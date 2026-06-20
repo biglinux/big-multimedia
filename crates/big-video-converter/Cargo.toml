@@ -8,6 +8,7 @@ license = "GPL-3.0-or-later"
 description = "BigLinux Big Video Converter"
 homepage = "https://github.com/biglinux/big-multimedia"
 repository = "https://github.com/biglinux/big-multimedia"
+exclude = ["packaging"]
 
 [dependencies]
 gtk = { version = "0.11", features = ["v4_22"], package = "gtk4" }

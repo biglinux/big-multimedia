@@ -8,7 +8,7 @@
 
 pkgname=big-audio-player
 pkgver=0.1.0
-pkgrel=1
+pkgrel=2
 _runtime_ver=2.0.0
 _data_ver=0.1.0
 _components_ver=0.1.0
@@ -71,17 +71,10 @@ _mirror_dir() {
 
 prepare() {
   if [ -n "${_local_root}" ]; then
-    msg2 "Mirroring local source tree from ${_local_root}"
-    mkdir -p "${srcdir}/${pkgname}"
-    _mirror_dir "${_local_root}" "${srcdir}/${pkgname}"
-    for _sib in "${_siblings[@]}"; do
-      _sib_src="$(cd "${_local_root}/.." && pwd -P)/${_sib}"
-      if [ -d "${_sib_src}" ]; then
-        msg2 "Mirroring sibling ${_sib}"
-        mkdir -p "${srcdir}/${_sib}"
-        _mirror_dir "${_sib_src}" "${srcdir}/${_sib}"
-      fi
-    done
+    # Consolidated layout: ${_local_root} is the live crate inside the
+    # big-multimedia Cargo workspace. Build directly against that workspace
+    # (reusing its target/ cache) instead of mirroring — see build()/package().
+    msg2 "Local source: building against the live workspace at ${_local_root}"
   else
     cd "$srcdir"
     [ -d "${pkgname}-${pkgver}" ] && ln -sfn "${pkgname}-${pkgver}" "${pkgname}"
@@ -95,14 +88,29 @@ prepare() {
 }
 
 build() {
-  cd "${srcdir}/${pkgname}"
   export RUSTFLAGS="${RUSTFLAGS} --remap-path-prefix=${srcdir}=/build --remap-path-prefix=${HOME}/.cargo=/cargo"
-  cargo build --release
+  if [ -n "${_local_root}" ]; then
+    # makepkg's pkg/src dirs (restricted perms) sit under the crate's
+    # packaging/; make them traversable so cargo's workspace source scan does
+    # not EACCES, then build the member reusing the live workspace cache.
+    chmod -R u+rX "${_local_root}/packaging" 2>/dev/null || true
+    cd "$(cd "${_local_root}/../.." && pwd -P)"
+    cargo build --release -p "${pkgname}"
+  else
+    cd "${srcdir}/${pkgname}"
+    cargo build --release
+  fi
 }
 
 package() {
-  cd "${srcdir}/${pkgname}"
-  install -Dm755 "target/release/big-audio-player" \
+  local _relbin="target/release/big-audio-player"
+  if [ -n "${_local_root}" ]; then
+    cd "${_local_root}"
+    _relbin="$(cd "${_local_root}/../.." && pwd -P)/target/release/big-audio-player"
+  else
+    cd "${srcdir}/${pkgname}"
+  fi
+  install -Dm755 "${_relbin}" \
     "$pkgdir/usr/bin/big-audio-player"
   install -Dm644 "resources/applications/br.com.biglinux.AudioPlayer.desktop" \
     "$pkgdir/usr/share/applications/br.com.biglinux.AudioPlayer.desktop"
@@ -116,6 +124,7 @@ package() {
   # UI strings live in one catalog that each app compiles and installs under
   # that domain name.
   _bmr_po="${srcdir}/big-media-runtime/po"
+  [ -n "${_local_root}" ] && _bmr_po="$(cd "${_local_root}/../../.." && pwd -P)/big-media-runtime/po"
   if [[ -d "${_bmr_po}" ]]; then
     while read -r _lang; do
       [[ -z "${_lang}" || "${_lang}" == \#* ]] && continue

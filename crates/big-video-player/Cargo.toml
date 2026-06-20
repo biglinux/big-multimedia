@@ -8,6 +8,7 @@ license = "GPL-3.0-or-later"
 description = "BigLinux Big Video Player"
 homepage = "https://github.com/biglinux/big-multimedia"
 repository = "https://github.com/biglinux/big-multimedia"
+exclude = ["packaging"]
 
 [features]
 default = []

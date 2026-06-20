@@ -8,7 +8,7 @@
 
 pkgname=big-video-player
 pkgver=0.1.0
-pkgrel=1
+pkgrel=2
 _runtime_ver=2.0.0
 _components_ver=0.1.0
 pkgdesc='Hardware-accelerated video player for BigLinux'
@@ -17,6 +17,8 @@ url='https://github.com/biglinux/big-video-player'
 license=('GPL-3.0-or-later')
 install=$pkgname.install
 depends=('gtk4' 'libadwaita' 'mpv' 'ffmpeg')
+replaces=('big-player-video')
+conflicts=('big-player-video')
 makedepends=('cargo' 'pkgconf' 'gettext' 'rsync')
 
 _has_workspace_files() {
@@ -68,17 +70,9 @@ _mirror_dir() {
 
 prepare() {
   if [ -n "${_local_root}" ]; then
-    msg2 "Mirroring local source tree from ${_local_root}"
-    mkdir -p "${srcdir}/${pkgname}"
-    _mirror_dir "${_local_root}" "${srcdir}/${pkgname}"
-    for _sib in "${_siblings[@]}"; do
-      _sib_src="$(cd "${_local_root}/.." && pwd -P)/${_sib}"
-      if [ -d "${_sib_src}" ]; then
-        msg2 "Mirroring sibling ${_sib}"
-        mkdir -p "${srcdir}/${_sib}"
-        _mirror_dir "${_sib_src}" "${srcdir}/${_sib}"
-      fi
-    done
+    # Consolidated layout: build directly against the live big-multimedia
+    # workspace (reusing its target/ cache) — no mirror. See build()/package().
+    msg2 "Local source: building against the live workspace at ${_local_root}"
   else
     cd "$srcdir"
     [ -d "${pkgname}-${pkgver}" ] && ln -sfn "${pkgname}-${pkgver}" "${pkgname}"
@@ -90,14 +84,29 @@ prepare() {
 }
 
 build() {
-  cd "${srcdir}/${pkgname}"
   export RUSTFLAGS="${RUSTFLAGS} --remap-path-prefix=${srcdir}=/build --remap-path-prefix=${HOME}/.cargo=/cargo"
-  cargo build --release
+  if [ -n "${_local_root}" ]; then
+    # makepkg pkg/src dirs (restricted perms) sit under the crate packaging/;
+    # make them traversable so cargo source scan does not EACCES, then build
+    # the member reusing the live workspace cache.
+    chmod -R u+rX "${_local_root}/packaging" 2>/dev/null || true
+    cd "$(cd "${_local_root}/../.." && pwd -P)"
+    cargo build --release -p "${pkgname}"
+  else
+    cd "${srcdir}/${pkgname}"
+    cargo build --release
+  fi
 }
 
 package() {
-  cd "${srcdir}/${pkgname}"
-  install -Dm755 "target/release/big-video-player" \
+  local _relbin="target/release/big-video-player"
+  if [ -n "${_local_root}" ]; then
+    cd "${_local_root}"
+    _relbin="$(cd "${_local_root}/../.." && pwd -P)/target/release/big-video-player"
+  else
+    cd "${srcdir}/${pkgname}"
+  fi
+  install -Dm755 "${_relbin}" \
     "$pkgdir/usr/bin/big-video-player"
   install -Dm644 "resources/applications/br.com.biglinux.VideoPlayer.desktop" \
     "$pkgdir/usr/share/applications/br.com.biglinux.VideoPlayer.desktop"
@@ -111,6 +120,7 @@ package() {
   # UI strings live in one catalog that each app compiles and installs under
   # that domain name.
   _bmr_po="${srcdir}/big-media-runtime/po"
+  [ -n "${_local_root}" ] && _bmr_po="$(cd "${_local_root}/../../.." && pwd -P)/big-media-runtime/po"
   if [[ -d "${_bmr_po}" ]]; then
     while read -r _lang; do
       [[ -z "${_lang}" || "${_lang}" == \#* ]] && continue
