@@ -115,6 +115,19 @@ impl Component for VideoShell {
         main_overlay.set_clip_overlay(&gl_area, true);
         main_overlay.set_measure_overlay(&gl_area, false);
 
+        // Software (no-GL) video surface: hidden until the GL render context
+        // fails to come up (headless software compositor, GL-less VM). The SW
+        // render path paints mpv frames here as memory textures (cairo path).
+        let sw_picture = gtk::Picture::builder()
+            .content_fit(gtk::ContentFit::Contain)
+            .hexpand(true)
+            .vexpand(true)
+            .visible(false)
+            .build();
+        main_overlay.add_overlay(&sw_picture);
+        main_overlay.set_clip_overlay(&sw_picture, true);
+        main_overlay.set_measure_overlay(&sw_picture, false);
+
         let controls_revealer = gtk::Revealer::builder()
             .valign(gtk::Align::End)
             .transition_type(gtk::RevealerTransitionType::Crossfade)
@@ -473,6 +486,7 @@ impl Component for VideoShell {
             &root,
             &main_overlay,
             &gl_area,
+            &sw_picture,
             &mpv,
             &render_ctx,
             &video_backend,

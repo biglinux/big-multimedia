@@ -22,7 +22,7 @@ use relm4::{Component, ComponentController, ComponentParts, ComponentSender, Con
 #[cfg(feature = "chromecast")]
 use crate::cast::chromecast::CastManager;
 use crate::i18n::{i18n, ni18n};
-use crate::player::mpv_backend::fast_render::FastRenderContext;
+use crate::player::mpv_backend::fast_render::{FastRenderContext, SwRenderContext};
 use crate::player::mpv_backend::offload_renderer::VideoBackend;
 use crate::player::mpv_backend::{skip_mpv_render, video_surface, MpvBackend, PlayerEvent};
 use crate::settings::{keys, Settings};

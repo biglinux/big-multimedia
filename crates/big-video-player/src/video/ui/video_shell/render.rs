@@ -3,6 +3,9 @@ use super::*;
 /// Shared, interior-mutable handle to the live mpv render context.
 pub(super) type RenderCtx = Rc<RefCell<Option<FastRenderContext>>>;
 
+/// Interior-mutable handle to the software (no-GL) render context.
+type SwRenderCtx = Rc<RefCell<Option<SwRenderContext>>>;
+
 pub(super) struct RealizeOpts {
     pub(super) custom_opts: String,
     pub(super) audio_output: String,
@@ -22,6 +25,7 @@ pub(super) fn wire_realize(
     realize_host: &impl IsA<gtk::Widget>,
     main_overlay: &gtk::Overlay,
     gl_area: &gtk::GLArea,
+    sw_picture: &gtk::Picture,
     mpv: &Rc<RefCell<Option<Arc<MpvBackend>>>>,
     render_ctx: &RenderCtx,
     video_backend: &Rc<RefCell<Option<VideoBackend>>>,
@@ -30,6 +34,8 @@ pub(super) fn wire_realize(
 ) {
     let main_overlay = main_overlay.clone();
     let gl_area = gl_area.clone();
+    let sw_picture = sw_picture.clone();
+    let sw_ctx: SwRenderCtx = Rc::new(RefCell::new(None));
     let mpv = mpv.clone();
     let render_ctx = render_ctx.clone();
     let video_backend = video_backend.clone();
@@ -74,8 +80,10 @@ pub(super) fn wire_realize(
         wire_render(
             &mpv_backend,
             &gl_area,
+            &sw_picture,
             &main_overlay,
             &render_ctx,
+            &sw_ctx,
             &video_backend,
             is_offload,
         );
@@ -84,11 +92,14 @@ pub(super) fn wire_realize(
 
 /// Wire the mpv render path: offload (DMA-BUF/GraphicsOffload) when available,
 /// GLArea fallback otherwise. Mirrors `init_render_context*` + `on_gl_render`.
+#[allow(clippy::too_many_arguments)]
 fn wire_render(
     mpv: &Arc<MpvBackend>,
     gl_area: &gtk::GLArea,
+    sw_picture: &gtk::Picture,
     main_overlay: &gtk::Overlay,
     render_ctx: &RenderCtx,
+    sw_ctx: &SwRenderCtx,
     video_backend: &Rc<RefCell<Option<VideoBackend>>>,
     is_offload: bool,
 ) {
@@ -130,7 +141,10 @@ fn wire_render(
             Ok(ctx) => {
                 render_ctx.replace(Some(ctx));
             }
-            Err(e) => error!("video: offload render context failed: {e}"),
+            Err(e) => {
+                error!("video: offload render context failed: {e}; trying software fallback");
+                wire_sw_fallback(mpv, gl_area, sw_picture, sw_ctx);
+            }
         }
         // `create_render_context` makes the offload renderer's GL context current
         // to build the mpv render context but does not release it; leaving it
@@ -158,27 +172,109 @@ fn wire_render(
     {
         let mpv = mpv.clone();
         let render_ctx = render_ctx.clone();
-        gl_area.connect_realize(move |area| ensure_glarea_ctx(&mpv, area, &render_ctx));
+        let sw_picture = sw_picture.clone();
+        let sw_ctx = sw_ctx.clone();
+        gl_area.connect_realize(move |area| {
+            ensure_glarea_ctx(&mpv, area, &sw_picture, &render_ctx, &sw_ctx);
+        });
     }
     gl_area.connect_resize(|area, _, _| area.queue_render());
     // The GLArea may already be realized (added to a realized window); create
     // the context now so we do not miss the realize signal.
     if gl_area.is_realized() {
-        ensure_glarea_ctx(mpv, gl_area, render_ctx);
+        ensure_glarea_ctx(mpv, gl_area, sw_picture, render_ctx, sw_ctx);
     }
 }
 
 /// Create the GLArea-path render context once (GL must be current → realize).
-fn ensure_glarea_ctx(mpv: &Arc<MpvBackend>, gl_area: &gtk::GLArea, render_ctx: &RenderCtx) {
-    if render_ctx.borrow().is_some() {
+/// When GL is unavailable the context creation fails — fall back to the
+/// software render path so video still plays on no-GL hosts.
+fn ensure_glarea_ctx(
+    mpv: &Arc<MpvBackend>,
+    gl_area: &gtk::GLArea,
+    sw_picture: &gtk::Picture,
+    render_ctx: &RenderCtx,
+    sw_ctx: &SwRenderCtx,
+) {
+    if render_ctx.borrow().is_some() || sw_ctx.borrow().is_some() {
         return;
     }
     match video_surface::create_render_context(mpv, None, gl_area, "Player GLArea", || {}) {
         Ok(ctx) => {
             render_ctx.replace(Some(ctx));
         }
-        Err(e) => error!("video: GLArea render context failed: {e}"),
+        Err(e) => {
+            error!("video: GLArea render context failed: {e}; using software fallback");
+            wire_sw_fallback(mpv, gl_area, sw_picture, sw_ctx);
+        }
     }
+}
+
+/// Software (no-GL) video path: mpv renders each frame into a CPU buffer that we
+/// publish as a `gdk::MemoryTexture` on `sw_picture`. Driven by a ~60 fps
+/// main-thread timer gated on `has_new_frame` (idle when paused/static). Swaps
+/// the dead GLArea out for the picture. Used only when the GL render context
+/// could not be created.
+fn wire_sw_fallback(
+    mpv: &Arc<MpvBackend>,
+    gl_area: &gtk::GLArea,
+    sw_picture: &gtk::Picture,
+    sw_ctx: &SwRenderCtx,
+) {
+    if sw_ctx.borrow().is_some() {
+        return;
+    }
+    let ctx = match mpv.create_sw_render_context() {
+        Ok(ctx) => ctx,
+        Err(e) => {
+            error!("video: software render context failed: {e}");
+            return;
+        }
+    };
+    sw_ctx.replace(Some(ctx));
+    gl_area.set_visible(false);
+    sw_picture.set_visible(true);
+    log::info!("video: software render fallback active (no OpenGL)");
+
+    let buffer: Rc<RefCell<Vec<u8>>> = Rc::new(RefCell::new(Vec::new()));
+    let sw_ctx = sw_ctx.clone();
+    let picture_weak = sw_picture.downgrade();
+    glib::timeout_add_local(std::time::Duration::from_millis(16), move || {
+        let Some(picture) = picture_weak.upgrade() else {
+            return glib::ControlFlow::Break; // widget gone → stop + drop the context clone
+        };
+        let ctx_ref = sw_ctx.borrow();
+        let Some(ctx) = ctx_ref.as_ref() else {
+            return glib::ControlFlow::Break;
+        };
+        if ctx.has_new_frame() {
+            render_sw_frame(&picture, ctx, &buffer);
+        }
+        glib::ControlFlow::Continue
+    });
+}
+
+/// Render one mpv frame into `buffer` (bgr0) and publish it on `picture`.
+fn render_sw_frame(picture: &gtk::Picture, ctx: &SwRenderContext, buffer: &Rc<RefCell<Vec<u8>>>) {
+    let scale = picture.scale_factor().max(1);
+    let width = picture.width() * scale;
+    let height = picture.height() * scale;
+    if width <= 0 || height <= 0 {
+        return; // not allocated yet — the next tick retries
+    }
+    let stride = width as usize * 4;
+    let needed = stride * height as usize;
+    let mut buf = buffer.borrow_mut();
+    if buf.len() != needed {
+        buf.resize(needed, 0);
+    }
+    if ctx.render_into(&mut buf, width, height, stride) < 0 {
+        return;
+    }
+    let bytes = gtk::glib::Bytes::from(&buf[..]);
+    let texture =
+        gdk::MemoryTexture::new(width, height, gdk::MemoryFormat::B8g8r8x8, &bytes, stride);
+    picture.set_paintable(Some(&texture));
 }
 
 /// Render one mpv frame into the GLArea's framebuffer (fallback path).
