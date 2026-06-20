@@ -157,6 +157,8 @@ impl AudioShell {
                 sender.input(AudioShellInput::RefreshPlaylists);
             }
             AudioShellInput::ShowSleepTimer => self.show_sleep_timer(&sender),
+            AudioShellInput::ConvertTrack(codec) => self.convert_track(&codec),
+            AudioShellInput::ShowTrimExport => self.show_trim_export(),
             AudioShellInput::SleepTimerStart { minutes, action } => {
                 self.start_sleep_timer(sleep_timer_seconds(minutes), action, &sender);
             }

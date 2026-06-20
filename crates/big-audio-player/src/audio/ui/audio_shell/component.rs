@@ -473,6 +473,21 @@ impl Component for AudioShell {
             let _ = playlists_sender.send(AudioShellInput::ShowManagePlaylists);
         });
 
+        let trim_sender = sender.input_sender().clone();
+        big_app_kit::desktop::install_action(&win_actions, "trim-export", move || {
+            let _ = trim_sender.send(AudioShellInput::ShowTrimExport);
+        });
+        for (name, codec) in [
+            ("convert-mp3", "mp3"),
+            ("convert-m4a", "aac"),
+            ("convert-flac", "flac"),
+        ] {
+            let convert_sender = sender.input_sender().clone();
+            big_app_kit::desktop::install_action(&win_actions, name, move || {
+                let _ = convert_sender.send(AudioShellInput::ConvertTrack(codec.to_string()));
+            });
+        }
+
         // Engine: DB + mpv (built once at init). The event loop forwards
         // PlayerEvents into the shell.
         let db = db::open_database().ok();

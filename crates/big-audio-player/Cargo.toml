@@ -25,6 +25,8 @@ big-player-ui = { path = "../../../big-rust-components/crates/big-player-ui" }
 big-app-kit = { path = "../../../big-rust-components/crates/big-app-kit" }
 big-relm4-components = { path = "../../../big-rust-components/crates/big-relm4-components" }
 big-media-components = { path = "../../../big-rust-components/crates/big-media-components" }
+# In-player quick export (convert / trim & export) reuses the converter engine.
+big-converter-ui = { path = "../../../big-rust-components/crates/big-converter-ui" }
 relm4 = { version = "0.11.0", default-features = false, features = ["libadwaita"] }
 async-channel = "2.5"
 dirs = "6"

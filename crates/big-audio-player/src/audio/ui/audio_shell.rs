@@ -8,6 +8,7 @@
 mod chrome;
 mod component;
 mod engine;
+mod export;
 mod input;
 mod library_store;
 mod metadata;

@@ -91,6 +91,15 @@ pub(super) fn build_toolbar(
     settings_section.append(Some(&i18n("Cast")), Some("win.show-cast"));
     menu.append_section(None, &settings_section);
 
+    let export_section = gio::Menu::new();
+    export_section.append(Some(&i18n("Trim & Export…")), Some("win.trim-export"));
+    let convert = gio::Menu::new();
+    convert.append(Some(&i18n("MP3")), Some("win.convert-mp3"));
+    convert.append(Some(&i18n("M4A")), Some("win.convert-m4a"));
+    convert.append(Some(&i18n("FLAC")), Some("win.convert-flac"));
+    export_section.append_submenu(Some(&i18n("Convert to")), &convert);
+    menu.append_section(None, &export_section);
+
     let tools_section = gio::Menu::new();
     tools_section.append(Some(&i18n("Sleep Timer")), Some("win.sleep-timer"));
     tools_section.append(Some(&i18n("Smartphone")), Some("win.show-smartphone"));

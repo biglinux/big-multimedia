@@ -169,6 +169,12 @@ pub enum AudioShellInput {
         /// `(id, name)` of existing playlists.
         playlists: Vec<(i64, String)>,
     },
+    /// Convert the current track to `codec` (mp3/aac/flac) beside it — runs off
+    /// the main loop via the in-process quick-export engine.
+    ConvertTrack(String),
+    /// Open the Trim & Export dialog for the current track (mark in/out, pick a
+    /// format, export just that range — clip a song / make a ringtone).
+    ShowTrimExport,
 }
 
 thread_local! {
