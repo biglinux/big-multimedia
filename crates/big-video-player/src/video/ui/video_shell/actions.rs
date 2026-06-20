@@ -31,6 +31,24 @@ pub(super) fn install_window_actions(
         ("screenshot", || VideoShellInput::Screenshot),
         ("chapters", || VideoShellInput::ShowChapters),
         ("sleep-timer", || VideoShellInput::ShowSleepTimer),
+        ("extract-audio-mp3", || {
+            VideoShellInput::ExtractAudio("mp3".into())
+        }),
+        ("extract-audio-m4a", || {
+            VideoShellInput::ExtractAudio("aac".into())
+        }),
+        ("extract-audio-flac", || {
+            VideoShellInput::ExtractAudio("flac".into())
+        }),
+        ("convert-mp4", || {
+            VideoShellInput::QuickConvert("mp4".into())
+        }),
+        ("convert-mkv", || {
+            VideoShellInput::QuickConvert("mkv".into())
+        }),
+        ("convert-webm", || {
+            VideoShellInput::QuickConvert("webm".into())
+        }),
     ];
     for (name, message) in pairs {
         let sender = sender.clone();

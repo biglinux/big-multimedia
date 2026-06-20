@@ -331,6 +331,20 @@ impl Component for VideoShell {
         media.append(Some(&i18n("Media Info")), Some("win.media-info"));
         media.append(Some(&i18n("IPTV")), Some("win.iptv"));
         menu.append_section(None, &media);
+        // Export: reuse the converter engine in-process — extract audio or
+        // re-encode the playing file without leaving the player.
+        let export = gio::Menu::new();
+        let extract = gio::Menu::new();
+        extract.append(Some(&i18n("MP3")), Some("win.extract-audio-mp3"));
+        extract.append(Some(&i18n("M4A")), Some("win.extract-audio-m4a"));
+        extract.append(Some(&i18n("FLAC")), Some("win.extract-audio-flac"));
+        export.append_submenu(Some(&i18n("Extract Audio")), &extract);
+        let convert = gio::Menu::new();
+        convert.append(Some(&i18n("MP4")), Some("win.convert-mp4"));
+        convert.append(Some(&i18n("MKV")), Some("win.convert-mkv"));
+        convert.append(Some(&i18n("WebM")), Some("win.convert-webm"));
+        export.append_submenu(Some(&i18n("Convert to")), &convert);
+        menu.append_section(None, &export);
         let settings_section = gio::Menu::new();
         settings_section.append(Some(&i18n("Preferences")), Some("win.preferences"));
         settings_section.append(Some(&i18n("Appearance")), Some("win.appearance"));
@@ -562,6 +576,8 @@ impl Component for VideoShell {
             VideoShellInput::Player(event) => self.on_player_event(event, window_ref),
             VideoShellInput::Controls(out) => self.on_controls(out, window_ref),
             VideoShellInput::Playlist(out) => self.on_playlist(out),
+            VideoShellInput::ExtractAudio(codec) => self.extract_audio(&codec),
+            VideoShellInput::QuickConvert(container) => self.quick_convert(&container),
             VideoShellInput::Iptv(out) => VideoShell::on_iptv(out, &sender),
             #[cfg(feature = "chromecast")]
             VideoShellInput::Cast(out) => self.on_cast(out),
