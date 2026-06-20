@@ -85,6 +85,7 @@ mod dialogs;
 mod export;
 mod input;
 mod input_gestures;
+mod keyboard;
 mod osd;
 mod playback;
 mod render;

@@ -317,14 +317,6 @@ pub const SHORTCUTS: &[ShortcutDef] = &[
         single_key: true,
     },
     ShortcutDef {
-        action: "stream-record",
-        display_name: "Toggle stream recording",
-        category: "Other",
-        // Was <Ctrl>r → clashed with music-replaygain.
-        default_accel: "<Ctrl><Shift>r",
-        single_key: true,
-    },
-    ShortcutDef {
         action: "cycle-edition",
         display_name: "Cycle edition",
         category: "Other",
@@ -356,6 +348,14 @@ pub const CATEGORIES: &[&str] = &[
 #[must_use]
 pub fn build_key_map(custom: &str) -> std::collections::HashMap<String, String> {
     build_accel_map(SHORTCUTS, custom, false)
+}
+
+/// Accel→action map for the bare single-key bindings only. Modified bindings are
+/// GTK accelerators; bare keys are dispatched by the window key controller and
+/// must be filtered so text entries keep normal typing (mirrors the audio port).
+#[must_use]
+pub fn build_single_key_map(custom: &str) -> std::collections::HashMap<String, String> {
+    build_accel_map(SHORTCUTS, custom, true)
 }
 
 pub use display_accel as display_key;

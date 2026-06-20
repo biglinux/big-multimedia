@@ -438,6 +438,10 @@ impl Component for VideoShell {
             // double-click → fullscreen, right-click → context menu, drag → move
             // the window (when not fullscreen).
             wire_video_input(&root, &main_overlay, &sender);
+            // Window-level keyboard shortcuts (space/seek/volume/fullscreen/…).
+            // The Relm4 port had lost this dispatch — the shortcut table was
+            // display-only until this controller restored it.
+            super::keyboard::wire_keyboard_shortcuts(&root, &mpv, &settings, &sender);
         }
 
         // Animated idle gradient behind the welcome screen (gl surface hidden so

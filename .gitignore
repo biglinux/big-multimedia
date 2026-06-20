@@ -7,3 +7,5 @@ mutants.out.old/
 # makepkg build artifacts
 **/packaging/pacman/pkg/
 **/packaging/pacman/src/
+/locale/
+wayland-screenshot-*.png

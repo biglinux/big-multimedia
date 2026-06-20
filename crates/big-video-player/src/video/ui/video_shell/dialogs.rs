@@ -96,28 +96,34 @@ impl VideoShell {
             return;
         };
         let group = adw::PreferencesGroup::new();
+        // Titles/subtitles are wrapped in `i18n()` on string literals here (not
+        // `i18n(title)` in the loop) so `xgettext` can extract them into the POT.
         let choices = [
             (
-                "Best available",
+                i18n("Best available"),
                 "bestvideo*+bestaudio/best",
-                "Highest video and audio quality",
+                i18n("Highest video and audio quality"),
             ),
             (
-                "Up to 1080p",
+                i18n("Up to 1080p"),
                 "bestvideo*[height<=1080]+bestaudio/best[height<=1080]/best",
-                "Prefer Full HD or lower",
+                i18n("Prefer Full HD or lower"),
             ),
             (
-                "Up to 720p",
+                i18n("Up to 720p"),
                 "bestvideo*[height<=720]+bestaudio/best[height<=720]/best",
-                "Prefer HD or lower",
+                i18n("Prefer HD or lower"),
             ),
             (
-                "Up to 480p",
+                i18n("Up to 480p"),
                 "bestvideo*[height<=480]+bestaudio/best[height<=480]/best",
-                "Prefer SD or lower",
+                i18n("Prefer SD or lower"),
             ),
-            ("Audio only", "bestaudio/best", "Use the best audio stream"),
+            (
+                i18n("Audio only"),
+                "bestaudio/best",
+                i18n("Use the best audio stream"),
+            ),
         ];
 
         let toolbar = adw::ToolbarView::new();
@@ -141,8 +147,8 @@ impl VideoShell {
             .build();
         for (title, format, subtitle) in choices {
             let row = BigNavigationRow::new(
-                BigNavigationRowSpec::new(i18n(title))
-                    .subtitle(i18n(subtitle))
+                BigNavigationRowSpec::new(title)
+                    .subtitle(subtitle)
                     .action_label(i18n("Use this quality")),
             )
             .into_root();
