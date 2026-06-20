@@ -334,6 +334,7 @@ impl Component for VideoShell {
         // Export: reuse the converter engine in-process — extract audio or
         // re-encode the playing file without leaving the player.
         let export = gio::Menu::new();
+        export.append(Some(&i18n("Clip & Export…")), Some("win.clip-export"));
         let extract = gio::Menu::new();
         extract.append(Some(&i18n("MP3")), Some("win.extract-audio-mp3"));
         extract.append(Some(&i18n("M4A")), Some("win.extract-audio-m4a"));
@@ -576,6 +577,11 @@ impl Component for VideoShell {
             VideoShellInput::Player(event) => self.on_player_event(event, window_ref),
             VideoShellInput::Controls(out) => self.on_controls(out, window_ref),
             VideoShellInput::Playlist(out) => self.on_playlist(out),
+            VideoShellInput::ShowClipExport => {
+                if let Some(root) = window_ref {
+                    self.show_clip_export(root);
+                }
+            }
             VideoShellInput::ExtractAudio(codec) => self.extract_audio(&codec),
             VideoShellInput::QuickConvert(container) => self.quick_convert(&container),
             VideoShellInput::Iptv(out) => VideoShell::on_iptv(out, &sender),

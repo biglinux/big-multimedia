@@ -31,6 +31,7 @@ pub(super) fn install_window_actions(
         ("screenshot", || VideoShellInput::Screenshot),
         ("chapters", || VideoShellInput::ShowChapters),
         ("sleep-timer", || VideoShellInput::ShowSleepTimer),
+        ("clip-export", || VideoShellInput::ShowClipExport),
         ("extract-audio-mp3", || {
             VideoShellInput::ExtractAudio("mp3".into())
         }),

@@ -86,6 +86,9 @@ pub enum VideoShellInput {
     ToggleFullscreen,
     /// Activity transition from a pane host such as the shell desktop.
     SetPaneActivity(big_relm4_components::pane::PaneActivity),
+    /// Open the Clip & Export dialog for the playing file (mark in/out, pick a
+    /// format, export the trimmed clip beside it).
+    ShowClipExport,
     /// Extract the current file's audio to `codec` (mp3/m4a/flac) beside it —
     /// runs off the main loop via the in-process quick-export engine.
     ExtractAudio(String),
