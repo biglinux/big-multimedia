@@ -1,0 +1,41 @@
+[default]
+extend-ignore-identifiers-re = [
+    # GTK / libadwaita / Relm4 acronyms
+    "Adw",
+    "adw",
+    # libmpv / FFmpeg domain words
+    "mpv",
+    "vaapi",
+    "nvenc",
+    "qsv",
+    # MIME-class playlist formats
+    "m3u",
+    "pls",
+    "cue",
+    # MPRIS D-Bus
+    "mpris",
+]
+
+[default.extend-words]
+# Portuguese / locale tokens in user-facing strings + doc comments.
+componentes = "componentes"
+controles = "controles"
+conver = "conver"
+Converte = "Converte"
+# Framework / crate / domain terms.
+relm = "relm"
+Relm = "Relm"
+flate = "flate"
+unparented = "unparented"   # GTK: widget removed from its parent.
+seeked = "seeked"           # MPRIS spec "Seeked" D-Bus signal.
+
+[files]
+extend-exclude = [
+    "target/**",
+    "po/**/*.po",
+    "po/*.pot",
+    "build-locale/**",
+    "*.mo",
+    "*.svg",
+    "Cargo.lock",
+]

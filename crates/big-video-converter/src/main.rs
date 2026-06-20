@@ -50,10 +50,14 @@ mod tests {
     fn with_host_binary_override<T>(host_binary: &str, f: impl FnOnce() -> T) -> T {
         let _guard = HOST_ENV_LOCK.lock().expect("host env lock");
         let previous = std::env::var_os(HOST_BINARY_ENV);
+        // SAFETY: HOST_ENV_LOCK serializes every env mutation in this test
+        // helper, so no other thread reads/writes HOST_BINARY_ENV concurrently
+        // (the soundness condition for the Rust 2024 `set_var`).
         unsafe {
             std::env::set_var(HOST_BINARY_ENV, host_binary);
         }
         let result = f();
+        // SAFETY: still holding HOST_ENV_LOCK — same serialization as above.
         unsafe {
             if let Some(previous) = previous {
                 std::env::set_var(HOST_BINARY_ENV, previous);
