@@ -1,0 +1,75 @@
+[package]
+name = "big-video-converter"
+publish = false
+version = "0.1.0"
+edition = "2021"
+rust-version = "1.93"
+license = "GPL-3.0-or-later"
+description = "BigLinux Big Video Converter"
+homepage = "https://github.com/biglinux/big-multimedia"
+repository = "https://github.com/biglinux/big-multimedia"
+
+[dependencies]
+gtk = { version = "0.11", features = ["v4_22"], package = "gtk4" }
+big-converter-ui = { path = "../../../big-rust-components/crates/big-converter-ui" }
+
+[dev-dependencies]
+big-media-runtime = { path = "../../../big-media-runtime", default-features = false, features = ["ui"] }
+tempfile = "3"
+toml = "1"
+
+[lints.clippy]
+pedantic = { level = "warn", priority = -1 }
+# Suppress noisy pedantic lints for GTK projects
+module_name_repetitions = "allow"
+must_use_candidate = "allow"
+missing_errors_doc = "allow"
+missing_panics_doc = "allow"
+cast_possible_truncation = "allow"
+cast_sign_loss = "allow"
+cast_precision_loss = "allow"
+cast_possible_wrap = "allow"
+doc_markdown = "allow"
+wildcard_imports = "allow"
+similar_names = "allow"
+many_single_char_names = "allow"
+items_after_statements = "allow"
+option_if_let_else = "allow"
+needless_pass_by_value = "allow"
+format_push_string = "allow"
+too_many_lines = "allow"
+struct_excessive_bools = "allow"
+fn_params_excessive_bools = "allow"
+clone_on_ref_ptr = "allow"
+ref_option = "allow"
+float_cmp = "allow"
+use_debug = "allow"
+unnecessary_debug_formatting = "allow"
+large_stack_arrays = "allow"
+implicit_hasher = "allow"
+missing_fields_in_debug = "allow"
+not_unsafe_ptr_arg_deref = "deny"
+ptr_as_ptr = "warn"
+dbg_macro = "warn"
+todo = "warn"
+rc_buffer = "warn"
+rc_mutex = "warn"
+verbose_file_reads = "warn"
+unseparated_literal_suffix = "warn"
+
+[lints.rust]
+unsafe_op_in_unsafe_fn = "warn"
+dead_code = "warn"
+unused_imports = "warn"
+unused_variables = "warn"
+unused_mut = "warn"
+unreachable_code = "warn"
+unreachable_patterns = "warn"
+trivial_numeric_casts = "warn"
+
+# caveman: cargo-machete ignore list (allow-list false positives)
+[package.metadata.cargo-machete]
+ignored = []
+
+# Workspace-level config (members list, [profile.release], machete) lives in the
+# big-multimedia root Cargo.toml.

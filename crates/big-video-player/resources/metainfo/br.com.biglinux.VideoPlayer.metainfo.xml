@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<component type="desktop-application">
+  <id>br.com.biglinux.VideoPlayer</id>
+  <metadata_license>CC0-1.0</metadata_license>
+  <project_license>GPL-3.0-or-later</project_license>
+  <developer id="com.biglinux">
+    <name>BigLinux</name>
+  </developer>
+  <name>Big Video Player</name>
+  <name xml:lang="pt_BR">Big Video Player</name>
+  <summary>Hardware-accelerated video player for BigLinux</summary>
+  <summary xml:lang="pt_BR">Reprodutor de vídeo com aceleração de hardware para o BigLinux</summary>
+  <description>
+    <p>Big Video Player is a libadwaita video player built in Rust on top of mpv and the shared BigLinux components. It supports hardware-accelerated decoding via VAAPI, VDPAU and NVDEC, MPRIS controls, subtitle tracks, and the BigLinux notifications stack. Common containers include MP4, MKV, WebM, MOV, and AVI.</p>
+    <p xml:lang="pt_BR">O Big Video Player é um reprodutor de vídeo em libadwaita escrito em Rust sobre o mpv e os componentes compartilhados do BigLinux. Suporta decodificação acelerada por hardware via VAAPI, VDPAU e NVDEC, controles MPRIS, faixas de legendas e a pilha de notificações do BigLinux. Os contêineres comuns incluem MP4, MKV, WebM, MOV e AVI.</p>
+  </description>
+  <launchable type="desktop-id">br.com.biglinux.VideoPlayer.desktop</launchable>
+  <categories>
+    <category>AudioVideo</category>
+    <category>Video</category>
+    <category>Player</category>
+  </categories>
+  <keywords>
+    <keyword>video</keyword>
+    <keyword>player</keyword>
+    <keyword>mpv</keyword>
+    <keyword>mpris</keyword>
+    <keyword>movie</keyword>
+    <keyword>film</keyword>
+    <keyword>vaapi</keyword>
+    <keyword xml:lang="pt_BR">vídeo</keyword>
+    <keyword xml:lang="pt_BR">reprodutor</keyword>
+    <keyword xml:lang="pt_BR">filme</keyword>
+  </keywords>
+  <url type="homepage">https://github.com/biglinux/big-video-player</url>
+  <url type="bugtracker">https://github.com/biglinux/big-video-player/issues</url>
+  <screenshots>
+    <screenshot type="default">
+      <caption>Main window playing a video</caption>
+      <caption xml:lang="pt_BR">Janela principal reproduzindo um vídeo</caption>
+      <image type="source">https://raw.githubusercontent.com/biglinux/big-video-player/main/docs/screenshots/01-main.png</image>
+    </screenshot>
+  </screenshots>
+  <content_rating type="oars-1.1"/>
+  <supports>
+    <control>keyboard</control>
+    <control>pointing</control>
+    <control>touch</control>
+  </supports>
+  <releases>
+    <release version="1.0.0" date="2026-04-26">
+      <description>
+        <p>Initial Rust release with libadwaita UI, mpv backend, hardware decoding, and BigLinux desktop integration.</p>
+        <p xml:lang="pt_BR">Primeira versão em Rust com interface libadwaita, backend mpv, decodificação acelerada por hardware e integração com o desktop BigLinux.</p>
+      </description>
+    </release>
+  </releases>
+</component>

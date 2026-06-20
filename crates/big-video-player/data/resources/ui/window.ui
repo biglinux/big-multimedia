@@ -1,0 +1,453 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<interface>
+  <template class="BigMediaPlayerWindow" parent="AdwApplicationWindow">
+    <property name="title" translatable="yes">Big Video Player</property>
+    <property name="default-width">1000</property>
+    <property name="default-height">600</property>
+    <property name="content">
+      <object class="AdwToastOverlay" id="toast_overlay">
+        <property name="child">
+          <object class="AdwOverlaySplitView" id="split_view">
+            <property name="show-sidebar">false</property>
+            <property name="sidebar-position">end</property>
+            <property name="collapsed">true</property>
+            <property name="max-sidebar-width">400</property>
+            <property name="min-sidebar-width">200</property>
+            <property name="sidebar-width-fraction">1.0</property>
+            <property name="sidebar">
+              <object class="GtkBox" id="sidebar_outer">
+                <property name="orientation">horizontal</property>
+                <child>
+                  <object class="GtkSeparator" id="sidebar_drag_handle">
+                    <property name="orientation">vertical</property>
+                    <property name="width-request">6</property>
+                    <style><class name="sidebar-drag-handle"/></style>
+                  </object>
+                </child>
+                <child>
+                  <object class="GtkBox" id="playlist_sidebar">
+                    <property name="orientation">vertical</property>
+                    <property name="hexpand">true</property>
+                  </object>
+                </child>
+              </object>
+            </property>
+            <property name="content">
+          <object class="GtkOverlay" id="main_overlay">
+            <property name="overflow">hidden</property>
+        <!-- Background filler -->
+        <property name="child">
+          <object class="GtkBox" id="video_bg">
+            <property name="hexpand">true</property>
+            <property name="vexpand">true</property>
+            <style>
+              <class name="video-bg"/>
+            </style>
+          </object>
+        </property>
+
+        <!-- Video rendering area (overlay child with fixed allocation to
+             prevent GTK4 from recreating GL framebuffers on every resize) -->
+        <child type="overlay">
+          <object class="GtkGLArea" id="video_area">
+            <property name="halign">start</property>
+            <property name="valign">end</property>
+            <property name="auto-render">false</property>
+            <property name="accessible-role">img</property>
+            <accessibility>
+              <property name="label" translatable="yes">Video playback area</property>
+            </accessibility>
+            <style>
+              <class name="video-bg"/>
+            </style>
+          </object>
+        </child>
+
+        <!-- Top: Header with revealer -->
+        <child type="overlay">
+          <object class="GtkRevealer" id="header_revealer">
+            <property name="transition-type">crossfade</property>
+            <property name="transition-duration">300</property>
+            <property name="reveal-child">true</property>
+            <property name="valign">start</property>
+            <property name="hexpand">true</property>
+            <child>
+              <object class="GtkBox" id="header_box">
+                <property name="orientation">vertical</property>
+                <style>
+                  <class name="osd-header"/>
+                </style>
+                <child>
+                  <object class="AdwHeaderBar" id="header_bar">
+                    <property name="show-title">true</property>
+                    <child type="start">
+                      <object class="GtkToggleButton" id="pin_btn">
+                        <property name="icon-name">view-pin-symbolic</property>
+                        <property name="tooltip-text" translatable="yes">Keep Above</property>
+                        <accessibility>
+                          <property name="label" translatable="yes">Keep Above</property>
+                        </accessibility>
+                        <style><class name="osd-btn"/></style>
+                      </object>
+                    </child>
+                    <child type="start">
+                      <object class="GtkMenuButton" id="open_btn">
+                        <property name="icon-name">document-open-symbolic</property>
+                        <property name="tooltip-text" translatable="yes">Open</property>
+                        <accessibility>
+                          <property name="label" translatable="yes">Open</property>
+                        </accessibility>
+                        <style><class name="osd-btn"/></style>
+                      </object>
+                    </child>
+                    <child type="end">
+                      <object class="GtkMenuButton" id="menu_btn">
+                        <property name="icon-name">open-menu-symbolic</property>
+                        <property name="tooltip-text" translatable="yes">Menu</property>
+                        <accessibility>
+                          <property name="label" translatable="yes">Menu</property>
+                        </accessibility>
+                        <style><class name="osd-btn"/></style>
+                      </object>
+                    </child>
+
+                  </object>
+                </child>
+              </object>
+            </child>
+          </object>
+        </child>
+
+        <!-- Seek time tooltip (positioned in main overlay for unrestricted Y placement) -->
+        <child type="overlay">
+          <object class="GtkBox" id="seek_tooltip_box">
+            <property name="visible">false</property>
+            <property name="orientation">vertical</property>
+            <property name="spacing">2</property>
+            <property name="halign">start</property>
+            <property name="valign">end</property>
+            <property name="can-target">false</property>
+            <style>
+              <class name="seek-time-label"/>
+            </style>
+            <child>
+              <object class="GtkPicture" id="seek_thumb_image">
+                <property name="width-request">240</property>
+                <property name="height-request">135</property>
+                <property name="content-fit">contain</property>
+                <property name="can-target">false</property>
+              </object>
+            </child>
+            <child>
+              <object class="GtkLabel" id="seek_time_label">
+                <property name="halign">center</property>
+                <property name="can-target">false</property>
+                <style>
+                  <class name="seek-time-text"/>
+                </style>
+              </object>
+            </child>
+          </object>
+        </child>
+
+        <!-- Bottom: Controls with revealer -->
+        <child type="overlay">
+          <object class="GtkRevealer" id="controls_revealer">
+            <property name="transition-type">crossfade</property>
+            <property name="transition-duration">300</property>
+            <property name="reveal-child">true</property>
+            <property name="valign">end</property>
+            <property name="hexpand">true</property>
+            <child>
+              <object class="GtkBox" id="controls_box">
+                <property name="orientation">vertical</property>
+                <property name="spacing">4</property>
+                <style>
+                  <class name="osd-controls"/>
+                </style>
+
+                <!-- Seek bar row -->
+                <child>
+                  <object class="GtkBox">
+                    <property name="orientation">horizontal</property>
+                    <property name="spacing">8</property>
+                    <property name="margin-start">4</property>
+                    <property name="margin-end">4</property>
+                    <child>
+                      <object class="GtkLabel" id="position_label">
+                        <property name="label">0:00</property>
+                        <property name="width-chars">7</property>
+                        <property name="xalign">1.0</property>
+                        <property name="accessible-role">status</property>
+                        <accessibility>
+                          <property name="label" translatable="yes">Playback position</property>
+                        </accessibility>
+                        <style><class name="time-label"/></style>
+                      </object>
+                    </child>
+                    <child>
+                      <object class="GtkOverlay" id="seek_overlay">
+                        <property name="hexpand">true</property>
+                        <property name="child">
+                          <object class="GtkScale" id="seek_bar">
+                            <property name="hexpand">true</property>
+                            <property name="draw-value">false</property>
+                            <property name="tooltip-text" translatable="yes">Seek Position</property>
+                            <accessibility>
+                              <property name="label" translatable="yes">Seek Position</property>
+                            </accessibility>
+                            <property name="adjustment">
+                              <object class="GtkAdjustment" id="seek_adj">
+                                <property name="lower">0</property>
+                                <property name="upper">100</property>
+                                <property name="step-increment">5</property>
+                                <property name="page-increment">10</property>
+                              </object>
+                            </property>
+                            <style><class name="seek-scale"/></style>
+                          </object>
+                        </property>
+                      </object>
+                    </child>
+                    <child>
+                      <object class="GtkLabel" id="duration_label">
+                        <property name="label">0:00</property>
+                        <property name="width-chars">7</property>
+                        <property name="xalign">0.0</property>
+                        <style><class name="time-label"/></style>
+                      </object>
+                    </child>
+                  </object>
+                </child>
+
+                <!-- Buttons row -->
+                <child>
+                  <object class="GtkCenterBox">
+                    <!-- Left: volume, speed & voice -->
+                    <property name="start-widget">
+                      <object class="GtkBox" id="controls_start_box">
+                        <property name="orientation">horizontal</property>
+                        <property name="spacing">2</property>
+                        <property name="valign">center</property>
+                        <child>
+                          <object class="GtkBox" id="volume_hover_box">
+                            <property name="orientation">horizontal</property>
+                            <property name="spacing">2</property>
+                            <child>
+                              <object class="GtkButton" id="volume_btn">
+                                <property name="icon-name">audio-volume-high-symbolic</property>
+                                <accessibility>
+                                  <property name="label" translatable="yes">Mute</property>
+                                </accessibility>
+                                <style><class name="osd-btn"/></style>
+                              </object>
+                            </child>
+                            <child>
+                              <object class="GtkLabel" id="volume_label">
+                                <property name="label">100</property>
+                                <property name="width-chars">3</property>
+                                <property name="xalign">0.0</property>
+                                <style><class name="osd-value-label"/></style>
+                              </object>
+                            </child>
+                          </object>
+                        </child>
+                        <child>
+                          <object class="GtkBox" id="speed_hover_box">
+                            <property name="orientation">horizontal</property>
+                            <property name="spacing">2</property>
+                            <child>
+                              <object class="GtkButton" id="speed_btn">
+                                <property name="icon-name">speedometer-symbolic</property>
+                                <accessibility>
+                                  <property name="label" translatable="yes">Speed</property>
+                                </accessibility>
+                                <style><class name="osd-btn"/></style>
+                              </object>
+                            </child>
+                            <child>
+                              <object class="GtkLabel" id="speed_label">
+                                <property name="label">1.00x</property>
+                                <property name="width-chars">5</property>
+                                <property name="xalign">0.0</property>
+                                <style><class name="osd-value-label"/></style>
+                              </object>
+                            </child>
+                          </object>
+                        </child>
+                        <child>
+                          <object class="GtkBox" id="voice_hover_box">
+                            <property name="orientation">horizontal</property>
+                            <property name="spacing">2</property>
+                            <child>
+                              <object class="GtkButton" id="voice_btn">
+                                <property name="icon-name">audio-input-microphone-symbolic</property>
+                                <accessibility>
+                                  <property name="label" translatable="yes">Voice Enhancement</property>
+                                </accessibility>
+                                <style><class name="osd-btn"/></style>
+                              </object>
+                            </child>
+                            <child>
+                              <object class="GtkLabel" id="voice_label">
+                                <property name="label">0</property>
+                                <property name="width-chars">6</property>
+                                <property name="xalign">0.0</property>
+                                <style><class name="osd-value-label"/></style>
+                              </object>
+                            </child>
+                          </object>
+                        </child>
+                      </object>
+                    </property>
+                    <!-- Center: playback controls -->
+                    <property name="center-widget">
+                      <object class="GtkBox" id="controls_center_box">
+                        <property name="orientation">horizontal</property>
+                        <property name="spacing">8</property>
+                        <property name="valign">center</property>
+                        <child>
+                          <object class="GtkButton" id="prev_btn">
+                            <property name="icon-name">media-skip-backward-symbolic</property>
+                            <property name="valign">center</property>
+                            <accessibility>
+                              <property name="label" translatable="yes">Previous</property>
+                            </accessibility>
+                            <style><class name="osd-btn"/></style>
+                          </object>
+                        </child>
+                        <child>
+                          <object class="GtkButton" id="play_btn">
+                            <property name="icon-name">media-playback-start-symbolic</property>
+                            <property name="tooltip-text" translatable="yes">Play</property>
+                            <property name="valign">center</property>
+                            <accessibility>
+                              <property name="label" translatable="yes">Play</property>
+                            </accessibility>
+                            <style>
+              <class name="osd-btn"/>
+              <class name="osd-btn-play"/>
+            </style>
+                          </object>
+                        </child>
+                        <child>
+                          <object class="GtkButton" id="next_btn">
+                            <property name="icon-name">media-skip-forward-symbolic</property>
+                            <property name="valign">center</property>
+                            <accessibility>
+                              <property name="label" translatable="yes">Next</property>
+                            </accessibility>
+                            <style><class name="osd-btn"/></style>
+                          </object>
+                        </child>
+                      </object>
+                    </property>
+                    <!-- Right: extra buttons -->
+                    <property name="end-widget">
+                      <object class="GtkBox" id="controls_end_box">
+                        <property name="orientation">horizontal</property>
+                        <property name="spacing">6</property>
+                        <property name="valign">center</property>
+                        <child>
+                          <object class="GtkButton" id="effects_btn">
+                            <property name="icon-name">dialog-warning-symbolic</property>
+                            <property name="visible">false</property>
+                            <accessibility>
+                              <property name="label" translatable="yes">Active effects</property>
+                            </accessibility>
+                            <style>
+                              <class name="osd-btn"/>
+                              <class name="effects-warning-btn"/>
+                            </style>
+                          </object>
+                        </child>
+                        <child>
+                          <object class="GtkButton" id="record_btn">
+                            <property name="icon-name">media-record-symbolic</property>
+                            <property name="tooltip-text" translatable="yes">Record Stream</property>
+                            <property name="action-name">win.stream-record</property>
+                            <property name="visible">false</property>
+                            <accessibility>
+                              <property name="label" translatable="yes">Record Stream</property>
+                            </accessibility>
+                            <style><class name="osd-btn"/></style>
+                          </object>
+                        </child>
+                        <child>
+                          <object class="GtkMenuButton" id="subtitle_btn">
+                            <property name="icon-name">media-view-subtitles-symbolic</property>
+                            <property name="tooltip-text" translatable="yes">Subtitles</property>
+                            <property name="direction">up</property>
+                            <accessibility>
+                              <property name="label" translatable="yes">Subtitles</property>
+                            </accessibility>
+                            <style><class name="osd-btn"/></style>
+                          </object>
+                        </child>
+                        <child>
+                          <object class="GtkMenuButton" id="audio_track_btn">
+                            <property name="icon-name">audio-x-generic-symbolic</property>
+                            <property name="tooltip-text" translatable="yes">Audio Track</property>
+                            <property name="direction">up</property>
+                            <accessibility>
+                              <property name="label" translatable="yes">Audio Track</property>
+                            </accessibility>
+                            <style><class name="osd-btn"/></style>
+                          </object>
+                        </child>
+                        <child>
+                          <object class="GtkButton" id="fullscreen_btn">
+                            <property name="icon-name">view-fullscreen-symbolic</property>
+                            <property name="tooltip-text" translatable="yes">Fullscreen</property>
+                            <accessibility>
+                              <property name="label" translatable="yes">Fullscreen</property>
+                            </accessibility>
+                            <style><class name="osd-btn"/></style>
+                          </object>
+                        </child>
+                      </object>
+                    </property>
+                  </object>
+                </child>
+              </object>
+            </child>
+          </object>
+        </child>
+
+        <!-- Center: playback status (buffering/paused overlay, hidden by default) -->
+        <child type="overlay">
+          <object class="GtkBox" id="status_overlay">
+            <property name="halign">center</property>
+            <property name="valign">center</property>
+            <property name="visible">false</property>
+            <child>
+              <object class="AdwSpinner" id="buffering_spinner">
+                <property name="width-request">48</property>
+                <property name="height-request">48</property>
+              </object>
+            </child>
+          </object>
+        </child>
+
+        <!-- Right-edge playlist sidebar trigger (last overlay = topmost z-order) -->
+        <child type="overlay">
+          <object class="GtkButton" id="sidebar_edge_btn">
+            <property name="halign">end</property>
+            <property name="valign">center</property>
+            <property name="can-target">true</property>
+            <property name="icon-name">go-next-symbolic</property>
+            <property name="visible">false</property>
+            <accessibility>
+              <property name="label" translatable="yes">Show Playlist</property>
+            </accessibility>
+            <style><class name="sidebar-edge-btn"/></style>
+          </object>
+        </child>
+      </object>
+            </property>
+          </object>
+    </property>
+  </object>
+    </property>
+  </template>
+</interface>

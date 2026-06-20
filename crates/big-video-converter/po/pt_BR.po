@@ -1,0 +1,33 @@
+# Portuguese (Brazil) translation for big-video-converter.
+# Copyright (C) 2026 BigLinux
+# This file is distributed under the same license as the big-video-converter package.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: big-video-converter 0.1.0\n"
+"Report-Msgid-Bugs-To: \n"
+"POT-Creation-Date: 2026-05-24 19:33-0300\n"
+"PO-Revision-Date: 2026-06-15 00:00+0000\n"
+"Last-Translator: BigLinux <contato@biglinux.com.br>\n"
+"Language-Team: Portuguese (Brazil) <pt_BR@li.org>\n"
+"Language: pt_BR\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n > 1);\n"
+
+#: resources/applications/br.com.biglinux.VideoConverter.desktop:3
+msgid "Big Video Converter"
+msgstr "Big Video Converter"
+
+#: resources/applications/br.com.biglinux.VideoConverter.desktop:5
+msgid "Video Converter"
+msgstr "Conversor de vídeo"
+
+#: resources/applications/br.com.biglinux.VideoConverter.desktop:7
+msgid "GPU-aware video converter for BigLinux"
+msgstr "Conversor de vídeo com reconhecimento de GPU para o BigLinux"
+
+#: resources/applications/br.com.biglinux.VideoConverter.desktop:13
+msgid "video;convert;converter;transcode;ffmpeg;vaapi;nvenc;h264;h265;"
+msgstr "vídeo;converter;conversor;transcodificar;codificar;ffmpeg;vaapi;nvenc;h264;h265;"

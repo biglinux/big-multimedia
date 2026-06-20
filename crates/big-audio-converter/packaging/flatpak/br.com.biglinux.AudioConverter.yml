@@ -1,0 +1,24 @@
+app-id: br.com.biglinux.AudioConverter
+runtime: org.gnome.Platform
+runtime-version: '49'
+sdk: org.gnome.Sdk
+command: big-audio-converter
+finish-args:
+  - --share=ipc
+  - --socket=wayland
+  - --socket=fallback-x11
+  - --device=dri
+  - --filesystem=home
+modules:
+  - name: big-audio-converter
+    buildsystem: simple
+    build-commands:
+      - cargo build --release --locked
+      - install -Dm755 target/release/big-audio-converter /app/bin/big-audio-converter
+      - install -Dm644 resources/applications/br.com.biglinux.AudioConverter.desktop /app/share/applications/br.com.biglinux.AudioConverter.desktop
+      - install -Dm644 resources/metainfo/br.com.biglinux.AudioConverter.metainfo.xml /app/share/metainfo/br.com.biglinux.AudioConverter.metainfo.xml
+      - install -Dm644 resources/icons/hicolor/scalable/apps/big-audio-converter.svg /app/share/icons/hicolor/scalable/apps/big-audio-converter.svg
+    sources:
+      - type: dir
+        path: ../..
+# Summary: Audio converter for BigLinux

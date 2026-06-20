@@ -1,0 +1,58 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<component type="desktop-application">
+  <id>br.com.biglinux.AudioPlayer</id>
+  <metadata_license>CC0-1.0</metadata_license>
+  <project_license>GPL-3.0-or-later</project_license>
+  <developer id="com.biglinux">
+    <name>BigLinux</name>
+  </developer>
+  <name>Big Audio Player</name>
+  <name xml:lang="pt_BR">Big Audio Player</name>
+  <summary>Music and audio player for BigLinux</summary>
+  <summary xml:lang="pt_BR">Reprodutor de música e áudio para o BigLinux</summary>
+  <description>
+    <p>Big Audio Player is a libadwaita music and audio player built in Rust on top of the shared BigLinux components. It plays MP3, FLAC, OGG Vorbis, Opus, AAC, and WAV files, exposes MPRIS controls to the desktop, and integrates with media keys, the BigLinux notifications stack, and the system tray.</p>
+    <p xml:lang="pt_BR">O Big Audio Player é um reprodutor de música em libadwaita escrito em Rust sobre os componentes compartilhados do BigLinux. Reproduz arquivos MP3, FLAC, OGG Vorbis, Opus, AAC e WAV, expõe controles MPRIS para o desktop e se integra com teclas de mídia, notificações e área de status.</p>
+  </description>
+  <launchable type="desktop-id">br.com.biglinux.AudioPlayer.desktop</launchable>
+  <categories>
+    <category>AudioVideo</category>
+    <category>Audio</category>
+    <category>Player</category>
+  </categories>
+  <keywords>
+    <keyword>audio</keyword>
+    <keyword>music</keyword>
+    <keyword>player</keyword>
+    <keyword>mpris</keyword>
+    <keyword>mp3</keyword>
+    <keyword>flac</keyword>
+    <keyword>ogg</keyword>
+    <keyword xml:lang="pt_BR">música</keyword>
+    <keyword xml:lang="pt_BR">reprodutor</keyword>
+    <keyword xml:lang="pt_BR">áudio</keyword>
+  </keywords>
+  <url type="homepage">https://github.com/biglinux/big-audio-player</url>
+  <url type="bugtracker">https://github.com/biglinux/big-audio-player/issues</url>
+  <screenshots>
+    <screenshot type="default">
+      <caption>Main window playing a track</caption>
+      <caption xml:lang="pt_BR">Janela principal reproduzindo uma faixa</caption>
+      <image type="source">https://raw.githubusercontent.com/biglinux/big-audio-player/main/docs/screenshots/01-main.png</image>
+    </screenshot>
+  </screenshots>
+  <content_rating type="oars-1.1"/>
+  <supports>
+    <control>keyboard</control>
+    <control>pointing</control>
+    <control>touch</control>
+  </supports>
+  <releases>
+    <release version="1.0.0" date="2026-04-26">
+      <description>
+        <p>Initial Rust release with libadwaita UI, MPRIS support, and BigLinux desktop integration.</p>
+        <p xml:lang="pt_BR">Primeira versão em Rust com interface libadwaita, suporte a MPRIS e integração com o desktop BigLinux.</p>
+      </description>
+    </release>
+  </releases>
+</component>

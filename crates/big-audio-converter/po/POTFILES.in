@@ -1,0 +1,14 @@
+# Source files containing translatable strings for big-audio-converter.
+#
+# NOTE: This app's translatable UI strings live in the shared crates
+# `big-converter-ui` and `big-media-runtime` (gettext domain
+# `big-media-runtime`). This POTFILES.in covers only strings owned by
+# the app repo itself — currently just metadata files. Real UI strings
+# stay in big-media-runtime's po/ catalog.
+#
+# See also: report "gettext-domain gap" — RunOptions does not let an app
+# install its own translator hook today; domain is hardcoded in
+# big-media-runtime::shared::app_base::init_gettext.
+
+[type: gettext/xml] resources/metainfo/br.com.biglinux.AudioConverter.metainfo.xml
+[type: gettext/desktop] resources/applications/br.com.biglinux.AudioConverter.desktop

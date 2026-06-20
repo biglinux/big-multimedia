@@ -1,0 +1,488 @@
+//! Library-panel file IO + folder-management dialogs (push-model).
+//!
+//! Free functions the panel calls when the user triggers export/import/save-as
+//! or opens the watch-folder manager. The panel NEVER touches the DB or the
+//! scanner: the m3u8 export writes the file off-thread (it already holds the
+//! detail tracks), but every DB-backed action emits an `Output` intent and the
+//! shell runs the query/scan. `parent` is the toplevel window — it satisfies
+//! both `FilePicker` (`IsA<gtk::Window>`) and `AlertDialog::present`.
+
+use adw::prelude::*;
+use gtk::glib;
+
+use big_app_kit::file_dialogs::FilePicker;
+use big_media_components::player_chrome::spawn_blocking_result;
+use big_relm4_components::list::button_strip_row::{BigButtonStripRow, BigButtonStripRowSpec};
+use big_relm4_components::list::info_row::{BigInfoRow, BigInfoRowSpec};
+use relm4::ComponentSender;
+
+use crate::db::models::{Track, WatchFolder};
+use crate::i18n::i18n;
+
+use super::library_panel::{LibraryPanel, LibraryPanelOutput};
+
+/// Export the current detail tracks as an `.m3u8` playlist. The save picker
+/// runs on the main loop; the `#EXTM3U`/`#EXTINF` body is built and written
+/// off-thread via `spawn_blocking_result` (the panel already owns the tracks,
+/// so no DB round-trip is needed). Success/failure surfaces through a `Notify`
+/// intent — the shell owns the toast surface.
+pub(super) fn export_detail_m3u8(
+    parent: &gtk::Window,
+    tracks: Vec<Track>,
+    sender: &ComponentSender<LibraryPanel>,
+) {
+    if tracks.is_empty() {
+        let _ = sender.output(LibraryPanelOutput::Notify(i18n("No tracks to export")));
+        return;
+    }
+    let out = sender.clone();
+    FilePicker::save_file(i18n("Export Playlist"))
+        .accept_label(i18n("Save"))
+        .initial_name("playlist.m3u8")
+        .pattern_filter("M3U8 Playlist", &["*.m3u8", "*.m3u"])
+        .save(parent, move |path| {
+            spawn_blocking_result(
+                move || std::fs::write(&path, render_m3u8(&tracks)).is_ok(),
+                move |ok| {
+                    let msg = if ok {
+                        i18n("Playlist exported")
+                    } else {
+                        i18n("Export failed")
+                    };
+                    let _ = out.output(LibraryPanelOutput::Notify(msg));
+                },
+            );
+        });
+}
+
+/// Render the `#EXTM3U` body for `tracks` (pure; off-thread caller).
+pub(crate) fn render_m3u8(tracks: &[Track]) -> String {
+    let mut content = String::from("#EXTM3U\n");
+    for t in tracks {
+        let secs = t.duration_secs as i64;
+        let artist = t.display_artist();
+        let title = t.display_title();
+        content.push_str(&format!("#EXTINF:{secs},{artist} - {title}\n"));
+        content.push_str(&t.file_path);
+        content.push('\n');
+    }
+    content
+}
+
+/// Pick an `.m3u`/`.m3u8`/`.pls` file and hand the path to the shell, which
+/// parses it (`big_media_runtime::media::playlist_scan`) + inserts the tracks.
+pub(super) fn import_playlist(parent: &gtk::Window, sender: &ComponentSender<LibraryPanel>) {
+    let out = sender.clone();
+    FilePicker::new(i18n("Import Playlist"))
+        .accept_label(i18n("Open"))
+        .pattern_filter("Playlists (m3u, m3u8, pls)", &["*.m3u", "*.m3u8", "*.pls"])
+        .open(parent, move |path| {
+            let _ = out.output(LibraryPanelOutput::ImportPlaylistFile { path });
+        });
+}
+
+/// Prompt for a name, then ask the shell to persist `track_ids` as a new
+/// playlist (the shell owns `create_playlist` + `add_track_to_playlist`).
+pub(super) fn save_tracks_as_playlist(
+    parent: &gtk::Window,
+    track_ids: Vec<i64>,
+    sender: &ComponentSender<LibraryPanel>,
+) {
+    if track_ids.is_empty() {
+        let _ = sender.output(LibraryPanelOutput::Notify(i18n("No tracks to save")));
+        return;
+    }
+    let out = sender.clone();
+    present_name_entry_dialog(
+        parent,
+        &i18n("Save as Playlist"),
+        &i18n("Enter a name for the new playlist"),
+        move |name| {
+            let _ = out.output(LibraryPanelOutput::SaveTracksAsPlaylist {
+                name,
+                track_ids: track_ids.clone(),
+            });
+        },
+    );
+}
+
+/// Present the "Manage Music Folders" dialog: lists the shell-supplied watch
+/// folders, an add-folder picker, a remove button per row, and a scan-now
+/// button. Add/remove/scan emit `Output` intents; the shell owns the DB +
+/// scanner and pushes the refreshed `folders` back via a re-open.
+pub(super) fn show_manage_folders(
+    parent: &gtk::Window,
+    folders: &[WatchFolder],
+    sender: &ComponentSender<LibraryPanel>,
+) {
+    let content = gtk::Box::builder()
+        .orientation(gtk::Orientation::Vertical)
+        .spacing(16)
+        .margin_top(16)
+        .margin_bottom(24)
+        .margin_start(24)
+        .margin_end(24)
+        .build();
+
+    content.append(&build_intro_label());
+    content.append(&build_folders_card(folders, sender));
+    content.append(&build_tips_card());
+
+    let scroll = gtk::ScrolledWindow::builder()
+        .hscrollbar_policy(gtk::PolicyType::Never)
+        .vscrollbar_policy(gtk::PolicyType::Automatic)
+        .child(&content)
+        .build();
+
+    let dialog = adw::Window::builder()
+        .title(i18n("Music Folders"))
+        .default_width(720)
+        .default_height(640)
+        .modal(true)
+        .transient_for(parent)
+        .build();
+    let toolbar_view = adw::ToolbarView::new();
+    toolbar_view.add_top_bar(&adw::HeaderBar::new());
+    toolbar_view.set_content(Some(&scroll));
+    dialog.set_content(Some(&toolbar_view));
+    dialog.present();
+}
+
+/// The framed "Monitored Folders" card: header, description, the folder list,
+/// and the add/scan button strip.
+fn build_folders_card(folders: &[WatchFolder], sender: &ComponentSender<LibraryPanel>) -> gtk::Box {
+    let card = gtk::Box::builder()
+        .orientation(gtk::Orientation::Vertical)
+        .spacing(0)
+        .build();
+    card.add_css_class("card");
+
+    let inner = gtk::Box::builder()
+        .orientation(gtk::Orientation::Vertical)
+        .spacing(12)
+        .margin_top(16)
+        .margin_bottom(16)
+        .margin_start(16)
+        .margin_end(16)
+        .build();
+
+    let header = gtk::Box::builder()
+        .orientation(gtk::Orientation::Horizontal)
+        .spacing(10)
+        .build();
+    let icon = gtk::Image::from_icon_name("folder-music-symbolic");
+    icon.set_pixel_size(24);
+    icon.set_valign(gtk::Align::Center);
+    header.append(&icon);
+    let title = gtk::Label::builder()
+        .label(i18n("Monitored Folders"))
+        .hexpand(true)
+        .xalign(0.0)
+        .build();
+    title.add_css_class("heading");
+    header.append(&title);
+    inner.append(&header);
+
+    let desc = gtk::Label::builder()
+        .label(i18n(
+            "These folders are scanned for audio files. \
+             Removing a folder also removes its tracks from the library.",
+        ))
+        .wrap(true)
+        .xalign(0.0)
+        .build();
+    desc.add_css_class("dim-label");
+    inner.append(&desc);
+
+    inner.append(&build_folders_list(folders, sender));
+    inner.append(&build_folder_buttons(sender));
+
+    card.append(&inner);
+    card
+}
+
+/// The boxed-list of watch folders (or an empty-state row); each row's remove
+/// button emits `RemoveWatchFolder`.
+fn build_folders_list(
+    folders: &[WatchFolder],
+    sender: &ComponentSender<LibraryPanel>,
+) -> gtk::ListBox {
+    let list = gtk::ListBox::builder()
+        .selection_mode(gtk::SelectionMode::None)
+        .css_classes(["boxed-list".to_string()])
+        .build();
+    list.update_property(&[gtk::accessible::Property::Label(&i18n("Music folders"))]);
+
+    if folders.is_empty() {
+        let empty = BigInfoRow::new(
+            BigInfoRowSpec::new(i18n("No folders added yet"))
+                .subtitle(i18n(
+                    "Click the button below to add your first music folder",
+                ))
+                .prefix_icon_name("folder-new-symbolic"),
+        )
+        .into_root();
+        empty.add_css_class("dim-label");
+        list.append(&empty);
+        return list;
+    }
+
+    for folder in folders {
+        let strip = BigButtonStripRow::new(
+            BigButtonStripRowSpec::new(abbreviate_home(&folder.path))
+                .prefix_icon_name("folder-symbolic"),
+        );
+        let remove_btn = build_remove_button();
+        let folder_id = folder.id;
+        let out = sender.clone();
+        let list_weak = list.downgrade();
+        remove_btn.connect_clicked(move |btn| {
+            let _ = out.output(LibraryPanelOutput::RemoveWatchFolder { id: folder_id });
+            remove_row_from_list(btn, &list_weak);
+        });
+        strip.append(&remove_btn);
+        list.append(&strip.into_root());
+    }
+    list
+}
+
+/// The add-folder + scan-now button row under the folder list.
+fn build_folder_buttons(sender: &ComponentSender<LibraryPanel>) -> gtk::Box {
+    let buttons = gtk::Box::builder()
+        .orientation(gtk::Orientation::Horizontal)
+        .spacing(8)
+        .margin_top(4)
+        .build();
+
+    let add_btn = gtk::Button::builder()
+        .css_classes(["suggested-action".to_string(), "pill".to_string()])
+        .halign(gtk::Align::Start)
+        .build();
+    add_btn.set_child(Some(
+        &adw::ButtonContent::builder()
+            .icon_name("folder-new-symbolic")
+            .label(i18n("Add Folder"))
+            .build(),
+    ));
+    add_btn.update_property(&[gtk::accessible::Property::Label(&i18n("Add music folder"))]);
+    let out_add = sender.clone();
+    add_btn.connect_clicked(move |btn| {
+        let Some(window) = btn.root().and_downcast::<gtk::Window>() else {
+            return;
+        };
+        let out = out_add.clone();
+        FilePicker::open_folder(i18n("Select Music Folder")).select_folder(&window, move |path| {
+            let _ = out.output(LibraryPanelOutput::AddWatchFolder { path });
+        });
+    });
+    buttons.append(&add_btn);
+
+    let scan_btn = gtk::Button::builder()
+        .css_classes(["pill".to_string()])
+        .build();
+    scan_btn.set_child(Some(
+        &adw::ButtonContent::builder()
+            .icon_name("view-refresh-symbolic")
+            .label(i18n("Scan Now"))
+            .build(),
+    ));
+    scan_btn.update_property(&[gtk::accessible::Property::Label(&i18n(
+        "Scan all monitored folders now",
+    ))]);
+    let out_scan = sender.clone();
+    scan_btn.connect_clicked(move |btn| {
+        btn.set_sensitive(false);
+        let _ = out_scan.output(LibraryPanelOutput::ScanNow);
+        let btn_weak = btn.downgrade();
+        glib::timeout_add_seconds_local_once(3, move || {
+            if let Some(b) = btn_weak.upgrade() {
+                b.set_sensitive(true);
+            }
+        });
+    });
+    buttons.append(&scan_btn);
+    buttons
+}
+
+/// Optimistic removal of the clicked row's `ActionRow` from `list` so the
+/// dialog updates immediately (the shell deletes the row from the DB).
+fn remove_row_from_list(btn: &gtk::Button, list_weak: &glib::WeakRef<gtk::ListBox>) {
+    let Some(list) = list_weak.upgrade() else {
+        return;
+    };
+    if let Some(row) = btn.ancestor(adw::ActionRow::static_type()) {
+        if let Some(row) = row.downcast_ref::<adw::ActionRow>() {
+            list.remove(row);
+        }
+    }
+}
+
+/// A small `adw::AlertDialog` with a single name entry; calls `on_save` with the
+/// trimmed name when the user confirms (empty input is ignored).
+fn present_name_entry_dialog<F>(parent: &gtk::Window, heading: &str, body: &str, on_save: F)
+where
+    F: Fn(String) + 'static,
+{
+    let (dialog, content) = big_app_kit::dialogs::content_action_dialog(
+        heading,
+        &i18n("Cancel"),
+        "save",
+        &i18n("Save"),
+        false,
+    );
+    dialog.set_body(body);
+    let entry = gtk::Entry::builder()
+        .placeholder_text(i18n("Playlist name"))
+        .activates_default(true)
+        .build();
+    entry.update_property(&[gtk::accessible::Property::Label(&i18n("Playlist name"))]);
+    content.append(&entry);
+
+    dialog.connect_response(None, move |_, response| {
+        if response != "save" {
+            return;
+        }
+        let name = entry.text().trim().to_string();
+        if name.is_empty() {
+            return;
+        }
+        on_save(name);
+    });
+    dialog.present(Some(parent));
+}
+
+/// Rewrite a `$HOME`-prefixed path to a `~`-abbreviated display form.
+fn abbreviate_home(path: &str) -> String {
+    let home = glib::home_dir();
+    let home_str = home.to_string_lossy();
+    if let Some(rest) = path.strip_prefix(home_str.as_ref()) {
+        format!("~{rest}")
+    } else {
+        path.to_string()
+    }
+}
+
+/// Error-styled circular trash button used for each folder row.
+fn build_remove_button() -> gtk::Button {
+    let btn = gtk::Button::builder()
+        .icon_name("user-trash-symbolic")
+        .valign(gtk::Align::Center)
+        .css_classes([
+            "flat".to_string(),
+            "circular".to_string(),
+            "error".to_string(),
+        ])
+        .build();
+    big_relm4_components::feedback::tooltip::set(&btn, &i18n("Remove folder and its tracks"));
+    btn.update_property(&[gtk::accessible::Property::Label(&i18n("Remove folder"))]);
+    btn
+}
+
+/// The dialog's lead-in paragraph.
+fn build_intro_label() -> gtk::Label {
+    let intro = gtk::Label::builder()
+        .label(i18n(
+            "Add folders where your music files are stored. \
+             The player scans these folders to build your library, \
+             organizing tracks by artist, album, and genre automatically.",
+        ))
+        .wrap(true)
+        .xalign(0.0)
+        .build();
+    intro.add_css_class("dim-label");
+    intro.set_margin_bottom(4);
+    intro
+}
+
+/// The framed "Tips" card at the bottom of the dialog.
+fn build_tips_card() -> gtk::Box {
+    let card = gtk::Box::builder()
+        .orientation(gtk::Orientation::Vertical)
+        .spacing(0)
+        .build();
+    card.add_css_class("card");
+
+    let inner = gtk::Box::builder()
+        .orientation(gtk::Orientation::Vertical)
+        .spacing(8)
+        .margin_top(16)
+        .margin_bottom(16)
+        .margin_start(16)
+        .margin_end(16)
+        .build();
+
+    let header = gtk::Box::builder()
+        .orientation(gtk::Orientation::Horizontal)
+        .spacing(10)
+        .build();
+    let icon = gtk::Image::from_icon_name("dialog-information-symbolic");
+    icon.set_pixel_size(24);
+    icon.set_valign(gtk::Align::Center);
+    header.append(&icon);
+    let title = gtk::Label::builder()
+        .label(i18n("Tips"))
+        .hexpand(true)
+        .xalign(0.0)
+        .build();
+    title.add_css_class("heading");
+    header.append(&title);
+    inner.append(&header);
+
+    for text in [
+        i18n("• Supported formats: MP3, FLAC, OGG, Opus, M4A, WAV, WMA, AAC, APE, WavPack"),
+        i18n("• Subfolders are included automatically — no need to add each one"),
+        i18n(
+            "• Use the Files tab to play files from any folder without adding them to the library",
+        ),
+    ] {
+        let tip = gtk::Label::builder()
+            .label(text)
+            .wrap(true)
+            .xalign(0.0)
+            .build();
+        tip.add_css_class("dim-label");
+        inner.append(&tip);
+    }
+
+    card.append(&inner);
+    card
+}
+
+#[cfg(test)]
+mod tests {
+    #[cfg(not(miri))]
+    use super::abbreviate_home;
+    use super::render_m3u8;
+    use crate::db::models::Track;
+
+    #[cfg(not(miri))]
+    #[test]
+    fn abbreviate_home_rewrites_prefix() {
+        let home = gtk::glib::home_dir();
+        let input = home.join("Music/Albums");
+        assert_eq!(
+            abbreviate_home(&input.to_string_lossy()),
+            "~/Music/Albums".to_string()
+        );
+    }
+
+    #[cfg(not(miri))]
+    #[test]
+    fn abbreviate_home_keeps_external_path() {
+        assert_eq!(
+            abbreviate_home("/mnt/media/lib"),
+            "/mnt/media/lib".to_string()
+        );
+    }
+
+    #[test]
+    fn render_m3u8_writes_extinf_and_path() {
+        let mut t = Track::new_external_path_with_title("/m/a.flac", Some("A".to_string()));
+        t.artist = Some("Band".to_string());
+        t.duration_secs = 12.7;
+        let out = render_m3u8(&[t]);
+        assert!(out.starts_with("#EXTM3U\n"));
+        assert!(out.contains("#EXTINF:12,Band - A\n"));
+        assert!(out.contains("/m/a.flac\n"));
+    }
+}

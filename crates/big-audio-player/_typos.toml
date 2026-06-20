@@ -1,0 +1,35 @@
+[default]
+extend-ignore-identifiers-re = [
+    "Adw",
+    "adw",
+    "mpv",
+    "vaapi",
+    "nvenc",
+    "qsv",
+    "m3u",
+    "pls",
+    "cue",
+    "mpris",
+    "pipewire",
+    "relm",
+    "i18nd?",
+]
+
+[default.extend-words]
+componentes = "componentes"
+controles = "controles"
+flate = "flate"
+Relm = "Relm"
+seeked = "seeked"
+som = "som"
+
+[files]
+extend-exclude = [
+    "target/**",
+    "mutants.out/**",
+    "po/**/*.po",
+    "po/*.pot",
+    "build-locale/**",
+    "*.mo",
+    "*.svg",
+]

@@ -1,0 +1,498 @@
+.video-bg {
+  background-color: #000000;
+}
+
+/* Ensure main player window background is black for clean rounded corners */
+window.big-video-player {
+  background-color: black;
+}
+
+.osd-overlay {
+  background: transparent;
+}
+
+/* Structural: headerbar padding/shadow only — colors come from apply_appearance() */
+.osd-header {
+  padding: 0;
+}
+.osd-header headerbar {
+  background: transparent;
+  box-shadow: none;
+  border: none;
+  padding-top: 0;
+  padding-bottom: 0;
+}
+
+/* Structural: padding only — background/radius/margin come from apply_appearance() */
+.osd-controls {
+  padding: 8px 16px 12px 16px;
+}
+
+/* Structural: base reset for OSD buttons — sizing comes from apply_appearance() */
+.osd-btn,
+.osd-btn > button {
+  border: none;
+  box-shadow: none;
+  outline: none;
+  margin: 0;
+  transition: background 150ms ease-in-out, color 150ms ease-in-out;
+}
+menubutton.osd-btn {
+  background: none;
+  border: none;
+  box-shadow: none;
+  margin: 0;
+}
+
+/* Play button: larger than regular buttons */
+.osd-btn-play,
+.osd-btn-play > button {
+  min-width: 48px;
+  min-height: 48px;
+  -gtk-icon-size: 24px;
+  transition: background 150ms ease-in-out, color 150ms ease-in-out;
+}
+
+/* Structural: font settings — color comes from apply_appearance() */
+.time-label {
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+}
+
+.title-label {
+  font-weight: bold;
+  font-size: 14px;
+}
+
+/* Seek bar — uses Adwaita named colors for proper theme integration */
+.seek-scale trough {
+  background: alpha(@window_fg_color, 0.25);
+  border-radius: 3px;
+  min-height: 8px;
+  margin: 0 4px;
+}
+.seek-scale trough highlight {
+  background: @accent_bg_color;
+  border-radius: 3px;
+  min-height: 8px;
+}
+.seek-scale slider {
+  min-width: 14px;
+  min-height: 14px;
+  margin: -3px 0;
+  background: @window_fg_color;
+  border-radius: 50%;
+  box-shadow: 0 1px 3px rgba(0,0,0,0.4);
+}
+
+/* Playlist rows — use named colors for theme integration */
+.playlist-row {
+  padding: 6px 12px;
+  border-radius: 6px;
+}
+.playlist-row:hover {
+  background: alpha(@window_fg_color, 0.06);
+}
+.playlist-row.playing {
+  background: alpha(@accent_bg_color, 0.15);
+  font-weight: bold;
+}
+
+/* Sidebar resizable drag handle */
+.sidebar-drag-handle {
+  background: alpha(@borders, 0.3);
+  min-width: 6px;
+}
+.sidebar-drag-handle:hover {
+  background: alpha(@accent_bg_color, 0.5);
+}
+
+.popover-menu {
+  padding: 8px;
+}
+
+/* Fullscreen header stays transparent */
+.fullscreen .osd-header headerbar {
+  background: transparent;
+  box-shadow: none;
+  border: none;
+}
+
+/* Info overlay */
+.info-overlay {
+  background: rgba(0,0,0,0.75);
+  color: #ffffff;
+  font-family: monospace;
+  font-size: 12px;
+  padding: 12px 16px;
+  border-radius: 8px;
+}
+
+/* Chapter marks on seek bar */
+.seek-scale mark indicator {
+  background: alpha(@window_fg_color, 0.7);
+  min-height: 8px;
+  min-width: 2px;
+}
+
+/* Floating seek tooltip */
+.seek-time-label {
+  background: rgba(0,0,0,0.85);
+  color: #ffffff;
+  border-radius: 6px;
+  padding: 4px;
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+}
+.seek-time-text {
+  color: #ffffff;
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  padding: 0 2px;
+}
+
+/* Seek-bar hover preview popover (thumbnail frame + time/chapter) */
+.seek-preview > contents {
+  background: rgba(0,0,0,0.85);
+  border-radius: 8px;
+  padding: 6px;
+  box-shadow: none;
+}
+.seek-preview-thumb {
+  border-radius: 4px;
+}
+.seek-preview-time {
+  color: #ffffff;
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
+  padding: 2px 4px;
+}
+
+/* Prev/Next navigation preview tooltip */
+.nav-preview-tooltip > contents {
+  background: rgba(0,0,0,0.85);
+  border-radius: 6px;
+  padding: 4px;
+  box-shadow: none;
+}
+.nav-preview-tooltip label {
+  color: #ffffff;
+  font-size: 12px;
+  padding: 2px 4px;
+}
+
+/* Value labels next to volume/speed buttons — color comes from apply_appearance() */
+.osd-value-label {
+  font-size: 13px;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Playlist current item highlight (list view) — clearly the playing track:
+   accent tint, a left accent bar, and bold accent text. */
+.playlist-current {
+  background: alpha(@accent_bg_color, 0.18);
+  border-radius: 6px;
+  border-left: 3px solid @accent_bg_color;
+}
+.playlist-current label {
+  color: @accent_bg_color;
+  font-weight: bold;
+}
+
+/* Duration / resolution badge on grid thumbnails */
+.playlist-badge {
+  background: rgba(0, 0, 0, 0.75);
+  color: #ffffff;
+  border-radius: 4px;
+  padding: 1px 5px;
+  font-variant-numeric: tabular-nums;
+}
+
+/* ── Breadcrumb navigation bar (Dolphin-style) ── */
+.breadcrumb-bar {
+  background: alpha(@window_fg_color, 0.04);
+  border-radius: 6px;
+  padding: 2px 4px;
+  min-height: 28px;
+}
+.breadcrumb-btn {
+  font-size: 12px;
+  min-height: 24px;
+  padding: 0 6px;
+  border-radius: 4px;
+}
+.breadcrumb-btn:hover {
+  background: alpha(@window_fg_color, 0.08);
+}
+.breadcrumb-sep {
+  font-size: 13px;
+  margin: 0 1px;
+  opacity: 0.5;
+}
+
+/* ── Grid view cards ── */
+.playlist-grid > child {
+  padding: 3px;
+}
+.playlist-card {
+  border-radius: 8px;
+  padding: 4px;
+  transition: background 150ms ease-in-out;
+}
+.playlist-card:hover {
+  background: alpha(@window_fg_color, 0.06);
+}
+.playlist-card-active {
+  background: alpha(@accent_bg_color, 0.18);
+}
+.playlist-card-active:hover {
+  background: alpha(@accent_bg_color, 0.24);
+}
+/* Playing card: accent-bordered thumbnail + bold accent title. */
+.playlist-card-active .playlist-thumb-frame {
+  box-shadow: inset 0 0 0 2px @accent_bg_color;
+}
+.playlist-card-active label {
+  color: @accent_bg_color;
+  font-weight: bold;
+}
+/* The centered play badge on the playing card — a filled accent circle. */
+.card-play-icon {
+  color: #ffffff;
+  background: alpha(@accent_bg_color, 0.9);
+  border-radius: 9999px;
+  padding: 8px;
+  box-shadow: 0 1px 4px rgba(0, 0, 0, 0.4);
+}
+
+/* Playlist (queue) rows — compact, position number, hover-revealed remove. */
+.queue-pos {
+  font-variant-numeric: tabular-nums;
+}
+.queue-remove {
+  opacity: 0;
+  transition: opacity 150ms ease-in-out;
+  min-width: 24px;
+  min-height: 24px;
+}
+.queue-list row:hover .queue-remove,
+.queue-list row:selected .queue-remove {
+  opacity: 0.7;
+}
+.queue-remove:hover {
+  opacity: 1;
+}
+
+/* Triage selection (Files multi-select mode). */
+.card-select-check {
+  color: #ffffff;
+  background: alpha(black, 0.55);
+  border-radius: 9999px;
+  padding: 2px;
+}
+.playlist-card.selected {
+  background: alpha(@accent_bg_color, 0.22);
+}
+.playlist-card.selected .playlist-thumb-frame {
+  box-shadow: inset 0 0 0 2px @accent_bg_color;
+}
+.playlist-current.selected,
+.navigation-sidebar box.selected {
+  background: alpha(@accent_bg_color, 0.22);
+  border-radius: 6px;
+}
+
+/* Thumbnail frame */
+.playlist-thumb-frame {
+  border-radius: 6px;
+  background: alpha(@window_fg_color, 0.06);
+  border: none;
+}
+.playlist-thumb-frame > picture {
+  border-radius: 6px;
+}
+
+/* ── Welcome screen — minimal design ── */
+.welcome-container {
+  padding: 48px 40px;
+}
+
+.welcome-icon-circle {
+  background: rgba(255,255,255,0.03);
+  border: 1px solid rgba(255,255,255,0.06);
+  border-radius: 9999px;
+  padding: 24px;
+  margin-bottom: 20px;
+}
+
+.welcome-icon {
+  color: @accent_bg_color;
+  opacity: 0.8;
+  margin-bottom: 0;
+}
+
+.welcome-title {
+  font-size: 22px;
+  font-weight: 500;
+  letter-spacing: 0.8px;
+  color: rgba(255,255,255,0.75);
+}
+
+.welcome-subtitle {
+  font-size: 13px;
+  color: rgba(255,255,255,0.30);
+  margin-bottom: 4px;
+}
+
+.welcome-btn {
+  min-height: 36px;
+  padding: 0 24px;
+  font-size: 13px;
+  font-weight: 500;
+  border-radius: 12px;
+}
+
+.welcome-btn-primary {
+  background: rgba(255,255,255,0.07);
+  color: rgba(255,255,255,0.70);
+  border: 1px solid rgba(255,255,255,0.10);
+}
+.welcome-btn-primary:hover {
+  background: rgba(255,255,255,0.12);
+  color: rgba(255,255,255,0.85);
+  border: 1px solid rgba(255,255,255,0.16);
+}
+
+.welcome-btn-secondary {
+  background: rgba(255,255,255,0.05);
+  color: rgba(255,255,255,0.60);
+  border: 1px solid rgba(255,255,255,0.08);
+}
+.welcome-btn-secondary:hover {
+  background: rgba(255,255,255,0.10);
+  color: rgba(255,255,255,0.80);
+  border: 1px solid rgba(255,255,255,0.14);
+}
+
+.welcome-shortcut {
+  font-size: 11px;
+  color: rgba(255,255,255,0.15);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Now Playing (music mode) */
+.now-playing {
+  padding: 32px 24px;
+}
+
+.now-playing-art {
+  border-radius: 12px;
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
+}
+
+.now-playing-title {
+  font-size: 22px;
+  font-weight: bold;
+  color: rgba(255, 255, 255, 0.95);
+  margin-top: 8px;
+}
+
+.now-playing-artist {
+  font-size: 16px;
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.now-playing-album {
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.5);
+  font-style: italic;
+}
+
+/* Play button pulse animation (toggle class briefly) */
+@keyframes play-pulse {
+  0%   { transform: scale(1.0); }
+  50%  { transform: scale(1.15); }
+  100% { transform: scale(1.0); }
+}
+.play-pulse {
+  animation: play-pulse 200ms ease-in-out;
+}
+
+/* Right-edge playlist sidebar trigger */
+.sidebar-edge-btn {
+  min-width: 32px;
+  min-height: 150px;
+  padding: 0;
+  margin: 0;
+  border-radius: 8px 0 0 8px;
+  background: rgba(0, 0, 0, 0.35);
+  color: rgba(255, 255, 255, 0.7);
+  border: none;
+  box-shadow: none;
+  opacity: 0.6;
+  transition: opacity 200ms ease, background 200ms ease;
+}
+.sidebar-edge-btn:hover {
+  opacity: 1.0;
+  background: rgba(0, 0, 0, 0.55);
+  color: white;
+}
+.sidebar-edge-btn:active {
+  background: rgba(0, 0, 0, 0.7);
+}
+
+/* ── Idle / Music-mode decorative background ── */
+.idle-bg {
+  background-color: #0e0e18;
+  background-image:
+    linear-gradient(220deg, rgba(53,132,228,0.22) 0%, transparent 38%),
+    linear-gradient(40deg, rgba(145,65,172,0.24) 0%, transparent 35%),
+    linear-gradient(320deg, rgba(38,162,105,0.12) 0%, transparent 30%),
+    linear-gradient(170deg, rgba(192,97,203,0.10) 5%, transparent 40%),
+    linear-gradient(90deg, rgba(80,80,120,0.18) 0%, transparent 40%);
+}
+
+/* ── Cast overlay bar ─────────────────────────────────── */
+.cast-overlay-bar {
+  background: alpha(black, 0.78);
+  border-radius: 12px;
+  padding: 8px 14px;
+  margin: 0px 48px;
+  border: 1px solid alpha(white, 0.12);
+}
+.cast-overlay-bar .cast-icon {
+  color: #4fc3f7;
+}
+.cast-overlay-bar .cast-status {
+  font-weight: 600;
+  color: #ffffff;
+  font-size: 0.95em;
+}
+.cast-action-btn {
+  border-radius: 8px;
+  padding: 2px 10px;
+  color: #ffffff;
+}
+.cast-action-btn:hover {
+  background: alpha(white, 0.12);
+}
+.cast-action-btn:checked {
+  background: alpha(@accent_color, 0.35);
+  color: @accent_color;
+}
+.cast-disconnect-btn {
+  border-radius: 8px;
+  padding: 2px 10px;
+  color: #ef5350;
+}
+.cast-disconnect-btn:hover {
+  background: alpha(#ef5350, 0.18);
+}
+
+/* Effects active warning button — amber/orange color */
+.effects-warning-btn {
+  color: #f5a623;
+}
+.effects-warning-btn:hover {
+  color: #ffbf47;
+}

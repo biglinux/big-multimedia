@@ -1,0 +1,396 @@
+//! "Manage IPTV providers" dialog (Relm4 port).
+//!
+//! Lists every provider in `IptvProviderStore`, with Add / Edit / Remove
+//! actions. Editing opens a form dialog that toggles between M3U URL, local M3U
+//! file, and Xtream Codes inputs. On dialog close the
+//! [`VideoIptvBrowser`] component reloads the store and
+//! refreshes its provider dropdown.
+//!
+//! Video-local helper presented by the browser component. Mirrors the legacy
+//! `iptv_view::providers_dialog` until the V6 cutover deletes it, but signals
+//! "closed" through a relm4 [`ComponentSender`] instead of a stored callback.
+
+use std::cell::RefCell;
+use std::rc::Rc;
+
+use adw::prelude::*;
+use big_relm4_components::feedback::tooltip;
+use big_relm4_components::list::editable_action_row::{
+    BigEditableActionRow, BigEditableActionRowSpec,
+};
+use big_relm4_components::list::info_row::{BigInfoRow, BigInfoRowSpec};
+use relm4::ComponentSender;
+
+use crate::i18n::i18n;
+use crate::media::iptv::{IptvKind, IptvProvider, IptvProviderStore};
+use crate::video::ui::iptv::{VideoIptvBrowser, VideoIptvBrowserInput};
+
+/// Present the providers-management dialog over `parent`, notifying the browser
+/// component (via `sender`) when it closes so the dropdown can refresh.
+pub fn present_providers_dialog(
+    parent: &impl IsA<gtk::Widget>,
+    store: Rc<RefCell<IptvProviderStore>>,
+    sender: ComponentSender<VideoIptvBrowser>,
+) {
+    let toolbar = adw::ToolbarView::new();
+    let header = adw::HeaderBar::new();
+    toolbar.add_top_bar(&header);
+
+    let add_btn = tooltip::icon_button("list-add-symbolic", &i18n("Add provider"), &[]);
+    header.pack_end(&add_btn);
+
+    let scrolled = gtk::ScrolledWindow::builder()
+        .hscrollbar_policy(gtk::PolicyType::Never)
+        .min_content_height(320)
+        .propagate_natural_height(true)
+        .build();
+    let list = gtk::ListBox::builder()
+        .selection_mode(gtk::SelectionMode::None)
+        .css_classes(["boxed-list"])
+        .margin_start(12)
+        .margin_end(12)
+        .margin_top(12)
+        .margin_bottom(12)
+        .build();
+    scrolled.set_child(Some(&list));
+    toolbar.set_content(Some(&scrolled));
+
+    let dialog = adw::Dialog::builder()
+        .title(i18n("IPTV Providers"))
+        .content_width(600)
+        .content_height(480)
+        .child(&toolbar)
+        .build();
+
+    let dialog_weak = dialog.downgrade();
+    let store_for_add = store.clone();
+    let list_weak = list.downgrade();
+    add_btn.connect_clicked(move |_| {
+        let Some(parent) = dialog_weak.upgrade() else {
+            return;
+        };
+        let list = list_weak.clone();
+        let store = store_for_add.clone();
+        show_provider_form(Some(&parent), IptvProvider::default(), move |p| {
+            store.borrow_mut().add(p);
+            if let Some(list) = list.upgrade() {
+                rebuild_list(&list, &store);
+            }
+        });
+    });
+
+    rebuild_list(&list, &store);
+
+    let sender = sender.clone();
+    dialog.connect_closed(move |_| {
+        sender.input(VideoIptvBrowserInput::ProvidersChanged);
+    });
+    dialog.present(Some(parent));
+}
+
+fn rebuild_list(list: &gtk::ListBox, store: &Rc<RefCell<IptvProviderStore>>) {
+    while let Some(child) = list.first_child() {
+        list.remove(&child);
+    }
+
+    let providers = store.borrow().providers.clone();
+    if providers.is_empty() {
+        let row = BigInfoRow::new(
+            BigInfoRowSpec::new(i18n("No providers yet"))
+                .subtitle(i18n("Add an IPTV provider to get started")),
+        )
+        .into_root();
+        list.append(&row);
+        return;
+    }
+
+    for (idx, provider) in providers.into_iter().enumerate() {
+        let provider_row = BigEditableActionRow::new(
+            BigEditableActionRowSpec::new(&provider.name, i18n("Edit"), i18n("Remove"))
+                .subtitle(provider.source.summary())
+                .prefix_icon_name(source_icon(&provider.source)),
+        );
+        let (row, edit_btn, remove_btn) = provider_row.into_parts();
+
+        let list_weak = list.downgrade();
+        let store_for_edit = store.clone();
+        edit_btn.connect_clicked(move |btn| {
+            let parent = btn
+                .ancestor(adw::Dialog::static_type())
+                .and_downcast::<adw::Dialog>();
+            let provider = store_for_edit
+                .borrow()
+                .providers
+                .get(idx)
+                .cloned()
+                .unwrap_or_default();
+            let list = list_weak.clone();
+            let store = store_for_edit.clone();
+            show_provider_form(parent.as_ref(), provider, move |p| {
+                store.borrow_mut().update(idx, p);
+                if let Some(list) = list.upgrade() {
+                    rebuild_list(&list, &store);
+                }
+            });
+        });
+
+        let list_weak = list.downgrade();
+        let store_for_remove = store.clone();
+        remove_btn.connect_clicked(move |_| {
+            store_for_remove.borrow_mut().remove(idx);
+            if let Some(list) = list_weak.upgrade() {
+                rebuild_list(&list, &store_for_remove);
+            }
+        });
+
+        list.append(&row);
+    }
+}
+
+fn source_icon(source: &IptvKind) -> &'static str {
+    match source {
+        IptvKind::M3uUrl { .. } => "network-transmit-receive-symbolic",
+        IptvKind::M3uLocal { .. } => "folder-documents-symbolic",
+        IptvKind::Xtream { .. } => "media-playback-start-symbolic",
+    }
+}
+
+fn show_provider_form<F>(parent: Option<&adw::Dialog>, initial: IptvProvider, on_save: F)
+where
+    F: Fn(IptvProvider) + 'static,
+{
+    let form = adw::Dialog::builder()
+        .title(i18n("IPTV Provider"))
+        .content_width(540)
+        .content_height(560)
+        .build();
+
+    let toolbar = adw::ToolbarView::new();
+    let header = adw::HeaderBar::new();
+    toolbar.add_top_bar(&header);
+
+    let save_btn = gtk::Button::builder()
+        .label(i18n("Save"))
+        .css_classes(["suggested-action"])
+        .build();
+    header.pack_end(&save_btn);
+
+    let cancel_btn = gtk::Button::builder().label(i18n("Cancel")).build();
+    header.pack_start(&cancel_btn);
+
+    let inputs = ProviderFormInputs::build(&initial);
+
+    let scrolled = gtk::ScrolledWindow::builder()
+        .hscrollbar_policy(gtk::PolicyType::Never)
+        .propagate_natural_height(true)
+        .child(&inputs.content)
+        .build();
+    toolbar.set_content(Some(&scrolled));
+    form.set_child(Some(&toolbar));
+
+    let form_weak = form.downgrade();
+    cancel_btn.connect_clicked(move |_| {
+        if let Some(f) = form_weak.upgrade() {
+            f.close();
+        }
+    });
+
+    let form_weak = form.downgrade();
+    let on_save = Rc::new(on_save);
+    save_btn.connect_clicked(move |_| {
+        let Some(provider) = inputs.collect() else {
+            return;
+        };
+        on_save(provider);
+        if let Some(f) = form_weak.upgrade() {
+            f.close();
+        }
+    });
+
+    if let Some(parent) = parent {
+        form.present(Some(parent));
+    } else {
+        form.present(None::<&adw::Dialog>);
+    }
+}
+
+/// Field widgets of the provider form, kept together so the save handler can
+/// read them and the type combo can toggle the relevant group's visibility.
+struct ProviderFormInputs {
+    content: gtk::Box,
+    name_row: adw::EntryRow,
+    type_row: adw::ComboRow,
+    url_row: adw::EntryRow,
+    path_row: adw::EntryRow,
+    server_row: adw::EntryRow,
+    username_row: adw::EntryRow,
+    password_row: adw::PasswordEntryRow,
+    ua_row: adw::EntryRow,
+    referer_row: adw::EntryRow,
+}
+
+impl ProviderFormInputs {
+    fn build(initial: &IptvProvider) -> Self {
+        let content = gtk::Box::builder()
+            .orientation(gtk::Orientation::Vertical)
+            .spacing(12)
+            .margin_start(18)
+            .margin_end(18)
+            .margin_top(18)
+            .margin_bottom(18)
+            .build();
+
+        let name_group = adw::PreferencesGroup::new();
+        let name_row = adw::EntryRow::builder().title(i18n("Name")).build();
+        name_row.set_text(&initial.name);
+        name_group.add(&name_row);
+        content.append(&name_group);
+
+        let type_group = adw::PreferencesGroup::new();
+        let type_model = gtk::StringList::new(&[
+            &i18n("M3U URL"),
+            &i18n("Local M3U file"),
+            &i18n("Xtream Codes"),
+        ]);
+        let type_row = adw::ComboRow::builder()
+            .title(i18n("Type"))
+            .model(&type_model)
+            .build();
+        let initial_index = source_index(&initial.source);
+        type_row.set_selected(initial_index);
+        type_group.add(&type_row);
+        content.append(&type_group);
+
+        let url_group = adw::PreferencesGroup::new();
+        let url_row = adw::EntryRow::builder().title(i18n("URL")).build();
+        url_group.add(&url_row);
+
+        let path_group = adw::PreferencesGroup::new();
+        let path_row = adw::EntryRow::builder().title(i18n("File path")).build();
+        path_group.add(&path_row);
+
+        let xtream_group = adw::PreferencesGroup::new();
+        let server_row = adw::EntryRow::builder().title(i18n("Server URL")).build();
+        let username_row = adw::EntryRow::builder().title(i18n("Username")).build();
+        let password_row = adw::PasswordEntryRow::builder()
+            .title(i18n("Password"))
+            .build();
+        xtream_group.add(&server_row);
+        xtream_group.add(&username_row);
+        xtream_group.add(&password_row);
+
+        match &initial.source {
+            IptvKind::M3uUrl { url } => url_row.set_text(url),
+            IptvKind::M3uLocal { path } => path_row.set_text(path),
+            IptvKind::Xtream {
+                server,
+                username,
+                password,
+            } => {
+                server_row.set_text(server);
+                username_row.set_text(username);
+                password_row.set_text(password);
+            }
+        }
+
+        content.append(&url_group);
+        content.append(&path_group);
+        content.append(&xtream_group);
+
+        let headers_group = adw::PreferencesGroup::builder()
+            .title(i18n("HTTP headers (optional)"))
+            .build();
+        let ua_row = adw::EntryRow::builder().title(i18n("User-Agent")).build();
+        ua_row.set_text(&initial.user_agent);
+        let referer_row = adw::EntryRow::builder().title(i18n("Referer")).build();
+        referer_row.set_text(&initial.referer);
+        headers_group.add(&ua_row);
+        headers_group.add(&referer_row);
+        content.append(&headers_group);
+
+        wire_type_visibility(
+            &type_row,
+            &url_group,
+            &path_group,
+            &xtream_group,
+            initial_index,
+        );
+
+        Self {
+            content,
+            name_row,
+            type_row,
+            url_row,
+            path_row,
+            server_row,
+            username_row,
+            password_row,
+            ua_row,
+            referer_row,
+        }
+    }
+
+    /// Read the form into a provider, or `None` if the (required) name is blank.
+    fn collect(&self) -> Option<IptvProvider> {
+        let name = self.name_row.text().trim().to_string();
+        if name.is_empty() {
+            return None;
+        }
+        let source = match self.type_row.selected() {
+            0 => IptvKind::M3uUrl {
+                url: self.url_row.text().trim().to_string(),
+            },
+            1 => IptvKind::M3uLocal {
+                path: self.path_row.text().trim().to_string(),
+            },
+            _ => IptvKind::Xtream {
+                server: self.server_row.text().trim().to_string(),
+                username: self.username_row.text().trim().to_string(),
+                password: self.password_row.text().to_string(),
+            },
+        };
+        Some(IptvProvider {
+            name,
+            source,
+            user_agent: self.ua_row.text().trim().to_string(),
+            referer: self.referer_row.text().trim().to_string(),
+            order: 0,
+        })
+    }
+}
+
+/// Combo index for a source kind (URL = 0, local = 1, Xtream = 2).
+fn source_index(source: &IptvKind) -> u32 {
+    match source {
+        IptvKind::M3uUrl { .. } => 0,
+        IptvKind::M3uLocal { .. } => 1,
+        IptvKind::Xtream { .. } => 2,
+    }
+}
+
+/// Show only the input group matching the selected source type; re-sync on
+/// every combo change.
+fn wire_type_visibility(
+    type_row: &adw::ComboRow,
+    url_group: &adw::PreferencesGroup,
+    path_group: &adw::PreferencesGroup,
+    xtream_group: &adw::PreferencesGroup,
+    initial_index: u32,
+) {
+    let url_weak = url_group.downgrade();
+    let path_weak = path_group.downgrade();
+    let xtream_weak = xtream_group.downgrade();
+    let sync = move |selected: u32| {
+        if let Some(g) = url_weak.upgrade() {
+            g.set_visible(selected == 0);
+        }
+        if let Some(g) = path_weak.upgrade() {
+            g.set_visible(selected == 1);
+        }
+        if let Some(g) = xtream_weak.upgrade() {
+            g.set_visible(selected == 2);
+        }
+    };
+    sync(initial_index);
+    type_row.connect_selected_notify(move |row| sync(row.selected()));
+}

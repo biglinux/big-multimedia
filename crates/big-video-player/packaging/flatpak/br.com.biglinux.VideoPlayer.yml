@@ -1,0 +1,24 @@
+app-id: br.com.biglinux.VideoPlayer
+runtime: org.gnome.Platform
+runtime-version: '49'
+sdk: org.gnome.Sdk
+command: big-video-player
+finish-args:
+  - --share=ipc
+  - --socket=wayland
+  - --socket=fallback-x11
+  - --device=dri
+  - --filesystem=home
+modules:
+  - name: big-video-player
+    buildsystem: simple
+    build-commands:
+      - cargo build --release --locked
+      - install -Dm755 target/release/big-video-player /app/bin/big-video-player
+      - install -Dm644 resources/applications/br.com.biglinux.VideoPlayer.desktop /app/share/applications/br.com.biglinux.VideoPlayer.desktop
+      - install -Dm644 resources/metainfo/br.com.biglinux.VideoPlayer.metainfo.xml /app/share/metainfo/br.com.biglinux.VideoPlayer.metainfo.xml
+      - install -Dm644 resources/icons/hicolor/scalable/apps/big-video-player.svg /app/share/icons/hicolor/scalable/apps/big-video-player.svg
+    sources:
+      - type: dir
+        path: ../..
+# Summary: Hardware-accelerated video player for BigLinux

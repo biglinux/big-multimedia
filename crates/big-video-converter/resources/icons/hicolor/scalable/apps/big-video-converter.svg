@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="128" height="128" viewBox="0 0 128 128">
+  <title>Big Video Converter</title>
+  <rect width="128" height="128" rx="24" fill="#2f6fed"/>
+  <rect x="24" y="34" width="80" height="60" rx="10" fill="#ffffff" opacity="0.92"/>
+  <path d="M50 50v30l26-15z" fill="#2f6fed"/>
+  <text x="64" y="113" text-anchor="middle" font-family="sans-serif" font-size="14" fill="#ffffff">video-conver</text>
+</svg>

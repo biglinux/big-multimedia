@@ -1,0 +1,59 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<component type="desktop-application">
+  <id>br.com.biglinux.VideoConverter</id>
+  <metadata_license>CC0-1.0</metadata_license>
+  <project_license>GPL-3.0-or-later</project_license>
+  <developer id="com.biglinux">
+    <name>BigLinux</name>
+  </developer>
+  <name>Big Video Converter</name>
+  <name xml:lang="pt_BR">Big Video Converter</name>
+  <summary>GPU-aware video converter for BigLinux</summary>
+  <summary xml:lang="pt_BR">Conversor de vídeo com aceleração de GPU para o BigLinux</summary>
+  <description>
+    <p>Big Video Converter is a libadwaita video transcoder built in Rust on top of the shared BigLinux components. It detects available VAAPI, NVENC, and QuickSync encoders, falls back to CPU when needed, and ships a batch queue tuned for predictable quality and disk usage. Output formats include MP4 (H.264/H.265), WebM (VP9/AV1), and MKV.</p>
+    <p xml:lang="pt_BR">O Big Video Converter é um transcoder de vídeo em libadwaita escrito em Rust sobre os componentes compartilhados do BigLinux. Detecta codificadores VAAPI, NVENC e QuickSync disponíveis, recai para CPU quando necessário e oferece uma fila em lote ajustada para qualidade previsível e uso controlado de disco. Os formatos de saída incluem MP4 (H.264/H.265), WebM (VP9/AV1) e MKV.</p>
+  </description>
+  <launchable type="desktop-id">br.com.biglinux.VideoConverter.desktop</launchable>
+  <categories>
+    <category>AudioVideo</category>
+    <category>Video</category>
+    <category>AudioVideoEditing</category>
+  </categories>
+  <keywords>
+    <keyword>video</keyword>
+    <keyword>convert</keyword>
+    <keyword>converter</keyword>
+    <keyword>transcode</keyword>
+    <keyword>ffmpeg</keyword>
+    <keyword>vaapi</keyword>
+    <keyword>nvenc</keyword>
+    <keyword>h264</keyword>
+    <keyword>h265</keyword>
+    <keyword xml:lang="pt_BR">conversor</keyword>
+    <keyword xml:lang="pt_BR">vídeo</keyword>
+  </keywords>
+  <url type="homepage">https://github.com/biglinux/big-video-converter</url>
+  <url type="bugtracker">https://github.com/biglinux/big-video-converter/issues</url>
+  <screenshots>
+    <screenshot type="default">
+      <caption>Main window with conversion queue</caption>
+      <caption xml:lang="pt_BR">Janela principal com fila de conversão</caption>
+      <image type="source">https://raw.githubusercontent.com/biglinux/big-video-converter/main/docs/screenshots/01-main.png</image>
+    </screenshot>
+  </screenshots>
+  <content_rating type="oars-1.1"/>
+  <supports>
+    <control>keyboard</control>
+    <control>pointing</control>
+    <control>touch</control>
+  </supports>
+  <releases>
+    <release version="1.0.0" date="2026-04-26">
+      <description>
+        <p>Initial Rust release with libadwaita UI, hardware-accelerated encoding, and BigLinux desktop integration.</p>
+        <p xml:lang="pt_BR">Primeira versão em Rust com interface libadwaita, codificação acelerada por hardware e integração com o desktop BigLinux.</p>
+      </description>
+    </release>
+  </releases>
+</component>

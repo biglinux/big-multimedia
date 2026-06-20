@@ -1,0 +1,18 @@
+[Desktop Entry]
+Type=Application
+Name=Big Video Player
+Name[pt_BR]=Big Video Player
+GenericName=Video Player
+GenericName[pt_BR]=Reprodutor de vídeo
+Comment=Hardware-accelerated video player for BigLinux
+Comment[pt_BR]=Reprodutor de vídeo com aceleração de hardware para o BigLinux
+Exec=big-video-player %F
+Icon=big-video-player
+Terminal=false
+Categories=AudioVideo;Video;Player;
+Keywords=video;player;mpv;mpris;movie;film;vaapi;
+Keywords[pt_BR]=vídeo;reprodutor;mpv;mpris;filme;
+MimeType=video/mp4;video/x-matroska;video/webm;video/quicktime;video/x-msvideo;video/mpeg;
+StartupNotify=true
+StartupWMClass=br.com.biglinux.VideoPlayer
+X-GNOME-UsesNotifications=true

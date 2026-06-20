@@ -1,0 +1,122 @@
+# Maintainer: Bruno Goncalves <bigbruno@gmail.com>
+# shellcheck shell=bash disable=SC2034,SC2154
+#
+# ─── Offline-first build ──────────────────────────────────────────────────
+# Local checkout detected → mirror tree + sibling repos (big-media-runtime
+# + big-rust-components). CI/AUR fall back to download tarballs from
+# GitHub. Force network: `BIG_VIDEO_PLAYER_FORCE_GIT=1`.
+
+pkgname=big-video-player
+pkgver=0.1.0
+pkgrel=1
+_runtime_ver=2.0.0
+_components_ver=0.1.0
+pkgdesc='Hardware-accelerated video player for BigLinux'
+arch=('x86_64')
+url='https://github.com/biglinux/big-video-player'
+license=('GPL-3.0-or-later')
+install=$pkgname.install
+depends=('gtk4' 'libadwaita' 'mpv' 'ffmpeg')
+makedepends=('cargo' 'pkgconf' 'gettext' 'rsync')
+
+_has_workspace_files() {
+  local root="$1"
+  [ -f "${root}/Cargo.toml" ] && [ -d "${root}/src" ]
+}
+
+_local_root=""
+if [ "${BIG_VIDEO_PLAYER_FORCE_GIT:-0}" != "1" ] && [ -n "${BASH_SOURCE[0]:-}" ]; then
+  _pkg_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" 2>/dev/null && pwd -P)"
+  if [ -n "${_pkg_dir}" ]; then
+    _candidate="$(cd "${_pkg_dir}/../.." && pwd -P)"
+    if _has_workspace_files "${_candidate}"; then
+      _local_root="${_candidate}"
+    fi
+    unset _candidate
+  fi
+fi
+
+if [ -n "${_local_root}" ]; then
+  echo "==> Local source detected at ${_local_root} — skipping git fetch" >&2
+  source=()
+  sha256sums=()
+else
+  echo "==> No local source, will fetch from GitHub release tarballs" >&2
+  source=(
+    "$pkgname-$pkgver.tar.gz::$url/archive/refs/tags/v$pkgver.tar.gz"
+    "big-media-runtime-$_runtime_ver.tar.gz::https://github.com/biglinux/big-media-runtime/archive/refs/tags/v$_runtime_ver.tar.gz"
+    "big-rust-components-$_components_ver.tar.gz::https://github.com/biglinux/big-rust-components/archive/refs/tags/v$_components_ver.tar.gz"
+  )
+  sha256sums=('SKIP' 'SKIP' 'SKIP')
+fi
+
+_siblings=(big-media-runtime big-rust-components)
+
+_mirror_dir() {
+  local src="$1" dst="$2"
+  if command -v rsync >/dev/null 2>&1; then
+    rsync -a --delete \
+      --exclude='/target' --exclude='/.git' --exclude='*.pkg.tar.*' \
+      --exclude='**/pkgbuild/src/' --exclude='**/pkgbuild/pkg/' \
+      --exclude='**/packaging/*/src/' --exclude='**/packaging/*/pkg/' \
+      "${src}/" "${dst}/"
+  else
+    cp -a "${src}/." "${dst}/"
+    rm -rf "${dst}/target" "${dst}/.git"
+  fi
+}
+
+prepare() {
+  if [ -n "${_local_root}" ]; then
+    msg2 "Mirroring local source tree from ${_local_root}"
+    mkdir -p "${srcdir}/${pkgname}"
+    _mirror_dir "${_local_root}" "${srcdir}/${pkgname}"
+    for _sib in "${_siblings[@]}"; do
+      _sib_src="$(cd "${_local_root}/.." && pwd -P)/${_sib}"
+      if [ -d "${_sib_src}" ]; then
+        msg2 "Mirroring sibling ${_sib}"
+        mkdir -p "${srcdir}/${_sib}"
+        _mirror_dir "${_sib_src}" "${srcdir}/${_sib}"
+      fi
+    done
+  else
+    cd "$srcdir"
+    [ -d "${pkgname}-${pkgver}" ] && ln -sfn "${pkgname}-${pkgver}" "${pkgname}"
+    ln -sfn "big-media-runtime-$_runtime_ver" big-media-runtime
+    ln -sfn "big-rust-components-$_components_ver" big-rust-components
+    sed -i 's#../../pamac-improves/big-rust-components#../big-rust-components#g' \
+      big-media-runtime/Cargo.toml
+  fi
+}
+
+build() {
+  cd "${srcdir}/${pkgname}"
+  export RUSTFLAGS="${RUSTFLAGS} --remap-path-prefix=${srcdir}=/build --remap-path-prefix=${HOME}/.cargo=/cargo"
+  cargo build --release
+}
+
+package() {
+  cd "${srcdir}/${pkgname}"
+  install -Dm755 "target/release/big-video-player" \
+    "$pkgdir/usr/bin/big-video-player"
+  install -Dm644 "resources/applications/br.com.biglinux.VideoPlayer.desktop" \
+    "$pkgdir/usr/share/applications/br.com.biglinux.VideoPlayer.desktop"
+  install -Dm644 "resources/metainfo/br.com.biglinux.VideoPlayer.metainfo.xml" \
+    "$pkgdir/usr/share/metainfo/br.com.biglinux.VideoPlayer.metainfo.xml"
+  install -Dm644 "resources/icons/hicolor/scalable/apps/big-video-player.svg" \
+    "$pkgdir/usr/share/icons/hicolor/scalable/apps/big-video-player.svg"
+
+  # Shared gettext catalog. Every media-suite app binds the single
+  # `big-media-runtime` textdomain (shared::app_base::init_gettext), so the
+  # UI strings live in one catalog that each app compiles and installs under
+  # that domain name.
+  _bmr_po="${srcdir}/big-media-runtime/po"
+  if [[ -d "${_bmr_po}" ]]; then
+    while read -r _lang; do
+      [[ -z "${_lang}" || "${_lang}" == \#* ]] && continue
+      install -d "$pkgdir/usr/share/locale/${_lang}/LC_MESSAGES"
+      msgfmt "${_bmr_po}/${_lang}.po" \
+        -o "$pkgdir/usr/share/locale/${_lang}/LC_MESSAGES/big-media-runtime.mo"
+    done < "${_bmr_po}/LINGUAS"
+  fi
+}

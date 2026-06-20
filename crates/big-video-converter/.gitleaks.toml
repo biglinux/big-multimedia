@@ -1,0 +1,12 @@
+title = "BigLinux project secret scan"
+
+[allowlist]
+description = "Generated and local-only build outputs."
+paths = [
+  '''(^|/)target/''',
+  '''(^|/)build/''',
+  '''(^|/)builddir/''',
+  '''(^|/)node_modules/''',
+  '''(^|/)\.flatpak-builder/''',
+  '''(^|/)pkg/''',
+]

@@ -1,0 +1,4 @@
+[Thumbnailer Entry]
+TryExec=big-audio-thumbnailer
+Exec=big-audio-thumbnailer %i %o %s
+MimeType=audio/mpeg;audio/flac;audio/ogg;audio/x-vorbis+ogg;audio/opus;audio/x-opus+ogg;audio/mp4;audio/aac;audio/x-wav;audio/x-aiff;audio/x-ape;audio/x-musepack;audio/x-wavpack;

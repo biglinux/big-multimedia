@@ -1,0 +1,18 @@
+[Desktop Entry]
+Type=Application
+Name=Big Audio Converter
+Name[pt_BR]=Big Audio Converter
+GenericName=Audio Converter
+GenericName[pt_BR]=Conversor de áudio
+Comment=Convert audio files between formats
+Comment[pt_BR]=Converta arquivos de áudio entre formatos
+Exec=big-audio-converter %F
+Icon=big-audio-converter
+Terminal=false
+Categories=AudioVideo;Audio;AudioVideoEditing;
+Keywords=audio;convert;converter;mp3;flac;ogg;opus;ffmpeg;
+Keywords[pt_BR]=áudio;converter;conversor;mp3;flac;ogg;opus;ffmpeg;
+MimeType=audio/mpeg;audio/flac;audio/x-flac;audio/ogg;audio/opus;audio/aac;audio/x-wav;audio/wav;audio/mp4;
+StartupNotify=true
+StartupWMClass=br.com.biglinux.AudioConverter
+X-GNOME-UsesNotifications=true

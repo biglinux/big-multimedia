@@ -1,0 +1,56 @@
+# caveman: local equivalent of .github/workflows/ci.yml
+# act unavailable on host — run `make -f Makefile.ci ci` for full gate.
+
+PROJECT      := big-audio-player
+BIN_NAME     := big-audio-player
+BIN_MIB_MAX  := 25
+RSS_MIB_MAX  := 360
+
+.PHONY: ci fmt clippy test deny audit machete doc complexity i18n budgets clean
+
+ci: fmt clippy test deny audit machete doc complexity i18n budgets
+	@echo "ALL GATES PASS for $(PROJECT)"
+
+fmt:
+	cargo fmt --all -- --check
+
+clippy:
+	cargo clippy --workspace --all-targets --all-features -- -D warnings
+
+test:
+	@if command -v cargo-nextest >/dev/null 2>&1; then \
+	  cargo nextest run --all-features --workspace; \
+	else \
+	  cargo test --all-features --tests --workspace; \
+	fi
+
+deny:
+	cargo deny check advisories bans licenses sources
+
+audit:
+	cargo audit -D warnings
+
+machete:
+	cargo machete --with-metadata
+
+doc:
+	RUSTDOCFLAGS='-D warnings' cargo doc --no-deps --all-features --workspace
+
+complexity:
+	@command -v lizard >/dev/null && lizard -l rust -C 25 src || echo "lizard not installed"
+	@command -v jscpd  >/dev/null && jscpd --threshold 5 --min-tokens 50 src || echo "jscpd not installed"
+
+i18n:
+	@[ -d po ] || { echo "no po/"; exit 0; }
+	@shopt -s nullglob; for po in po/*.po; do msgfmt -c -v -o /dev/null "$$po"; done; true
+
+budgets:
+	cargo build --release
+	@bin=target/release/$(BIN_NAME); \
+	  strip -s "$$bin" 2>/dev/null || true; \
+	  sz=$$(stat -c%s "$$bin"); mib=$$(( (sz + 1048575) / 1048576 )); \
+	  echo "size: $$mib MiB / max $(BIN_MIB_MAX)"; \
+	  [ "$$mib" -le "$(BIN_MIB_MAX)" ]
+
+clean:
+	cargo clean

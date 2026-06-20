@@ -1,0 +1,18 @@
+[Desktop Entry]
+Type=Application
+Name=Big Audio Player
+Name[pt_BR]=Big Audio Player
+GenericName=Music Player
+GenericName[pt_BR]=Reprodutor de música
+Comment=Music and audio player for BigLinux
+Comment[pt_BR]=Reprodutor de música e áudio para o BigLinux
+Exec=big-audio-player %F
+Icon=big-audio-player
+Terminal=false
+Categories=AudioVideo;Audio;Player;
+Keywords=audio;music;player;mpris;mp3;flac;ogg;
+Keywords[pt_BR]=áudio;música;reprodutor;mpris;mp3;flac;ogg;
+MimeType=audio/mpeg;audio/flac;audio/x-flac;audio/ogg;audio/opus;audio/aac;audio/x-wav;audio/wav;audio/mp4;
+StartupNotify=true
+StartupWMClass=br.com.biglinux.AudioPlayer
+X-GNOME-UsesNotifications=true

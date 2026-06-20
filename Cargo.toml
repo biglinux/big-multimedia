@@ -1,0 +1,24 @@
+# big-multimedia — unified media workspace: players + converters.
+# Four binary crates over the shared big-player-ui / big-converter-ui trees +
+# big-media-runtime engine. Players gain in-place clip/convert/extract via the
+# embeddable big-converter-ui panel; the converters stay the batch surface.
+[workspace]
+resolver = "2"
+members = [
+    "crates/big-audio-player",
+    "crates/big-video-player",
+    "crates/big-audio-converter",
+    "crates/big-video-converter",
+]
+
+[profile.release]
+opt-level = 3
+# Fat LTO: ~10% smaller binary + slightly faster runtime. Build time 2-3×
+# slower than thin LTO. Zero runtime CPU/memory penalty.
+lto = "fat"
+codegen-units = 1
+strip = "symbols"
+panic = "abort"
+
+[workspace.metadata.cargo-machete]
+ignored = []

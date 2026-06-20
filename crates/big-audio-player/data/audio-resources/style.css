@@ -1,0 +1,664 @@
+/* Big Audio Player — Premium Design */
+
+/* ─── Global ─── */
+window.background {
+    background-color: @window_bg_color;
+}
+
+/* ─── Header Bar ─── */
+headerbar {
+    min-height: 40px;
+}
+
+/* Content headerbar — clean, no bottom shadow */
+#content_header {
+    border-bottom: 1px solid alpha(@window_fg_color, 0.06);
+}
+
+/* ViewSwitcher tabs — clean, pill-shaped, elastic sizing */
+viewswitcher > button {
+    border-radius: 8px;
+    padding: 4px 4px;
+    min-height: 24px;
+    min-width: 0;
+    margin: 2px 1px;
+    font-weight: 400;
+    font-size: 0.85em;
+    opacity: 0.7;
+    transition: all 200ms ease;
+}
+
+viewswitcher > button > box {
+    min-width: 0;
+}
+
+viewswitcher > button label {
+    min-width: 0;
+}
+
+/* Custom tab bar — compact icon+label toggle buttons */
+.tab-bar {
+    margin: 0 2px;
+}
+
+.tab-btn {
+    border-radius: 6px;
+    padding: 2px 4px;
+    min-height: 24px;
+    min-width: 0;
+    margin: 2px 1px;
+    font-size: 0.85em;
+    opacity: 0.65;
+    transition: all 200ms ease;
+}
+
+.tab-btn:checked {
+    opacity: 1.0;
+    background: alpha(@accent_bg_color, 0.15);
+}
+
+.tab-btn:hover:not(:checked) {
+    opacity: 0.85;
+    background: alpha(@window_fg_color, 0.04);
+}
+
+.tab-btn label {
+    min-width: 0;
+}
+
+.tab-btn image {
+    min-width: 0;
+}
+
+viewswitcher > button:checked {
+    font-weight: 700;
+    opacity: 1.0;
+    background: alpha(@accent_bg_color, 0.12);
+}
+
+viewswitcher > button:hover:not(:checked) {
+    opacity: 0.9;
+    background: alpha(@window_fg_color, 0.04);
+}
+
+/* ─── Sidebar ─── */
+.sidebar-pane {
+    background-color: @sidebar_bg_color;
+}
+
+/* Sidebar headerbar — blend with sidebar background */
+.sidebar-pane headerbar {
+    background: transparent;
+    box-shadow: none;
+    border-bottom: 1px solid alpha(@window_fg_color, 0.06);
+}
+
+/* Sort dropdown — minimal */
+.sidebar-pane dropdown > button {
+    background: none;
+    box-shadow: none;
+    border: none;
+    min-height: 24px;
+    padding: 2px 8px;
+    font-size: 0.9em;
+}
+
+.sidebar-pane dropdown > button:hover {
+    background: alpha(@window_fg_color, 0.06);
+    border-radius: 8px;
+}
+
+/* Sidebar list rows */
+.sidebar-pane listview > row {
+    padding: 2px 6px;
+    margin: 0 4px;
+    border-radius: 8px;
+    transition: background-color 200ms ease;
+}
+
+.sidebar-pane listview > row:hover {
+    background: alpha(@accent_bg_color, 0.08);
+}
+
+.sidebar-pane listview > row:selected {
+    background: alpha(@accent_bg_color, 0.14);
+    border-radius: 8px;
+}
+
+/* Two-line track rows in sidebar (Songs mode) */
+.browser-title {
+    font-weight: 600;
+    font-size: 0.92em;
+}
+
+.browser-artist {
+    color: alpha(@window_fg_color, 0.55);
+    font-size: 0.8em;
+}
+
+.browser-duration {
+    color: alpha(@window_fg_color, 0.55);
+    font-variant-numeric: tabular-nums;
+    font-size: 0.85em;
+}
+
+/* Now Playing sidebar bottom — hover effect */
+#sidebar_now_playing {
+    border-radius: 8px;
+    transition: background-color 200ms ease;
+    border-top: 1px solid alpha(@window_fg_color, 0.06);
+}
+
+#sidebar_now_playing:hover {
+    background: alpha(@accent_bg_color, 0.06);
+}
+
+/* ─── ColumnView (track list) — clean and modern ─── */
+columnview {
+    background: transparent;
+}
+
+/* Column headers — subtle and light */
+columnview > header > row {
+    background: transparent;
+    border-bottom: 1px solid alpha(@window_fg_color, 0.06);
+}
+
+columnview > header > row > button {
+    padding: 6px 12px;
+    min-height: 28px;
+    font-size: 0.8em;
+    font-weight: 500;
+    letter-spacing: 0.3px;
+    color: alpha(@window_fg_color, 0.55);
+    background: transparent;
+    border: none;
+    box-shadow: none;
+    transition: color 200ms ease;
+}
+
+columnview > header > row > button:hover {
+    color: alpha(@window_fg_color, 0.8);
+}
+
+/* Track list rows */
+columnview > listview > row {
+    min-height: 42px;
+    border-radius: 8px;
+    margin: 1px 6px;
+    transition: background-color 150ms ease;
+}
+
+columnview > listview > row:nth-child(even) {
+    background: alpha(@window_fg_color, 0.025);
+}
+
+columnview > listview > row > cell {
+    padding: 6px 12px;
+}
+
+columnview > listview > row:hover {
+    background: alpha(@accent_bg_color, 0.10);
+}
+
+columnview > listview > row:selected {
+    background: alpha(@accent_bg_color, 0.12);
+}
+
+/* Currently playing row */
+columnview > listview > row.now-playing {
+    font-weight: 600;
+    background: alpha(@accent_bg_color, 0.10);
+}
+
+/* Playing indicator icon */
+.playing-indicator {
+    color: @accent_bg_color;
+}
+
+/* Active track text in accent color */
+.now-playing-accent {
+    color: @accent_bg_color;
+    font-weight: 600;
+}
+
+/* Numeric cells — dim style */
+.numeric {
+    color: alpha(@window_fg_color, 0.55);
+    font-variant-numeric: tabular-nums;
+    font-size: 0.9em;
+}
+
+/* ─── Playback bar ─── */
+.playback-bar {
+    padding: 0;
+    border-top: 1px solid alpha(@window_fg_color, 0.05);
+}
+
+/* Blurred album art behind the playback bar */
+.blur-bg {
+    opacity: 0.18;
+}
+
+.playback-bar-art {
+    border-radius: 8px;
+    min-width: 48px;
+    min-height: 48px;
+    /* GTK4 CSS has no max-width/max-height — constrain via min only */
+    box-shadow: 0 2px 8px alpha(black, 0.10);
+    transition: box-shadow 250ms ease;
+}
+
+.playback-bar-art:hover {
+    box-shadow: 0 3px 12px alpha(black, 0.16);
+}
+
+.playback-title {
+    font-weight: 700;
+    font-size: 0.95em;
+}
+
+.playback-artist {
+    color: alpha(@window_fg_color, 0.6);
+    font-size: 0.85em;
+}
+
+.playback-album {
+    color: alpha(@window_fg_color, 0.4);
+    font-size: 0.78em;
+    font-style: italic;
+}
+
+/* ─── Lyrics panel ─── */
+.lyrics-panel {
+    background: alpha(@sidebar_bg_color, 0.3);
+}
+
+.lyrics-header-icon {
+    color: alpha(@accent_bg_color, 0.8);
+}
+
+.lyrics-header-label {
+    font-weight: 700;
+    font-size: 0.85em;
+    letter-spacing: 0.5px;
+    text-transform: uppercase;
+    color: alpha(@window_fg_color, 0.45);
+}
+
+.lyrics-separator {
+    min-height: 1px;
+    background-color: alpha(@window_fg_color, 0.06);
+    margin-left: 12px;
+    margin-right: 12px;
+}
+
+.lyrics-text {
+    font-size: 14px;
+    font-weight: 500;
+    line-height: 1.7;
+    color: alpha(@window_fg_color, 0.88);
+    letter-spacing: 0.2px;
+}
+
+.lyrics-scroll {
+    background: transparent;
+}
+
+.lyrics-empty-icon {
+    color: alpha(@window_fg_color, 0.12);
+}
+
+.lyrics-empty-label {
+    font-size: 0.9em;
+}
+
+/* ─── Seek bar — polished with hover effect ─── */
+.playback-bar scale trough {
+    min-height: 4px;
+    border-radius: 2px;
+    transition: min-height 200ms ease;
+}
+
+.playback-bar scale:hover trough {
+    min-height: 6px;
+}
+
+.playback-bar scale highlight {
+    min-height: 4px;
+    border-radius: 2px;
+    background: @accent_bg_color;
+    transition: min-height 200ms ease;
+}
+
+.playback-bar scale:hover highlight {
+    min-height: 6px;
+}
+
+.playback-bar scale slider {
+    min-width: 18px;
+    min-height: 18px;
+    margin: -7px;
+    border-radius: 50%;
+    transition: all 200ms ease;
+}
+
+.playback-bar scale:hover slider {
+    min-width: 20px;
+    min-height: 20px;
+    margin: -8px;
+}
+
+/* ─── Vertical Popover Scales (volume, speed, voice) ─── */
+popover scale.vertical trough {
+    min-width: 6px;
+    border-radius: 3px;
+}
+
+popover scale.vertical highlight {
+    min-width: 6px;
+    border-radius: 3px;
+}
+
+popover scale.vertical slider {
+    min-width: 16px;
+    min-height: 16px;
+    border-radius: 50%;
+}
+
+/* Speed scale — no custom trough color, use accent */
+popover scale.vertical:not(.volume-scale):not(.voice-scale) highlight {
+    background: @accent_bg_color;
+}
+
+/* ─── Radio LIVE indicator ─── */
+.radio-live {
+    color: @error_bg_color;
+    font-weight: 700;
+    font-size: 0.85em;
+    letter-spacing: 0.5px;
+}
+
+.radio-behind {
+    color: alpha(@window_fg_color, 0.6);
+    font-variant-numeric: tabular-nums;
+}
+
+/* ─── Voice button active indicator ─── */
+.voice-active {
+    color: @accent_bg_color;
+}
+
+/* ─── Radio now-playing row highlight ─── */
+.radio-now-playing,
+.navigation-sidebar > row.radio-now-playing {
+    background: alpha(@accent_bg_color, 0.12);
+    font-weight: 600;
+}
+
+.radio-now-playing image {
+    color: @accent_bg_color;
+}
+
+/* ─── Radio connecting/buffering animation on play button ─── */
+.radio-connecting,
+.radio-buffering {
+    animation: radio-pulse 1.2s ease-in-out infinite;
+}
+
+@keyframes radio-pulse {
+    0%, 100% { opacity: 1.0; }
+    50% { opacity: 0.4; }
+}
+
+/* ─── Radio now-playing panel ─── */
+.radio-np-panel {
+    background: alpha(@window_bg_color, 0.5);
+}
+
+.radio-np-art {
+    border-radius: 12px;
+    box-shadow: 0 4px 12px alpha(black, 0.15);
+}
+
+.radio-np-song {
+    font-style: italic;
+    font-size: 0.95em;
+}
+
+.radio-status-connecting {
+    color: @warning_color;
+    font-weight: 700;
+    animation: radio-pulse 1.2s ease-in-out infinite;
+}
+
+.radio-status-live {
+    color: @error_bg_color;
+    font-weight: 700;
+    font-size: 0.95em;
+}
+
+.radio-status-buffering {
+    color: @warning_color;
+    font-weight: 600;
+    animation: radio-pulse 1.2s ease-in-out infinite;
+}
+
+.radio-status-error {
+    color: @error_color;
+    font-weight: 600;
+}
+
+/* Playback buttons — subtle */
+.playback-bar button.flat,
+.playback-bar button:not(.suggested-action) {
+    min-width: 32px;
+    min-height: 32px;
+    border-radius: 50%;
+    padding: 4px;
+    transition: all 200ms ease;
+}
+
+.playback-bar button.flat:hover,
+.playback-bar button:not(.suggested-action):hover {
+    background: alpha(@window_fg_color, 0.08);
+}
+
+/* Play button — accent circle with subtle glow */
+.playback-bar button.circular.suggested-action {
+    min-width: 44px;
+    min-height: 44px;
+    border-radius: 50%;
+    box-shadow: 0 2px 8px alpha(@accent_bg_color, 0.3);
+    transition: all 250ms ease;
+}
+
+.playback-bar button.circular.suggested-action:hover {
+    box-shadow: 0 3px 12px alpha(@accent_bg_color, 0.4);
+}
+
+/* ─── Now Playing view ─── */
+.now-playing-view {
+    padding: 32px;
+}
+
+.now-playing-art {
+    border-radius: 16px;
+    box-shadow: 0 8px 32px alpha(black, 0.18);
+    min-width: 140px;
+    min-height: 140px;
+    transition: box-shadow 300ms ease;
+}
+
+.now-playing-art:hover {
+    box-shadow: 0 10px 40px alpha(black, 0.24);
+}
+
+.now-playing-title {
+    font-size: 22px;
+    font-weight: 800;
+    letter-spacing: -0.3px;
+}
+
+.now-playing-artist {
+    font-size: 15px;
+    color: alpha(@window_fg_color, 0.6);
+}
+
+.now-playing-album {
+    font-size: 13px;
+    font-style: italic;
+    color: alpha(@window_fg_color, 0.4);
+}
+
+/* ─── Empty state pages ─── */
+statuspage {
+    margin: 48px;
+}
+
+statuspage .icon {
+    color: alpha(@window_fg_color, 0.15);
+}
+
+/* ─── Focus ─── */
+/* Use libadwaita defaults — no global override needed */
+
+/* ─── GtkPaned separator — minimal ─── */
+paned > separator {
+    min-width: 1px;
+    background-color: alpha(@window_fg_color, 0.06);
+}
+
+/* ─── Skeleton Loading ─── */
+.skeleton-circle {
+    border-radius: 50%;
+    background: alpha(@window_fg_color, 0.08);
+}
+
+.skeleton-line {
+    border-radius: 4px;
+    background: alpha(@window_fg_color, 0.08);
+}
+
+
+
+/* Playlist ColumnView rows */
+.playlist-columnview > listview > row {
+    padding: 0 4px;
+    min-height: 32px;
+    transition: background-color 150ms ease;
+}
+
+.playlist-columnview > listview > row:nth-child(even) {
+    background: alpha(@window_fg_color, 0.03);
+}
+
+.playlist-columnview > listview > row:hover {
+    background: alpha(@accent_bg_color, 0.12);
+}
+
+.playlist-columnview > listview > row:selected {
+    background: alpha(@accent_bg_color, 0.15);
+}
+
+/* Remove button hover in playlist */
+.playlist-columnview > listview > row button.circular {
+    opacity: 0;
+    transition: opacity 200ms ease;
+}
+.playlist-columnview > listview > row:hover button.circular {
+    opacity: 0.5;
+}
+.playlist-columnview > listview > row button.circular:hover {
+    opacity: 1;
+}
+
+.sidebar-separator {
+    min-height: 1px;
+    background-color: alpha(@window_fg_color, 0.06);
+}
+
+/* ─── Add-to-playlist button in ColumnView rows ─── */
+columnview > listview > row button.circular {
+    opacity: 0;
+    transition: opacity 200ms ease;
+}
+columnview > listview > row:hover button.circular {
+    opacity: 0.7;
+}
+columnview > listview > row button.circular:hover {
+    opacity: 1;
+}
+
+/* ─── Queue sidebar rows ─── */
+.navigation-sidebar > row:nth-child(even) {
+    background: alpha(@window_fg_color, 0.025);
+}
+
+.navigation-sidebar > row.queue-now-playing {
+    background: alpha(@accent_bg_color, 0.12);
+    font-weight: 600;
+}
+
+/* ─── High Contrast ─── */
+@media (prefers-contrast: more) {
+    .sidebar-pane listview > row:selected,
+    .radio-now-playing,
+    columnview > listview > row.now-playing {
+        outline: 2px solid @accent_bg_color;
+        outline-offset: -2px;
+    }
+
+    .playback-bar {
+        border-top: 2px solid @window_fg_color;
+    }
+
+    paned > separator {
+        min-width: 2px;
+        background-color: @window_fg_color;
+    }
+
+    .sidebar-separator {
+        min-height: 2px;
+        background-color: @window_fg_color;
+    }
+
+    columnview > header > row {
+        border-bottom: 2px solid @window_fg_color;
+    }
+
+    *:focus-visible {
+        outline: 3px solid @accent_bg_color;
+        outline-offset: 2px;
+    }
+
+    .dim-label {
+        opacity: 0.8;
+    }
+}
+
+/* ─── Audio welcome / empty-playlist state ─── */
+.audio-welcome {
+    padding: 32px 24px;
+}
+
+.audio-welcome .title-2 {
+    font-weight: 600;
+    margin-bottom: 2px;
+}
+
+/* Drop indicator line for playlist DnD positioning */
+.drop-indicator-line {
+    min-height: 2px;
+    background: @accent_bg_color;
+    opacity: 0.9;
+}
+
+/* ── Download manager panel ── */
+.download-panel-row progressbar trough {
+    min-height: 6px;
+}
+.download-panel-row progressbar progress {
+    min-height: 6px;
+    border-radius: 3px;
+}

@@ -1,0 +1,12 @@
+# Languages with .po catalogs. PKGBUILD compiles each via msgfmt and
+# installs as /usr/share/locale/<lang>/LC_MESSAGES/big-audio-converter.mo.
+# Source msgid language is English; pt_BR.po carries Portuguese translations.
+de
+en
+es
+fr
+it
+pl
+pt_BR
+ru
+zh_CN
