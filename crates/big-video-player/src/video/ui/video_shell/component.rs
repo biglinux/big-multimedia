@@ -94,6 +94,16 @@ impl Component for VideoShell {
             })
             .forward(sender.input_sender(), VideoShellInput::Cast);
 
+        // Interactive trim bar (bottom overlay) + the shared conversion-progress
+        // page shown full-cover while a clip export runs. Both are video-local
+        // Relm4 components; their typed outputs route back into the shell.
+        let trim = trim::VideoTrimBar::builder()
+            .launch(())
+            .forward(sender.input_sender(), VideoShellInput::TrimBar);
+        let trim_progress = BigConverterProgress::builder()
+            .launch(())
+            .forward(sender.input_sender(), VideoShellInput::TrimProgress);
+
         // Video surface: a black bg box is the overlay's main child; the GLArea
         // is an overlay child (the offload path hides it and stacks a
         // GraphicsOffload widget). The transport rides as a bottom overlay.
@@ -137,6 +147,31 @@ impl Component for VideoShell {
         if !is_background {
             main_overlay.add_overlay(&controls_revealer);
             main_overlay.set_measure_overlay(&controls_revealer, false);
+        }
+
+        // Trim bar: floats just above the transport, hidden until trim mode.
+        let trim_revealer = gtk::Revealer::builder()
+            .valign(gtk::Align::End)
+            .halign(gtk::Align::Fill)
+            .transition_type(gtk::RevealerTransitionType::SlideUp)
+            .reveal_child(false)
+            .margin_bottom(80)
+            .child(trim.widget())
+            .build();
+        // Progress page: full-cover overlay while a clip export runs.
+        let trim_progress_overlay = gtk::Box::builder()
+            .orientation(gtk::Orientation::Vertical)
+            .hexpand(true)
+            .vexpand(true)
+            .visible(false)
+            .css_classes(["background"])
+            .build();
+        trim_progress_overlay.append(trim_progress.widget());
+        if !is_background {
+            main_overlay.add_overlay(&trim_revealer);
+            main_overlay.set_measure_overlay(&trim_revealer, false);
+            main_overlay.add_overlay(&trim_progress_overlay);
+            main_overlay.set_measure_overlay(&trim_progress_overlay, false);
         }
 
         // Welcome screen: shown until the first file loads (hidden on
@@ -347,7 +382,7 @@ impl Component for VideoShell {
         // Export: reuse the converter engine in-process — extract audio or
         // re-encode the playing file without leaving the player.
         let export = gio::Menu::new();
-        export.append(Some(&i18n("Clip & Export…")), Some("win.clip-export"));
+        export.append(Some(&i18n("Cut Video…")), Some("win.trim"));
         let extract = gio::Menu::new();
         extract.append(Some(&i18n("MP3")), Some("win.extract-audio-mp3"));
         extract.append(Some(&i18n("M4A")), Some("win.extract-audio-m4a"));
@@ -416,6 +451,7 @@ impl Component for VideoShell {
         // `OSD_HIDE_DELAY_MS` of inactivity or on pointer-leave. Mirrors the old
         // `controls/visibility.rs`. The welcome screen is up at init, so the OSD
         // never auto-hides until the first file loads.
+        let trim_active = Rc::new(Cell::new(false));
         let osd = Rc::new(OsdState {
             header_revealer: header_revealer.clone(),
             controls_revealer: controls_revealer.clone(),
@@ -428,6 +464,7 @@ impl Component for VideoShell {
             controls_popovers: controls.model().popovers(),
             is_paused: Cell::new(false),
             is_welcome_visible: Cell::new(!is_background),
+            trim_active: trim_active.clone(),
             hide_timeout_id: RefCell::new(None),
         });
         if is_background {
@@ -442,6 +479,10 @@ impl Component for VideoShell {
             // The Relm4 port had lost this dispatch — the shortcut table was
             // display-only until this controller restored it.
             super::keyboard::wire_keyboard_shortcuts(&root, &mpv, &settings, &sender);
+            // Trim-mode keys (I / O / M / Esc): a capture-phase controller that
+            // only acts while trim mode is active, so it never shadows the normal
+            // bindings on those keys outside trim mode.
+            super::keyboard::wire_trim_keys(&root, trim_active.clone(), &sender);
         }
 
         // Animated idle gradient behind the welcome screen (gl surface hidden so
@@ -581,6 +622,12 @@ impl Component for VideoShell {
                 sleep_timer_volume: 100.0,
                 aspect_snap,
                 shell_input_token,
+                trim,
+                trim_progress,
+                trim_revealer,
+                trim_progress_overlay,
+                trim_active,
+                trim_queue: Rc::new(RefCell::new(None)),
             },
             widgets: (),
         }
@@ -595,11 +642,12 @@ impl Component for VideoShell {
             VideoShellInput::Player(event) => self.on_player_event(event, window_ref),
             VideoShellInput::Controls(out) => self.on_controls(out, window_ref),
             VideoShellInput::Playlist(out) => self.on_playlist(out),
-            VideoShellInput::ShowClipExport => {
-                if let Some(root) = window_ref {
-                    self.show_clip_export(root);
-                }
-            }
+            VideoShellInput::EnterTrimMode => self.enter_trim_mode(),
+            VideoShellInput::ExitTrimMode => self.exit_trim_mode(),
+            VideoShellInput::TrimBar(out) => self.on_trim_bar(out, &sender),
+            VideoShellInput::TrimProgress(out) => self.on_trim_progress(out),
+            VideoShellInput::TrimMark(kind) => self.trim_mark(kind),
+            VideoShellInput::TrimExportFinished(outcome) => self.finish_trim_export(outcome),
             VideoShellInput::ExtractAudio(codec) => self.extract_audio(&codec),
             VideoShellInput::QuickConvert(container) => self.quick_convert(&container),
             VideoShellInput::Iptv(out) => VideoShell::on_iptv(out, &sender),
@@ -743,6 +791,9 @@ impl Drop for VideoShell {
     /// destroyed.
     fn drop(&mut self) {
         clear_shell_input(self.shell_input_token);
+        // Abort any in-flight clip export so a closing window does not leave an
+        // orphaned ffmpeg worker running.
+        self.cancel_trim_export();
         if let Some(source) = self.sleep_timer_source.take() {
             source.remove();
         }

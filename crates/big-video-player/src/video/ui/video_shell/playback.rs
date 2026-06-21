@@ -15,6 +15,7 @@ impl VideoShell {
                     self.controls
                         .emit(VideoControlsBarInput::SetSeekFraction(frac));
                 }
+                self.feed_trim_playhead(pos);
             }
             PlayerEvent::DurationChanged(dur) => {
                 self.duration_secs = dur;
@@ -22,6 +23,7 @@ impl VideoShell {
                     .emit(VideoControlsBarInput::SetDuration(playback_time(dur)));
                 self.controls
                     .emit(VideoControlsBarInput::SetDurationSecs(dur));
+                self.feed_trim_duration(dur);
             }
             PlayerEvent::PauseChanged(paused) => {
                 self.controls.emit(VideoControlsBarInput::SetPaused(paused));

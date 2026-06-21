@@ -11,6 +11,7 @@
 
 use super::*;
 
+use super::trim::TrimMarkKind;
 use crate::video::keybindings::{build_single_key_map, key_to_accel_string};
 
 const SEEK_SHORT_SECS: f64 = 5.0;
@@ -54,6 +55,37 @@ pub(super) fn wire_keyboard_shortcuts(
         }
     });
     root.add_controller(key_controller);
+}
+
+/// Install the capture-phase trim-mode key controller (I / O / M / Esc). It runs
+/// before the normal bubble-phase shortcut controller and acts only while trim
+/// mode is active, so outside trim mode those keys keep their usual meaning. A
+/// handled key is consumed (`Stop`) so it never reaches the normal map.
+pub(super) fn wire_trim_keys(
+    root: &adw::ToastOverlay,
+    trim_active: Rc<Cell<bool>>,
+    sender: &ComponentSender<VideoShell>,
+) {
+    let controller = gtk::EventControllerKey::new();
+    controller.set_propagation_phase(gtk::PropagationPhase::Capture);
+    let input = sender.input_sender().clone();
+    controller.connect_key_pressed(move |controller, keyval, _code, _state| {
+        use gtk::gdk::Key;
+        use VideoShellInput as In;
+        if !trim_active.get() || focus_accepts_text(controller) {
+            return glib::Propagation::Proceed;
+        }
+        let message = match keyval {
+            Key::i | Key::I => In::TrimMark(TrimMarkKind::In),
+            Key::o | Key::O => In::TrimMark(TrimMarkKind::Out),
+            Key::m | Key::M => In::TrimMark(TrimMarkKind::Quick),
+            Key::Escape => In::ExitTrimMode,
+            _ => return glib::Propagation::Proceed,
+        };
+        let _ = input.send(message);
+        glib::Propagation::Stop
+    });
+    root.add_controller(controller);
 }
 
 /// Map a shortcut action id to its effect. Menu/toggle actions are sent as shell

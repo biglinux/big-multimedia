@@ -42,8 +42,10 @@ use crate::video::ui::video_controls_bar::{
     VideoControlsBar, VideoControlsBarInit, VideoControlsBarInput, VideoControlsBarOutput,
 };
 use big_app_kit::file_dialogs::FilePicker;
+use big_media_components::converter::progress::BigConverterProgress;
 use big_media_components::media::files::VIDEO_EXTENSIONS;
 use big_media_components::time::playback_time;
+use big_media_runtime::converter::queue::ConversionQueue;
 use big_relm4_components::list::navigation_row::{BigNavigationRow, BigNavigationRowSpec};
 
 /// OSD auto-hide delay after the last pointer activity (mirrors the old
@@ -90,6 +92,7 @@ mod osd;
 mod playback;
 mod render;
 mod state_access;
+mod trim;
 
 pub use input::{send_to_shell, VideoShellInput};
 
@@ -154,6 +157,19 @@ pub struct VideoShell {
     /// Token for the thread-local shell input broker. Cleared on drop so a
     /// closed host module does not keep the Relm4 component alive.
     shell_input_token: input::ShellInputToken,
+    /// Interactive trim bar (bottom overlay), shown only in trim mode.
+    trim: Controller<trim::VideoTrimBar>,
+    /// Shared conversion-progress page, shown as an overlay during clip export.
+    trim_progress: Controller<BigConverterProgress>,
+    /// Revealer hosting the trim bar above the transport.
+    trim_revealer: gtk::Revealer,
+    /// Full-cover overlay hosting the progress page while an export runs.
+    trim_progress_overlay: gtk::Box,
+    /// True while interactive trim mode is active. Shared (`Rc`) with the OSD pin
+    /// and the trim key controller.
+    trim_active: Rc<Cell<bool>>,
+    /// Live clip-export queue (kept so the progress page can cancel it).
+    trim_queue: Rc<RefCell<Option<ConversionQueue>>>,
 }
 
 #[cfg(test)]

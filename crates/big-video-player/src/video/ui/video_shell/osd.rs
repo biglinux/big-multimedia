@@ -19,6 +19,10 @@ pub(super) struct OsdState {
     pub(super) is_paused: Cell<bool>,
     /// True while the welcome screen is up (nothing loaded) — never auto-hide.
     pub(super) is_welcome_visible: Cell<bool>,
+    /// True while interactive trim mode is active — pin the OSD so the transport
+    /// (scrub / play-pause) stays reachable while marking cuts. Shared (`Rc`)
+    /// with the shell model and the trim key controller (one source of truth).
+    pub(super) trim_active: Rc<Cell<bool>>,
     /// Pending auto-hide timer; replaced on each activity, removed on drop.
     pub(super) hide_timeout_id: RefCell<Option<glib::SourceId>>,
 }
@@ -37,7 +41,7 @@ impl OsdState {
     /// (welcome up, paused, or a header menu popover open). Mirrors the old
     /// `hide_controls` bail-outs.
     pub(super) fn hide(&self) {
-        if self.is_welcome_visible.get() || self.is_paused.get() {
+        if self.is_welcome_visible.get() || self.is_paused.get() || self.trim_active.get() {
             return;
         }
         if self

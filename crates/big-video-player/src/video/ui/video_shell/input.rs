@@ -2,6 +2,10 @@ use super::*;
 
 use std::sync::atomic::{AtomicU64, Ordering};
 
+use big_media_components::converter::progress::BigConverterProgressOutput;
+
+use super::trim::{TrimExportOutcome, TrimMarkKind, VideoTrimBarOutput};
+
 #[derive(Debug)]
 pub enum VideoShellInput {
     /// An mpv backend event (position, duration, pause, EOF, …).
@@ -86,15 +90,24 @@ pub enum VideoShellInput {
     ToggleFullscreen,
     /// Activity transition from a pane host such as the shell desktop.
     SetPaneActivity(big_relm4_components::pane::PaneActivity),
-    /// Open the Clip & Export dialog for the playing file (mark in/out, pick a
-    /// format, export the trimmed clip beside it).
-    ShowClipExport,
     /// Extract the current file's audio to `codec` (mp3/m4a/flac) beside it —
     /// runs off the main loop via the in-process quick-export engine.
     ExtractAudio(String),
     /// Re-encode the current file into `container` (mp4/mkv/webm) beside it —
     /// the simple one-file convert; runs off the main loop.
     QuickConvert(String),
+    /// Enter the interactive trim mode (timeline + multi-cut export).
+    EnterTrimMode,
+    /// Leave the interactive trim mode.
+    ExitTrimMode,
+    /// A typed effect emitted by the trim bar (seek preview / export / exit).
+    TrimBar(VideoTrimBarOutput),
+    /// A button on the clip-export progress page (back / cancel).
+    TrimProgress(BigConverterProgressOutput),
+    /// Mark a cut boundary at the live playback position (keyboard I / O / M).
+    TrimMark(TrimMarkKind),
+    /// A clip export finished (success / cancellation / failure).
+    TrimExportFinished(TrimExportOutcome),
 }
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
