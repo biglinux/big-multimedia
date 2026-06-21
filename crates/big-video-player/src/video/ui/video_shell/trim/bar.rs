@@ -85,7 +85,6 @@ pub struct VideoTrimBar {
     hint_label: gtk::Label,
     count_label: gtk::Label,
     export_btn: gtk::Button,
-    config_btn: gtk::Button,
     /// Controls greyed out while exporting.
     busy_sensitive: Vec<gtk::Widget>,
 }
@@ -114,7 +113,11 @@ impl VideoTrimBar {
                 self.segments_strip.append(&chip);
             }
         }
-        self.segments_scroll.set_visible(has_segments);
+        // Chips and the hint share the middle slot: chips once cuts exist, the
+        // hint (incl. the pending-mark feedback) otherwise.
+        let show_chips = has_segments && pending.is_none();
+        self.segments_scroll.set_visible(show_chips);
+        self.hint_label.set_visible(!show_chips);
         self.count_label.set_visible(has_segments);
         self.count_label.set_label(&format!("{count} ✂"));
 
@@ -188,13 +191,7 @@ impl Component for VideoTrimBar {
             .css_classes(["dim-label", "caption"])
             .build();
 
-        let mark_row = gtk::Box::new(gtk::Orientation::Horizontal, 6);
-        mark_row.append(&mark_btn);
-        mark_row.append(&clear_btn);
-        mark_row.append(&segments_scroll);
-        mark_row.append(&count_label);
-
-        // ── format choice + gear + export ───────────────────────────────────
+        // Hint / chips share the expanding middle slot (one visible at a time).
         let hint_label = gtk::Label::builder()
             .css_classes(["dim-label", "caption"])
             .ellipsize(gtk::pango::EllipsizeMode::End)
@@ -228,12 +225,14 @@ impl Component for VideoTrimBar {
 
         // Gear: re-encode settings. Disabled while "Keep format" is selected
         // (a stream-copy has no encode settings); opens a dialog on precise.
+        // Settings (gear) — always available: even in fast/keep-format mode the
+        // user needs the output-layout choice (join cuts vs separate files). The
+        // dialog shows that always + the encode options for precise.
         let config_btn = icon_button(
             "emblem-system-symbolic",
-            &i18n("Re-encode settings"),
+            &i18n("Cut settings"),
             &["flat", "circular"],
         );
-        config_btn.set_sensitive(false);
         config_btn.connect_clicked(glib::clone!(
             #[strong]
             sender,
@@ -271,20 +270,30 @@ impl Component for VideoTrimBar {
             move |_| sender.input(VideoTrimBarInput::RequestExport)
         ));
 
-        let export_row = gtk::Box::new(gtk::Orientation::Horizontal, 8);
-        export_row.append(&hint_label);
-        export_row.append(&mode_group);
-        export_row.append(&config_btn);
-        export_row.append(&export_btn);
-        export_row.append(&exit_btn);
+        // One compact row: Mark · Clear · [hint/chips] · count · format · gear ·
+        // Export · exit — halves the vertical space versus two rows.
+        let middle = gtk::Box::new(gtk::Orientation::Horizontal, 0);
+        middle.set_hexpand(true);
+        middle.append(&hint_label);
+        middle.append(&segments_scroll);
 
-        root.append(&mark_row);
-        root.append(&export_row);
+        let row = gtk::Box::new(gtk::Orientation::Horizontal, 8);
+        row.set_valign(gtk::Align::Center);
+        row.append(&mark_btn);
+        row.append(&clear_btn);
+        row.append(&middle);
+        row.append(&count_label);
+        row.append(&mode_group);
+        row.append(&config_btn);
+        row.append(&export_btn);
+        row.append(&exit_btn);
+        root.append(&row);
 
         let busy_sensitive: Vec<gtk::Widget> = vec![
             mark_btn.upcast::<gtk::Widget>(),
             clear_btn.upcast::<gtk::Widget>(),
             mode_group.upcast::<gtk::Widget>(),
+            config_btn.clone().upcast::<gtk::Widget>(),
         ];
 
         let model = VideoTrimBar {
@@ -294,7 +303,6 @@ impl Component for VideoTrimBar {
             hint_label,
             count_label,
             export_btn,
-            config_btn,
             busy_sensitive,
         };
         model.refresh(&sender);
@@ -322,11 +330,7 @@ impl Component for VideoTrimBar {
             VideoTrimBarInput::SetSegmentTimes(id, a, b) => {
                 self.state.borrow_mut().set_segment_times(id, a, b);
             }
-            VideoTrimBarInput::SetMode(mode) => {
-                self.state.borrow_mut().mode = mode;
-                self.config_btn
-                    .set_sensitive(matches!(mode, CutMode::Precise));
-            }
+            VideoTrimBarInput::SetMode(mode) => self.state.borrow_mut().mode = mode,
             VideoTrimBarInput::RequestExport => {
                 let (ranges, mode) = {
                     let state = self.state.borrow();

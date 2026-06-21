@@ -7,22 +7,21 @@ use gtk::{gdk, glib};
 /// Build the hover-preview popover: a thumbnail frame above a time (+ chapter)
 /// label, parented to the seek bar. Non-autohide so it never grabs input; the
 /// hover controller pops it up / down. Mirrors the old `seek_tooltip_box`.
-pub(super) fn build_seek_preview(
-    seek_bar: &gtk::Scale,
-) -> (gtk::Popover, gtk::Picture, gtk::Label) {
+pub(super) fn build_seek_preview(anchor: &gtk::Widget) -> (gtk::Popover, gtk::Picture, gtk::Label) {
     // bigagents: popover-parent-managed — single reused seek-preview popover,
-    // lives exactly as long as the controls bar (app lifetime).
+    // lives exactly as long as the controls bar (app lifetime). Parented to the
+    // shared bar-stack so it works for both the seek scale and the cut timeline.
     let popover = gtk::Popover::builder()
         .autohide(false)
         .position(gtk::PositionType::Top)
         .css_classes(["seek-preview"])
         .build();
-    popover.set_parent(seek_bar);
+    popover.set_parent(anchor);
     {
-        // GtkScale does not unparent foreign children at dispose (it
+        // The anchor does not unparent foreign children at dispose (it
         // finalized "with children left" and the popover dangled).
         let popover = popover.downgrade();
-        seek_bar.connect_destroy(move |_| {
+        anchor.connect_destroy(move |_| {
             if let Some(popover) = popover.upgrade() {
                 popover.popdown();
                 if popover.parent().is_some() {
@@ -54,7 +53,7 @@ pub(super) fn build_seek_preview(
 /// hides it. Mirrors the old `update_seek_hover_label`.
 #[allow(clippy::too_many_arguments)]
 pub(super) fn wire_seek_hover(
-    seek_bar: &gtk::Scale,
+    anchor: &gtk::Widget,
     popover: &gtk::Popover,
     thumb: &gtk::Picture,
     label: &gtk::Label,
@@ -66,9 +65,9 @@ pub(super) fn wire_seek_hover(
 ) {
     let motion = gtk::EventControllerMotion::new();
     let update = {
-        // Weak: this closure is held by controllers ON the seek bar — a
-        // strong self capture pinned the controls bar subtree after close.
-        let seek_bar = seek_bar.downgrade();
+        // Weak: this closure is held by controllers ON the anchor — a strong
+        // self capture pinned the controls bar subtree after close.
+        let anchor = anchor.downgrade();
         let popover = popover.clone();
         let thumb = thumb.clone();
         let label = label.clone();
@@ -78,11 +77,11 @@ pub(super) fn wire_seek_hover(
         let thumb_gen = thumb_gen.clone();
         let settings = settings.clone();
         move |x: f64| {
-            let Some(seek_bar) = seek_bar.upgrade() else {
+            let Some(anchor) = anchor.upgrade() else {
                 return;
             };
             let duration = duration_secs.get();
-            let width = f64::from(seek_bar.width());
+            let width = f64::from(anchor.width());
             if duration <= 0.0 || width <= 0.0 {
                 return;
             }
@@ -120,7 +119,7 @@ pub(super) fn wire_seek_hover(
         let popover = popover.clone();
         motion.connect_leave(move |_| popover.popdown());
     }
-    seek_bar.add_controller(motion);
+    anchor.add_controller(motion);
 }
 
 /// Drain thumbnail results and paint them into the preview while it is shown.

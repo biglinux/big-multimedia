@@ -228,18 +228,26 @@ impl Component for VideoControlsBar {
         root.append(&seek_row);
 
         // ── hover preview: thumbnail frame + time (+ chapter) at the cursor ──
-        let (preview_popover, preview_thumb, preview_label) = build_seek_preview(&seek_bar);
-        wire_seek_hover(
-            &seek_bar,
-            &preview_popover,
-            &preview_thumb,
-            &preview_label,
-            &duration_secs,
-            &chapters,
-            &current_file,
-            &thumb_gen,
-            &init.settings,
-        );
+        // Parented to the shared bar-stack so it works for BOTH the seek scale and
+        // the cut timeline (the cut timeline keeps the original hover preview).
+        let (preview_popover, preview_thumb, preview_label) =
+            build_seek_preview(bar_stack.upcast_ref());
+        for hover_anchor in [
+            seek_bar.upcast_ref::<gtk::Widget>(),
+            cut_timeline.upcast_ref(),
+        ] {
+            wire_seek_hover(
+                hover_anchor,
+                &preview_popover,
+                &preview_thumb,
+                &preview_label,
+                &duration_secs,
+                &chapters,
+                &current_file,
+                &thumb_gen,
+                &init.settings,
+            );
+        }
         wire_thumb_consumer(thumb_rx, &preview_popover, &preview_thumb);
 
         // ── center box ──────────────────────────────────────────────────────
@@ -435,29 +443,37 @@ fn install_cut_timeline_draw(
     let cut_segments = cut_segments.clone();
     let seek_fraction = seek_fraction.clone();
     let duration_secs = duration_secs.clone();
-    area.set_draw_func(move |_area, cr, width, height| {
+    area.set_draw_func(move |area, cr, width, height| {
         let duration = duration_secs.get().max(0.001);
         let w = f64::from(width);
         let h = f64::from(height);
         let track_h = (h * 0.5).clamp(6.0, 12.0);
         let track_top = (h - track_h) / 2.0;
+        let r = track_h / 2.0;
         let frac = seek_fraction.get().clamp(0.0, 1.0);
         let x_for = |t: f64| (t / duration).clamp(0.0, 1.0) * w;
 
-        // Track background.
-        cr.set_source_rgba(1.0, 1.0, 1.0, 0.22);
-        cr.rectangle(0.0, track_top, w, track_h);
+        // Unplayed track: themed foreground at low alpha → a clearly visible
+        // distinct background for the not-yet-played region (theme-aware).
+        let fg = area.color();
+        cr.set_source_rgba(
+            f64::from(fg.red()),
+            f64::from(fg.green()),
+            f64::from(fg.blue()),
+            0.28,
+        );
+        rounded_rect(cr, 0.0, track_top, w, track_h, r);
         let _ = cr.fill();
         // Played portion (accent blue).
         cr.set_source_rgba(0.20, 0.52, 0.89, 0.95);
-        cr.rectangle(0.0, track_top, frac * w, track_h);
+        rounded_rect(cr, 0.0, track_top, frac * w, track_h, r);
         let _ = cr.fill();
-        // Cut ranges (warning colour).
+        // Cut ranges (Adwaita warning colour).
         for (start, end) in cut_segments.borrow().iter() {
             let x0 = x_for(*start);
             let x1 = x_for(*end);
             cr.set_source_rgba(0.898, 0.647, 0.039, 0.95);
-            cr.rectangle(x0, track_top, (x1 - x0).max(2.0), track_h);
+            rounded_rect(cr, x0, track_top, (x1 - x0).max(2.0), track_h, r);
             let _ = cr.fill();
         }
         // Playhead cursor.
@@ -498,4 +514,19 @@ fn wire_cut_timeline_seek(area: &gtk::DrawingArea, sender: &ComponentSender<Vide
         }
     ));
     area.add_controller(drag);
+}
+
+/// Append a rounded-rectangle sub-path to `cr` (used for the cut-timeline track).
+fn rounded_rect(cr: &gtk::cairo::Context, x: f64, y: f64, w: f64, h: f64, radius: f64) {
+    use std::f64::consts::PI;
+    if w <= 0.0 || h <= 0.0 {
+        return;
+    }
+    let r = radius.min(w / 2.0).min(h / 2.0).max(0.0);
+    cr.new_sub_path();
+    cr.arc(x + w - r, y + r, r, -PI / 2.0, 0.0);
+    cr.arc(x + w - r, y + h - r, r, 0.0, PI / 2.0);
+    cr.arc(x + r, y + h - r, r, PI / 2.0, PI);
+    cr.arc(x + r, y + r, r, PI, 1.5 * PI);
+    cr.close_path();
 }
