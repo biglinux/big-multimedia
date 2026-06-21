@@ -375,32 +375,46 @@ impl Component for VideoShell {
         // Hamburger menu (old `menu_btn`): only the items whose dialogs are
         // actually ported. Not-yet-ported entries are deliberately omitted (a
         // dead menu item is worse than an absent one).
+        // Labelled sections (gio renders the label as a small-caps header in the
+        // popover) so the user scans by category instead of reading 20 items one
+        // by one. The old single 8-item "Media" grab-bag is split into Audio /
+        // Video / Sources by what the entry actually controls.
         let menu = gio::Menu::new();
         let playback = gio::Menu::new();
         playback.append(Some(&i18n("Go to Time…")), Some("win.goto-time"));
         playback.append(Some(&i18n("Chapters")), Some("win.chapters"));
         playback.append(Some(&i18n("Screenshot")), Some("win.screenshot"));
         playback.append(Some(&i18n("Sleep Timer…")), Some("win.sleep-timer"));
-        menu.append_section(None, &playback);
-        let media = gio::Menu::new();
-        media.append(Some(&i18n("Equalizer")), Some("win.show-equalizer"));
-        media.append(
+        menu.append_section(Some(&i18n("Playback")), &playback);
+
+        let audio = gio::Menu::new();
+        audio.append(Some(&i18n("Equalizer")), Some("win.show-equalizer"));
+        audio.append(
             Some(&i18n("Audio & Subtitle Delay")),
             Some("win.show-delay"),
         );
-        media.append(Some(&i18n("Image & Video")), Some("win.show-image-adjust"));
-        media.append(
-            Some(&i18n("Online Video Quality")),
-            Some("win.ytdl-quality"),
+        menu.append_section(Some(&i18n("Audio")), &audio);
+
+        let video = gio::Menu::new();
+        // Renamed for clarity: "Image & Video" was really the colour/picture
+        // adjustments; "Online Video Quality" is the stream-quality picker.
+        video.append(
+            Some(&i18n("Picture Adjustments")),
+            Some("win.show-image-adjust"),
         );
-        media.append(Some(&i18n("Video Filters")), Some("win.filters"));
+        video.append(Some(&i18n("Video Filters")), Some("win.filters"));
+        video.append(Some(&i18n("Stream Quality")), Some("win.ytdl-quality"));
+        menu.append_section(Some(&i18n("Video")), &video);
+
+        let sources = gio::Menu::new();
+        sources.append(Some(&i18n("IPTV")), Some("win.iptv"));
         #[cfg(feature = "chromecast")]
-        media.append(Some(&i18n("Cast to Device")), Some("win.cast"));
-        media.append(Some(&i18n("Media Info")), Some("win.media-info"));
-        media.append(Some(&i18n("IPTV")), Some("win.iptv"));
-        menu.append_section(None, &media);
-        // Export: reuse the converter engine in-process — extract audio or
-        // re-encode the playing file without leaving the player.
+        sources.append(Some(&i18n("Cast to Device")), Some("win.cast"));
+        sources.append(Some(&i18n("Media Info")), Some("win.media-info"));
+        menu.append_section(Some(&i18n("Sources")), &sources);
+
+        // Edit & export: reuse the converter engine in-process — cut, extract
+        // audio, or re-encode the playing file without leaving the player.
         let export = gio::Menu::new();
         export.append(Some(&i18n("Cut Video…")), Some("win.trim"));
         let extract = gio::Menu::new();
@@ -413,7 +427,8 @@ impl Component for VideoShell {
         convert.append(Some(&i18n("MKV")), Some("win.convert-mkv"));
         convert.append(Some(&i18n("WebM")), Some("win.convert-webm"));
         export.append_submenu(Some(&i18n("Convert to")), &convert);
-        menu.append_section(None, &export);
+        menu.append_section(Some(&i18n("Edit & Export")), &export);
+
         let settings_section = gio::Menu::new();
         settings_section.append(Some(&i18n("Preferences")), Some("win.preferences"));
         settings_section.append(Some(&i18n("Appearance")), Some("win.appearance"));
@@ -421,14 +436,15 @@ impl Component for VideoShell {
             Some(&i18n("Restore Defaults")),
             Some("win.restore-defaults"),
         );
-        menu.append_section(None, &settings_section);
+        menu.append_section(Some(&i18n("Settings")), &settings_section);
+
         let help = gio::Menu::new();
         help.append(
             Some(&i18n("Keyboard Shortcuts")),
             Some("win.keyboard-shortcuts"),
         );
         help.append(Some(&i18n("About")), Some("app.about"));
-        menu.append_section(None, &help);
+        menu.append_section(Some(&i18n("Help")), &help);
         let menu_btn = gtk::MenuButton::builder()
             .icon_name("open-menu-symbolic")
             .menu_model(&menu)
