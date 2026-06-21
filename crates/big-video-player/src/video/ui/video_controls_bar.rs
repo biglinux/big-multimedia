@@ -409,15 +409,17 @@ fn install_cut_overlay_draw(
         let w = f64::from(width);
         let h = f64::from(height);
         // Recolour the seek trough itself across each cut range, in the Adwaita
-        // warning colour (#e5a50a), so the marked spans read as part of the bar
-        // (not a separate track) and stand out from the blue playback fill.
-        let band_h = (h * 0.42).clamp(6.0, 12.0);
-        let band_top = (h - band_h) / 2.0;
+        // warning colour (#e5a50a). The band spans most of the seek widget height
+        // so it covers the trough wherever GTK centres it (the slider's negative
+        // margin shifts the trough off the widget centre), reading as part of the
+        // bar rather than a separate track.
+        let band_top = h * 0.15;
+        let band_h = h * 0.70;
         let x_for = |t: f64| (t / duration).clamp(0.0, 1.0) * w;
         for (start, end) in cut_segments.borrow().iter() {
             let x0 = x_for(*start);
             let x1 = x_for(*end);
-            cr.set_source_rgba(0.898, 0.647, 0.039, 0.88);
+            cr.set_source_rgba(0.898, 0.647, 0.039, 0.85);
             cr.rectangle(x0, band_top, (x1 - x0).max(2.0), band_h);
             let _ = cr.fill();
         }

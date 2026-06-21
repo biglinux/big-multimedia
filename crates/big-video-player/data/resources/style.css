@@ -92,12 +92,12 @@ menubutton.osd-btn {
   border-radius: 3px;
 }
 
-/* Trim toolbar: a flat, full-width bar docked above the transport (embedded in
-   the bottom controls), NOT a floating rounded OSD card. A gentle scrim keeps it
-   readable over the video and blends into the transport below. */
+/* Trim toolbar: a flat, transparent row docked directly above the transport so
+   it sits IN the existing bottom controls (same surface as the seek bar +
+   buttons), NOT a separate dark card. No own background — it inherits the
+   controls surface. */
 .video-trim-bar {
-  background: alpha(black, 0.55);
-  padding: 6px 14px 4px 14px;
+  padding: 4px 14px 0 14px;
 }
 
 /* Playlist rows — use named colors for theme integration */
