@@ -35,11 +35,21 @@ impl VideoShell {
         // (the OSD shares this same flag) and turn the seek bar into the cut
         // editor.
         self.osd.show();
-        // SetEditMode swaps the transport row for the trim controls inside the
-        // controls bar (no separate bar) and turns the seek bar into the cut editor.
+        // SetEditMode reveals the trim controls row (above the kept transport) and
+        // turns the seek bar into the dedicated cut timeline.
         self.controls.emit(VideoControlsBarInput::SetEditMode(true));
         self.trim
             .emit(VideoTrimBarInput::SetDuration(self.trim_duration()));
+        // Inset the video so the full frame shows above/below the pinned bars
+        // (deferred so the trim row's reveal animation has settled → real heights).
+        {
+            let main_overlay = self.main_overlay.clone();
+            let controls = self.osd.controls_revealer.clone();
+            let header = self.osd.header_revealer.clone();
+            glib::timeout_add_local_once(std::time::Duration::from_millis(350), move || {
+                apply_video_inset(&main_overlay, header.height().max(0), controls.height().max(0));
+            });
+        }
         if let Some(mpv) = self.mpv.borrow().as_ref() {
             self.trim.emit(VideoTrimBarInput::SetPlayhead(
                 mpv.get_property_f64("time-pos"),
@@ -52,6 +62,8 @@ impl VideoShell {
         self.trim_active.set(false);
         self.controls
             .emit(VideoControlsBarInput::SetEditMode(false));
+        // Restore edge-to-edge video.
+        apply_video_inset(&self.main_overlay, 0, 0);
         self.osd.show_and_schedule_hide();
     }
 
@@ -461,6 +473,25 @@ impl VideoShell {
                 .map_or(0.0, |mpv| mpv.get_property_f64("duration"))
                 .max(1.0)
         }
+    }
+}
+
+/// Inset the video layers (GraphicsOffload / GLArea / software Picture) of
+/// `overlay` by `top`/`bottom` margins so the full frame shows clear of the
+/// pinned trim bars; `(0, 0)` restores edge-to-edge. The OSD bars + welcome /
+/// buffering boxes are left untouched.
+fn apply_video_inset(overlay: &gtk::Overlay, top: i32, bottom: i32) {
+    let mut child = overlay.first_child();
+    while let Some(widget) = child {
+        let next = widget.next_sibling();
+        if widget.is::<gtk::GLArea>()
+            || widget.is::<gtk::Picture>()
+            || widget.is::<gtk::GraphicsOffload>()
+        {
+            widget.set_margin_top(top);
+            widget.set_margin_bottom(bottom);
+        }
+        child = next;
     }
 }
 
