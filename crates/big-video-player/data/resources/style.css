@@ -84,15 +84,20 @@ menubutton.osd-btn {
   border-radius: 50%;
   box-shadow: 0 1px 3px rgba(0,0,0,0.4);
 }
-/* Trim mode: a taller seek bar with room under the trough for the warning-colour
-   cut track painted along the bottom edge (see install_cut_overlay_draw). */
-.seek-scale.trim-editing {
-  min-height: 30px;
-}
+/* Trim mode: a slightly taller seek bar; the cut ranges recolour the trough in
+   the warning colour (painted by install_cut_overlay_draw). */
 .seek-scale.trim-editing trough,
 .seek-scale.trim-editing trough highlight {
-  min-height: 16px;
-  border-radius: 4px;
+  min-height: 12px;
+  border-radius: 3px;
+}
+
+/* Trim toolbar: a flat, full-width bar docked above the transport (embedded in
+   the bottom controls), NOT a floating rounded OSD card. A gentle scrim keeps it
+   readable over the video and blends into the transport below. */
+.video-trim-bar {
+  background: alpha(black, 0.55);
+  padding: 6px 14px 4px 14px;
 }
 
 /* Playlist rows — use named colors for theme integration */

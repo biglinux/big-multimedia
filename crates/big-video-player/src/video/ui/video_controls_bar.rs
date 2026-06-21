@@ -408,16 +408,16 @@ fn install_cut_overlay_draw(
         let duration = duration_secs.get().max(0.001);
         let w = f64::from(width);
         let h = f64::from(height);
-        // A cut track along the BOTTOM edge of the seek bar, in the Adwaita
-        // warning colour (#e5a50a) so the marked ranges read distinctly from the
-        // blue playback fill above.
-        let band_h = (h * 0.30).clamp(3.0, 6.0);
-        let band_top = h - band_h;
+        // Recolour the seek trough itself across each cut range, in the Adwaita
+        // warning colour (#e5a50a), so the marked spans read as part of the bar
+        // (not a separate track) and stand out from the blue playback fill.
+        let band_h = (h * 0.42).clamp(6.0, 12.0);
+        let band_top = (h - band_h) / 2.0;
         let x_for = |t: f64| (t / duration).clamp(0.0, 1.0) * w;
         for (start, end) in cut_segments.borrow().iter() {
             let x0 = x_for(*start);
             let x1 = x_for(*end);
-            cr.set_source_rgba(0.898, 0.647, 0.039, 0.95);
+            cr.set_source_rgba(0.898, 0.647, 0.039, 0.88);
             cr.rectangle(x0, band_top, (x1 - x0).max(2.0), band_h);
             let _ = cr.fill();
         }

@@ -141,25 +141,22 @@ impl Component for VideoShell {
         main_overlay.set_clip_overlay(&sw_picture, true);
         main_overlay.set_measure_overlay(&sw_picture, false);
 
+        // The bottom OSD cluster: the trim bar (hidden until trim mode) docked
+        // directly ABOVE the transport, so it reads as embedded in the player UI
+        // rather than a floating card over the video.
+        let trim_revealer = gtk::Revealer::builder()
+            .transition_type(gtk::RevealerTransitionType::SlideUp)
+            .reveal_child(false)
+            .child(trim.widget())
+            .build();
+        let bottom_cluster = gtk::Box::new(gtk::Orientation::Vertical, 0);
+        bottom_cluster.append(&trim_revealer);
+        bottom_cluster.append(controls.widget());
         let controls_revealer = gtk::Revealer::builder()
             .valign(gtk::Align::End)
             .transition_type(gtk::RevealerTransitionType::Crossfade)
             .reveal_child(!is_background)
-            .child(controls.widget())
-            .build();
-        if !is_background {
-            main_overlay.add_overlay(&controls_revealer);
-            main_overlay.set_measure_overlay(&controls_revealer, false);
-        }
-
-        // Trim bar: floats just above the transport, hidden until trim mode.
-        let trim_revealer = gtk::Revealer::builder()
-            .valign(gtk::Align::End)
-            .halign(gtk::Align::Fill)
-            .transition_type(gtk::RevealerTransitionType::SlideUp)
-            .reveal_child(false)
-            .margin_bottom(80)
-            .child(trim.widget())
+            .child(&bottom_cluster)
             .build();
         // Progress page: full-cover overlay while a clip export runs.
         let trim_progress_overlay = gtk::Box::builder()
@@ -174,8 +171,8 @@ impl Component for VideoShell {
         // not an over-screen panel; `trim_encode.group()` is parented there on
         // first open.
         if !is_background {
-            main_overlay.add_overlay(&trim_revealer);
-            main_overlay.set_measure_overlay(&trim_revealer, false);
+            main_overlay.add_overlay(&controls_revealer);
+            main_overlay.set_measure_overlay(&controls_revealer, false);
             main_overlay.add_overlay(&trim_progress_overlay);
             main_overlay.set_measure_overlay(&trim_progress_overlay, false);
         }

@@ -140,13 +140,11 @@ impl Component for VideoTrimBar {
     type Widgets = ();
 
     fn init_root() -> Self::Root {
+        // Flat, full-width bar docked above the transport (NOT a floating card):
+        // styling lives in `.video-trim-bar` (no `.osd` rounded/translucent card,
+        // no margins) so it reads as embedded in the player's bottom controls.
         let root = gtk::Box::new(gtk::Orientation::Vertical, 6);
-        root.add_css_class("osd");
-        root.add_css_class("toolbar");
         root.add_css_class("video-trim-bar");
-        root.set_margin_start(12);
-        root.set_margin_end(12);
-        root.set_margin_bottom(12);
         root
     }
 
