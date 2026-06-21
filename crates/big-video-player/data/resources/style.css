@@ -158,9 +158,11 @@ menubutton.osd-btn {
   padding: 0 2px;
 }
 
-/* Seek-bar hover preview popover (thumbnail frame + time/chapter) */
+/* Seek-bar hover preview popover (thumbnail frame + time/chapter).
+   Background comes from the theming provider's `popover > contents`
+   (@popover_bg_color, USER+1 priority) — so the text MUST follow the theme too,
+   else light theme = white text on a light popover (invisible). */
 .seek-preview > contents {
-  background: rgba(0,0,0,0.85);
   border-radius: 8px;
   padding: 6px;
   box-shadow: none;
@@ -169,7 +171,7 @@ menubutton.osd-btn {
   border-radius: 4px;
 }
 .seek-preview-time {
-  color: #ffffff;
+  color: @popover_fg_color;
   font-size: 12px;
   font-variant-numeric: tabular-nums;
   padding: 2px 4px;
