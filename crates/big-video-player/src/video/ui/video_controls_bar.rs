@@ -19,6 +19,7 @@ use std::rc::Rc;
 use std::sync::{Arc, Mutex};
 
 use adw::prelude::*;
+use gtk::glib;
 use relm4::{Component, ComponentParts, ComponentSender};
 
 use crate::i18n::i18n;
@@ -118,13 +119,18 @@ pub struct VideoControlsBar {
     /// Bottom OSD button-zone handles used by the Appearance dialog's live
     /// layout editor.
     button_layout: ButtonLayoutWidgets,
-    /// Trim-mode cut ranges painted over the seek bar (shared with the overlay
-    /// draw closure).
+    /// Trim-mode cut ranges shown on the dedicated cut timeline.
     cut_segments: Rc<RefCell<Vec<(f64, f64)>>>,
-    /// Input-transparent overlay painting [`Self::cut_segments`] on the seek bar.
-    cut_overlay: gtk::DrawingArea,
-    /// Swaps the transport button row ↔ the trim controls inside this bar.
-    content_stack: gtk::Stack,
+    /// Live playhead fraction `0..=1` (drives the cut-timeline playhead).
+    seek_fraction: Rc<Cell<f64>>,
+    /// Dedicated cut timeline (a fully-owned DrawingArea) shown IN PLACE of the
+    /// GtkScale during trim mode, so the cut ranges align exactly with the bar.
+    cut_timeline: gtk::DrawingArea,
+    /// Swaps the GtkScale ↔ the cut timeline in the seek row.
+    bar_stack: gtk::Stack,
+    /// Revealer for the trim controls — an EXTRA row above the transport (the
+    /// transport play/volume stay; the cut controls are added, not swapped in).
+    trim_controls_revealer: gtk::Revealer,
     /// Media duration in seconds (hover-preview time + chapter-mark fractions).
     duration_secs: Rc<Cell<f64>>,
     /// Chapter list (`time_secs`, `title`): seek-bar marks + hover chapter name.
@@ -193,21 +199,24 @@ impl Component for VideoControlsBar {
             .build();
         seek_bar.update_property(&[gtk::accessible::Property::Label(&i18n("Seek Position"))]);
 
-        // Trim-mode cut overlay: an input-transparent DrawingArea stacked over the
-        // seek bar that paints the marked cut ranges, so the user reads + edits the
-        // cuts on the real timeline instead of a separate one. Hidden until trim
-        // mode reveals it.
+        // Trim mode swaps the GtkScale for a dedicated cut timeline (a fully-owned
+        // DrawingArea) in the same seek row, so the cut ranges + playhead align
+        // exactly with the bar (no GtkScale trough-geometry guessing) and the
+        // timeline is the cut scrubber.
         let cut_segments: Rc<RefCell<Vec<(f64, f64)>>> = Rc::new(RefCell::new(Vec::new()));
-        let cut_overlay = gtk::DrawingArea::new();
-        cut_overlay.set_can_target(false);
-        cut_overlay.set_visible(false);
-        install_cut_overlay_draw(&cut_overlay, &cut_segments, &duration_secs);
-        let seek_overlay = gtk::Overlay::builder()
+        let seek_fraction = Rc::new(Cell::new(0.0_f64));
+        let cut_timeline = gtk::DrawingArea::builder()
             .hexpand(true)
-            .child(&seek_bar)
+            .height_request(20)
             .build();
-        seek_overlay.add_overlay(&cut_overlay);
-        seek_row.append(&seek_overlay);
+        cut_timeline.update_property(&[gtk::accessible::Property::Label(&i18n("Cut timeline"))]);
+        install_cut_timeline_draw(&cut_timeline, &cut_segments, &seek_fraction, &duration_secs);
+        wire_cut_timeline_seek(&cut_timeline, &sender);
+        let bar_stack = gtk::Stack::builder().hexpand(true).build();
+        bar_stack.add_named(&seek_bar, Some("seek"));
+        bar_stack.add_named(&cut_timeline, Some("cut"));
+        bar_stack.set_visible_child_name("seek");
+        seek_row.append(&bar_stack);
 
         let duration_label = gtk::Label::builder()
             .label("0:00")
@@ -260,16 +269,16 @@ impl Component for VideoControlsBar {
             fullscreen_btn: fullscreen_btn.clone(),
         };
 
-        // Swap the transport button row with the trim controls in trim mode, so
-        // the cut controls live inside this bar (no extra bar). The seek row above
-        // stays put (the cuts paint on it).
-        let content_stack = gtk::Stack::builder()
-            .transition_type(gtk::StackTransitionType::Crossfade)
+        // Trim controls = an EXTRA row above the transport (revealed in trim mode).
+        // The transport (play / volume / …) stays put — the cut controls are added,
+        // not swapped in.
+        let trim_controls_revealer = gtk::Revealer::builder()
+            .transition_type(gtk::RevealerTransitionType::SlideUp)
+            .reveal_child(false)
+            .child(&init.trim_content)
             .build();
-        content_stack.add_named(&center, Some("transport"));
-        content_stack.add_named(&init.trim_content, Some("trim"));
-        content_stack.set_visible_child_name("transport");
-        root.append(&content_stack);
+        root.append(&trim_controls_revealer);
+        root.append(&center);
 
         wire_signals(
             &sender,
@@ -295,8 +304,10 @@ impl Component for VideoControlsBar {
             hover_popovers,
             button_layout,
             cut_segments,
-            cut_overlay,
-            content_stack,
+            seek_fraction,
+            cut_timeline,
+            bar_stack,
+            trim_controls_revealer,
             duration_secs,
             chapters,
             current_file,
@@ -325,27 +336,26 @@ impl Component for VideoControlsBar {
                 self.suppress_seek.set(true);
                 self.seek_bar.set_value(value);
                 self.suppress_seek.set(false);
+                self.seek_fraction.set(value);
+                self.cut_timeline.queue_draw();
             }
             VideoControlsBarInput::SetTracks(tracks) => self.populate_track_menus(&tracks),
             VideoControlsBarInput::SetDurationSecs(secs) => {
                 self.duration_secs.set(secs);
                 self.render_chapter_marks();
-                self.cut_overlay.queue_draw();
+                self.cut_timeline.queue_draw();
             }
             VideoControlsBarInput::SetCutSegments(segments) => {
                 self.cut_segments.replace(segments);
-                self.cut_overlay.queue_draw();
+                self.cut_timeline.queue_draw();
             }
             VideoControlsBarInput::SetEditMode(on) => {
-                self.cut_overlay.set_visible(on);
-                if on {
-                    self.seek_bar.add_css_class("trim-editing");
-                    self.content_stack.set_visible_child_name("trim");
-                } else {
-                    self.seek_bar.remove_css_class("trim-editing");
-                    self.content_stack.set_visible_child_name("transport");
-                }
-                self.cut_overlay.queue_draw();
+                // Swap the GtkScale for the dedicated cut timeline + reveal the
+                // trim controls row above the (kept) transport.
+                self.bar_stack
+                    .set_visible_child_name(if on { "cut" } else { "seek" });
+                self.trim_controls_revealer.set_reveal_child(on);
+                self.cut_timeline.queue_draw();
             }
             VideoControlsBarInput::SetChapters(chapters) => {
                 self.chapters.replace(chapters);
@@ -413,33 +423,79 @@ impl VideoControlsBar {
     }
 }
 
-/// Paint the trim-mode cut ranges as accent bands over the seek bar, scaled by
-/// the media duration. Input-transparent, so the seek scale still scrubs.
-fn install_cut_overlay_draw(
+/// Draw the dedicated cut timeline: a track with the played portion, the marked
+/// cut ranges (Adwaita warning colour #e5a50a) and the playhead, scaled by the
+/// media duration. Fully owned, so the cut ranges align exactly with the bar.
+fn install_cut_timeline_draw(
     area: &gtk::DrawingArea,
     cut_segments: &Rc<RefCell<Vec<(f64, f64)>>>,
+    seek_fraction: &Rc<Cell<f64>>,
     duration_secs: &Rc<Cell<f64>>,
 ) {
     let cut_segments = cut_segments.clone();
+    let seek_fraction = seek_fraction.clone();
     let duration_secs = duration_secs.clone();
     area.set_draw_func(move |_area, cr, width, height| {
         let duration = duration_secs.get().max(0.001);
         let w = f64::from(width);
         let h = f64::from(height);
-        // Recolour the seek trough itself across each cut range, in the Adwaita
-        // warning colour (#e5a50a). The band spans most of the seek widget height
-        // so it covers the trough wherever GTK centres it (the slider's negative
-        // margin shifts the trough off the widget centre), reading as part of the
-        // bar rather than a separate track.
-        let band_top = h * 0.15;
-        let band_h = h * 0.70;
+        let track_h = (h * 0.5).clamp(6.0, 12.0);
+        let track_top = (h - track_h) / 2.0;
+        let frac = seek_fraction.get().clamp(0.0, 1.0);
         let x_for = |t: f64| (t / duration).clamp(0.0, 1.0) * w;
+
+        // Track background.
+        cr.set_source_rgba(1.0, 1.0, 1.0, 0.22);
+        cr.rectangle(0.0, track_top, w, track_h);
+        let _ = cr.fill();
+        // Played portion (accent blue).
+        cr.set_source_rgba(0.20, 0.52, 0.89, 0.95);
+        cr.rectangle(0.0, track_top, frac * w, track_h);
+        let _ = cr.fill();
+        // Cut ranges (warning colour).
         for (start, end) in cut_segments.borrow().iter() {
             let x0 = x_for(*start);
             let x1 = x_for(*end);
-            cr.set_source_rgba(0.898, 0.647, 0.039, 0.85);
-            cr.rectangle(x0, band_top, (x1 - x0).max(2.0), band_h);
+            cr.set_source_rgba(0.898, 0.647, 0.039, 0.95);
+            cr.rectangle(x0, track_top, (x1 - x0).max(2.0), track_h);
             let _ = cr.fill();
         }
+        // Playhead cursor.
+        cr.set_source_rgba(1.0, 1.0, 1.0, 1.0);
+        cr.rectangle(frac * w - 1.0, 0.0, 2.0, h);
+        let _ = cr.fill();
     });
+}
+
+/// Click + drag on the cut timeline emits a seek fraction (`0..=1`), so the cut
+/// timeline is the scrubber in trim mode.
+fn wire_cut_timeline_seek(area: &gtk::DrawingArea, sender: &ComponentSender<VideoControlsBar>) {
+    let click = gtk::GestureClick::new();
+    click.connect_released(glib::clone!(
+        #[strong]
+        sender,
+        #[weak]
+        area,
+        move |_, _, x, _| {
+            let w = f64::from(area.width()).max(1.0);
+            let _ = sender.output(VideoControlsBarOutput::SeekChanged((x / w).clamp(0.0, 1.0)));
+        }
+    ));
+    area.add_controller(click);
+
+    let drag = gtk::GestureDrag::new();
+    drag.connect_drag_update(glib::clone!(
+        #[strong]
+        sender,
+        #[weak]
+        area,
+        move |gesture, offset_x, _| {
+            if let Some((start_x, _)) = gesture.start_point() {
+                let w = f64::from(area.width()).max(1.0);
+                let frac = ((start_x + offset_x) / w).clamp(0.0, 1.0);
+                let _ = sender.output(VideoControlsBarOutput::SeekChanged(frac));
+            }
+        }
+    ));
+    area.add_controller(drag);
 }

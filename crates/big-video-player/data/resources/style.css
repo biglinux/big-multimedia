@@ -84,14 +84,6 @@ menubutton.osd-btn {
   border-radius: 50%;
   box-shadow: 0 1px 3px rgba(0,0,0,0.4);
 }
-/* Trim mode: a slightly taller seek bar; the cut ranges recolour the trough in
-   the warning colour (painted by install_cut_overlay_draw). */
-.seek-scale.trim-editing trough,
-.seek-scale.trim-editing trough highlight {
-  min-height: 12px;
-  border-radius: 3px;
-}
-
 /* Trim toolbar: a flat, transparent row docked directly above the transport so
    it sits IN the existing bottom controls (same surface as the seek bar +
    buttons), NOT a separate dark card. No own background — it inherits the
