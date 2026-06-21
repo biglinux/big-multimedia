@@ -584,7 +584,10 @@ fn wire_cut_timeline_interaction(
         duration_secs,
         #[weak]
         area,
-        move |_, start_x, _| {
+        move |gesture, start_x, _| {
+            // Claim the sequence so a drag on the timeline scrubs / adjusts a cut
+            // instead of bubbling to the video's window-move gesture.
+            gesture.set_state(gtk::EventSequenceState::Claimed);
             let w = f64::from(area.width()).max(1.0);
             let dur = duration_secs.get().max(0.001);
             let segs = cut_segments.borrow();
