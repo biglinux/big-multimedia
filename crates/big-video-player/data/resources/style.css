@@ -84,11 +84,14 @@ menubutton.osd-btn {
   border-radius: 50%;
   box-shadow: 0 1px 3px rgba(0,0,0,0.4);
 }
-/* Trim mode: a taller seek bar so the marked cuts (painted as accent bands over
-   the trough) are easy to read and edit on the real timeline. */
+/* Trim mode: a taller seek bar with room under the trough for the warning-colour
+   cut track painted along the bottom edge (see install_cut_overlay_draw). */
+.seek-scale.trim-editing {
+  min-height: 30px;
+}
 .seek-scale.trim-editing trough,
 .seek-scale.trim-editing trough highlight {
-  min-height: 18px;
+  min-height: 16px;
   border-radius: 4px;
 }
 
