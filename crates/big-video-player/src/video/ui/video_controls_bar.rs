@@ -76,10 +76,13 @@ pub enum VideoControlsBarInput {
     /// Set the path of the loaded media (so the hover preview can render a
     /// thumbnail frame); `None` clears it (e.g. a remote stream).
     SetCurrentFile(Option<String>),
-    /// Trim mode: the `(start, end)` cut ranges to paint over the seek bar so the
-    /// user edits the cuts on the real timeline (empty = clear).
-    SetCutSegments(Vec<(f64, f64)>),
-    /// Trim mode on/off — reveals the cut overlay + makes the seek bar taller.
+    /// Trim mode: each cut's `(id, start, end)` to paint on the cut timeline (and
+    /// hit-test for edge dragging); empty = clear.
+    SetCutSegments(Vec<(u64, f64, f64)>),
+    /// Trim mode: the pending first mark (drawn as a green guide), if any.
+    SetPendingMark(Option<f64>),
+    /// Trim mode on/off — swaps the seek scale for the cut timeline + reveals the
+    /// trim controls row.
     SetEditMode(bool),
 }
 
@@ -94,6 +97,15 @@ pub enum VideoControlsBarOutput {
     Previous,
     /// Scrub bar moved by the user; carries the raw `0.0..=1.0` fraction.
     SeekChanged(f64),
+    /// A cut's edge was dragged on the cut timeline → new `(start, end)`.
+    SegmentEdgeAdjusted {
+        /// Segment id.
+        id: u64,
+        /// New start (seconds).
+        start: f64,
+        /// New end (seconds).
+        end: f64,
+    },
     /// Fullscreen button clicked.
     ToggleFullscreen,
 }
@@ -119,8 +131,11 @@ pub struct VideoControlsBar {
     /// Bottom OSD button-zone handles used by the Appearance dialog's live
     /// layout editor.
     button_layout: ButtonLayoutWidgets,
-    /// Trim-mode cut ranges shown on the dedicated cut timeline.
-    cut_segments: Rc<RefCell<Vec<(f64, f64)>>>,
+    /// Trim-mode cuts `(id, start, end)` shown on the cut timeline + hit-tested
+    /// for edge dragging.
+    cut_segments: Rc<RefCell<Vec<(u64, f64, f64)>>>,
+    /// Pending first mark (green guide) on the cut timeline.
+    pending_mark: Rc<RefCell<Option<f64>>>,
     /// Live playhead fraction `0..=1` (drives the cut-timeline playhead).
     seek_fraction: Rc<Cell<f64>>,
     /// Dedicated cut timeline (a fully-owned DrawingArea) shown IN PLACE of the
@@ -203,15 +218,22 @@ impl Component for VideoControlsBar {
         // DrawingArea) in the same seek row, so the cut ranges + playhead align
         // exactly with the bar (no GtkScale trough-geometry guessing) and the
         // timeline is the cut scrubber.
-        let cut_segments: Rc<RefCell<Vec<(f64, f64)>>> = Rc::new(RefCell::new(Vec::new()));
+        let cut_segments: Rc<RefCell<Vec<(u64, f64, f64)>>> = Rc::new(RefCell::new(Vec::new()));
+        let pending_mark: Rc<RefCell<Option<f64>>> = Rc::new(RefCell::new(None));
         let seek_fraction = Rc::new(Cell::new(0.0_f64));
         let cut_timeline = gtk::DrawingArea::builder()
             .hexpand(true)
             .height_request(20)
             .build();
         cut_timeline.update_property(&[gtk::accessible::Property::Label(&i18n("Cut timeline"))]);
-        install_cut_timeline_draw(&cut_timeline, &cut_segments, &seek_fraction, &duration_secs);
-        wire_cut_timeline_seek(&cut_timeline, &sender);
+        install_cut_timeline_draw(
+            &cut_timeline,
+            &cut_segments,
+            &pending_mark,
+            &seek_fraction,
+            &duration_secs,
+        );
+        wire_cut_timeline_interaction(&cut_timeline, &cut_segments, &duration_secs, &sender);
         let bar_stack = gtk::Stack::builder().hexpand(true).build();
         bar_stack.add_named(&seek_bar, Some("seek"));
         bar_stack.add_named(&cut_timeline, Some("cut"));
@@ -312,6 +334,7 @@ impl Component for VideoControlsBar {
             hover_popovers,
             button_layout,
             cut_segments,
+            pending_mark,
             seek_fraction,
             cut_timeline,
             bar_stack,
@@ -355,6 +378,10 @@ impl Component for VideoControlsBar {
             }
             VideoControlsBarInput::SetCutSegments(segments) => {
                 self.cut_segments.replace(segments);
+                self.cut_timeline.queue_draw();
+            }
+            VideoControlsBarInput::SetPendingMark(mark) => {
+                self.pending_mark.replace(mark);
                 self.cut_timeline.queue_draw();
             }
             VideoControlsBarInput::SetEditMode(on) => {
@@ -431,16 +458,18 @@ impl VideoControlsBar {
     }
 }
 
-/// Draw the dedicated cut timeline: a track with the played portion, the marked
-/// cut ranges (Adwaita warning colour #e5a50a) and the playhead, scaled by the
-/// media duration. Fully owned, so the cut ranges align exactly with the bar.
+/// Draw the cut timeline: track + played portion + cut ranges (warning colour) +
+/// the pending first mark (green guide) + the playhead. Fully owned, exact
+/// geometry, so the cuts align with the bar.
 fn install_cut_timeline_draw(
     area: &gtk::DrawingArea,
-    cut_segments: &Rc<RefCell<Vec<(f64, f64)>>>,
+    cut_segments: &Rc<RefCell<Vec<(u64, f64, f64)>>>,
+    pending_mark: &Rc<RefCell<Option<f64>>>,
     seek_fraction: &Rc<Cell<f64>>,
     duration_secs: &Rc<Cell<f64>>,
 ) {
     let cut_segments = cut_segments.clone();
+    let pending_mark = pending_mark.clone();
     let seek_fraction = seek_fraction.clone();
     let duration_secs = duration_secs.clone();
     area.set_draw_func(move |area, cr, width, height| {
@@ -469,11 +498,17 @@ fn install_cut_timeline_draw(
         rounded_rect(cr, 0.0, track_top, frac * w, track_h, r);
         let _ = cr.fill();
         // Cut ranges (Adwaita warning colour).
-        for (start, end) in cut_segments.borrow().iter() {
+        for (_, start, end) in cut_segments.borrow().iter() {
             let x0 = x_for(*start);
             let x1 = x_for(*end);
             cr.set_source_rgba(0.898, 0.647, 0.039, 0.95);
             rounded_rect(cr, x0, track_top, (x1 - x0).max(2.0), track_h, r);
+            let _ = cr.fill();
+        }
+        // Pending first mark — a green guide line awaiting its pair.
+        if let Some(mark) = *pending_mark.borrow() {
+            cr.set_source_rgba(0.18, 0.76, 0.35, 1.0);
+            cr.rectangle(x_for(mark) - 1.0, 0.0, 2.0, h);
             let _ = cr.fill();
         }
         // Playhead cursor.
@@ -483,37 +518,159 @@ fn install_cut_timeline_draw(
     });
 }
 
-/// Click + drag on the cut timeline emits a seek fraction (`0..=1`), so the cut
-/// timeline is the scrubber in trim mode.
-fn wire_cut_timeline_seek(area: &gtk::DrawingArea, sender: &ComponentSender<VideoControlsBar>) {
+const EDGE_GRAB_PX: f64 = 8.0;
+
+/// Cut-timeline pointer interaction: drag a cut's start/end edge (within
+/// [`EDGE_GRAB_PX`] of the boundary) to adjust it, otherwise click/drag to seek;
+/// the cursor becomes a resize handle near an edge.
+fn wire_cut_timeline_interaction(
+    area: &gtk::DrawingArea,
+    cut_segments: &Rc<RefCell<Vec<(u64, f64, f64)>>>,
+    duration_secs: &Rc<Cell<f64>>,
+    sender: &ComponentSender<VideoControlsBar>,
+) {
+    // The edge grabbed during a drag: `(segment id, is_end)`.
+    let grab: Rc<Cell<Option<(u64, bool)>>> = Rc::new(Cell::new(None));
+
+    // Plain click → seek, unless it lands on a cut edge (then it's an adjust).
     let click = gtk::GestureClick::new();
     click.connect_released(glib::clone!(
         #[strong]
         sender,
+        #[strong]
+        cut_segments,
+        #[strong]
+        duration_secs,
         #[weak]
         area,
         move |_, _, x, _| {
             let w = f64::from(area.width()).max(1.0);
+            let dur = duration_secs.get().max(0.001);
+            if edge_near(&cut_segments.borrow(), x, w, dur, EDGE_GRAB_PX).is_some() {
+                return;
+            }
             let _ = sender.output(VideoControlsBarOutput::SeekChanged((x / w).clamp(0.0, 1.0)));
         }
     ));
     area.add_controller(click);
 
     let drag = gtk::GestureDrag::new();
+    drag.connect_drag_begin(glib::clone!(
+        #[strong]
+        grab,
+        #[strong]
+        cut_segments,
+        #[strong]
+        duration_secs,
+        #[weak]
+        area,
+        move |_, start_x, _| {
+            let w = f64::from(area.width()).max(1.0);
+            let dur = duration_secs.get().max(0.001);
+            grab.set(edge_near(
+                &cut_segments.borrow(),
+                start_x,
+                w,
+                dur,
+                EDGE_GRAB_PX,
+            ));
+        }
+    ));
     drag.connect_drag_update(glib::clone!(
         #[strong]
         sender,
+        #[strong]
+        grab,
+        #[strong]
+        cut_segments,
+        #[strong]
+        duration_secs,
         #[weak]
         area,
         move |gesture, offset_x, _| {
-            if let Some((start_x, _)) = gesture.start_point() {
-                let w = f64::from(area.width()).max(1.0);
-                let frac = ((start_x + offset_x) / w).clamp(0.0, 1.0);
+            let Some((start_x, _)) = gesture.start_point() else {
+                return;
+            };
+            let w = f64::from(area.width()).max(1.0);
+            let frac = ((start_x + offset_x) / w).clamp(0.0, 1.0);
+            if let Some((id, is_end)) = grab.get() {
+                let time = frac * duration_secs.get().max(0.001);
+                {
+                    let mut segs = cut_segments.borrow_mut();
+                    if let Some((_, s, e)) = segs.iter_mut().find(|(sid, _, _)| *sid == id) {
+                        if is_end {
+                            *e = time.max(*s + 0.05);
+                        } else {
+                            *s = time.min(*e - 0.05);
+                        }
+                    }
+                }
+                area.queue_draw();
+            } else {
                 let _ = sender.output(VideoControlsBarOutput::SeekChanged(frac));
             }
         }
     ));
+    drag.connect_drag_end(glib::clone!(
+        #[strong]
+        sender,
+        #[strong]
+        grab,
+        #[strong]
+        cut_segments,
+        move |_, _, _| {
+            if let Some((id, _)) = grab.replace(None) {
+                if let Some((_, s, e)) = cut_segments.borrow().iter().find(|(sid, _, _)| *sid == id)
+                {
+                    let _ = sender.output(VideoControlsBarOutput::SegmentEdgeAdjusted {
+                        id,
+                        start: *s,
+                        end: *e,
+                    });
+                }
+            }
+        }
+    ));
     area.add_controller(drag);
+
+    // Hover near an edge → resize cursor.
+    let motion = gtk::EventControllerMotion::new();
+    motion.connect_motion(glib::clone!(
+        #[strong]
+        cut_segments,
+        #[strong]
+        duration_secs,
+        #[weak]
+        area,
+        move |_, x, _| {
+            let w = f64::from(area.width()).max(1.0);
+            let dur = duration_secs.get().max(0.001);
+            let near = edge_near(&cut_segments.borrow(), x, w, dur, EDGE_GRAB_PX).is_some();
+            area.set_cursor_from_name(Some(if near { "ew-resize" } else { "default" }));
+        }
+    ));
+    area.add_controller(motion);
+}
+
+/// The cut edge `(segment id, is_end)` within `thresh` px of `x`, nearest first.
+fn edge_near(
+    segments: &[(u64, f64, f64)],
+    x: f64,
+    w: f64,
+    duration: f64,
+    thresh: f64,
+) -> Option<(u64, bool)> {
+    let mut best: Option<(u64, bool, f64)> = None;
+    for (id, start, end) in segments {
+        for (is_end, t) in [(false, *start), (true, *end)] {
+            let edge_x = (t / duration).clamp(0.0, 1.0) * w;
+            let dist = (x - edge_x).abs();
+            if dist <= thresh && best.is_none_or(|(_, _, best_dist)| dist < best_dist) {
+                best = Some((*id, is_end, dist));
+            }
+        }
+    }
+    best.map(|(id, is_end, _)| (id, is_end))
 }
 
 /// Append a rounded-rectangle sub-path to `cr` (used for the cut-timeline track).

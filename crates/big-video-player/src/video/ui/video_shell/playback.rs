@@ -372,6 +372,10 @@ impl VideoShell {
             }
             return;
         }
+        if let VideoControlsBarOutput::SegmentEdgeAdjusted { id, start, end } = out {
+            self.adjust_trim_segment(id, start, end);
+            return;
+        }
         let mpv_ref = self.mpv.borrow();
         let Some(mpv) = mpv_ref.as_ref() else {
             return;
@@ -385,7 +389,9 @@ impl VideoShell {
                     mpv.seek_absolute(target);
                 }
             }
-            VideoControlsBarOutput::ToggleFullscreen => {}
+            // Handled before the mpv borrow above (early return).
+            VideoControlsBarOutput::ToggleFullscreen
+            | VideoControlsBarOutput::SegmentEdgeAdjusted { .. } => {}
         }
     }
 

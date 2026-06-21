@@ -47,7 +47,11 @@ impl VideoShell {
             let controls = self.osd.controls_revealer.clone();
             let header = self.osd.header_revealer.clone();
             glib::timeout_add_local_once(std::time::Duration::from_millis(350), move || {
-                apply_video_inset(&main_overlay, header.height().max(0), controls.height().max(0));
+                apply_video_inset(
+                    &main_overlay,
+                    header.height().max(0),
+                    controls.height().max(0),
+                );
             });
         }
         if let Some(mpv) = self.mpv.borrow().as_ref() {
@@ -65,6 +69,18 @@ impl VideoShell {
         // Restore edge-to-edge video.
         apply_video_inset(&self.main_overlay, 0, 0);
         self.osd.show_and_schedule_hide();
+    }
+
+    /// Apply a cut's new times after the user dragged its edge on the cut
+    /// timeline (forwarded from the controls bar).
+    pub(in crate::video::ui::video_shell) fn adjust_trim_segment(
+        &self,
+        id: u64,
+        start: f64,
+        end: f64,
+    ) {
+        self.trim
+            .emit(VideoTrimBarInput::SetSegmentTimes(id, start, end));
     }
 
     /// Push the live playhead to the trim bar (called from the position tick
@@ -104,9 +120,11 @@ impl VideoShell {
         sender: &ComponentSender<Self>,
     ) {
         match out {
-            VideoTrimBarOutput::SegmentsChanged(ranges) => {
+            VideoTrimBarOutput::SegmentsChanged { segments, pending } => {
                 self.controls
-                    .emit(VideoControlsBarInput::SetCutSegments(ranges));
+                    .emit(VideoControlsBarInput::SetCutSegments(segments));
+                self.controls
+                    .emit(VideoControlsBarInput::SetPendingMark(pending));
             }
             VideoTrimBarOutput::EditSegment { id, start, end } => {
                 if let Some(root) = root {

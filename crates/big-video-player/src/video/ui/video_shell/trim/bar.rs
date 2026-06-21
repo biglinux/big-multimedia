@@ -53,8 +53,14 @@ pub enum VideoTrimBarInput {
 /// Typed effects the shell acts on.
 #[derive(Debug)]
 pub enum VideoTrimBarOutput {
-    /// The raw per-segment ranges changed — repaint the transport seek bar.
-    SegmentsChanged(Vec<(f64, f64)>),
+    /// The cut state changed — repaint the cut timeline. Carries each segment's
+    /// `(id, start, end)` (for edge-drag addressing) plus the pending first mark.
+    SegmentsChanged {
+        /// Per-segment `(id, start, end)`.
+        segments: Vec<(u64, f64, f64)>,
+        /// First mark awaiting its pair (drawn as a green guide), if any.
+        pending: Option<f64>,
+    },
     /// Open the manual time-edit form for this segment (seeded with its times).
     EditSegment {
         /// Segment id.
@@ -91,10 +97,14 @@ pub struct VideoTrimBar {
 
 impl VideoTrimBar {
     fn refresh(&self, sender: &ComponentSender<Self>) {
-        let (ranges, has_segments, count, pending, exportable, busy) = {
+        let (segments, has_segments, count, pending, exportable, busy) = {
             let state = self.state.borrow();
             (
-                state.segment_ranges(),
+                state
+                    .segments
+                    .iter()
+                    .map(|s| (s.id, s.start, s.end))
+                    .collect::<Vec<_>>(),
                 !state.segments.is_empty(),
                 state.segments.len(),
                 state.pending,
@@ -129,8 +139,8 @@ impl VideoTrimBar {
             None => i18n("Press M (or Mark) at the start and end of a cut"),
         });
         self.export_btn.set_sensitive(exportable && !busy);
-        // Tell the shell to repaint the seek-bar cut overlay.
-        let _ = sender.output(VideoTrimBarOutput::SegmentsChanged(ranges));
+        // Tell the shell to repaint the cut timeline (segments + pending mark).
+        let _ = sender.output(VideoTrimBarOutput::SegmentsChanged { segments, pending });
     }
 }
 
