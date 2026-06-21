@@ -103,10 +103,6 @@ impl Component for VideoShell {
             })
             .forward(sender.input_sender(), VideoShellInput::Cast);
 
-        // Shared conversion-progress page shown full-cover while a clip export runs.
-        let trim_progress = BigConverterProgress::builder()
-            .launch(())
-            .forward(sender.input_sender(), VideoShellInput::TrimProgress);
         // Shared re-encode options (container/codec/quality) — same vocabulary as
         // the full converter, shown in the gear settings dialog (built lazily).
         let trim_encode = big_converter_ui::encode_options::EncodeOptions::new();
@@ -153,23 +149,49 @@ impl Component for VideoShell {
             .reveal_child(!is_background)
             .child(controls.widget())
             .build();
-        // Progress page: full-cover overlay while a clip export runs.
-        let trim_progress_overlay = gtk::Box::builder()
-            .orientation(gtk::Orientation::Vertical)
-            .hexpand(true)
-            .vexpand(true)
-            .visible(false)
-            .css_classes(["background"])
+        // Slim, non-blocking export-progress strip: a shared `BigProgressRow`
+        // (title · bar · percent/speed/ETA · Cancel) on a flat status bar docked
+        // DIRECTLY ABOVE the transport — so the user keeps watching the video and
+        // follows the cut progress in place (NOT the converter's full-cover page).
+        let trim_progress_row = BigProgressRow::new(
+            &big_relm4_components::list::progress_row::BigProgressRowSpec::indeterminate(
+                i18n("Generating cut…"),
+                String::new(),
+            )
+            .with_action(
+                big_relm4_components::list::progress_row::BigProgressRowActionSpec::new(
+                    "process-stop-symbolic",
+                    i18n("Cancel"),
+                ),
+            ),
+        );
+        if let Some(cancel) = trim_progress_row.action_button() {
+            cancel.connect_clicked(glib::clone!(
+                #[strong]
+                sender,
+                move |_| sender.input(VideoShellInput::TrimCancelExport)
+            ));
+        }
+        let trim_progress_strip = gtk::Box::new(gtk::Orientation::Vertical, 0);
+        trim_progress_strip.add_css_class("trim-progress");
+        trim_progress_strip.append(trim_progress_row.root());
+        let trim_progress_revealer = gtk::Revealer::builder()
+            .transition_type(gtk::RevealerTransitionType::SlideUp)
+            .reveal_child(false)
+            .child(&trim_progress_strip)
             .build();
-        trim_progress_overlay.append(trim_progress.widget());
+        // One bottom stack: the progress strip sits above the transport so it
+        // reads as an extension of the bottom controls, never covering the video.
+        let bottom_stack = gtk::Box::new(gtk::Orientation::Vertical, 0);
+        bottom_stack.set_valign(gtk::Align::End);
+        bottom_stack.append(&trim_progress_revealer);
+        bottom_stack.append(&controls_revealer);
         // Re-encode options (container/codec/quality) live in the gear dialog,
         // not an over-screen panel; `trim_encode.group()` is parented there on
         // first open.
         if !is_background {
-            main_overlay.add_overlay(&controls_revealer);
-            main_overlay.set_measure_overlay(&controls_revealer, false);
-            main_overlay.add_overlay(&trim_progress_overlay);
-            main_overlay.set_measure_overlay(&trim_progress_overlay, false);
+            main_overlay.add_overlay(&bottom_stack);
+            main_overlay.set_measure_overlay(&bottom_stack, false);
         }
 
         // Welcome screen: shown until the first file loads (hidden on
@@ -621,7 +643,7 @@ impl Component for VideoShell {
                 aspect_snap,
                 shell_input_token,
                 trim,
-                trim_progress,
+                trim_progress_row,
                 trim_encode,
                 trim_filters: Rc::new(RefCell::new(
                     big_media_runtime::converter::profiles::VideoFilters::default(),
@@ -630,7 +652,7 @@ impl Component for VideoShell {
                 trim_play_selection: Rc::new(Cell::new(false)),
                 trim_ranges: Rc::new(RefCell::new(Vec::new())),
                 trim_encode_dialog: Rc::new(RefCell::new(None)),
-                trim_progress_overlay,
+                trim_progress_revealer,
                 trim_active,
                 trim_queue: Rc::new(RefCell::new(None)),
             },
@@ -650,7 +672,7 @@ impl Component for VideoShell {
             VideoShellInput::EnterTrimMode => self.enter_trim_mode(),
             VideoShellInput::ExitTrimMode => self.exit_trim_mode(),
             VideoShellInput::TrimBar(out) => self.on_trim_bar(out, window_ref, &sender),
-            VideoShellInput::TrimProgress(out) => self.on_trim_progress(out),
+            VideoShellInput::TrimCancelExport => self.cancel_trim_export(),
             VideoShellInput::TrimMark => self.trim_mark(),
             VideoShellInput::TrimExportFinished(outcome) => self.finish_trim_export(outcome),
             VideoShellInput::ExtractAudio(codec) => self.extract_audio(&codec),

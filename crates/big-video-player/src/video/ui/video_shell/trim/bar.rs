@@ -17,7 +17,9 @@ use std::rc::Rc;
 
 use adw::prelude::*;
 use big_media_components::time::playback_time;
-use big_relm4_components::feedback::tooltip::icon_button;
+use big_relm4_components::feedback::tooltip::{
+    self, icon_button, icon_toggle_button, labeled_icon_button,
+};
 use gtk::glib;
 use relm4::{gtk, Component, ComponentParts, ComponentSender};
 
@@ -181,8 +183,14 @@ impl Component for VideoTrimBar {
             .child(&segments_strip)
             .build();
 
-        // ── mark controls ───────────────────────────────────────────────────
-        let mark_btn = labeled_button("bookmark-new-symbolic", &i18n("Mark"), &["flat"]);
+        // ── mark controls (every control carries a tooltip + accessible label
+        // via the shared tooltip helpers) ───────────────────────────────────
+        let mark_btn = labeled_icon_button(
+            "bookmark-new-symbolic",
+            &i18n("Mark"),
+            &i18n("Mark a cut point at the current position (M)"),
+            &["flat"],
+        );
         let clear_btn = icon_button(
             "user-trash-symbolic",
             &i18n("Clear all cuts"),
@@ -199,13 +207,12 @@ impl Component for VideoTrimBar {
             move |_| sender.input(VideoTrimBarInput::ClearSegments)
         ));
         // Play only the marked cuts (loops/skips to play just the segments).
-        let play_sel_btn = gtk::ToggleButton::builder()
-            .icon_name("media-playlist-repeat-symbolic")
-            .css_classes(["flat", "circular"])
-            .build();
-        play_sel_btn.update_property(&[gtk::accessible::Property::Label(&i18n(
-            "Play only the marked cuts",
-        ))]);
+        let play_sel_btn = icon_toggle_button(
+            "media-playlist-repeat-symbolic",
+            &i18n("Play only the marked cuts"),
+            false,
+            &["flat", "circular"],
+        );
         play_sel_btn.connect_toggled(glib::clone!(
             #[strong]
             sender,
@@ -237,6 +244,10 @@ impl Component for VideoTrimBar {
         );
         mode_group.add(adw::Toggle::builder().label(i18n("Re-encode")).build());
         mode_group.set_active(0);
+        tooltip::set(
+            &mode_group,
+            &i18n("Keep format copies the cut without re-encoding (fast); Re-encode applies the cut settings"),
+        );
         mode_group.connect_active_notify(glib::clone!(
             #[strong]
             sender,
@@ -291,6 +302,8 @@ impl Component for VideoTrimBar {
             .css_classes(["suggested-action", "pill"])
             .sensitive(false)
             .build();
+        export_btn.update_property(&[gtk::accessible::Property::Label(&i18n("Export"))]);
+        tooltip::set(&export_btn, &i18n("Export the marked cuts"));
         export_btn.connect_clicked(glib::clone!(
             #[strong]
             sender,
@@ -383,22 +396,6 @@ impl Component for VideoTrimBar {
     }
 }
 
-/// A flat icon+label button (novice-clear); the label is the accessible name.
-fn labeled_button(icon: &str, label: &str, css: &[&str]) -> gtk::Button {
-    let button = gtk::Button::builder()
-        .child(
-            &adw::ButtonContent::builder()
-                .icon_name(icon)
-                .label(label)
-                .build(),
-        )
-        .build();
-    for class in css {
-        button.add_css_class(class);
-    }
-    button
-}
-
 /// Build one segment chip: "00:05 – 00:12" (click to edit the times) + delete.
 fn build_segment_chip(
     id: u64,
@@ -418,6 +415,7 @@ fn build_segment_chip(
     edit_btn.update_property(&[gtk::accessible::Property::Description(&i18n(
         "Edit cut times",
     ))]);
+    tooltip::set(&edit_btn, &i18n("Edit cut times"));
     edit_btn.connect_clicked(glib::clone!(
         #[strong]
         sender,

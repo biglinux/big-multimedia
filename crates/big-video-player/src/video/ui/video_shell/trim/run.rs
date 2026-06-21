@@ -9,12 +9,12 @@ use adw::prelude::*;
 use gtk::glib;
 use relm4::{ComponentController, ComponentSender};
 
-use big_converter_ui::export::{build_single_export_queue, ui_progress_info, QuickExportChoice};
-use big_media_components::converter::progress::{
-    BigConverterProgressInput as ProgIn, BigConverterProgressOutput as ProgOut,
-};
+use big_converter_ui::export::{build_single_export_queue, QuickExportChoice};
+use big_media_components::time::playback_time;
+use big_media_runtime::converter::ffmpeg::progress::ProgressInfo;
 use big_media_runtime::converter::queue::{QueueMessage, SegmentOutputMode};
 use big_relm4_components::input::slider_row::{BigSliderRow, BigSliderRowSpec};
+use big_relm4_components::list::progress_row::BigProgressRowSpec;
 
 use crate::i18n::i18n;
 use crate::video::ui::video_controls_bar::VideoControlsBarInput;
@@ -228,55 +228,45 @@ impl VideoShell {
             queue.set_pending_segment_mode(SegmentOutputMode::Split);
         }
 
-        // Progress page: one row for this file.
-        self.trim_progress.emit(ProgIn::Reset);
-        self.trim_progress
-            .emit(ProgIn::SetItems(vec![(id, input.clone())]));
-        self.trim_progress.emit(ProgIn::SetCurrentFile(
-            input
-                .file_name()
-                .and_then(|n| n.to_str())
-                .unwrap_or_default()
-                .to_string(),
-        ));
-        self.trim_progress_overlay.set_visible(true);
+        let _ = id;
+        // Slim strip: start indeterminate, reveal it above the transport. The
+        // video keeps playing behind it.
+        let title = i18n("Generating cut…");
+        self.trim_progress_row
+            .update(&BigProgressRowSpec::indeterminate(
+                title.clone(),
+                String::new(),
+            ));
+        self.trim_progress_revealer.set_reveal_child(true);
         self.trim.emit(VideoTrimBarInput::SetBusy(true));
 
         queue.start();
         let receiver = queue.receiver().clone();
         *self.trim_queue.borrow_mut() = Some(queue);
 
-        let progress = self.trim_progress.sender().clone();
+        // Drive the strip directly (local future = main thread; the row holds GTK
+        // widgets). No per-file rows / command log — just the live cut progress.
+        let row = self.trim_progress_row.clone();
         let shell = sender.input_sender().clone();
         glib::spawn_future_local(async move {
             let mut outcome: TrimExportOutcome = TrimExportOutcome::Ok;
             while let Ok(msg) = receiver.recv().await {
                 match msg {
-                    QueueMessage::Started { item_id, command } => {
-                        let _ = progress.send(ProgIn::SetCommand(item_id, command));
+                    QueueMessage::Progress { info, .. } => {
+                        let (fraction, status) = trim_progress_status(&info);
+                        row.update(&BigProgressRowSpec::determinate(
+                            title.clone(),
+                            fraction,
+                            status,
+                        ));
                     }
-                    QueueMessage::Progress { item_id, info } => {
-                        let _ =
-                            progress.send(ProgIn::UpdateProgress(item_id, ui_progress_info(&info)));
-                    }
-                    QueueMessage::StderrLine { item_id, line } => {
-                        let _ = progress.send(ProgIn::AppendStderrLine(item_id, line));
-                    }
-                    QueueMessage::Done { item_id } => {
-                        let _ = progress.send(ProgIn::MarkDone(item_id));
-                    }
-                    QueueMessage::Failed { item_id, error } => {
-                        let _ = progress.send(ProgIn::MarkFailed(item_id, error.clone()));
+                    QueueMessage::Failed { error, .. } => {
                         outcome = TrimExportOutcome::Failed(error);
                     }
-                    QueueMessage::Cancelled { item_id } => {
-                        let _ = progress.send(ProgIn::MarkCancelled(item_id));
+                    QueueMessage::Cancelled { .. } => {
                         outcome = TrimExportOutcome::Cancelled;
                     }
-                    QueueMessage::AllDone => {
-                        let _ = progress.send(ProgIn::ShowComplete);
-                        break;
-                    }
+                    QueueMessage::AllDone => break,
                     _ => {}
                 }
             }
@@ -476,23 +466,13 @@ impl VideoShell {
         window.present();
     }
 
-    /// React to the progress page's own buttons (Back dismisses; Cancel aborts).
-    pub(in crate::video::ui::video_shell) fn on_trim_progress(&mut self, out: ProgOut) {
-        match out {
-            ProgOut::Back => self.trim_progress_overlay.set_visible(false),
-            ProgOut::CancelAll | ProgOut::CancelItem(_) => {
-                if let Some(queue) = self.trim_queue.borrow().as_ref() {
-                    queue.cancel();
-                }
-            }
-        }
-    }
-
-    /// Finish an export: re-enable the bar, drop the queue, toast the outcome.
+    /// Finish an export: hide the strip, re-enable the bar, drop the queue,
+    /// toast the outcome.
     pub(in crate::video::ui::video_shell) fn finish_trim_export(
         &mut self,
         outcome: TrimExportOutcome,
     ) {
+        self.trim_progress_revealer.set_reveal_child(false);
         self.trim.emit(VideoTrimBarInput::SetBusy(false));
         *self.trim_queue.borrow_mut() = None;
         match outcome {
@@ -502,8 +482,6 @@ impl VideoShell {
                 self.notify(&format!("{}: {error}", i18n("Export failed")));
             }
         }
-        // The progress page keeps its completion banner up; the user dismisses it
-        // with its Back button (→ on_trim_progress hides the overlay).
     }
 
     /// Cancel any in-flight export (used on teardown so a closing window does not
@@ -540,6 +518,21 @@ impl VideoShell {
                 .max(1.0)
         }
     }
+}
+
+/// Build the slim strip's `(fraction, status)` from a queue progress sample:
+/// `42% · 1.8× · ETA 0:12`. Speed/ETA are dropped when unknown (e.g. the
+/// near-instant stream-copy of the fast path).
+fn trim_progress_status(info: &ProgressInfo) -> (f64, String) {
+    let fraction = (info.percent / 100.0).clamp(0.0, 1.0);
+    let mut parts = vec![format!("{:.0}%", info.percent)];
+    if info.speed > 0.0 {
+        parts.push(format!("{:.1}×", info.speed));
+    }
+    if info.eta_secs > 0.0 {
+        parts.push(format!("ETA {}", playback_time(info.eta_secs)));
+    }
+    (fraction, parts.join(" · "))
 }
 
 /// Inset the video layers (GraphicsOffload / GLArea / software Picture) of

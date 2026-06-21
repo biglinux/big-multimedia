@@ -42,11 +42,11 @@ use crate::video::ui::video_controls_bar::{
     VideoControlsBar, VideoControlsBarInit, VideoControlsBarInput, VideoControlsBarOutput,
 };
 use big_app_kit::file_dialogs::FilePicker;
-use big_media_components::converter::progress::BigConverterProgress;
 use big_media_components::media::files::VIDEO_EXTENSIONS;
 use big_media_components::time::playback_time;
 use big_media_runtime::converter::queue::ConversionQueue;
 use big_relm4_components::list::navigation_row::{BigNavigationRow, BigNavigationRowSpec};
+use big_relm4_components::list::progress_row::BigProgressRow;
 
 /// OSD auto-hide delay after the last pointer activity (mirrors the old
 /// `HIDE_DELAY_MS`).
@@ -159,8 +159,9 @@ pub struct VideoShell {
     shell_input_token: input::ShellInputToken,
     /// Interactive trim bar (bottom overlay), shown only in trim mode.
     trim: Controller<trim::VideoTrimBar>,
-    /// Shared conversion-progress page, shown as an overlay during clip export.
-    trim_progress: Controller<BigConverterProgress>,
+    /// Slim inline export-progress row (title · bar · percent/speed/ETA · Cancel),
+    /// docked just above the transport so the video stays visible during export.
+    trim_progress_row: BigProgressRow,
     /// Shared re-encode options (container/codec/quality) — same vocabulary as
     /// the full converter; shown in the re-encode settings dialog.
     trim_encode: big_converter_ui::encode_options::EncodeOptions,
@@ -174,8 +175,8 @@ pub struct VideoShell {
     trim_ranges: Rc<RefCell<Vec<(f64, f64)>>>,
     /// Reused re-encode settings window (built lazily on the gear).
     trim_encode_dialog: Rc<RefCell<Option<adw::Window>>>,
-    /// Full-cover overlay hosting the progress page while an export runs.
-    trim_progress_overlay: gtk::Box,
+    /// Reveals the slim export-progress strip (non-blocking, video stays visible).
+    trim_progress_revealer: gtk::Revealer,
     /// True while interactive trim mode is active. Shared (`Rc`) with the OSD pin
     /// and the trim key controller.
     trim_active: Rc<Cell<bool>>,

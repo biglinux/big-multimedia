@@ -2,8 +2,6 @@ use super::*;
 
 use std::sync::atomic::{AtomicU64, Ordering};
 
-use big_media_components::converter::progress::BigConverterProgressOutput;
-
 use super::trim::{TrimExportOutcome, VideoTrimBarOutput};
 
 #[derive(Debug)]
@@ -102,8 +100,8 @@ pub enum VideoShellInput {
     ExitTrimMode,
     /// A typed effect emitted by the trim bar (seek preview / export / exit).
     TrimBar(VideoTrimBarOutput),
-    /// A button on the clip-export progress page (back / cancel).
-    TrimProgress(BigConverterProgressOutput),
+    /// Cancel the in-flight clip export (slim progress strip's Cancel button).
+    TrimCancelExport,
     /// Mark a cut point at the live playback position (keyboard `M`). Two marks
     /// (in any order) make a cut.
     TrimMark,
