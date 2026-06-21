@@ -15,16 +15,3 @@ mod state;
 
 pub(super) use bar::{VideoTrimBar, VideoTrimBarOutput};
 pub(super) use run::TrimExportOutcome;
-
-/// Which boundary a keyboard mark sets. The shell reads the live mpv `time-pos`
-/// and forwards the exact time to the bar. Public because it travels in the
-/// public [`super::VideoShellInput`] enum.
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
-pub enum TrimMarkKind {
-    /// Segment start.
-    In,
-    /// Segment end (commits the segment).
-    Out,
-    /// Toggle in→out.
-    Quick,
-}

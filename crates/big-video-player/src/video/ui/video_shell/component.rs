@@ -104,7 +104,7 @@ impl Component for VideoShell {
             .launch(())
             .forward(sender.input_sender(), VideoShellInput::TrimProgress);
         // Shared re-encode options (container/codec/quality) — same vocabulary as
-        // the full converter, shown in a right panel during precise trim export.
+        // the full converter, shown in the gear settings dialog (built lazily).
         let trim_encode = big_converter_ui::encode_options::EncodeOptions::new();
 
         // Video surface: a black bg box is the overlay's main child; the GLArea
@@ -170,36 +170,12 @@ impl Component for VideoShell {
             .css_classes(["background"])
             .build();
         trim_progress_overlay.append(trim_progress.widget());
-        // Right encode-options panel (revealed on precise trim mode).
-        let trim_panel_box = gtk::Box::builder()
-            .orientation(gtk::Orientation::Vertical)
-            .spacing(6)
-            .width_request(300)
-            .css_classes(["osd", "toolbar"])
-            .margin_top(60)
-            .margin_bottom(96)
-            .margin_end(12)
-            .build();
-        let panel_heading = gtk::Label::builder()
-            .label(i18n("Re-encode"))
-            .css_classes(["heading"])
-            .halign(gtk::Align::Start)
-            .margin_start(6)
-            .build();
-        trim_panel_box.append(&panel_heading);
-        trim_panel_box.append(trim_encode.group());
-        let trim_panel_revealer = gtk::Revealer::builder()
-            .halign(gtk::Align::End)
-            .valign(gtk::Align::Fill)
-            .transition_type(gtk::RevealerTransitionType::SlideLeft)
-            .reveal_child(false)
-            .child(&trim_panel_box)
-            .build();
+        // Re-encode options (container/codec/quality) live in the gear dialog,
+        // not an over-screen panel; `trim_encode.group()` is parented there on
+        // first open.
         if !is_background {
             main_overlay.add_overlay(&trim_revealer);
             main_overlay.set_measure_overlay(&trim_revealer, false);
-            main_overlay.add_overlay(&trim_panel_revealer);
-            main_overlay.set_measure_overlay(&trim_panel_revealer, false);
             main_overlay.add_overlay(&trim_progress_overlay);
             main_overlay.set_measure_overlay(&trim_progress_overlay, false);
         }
@@ -656,7 +632,11 @@ impl Component for VideoShell {
                 trim_progress,
                 trim_revealer,
                 trim_encode,
-                trim_panel_revealer,
+                trim_filters: Rc::new(RefCell::new(
+                    big_media_runtime::converter::profiles::VideoFilters::default(),
+                )),
+                trim_split: Rc::new(Cell::new(false)),
+                trim_encode_dialog: Rc::new(RefCell::new(None)),
                 trim_progress_overlay,
                 trim_active,
                 trim_queue: Rc::new(RefCell::new(None)),
@@ -676,9 +656,9 @@ impl Component for VideoShell {
             VideoShellInput::Playlist(out) => self.on_playlist(out),
             VideoShellInput::EnterTrimMode => self.enter_trim_mode(),
             VideoShellInput::ExitTrimMode => self.exit_trim_mode(),
-            VideoShellInput::TrimBar(out) => self.on_trim_bar(out, &sender),
+            VideoShellInput::TrimBar(out) => self.on_trim_bar(out, window_ref, &sender),
             VideoShellInput::TrimProgress(out) => self.on_trim_progress(out),
-            VideoShellInput::TrimMark(kind) => self.trim_mark(kind),
+            VideoShellInput::TrimMark => self.trim_mark(),
             VideoShellInput::TrimExportFinished(outcome) => self.finish_trim_export(outcome),
             VideoShellInput::ExtractAudio(codec) => self.extract_audio(&codec),
             VideoShellInput::QuickConvert(container) => self.quick_convert(&container),

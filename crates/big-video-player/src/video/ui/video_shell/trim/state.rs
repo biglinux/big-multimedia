@@ -1,6 +1,6 @@
-//! Pure trim-mode state: the set of clip segments the user has marked plus the
-//! pending in-point and the chosen cut mode. No GTK — unit-tested in isolation;
-//! [`super::bar`] renders it and [`super::run`] exports it.
+//! Pure trim-mode state: the marked clip segments + the pending first mark + the
+//! chosen cut mode. No GTK — unit-tested in isolation; [`super::bar`] renders it
+//! and [`super::run`] exports it.
 
 /// How a clip export turns the marked segments into a file.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, Default)]
@@ -14,7 +14,7 @@ pub enum CutMode {
 }
 
 /// One marked clip range, in seconds. `id` is stable for the row's lifetime so
-/// the UI can address a chip for deletion without index drift.
+/// the UI can address a chip for editing/deletion without index drift.
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct TrimSegment {
     /// Stable identifier for UI addressing.
@@ -25,15 +25,16 @@ pub struct TrimSegment {
     pub end: f64,
 }
 
-/// Marked segments + the in-progress in-point + cut mode. Pure logic.
+/// Marked segments + the pending first mark + cut mode. Pure logic.
 #[derive(Debug, Default)]
 pub struct TrimState {
     /// Total media duration (seconds); marks clamp to `[0, duration]`.
     pub duration: f64,
-    /// Live playhead used for the timeline cursor (seconds).
+    /// Live playhead (seconds).
     pub playhead: f64,
-    /// A set in-point awaiting an out-point (the half-open segment being marked).
-    pub pending_in: Option<f64>,
+    /// The first mark of a segment, awaiting its second. The user marks two
+    /// points in any order; the earlier becomes the start, the later the end.
+    pub pending: Option<f64>,
     /// Committed segments, in mark order.
     pub segments: Vec<TrimSegment>,
     /// Chosen cut mode.
@@ -53,35 +54,27 @@ impl TrimState {
         }
     }
 
-    /// Mark the in-point at `t` (replaces any prior pending in-point).
-    pub fn set_in(&mut self, t: f64) {
-        self.pending_in = Some(self.clamp(t));
-    }
-
-    /// Mark the out-point at `t`, committing `[pending_in, t]` as a segment.
-    /// Returns `false` (no commit) when no in-point is pending or `t` is not
-    /// strictly after it.
-    pub fn set_out(&mut self, t: f64) -> bool {
-        let end = self.clamp(t);
-        let Some(start) = self.pending_in else {
-            return false;
-        };
-        if end <= start {
-            return false;
-        }
-        self.push_segment(start, end);
-        self.pending_in = None;
-        true
-    }
-
-    /// `M`: when no in-point is pending, set one; otherwise close the segment at
-    /// `t`. Returns true when a segment was committed.
-    pub fn quick_mark(&mut self, t: f64) -> bool {
-        if self.pending_in.is_some() {
-            self.set_out(t)
-        } else {
-            self.set_in(t);
-            false
+    /// Mark a point. The first mark is held pending; the second commits a segment
+    /// spanning the two marks — **in either order** (mark the end first then the
+    /// start and the segment is still `[min, max]`). Returns true when a segment
+    /// was committed. A zero-length pair (two marks at the same time) is ignored
+    /// and keeps the pending mark.
+    pub fn mark(&mut self, t: f64) -> bool {
+        let t = self.clamp(t);
+        match self.pending {
+            None => {
+                self.pending = Some(t);
+                false
+            }
+            Some(first) => {
+                let (start, end) = if t >= first { (first, t) } else { (t, first) };
+                if end <= start {
+                    return false;
+                }
+                self.push_segment(start, end);
+                self.pending = None;
+                true
+            }
         }
     }
 
@@ -91,6 +84,24 @@ impl TrimState {
         self.segments.push(TrimSegment { id, start, end });
     }
 
+    /// Replace the times of the segment `id` (the manual-edit form). The pair is
+    /// clamped to `[0, duration]` and ordered; returns false when `id` is unknown
+    /// or the range is empty.
+    pub fn set_segment_times(&mut self, id: u64, a: f64, b: f64) -> bool {
+        let lo = self.clamp(a.min(b));
+        let hi = self.clamp(a.max(b));
+        if hi <= lo {
+            return false;
+        }
+        if let Some(seg) = self.segments.iter_mut().find(|s| s.id == id) {
+            seg.start = lo;
+            seg.end = hi;
+            true
+        } else {
+            false
+        }
+    }
+
     /// Remove the segment with `id`. Returns true when one was removed.
     pub fn delete(&mut self, id: u64) -> bool {
         let before = self.segments.len();
@@ -98,10 +109,10 @@ impl TrimState {
         self.segments.len() != before
     }
 
-    /// Drop every segment and any pending in-point.
+    /// Drop every segment and any pending mark.
     pub fn clear(&mut self) {
         self.segments.clear();
-        self.pending_in = None;
+        self.pending = None;
     }
 
     /// At least one committed segment exists → export is allowed.
@@ -110,11 +121,18 @@ impl TrimState {
         !self.segments.is_empty()
     }
 
+    /// Raw per-segment `(start, end)` ranges in mark order — for display on the
+    /// seek bar (NOT merged; each marked cut shows as itself).
+    #[must_use]
+    pub fn segment_ranges(&self) -> Vec<(f64, f64)> {
+        self.segments.iter().map(|s| (s.start, s.end)).collect()
+    }
+
     /// Export ranges as `(start, end)` pairs, sorted by start and with
     /// overlapping/touching ranges merged so the output never replays a span.
     #[must_use]
     pub fn export_ranges(&self) -> Vec<(f64, f64)> {
-        let mut ranges: Vec<(f64, f64)> = self.segments.iter().map(|s| (s.start, s.end)).collect();
+        let mut ranges = self.segment_ranges();
         ranges.sort_by(|a, b| a.0.total_cmp(&b.0));
         let mut merged: Vec<(f64, f64)> = Vec::with_capacity(ranges.len());
         for (start, end) in ranges {
@@ -138,57 +156,58 @@ mod tests {
         }
     }
 
-    /// Commit a segment via the in→out path (the only way segments are made).
-    fn mark(s: &mut TrimState, start: f64, end: f64) {
-        s.set_in(start);
-        assert!(s.set_out(end), "[{start}, {end}] should commit");
+    fn mark(s: &mut TrimState, a: f64, b: f64) {
+        assert!(!s.mark(a), "first mark is pending");
+        assert!(s.mark(b), "second mark commits");
     }
 
     #[test]
-    fn set_in_then_out_commits_one_segment() {
+    fn two_marks_commit_one_segment() {
         let mut s = state(100.0);
-        s.set_in(10.0);
-        assert!(s.set_out(25.0));
+        assert!(!s.mark(10.0));
+        assert_eq!(s.pending, Some(10.0));
+        assert!(s.mark(25.0));
         assert_eq!(s.segments.len(), 1);
-        assert_eq!(s.segments[0].start, 10.0);
-        assert_eq!(s.segments[0].end, 25.0);
-        assert!(s.pending_in.is_none());
+        assert_eq!((s.segments[0].start, s.segments[0].end), (10.0, 25.0));
+        assert!(s.pending.is_none());
     }
 
     #[test]
-    fn set_out_without_in_is_noop() {
+    fn marks_auto_order_when_end_marked_first() {
         let mut s = state(100.0);
-        assert!(!s.set_out(25.0));
+        s.mark(40.0); // user marks the END first
+        s.mark(15.0); // then the START
+        assert_eq!((s.segments[0].start, s.segments[0].end), (15.0, 40.0));
+    }
+
+    #[test]
+    fn duplicate_mark_keeps_pending() {
+        let mut s = state(100.0);
+        s.mark(20.0);
+        assert!(!s.mark(20.0)); // zero-length → ignored
+        assert_eq!(s.pending, Some(20.0));
         assert!(s.segments.is_empty());
-    }
-
-    #[test]
-    fn set_out_before_in_rejected() {
-        let mut s = state(100.0);
-        s.set_in(30.0);
-        assert!(!s.set_out(20.0));
-        // pending in-point survives a rejected out so the user can retry.
-        assert_eq!(s.pending_in, Some(30.0));
-        assert!(s.segments.is_empty());
-    }
-
-    #[test]
-    fn quick_mark_toggles_in_then_out() {
-        let mut s = state(100.0);
-        assert!(!s.quick_mark(5.0)); // sets in
-        assert_eq!(s.pending_in, Some(5.0));
-        assert!(s.quick_mark(15.0)); // closes segment
-        assert_eq!(s.segments.len(), 1);
-        assert!(s.pending_in.is_none());
     }
 
     #[test]
     fn marks_clamp_to_duration() {
         let mut s = state(40.0);
-        s.set_in(-5.0);
-        assert_eq!(s.pending_in, Some(0.0));
-        assert!(s.set_out(999.0));
-        assert_eq!(s.segments[0].end, 40.0);
+        s.mark(-5.0);
+        assert_eq!(s.pending, Some(0.0));
+        s.mark(999.0);
+        assert_eq!((s.segments[0].start, s.segments[0].end), (0.0, 40.0));
+    }
+
+    #[test]
+    fn set_segment_times_clamps_and_orders() {
+        let mut s = state(100.0);
+        mark(&mut s, 10.0, 20.0);
+        let id = s.segments[0].id;
+        // edit with reversed + out-of-range values → clamped + ordered.
+        assert!(s.set_segment_times(id, 55.5, 33.25));
+        assert_eq!((s.segments[0].start, s.segments[0].end), (33.25, 55.5));
+        assert!(!s.set_segment_times(id, 9.0, 9.0)); // empty rejected
+        assert!(!s.set_segment_times(999, 1.0, 2.0)); // unknown id
     }
 
     #[test]
@@ -210,17 +229,18 @@ mod tests {
         mark(&mut s, 2.0, 5.0);
         mark(&mut s, 4.0, 8.0); // overlaps the [2,5] range
         mark(&mut s, 30.0, 35.0); // touches [20,30] → merge
-        let ranges = s.export_ranges();
-        assert_eq!(ranges, vec![(2.0, 8.0), (20.0, 35.0)]);
+        assert_eq!(s.export_ranges(), vec![(2.0, 8.0), (20.0, 35.0)]);
+        // raw display ranges stay unmerged, in mark order.
+        assert_eq!(s.segment_ranges().len(), 4);
     }
 
     #[test]
     fn not_exportable_until_a_segment_exists() {
         let mut s = state(100.0);
         assert!(!s.is_exportable());
-        s.set_in(1.0);
-        assert!(!s.is_exportable()); // pending in-point alone is not a segment
-        s.set_out(2.0);
+        s.mark(1.0);
+        assert!(!s.is_exportable()); // pending mark alone is not a segment
+        s.mark(2.0);
         assert!(s.is_exportable());
     }
 }

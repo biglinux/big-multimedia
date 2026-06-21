@@ -4,7 +4,7 @@ use std::sync::atomic::{AtomicU64, Ordering};
 
 use big_media_components::converter::progress::BigConverterProgressOutput;
 
-use super::trim::{TrimExportOutcome, TrimMarkKind, VideoTrimBarOutput};
+use super::trim::{TrimExportOutcome, VideoTrimBarOutput};
 
 #[derive(Debug)]
 pub enum VideoShellInput {
@@ -104,8 +104,9 @@ pub enum VideoShellInput {
     TrimBar(VideoTrimBarOutput),
     /// A button on the clip-export progress page (back / cancel).
     TrimProgress(BigConverterProgressOutput),
-    /// Mark a cut boundary at the live playback position (keyboard I / O / M).
-    TrimMark(TrimMarkKind),
+    /// Mark a cut point at the live playback position (keyboard `M`). Two marks
+    /// (in any order) make a cut.
+    TrimMark,
     /// A clip export finished (success / cancellation / failure).
     TrimExportFinished(TrimExportOutcome),
 }

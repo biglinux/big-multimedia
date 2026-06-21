@@ -164,10 +164,14 @@ pub struct VideoShell {
     /// Revealer hosting the trim bar above the transport.
     trim_revealer: gtk::Revealer,
     /// Shared re-encode options (container/codec/quality) — same vocabulary as
-    /// the full converter; read on a precise export.
+    /// the full converter; shown in the re-encode settings dialog.
     trim_encode: big_converter_ui::encode_options::EncodeOptions,
-    /// Right-side panel holding the encode options; revealed on precise mode.
-    trim_panel_revealer: gtk::Revealer,
+    /// Colour adjustments applied on a precise export (set in the settings dialog).
+    trim_filters: Rc<RefCell<big_media_runtime::converter::profiles::VideoFilters>>,
+    /// Output layout: true = each cut to its own file, false = joined.
+    trim_split: Rc<Cell<bool>>,
+    /// Reused re-encode settings window (built lazily on the gear).
+    trim_encode_dialog: Rc<RefCell<Option<adw::Window>>>,
     /// Full-cover overlay hosting the progress page while an export runs.
     trim_progress_overlay: gtk::Box,
     /// True while interactive trim mode is active. Shared (`Rc`) with the OSD pin

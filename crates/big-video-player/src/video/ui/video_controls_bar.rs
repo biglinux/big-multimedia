@@ -71,6 +71,11 @@ pub enum VideoControlsBarInput {
     /// Set the path of the loaded media (so the hover preview can render a
     /// thumbnail frame); `None` clears it (e.g. a remote stream).
     SetCurrentFile(Option<String>),
+    /// Trim mode: the `(start, end)` cut ranges to paint over the seek bar so the
+    /// user edits the cuts on the real timeline (empty = clear).
+    SetCutSegments(Vec<(f64, f64)>),
+    /// Trim mode on/off — reveals the cut overlay + makes the seek bar taller.
+    SetEditMode(bool),
 }
 
 /// User intents emitted by the bar for the shell to act on.
@@ -109,6 +114,11 @@ pub struct VideoControlsBar {
     /// Bottom OSD button-zone handles used by the Appearance dialog's live
     /// layout editor.
     button_layout: ButtonLayoutWidgets,
+    /// Trim-mode cut ranges painted over the seek bar (shared with the overlay
+    /// draw closure).
+    cut_segments: Rc<RefCell<Vec<(f64, f64)>>>,
+    /// Input-transparent overlay painting [`Self::cut_segments`] on the seek bar.
+    cut_overlay: gtk::DrawingArea,
     /// Media duration in seconds (hover-preview time + chapter-mark fractions).
     duration_secs: Rc<Cell<f64>>,
     /// Chapter list (`time_secs`, `title`): seek-bar marks + hover chapter name.
@@ -176,7 +186,22 @@ impl Component for VideoControlsBar {
             .css_classes(["seek-scale"])
             .build();
         seek_bar.update_property(&[gtk::accessible::Property::Label(&i18n("Seek Position"))]);
-        seek_row.append(&seek_bar);
+
+        // Trim-mode cut overlay: an input-transparent DrawingArea stacked over the
+        // seek bar that paints the marked cut ranges, so the user reads + edits the
+        // cuts on the real timeline instead of a separate one. Hidden until trim
+        // mode reveals it.
+        let cut_segments: Rc<RefCell<Vec<(f64, f64)>>> = Rc::new(RefCell::new(Vec::new()));
+        let cut_overlay = gtk::DrawingArea::new();
+        cut_overlay.set_can_target(false);
+        cut_overlay.set_visible(false);
+        install_cut_overlay_draw(&cut_overlay, &cut_segments, &duration_secs);
+        let seek_overlay = gtk::Overlay::builder()
+            .hexpand(true)
+            .child(&seek_bar)
+            .build();
+        seek_overlay.add_overlay(&cut_overlay);
+        seek_row.append(&seek_overlay);
 
         let duration_label = gtk::Label::builder()
             .label("0:00")
@@ -254,6 +279,8 @@ impl Component for VideoControlsBar {
             mpv: init.mpv,
             hover_popovers,
             button_layout,
+            cut_segments,
+            cut_overlay,
             duration_secs,
             chapters,
             current_file,
@@ -287,6 +314,20 @@ impl Component for VideoControlsBar {
             VideoControlsBarInput::SetDurationSecs(secs) => {
                 self.duration_secs.set(secs);
                 self.render_chapter_marks();
+                self.cut_overlay.queue_draw();
+            }
+            VideoControlsBarInput::SetCutSegments(segments) => {
+                self.cut_segments.replace(segments);
+                self.cut_overlay.queue_draw();
+            }
+            VideoControlsBarInput::SetEditMode(on) => {
+                self.cut_overlay.set_visible(on);
+                if on {
+                    self.seek_bar.add_css_class("trim-editing");
+                } else {
+                    self.seek_bar.remove_css_class("trim-editing");
+                }
+                self.cut_overlay.queue_draw();
             }
             VideoControlsBarInput::SetChapters(chapters) => {
                 self.chapters.replace(chapters);
@@ -352,4 +393,28 @@ impl VideoControlsBar {
             );
         }
     }
+}
+
+/// Paint the trim-mode cut ranges as accent bands over the seek bar, scaled by
+/// the media duration. Input-transparent, so the seek scale still scrubs.
+fn install_cut_overlay_draw(
+    area: &gtk::DrawingArea,
+    cut_segments: &Rc<RefCell<Vec<(f64, f64)>>>,
+    duration_secs: &Rc<Cell<f64>>,
+) {
+    let cut_segments = cut_segments.clone();
+    let duration_secs = duration_secs.clone();
+    area.set_draw_func(move |_area, cr, width, height| {
+        let duration = duration_secs.get().max(0.001);
+        let w = f64::from(width);
+        let h = f64::from(height);
+        let x_for = |t: f64| (t / duration).clamp(0.0, 1.0) * w;
+        for (start, end) in cut_segments.borrow().iter() {
+            let x0 = x_for(*start);
+            let x1 = x_for(*end);
+            cr.set_source_rgba(0.20, 0.52, 0.89, 0.55);
+            cr.rectangle(x0, h * 0.32, (x1 - x0).max(2.0), h * 0.36);
+            let _ = cr.fill();
+        }
+    });
 }

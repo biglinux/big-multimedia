@@ -1,7 +1,5 @@
 use super::*;
 
-use super::trim::TrimMarkKind;
-
 pub(super) fn install_window_actions(
     // The `win.*` actions are inserted on the content Root (ADR D14) so they
     // travel with the content into whatever window hosts it.
@@ -34,15 +32,7 @@ pub(super) fn install_window_actions(
         ("chapters", || VideoShellInput::ShowChapters),
         ("sleep-timer", || VideoShellInput::ShowSleepTimer),
         ("trim", || VideoShellInput::EnterTrimMode),
-        ("trim-set-in", || {
-            VideoShellInput::TrimMark(TrimMarkKind::In)
-        }),
-        ("trim-set-out", || {
-            VideoShellInput::TrimMark(TrimMarkKind::Out)
-        }),
-        ("trim-mark", || {
-            VideoShellInput::TrimMark(TrimMarkKind::Quick)
-        }),
+        ("trim-mark", || VideoShellInput::TrimMark),
         ("trim-exit", || VideoShellInput::ExitTrimMode),
         ("extract-audio-mp3", || {
             VideoShellInput::ExtractAudio("mp3".into())
