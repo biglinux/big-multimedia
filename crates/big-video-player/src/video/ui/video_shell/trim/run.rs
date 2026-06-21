@@ -35,8 +35,9 @@ impl VideoShell {
         // (the OSD shares this same flag) and turn the seek bar into the cut
         // editor.
         self.osd.show();
+        // SetEditMode swaps the transport row for the trim controls inside the
+        // controls bar (no separate bar) and turns the seek bar into the cut editor.
         self.controls.emit(VideoControlsBarInput::SetEditMode(true));
-        self.trim_revealer.set_reveal_child(true);
         self.trim
             .emit(VideoTrimBarInput::SetDuration(self.trim_duration()));
         if let Some(mpv) = self.mpv.borrow().as_ref() {
@@ -49,7 +50,6 @@ impl VideoShell {
     /// Leave trim mode and restore the normal OSD auto-hide + seek bar.
     pub(in crate::video::ui::video_shell) fn exit_trim_mode(&mut self) {
         self.trim_active.set(false);
-        self.trim_revealer.set_reveal_child(false);
         self.controls
             .emit(VideoControlsBarInput::SetEditMode(false));
         self.osd.show_and_schedule_hide();

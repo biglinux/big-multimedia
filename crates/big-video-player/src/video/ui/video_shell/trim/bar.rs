@@ -202,40 +202,27 @@ impl Component for VideoTrimBar {
             .xalign(0.0)
             .build();
 
-        let fast_btn = gtk::ToggleButton::builder()
-            .label(i18n("Keep format (fast)"))
-            .active(true)
-            .build();
-        let precise_btn = gtk::ToggleButton::builder()
-            .label(i18n("Re-encode"))
-            .build();
-        precise_btn.set_group(Some(&fast_btn));
-        fast_btn.update_property(&[gtk::accessible::Property::Label(&i18n(
-            "Keep format — fast stream-copy cut",
-        ))]);
-        precise_btn.update_property(&[gtk::accessible::Property::Label(&i18n(
-            "Re-encode — precise cut with format options",
-        ))]);
-        let mode_box = gtk::Box::new(gtk::Orientation::Horizontal, 0);
-        mode_box.add_css_class("linked");
-        mode_box.append(&fast_btn);
-        mode_box.append(&precise_btn);
-        fast_btn.connect_toggled(glib::clone!(
+        // Format choice: an Adwaita ToggleGroup (segmented control) — proper
+        // exclusivity + accessible names out of the box (grouped GtkToggleButtons
+        // do not expose their text label as an accessible name).
+        let mode_group = adw::ToggleGroup::new();
+        mode_group.add(
+            adw::Toggle::builder()
+                .label(i18n("Keep format (fast)"))
+                .build(),
+        );
+        mode_group.add(adw::Toggle::builder().label(i18n("Re-encode")).build());
+        mode_group.set_active(0);
+        mode_group.connect_active_notify(glib::clone!(
             #[strong]
             sender,
-            move |b| {
-                if b.is_active() {
-                    sender.input(VideoTrimBarInput::SetMode(CutMode::Fast));
-                }
-            }
-        ));
-        precise_btn.connect_toggled(glib::clone!(
-            #[strong]
-            sender,
-            move |b| {
-                if b.is_active() {
-                    sender.input(VideoTrimBarInput::SetMode(CutMode::Precise));
-                }
+            move |group| {
+                let mode = if group.active() == 1 {
+                    CutMode::Precise
+                } else {
+                    CutMode::Fast
+                };
+                sender.input(VideoTrimBarInput::SetMode(mode));
             }
         ));
 
@@ -286,7 +273,7 @@ impl Component for VideoTrimBar {
 
         let export_row = gtk::Box::new(gtk::Orientation::Horizontal, 8);
         export_row.append(&hint_label);
-        export_row.append(&mode_box);
+        export_row.append(&mode_group);
         export_row.append(&config_btn);
         export_row.append(&export_btn);
         export_row.append(&exit_btn);
@@ -297,8 +284,7 @@ impl Component for VideoTrimBar {
         let busy_sensitive: Vec<gtk::Widget> = vec![
             mark_btn.upcast::<gtk::Widget>(),
             clear_btn.upcast::<gtk::Widget>(),
-            fast_btn.upcast::<gtk::Widget>(),
-            precise_btn.upcast::<gtk::Widget>(),
+            mode_group.upcast::<gtk::Widget>(),
         ];
 
         let model = VideoTrimBar {

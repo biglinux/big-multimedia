@@ -58,11 +58,20 @@ impl Component for VideoShell {
         let mpv: Rc<RefCell<Option<Arc<MpvBackend>>>> = Rc::new(RefCell::new(None));
         let video_transform = media_adjust::VideoTransformState::default();
 
-        // OSD controls bar (app-local; recovers the old `controls_box`).
+        // Interactive trim bar — built first so its widget can be mounted INSIDE
+        // the controls bar (shown in place of the transport row in trim mode, not
+        // a separate bar). Its typed outputs route back into the shell.
+        let trim = trim::VideoTrimBar::builder()
+            .launch(())
+            .forward(sender.input_sender(), VideoShellInput::TrimBar);
+
+        // OSD controls bar (app-local; recovers the old `controls_box`). The trim
+        // bar rides inside it (transport ↔ trim stack).
         let controls = VideoControlsBar::builder()
             .launch(VideoControlsBarInit {
                 settings: settings.clone(),
                 mpv: mpv.clone(),
+                trim_content: trim.widget().clone().upcast::<gtk::Widget>(),
             })
             .forward(sender.input_sender(), VideoShellInput::Controls);
         controls.emit(VideoControlsBarInput::SetControlsSensitive(false));
@@ -94,12 +103,7 @@ impl Component for VideoShell {
             })
             .forward(sender.input_sender(), VideoShellInput::Cast);
 
-        // Interactive trim bar (bottom overlay) + the shared conversion-progress
-        // page shown full-cover while a clip export runs. Both are video-local
-        // Relm4 components; their typed outputs route back into the shell.
-        let trim = trim::VideoTrimBar::builder()
-            .launch(())
-            .forward(sender.input_sender(), VideoShellInput::TrimBar);
+        // Shared conversion-progress page shown full-cover while a clip export runs.
         let trim_progress = BigConverterProgress::builder()
             .launch(())
             .forward(sender.input_sender(), VideoShellInput::TrimProgress);
@@ -141,22 +145,13 @@ impl Component for VideoShell {
         main_overlay.set_clip_overlay(&sw_picture, true);
         main_overlay.set_measure_overlay(&sw_picture, false);
 
-        // The bottom OSD cluster: the trim bar (hidden until trim mode) docked
-        // directly ABOVE the transport, so it reads as embedded in the player UI
-        // rather than a floating card over the video.
-        let trim_revealer = gtk::Revealer::builder()
-            .transition_type(gtk::RevealerTransitionType::SlideUp)
-            .reveal_child(false)
-            .child(trim.widget())
-            .build();
-        let bottom_cluster = gtk::Box::new(gtk::Orientation::Vertical, 0);
-        bottom_cluster.append(&trim_revealer);
-        bottom_cluster.append(controls.widget());
+        // The trim controls live INSIDE the controls bar (transport ↔ trim stack);
+        // the bottom OSD is just the controls bar, as before.
         let controls_revealer = gtk::Revealer::builder()
             .valign(gtk::Align::End)
             .transition_type(gtk::RevealerTransitionType::Crossfade)
             .reveal_child(!is_background)
-            .child(&bottom_cluster)
+            .child(controls.widget())
             .build();
         // Progress page: full-cover overlay while a clip export runs.
         let trim_progress_overlay = gtk::Box::builder()
@@ -627,7 +622,6 @@ impl Component for VideoShell {
                 shell_input_token,
                 trim,
                 trim_progress,
-                trim_revealer,
                 trim_encode,
                 trim_filters: Rc::new(RefCell::new(
                     big_media_runtime::converter::profiles::VideoFilters::default(),

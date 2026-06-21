@@ -45,6 +45,10 @@ pub struct VideoControlsBarInit {
     pub settings: Settings,
     /// Shared mpv handle the popover callbacks read at call time.
     pub mpv: MpvSlot,
+    /// The trim-bar widget, shown IN PLACE of the transport button row while trim
+    /// mode is active (so the cut controls live inside the existing controls, not
+    /// a separate bar).
+    pub trim_content: gtk::Widget,
 }
 
 /// Display state pushed into the bar by the shell.
@@ -119,6 +123,8 @@ pub struct VideoControlsBar {
     cut_segments: Rc<RefCell<Vec<(f64, f64)>>>,
     /// Input-transparent overlay painting [`Self::cut_segments`] on the seek bar.
     cut_overlay: gtk::DrawingArea,
+    /// Swaps the transport button row ↔ the trim controls inside this bar.
+    content_stack: gtk::Stack,
     /// Media duration in seconds (hover-preview time + chapter-mark fractions).
     duration_secs: Rc<Cell<f64>>,
     /// Chapter list (`time_secs`, `title`): seek-bar marks + hover chapter name.
@@ -254,7 +260,16 @@ impl Component for VideoControlsBar {
             fullscreen_btn: fullscreen_btn.clone(),
         };
 
-        root.append(&center);
+        // Swap the transport button row with the trim controls in trim mode, so
+        // the cut controls live inside this bar (no extra bar). The seek row above
+        // stays put (the cuts paint on it).
+        let content_stack = gtk::Stack::builder()
+            .transition_type(gtk::StackTransitionType::Crossfade)
+            .build();
+        content_stack.add_named(&center, Some("transport"));
+        content_stack.add_named(&init.trim_content, Some("trim"));
+        content_stack.set_visible_child_name("transport");
+        root.append(&content_stack);
 
         wire_signals(
             &sender,
@@ -281,6 +296,7 @@ impl Component for VideoControlsBar {
             button_layout,
             cut_segments,
             cut_overlay,
+            content_stack,
             duration_secs,
             chapters,
             current_file,
@@ -324,8 +340,10 @@ impl Component for VideoControlsBar {
                 self.cut_overlay.set_visible(on);
                 if on {
                     self.seek_bar.add_css_class("trim-editing");
+                    self.content_stack.set_visible_child_name("trim");
                 } else {
                     self.seek_bar.remove_css_class("trim-editing");
+                    self.content_stack.set_visible_child_name("transport");
                 }
                 self.cut_overlay.queue_draw();
             }

@@ -161,8 +161,6 @@ pub struct VideoShell {
     trim: Controller<trim::VideoTrimBar>,
     /// Shared conversion-progress page, shown as an overlay during clip export.
     trim_progress: Controller<BigConverterProgress>,
-    /// Revealer hosting the trim bar above the transport.
-    trim_revealer: gtk::Revealer,
     /// Shared re-encode options (container/codec/quality) — same vocabulary as
     /// the full converter; shown in the re-encode settings dialog.
     trim_encode: big_converter_ui::encode_options::EncodeOptions,
