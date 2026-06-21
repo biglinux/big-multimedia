@@ -1,5 +1,7 @@
 use super::*;
 
+use std::path::{Path, PathBuf};
+
 pub(super) struct OsdState {
     /// Top OSD revealer (header bar). Revealed/hidden together with `controls`.
     pub(super) header_revealer: gtk::Revealer,
@@ -91,57 +93,76 @@ impl Drop for OsdState {
     }
 }
 
-/// Animated idle-background state (CSS gradient behind the welcome screen).
-/// Mirrors the old `show_idle_bg`/`hide_idle_bg`: a 33 ms tick mutates a
-/// user-priority `CssProvider`; the gl surface is hidden (opacity 0) so the
-/// gradient shows through. The tick `SourceId` and provider are stored so they
-/// are torn down (no leaked source) when the idle bg hides.
+/// Static idle background behind the welcome screen (no video loaded). The gl
+/// surface is hidden (opacity 0) so the `.idle-bg` box shows through. The base
+/// `.idle-bg` gradient (style.css) is the immediate look; once the desktop
+/// wallpaper has been detected + blurred ([`super::idle_wallpaper`]) a
+/// user-priority provider overrides it with the cached blurred image. No
+/// animation — the old 33 ms gradient tick burned CPU under software rendering.
 pub(super) struct IdleBackground {
-    /// The black bg box carrying the `.idle-bg` class (gradient target).
+    /// The black bg box carrying the `.idle-bg` class (background target).
     pub(super) video_bg: gtk::Box,
     /// The visible video surface (GLArea), hidden while idle.
     pub(super) gl_area: gtk::GLArea,
-    /// Tick mutating the gradient; `None` when not animating.
-    pub(super) tick_id: RefCell<Option<glib::SourceId>>,
-    /// User-priority provider holding the live gradient CSS; removed on hide.
+    /// User-priority provider holding the blurred-wallpaper CSS; `None` = the
+    /// base `.idle-bg` gradient fallback.
     pub(super) provider: RefCell<Option<gtk::CssProvider>>,
+    /// Cached blurred-wallpaper path; `None` until detection succeeds (or never,
+    /// if no desktop wallpaper resolves).
+    pub(super) blurred_path: RefCell<Option<PathBuf>>,
+    /// True while the idle background is shown (welcome up).
+    pub(super) is_shown: Cell<bool>,
 }
 
 impl IdleBackground {
-    /// Start the idle gradient: hide the gl surface, add the `.idle-bg` class,
-    /// and tick the gradient CSS. No-op if already animating.
+    /// Show the idle background: hide the gl surface, add the `.idle-bg` class,
+    /// and apply the current background (blurred wallpaper if known, else the
+    /// base gradient).
     pub(super) fn show(&self, display: &gtk::gdk::Display) {
-        if self.tick_id.borrow().is_some() {
-            return;
-        }
+        self.is_shown.set(true);
         self.gl_area.set_opacity(0.0);
         self.video_bg.add_css_class("idle-bg");
+        self.apply_background(display);
+    }
 
+    /// Hide the idle background: restore the gl surface opacity, drop the class,
+    /// and remove the wallpaper provider. Restoring gl opacity is load-bearing —
+    /// video would stay invisible otherwise.
+    pub(super) fn hide(&self, display: &gtk::gdk::Display) {
+        self.is_shown.set(false);
+        self.gl_area.set_opacity(1.0);
+        self.video_bg.remove_css_class("idle-bg");
+        self.clear_provider(display);
+    }
+
+    /// Record the detected blurred wallpaper and apply it if idle is shown now.
+    /// Called from the wallpaper worker once the blurred image is cached.
+    pub(super) fn set_blurred_wallpaper(&self, path: &Path, display: &gtk::gdk::Display) {
+        self.blurred_path.replace(Some(path.to_path_buf()));
+        if self.is_shown.get() {
+            self.apply_background(display);
+        }
+    }
+
+    /// (Re)apply the background: the blurred wallpaper when known (static image
+    /// provider), else nothing — the base `.idle-bg` gradient shows through.
+    fn apply_background(&self, display: &gtk::gdk::Display) {
+        self.clear_provider(display);
+        let Some(path) = self.blurred_path.borrow().clone() else {
+            return;
+        };
         let provider = gtk::CssProvider::new();
+        provider.load_from_string(&idle_bg_image_css(&path));
         gtk::style_context_add_provider_for_display(
             display,
             &provider,
             gtk::STYLE_PROVIDER_PRIORITY_USER + 2,
         );
-        self.provider.replace(Some(provider.clone()));
-
-        let start = std::time::Instant::now();
-        let id = glib::timeout_add_local(Duration::from_millis(IDLE_BG_TICK_MS), move || {
-            provider.load_from_string(&idle_bg_css(start.elapsed().as_secs_f64()));
-            glib::ControlFlow::Continue
-        });
-        self.tick_id.replace(Some(id));
+        self.provider.replace(Some(provider));
     }
 
-    /// Stop the idle gradient: restore the gl surface opacity, drop the class,
-    /// remove the tick source, and remove the provider. Restoring gl opacity is
-    /// load-bearing — video would stay invisible otherwise.
-    pub(super) fn hide(&self, display: &gtk::gdk::Display) {
-        self.gl_area.set_opacity(1.0);
-        self.video_bg.remove_css_class("idle-bg");
-        if let Some(id) = self.tick_id.borrow_mut().take() {
-            id.remove();
-        }
+    /// Remove the wallpaper provider from `display` if one is installed.
+    fn clear_provider(&self, display: &gtk::gdk::Display) {
         if let Some(provider) = self.provider.borrow_mut().take() {
             gtk::style_context_remove_provider_for_display(display, &provider);
         }
@@ -150,35 +171,42 @@ impl IdleBackground {
 
 impl Drop for IdleBackground {
     fn drop(&mut self) {
-        if let Some(id) = self.tick_id.borrow_mut().take() {
-            id.remove();
+        if let Some(provider) = self.provider.borrow_mut().take() {
+            if let Some(display) = gtk::gdk::Display::default() {
+                gtk::style_context_remove_provider_for_display(&display, &provider);
+            }
         }
     }
 }
 
-/// One animated frame of the idle gradient CSS at elapsed time `t` seconds.
-/// Drifts gradient angles/spreads with slow sine/cosine — cheaper than redrawing
-/// widgets (mirrors the old in-tick `format!`).
-fn idle_bg_css(t: f64) -> String {
-    let a1 = 220.0 + 80.0 * (t * 0.28).sin();
-    let a2 = 40.0 + 70.0 * (t * 0.21).sin();
-    let a3 = 320.0 + 90.0 * (t * 0.17).sin();
-    let a4 = 170.0 + 75.0 * (t * 0.24).cos();
-    let a5 = 90.0 + 60.0 * (t * 0.14).sin();
-    let s1 = 55.0 + 10.0 * (t * 0.10).cos();
-    let s2 = 45.0 + 10.0 * (t * 0.14).sin();
-    let s3 = 50.0 + 12.0 * (t * 0.12).cos();
+/// Static `.idle-bg` CSS that paints the cached blurred wallpaper, scaled to
+/// cover the surface. `#0e0e18` stays as the letterbox/transparency backdrop.
+fn idle_bg_image_css(path: &Path) -> String {
     format!(
         ".idle-bg {{
-            background-image:
-                linear-gradient({a1:.1}deg, rgba(30,58,138,0.55), transparent {s1:.1}%),
-                linear-gradient({a2:.1}deg, rgba(88,28,135,0.45), transparent {s2:.1}%),
-                linear-gradient({a3:.1}deg, rgba(6,95,70,0.40), transparent {s3:.1}%),
-                linear-gradient({a4:.1}deg, rgba(136,19,55,0.35), transparent 45%),
-                linear-gradient({a5:.1}deg, rgba(255,255,255,0.04), transparent 35%);
             background-color: #0e0e18;
-        }}"
+            background-image: url(\"{}\");
+            background-size: cover;
+            background-position: center;
+            background-repeat: no-repeat;
+        }}",
+        file_url(path)
     )
+}
+
+/// Build a `file://` URL for a CSS `url()`, percent-encoding every byte that is
+/// not an unreserved / path-safe character (handles spaces, quotes, `#`, `?` and
+/// non-ASCII UTF-8 bytes alike).
+fn file_url(path: &Path) -> String {
+    let mut url = String::from("file://");
+    for &byte in path.as_os_str().to_string_lossy().as_bytes() {
+        if byte.is_ascii_alphanumeric() || matches!(byte, b'-' | b'.' | b'_' | b'~' | b'/' | b':') {
+            url.push(byte as char);
+        } else {
+            url.push_str(&format!("%{byte:02X}"));
+        }
+    }
+    url
 }
 
 /// Window aspect-ratio snap state: resizes the window so the video fills it

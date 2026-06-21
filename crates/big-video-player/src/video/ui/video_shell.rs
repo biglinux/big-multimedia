@@ -52,9 +52,6 @@ use big_relm4_components::list::progress_row::BigProgressRow;
 /// `HIDE_DELAY_MS`).
 const OSD_HIDE_DELAY_MS: u64 = 2500;
 
-/// Tick interval for the animated idle gradient (mirrors the old 33 ms tick).
-const IDLE_BG_TICK_MS: u64 = 33;
-
 /// Pointer travel (px) before a button-1 drag over the video begins a window
 /// move (mirrors the old `input/mod.rs` `DRAG_THRESHOLD`).
 const DRAG_THRESHOLD: f64 = 8.0;
@@ -85,6 +82,7 @@ mod cast_snapshot;
 mod component;
 mod dialogs;
 mod export;
+mod idle_wallpaper;
 mod input;
 mod input_gestures;
 mod keyboard;
@@ -186,15 +184,14 @@ pub struct VideoShell {
 
 #[cfg(test)]
 mod tests {
-    use super::{dialogs, VideoShellMode, DRAG_THRESHOLD, IDLE_BG_TICK_MS, OSD_HIDE_DELAY_MS};
+    use super::{dialogs, VideoShellMode, DRAG_THRESHOLD, OSD_HIDE_DELAY_MS};
 
     #[test]
     fn shell_interaction_timing_constants_stay_ordered() {
-        let idle_tick_ms = std::hint::black_box(IDLE_BG_TICK_MS);
         let osd_hide_ms = std::hint::black_box(OSD_HIDE_DELAY_MS);
         let drag_threshold = std::hint::black_box(DRAG_THRESHOLD);
 
-        assert!(idle_tick_ms < osd_hide_ms);
+        assert!(osd_hide_ms > 0);
         assert!(drag_threshold > 0.0);
     }
 

@@ -505,14 +505,16 @@ impl Component for VideoShell {
             super::keyboard::wire_trim_keys(&root, trim_active.clone(), &sender);
         }
 
-        // Animated idle gradient behind the welcome screen (gl surface hidden so
-        // it shows through). Started below once the display is known; restored on
-        // the first `FileLoaded`.
+        // Static idle background behind the welcome screen (gl surface hidden so
+        // it shows through). Shown below once the display is known; restored on
+        // the first `FileLoaded`. The blurred desktop wallpaper is fetched off
+        // the main loop (idle_wallpaper::spawn_apply) and swapped in when ready.
         let idle_bg = Rc::new(IdleBackground {
             video_bg: video_bg.clone(),
             gl_area: gl_area.clone(),
-            tick_id: RefCell::new(None),
             provider: RefCell::new(None),
+            blurred_path: RefCell::new(None),
+            is_shown: Cell::new(false),
         });
 
         // Toast host wrapping the content (screenshot / chapter / sleep-timer
@@ -522,12 +524,15 @@ impl Component for VideoShell {
         let toast_overlay = root.clone();
         toast_overlay.set_child(Some(&split_view));
 
-        // Start the idle gradient now (welcome is up). Hidden on first
-        // `FileLoaded` so the video surface becomes visible again.
+        // Show the idle background now (welcome is up). Hidden on first
+        // `FileLoaded` so the video surface becomes visible again. Kick off the
+        // wallpaper detection + blur so the static gradient is replaced by the
+        // blurred desktop wallpaper once it is cached.
         if !is_background {
             if let Some(display) = gtk::gdk::Display::default() {
                 idle_bg.show(&display);
             }
+            super::idle_wallpaper::spawn_apply(idle_bg.clone());
         }
 
         // mpv option strings, read once.
