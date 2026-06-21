@@ -72,6 +72,9 @@ pub enum VideoTrimBarOutput {
         /// Each range to its own file vs joined into one.
         split: bool,
     },
+    /// The fast/precise choice changed (the shell reveals the encode panel on
+    /// precise).
+    ModeChanged(CutMode),
     /// Leave trim mode.
     Exit,
 }
@@ -370,7 +373,10 @@ impl Component for VideoTrimBar {
                 self.state.borrow_mut().delete(id);
             }
             VideoTrimBarInput::ClearSegments => self.state.borrow_mut().clear(),
-            VideoTrimBarInput::SetMode(mode) => self.state.borrow_mut().mode = mode,
+            VideoTrimBarInput::SetMode(mode) => {
+                self.state.borrow_mut().mode = mode;
+                let _ = sender.output(VideoTrimBarOutput::ModeChanged(mode));
+            }
             VideoTrimBarInput::RequestExport => {
                 let (ranges, mode) = {
                     let state = self.state.borrow();

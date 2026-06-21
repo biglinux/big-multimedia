@@ -8,9 +8,7 @@ use adw::prelude::*;
 use gtk::glib;
 use relm4::{ComponentController, ComponentSender};
 
-use big_converter_ui::export::{
-    build_single_export_queue, ui_progress_info, QuickExportChoice, QuickExportFormat,
-};
+use big_converter_ui::export::{build_single_export_queue, ui_progress_info, QuickExportChoice};
 use big_media_components::converter::progress::{
     BigConverterProgressInput as ProgIn, BigConverterProgressOutput as ProgOut,
 };
@@ -49,6 +47,7 @@ impl VideoShell {
     pub(in crate::video::ui::video_shell) fn exit_trim_mode(&mut self) {
         self.trim_active.set(false);
         self.trim_revealer.set_reveal_child(false);
+        self.trim_panel_revealer.set_reveal_child(false);
         self.osd.show_and_schedule_hide();
     }
 
@@ -96,6 +95,12 @@ impl VideoShell {
                     mpv.seek_absolute(pos);
                 }
             }
+            VideoTrimBarOutput::ModeChanged(mode) => {
+                // Re-encode options only matter when re-encoding; reveal the
+                // right panel on precise, hide it on fast (keep-format).
+                self.trim_panel_revealer
+                    .set_reveal_child(matches!(mode, CutMode::Precise));
+            }
             VideoTrimBarOutput::Exit => self.exit_trim_mode(),
             VideoTrimBarOutput::ExportRequested {
                 ranges,
@@ -124,19 +129,12 @@ impl VideoShell {
 
         let choice = match mode {
             CutMode::Fast => QuickExportChoice::keep_format(&input),
-            CutMode::Precise => QuickExportChoice {
-                format: QuickExportFormat::Video {
-                    container: input
-                        .extension()
-                        .and_then(|ext| ext.to_str())
-                        .map(str::to_ascii_lowercase)
-                        .filter(|ext| !ext.is_empty())
-                        .unwrap_or_else(|| "mp4".to_string()),
-                    codec: "h264".into(),
-                    quality: "good".into(),
-                },
-                filters: VideoFilters::default(),
-            },
+            // Precise: re-encode with the SAME container/codec/quality options the
+            // full converter offers (shared `EncodeOptions`).
+            CutMode::Precise => self
+                .trim_encode
+                .choice()
+                .to_quick_choice(VideoFilters::default()),
         };
 
         let (mut queue, id, output) =

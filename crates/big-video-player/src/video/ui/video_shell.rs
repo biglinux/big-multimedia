@@ -163,6 +163,11 @@ pub struct VideoShell {
     trim_progress: Controller<BigConverterProgress>,
     /// Revealer hosting the trim bar above the transport.
     trim_revealer: gtk::Revealer,
+    /// Shared re-encode options (container/codec/quality) — same vocabulary as
+    /// the full converter; read on a precise export.
+    trim_encode: big_converter_ui::encode_options::EncodeOptions,
+    /// Right-side panel holding the encode options; revealed on precise mode.
+    trim_panel_revealer: gtk::Revealer,
     /// Full-cover overlay hosting the progress page while an export runs.
     trim_progress_overlay: gtk::Box,
     /// True while interactive trim mode is active. Shared (`Rc`) with the OSD pin
