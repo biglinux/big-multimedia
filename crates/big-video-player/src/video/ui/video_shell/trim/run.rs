@@ -64,6 +64,7 @@ impl VideoShell {
     /// Leave trim mode and restore the normal OSD auto-hide + seek bar.
     pub(in crate::video::ui::video_shell) fn exit_trim_mode(&mut self) {
         self.trim_active.set(false);
+        self.trim_play_selection.set(false);
         self.controls
             .emit(VideoControlsBarInput::SetEditMode(false));
         // Restore edge-to-edge video.
@@ -88,6 +89,38 @@ impl VideoShell {
     pub(in crate::video::ui::video_shell) fn feed_trim_playhead(&self, pos: f64) {
         if self.trim_active.get() {
             self.trim.emit(VideoTrimBarInput::SetPlayhead(pos));
+        }
+    }
+
+    /// "Play only the marked cuts": when the playhead leaves / reaches the end of
+    /// a cut, jump to the next cut (or restart at the first). Mirrors the audio
+    /// editor's play-selection. Called every position tick while trim is active.
+    pub(in crate::video::ui::video_shell) fn apply_play_selection(&self, pos: f64) {
+        if !self.trim_play_selection.get() {
+            return;
+        }
+        let ranges = self.trim_ranges.borrow();
+        let Some(&(first_start, _)) = ranges.first() else {
+            return;
+        };
+        let mpv_ref = self.mpv.borrow();
+        let Some(mpv) = mpv_ref.as_ref() else {
+            return;
+        };
+        const EPS: f64 = 0.05;
+        if let Some((idx, &(_, end))) = ranges
+            .iter()
+            .enumerate()
+            .find(|(_, &(s, e))| pos >= s - EPS && pos <= e + EPS)
+        {
+            if pos >= end - EPS {
+                let next = ranges.get(idx + 1).map_or(first_start, |&(s, _)| s);
+                mpv.seek_absolute(next);
+            }
+        } else if let Some(&(next, _)) = ranges.iter().find(|&&(s, _)| s > pos) {
+            mpv.seek_absolute(next);
+        } else {
+            mpv.seek_absolute(first_start);
         }
     }
 
@@ -121,10 +154,25 @@ impl VideoShell {
     ) {
         match out {
             VideoTrimBarOutput::SegmentsChanged { segments, pending } => {
+                let mut ranges: Vec<(f64, f64)> =
+                    segments.iter().map(|(_, s, e)| (*s, *e)).collect();
+                ranges.sort_by(|a, b| a.0.total_cmp(&b.0));
+                *self.trim_ranges.borrow_mut() = ranges;
                 self.controls
                     .emit(VideoControlsBarInput::SetCutSegments(segments));
                 self.controls
                     .emit(VideoControlsBarInput::SetPendingMark(pending));
+            }
+            VideoTrimBarOutput::PlaySelection(on) => {
+                self.trim_play_selection.set(on);
+                if on {
+                    if let Some(mpv) = self.mpv.borrow().as_ref() {
+                        if let Some((start, _)) = self.trim_ranges.borrow().first().copied() {
+                            mpv.seek_absolute(start);
+                        }
+                        mpv.play();
+                    }
+                }
             }
             VideoTrimBarOutput::EditSegment { id, start, end } => {
                 if let Some(root) = root {

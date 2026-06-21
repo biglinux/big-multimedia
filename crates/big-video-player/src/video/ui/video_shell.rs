@@ -168,6 +168,10 @@ pub struct VideoShell {
     trim_filters: Rc<RefCell<big_media_runtime::converter::profiles::VideoFilters>>,
     /// Output layout: true = each cut to its own file, false = joined.
     trim_split: Rc<Cell<bool>>,
+    /// "Play only the marked cuts" toggle state.
+    trim_play_selection: Rc<Cell<bool>>,
+    /// Sorted `(start, end)` cut ranges — drives play-selection looping.
+    trim_ranges: Rc<RefCell<Vec<(f64, f64)>>>,
     /// Reused re-encode settings window (built lazily on the gear).
     trim_encode_dialog: Rc<RefCell<Option<adw::Window>>>,
     /// Full-cover overlay hosting the progress page while an export runs.

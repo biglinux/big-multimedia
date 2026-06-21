@@ -70,6 +70,8 @@ pub enum VideoTrimBarOutput {
         /// Current end (seconds).
         end: f64,
     },
+    /// Toggle "play only the marked cuts" (loop/skip to play just the segments).
+    PlaySelection(bool),
     /// Open the re-encode settings dialog (gear, precise mode only).
     OpenEncodeConfig,
     /// Export the marked ranges with the chosen mode.
@@ -196,6 +198,21 @@ impl Component for VideoTrimBar {
             sender,
             move |_| sender.input(VideoTrimBarInput::ClearSegments)
         ));
+        // Play only the marked cuts (loops/skips to play just the segments).
+        let play_sel_btn = gtk::ToggleButton::builder()
+            .icon_name("media-playlist-repeat-symbolic")
+            .css_classes(["flat", "circular"])
+            .build();
+        play_sel_btn.update_property(&[gtk::accessible::Property::Label(&i18n(
+            "Play only the marked cuts",
+        ))]);
+        play_sel_btn.connect_toggled(glib::clone!(
+            #[strong]
+            sender,
+            move |b| {
+                let _ = sender.output(VideoTrimBarOutput::PlaySelection(b.is_active()));
+            }
+        ));
 
         let count_label = gtk::Label::builder()
             .css_classes(["dim-label", "caption"])
@@ -291,6 +308,7 @@ impl Component for VideoTrimBar {
         row.set_valign(gtk::Align::Center);
         row.append(&mark_btn);
         row.append(&clear_btn);
+        row.append(&play_sel_btn);
         row.append(&middle);
         row.append(&count_label);
         row.append(&mode_group);

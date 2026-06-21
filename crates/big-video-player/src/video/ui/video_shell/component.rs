@@ -627,6 +627,8 @@ impl Component for VideoShell {
                     big_media_runtime::converter::profiles::VideoFilters::default(),
                 )),
                 trim_split: Rc::new(Cell::new(false)),
+                trim_play_selection: Rc::new(Cell::new(false)),
+                trim_ranges: Rc::new(RefCell::new(Vec::new())),
                 trim_encode_dialog: Rc::new(RefCell::new(None)),
                 trim_progress_overlay,
                 trim_active,

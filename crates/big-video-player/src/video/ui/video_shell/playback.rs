@@ -16,6 +16,7 @@ impl VideoShell {
                         .emit(VideoControlsBarInput::SetSeekFraction(frac));
                 }
                 self.feed_trim_playhead(pos);
+                self.apply_play_selection(pos);
             }
             PlayerEvent::DurationChanged(dur) => {
                 self.duration_secs = dur;

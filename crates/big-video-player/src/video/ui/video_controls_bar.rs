@@ -497,12 +497,13 @@ fn install_cut_timeline_draw(
         cr.set_source_rgba(0.20, 0.52, 0.89, 0.95);
         rounded_rect(cr, 0.0, track_top, frac * w, track_h, r);
         let _ = cr.fill();
-        // Cut ranges (Adwaita warning colour).
+        // Cut ranges (Adwaita warning colour) — square edges so the boundaries
+        // read as exact cut points (not rounded).
         for (_, start, end) in cut_segments.borrow().iter() {
             let x0 = x_for(*start);
             let x1 = x_for(*end);
             cr.set_source_rgba(0.898, 0.647, 0.039, 0.95);
-            rounded_rect(cr, x0, track_top, (x1 - x0).max(2.0), track_h, r);
+            cr.rectangle(x0, track_top, (x1 - x0).max(2.0), track_h);
             let _ = cr.fill();
         }
         // Pending first mark — a green guide line awaiting its pair.
@@ -520,21 +521,37 @@ fn install_cut_timeline_draw(
 
 const EDGE_GRAB_PX: f64 = 8.0;
 
-/// Cut-timeline pointer interaction: drag a cut's start/end edge (within
-/// [`EDGE_GRAB_PX`] of the boundary) to adjust it, otherwise click/drag to seek;
-/// the cursor becomes a resize handle near an edge.
+/// Which part of which cut is being dragged on the timeline.
+#[derive(Clone, Copy)]
+enum CutDrag {
+    None,
+    Start(u64),
+    End(u64),
+    Body {
+        id: u64,
+        anchor: f64,
+        orig_start: f64,
+        orig_end: f64,
+    },
+}
+
+/// Cut-timeline pointer interaction (mirrors the audio editor's waveform): drag a
+/// cut's start/end handle or its whole body to adjust it — the PLAYBACK POSITION
+/// follows the drag so the exact cut point is visible — otherwise click/drag to
+/// seek. The cursor shows a resize/move handle. The drag state persists for the
+/// whole gesture, so a tiny movement no longer ends it.
 fn wire_cut_timeline_interaction(
     area: &gtk::DrawingArea,
     cut_segments: &Rc<RefCell<Vec<(u64, f64, f64)>>>,
     duration_secs: &Rc<Cell<f64>>,
     sender: &ComponentSender<VideoControlsBar>,
 ) {
-    // The edge grabbed during a drag: `(segment id, is_end)`.
-    let grab: Rc<Cell<Option<(u64, bool)>>> = Rc::new(Cell::new(None));
+    let drag_state: Rc<Cell<CutDrag>> = Rc::new(Cell::new(CutDrag::None));
 
-    // Plain click → seek, unless it lands on a cut edge (then it's an adjust).
+    // Press → seek, unless it lands on a cut handle/body (which starts a drag).
     let click = gtk::GestureClick::new();
-    click.connect_released(glib::clone!(
+    click.set_button(1);
+    click.connect_pressed(glib::clone!(
         #[strong]
         sender,
         #[strong]
@@ -546,7 +563,10 @@ fn wire_cut_timeline_interaction(
         move |_, _, x, _| {
             let w = f64::from(area.width()).max(1.0);
             let dur = duration_secs.get().max(0.001);
-            if edge_near(&cut_segments.borrow(), x, w, dur, EDGE_GRAB_PX).is_some() {
+            let segs = cut_segments.borrow();
+            if hit_handle(&segs, x, w, dur, EDGE_GRAB_PX).is_some()
+                || hit_body(&segs, x, w, dur).is_some()
+            {
                 return;
             }
             let _ = sender.output(VideoControlsBarOutput::SeekChanged((x / w).clamp(0.0, 1.0)));
@@ -557,7 +577,7 @@ fn wire_cut_timeline_interaction(
     let drag = gtk::GestureDrag::new();
     drag.connect_drag_begin(glib::clone!(
         #[strong]
-        grab,
+        drag_state,
         #[strong]
         cut_segments,
         #[strong]
@@ -567,20 +587,37 @@ fn wire_cut_timeline_interaction(
         move |_, start_x, _| {
             let w = f64::from(area.width()).max(1.0);
             let dur = duration_secs.get().max(0.001);
-            grab.set(edge_near(
-                &cut_segments.borrow(),
-                start_x,
-                w,
-                dur,
-                EDGE_GRAB_PX,
-            ));
+            let segs = cut_segments.borrow();
+            let mode = if let Some((id, is_end)) = hit_handle(&segs, start_x, w, dur, EDGE_GRAB_PX)
+            {
+                if is_end {
+                    CutDrag::End(id)
+                } else {
+                    CutDrag::Start(id)
+                }
+            } else if let Some(id) = hit_body(&segs, start_x, w, dur) {
+                let (_, s, e) = segs
+                    .iter()
+                    .find(|(sid, _, _)| *sid == id)
+                    .copied()
+                    .unwrap_or((id, 0.0, 0.0));
+                CutDrag::Body {
+                    id,
+                    anchor: (start_x / w).clamp(0.0, 1.0) * dur,
+                    orig_start: s,
+                    orig_end: e,
+                }
+            } else {
+                CutDrag::None
+            };
+            drag_state.set(mode);
         }
     ));
     drag.connect_drag_update(glib::clone!(
         #[strong]
         sender,
         #[strong]
-        grab,
+        drag_state,
         #[strong]
         cut_segments,
         #[strong]
@@ -592,34 +629,67 @@ fn wire_cut_timeline_interaction(
                 return;
             };
             let w = f64::from(area.width()).max(1.0);
+            let dur = duration_secs.get().max(0.001);
             let frac = ((start_x + offset_x) / w).clamp(0.0, 1.0);
-            if let Some((id, is_end)) = grab.get() {
-                let time = frac * duration_secs.get().max(0.001);
-                {
-                    let mut segs = cut_segments.borrow_mut();
-                    if let Some((_, s, e)) = segs.iter_mut().find(|(sid, _, _)| *sid == id) {
-                        if is_end {
-                            *e = time.max(*s + 0.05);
-                        } else {
-                            *s = time.min(*e - 0.05);
+            let t = frac * dur;
+            {
+                let mut segs = cut_segments.borrow_mut();
+                match drag_state.get() {
+                    CutDrag::Start(id) => {
+                        if let Some((_, s, e)) = segs.iter_mut().find(|(sid, _, _)| *sid == id) {
+                            *s = t.min(*e - 0.1).max(0.0);
                         }
                     }
+                    CutDrag::End(id) => {
+                        if let Some((_, s, e)) = segs.iter_mut().find(|(sid, _, _)| *sid == id) {
+                            *e = t.max(*s + 0.1).min(dur);
+                        }
+                    }
+                    CutDrag::Body {
+                        id,
+                        anchor,
+                        orig_start,
+                        orig_end,
+                    } => {
+                        if let Some((_, s, e)) = segs.iter_mut().find(|(sid, _, _)| *sid == id) {
+                            let len = (orig_end - orig_start).max(0.1);
+                            let (mut ns, mut ne) =
+                                (orig_start + (t - anchor), orig_end + (t - anchor));
+                            if ns < 0.0 {
+                                ns = 0.0;
+                                ne = len;
+                            }
+                            if ne > dur {
+                                ne = dur;
+                                ns = (dur - len).max(0.0);
+                            }
+                            *s = ns;
+                            *e = ne;
+                        }
+                    }
+                    CutDrag::None => {}
                 }
-                area.queue_draw();
-            } else {
-                let _ = sender.output(VideoControlsBarOutput::SeekChanged(frac));
             }
+            // Playback follows the drag (or scrubs when not on a cut).
+            let _ = sender.output(VideoControlsBarOutput::SeekChanged(frac));
+            area.queue_draw();
         }
     ));
     drag.connect_drag_end(glib::clone!(
         #[strong]
         sender,
         #[strong]
-        grab,
+        drag_state,
         #[strong]
         cut_segments,
+        #[weak]
+        area,
         move |_, _, _| {
-            if let Some((id, _)) = grab.replace(None) {
+            let id = match drag_state.replace(CutDrag::None) {
+                CutDrag::Start(id) | CutDrag::End(id) | CutDrag::Body { id, .. } => Some(id),
+                CutDrag::None => None,
+            };
+            if let Some(id) = id {
                 if let Some((_, s, e)) = cut_segments.borrow().iter().find(|(sid, _, _)| *sid == id)
                 {
                     let _ = sender.output(VideoControlsBarOutput::SegmentEdgeAdjusted {
@@ -629,11 +699,12 @@ fn wire_cut_timeline_interaction(
                     });
                 }
             }
+            area.queue_draw();
         }
     ));
     area.add_controller(drag);
 
-    // Hover near an edge → resize cursor.
+    // Cursor: resize on a handle, move on a body.
     let motion = gtk::EventControllerMotion::new();
     motion.connect_motion(glib::clone!(
         #[strong]
@@ -645,15 +716,26 @@ fn wire_cut_timeline_interaction(
         move |_, x, _| {
             let w = f64::from(area.width()).max(1.0);
             let dur = duration_secs.get().max(0.001);
-            let near = edge_near(&cut_segments.borrow(), x, w, dur, EDGE_GRAB_PX).is_some();
-            area.set_cursor_from_name(Some(if near { "ew-resize" } else { "default" }));
+            let segs = cut_segments.borrow();
+            let cursor = if let Some((_, is_end)) = hit_handle(&segs, x, w, dur, EDGE_GRAB_PX) {
+                if is_end {
+                    "e-resize"
+                } else {
+                    "w-resize"
+                }
+            } else if hit_body(&segs, x, w, dur).is_some() {
+                "move"
+            } else {
+                "default"
+            };
+            area.set_cursor_from_name(Some(cursor));
         }
     ));
     area.add_controller(motion);
 }
 
-/// The cut edge `(segment id, is_end)` within `thresh` px of `x`, nearest first.
-fn edge_near(
+/// The cut handle `(id, is_end)` within `thresh` px of `x`, nearest first.
+fn hit_handle(
     segments: &[(u64, f64, f64)],
     x: f64,
     w: f64,
@@ -671,6 +753,15 @@ fn edge_near(
         }
     }
     best.map(|(id, is_end, _)| (id, is_end))
+}
+
+/// The id of the cut whose body contains `x` (strictly between its handles).
+fn hit_body(segments: &[(u64, f64, f64)], x: f64, w: f64, duration: f64) -> Option<u64> {
+    segments.iter().find_map(|(id, start, end)| {
+        let x0 = (start / duration).clamp(0.0, 1.0) * w;
+        let x1 = (end / duration).clamp(0.0, 1.0) * w;
+        (x > x0 && x < x1).then_some(*id)
+    })
 }
 
 /// Append a rounded-rectangle sub-path to `cr` (used for the cut-timeline track).
