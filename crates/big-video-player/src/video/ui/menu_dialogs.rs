@@ -7,7 +7,10 @@
 //! The pure helpers (`parse_goto_seconds`, `sleep_minutes_to_secs`,
 //! `screenshot_filename`) carry the testable logic.
 
+use std::cell::Cell;
 use std::path::PathBuf;
+use std::rc::Rc;
+use std::time::Duration;
 
 use adw::prelude::*;
 use gtk::glib;
@@ -53,11 +56,12 @@ impl VideoShell {
         dialog.present(Some(root));
     }
 
-    /// Capture the current frame to the XDG Pictures dir (home fallback) via
-    /// `mpv.screenshot_to_file(path, "video")`, then toast the result with an
-    /// Open button. Mirrors the old screenshot overlay (it shelled out to ffmpeg;
-    /// the libmpv command is simpler and stays in-process). No-op + "failed"
-    /// toast when nothing is playing.
+    /// Capture the current frame to the XDG Pictures dir (home fallback) via the
+    /// NON-BLOCKING `screenshot_to_file_async`, then poll for the file on the main
+    /// loop and toast the result with an Open button. The synchronous command
+    /// froze the player under the libmpv render API (main-thread ⇄ mpv playloop
+    /// deadlock); the async fire + bounded poll keeps the UI responsive. No-op +
+    /// "failed" toast when nothing is playing.
     pub(super) fn take_screenshot(&self) {
         let mpv_ref = self.mpv_handle();
         let mpv_borrow = mpv_ref.borrow();
@@ -76,29 +80,13 @@ impl VideoShell {
         let timestamp = glib::real_time() / 1_000_000; // µs → s
         let path = dir.join(screenshot_filename(&title, timestamp));
 
-        // mpv writes the file synchronously; the path is app-derived (no
-        // untrusted input). "video" = the decoded frame without OSD/subtitles.
-        mpv.screenshot_to_file(&path.to_string_lossy(), "video");
+        // Fire async (mpv writes the file on its own thread); the path is
+        // app-derived (no untrusted input). "video" = the decoded frame without
+        // OSD/subtitles.
+        mpv.screenshot_to_file_async(&path.to_string_lossy(), "video");
         drop(mpv_borrow);
 
-        if path.exists() {
-            let name = path
-                .file_name()
-                .unwrap_or_default()
-                .to_string_lossy()
-                .into_owned();
-            let toast = adw::Toast::builder()
-                .title(format!("{}: {name}", i18n("Screenshot saved")))
-                .button_label(i18n("Open"))
-                .timeout(5)
-                .build();
-            toast.connect_button_clicked(move |_| {
-                big_app_kit::desktop::open_file(&path);
-            });
-            self.toast_overlay().add_toast(toast);
-        } else {
-            self.notify(&i18n("Screenshot failed"));
-        }
+        schedule_screenshot_toast(self.toast_overlay().clone(), path);
     }
 
     /// Jump to chapter `idx` (from the chapter list dialog). Drives
@@ -374,6 +362,43 @@ fn chapter_title_with_prefix(raw: String, index: i64, chapter_prefix: &str) -> S
     } else {
         raw
     }
+}
+
+/// Poll (bounded, on the main loop) for the async screenshot to land at `path`,
+/// then toast the outcome: "saved" with an Open button on success, "failed"
+/// after the timeout. Polling keeps the UI responsive — the capture itself runs
+/// off-thread inside mpv (see [`take_screenshot`]).
+fn schedule_screenshot_toast(overlay: adw::ToastOverlay, path: PathBuf) {
+    // ~120 ms × 25 = 3 s ceiling; mpv normally writes within a frame or two.
+    const POLL_MS: u64 = 120;
+    const MAX_ATTEMPTS: u32 = 25;
+    let attempts = Rc::new(Cell::new(0_u32));
+    glib::timeout_add_local(Duration::from_millis(POLL_MS), move || {
+        if path.exists() {
+            let name = path
+                .file_name()
+                .unwrap_or_default()
+                .to_string_lossy()
+                .into_owned();
+            let toast = adw::Toast::builder()
+                .title(format!("{}: {name}", i18n("Screenshot saved")))
+                .button_label(i18n("Open"))
+                .timeout(5)
+                .build();
+            let open_path = path.clone();
+            toast.connect_button_clicked(move |_| {
+                big_app_kit::desktop::open_file(&open_path);
+            });
+            overlay.add_toast(toast);
+            return glib::ControlFlow::Break;
+        }
+        attempts.set(attempts.get() + 1);
+        if attempts.get() >= MAX_ATTEMPTS {
+            overlay.add_toast(adw::Toast::new(&i18n("Screenshot failed")));
+            return glib::ControlFlow::Break;
+        }
+        glib::ControlFlow::Continue
+    });
 }
 
 /// XDG Pictures dir for screenshots, falling back to home.
