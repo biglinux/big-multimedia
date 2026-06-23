@@ -15,7 +15,7 @@
 use std::fs;
 use std::path::PathBuf;
 
-use gtk::{gio, glib};
+use gtk::glib;
 
 use crate::config;
 use big_app_kit::http_client::{http_get_bytes_with_headers, RequestHeaders};
@@ -62,62 +62,29 @@ fn extension_from_url(url: &str) -> Option<&'static str> {
     }
 }
 
-/// Return the cached logo path if already on disk (no network), else `None`.
+/// Blocking, cache-aware logo byte fetch for the virtualized channel list.
+///
+/// Returns the logo bytes: the on-disk cache first (no network), else a headered
+/// HTTP GET whose result is written back to the cache. Meant to run **off the
+/// main thread** — `MediaListView` calls it on a worker for visible rows only,
+/// then decodes + memory-caches the texture and cancels on recycle. No-op
+/// (`None`) for an empty URL or on fetch failure.
 #[must_use]
-pub fn cached(url: &str) -> Option<PathBuf> {
+pub fn fetch_bytes(url: &str, user_agent: &str, referer: &str) -> Option<Vec<u8>> {
     if url.is_empty() {
         return None;
     }
     let path = cache_file_for_url(url);
-    if path.exists() {
-        Some(path)
-    } else {
-        None
+    if let Ok(bytes) = fs::read(&path) {
+        return Some(bytes);
     }
-}
-
-/// Fetch a logo (cache-first), invoking `on_ready` on the GTK main thread once
-/// the file is available. `headers` carries provider UA/Referer — some CDNs
-/// reject without them. No-op for an empty URL or on fetch failure.
-pub fn fetch<F>(url: &str, headers: &RequestHeaders<'_>, on_ready: F)
-where
-    F: FnOnce(gio::File) + 'static,
-{
-    if url.is_empty() {
-        return;
-    }
-    let path = cache_file_for_url(url);
-    if path.exists() {
-        on_ready(gio::File::for_path(&path));
-        return;
-    }
-
-    let url = url.to_string();
-    let user_agent = headers.user_agent.to_string();
-    let referer = headers.referer.to_string();
-    let (tx, rx) = async_channel::bounded::<Option<PathBuf>>(1);
-
-    std::thread::spawn(move || {
-        let headers = RequestHeaders {
-            user_agent: &user_agent,
-            referer: &referer,
-        };
-        let bytes = http_get_bytes_with_headers(&url, &headers);
-        let out = bytes.and_then(|b| {
-            fs::write(&path, b).ok()?;
-            Some(path)
-        });
-        let _ = tx.send_blocking(out);
-    });
-
-    let mut cb = Some(on_ready);
-    glib::spawn_future_local(async move {
-        if let Ok(Some(p)) = rx.recv().await {
-            if let Some(cb) = cb.take() {
-                cb(gio::File::for_path(&p));
-            }
-        }
-    });
+    let headers = RequestHeaders {
+        user_agent,
+        referer,
+    };
+    let bytes = http_get_bytes_with_headers(url, &headers)?;
+    let _ = fs::write(&path, &bytes);
+    Some(bytes)
 }
 
 #[cfg(test)]
@@ -148,7 +115,7 @@ mod tests {
     }
 
     #[test]
-    fn cached_returns_none_for_empty() {
-        assert!(cached("").is_none());
+    fn fetch_bytes_returns_none_for_empty() {
+        assert!(fetch_bytes("", "ua", "ref").is_none());
     }
 }

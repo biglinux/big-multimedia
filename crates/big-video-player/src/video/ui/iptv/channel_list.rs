@@ -1,24 +1,24 @@
-//! Grouped IPTV channel list (Relm4 port).
+//! Grouped IPTV channel list — virtualized (Relm4 port).
 //!
-//! Groups channels by `group-title` into collapsible `AdwExpanderRow`; each
-//! channel is an `AdwActionRow` with an optional logo (lazy `logos::fetch`)
-//! and a favorite-toggle suffix. The view is a plain GTK `ListBox` driven by
-//! the [`VideoIptvBrowser`] component: the component
-//! pushes channels in and listens for play / favorite-toggle intents via the
-//! relm4 sender, so this stays a thin, video-local widget builder (relm4's
-//! `factory` feature is off in this workspace).
+//! An IPTV M3U routinely carries thousands to tens of thousands of channels,
+//! each with a remote `tvg-logo`. The old view built one `AdwActionRow` per
+//! channel into a `ListBox` up front (and rebuilt the whole tree on every
+//! keystroke of the filter), firing a logo fetch for every row whether or not
+//! it was on screen — a widget-churn + fetch-storm that froze on large lists.
 //!
-//! Mirrors the legacy `iptv_view::channel_list` until the V6 cutover deletes it,
-//! but reports user actions back through a relm4 [`ComponentSender`] instead of
-//! `Rc<RefCell<Option<Box<dyn Fn>>>>` callbacks.
+//! This reuses the shared recycling [`MediaListView`]: a `GListModel` of
+//! lightweight rows feeds a `ListView`, so only the ~visible rows ever become
+//! widgets and only their logos are fetched (lazily, off-thread, cancelled on
+//! recycle). Groups become inline section-header rows. Filtering is a cheap
+//! model splice ([`MediaListView::set_items`]), never a widget rebuild.
 
 use std::cell::RefCell;
 use std::rc::Rc;
+use std::sync::Arc;
 
 use adw::prelude::*;
+use big_player_ui::media_list::{MediaListView, MediaRow, RowImage};
 use big_relm4_components::feedback::tooltip;
-use big_relm4_components::list::button_strip_row::{BigButtonStripRow, BigButtonStripRowSpec};
-use big_relm4_components::list::info_row::{BigInfoRow, BigInfoRowSpec};
 use relm4::ComponentSender;
 
 use crate::i18n::{i18n, ni18n};
@@ -26,34 +26,83 @@ use crate::media::iptv::IptvChannel;
 use crate::video::ui::iptv::favorites::IptvFavorites;
 use crate::video::ui::iptv::logos;
 use crate::video::ui::iptv::{VideoIptvBrowser, VideoIptvBrowserInput};
-use big_app_kit::http_client::RequestHeaders;
 
-/// Grouped channel list widget plus the state needed to rebuild it on filter or
-/// channel-set changes. Owned by the component; not a relm4 component itself.
+/// Logo pixel size in the channel list.
+const LOGO_PX: i32 = 40;
+
+/// Grouped channel list widget plus the state needed to re-splice it on filter
+/// or channel-set changes. Owned by the component; not a relm4 component itself.
 pub struct ChannelListView {
-    /// Root `ListBox` mounted by the browser component.
-    pub root: gtk::ListBox,
+    /// Root `ListView` mounted (in a `ScrolledWindow`) by the browser component.
+    pub root: gtk::Widget,
+    view: MediaListView,
     all_channels: Rc<RefCell<Vec<IptvChannel>>>,
     favorites: Rc<RefCell<IptvFavorites>>,
     user_agent: Rc<RefCell<String>>,
     referer: Rc<RefCell<String>>,
-    sender: ComponentSender<VideoIptvBrowser>,
+    last_query: RefCell<String>,
 }
 
 impl ChannelListView {
     #[must_use]
     pub fn new(sender: ComponentSender<VideoIptvBrowser>) -> Self {
-        let root = gtk::ListBox::builder()
-            .selection_mode(gtk::SelectionMode::None)
-            .css_classes(["boxed-list"])
-            .build();
+        let all_channels: Rc<RefCell<Vec<IptvChannel>>> = Rc::new(RefCell::new(Vec::new()));
+        let favorites = Rc::new(RefCell::new(IptvFavorites::load()));
+
+        // Activation: map the row id (channel URL) back to its title for play.
+        let on_activate = {
+            let all_channels = all_channels.clone();
+            let sender = sender.clone();
+            move |url: &str| {
+                let title = all_channels
+                    .borrow()
+                    .iter()
+                    .find(|c| c.url == url)
+                    .map_or_else(|| url.to_string(), |c| c.name.clone());
+                sender.input(VideoIptvBrowserInput::PlayChannel {
+                    url: url.to_string(),
+                    title,
+                });
+            }
+        };
+
+        // Per-row suffix: the favorite-toggle star (rebuilt on each visible bind).
+        let build_suffix = {
+            let favorites = favorites.clone();
+            let sender = sender.clone();
+            move |row: &MediaRow| -> Vec<gtk::Widget> {
+                if row.header.is_some() || row.id.is_empty() {
+                    return Vec::new();
+                }
+                let url = row.id.clone();
+                let is_favorite = favorites.borrow().contains(&url);
+                let fav_btn = tooltip::icon_toggle_button(
+                    star_icon(is_favorite),
+                    &i18n("Toggle favorite"),
+                    is_favorite,
+                    &["flat", "circular"],
+                );
+                fav_btn.set_valign(gtk::Align::Center);
+                let favorites = favorites.clone();
+                let sender = sender.clone();
+                fav_btn.connect_toggled(move |btn| {
+                    let now_starred = favorites.borrow_mut().toggle(&url);
+                    btn.set_icon_name(star_icon(now_starred));
+                    sender.input(VideoIptvBrowserInput::FavoriteToggled);
+                });
+                vec![fav_btn.upcast()]
+            }
+        };
+
+        let view = MediaListView::new(on_activate, build_suffix);
         Self {
-            root,
-            all_channels: Rc::new(RefCell::new(Vec::new())),
-            favorites: Rc::new(RefCell::new(IptvFavorites::load())),
+            root: view.widget.clone(),
+            view,
+            all_channels,
+            favorites,
             user_agent: Rc::new(RefCell::new(String::new())),
             referer: Rc::new(RefCell::new(String::new())),
-            sender,
+            last_query: RefCell::new(String::new()),
         }
     }
 
@@ -63,27 +112,31 @@ impl ChannelListView {
         self.referer.replace(referer.to_string());
     }
 
-    /// Replace the channel set and rebuild the (unfiltered) list.
+    /// Replace the channel set and re-splice the (unfiltered) list.
     pub fn set_channels(&self, channels: Vec<IptvChannel>) {
         self.all_channels.replace(channels);
-        self.rebuild("");
+        self.last_query.replace(String::new());
+        self.resplice("");
     }
 
-    /// Re-render the list filtered by `query` (matches name or group).
+    /// Re-render the list filtered by `query` (matches name or group). A model
+    /// splice — only the visible rows rebind, no widget rebuild.
     pub fn apply_filter(&self, query: &str) {
-        self.rebuild(query);
+        self.last_query.replace(query.to_string());
+        self.resplice(query);
     }
 
-    /// Re-read the favorites file → mirror cross-instance star toggles.
+    /// Re-read the favorites file and re-splice so visible stars reflect
+    /// cross-instance toggles.
     pub fn reload_favorites(&self) {
         self.favorites.replace(IptvFavorites::load());
+        let query = self.last_query.borrow().clone();
+        self.resplice(&query);
     }
 
-    fn rebuild(&self, query: &str) {
-        while let Some(child) = self.root.first_child() {
-            self.root.remove(&child);
-        }
-
+    /// Build the flat row model (group headers + channel rows) for `query` and
+    /// splice it into the view.
+    fn resplice(&self, query: &str) {
         let query_lower = query.trim().to_lowercase();
         let channels = self.all_channels.borrow();
         let filtered: Vec<&IptvChannel> = channels
@@ -96,106 +149,53 @@ impl ChannelListView {
             .collect();
 
         if filtered.is_empty() {
-            let row = BigInfoRow::new(
-                BigInfoRowSpec::new(i18n("No channels"))
-                    .subtitle(i18n("Try a different search or refresh the list")),
-            )
-            .into_root();
-            self.root.append(&row);
+            self.view
+                .set_items(vec![MediaRow::header(i18n("No channels"))]);
             return;
         }
 
+        let user_agent = self.user_agent.borrow().clone();
+        let referer = self.referer.borrow().clone();
+        let mut rows = Vec::new();
         for (group_name, list) in group_channels(&filtered) {
             let subtitle = ni18n("{} channel", "{} channels", list.len() as u64)
                 .replace("{}", &list.len().to_string());
-            let expander = adw::ExpanderRow::builder()
-                .title(&group_name)
-                .subtitle(&subtitle)
-                .build();
+            rows.push(MediaRow::header(format!("{group_name}  ·  {subtitle}")));
             for ch in list {
-                expander.add_row(&self.build_channel_row(ch));
+                rows.push(channel_row(ch, &user_agent, &referer));
             }
-            self.root.append(&expander);
         }
+        self.view.set_items(rows);
     }
+}
 
-    fn build_channel_row(&self, channel: &IptvChannel) -> adw::ActionRow {
-        let mut spec = BigButtonStripRowSpec::new(&channel.name).activatable(true);
-        if !channel.group.is_empty() {
-            spec = spec.subtitle(&channel.group);
+/// One channel row: title/group, a remote logo (initials fallback) fetched
+/// off-thread for visible rows only, keyed on the channel URL for activation.
+fn channel_row(channel: &IptvChannel, user_agent: &str, referer: &str) -> MediaRow {
+    let image = if channel.logo.is_empty() {
+        RowImage::Icon {
+            name: "video-x-generic-symbolic".to_owned(),
+            size: LOGO_PX,
         }
-        let row_builder = BigButtonStripRow::new(spec);
-
-        self.attach_logo(&row_builder, channel);
-        self.attach_favorite_button(&row_builder, channel);
-
-        let url = channel.url.clone();
-        let name = channel.name.clone();
-        let sender = self.sender.clone();
-        let row = row_builder.into_root();
-        row.connect_activated(move |_| {
-            sender.input(VideoIptvBrowserInput::PlayChannel {
-                url: url.clone(),
-                title: name.clone(),
-            });
-        });
-
-        row
-    }
-
-    /// Show the cached logo immediately, else a placeholder icon plus a lazy
-    /// fetch that swaps the placeholder once the logo lands.
-    fn attach_logo(&self, row_builder: &BigButtonStripRow, channel: &IptvChannel) {
-        if let Some(path) = logos::cached(&channel.logo) {
-            row_builder
-                .root()
-                .add_prefix(&thumbnail_image_from_path(&path));
-            return;
+    } else {
+        let ua = user_agent.to_owned();
+        let referer = referer.to_owned();
+        RowImage::Remote {
+            url: channel.logo.clone(),
+            initials: channel.name.clone(),
+            size: LOGO_PX,
+            fetch: Arc::new(move |url: &str| logos::fetch_bytes(url, &ua, &referer)),
         }
-        let placeholder = gtk::Image::builder()
-            .icon_name("video-x-generic-symbolic")
-            .pixel_size(32)
-            .build();
-        row_builder.root().add_prefix(&placeholder);
-        if channel.logo.is_empty() {
-            return;
-        }
-        let placeholder_weak = placeholder.downgrade();
-        let row_weak = row_builder.root().downgrade();
-        let headers = RequestHeaders {
-            user_agent: &self.user_agent.borrow(),
-            referer: &self.referer.borrow(),
-        };
-        logos::fetch(&channel.logo, &headers, move |file| {
-            if let Some(row) = row_weak.upgrade() {
-                if let Some(placeholder) = placeholder_weak.upgrade() {
-                    row.remove(&placeholder);
-                }
-                row.add_prefix(&thumbnail_image_from_file(&file));
-            }
-        });
-    }
-
-    /// Append the favorite-toggle star; toggling persists and notifies the
-    /// component so other views can re-sync.
-    fn attach_favorite_button(&self, row_builder: &BigButtonStripRow, channel: &IptvChannel) {
-        let is_favorite = self.favorites.borrow().contains(&channel.url);
-        let fav_btn = tooltip::icon_toggle_button(
-            star_icon(is_favorite),
-            &i18n("Toggle favorite"),
-            is_favorite,
-            &["flat", "circular"],
-        );
-        fav_btn.set_valign(gtk::Align::Center);
-        let url = channel.url.clone();
-        let favorites = self.favorites.clone();
-        let sender = self.sender.clone();
-        fav_btn.connect_toggled(move |btn| {
-            let now_starred = favorites.borrow_mut().toggle(&url);
-            btn.set_icon_name(star_icon(now_starred));
-            sender.input(VideoIptvBrowserInput::FavoriteToggled);
-        });
-        row_builder.append(&fav_btn);
+    };
+    MediaRow {
+        id: channel.url.clone(),
+        title: channel.name.clone(),
+        subtitle: (!channel.group.is_empty()).then(|| channel.group.clone()),
+        image,
+        header: None,
+        favicon: String::new(),
+        group: channel.group.clone(),
+        tag: 0,
     }
 }
 
@@ -223,18 +223,4 @@ fn star_icon(is_favorite: bool) -> &'static str {
     } else {
         "non-starred-symbolic"
     }
-}
-
-fn thumbnail_image_from_path(path: &std::path::Path) -> gtk::Image {
-    let img = gtk::Image::builder().pixel_size(40).build();
-    img.set_from_file(Some(path));
-    img
-}
-
-fn thumbnail_image_from_file(file: &gtk::gio::File) -> gtk::Image {
-    let img = gtk::Image::builder().pixel_size(40).build();
-    if let Some(path) = file.path() {
-        img.set_from_file(Some(&path));
-    }
-    img
 }
