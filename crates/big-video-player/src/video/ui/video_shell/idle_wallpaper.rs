@@ -58,9 +58,25 @@ fn resolve_blurred_wallpaper() -> Option<PathBuf> {
 }
 
 /// Best-effort active-wallpaper detection across the desktops BigLinux ships /
-/// runs on: KDE Plasma first (the default), then GNOME. `None` on anything else.
+/// runs on: **BigShell first** (its `shell.json` is authoritative when the
+/// player runs inside a BigShell session — directly or as a big-host module),
+/// then KDE Plasma, then GNOME. `None` on anything else.
 fn detect_wallpaper() -> Option<PathBuf> {
-    detect_plasma_wallpaper().or_else(detect_gnome_wallpaper)
+    detect_bigshell_wallpaper()
+        .or_else(detect_plasma_wallpaper)
+        .or_else(detect_gnome_wallpaper)
+}
+
+/// BigShell's own wallpaper, from `~/.config/big-shell/shell.json`
+/// (`wallpaper.image_path`). Checked first so a video opened on the BigShell
+/// desktop matches the shell's wallpaper, not Plasma's stale default.
+fn detect_bigshell_wallpaper() -> Option<PathBuf> {
+    let config = config_home().join("big-shell").join("shell.json");
+    let text = std::fs::read_to_string(&config).ok()?;
+    let value: serde_json::Value = serde_json::from_str(&text).ok()?;
+    let raw = value.get("wallpaper")?.get("image_path")?.as_str()?;
+    let path = PathBuf::from(raw);
+    path.is_file().then_some(path)
 }
 
 /// Parse the active Plasma wallpaper from `plasma-org.kde.plasma.desktop-appletsrc`
@@ -171,22 +187,41 @@ fn ensure_blurred(source: &Path) -> Option<PathBuf> {
     blur_to(source, &cache)
 }
 
-/// Blur + darken `source` into `dest`. Tries ffmpeg directly; if that fails on
-/// an SVG (ffmpeg builds without an SVG decoder), rasterizes it with
-/// `rsvg-convert` first — BigLinux ships SVG wallpapers — then blurs the raster.
+/// Blur + darken `source` into `dest`. Tries ffmpeg directly; if that fails
+/// because ffmpeg lacks the decoder (always for SVG; often for HEIC/AVIF — and
+/// BigShell's default wallpapers are HEIC), rasterizes to PNG first (rsvg for
+/// SVG, ImageMagick otherwise) then blurs the raster.
 fn blur_to(source: &Path, dest: &Path) -> Option<PathBuf> {
     if run_blur(source, dest) {
         return Some(dest.to_path_buf());
     }
-    if is_svg(source) {
-        let raster = dest.with_extension("src.png");
-        let ok = rasterize_svg(source, &raster) && run_blur(&raster, dest);
-        let _ = std::fs::remove_file(&raster);
+    let raster = dest.with_extension("src.png");
+    let rasterized =
+        (is_svg(source) && rasterize_svg(source, &raster)) || rasterize_magick(source, &raster);
+    let ok = rasterized && run_blur(&raster, dest);
+    let _ = std::fs::remove_file(&raster);
+    ok.then(|| dest.to_path_buf())
+}
+
+/// Rasterize `source` (HEIC/AVIF/anything ImageMagick decodes) to PNG `dest` via
+/// ImageMagick — `magick` (IM7) or `convert` (IM6). `true` on a non-empty result.
+fn rasterize_magick(source: &Path, dest: &Path) -> bool {
+    for binary in ["magick", "convert"] {
+        let ok = Command::new(binary)
+            .arg(source)
+            .args(["-resize", "1920x"])
+            .arg(dest)
+            .stdin(Stdio::null())
+            .stdout(Stdio::null())
+            .stderr(Stdio::null())
+            .status()
+            .is_ok_and(|status| status.success())
+            && std::fs::metadata(dest).is_ok_and(|m| m.len() > 0);
         if ok {
-            return Some(dest.to_path_buf());
+            return true;
         }
     }
-    None
+    false
 }
 
 /// Run the ffmpeg blur on `source` → `dest`; `true` on a non-empty result. Argv
