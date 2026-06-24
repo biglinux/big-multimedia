@@ -117,8 +117,14 @@ pub(super) fn show_tag_editor(
     dialog.set_content(Some(&split));
 
     {
-        let dialog = dialog.clone();
-        cancel_btn.connect_clicked(move |_| dialog.close());
+        // WEAK: the cancel button lives in the dialog window — a strong clone is
+        // a window ⇄ button ⇄ closure cycle that leaks the dialog after close.
+        let dialog = dialog.downgrade();
+        cancel_btn.connect_clicked(move |_| {
+            if let Some(dialog) = dialog.upgrade() {
+                dialog.close();
+            }
+        });
     }
     wire_save(&dialog, &save_btn, track, &rows, sender);
 
@@ -451,7 +457,9 @@ fn wire_save(
     rows: &EditRows,
     sender: &ComponentSender<LibraryPanel>,
 ) {
-    let dialog = dialog.clone();
+    // WEAK: the save button lives in the dialog window — a strong clone is a
+    // window ⇄ button ⇄ closure cycle that leaks the dialog after close.
+    let dialog = dialog.downgrade();
     let rows = rows.clone();
     let out = sender.clone();
     let track_id = track.id;
@@ -463,7 +471,9 @@ fn wire_save(
             file_path: file_path.clone(),
             fields: rows.collect(),
         });
-        dialog.close();
+        if let Some(dialog) = dialog.upgrade() {
+            dialog.close();
+        }
     });
 }
 
