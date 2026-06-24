@@ -682,150 +682,155 @@ impl Component for VideoShell {
     }
 
     fn update(&mut self, msg: Self::Input, sender: ComponentSender<Self>, root: &Self::Root) {
-        let adw_window = root.root().and_downcast::<adw::ApplicationWindow>();
-        let window_ref = adw_window.as_ref();
-        let gtk_window = root.root().and_downcast::<gtk::Window>();
-        let gtk_window_ref = gtk_window.as_ref();
-        match msg {
-            VideoShellInput::Player(event) => self.on_player_event(event, window_ref),
-            VideoShellInput::Controls(out) => self.on_controls(out, window_ref),
-            VideoShellInput::Playlist(out) => self.on_playlist(out),
-            VideoShellInput::EnterTrimMode => self.enter_trim_mode(),
-            VideoShellInput::ExitTrimMode => self.exit_trim_mode(),
-            VideoShellInput::TrimBar(out) => self.on_trim_bar(out, window_ref, &sender),
-            VideoShellInput::TrimCancelExport => self.cancel_trim_export(),
-            VideoShellInput::TrimMark => self.trim_mark(),
-            VideoShellInput::TrimExportFinished(outcome) => self.finish_trim_export(outcome),
-            VideoShellInput::ExtractAudio(codec) => self.extract_audio(&codec),
-            VideoShellInput::QuickConvert(container) => self.quick_convert(&container),
-            VideoShellInput::Iptv(out) => VideoShell::on_iptv(out, &sender),
-            #[cfg(feature = "chromecast")]
-            VideoShellInput::Cast(out) => self.on_cast(out),
-            VideoShellInput::ShowIptvBrowser => {
-                if let Some(root) = window_ref {
-                    self.show_iptv_browser(root);
+        // Panic boundary (module contract): a panic in message handling reaps
+        // this module's window cleanly (host closes it) instead of orphaning a
+        // dead window; the host process and sibling modules survive.
+        big_app_kit::containment::contain_embedded_update(root, "video-player", || {
+            let adw_window = root.root().and_downcast::<adw::ApplicationWindow>();
+            let window_ref = adw_window.as_ref();
+            let gtk_window = root.root().and_downcast::<gtk::Window>();
+            let gtk_window_ref = gtk_window.as_ref();
+            match msg {
+                VideoShellInput::Player(event) => self.on_player_event(event, window_ref),
+                VideoShellInput::Controls(out) => self.on_controls(out, window_ref),
+                VideoShellInput::Playlist(out) => self.on_playlist(out),
+                VideoShellInput::EnterTrimMode => self.enter_trim_mode(),
+                VideoShellInput::ExitTrimMode => self.exit_trim_mode(),
+                VideoShellInput::TrimBar(out) => self.on_trim_bar(out, window_ref, &sender),
+                VideoShellInput::TrimCancelExport => self.cancel_trim_export(),
+                VideoShellInput::TrimMark => self.trim_mark(),
+                VideoShellInput::TrimExportFinished(outcome) => self.finish_trim_export(outcome),
+                VideoShellInput::ExtractAudio(codec) => self.extract_audio(&codec),
+                VideoShellInput::QuickConvert(container) => self.quick_convert(&container),
+                VideoShellInput::Iptv(out) => VideoShell::on_iptv(out, &sender),
+                #[cfg(feature = "chromecast")]
+                VideoShellInput::Cast(out) => self.on_cast(out),
+                VideoShellInput::ShowIptvBrowser => {
+                    if let Some(root) = window_ref {
+                        self.show_iptv_browser(root);
+                    }
                 }
-            }
-            #[cfg(feature = "chromecast")]
-            VideoShellInput::ShowCastDialog => {
-                if let Some(root) = window_ref {
-                    self.show_cast_dialog(root);
+                #[cfg(feature = "chromecast")]
+                VideoShellInput::ShowCastDialog => {
+                    if let Some(root) = window_ref {
+                        self.show_cast_dialog(root);
+                    }
                 }
-            }
-            VideoShellInput::ShowFiltersDialog => {
-                if let Some(root) = window_ref {
-                    self.show_filters_dialog(root);
+                VideoShellInput::ShowFiltersDialog => {
+                    if let Some(root) = window_ref {
+                        self.show_filters_dialog(root);
+                    }
                 }
-            }
-            VideoShellInput::ShowEqualizer => {
-                if let Some(root) = window_ref {
-                    self.show_equalizer_dialog(root);
+                VideoShellInput::ShowEqualizer => {
+                    if let Some(root) = window_ref {
+                        self.show_equalizer_dialog(root);
+                    }
                 }
-            }
-            VideoShellInput::ShowDelay => {
-                if let Some(root) = window_ref {
-                    self.show_delay_dialog(root);
+                VideoShellInput::ShowDelay => {
+                    if let Some(root) = window_ref {
+                        self.show_delay_dialog(root);
+                    }
                 }
-            }
-            VideoShellInput::ShowImageAdjust => {
-                if let Some(root) = window_ref {
-                    self.show_image_adjust_dialog(root);
+                VideoShellInput::ShowImageAdjust => {
+                    if let Some(root) = window_ref {
+                        self.show_image_adjust_dialog(root);
+                    }
                 }
-            }
-            VideoShellInput::ShowYtdlQuality => {
-                if let Some(root) = window_ref {
-                    self.show_ytdl_quality_dialog(root);
+                VideoShellInput::ShowYtdlQuality => {
+                    if let Some(root) = window_ref {
+                        self.show_ytdl_quality_dialog(root);
+                    }
                 }
-            }
-            VideoShellInput::ShowMediaInfo => {
-                if let Some(root) = window_ref {
-                    self.show_media_info(root);
+                VideoShellInput::ShowMediaInfo => {
+                    if let Some(root) = window_ref {
+                        self.show_media_info(root);
+                    }
                 }
-            }
-            VideoShellInput::ShowKeyboardShortcuts => {
-                if let Some(root) = window_ref {
-                    show_video_keyboard_shortcuts_dialog(root, &self.settings);
+                VideoShellInput::ShowKeyboardShortcuts => {
+                    if let Some(root) = window_ref {
+                        show_video_keyboard_shortcuts_dialog(root, &self.settings);
+                    }
                 }
-            }
-            VideoShellInput::ShowOpenFile => {
-                if let Some(root) = gtk_window_ref {
-                    Self::show_open_file_dialog(root);
+                VideoShellInput::ShowOpenFile => {
+                    if let Some(root) = gtk_window_ref {
+                        Self::show_open_file_dialog(root);
+                    }
                 }
-            }
-            VideoShellInput::ShowOpenUrl => {
-                if let Some(root) = window_ref {
-                    Self::show_open_url_dialog(root);
+                VideoShellInput::ShowOpenUrl => {
+                    if let Some(root) = window_ref {
+                        Self::show_open_url_dialog(root);
+                    }
                 }
-            }
-            VideoShellInput::ShowRecent => {
-                if let Some(root) = window_ref {
-                    Self::show_recent_dialog(root);
+                VideoShellInput::ShowRecent => {
+                    if let Some(root) = window_ref {
+                        Self::show_recent_dialog(root);
+                    }
                 }
-            }
-            VideoShellInput::ShowOpenDisc => {
-                if let Some(root) = window_ref {
-                    Self::show_open_disc_dialog(root);
+                VideoShellInput::ShowOpenDisc => {
+                    if let Some(root) = window_ref {
+                        Self::show_open_disc_dialog(root);
+                    }
                 }
-            }
-            VideoShellInput::ShowPreferences => {
-                if let Some(root) = window_ref {
-                    self.show_preferences(root);
+                VideoShellInput::ShowPreferences => {
+                    if let Some(root) = window_ref {
+                        self.show_preferences(root);
+                    }
                 }
-            }
-            VideoShellInput::ShowAppearance => {
-                if let Some(root) = window_ref {
-                    self.show_appearance(root);
+                VideoShellInput::ShowAppearance => {
+                    if let Some(root) = window_ref {
+                        self.show_appearance(root);
+                    }
                 }
-            }
-            VideoShellInput::ShowRestoreDefaults => {
-                if let Some(root) = window_ref {
-                    Self::show_restore_defaults_dialog(root);
+                VideoShellInput::ShowRestoreDefaults => {
+                    if let Some(root) = window_ref {
+                        Self::show_restore_defaults_dialog(root);
+                    }
                 }
-            }
-            VideoShellInput::RestoreDefaultsConfirmed => self.restore_all_defaults(),
-            VideoShellInput::OpenFiles(paths) => VideoShell::open_files(&paths, &sender),
-            VideoShellInput::PlaylistResolved {
-                entries,
-                start,
-                folder,
-            } => self.apply_open(entries, start, folder),
-            VideoShellInput::ShowGotoTime => {
-                if let Some(root) = window_ref {
-                    self.show_goto_time_dialog(root);
+                VideoShellInput::RestoreDefaultsConfirmed => self.restore_all_defaults(),
+                VideoShellInput::OpenFiles(paths) => VideoShell::open_files(&paths, &sender),
+                VideoShellInput::PlaylistResolved {
+                    entries,
+                    start,
+                    folder,
+                } => self.apply_open(entries, start, folder),
+                VideoShellInput::ShowGotoTime => {
+                    if let Some(root) = window_ref {
+                        self.show_goto_time_dialog(root);
+                    }
                 }
-            }
-            VideoShellInput::Screenshot => self.take_screenshot(),
-            VideoShellInput::ShowChapters => {
-                if let Some(root) = window_ref {
-                    self.show_chapters_dialog(root, &sender);
+                VideoShellInput::Screenshot => self.take_screenshot(),
+                VideoShellInput::ShowChapters => {
+                    if let Some(root) = window_ref {
+                        self.show_chapters_dialog(root, &sender);
+                    }
                 }
-            }
-            VideoShellInput::SetChapter(idx) => self.set_chapter(idx),
-            VideoShellInput::ShowSleepTimer => {
-                if let Some(root) = window_ref {
-                    self.show_sleep_timer_dialog(root, &sender);
+                VideoShellInput::SetChapter(idx) => self.set_chapter(idx),
+                VideoShellInput::ShowSleepTimer => {
+                    if let Some(root) = window_ref {
+                        self.show_sleep_timer_dialog(root, &sender);
+                    }
                 }
-            }
-            VideoShellInput::SleepTimerStart { minutes, action } => {
-                self.start_sleep_timer(sleep_minutes_to_secs(minutes), action, &sender);
-            }
-            VideoShellInput::SleepTimerCancel => {
-                self.cancel_sleep_timer();
-                self.notify(&i18n("Sleep timer cancelled"));
-            }
-            VideoShellInput::SleepTick => self.sleep_tick(),
-            VideoShellInput::TogglePlayback => {
-                if let Some(mpv) = self.mpv.borrow().as_ref() {
-                    mpv.toggle_pause();
+                VideoShellInput::SleepTimerStart { minutes, action } => {
+                    self.start_sleep_timer(sleep_minutes_to_secs(minutes), action, &sender);
                 }
-            }
-            VideoShellInput::ToggleFullscreen => {
-                if let Some(root) = window_ref {
-                    root.set_fullscreened(!root.is_fullscreen());
+                VideoShellInput::SleepTimerCancel => {
+                    self.cancel_sleep_timer();
+                    self.notify(&i18n("Sleep timer cancelled"));
                 }
+                VideoShellInput::SleepTick => self.sleep_tick(),
+                VideoShellInput::TogglePlayback => {
+                    if let Some(mpv) = self.mpv.borrow().as_ref() {
+                        mpv.toggle_pause();
+                    }
+                }
+                VideoShellInput::ToggleFullscreen => {
+                    if let Some(root) = window_ref {
+                        root.set_fullscreened(!root.is_fullscreen());
+                    }
+                }
+                VideoShellInput::SetPaneActivity(activity) => self.set_pane_activity(activity),
             }
-            VideoShellInput::SetPaneActivity(activity) => self.set_pane_activity(activity),
-        }
+        });
     }
 }
 
