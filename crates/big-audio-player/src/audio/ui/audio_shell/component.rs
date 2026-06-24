@@ -567,8 +567,14 @@ impl Component for AudioShell {
         }
     }
 
-    fn update(&mut self, msg: Self::Input, sender: ComponentSender<Self>, _root: &Self::Root) {
-        self.handle_shell_input(msg, sender);
+    fn update(&mut self, msg: Self::Input, sender: ComponentSender<Self>, root: &Self::Root) {
+        // Panic boundary (module contract): a panic in the shell's message
+        // handling tears this module's window down cleanly (host reaps it)
+        // instead of leaving an orphaned dead window; the host process and
+        // every sibling module/surface keep running.
+        big_app_kit::containment::contain_embedded_update(root, "player-audio", || {
+            self.handle_shell_input(msg, sender);
+        });
     }
 }
 
