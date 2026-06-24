@@ -224,9 +224,10 @@ fn spawn_queue_media(
     let token: glib::GString = token.into();
     let path_meta = path.clone();
     glib::spawn_future_local(async move {
-        let texture = gio::spawn_blocking(move || {
-            thumbnail::get_or_generate_thumbnail(&path)
-                .and_then(|p| gdk::Texture::from_filename(p).ok())
+        let decoded = gio::spawn_blocking(move || {
+            let thumb = thumbnail::get_or_generate_thumbnail(&path)?;
+            let texture = gdk::Texture::from_filename(&thumb).ok()?;
+            Some((thumb, texture))
         })
         .await
         .ok()
@@ -234,7 +235,8 @@ fn spawn_queue_media(
         if row_weak.upgrade().map(|r| r.widget_name()) != Some(token.clone()) {
             return;
         }
-        if let (Some(texture), Some(picture)) = (texture, pic_weak.upgrade()) {
+        if let (Some((thumb, texture)), Some(picture)) = (decoded, pic_weak.upgrade()) {
+            let texture = thumbnail::intern_thumbnail_texture(thumb, texture);
             picture.set_paintable(Some(&texture));
         }
         let meta = gio::spawn_blocking(move || playlist::probe_metadata_cached(&path_meta))

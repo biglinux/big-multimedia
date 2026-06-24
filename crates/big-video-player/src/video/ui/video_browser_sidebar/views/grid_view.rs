@@ -333,9 +333,10 @@ fn spawn_thumbnail_load(
     let token_quark: glib::GString = token.into();
     let path_meta = path.clone();
     glib::spawn_future_local(async move {
-        let texture = gio::spawn_blocking(move || {
-            thumbnail::get_or_generate_thumbnail(&path)
-                .and_then(|p| gdk::Texture::from_filename(p).ok())
+        let decoded = gio::spawn_blocking(move || {
+            let thumb = thumbnail::get_or_generate_thumbnail(&path)?;
+            let texture = gdk::Texture::from_filename(&thumb).ok()?;
+            Some((thumb, texture))
         })
         .await
         .ok()
@@ -344,7 +345,8 @@ fn spawn_thumbnail_load(
         if card_weak.upgrade().map(|c| c.widget_name()) != Some(token_quark.clone()) {
             return;
         }
-        if let (Some(texture), Some(picture)) = (texture, pic_weak.upgrade()) {
+        if let (Some((thumb, texture)), Some(picture)) = (decoded, pic_weak.upgrade()) {
+            let texture = thumbnail::intern_thumbnail_texture(thumb, texture);
             picture.set_paintable(Some(&texture));
             if let Some(ph) = placeholder_weak.upgrade() {
                 ph.set_visible(false);
