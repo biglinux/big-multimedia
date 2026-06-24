@@ -240,15 +240,17 @@ pub(super) fn wire_sort_commit(
         let flag = sorting_flag.clone();
         let out = out.clone();
         glib::idle_add_local_once(move || {
-            flag.set(true);
-            let tracks: Vec<Track> = (0..sm.n_items())
-                .filter_map(|i| sm.item(i).and_downcast::<glib::BoxedAnyObject>())
-                .map(|obj| obj.borrow::<Track>().clone())
-                .collect();
-            flag.set(false);
-            if !tracks.is_empty() {
-                let _ = out.output(PlaylistPanelOutput::CommitSortedOrder { tracks });
-            }
+            big_app_kit::containment::guard("audio.playlist.commit_sort", || {
+                flag.set(true);
+                let tracks: Vec<Track> = (0..sm.n_items())
+                    .filter_map(|i| sm.item(i).and_downcast::<glib::BoxedAnyObject>())
+                    .map(|obj| obj.borrow::<Track>().clone())
+                    .collect();
+                flag.set(false);
+                if !tracks.is_empty() {
+                    let _ = out.output(PlaylistPanelOutput::CommitSortedOrder { tracks });
+                }
+            });
         });
     });
 }

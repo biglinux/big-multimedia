@@ -53,34 +53,38 @@ pub(crate) fn present_cast(
     let dialog_weak = glib::WeakRef::new();
     dialog_weak.set(Some(&dialog));
     glib::timeout_add_local(Duration::from_millis(800), move || {
-        if dialog_weak.upgrade().is_none() {
-            return glib::ControlFlow::Break;
-        }
-        let devices = manager_poll.get_devices();
-        while let Some(row) = list_clone.row_at_index(0) {
-            list_clone.remove(&row);
-        }
-        for dev in &devices {
-            let label = if dev.model.is_empty() {
-                dev.name.clone()
+        big_app_kit::containment::guard("audio.cast_dialog.poll", || {
+            if dialog_weak.upgrade().is_none() {
+                return glib::ControlFlow::Break;
+            }
+            let devices = manager_poll.get_devices();
+            while let Some(row) = list_clone.row_at_index(0) {
+                list_clone.remove(&row);
+            }
+            for dev in &devices {
+                let label = if dev.model.is_empty() {
+                    dev.name.clone()
+                } else {
+                    format!("{} ({})", dev.name, dev.model)
+                };
+                let row = BigNavigationRow::new(
+                    BigNavigationRowSpec::new(&label)
+                        .subtitle(format!("{}:{}", dev.host, dev.port)),
+                )
+                .into_root();
+                list_clone.append(&row);
+            }
+            if devices.is_empty() {
+                status_clone.set_text(&i18n("Searching for devices..."));
             } else {
-                format!("{} ({})", dev.name, dev.model)
-            };
-            let row = BigNavigationRow::new(
-                BigNavigationRowSpec::new(&label).subtitle(format!("{}:{}", dev.host, dev.port)),
-            )
-            .into_root();
-            list_clone.append(&row);
-        }
-        if devices.is_empty() {
-            status_clone.set_text(&i18n("Searching for devices..."));
-        } else {
-            status_clone.set_text(&format!("{} {}", devices.len(), i18n("device(s) found")));
-        }
-        if !manager_poll.is_discovering() {
-            manager_poll.start_discovery(8);
-        }
-        glib::ControlFlow::Continue
+                status_clone.set_text(&format!("{} {}", devices.len(), i18n("device(s) found")));
+            }
+            if !manager_poll.is_discovering() {
+                manager_poll.start_discovery(8);
+            }
+            glib::ControlFlow::Continue
+        })
+        .unwrap_or(glib::ControlFlow::Break)
     });
 
     let cast_input = input.clone();
