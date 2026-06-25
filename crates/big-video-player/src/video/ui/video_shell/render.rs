@@ -84,22 +84,13 @@ pub(super) fn wire_realize(
             "" => "auto",
             other => other,
         };
-        let display = WidgetExt::display(win);
-        // Take the software (no-GL) path for an explicit "sw", OR for "auto" on a
-        // software GL renderer (llvmpipe/…): the GL/offload path leaks one dmabuf
-        // fd per frame under software rendering on Wayland (GTK exports a
-        // subsurface dmabuf each frame that Mesa never releases), exhausting the
-        // process's fd limit after ~40 s of playback. The software path uses
-        // GdkMemoryTexture — no dmabuf, no leak. "gl" forces GL regardless.
-        let use_software = mode == "sw"
-            || (mode == "auto"
-                && crate::player::mpv_backend::offload_renderer::gl_renderer_is_software(&display));
-        if use_software {
-            log::info!("video: using the software render path (render-mode={mode})");
+        if mode == "sw" {
+            log::info!("video: render-mode=sw — forcing the software render path");
             video_backend.replace(None);
             wire_sw_fallback(&mpv_backend, &gl_area, &sw_picture, &sw_ctx);
             return;
         }
+        let display = WidgetExt::display(win);
         let backend =
             video_surface::install_best_backend(&display, &main_overlay, &gl_area, "Player");
         let is_offload = backend.is_offload();
