@@ -21,8 +21,17 @@ use gtk::glib;
 
 use super::osd::IdleBackground;
 
-/// Image extensions accepted as wallpapers (lower-case match).
-const IMAGE_EXTS: &[&str] = &["jpg", "jpeg", "png", "webp", "bmp", "tiff", "avif", "svg"];
+/// Image extensions accepted as wallpapers (lower-case match). Mirrors
+/// big-shell's `WALLPAPER_EXTENSIONS` (incl. `heic`/`jxl` — BigShell's default
+/// wallpapers are HEIC) plus the extra raster types ffmpeg can also blur.
+const IMAGE_EXTS: &[&str] = &[
+    "jpg", "jpeg", "png", "webp", "bmp", "tiff", "avif", "heic", "jxl", "svg",
+];
+
+/// System wallpaper pool BigShell scans (mirrors `big_shell_core::paths`).
+const SYSTEM_WALLPAPER_DIR: &str = "/usr/share/wallpapers";
+/// BigShell's `WALLPAPER_SCAN_DEPTH`.
+const WALLPAPER_SCAN_DEPTH: usize = 4;
 
 /// Kick off desktop-wallpaper detection + blur on a worker thread, then apply
 /// the cached blurred image as the idle background once it is ready. No-op on
@@ -67,16 +76,79 @@ fn detect_wallpaper() -> Option<PathBuf> {
         .or_else(detect_gnome_wallpaper)
 }
 
-/// BigShell's own wallpaper, from `~/.config/big-shell/shell.json`
-/// (`wallpaper.image_path`). Checked first so a video opened on the BigShell
-/// desktop matches the shell's wallpaper, not Plasma's stale default.
+/// BigShell's own wallpaper, mirroring `big_shell_core::config::resolve_wallpaper`
+/// so the idle background matches what the BigShell desktop actually renders.
+/// Checked first (before Plasma/GNOME) so a video opened on the BigShell desktop
+/// matches the shell, not Plasma's stale default.
+///
+/// Resolution, in order: the explicit `wallpaper.image_path` from
+/// `~/.config/big-shell/shell.json` when set + present, otherwise BigShell's
+/// system-wallpaper default (the previous code stopped at a null `image_path`
+/// and fell through to Plasma — which is why a default config, where
+/// `image_path` is null, showed the wrong wallpaper). Returns `None` only when
+/// `shell.json` is absent (not a BigShell session) so the Plasma/GNOME
+/// detectors still run there.
 fn detect_bigshell_wallpaper() -> Option<PathBuf> {
     let config = config_home().join("big-shell").join("shell.json");
+    // shell.json absent → not a BigShell session → let the other detectors run.
     let text = std::fs::read_to_string(&config).ok()?;
-    let value: serde_json::Value = serde_json::from_str(&text).ok()?;
-    let raw = value.get("wallpaper")?.get("image_path")?.as_str()?;
-    let path = PathBuf::from(raw);
-    path.is_file().then_some(path)
+
+    if let Ok(value) = serde_json::from_str::<serde_json::Value>(&text) {
+        if let Some(raw) = value
+            .get("wallpaper")
+            .and_then(|w| w.get("image_path"))
+            .and_then(serde_json::Value::as_str)
+        {
+            let path = PathBuf::from(raw);
+            if path.is_file() {
+                return Some(path);
+            }
+        }
+    }
+
+    // `image_path` null / missing / stale → BigShell renders its system-wallpaper
+    // default; mirror that exact pick so the idle background matches the desktop.
+    default_bigshell_wallpaper()
+}
+
+/// BigShell's system-wallpaper default: the "biglinux"-named image under
+/// `/usr/share/wallpapers` if present, else the first sorted image. Mirrors
+/// `big_shell_core::config::default_system_wallpaper`.
+fn default_bigshell_wallpaper() -> Option<PathBuf> {
+    let mut images = Vec::new();
+    collect_images_recursive(
+        Path::new(SYSTEM_WALLPAPER_DIR),
+        WALLPAPER_SCAN_DEPTH,
+        &mut images,
+    );
+    images.sort();
+    images
+        .iter()
+        .find(|path| {
+            path.file_name()
+                .and_then(OsStr::to_str)
+                .is_some_and(|name| name.to_ascii_lowercase().contains("biglinux"))
+        })
+        .cloned()
+        .or_else(|| images.into_iter().next())
+}
+
+/// Collect image files under `dir` up to `depth` levels (depth 0 = stop), by
+/// extension. Mirrors BigShell's recursive wallpaper scan.
+fn collect_images_recursive(dir: &Path, depth: usize, out: &mut Vec<PathBuf>) {
+    if depth == 0 {
+        return;
+    }
+    let Ok(entries) = std::fs::read_dir(dir) else {
+        return;
+    };
+    for path in entries.filter_map(Result::ok).map(|entry| entry.path()) {
+        if path.is_dir() {
+            collect_images_recursive(&path, depth - 1, out);
+        } else if is_image_path(&path) {
+            out.push(path);
+        }
+    }
 }
 
 /// Parse the active Plasma wallpaper from `plasma-org.kde.plasma.desktop-appletsrc`
