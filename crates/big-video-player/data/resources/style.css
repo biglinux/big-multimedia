@@ -59,6 +59,11 @@ menubutton.osd-btn {
   font-variant-numeric: tabular-nums;
 }
 
+/* The elapsed-time label doubles as the "Go to time" trigger. */
+.time-label-clickable:hover {
+  text-decoration: underline;
+}
+
 .title-label {
   font-weight: bold;
   font-size: 14px;

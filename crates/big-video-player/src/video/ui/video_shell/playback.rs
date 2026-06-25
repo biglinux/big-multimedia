@@ -373,6 +373,12 @@ impl VideoShell {
             }
             return;
         }
+        if let VideoControlsBarOutput::GotoTimeClicked = out {
+            if let Some(root) = root {
+                self.show_goto_time_dialog(root);
+            }
+            return;
+        }
         if let VideoControlsBarOutput::SegmentEdgeAdjusted { id, start, end } = out {
             self.adjust_trim_segment(id, start, end);
             return;
@@ -392,6 +398,7 @@ impl VideoShell {
             }
             // Handled before the mpv borrow above (early return).
             VideoControlsBarOutput::ToggleFullscreen
+            | VideoControlsBarOutput::GotoTimeClicked
             | VideoControlsBarOutput::SegmentEdgeAdjusted { .. } => {}
         }
     }

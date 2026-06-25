@@ -374,10 +374,10 @@ impl Component for VideoShell {
         // by one. The old single 8-item "Media" grab-bag is split into Audio /
         // Video / Sources by what the entry actually controls.
         let menu = gio::Menu::new();
+        // "Go to Time" moved to the elapsed-time label click; "Screenshot" is on
+        // the video right-click menu — both removed from here.
         let playback = gio::Menu::new();
-        playback.append(Some(&i18n("Go to Time…")), Some("win.goto-time"));
         playback.append(Some(&i18n("Chapters")), Some("win.chapters"));
-        playback.append(Some(&i18n("Screenshot")), Some("win.screenshot"));
         playback.append(Some(&i18n("Sleep Timer…")), Some("win.sleep-timer"));
         menu.append_section(Some(&i18n("Playback")), &playback);
 
@@ -407,21 +407,8 @@ impl Component for VideoShell {
         sources.append(Some(&i18n("Media Info")), Some("win.media-info"));
         menu.append_section(Some(&i18n("Sources")), &sources);
 
-        // Edit & export: reuse the converter engine in-process — cut, extract
-        // audio, or re-encode the playing file without leaving the player.
-        let export = gio::Menu::new();
-        export.append(Some(&i18n("Cut Video…")), Some("win.trim"));
-        let extract = gio::Menu::new();
-        extract.append(Some(&i18n("MP3")), Some("win.extract-audio-mp3"));
-        extract.append(Some(&i18n("M4A")), Some("win.extract-audio-m4a"));
-        extract.append(Some(&i18n("FLAC")), Some("win.extract-audio-flac"));
-        export.append_submenu(Some(&i18n("Extract Audio")), &extract);
-        let convert = gio::Menu::new();
-        convert.append(Some(&i18n("MP4")), Some("win.convert-mp4"));
-        convert.append(Some(&i18n("MKV")), Some("win.convert-mkv"));
-        convert.append(Some(&i18n("WebM")), Some("win.convert-webm"));
-        export.append_submenu(Some(&i18n("Convert to")), &convert);
-        menu.append_section(Some(&i18n("Edit & Export")), &export);
+        // Edit & Export (cut / extract audio / convert) moved to a footer button
+        // next to the subtitle control — see video_controls_bar::zones.
 
         let settings_section = gio::Menu::new();
         settings_section.append(Some(&i18n("Preferences")), Some("win.preferences"));

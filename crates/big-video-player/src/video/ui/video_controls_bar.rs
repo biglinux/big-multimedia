@@ -108,6 +108,8 @@ pub enum VideoControlsBarOutput {
     },
     /// Fullscreen button clicked.
     ToggleFullscreen,
+    /// The elapsed-time label was clicked → open the "Go to time" dialog.
+    GotoTimeClicked,
 }
 
 /// App-local OSD controls bar (recovers the old `controls_box`).
@@ -199,10 +201,21 @@ impl Component for VideoControlsBar {
             .label("0:00")
             .width_chars(7)
             .xalign(1.0)
-            .css_classes(["time-label"])
+            .css_classes(["time-label", "time-label-clickable"])
             .build();
-        position_label
-            .update_property(&[gtk::accessible::Property::Label(&i18n("Playback position"))]);
+        position_label.update_property(&[gtk::accessible::Property::Label(&i18n("Go to time"))]);
+        crate::shared::tooltip::set(&position_label, &i18n("Go to time"));
+        position_label.set_cursor_from_name(Some("pointer"));
+        // Clicking the elapsed-time counter opens the "Go to time" dialog (the
+        // menu entry was moved here).
+        {
+            let click = gtk::GestureClick::new();
+            let sender = sender.clone();
+            click.connect_released(move |_, _, _, _| {
+                sender.output(VideoControlsBarOutput::GotoTimeClicked).ok();
+            });
+            position_label.add_controller(click);
+        }
         seek_row.append(&position_label);
 
         let seek_adj = gtk::Adjustment::new(0.0, 0.0, 1.0, 0.01, 0.1, 0.0);
@@ -282,7 +295,7 @@ impl Component for VideoControlsBar {
         let (controls_center, prev_btn, play_btn, next_btn) = build_center_box();
         center.set_center_widget(Some(&controls_center));
 
-        let (end_box, subtitle_btn, audio_track_btn, fullscreen_btn) = build_end_box();
+        let (end_box, export_btn, subtitle_btn, audio_track_btn, fullscreen_btn) = build_end_box();
         center.set_end_widget(Some(&end_box));
         let button_layout = ButtonLayoutWidgets {
             start_zone: start_box,
@@ -294,6 +307,7 @@ impl Component for VideoControlsBar {
             prev_btn: prev_btn.clone(),
             play_btn: play_btn.clone(),
             next_btn: next_btn.clone(),
+            export_btn,
             subtitle_btn: subtitle_btn.clone(),
             audio_track_btn: audio_track_btn.clone(),
             fullscreen_btn: fullscreen_btn.clone(),

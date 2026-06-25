@@ -16,6 +16,7 @@ pub(crate) struct ButtonLayoutWidgets {
     pub(super) prev_btn: gtk::Button,
     pub(super) play_btn: gtk::Button,
     pub(super) next_btn: gtk::Button,
+    pub(super) export_btn: gtk::MenuButton,
     pub(super) subtitle_btn: gtk::MenuButton,
     pub(super) audio_track_btn: gtk::MenuButton,
     pub(super) fullscreen_btn: gtk::Button,
@@ -74,6 +75,7 @@ impl ButtonLayoutWidgets {
             ("prev", ButtonZone::Center),
             ("play", ButtonZone::Center),
             ("next", ButtonZone::Center),
+            ("edit-export", ButtonZone::Right),
             ("subtitle", ButtonZone::Right),
             ("audio-track", ButtonZone::Right),
             ("fullscreen", ButtonZone::Right),
@@ -130,6 +132,7 @@ impl ButtonLayoutWidgets {
             "prev" => Some(self.prev_btn.clone().upcast()),
             "play" => Some(self.play_btn.clone().upcast()),
             "next" => Some(self.next_btn.clone().upcast()),
+            "edit-export" => Some(self.export_btn.clone().upcast()),
             "subtitle" => Some(self.subtitle_btn.clone().upcast()),
             "audio-track" => Some(self.audio_track_btn.clone().upcast()),
             "fullscreen" => Some(self.fullscreen_btn.clone().upcast()),
@@ -154,6 +157,7 @@ fn control_name(name: &str) -> &'static str {
         "prev" | "previous" => "prev",
         "play" => "play",
         "next" => "next",
+        "edit-export" | "export" => "edit-export",
         "subtitle" | "subtitles" => "subtitle",
         "audio-track" | "audio" => "audio-track",
         "fullscreen" => "fullscreen",
@@ -350,13 +354,31 @@ pub(super) fn build_center_box() -> (gtk::Box, gtk::Button, gtk::Button, gtk::Bu
     (center, prev_btn, play_btn, next_btn)
 }
 
-/// END box: subtitle MenuButton · audio-track MenuButton · fullscreen.
-pub(super) fn build_end_box() -> (gtk::Box, gtk::MenuButton, gtk::MenuButton, gtk::Button) {
+/// END box: edit-export MenuButton · subtitle MenuButton · audio-track
+/// MenuButton · fullscreen.
+pub(super) fn build_end_box() -> (
+    gtk::Box,
+    gtk::MenuButton,
+    gtk::MenuButton,
+    gtk::MenuButton,
+    gtk::Button,
+) {
     let end_box = gtk::Box::builder()
         .orientation(gtk::Orientation::Horizontal)
         .spacing(6)
         .valign(gtk::Align::Center)
         .build();
+
+    // Edit & Export: cut / extract audio / convert — moved out of the hamburger
+    // menu to a footer button next to the subtitle control. Items target the same
+    // `win.*` window actions, resolved against the player window's action group.
+    let export_btn = gtk::MenuButton::builder()
+        .icon_name("edit-cut-symbolic")
+        .direction(gtk::ArrowType::Up)
+        .css_classes(["osd-btn"])
+        .menu_model(&build_export_menu())
+        .build();
+    export_btn.update_property(&[gtk::accessible::Property::Label(&i18n("Edit & Export"))]);
 
     let subtitle_btn = gtk::MenuButton::builder()
         .icon_name("media-view-subtitles-symbolic")
@@ -374,10 +396,38 @@ pub(super) fn build_end_box() -> (gtk::Box, gtk::MenuButton, gtk::MenuButton, gt
 
     let fullscreen_btn = osd_button("view-fullscreen-symbolic", &i18n("Fullscreen"));
 
+    end_box.append(&export_btn);
     end_box.append(&subtitle_btn);
     end_box.append(&audio_track_btn);
     end_box.append(&fullscreen_btn);
-    (end_box, subtitle_btn, audio_track_btn, fullscreen_btn)
+    (
+        end_box,
+        export_btn,
+        subtitle_btn,
+        audio_track_btn,
+        fullscreen_btn,
+    )
+}
+
+/// The Edit & Export menu (cut · extract audio · convert), targeting the
+/// player window's `win.*` actions. Lives here so the footer button owns it.
+fn build_export_menu() -> gio::Menu {
+    let export = gio::Menu::new();
+    export.append(Some(&i18n("Cut Video…")), Some("win.trim"));
+
+    let extract = gio::Menu::new();
+    extract.append(Some(&i18n("MP3")), Some("win.extract-audio-mp3"));
+    extract.append(Some(&i18n("M4A")), Some("win.extract-audio-m4a"));
+    extract.append(Some(&i18n("FLAC")), Some("win.extract-audio-flac"));
+    export.append_submenu(Some(&i18n("Extract Audio")), &extract);
+
+    let convert = gio::Menu::new();
+    convert.append(Some(&i18n("MP4")), Some("win.convert-mp4"));
+    convert.append(Some(&i18n("MKV")), Some("win.convert-mkv"));
+    convert.append(Some(&i18n("WebM")), Some("win.convert-webm"));
+    export.append_submenu(Some(&i18n("Convert to")), &convert);
+
+    export
 }
 
 /// OSD icon button with an accessible label.
