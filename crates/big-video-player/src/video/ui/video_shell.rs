@@ -137,6 +137,9 @@ pub struct VideoShell {
     /// Transient-toast host wrapping the window content (screenshot / chapter /
     /// sleep-timer feedback). Mirrors the god-object's `toast_overlay`.
     toast_overlay: adw::ToastOverlay,
+    /// The `win.*` action group, kept so the shell can gate context-dependent
+    /// entries (e.g. enable Stream Quality only for online media).
+    win_actions: gio::SimpleActionGroup,
     /// Armed sleep-timer countdown source; `None` when disarmed. Stored so it is
     /// removed on disarm / re-arm / drop (no leaked `glib::timeout`).
     sleep_timer_source: Option<glib::SourceId>,

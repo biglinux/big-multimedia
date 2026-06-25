@@ -98,7 +98,10 @@ pub(super) fn wire_video_input(
         Some(&i18n("Audio & Subtitle Delay")),
         Some("win.show-delay"),
     );
-    av.append(Some(&i18n("Image & Video")), Some("win.show-image-adjust"));
+    av.append(
+        Some(&i18n("Picture Adjustments")),
+        Some("win.show-image-adjust"),
+    );
     ctx_menu.append_section(None, &av);
     let nav = gio::Menu::new();
     nav.append(Some(&i18n("Open File…")), Some("win.open-file"));

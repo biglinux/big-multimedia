@@ -46,12 +46,15 @@ impl VideoShell {
                 // preview can render thumbnail frames (local files only). The
                 // `FileLoaded` payload is the media TITLE, not the path — read
                 // the real path from mpv (`path` property).
-                let preview_path = self
+                let current_file = self
                     .mpv
                     .borrow()
                     .as_ref()
-                    .and_then(|mpv| mpv.get_current_file())
-                    .filter(|p| !is_remote_uri(p));
+                    .and_then(|mpv| mpv.get_current_file());
+                // Stream Quality (yt-dlp) only applies to online/streamed media.
+                let is_online = current_file.as_deref().is_some_and(is_remote_uri);
+                super::actions::set_action_enabled(&self.win_actions, "ytdl-quality", is_online);
+                let preview_path = current_file.filter(|p| !is_remote_uri(p));
                 self.controls
                     .emit(VideoControlsBarInput::SetCurrentFile(preview_path));
                 self.hide_welcome_screen();

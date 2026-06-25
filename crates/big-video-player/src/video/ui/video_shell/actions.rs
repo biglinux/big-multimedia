@@ -5,7 +5,7 @@ pub(super) fn install_window_actions(
     // travel with the content into whatever window hosts it.
     content: &adw::ToastOverlay,
     sender: &ComponentSender<VideoShell>,
-) {
+) -> gio::SimpleActionGroup {
     let actions = gio::SimpleActionGroup::new();
     let pairs: &[(&str, fn() -> VideoShellInput)] = &[
         ("play-pause", || VideoShellInput::TogglePlayback),
@@ -65,7 +65,26 @@ pub(super) fn install_window_actions(
             sender.input(VideoShellInput::ShowCastDialog);
         });
     }
+    // Stream Quality (yt-dlp format picker) only applies to online/streamed
+    // media — start disabled; the shell enables it on a remote `FileLoaded` and
+    // disables it again for local files (see playback.rs). Grays the menu entry.
+    set_action_enabled(&actions, "ytdl-quality", false);
+
     content.insert_action_group("win", Some(&actions));
+    actions
+}
+
+/// Enable/disable a `win.*` action by name (no-op if absent or not a
+/// `SimpleAction`). Used to gate context-dependent entries (e.g. Stream Quality
+/// for online media only).
+pub(super) fn set_action_enabled(actions: &gio::SimpleActionGroup, name: &str, enabled: bool) {
+    use gtk::prelude::ActionMapExt;
+    if let Some(action) = actions
+        .lookup_action(name)
+        .and_downcast::<gio::SimpleAction>()
+    {
+        action.set_enabled(enabled);
+    }
 }
 
 /// Build the centered welcome screen (icon + title + subtitle + Open File /

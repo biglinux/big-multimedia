@@ -113,6 +113,24 @@ pub fn show_preferences(
         switch_box.append(&switch);
         hb.pack_end(&switch_box);
 
+        // "Restore Defaults" lives here now (was a loose top-menu entry). Triggers
+        // the parent window's `win.restore-defaults` action (where the reset logic
+        // + confirmation live).
+        let restore_btn = gtk::Button::builder()
+            .icon_name("edit-undo-symbolic")
+            .css_classes(["flat"])
+            .build();
+        crate::shared::tooltip::set(&restore_btn, &i18n("Restore Defaults"));
+        restore_btn.update_property(&[gtk::accessible::Property::Label(&i18n("Restore Defaults"))]);
+        {
+            let parent: gtk::Window = parent.clone().upcast();
+            restore_btn.connect_clicked(move |_| {
+                let _ =
+                    gtk::prelude::WidgetExt::activate_action(&parent, "win.restore-defaults", None);
+            });
+        }
+        hb.pack_start(&restore_btn);
+
         let s = settings.clone();
         let aw = adv_widgets.clone();
         let sw = simple_widgets.clone();

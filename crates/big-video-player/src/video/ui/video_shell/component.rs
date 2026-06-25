@@ -410,13 +410,11 @@ impl Component for VideoShell {
         // Edit & Export (cut / extract audio / convert) moved to a footer button
         // next to the subtitle control — see video_controls_bar::zones.
 
+        // "Restore Defaults" moved into the Preferences window (header button),
+        // so it is not loose in the top menu.
         let settings_section = gio::Menu::new();
         settings_section.append(Some(&i18n("Preferences")), Some("win.preferences"));
         settings_section.append(Some(&i18n("Appearance")), Some("win.appearance"));
-        settings_section.append(
-            Some(&i18n("Restore Defaults")),
-            Some("win.restore-defaults"),
-        );
         menu.append_section(Some(&i18n("Settings")), &settings_section);
 
         let help = gio::Menu::new();
@@ -443,7 +441,7 @@ impl Component for VideoShell {
         chrome.add_header_start(&files_btn);
         chrome.add_header_start(&list_btn);
 
-        install_window_actions(&root, &sender);
+        let win_actions = install_window_actions(&root, &sender);
 
         // Header is an OSD overlay over edge-to-edge video (matches the old
         // design), NOT an AdwToolbarView top bar: wrapping the video surface in a
@@ -639,6 +637,7 @@ impl Component for VideoShell {
                 idle_bg,
                 buffering_overlay,
                 toast_overlay,
+                win_actions,
                 sleep_timer_source: None,
                 activity_paused_playback: Cell::new(false),
                 sleep_timer_remaining: 0,
