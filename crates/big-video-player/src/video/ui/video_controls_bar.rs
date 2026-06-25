@@ -452,6 +452,10 @@ impl VideoControlsBar {
         self.seek_bar.set_sensitive(on);
         self.subtitle_btn.set_sensitive(on);
         self.audio_track_btn.set_sensitive(on);
+        // Edit & Export (cut/extract/convert) and Go-to-time act on the loaded
+        // media — disabled until a file is open (welcome screen).
+        self.button_layout.export_btn.set_sensitive(on);
+        self.position_label.set_sensitive(on);
     }
 
     /// Redraw the seek-bar chapter marks. The scale runs `0.0..=1.0`, so each
