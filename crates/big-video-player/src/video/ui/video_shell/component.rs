@@ -287,8 +287,6 @@ impl Component for VideoShell {
         });
         drag_handle.add_controller(resize);
 
-        let header = adw::HeaderBar::new();
-
         // Keep-Above pin toggle (old `pin_btn`). No portable Wayland keep-above
         // exists; mirror the god-object by toggling via the compositor (KWin
         // global shortcut, falling back to wmctrl). Both via argv arrays — no
@@ -299,7 +297,6 @@ impl Component for VideoShell {
             .build();
         pin_btn.update_property(&[gtk::accessible::Property::Label(&i18n("Keep Above"))]);
         pin_btn.connect_toggled(|_btn| toggle_keep_above());
-        header.pack_start(&pin_btn);
 
         // Open menu-button (old `open_btn`): Open File… / Open Recent / Open URL…
         let open_menu = gio::Menu::new();
@@ -313,7 +310,6 @@ impl Component for VideoShell {
             .css_classes(["osd-btn"])
             .build();
         open_btn.update_property(&[gtk::accessible::Property::Label(&i18n("Open"))]);
-        header.pack_start(&open_btn);
 
         // Two separate sidebar entry points: Files (folder browser) and Playlist
         // (the play queue). Each reveals the sidebar in its mode; clicking the
@@ -369,8 +365,6 @@ impl Component for VideoShell {
                 updating.set(false);
             }
         });
-        header.pack_start(&files_btn);
-        header.pack_start(&list_btn);
 
         // Hamburger menu (old `menu_btn`): only the items whose dialogs are
         // actually ported. Not-yet-ported entries are deliberately omitted (a
@@ -445,13 +439,22 @@ impl Component for VideoShell {
         );
         help.append(Some(&i18n("About")), Some("app.about"));
         menu.append_section(Some(&i18n("Help")), &help);
-        let menu_btn = gtk::MenuButton::builder()
-            .icon_name("open-menu-symbolic")
-            .menu_model(&menu)
-            .css_classes(["osd-btn"])
-            .build();
-        menu_btn.update_property(&[gtk::accessible::Property::Label(&i18n("Menu"))]);
-        header.pack_end(&menu_btn);
+        // Shared media-viewer chrome (header + accessible GMenuModel menu + the
+        // OSD reveal) — see big_relm4_components::layout::media_window. The video
+        // player keeps its own overlay/offload/sidebar/bottom; only the header
+        // chrome is shared (also used by bigcam + bigiris).
+        let chrome = big_relm4_components::layout::media_window::BigMediaChrome::new(
+            big_relm4_components::layout::media_window::BigMediaMenuSpec {
+                icon_name: "open-menu-symbolic".to_owned(),
+                label: i18n("Menu"),
+                model: menu.upcast(),
+            },
+            !is_background,
+        );
+        chrome.add_header_start(&pin_btn);
+        chrome.add_header_start(&open_btn);
+        chrome.add_header_start(&files_btn);
+        chrome.add_header_start(&list_btn);
 
         install_window_actions(&root, &sender);
 
@@ -469,15 +472,7 @@ impl Component for VideoShell {
         // theme-aware colors (the `.osd-btn` header buttons get
         // `@player_icon_color`), so both light and dark themes stay readable —
         // matching the old god-object's `.osd-header` wrapper box.
-        let header_box = gtk::Box::new(gtk::Orientation::Vertical, 0);
-        header_box.add_css_class("osd-header");
-        header_box.append(&header);
-        let header_revealer = gtk::Revealer::builder()
-            .valign(gtk::Align::Start)
-            .transition_type(gtk::RevealerTransitionType::Crossfade)
-            .reveal_child(!is_background)
-            .child(&header_box)
-            .build();
+        let header_revealer = chrome.header_revealer().clone();
         if !is_background {
             main_overlay.add_overlay(&header_revealer);
             main_overlay.set_measure_overlay(&header_revealer, false);
@@ -493,7 +488,7 @@ impl Component for VideoShell {
             controls_revealer: controls_revealer.clone(),
             main_overlay: main_overlay.clone(),
             header_menu_buttons: {
-                let mut buttons = vec![open_btn.clone(), menu_btn.clone()];
+                let mut buttons = vec![open_btn.clone(), chrome.menu_button().clone()];
                 buttons.extend(controls.model().track_menu_buttons());
                 buttons
             },
