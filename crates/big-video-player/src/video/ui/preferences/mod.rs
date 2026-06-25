@@ -14,7 +14,6 @@ use adw::prelude::*;
 use big_player_ui::audio_preferences::{
     create_player_audio_page as create_audio_page, PlayerAudioEffects, PlayerAudioPreferenceActions,
 };
-use gtk::glib;
 use std::cell::RefCell;
 use std::rc::Rc;
 use std::sync::Arc;
@@ -46,55 +45,48 @@ pub fn show_preferences(
     settings: &Settings,
     mpv: Option<Arc<MpvBackend>>,
 ) {
-    let saved_w = settings.get_int(keys::PREFS_WINDOW_WIDTH);
-    let saved_h = settings.get_int(keys::PREFS_WINDOW_HEIGHT);
-    let w = if saved_w > 0 { saved_w } else { 600 };
-    let h = if saved_h > 0 { saved_h } else { 700 };
-
-    #[allow(deprecated)]
-    // PreferencesDialog (adw 1.6) is not user-resizable; PreferencesWindow keeps that.
-    let win = adw::PreferencesWindow::builder()
-        .title(i18n("Preferences"))
-        .search_enabled(true)
-        .default_width(w)
-        .default_height(h)
-        .transient_for(parent.as_ref())
-        .modal(true)
-        .build();
+    let saved = (
+        settings.get_int(keys::PREFS_WINDOW_WIDTH),
+        settings.get_int(keys::PREFS_WINDOW_HEIGHT),
+    );
 
     let is_advanced = settings.get_bool(keys::ADVANCED_MODE);
     let adv_widgets: AdvancedWidgets = Rc::new(RefCell::new(Vec::new()));
     let simple_widgets: AdvancedWidgets = Rc::new(RefCell::new(Vec::new()));
 
-    #[allow(deprecated)]
-    {
-        win.add(&create_video_page(
+    let pages = [
+        create_video_page(
             settings,
             mpv.as_ref(),
             is_advanced,
             &adv_widgets,
             &simple_widgets,
-        ));
-        win.add(&create_audio_page(
+        ),
+        create_audio_page(
             settings,
             audio_preference_actions(mpv.as_ref()),
             is_advanced,
             &adv_widgets,
             None,
-        ));
-        win.add(&create_subtitle_page(
-            settings,
-            mpv.as_ref(),
-            is_advanced,
-            &adv_widgets,
-        ));
-        win.add(&create_advanced_page(
-            settings,
-            mpv.as_ref(),
-            is_advanced,
-            &adv_widgets,
-        ));
-    }
+        ),
+        create_subtitle_page(settings, mpv.as_ref(), is_advanced, &adv_widgets),
+        create_advanced_page(settings, mpv.as_ref(), is_advanced, &adv_widgets),
+    ];
+
+    let s = settings.clone();
+    let win = big_player_ui::appearance::build_preferences_window(
+        parent,
+        &i18n("Preferences"),
+        true,
+        saved,
+        (600, 700),
+        &pages,
+        move |w, h| {
+            let _ = s.put_int(keys::PREFS_WINDOW_WIDTH, w);
+            let _ = s.put_int(keys::PREFS_WINDOW_HEIGHT, h);
+        },
+        || {},
+    );
 
     // Advanced switch shared across all pages → goes in header bar, not per-page.
     if let Some(hb) = find_header_bar(win.upcast_ref::<gtk::Widget>()) {
@@ -133,15 +125,6 @@ pub fn show_preferences(
             for w in sw.borrow().iter() {
                 w.set_visible(!active);
             }
-        });
-    }
-
-    {
-        let s = settings.clone();
-        win.connect_close_request(move |w| {
-            let _ = s.put_int(keys::PREFS_WINDOW_WIDTH, w.width());
-            let _ = s.put_int(keys::PREFS_WINDOW_HEIGHT, w.height());
-            glib::Propagation::Proceed
         });
     }
 

@@ -288,50 +288,43 @@ fn apply_player_audio_effects(mpv: &MpvBackend, effects: PlayerAudioEffects) {
 
 /// `on_taskbar_toggle` fires when the taskbar-progress switch changes → MPRIS
 /// service updates without a restart.
-#[allow(deprecated)] // PreferencesDialog (adw 1.6) is not user-resizable; PreferencesWindow keeps that capability.
 pub fn show_audio_preferences(
     parent: &impl IsA<gtk::Window>,
     settings: &Settings,
     on_taskbar_toggle: Option<Box<dyn Fn(bool) + 'static>>,
 ) {
-    let saved_w = settings.get_int(keys::AUDIO_PREFS_WINDOW_WIDTH);
-    let saved_h = settings.get_int(keys::AUDIO_PREFS_WINDOW_HEIGHT);
-    let w = if saved_w > 0 { saved_w } else { 550 };
-    let h = if saved_h > 0 { saved_h } else { 650 };
-
-    let win = adw::PreferencesWindow::builder()
-        .title(i18n("Preferences"))
-        .search_enabled(true)
-        .default_width(w)
-        .default_height(h)
-        .transient_for(parent.as_ref())
-        .modal(true)
-        .build();
+    let saved = (
+        settings.get_int(keys::AUDIO_PREFS_WINDOW_WIDTH),
+        settings.get_int(keys::AUDIO_PREFS_WINDOW_HEIGHT),
+    );
 
     let mpv: Option<Arc<MpvBackend>> = None;
     let is_advanced = settings.get_bool(keys::ADVANCED_MODE);
     let adv_widgets: AdvancedWidgets = Rc::new(RefCell::new(Vec::new()));
-    win.add(&create_audio_page(
-        settings,
-        audio_preference_actions(mpv.as_ref()),
-        is_advanced,
-        &adv_widgets,
-        None,
-    ));
-    win.add(&create_music_page(
-        settings,
-        mpv.as_ref(),
-        on_taskbar_toggle,
-    ));
+    let pages = [
+        create_audio_page(
+            settings,
+            audio_preference_actions(mpv.as_ref()),
+            is_advanced,
+            &adv_widgets,
+            None,
+        ),
+        create_music_page(settings, mpv.as_ref(), on_taskbar_toggle),
+    ];
 
-    {
-        let s = settings.clone();
-        win.connect_close_request(move |w| {
-            let _ = s.put_int(keys::AUDIO_PREFS_WINDOW_WIDTH, w.width());
-            let _ = s.put_int(keys::AUDIO_PREFS_WINDOW_HEIGHT, w.height());
-            glib::Propagation::Proceed
-        });
-    }
-
-    win.present();
+    let s = settings.clone();
+    big_player_ui::appearance::build_preferences_window(
+        parent,
+        &i18n("Preferences"),
+        true,
+        saved,
+        (550, 650),
+        &pages,
+        move |w, h| {
+            let _ = s.put_int(keys::AUDIO_PREFS_WINDOW_WIDTH, w);
+            let _ = s.put_int(keys::AUDIO_PREFS_WINDOW_HEIGHT, h);
+        },
+        || {},
+    )
+    .present();
 }
