@@ -155,6 +155,13 @@ pub fn open_paths(paths: Vec<String>) {
     ));
 }
 
+/// Best-effort detection of the NVIDIA proprietary driver, before GTK init: the
+/// kernel module exposes these paths only when loaded (nouveau does not).
+fn nvidia_proprietary_driver_in_use() -> bool {
+    std::path::Path::new("/proc/driver/nvidia/version").exists()
+        || std::path::Path::new("/dev/nvidia0").exists()
+}
+
 /// Initialize logging, gettext, locale, GSK renderer, and GResources,
 /// then run the GTK application. Returns the process exit code.
 #[must_use]
@@ -167,8 +174,18 @@ pub fn run() -> gtk::glib::ExitCode {
         "big_media_runtime=info,big_video_player=info,lofty=error,glycin=error",
     );
     shared::app_base::init_gettext();
+    // The video player renders libmpv into a GtkGLArea. Force (override, since the
+    // session often exports GSK_RENDERER=cairo) the renderer that is stable for
+    // that: "ngl" everywhere except NVIDIA proprietary, which needs the legacy
+    // "gl" (the modern renderer retains GPU memory on resize there). Both "cairo"
+    // and legacy "gl" leak one dmabuf fd per frame on Mesa software (llvmpipe) on
+    // Wayland and crash playback after ~40 s. Mirrors big-host's
+    // configure_process_environment.
     // SAFETY: main path, before GTK init and before app threads.
-    shared::app_base::set_default_env("GSK_RENDERER", "gl");
+    let gsk_renderer = if nvidia_proprietary_driver_in_use() { "gl" } else { "ngl" };
+    unsafe {
+        std::env::set_var("GSK_RENDERER", gsk_renderer);
+    }
     // Default to the GLArea video path. GraphicsOffload zero-copy is only a win
     // when the GPU exports DMA-BUF-importable (linear) modifiers; GPUs that
     // export non-linear modifiers (e.g. NVIDIA proprietary) fall back to a
