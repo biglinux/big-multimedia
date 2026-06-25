@@ -11,6 +11,10 @@ pub(super) struct RealizeOpts {
     pub(super) audio_output: String,
     pub(super) initial_volume: f64,
     pub(super) muted: bool,
+    /// Video output mode (settings `render-mode`): `"auto"` (default — best GL
+    /// backend + software fallback on failure), `"gl"` (force GL/offload), `"sw"`
+    /// (force the software/no-GL render path).
+    pub(super) render_mode: String,
 }
 
 /// On content realize, pick the best video backend, bring up mpv, and wire the
@@ -47,12 +51,6 @@ pub(super) fn wire_realize(
         if mpv.borrow().is_some() {
             return;
         }
-        let display = WidgetExt::display(win);
-        let backend =
-            video_surface::install_best_backend(&display, &main_overlay, &gl_area, "Player");
-        let is_offload = backend.is_offload();
-        video_backend.replace(Some(backend));
-
         let (tx, rx) = async_channel::bounded::<PlayerEvent>(32);
         let mpv_backend = match MpvBackend::new(tx, &opts.custom_opts, &opts.audio_output) {
             Ok(backend) => Arc::new(backend),
@@ -77,6 +75,26 @@ pub(super) fn wire_realize(
             }
         });
 
+        // Render path by mode (settings `render-mode`, default "auto"). "sw"
+        // forces the software/no-GL path directly — never touching GL/offload —
+        // so video plays where GL is not viable (e.g. a GL-less VM). "gl"/"auto"
+        // install the best GL backend; the GL paths fall back to software on a
+        // render-context error (see `wire_render`).
+        let mode = match opts.render_mode.as_str() {
+            "" => "auto",
+            other => other,
+        };
+        if mode == "sw" {
+            log::info!("video: render-mode=sw — forcing the software render path");
+            video_backend.replace(None);
+            wire_sw_fallback(&mpv_backend, &gl_area, &sw_picture, &sw_ctx);
+            return;
+        }
+        let display = WidgetExt::display(win);
+        let backend =
+            video_surface::install_best_backend(&display, &main_overlay, &gl_area, "Player");
+        let is_offload = backend.is_offload();
+        video_backend.replace(Some(backend));
         wire_render(
             &mpv_backend,
             &gl_area,

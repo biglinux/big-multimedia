@@ -31,6 +31,59 @@ fn sync_profile_to_settings(settings: &Settings, profile: &str) {
     }
 }
 
+/// Always-visible "Video Output" group: how frames are rendered — Automatic
+/// (GPU when viable, software fallback), OpenGL (force GPU/offload), or Software
+/// (force the no-GL path; plays without a GPU). Bound to `keys::RENDER_MODE`,
+/// default Automatic. Takes effect on newly opened videos (the render path is
+/// wired when the content realizes).
+pub(super) fn build_video_output_group(settings: &Settings) -> adw::PreferencesGroup {
+    let group = adw::PreferencesGroup::builder()
+        .title(i18n("Video Output"))
+        .description(i18n(
+            "How video is rendered. Automatic uses the GPU when available and falls back to software.",
+        ))
+        .build();
+
+    let labels = &[i18n("Automatic"), i18n("OpenGL (GPU)"), i18n("Software")];
+    let options = gtk::StringList::new(
+        &labels
+            .iter()
+            .map(std::string::String::as_str)
+            .collect::<Vec<_>>(),
+    );
+    let values: &[&str] = &["auto", "gl", "sw"];
+
+    let row = adw::ComboRow::builder()
+        .title(i18n("Video Output"))
+        .subtitle(i18n(
+            "Software works without a GPU; applies to newly opened videos",
+        ))
+        .model(&options)
+        .build();
+    row.add_prefix(&illustration("render_profile.svg"));
+
+    let current = settings.get_string(keys::RENDER_MODE);
+    let current = if current.is_empty() {
+        "auto"
+    } else {
+        current.as_str()
+    };
+    let idx = values.iter().position(|v| *v == current).unwrap_or(0);
+    row.set_selected(idx as u32);
+
+    {
+        let s = settings.clone();
+        row.connect_selected_notify(move |row| {
+            if let Some(&val) = values.get(row.selected() as usize) {
+                let _ = s.put_string(keys::RENDER_MODE, val);
+            }
+        });
+    }
+
+    group.add(&row);
+    group
+}
+
 pub(super) fn build_render_profile_group(
     settings: &Settings,
     mpv: Option<&Arc<MpvBackend>>,

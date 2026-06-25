@@ -32,6 +32,9 @@ pub(super) fn create_video_page(
         .icon_name("video-display-symbolic")
         .build();
 
+    // Video output (Automatic / OpenGL / Software) — always visible, since the
+    // software fallback is what makes video play on GPU-less hosts.
+    page.add(&render_profile::build_video_output_group(settings));
     page.add(&render_profile::build_render_profile_group(
         settings,
         mpv,

@@ -577,6 +577,7 @@ impl Component for VideoShell {
                 audio_output,
                 initial_volume,
                 muted,
+                render_mode: settings.get_string(keys::RENDER_MODE).clone(),
             },
         );
 
