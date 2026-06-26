@@ -21,10 +21,10 @@ pub(super) fn install_bindings(sidebar: &Sidebar) {
 }
 
 fn install_audio_mode_visibility(sidebar: &Sidebar) {
-    let bitrate_combo = sidebar.audio_br_combo.clone();
-    let channels_combo = sidebar.audio_ch_combo.clone();
+    let bitrate_combo = sidebar.audio_mode_bitrate_combo.clone();
+    let channels_combo = sidebar.audio_mode_channels_combo.clone();
     sidebar
-        .audio_fmt_combo
+        .audio_mode_format_combo
         .connect_selected_notify(move |combo| {
             let is_copy = combo.selected() == 0;
             let has_bitrate = matches!(combo.selected(), 1 | 2 | 5 | 6);
@@ -254,9 +254,9 @@ fn install_settings_changed_bindings(sidebar: &Sidebar) {
     connect_combo_changed(&sidebar.audio_bitrate_combo, &settings_changed);
     connect_combo_changed(&sidebar.audio_channels_combo, &settings_changed);
     connect_combo_changed(&sidebar.subtitle_combo, &settings_changed);
-    connect_combo_changed(&sidebar.audio_fmt_combo, &settings_changed);
-    connect_combo_changed(&sidebar.audio_br_combo, &settings_changed);
-    connect_combo_changed(&sidebar.audio_ch_combo, &settings_changed);
+    connect_combo_changed(&sidebar.audio_mode_format_combo, &settings_changed);
+    connect_combo_changed(&sidebar.audio_mode_bitrate_combo, &settings_changed);
+    connect_combo_changed(&sidebar.audio_mode_channels_combo, &settings_changed);
     connect_combo_changed(&sidebar.audio_cut_combo, &settings_changed);
     connect_combo_changed(&sidebar.audio_cut_out_combo, &settings_changed);
 
@@ -282,7 +282,7 @@ fn install_settings_changed_bindings(sidebar: &Sidebar) {
     connect_adjustment_changed(&sidebar.hpf_freq_adj, &settings_changed);
     connect_adjustment_changed(&sidebar.compressor_intensity_adj, &settings_changed);
     connect_dropdown_changed(&sidebar.eq_preset_combo, &settings_changed);
-    connect_adjustment_changed(&sidebar.audio_vol_adj, &settings_changed);
+    connect_adjustment_changed(&sidebar.audio_mode_volume_adjustment, &settings_changed);
     connect_adjustment_changed(&sidebar.audio_speed_adj, &settings_changed);
     for adjustment in &sidebar.eq_band_adjs {
         connect_adjustment_changed(adjustment, &settings_changed);

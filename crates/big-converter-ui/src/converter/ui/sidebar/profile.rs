@@ -91,7 +91,7 @@ impl Sidebar {
                 .iter()
                 .map(gtk::prelude::AdjustmentExt::value)
                 .collect(),
-            volume: self.audio_vol_adj.value(),
+            volume: self.audio_mode_volume_adjustment.value(),
             speed: self.audio_speed_adj.value(),
         };
 
@@ -110,7 +110,7 @@ impl Sidebar {
 
     fn build_audio_profile(&self) -> Profile {
         let fmt = AUDIO_FORMAT_IDS
-            .get(self.audio_fmt_combo.selected() as usize)
+            .get(self.audio_mode_format_combo.selected() as usize)
             .copied()
             .unwrap_or("mp3");
         let (handling, codec, container): (&str, &str, &str) = match fmt {
@@ -123,12 +123,12 @@ impl Sidebar {
             _ => ("reencode", "mp3", "mp3"),
         };
         let bitrate = AUDIO_BITRATE_IDS_A
-            .get(self.audio_br_combo.selected() as usize)
+            .get(self.audio_mode_bitrate_combo.selected() as usize)
             .copied()
             .unwrap_or("128k")
             .to_string();
         let channels = AUDIO_CHANNELS_IDS_A
-            .get(self.audio_ch_combo.selected() as usize)
+            .get(self.audio_mode_channels_combo.selected() as usize)
             .copied()
             .unwrap_or("auto")
             .to_string();
@@ -166,7 +166,7 @@ impl Sidebar {
                         .iter()
                         .map(gtk::prelude::AdjustmentExt::value)
                         .collect(),
-                    volume: self.audio_vol_adj.value(),
+                    volume: self.audio_mode_volume_adjustment.value(),
                     speed: self.audio_speed_adj.value(),
                 },
             },

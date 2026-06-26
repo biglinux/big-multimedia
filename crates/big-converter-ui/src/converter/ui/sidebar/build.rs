@@ -46,33 +46,40 @@ pub(super) fn build_sidebar(mode: ConverterMode) -> Sidebar {
 
     // Bind translated labels: combos borrow refs only for the make_combo call,
     // so each owned Vec can drop right after.
-    let codec_lbl = ui_labels::codec_labels();
-    let video_codec_combo = make_combo(&i18n("Codec"), &super::as_str_refs(&codec_lbl));
+    let codec_labels = ui_labels::codec_labels();
+    let video_codec_combo = make_combo(&i18n("Codec"), &super::as_str_refs(&codec_labels));
     video_codec_combo.set_selected(1);
-    let quality_lbl = ui_labels::quality_labels();
-    let video_quality_combo = make_combo(&i18n("Quality"), &super::as_str_refs(&quality_lbl));
+    let quality_labels = ui_labels::quality_labels();
+    let video_quality_combo = make_combo(&i18n("Quality"), &super::as_str_refs(&quality_labels));
     video_quality_combo.set_selected(3);
-    let preset_lbl = ui_labels::preset_labels();
-    let preset_combo = make_combo(&i18n("Preset"), &super::as_str_refs(&preset_lbl));
+    let preset_labels = ui_labels::preset_labels();
+    let preset_combo = make_combo(&i18n("Preset"), &super::as_str_refs(&preset_labels));
     preset_combo.set_selected(3);
-    let resolution_lbl = ui_labels::resolution_labels();
-    let resolution_combo = make_combo(&i18n("Resolution"), &super::as_str_refs(&resolution_lbl));
-    let container_lbl = ui_labels::container_labels();
-    let output_format_combo = make_combo(&i18n("Format"), &super::as_str_refs(&container_lbl));
+    let resolution_labels = ui_labels::resolution_labels();
+    let resolution_combo = make_combo(&i18n("Resolution"), &super::as_str_refs(&resolution_labels));
+    let container_labels = ui_labels::container_labels();
+    let output_format_combo = make_combo(&i18n("Format"), &super::as_str_refs(&container_labels));
     let gpu_combo = adw::ComboRow::builder().title(&i18n("GPU")).build();
     let gpu_device_combo = adw::ComboRow::builder().title(&i18n("GPU Device")).build();
-    let audio_handling_lbl = ui_labels::audio_handling_labels();
-    let audio_handling_combo = make_combo(&i18n("Audio"), &super::as_str_refs(&audio_handling_lbl));
-    let audio_codec_lbl = ui_labels::audio_codec_labels();
-    let audio_codec_combo = make_combo(&i18n("Audio Codec"), &super::as_str_refs(&audio_codec_lbl));
-    let audio_bitrate_lbl = ui_labels::audio_bitrate_labels();
-    let audio_bitrate_combo = make_combo(&i18n("Bitrate"), &super::as_str_refs(&audio_bitrate_lbl));
+    let audio_handling_labels = ui_labels::audio_handling_labels();
+    let audio_handling_combo =
+        make_combo(&i18n("Audio"), &super::as_str_refs(&audio_handling_labels));
+    let audio_codec_labels = ui_labels::audio_codec_labels();
+    let audio_codec_combo = make_combo(
+        &i18n("Audio Codec"),
+        &super::as_str_refs(&audio_codec_labels),
+    );
+    let audio_bitrate_labels = ui_labels::audio_bitrate_labels();
+    let audio_bitrate_combo =
+        make_combo(&i18n("Bitrate"), &super::as_str_refs(&audio_bitrate_labels));
     audio_bitrate_combo.set_selected(2);
-    let audio_channels_lbl = ui_labels::audio_channels_labels();
-    let audio_channels_combo =
-        make_combo(&i18n("Channels"), &super::as_str_refs(&audio_channels_lbl));
-    let subtitle_lbl = ui_labels::subtitle_labels();
-    let subtitle_combo = make_combo(&i18n("Subtitles"), &super::as_str_refs(&subtitle_lbl));
+    let audio_channels_labels = ui_labels::audio_channels_labels();
+    let audio_channels_combo = make_combo(
+        &i18n("Channels"),
+        &super::as_str_refs(&audio_channels_labels),
+    );
+    let subtitle_labels = ui_labels::subtitle_labels();
+    let subtitle_combo = make_combo(&i18n("Subtitles"), &super::as_str_refs(&subtitle_labels));
     let gpu_partial_switch = adw::SwitchRow::builder()
         .title(&i18n("Decode Using Software"))
         .build();
@@ -192,12 +199,12 @@ pub(super) fn build_sidebar(mode: ConverterMode) -> Sidebar {
         eq_enabled_switch,
         eq_preset_combo,
         eq_band_adjs,
-        audio_fmt_combo: conversion.audio_fmt_combo,
-        audio_br_combo: conversion.audio_br_combo,
-        audio_ch_combo: conversion.audio_ch_combo,
+        audio_mode_format_combo: conversion.audio_mode_format_combo,
+        audio_mode_bitrate_combo: conversion.audio_mode_bitrate_combo,
+        audio_mode_channels_combo: conversion.audio_mode_channels_combo,
         audio_cut_combo: conversion.audio_cut_combo,
         audio_cut_out_combo: conversion.audio_cut_out_combo,
-        audio_vol_adj: conversion.audio_vol_adj,
+        audio_mode_volume_adjustment: conversion.audio_mode_volume_adjustment,
         audio_speed_adj: conversion.audio_speed_adj,
         editing_box: editing.editing_box,
         brightness_scale: editing.brightness_scale,
@@ -221,7 +228,7 @@ pub(super) fn build_sidebar(mode: ConverterMode) -> Sidebar {
         delete_switch: conversion.delete_switch,
         folder_combo: conversion.folder_combo,
         folder_entry: conversion.folder_entry,
-        folder_btn: conversion.folder_btn,
+        folder_button: conversion.folder_button,
         on_profile_selected: new_cb(),
         on_show_encoding_dialog: new_cb(),
         on_show_audio_dialog: new_cb(),

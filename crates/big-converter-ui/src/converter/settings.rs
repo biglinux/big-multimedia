@@ -160,20 +160,20 @@ pub fn save_audio_settings(settings: &Settings, sidebar: &Sidebar) {
     settings.put_string(keys::EQ_BANDS, &bands);
 
     let fmt = crate::converter::ui::sidebar::AUDIO_FORMAT_IDS
-        .get(sidebar.audio_fmt_combo.selected() as usize)
+        .get(sidebar.audio_mode_format_combo.selected() as usize)
         .copied()
         .unwrap_or("mp3");
     settings.put_string(keys::AUDIO_CONV_FORMAT, fmt);
 
     let br = crate::converter::ui::sidebar::AUDIO_BITRATE_IDS_A
-        .get(sidebar.audio_br_combo.selected() as usize)
+        .get(sidebar.audio_mode_bitrate_combo.selected() as usize)
         .copied()
         .unwrap_or("128k");
     settings.put_string(keys::AUDIO_CONV_BITRATE, br);
 
     settings.put_int(
         keys::AUDIO_CONV_CHANNELS,
-        sidebar.audio_ch_combo.selected() as i32,
+        sidebar.audio_mode_channels_combo.selected() as i32,
     );
     settings.put_int(
         keys::AUDIO_CONV_CUT_MODE,
@@ -183,7 +183,10 @@ pub fn save_audio_settings(settings: &Settings, sidebar: &Sidebar) {
         keys::AUDIO_CONV_CUT_OUTPUT,
         sidebar.audio_cut_out_combo.selected() as i32,
     );
-    settings.put_double(keys::AUDIO_CONV_VOLUME, sidebar.audio_vol_adj.value());
+    settings.put_double(
+        keys::AUDIO_CONV_VOLUME,
+        sidebar.audio_mode_volume_adjustment.value(),
+    );
     settings.put_double(keys::AUDIO_CONV_SPEED, sidebar.audio_speed_adj.value());
 
     settings.flush();
@@ -240,7 +243,7 @@ pub fn restore_audio_settings(settings: &Settings, sidebar: &Sidebar) {
     let fmt = settings.get_string(keys::AUDIO_CONV_FORMAT);
     if !fmt.is_empty() {
         crate::converter::ui::sidebar::set_combo_by_id(
-            &sidebar.audio_fmt_combo,
+            &sidebar.audio_mode_format_combo,
             crate::converter::ui::sidebar::AUDIO_FORMAT_IDS,
             &fmt,
         );
@@ -249,7 +252,7 @@ pub fn restore_audio_settings(settings: &Settings, sidebar: &Sidebar) {
     let br = settings.get_string(keys::AUDIO_CONV_BITRATE);
     if !br.is_empty() {
         crate::converter::ui::sidebar::set_combo_by_id(
-            &sidebar.audio_br_combo,
+            &sidebar.audio_mode_bitrate_combo,
             crate::converter::ui::sidebar::AUDIO_BITRATE_IDS_A,
             &br,
         );
@@ -257,7 +260,9 @@ pub fn restore_audio_settings(settings: &Settings, sidebar: &Sidebar) {
 
     let channels = settings.get_int(keys::AUDIO_CONV_CHANNELS);
     if channels >= 0 {
-        sidebar.audio_ch_combo.set_selected(channels as u32);
+        sidebar
+            .audio_mode_channels_combo
+            .set_selected(channels as u32);
     }
 
     let cut_mode = settings.get_int(keys::AUDIO_CONV_CUT_MODE);
@@ -276,7 +281,7 @@ pub fn restore_audio_settings(settings: &Settings, sidebar: &Sidebar) {
 
     let volume = settings.get_double(keys::AUDIO_CONV_VOLUME);
     if volume > 0.0 {
-        sidebar.audio_vol_adj.set_value(volume);
+        sidebar.audio_mode_volume_adjustment.set_value(volume);
     }
 
     let speed = settings.get_double(keys::AUDIO_CONV_SPEED);

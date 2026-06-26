@@ -34,13 +34,13 @@ pub(super) struct ConversionPageWidgets {
     pub(super) folder_combo: gtk::DropDown,
     pub(super) delete_switch: gtk::Switch,
     pub(super) folder_entry: gtk::Entry,
-    pub(super) folder_btn: gtk::Button,
-    pub(super) audio_fmt_combo: adw::ComboRow,
-    pub(super) audio_br_combo: adw::ComboRow,
-    pub(super) audio_ch_combo: adw::ComboRow,
+    pub(super) folder_button: gtk::Button,
+    pub(super) audio_mode_format_combo: adw::ComboRow,
+    pub(super) audio_mode_bitrate_combo: adw::ComboRow,
+    pub(super) audio_mode_channels_combo: adw::ComboRow,
     pub(super) audio_cut_combo: adw::ComboRow,
     pub(super) audio_cut_out_combo: adw::ComboRow,
-    pub(super) audio_vol_adj: gtk::Adjustment,
+    pub(super) audio_mode_volume_adjustment: gtk::Adjustment,
     pub(super) audio_speed_adj: gtk::Adjustment,
 }
 
@@ -56,14 +56,19 @@ pub(super) fn build_conversion_page(mode: ConverterMode) -> ConversionPageWidget
     conv_box.set_margin_start(12);
     conv_box.set_margin_end(12);
 
-    let audio_fmt_lbl = ui_labels::audio_format_labels();
-    let audio_fmt_combo = make_combo(&i18n("Format"), &super::as_str_refs(&audio_fmt_lbl));
-    audio_fmt_combo.set_selected(1);
-    let audio_br_lbl = ui_labels::audio_bitrate_labels_audio_mode();
-    let audio_br_combo = make_combo(&i18n("Bitrate"), &super::as_str_refs(&audio_br_lbl));
-    audio_br_combo.set_selected(2);
-    let audio_ch_lbl = ui_labels::audio_channels_labels_audio_mode();
-    let audio_ch_combo = make_combo(&i18n("Channels"), &super::as_str_refs(&audio_ch_lbl));
+    let audio_format_labels = ui_labels::audio_format_labels();
+    let audio_mode_format_combo =
+        make_combo(&i18n("Format"), &super::as_str_refs(&audio_format_labels));
+    audio_mode_format_combo.set_selected(1);
+    let audio_bitrate_labels = ui_labels::audio_bitrate_labels_audio_mode();
+    let audio_mode_bitrate_combo =
+        make_combo(&i18n("Bitrate"), &super::as_str_refs(&audio_bitrate_labels));
+    audio_mode_bitrate_combo.set_selected(2);
+    let audio_channels_labels = ui_labels::audio_channels_labels_audio_mode();
+    let audio_mode_channels_combo = make_combo(
+        &i18n("Channels"),
+        &super::as_str_refs(&audio_channels_labels),
+    );
     let audio_cut_combo = make_combo(
         &i18n("Mode"),
         &[
@@ -87,7 +92,7 @@ pub(super) fn build_conversion_page(mode: ConverterMode) -> ConversionPageWidget
         "Separate Files creates one file per segment; Merge joins all",
     ));
     audio_cut_out_combo.set_visible(audio_cut_combo.selected() != 0);
-    let audio_vol_adj = gtk::Adjustment::new(1.0, 0.0, 2.0, 0.05, 0.1, 0.0);
+    let audio_mode_volume_adjustment = gtk::Adjustment::new(1.0, 0.0, 2.0, 0.05, 0.1, 0.0);
     let audio_speed_adj = gtk::Adjustment::new(1.0, 0.1, 5.0, 0.05, 0.1, 0.0);
 
     let profile_group = adw::PreferencesGroup::new();
@@ -180,9 +185,9 @@ pub(super) fn build_conversion_page(mode: ConverterMode) -> ConversionPageWidget
     let audio_settings_row_audio_mode = if mode.is_audio() {
         let output_group = adw::PreferencesGroup::new();
         output_group.set_margin_top(0);
-        output_group.add(&audio_fmt_combo);
-        output_group.add(&audio_br_combo);
-        output_group.add(&audio_ch_combo);
+        output_group.add(&audio_mode_format_combo);
+        output_group.add(&audio_mode_bitrate_combo);
+        output_group.add(&audio_mode_channels_combo);
         conv_box.append(&output_group);
 
         let cut_group = adw::PreferencesGroup::builder().title(i18n("Cut")).build();
@@ -235,8 +240,8 @@ pub(super) fn build_conversion_page(mode: ConverterMode) -> ConversionPageWidget
         .hexpand(true)
         .build();
     folder_entry.update_property(&[gtk::accessible::Property::Label(&i18n("Select folder"))]);
-    let folder_btn = gtk::Button::builder().icon_name("folder-symbolic").build();
-    folder_btn.update_property(&[gtk::accessible::Property::Label(&i18n(
+    let folder_button = gtk::Button::builder().icon_name("folder-symbolic").build();
+    folder_button.update_property(&[gtk::accessible::Property::Label(&i18n(
         "Choose output folder",
     ))]);
 
@@ -260,13 +265,13 @@ pub(super) fn build_conversion_page(mode: ConverterMode) -> ConversionPageWidget
         folder_combo,
         delete_switch,
         folder_entry,
-        folder_btn,
-        audio_fmt_combo,
-        audio_br_combo,
-        audio_ch_combo,
+        folder_button,
+        audio_mode_format_combo,
+        audio_mode_bitrate_combo,
+        audio_mode_channels_combo,
         audio_cut_combo,
         audio_cut_out_combo,
-        audio_vol_adj,
+        audio_mode_volume_adjustment,
         audio_speed_adj,
     }
 }

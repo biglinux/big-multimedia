@@ -161,9 +161,9 @@ impl Component for ConverterSidebar {
         wire_profile_signals(&sidebar, &sender);
         wire_dialog_signals(&sidebar, &sender);
 
-        // folder_btn opens the output-dir chooser (same as the output row).
+        // folder_button opens the output-dir chooser (same as the output row).
         let s = sender.clone();
-        sidebar.folder_btn.connect_clicked(move |_| {
+        sidebar.folder_button.connect_clicked(move |_| {
             s.input(ConverterSidebarInput::OutputDirClicked);
         });
         let _ = sender.output(ConverterSidebarOutput::FooterReady(build_footer(&sidebar)));
@@ -171,7 +171,7 @@ impl Component for ConverterSidebar {
         if sidebar.mode.is_audio() {
             wire_audio_mode_signals(&sidebar, &sender);
             let _ = sender.output(ConverterSidebarOutput::AudioAdjustmentsReady {
-                volume: sidebar.audio_vol_adj.clone(),
+                volume: sidebar.audio_mode_volume_adjustment.clone(),
                 speed: sidebar.audio_speed_adj.clone(),
             });
         }
@@ -284,7 +284,7 @@ impl Component for ConverterSidebar {
                 conv_settings::save_audio_settings(&self.settings, &self.sidebar);
                 let _ = sender.output(ConverterSidebarOutput::AudioPreviewChanged {
                     effects,
-                    volume: self.sidebar.audio_vol_adj.value(),
+                    volume: self.sidebar.audio_mode_volume_adjustment.value(),
                     speed: self.sidebar.audio_speed_adj.value(),
                 });
             }
@@ -374,7 +374,7 @@ fn build_footer(sidebar: &Sidebar) -> gtk::Box {
     let folder_entry_box = gtk::Box::new(gtk::Orientation::Horizontal, 4);
     folder_entry_box.set_visible(false);
     folder_entry_box.append(&sidebar.folder_entry);
-    folder_entry_box.append(&sidebar.folder_btn);
+    folder_entry_box.append(&sidebar.folder_button);
     footer.append(&folder_entry_box);
     {
         let feb = folder_entry_box.clone();
@@ -513,7 +513,9 @@ fn wire_audio_mode_signals(sidebar: &Sidebar, sender: &ComponentSender<Converter
         adj.connect_value_changed(move |_| f());
     }
     let f = effect(sender);
-    sidebar.audio_vol_adj.connect_value_changed(move |_| f());
+    sidebar
+        .audio_mode_volume_adjustment
+        .connect_value_changed(move |_| f());
     let f = effect(sender);
     sidebar.audio_speed_adj.connect_value_changed(move |_| f());
 
@@ -524,12 +526,16 @@ fn wire_audio_mode_signals(sidebar: &Sidebar, sender: &ComponentSender<Converter
     };
     let f = fmt(sender);
     sidebar
-        .audio_fmt_combo
+        .audio_mode_format_combo
         .connect_selected_notify(move |_| f());
     let f = fmt(sender);
-    sidebar.audio_br_combo.connect_selected_notify(move |_| f());
+    sidebar
+        .audio_mode_bitrate_combo
+        .connect_selected_notify(move |_| f());
     let f = fmt(sender);
-    sidebar.audio_ch_combo.connect_selected_notify(move |_| f());
+    sidebar
+        .audio_mode_channels_combo
+        .connect_selected_notify(move |_| f());
     let f = fmt(sender);
     sidebar
         .audio_cut_out_combo
