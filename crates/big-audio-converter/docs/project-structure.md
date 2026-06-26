@@ -16,7 +16,7 @@ This is a thin wrapper. `src/` holds only two files:
 
 The converter window, sidebar, dialogs, edit pages, queue page, audio preview,
 and settings persistence are **not** in this repo — they live in the sibling
-crate `../big-rust-components/crates/big-converter-ui`. ffmpeg orchestration
+crate `../big-converter-ui`. ffmpeg orchestration
 lives in `../big-media-runtime`. Edit converter behaviour there.
 
 Note: this binary runs the UI **in-process** (`main_impl`) — audio conversion

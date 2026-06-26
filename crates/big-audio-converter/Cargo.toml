@@ -11,7 +11,7 @@ repository = "https://github.com/biglinux/big-multimedia"
 exclude = ["packaging"]
 
 [dependencies]
-big-converter-ui = { path = "../../../big-rust-components/crates/big-converter-ui" }
+big-converter-ui = { path = "../big-converter-ui" }
 
 [dev-dependencies]
 big-media-runtime = { path = "../../../big-media-runtime", default-features = false, features = ["ui"] }

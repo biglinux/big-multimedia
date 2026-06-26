@@ -5,6 +5,7 @@
 [workspace]
 resolver = "2"
 members = [
+    "crates/big-converter-ui",
     "crates/big-audio-player",
     "crates/big-video-player",
     "crates/big-audio-converter",

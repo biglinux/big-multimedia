@@ -14,7 +14,7 @@ binary calls `big_converter_ui::run(RunOptions { mode: Video, … })`.
 
 There is NO app-owned converter source in this repo. The converter window,
 sidebar, dialogs, edit/queue pages, render loop, and settings live upstream in
-`../big-rust-components/crates/big-converter-ui`. The multimedia backend
+`../big-converter-ui`. The multimedia backend
 (ffmpeg/ffprobe orchestration, GPU detect, cast/transcode) lives in
 `../big-media-runtime`.
 

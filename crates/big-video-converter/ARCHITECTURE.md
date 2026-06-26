@@ -24,7 +24,7 @@ The `dlopen` host module (`libbig_converter_video.so` + manifest) is owned by
 | Crate | Path | Role |
 |---|---|---|
 | `big-video-converter` (bin+lib) | `src/main.rs`, `src/lib.rs` | Entry; selects `ConverterMode::Video`, no bootstrap env. |
-| `big-converter-ui` | `../big-rust-components/crates/big-converter-ui` | Shared UI: window, file list, edit page, render preview, queue. |
+| `big-converter-ui` | `../big-converter-ui` | Shared UI: window, file list, edit page, render preview, queue. |
 | `big-media-runtime` (dev-dep) | `../big-media-runtime` | ffmpeg/ffprobe, GPU detect, cast/transcode sessions, thumbnails. |
 | `gtk4` 0.11 (v4_22) | crates.io | GTK bindings. |
 
@@ -131,6 +131,6 @@ See `INVARIANTS.md`. Highlights:
 ### Next steps
 
 - INVARIANTS.md — authoritative invariant list and audio/video deltas.
-- `../big-rust-components/crates/big-converter-ui/src/converter/ui/edit_page/render.rs` — video render loop.
+- `../big-converter-ui/src/converter/ui/edit_page/render.rs` — video render loop.
 - `../big-media-runtime/src/cast/gpu/` — VA-API / NVENC detection.
 - `../big-media-runtime/src/converter/` — ffmpeg orchestration.

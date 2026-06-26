@@ -35,7 +35,7 @@ wrapper architecture — see Residual).
 
 - **R11 `split-media-app-thin-wrapper` / `split-media-app-missing-domain-tree`** —
   intentional architecture: this app crate is a thin entrypoint;
-  domain code lives in `big-rust-components/crates/big-converter-ui`.
+  domain code lives in `big-multimedia/crates/big-converter-ui`.
   Documented in `ARCHITECTURE.md`. component-check rule fires on
   `ownedSourceFiles < 4` heuristic and lacks a marker-based waiver
   mechanism; auditor should treat as documented residual, not gate

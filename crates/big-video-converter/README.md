@@ -42,7 +42,7 @@ Full gate matrix (fmt, clippy, doc, tests, deny, audit, machete): see
 - `packaging/flatpak/`: Flatpak/Flathub packaging source.
 
 The converter window, sidebar, dialogs, edit/queue pages, and settings are
-owned upstream in `../big-rust-components/crates/big-converter-ui`, not in this
+owned upstream in `../big-converter-ui`, not in this
 repo. See `ARCHITECTURE.md` for the wrapper design and `INVARIANTS.md` for the
 enforced contract.
 

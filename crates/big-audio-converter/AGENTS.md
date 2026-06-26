@@ -19,7 +19,7 @@ That is the whole crate. There is no `src/converter/`, `dev/`, `legacy/`, or
 ## Where to edit (common tasks)
 
 - Converter window, sidebar, edit/queue pages, dialogs, playback →
-  `../big-rust-components/crates/big-converter-ui`.
+  `../big-converter-ui`.
 - ffmpeg/ffprobe orchestration, transcode session, scratch dirs, probing →
   `../big-media-runtime`.
 - Generic reusable UI/media/task helpers → `big-rust-components` (do not copy

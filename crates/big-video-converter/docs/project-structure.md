@@ -31,7 +31,7 @@ The `dlopen`-able host module (`libbig_converter_video.so` + its
 packaged as `big-converter-video` — NOT by this repo.
 
 Converter window, sidebar, dialogs, edit/queue pages, and settings are owned
-upstream in `../big-rust-components/crates/big-converter-ui`, not in this repo.
+upstream in `../big-converter-ui`, not in this repo.
 Edits to that UI/settings logic belong there, not here. See `ARCHITECTURE.md`
 for the cross-repo map.
 

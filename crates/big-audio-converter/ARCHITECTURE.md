@@ -16,7 +16,7 @@ bootstrap env so the shared crate gates audio-only code paths.
 | Crate | Path | Role |
 |---|---|---|
 | `big-audio-converter` (bin+lib) | `src/main.rs`, `src/lib.rs` | Entry point. Calls `big_converter_ui::run(RunOptions { mode: Audio, … })`. |
-| `big-converter-ui` (dep, path) | `../big-rust-components/crates/big-converter-ui` | Shared GTK UI: window, file list, edit page, queue, audio playback. |
+| `big-converter-ui` (dep, path) | `../big-converter-ui` | Shared GTK UI: window, file list, edit page, queue, audio playback. |
 | `big-media-runtime` (dev-dep) | `../big-media-runtime` | ffmpeg/ffprobe wrappers, cast/transcode session, scratch-dir lifecycle. Reused by tests. |
 | `gtk4` 0.11 (v4_22) | crates.io | GTK bindings. |
 
@@ -135,5 +135,5 @@ See `INVARIANTS.md` (canonical). Highlights:
 ### Next steps
 
 - INVARIANTS.md — authoritative list of every defended property.
-- `../big-rust-components/crates/big-converter-ui/` — UI + state.
+- `../big-converter-ui/` — UI + state.
 - `../big-media-runtime/src/converter/` — ffmpeg orchestration.

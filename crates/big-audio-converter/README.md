@@ -33,7 +33,7 @@ cargo deny check
 ```
 
 This crate is a thin wrapper: `src/` holds only `main.rs` + `lib.rs`. The
-converter UI/state lives in `../big-rust-components/crates/big-converter-ui`
+converter UI/state lives in `../big-converter-ui`
 and ffmpeg orchestration in `../big-media-runtime`. See `ARCHITECTURE.md` and
 `docs/project-structure.md`.
 
