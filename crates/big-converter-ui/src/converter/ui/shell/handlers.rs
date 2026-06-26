@@ -28,7 +28,7 @@ use crate::i18n::i18n;
 use big_media_runtime::editor::audio_edit_page::AudioEditorInput;
 use big_media_runtime::editor::edit_page::{VideoEditResult, VideoEditorInput};
 
-use super::setup::to_queue_item;
+use super::setup::to_queue_entry;
 use super::{ConverterShell, ShellMsg};
 
 impl ConverterShell {
@@ -117,9 +117,9 @@ impl ConverterShell {
         }
 
         let id = self.queue.add_file(path);
-        if let Some(item) = self.queue.items().iter().find(|i| i.id == id) {
+        if let Some(queue_item) = self.queue.items().iter().find(|i| i.id == id) {
             self.queue_view
-                .emit(BigConverterQueueInput::AddItem(to_queue_item(item)));
+                .emit(BigConverterQueueInput::AddEntry(to_queue_entry(queue_item)));
         }
         self.header.emit(BigConverterHeaderInput::SetQueueCount(
             self.queue.items().len(),
@@ -212,7 +212,7 @@ impl ConverterShell {
                 .queue
                 .items()
                 .iter()
-                .filter(|item| item.status == ItemStatus::Pending)
+                .filter(|queue_item| queue_item.status == ItemStatus::Pending)
                 .cloned()
                 .collect(),
             output_dir: self.queue.output_dir().to_path_buf(),
@@ -353,7 +353,7 @@ impl ConverterShell {
                     self.progress
                         .emit(BigConverterProgressInput::MarkDone(item_id));
                     self.queue_view
-                        .emit(BigConverterQueueInput::RemoveItem(item_id));
+                        .emit(BigConverterQueueInput::RemoveEntry(item_id));
                     self.queue.remove_item(item_id);
                     self.progress_done += 1;
                     self.header.emit(BigConverterHeaderInput::SetQueueCount(
@@ -505,27 +505,27 @@ impl ConverterShell {
         let mut running_items = 0_usize;
         let mut terminal_items = 0_usize;
         let mut current_file_name = None;
-        for item in details.items {
-            let Some(local_item_id) = job.item_ids.get(item.item_index).copied() else {
+        for daemon_item in details.items {
+            let Some(local_item_id) = job.item_ids.get(daemon_item.item_index).copied() else {
                 continue;
             };
-            if let Some(command) = item.command {
+            if let Some(command) = daemon_item.command {
                 self.progress.emit(BigConverterProgressInput::SetCommand(
                     local_item_id,
                     command,
                 ));
             }
-            if !item.stderr_tail.is_empty() {
+            if !daemon_item.stderr_tail.is_empty() {
                 self.progress.emit(BigConverterProgressInput::SetStderrLog(
                     local_item_id,
-                    item.stderr_tail,
+                    daemon_item.stderr_tail,
                 ));
             }
-            match item.state {
+            match daemon_item.state {
                 ConversionItemState::Pending => {}
                 ConversionItemState::Running => {
                     running_items += 1;
-                    if let Some(progress) = item.progress {
+                    if let Some(progress) = daemon_item.progress {
                         self.progress
                             .emit(BigConverterProgressInput::UpdateProgress(
                                 local_item_id,
@@ -536,7 +536,7 @@ impl ConverterShell {
                         local_item_id,
                         BigConversionQueueStatus::Converting,
                     ));
-                    current_file_name = item
+                    current_file_name = daemon_item
                         .input
                         .file_name()
                         .map(|name| name.to_string_lossy().into_owned());
@@ -559,8 +559,7 @@ impl ConverterShell {
                     terminal_items += 1;
                     self.progress.emit(BigConverterProgressInput::MarkFailed(
                         local_item_id,
-                        item.status_text
-                            .unwrap_or_else(|| i18n("Conversion failed")),
+                        daemon_failure_status_text(daemon_item.status_text),
                     ));
                     self.queue_view.emit(BigConverterQueueInput::UpdateStatus(
                         local_item_id,
@@ -605,7 +604,7 @@ impl ConverterShell {
                     self.progress
                         .emit(BigConverterProgressInput::MarkDone(item_id));
                     self.queue_view
-                        .emit(BigConverterQueueInput::RemoveItem(item_id));
+                        .emit(BigConverterQueueInput::RemoveEntry(item_id));
                     self.queue.remove_item(item_id);
                 }
                 DurableJobState::Cancelled => {
@@ -652,7 +651,7 @@ impl ConverterShell {
         self.queue.clear_all();
         self.queue_view.emit(BigConverterQueueInput::Clear);
         self.queue_view
-            .emit(BigConverterQueueInput::SetPlayingItem(None));
+            .emit(BigConverterQueueInput::SetPlayingEntry(None));
         self.current_audio_preview_item = None;
         self.header.emit(BigConverterHeaderInput::SetQueueCount(0));
         self.audio_preview_revealer.set_reveal_child(false);
@@ -666,12 +665,12 @@ impl ConverterShell {
         })));
     }
 
-    pub(super) fn remove_queue_item(&mut self, item_id: u64) {
+    pub(super) fn remove_queue_entry(&mut self, item_id: u64) {
         self.queue.remove_item(item_id);
         if self.current_audio_preview_item == Some(item_id) {
             self.current_audio_preview_item = None;
             self.queue_view
-                .emit(BigConverterQueueInput::SetPlayingItem(None));
+                .emit(BigConverterQueueInput::SetPlayingEntry(None));
             self.audio_preview_revealer.set_reveal_child(false);
             if let Some(ae) = &self.audio_editor {
                 ae.emit(AudioEditorInput::Unload);
@@ -709,11 +708,11 @@ impl ConverterShell {
 
     pub(super) fn open_audio_preview(&mut self, item_id: u64, autoplay: bool) {
         let Some(ae) = &self.audio_editor else { return };
-        let Some(item) = self.queue.items().iter().find(|i| i.id == item_id) else {
+        let Some(queue_item) = self.queue.items().iter().find(|i| i.id == item_id) else {
             return;
         };
-        let input_path = item.input.clone();
-        let segments = item.segments.clone();
+        let input_path = queue_item.input.clone();
+        let segments = queue_item.segments.clone();
 
         ae.emit(AudioEditorInput::LoadFile(input_path));
         ae.emit(AudioEditorInput::SetSegments(segments));
@@ -734,15 +733,20 @@ impl ConverterShell {
             return;
         };
         let next_id = {
-            let items = self.queue.items();
-            let Some(idx) = items.iter().position(|i| i.id == current) else {
+            let queue_items = self.queue.items();
+            let Some(idx) = queue_items
+                .iter()
+                .position(|queue_item| queue_item.id == current)
+            else {
                 return;
             };
             let target = idx as i64 + delta;
             if target < 0 {
                 None
             } else {
-                items.get(target as usize).map(|i| i.id)
+                queue_items
+                    .get(target as usize)
+                    .map(|queue_item| queue_item.id)
             }
         };
         if let Some(id) = next_id {
@@ -824,8 +828,8 @@ impl ConverterShell {
             .queue
             .items()
             .iter()
-            .find(|i| i.id == item_id)
-            .map(|i| i.input.clone())
+            .find(|queue_item| queue_item.id == item_id)
+            .map(|queue_item| queue_item.input.clone())
         {
             crate::converter::ui::dialogs::file_metadata_dialog::show_file_metadata_dialog(
                 self.window.upcast_ref::<gtk::Window>(),
@@ -838,8 +842,8 @@ impl ConverterShell {
         self.queue
             .items()
             .iter()
-            .find(|i| i.input == path)
-            .map(|i| i.id)
+            .find(|queue_item| queue_item.input == path)
+            .map(|queue_item| queue_item.id)
     }
 }
 
@@ -849,6 +853,10 @@ fn cancel_daemon_job(sender: &ComponentSender<ConverterShell>, job_id: String) {
         move || crate::converter::daemon::cancel_conversion(job_id),
         move |result| cancel_sender.input(ShellMsg::DaemonCancelFinished(result)),
     );
+}
+
+fn daemon_failure_status_text(status_text: Option<String>) -> String {
+    status_text.unwrap_or_else(|| i18n("Conversion failed"))
 }
 
 fn daemon_progress_snapshot(progress: JobProgress) -> FfmpegProgressSnapshot {

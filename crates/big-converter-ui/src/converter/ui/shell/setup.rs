@@ -1,6 +1,6 @@
 //! Window wiring helpers for [`ConverterShell`](super::ConverterShell):
 //! keyboard shortcuts, file-drop target, recursive media collection, and the
-//! queue-item adapter. Split out of `shell.rs` (recipe: file-size budget); pure
+//! queue-entry adapter. Split out of `shell.rs` (recipe: file-size budget); pure
 //! move, behavior identical. Cross-module helpers are `pub(super)`.
 
 use std::path::{Path, PathBuf};
@@ -8,17 +8,19 @@ use std::path::{Path, PathBuf};
 use adw::prelude::*;
 use relm4::ComponentSender;
 
-use big_media_components::converter::queue::BigConversionQueueItem;
+use big_media_components::converter::queue::BigConversionQueueEntry;
 
 use crate::converter::app::ConverterMode;
 
 use super::{ConverterShell, ShellMsg};
 
-pub(super) fn to_queue_item(item: &crate::converter::queue::QueueItem) -> BigConversionQueueItem {
-    BigConversionQueueItem {
-        id: item.id,
-        input: item.input.clone(),
-        duration_secs: item.duration_secs,
+pub(super) fn to_queue_entry(
+    queue_item: &crate::converter::queue::QueueItem,
+) -> BigConversionQueueEntry {
+    BigConversionQueueEntry {
+        id: queue_item.id,
+        input: queue_item.input.clone(),
+        duration_secs: queue_item.duration_secs,
     }
 }
 

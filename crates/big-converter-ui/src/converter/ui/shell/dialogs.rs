@@ -78,7 +78,7 @@ impl ConverterShell {
         dialog.present(Some(&self.window));
     }
 
-    pub(super) fn confirm_remove_item(&self, item_id: u64, sender: &ComponentSender<Self>) {
+    pub(super) fn confirm_remove_queue_entry(&self, item_id: u64, sender: &ComponentSender<Self>) {
         let dialog = crate::shared::ui_helpers::new_confirm_dialog(
             &i18n("Remove this item from the queue?"),
             &i18n("Edits applied to this file (segments, filters, output settings) will be lost."),

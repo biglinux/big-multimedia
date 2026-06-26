@@ -329,7 +329,7 @@ impl Component for ConverterShell {
                 .forward(sender.input_sender(), |out| match out {
                     BigConverterQueueOutput::Remove(id) => ShellMsg::QueueRemoveRequested(id),
                     BigConverterQueueOutput::OpenFolder(p) => ShellMsg::QueueOpenFolder(p),
-                    BigConverterQueueOutput::Info(id) => ShellMsg::QueueMetadata(id),
+                    BigConverterQueueOutput::Metadata(id) => ShellMsg::QueueMetadata(id),
                     BigConverterQueueOutput::DeleteDisk(id) => ShellMsg::QueueDeleteDisk(id),
                     BigConverterQueueOutput::Play(p) => ShellMsg::QueuePlay(p),
                     BigConverterQueueOutput::Select(p) => ShellMsg::QueueSelect(p),
@@ -619,8 +619,8 @@ impl ConverterShell {
                 self.footer_slot.append(&footer);
             }
 
-            ShellMsg::QueueRemoveRequested(id) => self.confirm_remove_item(id, sender),
-            ShellMsg::QueueRemoveConfirmed(id) => self.remove_queue_item(id),
+            ShellMsg::QueueRemoveRequested(id) => self.confirm_remove_queue_entry(id, sender),
+            ShellMsg::QueueRemoveConfirmed(id) => self.remove_queue_entry(id),
             ShellMsg::QueueOpenFolder(path) => big_app_kit::desktop::open_containing_folder(&path),
             ShellMsg::QueueMetadata(id) => self.show_file_metadata(id),
             ShellMsg::QueueDeleteDisk(id) => self.confirm_delete_disk(id, sender),
