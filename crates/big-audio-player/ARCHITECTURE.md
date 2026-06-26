@@ -33,7 +33,7 @@ preferences. Hands off transcoding to `big-audio-converter` /
 - `src/audio/lyrics_panel.rs`, `popovers.rs`, `preferences.rs`,
   `keybindings.rs`, `appearance/`, `column_helpers.rs`,
   `library_grouping/`, `playlist_dialog/`, `playlist_panel/`,
-  `track_object.rs`, `browser_node.rs`.
+  `browser_node.rs`.
 - `src/audio/download_manager/` — podcast/episode downloads.
 - `src/audio/converter_launcher.rs` — argv-safe spawn of external
   converter (only `Command::new` site).
