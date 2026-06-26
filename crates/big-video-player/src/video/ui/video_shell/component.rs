@@ -8,6 +8,9 @@ use super::input::{clear_shell_input, set_shell_input};
 use super::input_gestures::{wire_background_video_input, wire_osd_autohide, wire_video_input};
 use super::render::{wire_close, wire_realize, RealizeOpts, RenderCtx};
 use super::*;
+use big_relm4_components::layout::hamburger_menu::{
+    build_flat_menu_model, build_hamburger_menu_button, BigHamburgerMenuSpec, BigMenuActionItem,
+};
 
 impl Component for VideoShell {
     type Init = VideoShellMode;
@@ -298,45 +301,15 @@ impl Component for VideoShell {
         pin_btn.update_property(&[gtk::accessible::Property::Label(&i18n("Keep Above"))]);
         pin_btn.connect_toggled(|_btn| toggle_keep_above());
 
-        // Open menu-button (old `open_btn`): use real buttons in the popover
-        // instead of a GMenuModel so AT-SPI exposes each option's name/action.
-        let open_popover_box = gtk::Box::builder()
-            .orientation(gtk::Orientation::Vertical)
-            .spacing(2)
-            .margin_top(6)
-            .margin_bottom(6)
-            .margin_start(6)
-            .margin_end(6)
-            .build();
-        let open_popover = gtk::Popover::builder().child(&open_popover_box).build();
-        let append_open_action = |label: String, action_name: &'static str| {
-            let button = gtk::Button::builder()
-                .label(&label)
-                .halign(gtk::Align::Fill)
-                .css_classes(["flat"])
-                .build();
-            button.update_property(&[gtk::accessible::Property::Label(&label)]);
-            button.set_action_name(Some(action_name));
-            button.connect_clicked({
-                let open_popover = open_popover.downgrade();
-                move |_| {
-                    if let Some(open_popover) = open_popover.upgrade() {
-                        open_popover.popdown();
-                    }
-                }
-            });
-            open_popover_box.append(&button);
-        };
-        append_open_action(i18n("Open File…"), "win.open-file");
-        append_open_action(i18n("Open Recent"), "win.open-recent");
-        append_open_action(i18n("Open URL…"), "win.open-url");
-        append_open_action(i18n("Open Disc…"), "win.open-disc");
-        let open_btn = gtk::MenuButton::builder()
-            .icon_name("document-open-symbolic")
-            .popover(&open_popover)
-            .css_classes(["osd-btn"])
-            .build();
-        open_btn.update_property(&[gtk::accessible::Property::Label(&i18n("Open"))]);
+        // Open menu-button (old `open_btn`): real GtkMenuButton + GMenuModel so
+        // GTK renders native menu items with menu/menu-item accessibility roles.
+        let open_label = i18n("Open");
+        let open_btn = build_hamburger_menu_button(
+            &BigHamburgerMenuSpec::new(open_label)
+                .icon_name("document-open-symbolic")
+                .css_classes(["osd-btn"])
+                .items(open_menu_items()),
+        );
 
         // Two separate sidebar entry points: Files (folder browser) and Playlist
         // (the play queue). Each reveals the sidebar in its mode; clicking the
@@ -400,57 +373,7 @@ impl Component for VideoShell {
         // popover) so the user scans by category instead of reading 20 items one
         // by one. The old single 8-item "Media" grab-bag is split into Audio /
         // Video / Sources by what the entry actually controls.
-        let menu = gio::Menu::new();
-        // "Go to Time" moved to the elapsed-time label click; "Screenshot" is on
-        // the video right-click menu — both removed from here.
-        let playback = gio::Menu::new();
-        playback.append(Some(&i18n("Chapters")), Some("win.chapters"));
-        playback.append(Some(&i18n("Sleep Timer…")), Some("win.sleep-timer"));
-        menu.append_section(Some(&i18n("Playback")), &playback);
-
-        let audio = gio::Menu::new();
-        audio.append(Some(&i18n("Equalizer")), Some("win.show-equalizer"));
-        audio.append(
-            Some(&i18n("Audio & Subtitle Delay")),
-            Some("win.show-delay"),
-        );
-        menu.append_section(Some(&i18n("Audio")), &audio);
-
-        let video = gio::Menu::new();
-        // Renamed for clarity: "Image & Video" was really the colour/picture
-        // adjustments; "Online Video Quality" is the stream-quality picker.
-        video.append(
-            Some(&i18n("Picture Adjustments")),
-            Some("win.show-image-adjust"),
-        );
-        video.append(Some(&i18n("Video Filters")), Some("win.filters"));
-        video.append(Some(&i18n("Stream Quality")), Some("win.ytdl-quality"));
-        menu.append_section(Some(&i18n("Video")), &video);
-
-        let sources = gio::Menu::new();
-        sources.append(Some(&i18n("IPTV")), Some("win.iptv"));
-        #[cfg(feature = "chromecast")]
-        sources.append(Some(&i18n("Cast to Device")), Some("win.cast"));
-        sources.append(Some(&i18n("Media Info")), Some("win.media-info"));
-        menu.append_section(Some(&i18n("Sources")), &sources);
-
-        // Edit & Export (cut / extract audio / convert) moved to a footer button
-        // next to the subtitle control — see video_controls_bar::zones.
-
-        // "Restore Defaults" moved into the Preferences window (header button),
-        // so it is not loose in the top menu.
-        let settings_section = gio::Menu::new();
-        settings_section.append(Some(&i18n("Preferences")), Some("win.preferences"));
-        settings_section.append(Some(&i18n("Appearance")), Some("win.appearance"));
-        menu.append_section(Some(&i18n("Settings")), &settings_section);
-
-        let help = gio::Menu::new();
-        help.append(
-            Some(&i18n("Keyboard Shortcuts")),
-            Some("win.keyboard-shortcuts"),
-        );
-        help.append(Some(&i18n("About")), Some("app.about"));
-        menu.append_section(Some(&i18n("Help")), &help);
+        let menu = build_main_menu_model();
         // Shared media-viewer chrome (header + accessible GMenuModel menu + the
         // OSD reveal) — see big_relm4_components::layout::media_window. The video
         // player keeps its own overlay/offload/sidebar/bottom; only the header
@@ -458,7 +381,7 @@ impl Component for VideoShell {
         let chrome = big_relm4_components::layout::media_window::BigMediaChrome::new(
             big_relm4_components::layout::media_window::BigMediaMenuSpec {
                 icon_name: "open-menu-symbolic".to_owned(),
-                label: i18n("Menu"),
+                label: i18n("Main Menu"),
                 model: menu.upcast(),
             },
             !is_background,
@@ -858,6 +781,125 @@ impl Drop for VideoShell {
         self.cancel_trim_export();
         if let Some(source) = self.sleep_timer_source.take() {
             source.remove();
+        }
+    }
+}
+
+#[cfg(test)]
+fn build_open_menu_model() -> gio::Menu {
+    build_flat_menu_model(&open_menu_items())
+}
+
+fn open_menu_items() -> Vec<BigMenuActionItem> {
+    vec![
+        BigMenuActionItem::new(i18n("Open File…"), "win.open-file"),
+        BigMenuActionItem::new(i18n("Open Recent"), "win.open-recent"),
+        BigMenuActionItem::new(i18n("Open URL…"), "win.open-url"),
+        BigMenuActionItem::new(i18n("Open Disc…"), "win.open-disc"),
+    ]
+}
+
+fn build_main_menu_model() -> gio::Menu {
+    build_flat_menu_model(&main_menu_items())
+}
+
+fn main_menu_items() -> Vec<BigMenuActionItem> {
+    // "Go to Time" moved to the elapsed-time label click; "Screenshot" is on
+    // the video right-click menu — both removed from here.
+    let mut items = vec![
+        BigMenuActionItem::new(i18n("Chapters"), "win.chapters"),
+        BigMenuActionItem::new(i18n("Sleep Timer…"), "win.sleep-timer"),
+        BigMenuActionItem::new(i18n("Equalizer"), "win.show-equalizer"),
+        BigMenuActionItem::new(i18n("Audio & Subtitle Delay"), "win.show-delay"),
+    ];
+    // Renamed for clarity: "Image & Video" was really the colour/picture
+    // adjustments; "Online Video Quality" is the stream-quality picker.
+    items.extend([
+        BigMenuActionItem::new(i18n("Picture Adjustments"), "win.show-image-adjust"),
+        BigMenuActionItem::new(i18n("Video Filters"), "win.filters"),
+        BigMenuActionItem::new(i18n("Stream Quality"), "win.ytdl-quality"),
+        BigMenuActionItem::new(i18n("IPTV"), "win.iptv"),
+    ]);
+    #[cfg(feature = "chromecast")]
+    items.push(BigMenuActionItem::new(i18n("Cast to Device"), "win.cast"));
+
+    // Edit & Export (cut / extract audio / convert) moved to a footer button
+    // next to the subtitle control — see video_controls_bar::zones.
+
+    // "Restore Defaults" moved into the Preferences window (header button), so
+    // it is not loose in the top menu.
+    items.extend([
+        BigMenuActionItem::new(i18n("Media Info"), "win.media-info"),
+        BigMenuActionItem::new(i18n("Preferences"), "win.preferences"),
+        BigMenuActionItem::new(i18n("Appearance"), "win.appearance"),
+        BigMenuActionItem::new(i18n("Keyboard Shortcuts"), "win.keyboard-shortcuts"),
+        BigMenuActionItem::new(i18n("About"), "app.about"),
+    ]);
+    items
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn open_menu_uses_native_gmenu_actions() {
+        assert_menu_has_actions(
+            &build_open_menu_model(),
+            &[
+                "win.open-file",
+                "win.open-recent",
+                "win.open-url",
+                "win.open-disc",
+            ],
+        );
+    }
+
+    #[test]
+    fn main_menu_uses_native_gmenu_actions() {
+        let expected = &[
+            "win.chapters",
+            "win.sleep-timer",
+            "win.show-equalizer",
+            "win.show-delay",
+            "win.show-image-adjust",
+            "win.filters",
+            "win.ytdl-quality",
+            "win.iptv",
+            "win.media-info",
+            "win.preferences",
+            "win.appearance",
+            "win.keyboard-shortcuts",
+            "app.about",
+        ];
+        assert_menu_has_actions(&build_main_menu_model(), expected);
+
+        #[cfg(feature = "chromecast")]
+        assert_menu_has_actions(&build_main_menu_model(), &["win.cast"]);
+    }
+
+    #[test]
+    fn main_menu_is_flat_without_sections_or_submenus() {
+        let menu = build_main_menu_model();
+        for index in 0..menu.n_items() {
+            assert!(
+                menu.item_link(index, "section").is_none(),
+                "hamburger menu must not expose categories"
+            );
+            assert!(
+                menu.item_link(index, "submenu").is_none(),
+                "hamburger menu must not expose category submenus"
+            );
+        }
+    }
+
+    fn assert_menu_has_actions(menu: &impl IsA<gio::MenuModel>, expected: &[&str]) {
+        let actions = big_relm4_components::layout::hamburger_menu::menu_action_names(menu);
+        for action in expected {
+            assert!(
+                actions.iter().any(|actual| actual == action),
+                "missing menu action {action}; actions={actions:?}"
+            );
         }
     }
 }

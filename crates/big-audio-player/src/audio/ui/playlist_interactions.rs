@@ -11,6 +11,10 @@ use std::cell::Cell;
 use std::rc::Rc;
 
 use big_relm4_components::feedback::context_popover::BigContextPopover;
+use big_relm4_components::layout::{
+    dialog_footer::{BigDialogFooter, BigDialogFooterSpec},
+    dialog_page::BigDialogPage,
+};
 
 use crate::audio::converter_launcher;
 use crate::audio::ui::playlist_geom::{
@@ -454,17 +458,72 @@ fn show_delete_confirm(
     items: Vec<(usize, Track)>,
     sender: &ComponentSender<PlaylistPanel>,
 ) {
-    let count = items.len();
-    let heading = if count == 1 {
+    let heading = delete_storage_heading(items.len());
+    let body = delete_storage_body(
+        items.len(),
+        items.first().map(|(_, track)| track.display_title()),
+    );
+
+    let dialog = adw::Dialog::builder()
+        .title(&heading)
+        .content_width(440)
+        .content_height(280)
+        .build();
+    let page = BigDialogPage::plain();
+    page.content().set_spacing(12);
+    page.append_description(&body);
+
+    let group = adw::PreferencesGroup::new();
+    let perm_row = adw::SwitchRow::builder()
+        .title(i18n("Delete permanently"))
+        .subtitle(i18n("Skip trash — cannot be undone"))
+        .active(false)
+        .build();
+    group.add(&perm_row);
+    page.content().append(&group);
+
+    let footer = BigDialogFooter::new(
+        &BigDialogFooterSpec::new(i18n("Cancel"), i18n("Delete"))
+            .with_accept_css_classes(&["destructive-action"]),
+    );
+    page.root().add_bottom_bar(footer.root());
+    dialog.set_child(Some(page.root()));
+
+    let out = sender.clone();
+    let dialog_weak = dialog.downgrade();
+    footer.accept_button().connect_clicked(move |_| {
+        let _ = out.output(PlaylistPanelOutput::DeleteTracksFromStorage {
+            items: items.clone(),
+            permanent: perm_row.is_active(),
+        });
+        if let Some(dialog) = dialog_weak.upgrade() {
+            dialog.close();
+        }
+    });
+
+    let dialog_weak = dialog.downgrade();
+    footer.cancel_button().connect_clicked(move |_| {
+        if let Some(dialog) = dialog_weak.upgrade() {
+            dialog.close();
+        }
+    });
+    dialog.present(parent);
+}
+
+fn delete_storage_heading(count: usize) -> String {
+    if count == 1 {
         i18n("Delete from Storage")
     } else {
         format!("{} ({count})", i18n("Delete from Storage"))
-    };
-    let body = if count == 1 {
+    }
+}
+
+fn delete_storage_body(count: usize, single_title: Option<&str>) -> String {
+    if count == 1 {
         format!(
             "{}\n\n{}",
             i18n("Move this file to the trash?"),
-            items[0].1.display_title()
+            single_title.unwrap_or_default()
         )
     } else {
         format!(
@@ -473,25 +532,28 @@ fn show_delete_confirm(
             count,
             i18n("tracks")
         )
-    };
-    let (dialog, perm_row) = big_app_kit::dialogs::confirm_switch_dialog(
-        &heading,
-        &body,
-        &i18n("Cancel"),
-        "delete",
-        &i18n("Delete"),
-        &i18n("Delete permanently"),
-        &i18n("Skip trash — cannot be undone"),
-    );
-    let out = sender.clone();
-    dialog.connect_response(None, move |_, response| {
-        if response != "delete" {
-            return;
-        }
-        let _ = out.output(PlaylistPanelOutput::DeleteTracksFromStorage {
-            items: items.clone(),
-            permanent: perm_row.is_active(),
-        });
-    });
-    dialog.present(parent);
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{delete_storage_body, delete_storage_heading};
+
+    #[test]
+    fn delete_storage_heading_marks_plural_count() {
+        assert_eq!(delete_storage_heading(1), "Delete from Storage");
+        assert_eq!(delete_storage_heading(3), "Delete from Storage (3)");
+    }
+
+    #[test]
+    fn delete_storage_body_names_single_track_or_count() {
+        assert_eq!(
+            delete_storage_body(1, Some("First Song")),
+            "Move this file to the trash?\n\nFirst Song"
+        );
+        assert_eq!(
+            delete_storage_body(3, None),
+            "Move these files to the trash?\n\n3 tracks"
+        );
+    }
 }

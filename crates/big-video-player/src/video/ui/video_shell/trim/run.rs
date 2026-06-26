@@ -13,6 +13,7 @@ use big_converter_ui::export::{build_single_export_queue, QuickExportChoice};
 use big_media_components::time::playback_time;
 use big_media_runtime::converter::ffmpeg::progress::ProgressInfo;
 use big_media_runtime::converter::queue::{QueueMessage, SegmentOutputMode};
+use big_relm4_components::input::dropdown_row::{BigDropdownRow, BigDropdownRowSpec};
 use big_relm4_components::input::inline_spin_set::{BigInlineSpinItemSpec, BigInlineSpinSet};
 use big_relm4_components::input::preference_cards::BigSpinRange;
 use big_relm4_components::input::slider_row::{BigSliderRow, BigSliderRowSpec};
@@ -488,20 +489,21 @@ impl VideoShell {
         let output = adw::PreferencesGroup::builder()
             .title(i18n("Output files"))
             .build();
-        let output_row = adw::ComboRow::builder()
-            .title(i18n("When there are multiple cuts"))
+        let output_row = BigDropdownRow::new(
+            BigDropdownRowSpec::new(
+                i18n("When there are multiple cuts"),
+                [i18n("Join into one file"), i18n("Save each cut separately")],
+            )
             .subtitle(i18n(
                 "One file is easier to share; separate files are easier to edit later",
             ))
-            .model(&gtk::StringList::new(&[
-                &i18n("Join into one file"),
-                &i18n("Save each cut separately"),
-            ]))
-            .build();
-        output_row.set_selected(u32::from(self.trim_split.get()));
+            .selected(u32::from(self.trim_split.get())),
+        );
         let split = self.trim_split.clone();
-        output_row.connect_selected_notify(move |row| split.set(row.selected() == 1));
-        output.add(&output_row);
+        output_row
+            .dropdown()
+            .connect_selected_notify(move |dropdown| split.set(dropdown.selected() == 1));
+        output.add(output_row.root());
         dialog.add_group(&output);
 
         let window = dialog.window().clone();
