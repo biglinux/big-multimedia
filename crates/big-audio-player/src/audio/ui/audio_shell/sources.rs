@@ -1,4 +1,8 @@
 use super::*;
+use big_relm4_components::layout::{
+    dialog_footer::{BigDialogFooter, BigDialogFooterSpec},
+    dialog_page::BigDialogPage,
+};
 
 impl AudioShell {
     pub(super) fn handle_files(&mut self, out: FileBrowserOutput, sender: &ComponentSender<Self>) {
@@ -200,35 +204,17 @@ impl AudioShell {
         let Some(path) = self.recording_path.take() else {
             return;
         };
-        let filename = path
-            .file_name()
-            .map(|f| f.to_string_lossy().into_owned())
-            .unwrap_or_default();
-        let folder = path
-            .parent()
-            .map(|p| p.to_string_lossy().into_owned())
-            .unwrap_or_default();
-
-        // bigagents: app-local-dialog. Recording completion has domain-specific
-        // open-folder/open-file actions.
-        let dialog = adw::AlertDialog::builder()
-            .heading(i18n("Recording saved"))
-            .body(format!("{filename}\n\n📁 {folder}"))
-            .build();
-        dialog.add_response("close", &i18n("Close"));
-        dialog.add_response("open_folder", &i18n("Open Folder"));
-        dialog.add_response("open_file", &i18n("Open File"));
-        dialog.set_response_appearance("open_file", adw::ResponseAppearance::Suggested);
-        dialog.set_default_response(Some("open_file"));
-        dialog.set_close_response("close");
-        dialog.connect_response(None, move |_, response| match response {
-            "open_folder" => big_app_kit::desktop::open_containing_folder(&path),
-            "open_file" => big_app_kit::desktop::open_file(&path),
-            _ => {}
+        let parent = self.window().map(|window| window.downgrade());
+        let toast_overlay = self.toast_overlay.clone();
+        glib::timeout_add_local_once(std::time::Duration::from_millis(750), move || {
+            if !recording_file_has_content(&path) {
+                toast_overlay.add_toast(adw::Toast::new(&i18n("Recording was not saved")));
+                return;
+            }
+            if let Some(parent) = parent.as_ref().and_then(glib::WeakRef::upgrade) {
+                present_recording_saved_dialog(&parent, path);
+            }
         });
-        if let Some(win) = self.window() {
-            dialog.present(Some(&win));
-        }
     }
 
     /// Resolve a podcast-panel intent: fetch the feed off-thread → enter podcast
@@ -346,5 +332,153 @@ impl AudioShell {
                 let _ = input.send(AudioShellInput::RadioStationsResolved(stations));
             },
         );
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+struct RecordingSavedPaths {
+    file_name: String,
+    folder_name: String,
+}
+
+fn recording_saved_paths(path: &Path) -> RecordingSavedPaths {
+    RecordingSavedPaths {
+        file_name: path
+            .file_name()
+            .map(|name| name.to_string_lossy().into_owned())
+            .unwrap_or_default(),
+        folder_name: path
+            .parent()
+            .map(|folder| folder.to_string_lossy().into_owned())
+            .unwrap_or_default(),
+    }
+}
+
+fn recording_file_has_content(path: &Path) -> bool {
+    std::fs::metadata(path).is_ok_and(|metadata| metadata.is_file() && metadata.len() > 0)
+}
+
+fn present_recording_saved_dialog(parent: &impl IsA<gtk::Widget>, path: PathBuf) {
+    let saved_paths = recording_saved_paths(&path);
+    let dialog = adw::Dialog::builder()
+        .title(i18n("Recording saved"))
+        .content_width(460)
+        .content_height(340)
+        .build();
+    let page = BigDialogPage::plain();
+    page.content().set_spacing(12);
+    page.append_description(&i18n("The recording was saved and is ready to open."));
+
+    let rows = gtk::Box::new(gtk::Orientation::Vertical, 8);
+    rows.append(&recording_saved_field(
+        &i18n("File"),
+        &saved_paths.file_name,
+    ));
+    rows.append(&recording_saved_field(
+        &i18n("Folder"),
+        &saved_paths.folder_name,
+    ));
+    page.content().append(&rows);
+
+    let open_folder_button = gtk::Button::builder()
+        .label(i18n("Open Folder"))
+        .halign(gtk::Align::Start)
+        .build();
+    page.content().append(&open_folder_button);
+
+    let footer = BigDialogFooter::new(&BigDialogFooterSpec::new(i18n("Close"), i18n("Open File")));
+    page.root().add_bottom_bar(footer.root());
+    dialog.set_child(Some(page.root()));
+
+    let folder_path = path.clone();
+    let dialog_weak = dialog.downgrade();
+    open_folder_button.connect_clicked(move |_| {
+        big_app_kit::desktop::open_containing_folder(&folder_path);
+        if let Some(dialog) = dialog_weak.upgrade() {
+            dialog.close();
+        }
+    });
+
+    let file_path = path;
+    let dialog_weak = dialog.downgrade();
+    footer.accept_button().connect_clicked(move |_| {
+        big_app_kit::desktop::open_file(&file_path);
+        if let Some(dialog) = dialog_weak.upgrade() {
+            dialog.close();
+        }
+    });
+
+    let dialog_weak = dialog.downgrade();
+    footer.cancel_button().connect_clicked(move |_| {
+        if let Some(dialog) = dialog_weak.upgrade() {
+            dialog.close();
+        }
+    });
+
+    dialog.present(Some(parent));
+}
+
+fn recording_saved_field(label: &str, value: &str) -> gtk::Box {
+    let row = gtk::Box::new(gtk::Orientation::Vertical, 4);
+    let title = gtk::Label::builder()
+        .label(label)
+        .halign(gtk::Align::Start)
+        .build();
+    title.add_css_class("caption");
+    title.add_css_class("dim-label");
+
+    let text = gtk::Label::builder()
+        .label(value)
+        .halign(gtk::Align::Start)
+        .selectable(true)
+        .wrap(true)
+        .wrap_mode(gtk::pango::WrapMode::Char)
+        .build();
+    row.append(&title);
+    row.append(&text);
+    row
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{recording_file_has_content, recording_saved_paths, RecordingSavedPaths};
+    use std::fs;
+    use std::io::Write;
+    use std::path::Path;
+
+    #[test]
+    fn recording_saved_paths_split_file_and_parent_folder() {
+        assert_eq!(
+            recording_saved_paths(Path::new("/home/bruno/Music/Radio Recordings/show.mp3")),
+            RecordingSavedPaths {
+                file_name: "show.mp3".into(),
+                folder_name: "/home/bruno/Music/Radio Recordings".into(),
+            }
+        );
+    }
+
+    #[test]
+    fn recording_file_has_content_requires_existing_non_empty_file() {
+        let mut path = std::env::temp_dir();
+        path.push(format!(
+            "big-audio-recording-test-{}.mp3",
+            std::process::id()
+        ));
+        let _ = fs::remove_file(&path);
+
+        assert!(!recording_file_has_content(&path));
+
+        fs::File::create(&path).expect("create empty recording fixture");
+        assert!(!recording_file_has_content(&path));
+
+        let mut file = fs::OpenOptions::new()
+            .write(true)
+            .open(&path)
+            .expect("open recording fixture");
+        file.write_all(b"audio").expect("write recording fixture");
+        file.sync_all().expect("sync recording fixture");
+        assert!(recording_file_has_content(&path));
+
+        fs::remove_file(&path).expect("remove recording fixture");
     }
 }
