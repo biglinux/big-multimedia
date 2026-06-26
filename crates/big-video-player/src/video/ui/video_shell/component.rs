@@ -298,15 +298,42 @@ impl Component for VideoShell {
         pin_btn.update_property(&[gtk::accessible::Property::Label(&i18n("Keep Above"))]);
         pin_btn.connect_toggled(|_btn| toggle_keep_above());
 
-        // Open menu-button (old `open_btn`): Open File… / Open Recent / Open URL…
-        let open_menu = gio::Menu::new();
-        open_menu.append(Some(&i18n("Open File…")), Some("win.open-file"));
-        open_menu.append(Some(&i18n("Open Recent")), Some("win.open-recent"));
-        open_menu.append(Some(&i18n("Open URL…")), Some("win.open-url"));
-        open_menu.append(Some(&i18n("Open Disc…")), Some("win.open-disc"));
+        // Open menu-button (old `open_btn`): use real buttons in the popover
+        // instead of a GMenuModel so AT-SPI exposes each option's name/action.
+        let open_popover_box = gtk::Box::builder()
+            .orientation(gtk::Orientation::Vertical)
+            .spacing(2)
+            .margin_top(6)
+            .margin_bottom(6)
+            .margin_start(6)
+            .margin_end(6)
+            .build();
+        let open_popover = gtk::Popover::builder().child(&open_popover_box).build();
+        let append_open_action = |label: String, action_name: &'static str| {
+            let button = gtk::Button::builder()
+                .label(&label)
+                .halign(gtk::Align::Fill)
+                .css_classes(["flat"])
+                .build();
+            button.update_property(&[gtk::accessible::Property::Label(&label)]);
+            button.set_action_name(Some(action_name));
+            button.connect_clicked({
+                let open_popover = open_popover.downgrade();
+                move |_| {
+                    if let Some(open_popover) = open_popover.upgrade() {
+                        open_popover.popdown();
+                    }
+                }
+            });
+            open_popover_box.append(&button);
+        };
+        append_open_action(i18n("Open File…"), "win.open-file");
+        append_open_action(i18n("Open Recent"), "win.open-recent");
+        append_open_action(i18n("Open URL…"), "win.open-url");
+        append_open_action(i18n("Open Disc…"), "win.open-disc");
         let open_btn = gtk::MenuButton::builder()
             .icon_name("document-open-symbolic")
-            .menu_model(&open_menu)
+            .popover(&open_popover)
             .css_classes(["osd-btn"])
             .build();
         open_btn.update_property(&[gtk::accessible::Property::Label(&i18n("Open"))]);

@@ -1,6 +1,7 @@
 use super::input::shell_input_sender;
 use super::playback::is_remote_uri;
 use super::*;
+use big_relm4_components::input::dropdown_row::{BigDropdownRow, BigDropdownRowSpec};
 use big_relm4_components::layout::{
     dialog_footer::{BigDialogFooter, BigDialogFooterSpec},
     dialog_page::BigDialogPage,
@@ -313,26 +314,96 @@ impl VideoShell {
     /// sequence) before forming the mpv `dvd://` / `bd://` URI. Mirrors the old
     /// `show_open_disc_dialog`.
     pub(super) fn show_open_disc_dialog(root: &adw::ApplicationWindow) {
-        let (dialog, entry) = big_app_kit::dialogs::entry_choice_dialog(
-            &i18n("Open Disc"),
-            &i18n("Enter the disc device or path to ISO/folder:"),
-            &i18n("Cancel"),
-            "dvd",
-            "/dev/sr0",
-            &i18n("Disc device path"),
-            &[
-                ("dvd", "DVD", adw::ResponseAppearance::Default),
-                ("bd", "Blu-ray", adw::ResponseAppearance::Default),
-            ],
-        );
-        entry.set_text("/dev/sr0");
+        let dialog = adw::Dialog::builder()
+            .title(i18n("Open Disc"))
+            .content_width(460)
+            .content_height(320)
+            .build();
+        let page = BigDialogPage::plain();
+        page.content().set_spacing(12);
+
+        let group = adw::PreferencesGroup::builder()
+            .description(i18n(
+                "Choose a disc type and enter the device, ISO, or folder path.",
+            ))
+            .build();
+        let disc_type_row = BigDropdownRow::new(BigDropdownRowSpec::new(
+            i18n("Disc type"),
+            [i18n("DVD"), i18n("Blu-ray")],
+        ));
+        let entry = adw::EntryRow::builder()
+            .title(i18n("Disc device path"))
+            .text("/dev/sr0")
+            .show_apply_button(true)
+            .build();
         entry.add_css_class("monospace");
+        group.add(disc_type_row.root());
+        group.add(&entry);
+        page.content().append(&group);
+
+        let footer = BigDialogFooter::new(&BigDialogFooterSpec::new(i18n("Cancel"), i18n("Open")));
+        page.root().add_bottom_bar(footer.root());
+        dialog.set_child(Some(page.root()));
+
+        let refresh_accept: Rc<dyn Fn()> = Rc::new({
+            let accept_button = footer.accept_button().clone();
+            let dropdown = disc_type_row.dropdown().clone();
+            let entry = entry.clone();
+            move || {
+                accept_button.set_sensitive(
+                    build_disc_uri(disc_kind_from_selected(dropdown.selected()), &entry.text())
+                        .is_some(),
+                );
+            }
+        });
+        refresh_accept();
+
+        entry.connect_changed({
+            let refresh_accept = Rc::clone(&refresh_accept);
+            move |_| refresh_accept()
+        });
+        disc_type_row.dropdown().connect_selected_notify({
+            let refresh_accept = Rc::clone(&refresh_accept);
+            move |_| refresh_accept()
+        });
+
+        let accept_button = footer.accept_button().clone();
+        entry.connect_apply(move |_| {
+            if accept_button.is_sensitive() {
+                accept_button.emit_clicked();
+            }
+        });
+
+        let dialog_ref = dialog.downgrade();
+        footer.cancel_button().connect_clicked(move |_| {
+            if let Some(dialog) = dialog_ref.upgrade() {
+                dialog.close();
+            }
+        });
 
         let sender = shell_input_sender();
-        dialog.connect_response(None, move |_dlg, response| {
-            if let Some(uri) = build_disc_uri(response, &entry.text()) {
+        let dialog_ref = dialog.downgrade();
+        let dropdown = disc_type_row.dropdown().clone();
+        let entry_for_accept = entry.clone();
+        footer.accept_button().connect_clicked(move |_| {
+            if let Some(uri) = build_disc_uri(
+                disc_kind_from_selected(dropdown.selected()),
+                &entry_for_accept.text(),
+            ) {
                 let _ = sender.send(VideoShellInput::OpenFiles(vec![uri]));
+                if let Some(dialog) = dialog_ref.upgrade() {
+                    dialog.close();
+                }
             }
+        });
+
+        let entry_for_idle = entry.clone();
+        dialog.connect_map(move |_| {
+            let entry = entry_for_idle.clone();
+            gtk::glib::idle_add_local_once(move || {
+                entry.grab_focus();
+                entry.select_region(0, -1);
+            });
         });
         dialog.present(Some(root));
     }
@@ -420,6 +491,14 @@ pub(super) fn build_disc_uri(response: &str, device: &str) -> Option<String> {
     }
 }
 
+fn disc_kind_from_selected(selected: u32) -> &'static str {
+    if selected == 1 {
+        "bd"
+    } else {
+        "dvd"
+    }
+}
+
 fn accepted_open_url(input: &str) -> Option<String> {
     let url = input.trim();
     if url.starts_with('-') || !is_remote_uri(url) {
@@ -468,7 +547,7 @@ pub(super) fn present_controller_dialog(
 
 #[cfg(test)]
 mod tests {
-    use super::{accepted_open_url, build_disc_uri};
+    use super::{accepted_open_url, build_disc_uri, disc_kind_from_selected};
 
     #[test]
     fn open_url_accepts_trimmed_remote_media_urls() {
@@ -526,5 +605,12 @@ mod tests {
     fn disc_uri_rejects_unknown_response() {
         assert_eq!(build_disc_uri("cancel", "/dev/sr0"), None);
         assert_eq!(build_disc_uri("", "/dev/sr0"), None);
+    }
+
+    #[test]
+    fn disc_dropdown_maps_to_uri_kinds() {
+        assert_eq!(disc_kind_from_selected(0), "dvd");
+        assert_eq!(disc_kind_from_selected(1), "bd");
+        assert_eq!(disc_kind_from_selected(99), "dvd");
     }
 }
