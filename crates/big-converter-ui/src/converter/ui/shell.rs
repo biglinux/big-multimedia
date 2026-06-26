@@ -145,8 +145,8 @@ pub enum ShellMsg {
     QueueRemoveConfirmed(u64),
     /// Open the containing folder.
     QueueOpenFolder(PathBuf),
-    /// Show file info.
-    QueueInfo(u64),
+    /// Show file metadata.
+    QueueMetadata(u64),
     /// Delete file from disk (after confirm).
     QueueDeleteDisk(u64),
     /// Play / preview a row.
@@ -329,7 +329,7 @@ impl Component for ConverterShell {
                 .forward(sender.input_sender(), |out| match out {
                     BigConverterQueueOutput::Remove(id) => ShellMsg::QueueRemoveRequested(id),
                     BigConverterQueueOutput::OpenFolder(p) => ShellMsg::QueueOpenFolder(p),
-                    BigConverterQueueOutput::Info(id) => ShellMsg::QueueInfo(id),
+                    BigConverterQueueOutput::Info(id) => ShellMsg::QueueMetadata(id),
                     BigConverterQueueOutput::DeleteDisk(id) => ShellMsg::QueueDeleteDisk(id),
                     BigConverterQueueOutput::Play(p) => ShellMsg::QueuePlay(p),
                     BigConverterQueueOutput::Select(p) => ShellMsg::QueueSelect(p),
@@ -622,7 +622,7 @@ impl ConverterShell {
             ShellMsg::QueueRemoveRequested(id) => self.confirm_remove_item(id, sender),
             ShellMsg::QueueRemoveConfirmed(id) => self.remove_queue_item(id),
             ShellMsg::QueueOpenFolder(path) => big_app_kit::desktop::open_containing_folder(&path),
-            ShellMsg::QueueInfo(id) => self.show_file_info(id),
+            ShellMsg::QueueMetadata(id) => self.show_file_metadata(id),
             ShellMsg::QueueDeleteDisk(id) => self.confirm_delete_disk(id, sender),
             ShellMsg::QueuePlay(path) => self.on_queue_play(&path),
             ShellMsg::QueueSelect(path) => self.on_queue_select(&path),

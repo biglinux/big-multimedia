@@ -275,9 +275,9 @@ impl AudioShell {
         let Some(win) = self.window() else {
             return;
         };
-        let labels = BigMediaFileInfoDialogLabels::translated(i18n);
-        let spec = BigMediaFileInfoDialogSpec::new(PathBuf::from(&track.file_path), labels)
+        let labels = BigMediaFileMetadataDialogLabels::translated(i18n);
+        let spec = BigMediaFileMetadataDialogSpec::new(PathBuf::from(&track.file_path), labels)
             .duration_secs(track.duration_secs);
-        show_media_file_info_dialog(&win, spec);
+        show_media_file_metadata_dialog(&win, spec);
     }
 }

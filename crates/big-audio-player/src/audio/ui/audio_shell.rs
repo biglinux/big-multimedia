@@ -58,8 +58,9 @@ use big_app_kit::file_dialogs::FilePicker;
 use big_app_kit::mpris::{
     route_common_playback_command, BigMprisPlaybackControls, BigMprisPlaybackFeedback,
 };
-use big_media_components::media::file_info_dialog::{
-    show_media_file_info_dialog, BigMediaFileInfoDialogLabels, BigMediaFileInfoDialogSpec,
+use big_media_components::media::file_metadata_dialog::{
+    show_media_file_metadata_dialog, BigMediaFileMetadataDialogLabels,
+    BigMediaFileMetadataDialogSpec,
 };
 use big_media_components::playback::audio_transport::{
     BigAudioTransportLabels, BigAudioTransportSpec,

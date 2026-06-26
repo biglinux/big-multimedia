@@ -6,7 +6,7 @@
 //! `adw::Dialog` from a one-shot snapshot of mpv state and owns no further
 //! lifecycle (the shell calls it from a header/menu action).
 //!
-//! Reuse note: the shared `big_media_components::media::file_info_dialog`
+//! Reuse note: the shared `big_media_components::media::file_metadata_dialog`
 //! consumes an ffprobe JSON model, whereas the player wants the *live* mpv view
 //! (hwdec, cache %, selected tracks). Those differ, so this dialog stays
 //! app-local but reuses the shared dialog chrome, copyable-row + copy-all

@@ -6,7 +6,7 @@
 pub mod audio_dialog;
 pub mod equalizer_dialog;
 pub mod extra_dialog;
-pub mod file_info_dialog;
+pub mod file_metadata_dialog;
 pub mod noise_dialog;
 pub mod subtitles_dialog;
 pub mod video_encoding_dialog;

@@ -819,7 +819,7 @@ impl ConverterShell {
         self.start_conversion(sender);
     }
 
-    pub(super) fn show_file_info(&self, item_id: u64) {
+    pub(super) fn show_file_metadata(&self, item_id: u64) {
         if let Some(path) = self
             .queue
             .items()
@@ -827,7 +827,7 @@ impl ConverterShell {
             .find(|i| i.id == item_id)
             .map(|i| i.input.clone())
         {
-            crate::converter::ui::dialogs::file_info_dialog::show_file_info_dialog(
+            crate::converter::ui::dialogs::file_metadata_dialog::show_file_metadata_dialog(
                 self.window.upcast_ref::<gtk::Window>(),
                 &path,
             );
