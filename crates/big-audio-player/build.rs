@@ -7,8 +7,8 @@ fn main() {
     compile_gresource(
         &out_dir,
         "audio-player-shell.gresource",
-        "data/audio-resources",
-        "data/audio-resources/resources.gresource.xml",
+        "application-assets/resources",
+        "application-assets/resources/resources.gresource.xml",
     );
 }
 

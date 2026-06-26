@@ -138,7 +138,7 @@ No other `Command::new` callers exist. Playback uses
 - **Flatpak.** `packaging/flatpak/` manifest (sandboxed runtime).
 - **Nix.** `packaging/nix/` flake for reproducible builds.
 - **Desktop file.** `resources/applications/br.com.biglinux.AudioPlayer.desktop`
-  (also installed copy under `data/app/`).
+  (also installed copy under `application-assets/desktop-integration/`).
 - **AppStream metainfo.** `resources/metainfo/br.com.biglinux.AudioPlayer.metainfo.xml`.
 - **Polkit.** None (no privileged actions).
 - **i18n.** Strings route through `big_media_runtime::i18n`; gettext is

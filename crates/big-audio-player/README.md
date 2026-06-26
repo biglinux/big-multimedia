@@ -54,7 +54,7 @@ installed.
 - `src/`: Rust application entrypoints and app-owned code.
 - `docs/`: structure and maintenance notes (`project-structure.md`, `native-deps-exceptions.md`).
 - `resources/`: installed desktop metadata and icons shared by packages.
-- `data/`: gresource sources (UI, CSS) and thumbnailer assets.
+- `application-assets/`: gresource sources, CSS, and desktop-integration assets.
 - `packaging/pacman/`: BigLinux/pacman packaging source.
 - `packaging/nix/`: Nix packaging source.
 - `packaging/flatpak/`: Flatpak/Flathub packaging source.

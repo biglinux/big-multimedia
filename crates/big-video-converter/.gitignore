@@ -101,4 +101,4 @@ target/doc/
 tmp/
 
 # Orphan/unused local asset (wrong product id, not wired into packaging)
-/data/app/br.com.biglinux.VideoPlayer.svg
+/application-assets/desktop-integration/br.com.biglinux.VideoPlayer.svg
