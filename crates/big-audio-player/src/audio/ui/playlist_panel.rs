@@ -59,7 +59,7 @@ pub enum PlaylistPanelInput {
     },
     /// Incremental single-row removal.
     RemoveRow(usize),
-    /// Current-track changed (object-identity re-light; no rebuild).
+    /// Current-track changed (track-identity re-light; no rebuild).
     SetPlaying {
         /// New current index, if any.
         idx: Option<usize>,
@@ -173,7 +173,7 @@ pub struct PlaylistPanel {
     /// Bound now-playing indicators, pruned on unbind.
     indicators: Rc<RefCell<Vec<RowIndicator>>>,
     /// The currently-playing store object (identity target for the indicator).
-    current_obj: Rc<RefCell<Option<glib::Object>>>,
+    current_track_identity: Rc<RefCell<Option<glib::Object>>>,
     /// Active saved-playlist name (shown in the toolbar header when the queue
     /// is empty).
     playlist_name: String,
@@ -195,9 +195,9 @@ impl PlaylistPanel {
 
     /// Re-light the now-playing indicator on every bound row by object identity.
     fn relight(&self) {
-        let current = self.current_obj.borrow();
-        for (obj, icon, label) in self.indicators.borrow().iter() {
-            let is_current = current.as_ref() == Some(obj);
+        let current_track_identity = self.current_track_identity.borrow();
+        for (track_identity, icon, label) in self.indicators.borrow().iter() {
+            let is_current = current_track_identity.as_ref() == Some(track_identity);
             icon.set_visible(is_current);
             if is_current {
                 label.add_css_class("now-playing-accent");
@@ -243,9 +243,9 @@ impl PlaylistPanel {
         }
         let total_secs: f64 = (0..count)
             .filter_map(|i| self.store.item(i).and_downcast::<glib::BoxedAnyObject>())
-            .map(|obj| obj.borrow::<Track>().duration_secs)
+            .map(|boxed_track| boxed_track.borrow::<Track>().duration_secs)
             .sum();
-        let info = format!(
+        let queue_summary = format!(
             "{} {} · {}",
             count,
             if count == 1 {
@@ -255,7 +255,7 @@ impl PlaylistPanel {
             },
             format_duration_hm(total_secs),
         );
-        self.header_label.set_label(&info);
+        self.header_label.set_label(&queue_summary);
     }
 
     /// Show the empty-state placeholder when the queue is empty, otherwise
@@ -306,9 +306,14 @@ impl Component for PlaylistPanel {
         column_view.add_css_class("playlist-columnview");
 
         let indicators: Rc<RefCell<Vec<RowIndicator>>> = Rc::new(RefCell::new(Vec::new()));
-        let current_obj: Rc<RefCell<Option<glib::Object>>> = Rc::new(RefCell::new(None));
+        let current_track_identity: Rc<RefCell<Option<glib::Object>>> = Rc::new(RefCell::new(None));
 
-        playlist_columns::build_columns(&column_view, &indicators, &current_obj, &sender);
+        playlist_columns::build_columns(
+            &column_view,
+            &indicators,
+            &current_track_identity,
+            &sender,
+        );
         wire_configure_columns_menu(&column_view, &i18n("Configure Columns…"), &i18n("Columns"));
         let applying_widths = Rc::new(Cell::new(false));
         {
@@ -392,7 +397,7 @@ impl Component for PlaylistPanel {
             scroll,
             header_label,
             indicators,
-            current_obj,
+            current_track_identity,
             playlist_name: String::new(),
             library_has_items: false,
             applying_widths,
@@ -405,8 +410,8 @@ impl Component for PlaylistPanel {
         ComponentParts { model, widgets: () }
     }
 
-    fn update(&mut self, msg: Self::Input, sender: ComponentSender<Self>, _root: &Self::Root) {
-        match msg {
+    fn update(&mut self, message: Self::Input, sender: ComponentSender<Self>, _root: &Self::Root) {
+        match message {
             PlaylistPanelInput::SetQueue {
                 tracks,
                 current_idx,
@@ -416,7 +421,7 @@ impl Component for PlaylistPanel {
                 let objects = Self::to_objects(&tracks);
                 // Splice in place — never rebuild the ColumnView (RSS regression).
                 self.store.splice(0, self.store.n_items(), &objects);
-                *self.current_obj.borrow_mut() =
+                *self.current_track_identity.borrow_mut() =
                     current_idx.and_then(|i| self.store.item(i as u32));
                 self.refresh_empty_state(&sender);
                 self.update_header();
@@ -447,7 +452,8 @@ impl Component for PlaylistPanel {
                 self.update_header();
             }
             PlaylistPanelInput::SetPlaying { idx } => {
-                *self.current_obj.borrow_mut() = idx.and_then(|i| self.store.item(i as u32));
+                *self.current_track_identity.borrow_mut() =
+                    idx.and_then(|i| self.store.item(i as u32));
                 self.relight();
             }
             PlaylistPanelInput::ScrollToCurrent { idx } => self.scroll_to(idx),
