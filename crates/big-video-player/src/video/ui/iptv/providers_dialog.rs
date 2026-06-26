@@ -16,8 +16,14 @@ use std::rc::Rc;
 use adw::prelude::*;
 use big_relm4_components::feedback::tooltip;
 use big_relm4_components::input::dropdown_row::{BigDropdownRow, BigDropdownRowSpec};
-use big_relm4_components::layout::dialog_footer::{BigDialogFooter, BigDialogFooterSpec};
-use big_relm4_components::layout::dialog_page::BigDialogPage;
+use big_relm4_components::layout::{
+    dialog_footer::{BigDialogFooter, BigDialogFooterSpec},
+    dialog_page::BigDialogPage,
+    preferences::BigPreferencesGroupSpec,
+};
+use big_relm4_components::list::bounded_list_box::{
+    clear_list_box_rows, BigBoundedListBox, BigBoundedListBoxSpec,
+};
 use big_relm4_components::list::editable_action_row::{
     BigEditableActionRow, BigEditableActionRowSpec,
 };
@@ -36,13 +42,12 @@ pub fn present_providers_dialog(
     sender: ComponentSender<VideoIptvBrowser>,
 ) {
     let page = BigDialogPage::scrolled_clamped(560, 480);
-    let add_btn = tooltip::icon_button("list-add-symbolic", &i18n("Add provider"), &[]);
-    page.header().pack_end(&add_btn);
+    let add_provider_button = tooltip::icon_button("list-add-symbolic", &i18n("Add provider"), &[]);
+    page.header().pack_end(&add_provider_button);
 
-    let list = gtk::ListBox::builder()
-        .selection_mode(gtk::SelectionMode::None)
-        .css_classes(["boxed-list"])
-        .build();
+    let provider_list =
+        BigBoundedListBox::new(BigBoundedListBoxSpec::new(24).css_class("boxed-list"));
+    let list = provider_list.root().clone();
     page.content().append(&list);
 
     let dialog = adw::Dialog::builder()
@@ -55,7 +60,7 @@ pub fn present_providers_dialog(
     let dialog_weak = dialog.downgrade();
     let store_for_add = store.clone();
     let list_weak = list.downgrade();
-    add_btn.connect_clicked(move |_| {
+    add_provider_button.connect_clicked(move |_| {
         let Some(parent) = dialog_weak.upgrade() else {
             return;
         };
@@ -79,9 +84,7 @@ pub fn present_providers_dialog(
 }
 
 fn rebuild_list(list: &gtk::ListBox, store: &Rc<RefCell<IptvProviderStore>>) {
-    while let Some(child) = list.first_child() {
-        list.remove(&child);
-    }
+    clear_list_box_rows(list);
 
     let providers = store.borrow().providers.clone();
     if providers.is_empty() {
@@ -210,13 +213,13 @@ impl ProviderFormInputs {
             .spacing(12)
             .build();
 
-        let name_group = adw::PreferencesGroup::new();
+        let name_group = BigPreferencesGroupSpec::untitled().build();
         let name_row = adw::EntryRow::builder().title(i18n("Name")).build();
         name_row.set_text(&initial.name);
         name_group.add(&name_row);
         content.append(&name_group);
 
-        let type_group = adw::PreferencesGroup::new();
+        let type_group = BigPreferencesGroupSpec::untitled().build();
         let initial_index = source_index(&initial.source);
         let (type_row_widget, type_row) = BigDropdownRow::new(
             BigDropdownRowSpec::new(
@@ -233,15 +236,15 @@ impl ProviderFormInputs {
         type_group.add(&type_row_widget);
         content.append(&type_group);
 
-        let url_group = adw::PreferencesGroup::new();
+        let url_group = BigPreferencesGroupSpec::untitled().build();
         let url_row = adw::EntryRow::builder().title(i18n("URL")).build();
         url_group.add(&url_row);
 
-        let path_group = adw::PreferencesGroup::new();
+        let path_group = BigPreferencesGroupSpec::untitled().build();
         let path_row = adw::EntryRow::builder().title(i18n("File path")).build();
         path_group.add(&path_row);
 
-        let xtream_group = adw::PreferencesGroup::new();
+        let xtream_group = BigPreferencesGroupSpec::untitled().build();
         let server_row = adw::EntryRow::builder().title(i18n("Server URL")).build();
         let username_row = adw::EntryRow::builder().title(i18n("Username")).build();
         let password_row = adw::PasswordEntryRow::builder()
@@ -269,9 +272,7 @@ impl ProviderFormInputs {
         content.append(&path_group);
         content.append(&xtream_group);
 
-        let headers_group = adw::PreferencesGroup::builder()
-            .title(i18n("HTTP headers (optional)"))
-            .build();
+        let headers_group = BigPreferencesGroupSpec::new(i18n("HTTP headers (optional)")).build();
         let ua_row = adw::EntryRow::builder().title(i18n("User-Agent")).build();
         ua_row.set_text(&initial.user_agent);
         let referer_row = adw::EntryRow::builder().title(i18n("Referer")).build();

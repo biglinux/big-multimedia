@@ -53,6 +53,9 @@ crypto-common
 darling
 darling_core
 darling_macro
+defmt
+defmt-macros
+defmt-parser
 digest
 dirs
 dirs-sys
@@ -152,6 +155,8 @@ portable-atomic
 portable-atomic-util
 prettyplease
 proc-macro-crate
+proc-macro-error-attr2
+proc-macro-error2
 proc-macro2
 protobuf
 protobuf-codegen

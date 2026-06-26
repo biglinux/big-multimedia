@@ -13,7 +13,7 @@ use crate::player::mpv_backend::MpvBackend;
 use crate::settings::Settings;
 
 use super::super::{add_combo_row, add_switch_row, AdvancedWidgets};
-use super::common::illustration;
+use super::illustration_assets::illustration;
 
 pub(super) fn build_video_sync_group(
     settings: &Settings,

@@ -16,6 +16,7 @@ use big_relm4_components::input::zone_layout::{
     BarDecoration, BarSpec, ZoneControl, ZoneLayout, ZoneLayoutSpec, ZonePlacement,
 };
 use big_relm4_components::input::zone_layout_editor::BigZoneLayoutEditor;
+use big_relm4_components::layout::preferences::BigPreferencesGroupSpec;
 
 use crate::i18n::i18n;
 use crate::settings::{keys, Settings};
@@ -182,8 +183,7 @@ pub(in crate::video) fn create_buttons_page(
         .icon_name("view-more-symbolic")
         .build();
 
-    let group = adw::PreferencesGroup::builder()
-        .title(i18n("Button Layout"))
+    let group = BigPreferencesGroupSpec::new(i18n("Button Layout"))
         .description(i18n(
             "Drag buttons between zones • Click to toggle visibility",
         ))

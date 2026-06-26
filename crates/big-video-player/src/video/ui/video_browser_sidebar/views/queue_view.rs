@@ -30,19 +30,25 @@ pub(crate) fn build_queue_view(state: &Rc<BrowserState>, items: &[String]) -> gt
     factory.connect_setup({
         let state = state.clone();
         move |_, item| {
-            let item = item.downcast_ref::<gtk::ListItem>().unwrap();
+            let Some(item) = item.downcast_ref::<gtk::ListItem>() else {
+                return;
+            };
             item.set_child(Some(&build_queue_row(&state)));
         }
     });
     factory.connect_bind({
         let state = state.clone();
         move |_, item| {
-            let item = item.downcast_ref::<gtk::ListItem>().unwrap();
+            let Some(item) = item.downcast_ref::<gtk::ListItem>() else {
+                return;
+            };
             bind_queue_row(&state, item, generation);
         }
     });
     factory.connect_unbind(|_, item| {
-        let item = item.downcast_ref::<gtk::ListItem>().unwrap();
+        let Some(item) = item.downcast_ref::<gtk::ListItem>() else {
+            return;
+        };
         if let Some(row) = item.child().and_downcast::<gtk::Box>() {
             row.set_widget_name("unbound");
         }
@@ -154,35 +160,35 @@ fn queue_path_of(state: &Rc<BrowserState>, row: &gtk::Box) -> Option<String> {
     state.active_items().get(idx).cloned()
 }
 
-fn bind_queue_row(state: &Rc<BrowserState>, item: &gtk::ListItem, generation: u64) {
-    let obj = item.item().and_downcast::<glib::BoxedAnyObject>().unwrap();
+fn bind_queue_row(state: &Rc<BrowserState>, queue_cell: &gtk::ListItem, generation: u64) {
+    let Some(obj) = queue_cell.item().and_downcast::<glib::BoxedAnyObject>() else {
+        return;
+    };
     let entry: std::cell::Ref<PlaylistEntry> = obj.borrow();
     if entry.kind != EntryKind::Video {
         return;
     }
-    let row = item.child().and_downcast::<gtk::Box>().unwrap();
-    let pos = row.first_child().unwrap().downcast::<gtk::Label>().unwrap();
-    let frame = pos
-        .next_sibling()
-        .unwrap()
-        .downcast::<gtk::Frame>()
-        .unwrap();
-    let picture = frame.child().unwrap().downcast::<gtk::Picture>().unwrap();
-    let text = frame
-        .next_sibling()
-        .unwrap()
-        .downcast::<gtk::Box>()
-        .unwrap();
-    let title = text
-        .first_child()
-        .unwrap()
-        .downcast::<gtk::Label>()
-        .unwrap();
-    let dur = title
-        .next_sibling()
-        .unwrap()
-        .downcast::<gtk::Label>()
-        .unwrap();
+    let Some(row) = queue_cell.child().and_downcast::<gtk::Box>() else {
+        return;
+    };
+    let Some(pos) = row.first_child().and_downcast::<gtk::Label>() else {
+        return;
+    };
+    let Some(frame) = pos.next_sibling().and_downcast::<gtk::Frame>() else {
+        return;
+    };
+    let Some(picture) = frame.child().and_downcast::<gtk::Picture>() else {
+        return;
+    };
+    let Some(text) = frame.next_sibling().and_downcast::<gtk::Box>() else {
+        return;
+    };
+    let Some(title) = text.first_child().and_downcast::<gtk::Label>() else {
+        return;
+    };
+    let Some(dur) = title.next_sibling().and_downcast::<gtk::Label>() else {
+        return;
+    };
 
     let is_current = entry.index as i64 == state.pos.get();
     if is_current {

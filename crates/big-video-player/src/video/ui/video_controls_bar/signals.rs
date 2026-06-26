@@ -4,33 +4,33 @@ use super::*;
 pub(super) fn wire_signals(
     sender: &ComponentSender<VideoControlsBar>,
     seek_bar: &gtk::Scale,
-    prev_btn: &gtk::Button,
-    play_btn: &gtk::Button,
-    next_btn: &gtk::Button,
-    fullscreen_btn: &gtk::Button,
+    previous_button: &gtk::Button,
+    play_button: &gtk::Button,
+    next_button: &gtk::Button,
+    fullscreen_button: &gtk::Button,
     suppress_seek: &Rc<std::cell::Cell<bool>>,
 ) {
-    let s = sender.clone();
-    play_btn.connect_clicked(move |_| {
-        let _ = s.output(VideoControlsBarOutput::TogglePlay);
+    let play_sender = sender.clone();
+    play_button.connect_clicked(move |_| {
+        let _ = play_sender.output(VideoControlsBarOutput::TogglePlay);
     });
-    let s = sender.clone();
-    prev_btn.connect_clicked(move |_| {
-        let _ = s.output(VideoControlsBarOutput::Previous);
+    let previous_sender = sender.clone();
+    previous_button.connect_clicked(move |_| {
+        let _ = previous_sender.output(VideoControlsBarOutput::Previous);
     });
-    let s = sender.clone();
-    next_btn.connect_clicked(move |_| {
-        let _ = s.output(VideoControlsBarOutput::Next);
+    let next_sender = sender.clone();
+    next_button.connect_clicked(move |_| {
+        let _ = next_sender.output(VideoControlsBarOutput::Next);
     });
-    let s = sender.clone();
-    fullscreen_btn.connect_clicked(move |_| {
-        let _ = s.output(VideoControlsBarOutput::ToggleFullscreen);
+    let fullscreen_sender = sender.clone();
+    fullscreen_button.connect_clicked(move |_| {
+        let _ = fullscreen_sender.output(VideoControlsBarOutput::ToggleFullscreen);
     });
-    let s = sender.clone();
-    let guard = suppress_seek.clone();
+    let seek_sender = sender.clone();
+    let suppress_seek_guard = suppress_seek.clone();
     seek_bar.connect_change_value(move |_scale, _scroll, value| {
-        if !guard.get() {
-            let _ = s.output(VideoControlsBarOutput::SeekChanged(value.clamp(0.0, 1.0)));
+        if !suppress_seek_guard.get() {
+            let _ = seek_sender.output(VideoControlsBarOutput::SeekChanged(value.clamp(0.0, 1.0)));
         }
         gtk::glib::Propagation::Proceed
     });

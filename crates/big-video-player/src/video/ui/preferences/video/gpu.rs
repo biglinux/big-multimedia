@@ -13,7 +13,7 @@ use crate::player::mpv_backend::MpvBackend;
 use crate::settings::Settings;
 
 use super::super::{add_entry_row, add_switch_row, AdvancedWidgets};
-use super::common::illustration;
+use super::illustration_assets::illustration;
 
 pub(super) fn build_gpu_rendering_group(
     settings: &Settings,

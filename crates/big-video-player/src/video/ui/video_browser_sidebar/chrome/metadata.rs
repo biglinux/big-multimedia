@@ -26,26 +26,26 @@ pub(crate) fn build_chips(state: &Rc<BrowserState>) {
         (FilterKind::Folders, i18n("Folders")),
         (FilterKind::Videos, i18n("Videos")),
     ] {
-        let btn = gtk::ToggleButton::builder()
+        let filter_chip_button = gtk::ToggleButton::builder()
             .label(&label)
             .active(kind == active)
             .css_classes(["flat"])
             .build();
         if let Some(first) = &group {
-            btn.set_group(Some(first));
+            filter_chip_button.set_group(Some(first));
         } else {
-            group = Some(btn.clone());
+            group = Some(filter_chip_button.clone());
         }
-        btn.connect_toggled({
+        filter_chip_button.connect_toggled({
             let state = state.clone();
-            move |b| {
-                if b.is_active() {
+            move |button| {
+                if button.is_active() {
                     state.filter_kind.set(kind);
                     state.refilter();
                 }
             }
         });
-        chips.append(&btn);
+        chips.append(&filter_chip_button);
     }
     if let Some(panel) = state.container() {
         panel.append(&chips);
@@ -76,18 +76,18 @@ pub(crate) fn build_breadcrumb(state: &Rc<BrowserState>, folder: &str) {
             sep.add_css_class("breadcrumb-sep");
             bar.append(&sep);
         }
-        let btn = gtk::Button::builder().label(name).build();
-        btn.add_css_class("flat");
-        btn.add_css_class("breadcrumb-btn");
+        let breadcrumb_button = gtk::Button::builder().label(name).build();
+        breadcrumb_button.add_css_class("flat");
+        breadcrumb_button.add_css_class("breadcrumb-btn");
         if i == last {
-            btn.set_sensitive(false);
-            btn.add_css_class("accent");
+            breadcrumb_button.set_sensitive(false);
+            breadcrumb_button.add_css_class("accent");
         } else {
             let path = path.clone();
             let state = state.clone();
-            btn.connect_clicked(move |_| state.navigate_to_folder(&path));
+            breadcrumb_button.connect_clicked(move |_| state.navigate_to_folder(&path));
         }
-        bar.append(&btn);
+        bar.append(&breadcrumb_button);
     }
 
     let scroll = gtk::ScrolledWindow::builder()
@@ -132,7 +132,7 @@ pub(crate) fn build_search(state: &Rc<BrowserState>) -> gtk::SearchEntry {
 /// Info row: just the video count (+ a truncation warning when a recursive scan
 /// hit its cap). The folder path is *not* repeated here — the breadcrumb above
 /// already shows it.
-pub(crate) fn build_info(state: &Rc<BrowserState>, count: usize) {
+pub(crate) fn build_count_summary(state: &Rc<BrowserState>, count: usize) {
     let row = gtk::Box::builder()
         .spacing(6)
         .margin_start(12)
@@ -141,9 +141,9 @@ pub(crate) fn build_info(state: &Rc<BrowserState>, count: usize) {
         .build();
 
     let count_text = ni18n("{} video", "{} videos", count as u64).replace("{}", &count.to_string());
-    let count_lbl = caption_label(&count_text);
-    count_lbl.set_halign(gtk::Align::Start);
-    row.append(&count_lbl);
+    let count_label = caption_label(&count_text);
+    count_label.set_halign(gtk::Align::Start);
+    row.append(&count_label);
 
     if state.truncated.get() {
         let total = state.total_found.get();

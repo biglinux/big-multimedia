@@ -31,7 +31,9 @@ pub(crate) fn build_list_view(
     factory.connect_setup({
         let state = state.clone();
         move |_, item| {
-            let item = item.downcast_ref::<gtk::ListItem>().unwrap();
+            let Some(item) = item.downcast_ref::<gtk::ListItem>() else {
+                return;
+            };
             let row = gtk::Box::new(gtk::Orientation::Vertical, 0);
 
             let hbox = gtk::Box::builder()
@@ -71,26 +73,28 @@ pub(crate) fn build_list_view(
     factory.connect_bind({
         let state = state.clone();
         move |_, item| {
-            let item = item.downcast_ref::<gtk::ListItem>().unwrap();
-            let obj = item.item().and_downcast::<glib::BoxedAnyObject>().unwrap();
+            let Some(item) = item.downcast_ref::<gtk::ListItem>() else {
+                return;
+            };
+            let Some(obj) = item.item().and_downcast::<glib::BoxedAnyObject>() else {
+                return;
+            };
             let entry: std::cell::Ref<PlaylistEntry> = obj.borrow();
-            let row = item.child().and_downcast::<gtk::Box>().unwrap();
-            let hbox = row.first_child().unwrap().downcast::<gtk::Box>().unwrap();
-            let icon = hbox
-                .first_child()
-                .unwrap()
-                .downcast::<gtk::Image>()
-                .unwrap();
-            let label = icon
-                .next_sibling()
-                .unwrap()
-                .downcast::<gtk::Label>()
-                .unwrap();
-            let meta = hbox
-                .next_sibling()
-                .unwrap()
-                .downcast::<gtk::Label>()
-                .unwrap();
+            let Some(row) = item.child().and_downcast::<gtk::Box>() else {
+                return;
+            };
+            let Some(hbox) = row.first_child().and_downcast::<gtk::Box>() else {
+                return;
+            };
+            let Some(icon) = hbox.first_child().and_downcast::<gtk::Image>() else {
+                return;
+            };
+            let Some(label) = icon.next_sibling().and_downcast::<gtk::Label>() else {
+                return;
+            };
+            let Some(meta) = hbox.next_sibling().and_downcast::<gtk::Label>() else {
+                return;
+            };
 
             match entry.kind {
                 EntryKind::ParentFolder | EntryKind::Folder => {
@@ -155,7 +159,9 @@ pub(crate) fn build_list_view(
     });
 
     factory.connect_unbind(|_, item| {
-        let item = item.downcast_ref::<gtk::ListItem>().unwrap();
+        let Some(item) = item.downcast_ref::<gtk::ListItem>() else {
+            return;
+        };
         if let Some(row) = item.child().and_downcast::<gtk::Box>() {
             row.set_widget_name("unbound");
         }

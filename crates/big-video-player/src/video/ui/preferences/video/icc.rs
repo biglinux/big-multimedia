@@ -3,6 +3,7 @@
 //! Whole group is advanced-gated and self-registers in `adv_widgets`.
 
 use adw::prelude::*;
+use big_relm4_components::input::dropdown_row::{BigDropdownRow, BigDropdownRowSpec};
 use big_relm4_components::layout::preferences::{
     tracked_preferences_group, BigPreferencesGroupSpec,
 };
@@ -13,7 +14,7 @@ use crate::player::mpv_backend::MpvBackend;
 use crate::settings::{keys, Settings};
 
 use super::super::{add_entry_row, add_switch_row, AdvancedWidgets};
-use super::common::illustration;
+use super::illustration_assets::illustration;
 
 pub(super) fn build_icc_group(
     settings: &Settings,
@@ -60,29 +61,23 @@ pub(super) fn build_icc_group(
     );
     icc_path_row.add_prefix(&illustration("folder.svg"));
 
-    let icc_intent_labels = &[
-        i18n("Perceptual"),
-        i18n("Relative"),
-        i18n("Saturation"),
-        i18n("Absolute"),
-    ];
-    let icc_intent_options = gtk::StringList::new(
-        &icc_intent_labels
-            .iter()
-            .map(std::string::String::as_str)
-            .collect::<Vec<_>>(),
-    );
-    let icc_intent_row = adw::ComboRow::builder()
-        .title(i18n("Rendering Intent"))
-        .model(&icc_intent_options)
-        .build();
-    icc_intent_row.set_selected((settings.get_int(keys::ICC_INTENT) as u32).min(3));
+    let (icc_intent_row, icc_intent_dropdown) = BigDropdownRow::new(BigDropdownRowSpec::new(
+        i18n("Rendering Intent"),
+        [
+            i18n("Perceptual"),
+            i18n("Relative"),
+            i18n("Saturation"),
+            i18n("Absolute"),
+        ],
+    ))
+    .into_parts();
+    icc_intent_dropdown.set_selected((settings.get_int(keys::ICC_INTENT) as u32).min(3));
     icc_intent_row.add_prefix(&illustration("icc_profile.svg"));
     {
         let s = settings.clone();
         let m = mpv.cloned();
-        icc_intent_row.connect_selected_notify(move |row| {
-            let val = row.selected() as i32;
+        icc_intent_dropdown.connect_selected_notify(move |dropdown| {
+            let val = dropdown.selected() as i32;
             let _ = s.put_int(keys::ICC_INTENT, val);
             if let Some(ref mpv) = m {
                 mpv.set_icc_intent(i64::from(val));

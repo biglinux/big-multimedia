@@ -94,5 +94,11 @@ impl Component for VideoFiltersDialog {
         }
     }
 
-    fn update(&mut self, _msg: Self::Input, _sender: ComponentSender<Self>, _root: &Self::Root) {}
+    fn update(
+        &mut self,
+        _message: Self::Input,
+        _sender: ComponentSender<Self>,
+        _root: &Self::Root,
+    ) {
+    }
 }

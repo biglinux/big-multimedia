@@ -24,11 +24,11 @@ pub(super) fn wire_osd_autohide(main_overlay: &gtk::Overlay, osd: &Rc<OsdState>)
 /// Wire the desktop-background context menu. This intentionally exposes only
 /// wallpaper-level actions; the full player menus stay in [`wire_video_input`].
 pub(super) fn wire_background_video_input(main_overlay: &gtk::Overlay) {
-    let ctx_menu = gio::Menu::new();
-    ctx_menu.append(Some(&i18n("Choose Video…")), Some("win.open-file"));
-    ctx_menu.append(Some(&i18n("Pause / Resume")), Some("win.play-pause"));
+    let context_menu = gio::Menu::new();
+    context_menu.append(Some(&i18n("Choose Video…")), Some("win.open-file"));
+    context_menu.append(Some(&i18n("Pause / Resume")), Some("win.play-pause"));
 
-    let popover = gtk::PopoverMenu::from_model(Some(&ctx_menu));
+    let popover = gtk::PopoverMenu::from_model(Some(&context_menu));
     popover.set_parent(main_overlay);
     popover.set_has_arrow(false);
     {
@@ -86,12 +86,12 @@ pub(super) fn wire_video_input(
 
     // Right-click → context menu (uses the `win.*` actions on the window, which
     // resolve through the action group inherited by this descendant).
-    let ctx_menu = gio::Menu::new();
+    let context_menu = gio::Menu::new();
     let playback = gio::Menu::new();
     playback.append(Some(&i18n("Play / Pause")), Some("win.play-pause"));
     playback.append(Some(&i18n("Fullscreen")), Some("win.fullscreen"));
     playback.append(Some(&i18n("Screenshot")), Some("win.screenshot"));
-    ctx_menu.append_section(None, &playback);
+    context_menu.append_section(None, &playback);
     let av = gio::Menu::new();
     av.append(Some(&i18n("Equalizer")), Some("win.show-equalizer"));
     av.append(
@@ -102,14 +102,14 @@ pub(super) fn wire_video_input(
         Some(&i18n("Picture Adjustments")),
         Some("win.show-image-adjust"),
     );
-    ctx_menu.append_section(None, &av);
+    context_menu.append_section(None, &av);
     let nav = gio::Menu::new();
     nav.append(Some(&i18n("Open File…")), Some("win.open-file"));
     nav.append(Some(&i18n("Open URL…")), Some("win.open-url"));
     nav.append(Some(&i18n("Media Info")), Some("win.media-info"));
-    ctx_menu.append_section(None, &nav);
+    context_menu.append_section(None, &nav);
 
-    let popover = gtk::PopoverMenu::from_model(Some(&ctx_menu));
+    let popover = gtk::PopoverMenu::from_model(Some(&context_menu));
     popover.set_parent(main_overlay);
     popover.set_has_arrow(false);
     {

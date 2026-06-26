@@ -54,7 +54,7 @@ pub enum CastAttempt {
 /// Init payload: the shared cast engine + the shell's mpv handle.
 pub struct VideoCastDialogInit {
     /// Shared Chromecast engine (from `big-media-runtime`).
-    pub manager: Arc<CastManager>,
+    pub cast_engine: Arc<CastManager>,
     /// The shell's live mpv backend handle (read on device pick).
     pub mpv: MpvHandle,
     /// Snapshot provider for transcoded cast filters.
@@ -94,7 +94,7 @@ pub enum VideoCastDialogOutput {
 
 /// Relm4 cast device picker.
 pub struct VideoCastDialog {
-    manager: Arc<CastManager>,
+    cast_engine: Arc<CastManager>,
     mpv: MpvHandle,
     filter_snapshot: FilterSnapshot,
     list_box: gtk::ListBox,
@@ -199,7 +199,7 @@ impl Component for VideoCastDialog {
         root.append(&tip);
 
         let model = Self {
-            manager: init.manager,
+            cast_engine: init.cast_engine,
             mpv: init.mpv,
             filter_snapshot: init.filter_snapshot,
             list_box,
@@ -210,7 +210,7 @@ impl Component for VideoCastDialog {
             polling: Rc::new(Cell::new(false)),
         };
 
-        model.manager.start_discovery(10);
+        model.cast_engine.start_discovery(10);
         model.spawn_discovery_poll();
 
         ComponentParts { model, widgets: () }
@@ -219,20 +219,20 @@ impl Component for VideoCastDialog {
     fn update(&mut self, message: Self::Input, sender: ComponentSender<Self>, _root: &Self::Root) {
         match message {
             VideoCastDialogInput::Refresh => {
-                self.manager.clear_devices();
+                self.cast_engine.clear_devices();
                 self.rendered_count = 0;
                 self.refresh_device_list();
                 self.status_label.set_text(&i18n("Searching for devices…"));
                 self.spinner.set_visible(true);
-                self.manager.start_discovery(10);
+                self.cast_engine.start_discovery(10);
             }
             VideoCastDialogInput::Reopened => {
-                self.manager.clear_devices();
+                self.cast_engine.clear_devices();
                 self.rendered_count = 0;
                 self.refresh_device_list();
                 self.status_label.set_text(&i18n("Searching for devices…"));
                 self.spinner.set_visible(true);
-                self.manager.start_discovery(10);
+                self.cast_engine.start_discovery(10);
                 // The poll timer broke when the dialog last closed; restart it
                 // (guarded — no-op if somehow still running).
                 self.spawn_discovery_poll();
@@ -240,7 +240,7 @@ impl Component for VideoCastDialog {
             VideoCastDialogInput::DevicePicked(index) => self.attempt_cast(index, &sender),
             VideoCastDialogInput::Attempt(attempt) => self.on_attempt(attempt, &sender),
             VideoCastDialogInput::StopCast => {
-                self.manager.stop_casting();
+                self.cast_engine.stop_casting();
                 self.stop_button.set_sensitive(false);
                 let _ = sender.output(VideoCastDialogOutput::Stopped);
             }
@@ -250,15 +250,15 @@ impl Component for VideoCastDialog {
 
 impl VideoCastDialog {
     pub(crate) fn filter_sync(&self) -> Rc<dyn Fn(TranscodeFilters, f64)> {
-        let manager = Arc::clone(&self.manager);
+        let cast_engine = Arc::clone(&self.cast_engine);
         Rc::new(move |filters, position_secs| {
-            if !manager.is_casting() {
+            if !cast_engine.is_casting() {
                 return;
             }
-            let result = if manager.is_transcoding() {
-                manager.transcode_update_filters(filters, position_secs)
+            let result = if cast_engine.is_transcoding() {
+                cast_engine.transcode_update_filters(filters, position_secs)
             } else if filters.has_any_filter() {
-                manager.switch_to_transcoding(filters, position_secs)
+                cast_engine.switch_to_transcoding(filters, position_secs)
             } else {
                 Ok(())
             };
@@ -277,7 +277,7 @@ impl VideoCastDialog {
             return;
         }
         self.polling.set(true);
-        let manager = Arc::clone(&self.manager);
+        let cast_engine = Arc::clone(&self.cast_engine);
         let list_box = self.list_box.clone();
         let status_label = self.status_label.clone();
         let spinner = self.spinner.clone();
@@ -291,12 +291,12 @@ impl VideoCastDialog {
                 polling.set(false);
                 return glib::ControlFlow::Break;
             }
-            rendered_count = render_devices(&list_box, &status_label, &manager, rendered_count);
-            if manager.is_discovering() {
+            rendered_count = render_devices(&list_box, &status_label, &cast_engine, rendered_count);
+            if cast_engine.is_discovering() {
                 spinner.set_visible(true);
             } else {
                 spinner.set_visible(false);
-                manager.start_discovery(10);
+                cast_engine.start_discovery(10);
             }
             glib::ControlFlow::Continue
         });
@@ -307,14 +307,14 @@ impl VideoCastDialog {
         self.rendered_count = render_devices(
             &self.list_box,
             &self.status_label,
-            &self.manager,
+            &self.cast_engine,
             self.rendered_count,
         );
     }
 
     /// Attempt to cast the loaded media to the device at `index`.
     fn attempt_cast(&self, index: usize, sender: &ComponentSender<Self>) {
-        let devices = self.manager.get_devices();
+        let devices = self.cast_engine.get_devices();
         let Some(device) = devices.get(index).cloned() else {
             return;
         };
@@ -335,12 +335,12 @@ impl VideoCastDialog {
             return;
         };
 
-        let manager = Arc::clone(&self.manager);
+        let cast_engine = Arc::clone(&self.cast_engine);
         let filters = (self.filter_snapshot)();
         let sender = sender.clone();
         glib::spawn_future_local(async move {
             let attempt = start_cast(
-                &manager,
+                &cast_engine,
                 &device,
                 file_path.as_deref(),
                 &local_ip,
@@ -363,7 +363,8 @@ impl VideoCastDialog {
                 resume_secs,
             } => {
                 if resume_secs > 1.0 {
-                    self.manager.send_command(CastCommand::Seek(resume_secs));
+                    self.cast_engine
+                        .send_command(CastCommand::Seek(resume_secs));
                 }
                 self.stop_button.set_sensitive(true);
                 self.status_label
@@ -384,10 +385,10 @@ impl VideoCastDialog {
 fn render_devices(
     list_box: &gtk::ListBox,
     status_label: &gtk::Label,
-    manager: &Arc<CastManager>,
+    cast_engine: &Arc<CastManager>,
     rendered_count: usize,
 ) -> usize {
-    let devices = manager.get_devices();
+    let devices = cast_engine.get_devices();
     if devices.len() != rendered_count {
         while let Some(row) = list_box.row_at_index(0) {
             list_box.remove(&row);
@@ -402,7 +403,7 @@ fn render_devices(
         }
     }
     if devices.is_empty() {
-        status_label.set_text(&if manager.is_discovering() {
+        status_label.set_text(&if cast_engine.is_discovering() {
             i18n("Searching for devices…")
         } else {
             i18n("No devices found")
@@ -420,7 +421,7 @@ fn render_devices(
 /// map the result to a [`CastAttempt`]. Pure-logic decision via
 /// [`decide_cast_target`]; the I/O is the runtime cast engine's.
 async fn start_cast(
-    manager: &Arc<CastManager>,
+    cast_engine: &Arc<CastManager>,
     device: &CastDeviceInfo,
     file_path: Option<&str>,
     local_ip: &str,
@@ -447,10 +448,10 @@ async fn start_cast(
     );
     let path = file_path.unwrap_or_default();
     let result = match target {
-        CastTarget::Url { mime } => manager.cast_url(device, path, mime),
-        CastTarget::DirectFile => manager.cast_file(device, path, local_ip),
+        CastTarget::Url { mime } => cast_engine.cast_url(device, path, mime),
+        CastTarget::DirectFile => cast_engine.cast_file(device, path, local_ip),
         CastTarget::Transcode => {
-            manager.cast_file_transcoded(device, path, local_ip, filters, position_secs)
+            cast_engine.cast_file_transcoded(device, path, local_ip, filters, position_secs)
         }
         CastTarget::Error(CastTargetError::NoMedia) => {
             return CastAttempt::Failed(i18n("No media loaded"));
@@ -463,7 +464,7 @@ async fn start_cast(
     match result {
         Ok(()) => CastAttempt::Started {
             device_name: device.name.clone(),
-            transcoding: manager.is_transcoding(),
+            transcoding: cast_engine.is_transcoding(),
             resume_secs: position_secs,
         },
         Err(error) => {

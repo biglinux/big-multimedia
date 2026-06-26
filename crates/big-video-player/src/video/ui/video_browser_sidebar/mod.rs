@@ -33,6 +33,7 @@ use std::rc::Rc;
 use std::time::Duration;
 
 use adw::prelude::*;
+use big_relm4_components::layout::widget_container::clear_box_children;
 use gtk::{gio, glib};
 use relm4::{Component, ComponentParts, ComponentSender};
 
@@ -310,7 +311,7 @@ impl BrowserState {
         let Some(container) = self.container() else {
             return;
         };
-        clear(&container);
+        clear_sidebar_container(&container);
         chrome::build_header(self);
 
         let spinner_box = gtk::Box::builder()
@@ -345,7 +346,7 @@ impl BrowserState {
         self.store.replace(None);
         self.filter.replace(None);
         self.recompute_pos();
-        clear(&container);
+        clear_sidebar_container(&container);
 
         chrome::build_header(self);
 
@@ -374,7 +375,7 @@ impl BrowserState {
             return;
         }
 
-        chrome::build_info(self, items.len());
+        chrome::build_count_summary(self, items.len());
 
         let scroll = if is_grid {
             views::build_grid_view(self, &items, recursive_on, folder_opt.as_ref())
@@ -407,7 +408,7 @@ impl BrowserState {
             return;
         }
 
-        chrome::build_info(self, items.len());
+        chrome::build_count_summary(self, items.len());
 
         let scroll = views::build_queue_view(self, &items);
         self.prev_pos.set(self.pos.get());
@@ -544,11 +545,9 @@ impl BrowserState {
     }
 }
 
-/// Remove every child of `container`.
-pub(crate) fn clear(container: &gtk::Box) {
-    while let Some(child) = container.first_child() {
-        container.remove(&child);
-    }
+/// Remove every child from the sidebar root before a mode rebuild.
+pub(crate) fn clear_sidebar_container(container: &gtk::Box) {
+    clear_box_children(container);
 }
 
 /// Relm4 folder-browser sidebar component.

@@ -5,6 +5,7 @@ use big_relm4_components::input::dropdown_row::{BigDropdownRow, BigDropdownRowSp
 use big_relm4_components::layout::{
     dialog_footer::{BigDialogFooter, BigDialogFooterSpec},
     dialog_page::BigDialogPage,
+    preferences::BigPreferencesGroupSpec,
 };
 
 impl VideoShell {
@@ -99,7 +100,7 @@ impl VideoShell {
         let Some(mpv) = self.mpv.borrow().as_ref().map(Arc::clone) else {
             return;
         };
-        let group = adw::PreferencesGroup::new();
+        let group = BigPreferencesGroupSpec::untitled().build();
         // Titles/subtitles are wrapped in `i18n()` on string literals here (not
         // `i18n(title)` in the loop) so `xgettext` can extract them into the POT.
         let choices = [
@@ -161,11 +162,11 @@ impl VideoShell {
         dialog.present(Some(root));
     }
 
-    /// Present the live media-information dialog for the loaded media. No-op
+    /// Present the live media-details dialog for the loaded media. No-op
     /// before mpv is up.
-    pub(super) fn show_media_info(&self, root: &adw::ApplicationWindow) {
+    pub(super) fn show_media_details(&self, root: &adw::ApplicationWindow) {
         if let Some(mpv) = self.mpv.borrow().as_ref() {
-            show_video_media_info_dialog(root, mpv);
+            show_video_media_details_dialog(root, mpv);
         }
     }
 
@@ -204,7 +205,7 @@ impl VideoShell {
         let page = BigDialogPage::plain();
         page.content().set_spacing(12);
 
-        let group = adw::PreferencesGroup::builder()
+        let group = BigPreferencesGroupSpec::untitled()
             .description(i18n(
                 "Supports YouTube, HTTP streams, RTSP, RTMP, DVD, and Blu-ray URLs.",
             ))
@@ -282,7 +283,7 @@ impl VideoShell {
             status.set_vexpand(true);
             content.append(&status);
         } else {
-            let group = adw::PreferencesGroup::new();
+            let group = BigPreferencesGroupSpec::untitled().build();
             let sender = shell_input_sender();
             for entry in &entries {
                 let display = crate::recent::display_name(&entry.path);
@@ -322,7 +323,7 @@ impl VideoShell {
         let page = BigDialogPage::plain();
         page.content().set_spacing(12);
 
-        let group = adw::PreferencesGroup::builder()
+        let group = BigPreferencesGroupSpec::untitled()
             .description(i18n(
                 "Choose a disc type and enter the device, ISO, or folder path.",
             ))

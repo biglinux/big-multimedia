@@ -2,7 +2,7 @@
 //! / cache / screensaver / GPU / custom-mpv-options groups in display order.
 //! Tab is labeled "General" since it's the first one users see.
 
-mod common;
+mod illustration_assets;
 mod playback;
 mod screenshot;
 mod system;

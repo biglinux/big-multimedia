@@ -6,6 +6,7 @@
 //! per-feature rows directly).
 
 use adw::prelude::*;
+use big_relm4_components::input::dropdown_row::{BigDropdownRow, BigDropdownRowSpec};
 use big_relm4_components::layout::preferences::{
     tracked_preferences_group, BigPreferencesGroupSpec,
 };
@@ -16,7 +17,7 @@ use crate::player::mpv_backend::MpvBackend;
 use crate::settings::{keys, Settings};
 
 use super::super::AdvancedWidgets;
-use super::common::illustration;
+use super::illustration_assets::illustration;
 
 fn sync_profile_to_settings(settings: &Settings, profile: &str) {
     if profile == "high-quality" {
@@ -37,29 +38,24 @@ fn sync_profile_to_settings(settings: &Settings, profile: &str) {
 /// default Automatic. Takes effect on newly opened videos (the render path is
 /// wired when the content realizes).
 pub(super) fn build_video_output_group(settings: &Settings) -> adw::PreferencesGroup {
-    let group = adw::PreferencesGroup::builder()
-        .title(i18n("Video Output"))
+    let group = BigPreferencesGroupSpec::new(i18n("Video Output"))
         .description(i18n(
             "How video is rendered. Automatic uses the GPU when available and falls back to software.",
         ))
         .build();
 
-    let labels = &[i18n("Automatic"), i18n("OpenGL (GPU)"), i18n("Software")];
-    let options = gtk::StringList::new(
-        &labels
-            .iter()
-            .map(std::string::String::as_str)
-            .collect::<Vec<_>>(),
-    );
     let values: &[&str] = &["auto", "gl", "sw"];
 
-    let row = adw::ComboRow::builder()
-        .title(i18n("Video Output"))
+    let (row, dropdown) = BigDropdownRow::new(
+        BigDropdownRowSpec::new(
+            i18n("Video Output"),
+            [i18n("Automatic"), i18n("OpenGL (GPU)"), i18n("Software")],
+        )
         .subtitle(i18n(
             "Software works without a GPU; applies to newly opened videos",
-        ))
-        .model(&options)
-        .build();
+        )),
+    )
+    .into_parts();
     row.add_prefix(&illustration("render_profile.svg"));
 
     let current = settings.get_string(keys::RENDER_MODE);
@@ -69,12 +65,12 @@ pub(super) fn build_video_output_group(settings: &Settings) -> adw::PreferencesG
         current.as_str()
     };
     let idx = values.iter().position(|v| *v == current).unwrap_or(0);
-    row.set_selected(idx as u32);
+    dropdown.set_selected(idx as u32);
 
     {
         let s = settings.clone();
-        row.connect_selected_notify(move |row| {
-            if let Some(&val) = values.get(row.selected() as usize) {
+        dropdown.connect_selected_notify(move |dropdown| {
+            if let Some(&val) = values.get(dropdown.selected() as usize) {
                 let _ = s.put_string(keys::RENDER_MODE, val);
             }
         });
@@ -99,20 +95,16 @@ pub(super) fn build_render_profile_group(
         simple_widgets,
     );
 
-    let profile_labels = &[i18n("⚡ Fast"), i18n("⚖ Balanced"), i18n("✨ High Quality")];
-    let profile_options = gtk::StringList::new(
-        &profile_labels
-            .iter()
-            .map(std::string::String::as_str)
-            .collect::<Vec<_>>(),
-    );
     let profile_values: &[&str] = &["default", "balanced", "high-quality"];
 
-    let profile_row = adw::ComboRow::builder()
-        .title(i18n("Video Profile"))
-        .subtitle(i18n("Higher quality uses more GPU power"))
-        .model(&profile_options)
-        .build();
+    let (profile_row, profile_dropdown) = BigDropdownRow::new(
+        BigDropdownRowSpec::new(
+            i18n("Video Profile"),
+            [i18n("⚡ Fast"), i18n("⚖ Balanced"), i18n("✨ High Quality")],
+        )
+        .subtitle(i18n("Higher quality uses more GPU power")),
+    )
+    .into_parts();
     profile_row.add_prefix(&illustration("render_profile.svg"));
 
     let current = settings.get_string(keys::RENDER_PROFILE);
@@ -120,13 +112,13 @@ pub(super) fn build_render_profile_group(
         .iter()
         .position(|v| *v == current.as_str())
         .unwrap_or(0);
-    profile_row.set_selected(idx as u32);
+    profile_dropdown.set_selected(idx as u32);
 
     {
         let s = settings.clone();
         let m = mpv.cloned();
-        profile_row.connect_selected_notify(move |row| {
-            let selected = row.selected() as usize;
+        profile_dropdown.connect_selected_notify(move |dropdown| {
+            let selected = dropdown.selected() as usize;
             if let Some(&val) = profile_values.get(selected) {
                 let _ = s.put_string(keys::RENDER_PROFILE, val);
                 sync_profile_to_settings(&s, val);

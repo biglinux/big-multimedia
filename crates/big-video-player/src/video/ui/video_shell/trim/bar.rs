@@ -20,6 +20,7 @@ use big_media_components::time::playback_time;
 use big_relm4_components::feedback::tooltip::{
     self, icon_button, icon_toggle_button, labeled_icon_button,
 };
+use big_relm4_components::layout::widget_container::clear_box_children;
 use gtk::glib;
 use relm4::{gtk, Component, ComponentParts, ComponentSender};
 
@@ -117,9 +118,7 @@ impl VideoTrimBar {
             )
         };
 
-        while let Some(child) = self.segments_strip.first_child() {
-            self.segments_strip.remove(&child);
-        }
+        clear_box_children(&self.segments_strip);
         {
             let state = self.state.borrow();
             for segment in &state.segments {
@@ -185,39 +184,39 @@ impl Component for VideoTrimBar {
 
         // ── mark controls (every control carries a tooltip + accessible label
         // via the shared tooltip helpers) ───────────────────────────────────
-        let mark_btn = labeled_icon_button(
+        let mark_button = labeled_icon_button(
             "bookmark-new-symbolic",
             &i18n("Mark"),
             &i18n("Mark a cut point at the current position (M)"),
             &["flat"],
         );
-        let clear_btn = icon_button(
+        let clear_button = icon_button(
             "user-trash-symbolic",
             &i18n("Clear all cuts"),
             &["flat", "circular"],
         );
-        mark_btn.connect_clicked(glib::clone!(
+        mark_button.connect_clicked(glib::clone!(
             #[strong]
             sender,
             move |_| sender.input(VideoTrimBarInput::MarkHere)
         ));
-        clear_btn.connect_clicked(glib::clone!(
+        clear_button.connect_clicked(glib::clone!(
             #[strong]
             sender,
             move |_| sender.input(VideoTrimBarInput::ClearSegments)
         ));
         // Play only the marked cuts (loops/skips to play just the segments).
-        let play_sel_btn = icon_toggle_button(
+        let play_selection_button = icon_toggle_button(
             "media-playlist-repeat-symbolic",
             &i18n("Play only the marked cuts"),
             false,
             &["flat", "circular"],
         );
-        play_sel_btn.connect_toggled(glib::clone!(
+        play_selection_button.connect_toggled(glib::clone!(
             #[strong]
             sender,
-            move |b| {
-                let _ = sender.output(VideoTrimBarOutput::PlaySelection(b.is_active()));
+            move |button| {
+                let _ = sender.output(VideoTrimBarOutput::PlaySelection(button.is_active()));
             }
         ));
 
@@ -266,12 +265,12 @@ impl Component for VideoTrimBar {
         // Settings (gear) — always available: even in fast/keep-format mode the
         // user needs the output-layout choice (join cuts vs separate files). The
         // dialog shows that always + the encode options for precise.
-        let config_btn = icon_button(
+        let cut_settings_button = icon_button(
             "emblem-system-symbolic",
             &i18n("Cut settings"),
             &["flat", "circular"],
         );
-        config_btn.connect_clicked(glib::clone!(
+        cut_settings_button.connect_clicked(glib::clone!(
             #[strong]
             sender,
             move |_| {
@@ -279,12 +278,12 @@ impl Component for VideoTrimBar {
             }
         ));
 
-        let exit_btn = icon_button(
+        let exit_trim_mode_button = icon_button(
             "window-close-symbolic",
             &i18n("Exit trim mode"),
             &["flat", "circular"],
         );
-        exit_btn.connect_clicked(glib::clone!(
+        exit_trim_mode_button.connect_clicked(glib::clone!(
             #[strong]
             sender,
             move |_| {
@@ -292,7 +291,7 @@ impl Component for VideoTrimBar {
             }
         ));
 
-        let export_btn = gtk::Button::builder()
+        let export_button = gtk::Button::builder()
             .child(
                 &adw::ButtonContent::builder()
                     .icon_name("document-save-symbolic")
@@ -302,9 +301,9 @@ impl Component for VideoTrimBar {
             .css_classes(["suggested-action", "pill"])
             .sensitive(false)
             .build();
-        export_btn.update_property(&[gtk::accessible::Property::Label(&i18n("Export"))]);
-        tooltip::set(&export_btn, &i18n("Export the marked cuts"));
-        export_btn.connect_clicked(glib::clone!(
+        export_button.update_property(&[gtk::accessible::Property::Label(&i18n("Export"))]);
+        tooltip::set(&export_button, &i18n("Export the marked cuts"));
+        export_button.connect_clicked(glib::clone!(
             #[strong]
             sender,
             move |_| sender.input(VideoTrimBarInput::RequestExport)
@@ -319,22 +318,22 @@ impl Component for VideoTrimBar {
 
         let row = gtk::Box::new(gtk::Orientation::Horizontal, 8);
         row.set_valign(gtk::Align::Center);
-        row.append(&mark_btn);
-        row.append(&clear_btn);
-        row.append(&play_sel_btn);
+        row.append(&mark_button);
+        row.append(&clear_button);
+        row.append(&play_selection_button);
         row.append(&middle);
         row.append(&count_label);
         row.append(&mode_group);
-        row.append(&config_btn);
-        row.append(&export_btn);
-        row.append(&exit_btn);
+        row.append(&cut_settings_button);
+        row.append(&export_button);
+        row.append(&exit_trim_mode_button);
         root.append(&row);
 
         let busy_sensitive: Vec<gtk::Widget> = vec![
-            mark_btn.upcast::<gtk::Widget>(),
-            clear_btn.upcast::<gtk::Widget>(),
+            mark_button.upcast::<gtk::Widget>(),
+            clear_button.upcast::<gtk::Widget>(),
             mode_group.upcast::<gtk::Widget>(),
-            config_btn.clone().upcast::<gtk::Widget>(),
+            cut_settings_button.clone().upcast::<gtk::Widget>(),
         ];
 
         let model = VideoTrimBar {
@@ -343,7 +342,7 @@ impl Component for VideoTrimBar {
             segments_scroll,
             hint_label,
             count_label,
-            export_btn,
+            export_btn: export_button,
             busy_sensitive,
         };
         model.refresh(&sender);
@@ -408,15 +407,15 @@ fn build_segment_chip(
     chip.set_margin_top(2);
     chip.set_margin_bottom(2);
 
-    let edit_btn = gtk::Button::builder()
+    let edit_segment_button = gtk::Button::builder()
         .label(format!("{} – {}", playback_time(start), playback_time(end)))
         .css_classes(["flat", "caption"])
         .build();
-    edit_btn.update_property(&[gtk::accessible::Property::Description(&i18n(
+    edit_segment_button.update_property(&[gtk::accessible::Property::Description(&i18n(
         "Edit cut times",
     ))]);
-    tooltip::set(&edit_btn, &i18n("Edit cut times"));
-    edit_btn.connect_clicked(glib::clone!(
+    tooltip::set(&edit_segment_button, &i18n("Edit cut times"));
+    edit_segment_button.connect_clicked(glib::clone!(
         #[strong]
         sender,
         move |_| {
@@ -424,14 +423,15 @@ fn build_segment_chip(
         }
     ));
 
-    let delete = icon_button("window-close-symbolic", &i18n("Remove this cut"), &["flat"]);
-    delete.connect_clicked(glib::clone!(
+    let delete_segment_button =
+        icon_button("window-close-symbolic", &i18n("Remove this cut"), &["flat"]);
+    delete_segment_button.connect_clicked(glib::clone!(
         #[strong]
         sender,
         move |_| sender.input(VideoTrimBarInput::DeleteSegment(id))
     ));
 
-    chip.append(&edit_btn);
-    chip.append(&delete);
+    chip.append(&edit_segment_button);
+    chip.append(&delete_segment_button);
     chip
 }

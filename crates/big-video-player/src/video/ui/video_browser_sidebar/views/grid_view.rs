@@ -33,19 +33,25 @@ pub(crate) fn build_grid_view(
     factory.connect_setup({
         let state = state.clone();
         move |_, item| {
-            let item = item.downcast_ref::<gtk::ListItem>().unwrap();
+            let Some(item) = item.downcast_ref::<gtk::ListItem>() else {
+                return;
+            };
             item.set_child(Some(&build_card(&state)));
         }
     });
     factory.connect_bind({
         let state = state.clone();
         move |_, item| {
-            let item = item.downcast_ref::<gtk::ListItem>().unwrap();
+            let Some(item) = item.downcast_ref::<gtk::ListItem>() else {
+                return;
+            };
             bind_card(&state, item, generation);
         }
     });
     factory.connect_unbind(|_, item| {
-        let item = item.downcast_ref::<gtk::ListItem>().unwrap();
+        let Some(item) = item.downcast_ref::<gtk::ListItem>() else {
+            return;
+        };
         if let Some(card) = item.child().and_downcast::<gtk::Box>() {
             card.set_widget_name("unbound");
         }
@@ -175,15 +181,11 @@ fn build_card(state: &Rc<BrowserState>) -> gtk::Box {
     card
 }
 
-fn extract_card(item: &gtk::ListItem) -> CardWidgets {
-    let card = item.child().and_downcast::<gtk::Box>().unwrap();
-    let overlay = card
-        .first_child()
-        .unwrap()
-        .downcast::<gtk::Overlay>()
-        .unwrap();
-    let frame = overlay.child().unwrap().downcast::<gtk::Frame>().unwrap();
-    let picture = frame.child().unwrap().downcast::<gtk::Picture>().unwrap();
+fn extract_card(grid_cell: &gtk::ListItem) -> Option<CardWidgets> {
+    let card = grid_cell.child().and_downcast::<gtk::Box>()?;
+    let overlay = card.first_child().and_downcast::<gtk::Overlay>()?;
+    let frame = overlay.child().and_downcast::<gtk::Frame>()?;
+    let picture = frame.child().and_downcast::<gtk::Picture>()?;
 
     let mut placeholder = None;
     let mut badge = None;
@@ -202,29 +204,29 @@ fn extract_card(item: &gtk::ListItem) -> CardWidgets {
         }
         child = w.next_sibling();
     }
-    let name = overlay
-        .next_sibling()
-        .unwrap()
-        .downcast::<gtk::Label>()
-        .unwrap();
+    let name = overlay.next_sibling().and_downcast::<gtk::Label>()?;
 
-    CardWidgets {
+    Some(CardWidgets {
         card,
         picture,
         frame,
-        placeholder: placeholder.unwrap(),
-        badge: badge.unwrap(),
-        play_icon: play_icon.unwrap(),
-        folder_icon: folder_icon.unwrap(),
-        select_check: select_check.unwrap(),
+        placeholder: placeholder?,
+        badge: badge?,
+        play_icon: play_icon?,
+        folder_icon: folder_icon?,
+        select_check: select_check?,
         name,
-    }
+    })
 }
 
-fn bind_card(state: &Rc<BrowserState>, item: &gtk::ListItem, generation: u64) {
-    let obj = item.item().and_downcast::<glib::BoxedAnyObject>().unwrap();
+fn bind_card(state: &Rc<BrowserState>, grid_cell: &gtk::ListItem, generation: u64) {
+    let Some(obj) = grid_cell.item().and_downcast::<glib::BoxedAnyObject>() else {
+        return;
+    };
     let entry: std::cell::Ref<PlaylistEntry> = obj.borrow();
-    let w = extract_card(item);
+    let Some(w) = extract_card(grid_cell) else {
+        return;
+    };
 
     match entry.kind {
         EntryKind::ParentFolder => bind_folder_card(&w, &entry, "go-up-symbolic"),

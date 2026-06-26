@@ -13,7 +13,7 @@ pub(in crate::video::ui::preferences) use special::build_special_formats_group;
 // Drop unused parent re-exports below; the warning list above covers it.
 
 use adw::prelude::*;
-use big_relm4_components::layout::preferences::track_widget_visibility;
+use big_relm4_components::layout::preferences::{track_widget_visibility, BigPreferencesGroupSpec};
 use big_relm4_components::list::button_strip_row::{BigButtonStripRow, BigButtonStripRowSpec};
 use gtk::pango;
 use std::sync::Arc;
@@ -36,17 +36,16 @@ pub(super) fn build_font_group(
     is_advanced: bool,
     adv_widgets: &AdvancedWidgets,
 ) -> adw::PreferencesGroup {
-    let group = adw::PreferencesGroup::builder()
-        .title(i18n("Font"))
+    let group = BigPreferencesGroupSpec::new(i18n("Font"))
         .description(i18n("Typeface and size for subtitle text"))
         .build();
 
     let font_dialog = gtk::FontDialog::new();
-    let font_btn = gtk::FontDialogButton::new(Some(font_dialog));
+    let font_picker_button = gtk::FontDialogButton::new(Some(font_dialog));
     let current_font = settings.get_string(keys::SUB_FONT);
     if !current_font.is_empty() {
         let desc = pango::FontDescription::from_string(&current_font);
-        font_btn.set_font_desc(&desc);
+        font_picker_button.set_font_desc(&desc);
     }
     let font_row_builder = BigButtonStripRow::new(
         BigButtonStripRowSpec::new(i18n("Font Family"))
@@ -55,18 +54,21 @@ pub(super) fn build_font_group(
     font_row_builder
         .root()
         .add_prefix(&illustration("font.svg"));
-    font_row_builder.append(&font_btn);
+    font_row_builder.append(&font_picker_button);
     font_row_builder
         .root()
-        .set_activatable_widget(Some(&font_btn));
+        .set_activatable_widget(Some(&font_picker_button));
     {
-        let s = settings.clone();
-        let m = mpv.cloned();
-        font_btn.connect_font_desc_notify(move |btn| {
-            if let Some(desc) = btn.font_desc() {
-                let family = desc.family().map(|f| f.to_string()).unwrap_or_default();
-                let _ = s.put_string(keys::SUB_FONT, &family);
-                if let Some(ref mpv) = m {
+        let settings = settings.clone();
+        let mpv = mpv.cloned();
+        font_picker_button.connect_font_desc_notify(move |button| {
+            if let Some(description) = button.font_desc() {
+                let family = description
+                    .family()
+                    .map(|font_family| font_family.to_string())
+                    .unwrap_or_default();
+                let _ = settings.put_string(keys::SUB_FONT, &family);
+                if let Some(ref mpv) = mpv {
                     mpv.set_sub_font(&family);
                 }
             }
@@ -118,8 +120,7 @@ pub(super) fn build_colors_outline_group(
     is_advanced: bool,
     adv_widgets: &AdvancedWidgets,
 ) -> adw::PreferencesGroup {
-    let group = adw::PreferencesGroup::builder()
-        .title(i18n("Colors and Outline"))
+    let group = BigPreferencesGroupSpec::new(i18n("Colors and Outline"))
         .description(i18n(
             "Customize how subtitles look for better readability on any background",
         ))
@@ -220,8 +221,7 @@ pub(super) fn build_language_loading_group(
     is_advanced: bool,
     adv_widgets: &AdvancedWidgets,
 ) -> adw::PreferencesGroup {
-    let group = adw::PreferencesGroup::builder()
-        .title(i18n("Language and Loading"))
+    let group = BigPreferencesGroupSpec::new(i18n("Language and Loading"))
         .description(i18n(
             "Language preferences and how external subtitle files are found",
         ))

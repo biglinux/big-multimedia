@@ -29,6 +29,7 @@ use big_relm4_components::input::illustrated_slider_row::{
     BigIllustratedSliderRow, BigIllustratedSliderRowSpec,
 };
 use big_relm4_components::layout::dialog_page::BigDialogPage;
+use big_relm4_components::layout::preferences::BigPreferencesGroupSpec;
 
 use crate::config::video::RESOURCE_PREFIX;
 use crate::i18n::i18n;
@@ -227,8 +228,7 @@ fn add_image_group(
     mpv: &Arc<MpvBackend>,
 ) {
     let prefix = illustration_prefix();
-    let group = adw::PreferencesGroup::builder()
-        .title(title)
+    let group = BigPreferencesGroupSpec::new(title)
         .description(description)
         .build();
     let axes: Vec<BigAdjustAxis> = rows
@@ -264,8 +264,7 @@ fn build_transform_group(
     mpv: &Arc<MpvBackend>,
     transform_state: &VideoTransformState,
 ) {
-    let group = adw::PreferencesGroup::builder()
-        .title(i18n("Transform"))
+    let group = BigPreferencesGroupSpec::new(i18n("Transform"))
         .description(i18n("Rotate or mirror the video picture"))
         .build();
 
@@ -339,34 +338,34 @@ fn build_transform_group(
         .spacing(6)
         .valign(gtk::Align::Center)
         .build();
-    let hflip_btn = gtk::ToggleButton::builder()
+    let horizontal_flip_button = gtk::ToggleButton::builder()
         .label(i18n("Horizontal"))
         .active(transform_state.hflip())
         .css_classes(["flat"])
         .build();
-    let vflip_btn = gtk::ToggleButton::builder()
+    let vertical_flip_button = gtk::ToggleButton::builder()
         .label(i18n("Vertical"))
         .active(transform_state.vflip())
         .css_classes(["flat"])
         .build();
-    flip_box.append(&hflip_btn);
-    flip_box.append(&vflip_btn);
+    flip_box.append(&horizontal_flip_button);
+    flip_box.append(&vertical_flip_button);
     flip_row.add_suffix(&flip_box);
     group.add(&flip_row);
 
-    hflip_btn.connect_toggled({
+    horizontal_flip_button.connect_toggled({
         let mpv = Arc::clone(mpv);
         let transform_state = transform_state.clone();
-        move |btn| {
-            transform_state.set_hflip(btn.is_active());
+        move |button| {
+            transform_state.set_hflip(button.is_active());
             mpv.set_video_flip(transform_state.hflip(), transform_state.vflip());
         }
     });
-    vflip_btn.connect_toggled({
+    vertical_flip_button.connect_toggled({
         let mpv = Arc::clone(mpv);
         let transform_state = transform_state.clone();
-        move |btn| {
-            transform_state.set_vflip(btn.is_active());
+        move |button| {
+            transform_state.set_vflip(button.is_active());
             mpv.set_video_flip(transform_state.hflip(), transform_state.vflip());
         }
     });
@@ -379,8 +378,7 @@ fn build_crop_group(
     mpv: &Arc<MpvBackend>,
     transform_state: &VideoTransformState,
 ) {
-    let group = adw::PreferencesGroup::builder()
-        .title(i18n("Crop"))
+    let group = BigPreferencesGroupSpec::new(i18n("Crop"))
         .description(i18n("Crop video edges in pixels"))
         .build();
     let (width, height) = mpv.get_video_dimensions().unwrap_or((0, 0));

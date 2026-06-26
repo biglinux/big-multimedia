@@ -3,6 +3,7 @@ use std::rc::Rc;
 use adw::prelude::*;
 use big_app_kit::file_dialogs::FilePicker;
 use big_relm4_components::feedback::tooltip;
+use big_relm4_components::layout::sidebar_header::{BigSidebarHeader, BigSidebarHeaderSpec};
 use gtk::gio;
 
 use super::super::{BrowserState, SidebarMode, VideoBrowserSidebarOutput};
@@ -22,57 +23,49 @@ pub(crate) fn build_header(state: &Rc<BrowserState>) {
     } else {
         i18n("Playlist")
     };
-    let header = adw::HeaderBar::builder()
-        .show_title(true)
-        .title_widget(
-            &gtk::Label::builder()
-                .label(&title)
-                .css_classes(["heading"])
-                .build(),
-        )
-        .build();
-    header.add_css_class("flat");
+    let sidebar_header = BigSidebarHeader::new(BigSidebarHeaderSpec::new(title).css_class("flat"));
 
     if mode == SidebarMode::Files {
-        let folder_btn = tooltip::icon_button("folder-open-symbolic", &i18n("Load folder…"), &[]);
-        folder_btn.connect_clicked({
+        let folder_button =
+            tooltip::icon_button("folder-open-symbolic", &i18n("Load folder…"), &[]);
+        folder_button.connect_clicked({
             let state = state.clone();
             move |_| pick_folder(&state)
         });
-        header.pack_start(&folder_btn);
+        sidebar_header.pack_start(&folder_button);
 
         // Triage multi-select toggle (creator workflow).
-        let select_btn = gtk::ToggleButton::builder()
+        let select_mode_button = gtk::ToggleButton::builder()
             .icon_name("selection-mode-symbolic")
             .active(state.select_mode.get())
             .css_classes(["flat"])
             .build();
-        tooltip::set(&select_btn, &i18n("Select"));
-        select_btn.update_property(&[gtk::accessible::Property::Label(&i18n("Select"))]);
-        select_btn.connect_toggled({
+        tooltip::set(&select_mode_button, &i18n("Select"));
+        select_mode_button.update_property(&[gtk::accessible::Property::Label(&i18n("Select"))]);
+        select_mode_button.connect_toggled({
             let state = state.clone();
-            move |b| state.set_select_mode(b.is_active())
+            move |button| state.set_select_mode(button.is_active())
         });
-        header.pack_start(&select_btn);
+        sidebar_header.pack_start(&select_mode_button);
     } else {
-        let add_btn = tooltip::icon_button("list-add-symbolic", &i18n("Add files…"), &[]);
-        add_btn.connect_clicked({
+        let add_files_button = tooltip::icon_button("list-add-symbolic", &i18n("Add files…"), &[]);
+        add_files_button.connect_clicked({
             let state = state.clone();
             move |_| add_files(&state)
         });
-        header.pack_start(&add_btn);
+        sidebar_header.pack_start(&add_files_button);
     }
 
     // pack_end is right-to-left → menu rightmost, view toggle to its left.
-    header.pack_end(&build_options_menu(state, mode));
+    sidebar_header.pack_end(&build_options_menu(state, mode));
     // The list/grid toggle only makes sense for the Files browser; the Playlist
     // is always a compact ordered queue.
     if mode == SidebarMode::Files {
-        header.pack_end(&build_view_toggle(state));
+        sidebar_header.pack_end(&build_view_toggle(state));
     }
 
     if let Some(panel) = state.container() {
-        panel.append(&header);
+        panel.append(sidebar_header.root());
     }
 }
 
@@ -85,8 +78,8 @@ fn build_view_toggle(state: &Rc<BrowserState>) -> gtk::Button {
     } else {
         ("view-grid-symbolic", i18n("Show as grid"))
     };
-    let btn = tooltip::icon_button(icon, &label, &["flat"]);
-    btn.connect_clicked({
+    let view_toggle_button = tooltip::icon_button(icon, &label, &["flat"]);
+    view_toggle_button.connect_clicked({
         let state = state.clone();
         move |_| {
             let next = if state.settings.get_string(keys::PLAYLIST_VIEW) == "list" {
@@ -98,7 +91,7 @@ fn build_view_toggle(state: &Rc<BrowserState>) -> gtk::Button {
             state.rebuild();
         }
     });
-    btn
+    view_toggle_button
 }
 
 /// Open the folder picker, switch to Files mode, and navigate into the chosen
@@ -185,12 +178,8 @@ fn build_options_menu(state: &Rc<BrowserState>, mode: SidebarMode) -> gtk::MenuB
         }
     }
 
-    let btn = gtk::MenuButton::builder()
-        .icon_name("view-more-symbolic")
-        .css_classes(["flat"])
-        .menu_model(&menu)
-        .build();
-    tooltip::set(&btn, &i18n("Options"));
-    btn.update_property(&[gtk::accessible::Property::Label(&i18n("Options"))]);
-    btn
+    let options_menu_button =
+        tooltip::icon_menu_button("view-more-symbolic", &i18n("Options"), &["flat"]);
+    options_menu_button.set_menu_model(Some(&menu));
+    options_menu_button
 }

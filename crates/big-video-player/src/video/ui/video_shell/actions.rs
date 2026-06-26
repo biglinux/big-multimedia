@@ -14,6 +14,12 @@ pub(super) fn install_window_actions(
         ("open-url", || VideoShellInput::ShowOpenUrl),
         ("open-recent", || VideoShellInput::ShowRecent),
         ("open-disc", || VideoShellInput::ShowOpenDisc),
+        ("toggle-files-sidebar", || {
+            VideoShellInput::ToggleFilesSidebar
+        }),
+        ("toggle-playlist-sidebar", || {
+            VideoShellInput::TogglePlaylistSidebar
+        }),
         ("preferences", || VideoShellInput::ShowPreferences),
         ("appearance", || VideoShellInput::ShowAppearance),
         ("restore-defaults", || VideoShellInput::ShowRestoreDefaults),
@@ -128,31 +134,31 @@ pub(super) fn build_welcome_screen(sender: &ComponentSender<VideoShell>) -> gtk:
         .build();
     container.append(&subtitle);
 
-    let btn_box = gtk::Box::builder()
+    let welcome_button_row = gtk::Box::builder()
         .orientation(gtk::Orientation::Horizontal)
         .halign(gtk::Align::Center)
         .spacing(10)
         .margin_top(24)
         .build();
-    btn_box.append(&welcome_button(
+    welcome_button_row.append(&welcome_button(
         "folder-open-symbolic",
         &i18n("Open File"),
         sender,
         || VideoShellInput::ShowOpenFile,
     ));
-    btn_box.append(&welcome_button(
+    welcome_button_row.append(&welcome_button(
         "document-open-recent-symbolic",
         &i18n("Open Recent"),
         sender,
         || VideoShellInput::ShowRecent,
     ));
-    btn_box.append(&welcome_button(
+    welcome_button_row.append(&welcome_button(
         "web-browser-symbolic",
         &i18n("Open URL"),
         sender,
         || VideoShellInput::ShowOpenUrl,
     ));
-    container.append(&btn_box);
+    container.append(&welcome_button_row);
 
     container
 }
@@ -180,7 +186,7 @@ fn welcome_button(
 
 /// Toggle the active window's keep-above state via the compositor, off the GTK
 /// main thread. Tries the KWin global shortcut first, falls back to wmctrl.
-/// Mirrors the god-object's `pin_btn` handler. Argv arrays only (no shell).
+/// Mirrors the legacy keep-above toggle handler. Argv arrays only (no shell).
 pub(super) fn toggle_keep_above() {
     use big_app_kit::subprocess::BigSubprocessSpec;
     big_media_components::player_chrome::spawn_blocking_task(move || {
@@ -215,6 +221,7 @@ pub(super) fn wire_sidebar_toggle(
     mode: SidebarMode,
     split_view: &adw::OverlaySplitView,
     updating: &Rc<Cell<bool>>,
+    active_mode: &Rc<Cell<SidebarMode>>,
     pl_sender: &relm4::Sender<VideoBrowserSidebarInput>,
 ) {
     let sibling = sibling.downgrade();
@@ -222,6 +229,7 @@ pub(super) fn wire_sidebar_toggle(
     // split capture is a content⇄split cycle.
     let split_view = split_view.downgrade();
     let updating = updating.clone();
+    let active_mode = active_mode.clone();
     let pl_sender = pl_sender.clone();
     btn.connect_toggled(move |b| {
         if updating.get() {
@@ -231,6 +239,7 @@ pub(super) fn wire_sidebar_toggle(
             return;
         };
         if b.is_active() {
+            active_mode.set(mode);
             let _ = pl_sender.send(VideoBrowserSidebarInput::SetMode(mode));
             split_view.set_show_sidebar(true);
             if let Some(sibling) = sibling.upgrade() {

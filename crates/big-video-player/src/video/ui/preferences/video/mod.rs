@@ -3,11 +3,11 @@
 //! Per-group advanced gating + simple-mode rows are tracked through the two
 //! `AdvancedWidgets` registers passed in.
 
-mod common;
 mod decoding;
 mod gpu;
 mod hdr;
 mod icc;
+mod illustration_assets;
 mod render_profile;
 mod sync;
 

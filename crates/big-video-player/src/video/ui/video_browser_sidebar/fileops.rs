@@ -12,6 +12,7 @@ use big_app_kit::file_dialogs::FilePicker;
 use big_relm4_components::layout::{
     dialog_footer::{BigDialogFooter, BigDialogFooterSpec},
     dialog_page::BigDialogPage,
+    preferences::BigPreferencesGroupSpec,
 };
 
 use super::{BrowserState, VideoBrowserSidebarOutput};
@@ -114,24 +115,24 @@ fn batch_button(
     label: &str,
     action: impl Fn(&Rc<BrowserState>, Vec<String>) + 'static,
 ) -> gtk::Button {
-    let btn = gtk::Button::builder()
+    let action_button = gtk::Button::builder()
         .icon_name(icon)
         .css_classes(["flat"])
         .build();
-    big_relm4_components::feedback::tooltip::set(&btn, label);
-    btn.update_property(&[gtk::accessible::Property::Label(label)]);
-    btn.connect_clicked({
+    big_relm4_components::feedback::tooltip::set(&action_button, label);
+    action_button.update_property(&[gtk::accessible::Property::Label(label)]);
+    action_button.connect_clicked({
         let state = state.clone();
         move |_| {
-            let sel: Vec<String> = state.selection.borrow().iter().cloned().collect();
-            if sel.is_empty() {
+            let selected_paths: Vec<String> = state.selection.borrow().iter().cloned().collect();
+            if selected_paths.is_empty() {
                 return;
             }
-            action(&state, sel);
+            action(&state, selected_paths);
             state.set_select_mode(false);
         }
     });
-    btn
+    action_button
 }
 
 /// Pick a destination folder, move `paths` into it, re-scan, and report.
@@ -187,7 +188,7 @@ pub(super) fn rename_file(state: &Rc<BrowserState>, path: &str) {
     page.content().set_spacing(12);
     page.append_description(&i18n("Choose a new file name."));
 
-    let group = adw::PreferencesGroup::new();
+    let group = BigPreferencesGroupSpec::untitled().build();
     let entry = adw::EntryRow::builder()
         .title(i18n("New name"))
         .text(&current_name)
@@ -303,7 +304,7 @@ fn move_file(src: &str, dest_dir: &Path) -> std::io::Result<()> {
 
 /// Emit a result toast for a batch file op.
 fn notify_op_result(state: &Rc<BrowserState>, ok: usize, failed: usize, verb: &str) {
-    let msg = if failed == 0 {
+    let notification_message = if failed == 0 {
         ni18n("{} file {verb}", "{} files {verb}", ok as u64)
             .replace("{}", &ok.to_string())
             .replace("{verb}", verb)
@@ -315,7 +316,7 @@ fn notify_op_result(state: &Rc<BrowserState>, ok: usize, failed: usize, verb: &s
     };
     state
         .sender
-        .output(VideoBrowserSidebarOutput::Notify(msg))
+        .output(VideoBrowserSidebarOutput::Notify(notification_message))
         .ok();
 }
 

@@ -21,6 +21,7 @@ use crate::i18n::i18n;
 use big_relm4_components::layout::{
     dialog_footer::{BigDialogFooter, BigDialogFooterSpec},
     dialog_page::BigDialogPage,
+    preferences::BigPreferencesGroupSpec,
 };
 use big_relm4_components::list::navigation_row::{BigNavigationRow, BigNavigationRowSpec};
 
@@ -43,7 +44,7 @@ impl VideoShell {
         let page = BigDialogPage::plain();
         page.content().set_spacing(12);
 
-        let group = adw::PreferencesGroup::builder()
+        let group = BigPreferencesGroupSpec::untitled()
             .description(i18n("Use H:MM:SS, M:SS, or seconds."))
             .build();
         let entry = adw::EntryRow::builder()
@@ -169,7 +170,7 @@ impl VideoShell {
         }
         let current = mpv.get_current_chapter();
 
-        let group = adw::PreferencesGroup::new();
+        let group = BigPreferencesGroupSpec::untitled().build();
         for i in 0..count {
             let time = mpv.get_property_f64(&format!("chapter-list/{i}/time"));
             let title = chapter_title(

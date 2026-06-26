@@ -117,31 +117,32 @@ pub fn show_preferences(
         // "Restore Defaults" lives here now (was a loose top-menu entry). Keep
         // the confirmation parented to this preferences window so it is always
         // visible above the modal preferences surface.
-        let restore_btn = gtk::Button::builder()
+        let restore_defaults_button = gtk::Button::builder()
             .icon_name("edit-undo-symbolic")
             .css_classes(["flat"])
             .build();
-        crate::shared::tooltip::set(&restore_btn, &i18n("Restore Defaults"));
-        restore_btn.update_property(&[gtk::accessible::Property::Label(&i18n("Restore Defaults"))]);
+        crate::shared::tooltip::set(&restore_defaults_button, &i18n("Restore Defaults"));
+        restore_defaults_button
+            .update_property(&[gtk::accessible::Property::Label(&i18n("Restore Defaults"))]);
         {
-            let win = win.clone();
-            restore_btn.connect_clicked(move |_| {
-                on_restore_defaults(win.upcast_ref::<gtk::Window>());
+            let preferences_window = win.clone();
+            restore_defaults_button.connect_clicked(move |_| {
+                on_restore_defaults(preferences_window.upcast_ref::<gtk::Window>());
             });
         }
-        hb.pack_start(&restore_btn);
+        hb.pack_start(&restore_defaults_button);
 
-        let s = settings.clone();
-        let aw = adv_widgets.clone();
-        let sw = simple_widgets.clone();
+        let settings = settings.clone();
+        let advanced_widgets = adv_widgets.clone();
+        let simple_widgets = simple_widgets.clone();
         switch.connect_active_notify(move |toggle| {
             let active = toggle.is_active();
-            let _ = s.put_bool(keys::ADVANCED_MODE, active);
-            for w in aw.borrow().iter() {
-                w.set_visible(active);
+            let _ = settings.put_bool(keys::ADVANCED_MODE, active);
+            for widget in advanced_widgets.borrow().iter() {
+                widget.set_visible(active);
             }
-            for w in sw.borrow().iter() {
-                w.set_visible(!active);
+            for widget in simple_widgets.borrow().iter() {
+                widget.set_visible(!active);
             }
         });
     }

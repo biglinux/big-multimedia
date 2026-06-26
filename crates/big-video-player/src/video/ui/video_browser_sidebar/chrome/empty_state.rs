@@ -79,10 +79,10 @@ fn build_status_page(
 
 /// A pill button wired to `on_click`.
 fn pill_button(label: &str, classes: &[&str], on_click: impl Fn() + 'static) -> gtk::Button {
-    let btn = gtk::Button::builder()
+    let pill_button = gtk::Button::builder()
         .label(label)
         .css_classes(classes)
         .build();
-    btn.connect_clicked(move |_| on_click());
-    btn
+    pill_button.connect_clicked(move |_| on_click());
+    pill_button
 }

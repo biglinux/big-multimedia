@@ -76,21 +76,21 @@ impl ChannelListView {
                 }
                 let url = row.id.clone();
                 let is_favorite = favorites.borrow().contains(&url);
-                let fav_btn = tooltip::icon_toggle_button(
+                let favorite_button = tooltip::icon_toggle_button(
                     star_icon(is_favorite),
                     &i18n("Toggle favorite"),
                     is_favorite,
                     &["flat", "circular"],
                 );
-                fav_btn.set_valign(gtk::Align::Center);
+                favorite_button.set_valign(gtk::Align::Center);
                 let favorites = favorites.clone();
                 let sender = sender.clone();
-                fav_btn.connect_toggled(move |btn| {
+                favorite_button.connect_toggled(move |button| {
                     let now_starred = favorites.borrow_mut().toggle(&url);
-                    btn.set_icon_name(star_icon(now_starred));
+                    button.set_icon_name(star_icon(now_starred));
                     sender.input(VideoIptvBrowserInput::FavoriteToggled);
                 });
-                vec![fav_btn.upcast()]
+                vec![favorite_button.upcast()]
             }
         };
 

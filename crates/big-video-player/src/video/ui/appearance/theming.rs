@@ -263,10 +263,10 @@ popover > arrow {{
     }
 }
 
-fn build_osd_css(settings: &Settings, cfg: &OsdCssConfig) -> String {
-    let mut css = cfg.css_color_foundation(settings);
-    css += &cfg.css_widget_styles();
-    css += &cfg.css_customizations();
+fn build_osd_css(settings: &Settings, osd_css_config: &OsdCssConfig) -> String {
+    let mut css = osd_css_config.css_color_foundation(settings);
+    css += &osd_css_config.css_widget_styles();
+    css += &osd_css_config.css_customizations();
 
     if settings.get_bool(keys::AUDIO_HIGH_CONTRAST) {
         css += crate::shared::theming::HIGH_CONTRAST_CSS;
@@ -289,9 +289,9 @@ pub(in crate::video) fn apply_appearance(
         }
     }
 
-    let cfg = OsdCssConfig::from_settings(settings);
-    crate::shared::theming::apply_color_scheme(&cfg.color_source);
-    let css = build_osd_css(settings, &cfg);
+    let osd_css_config = OsdCssConfig::from_settings(settings);
+    crate::shared::theming::apply_color_scheme(&osd_css_config.color_source);
+    let css = build_osd_css(settings, &osd_css_config);
 
     let provider = gtk::CssProvider::new();
     provider.load_from_string(&css);

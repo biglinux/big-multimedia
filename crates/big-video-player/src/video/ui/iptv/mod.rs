@@ -140,16 +140,16 @@ impl Component for VideoIptvBrowser {
         ])]);
         provider_row_box.append(&provider_dropdown);
 
-        let manage_btn = gtk::Button::builder().label(i18n("Manage…")).build();
-        provider_row_box.append(&manage_btn);
+        let manage_providers_button = gtk::Button::builder().label(i18n("Manage…")).build();
+        provider_row_box.append(&manage_providers_button);
 
-        let refresh_btn = gtk::Button::builder()
+        let refresh_provider_button = gtk::Button::builder()
             .icon_name("view-refresh-symbolic")
             .build();
-        refresh_btn.update_property(&[gtk::accessible::Property::Label(&i18n(
+        refresh_provider_button.update_property(&[gtk::accessible::Property::Label(&i18n(
             "Reload from provider",
         ))]);
-        provider_row_box.append(&refresh_btn);
+        provider_row_box.append(&refresh_provider_button);
         root.append(&provider_row_box);
 
         let search = gtk::SearchEntry::builder()
@@ -183,8 +183,8 @@ impl Component for VideoIptvBrowser {
         root.append(&scrolled);
 
         wire_widget_signals(
-            &manage_btn,
-            &refresh_btn,
+            &manage_providers_button,
+            &refresh_provider_button,
             &search,
             &provider_dropdown,
             &sender,
@@ -375,19 +375,19 @@ fn spawn_network_load(
 /// Wire the static widget signals (manage/refresh/search/dropdown) to component
 /// inputs. Pulled out of `init` to keep that function small.
 fn wire_widget_signals(
-    manage_btn: &gtk::Button,
-    refresh_btn: &gtk::Button,
+    manage_providers_button: &gtk::Button,
+    refresh_provider_button: &gtk::Button,
     search: &gtk::SearchEntry,
     provider_dropdown: &gtk::DropDown,
     sender: &ComponentSender<VideoIptvBrowser>,
 ) {
     let manage_sender = sender.clone();
-    manage_btn.connect_clicked(move |_| {
+    manage_providers_button.connect_clicked(move |_| {
         manage_sender.input(VideoIptvBrowserInput::ManageProviders);
     });
 
     let refresh_sender = sender.clone();
-    refresh_btn.connect_clicked(move |_| {
+    refresh_provider_button.connect_clicked(move |_| {
         refresh_sender.input(VideoIptvBrowserInput::Refresh);
     });
 

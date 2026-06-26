@@ -18,8 +18,8 @@ impl VideoControlsBar {
             install_track_action(&sub_actions, &action, &self.mpv, track.id, true);
             sub_menu.append(Some(&track_label(track)), Some(&format!("sub.{action}")));
         }
-        self.subtitle_btn.set_menu_model(Some(&sub_menu));
-        if let Some(popover) = self.subtitle_btn.popover() {
+        self.subtitle_menu_button.set_menu_model(Some(&sub_menu));
+        if let Some(popover) = self.subtitle_menu_button.popover() {
             popover.insert_action_group("sub", Some(&sub_actions));
         }
 
@@ -30,8 +30,9 @@ impl VideoControlsBar {
             install_track_action(&audio_actions, &action, &self.mpv, track.id, false);
             audio_menu.append(Some(&track_label(track)), Some(&format!("audio.{action}")));
         }
-        self.audio_track_btn.set_menu_model(Some(&audio_menu));
-        if let Some(popover) = self.audio_track_btn.popover() {
+        self.audio_track_menu_button
+            .set_menu_model(Some(&audio_menu));
+        if let Some(popover) = self.audio_track_menu_button.popover() {
             popover.insert_action_group("audio", Some(&audio_actions));
         }
     }

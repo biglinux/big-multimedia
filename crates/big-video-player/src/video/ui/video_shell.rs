@@ -22,7 +22,9 @@ use relm4::{Component, ComponentController, ComponentParts, ComponentSender, Con
 #[cfg(feature = "chromecast")]
 use crate::cast::chromecast::CastManager;
 use crate::i18n::{i18n, ni18n};
-use crate::player::mpv_backend::fast_render::{FastRenderContext, SwRenderContext};
+use crate::player::mpv_backend::fast_render::{
+    FastRenderContext, SwRenderContext as SoftwareRenderContext,
+};
 use crate::player::mpv_backend::offload_renderer::VideoBackend;
 use crate::player::mpv_backend::{skip_mpv_render, video_surface, MpvBackend, PlayerEvent};
 use crate::settings::{keys, Settings};
@@ -33,7 +35,7 @@ use crate::video::ui::gl_framebuffer::{get_gl_get_integerv, GL_FRAMEBUFFER_BINDI
 use crate::video::ui::iptv::{VideoIptvBrowser, VideoIptvBrowserOutput};
 use crate::video::ui::keyboard_shortcuts_dialog::show_video_keyboard_shortcuts_dialog;
 use crate::video::ui::media_adjust;
-use crate::video::ui::media_info_dialog::show_video_media_info_dialog;
+use crate::video::ui::media_details_dialog::show_video_media_details_dialog;
 use crate::video::ui::menu_dialogs::sleep_minutes_to_secs;
 use crate::video::ui::video_browser_sidebar::{
     SidebarMode, VideoBrowserSidebar, VideoBrowserSidebarInput, VideoBrowserSidebarOutput,
@@ -103,6 +105,17 @@ pub struct VideoShell {
     controls: Controller<VideoControlsBar>,
     /// Folder-browser playlist sidebar (folder scan = the playlist).
     playlist: Controller<VideoBrowserSidebar>,
+    /// Media sidebar host. Kept in the model so keyboard/GAction routes can
+    /// reveal Files/Playlist even while the OSD header is auto-hidden.
+    split_view: adw::OverlaySplitView,
+    /// Last sidebar mode requested by a button, keyboard shortcut, or GAction.
+    sidebar_mode: Rc<Cell<SidebarMode>>,
+    /// Header Files toggle, mirrored when keyboard/GAction opens the sidebar.
+    files_sidebar_button: gtk::ToggleButton,
+    /// Header Playlist toggle, mirrored when keyboard/GAction opens the sidebar.
+    playlist_sidebar_button: gtk::ToggleButton,
+    /// Guard shared with the header toggles to avoid re-entrant state changes.
+    sidebar_toggle_updating: Rc<Cell<bool>>,
     /// IPTV browser (providers / channels / favorites). Presented in a dialog
     /// from the header button; emits play intents routed to mpv.
     iptv: Controller<VideoIptvBrowser>,

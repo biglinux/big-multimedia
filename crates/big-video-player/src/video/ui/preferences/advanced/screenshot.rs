@@ -4,7 +4,7 @@
 //! tagging / bit-depth are advanced-gated and self-register in `adv_widgets`.
 
 use adw::prelude::*;
-use big_relm4_components::layout::preferences::track_widget_visibility;
+use big_relm4_components::layout::preferences::{track_widget_visibility, BigPreferencesGroupSpec};
 use std::sync::Arc;
 
 use crate::i18n::i18n;
@@ -13,7 +13,7 @@ use crate::settings::Settings;
 
 use super::super::AdvancedWidgets;
 use super::super::{add_combo_row, add_entry_row, add_spin_int_row, add_switch_row};
-use super::common::illustration;
+use super::illustration_assets::illustration;
 
 pub(super) fn build_screenshot_group(
     settings: &Settings,
@@ -21,8 +21,7 @@ pub(super) fn build_screenshot_group(
     is_advanced: bool,
     adv_widgets: &AdvancedWidgets,
 ) -> adw::PreferencesGroup {
-    let ss_group = adw::PreferencesGroup::builder()
-        .title(i18n("Screenshots"))
+    let ss_group = BigPreferencesGroupSpec::new(i18n("Screenshots"))
         .description(i18n("Format and save location for video screenshots"))
         .build();
 

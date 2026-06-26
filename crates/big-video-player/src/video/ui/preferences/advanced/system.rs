@@ -17,7 +17,7 @@ use super::super::AdvancedWidgets;
 use super::super::{
     add_combo_row, add_entry_row, add_spin_double_row, add_spin_int_row, add_switch_row,
 };
-use super::common::illustration;
+use super::illustration_assets::illustration;
 
 pub(super) fn build_adv_cache_group(
     settings: &Settings,

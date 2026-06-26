@@ -10,9 +10,11 @@ pub(super) struct OsdState {
     /// Overlay the cursor is set on (hidden when controls hide).
     pub(super) main_overlay: gtk::Overlay,
     /// Menu buttons whose open popover must keep the OSD shown (header Open +
-    /// hamburger, plus the controls-bar subtitle / audio-track selectors — else
-    /// the auto-hide timer dismisses an open track menu mid-pick).
+    /// the controls-bar subtitle / audio-track selectors — else the auto-hide
+    /// timer dismisses an open track menu mid-pick).
     pub(super) header_menu_buttons: Vec<gtk::MenuButton>,
+    /// Button-backed popovers whose open state must keep the OSD shown.
+    pub(super) header_popovers: Vec<gtk::Popover>,
     /// Controls-bar hover popovers (volume / speed / voice) whose open state
     /// must keep the OSD shown — else the auto-hide timer dismisses the popover
     /// mid-hover (the "intensity slider flashes then disappears" bug).
@@ -51,6 +53,9 @@ impl OsdState {
             .iter()
             .any(|b| b.popover().is_some_and(|p| p.is_visible()))
         {
+            return;
+        }
+        if self.header_popovers.iter().any(gtk::Popover::is_visible) {
             return;
         }
         // Keep the OSD shown while a controls-bar hover popover (volume / speed /

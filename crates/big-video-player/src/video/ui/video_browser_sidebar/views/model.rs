@@ -66,8 +66,10 @@ pub(super) fn build_store(
 pub(super) fn build_filter(state: &Rc<BrowserState>) -> gtk::CustomFilter {
     let state = state.clone();
     gtk::CustomFilter::new(move |obj| {
-        let entry: std::cell::Ref<PlaylistEntry> =
-            obj.downcast_ref::<glib::BoxedAnyObject>().unwrap().borrow();
+        let Some(entry_object) = obj.downcast_ref::<glib::BoxedAnyObject>() else {
+            return false;
+        };
+        let entry: std::cell::Ref<PlaylistEntry> = entry_object.borrow();
         let kind_chip = state.filter_kind.get();
         match entry.kind {
             EntryKind::ParentFolder | EntryKind::Folder => kind_chip != FilterKind::Videos,

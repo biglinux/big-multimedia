@@ -3,7 +3,8 @@
 //! two settings are gated by `is_advanced` and self-register in `adv_widgets`.
 
 use adw::prelude::*;
-use big_relm4_components::layout::preferences::track_widget_visibility;
+use big_relm4_components::input::dropdown_row::{BigDropdownRow, BigDropdownRowSpec};
+use big_relm4_components::layout::preferences::{track_widget_visibility, BigPreferencesGroupSpec};
 use std::sync::Arc;
 
 use crate::i18n::i18n;
@@ -12,14 +13,13 @@ use crate::settings::{keys, Settings};
 
 use super::super::AdvancedWidgets;
 use super::super::{add_combo_row, add_switch_row};
-use super::common::illustration;
+use super::illustration_assets::illustration;
 
 pub(super) fn build_adv_playback_group(
     settings: &Settings,
     mpv: Option<&Arc<MpvBackend>>,
 ) -> adw::PreferencesGroup {
-    let playback = adw::PreferencesGroup::builder()
-        .title(i18n("Playback"))
+    let playback = BigPreferencesGroupSpec::new(i18n("Playback"))
         .description(i18n(
             "General playback behavior such as resuming and looping",
         ))
@@ -40,30 +40,26 @@ pub(super) fn build_adv_playback_group(
     );
     resume_row.add_prefix(&illustration("resume.svg"));
 
-    let loop_labels = &[i18n("Off"), i18n("Repeat file"), i18n("Repeat playlist")];
-    let loop_options = gtk::StringList::new(
-        &loop_labels
-            .iter()
-            .map(std::string::String::as_str)
-            .collect::<Vec<_>>(),
-    );
-    let loop_row = adw::ComboRow::builder()
-        .title(i18n("Repeat"))
-        .subtitle(i18n("Repeat the current file or the entire playlist"))
-        .model(&loop_options)
-        .build();
+    let (loop_row, loop_dropdown) = BigDropdownRow::new(
+        BigDropdownRowSpec::new(
+            i18n("Repeat"),
+            [i18n("Off"), i18n("Repeat file"), i18n("Repeat playlist")],
+        )
+        .subtitle(i18n("Repeat the current file or the entire playlist")),
+    )
+    .into_parts();
     let loop_values: &[&str] = &["no", "file", "playlist"];
     let current_loop = settings.get_string(keys::LOOP_MODE);
     let loop_idx = loop_values
         .iter()
         .position(|v| *v == current_loop.as_str())
         .unwrap_or(0);
-    loop_row.set_selected(loop_idx as u32);
+    loop_dropdown.set_selected(loop_idx as u32);
     {
         let s = settings.clone();
         let m = mpv.cloned();
-        loop_row.connect_selected_notify(move |row| {
-            let selected = row.selected() as usize;
+        loop_dropdown.connect_selected_notify(move |dropdown| {
+            let selected = dropdown.selected() as usize;
             if let Some(val) = loop_values.get(selected) {
                 let _ = s.put_string(keys::LOOP_MODE, val);
                 if let Some(ref mpv) = m {
@@ -97,8 +93,7 @@ pub(super) fn build_adv_eof_group(
     is_advanced: bool,
     adv_widgets: &AdvancedWidgets,
 ) -> adw::PreferencesGroup {
-    let eof_group = adw::PreferencesGroup::builder()
-        .title(i18n("When Video Ends"))
+    let eof_group = BigPreferencesGroupSpec::new(i18n("When Video Ends"))
         .description(i18n(
             "Choose what happens when the file or playlist finishes playing",
         ))

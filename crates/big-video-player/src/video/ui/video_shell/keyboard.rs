@@ -103,6 +103,8 @@ fn dispatch_video_shortcut(
         "media-info" => Some(In::ShowMediaInfo),
         "open-file" => Some(In::ShowOpenFile),
         "open-url" => Some(In::ShowOpenUrl),
+        "toggle-files-sidebar" => Some(In::ToggleFilesSidebar),
+        "toggle-playlist-sidebar" => Some(In::TogglePlaylistSidebar),
         "playlist-next" => Some(In::Controls(VideoControlsBarOutput::Next)),
         "playlist-prev" => Some(In::Controls(VideoControlsBarOutput::Previous)),
         _ => None,
@@ -183,6 +185,8 @@ mod tests {
             "media-info",
             "open-file",
             "open-url",
+            "toggle-files-sidebar",
+            "toggle-playlist-sidebar",
             "playlist-next",
             "playlist-prev",
         ] {
@@ -227,6 +231,14 @@ mod tests {
         let map = build_single_key_map("");
         assert_eq!(map.get("space").map(String::as_str), Some("play-pause"));
         assert_eq!(map.get("f").map(String::as_str), Some("fullscreen"));
+        assert_eq!(
+            map.get("F9").map(String::as_str),
+            Some("toggle-files-sidebar")
+        );
+        assert_eq!(
+            map.get("<Shift>F9").map(String::as_str),
+            Some("toggle-playlist-sidebar")
+        );
         assert_eq!(map.get("s").map(String::as_str), Some("screenshot"));
     }
 }

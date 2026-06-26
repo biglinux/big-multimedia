@@ -28,7 +28,7 @@ pub mod cast;
 pub mod filters;
 
 /// Live media-information dialog (mpv-driven copyable rows).
-pub mod media_info_dialog;
+pub mod media_details_dialog;
 
 /// Keyboard-shortcuts dialog launcher (reuses the shared shortcut dialog).
 pub mod keyboard_shortcuts_dialog;

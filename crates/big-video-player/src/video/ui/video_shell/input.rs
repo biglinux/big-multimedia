@@ -44,6 +44,10 @@ pub enum VideoShellInput {
     ShowRecent,
     /// Present the open-disc entry dialog (Open menu).
     ShowOpenDisc,
+    /// Toggle the Files sidebar, reachable without the auto-hidden OSD header.
+    ToggleFilesSidebar,
+    /// Toggle the Playlist sidebar, reachable without the auto-hidden OSD header.
+    TogglePlaylistSidebar,
     /// Open the categorized preferences window (Settings menu).
     ShowPreferences,
     /// Open the appearance (palette + layout) dialog (Settings menu).

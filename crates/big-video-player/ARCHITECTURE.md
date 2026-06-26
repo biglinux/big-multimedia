@@ -151,7 +151,7 @@ No `sh -c` / `bash -c` / `Command::new("sh")` anywhere
 - **Flatpak.** `packaging/flatpak/` manifest.
 - **Nix.** `packaging/nix/` flake.
 - **Desktop file.** `resources/applications/br.com.biglinux.VideoPlayer.desktop`.
-  (Source app icon: `data/app/br.com.biglinux.VideoPlayer.svg`.)
+  (Source app icon: `application-assets/app/br.com.biglinux.VideoPlayer.svg`.)
 - **AppStream metainfo.** `resources/metainfo/br.com.biglinux.VideoPlayer.metainfo.xml`.
 - **Polkit.** None.
 - **i18n.** User-visible strings route through the shared `i18n()` /

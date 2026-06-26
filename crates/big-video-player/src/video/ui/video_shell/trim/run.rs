@@ -20,6 +20,7 @@ use big_relm4_components::input::slider_row::{BigSliderRow, BigSliderRowSpec};
 use big_relm4_components::layout::advanced_disclosure::advanced_disclosure;
 use big_relm4_components::layout::dialog_footer::{BigDialogFooter, BigDialogFooterSpec};
 use big_relm4_components::layout::dialog_page::BigDialogPage;
+use big_relm4_components::layout::preferences::BigPreferencesGroupSpec;
 use big_relm4_components::layout::preferences_dialog::{
     BigPreferencesDialog, BigPreferencesDialogSpec,
 };
@@ -390,7 +391,7 @@ impl VideoShell {
         dialog.add_group(self.trim_encode.group());
 
         // Colour adjustments (imported editor slider component) → VideoFilters.
-        let adjust = adw::PreferencesGroup::new();
+        let adjust = BigPreferencesGroupSpec::untitled().build();
         let adjust_row = advanced_disclosure(
             &i18n("Image adjustments"),
             &i18n("Brightness, contrast, color intensity, and color balance"),
@@ -486,9 +487,7 @@ impl VideoShell {
         ));
 
         // Output layout: join the cuts into one file or save each separately.
-        let output = adw::PreferencesGroup::builder()
-            .title(i18n("Output files"))
-            .build();
+        let output = BigPreferencesGroupSpec::new(i18n("Output files")).build();
         let output_row = BigDropdownRow::new(
             BigDropdownRowSpec::new(
                 i18n("When there are multiple cuts"),
@@ -574,14 +573,14 @@ impl VideoShell {
 /// Build the slim strip's `(fraction, status)` from a queue progress sample:
 /// `42% · 1.8× · ETA 0:12`. Speed/ETA are dropped when unknown (e.g. the
 /// near-instant stream-copy of the fast path).
-fn trim_progress_status(info: &ProgressInfo) -> (f64, String) {
-    let fraction = (info.percent / 100.0).clamp(0.0, 1.0);
-    let mut parts = vec![format!("{:.0}%", info.percent)];
-    if info.speed > 0.0 {
-        parts.push(format!("{:.1}×", info.speed));
+fn trim_progress_status(progress: &ProgressInfo) -> (f64, String) {
+    let fraction = (progress.percent / 100.0).clamp(0.0, 1.0);
+    let mut parts = vec![format!("{:.0}%", progress.percent)];
+    if progress.speed > 0.0 {
+        parts.push(format!("{:.1}×", progress.speed));
     }
-    if info.eta_secs > 0.0 {
-        parts.push(format!("ETA {}", playback_time(info.eta_secs)));
+    if progress.eta_secs > 0.0 {
+        parts.push(format!("ETA {}", playback_time(progress.eta_secs)));
     }
     (fraction, parts.join(" · "))
 }

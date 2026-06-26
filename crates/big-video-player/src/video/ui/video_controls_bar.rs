@@ -1,7 +1,7 @@
 //! App-local OSD controls bar — recovers the old god-object `controls_box`
 //! layout (the minimal `BigVideoTransport` regressed the design).
 //!
-//! Layout (mirrors `data/resources/ui/window.ui` `controls_box`):
+//! Layout (mirrors the old application resource `controls_box`):
 //!   • seek row: position label · seek scale · duration label
 //!   • center box:
 //!       START  = volume / speed / voice hover popovers (shared builders)
@@ -118,11 +118,11 @@ pub struct VideoControlsBar {
     position_label: gtk::Label,
     duration_label: gtk::Label,
     seek_bar: gtk::Scale,
-    play_btn: gtk::Button,
-    prev_btn: gtk::Button,
-    next_btn: gtk::Button,
-    subtitle_btn: gtk::MenuButton,
-    audio_track_btn: gtk::MenuButton,
+    play_button: gtk::Button,
+    previous_button: gtk::Button,
+    next_button: gtk::Button,
+    subtitle_menu_button: gtk::MenuButton,
+    audio_track_menu_button: gtk::MenuButton,
     /// Guard so programmatic scrub updates do not echo as user seek intents.
     suppress_seek: Rc<std::cell::Cell<bool>>,
     /// Live mpv handle shared with the popover callbacks (for track menus).
@@ -296,10 +296,16 @@ impl Component for VideoControlsBar {
             build_start_box(&init.settings, &init.mpv);
         center.set_start_widget(Some(&start_box));
 
-        let (controls_center, prev_btn, play_btn, next_btn) = build_center_box();
+        let (controls_center, previous_button, play_button, next_button) = build_center_box();
         center.set_center_widget(Some(&controls_center));
 
-        let (end_box, export_btn, subtitle_btn, audio_track_btn, fullscreen_btn) = build_end_box();
+        let (
+            end_box,
+            export_menu_button,
+            subtitle_menu_button,
+            audio_track_menu_button,
+            fullscreen_button,
+        ) = build_end_box();
         center.set_end_widget(Some(&end_box));
         let button_layout = ButtonLayoutWidgets {
             start_zone: start_box,
@@ -308,13 +314,13 @@ impl Component for VideoControlsBar {
             volume_box,
             speed_box,
             voice_box,
-            prev_btn: prev_btn.clone(),
-            play_btn: play_btn.clone(),
-            next_btn: next_btn.clone(),
-            export_btn,
-            subtitle_btn: subtitle_btn.clone(),
-            audio_track_btn: audio_track_btn.clone(),
-            fullscreen_btn: fullscreen_btn.clone(),
+            previous_button: previous_button.clone(),
+            play_button: play_button.clone(),
+            next_button: next_button.clone(),
+            export_menu_button,
+            subtitle_menu_button: subtitle_menu_button.clone(),
+            audio_track_menu_button: audio_track_menu_button.clone(),
+            fullscreen_button: fullscreen_button.clone(),
         };
 
         // Trim controls = an EXTRA row above the transport (revealed in trim mode).
@@ -331,10 +337,10 @@ impl Component for VideoControlsBar {
         wire_signals(
             &sender,
             &seek_bar,
-            &prev_btn,
-            &play_btn,
-            &next_btn,
-            &fullscreen_btn,
+            &previous_button,
+            &play_button,
+            &next_button,
+            &fullscreen_button,
             &suppress_seek,
         );
 
@@ -343,11 +349,11 @@ impl Component for VideoControlsBar {
             position_label,
             duration_label,
             seek_bar,
-            play_btn,
-            prev_btn,
-            next_btn,
-            subtitle_btn,
-            audio_track_btn,
+            play_button,
+            previous_button,
+            next_button,
+            subtitle_menu_button,
+            audio_track_menu_button,
             suppress_seek,
             mpv: init.mpv,
             hover_popovers,
@@ -378,7 +384,7 @@ impl Component for VideoControlsBar {
                 } else {
                     "media-playback-pause-symbolic"
                 };
-                self.play_btn.set_icon_name(icon);
+                self.play_button.set_icon_name(icon);
             }
             VideoControlsBarInput::SetPosition(text) => self.position_label.set_label(&text),
             VideoControlsBarInput::SetDuration(text) => self.duration_label.set_label(&text),
@@ -439,9 +445,9 @@ impl VideoControlsBar {
     /// `hide_controls` bail on active menu buttons.
     pub fn track_menu_buttons(&self) -> Vec<gtk::MenuButton> {
         vec![
-            self.button_layout.export_btn.clone(),
-            self.subtitle_btn.clone(),
-            self.audio_track_btn.clone(),
+            self.button_layout.export_menu_button.clone(),
+            self.subtitle_menu_button.clone(),
+            self.audio_track_menu_button.clone(),
         ]
     }
 
@@ -454,15 +460,15 @@ impl VideoControlsBar {
     }
 
     fn set_sensitive(&self, on: bool) {
-        self.play_btn.set_sensitive(on);
-        self.prev_btn.set_sensitive(on);
-        self.next_btn.set_sensitive(on);
+        self.play_button.set_sensitive(on);
+        self.previous_button.set_sensitive(on);
+        self.next_button.set_sensitive(on);
         self.seek_bar.set_sensitive(on);
-        self.subtitle_btn.set_sensitive(on);
-        self.audio_track_btn.set_sensitive(on);
+        self.subtitle_menu_button.set_sensitive(on);
+        self.audio_track_menu_button.set_sensitive(on);
         // Edit & Export (cut/extract/convert) and Go-to-time act on the loaded
         // media — disabled until a file is open (welcome screen).
-        self.button_layout.export_btn.set_sensitive(on);
+        self.button_layout.export_menu_button.set_sensitive(on);
         self.position_button.set_sensitive(on);
     }
 

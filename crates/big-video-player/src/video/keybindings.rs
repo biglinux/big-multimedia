@@ -325,6 +325,20 @@ pub const SHORTCUTS: &[ShortcutDef] = &[
         single_key: true,
     },
     ShortcutDef {
+        action: "toggle-files-sidebar",
+        display_name: "Toggle files sidebar",
+        category: "Other",
+        default_accel: "F9",
+        single_key: true,
+    },
+    ShortcutDef {
+        action: "toggle-playlist-sidebar",
+        display_name: "Toggle playlist sidebar",
+        category: "Other",
+        default_accel: "<Shift>F9",
+        single_key: true,
+    },
+    ShortcutDef {
         action: "media-info",
         display_name: "Media information",
         category: "Other",

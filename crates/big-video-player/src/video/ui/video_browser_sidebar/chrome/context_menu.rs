@@ -26,19 +26,19 @@ pub(crate) fn show_row_context_menu(
     popover.set_parent(anchor);
     popover.set_pointing_to(Some(&gtk::gdk::Rectangle::new(x as i32, y as i32, 1, 1)));
 
-    let add_item = |label: &str, icon: &str| -> gtk::Button {
+    let add_context_menu_button = |label: &str, icon: &str| -> gtk::Button {
         let row = gtk::Box::builder().spacing(8).build();
         row.append(&gtk::Image::from_icon_name(icon));
         row.append(&gtk::Label::builder().label(label).xalign(0.0).build());
-        let btn = gtk::Button::builder()
+        let menu_button = gtk::Button::builder()
             .child(&row)
             .css_classes(["flat"])
             .build();
-        menu.append(&btn);
-        btn
+        menu.append(&menu_button);
+        menu_button
     };
 
-    let play = add_item(&i18n("Play"), "media-playback-start-symbolic");
+    let play = add_context_menu_button(&i18n("Play"), "media-playback-start-symbolic");
     play.connect_clicked({
         let state = state.clone();
         let path = path.to_string();
@@ -68,26 +68,26 @@ pub(crate) fn show_row_context_menu(
     // Files mode → everyday per-item actions (bulk org lives in the batch bar);
     // Playlist mode → just Remove.
     if state.mode.get() == SidebarMode::Files {
-        let add = add_item(&i18n("Add to playlist"), "list-add-symbolic");
+        let add = add_context_menu_button(&i18n("Add to playlist"), "list-add-symbolic");
         add.connect_clicked(emit_paths(state, &popover, path, |s, p| {
             s.sender
                 .output(VideoBrowserSidebarOutput::Enqueue(vec![p]))
                 .ok();
         }));
 
-        let rename = add_item(&i18n("Rename…"), "document-edit-symbolic");
+        let rename = add_context_menu_button(&i18n("Rename…"), "document-edit-symbolic");
         rename.connect_clicked(emit_paths(state, &popover, path, |s, p| {
             fileops::rename_file(s, &p);
         }));
 
-        let trash = add_item(&i18n("Move to trash"), "user-trash-symbolic");
+        let trash = add_context_menu_button(&i18n("Move to trash"), "user-trash-symbolic");
         trash.connect_clicked(emit_paths(state, &popover, path, |s, p| {
             s.sender
                 .output(VideoBrowserSidebarOutput::TrashFiles(vec![p]))
                 .ok();
         }));
     } else {
-        let remove = add_item(&i18n("Remove from playlist"), "list-remove-symbolic");
+        let remove = add_context_menu_button(&i18n("Remove from playlist"), "list-remove-symbolic");
         remove.connect_clicked({
             let state = state.clone();
             let path = path.to_string();
@@ -102,7 +102,7 @@ pub(crate) fn show_row_context_menu(
         });
     }
 
-    let open_folder = add_item(&i18n("Open containing folder"), "folder-symbolic");
+    let open_folder = add_context_menu_button(&i18n("Open containing folder"), "folder-symbolic");
     open_folder.connect_clicked(emit_paths(state, &popover, path, |_, p| {
         big_app_kit::desktop::open_containing_folder(std::path::Path::new(&p));
     }));

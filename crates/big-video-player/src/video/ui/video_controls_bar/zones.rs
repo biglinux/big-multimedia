@@ -4,6 +4,11 @@ use big_media_components::player_chrome::{
     build_speed_popover, build_voice_popover, build_volume_popover,
     setup_exclusive_hover_popover_group,
 };
+use big_relm4_components::feedback::tooltip;
+use big_relm4_components::layout::hamburger_menu::{set_flat_action_popover, BigMenuActionItem};
+
+#[cfg(test)]
+use big_relm4_components::layout::hamburger_menu::{build_flat_menu_model, menu_action_names};
 
 #[derive(Clone)]
 pub(crate) struct ButtonLayoutWidgets {
@@ -13,13 +18,13 @@ pub(crate) struct ButtonLayoutWidgets {
     pub(super) volume_box: gtk::Box,
     pub(super) speed_box: gtk::Box,
     pub(super) voice_box: gtk::Box,
-    pub(super) prev_btn: gtk::Button,
-    pub(super) play_btn: gtk::Button,
-    pub(super) next_btn: gtk::Button,
-    pub(super) export_btn: gtk::MenuButton,
-    pub(super) subtitle_btn: gtk::MenuButton,
-    pub(super) audio_track_btn: gtk::MenuButton,
-    pub(super) fullscreen_btn: gtk::Button,
+    pub(super) previous_button: gtk::Button,
+    pub(super) play_button: gtk::Button,
+    pub(super) next_button: gtk::Button,
+    pub(super) export_menu_button: gtk::MenuButton,
+    pub(super) subtitle_menu_button: gtk::MenuButton,
+    pub(super) audio_track_menu_button: gtk::MenuButton,
+    pub(super) fullscreen_button: gtk::Button,
 }
 
 #[derive(Clone, Copy)]
@@ -110,17 +115,17 @@ impl ButtonLayoutWidgets {
             settings.get_bool(keys::UI_SHOW_VOICE)
                 && crate::shared::audio_effects::has_noise_reduction_backend(),
         );
-        self.prev_btn
+        self.previous_button
             .set_visible(settings.get_bool(keys::UI_SHOW_PREV));
-        self.play_btn
+        self.play_button
             .set_visible(settings.get_bool(keys::UI_SHOW_PLAY));
-        self.next_btn
+        self.next_button
             .set_visible(settings.get_bool(keys::UI_SHOW_NEXT));
-        self.subtitle_btn
+        self.subtitle_menu_button
             .set_visible(settings.get_bool(keys::UI_SHOW_SUBTITLE));
-        self.audio_track_btn
+        self.audio_track_menu_button
             .set_visible(settings.get_bool(keys::UI_SHOW_AUDIO_TRACK));
-        self.fullscreen_btn
+        self.fullscreen_button
             .set_visible(settings.get_bool(keys::UI_SHOW_FULLSCREEN));
     }
 
@@ -129,13 +134,13 @@ impl ButtonLayoutWidgets {
             "volume" => Some(self.volume_box.clone().upcast()),
             "speed" => Some(self.speed_box.clone().upcast()),
             "voice" => Some(self.voice_box.clone().upcast()),
-            "prev" => Some(self.prev_btn.clone().upcast()),
-            "play" => Some(self.play_btn.clone().upcast()),
-            "next" => Some(self.next_btn.clone().upcast()),
-            "edit-export" => Some(self.export_btn.clone().upcast()),
-            "subtitle" => Some(self.subtitle_btn.clone().upcast()),
-            "audio-track" => Some(self.audio_track_btn.clone().upcast()),
-            "fullscreen" => Some(self.fullscreen_btn.clone().upcast()),
+            "prev" => Some(self.previous_button.clone().upcast()),
+            "play" => Some(self.play_button.clone().upcast()),
+            "next" => Some(self.next_button.clone().upcast()),
+            "edit-export" => Some(self.export_menu_button.clone().upcast()),
+            "subtitle" => Some(self.subtitle_menu_button.clone().upcast()),
+            "audio-track" => Some(self.audio_track_menu_button.clone().upcast()),
+            "fullscreen" => Some(self.fullscreen_button.clone().upcast()),
             _ => None,
         }
     }
@@ -181,33 +186,33 @@ pub(super) fn build_start_box(
 
     // Volume.
     let volume_box = gtk::Box::new(gtk::Orientation::Horizontal, 2);
-    let volume_btn = osd_button("audio-volume-high-symbolic", &i18n("Mute"));
+    let volume_button = osd_button("audio-volume-high-symbolic", &i18n("Mute"));
     let volume_label = gtk::Label::builder()
         .label("100")
         .width_chars(3)
         .xalign(0.0)
         .css_classes(["osd-value-label"])
         .build();
-    volume_box.append(&volume_btn);
+    volume_box.append(&volume_button);
     volume_box.append(&volume_label);
     start_box.append(&volume_box);
 
     // Speed.
     let speed_box = gtk::Box::new(gtk::Orientation::Horizontal, 2);
-    let speed_btn = osd_button("speedometer-symbolic", &i18n("Speed"));
+    let speed_button = osd_button("speedometer-symbolic", &i18n("Speed"));
     let speed_label = gtk::Label::builder()
         .label("1.00x")
         .width_chars(5)
         .xalign(0.0)
         .css_classes(["osd-value-label"])
         .build();
-    speed_box.append(&speed_btn);
+    speed_box.append(&speed_button);
     speed_box.append(&speed_label);
     start_box.append(&speed_box);
 
     // Voice enhancement.
     let voice_box = gtk::Box::new(gtk::Orientation::Horizontal, 2);
-    let voice_btn = osd_button(
+    let voice_button = osd_button(
         "audio-input-microphone-symbolic",
         &i18n("Voice Enhancement"),
     );
@@ -217,28 +222,29 @@ pub(super) fn build_start_box(
         .xalign(0.0)
         .css_classes(["osd-value-label"])
         .build();
-    voice_box.append(&voice_btn);
+    voice_box.append(&voice_button);
     voice_box.append(&voice_label);
     start_box.append(&voice_box);
 
-    let max_vol = f64::from(settings.get_int(keys::VOLUME_MAX)).max(100.0);
-    let initial_vol = settings.get_double(keys::VOLUME) * 100.0;
-    let (vol_popover, vol_scale) = build_volume_popover(&volume_box, max_vol, initial_vol);
+    let maximum_volume = f64::from(settings.get_int(keys::VOLUME_MAX)).max(100.0);
+    let initial_volume = settings.get_double(keys::VOLUME) * 100.0;
+    let (volume_popover, volume_scale) =
+        build_volume_popover(&volume_box, maximum_volume, initial_volume);
     {
         // Capture the button weakly: the scale's handler must not keep the
         // button alive (mutual cycle → leak on close).
         let mpv = mpv.clone();
-        let vbtn = volume_btn.downgrade();
+        let volume_button_weak = volume_button.downgrade();
         // Weak label too: the popover can outlive teardown ordering — any
         // strong sibling capture here gets pinned with it.
-        let vlabel = volume_label.downgrade();
-        vol_scale.connect_value_changed(move |s| {
-            let value = s.value();
-            if let Some(vlabel) = vlabel.upgrade() {
-                vlabel.set_label(&format!("{value:.0}"));
+        let volume_label_weak = volume_label.downgrade();
+        volume_scale.connect_value_changed(move |scale| {
+            let value = scale.value();
+            if let Some(volume_label) = volume_label_weak.upgrade() {
+                volume_label.set_label(&format!("{value:.0}"));
             }
-            if let Some(vbtn) = vbtn.upgrade() {
-                vbtn.set_icon_name(volume_icon(value));
+            if let Some(volume_button) = volume_button_weak.upgrade() {
+                volume_button.set_icon_name(volume_icon(value));
             }
             if let Some(mpv) = mpv.borrow().as_ref() {
                 mpv.set_volume(value);
@@ -246,17 +252,17 @@ pub(super) fn build_start_box(
             }
         });
     }
-    // Mute toggle on the volume button. Uses the handler's own `btn` argument
+    // Mute toggle on the volume button. Uses the handler's own button argument
     // (no self-clone) and a weak scale ref (no mutual cycle).
     {
         let mpv = mpv.clone();
-        let scale = vol_scale.downgrade();
-        volume_btn.connect_clicked(move |btn| {
+        let scale = volume_scale.downgrade();
+        volume_button.connect_clicked(move |button| {
             if let Some(mpv) = mpv.borrow().as_ref() {
                 let muted = !mpv.get_mute();
                 mpv.set_mute(muted);
-                let fallback = scale.upgrade().map_or(0.0, |s| s.value());
-                btn.set_icon_name(if muted {
+                let fallback = scale.upgrade().map_or(0.0, |scale| scale.value());
+                button.set_icon_name(if muted {
                     "audio-volume-muted-symbolic"
                 } else {
                     volume_icon(fallback)
@@ -265,7 +271,7 @@ pub(super) fn build_start_box(
         });
     }
 
-    let spd_popover = build_speed_popover(&speed_box, &speed_btn, &speed_label, {
+    let speed_popover = build_speed_popover(&speed_box, &speed_button, &speed_label, {
         let mpv = mpv.clone();
         move |speed| {
             if let Some(mpv) = mpv.borrow().as_ref() {
@@ -274,14 +280,16 @@ pub(super) fn build_start_box(
         }
     });
 
-    let stored_nr = settings.get_double(keys::NOISE_STRENGTH).max(0.0);
-    let initial_pct = (stored_nr * 100.0).clamp(0.0, 100.0);
-    let prev_active = Rc::new(std::cell::Cell::new(stored_nr > 0.0));
+    let stored_noise_reduction_strength = settings.get_double(keys::NOISE_STRENGTH).max(0.0);
+    let initial_noise_reduction_percent =
+        (stored_noise_reduction_strength * 100.0).clamp(0.0, 100.0);
+    let previous_noise_reduction_active =
+        Rc::new(std::cell::Cell::new(stored_noise_reduction_strength > 0.0));
     let voice_popover = build_voice_popover(
         &voice_box,
-        &voice_btn,
+        &voice_button,
         &voice_label,
-        initial_pct,
+        initial_noise_reduction_percent,
         {
             let settings = settings.clone();
             let mpv = mpv.clone();
@@ -290,15 +298,15 @@ pub(super) fn build_start_box(
                     &settings,
                     mpv.borrow().as_ref().map(Arc::as_ref),
                     pct,
-                    &prev_active,
+                    &previous_noise_reduction_active,
                 );
             }
         },
         {
             let settings = settings.clone();
-            // Weak: this closure lives on the popover, which voice_btn's
+            // Weak: this closure lives on the popover, which the voice button's
             // handler keeps alive — a strong voice_box capture closes a
-            // box→btn→popover→box cycle that survives popover unparent.
+            // box→button→popover→box cycle that survives popover unparent.
             let voice_box = voice_box.downgrade();
             move || {
                 if let Some(window) = voice_box
@@ -319,8 +327,8 @@ pub(super) fn build_start_box(
     }
 
     let _hover_group = setup_exclusive_hover_popover_group([
-        (&volume_box, &vol_popover),
-        (&speed_box, &spd_popover),
+        (&volume_box, &volume_popover),
+        (&speed_box, &speed_popover),
         (&voice_box, &voice_popover),
     ]);
     // The hover group keeps the popovers alive via the boxes' controllers; the
@@ -331,7 +339,7 @@ pub(super) fn build_start_box(
         volume_box,
         speed_box,
         voice_box,
-        vec![vol_popover, spd_popover, voice_popover],
+        vec![volume_popover, speed_popover, voice_popover],
     )
 }
 
@@ -343,15 +351,15 @@ pub(super) fn build_center_box() -> (gtk::Box, gtk::Button, gtk::Button, gtk::Bu
         .valign(gtk::Align::Center)
         .build();
 
-    let prev_btn = osd_button("media-skip-backward-symbolic", &i18n("Previous"));
-    let play_btn = osd_button("media-playback-start-symbolic", &i18n("Play"));
-    play_btn.add_css_class("osd-btn-play");
-    let next_btn = osd_button("media-skip-forward-symbolic", &i18n("Next"));
+    let previous_button = osd_button("media-skip-backward-symbolic", &i18n("Previous"));
+    let play_button = osd_button("media-playback-start-symbolic", &i18n("Play"));
+    play_button.add_css_class("osd-btn-play");
+    let next_button = osd_button("media-skip-forward-symbolic", &i18n("Next"));
 
-    center.append(&prev_btn);
-    center.append(&play_btn);
-    center.append(&next_btn);
-    (center, prev_btn, play_btn, next_btn)
+    center.append(&previous_button);
+    center.append(&play_button);
+    center.append(&next_button);
+    (center, previous_button, play_button, next_button)
 }
 
 /// END box: edit-export MenuButton · subtitle MenuButton · audio-track
@@ -372,62 +380,58 @@ pub(super) fn build_end_box() -> (
     // Edit & Export: cut / extract audio / convert — moved out of the hamburger
     // menu to a footer button next to the subtitle control. Items target the same
     // `win.*` window actions, resolved against the player window's action group.
-    let export_btn = gtk::MenuButton::builder()
-        .icon_name("edit-cut-symbolic")
-        .direction(gtk::ArrowType::Up)
-        .css_classes(["osd-btn"])
-        .menu_model(&build_export_menu())
-        .build();
-    export_btn.update_property(&[gtk::accessible::Property::Label(&i18n("Edit & Export"))]);
+    let export_menu_button =
+        tooltip::icon_menu_button("edit-cut-symbolic", &i18n("Edit & Export"), &["osd-btn"]);
+    export_menu_button.set_direction(gtk::ArrowType::Up);
+    set_flat_action_popover(&export_menu_button, &export_menu_items());
 
-    let subtitle_btn = gtk::MenuButton::builder()
-        .icon_name("media-view-subtitles-symbolic")
-        .direction(gtk::ArrowType::Up)
-        .css_classes(["osd-btn"])
-        .build();
-    subtitle_btn.update_property(&[gtk::accessible::Property::Label(&i18n("Subtitles"))]);
+    let subtitle_menu_button = tooltip::icon_menu_button(
+        "media-view-subtitles-symbolic",
+        &i18n("Subtitles"),
+        &["osd-btn"],
+    );
+    subtitle_menu_button.set_direction(gtk::ArrowType::Up);
 
-    let audio_track_btn = gtk::MenuButton::builder()
-        .icon_name("audio-x-generic-symbolic")
-        .direction(gtk::ArrowType::Up)
-        .css_classes(["osd-btn"])
-        .build();
-    audio_track_btn.update_property(&[gtk::accessible::Property::Label(&i18n("Audio Track"))]);
+    let audio_track_menu_button = tooltip::icon_menu_button(
+        "audio-x-generic-symbolic",
+        &i18n("Audio Track"),
+        &["osd-btn"],
+    );
+    audio_track_menu_button.set_direction(gtk::ArrowType::Up);
 
-    let fullscreen_btn = osd_button("view-fullscreen-symbolic", &i18n("Fullscreen"));
+    let fullscreen_button = osd_button("view-fullscreen-symbolic", &i18n("Fullscreen"));
 
-    end_box.append(&export_btn);
-    end_box.append(&subtitle_btn);
-    end_box.append(&audio_track_btn);
-    end_box.append(&fullscreen_btn);
+    end_box.append(&export_menu_button);
+    end_box.append(&subtitle_menu_button);
+    end_box.append(&audio_track_menu_button);
+    end_box.append(&fullscreen_button);
     (
         end_box,
-        export_btn,
-        subtitle_btn,
-        audio_track_btn,
-        fullscreen_btn,
+        export_menu_button,
+        subtitle_menu_button,
+        audio_track_menu_button,
+        fullscreen_button,
     )
 }
 
 /// The Edit & Export menu (cut · extract audio · convert), targeting the
-/// player window's `win.*` actions. Lives here so the footer button owns it.
-fn build_export_menu() -> gio::Menu {
-    let export = gio::Menu::new();
-    export.append(Some(&i18n("Cut Video…")), Some("win.trim"));
+/// player window's `win.*` actions. Keep it flat so AT-SPI exposes named rows
+/// instead of nested "category/item" structures.
+fn export_menu_items() -> Vec<BigMenuActionItem> {
+    vec![
+        BigMenuActionItem::new(i18n("Cut Video…"), "win.trim"),
+        BigMenuActionItem::new(i18n("Extract Audio as MP3"), "win.extract-audio-mp3"),
+        BigMenuActionItem::new(i18n("Extract Audio as M4A"), "win.extract-audio-m4a"),
+        BigMenuActionItem::new(i18n("Extract Audio as FLAC"), "win.extract-audio-flac"),
+        BigMenuActionItem::new(i18n("Convert to MP4"), "win.convert-mp4"),
+        BigMenuActionItem::new(i18n("Convert to MKV"), "win.convert-mkv"),
+        BigMenuActionItem::new(i18n("Convert to WebM"), "win.convert-webm"),
+    ]
+}
 
-    let extract = gio::Menu::new();
-    extract.append(Some(&i18n("MP3")), Some("win.extract-audio-mp3"));
-    extract.append(Some(&i18n("M4A")), Some("win.extract-audio-m4a"));
-    extract.append(Some(&i18n("FLAC")), Some("win.extract-audio-flac"));
-    export.append_submenu(Some(&i18n("Extract Audio")), &extract);
-
-    let convert = gio::Menu::new();
-    convert.append(Some(&i18n("MP4")), Some("win.convert-mp4"));
-    convert.append(Some(&i18n("MKV")), Some("win.convert-mkv"));
-    convert.append(Some(&i18n("WebM")), Some("win.convert-webm"));
-    export.append_submenu(Some(&i18n("Convert to")), &convert);
-
-    export
+#[cfg(test)]
+fn build_export_menu_model() -> gio::Menu {
+    build_flat_menu_model(&export_menu_items())
 }
 
 /// OSD icon button with an accessible label.
@@ -451,5 +455,32 @@ fn volume_icon(value: f64) -> &'static str {
         "audio-volume-medium-symbolic"
     } else {
         "audio-volume-high-symbolic"
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn edit_export_menu_is_flat() {
+        let menu = build_export_menu_model();
+
+        assert_eq!(
+            menu_action_names(&menu),
+            [
+                "win.trim",
+                "win.extract-audio-mp3",
+                "win.extract-audio-m4a",
+                "win.extract-audio-flac",
+                "win.convert-mp4",
+                "win.convert-mkv",
+                "win.convert-webm",
+            ]
+        );
+        for index in 0..menu.n_items() {
+            assert!(menu.item_link(index, "section").is_none());
+            assert!(menu.item_link(index, "submenu").is_none());
+        }
     }
 }

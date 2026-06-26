@@ -10,6 +10,8 @@ use std::sync::Arc;
 use std::time::Duration;
 
 use adw::prelude::*;
+use big_relm4_components::input::dropdown_row::{BigDropdownRow, BigDropdownRowSpec};
+use big_relm4_components::layout::preferences::BigPreferencesGroupSpec;
 use big_relm4_components::list::info_row::{BigInfoRow, BigInfoRowSpec};
 
 use super::filter_specs::{
@@ -29,8 +31,7 @@ pub(super) fn build_gpu_group(
     mpv: &Arc<MpvBackend>,
     on_filter_changed: &Rc<dyn Fn()>,
 ) -> adw::PreferencesGroup {
-    let group = adw::PreferencesGroup::builder()
-        .title(i18n("GPU Processing"))
+    let group = BigPreferencesGroupSpec::new(i18n("GPU Processing"))
         .description(i18n("Hardware-accelerated, no performance impact"))
         .build();
 
@@ -162,8 +163,7 @@ pub(super) fn build_shaders_group(
     settings: &Settings,
     on_filter_changed: &Rc<dyn Fn()>,
 ) -> adw::PreferencesGroup {
-    let group = adw::PreferencesGroup::builder()
-        .title(i18n("GPU Upscaling Shaders"))
+    let group = BigPreferencesGroupSpec::new(i18n("GPU Upscaling Shaders"))
         .description(i18n(
             "Open-source GPU shaders that enhance image quality when upscaling. \
              Choose one upscaler and adjust sharpening intensity.",
@@ -180,21 +180,23 @@ pub(super) fn build_shaders_group(
     let cas_value = settings.get_double(keys::SHADER_CAS_SHARPENING);
 
     let ids = ["", "fsr", "cas"];
-    let names = gtk::StringList::new(&[
-        &i18n("None"),
-        &i18n("FidelityFX Super Resolution (FSR)"),
-        &i18n("CAS Upscaling"),
-    ]);
-    let combo = adw::ComboRow::builder()
-        .title(i18n("Upscaling Shader"))
+    let (upscaling_shader_row, combo) = BigDropdownRow::new(
+        BigDropdownRowSpec::new(
+            i18n("Upscaling Shader"),
+            [
+                i18n("None"),
+                i18n("FidelityFX Super Resolution (FSR)"),
+                i18n("CAS Upscaling"),
+            ],
+        )
         .subtitle(i18n(
             "Enhances image quality when the video resolution is lower than your display",
-        ))
-        .model(&names)
-        .build();
-    combo.add_prefix(&illustration("upscaler.svg"));
+        )),
+    )
+    .into_parts();
+    upscaling_shader_row.add_prefix(&illustration("upscaler.svg"));
     combo.set_selected(ids.iter().position(|id| *id == current).unwrap_or(0) as u32);
-    group.add(&combo);
+    group.add(&upscaling_shader_row);
 
     let fsr_default = if fsr_value == 0.0 { 0.2 } else { fsr_value };
     let intensity = gtk::Adjustment::new(
@@ -320,8 +322,7 @@ pub(super) fn build_neural_group(
     settings: &Settings,
     on_filter_changed: &Rc<dyn Fn()>,
 ) -> adw::PreferencesGroup {
-    let group = adw::PreferencesGroup::builder()
-        .title(i18n("Neural Network Upscaling"))
+    let group = BigPreferencesGroupSpec::new(i18n("Neural Network Upscaling"))
         .description(i18n(
             "AI-trained shader that reconstructs fine detail when upscaling video. \
              Best for low-resolution content on high-resolution displays.",
@@ -371,8 +372,7 @@ pub(super) fn build_anime4k_group(
     settings: &Settings,
     on_filter_changed: &Rc<dyn Fn()>,
 ) -> adw::PreferencesGroup {
-    let group = adw::PreferencesGroup::builder()
-        .title(i18n("Anime / Cartoon Enhancement"))
+    let group = BigPreferencesGroupSpec::new(i18n("Anime / Cartoon Enhancement"))
         .description(i18n(
             "AI-powered shaders that restore and upscale animated content. \
              Optimized for anime line art and cel-shaded styles.",
@@ -386,20 +386,22 @@ pub(super) fn build_anime4k_group(
 
     let current = settings.get_string(keys::ANIME4K_PRESET);
     let ids = ["", "a", "b", "c"];
-    let names = gtk::StringList::new(&[
-        &i18n("Disabled"),
-        &i18n("Quality A — Best (1080p sources)"),
-        &i18n("Quality B — Soft Restore (720p sources)"),
-        &i18n("Quality C — Fast (low-end GPU)"),
-    ]);
-    let combo = adw::ComboRow::builder()
-        .title(i18n("Anime4K Preset"))
+    let (anime4k_preset_row, combo) = BigDropdownRow::new(
+        BigDropdownRowSpec::new(
+            i18n("Anime4K Preset"),
+            [
+                i18n("Disabled"),
+                i18n("Quality A — Best (1080p sources)"),
+                i18n("Quality B — Soft Restore (720p sources)"),
+                i18n("Quality C — Fast (low-end GPU)"),
+            ],
+        )
         .subtitle(i18n(
             "Select a quality preset — higher quality uses more GPU power",
-        ))
-        .model(&names)
-        .build();
-    combo.add_prefix(&illustration("anime4k.svg"));
+        )),
+    )
+    .into_parts();
+    anime4k_preset_row.add_prefix(&illustration("anime4k.svg"));
     combo.set_selected(ids.iter().position(|id| *id == current).unwrap_or(0) as u32);
 
     let mpv = Arc::clone(mpv);
@@ -424,7 +426,7 @@ pub(super) fn build_anime4k_group(
         on_filter_changed();
     });
 
-    group.add(&combo);
+    group.add(&anime4k_preset_row);
     group
 }
 

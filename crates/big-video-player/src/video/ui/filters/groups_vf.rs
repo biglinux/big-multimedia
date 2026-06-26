@@ -9,6 +9,8 @@ use std::sync::Arc;
 use std::time::Duration;
 
 use adw::prelude::*;
+use big_relm4_components::input::dropdown_row::{BigDropdownRow, BigDropdownRowSpec};
+use big_relm4_components::layout::preferences::BigPreferencesGroupSpec;
 
 use super::filter_specs::{colorize_vf, colortemp_vf, hqdn3d_vf, pixelize_vf};
 use super::vf_row::{build_vf_expander_row, illustration, VfFilterSpec};
@@ -21,8 +23,7 @@ pub(super) fn build_denoise_sharpen_group(
     mpv: &Arc<MpvBackend>,
     current_vf: &str,
 ) -> adw::PreferencesGroup {
-    let group = adw::PreferencesGroup::builder()
-        .title(i18n("Denoise and Sharpen"))
+    let group = BigPreferencesGroupSpec::new(i18n("Denoise and Sharpen"))
         .description(i18n(
             "Software filters that clean up or enhance the image. \
              Useful for old or low-quality video sources.",
@@ -66,9 +67,7 @@ pub(super) fn build_denoise_sharpen_group(
 
 /// Color: temperature, vibrance, colorize (hue/sat/mix), monochrome.
 pub(super) fn build_color_group(mpv: &Arc<MpvBackend>, current_vf: &str) -> adw::PreferencesGroup {
-    let group = adw::PreferencesGroup::builder()
-        .title(i18n("Color"))
-        .build();
+    let group = BigPreferencesGroupSpec::new(i18n("Color")).build();
 
     group.add(&build_vf_expander_row(
         mpv,
@@ -212,8 +211,7 @@ pub(super) fn build_presets_group(
     current_vf: &str,
 ) -> adw::PreferencesGroup {
     const LABEL: &str = "curves_preset";
-    let group = adw::PreferencesGroup::builder()
-        .title(i18n("Style Presets"))
+    let group = BigPreferencesGroupSpec::new(i18n("Style Presets"))
         .description(i18n("One-click color grading effects"))
         .build();
 
@@ -234,20 +232,20 @@ pub(super) fn build_presets_group(
         "strong_contrast",
         "color_negative",
     ];
-    let names = gtk::StringList::new(&[
-        &i18n("Vintage"),
-        &i18n("Cross Process"),
-        &i18n("Darker"),
-        &i18n("Lighter"),
-        &i18n("More Contrast"),
-        &i18n("Strong Contrast"),
-        &i18n("Color Negative"),
-    ]);
-    let combo = adw::ComboRow::builder()
-        .title(i18n("Preset"))
-        .model(&names)
-        .build();
-    expander.add_row(&combo);
+    let (preset_row, combo) = BigDropdownRow::new(BigDropdownRowSpec::new(
+        i18n("Preset"),
+        [
+            i18n("Vintage"),
+            i18n("Cross Process"),
+            i18n("Darker"),
+            i18n("Lighter"),
+            i18n("More Contrast"),
+            i18n("Strong Contrast"),
+            i18n("Color Negative"),
+        ],
+    ))
+    .into_parts();
+    expander.add_row(&preset_row);
 
     let apply = {
         let mpv = Arc::clone(mpv);
@@ -291,8 +289,7 @@ pub(super) fn build_effects_group(
     mpv: &Arc<MpvBackend>,
     current_vf: &str,
 ) -> adw::PreferencesGroup {
-    let group = adw::PreferencesGroup::builder()
-        .title(i18n("Effects"))
+    let group = BigPreferencesGroupSpec::new(i18n("Effects"))
         .description(i18n(
             "Creative visual effects and artistic transformations.",
         ))

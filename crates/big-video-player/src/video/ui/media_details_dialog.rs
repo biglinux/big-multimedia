@@ -1,4 +1,4 @@
-//! App-local media-information dialog (video port, V5).
+//! App-local media-details dialog (video port, V5).
 //!
 //! Reads the live mpv backend (general / metadata / video / audio / streaming /
 //! track sections) into copyable rows, with a "Copy All" header button. A free
@@ -17,7 +17,9 @@ use std::sync::Arc;
 use adw::prelude::*;
 use big_media_components::bytes::decimal_detailed;
 use big_media_components::time::duration_hms;
-use big_relm4_components::layout::dialog_page::BigDialogPage;
+use big_relm4_components::layout::{
+    dialog_page::BigDialogPage, preferences::BigPreferencesGroupSpec,
+};
 use big_relm4_components::list::copyable_info_row::{
     copy_all_button, BigCopyableInfoRow, BigCopyableInfoRowSpec, BigInfoLines,
 };
@@ -25,8 +27,8 @@ use big_relm4_components::list::copyable_info_row::{
 use crate::i18n::i18n;
 use crate::player::mpv_backend::{MpvBackend, TrackInfo};
 
-/// Build one copyable info row and register it for "Copy All".
-fn info_row(title: &str, value: &str, lines: &BigInfoLines) -> adw::ActionRow {
+/// Build one copyable detail row and register it for "Copy All".
+fn media_detail_row(title: &str, value: &str, lines: &BigInfoLines) -> adw::ActionRow {
     BigCopyableInfoRow::new(
         BigCopyableInfoRowSpec::new(title, value, i18n("Copy")),
         Some(lines),
@@ -34,8 +36,8 @@ fn info_row(title: &str, value: &str, lines: &BigInfoLines) -> adw::ActionRow {
     .into_row()
 }
 
-/// Present the media-information dialog over `parent`.
-pub fn show_video_media_info_dialog(parent: &impl IsA<gtk::Widget>, mpv: &Arc<MpvBackend>) {
+/// Present the media-details dialog over `parent`.
+pub fn show_video_media_details_dialog(parent: &impl IsA<gtk::Widget>, mpv: &Arc<MpvBackend>) {
     let dialog = adw::Dialog::builder()
         .title(i18n("Media Information"))
         .content_width(500)
@@ -72,15 +74,13 @@ pub fn show_video_media_info_dialog(parent: &impl IsA<gtk::Widget>, mpv: &Arc<Mp
 }
 
 fn build_general_group(mpv: &Arc<MpvBackend>, lines: &BigInfoLines) -> adw::PreferencesGroup {
-    let group = adw::PreferencesGroup::builder()
-        .title(i18n("General"))
-        .build();
+    let group = BigPreferencesGroupSpec::new(i18n("General")).build();
 
     let file_path = mpv.get_current_file().unwrap_or_default();
     if !file_path.is_empty() {
-        group.add(&info_row(&i18n("File"), &file_path, lines));
+        group.add(&media_detail_row(&i18n("File"), &file_path, lines));
         if let Ok(meta) = std::fs::metadata(&file_path) {
-            group.add(&info_row(
+            group.add(&media_detail_row(
                 &i18n("File Size"),
                 &decimal_detailed(meta.len()),
                 lines,
@@ -89,19 +89,27 @@ fn build_general_group(mpv: &Arc<MpvBackend>, lines: &BigInfoLines) -> adw::Pref
     }
     let media_title = mpv.get_media_title().unwrap_or_default();
     if !media_title.is_empty() && media_title != file_path {
-        group.add(&info_row(&i18n("Title"), &media_title, lines));
+        group.add(&media_detail_row(&i18n("Title"), &media_title, lines));
     }
     let format = mpv.get_file_format();
     if !format.is_empty() {
-        group.add(&info_row(&i18n("Format"), &format, lines));
+        group.add(&media_detail_row(&i18n("Format"), &format, lines));
     }
     let duration = mpv.get_duration();
     if duration > 0.0 {
-        group.add(&info_row(&i18n("Duration"), &duration_hms(duration), lines));
+        group.add(&media_detail_row(
+            &i18n("Duration"),
+            &duration_hms(duration),
+            lines,
+        ));
     }
     let chapters = mpv.get_chapter_count();
     if chapters > 0 {
-        group.add(&info_row(&i18n("Chapters"), &chapters.to_string(), lines));
+        group.add(&media_detail_row(
+            &i18n("Chapters"),
+            &chapters.to_string(),
+            lines,
+        ));
     }
     group
 }
@@ -114,9 +122,7 @@ fn build_metadata_group(
     if metadata.is_empty() {
         return None;
     }
-    let group = adw::PreferencesGroup::builder()
-        .title(i18n("Metadata"))
-        .build();
+    let group = BigPreferencesGroupSpec::new(i18n("Metadata")).build();
     for (key, label) in [
         ("artist", "Artist"),
         ("album", "Album"),
@@ -125,7 +131,7 @@ fn build_metadata_group(
         ("track", "Track"),
     ] {
         if let Some(value) = metadata.get(key).filter(|v| !v.is_empty()) {
-            group.add(&info_row(&i18n(label), value, lines));
+            group.add(&media_detail_row(&i18n(label), value, lines));
         }
     }
     Some(group)
@@ -136,12 +142,10 @@ fn build_video_group(mpv: &Arc<MpvBackend>, lines: &BigInfoLines) -> Option<adw:
     if video_codec.is_empty() {
         return None;
     }
-    let group = adw::PreferencesGroup::builder()
-        .title(i18n("Video"))
-        .build();
-    group.add(&info_row(&i18n("Codec"), &video_codec, lines));
+    let group = BigPreferencesGroupSpec::new(i18n("Video")).build();
+    group.add(&media_detail_row(&i18n("Codec"), &video_codec, lines));
     if let Some((width, height)) = mpv.get_video_dimensions() {
-        group.add(&info_row(
+        group.add(&media_detail_row(
             &i18n("Resolution"),
             &format!("{width}×{height}"),
             lines,
@@ -149,7 +153,7 @@ fn build_video_group(mpv: &Arc<MpvBackend>, lines: &BigInfoLines) -> Option<adw:
     }
     let fps = mpv.get_property_f64("estimated-vf-fps");
     if fps > 0.0 {
-        group.add(&info_row(
+        group.add(&media_detail_row(
             &i18n("Frame Rate"),
             &format!("{fps:.2} fps"),
             lines,
@@ -157,29 +161,33 @@ fn build_video_group(mpv: &Arc<MpvBackend>, lines: &BigInfoLines) -> Option<adw:
     }
     let bitrate = mpv.get_video_bitrate();
     if bitrate > 0.0 {
-        group.add(&info_row(
+        group.add(&media_detail_row(
             &i18n("Bitrate"),
             &format!("{:.0} kbps", bitrate / 1000.0),
             lines,
         ));
     }
     let hwdec = mpv.get_property_string("hwdec-current");
-    group.add(&info_row(
+    group.add(&media_detail_row(
         &i18n("Hardware Decoder"),
         if hwdec.is_empty() { "Software" } else { &hwdec },
         lines,
     ));
     let pixel_format = mpv.get_property_string("video-params/pixelformat");
     if !pixel_format.is_empty() {
-        group.add(&info_row(&i18n("Pixel Format"), &pixel_format, lines));
+        group.add(&media_detail_row(
+            &i18n("Pixel Format"),
+            &pixel_format,
+            lines,
+        ));
     }
     let colormatrix = mpv.get_property_string("video-params/colormatrix");
     if !colormatrix.is_empty() {
-        group.add(&info_row(&i18n("Colorspace"), &colormatrix, lines));
+        group.add(&media_detail_row(&i18n("Colorspace"), &colormatrix, lines));
     }
     let primaries = mpv.get_property_string("video-params/primaries");
     if !primaries.is_empty() {
-        group.add(&info_row(&i18n("Primaries"), &primaries, lines));
+        group.add(&media_detail_row(&i18n("Primaries"), &primaries, lines));
     }
     let transfer = mpv.get_property_string("video-params/gamma");
     if !transfer.is_empty() {
@@ -188,7 +196,7 @@ fn build_video_group(mpv: &Arc<MpvBackend>, lines: &BigInfoLines) -> Option<adw:
         } else {
             i18n("Transfer")
         };
-        group.add(&info_row(&label, &transfer, lines));
+        group.add(&media_detail_row(&label, &transfer, lines));
     }
     Some(group)
 }
@@ -198,31 +206,37 @@ fn build_audio_group(mpv: &Arc<MpvBackend>, lines: &BigInfoLines) -> Option<adw:
     if audio_codec.is_empty() {
         return None;
     }
-    let group = adw::PreferencesGroup::builder()
-        .title(i18n("Audio"))
-        .build();
-    group.add(&info_row(&i18n("Codec"), &audio_codec, lines));
+    let group = BigPreferencesGroupSpec::new(i18n("Audio")).build();
+    group.add(&media_detail_row(&i18n("Codec"), &audio_codec, lines));
     let bitrate = mpv.get_audio_bitrate();
     if bitrate > 0.0 {
-        group.add(&info_row(
+        group.add(&media_detail_row(
             &i18n("Bitrate"),
             &format!("{:.0} kbps", bitrate / 1000.0),
             lines,
         ));
     }
-    let audio_info = mpv.get_audio_info();
-    if audio_info.sample_rate > 0 {
-        group.add(&info_row(
+    let audio_properties = mpv.get_audio_info();
+    if audio_properties.sample_rate > 0 {
+        group.add(&media_detail_row(
             &i18n("Sample Rate"),
-            &format!("{} Hz", audio_info.sample_rate),
+            &format!("{} Hz", audio_properties.sample_rate),
             lines,
         ));
     }
-    if !audio_info.channels.is_empty() {
-        group.add(&info_row(&i18n("Channels"), &audio_info.channels, lines));
+    if !audio_properties.channels.is_empty() {
+        group.add(&media_detail_row(
+            &i18n("Channels"),
+            &audio_properties.channels,
+            lines,
+        ));
     }
-    if !audio_info.format.is_empty() {
-        group.add(&info_row(&i18n("Format"), &audio_info.format, lines));
+    if !audio_properties.format.is_empty() {
+        group.add(&media_detail_row(
+            &i18n("Format"),
+            &audio_properties.format,
+            lines,
+        ));
     }
     Some(group)
 }
@@ -235,10 +249,12 @@ fn build_streaming_group(
     if cache_state < 0 {
         return None;
     }
-    let group = adw::PreferencesGroup::builder()
-        .title(i18n("Streaming"))
-        .build();
-    group.add(&info_row(&i18n("Cache"), &format!("{cache_state}%"), lines));
+    let group = BigPreferencesGroupSpec::new(i18n("Streaming")).build();
+    group.add(&media_detail_row(
+        &i18n("Cache"),
+        &format!("{cache_state}%"),
+        lines,
+    ));
     Some(group)
 }
 
@@ -251,9 +267,7 @@ fn build_track_groups(tracks: &[TrackInfo], lines: &BigInfoLines) -> Vec<adw::Pr
     let subtitle: Vec<_> = tracks.iter().filter(|t| t.track_type == "sub").collect();
 
     if video.len() > 1 {
-        let group = adw::PreferencesGroup::builder()
-            .title(i18n("Video Tracks"))
-            .build();
+        let group = BigPreferencesGroupSpec::new(i18n("Video Tracks")).build();
         for track in &video {
             let label = if track.title.is_empty() {
                 format!("{} #{}", i18n("Video"), track.id)
@@ -261,18 +275,16 @@ fn build_track_groups(tracks: &[TrackInfo], lines: &BigInfoLines) -> Vec<adw::Pr
                 track.title.clone()
             };
             let detail = format!("{}{}", track.codec, selected_mark(track.selected));
-            group.add(&info_row(&label, &detail, lines));
+            group.add(&media_detail_row(&label, &detail, lines));
         }
         groups.push(group);
     }
 
     if audio.len() > 1 {
-        let group = adw::PreferencesGroup::builder()
-            .title(i18n("Audio Tracks"))
-            .build();
+        let group = BigPreferencesGroupSpec::new(i18n("Audio Tracks")).build();
         for track in &audio {
             let detail = format!("{}{}", track.codec, selected_mark(track.selected));
-            group.add(&info_row(
+            group.add(&media_detail_row(
                 &track_label(track, &i18n("Audio")),
                 &detail,
                 lines,
@@ -282,9 +294,7 @@ fn build_track_groups(tracks: &[TrackInfo], lines: &BigInfoLines) -> Vec<adw::Pr
     }
 
     if !subtitle.is_empty() {
-        let group = adw::PreferencesGroup::builder()
-            .title(i18n("Subtitle Tracks"))
-            .build();
+        let group = BigPreferencesGroupSpec::new(i18n("Subtitle Tracks")).build();
         for track in &subtitle {
             let detail = format!(
                 "{}{}{}",
@@ -292,7 +302,7 @@ fn build_track_groups(tracks: &[TrackInfo], lines: &BigInfoLines) -> Vec<adw::Pr
                 if track.external { " (ext)" } else { "" },
                 selected_mark(track.selected),
             );
-            group.add(&info_row(
+            group.add(&media_detail_row(
                 &track_label(track, &i18n("Subtitle")),
                 &detail,
                 lines,

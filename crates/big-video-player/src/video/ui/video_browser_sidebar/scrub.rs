@@ -21,11 +21,11 @@ use super::BrowserState;
 use crate::media::playlist;
 
 /// Number of frames sampled across a clip.
-const FRAMES: usize = 8;
+const SCRUB_FRAME_COUNT: usize = 8;
 
 /// Per-card scrub state, persisted across factory rebinds.
 #[derive(Default)]
-struct ScrubData {
+struct ScrubPreviewState {
     /// Path the cached textures belong to (`""` until first hover).
     path: String,
     /// Decoded frame textures (filled once generation completes).
@@ -37,32 +37,33 @@ struct ScrubData {
 /// Wire hover-scrub onto a grid card's picture. Resolves the bound video path
 /// from the card's `widget_name` at motion time (so it follows rebinds).
 pub(super) fn wire_card_hover(state: &Rc<BrowserState>, card: &gtk::Box, picture: &gtk::Picture) {
-    let data: Rc<RefCell<ScrubData>> = Rc::new(RefCell::new(ScrubData::default()));
+    let scrub_state: Rc<RefCell<ScrubPreviewState>> =
+        Rc::new(RefCell::new(ScrubPreviewState::default()));
     let motion = gtk::EventControllerMotion::new();
 
     motion.connect_motion({
         let state = state.clone();
         let card = card.downgrade();
         let picture = picture.downgrade();
-        let data = data.clone();
-        move |_, x, _| {
+        let scrub_state = scrub_state.clone();
+        move |_, pointer_x, _| {
             let (Some(card), Some(picture)) = (card.upgrade(), picture.upgrade()) else {
                 return;
             };
             let Some(path) = video_path_of(&state, &card) else {
                 return;
             };
-            ensure_started(&data, &picture, &path);
-            apply_frame(&data, &picture, &path, x);
+            ensure_started(&scrub_state, &picture, &path);
+            apply_frame(&scrub_state, &picture, &path, pointer_x);
         }
     });
 
     motion.connect_leave({
         let picture = picture.downgrade();
-        let data = data.clone();
+        let scrub_state = scrub_state.clone();
         move |_| {
             if let Some(picture) = picture.upgrade() {
-                if let Some(original) = data.borrow().original.clone() {
+                if let Some(original) = scrub_state.borrow().original.clone() {
                     picture.set_paintable(Some(&original));
                 }
             }
@@ -74,8 +75,8 @@ pub(super) fn wire_card_hover(state: &Rc<BrowserState>, card: &gtk::Box, picture
 
 /// The bound video path for a card, via its `video:{index}` widget name.
 fn video_path_of(state: &Rc<BrowserState>, card: &gtk::Box) -> Option<String> {
-    let idx = parse_card_index(&card.widget_name())?;
-    state.active_items().get(idx).cloned()
+    let card_index = parse_card_index(&card.widget_name())?;
+    state.active_items().get(card_index).cloned()
 }
 
 /// Card index encoded in a grid card's `video:{index}` widget name.
@@ -85,50 +86,63 @@ fn parse_card_index(name: &str) -> Option<usize> {
 
 /// On first hover for a path, snapshot the original thumbnail and kick off the
 /// off-thread frame generation + decode.
-fn ensure_started(data: &Rc<RefCell<ScrubData>>, picture: &gtk::Picture, path: &str) {
+fn ensure_started(
+    scrub_state: &Rc<RefCell<ScrubPreviewState>>,
+    picture: &gtk::Picture,
+    path: &str,
+) {
     {
-        let mut d = data.borrow_mut();
-        if d.path == path {
+        let mut scrub_state_borrow = scrub_state.borrow_mut();
+        if scrub_state_borrow.path == path {
             return;
         }
         // New card binding → reset for this path.
-        d.path = path.to_string();
-        d.textures.clear();
-        d.original = picture.paintable();
+        scrub_state_borrow.path = path.to_string();
+        scrub_state_borrow.textures.clear();
+        scrub_state_borrow.original = picture.paintable();
     }
 
     let path_owned = path.to_string();
-    let data = data.clone();
+    let scrub_state = scrub_state.clone();
     glib::spawn_future_local(async move {
-        let gen_path = path_owned.clone();
-        let frame_files = gio::spawn_blocking(move || ensure_frames(&gen_path))
+        let generation_path = path_owned.clone();
+        let frame_files = gio::spawn_blocking(move || ensure_frames(&generation_path))
             .await
             .unwrap_or_default();
         // Card may have been recycled to another path while generating.
-        if data.borrow().path != path_owned {
+        if scrub_state.borrow().path != path_owned {
             return;
         }
         let textures: Vec<gdk::Texture> = frame_files
             .iter()
-            .filter_map(|p| gdk::Texture::from_filename(p).ok())
+            .filter_map(|frame_file| gdk::Texture::from_filename(frame_file).ok())
             .collect();
-        let mut d = data.borrow_mut();
-        if d.path == path_owned {
-            d.textures = textures;
+        let mut scrub_state_borrow = scrub_state.borrow_mut();
+        if scrub_state_borrow.path == path_owned {
+            scrub_state_borrow.textures = textures;
         }
     });
 }
 
 /// Map pointer x → frame index and show that frame, if generated.
-fn apply_frame(data: &Rc<RefCell<ScrubData>>, picture: &gtk::Picture, path: &str, x: f64) {
-    let d = data.borrow();
-    if d.path != path {
+fn apply_frame(
+    scrub_state: &Rc<RefCell<ScrubPreviewState>>,
+    picture: &gtk::Picture,
+    path: &str,
+    pointer_x: f64,
+) {
+    let scrub_state_borrow = scrub_state.borrow();
+    if scrub_state_borrow.path != path {
         return;
     }
-    let Some(idx) = frame_index_for_x(x, f64::from(picture.width()), d.textures.len()) else {
+    let Some(frame_index) = frame_index_for_x(
+        pointer_x,
+        f64::from(picture.width()),
+        scrub_state_borrow.textures.len(),
+    ) else {
         return;
     };
-    if let Some(texture) = d.textures.get(idx) {
+    if let Some(texture) = scrub_state_borrow.textures.get(frame_index) {
         picture.set_paintable(Some(texture));
     }
 }
@@ -136,19 +150,19 @@ fn apply_frame(data: &Rc<RefCell<ScrubData>>, picture: &gtk::Picture, path: &str
 /// Map pointer `x` within a `width`-wide picture to a frame index over
 /// `frame_count` frames. `None` when the picture has no width or no frames yet.
 /// `x` outside `[0, width]` clamps to the first/last frame.
-fn frame_index_for_x(x: f64, width: f64, frame_count: usize) -> Option<usize> {
+fn frame_index_for_x(pointer_x: f64, width: f64, frame_count: usize) -> Option<usize> {
     if width <= 0.0 || frame_count == 0 {
         return None;
     }
-    let frac = (x / width).clamp(0.0, 1.0);
-    Some(((frac * frame_count as f64) as usize).min(frame_count - 1))
+    let pointer_fraction = (pointer_x / width).clamp(0.0, 1.0);
+    Some(((pointer_fraction * frame_count as f64) as usize).min(frame_count - 1))
 }
 
 /// Cache directory for scrub frames (`~/.cache/big-video-player/scrub`).
 fn cache_root() -> Option<PathBuf> {
-    let dir = glib::user_cache_dir().join("big-video-player/scrub");
-    std::fs::create_dir_all(&dir).ok()?;
-    Some(dir)
+    let cache_directory = glib::user_cache_dir().join("big-video-player/scrub");
+    std::fs::create_dir_all(&cache_directory).ok()?;
+    Some(cache_directory)
 }
 
 /// Per-clip frame directory key, salted with the file's mtime so edits
@@ -156,10 +170,10 @@ fn cache_root() -> Option<PathBuf> {
 fn clip_key(path: &str) -> u64 {
     let mut hasher = DefaultHasher::new();
     path.hash(&mut hasher);
-    if let Ok(meta) = std::fs::metadata(path) {
-        if let Ok(mtime) = meta.modified() {
-            if let Ok(dur) = mtime.duration_since(std::time::UNIX_EPOCH) {
-                dur.as_secs().hash(&mut hasher);
+    if let Ok(metadata) = std::fs::metadata(path) {
+        if let Ok(modified_time) = metadata.modified() {
+            if let Ok(modified_since_epoch) = modified_time.duration_since(std::time::UNIX_EPOCH) {
+                modified_since_epoch.as_secs().hash(&mut hasher);
             }
         }
     }
@@ -172,20 +186,22 @@ fn ensure_frames(path: &str) -> Vec<PathBuf> {
     let Some(root) = cache_root() else {
         return Vec::new();
     };
-    let dir = root.join(format!("{:016x}", clip_key(path)));
-    let _ = std::fs::create_dir_all(&dir);
+    let clip_directory = root.join(format!("{:016x}", clip_key(path)));
+    let _ = std::fs::create_dir_all(&clip_directory);
 
     let duration = playlist::probe_metadata_cached(path)
         .and_then(|m| m.duration_secs)
-        .filter(|d| *d > 0.0)
+        .filter(|duration_secs| *duration_secs > 0.0)
         .unwrap_or(0.0);
 
-    let mut frames = Vec::with_capacity(FRAMES);
-    for i in 0..FRAMES {
-        let frame = dir.join(format!("{i}.jpg"));
+    let mut frames = Vec::with_capacity(SCRUB_FRAME_COUNT);
+    for frame_index in 0..SCRUB_FRAME_COUNT {
+        let frame = clip_directory.join(format!("{frame_index}.jpg"));
         if !frame.exists() {
-            let time = sample_time_secs(i, duration);
-            let Some(out) = frame.to_str() else { continue };
+            let time = sample_time_secs(frame_index, duration);
+            let Some(output_path) = frame.to_str() else {
+                continue;
+            };
             let _ = BigSubprocessSpec::builder()
                 .program("ffmpeg")
                 .args([
@@ -202,7 +218,7 @@ fn ensure_frames(path: &str) -> Vec<PathBuf> {
                      pad=240:135:(ow-iw)/2:(oh-ih)/2",
                     "-y",
                     "--",
-                    out,
+                    output_path,
                 ])
                 .stdout(BigSubprocessOutputMode::Null)
                 .stderr(BigSubprocessOutputMode::Null)
@@ -216,13 +232,13 @@ fn ensure_frames(path: &str) -> Vec<PathBuf> {
     frames
 }
 
-/// Sample time (seconds) for frame `i` of [`FRAMES`]: the center of each equal
+/// Sample time (seconds) for frame `i` of [`SCRUB_FRAME_COUNT`]: the center of each equal
 /// segment when `duration` is known, else one frame per second as a fallback.
-fn sample_time_secs(i: usize, duration: f64) -> f64 {
+fn sample_time_secs(frame_index: usize, duration: f64) -> f64 {
     if duration > 0.0 {
-        duration * (i as f64 + 0.5) / FRAMES as f64
+        duration * (frame_index as f64 + 0.5) / SCRUB_FRAME_COUNT as f64
     } else {
-        f64::from(i as u32)
+        f64::from(frame_index as u32)
     }
 }
 

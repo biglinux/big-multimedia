@@ -6,10 +6,15 @@ use super::cast_snapshot::build_cast_filter_snapshot;
 use super::dialogs::reapply_theme;
 use super::input::{clear_shell_input, set_shell_input};
 use super::input_gestures::{wire_background_video_input, wire_osd_autohide, wire_video_input};
-use super::render::{wire_close, wire_realize, RealizeOpts, RenderCtx};
+use super::render::{wire_close, wire_realize, FastRenderContextSlot, VideoRealizeOptions};
 use super::*;
+#[cfg(test)]
+use big_relm4_components::layout::hamburger_menu::build_flat_menu_model;
 use big_relm4_components::layout::hamburger_menu::{
-    build_flat_menu_model, build_hamburger_menu_button, BigHamburgerMenuSpec, BigMenuActionItem,
+    build_hamburger_menu_button, BigHamburgerMenuSpec, BigMenuActionItem,
+};
+use big_relm4_components::layout::media_window::{
+    BigMediaChrome, BigMediaMenuSpec, BigMediaSidebarShell, BigMediaSidebarSpec,
 };
 
 impl Component for VideoShell {
@@ -95,7 +100,7 @@ impl Component for VideoShell {
         #[cfg(feature = "chromecast")]
         let cast = VideoCastDialog::builder()
             .launch(VideoCastDialogInit {
-                manager: Arc::new(CastManager::new()),
+                cast_engine: Arc::new(CastManager::new()),
                 mpv: mpv.clone(),
                 filter_snapshot: {
                     let mpv = mpv.clone();
@@ -144,14 +149,15 @@ impl Component for VideoShell {
         main_overlay.set_clip_overlay(&sw_picture, true);
         main_overlay.set_measure_overlay(&sw_picture, false);
 
-        // The trim controls live INSIDE the controls bar (transport ↔ trim stack);
-        // the bottom OSD is just the controls bar, as before.
-        let controls_revealer = gtk::Revealer::builder()
-            .valign(gtk::Align::End)
-            .transition_type(gtk::RevealerTransitionType::Crossfade)
-            .reveal_child(!is_background)
-            .child(controls.widget())
-            .build();
+        let chrome = BigMediaChrome::new(
+            BigMediaMenuSpec {
+                icon_name: "open-menu-symbolic".to_owned(),
+                label: i18n("Main Menu"),
+                items: main_menu_items(),
+            },
+            !is_background,
+        );
+
         // Slim, non-blocking export-progress strip: a shared `BigProgressRow`
         // (title · bar · percent/speed/ETA · Cancel) on a flat status bar docked
         // DIRECTLY ABOVE the transport — so the user keeps watching the video and
@@ -188,13 +194,13 @@ impl Component for VideoShell {
         let bottom_stack = gtk::Box::new(gtk::Orientation::Vertical, 0);
         bottom_stack.set_valign(gtk::Align::End);
         bottom_stack.append(&trim_progress_revealer);
-        bottom_stack.append(&controls_revealer);
+        bottom_stack.append(controls.widget());
         // Re-encode options (container/codec/quality) live in the gear dialog,
         // not an over-screen panel; `trim_encode.group()` is parented there on
         // first open.
+        chrome.set_bottom_child(&bottom_stack);
         if !is_background {
-            main_overlay.add_overlay(&bottom_stack);
-            main_overlay.set_measure_overlay(&bottom_stack, false);
+            chrome.install_bottom_into(&main_overlay);
         }
 
         // Welcome screen: shown until the first file loads (hidden on
@@ -237,74 +243,35 @@ impl Component for VideoShell {
         }
 
         // Sidebar reveal: collapsed overlay (playlist) over the video content.
-        // Hidden by default; a header toggle/`OpenFiles` reveals it. The sidebar
-        // widget is wrapped with a draggable handle on its inner (content) edge
-        // so the user can widen it (bigger grid previews); the handle adjusts
-        // `max_sidebar_width` live (matches the old player).
-        let drag_handle = gtk::Separator::new(gtk::Orientation::Vertical);
-        drag_handle.set_width_request(6);
-        drag_handle.add_css_class("sidebar-drag-handle");
-        drag_handle.set_cursor_from_name(Some("col-resize"));
-        let sidebar_outer = gtk::Box::new(gtk::Orientation::Horizontal, 0);
-        let pl_widget = playlist.widget();
-        pl_widget.set_hexpand(true);
-        sidebar_outer.append(pl_widget);
-        sidebar_outer.append(&drag_handle);
+        // Hidden by default; a header toggle/`OpenFiles` reveals it. The shared
+        // media shell owns the split-view sizing and leak-safe drag handle so
+        // camera/image shells can reuse the same chrome without cloning this
+        // widget plumbing.
+        let sidebar_shell = BigMediaSidebarShell::new(
+            playlist.widget(),
+            &main_overlay,
+            BigMediaSidebarSpec::new()
+                .width_range(260.0, 480.0)
+                .resize_limit(900.0),
+        );
+        let split_view = sidebar_shell.split_view().clone();
 
-        let split_view = adw::OverlaySplitView::builder()
-            .sidebar(&sidebar_outer)
-            .content(&main_overlay)
-            .show_sidebar(false)
-            .min_sidebar_width(260.0)
-            .max_sidebar_width(480.0)
-            // fraction 1.0 → actual width == max_sidebar_width (clamped), so the
-            // drag handle resizing max actually resizes the sidebar.
-            .sidebar_width_fraction(1.0)
-            .build();
-
-        // Drag the handle to resize: a left (start) sidebar widens as the inner
-        // edge moves right (+x). Clamped 260..900; not persisted (per old).
-        let resize = gtk::GestureDrag::new();
-        let resize_start_width = Rc::new(Cell::new(0.0_f64));
-        // Weak split_view: the gesture lives on a handle INSIDE the split
-        // view — strong captures here pinned the whole content tree after
-        // close (window finalized, split subtree leaked).
-        resize.connect_drag_begin({
-            let split_view = split_view.downgrade();
-            let resize_start_width = resize_start_width.clone();
-            move |_, _, _| {
-                if let Some(split_view) = split_view.upgrade() {
-                    resize_start_width.set(split_view.max_sidebar_width());
-                }
-            }
-        });
-        resize.connect_drag_update({
-            let split_view = split_view.downgrade();
-            move |_, offset_x, _| {
-                let Some(split_view) = split_view.upgrade() else {
-                    return;
-                };
-                let new_max = (resize_start_width.get() + offset_x).clamp(260.0, 900.0);
-                split_view.set_max_sidebar_width(new_max);
-            }
-        });
-        drag_handle.add_controller(resize);
-
-        // Keep-Above pin toggle (old `pin_btn`). No portable Wayland keep-above
+        // Keep-Above toggle. No portable Wayland keep-above
         // exists; mirror the god-object by toggling via the compositor (KWin
         // global shortcut, falling back to wmctrl). Both via argv arrays — no
         // shell, no untrusted input.
-        let pin_btn = gtk::ToggleButton::builder()
+        let keep_above_toggle_button = gtk::ToggleButton::builder()
             .icon_name("view-pin-symbolic")
             .css_classes(["osd-btn"])
             .build();
-        pin_btn.update_property(&[gtk::accessible::Property::Label(&i18n("Keep Above"))]);
-        pin_btn.connect_toggled(|_btn| toggle_keep_above());
+        keep_above_toggle_button
+            .update_property(&[gtk::accessible::Property::Label(&i18n("Keep Above"))]);
+        keep_above_toggle_button.connect_toggled(|_button| toggle_keep_above());
 
-        // Open menu-button (old `open_btn`): real GtkMenuButton + GMenuModel so
-        // GTK renders native menu items with menu/menu-item accessibility roles.
+        // Open menu-button: real GtkMenuButton with explicit menu-item rows so
+        // AT-SPI exposes named, activatable actions.
         let open_label = i18n("Open");
-        let open_btn = build_hamburger_menu_button(
+        let open_menu_button = build_hamburger_menu_button(
             &BigHamburgerMenuSpec::new(open_label)
                 .icon_name("document-open-symbolic")
                 .css_classes(["osd-btn"])
@@ -314,82 +281,71 @@ impl Component for VideoShell {
         // Two separate sidebar entry points: Files (folder browser) and Playlist
         // (the play queue). Each reveals the sidebar in its mode; clicking the
         // active one hides it. Not a radio pair — both off = sidebar hidden.
-        let files_btn = gtk::ToggleButton::builder()
+        let files_sidebar_toggle_button = gtk::ToggleButton::builder()
             .icon_name("folder-symbolic")
             .css_classes(["osd-btn"])
             .build();
-        files_btn.update_property(&[gtk::accessible::Property::Label(&i18n("Files"))]);
-        let list_btn = gtk::ToggleButton::builder()
+        files_sidebar_toggle_button
+            .update_property(&[gtk::accessible::Property::Label(&i18n("Files"))]);
+        let playlist_sidebar_toggle_button = gtk::ToggleButton::builder()
             .icon_name("view-list-symbolic")
             .css_classes(["osd-btn"])
             .build();
-        list_btn.update_property(&[gtk::accessible::Property::Label(&i18n("Playlist"))]);
+        playlist_sidebar_toggle_button
+            .update_property(&[gtk::accessible::Property::Label(&i18n("Playlist"))]);
 
         // Guard so programmatic `set_active` (deactivating the sibling) doesn't
         // re-enter the toggled handlers.
         let toggles_updating = Rc::new(Cell::new(false));
+        let active_sidebar_mode = Rc::new(Cell::new(SidebarMode::Files));
         let pl_sender = playlist.sender().clone();
         wire_sidebar_toggle(
-            &files_btn,
-            &list_btn,
+            &files_sidebar_toggle_button,
+            &playlist_sidebar_toggle_button,
             SidebarMode::Files,
             &split_view,
             &toggles_updating,
+            &active_sidebar_mode,
             &pl_sender,
         );
         wire_sidebar_toggle(
-            &list_btn,
-            &files_btn,
+            &playlist_sidebar_toggle_button,
+            &files_sidebar_toggle_button,
             SidebarMode::Playlist,
             &split_view,
             &toggles_updating,
+            &active_sidebar_mode,
             &pl_sender,
         );
         // Keep the toggles in sync when the overlay is dismissed externally
         // (click-outside / Esc collapses an AdwOverlaySplitView) → release both.
         split_view.connect_show_sidebar_notify({
-            let files_btn = files_btn.downgrade();
-            let list_btn = list_btn.downgrade();
+            let files_sidebar_toggle_button = files_sidebar_toggle_button.downgrade();
+            let playlist_sidebar_toggle_button = playlist_sidebar_toggle_button.downgrade();
             let updating = toggles_updating.clone();
             move |sv| {
                 if updating.get() || sv.shows_sidebar() {
                     return;
                 }
                 updating.set(true);
-                if let Some(b) = files_btn.upgrade() {
-                    b.set_active(false);
+                if let Some(button) = files_sidebar_toggle_button.upgrade() {
+                    button.set_active(false);
                 }
-                if let Some(b) = list_btn.upgrade() {
-                    b.set_active(false);
+                if let Some(button) = playlist_sidebar_toggle_button.upgrade() {
+                    button.set_active(false);
                 }
                 updating.set(false);
             }
         });
 
-        // Hamburger menu (old `menu_btn`): only the items whose dialogs are
-        // actually ported. Not-yet-ported entries are deliberately omitted (a
-        // dead menu item is worse than an absent one).
-        // Labelled sections (gio renders the label as a small-caps header in the
-        // popover) so the user scans by category instead of reading 20 items one
-        // by one. The old single 8-item "Media" grab-bag is split into Audio /
-        // Video / Sources by what the entry actually controls.
-        let menu = build_main_menu_model();
-        // Shared media-viewer chrome (header + accessible GMenuModel menu + the
+        // Shared media-viewer chrome (header + accessible primary menu + the
         // OSD reveal) — see big_relm4_components::layout::media_window. The video
-        // player keeps its own overlay/offload/sidebar/bottom; only the header
-        // chrome is shared (also used by bigcam + bigiris).
-        let chrome = big_relm4_components::layout::media_window::BigMediaChrome::new(
-            big_relm4_components::layout::media_window::BigMediaMenuSpec {
-                icon_name: "open-menu-symbolic".to_owned(),
-                label: i18n("Main Menu"),
-                model: menu.upcast(),
-            },
-            !is_background,
-        );
-        chrome.add_header_start(&pin_btn);
-        chrome.add_header_start(&open_btn);
-        chrome.add_header_start(&files_btn);
-        chrome.add_header_start(&list_btn);
+        // player keeps mpv/offload/welcome/buffering state app-local; shared
+        // chrome owns the repeatable header, bottom revealer, and sidebar split.
+        chrome.add_header_start(&keep_above_toggle_button);
+        chrome.add_header_start(&open_menu_button);
+        chrome.add_header_start(&files_sidebar_toggle_button);
+        chrome.add_header_start(&playlist_sidebar_toggle_button);
 
         let win_actions = install_window_actions(&root, &sender);
 
@@ -408,9 +364,9 @@ impl Component for VideoShell {
         // `@player_icon_color`), so both light and dark themes stay readable —
         // matching the old god-object's `.osd-header` wrapper box.
         let header_revealer = chrome.header_revealer().clone();
+        let controls_revealer = chrome.bottom_revealer().clone();
         if !is_background {
-            main_overlay.add_overlay(&header_revealer);
-            main_overlay.set_measure_overlay(&header_revealer, false);
+            chrome.install_header_into(&main_overlay);
         }
 
         // OSD auto-hide: reveal on pointer motion over the video, hide after
@@ -423,10 +379,11 @@ impl Component for VideoShell {
             controls_revealer: controls_revealer.clone(),
             main_overlay: main_overlay.clone(),
             header_menu_buttons: {
-                let mut buttons = vec![open_btn.clone(), chrome.menu_button().clone()];
+                let mut buttons = vec![open_menu_button.clone()];
                 buttons.extend(controls.model().track_menu_buttons());
                 buttons
             },
+            header_popovers: vec![chrome.menu_popover().clone()],
             controls_popovers: controls.model().popovers(),
             is_paused: Cell::new(false),
             is_welcome_visible: Cell::new(!is_background),
@@ -482,18 +439,18 @@ impl Component for VideoShell {
         }
 
         // mpv option strings, read once.
-        let mut custom_opts = settings.get_string(keys::CUSTOM_MPV_OPTIONS).clone();
+        let mut custom_mpv_options = settings.get_string(keys::CUSTOM_MPV_OPTIONS).clone();
         if settings.get_bool(keys::GPU_DUMB_MODE) {
-            if !custom_opts.is_empty() {
-                custom_opts.push(',');
+            if !custom_mpv_options.is_empty() {
+                custom_mpv_options.push(',');
             }
-            custom_opts.push_str("gpu-dumb-mode=yes");
+            custom_mpv_options.push_str("gpu-dumb-mode=yes");
         }
         let audio_output = settings.get_string(keys::AUDIO_OUTPUT).clone();
         let initial_volume = settings.get_double(keys::VOLUME) * 100.0;
         let muted = settings.get_bool(keys::MUTE);
 
-        let render_ctx: RenderCtx = Rc::new(RefCell::new(None));
+        let fast_render_context_slot: FastRenderContextSlot = Rc::new(RefCell::new(None));
         let video_backend: Rc<RefCell<Option<VideoBackend>>> = Rc::new(RefCell::new(None));
 
         // mpv/GL comes up when the CONTENT realizes (it needs only the display +
@@ -504,11 +461,11 @@ impl Component for VideoShell {
             &gl_area,
             &sw_picture,
             &mpv,
-            &render_ctx,
+            &fast_render_context_slot,
             &video_backend,
             &sender,
-            RealizeOpts {
-                custom_opts,
+            VideoRealizeOptions {
+                custom_mpv_options,
                 audio_output,
                 initial_volume,
                 muted,
@@ -573,6 +530,11 @@ impl Component for VideoShell {
                 mode,
                 controls,
                 playlist,
+                split_view: split_view.clone(),
+                sidebar_mode: active_sidebar_mode,
+                files_sidebar_button: files_sidebar_toggle_button,
+                playlist_sidebar_button: playlist_sidebar_toggle_button,
+                sidebar_toggle_updating: toggles_updating,
                 iptv,
                 #[cfg(feature = "chromecast")]
                 cast,
@@ -613,7 +575,12 @@ impl Component for VideoShell {
         }
     }
 
-    fn update(&mut self, msg: Self::Input, sender: ComponentSender<Self>, root: &Self::Root) {
+    fn update(
+        &mut self,
+        shell_input: Self::Input,
+        sender: ComponentSender<Self>,
+        root: &Self::Root,
+    ) {
         // Panic boundary (module contract): a panic in message handling reaps
         // this module's window cleanly (host closes it) instead of orphaning a
         // dead window; the host process and sibling modules survive.
@@ -622,7 +589,7 @@ impl Component for VideoShell {
             let window_ref = adw_window.as_ref();
             let gtk_window = root.root().and_downcast::<gtk::Window>();
             let gtk_window_ref = gtk_window.as_ref();
-            match msg {
+            match shell_input {
                 VideoShellInput::Player(event) => self.on_player_event(event, window_ref),
                 VideoShellInput::Controls(out) => self.on_controls(out, window_ref),
                 VideoShellInput::Playlist(out) => self.on_playlist(out),
@@ -675,7 +642,7 @@ impl Component for VideoShell {
                 }
                 VideoShellInput::ShowMediaInfo => {
                     if let Some(root) = window_ref {
-                        self.show_media_info(root);
+                        self.show_media_details(root);
                     }
                 }
                 VideoShellInput::ShowKeyboardShortcuts => {
@@ -702,6 +669,12 @@ impl Component for VideoShell {
                     if let Some(root) = window_ref {
                         Self::show_open_disc_dialog(root);
                     }
+                }
+                VideoShellInput::ToggleFilesSidebar => {
+                    self.toggle_sidebar_mode(SidebarMode::Files);
+                }
+                VideoShellInput::TogglePlaylistSidebar => {
+                    self.toggle_sidebar_mode(SidebarMode::Playlist);
                 }
                 VideoShellInput::ShowPreferences => {
                     if let Some(root) = window_ref {
@@ -799,6 +772,7 @@ fn open_menu_items() -> Vec<BigMenuActionItem> {
     ]
 }
 
+#[cfg(test)]
 fn build_main_menu_model() -> gio::Menu {
     build_flat_menu_model(&main_menu_items())
 }

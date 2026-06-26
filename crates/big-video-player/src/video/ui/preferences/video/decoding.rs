@@ -3,7 +3,7 @@
 //! based on `is_advanced`. Plus deinterlace (always visible).
 
 use adw::prelude::*;
-use big_relm4_components::layout::preferences::track_widget_visibility;
+use big_relm4_components::layout::preferences::{track_widget_visibility, BigPreferencesGroupSpec};
 use std::sync::Arc;
 
 use crate::i18n::i18n;
@@ -11,7 +11,7 @@ use crate::player::mpv_backend::MpvBackend;
 use crate::settings::{keys, Settings};
 
 use super::super::{add_combo_row, add_switch_row, AdvancedWidgets};
-use super::common::illustration;
+use super::illustration_assets::illustration;
 
 pub(super) fn build_hw_decoding_group(
     settings: &Settings,
@@ -20,8 +20,7 @@ pub(super) fn build_hw_decoding_group(
     adv_widgets: &AdvancedWidgets,
     simple_widgets: &AdvancedWidgets,
 ) -> adw::PreferencesGroup {
-    let hw_group = adw::PreferencesGroup::builder()
-        .title(i18n("Hardware Decoding"))
+    let hw_group = BigPreferencesGroupSpec::new(i18n("Hardware Decoding"))
         .description(i18n(
             "Let your graphics card handle video decoding — smoother playback and lower CPU usage",
         ))
