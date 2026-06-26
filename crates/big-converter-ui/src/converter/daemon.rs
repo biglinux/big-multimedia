@@ -28,8 +28,8 @@ const DAEMON_IO_TIMEOUT: Duration = Duration::from_secs(3);
 pub struct DaemonConversionRequest {
     /// Audio or video binding.
     pub mode: ConverterMode,
-    /// Pending queue items to hand off.
-    pub items: Vec<QueueItem>,
+    /// Pending queue entries to hand off.
+    pub queue_entries: Vec<QueueItem>,
     /// Destination directory selected by the user.
     pub output_dir: PathBuf,
     /// Encoding profile selected in the sidebar.
@@ -45,8 +45,8 @@ pub struct DaemonConversionRequest {
 pub struct DaemonJobAccepted {
     /// Stable daemon job id.
     pub job_id: String,
-    /// Local queue item ids handed off to the daemon.
-    pub item_ids: Vec<u64>,
+    /// Local queue entry ids handed off to the daemon.
+    pub queue_entry_ids: Vec<u64>,
 }
 
 /// Client-side daemon submit failure.
@@ -92,7 +92,11 @@ impl From<io::Error> for DaemonSubmitError {
 pub fn submit_conversion(
     request: DaemonConversionRequest,
 ) -> Result<DaemonJobAccepted, DaemonSubmitError> {
-    let item_ids = request.items.iter().map(|item| item.id).collect::<Vec<_>>();
+    let queue_entry_ids = request
+        .queue_entries
+        .iter()
+        .map(|queue_entry| queue_entry.id)
+        .collect::<Vec<_>>();
     let job = build_conversion_job_spec(&request)?;
     let mut stream = UnixStream::connect(big_media_runtime::convertd::default_socket_path())?;
     stream.set_read_timeout(Some(DAEMON_IO_TIMEOUT))?;
@@ -101,7 +105,10 @@ pub fn submit_conversion(
     loop {
         match read_event(&mut stream)? {
             MicrodaemonEvent::JobAccepted { job_id } => {
-                return Ok(DaemonJobAccepted { job_id, item_ids });
+                return Ok(DaemonJobAccepted {
+                    job_id,
+                    queue_entry_ids,
+                });
             }
             MicrodaemonEvent::Error { code, message, .. } => {
                 return Err(DaemonSubmitError::new(format!("{code}: {message}")));
@@ -198,15 +205,17 @@ fn read_event(stream: &mut UnixStream) -> Result<MicrodaemonEvent, DaemonSubmitE
 fn build_conversion_job_spec(
     request: &DaemonConversionRequest,
 ) -> Result<DurableJobSpec, DaemonSubmitError> {
-    if request.items.is_empty() {
-        return Err(DaemonSubmitError::new("no pending conversion items"));
+    if request.queue_entries.is_empty() {
+        return Err(DaemonSubmitError::new(
+            "no pending conversion queue entries",
+        ));
     }
     let arguments = serde_json::to_value(ConversionDaemonArguments {
         schema_version: 1,
         items: request
-            .items
+            .queue_entries
             .iter()
-            .map(ConversionDaemonItem::from)
+            .map(ConversionDaemonQueueEntry::from)
             .collect(),
         output_dir: request.output_dir.clone(),
         profile: request.profile.clone(),
@@ -216,14 +225,14 @@ fn build_conversion_job_spec(
     .map_err(|error| DaemonSubmitError::new(error.to_string()))?;
     Ok(DurableJobSpec {
         job_key: conversion_job_key(request.mode),
-        job_class: conversion_job_class(request.mode, request.items.len()).to_owned(),
+        job_class: conversion_job_class(request.mode, request.queue_entries.len()).to_owned(),
         is_durable: true,
         arguments,
     })
 }
 
-fn conversion_job_class(mode: ConverterMode, item_count: usize) -> &'static str {
-    if item_count > 1 {
+fn conversion_job_class(mode: ConverterMode, queue_entry_count: usize) -> &'static str {
+    if queue_entry_count > 1 {
         "batch-conversion"
     } else if mode.is_audio() {
         "audio-conversion"
@@ -247,7 +256,7 @@ fn conversion_job_key(mode: ConverterMode) -> String {
 #[derive(Serialize)]
 struct ConversionDaemonArguments {
     schema_version: u32,
-    items: Vec<ConversionDaemonItem>,
+    items: Vec<ConversionDaemonQueueEntry>,
     output_dir: PathBuf,
     profile: Profile,
     audio_only_mode: bool,
@@ -255,7 +264,7 @@ struct ConversionDaemonArguments {
 }
 
 #[derive(Serialize)]
-struct ConversionDaemonItem {
+struct ConversionDaemonQueueEntry {
     input: PathBuf,
     segments: Vec<crate::converter::ffmpeg::TrimRange>,
     segment_mode: SegmentOutputMode,
@@ -268,19 +277,19 @@ struct ConversionDaemonItem {
     skip_video_filters: bool,
 }
 
-impl From<&QueueItem> for ConversionDaemonItem {
-    fn from(item: &QueueItem) -> Self {
+impl From<&QueueItem> for ConversionDaemonQueueEntry {
+    fn from(queue_entry: &QueueItem) -> Self {
         Self {
-            input: item.input.clone(),
-            segments: item.segments.clone(),
-            segment_mode: item.segment_mode,
-            subtitle: item.subtitle.clone(),
-            audio_track: item.audio_track,
-            video_track: item.video_track,
-            crop: item.crop.clone(),
-            video_overrides: item.video_overrides.clone(),
-            input_audio_channels: item.input_audio_channels,
-            skip_video_filters: item.skip_video_filters,
+            input: queue_entry.input.clone(),
+            segments: queue_entry.segments.clone(),
+            segment_mode: queue_entry.segment_mode,
+            subtitle: queue_entry.subtitle.clone(),
+            audio_track: queue_entry.audio_track,
+            video_track: queue_entry.video_track,
+            crop: queue_entry.crop.clone(),
+            video_overrides: queue_entry.video_overrides.clone(),
+            input_audio_channels: queue_entry.input_audio_channels,
+            skip_video_filters: queue_entry.skip_video_filters,
         }
     }
 }
@@ -303,7 +312,7 @@ mod tests {
         }
     }
 
-    fn test_item() -> QueueItem {
+    fn test_queue_entry() -> QueueItem {
         QueueItem {
             id: 42,
             input: PathBuf::from("/tmp/input.mp4"),
@@ -341,10 +350,10 @@ mod tests {
     }
 
     #[test]
-    fn job_spec_preserves_per_item_metadata() {
+    fn job_spec_preserves_per_queue_entry_metadata() {
         let spec = build_conversion_job_spec(&DaemonConversionRequest {
             mode: ConverterMode::Video,
-            items: vec![test_item()],
+            queue_entries: vec![test_queue_entry()],
             output_dir: PathBuf::from("/tmp/out"),
             profile: test_profile(),
             delete_source: true,
@@ -381,7 +390,7 @@ mod tests {
     fn empty_request_is_rejected() {
         let err = build_conversion_job_spec(&DaemonConversionRequest {
             mode: ConverterMode::Video,
-            items: vec![],
+            queue_entries: vec![],
             output_dir: PathBuf::from("/tmp/out"),
             profile: test_profile(),
             delete_source: false,
