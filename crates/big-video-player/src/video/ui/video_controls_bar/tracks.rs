@@ -1,4 +1,7 @@
 use super::*;
+use big_relm4_components::layout::hamburger_menu::{
+    populate_flat_action_popover, BigMenuActionItem,
+};
 use gtk::gio;
 
 impl VideoControlsBar {
@@ -6,35 +9,45 @@ impl VideoControlsBar {
     /// Each entry installs an action that selects the track via the live mpv
     /// backend (read from the shared slot at click time).
     pub(super) fn populate_track_menus(&self, tracks: &[TrackInfo]) {
-        let sub_menu = gio::Menu::new();
         let sub_actions = gio::SimpleActionGroup::new();
-        sub_menu.append(
-            Some(&i18n("Disable Subtitles")),
-            Some("sub.select--disabled"),
-        );
+        let mut subtitle_items = vec![BigMenuActionItem::new(
+            i18n("Disable Subtitles"),
+            "sub.select--disabled",
+        )];
         install_track_action(&sub_actions, "select--disabled", &self.mpv, -1, true);
         for track in tracks.iter().filter(|t| t.track_type == "sub") {
             let action = format!("select-{}", track.id);
             install_track_action(&sub_actions, &action, &self.mpv, track.id, true);
-            sub_menu.append(Some(&track_label(track)), Some(&format!("sub.{action}")));
+            subtitle_items.push(BigMenuActionItem::new(
+                track_label(track),
+                format!("sub.{action}"),
+            ));
         }
-        self.subtitle_menu_button.set_menu_model(Some(&sub_menu));
-        if let Some(popover) = self.subtitle_menu_button.popover() {
-            popover.insert_action_group("sub", Some(&sub_actions));
-        }
+        populate_flat_action_popover(
+            &self.subtitle_menu_popover,
+            &self.subtitle_menu_button,
+            &subtitle_items,
+        );
+        self.subtitle_menu_popover
+            .insert_action_group("sub", Some(&sub_actions));
 
-        let audio_menu = gio::Menu::new();
         let audio_actions = gio::SimpleActionGroup::new();
+        let mut audio_items = Vec::new();
         for track in tracks.iter().filter(|t| t.track_type == "audio") {
             let action = format!("select-{}", track.id);
             install_track_action(&audio_actions, &action, &self.mpv, track.id, false);
-            audio_menu.append(Some(&track_label(track)), Some(&format!("audio.{action}")));
+            audio_items.push(BigMenuActionItem::new(
+                track_label(track),
+                format!("audio.{action}"),
+            ));
         }
-        self.audio_track_menu_button
-            .set_menu_model(Some(&audio_menu));
-        if let Some(popover) = self.audio_track_menu_button.popover() {
-            popover.insert_action_group("audio", Some(&audio_actions));
-        }
+        populate_flat_action_popover(
+            &self.audio_track_menu_popover,
+            &self.audio_track_menu_button,
+            &audio_items,
+        );
+        self.audio_track_menu_popover
+            .insert_action_group("audio", Some(&audio_actions));
     }
 }
 

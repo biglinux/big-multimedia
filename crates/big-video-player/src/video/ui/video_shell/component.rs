@@ -11,10 +11,11 @@ use super::*;
 #[cfg(test)]
 use big_relm4_components::layout::hamburger_menu::build_flat_menu_model;
 use big_relm4_components::layout::hamburger_menu::{
-    build_hamburger_menu_button, BigHamburgerMenuSpec, BigMenuActionItem,
+    build_flat_action_popover_button, BigHamburgerMenuSpec, BigMenuActionItem,
 };
 use big_relm4_components::layout::media_window::{
-    BigMediaChrome, BigMediaMenuSpec, BigMediaSidebarShell, BigMediaSidebarSpec,
+    BigMediaChrome, BigMediaMenuSpec, BigMediaOverlayStack, BigMediaSidebarShell,
+    BigMediaSidebarSpec,
 };
 
 impl Component for VideoShell {
@@ -127,14 +128,9 @@ impl Component for VideoShell {
 
         let gl_area = gtk::GLArea::new();
 
-        let main_overlay = gtk::Overlay::builder()
-            .hexpand(true)
-            .vexpand(true)
-            .child(&video_bg)
-            .build();
-        main_overlay.add_overlay(&gl_area);
-        main_overlay.set_clip_overlay(&gl_area, true);
-        main_overlay.set_measure_overlay(&gl_area, false);
+        let media_stack = BigMediaOverlayStack::new(&video_bg);
+        let main_overlay = media_stack.overlay().clone();
+        media_stack.add_clipped_media_layer(&gl_area);
 
         // Software (no-GL) video surface: hidden until the GL render context
         // fails to come up (headless software compositor, GL-less VM). The SW
@@ -145,9 +141,7 @@ impl Component for VideoShell {
             .vexpand(true)
             .visible(false)
             .build();
-        main_overlay.add_overlay(&sw_picture);
-        main_overlay.set_clip_overlay(&sw_picture, true);
-        main_overlay.set_measure_overlay(&sw_picture, false);
+        media_stack.add_clipped_media_layer(&sw_picture);
 
         let chrome = BigMediaChrome::new(
             BigMediaMenuSpec {
@@ -209,8 +203,7 @@ impl Component for VideoShell {
             None
         } else {
             let welcome = build_welcome_screen(&sender);
-            main_overlay.add_overlay(&welcome);
-            main_overlay.set_measure_overlay(&welcome, false);
+            media_stack.add_floating_overlay(&welcome);
             Some(welcome)
         };
 
@@ -227,8 +220,7 @@ impl Component for VideoShell {
                 .height_request(48)
                 .build(),
         );
-        main_overlay.add_overlay(&buffering_overlay);
-        main_overlay.set_measure_overlay(&buffering_overlay, false);
+        media_stack.add_floating_overlay(&buffering_overlay);
 
         // Drag-and-drop a file onto the window → open it (old `setup_drag_drop`).
         {
@@ -268,15 +260,17 @@ impl Component for VideoShell {
             .update_property(&[gtk::accessible::Property::Label(&i18n("Keep Above"))]);
         keep_above_toggle_button.connect_toggled(|_button| toggle_keep_above());
 
-        // Open menu-button: real GtkMenuButton with explicit menu-item rows so
-        // AT-SPI exposes named, activatable actions.
+        // Open popover button: a real GtkButton exposes AT-SPI DoAction while
+        // the popover rows keep named, activatable file-opening actions.
         let open_label = i18n("Open");
-        let open_menu_button = build_hamburger_menu_button(
+        let open_popover_button = build_flat_action_popover_button(
             &BigHamburgerMenuSpec::new(open_label)
                 .icon_name("document-open-symbolic")
                 .css_classes(["osd-btn"])
                 .items(open_menu_items()),
         );
+        let open_menu_button = open_popover_button.button().clone();
+        let open_menu_popover = open_popover_button.popover().clone();
 
         // Two separate sidebar entry points: Files (folder browser) and Playlist
         // (the play queue). Each reveals the sidebar in its mode; clicking the
@@ -378,12 +372,7 @@ impl Component for VideoShell {
             header_revealer: header_revealer.clone(),
             controls_revealer: controls_revealer.clone(),
             main_overlay: main_overlay.clone(),
-            header_menu_buttons: {
-                let mut buttons = vec![open_menu_button.clone()];
-                buttons.extend(controls.model().track_menu_buttons());
-                buttons
-            },
-            header_popovers: vec![chrome.menu_popover().clone()],
+            header_popovers: vec![chrome.menu_popover().clone(), open_menu_popover],
             controls_popovers: controls.model().popovers(),
             is_paused: Cell::new(false),
             is_welcome_visible: Cell::new(!is_background),
@@ -817,7 +806,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn open_menu_uses_native_gmenu_actions() {
+    fn open_menu_uses_flat_action_items() {
         assert_menu_has_actions(
             &build_open_menu_model(),
             &[

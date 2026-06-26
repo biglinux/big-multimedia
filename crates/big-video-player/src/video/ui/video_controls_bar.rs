@@ -6,7 +6,7 @@
 //!   • center box:
 //!       START  = volume / speed / voice hover popovers (shared builders)
 //!       CENTER = previous · play/pause · next
-//!       END    = subtitle MenuButton · audio-track MenuButton · fullscreen
+//!       END    = subtitle popover button · audio-track popover button · fullscreen
 //!
 //! Push-model Component: buttons/scrub emit typed `VideoControlsBarOutput`
 //! intents; the shell owns mpv/settings and pushes display state back via
@@ -121,8 +121,10 @@ pub struct VideoControlsBar {
     play_button: gtk::Button,
     previous_button: gtk::Button,
     next_button: gtk::Button,
-    subtitle_menu_button: gtk::MenuButton,
-    audio_track_menu_button: gtk::MenuButton,
+    subtitle_menu_button: gtk::Button,
+    subtitle_menu_popover: gtk::Popover,
+    audio_track_menu_button: gtk::Button,
+    audio_track_menu_popover: gtk::Popover,
     /// Guard so programmatic scrub updates do not echo as user seek intents.
     suppress_seek: Rc<std::cell::Cell<bool>>,
     /// Live mpv handle shared with the popover callbacks (for track menus).
@@ -299,28 +301,23 @@ impl Component for VideoControlsBar {
         let (controls_center, previous_button, play_button, next_button) = build_center_box();
         center.set_center_widget(Some(&controls_center));
 
-        let (
-            end_box,
-            export_menu_button,
-            subtitle_menu_button,
-            audio_track_menu_button,
-            fullscreen_button,
-        ) = build_end_box();
-        center.set_end_widget(Some(&end_box));
+        let end_widgets = build_end_box();
+        center.set_end_widget(Some(&end_widgets.end_box));
         let button_layout = ButtonLayoutWidgets {
             start_zone: start_box,
             center_zone: controls_center.clone(),
-            end_zone: end_box,
+            end_zone: end_widgets.end_box,
             volume_box,
             speed_box,
             voice_box,
             previous_button: previous_button.clone(),
             play_button: play_button.clone(),
             next_button: next_button.clone(),
-            export_menu_button,
-            subtitle_menu_button: subtitle_menu_button.clone(),
-            audio_track_menu_button: audio_track_menu_button.clone(),
-            fullscreen_button: fullscreen_button.clone(),
+            export_menu_button: end_widgets.export_menu_button,
+            export_menu_popover: end_widgets.export_menu_popover,
+            subtitle_menu_button: end_widgets.subtitle_menu_button.clone(),
+            audio_track_menu_button: end_widgets.audio_track_menu_button.clone(),
+            fullscreen_button: end_widgets.fullscreen_button.clone(),
         };
 
         // Trim controls = an EXTRA row above the transport (revealed in trim mode).
@@ -340,7 +337,7 @@ impl Component for VideoControlsBar {
             &previous_button,
             &play_button,
             &next_button,
-            &fullscreen_button,
+            &end_widgets.fullscreen_button,
             &suppress_seek,
         );
 
@@ -352,8 +349,10 @@ impl Component for VideoControlsBar {
             play_button,
             previous_button,
             next_button,
-            subtitle_menu_button,
-            audio_track_menu_button,
+            subtitle_menu_button: end_widgets.subtitle_menu_button,
+            subtitle_menu_popover: end_widgets.subtitle_menu_popover,
+            audio_track_menu_button: end_widgets.audio_track_menu_button,
+            audio_track_menu_popover: end_widgets.audio_track_menu_popover,
             suppress_seek,
             mpv: init.mpv,
             hover_popovers,
@@ -432,23 +431,17 @@ impl Component for VideoControlsBar {
 }
 
 impl VideoControlsBar {
-    /// The hover popovers (volume / speed / voice) the OSD auto-hide must
-    /// inspect so it does not dismiss one mid-hover. Long-lived (built once),
-    /// safe to clone for the shell's `OsdState`.
+    /// Popovers the OSD auto-hide must inspect so it does not dismiss one
+    /// mid-hover or mid-menu-pick. Long-lived (built once), safe to clone for
+    /// the shell's `OsdState`.
     pub fn popovers(&self) -> Vec<gtk::Popover> {
-        self.hover_popovers.clone()
-    }
-
-    /// OSD menu buttons whose open popover must keep the OSD shown — else the
-    /// auto-hide timer dismisses the menu mid-pick, so the selector appears to
-    /// "only work while paused" (paused keeps the OSD shown). Mirrors the old
-    /// `hide_controls` bail on active menu buttons.
-    pub fn track_menu_buttons(&self) -> Vec<gtk::MenuButton> {
-        vec![
-            self.button_layout.export_menu_button.clone(),
-            self.subtitle_menu_button.clone(),
-            self.audio_track_menu_button.clone(),
-        ]
+        let mut popovers = self.hover_popovers.clone();
+        popovers.extend([
+            self.button_layout.export_menu_popover.clone(),
+            self.subtitle_menu_popover.clone(),
+            self.audio_track_menu_popover.clone(),
+        ]);
+        popovers
     }
 
     pub(crate) fn button_layout(&self) -> ButtonLayoutWidgets {

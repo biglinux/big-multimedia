@@ -5,7 +5,10 @@ use big_media_components::player_chrome::{
     setup_exclusive_hover_popover_group,
 };
 use big_relm4_components::feedback::tooltip;
-use big_relm4_components::layout::hamburger_menu::{set_flat_action_popover, BigMenuActionItem};
+use big_relm4_components::layout::hamburger_menu::{
+    attach_popover_to_button, build_flat_action_popover_button, BigHamburgerMenuSpec,
+    BigMenuActionItem,
+};
 
 #[cfg(test)]
 use big_relm4_components::layout::hamburger_menu::{build_flat_menu_model, menu_action_names};
@@ -21,9 +24,10 @@ pub(crate) struct ButtonLayoutWidgets {
     pub(super) previous_button: gtk::Button,
     pub(super) play_button: gtk::Button,
     pub(super) next_button: gtk::Button,
-    pub(super) export_menu_button: gtk::MenuButton,
-    pub(super) subtitle_menu_button: gtk::MenuButton,
-    pub(super) audio_track_menu_button: gtk::MenuButton,
+    pub(super) export_menu_button: gtk::Button,
+    pub(super) export_menu_popover: gtk::Popover,
+    pub(super) subtitle_menu_button: gtk::Button,
+    pub(super) audio_track_menu_button: gtk::Button,
     pub(super) fullscreen_button: gtk::Button,
 }
 
@@ -362,15 +366,19 @@ pub(super) fn build_center_box() -> (gtk::Box, gtk::Button, gtk::Button, gtk::Bu
     (center, previous_button, play_button, next_button)
 }
 
-/// END box: edit-export MenuButton · subtitle MenuButton · audio-track
-/// MenuButton · fullscreen.
-pub(super) fn build_end_box() -> (
-    gtk::Box,
-    gtk::MenuButton,
-    gtk::MenuButton,
-    gtk::MenuButton,
-    gtk::Button,
-) {
+/// END box: edit-export popover · subtitle popover · audio-track popover · fullscreen.
+pub(super) struct EndBoxWidgets {
+    pub(super) end_box: gtk::Box,
+    pub(super) export_menu_button: gtk::Button,
+    pub(super) export_menu_popover: gtk::Popover,
+    pub(super) subtitle_menu_button: gtk::Button,
+    pub(super) subtitle_menu_popover: gtk::Popover,
+    pub(super) audio_track_menu_button: gtk::Button,
+    pub(super) audio_track_menu_popover: gtk::Popover,
+    pub(super) fullscreen_button: gtk::Button,
+}
+
+pub(super) fn build_end_box() -> EndBoxWidgets {
     let end_box = gtk::Box::builder()
         .orientation(gtk::Orientation::Horizontal)
         .spacing(6)
@@ -380,24 +388,33 @@ pub(super) fn build_end_box() -> (
     // Edit & Export: cut / extract audio / convert — moved out of the hamburger
     // menu to a footer button next to the subtitle control. Items target the same
     // `win.*` window actions, resolved against the player window's action group.
-    let export_menu_button =
-        tooltip::icon_menu_button("edit-cut-symbolic", &i18n("Edit & Export"), &["osd-btn"]);
-    export_menu_button.set_direction(gtk::ArrowType::Up);
-    set_flat_action_popover(&export_menu_button, &export_menu_items());
+    let export_menu = build_flat_action_popover_button(
+        &BigHamburgerMenuSpec::new(i18n("Edit & Export"))
+            .icon_name("edit-cut-symbolic")
+            .css_classes(["osd-btn"])
+            .items(export_menu_items()),
+    );
+    let export_menu_button = export_menu.button().clone();
+    let export_menu_popover = export_menu.popover().clone();
+    export_menu_popover.set_position(gtk::PositionType::Top);
 
-    let subtitle_menu_button = tooltip::icon_menu_button(
+    let subtitle_menu_button = tooltip::icon_button(
         "media-view-subtitles-symbolic",
         &i18n("Subtitles"),
         &["osd-btn"],
     );
-    subtitle_menu_button.set_direction(gtk::ArrowType::Up);
+    let subtitle_menu_popover = gtk::Popover::new();
+    subtitle_menu_popover.set_position(gtk::PositionType::Top);
+    attach_popover_to_button(&subtitle_menu_button, &subtitle_menu_popover);
 
-    let audio_track_menu_button = tooltip::icon_menu_button(
+    let audio_track_menu_button = tooltip::icon_button(
         "audio-x-generic-symbolic",
         &i18n("Audio Track"),
         &["osd-btn"],
     );
-    audio_track_menu_button.set_direction(gtk::ArrowType::Up);
+    let audio_track_menu_popover = gtk::Popover::new();
+    audio_track_menu_popover.set_position(gtk::PositionType::Top);
+    attach_popover_to_button(&audio_track_menu_button, &audio_track_menu_popover);
 
     let fullscreen_button = osd_button("view-fullscreen-symbolic", &i18n("Fullscreen"));
 
@@ -405,13 +422,16 @@ pub(super) fn build_end_box() -> (
     end_box.append(&subtitle_menu_button);
     end_box.append(&audio_track_menu_button);
     end_box.append(&fullscreen_button);
-    (
+    EndBoxWidgets {
         end_box,
         export_menu_button,
+        export_menu_popover,
         subtitle_menu_button,
+        subtitle_menu_popover,
         audio_track_menu_button,
+        audio_track_menu_popover,
         fullscreen_button,
-    )
+    }
 }
 
 /// The Edit & Export menu (cut · extract audio · convert), targeting the
