@@ -129,8 +129,8 @@ pub(super) fn build_detail_columns(
 /// unbind (recycled-row leak guard).
 fn append_art_column(column_view: &gtk::ColumnView, art_cache: &ArtCache) {
     let factory = gtk::SignalListItemFactory::new();
-    factory.connect_setup(|_, item| {
-        let item = item.downcast_ref::<gtk::ListItem>().unwrap();
+    factory.connect_setup(|_, list_item| {
+        let list_item = list_item.downcast_ref::<gtk::ListItem>().unwrap();
         let picture = gtk::Picture::builder()
             .content_fit(gtk::ContentFit::Cover)
             .width_request(36)
@@ -138,14 +138,17 @@ fn append_art_column(column_view: &gtk::ColumnView, art_cache: &ArtCache) {
             .overflow(gtk::Overflow::Hidden)
             .build();
         picture.add_css_class("album-art-cell");
-        item.set_child(Some(&picture));
+        list_item.set_child(Some(&picture));
     });
     let cache = art_cache.clone();
-    factory.connect_bind(move |_, item| {
-        let item = item.downcast_ref::<gtk::ListItem>().unwrap();
-        let obj = item.item().and_downcast::<glib::BoxedAnyObject>().unwrap();
-        let track = obj.borrow::<Track>();
-        let picture = item.child().and_downcast::<gtk::Picture>().unwrap();
+    factory.connect_bind(move |_, list_item| {
+        let list_item = list_item.downcast_ref::<gtk::ListItem>().unwrap();
+        let boxed_track = list_item
+            .item()
+            .and_downcast::<glib::BoxedAnyObject>()
+            .unwrap();
+        let track = boxed_track.borrow::<Track>();
+        let picture = list_item.child().and_downcast::<gtk::Picture>().unwrap();
         picture.set_paintable(gdk::Paintable::NONE);
 
         let hash = match track.art_hash {
@@ -172,9 +175,9 @@ fn append_art_column(column_view: &gtk::ColumnView, art_cache: &ArtCache) {
             },
         );
     });
-    factory.connect_unbind(|_, item| {
-        let item = item.downcast_ref::<gtk::ListItem>().unwrap();
-        if let Some(picture) = item.child().and_downcast::<gtk::Picture>() {
+    factory.connect_unbind(|_, list_item| {
+        let list_item = list_item.downcast_ref::<gtk::ListItem>().unwrap();
+        if let Some(picture) = list_item.child().and_downcast::<gtk::Picture>() {
             picture.set_paintable(gdk::Paintable::NONE);
         }
     });
@@ -190,21 +193,24 @@ fn append_art_column(column_view: &gtk::ColumnView, art_cache: &ArtCache) {
 /// Track-number column (from tag, not list position); hidden by default.
 fn append_track_number_column(column_view: &gtk::ColumnView) {
     let factory = gtk::SignalListItemFactory::new();
-    factory.connect_setup(|_, item| {
-        let item = item.downcast_ref::<gtk::ListItem>().unwrap();
+    factory.connect_setup(|_, list_item| {
+        let list_item = list_item.downcast_ref::<gtk::ListItem>().unwrap();
         let label = gtk::Label::builder()
             .xalign(1.0)
             .margin_start(4)
             .margin_end(4)
             .build();
         label.add_css_class("numeric");
-        item.set_child(Some(&label));
+        list_item.set_child(Some(&label));
     });
-    factory.connect_bind(|_, item| {
-        let item = item.downcast_ref::<gtk::ListItem>().unwrap();
-        let obj = item.item().and_downcast::<glib::BoxedAnyObject>().unwrap();
-        let track = obj.borrow::<Track>();
-        let label = item.child().and_downcast::<gtk::Label>().unwrap();
+    factory.connect_bind(|_, list_item| {
+        let list_item = list_item.downcast_ref::<gtk::ListItem>().unwrap();
+        let boxed_track = list_item
+            .item()
+            .and_downcast::<glib::BoxedAnyObject>()
+            .unwrap();
+        let track = boxed_track.borrow::<Track>();
+        let label = list_item.child().and_downcast::<gtk::Label>().unwrap();
         label.set_label(
             &track
                 .track_number
@@ -248,8 +254,8 @@ fn build_title_column(
     text_sorter: fn(fn(&Track) -> String) -> gtk::CustomSorter,
 ) {
     let factory = gtk::SignalListItemFactory::new();
-    factory.connect_setup(|_, item| {
-        let item = item.downcast_ref::<gtk::ListItem>().unwrap();
+    factory.connect_setup(|_, list_item| {
+        let list_item = list_item.downcast_ref::<gtk::ListItem>().unwrap();
         let hbox = gtk::Box::builder()
             .orientation(gtk::Orientation::Horizontal)
             .spacing(4)
@@ -270,21 +276,21 @@ fn build_title_column(
             .build();
         hbox.append(&icon);
         hbox.append(&label);
-        item.set_child(Some(&hbox));
+        list_item.set_child(Some(&hbox));
     });
     let cur_bind = current_path.clone();
     let ind_bind = indicators.clone();
-    factory.connect_bind(move |_, item| {
-        let item = item.downcast_ref::<gtk::ListItem>().unwrap();
-        let obj = item.item().unwrap();
-        let track = obj
-            .downcast_ref::<glib::BoxedAnyObject>()
-            .unwrap()
-            .borrow::<Track>();
-        let hbox = item.child().and_downcast::<gtk::Box>().unwrap();
+    factory.connect_bind(move |_, list_item| {
+        let list_item = list_item.downcast_ref::<gtk::ListItem>().unwrap();
+        let boxed_track = list_item
+            .item()
+            .and_downcast::<glib::BoxedAnyObject>()
+            .unwrap();
+        let track = boxed_track.borrow::<Track>();
+        let hbox = list_item.child().and_downcast::<gtk::Box>().unwrap();
         // SAFETY: read by the right-click hit-test (L3) to resolve a row index.
         unsafe {
-            hbox.set_data("vis-pos", item.position());
+            hbox.set_data("vis-pos", list_item.position());
         }
         big_relm4_components::feedback::tooltip::set(&hbox, &track.file_path);
         let Some(icon) = hbox.first_child().and_downcast::<gtk::Image>() else {
@@ -301,9 +307,9 @@ fn build_title_column(
             .push((track.file_path.clone(), icon, label));
     });
     let ind_unbind = indicators.clone();
-    factory.connect_unbind(move |_, item| {
-        let item = item.downcast_ref::<gtk::ListItem>().unwrap();
-        let hbox = item.child().and_downcast::<gtk::Box>().unwrap();
+    factory.connect_unbind(move |_, list_item| {
+        let list_item = list_item.downcast_ref::<gtk::ListItem>().unwrap();
+        let hbox = list_item.child().and_downcast::<gtk::Box>().unwrap();
         if let Some(icon) = hbox.first_child().and_downcast::<gtk::Image>() {
             ind_unbind.borrow_mut().retain(|(_, img, _)| img != &icon);
         }
@@ -322,8 +328,8 @@ fn build_title_column(
 /// Rating column: 5 stars, click → optimistic update + `RateTrack` intent.
 fn append_rating_column(column_view: &gtk::ColumnView, sender: &ComponentSender<LibraryPanel>) {
     let factory = gtk::SignalListItemFactory::new();
-    factory.connect_setup(|_, item| {
-        let item = item.downcast_ref::<gtk::ListItem>().unwrap();
+    factory.connect_setup(|_, list_item| {
+        let list_item = list_item.downcast_ref::<gtk::ListItem>().unwrap();
         let hbox = gtk::Box::builder()
             .orientation(gtk::Orientation::Horizontal)
             .spacing(0)
@@ -338,38 +344,41 @@ fn append_rating_column(column_view: &gtk::ColumnView, sender: &ComponentSender<
             );
         }
         hbox.update_property(&[gtk::accessible::Property::Label(&i18n("Rating"))]);
-        item.set_child(Some(&hbox));
+        list_item.set_child(Some(&hbox));
     });
     let out = sender.clone();
-    factory.connect_bind(move |_, item| {
-        let item = item.downcast_ref::<gtk::ListItem>().unwrap();
-        let obj = item.item().and_downcast::<glib::BoxedAnyObject>().unwrap();
-        let track = obj.borrow::<Track>();
+    factory.connect_bind(move |_, list_item| {
+        let list_item = list_item.downcast_ref::<gtk::ListItem>().unwrap();
+        let boxed_track = list_item
+            .item()
+            .and_downcast::<glib::BoxedAnyObject>()
+            .unwrap();
+        let track = boxed_track.borrow::<Track>();
         let track_id = track.id;
-        let hbox = item.child().and_downcast::<gtk::Box>().unwrap();
+        let hbox = list_item.child().and_downcast::<gtk::Box>().unwrap();
         update_star_icons(&hbox, track.rating);
 
         let hbox_ref = hbox.downgrade();
         let out = out.clone();
         let gesture = gtk::GestureClick::new();
-        gesture.connect_released(move |gest, _, x, _| {
+        gesture.connect_released(move |gesture, _, x, _| {
             let Some(hbox) = hbox_ref.upgrade() else {
                 return;
             };
-            let star_w = f64::from(hbox.width()) / 5.0;
-            let clicked = ((x / star_w) as i32 + 1).clamp(1, 5);
-            update_star_icons(&hbox, clicked);
+            let star_width = f64::from(hbox.width()) / 5.0;
+            let clicked_rating = ((x / star_width) as i32 + 1).clamp(1, 5);
+            update_star_icons(&hbox, clicked_rating);
             let _ = out.output(LibraryPanelOutput::RateTrack {
                 id: track_id,
-                rating: clicked,
+                rating: clicked_rating,
             });
-            gest.set_state(gtk::EventSequenceState::Claimed);
+            gesture.set_state(gtk::EventSequenceState::Claimed);
         });
         hbox.add_controller(gesture);
     });
-    factory.connect_unbind(|_, item| {
-        let item = item.downcast_ref::<gtk::ListItem>().unwrap();
-        if let Some(hbox) = item.child().and_downcast::<gtk::Box>() {
+    factory.connect_unbind(|_, list_item| {
+        let list_item = list_item.downcast_ref::<gtk::ListItem>().unwrap();
+        if let Some(hbox) = list_item.child().and_downcast::<gtk::Box>() {
             unbind_click_gestures(&hbox);
         }
     });
@@ -388,43 +397,48 @@ fn append_rating_column(column_view: &gtk::ColumnView, sender: &ComponentSender<
 /// Trailing "add to playlist" button column → `ShowAddToPlaylist` intent.
 fn append_add_column(column_view: &gtk::ColumnView, sender: &ComponentSender<LibraryPanel>) {
     let factory = gtk::SignalListItemFactory::new();
-    factory.connect_setup(|_, item| {
-        let item = item.downcast_ref::<gtk::ListItem>().unwrap();
-        let btn = gtk::Button::builder()
+    factory.connect_setup(|_, list_item| {
+        let list_item = list_item.downcast_ref::<gtk::ListItem>().unwrap();
+        let add_button = gtk::Button::builder()
             .icon_name("list-add-symbolic")
             .css_classes(["flat", "circular"])
             .valign(gtk::Align::Center)
             .halign(gtk::Align::Center)
             .build();
-        btn.update_property(&[gtk::accessible::Property::Label(&i18n(
+        add_button.update_property(&[gtk::accessible::Property::Label(&i18n(
             "Add track to playlist",
         ))]);
-        btn.set_opacity(0.0);
-        item.set_child(Some(&btn));
+        add_button.set_opacity(0.0);
+        list_item.set_child(Some(&add_button));
     });
     let out = sender.clone();
-    factory.connect_bind(move |_, item| {
-        let item = item.downcast_ref::<gtk::ListItem>().unwrap();
-        let obj = item.item().and_downcast::<glib::BoxedAnyObject>().unwrap();
-        let track = obj.borrow::<Track>().clone();
-        let btn = item.child().and_downcast::<gtk::Button>().unwrap();
+    factory.connect_bind(move |_, list_item| {
+        let list_item = list_item.downcast_ref::<gtk::ListItem>().unwrap();
+        let boxed_track = list_item
+            .item()
+            .and_downcast::<glib::BoxedAnyObject>()
+            .unwrap();
+        let track = boxed_track.borrow::<Track>().clone();
+        let add_button = list_item.child().and_downcast::<gtk::Button>().unwrap();
         let out = out.clone();
-        let handler = btn.connect_clicked(move |_| {
+        let add_button_click_signal_id = add_button.connect_clicked(move |_| {
             let _ = out.output(LibraryPanelOutput::ShowAddToPlaylist(track.clone()));
         });
-        // SAFETY: stash the handler id so unbind disconnects the recycled row's
+        // SAFETY: stash the click signal id so unbind disconnects the recycled row's
         // stale closure.
         unsafe {
-            btn.set_data("handler-id", handler);
+            add_button.set_data("add-button-click-signal-id", add_button_click_signal_id);
         }
     });
-    factory.connect_unbind(|_, item| {
-        let item = item.downcast_ref::<gtk::ListItem>().unwrap();
-        if let Some(btn) = item.child().and_downcast::<gtk::Button>() {
+    factory.connect_unbind(|_, list_item| {
+        let list_item = list_item.downcast_ref::<gtk::ListItem>().unwrap();
+        if let Some(add_button) = list_item.child().and_downcast::<gtk::Button>() {
             // SAFETY: matches the id stashed in bind above.
             unsafe {
-                if let Some(id) = btn.steal_data::<glib::SignalHandlerId>("handler-id") {
-                    btn.disconnect(id);
+                if let Some(id) =
+                    add_button.steal_data::<glib::SignalHandlerId>("add-button-click-signal-id")
+                {
+                    add_button.disconnect(id);
                 }
             }
         }
