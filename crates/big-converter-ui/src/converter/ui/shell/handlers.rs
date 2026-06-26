@@ -31,7 +31,7 @@ use big_media_runtime::editor::audio_edit_page::AudioEditorInput;
 use big_media_runtime::editor::edit_page::{VideoEditResult, VideoEditorInput};
 
 use super::setup::to_queue_entry;
-use super::{ConverterShell, ShellMsg};
+use super::{ConverterShell, ShellMessage};
 
 #[derive(Default)]
 struct DaemonQueueEntryApplyResult {
@@ -242,7 +242,7 @@ impl ConverterShell {
         let submit_sender = sender.clone();
         big_relm4_components::task::spawn_blocking_result(
             move || crate::converter::daemon::submit_conversion(request),
-            move |result| submit_sender.input(ShellMsg::DaemonSubmitFinished(result)),
+            move |result| submit_sender.input(ShellMessage::DaemonSubmitFinished(result)),
         );
     }
 
@@ -450,7 +450,7 @@ impl ConverterShell {
         let snapshot_sender = sender.clone();
         big_relm4_components::task::spawn_blocking_result(
             move || crate::converter::daemon::attach_conversion(job_id),
-            move |result| snapshot_sender.input(ShellMsg::DaemonSnapshot(result)),
+            move |result| snapshot_sender.input(ShellMessage::DaemonSnapshot(result)),
         );
     }
 
@@ -894,7 +894,7 @@ fn cancel_daemon_job(sender: &ComponentSender<ConverterShell>, job_id: String) {
     let cancel_sender = sender.clone();
     big_relm4_components::task::spawn_blocking_result(
         move || crate::converter::daemon::cancel_conversion(job_id),
-        move |result| cancel_sender.input(ShellMsg::DaemonCancelFinished(result)),
+        move |result| cancel_sender.input(ShellMessage::DaemonCancelFinished(result)),
     );
 }
 

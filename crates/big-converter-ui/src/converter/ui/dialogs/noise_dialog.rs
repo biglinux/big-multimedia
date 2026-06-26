@@ -10,17 +10,21 @@ use crate::i18n::i18n;
 
 /// Present the audio-cleanup dialog with the equalizer page enabled.
 pub fn show(parent: &impl IsA<gtk::Widget>, sidebar: &Sidebar) {
-    show_impl(parent, sidebar, true);
+    show_audio_cleanup_dialog_for_sidebar(parent, sidebar, true);
 }
 
 /// Present the audio-cleanup dialog without the equalizer page —
 /// used when the equalizer is reachable through its own dedicated
 /// dialog instead.
 pub fn show_without_equalizer(parent: &impl IsA<gtk::Widget>, sidebar: &Sidebar) {
-    show_impl(parent, sidebar, false);
+    show_audio_cleanup_dialog_for_sidebar(parent, sidebar, false);
 }
 
-fn show_impl(parent: &impl IsA<gtk::Widget>, sidebar: &Sidebar, include_equalizer: bool) {
+fn show_audio_cleanup_dialog_for_sidebar(
+    parent: &impl IsA<gtk::Widget>,
+    sidebar: &Sidebar,
+    include_equalizer: bool,
+) {
     show_audio_cleanup_dialog(
         parent,
         BigAudioCleanupDialogText::translated(i18n),

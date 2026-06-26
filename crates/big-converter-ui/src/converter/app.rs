@@ -90,7 +90,7 @@ mod imp {
             if !paths.is_empty() {
                 crate::converter::ui::shell::send_to_shell(
                     self.mode.get(),
-                    crate::converter::ui::shell::ShellMsg::AddFiles(paths),
+                    crate::converter::ui::shell::ShellMessage::AddFiles(paths),
                 );
             }
         }

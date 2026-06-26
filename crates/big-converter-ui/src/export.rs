@@ -348,11 +348,15 @@ mod tests {
             &[(2.0, 5.0), (10.0, 12.5)],
         );
         assert!(!output.as_os_str().is_empty());
-        let item = queue.items().iter().find(|i| i.id == id).expect("item");
-        assert_eq!(item.segments.len(), 2);
-        assert_eq!(item.segments[0].start, Some(2.0));
-        assert_eq!(item.segments[1].end, Some(12.5));
-        assert_eq!(item.segment_mode, SegmentOutputMode::Join);
+        let queue_entry = queue
+            .items()
+            .iter()
+            .find(|queue_entry| queue_entry.id == id)
+            .expect("queue entry");
+        assert_eq!(queue_entry.segments.len(), 2);
+        assert_eq!(queue_entry.segments[0].start, Some(2.0));
+        assert_eq!(queue_entry.segments[1].end, Some(12.5));
+        assert_eq!(queue_entry.segment_mode, SegmentOutputMode::Join);
     }
 
     #[test]

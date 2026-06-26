@@ -12,7 +12,7 @@ use big_media_components::converter::queue::BigConversionQueueEntry;
 
 use crate::converter::app::ConverterMode;
 
-use super::{ConverterShell, ShellMsg};
+use super::{ConverterShell, ShellMessage};
 
 pub(super) fn to_queue_entry(
     queue_item: &crate::converter::queue::QueueItem,
@@ -36,32 +36,32 @@ pub(super) fn install_shortcuts(
 
     let s = sender.clone();
     install_action(window, "add-files", move || {
-        s.input(ShellMsg::OpenFileChooser);
+        s.input(ShellMessage::OpenFileChooser);
     });
     app.set_accels_for_action("win.add-files", &["<Control>o"]);
 
     let s = sender.clone();
     install_action(window, "add-folder", move || {
-        s.input(ShellMsg::OpenFolderChooser);
+        s.input(ShellMessage::OpenFolderChooser);
     });
     app.set_accels_for_action("win.add-folder", &["<Control><Shift>o"]);
 
     let s = sender.clone();
     install_action(window, "convert", move || {
-        s.input(ShellMsg::StartConversion);
+        s.input(ShellMessage::StartConversion);
     });
     app.set_accels_for_action("win.convert", &["<Control>Return"]);
 
     let s = sender.clone();
     install_action(window, "clear-queue", move || {
-        s.input(ShellMsg::ClearQueueRequested);
+        s.input(ShellMessage::ClearQueueRequested);
     });
     app.set_accels_for_action("win.clear-queue", &["<Control>Delete"]);
 
     if mode.is_audio() {
         let s = sender.clone();
         install_action(window, "play-pause", move || {
-            s.input(ShellMsg::AudioTogglePlayPause);
+            s.input(ShellMessage::AudioTogglePlayPause);
         });
         app.set_accels_for_action("win.play-pause", &["space"]);
     }
@@ -87,7 +87,7 @@ pub(super) fn install_file_drop(
             },
             move |paths| {
                 if !paths.is_empty() {
-                    s.input(ShellMsg::AddFiles(paths));
+                    s.input(ShellMessage::AddFiles(paths));
                 }
             },
         );

@@ -21,7 +21,7 @@ use crate::converter::ui::sidebar::ConverterSidebarInput;
 use crate::i18n::i18n;
 
 use super::setup::collect_media_files;
-use super::{ConverterShell, ShellMsg};
+use super::{ConverterShell, ShellMessage};
 
 impl ConverterShell {
     pub(super) fn show_output_dir_chooser(&self) {
@@ -52,7 +52,7 @@ impl ConverterShell {
         let s = sender.clone();
         dialog.connect_response(None, move |_, resp| {
             if resp == "clear" {
-                s.input(ShellMsg::ClearQueueConfirmed);
+                s.input(ShellMessage::ClearQueueConfirmed);
             }
         });
         dialog.present(Some(&self.window));
@@ -89,7 +89,7 @@ impl ConverterShell {
         let s = sender.clone();
         dialog.connect_response(None, move |_, resp| {
             if resp == "remove" {
-                s.input(ShellMsg::QueueRemoveConfirmed(item_id));
+                s.input(ShellMessage::QueueRemoveConfirmed(item_id));
             }
         });
         dialog.present(Some(&self.window));
@@ -127,7 +127,7 @@ impl ConverterShell {
                     log::error!("Failed to delete {}: {e}", path.display());
                 } else {
                     log::info!("Deleted {}", path.display());
-                    s.input(ShellMsg::QueueRemoveConfirmed(item_id));
+                    s.input(ShellMessage::QueueRemoveConfirmed(item_id));
                 }
             }
         });
@@ -153,7 +153,7 @@ impl ConverterShell {
                     true,
                 );
                 if dialog.choose_future(Some(&win)).await == "close" {
-                    s.input(ShellMsg::ConfirmedClose);
+                    s.input(ShellMessage::ConfirmedClose);
                 }
             });
             return;
@@ -199,7 +199,7 @@ pub(super) fn show_file_chooser(
                 st.flush();
             }
             if !paths.is_empty() {
-                s.input(ShellMsg::AddFiles(paths));
+                s.input(ShellMessage::AddFiles(paths));
             }
         });
 }
@@ -231,7 +231,7 @@ pub(super) fn show_folder_chooser(
                 },
                 move |paths| {
                     if !paths.is_empty() {
-                        s.input(ShellMsg::AddFiles(paths));
+                        s.input(ShellMessage::AddFiles(paths));
                     }
                 },
             );
@@ -308,7 +308,7 @@ pub(super) fn show_network_url_dialog(
                 let _ = result;
                 let file = gio::File::for_uri(&url);
                 if let Some(path) = file.path() {
-                    s2.input(ShellMsg::AddFiles(vec![path]));
+                    s2.input(ShellMessage::AddFiles(vec![path]));
                 }
             },
         );

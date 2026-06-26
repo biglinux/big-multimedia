@@ -3,7 +3,7 @@
 //! `ConverterShell` owns the `adw::ApplicationWindow`, the runtime
 //! [`ConversionQueue`]/settings/profiles/GPUs, and the six child Controllers
 //! (header, sidebar, queue, progress, video/audio editor). Every child `Output`
-//! is forwarded to [`ShellMsg`]; the shell holds no `Rc<RefCell<callback>>` and
+//! is forwarded to [`ShellMessage`]; the shell holds no `Rc<RefCell<callback>>` and
 //! no command sink. The 200 ms progress tick lives here and is torn down on drop.
 //!
 //! Built alongside the legacy `audio_converter::ConverterModel` until the F7
@@ -61,18 +61,18 @@ thread_local! {
     /// Main-thread handles to the running shells' inputs, keyed by binding
     /// and set at init so the
     /// [`Application`](crate::converter::app::Application) `open` handler can
-    /// deliver opened files. `ShellMsg` carries GTK objects (not `Send`), so
+    /// deliver opened files. `ShellMessage` carries GTK objects (not `Send`), so
     /// thread-local `Sender`s are used instead of a `MessageBroker` static.
     /// One slot per [`ConverterMode`]: the audio and video shells can run
     /// side by side in one host process.
-    static SHELL_INPUTS: std::cell::RefCell<Vec<(ConverterMode, relm4::Sender<ShellMsg>)>> =
+    static SHELL_INPUTS: std::cell::RefCell<Vec<(ConverterMode, relm4::Sender<ShellMessage>)>> =
         const { std::cell::RefCell::new(Vec::new()) };
 }
 
 /// Deliver a message to the running shell of the given binding from the main
 /// thread (used by the application `open` handler). No-op if that shell is
 /// not running yet.
-pub fn send_to_shell(mode: ConverterMode, message: ShellMsg) {
+pub fn send_to_shell(mode: ConverterMode, message: ShellMessage) {
     SHELL_INPUTS.with(|cell| {
         if let Some((_, sender)) = cell.borrow().iter().find(|(m, _)| *m == mode) {
             let _ = sender.send(message);
@@ -82,7 +82,7 @@ pub fn send_to_shell(mode: ConverterMode, message: ShellMsg) {
 
 /// Every user-driven event in the converter, routed through one Relm4 model.
 #[derive(Debug)]
-pub enum ShellMsg {
+pub enum ShellMessage {
     // ── files ────────────────────────────────────────────────────────
     /// Enqueue the given source files.
     AddFiles(Vec<PathBuf>),
@@ -239,7 +239,7 @@ impl Drop for ConverterShell {
 
 impl Component for ConverterShell {
     type Init = ConverterMode;
-    type Input = ShellMsg;
+    type Input = ShellMessage;
     type Output = ();
     type CommandOutput = ();
     type Root = adw::ApplicationWindow;
@@ -280,17 +280,17 @@ impl Component for ConverterShell {
             "Video Converter"
         })));
 
-        // ── child Controllers (Output → ShellMsg) ───────────────────────
+        // ── child Controllers (Output → ShellMessage) ───────────────────────
         let header = BigConverterHeader::builder()
             .launch(BigConverterHeaderText::translated(i18n))
             .forward(sender.input_sender(), |out| match out {
-                BigConverterHeaderOutput::Convert => ShellMsg::StartConversion,
-                BigConverterHeaderOutput::ClearQueue => ShellMsg::ClearQueueRequested,
-                BigConverterHeaderOutput::Cancel => ShellMsg::CancelConversion,
-                BigConverterHeaderOutput::RestoreDefaults => ShellMsg::RestoreDefaultsRequested,
-                BigConverterHeaderOutput::AddFiles => ShellMsg::OpenFileChooser,
-                BigConverterHeaderOutput::AddFolder => ShellMsg::OpenFolderChooser,
-                BigConverterHeaderOutput::AddNetwork => ShellMsg::OpenNetworkDialog,
+                BigConverterHeaderOutput::Convert => ShellMessage::StartConversion,
+                BigConverterHeaderOutput::ClearQueue => ShellMessage::ClearQueueRequested,
+                BigConverterHeaderOutput::Cancel => ShellMessage::CancelConversion,
+                BigConverterHeaderOutput::RestoreDefaults => ShellMessage::RestoreDefaultsRequested,
+                BigConverterHeaderOutput::AddFiles => ShellMessage::OpenFileChooser,
+                BigConverterHeaderOutput::AddFolder => ShellMessage::OpenFolderChooser,
+                BigConverterHeaderOutput::AddNetwork => ShellMessage::OpenNetworkDialog,
             });
 
         let sidebar = ConverterSidebar::builder()
@@ -299,23 +299,27 @@ impl Component for ConverterShell {
                 mode,
             })
             .forward(sender.input_sender(), |out| match out {
-                ConverterSidebarOutput::ParamsChanged(p) => ShellMsg::ParamsChanged(p),
-                ConverterSidebarOutput::OutputDirClicked => ShellMsg::ShowOutputDirChooser,
+                ConverterSidebarOutput::ParamsChanged(p) => ShellMessage::ParamsChanged(p),
+                ConverterSidebarOutput::OutputDirClicked => ShellMessage::ShowOutputDirChooser,
                 ConverterSidebarOutput::AudioPreviewChanged {
                     effects,
                     volume,
                     speed,
-                } => ShellMsg::AudioPreview {
+                } => ShellMessage::AudioPreview {
                     effects,
                     volume,
                     speed,
                 },
-                ConverterSidebarOutput::CutModeActive(active) => ShellMsg::CutModeActive(active),
-                ConverterSidebarOutput::AudioAdjustmentsReady { volume, speed } => {
-                    ShellMsg::BindAudioAdjustments { volume, speed }
+                ConverterSidebarOutput::CutModeActive(active) => {
+                    ShellMessage::CutModeActive(active)
                 }
-                ConverterSidebarOutput::RestoreDefaultRequested => ShellMsg::RestoreDefaultProfile,
-                ConverterSidebarOutput::FooterReady(footer) => ShellMsg::MountFooter(footer),
+                ConverterSidebarOutput::AudioAdjustmentsReady { volume, speed } => {
+                    ShellMessage::BindAudioAdjustments { volume, speed }
+                }
+                ConverterSidebarOutput::RestoreDefaultRequested => {
+                    ShellMessage::RestoreDefaultProfile
+                }
+                ConverterSidebarOutput::FooterReady(footer) => ShellMessage::MountFooter(footer),
             });
 
         let queue_mode = if mode.is_audio() {
@@ -327,36 +331,38 @@ impl Component for ConverterShell {
             BigConverterQueue::builder()
                 .launch(queue_mode)
                 .forward(sender.input_sender(), |out| match out {
-                    BigConverterQueueOutput::Remove(id) => ShellMsg::QueueRemoveRequested(id),
-                    BigConverterQueueOutput::OpenFolder(p) => ShellMsg::QueueOpenFolder(p),
-                    BigConverterQueueOutput::Metadata(id) => ShellMsg::QueueMetadata(id),
-                    BigConverterQueueOutput::DeleteDisk(id) => ShellMsg::QueueDeleteDisk(id),
-                    BigConverterQueueOutput::Play(p) => ShellMsg::QueuePlay(p),
-                    BigConverterQueueOutput::Select(p) => ShellMsg::QueueSelect(p),
-                    BigConverterQueueOutput::Edit(p) => ShellMsg::QueueEdit(p),
-                    BigConverterQueueOutput::Reorder(o) => ShellMsg::QueueReorder(o),
+                    BigConverterQueueOutput::Remove(id) => ShellMessage::QueueRemoveRequested(id),
+                    BigConverterQueueOutput::OpenFolder(p) => ShellMessage::QueueOpenFolder(p),
+                    BigConverterQueueOutput::Metadata(id) => ShellMessage::QueueMetadata(id),
+                    BigConverterQueueOutput::DeleteDisk(id) => ShellMessage::QueueDeleteDisk(id),
+                    BigConverterQueueOutput::Play(p) => ShellMessage::QueuePlay(p),
+                    BigConverterQueueOutput::Select(p) => ShellMessage::QueueSelect(p),
+                    BigConverterQueueOutput::Edit(p) => ShellMessage::QueueEdit(p),
+                    BigConverterQueueOutput::Reorder(o) => ShellMessage::QueueReorder(o),
                 });
 
         let progress =
             BigConverterProgress::builder()
                 .launch(())
                 .forward(sender.input_sender(), |out| match out {
-                    BigConverterProgressOutput::Back => ShellMsg::ProgressBack,
+                    BigConverterProgressOutput::Back => ShellMessage::ProgressBack,
                     BigConverterProgressOutput::CancelAll
-                    | BigConverterProgressOutput::CancelItem(_) => ShellMsg::CancelConversion,
+                    | BigConverterProgressOutput::CancelItem(_) => ShellMessage::CancelConversion,
                 });
 
         let (video_editor, audio_editor) = if mode.is_audio() {
             let ae = AudioEditor::builder()
                 .launch(AudioEditorInit { compact: true })
                 .forward(sender.input_sender(), |out| match out {
-                    AudioEditorOutput::SegmentsApplied(r) => ShellMsg::AudioSegmentsApplied(r),
-                    AudioEditorOutput::ApplyAndConvert(r) => ShellMsg::AudioApplyAndConvert(r),
-                    AudioEditorOutput::ShowAudioSettings => ShellMsg::ShowNoiseDialog,
-                    AudioEditorOutput::ShowEqualizer => ShellMsg::ShowEqualizerDialog,
-                    AudioEditorOutput::PlaybackStateChanged(p) => ShellMsg::AudioPlaybackState(p),
-                    AudioEditorOutput::PreviousTrack => ShellMsg::AudioPrevTrack,
-                    AudioEditorOutput::NextTrack => ShellMsg::AudioNextTrack,
+                    AudioEditorOutput::SegmentsApplied(r) => ShellMessage::AudioSegmentsApplied(r),
+                    AudioEditorOutput::ApplyAndConvert(r) => ShellMessage::AudioApplyAndConvert(r),
+                    AudioEditorOutput::ShowAudioSettings => ShellMessage::ShowNoiseDialog,
+                    AudioEditorOutput::ShowEqualizer => ShellMessage::ShowEqualizerDialog,
+                    AudioEditorOutput::PlaybackStateChanged(p) => {
+                        ShellMessage::AudioPlaybackState(p)
+                    }
+                    AudioEditorOutput::PreviousTrack => ShellMessage::AudioPrevTrack,
+                    AudioEditorOutput::NextTrack => ShellMessage::AudioNextTrack,
                 });
             (None, Some(ae))
         } else {
@@ -364,12 +370,12 @@ impl Component for ConverterShell {
                 .launch(())
                 .forward(sender.input_sender(), |out| match out {
                     VideoEditorOutput::ApplyAndConvert(r) => {
-                        ShellMsg::VideoApplyAndConvert(Box::new(r))
+                        ShellMessage::VideoApplyAndConvert(Box::new(r))
                     }
-                    VideoEditorOutput::ShowAudioSettings => ShellMsg::ShowNoiseDialog,
-                    VideoEditorOutput::Fullscreen(fs) => ShellMsg::VideoFullscreen(fs),
-                    VideoEditorOutput::Back => ShellMsg::VideoBack,
-                    VideoEditorOutput::SegmentsChanged(_) => ShellMsg::Tick,
+                    VideoEditorOutput::ShowAudioSettings => ShellMessage::ShowNoiseDialog,
+                    VideoEditorOutput::Fullscreen(fs) => ShellMessage::VideoFullscreen(fs),
+                    VideoEditorOutput::Back => ShellMessage::VideoBack,
+                    VideoEditorOutput::SegmentsChanged(_) => ShellMessage::Tick,
                 });
             (Some(ve), None)
         };
@@ -483,7 +489,7 @@ impl Component for ConverterShell {
                     // (window.close() re-emits this signal).
                     glib::Propagation::Proceed
                 } else {
-                    sender.input(ShellMsg::CloseRequested);
+                    sender.input(ShellMessage::CloseRequested);
                     glib::Propagation::Stop
                 }
             }
@@ -495,7 +501,7 @@ impl Component for ConverterShell {
                 #[strong] // strong: ComponentSender channel; tick source removed on teardown
                 sender,
                 move || {
-                    sender.input(ShellMsg::Tick);
+                    sender.input(ShellMessage::Tick);
                     glib::ControlFlow::Continue
                 }
             ),
@@ -548,36 +554,38 @@ impl Component for ConverterShell {
 
 impl ConverterShell {
     #[allow(clippy::too_many_lines)] // central message dispatch — long by nature
-    fn dispatch(&mut self, message: ShellMsg, sender: &ComponentSender<Self>) {
+    fn dispatch(&mut self, message: ShellMessage, sender: &ComponentSender<Self>) {
         match message {
-            ShellMsg::AddFiles(paths) => self.add_files(&paths),
-            ShellMsg::OpenFileChooser => {
+            ShellMessage::AddFiles(paths) => self.add_files(&paths),
+            ShellMessage::OpenFileChooser => {
                 dialogs::show_file_chooser(&self.window, sender, self.mode);
             }
-            ShellMsg::OpenFolderChooser => {
+            ShellMessage::OpenFolderChooser => {
                 dialogs::show_folder_chooser(&self.window, sender, self.mode);
             }
-            ShellMsg::OpenNetworkDialog => dialogs::show_network_url_dialog(&self.window, sender),
+            ShellMessage::OpenNetworkDialog => {
+                dialogs::show_network_url_dialog(&self.window, sender);
+            }
 
-            ShellMsg::StartConversion => self.start_conversion(sender),
-            ShellMsg::DaemonSubmitFinished(result) => self.finish_daemon_submit(result, sender),
-            ShellMsg::DaemonSnapshot(result) => self.apply_daemon_snapshot(result, sender),
-            ShellMsg::DaemonCancelFinished(result) => self.finish_daemon_cancel(result),
-            ShellMsg::CancelConversion => {
+            ShellMessage::StartConversion => self.start_conversion(sender),
+            ShellMessage::DaemonSubmitFinished(result) => self.finish_daemon_submit(result, sender),
+            ShellMessage::DaemonSnapshot(result) => self.apply_daemon_snapshot(result, sender),
+            ShellMessage::DaemonCancelFinished(result) => self.finish_daemon_cancel(result),
+            ShellMessage::CancelConversion => {
                 self.cancel_conversion(sender);
             }
-            ShellMsg::ClearQueueRequested => self.confirm_clear_queue(sender),
-            ShellMsg::ClearQueueConfirmed => self.clear_queue(),
-            ShellMsg::Tick => self.tick_progress(sender),
-            ShellMsg::RestoreDefaultsRequested => self.confirm_restore_defaults(sender),
+            ShellMessage::ClearQueueRequested => self.confirm_clear_queue(sender),
+            ShellMessage::ClearQueueConfirmed => self.clear_queue(),
+            ShellMessage::Tick => self.tick_progress(sender),
+            ShellMessage::RestoreDefaultsRequested => self.confirm_restore_defaults(sender),
 
-            ShellMsg::ParamsChanged(params) => {
+            ShellMessage::ParamsChanged(params) => {
                 self.queue.set_profile(params.profile.clone());
                 self.persist_gpu_device(params.gpu_index);
                 self.params = Some(*params);
             }
-            ShellMsg::ShowOutputDirChooser => self.show_output_dir_chooser(),
-            ShellMsg::AudioPreview {
+            ShellMessage::ShowOutputDirChooser => self.show_output_dir_chooser(),
+            ShellMessage::AudioPreview {
                 effects,
                 volume,
                 speed,
@@ -592,17 +600,17 @@ impl ConverterShell {
                     ve.emit(VideoEditorInput::ApplyAudioEffects(effects));
                 }
             }
-            ShellMsg::CutModeActive(active) => {
+            ShellMessage::CutModeActive(active) => {
                 if let Some(ae) = &self.audio_editor {
                     ae.emit(AudioEditorInput::SetCutModeActive(active));
                 }
             }
-            ShellMsg::BindAudioAdjustments { volume, speed } => {
+            ShellMessage::BindAudioAdjustments { volume, speed } => {
                 if let Some(ae) = &self.audio_editor {
                     ae.emit(AudioEditorInput::BindAdjustments { volume, speed });
                 }
             }
-            ShellMsg::RestoreDefaultProfile => {
+            ShellMessage::RestoreDefaultProfile => {
                 if let Some(default) = self.profiles.get("universal").cloned() {
                     self.sidebar
                         .emit(ConverterSidebarInput::ApplyProfile(Box::new(
@@ -612,24 +620,26 @@ impl ConverterShell {
                     info!("Settings reset to default");
                 }
             }
-            ShellMsg::MountFooter(footer) => {
+            ShellMessage::MountFooter(footer) => {
                 while let Some(child) = self.footer_slot.first_child() {
                     self.footer_slot.remove(&child);
                 }
                 self.footer_slot.append(&footer);
             }
 
-            ShellMsg::QueueRemoveRequested(id) => self.confirm_remove_queue_entry(id, sender),
-            ShellMsg::QueueRemoveConfirmed(id) => self.remove_queue_entry(id),
-            ShellMsg::QueueOpenFolder(path) => big_app_kit::desktop::open_containing_folder(&path),
-            ShellMsg::QueueMetadata(id) => self.show_file_metadata(id),
-            ShellMsg::QueueDeleteDisk(id) => self.confirm_delete_disk(id, sender),
-            ShellMsg::QueuePlay(path) => self.on_queue_play(&path),
-            ShellMsg::QueueSelect(path) => self.on_queue_select(&path),
-            ShellMsg::QueueEdit(path) => self.on_queue_edit(&path),
-            ShellMsg::QueueReorder(order) => self.queue.reorder(&order),
+            ShellMessage::QueueRemoveRequested(id) => self.confirm_remove_queue_entry(id, sender),
+            ShellMessage::QueueRemoveConfirmed(id) => self.remove_queue_entry(id),
+            ShellMessage::QueueOpenFolder(path) => {
+                big_app_kit::desktop::open_containing_folder(&path);
+            }
+            ShellMessage::QueueMetadata(id) => self.show_file_metadata(id),
+            ShellMessage::QueueDeleteDisk(id) => self.confirm_delete_disk(id, sender),
+            ShellMessage::QueuePlay(path) => self.on_queue_play(&path),
+            ShellMessage::QueueSelect(path) => self.on_queue_select(&path),
+            ShellMessage::QueueEdit(path) => self.on_queue_edit(&path),
+            ShellMessage::QueueReorder(order) => self.queue.reorder(&order),
 
-            ShellMsg::ProgressBack => {
+            ShellMessage::ProgressBack => {
                 self.queue.reset_non_done();
                 self.queue_view
                     .emit(BigConverterQueueInput::ResetStatusIcons);
@@ -637,11 +647,11 @@ impl ConverterShell {
                 self.progress.emit(BigConverterProgressInput::Reset);
             }
 
-            ShellMsg::VideoApplyAndConvert(result) => {
+            ShellMessage::VideoApplyAndConvert(result) => {
                 self.apply_video_edits_and_convert(*result, sender);
             }
-            ShellMsg::VideoFullscreen(fs) => self.window.set_fullscreened(fs),
-            ShellMsg::VideoBack => {
+            ShellMessage::VideoFullscreen(fs) => self.window.set_fullscreened(fs),
+            ShellMessage::VideoBack => {
                 if let Some(ve) = &self.video_editor {
                     ve.emit(VideoEditorInput::Unload);
                 }
@@ -649,35 +659,35 @@ impl ConverterShell {
                 self.main_stack.set_visible_child_name("main");
             }
 
-            ShellMsg::AudioSegmentsApplied(ranges) => self.on_audio_segments_applied(ranges),
-            ShellMsg::AudioApplyAndConvert(ranges) => {
+            ShellMessage::AudioSegmentsApplied(ranges) => self.on_audio_segments_applied(ranges),
+            ShellMessage::AudioApplyAndConvert(ranges) => {
                 self.on_audio_apply_and_convert(ranges, sender);
             }
-            ShellMsg::AudioPlaybackState(playing) => {
+            ShellMessage::AudioPlaybackState(playing) => {
                 self.queue_view
                     .emit(BigConverterQueueInput::SetPlayingState(
                         self.current_audio_preview_item,
                         playing,
                     ));
             }
-            ShellMsg::AudioPrevTrack => self.step_audio_track(-1),
-            ShellMsg::AudioNextTrack => self.step_audio_track(1),
-            ShellMsg::AudioTogglePlayPause => {
+            ShellMessage::AudioPrevTrack => self.step_audio_track(-1),
+            ShellMessage::AudioNextTrack => self.step_audio_track(1),
+            ShellMessage::AudioTogglePlayPause => {
                 if let Some(ae) = &self.audio_editor {
                     ae.emit(AudioEditorInput::TogglePlayPause);
                 }
             }
 
-            ShellMsg::ShowNoiseDialog => {
+            ShellMessage::ShowNoiseDialog => {
                 self.sidebar.emit(ConverterSidebarInput::ShowNoiseDialog);
             }
-            ShellMsg::ShowEqualizerDialog => {
+            ShellMessage::ShowEqualizerDialog => {
                 self.sidebar
                     .emit(ConverterSidebarInput::ShowEqualizerDialog);
             }
 
-            ShellMsg::CloseRequested => self.perform_window_close(sender),
-            ShellMsg::ConfirmedClose => self.save_and_close(),
+            ShellMessage::CloseRequested => self.perform_window_close(sender),
+            ShellMessage::ConfirmedClose => self.save_and_close(),
         }
     }
 }
