@@ -30,7 +30,7 @@ Full gate matrix (fmt, clippy, doc, tests, deny, audit, machete): see
 
 ## Tree
 
-- `src/main.rs`: thin binary entrypoint; calls `big_video_converter::main_impl`.
+- `src/main.rs`: thin binary launcher; starts `big-host --separate converter-video`.
 - `src/lib.rs`: delegates to `big_converter_ui::run(RunOptions { mode: Video, … })`
   and exports `APP_MODE`.
 - `tests/`: integration (`converter_integration.rs`) and smoke (`smoke.rs`).

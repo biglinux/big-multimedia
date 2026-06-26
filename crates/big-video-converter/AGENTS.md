@@ -1,11 +1,12 @@
 # AGENTS.md — big-video-converter
 
 GPU-aware GTK4/libadwaita video converter for BigLinux. Thin wrapper: the
-binary calls `big_converter_ui::run(RunOptions { mode: Video, … })`.
+binary launches `big-host --separate converter-video`; `src/lib.rs` keeps the
+in-process shared-UI runner for the reference path.
 
 ## What lives here
 
-- `src/main.rs` — binary entrypoint; calls `big_video_converter::main_impl`.
+- `src/main.rs` — binary launcher; starts `big-host --separate converter-video`.
 - `src/lib.rs` — delegates to `big_converter_ui::run(...)`; exports `APP_MODE =
   ConverterMode::Video`.
 - `tests/converter_integration.rs`, `tests/smoke.rs` — drive the shared queue
@@ -33,7 +34,7 @@ flags: `REVIEW.md`. CI: `.github/workflows/ci.yml` (note: CI does not pass
 
 ## Where to edit for common tasks
 
-- Boot mode / log filter / run options → `src/lib.rs` (`main_impl`).
+- Boot mode / log filter / run options → `src/lib.rs` (`run_video_converter_application`).
 - Converter UI / settings / edit page / queue → upstream
   `big-converter-ui` (NOT here).
 - ffmpeg/GPU/cast backend → upstream `big-media-runtime` (NOT here).

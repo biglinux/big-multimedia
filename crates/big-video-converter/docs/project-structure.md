@@ -9,16 +9,16 @@ This repo is a thin wrapper. Its only source is:
 
 - `src/main.rs`: binary entrypoint. A **launcher** — it execs
   `big-host --separate converter-video`; it does NOT run the UI in-process.
-- `src/lib.rs`: standalone binding. `main_impl()` boots the shared UI
+- `src/lib.rs`: standalone binding. `run_video_converter_application()` boots the shared UI
   in-process (`big_converter_ui::run(RunOptions { mode: Video, … })`) and
   exports `APP_MODE`. Kept as the reference in-proc path; the shipped binary
-  uses the launcher above, not `main_impl`.
+  uses the launcher above, not `run_video_converter_application`.
 - `Cargo.toml`: Rust package contract.
 - `Cargo.lock`: committed for application repositories.
 
 ### Why video launches through big-host (and audio does not)
 
-`big-audio-converter`'s binary runs its UI **in-process** (`main_impl`): it
+`big-audio-converter`'s binary runs its UI **in-process** (`run_audio_converter_application`): it
 needs no native media engine. `big-video-converter` instead execs `big-host`
 because video transcoding is `engine_owner` with `native_caps = ["mpv",
 "ffmpeg"]` and `requires_daemon = ["big-convertd"]` — routing the standalone

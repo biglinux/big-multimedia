@@ -17,7 +17,7 @@ pub use big_converter_ui::{self, ConverterMode, RunOptions};
 /// so it shares the host-managed mpv engine + `big-convertd` queue.
 ///
 /// Returns the process exit code.
-pub fn main_impl() -> std::process::ExitCode {
+pub fn run_video_converter_application() -> std::process::ExitCode {
     big_converter_ui::run(RunOptions {
         mode: ConverterMode::Video,
         log_filter: "big_media_runtime=info,big_video_converter=info",

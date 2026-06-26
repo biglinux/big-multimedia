@@ -6,8 +6,8 @@ the shared converter UI in `ConverterMode::Audio` and flips
 
 ## What is here
 
-- `src/main.rs` — binary entrypoint; calls `big_audio_converter::main_impl()`.
-- `src/lib.rs` — `main_impl()` runs `big_converter_ui::run(RunOptions{ mode: Audio, … })`;
+- `src/main.rs` — binary entrypoint; calls `big_audio_converter::run_audio_converter_application()`.
+- `src/lib.rs` — `run_audio_converter_application()` runs `big_converter_ui::run(RunOptions{ mode: Audio, … })`;
   exports `APP_MODE`, `BOOTSTRAP_ENV_KEY`, `BOOTSTRAP_ENV_VAL`.
 - `tests/converter_integration.rs`, `tests/smoke.rs` — link `lib.rs` re-exports +
   `big-media-runtime` (dev-dep) to drive the shared queue / assert argv hardening.

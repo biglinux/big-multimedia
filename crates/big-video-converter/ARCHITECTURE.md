@@ -9,7 +9,7 @@ NVENC), an interactive edit page (crop preview, render loop on
 `big-converter-ui` + `big-media-runtime` crates. The shipped binary
 (`src/main.rs`) is a **launcher**: it execs `big-host --separate
 converter-video` so it shares the host-managed mpv engine + `big-convertd`
-queue (video is `engine_owner`). `src/lib.rs::main_impl` keeps the
+queue (video is `engine_owner`). `src/lib.rs::run_video_converter_application` keeps the
 equivalent in-process boot (`big_converter_ui::run(RunOptions { mode: Video,
 … })`) as the reference path. This differs from `big-audio-converter`, whose
 binary runs the UI in-process — audio needs no native engine. INVARIANTS.md

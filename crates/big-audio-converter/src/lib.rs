@@ -11,7 +11,7 @@ pub use big_converter_ui::{self, ConverterMode, RunOptions};
 ///
 /// Returns the process exit code. Not called from tests — present only
 /// so the binary can delegate.
-pub fn main_impl() -> std::process::ExitCode {
+pub fn run_audio_converter_application() -> std::process::ExitCode {
     big_converter_ui::run(RunOptions {
         mode: ConverterMode::Audio,
         log_filter: "big_media_runtime=info,big_audio_converter=info",

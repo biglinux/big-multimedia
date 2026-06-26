@@ -19,7 +19,7 @@ and settings persistence are **not** in this repo — they live in the sibling
 crate `../big-converter-ui`. ffmpeg orchestration
 lives in `../big-media-runtime`. Edit converter behaviour there.
 
-Note: this binary runs the UI **in-process** (`main_impl`) — audio conversion
+Note: this binary runs the UI **in-process** (`run_audio_converter_application`) — audio conversion
 needs no native media engine. Its twin `big-video-converter` instead execs
 `big-host` to share an isolated mpv engine + `big-convertd` queue (video is
 `engine_owner`). That entrypoint asymmetry between the two converters is
