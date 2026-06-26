@@ -18,6 +18,7 @@ use relm4::ComponentSender;
 
 use super::video_shell::{VideoShell, VideoShellInput};
 use crate::i18n::i18n;
+use big_relm4_components::layout::dialog_page::BigDialogPage;
 use big_relm4_components::list::navigation_row::{BigNavigationRow, BigNavigationRowSpec};
 
 impl VideoShell {
@@ -142,16 +143,13 @@ impl VideoShell {
         }
         drop(mpv_borrow);
 
-        let page = adw::PreferencesPage::new();
-        page.add(&group);
-        let toolbar = adw::ToolbarView::new();
-        toolbar.add_top_bar(&adw::HeaderBar::new());
-        toolbar.set_content(Some(&page));
+        let page = BigDialogPage::scrolled_clamped(420, 360);
+        page.content().append(&group);
         let dialog = adw::Dialog::builder()
             .title(i18n("Chapters"))
             .content_width(420)
             .content_height(520)
-            .child(&toolbar)
+            .child(&page.into_root())
             .build();
         dialog.present(Some(root));
     }
@@ -161,27 +159,23 @@ impl VideoShell {
     /// Mirrors the old `show_sleep_timer_dialog` and the audio player's port,
     /// reusing the shared `BigSleepTimer*` components + `shared::sleep_timer`
     /// label/persistence helpers.
-    #[allow(deprecated)] // PreferencesWindow (adw 1.6) kept for resizability.
     pub(super) fn show_sleep_timer_dialog(
         &self,
         root: &adw::ApplicationWindow,
         sender: &ComponentSender<Self>,
     ) {
         use big_relm4_components::display::sleep_timer::{
-            connect_sleep_timer_start, BigSleepTimerActiveLabels, BigSleepTimerActivePage,
-            BigSleepTimerActiveSpec, BigSleepTimerSetupPage, BigSleepTimerSetupSpec,
+            connect_sleep_timer_start_with_close, BigSleepTimerActiveLabels,
+            BigSleepTimerActivePage, BigSleepTimerActiveSpec, BigSleepTimerSetupPage,
+            BigSleepTimerSetupSpec,
         };
 
         let active = self.sleep_timer_is_armed();
 
-        #[allow(deprecated)] // PreferencesDialog (adw 1.6) is not resizable.
-        let dialog = adw::PreferencesWindow::builder()
+        let dialog = adw::Dialog::builder()
             .title(i18n("Sleep Timer"))
-            .default_width(600)
-            .default_height(if active { 440 } else { 620 })
-            .modal(true)
-            .transient_for(root)
-            .search_enabled(false)
+            .content_width(600)
+            .content_height(if active { 420 } else { 560 })
             .build();
 
         let icon = || gtk::Image::from_icon_name("preferences-system-time-symbolic");
@@ -229,19 +223,31 @@ impl VideoShell {
 
             let input = sender.input_sender().clone();
             let settings = settings.clone();
-            connect_sleep_timer_start(&setup_page, &dialog, root, move |_, minutes, action| {
-                crate::shared::sleep_timer::save_sleep_timer_preferences(
-                    Some(&settings),
-                    minutes,
-                    &action,
-                );
-                let _ = input.send(VideoShellInput::SleepTimerStart { minutes, action });
-            });
+            let dialog_ref = dialog.downgrade();
+            connect_sleep_timer_start_with_close(
+                &setup_page,
+                root,
+                move |_, minutes, action| {
+                    crate::shared::sleep_timer::save_sleep_timer_preferences(
+                        Some(&settings),
+                        minutes,
+                        &action,
+                    );
+                    let _ = input.send(VideoShellInput::SleepTimerStart { minutes, action });
+                },
+                move || {
+                    if let Some(dialog) = dialog_ref.upgrade() {
+                        dialog.close();
+                    }
+                },
+            );
             setup_page.into_page()
         };
 
-        dialog.add(&page);
-        dialog.present();
+        let dialog_page = BigDialogPage::scrolled_clamped(560, 480);
+        dialog_page.content().append(&page);
+        dialog.set_child(Some(&dialog_page.into_root()));
+        dialog.present(Some(root));
     }
 
     /// Arm the sleep timer: a 1 s `SleepTick` source drives the countdown. Stores

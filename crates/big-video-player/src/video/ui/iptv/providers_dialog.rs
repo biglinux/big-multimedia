@@ -15,6 +15,9 @@ use std::rc::Rc;
 
 use adw::prelude::*;
 use big_relm4_components::feedback::tooltip;
+use big_relm4_components::input::dropdown_row::{BigDropdownRow, BigDropdownRowSpec};
+use big_relm4_components::layout::dialog_footer::{BigDialogFooter, BigDialogFooterSpec};
+use big_relm4_components::layout::dialog_page::BigDialogPage;
 use big_relm4_components::list::editable_action_row::{
     BigEditableActionRow, BigEditableActionRowSpec,
 };
@@ -32,34 +35,21 @@ pub fn present_providers_dialog(
     store: Rc<RefCell<IptvProviderStore>>,
     sender: ComponentSender<VideoIptvBrowser>,
 ) {
-    let toolbar = adw::ToolbarView::new();
-    let header = adw::HeaderBar::new();
-    toolbar.add_top_bar(&header);
-
+    let page = BigDialogPage::scrolled_clamped(560, 480);
     let add_btn = tooltip::icon_button("list-add-symbolic", &i18n("Add provider"), &[]);
-    header.pack_end(&add_btn);
+    page.header().pack_end(&add_btn);
 
-    let scrolled = gtk::ScrolledWindow::builder()
-        .hscrollbar_policy(gtk::PolicyType::Never)
-        .min_content_height(320)
-        .propagate_natural_height(true)
-        .build();
     let list = gtk::ListBox::builder()
         .selection_mode(gtk::SelectionMode::None)
         .css_classes(["boxed-list"])
-        .margin_start(12)
-        .margin_end(12)
-        .margin_top(12)
-        .margin_bottom(12)
         .build();
-    scrolled.set_child(Some(&list));
-    toolbar.set_content(Some(&scrolled));
+    page.content().append(&list);
 
     let dialog = adw::Dialog::builder()
         .title(i18n("IPTV Providers"))
         .content_width(600)
         .content_height(480)
-        .child(&toolbar)
+        .child(&page.into_root())
         .build();
 
     let dialog_weak = dialog.downgrade();
@@ -162,34 +152,18 @@ where
     let form = adw::Dialog::builder()
         .title(i18n("IPTV Provider"))
         .content_width(540)
-        .content_height(560)
+        .content_height(520)
         .build();
 
-    let toolbar = adw::ToolbarView::new();
-    let header = adw::HeaderBar::new();
-    toolbar.add_top_bar(&header);
-
-    let save_btn = gtk::Button::builder()
-        .label(i18n("Save"))
-        .css_classes(["suggested-action"])
-        .build();
-    header.pack_end(&save_btn);
-
-    let cancel_btn = gtk::Button::builder().label(i18n("Cancel")).build();
-    header.pack_start(&cancel_btn);
-
+    let page = BigDialogPage::scrolled_clamped(520, 420);
+    let footer = BigDialogFooter::new(&BigDialogFooterSpec::new(i18n("Cancel"), i18n("Save")));
     let inputs = ProviderFormInputs::build(&initial);
-
-    let scrolled = gtk::ScrolledWindow::builder()
-        .hscrollbar_policy(gtk::PolicyType::Never)
-        .propagate_natural_height(true)
-        .child(&inputs.content)
-        .build();
-    toolbar.set_content(Some(&scrolled));
-    form.set_child(Some(&toolbar));
+    page.content().append(&inputs.content);
+    page.root().add_bottom_bar(footer.root());
+    form.set_child(Some(&page.into_root()));
 
     let form_weak = form.downgrade();
-    cancel_btn.connect_clicked(move |_| {
+    footer.cancel_button().connect_clicked(move |_| {
         if let Some(f) = form_weak.upgrade() {
             f.close();
         }
@@ -197,7 +171,7 @@ where
 
     let form_weak = form.downgrade();
     let on_save = Rc::new(on_save);
-    save_btn.connect_clicked(move |_| {
+    footer.accept_button().connect_clicked(move |_| {
         let Some(provider) = inputs.collect() else {
             return;
         };
@@ -219,7 +193,7 @@ where
 struct ProviderFormInputs {
     content: gtk::Box,
     name_row: adw::EntryRow,
-    type_row: adw::ComboRow,
+    type_row: gtk::DropDown,
     url_row: adw::EntryRow,
     path_row: adw::EntryRow,
     server_row: adw::EntryRow,
@@ -234,10 +208,6 @@ impl ProviderFormInputs {
         let content = gtk::Box::builder()
             .orientation(gtk::Orientation::Vertical)
             .spacing(12)
-            .margin_start(18)
-            .margin_end(18)
-            .margin_top(18)
-            .margin_bottom(18)
             .build();
 
         let name_group = adw::PreferencesGroup::new();
@@ -247,18 +217,20 @@ impl ProviderFormInputs {
         content.append(&name_group);
 
         let type_group = adw::PreferencesGroup::new();
-        let type_model = gtk::StringList::new(&[
-            &i18n("M3U URL"),
-            &i18n("Local M3U file"),
-            &i18n("Xtream Codes"),
-        ]);
-        let type_row = adw::ComboRow::builder()
-            .title(i18n("Type"))
-            .model(&type_model)
-            .build();
         let initial_index = source_index(&initial.source);
-        type_row.set_selected(initial_index);
-        type_group.add(&type_row);
+        let (type_row_widget, type_row) = BigDropdownRow::new(
+            BigDropdownRowSpec::new(
+                i18n("Type"),
+                [
+                    i18n("M3U URL"),
+                    i18n("Local M3U file"),
+                    i18n("Xtream Codes"),
+                ],
+            )
+            .selected(initial_index),
+        )
+        .into_parts();
+        type_group.add(&type_row_widget);
         content.append(&type_group);
 
         let url_group = adw::PreferencesGroup::new();
@@ -371,7 +343,7 @@ fn source_index(source: &IptvKind) -> u32 {
 /// Show only the input group matching the selected source type; re-sync on
 /// every combo change.
 fn wire_type_visibility(
-    type_row: &adw::ComboRow,
+    type_row: &gtk::DropDown,
     url_group: &adw::PreferencesGroup,
     path_group: &adw::PreferencesGroup,
     xtream_group: &adw::PreferencesGroup,

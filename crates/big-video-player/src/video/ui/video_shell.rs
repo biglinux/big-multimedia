@@ -166,7 +166,8 @@ pub struct VideoShell {
     /// Shared re-encode options (container/codec/quality) — same vocabulary as
     /// the full converter; shown in the re-encode settings dialog.
     trim_encode: big_converter_ui::encode_options::EncodeOptions,
-    /// Colour adjustments applied on a precise export (set in the settings dialog).
+    /// Image adjustments applied on a precise export (seeded from the player,
+    /// then editable in the settings dialog).
     trim_filters: Rc<RefCell<big_media_runtime::converter::profiles::VideoFilters>>,
     /// Output layout: true = each cut to its own file, false = joined.
     trim_split: Rc<Cell<bool>>,
@@ -175,6 +176,9 @@ pub struct VideoShell {
     /// Sorted `(start, end)` cut ranges — drives play-selection looping.
     trim_ranges: Rc<RefCell<Vec<(f64, f64)>>>,
     /// Reused re-encode settings window (built lazily on the gear).
+    /// bigagents: app-local-window-owner — this field intentionally owns the
+    /// reusable dialog because `trim_encode.group()` stays parented there
+    /// between opens; dialog signal handlers capture the window weakly.
     trim_encode_dialog: Rc<RefCell<Option<adw::Window>>>,
     /// Reveals the slim export-progress strip (non-blocking, video stays visible).
     trim_progress_revealer: gtk::Revealer,

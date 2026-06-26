@@ -104,26 +104,23 @@ impl AudioShell {
 
     /// Present the sleep-timer dialog: the active countdown (with cancel) when a
     /// timer is armed, otherwise the setup page (duration + on-expiry action).
-    #[allow(deprecated)] // PreferencesWindow (adw 1.6) kept for resizability.
     pub(super) fn show_sleep_timer(&self, sender: &ComponentSender<Self>) {
         use big_relm4_components::display::sleep_timer::{
-            connect_sleep_timer_start, BigSleepTimerActiveLabels, BigSleepTimerActivePage,
-            BigSleepTimerActiveSpec, BigSleepTimerSetupPage, BigSleepTimerSetupSpec,
+            connect_sleep_timer_start_with_close, BigSleepTimerActiveLabels,
+            BigSleepTimerActivePage, BigSleepTimerActiveSpec, BigSleepTimerSetupPage,
+            BigSleepTimerSetupSpec,
         };
+        use big_relm4_components::layout::dialog_page::BigDialogPage;
 
         let Some(win) = self.window() else {
             return;
         };
         let active = self.sleep_timer_source.is_some();
 
-        #[allow(deprecated)] // PreferencesDialog (adw 1.6) is not resizable.
-        let dialog = adw::PreferencesWindow::builder()
+        let dialog = adw::Dialog::builder()
             .title(i18n("Sleep Timer"))
-            .default_width(600)
-            .default_height(if active { 440 } else { 620 })
-            .modal(true)
-            .transient_for(&win)
-            .search_enabled(false)
+            .content_width(600)
+            .content_height(if active { 420 } else { 560 })
             .build();
 
         let page = if active {
@@ -168,19 +165,31 @@ impl AudioShell {
 
             let input = sender.input_sender().clone();
             let settings = self.settings.clone();
-            connect_sleep_timer_start(&setup_page, &dialog, &win, move |_, minutes, action| {
-                crate::shared::sleep_timer::save_sleep_timer_preferences(
-                    Some(&settings),
-                    minutes,
-                    &action,
-                );
-                let _ = input.send(AudioShellInput::SleepTimerStart { minutes, action });
-            });
+            let dialog_ref = dialog.downgrade();
+            connect_sleep_timer_start_with_close(
+                &setup_page,
+                &win,
+                move |_, minutes, action| {
+                    crate::shared::sleep_timer::save_sleep_timer_preferences(
+                        Some(&settings),
+                        minutes,
+                        &action,
+                    );
+                    let _ = input.send(AudioShellInput::SleepTimerStart { minutes, action });
+                },
+                move || {
+                    if let Some(dialog) = dialog_ref.upgrade() {
+                        dialog.close();
+                    }
+                },
+            );
             setup_page.into_page()
         };
 
-        dialog.add(&page);
-        dialog.present();
+        let dialog_page = BigDialogPage::scrolled_clamped(560, 480);
+        dialog_page.content().append(&page);
+        dialog.set_child(Some(&dialog_page.into_root()));
+        dialog.present(Some(&win));
     }
 
     /// Arm the sleep timer: a 1 s `SleepTick` source drives the countdown.

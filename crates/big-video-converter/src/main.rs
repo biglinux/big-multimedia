@@ -2,7 +2,7 @@
 //! Thin launcher for `big-video-converter`.
 
 use std::ffi::OsString;
-use std::process::{Command, ExitCode, ExitStatus};
+use std::process::ExitCode;
 
 const HOST_BINARY: &str = "big-host";
 const HOST_BINARY_ENV: &str = "BIG_VIDEO_CONVERTER_HOST_BINARY";
@@ -13,33 +13,20 @@ fn main() -> ExitCode {
 }
 
 fn launch_host(args: impl IntoIterator<Item = OsString>) -> u8 {
-    let host_binary = std::env::var_os(HOST_BINARY_ENV).unwrap_or_else(|| HOST_BINARY.into());
-    launch_host_binary(host_binary, args)
+    launch_host_binary(host_binary_from_env(), args)
+}
+
+fn host_binary_from_env() -> OsString {
+    std::env::var_os(HOST_BINARY_ENV).unwrap_or_else(|| HOST_BINARY.into())
 }
 
 fn launch_host_binary(host_binary: OsString, args: impl IntoIterator<Item = OsString>) -> u8 {
-    let status = Command::new(host_binary)
-        .arg("--separate")
-        .arg(MODULE_ID)
-        .args(args)
-        .status();
-    exit_status_code(status)
-}
-
-fn exit_status_code(status: std::io::Result<ExitStatus>) -> u8 {
-    match status {
-        Ok(status) => status.code().unwrap_or(1) as u8,
-        Err(error) => {
-            eprintln!("failed to launch {HOST_BINARY}: {error}");
-            1
-        }
-    }
+    big_converter_ui::launch_host_module_code(host_binary, MODULE_ID, args)
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::io;
     #[cfg(not(miri))]
     use std::sync::Mutex;
 
@@ -68,23 +55,23 @@ mod tests {
         result
     }
 
+    #[cfg(not(miri))]
     #[test]
-    fn exit_status_code_reports_spawn_error() {
-        let code = exit_status_code(Err(io::Error::new(
-            io::ErrorKind::NotFound,
-            "missing host binary",
-        )));
+    fn launch_host_binary_reports_spawn_error() {
+        let code = launch_host_binary(
+            OsString::from("/definitely/missing/big-video-converter-host"),
+            std::iter::empty::<OsString>(),
+        );
 
         assert_eq!(code, 1);
     }
 
-    #[cfg(unix)]
+    #[cfg(not(miri))]
     #[test]
-    fn exit_status_code_maps_unix_status() {
-        use std::os::unix::process::ExitStatusExt;
+    fn launch_host_binary_rejects_control_byte_arg() {
+        let code = launch_host_binary("true".into(), [OsString::from("bad\narg")]);
 
-        assert_eq!(exit_status_code(Ok(ExitStatus::from_raw(0))), 0);
-        assert_eq!(exit_status_code(Ok(ExitStatus::from_raw(7 << 8))), 7);
+        assert_eq!(code, 1);
     }
 
     #[cfg(not(miri))]

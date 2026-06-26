@@ -14,9 +14,9 @@
 use std::ffi::OsStr;
 use std::hash::{Hash, Hasher};
 use std::path::{Path, PathBuf};
-use std::process::{Command, Stdio};
 use std::rc::Rc;
 
+use big_app_kit::subprocess::{BigSubprocessOutputMode, BigSubprocessSpec};
 use gtk::glib;
 
 use super::osd::IdleBackground;
@@ -201,16 +201,17 @@ fn resolve_plasma_image(value: &str) -> Option<PathBuf> {
 /// Query the GNOME wallpaper via `gsettings`. `None` if gsettings is missing or
 /// the value does not resolve to an existing file.
 fn detect_gnome_wallpaper() -> Option<PathBuf> {
-    let output = Command::new("gsettings")
+    let output = BigSubprocessSpec::builder()
+        .program("gsettings")
         .args(["get", "org.gnome.desktop.background", "picture-uri"])
-        .stdin(Stdio::null())
-        .stderr(Stdio::null())
-        .output()
+        .stderr(BigSubprocessOutputMode::Null)
+        .build()
+        .run()
         .ok()?;
     if !output.status.success() {
         return None;
     }
-    let value = String::from_utf8_lossy(&output.stdout);
+    let value = output.stdout_lossy();
     let value = value.trim().trim_matches(['\'', '"']);
     let raw = value.strip_prefix("file://").unwrap_or(value);
     let path = PathBuf::from(percent_decode(raw));
@@ -279,15 +280,16 @@ fn blur_to(source: &Path, dest: &Path) -> Option<PathBuf> {
 /// ImageMagick — `magick` (IM7) or `convert` (IM6). `true` on a non-empty result.
 fn rasterize_magick(source: &Path, dest: &Path) -> bool {
     for binary in ["magick", "convert"] {
-        let ok = Command::new(binary)
+        let ok = BigSubprocessSpec::builder()
+            .program(binary)
             .arg(source)
             .args(["-resize", "1920x"])
             .arg(dest)
-            .stdin(Stdio::null())
-            .stdout(Stdio::null())
-            .stderr(Stdio::null())
-            .status()
-            .is_ok_and(|status| status.success())
+            .stdout(BigSubprocessOutputMode::Null)
+            .stderr(BigSubprocessOutputMode::Null)
+            .build()
+            .run()
+            .is_ok_and(|output| output.status.success())
             && std::fs::metadata(dest).is_ok_and(|m| m.len() > 0);
         if ok {
             return true;
@@ -299,7 +301,8 @@ fn rasterize_magick(source: &Path, dest: &Path) -> bool {
 /// Run the ffmpeg blur on `source` → `dest`; `true` on a non-empty result. Argv
 /// array, no shell.
 fn run_blur(source: &Path, dest: &Path) -> bool {
-    Command::new("ffmpeg")
+    BigSubprocessSpec::builder()
+        .program("ffmpeg")
         .arg("-y")
         .arg("-i")
         .arg(source)
@@ -312,25 +315,26 @@ fn run_blur(source: &Path, dest: &Path) -> bool {
             "1",
         ])
         .arg(dest)
-        .stdin(Stdio::null())
-        .stdout(Stdio::null())
-        .stderr(Stdio::null())
-        .status()
-        .is_ok_and(|status| status.success())
+        .stdout(BigSubprocessOutputMode::Null)
+        .stderr(BigSubprocessOutputMode::Null)
+        .build()
+        .run()
+        .is_ok_and(|output| output.status.success())
         && std::fs::metadata(dest).is_ok_and(|m| m.len() > 0)
 }
 
 /// Rasterize an SVG `source` to PNG `dest` via `rsvg-convert`; `true` on success.
 fn rasterize_svg(source: &Path, dest: &Path) -> bool {
-    Command::new("rsvg-convert")
+    BigSubprocessSpec::builder()
+        .program("rsvg-convert")
         .args(["-w", "1920", "-o"])
         .arg(dest)
         .arg(source)
-        .stdin(Stdio::null())
-        .stdout(Stdio::null())
-        .stderr(Stdio::null())
-        .status()
-        .is_ok_and(|status| status.success())
+        .stdout(BigSubprocessOutputMode::Null)
+        .stderr(BigSubprocessOutputMode::Null)
+        .build()
+        .run()
+        .is_ok_and(|output| output.status.success())
         && std::fs::metadata(dest).is_ok_and(|m| m.len() > 0)
 }
 

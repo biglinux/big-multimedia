@@ -13,6 +13,7 @@ impl AudioShell {
             AudioShellInput::Playback(out) | AudioShellInput::PlaybackRemote(out) => {
                 self.handle_playback(out, &sender);
             }
+            AudioShellInput::Trim(out) => self.handle_trim(out, &sender),
             AudioShellInput::Files(out) => self.handle_files(out, &sender),
             AudioShellInput::Radio(out) => self.handle_radio(out, &sender),
             AudioShellInput::Lyrics(LyricsPanelOutput::ExpandToggled(only_lyrics)) => {
@@ -98,6 +99,11 @@ impl AudioShell {
                     dialog.present();
                 }
             }
+            AudioShellInput::ShowManageFolders => self.resolve_watch_folders(&sender),
+            AudioShellInput::ManageFoldersResolved(folders) => {
+                self.library
+                    .emit(LibraryPanelInput::ShowManageFolders(folders));
+            }
             #[cfg(feature = "chromecast")]
             AudioShellInput::ShowCast => {
                 if let Some(win) = self.window() {
@@ -158,7 +164,8 @@ impl AudioShell {
             }
             AudioShellInput::ShowSleepTimer => self.show_sleep_timer(&sender),
             AudioShellInput::ConvertTrack(codec) => self.convert_track(&codec),
-            AudioShellInput::ShowTrimExport => self.show_trim_export(),
+            AudioShellInput::ShowTrimExport => self.enter_trim_mode(),
+            AudioShellInput::TrimExportFinished(result) => self.finish_trim_export(result),
             AudioShellInput::SleepTimerStart { minutes, action } => {
                 self.start_sleep_timer(sleep_timer_seconds(minutes), action, &sender);
             }

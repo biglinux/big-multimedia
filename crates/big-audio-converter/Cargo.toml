@@ -11,7 +11,6 @@ repository = "https://github.com/biglinux/big-multimedia"
 exclude = ["packaging"]
 
 [dependencies]
-gtk = { version = "0.11", features = ["v4_22"], package = "gtk4" }
 big-converter-ui = { path = "../../../big-rust-components/crates/big-converter-ui" }
 
 [dev-dependencies]

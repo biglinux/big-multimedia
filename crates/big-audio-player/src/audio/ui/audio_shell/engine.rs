@@ -45,6 +45,7 @@ impl AudioShell {
                         secs / self.duration_secs * 100.0,
                     ));
                 }
+                self.feed_trim_playhead(secs);
             }
             PlayerEvent::DurationChanged(secs) => {
                 self.duration_secs = secs;
@@ -57,6 +58,7 @@ impl AudioShell {
                     .emit(AudioPlaybackBarInput::SetDuration(time::playback_time(
                         secs,
                     )));
+                self.feed_trim_duration(secs);
             }
             PlayerEvent::VolumeChanged(vol) => {
                 *self
@@ -73,6 +75,11 @@ impl AudioShell {
                     .emit(AudioPlaybackBarInput::SetVolumeValue(vol));
             }
             PlayerEvent::FileLoaded(_) => {
+                if self.trim_active {
+                    self.exit_trim_mode();
+                }
+                self.trim.emit(AudioTrimBarInput::ClearSegments);
+                self.trim_ranges.clear();
                 self.now_playing_gen = self.now_playing_gen.wrapping_add(1);
                 self.sync_now_playing();
                 self.sync_now_playing_card();

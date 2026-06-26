@@ -45,7 +45,7 @@ use crate::audio::ui::playlist_manager::{
     PlaylistManager, PlaylistManagerInput, PlaylistManagerOutput,
 };
 use crate::audio::ui::playlist_panel::{PlaylistPanel, PlaylistPanelInput, PlaylistPanelOutput};
-use crate::db::models::{RadioStation, Track};
+use crate::db::models::{RadioStation, Track, WatchFolder};
 use crate::db::queries_advanced::{update_track_metadata, TrackMetadataUpdate};
 use crate::db::{self, queries, DbHandle};
 use crate::i18n::i18n;
@@ -66,6 +66,9 @@ use big_media_components::playback::audio_transport::{
 };
 use big_media_components::player_chrome::spawn_blocking_result;
 use big_media_components::time;
+use big_player_ui::audio_trim_bar::{
+    AudioTrimBar, AudioTrimBarInput, AudioTrimBarOutput, BigAudioTrimBarLabels,
+};
 use big_player_ui::download::filename_from_url;
 use big_player_ui::download_panel::{DownloadManagerInput, DownloadManagerPanel};
 use big_player_ui::file_browser::{FileBrowser, FileBrowserConfig, FileBrowserOutput};
@@ -85,6 +88,8 @@ pub struct AudioShell {
     playlist: Controller<PlaylistPanel>,
     /// Bottom transport bar (play/seek/volume/repeat/shuffle).
     playback_bar: Controller<AudioPlaybackBar>,
+    /// Visual trim controls shown above the bottom transport in trim mode.
+    trim: Controller<AudioTrimBar>,
     /// Files browser tab — held for its lifetime (Output forwarding); the shell
     /// sends it no inputs, so it is never read after construction.
     _files: Controller<FileBrowser>,
@@ -139,6 +144,12 @@ pub struct AudioShell {
     mpris_state: Arc<SharedMprisState>,
     /// Duration of the loaded track (seek-percent → seconds conversion).
     duration_secs: f64,
+    /// Whether visual trim mode is active.
+    trim_active: bool,
+    /// Sorted display ranges currently selected in trim mode.
+    trim_ranges: Vec<(f64, f64)>,
+    /// Whether playback should skip/loop through only selected cuts.
+    trim_play_selection: bool,
     /// Audio playback backend (system libmpv). Built once at init; `None` only
     /// if the engine failed to initialize.
     mpv: Option<Arc<MpvBackend>>,

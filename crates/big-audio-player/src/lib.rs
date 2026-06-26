@@ -67,6 +67,7 @@ fn embed_boot() {
         big_player_ui::favicon_cache::set_cache_namespace("big-audio-player");
         shared::app_base::register_resource_bytes(big_media_runtime::resources::AUDIO);
         shared::app_base::register_resource_bytes(resources::AUDIO_PLAYER_SHELL);
+        audio::app::install_audio_accels(&relm4::main_application());
     });
 }
 

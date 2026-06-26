@@ -428,13 +428,16 @@ impl VideoControlsBar {
         self.hover_popovers.clone()
     }
 
-    /// The subtitle + audio-track menu buttons whose open popover must keep the
-    /// OSD shown — else the auto-hide timer dismisses the track menu mid-pick,
-    /// so the selector appears to "only work while paused" (paused keeps the OSD
-    /// shown). Mirrors the old `hide_controls` bail on
-    /// `subtitle_btn.is_active() || audio_track_btn.is_active()`.
+    /// OSD menu buttons whose open popover must keep the OSD shown — else the
+    /// auto-hide timer dismisses the menu mid-pick, so the selector appears to
+    /// "only work while paused" (paused keeps the OSD shown). Mirrors the old
+    /// `hide_controls` bail on active menu buttons.
     pub fn track_menu_buttons(&self) -> Vec<gtk::MenuButton> {
-        vec![self.subtitle_btn.clone(), self.audio_track_btn.clone()]
+        vec![
+            self.button_layout.export_btn.clone(),
+            self.subtitle_btn.clone(),
+            self.audio_track_btn.clone(),
+        ]
     }
 
     pub(crate) fn button_layout(&self) -> ButtonLayoutWidgets {

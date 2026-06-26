@@ -8,7 +8,7 @@ impl AudioShell {
         self.is_playing = true;
         self.is_stream = false;
         if let Some(mpv) = &self.mpv {
-            mpv.load_file(&path);
+            mpv.load_file_from_start(&path);
             mpv.play();
         }
         self.current_file = path;

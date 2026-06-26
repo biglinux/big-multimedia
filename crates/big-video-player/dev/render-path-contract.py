@@ -23,10 +23,15 @@ REQUIRED_RENDER_TOKENS = (
 )
 
 REQUIRED_LIB_TOKENS = (
-    'set_default_env("GSK_RENDERER", "gl")',
+    "nvidia_proprietary_driver_in_use()",
+    'std::env::set_var("GSK_RENDERER", gsk_renderer)',
+    '"ngl"',
+    '"gl"',
     "GLArea video path",
     "GraphicsOffload zero-copy",
 )
+
+SOFTWARE_FALLBACK_START = "/// Software (no-GL) video path"
 
 FORBIDDEN_MAIN_RENDER_TOKENS = (
     "gdk::MemoryTexture",
@@ -58,6 +63,13 @@ def collect_forbidden_tokens(source_text: str) -> list[str]:
     return [token for token in FORBIDDEN_MAIN_RENDER_TOKENS if token in source_text]
 
 
+def main_render_source(source_text: str) -> str:
+    fallback_index = source_text.find(SOFTWARE_FALLBACK_START)
+    if fallback_index == -1:
+        return source_text
+    return source_text[:fallback_index]
+
+
 def main() -> int:
     render_source = read_source(RENDER_SOURCE)
     lib_source = read_source(LIB_SOURCE)
@@ -72,10 +84,12 @@ def main() -> int:
             + ", ".join(missing_render_tokens)
         )
 
-    forbidden_render_tokens = collect_forbidden_tokens(render_source)
+    forbidden_render_tokens = collect_forbidden_tokens(
+        main_render_source(render_source)
+    )
     if forbidden_render_tokens:
         failures.append(
-            "render.rs contains forbidden main-frame CPU-copy tokens: "
+            "render.rs contains forbidden primary-path CPU-copy tokens: "
             + ", ".join(forbidden_render_tokens)
         )
 

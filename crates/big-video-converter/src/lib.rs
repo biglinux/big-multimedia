@@ -16,8 +16,8 @@ pub use big_converter_ui::{self, ConverterMode, RunOptions};
 /// shell; the standalone binary (`src/main.rs`) instead execs `big-host`
 /// so it shares the host-managed mpv engine + `big-convertd` queue.
 ///
-/// Returns the GTK exit code.
-pub fn main_impl() -> gtk::glib::ExitCode {
+/// Returns the process exit code.
+pub fn main_impl() -> std::process::ExitCode {
     big_converter_ui::run(RunOptions {
         mode: ConverterMode::Video,
         log_filter: "big_media_runtime=info,big_video_converter=info",

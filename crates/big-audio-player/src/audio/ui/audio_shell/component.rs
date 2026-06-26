@@ -72,12 +72,16 @@ impl Component for AudioShell {
         let playlist = PlaylistPanel::builder()
             .launch(())
             .forward(sender.input_sender(), AudioShellInput::Playlist);
+        let trim = AudioTrimBar::builder()
+            .launch(BigAudioTrimBarLabels::translated(i18n))
+            .forward(sender.input_sender(), AudioShellInput::Trim);
         let playback_bar = AudioPlaybackBar::builder()
             .launch(AudioPlaybackBarInit {
                 spec: BigAudioTransportSpec::new(transport_labels()),
                 max_volume: 150.0,
                 initial_volume,
                 initial_voice_pct: (initial_noise * 100.0).clamp(0.0, 100.0),
+                trim_content: Some(trim.widget().clone().upcast()),
             })
             .forward(sender.input_sender(), AudioShellInput::Playback);
         // The queue is always visible (right pane) — the transport's playlist
@@ -325,6 +329,10 @@ impl Component for AudioShell {
                 dispatch_shortcut_action(action, &input);
             });
         }
+        let manage_folders_sender = sender.input_sender().clone();
+        big_app_kit::desktop::install_action(&win_actions, "add-folder", move || {
+            let _ = manage_folders_sender.send(AudioShellInput::ShowManageFolders);
+        });
 
         // Window-level shortcuts. Modified bindings are GTK accelerators over
         // the actions above; bare single-key bindings stay here so text widgets
@@ -519,6 +527,7 @@ impl Component for AudioShell {
                 playlist_manager,
                 playlist,
                 playback_bar,
+                trim,
                 _files: files,
                 radio,
                 lyrics,
@@ -544,6 +553,9 @@ impl Component for AudioShell {
                 mpris,
                 mpris_state,
                 duration_secs: 0.0,
+                trim_active: false,
+                trim_ranges: Vec::new(),
+                trim_play_selection: false,
                 mpv,
                 db,
                 db_read,

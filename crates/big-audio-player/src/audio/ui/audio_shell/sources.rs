@@ -74,6 +74,21 @@ impl AudioShell {
         });
     }
 
+    /// Resolve watched folders off-thread, then open the folder manager dialog.
+    pub(super) fn resolve_watch_folders(&self, sender: &ComponentSender<Self>) {
+        let Some(db) = self.db_read.clone().or_else(|| self.db.clone()) else {
+            return;
+        };
+        let input = sender.input_sender().clone();
+        spawn_db_query(
+            db,
+            |conn| queries::get_watch_folders(conn).unwrap_or_default(),
+            move |folders| {
+                let _ = input.send(AudioShellInput::ManageFoldersResolved(folders));
+            },
+        );
+    }
+
     /// Resolve a radio-panel intent: station CRUD (DB) + stream playback (mpv).
     /// Explore search, favicons, and the explore cache are self-contained in the
     /// panel. Recording is deferred to the recording subsystem.

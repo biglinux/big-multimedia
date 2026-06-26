@@ -18,6 +18,10 @@ use gtk::glib;
 use relm4::ComponentSender;
 
 use big_media_components::player_chrome::spawn_blocking_result;
+use big_relm4_components::layout::{
+    dialog_footer::{BigDialogFooter, BigDialogFooterSpec},
+    dialog_page::BigDialogPage,
+};
 
 use crate::db::models::Track;
 use crate::i18n::i18n;
@@ -91,34 +95,38 @@ pub(super) fn show_tag_editor(
     track: &Track,
     sender: &ComponentSender<LibraryPanel>,
 ) -> Option<TagEditorHandle> {
-    const DEFAULT_W: i32 = 900;
-    const DEFAULT_H: i32 = 750;
+    const CONTENT_W: i32 = 900;
+    const CONTENT_H: i32 = 640;
 
-    let dialog = adw::Window::builder()
+    let dialog = adw::Dialog::builder()
         .title(i18n("Track Info"))
-        .default_width(DEFAULT_W)
-        .default_height(DEFAULT_H)
-        .modal(true)
+        .content_width(CONTENT_W)
+        .content_height(CONTENT_H)
         .build();
-    if let Some(parent) = parent {
-        dialog.set_transient_for(Some(parent));
-    }
+
+    let page = BigDialogPage::plain();
+    let footer = BigDialogFooter::new(&BigDialogFooterSpec::new(i18n("Cancel"), i18n("Save")));
+    let cancel_btn = footer.cancel_button().clone();
+    let save_btn = footer.accept_button().clone();
+    save_btn.set_sensitive(false);
 
     let split = adw::NavigationSplitView::new();
+    split.set_hexpand(true);
+    split.set_vexpand(true);
     split.set_min_sidebar_width(340.0);
     split.set_max_sidebar_width(420.0);
     split.set_sidebar(Some(&build_sidebar_page(track)));
 
     let rows = EditRows::new(track);
-    let (cancel_btn, save_btn) = build_dialog_actions();
-    let (content_page, editor_handle) =
-        build_content_page(track, &rows, &cancel_btn, &save_btn, sender);
+    let (content_page, editor_handle) = build_content_page(track, &rows, &save_btn, sender);
     split.set_content(Some(&content_page));
-    dialog.set_content(Some(&split));
+    page.content().append(&split);
+    page.root().add_bottom_bar(footer.root());
+    dialog.set_child(Some(&page.into_root()));
 
     {
-        // WEAK: the cancel button lives in the dialog window — a strong clone is
-        // a window ⇄ button ⇄ closure cycle that leaks the dialog after close.
+        // WEAK: the cancel button lives in the dialog — a strong clone is a
+        // dialog ⇄ button ⇄ closure cycle that leaks the dialog after close.
         let dialog = dialog.downgrade();
         cancel_btn.connect_clicked(move |_| {
             if let Some(dialog) = dialog.upgrade() {
@@ -128,7 +136,7 @@ pub(super) fn show_tag_editor(
     }
     wire_save(&dialog, &save_btn, track, &rows, sender);
 
-    dialog.present();
+    dialog.present(parent);
     editor_handle
 }
 
@@ -214,29 +222,8 @@ fn optional_entry_text(text: &str) -> Option<String> {
     }
 }
 
-/// Cancel + Save header buttons (hidden until a field goes dirty).
-fn build_dialog_actions() -> (gtk::Button, gtk::Button) {
-    let cancel_btn = gtk::Button::builder()
-        .label(i18n("Cancel"))
-        .visible(false)
-        .build();
-    let save_btn = gtk::Button::builder()
-        .label(i18n("Save"))
-        .visible(false)
-        .build();
-    save_btn.add_css_class("suggested-action");
-    (cancel_btn, save_btn)
-}
-
 /// Sidebar page: album art (off-thread) + read-only file info.
 fn build_sidebar_page(track: &Track) -> adw::NavigationPage {
-    let toolbar = adw::ToolbarView::new();
-    let header = adw::HeaderBar::builder()
-        .show_end_title_buttons(false)
-        .build();
-    header.set_title_widget(Some(&adw::WindowTitle::new(&i18n("File Info"), "")));
-    toolbar.add_top_bar(&header);
-
     let sidebar_box = gtk::Box::builder()
         .orientation(gtk::Orientation::Vertical)
         .spacing(12)
@@ -251,14 +238,14 @@ fn build_sidebar_page(track: &Track) -> adw::NavigationPage {
 
     let scroll = gtk::ScrolledWindow::builder()
         .hscrollbar_policy(gtk::PolicyType::Never)
+        .hexpand(true)
         .vexpand(true)
         .child(&sidebar_box)
         .build();
-    toolbar.set_content(Some(&scroll));
 
     adw::NavigationPage::builder()
         .title(i18n("File Info"))
-        .child(&toolbar)
+        .child(&scroll)
         .build()
 }
 
@@ -357,17 +344,9 @@ fn append_info_row(sidebar_box: &gtk::Box, label: &str, value: &str, path: bool)
 fn build_content_page(
     track: &Track,
     rows: &EditRows,
-    cancel_btn: &gtk::Button,
     save_btn: &gtk::Button,
     sender: &ComponentSender<LibraryPanel>,
 ) -> (adw::NavigationPage, Option<TagEditorHandle>) {
-    let toolbar = adw::ToolbarView::new();
-    let header = adw::HeaderBar::new();
-    header.set_title_widget(Some(&adw::WindowTitle::new(&i18n("Track Info"), "")));
-    header.pack_start(cancel_btn);
-    header.pack_end(save_btn);
-    toolbar.add_top_bar(&header);
-
     let content = gtk::Box::builder()
         .orientation(gtk::Orientation::Vertical)
         .spacing(18)
@@ -391,31 +370,25 @@ fn build_content_page(
     group.add(&rows.comment);
     content.append(&group);
 
-    connect_dirty_detection(save_btn, cancel_btn, rows, track);
+    connect_dirty_detection(save_btn, rows, track);
     let editor_handle = maybe_add_musicbrainz_lookup(&content, track, rows, sender);
 
     let scroll = gtk::ScrolledWindow::builder()
         .hscrollbar_policy(gtk::PolicyType::Never)
+        .hexpand(true)
         .vexpand(true)
         .child(&content)
         .build();
-    toolbar.set_content(Some(&scroll));
 
     let page = adw::NavigationPage::builder()
         .title(i18n("Track Info"))
-        .child(&toolbar)
+        .child(&scroll)
         .build();
     (page, editor_handle)
 }
 
-/// Show Save/Cancel only when at least one editable row differs from its
-/// original value.
-fn connect_dirty_detection(
-    save_btn: &gtk::Button,
-    cancel_btn: &gtk::Button,
-    rows: &EditRows,
-    track: &Track,
-) {
+/// Enable Save only when at least one editable row differs from its original value.
+fn connect_dirty_detection(save_btn: &gtk::Button, rows: &EditRows, track: &Track) {
     let num = |n: Option<i32>| n.map_or_else(String::new, |n| n.to_string());
     let originals: [String; 9] = [
         track.title.clone().unwrap_or_default(),
@@ -434,13 +407,11 @@ fn connect_dirty_detection(
 
     let recheck = {
         let save_btn = save_btn.clone();
-        let cancel_btn = cancel_btn.clone();
         std::rc::Rc::new(move || {
             let dirty = pairs
                 .iter()
                 .any(|(row, orig)| row.text().as_str() != orig.as_str());
-            save_btn.set_visible(dirty);
-            cancel_btn.set_visible(dirty);
+            save_btn.set_sensitive(dirty);
         })
     };
     for editable in editables {
@@ -451,14 +422,14 @@ fn connect_dirty_detection(
 
 /// Save → collect fields → emit `WriteTags` → close. The shell owns the write.
 fn wire_save(
-    dialog: &adw::Window,
+    dialog: &adw::Dialog,
     save_btn: &gtk::Button,
     track: &Track,
     rows: &EditRows,
     sender: &ComponentSender<LibraryPanel>,
 ) {
-    // WEAK: the save button lives in the dialog window — a strong clone is a
-    // window ⇄ button ⇄ closure cycle that leaks the dialog after close.
+    // WEAK: the save button lives in the dialog — a strong clone is a
+    // dialog ⇄ button ⇄ closure cycle that leaks the dialog after close.
     let dialog = dialog.downgrade();
     let rows = rows.clone();
     let out = sender.clone();

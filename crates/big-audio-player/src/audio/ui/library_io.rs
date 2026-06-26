@@ -12,6 +12,7 @@ use gtk::glib;
 
 use big_app_kit::file_dialogs::FilePicker;
 use big_media_components::player_chrome::spawn_blocking_result;
+use big_relm4_components::layout::dialog_page::BigDialogPage;
 use big_relm4_components::list::button_strip_row::{BigButtonStripRow, BigButtonStripRowSpec};
 use big_relm4_components::list::info_row::{BigInfoRow, BigInfoRowSpec};
 use relm4::ComponentSender;
@@ -20,6 +21,11 @@ use crate::db::models::{Track, WatchFolder};
 use crate::i18n::i18n;
 
 use super::library_panel::{LibraryPanel, LibraryPanelOutput};
+
+const MUSIC_FOLDERS_DIALOG_WIDTH: i32 = 600;
+const MUSIC_FOLDERS_DIALOG_HEIGHT: i32 = 560;
+const MUSIC_FOLDERS_CONTENT_WIDTH: i32 = 560;
+const MUSIC_FOLDERS_TIGHTENING_WIDTH: i32 = 420;
 
 /// Export the current detail tracks as an `.m3u8` playlist. The save picker
 /// runs on the main loop; the `#EXTM3U`/`#EXTINF` body is built and written
@@ -115,42 +121,35 @@ pub(super) fn show_manage_folders(
     folders: &[WatchFolder],
     sender: &ComponentSender<LibraryPanel>,
 ) {
-    let content = gtk::Box::builder()
-        .orientation(gtk::Orientation::Vertical)
-        .spacing(16)
-        .margin_top(16)
-        .margin_bottom(24)
-        .margin_start(24)
-        .margin_end(24)
-        .build();
+    let page = BigDialogPage::scrolled_clamped(
+        MUSIC_FOLDERS_CONTENT_WIDTH,
+        MUSIC_FOLDERS_TIGHTENING_WIDTH,
+    );
+    page.root()
+        .update_property(&[gtk::accessible::Property::Label(&i18n("Music Folders"))]);
 
+    let content = page.content();
+    content.set_spacing(14);
     content.append(&build_intro_label());
-    content.append(&build_folders_card(folders, sender));
+    content.append(&build_folders_card(parent, folders, sender));
     content.append(&build_tips_card());
 
-    let scroll = gtk::ScrolledWindow::builder()
-        .hscrollbar_policy(gtk::PolicyType::Never)
-        .vscrollbar_policy(gtk::PolicyType::Automatic)
-        .child(&content)
-        .build();
-
-    let dialog = adw::Window::builder()
+    let dialog = adw::Dialog::builder()
         .title(i18n("Music Folders"))
-        .default_width(720)
-        .default_height(640)
-        .modal(true)
-        .transient_for(parent)
+        .content_width(MUSIC_FOLDERS_DIALOG_WIDTH)
+        .content_height(MUSIC_FOLDERS_DIALOG_HEIGHT)
         .build();
-    let toolbar_view = adw::ToolbarView::new();
-    toolbar_view.add_top_bar(&adw::HeaderBar::new());
-    toolbar_view.set_content(Some(&scroll));
-    dialog.set_content(Some(&toolbar_view));
-    dialog.present();
+    dialog.set_child(Some(&page.into_root()));
+    dialog.present(Some(parent));
 }
 
 /// The framed "Monitored Folders" card: header, description, the folder list,
 /// and the add/scan button strip.
-fn build_folders_card(folders: &[WatchFolder], sender: &ComponentSender<LibraryPanel>) -> gtk::Box {
+fn build_folders_card(
+    parent: &gtk::Window,
+    folders: &[WatchFolder],
+    sender: &ComponentSender<LibraryPanel>,
+) -> gtk::Box {
     let card = gtk::Box::builder()
         .orientation(gtk::Orientation::Vertical)
         .spacing(0)
@@ -195,7 +194,7 @@ fn build_folders_card(folders: &[WatchFolder], sender: &ComponentSender<LibraryP
     inner.append(&desc);
 
     inner.append(&build_folders_list(folders, sender));
-    inner.append(&build_folder_buttons(sender));
+    inner.append(&build_folder_buttons(parent, sender));
 
     card.append(&inner);
     card
@@ -228,11 +227,11 @@ fn build_folders_list(
     }
 
     for folder in folders {
+        let folder_label = abbreviate_home(&folder.path);
         let strip = BigButtonStripRow::new(
-            BigButtonStripRowSpec::new(abbreviate_home(&folder.path))
-                .prefix_icon_name("folder-symbolic"),
+            BigButtonStripRowSpec::new(&folder_label).prefix_icon_name("folder-symbolic"),
         );
-        let remove_btn = build_remove_button();
+        let remove_btn = build_remove_button(&folder_label);
         let folder_id = folder.id;
         let out = sender.clone();
         let list_weak = list.downgrade();
@@ -247,7 +246,7 @@ fn build_folders_list(
 }
 
 /// The add-folder + scan-now button row under the folder list.
-fn build_folder_buttons(sender: &ComponentSender<LibraryPanel>) -> gtk::Box {
+fn build_folder_buttons(parent: &gtk::Window, sender: &ComponentSender<LibraryPanel>) -> gtk::Box {
     let buttons = gtk::Box::builder()
         .orientation(gtk::Orientation::Horizontal)
         .spacing(8)
@@ -266,8 +265,9 @@ fn build_folder_buttons(sender: &ComponentSender<LibraryPanel>) -> gtk::Box {
     ));
     add_btn.update_property(&[gtk::accessible::Property::Label(&i18n("Add music folder"))]);
     let out_add = sender.clone();
-    add_btn.connect_clicked(move |btn| {
-        let Some(window) = btn.root().and_downcast::<gtk::Window>() else {
+    let parent_weak = parent.downgrade();
+    add_btn.connect_clicked(move |_| {
+        let Some(window) = parent_weak.upgrade() else {
             return;
         };
         let out = out_add.clone();
@@ -286,9 +286,10 @@ fn build_folder_buttons(sender: &ComponentSender<LibraryPanel>) -> gtk::Box {
             .label(i18n("Scan Now"))
             .build(),
     ));
-    scan_btn.update_property(&[gtk::accessible::Property::Label(&i18n(
-        "Scan all monitored folders now",
-    ))]);
+    scan_btn.update_property(&[
+        gtk::accessible::Property::Label(&i18n("Scan Now")),
+        gtk::accessible::Property::Description(&i18n("Scan all monitored folders now")),
+    ]);
     let out_scan = sender.clone();
     scan_btn.connect_clicked(move |btn| {
         btn.set_sensitive(false);
@@ -363,7 +364,7 @@ fn abbreviate_home(path: &str) -> String {
 }
 
 /// Error-styled circular trash button used for each folder row.
-fn build_remove_button() -> gtk::Button {
+fn build_remove_button(folder_label: &str) -> gtk::Button {
     let btn = gtk::Button::builder()
         .icon_name("user-trash-symbolic")
         .valign(gtk::Align::Center)
@@ -374,7 +375,10 @@ fn build_remove_button() -> gtk::Button {
         ])
         .build();
     big_relm4_components::feedback::tooltip::set(&btn, &i18n("Remove folder and its tracks"));
-    btn.update_property(&[gtk::accessible::Property::Label(&i18n("Remove folder"))]);
+    btn.update_property(&[gtk::accessible::Property::Label(&format!(
+        "{}: {folder_label}",
+        i18n("Remove folder")
+    ))]);
     btn
 }
 

@@ -3,20 +3,21 @@
 //! Reads the live mpv backend (general / metadata / video / audio / streaming /
 //! track sections) into copyable rows, with a "Copy All" header button. A free
 //! function rather than a Relm4 component: it builds and presents a transient
-//! `adw::Window` from a one-shot snapshot of mpv state and owns no further
+//! `adw::Dialog` from a one-shot snapshot of mpv state and owns no further
 //! lifecycle (the shell calls it from a header/menu action).
 //!
 //! Reuse note: the shared `big_media_components::media::file_info_dialog`
 //! consumes an ffprobe JSON model, whereas the player wants the *live* mpv view
 //! (hwdec, cache %, selected tracks). Those differ, so this dialog stays
-//! app-local but reuses the shared copyable-row + copy-all widgets and the
-//! shared byte/time formatting helpers, not bespoke ones.
+//! app-local but reuses the shared dialog chrome, copyable-row + copy-all
+//! widgets, and the shared byte/time formatting helpers, not bespoke ones.
 
 use std::sync::Arc;
 
 use adw::prelude::*;
 use big_media_components::bytes::decimal_detailed;
 use big_media_components::time::duration_hms;
+use big_relm4_components::layout::dialog_page::BigDialogPage;
 use big_relm4_components::list::copyable_info_row::{
     copy_all_button, BigCopyableInfoRow, BigCopyableInfoRowSpec, BigInfoLines,
 };
@@ -33,43 +34,41 @@ fn info_row(title: &str, value: &str, lines: &BigInfoLines) -> adw::ActionRow {
     .into_row()
 }
 
-/// Present the media-information dialog as a transient child of `parent`.
-pub fn show_video_media_info_dialog(parent: &impl IsA<gtk::Window>, mpv: &Arc<MpvBackend>) {
-    let dialog = adw::Window::builder()
+/// Present the media-information dialog over `parent`.
+pub fn show_video_media_info_dialog(parent: &impl IsA<gtk::Widget>, mpv: &Arc<MpvBackend>) {
+    let dialog = adw::Dialog::builder()
         .title(i18n("Media Information"))
-        .transient_for(parent)
-        .modal(false)
-        .default_width(500)
-        .default_height(500)
+        .content_width(500)
+        .content_height(500)
         .build();
 
-    let toolbar = adw::ToolbarView::new();
-    let header = adw::HeaderBar::new();
+    let page = BigDialogPage::scrolled_clamped(500, 420);
     let lines = BigInfoLines::new();
-    header.pack_end(&copy_all_button(&i18n("Copy All"), lines.clone()));
-    toolbar.add_top_bar(&header);
+    page.header()
+        .pack_end(&copy_all_button(&i18n("Copy All"), lines.clone()));
 
-    let page = adw::PreferencesPage::new();
-    page.add(&build_general_group(mpv, &lines));
+    let content = page.content().clone();
+    content.set_spacing(12);
+    content.append(&build_general_group(mpv, &lines));
     if let Some(group) = build_metadata_group(mpv, &lines) {
-        page.add(&group);
+        content.append(&group);
     }
     if let Some(group) = build_video_group(mpv, &lines) {
-        page.add(&group);
+        content.append(&group);
     }
     if let Some(group) = build_audio_group(mpv, &lines) {
-        page.add(&group);
+        content.append(&group);
     }
     if let Some(group) = build_streaming_group(mpv, &lines) {
-        page.add(&group);
+        content.append(&group);
     }
     for group in build_track_groups(&mpv.get_track_list(), &lines) {
-        page.add(&group);
+        content.append(&group);
     }
 
-    toolbar.set_content(Some(&page));
-    dialog.set_content(Some(&toolbar));
-    dialog.present();
+    let root = page.into_root();
+    dialog.set_child(Some(&root));
+    dialog.present(Some(parent));
 }
 
 fn build_general_group(mpv: &Arc<MpvBackend>, lines: &BigInfoLines) -> adw::PreferencesGroup {

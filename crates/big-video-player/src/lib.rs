@@ -182,7 +182,11 @@ pub fn run() -> gtk::glib::ExitCode {
     // Wayland and crash playback after ~40 s. Mirrors big-host's
     // configure_process_environment.
     // SAFETY: main path, before GTK init and before app threads.
-    let gsk_renderer = if nvidia_proprietary_driver_in_use() { "gl" } else { "ngl" };
+    let gsk_renderer = if nvidia_proprietary_driver_in_use() {
+        "gl"
+    } else {
+        "ngl"
+    };
     unsafe {
         std::env::set_var("GSK_RENDERER", gsk_renderer);
     }

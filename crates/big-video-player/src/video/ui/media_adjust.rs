@@ -28,6 +28,7 @@ use big_relm4_components::input::debounce::connect_debounced_adjustment;
 use big_relm4_components::input::illustrated_slider_row::{
     BigIllustratedSliderRow, BigIllustratedSliderRowSpec,
 };
+use big_relm4_components::layout::dialog_page::BigDialogPage;
 
 use crate::config::video::RESOURCE_PREFIX;
 use crate::i18n::i18n;
@@ -630,14 +631,13 @@ fn present_adjust_dialog(
     height: i32,
     root: &adw::ApplicationWindow,
 ) {
-    let toolbar = adw::ToolbarView::new();
-    toolbar.add_top_bar(&adw::HeaderBar::new());
-    toolbar.set_content(Some(content));
+    let page = BigDialogPage::scrolled_clamped(width, width);
+    page.content().append(content);
     let dialog = adw::Dialog::builder()
         .title(title)
         .content_width(width)
         .content_height(height)
-        .child(&toolbar)
+        .child(&page.into_root())
         .build();
     dialog.present(Some(root));
 }

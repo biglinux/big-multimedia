@@ -31,6 +31,9 @@ impl AudioShell {
                     }
                 }
             }
+            AudioPlaybackBarOutput::SegmentEdgeAdjusted { id, start, end } => {
+                self.adjust_trim_segment(id, start, end);
+            }
             AudioPlaybackBarOutput::VolumeChanged(vol) => {
                 if let Some(mpv) = &self.mpv {
                     mpv.set_volume(vol);
@@ -75,6 +78,9 @@ impl AudioShell {
             // The queue lives in the always-visible right content pane now, so
             // the playlist button is a no-op (kept for transport-bar API parity).
             AudioPlaybackBarOutput::ShowPlaylist => {}
+            AudioPlaybackBarOutput::ShowTrimExport => {
+                sender.input(AudioShellInput::ShowTrimExport);
+            }
             AudioPlaybackBarOutput::SpeedChanged(speed) => {
                 if let Some(mpv) = &self.mpv {
                     mpv.set_speed(speed);
@@ -154,6 +160,7 @@ pub(super) fn transport_labels() -> BigAudioTransportLabels {
         volume: i18n("Volume"),
         speed: i18n("Speed"),
         voice: i18n("Voice Enhancement"),
+        trim_export: i18n("Trim & Export"),
         lyrics: i18n("Lyrics"),
         playlist: i18n("Playlist"),
         status: i18n("Status"),

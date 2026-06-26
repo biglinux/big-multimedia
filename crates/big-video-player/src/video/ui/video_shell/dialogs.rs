@@ -1,6 +1,7 @@
 use super::input::shell_input_sender;
 use super::playback::is_remote_uri;
 use super::*;
+use big_relm4_components::layout::dialog_page::BigDialogPage;
 
 impl VideoShell {
     /// Present the cast device picker in a dialog (same mount/unparent pattern
@@ -49,14 +50,13 @@ impl VideoShell {
                 on_filter_changed,
             })
             .detach();
-        let toolbar = adw::ToolbarView::new();
-        toolbar.add_top_bar(&adw::HeaderBar::new());
-        toolbar.set_content(Some(dialog.widget()));
+        let page = BigDialogPage::plain();
+        page.root().set_content(Some(dialog.widget()));
         let adw_dialog = adw::Dialog::builder()
             .title(i18n("Video Filters"))
             .content_width(400)
             .content_height(560)
-            .child(&toolbar)
+            .child(&page.into_root())
             .build();
         // Own the controller for the dialog's lifetime: a `Cell` lets the `Fn`
         // close handler drop it (taking the runtime down) when the dialog goes
@@ -126,24 +126,14 @@ impl VideoShell {
             ),
         ];
 
-        let toolbar = adw::ToolbarView::new();
-        toolbar.add_top_bar(&adw::HeaderBar::new());
-        let content = gtk::Box::builder()
-            .orientation(gtk::Orientation::Vertical)
-            .spacing(12)
-            .margin_top(12)
-            .margin_bottom(12)
-            .margin_start(12)
-            .margin_end(12)
-            .build();
-        content.append(&group);
-        toolbar.set_content(Some(&content));
+        let page = BigDialogPage::scrolled_clamped(420, 360);
+        page.content().append(&group);
 
         let dialog = adw::Dialog::builder()
             .title(i18n("Online Video Quality"))
             .content_width(420)
             .content_height(360)
-            .child(&toolbar)
+            .child(&page.into_root())
             .build();
         for (title, format, subtitle) in choices {
             let row = BigNavigationRow::new(
@@ -234,24 +224,16 @@ impl VideoShell {
             .content_width(520)
             .content_height(480)
             .build();
-        let toolbar = adw::ToolbarView::new();
-        toolbar.add_top_bar(&adw::HeaderBar::new());
-
-        let scroll = gtk::ScrolledWindow::builder().vexpand(true).build();
-        let clamp = adw::Clamp::builder()
-            .maximum_size(500)
-            .margin_start(12)
-            .margin_end(12)
-            .margin_top(12)
-            .margin_bottom(12)
-            .build();
+        let page = BigDialogPage::scrolled_clamped(500, 420);
+        let content = page.content().clone();
 
         if entries.is_empty() {
             let status = adw::StatusPage::builder()
                 .icon_name("document-open-recent-symbolic")
                 .title(i18n("No Recent Files"))
                 .build();
-            clamp.set_child(Some(&status));
+            status.set_vexpand(true);
+            content.append(&status);
         } else {
             let group = adw::PreferencesGroup::new();
             let sender = shell_input_sender();
@@ -274,11 +256,9 @@ impl VideoShell {
                 });
                 group.add(&row);
             }
-            clamp.set_child(Some(&group));
+            content.append(&group);
         }
-        scroll.set_child(Some(&clamp));
-        toolbar.set_content(Some(&scroll));
-        dialog.set_child(Some(&toolbar));
+        dialog.set_child(Some(&page.into_root()));
         dialog.present(Some(root));
     }
 
@@ -408,20 +388,20 @@ pub(super) fn present_controller_dialog(
     if widget.parent().is_some() {
         return;
     }
-    let toolbar = adw::ToolbarView::new();
-    toolbar.add_top_bar(&adw::HeaderBar::new());
-    toolbar.set_content(Some(widget));
+    let page = BigDialogPage::plain();
+    page.root().set_content(Some(widget));
+    let dialog_root = page.into_root();
     let dialog = adw::Dialog::builder()
         .title(title)
         .content_width(content_width)
         .content_height(content_height)
-        .child(&toolbar)
+        .child(&dialog_root)
         .build();
-    let toolbar_weak = toolbar.downgrade();
+    let dialog_root_weak = dialog_root.downgrade();
     let widget = widget.clone();
     dialog.connect_closed(move |_| {
-        if let Some(toolbar) = toolbar_weak.upgrade() {
-            toolbar.set_content(None::<&gtk::Widget>);
+        if let Some(dialog_root) = dialog_root_weak.upgrade() {
+            dialog_root.set_content(None::<&gtk::Widget>);
         }
         widget.unparent();
     });

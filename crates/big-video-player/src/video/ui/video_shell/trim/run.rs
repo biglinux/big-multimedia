@@ -13,7 +13,15 @@ use big_converter_ui::export::{build_single_export_queue, QuickExportChoice};
 use big_media_components::time::playback_time;
 use big_media_runtime::converter::ffmpeg::progress::ProgressInfo;
 use big_media_runtime::converter::queue::{QueueMessage, SegmentOutputMode};
+use big_relm4_components::input::inline_spin_set::{BigInlineSpinItemSpec, BigInlineSpinSet};
+use big_relm4_components::input::preference_cards::BigSpinRange;
 use big_relm4_components::input::slider_row::{BigSliderRow, BigSliderRowSpec};
+use big_relm4_components::layout::advanced_disclosure::advanced_disclosure;
+use big_relm4_components::layout::dialog_footer::{BigDialogFooter, BigDialogFooterSpec};
+use big_relm4_components::layout::dialog_page::BigDialogPage;
+use big_relm4_components::layout::preferences_dialog::{
+    BigPreferencesDialog, BigPreferencesDialogSpec,
+};
 use big_relm4_components::list::progress_row::BigProgressRowSpec;
 
 use crate::i18n::i18n;
@@ -30,6 +38,7 @@ impl VideoShell {
             self.notify(&i18n("Open a local video to cut it"));
             return;
         }
+        *self.trim_filters.borrow_mut() = self.current_video_filters();
         self.trim_active.set(true);
         // Pin the OSD so the transport (scrub/play) stays available while cutting
         // (the OSD shares this same flag) and turn the seek bar into the cut
@@ -284,71 +293,84 @@ impl VideoShell {
         root: &adw::ApplicationWindow,
     ) {
         let duration = self.trim_duration();
-        let start_row = adw::SpinRow::builder()
-            .title(i18n("Start (seconds)"))
-            .digits(2)
-            .adjustment(&gtk::Adjustment::new(start, 0.0, duration, 0.1, 5.0, 0.0))
-            .build();
-        let end_row = adw::SpinRow::builder()
-            .title(i18n("End (seconds)"))
-            .digits(2)
-            .adjustment(&gtk::Adjustment::new(end, 0.0, duration, 0.1, 5.0, 0.0))
-            .build();
-        let group = adw::PreferencesGroup::builder()
-            .title(i18n("Cut times"))
-            .description(i18n("Hundredth-second precision; either order is fine"))
-            .build();
-        group.add(&start_row);
-        group.add(&end_row);
+        let spin_range = BigSpinRange::new(0.0, duration, 0.1, 5.0);
+        let spin_set = BigInlineSpinSet::new(&[
+            BigInlineSpinItemSpec::new("start", i18n("Start (seconds)"), start, spin_range)
+                .digits(2)
+                .width_chars(7)
+                .unit(i18n("s")),
+            BigInlineSpinItemSpec::new("end", i18n("End (seconds)"), end, spin_range)
+                .digits(2)
+                .width_chars(7)
+                .unit(i18n("s")),
+        ]);
+        let start_spin = spin_set
+            .spin("start")
+            .expect("trim edit dialog start spin exists")
+            .clone();
+        let end_spin = spin_set
+            .spin("end")
+            .expect("trim edit dialog end spin exists")
+            .clone();
 
-        let apply = gtk::Button::builder()
-            .label(i18n("Apply"))
-            .css_classes(["suggested-action", "pill"])
-            .halign(gtk::Align::Center)
-            .margin_top(12)
-            .build();
-
-        let page = gtk::Box::builder()
+        let section = gtk::Box::builder()
             .orientation(gtk::Orientation::Vertical)
-            .spacing(12)
-            .margin_top(12)
-            .margin_bottom(12)
-            .margin_start(12)
-            .margin_end(12)
+            .spacing(6)
             .build();
-        page.append(&group);
-        page.append(&apply);
+        let title = gtk::Label::builder()
+            .label(i18n("Cut times"))
+            .xalign(0.0)
+            .css_classes(["heading"])
+            .build();
+        let description = gtk::Label::builder()
+            .label(i18n("Hundredth-second precision; either order is fine"))
+            .xalign(0.0)
+            .wrap(true)
+            .css_classes(["dim-label"])
+            .build();
+        section.append(&title);
+        section.append(&description);
+        section.append(spin_set.root());
 
-        let header = adw::HeaderBar::new();
-        let toolbar = adw::ToolbarView::new();
-        toolbar.add_top_bar(&header);
-        toolbar.set_content(Some(&page));
-        let window = adw::Window::builder()
+        let dialog = adw::Dialog::builder()
             .title(i18n("Edit Cut"))
-            .modal(true)
-            .transient_for(root)
-            .default_width(380)
-            .content(&toolbar)
+            .content_width(380)
+            .content_height(340)
             .build();
+        let page = BigDialogPage::scrolled_clamped(360, 320);
+        let footer = BigDialogFooter::new(&BigDialogFooterSpec::new(i18n("Cancel"), i18n("Apply")));
+        page.content().append(&section);
+        page.root().add_bottom_bar(footer.root());
+        dialog.set_child(Some(&page.into_root()));
+
+        let dialog_ref = dialog.downgrade();
+        footer.cancel_button().connect_clicked(move |_| {
+            if let Some(dialog) = dialog_ref.upgrade() {
+                dialog.close();
+            }
+        });
 
         let trim = self.trim.sender().clone();
-        apply.connect_clicked(glib::clone!(
+        let dialog_ref = dialog.downgrade();
+        footer.accept_button().connect_clicked(glib::clone!(
+            #[strong]
+            dialog_ref,
             #[weak]
-            window,
+            start_spin,
             #[weak]
-            start_row,
-            #[weak]
-            end_row,
+            end_spin,
             move |_| {
                 let _ = trim.send(VideoTrimBarInput::SetSegmentTimes(
                     id,
-                    start_row.value(),
-                    end_row.value(),
+                    start_spin.value(),
+                    end_spin.value(),
                 ));
-                window.close();
+                if let Some(dialog) = dialog_ref.upgrade() {
+                    dialog.close();
+                }
             }
         ));
-        window.present();
+        dialog.present(Some(root));
     }
 
     /// Re-encode settings dialog (the gear): container/codec/quality (shared with
@@ -360,57 +382,76 @@ impl VideoShell {
             return;
         }
 
-        let page = gtk::Box::builder()
-            .orientation(gtk::Orientation::Vertical)
-            .spacing(12)
-            .margin_top(12)
-            .margin_bottom(12)
-            .margin_start(12)
-            .margin_end(12)
-            .build();
-        page.append(self.trim_encode.group());
+        let dialog = BigPreferencesDialog::new(
+            &BigPreferencesDialogSpec::new(i18n("Clip export settings")).size(560, 656),
+        );
+        dialog.action_bar().set_visible(false);
+        dialog.add_group(self.trim_encode.group());
 
         // Colour adjustments (imported editor slider component) → VideoFilters.
-        let adjust = adw::PreferencesGroup::builder()
-            .title(i18n("Adjustments"))
-            .build();
-        let (brightness_row, brightness_scale, _) = BigSliderRow::new(BigSliderRowSpec::new(
-            i18n("Brightness"),
+        let adjust = adw::PreferencesGroup::new();
+        let adjust_row = advanced_disclosure(
+            &i18n("Image adjustments"),
+            &i18n("Brightness, contrast, color intensity, and color balance"),
+            false,
+        );
+        let current_filters = self.trim_filters.borrow().clone();
+        let (brightness_row, brightness_scale, brightness_reset) =
+            BigSliderRow::new(BigSliderRowSpec::new(
+                i18n("Brightness"),
+                -1.0,
+                1.0,
+                current_filters.brightness,
+                0.05,
+                i18n("Reset"),
+            ))
+            .into_parts();
+        let (contrast_row, contrast_scale, contrast_reset) =
+            BigSliderRow::new(BigSliderRowSpec::new(
+                i18n("Contrast"),
+                0.0,
+                2.0,
+                current_filters.contrast,
+                0.05,
+                i18n("Reset"),
+            ))
+            .into_parts();
+        let (saturation_row, saturation_scale, saturation_reset) =
+            BigSliderRow::new(BigSliderRowSpec::new(
+                i18n("Color intensity"),
+                0.0,
+                2.0,
+                current_filters.saturation,
+                0.05,
+                i18n("Reset"),
+            ))
+            .into_parts();
+        let (hue_row, hue_scale, hue_reset) = BigSliderRow::new(BigSliderRowSpec::new(
+            i18n("Color balance"),
             -1.0,
             1.0,
-            0.0,
+            current_filters.hue,
             0.05,
             i18n("Reset"),
         ))
         .into_parts();
-        let (saturation_row, saturation_scale, _) = BigSliderRow::new(BigSliderRowSpec::new(
-            i18n("Saturation"),
-            0.0,
-            2.0,
-            1.0,
-            0.05,
-            i18n("Reset"),
-        ))
-        .into_parts();
-        let (hue_row, hue_scale, _) = BigSliderRow::new(BigSliderRowSpec::new(
-            i18n("Hue"),
-            -1.0,
-            1.0,
-            0.0,
-            0.05,
-            i18n("Reset"),
-        ))
-        .into_parts();
-        adjust.add(&brightness_row);
-        adjust.add(&saturation_row);
-        adjust.add(&hue_row);
-        page.append(&adjust);
+        adjust_row.add_row(&brightness_row);
+        adjust_row.add_row(&contrast_row);
+        adjust_row.add_row(&saturation_row);
+        adjust_row.add_row(&hue_row);
+        adjust.add(&adjust_row);
+        dialog.add_group(&adjust);
 
         let filters = self.trim_filters.clone();
         brightness_scale.connect_value_changed(glib::clone!(
             #[strong]
             filters,
             move |s| filters.borrow_mut().brightness = s.value()
+        ));
+        contrast_scale.connect_value_changed(glib::clone!(
+            #[strong]
+            filters,
+            move |s| filters.borrow_mut().contrast = s.value()
         ));
         saturation_scale.connect_value_changed(glib::clone!(
             #[strong]
@@ -422,40 +463,48 @@ impl VideoShell {
             filters,
             move |s| filters.borrow_mut().hue = s.value()
         ));
+        brightness_reset.connect_clicked(glib::clone!(
+            #[weak]
+            brightness_scale,
+            move |_| brightness_scale.set_value(0.0)
+        ));
+        contrast_reset.connect_clicked(glib::clone!(
+            #[weak]
+            contrast_scale,
+            move |_| contrast_scale.set_value(1.0)
+        ));
+        saturation_reset.connect_clicked(glib::clone!(
+            #[weak]
+            saturation_scale,
+            move |_| saturation_scale.set_value(1.0)
+        ));
+        hue_reset.connect_clicked(glib::clone!(
+            #[weak]
+            hue_scale,
+            move |_| hue_scale.set_value(0.0)
+        ));
 
         // Output layout: join the cuts into one file or save each separately.
         let output = adw::PreferencesGroup::builder()
-            .title(i18n("Output"))
+            .title(i18n("Output files"))
             .build();
         let output_row = adw::ComboRow::builder()
             .title(i18n("When there are multiple cuts"))
+            .subtitle(i18n(
+                "One file is easier to share; separate files are easier to edit later",
+            ))
             .model(&gtk::StringList::new(&[
                 &i18n("Join into one file"),
                 &i18n("Save each cut separately"),
             ]))
             .build();
+        output_row.set_selected(u32::from(self.trim_split.get()));
         let split = self.trim_split.clone();
         output_row.connect_selected_notify(move |row| split.set(row.selected() == 1));
         output.add(&output_row);
-        page.append(&output);
+        dialog.add_group(&output);
 
-        let header = adw::HeaderBar::new();
-        let toolbar = adw::ToolbarView::new();
-        toolbar.add_top_bar(&header);
-        toolbar.set_content(Some(
-            &gtk::ScrolledWindow::builder()
-                .hscrollbar_policy(gtk::PolicyType::Never)
-                .child(&page)
-                .build(),
-        ));
-        let window = adw::Window::builder()
-            .title(i18n("Re-encode settings"))
-            .modal(true)
-            .transient_for(root)
-            .default_width(420)
-            .default_height(520)
-            .content(&toolbar)
-            .build();
+        let window = dialog.window().clone();
         // Hide (not destroy) on close so the shared group stays parented + the
         // settings persist for the next open.
         window.connect_close_request(|window| {
@@ -463,7 +512,7 @@ impl VideoShell {
             glib::Propagation::Stop
         });
         *self.trim_encode_dialog.borrow_mut() = Some(window.clone());
-        window.present();
+        dialog.present(root);
     }
 
     /// Finish an export: hide the strip, re-enable the bar, drop the queue,

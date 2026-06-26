@@ -9,9 +9,9 @@ pub use big_converter_ui::{self, ConverterMode, RunOptions};
 
 /// Boot the audio-converter UI. Equivalent to what `main.rs` does.
 ///
-/// Returns the GTK exit code. Not called from tests — present only
+/// Returns the process exit code. Not called from tests — present only
 /// so the binary can delegate.
-pub fn main_impl() -> gtk::glib::ExitCode {
+pub fn main_impl() -> std::process::ExitCode {
     big_converter_ui::run(RunOptions {
         mode: ConverterMode::Audio,
         log_filter: "big_media_runtime=info,big_audio_converter=info",

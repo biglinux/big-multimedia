@@ -16,6 +16,8 @@ pub enum AudioShellInput {
     Player(PlayerEvent),
     /// An intent emitted by the playback bar (transport controls).
     Playback(AudioPlaybackBarOutput),
+    /// An intent emitted by the visual trim bar.
+    Trim(AudioTrimBarOutput),
     /// An intent emitted by the files browser.
     Files(FileBrowserOutput),
     /// An intent emitted by the radio panel.
@@ -88,6 +90,10 @@ pub enum AudioShellInput {
     OpenPaths(Vec<String>),
     /// Open the equalizer dialog (main menu).
     ShowEqualizer,
+    /// Resolve watched music folders, then open the folder manager.
+    ShowManageFolders,
+    /// Watched music folders resolved → push into the library dialog.
+    ManageFoldersResolved(Vec<WatchFolder>),
     /// Open the cast device-picker dialog (main menu).
     #[cfg(feature = "chromecast")]
     ShowCast,
@@ -172,9 +178,10 @@ pub enum AudioShellInput {
     /// Convert the current track to `codec` (mp3/aac/flac) beside it — runs off
     /// the main loop via the in-process quick-export engine.
     ConvertTrack(String),
-    /// Open the Trim & Export dialog for the current track (mark in/out, pick a
-    /// format, export just that range — clip a song / make a ringtone).
+    /// Enter visual Trim & Export mode for the current track.
     ShowTrimExport,
+    /// Visual trim export finished on a worker thread.
+    TrimExportFinished(Result<PathBuf, String>),
 }
 
 thread_local! {

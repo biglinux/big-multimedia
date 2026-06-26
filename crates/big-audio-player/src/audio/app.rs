@@ -56,7 +56,7 @@ mod imp {
 
             let app = self.obj();
             Self::setup_actions(&app);
-            Self::setup_accels(&app);
+            super::install_audio_accels(app.upcast_ref());
         }
     }
 
@@ -98,28 +98,6 @@ mod imp {
             install_quit_action(app);
             app.add_action_entries([about]);
         }
-
-        fn setup_accels(app: &super::Application) {
-            use crate::audio::keybindings::{resolve_accels, SHORTCUTS};
-            use crate::settings::{keys, Settings};
-
-            let custom_str = Settings::for_audio().get_string(keys::CUSTOM_KEYBINDINGS);
-
-            // Multi-key defs go through GTK accels; single-key defs are
-            // dispatched by `EventControllerKey` in the window — registering
-            // bare letters as accels would fire them while typing in entries.
-            for (def, accel) in resolve_accels(SHORTCUTS, &custom_str) {
-                if def.single_key {
-                    continue;
-                }
-                let full_action = if def.action.contains('.') {
-                    def.action.to_string()
-                } else {
-                    format!("win.{}", def.action)
-                };
-                app.set_accels_for_action(&full_action, &[&accel]);
-            }
-        }
     }
 }
 
@@ -140,5 +118,30 @@ impl Application {
 
     pub fn run(&self) -> glib::ExitCode {
         ApplicationExtManual::run(self)
+    }
+}
+
+/// Install the audio player's configured GTK accelerators on the supplied app.
+///
+/// Standalone startup calls this through [`Application`]; `big-host` modules
+/// call it during embed boot because they reuse the host `gtk::Application`.
+pub(crate) fn install_audio_accels(app: &gtk::Application) {
+    use crate::audio::keybindings::{resolve_accels, SHORTCUTS};
+    use crate::settings::{keys, Settings};
+
+    let custom_str = Settings::for_audio().get_string(keys::CUSTOM_KEYBINDINGS);
+
+    // Multi-key defs go through GTK accels; single-key defs are dispatched by
+    // `EventControllerKey` in the window so text widgets keep normal typing.
+    for (def, accel) in resolve_accels(SHORTCUTS, &custom_str) {
+        if def.single_key {
+            continue;
+        }
+        let full_action = if def.action.contains('.') {
+            def.action.to_string()
+        } else {
+            format!("win.{}", def.action)
+        };
+        app.set_accels_for_action(&full_action, &[&accel]);
     }
 }

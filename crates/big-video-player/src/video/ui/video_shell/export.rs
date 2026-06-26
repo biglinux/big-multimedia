@@ -36,7 +36,7 @@ impl VideoShell {
                     codec: "h264".into(),
                     quality: "good".into(),
                 },
-                filters: VideoFilters::default(),
+                filters: self.current_video_filters(),
             },
             &i18n("Converting…"),
         );
@@ -84,4 +84,26 @@ impl VideoShell {
             },
         );
     }
+
+    pub(in crate::video::ui::video_shell) fn current_video_filters(&self) -> VideoFilters {
+        let Some(mpv) = self.mpv.borrow().as_ref().cloned() else {
+            return VideoFilters::default();
+        };
+
+        VideoFilters {
+            brightness: mpv_equalizer_offset(mpv.get_brightness()),
+            contrast: mpv_equalizer_multiplier(mpv.get_contrast(), 0.0, 2.0),
+            saturation: mpv_equalizer_multiplier(mpv.get_saturation(), 0.0, 2.0),
+            hue: mpv_equalizer_offset(mpv.get_hue()),
+            ..VideoFilters::default()
+        }
+    }
+}
+
+fn mpv_equalizer_offset(value: i64) -> f64 {
+    (value as f64 / 100.0).clamp(-1.0, 1.0)
+}
+
+fn mpv_equalizer_multiplier(value: i64, lower: f64, upper: f64) -> f64 {
+    (1.0 + value as f64 / 100.0).clamp(lower, upper)
 }

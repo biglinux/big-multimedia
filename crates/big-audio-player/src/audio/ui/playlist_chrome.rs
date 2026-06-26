@@ -79,6 +79,7 @@ pub(super) fn build_toolbar(
         Some(&i18n("Manage Playlists")),
         Some("win.show-manage-playlists"),
     );
+    queue_section.append(Some(&i18n("Music Folders")), Some("win.add-folder"));
     queue_section.append(Some(&i18n("Remove Duplicates")), Some("queue.dedupe"));
     queue_section.append(Some(&i18n("Clear Queue")), Some("queue.clear"));
     menu.append_section(None, &queue_section);

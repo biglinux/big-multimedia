@@ -201,6 +201,7 @@ impl PlaylistManager {
             .selection_mode(gtk::SelectionMode::None)
             .css_classes(["boxed-list"])
             .build();
+        list.update_property(&[gtk::accessible::Property::Label(&i18n("Saved playlists"))]);
         for (id, name, count, secs) in entries {
             list.append(&build_playlist_row(*id, name, *count, *secs, sender, root));
         }
@@ -261,6 +262,7 @@ fn build_save_button(sender: &ComponentSender<PlaylistManager>, root: &adw::Wind
         prompt_name(
             root_weak.upgrade().as_ref(),
             &i18n("Save Current Queue"),
+            &i18n("Playlist name"),
             &i18n("Name for the new playlist"),
             "",
             {
@@ -332,7 +334,10 @@ fn build_playlist_row(
         });
     }
 
-    let rename_btn = suffix_button("document-edit-symbolic", &i18n("Rename"));
+    let rename_btn = suffix_button(
+        "document-edit-symbolic",
+        &format!("{}: {name}", i18n("Rename playlist")),
+    );
     {
         let out = sender.clone();
         let root_weak = root.downgrade();
@@ -341,6 +346,7 @@ fn build_playlist_row(
             prompt_name(
                 root_weak.upgrade().as_ref(),
                 &i18n("Rename Playlist"),
+                &i18n("Playlist name"),
                 &i18n("New name"),
                 &current,
                 {
@@ -354,7 +360,10 @@ fn build_playlist_row(
     }
     row.add_suffix(&rename_btn);
 
-    let export_btn = suffix_button("document-save-symbolic", &i18n("Export"));
+    let export_btn = suffix_button(
+        "document-save-symbolic",
+        &format!("{}: {name}", i18n("Export playlist")),
+    );
     {
         let out = sender.clone();
         export_btn.connect_clicked(move |_| {
@@ -363,7 +372,10 @@ fn build_playlist_row(
     }
     row.add_suffix(&export_btn);
 
-    let delete_btn = suffix_button("user-trash-symbolic", &i18n("Delete"));
+    let delete_btn = suffix_button(
+        "user-trash-symbolic",
+        &format!("{}: {name}", i18n("Delete playlist")),
+    );
     delete_btn.add_css_class("destructive-action");
     {
         let out = sender.clone();
@@ -400,6 +412,7 @@ fn suffix_button(icon: &str, tooltip: &str) -> gtk::Button {
 fn prompt_name(
     parent: Option<&adw::Window>,
     heading: &str,
+    entry_label: &str,
     placeholder: &str,
     prefill: &str,
     on_accept: impl Fn(String) + 'static,
@@ -410,6 +423,7 @@ fn prompt_name(
         .text(prefill)
         .activates_default(true)
         .build();
+    entry.update_property(&[gtk::accessible::Property::Label(entry_label)]);
     dialog.set_extra_child(Some(&entry));
     dialog.add_response("cancel", &i18n("Cancel"));
     dialog.add_response("accept", &i18n("Save"));

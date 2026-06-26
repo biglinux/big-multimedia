@@ -4,14 +4,26 @@
 
 use std::path::{Path, PathBuf};
 
-use big_converter_ui::export::{run_single_export_blocking, QuickExportChoice, QuickExportFormat};
+use big_converter_ui::export::{
+    build_single_export_queue, run_single_export_blocking, QuickExportChoice, QuickExportFormat,
+};
 use big_media_runtime::converter::profiles::VideoFilters;
+use big_media_runtime::converter::queue::{QueueMessage, SegmentOutputMode};
+use big_relm4_components::input::dropdown_row::{BigDropdownRow, BigDropdownRowSpec};
+use big_relm4_components::input::preference_cards::BigSpinRange;
+use big_relm4_components::input::spin_row::{BigSpinRow, BigSpinRowSpec};
+use big_relm4_components::layout::dialog_footer::{BigDialogFooter, BigDialogFooterSpec};
+use big_relm4_components::layout::dialog_page::BigDialogPage;
 
 use super::*;
 
 /// `(label, codec)` for the audio output chooser; container is derived from the
 /// codec by the export engine.
 const AUDIO_FORMATS: [(&str, &str); 3] = [("MP3", "mp3"), ("M4A", "aac"), ("FLAC", "flac")];
+const AUDIO_SEGMENT_OUTPUTS: [(&str, bool); 2] = [
+    ("Join cuts into one file", false),
+    ("Save each cut separately", true),
+];
 
 impl AudioShell {
     /// Convert the playing track to `codec` (mp3/aac/flac) beside it.
@@ -26,108 +38,255 @@ impl AudioShell {
         self.run_track_export(choice, Vec::new(), &i18n("Converting…"));
     }
 
-    /// Open the Trim & Export dialog: mark in/out (snappable to the playhead),
-    /// pick an audio format, and export just that range beside the source.
-    pub(super) fn show_trim_export(&self) {
-        let input = self.current_file.clone();
-        if input.is_empty() || input.contains("://") {
+    /// Enter visual trim mode on the current local track.
+    pub(super) fn enter_trim_mode(&mut self) {
+        if self.current_file.is_empty() || self.current_file.contains("://") {
             self.notify(&i18n("No local track is playing"));
             return;
         }
-        let input = PathBuf::from(&input);
+        self.trim_active = true;
+        self.trim_play_selection = false;
+        let duration = self.duration_secs.max(
+            self.mpv
+                .as_ref()
+                .map_or(0.0, |mpv| mpv.get_property_f64("duration")),
+        );
+        let playhead = self
+            .mpv
+            .as_ref()
+            .map_or(0.0, |mpv| mpv.get_property_f64("time-pos"));
+        self.playback_bar
+            .emit(AudioPlaybackBarInput::SetDurationSecs(duration));
+        self.playback_bar
+            .emit(AudioPlaybackBarInput::SetEditMode(true));
+        self.trim.emit(AudioTrimBarInput::SetDuration(duration));
+        self.trim.emit(AudioTrimBarInput::SetPlayhead(playhead));
+        self.notify(&i18n("Trim mode enabled"));
+    }
+
+    /// Leave visual trim mode and restore the normal seek bar.
+    pub(super) fn exit_trim_mode(&mut self) {
+        self.trim_active = false;
+        self.trim_play_selection = false;
+        self.playback_bar
+            .emit(AudioPlaybackBarInput::SetEditMode(false));
+    }
+
+    /// Handle a typed output from the visual trim bar.
+    pub(super) fn handle_trim(
+        &mut self,
+        output: AudioTrimBarOutput,
+        sender: &ComponentSender<Self>,
+    ) {
+        match output {
+            AudioTrimBarOutput::SegmentsChanged { segments, pending } => {
+                let mut ranges: Vec<(f64, f64)> = segments
+                    .iter()
+                    .map(|(_, start, end)| (*start, *end))
+                    .collect();
+                ranges.sort_by(|a, b| a.0.total_cmp(&b.0));
+                self.trim_ranges = ranges;
+                self.playback_bar
+                    .emit(AudioPlaybackBarInput::SetCutSegments(segments));
+                self.playback_bar
+                    .emit(AudioPlaybackBarInput::SetPendingMark(pending));
+            }
+            AudioTrimBarOutput::EditSegment { id, start, end } => {
+                self.show_segment_edit_dialog(id, start, end);
+            }
+            AudioTrimBarOutput::PlaySelection(active) => {
+                self.trim_play_selection = active;
+                if active {
+                    if let (Some((start, _)), Some(mpv)) =
+                        (self.trim_ranges.first().copied(), self.mpv.as_ref())
+                    {
+                        mpv.seek_absolute(start);
+                    }
+                }
+            }
+            AudioTrimBarOutput::ExportRequested { ranges } => {
+                self.show_trim_export_options(ranges, sender);
+            }
+            AudioTrimBarOutput::Exit => self.exit_trim_mode(),
+        }
+    }
+
+    /// Apply a segment drag emitted by the shared playback timeline.
+    pub(super) fn adjust_trim_segment(&self, id: u64, start: f64, end: f64) {
+        self.trim
+            .emit(AudioTrimBarInput::SetSegmentTimes(id, start, end));
+    }
+
+    /// Feed live playhead updates to the trim bar and apply play-selection mode.
+    pub(super) fn feed_trim_playhead(&self, position: f64) {
+        if !self.trim_active {
+            return;
+        }
+        self.trim.emit(AudioTrimBarInput::SetPlayhead(position));
+        if self.trim_play_selection {
+            self.apply_trim_play_selection(position);
+        }
+    }
+
+    /// Feed duration changes to the trim bar and cut timeline.
+    pub(super) fn feed_trim_duration(&self, duration: f64) {
+        self.playback_bar
+            .emit(AudioPlaybackBarInput::SetDurationSecs(duration));
+        if self.trim_active {
+            self.trim.emit(AudioTrimBarInput::SetDuration(duration));
+        }
+    }
+
+    /// Re-enable the trim controls after a background export completes.
+    pub(super) fn finish_trim_export(&self, result: Result<PathBuf, String>) {
+        self.trim.emit(AudioTrimBarInput::SetBusy(false));
+        self.toast_overlay
+            .add_toast(adw::Toast::new(&export_message(&result)));
+    }
+
+    fn show_segment_edit_dialog(&self, id: u64, start: f64, end: f64) {
+        let duration = self.duration_secs.max(1.0);
+        let range = BigSpinRange::new(0.0, duration, 1.0, 10.0);
+        let start_row = BigSpinRow::new(
+            BigSpinRowSpec::new(i18n("Start (seconds)"), start, range)
+                .digits(2)
+                .width_chars(7),
+        );
+        let end_row = BigSpinRow::new(
+            BigSpinRowSpec::new(i18n("End (seconds)"), end, range)
+                .digits(2)
+                .width_chars(7),
+        );
+        start_row
+            .row()
+            .add_suffix(&playhead_button(&self.mpv, start_row.spin()));
+        end_row
+            .row()
+            .add_suffix(&playhead_button(&self.mpv, end_row.spin()));
+        let start_spin = start_row.spin().clone();
+        let end_spin = end_row.spin().clone();
+
+        let group = adw::PreferencesGroup::builder()
+            .title(i18n("Cut range"))
+            .description(i18n(
+                "Use the clock buttons to copy the current playback position",
+            ))
+            .build();
+        group.add(start_row.row());
+        group.add(end_row.row());
+
+        let error_label = error_label(&i18n("End must be after start"));
+        let dialog = adw::Dialog::builder()
+            .title(i18n("Edit cut"))
+            .content_width(440)
+            .content_height(360)
+            .build();
+        let page = BigDialogPage::scrolled_clamped(420, 320);
+        let footer = BigDialogFooter::new(&BigDialogFooterSpec::new(i18n("Cancel"), i18n("Apply")));
+        page.content().set_spacing(12);
+        page.content().append(&group);
+        page.content().append(&error_label);
+        page.root().add_bottom_bar(footer.root());
+        dialog.set_child(Some(&page.into_root()));
+
+        let dialog_ref = dialog.downgrade();
+        footer.cancel_button().connect_clicked(move |_| {
+            if let Some(dialog) = dialog_ref.upgrade() {
+                dialog.close();
+            }
+        });
+
+        let trim = self.trim.sender().clone();
+        let dialog_ref = dialog.downgrade();
+        footer.accept_button().connect_clicked(glib::clone!(
+            #[weak]
+            start_spin,
+            #[weak]
+            end_spin,
+            #[weak]
+            error_label,
+            move |_| {
+                let start = start_spin.value();
+                let end = end_spin.value();
+                if end <= start {
+                    error_label.set_visible(true);
+                    end_spin.grab_focus();
+                    return;
+                }
+                let _ = trim.send(AudioTrimBarInput::SetSegmentTimes(id, start, end));
+                if let Some(dialog) = dialog_ref.upgrade() {
+                    dialog.close();
+                }
+            }
+        ));
+
+        dialog.present(self.window().as_ref());
+    }
+
+    fn show_trim_export_options(&self, ranges: Vec<(f64, f64)>, sender: &ComponentSender<Self>) {
+        if self.current_file.is_empty() || self.current_file.contains("://") {
+            self.notify(&i18n("No local track is playing"));
+            return;
+        }
+        let input = PathBuf::from(&self.current_file);
         let output_dir = input
             .parent()
             .map_or_else(|| PathBuf::from("."), Path::to_path_buf);
-        let mpv = self.mpv.clone();
-        let duration = mpv
-            .as_ref()
-            .map_or(0.0, |m| m.get_property_f64("duration"))
-            .max(1.0);
+        let format_row = BigDropdownRow::new(BigDropdownRowSpec::new(
+            i18n("Format"),
+            AUDIO_FORMATS.iter().map(|(label, _)| *label),
+        ));
+        let output_row = BigDropdownRow::new(BigDropdownRowSpec::new(
+            i18n("Output"),
+            AUDIO_SEGMENT_OUTPUTS.iter().map(|(label, _)| i18n(label)),
+        ));
+        output_row.root().set_subtitle(&i18n(
+            "Join creates one file; separate creates one file per cut",
+        ));
 
-        let start_row = adw::SpinRow::builder()
-            .title(i18n("Start (seconds)"))
-            .adjustment(&gtk::Adjustment::new(0.0, 0.0, duration, 1.0, 10.0, 0.0))
-            .digits(2)
+        let group = adw::PreferencesGroup::builder()
+            .title(i18n("Export marked cuts"))
+            .description(format!("{} {}", ranges.len(), i18n("selected cut ranges")))
             .build();
-        let end_row = adw::SpinRow::builder()
-            .title(i18n("End (seconds)"))
-            .adjustment(&gtk::Adjustment::new(
-                duration, 0.0, duration, 1.0, 10.0, 0.0,
-            ))
-            .digits(2)
-            .build();
-        start_row.add_suffix(&playhead_button(&mpv, &start_row));
-        end_row.add_suffix(&playhead_button(&mpv, &end_row));
+        group.add(format_row.root());
+        group.add(output_row.root());
 
-        let clip_group = adw::PreferencesGroup::builder()
-            .title(i18n("Clip range"))
-            .description(i18n(
-                "Use ⏱ to set a point to the current playback position",
-            ))
+        let dialog = adw::Dialog::builder()
+            .title(i18n("Export Cuts"))
+            .content_width(460)
+            .content_height(360)
             .build();
-        clip_group.add(&start_row);
-        clip_group.add(&end_row);
+        let page = BigDialogPage::scrolled_clamped(430, 320);
+        let footer =
+            BigDialogFooter::new(&BigDialogFooterSpec::new(i18n("Cancel"), i18n("Export")));
+        page.content().append(&group);
+        page.root().add_bottom_bar(footer.root());
+        dialog.set_child(Some(&page.into_root()));
 
-        let labels: Vec<&str> = AUDIO_FORMATS.iter().map(|(label, _)| *label).collect();
-        let format_model = gtk::StringList::new(&labels);
-        let format_row = adw::ComboRow::builder()
-            .title(i18n("Format"))
-            .model(&format_model)
-            .build();
-        let format_group = adw::PreferencesGroup::new();
-        format_group.add(&format_row);
+        let dialog_ref = dialog.downgrade();
+        footer.cancel_button().connect_clicked(move |_| {
+            if let Some(dialog) = dialog_ref.upgrade() {
+                dialog.close();
+            }
+        });
 
-        let export_btn = gtk::Button::builder()
-            .label(i18n("Export Clip"))
-            .css_classes(["suggested-action", "pill"])
-            .halign(gtk::Align::Center)
-            .margin_top(12)
-            .build();
-
-        let page = gtk::Box::builder()
-            .orientation(gtk::Orientation::Vertical)
-            .spacing(12)
-            .margin_top(12)
-            .margin_bottom(12)
-            .margin_start(12)
-            .margin_end(12)
-            .build();
-        page.append(&clip_group);
-        page.append(&format_group);
-        page.append(&export_btn);
-
-        let header = adw::HeaderBar::new();
-        let toolbar = adw::ToolbarView::new();
-        toolbar.add_top_bar(&header);
-        toolbar.set_content(Some(&page));
-        let window = adw::Window::builder()
-            .title(i18n("Trim & Export"))
-            .modal(true)
-            .default_width(440)
-            .content(&toolbar)
-            .build();
-        window.set_transient_for(self.window().as_ref());
-
-        let toast_overlay = self.toast_overlay.clone();
-        export_btn.connect_clicked(glib::clone!(
+        let format_dropdown = format_row.dropdown().clone();
+        let output_dropdown = output_row.dropdown().clone();
+        let input_sender = sender.input_sender().clone();
+        let trim = self.trim.sender().clone();
+        let dialog_ref = dialog.downgrade();
+        footer.accept_button().connect_clicked(glib::clone!(
             #[weak]
-            window,
+            format_dropdown,
             #[weak]
-            start_row,
-            #[weak]
-            end_row,
-            #[weak]
-            format_row,
+            output_dropdown,
             move |_| {
-                let start = start_row.value();
-                let end = end_row.value();
-                if end <= start {
-                    toast_overlay.add_toast(adw::Toast::new(&i18n("End must be after start")));
-                    return;
-                }
                 let codec = AUDIO_FORMATS
-                    .get(format_row.selected() as usize)
+                    .get(format_dropdown.selected() as usize)
                     .map_or("mp3", |(_, codec)| *codec);
+                let split = AUDIO_SEGMENT_OUTPUTS
+                    .get(output_dropdown.selected() as usize)
+                    .is_some_and(|(_, split)| *split);
                 let choice = QuickExportChoice {
                     format: QuickExportFormat::Audio {
                         codec: codec.to_string(),
@@ -135,19 +294,57 @@ impl AudioShell {
                     },
                     filters: VideoFilters::default(),
                 };
+                let _ = trim.send(AudioTrimBarInput::SetBusy(true));
                 let input = input.clone();
                 let output_dir = output_dir.clone();
-                let done_overlay = toast_overlay.clone();
-                toast_overlay.add_toast(adw::Toast::new(&i18n("Exporting clip…")));
+                let ranges = ranges.clone();
+                let input_sender = input_sender.clone();
                 big_media_components::player_chrome::spawn_blocking_result(
-                    move || run_single_export_blocking(input, output_dir, &choice, &[(start, end)]),
-                    move |result| done_overlay.add_toast(adw::Toast::new(&export_message(&result))),
+                    move || run_segment_export_blocking(input, output_dir, &choice, &ranges, split),
+                    move |result| {
+                        let _ = input_sender.send(AudioShellInput::TrimExportFinished(result));
+                    },
                 );
-                window.close();
+                if let Some(dialog) = dialog_ref.upgrade() {
+                    dialog.close();
+                }
             }
         ));
 
-        window.present();
+        dialog.present(self.window().as_ref());
+    }
+
+    fn apply_trim_play_selection(&self, position: f64) {
+        let Some((first_start, _)) = self.trim_ranges.first().copied() else {
+            return;
+        };
+        let Some(mpv) = &self.mpv else {
+            return;
+        };
+        let epsilon = 0.02;
+        if let Some((idx, (_, end))) = self
+            .trim_ranges
+            .iter()
+            .enumerate()
+            .find(|(_, (start, end))| position >= *start - epsilon && position <= *end + epsilon)
+        {
+            if position >= end - epsilon {
+                let next = self
+                    .trim_ranges
+                    .get(idx + 1)
+                    .map_or(first_start, |(start, _)| *start);
+                mpv.seek_absolute(next);
+            }
+        } else if let Some((next_start, _)) = self
+            .trim_ranges
+            .iter()
+            .find(|(start, _)| *start > position)
+            .copied()
+        {
+            mpv.seek_absolute(next_start);
+        } else {
+            mpv.seek_absolute(first_start);
+        }
     }
 
     /// Resolve the current local track, then run `choice` (with optional trim
@@ -176,6 +373,32 @@ impl AudioShell {
     }
 }
 
+fn run_segment_export_blocking(
+    input: PathBuf,
+    output_dir: PathBuf,
+    choice: &QuickExportChoice,
+    segments: &[(f64, f64)],
+    split: bool,
+) -> Result<PathBuf, String> {
+    let (mut queue, _id, output) = build_single_export_queue(input, output_dir, choice, segments);
+    if output.as_os_str().is_empty() {
+        return Err("export item vanished before start".to_string());
+    }
+    if split {
+        queue.set_pending_segment_mode(SegmentOutputMode::Split);
+    }
+
+    queue.start();
+    loop {
+        match queue.receiver().recv_blocking() {
+            Ok(QueueMessage::AllDone) => return Ok(output),
+            Ok(QueueMessage::Failed { error, .. }) => return Err(error),
+            Ok(_) => {}
+            Err(_) => return Err("export worker stopped before completion".to_string()),
+        }
+    }
+}
+
 /// Human-readable toast for a finished export.
 fn export_message(result: &Result<PathBuf, String>) -> String {
     match result {
@@ -190,19 +413,36 @@ fn export_message(result: &Result<PathBuf, String>) -> String {
     }
 }
 
+fn error_label(label: &str) -> gtk::Label {
+    let error = gtk::Label::builder()
+        .label(label)
+        .halign(gtk::Align::Start)
+        .margin_start(12)
+        .margin_end(12)
+        .wrap(true)
+        .visible(false)
+        .build();
+    error.add_css_class("error");
+    error.update_property(&[gtk::accessible::Property::Label(label)]);
+    error
+}
+
 /// A flat "current position" suffix button that snaps `row` to mpv's `time-pos`.
-fn playhead_button(mpv: &Option<Arc<MpvBackend>>, row: &adw::SpinRow) -> gtk::Button {
+fn playhead_button(mpv: &Option<Arc<MpvBackend>>, spin: &gtk::SpinButton) -> gtk::Button {
     let button = gtk::Button::builder()
         .icon_name("preferences-system-time-symbolic")
-        .tooltip_text(i18n("Use current position"))
         .valign(gtk::Align::Center)
         .css_classes(["flat"])
         .build();
+    big_relm4_components::feedback::tooltip::set(&button, &i18n("Use current position"));
+    button.update_property(&[gtk::accessible::Property::Label(&i18n(
+        "Use current playback position",
+    ))]);
     let mpv = mpv.clone();
-    let row = row.downgrade();
+    let spin = spin.downgrade();
     button.connect_clicked(move |_| {
-        if let (Some(mpv), Some(row)) = (mpv.as_ref(), row.upgrade()) {
-            row.set_value(mpv.get_property_f64("time-pos"));
+        if let (Some(mpv), Some(spin)) = (mpv.as_ref(), spin.upgrade()) {
+            spin.set_value(mpv.get_property_f64("time-pos"));
         }
     });
     button
