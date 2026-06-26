@@ -8,7 +8,13 @@ use std::sync::Arc;
 use std::time::Duration;
 
 use adw::prelude::*;
-use big_relm4_components::list::navigation_row::{BigNavigationRow, BigNavigationRowSpec};
+use big_relm4_components::{
+    layout::{
+        dialog_footer::{BigDialogFooter, BigDialogFooterSpec},
+        dialog_page::BigDialogPage,
+    },
+    list::action_nav_row::{BigActionNavRow, BigActionNavRowSpec},
+};
 use gtk::glib;
 use relm4::Sender;
 
@@ -23,26 +29,35 @@ pub(crate) fn present_cast(
     manager: Arc<CastManager>,
     input: Sender<AudioShellInput>,
 ) {
-    let (dialog, content) = crate::shared::dialogs::new_content_dialog(&i18n("Cast Audio"));
+    let dialog = adw::Dialog::builder()
+        .title(i18n("Cast Audio"))
+        .content_width(560)
+        .content_height(420)
+        .build();
+
+    let page = BigDialogPage::scrolled_clamped(520, 440);
+    page.content().set_spacing(12);
+    dialog.set_child(Some(page.root()));
 
     let status = gtk::Label::new(Some(&i18n("Searching for devices...")));
     status.add_css_class("dim-label");
-    content.append(&status);
+    status.set_halign(gtk::Align::Start);
+    status.set_wrap(true);
+    page.content().append(&status);
 
     let list_box = gtk::ListBox::new();
     list_box.set_selection_mode(gtk::SelectionMode::None);
     list_box.add_css_class("boxed-list");
 
-    let scroll = gtk::ScrolledWindow::builder()
-        .child(&list_box)
-        .min_content_height(120)
-        .build();
-    content.append(&scroll);
+    list_box.set_vexpand(true);
+    page.content().append(&list_box);
 
-    let stop_btn = gtk::Button::with_label(&i18n("Stop Casting"));
-    stop_btn.add_css_class("destructive-action");
-    stop_btn.set_sensitive(manager.is_casting());
-    content.append(&stop_btn);
+    let footer = BigDialogFooter::new(
+        &BigDialogFooterSpec::new(i18n("Close"), i18n("Stop Casting"))
+            .with_accept_css_classes(&["destructive-action"]),
+    );
+    footer.accept_button().set_sensitive(manager.is_casting());
+    page.root().add_bottom_bar(footer.root());
 
     manager.start_discovery(8);
 
@@ -67,9 +82,10 @@ pub(crate) fn present_cast(
                 } else {
                     format!("{} ({})", dev.name, dev.model)
                 };
-                let row = BigNavigationRow::new(
-                    BigNavigationRowSpec::new(&label)
-                        .subtitle(format!("{}:{}", dev.host, dev.port)),
+                let row = BigActionNavRow::new(
+                    BigActionNavRowSpec::new(&label)
+                        .subtitle(format!("{}:{}", dev.host, dev.port))
+                        .action_label(i18n("Cast to this device")),
                 )
                 .into_root();
                 list_clone.append(&row);
@@ -88,7 +104,7 @@ pub(crate) fn present_cast(
     });
 
     let cast_input = input.clone();
-    let stop_btn_ref = stop_btn.clone();
+    let stop_btn_ref = footer.accept_button().clone();
     list_box.connect_row_activated(move |_, row| {
         let idx = row.index() as usize;
         let _ = cast_input.send(AudioShellInput::CastToDeviceIndex(idx));
@@ -97,9 +113,16 @@ pub(crate) fn present_cast(
     });
 
     let stop_input = input.clone();
-    stop_btn.connect_clicked(move |btn| {
+    footer.accept_button().connect_clicked(move |btn| {
         let _ = stop_input.send(AudioShellInput::CastStop);
         btn.set_sensitive(false);
+    });
+
+    let dialog_weak = dialog.downgrade();
+    footer.cancel_button().connect_clicked(move |_| {
+        if let Some(dialog) = dialog_weak.upgrade() {
+            dialog.close();
+        }
     });
 
     dialog.present(Some(parent));

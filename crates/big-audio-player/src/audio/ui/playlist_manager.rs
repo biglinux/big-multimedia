@@ -12,8 +12,14 @@
 //! is an `Output` intent; the shell performs it and pushes the refreshed list
 //! back via `PlaylistManagerInput::SetPlaylists`.
 
+use std::rc::Rc;
+
 use adw::prelude::*;
-use big_relm4_components::layout::sidebar_dialog::{BigSidebarDialog, BigSidebarDialogSpec};
+use big_relm4_components::layout::{
+    dialog_footer::{BigDialogFooter, BigDialogFooterSpec},
+    dialog_page::BigDialogPage,
+    sidebar_dialog::{BigSidebarDialog, BigSidebarDialogSpec},
+};
 use big_relm4_components::list::navigation_row::{BigNavigationRow, BigNavigationRowSpec};
 use gtk::glib;
 use relm4::{Component, ComponentParts, ComponentSender};
@@ -417,50 +423,109 @@ fn prompt_name(
     prefill: &str,
     on_accept: impl Fn(String) + 'static,
 ) {
-    let dialog = adw::AlertDialog::new(Some(heading), None);
-    let entry = gtk::Entry::builder()
-        .placeholder_text(placeholder)
-        .text(prefill)
-        .activates_default(true)
+    let dialog = adw::Dialog::builder()
+        .title(heading)
+        .content_width(420)
+        .content_height(240)
         .build();
-    entry.update_property(&[gtk::accessible::Property::Label(entry_label)]);
-    dialog.set_extra_child(Some(&entry));
-    dialog.add_response("cancel", &i18n("Cancel"));
-    dialog.add_response("accept", &i18n("Save"));
-    dialog.set_response_appearance("accept", adw::ResponseAppearance::Suggested);
-    dialog.set_default_response(Some("accept"));
-    dialog.set_close_response("cancel");
+    let page = BigDialogPage::plain();
+    page.content().set_spacing(12);
+    page.append_description(placeholder);
 
-    dialog.connect_response(None, move |_, resp| {
-        if resp != "accept" {
+    let group = adw::PreferencesGroup::new();
+    let entry = adw::EntryRow::builder()
+        .title(entry_label)
+        .text(prefill)
+        .show_apply_button(true)
+        .build();
+    group.add(&entry);
+    page.content().append(&group);
+
+    let footer = BigDialogFooter::new(&BigDialogFooterSpec::new(i18n("Cancel"), i18n("Save")));
+    footer
+        .accept_button()
+        .set_sensitive(!prefill.trim().is_empty());
+    page.root().add_bottom_bar(footer.root());
+    dialog.set_child(Some(page.root()));
+
+    let accept_button = footer.accept_button().clone();
+    entry.connect_changed(move |row| {
+        accept_button.set_sensitive(!row.text().trim().is_empty());
+    });
+
+    let accept_button = footer.accept_button().clone();
+    entry.connect_apply(move |_| {
+        if accept_button.is_sensitive() {
+            accept_button.emit_clicked();
+        }
+    });
+
+    let on_accept = Rc::new(on_accept);
+    let entry_for_accept = entry.clone();
+    let dialog_weak = dialog.downgrade();
+    footer.accept_button().connect_clicked(move |_| {
+        let name = entry_for_accept.text().trim().to_string();
+        if name.is_empty() {
             return;
         }
-        let name = entry.text().trim().to_string();
-        if !name.is_empty() {
-            on_accept(name);
+        on_accept(name);
+        if let Some(dialog) = dialog_weak.upgrade() {
+            dialog.close();
         }
+    });
+
+    let dialog_weak = dialog.downgrade();
+    footer.cancel_button().connect_clicked(move |_| {
+        if let Some(dialog) = dialog_weak.upgrade() {
+            dialog.close();
+        }
+    });
+
+    let entry_for_focus = entry.clone();
+    dialog.connect_map(move |_| {
+        let entry_for_idle = entry_for_focus.clone();
+        glib::idle_add_local_once(move || {
+            entry_for_idle.grab_focus();
+            entry_for_idle.select_region(0, -1);
+        });
     });
     dialog.present(parent);
 }
 
 /// Present a destructive confirmation; `on_confirm` fires on accept.
 fn confirm_delete(parent: Option<&adw::Window>, name: &str, on_confirm: impl Fn() + 'static) {
-    let dialog = adw::AlertDialog::new(
-        Some(&i18n("Delete Playlist?")),
-        Some(&format!(
-            "{} \u{201C}{name}\u{201D}?",
-            i18n("This will permanently delete")
-        )),
-    );
-    dialog.add_response("cancel", &i18n("Cancel"));
-    dialog.add_response("delete", &i18n("Delete"));
-    dialog.set_response_appearance("delete", adw::ResponseAppearance::Destructive);
-    dialog.set_default_response(Some("cancel"));
-    dialog.set_close_response("cancel");
+    let dialog = adw::Dialog::builder()
+        .title(i18n("Delete Playlist?"))
+        .content_width(420)
+        .content_height(220)
+        .build();
+    let page = BigDialogPage::plain();
+    page.content().set_spacing(12);
+    page.append_description(&format!(
+        "{} \u{201C}{name}\u{201D}?",
+        i18n("This will permanently delete")
+    ));
 
-    dialog.connect_response(None, move |_, resp| {
-        if resp == "delete" {
-            on_confirm();
+    let footer = BigDialogFooter::new(
+        &BigDialogFooterSpec::new(i18n("Cancel"), i18n("Delete"))
+            .with_accept_css_classes(&["destructive-action"]),
+    );
+    page.root().add_bottom_bar(footer.root());
+    dialog.set_child(Some(page.root()));
+
+    let on_confirm = Rc::new(on_confirm);
+    let dialog_weak = dialog.downgrade();
+    footer.accept_button().connect_clicked(move |_| {
+        on_confirm();
+        if let Some(dialog) = dialog_weak.upgrade() {
+            dialog.close();
+        }
+    });
+
+    let dialog_weak = dialog.downgrade();
+    footer.cancel_button().connect_clicked(move |_| {
+        if let Some(dialog) = dialog_weak.upgrade() {
+            dialog.close();
         }
     });
     dialog.present(parent);
