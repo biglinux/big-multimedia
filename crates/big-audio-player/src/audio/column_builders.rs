@@ -76,21 +76,24 @@ pub(super) fn make_rating_sorter() -> gtk::CustomSorter {
 /// Right-aligned numeric column; empty when year missing.
 pub(super) fn make_year_factory() -> gtk::SignalListItemFactory {
     let factory = gtk::SignalListItemFactory::new();
-    factory.connect_setup(|_, item| {
-        let item = item.downcast_ref::<gtk::ListItem>().unwrap();
+    factory.connect_setup(|_, list_item| {
+        let list_item = list_item.downcast_ref::<gtk::ListItem>().unwrap();
         let label = gtk::Label::builder()
             .xalign(1.0)
             .margin_start(4)
             .margin_end(4)
             .build();
         label.add_css_class("numeric");
-        item.set_child(Some(&label));
+        list_item.set_child(Some(&label));
     });
-    factory.connect_bind(|_, item| {
-        let item = item.downcast_ref::<gtk::ListItem>().unwrap();
-        let obj = item.item().and_downcast::<glib::BoxedAnyObject>().unwrap();
-        let track = obj.borrow::<Track>();
-        let label = item.child().and_downcast::<gtk::Label>().unwrap();
+    factory.connect_bind(|_, list_item| {
+        let list_item = list_item.downcast_ref::<gtk::ListItem>().unwrap();
+        let boxed_track = list_item
+            .item()
+            .and_downcast::<glib::BoxedAnyObject>()
+            .unwrap();
+        let track = boxed_track.borrow::<Track>();
+        let label = list_item.child().and_downcast::<gtk::Label>().unwrap();
         if let Some(y) = track.year {
             label.set_label(&y.to_string());
         } else {
@@ -135,8 +138,8 @@ pub(super) fn unbind_click_gestures(widget: &impl IsA<gtk::Widget>) {
 /// Left-aligned, ellipsized text column.
 pub(super) fn make_label_factory(get_text: fn(&Track) -> String) -> gtk::SignalListItemFactory {
     let factory = gtk::SignalListItemFactory::new();
-    factory.connect_setup(|_, item| {
-        let item = item.downcast_ref::<gtk::ListItem>().unwrap();
+    factory.connect_setup(|_, list_item| {
+        let list_item = list_item.downcast_ref::<gtk::ListItem>().unwrap();
         let label = gtk::Label::builder()
             .xalign(0.0)
             .ellipsize(pango::EllipsizeMode::End)
@@ -145,13 +148,16 @@ pub(super) fn make_label_factory(get_text: fn(&Track) -> String) -> gtk::SignalL
             .margin_top(2)
             .margin_bottom(2)
             .build();
-        item.set_child(Some(&label));
+        list_item.set_child(Some(&label));
     });
-    factory.connect_bind(move |_, item| {
-        let item = item.downcast_ref::<gtk::ListItem>().unwrap();
-        let obj = item.item().and_downcast::<glib::BoxedAnyObject>().unwrap();
-        let track = obj.borrow::<Track>();
-        let label = item.child().and_downcast::<gtk::Label>().unwrap();
+    factory.connect_bind(move |_, list_item| {
+        let list_item = list_item.downcast_ref::<gtk::ListItem>().unwrap();
+        let boxed_track = list_item
+            .item()
+            .and_downcast::<glib::BoxedAnyObject>()
+            .unwrap();
+        let track = boxed_track.borrow::<Track>();
+        let label = list_item.child().and_downcast::<gtk::Label>().unwrap();
         label.set_label(&get_text(&track));
     });
     factory
@@ -160,21 +166,24 @@ pub(super) fn make_label_factory(get_text: fn(&Track) -> String) -> gtk::SignalL
 /// Right-aligned numeric column; empty when duration ≤ 0.
 pub(super) fn make_duration_factory() -> gtk::SignalListItemFactory {
     let factory = gtk::SignalListItemFactory::new();
-    factory.connect_setup(|_, item| {
-        let item = item.downcast_ref::<gtk::ListItem>().unwrap();
+    factory.connect_setup(|_, list_item| {
+        let list_item = list_item.downcast_ref::<gtk::ListItem>().unwrap();
         let label = gtk::Label::builder()
             .xalign(1.0)
             .margin_start(2)
             .margin_end(4)
             .build();
         label.add_css_class("numeric");
-        item.set_child(Some(&label));
+        list_item.set_child(Some(&label));
     });
-    factory.connect_bind(|_, item| {
-        let item = item.downcast_ref::<gtk::ListItem>().unwrap();
-        let obj = item.item().and_downcast::<glib::BoxedAnyObject>().unwrap();
-        let track = obj.borrow::<Track>();
-        let label = item.child().and_downcast::<gtk::Label>().unwrap();
+    factory.connect_bind(|_, list_item| {
+        let list_item = list_item.downcast_ref::<gtk::ListItem>().unwrap();
+        let boxed_track = list_item
+            .item()
+            .and_downcast::<glib::BoxedAnyObject>()
+            .unwrap();
+        let track = boxed_track.borrow::<Track>();
+        let label = list_item.child().and_downcast::<gtk::Label>().unwrap();
         if track.duration_secs > 0.0 {
             label.set_label(&track.duration_display());
         } else {
