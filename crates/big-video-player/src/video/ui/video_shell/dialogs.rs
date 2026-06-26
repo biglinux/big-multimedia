@@ -413,7 +413,9 @@ impl VideoShell {
     /// `show_preferences`.
     pub(super) fn show_preferences(&self, root: &adw::ApplicationWindow) {
         let mpv = self.mpv.borrow().as_ref().map(Arc::clone);
-        crate::video::ui::preferences::show_preferences(root, &self.settings, mpv);
+        crate::video::ui::preferences::show_preferences(root, &self.settings, mpv, |parent| {
+            Self::show_restore_defaults_dialog(parent);
+        });
     }
 
     /// Open the appearance dialog (palette + OSD layout + button-layout editor).
@@ -437,22 +439,41 @@ impl VideoShell {
 
     /// Confirm + reset every setting to its default (restart-required toast in
     /// the body). Mirrors the old `show_restore_defaults_dialog`.
-    pub(super) fn show_restore_defaults_dialog(root: &adw::ApplicationWindow) {
-        let alert = big_app_kit::dialogs::confirm_dialog(
-            &i18n("Restore Defaults"),
-            &i18n("Reset all settings to their default values? The application will need to be restarted for all changes to take effect."),
-            &i18n("Cancel"),
-            "restore",
-            &i18n("Restore"),
-            true,
+    pub(super) fn show_restore_defaults_dialog(parent: &impl IsA<gtk::Widget>) {
+        let dialog = adw::Dialog::builder()
+            .title(i18n("Restore Defaults"))
+            .content_width(460)
+            .content_height(220)
+            .build();
+        let page = BigDialogPage::plain();
+        page.content().set_spacing(12);
+        page.append_description(&i18n(
+            "Reset all settings to their default values? The application will need to be restarted for all changes to take effect.",
+        ));
+
+        let footer = BigDialogFooter::new(
+            &BigDialogFooterSpec::new(i18n("Cancel"), i18n("Restore"))
+                .with_accept_css_classes(&["destructive-action"]),
         );
-        let sender = shell_input_sender();
-        alert.connect_response(None, move |_dialog, response| {
-            if response == "restore" {
-                let _ = sender.send(VideoShellInput::RestoreDefaultsConfirmed);
+        page.root().add_bottom_bar(footer.root());
+        dialog.set_child(Some(page.root()));
+
+        let dialog_ref = dialog.downgrade();
+        footer.cancel_button().connect_clicked(move |_| {
+            if let Some(dialog) = dialog_ref.upgrade() {
+                dialog.close();
             }
         });
-        alert.present(Some(root));
+
+        let sender = shell_input_sender();
+        let dialog_ref = dialog.downgrade();
+        footer.accept_button().connect_clicked(move |_| {
+            let _ = sender.send(VideoShellInput::RestoreDefaultsConfirmed);
+            if let Some(dialog) = dialog_ref.upgrade() {
+                dialog.close();
+            }
+        });
+        dialog.present(Some(parent));
     }
 
     /// Apply a confirmed restore-to-defaults: reset the settings store. A

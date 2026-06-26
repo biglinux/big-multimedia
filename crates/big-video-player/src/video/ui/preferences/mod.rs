@@ -44,6 +44,7 @@ pub fn show_preferences(
     parent: &impl IsA<gtk::Window>,
     settings: &Settings,
     mpv: Option<Arc<MpvBackend>>,
+    on_restore_defaults: impl Fn(&gtk::Window) + 'static,
 ) {
     let saved = (
         settings.get_int(keys::PREFS_WINDOW_WIDTH),
@@ -113,9 +114,9 @@ pub fn show_preferences(
         switch_box.append(&switch);
         hb.pack_end(&switch_box);
 
-        // "Restore Defaults" lives here now (was a loose top-menu entry). Triggers
-        // the parent window's `win.restore-defaults` action (where the reset logic
-        // + confirmation live).
+        // "Restore Defaults" lives here now (was a loose top-menu entry). Keep
+        // the confirmation parented to this preferences window so it is always
+        // visible above the modal preferences surface.
         let restore_btn = gtk::Button::builder()
             .icon_name("edit-undo-symbolic")
             .css_classes(["flat"])
@@ -123,10 +124,9 @@ pub fn show_preferences(
         crate::shared::tooltip::set(&restore_btn, &i18n("Restore Defaults"));
         restore_btn.update_property(&[gtk::accessible::Property::Label(&i18n("Restore Defaults"))]);
         {
-            let parent: gtk::Window = parent.clone().upcast();
+            let win = win.clone();
             restore_btn.connect_clicked(move |_| {
-                let _ =
-                    gtk::prelude::WidgetExt::activate_action(&parent, "win.restore-defaults", None);
+                on_restore_defaults(win.upcast_ref::<gtk::Window>());
             });
         }
         hb.pack_start(&restore_btn);
