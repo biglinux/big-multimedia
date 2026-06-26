@@ -1,7 +1,10 @@
 use super::input::shell_input_sender;
 use super::playback::is_remote_uri;
 use super::*;
-use big_relm4_components::layout::dialog_page::BigDialogPage;
+use big_relm4_components::layout::{
+    dialog_footer::{BigDialogFooter, BigDialogFooterSpec},
+    dialog_page::BigDialogPage,
+};
 
 impl VideoShell {
     /// Present the cast device picker in a dialog (same mount/unparent pattern
@@ -192,25 +195,68 @@ impl VideoShell {
     /// Present the open-URL entry dialog → `open_files([url])`. Validates the URL
     /// shape and rejects a leading `-` (option-injection guard for mpv).
     pub(super) fn show_open_url_dialog(root: &adw::ApplicationWindow) {
-        let (dialog, entry) = big_app_kit::dialogs::entry_dialog(
-            &i18n("Open URL"),
-            &i18n("Enter a URL to play (YouTube, HTTP streams, etc.)"),
-            &i18n("Cancel"),
-            "play",
-            &i18n("Play"),
-            "https://...",
-            &i18n("Media URL"),
-        );
-        entry.set_width_chars(48);
+        let dialog = adw::Dialog::builder()
+            .title(i18n("Open URL"))
+            .content_width(460)
+            .content_height(260)
+            .build();
+        let page = BigDialogPage::plain();
+        page.content().set_spacing(12);
+
+        let group = adw::PreferencesGroup::builder()
+            .description(i18n(
+                "Supports YouTube, HTTP streams, RTSP, RTMP, DVD, and Blu-ray URLs.",
+            ))
+            .build();
+        let entry = adw::EntryRow::builder()
+            .title(i18n("Media URL"))
+            .show_apply_button(true)
+            .build();
+        group.add(&entry);
+        page.content().append(&group);
+
+        let footer = BigDialogFooter::new(&BigDialogFooterSpec::new(i18n("Cancel"), i18n("Play")));
+        footer.accept_button().set_sensitive(false);
+        page.root().add_bottom_bar(footer.root());
+        dialog.set_child(Some(page.root()));
+
+        let accept_button = footer.accept_button().clone();
+        entry.connect_changed(move |row| {
+            accept_button.set_sensitive(accepted_open_url(&row.text()).is_some());
+        });
+
+        let accept_button = footer.accept_button().clone();
+        entry.connect_apply(move |_| {
+            if accept_button.is_sensitive() {
+                accept_button.emit_clicked();
+            }
+        });
+
+        let dialog_ref = dialog.downgrade();
+        footer.cancel_button().connect_clicked(move |_| {
+            if let Some(dialog) = dialog_ref.upgrade() {
+                dialog.close();
+            }
+        });
+
         let sender = shell_input_sender();
-        dialog.connect_response(None, move |_dialog, response| {
-            if response != "play" {
-                return;
-            }
-            let url = entry.text().trim().to_string();
-            if is_remote_uri(&url) {
+        let dialog_ref = dialog.downgrade();
+        let entry_for_accept = entry.clone();
+        footer.accept_button().connect_clicked(move |_| {
+            if let Some(url) = accepted_open_url(&entry_for_accept.text()) {
                 let _ = sender.send(VideoShellInput::OpenFiles(vec![url]));
+                if let Some(dialog) = dialog_ref.upgrade() {
+                    dialog.close();
+                }
             }
+        });
+
+        let entry_for_idle = entry.clone();
+        dialog.connect_map(move |_| {
+            let entry = entry_for_idle.clone();
+            gtk::glib::idle_add_local_once(move || {
+                entry.grab_focus();
+            });
         });
         dialog.present(Some(root));
     }
@@ -374,6 +420,18 @@ pub(super) fn build_disc_uri(response: &str, device: &str) -> Option<String> {
     }
 }
 
+fn accepted_open_url(input: &str) -> Option<String> {
+    let url = input.trim();
+    if url.starts_with('-') || !is_remote_uri(url) {
+        return None;
+    }
+    let (_, target) = url.split_once("://")?;
+    if target.trim().is_empty() {
+        return None;
+    }
+    Some(url.to_string())
+}
+
 /// Mount a controller's long-lived widget in a dialog and present it, detaching
 /// the widget on close so it can be re-mounted next open (mirrors the IPTV
 /// browser pattern).
@@ -410,7 +468,34 @@ pub(super) fn present_controller_dialog(
 
 #[cfg(test)]
 mod tests {
-    use super::build_disc_uri;
+    use super::{accepted_open_url, build_disc_uri};
+
+    #[test]
+    fn open_url_accepts_trimmed_remote_media_urls() {
+        assert_eq!(
+            accepted_open_url("  https://example.test/video.mp4  ").as_deref(),
+            Some("https://example.test/video.mp4")
+        );
+        assert_eq!(
+            accepted_open_url("rtsp://camera.local/stream").as_deref(),
+            Some("rtsp://camera.local/stream")
+        );
+    }
+
+    #[test]
+    fn open_url_rejects_local_option_and_empty_targets() {
+        for input in [
+            "",
+            "/home/user/video.mp4",
+            "file:///home/user/video.mp4",
+            "--profile=evil",
+            "-https://example.test/video.mp4",
+            "https://",
+            "rtmp://   ",
+        ] {
+            assert_eq!(accepted_open_url(input), None, "{input} should be rejected");
+        }
+    }
 
     #[test]
     fn disc_uri_builds_dvd_and_bluray() {
