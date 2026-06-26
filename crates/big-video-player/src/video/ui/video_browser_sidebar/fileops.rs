@@ -9,6 +9,10 @@ use std::rc::Rc;
 
 use adw::prelude::*;
 use big_app_kit::file_dialogs::FilePicker;
+use big_relm4_components::layout::{
+    dialog_footer::{BigDialogFooter, BigDialogFooterSpec},
+    dialog_page::BigDialogPage,
+};
 
 use super::{BrowserState, VideoBrowserSidebarOutput};
 use crate::i18n::{i18n, ni18n};
@@ -174,30 +178,60 @@ pub(super) fn rename_file(state: &Rc<BrowserState>, path: &str) {
         .map(|n| n.to_string_lossy().into_owned())
         .unwrap_or_default();
 
-    let (dialog, entry) = big_app_kit::dialogs::entry_dialog_with_initial(
-        &i18n("Rename"),
-        "",
-        &i18n("Cancel"),
-        "rename",
-        &i18n("Rename"),
-        &i18n("New name"),
-        &current_name,
-        &i18n("New name"),
-    );
+    let dialog = adw::Dialog::builder()
+        .title(i18n("Rename"))
+        .content_width(460)
+        .content_height(240)
+        .build();
+    let page = BigDialogPage::plain();
+    page.content().set_spacing(12);
+    page.append_description(&i18n("Choose a new file name."));
+
+    let group = adw::PreferencesGroup::new();
+    let entry = adw::EntryRow::builder()
+        .title(i18n("New name"))
+        .text(&current_name)
+        .show_apply_button(true)
+        .build();
+    group.add(&entry);
+    page.content().append(&group);
+
+    let footer = BigDialogFooter::new(&BigDialogFooterSpec::new(i18n("Cancel"), i18n("Rename")));
+    page.root().add_bottom_bar(footer.root());
+    dialog.set_child(Some(page.root()));
+
+    let accept_button = footer.accept_button().clone();
+    accept_button.set_sensitive(accepted_rename_name(&entry.text()).is_some());
+    entry.connect_changed({
+        let accept_button = accept_button.clone();
+        move |row| {
+            accept_button.set_sensitive(accepted_rename_name(&row.text()).is_some());
+        }
+    });
+    entry.connect_apply(move |_| {
+        if accept_button.is_sensitive() {
+            accept_button.emit_clicked();
+        }
+    });
+
+    let dialog_ref = dialog.downgrade();
+    footer.cancel_button().connect_clicked(move |_| {
+        if let Some(dialog) = dialog_ref.upgrade() {
+            dialog.close();
+        }
+    });
 
     let state = state.clone();
-    dialog.connect_response(None, move |_, response| {
-        if response != "rename" {
-            return;
-        }
-        let new_name = entry.text().trim().to_string();
-        if new_name.is_empty() || new_name.contains('/') {
+    let dialog_ref = dialog.downgrade();
+    let entry_for_accept = entry.clone();
+    footer.accept_button().connect_clicked(move |_| {
+        let Some(new_name) = accepted_rename_name(&entry_for_accept.text()) else {
             state
                 .sender
                 .output(VideoBrowserSidebarOutput::Notify(i18n("Invalid name")))
                 .ok();
             return;
-        }
+        };
         let dest = parent.join(&new_name);
         if dest.exists() {
             state
@@ -209,7 +243,12 @@ pub(super) fn rename_file(state: &Rc<BrowserState>, path: &str) {
             return;
         }
         match std::fs::rename(&old, &dest) {
-            Ok(()) => state.refresh_current_folder(),
+            Ok(()) => {
+                state.refresh_current_folder();
+                if let Some(dialog) = dialog_ref.upgrade() {
+                    dialog.close();
+                }
+            }
             Err(_) => {
                 state
                     .sender
@@ -218,7 +257,23 @@ pub(super) fn rename_file(state: &Rc<BrowserState>, path: &str) {
             }
         }
     });
+    let entry_for_idle = entry.clone();
+    dialog.connect_map(move |_| {
+        let entry = entry_for_idle.clone();
+        gtk::glib::idle_add_local_once(move || {
+            entry.grab_focus();
+            entry.select_region(0, -1);
+        });
+    });
     dialog.present(Some(&window));
+}
+
+fn accepted_rename_name(input: &str) -> Option<String> {
+    let name = input.trim();
+    if name.is_empty() || name == "." || name == ".." || name.contains('/') || name.contains('\0') {
+        return None;
+    }
+    Some(name.to_string())
 }
 
 /// Move one file into `dest_dir`, keeping its basename. Refuses to overwrite an
@@ -272,6 +327,26 @@ impl BrowserState {
             self.navigate_to_folder(&folder);
         } else {
             self.rebuild();
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::accepted_rename_name;
+
+    #[test]
+    fn rename_name_accepts_trimmed_file_names() {
+        assert_eq!(
+            accepted_rename_name("  renamed video.mp4  ").as_deref(),
+            Some("renamed video.mp4")
+        );
+    }
+
+    #[test]
+    fn rename_name_rejects_empty_paths_and_traversal_names() {
+        for input in ["", "   ", ".", "..", "nested/name.mp4", "bad\0name.mp4"] {
+            assert_eq!(accepted_rename_name(input), None);
         }
     }
 }
