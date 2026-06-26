@@ -108,12 +108,13 @@ pub enum VideoControlsBarOutput {
     },
     /// Fullscreen button clicked.
     ToggleFullscreen,
-    /// The elapsed-time label was clicked → open the "Go to time" dialog.
+    /// The elapsed-time button was activated → open the "Go to time" dialog.
     GotoTimeClicked,
 }
 
 /// App-local OSD controls bar (recovers the old `controls_box`).
 pub struct VideoControlsBar {
+    position_button: gtk::Button,
     position_label: gtk::Label,
     duration_label: gtk::Label,
     seek_bar: gtk::Scale,
@@ -201,22 +202,25 @@ impl Component for VideoControlsBar {
             .label("0:00")
             .width_chars(7)
             .xalign(1.0)
-            .css_classes(["time-label", "time-label-clickable"])
+            .css_classes(["time-label"])
             .build();
-        position_label.update_property(&[gtk::accessible::Property::Label(&i18n("Go to time"))]);
-        crate::shared::tooltip::set(&position_label, &i18n("Go to time"));
-        position_label.set_cursor_from_name(Some("pointer"));
-        // Clicking the elapsed-time counter opens the "Go to time" dialog (the
-        // menu entry was moved here).
+        let position_button = gtk::Button::builder()
+            .child(&position_label)
+            .css_classes(["flat", "time-label-clickable"])
+            .build();
+        position_button.update_property(&[gtk::accessible::Property::Label(&i18n("Go to time"))]);
+        crate::shared::tooltip::set(&position_button, &i18n("Go to time"));
+        position_button.set_cursor_from_name(Some("pointer"));
+        // The elapsed-time counter opens the "Go to time" dialog (the menu entry
+        // was moved here). Keep it a real button so AT-SPI and keyboard users
+        // have the same path as pointer users.
         {
-            let click = gtk::GestureClick::new();
             let sender = sender.clone();
-            click.connect_released(move |_, _, _, _| {
+            position_button.connect_clicked(move |_| {
                 sender.output(VideoControlsBarOutput::GotoTimeClicked).ok();
             });
-            position_label.add_controller(click);
         }
-        seek_row.append(&position_label);
+        seek_row.append(&position_button);
 
         let seek_adj = gtk::Adjustment::new(0.0, 0.0, 1.0, 0.01, 0.1, 0.0);
         let seek_bar = gtk::Scale::builder()
@@ -335,6 +339,7 @@ impl Component for VideoControlsBar {
         );
 
         let model = Self {
+            position_button,
             position_label,
             duration_label,
             seek_bar,
@@ -458,7 +463,7 @@ impl VideoControlsBar {
         // Edit & Export (cut/extract/convert) and Go-to-time act on the loaded
         // media — disabled until a file is open (welcome screen).
         self.button_layout.export_btn.set_sensitive(on);
-        self.position_label.set_sensitive(on);
+        self.position_button.set_sensitive(on);
     }
 
     /// Redraw the seek-bar chapter marks. The scale runs `0.0..=1.0`, so each

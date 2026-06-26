@@ -18,7 +18,10 @@ use relm4::ComponentSender;
 
 use super::video_shell::{VideoShell, VideoShellInput};
 use crate::i18n::i18n;
-use big_relm4_components::layout::dialog_page::BigDialogPage;
+use big_relm4_components::layout::{
+    dialog_footer::{BigDialogFooter, BigDialogFooterSpec},
+    dialog_page::BigDialogPage,
+};
 use big_relm4_components::list::navigation_row::{BigNavigationRow, BigNavigationRowSpec};
 
 impl VideoShell {
@@ -32,27 +35,72 @@ impl VideoShell {
     /// seconds; on confirm it seeks mpv absolutely. Mirrors the old
     /// `show_goto_dialog`; drives `mpv.seek_absolute`.
     pub(super) fn show_goto_time_dialog(&self, root: &adw::ApplicationWindow) {
-        let (dialog, entry) = big_app_kit::dialogs::entry_dialog(
-            &i18n("Go to Time"),
-            &i18n("Enter time as H:MM:SS, M:SS, or seconds"),
-            &i18n("Cancel"),
-            "go",
-            &i18n("Go"),
-            "0:00:00",
-            &i18n("Playback time"),
-        );
+        let dialog = adw::Dialog::builder()
+            .title(i18n("Go to Time"))
+            .content_width(420)
+            .content_height(260)
+            .build();
+        let page = BigDialogPage::plain();
+        page.content().set_spacing(12);
+
+        let group = adw::PreferencesGroup::builder()
+            .description(i18n("Use H:MM:SS, M:SS, or seconds."))
+            .build();
+        let entry = adw::EntryRow::builder()
+            .title(i18n("Playback time"))
+            .text("0:00:00")
+            .show_apply_button(true)
+            .build();
+        group.add(&entry);
+        page.content().append(&group);
+
+        let footer = BigDialogFooter::new(&BigDialogFooterSpec::new(i18n("Cancel"), i18n("Go")));
+        footer
+            .accept_button()
+            .set_sensitive(accepted_goto_seconds(&entry.text()).is_some());
+        page.root().add_bottom_bar(footer.root());
+        dialog.set_child(Some(page.root()));
+
+        let accept_button = footer.accept_button().clone();
+        entry.connect_changed(move |row| {
+            accept_button.set_sensitive(accepted_goto_seconds(&row.text()).is_some());
+        });
+
+        let accept_button = footer.accept_button().clone();
+        entry.connect_apply(move |_| {
+            if accept_button.is_sensitive() {
+                accept_button.emit_clicked();
+            }
+        });
+
+        let dialog_ref = dialog.downgrade();
+        footer.cancel_button().connect_clicked(move |_| {
+            if let Some(dialog) = dialog_ref.upgrade() {
+                dialog.close();
+            }
+        });
 
         let mpv = self.mpv_handle().clone();
-        dialog.connect_response(None, move |_dialog, response| {
-            if response != "go" {
-                return;
-            }
-            let text = entry.text().trim().to_string();
-            if let Some(secs) = parse_goto_seconds(&text) {
+        let dialog_ref = dialog.downgrade();
+        let entry_for_accept = entry.clone();
+        footer.accept_button().connect_clicked(move |_| {
+            if let Some(secs) = accepted_goto_seconds(&entry_for_accept.text()) {
                 if let Some(mpv) = mpv.borrow().as_ref() {
                     mpv.seek_absolute(secs);
                 }
+                if let Some(dialog) = dialog_ref.upgrade() {
+                    dialog.close();
+                }
             }
+        });
+
+        let entry_for_idle = entry.clone();
+        dialog.connect_map(move |_| {
+            let entry = entry_for_idle.clone();
+            glib::idle_add_local_once(move || {
+                entry.grab_focus();
+                entry.select_region(0, -1);
+            });
         });
         dialog.present(Some(root));
     }
@@ -348,6 +396,15 @@ fn parse_goto_seconds(input: &str) -> Option<f64> {
     big_media_components::time::parse_playback_time(input)
 }
 
+fn accepted_goto_seconds(input: &str) -> Option<f64> {
+    let text = input.trim();
+    if text.is_empty() {
+        None
+    } else {
+        parse_goto_seconds(text)
+    }
+}
+
 /// Sleep-timer minutes → total seconds (`u32`, saturating). Pure conversion.
 pub(super) fn sleep_minutes_to_secs(minutes: u32) -> u32 {
     minutes.saturating_mul(60)
@@ -443,7 +500,8 @@ fn screenshot_filename(title: &str, timestamp: i64) -> String {
 #[cfg(test)]
 mod tests {
     use super::{
-        chapter_title_with_prefix, parse_goto_seconds, screenshot_filename, sleep_minutes_to_secs,
+        accepted_goto_seconds, chapter_title_with_prefix, parse_goto_seconds, screenshot_filename,
+        sleep_minutes_to_secs,
     };
 
     #[test]
@@ -464,6 +522,16 @@ mod tests {
     #[test]
     fn goto_rejects_garbage() {
         assert_eq!(parse_goto_seconds("abc:def"), None);
+    }
+
+    #[test]
+    fn goto_accepts_trimmed_dialog_input() {
+        assert_eq!(accepted_goto_seconds(" 2:30 "), Some(150.0));
+    }
+
+    #[test]
+    fn goto_rejects_blank_dialog_input() {
+        assert_eq!(accepted_goto_seconds("   "), None);
     }
 
     #[test]
