@@ -40,7 +40,7 @@ impl AudioShell {
 
     /// Enter visual trim mode on the current local track.
     pub(super) fn enter_trim_mode(&mut self) {
-        if self.current_file.is_empty() || self.current_file.contains("://") {
+        if self.current_local_input().is_none() {
             self.notify(&i18n("No local track is playing"));
             return;
         }
@@ -224,11 +224,10 @@ impl AudioShell {
     }
 
     fn show_trim_export_options(&self, ranges: Vec<(f64, f64)>, sender: &ComponentSender<Self>) {
-        if self.current_file.is_empty() || self.current_file.contains("://") {
+        let Some(input) = self.current_local_input() else {
             self.notify(&i18n("No local track is playing"));
             return;
-        }
-        let input = PathBuf::from(&self.current_file);
+        };
         let output_dir = input
             .parent()
             .map_or_else(|| PathBuf::from("."), Path::to_path_buf);
@@ -355,12 +354,10 @@ impl AudioShell {
         segments: Vec<(f64, f64)>,
         busy_message: &str,
     ) {
-        let input = self.current_file.clone();
-        if input.is_empty() || input.contains("://") {
+        let Some(input) = self.current_local_input() else {
             self.notify(&i18n("No local track is playing"));
             return;
-        }
-        let input = PathBuf::from(&input);
+        };
         let output_dir = input
             .parent()
             .map_or_else(|| PathBuf::from("."), Path::to_path_buf);
@@ -371,6 +368,29 @@ impl AudioShell {
             move |result| toast_overlay.add_toast(adw::Toast::new(&export_message(&result))),
         );
     }
+
+    fn current_local_input(&self) -> Option<PathBuf> {
+        let input = self
+            .mpv
+            .as_ref()
+            .and_then(|mpv| mpv.get_current_file())
+            .unwrap_or_else(|| self.current_file.clone());
+        local_input_path(&input)
+    }
+}
+
+fn local_input_path(input: &str) -> Option<PathBuf> {
+    let input = input.trim();
+    if input.is_empty() {
+        return None;
+    }
+    if input.starts_with("file://") {
+        return gio::File::for_uri(input).path();
+    }
+    if input.contains("://") {
+        return None;
+    }
+    Some(PathBuf::from(input))
 }
 
 fn run_segment_export_blocking(
@@ -446,4 +466,30 @@ fn playhead_button(mpv: &Option<Arc<MpvBackend>>, spin: &gtk::SpinButton) -> gtk
         }
     });
     button
+}
+
+#[cfg(test)]
+mod tests {
+    use super::local_input_path;
+    use std::path::PathBuf;
+
+    #[test]
+    fn local_input_path_accepts_plain_paths_and_file_uris() {
+        assert_eq!(
+            local_input_path("/tmp/song.flac"),
+            Some(PathBuf::from("/tmp/song.flac"))
+        );
+        assert_eq!(
+            local_input_path("file:///tmp/song.flac"),
+            Some(PathBuf::from("/tmp/song.flac"))
+        );
+    }
+
+    #[test]
+    fn local_input_path_rejects_empty_values_and_streams() {
+        assert_eq!(local_input_path(""), None);
+        assert_eq!(local_input_path("   "), None);
+        assert_eq!(local_input_path("https://example.test/song.flac"), None);
+        assert_eq!(local_input_path("rtmp://example.test/live"), None);
+    }
 }
