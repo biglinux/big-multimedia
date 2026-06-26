@@ -11,7 +11,10 @@ use std::rc::Rc;
 use adw::prelude::*;
 use big_app_kit::file_dialogs::FilePicker;
 use big_relm4_components::feedback::tooltip;
-use big_relm4_components::layout::dialog_page::BigDialogPage;
+use big_relm4_components::layout::{
+    dialog_footer::{BigDialogFooter, BigDialogFooterSpec},
+    dialog_page::BigDialogPage,
+};
 use big_relm4_components::list::action_nav_row::{BigActionNavRow, BigActionNavRowSpec};
 use gtk::glib;
 use relm4::ComponentSender;
@@ -92,6 +95,23 @@ fn show_main_menu_dialog(
         "view-list-symbolic",
         "win.show-manage-playlists",
     );
+    {
+        let out = sender.clone();
+        let dialog_weak = dialog_weak.clone();
+        let parent_weak = parent.map(ObjectExt::downgrade);
+        append_menu_row(
+            &library_group,
+            i18n("Save Queue as Playlist"),
+            "media-playlist-consecutive-symbolic",
+            move || {
+                if let Some(dialog) = dialog_weak.upgrade() {
+                    dialog.close();
+                }
+                let parent = parent_weak.as_ref().and_then(glib::WeakRef::upgrade);
+                prompt_queue_playlist_name(parent.as_ref(), &out);
+            },
+        );
+    }
     append_window_action_row(
         &library_group,
         &dialog_weak,
@@ -305,6 +325,76 @@ fn append_menu_row<F>(
     .into_root();
     row.connect_activated(move |_| action());
     group.add(&row);
+}
+
+fn prompt_queue_playlist_name(
+    parent: Option<&gtk::Window>,
+    sender: &ComponentSender<PlaylistPanel>,
+) {
+    let dialog = adw::Dialog::builder()
+        .title(i18n("Save Queue as Playlist"))
+        .content_width(420)
+        .content_height(240)
+        .build();
+    let page = BigDialogPage::plain();
+    page.content().set_spacing(12);
+    page.append_description(&i18n("Name for the new playlist"));
+
+    let group = adw::PreferencesGroup::new();
+    let entry = adw::EntryRow::builder()
+        .title(i18n("Playlist name"))
+        .show_apply_button(true)
+        .build();
+    group.add(&entry);
+    page.content().append(&group);
+
+    let footer = BigDialogFooter::new(&BigDialogFooterSpec::new(i18n("Cancel"), i18n("Save")));
+    footer.accept_button().set_sensitive(false);
+    page.root().add_bottom_bar(footer.root());
+    dialog.set_child(Some(page.root()));
+
+    let accept_button = footer.accept_button().clone();
+    entry.connect_changed(move |row| {
+        accept_button.set_sensitive(!row.text().trim().is_empty());
+    });
+
+    let accept_button = footer.accept_button().clone();
+    entry.connect_apply(move |_| {
+        if accept_button.is_sensitive() {
+            accept_button.emit_clicked();
+        }
+    });
+
+    let out = sender.clone();
+    let entry_for_accept = entry.clone();
+    let dialog_weak = dialog.downgrade();
+    footer.accept_button().connect_clicked(move |_| {
+        let name = entry_for_accept.text().trim().to_string();
+        if name.is_empty() {
+            return;
+        }
+        let _ = out.output(PlaylistPanelOutput::SaveQueueAsPlaylist { name });
+        if let Some(dialog) = dialog_weak.upgrade() {
+            dialog.close();
+        }
+    });
+
+    let dialog_weak = dialog.downgrade();
+    footer.cancel_button().connect_clicked(move |_| {
+        if let Some(dialog) = dialog_weak.upgrade() {
+            dialog.close();
+        }
+    });
+
+    let entry_for_focus = entry.clone();
+    dialog.connect_map(move |_| {
+        let entry_for_idle = entry_for_focus.clone();
+        glib::idle_add_local_once(move || {
+            entry_for_idle.grab_focus();
+            entry_for_idle.select_region(0, -1);
+        });
+    });
+    dialog.present(parent);
 }
 
 /// Empty-queue placeholder: a drop hint when the library already has tracks,

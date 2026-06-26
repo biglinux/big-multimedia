@@ -12,7 +12,10 @@ use gtk::glib;
 
 use big_app_kit::file_dialogs::FilePicker;
 use big_media_components::player_chrome::spawn_blocking_result;
-use big_relm4_components::layout::dialog_page::BigDialogPage;
+use big_relm4_components::layout::{
+    dialog_footer::{BigDialogFooter, BigDialogFooterSpec},
+    dialog_page::BigDialogPage,
+};
 use big_relm4_components::list::button_strip_row::{BigButtonStripRow, BigButtonStripRowSpec};
 use big_relm4_components::list::info_row::{BigInfoRow, BigInfoRowSpec};
 use relm4::ComponentSender;
@@ -318,36 +321,73 @@ fn remove_row_from_list(btn: &gtk::Button, list_weak: &glib::WeakRef<gtk::ListBo
     }
 }
 
-/// A small `adw::AlertDialog` with a single name entry; calls `on_save` with the
-/// trimmed name when the user confirms (empty input is ignored).
+/// A small shared-chrome dialog with a single name entry; calls `on_save` with
+/// the trimmed name when the user confirms.
 fn present_name_entry_dialog<F>(parent: &gtk::Window, heading: &str, body: &str, on_save: F)
 where
     F: Fn(String) + 'static,
 {
-    let (dialog, content) = big_app_kit::dialogs::content_action_dialog(
-        heading,
-        &i18n("Cancel"),
-        "save",
-        &i18n("Save"),
-        false,
-    );
-    dialog.set_body(body);
-    let entry = gtk::Entry::builder()
-        .placeholder_text(i18n("Playlist name"))
-        .activates_default(true)
+    let dialog = adw::Dialog::builder()
+        .title(heading)
+        .content_width(420)
+        .content_height(240)
         .build();
-    entry.update_property(&[gtk::accessible::Property::Label(&i18n("Playlist name"))]);
-    content.append(&entry);
+    let page = BigDialogPage::plain();
+    page.content().set_spacing(12);
+    page.append_description(body);
 
-    dialog.connect_response(None, move |_, response| {
-        if response != "save" {
-            return;
+    let group = adw::PreferencesGroup::new();
+    let entry = adw::EntryRow::builder()
+        .title(i18n("Playlist name"))
+        .show_apply_button(true)
+        .build();
+    group.add(&entry);
+    page.content().append(&group);
+
+    let footer = BigDialogFooter::new(&BigDialogFooterSpec::new(i18n("Cancel"), i18n("Save")));
+    footer.accept_button().set_sensitive(false);
+    page.root().add_bottom_bar(footer.root());
+    dialog.set_child(Some(page.root()));
+
+    let accept_button = footer.accept_button().clone();
+    entry.connect_changed(move |row| {
+        accept_button.set_sensitive(!row.text().trim().is_empty());
+    });
+
+    let accept_button = footer.accept_button().clone();
+    entry.connect_apply(move |_| {
+        if accept_button.is_sensitive() {
+            accept_button.emit_clicked();
         }
-        let name = entry.text().trim().to_string();
+    });
+
+    let entry_for_accept = entry.clone();
+    let dialog_weak = dialog.downgrade();
+    footer.accept_button().connect_clicked(move |_| {
+        let name = entry_for_accept.text().trim().to_string();
         if name.is_empty() {
             return;
         }
         on_save(name);
+        if let Some(dialog) = dialog_weak.upgrade() {
+            dialog.close();
+        }
+    });
+
+    let dialog_weak = dialog.downgrade();
+    footer.cancel_button().connect_clicked(move |_| {
+        if let Some(dialog) = dialog_weak.upgrade() {
+            dialog.close();
+        }
+    });
+
+    let entry_for_focus = entry.clone();
+    dialog.connect_map(move |_| {
+        let entry_for_idle = entry_for_focus.clone();
+        glib::idle_add_local_once(move || {
+            entry_for_idle.grab_focus();
+            entry_for_idle.select_region(0, -1);
+        });
     });
     dialog.present(Some(parent));
 }

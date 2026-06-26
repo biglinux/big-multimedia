@@ -19,7 +19,7 @@ use std::collections::HashMap;
 use std::rc::Rc;
 
 use adw::prelude::*;
-use gtk::{gdk, gio};
+use gtk::{gdk, gio, glib};
 use relm4::ComponentSender;
 
 use big_relm4_components::feedback::context_popover::BigContextPopover;
@@ -204,7 +204,7 @@ pub(super) fn build_library_tree(
 
     let tree_model = build_tree_model(&root_store, &child_stores);
     let selection = gtk::MultiSelection::new(Some(tree_model));
-    let factory = build_tree_factory(&leaf_tracks);
+    let factory = build_tree_factory(&leaf_tracks, sender);
 
     let list_view = gtk::ListView::builder()
         .model(&selection)
@@ -245,7 +245,10 @@ fn build_tree_model(root_store: &gio::ListStore, child_stores: &ChildStores) -> 
 }
 
 /// Row factory: a `TreeExpander` wrapping icon + avatar + label/artist + count.
-fn build_tree_factory(leaf_tracks: &LeafTracks) -> gtk::SignalListItemFactory {
+fn build_tree_factory(
+    leaf_tracks: &LeafTracks,
+    sender: &ComponentSender<LibraryPanel>,
+) -> gtk::SignalListItemFactory {
     let factory = gtk::SignalListItemFactory::new();
     factory.connect_setup(|_, item| {
         let item = item.downcast_ref::<gtk::ListItem>().unwrap();
@@ -289,14 +292,29 @@ fn build_tree_factory(leaf_tracks: &LeafTracks) -> gtk::SignalListItemFactory {
         row.append(&avatar);
         row.append(&text_box);
         row.append(&count_lbl);
+        row.append(&build_show_tracks_button());
         expander.set_child(Some(&row));
         item.set_child(Some(&expander));
     });
 
     let leaves = leaf_tracks.clone();
+    let out = sender.clone();
     factory.connect_bind(move |_, item| {
         let item = item.downcast_ref::<gtk::ListItem>().unwrap();
-        bind_tree_row(item, &leaves);
+        bind_tree_row(item, &leaves, &out);
+    });
+    factory.connect_unbind(|_, item| {
+        let item = item.downcast_ref::<gtk::ListItem>().unwrap();
+        let Some(expander) = item.child().and_downcast::<gtk::TreeExpander>() else {
+            return;
+        };
+        let Some(row) = expander.child().and_downcast::<gtk::Box>() else {
+            return;
+        };
+        let Some(open_btn) = row.last_child().and_downcast::<gtk::Button>() else {
+            return;
+        };
+        disconnect_show_tracks_button(&open_btn);
     });
 
     factory
@@ -304,7 +322,11 @@ fn build_tree_factory(leaf_tracks: &LeafTracks) -> gtk::SignalListItemFactory {
 
 /// Bind one `BrowserNode` onto the row widgets; stashes `vis-pos` for hit-tests
 /// and kicks off the off-thread art thumbnail for file leaves.
-fn bind_tree_row(item: &gtk::ListItem, leaves: &LeafTracks) {
+fn bind_tree_row(
+    item: &gtk::ListItem,
+    leaves: &LeafTracks,
+    sender: &ComponentSender<LibraryPanel>,
+) {
     let Some(tree_row) = item.item().and_downcast::<gtk::TreeListRow>() else {
         return;
     };
@@ -328,6 +350,11 @@ fn bind_tree_row(item: &gtk::ListItem, leaves: &LeafTracks) {
         .next_sibling()
         .and_downcast::<gtk::Label>()
         .unwrap();
+    let open_btn = count_lbl
+        .next_sibling()
+        .and_downcast::<gtk::Button>()
+        .unwrap();
+    disconnect_show_tracks_button(&open_btn);
 
     let kind = node.kind();
     if kind == BrowserNodeKind::Divider {
@@ -337,6 +364,7 @@ fn bind_tree_row(item: &gtk::ListItem, leaves: &LeafTracks) {
         label.add_css_class("heading");
         artist_label.set_visible(false);
         count_lbl.set_visible(false);
+        open_btn.set_visible(false);
         item.set_activatable(false);
         item.set_selectable(false);
         return;
@@ -357,6 +385,7 @@ fn bind_tree_row(item: &gtk::ListItem, leaves: &LeafTracks) {
             &count_lbl,
             leaves,
         );
+        open_btn.set_visible(false);
         return;
     }
 
@@ -382,6 +411,52 @@ fn bind_tree_row(item: &gtk::ListItem, leaves: &LeafTracks) {
     } else if is_va {
         avatar.set_text(Some("Various Artists"));
         avatar.set_icon_name(Some("system-users-symbolic"));
+    }
+    bind_show_tracks_button(&open_btn, &node, tree_row.depth(), sender);
+}
+
+fn build_show_tracks_button() -> gtk::Button {
+    gtk::Button::builder()
+        .icon_name("go-next-symbolic")
+        .valign(gtk::Align::Center)
+        .css_classes(["flat", "circular"])
+        .visible(false)
+        .build()
+}
+
+fn bind_show_tracks_button(
+    button: &gtk::Button,
+    node: &BrowserNode,
+    depth: u32,
+    sender: &ComponentSender<LibraryPanel>,
+) {
+    let action_label = format!("{}: {}", i18n("Show tracks"), node.label());
+    button.set_visible(true);
+    button.update_property(&[gtk::accessible::Property::Label(&action_label)]);
+    big_relm4_components::feedback::tooltip::set(button, &action_label);
+
+    let out = sender.clone();
+    let kind = node.kind() as u32;
+    let key = node.key();
+    let secondary = node.secondary();
+    let handler = button.connect_clicked(move |_| {
+        let _ = out.output(LibraryPanelOutput::NodeSelected {
+            kind,
+            key: key.clone(),
+            secondary: secondary.clone(),
+            depth,
+        });
+    });
+    unsafe {
+        button.set_data("handler-id", handler);
+    }
+}
+
+fn disconnect_show_tracks_button(button: &gtk::Button) {
+    unsafe {
+        if let Some(id) = button.steal_data::<glib::SignalHandlerId>("handler-id") {
+            button.disconnect(id);
+        }
     }
 }
 
