@@ -32,10 +32,10 @@ impl AudioShell {
                     update_taskbar_progress: &update_taskbar_progress,
                     hide_taskbar_progress: &hide_taskbar_progress,
                 };
-                if route_common_playback_command(cmd, arg, &controls, Some(&feedback)) {
+                if route_standard_playback_command(cmd, arg, &controls, Some(&feedback)) {
                     return;
                 }
-            } else if route_common_playback_command(cmd, arg, &controls, None) {
+            } else if route_standard_playback_command(cmd, arg, &controls, None) {
                 return;
             }
         }

@@ -56,7 +56,7 @@ use crate::settings::{keys, Settings};
 use crate::shared::ui_helpers::spawn_db_query;
 use big_app_kit::file_dialogs::FilePicker;
 use big_app_kit::mpris::{
-    route_common_playback_command, BigMprisPlaybackControls, BigMprisPlaybackFeedback,
+    route_standard_playback_command, BigMprisPlaybackControls, BigMprisPlaybackFeedback,
 };
 use big_media_components::media::file_metadata_dialog::{
     show_media_file_metadata_dialog, BigMediaFileMetadataDialogLabels,
