@@ -64,8 +64,9 @@ fn base_job(input: PathBuf, output: PathBuf, profile: Profile) -> FfmpegJob {
 }
 
 #[cfg(not(miri))]
-fn argv(cmd: &std::process::Command) -> Vec<String> {
-    cmd.get_args()
+fn argv(command: &std::process::Command) -> Vec<String> {
+    command
+        .get_args()
         .map(|a| a.to_string_lossy().into_owned())
         .collect()
 }
@@ -100,10 +101,10 @@ fn mode_branching_video_vs_audio() {
 #[cfg(not(miri))]
 #[test]
 fn settings_persistence_round_trip() {
-    let tmp = tempfile::tempdir().expect("tempdir");
+    let settings_config_directory = tempfile::tempdir().expect("tempdir");
     // SAFETY: test process.
     unsafe {
-        std::env::set_var("XDG_CONFIG_HOME", tmp.path());
+        std::env::set_var("XDG_CONFIG_HOME", settings_config_directory.path());
     }
 
     let s = Settings::new("big-video-converter-test");
@@ -179,10 +180,11 @@ fn failed_canonicalize_does_not_update_last_dir() {
 #[cfg(not(miri))]
 #[test]
 fn broken_symlink_does_not_poison_last_dir() {
-    let tmp = tempfile::tempdir().expect("tempdir");
-    let link = tmp.path().join("dangling.mkv");
+    let symlink_fixture_directory = tempfile::tempdir().expect("tempdir");
+    let link = symlink_fixture_directory.path().join("dangling.mkv");
     #[cfg(unix)]
-    std::os::unix::fs::symlink(tmp.path().join("nonexistent"), &link).expect("symlink");
+    std::os::unix::fs::symlink(symlink_fixture_directory.path().join("nonexistent"), &link)
+        .expect("symlink");
 
     let resolved = std::fs::canonicalize(&link);
     assert!(resolved.is_err(), "{resolved:?}");
