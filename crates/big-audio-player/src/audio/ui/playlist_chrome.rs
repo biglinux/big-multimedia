@@ -6,9 +6,14 @@
 //! config header menu, column-width persist) lives in `column_builders` (shared
 //! with the library detail view).
 
+use std::rc::Rc;
+
 use adw::prelude::*;
 use big_app_kit::file_dialogs::FilePicker;
-use gtk::gio;
+use big_relm4_components::feedback::tooltip;
+use big_relm4_components::layout::dialog_page::BigDialogPage;
+use big_relm4_components::list::action_nav_row::{BigActionNavRow, BigActionNavRowSpec};
+use gtk::glib;
 use relm4::ComponentSender;
 
 use crate::i18n::i18n;
@@ -48,82 +53,258 @@ pub(super) fn build_toolbar(
     header_label.add_css_class("heading");
     bar.set_title_widget(Some(&header_label));
 
-    // Queue actions live in a local "queue" action group so the hamburger menu
-    // can reference them (queue.*); the shell-owned dialogs use win.* actions.
-    let queue_actions = gio::SimpleActionGroup::new();
-
+    let main_menu_label = i18n("Main Menu");
+    let menu_btn = tooltip::icon_button("open-menu-symbolic", &main_menu_label, &[]);
     {
         let out = sender.clone();
-        big_app_kit::desktop::install_action(&queue_actions, "dedupe", move || {
-            let _ = out.output(PlaylistPanelOutput::RemoveDuplicates);
+        menu_btn.connect_clicked(move |button| {
+            let parent = button.root().and_downcast::<gtk::Window>();
+            let action_source = button.clone().upcast::<gtk::Widget>().downgrade();
+            show_main_menu_dialog(parent.as_ref(), action_source, &out);
         });
     }
-
-    {
-        let out = sender.clone();
-        big_app_kit::desktop::install_action(&queue_actions, "clear", move || {
-            let _ = out.output(PlaylistPanelOutput::ClearQueue {
-                confirmed: true,
-                with_undo: true,
-            });
-        });
-    }
-    bar.insert_action_group("queue", Some(&queue_actions));
-
-    // Primary "more options" menu (hamburger), three sections mirroring the
-    // god-object: queue tools · settings · help.
-    let menu = gio::Menu::new();
-
-    let queue_section = gio::Menu::new();
-    queue_section.append(
-        Some(&i18n("Manage Playlists")),
-        Some("win.show-manage-playlists"),
-    );
-    queue_section.append(Some(&i18n("Music Folders")), Some("win.add-folder"));
-    queue_section.append(Some(&i18n("Remove Duplicates")), Some("queue.dedupe"));
-    queue_section.append(Some(&i18n("Clear Queue")), Some("queue.clear"));
-    menu.append_section(None, &queue_section);
-
-    let settings_section = gio::Menu::new();
-    settings_section.append(Some(&i18n("Equalizer")), Some("win.show-equalizer"));
-    settings_section.append(Some(&i18n("Appearance")), Some("win.show-appearance"));
-    settings_section.append(Some(&i18n("Preferences")), Some("win.show-preferences"));
-    #[cfg(feature = "chromecast")]
-    settings_section.append(Some(&i18n("Cast")), Some("win.show-cast"));
-    menu.append_section(None, &settings_section);
-
-    let export_section = gio::Menu::new();
-    export_section.append(Some(&i18n("Trim & Export…")), Some("win.trim-export"));
-    let convert = gio::Menu::new();
-    convert.append(Some(&i18n("MP3")), Some("win.convert-mp3"));
-    convert.append(Some(&i18n("M4A")), Some("win.convert-m4a"));
-    convert.append(Some(&i18n("FLAC")), Some("win.convert-flac"));
-    export_section.append_submenu(Some(&i18n("Convert to")), &convert);
-    menu.append_section(None, &export_section);
-
-    let tools_section = gio::Menu::new();
-    tools_section.append(Some(&i18n("Sleep Timer")), Some("win.sleep-timer"));
-    tools_section.append(Some(&i18n("Smartphone")), Some("win.show-smartphone"));
-    menu.append_section(None, &tools_section);
-
-    let help_section = gio::Menu::new();
-    help_section.append(
-        Some(&i18n("Keyboard Shortcuts")),
-        Some("win.show-shortcuts"),
-    );
-    help_section.append(Some(&i18n("About")), Some("app.about"));
-    menu.append_section(None, &help_section);
-
-    let menu_btn = gtk::MenuButton::builder()
-        .icon_name("open-menu-symbolic")
-        .primary(true)
-        .menu_model(&menu)
-        .build();
-    crate::shared::tooltip::set(&menu_btn, &i18n("Main Menu"));
-    menu_btn.update_property(&[gtk::accessible::Property::Label(&i18n("Main Menu"))]);
     bar.pack_end(&menu_btn);
 
     (bar, header_label)
+}
+
+fn show_main_menu_dialog(
+    parent: Option<&gtk::Window>,
+    action_source: glib::WeakRef<gtk::Widget>,
+    sender: &ComponentSender<PlaylistPanel>,
+) {
+    let dialog = adw::Dialog::builder()
+        .title(i18n("Main Menu"))
+        .content_width(420)
+        .content_height(560)
+        .build();
+    let page = BigDialogPage::scrolled_clamped(420, 520);
+    page.content().set_spacing(12);
+
+    let dialog_weak = dialog.downgrade();
+
+    let library_group = menu_group(i18n("Library"));
+    append_window_action_row(
+        &library_group,
+        &dialog_weak,
+        &action_source,
+        i18n("Manage Playlists"),
+        "view-list-symbolic",
+        "win.show-manage-playlists",
+    );
+    append_window_action_row(
+        &library_group,
+        &dialog_weak,
+        &action_source,
+        i18n("Music Folders"),
+        "folder-music-symbolic",
+        "win.add-folder",
+    );
+    {
+        let out = sender.clone();
+        append_output_row(
+            &library_group,
+            &dialog_weak,
+            i18n("Remove Duplicates"),
+            "edit-clear-symbolic",
+            move || {
+                let _ = out.output(PlaylistPanelOutput::RemoveDuplicates);
+            },
+        );
+    }
+    {
+        let out = sender.clone();
+        append_output_row(
+            &library_group,
+            &dialog_weak,
+            i18n("Clear Queue"),
+            "edit-delete-symbolic",
+            move || {
+                let _ = out.output(PlaylistPanelOutput::ClearQueue {
+                    confirmed: true,
+                    with_undo: true,
+                });
+            },
+        );
+    }
+    page.content().append(&library_group);
+
+    let sound_group = menu_group(i18n("Sound & App"));
+    append_window_action_row(
+        &sound_group,
+        &dialog_weak,
+        &action_source,
+        i18n("Equalizer"),
+        "audio-equalizer-symbolic",
+        "win.show-equalizer",
+    );
+    append_window_action_row(
+        &sound_group,
+        &dialog_weak,
+        &action_source,
+        i18n("Appearance"),
+        "preferences-desktop-theme-symbolic",
+        "win.show-appearance",
+    );
+    append_window_action_row(
+        &sound_group,
+        &dialog_weak,
+        &action_source,
+        i18n("Preferences"),
+        "emblem-system-symbolic",
+        "win.show-preferences",
+    );
+    #[cfg(feature = "chromecast")]
+    append_window_action_row(
+        &sound_group,
+        &dialog_weak,
+        &action_source,
+        i18n("Cast"),
+        "network-wireless-symbolic",
+        "win.show-cast",
+    );
+    page.content().append(&sound_group);
+
+    let export_group = menu_group(i18n("Edit & Export"));
+    append_window_action_row(
+        &export_group,
+        &dialog_weak,
+        &action_source,
+        i18n("Trim & Export"),
+        "edit-cut-symbolic",
+        "win.trim-export",
+    );
+    append_window_action_row(
+        &export_group,
+        &dialog_weak,
+        &action_source,
+        i18n("Convert to MP3"),
+        "audio-x-generic-symbolic",
+        "win.convert-mp3",
+    );
+    append_window_action_row(
+        &export_group,
+        &dialog_weak,
+        &action_source,
+        i18n("Convert to M4A"),
+        "audio-x-generic-symbolic",
+        "win.convert-m4a",
+    );
+    append_window_action_row(
+        &export_group,
+        &dialog_weak,
+        &action_source,
+        i18n("Convert to FLAC"),
+        "audio-x-generic-symbolic",
+        "win.convert-flac",
+    );
+    page.content().append(&export_group);
+
+    let tools_group = menu_group(i18n("Tools"));
+    append_window_action_row(
+        &tools_group,
+        &dialog_weak,
+        &action_source,
+        i18n("Sleep Timer"),
+        "alarm-symbolic",
+        "win.sleep-timer",
+    );
+    append_window_action_row(
+        &tools_group,
+        &dialog_weak,
+        &action_source,
+        i18n("Smartphone"),
+        "phone-symbolic",
+        "win.show-smartphone",
+    );
+    page.content().append(&tools_group);
+
+    let help_group = menu_group(i18n("Help"));
+    append_window_action_row(
+        &help_group,
+        &dialog_weak,
+        &action_source,
+        i18n("Keyboard Shortcuts"),
+        "preferences-desktop-keyboard-shortcuts-symbolic",
+        "win.show-shortcuts",
+    );
+    append_window_action_row(
+        &help_group,
+        &dialog_weak,
+        &action_source,
+        i18n("About"),
+        "help-about-symbolic",
+        "app.about",
+    );
+    page.content().append(&help_group);
+
+    dialog.set_child(Some(page.root()));
+    if let Some(parent) = parent {
+        dialog.present(Some(parent));
+    } else {
+        dialog.present(None::<&gtk::Window>);
+    }
+}
+
+fn menu_group(title: String) -> adw::PreferencesGroup {
+    adw::PreferencesGroup::builder().title(title).build()
+}
+
+fn append_window_action_row(
+    group: &adw::PreferencesGroup,
+    dialog_weak: &glib::WeakRef<adw::Dialog>,
+    action_source: &glib::WeakRef<gtk::Widget>,
+    title: String,
+    icon_name: &'static str,
+    action_name: &'static str,
+) {
+    let dialog_weak = dialog_weak.clone();
+    let action_source = action_source.clone();
+    append_menu_row(group, title, icon_name, move || {
+        if let Some(dialog) = dialog_weak.upgrade() {
+            dialog.close();
+        }
+        if let Some(source) = action_source.upgrade() {
+            let _ = gtk::prelude::WidgetExt::activate_action(&source, action_name, None);
+        }
+    });
+}
+
+fn append_output_row<F>(
+    group: &adw::PreferencesGroup,
+    dialog_weak: &glib::WeakRef<adw::Dialog>,
+    title: String,
+    icon_name: &'static str,
+    emit: F,
+) where
+    F: Fn() + 'static,
+{
+    let dialog_weak = dialog_weak.clone();
+    append_menu_row(group, title, icon_name, move || {
+        if let Some(dialog) = dialog_weak.upgrade() {
+            dialog.close();
+        }
+        emit();
+    });
+}
+
+fn append_menu_row<F>(
+    group: &adw::PreferencesGroup,
+    title: String,
+    icon_name: &'static str,
+    on_activate: F,
+) where
+    F: Fn() + 'static,
+{
+    let action = Rc::new(on_activate);
+    let row = BigActionNavRow::new(
+        BigActionNavRowSpec::new(&title)
+            .prefix_icon_name(icon_name)
+            .action_label(&title),
+    )
+    .into_root();
+    row.connect_activated(move |_| action());
+    group.add(&row);
 }
 
 /// Empty-queue placeholder: a drop hint when the library already has tracks,
