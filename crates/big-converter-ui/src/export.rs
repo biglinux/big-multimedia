@@ -143,27 +143,27 @@ pub fn single_file_export_profile(choice: &QuickExportChoice) -> Profile {
 }
 
 /// Convert a runtime conversion-queue progress snapshot into the shared progress
-/// component's `ProgressInfo`.
+/// component's `FfmpegProgressSnapshot`.
 ///
 /// `big-media-runtime` (the engine) and `big-media-components` (the UI) each
-/// define a field-identical `ProgressInfo`; this is the single bridge so a player
+/// define a field-identical `FfmpegProgressSnapshot`; this is the single bridge so a player
 /// embedding can drive [`big_media_components::converter::progress::BigConverterProgress`]
 /// straight from `QueueMessage::Progress`, exactly as the full converter does.
 #[must_use]
-pub fn ui_progress_info(
-    info: &crate::converter::ffmpeg::progress::ProgressInfo,
-) -> big_media_components::ffmpeg::progress::ProgressInfo {
-    big_media_components::ffmpeg::progress::ProgressInfo {
-        time_secs: info.time_secs,
-        total_secs: info.total_secs,
-        speed: info.speed,
-        size_bytes: info.size_bytes,
-        bitrate_kbps: info.bitrate_kbps,
-        frame: info.frame,
-        fps: info.fps,
-        eta_secs: info.eta_secs,
-        percent: info.percent,
-        done: info.done,
+pub fn ui_progress_snapshot(
+    runtime_progress_snapshot: &crate::converter::ffmpeg::progress::FfmpegProgressSnapshot,
+) -> big_media_components::ffmpeg::progress::FfmpegProgressSnapshot {
+    big_media_components::ffmpeg::progress::FfmpegProgressSnapshot {
+        time_secs: runtime_progress_snapshot.time_secs,
+        total_secs: runtime_progress_snapshot.total_secs,
+        speed: runtime_progress_snapshot.speed,
+        size_bytes: runtime_progress_snapshot.size_bytes,
+        bitrate_kbps: runtime_progress_snapshot.bitrate_kbps,
+        frame: runtime_progress_snapshot.frame,
+        fps: runtime_progress_snapshot.fps,
+        eta_secs: runtime_progress_snapshot.eta_secs,
+        percent: runtime_progress_snapshot.percent,
+        done: runtime_progress_snapshot.done,
     }
 }
 

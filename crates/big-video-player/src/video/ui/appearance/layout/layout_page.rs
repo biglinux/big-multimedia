@@ -246,13 +246,13 @@ fn build_window_group(settings: &Settings, on_changed: &Rc<dyn Fn()>) -> adw::Pr
     let custom_window_button_size_row = adw::SwitchRow::builder()
         .title(i18n("Window Buttons Follow Custom Size"))
         .subtitle(i18n("Also resize the minimize, maximize and close buttons"))
-        .active(settings.get_bool(keys::UI_WINDOW_BTN_CUSTOM_SIZE))
+        .active(settings.get_bool(keys::UI_WINDOW_BUTTON_CUSTOM_SIZE))
         .build();
     {
         let settings = settings.clone();
         let on_changed = on_changed.clone();
         custom_window_button_size_row.connect_active_notify(move |row| {
-            let _ = settings.put_bool(keys::UI_WINDOW_BTN_CUSTOM_SIZE, row.is_active());
+            let _ = settings.put_bool(keys::UI_WINDOW_BUTTON_CUSTOM_SIZE, row.is_active());
             on_changed();
         });
     }

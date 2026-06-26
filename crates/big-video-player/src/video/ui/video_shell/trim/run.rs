@@ -11,7 +11,7 @@ use relm4::{ComponentController, ComponentSender};
 
 use big_converter_ui::export::{build_single_export_queue, QuickExportChoice};
 use big_media_components::time::playback_time;
-use big_media_runtime::converter::ffmpeg::progress::ProgressInfo;
+use big_media_runtime::converter::ffmpeg::progress::FfmpegProgressSnapshot;
 use big_media_runtime::converter::queue::{QueueMessage, SegmentOutputMode};
 use big_relm4_components::input::dropdown_row::{BigDropdownRow, BigDropdownRowSpec};
 use big_relm4_components::input::inline_spin_set::{BigInlineSpinItemSpec, BigInlineSpinSet};
@@ -263,8 +263,10 @@ impl VideoShell {
             let mut outcome: TrimExportOutcome = TrimExportOutcome::Ok;
             while let Ok(msg) = receiver.recv().await {
                 match msg {
-                    QueueMessage::Progress { info, .. } => {
-                        let (fraction, status) = trim_progress_status(&info);
+                    QueueMessage::Progress {
+                        progress_snapshot, ..
+                    } => {
+                        let (fraction, status) = trim_progress_status(&progress_snapshot);
                         row.update(&BigProgressRowSpec::determinate(
                             title.clone(),
                             fraction,
@@ -573,7 +575,7 @@ impl VideoShell {
 /// Build the slim strip's `(fraction, status)` from a queue progress sample:
 /// `42% · 1.8× · ETA 0:12`. Speed/ETA are dropped when unknown (e.g. the
 /// near-instant stream-copy of the fast path).
-fn trim_progress_status(progress: &ProgressInfo) -> (f64, String) {
+fn trim_progress_status(progress: &FfmpegProgressSnapshot) -> (f64, String) {
     let fraction = (progress.percent / 100.0).clamp(0.0, 1.0);
     let mut parts = vec![format!("{:.0}%", progress.percent)];
     if progress.speed > 0.0 {

@@ -23,7 +23,7 @@ pub fn show_file_info_dialog(parent: &impl IsA<gtk::Window>, file_path: &Path) {
     spawn_blocking_result(
         move || {
             let duration_secs = progress::probe_duration(&path);
-            let media_info = progress::probe_media_info(&path);
+            let media_info = progress::probe_media_metadata(&path);
             (path, duration_secs, media_info)
         },
         move |(path, duration_secs, media_info)| {

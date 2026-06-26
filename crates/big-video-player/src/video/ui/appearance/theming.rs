@@ -53,7 +53,7 @@ impl OsdCssConfig {
             btn_radius: settings.get_int(keys::UI_BUTTON_RADIUS),
             win_radius_custom: settings.get_bool(keys::UI_WINDOW_RADIUS_CUSTOM),
             win_radius: settings.get_int(keys::UI_WINDOW_RADIUS),
-            win_btn_custom: settings.get_bool(keys::UI_WINDOW_BTN_CUSTOM_SIZE),
+            win_btn_custom: settings.get_bool(keys::UI_WINDOW_BUTTON_CUSTOM_SIZE),
             osd_shadow: settings.get_bool(keys::UI_OSD_SHADOW),
         }
     }

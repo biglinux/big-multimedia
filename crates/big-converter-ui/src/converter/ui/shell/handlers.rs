@@ -15,7 +15,7 @@ use big_media_components::converter::header_bar::BigConverterHeaderInput;
 use big_media_components::converter::progress::BigConverterProgressInput;
 use big_media_components::converter::queue::BigConversionQueueStatus;
 use big_media_components::converter::queue_component::BigConverterQueueInput;
-use big_media_components::ffmpeg::progress::ProgressInfo;
+use big_media_components::ffmpeg::progress::FfmpegProgressSnapshot;
 use big_media_runtime::convertd::{ConversionItemState, ConversionJobDetails};
 use big_os_kit::microdaemon::{DurableJobSnapshot, DurableJobState, JobProgress};
 
@@ -307,11 +307,14 @@ impl ConverterShell {
                     self.progress
                         .emit(BigConverterProgressInput::SetCommand(item_id, command));
                 }
-                QueueMessage::Progress { item_id, info } => {
+                QueueMessage::Progress {
+                    item_id,
+                    progress_snapshot,
+                } => {
                     self.progress
                         .emit(BigConverterProgressInput::UpdateProgress(
                             item_id,
-                            queue_progress_info(info),
+                            queue_progress_snapshot(progress_snapshot),
                         ));
                     self.queue_view.emit(BigConverterQueueInput::UpdateStatus(
                         item_id,
@@ -479,7 +482,7 @@ impl ConverterShell {
             self.progress
                 .emit(BigConverterProgressInput::UpdateProgress(
                     first_item_id,
-                    daemon_progress_info(progress),
+                    daemon_progress_snapshot(progress),
                 ));
         }
         self.progress
@@ -526,7 +529,7 @@ impl ConverterShell {
                         self.progress
                             .emit(BigConverterProgressInput::UpdateProgress(
                                 local_item_id,
-                                queue_progress_info(progress),
+                                queue_progress_snapshot(progress),
                             ));
                     }
                     self.queue_view.emit(BigConverterQueueInput::UpdateStatus(
@@ -848,7 +851,7 @@ fn cancel_daemon_job(sender: &ComponentSender<ConverterShell>, job_id: String) {
     );
 }
 
-fn daemon_progress_info(progress: JobProgress) -> ProgressInfo {
+fn daemon_progress_snapshot(progress: JobProgress) -> FfmpegProgressSnapshot {
     let percent = progress.total_units.map_or(0.0, |total| {
         if total == 0 {
             0.0
@@ -856,7 +859,7 @@ fn daemon_progress_info(progress: JobProgress) -> ProgressInfo {
             progress.completed_units as f64 / total as f64 * 100.0
         }
     });
-    ProgressInfo {
+    FfmpegProgressSnapshot {
         percent: percent.clamp(0.0, 100.0),
         time_secs: percent,
         total_secs: 100.0,
@@ -864,12 +867,12 @@ fn daemon_progress_info(progress: JobProgress) -> ProgressInfo {
     }
 }
 
-fn queue_progress_info(
-    info: big_media_runtime::converter::ffmpeg::progress::ProgressInfo,
-) -> ProgressInfo {
+fn queue_progress_snapshot(
+    runtime_progress_snapshot: big_media_runtime::converter::ffmpeg::progress::FfmpegProgressSnapshot,
+) -> FfmpegProgressSnapshot {
     // Single bridge impl lives in `crate::export` so the player embedding and the
-    // converter share one runtime→UI ProgressInfo conversion.
-    crate::export::ui_progress_info(&info)
+    // converter share one runtime→UI FfmpegProgressSnapshot conversion.
+    crate::export::ui_progress_snapshot(&runtime_progress_snapshot)
 }
 
 #[cfg(test)]
@@ -877,24 +880,24 @@ mod daemon_progress_tests {
     use super::*;
 
     #[test]
-    fn daemon_progress_info_clamps_to_percent_units() {
-        let info = daemon_progress_info(JobProgress::new(250, Some(100)));
+    fn daemon_progress_snapshot_clamps_to_percent_units() {
+        let progress_snapshot = daemon_progress_snapshot(JobProgress::new(250, Some(100)));
 
-        assert_eq!(info.percent, 100.0);
-        assert_eq!(info.total_secs, 100.0);
+        assert_eq!(progress_snapshot.percent, 100.0);
+        assert_eq!(progress_snapshot.total_secs, 100.0);
     }
 
     #[test]
-    fn daemon_progress_info_handles_unknown_total() {
-        let info = daemon_progress_info(JobProgress::new(5, None));
+    fn daemon_progress_snapshot_handles_unknown_total() {
+        let progress_snapshot = daemon_progress_snapshot(JobProgress::new(5, None));
 
-        assert_eq!(info.percent, 0.0);
+        assert_eq!(progress_snapshot.percent, 0.0);
     }
 
     #[test]
-    fn queue_progress_info_preserves_runtime_fields_for_ui() {
-        let info = queue_progress_info(
-            big_media_runtime::converter::ffmpeg::progress::ProgressInfo {
+    fn queue_progress_snapshot_preserves_runtime_fields_for_ui() {
+        let progress_snapshot = queue_progress_snapshot(
+            big_media_runtime::converter::ffmpeg::progress::FfmpegProgressSnapshot {
                 time_secs: 2.0,
                 total_secs: 10.0,
                 speed: 1.5,
@@ -908,9 +911,9 @@ mod daemon_progress_tests {
             },
         );
 
-        assert_eq!(info.time_secs, 2.0);
-        assert_eq!(info.size_bytes, 2048);
-        assert_eq!(info.percent, 20.0);
-        assert!(info.done);
+        assert_eq!(progress_snapshot.time_secs, 2.0);
+        assert_eq!(progress_snapshot.size_bytes, 2048);
+        assert_eq!(progress_snapshot.percent, 20.0);
+        assert!(progress_snapshot.done);
     }
 }
