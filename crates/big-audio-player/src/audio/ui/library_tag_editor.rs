@@ -106,9 +106,9 @@ pub(super) fn show_tag_editor(
 
     let page = BigDialogPage::plain();
     let footer = BigDialogFooter::new(&BigDialogFooterSpec::new(i18n("Cancel"), i18n("Save")));
-    let cancel_btn = footer.cancel_button().clone();
-    let save_btn = footer.accept_button().clone();
-    save_btn.set_sensitive(false);
+    let cancel_button = footer.cancel_button().clone();
+    let save_button = footer.accept_button().clone();
+    save_button.set_sensitive(false);
 
     let split = adw::NavigationSplitView::new();
     split.set_hexpand(true);
@@ -118,7 +118,7 @@ pub(super) fn show_tag_editor(
     split.set_sidebar(Some(&build_sidebar_page(track)));
 
     let rows = EditRows::new(track);
-    let (content_page, editor_handle) = build_content_page(track, &rows, &save_btn, sender);
+    let (content_page, editor_handle) = build_content_page(track, &rows, &save_button, sender);
     split.set_content(Some(&content_page));
     page.content().append(&split);
     page.root().add_bottom_bar(footer.root());
@@ -128,13 +128,13 @@ pub(super) fn show_tag_editor(
         // WEAK: the cancel button lives in the dialog — a strong clone is a
         // dialog ⇄ button ⇄ closure cycle that leaks the dialog after close.
         let dialog = dialog.downgrade();
-        cancel_btn.connect_clicked(move |_| {
+        cancel_button.connect_clicked(move |_| {
             if let Some(dialog) = dialog.upgrade() {
                 dialog.close();
             }
         });
     }
-    wire_save(&dialog, &save_btn, track, &rows, sender);
+    wire_save(&dialog, &save_button, track, &rows, sender);
 
     dialog.present(parent);
     editor_handle
@@ -234,7 +234,7 @@ fn build_sidebar_page(track: &Track) -> adw::NavigationPage {
         .build();
 
     sidebar_box.append(&build_art_box(&track.file_path));
-    append_read_only_info(&sidebar_box, track);
+    append_read_only_metadata_rows(&sidebar_box, track);
 
     let scroll = gtk::ScrolledWindow::builder()
         .hscrollbar_policy(gtk::PolicyType::Never)
@@ -278,9 +278,9 @@ fn build_art_box(file_path: &str) -> gtk::Box {
     art_box
 }
 
-/// Read-only file-info rows (label/value pairs) appended to the sidebar.
-fn append_read_only_info(sidebar_box: &gtk::Box, track: &Track) {
-    let ro_fields: [(&str, String); 6] = [
+/// Read-only file metadata rows (label/value pairs) appended to the sidebar.
+fn append_read_only_metadata_rows(sidebar_box: &gtk::Box, track: &Track) {
+    let read_only_fields: [(&str, String); 6] = [
         ("Duration", track.duration_display()),
         (
             "Bitrate",
@@ -313,19 +313,19 @@ fn append_read_only_info(sidebar_box: &gtk::Box, track: &Track) {
         ),
     ];
 
-    for (label, value) in &ro_fields {
-        append_info_row(sidebar_box, &i18n(label), value, false);
+    for (label, value) in &read_only_fields {
+        append_metadata_value_row(sidebar_box, &i18n(label), value, false);
     }
-    append_info_row(sidebar_box, &i18n("File"), &track.file_path, true);
+    append_metadata_value_row(sidebar_box, &i18n("File"), &track.file_path, true);
 }
 
 /// One read-only "caption header + value" pair; `path` makes the value
 /// char-wrapping + selectable (for long file paths).
-fn append_info_row(sidebar_box: &gtk::Box, label: &str, value: &str, path: bool) {
-    let lbl = gtk::Label::builder().label(label).xalign(0.0).build();
-    lbl.add_css_class("caption");
-    lbl.add_css_class("dim-label");
-    sidebar_box.append(&lbl);
+fn append_metadata_value_row(sidebar_box: &gtk::Box, label: &str, value: &str, path: bool) {
+    let field_label = gtk::Label::builder().label(label).xalign(0.0).build();
+    field_label.add_css_class("caption");
+    field_label.add_css_class("dim-label");
+    sidebar_box.append(&field_label);
 
     let val = gtk::Label::builder()
         .label(value)
@@ -344,7 +344,7 @@ fn append_info_row(sidebar_box: &gtk::Box, label: &str, value: &str, path: bool)
 fn build_content_page(
     track: &Track,
     rows: &EditRows,
-    save_btn: &gtk::Button,
+    save_button: &gtk::Button,
     sender: &ComponentSender<LibraryPanel>,
 ) -> (adw::NavigationPage, Option<TagEditorHandle>) {
     let content = gtk::Box::builder()
@@ -370,7 +370,7 @@ fn build_content_page(
     group.add(&rows.comment);
     content.append(&group);
 
-    connect_dirty_detection(save_btn, rows, track);
+    connect_dirty_detection(save_button, rows, track);
     let editor_handle = maybe_add_musicbrainz_lookup(&content, track, rows, sender);
 
     let scroll = gtk::ScrolledWindow::builder()
@@ -388,7 +388,7 @@ fn build_content_page(
 }
 
 /// Enable Save only when at least one editable row differs from its original value.
-fn connect_dirty_detection(save_btn: &gtk::Button, rows: &EditRows, track: &Track) {
+fn connect_dirty_detection(save_button: &gtk::Button, rows: &EditRows, track: &Track) {
     let num = |n: Option<i32>| n.map_or_else(String::new, |n| n.to_string());
     let originals: [String; 9] = [
         track.title.clone().unwrap_or_default(),
@@ -406,12 +406,12 @@ fn connect_dirty_detection(save_btn: &gtk::Button, rows: &EditRows, track: &Trac
         std::array::from_fn(|i| (editables[i].clone(), originals[i].clone()));
 
     let recheck = {
-        let save_btn = save_btn.clone();
+        let save_button = save_button.clone();
         std::rc::Rc::new(move || {
             let dirty = pairs
                 .iter()
                 .any(|(row, orig)| row.text().as_str() != orig.as_str());
-            save_btn.set_sensitive(dirty);
+            save_button.set_sensitive(dirty);
         })
     };
     for editable in editables {
@@ -423,7 +423,7 @@ fn connect_dirty_detection(save_btn: &gtk::Button, rows: &EditRows, track: &Trac
 /// Save → collect fields → emit `WriteTags` → close. The shell owns the write.
 fn wire_save(
     dialog: &adw::Dialog,
-    save_btn: &gtk::Button,
+    save_button: &gtk::Button,
     track: &Track,
     rows: &EditRows,
     sender: &ComponentSender<LibraryPanel>,
@@ -435,8 +435,8 @@ fn wire_save(
     let out = sender.clone();
     let track_id = track.id;
     let file_path = track.file_path.clone();
-    save_btn.connect_clicked(move |btn| {
-        btn.set_sensitive(false);
+    save_button.connect_clicked(move |button| {
+        button.set_sensitive(false);
         let _ = out.output(LibraryPanelOutput::WriteTags {
             track_id,
             file_path: file_path.clone(),
@@ -462,27 +462,27 @@ fn maybe_add_musicbrainz_lookup(
         return None;
     }
 
-    let mb_btn = gtk::Button::builder()
+    let musicbrainz_lookup_button = gtk::Button::builder()
         .label(i18n("Lookup from MusicBrainz"))
         .halign(gtk::Align::Center)
         .margin_top(4)
         .build();
-    mb_btn.add_css_class("pill");
+    musicbrainz_lookup_button.add_css_class("pill");
 
     let out = sender.clone();
     let track_id = track.id;
     let track_for_lookup = track.clone();
-    mb_btn.connect_clicked(move |btn| {
+    musicbrainz_lookup_button.connect_clicked(move |button| {
         let _ = out.output(LibraryPanelOutput::MusicBrainzLookup(
             track_for_lookup.clone(),
         ));
-        btn.set_sensitive(false);
-        btn.set_label(&i18n("Searching…"));
+        button.set_sensitive(false);
+        button.set_label(&i18n("Searching…"));
     });
-    content.append(&mb_btn);
+    content.append(&musicbrainz_lookup_button);
     Some(TagEditorHandle {
         track_id,
-        lookup_button: mb_btn.downgrade(),
+        lookup_button: musicbrainz_lookup_button.downgrade(),
         genre_row: rows.genre.downgrade(),
         year_row: rows.year.downgrade(),
         track_row: rows.track_number.downgrade(),
@@ -492,14 +492,14 @@ fn maybe_add_musicbrainz_lookup(
 /// Fill only the empty MusicBrainz-eligible rows; update the button to report
 /// what (if anything) was found.
 fn apply_musicbrainz_result(
-    btn: &gtk::Button,
+    lookup_button: &gtk::Button,
     genre_row: &adw::EntryRow,
     year_row: &adw::EntryRow,
     track_row: &adw::EntryRow,
     meta: Option<crate::library::musicbrainz::MbMetadata>,
 ) {
     let Some(meta) = meta else {
-        btn.set_label(&i18n("Not found"));
+        lookup_button.set_label(&i18n("Not found"));
         return;
     };
     let mut filled: Vec<&str> = Vec::new();
@@ -522,9 +522,9 @@ fn apply_musicbrainz_result(
         }
     }
     if filled.is_empty() {
-        btn.set_label(&i18n("No new data found"));
+        lookup_button.set_label(&i18n("No new data found"));
     } else {
-        btn.set_label(&format!("✓ {}", filled.join(", ")));
+        lookup_button.set_label(&format!("✓ {}", filled.join(", ")));
     }
 }
 

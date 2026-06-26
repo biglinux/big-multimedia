@@ -40,7 +40,7 @@ use crate::audio::playlist_import;
 use crate::audio::queue_undo::QueueHistory;
 use crate::audio::ui::library_panel::{LibraryPanel, LibraryPanelInput, LibraryPanelOutput};
 use crate::audio::ui::library_tag_editor::TagEditFields;
-use crate::audio::ui::library_tree::LibraryTreeData;
+use crate::audio::ui::library_tree::LibraryTreeSnapshot;
 use crate::audio::ui::playlist_manager::{
     PlaylistManager, PlaylistManagerInput, PlaylistManagerOutput,
 };

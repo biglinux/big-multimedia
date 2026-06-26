@@ -7,7 +7,7 @@
 
 use crate::audio::browser_node::BrowserNodeKind;
 use crate::audio::library_grouping::{GroupBy, LibraryGrouping};
-use crate::audio::ui::library_tree::{LibraryTreeData, LibraryTreeNode};
+use crate::audio::ui::library_tree::{LibraryTreeNode, LibraryTreeSnapshot};
 use crate::db::models::Track;
 use crate::db::queries;
 use crate::i18n::i18n;
@@ -105,22 +105,22 @@ pub(crate) fn query_tracks_for_node(
 /// Build the full nested library tree (the `SetLibraryTree` payload) from the
 /// group + recursive child queries — the producer side of the atomic preload.
 /// Mirrors `window::library::{rebuild,populate,preload}` but emits pure data.
-pub(crate) fn build_library_tree_data(
+pub(crate) fn build_library_tree_snapshot(
     conn: &rusqlite::Connection,
     grouping: &LibraryGrouping,
     filter: &str,
     age_secs: Option<i64>,
-) -> LibraryTreeData {
+) -> LibraryTreeSnapshot {
     let total = queries::get_library_track_count(conn, filter, age_secs).unwrap_or(0);
     if total == 0 {
-        return LibraryTreeData::default();
+        return LibraryTreeSnapshot::default();
     }
 
     let level0 = grouping.level(0);
     if level0 == GroupBy::None {
         // Songs view: flat file leaves, no grouping.
         let tracks = queries::get_library_tracks(conn, &[], filter, age_secs).unwrap_or_default();
-        return LibraryTreeData {
+        return LibraryTreeSnapshot {
             level0: tracks.iter().map(file_node).collect(),
         };
     }
@@ -190,7 +190,7 @@ pub(crate) fn build_library_tree_data(
         ));
     }
 
-    LibraryTreeData {
+    LibraryTreeSnapshot {
         level0: level0_nodes,
     }
 }
@@ -560,8 +560,8 @@ mod tests {
     #[test]
     fn tree_empty_library_is_default() {
         let conn = setup_db();
-        let data = build_library_tree_data(&conn, &artist_grouping(), "", None);
-        assert!(data.level0.is_empty());
+        let tree_snapshot = build_library_tree_snapshot(&conn, &artist_grouping(), "", None);
+        assert!(tree_snapshot.level0.is_empty());
     }
 
     #[test]
@@ -571,61 +571,64 @@ mod tests {
         let songs = LibraryGrouping {
             levels: [GroupBy::None, GroupBy::None, GroupBy::None],
         };
-        let data = build_library_tree_data(&conn, &songs, "", None);
-        assert_eq!(data.level0.len(), 5);
-        assert!(data
+        let tree_snapshot = build_library_tree_snapshot(&conn, &songs, "", None);
+        assert_eq!(tree_snapshot.level0.len(), 5);
+        assert!(tree_snapshot
             .level0
             .iter()
-            .all(|n| n.kind == BrowserNodeKind::File && n.children.is_empty()));
+            .all(|node| node.kind == BrowserNodeKind::File && node.children.is_empty()));
     }
 
     #[test]
     fn tree_artist_grouping_has_all_tracks_then_various_then_groups() {
         let conn = setup_db();
         seed_library(&conn);
-        let data = build_library_tree_data(&conn, &artist_grouping(), "", None);
+        let tree_snapshot = build_library_tree_snapshot(&conn, &artist_grouping(), "", None);
 
         // First node is "All Tracks" carrying the total count.
-        assert_eq!(data.level0[0].kind, BrowserNodeKind::All);
-        assert_eq!(data.level0[0].count, 5);
+        assert_eq!(tree_snapshot.level0[0].kind, BrowserNodeKind::All);
+        assert_eq!(tree_snapshot.level0[0].count, 5);
 
         // The compilation bucket appears under an artist top level.
-        let va = data
+        let various_artists_node = tree_snapshot
             .level0
             .iter()
-            .find(|n| n.kind == BrowserNodeKind::VariousArtists)
+            .find(|node| node.kind == BrowserNodeKind::VariousArtists)
             .expect("various-artists bucket present");
-        assert_eq!(va.count, 2);
+        assert_eq!(various_artists_node.count, 2);
 
         // Artist groups: Alice, Bob, Carol, Dave — each a leaf level (depth 1)
         // whose children are file nodes.
-        let artist_nodes: Vec<_> = data
+        let artist_nodes: Vec<_> = tree_snapshot
             .level0
             .iter()
-            .filter(|n| n.kind == BrowserNodeKind::Artist)
+            .filter(|node| node.kind == BrowserNodeKind::Artist)
             .collect();
         assert_eq!(artist_nodes.len(), 4);
-        let alice = artist_nodes.iter().find(|n| n.key == "Alice").unwrap();
+        let alice = artist_nodes
+            .iter()
+            .find(|node| node.key == "Alice")
+            .unwrap();
         assert_eq!(alice.count, 2);
         assert_eq!(alice.children.len(), 2);
         assert!(alice
             .children
             .iter()
-            .all(|c| c.kind == BrowserNodeKind::File));
+            .all(|child| child.kind == BrowserNodeKind::File));
     }
 
     #[test]
     fn tree_two_level_grouping_nests_albums_under_artists() {
         let conn = setup_db();
         seed_library(&conn);
-        let g = LibraryGrouping {
+        let grouping = LibraryGrouping {
             levels: [GroupBy::Artist, GroupBy::Album, GroupBy::None],
         };
-        let data = build_library_tree_data(&conn, &g, "", None);
-        let alice = data
+        let tree_snapshot = build_library_tree_snapshot(&conn, &grouping, "", None);
+        let alice = tree_snapshot
             .level0
             .iter()
-            .find(|n| n.kind == BrowserNodeKind::Artist && n.key == "Alice")
+            .find(|node| node.kind == BrowserNodeKind::Artist && node.key == "Alice")
             .unwrap();
         // Alice → album "Debut" → two file leaves.
         assert_eq!(alice.children.len(), 1);
@@ -636,20 +639,20 @@ mod tests {
         assert!(debut
             .children
             .iter()
-            .all(|c| c.kind == BrowserNodeKind::File));
+            .all(|child| child.kind == BrowserNodeKind::File));
     }
 
     #[test]
     fn tree_without_artist_top_level_has_no_various_bucket() {
         let conn = setup_db();
         seed_library(&conn);
-        let g = LibraryGrouping {
+        let grouping = LibraryGrouping {
             levels: [GroupBy::Genre, GroupBy::None, GroupBy::None],
         };
-        let data = build_library_tree_data(&conn, &g, "", None);
-        assert!(data
+        let tree_snapshot = build_library_tree_snapshot(&conn, &grouping, "", None);
+        assert!(tree_snapshot
             .level0
             .iter()
-            .all(|n| n.kind != BrowserNodeKind::VariousArtists));
+            .all(|node| node.kind != BrowserNodeKind::VariousArtists));
     }
 }

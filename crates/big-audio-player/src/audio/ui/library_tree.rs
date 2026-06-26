@@ -2,7 +2,7 @@
 //!
 //! A `gtk::ListView` over a `gtk::TreeListModel` whose root is a
 //! `gio::ListStore` of [`BrowserNode`]. The shell runs the full group+preload
-//! query once and pushes the ENTIRE tree as pure (non-GTK) [`LibraryTreeData`]
+//! query once and pushes the ENTIRE tree as pure (non-GTK) [`LibraryTreeSnapshot`]
 //! via `SetLibraryTree`; the `TreeListModel` create-func then builds each child
 //! `gio::ListStore` SYNCHRONOUSLY from the preloaded [`LibraryTreeNode`]
 //! children (never a DB hit on expand — atomic preload is the generation guard).
@@ -11,7 +11,7 @@
 //! the node into tracks and pushes them back via `PopulateDetail`. Letter
 //! dividers are inserted when a group level has more than ten real entries
 //! (mirrors `window::library::group_nodes::group_divider_letter`). Per-row
-//! gestures are recycled-safe (handler id stashed on bind, disconnected on
+//! gestures are recycled-safe (signal id stashed on bind, disconnected on
 //! unbind); the tree data changes via `splice`, never a full view rebuild.
 
 use std::cell::RefCell;
@@ -40,7 +40,7 @@ const LEAF_ART_PX: i32 = 48;
 /// Built on a worker thread from the group+preload query, then converted to
 /// `BrowserNode` stores on the main thread.
 #[derive(Debug, Clone, Default)]
-pub struct LibraryTreeData {
+pub struct LibraryTreeSnapshot {
     /// Top-level nodes (All Tracks, Various Artists, then groups), in order.
     pub level0: Vec<LibraryTreeNode>,
 }
@@ -102,13 +102,13 @@ impl LibraryTreeHandle {
     /// Replace the whole tree from freshly-preloaded data. Rebuilds the child-
     /// store map, then splices the root store in place (the `ListView`/
     /// `TreeListModel`/selection are never rebuilt — the RSS-leak invariant).
-    pub(super) fn set_tree(&self, data: LibraryTreeData) {
+    pub(super) fn set_tree(&self, tree_snapshot: LibraryTreeSnapshot) {
         let mut stores = self.child_stores.borrow_mut();
         let mut leaves = self.leaf_tracks.borrow_mut();
         stores.clear();
         leaves.clear();
 
-        let roots: Vec<BrowserNode> = data
+        let roots: Vec<BrowserNode> = tree_snapshot
             .level0
             .iter()
             .map(|node| build_node_recursive(node, &mut stores, &mut leaves))
@@ -230,8 +230,8 @@ pub(super) fn build_library_tree(
 /// (synchronous HashMap lookup; `None` for leaves/dividers).
 fn build_tree_model(root_store: &gio::ListStore, child_stores: &ChildStores) -> gtk::TreeListModel {
     let stores = child_stores.clone();
-    gtk::TreeListModel::new(root_store.clone(), false, false, move |item| {
-        let node = item.downcast_ref::<BrowserNode>()?;
+    gtk::TreeListModel::new(root_store.clone(), false, false, move |model_item| {
+        let node = model_item.downcast_ref::<BrowserNode>()?;
         if matches!(
             node.kind(),
             BrowserNodeKind::Divider | BrowserNodeKind::File
@@ -250,8 +250,8 @@ fn build_tree_factory(
     sender: &ComponentSender<LibraryPanel>,
 ) -> gtk::SignalListItemFactory {
     let factory = gtk::SignalListItemFactory::new();
-    factory.connect_setup(|_, item| {
-        let item = item.downcast_ref::<gtk::ListItem>().unwrap();
+    factory.connect_setup(|_, factory_item| {
+        let list_item = factory_item.downcast_ref::<gtk::ListItem>().unwrap();
         let expander = gtk::TreeExpander::builder().indent_for_icon(true).build();
         let row = gtk::Box::builder()
             .orientation(gtk::Orientation::Horizontal)
@@ -284,37 +284,37 @@ fn build_tree_factory(
             .visible(false)
             .build();
         artist_label.add_css_class("browser-artist");
-        let count_lbl = gtk::Label::builder().halign(gtk::Align::End).build();
-        count_lbl.add_css_class("caption");
+        let track_count_label = gtk::Label::builder().halign(gtk::Align::End).build();
+        track_count_label.add_css_class("caption");
         text_box.append(&label);
         text_box.append(&artist_label);
         row.append(&icon);
         row.append(&avatar);
         row.append(&text_box);
-        row.append(&count_lbl);
+        row.append(&track_count_label);
         row.append(&build_show_tracks_button());
         expander.set_child(Some(&row));
-        item.set_child(Some(&expander));
+        list_item.set_child(Some(&expander));
     });
 
     let leaves = leaf_tracks.clone();
     let out = sender.clone();
-    factory.connect_bind(move |_, item| {
-        let item = item.downcast_ref::<gtk::ListItem>().unwrap();
-        bind_tree_row(item, &leaves, &out);
+    factory.connect_bind(move |_, factory_item| {
+        let list_item = factory_item.downcast_ref::<gtk::ListItem>().unwrap();
+        bind_tree_row(list_item, &leaves, &out);
     });
-    factory.connect_unbind(|_, item| {
-        let item = item.downcast_ref::<gtk::ListItem>().unwrap();
-        let Some(expander) = item.child().and_downcast::<gtk::TreeExpander>() else {
+    factory.connect_unbind(|_, factory_item| {
+        let list_item = factory_item.downcast_ref::<gtk::ListItem>().unwrap();
+        let Some(expander) = list_item.child().and_downcast::<gtk::TreeExpander>() else {
             return;
         };
         let Some(row) = expander.child().and_downcast::<gtk::Box>() else {
             return;
         };
-        let Some(open_btn) = row.last_child().and_downcast::<gtk::Button>() else {
+        let Some(show_tracks_button) = row.last_child().and_downcast::<gtk::Button>() else {
             return;
         };
-        disconnect_show_tracks_button(&open_btn);
+        disconnect_show_tracks_button(&show_tracks_button);
     });
 
     factory
@@ -323,38 +323,41 @@ fn build_tree_factory(
 /// Bind one `BrowserNode` onto the row widgets; stashes `vis-pos` for hit-tests
 /// and kicks off the off-thread art thumbnail for file leaves.
 fn bind_tree_row(
-    item: &gtk::ListItem,
+    list_item: &gtk::ListItem,
     leaves: &LeafTracks,
     sender: &ComponentSender<LibraryPanel>,
 ) {
-    let Some(tree_row) = item.item().and_downcast::<gtk::TreeListRow>() else {
+    let Some(tree_row) = list_item.item().and_downcast::<gtk::TreeListRow>() else {
         return;
     };
     let Some(node) = tree_row.item().and_downcast::<BrowserNode>() else {
         return;
     };
-    let expander = item.child().and_downcast::<gtk::TreeExpander>().unwrap();
+    let expander = list_item
+        .child()
+        .and_downcast::<gtk::TreeExpander>()
+        .unwrap();
     expander.set_list_row(Some(&tree_row));
 
     let row = expander.child().and_downcast::<gtk::Box>().unwrap();
     // SAFETY: read by the right-click hit-test to resolve a clicked row index.
     unsafe {
-        row.set_data("vis-pos", item.position());
+        row.set_data("vis-pos", list_item.position());
     }
     let icon = row.first_child().and_downcast::<gtk::Image>().unwrap();
     let avatar = icon.next_sibling().and_downcast::<adw::Avatar>().unwrap();
     let text_box = avatar.next_sibling().and_downcast::<gtk::Box>().unwrap();
     let label = text_box.first_child().and_downcast::<gtk::Label>().unwrap();
     let artist_label = label.next_sibling().and_downcast::<gtk::Label>().unwrap();
-    let count_lbl = text_box
+    let track_count_label = text_box
         .next_sibling()
         .and_downcast::<gtk::Label>()
         .unwrap();
-    let open_btn = count_lbl
+    let show_tracks_button = track_count_label
         .next_sibling()
         .and_downcast::<gtk::Button>()
         .unwrap();
-    disconnect_show_tracks_button(&open_btn);
+    disconnect_show_tracks_button(&show_tracks_button);
 
     let kind = node.kind();
     if kind == BrowserNodeKind::Divider {
@@ -363,15 +366,15 @@ fn bind_tree_row(
         label.set_label(&node.label());
         label.add_css_class("heading");
         artist_label.set_visible(false);
-        count_lbl.set_visible(false);
-        open_btn.set_visible(false);
-        item.set_activatable(false);
-        item.set_selectable(false);
+        track_count_label.set_visible(false);
+        show_tracks_button.set_visible(false);
+        list_item.set_activatable(false);
+        list_item.set_selectable(false);
         return;
     }
     label.remove_css_class("heading");
-    item.set_activatable(true);
-    item.set_selectable(true);
+    list_item.set_activatable(true);
+    list_item.set_selectable(true);
     icon.set_icon_name(Some(&node.icon_name()));
     label.set_label(&node.label());
 
@@ -382,10 +385,10 @@ fn bind_tree_row(
             &avatar,
             &label,
             &artist_label,
-            &count_lbl,
+            &track_count_label,
             leaves,
         );
-        open_btn.set_visible(false);
+        show_tracks_button.set_visible(false);
         return;
     }
 
@@ -394,8 +397,8 @@ fn bind_tree_row(
     big_relm4_components::feedback::tooltip::set(&text_box, &node.label());
 
     let count = node.track_count();
-    count_lbl.set_visible(count > 0);
-    count_lbl.set_label(&if count > 0 {
+    track_count_label.set_visible(count > 0);
+    track_count_label.set_label(&if count > 0 {
         count.to_string()
     } else {
         String::new()
@@ -412,7 +415,7 @@ fn bind_tree_row(
         avatar.set_text(Some("Various Artists"));
         avatar.set_icon_name(Some("system-users-symbolic"));
     }
-    bind_show_tracks_button(&open_btn, &node, tree_row.depth(), sender);
+    bind_show_tracks_button(&show_tracks_button, &node, tree_row.depth(), sender);
 }
 
 fn build_show_tracks_button() -> gtk::Button {
@@ -439,7 +442,7 @@ fn bind_show_tracks_button(
     let kind = node.kind() as u32;
     let key = node.key();
     let secondary = node.secondary();
-    let handler = button.connect_clicked(move |_| {
+    let click_signal_id = button.connect_clicked(move |_| {
         let _ = out.output(LibraryPanelOutput::NodeSelected {
             kind,
             key: key.clone(),
@@ -448,14 +451,16 @@ fn bind_show_tracks_button(
         });
     });
     unsafe {
-        button.set_data("handler-id", handler);
+        button.set_data("show-tracks-click-signal-id", click_signal_id);
     }
 }
 
 fn disconnect_show_tracks_button(button: &gtk::Button) {
     unsafe {
-        if let Some(id) = button.steal_data::<glib::SignalHandlerId>("handler-id") {
-            button.disconnect(id);
+        if let Some(signal_id) =
+            button.steal_data::<glib::SignalHandlerId>("show-tracks-click-signal-id")
+        {
+            button.disconnect(signal_id);
         }
     }
 }
@@ -469,7 +474,7 @@ fn bind_file_leaf(
     avatar: &adw::Avatar,
     label: &gtk::Label,
     artist_label: &gtk::Label,
-    count_lbl: &gtk::Label,
+    track_count_label: &gtk::Label,
     leaves: &LeafTracks,
 ) {
     let secondary = node.secondary();
@@ -478,16 +483,16 @@ fn bind_file_leaf(
         avatar.set_visible(false);
         icon.set_visible(true);
         artist_label.set_visible(false);
-        count_lbl.set_visible(!secondary.is_empty());
-        count_lbl.set_label(&secondary);
+        track_count_label.set_visible(!secondary.is_empty());
+        track_count_label.set_label(&secondary);
         return;
     }
 
     let duration = parts[1];
     let artist = parts.get(2).copied().unwrap_or("");
-    count_lbl.set_label(duration);
-    count_lbl.set_visible(true);
-    count_lbl.add_css_class("browser-duration");
+    track_count_label.set_label(duration);
+    track_count_label.set_visible(true);
+    track_count_label.add_css_class("browser-duration");
     avatar.set_visible(true);
     icon.set_visible(false);
     label.add_css_class("browser-title");
@@ -533,9 +538,11 @@ fn bind_file_leaf(
 /// (the shell queries tracks → `PopulateDetail`). Dividers are inert.
 fn wire_activation(list_view: &gtk::ListView, sender: &ComponentSender<LibraryPanel>) {
     let out = sender.clone();
-    list_view.connect_activate(move |lv, pos| {
-        let Some(model) = lv.model() else { return };
-        let Some(tree_row) = model.item(pos).and_downcast::<gtk::TreeListRow>() else {
+    list_view.connect_activate(move |list_view, position| {
+        let Some(model) = list_view.model() else {
+            return;
+        };
+        let Some(tree_row) = model.item(position).and_downcast::<gtk::TreeListRow>() else {
             return;
         };
         let Some(node) = tree_row.item().and_downcast::<BrowserNode>() else {
@@ -561,20 +568,25 @@ fn wire_context_menu(
     leaf_tracks: &LeafTracks,
     sender: &ComponentSender<LibraryPanel>,
 ) {
-    let rclick = gtk::GestureClick::builder().button(3).build();
+    let context_click = gtk::GestureClick::builder().button(3).build();
     // Weak: this controller lives ON the list view — a strong clone is a
     // controller⇄widget self-cycle that pins the whole tree after close.
-    let lv_weak = list_view.downgrade();
+    let list_view_weak = list_view.downgrade();
     let leaves = leaf_tracks.clone();
     let out = sender.clone();
-    rclick.connect_released(move |gesture, _n, x, y| {
+    context_click.connect_released(move |gesture, _click_count, x, y| {
         gesture.set_state(gtk::EventSequenceState::Claimed);
-        let Some(lv) = lv_weak.upgrade() else { return };
-        let Some(pos) = find_clicked_position(lv.upcast_ref::<gtk::Widget>(), x, y) else {
+        let Some(list_view) = list_view_weak.upgrade() else {
             return;
         };
-        let Some(model) = lv.model() else { return };
-        let Some(tree_row) = model.item(pos).and_downcast::<gtk::TreeListRow>() else {
+        let Some(position) = find_clicked_position(list_view.upcast_ref::<gtk::Widget>(), x, y)
+        else {
+            return;
+        };
+        let Some(model) = list_view.model() else {
+            return;
+        };
+        let Some(tree_row) = model.item(position).and_downcast::<gtk::TreeListRow>() else {
             return;
         };
         let Some(node) = tree_row.item().and_downcast::<BrowserNode>() else {
@@ -591,7 +603,7 @@ fn wire_context_menu(
             add_leaf_menu_items(&menu, &track, &out);
         } else {
             // Group node: a single Play that enqueues all of its tracks.
-            let o = out.clone();
+            let output_sender = out.clone();
             let (kind, key, secondary, depth) = (
                 node.kind() as u32,
                 node.key(),
@@ -599,7 +611,7 @@ fn wire_context_menu(
                 tree_row.depth(),
             );
             menu.append_button(i18n("Play"), &[], move || {
-                let _ = o.output(LibraryPanelOutput::NodeSelected {
+                let _ = output_sender.output(LibraryPanelOutput::NodeSelected {
                     kind,
                     key: key.clone(),
                     secondary: secondary.clone(),
@@ -607,9 +619,9 @@ fn wire_context_menu(
                 });
             });
         }
-        menu.popup_at(lv.upcast_ref::<gtk::Widget>(), x, y);
+        menu.popup_at(list_view.upcast_ref::<gtk::Widget>(), x, y);
     });
-    list_view.add_controller(rclick);
+    list_view.add_controller(context_click);
 }
 
 /// Append the per-track menu items for a file leaf.
@@ -619,35 +631,36 @@ fn add_leaf_menu_items(
     sender: &ComponentSender<LibraryPanel>,
 ) {
     {
-        let (o, t) = (sender.clone(), track.clone());
+        let (output_sender, track) = (sender.clone(), track.clone());
         menu.append_button(i18n("Play"), &[], move || {
-            let _ = o.output(LibraryPanelOutput::PlayTrack(t.clone()));
+            let _ = output_sender.output(LibraryPanelOutput::PlayTrack(track.clone()));
         });
     }
     {
-        let (o, t) = (sender.clone(), track.clone());
+        let (output_sender, track) = (sender.clone(), track.clone());
         menu.append_button(i18n("Add to Queue"), &[], move || {
-            let _ = o.output(LibraryPanelOutput::EnqueueTrack(t.clone()));
+            let _ = output_sender.output(LibraryPanelOutput::EnqueueTrack(track.clone()));
         });
     }
     menu.append_separator();
     {
-        let (o, t) = (sender.clone(), track.clone());
+        let (output_sender, track) = (sender.clone(), track.clone());
         menu.append_button(i18n("Add to Playlist…"), &[], move || {
-            let _ = o.output(LibraryPanelOutput::ShowAddToPlaylist(t.clone()));
+            let _ = output_sender.output(LibraryPanelOutput::ShowAddToPlaylist(track.clone()));
         });
     }
     {
-        let (o, fp) = (sender.clone(), track.file_path.clone());
+        let (output_sender, file_path) = (sender.clone(), track.file_path.clone());
         menu.append_button(i18n("Show in File Manager"), &[], move || {
-            let _ = o.output(LibraryPanelOutput::RevealInFileManager(fp.clone()));
+            let _ =
+                output_sender.output(LibraryPanelOutput::RevealInFileManager(file_path.clone()));
         });
     }
     {
         // "Track Info" opens the panel-owned tag editor (opened via an Input).
-        let (s, t) = (sender.clone(), track.clone());
+        let (input_sender, track) = (sender.clone(), track.clone());
         menu.append_button(i18n("Track Info"), &[], move || {
-            s.input(LibraryPanelInput::EditTags(t.clone()));
+            input_sender.input(LibraryPanelInput::EditTags(track.clone()));
         });
     }
 }
@@ -661,18 +674,18 @@ fn build_leaf_drag_source(
 ) -> gtk::DragSource {
     let drag = gtk::DragSource::new();
     drag.set_actions(gdk::DragAction::COPY);
-    let sel = selection.clone();
+    let selection_model = selection.clone();
     let leaves = leaf_tracks.clone();
     drag.connect_prepare(move |_, _, _| {
-        let bitset = sel.selection();
+        let bitset = selection_model.selection();
         if bitset.is_empty() {
             return None;
         }
         let known = leaves.borrow();
         let mut paths = Vec::with_capacity(bitset.size() as usize);
-        for n in 0..bitset.size() {
-            let Some(tree_row) = sel
-                .item(bitset.nth(n as u32))
+        for selected_index in 0..bitset.size() {
+            let Some(tree_row) = selection_model
+                .item(bitset.nth(selected_index as u32))
                 .and_downcast::<gtk::TreeListRow>()
             else {
                 continue;
@@ -691,7 +704,7 @@ fn build_leaf_drag_source(
             &paths.join("\n").to_value(),
         ))
     });
-    drag.connect_drag_begin(|src, _| {
+    drag.connect_drag_begin(|drag_source, _| {
         let Some(display) = gdk::Display::default() else {
             return;
         };
@@ -703,7 +716,7 @@ fn build_leaf_drag_source(
             gtk::TextDirection::Ltr,
             gtk::IconLookupFlags::empty(),
         );
-        src.set_icon(Some(&icon), 16, 16);
+        drag_source.set_icon(Some(&icon), 16, 16);
     });
     drag
 }

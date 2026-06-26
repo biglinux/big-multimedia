@@ -25,7 +25,7 @@ pub mod library_panel;
 /// Tag editor dialog.
 mod library_tag_editor;
 /// Left-pane library tree (TreeListModel of BrowserNode; atomic preload).
-/// `pub(crate)` so `library_query` can build the `LibraryTreeData` payload.
+/// `pub(crate)` so `library_query` can build the `LibraryTreeSnapshot` payload.
 pub(crate) mod library_tree;
 /// Queue-panel chrome: toolbar, empty states, column-config dialog.
 mod playlist_chrome;

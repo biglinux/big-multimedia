@@ -66,7 +66,7 @@ pub enum AudioShellInput {
     /// after a grouping/search/age change).
     RebuildLibraryTree,
     /// The rebuilt library tree (async DB result) → push to the library panel.
-    LibraryTreeResolved(LibraryTreeData),
+    LibraryTreeResolved(LibraryTreeSnapshot),
     /// Reload playlist-manager data after any playlist DB change.
     RefreshPlaylists,
     /// Edited tags were written to file + DB → patch the queue + rebuild tree.

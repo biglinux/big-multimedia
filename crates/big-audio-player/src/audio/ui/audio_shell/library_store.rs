@@ -11,7 +11,7 @@ impl AudioShell {
         let input = sender.input_sender().clone();
         spawn_db_query(
             db,
-            move |conn| library_query::build_library_tree_data(conn, &grouping, &filter, age),
+            move |conn| library_query::build_library_tree_snapshot(conn, &grouping, &filter, age),
             move |data| {
                 let _ = input.send(AudioShellInput::LibraryTreeResolved(data));
             },

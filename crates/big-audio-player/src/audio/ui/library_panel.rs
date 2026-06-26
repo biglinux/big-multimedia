@@ -29,7 +29,7 @@ use big_relm4_components::layout::column_persist::{
 
 use crate::audio::library_grouping::LibraryGrouping;
 use crate::audio::ui::library_detail_columns::{self, ArtCache};
-use crate::audio::ui::library_tree::{self, LibraryTreeData, LibraryTreeHandle};
+use crate::audio::ui::library_tree::{self, LibraryTreeHandle, LibraryTreeSnapshot};
 use crate::audio::ui::{
     library_detail_interactions, library_dialogs, library_grouping_ui, library_io,
     library_tag_editor,
@@ -54,7 +54,7 @@ pub enum LibraryPanelInput {
     /// at construction. Suppresses the persist echo while applying.
     ApplyColumnWidths(String),
     /// Replace the whole left-pane tree (shell ran the group + atomic preload).
-    SetLibraryTree(LibraryTreeData),
+    SetLibraryTree(LibraryTreeSnapshot),
     /// Sync the grouping dropdown to the shell's restored preset (boot; no
     /// re-emit of `GroupingChanged`).
     SetGrouping(LibraryGrouping),

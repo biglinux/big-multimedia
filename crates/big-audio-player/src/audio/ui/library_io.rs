@@ -53,12 +53,12 @@ pub(super) fn export_detail_m3u8(
             spawn_blocking_result(
                 move || std::fs::write(&path, render_m3u8(&tracks)).is_ok(),
                 move |ok| {
-                    let msg = if ok {
+                    let notification_message = if ok {
                         i18n("Playlist exported")
                     } else {
                         i18n("Export failed")
                     };
-                    let _ = out.output(LibraryPanelOutput::Notify(msg));
+                    let _ = out.output(LibraryPanelOutput::Notify(notification_message));
                 },
             );
         });
@@ -234,15 +234,15 @@ fn build_folders_list(
         let strip = BigButtonStripRow::new(
             BigButtonStripRowSpec::new(&folder_label).prefix_icon_name("folder-symbolic"),
         );
-        let remove_btn = build_remove_button(&folder_label);
+        let remove_folder_button = build_remove_button(&folder_label);
         let folder_id = folder.id;
         let out = sender.clone();
         let list_weak = list.downgrade();
-        remove_btn.connect_clicked(move |btn| {
+        remove_folder_button.connect_clicked(move |button| {
             let _ = out.output(LibraryPanelOutput::RemoveWatchFolder { id: folder_id });
-            remove_row_from_list(btn, &list_weak);
+            remove_row_from_list(button, &list_weak);
         });
-        strip.append(&remove_btn);
+        strip.append(&remove_folder_button);
         list.append(&strip.into_root());
     }
     list
@@ -256,20 +256,21 @@ fn build_folder_buttons(parent: &gtk::Window, sender: &ComponentSender<LibraryPa
         .margin_top(4)
         .build();
 
-    let add_btn = gtk::Button::builder()
+    let add_folder_button = gtk::Button::builder()
         .css_classes(["suggested-action".to_string(), "pill".to_string()])
         .halign(gtk::Align::Start)
         .build();
-    add_btn.set_child(Some(
+    add_folder_button.set_child(Some(
         &adw::ButtonContent::builder()
             .icon_name("folder-new-symbolic")
             .label(i18n("Add Folder"))
             .build(),
     ));
-    add_btn.update_property(&[gtk::accessible::Property::Label(&i18n("Add music folder"))]);
+    add_folder_button
+        .update_property(&[gtk::accessible::Property::Label(&i18n("Add music folder"))]);
     let out_add = sender.clone();
     let parent_weak = parent.downgrade();
-    add_btn.connect_clicked(move |_| {
+    add_folder_button.connect_clicked(move |_| {
         let Some(window) = parent_weak.upgrade() else {
             return;
         };
@@ -278,43 +279,43 @@ fn build_folder_buttons(parent: &gtk::Window, sender: &ComponentSender<LibraryPa
             let _ = out.output(LibraryPanelOutput::AddWatchFolder { path });
         });
     });
-    buttons.append(&add_btn);
+    buttons.append(&add_folder_button);
 
-    let scan_btn = gtk::Button::builder()
+    let scan_now_button = gtk::Button::builder()
         .css_classes(["pill".to_string()])
         .build();
-    scan_btn.set_child(Some(
+    scan_now_button.set_child(Some(
         &adw::ButtonContent::builder()
             .icon_name("view-refresh-symbolic")
             .label(i18n("Scan Now"))
             .build(),
     ));
-    scan_btn.update_property(&[
+    scan_now_button.update_property(&[
         gtk::accessible::Property::Label(&i18n("Scan Now")),
         gtk::accessible::Property::Description(&i18n("Scan all monitored folders now")),
     ]);
     let out_scan = sender.clone();
-    scan_btn.connect_clicked(move |btn| {
-        btn.set_sensitive(false);
+    scan_now_button.connect_clicked(move |button| {
+        button.set_sensitive(false);
         let _ = out_scan.output(LibraryPanelOutput::ScanNow);
-        let btn_weak = btn.downgrade();
+        let scan_now_button_weak = button.downgrade();
         glib::timeout_add_seconds_local_once(3, move || {
-            if let Some(b) = btn_weak.upgrade() {
-                b.set_sensitive(true);
+            if let Some(button) = scan_now_button_weak.upgrade() {
+                button.set_sensitive(true);
             }
         });
     });
-    buttons.append(&scan_btn);
+    buttons.append(&scan_now_button);
     buttons
 }
 
 /// Optimistic removal of the clicked row's `ActionRow` from `list` so the
 /// dialog updates immediately (the shell deletes the row from the DB).
-fn remove_row_from_list(btn: &gtk::Button, list_weak: &glib::WeakRef<gtk::ListBox>) {
+fn remove_row_from_list(clicked_button: &gtk::Button, list_weak: &glib::WeakRef<gtk::ListBox>) {
     let Some(list) = list_weak.upgrade() else {
         return;
     };
-    if let Some(row) = btn.ancestor(adw::ActionRow::static_type()) {
+    if let Some(row) = clicked_button.ancestor(adw::ActionRow::static_type()) {
         if let Some(row) = row.downcast_ref::<adw::ActionRow>() {
             list.remove(row);
         }
@@ -405,7 +406,7 @@ fn abbreviate_home(path: &str) -> String {
 
 /// Error-styled circular trash button used for each folder row.
 fn build_remove_button(folder_label: &str) -> gtk::Button {
-    let btn = gtk::Button::builder()
+    let remove_folder_button = gtk::Button::builder()
         .icon_name("user-trash-symbolic")
         .valign(gtk::Align::Center)
         .css_classes([
@@ -414,12 +415,15 @@ fn build_remove_button(folder_label: &str) -> gtk::Button {
             "error".to_string(),
         ])
         .build();
-    big_relm4_components::feedback::tooltip::set(&btn, &i18n("Remove folder and its tracks"));
-    btn.update_property(&[gtk::accessible::Property::Label(&format!(
+    big_relm4_components::feedback::tooltip::set(
+        &remove_folder_button,
+        &i18n("Remove folder and its tracks"),
+    );
+    remove_folder_button.update_property(&[gtk::accessible::Property::Label(&format!(
         "{}: {folder_label}",
         i18n("Remove folder")
     ))]);
-    btn
+    remove_folder_button
 }
 
 /// The dialog's lead-in paragraph.
