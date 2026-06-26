@@ -26,7 +26,7 @@ use crate::i18n::i18n;
 /// or stop (→ `CastStop`). The shell does the actual cast/stop + toasts.
 pub(crate) fn present_cast(
     parent: &impl IsA<gtk::Widget>,
-    manager: Arc<CastManager>,
+    cast_device_registry: Arc<CastManager>,
     input: Sender<AudioShellInput>,
 ) {
     let dialog = adw::Dialog::builder()
@@ -56,13 +56,15 @@ pub(crate) fn present_cast(
         &BigDialogFooterSpec::new(i18n("Close"), i18n("Stop Casting"))
             .with_accept_css_classes(&["destructive-action"]),
     );
-    footer.accept_button().set_sensitive(manager.is_casting());
+    footer
+        .accept_button()
+        .set_sensitive(cast_device_registry.is_casting());
     page.root().add_bottom_bar(footer.root());
 
-    manager.start_discovery(8);
+    cast_device_registry.start_discovery(8);
 
     // Poll discovery every 800 ms while the dialog lives; rebuild the list.
-    let manager_poll = Arc::clone(&manager);
+    let cast_device_registry_for_poll = Arc::clone(&cast_device_registry);
     let list_clone = list_box.clone();
     let status_clone = status.clone();
     let dialog_weak = glib::WeakRef::new();
@@ -72,7 +74,7 @@ pub(crate) fn present_cast(
             if dialog_weak.upgrade().is_none() {
                 return glib::ControlFlow::Break;
             }
-            let devices = manager_poll.get_devices();
+            let devices = cast_device_registry_for_poll.get_devices();
             while let Some(row) = list_clone.row_at_index(0) {
                 list_clone.remove(&row);
             }
@@ -95,8 +97,8 @@ pub(crate) fn present_cast(
             } else {
                 status_clone.set_text(&format!("{} {}", devices.len(), i18n("device(s) found")));
             }
-            if !manager_poll.is_discovering() {
-                manager_poll.start_discovery(8);
+            if !cast_device_registry_for_poll.is_discovering() {
+                cast_device_registry_for_poll.start_discovery(8);
             }
             glib::ControlFlow::Continue
         })
@@ -104,18 +106,18 @@ pub(crate) fn present_cast(
     });
 
     let cast_input = input.clone();
-    let stop_btn_ref = footer.accept_button().clone();
+    let stop_cast_button = footer.accept_button().clone();
     list_box.connect_row_activated(move |_, row| {
         let idx = row.index() as usize;
         let _ = cast_input.send(AudioShellInput::CastToDeviceIndex(idx));
         // Optimistic: the shell reports failures via toast.
-        stop_btn_ref.set_sensitive(true);
+        stop_cast_button.set_sensitive(true);
     });
 
     let stop_input = input.clone();
-    footer.accept_button().connect_clicked(move |btn| {
+    footer.accept_button().connect_clicked(move |button| {
         let _ = stop_input.send(AudioShellInput::CastStop);
-        btn.set_sensitive(false);
+        button.set_sensitive(false);
     });
 
     let dialog_weak = dialog.downgrade();

@@ -270,8 +270,8 @@ impl AudioShell {
         }
     }
 
-    /// Show the read-only track-info dialog (reuses the shared media dialog).
-    pub(super) fn show_track_info(&self, track: &Track) {
+    /// Show the read-only track metadata dialog (reuses the shared media dialog).
+    pub(super) fn show_track_metadata_dialog(&self, track: &Track) {
         let Some(win) = self.window() else {
             return;
         };

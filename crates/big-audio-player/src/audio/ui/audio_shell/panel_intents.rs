@@ -76,7 +76,7 @@ impl AudioShell {
             }
             LibraryPanelOutput::ScanNow => self.scan_all_watch_folders(sender),
             LibraryPanelOutput::RemoveWatchFolder { id } => self.remove_watch_folder(id, sender),
-            LibraryPanelOutput::ShowTrackInfo(track) => self.show_track_info(&track),
+            LibraryPanelOutput::ShowTrackInfo(track) => self.show_track_metadata_dialog(&track),
             LibraryPanelOutput::Notify(message) => self.notify(&message),
             LibraryPanelOutput::WriteTags {
                 track_id,
@@ -168,7 +168,7 @@ impl AudioShell {
             PlaylistPanelOutput::ShowAddToPlaylistDialog(track) => {
                 self.request_add_to_playlist(track, sender);
             }
-            PlaylistPanelOutput::ShowTrackInfo(track) => self.show_track_info(&track),
+            PlaylistPanelOutput::ShowTrackInfo(track) => self.show_track_metadata_dialog(&track),
             PlaylistPanelOutput::DownloadEpisodes(episodes) => {
                 self.download_episodes(episodes);
             }

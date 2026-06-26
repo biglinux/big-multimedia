@@ -193,11 +193,11 @@ pub(super) fn create_music_page(
         };
         let token = entry.text().to_string();
         let enabled = enabled_ref.is_active();
-        let cfg = crate::library::listenbrainz::ListenBrainzConfig {
+        let listenbrainz_config = crate::library::listenbrainz::ListenBrainzConfig {
             user_token: token,
             enabled,
         };
-        let _ = cfg.save();
+        let _ = listenbrainz_config.save();
     });
 
     let token_ref = lb_token.downgrade();
@@ -210,11 +210,11 @@ pub(super) fn create_music_page(
             return;
         };
         let token = token_ref.text().to_string();
-        let cfg = crate::library::listenbrainz::ListenBrainzConfig {
+        let listenbrainz_config = crate::library::listenbrainz::ListenBrainzConfig {
             user_token: token,
             enabled: row.is_active(),
         };
-        let _ = cfg.save();
+        let _ = listenbrainz_config.save();
     });
 
     lb_group.add(&lb_enabled);

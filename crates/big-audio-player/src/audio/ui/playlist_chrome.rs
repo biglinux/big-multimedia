@@ -54,11 +54,11 @@ pub(super) fn build_toolbar(
     bar.set_title_widget(Some(&header_label));
 
     let main_menu_label = i18n("Main Menu");
-    let menu_btn = build_hamburger_menu_button(
+    let menu_button = build_hamburger_menu_button(
         &BigHamburgerMenuSpec::new(main_menu_label).items(main_menu_items()),
     );
-    install_queue_menu_actions(&menu_btn, sender);
-    bar.pack_end(&menu_btn);
+    install_queue_menu_actions(&menu_button, sender);
+    bar.pack_end(&menu_button);
 
     (bar, header_label)
 }
@@ -89,14 +89,17 @@ fn main_menu_items() -> Vec<BigMenuActionItem> {
     items
 }
 
-fn install_queue_menu_actions(menu_btn: &gtk::MenuButton, sender: &ComponentSender<PlaylistPanel>) {
+fn install_queue_menu_actions(
+    menu_button: &gtk::MenuButton,
+    sender: &ComponentSender<PlaylistPanel>,
+) {
     let actions = gio::SimpleActionGroup::new();
 
     {
         let out = sender.clone();
-        let menu_btn = menu_btn.downgrade();
+        let menu_button = menu_button.downgrade();
         big_app_kit::desktop::install_action(&actions, "save-as-playlist", move || {
-            let parent = menu_btn
+            let parent = menu_button
                 .upgrade()
                 .and_then(|button| button.root())
                 .and_downcast::<gtk::Window>();
@@ -119,7 +122,7 @@ fn install_queue_menu_actions(menu_btn: &gtk::MenuButton, sender: &ComponentSend
         });
     }
 
-    menu_btn.insert_action_group("queue", Some(&actions));
+    menu_button.insert_action_group("queue", Some(&actions));
 }
 
 fn prompt_queue_playlist_name(
@@ -256,13 +259,14 @@ fn build_welcome(sender: &ComponentSender<PlaylistPanel>) -> gtk::Box {
     subtitle.add_css_class("body");
     container.append(&subtitle);
 
-    let open_btn = gtk::Button::builder()
+    let open_files_button = gtk::Button::builder()
         .halign(gtk::Align::Center)
         .margin_top(18)
         .build();
-    open_btn.add_css_class("suggested-action");
-    open_btn.add_css_class("pill");
-    open_btn.set_child(Some(
+    open_files_button.add_css_class("suggested-action");
+    open_files_button.add_css_class("pill");
+    open_files_button.update_property(&[gtk::accessible::Property::Label(&i18n("Open files"))]);
+    open_files_button.set_child(Some(
         &adw::ButtonContent::builder()
             .icon_name("document-open-symbolic")
             .label(i18n("Open Files"))
@@ -270,8 +274,8 @@ fn build_welcome(sender: &ComponentSender<PlaylistPanel>) -> gtk::Box {
     ));
     {
         let out = sender.clone();
-        open_btn.connect_clicked(move |btn| {
-            let parent = btn.root().and_downcast::<gtk::Window>();
+        open_files_button.connect_clicked(move |button| {
+            let parent = button.root().and_downcast::<gtk::Window>();
             let out = out.clone();
             FilePicker::open_files(i18n("Open Audio Files"))
                 .filter(&i18n("Audio Files"), AUDIO_EXTENSIONS)
@@ -286,7 +290,7 @@ fn build_welcome(sender: &ComponentSender<PlaylistPanel>) -> gtk::Box {
                 });
         });
     }
-    container.append(&open_btn);
+    container.append(&open_files_button);
 
     let tips_box = gtk::Box::builder()
         .orientation(gtk::Orientation::Vertical)

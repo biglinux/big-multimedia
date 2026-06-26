@@ -204,7 +204,7 @@ pub struct LibraryPanel {
     applying_widths: Rc<Cell<bool>>,
     /// Handle to push tree data after construction (atomic splice, no rebuild).
     library_tree_handle: LibraryTreeHandle,
-    /// Grouping dropdown + handler, synced to the restored preset on boot.
+    /// Grouping dropdown + signal id, synced to the restored preset on boot.
     grouping_controls: library_grouping_ui::GroupingControls,
     /// Weak handle to the currently open tag editor, used for async lookup
     /// results.
@@ -389,21 +389,21 @@ impl Component for LibraryPanel {
             .margin_top(4)
             .margin_bottom(4)
             .build();
-        let back_btn = gtk::Button::builder()
+        let back_button = gtk::Button::builder()
             .icon_name("go-previous-symbolic")
             .css_classes(["flat"])
             .build();
-        big_relm4_components::feedback::tooltip::set(&back_btn, &i18n("Back to library"));
-        back_btn.update_property(&[gtk::accessible::Property::Label(&i18n("Back to library"))]);
-        // Weak: back_btn lives INSIDE root — a strong capture is a
+        big_relm4_components::feedback::tooltip::set(&back_button, &i18n("Back to library"));
+        back_button.update_property(&[gtk::accessible::Property::Label(&i18n("Back to library"))]);
+        // Weak: back_button lives INSIDE root — a strong capture is a
         // closure⇄widget self-cycle pinning the whole library subtree.
         let stack_for_back = root.downgrade();
-        back_btn.connect_clicked(move |_| {
+        back_button.connect_clicked(move |_| {
             if let Some(stack) = stack_for_back.upgrade() {
                 stack.set_visible_child_name("browse");
             }
         });
-        back_bar.append(&back_btn);
+        back_bar.append(&back_button);
         detail_page.append(&back_bar);
         detail_page.append(&content_scroll);
 
@@ -427,9 +427,9 @@ impl Component for LibraryPanel {
         ComponentParts { model, widgets: () }
     }
 
-    fn update(&mut self, msg: Self::Input, sender: ComponentSender<Self>, root: &Self::Root) {
+    fn update(&mut self, message: Self::Input, sender: ComponentSender<Self>, root: &Self::Root) {
         let parent = root.root().and_downcast::<gtk::Window>();
-        match msg {
+        match message {
             LibraryPanelInput::PopulateDetail(tracks) => {
                 let objects = Self::to_objects(&tracks);
                 // Splice in place — never rebuild the ColumnView (RSS regression).
