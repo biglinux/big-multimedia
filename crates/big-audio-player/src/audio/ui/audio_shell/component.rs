@@ -66,9 +66,10 @@ impl Component for AudioShell {
         let library = LibraryPanel::builder()
             .launch(())
             .forward(sender.input_sender(), AudioShellInput::Library);
-        let playlist_manager = PlaylistManager::builder()
-            .launch(())
-            .forward(sender.input_sender(), AudioShellInput::PlaylistManager);
+        let playlist_library_dialog = PlaylistLibraryDialog::builder().launch(()).forward(
+            sender.input_sender(),
+            AudioShellInput::PlaylistLibraryDialog,
+        );
         let playlist = PlaylistPanel::builder()
             .launch(())
             .forward(sender.input_sender(), AudioShellInput::Playlist);
@@ -186,30 +187,30 @@ impl Component for AudioShell {
                 .icon_name(icon)
                 .label(&label)
                 .build();
-            let btn = gtk::ToggleButton::builder()
+            let tab_button = gtk::ToggleButton::builder()
                 .child(&content)
                 .css_classes(["tab-btn", "flat"])
                 .build();
-            btn.update_property(&[gtk::accessible::Property::Label(&label)]);
+            tab_button.update_property(&[gtk::accessible::Property::Label(&label)]);
             if let Some(ref g) = tab_group {
-                btn.set_group(Some(g));
+                tab_button.set_group(Some(g));
             } else {
-                btn.set_active(true);
-                tab_group = Some(btn.clone());
+                tab_button.set_active(true);
+                tab_group = Some(tab_button.clone());
             }
             // Weak: the tab button lives in the same pane as the stack — a
             // strong capture pinned the whole sidebar stack after close.
             let stack = view_stack.downgrade();
             let target = name.to_string();
-            btn.connect_toggled(move |b| {
-                if !b.is_active() {
+            tab_button.connect_toggled(move |button| {
+                if !button.is_active() {
                     return;
                 }
                 if let Some(stack) = stack.upgrade() {
                     stack.set_visible_child_name(&target);
                 }
             });
-            tab_bar.append(&btn);
+            tab_bar.append(&tab_button);
         }
         let sidebar_header = adw::HeaderBar::builder()
             .title_widget(&tab_bar)
@@ -350,13 +351,13 @@ impl Component for AudioShell {
 
             if state.contains(gdk::ModifierType::CONTROL_MASK) {
                 let shift = state.contains(gdk::ModifierType::SHIFT_MASK);
-                let msg = match keyval {
+                let message = match keyval {
                     gdk::Key::z | gdk::Key::Z if shift => AudioShellInput::Redo,
                     gdk::Key::z | gdk::Key::Z => AudioShellInput::Undo,
                     gdk::Key::y | gdk::Key::Y => AudioShellInput::Redo,
                     _ => return glib::Propagation::Proceed,
                 };
-                let _ = key_sender.send(msg);
+                let _ = key_sender.send(message);
                 return glib::Propagation::Stop;
             }
 
@@ -501,7 +502,7 @@ impl Component for AudioShell {
         let db = db::open_database().ok();
         let db_read = db::open_read_connection().ok();
         #[cfg(feature = "chromecast")]
-        let cast_manager = Arc::new(crate::cast::chromecast::CastManager::new());
+        let cast_device_registry = Arc::new(crate::cast::chromecast::CastManager::new());
         let mpv = build_mpv_backend(&sender, &settings);
         let mpris_state = Arc::new(SharedMprisState::default());
         let mpris = build_mpris_service(&sender, &mpris_state, &settings);
@@ -524,7 +525,7 @@ impl Component for AudioShell {
         ComponentParts {
             model: Self {
                 library,
-                playlist_manager,
+                playlist_library_dialog,
                 playlist,
                 playback_bar,
                 trim,
@@ -561,7 +562,7 @@ impl Component for AudioShell {
                 db_read,
                 settings,
                 #[cfg(feature = "chromecast")]
-                cast_manager,
+                cast_device_registry,
                 sleep_timer_source: None,
                 sleep_timer_remaining: 0,
                 sleep_timer_action: String::new(),
@@ -579,13 +580,13 @@ impl Component for AudioShell {
         }
     }
 
-    fn update(&mut self, msg: Self::Input, sender: ComponentSender<Self>, root: &Self::Root) {
+    fn update(&mut self, message: Self::Input, sender: ComponentSender<Self>, root: &Self::Root) {
         // Panic boundary (module contract): a panic in the shell's message
         // handling tears this module's window down cleanly (host reaps it)
         // instead of leaving an orphaned dead window; the host process and
         // every sibling module/surface keep running.
         big_app_kit::containment::contain_embedded_update(root, "player-audio", || {
-            self.handle_shell_input(msg, sender);
+            self.handle_shell_input(message, sender);
         });
     }
 }

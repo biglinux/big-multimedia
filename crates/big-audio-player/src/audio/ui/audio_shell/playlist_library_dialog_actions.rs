@@ -1,7 +1,7 @@
 use super::*;
 
 impl AudioShell {
-    pub(super) fn refresh_manager_playlists(&self, sender: &ComponentSender<Self>) {
+    pub(super) fn refresh_playlist_dialog_entries(&self, sender: &ComponentSender<Self>) {
         let Some(db) = self.db_read.clone().or_else(|| self.db.clone()) else {
             return;
         };
@@ -26,7 +26,7 @@ impl AudioShell {
     }
 
     /// Resolve a playlist's tracks → replace the queue and play
-    /// (`PlaylistTracksForQueue`). This is the manager's "Load" action.
+    /// (`PlaylistTracksForQueue`). This is the dialog's "Load" action.
     pub(super) fn load_playlist_to_queue(&self, id: i64, sender: &ComponentSender<Self>) {
         let Some(db) = self.db_read.clone().or_else(|| self.db.clone()) else {
             return;
@@ -41,29 +41,29 @@ impl AudioShell {
         );
     }
 
-    /// Dispatch a playlist-manager action: save current queue, load, rename,
-    /// delete, export, or import. Mutations re-resolve the manager list.
-    pub(super) fn handle_playlist_manager(
+    /// Dispatch a playlist-dialog action: save current queue, load, rename,
+    /// delete, export, or import. Mutations re-resolve the dialog list.
+    pub(super) fn handle_playlist_library_dialog(
         &mut self,
-        out: PlaylistManagerOutput,
+        dialog_output: PlaylistLibraryDialogOutput,
         sender: &ComponentSender<Self>,
     ) {
-        match out {
-            // Mutations refresh the manager via their completion → RefreshPlaylists
+        match dialog_output {
+            // Mutations refresh the dialog via their completion → RefreshPlaylists
             // (not immediately, which would read before the write commits).
-            PlaylistManagerOutput::SaveCurrent { name } => {
+            PlaylistLibraryDialogOutput::SaveCurrent { name } => {
                 self.save_queue_as_playlist(name, sender);
             }
-            PlaylistManagerOutput::Load(id) => self.load_playlist_to_queue(id, sender),
-            PlaylistManagerOutput::Rename { id, name } => {
+            PlaylistLibraryDialogOutput::Load(id) => self.load_playlist_to_queue(id, sender),
+            PlaylistLibraryDialogOutput::Rename { id, name } => {
                 self.rename_playlist_db(id, name, sender);
             }
-            PlaylistManagerOutput::Delete(id) => self.delete_playlist(id, sender),
-            PlaylistManagerOutput::Export(id) => self.export_playlist(id),
-            PlaylistManagerOutput::Import => self.import_playlist(sender),
-            PlaylistManagerOutput::ImportFolder => self.import_playlist_folder(sender),
-            PlaylistManagerOutput::ExportAll => self.export_all_playlists(),
-            PlaylistManagerOutput::GenerateLoad(kind) => {
+            PlaylistLibraryDialogOutput::Delete(id) => self.delete_playlist(id, sender),
+            PlaylistLibraryDialogOutput::Export(id) => self.export_playlist(id),
+            PlaylistLibraryDialogOutput::Import => self.import_playlist(sender),
+            PlaylistLibraryDialogOutput::ImportFolder => self.import_playlist_folder(sender),
+            PlaylistLibraryDialogOutput::ExportAll => self.export_all_playlists(),
+            PlaylistLibraryDialogOutput::GenerateLoad(kind) => {
                 self.generate_smart_to_queue(&kind, sender);
             }
         }
@@ -192,7 +192,7 @@ impl AudioShell {
         );
     }
 
-    /// Persist a playlist rename, then refresh the playlist manager.
+    /// Persist a playlist rename, then refresh the playlist dialog.
     pub(super) fn rename_playlist_db(&self, id: i64, name: String, sender: &ComponentSender<Self>) {
         if let Some(db) = self.db.clone() {
             let input = sender.input_sender().clone();

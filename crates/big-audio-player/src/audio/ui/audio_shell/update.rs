@@ -3,10 +3,10 @@ use super::*;
 impl AudioShell {
     pub(super) fn handle_shell_input(
         &mut self,
-        msg: AudioShellInput,
+        message: AudioShellInput,
         sender: ComponentSender<Self>,
     ) {
-        match msg {
+        match message {
             AudioShellInput::TracksDeletedFromStorage(ids) => self.reconcile_deleted_tracks(ids),
             AudioShellInput::Library(out) => self.handle_library(out, &sender),
             AudioShellInput::Playlist(out) => self.handle_playlist(out, &sender),
@@ -43,7 +43,7 @@ impl AudioShell {
                 self.playback_bar
                     .emit(AudioPlaybackBarInput::SetStatus(i18n("Library updated")));
                 self.rebuild_library_tree(&sender);
-                self.refresh_manager_playlists(&sender);
+                self.refresh_playlist_dialog_entries(&sender);
             }
             AudioShellInput::Player(event) => self.handle_player_event(event, &sender),
             AudioShellInput::DroppedResolved { insert_pos, tracks } => {
@@ -69,7 +69,7 @@ impl AudioShell {
                 self.library.emit(LibraryPanelInput::SetLibraryTree(data));
             }
             AudioShellInput::RefreshPlaylists => {
-                self.refresh_manager_playlists(&sender);
+                self.refresh_playlist_dialog_entries(&sender);
             }
             AudioShellInput::AddToPlaylistResolved { track, playlists } => {
                 self.library
@@ -109,7 +109,7 @@ impl AudioShell {
                 if let Some(win) = self.window() {
                     crate::audio::ui::cast_dialog::present_cast(
                         &win,
-                        self.cast_manager.clone(),
+                        self.cast_device_registry.clone(),
                         sender.input_sender().clone(),
                     );
                 }
@@ -118,7 +118,7 @@ impl AudioShell {
             AudioShellInput::CastToDeviceIndex(idx) => self.cast_to_device(idx),
             #[cfg(feature = "chromecast")]
             AudioShellInput::CastStop => {
-                self.cast_manager.stop_casting();
+                self.cast_device_registry.stop_casting();
                 self.notify(&i18n("Casting stopped"));
             }
             AudioShellInput::ShowSmartphone => {
@@ -132,17 +132,19 @@ impl AudioShell {
             }
             AudioShellInput::RefreshBlurArt => self.refresh_blur_art(),
             AudioShellInput::ShowManagePlaylists => {
-                let dialog = self.playlist_manager.widget();
+                let dialog = self.playlist_library_dialog.widget();
                 dialog.set_transient_for(self.window().as_ref());
                 dialog.set_visible(true);
                 dialog.present();
-                self.refresh_manager_playlists(&sender);
+                self.refresh_playlist_dialog_entries(&sender);
             }
             AudioShellInput::ManagePlaylistsResolved(entries) => {
-                self.playlist_manager
-                    .emit(PlaylistManagerInput::SetPlaylists(entries));
+                self.playlist_library_dialog
+                    .emit(PlaylistLibraryDialogInput::SetPlaylists(entries));
             }
-            AudioShellInput::PlaylistManager(out) => self.handle_playlist_manager(out, &sender),
+            AudioShellInput::PlaylistLibraryDialog(out) => {
+                self.handle_playlist_library_dialog(out, &sender);
+            }
             AudioShellInput::PlaylistTracksForQueue(tracks) => {
                 if should_replace_queue_with(tracks.len()) {
                     self.snapshot_queue();

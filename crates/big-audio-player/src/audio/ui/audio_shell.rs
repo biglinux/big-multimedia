@@ -15,7 +15,7 @@ mod metadata;
 mod mpris;
 mod panel_intents;
 mod playback;
-mod playlist_manager_actions;
+mod playlist_library_dialog_actions;
 mod queue_state;
 mod sources;
 mod update;
@@ -41,8 +41,8 @@ use crate::audio::queue_undo::QueueHistory;
 use crate::audio::ui::library_panel::{LibraryPanel, LibraryPanelInput, LibraryPanelOutput};
 use crate::audio::ui::library_tag_editor::TagEditFields;
 use crate::audio::ui::library_tree::LibraryTreeSnapshot;
-use crate::audio::ui::playlist_manager::{
-    PlaylistManager, PlaylistManagerInput, PlaylistManagerOutput,
+use crate::audio::ui::playlist_library_dialog::{
+    PlaylistLibraryDialog, PlaylistLibraryDialogInput, PlaylistLibraryDialogOutput,
 };
 use crate::audio::ui::playlist_panel::{PlaylistPanel, PlaylistPanelInput, PlaylistPanelOutput};
 use crate::db::models::{RadioStation, Track, WatchFolder};
@@ -84,8 +84,8 @@ use big_player_ui::radio_panel::{RadioPanel, RadioPanelInput, RadioPanelOutput};
 /// shell-owned play queue.
 pub struct AudioShell {
     library: Controller<LibraryPanel>,
-    /// Playlist manager dialog (save/load/rename/export/import/delete).
-    playlist_manager: Controller<PlaylistManager>,
+    /// Playlist library dialog (save/load/rename/export/import/delete).
+    playlist_library_dialog: Controller<PlaylistLibraryDialog>,
     playlist: Controller<PlaylistPanel>,
     /// Bottom transport bar (play/seek/volume/repeat/shuffle).
     playback_bar: Controller<AudioPlaybackBar>,
@@ -162,7 +162,7 @@ pub struct AudioShell {
     settings: Settings,
     /// Chromecast discovery/casting engine (shared runtime engine).
     #[cfg(feature = "chromecast")]
-    cast_manager: Arc<crate::cast::chromecast::CastManager>,
+    cast_device_registry: Arc<crate::cast::chromecast::CastManager>,
     /// Active sleep-timer countdown source (None = no timer armed).
     sleep_timer_source: Option<glib::SourceId>,
     /// Seconds left on the armed sleep timer.

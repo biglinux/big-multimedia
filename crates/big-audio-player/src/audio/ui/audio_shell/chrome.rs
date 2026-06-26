@@ -78,7 +78,7 @@ impl AudioShell {
     /// cast dialog). The shell owns `current_file`, so the cast happens here.
     #[cfg(feature = "chromecast")]
     pub(super) fn cast_to_device(&self, idx: usize) {
-        let devices = self.cast_manager.get_devices();
+        let devices = self.cast_device_registry.get_devices();
         let Some(device) = devices.get(idx) else {
             return;
         };
@@ -92,9 +92,11 @@ impl AudioShell {
         };
         let file_path = self.current_file.clone();
         let result = if file_path.starts_with("http://") || file_path.starts_with("https://") {
-            self.cast_manager.cast_url(device, &file_path, "audio/mpeg")
+            self.cast_device_registry
+                .cast_url(device, &file_path, "audio/mpeg")
         } else {
-            self.cast_manager.cast_file(device, &file_path, &local_ip)
+            self.cast_device_registry
+                .cast_file(device, &file_path, &local_ip)
         };
         match result {
             Ok(()) => self.notify(&format!("{} {}", i18n("Casting to"), device.name)),

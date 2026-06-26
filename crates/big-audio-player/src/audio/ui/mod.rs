@@ -35,8 +35,8 @@ mod playlist_columns;
 mod playlist_geom;
 /// Queue `ColumnView` interactions: drop, reorder, sort, context menu.
 mod playlist_interactions;
-/// Playlist manager dialog (save / load / rename / export / import / delete).
-pub mod playlist_manager;
+/// Playlist library dialog (save / load / rename / export / import / delete).
+pub mod playlist_library_dialog;
 /// App-local playlist/queue panel (push-model; queue is shell-owned).
 pub mod playlist_panel;
 /// Keyboard-shortcuts viewer/rebind dialog (restored app-local).

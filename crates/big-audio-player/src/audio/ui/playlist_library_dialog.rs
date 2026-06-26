@@ -1,4 +1,4 @@
-//! Playlist manager — a single premium dialog for everything playlist-related.
+//! Playlist library dialog — a single premium dialog for everything playlist-related.
 //!
 //! Sidebar + content split. The sidebar holds the actions:
 //! 1. **Save** the current queue as a new playlist.
@@ -10,7 +10,7 @@
 //!
 //! Push-model Relm4 `Component`: the shell owns the DB + queue, so every action
 //! is an `Output` intent; the shell performs it and pushes the refreshed list
-//! back via `PlaylistManagerInput::SetPlaylists`.
+//! back via `PlaylistLibraryDialogInput::SetPlaylists`.
 
 use std::rc::Rc;
 
@@ -42,14 +42,14 @@ const GENERATORS: [(&str, &str, &str); 3] = [
 
 /// Inputs pushed by the shell.
 #[derive(Debug)]
-pub enum PlaylistManagerInput {
+pub enum PlaylistLibraryDialogInput {
     /// Replace the displayed list with the shell-resolved playlists.
     SetPlaylists(Vec<PlaylistEntry>),
 }
 
 /// Action intents emitted to the shell.
 #[derive(Debug)]
-pub enum PlaylistManagerOutput {
+pub enum PlaylistLibraryDialogOutput {
     /// Save the current queue as a new playlist.
     SaveCurrent { name: String },
     /// Load this playlist into the queue and play it.
@@ -70,18 +70,18 @@ pub enum PlaylistManagerOutput {
     GenerateLoad(String),
 }
 
-/// The playlist-manager dialog component.
-pub struct PlaylistManager {
+/// The playlist library dialog component.
+pub struct PlaylistLibraryDialog {
     /// Container holding the (rebuilt) saved-playlists list / empty state.
     list_slot: gtk::Box,
     /// The reusable sidebar-dialog scaffold (for the live content title).
     layout: BigSidebarDialog,
 }
 
-impl Component for PlaylistManager {
+impl Component for PlaylistLibraryDialog {
     type Init = ();
-    type Input = PlaylistManagerInput;
-    type Output = PlaylistManagerOutput;
+    type Input = PlaylistLibraryDialogInput;
+    type Output = PlaylistLibraryDialogOutput;
     type Root = adw::Window;
     type Widgets = ();
     type CommandOutput = ();
@@ -164,16 +164,16 @@ impl Component for PlaylistManager {
         }
     }
 
-    fn update(&mut self, msg: Self::Input, sender: ComponentSender<Self>, root: &Self::Root) {
-        match msg {
-            PlaylistManagerInput::SetPlaylists(entries) => {
+    fn update(&mut self, message: Self::Input, sender: ComponentSender<Self>, root: &Self::Root) {
+        match message {
+            PlaylistLibraryDialogInput::SetPlaylists(entries) => {
                 self.rebuild(&entries, &sender, root);
             }
         }
     }
 }
 
-impl PlaylistManager {
+impl PlaylistLibraryDialog {
     /// Rebuild the saved-playlists section: a titled boxed-list, or empty state.
     fn rebuild(
         &self,
@@ -217,20 +217,20 @@ impl PlaylistManager {
 
 /// "Import & Export" group, shown directly in the dialog (no overflow menu):
 /// single-file import, batch folder import, and export-all.
-fn build_io_group(sender: &ComponentSender<PlaylistManager>) -> adw::PreferencesGroup {
+fn build_io_group(sender: &ComponentSender<PlaylistLibraryDialog>) -> adw::PreferencesGroup {
     let group = adw::PreferencesGroup::builder()
         .title(i18n("Import / Export"))
         .build();
 
-    let rows: [(&str, &str, fn() -> PlaylistManagerOutput); 3] = [
+    let rows: [(&str, &str, fn() -> PlaylistLibraryDialogOutput); 3] = [
         ("document-import-symbolic", "Import File…", || {
-            PlaylistManagerOutput::Import
+            PlaylistLibraryDialogOutput::Import
         }),
         ("folder-open-symbolic", "Import Folder…", || {
-            PlaylistManagerOutput::ImportFolder
+            PlaylistLibraryDialogOutput::ImportFolder
         }),
         ("document-save-symbolic", "Export All…", || {
-            PlaylistManagerOutput::ExportAll
+            PlaylistLibraryDialogOutput::ExportAll
         }),
     ];
     for (icon, label, make) in rows {
@@ -251,8 +251,11 @@ fn build_io_group(sender: &ComponentSender<PlaylistManager>) -> adw::Preferences
 }
 
 /// Prominent "save current queue" pill.
-fn build_save_button(sender: &ComponentSender<PlaylistManager>, root: &adw::Window) -> gtk::Button {
-    let save_btn = gtk::Button::builder()
+fn build_save_button(
+    sender: &ComponentSender<PlaylistLibraryDialog>,
+    root: &adw::Window,
+) -> gtk::Button {
+    let save_button = gtk::Button::builder()
         .halign(gtk::Align::Center)
         .css_classes(["suggested-action", "pill"])
         .child(
@@ -264,7 +267,7 @@ fn build_save_button(sender: &ComponentSender<PlaylistManager>, root: &adw::Wind
         .build();
     let out = sender.clone();
     let root_weak = root.downgrade();
-    save_btn.connect_clicked(move |_| {
+    save_button.connect_clicked(move |_| {
         prompt_name(
             root_weak.upgrade().as_ref(),
             &i18n("Save Current Queue"),
@@ -274,17 +277,17 @@ fn build_save_button(sender: &ComponentSender<PlaylistManager>, root: &adw::Wind
             {
                 let out = out.clone();
                 move |name| {
-                    let _ = out.output(PlaylistManagerOutput::SaveCurrent { name });
+                    let _ = out.output(PlaylistLibraryDialogOutput::SaveCurrent { name });
                 }
             },
         );
     });
-    save_btn
+    save_button
 }
 
 /// "Generate" group: smart playlists from listening stats. Row activate loads
 /// the set into the queue (save it afterwards with "Save Current Queue").
-fn build_generate_group(sender: &ComponentSender<PlaylistManager>) -> adw::PreferencesGroup {
+fn build_generate_group(sender: &ComponentSender<PlaylistLibraryDialog>) -> adw::PreferencesGroup {
     let group = adw::PreferencesGroup::builder()
         .title(i18n("Generate"))
         .description(i18n("Build a playlist from your listening stats"))
@@ -300,7 +303,7 @@ fn build_generate_group(sender: &ComponentSender<PlaylistManager>) -> adw::Prefe
         .into_root();
         let (out, kind) = (sender.clone(), kind.to_string());
         row.connect_activated(move |_| {
-            let _ = out.output(PlaylistManagerOutput::GenerateLoad(kind.clone()));
+            let _ = out.output(PlaylistLibraryDialogOutput::GenerateLoad(kind.clone()));
         });
         group.add(&row);
     }
@@ -314,7 +317,7 @@ fn build_playlist_row(
     name: &str,
     count: i64,
     secs: f64,
-    sender: &ComponentSender<PlaylistManager>,
+    sender: &ComponentSender<PlaylistLibraryDialog>,
     root: &adw::Window,
 ) -> adw::ActionRow {
     let subtitle = format!(
@@ -336,11 +339,11 @@ fn build_playlist_row(
     {
         let out = sender.clone();
         row.connect_activated(move |_| {
-            let _ = out.output(PlaylistManagerOutput::Load(id));
+            let _ = out.output(PlaylistLibraryDialogOutput::Load(id));
         });
     }
 
-    let rename_btn = suffix_button(
+    let rename_button = suffix_button(
         "document-edit-symbolic",
         &format!("{}: {name}", i18n("Rename playlist")),
     );
@@ -348,7 +351,7 @@ fn build_playlist_row(
         let out = sender.clone();
         let root_weak = root.downgrade();
         let current = name.to_string();
-        rename_btn.connect_clicked(move |_| {
+        rename_button.connect_clicked(move |_| {
             prompt_name(
                 root_weak.upgrade().as_ref(),
                 &i18n("Rename Playlist"),
@@ -358,63 +361,63 @@ fn build_playlist_row(
                 {
                     let out = out.clone();
                     move |name| {
-                        let _ = out.output(PlaylistManagerOutput::Rename { id, name });
+                        let _ = out.output(PlaylistLibraryDialogOutput::Rename { id, name });
                     }
                 },
             );
         });
     }
-    row.add_suffix(&rename_btn);
+    row.add_suffix(&rename_button);
 
-    let export_btn = suffix_button(
+    let export_button = suffix_button(
         "document-save-symbolic",
         &format!("{}: {name}", i18n("Export playlist")),
     );
     {
         let out = sender.clone();
-        export_btn.connect_clicked(move |_| {
-            let _ = out.output(PlaylistManagerOutput::Export(id));
+        export_button.connect_clicked(move |_| {
+            let _ = out.output(PlaylistLibraryDialogOutput::Export(id));
         });
     }
-    row.add_suffix(&export_btn);
+    row.add_suffix(&export_button);
 
-    let delete_btn = suffix_button(
+    let delete_button = suffix_button(
         "user-trash-symbolic",
         &format!("{}: {name}", i18n("Delete playlist")),
     );
-    delete_btn.add_css_class("destructive-action");
+    delete_button.add_css_class("destructive-action");
     {
         let out = sender.clone();
         let root_weak = root.downgrade();
         let label = name.to_string();
-        delete_btn.connect_clicked(move |_| {
+        delete_button.connect_clicked(move |_| {
             confirm_delete(root_weak.upgrade().as_ref(), &label, {
                 let out = out.clone();
                 move || {
-                    let _ = out.output(PlaylistManagerOutput::Delete(id));
+                    let _ = out.output(PlaylistLibraryDialogOutput::Delete(id));
                 }
             });
         });
     }
-    row.add_suffix(&delete_btn);
+    row.add_suffix(&delete_button);
 
     row
 }
 
 /// Flat, vertically-centred icon button for an `ActionRow` suffix.
 fn suffix_button(icon: &str, tooltip: &str) -> gtk::Button {
-    let btn = gtk::Button::builder()
+    let suffix_button = gtk::Button::builder()
         .icon_name(icon)
         .valign(gtk::Align::Center)
         .css_classes(["flat"])
         .build();
-    big_relm4_components::feedback::tooltip::set(&btn, tooltip);
-    btn.update_property(&[gtk::accessible::Property::Label(tooltip)]);
-    btn
+    big_relm4_components::feedback::tooltip::set(&suffix_button, tooltip);
+    suffix_button.update_property(&[gtk::accessible::Property::Label(tooltip)]);
+    suffix_button
 }
 
 /// Present a single-entry name dialog; `on_accept` fires with the trimmed,
-/// non-empty name. `parent` anchors the dialog to the manager.
+/// non-empty name. `parent` anchors the dialog to the playlist library window.
 fn prompt_name(
     parent: Option<&adw::Window>,
     heading: &str,

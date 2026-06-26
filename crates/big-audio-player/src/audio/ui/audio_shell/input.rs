@@ -45,7 +45,7 @@ pub enum AudioShellInput {
     ViewTabChanged(String),
     /// Saved radio stations resolved (async DB result) → push to the radio panel.
     RadioStationsResolved(Vec<RadioStation>),
-    /// A folder scan finished → rebuild the library tree + playlist-manager data.
+    /// A folder scan finished → rebuild the library tree + playlist dialog data.
     ScanFinished,
     /// Dropped/opened paths resolved to library tracks (async DB result) →
     /// insert into the queue at `insert_pos`.
@@ -67,7 +67,7 @@ pub enum AudioShellInput {
     RebuildLibraryTree,
     /// The rebuilt library tree (async DB result) → push to the library panel.
     LibraryTreeResolved(LibraryTreeSnapshot),
-    /// Reload playlist-manager data after any playlist DB change.
+    /// Reload playlist dialog data after any playlist DB change.
     RefreshPlaylists,
     /// Edited tags were written to file + DB → patch the queue + rebuild tree.
     TagsWritten {
@@ -107,12 +107,12 @@ pub enum AudioShellInput {
     ShowSmartphone,
     /// Re-evaluate the album-art background (Appearance toggle changed).
     RefreshBlurArt,
-    /// Open the playlist manager dialog (main menu) — resolves + presents.
+    /// Open the playlist library dialog (main menu) — resolves + presents.
     ShowManagePlaylists,
-    /// Custom playlists resolved → push into the manager dialog.
+    /// Custom playlists resolved → push into the playlist library dialog.
     ManagePlaylistsResolved(Vec<(i64, String, i64, f64)>),
-    /// An action intent from the playlist manager dialog.
-    PlaylistManager(crate::audio::ui::playlist_manager::PlaylistManagerOutput),
+    /// An action intent from the playlist library dialog.
+    PlaylistLibraryDialog(crate::audio::ui::playlist_library_dialog::PlaylistLibraryDialogOutput),
     /// A saved playlist's tracks resolved → replace the queue and play.
     PlaylistTracksForQueue(Vec<Track>),
     /// An imported playlist file was chosen → parse + save as a new playlist.
