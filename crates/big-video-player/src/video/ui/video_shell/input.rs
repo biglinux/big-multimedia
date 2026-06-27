@@ -155,11 +155,6 @@ pub(super) fn clear_shell_input(token: ShellInputToken) {
     });
 }
 
-pub(super) fn shell_input_sender() -> relm4::Sender<VideoShellInput> {
-    SHELL_INPUT.with(|cell| {
-        cell.borrow()
-            .as_ref()
-            .map(|(_, sender)| sender.clone())
-            .expect("shell input set at init before any dialog can open")
-    })
+pub(super) fn shell_input_sender() -> Option<relm4::Sender<VideoShellInput>> {
+    SHELL_INPUT.with(|cell| cell.borrow().as_ref().map(|(_, sender)| sender.clone()))
 }

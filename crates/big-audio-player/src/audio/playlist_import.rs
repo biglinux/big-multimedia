@@ -68,39 +68,76 @@ mod tests {
     use std::io::Write;
 
     #[test]
-    fn import_rejects_oversize_playlist() {
+    fn playlist_byte_limit_is_sixteen_mib() {
+        assert_eq!(MAX_PLAYLIST_BYTES, 16_777_216);
+    }
+
+    #[test]
+    fn import_rejects_oversize_playlist() -> std::io::Result<()> {
         let path = std::env::temp_dir().join("bap-import-oversize.m3u");
-        let mut f = std::fs::File::create(&path).expect("create temp");
+        let mut f = std::fs::File::create(&path)?;
         // Seek past the cap to avoid materializing 16 MiB.
         use std::io::Seek;
-        f.seek(std::io::SeekFrom::Start(MAX_PLAYLIST_BYTES))
-            .expect("seek");
-        f.write_all(b"x").expect("write trailing");
+        f.seek(std::io::SeekFrom::Start(MAX_PLAYLIST_BYTES))?;
+        f.write_all(b"x")?;
         drop(f);
 
         assert!(parse_playlist_file_for_import(&path).is_empty());
         let _ = std::fs::remove_file(&path);
+        Ok(())
     }
 
     #[test]
-    fn import_accepts_small_playlist() {
+    fn import_accepts_playlist_at_exact_byte_limit() -> std::io::Result<()> {
+        let path = std::env::temp_dir().join("bap-import-exact-limit.m3u");
+        let file = std::fs::File::create(&path)?;
+        file.set_len(MAX_PLAYLIST_BYTES)?;
+        drop(file);
+
+        assert!(!parse_playlist_file_for_import(&path).is_empty());
+        let _ = std::fs::remove_file(&path);
+        Ok(())
+    }
+
+    #[test]
+    fn import_accepts_small_playlist() -> std::io::Result<()> {
         let path = std::env::temp_dir().join("bap-import-small.m3u");
-        std::fs::write(&path, b"/music/a.mp3\n/music/b.flac\n").expect("write");
+        std::fs::write(&path, b"/music/a.mp3\n/music/b.flac\n")?;
         assert_eq!(
             parse_playlist_file_for_import(&path),
             vec!["/music/a.mp3".to_string(), "/music/b.flac".to_string()]
         );
         let _ = std::fs::remove_file(&path);
+        Ok(())
     }
 
     #[test]
-    fn import_parses_pls_file_entries() {
+    fn import_ignores_blank_and_comment_lines() -> std::io::Result<()> {
+        let path = std::env::temp_dir().join("bap-import-comments.m3u");
+        std::fs::write(&path, b"#EXTM3U\n\nrelative.mp3\n")?;
+
+        assert_eq!(
+            parse_playlist_file_for_import(&path),
+            vec![path
+                .parent()
+                .unwrap_or_else(|| Path::new(""))
+                .join("relative.mp3")
+                .to_string_lossy()
+                .to_string()]
+        );
+        let _ = std::fs::remove_file(&path);
+        Ok(())
+    }
+
+    #[test]
+    fn import_parses_pls_file_entries() -> std::io::Result<()> {
         let path = std::env::temp_dir().join("bap-import.pls");
-        std::fs::write(&path, b"[playlist]\nFile1=/m/a.mp3\nFile2=/m/b.ogg\n").expect("write");
+        std::fs::write(&path, b"[playlist]\nFile1=/m/a.mp3\nFile2=/m/b.ogg\n")?;
         assert_eq!(
             parse_playlist_file_for_import(&path),
             vec!["/m/a.mp3".to_string(), "/m/b.ogg".to_string()]
         );
         let _ = std::fs::remove_file(&path);
+        Ok(())
     }
 }

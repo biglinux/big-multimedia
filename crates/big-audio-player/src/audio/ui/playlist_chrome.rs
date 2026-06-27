@@ -347,7 +347,7 @@ fn build_welcome(sender: &ComponentSender<PlaylistPanel>) -> gtk::Box {
     container
 }
 
-#[cfg(test)]
+#[cfg(all(test, not(miri)))]
 mod tests {
     use super::*;
     use big_relm4_components::layout::hamburger_menu::build_flat_menu_model;

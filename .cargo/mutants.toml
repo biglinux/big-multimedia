@@ -1,0 +1,7 @@
+# cargo-mutants config (workspace root; read by `cargo mutants` for any member).
+#
+# Doctests run through `~/.agents/scripts/cargo-doctest.sh`, which forces an
+# executable TMPDIR under `target/` on hardened hosts where `/tmp` is noexec.
+# Keep mutation testing on nextest/unit targets so the baseline does not depend
+# on raw rustdoc doctest temp binaries.
+test_tool = "nextest"

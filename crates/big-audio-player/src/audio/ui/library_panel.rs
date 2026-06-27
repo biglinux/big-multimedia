@@ -331,7 +331,7 @@ impl Component for LibraryPanel {
         let detail_indicators: Rc<RefCell<Vec<DetailIndicator>>> =
             Rc::new(RefCell::new(Vec::new()));
         let art_cache: ArtCache = Rc::new(RefCell::new(lru::LruCache::new(
-            NonZeroUsize::new(200).expect("non-zero art cache size"),
+            NonZeroUsize::new(200).unwrap_or(NonZeroUsize::MIN),
         )));
         library_detail_columns::build_detail_columns(
             &detail_view,

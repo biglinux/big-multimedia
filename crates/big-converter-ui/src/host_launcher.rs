@@ -101,6 +101,7 @@ mod tests {
     }
 
     #[test]
+    #[cfg(not(miri))]
     fn launch_host_module_reports_success() {
         assert_eq!(
             launch_host_module_code("true", "converter-video", std::iter::empty::<OsString>()),
@@ -109,6 +110,7 @@ mod tests {
     }
 
     #[test]
+    #[cfg(not(miri))]
     fn launch_host_module_reports_failure() {
         assert_ne!(
             launch_host_module_code("false", "converter-video", std::iter::empty::<OsString>()),

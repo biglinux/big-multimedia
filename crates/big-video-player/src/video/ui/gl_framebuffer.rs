@@ -16,13 +16,12 @@ pub type GlGetIntegervFn = unsafe extern "C" fn(u32, *mut i32);
 /// the library or symbol is unavailable.
 pub fn get_gl_get_integerv() -> Option<GlGetIntegervFn> {
     use std::cell::OnceCell;
-    use std::ffi::CString;
     thread_local! {
         static CACHED: OnceCell<Option<GlGetIntegervFn>> = const { OnceCell::new() };
     }
     CACHED.with(|c| {
         *c.get_or_init(|| {
-            let libname = CString::new("libGL.so.1").expect("static string has no null bytes");
+            let libname = c"libGL.so.1";
             // SAFETY: dlopen with `RTLD_LAZY | RTLD_LOCAL` returns a
             // refcounted handle scoped to libGL.so.1 only. The handle is
             // intentionally never `dlclose`d — its symbol resolution must
@@ -34,7 +33,7 @@ pub fn get_gl_get_integerv() -> Option<GlGetIntegervFn> {
             if lib.is_null() {
                 return None;
             }
-            let name = CString::new("glGetIntegerv").expect("static string has no null bytes");
+            let name = c"glGetIntegerv";
             // SAFETY: `lib` is a valid handle obtained from dlopen above.
             // dlsym returns NULL when the symbol is missing; we check below.
             let ptr = unsafe { libc::dlsym(lib, name.as_ptr()) };

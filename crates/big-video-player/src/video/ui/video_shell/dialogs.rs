@@ -178,7 +178,10 @@ impl VideoShell {
     }
     /// Present the open-file picker (video + playlist filters, multi-select).
     pub(super) fn show_open_file_dialog(root: &impl gtk::prelude::IsA<gtk::Window>) {
-        let sender = shell_input_sender();
+        let Some(sender) = shell_input_sender() else {
+            log::warn!("video open-file dialog ignored before shell input registration");
+            return;
+        };
         FilePicker::new(i18n("Open Video"))
             .filter(&i18n("Video files"), VIDEO_EXTENSIONS)
             .filter(&i18n("Playlist files"), &["m3u", "m3u8", "pls"])
@@ -197,6 +200,10 @@ impl VideoShell {
     /// Present the open-URL entry dialog → `open_files([url])`. Validates the URL
     /// shape and rejects a leading `-` (option-injection guard for mpv).
     pub(super) fn show_open_url_dialog(root: &adw::ApplicationWindow) {
+        let Some(sender) = shell_input_sender() else {
+            log::warn!("video open-url dialog ignored before shell input registration");
+            return;
+        };
         let dialog = adw::Dialog::builder()
             .title(i18n("Open URL"))
             .content_width(460)
@@ -241,7 +248,6 @@ impl VideoShell {
             }
         });
 
-        let sender = shell_input_sender();
         let dialog_ref = dialog.downgrade();
         let entry_for_accept = entry.clone();
         footer.accept_button().connect_clicked(move |_| {
@@ -265,6 +271,10 @@ impl VideoShell {
 
     /// Present the recent-files chooser → `open_files([path])` on activation.
     pub(super) fn show_recent_dialog(root: &adw::ApplicationWindow) {
+        let Some(sender) = shell_input_sender() else {
+            log::warn!("video recent-files dialog ignored before shell input registration");
+            return;
+        };
         let entries = crate::recent::load_recent_for("video");
 
         let dialog = adw::Dialog::builder()
@@ -284,7 +294,6 @@ impl VideoShell {
             content.append(&status);
         } else {
             let group = BigPreferencesGroupSpec::untitled().build();
-            let sender = shell_input_sender();
             for entry in &entries {
                 let display = crate::recent::display_name(&entry.path);
                 let row = BigNavigationRow::new(
@@ -315,6 +324,10 @@ impl VideoShell {
     /// sequence) before forming the mpv `dvd://` / `bd://` URI. Mirrors the old
     /// `show_open_disc_dialog`.
     pub(super) fn show_open_disc_dialog(root: &adw::ApplicationWindow) {
+        let Some(sender) = shell_input_sender() else {
+            log::warn!("video open-disc dialog ignored before shell input registration");
+            return;
+        };
         let dialog = adw::Dialog::builder()
             .title(i18n("Open Disc"))
             .content_width(460)
@@ -382,7 +395,6 @@ impl VideoShell {
             }
         });
 
-        let sender = shell_input_sender();
         let dialog_ref = dialog.downgrade();
         let dropdown = disc_type_row.dropdown().clone();
         let entry_for_accept = entry.clone();
@@ -441,6 +453,10 @@ impl VideoShell {
     /// Confirm + reset every setting to its default (restart-required toast in
     /// the body). Mirrors the old `show_restore_defaults_dialog`.
     pub(super) fn show_restore_defaults_dialog(parent: &impl IsA<gtk::Widget>) {
+        let Some(sender) = shell_input_sender() else {
+            log::warn!("video restore-defaults dialog ignored before shell input registration");
+            return;
+        };
         let dialog = adw::Dialog::builder()
             .title(i18n("Restore Defaults"))
             .content_width(460)
@@ -466,7 +482,6 @@ impl VideoShell {
             }
         });
 
-        let sender = shell_input_sender();
         let dialog_ref = dialog.downgrade();
         footer.accept_button().connect_clicked(move |_| {
             let _ = sender.send(VideoShellInput::RestoreDefaultsConfirmed);

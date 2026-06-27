@@ -280,18 +280,19 @@ fn file_node(track: &Track) -> LibraryTreeNode {
     }
 }
 
-#[cfg(test)]
+#[cfg(all(test, not(miri)))]
 mod tests {
     use super::*;
     use crate::db::queries::insert_track;
     use crate::db::schema;
+    use big_media_runtime::Result as MediaResult;
     use rusqlite::Connection;
 
-    fn setup_db() -> Connection {
-        let conn = Connection::open_in_memory().unwrap();
-        conn.execute_batch("PRAGMA foreign_keys = ON;").unwrap();
-        schema::run_migrations(&conn).unwrap();
-        conn
+    fn setup_db() -> MediaResult<Connection> {
+        let conn = Connection::open_in_memory()?;
+        conn.execute_batch("PRAGMA foreign_keys = ON;")?;
+        schema::run_migrations(&conn)?;
+        Ok(conn)
     }
 
     #[allow(clippy::too_many_arguments)]
@@ -331,28 +332,25 @@ mod tests {
 
     /// Two "Debut" tracks by Alice, one "Solo" by Bob, and a two-artist
     /// "Comp" compilation (Carol + Dave under album_artist "VA").
-    fn seed_library(conn: &Connection) {
+    fn seed_library(conn: &Connection) -> MediaResult<()> {
         insert_track(
             conn,
             &track("/m/a1.mp3", "Alice", "Alice", "Debut", "Rock", 2000),
-        )
-        .unwrap();
+        )?;
         insert_track(
             conn,
             &track("/m/a2.mp3", "Alice", "Alice", "Debut", "Rock", 2000),
-        )
-        .unwrap();
+        )?;
         insert_track(
             conn,
             &track("/m/b1.flac", "Bob", "Bob", "Solo", "Jazz", 2010),
-        )
-        .unwrap();
+        )?;
         insert_track(
             conn,
             &track("/m/c1.mp3", "Carol", "VA", "Comp", "Pop", 2020),
-        )
-        .unwrap();
-        insert_track(conn, &track("/m/c2.mp3", "Dave", "VA", "Comp", "Pop", 2020)).unwrap();
+        )?;
+        insert_track(conn, &track("/m/c2.mp3", "Dave", "VA", "Comp", "Pop", 2020))?;
+        Ok(())
     }
 
     fn artist_grouping() -> LibraryGrouping {
@@ -386,9 +384,9 @@ mod tests {
     }
 
     #[test]
-    fn query_all_returns_every_track() {
-        let conn = setup_db();
-        seed_library(&conn);
+    fn query_all_returns_every_track() -> MediaResult<()> {
+        let conn = setup_db()?;
+        seed_library(&conn)?;
         let tracks = query_tracks_for_node(
             &conn,
             BrowserNodeKind::All,
@@ -399,12 +397,13 @@ mod tests {
             &artist_grouping(),
         );
         assert_eq!(tracks.len(), 5);
+        Ok(())
     }
 
     #[test]
-    fn query_file_node_resolves_single_track_or_empty() {
-        let conn = setup_db();
-        seed_library(&conn);
+    fn query_file_node_resolves_single_track_or_empty() -> MediaResult<()> {
+        let conn = setup_db()?;
+        seed_library(&conn)?;
         let found = query_tracks_for_node(
             &conn,
             BrowserNodeKind::File,
@@ -427,12 +426,13 @@ mod tests {
             &artist_grouping(),
         );
         assert!(missing.is_empty());
+        Ok(())
     }
 
     #[test]
-    fn query_non_track_nodes_are_empty() {
-        let conn = setup_db();
-        seed_library(&conn);
+    fn query_non_track_nodes_are_empty() -> MediaResult<()> {
+        let conn = setup_db()?;
+        seed_library(&conn)?;
         for kind in [
             BrowserNodeKind::Divider,
             BrowserNodeKind::Station,
@@ -442,12 +442,13 @@ mod tests {
                 query_tracks_for_node(&conn, kind, "anything", "", "", None, &artist_grouping());
             assert!(tracks.is_empty(), "{kind:?} should resolve to no tracks");
         }
+        Ok(())
     }
 
     #[test]
-    fn query_album_genre_year_filter_by_their_column() {
-        let conn = setup_db();
-        seed_library(&conn);
+    fn query_album_genre_year_filter_by_their_column() -> MediaResult<()> {
+        let conn = setup_db()?;
+        seed_library(&conn)?;
         let g = artist_grouping();
 
         let album = query_tracks_for_node(&conn, BrowserNodeKind::Album, "Debut", "", "", None, &g);
@@ -464,12 +465,13 @@ mod tests {
         assert_eq!(year.len(), 2);
         let none = query_tracks_for_node(&conn, BrowserNodeKind::Year, "1999", "", "", None, &g);
         assert!(none.is_empty());
+        Ok(())
     }
 
     #[test]
-    fn artist_node_uses_artist_column_under_artist_grouping() {
-        let conn = setup_db();
-        seed_library(&conn);
+    fn artist_node_uses_artist_column_under_artist_grouping() -> MediaResult<()> {
+        let conn = setup_db()?;
+        seed_library(&conn)?;
         // Plain artist grouping → filters on `artist`. "VA" is an album_artist
         // only, so it matches nothing here.
         let by_artist = query_tracks_for_node(
@@ -492,12 +494,13 @@ mod tests {
             &artist_grouping(),
         );
         assert!(va.is_empty());
+        Ok(())
     }
 
     #[test]
-    fn artist_node_uses_album_artist_column_under_album_artist_grouping() {
-        let conn = setup_db();
-        seed_library(&conn);
+    fn artist_node_uses_album_artist_column_under_album_artist_grouping() -> MediaResult<()> {
+        let conn = setup_db()?;
+        seed_library(&conn)?;
         let g = LibraryGrouping {
             levels: [GroupBy::AlbumArtist, GroupBy::None, GroupBy::None],
         };
@@ -508,12 +511,13 @@ mod tests {
         let alice =
             query_tracks_for_node(&conn, BrowserNodeKind::Artist, "Alice", "", "", None, &g);
         assert_eq!(alice.len(), 2);
+        Ok(())
     }
 
     #[test]
-    fn secondary_adds_parent_column_filter() {
-        let conn = setup_db();
-        seed_library(&conn);
+    fn secondary_adds_parent_column_filter() -> MediaResult<()> {
+        let conn = setup_db()?;
+        seed_library(&conn)?;
         let g = artist_grouping();
         // Album "Debut" narrowed by parent artist=Alice keeps both tracks.
         let matched = query_tracks_for_node(
@@ -537,12 +541,13 @@ mod tests {
             &g,
         );
         assert!(none.is_empty());
+        Ok(())
     }
 
     #[test]
-    fn various_artists_node_returns_compilation_tracks() {
-        let conn = setup_db();
-        seed_library(&conn);
+    fn various_artists_node_returns_compilation_tracks() -> MediaResult<()> {
+        let conn = setup_db()?;
+        seed_library(&conn)?;
         let tracks = query_tracks_for_node(
             &conn,
             BrowserNodeKind::VariousArtists,
@@ -555,19 +560,21 @@ mod tests {
         // Only the two-artist "Comp" album qualifies.
         assert_eq!(tracks.len(), 2);
         assert!(tracks.iter().all(|t| t.album.as_deref() == Some("Comp")));
+        Ok(())
     }
 
     #[test]
-    fn tree_empty_library_is_default() {
-        let conn = setup_db();
+    fn tree_empty_library_is_default() -> MediaResult<()> {
+        let conn = setup_db()?;
         let tree_snapshot = build_library_tree_snapshot(&conn, &artist_grouping(), "", None);
         assert!(tree_snapshot.level0.is_empty());
+        Ok(())
     }
 
     #[test]
-    fn tree_songs_view_emits_flat_file_leaves() {
-        let conn = setup_db();
-        seed_library(&conn);
+    fn tree_songs_view_emits_flat_file_leaves() -> MediaResult<()> {
+        let conn = setup_db()?;
+        seed_library(&conn)?;
         let songs = LibraryGrouping {
             levels: [GroupBy::None, GroupBy::None, GroupBy::None],
         };
@@ -577,12 +584,13 @@ mod tests {
             .level0
             .iter()
             .all(|node| node.kind == BrowserNodeKind::File && node.children.is_empty()));
+        Ok(())
     }
 
     #[test]
-    fn tree_artist_grouping_has_all_tracks_then_various_then_groups() {
-        let conn = setup_db();
-        seed_library(&conn);
+    fn tree_artist_grouping_has_all_tracks_then_various_then_groups() -> MediaResult<()> {
+        let conn = setup_db()?;
+        seed_library(&conn)?;
         let tree_snapshot = build_library_tree_snapshot(&conn, &artist_grouping(), "", None);
 
         // First node is "All Tracks" carrying the total count.
@@ -593,9 +601,8 @@ mod tests {
         let various_artists_node = tree_snapshot
             .level0
             .iter()
-            .find(|node| node.kind == BrowserNodeKind::VariousArtists)
-            .expect("various-artists bucket present");
-        assert_eq!(various_artists_node.count, 2);
+            .find(|node| node.kind == BrowserNodeKind::VariousArtists);
+        assert_eq!(various_artists_node.map(|node| node.count), Some(2));
 
         // Artist groups: Alice, Bob, Carol, Dave — each a leaf level (depth 1)
         // whose children are file nodes.
@@ -605,22 +612,21 @@ mod tests {
             .filter(|node| node.kind == BrowserNodeKind::Artist)
             .collect();
         assert_eq!(artist_nodes.len(), 4);
-        let alice = artist_nodes
-            .iter()
-            .find(|node| node.key == "Alice")
-            .unwrap();
-        assert_eq!(alice.count, 2);
-        assert_eq!(alice.children.len(), 2);
-        assert!(alice
-            .children
-            .iter()
-            .all(|child| child.kind == BrowserNodeKind::File));
+        let alice = artist_nodes.iter().find(|node| node.key == "Alice");
+        assert_eq!(alice.map(|node| node.count), Some(2));
+        assert_eq!(alice.map(|node| node.children.len()), Some(2));
+        assert!(alice.is_some_and(|node| {
+            node.children
+                .iter()
+                .all(|child| child.kind == BrowserNodeKind::File)
+        }));
+        Ok(())
     }
 
     #[test]
-    fn tree_two_level_grouping_nests_albums_under_artists() {
-        let conn = setup_db();
-        seed_library(&conn);
+    fn tree_two_level_grouping_nests_albums_under_artists() -> MediaResult<()> {
+        let conn = setup_db()?;
+        seed_library(&conn)?;
         let grouping = LibraryGrouping {
             levels: [GroupBy::Artist, GroupBy::Album, GroupBy::None],
         };
@@ -628,24 +634,25 @@ mod tests {
         let alice = tree_snapshot
             .level0
             .iter()
-            .find(|node| node.kind == BrowserNodeKind::Artist && node.key == "Alice")
-            .unwrap();
+            .find(|node| node.kind == BrowserNodeKind::Artist && node.key == "Alice");
         // Alice → album "Debut" → two file leaves.
-        assert_eq!(alice.children.len(), 1);
-        let debut = &alice.children[0];
-        assert_eq!(debut.kind, BrowserNodeKind::Album);
-        assert_eq!(debut.key, "Debut");
-        assert_eq!(debut.children.len(), 2);
-        assert!(debut
-            .children
-            .iter()
-            .all(|child| child.kind == BrowserNodeKind::File));
+        assert_eq!(alice.map(|node| node.children.len()), Some(1));
+        let debut = alice.and_then(|node| node.children.first());
+        assert_eq!(debut.map(|node| node.kind), Some(BrowserNodeKind::Album));
+        assert_eq!(debut.map(|node| node.key.as_str()), Some("Debut"));
+        assert_eq!(debut.map(|node| node.children.len()), Some(2));
+        assert!(debut.is_some_and(|node| {
+            node.children
+                .iter()
+                .all(|child| child.kind == BrowserNodeKind::File)
+        }));
+        Ok(())
     }
 
     #[test]
-    fn tree_without_artist_top_level_has_no_various_bucket() {
-        let conn = setup_db();
-        seed_library(&conn);
+    fn tree_without_artist_top_level_has_no_various_bucket() -> MediaResult<()> {
+        let conn = setup_db()?;
+        seed_library(&conn)?;
         let grouping = LibraryGrouping {
             levels: [GroupBy::Genre, GroupBy::None, GroupBy::None],
         };
@@ -654,5 +661,6 @@ mod tests {
             .level0
             .iter()
             .all(|node| node.kind != BrowserNodeKind::VariousArtists));
+        Ok(())
     }
 }

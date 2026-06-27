@@ -308,14 +308,14 @@ impl VideoShell {
                 .width_chars(7)
                 .unit(i18n("s")),
         ]);
-        let start_spin = spin_set
-            .spin("start")
-            .expect("trim edit dialog start spin exists")
-            .clone();
-        let end_spin = spin_set
-            .spin("end")
-            .expect("trim edit dialog end spin exists")
-            .clone();
+        let Some(start_spin) = spin_set.spin("start").cloned() else {
+            log::warn!("trim edit dialog ignored because the start spin is missing");
+            return;
+        };
+        let Some(end_spin) = spin_set.spin("end").cloned() else {
+            log::warn!("trim edit dialog ignored because the end spin is missing");
+            return;
+        };
 
         let section = gtk::Box::builder()
             .orientation(gtk::Orientation::Vertical)

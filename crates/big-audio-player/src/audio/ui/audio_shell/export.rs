@@ -384,12 +384,44 @@ fn local_input_path(input: &str) -> Option<PathBuf> {
         return None;
     }
     if input.starts_with("file://") {
-        return gio::File::for_uri(input).path();
+        return local_file_uri_path(input);
     }
     if input.contains("://") {
         return None;
     }
     Some(PathBuf::from(input))
+}
+
+fn local_file_uri_path(input: &str) -> Option<PathBuf> {
+    let path_part = input.strip_prefix("file://")?;
+    let local_path = path_part.strip_prefix("localhost/").map_or_else(
+        || path_part.to_string(),
+        |path_after_host| format!("/{path_after_host}"),
+    );
+    if !local_path.starts_with('/') {
+        return None;
+    }
+    Some(PathBuf::from(percent_decode_uri_path(&local_path)))
+}
+
+fn percent_decode_uri_path(input: &str) -> String {
+    let bytes = input.as_bytes();
+    let mut decoded_bytes = Vec::with_capacity(bytes.len());
+    let mut index = 0;
+    while index < bytes.len() {
+        if bytes[index] == b'%' && index + 2 < bytes.len() {
+            let high_nibble = (bytes[index + 1] as char).to_digit(16);
+            let low_nibble = (bytes[index + 2] as char).to_digit(16);
+            if let (Some(high_nibble), Some(low_nibble)) = (high_nibble, low_nibble) {
+                decoded_bytes.push((high_nibble * 16 + low_nibble) as u8);
+                index += 3;
+                continue;
+            }
+        }
+        decoded_bytes.push(bytes[index]);
+        index += 1;
+    }
+    String::from_utf8_lossy(&decoded_bytes).into_owned()
 }
 
 fn run_segment_export_blocking(
@@ -482,12 +514,21 @@ mod tests {
             local_input_path("file:///tmp/song.flac"),
             Some(PathBuf::from("/tmp/song.flac"))
         );
+        assert_eq!(
+            local_input_path("file://localhost/tmp/song.flac"),
+            Some(PathBuf::from("/tmp/song.flac"))
+        );
+        assert_eq!(
+            local_input_path("file:///tmp/My%20Song.flac"),
+            Some(PathBuf::from("/tmp/My Song.flac"))
+        );
     }
 
     #[test]
     fn local_input_path_rejects_empty_values_and_streams() {
         assert_eq!(local_input_path(""), None);
         assert_eq!(local_input_path("   "), None);
+        assert_eq!(local_input_path("file://remote-host/tmp/song.flac"), None);
         assert_eq!(local_input_path("https://example.test/song.flac"), None);
         assert_eq!(local_input_path("rtmp://example.test/live"), None);
     }
