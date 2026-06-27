@@ -5,3 +5,8 @@
 # Keep mutation testing on nextest/unit targets so the baseline does not depend
 # on raw rustdoc doctest temp binaries.
 test_tool = "nextest"
+
+# Mutation debt is tracked for production behavior. Helpers compiled only inside
+# `#[cfg(test)] mod tests` are fixtures, not shipped logic, and mutating them
+# creates false debt that does not represent application behavior.
+exclude_re = ["tests::"]
