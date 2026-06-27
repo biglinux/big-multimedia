@@ -91,6 +91,50 @@ type ChildStores = Rc<RefCell<HashMap<String, gio::ListStore>>>;
 /// GObject so the drag-prepare closure stays DB-free (push-model).
 type LeafTracks = Rc<RefCell<HashMap<String, Track>>>;
 
+#[derive(Debug, Clone, PartialEq, Eq)]
+struct LibraryTreeAvatarPresentation {
+    text: String,
+    icon_name: Option<&'static str>,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+struct LibraryTreeRowPresentation {
+    label: String,
+    icon_name: String,
+    track_count_label: Option<String>,
+    avatar: Option<LibraryTreeAvatarPresentation>,
+    is_heading: bool,
+    is_file_leaf: bool,
+    is_activatable: bool,
+    is_selectable: bool,
+    show_icon: bool,
+    show_tracks_button: bool,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+struct FileLeafPresentation {
+    duration_label: Option<String>,
+    artist_label: Option<String>,
+    fallback_badge_label: Option<String>,
+    avatar_text: Option<String>,
+    has_embedded_art: bool,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+struct LibraryTreeSelection {
+    kind: u32,
+    key: String,
+    secondary: String,
+    depth: u32,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+enum LibraryTreeContextTarget {
+    Inert,
+    FileLeaf { file_path: String },
+    Group { selection: LibraryTreeSelection },
+}
+
 /// Handle the panel keeps to push tree data after construction. Owns the root
 /// store + the preloaded child stores; `set_tree` splices both atomically.
 pub(super) struct LibraryTreeHandle {
@@ -245,6 +289,159 @@ fn build_tree_model(root_store: &gio::ListStore, child_stores: &ChildStores) -> 
     })
 }
 
+fn library_tree_row_presentation(node: &BrowserNode) -> LibraryTreeRowPresentation {
+    let kind = node.kind();
+    if kind == BrowserNodeKind::Divider {
+        return LibraryTreeRowPresentation {
+            label: node.label(),
+            icon_name: String::new(),
+            track_count_label: None,
+            avatar: None,
+            is_heading: true,
+            is_file_leaf: false,
+            is_activatable: false,
+            is_selectable: false,
+            show_icon: false,
+            show_tracks_button: false,
+        };
+    }
+
+    if kind == BrowserNodeKind::File {
+        return LibraryTreeRowPresentation {
+            label: node.label(),
+            icon_name: node.icon_name(),
+            track_count_label: None,
+            avatar: None,
+            is_heading: false,
+            is_file_leaf: true,
+            is_activatable: true,
+            is_selectable: true,
+            show_icon: true,
+            show_tracks_button: false,
+        };
+    }
+
+    let is_album = kind == BrowserNodeKind::Album;
+    let is_various_artists = kind == BrowserNodeKind::VariousArtists;
+    let avatar = if is_album {
+        Some(LibraryTreeAvatarPresentation {
+            text: node.label(),
+            icon_name: None,
+        })
+    } else if is_various_artists {
+        Some(LibraryTreeAvatarPresentation {
+            text: i18n("Various Artists"),
+            icon_name: Some("system-users-symbolic"),
+        })
+    } else {
+        None
+    };
+    let track_count = node.track_count();
+
+    LibraryTreeRowPresentation {
+        label: node.label(),
+        icon_name: node.icon_name(),
+        track_count_label: (track_count > 0).then(|| track_count.to_string()),
+        avatar,
+        is_heading: false,
+        is_file_leaf: false,
+        is_activatable: true,
+        is_selectable: true,
+        show_icon: !is_album && !is_various_artists,
+        show_tracks_button: true,
+    }
+}
+
+fn file_leaf_presentation(
+    node: &BrowserNode,
+    source_track: Option<&Track>,
+) -> FileLeafPresentation {
+    let secondary = node.secondary();
+    let secondary_fields: Vec<&str> = secondary.splitn(4, '\t').collect();
+    if secondary_fields.len() < 2 {
+        return FileLeafPresentation {
+            duration_label: None,
+            artist_label: None,
+            fallback_badge_label: (!secondary.is_empty()).then_some(secondary),
+            avatar_text: None,
+            has_embedded_art: false,
+        };
+    }
+
+    let duration = secondary_fields[1].to_string();
+    let artist = secondary_fields.get(2).copied().unwrap_or("");
+    let artist_label = (!artist.is_empty()).then(|| artist.to_string());
+    let avatar_text = artist_label.clone().unwrap_or_else(|| node.label());
+    let has_embedded_art = source_track
+        .and_then(|track| track.art_hash.as_deref())
+        .is_some_and(|art_hash| !art_hash.is_empty());
+
+    FileLeafPresentation {
+        duration_label: Some(duration),
+        artist_label,
+        fallback_badge_label: None,
+        avatar_text: Some(avatar_text),
+        has_embedded_art,
+    }
+}
+
+fn selected_leaf_drag_paths<'a>(
+    selected_browser_nodes: impl IntoIterator<Item = &'a BrowserNode>,
+    registered_leaf_tracks: &HashMap<String, Track>,
+) -> Vec<String> {
+    selected_browser_nodes
+        .into_iter()
+        .filter_map(|node| {
+            let file_path = node.key();
+            (node.kind() == BrowserNodeKind::File
+                && registered_leaf_tracks.contains_key(&file_path))
+            .then_some(file_path)
+        })
+        .collect()
+}
+
+fn library_tree_selection(node: &BrowserNode, depth: u32) -> Option<LibraryTreeSelection> {
+    if node.kind() == BrowserNodeKind::Divider {
+        return None;
+    }
+    Some(LibraryTreeSelection {
+        kind: node.kind() as u32,
+        key: node.key(),
+        secondary: node.secondary(),
+        depth,
+    })
+}
+
+fn library_tree_context_target(
+    node: &BrowserNode,
+    depth: u32,
+    registered_leaf_tracks: &HashMap<String, Track>,
+) -> LibraryTreeContextTarget {
+    if node.kind() == BrowserNodeKind::Divider {
+        return LibraryTreeContextTarget::Inert;
+    }
+    if node.kind() == BrowserNodeKind::File {
+        let file_path = node.key();
+        if registered_leaf_tracks.contains_key(&file_path) {
+            return LibraryTreeContextTarget::FileLeaf { file_path };
+        }
+        return LibraryTreeContextTarget::Inert;
+    }
+    let Some(selection) = library_tree_selection(node, depth) else {
+        return LibraryTreeContextTarget::Inert;
+    };
+    LibraryTreeContextTarget::Group { selection }
+}
+
+fn library_panel_node_selected_output(selection: &LibraryTreeSelection) -> LibraryPanelOutput {
+    LibraryPanelOutput::NodeSelected {
+        kind: selection.kind,
+        key: selection.key.clone(),
+        secondary: selection.secondary.clone(),
+        depth: selection.depth,
+    }
+}
+
 /// Row factory: a `TreeExpander` wrapping icon + avatar + label/artist + count.
 fn build_tree_factory(
     leaf_tracks: &LeafTracks,
@@ -381,26 +578,27 @@ fn bind_tree_row(
     };
     disconnect_show_tracks_button(&show_tracks_button);
 
-    let kind = node.kind();
-    if kind == BrowserNodeKind::Divider {
-        icon.set_visible(false);
-        avatar.set_visible(false);
-        label.set_label(&node.label());
+    let row_presentation = library_tree_row_presentation(&node);
+    icon.set_visible(row_presentation.show_icon);
+    avatar.set_visible(row_presentation.avatar.is_some());
+    label.set_label(&row_presentation.label);
+    list_item.set_activatable(row_presentation.is_activatable);
+    list_item.set_selectable(row_presentation.is_selectable);
+    show_tracks_button.set_visible(row_presentation.show_tracks_button);
+    if row_presentation.is_heading {
         label.add_css_class("heading");
+    } else {
+        label.remove_css_class("heading");
+    }
+
+    if row_presentation.is_heading {
         artist_label.set_visible(false);
         track_count_label.set_visible(false);
-        show_tracks_button.set_visible(false);
-        list_item.set_activatable(false);
-        list_item.set_selectable(false);
         return;
     }
-    label.remove_css_class("heading");
-    list_item.set_activatable(true);
-    list_item.set_selectable(true);
-    icon.set_icon_name(Some(&node.icon_name()));
-    label.set_label(&node.label());
 
-    if kind == BrowserNodeKind::File {
+    icon.set_icon_name(Some(&row_presentation.icon_name));
+    if row_presentation.is_file_leaf {
         bind_file_leaf(
             &node,
             &icon,
@@ -410,7 +608,6 @@ fn bind_tree_row(
             &track_count_label,
             leaves,
         );
-        show_tracks_button.set_visible(false);
         return;
     }
 
@@ -418,24 +615,18 @@ fn bind_tree_row(
     label.remove_css_class("browser-title");
     big_relm4_components::feedback::tooltip::set(&text_box, &node.label());
 
-    let count = node.track_count();
-    track_count_label.set_visible(count > 0);
-    track_count_label.set_label(&if count > 0 {
-        count.to_string()
+    if let Some(track_count_label_text) = &row_presentation.track_count_label {
+        track_count_label.set_visible(true);
+        track_count_label.set_label(track_count_label_text);
     } else {
-        String::new()
-    });
+        track_count_label.set_visible(false);
+        track_count_label.set_label("");
+    }
 
-    let is_album = kind == BrowserNodeKind::Album;
-    let is_va = kind == BrowserNodeKind::VariousArtists;
-    avatar.set_visible(is_album || is_va);
-    icon.set_visible(!is_album && !is_va);
-    if is_album {
-        avatar.set_text(Some(&node.label()));
+    if let Some(avatar_presentation) = &row_presentation.avatar {
+        avatar.set_text(Some(&avatar_presentation.text));
+        avatar.set_icon_name(avatar_presentation.icon_name);
         avatar.set_custom_image(None::<&gdk::Paintable>);
-    } else if is_va {
-        avatar.set_text(Some("Various Artists"));
-        avatar.set_icon_name(Some("system-users-symbolic"));
     }
     bind_show_tracks_button(&show_tracks_button, &node, tree_row.depth(), sender);
 }
@@ -461,16 +652,12 @@ fn bind_show_tracks_button(
     big_relm4_components::feedback::tooltip::set(button, &action_label);
 
     let out = sender.clone();
-    let kind = node.kind() as u32;
-    let key = node.key();
-    let secondary = node.secondary();
+    let Some(selection) = library_tree_selection(node, depth) else {
+        button.set_visible(false);
+        return;
+    };
     let click_signal_id = button.connect_clicked(move |_| {
-        let _ = out.output(LibraryPanelOutput::NodeSelected {
-            kind,
-            key: key.clone(),
-            secondary: secondary.clone(),
-            depth,
-        });
+        let _ = out.output(library_panel_node_selected_output(&selection));
     });
     unsafe {
         button.set_data("show-tracks-click-signal-id", click_signal_id);
@@ -499,61 +686,59 @@ fn bind_file_leaf(
     track_count_label: &gtk::Label,
     leaves: &LeafTracks,
 ) {
-    let secondary = node.secondary();
-    let parts: Vec<&str> = secondary.splitn(4, '\t').collect();
-    if parts.len() < 2 {
+    let file_path = node.key();
+    let presentation = {
+        let registered_leaf_tracks = leaves.borrow();
+        file_leaf_presentation(node, registered_leaf_tracks.get(&file_path))
+    };
+    if let Some(fallback_badge_label) = &presentation.fallback_badge_label {
         avatar.set_visible(false);
         icon.set_visible(true);
         artist_label.set_visible(false);
-        track_count_label.set_visible(!secondary.is_empty());
-        track_count_label.set_label(&secondary);
+        track_count_label.set_visible(true);
+        track_count_label.set_label(fallback_badge_label);
+        return;
+    }
+    if presentation.duration_label.is_none() {
+        avatar.set_visible(false);
+        icon.set_visible(true);
+        artist_label.set_visible(false);
+        track_count_label.set_visible(false);
+        track_count_label.set_label("");
         return;
     }
 
-    let duration = parts[1];
-    let artist = parts.get(2).copied().unwrap_or("");
-    track_count_label.set_label(duration);
+    track_count_label.set_label(presentation.duration_label.as_deref().unwrap_or(""));
     track_count_label.set_visible(true);
     track_count_label.add_css_class("browser-duration");
     avatar.set_visible(true);
     icon.set_visible(false);
     label.add_css_class("browser-title");
-    if artist.is_empty() {
-        artist_label.set_visible(false);
-    } else {
-        artist_label.set_label(artist);
+    if let Some(artist_label_text) = &presentation.artist_label {
+        artist_label.set_label(artist_label_text);
         artist_label.set_visible(true);
-    }
-    let initials = if artist.is_empty() {
-        node.label()
     } else {
-        artist.to_string()
-    };
-    avatar.set_text(Some(&initials));
+        artist_label.set_visible(false);
+    }
+    avatar.set_text(presentation.avatar_text.as_deref());
     avatar.set_custom_image(None::<&gdk::Paintable>);
 
     // Resolve the source path from the leaf-track map (set on splice) and load
     // the embedded thumbnail off-thread. No DB hit — file IO only.
-    let file_path = node.key();
-    let has_art = leaves
-        .borrow()
-        .get(&file_path)
-        .is_some_and(|t| t.art_hash.as_deref().is_some_and(|h| !h.is_empty()));
-    if !has_art {
-        return;
+    if presentation.has_embedded_art {
+        let avatar = avatar.clone();
+        big_media_components::player_chrome::spawn_blocking_result(
+            move || crate::library::metadata::extract_album_art(&file_path),
+            move |data| {
+                let Some(data) = data else { return };
+                if let Some(texture) =
+                    big_media_components::media::images::bytes_to_thumbnail(&data, LEAF_ART_PX)
+                {
+                    avatar.set_custom_image(Some(&texture));
+                }
+            },
+        );
     }
-    let avatar = avatar.clone();
-    big_media_components::player_chrome::spawn_blocking_result(
-        move || crate::library::metadata::extract_album_art(&file_path),
-        move |data| {
-            let Some(data) = data else { return };
-            if let Some(texture) =
-                big_media_components::media::images::bytes_to_thumbnail(&data, LEAF_ART_PX)
-            {
-                avatar.set_custom_image(Some(&texture));
-            }
-        },
-    );
 }
 
 /// Single-click/keyboard activation → resolve the row's node → `NodeSelected`
@@ -570,15 +755,10 @@ fn wire_activation(list_view: &gtk::ListView, sender: &ComponentSender<LibraryPa
         let Some(node) = tree_row.item().and_downcast::<BrowserNode>() else {
             return;
         };
-        if node.kind() == BrowserNodeKind::Divider {
+        let Some(selection) = library_tree_selection(&node, tree_row.depth()) else {
             return;
-        }
-        let _ = out.output(LibraryPanelOutput::NodeSelected {
-            kind: node.kind() as u32,
-            key: node.key(),
-            secondary: node.secondary(),
-            depth: tree_row.depth(),
-        });
+        };
+        let _ = out.output(library_panel_node_selected_output(&selection));
     });
 }
 
@@ -614,32 +794,26 @@ fn wire_context_menu(
         let Some(node) = tree_row.item().and_downcast::<BrowserNode>() else {
             return;
         };
-        if node.kind() == BrowserNodeKind::Divider {
-            return;
-        }
+        let context_target = {
+            let registered_leaf_tracks = leaves.borrow();
+            library_tree_context_target(&node, tree_row.depth(), &registered_leaf_tracks)
+        };
         let menu = BigContextPopover::new(false);
-        if node.kind() == BrowserNodeKind::File {
-            let Some(track) = leaves.borrow().get(&node.key()).cloned() else {
-                return;
-            };
-            add_leaf_menu_items(&menu, &track, &out);
-        } else {
-            // Group node: a single Play that enqueues all of its tracks.
-            let output_sender = out.clone();
-            let (kind, key, secondary, depth) = (
-                node.kind() as u32,
-                node.key(),
-                node.secondary(),
-                tree_row.depth(),
-            );
-            menu.append_button(i18n("Play"), &[], move || {
-                let _ = output_sender.output(LibraryPanelOutput::NodeSelected {
-                    kind,
-                    key: key.clone(),
-                    secondary: secondary.clone(),
-                    depth,
+        match context_target {
+            LibraryTreeContextTarget::Inert => return,
+            LibraryTreeContextTarget::FileLeaf { file_path } => {
+                let Some(track) = leaves.borrow().get(&file_path).cloned() else {
+                    return;
+                };
+                add_leaf_menu_items(&menu, &track, &out);
+            }
+            LibraryTreeContextTarget::Group { selection } => {
+                // Group node: a single Play that enqueues all of its tracks.
+                let output_sender = out.clone();
+                menu.append_button(i18n("Play"), &[], move || {
+                    let _ = output_sender.output(library_panel_node_selected_output(&selection));
                 });
-            });
+            }
         }
         menu.popup_at(list_view.upcast_ref::<gtk::Widget>(), x, y);
     });
@@ -703,8 +877,8 @@ fn build_leaf_drag_source(
         if bitset.is_empty() {
             return None;
         }
-        let known = leaves.borrow();
-        let mut paths = Vec::with_capacity(bitset.size() as usize);
+        let registered_leaf_tracks = leaves.borrow();
+        let mut selected_browser_nodes = Vec::with_capacity(bitset.size() as usize);
         for selected_index in 0..bitset.size() {
             let Some(tree_row) = selection_model
                 .item(bitset.nth(selected_index as u32))
@@ -715,10 +889,10 @@ fn build_leaf_drag_source(
             let Some(node) = tree_row.item().and_downcast::<BrowserNode>() else {
                 continue;
             };
-            if node.kind() == BrowserNodeKind::File && known.contains_key(&node.key()) {
-                paths.push(node.key());
-            }
+            selected_browser_nodes.push(node);
         }
+        let paths =
+            selected_leaf_drag_paths(selected_browser_nodes.iter(), &registered_leaf_tracks);
         if paths.is_empty() {
             return None;
         }
@@ -914,6 +1088,248 @@ mod tests {
         assert_eq!(
             browser_node_with_secondary.secondary(),
             "Album\t1:01\tArtist\thash"
+        );
+    }
+
+    #[test]
+    fn row_presentation_makes_dividers_inert_headings() {
+        let divider_node = BrowserNode::divider("B");
+        let presentation = library_tree_row_presentation(&divider_node);
+
+        assert_eq!(presentation.label, "B");
+        assert!(presentation.is_heading);
+        assert!(!presentation.is_file_leaf);
+        assert!(!presentation.is_activatable);
+        assert!(!presentation.is_selectable);
+        assert!(!presentation.show_icon);
+        assert!(!presentation.show_tracks_button);
+        assert_eq!(presentation.track_count_label, None);
+        assert_eq!(presentation.avatar, None);
+    }
+
+    #[test]
+    fn row_presentation_keeps_file_leaves_for_leaf_binder() {
+        let file_node = BrowserNode::track_node("Song", "/music/song.flac", 65.0);
+        let presentation = library_tree_row_presentation(&file_node);
+
+        assert_eq!(presentation.label, "Song");
+        assert_eq!(presentation.icon_name, "audio-x-generic-symbolic");
+        assert!(presentation.is_file_leaf);
+        assert!(presentation.is_activatable);
+        assert!(presentation.is_selectable);
+        assert!(presentation.show_icon);
+        assert!(!presentation.show_tracks_button);
+    }
+
+    #[test]
+    fn row_presentation_uses_count_badge_and_icon_for_regular_groups() {
+        let artist_node = BrowserNode::artist("Alice", 7);
+        let presentation = library_tree_row_presentation(&artist_node);
+
+        assert_eq!(presentation.label, "Alice");
+        assert_eq!(presentation.icon_name, "avatar-default-symbolic");
+        assert_eq!(presentation.track_count_label, Some("7".to_string()));
+        assert_eq!(presentation.avatar, None);
+        assert!(presentation.show_icon);
+        assert!(presentation.show_tracks_button);
+
+        let empty_genre_node = BrowserNode::genre("Ambient", 0);
+        let empty_genre_presentation = library_tree_row_presentation(&empty_genre_node);
+        assert_eq!(empty_genre_presentation.track_count_label, None);
+        assert!(empty_genre_presentation.show_icon);
+    }
+
+    #[test]
+    fn row_presentation_uses_avatar_for_album_and_various_artists() {
+        let album_node = BrowserNode::album("Debut", "Alice", 3);
+        let album_presentation = library_tree_row_presentation(&album_node);
+
+        assert_eq!(
+            album_presentation.avatar,
+            Some(LibraryTreeAvatarPresentation {
+                text: "Debut".to_string(),
+                icon_name: None,
+            })
+        );
+        assert!(!album_presentation.show_icon);
+        assert_eq!(album_presentation.track_count_label, Some("3".to_string()));
+
+        let various_artists_node = BrowserNode::various_artists(4);
+        let various_artists_presentation = library_tree_row_presentation(&various_artists_node);
+        assert_eq!(
+            various_artists_presentation.avatar,
+            Some(LibraryTreeAvatarPresentation {
+                text: i18n("Various Artists"),
+                icon_name: Some("system-users-symbolic"),
+            })
+        );
+        assert!(!various_artists_presentation.show_icon);
+    }
+
+    #[test]
+    fn file_leaf_presentation_handles_badge_fallback_and_detailed_metadata() {
+        let fallback_node = BrowserNode::file_node("Loose", "/music/loose.flac");
+        fallback_node.set_secondary("3:04");
+        assert_eq!(
+            file_leaf_presentation(&fallback_node, None),
+            FileLeafPresentation {
+                duration_label: None,
+                artist_label: None,
+                fallback_badge_label: Some("3:04".to_string()),
+                avatar_text: None,
+                has_embedded_art: false,
+            }
+        );
+
+        let empty_secondary_node = BrowserNode::file_node("Plain", "/music/plain.flac");
+        assert_eq!(
+            file_leaf_presentation(&empty_secondary_node, None),
+            FileLeafPresentation {
+                duration_label: None,
+                artist_label: None,
+                fallback_badge_label: None,
+                avatar_text: None,
+                has_embedded_art: false,
+            }
+        );
+
+        let detailed_node = BrowserNode::file_node("Detailed", "/music/detailed.flac");
+        detailed_node.set_secondary("Album\t4:20\tAlice\tcover-hash");
+        let mut track_with_art = Track::new_external_path("/music/detailed.flac");
+        track_with_art.art_hash = Some("cover-hash".to_string());
+        assert_eq!(
+            file_leaf_presentation(&detailed_node, Some(&track_with_art)),
+            FileLeafPresentation {
+                duration_label: Some("4:20".to_string()),
+                artist_label: Some("Alice".to_string()),
+                fallback_badge_label: None,
+                avatar_text: Some("Alice".to_string()),
+                has_embedded_art: true,
+            }
+        );
+
+        let minimal_detailed_node = BrowserNode::file_node("Short", "/music/short.flac");
+        minimal_detailed_node.set_secondary("Album\t0:59");
+        assert_eq!(
+            file_leaf_presentation(&minimal_detailed_node, None),
+            FileLeafPresentation {
+                duration_label: Some("0:59".to_string()),
+                artist_label: None,
+                fallback_badge_label: None,
+                avatar_text: Some("Short".to_string()),
+                has_embedded_art: false,
+            }
+        );
+
+        let no_artist_node = BrowserNode::file_node("Instrumental", "/music/instrumental.flac");
+        no_artist_node.set_secondary("Album\t2:10\t\t");
+        assert_eq!(
+            file_leaf_presentation(&no_artist_node, None),
+            FileLeafPresentation {
+                duration_label: Some("2:10".to_string()),
+                artist_label: None,
+                fallback_badge_label: None,
+                avatar_text: Some("Instrumental".to_string()),
+                has_embedded_art: false,
+            }
+        );
+    }
+
+    #[test]
+    fn selected_leaf_drag_paths_exports_only_registered_file_leaves() {
+        let registered_leaf_node = BrowserNode::file_node("Ready", "/music/ready.flac");
+        let missing_leaf_node = BrowserNode::file_node("Missing", "/music/missing.flac");
+        let artist_node = BrowserNode::artist("Alice", 1);
+        let selected_browser_nodes = [registered_leaf_node, missing_leaf_node, artist_node];
+        let mut registered_leaf_tracks = HashMap::new();
+        registered_leaf_tracks.insert(
+            "/music/ready.flac".to_string(),
+            Track::new_external_path("/music/ready.flac"),
+        );
+
+        assert_eq!(
+            selected_leaf_drag_paths(selected_browser_nodes.iter(), &registered_leaf_tracks),
+            vec!["/music/ready.flac".to_string()]
+        );
+    }
+
+    #[test]
+    fn library_tree_selection_ignores_dividers_and_preserves_node_identity() {
+        let divider_node = BrowserNode::divider("C");
+        assert_eq!(library_tree_selection(&divider_node, 2), None);
+
+        let album_node = BrowserNode::album("Debut", "Alice", 8);
+        assert_eq!(
+            library_tree_selection(&album_node, 3),
+            Some(LibraryTreeSelection {
+                kind: BrowserNodeKind::Album as u32,
+                key: "Debut".to_string(),
+                secondary: "Alice".to_string(),
+                depth: 3,
+            })
+        );
+    }
+
+    #[test]
+    fn node_selected_output_preserves_tree_selection_payload() {
+        let output = library_panel_node_selected_output(&LibraryTreeSelection {
+            kind: BrowserNodeKind::Album as u32,
+            key: "Debut".to_string(),
+            secondary: "Alice".to_string(),
+            depth: 3,
+        });
+
+        let LibraryPanelOutput::NodeSelected {
+            kind,
+            key,
+            secondary,
+            depth,
+        } = output
+        else {
+            panic!("expected node selection output");
+        };
+        assert_eq!(kind, BrowserNodeKind::Album as u32);
+        assert_eq!(key, "Debut");
+        assert_eq!(secondary, "Alice");
+        assert_eq!(depth, 3);
+    }
+
+    #[test]
+    fn context_target_distinguishes_inert_files_and_groups() {
+        let divider_node = BrowserNode::divider("D");
+        let registered_file_node = BrowserNode::file_node("Ready", "/music/ready.flac");
+        let missing_file_node = BrowserNode::file_node("Missing", "/music/missing.flac");
+        let genre_node = BrowserNode::genre("Jazz", 5);
+        let mut registered_leaf_tracks = HashMap::new();
+        registered_leaf_tracks.insert(
+            "/music/ready.flac".to_string(),
+            Track::new_external_path("/music/ready.flac"),
+        );
+
+        assert_eq!(
+            library_tree_context_target(&divider_node, 0, &registered_leaf_tracks),
+            LibraryTreeContextTarget::Inert
+        );
+        assert_eq!(
+            library_tree_context_target(&missing_file_node, 1, &registered_leaf_tracks),
+            LibraryTreeContextTarget::Inert
+        );
+        assert_eq!(
+            library_tree_context_target(&registered_file_node, 1, &registered_leaf_tracks),
+            LibraryTreeContextTarget::FileLeaf {
+                file_path: "/music/ready.flac".to_string(),
+            }
+        );
+        assert_eq!(
+            library_tree_context_target(&genre_node, 2, &registered_leaf_tracks),
+            LibraryTreeContextTarget::Group {
+                selection: LibraryTreeSelection {
+                    kind: BrowserNodeKind::Genre as u32,
+                    key: "Jazz".to_string(),
+                    secondary: String::new(),
+                    depth: 2,
+                },
+            }
         );
     }
 
