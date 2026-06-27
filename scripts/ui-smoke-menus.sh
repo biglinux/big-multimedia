@@ -2,7 +2,7 @@
 set -euo pipefail
 
 SCRIPT_NAME="${0##*/}"
-OUT_DIR="${OUT_DIR:-/tmp/big-multimedia-ui-smoke}"
+OUT_DIR="${OUT_DIR:-${BIGLINUX_UI_EVIDENCE_DIR:-/tmp/big-multimedia-ui-smoke}}"
 RUN_AUDIO=0
 RUN_VIDEO=0
 KEEP_RUNNING=0
@@ -47,7 +47,7 @@ screenshots. Set AIGUI_HOST/AIGUI_PASS when driving the VM.
 
 Environment:
   AIGUI     Path to the aigui script. Auto-detected from PATH, AGENTS_HOME, or HOME.
-  OUT_DIR   Local screenshot directory. Default: $OUT_DIR
+  OUT_DIR   Local evidence directory. Default: BIGLINUX_UI_EVIDENCE_DIR or $OUT_DIR
 EOF
 }
 
@@ -88,7 +88,16 @@ capture_shot() {
 	mkdir -p "$OUT_DIR"
 	run_aigui --out "$path" shot >/dev/null
 	assert_1280x720 "$path"
+	assert_grid_screenshot "$path"
 	printf '%s\n' "$path"
+}
+
+capture_accessibility_bundle() {
+	local name="$1"
+
+	run_aigui layout >"$OUT_DIR/$name.layout.txt"
+	run_aigui targets >"$OUT_DIR/$name.targets.txt"
+	run_aigui tree >"$OUT_DIR/$name.tree.txt"
 }
 
 assert_1280x720() {
@@ -99,6 +108,14 @@ assert_1280x720() {
 	*"1280 x 720"*) ;;
 	*) fail "expected 1280x720 screenshot, got: $description" ;;
 	esac
+}
+
+assert_grid_screenshot() {
+	local screenshot_path="$1"
+	local grid_path="${screenshot_path%.png}.grid.png"
+
+	[ -s "$grid_path" ] || fail "missing grid screenshot: $grid_path"
+	assert_1280x720 "$grid_path"
 }
 
 open_menu_and_capture() {
@@ -113,6 +130,7 @@ open_menu_and_capture() {
 	sleep 0.4
 	local shot
 	shot="$(capture_shot "$shot_name")"
+	capture_accessibility_bundle "$shot_name"
 	note "Captured $shot"
 	run_aigui key esc >/dev/null || true
 }
@@ -122,6 +140,7 @@ launch_module() {
 	local module="$2"
 
 	run_aigui stop "$unit" >/dev/null 2>&1 || true
+	printf '/usr/bin/big-host --separate %s\n' "$module" >"$OUT_DIR/$unit.launch-command.txt"
 	run_aigui launch "$unit" -- /usr/bin/big-host --separate "$module" >/dev/null
 	wait_for_control "=Main Menu" button 15000
 }
@@ -178,6 +197,9 @@ while [ "$#" -gt 0 ]; do
 done
 
 [ -x "$AIGUI" ] || fail "aigui not executable: $AIGUI"
+mkdir -p "$OUT_DIR"
+run_aigui resolution >"$OUT_DIR/aigui-resolution.txt"
+
 if [ "$RUN_AUDIO" -eq 0 ] && [ "$RUN_VIDEO" -eq 0 ]; then
 	RUN_AUDIO=1
 	RUN_VIDEO=1
