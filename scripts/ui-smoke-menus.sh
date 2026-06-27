@@ -43,7 +43,9 @@ usage() {
 Usage: $SCRIPT_NAME [--audio] [--video] [--all] [--keep-running]
 
 Drives the installed big-host media modules through aigui and captures menu
-screenshots. Set AIGUI_HOST/AIGUI_PASS when driving the VM.
+screenshots. Set AIGUI_HOST/AIGUI_PASS when driving the VM. Without AIGUI_HOST,
+the script refuses to touch the local graphical session unless
+BIGLINUX_ALLOW_LOCAL_UI_SMOKE=1 is set for an explicit disposable local session.
 
 Environment:
   AIGUI     Path to the aigui script. Auto-detected from PATH, AGENTS_HOME, or HOME.
@@ -197,6 +199,8 @@ while [ "$#" -gt 0 ]; do
 done
 
 [ -x "$AIGUI" ] || fail "aigui not executable: $AIGUI"
+[ -n "${AIGUI_HOST:-}" ] || [ "${BIGLINUX_ALLOW_LOCAL_UI_SMOKE:-0}" = "1" ] ||
+	fail "refusing to drive the local graphical session without AIGUI_HOST; use VM or BIGLINUX_ALLOW_LOCAL_UI_SMOKE=1 only for a disposable local session"
 mkdir -p "$OUT_DIR"
 run_aigui resolution >"$OUT_DIR/aigui-resolution.txt"
 

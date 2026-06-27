@@ -26,6 +26,7 @@ use big_relm4_components::layout::column_chrome::wire_configure_columns_menu;
 use big_relm4_components::layout::column_persist::{
     apply_column_widths, wire_column_width_persist,
 };
+use big_relm4_components::layout::toolbar_pane::{BigToolbarPane, BigToolbarPaneSpec};
 
 use crate::audio::ui::{playlist_chrome, playlist_columns, playlist_interactions};
 use crate::db::models::Track;
@@ -282,7 +283,7 @@ impl Component for PlaylistPanel {
     type Widgets = ();
 
     fn init_root() -> Self::Root {
-        adw::ToolbarView::new()
+        BigToolbarPane::new(BigToolbarPaneSpec::new()).into_root()
     }
 
     fn init(

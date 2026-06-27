@@ -13,6 +13,7 @@ use big_relm4_components::layout::{
     dialog_page::BigDialogPage,
     hamburger_menu::{build_hamburger_menu_button, BigHamburgerMenuSpec, BigMenuActionItem},
     preferences::BigPreferencesGroupSpec,
+    toolbar_pane::{BigToolbarHeader, BigToolbarHeaderSpec},
 };
 use gtk::{gio, glib};
 use relm4::ComponentSender;
@@ -40,11 +41,6 @@ pub(super) fn build_toolbar(
     // owns the left window buttons; this one owns the right. Only the hamburger
     // is exposed — every queue/settings action lives in its menu, like the old
     // player (whose header buttons were hidden by default).
-    let bar = adw::HeaderBar::builder()
-        .show_start_title_buttons(false)
-        .build();
-    bar.add_css_class("playlist-toolbar");
-
     // Centred title widget: the queue name when empty, "N tracks · duration"
     // when full (the panel refreshes it on every queue change).
     let header_label = gtk::Label::builder()
@@ -52,7 +48,12 @@ pub(super) fn build_toolbar(
         .ellipsize(gtk::pango::EllipsizeMode::End)
         .build();
     header_label.add_css_class("heading");
-    bar.set_title_widget(Some(&header_label));
+    let bar = BigToolbarHeader::with_title_widget(
+        BigToolbarHeaderSpec::new()
+            .show_start_title_buttons(false)
+            .css_class("playlist-toolbar"),
+        &header_label,
+    );
 
     let main_menu_label = i18n("Main Menu");
     let menu_button = build_hamburger_menu_button(
@@ -61,7 +62,7 @@ pub(super) fn build_toolbar(
     install_queue_menu_actions(&menu_button, sender);
     bar.pack_end(&menu_button);
 
-    (bar, header_label)
+    (bar.into_root(), header_label)
 }
 
 fn main_menu_items() -> Vec<BigMenuActionItem> {

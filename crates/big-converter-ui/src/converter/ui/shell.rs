@@ -33,6 +33,9 @@ use big_media_components::converter::queue_component::{
     BigConverterQueue, BigConverterQueueInput, BigConverterQueueOutput,
 };
 use big_os_kit::microdaemon::DurableJobSnapshot;
+use big_relm4_components::layout::toolbar_pane::{
+    BigToolbarHeader, BigToolbarHeaderSpec, BigToolbarPane, BigToolbarPaneSpec,
+};
 
 use crate::cast::gpu::{GpuDevice, detect_all_gpus};
 use crate::converter::app::ConverterMode;
@@ -439,19 +442,22 @@ impl Component for ConverterShell {
             split_view.clone().upcast::<gtk::Widget>()
         };
 
-        let progress_toolbar = adw::ToolbarView::new();
-        let progress_header = adw::HeaderBar::builder()
-            .title_widget(&gtk::Label::new(Some(&i18n(if mode.is_audio() {
-                "Converting Audio"
-            } else {
-                "Converting Videos"
-            }))))
-            .show_start_title_buttons(false)
-            .show_end_title_buttons(true)
-            .css_classes(["flat"])
-            .build();
-        progress_toolbar.add_top_bar(&progress_header);
-        progress_toolbar.set_content(Some(progress.widget()));
+        let progress_title = gtk::Label::new(Some(&i18n(if mode.is_audio() {
+            "Converting Audio"
+        } else {
+            "Converting Videos"
+        })));
+        let progress_pane = BigToolbarPane::new(BigToolbarPaneSpec::new());
+        let progress_header = BigToolbarHeader::with_title_widget(
+            BigToolbarHeaderSpec::new()
+                .show_start_title_buttons(false)
+                .show_end_title_buttons(true)
+                .css_class("flat"),
+            &progress_title,
+        );
+        progress_pane.add_top_bar(progress_header.root());
+        progress_pane.set_content(progress.widget());
+        let progress_toolbar = progress_pane.into_root();
 
         main_stack.add_named(&main_layout, Some("main"));
         main_stack.add_named(&progress_toolbar, Some("progress"));
@@ -473,9 +479,9 @@ impl Component for ConverterShell {
             .build();
         nav_view.push(&wrapper);
 
-        let toolbar = adw::ToolbarView::new();
-        toolbar.set_content(Some(&nav_view));
-        window.set_content(Some(&toolbar));
+        let toolbar = BigToolbarPane::new(BigToolbarPaneSpec::new());
+        toolbar.set_content(&nav_view);
+        window.set_content(Some(toolbar.root()));
 
         setup::install_shortcuts(&window, &sender, mode);
         setup::install_file_drop(&window, &sender);

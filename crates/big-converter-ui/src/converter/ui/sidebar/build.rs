@@ -9,6 +9,7 @@ use crate::shared::audio_effects::noise_model_labels;
 
 use big_audio_effects::equalizer::EQ_PRESET_LABELS;
 use big_media_runtime::ui_labels;
+use big_relm4_components::layout::toolbar_pane::{BigToolbarHeader, BigToolbarHeaderSpec};
 
 use super::combo::make_combo;
 use super::conversion_page::build_conversion_page;
@@ -20,16 +21,18 @@ pub(super) fn build_sidebar(mode: ConverterMode) -> Sidebar {
     let container = gtk::Box::new(gtk::Orientation::Vertical, 0);
     container.set_width_request(320);
 
-    let header = adw::HeaderBar::builder()
-        .title_widget(&gtk::Label::new(Some(&if mode.is_audio() {
-            i18n("Audio Converter")
-        } else {
-            i18n("Video Converter")
-        })))
-        .show_end_title_buttons(false)
-        .css_classes(["flat"])
-        .build();
-    container.append(&header);
+    let header_title = gtk::Label::new(Some(&if mode.is_audio() {
+        i18n("Audio Converter")
+    } else {
+        i18n("Video Converter")
+    }));
+    let header = BigToolbarHeader::with_title_widget(
+        BigToolbarHeaderSpec::new()
+            .show_end_title_buttons(false)
+            .css_class("flat"),
+        &header_title,
+    );
+    container.append(header.root());
 
     let view_stack = adw::ViewStack::new();
 

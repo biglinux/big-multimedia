@@ -3,6 +3,9 @@ use super::input::set_shell_input;
 use super::mpris::build_mpris_service;
 use super::playback::transport_labels;
 use super::*;
+use big_relm4_components::layout::toolbar_pane::{
+    BigToolbarHeader, BigToolbarHeaderSpec, BigToolbarPane, BigToolbarPaneSpec,
+};
 
 const PLAYBACK_SHORTCUT_ACTIONS: &[&str] = &[
     "play-pause",
@@ -212,15 +215,17 @@ impl Component for AudioShell {
             });
             tab_bar.append(&tab_button);
         }
-        let sidebar_header = adw::HeaderBar::builder()
-            .title_widget(&tab_bar)
-            .show_end_title_buttons(false)
-            .build();
-        let sidebar_pane = adw::ToolbarView::new();
-        sidebar_pane.add_top_bar(&sidebar_header);
-        sidebar_pane.set_content(Some(&view_stack));
-        sidebar_pane.add_css_class("sidebar-pane");
-        sidebar_pane.set_size_request(360, -1);
+        let sidebar_header = BigToolbarHeader::with_title_widget(
+            BigToolbarHeaderSpec::new().show_end_title_buttons(false),
+            &tab_bar,
+        );
+        let sidebar_pane = BigToolbarPane::new(
+            BigToolbarPaneSpec::new()
+                .css_class("sidebar-pane")
+                .width_request(360),
+        );
+        sidebar_pane.add_top_bar(sidebar_header.root());
+        sidebar_pane.set_content(&view_stack);
 
         // Now-playing card at the sidebar bottom (art + title/artist/album),
         // hidden until something plays — mirrors the god-object's
@@ -289,8 +294,8 @@ impl Component for AudioShell {
         let content_box = gtk::Box::new(gtk::Orientation::Vertical, 0);
         content_box.append(&lyrics_paned);
         content_box.append(downloads.widget());
-        let content_pane = adw::ToolbarView::new();
-        content_pane.set_content(Some(&content_box));
+        let content_pane = BigToolbarPane::new(BigToolbarPaneSpec::new());
+        content_pane.set_content(&content_box);
         content_pane.add_bottom_bar(playback_bar.widget());
 
         let main_paned = gtk::Paned::builder()
@@ -301,8 +306,8 @@ impl Component for AudioShell {
             .resize_end_child(true)
             .position(400)
             .build();
-        main_paned.set_start_child(Some(&sidebar_pane));
-        main_paned.set_end_child(Some(&content_pane));
+        main_paned.set_start_child(Some(sidebar_pane.root()));
+        main_paned.set_end_child(Some(content_pane.root()));
 
         root.set_child(Some(&main_paned));
 
