@@ -11,7 +11,7 @@ use big_app_kit::file_dialogs::FilePicker;
 use big_relm4_components::layout::{
     dialog_footer::{BigDialogFooter, BigDialogFooterSpec},
     dialog_page::BigDialogPage,
-    hamburger_menu::{build_hamburger_menu_button, BigHamburgerMenuSpec, BigMenuActionItem},
+    hamburger_menu::{build_flat_action_popover_button, BigHamburgerMenuSpec, BigMenuActionItem},
     preferences::BigPreferencesGroupSpec,
     toolbar_pane::{BigToolbarHeader, BigToolbarHeaderSpec},
 };
@@ -56,11 +56,11 @@ pub(super) fn build_toolbar(
     );
 
     let main_menu_label = i18n("Main Menu");
-    let menu_button = build_hamburger_menu_button(
+    let menu_button = build_flat_action_popover_button(
         &BigHamburgerMenuSpec::new(main_menu_label).items(main_menu_items()),
     );
-    install_queue_menu_actions(&menu_button, sender);
-    bar.pack_end(&menu_button);
+    install_queue_menu_actions(menu_button.button(), sender);
+    bar.pack_end(menu_button.button());
 
     (bar.into_root(), header_label)
 }
@@ -91,10 +91,7 @@ fn main_menu_items() -> Vec<BigMenuActionItem> {
     items
 }
 
-fn install_queue_menu_actions(
-    menu_button: &gtk::MenuButton,
-    sender: &ComponentSender<PlaylistPanel>,
-) {
+fn install_queue_menu_actions(menu_button: &gtk::Button, sender: &ComponentSender<PlaylistPanel>) {
     let actions = gio::SimpleActionGroup::new();
 
     {
