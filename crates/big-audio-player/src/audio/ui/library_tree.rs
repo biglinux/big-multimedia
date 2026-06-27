@@ -23,6 +23,7 @@ use gtk::{gdk, gio, glib};
 use relm4::ComponentSender;
 
 use big_relm4_components::feedback::context_popover::BigContextPopover;
+use big_relm4_components::list::signal_factory;
 
 use crate::audio::browser_node::{BrowserNode, BrowserNodeKind};
 use crate::db::models::Track;
@@ -250,8 +251,11 @@ fn build_tree_factory(
     sender: &ComponentSender<LibraryPanel>,
 ) -> gtk::SignalListItemFactory {
     let factory = gtk::SignalListItemFactory::new();
-    factory.connect_setup(|_, factory_item| {
-        let list_item = factory_item.downcast_ref::<gtk::ListItem>().unwrap();
+    factory.connect_setup(|_, factory_callback_value| {
+        let Some(list_item) = signal_factory::list_item_from_factory_value(factory_callback_value)
+        else {
+            return;
+        };
         let expander = gtk::TreeExpander::builder().indent_for_icon(true).build();
         let row = gtk::Box::builder()
             .orientation(gtk::Orientation::Horizontal)
@@ -299,13 +303,19 @@ fn build_tree_factory(
 
     let leaves = leaf_tracks.clone();
     let out = sender.clone();
-    factory.connect_bind(move |_, factory_item| {
-        let list_item = factory_item.downcast_ref::<gtk::ListItem>().unwrap();
+    factory.connect_bind(move |_, factory_callback_value| {
+        let Some(list_item) = signal_factory::list_item_from_factory_value(factory_callback_value)
+        else {
+            return;
+        };
         bind_tree_row(list_item, &leaves, &out);
     });
-    factory.connect_unbind(|_, factory_item| {
-        let list_item = factory_item.downcast_ref::<gtk::ListItem>().unwrap();
-        let Some(expander) = list_item.child().and_downcast::<gtk::TreeExpander>() else {
+    factory.connect_unbind(|_, factory_callback_value| {
+        let Some(list_item) = signal_factory::list_item_from_factory_value(factory_callback_value)
+        else {
+            return;
+        };
+        let Some(expander) = signal_factory::child_as::<gtk::TreeExpander>(list_item) else {
             return;
         };
         let Some(row) = expander.child().and_downcast::<gtk::Box>() else {
@@ -327,36 +337,48 @@ fn bind_tree_row(
     leaves: &LeafTracks,
     sender: &ComponentSender<LibraryPanel>,
 ) {
-    let Some(tree_row) = list_item.item().and_downcast::<gtk::TreeListRow>() else {
+    let Some(tree_row) = signal_factory::bound_model_as::<gtk::TreeListRow>(list_item) else {
         return;
     };
     let Some(node) = tree_row.item().and_downcast::<BrowserNode>() else {
         return;
     };
-    let expander = list_item
-        .child()
-        .and_downcast::<gtk::TreeExpander>()
-        .unwrap();
+    let Some(expander) = signal_factory::child_as::<gtk::TreeExpander>(list_item) else {
+        return;
+    };
     expander.set_list_row(Some(&tree_row));
 
-    let row = expander.child().and_downcast::<gtk::Box>().unwrap();
+    let Some(row) = expander.child().and_downcast::<gtk::Box>() else {
+        return;
+    };
     // SAFETY: read by the right-click hit-test to resolve a clicked row index.
     unsafe {
         row.set_data("vis-pos", list_item.position());
     }
-    let icon = row.first_child().and_downcast::<gtk::Image>().unwrap();
-    let avatar = icon.next_sibling().and_downcast::<adw::Avatar>().unwrap();
-    let text_box = avatar.next_sibling().and_downcast::<gtk::Box>().unwrap();
-    let label = text_box.first_child().and_downcast::<gtk::Label>().unwrap();
-    let artist_label = label.next_sibling().and_downcast::<gtk::Label>().unwrap();
-    let track_count_label = text_box
-        .next_sibling()
-        .and_downcast::<gtk::Label>()
-        .unwrap();
-    let show_tracks_button = track_count_label
+    let Some(icon) = row.first_child().and_downcast::<gtk::Image>() else {
+        return;
+    };
+    let Some(avatar) = icon.next_sibling().and_downcast::<adw::Avatar>() else {
+        return;
+    };
+    let Some(text_box) = avatar.next_sibling().and_downcast::<gtk::Box>() else {
+        return;
+    };
+    let Some(label) = text_box.first_child().and_downcast::<gtk::Label>() else {
+        return;
+    };
+    let Some(artist_label) = label.next_sibling().and_downcast::<gtk::Label>() else {
+        return;
+    };
+    let Some(track_count_label) = text_box.next_sibling().and_downcast::<gtk::Label>() else {
+        return;
+    };
+    let Some(show_tracks_button) = track_count_label
         .next_sibling()
         .and_downcast::<gtk::Button>()
-        .unwrap();
+    else {
+        return;
+    };
     disconnect_show_tracks_button(&show_tracks_button);
 
     let kind = node.kind();

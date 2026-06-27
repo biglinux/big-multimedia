@@ -4,6 +4,7 @@
 //! column_chrome}` (RESTRUCTURE P5); only the `Track`-specific sorters and cell
 //! factories stay here.
 
+use big_relm4_components::list::signal_factory;
 use gtk::prelude::*;
 use gtk::{glib, pango};
 
@@ -12,48 +13,53 @@ use crate::db::models::Track;
 /// Case-insensitive text sort.
 pub(super) fn make_track_text_sorter(get_key: fn(&Track) -> String) -> gtk::CustomSorter {
     gtk::CustomSorter::new(move |a, b| {
-        let ta = a
-            .downcast_ref::<glib::BoxedAnyObject>()
-            .unwrap()
-            .borrow::<Track>();
-        let tb = b
-            .downcast_ref::<glib::BoxedAnyObject>()
-            .unwrap()
-            .borrow::<Track>();
-        get_key(&ta)
+        let Some(track_a_object) = a.downcast_ref::<glib::BoxedAnyObject>() else {
+            return std::cmp::Ordering::Equal.into();
+        };
+        let Some(track_b_object) = b.downcast_ref::<glib::BoxedAnyObject>() else {
+            return std::cmp::Ordering::Equal.into();
+        };
+        let track_a = track_a_object.borrow::<Track>();
+        let track_b = track_b_object.borrow::<Track>();
+        get_key(&track_a)
             .to_lowercase()
-            .cmp(&get_key(&tb).to_lowercase())
+            .cmp(&get_key(&track_b).to_lowercase())
             .into()
     })
 }
 
 pub(super) fn make_year_sorter() -> gtk::CustomSorter {
     gtk::CustomSorter::new(|a, b| {
-        let ta = a
-            .downcast_ref::<glib::BoxedAnyObject>()
-            .unwrap()
-            .borrow::<Track>();
-        let tb = b
-            .downcast_ref::<glib::BoxedAnyObject>()
-            .unwrap()
-            .borrow::<Track>();
-        ta.year.unwrap_or(0).cmp(&tb.year.unwrap_or(0)).into()
+        let Some(track_a_object) = a.downcast_ref::<glib::BoxedAnyObject>() else {
+            return std::cmp::Ordering::Equal.into();
+        };
+        let Some(track_b_object) = b.downcast_ref::<glib::BoxedAnyObject>() else {
+            return std::cmp::Ordering::Equal.into();
+        };
+        let track_a = track_a_object.borrow::<Track>();
+        let track_b = track_b_object.borrow::<Track>();
+        track_a
+            .year
+            .unwrap_or(0)
+            .cmp(&track_b.year.unwrap_or(0))
+            .into()
     })
 }
 
 /// NaN → Equal.
 pub(super) fn make_duration_sorter() -> gtk::CustomSorter {
     gtk::CustomSorter::new(|a, b| {
-        let ta = a
-            .downcast_ref::<glib::BoxedAnyObject>()
-            .unwrap()
-            .borrow::<Track>();
-        let tb = b
-            .downcast_ref::<glib::BoxedAnyObject>()
-            .unwrap()
-            .borrow::<Track>();
-        ta.duration_secs
-            .partial_cmp(&tb.duration_secs)
+        let Some(track_a_object) = a.downcast_ref::<glib::BoxedAnyObject>() else {
+            return std::cmp::Ordering::Equal.into();
+        };
+        let Some(track_b_object) = b.downcast_ref::<glib::BoxedAnyObject>() else {
+            return std::cmp::Ordering::Equal.into();
+        };
+        let track_a = track_a_object.borrow::<Track>();
+        let track_b = track_b_object.borrow::<Track>();
+        track_a
+            .duration_secs
+            .partial_cmp(&track_b.duration_secs)
             .unwrap_or(std::cmp::Ordering::Equal)
             .into()
     })
@@ -61,23 +67,26 @@ pub(super) fn make_duration_sorter() -> gtk::CustomSorter {
 
 pub(super) fn make_rating_sorter() -> gtk::CustomSorter {
     gtk::CustomSorter::new(|a, b| {
-        let ta = a
-            .downcast_ref::<glib::BoxedAnyObject>()
-            .unwrap()
-            .borrow::<Track>();
-        let tb = b
-            .downcast_ref::<glib::BoxedAnyObject>()
-            .unwrap()
-            .borrow::<Track>();
-        ta.rating.cmp(&tb.rating).into()
+        let Some(track_a_object) = a.downcast_ref::<glib::BoxedAnyObject>() else {
+            return std::cmp::Ordering::Equal.into();
+        };
+        let Some(track_b_object) = b.downcast_ref::<glib::BoxedAnyObject>() else {
+            return std::cmp::Ordering::Equal.into();
+        };
+        let track_a = track_a_object.borrow::<Track>();
+        let track_b = track_b_object.borrow::<Track>();
+        track_a.rating.cmp(&track_b.rating).into()
     })
 }
 
 /// Right-aligned numeric column; empty when year missing.
 pub(super) fn make_year_factory() -> gtk::SignalListItemFactory {
     let factory = gtk::SignalListItemFactory::new();
-    factory.connect_setup(|_, list_item| {
-        let list_item = list_item.downcast_ref::<gtk::ListItem>().unwrap();
+    factory.connect_setup(|_, factory_callback_value| {
+        let Some(list_item) = signal_factory::list_item_from_factory_value(factory_callback_value)
+        else {
+            return;
+        };
         let label = gtk::Label::builder()
             .xalign(1.0)
             .margin_start(4)
@@ -86,14 +95,19 @@ pub(super) fn make_year_factory() -> gtk::SignalListItemFactory {
         label.add_css_class("numeric");
         list_item.set_child(Some(&label));
     });
-    factory.connect_bind(|_, list_item| {
-        let list_item = list_item.downcast_ref::<gtk::ListItem>().unwrap();
-        let boxed_track = list_item
-            .item()
-            .and_downcast::<glib::BoxedAnyObject>()
-            .unwrap();
+    factory.connect_bind(|_, factory_callback_value| {
+        let Some(list_item) = signal_factory::list_item_from_factory_value(factory_callback_value)
+        else {
+            return;
+        };
+        let Some(boxed_track) = signal_factory::bound_model_as::<glib::BoxedAnyObject>(list_item)
+        else {
+            return;
+        };
         let track = boxed_track.borrow::<Track>();
-        let label = list_item.child().and_downcast::<gtk::Label>().unwrap();
+        let Some(label) = signal_factory::child_as::<gtk::Label>(list_item) else {
+            return;
+        };
         if let Some(y) = track.year {
             label.set_label(&y.to_string());
         } else {
@@ -126,7 +140,9 @@ pub(super) fn unbind_click_gestures(widget: &impl IsA<gtk::Widget>) {
     for i in 0..ctrl.n_items() {
         if let Some(c) = ctrl.item(i) {
             if c.downcast_ref::<gtk::GestureClick>().is_some() {
-                to_remove.push(c.downcast::<gtk::EventController>().unwrap());
+                if let Ok(controller) = c.downcast::<gtk::EventController>() {
+                    to_remove.push(controller);
+                }
             }
         }
     }
@@ -138,8 +154,11 @@ pub(super) fn unbind_click_gestures(widget: &impl IsA<gtk::Widget>) {
 /// Left-aligned, ellipsized text column.
 pub(super) fn make_label_factory(get_text: fn(&Track) -> String) -> gtk::SignalListItemFactory {
     let factory = gtk::SignalListItemFactory::new();
-    factory.connect_setup(|_, list_item| {
-        let list_item = list_item.downcast_ref::<gtk::ListItem>().unwrap();
+    factory.connect_setup(|_, factory_callback_value| {
+        let Some(list_item) = signal_factory::list_item_from_factory_value(factory_callback_value)
+        else {
+            return;
+        };
         let label = gtk::Label::builder()
             .xalign(0.0)
             .ellipsize(pango::EllipsizeMode::End)
@@ -150,14 +169,19 @@ pub(super) fn make_label_factory(get_text: fn(&Track) -> String) -> gtk::SignalL
             .build();
         list_item.set_child(Some(&label));
     });
-    factory.connect_bind(move |_, list_item| {
-        let list_item = list_item.downcast_ref::<gtk::ListItem>().unwrap();
-        let boxed_track = list_item
-            .item()
-            .and_downcast::<glib::BoxedAnyObject>()
-            .unwrap();
+    factory.connect_bind(move |_, factory_callback_value| {
+        let Some(list_item) = signal_factory::list_item_from_factory_value(factory_callback_value)
+        else {
+            return;
+        };
+        let Some(boxed_track) = signal_factory::bound_model_as::<glib::BoxedAnyObject>(list_item)
+        else {
+            return;
+        };
         let track = boxed_track.borrow::<Track>();
-        let label = list_item.child().and_downcast::<gtk::Label>().unwrap();
+        let Some(label) = signal_factory::child_as::<gtk::Label>(list_item) else {
+            return;
+        };
         label.set_label(&get_text(&track));
     });
     factory
@@ -166,8 +190,11 @@ pub(super) fn make_label_factory(get_text: fn(&Track) -> String) -> gtk::SignalL
 /// Right-aligned numeric column; empty when duration ≤ 0.
 pub(super) fn make_duration_factory() -> gtk::SignalListItemFactory {
     let factory = gtk::SignalListItemFactory::new();
-    factory.connect_setup(|_, list_item| {
-        let list_item = list_item.downcast_ref::<gtk::ListItem>().unwrap();
+    factory.connect_setup(|_, factory_callback_value| {
+        let Some(list_item) = signal_factory::list_item_from_factory_value(factory_callback_value)
+        else {
+            return;
+        };
         let label = gtk::Label::builder()
             .xalign(1.0)
             .margin_start(2)
@@ -176,14 +203,19 @@ pub(super) fn make_duration_factory() -> gtk::SignalListItemFactory {
         label.add_css_class("numeric");
         list_item.set_child(Some(&label));
     });
-    factory.connect_bind(|_, list_item| {
-        let list_item = list_item.downcast_ref::<gtk::ListItem>().unwrap();
-        let boxed_track = list_item
-            .item()
-            .and_downcast::<glib::BoxedAnyObject>()
-            .unwrap();
+    factory.connect_bind(|_, factory_callback_value| {
+        let Some(list_item) = signal_factory::list_item_from_factory_value(factory_callback_value)
+        else {
+            return;
+        };
+        let Some(boxed_track) = signal_factory::bound_model_as::<glib::BoxedAnyObject>(list_item)
+        else {
+            return;
+        };
         let track = boxed_track.borrow::<Track>();
-        let label = list_item.child().and_downcast::<gtk::Label>().unwrap();
+        let Some(label) = signal_factory::child_as::<gtk::Label>(list_item) else {
+            return;
+        };
         if track.duration_secs > 0.0 {
             label.set_label(&track.duration_display());
         } else {

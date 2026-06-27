@@ -3,6 +3,7 @@
 //! panel keeps working after the window/ tree is deleted at cutover.
 
 use adw::prelude::*;
+use big_relm4_components::list::signal_factory;
 use gtk::pango;
 
 /// Fallback only — actual pitch is measured at runtime.
@@ -12,8 +13,11 @@ pub const FALLBACK_ROW_HEIGHT: f64 = 44.0;
 /// from the god-object `playlist_panel::drop_position`).
 pub fn dropdown_list_factory() -> gtk::SignalListItemFactory {
     let factory = gtk::SignalListItemFactory::new();
-    factory.connect_setup(|_, item| {
-        let list_item = item.downcast_ref::<gtk::ListItem>().unwrap();
+    factory.connect_setup(|_, factory_callback_value| {
+        let Some(list_item) = signal_factory::list_item_from_factory_value(factory_callback_value)
+        else {
+            return;
+        };
         let label = gtk::Label::new(None);
         label.set_xalign(0.0);
         label.set_margin_start(8);
@@ -25,11 +29,17 @@ pub fn dropdown_list_factory() -> gtk::SignalListItemFactory {
         label.set_attributes(Some(&attrs));
         list_item.set_child(Some(&label));
     });
-    factory.connect_bind(|_, item| {
-        let list_item = item.downcast_ref::<gtk::ListItem>().unwrap();
-        let label = list_item.child().and_downcast::<gtk::Label>().unwrap();
-        if let Some(obj) = list_item.item().and_downcast::<gtk::StringObject>() {
-            label.set_label(&obj.string());
+    factory.connect_bind(|_, factory_callback_value| {
+        let Some(list_item) = signal_factory::list_item_from_factory_value(factory_callback_value)
+        else {
+            return;
+        };
+        let Some(label) = signal_factory::child_as::<gtk::Label>(list_item) else {
+            return;
+        };
+        if let Some(string_object) = signal_factory::bound_model_as::<gtk::StringObject>(list_item)
+        {
+            label.set_label(&string_object.string());
         }
     });
     factory

@@ -5,6 +5,7 @@
 //! intents; the title column hosts the track-identity now-playing indicator.
 
 use adw::prelude::*;
+use big_relm4_components::list::signal_factory;
 use gtk::{glib, pango};
 use relm4::ComponentSender;
 use std::cell::RefCell;
@@ -32,8 +33,11 @@ pub(super) fn build_columns(
 
     // # (position) — re-derived from list position, not stored.
     let num_factory = gtk::SignalListItemFactory::new();
-    num_factory.connect_setup(|_, list_item| {
-        let list_item = list_item.downcast_ref::<gtk::ListItem>().unwrap();
+    num_factory.connect_setup(|_, factory_callback_value| {
+        let Some(list_item) = signal_factory::list_item_from_factory_value(factory_callback_value)
+        else {
+            return;
+        };
         let label = gtk::Label::builder()
             .xalign(1.0)
             .margin_start(4)
@@ -42,9 +46,14 @@ pub(super) fn build_columns(
         label.add_css_class("numeric");
         list_item.set_child(Some(&label));
     });
-    num_factory.connect_bind(|_, list_item| {
-        let list_item = list_item.downcast_ref::<gtk::ListItem>().unwrap();
-        let label = list_item.child().and_downcast::<gtk::Label>().unwrap();
+    num_factory.connect_bind(|_, factory_callback_value| {
+        let Some(list_item) = signal_factory::list_item_from_factory_value(factory_callback_value)
+        else {
+            return;
+        };
+        let Some(label) = signal_factory::child_as::<gtk::Label>(list_item) else {
+            return;
+        };
         label.set_label(&(list_item.position() + 1).to_string());
     });
     column_view.append_column(
@@ -156,8 +165,11 @@ fn build_title_column(
     text_sorter: fn(fn(&Track) -> String) -> gtk::CustomSorter,
 ) {
     let factory = gtk::SignalListItemFactory::new();
-    factory.connect_setup(|_, list_item| {
-        let list_item = list_item.downcast_ref::<gtk::ListItem>().unwrap();
+    factory.connect_setup(|_, factory_callback_value| {
+        let Some(list_item) = signal_factory::list_item_from_factory_value(factory_callback_value)
+        else {
+            return;
+        };
         let hbox = gtk::Box::builder()
             .orientation(gtk::Orientation::Horizontal)
             .spacing(4)
@@ -182,14 +194,21 @@ fn build_title_column(
     });
     let ind_bind = indicators.clone();
     let cur_bind = current_track_identity.clone();
-    factory.connect_bind(move |_, list_item| {
-        let list_item = list_item.downcast_ref::<gtk::ListItem>().unwrap();
-        let track_identity = list_item.item().unwrap();
-        let track = track_identity
-            .downcast_ref::<glib::BoxedAnyObject>()
-            .unwrap()
-            .borrow::<Track>();
-        let hbox = list_item.child().and_downcast::<gtk::Box>().unwrap();
+    factory.connect_bind(move |_, factory_callback_value| {
+        let Some(list_item) = signal_factory::list_item_from_factory_value(factory_callback_value)
+        else {
+            return;
+        };
+        let Some(track_identity) = list_item.item() else {
+            return;
+        };
+        let Some(track_object) = track_identity.downcast_ref::<glib::BoxedAnyObject>() else {
+            return;
+        };
+        let track = track_object.borrow::<Track>();
+        let Some(hbox) = signal_factory::child_as::<gtk::Box>(list_item) else {
+            return;
+        };
         // SAFETY: read only by playlist_geom::find_clicked_position (right-click
         // hit-test) so a context-menu click can resolve the visual row index.
         unsafe {
@@ -215,9 +234,14 @@ fn build_title_column(
             .push((track_identity.clone(), icon, label));
     });
     let ind_unbind = indicators.clone();
-    factory.connect_unbind(move |_, list_item| {
-        let list_item = list_item.downcast_ref::<gtk::ListItem>().unwrap();
-        let hbox = list_item.child().and_downcast::<gtk::Box>().unwrap();
+    factory.connect_unbind(move |_, factory_callback_value| {
+        let Some(list_item) = signal_factory::list_item_from_factory_value(factory_callback_value)
+        else {
+            return;
+        };
+        let Some(hbox) = signal_factory::child_as::<gtk::Box>(list_item) else {
+            return;
+        };
         if let Some(icon) = hbox.first_child().and_downcast::<gtk::Image>() {
             ind_unbind.borrow_mut().retain(|(_, img, _)| img != &icon);
         }
@@ -236,8 +260,11 @@ fn build_title_column(
 /// Rating column: 5 stars, one click gesture per row → optimistic update + emit.
 fn build_rating_column(column_view: &gtk::ColumnView, sender: &ComponentSender<PlaylistPanel>) {
     let factory = gtk::SignalListItemFactory::new();
-    factory.connect_setup(|_, list_item| {
-        let list_item = list_item.downcast_ref::<gtk::ListItem>().unwrap();
+    factory.connect_setup(|_, factory_callback_value| {
+        let Some(list_item) = signal_factory::list_item_from_factory_value(factory_callback_value)
+        else {
+            return;
+        };
         let hbox = gtk::Box::builder()
             .orientation(gtk::Orientation::Horizontal)
             .spacing(0)
@@ -255,15 +282,20 @@ fn build_rating_column(column_view: &gtk::ColumnView, sender: &ComponentSender<P
         list_item.set_child(Some(&hbox));
     });
     let out = sender.clone();
-    factory.connect_bind(move |_, list_item| {
-        let list_item = list_item.downcast_ref::<gtk::ListItem>().unwrap();
-        let boxed_track = list_item
-            .item()
-            .and_downcast::<glib::BoxedAnyObject>()
-            .unwrap();
+    factory.connect_bind(move |_, factory_callback_value| {
+        let Some(list_item) = signal_factory::list_item_from_factory_value(factory_callback_value)
+        else {
+            return;
+        };
+        let Some(boxed_track) = signal_factory::bound_model_as::<glib::BoxedAnyObject>(list_item)
+        else {
+            return;
+        };
         let track = boxed_track.borrow::<Track>();
         let track_id = track.id;
-        let hbox = list_item.child().and_downcast::<gtk::Box>().unwrap();
+        let Some(hbox) = signal_factory::child_as::<gtk::Box>(list_item) else {
+            return;
+        };
         update_star_icons(&hbox, track.rating);
 
         // One gesture per row; x-position picks the star (cheaper than 5 gestures).
@@ -286,9 +318,12 @@ fn build_rating_column(column_view: &gtk::ColumnView, sender: &ComponentSender<P
         hbox.add_controller(gesture);
     });
     // Drop gesture controllers on recycle; otherwise they accumulate per row.
-    factory.connect_unbind(|_, list_item| {
-        let list_item = list_item.downcast_ref::<gtk::ListItem>().unwrap();
-        if let Some(hbox) = list_item.child().and_downcast::<gtk::Box>() {
+    factory.connect_unbind(|_, factory_callback_value| {
+        let Some(list_item) = signal_factory::list_item_from_factory_value(factory_callback_value)
+        else {
+            return;
+        };
+        if let Some(hbox) = signal_factory::child_as::<gtk::Box>(list_item) {
             unbind_click_gestures(&hbox);
         }
     });
@@ -307,8 +342,11 @@ fn build_rating_column(column_view: &gtk::ColumnView, sender: &ComponentSender<P
 /// Remove column: per-row delete button → emit `RemoveTracks` (shell mutates).
 fn build_remove_column(column_view: &gtk::ColumnView, sender: &ComponentSender<PlaylistPanel>) {
     let factory = gtk::SignalListItemFactory::new();
-    factory.connect_setup(|_, list_item| {
-        let list_item = list_item.downcast_ref::<gtk::ListItem>().unwrap();
+    factory.connect_setup(|_, factory_callback_value| {
+        let Some(list_item) = signal_factory::list_item_from_factory_value(factory_callback_value)
+        else {
+            return;
+        };
         let remove_button = gtk::Button::builder()
             .icon_name("edit-delete-symbolic")
             .css_classes(["flat", "circular"])
@@ -320,10 +358,15 @@ fn build_remove_column(column_view: &gtk::ColumnView, sender: &ComponentSender<P
         list_item.set_child(Some(&remove_button));
     });
     let out = sender.clone();
-    factory.connect_bind(move |_, list_item| {
-        let list_item = list_item.downcast_ref::<gtk::ListItem>().unwrap();
+    factory.connect_bind(move |_, factory_callback_value| {
+        let Some(list_item) = signal_factory::list_item_from_factory_value(factory_callback_value)
+        else {
+            return;
+        };
         let visual_position = list_item.position() as usize;
-        let remove_button = list_item.child().and_downcast::<gtk::Button>().unwrap();
+        let Some(remove_button) = signal_factory::child_as::<gtk::Button>(list_item) else {
+            return;
+        };
         let out = out.clone();
         let remove_click_signal_id = remove_button.connect_clicked(move |_| {
             let _ = out.output(PlaylistPanelOutput::RemoveTracks {
@@ -336,9 +379,12 @@ fn build_remove_column(column_view: &gtk::ColumnView, sender: &ComponentSender<P
             remove_button.set_data("remove-button-click-signal-id", remove_click_signal_id);
         }
     });
-    factory.connect_unbind(|_, list_item| {
-        let list_item = list_item.downcast_ref::<gtk::ListItem>().unwrap();
-        if let Some(remove_button) = list_item.child().and_downcast::<gtk::Button>() {
+    factory.connect_unbind(|_, factory_callback_value| {
+        let Some(list_item) = signal_factory::list_item_from_factory_value(factory_callback_value)
+        else {
+            return;
+        };
+        if let Some(remove_button) = signal_factory::child_as::<gtk::Button>(list_item) {
             // SAFETY: matches the id stashed in bind above.
             unsafe {
                 if let Some(id) = remove_button
@@ -363,14 +409,18 @@ fn build_remove_column(column_view: &gtk::ColumnView, sender: &ComponentSender<P
 /// has no bitrate helper.
 fn make_bitrate_sorter() -> gtk::CustomSorter {
     gtk::CustomSorter::new(|a, b| {
-        let ta = a
-            .downcast_ref::<glib::BoxedAnyObject>()
-            .unwrap()
-            .borrow::<Track>();
-        let tb = b
-            .downcast_ref::<glib::BoxedAnyObject>()
-            .unwrap()
-            .borrow::<Track>();
-        ta.bitrate.unwrap_or(0).cmp(&tb.bitrate.unwrap_or(0)).into()
+        let Some(track_a_object) = a.downcast_ref::<glib::BoxedAnyObject>() else {
+            return std::cmp::Ordering::Equal.into();
+        };
+        let Some(track_b_object) = b.downcast_ref::<glib::BoxedAnyObject>() else {
+            return std::cmp::Ordering::Equal.into();
+        };
+        let track_a = track_a_object.borrow::<Track>();
+        let track_b = track_b_object.borrow::<Track>();
+        track_a
+            .bitrate
+            .unwrap_or(0)
+            .cmp(&track_b.bitrate.unwrap_or(0))
+            .into()
     })
 }

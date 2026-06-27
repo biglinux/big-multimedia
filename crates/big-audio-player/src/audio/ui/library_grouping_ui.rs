@@ -11,6 +11,7 @@
 use std::time::Duration;
 
 use adw::prelude::*;
+use big_relm4_components::list::signal_factory;
 use gtk::glib;
 use relm4::ComponentSender;
 
@@ -124,8 +125,11 @@ fn build_age_dropdown(sender: &ComponentSender<LibraryPanel>) -> gtk::DropDown {
     // Compact button display (mirrors the god-object): the default "all" preset
     // (index 0) shows only a clock icon; any active filter shows its label.
     let selected_factory = gtk::SignalListItemFactory::new();
-    selected_factory.connect_setup(|_, item| {
-        let list_item = item.downcast_ref::<gtk::ListItem>().unwrap();
+    selected_factory.connect_setup(|_, factory_callback_value| {
+        let Some(list_item) = signal_factory::list_item_from_factory_value(factory_callback_value)
+        else {
+            return;
+        };
         let stack = gtk::Stack::new();
         let icon = gtk::Image::from_icon_name("document-open-recent-symbolic");
         icon.update_property(&[gtk::accessible::Property::Label(&i18n(
@@ -136,17 +140,23 @@ fn build_age_dropdown(sender: &ComponentSender<LibraryPanel>) -> gtk::DropDown {
         stack.add_named(&label, Some("label"));
         list_item.set_child(Some(&stack));
     });
-    selected_factory.connect_bind(|_, item| {
-        let list_item = item.downcast_ref::<gtk::ListItem>().unwrap();
-        let stack = list_item.child().and_downcast::<gtk::Stack>().unwrap();
+    selected_factory.connect_bind(|_, factory_callback_value| {
+        let Some(list_item) = signal_factory::list_item_from_factory_value(factory_callback_value)
+        else {
+            return;
+        };
+        let Some(stack) = signal_factory::child_as::<gtk::Stack>(list_item) else {
+            return;
+        };
         if list_item.position() == 0 {
             stack.set_visible_child_name("icon");
-        } else if let Some(string_obj) = list_item.item().and_downcast::<gtk::StringObject>() {
-            let label = stack
-                .child_by_name("label")
-                .and_downcast::<gtk::Label>()
-                .unwrap();
-            label.set_label(&string_obj.string());
+        } else if let Some(string_object) =
+            signal_factory::bound_model_as::<gtk::StringObject>(list_item)
+        {
+            let Some(label) = stack.child_by_name("label").and_downcast::<gtk::Label>() else {
+                return;
+            };
+            label.set_label(&string_object.string());
             stack.set_visible_child_name("label");
         }
     });
