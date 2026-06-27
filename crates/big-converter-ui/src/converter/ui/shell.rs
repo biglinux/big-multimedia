@@ -347,7 +347,9 @@ impl Component for ConverterShell {
                 .forward(sender.input_sender(), |out| match out {
                     BigConverterProgressOutput::Back => ShellMessage::ProgressBack,
                     BigConverterProgressOutput::CancelAll
-                    | BigConverterProgressOutput::CancelItem(_) => ShellMessage::CancelConversion,
+                    | BigConverterProgressOutput::CancelConversion(_) => {
+                        ShellMessage::CancelConversion
+                    }
                 });
 
         let (video_editor, audio_editor) = if mode.is_audio() {

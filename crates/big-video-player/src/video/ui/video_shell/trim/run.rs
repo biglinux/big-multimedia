@@ -14,7 +14,7 @@ use big_media_components::time::playback_time;
 use big_media_runtime::converter::ffmpeg::progress::FfmpegProgressSnapshot;
 use big_media_runtime::converter::queue::{QueueMessage, SegmentOutputMode};
 use big_relm4_components::input::dropdown_row::{BigDropdownRow, BigDropdownRowSpec};
-use big_relm4_components::input::inline_spin_set::{BigInlineSpinItemSpec, BigInlineSpinSet};
+use big_relm4_components::input::inline_spin_set::{BigInlineSpinFieldSpec, BigInlineSpinSet};
 use big_relm4_components::input::preference_cards::BigSpinRange;
 use big_relm4_components::input::slider_row::{BigSliderRow, BigSliderRowSpec};
 use big_relm4_components::layout::advanced_disclosure::advanced_disclosure;
@@ -299,11 +299,11 @@ impl VideoShell {
         let duration = self.trim_duration();
         let spin_range = BigSpinRange::new(0.0, duration, 0.1, 5.0);
         let spin_set = BigInlineSpinSet::new(&[
-            BigInlineSpinItemSpec::new("start", i18n("Start (seconds)"), start, spin_range)
+            BigInlineSpinFieldSpec::new("start", i18n("Start (seconds)"), start, spin_range)
                 .digits(2)
                 .width_chars(7)
                 .unit(i18n("s")),
-            BigInlineSpinItemSpec::new("end", i18n("End (seconds)"), end, spin_range)
+            BigInlineSpinFieldSpec::new("end", i18n("End (seconds)"), end, spin_range)
                 .digits(2)
                 .width_chars(7)
                 .unit(i18n("s")),

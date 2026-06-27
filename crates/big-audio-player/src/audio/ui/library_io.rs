@@ -17,7 +17,7 @@ use big_relm4_components::layout::{
     dialog_page::BigDialogPage,
 };
 use big_relm4_components::list::button_strip_row::{BigButtonStripRow, BigButtonStripRowSpec};
-use big_relm4_components::list::info_row::{BigInfoRow, BigInfoRowSpec};
+use big_relm4_components::list::detail_row::{BigDetailRow, BigDetailRowSpec};
 use relm4::ComponentSender;
 
 use crate::db::models::{Track, WatchFolder};
@@ -216,8 +216,8 @@ fn build_folders_list(
     list.update_property(&[gtk::accessible::Property::Label(&i18n("Music folders"))]);
 
     if folders.is_empty() {
-        let empty = BigInfoRow::new(
-            BigInfoRowSpec::new(i18n("No folders added yet"))
+        let empty = BigDetailRow::new(
+            BigDetailRowSpec::new(i18n("No folders added yet"))
                 .subtitle(i18n(
                     "Click the button below to add your first music folder",
                 ))

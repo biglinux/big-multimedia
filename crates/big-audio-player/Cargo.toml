@@ -32,8 +32,8 @@ relm4 = { version = "0.11.0", default-features = false, features = ["libadwaita"
 async-channel = "2.5"
 dirs = "6"
 log = "0.4"
-lru = "0.17"
-rusqlite = "0.39"
+lru = "0.18"
+rusqlite = "0.40.1"
 
 [lints.clippy]
 pedantic = { level = "warn", priority = -1 }

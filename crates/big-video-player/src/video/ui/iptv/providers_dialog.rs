@@ -24,10 +24,10 @@ use big_relm4_components::layout::{
 use big_relm4_components::list::bounded_list_box::{
     clear_list_box_rows, BigBoundedListBox, BigBoundedListBoxSpec,
 };
+use big_relm4_components::list::detail_row::{BigDetailRow, BigDetailRowSpec};
 use big_relm4_components::list::editable_action_row::{
     BigEditableActionRow, BigEditableActionRowSpec,
 };
-use big_relm4_components::list::info_row::{BigInfoRow, BigInfoRowSpec};
 use relm4::ComponentSender;
 
 use crate::i18n::i18n;
@@ -88,8 +88,8 @@ fn rebuild_list(list: &gtk::ListBox, store: &Rc<RefCell<IptvProviderStore>>) {
 
     let providers = store.borrow().providers.clone();
     if providers.is_empty() {
-        let row = BigInfoRow::new(
-            BigInfoRowSpec::new(i18n("No providers yet"))
+        let row = BigDetailRow::new(
+            BigDetailRowSpec::new(i18n("No providers yet"))
                 .subtitle(i18n("Add an IPTV provider to get started")),
         )
         .into_root();

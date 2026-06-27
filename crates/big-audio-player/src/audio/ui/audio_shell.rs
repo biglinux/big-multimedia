@@ -71,7 +71,7 @@ use big_player_ui::audio_trim_bar::{
     AudioTrimBar, AudioTrimBarInput, AudioTrimBarOutput, BigAudioTrimBarLabels,
 };
 use big_player_ui::download::filename_from_url;
-use big_player_ui::download_panel::{DownloadManagerInput, DownloadManagerPanel};
+use big_player_ui::download_panel::{DownloadQueueInput, DownloadQueuePanel};
 use big_player_ui::file_browser::{FileBrowser, FileBrowserConfig, FileBrowserOutput};
 use big_player_ui::lyrics_panel::{LyricsPanel, LyricsPanelInput, LyricsPanelOutput, LyricsState};
 use big_player_ui::playback_bar::{
@@ -103,9 +103,9 @@ pub struct AudioShell {
     lyrics_paned: gtk::Paned,
     /// Whether the lyrics panel is shown (gates the on-demand fetch).
     lyrics_visible: bool,
-    /// Slide-up download-manager panel (podcast episode downloads); self-driven
+    /// Slide-up download-queue panel (podcast episode downloads); self-driven
     /// once fed an `Enqueue`.
-    downloads: Controller<DownloadManagerPanel>,
+    downloads: Controller<DownloadQueuePanel>,
     /// Podcast tab (subscriptions + search); self-renders + emits `LoadFeed`,
     /// so the shell holds it only for its lifetime (never sends it inputs).
     _podcast: Controller<PodcastPanel>,

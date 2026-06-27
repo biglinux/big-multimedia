@@ -12,7 +12,7 @@ use std::time::Duration;
 use adw::prelude::*;
 use big_relm4_components::input::dropdown_row::{BigDropdownRow, BigDropdownRowSpec};
 use big_relm4_components::layout::preferences::BigPreferencesGroupSpec;
-use big_relm4_components::list::info_row::{BigInfoRow, BigInfoRowSpec};
+use big_relm4_components::list::detail_row::{BigDetailRow, BigDetailRowSpec};
 
 use super::filter_specs::{
     cas_shader_to_ui_pct, cas_ui_pct_to_shader, fsr_shader_to_ui_pct, fsr_ui_pct_to_shader,
@@ -431,8 +431,8 @@ pub(super) fn build_anime4k_group(
 }
 
 fn not_installed_row() -> adw::ActionRow {
-    BigInfoRow::new(
-        BigInfoRowSpec::new(i18n("Shaders not installed")).subtitle(i18n(
+    BigDetailRow::new(
+        BigDetailRowSpec::new(i18n("Shaders not installed")).subtitle(i18n(
             "Install the big-media-runtime package to get built-in shaders",
         )),
     )
@@ -440,8 +440,8 @@ fn not_installed_row() -> adw::ActionRow {
 }
 
 fn neural_not_installed_row() -> adw::ActionRow {
-    BigInfoRow::new(
-        BigInfoRowSpec::new(i18n("Neural upscaler shaders not installed")).subtitle(i18n(
+    BigDetailRow::new(
+        BigDetailRowSpec::new(i18n("Neural upscaler shaders not installed")).subtitle(i18n(
             "Install the big-media-runtime package to get neural upscaling shaders",
         )),
     )
@@ -449,8 +449,8 @@ fn neural_not_installed_row() -> adw::ActionRow {
 }
 
 fn anime4k_not_installed_row() -> adw::ActionRow {
-    BigInfoRow::new(
-        BigInfoRowSpec::new(i18n("Anime4K shaders not installed")).subtitle(i18n(
+    BigDetailRow::new(
+        BigDetailRowSpec::new(i18n("Anime4K shaders not installed")).subtitle(i18n(
             "Install the big-media-runtime package to get Anime4K shaders",
         )),
     )

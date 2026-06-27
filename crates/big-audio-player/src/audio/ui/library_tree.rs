@@ -183,7 +183,7 @@ fn to_browser_node(node: &LibraryTreeNode) -> BrowserNode {
             }
             gnode
         }
-        _ => BrowserNode::file_item(&node.label, &node.key),
+        _ => BrowserNode::file_node(&node.label, &node.key),
     };
     // `key` is authoritative for resolution (year stores the raw string).
     if !node.key.is_empty() {

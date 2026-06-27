@@ -218,7 +218,7 @@ impl ConverterShell {
         self.progress_total = queue_entry_paths.len();
         self.progress_done = 0;
         self.progress
-            .emit(BigConverterProgressInput::SetItems(queue_entry_paths));
+            .emit(BigConverterProgressInput::SetConversions(queue_entry_paths));
 
         self.main_stack.set_visible_child_name("progress");
         self.queue.delete_source = params.delete_source;

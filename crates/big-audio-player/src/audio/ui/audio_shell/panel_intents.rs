@@ -383,14 +383,14 @@ impl AudioShell {
                     .accept_label(i18n("Save"))
                     .initial_name(filename_from_url(&url, &title))
                     .save(&window, move |dest| {
-                        let _ = downloads.send(DownloadManagerInput::Enqueue { url, title, dest });
+                        let _ = downloads.send(DownloadQueueInput::Enqueue { url, title, dest });
                     });
             }
             _ => {
                 FilePicker::open_folder(i18n("Save Episodes")).select_folder(&window, move |dir| {
                     for (url, title) in &episodes {
                         let dest = dir.join(filename_from_url(url, title));
-                        let _ = downloads.send(DownloadManagerInput::Enqueue {
+                        let _ = downloads.send(DownloadQueueInput::Enqueue {
                             url: url.clone(),
                             title: title.clone(),
                             dest,

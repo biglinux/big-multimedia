@@ -106,7 +106,7 @@ impl Component for AudioShell {
             .launch(())
             .forward(sender.input_sender(), AudioShellInput::Lyrics);
         // Self-contained: no Output, fed only an Enqueue by the shell.
-        let downloads = DownloadManagerPanel::builder().launch(()).detach();
+        let downloads = DownloadQueuePanel::builder().launch(()).detach();
         let podcast = PodcastPanel::builder()
             .launch(())
             .forward(sender.input_sender(), AudioShellInput::Podcast);

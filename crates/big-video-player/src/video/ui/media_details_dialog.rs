@@ -20,17 +20,17 @@ use big_media_components::time::duration_hms;
 use big_relm4_components::layout::{
     dialog_page::BigDialogPage, preferences::BigPreferencesGroupSpec,
 };
-use big_relm4_components::list::copyable_info_row::{
-    copy_all_button, BigCopyableInfoRow, BigCopyableInfoRowSpec, BigInfoLines,
+use big_relm4_components::list::copyable_detail_row::{
+    copy_all_button, BigCopyableDetailRow, BigCopyableDetailRowSpec, BigDetailLines,
 };
 
 use crate::i18n::i18n;
 use crate::player::mpv_backend::{MpvBackend, TrackInfo};
 
 /// Build one copyable detail row and register it for "Copy All".
-fn media_detail_row(title: &str, value: &str, lines: &BigInfoLines) -> adw::ActionRow {
-    BigCopyableInfoRow::new(
-        BigCopyableInfoRowSpec::new(title, value, i18n("Copy")),
+fn media_detail_row(title: &str, value: &str, lines: &BigDetailLines) -> adw::ActionRow {
+    BigCopyableDetailRow::new(
+        BigCopyableDetailRowSpec::new(title, value, i18n("Copy")),
         Some(lines),
     )
     .into_row()
@@ -45,7 +45,7 @@ pub fn show_video_media_details_dialog(parent: &impl IsA<gtk::Widget>, mpv: &Arc
         .build();
 
     let page = BigDialogPage::scrolled_clamped(500, 420);
-    let lines = BigInfoLines::new();
+    let lines = BigDetailLines::new();
     page.header()
         .pack_end(&copy_all_button(&i18n("Copy All"), lines.clone()));
 
@@ -73,7 +73,7 @@ pub fn show_video_media_details_dialog(parent: &impl IsA<gtk::Widget>, mpv: &Arc
     dialog.present(Some(parent));
 }
 
-fn build_general_group(mpv: &Arc<MpvBackend>, lines: &BigInfoLines) -> adw::PreferencesGroup {
+fn build_general_group(mpv: &Arc<MpvBackend>, lines: &BigDetailLines) -> adw::PreferencesGroup {
     let group = BigPreferencesGroupSpec::new(i18n("General")).build();
 
     let file_path = mpv.get_current_file().unwrap_or_default();
@@ -116,7 +116,7 @@ fn build_general_group(mpv: &Arc<MpvBackend>, lines: &BigInfoLines) -> adw::Pref
 
 fn build_metadata_group(
     mpv: &Arc<MpvBackend>,
-    lines: &BigInfoLines,
+    lines: &BigDetailLines,
 ) -> Option<adw::PreferencesGroup> {
     let metadata = mpv.get_metadata();
     if metadata.is_empty() {
@@ -137,7 +137,10 @@ fn build_metadata_group(
     Some(group)
 }
 
-fn build_video_group(mpv: &Arc<MpvBackend>, lines: &BigInfoLines) -> Option<adw::PreferencesGroup> {
+fn build_video_group(
+    mpv: &Arc<MpvBackend>,
+    lines: &BigDetailLines,
+) -> Option<adw::PreferencesGroup> {
     let video_codec = mpv.get_video_codec();
     if video_codec.is_empty() {
         return None;
@@ -201,7 +204,10 @@ fn build_video_group(mpv: &Arc<MpvBackend>, lines: &BigInfoLines) -> Option<adw:
     Some(group)
 }
 
-fn build_audio_group(mpv: &Arc<MpvBackend>, lines: &BigInfoLines) -> Option<adw::PreferencesGroup> {
+fn build_audio_group(
+    mpv: &Arc<MpvBackend>,
+    lines: &BigDetailLines,
+) -> Option<adw::PreferencesGroup> {
     let audio_codec = mpv.get_audio_codec_name();
     if audio_codec.is_empty() {
         return None;
@@ -243,7 +249,7 @@ fn build_audio_group(mpv: &Arc<MpvBackend>, lines: &BigInfoLines) -> Option<adw:
 
 fn build_streaming_group(
     mpv: &Arc<MpvBackend>,
-    lines: &BigInfoLines,
+    lines: &BigDetailLines,
 ) -> Option<adw::PreferencesGroup> {
     let cache_state = mpv.get_cache_buffering_state();
     if cache_state < 0 {
@@ -260,7 +266,7 @@ fn build_streaming_group(
 
 /// One group per track type, shown only when it carries a meaningful choice
 /// (>1 video/audio track, or any subtitle track).
-fn build_track_groups(tracks: &[TrackInfo], lines: &BigInfoLines) -> Vec<adw::PreferencesGroup> {
+fn build_track_groups(tracks: &[TrackInfo], lines: &BigDetailLines) -> Vec<adw::PreferencesGroup> {
     let mut groups = Vec::new();
     let video: Vec<_> = tracks.iter().filter(|t| t.track_type == "video").collect();
     let audio: Vec<_> = tracks.iter().filter(|t| t.track_type == "audio").collect();
