@@ -34,7 +34,7 @@ use super::library_panel::{LibraryPanel, LibraryPanelOutput};
 /// Strings are pre-trimmed; `None` means "clear this tag". `year` stays a string
 /// (the writer parses it); numeric fields are parsed into `Option<u32>`/`<i32>`.
 /// Mirrors `crate::library::metadata::TagEdits` so the shell can map 1:1.
-#[derive(Debug, Clone, Default)]
+#[derive(Debug, Clone, Default, PartialEq, Eq)]
 pub struct TagEditFields {
     /// New title (`None` = clear).
     pub title: Option<String>,
@@ -156,6 +156,19 @@ struct EditRows {
     comment: adw::EntryRow,
 }
 
+#[derive(Debug, Clone, Copy)]
+struct TagEditFieldTextRefs<'a> {
+    title: &'a str,
+    artist: &'a str,
+    album: &'a str,
+    album_artist: &'a str,
+    genre: &'a str,
+    comment: &'a str,
+    year: &'a str,
+    track_number: &'a str,
+    disc_number: &'a str,
+}
+
 impl EditRows {
     fn new(track: &Track) -> Self {
         let entry =
@@ -194,22 +207,26 @@ impl EditRows {
 
     /// Collect the current values into a shell-bound `TagEditFields`.
     fn collect(&self) -> TagEditFields {
-        let year_str = self.year.text().trim().to_string();
-        TagEditFields {
-            title: optional_entry_text(self.title.text().as_str()),
-            artist: optional_entry_text(self.artist.text().as_str()),
-            album: optional_entry_text(self.album.text().as_str()),
-            album_artist: optional_entry_text(self.album_artist.text().as_str()),
-            genre: optional_entry_text(self.genre.text().as_str()),
-            comment: optional_entry_text(self.comment.text().as_str()),
-            year: if year_str.is_empty() {
-                None
-            } else {
-                Some(year_str)
-            },
-            track_number: self.track_number.text().trim().parse().ok(),
-            disc_number: self.disc_number.text().trim().parse().ok(),
-        }
+        let title = self.title.text();
+        let artist = self.artist.text();
+        let album = self.album.text();
+        let album_artist = self.album_artist.text();
+        let genre = self.genre.text();
+        let comment = self.comment.text();
+        let year = self.year.text();
+        let track_number = self.track_number.text();
+        let disc_number = self.disc_number.text();
+        collect_tag_edit_fields(TagEditFieldTextRefs {
+            title: title.as_str(),
+            artist: artist.as_str(),
+            album: album.as_str(),
+            album_artist: album_artist.as_str(),
+            genre: genre.as_str(),
+            comment: comment.as_str(),
+            year: year.as_str(),
+            track_number: track_number.as_str(),
+            disc_number: disc_number.as_str(),
+        })
     }
 }
 
@@ -221,6 +238,33 @@ fn optional_entry_text(text: &str) -> Option<String> {
     } else {
         Some(trimmed.to_string())
     }
+}
+
+fn optional_u32_entry(text: &str) -> Option<u32> {
+    text.trim().parse().ok()
+}
+
+fn collect_tag_edit_fields(fields: TagEditFieldTextRefs<'_>) -> TagEditFields {
+    TagEditFields {
+        title: optional_entry_text(fields.title),
+        artist: optional_entry_text(fields.artist),
+        album: optional_entry_text(fields.album),
+        album_artist: optional_entry_text(fields.album_artist),
+        genre: optional_entry_text(fields.genre),
+        comment: optional_entry_text(fields.comment),
+        year: optional_entry_text(fields.year),
+        track_number: optional_u32_entry(fields.track_number),
+        disc_number: optional_u32_entry(fields.disc_number),
+    }
+}
+
+fn should_offer_musicbrainz_lookup(
+    has_artist: bool,
+    has_genre: bool,
+    has_year: bool,
+    has_track_number: bool,
+) -> bool {
+    has_artist && (!has_genre || !has_year || !has_track_number)
 }
 
 /// Sidebar page: album art (off-thread) + read-only file info.
@@ -456,36 +500,41 @@ fn maybe_add_musicbrainz_lookup(
     rows: &EditRows,
     sender: &ComponentSender<LibraryPanel>,
 ) -> Option<TagEditorHandle> {
-    let has_missing = track.genre.is_none() || track.year.is_none() || track.track_number.is_none();
-    if !has_missing || track.artist.is_none() {
-        return None;
+    let should_add_lookup = should_offer_musicbrainz_lookup(
+        track.artist.is_some(),
+        track.genre.is_some(),
+        track.year.is_some(),
+        track.track_number.is_some(),
+    );
+    if should_add_lookup {
+        let musicbrainz_lookup_button = gtk::Button::builder()
+            .label(i18n("Lookup from MusicBrainz"))
+            .halign(gtk::Align::Center)
+            .margin_top(4)
+            .build();
+        musicbrainz_lookup_button.add_css_class("pill");
+
+        let out = sender.clone();
+        let track_id = track.id;
+        let track_for_lookup = track.clone();
+        musicbrainz_lookup_button.connect_clicked(move |button| {
+            let _ = out.output(LibraryPanelOutput::MusicBrainzLookup(
+                track_for_lookup.clone(),
+            ));
+            button.set_sensitive(false);
+            button.set_label(&i18n("Searching…"));
+        });
+        content.append(&musicbrainz_lookup_button);
+        Some(TagEditorHandle {
+            track_id,
+            lookup_button: musicbrainz_lookup_button.downgrade(),
+            genre_row: rows.genre.downgrade(),
+            year_row: rows.year.downgrade(),
+            track_row: rows.track_number.downgrade(),
+        })
+    } else {
+        None
     }
-
-    let musicbrainz_lookup_button = gtk::Button::builder()
-        .label(i18n("Lookup from MusicBrainz"))
-        .halign(gtk::Align::Center)
-        .margin_top(4)
-        .build();
-    musicbrainz_lookup_button.add_css_class("pill");
-
-    let out = sender.clone();
-    let track_id = track.id;
-    let track_for_lookup = track.clone();
-    musicbrainz_lookup_button.connect_clicked(move |button| {
-        let _ = out.output(LibraryPanelOutput::MusicBrainzLookup(
-            track_for_lookup.clone(),
-        ));
-        button.set_sensitive(false);
-        button.set_label(&i18n("Searching…"));
-    });
-    content.append(&musicbrainz_lookup_button);
-    Some(TagEditorHandle {
-        track_id,
-        lookup_button: musicbrainz_lookup_button.downgrade(),
-        genre_row: rows.genre.downgrade(),
-        year_row: rows.year.downgrade(),
-        track_row: rows.track_number.downgrade(),
-    })
 }
 
 /// Fill only the empty MusicBrainz-eligible rows; update the button to report
@@ -529,7 +578,12 @@ fn apply_musicbrainz_result(
 
 #[cfg(test)]
 mod tests {
-    use super::optional_entry_text;
+    use gtk::glib;
+
+    use super::{
+        collect_tag_edit_fields, optional_entry_text, should_offer_musicbrainz_lookup,
+        TagEditFieldTextRefs, TagEditFields, TagEditorHandle,
+    };
 
     #[test]
     fn optional_entry_text_discards_blank_values() {
@@ -540,5 +594,74 @@ mod tests {
     #[test]
     fn optional_entry_text_trims_real_values() {
         assert_eq!(optional_entry_text("  album  "), Some("album".to_string()));
+    }
+
+    #[test]
+    fn collect_tag_edit_fields_trims_text_and_parses_numbers() {
+        assert_eq!(
+            collect_tag_edit_fields(TagEditFieldTextRefs {
+                title: "  Song  ",
+                artist: " Artist ",
+                album: " Album ",
+                album_artist: " Album Artist ",
+                genre: " Rock ",
+                comment: " Comment ",
+                year: " 2026 ",
+                track_number: " 7 ",
+                disc_number: " 2 ",
+            }),
+            TagEditFields {
+                title: Some("Song".to_string()),
+                artist: Some("Artist".to_string()),
+                album: Some("Album".to_string()),
+                album_artist: Some("Album Artist".to_string()),
+                genre: Some("Rock".to_string()),
+                comment: Some("Comment".to_string()),
+                year: Some("2026".to_string()),
+                track_number: Some(7),
+                disc_number: Some(2),
+            }
+        );
+    }
+
+    #[test]
+    fn collect_tag_edit_fields_discards_blank_and_invalid_numbers() {
+        assert_eq!(
+            collect_tag_edit_fields(TagEditFieldTextRefs {
+                title: " ",
+                artist: "",
+                album: "\n",
+                album_artist: "\t",
+                genre: "",
+                comment: "",
+                year: " ",
+                track_number: "side a",
+                disc_number: "-1",
+            }),
+            TagEditFields::default()
+        );
+    }
+
+    #[test]
+    fn musicbrainz_lookup_requires_artist_and_missing_fillable_field() {
+        assert!(should_offer_musicbrainz_lookup(true, false, true, true));
+        assert!(should_offer_musicbrainz_lookup(true, true, false, true));
+        assert!(should_offer_musicbrainz_lookup(true, true, true, false));
+        assert!(!should_offer_musicbrainz_lookup(false, false, false, false));
+        assert!(!should_offer_musicbrainz_lookup(true, true, true, true));
+    }
+
+    #[test]
+    fn stale_tag_editor_handle_preserves_track_id_and_rejects_result() {
+        let handle = TagEditorHandle {
+            track_id: 42,
+            lookup_button: glib::WeakRef::new(),
+            genre_row: glib::WeakRef::new(),
+            year_row: glib::WeakRef::new(),
+            track_row: glib::WeakRef::new(),
+        };
+
+        assert_eq!(handle.track_id(), 42);
+        assert!(!handle.apply_musicbrainz_result(None));
     }
 }
