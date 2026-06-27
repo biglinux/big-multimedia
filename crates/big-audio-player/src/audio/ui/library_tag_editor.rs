@@ -21,6 +21,7 @@ use big_media_components::player_chrome::spawn_blocking_result;
 use big_relm4_components::layout::{
     dialog_footer::{BigDialogFooter, BigDialogFooterSpec},
     dialog_page::BigDialogPage,
+    preferences::BigPreferencesGroupSpec,
 };
 
 use crate::db::models::Track;
@@ -356,9 +357,7 @@ fn build_content_page(
         .margin_bottom(16)
         .build();
 
-    let group = adw::PreferencesGroup::builder()
-        .title(i18n("Metadata"))
-        .build();
+    let group = BigPreferencesGroupSpec::new(i18n("Metadata")).build();
     group.add(&rows.title);
     group.add(&rows.artist);
     group.add(&rows.album);

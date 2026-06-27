@@ -4,6 +4,7 @@
 //! to format/bitrate/channels + cut + audio-settings.
 
 use adw::prelude::*;
+use big_relm4_components::layout::preferences::BigPreferencesGroupSpec;
 use big_relm4_components::list::check_action_row::{
     BigCheckActionRow, BigCheckActionRowSpec, BigCheckRowActivation,
 };
@@ -95,7 +96,7 @@ pub(super) fn build_conversion_page(mode: ConverterMode) -> ConversionPageWidget
     let audio_mode_volume_adjustment = gtk::Adjustment::new(1.0, 0.0, 2.0, 0.05, 0.1, 0.0);
     let audio_speed_adj = gtk::Adjustment::new(1.0, 0.1, 5.0, 0.05, 0.1, 0.0);
 
-    let profile_group = adw::PreferencesGroup::new();
+    let profile_group = BigPreferencesGroupSpec::untitled().build();
     let copy = BigCheckActionRow::new(
         BigCheckActionRowSpec::new(i18n("Fast Copy")).subtitle(i18n("No re-encoding, fastest")),
         None,
@@ -139,13 +140,13 @@ pub(super) fn build_conversion_page(mode: ConverterMode) -> ConversionPageWidget
     let radio_custom = custom.check().clone();
     profile_group.add(&customize_row);
 
-    let gpu_group = adw::PreferencesGroup::new();
+    let gpu_group = BigPreferencesGroupSpec::untitled().build();
     gpu_group.set_visible(false);
     let gpu_combo = adw::ComboRow::builder().title(&i18n("GPU")).build();
     gpu_combo.add_prefix(&gtk::Image::from_icon_name("video-display-symbolic"));
     gpu_group.add(&gpu_combo);
 
-    let actions_group = adw::PreferencesGroup::new();
+    let actions_group = BigPreferencesGroupSpec::untitled().build();
     let audio_handling_default = ui_labels::audio_handling_labels()
         .into_iter()
         .next()
@@ -183,22 +184,20 @@ pub(super) fn build_conversion_page(mode: ConverterMode) -> ConversionPageWidget
     actions_group.add(&extra_row);
 
     let audio_settings_row_audio_mode = if mode.is_audio() {
-        let output_group = adw::PreferencesGroup::new();
+        let output_group = BigPreferencesGroupSpec::untitled().build();
         output_group.set_margin_top(0);
         output_group.add(&audio_mode_format_combo);
         output_group.add(&audio_mode_bitrate_combo);
         output_group.add(&audio_mode_channels_combo);
         conv_box.append(&output_group);
 
-        let cut_group = adw::PreferencesGroup::builder().title(i18n("Cut")).build();
+        let cut_group = BigPreferencesGroupSpec::new(i18n("Cut")).build();
         cut_group.set_margin_top(6);
         cut_group.add(&audio_cut_combo);
         cut_group.add(&audio_cut_out_combo);
         conv_box.append(&cut_group);
 
-        let audio_settings_group = adw::PreferencesGroup::builder()
-            .title(i18n("Audio Settings"))
-            .build();
+        let audio_settings_group = BigPreferencesGroupSpec::new(i18n("Audio Settings")).build();
         audio_settings_group.set_margin_top(6);
         let audio_settings_row_audio_mode = BigNavigationRow::new(
             BigNavigationRowSpec::new(i18n("Audio Settings"))

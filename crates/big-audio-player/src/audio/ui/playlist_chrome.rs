@@ -12,6 +12,7 @@ use big_relm4_components::layout::{
     dialog_footer::{BigDialogFooter, BigDialogFooterSpec},
     dialog_page::BigDialogPage,
     hamburger_menu::{build_hamburger_menu_button, BigHamburgerMenuSpec, BigMenuActionItem},
+    preferences::BigPreferencesGroupSpec,
 };
 use gtk::{gio, glib};
 use relm4::ComponentSender;
@@ -138,7 +139,7 @@ fn prompt_queue_playlist_name(
     page.content().set_spacing(12);
     page.append_description(&i18n("Name for the new playlist"));
 
-    let group = adw::PreferencesGroup::new();
+    let group = BigPreferencesGroupSpec::untitled().build();
     let entry = adw::EntryRow::builder()
         .title(i18n("Playlist name"))
         .show_apply_button(true)

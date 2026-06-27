@@ -11,6 +11,7 @@ use std::sync::Arc;
 use big_player_ui::audio_preferences::{
     create_player_audio_page as create_audio_page, PlayerAudioEffects, PlayerAudioPreferenceActions,
 };
+use big_relm4_components::layout::preferences::BigPreferencesGroupSpec;
 
 use crate::i18n::i18n;
 use crate::player::mpv_backend::{AudioEffects, MpvBackend};
@@ -28,8 +29,7 @@ pub(super) fn create_music_page(
         .icon_name("emblem-music-symbolic")
         .build();
 
-    let playback_group = adw::PreferencesGroup::builder()
-        .title(i18n("Playback"))
+    let playback_group = BigPreferencesGroupSpec::new(i18n("Playback"))
         .description(i18n("Control how your music is played"))
         .build();
 
@@ -164,8 +164,7 @@ pub(super) fn create_music_page(
 
     page.add(&playback_group);
 
-    let lb_group = adw::PreferencesGroup::builder()
-        .title("ListenBrainz")
+    let lb_group = BigPreferencesGroupSpec::new("ListenBrainz")
         .description(i18n("Keep a record of everything you listen to on ListenBrainz — a free, open-source music tracking service"))
         .build();
 

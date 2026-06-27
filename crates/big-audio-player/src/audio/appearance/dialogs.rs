@@ -7,6 +7,7 @@ use crate::i18n::i18n;
 use crate::settings::{keys, Settings};
 
 use big_player_ui::appearance::{create_audio_colors_page, show_appearance_window};
+use big_relm4_components::layout::preferences::BigPreferencesGroupSpec;
 
 pub fn show_audio_appearance_dialog(
     parent: &impl IsA<gtk::Window>,
@@ -48,9 +49,7 @@ fn create_effects_page(settings: &Settings, on_changed: &Rc<dyn Fn()>) -> adw::P
         .icon_name("applications-graphics-symbolic")
         .build();
 
-    let group = adw::PreferencesGroup::builder()
-        .title(i18n("Playback Bar"))
-        .build();
+    let group = BigPreferencesGroupSpec::new(i18n("Playback Bar")).build();
 
     let art_bg_row = adw::SwitchRow::builder()
         .title(i18n("Album Art Background"))

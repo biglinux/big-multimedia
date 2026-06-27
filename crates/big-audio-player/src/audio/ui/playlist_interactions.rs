@@ -14,6 +14,7 @@ use big_relm4_components::feedback::context_popover::BigContextPopover;
 use big_relm4_components::layout::{
     dialog_footer::{BigDialogFooter, BigDialogFooterSpec},
     dialog_page::BigDialogPage,
+    preferences::BigPreferencesGroupSpec,
 };
 
 use crate::audio::converter_launcher;
@@ -473,7 +474,7 @@ fn show_delete_confirm(
     page.content().set_spacing(12);
     page.append_description(&body);
 
-    let group = adw::PreferencesGroup::new();
+    let group = BigPreferencesGroupSpec::untitled().build();
     let perm_row = adw::SwitchRow::builder()
         .title(i18n("Delete permanently"))
         .subtitle(i18n("Skip trash — cannot be undone"))

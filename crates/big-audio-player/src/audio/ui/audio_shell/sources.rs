@@ -449,10 +449,10 @@ mod tests {
     #[test]
     fn recording_saved_paths_split_file_and_parent_folder() {
         assert_eq!(
-            recording_saved_paths(Path::new("/home/bruno/Music/Radio Recordings/show.mp3")),
+            recording_saved_paths(Path::new("Music/Radio Recordings/show.mp3")),
             RecordingSavedPaths {
                 file_name: "show.mp3".into(),
-                folder_name: "/home/bruno/Music/Radio Recordings".into(),
+                folder_name: "Music/Radio Recordings".into(),
             }
         );
     }

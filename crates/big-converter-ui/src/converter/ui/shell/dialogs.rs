@@ -13,6 +13,7 @@ use big_app_kit::file_dialogs::FilePicker;
 use big_relm4_components::layout::{
     dialog_footer::{BigDialogFooter, BigDialogFooterSpec},
     dialog_page::BigDialogPage,
+    preferences::BigPreferencesGroupSpec,
 };
 
 use crate::converter::app::ConverterMode;
@@ -253,7 +254,7 @@ pub(super) fn show_network_url_dialog(
         "Enter the file URL (sftp://, smb://, ftp://, http://):",
     ));
 
-    let group = adw::PreferencesGroup::new();
+    let group = BigPreferencesGroupSpec::untitled().build();
     let entry = adw::EntryRow::builder()
         .title(i18n("Network file URL"))
         .show_apply_button(true)

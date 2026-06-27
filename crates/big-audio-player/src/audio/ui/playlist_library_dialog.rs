@@ -18,6 +18,7 @@ use adw::prelude::*;
 use big_relm4_components::layout::{
     dialog_footer::{BigDialogFooter, BigDialogFooterSpec},
     dialog_page::BigDialogPage,
+    preferences::BigPreferencesGroupSpec,
     sidebar_dialog::{BigSidebarDialog, BigSidebarDialogSpec},
 };
 use big_relm4_components::list::navigation_row::{BigNavigationRow, BigNavigationRowSpec};
@@ -218,9 +219,7 @@ impl PlaylistLibraryDialog {
 /// "Import & Export" group, shown directly in the dialog (no overflow menu):
 /// single-file import, batch folder import, and export-all.
 fn build_io_group(sender: &ComponentSender<PlaylistLibraryDialog>) -> adw::PreferencesGroup {
-    let group = adw::PreferencesGroup::builder()
-        .title(i18n("Import / Export"))
-        .build();
+    let group = BigPreferencesGroupSpec::new(i18n("Import / Export")).build();
 
     let rows: [(&str, &str, fn() -> PlaylistLibraryDialogOutput); 3] = [
         ("document-import-symbolic", "Import File…", || {
@@ -288,8 +287,7 @@ fn build_save_button(
 /// "Generate" group: smart playlists from listening stats. Row activate loads
 /// the set into the queue (save it afterwards with "Save Current Queue").
 fn build_generate_group(sender: &ComponentSender<PlaylistLibraryDialog>) -> adw::PreferencesGroup {
-    let group = adw::PreferencesGroup::builder()
-        .title(i18n("Generate"))
+    let group = BigPreferencesGroupSpec::new(i18n("Generate"))
         .description(i18n("Build a playlist from your listening stats"))
         .build();
 
@@ -435,7 +433,7 @@ fn prompt_name(
     page.content().set_spacing(12);
     page.append_description(placeholder);
 
-    let group = adw::PreferencesGroup::new();
+    let group = BigPreferencesGroupSpec::untitled().build();
     let entry = adw::EntryRow::builder()
         .title(entry_label)
         .text(prefill)

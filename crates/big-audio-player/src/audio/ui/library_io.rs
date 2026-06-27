@@ -15,6 +15,7 @@ use big_media_components::player_chrome::spawn_blocking_result;
 use big_relm4_components::layout::{
     dialog_footer::{BigDialogFooter, BigDialogFooterSpec},
     dialog_page::BigDialogPage,
+    preferences::BigPreferencesGroupSpec,
 };
 use big_relm4_components::list::button_strip_row::{BigButtonStripRow, BigButtonStripRowSpec};
 use big_relm4_components::list::detail_row::{BigDetailRow, BigDetailRowSpec};
@@ -337,7 +338,7 @@ where
     page.content().set_spacing(12);
     page.append_description(body);
 
-    let group = adw::PreferencesGroup::new();
+    let group = BigPreferencesGroupSpec::untitled().build();
     let entry = adw::EntryRow::builder()
         .title(i18n("Playlist name"))
         .show_apply_button(true)

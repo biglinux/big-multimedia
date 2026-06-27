@@ -14,6 +14,7 @@ use big_relm4_components::input::preference_cards::BigSpinRange;
 use big_relm4_components::input::spin_row::{BigSpinRow, BigSpinRowSpec};
 use big_relm4_components::layout::dialog_footer::{BigDialogFooter, BigDialogFooterSpec};
 use big_relm4_components::layout::dialog_page::BigDialogPage;
+use big_relm4_components::layout::preferences::BigPreferencesGroupSpec;
 
 use super::*;
 
@@ -166,8 +167,7 @@ impl AudioShell {
         let start_spin = start_row.spin().clone();
         let end_spin = end_row.spin().clone();
 
-        let group = adw::PreferencesGroup::builder()
-            .title(i18n("Cut range"))
+        let group = BigPreferencesGroupSpec::new(i18n("Cut range"))
             .description(i18n(
                 "Use the clock buttons to copy the current playback position",
             ))
@@ -243,8 +243,7 @@ impl AudioShell {
             "Join creates one file; separate creates one file per cut",
         ));
 
-        let group = adw::PreferencesGroup::builder()
-            .title(i18n("Export marked cuts"))
+        let group = BigPreferencesGroupSpec::new(i18n("Export marked cuts"))
             .description(format!("{} {}", ranges.len(), i18n("selected cut ranges")))
             .build();
         group.add(format_row.root());

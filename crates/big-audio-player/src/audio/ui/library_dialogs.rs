@@ -10,6 +10,7 @@ use adw::prelude::*;
 use big_relm4_components::layout::{
     dialog_footer::{BigDialogFooter, BigDialogFooterSpec},
     dialog_page::BigDialogPage,
+    preferences::BigPreferencesGroupSpec,
 };
 use big_relm4_components::list::navigation_row::{BigNavigationRow, BigNavigationRowSpec};
 use gtk::glib;
@@ -125,7 +126,7 @@ where
     let page = BigDialogPage::plain();
     page.content().set_spacing(12);
 
-    let group = adw::PreferencesGroup::new();
+    let group = BigPreferencesGroupSpec::untitled().build();
     let entry = adw::EntryRow::builder()
         .title(i18n("Playlist name"))
         .show_apply_button(true)

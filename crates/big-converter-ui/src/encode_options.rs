@@ -11,6 +11,7 @@
 use adw::prelude::*;
 use big_media_runtime::converter::profiles::VideoFilters;
 use big_media_runtime::ui_labels;
+use big_relm4_components::layout::preferences::BigPreferencesGroupSpec;
 
 use crate::converter::ui::sidebar::{
     CODEC_IDS, CONTAINER_IDS, QUALITY_IDS, as_str_refs, combo_id, make_combo, set_combo_by_id,
@@ -77,8 +78,7 @@ impl EncodeOptions {
         set_combo_by_id(&codec_combo, CODEC_IDS, "h264");
         set_combo_by_id(&quality_combo, QUALITY_IDS, "good");
 
-        let group = adw::PreferencesGroup::builder()
-            .title(i18n("Re-encode options"))
+        let group = BigPreferencesGroupSpec::new(i18n("Re-encode options"))
             .description(i18n(
                 "Choose the file type, video codec, and quality used to create the new clip.",
             ))
