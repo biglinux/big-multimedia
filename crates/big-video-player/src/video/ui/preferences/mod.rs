@@ -125,9 +125,11 @@ pub fn show_preferences(
         restore_defaults_button
             .update_property(&[gtk::accessible::Property::Label(&i18n("Restore Defaults"))]);
         {
-            let preferences_window = win.clone();
+            let preferences_window = win.downgrade();
             restore_defaults_button.connect_clicked(move |_| {
-                on_restore_defaults(preferences_window.upcast_ref::<gtk::Window>());
+                if let Some(preferences_window) = preferences_window.upgrade() {
+                    on_restore_defaults(preferences_window.upcast_ref::<gtk::Window>());
+                }
             });
         }
         hb.pack_start(&restore_defaults_button);
