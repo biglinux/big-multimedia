@@ -14,8 +14,9 @@ use big_relm4_components::layout::hamburger_menu::{
     build_flat_action_popover_button, BigHamburgerMenuSpec, BigMenuActionItem,
 };
 use big_relm4_components::layout::media_window::{
-    create_media_toast_overlay_root, mount_media_toast_content, BigMediaChrome, BigMediaMenuSpec,
-    BigMediaOverlayStack, BigMediaSidebarShell, BigMediaSidebarSpec,
+    create_media_toast_overlay_root, mount_media_toast_content, BigMediaChrome,
+    BigMediaChromePlacement, BigMediaMenuSpec, BigMediaOverlayStack, BigMediaSidebarShell,
+    BigMediaSidebarSpec,
 };
 
 impl Component for VideoShell {
@@ -130,7 +131,7 @@ impl Component for VideoShell {
 
         let media_stack = BigMediaOverlayStack::new(&video_bg);
         let main_overlay = media_stack.overlay().clone();
-        media_stack.add_clipped_media_layer(&gl_area);
+        media_stack.add_primary_media_surface(&gl_area);
 
         // Software (no-GL) video surface: hidden until the GL render context
         // fails to come up (headless software compositor, GL-less VM). The SW
@@ -141,7 +142,7 @@ impl Component for VideoShell {
             .vexpand(true)
             .visible(false)
             .build();
-        media_stack.add_clipped_media_layer(&sw_picture);
+        media_stack.add_fallback_media_surface(&sw_picture);
 
         let chrome = BigMediaChrome::new(
             BigMediaMenuSpec {
@@ -194,7 +195,7 @@ impl Component for VideoShell {
         // first open.
         chrome.set_bottom_child(&bottom_stack);
         if !is_background {
-            chrome.install_bottom_into(&main_overlay);
+            media_stack.install_chrome(&chrome, BigMediaChromePlacement::Bottom);
         }
 
         // Welcome screen: shown until the first file loads (hidden on
@@ -203,7 +204,7 @@ impl Component for VideoShell {
             None
         } else {
             let welcome = build_welcome_screen(&sender);
-            media_stack.add_floating_overlay(&welcome);
+            media_stack.add_welcome_overlay(&welcome);
             Some(welcome)
         };
 
@@ -220,7 +221,7 @@ impl Component for VideoShell {
                 .height_request(48)
                 .build(),
         );
-        media_stack.add_floating_overlay(&buffering_overlay);
+        media_stack.add_status_overlay(&buffering_overlay);
 
         // Drag-and-drop a file onto the window → open it (old `setup_drag_drop`).
         {
@@ -358,7 +359,7 @@ impl Component for VideoShell {
         // `@player_icon_color`), so both light and dark themes stay readable —
         // matching the old god-object's `.osd-header` wrapper box.
         if !is_background {
-            chrome.install_header_into(&main_overlay);
+            media_stack.install_chrome(&chrome, BigMediaChromePlacement::Header);
         }
 
         // OSD auto-hide: reveal on pointer motion over the video, hide after
