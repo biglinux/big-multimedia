@@ -11,7 +11,7 @@ use big_audio_effects::equalizer::EQ_PRESET_LABELS;
 use big_media_runtime::ui_labels;
 use big_relm4_components::layout::toolbar_pane::{BigToolbarHeader, BigToolbarHeaderSpec};
 
-use super::combo::make_combo;
+use super::combo::{make_combo, make_empty_combo};
 use super::conversion_page::build_conversion_page;
 use super::editing_page::build_editing_page;
 use super::{Sidebar, bindings, new_cb};
@@ -62,8 +62,8 @@ pub(super) fn build_sidebar(mode: ConverterMode) -> Sidebar {
     let resolution_combo = make_combo(&i18n("Resolution"), &super::as_str_refs(&resolution_labels));
     let container_labels = ui_labels::container_labels();
     let output_format_combo = make_combo(&i18n("Format"), &super::as_str_refs(&container_labels));
-    let gpu_combo = adw::ComboRow::builder().title(&i18n("GPU")).build();
-    let gpu_device_combo = adw::ComboRow::builder().title(&i18n("GPU Device")).build();
+    let gpu_combo = make_empty_combo(&i18n("GPU"));
+    let gpu_device_combo = make_empty_combo(&i18n("GPU Device"));
     let audio_handling_labels = ui_labels::audio_handling_labels();
     let audio_handling_combo =
         make_combo(&i18n("Audio"), &super::as_str_refs(&audio_handling_labels));

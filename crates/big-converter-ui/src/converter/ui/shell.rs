@@ -36,6 +36,7 @@ use big_os_kit::microdaemon::DurableJobSnapshot;
 use big_relm4_components::layout::toolbar_pane::{
     BigToolbarHeader, BigToolbarHeaderSpec, BigToolbarPane, BigToolbarPaneSpec,
 };
+use big_relm4_components::layout::widget_container::clear_box_children;
 
 use crate::cast::gpu::{GpuDevice, detect_all_gpus};
 use crate::converter::app::ConverterMode;
@@ -629,9 +630,7 @@ impl ConverterShell {
                 }
             }
             ShellMessage::MountFooter(footer) => {
-                while let Some(child) = self.footer_slot.first_child() {
-                    self.footer_slot.remove(&child);
-                }
+                clear_box_children(&self.footer_slot);
                 self.footer_slot.append(&footer);
             }
 

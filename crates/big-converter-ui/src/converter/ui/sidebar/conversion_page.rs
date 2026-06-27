@@ -15,7 +15,7 @@ use big_media_runtime::ui_labels;
 use crate::converter::app::ConverterMode;
 use crate::i18n::i18n;
 
-use super::combo::make_combo;
+use super::combo::{make_combo, make_empty_combo};
 
 pub(super) struct ConversionPageWidgets {
     pub(super) conv_scroll: gtk::ScrolledWindow,
@@ -142,7 +142,7 @@ pub(super) fn build_conversion_page(mode: ConverterMode) -> ConversionPageWidget
 
     let gpu_group = BigPreferencesGroupSpec::untitled().build();
     gpu_group.set_visible(false);
-    let gpu_combo = adw::ComboRow::builder().title(&i18n("GPU")).build();
+    let gpu_combo = make_empty_combo(&i18n("GPU"));
     gpu_combo.add_prefix(&gtk::Image::from_icon_name("video-display-symbolic"));
     gpu_group.add(&gpu_combo);
 

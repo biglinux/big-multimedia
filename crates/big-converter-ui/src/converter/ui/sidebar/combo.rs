@@ -1,12 +1,17 @@
 //! Sidebar ComboRow factory + parallel-ID-table accessors.
 
 use adw::prelude::*;
+use big_relm4_components::input::combo_row::{BigComboRow, BigComboRowSpec};
 
 /// Build an `adw::ComboRow` with `title` and an initial
 /// [`gtk::StringList`] model populated from `labels`.
 pub fn make_combo(title: &str, labels: &[&str]) -> adw::ComboRow {
-    let model = gtk::StringList::new(labels);
-    adw::ComboRow::builder().title(title).model(&model).build()
+    BigComboRow::new(BigComboRowSpec::new(title, labels.iter().copied())).into_root()
+}
+
+/// Build an `adw::ComboRow` without an initial model.
+pub fn make_empty_combo(title: &str) -> adw::ComboRow {
+    BigComboRow::new(BigComboRowSpec::empty(title)).into_root()
 }
 
 /// Select the row in `combo` whose id matches `target`, looked up in

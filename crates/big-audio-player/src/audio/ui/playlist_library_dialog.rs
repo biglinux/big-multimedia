@@ -20,8 +20,12 @@ use big_relm4_components::layout::{
     dialog_page::BigDialogPage,
     preferences::BigPreferencesGroupSpec,
     sidebar_dialog::{BigSidebarDialog, BigSidebarDialogSpec},
+    widget_container::clear_box_children,
 };
-use big_relm4_components::list::navigation_row::{BigNavigationRow, BigNavigationRowSpec};
+use big_relm4_components::list::{
+    bounded_list_box::{BigBoundedListBox, BigBoundedListBoxSpec},
+    navigation_row::{BigNavigationRow, BigNavigationRowSpec},
+};
 use gtk::glib;
 use relm4::{Component, ComponentParts, ComponentSender};
 
@@ -182,9 +186,7 @@ impl PlaylistLibraryDialog {
         sender: &ComponentSender<Self>,
         root: &adw::Window,
     ) {
-        while let Some(child) = self.list_slot.first_child() {
-            self.list_slot.remove(&child);
-        }
+        clear_box_children(&self.list_slot);
 
         if entries.is_empty() {
             self.layout.set_content_title(&i18n("Your Playlists"));
@@ -204,10 +206,9 @@ impl PlaylistLibraryDialog {
         // The page header carries the count; the list itself is untitled.
         self.layout
             .set_content_title(&format!("{} ({})", i18n("Your Playlists"), entries.len()));
-        let list = gtk::ListBox::builder()
-            .selection_mode(gtk::SelectionMode::None)
-            .css_classes(["boxed-list"])
-            .build();
+        let saved_playlist_list =
+            BigBoundedListBox::new(BigBoundedListBoxSpec::new(64).css_class("boxed-list"));
+        let list = saved_playlist_list.root().clone();
         list.update_property(&[gtk::accessible::Property::Label(&i18n("Saved playlists"))]);
         for (id, name, count, secs) in entries {
             list.append(&build_playlist_row(*id, name, *count, *secs, sender, root));

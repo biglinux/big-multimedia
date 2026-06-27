@@ -13,7 +13,10 @@ use big_relm4_components::{
         dialog_footer::{BigDialogFooter, BigDialogFooterSpec},
         dialog_page::BigDialogPage,
     },
-    list::action_nav_row::{BigActionNavRow, BigActionNavRowSpec},
+    list::{
+        action_nav_row::{BigActionNavRow, BigActionNavRowSpec},
+        bounded_list_box::{clear_list_box_rows, BigBoundedListBox, BigBoundedListBoxSpec},
+    },
 };
 use gtk::glib;
 use relm4::Sender;
@@ -45,10 +48,10 @@ pub(crate) fn present_cast(
     status.set_wrap(true);
     page.content().append(&status);
 
-    let list_box = gtk::ListBox::new();
-    list_box.set_selection_mode(gtk::SelectionMode::None);
-    list_box.add_css_class("boxed-list");
-
+    let cast_device_list =
+        BigBoundedListBox::new(BigBoundedListBoxSpec::new(16).css_class("boxed-list"));
+    let list_box = cast_device_list.root().clone();
+    list_box.update_property(&[gtk::accessible::Property::Label(&i18n("Cast devices"))]);
     list_box.set_vexpand(true);
     page.content().append(&list_box);
 
@@ -75,9 +78,7 @@ pub(crate) fn present_cast(
                 return glib::ControlFlow::Break;
             }
             let devices = cast_device_registry_for_poll.get_devices();
-            while let Some(row) = list_clone.row_at_index(0) {
-                list_clone.remove(&row);
-            }
+            clear_list_box_rows(&list_clone);
             for dev in &devices {
                 let label = if dev.model.is_empty() {
                     dev.name.clone()
