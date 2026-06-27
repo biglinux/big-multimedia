@@ -357,8 +357,6 @@ impl Component for VideoShell {
         // theme-aware colors (the `.osd-btn` header buttons get
         // `@player_icon_color`), so both light and dark themes stay readable —
         // matching the old god-object's `.osd-header` wrapper box.
-        let header_revealer = chrome.header_revealer().clone();
-        let controls_revealer = chrome.bottom_revealer().clone();
         if !is_background {
             chrome.install_header_into(&main_overlay);
         }
@@ -368,17 +366,15 @@ impl Component for VideoShell {
         // `controls/visibility.rs`. The welcome screen is up at init, so the OSD
         // never auto-hides until the first file loads.
         let trim_active = Rc::new(Cell::new(false));
-        let osd = Rc::new(OsdState {
-            header_revealer: header_revealer.clone(),
-            controls_revealer: controls_revealer.clone(),
-            main_overlay: main_overlay.clone(),
-            header_popovers: vec![chrome.menu_popover().clone(), open_menu_popover],
-            controls_popovers: controls.model().popovers(),
-            is_paused: Cell::new(false),
-            is_welcome_visible: Cell::new(!is_background),
-            trim_active: trim_active.clone(),
-            hide_timeout_id: RefCell::new(None),
-        });
+        let osd = OsdState::new(
+            &main_overlay,
+            chrome.header_revealer(),
+            chrome.bottom_revealer(),
+            vec![chrome.menu_popover().clone(), open_menu_popover],
+            controls.model().popovers(),
+            !is_background,
+            trim_active.clone(),
+        );
         if is_background {
             wire_background_video_input(&main_overlay);
         } else {

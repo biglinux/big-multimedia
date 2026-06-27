@@ -1,4 +1,5 @@
 use super::*;
+use big_relm4_components::layout::media_window::BigMediaImmersionController;
 
 use std::path::{Path, PathBuf};
 
@@ -7,14 +8,9 @@ pub(super) struct OsdState {
     pub(super) header_revealer: gtk::Revealer,
     /// Bottom OSD revealer (transport/controls bar).
     pub(super) controls_revealer: gtk::Revealer,
-    /// Overlay the cursor is set on (hidden when controls hide).
-    pub(super) main_overlay: gtk::Overlay,
-    /// Button-backed popovers whose open state must keep the OSD shown.
-    pub(super) header_popovers: Vec<gtk::Popover>,
-    /// Controls-bar hover popovers (volume / speed / voice) whose open state
-    /// must keep the OSD shown — else the auto-hide timer dismisses the popover
-    /// mid-hover (the "intensity slider flashes then disappears" bug).
-    pub(super) controls_popovers: Vec<gtk::Popover>,
+    /// Shared media chrome immersion controller: owns timer, cursor hiding,
+    /// revealer updates, and popover guards for media shells.
+    immersion: Rc<BigMediaImmersionController>,
     /// True while playback is paused — keep the OSD shown (old "bail if paused").
     pub(super) is_paused: Cell<bool>,
     /// True while the welcome screen is up (nothing loaded) — never auto-hide.
@@ -23,67 +19,64 @@ pub(super) struct OsdState {
     /// (scrub / play-pause) stays reachable while marking cuts. Shared (`Rc`)
     /// with the shell model and the trim key controller (one source of truth).
     pub(super) trim_active: Rc<Cell<bool>>,
-    /// Pending auto-hide timer; replaced on each activity, removed on drop.
-    pub(super) hide_timeout_id: RefCell<Option<glib::SourceId>>,
 }
 
 impl OsdState {
+    pub(super) fn new(
+        main_overlay: &gtk::Overlay,
+        header_revealer: &gtk::Revealer,
+        controls_revealer: &gtk::Revealer,
+        header_popovers: Vec<gtk::Popover>,
+        controls_popovers: Vec<gtk::Popover>,
+        is_welcome_visible: bool,
+        trim_active: Rc<Cell<bool>>,
+    ) -> Rc<Self> {
+        let immersion = BigMediaImmersionController::new(main_overlay);
+        immersion.set_idle_timeout(Duration::from_millis(OSD_HIDE_DELAY_MS));
+        immersion.set_hide_cursor_when_idle(true);
+        immersion.register_revealer(header_revealer);
+        immersion.register_revealer(controls_revealer);
+        for popover in header_popovers.iter().chain(controls_popovers.iter()) {
+            immersion.register_popover_hide_guard(popover);
+        }
+
+        let state = Rc::new(Self {
+            header_revealer: header_revealer.clone(),
+            controls_revealer: controls_revealer.clone(),
+            immersion,
+            is_paused: Cell::new(false),
+            is_welcome_visible: Cell::new(is_welcome_visible),
+            trim_active,
+        });
+        let state_weak = Rc::downgrade(&state);
+        state.immersion.register_hide_guard(move || {
+            state_weak
+                .upgrade()
+                .is_some_and(|state| state.should_keep_visible())
+        });
+        state
+    }
+
     /// Reveal the header + controls and restore the default cursor.
     pub(super) fn show(&self) {
-        self.header_revealer.set_visible(true);
-        self.controls_revealer.set_visible(true);
-        self.header_revealer.set_reveal_child(true);
-        self.controls_revealer.set_reveal_child(true);
-        self.main_overlay.set_cursor_from_name(Some("default"));
+        self.immersion.show_now();
     }
 
     /// Hide the header + controls and the cursor — unless a guard says otherwise
     /// (welcome up, paused, or a header menu popover open). Mirrors the old
     /// `hide_controls` bail-outs.
     pub(super) fn hide(&self) {
-        if self.is_welcome_visible.get() || self.is_paused.get() || self.trim_active.get() {
-            return;
-        }
-        if self.header_popovers.iter().any(gtk::Popover::is_visible) {
-            return;
-        }
-        // Keep the OSD shown while a controls-bar hover popover (volume / speed /
-        // voice) is open, so the auto-hide timer does not dismiss it mid-hover.
-        if self.controls_popovers.iter().any(gtk::Popover::is_visible) {
-            return;
-        }
-        self.header_revealer.set_reveal_child(false);
-        self.controls_revealer.set_reveal_child(false);
-        self.main_overlay.set_cursor_from_name(Some("none"));
+        self.immersion.hide_now();
     }
 
     /// Reveal the OSD now and (re)arm the auto-hide timer. Never arms the timer
     /// while the welcome screen is up.
     pub(super) fn show_and_schedule_hide(self: &Rc<Self>) {
-        self.show();
-        if let Some(id) = self.hide_timeout_id.borrow_mut().take() {
-            id.remove();
-        }
-        if self.is_welcome_visible.get() {
-            return;
-        }
-        let state = Rc::downgrade(self);
-        let id =
-            glib::timeout_add_local_once(Duration::from_millis(OSD_HIDE_DELAY_MS), move || {
-                if let Some(state) = state.upgrade() {
-                    state.hide();
-                    state.hide_timeout_id.borrow_mut().take();
-                }
-            });
-        self.hide_timeout_id.replace(Some(id));
+        self.immersion.show_and_schedule_hide();
     }
-}
 
-impl Drop for OsdState {
-    fn drop(&mut self) {
-        if let Some(id) = self.hide_timeout_id.borrow_mut().take() {
-            id.remove();
-        }
+    fn should_keep_visible(&self) -> bool {
+        self.is_welcome_visible.get() || self.is_paused.get() || self.trim_active.get()
     }
 }
 
