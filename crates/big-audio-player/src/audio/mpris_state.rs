@@ -62,3 +62,82 @@ pub(crate) fn save_mpris_art(data: &[u8]) -> Option<String> {
     std::fs::write(&art_path, data).ok()?;
     Some(format!("file://{}", art_path.display()))
 }
+
+#[cfg(all(test, not(miri)))]
+mod tests {
+    use super::save_mpris_art;
+    use std::env;
+    use std::ffi::OsString;
+    use std::fs;
+    use std::path::PathBuf;
+    use std::sync::{Mutex, PoisonError};
+    use std::time::{SystemTime, UNIX_EPOCH};
+
+    static CACHE_ENVIRONMENT_LOCK: Mutex<()> = Mutex::new(());
+
+    struct CacheHomeOverride {
+        previous_cache_home: Option<OsString>,
+        cache_home: PathBuf,
+    }
+
+    impl CacheHomeOverride {
+        fn activate() -> std::result::Result<Self, Box<dyn std::error::Error>> {
+            let unique_suffix = SystemTime::now().duration_since(UNIX_EPOCH)?.as_nanos();
+            let cache_home = env::temp_dir().join(format!(
+                "big-audio-mpris-cache-{}-{unique_suffix}",
+                std::process::id()
+            ));
+            fs::create_dir_all(&cache_home)?;
+            let previous_cache_home = env::var_os("XDG_CACHE_HOME");
+            env::set_var("XDG_CACHE_HOME", &cache_home);
+            Ok(Self {
+                previous_cache_home,
+                cache_home,
+            })
+        }
+    }
+
+    impl Drop for CacheHomeOverride {
+        fn drop(&mut self) {
+            if let Some(previous_cache_home) = &self.previous_cache_home {
+                env::set_var("XDG_CACHE_HOME", previous_cache_home);
+            } else {
+                env::remove_var("XDG_CACHE_HOME");
+            }
+            let _ = fs::remove_dir_all(&self.cache_home);
+        }
+    }
+
+    #[test]
+    fn save_mpris_art_writes_bytes_to_app_cache_and_returns_file_uri(
+    ) -> std::result::Result<(), Box<dyn std::error::Error>> {
+        let _environment_guard = CACHE_ENVIRONMENT_LOCK
+            .lock()
+            .unwrap_or_else(PoisonError::into_inner);
+        let cache_home_override = CacheHomeOverride::activate()?;
+        let art_bytes = b"jpeg bytes for mpris";
+
+        let art_url = save_mpris_art(art_bytes)
+            .ok_or_else(|| std::io::Error::other("cache dir should be available"))?;
+        let art_path = PathBuf::from(
+            art_url
+                .strip_prefix("file://")
+                .ok_or_else(|| std::io::Error::other("MPRIS art URL should use file scheme"))?,
+        );
+
+        assert_eq!(
+            art_path,
+            cache_home_override
+                .cache_home
+                .join("big-audio-player")
+                .join("mpris-art.jpg")
+        );
+        assert_eq!(
+            fs::read(&art_path)?,
+            art_bytes,
+            "MPRIS art cache should contain the bytes supplied by the caller"
+        );
+
+        Ok(())
+    }
+}

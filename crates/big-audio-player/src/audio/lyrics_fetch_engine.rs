@@ -62,7 +62,54 @@ fn strip_lrc_timestamps(raw: &str) -> String {
 
 #[cfg(test)]
 mod tests {
+    #[cfg(not(miri))]
+    use super::fetch_lyrics_blocking;
     use super::strip_lrc_timestamps;
+    #[cfg(not(miri))]
+    use crate::db::{schema, DbHandle};
+    #[cfg(not(miri))]
+    use big_media_runtime::Result as MediaResult;
+    #[cfg(not(miri))]
+    use rusqlite::Connection;
+    #[cfg(not(miri))]
+    use std::fs;
+    #[cfg(not(miri))]
+    use std::sync::{Arc, Mutex};
+    #[cfg(not(miri))]
+    use std::time::{SystemTime, UNIX_EPOCH};
+
+    #[cfg(not(miri))]
+    struct LyricsFixtureFolder {
+        path: std::path::PathBuf,
+    }
+
+    #[cfg(not(miri))]
+    impl LyricsFixtureFolder {
+        fn create() -> std::result::Result<Self, Box<dyn std::error::Error>> {
+            let unique_suffix = SystemTime::now().duration_since(UNIX_EPOCH)?.as_nanos();
+            let path = std::env::temp_dir().join(format!(
+                "big-audio-lyrics-fetch-{}-{unique_suffix}",
+                std::process::id()
+            ));
+            fs::create_dir_all(&path)?;
+            Ok(Self { path })
+        }
+    }
+
+    #[cfg(not(miri))]
+    impl Drop for LyricsFixtureFolder {
+        fn drop(&mut self) {
+            let _ = fs::remove_dir_all(&self.path);
+        }
+    }
+
+    #[cfg(not(miri))]
+    fn in_memory_library_database() -> MediaResult<DbHandle> {
+        let connection = Connection::open_in_memory()?;
+        connection.execute_batch("PRAGMA foreign_keys = ON;")?;
+        schema::run_migrations(&connection)?;
+        Ok(Arc::new(Mutex::new(connection)))
+    }
 
     #[test]
     fn plain_text_passes_through() {
@@ -79,5 +126,29 @@ mod tests {
     fn timestamp_only_lines_dropped() {
         let lrc = "[00:01.00]\n[00:02.00]kept";
         assert_eq!(strip_lrc_timestamps(lrc), "kept");
+    }
+
+    #[cfg(not(miri))]
+    #[test]
+    fn fetch_lyrics_prefers_sidecar_lrc_and_returns_plain_text(
+    ) -> std::result::Result<(), Box<dyn std::error::Error>> {
+        let library_database = in_memory_library_database()?;
+        let lyrics_fixture_folder = LyricsFixtureFolder::create()?;
+        let audio_path = lyrics_fixture_folder.path.join("song.mp3");
+        let sidecar_path = lyrics_fixture_folder.path.join("song.lrc");
+        fs::write(&audio_path, [])?;
+        fs::write(
+            &sidecar_path,
+            "[00:01.00]first line\n[00:02.00]\n[00:03.00]second line",
+        )?;
+
+        let lyrics = fetch_lyrics_blocking(&library_database, &audio_path.to_string_lossy());
+        assert_eq!(
+            lyrics.as_deref(),
+            Some("first line\nsecond line"),
+            "sidecar LRC should bypass network lookup and be stripped to plain text"
+        );
+
+        Ok(())
     }
 }
