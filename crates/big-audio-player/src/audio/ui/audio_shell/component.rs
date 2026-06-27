@@ -3,6 +3,9 @@ use super::input::set_shell_input;
 use super::mpris::build_mpris_service;
 use super::playback::transport_labels;
 use super::*;
+use big_relm4_components::layout::media_window::{
+    create_media_toast_overlay_root, mount_media_toast_content,
+};
 use big_relm4_components::layout::toolbar_pane::{
     BigToolbarHeader, BigToolbarHeaderSpec, BigToolbarPane, BigToolbarPaneSpec,
 };
@@ -29,7 +32,7 @@ impl Component for AudioShell {
     type Widgets = ();
 
     fn init_root() -> Self::Root {
-        adw::ToastOverlay::new()
+        create_media_toast_overlay_root()
     }
 
     fn init(
@@ -309,7 +312,7 @@ impl Component for AudioShell {
         main_paned.set_start_child(Some(sidebar_pane.root()));
         main_paned.set_end_child(Some(content_pane.root()));
 
-        root.set_child(Some(&main_paned));
+        mount_media_toast_content(&root, &main_paned);
 
         // App stylesheet (lyrics/radio/queue CSS classes) — was loaded by the
         // god-object window; the shell owns it now. Also register the bundled

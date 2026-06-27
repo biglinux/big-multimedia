@@ -14,8 +14,8 @@ use big_relm4_components::layout::hamburger_menu::{
     build_flat_action_popover_button, BigHamburgerMenuSpec, BigMenuActionItem,
 };
 use big_relm4_components::layout::media_window::{
-    BigMediaChrome, BigMediaMenuSpec, BigMediaOverlayStack, BigMediaSidebarShell,
-    BigMediaSidebarSpec,
+    create_media_toast_overlay_root, mount_media_toast_content, BigMediaChrome, BigMediaMenuSpec,
+    BigMediaOverlayStack, BigMediaSidebarShell, BigMediaSidebarSpec,
 };
 
 impl Component for VideoShell {
@@ -30,7 +30,7 @@ impl Component for VideoShell {
     type Widgets = ();
 
     fn init_root() -> Self::Root {
-        adw::ToastOverlay::new()
+        create_media_toast_overlay_root()
     }
 
     fn init(
@@ -414,7 +414,7 @@ impl Component for VideoShell {
         // The Root IS the toast overlay (toast host wrapping the content): the
         // split view is its child; toasts float above the video.
         let toast_overlay = root.clone();
-        toast_overlay.set_child(Some(&split_view));
+        mount_media_toast_content(&toast_overlay, &split_view);
 
         // Show the idle background now (welcome is up). Hidden on first
         // `FileLoaded` so the video surface becomes visible again. Kick off the
