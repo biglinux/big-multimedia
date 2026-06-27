@@ -15,6 +15,14 @@ use crate::i18n::i18n;
 
 use super::library_panel::{LibraryPanel, LibraryPanelInput, LibraryPanelOutput};
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum DetailSelectionAction {
+    Ignore,
+    ToggleOff(u32),
+    ToggleOn(u32),
+    SelectRange { start: u32, count: u32 },
+}
+
 /// Wire the detail view's drag-source, multi-select gesture, and right-click
 /// context menu onto `column_view`.
 pub(super) fn build_detail_interactions(
@@ -81,45 +89,74 @@ fn build_multi_select_gesture(selection: &gtk::MultiSelection) -> gtk::GestureCl
     gesture.set_propagation_phase(gtk::PropagationPhase::Capture);
     let sel = selection.clone();
     gesture.connect_pressed(move |gesture, n_press, x, y| {
-        if n_press != 1 {
-            return;
-        }
         let mods = gesture.current_event_state();
         let ctrl = mods.contains(gdk::ModifierType::CONTROL_MASK);
         let shift = mods.contains(gdk::ModifierType::SHIFT_MASK);
-        if !ctrl && !shift {
-            return;
-        }
         let Some(widget) = gesture.widget() else {
             return;
         };
-        let Some(pos) = find_clicked_position(&widget, x, y) else {
-            return;
+        let clicked_position = find_clicked_position(&widget, x, y);
+        let selected_positions = sel.selection();
+        let selection_anchor = if selected_positions.is_empty() {
+            None
+        } else {
+            Some(selected_positions.minimum())
         };
-        gesture.set_state(gtk::EventSequenceState::Claimed);
-        if ctrl {
-            if sel.is_selected(pos) {
-                sel.unselect_item(pos);
-            } else {
-                sel.select_item(pos, false);
+        let action = detail_selection_action(
+            n_press,
+            ctrl,
+            shift,
+            clicked_position,
+            selection_anchor,
+            clicked_position.is_some_and(|position| sel.is_selected(position)),
+        );
+        match action {
+            DetailSelectionAction::Ignore => (),
+            DetailSelectionAction::ToggleOff(position) => {
+                gesture.set_state(gtk::EventSequenceState::Claimed);
+                sel.unselect_item(position);
             }
-        } else if shift {
-            let bitset = sel.selection();
-            let anchor = if bitset.is_empty() {
-                0
-            } else {
-                bitset.minimum()
-            };
-            let (start, count) = if pos >= anchor {
-                (anchor, pos - anchor + 1)
-            } else {
-                (pos, anchor - pos + 1)
-            };
-            sel.unselect_all();
-            sel.select_range(start, count, false);
+            DetailSelectionAction::ToggleOn(position) => {
+                gesture.set_state(gtk::EventSequenceState::Claimed);
+                sel.select_item(position, false);
+            }
+            DetailSelectionAction::SelectRange { start, count } => {
+                gesture.set_state(gtk::EventSequenceState::Claimed);
+                sel.unselect_all();
+                sel.select_range(start, count, false);
+            }
         }
     });
     gesture
+}
+
+fn detail_selection_action(
+    click_count: i32,
+    has_control: bool,
+    has_shift: bool,
+    clicked_position: Option<u32>,
+    selection_anchor: Option<u32>,
+    is_clicked_selected: bool,
+) -> DetailSelectionAction {
+    if click_count != 1 || (!has_control && !has_shift) {
+        return DetailSelectionAction::Ignore;
+    }
+    let Some(position) = clicked_position else {
+        return DetailSelectionAction::Ignore;
+    };
+    if has_control {
+        if is_clicked_selected {
+            return DetailSelectionAction::ToggleOff(position);
+        }
+        return DetailSelectionAction::ToggleOn(position);
+    }
+    let anchor = selection_anchor.unwrap_or(0);
+    let (start, count) = if position >= anchor {
+        (anchor, position - anchor + 1)
+    } else {
+        (position, anchor - position + 1)
+    };
+    DetailSelectionAction::SelectRange { start, count }
 }
 
 /// Right-click gesture → resolve the clicked row → per-track context menu.
@@ -138,10 +175,10 @@ fn build_right_click_gesture(
             return;
         };
         let tracks = gather_visual_tracks(&sm);
-        if (pos as usize) >= tracks.len() {
+        let Some(index) = detail_context_index(tracks.len(), pos) else {
             return;
-        }
-        show_detail_context_menu(&widget, x, y, tracks, pos as usize, &out);
+        };
+        show_detail_context_menu(&widget, x, y, tracks, index, &out);
     });
     gesture
 }
@@ -152,6 +189,15 @@ fn gather_visual_tracks(sort_model: &gtk::SortListModel) -> Vec<Track> {
         .filter_map(|i| sort_model.item(i).and_downcast::<glib::BoxedAnyObject>())
         .map(|obj| obj.borrow::<Track>().clone())
         .collect()
+}
+
+fn detail_context_index(track_count: usize, clicked_position: u32) -> Option<usize> {
+    let index = clicked_position as usize;
+    if index < track_count {
+        Some(index)
+    } else {
+        None
+    }
 }
 
 /// Build + pop the per-track context menu; each item emits an `Output` intent.
@@ -224,4 +270,69 @@ fn show_detail_context_menu(
     }
 
     menu.popup_at(widget, x, y);
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{detail_context_index, detail_selection_action, DetailSelectionAction};
+
+    #[test]
+    fn detail_selection_ignores_plain_double_and_missing_position_clicks() {
+        assert_eq!(
+            detail_selection_action(1, false, false, Some(3), Some(1), false),
+            DetailSelectionAction::Ignore
+        );
+        assert_eq!(
+            detail_selection_action(2, true, false, Some(3), Some(1), false),
+            DetailSelectionAction::Ignore
+        );
+        assert_eq!(
+            detail_selection_action(1, true, false, None, Some(1), false),
+            DetailSelectionAction::Ignore
+        );
+    }
+
+    #[test]
+    fn detail_selection_control_toggles_clicked_row() {
+        assert_eq!(
+            detail_selection_action(1, true, false, Some(4), Some(2), true),
+            DetailSelectionAction::ToggleOff(4)
+        );
+        assert_eq!(
+            detail_selection_action(1, true, false, Some(4), Some(2), false),
+            DetailSelectionAction::ToggleOn(4)
+        );
+    }
+
+    #[test]
+    fn detail_selection_shift_uses_anchor_or_zero() {
+        assert_eq!(
+            detail_selection_action(1, false, true, Some(5), Some(2), false),
+            DetailSelectionAction::SelectRange { start: 2, count: 4 }
+        );
+        assert_eq!(
+            detail_selection_action(1, false, true, Some(2), Some(5), false),
+            DetailSelectionAction::SelectRange { start: 2, count: 4 }
+        );
+        assert_eq!(
+            detail_selection_action(1, false, true, Some(3), None, false),
+            DetailSelectionAction::SelectRange { start: 0, count: 4 }
+        );
+    }
+
+    #[test]
+    fn detail_selection_control_takes_precedence_over_shift() {
+        assert_eq!(
+            detail_selection_action(1, true, true, Some(4), Some(2), false),
+            DetailSelectionAction::ToggleOn(4)
+        );
+    }
+
+    #[test]
+    fn detail_context_index_accepts_only_visible_track_positions() {
+        assert_eq!(detail_context_index(3, 0), Some(0));
+        assert_eq!(detail_context_index(3, 2), Some(2));
+        assert_eq!(detail_context_index(3, 3), None);
+        assert_eq!(detail_context_index(0, 0), None);
+    }
 }
