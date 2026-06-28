@@ -15,6 +15,25 @@ mod resources;
 
 static EMBED_BOOT: std::sync::Once = std::sync::Once::new();
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+struct AudioPlayerWindowSpec {
+    title: &'static str,
+    default_width: i32,
+    default_height: i32,
+    minimum_width: i32,
+    minimum_height: i32,
+}
+
+fn audio_player_window_spec() -> AudioPlayerWindowSpec {
+    AudioPlayerWindowSpec {
+        title: "Big Audio Player",
+        default_width: 1200,
+        default_height: 720,
+        minimum_width: 640,
+        minimum_height: 400,
+    }
+}
+
 /// Wrap the player content (the shell's `ToastOverlay` Root, which is window-
 /// agnostic — RESTRUCTURE ADR D14) in an application window with the standard
 /// player geometry + title. Each mount point supplies its own window.
@@ -23,14 +42,15 @@ fn build_player_window(
     content: &adw::ToastOverlay,
 ) -> adw::ApplicationWindow {
     use gtk::prelude::*;
+    let spec = audio_player_window_spec();
     let window = adw::ApplicationWindow::builder()
         .application(app)
-        .default_width(1200)
-        .default_height(720)
-        .title(i18n::i18n("Big Audio Player"))
+        .default_width(spec.default_width)
+        .default_height(spec.default_height)
+        .title(i18n::i18n(spec.title))
         .content(content)
         .build();
-    window.set_size_request(640, 400);
+    window.set_size_request(spec.minimum_width, spec.minimum_height);
     window
 }
 
@@ -118,12 +138,19 @@ pub fn open_in_application() -> AudioEmbed {
 /// Multicall hosts call this right after [`open_in_application`] (or on
 /// re-invocation with files while the module is already open).
 pub fn open_paths(paths: Vec<String>) {
-    if paths.is_empty() {
-        return;
+    if let Some(message) = open_paths_message_for_shell(paths) {
+        audio::ui::audio_shell::send_to_shell(message);
     }
-    audio::ui::audio_shell::send_to_shell(audio::ui::audio_shell::AudioShellInput::OpenPaths(
-        paths,
-    ));
+}
+
+fn open_paths_message_for_shell(
+    paths: Vec<String>,
+) -> Option<audio::ui::audio_shell::AudioShellInput> {
+    if paths.is_empty() {
+        None
+    } else {
+        Some(audio::ui::audio_shell::AudioShellInput::OpenPaths(paths))
+    }
 }
 
 /// Initialize logging, gettext, locale, and GResources, then run the GTK
@@ -172,4 +199,37 @@ pub fn run() -> gtk::glib::ExitCode {
         *shell_for_activate.borrow_mut() = Some(controller);
     });
     app.run()
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn audio_player_window_spec_matches_shell_geometry() {
+        let spec = audio_player_window_spec();
+
+        assert_eq!(spec.title, "Big Audio Player");
+        assert_eq!(spec.default_width, 1200);
+        assert_eq!(spec.default_height, 720);
+        assert_eq!(spec.minimum_width, 640);
+        assert_eq!(spec.minimum_height, 400);
+    }
+
+    #[test]
+    fn empty_open_paths_do_not_emit_shell_message() {
+        assert!(open_paths_message_for_shell(Vec::new()).is_none());
+    }
+
+    #[test]
+    fn non_empty_open_paths_preserve_order_for_shell() {
+        let paths = vec!["first.ogg".to_string(), "second.flac".to_string()];
+
+        match open_paths_message_for_shell(paths) {
+            Some(audio::ui::audio_shell::AudioShellInput::OpenPaths(paths)) => {
+                assert_eq!(paths, ["first.ogg", "second.flac"]);
+            }
+            other => panic!("expected OpenPaths shell message, got {other:?}"),
+        }
+    }
 }

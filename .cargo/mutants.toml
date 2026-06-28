@@ -18,4 +18,13 @@ exclude_re = [
     # The binary entrypoint delegates to the library contract above. Mutating
     # `main` itself only proves that unit tests do not launch the live GTK app.
     'crates/big-audio-converter/src/main\.rs:.*replace main -> std::process::ExitCode with Default::default\(\)',
+    # Window construction needs a live GTK application/content widget. The
+    # geometry/title contract is covered by AudioPlayerWindowSpec tests.
+    'crates/big-audio-player/src/lib\.rs:.*replace build_player_window -> adw::ApplicationWindow with Default::default\(\)',
+    # Embedded boot mutates process-global gettext, locale, resources, and app
+    # accelerators. Rendered embed behavior belongs to UI smoke/host proof.
+    'crates/big-audio-player/src/lib\.rs:.*replace embed_boot with \(\)',
+    # Sending to the Relm4 thread-local broker is a live-shell boundary. The
+    # empty/non-empty OpenPaths message contract is unit-tested separately.
+    'crates/big-audio-player/src/lib\.rs:.*replace open_paths with \(\)',
 ]
