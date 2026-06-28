@@ -14,19 +14,103 @@ use big_player_ui::audio_preferences::{
 use big_relm4_components::layout::preferences::BigPreferencesGroupSpec;
 
 use crate::i18n::i18n;
-use crate::player::mpv_backend::{AudioEffects, MpvBackend};
+use crate::player::mpv_backend::{AudioEffectsSnapshot, MpvBackend};
 use crate::settings::{keys, Settings};
 use crate::shared::preference_rows::{add_combo_row, AdvancedWidgets};
 use crate::shared::ui_helpers::illustration_auto as illustration;
+
+#[derive(Debug, Clone, Copy, PartialEq)]
+struct NumericAdjustmentSpec {
+    lower: f64,
+    upper: f64,
+    step_increment: f64,
+    page_increment: f64,
+    page_size: f64,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+struct PreferencesPageChromeSpec {
+    title: &'static str,
+    icon_name: &'static str,
+}
+
+#[derive(Clone, Copy)]
+struct AudioPreferencesWindowSpec {
+    title: &'static str,
+    default_width: i32,
+    default_height: i32,
+    saved_width_key: keys::IntKey,
+    saved_height_key: keys::IntKey,
+}
+
+fn music_page_chrome_spec() -> PreferencesPageChromeSpec {
+    PreferencesPageChromeSpec {
+        title: "Music",
+        icon_name: "emblem-music-symbolic",
+    }
+}
+
+fn replaygain_preamp_adjustment_spec() -> NumericAdjustmentSpec {
+    NumericAdjustmentSpec {
+        lower: -15.0,
+        upper: 15.0,
+        step_increment: 0.5,
+        page_increment: 1.0,
+        page_size: 0.0,
+    }
+}
+
+fn crossfade_adjustment_spec() -> NumericAdjustmentSpec {
+    NumericAdjustmentSpec {
+        lower: 0.0,
+        upper: 12.0,
+        step_increment: 1.0,
+        page_increment: 1.0,
+        page_size: 0.0,
+    }
+}
+
+fn audio_preferences_window_spec() -> AudioPreferencesWindowSpec {
+    AudioPreferencesWindowSpec {
+        title: "Preferences",
+        default_width: 550,
+        default_height: 650,
+        saved_width_key: keys::AUDIO_PREFS_WINDOW_WIDTH,
+        saved_height_key: keys::AUDIO_PREFS_WINDOW_HEIGHT,
+    }
+}
+
+fn should_create_audio_preference_actions(has_mpv_backend: bool) -> bool {
+    has_mpv_backend
+}
+
+fn player_audio_effects_snapshot(effects: &PlayerAudioEffects) -> AudioEffectsSnapshot {
+    AudioEffectsSnapshot {
+        normalize: effects.normalize,
+        nr_enabled: effects.nr_enabled,
+        nr_strength: effects.nr_strength,
+        nr_model: effects.nr_model,
+        nr_model_blend: effects.nr_model_blend,
+        nr_voice_recovery: effects.nr_voice_recovery,
+        gate_enabled: false,
+        gate_intensity: 0.0,
+        hpf_enabled: false,
+        hpf_frequency: 0.0,
+        eq_bands: effects.eq_bands.clone(),
+        compressor_enabled: false,
+        compressor_intensity: 0.0,
+    }
+}
 
 pub(super) fn create_music_page(
     settings: &Settings,
     mpv: Option<&Arc<MpvBackend>>,
     on_taskbar_toggle: Option<Box<dyn Fn(bool) + 'static>>,
 ) -> adw::PreferencesPage {
+    let page_spec = music_page_chrome_spec();
     let page = adw::PreferencesPage::builder()
-        .title(i18n("Music"))
-        .icon_name("emblem-music-symbolic")
+        .title(i18n(page_spec.title))
+        .icon_name(page_spec.icon_name)
         .build();
 
     let playback_group = BigPreferencesGroupSpec::new(i18n("Playback"))
@@ -52,6 +136,7 @@ pub(super) fn create_music_page(
     );
     rg_row.add_prefix(&illustration("volume_leveling.svg"));
 
+    let replaygain_preamp_adjustment = replaygain_preamp_adjustment_spec();
     let rg_preamp_row = adw::SpinRow::builder()
         .title(i18n("Volume Leveling Boost"))
         .subtitle(i18n(
@@ -59,11 +144,11 @@ pub(super) fn create_music_page(
         ))
         .adjustment(&gtk::Adjustment::new(
             settings.get_double(keys::REPLAYGAIN_PREAMP),
-            -15.0,
-            15.0,
-            0.5,
-            1.0,
-            0.0,
+            replaygain_preamp_adjustment.lower,
+            replaygain_preamp_adjustment.upper,
+            replaygain_preamp_adjustment.step_increment,
+            replaygain_preamp_adjustment.page_increment,
+            replaygain_preamp_adjustment.page_size,
         ))
         .build();
     rg_preamp_row.add_prefix(&illustration("volume_boost.svg"));
@@ -118,6 +203,7 @@ pub(super) fn create_music_page(
     }
     playback_group.add(&resume_row);
 
+    let crossfade_adjustment = crossfade_adjustment_spec();
     let crossfade_row = adw::SpinRow::builder()
         .title(i18n("Crossfade"))
         .subtitle(i18n(
@@ -125,11 +211,11 @@ pub(super) fn create_music_page(
         ))
         .adjustment(&gtk::Adjustment::new(
             f64::from(settings.get_int(keys::CROSSFADE_SECS)),
-            0.0,
-            12.0,
-            1.0,
-            1.0,
-            0.0,
+            crossfade_adjustment.lower,
+            crossfade_adjustment.upper,
+            crossfade_adjustment.step_increment,
+            crossfade_adjustment.page_increment,
+            crossfade_adjustment.page_size,
         ))
         .build();
     crossfade_row.add_prefix(&illustration("crossfade.svg"));
@@ -245,44 +331,34 @@ pub(super) fn create_music_page(
 }
 
 fn audio_preference_actions(mpv: Option<&Arc<MpvBackend>>) -> Option<PlayerAudioPreferenceActions> {
-    let mpv = mpv.cloned()?;
-    Some(PlayerAudioPreferenceActions::new(
-        {
-            let mpv = Arc::clone(&mpv);
-            move |value| mpv.set_audio_channels(value)
-        },
-        {
-            let mpv = Arc::clone(&mpv);
-            move |value| mpv.set_audio_pitch_correction(value)
-        },
-        {
-            let mpv = Arc::clone(&mpv);
-            move |value| mpv.set_volume_max(value)
-        },
-        {
-            let mpv = Arc::clone(&mpv);
-            move |value| mpv.set_preferred_audio_lang(value)
-        },
-        move |effects| apply_player_audio_effects(&mpv, effects),
-    ))
+    if should_create_audio_preference_actions(mpv.is_some()) {
+        let mpv = mpv.cloned()?;
+        return Some(PlayerAudioPreferenceActions::new(
+            {
+                let mpv = Arc::clone(&mpv);
+                move |value| mpv.set_audio_channels(value)
+            },
+            {
+                let mpv = Arc::clone(&mpv);
+                move |value| mpv.set_audio_pitch_correction(value)
+            },
+            {
+                let mpv = Arc::clone(&mpv);
+                move |value| mpv.set_volume_max(value)
+            },
+            {
+                let mpv = Arc::clone(&mpv);
+                move |value| mpv.set_preferred_audio_lang(value)
+            },
+            move |effects| apply_player_audio_effects(&mpv, effects),
+        ));
+    }
+    None
 }
 
 fn apply_player_audio_effects(mpv: &MpvBackend, effects: PlayerAudioEffects) {
-    mpv.apply_audio_effects(&AudioEffects {
-        normalize: effects.normalize,
-        nr_enabled: effects.nr_enabled,
-        nr_strength: effects.nr_strength,
-        nr_model: effects.nr_model,
-        nr_model_blend: effects.nr_model_blend,
-        nr_voice_recovery: effects.nr_voice_recovery,
-        gate_enabled: false,
-        gate_intensity: 0.0,
-        hpf_enabled: false,
-        hpf_frequency: 0.0,
-        eq_bands: &effects.eq_bands,
-        compressor_enabled: false,
-        compressor_intensity: 0.0,
-    });
+    let snapshot = player_audio_effects_snapshot(&effects);
+    mpv.apply_audio_effects(&snapshot.as_effects());
 }
 
 /// `on_taskbar_toggle` fires when the taskbar-progress switch changes → MPRIS
@@ -292,9 +368,10 @@ pub fn show_audio_preferences(
     settings: &Settings,
     on_taskbar_toggle: Option<Box<dyn Fn(bool) + 'static>>,
 ) {
+    let window_spec = audio_preferences_window_spec();
     let saved = (
-        settings.get_int(keys::AUDIO_PREFS_WINDOW_WIDTH),
-        settings.get_int(keys::AUDIO_PREFS_WINDOW_HEIGHT),
+        settings.get_int(window_spec.saved_width_key),
+        settings.get_int(window_spec.saved_height_key),
     );
 
     let mpv: Option<Arc<MpvBackend>> = None;
@@ -314,16 +391,105 @@ pub fn show_audio_preferences(
     let s = settings.clone();
     big_player_ui::appearance::build_preferences_window(
         parent,
-        &i18n("Preferences"),
+        &i18n(window_spec.title),
         true,
         saved,
-        (550, 650),
+        (window_spec.default_width, window_spec.default_height),
         &pages,
         move |w, h| {
-            let _ = s.put_int(keys::AUDIO_PREFS_WINDOW_WIDTH, w);
-            let _ = s.put_int(keys::AUDIO_PREFS_WINDOW_HEIGHT, h);
+            let _ = s.put_int(window_spec.saved_width_key, w);
+            let _ = s.put_int(window_spec.saved_height_key, h);
         },
         || {},
     )
     .present();
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn player_audio_effects_fixture() -> PlayerAudioEffects {
+        PlayerAudioEffects {
+            normalize: true,
+            nr_enabled: true,
+            nr_strength: 0.75,
+            nr_model: 3,
+            nr_model_blend: true,
+            nr_voice_recovery: 0.5,
+            eq_bands: vec![(60.0, -3.0), (1_000.0, 2.5)],
+        }
+    }
+
+    #[test]
+    fn music_page_chrome_names_music_surface() {
+        assert_eq!(
+            music_page_chrome_spec(),
+            PreferencesPageChromeSpec {
+                title: "Music",
+                icon_name: "emblem-music-symbolic",
+            }
+        );
+    }
+
+    #[test]
+    fn playback_adjustment_specs_keep_expected_ranges() {
+        assert_eq!(
+            replaygain_preamp_adjustment_spec(),
+            NumericAdjustmentSpec {
+                lower: -15.0,
+                upper: 15.0,
+                step_increment: 0.5,
+                page_increment: 1.0,
+                page_size: 0.0,
+            }
+        );
+        assert_eq!(
+            crossfade_adjustment_spec(),
+            NumericAdjustmentSpec {
+                lower: 0.0,
+                upper: 12.0,
+                step_increment: 1.0,
+                page_increment: 1.0,
+                page_size: 0.0,
+            }
+        );
+    }
+
+    #[test]
+    fn audio_preferences_window_spec_uses_saved_geometry_keys() {
+        let spec = audio_preferences_window_spec();
+
+        assert_eq!(spec.title, "Preferences");
+        assert_eq!(spec.default_width, 550);
+        assert_eq!(spec.default_height, 650);
+        assert_eq!(spec.saved_width_key.0, keys::AUDIO_PREFS_WINDOW_WIDTH.0);
+        assert_eq!(spec.saved_height_key.0, keys::AUDIO_PREFS_WINDOW_HEIGHT.0);
+    }
+
+    #[test]
+    fn audio_preference_actions_exist_only_with_backend() {
+        assert!(should_create_audio_preference_actions(true));
+        assert!(!should_create_audio_preference_actions(false));
+    }
+
+    #[test]
+    fn player_audio_effects_snapshot_preserves_player_fields_and_disables_app_only_filters() {
+        let effects = player_audio_effects_fixture();
+        let snapshot = player_audio_effects_snapshot(&effects);
+
+        assert_eq!(snapshot.normalize, effects.normalize);
+        assert_eq!(snapshot.nr_enabled, effects.nr_enabled);
+        assert_eq!(snapshot.nr_strength, effects.nr_strength);
+        assert_eq!(snapshot.nr_model, effects.nr_model);
+        assert_eq!(snapshot.nr_model_blend, effects.nr_model_blend);
+        assert_eq!(snapshot.nr_voice_recovery, effects.nr_voice_recovery);
+        assert_eq!(snapshot.eq_bands, effects.eq_bands);
+        assert!(!snapshot.gate_enabled);
+        assert_eq!(snapshot.gate_intensity, 0.0);
+        assert!(!snapshot.hpf_enabled);
+        assert_eq!(snapshot.hpf_frequency, 0.0);
+        assert!(!snapshot.compressor_enabled);
+        assert_eq!(snapshot.compressor_intensity, 0.0);
+    }
 }

@@ -60,4 +60,13 @@ exclude_re = [
     # Launch performs the real detached spawn. Program order, env override, and
     # end-of-options argv contract are tested as BigSubprocessSpec values.
     'crates/big-audio-player/src/audio/converter_launcher\.rs:.*replace launch with \(\)',
+    # Audio preferences page/window construction is live GTK/libadwaita. Page
+    # chrome, adjustment ranges, saved geometry keys, and effect mapping are
+    # covered by display-free preferences tests.
+    'crates/big-audio-player/src/audio/preferences\.rs:.*replace create_music_page -> adw::PreferencesPage with Default::default\(\)',
+    'crates/big-audio-player/src/audio/preferences\.rs:.*replace show_audio_preferences with \(\)',
+    # These bridge the generic preference page to a live MpvBackend. Backend
+    # presence and PlayerAudioEffects -> AudioEffectsSnapshot mapping are tested.
+    'crates/big-audio-player/src/audio/preferences\.rs:.*replace audio_preference_actions -> Option<PlayerAudioPreferenceActions> with None',
+    'crates/big-audio-player/src/audio/preferences\.rs:.*replace apply_player_audio_effects with \(\)',
 ]
