@@ -9,4 +9,10 @@ test_tool = "nextest"
 # Mutation debt is tracked for production behavior. Helpers compiled only inside
 # `#[cfg(test)] mod tests` are fixtures, not shipped logic, and mutating them
 # creates false debt that does not represent application behavior.
-exclude_re = ["tests::"]
+exclude_re = [
+    "tests::",
+    # This function crosses the live GTK/Relm4 boundary. The display-free
+    # options and runner delegation are covered in big-audio-converter tests;
+    # the real UI launch belongs to the harness UI smoke path, not unit tests.
+    'crates/big-audio-converter/src/lib\.rs:.*replace run_audio_converter_application -> std::process::ExitCode with Default::default\(\)',
+]

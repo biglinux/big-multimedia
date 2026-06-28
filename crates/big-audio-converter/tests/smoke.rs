@@ -19,19 +19,16 @@
 //! `RelmApp::run`. Until then, full UI smoke lives behind
 //! `linux-ui-a11y` `kwin_wayland --virtual` harness, not `cargo test`.
 
-use big_audio_converter::{APP_MODE, BOOTSTRAP_ENV_KEY, BOOTSTRAP_ENV_VAL};
-use big_converter_ui::{ConverterMode, RunOptions};
+use big_audio_converter::{
+    audio_converter_run_options, APP_MODE, BOOTSTRAP_ENV_KEY, BOOTSTRAP_ENV_VAL,
+};
+use big_converter_ui::ConverterMode;
 
 #[test]
 fn run_options_audio_constructs() {
-    // Mirror the exact options main.rs builds. Pure construction —
-    // never call `run()`; that would block + mutate process state.
-    let opts = RunOptions {
-        mode: ConverterMode::Audio,
-        log_filter: "big_media_runtime=info,big_audio_converter=info",
-        bootstrap_env: Some((BOOTSTRAP_ENV_KEY, BOOTSTRAP_ENV_VAL)),
-        include_audio_resources: true,
-    };
+    // Pure construction. Never call `run()`; that would block and mutate
+    // process state.
+    let opts = audio_converter_run_options();
 
     assert!(matches!(opts.mode, ConverterMode::Audio));
     assert!(opts.mode.is_audio());
@@ -47,7 +44,14 @@ fn exported_constants_match_run_options() {
     // Binary's exported binding constants are the contract integration
     // tests (and packaging tooling) read; keep them aligned with the
     // RunOptions main.rs builds.
+    let opts = audio_converter_run_options();
+
     assert!(matches!(APP_MODE, ConverterMode::Audio));
+    assert_eq!(
+        opts.log_filter,
+        "big_media_runtime=info,big_audio_converter=info"
+    );
     assert_eq!(BOOTSTRAP_ENV_KEY, "BIG_MEDIA_AUDIO_CONVERTER");
     assert_eq!(BOOTSTRAP_ENV_VAL, "1");
+    assert!(opts.include_audio_resources);
 }
