@@ -15,4 +15,7 @@ exclude_re = [
     # options and runner delegation are covered in big-audio-converter tests;
     # the real UI launch belongs to the harness UI smoke path, not unit tests.
     'crates/big-audio-converter/src/lib\.rs:.*replace run_audio_converter_application -> std::process::ExitCode with Default::default\(\)',
+    # The binary entrypoint delegates to the library contract above. Mutating
+    # `main` itself only proves that unit tests do not launch the live GTK app.
+    'crates/big-audio-converter/src/main\.rs:.*replace main -> std::process::ExitCode with Default::default\(\)',
 ]
