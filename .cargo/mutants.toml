@@ -53,4 +53,11 @@ exclude_re = [
     'crates/big-audio-player/src/audio/column_builders\.rs:.*replace unbind_click_gestures with \(\)',
     'crates/big-audio-player/src/audio/column_builders\.rs:.*replace make_label_factory -> gtk::SignalListItemFactory with Default::default\(\)',
     'crates/big-audio-player/src/audio/column_builders\.rs:.*replace make_duration_factory -> gtk::SignalListItemFactory with Default::default\(\)',
+    # Availability probes the real host filesystem. Candidate paths and the
+    # injected lookup predicate are covered by converter_launcher tests.
+    'crates/big-audio-player/src/audio/converter_launcher\.rs:.*replace is_available -> bool with true',
+    'crates/big-audio-player/src/audio/converter_launcher\.rs:.*replace is_available -> bool with false',
+    # Launch performs the real detached spawn. Program order, env override, and
+    # end-of-options argv contract are tested as BigSubprocessSpec values.
+    'crates/big-audio-player/src/audio/converter_launcher\.rs:.*replace launch with \(\)',
 ]
