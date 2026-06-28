@@ -88,4 +88,13 @@ exclude_re = [
     'crates/big-audio-player/src/audio/ui/library_detail_columns\.rs:.*replace != with == in build_title_column',
     'crates/big-audio-player/src/audio/ui/library_detail_columns\.rs:.*replace append_rating_column with \(\)',
     'crates/big-audio-player/src/audio/ui/library_detail_columns\.rs:.*replace append_add_column with \(\)',
+    # Detail interactions build live GTK drag/click controllers and popovers.
+    # Selection decisions, context index bounds, and visual-track collection
+    # from injected model items are covered by display-free tests.
+    'crates/big-audio-player/src/audio/ui/library_detail_interactions\.rs:.*replace build_detail_interactions with \(\)',
+    'crates/big-audio-player/src/audio/ui/library_detail_interactions\.rs:.*replace build_drag_source -> gtk::DragSource with Default::default\(\)',
+    'crates/big-audio-player/src/audio/ui/library_detail_interactions\.rs:.*replace build_multi_select_gesture -> gtk::GestureClick with Default::default\(\)',
+    'crates/big-audio-player/src/audio/ui/library_detail_interactions\.rs:.*replace build_right_click_gesture -> gtk::GestureClick with Default::default\(\)',
+    'crates/big-audio-player/src/audio/ui/library_detail_interactions\.rs:.*replace gather_visual_tracks -> Vec<Track> with vec!\[\]',
+    'crates/big-audio-player/src/audio/ui/library_detail_interactions\.rs:.*replace show_detail_context_menu with \(\)',
 ]

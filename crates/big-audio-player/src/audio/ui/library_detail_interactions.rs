@@ -185,8 +185,15 @@ fn build_right_click_gesture(
 
 /// Collect every detail track in visual (sorted) order.
 fn gather_visual_tracks(sort_model: &gtk::SortListModel) -> Vec<Track> {
-    (0..sort_model.n_items())
-        .filter_map(|i| sort_model.item(i).and_downcast::<glib::BoxedAnyObject>())
+    collect_visual_tracks(sort_model.n_items(), |index| sort_model.item(index))
+}
+
+fn collect_visual_tracks(
+    item_count: u32,
+    item_at: impl Fn(u32) -> Option<glib::Object>,
+) -> Vec<Track> {
+    (0..item_count)
+        .filter_map(|index| item_at(index).and_downcast::<glib::BoxedAnyObject>())
         .map(|obj| obj.borrow::<Track>().clone())
         .collect()
 }
@@ -274,7 +281,12 @@ fn show_detail_context_menu(
 
 #[cfg(test)]
 mod tests {
-    use super::{detail_context_index, detail_selection_action, DetailSelectionAction};
+    use super::{
+        collect_visual_tracks, detail_context_index, detail_selection_action, DetailSelectionAction,
+    };
+    use crate::db::models::Track;
+    use gtk::glib;
+    use gtk::prelude::Cast;
 
     #[test]
     fn detail_selection_ignores_plain_double_and_missing_position_clicks() {
@@ -334,5 +346,38 @@ mod tests {
         assert_eq!(detail_context_index(3, 2), Some(2));
         assert_eq!(detail_context_index(3, 3), None);
         assert_eq!(detail_context_index(0, 0), None);
+    }
+
+    #[test]
+    fn collect_visual_tracks_preserves_sorted_model_order() {
+        let visual_model_objects: Vec<Option<glib::Object>> = vec![
+            Some(
+                glib::BoxedAnyObject::new(Track::new_external_path_with_title(
+                    "/music/one.flac",
+                    Some("One".to_string()),
+                ))
+                .upcast(),
+            ),
+            None,
+            Some(
+                glib::BoxedAnyObject::new(Track::new_external_path_with_title(
+                    "/music/two.flac",
+                    Some("Two".to_string()),
+                ))
+                .upcast(),
+            ),
+        ];
+
+        let file_paths: Vec<String> =
+            collect_visual_tracks(visual_model_objects.len() as u32, |index| {
+                visual_model_objects
+                    .get(index as usize)
+                    .and_then(Clone::clone)
+            })
+            .into_iter()
+            .map(|track| track.file_path)
+            .collect();
+
+        assert_eq!(file_paths, ["/music/one.flac", "/music/two.flac"]);
     }
 }
