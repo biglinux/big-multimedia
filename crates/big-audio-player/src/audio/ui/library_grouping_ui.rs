@@ -27,6 +27,34 @@ use super::library_panel::{LibraryPanel, LibraryPanelOutput};
 /// rebuild cadence; one query per typing pause, not per keystroke).
 const SEARCH_DEBOUNCE: Duration = Duration::from_millis(50);
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum AgeFilterButtonChild {
+    Icon,
+    Label,
+}
+
+fn grouping_preset_index(grouping: &LibraryGrouping) -> u32 {
+    LibraryGrouping::presets()
+        .iter()
+        .position(|(_, preset)| preset == grouping)
+        .unwrap_or(0) as u32
+}
+
+fn age_filter_button_child(position: u32) -> AgeFilterButtonChild {
+    if position == 0 {
+        AgeFilterButtonChild::Icon
+    } else {
+        AgeFilterButtonChild::Label
+    }
+}
+
+fn age_filter_button_child_name(child: AgeFilterButtonChild) -> &'static str {
+    match child {
+        AgeFilterButtonChild::Icon => "icon",
+        AgeFilterButtonChild::Label => "label",
+    }
+}
+
 /// The grouping dropdown plus its selection-notify signal id, so the panel can
 /// set the restored preset on boot without re-emitting `GroupingChanged`.
 pub(super) struct GroupingControls {
@@ -39,10 +67,7 @@ pub(super) struct GroupingControls {
 /// Set the dropdown to the preset matching `grouping` without firing the
 /// selection-notify signal (avoids a spurious rebuild on boot).
 pub(super) fn select_grouping(controls: &GroupingControls, grouping: &LibraryGrouping) {
-    let idx = LibraryGrouping::presets()
-        .iter()
-        .position(|(_, preset)| preset == grouping)
-        .unwrap_or(0) as u32;
+    let idx = grouping_preset_index(grouping);
     controls
         .dropdown
         .block_signal(&controls.selection_signal_id);
@@ -148,16 +173,26 @@ fn build_age_dropdown(sender: &ComponentSender<LibraryPanel>) -> gtk::DropDown {
         let Some(stack) = signal_factory::child_as::<gtk::Stack>(list_item) else {
             return;
         };
-        if list_item.position() == 0 {
-            stack.set_visible_child_name("icon");
-        } else if let Some(string_object) =
-            signal_factory::bound_model_as::<gtk::StringObject>(list_item)
-        {
-            let Some(label) = stack.child_by_name("label").and_downcast::<gtk::Label>() else {
-                return;
-            };
-            label.set_label(&string_object.string());
-            stack.set_visible_child_name("label");
+        match age_filter_button_child(list_item.position()) {
+            AgeFilterButtonChild::Icon => {
+                stack.set_visible_child_name(age_filter_button_child_name(
+                    AgeFilterButtonChild::Icon,
+                ));
+            }
+            AgeFilterButtonChild::Label => {
+                let Some(string_object) =
+                    signal_factory::bound_model_as::<gtk::StringObject>(list_item)
+                else {
+                    return;
+                };
+                let Some(label) = stack.child_by_name("label").and_downcast::<gtk::Label>() else {
+                    return;
+                };
+                label.set_label(&string_object.string());
+                stack.set_visible_child_name(age_filter_button_child_name(
+                    AgeFilterButtonChild::Label,
+                ));
+            }
         }
     });
     dropdown.set_factory(Some(&selected_factory));
@@ -219,4 +254,39 @@ fn build_search_entry(sender: &ComponentSender<LibraryPanel>) -> gtk::SearchEntr
         });
     });
     entry
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn grouping_preset_index_matches_preset_definition_order() {
+        for (expected_index, (_, grouping)) in LibraryGrouping::presets().iter().enumerate() {
+            assert_eq!(grouping_preset_index(grouping), expected_index as u32);
+        }
+    }
+
+    #[test]
+    fn grouping_preset_index_falls_back_to_first_preset_for_custom_grouping() {
+        assert_eq!(
+            grouping_preset_index(&LibraryGrouping::deserialize("format/year/genre")),
+            0
+        );
+    }
+
+    #[test]
+    fn age_filter_button_child_uses_icon_only_for_all_time() {
+        assert_eq!(age_filter_button_child(0), AgeFilterButtonChild::Icon);
+        assert_eq!(age_filter_button_child(1), AgeFilterButtonChild::Label);
+        assert_eq!(age_filter_button_child(5), AgeFilterButtonChild::Label);
+        assert_eq!(
+            age_filter_button_child_name(AgeFilterButtonChild::Icon),
+            "icon"
+        );
+        assert_eq!(
+            age_filter_button_child_name(AgeFilterButtonChild::Label),
+            "label"
+        );
+    }
 }

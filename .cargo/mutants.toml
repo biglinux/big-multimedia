@@ -102,4 +102,11 @@ exclude_re = [
     # playlist-name normalization are covered by display-free tests.
     'crates/big-audio-player/src/audio/ui/library_dialogs\.rs:.*replace show_add_to_playlist with \(\)',
     'crates/big-audio-player/src/audio/ui/library_dialogs\.rs:.*replace present_new_playlist_dialog with \(\)',
+    # Grouping bar builders and programmatic dropdown selection need live GTK
+    # widgets. Preset index lookup and age-filter icon/label presentation are
+    # covered by display-free library_grouping_ui tests.
+    'crates/big-audio-player/src/audio/ui/library_grouping_ui\.rs:.*replace select_grouping with \(\)',
+    'crates/big-audio-player/src/audio/ui/library_grouping_ui\.rs:.*replace build_age_dropdown -> gtk::DropDown with Default::default\(\)',
+    'crates/big-audio-player/src/audio/ui/library_grouping_ui\.rs:.*replace build_add_folder_button -> gtk::Button with Default::default\(\)',
+    'crates/big-audio-player/src/audio/ui/library_grouping_ui\.rs:.*replace build_search_entry -> gtk::SearchEntry with Default::default\(\)',
 ]
