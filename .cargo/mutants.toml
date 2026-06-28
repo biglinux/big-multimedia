@@ -109,4 +109,19 @@ exclude_re = [
     'crates/big-audio-player/src/audio/ui/library_grouping_ui\.rs:.*replace build_age_dropdown -> gtk::DropDown with Default::default\(\)',
     'crates/big-audio-player/src/audio/ui/library_grouping_ui\.rs:.*replace build_add_folder_button -> gtk::Button with Default::default\(\)',
     'crates/big-audio-player/src/audio/ui/library_grouping_ui\.rs:.*replace build_search_entry -> gtk::SearchEntry with Default::default\(\)',
+    # Library IO launches live file pickers and GTK/libadwaita folder dialogs.
+    # M3U8 rendering, home-path abbreviation, playlist-name normalization, and
+    # name-entry dialog chrome/focus selection are covered by display-free tests.
+    'crates/big-audio-player/src/audio/ui/library_io\.rs:.*replace export_detail_m3u8 with \(\)',
+    'crates/big-audio-player/src/audio/ui/library_io\.rs:.*replace import_playlist with \(\)',
+    'crates/big-audio-player/src/audio/ui/library_io\.rs:.*replace save_tracks_as_playlist with \(\)',
+    'crates/big-audio-player/src/audio/ui/library_io\.rs:.*replace show_manage_folders with \(\)',
+    'crates/big-audio-player/src/audio/ui/library_io\.rs:.*replace build_folders_card -> gtk::Box with Default::default\(\)',
+    'crates/big-audio-player/src/audio/ui/library_io\.rs:.*replace build_folders_list -> gtk::ListBox with Default::default\(\)',
+    'crates/big-audio-player/src/audio/ui/library_io\.rs:.*replace build_folder_buttons -> gtk::Box with Default::default\(\)',
+    'crates/big-audio-player/src/audio/ui/library_io\.rs:.*replace remove_row_from_list with \(\)',
+    'crates/big-audio-player/src/audio/ui/library_io\.rs:.*replace present_name_entry_dialog with \(\)',
+    'crates/big-audio-player/src/audio/ui/library_io\.rs:.*replace build_remove_button -> gtk::Button with Default::default\(\)',
+    'crates/big-audio-player/src/audio/ui/library_io\.rs:.*replace build_intro_label -> gtk::Label with Default::default\(\)',
+    'crates/big-audio-player/src/audio/ui/library_io\.rs:.*replace build_tips_card -> gtk::Box with Default::default\(\)',
 ]

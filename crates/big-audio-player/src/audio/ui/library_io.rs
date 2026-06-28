@@ -31,6 +31,40 @@ const MUSIC_FOLDERS_DIALOG_HEIGHT: i32 = 560;
 const MUSIC_FOLDERS_CONTENT_WIDTH: i32 = 560;
 const MUSIC_FOLDERS_TIGHTENING_WIDTH: i32 = 420;
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+struct NameEntryDialogSpec {
+    content_width: i32,
+    content_height: i32,
+    content_spacing: i32,
+    entry_title: &'static str,
+    cancel_label: &'static str,
+    save_label: &'static str,
+    focus_select_start: i32,
+    focus_select_end: i32,
+}
+
+fn name_entry_dialog_spec() -> NameEntryDialogSpec {
+    NameEntryDialogSpec {
+        content_width: 420,
+        content_height: 240,
+        content_spacing: 12,
+        entry_title: "Playlist name",
+        cancel_label: "Cancel",
+        save_label: "Save",
+        focus_select_start: 0,
+        focus_select_end: -1,
+    }
+}
+
+fn normalized_playlist_name(name: &str) -> Option<String> {
+    let trimmed_name = name.trim();
+    if trimmed_name.is_empty() {
+        None
+    } else {
+        Some(trimmed_name.to_string())
+    }
+}
+
 /// Export the current detail tracks as an `.m3u8` playlist. The save picker
 /// runs on the main loop; the `#EXTM3U`/`#EXTINF` body is built and written
 /// off-thread via `spawn_blocking_result` (the panel already owns the tracks,
@@ -329,31 +363,35 @@ fn present_name_entry_dialog<F>(parent: &gtk::Window, heading: &str, body: &str,
 where
     F: Fn(String) + 'static,
 {
+    let dialog_spec = name_entry_dialog_spec();
     let dialog = adw::Dialog::builder()
         .title(heading)
-        .content_width(420)
-        .content_height(240)
+        .content_width(dialog_spec.content_width)
+        .content_height(dialog_spec.content_height)
         .build();
     let page = BigDialogPage::plain();
-    page.content().set_spacing(12);
+    page.content().set_spacing(dialog_spec.content_spacing);
     page.append_description(body);
 
     let group = BigPreferencesGroupSpec::untitled().build();
     let entry = adw::EntryRow::builder()
-        .title(i18n("Playlist name"))
+        .title(i18n(dialog_spec.entry_title))
         .show_apply_button(true)
         .build();
     group.add(&entry);
     page.content().append(&group);
 
-    let footer = BigDialogFooter::new(&BigDialogFooterSpec::new(i18n("Cancel"), i18n("Save")));
+    let footer = BigDialogFooter::new(&BigDialogFooterSpec::new(
+        i18n(dialog_spec.cancel_label),
+        i18n(dialog_spec.save_label),
+    ));
     footer.accept_button().set_sensitive(false);
     page.root().add_bottom_bar(footer.root());
     dialog.set_child(Some(page.root()));
 
     let accept_button = footer.accept_button().clone();
     entry.connect_changed(move |row| {
-        accept_button.set_sensitive(!row.text().trim().is_empty());
+        accept_button.set_sensitive(normalized_playlist_name(&row.text()).is_some());
     });
 
     let accept_button = footer.accept_button().clone();
@@ -366,10 +404,9 @@ where
     let entry_for_accept = entry.clone();
     let dialog_weak = dialog.downgrade();
     footer.accept_button().connect_clicked(move |_| {
-        let name = entry_for_accept.text().trim().to_string();
-        if name.is_empty() {
+        let Some(name) = normalized_playlist_name(&entry_for_accept.text()) else {
             return;
-        }
+        };
         on_save(name);
         if let Some(dialog) = dialog_weak.upgrade() {
             dialog.close();
@@ -388,7 +425,8 @@ where
         let entry_for_idle = entry_for_focus.clone();
         glib::idle_add_local_once(move || {
             entry_for_idle.grab_focus();
-            entry_for_idle.select_region(0, -1);
+            entry_for_idle
+                .select_region(dialog_spec.focus_select_start, dialog_spec.focus_select_end);
         });
     });
     dialog.present(Some(parent));
@@ -502,6 +540,7 @@ mod tests {
     #[cfg(not(miri))]
     use super::abbreviate_home;
     use super::render_m3u8;
+    use super::{name_entry_dialog_spec, normalized_playlist_name, NameEntryDialogSpec};
     use crate::db::models::Track;
 
     #[cfg(not(miri))]
@@ -533,5 +572,32 @@ mod tests {
         assert!(out.starts_with("#EXTM3U\n"));
         assert!(out.contains("#EXTINF:12,Band - A\n"));
         assert!(out.contains("/m/a.flac\n"));
+    }
+
+    #[test]
+    fn name_entry_dialog_spec_keeps_playlist_save_chrome_and_focus_selection() {
+        assert_eq!(
+            name_entry_dialog_spec(),
+            NameEntryDialogSpec {
+                content_width: 420,
+                content_height: 240,
+                content_spacing: 12,
+                entry_title: "Playlist name",
+                cancel_label: "Cancel",
+                save_label: "Save",
+                focus_select_start: 0,
+                focus_select_end: -1,
+            }
+        );
+    }
+
+    #[test]
+    fn normalized_playlist_name_requires_non_blank_trimmed_text() {
+        assert_eq!(normalized_playlist_name(""), None);
+        assert_eq!(normalized_playlist_name("   "), None);
+        assert_eq!(
+            normalized_playlist_name("  Favorites  "),
+            Some("Favorites".to_string())
+        );
     }
 }
