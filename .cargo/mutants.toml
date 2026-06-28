@@ -39,4 +39,18 @@ exclude_re = [
     # GTK accelerator installation mutates a live application. Resolved action
     # names and single-key filtering are unit-tested.
     'crates/big-audio-player/src/audio/app\.rs:.*replace install_audio_accels with \(\)',
+    # Track column sorters are GTK object adapters over pure comparison
+    # contracts (`compare_track_*_values`) tested in column_builders.
+    'crates/big-audio-player/src/audio/column_builders\.rs:.*replace make_track_text_sorter -> gtk::CustomSorter with Default::default\(\)',
+    'crates/big-audio-player/src/audio/column_builders\.rs:.*replace make_year_sorter -> gtk::CustomSorter with Default::default\(\)',
+    'crates/big-audio-player/src/audio/column_builders\.rs:.*replace make_duration_sorter -> gtk::CustomSorter with Default::default\(\)',
+    'crates/big-audio-player/src/audio/column_builders\.rs:.*replace make_rating_sorter -> gtk::CustomSorter with Default::default\(\)',
+    # SignalListItemFactory setup/bind and live widget updates need GTK's
+    # recycled-row machinery. Cell labels, star thresholds, and comparison
+    # semantics are covered by display-free tests in column_builders.
+    'crates/big-audio-player/src/audio/column_builders\.rs:.*replace make_year_factory -> gtk::SignalListItemFactory with Default::default\(\)',
+    'crates/big-audio-player/src/audio/column_builders\.rs:.*replace update_star_icons with \(\)',
+    'crates/big-audio-player/src/audio/column_builders\.rs:.*replace unbind_click_gestures with \(\)',
+    'crates/big-audio-player/src/audio/column_builders\.rs:.*replace make_label_factory -> gtk::SignalListItemFactory with Default::default\(\)',
+    'crates/big-audio-player/src/audio/column_builders\.rs:.*replace make_duration_factory -> gtk::SignalListItemFactory with Default::default\(\)',
 ]
