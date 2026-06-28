@@ -27,4 +27,16 @@ exclude_re = [
     # Sending to the Relm4 thread-local broker is a live-shell boundary. The
     # empty/non-empty OpenPaths message contract is unit-tested separately.
     'crates/big-audio-player/src/lib\.rs:.*replace open_paths with \(\)',
+    # GTK Application::open must activate the live app and send through the
+    # shell broker. File-to-OpenPaths conversion is tested without rendering.
+    'crates/big-audio-player/src/audio/app\.rs:.*replace imp::<impl ApplicationImpl for Application>::open with \(\)',
+    # Startup mutates GTK process state, settings, actions, and accelerators.
+    # The pure about/action/accelerator contracts are tested below the boundary.
+    'crates/big-audio-player/src/audio/app\.rs:.*replace imp::<impl ApplicationImpl for Application>::startup with \(\)',
+    # Action installation requires a live GApplication action map and About
+    # dialog presentation. The about-dialog data contract is unit-tested.
+    'crates/big-audio-player/src/audio/app\.rs:.*replace imp::Application::setup_actions with \(\)',
+    # GTK accelerator installation mutates a live application. Resolved action
+    # names and single-key filtering are unit-tested.
+    'crates/big-audio-player/src/audio/app\.rs:.*replace install_audio_accels with \(\)',
 ]

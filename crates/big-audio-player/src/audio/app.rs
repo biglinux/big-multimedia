@@ -9,6 +9,63 @@ use gtk::{gio, glib};
 use crate::config;
 use crate::settings::keys;
 
+const AUDIO_ABOUT_COMMENTS: &str = "Lyrics: LRCLIB · lyrics.ovh\n\
+                                   Metadata: MusicBrainz\n\
+                                   Scrobbling: Last.fm · ListenBrainz\n\
+                                   Radio: Radio Browser\n\
+                                   Art: Cover Art Archive";
+const AUDIO_ABOUT_CREDIT_SECTION_HEADING: &str = "Data Sources";
+const AUDIO_ABOUT_CREDIT_LINES: &[&str] = &[
+    "LRCLIB https://lrclib.net",
+    "lyrics.ovh https://lyrics.ovh",
+    "MusicBrainz https://musicbrainz.org",
+    "Cover Art Archive https://coverartarchive.org",
+    "Radio Browser https://www.radio-browser.info",
+    "ListenBrainz https://listenbrainz.org",
+];
+
+fn open_files_message(
+    files: &[gio::File],
+) -> Option<crate::audio::ui::audio_shell::AudioShellInput> {
+    let paths: Vec<String> = files
+        .iter()
+        .filter_map(|file| file.path().map(|path| path.to_string_lossy().into_owned()))
+        .collect();
+    if paths.is_empty() {
+        None
+    } else {
+        Some(crate::audio::ui::audio_shell::AudioShellInput::OpenPaths(
+            paths,
+        ))
+    }
+}
+
+fn audio_about_dialog_config() -> crate::shared::app_base::AboutDialogConfig {
+    crate::shared::app_base::AboutDialogConfig {
+        app_name: config::audio::APP_NAME,
+        app_icon: config::audio::APP_ID,
+        comments: AUDIO_ABOUT_COMMENTS,
+    }
+}
+
+fn audio_accel_action_name(action: &str) -> String {
+    if action.contains('.') {
+        action.to_string()
+    } else {
+        format!("win.{action}")
+    }
+}
+
+fn resolved_audio_application_accels(custom_shortcuts: &str) -> Vec<(String, String)> {
+    use crate::audio::keybindings::{resolve_accels, SHORTCUTS};
+
+    resolve_accels(SHORTCUTS, custom_shortcuts)
+        .into_iter()
+        .filter(|(definition, _)| !definition.single_key)
+        .map(|(definition, accel)| (audio_accel_action_name(definition.action), accel))
+        .collect()
+}
+
 mod imp {
     use super::*;
 
@@ -34,14 +91,8 @@ mod imp {
             // Show the relm4-managed window, then deliver opened files through
             // the shell's thread-local broker.
             self.obj().activate();
-            let paths: Vec<String> = files
-                .iter()
-                .filter_map(|f| f.path().map(|p| p.to_string_lossy().into_owned()))
-                .collect();
-            if !paths.is_empty() {
-                crate::audio::ui::audio_shell::send_to_shell(
-                    crate::audio::ui::audio_shell::AudioShellInput::OpenPaths(paths),
-                );
+            if let Some(message) = open_files_message(files) {
+                crate::audio::ui::audio_shell::send_to_shell(message);
             }
         }
 
@@ -68,27 +119,11 @@ mod imp {
             let about = gio::ActionEntry::builder("about")
                 .activate(|app: &super::Application, _, _| {
                     let win = app.active_window();
-                    let dialog = crate::shared::app_base::build_about_dialog(
-                        &crate::shared::app_base::AboutDialogConfig {
-                            app_name: config::audio::APP_NAME,
-                            app_icon: config::audio::APP_ID,
-                            comments: "Lyrics: LRCLIB · lyrics.ovh\n\
-                                       Metadata: MusicBrainz\n\
-                                       Scrobbling: Last.fm · ListenBrainz\n\
-                                       Radio: Radio Browser\n\
-                                       Art: Cover Art Archive",
-                        },
-                    );
+                    let dialog =
+                        crate::shared::app_base::build_about_dialog(&audio_about_dialog_config());
                     dialog.add_credit_section(
-                        Some("Data Sources"),
-                        &[
-                            "LRCLIB https://lrclib.net",
-                            "lyrics.ovh https://lyrics.ovh",
-                            "MusicBrainz https://musicbrainz.org",
-                            "Cover Art Archive https://coverartarchive.org",
-                            "Radio Browser https://www.radio-browser.info",
-                            "ListenBrainz https://listenbrainz.org",
-                        ],
+                        Some(AUDIO_ABOUT_CREDIT_SECTION_HEADING),
+                        AUDIO_ABOUT_CREDIT_LINES,
                     );
                     if let Some(w) = win.as_ref() {
                         dialog.present(Some(w));
@@ -126,22 +161,74 @@ impl Application {
 /// Standalone startup calls this through [`Application`]; `big-host` modules
 /// call it during embed boot because they reuse the host `gtk::Application`.
 pub(crate) fn install_audio_accels(app: &gtk::Application) {
-    use crate::audio::keybindings::{resolve_accels, SHORTCUTS};
     use crate::settings::{keys, Settings};
 
     let custom_str = Settings::for_audio().get_string(keys::CUSTOM_KEYBINDINGS);
 
     // Multi-key defs go through GTK accels; single-key defs are dispatched by
     // `EventControllerKey` in the window so text widgets keep normal typing.
-    for (def, accel) in resolve_accels(SHORTCUTS, &custom_str) {
-        if def.single_key {
-            continue;
+    for (action, accel) in resolved_audio_application_accels(&custom_str) {
+        app.set_accels_for_action(&action, &[&accel]);
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn open_files_message_ignores_empty_and_non_local_inputs() {
+        assert!(open_files_message(&[]).is_none());
+
+        let remote_file = gio::File::for_uri("https://example.invalid/audio.ogg");
+        assert!(open_files_message(&[remote_file]).is_none());
+    }
+
+    #[test]
+    fn open_files_message_preserves_local_paths_in_order() {
+        let first_file = gio::File::for_path("/tmp/first.ogg");
+        let second_file = gio::File::for_path("/tmp/second.flac");
+
+        match open_files_message(&[first_file, second_file]) {
+            Some(crate::audio::ui::audio_shell::AudioShellInput::OpenPaths(paths)) => {
+                assert_eq!(paths, ["/tmp/first.ogg", "/tmp/second.flac"]);
+            }
+            other => panic!("expected OpenPaths shell message, got {other:?}"),
         }
-        let full_action = if def.action.contains('.') {
-            def.action.to_string()
-        } else {
-            format!("win.{}", def.action)
-        };
-        app.set_accels_for_action(&full_action, &[&accel]);
+    }
+
+    #[test]
+    fn about_dialog_contract_names_app_and_credit_sources() {
+        let config = audio_about_dialog_config();
+
+        assert_eq!(config.app_name, crate::config::audio::APP_NAME);
+        assert_eq!(config.app_icon, crate::config::audio::APP_ID);
+        assert!(config.comments.contains("MusicBrainz"));
+        assert_eq!(AUDIO_ABOUT_CREDIT_SECTION_HEADING, "Data Sources");
+        assert!(AUDIO_ABOUT_CREDIT_LINES
+            .iter()
+            .any(|source| source.contains("Radio Browser")));
+    }
+
+    #[test]
+    fn audio_application_accels_skip_single_key_and_prefix_window_actions() {
+        let actions: std::collections::HashSet<String> = resolved_audio_application_accels("")
+            .into_iter()
+            .map(|(action, _)| action)
+            .collect();
+
+        assert!(actions.contains("app.quit"));
+        assert!(actions.contains("win.next-track"));
+        assert!(actions.contains("win.prev-track"));
+        assert!(!actions.contains("win.play-pause"));
+    }
+
+    #[test]
+    fn audio_accel_action_name_preserves_app_scope() {
+        assert_eq!(audio_accel_action_name("app.quit"), "app.quit");
+        assert_eq!(
+            audio_accel_action_name("toggle-repeat"),
+            "win.toggle-repeat"
+        );
     }
 }
