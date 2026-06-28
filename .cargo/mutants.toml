@@ -77,4 +77,15 @@ exclude_re = [
     # Dialog chrome, row text, status text, and discovery restart rule are
     # covered by display-free cast_dialog tests with all features enabled.
     'crates/big-audio-player/src/audio/ui/cast_dialog\.rs:.*replace present_cast with \(\)',
+    # Detail ColumnView assembly and recycled-row widget cleanup are live GTK
+    # factory boundaries. Album-art hash selection, track-number labels,
+    # current-track matching, and click-position rating math are tested without
+    # a display in library_detail_columns.
+    'crates/big-audio-player/src/audio/ui/library_detail_columns\.rs:.*replace build_detail_columns with \(\)',
+    'crates/big-audio-player/src/audio/ui/library_detail_columns\.rs:.*replace append_art_column with \(\)',
+    'crates/big-audio-player/src/audio/ui/library_detail_columns\.rs:.*replace append_track_number_column with \(\)',
+    'crates/big-audio-player/src/audio/ui/library_detail_columns\.rs:.*replace build_title_column with \(\)',
+    'crates/big-audio-player/src/audio/ui/library_detail_columns\.rs:.*replace != with == in build_title_column',
+    'crates/big-audio-player/src/audio/ui/library_detail_columns\.rs:.*replace append_rating_column with \(\)',
+    'crates/big-audio-player/src/audio/ui/library_detail_columns\.rs:.*replace append_add_column with \(\)',
 ]

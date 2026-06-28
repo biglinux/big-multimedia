@@ -27,6 +27,28 @@ use super::library_panel::{DetailIndicator, LibraryPanel, LibraryPanelOutput};
 /// Bounded album-art texture cache, keyed by `art_hash`.
 pub(super) type ArtCache = Rc<RefCell<lru::LruCache<String, gdk::Texture>>>;
 
+fn album_art_hash_key(art_hash: Option<&str>) -> Option<String> {
+    match art_hash {
+        Some(art_hash) if !art_hash.is_empty() => Some(art_hash.to_string()),
+        _ => None,
+    }
+}
+
+fn track_number_cell_label(track_number: Option<i32>) -> String {
+    track_number
+        .map(|number| number.to_string())
+        .unwrap_or_default()
+}
+
+fn is_current_detail_track(current_path: Option<&str>, track_file_path: &str) -> bool {
+    current_path == Some(track_file_path)
+}
+
+fn clicked_star_rating(row_width: i32, click_x: f64) -> i32 {
+    let star_width = f64::from(row_width.max(1)) / 5.0;
+    ((click_x / star_width) as i32 + 1).clamp(1, 5)
+}
+
 /// Build the detail column set. The title column registers its indicator widgets
 /// into `indicators` for `SetPlayingPath` re-light; rating/add emit intents.
 pub(super) fn build_detail_columns(
@@ -160,9 +182,8 @@ fn append_art_column(column_view: &gtk::ColumnView, art_cache: &ArtCache) {
         };
         picture.set_paintable(gdk::Paintable::NONE);
 
-        let hash = match track.art_hash {
-            Some(ref h) if !h.is_empty() => h.clone(),
-            _ => return,
+        let Some(hash) = album_art_hash_key(track.art_hash.as_deref()) else {
+            return;
         };
         if let Some(texture) = cache.borrow_mut().get(&hash) {
             picture.set_paintable(Some(texture));
@@ -231,12 +252,7 @@ fn append_track_number_column(column_view: &gtk::ColumnView) {
         let Some(label) = signal_factory::child_as::<gtk::Label>(list_item) else {
             return;
         };
-        label.set_label(
-            &track
-                .track_number
-                .map(|n| n.to_string())
-                .unwrap_or_default(),
-        );
+        label.set_label(&track_number_cell_label(track.track_number));
     });
     let sorter = gtk::CustomSorter::new(|a, b| {
         let Some(track_a_object) = a.downcast_ref::<glib::BoxedAnyObject>() else {
@@ -329,7 +345,7 @@ fn build_title_column(
             return;
         };
         label.set_label(track.display_title());
-        let is_current = cur_bind.borrow().as_deref() == Some(track.file_path.as_str());
+        let is_current = is_current_detail_track(cur_bind.borrow().as_deref(), &track.file_path);
         icon.set_visible(is_current);
         ind_bind
             .borrow_mut()
@@ -407,8 +423,7 @@ fn append_rating_column(column_view: &gtk::ColumnView, sender: &ComponentSender<
             let Some(hbox) = hbox_ref.upgrade() else {
                 return;
             };
-            let star_width = f64::from(hbox.width()) / 5.0;
-            let clicked_rating = ((x / star_width) as i32 + 1).clamp(1, 5);
+            let clicked_rating = clicked_star_rating(hbox.width(), x);
             update_star_icons(&hbox, clicked_rating);
             let _ = out.output(LibraryPanelOutput::RateTrack {
                 id: track_id,
@@ -507,4 +522,51 @@ fn append_add_column(column_view: &gtk::ColumnView, sender: &ComponentSender<Lib
             .resizable(false)
             .build(),
     );
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn album_art_hash_key_accepts_only_non_empty_hashes() {
+        assert_eq!(
+            album_art_hash_key(Some("cover-hash")),
+            Some("cover-hash".to_string())
+        );
+        assert_eq!(album_art_hash_key(Some("")), None);
+        assert_eq!(album_art_hash_key(None), None);
+    }
+
+    #[test]
+    fn track_number_cell_label_is_blank_only_when_missing() {
+        assert_eq!(track_number_cell_label(Some(7)), "7");
+        assert_eq!(track_number_cell_label(Some(0)), "0");
+        assert_eq!(track_number_cell_label(None), "");
+    }
+
+    #[test]
+    fn current_detail_track_matches_exact_file_path_only() {
+        assert!(is_current_detail_track(
+            Some("/music/song.flac"),
+            "/music/song.flac"
+        ));
+        assert!(!is_current_detail_track(
+            Some("/music/other.flac"),
+            "/music/song.flac"
+        ));
+        assert!(!is_current_detail_track(None, "/music/song.flac"));
+    }
+
+    #[test]
+    fn clicked_star_rating_maps_pointer_position_to_clamped_rating() {
+        assert_eq!(clicked_star_rating(100, -5.0), 1);
+        assert_eq!(clicked_star_rating(100, 0.0), 1);
+        assert_eq!(clicked_star_rating(100, 19.9), 1);
+        assert_eq!(clicked_star_rating(100, 20.0), 2);
+        assert_eq!(clicked_star_rating(100, 79.9), 4);
+        assert_eq!(clicked_star_rating(100, 80.0), 5);
+        assert_eq!(clicked_star_rating(100, 120.0), 5);
+        assert_eq!(clicked_star_rating(0, 120.0), 5);
+    }
 }
