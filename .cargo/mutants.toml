@@ -73,4 +73,8 @@ exclude_re = [
     # geometry keys and Effects-page toggle metadata are tested as specs.
     'crates/big-audio-player/src/audio/appearance/dialogs\.rs:.*replace show_audio_appearance_dialog with \(\)',
     'crates/big-audio-player/src/audio/appearance/dialogs\.rs:.*replace create_effects_page -> adw::PreferencesPage with Default::default\(\)',
+    # Cast dialog construction/polling needs live GTK plus Chromecast discovery.
+    # Dialog chrome, row text, status text, and discovery restart rule are
+    # covered by display-free cast_dialog tests with all features enabled.
+    'crates/big-audio-player/src/audio/ui/cast_dialog\.rs:.*replace present_cast with \(\)',
 ]
