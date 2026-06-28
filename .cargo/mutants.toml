@@ -69,4 +69,8 @@ exclude_re = [
     # presence and PlayerAudioEffects -> AudioEffectsSnapshot mapping are tested.
     'crates/big-audio-player/src/audio/preferences\.rs:.*replace audio_preference_actions -> Option<PlayerAudioPreferenceActions> with None',
     'crates/big-audio-player/src/audio/preferences\.rs:.*replace apply_player_audio_effects with \(\)',
+    # Appearance dialog/page construction is live GTK/libadwaita. Window
+    # geometry keys and Effects-page toggle metadata are tested as specs.
+    'crates/big-audio-player/src/audio/appearance/dialogs\.rs:.*replace show_audio_appearance_dialog with \(\)',
+    'crates/big-audio-player/src/audio/appearance/dialogs\.rs:.*replace create_effects_page -> adw::PreferencesPage with Default::default\(\)',
 ]
