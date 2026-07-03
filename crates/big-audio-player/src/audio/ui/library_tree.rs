@@ -654,7 +654,7 @@ fn bind_tree_row(
 
     artist_label.set_visible(false);
     label.remove_css_class("browser-title");
-    big_relm4_components::feedback::tooltip::set(&text_box, &node.label());
+    big_relm4_components::feedback::tooltip::set(&text_box, node.label());
 
     if let Some(track_count_label_text) = &row_presentation.track_count_label {
         track_count_label.set_visible(true);

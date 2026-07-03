@@ -153,7 +153,7 @@ pub(crate) fn build_count_summary(state: &Rc<BrowserState>, count: usize) {
             .build();
         tooltip::set(
             &warn,
-            &i18n("Showing {shown} of {total} files found. Consider filtering by subfolder.")
+            i18n("Showing {shown} of {total} files found. Consider filtering by subfolder.")
                 .replace("{shown}", &count.to_string())
                 .replace("{total}", &total.to_string()),
         );

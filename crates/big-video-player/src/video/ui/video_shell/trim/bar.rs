@@ -246,7 +246,7 @@ impl Component for VideoTrimBar {
         mode_group.set_active(0);
         tooltip::set(
             &mode_group,
-            &i18n("Keep format copies the cut without re-encoding (fast); Re-encode applies the cut settings"),
+            i18n("Keep format copies the cut without re-encoding (fast); Re-encode applies the cut settings"),
         );
         mode_group.connect_active_notify(glib::clone!(
             #[strong]
@@ -409,7 +409,7 @@ fn build_segment_chip(
     edit_segment_button.update_property(&[gtk::accessible::Property::Description(&i18n(
         "Edit cut times",
     ))]);
-    tooltip::set(&edit_segment_button, &i18n("Edit cut times"));
+    tooltip::set(&edit_segment_button, i18n("Edit cut times"));
     edit_segment_button.connect_clicked(glib::clone!(
         #[strong]
         sender,

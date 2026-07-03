@@ -93,7 +93,7 @@ pub(super) fn build_batch_bar(state: &Rc<BrowserState>) {
         .icon_name("window-close-symbolic")
         .css_classes(["flat"])
         .build();
-    big_relm4_components::feedback::tooltip::set(&done, &i18n("Done"));
+    big_relm4_components::feedback::tooltip::set(&done, i18n("Done"));
     done.update_property(&[gtk::accessible::Property::Label(&i18n("Done"))]);
     done.connect_clicked({
         let state = state.clone();

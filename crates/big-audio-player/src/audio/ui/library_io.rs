@@ -443,7 +443,7 @@ fn build_remove_button(folder_label: &str) -> gtk::Button {
         .build();
     big_relm4_components::feedback::tooltip::set(
         &remove_folder_button,
-        &i18n("Remove folder and its tracks"),
+        i18n("Remove folder and its tracks"),
     );
     remove_folder_button.update_property(&[gtk::accessible::Property::Label(&format!(
         "{}: {folder_label}",
