@@ -32,9 +32,16 @@ use crate::i18n::i18n;
 use super::library_panel::{LibraryPanel, LibraryPanelInput, LibraryPanelOutput};
 use super::playlist_geom::find_clicked_position;
 
+mod interaction;
 mod model;
 mod presentation;
 
+#[cfg(test)]
+use interaction::LibraryTreeSelection;
+use interaction::{
+    library_panel_node_selected_output, library_tree_context_target, library_tree_selection,
+    selected_leaf_drag_paths, LibraryTreeContextTarget,
+};
 pub(super) use model::LibraryTreeHandle;
 #[cfg(test)]
 use model::{
@@ -49,21 +56,6 @@ use presentation::{FileLeafPresentation, LibraryTreeAvatarPresentation};
 
 /// Album-art thumbnail edge (px) for file leaves.
 const LEAF_ART_PX: i32 = 48;
-
-#[derive(Debug, Clone, PartialEq, Eq)]
-struct LibraryTreeSelection {
-    kind: u32,
-    key: String,
-    secondary: String,
-    depth: u32,
-}
-
-#[derive(Debug, Clone, PartialEq, Eq)]
-enum LibraryTreeContextTarget {
-    Inert,
-    FileLeaf { file_path: String },
-    Group { selection: LibraryTreeSelection },
-}
 
 /// Build the library tree widget. Returns the `ListView` (the panel mounts it
 /// into its left-pane `gtk::ScrolledWindow` via `set_child`) and a
@@ -115,63 +107,6 @@ fn build_tree_model(root_store: &gio::ListStore, child_stores: &ChildStores) -> 
         let store = stores.borrow().get(&cache_key)?.clone();
         Some(store.upcast::<gio::ListModel>())
     })
-}
-
-fn selected_leaf_drag_paths<'a>(
-    selected_browser_nodes: impl IntoIterator<Item = &'a BrowserNode>,
-    registered_leaf_tracks: &HashMap<String, Track>,
-) -> Vec<String> {
-    selected_browser_nodes
-        .into_iter()
-        .filter_map(|node| {
-            let file_path = node.key();
-            (node.kind() == BrowserNodeKind::File
-                && registered_leaf_tracks.contains_key(&file_path))
-            .then_some(file_path)
-        })
-        .collect()
-}
-
-fn library_tree_selection(node: &BrowserNode, depth: u32) -> Option<LibraryTreeSelection> {
-    if node.kind() == BrowserNodeKind::Divider {
-        return None;
-    }
-    Some(LibraryTreeSelection {
-        kind: node.kind() as u32,
-        key: node.key(),
-        secondary: node.secondary(),
-        depth,
-    })
-}
-
-fn library_tree_context_target(
-    node: &BrowserNode,
-    depth: u32,
-    registered_leaf_tracks: &HashMap<String, Track>,
-) -> LibraryTreeContextTarget {
-    if node.kind() == BrowserNodeKind::Divider {
-        return LibraryTreeContextTarget::Inert;
-    }
-    if node.kind() == BrowserNodeKind::File {
-        let file_path = node.key();
-        if registered_leaf_tracks.contains_key(&file_path) {
-            return LibraryTreeContextTarget::FileLeaf { file_path };
-        }
-        return LibraryTreeContextTarget::Inert;
-    }
-    let Some(selection) = library_tree_selection(node, depth) else {
-        return LibraryTreeContextTarget::Inert;
-    };
-    LibraryTreeContextTarget::Group { selection }
-}
-
-fn library_panel_node_selected_output(selection: &LibraryTreeSelection) -> LibraryPanelOutput {
-    LibraryPanelOutput::NodeSelected {
-        kind: selection.kind,
-        key: selection.key.clone(),
-        secondary: selection.secondary.clone(),
-        depth: selection.depth,
-    }
 }
 
 /// Row factory: a `TreeExpander` wrapping icon + avatar + label/artist + count.
