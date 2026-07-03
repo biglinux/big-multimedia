@@ -19,8 +19,9 @@ use std::rc::Rc;
 use std::sync::{Arc, Mutex};
 
 use adw::prelude::*;
-use gtk::glib;
 use relm4::{Component, ComponentParts, ComponentSender};
+
+use big_player_ui::cut_timeline::{install_cut_timeline_draw, wire_cut_timeline_interaction};
 
 use crate::i18n::i18n;
 use crate::player::mpv_backend::{MpvBackend, TrackMetadata};
@@ -252,7 +253,23 @@ impl Component for VideoControlsBar {
             &seek_fraction,
             &duration_secs,
         );
-        wire_cut_timeline_interaction(&cut_timeline, &cut_segments, &duration_secs, &sender);
+        let seek_sender = sender.clone();
+        let segment_sender = sender.clone();
+        wire_cut_timeline_interaction(
+            &cut_timeline,
+            &cut_segments,
+            &duration_secs,
+            move |fraction| {
+                let _ = seek_sender.output(VideoControlsBarOutput::SeekChanged(fraction));
+            },
+            move |adjustment| {
+                let _ = segment_sender.output(VideoControlsBarOutput::SegmentEdgeAdjusted {
+                    id: adjustment.id,
+                    start: adjustment.start,
+                    end: adjustment.end,
+                });
+            },
+        );
         let bar_stack = gtk::Stack::builder().hexpand(true).build();
         bar_stack.add_named(&seek_bar, Some("seek"));
         bar_stack.add_named(&cut_timeline, Some("cut"));
@@ -481,328 +498,4 @@ impl VideoControlsBar {
             );
         }
     }
-}
-
-/// Draw the cut timeline: track + played portion + cut ranges (warning colour) +
-/// the pending first mark (green guide) + the playhead. Fully owned, exact
-/// geometry, so the cuts align with the bar.
-fn install_cut_timeline_draw(
-    area: &gtk::DrawingArea,
-    cut_segments: &Rc<RefCell<Vec<(u64, f64, f64)>>>,
-    pending_mark: &Rc<RefCell<Option<f64>>>,
-    seek_fraction: &Rc<Cell<f64>>,
-    duration_secs: &Rc<Cell<f64>>,
-) {
-    let cut_segments = cut_segments.clone();
-    let pending_mark = pending_mark.clone();
-    let seek_fraction = seek_fraction.clone();
-    let duration_secs = duration_secs.clone();
-    area.set_draw_func(move |area, cr, width, height| {
-        let duration = duration_secs.get().max(0.001);
-        let w = f64::from(width);
-        let h = f64::from(height);
-        let track_h = (h * 0.5).clamp(6.0, 12.0);
-        let track_top = (h - track_h) / 2.0;
-        let r = track_h / 2.0;
-        let frac = seek_fraction.get().clamp(0.0, 1.0);
-        let x_for = |t: f64| (t / duration).clamp(0.0, 1.0) * w;
-
-        // Unplayed track: themed foreground at low alpha → a clearly visible
-        // distinct background for the not-yet-played region (theme-aware).
-        let fg = area.color();
-        cr.set_source_rgba(
-            f64::from(fg.red()),
-            f64::from(fg.green()),
-            f64::from(fg.blue()),
-            0.28,
-        );
-        rounded_rect(cr, 0.0, track_top, w, track_h, r);
-        let _ = cr.fill();
-        // Played portion (accent blue).
-        cr.set_source_rgba(0.20, 0.52, 0.89, 0.95);
-        rounded_rect(cr, 0.0, track_top, frac * w, track_h, r);
-        let _ = cr.fill();
-        // Cut ranges (Adwaita warning colour) — square edges so the boundaries
-        // read as exact cut points (not rounded).
-        for (_, start, end) in cut_segments.borrow().iter() {
-            let x0 = x_for(*start);
-            let x1 = x_for(*end);
-            cr.set_source_rgba(0.898, 0.647, 0.039, 0.95);
-            cr.rectangle(x0, track_top, (x1 - x0).max(2.0), track_h);
-            let _ = cr.fill();
-        }
-        // Pending first mark — a green guide line awaiting its pair.
-        if let Some(mark) = *pending_mark.borrow() {
-            cr.set_source_rgba(0.18, 0.76, 0.35, 1.0);
-            cr.rectangle(x_for(mark) - 1.0, 0.0, 2.0, h);
-            let _ = cr.fill();
-        }
-        // Playhead cursor.
-        cr.set_source_rgba(1.0, 1.0, 1.0, 1.0);
-        cr.rectangle(frac * w - 1.0, 0.0, 2.0, h);
-        let _ = cr.fill();
-    });
-}
-
-const EDGE_GRAB_PX: f64 = 8.0;
-
-/// Which part of which cut is being dragged on the timeline.
-#[derive(Clone, Copy)]
-enum CutDrag {
-    None,
-    Start(u64),
-    End(u64),
-    Body {
-        id: u64,
-        anchor: f64,
-        orig_start: f64,
-        orig_end: f64,
-    },
-}
-
-/// Cut-timeline pointer interaction (mirrors the audio editor's waveform): drag a
-/// cut's start/end handle or its whole body to adjust it — the PLAYBACK POSITION
-/// follows the drag so the exact cut point is visible — otherwise click/drag to
-/// seek. The cursor shows a resize/move handle. The drag state persists for the
-/// whole gesture, so a tiny movement no longer ends it.
-fn wire_cut_timeline_interaction(
-    area: &gtk::DrawingArea,
-    cut_segments: &Rc<RefCell<Vec<(u64, f64, f64)>>>,
-    duration_secs: &Rc<Cell<f64>>,
-    sender: &ComponentSender<VideoControlsBar>,
-) {
-    let drag_state: Rc<Cell<CutDrag>> = Rc::new(Cell::new(CutDrag::None));
-
-    // Press → seek, unless it lands on a cut handle/body (which starts a drag).
-    let click = gtk::GestureClick::new();
-    click.set_button(1);
-    click.connect_pressed(glib::clone!(
-        #[strong]
-        sender,
-        #[strong]
-        cut_segments,
-        #[strong]
-        duration_secs,
-        #[weak]
-        area,
-        move |_, _, x, _| {
-            let w = f64::from(area.width()).max(1.0);
-            let dur = duration_secs.get().max(0.001);
-            let segs = cut_segments.borrow();
-            if hit_handle(&segs, x, w, dur, EDGE_GRAB_PX).is_some()
-                || hit_body(&segs, x, w, dur).is_some()
-            {
-                return;
-            }
-            let _ = sender.output(VideoControlsBarOutput::SeekChanged((x / w).clamp(0.0, 1.0)));
-        }
-    ));
-    area.add_controller(click);
-
-    let drag = gtk::GestureDrag::new();
-    drag.connect_drag_begin(glib::clone!(
-        #[strong]
-        drag_state,
-        #[strong]
-        cut_segments,
-        #[strong]
-        duration_secs,
-        #[weak]
-        area,
-        move |gesture, start_x, _| {
-            // Claim the sequence so a drag on the timeline scrubs / adjusts a cut
-            // instead of bubbling to the video's window-move gesture.
-            gesture.set_state(gtk::EventSequenceState::Claimed);
-            let w = f64::from(area.width()).max(1.0);
-            let dur = duration_secs.get().max(0.001);
-            let segs = cut_segments.borrow();
-            let mode = if let Some((id, is_end)) = hit_handle(&segs, start_x, w, dur, EDGE_GRAB_PX)
-            {
-                if is_end {
-                    CutDrag::End(id)
-                } else {
-                    CutDrag::Start(id)
-                }
-            } else if let Some(id) = hit_body(&segs, start_x, w, dur) {
-                let (_, s, e) = segs
-                    .iter()
-                    .find(|(sid, _, _)| *sid == id)
-                    .copied()
-                    .unwrap_or((id, 0.0, 0.0));
-                CutDrag::Body {
-                    id,
-                    anchor: (start_x / w).clamp(0.0, 1.0) * dur,
-                    orig_start: s,
-                    orig_end: e,
-                }
-            } else {
-                CutDrag::None
-            };
-            drag_state.set(mode);
-        }
-    ));
-    drag.connect_drag_update(glib::clone!(
-        #[strong]
-        sender,
-        #[strong]
-        drag_state,
-        #[strong]
-        cut_segments,
-        #[strong]
-        duration_secs,
-        #[weak]
-        area,
-        move |gesture, offset_x, _| {
-            let Some((start_x, _)) = gesture.start_point() else {
-                return;
-            };
-            let w = f64::from(area.width()).max(1.0);
-            let dur = duration_secs.get().max(0.001);
-            let frac = ((start_x + offset_x) / w).clamp(0.0, 1.0);
-            let t = frac * dur;
-            {
-                let mut segs = cut_segments.borrow_mut();
-                match drag_state.get() {
-                    CutDrag::Start(id) => {
-                        if let Some((_, s, e)) = segs.iter_mut().find(|(sid, _, _)| *sid == id) {
-                            *s = t.min(*e - 0.1).max(0.0);
-                        }
-                    }
-                    CutDrag::End(id) => {
-                        if let Some((_, s, e)) = segs.iter_mut().find(|(sid, _, _)| *sid == id) {
-                            *e = t.max(*s + 0.1).min(dur);
-                        }
-                    }
-                    CutDrag::Body {
-                        id,
-                        anchor,
-                        orig_start,
-                        orig_end,
-                    } => {
-                        if let Some((_, s, e)) = segs.iter_mut().find(|(sid, _, _)| *sid == id) {
-                            let len = (orig_end - orig_start).max(0.1);
-                            let (mut ns, mut ne) =
-                                (orig_start + (t - anchor), orig_end + (t - anchor));
-                            if ns < 0.0 {
-                                ns = 0.0;
-                                ne = len;
-                            }
-                            if ne > dur {
-                                ne = dur;
-                                ns = (dur - len).max(0.0);
-                            }
-                            *s = ns;
-                            *e = ne;
-                        }
-                    }
-                    CutDrag::None => {}
-                }
-            }
-            // Playback follows the drag (or scrubs when not on a cut).
-            let _ = sender.output(VideoControlsBarOutput::SeekChanged(frac));
-            area.queue_draw();
-        }
-    ));
-    drag.connect_drag_end(glib::clone!(
-        #[strong]
-        sender,
-        #[strong]
-        drag_state,
-        #[strong]
-        cut_segments,
-        #[weak]
-        area,
-        move |_, _, _| {
-            let id = match drag_state.replace(CutDrag::None) {
-                CutDrag::Start(id) | CutDrag::End(id) | CutDrag::Body { id, .. } => Some(id),
-                CutDrag::None => None,
-            };
-            if let Some(id) = id {
-                if let Some((_, s, e)) = cut_segments.borrow().iter().find(|(sid, _, _)| *sid == id)
-                {
-                    let _ = sender.output(VideoControlsBarOutput::SegmentEdgeAdjusted {
-                        id,
-                        start: *s,
-                        end: *e,
-                    });
-                }
-            }
-            area.queue_draw();
-        }
-    ));
-    area.add_controller(drag);
-
-    // Cursor: resize on a handle, move on a body.
-    let motion = gtk::EventControllerMotion::new();
-    motion.connect_motion(glib::clone!(
-        #[strong]
-        cut_segments,
-        #[strong]
-        duration_secs,
-        #[weak]
-        area,
-        move |_, x, _| {
-            let w = f64::from(area.width()).max(1.0);
-            let dur = duration_secs.get().max(0.001);
-            let segs = cut_segments.borrow();
-            let cursor = if let Some((_, is_end)) = hit_handle(&segs, x, w, dur, EDGE_GRAB_PX) {
-                if is_end {
-                    "e-resize"
-                } else {
-                    "w-resize"
-                }
-            } else if hit_body(&segs, x, w, dur).is_some() {
-                "move"
-            } else {
-                "default"
-            };
-            area.set_cursor_from_name(Some(cursor));
-        }
-    ));
-    area.add_controller(motion);
-}
-
-/// The cut handle `(id, is_end)` within `thresh` px of `x`, nearest first.
-fn hit_handle(
-    segments: &[(u64, f64, f64)],
-    x: f64,
-    w: f64,
-    duration: f64,
-    thresh: f64,
-) -> Option<(u64, bool)> {
-    let mut best: Option<(u64, bool, f64)> = None;
-    for (id, start, end) in segments {
-        for (is_end, t) in [(false, *start), (true, *end)] {
-            let edge_x = (t / duration).clamp(0.0, 1.0) * w;
-            let dist = (x - edge_x).abs();
-            if dist <= thresh && best.is_none_or(|(_, _, best_dist)| dist < best_dist) {
-                best = Some((*id, is_end, dist));
-            }
-        }
-    }
-    best.map(|(id, is_end, _)| (id, is_end))
-}
-
-/// The id of the cut whose body contains `x` (strictly between its handles).
-fn hit_body(segments: &[(u64, f64, f64)], x: f64, w: f64, duration: f64) -> Option<u64> {
-    segments.iter().find_map(|(id, start, end)| {
-        let x0 = (start / duration).clamp(0.0, 1.0) * w;
-        let x1 = (end / duration).clamp(0.0, 1.0) * w;
-        (x > x0 && x < x1).then_some(*id)
-    })
-}
-
-/// Append a rounded-rectangle sub-path to `cr` (used for the cut-timeline track).
-fn rounded_rect(cr: &gtk::cairo::Context, x: f64, y: f64, w: f64, h: f64, radius: f64) {
-    use std::f64::consts::PI;
-    if w <= 0.0 || h <= 0.0 {
-        return;
-    }
-    let r = radius.min(w / 2.0).min(h / 2.0).max(0.0);
-    cr.new_sub_path();
-    cr.arc(x + w - r, y + r, r, -PI / 2.0, 0.0);
-    cr.arc(x + w - r, y + h - r, r, 0.0, PI / 2.0);
-    cr.arc(x + r, y + h - r, r, PI / 2.0, PI);
-    cr.arc(x + r, y + r, r, PI, 1.5 * PI);
-    cr.close_path();
 }

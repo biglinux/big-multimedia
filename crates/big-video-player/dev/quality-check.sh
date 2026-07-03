@@ -64,6 +64,7 @@ fi
 
 run rustfmt cargo fmt --all -- --check
 run video-render-contract python3 dev/render-path-contract.py
+run cut-timeline-ownership bash dev/check-cut-timeline-ownership.sh
 run clippy cargo clippy --all-targets --all-features --locked -- -D warnings
 run tests cargo test --all-targets --all-features --locked
 mkdir -p target/.doctest-tmp
