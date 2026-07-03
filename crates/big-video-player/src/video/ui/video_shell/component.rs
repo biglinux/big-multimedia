@@ -8,15 +8,15 @@ use super::input::{clear_shell_input, set_shell_input};
 use super::input_gestures::{wire_background_video_input, wire_osd_autohide, wire_video_input};
 use super::render::{wire_close, wire_realize, FastRenderContextSlot, VideoRealizeOptions};
 use super::*;
+use big_media_components::surface::{
+    create_media_toast_overlay_root, mount_media_toast_content, BigMediaChrome,
+    BigMediaChromePlacement, BigMediaMenuSpec, BigMediaOverlayStack, BigMediaSidebarShell,
+    BigMediaSidebarSpec,
+};
 #[cfg(all(test, not(miri)))]
 use big_relm4_components::layout::hamburger_menu::build_flat_menu_model;
 use big_relm4_components::layout::hamburger_menu::{
     build_flat_action_popover_button, BigHamburgerMenuSpec, BigMenuActionItem,
-};
-use big_relm4_components::layout::media_window::{
-    create_media_toast_overlay_root, mount_media_toast_content, BigMediaChrome,
-    BigMediaChromePlacement, BigMediaMenuSpec, BigMediaOverlayStack, BigMediaSidebarShell,
-    BigMediaSidebarSpec,
 };
 
 impl Component for VideoShell {
@@ -334,7 +334,7 @@ impl Component for VideoShell {
         });
 
         // Shared media-viewer chrome (header + accessible primary menu + the
-        // OSD reveal) — see big_relm4_components::layout::media_window. The video
+        // OSD reveal) — see big_media_components::surface. The video
         // player keeps mpv/offload/welcome/buffering state app-local; shared
         // chrome owns the repeatable header, bottom revealer, and sidebar split.
         chrome.add_header_start(&keep_above_toggle_button);

@@ -3,10 +3,8 @@ use super::input::set_shell_input;
 use super::mpris::build_mpris_service;
 use super::playback::transport_labels;
 use super::*;
+use big_media_components::surface::{create_media_toast_overlay_root, mount_media_toast_content};
 use big_relm4_components::input::button_content::{build_button_content, BigButtonContentSpec};
-use big_relm4_components::layout::media_window::{
-    create_media_toast_overlay_root, mount_media_toast_content,
-};
 use big_relm4_components::layout::toolbar_pane::{
     BigToolbarHeader, BigToolbarHeaderSpec, BigToolbarPane, BigToolbarPaneSpec,
 };

@@ -1,5 +1,5 @@
 use super::*;
-use big_relm4_components::layout::media_window::BigMediaImmersionController;
+use big_media_components::surface::BigMediaImmersionController;
 
 use std::path::{Path, PathBuf};
 

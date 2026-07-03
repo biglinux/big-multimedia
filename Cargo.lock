@@ -244,6 +244,7 @@ dependencies = [
  "big-audio-effects",
  "big-media-components",
  "big-media-data",
+ "big-media-engines",
  "big-mpv-render",
  "big-os-kit",
  "big-relm4-components",
