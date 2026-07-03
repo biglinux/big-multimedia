@@ -26,6 +26,81 @@ use crate::i18n::i18n;
 
 use super::playlist_panel::{PlaylistPanel, PlaylistPanelOutput};
 
+fn is_queue_delete_key(keyval: gdk::Key) -> bool {
+    keyval == gdk::Key::Delete || keyval == gdk::Key::BackSpace
+}
+
+fn valid_reorder_source_index(raw_index: i64) -> Option<usize> {
+    if raw_index < 0 {
+        None
+    } else {
+        Some(raw_index as usize)
+    }
+}
+
+fn has_sorted_tracks_to_commit(tracks: &[Track]) -> bool {
+    !tracks.is_empty()
+}
+
+fn resolve_queue_index_from_track_identities(
+    visual_pos: u32,
+    sorted_track_identity_at: impl FnOnce(u32) -> Option<glib::Object>,
+    store_count: u32,
+    queue_track_identity_at: impl FnMut(u32) -> Option<glib::Object>,
+) -> Option<usize> {
+    resolve_queue_index_from_identity_keys(
+        visual_pos,
+        sorted_track_identity_at,
+        store_count,
+        queue_track_identity_at,
+    )
+}
+
+fn resolve_queue_index_from_identity_keys<T: PartialEq>(
+    visual_pos: u32,
+    sorted_track_identity_at: impl FnOnce(u32) -> Option<T>,
+    store_count: u32,
+    mut queue_track_identity_at: impl FnMut(u32) -> Option<T>,
+) -> Option<usize> {
+    let clicked_track_identity = sorted_track_identity_at(visual_pos)?;
+    (0..store_count)
+        .find(|&index| {
+            queue_track_identity_at(index)
+                .is_some_and(|track_identity| track_identity == clicked_track_identity)
+        })
+        .map(|index| index as usize)
+}
+
+fn remove_from_queue_label(count: usize) -> String {
+    if count > 1 {
+        format!("{} ({count})", i18n("Remove from Queue"))
+    } else {
+        i18n("Remove from Queue")
+    }
+}
+
+fn should_show_single_track_actions(count: usize) -> bool {
+    count == 1
+}
+
+fn downloadable_episode_items(selected: &[(usize, Track)]) -> Vec<(String, String)> {
+    selected
+        .iter()
+        .filter(|(_, track)| {
+            track.file_path.starts_with("http://") || track.file_path.starts_with("https://")
+        })
+        .map(|(_, track)| (track.file_path.clone(), track.display_title().to_string()))
+        .collect()
+}
+
+fn download_episode_label(episode_count: usize) -> Option<String> {
+    match episode_count {
+        0 => None,
+        1 => Some(i18n("Download Episode…")),
+        count => Some(format!("{} ({count})", i18n("Download Episodes…"))),
+    }
+}
+
 /// Mount the external-path DropTarget on the scroll area: motion positions the
 /// indicator line at the row under the pointer; drop emits `DropPaths` (the
 /// shell resolves paths → tracks and mutates the queue).
@@ -160,20 +235,16 @@ pub(super) fn wire_reorder_drop(
     );
     drop.connect_drop(move |_, value, _, y| {
         ind_d.set_visible(false);
-        let from = value.get::<i64>().unwrap_or(-1);
-        if from < 0 {
+        let Some(from) = valid_reorder_source_index(value.get::<i64>().unwrap_or(-1)) else {
             return false;
-        }
+        };
         let (Some(scroll), Some(cv), Some(store)) =
             (sc_d.upgrade(), cv_d.upgrade(), st_d.upgrade())
         else {
             return false;
         };
         let to = find_reorder_drop_position(&scroll, &cv, y, store.n_items() as usize).insert_index;
-        let _ = out.output(PlaylistPanelOutput::ReorderTrack {
-            from: from as usize,
-            to,
-        });
+        let _ = out.output(PlaylistPanelOutput::ReorderTrack { from, to });
         true
     });
 
@@ -196,7 +267,7 @@ pub(super) fn wire_delete_key(
         sender.clone(),
     );
     key.connect_key_pressed(move |_, keyval, _, _| {
-        if keyval != gdk::Key::Delete && keyval != gdk::Key::BackSpace {
+        if !is_queue_delete_key(keyval) {
             return glib::Propagation::Proceed;
         }
         let bitset = sel.selection();
@@ -252,7 +323,7 @@ pub(super) fn wire_sort_commit(
                     .map(|obj| obj.borrow::<Track>().clone())
                     .collect();
                 flag.set(false);
-                if !tracks.is_empty() {
+                if has_sorted_tracks_to_commit(&tracks) {
                     let _ = out.output(PlaylistPanelOutput::CommitSortedOrder { tracks });
                 }
             });
@@ -266,10 +337,12 @@ fn resolve_queue_index(
     store: &gio::ListStore,
     visual_pos: u32,
 ) -> Option<usize> {
-    let clicked = sort_model.item(visual_pos)?;
-    (0..store.n_items())
-        .find(|&i| store.item(i).is_some_and(|o| o == clicked))
-        .map(|i| i as usize)
+    resolve_queue_index_from_track_identities(
+        visual_pos,
+        |position| sort_model.item(position),
+        store.n_items(),
+        |index| store.item(index),
+    )
 }
 
 /// Collect `(queue_index, track)` for the current selection.
@@ -345,7 +418,6 @@ fn show_track_context_menu(
     sender: &ComponentSender<PlaylistPanel>,
 ) {
     let count = selected.len();
-    let is_multi = count > 1;
     let first_idx = selected[0].0;
     let first_track = selected[0].1.clone();
 
@@ -358,11 +430,7 @@ fn show_track_context_menu(
         });
     }
     {
-        let label = if is_multi {
-            format!("{} ({count})", i18n("Remove from Queue"))
-        } else {
-            i18n("Remove from Queue")
-        };
+        let label = remove_from_queue_label(count);
         let mut indices: Vec<usize> = selected.iter().map(|(i, _)| *i).collect();
         indices.sort_unstable_by(|a, b| b.cmp(a));
         indices.dedup();
@@ -374,7 +442,7 @@ fn show_track_context_menu(
         });
     }
 
-    if !is_multi {
+    if should_show_single_track_actions(count) {
         menu.append_separator();
         {
             let out = sender.clone();
@@ -400,17 +468,8 @@ fn show_track_context_menu(
     }
 
     // Podcast episodes only (HTTP URLs).
-    let http_episodes: Vec<(String, String)> = selected
-        .iter()
-        .filter(|(_, t)| t.file_path.starts_with("http://") || t.file_path.starts_with("https://"))
-        .map(|(_, t)| (t.file_path.clone(), t.display_title().to_string()))
-        .collect();
-    if !http_episodes.is_empty() {
-        let label = if http_episodes.len() == 1 {
-            i18n("Download Episode…")
-        } else {
-            format!("{} ({})", i18n("Download Episodes…"), http_episodes.len())
-        };
+    let http_episodes = downloadable_episode_items(&selected);
+    if let Some(label) = download_episode_label(http_episodes.len()) {
         let out = sender.clone();
         menu.append_button(label, &[], move || {
             let _ = out.output(PlaylistPanelOutput::DownloadEpisodes(http_episodes.clone()));
@@ -419,11 +478,7 @@ fn show_track_context_menu(
 
     menu.append_separator();
     {
-        let label = if is_multi {
-            format!("{} ({count})", i18n("Delete from Storage"))
-        } else {
-            i18n("Delete from Storage")
-        };
+        let label = delete_storage_heading(count);
         let out = sender.clone();
         let items = selected.clone();
         let parent = widget.root().and_downcast::<gtk::Window>();
@@ -538,7 +593,24 @@ fn delete_storage_body(count: usize, single_title: Option<&str>) -> String {
 
 #[cfg(test)]
 mod tests {
-    use super::{delete_storage_body, delete_storage_heading};
+    #[cfg(not(miri))]
+    use super::resolve_queue_index_from_track_identities;
+    use super::{
+        delete_storage_body, delete_storage_heading, download_episode_label,
+        downloadable_episode_items, has_sorted_tracks_to_commit, is_queue_delete_key,
+        remove_from_queue_label, resolve_queue_index_from_identity_keys,
+        should_show_single_track_actions, valid_reorder_source_index,
+    };
+    use crate::db::models::Track;
+    use gtk::gdk;
+    #[cfg(not(miri))]
+    use gtk::glib;
+    #[cfg(not(miri))]
+    use gtk::prelude::Cast;
+
+    fn track(path: &str, title: &str) -> Track {
+        Track::new_external_path_with_title(path, Some(title.to_string()))
+    }
 
     #[test]
     fn delete_storage_heading_marks_plural_count() {
@@ -555,6 +627,117 @@ mod tests {
         assert_eq!(
             delete_storage_body(3, None),
             "Move these files to the trash?\n\n3 tracks"
+        );
+    }
+
+    #[test]
+    fn queue_delete_key_accepts_delete_and_backspace_only() {
+        assert!(is_queue_delete_key(gdk::Key::Delete));
+        assert!(is_queue_delete_key(gdk::Key::BackSpace));
+        assert!(!is_queue_delete_key(gdk::Key::space));
+    }
+
+    #[test]
+    fn reorder_source_index_rejects_negative_payloads() {
+        assert_eq!(valid_reorder_source_index(-1), None);
+        assert_eq!(valid_reorder_source_index(0), Some(0));
+        assert_eq!(valid_reorder_source_index(7), Some(7));
+    }
+
+    #[test]
+    fn sorted_order_commit_requires_tracks() {
+        assert!(!has_sorted_tracks_to_commit(&[]));
+        assert!(has_sorted_tracks_to_commit(&[track(
+            "/music/song.flac",
+            "Song"
+        )]));
+    }
+
+    #[cfg(not(miri))]
+    #[test]
+    fn queue_index_resolution_matches_visual_track_identity() {
+        let first: glib::Object =
+            glib::BoxedAnyObject::new(track("/music/one.flac", "One")).upcast();
+        let second: glib::Object =
+            glib::BoxedAnyObject::new(track("/music/two.flac", "Two")).upcast();
+
+        assert_eq!(
+            resolve_queue_index_from_track_identities(
+                0,
+                |_| Some(second.clone()),
+                2,
+                |index| match index {
+                    0 => Some(first.clone()),
+                    1 => Some(second.clone()),
+                    _ => None,
+                },
+            ),
+            Some(1)
+        );
+        assert_eq!(
+            resolve_queue_index_from_track_identities(0, |_| None, 2, |_| Some(first.clone())),
+            None
+        );
+    }
+
+    #[test]
+    fn queue_index_resolution_matches_visual_identity_keys() {
+        assert_eq!(
+            resolve_queue_index_from_identity_keys(
+                0,
+                |_| Some("two"),
+                2,
+                |index| match index {
+                    0 => Some("one"),
+                    1 => Some("two"),
+                    _ => None,
+                }
+            ),
+            Some(1)
+        );
+        assert_eq!(
+            resolve_queue_index_from_identity_keys(0, |_| None::<&str>, 2, |_| Some("one")),
+            None
+        );
+    }
+
+    #[test]
+    fn queue_context_menu_labels_follow_selection_count() {
+        assert_eq!(remove_from_queue_label(1), "Remove from Queue");
+        assert_eq!(remove_from_queue_label(3), "Remove from Queue (3)");
+        assert!(should_show_single_track_actions(1));
+        assert!(!should_show_single_track_actions(2));
+    }
+
+    #[test]
+    fn downloadable_episode_items_keep_only_http_tracks() {
+        let selected = vec![
+            (0, track("https://example.test/podcast.mp3", "Episode")),
+            (1, track("http://example.test/bonus.mp3", "Bonus")),
+            (2, track("/music/song.flac", "Song")),
+        ];
+
+        assert_eq!(
+            downloadable_episode_items(&selected),
+            vec![
+                (
+                    "https://example.test/podcast.mp3".to_string(),
+                    "Episode".to_string(),
+                ),
+                (
+                    "http://example.test/bonus.mp3".to_string(),
+                    "Bonus".to_string(),
+                ),
+            ]
+        );
+        assert_eq!(download_episode_label(0), None);
+        assert_eq!(
+            download_episode_label(1),
+            Some("Download Episode…".to_string())
+        );
+        assert_eq!(
+            download_episode_label(2),
+            Some("Download Episodes… (2)".to_string())
         );
     }
 }

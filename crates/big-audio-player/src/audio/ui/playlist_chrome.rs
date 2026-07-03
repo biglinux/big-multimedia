@@ -8,6 +8,7 @@
 
 use adw::prelude::*;
 use big_app_kit::file_dialogs::FilePicker;
+use big_relm4_components::input::button_content::{build_button, BigButtonContentSpec};
 use big_relm4_components::layout::{
     dialog_footer::{BigDialogFooter, BigDialogFooterSpec},
     dialog_page::BigDialogPage,
@@ -26,6 +27,46 @@ use super::playlist_panel::{PlaylistPanel, PlaylistPanelOutput};
 const AUDIO_EXTENSIONS: &[&str] = &[
     "mp3", "flac", "ogg", "opus", "m4a", "wav", "aac", "wma", "aif", "aiff", "ape", "wv", "mka",
 ];
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+struct WelcomeTipSpec {
+    icon_name: &'static str,
+    text: String,
+}
+
+fn can_save_queue_playlist_name(candidate_name: &str) -> bool {
+    !candidate_name.trim().is_empty()
+}
+
+fn normalized_queue_playlist_name(candidate_name: &str) -> Option<String> {
+    let trimmed_name = candidate_name.trim();
+    if trimmed_name.is_empty() {
+        None
+    } else {
+        Some(trimmed_name.to_string())
+    }
+}
+
+fn should_emit_open_audio_paths(file_paths: &[String]) -> bool {
+    !file_paths.is_empty()
+}
+
+fn welcome_tip_specs() -> Vec<WelcomeTipSpec> {
+    vec![
+        WelcomeTipSpec {
+            icon_name: "media-playlist-shuffle-symbolic",
+            text: i18n("Drag and drop files to create a playlist"),
+        },
+        WelcomeTipSpec {
+            icon_name: "folder-symbolic",
+            text: i18n("Use the Music tab on the left to browse your library"),
+        },
+        WelcomeTipSpec {
+            icon_name: "audio-speakers-symbolic",
+            text: i18n("Explore Radio and Podcasts in the sidebar tabs"),
+        },
+    ]
+}
 
 /// Queue toolbar: a left-aligned header label (playlist name when empty,
 /// "N tracks · duration" when full) plus save-as / remove-duplicates / clear.
@@ -59,8 +100,9 @@ pub(super) fn build_toolbar(
     let menu_button = build_flat_action_popover_button(
         &BigHamburgerMenuSpec::new(main_menu_label).items(main_menu_items()),
     );
+    let menu_root = menu_button.root().clone();
     install_queue_menu_actions(menu_button.button(), sender);
-    bar.pack_end(menu_button.button());
+    bar.pack_end(&menu_root);
 
     (bar.into_root(), header_label)
 }
@@ -152,7 +194,7 @@ fn prompt_queue_playlist_name(
 
     let accept_button = footer.accept_button().clone();
     entry.connect_changed(move |row| {
-        accept_button.set_sensitive(!row.text().trim().is_empty());
+        accept_button.set_sensitive(can_save_queue_playlist_name(row.text().as_str()));
     });
 
     let accept_button = footer.accept_button().clone();
@@ -166,10 +208,9 @@ fn prompt_queue_playlist_name(
     let entry_for_accept = entry.clone();
     let dialog_weak = dialog.downgrade();
     footer.accept_button().connect_clicked(move |_| {
-        let name = entry_for_accept.text().trim().to_string();
-        if name.is_empty() {
+        let Some(name) = normalized_queue_playlist_name(entry_for_accept.text().as_str()) else {
             return;
-        }
+        };
         let _ = out.output(PlaylistPanelOutput::SaveQueueAsPlaylist { name });
         if let Some(dialog) = dialog_weak.upgrade() {
             dialog.close();
@@ -258,19 +299,13 @@ fn build_welcome(sender: &ComponentSender<PlaylistPanel>) -> gtk::Box {
     subtitle.add_css_class("body");
     container.append(&subtitle);
 
-    let open_files_button = gtk::Button::builder()
-        .halign(gtk::Align::Center)
-        .margin_top(18)
-        .build();
-    open_files_button.add_css_class("suggested-action");
-    open_files_button.add_css_class("pill");
-    open_files_button.update_property(&[gtk::accessible::Property::Label(&i18n("Open files"))]);
-    open_files_button.set_child(Some(
-        &adw::ButtonContent::builder()
-            .icon_name("document-open-symbolic")
-            .label(i18n("Open Files"))
-            .build(),
-    ));
+    let open_files_button = build_button(
+        &BigButtonContentSpec::new("document-open-symbolic", i18n("Open Files"))
+            .accessible_label(i18n("Open files"))
+            .css_classes(["suggested-action", "pill"]),
+    );
+    open_files_button.set_halign(gtk::Align::Center);
+    open_files_button.set_margin_top(18);
     {
         let out = sender.clone();
         open_files_button.connect_clicked(move |button| {
@@ -283,7 +318,7 @@ fn build_welcome(sender: &ComponentSender<PlaylistPanel>) -> gtk::Box {
                         .into_iter()
                         .map(|p| p.to_string_lossy().into_owned())
                         .collect();
-                    if !strs.is_empty() {
+                    if should_emit_open_audio_paths(&strs) {
                         let _ = out.output(PlaylistPanelOutput::OpenFiles(strs));
                     }
                 });
@@ -305,33 +340,19 @@ fn build_welcome(sender: &ComponentSender<PlaylistPanel>) -> gtk::Box {
     tips_header.add_css_class("heading");
     tips_box.append(&tips_header);
 
-    let tips = [
-        (
-            "media-playlist-shuffle-symbolic",
-            i18n("Drag and drop files to create a playlist"),
-        ),
-        (
-            "folder-symbolic",
-            i18n("Use the Music tab on the left to browse your library"),
-        ),
-        (
-            "audio-speakers-symbolic",
-            i18n("Explore Radio and Podcasts in the sidebar tabs"),
-        ),
-    ];
-    for (icon_name, text) in &tips {
+    for tip in welcome_tip_specs() {
         let row = gtk::Box::builder()
             .orientation(gtk::Orientation::Horizontal)
             .spacing(8)
             .build();
         row.append(
             &gtk::Image::builder()
-                .icon_name(*icon_name)
+                .icon_name(tip.icon_name)
                 .pixel_size(16)
                 .build(),
         );
         let tip_label = gtk::Label::builder()
-            .label(text)
+            .label(&tip.text)
             .wrap(true)
             .xalign(0.0)
             .build();
@@ -398,5 +419,51 @@ mod tests {
                 "hamburger menu must not expose category submenus"
             );
         }
+    }
+
+    #[test]
+    fn queue_playlist_name_accepts_only_trimmed_non_empty_text() {
+        assert!(!can_save_queue_playlist_name(""));
+        assert!(!can_save_queue_playlist_name("  "));
+        assert!(can_save_queue_playlist_name(" Road Trip "));
+
+        assert_eq!(
+            normalized_queue_playlist_name("  Road Trip  "),
+            Some("Road Trip".to_string())
+        );
+        assert_eq!(normalized_queue_playlist_name("\t\n"), None);
+    }
+
+    #[test]
+    fn open_audio_paths_emit_only_when_picker_returns_paths() {
+        assert!(!should_emit_open_audio_paths(&[]));
+        assert!(should_emit_open_audio_paths(&[
+            "/music/song.flac".to_string()
+        ]));
+    }
+
+    #[test]
+    fn welcome_tip_specs_keep_expected_icon_order_and_text() {
+        let tips = welcome_tip_specs();
+
+        assert_eq!(
+            tips.iter()
+                .map(|tip| (tip.icon_name, tip.text.as_str()))
+                .collect::<Vec<_>>(),
+            vec![
+                (
+                    "media-playlist-shuffle-symbolic",
+                    "Drag and drop files to create a playlist",
+                ),
+                (
+                    "folder-symbolic",
+                    "Use the Music tab on the left to browse your library",
+                ),
+                (
+                    "audio-speakers-symbolic",
+                    "Explore Radio and Podcasts in the sidebar tabs",
+                ),
+            ]
+        );
     }
 }

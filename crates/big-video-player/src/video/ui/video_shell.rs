@@ -20,7 +20,7 @@ use log::error;
 use relm4::{Component, ComponentController, ComponentParts, ComponentSender, Controller};
 
 #[cfg(feature = "chromecast")]
-use crate::cast::chromecast::CastManager;
+use crate::cast::chromecast::CastSessionController;
 use crate::i18n::{i18n, ni18n};
 use crate::player::mpv_backend::fast_render::{
     FastRenderContext, SwRenderContext as SoftwareRenderContext,
@@ -120,7 +120,7 @@ pub struct VideoShell {
     /// from the header button; emits play intents routed to mpv.
     iptv: Controller<VideoIptvBrowser>,
     /// Cast (Chromecast) device picker. Presented in a dialog from the header
-    /// button; drives the shared `CastManager` and reports start/stop here.
+    /// button; drives the shared `CastSessionController` and reports start/stop here.
     #[cfg(feature = "chromecast")]
     cast: Controller<VideoCastDialog>,
     /// Main video overlay — owns the welcome screen child (added/removed).

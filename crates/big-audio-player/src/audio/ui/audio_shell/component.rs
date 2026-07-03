@@ -3,6 +3,7 @@ use super::input::set_shell_input;
 use super::mpris::build_mpris_service;
 use super::playback::transport_labels;
 use super::*;
+use big_relm4_components::input::button_content::{build_button_content, BigButtonContentSpec};
 use big_relm4_components::layout::media_window::{
     create_media_toast_overlay_root, mount_media_toast_content,
 };
@@ -189,10 +190,7 @@ impl Component for AudioShell {
         ];
         let mut tab_group: Option<gtk::ToggleButton> = None;
         for (icon, label, name) in tabs {
-            let content = adw::ButtonContent::builder()
-                .icon_name(icon)
-                .label(&label)
-                .build();
+            let content = build_button_content(&BigButtonContentSpec::new(icon, &label));
             let tab_button = gtk::ToggleButton::builder()
                 .child(&content)
                 .css_classes(["tab-btn", "flat"])
@@ -510,7 +508,7 @@ impl Component for AudioShell {
         let db = db::open_database().ok();
         let db_read = db::open_read_connection().ok();
         #[cfg(feature = "chromecast")]
-        let cast_device_registry = Arc::new(crate::cast::chromecast::CastManager::new());
+        let cast_device_registry = Arc::new(crate::cast::chromecast::CastSessionController::new());
         let mpv = build_mpv_backend(&sender, &settings);
         let mpris_state = Arc::new(SharedMprisState::default());
         let mpris = build_mpris_service(&sender, &mpris_state, &settings);

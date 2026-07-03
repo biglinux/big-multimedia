@@ -15,6 +15,7 @@
 use std::rc::Rc;
 
 use adw::prelude::*;
+use big_relm4_components::input::button_content::{build_button, BigButtonContentSpec};
 use big_relm4_components::layout::{
     dialog_footer::{BigDialogFooter, BigDialogFooterSpec},
     dialog_page::BigDialogPage,
@@ -34,6 +35,82 @@ use crate::i18n::i18n;
 /// `(id, name, track_count, total_secs)` for one saved playlist.
 pub type PlaylistEntry = (i64, String, i64, f64);
 
+#[derive(Debug, PartialEq, Eq)]
+struct PlaylistLibraryWindowSpec {
+    title: &'static str,
+    content_title: &'static str,
+    default_width: i32,
+    default_height: i32,
+}
+
+#[derive(Debug, PartialEq, Eq)]
+struct SavedPlaylistListState {
+    content_title: String,
+    is_empty: bool,
+}
+
+#[derive(Debug, PartialEq, Eq)]
+struct EmptyPlaylistStateSpec {
+    icon_name: &'static str,
+    title: &'static str,
+    description: &'static str,
+}
+
+#[derive(Debug, PartialEq, Eq)]
+struct PlaylistActionSpec {
+    icon_name: &'static str,
+    label: &'static str,
+    action_kind: PlaylistActionKind,
+}
+
+#[derive(Debug, PartialEq, Eq)]
+enum PlaylistActionKind {
+    Import,
+    ImportFolder,
+    ExportAll,
+    GenerateLoad(&'static str),
+}
+
+impl PlaylistActionKind {
+    fn to_output(&self) -> PlaylistLibraryDialogOutput {
+        match self {
+            Self::Import => PlaylistLibraryDialogOutput::Import,
+            Self::ImportFolder => PlaylistLibraryDialogOutput::ImportFolder,
+            Self::ExportAll => PlaylistLibraryDialogOutput::ExportAll,
+            Self::GenerateLoad(kind) => PlaylistLibraryDialogOutput::GenerateLoad(kind.to_string()),
+        }
+    }
+}
+
+#[derive(Debug, PartialEq, Eq)]
+struct SavedPlaylistRowSpec {
+    title: String,
+    subtitle: String,
+    load_label: &'static str,
+    rename_tooltip: String,
+    export_tooltip: String,
+    delete_tooltip: String,
+}
+
+#[derive(Debug, PartialEq, Eq)]
+struct NamePromptSpec {
+    heading: &'static str,
+    entry_label: &'static str,
+    placeholder: &'static str,
+    prefill: String,
+    accept_label: &'static str,
+    cancel_label: &'static str,
+}
+
+#[derive(Debug, PartialEq, Eq)]
+struct DeletePromptSpec {
+    heading: &'static str,
+    playlist_name: String,
+    accept_label: &'static str,
+    cancel_label: &'static str,
+    accept_css_class: &'static str,
+}
+
 /// Smart-generator presets, keyed to the shell's `generate_smart_to_queue` kinds.
 const GENERATORS: [(&str, &str, &str); 3] = [
     ("most-played", "Most Played", "starred-symbolic"),
@@ -44,6 +121,154 @@ const GENERATORS: [(&str, &str, &str); 3] = [
     ),
     ("never-played", "Never Played", "audio-x-generic-symbolic"),
 ];
+
+fn playlist_library_window_spec() -> PlaylistLibraryWindowSpec {
+    PlaylistLibraryWindowSpec {
+        title: "Manage Playlists",
+        content_title: "Your Playlists",
+        default_width: 820,
+        default_height: 640,
+    }
+}
+
+fn saved_playlist_list_state(count: usize) -> SavedPlaylistListState {
+    if count == 0 {
+        SavedPlaylistListState {
+            content_title: "Your Playlists".to_string(),
+            is_empty: true,
+        }
+    } else {
+        SavedPlaylistListState {
+            content_title: format!("Your Playlists ({count})"),
+            is_empty: false,
+        }
+    }
+}
+
+fn empty_playlist_state_spec() -> EmptyPlaylistStateSpec {
+    EmptyPlaylistStateSpec {
+        icon_name: "view-list-symbolic",
+        title: "No Saved Playlists",
+        description: "Save the current queue, generate one from your stats, or import a file",
+    }
+}
+
+fn import_export_action_specs() -> Vec<PlaylistActionSpec> {
+    vec![
+        PlaylistActionSpec {
+            icon_name: "document-import-symbolic",
+            label: "Import File…",
+            action_kind: PlaylistActionKind::Import,
+        },
+        PlaylistActionSpec {
+            icon_name: "folder-open-symbolic",
+            label: "Import Folder…",
+            action_kind: PlaylistActionKind::ImportFolder,
+        },
+        PlaylistActionSpec {
+            icon_name: "document-save-symbolic",
+            label: "Export All…",
+            action_kind: PlaylistActionKind::ExportAll,
+        },
+    ]
+}
+
+fn generator_action_specs() -> Vec<PlaylistActionSpec> {
+    GENERATORS
+        .into_iter()
+        .map(|(kind, label, icon_name)| PlaylistActionSpec {
+            icon_name,
+            label,
+            action_kind: PlaylistActionKind::GenerateLoad(kind),
+        })
+        .collect()
+}
+
+fn saved_playlist_row_spec(name: &str, count: i64, secs: f64) -> SavedPlaylistRowSpec {
+    SavedPlaylistRowSpec {
+        title: name.to_string(),
+        subtitle: saved_playlist_subtitle(count, secs),
+        load_label: "Load",
+        rename_tooltip: format!("Rename playlist: {name}"),
+        export_tooltip: format!("Export playlist: {name}"),
+        delete_tooltip: format!("Delete playlist: {name}"),
+    }
+}
+
+fn saved_playlist_subtitle(count: i64, secs: f64) -> String {
+    let track_label = if count == 1 { "track" } else { "tracks" };
+    format!("{count} {track_label} · {} min", (secs as i64) / 60)
+}
+
+fn localized_saved_playlist_subtitle(count: i64, secs: f64) -> String {
+    let track_label = if count == 1 {
+        i18n("track")
+    } else {
+        i18n("tracks")
+    };
+    format!(
+        "{count} {track_label} · {} {}",
+        (secs as i64) / 60,
+        i18n("min")
+    )
+}
+
+fn save_current_queue_prompt_spec() -> NamePromptSpec {
+    NamePromptSpec {
+        heading: "Save Current Queue",
+        entry_label: "Playlist name",
+        placeholder: "Name for the new playlist",
+        prefill: String::new(),
+        accept_label: "Save",
+        cancel_label: "Cancel",
+    }
+}
+
+fn rename_playlist_prompt_spec(current_name: &str) -> NamePromptSpec {
+    NamePromptSpec {
+        heading: "Rename Playlist",
+        entry_label: "Playlist name",
+        placeholder: "New name",
+        prefill: current_name.to_string(),
+        accept_label: "Save",
+        cancel_label: "Cancel",
+    }
+}
+
+fn delete_playlist_prompt_spec(name: &str) -> DeletePromptSpec {
+    DeletePromptSpec {
+        heading: "Delete Playlist?",
+        playlist_name: name.to_string(),
+        accept_label: "Delete",
+        cancel_label: "Cancel",
+        accept_css_class: "destructive-action",
+    }
+}
+
+#[cfg(test)]
+fn delete_playlist_description(name: &str) -> String {
+    format!("This will permanently delete \u{201C}{name}\u{201D}?")
+}
+
+fn localized_delete_playlist_description(name: &str) -> String {
+    format!(
+        "{} \u{201C}{name}\u{201D}?",
+        i18n("This will permanently delete")
+    )
+}
+
+fn is_name_prompt_accept_enabled(text: &str) -> bool {
+    !text.trim().is_empty()
+}
+
+fn accepted_playlist_name(text: &str) -> Option<String> {
+    let name = text.trim();
+    (!name.is_empty()).then(|| name.to_string())
+}
+
+fn name_prompt_focus_selection() -> (i32, i32) {
+    (0, -1)
+}
 
 /// Inputs pushed by the shell.
 #[derive(Debug)]
@@ -94,10 +319,11 @@ impl Component for PlaylistLibraryDialog {
     fn init_root() -> Self::Root {
         // A resizable `adw::Window` (like the Preferences window), not the fixed
         // `adw::Dialog`, so users can size the playlist list to taste.
+        let window_spec = playlist_library_window_spec();
         adw::Window::builder()
-            .title(i18n("Manage Playlists"))
-            .default_width(820)
-            .default_height(640)
+            .title(i18n(window_spec.title))
+            .default_width(window_spec.default_width)
+            .default_height(window_spec.default_height)
             .modal(true)
             .destroy_with_parent(true)
             .build()
@@ -118,10 +344,11 @@ impl Component for PlaylistLibraryDialog {
 
         // Canonical Adwaita sidebar layout, from the shared scaffold (no direct
         // NavigationSplitView assembly here).
+        let window_spec = playlist_library_window_spec();
         let layout = BigSidebarDialog::install(
             &root,
-            &BigSidebarDialogSpec::new(i18n("Manage Playlists"))
-                .content_title(i18n("Your Playlists")),
+            &BigSidebarDialogSpec::new(i18n(window_spec.title))
+                .content_title(i18n(window_spec.content_title)),
         );
 
         // ── Sidebar: save action sits in the (flat, title-less) header; the
@@ -189,13 +416,14 @@ impl PlaylistLibraryDialog {
         clear_box_children(&self.list_slot);
 
         if entries.is_empty() {
-            self.layout.set_content_title(&i18n("Your Playlists"));
+            let list_state = saved_playlist_list_state(entries.len());
+            let empty_spec = empty_playlist_state_spec();
+            self.layout
+                .set_content_title(&i18n(&list_state.content_title));
             let empty = adw::StatusPage::builder()
-                .icon_name("view-list-symbolic")
-                .title(i18n("No Saved Playlists"))
-                .description(i18n(
-                    "Save the current queue, generate one from your stats, or import a file",
-                ))
+                .icon_name(empty_spec.icon_name)
+                .title(i18n(empty_spec.title))
+                .description(i18n(empty_spec.description))
                 .vexpand(true)
                 .build();
             empty.add_css_class("compact");
@@ -204,8 +432,13 @@ impl PlaylistLibraryDialog {
         }
 
         // The page header carries the count; the list itself is untitled.
-        self.layout
-            .set_content_title(&format!("{} ({})", i18n("Your Playlists"), entries.len()));
+        let list_state = saved_playlist_list_state(entries.len());
+        debug_assert!(!list_state.is_empty);
+        self.layout.set_content_title(&format!(
+            "{} ({})",
+            i18n(playlist_library_window_spec().content_title),
+            entries.len()
+        ));
         let saved_playlist_list =
             BigBoundedListBox::new(BigBoundedListBoxSpec::new(64).css_class("boxed-list"));
         let list = saved_playlist_list.root().clone();
@@ -222,28 +455,17 @@ impl PlaylistLibraryDialog {
 fn build_io_group(sender: &ComponentSender<PlaylistLibraryDialog>) -> adw::PreferencesGroup {
     let group = BigPreferencesGroupSpec::new(i18n("Import / Export")).build();
 
-    let rows: [(&str, &str, fn() -> PlaylistLibraryDialogOutput); 3] = [
-        ("document-import-symbolic", "Import File…", || {
-            PlaylistLibraryDialogOutput::Import
-        }),
-        ("folder-open-symbolic", "Import Folder…", || {
-            PlaylistLibraryDialogOutput::ImportFolder
-        }),
-        ("document-save-symbolic", "Export All…", || {
-            PlaylistLibraryDialogOutput::ExportAll
-        }),
-    ];
-    for (icon, label, make) in rows {
-        let title = i18n(label);
+    for action_spec in import_export_action_specs() {
+        let title = i18n(action_spec.label);
         let row = BigNavigationRow::new(
             BigNavigationRowSpec::new(title.as_str())
-                .prefix_icon_name(icon)
+                .prefix_icon_name(action_spec.icon_name)
                 .action_label(title.as_str()),
         )
         .into_root();
         let out = sender.clone();
         row.connect_activated(move |_| {
-            let _ = out.output(make());
+            let _ = out.output(action_spec.action_kind.to_output());
         });
         group.add(&row);
     }
@@ -255,32 +477,21 @@ fn build_save_button(
     sender: &ComponentSender<PlaylistLibraryDialog>,
     root: &adw::Window,
 ) -> gtk::Button {
-    let save_button = gtk::Button::builder()
-        .halign(gtk::Align::Center)
-        .css_classes(["suggested-action", "pill"])
-        .child(
-            &adw::ButtonContent::builder()
-                .icon_name("list-add-symbolic")
-                .label(i18n("Save Current Queue"))
-                .build(),
-        )
-        .build();
+    let save_button = build_button(
+        &BigButtonContentSpec::new("list-add-symbolic", i18n("Save Current Queue"))
+            .css_classes(["suggested-action", "pill"]),
+    );
+    save_button.set_halign(gtk::Align::Center);
     let out = sender.clone();
     let root_weak = root.downgrade();
     save_button.connect_clicked(move |_| {
-        prompt_name(
-            root_weak.upgrade().as_ref(),
-            &i18n("Save Current Queue"),
-            &i18n("Playlist name"),
-            &i18n("Name for the new playlist"),
-            "",
-            {
-                let out = out.clone();
-                move |name| {
-                    let _ = out.output(PlaylistLibraryDialogOutput::SaveCurrent { name });
-                }
-            },
-        );
+        let prompt_spec = save_current_queue_prompt_spec();
+        prompt_name(root_weak.upgrade().as_ref(), &prompt_spec, {
+            let out = out.clone();
+            move |name| {
+                let _ = out.output(PlaylistLibraryDialogOutput::SaveCurrent { name });
+            }
+        });
     });
     save_button
 }
@@ -292,17 +503,17 @@ fn build_generate_group(sender: &ComponentSender<PlaylistLibraryDialog>) -> adw:
         .description(i18n("Build a playlist from your listening stats"))
         .build();
 
-    for (kind, title, icon) in GENERATORS {
-        let title = i18n(title);
+    for action_spec in generator_action_specs() {
+        let title = i18n(action_spec.label);
         let row = BigNavigationRow::new(
             BigNavigationRowSpec::new(title.as_str())
-                .prefix_icon_name(icon)
+                .prefix_icon_name(action_spec.icon_name)
                 .action_label(title.as_str()),
         )
         .into_root();
-        let (out, kind) = (sender.clone(), kind.to_string());
+        let out = sender.clone();
         row.connect_activated(move |_| {
-            let _ = out.output(PlaylistLibraryDialogOutput::GenerateLoad(kind.clone()));
+            let _ = out.output(action_spec.action_kind.to_output());
         });
         group.add(&row);
     }
@@ -319,20 +530,11 @@ fn build_playlist_row(
     sender: &ComponentSender<PlaylistLibraryDialog>,
     root: &adw::Window,
 ) -> adw::ActionRow {
-    let subtitle = format!(
-        "{count} {} · {} {}",
-        if count == 1 {
-            i18n("track")
-        } else {
-            i18n("tracks")
-        },
-        (secs as i64) / 60,
-        i18n("min"),
-    );
+    let row_spec = saved_playlist_row_spec(name, count, secs);
     let row = BigNavigationRow::new(
-        BigNavigationRowSpec::new(name)
-            .subtitle(&subtitle)
-            .action_label(i18n("Load")),
+        BigNavigationRowSpec::new(&row_spec.title)
+            .subtitle(localized_saved_playlist_subtitle(count, secs))
+            .action_label(i18n(row_spec.load_label)),
     )
     .into_root();
     {
@@ -342,36 +544,24 @@ fn build_playlist_row(
         });
     }
 
-    let rename_button = suffix_button(
-        "document-edit-symbolic",
-        &format!("{}: {name}", i18n("Rename playlist")),
-    );
+    let rename_button = suffix_button("document-edit-symbolic", &i18n(&row_spec.rename_tooltip));
     {
         let out = sender.clone();
         let root_weak = root.downgrade();
-        let current = name.to_string();
+        let current_name = name.to_string();
         rename_button.connect_clicked(move |_| {
-            prompt_name(
-                root_weak.upgrade().as_ref(),
-                &i18n("Rename Playlist"),
-                &i18n("Playlist name"),
-                &i18n("New name"),
-                &current,
-                {
-                    let out = out.clone();
-                    move |name| {
-                        let _ = out.output(PlaylistLibraryDialogOutput::Rename { id, name });
-                    }
-                },
-            );
+            let prompt_spec = rename_playlist_prompt_spec(&current_name);
+            prompt_name(root_weak.upgrade().as_ref(), &prompt_spec, {
+                let out = out.clone();
+                move |name| {
+                    let _ = out.output(PlaylistLibraryDialogOutput::Rename { id, name });
+                }
+            });
         });
     }
     row.add_suffix(&rename_button);
 
-    let export_button = suffix_button(
-        "document-save-symbolic",
-        &format!("{}: {name}", i18n("Export playlist")),
-    );
+    let export_button = suffix_button("document-save-symbolic", &i18n(&row_spec.export_tooltip));
     {
         let out = sender.clone();
         export_button.connect_clicked(move |_| {
@@ -380,10 +570,7 @@ fn build_playlist_row(
     }
     row.add_suffix(&export_button);
 
-    let delete_button = suffix_button(
-        "user-trash-symbolic",
-        &format!("{}: {name}", i18n("Delete playlist")),
-    );
+    let delete_button = suffix_button("user-trash-symbolic", &i18n(&row_spec.delete_tooltip));
     delete_button.add_css_class("destructive-action");
     {
         let out = sender.clone();
@@ -419,40 +606,40 @@ fn suffix_button(icon: &str, tooltip: &str) -> gtk::Button {
 /// non-empty name. `parent` anchors the dialog to the playlist library window.
 fn prompt_name(
     parent: Option<&adw::Window>,
-    heading: &str,
-    entry_label: &str,
-    placeholder: &str,
-    prefill: &str,
+    prompt_spec: &NamePromptSpec,
     on_accept: impl Fn(String) + 'static,
 ) {
     let dialog = adw::Dialog::builder()
-        .title(heading)
+        .title(i18n(prompt_spec.heading))
         .content_width(420)
         .content_height(240)
         .build();
     let page = BigDialogPage::plain();
     page.content().set_spacing(12);
-    page.append_description(placeholder);
+    page.append_description(&i18n(prompt_spec.placeholder));
 
     let group = BigPreferencesGroupSpec::untitled().build();
     let entry = adw::EntryRow::builder()
-        .title(entry_label)
-        .text(prefill)
+        .title(i18n(prompt_spec.entry_label))
+        .text(&prompt_spec.prefill)
         .show_apply_button(true)
         .build();
     group.add(&entry);
     page.content().append(&group);
 
-    let footer = BigDialogFooter::new(&BigDialogFooterSpec::new(i18n("Cancel"), i18n("Save")));
+    let footer = BigDialogFooter::new(&BigDialogFooterSpec::new(
+        i18n(prompt_spec.cancel_label),
+        i18n(prompt_spec.accept_label),
+    ));
     footer
         .accept_button()
-        .set_sensitive(!prefill.trim().is_empty());
+        .set_sensitive(is_name_prompt_accept_enabled(&prompt_spec.prefill));
     page.root().add_bottom_bar(footer.root());
     dialog.set_child(Some(page.root()));
 
     let accept_button = footer.accept_button().clone();
     entry.connect_changed(move |row| {
-        accept_button.set_sensitive(!row.text().trim().is_empty());
+        accept_button.set_sensitive(is_name_prompt_accept_enabled(&row.text()));
     });
 
     let accept_button = footer.accept_button().clone();
@@ -466,10 +653,9 @@ fn prompt_name(
     let entry_for_accept = entry.clone();
     let dialog_weak = dialog.downgrade();
     footer.accept_button().connect_clicked(move |_| {
-        let name = entry_for_accept.text().trim().to_string();
-        if name.is_empty() {
+        let Some(name) = accepted_playlist_name(&entry_for_accept.text()) else {
             return;
-        }
+        };
         on_accept(name);
         if let Some(dialog) = dialog_weak.upgrade() {
             dialog.close();
@@ -488,7 +674,8 @@ fn prompt_name(
         let entry_for_idle = entry_for_focus.clone();
         glib::idle_add_local_once(move || {
             entry_for_idle.grab_focus();
-            entry_for_idle.select_region(0, -1);
+            let (start, end) = name_prompt_focus_selection();
+            entry_for_idle.select_region(start, end);
         });
     });
     dialog.present(parent);
@@ -496,21 +683,24 @@ fn prompt_name(
 
 /// Present a destructive confirmation; `on_confirm` fires on accept.
 fn confirm_delete(parent: Option<&adw::Window>, name: &str, on_confirm: impl Fn() + 'static) {
+    let prompt_spec = delete_playlist_prompt_spec(name);
     let dialog = adw::Dialog::builder()
-        .title(i18n("Delete Playlist?"))
+        .title(i18n(prompt_spec.heading))
         .content_width(420)
         .content_height(220)
         .build();
     let page = BigDialogPage::plain();
     page.content().set_spacing(12);
-    page.append_description(&format!(
-        "{} \u{201C}{name}\u{201D}?",
-        i18n("This will permanently delete")
+    page.append_description(&localized_delete_playlist_description(
+        &prompt_spec.playlist_name,
     ));
 
     let footer = BigDialogFooter::new(
-        &BigDialogFooterSpec::new(i18n("Cancel"), i18n("Delete"))
-            .with_accept_css_classes(&["destructive-action"]),
+        &BigDialogFooterSpec::new(
+            i18n(prompt_spec.cancel_label),
+            i18n(prompt_spec.accept_label),
+        )
+        .with_accept_css_classes(&[prompt_spec.accept_css_class]),
     );
     page.root().add_bottom_bar(footer.root());
     dialog.set_child(Some(page.root()));
@@ -531,4 +721,185 @@ fn confirm_delete(parent: Option<&adw::Window>, name: &str, on_confirm: impl Fn(
         }
     });
     dialog.present(parent);
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{
+        accepted_playlist_name, delete_playlist_description, delete_playlist_prompt_spec,
+        empty_playlist_state_spec, generator_action_specs, import_export_action_specs,
+        is_name_prompt_accept_enabled, localized_delete_playlist_description,
+        localized_saved_playlist_subtitle, name_prompt_focus_selection,
+        playlist_library_window_spec, rename_playlist_prompt_spec, save_current_queue_prompt_spec,
+        saved_playlist_list_state, saved_playlist_row_spec, EmptyPlaylistStateSpec, NamePromptSpec,
+        PlaylistActionKind, PlaylistActionSpec, PlaylistLibraryWindowSpec, SavedPlaylistListState,
+        SavedPlaylistRowSpec,
+    };
+
+    #[test]
+    fn playlist_library_window_spec_keeps_resizable_dialog_chrome() {
+        assert_eq!(
+            playlist_library_window_spec(),
+            PlaylistLibraryWindowSpec {
+                title: "Manage Playlists",
+                content_title: "Your Playlists",
+                default_width: 820,
+                default_height: 640,
+            }
+        );
+    }
+
+    #[test]
+    fn saved_playlist_list_state_names_empty_and_counted_content() {
+        assert_eq!(
+            saved_playlist_list_state(0),
+            SavedPlaylistListState {
+                content_title: "Your Playlists".to_string(),
+                is_empty: true,
+            }
+        );
+        assert_eq!(
+            saved_playlist_list_state(3),
+            SavedPlaylistListState {
+                content_title: "Your Playlists (3)".to_string(),
+                is_empty: false,
+            }
+        );
+        assert_eq!(
+            empty_playlist_state_spec(),
+            EmptyPlaylistStateSpec {
+                icon_name: "view-list-symbolic",
+                title: "No Saved Playlists",
+                description:
+                    "Save the current queue, generate one from your stats, or import a file",
+            }
+        );
+    }
+
+    #[test]
+    fn playlist_library_action_specs_preserve_sidebar_order() {
+        assert_eq!(
+            import_export_action_specs(),
+            vec![
+                PlaylistActionSpec {
+                    icon_name: "document-import-symbolic",
+                    label: "Import File…",
+                    action_kind: PlaylistActionKind::Import,
+                },
+                PlaylistActionSpec {
+                    icon_name: "folder-open-symbolic",
+                    label: "Import Folder…",
+                    action_kind: PlaylistActionKind::ImportFolder,
+                },
+                PlaylistActionSpec {
+                    icon_name: "document-save-symbolic",
+                    label: "Export All…",
+                    action_kind: PlaylistActionKind::ExportAll,
+                },
+            ]
+        );
+        assert_eq!(
+            generator_action_specs(),
+            vec![
+                PlaylistActionSpec {
+                    icon_name: "starred-symbolic",
+                    label: "Most Played",
+                    action_kind: PlaylistActionKind::GenerateLoad("most-played"),
+                },
+                PlaylistActionSpec {
+                    icon_name: "document-open-recent-symbolic",
+                    label: "Recently Added",
+                    action_kind: PlaylistActionKind::GenerateLoad("recently-added"),
+                },
+                PlaylistActionSpec {
+                    icon_name: "audio-x-generic-symbolic",
+                    label: "Never Played",
+                    action_kind: PlaylistActionKind::GenerateLoad("never-played"),
+                },
+            ]
+        );
+    }
+
+    #[test]
+    fn saved_playlist_row_spec_formats_counts_minutes_and_tooltips() {
+        assert_eq!(
+            saved_playlist_row_spec("Road Mix", 1, 125.0),
+            SavedPlaylistRowSpec {
+                title: "Road Mix".to_string(),
+                subtitle: "1 track · 2 min".to_string(),
+                load_label: "Load",
+                rename_tooltip: "Rename playlist: Road Mix".to_string(),
+                export_tooltip: "Export playlist: Road Mix".to_string(),
+                delete_tooltip: "Delete playlist: Road Mix".to_string(),
+            }
+        );
+        assert_eq!(
+            saved_playlist_row_spec("Night Mix", 4, 360.0).subtitle,
+            "4 tracks · 6 min"
+        );
+        assert_eq!(
+            localized_saved_playlist_subtitle(1, 125.0),
+            "1 track · 2 min"
+        );
+        assert_eq!(
+            localized_saved_playlist_subtitle(4, 360.0),
+            "4 tracks · 6 min"
+        );
+    }
+
+    #[test]
+    fn name_prompt_spec_and_acceptance_trim_blank_values() {
+        assert_eq!(
+            save_current_queue_prompt_spec(),
+            NamePromptSpec {
+                heading: "Save Current Queue",
+                entry_label: "Playlist name",
+                placeholder: "Name for the new playlist",
+                prefill: String::new(),
+                accept_label: "Save",
+                cancel_label: "Cancel",
+            }
+        );
+        assert_eq!(
+            rename_playlist_prompt_spec("Road Mix"),
+            NamePromptSpec {
+                heading: "Rename Playlist",
+                entry_label: "Playlist name",
+                placeholder: "New name",
+                prefill: "Road Mix".to_string(),
+                accept_label: "Save",
+                cancel_label: "Cancel",
+            }
+        );
+        assert!(!is_name_prompt_accept_enabled("   "));
+        assert!(is_name_prompt_accept_enabled(" Road Mix "));
+        assert_eq!(
+            accepted_playlist_name(" Road Mix "),
+            Some("Road Mix".to_string())
+        );
+        assert_eq!(accepted_playlist_name(" \t "), None);
+    }
+
+    #[test]
+    fn name_prompt_focus_selects_entire_prefill() {
+        assert_eq!(name_prompt_focus_selection(), (0, -1));
+    }
+
+    #[test]
+    fn delete_playlist_prompt_spec_keeps_destructive_copy() {
+        let prompt_spec = delete_playlist_prompt_spec("Road Mix");
+        assert_eq!(prompt_spec.heading, "Delete Playlist?");
+        assert_eq!(prompt_spec.playlist_name, "Road Mix");
+        assert_eq!(prompt_spec.accept_label, "Delete");
+        assert_eq!(prompt_spec.cancel_label, "Cancel");
+        assert_eq!(prompt_spec.accept_css_class, "destructive-action");
+        assert_eq!(
+            delete_playlist_description("Road Mix"),
+            "This will permanently delete “Road Mix”?"
+        );
+        assert_eq!(
+            localized_delete_playlist_description("Road Mix"),
+            "This will permanently delete “Road Mix”?"
+        );
+    }
 }

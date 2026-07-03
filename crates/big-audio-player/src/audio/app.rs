@@ -6,6 +6,7 @@ use adw::subclass::prelude::*;
 use big_app_kit::desktop::install_quit_action;
 use gtk::{gio, glib};
 
+use crate::audio::ui::audio_shell::AudioShellInput;
 use crate::config;
 use crate::settings::keys;
 
@@ -24,20 +25,20 @@ const AUDIO_ABOUT_CREDIT_LINES: &[&str] = &[
     "ListenBrainz https://listenbrainz.org",
 ];
 
-fn open_files_message(
-    files: &[gio::File],
-) -> Option<crate::audio::ui::audio_shell::AudioShellInput> {
+fn open_paths_message(paths: Vec<String>) -> Option<AudioShellInput> {
+    if paths.is_empty() {
+        None
+    } else {
+        Some(AudioShellInput::OpenPaths(paths))
+    }
+}
+
+fn open_files_message(files: &[gio::File]) -> Option<AudioShellInput> {
     let paths: Vec<String> = files
         .iter()
         .filter_map(|file| file.path().map(|path| path.to_string_lossy().into_owned()))
         .collect();
-    if paths.is_empty() {
-        None
-    } else {
-        Some(crate::audio::ui::audio_shell::AudioShellInput::OpenPaths(
-            paths,
-        ))
-    }
+    open_paths_message(paths)
 }
 
 fn audio_about_dialog_config() -> crate::shared::app_base::AboutDialogConfig {
@@ -177,20 +178,39 @@ mod tests {
     use super::*;
 
     #[test]
+    fn open_paths_message_ignores_empty_inputs() {
+        assert!(open_paths_message(Vec::new()).is_none());
+    }
+
+    #[test]
+    fn open_paths_message_preserves_local_paths_in_order() {
+        match open_paths_message(vec![
+            "/tmp/first.ogg".to_string(),
+            "/tmp/second.flac".to_string(),
+        ]) {
+            Some(AudioShellInput::OpenPaths(paths)) => {
+                assert_eq!(paths, ["/tmp/first.ogg", "/tmp/second.flac"]);
+            }
+            other => panic!("expected OpenPaths shell message, got {other:?}"),
+        }
+    }
+
+    #[test]
+    #[cfg(not(miri))]
     fn open_files_message_ignores_empty_and_non_local_inputs() {
         assert!(open_files_message(&[]).is_none());
-
         let remote_file = gio::File::for_uri("https://example.invalid/audio.ogg");
         assert!(open_files_message(&[remote_file]).is_none());
     }
 
     #[test]
+    #[cfg(not(miri))]
     fn open_files_message_preserves_local_paths_in_order() {
         let first_file = gio::File::for_path("/tmp/first.ogg");
         let second_file = gio::File::for_path("/tmp/second.flac");
 
         match open_files_message(&[first_file, second_file]) {
-            Some(crate::audio::ui::audio_shell::AudioShellInput::OpenPaths(paths)) => {
+            Some(AudioShellInput::OpenPaths(paths)) => {
                 assert_eq!(paths, ["/tmp/first.ogg", "/tmp/second.flac"]);
             }
             other => panic!("expected OpenPaths shell message, got {other:?}"),

@@ -1,3 +1,5 @@
+use big_relm4_components::input::button_content::{build_button, BigButtonContentSpec};
+
 use super::*;
 
 pub(super) fn install_window_actions(
@@ -170,15 +172,11 @@ fn welcome_button(
     sender: &ComponentSender<VideoShell>,
     message: fn() -> VideoShellInput,
 ) -> gtk::Button {
-    let content = adw::ButtonContent::builder()
-        .icon_name(icon_name)
-        .label(label)
-        .build();
-    let button = gtk::Button::builder()
-        .halign(gtk::Align::Center)
-        .css_classes(["welcome-btn", "welcome-btn-primary"])
-        .child(&content)
-        .build();
+    let button = build_button(
+        &BigButtonContentSpec::new(icon_name, label)
+            .css_classes(["welcome-btn", "welcome-btn-primary"]),
+    );
+    button.set_halign(gtk::Align::Center);
     let sender = sender.clone();
     button.connect_clicked(move |_| sender.input(message()));
     button

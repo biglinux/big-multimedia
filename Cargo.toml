@@ -3,7 +3,7 @@
 # big-media-runtime engine. Players gain in-place clip/convert/extract via the
 # embeddable big-converter-ui panel; the converters stay the batch surface.
 [workspace]
-resolver = "2"
+resolver = "3"
 members = [
     "crates/big-converter-ui",
     "crates/big-audio-player",

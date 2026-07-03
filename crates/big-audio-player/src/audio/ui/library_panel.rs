@@ -41,6 +41,74 @@ use crate::i18n::i18n;
 /// `(file_path, speaker_icon, title_label)`.
 pub(super) type DetailIndicator = (String, gtk::Image, gtk::Label);
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum DetailContentState {
+    EmptyPlaceholder,
+    KeepDetailView,
+    ReattachDetailView,
+}
+
+/// Wrap tracks as the `BoxedAnyObject`s the store/factories expect.
+fn detail_track_objects(tracks: &[Track]) -> Vec<glib::Object> {
+    tracks
+        .iter()
+        .map(|track| glib::BoxedAnyObject::new(track.clone()).upcast())
+        .collect()
+}
+
+/// Snapshot detail tracks from a `gio::ListStore`-compatible item provider.
+fn collect_tracks_from_boxed_store(
+    item_count: u32,
+    mut object_at: impl FnMut(u32) -> Option<glib::Object>,
+) -> Vec<Track> {
+    collect_tracks_from_tracks(item_count, |index| {
+        object_at(index)
+            .and_downcast::<glib::BoxedAnyObject>()
+            .map(|boxed_track| boxed_track.borrow::<Track>().clone())
+    })
+}
+
+fn collect_tracks_from_tracks(
+    item_count: u32,
+    mut track_at: impl FnMut(u32) -> Option<Track>,
+) -> Vec<Track> {
+    (0..item_count).filter_map(&mut track_at).collect()
+}
+
+/// DB ids for detail tracks from a `gio::ListStore`-compatible item provider.
+fn collect_track_ids_from_boxed_store(
+    item_count: u32,
+    object_at: impl FnMut(u32) -> Option<glib::Object>,
+) -> Vec<i64> {
+    collect_track_ids_from_tracks(collect_tracks_from_boxed_store(item_count, object_at))
+}
+
+fn collect_track_ids_from_tracks(tracks: Vec<Track>) -> Vec<i64> {
+    tracks.into_iter().map(|track| track.id).collect()
+}
+
+fn is_current_detail_indicator(current_path: Option<&str>, indicator_path: &str) -> bool {
+    current_path == Some(indicator_path)
+}
+
+fn detail_content_state(row_count: u32, is_detail_view_attached: bool) -> DetailContentState {
+    if row_count == 0 {
+        DetailContentState::EmptyPlaceholder
+    } else if is_detail_view_attached {
+        DetailContentState::KeepDetailView
+    } else {
+        DetailContentState::ReattachDetailView
+    }
+}
+
+fn should_clear_tag_editor_handle(
+    editor_track_id: i64,
+    resolved_track_id: i64,
+    was_result_applied: bool,
+) -> bool {
+    editor_track_id == resolved_track_id && !was_result_applied
+}
+
 /// Messages the shell pushes into the library panel.
 #[derive(Debug)]
 pub enum LibraryPanelInput {
@@ -212,44 +280,12 @@ pub struct LibraryPanel {
 }
 
 impl LibraryPanel {
-    /// Wrap tracks as the `BoxedAnyObject`s the store/factories expect.
-    fn to_objects(tracks: &[Track]) -> Vec<glib::Object> {
-        tracks
-            .iter()
-            .map(|t| glib::BoxedAnyObject::new(t.clone()).upcast())
-            .collect()
-    }
-
-    /// Snapshot the current detail tracks (store order).
-    fn detail_tracks(&self) -> Vec<Track> {
-        (0..self.detail_store.n_items())
-            .filter_map(|i| {
-                self.detail_store
-                    .item(i)
-                    .and_downcast::<glib::BoxedAnyObject>()
-            })
-            .map(|obj| obj.borrow::<Track>().clone())
-            .collect()
-    }
-
-    /// DB ids of the current detail tracks.
-    fn detail_track_ids(&self) -> Vec<i64> {
-        (0..self.detail_store.n_items())
-            .filter_map(|i| {
-                self.detail_store
-                    .item(i)
-                    .and_downcast::<glib::BoxedAnyObject>()
-            })
-            .map(|obj| obj.borrow::<Track>().id)
-            .collect()
-    }
-
     /// Re-light the detail now-playing indicator on every bound title row by
     /// file-path match.
     fn relight_detail(&self) {
         let current = self.current_path.borrow();
         for (path, icon, label) in self.detail_indicators.borrow().iter() {
-            let is_current = current.as_deref() == Some(path.as_str());
+            let is_current = is_current_detail_indicator(current.as_deref(), path);
             icon.set_visible(is_current);
             if is_current {
                 label.add_css_class("now-playing-accent");
@@ -262,17 +298,24 @@ impl LibraryPanel {
     /// Show the detail `ColumnView` when it has rows, otherwise an empty-state
     /// placeholder. The view is reattached, never rebuilt.
     fn refresh_detail_empty_state(&self) {
-        if self.detail_store.n_items() == 0 {
-            let empty = adw::StatusPage::builder()
-                .icon_name("folder-music-symbolic")
-                .title(i18n("No Tracks"))
-                .description(i18n("Select an item on the left to view its tracks"))
-                .vexpand(true)
-                .build();
-            self.content_scroll.set_child(Some(&empty));
-        } else {
-            let view: gtk::Widget = self.detail_view.clone().upcast();
-            if self.content_scroll.child().as_ref() != Some(&view) {
+        let is_detail_view_attached = self
+            .content_scroll
+            .child()
+            .as_ref()
+            .is_some_and(|child| child == self.detail_view.upcast_ref::<gtk::Widget>());
+
+        match detail_content_state(self.detail_store.n_items(), is_detail_view_attached) {
+            DetailContentState::EmptyPlaceholder => {
+                let empty = adw::StatusPage::builder()
+                    .icon_name("folder-music-symbolic")
+                    .title(i18n("No Tracks"))
+                    .description(i18n("Select an item on the left to view its tracks"))
+                    .vexpand(true)
+                    .build();
+                self.content_scroll.set_child(Some(&empty));
+            }
+            DetailContentState::KeepDetailView => {}
+            DetailContentState::ReattachDetailView => {
                 self.content_scroll.set_child(Some(&self.detail_view));
             }
         }
@@ -431,10 +474,10 @@ impl Component for LibraryPanel {
         let parent = root.root().and_downcast::<gtk::Window>();
         match message {
             LibraryPanelInput::PopulateDetail(tracks) => {
-                let objects = Self::to_objects(&tracks);
+                let boxed_track_objects = detail_track_objects(&tracks);
                 // Splice in place — never rebuild the ColumnView (RSS regression).
                 self.detail_store
-                    .splice(0, self.detail_store.n_items(), &objects);
+                    .splice(0, self.detail_store.n_items(), &boxed_track_objects);
                 self.refresh_detail_empty_state();
                 self.relight_detail();
                 // Selecting a node swaps the single column to the track list.
@@ -459,7 +502,9 @@ impl Component for LibraryPanel {
             }
             LibraryPanelInput::MusicBrainzLookupResolved { track_id, metadata } => {
                 let should_clear = self.tag_editor.borrow().as_ref().is_some_and(|editor| {
-                    editor.track_id() == track_id && !editor.apply_musicbrainz_result(metadata)
+                    let editor_track_id = editor.track_id();
+                    let was_result_applied = editor.apply_musicbrainz_result(metadata);
+                    should_clear_tag_editor_handle(editor_track_id, track_id, was_result_applied)
                 });
                 if should_clear {
                     self.tag_editor.borrow_mut().take();
@@ -477,7 +522,11 @@ impl Component for LibraryPanel {
             }
             LibraryPanelInput::ExportDetailM3u8 => {
                 if let Some(win) = parent.as_ref() {
-                    library_io::export_detail_m3u8(win, self.detail_tracks(), &sender);
+                    let tracks =
+                        collect_tracks_from_boxed_store(self.detail_store.n_items(), |index| {
+                            self.detail_store.item(index)
+                        });
+                    library_io::export_detail_m3u8(win, tracks, &sender);
                 }
             }
             LibraryPanelInput::ImportPlaylist => {
@@ -487,9 +536,155 @@ impl Component for LibraryPanel {
             }
             LibraryPanelInput::SaveDetailAsPlaylist => {
                 if let Some(win) = parent.as_ref() {
-                    library_io::save_tracks_as_playlist(win, self.detail_track_ids(), &sender);
+                    let track_ids =
+                        collect_track_ids_from_boxed_store(self.detail_store.n_items(), |index| {
+                            self.detail_store.item(index)
+                        });
+                    library_io::save_tracks_as_playlist(win, track_ids, &sender);
                 }
             }
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn track_with_id(id: i64, title: &str) -> Track {
+        let mut track = Track::new_external_path_with_title(
+            format!("/music/{title}.flac"),
+            Some(title.to_string()),
+        );
+        track.id = id;
+        track
+    }
+
+    #[cfg(not(miri))]
+    fn boxed_track(track: Track) -> glib::Object {
+        glib::BoxedAnyObject::new(track).upcast()
+    }
+
+    #[cfg(not(miri))]
+    #[test]
+    fn detail_track_objects_preserve_track_order() {
+        let tracks = [track_with_id(7, "one"), track_with_id(9, "two")];
+
+        let boxed_track_objects = detail_track_objects(&tracks);
+        let file_paths: Vec<String> = boxed_track_objects
+            .iter()
+            .map(|object| {
+                object
+                    .clone()
+                    .downcast::<glib::BoxedAnyObject>()
+                    .expect("detail track object")
+                    .borrow::<Track>()
+                    .file_path
+                    .clone()
+            })
+            .collect();
+
+        assert_eq!(file_paths, ["/music/one.flac", "/music/two.flac"]);
+    }
+
+    #[cfg(not(miri))]
+    #[test]
+    fn collect_tracks_from_boxed_store_preserves_existing_items_only() {
+        let boxed_track_objects = [
+            Some(boxed_track(track_with_id(7, "one"))),
+            None,
+            Some(boxed_track(track_with_id(9, "two"))),
+        ];
+
+        let file_paths: Vec<String> =
+            collect_tracks_from_boxed_store(boxed_track_objects.len() as u32, |index| {
+                boxed_track_objects
+                    .get(index as usize)
+                    .and_then(Clone::clone)
+            })
+            .into_iter()
+            .map(|track| track.file_path)
+            .collect();
+
+        assert_eq!(file_paths, ["/music/one.flac", "/music/two.flac"]);
+    }
+
+    #[test]
+    fn collect_tracks_from_tracks_preserves_existing_items_only() {
+        let tracks = [
+            Some(track_with_id(7, "one")),
+            None,
+            Some(track_with_id(9, "two")),
+        ];
+
+        let file_paths: Vec<String> = collect_tracks_from_tracks(tracks.len() as u32, |index| {
+            tracks.get(index as usize).cloned().flatten()
+        })
+        .into_iter()
+        .map(|track| track.file_path)
+        .collect();
+
+        assert_eq!(file_paths, ["/music/one.flac", "/music/two.flac"]);
+    }
+
+    #[cfg(not(miri))]
+    #[test]
+    fn collect_track_ids_from_boxed_store_returns_database_ids() {
+        let boxed_track_objects = [
+            Some(boxed_track(track_with_id(7, "one"))),
+            Some(boxed_track(track_with_id(9, "two"))),
+        ];
+
+        assert_eq!(
+            collect_track_ids_from_boxed_store(boxed_track_objects.len() as u32, |index| {
+                boxed_track_objects
+                    .get(index as usize)
+                    .and_then(Clone::clone)
+            }),
+            [7, 9]
+        );
+    }
+
+    #[test]
+    fn collect_track_ids_from_tracks_returns_database_ids() {
+        let tracks = vec![track_with_id(7, "one"), track_with_id(9, "two")];
+
+        assert_eq!(collect_track_ids_from_tracks(tracks), [7, 9]);
+    }
+
+    #[test]
+    fn detail_indicator_matches_exact_current_path_only() {
+        assert!(is_current_detail_indicator(
+            Some("/music/one.flac"),
+            "/music/one.flac"
+        ));
+        assert!(!is_current_detail_indicator(
+            Some("/music/two.flac"),
+            "/music/one.flac"
+        ));
+        assert!(!is_current_detail_indicator(None, "/music/one.flac"));
+    }
+
+    #[test]
+    fn detail_content_state_distinguishes_empty_attached_and_missing_view() {
+        assert_eq!(
+            detail_content_state(0, false),
+            DetailContentState::EmptyPlaceholder
+        );
+        assert_eq!(
+            detail_content_state(3, true),
+            DetailContentState::KeepDetailView
+        );
+        assert_eq!(
+            detail_content_state(3, false),
+            DetailContentState::ReattachDetailView
+        );
+    }
+
+    #[test]
+    fn musicbrainz_editor_handle_is_cleared_only_for_matching_stale_editor() {
+        assert!(should_clear_tag_editor_handle(42, 42, false));
+        assert!(!should_clear_tag_editor_handle(42, 7, false));
+        assert!(!should_clear_tag_editor_handle(42, 42, true));
     }
 }

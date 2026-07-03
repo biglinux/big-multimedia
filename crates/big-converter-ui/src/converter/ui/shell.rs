@@ -38,7 +38,6 @@ use big_relm4_components::layout::toolbar_pane::{
 };
 use big_relm4_components::layout::widget_container::clear_box_children;
 
-use crate::cast::gpu::{GpuDevice, detect_all_gpus};
 use crate::converter::app::ConverterMode;
 use crate::converter::daemon::{DaemonJobAccepted, DaemonSubmitError};
 use crate::converter::profiles::{self, Profile};
@@ -50,6 +49,7 @@ use crate::converter::ui::sidebar::{
 };
 use crate::i18n::i18n;
 use crate::settings::Settings;
+use big_media_runtime::cast::gpu::{GpuDevice, detect_all_gpus};
 use big_media_runtime::editor::audio_edit_page::{
     AudioEditor, AudioEditorInit, AudioEditorInput, AudioEditorOutput,
 };

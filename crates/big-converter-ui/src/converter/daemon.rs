@@ -18,7 +18,7 @@ use serde::Serialize;
 
 use crate::converter::app::ConverterMode;
 use crate::converter::profiles::{CropRect, Profile};
-use crate::converter::queue::{QueueItem, SegmentOutputMode, VideoOverrides};
+use crate::converter::queue::{ConversionQueueEntry, SegmentOutputMode, VideoOverrides};
 use crate::converter::subtitle::SubtitleInput;
 
 const DAEMON_IO_TIMEOUT: Duration = Duration::from_secs(3);
@@ -29,7 +29,7 @@ pub struct DaemonConversionRequest {
     /// Audio or video binding.
     pub mode: ConverterMode,
     /// Pending queue entries to hand off.
-    pub queue_entries: Vec<QueueItem>,
+    pub queue_entries: Vec<ConversionQueueEntry>,
     /// Destination directory selected by the user.
     pub output_dir: PathBuf,
     /// Encoding profile selected in the sidebar.
@@ -210,6 +210,18 @@ fn build_conversion_job_spec(
             "no pending conversion queue entries",
         ));
     }
+    build_conversion_job_spec_with_key(request, conversion_job_key(request.mode))
+}
+
+fn build_conversion_job_spec_with_key(
+    request: &DaemonConversionRequest,
+    job_key: String,
+) -> Result<DurableJobSpec, DaemonSubmitError> {
+    if request.queue_entries.is_empty() {
+        return Err(DaemonSubmitError::new(
+            "no pending conversion queue entries",
+        ));
+    }
     let arguments = serde_json::to_value(ConversionDaemonArguments {
         schema_version: 1,
         items: request
@@ -224,7 +236,7 @@ fn build_conversion_job_spec(
     })
     .map_err(|error| DaemonSubmitError::new(error.to_string()))?;
     Ok(DurableJobSpec {
-        job_key: conversion_job_key(request.mode),
+        job_key,
         job_class: conversion_job_class(request.mode, request.queue_entries.len()).to_owned(),
         is_durable: true,
         arguments,
@@ -242,15 +254,23 @@ fn conversion_job_class(mode: ConverterMode, queue_entry_count: usize) -> &'stat
 }
 
 fn conversion_job_key(mode: ConverterMode) -> String {
+    let nanos = SystemTime::now()
+        .duration_since(UNIX_EPOCH)
+        .map_or(0, |duration| duration.as_nanos());
+    conversion_job_key_for_clock(mode, std::process::id(), nanos)
+}
+
+fn conversion_job_key_for_clock(
+    mode: ConverterMode,
+    process_id: u32,
+    unix_epoch_nanos: u128,
+) -> String {
     let prefix = if mode.is_audio() {
         "audio-conversion"
     } else {
         "video-conversion"
     };
-    let nanos = SystemTime::now()
-        .duration_since(UNIX_EPOCH)
-        .map_or(0, |duration| duration.as_nanos());
-    format!("{prefix}-{}-{nanos}", std::process::id())
+    format!("{prefix}-{process_id}-{unix_epoch_nanos}")
 }
 
 #[derive(Serialize)]
@@ -277,8 +297,8 @@ struct ConversionDaemonQueueEntry {
     skip_video_filters: bool,
 }
 
-impl From<&QueueItem> for ConversionDaemonQueueEntry {
-    fn from(queue_entry: &QueueItem) -> Self {
+impl From<&ConversionQueueEntry> for ConversionDaemonQueueEntry {
+    fn from(queue_entry: &ConversionQueueEntry) -> Self {
         Self {
             input: queue_entry.input.clone(),
             segments: queue_entry.segments.clone(),
@@ -300,7 +320,7 @@ mod tests {
     use crate::converter::profiles::{
         AudioConfig, OutputConfig, ProfileMeta, SubtitleConfig, VideoConfig,
     };
-    use crate::converter::queue::ItemStatus;
+    use crate::converter::queue::ConversionStatus;
 
     fn test_profile() -> Profile {
         Profile {
@@ -312,12 +332,12 @@ mod tests {
         }
     }
 
-    fn test_queue_entry() -> QueueItem {
-        QueueItem {
+    fn test_queue_entry() -> ConversionQueueEntry {
+        ConversionQueueEntry {
             id: 42,
             input: PathBuf::from("/tmp/input.mp4"),
             output: PathBuf::from("/tmp/output.mp4"),
-            status: ItemStatus::Pending,
+            status: ConversionStatus::Pending,
             duration_secs: 0.0,
             profile_name: "test".to_owned(),
             segments: vec![crate::converter::ffmpeg::TrimRange {
@@ -351,16 +371,20 @@ mod tests {
 
     #[test]
     fn job_spec_preserves_per_queue_entry_metadata() {
-        let spec = build_conversion_job_spec(&DaemonConversionRequest {
-            mode: ConverterMode::Video,
-            queue_entries: vec![test_queue_entry()],
-            output_dir: PathBuf::from("/tmp/out"),
-            profile: test_profile(),
-            delete_source: true,
-            audio_only_mode: false,
-        })
+        let spec = build_conversion_job_spec_with_key(
+            &DaemonConversionRequest {
+                mode: ConverterMode::Video,
+                queue_entries: vec![test_queue_entry()],
+                output_dir: PathBuf::from("/tmp/out"),
+                profile: test_profile(),
+                delete_source: true,
+                audio_only_mode: false,
+            },
+            "video-conversion-test".to_string(),
+        )
         .expect("job spec");
 
+        assert_eq!(spec.job_key, "video-conversion-test");
         assert_eq!(spec.job_class, "video-conversion");
         assert!(spec.is_durable);
         assert_eq!(
@@ -424,6 +448,19 @@ mod tests {
 
     #[test]
     fn job_key_prefix_follows_mode() {
+        assert_eq!(
+            conversion_job_key_for_clock(ConverterMode::Audio, 42, 123),
+            "audio-conversion-42-123"
+        );
+        assert_eq!(
+            conversion_job_key_for_clock(ConverterMode::Video, 42, 123),
+            "video-conversion-42-123"
+        );
+    }
+
+    #[cfg(not(miri))]
+    #[test]
+    fn live_job_key_includes_mode_prefix() {
         assert!(conversion_job_key(ConverterMode::Audio).starts_with("audio-conversion-"));
         assert!(conversion_job_key(ConverterMode::Video).starts_with("video-conversion-"));
     }
@@ -433,5 +470,82 @@ mod tests {
         let err = DaemonSubmitError::new("boom");
         assert_eq!(err.message(), "boom");
         assert!(format!("{err}").contains("boom"));
+    }
+
+    #[test]
+    #[cfg(not(miri))]
+    fn write_command_sends_big_convertd_command_frame() {
+        let (mut client, mut daemon_peer) = UnixStream::pair().expect("socket pair");
+        daemon_peer
+            .set_read_timeout(Some(Duration::from_millis(250)))
+            .expect("set read timeout");
+
+        write_command(&mut client, MicrodaemonCommand::Ping).expect("write command");
+
+        let mut prefix = [0_u8; 4];
+        daemon_peer.read_exact(&mut prefix).expect("read prefix");
+        let frame_len = u32::from_be_bytes(prefix) as usize;
+        let mut bytes = Vec::with_capacity(4 + frame_len);
+        bytes.extend_from_slice(&prefix);
+        bytes.resize(4 + frame_len, 0);
+        daemon_peer
+            .read_exact(&mut bytes[4..])
+            .expect("read frame body");
+        let frame = decode_microdaemon_frame(&bytes).expect("decode command frame");
+
+        assert_eq!(frame.daemon_id, MicrodaemonId::BigConvertd);
+        assert!(matches!(
+            frame.body,
+            MicrodaemonBody::Command {
+                command: MicrodaemonCommand::Ping
+            }
+        ));
+    }
+
+    #[test]
+    #[cfg(not(miri))]
+    fn read_event_accepts_big_convertd_event_frame() {
+        let (mut client, mut daemon_peer) = UnixStream::pair().expect("socket pair");
+        client
+            .set_read_timeout(Some(Duration::from_millis(250)))
+            .expect("set read timeout");
+        let frame = MicrodaemonFrame::event(
+            MicrodaemonId::BigConvertd,
+            MicrodaemonEvent::JobAccepted {
+                job_id: "job-1".to_string(),
+            },
+        );
+        daemon_peer
+            .write_all(&encode_microdaemon_frame(&frame).expect("encode event"))
+            .expect("write event");
+
+        let event = read_event(&mut client).expect("read event");
+
+        assert_eq!(
+            event,
+            MicrodaemonEvent::JobAccepted {
+                job_id: "job-1".to_string()
+            }
+        );
+    }
+
+    #[test]
+    #[cfg(not(miri))]
+    fn read_event_rejects_frame_from_wrong_daemon() {
+        let (mut client, mut daemon_peer) = UnixStream::pair().expect("socket pair");
+        client
+            .set_read_timeout(Some(Duration::from_millis(250)))
+            .expect("set read timeout");
+        let frame = MicrodaemonFrame::event(
+            MicrodaemonId::BigFileopsd,
+            MicrodaemonEvent::JobList { jobs: Vec::new() },
+        );
+        daemon_peer
+            .write_all(&encode_microdaemon_frame(&frame).expect("encode event"))
+            .expect("write event");
+
+        let err = read_event(&mut client).expect_err("wrong daemon must fail");
+
+        assert!(err.message().contains("wrong daemon"));
     }
 }

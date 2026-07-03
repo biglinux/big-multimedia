@@ -15,7 +15,7 @@ use crate::converter::app::ConverterMode;
 use super::{ConverterShell, ShellMessage};
 
 pub(super) fn to_queue_entry(
-    queue_item: &crate::converter::queue::QueueItem,
+    queue_item: &crate::converter::queue::ConversionQueueEntry,
 ) -> BigConversionQueueEntry {
     BigConversionQueueEntry {
         id: queue_item.id,

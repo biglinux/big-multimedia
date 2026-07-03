@@ -20,6 +20,7 @@ use big_media_components::time::playback_time;
 use big_relm4_components::feedback::tooltip::{
     self, icon_button, icon_toggle_button, labeled_icon_button,
 };
+use big_relm4_components::input::button_content::{build_button, BigButtonContentSpec};
 use big_relm4_components::layout::widget_container::clear_box_children;
 use gtk::glib;
 use relm4::{gtk, Component, ComponentParts, ComponentSender};
@@ -291,18 +292,12 @@ impl Component for VideoTrimBar {
             }
         ));
 
-        let export_button = gtk::Button::builder()
-            .child(
-                &adw::ButtonContent::builder()
-                    .icon_name("document-save-symbolic")
-                    .label(i18n("Export"))
-                    .build(),
-            )
-            .css_classes(["suggested-action", "pill"])
-            .sensitive(false)
-            .build();
-        export_button.update_property(&[gtk::accessible::Property::Label(&i18n("Export"))]);
-        tooltip::set(&export_button, &i18n("Export the marked cuts"));
+        let export_button = build_button(
+            &BigButtonContentSpec::new("document-save-symbolic", i18n("Export"))
+                .tooltip(i18n("Export the marked cuts"))
+                .css_classes(["suggested-action", "pill"]),
+        );
+        export_button.set_sensitive(false);
         export_button.connect_clicked(glib::clone!(
             #[strong]
             sender,

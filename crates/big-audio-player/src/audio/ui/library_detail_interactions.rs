@@ -192,10 +192,18 @@ fn collect_visual_tracks(
     item_count: u32,
     item_at: impl Fn(u32) -> Option<glib::Object>,
 ) -> Vec<Track> {
-    (0..item_count)
-        .filter_map(|index| item_at(index).and_downcast::<glib::BoxedAnyObject>())
-        .map(|obj| obj.borrow::<Track>().clone())
-        .collect()
+    collect_visual_tracks_from_tracks(item_count, |index| {
+        item_at(index)
+            .and_downcast::<glib::BoxedAnyObject>()
+            .map(|obj| obj.borrow::<Track>().clone())
+    })
+}
+
+fn collect_visual_tracks_from_tracks(
+    item_count: u32,
+    track_at: impl Fn(u32) -> Option<Track>,
+) -> Vec<Track> {
+    (0..item_count).filter_map(track_at).collect()
 }
 
 fn detail_context_index(track_count: usize, clicked_position: u32) -> Option<usize> {
@@ -281,12 +289,16 @@ fn show_detail_context_menu(
 
 #[cfg(test)]
 mod tests {
+    #[cfg(not(miri))]
+    use gtk::glib;
+    #[cfg(not(miri))]
+    use gtk::prelude::Cast;
+
     use super::{
-        collect_visual_tracks, detail_context_index, detail_selection_action, DetailSelectionAction,
+        collect_visual_tracks, collect_visual_tracks_from_tracks, detail_context_index,
+        detail_selection_action, DetailSelectionAction,
     };
     use crate::db::models::Track;
-    use gtk::glib;
-    use gtk::prelude::Cast;
 
     #[test]
     fn detail_selection_ignores_plain_double_and_missing_position_clicks() {
@@ -350,34 +362,50 @@ mod tests {
 
     #[test]
     fn collect_visual_tracks_preserves_sorted_model_order() {
-        let visual_model_objects: Vec<Option<glib::Object>> = vec![
-            Some(
-                glib::BoxedAnyObject::new(Track::new_external_path_with_title(
-                    "/music/one.flac",
-                    Some("One".to_string()),
-                ))
-                .upcast(),
-            ),
+        let visual_tracks = [
+            Some(Track::new_external_path_with_title(
+                "/music/one.flac",
+                Some("One".to_string()),
+            )),
             None,
-            Some(
-                glib::BoxedAnyObject::new(Track::new_external_path_with_title(
-                    "/music/two.flac",
-                    Some("Two".to_string()),
-                ))
-                .upcast(),
-            ),
+            Some(Track::new_external_path_with_title(
+                "/music/two.flac",
+                Some("Two".to_string()),
+            )),
         ];
 
         let file_paths: Vec<String> =
-            collect_visual_tracks(visual_model_objects.len() as u32, |index| {
-                visual_model_objects
-                    .get(index as usize)
-                    .and_then(Clone::clone)
+            collect_visual_tracks_from_tracks(visual_tracks.len() as u32, |index| {
+                visual_tracks.get(index as usize).and_then(Clone::clone)
             })
             .into_iter()
             .map(|track| track.file_path)
             .collect();
 
         assert_eq!(file_paths, ["/music/one.flac", "/music/two.flac"]);
+    }
+
+    #[cfg(not(miri))]
+    #[test]
+    fn collect_visual_tracks_reads_boxed_track_objects() {
+        let first = Track::new_external_path_with_title("/music/one.flac", Some("One".into()));
+        let second = Track::new_external_path_with_title("/music/two.flac", Some("Two".into()));
+        let visual_items = [
+            Some(glib::BoxedAnyObject::new(first.clone()).upcast::<glib::Object>()),
+            None,
+            Some(glib::BoxedAnyObject::new(second.clone()).upcast::<glib::Object>()),
+        ];
+
+        let tracks = collect_visual_tracks(visual_items.len() as u32, |index| {
+            visual_items.get(index as usize).and_then(Clone::clone)
+        });
+
+        assert_eq!(
+            tracks
+                .into_iter()
+                .map(|track| track.file_path)
+                .collect::<Vec<_>>(),
+            [first.file_path, second.file_path]
+        );
     }
 }

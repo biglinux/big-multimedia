@@ -12,6 +12,7 @@ use gtk::glib;
 
 use big_app_kit::file_dialogs::FilePicker;
 use big_media_components::player_chrome::spawn_blocking_result;
+use big_relm4_components::input::button_content::{build_button, BigButtonContentSpec};
 use big_relm4_components::layout::{
     dialog_footer::{BigDialogFooter, BigDialogFooterSpec},
     dialog_page::BigDialogPage,
@@ -291,18 +292,12 @@ fn build_folder_buttons(parent: &gtk::Window, sender: &ComponentSender<LibraryPa
         .margin_top(4)
         .build();
 
-    let add_folder_button = gtk::Button::builder()
-        .css_classes(["suggested-action".to_string(), "pill".to_string()])
-        .halign(gtk::Align::Start)
-        .build();
-    add_folder_button.set_child(Some(
-        &adw::ButtonContent::builder()
-            .icon_name("folder-new-symbolic")
-            .label(i18n("Add Folder"))
-            .build(),
-    ));
-    add_folder_button
-        .update_property(&[gtk::accessible::Property::Label(&i18n("Add music folder"))]);
+    let add_folder_button = build_button(
+        &BigButtonContentSpec::new("folder-new-symbolic", i18n("Add Folder"))
+            .accessible_label(i18n("Add music folder"))
+            .css_classes(["suggested-action", "pill"]),
+    );
+    add_folder_button.set_halign(gtk::Align::Start);
     let out_add = sender.clone();
     let parent_weak = parent.downgrade();
     add_folder_button.connect_clicked(move |_| {
@@ -316,19 +311,11 @@ fn build_folder_buttons(parent: &gtk::Window, sender: &ComponentSender<LibraryPa
     });
     buttons.append(&add_folder_button);
 
-    let scan_now_button = gtk::Button::builder()
-        .css_classes(["pill".to_string()])
-        .build();
-    scan_now_button.set_child(Some(
-        &adw::ButtonContent::builder()
-            .icon_name("view-refresh-symbolic")
-            .label(i18n("Scan Now"))
-            .build(),
-    ));
-    scan_now_button.update_property(&[
-        gtk::accessible::Property::Label(&i18n("Scan Now")),
-        gtk::accessible::Property::Description(&i18n("Scan all monitored folders now")),
-    ]);
+    let scan_now_button = build_button(
+        &BigButtonContentSpec::new("view-refresh-symbolic", i18n("Scan Now"))
+            .accessible_description(i18n("Scan all monitored folders now"))
+            .css_class("pill"),
+    );
     let out_scan = sender.clone();
     scan_now_button.connect_clicked(move |button| {
         button.set_sensitive(false);

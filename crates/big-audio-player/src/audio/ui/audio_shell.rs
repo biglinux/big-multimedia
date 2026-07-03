@@ -162,7 +162,7 @@ pub struct AudioShell {
     settings: Settings,
     /// Chromecast discovery/casting engine (shared runtime engine).
     #[cfg(feature = "chromecast")]
-    cast_device_registry: Arc<crate::cast::chromecast::CastManager>,
+    cast_device_registry: Arc<crate::cast::chromecast::CastSessionController>,
     /// Active sleep-timer countdown source (None = no timer armed).
     sleep_timer_source: Option<glib::SourceId>,
     /// Seconds left on the armed sleep timer.

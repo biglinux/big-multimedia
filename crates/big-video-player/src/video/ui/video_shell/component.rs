@@ -8,7 +8,7 @@ use super::input::{clear_shell_input, set_shell_input};
 use super::input_gestures::{wire_background_video_input, wire_osd_autohide, wire_video_input};
 use super::render::{wire_close, wire_realize, FastRenderContextSlot, VideoRealizeOptions};
 use super::*;
-#[cfg(test)]
+#[cfg(all(test, not(miri)))]
 use big_relm4_components::layout::hamburger_menu::build_flat_menu_model;
 use big_relm4_components::layout::hamburger_menu::{
     build_flat_action_popover_button, BigHamburgerMenuSpec, BigMenuActionItem,
@@ -97,12 +97,12 @@ impl Component for VideoShell {
             .launch(())
             .forward(sender.input_sender(), VideoShellInput::Iptv);
 
-        // Cast device picker (video-local UI over the shared CastManager
+        // Cast device picker (video-local UI over the shared CastSessionController
         // engine). Held detached as a dialog child; start/stop reported back.
         #[cfg(feature = "chromecast")]
         let cast = VideoCastDialog::builder()
             .launch(VideoCastDialogInit {
-                cast_engine: Arc::new(CastManager::new()),
+                cast_engine: Arc::new(CastSessionController::new()),
                 mpv: mpv.clone(),
                 filter_snapshot: {
                     let mpv = mpv.clone();
@@ -270,7 +270,7 @@ impl Component for VideoShell {
                 .css_classes(["osd-btn"])
                 .items(open_menu_items()),
         );
-        let open_menu_button = open_popover_button.button().clone();
+        let open_menu_root = open_popover_button.root().clone();
         let open_menu_popover = open_popover_button.popover().clone();
 
         // Two separate sidebar entry points: Files (folder browser) and Playlist
@@ -338,7 +338,7 @@ impl Component for VideoShell {
         // player keeps mpv/offload/welcome/buffering state app-local; shared
         // chrome owns the repeatable header, bottom revealer, and sidebar split.
         chrome.add_header_start(&keep_above_toggle_button);
-        chrome.add_header_start(&open_menu_button);
+        chrome.add_header_start(&open_menu_root);
         chrome.add_header_start(&files_sidebar_toggle_button);
         chrome.add_header_start(&playlist_sidebar_toggle_button);
 
@@ -744,7 +744,7 @@ impl Drop for VideoShell {
     }
 }
 
-#[cfg(test)]
+#[cfg(all(test, not(miri)))]
 fn build_open_menu_model() -> gio::Menu {
     build_flat_menu_model(&open_menu_items())
 }
@@ -759,6 +759,14 @@ fn open_menu_items() -> Vec<BigMenuActionItem> {
 }
 
 #[cfg(test)]
+fn open_menu_action_names() -> Vec<String> {
+    open_menu_items()
+        .into_iter()
+        .map(|menu_item| menu_item.action)
+        .collect()
+}
+
+#[cfg(all(test, not(miri)))]
 fn build_main_menu_model() -> gio::Menu {
     build_flat_menu_model(&main_menu_items())
 }
@@ -799,13 +807,21 @@ fn main_menu_items() -> Vec<BigMenuActionItem> {
 }
 
 #[cfg(test)]
+fn main_menu_action_names() -> Vec<String> {
+    main_menu_items()
+        .into_iter()
+        .map(|menu_item| menu_item.action)
+        .collect()
+}
+
+#[cfg(test)]
 mod tests {
     use super::*;
 
     #[test]
     fn open_menu_uses_flat_action_items() {
-        assert_menu_has_actions(
-            &build_open_menu_model(),
+        assert_menu_actions_include(
+            &open_menu_action_names(),
             &[
                 "win.open-file",
                 "win.open-recent",
@@ -832,12 +848,13 @@ mod tests {
             "win.keyboard-shortcuts",
             "app.about",
         ];
-        assert_menu_has_actions(&build_main_menu_model(), expected);
+        assert_menu_actions_include(&main_menu_action_names(), expected);
 
         #[cfg(feature = "chromecast")]
-        assert_menu_has_actions(&build_main_menu_model(), &["win.cast"]);
+        assert_menu_actions_include(&main_menu_action_names(), &["win.cast"]);
     }
 
+    #[cfg(not(miri))]
     #[test]
     fn main_menu_is_flat_without_sections_or_submenus() {
         let menu = build_main_menu_model();
@@ -853,8 +870,17 @@ mod tests {
         }
     }
 
-    fn assert_menu_has_actions(menu: &impl IsA<gio::MenuModel>, expected: &[&str]) {
-        let actions = big_relm4_components::layout::hamburger_menu::menu_action_names(menu);
+    #[cfg(not(miri))]
+    #[test]
+    fn open_menu_is_flat_without_sections_or_submenus() {
+        let menu = build_open_menu_model();
+        for index in 0..menu.n_items() {
+            assert!(menu.item_link(index, "section").is_none());
+            assert!(menu.item_link(index, "submenu").is_none());
+        }
+    }
+
+    fn assert_menu_actions_include(actions: &[String], expected: &[&str]) {
         for action in expected {
             assert!(
                 actions.iter().any(|actual| actual == action),

@@ -9,6 +9,7 @@ use big_relm4_components::list::signal_factory;
 use gtk::{glib, pango};
 use relm4::ComponentSender;
 use std::cell::RefCell;
+use std::cmp::Ordering;
 use std::rc::Rc;
 
 use crate::audio::column_builders::{
@@ -20,6 +21,39 @@ use crate::db::models::Track;
 use crate::i18n::i18n;
 
 use super::playlist_panel::{PlaylistPanel, PlaylistPanelOutput, RowIndicator};
+
+fn queue_position_label(position: u32) -> String {
+    (position + 1).to_string()
+}
+
+fn is_current_track_identity(
+    current_track_identity: Option<&glib::Object>,
+    track_identity: &glib::Object,
+) -> bool {
+    is_current_track_identity_match(
+        current_track_identity.is_some(),
+        current_track_identity == Some(track_identity),
+    )
+}
+
+fn is_current_track_identity_match(
+    has_current_track_identity: bool,
+    is_same_track_identity: bool,
+) -> bool {
+    has_current_track_identity && is_same_track_identity
+}
+
+fn clicked_playlist_star_rating(row_width: i32, click_x: f64) -> i32 {
+    let star_width = f64::from(row_width.max(1)) / 5.0;
+    ((click_x / star_width) as i32 + 1).clamp(1, 5)
+}
+
+fn compare_track_bitrate_values(track_a: &Track, track_b: &Track) -> Ordering {
+    track_a
+        .bitrate
+        .unwrap_or(0)
+        .cmp(&track_b.bitrate.unwrap_or(0))
+}
 
 /// Build the default visible column set. Interactive columns (rating, remove)
 /// emit `Output` intents; the title column hosts the track-identity indicator.
@@ -54,7 +88,7 @@ pub(super) fn build_columns(
         let Some(label) = signal_factory::child_as::<gtk::Label>(list_item) else {
             return;
         };
-        label.set_label(&(list_item.position() + 1).to_string());
+        label.set_label(&queue_position_label(list_item.position()));
     });
     column_view.append_column(
         &gtk::ColumnViewColumn::builder()
@@ -222,7 +256,8 @@ fn build_title_column(
         };
         label.set_label(track.display_title());
         // Track identity (not file_path) so duplicates highlight independently.
-        let is_current = cur_bind.borrow().as_ref() == Some(&track_identity);
+        let is_current =
+            is_current_track_identity(cur_bind.borrow().as_ref(), track_identity.as_ref());
         icon.set_visible(is_current);
         if is_current {
             label.add_css_class("now-playing-accent");
@@ -306,8 +341,7 @@ fn build_rating_column(column_view: &gtk::ColumnView, sender: &ComponentSender<P
             let Some(hbox) = hbox_ref.upgrade() else {
                 return;
             };
-            let star_width = f64::from(hbox.width()) / 5.0;
-            let clicked_rating = ((x / star_width) as i32 + 1).clamp(1, 5);
+            let clicked_rating = clicked_playlist_star_rating(hbox.width(), x);
             update_star_icons(&hbox, clicked_rating);
             let _ = out.output(PlaylistPanelOutput::RateTrack {
                 id: track_id,
@@ -417,10 +451,82 @@ fn make_bitrate_sorter() -> gtk::CustomSorter {
         };
         let track_a = track_a_object.borrow::<Track>();
         let track_b = track_b_object.borrow::<Track>();
-        track_a
-            .bitrate
-            .unwrap_or(0)
-            .cmp(&track_b.bitrate.unwrap_or(0))
-            .into()
+        compare_track_bitrate_values(&track_a, &track_b).into()
     })
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn track_with_bitrate(bitrate: Option<i32>) -> Track {
+        let mut track =
+            Track::new_external_path_with_title("/music/song.flac", Some("Song".to_string()));
+        track.bitrate = bitrate;
+        track
+    }
+
+    #[test]
+    fn queue_position_label_is_one_based() {
+        assert_eq!(queue_position_label(0), "1");
+        assert_eq!(queue_position_label(41), "42");
+    }
+
+    #[test]
+    fn current_track_identity_match_requires_current_same_identity() {
+        assert!(is_current_track_identity_match(true, true));
+        assert!(!is_current_track_identity_match(true, false));
+        assert!(!is_current_track_identity_match(false, true));
+        assert!(!is_current_track_identity_match(false, false));
+    }
+
+    #[cfg(not(miri))]
+    #[test]
+    fn current_track_identity_matches_exact_identity_only() {
+        let current_track_identity: glib::Object =
+            glib::BoxedAnyObject::new(track_with_bitrate(None)).upcast();
+        let other_track_identity: glib::Object =
+            glib::BoxedAnyObject::new(track_with_bitrate(None)).upcast();
+
+        assert!(is_current_track_identity(
+            Some(&current_track_identity),
+            &current_track_identity
+        ));
+        assert!(!is_current_track_identity(
+            Some(&current_track_identity),
+            &other_track_identity
+        ));
+        assert!(!is_current_track_identity(None, &current_track_identity));
+    }
+
+    #[test]
+    fn clicked_playlist_star_rating_maps_pointer_position_to_clamped_rating() {
+        assert_eq!(clicked_playlist_star_rating(100, -5.0), 1);
+        assert_eq!(clicked_playlist_star_rating(100, 0.0), 1);
+        assert_eq!(clicked_playlist_star_rating(100, 19.9), 1);
+        assert_eq!(clicked_playlist_star_rating(100, 20.0), 2);
+        assert_eq!(clicked_playlist_star_rating(100, 79.9), 4);
+        assert_eq!(clicked_playlist_star_rating(100, 80.0), 5);
+        assert_eq!(clicked_playlist_star_rating(100, 120.0), 5);
+        assert_eq!(clicked_playlist_star_rating(0, 120.0), 5);
+    }
+
+    #[test]
+    fn bitrate_comparison_treats_missing_bitrate_as_zero() {
+        assert_eq!(
+            compare_track_bitrate_values(&track_with_bitrate(None), &track_with_bitrate(Some(1))),
+            Ordering::Less
+        );
+        assert_eq!(
+            compare_track_bitrate_values(
+                &track_with_bitrate(Some(320_000)),
+                &track_with_bitrate(Some(192_000)),
+            ),
+            Ordering::Greater
+        );
+        assert_eq!(
+            compare_track_bitrate_values(&track_with_bitrate(None), &track_with_bitrate(Some(0))),
+            Ordering::Equal
+        );
+    }
 }

@@ -1,6 +1,6 @@
 //! App-local Relm4 cast (Chromecast) device picker dialog (video port, V5).
 //!
-//! Drives the **shared** [`CastManager`](crate::cast::chromecast::CastManager)
+//! Drives the **shared** [`CastSessionController`](crate::cast::chromecast::CastSessionController)
 //! engine — only the UI is video-local. Discovery polls every 800 ms and the
 //! list rebuilds only when the device count changes (keeps selection steady,
 //! mirroring the legacy `device_dialog`). Picking a device reads the currently
@@ -11,7 +11,7 @@
 //!
 //! Push/intent model: the dialog emits `VideoCastDialogOutput` when a cast
 //! starts or stops so the shell can pause local playback and reflect cast
-//! status; everything cast-engine-side it does itself via the `CastManager`.
+//! status; everything cast-engine-side it does itself via the `CastSessionController`.
 //!
 pub mod cast_target;
 
@@ -26,7 +26,7 @@ use gtk::{gio, glib};
 use log::error;
 use relm4::{Component, ComponentParts, ComponentSender};
 
-use crate::cast::chromecast::{self, CastCommand, CastDeviceInfo, CastManager};
+use crate::cast::chromecast::{self, CastCommand, CastSessionController, DiscoveredCastDevice};
 use crate::cast::transcode::TranscodeFilters;
 use crate::i18n::{i18n, ni18n};
 use crate::player::mpv_backend::MpvBackend;
@@ -54,7 +54,7 @@ pub enum CastAttempt {
 /// Init payload: the shared cast engine + the shell's mpv handle.
 pub struct VideoCastDialogInit {
     /// Shared Chromecast engine (from `big-media-runtime`).
-    pub cast_engine: Arc<CastManager>,
+    pub cast_engine: Arc<CastSessionController>,
     /// The shell's live mpv backend handle (read on device pick).
     pub mpv: MpvHandle,
     /// Snapshot provider for transcoded cast filters.
@@ -94,7 +94,7 @@ pub enum VideoCastDialogOutput {
 
 /// Relm4 cast device picker.
 pub struct VideoCastDialog {
-    cast_engine: Arc<CastManager>,
+    cast_engine: Arc<CastSessionController>,
     mpv: MpvHandle,
     filter_snapshot: FilterSnapshot,
     list_box: gtk::ListBox,
@@ -385,7 +385,7 @@ impl VideoCastDialog {
 fn render_devices(
     list_box: &gtk::ListBox,
     status_label: &gtk::Label,
-    cast_engine: &Arc<CastManager>,
+    cast_engine: &Arc<CastSessionController>,
     rendered_count: usize,
 ) -> usize {
     let devices = cast_engine.get_devices();
@@ -421,8 +421,8 @@ fn render_devices(
 /// map the result to a [`CastAttempt`]. Pure-logic decision via
 /// [`decide_cast_target`]; the I/O is the runtime cast engine's.
 async fn start_cast(
-    cast_engine: &Arc<CastManager>,
-    device: &CastDeviceInfo,
+    cast_engine: &Arc<CastSessionController>,
+    device: &DiscoveredCastDevice,
     file_path: Option<&str>,
     local_ip: &str,
     position_secs: f64,

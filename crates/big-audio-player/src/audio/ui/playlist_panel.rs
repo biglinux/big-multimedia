@@ -37,6 +37,71 @@ use crate::shared::ui_helpers::format_duration_hm;
 /// can re-light rows by object identity without rebinding the factory.
 pub(super) type RowIndicator = (glib::Object, gtk::Image, gtk::Label);
 
+fn playlist_track_objects(tracks: &[Track]) -> Vec<glib::Object> {
+    tracks
+        .iter()
+        .map(|track| glib::BoxedAnyObject::new(track.clone()).upcast())
+        .collect()
+}
+
+fn is_current_indicator_track(
+    current_track_identity: Option<&glib::Object>,
+    track_identity: &glib::Object,
+) -> bool {
+    is_current_indicator_identity_match(
+        current_track_identity.is_some(),
+        current_track_identity == Some(track_identity),
+    )
+}
+
+fn is_current_indicator_identity_match(
+    has_current_track_identity: bool,
+    is_same_track_identity: bool,
+) -> bool {
+    has_current_track_identity && is_same_track_identity
+}
+
+fn scroll_target_position(track_count: usize, current_index: usize) -> Option<u32> {
+    if track_count == 0 {
+        None
+    } else {
+        Some((current_index + 3).min(track_count.saturating_sub(1)) as u32)
+    }
+}
+
+fn insert_tracks_position(requested_position: usize, existing_count: u32) -> u32 {
+    (requested_position as u32).min(existing_count)
+}
+
+fn should_refresh_empty_placeholder(track_count: u32) -> bool {
+    track_count == 0
+}
+
+fn should_remove_queue_row(index: usize, track_count: u32) -> bool {
+    (index as u32) < track_count
+}
+
+fn playlist_header_label(track_count: u32, total_secs: f64, playlist_name: &str) -> String {
+    if track_count == 0 {
+        if playlist_name.is_empty() {
+            i18n("Playlist")
+        } else {
+            playlist_name.to_string()
+        }
+    } else {
+        format!(
+            "{} {} · {}",
+            track_count,
+            if track_count == 1 {
+                i18n("track")
+            } else {
+                i18n("tracks")
+            },
+            format_duration_hm(total_secs),
+        )
+    }
+}
+
 /// Messages the shell pushes into the playlist panel.
 #[derive(Debug)]
 pub enum PlaylistPanelInput {
@@ -188,17 +253,15 @@ pub struct PlaylistPanel {
 impl PlaylistPanel {
     /// Wrap queue tracks as the `BoxedAnyObject`s the store/factories expect.
     fn to_objects(tracks: &[Track]) -> Vec<glib::Object> {
-        tracks
-            .iter()
-            .map(|t| glib::BoxedAnyObject::new(t.clone()).upcast())
-            .collect()
+        playlist_track_objects(tracks)
     }
 
     /// Re-light the now-playing indicator on every bound row by object identity.
     fn relight(&self) {
         let current_track_identity = self.current_track_identity.borrow();
         for (track_identity, icon, label) in self.indicators.borrow().iter() {
-            let is_current = current_track_identity.as_ref() == Some(track_identity);
+            let is_current =
+                is_current_indicator_track(current_track_identity.as_ref(), track_identity);
             icon.set_visible(is_current);
             if is_current {
                 label.add_css_class("now-playing-accent");
@@ -212,9 +275,9 @@ impl PlaylistPanel {
     /// the view has realized.
     fn scroll_to(&self, idx: usize) {
         let count = self.store.n_items() as usize;
-        if count == 0 {
+        let Some(target) = scroll_target_position(count, idx) else {
             return;
-        }
+        };
         if let Some(selection) = self
             .column_view
             .model()
@@ -223,7 +286,6 @@ impl PlaylistPanel {
             selection.select_item(idx as u32, true);
         }
         let cv = self.column_view.clone();
-        let target = (idx + 3).min(count.saturating_sub(1)) as u32;
         glib::idle_add_local_once(move || {
             cv.scroll_to(target, None, gtk::ListScrollFlags::FOCUS, None);
         });
@@ -233,30 +295,15 @@ impl PlaylistPanel {
     /// queue is empty, otherwise "N tracks · total duration".
     fn update_header(&self) {
         let count = self.store.n_items();
-        if count == 0 {
-            let title = if self.playlist_name.is_empty() {
-                i18n("Playlist")
-            } else {
-                self.playlist_name.clone()
-            };
-            self.header_label.set_label(&title);
-            return;
-        }
         let total_secs: f64 = (0..count)
             .filter_map(|i| self.store.item(i).and_downcast::<glib::BoxedAnyObject>())
             .map(|boxed_track| boxed_track.borrow::<Track>().duration_secs)
             .sum();
-        let queue_summary = format!(
-            "{} {} · {}",
+        self.header_label.set_label(&playlist_header_label(
             count,
-            if count == 1 {
-                i18n("track")
-            } else {
-                i18n("tracks")
-            },
-            format_duration_hm(total_secs),
-        );
-        self.header_label.set_label(&queue_summary);
+            total_secs,
+            &self.playlist_name,
+        ));
     }
 
     /// Show the empty-state placeholder when the queue is empty, otherwise
@@ -440,13 +487,13 @@ impl Component for PlaylistPanel {
             }
             PlaylistPanelInput::InsertTracksAt { pos, tracks } => {
                 let objects = Self::to_objects(&tracks);
-                let at = (pos as u32).min(self.store.n_items());
+                let at = insert_tracks_position(pos, self.store.n_items());
                 self.store.splice(at, 0, &objects);
                 self.refresh_empty_state(&sender);
                 self.update_header();
             }
             PlaylistPanelInput::RemoveRow(index) => {
-                if (index as u32) < self.store.n_items() {
+                if should_remove_queue_row(index, self.store.n_items()) {
                     self.store.remove(index as u32);
                 }
                 self.refresh_empty_state(&sender);
@@ -465,7 +512,7 @@ impl Component for PlaylistPanel {
             PlaylistPanelInput::SetLibraryHasItems(has_items) => {
                 self.library_has_items = has_items;
                 // Refresh only matters while the placeholder is visible.
-                if self.store.n_items() == 0 {
+                if should_refresh_empty_placeholder(self.store.n_items()) {
                     self.refresh_empty_state(&sender);
                 }
             }
@@ -477,5 +524,118 @@ impl Component for PlaylistPanel {
                 self.applying_widths.set(false);
             }
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{
+        insert_tracks_position, is_current_indicator_identity_match, playlist_header_label,
+        scroll_target_position, should_refresh_empty_placeholder, should_remove_queue_row,
+    };
+    #[cfg(not(miri))]
+    use super::{is_current_indicator_track, playlist_track_objects};
+    #[cfg(not(miri))]
+    use crate::db::models::Track;
+    #[cfg(not(miri))]
+    use gtk::glib;
+    #[cfg(not(miri))]
+    use gtk::prelude::Cast;
+
+    #[cfg(not(miri))]
+    fn track(path: &str, title: &str, duration_secs: f64) -> Track {
+        let mut track = Track::new_external_path_with_title(path, Some(title.to_string()));
+        track.duration_secs = duration_secs;
+        track
+    }
+
+    #[cfg(not(miri))]
+    #[test]
+    fn playlist_track_objects_preserve_ordered_tracks() {
+        let tracks = [
+            track("/music/one.flac", "One", 60.0),
+            track("/music/two.flac", "Two", 120.0),
+        ];
+
+        let objects = playlist_track_objects(&tracks);
+        let file_paths: Vec<String> = objects
+            .iter()
+            .map(|track_object| {
+                track_object
+                    .downcast_ref::<glib::BoxedAnyObject>()
+                    .expect("playlist track object")
+                    .borrow::<Track>()
+                    .file_path
+                    .clone()
+            })
+            .collect();
+
+        assert_eq!(file_paths, ["/music/one.flac", "/music/two.flac"]);
+    }
+
+    #[test]
+    fn current_indicator_identity_match_requires_current_same_identity() {
+        assert!(is_current_indicator_identity_match(true, true));
+        assert!(!is_current_indicator_identity_match(true, false));
+        assert!(!is_current_indicator_identity_match(false, true));
+        assert!(!is_current_indicator_identity_match(false, false));
+    }
+
+    #[cfg(not(miri))]
+    #[test]
+    fn current_indicator_matches_exact_track_identity() {
+        let current_track_identity: glib::Object =
+            glib::BoxedAnyObject::new(track("/music/current.flac", "Current", 60.0)).upcast();
+        let other_track_identity: glib::Object =
+            glib::BoxedAnyObject::new(track("/music/other.flac", "Other", 60.0)).upcast();
+
+        assert!(is_current_indicator_track(
+            Some(&current_track_identity),
+            &current_track_identity
+        ));
+        assert!(!is_current_indicator_track(
+            Some(&current_track_identity),
+            &other_track_identity
+        ));
+        assert!(!is_current_indicator_track(None, &current_track_identity));
+    }
+
+    #[test]
+    fn scroll_target_position_uses_three_row_lookahead_and_bounds() {
+        assert_eq!(scroll_target_position(0, 2), None);
+        assert_eq!(scroll_target_position(10, 2), Some(5));
+        assert_eq!(scroll_target_position(4, 2), Some(3));
+    }
+
+    #[test]
+    fn insert_tracks_position_clamps_to_existing_queue_len() {
+        assert_eq!(insert_tracks_position(0, 3), 0);
+        assert_eq!(insert_tracks_position(2, 3), 2);
+        assert_eq!(insert_tracks_position(9, 3), 3);
+    }
+
+    #[test]
+    fn empty_placeholder_refreshes_only_for_empty_queue() {
+        assert!(should_refresh_empty_placeholder(0));
+        assert!(!should_refresh_empty_placeholder(1));
+    }
+
+    #[test]
+    fn remove_queue_row_accepts_only_existing_indices() {
+        assert!(should_remove_queue_row(0, 1));
+        assert!(should_remove_queue_row(2, 3));
+        assert!(!should_remove_queue_row(3, 3));
+    }
+
+    #[test]
+    fn playlist_header_label_uses_name_or_track_summary() {
+        assert_eq!(playlist_header_label(0, 0.0, ""), "Playlist");
+        assert_eq!(playlist_header_label(0, 0.0, "Road Mix"), "Road Mix");
+
+        let one_track = playlist_header_label(1, 65.0, "Road Mix");
+        assert!(one_track.starts_with("1 track · "));
+
+        let two_tracks = playlist_header_label(2, 125.0, "Road Mix");
+        assert!(two_tracks.starts_with("2 tracks · "));
     }
 }

@@ -5,7 +5,7 @@
 //! "convert this file", or "extract audio" only needs a handful. This module is
 //! the pure bridge: it produces the same runtime [`Profile`] the converter
 //! engine consumes, so there is one conversion path, not two. The editor's
-//! trim segments travel on the `QueueItem` (not here); transform/colour filters
+//! trim segments travel on the `ConversionQueueEntry` (not here); transform/colour filters
 //! travel in [`QuickExportChoice::filters`].
 
 use std::path::{Path, PathBuf};
@@ -199,7 +199,7 @@ pub fn build_single_export_queue(
     let id = queue.add_file(input);
 
     if !segments.is_empty() {
-        if let Some(item) = queue.item_mut(id) {
+        if let Some(item) = queue.entry_mut(id) {
             item.segments = segments
                 .iter()
                 .map(|&(start, end)| TrimRange {
@@ -338,6 +338,16 @@ mod tests {
     }
 
     #[test]
+    fn keep_format_falls_back_to_mkv_for_empty_extension() {
+        let choice = QuickExportChoice::keep_format(std::path::Path::new("/movies/clip."));
+        match choice.format {
+            QuickExportFormat::Video { container, .. } => assert_eq!(container, "mkv"),
+            QuickExportFormat::Audio { .. } => panic!("keep_format must be a video copy"),
+        }
+    }
+
+    #[cfg(not(miri))]
+    #[test]
     fn build_queue_records_segments_join_and_output_path() {
         use crate::converter::queue::SegmentOutputMode;
         let choice = QuickExportChoice::keep_format(std::path::Path::new("/movies/Trip.mp4"));
@@ -372,5 +382,27 @@ mod tests {
         assert_eq!(profile.audio.codec, "mp3");
         assert_eq!(profile.audio.bitrate, "192k");
         assert_eq!(profile.output.container, "mp3");
+    }
+
+    #[test]
+    fn quick_export_profiles_use_user_visible_names() {
+        let video_profile = single_file_export_profile(&QuickExportChoice {
+            format: QuickExportFormat::Video {
+                container: "mp4".into(),
+                codec: "h264".into(),
+                quality: "good".into(),
+            },
+            filters: VideoFilters::default(),
+        });
+        let audio_profile = single_file_export_profile(&QuickExportChoice {
+            format: QuickExportFormat::Audio {
+                codec: "flac".into(),
+                bitrate: String::new(),
+            },
+            filters: VideoFilters::default(),
+        });
+
+        assert_eq!(video_profile.profile.name, "Quick Export");
+        assert_eq!(audio_profile.profile.name, "Extract Audio");
     }
 }

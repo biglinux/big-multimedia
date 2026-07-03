@@ -13,11 +13,15 @@
 //! crate, which carries its own argv-safety tests. The defense-in-depth shell
 //! walker below stays — it guards every `src/**` file, present and future.
 
+#[cfg(not(miri))]
 use std::fs;
+#[cfg(not(miri))]
 use std::path::Path;
 
+#[cfg(not(miri))]
 const SRC_ROOT: &str = "src";
 
+#[cfg(not(miri))]
 #[test]
 fn no_unguarded_shell_invocations() {
     // Defense-in-depth: no `sh -c` / `bash -c` style invocations should
@@ -40,6 +44,7 @@ fn no_unguarded_shell_invocations() {
     });
 }
 
+#[cfg(not(miri))]
 fn walk_rs(dir: &Path, on_file: &mut dyn FnMut(&Path, &str)) {
     let entries = fs::read_dir(dir).unwrap_or_else(|e| panic!("read_dir {dir:?}: {e}"));
     for entry in entries.flatten() {

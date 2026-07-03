@@ -77,6 +77,33 @@ exclude_re = [
     # Dialog chrome, row text, status text, and discovery restart rule are
     # covered by display-free cast_dialog tests with all features enabled.
     'crates/big-audio-player/src/audio/ui/cast_dialog\.rs:.*replace present_cast with \(\)',
+    # LibraryPanel methods below mutate live GTK/Relm4 state: recycled title-row
+    # widgets, ScrolledWindow child attachment, Stack construction, and message
+    # dispatch through live component fields. Store splicing, track-id export,
+    # current-track matching, empty/detail state selection, and stale editor
+    # clearing are covered by display-free library_panel tests; these wrappers
+    # belong to harness UI smoke with AT-SPI evidence.
+    'crates/big-audio-player/src/audio/ui/library_panel\.rs:.*replace LibraryPanel::relight_detail with \(\)',
+    'crates/big-audio-player/src/audio/ui/library_panel\.rs:.*replace LibraryPanel::refresh_detail_empty_state with \(\)',
+    'crates/big-audio-player/src/audio/ui/library_panel\.rs:.*replace == with != in LibraryPanel::refresh_detail_empty_state',
+    'crates/big-audio-player/src/audio/ui/library_panel\.rs:.*replace <impl Component for LibraryPanel>::init_root -> Self::Root with Default::default\(\)',
+    'crates/big-audio-player/src/audio/ui/library_panel\.rs:.*replace <impl Component for LibraryPanel>::update with \(\)',
+    # Tag editor construction and event wiring are live GTK/libadwaita dialog
+    # boundaries. Field collection, dirty-state comparison, read-only metadata
+    # row values, MusicBrainz lookup eligibility, and MusicBrainz fill planning
+    # are covered by display-free library_tag_editor tests.
+    'crates/big-audio-player/src/audio/ui/library_tag_editor\.rs:.*replace TagEditorHandle::apply_musicbrainz_result -> bool with false',
+    'crates/big-audio-player/src/audio/ui/library_tag_editor\.rs:.*replace show_tag_editor -> Option<TagEditorHandle> with None',
+    'crates/big-audio-player/src/audio/ui/library_tag_editor\.rs:.*replace EditRows::collect -> TagEditFields with Default::default\(\)',
+    'crates/big-audio-player/src/audio/ui/library_tag_editor\.rs:.*replace build_sidebar_page -> adw::NavigationPage with Default::default\(\)',
+    'crates/big-audio-player/src/audio/ui/library_tag_editor\.rs:.*replace build_art_box -> gtk::Box with Default::default\(\)',
+    'crates/big-audio-player/src/audio/ui/library_tag_editor\.rs:.*replace append_read_only_metadata_rows with \(\)',
+    'crates/big-audio-player/src/audio/ui/library_tag_editor\.rs:.*replace append_metadata_value_row with \(\)',
+    'crates/big-audio-player/src/audio/ui/library_tag_editor\.rs:.*replace build_content_page -> \(adw::NavigationPage, Option<TagEditorHandle>\) with \(Default::default\(\), None\)',
+    'crates/big-audio-player/src/audio/ui/library_tag_editor\.rs:.*replace connect_dirty_detection with \(\)',
+    'crates/big-audio-player/src/audio/ui/library_tag_editor\.rs:.*replace wire_save with \(\)',
+    'crates/big-audio-player/src/audio/ui/library_tag_editor\.rs:.*replace maybe_add_musicbrainz_lookup -> Option<TagEditorHandle> with None',
+    'crates/big-audio-player/src/audio/ui/library_tag_editor\.rs:.*replace apply_musicbrainz_result with \(\)',
     # Detail ColumnView assembly and recycled-row widget cleanup are live GTK
     # factory boundaries. Album-art hash selection, track-number labels,
     # current-track matching, and click-position rating math are tested without
@@ -109,6 +136,103 @@ exclude_re = [
     'crates/big-audio-player/src/audio/ui/library_grouping_ui\.rs:.*replace build_age_dropdown -> gtk::DropDown with Default::default\(\)',
     'crates/big-audio-player/src/audio/ui/library_grouping_ui\.rs:.*replace build_add_folder_button -> gtk::Button with Default::default\(\)',
     'crates/big-audio-player/src/audio/ui/library_grouping_ui\.rs:.*replace build_search_entry -> gtk::SearchEntry with Default::default\(\)',
+    # Library tree factory/bind/wiring paths depend on recycled GTK list/tree
+    # items, button signals, popover menus, and drag sources. Recursive node
+    # building, row presentation, selection payloads, context targeting, drag
+    # path collection, and tree-handle splicing are covered by display-free
+    # library_tree tests.
+    'crates/big-audio-player/src/audio/ui/library_tree\.rs:.*replace build_tree_factory -> gtk::SignalListItemFactory with Default::default\(\)',
+    'crates/big-audio-player/src/audio/ui/library_tree\.rs:.*replace bind_tree_row with \(\)',
+    'crates/big-audio-player/src/audio/ui/library_tree\.rs:.*replace build_show_tracks_button -> gtk::Button with Default::default\(\)',
+    'crates/big-audio-player/src/audio/ui/library_tree\.rs:.*replace bind_show_tracks_button with \(\)',
+    'crates/big-audio-player/src/audio/ui/library_tree\.rs:.*replace disconnect_show_tracks_button with \(\)',
+    'crates/big-audio-player/src/audio/ui/library_tree\.rs:.*replace bind_file_leaf with \(\)',
+    'crates/big-audio-player/src/audio/ui/library_tree\.rs:.*replace wire_activation with \(\)',
+    'crates/big-audio-player/src/audio/ui/library_tree\.rs:.*replace wire_context_menu with \(\)',
+    'crates/big-audio-player/src/audio/ui/library_tree\.rs:.*replace add_leaf_menu_items with \(\)',
+    'crates/big-audio-player/src/audio/ui/library_tree\.rs:.*replace build_leaf_drag_source -> gtk::DragSource with Default::default\(\)',
+    # Playlist chrome builders and action wiring are live GTK/libadwaita
+    # surfaces. Menu action names, flat menu shape, playlist-name normalization,
+    # open-files emission, and welcome-tip presentation specs are tested without
+    # a display in playlist_chrome.
+    'crates/big-audio-player/src/audio/ui/playlist_chrome\.rs:.*replace build_toolbar -> \(adw::HeaderBar, gtk::Label\) with \(Default::default\(\), Default::default\(\)\)',
+    'crates/big-audio-player/src/audio/ui/playlist_chrome\.rs:.*replace install_queue_menu_actions with \(\)',
+    'crates/big-audio-player/src/audio/ui/playlist_chrome\.rs:.*replace prompt_queue_playlist_name with \(\)',
+    'crates/big-audio-player/src/audio/ui/playlist_chrome\.rs:.*delete - in prompt_queue_playlist_name',
+    'crates/big-audio-player/src/audio/ui/playlist_chrome\.rs:.*replace build_drop_hint -> adw::StatusPage with Default::default\(\)',
+    'crates/big-audio-player/src/audio/ui/playlist_chrome\.rs:.*replace build_welcome -> gtk::Box with Default::default\(\)',
+    # Playlist ColumnView assembly, recycled row cleanup, per-row buttons, and
+    # GTK sorters are live factory boundaries. Position labels, current-track
+    # identity, click-to-rating math, and bitrate ordering are covered by
+    # display-free playlist_columns tests.
+    'crates/big-audio-player/src/audio/ui/playlist_columns\.rs:.*replace build_columns with \(\)',
+    'crates/big-audio-player/src/audio/ui/playlist_columns\.rs:.*replace build_title_column with \(\)',
+    'crates/big-audio-player/src/audio/ui/playlist_columns\.rs:.*replace != with == in build_title_column',
+    'crates/big-audio-player/src/audio/ui/playlist_columns\.rs:.*replace build_rating_column with \(\)',
+    'crates/big-audio-player/src/audio/ui/playlist_columns\.rs:.*replace build_remove_column with \(\)',
+    'crates/big-audio-player/src/audio/ui/playlist_columns\.rs:.*replace make_bitrate_sorter -> gtk::CustomSorter with Default::default\(\)',
+    # Playlist geometry has display-free coverage for row-height, drop-position,
+    # reorder-position, and ancestor-chain hit testing. The dropdown factory and
+    # widget pick/data bridge require live GTK widgets carrying `vis-pos`.
+    'crates/big-audio-player/src/audio/ui/playlist_geom\.rs:.*replace dropdown_list_factory -> gtk::SignalListItemFactory with Default::default\(\)',
+    'crates/big-audio-player/src/audio/ui/playlist_geom\.rs:.*replace find_clicked_position -> Option<u32> with None',
+    'crates/big-audio-player/src/audio/ui/playlist_geom\.rs:.*replace find_clicked_position -> Option<u32> with Some\(0\)',
+    'crates/big-audio-player/src/audio/ui/playlist_geom\.rs:.*replace find_clicked_position -> Option<u32> with Some\(1\)',
+    'crates/big-audio-player/src/audio/ui/playlist_geom\.rs:.*replace clicked_position_from_widget -> Option<u32> with None',
+    'crates/big-audio-player/src/audio/ui/playlist_geom\.rs:.*replace clicked_position_from_widget -> Option<u32> with Some\(0\)',
+    'crates/big-audio-player/src/audio/ui/playlist_geom\.rs:.*replace clicked_position_from_widget -> Option<u32> with Some\(1\)',
+    # Playlist interaction wiring crosses live GTK DropTarget/DragSource,
+    # EventControllerKey, SortListModel, Bitset selection, context popovers, and
+    # delete confirmation dialogs. Delete-key matching, reorder payload
+    # validation, sort commit emptiness, visual-to-store identity mapping,
+    # context labels, downloadable episode filtering, and delete text are
+    # covered by display-free playlist_interactions tests.
+    'crates/big-audio-player/src/audio/ui/playlist_interactions\.rs:.*replace wire_path_drop with \(\)',
+    'crates/big-audio-player/src/audio/ui/playlist_interactions\.rs:.*delete match arm \(Some\(scroll\), Some\(cv\), Some\(store\)\) in wire_path_drop',
+    'crates/big-audio-player/src/audio/ui/playlist_interactions\.rs:.*replace build_reorder_drag_source -> gtk::DragSource with Default::default\(\)',
+    'crates/big-audio-player/src/audio/ui/playlist_interactions\.rs:.*replace != with == in build_reorder_drag_source',
+    'crates/big-audio-player/src/audio/ui/playlist_interactions\.rs:.*replace wire_reorder_drop with \(\)',
+    'crates/big-audio-player/src/audio/ui/playlist_interactions\.rs:.*delete - in wire_reorder_drop',
+    'crates/big-audio-player/src/audio/ui/playlist_interactions\.rs:.*replace wire_delete_key with \(\)',
+    'crates/big-audio-player/src/audio/ui/playlist_interactions\.rs:.*delete ! in wire_delete_key',
+    'crates/big-audio-player/src/audio/ui/playlist_interactions\.rs:.*replace wire_sort_commit with \(\)',
+    'crates/big-audio-player/src/audio/ui/playlist_interactions\.rs:.*replace resolve_queue_index -> Option<usize> with None',
+    'crates/big-audio-player/src/audio/ui/playlist_interactions\.rs:.*replace resolve_queue_index -> Option<usize> with Some\(0\)',
+    'crates/big-audio-player/src/audio/ui/playlist_interactions\.rs:.*replace resolve_queue_index -> Option<usize> with Some\(1\)',
+    'crates/big-audio-player/src/audio/ui/playlist_interactions\.rs:.*replace gather_selected_tracks -> Vec<\(usize, Track\)> with vec!\[\]',
+    'crates/big-audio-player/src/audio/ui/playlist_interactions\.rs:.*replace wire_right_click_menu with \(\)',
+    'crates/big-audio-player/src/audio/ui/playlist_interactions\.rs:.*delete ! in wire_right_click_menu',
+    'crates/big-audio-player/src/audio/ui/playlist_interactions\.rs:.*replace show_track_context_menu with \(\)',
+    'crates/big-audio-player/src/audio/ui/playlist_interactions\.rs:.*replace show_delete_confirm with \(\)',
+    # Playlist library dialog wrappers construct and wire live GTK/libadwaita
+    # windows, sidebar groups, rows, suffix buttons, entry dialogs, and
+    # destructive confirmation dialogs. Window/list/action/row/name-prompt and
+    # delete-prompt contracts are covered by display-free
+    # playlist_library_dialog tests.
+    'crates/big-audio-player/src/audio/ui/playlist_library_dialog\.rs:.*replace <impl Component for PlaylistLibraryDialog>::init_root -> Self::Root with Default::default\(\)',
+    'crates/big-audio-player/src/audio/ui/playlist_library_dialog\.rs:.*replace <impl Component for PlaylistLibraryDialog>::update with \(\)',
+    'crates/big-audio-player/src/audio/ui/playlist_library_dialog\.rs:.*replace PlaylistLibraryDialog::rebuild with \(\)',
+    'crates/big-audio-player/src/audio/ui/playlist_library_dialog\.rs:.*replace build_io_group -> adw::PreferencesGroup with Default::default\(\)',
+    'crates/big-audio-player/src/audio/ui/playlist_library_dialog\.rs:.*replace build_save_button -> gtk::Button with Default::default\(\)',
+    'crates/big-audio-player/src/audio/ui/playlist_library_dialog\.rs:.*replace build_generate_group -> adw::PreferencesGroup with Default::default\(\)',
+    'crates/big-audio-player/src/audio/ui/playlist_library_dialog\.rs:.*replace build_playlist_row -> adw::ActionRow with Default::default\(\)',
+    'crates/big-audio-player/src/audio/ui/playlist_library_dialog\.rs:.*replace suffix_button -> gtk::Button with Default::default\(\)',
+    'crates/big-audio-player/src/audio/ui/playlist_library_dialog\.rs:.*replace prompt_name with \(\)',
+    'crates/big-audio-player/src/audio/ui/playlist_library_dialog\.rs:.*replace confirm_delete with \(\)',
+    # PlaylistPanel methods bridge tested queue contracts into live GIO stores,
+    # GTK labels/images/scrolling, reusable ToolbarView roots, and Relm4 update
+    # dispatch. Object wrapping, current-identity matching, scroll targets,
+    # insert/remove bounds, empty-placeholder decisions, and header labels are
+    # covered by display-free playlist_panel tests.
+    'crates/big-audio-player/src/audio/ui/playlist_panel\.rs:.*replace PlaylistPanel::to_objects -> Vec<glib::Object> with vec!\[\]',
+    'crates/big-audio-player/src/audio/ui/playlist_panel\.rs:.*replace PlaylistPanel::relight with \(\)',
+    'crates/big-audio-player/src/audio/ui/playlist_panel\.rs:.*replace PlaylistPanel::scroll_to with \(\)',
+    'crates/big-audio-player/src/audio/ui/playlist_panel\.rs:.*replace PlaylistPanel::update_header with \(\)',
+    'crates/big-audio-player/src/audio/ui/playlist_panel\.rs:.*replace PlaylistPanel::refresh_empty_state with \(\)',
+    'crates/big-audio-player/src/audio/ui/playlist_panel\.rs:.*replace == with != in PlaylistPanel::refresh_empty_state',
+    'crates/big-audio-player/src/audio/ui/playlist_panel\.rs:.*replace != with == in PlaylistPanel::refresh_empty_state',
+    'crates/big-audio-player/src/audio/ui/playlist_panel\.rs:.*replace <impl Component for PlaylistPanel>::init_root -> Self::Root with Default::default\(\)',
+    'crates/big-audio-player/src/audio/ui/playlist_panel\.rs:.*replace <impl Component for PlaylistPanel>::update with \(\)',
     # Library IO launches live file pickers and GTK/libadwaita folder dialogs.
     # M3U8 rendering, home-path abbreviation, playlist-name normalization, and
     # name-entry dialog chrome/focus selection are covered by display-free tests.
@@ -124,4 +248,89 @@ exclude_re = [
     'crates/big-audio-player/src/audio/ui/library_io\.rs:.*replace build_remove_button -> gtk::Button with Default::default\(\)',
     'crates/big-audio-player/src/audio/ui/library_io\.rs:.*replace build_intro_label -> gtk::Label with Default::default\(\)',
     'crates/big-audio-player/src/audio/ui/library_io\.rs:.*replace build_tips_card -> gtk::Box with Default::default\(\)',
+    # The remaining audio shell source methods are live orchestration:
+    # asynchronous DB queries, mpv stream control, Relm4 messages, GIO blocking
+    # workers, GTK toasts/dialogs, and tab/queue state bridges. The pure
+    # recording path/content contracts are tested in this module; the live
+    # behavior belongs to AT-SPI/UI smoke and daemon/session proof.
+    'crates/big-audio-player/src/audio/ui/audio_shell/sources\.rs:.*replace AudioShell::handle_files with \(\)',
+    'crates/big-audio-player/src/audio/ui/audio_shell/sources\.rs:.*replace AudioShell::scan_folder with \(\)',
+    'crates/big-audio-player/src/audio/ui/audio_shell/sources\.rs:.*replace AudioShell::remove_watch_folder with \(\)',
+    'crates/big-audio-player/src/audio/ui/audio_shell/sources\.rs:.*replace AudioShell::scan_all_watch_folders with \(\)',
+    'crates/big-audio-player/src/audio/ui/audio_shell/sources\.rs:.*replace AudioShell::resolve_watch_folders with \(\)',
+    'crates/big-audio-player/src/audio/ui/audio_shell/sources\.rs:.*replace AudioShell::handle_radio with \(\)',
+    'crates/big-audio-player/src/audio/ui/audio_shell/sources\.rs:.*replace AudioShell::notify with \(\)',
+    'crates/big-audio-player/src/audio/ui/audio_shell/sources\.rs:.*replace AudioShell::record_radio_stream with \(\)',
+    'crates/big-audio-player/src/audio/ui/audio_shell/sources\.rs:.*replace AudioShell::stop_radio_recording with \(\)',
+    'crates/big-audio-player/src/audio/ui/audio_shell/sources\.rs:.*delete ! in AudioShell::stop_radio_recording',
+    'crates/big-audio-player/src/audio/ui/audio_shell/sources\.rs:.*replace AudioShell::handle_podcast with \(\)',
+    'crates/big-audio-player/src/audio/ui/audio_shell/sources\.rs:.*replace AudioShell::enter_podcast_mode with \(\)',
+    'crates/big-audio-player/src/audio/ui/audio_shell/sources\.rs:.*delete ! in AudioShell::enter_podcast_mode',
+    'crates/big-audio-player/src/audio/ui/audio_shell/sources\.rs:.*delete - in AudioShell::enter_podcast_mode',
+    'crates/big-audio-player/src/audio/ui/audio_shell/sources\.rs:.*replace \+ with [-*] in AudioShell::enter_podcast_mode',
+    'crates/big-audio-player/src/audio/ui/audio_shell/sources\.rs:.*replace AudioShell::handle_tab_changed with \(\)',
+    'crates/big-audio-player/src/audio/ui/audio_shell/sources\.rs:.*replace == with != in AudioShell::handle_tab_changed',
+    'crates/big-audio-player/src/audio/ui/audio_shell/sources\.rs:.*delete ! in AudioShell::handle_tab_changed',
+    'crates/big-audio-player/src/audio/ui/audio_shell/sources\.rs:.*replace AudioShell::load_radio_stations with \(\)',
+    'crates/big-audio-player/src/audio/ui/audio_shell/sources\.rs:.*replace present_recording_saved_dialog with \(\)',
+    'crates/big-audio-player/src/audio/ui/audio_shell/sources\.rs:.*replace recording_saved_field -> gtk::Box with Default::default\(\)',
+    # TagEditorHandle::apply_musicbrainz_result upgrades live weak GTK rows and
+    # mutates widgets. The all-widget boolean contract and fill-plan behavior
+    # are display-free tested; stale weak refs are covered separately.
+    'crates/big-audio-player/src/audio/ui/library_tag_editor\.rs:.*delete ! in TagEditorHandle::apply_musicbrainz_result',
+    # Fire-and-forget export and daemon cancel are live process/socket
+    # boundaries. Queue/profile construction, protocol frame read/write, error
+    # handling, and job spec serialization are unit-tested without launching
+    # FFmpeg or requiring big-convertd to be running.
+    'crates/big-converter-ui/src/export\.rs:.*replace run_single_export_blocking -> Result<PathBuf, String> with Ok\(Default::default\(\)\)',
+    'cancel_conversion',
+    # Thin binary entrypoint delegates to the tested host-module launcher. Unit
+    # mutation of `main` itself would only prove that tests do not exec the
+    # process entrypoint.
+    'crates/big-video-converter/src/main\.rs:.*replace main -> ExitCode with Default::default\(\)',
+    # VideoShell component/playback methods are live GTK/Relm4/mpv/session
+    # orchestration. Display-free tests cover menu action contracts, open-file
+    # resolution, argv handling, and shared launcher behavior; rendered shell
+    # behavior is reserved for the VM AT-SPI smoke harness.
+    'crates/big-video-player/src/video/ui/video_shell/component\.rs:.*replace <impl Component for VideoShell>::init_root -> Self::Root with Default::default\(\)',
+    'crates/big-video-player/src/video/ui/video_shell/component\.rs:.*<impl Component for VideoShell>::init',
+    'crates/big-video-player/src/video/ui/video_shell/component\.rs:.*replace <impl Component for VideoShell>::update with \(\)',
+    'crates/big-video-player/src/video/ui/video_shell/component\.rs:.*delete ! in <impl Component for VideoShell>::update',
+    'crates/big-video-player/src/video/ui/video_shell/component\.rs:.*replace <impl Drop for VideoShell>::drop with \(\)',
+    'crates/big-video-player/src/video/ui/video_shell/component\.rs:.*replace build_open_menu_model -> gio::Menu with Default::default\(\)',
+    'crates/big-video-player/src/video/ui/video_shell/component\.rs:.*replace build_main_menu_model -> gio::Menu with Default::default\(\)',
+    'crates/big-video-player/src/video/ui/video_shell/playback\.rs:.*replace VideoShell::on_player_event with \(\)',
+    'crates/big-video-player/src/video/ui/video_shell/playback\.rs:.*delete match arm .* in VideoShell::on_player_event',
+    'crates/big-video-player/src/video/ui/video_shell/playback\.rs:.*delete ! in VideoShell::on_player_event',
+    'crates/big-video-player/src/video/ui/video_shell/playback\.rs:.*replace VideoShell::refresh_now_playing with \(\)',
+    'crates/big-video-player/src/video/ui/video_shell/playback\.rs:.*delete ! in VideoShell::refresh_now_playing',
+    'crates/big-video-player/src/video/ui/video_shell/playback\.rs:.*replace VideoShell::open_files with \(\)',
+    'crates/big-video-player/src/video/ui/video_shell/playback\.rs:.*replace VideoShell::apply_open with \(\)',
+    'crates/big-video-player/src/video/ui/video_shell/playback\.rs:.*replace VideoShell::load_playlist with \(\)',
+    'crates/big-video-player/src/video/ui/video_shell/playback\.rs:.*replace VideoShell::hide_welcome_screen with \(\)',
+    'crates/big-video-player/src/video/ui/video_shell/playback\.rs:.*replace VideoShell::on_playlist with \(\)',
+    'crates/big-video-player/src/video/ui/video_shell/playback\.rs:.*replace VideoShell::toast with \(\)',
+    'crates/big-video-player/src/video/ui/video_shell/playback\.rs:.*replace VideoShell::send_to_converter with \(\)',
+    'crates/big-video-player/src/video/ui/video_shell/playback\.rs:.*replace VideoShell::trash_files with \(\)',
+    'crates/big-video-player/src/video/ui/video_shell/playback\.rs:.*replace VideoShell::enqueue_paths with \(\)',
+    'crates/big-video-player/src/video/ui/video_shell/playback\.rs:.*replace VideoShell::remove_playlist_entry with \(\)',
+    'crates/big-video-player/src/video/ui/video_shell/playback\.rs:.*replace VideoShell::on_iptv with \(\)',
+    'crates/big-video-player/src/video/ui/video_shell/playback\.rs:.*replace VideoShell::on_cast with \(\)',
+    'crates/big-video-player/src/video/ui/video_shell/playback\.rs:.*delete ! in VideoShell::on_cast',
+    'crates/big-video-player/src/video/ui/video_shell/playback\.rs:.*replace VideoShell::on_controls with \(\)',
+    'crates/big-video-player/src/video/ui/video_shell/playback\.rs:.*delete ! in VideoShell::on_controls',
+    'crates/big-video-player/src/video/ui/video_shell/playback\.rs:.*replace VideoShell::set_pane_activity with \(\)',
+    # Video control layout methods mutate live GTK boxes/buttons/popovers and
+    # settings-backed visibility. Canonical control names, aliases, export menu
+    # actions, and volume-icon thresholds are tested as pure contracts here.
+    'crates/big-video-player/src/video/ui/video_controls_bar/zones\.rs:.*replace ButtonLayoutWidgets::apply_settings with \(\)',
+    'crates/big-video-player/src/video/ui/video_controls_bar/zones\.rs:.*ButtonLayoutWidgets::apply_zone',
+    'crates/big-video-player/src/video/ui/video_controls_bar/zones\.rs:.*ButtonLayoutWidgets::append_missing_defaults',
+    'crates/big-video-player/src/video/ui/video_controls_bar/zones\.rs:.*ButtonLayoutWidgets::move_control',
+    'crates/big-video-player/src/video/ui/video_controls_bar/zones\.rs:.*ButtonLayoutWidgets::apply_visibility',
+    'crates/big-video-player/src/video/ui/video_controls_bar/zones\.rs:.*ButtonLayoutWidgets::control_widget',
+    'crates/big-video-player/src/video/ui/video_controls_bar/zones\.rs:.*ButtonLayoutWidgets::zone_box',
+    'crates/big-video-player/src/video/ui/video_controls_bar/zones\.rs:.*build_start_box',
+    'crates/big-video-player/src/video/ui/video_controls_bar/zones\.rs:.*replace build_center_box -> \(gtk::Box, gtk::Button, gtk::Button, gtk::Button\) with \(Default::default\(\), Default::default\(\), Default::default\(\), Default::default\(\)\)',
+    'crates/big-video-player/src/video/ui/video_controls_bar/zones\.rs:.*replace osd_button -> gtk::Button with Default::default\(\)',
 ]

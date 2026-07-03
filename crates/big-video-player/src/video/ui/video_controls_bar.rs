@@ -23,7 +23,7 @@ use gtk::glib;
 use relm4::{Component, ComponentParts, ComponentSender};
 
 use crate::i18n::i18n;
-use crate::player::mpv_backend::{MpvBackend, TrackInfo};
+use crate::player::mpv_backend::{MpvBackend, TrackMetadata};
 use crate::player::thumbnail::{ThumbnailGenerator, ThumbnailResult};
 use crate::settings::Settings;
 mod seek_preview;
@@ -66,7 +66,7 @@ pub enum VideoControlsBarInput {
     /// Set the scrub bar value (`0.0..=1.0`); does not emit a seek intent.
     SetSeekFraction(f64),
     /// Populate the subtitle + audio-track menus from the current mpv tracks.
-    SetTracks(Vec<TrackInfo>),
+    SetTracks(Vec<TrackMetadata>),
     /// Set the media duration in seconds (drives the hover-preview time + the
     /// chapter marks, which are placed as `time/duration` fractions).
     SetDurationSecs(f64),

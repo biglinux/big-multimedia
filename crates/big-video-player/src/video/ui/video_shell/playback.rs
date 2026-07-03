@@ -610,9 +610,12 @@ mod tests {
 #[cfg(test)]
 mod resolve_open_files_tests {
     use super::resolve_open_files;
+    #[cfg(not(miri))]
     use std::fs;
+    #[cfg(not(miri))]
     use std::path::Path;
 
+    #[cfg(not(miri))]
     fn touch(dir: &Path, name: &str) -> String {
         let path = dir.join(name);
         fs::write(&path, b"x").unwrap();
@@ -658,6 +661,7 @@ mod resolve_open_files_tests {
         );
     }
 
+    #[cfg(not(miri))]
     #[test]
     fn single_local_file_scans_its_folder_and_locates_the_opened_file() {
         let dir = tempfile::tempdir().unwrap();
@@ -675,6 +679,7 @@ mod resolve_open_files_tests {
         );
     }
 
+    #[cfg(not(miri))]
     #[test]
     fn single_playlist_returns_its_entries_without_context() {
         let dir = tempfile::tempdir().unwrap();
@@ -689,6 +694,7 @@ mod resolve_open_files_tests {
         assert_eq!(context, None);
     }
 
+    #[cfg(not(miri))]
     #[test]
     fn single_empty_playlist_resolves_to_nothing() {
         let dir = tempfile::tempdir().unwrap();

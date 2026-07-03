@@ -355,7 +355,12 @@ fn recording_saved_paths(path: &Path) -> RecordingSavedPaths {
 }
 
 fn recording_file_has_content(path: &Path) -> bool {
-    std::fs::metadata(path).is_ok_and(|metadata| metadata.is_file() && metadata.len() > 0)
+    std::fs::metadata(path)
+        .is_ok_and(|metadata| recording_metadata_has_content(metadata.is_file(), metadata.len()))
+}
+
+fn recording_metadata_has_content(is_file: bool, byte_len: u64) -> bool {
+    is_file && byte_len > 0
 }
 
 fn present_recording_saved_dialog(parent: &impl IsA<gtk::Widget>, path: PathBuf) {
@@ -441,10 +446,12 @@ fn recording_saved_field(label: &str, value: &str) -> gtk::Box {
 
 #[cfg(test)]
 mod tests {
-    use super::{recording_file_has_content, recording_saved_paths, RecordingSavedPaths};
-    use std::fs;
-    use std::io::Write;
+    #[cfg(not(miri))]
+    use super::recording_file_has_content;
+    use super::{recording_metadata_has_content, recording_saved_paths, RecordingSavedPaths};
     use std::path::Path;
+    #[cfg(not(miri))]
+    use std::{fs, io::Write};
 
     #[test]
     fn recording_saved_paths_split_file_and_parent_folder() {
@@ -458,6 +465,14 @@ mod tests {
     }
 
     #[test]
+    fn recording_metadata_has_content_requires_file_with_bytes() {
+        assert!(!recording_metadata_has_content(false, 4));
+        assert!(!recording_metadata_has_content(true, 0));
+        assert!(recording_metadata_has_content(true, 4));
+    }
+
+    #[test]
+    #[cfg(not(miri))]
     fn recording_file_has_content_requires_existing_non_empty_file() {
         let mut path = std::env::temp_dir();
         path.push(format!(

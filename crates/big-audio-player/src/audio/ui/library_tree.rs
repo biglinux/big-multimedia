@@ -91,6 +91,15 @@ type ChildStores = Rc<RefCell<HashMap<String, gio::ListStore>>>;
 /// GObject so the drag-prepare closure stays DB-free (push-model).
 type LeafTracks = Rc<RefCell<HashMap<String, Track>>>;
 
+#[derive(Debug, Clone, PartialEq)]
+struct BrowserNodeContract {
+    kind: BrowserNodeKind,
+    label: String,
+    key: String,
+    secondary: String,
+    track_count: i32,
+}
+
 #[derive(Debug, Clone, PartialEq, Eq)]
 struct LibraryTreeAvatarPresentation {
     text: String,
@@ -212,7 +221,8 @@ fn build_node_recursive(
 /// Build the leaf-level `BrowserNode` for a tree node (no children attached —
 /// expansion is resolved through the child-store map).
 fn to_browser_node(node: &LibraryTreeNode) -> BrowserNode {
-    let gnode = match node.kind {
+    let contract = browser_node_contract_for_tree_node(node);
+    let gnode = match contract.kind {
         BrowserNodeKind::All => BrowserNode::all(&node.label, node.count),
         BrowserNodeKind::Artist => BrowserNode::artist(&node.label, node.count),
         BrowserNodeKind::Album => BrowserNode::album(&node.label, &node.secondary, node.count),
@@ -231,10 +241,41 @@ fn to_browser_node(node: &LibraryTreeNode) -> BrowserNode {
         _ => BrowserNode::file_node(&node.label, &node.key),
     };
     // `key` is authoritative for resolution (year stores the raw string).
-    if !node.key.is_empty() {
-        gnode.set_key(node.key.clone());
+    if !contract.key.is_empty() {
+        gnode.set_key(contract.key);
     }
     gnode
+}
+
+fn browser_node_contract_for_tree_node(node: &LibraryTreeNode) -> BrowserNodeContract {
+    let duration = node.track.as_ref().map_or(0.0, |track| track.duration_secs);
+    let (label, secondary) = match node.kind {
+        BrowserNodeKind::Year => (
+            node.key
+                .parse::<i32>()
+                .ok()
+                .filter(|year| *year > 0)
+                .map_or_else(String::new, |year| year.to_string()),
+            String::new(),
+        ),
+        BrowserNodeKind::VariousArtists => (i18n("Various Artists"), String::new()),
+        BrowserNodeKind::File => (
+            node.label.clone(),
+            if node.secondary.is_empty() {
+                big_media_components::time::playback_time(duration)
+            } else {
+                node.secondary.clone()
+            },
+        ),
+        _ => (node.label.clone(), node.secondary.clone()),
+    };
+    BrowserNodeContract {
+        kind: node.kind,
+        label,
+        key: node.key.clone(),
+        secondary,
+        track_count: node.count,
+    }
 }
 
 /// Build the library tree widget. Returns the `ListView` (the panel mounts it
@@ -939,6 +980,7 @@ mod tests {
         }
     }
 
+    #[cfg(not(miri))]
     fn child_browser_node(store: &gio::ListStore, position: u32) -> Option<BrowserNode> {
         store.item(position).and_downcast::<BrowserNode>()
     }
@@ -962,6 +1004,119 @@ mod tests {
         assert_eq!(cache_key, "1:Radiohead");
     }
 
+    #[test]
+    fn browser_node_contract_for_tree_node_covers_core_kinds_without_gobject() {
+        let mut track = Track::new_external_path("/music/song.flac");
+        track.duration_secs = 61.0;
+        let various_artists_label = i18n("Various Artists");
+        let cases = [
+            (
+                library_tree_node(BrowserNodeKind::All, "All songs", "", 12, ""),
+                BrowserNodeContract {
+                    kind: BrowserNodeKind::All,
+                    label: "All songs".to_string(),
+                    key: String::new(),
+                    secondary: String::new(),
+                    track_count: 12,
+                },
+            ),
+            (
+                library_tree_node(BrowserNodeKind::Album, "Debut", "album-key", 9, "Alice"),
+                BrowserNodeContract {
+                    kind: BrowserNodeKind::Album,
+                    label: "Debut".to_string(),
+                    key: "album-key".to_string(),
+                    secondary: "Alice".to_string(),
+                    track_count: 9,
+                },
+            ),
+            (
+                library_tree_node(BrowserNodeKind::Year, "ignored", "1997", 6, ""),
+                BrowserNodeContract {
+                    kind: BrowserNodeKind::Year,
+                    label: "1997".to_string(),
+                    key: "1997".to_string(),
+                    secondary: String::new(),
+                    track_count: 6,
+                },
+            ),
+            (
+                library_tree_node(
+                    BrowserNodeKind::VariousArtists,
+                    "ignored",
+                    "various-key",
+                    5,
+                    "",
+                ),
+                BrowserNodeContract {
+                    kind: BrowserNodeKind::VariousArtists,
+                    label: various_artists_label,
+                    key: "various-key".to_string(),
+                    secondary: String::new(),
+                    track_count: 5,
+                },
+            ),
+            (
+                LibraryTreeNode {
+                    kind: BrowserNodeKind::File,
+                    label: "Song".to_string(),
+                    key: "/music/song.flac".to_string(),
+                    track: Some(track),
+                    ..Default::default()
+                },
+                BrowserNodeContract {
+                    kind: BrowserNodeKind::File,
+                    label: "Song".to_string(),
+                    key: "/music/song.flac".to_string(),
+                    secondary: big_media_components::time::playback_time(61.0),
+                    track_count: 0,
+                },
+            ),
+        ];
+
+        for (source_node, expected_contract) in cases {
+            assert_eq!(
+                browser_node_contract_for_tree_node(&source_node),
+                expected_contract
+            );
+        }
+    }
+
+    #[test]
+    fn browser_node_contract_preserves_invalid_year_key_and_file_secondary_override() {
+        let invalid_year_node =
+            library_tree_node(BrowserNodeKind::Year, "ignored", "unknown", 2, "");
+        assert_eq!(
+            browser_node_contract_for_tree_node(&invalid_year_node),
+            BrowserNodeContract {
+                kind: BrowserNodeKind::Year,
+                label: String::new(),
+                key: "unknown".to_string(),
+                secondary: String::new(),
+                track_count: 2,
+            }
+        );
+        let zero_year_node = library_tree_node(BrowserNodeKind::Year, "ignored", "0", 1, "");
+        assert_eq!(
+            browser_node_contract_for_tree_node(&zero_year_node).label,
+            String::new()
+        );
+
+        let file_node = LibraryTreeNode {
+            kind: BrowserNodeKind::File,
+            label: "Song".to_string(),
+            key: "/music/song.flac".to_string(),
+            secondary: "Album\t1:01\tArtist\thash".to_string(),
+            track: Some(Track::new_external_path("/music/song.flac")),
+            ..Default::default()
+        };
+        assert_eq!(
+            browser_node_contract_for_tree_node(&file_node).secondary,
+            "Album\t1:01\tArtist\thash"
+        );
+    }
+
+    #[cfg(not(miri))]
     #[test]
     fn browser_node_contract_covers_every_library_tree_kind() {
         let various_artists_label = i18n("Various Artists");
@@ -1048,6 +1203,7 @@ mod tests {
         }
     }
 
+    #[cfg(not(miri))]
     #[test]
     fn year_node_with_invalid_key_preserves_raw_key_and_uses_unknown_label() {
         let source_node = library_tree_node(BrowserNodeKind::Year, "ignored", "unknown", 2, "");
@@ -1059,6 +1215,7 @@ mod tests {
         assert_eq!(browser_node.track_count(), 2);
     }
 
+    #[cfg(not(miri))]
     #[test]
     fn file_node_uses_track_duration_and_secondary_override() {
         let mut track = Track::new_external_path("/music/song.flac");
@@ -1091,6 +1248,7 @@ mod tests {
         );
     }
 
+    #[cfg(not(miri))]
     #[test]
     fn row_presentation_makes_dividers_inert_headings() {
         let divider_node = BrowserNode::divider("B");
@@ -1107,6 +1265,7 @@ mod tests {
         assert_eq!(presentation.avatar, None);
     }
 
+    #[cfg(not(miri))]
     #[test]
     fn row_presentation_keeps_file_leaves_for_leaf_binder() {
         let file_node = BrowserNode::track_node("Song", "/music/song.flac", 65.0);
@@ -1121,6 +1280,7 @@ mod tests {
         assert!(!presentation.show_tracks_button);
     }
 
+    #[cfg(not(miri))]
     #[test]
     fn row_presentation_uses_count_badge_and_icon_for_regular_groups() {
         let artist_node = BrowserNode::artist("Alice", 7);
@@ -1139,6 +1299,7 @@ mod tests {
         assert!(empty_genre_presentation.show_icon);
     }
 
+    #[cfg(not(miri))]
     #[test]
     fn row_presentation_uses_avatar_for_album_and_various_artists() {
         let album_node = BrowserNode::album("Debut", "Alice", 3);
@@ -1166,6 +1327,7 @@ mod tests {
         assert!(!various_artists_presentation.show_icon);
     }
 
+    #[cfg(not(miri))]
     #[test]
     fn file_leaf_presentation_handles_badge_fallback_and_detailed_metadata() {
         let fallback_node = BrowserNode::file_node("Loose", "/music/loose.flac");
@@ -1235,6 +1397,7 @@ mod tests {
         );
     }
 
+    #[cfg(not(miri))]
     #[test]
     fn selected_leaf_drag_paths_exports_only_registered_file_leaves() {
         let registered_leaf_node = BrowserNode::file_node("Ready", "/music/ready.flac");
@@ -1253,6 +1416,7 @@ mod tests {
         );
     }
 
+    #[cfg(not(miri))]
     #[test]
     fn library_tree_selection_ignores_dividers_and_preserves_node_identity() {
         let divider_node = BrowserNode::divider("C");
@@ -1294,6 +1458,7 @@ mod tests {
         assert_eq!(depth, 3);
     }
 
+    #[cfg(not(miri))]
     #[test]
     fn context_target_distinguishes_inert_files_and_groups() {
         let divider_node = BrowserNode::divider("D");
@@ -1333,6 +1498,7 @@ mod tests {
         );
     }
 
+    #[cfg(not(miri))]
     #[test]
     fn build_node_recursive_adds_letter_dividers_only_above_threshold(
     ) -> std::result::Result<(), Box<dyn std::error::Error>> {
@@ -1429,6 +1595,7 @@ mod tests {
         Ok(())
     }
 
+    #[cfg(not(miri))]
     #[test]
     fn build_node_recursive_registers_leaf_tracks_by_file_path() {
         let track = Track::new_external_path("/music/leaf.flac");
@@ -1453,6 +1620,7 @@ mod tests {
         );
     }
 
+    #[cfg(not(miri))]
     #[test]
     fn tree_handle_set_tree_splices_roots_and_replaces_child_state(
     ) -> std::result::Result<(), Box<dyn std::error::Error>> {

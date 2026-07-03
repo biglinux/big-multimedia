@@ -76,12 +76,21 @@ impl TagEditorHandle {
         &self,
         metadata: Option<crate::library::musicbrainz::MbMetadata>,
     ) -> bool {
-        let (Some(button), Some(genre_row), Some(year_row), Some(track_row)) = (
-            self.lookup_button.upgrade(),
-            self.genre_row.upgrade(),
-            self.year_row.upgrade(),
-            self.track_row.upgrade(),
-        ) else {
+        let lookup_button = self.lookup_button.upgrade();
+        let genre_row = self.genre_row.upgrade();
+        let year_row = self.year_row.upgrade();
+        let track_row = self.track_row.upgrade();
+        if !should_apply_musicbrainz_result(
+            lookup_button.is_some(),
+            genre_row.is_some(),
+            year_row.is_some(),
+            track_row.is_some(),
+        ) {
+            return false;
+        }
+        let (Some(button), Some(genre_row), Some(year_row), Some(track_row)) =
+            (lookup_button, genre_row, year_row, track_row)
+        else {
             return false;
         };
         apply_musicbrainz_result(&button, &genre_row, &year_row, &track_row, metadata);
@@ -167,6 +176,21 @@ struct TagEditFieldTextRefs<'a> {
     year: &'a str,
     track_number: &'a str,
     disc_number: &'a str,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+struct ReadOnlyMetadataRow {
+    label: &'static str,
+    value: String,
+    is_file_path: bool,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+struct MusicBrainzFillPlan {
+    genre: Option<String>,
+    year: Option<String>,
+    track_number: Option<String>,
+    lookup_button_label: String,
 }
 
 impl EditRows {
@@ -267,6 +291,118 @@ fn should_offer_musicbrainz_lookup(
     has_artist && (!has_genre || !has_year || !has_track_number)
 }
 
+fn is_editable_text_changed(current_text: &str, original_text: &str) -> bool {
+    current_text != original_text
+}
+
+fn read_only_metadata_rows(track: &Track) -> Vec<ReadOnlyMetadataRow> {
+    vec![
+        ReadOnlyMetadataRow {
+            label: "Duration",
+            value: track.duration_display(),
+            is_file_path: false,
+        },
+        ReadOnlyMetadataRow {
+            label: "Bitrate",
+            value: track.bitrate.map_or_else(
+                || "-".into(),
+                |bitrate| {
+                    big_media_components::audio::labels::bitrate_kbps_label_from_bps(bitrate.into())
+                },
+            ),
+            is_file_path: false,
+        },
+        ReadOnlyMetadataRow {
+            label: "Sample Rate",
+            value: track
+                .sample_rate
+                .map_or_else(|| "-".into(), |rate| format!("{rate} Hz")),
+            is_file_path: false,
+        },
+        ReadOnlyMetadataRow {
+            label: "Channels",
+            value: track
+                .channels
+                .map_or_else(|| "-".into(), |channels| channels.to_string()),
+            is_file_path: false,
+        },
+        ReadOnlyMetadataRow {
+            label: "Format",
+            value: track.format.as_deref().unwrap_or("-").to_string(),
+            is_file_path: false,
+        },
+        ReadOnlyMetadataRow {
+            label: "File Size",
+            value: track.file_size.map_or_else(
+                || "-".into(),
+                |size| big_media_components::bytes::decimal_compact(size.max(0) as u64),
+            ),
+            is_file_path: false,
+        },
+        ReadOnlyMetadataRow {
+            label: "File",
+            value: track.file_path.clone(),
+            is_file_path: true,
+        },
+    ]
+}
+
+fn musicbrainz_fill_plan(
+    current_genre: &str,
+    current_year: &str,
+    current_track_number: &str,
+    meta: Option<&crate::library::musicbrainz::MbMetadata>,
+) -> MusicBrainzFillPlan {
+    let Some(meta) = meta else {
+        return MusicBrainzFillPlan {
+            genre: None,
+            year: None,
+            track_number: None,
+            lookup_button_label: i18n("Not found"),
+        };
+    };
+
+    let genre = current_genre
+        .is_empty()
+        .then(|| meta.genre.clone())
+        .flatten();
+    let year = current_year
+        .is_empty()
+        .then(|| meta.year.map(|year| year.to_string()))
+        .flatten();
+    let track_number = current_track_number
+        .is_empty()
+        .then(|| {
+            meta.track_number
+                .map(|track_number| track_number.to_string())
+        })
+        .flatten();
+
+    let mut filled_field_names: Vec<&str> = Vec::new();
+    if genre.is_some() {
+        filled_field_names.push("Genre");
+    }
+    if year.is_some() {
+        filled_field_names.push("Year");
+    }
+    if track_number.is_some() {
+        filled_field_names.push("Track #");
+    }
+
+    let lookup_button_label = if filled_field_names.is_empty() {
+        i18n("No new data found")
+    } else {
+        format!("✓ {}", filled_field_names.join(", "))
+    };
+
+    MusicBrainzFillPlan {
+        genre,
+        year,
+        track_number,
+        lookup_button_label,
+    }
+}
+
 /// Sidebar page: album art (off-thread) + read-only file info.
 fn build_sidebar_page(track: &Track) -> adw::NavigationPage {
     let sidebar_box = gtk::Box::builder()
@@ -325,43 +461,9 @@ fn build_art_box(file_path: &str) -> gtk::Box {
 
 /// Read-only file metadata rows (label/value pairs) appended to the sidebar.
 fn append_read_only_metadata_rows(sidebar_box: &gtk::Box, track: &Track) {
-    let read_only_fields: [(&str, String); 6] = [
-        ("Duration", track.duration_display()),
-        (
-            "Bitrate",
-            track.bitrate.map_or_else(
-                || "-".into(),
-                |bitrate| {
-                    big_media_components::audio::labels::bitrate_kbps_label_from_bps(bitrate.into())
-                },
-            ),
-        ),
-        (
-            "Sample Rate",
-            track
-                .sample_rate
-                .map_or_else(|| "-".into(), |rate| format!("{rate} Hz")),
-        ),
-        (
-            "Channels",
-            track
-                .channels
-                .map_or_else(|| "-".into(), |channels| channels.to_string()),
-        ),
-        ("Format", track.format.as_deref().unwrap_or("-").to_string()),
-        (
-            "File Size",
-            track.file_size.map_or_else(
-                || "-".into(),
-                |size| big_media_components::bytes::decimal_compact(size.max(0) as u64),
-            ),
-        ),
-    ];
-
-    for (label, value) in &read_only_fields {
-        append_metadata_value_row(sidebar_box, &i18n(label), value, false);
+    for row in read_only_metadata_rows(track) {
+        append_metadata_value_row(sidebar_box, &i18n(row.label), &row.value, row.is_file_path);
     }
-    append_metadata_value_row(sidebar_box, &i18n("File"), &track.file_path, true);
 }
 
 /// One read-only "caption header + value" pair; `path` makes the value
@@ -453,7 +555,7 @@ fn connect_dirty_detection(save_button: &gtk::Button, rows: &EditRows, track: &T
         std::rc::Rc::new(move || {
             let dirty = pairs
                 .iter()
-                .any(|(row, orig)| row.text().as_str() != orig.as_str());
+                .any(|(row, orig)| is_editable_text_changed(row.text().as_str(), orig.as_str()));
             save_button.set_sensitive(dirty);
         })
     };
@@ -546,44 +648,64 @@ fn apply_musicbrainz_result(
     track_row: &adw::EntryRow,
     meta: Option<crate::library::musicbrainz::MbMetadata>,
 ) {
-    let Some(meta) = meta else {
-        lookup_button.set_label(&i18n("Not found"));
-        return;
-    };
-    let mut filled: Vec<&str> = Vec::new();
-    if genre_row.text().is_empty() {
-        if let Some(ref genre) = meta.genre {
-            genre_row.set_text(genre);
-            filled.push("Genre");
-        }
+    let genre_text = genre_row.text();
+    let year_text = year_row.text();
+    let track_number_text = track_row.text();
+    let plan = musicbrainz_fill_plan(
+        genre_text.as_str(),
+        year_text.as_str(),
+        track_number_text.as_str(),
+        meta.as_ref(),
+    );
+
+    if let Some(genre) = plan.genre {
+        genre_row.set_text(&genre);
     }
-    if year_row.text().is_empty() {
-        if let Some(year) = meta.year {
-            year_row.set_text(&year.to_string());
-            filled.push("Year");
-        }
+    if let Some(year) = plan.year {
+        year_row.set_text(&year);
     }
-    if track_row.text().is_empty() {
-        if let Some(track_number) = meta.track_number {
-            track_row.set_text(&track_number.to_string());
-            filled.push("Track #");
-        }
+    if let Some(track_number) = plan.track_number {
+        track_row.set_text(&track_number);
     }
-    if filled.is_empty() {
-        lookup_button.set_label(&i18n("No new data found"));
-    } else {
-        lookup_button.set_label(&format!("✓ {}", filled.join(", ")));
-    }
+    lookup_button.set_label(&plan.lookup_button_label);
+}
+
+fn should_apply_musicbrainz_result(
+    has_lookup_button: bool,
+    has_genre_row: bool,
+    has_year_row: bool,
+    has_track_row: bool,
+) -> bool {
+    has_lookup_button && has_genre_row && has_year_row && has_track_row
 }
 
 #[cfg(test)]
 mod tests {
+    #[cfg(not(miri))]
     use gtk::glib;
 
+    use crate::db::models::Track;
+    use crate::library::musicbrainz::MbMetadata;
+
+    #[cfg(not(miri))]
+    use super::TagEditorHandle;
     use super::{
-        collect_tag_edit_fields, optional_entry_text, should_offer_musicbrainz_lookup,
-        TagEditFieldTextRefs, TagEditFields, TagEditorHandle,
+        collect_tag_edit_fields, is_editable_text_changed, musicbrainz_fill_plan,
+        optional_entry_text, read_only_metadata_rows, should_apply_musicbrainz_result,
+        should_offer_musicbrainz_lookup, MusicBrainzFillPlan, TagEditFieldTextRefs, TagEditFields,
     };
+
+    fn track_with_read_only_metadata() -> Track {
+        let mut track =
+            Track::new_external_path_with_title("/music/song.flac", Some("Song".to_string()));
+        track.duration_secs = 125.0;
+        track.bitrate = Some(192_000);
+        track.sample_rate = Some(48_000);
+        track.channels = Some(2);
+        track.format = Some("FLAC".to_string());
+        track.file_size = Some(1_536);
+        track
+    }
 
     #[test]
     fn optional_entry_text_discards_blank_values() {
@@ -651,6 +773,91 @@ mod tests {
         assert!(!should_offer_musicbrainz_lookup(true, true, true, true));
     }
 
+    #[test]
+    fn dirty_detection_compares_exact_text_values() {
+        assert!(is_editable_text_changed("Album", "album"));
+        assert!(!is_editable_text_changed("Album", "Album"));
+    }
+
+    #[test]
+    fn read_only_metadata_rows_preserve_labels_values_and_file_path_flag() {
+        let rows = read_only_metadata_rows(&track_with_read_only_metadata());
+
+        assert_eq!(
+            rows.iter()
+                .map(|row| (row.label, row.value.as_str(), row.is_file_path))
+                .collect::<Vec<_>>(),
+            vec![
+                ("Duration", "2:05", false),
+                ("Bitrate", "192 kbps", false),
+                ("Sample Rate", "48000 Hz", false),
+                ("Channels", "2", false),
+                ("Format", "FLAC", false),
+                ("File Size", "2 KB", false),
+                ("File", "/music/song.flac", true),
+            ]
+        );
+    }
+
+    #[test]
+    fn musicbrainz_fill_plan_fills_only_empty_fields() {
+        let metadata = MbMetadata {
+            genre: Some("Rock".to_string()),
+            year: Some(2026),
+            track_number: Some(7),
+            ..MbMetadata::default()
+        };
+
+        assert_eq!(
+            musicbrainz_fill_plan("", "1999", "", Some(&metadata)),
+            MusicBrainzFillPlan {
+                genre: Some("Rock".to_string()),
+                year: None,
+                track_number: Some("7".to_string()),
+                lookup_button_label: "✓ Genre, Track #".to_string(),
+            }
+        );
+    }
+
+    #[test]
+    fn musicbrainz_fill_plan_reports_not_found_or_no_new_fields() {
+        let metadata = MbMetadata {
+            genre: Some("Rock".to_string()),
+            year: Some(2026),
+            track_number: Some(7),
+            ..MbMetadata::default()
+        };
+
+        assert_eq!(
+            musicbrainz_fill_plan("", "", "", None),
+            MusicBrainzFillPlan {
+                genre: None,
+                year: None,
+                track_number: None,
+                lookup_button_label: "Not found".to_string(),
+            }
+        );
+        assert_eq!(
+            musicbrainz_fill_plan("Pop", "1999", "2", Some(&metadata)),
+            MusicBrainzFillPlan {
+                genre: None,
+                year: None,
+                track_number: None,
+                lookup_button_label: "No new data found".to_string(),
+            }
+        );
+    }
+
+    #[test]
+    fn musicbrainz_result_requires_all_live_editor_widgets() {
+        assert!(should_apply_musicbrainz_result(true, true, true, true));
+        assert!(!should_apply_musicbrainz_result(false, true, true, true));
+        assert!(!should_apply_musicbrainz_result(true, false, true, true));
+        assert!(!should_apply_musicbrainz_result(true, true, false, true));
+        assert!(!should_apply_musicbrainz_result(true, true, true, false));
+    }
+
+    #[cfg(not(miri))]
     #[test]
     fn stale_tag_editor_handle_preserves_track_id_and_rejects_result() {
         let handle = TagEditorHandle {

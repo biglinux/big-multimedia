@@ -17,16 +17,16 @@ use big_media_components::converter::queue::BigConversionQueueStatus;
 use big_media_components::converter::queue_component::BigConverterQueueInput;
 use big_media_components::ffmpeg::progress::FfmpegProgressSnapshot;
 use big_media_runtime::convertd::{
-    ConversionItemDetails, ConversionItemState, ConversionJobDetails,
+    ConversionEntryDetails, ConversionEntryState, ConversionJobDetails,
 };
 use big_os_kit::microdaemon::{DurableJobSnapshot, DurableJobState, JobProgress};
 
-use crate::cast::gpu::{GpuDevice, GpuType};
 use crate::converter::daemon::{DaemonConversionRequest, DaemonJobAccepted, DaemonSubmitError};
-use crate::converter::queue::{ItemStatus, QueueMessage, SegmentOutputMode};
+use crate::converter::queue::{ConversionStatus, QueueMessage, SegmentOutputMode};
 use crate::converter::settings::{self as conv_settings, keys};
 use crate::converter::ui::sidebar::ConverterSidebarInput;
 use crate::i18n::i18n;
+use big_media_runtime::cast::gpu::{GpuDevice, GpuType};
 use big_media_runtime::editor::audio_edit_page::AudioEditorInput;
 use big_media_runtime::editor::edit_page::{VideoEditResult, VideoEditorInput};
 
@@ -202,7 +202,7 @@ impl ConverterShell {
             self.queue.set_gpu(gpu.clone());
         }
 
-        if self.queue.count(&ItemStatus::Pending) == 0 {
+        if self.queue.count(&ConversionStatus::Pending) == 0 {
             log::warn!("Convert requested with no pending items in the queue");
             return;
         }
@@ -211,7 +211,7 @@ impl ConverterShell {
             .queue
             .items()
             .iter()
-            .filter(|queue_entry| queue_entry.status == ItemStatus::Pending)
+            .filter(|queue_entry| queue_entry.status == ConversionStatus::Pending)
             .map(|queue_entry| (queue_entry.id, queue_entry.input.clone()))
             .collect();
         info!("Starting conversion of {} files", queue_entry_paths.len());
@@ -231,7 +231,7 @@ impl ConverterShell {
                 .queue
                 .items()
                 .iter()
-                .filter(|queue_item| queue_item.status == ItemStatus::Pending)
+                .filter(|queue_item| queue_item.status == ConversionStatus::Pending)
                 .cloned()
                 .collect(),
             output_dir: self.queue.output_dir().to_path_buf(),
@@ -322,12 +322,15 @@ impl ConverterShell {
         }
         for msg in messages {
             match msg {
-                QueueMessage::Started { item_id, command } => {
+                QueueMessage::Started {
+                    entry_id: item_id,
+                    command,
+                } => {
                     self.progress
                         .emit(BigConverterProgressInput::SetCommand(item_id, command));
                 }
                 QueueMessage::Progress {
-                    item_id,
+                    entry_id: item_id,
                     progress_snapshot,
                 } => {
                     self.progress
@@ -368,18 +371,21 @@ impl ConverterShell {
                         self.progress_total
                     )));
                 }
-                QueueMessage::Done { item_id } => {
+                QueueMessage::Done { entry_id: item_id } => {
                     self.progress
                         .emit(BigConverterProgressInput::MarkDone(item_id));
                     self.queue_view
                         .emit(BigConverterQueueInput::RemoveEntry(item_id));
-                    self.queue.remove_item(item_id);
+                    self.queue.remove_entry(item_id);
                     self.progress_done += 1;
                     self.header.emit(BigConverterHeaderInput::SetQueueCount(
                         self.queue.items().len(),
                     ));
                 }
-                QueueMessage::Failed { item_id, error } => {
+                QueueMessage::Failed {
+                    entry_id: item_id,
+                    error,
+                } => {
                     self.progress.emit(BigConverterProgressInput::MarkFailed(
                         item_id,
                         error.clone(),
@@ -390,7 +396,7 @@ impl ConverterShell {
                     ));
                     self.progress_done += 1;
                 }
-                QueueMessage::Cancelled { item_id } => {
+                QueueMessage::Cancelled { entry_id: item_id } => {
                     self.progress
                         .emit(BigConverterProgressInput::MarkCancelled(item_id));
                     self.queue_view.emit(BigConverterQueueInput::UpdateStatus(
@@ -418,19 +424,30 @@ impl ConverterShell {
                         }
                     }
                 }
-                QueueMessage::GpuFallback { item_id, stage } => {
+                QueueMessage::GpuFallback {
+                    entry_id: item_id,
+                    stage,
+                } => {
                     info!("GPU fallback for item {item_id}: {stage}");
                 }
-                QueueMessage::StderrLog { item_id, lines } => {
+                QueueMessage::StderrLog {
+                    entry_id: item_id,
+                    lines,
+                } => {
                     self.progress
                         .emit(BigConverterProgressInput::SetStderrLog(item_id, lines));
                 }
-                QueueMessage::Probed { item_id, .. } => {
+                QueueMessage::Probed {
+                    entry_id: item_id, ..
+                } => {
                     // Model fields were updated by queue.process_messages;
                     // the row does not render duration, so no view update.
                     log::debug!("probe finished for item {item_id}");
                 }
-                QueueMessage::StderrLine { item_id, line } => {
+                QueueMessage::StderrLine {
+                    entry_id: item_id,
+                    line,
+                } => {
                     self.progress
                         .emit(BigConverterProgressInput::AppendStderrLine(item_id, line));
                 }
@@ -528,7 +545,7 @@ impl ConverterShell {
         let mut current_file_name = None;
         for daemon_queue_entry in details.items {
             let Some(local_queue_entry_id) =
-                queue_entry_ids.get(daemon_queue_entry.item_index).copied()
+                queue_entry_ids.get(daemon_queue_entry.entry_index).copied()
             else {
                 continue;
             };
@@ -570,7 +587,7 @@ impl ConverterShell {
     fn apply_daemon_queue_entry_detail(
         &mut self,
         local_queue_entry_id: u64,
-        daemon_queue_entry: ConversionItemDetails,
+        daemon_queue_entry: ConversionEntryDetails,
     ) -> DaemonQueueEntryApplyResult {
         if let Some(command) = daemon_queue_entry.command {
             self.progress.emit(BigConverterProgressInput::SetCommand(
@@ -585,8 +602,8 @@ impl ConverterShell {
             ));
         }
         match daemon_queue_entry.state {
-            ConversionItemState::Pending => DaemonQueueEntryApplyResult::default(),
-            ConversionItemState::Running => {
+            ConversionEntryState::Pending => DaemonQueueEntryApplyResult::default(),
+            ConversionEntryState::Running => {
                 if let Some(progress) = daemon_queue_entry.progress {
                     self.progress
                         .emit(BigConverterProgressInput::UpdateProgress(
@@ -607,12 +624,12 @@ impl ConverterShell {
                         .map(|name| name.to_string_lossy().into_owned()),
                 }
             }
-            ConversionItemState::Completed => {
+            ConversionEntryState::Completed => {
                 self.progress
                     .emit(BigConverterProgressInput::MarkDone(local_queue_entry_id));
                 DaemonQueueEntryApplyResult::terminal()
             }
-            ConversionItemState::Cancelled => {
+            ConversionEntryState::Cancelled => {
                 self.progress.emit(BigConverterProgressInput::MarkCancelled(
                     local_queue_entry_id,
                 ));
@@ -622,7 +639,7 @@ impl ConverterShell {
                 ));
                 DaemonQueueEntryApplyResult::terminal()
             }
-            ConversionItemState::Interrupted | ConversionItemState::Failed => {
+            ConversionEntryState::Interrupted | ConversionEntryState::Failed => {
                 self.progress.emit(BigConverterProgressInput::MarkFailed(
                     local_queue_entry_id,
                     daemon_failure_status_text(daemon_queue_entry.status_text),
@@ -648,7 +665,7 @@ impl ConverterShell {
                         .emit(BigConverterProgressInput::MarkDone(queue_entry_id));
                     self.queue_view
                         .emit(BigConverterQueueInput::RemoveEntry(queue_entry_id));
-                    self.queue.remove_item(queue_entry_id);
+                    self.queue.remove_entry(queue_entry_id);
                 }
                 DurableJobState::Cancelled => {
                     self.progress
@@ -709,7 +726,7 @@ impl ConverterShell {
     }
 
     pub(super) fn remove_queue_entry(&mut self, item_id: u64) {
-        self.queue.remove_item(item_id);
+        self.queue.remove_entry(item_id);
         if self.current_audio_preview_item == Some(item_id) {
             self.current_audio_preview_item = None;
             self.queue_view
@@ -805,7 +822,7 @@ impl ConverterShell {
             return;
         };
         let non_empty = !ranges.is_empty();
-        if let Some(qi) = self.queue.item_mut(item_id) {
+        if let Some(qi) = self.queue.entry_mut(item_id) {
             qi.segments = ranges;
         }
         // Auto-enable cut mode when the user first marks a segment, else the
@@ -821,7 +838,7 @@ impl ConverterShell {
         sender: &ComponentSender<ConverterShell>,
     ) {
         if let Some(item_id) = self.current_audio_preview_item {
-            if let Some(qi) = self.queue.item_mut(item_id) {
+            if let Some(qi) = self.queue.entry_mut(item_id) {
                 qi.segments = ranges;
             }
         }
@@ -852,7 +869,7 @@ impl ConverterShell {
                 },
             );
             self.settings.flush();
-            if let Some(qi) = self.queue.item_mut(item_id) {
+            if let Some(qi) = self.queue.entry_mut(item_id) {
                 qi.segments = result.ranges;
                 qi.video_overrides = Some(result.overrides);
                 qi.crop = result.crop;

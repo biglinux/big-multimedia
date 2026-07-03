@@ -26,6 +26,7 @@ fn launch_host_binary(host_binary: OsString, args: impl IntoIterator<Item = OsSt
 
 #[cfg(test)]
 mod tests {
+    #[cfg(not(miri))]
     use super::*;
     #[cfg(not(miri))]
     use std::sync::Mutex;

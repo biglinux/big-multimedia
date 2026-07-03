@@ -22,7 +22,7 @@ use gtk::glib;
 use relm4::Sender;
 
 use crate::audio::ui::audio_shell::AudioShellInput;
-use crate::cast::chromecast::CastManager;
+use crate::cast::chromecast::CastSessionController;
 use crate::i18n::i18n;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -90,7 +90,7 @@ fn should_restart_cast_discovery(is_discovering: bool) -> bool {
 /// or stop (→ `CastStop`). The shell does the actual cast/stop + toasts.
 pub(crate) fn present_cast(
     parent: &impl IsA<gtk::Widget>,
-    cast_device_registry: Arc<CastManager>,
+    cast_device_registry: Arc<CastSessionController>,
     input: Sender<AudioShellInput>,
 ) {
     let dialog_spec = cast_dialog_spec();

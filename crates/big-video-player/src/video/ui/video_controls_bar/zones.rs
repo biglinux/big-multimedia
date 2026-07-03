@@ -10,7 +10,7 @@ use big_relm4_components::layout::hamburger_menu::{
     BigMenuActionItem,
 };
 
-#[cfg(test)]
+#[cfg(all(test, not(miri)))]
 use big_relm4_components::layout::hamburger_menu::{build_flat_menu_model, menu_action_names};
 
 #[derive(Clone)]
@@ -394,6 +394,7 @@ pub(super) fn build_end_box() -> EndBoxWidgets {
             .css_classes(["osd-btn"])
             .items(export_menu_items()),
     );
+    let export_menu_root = export_menu.root().clone();
     let export_menu_button = export_menu.button().clone();
     let export_menu_popover = export_menu.popover().clone();
     export_menu_popover.set_position(gtk::PositionType::Top);
@@ -418,7 +419,7 @@ pub(super) fn build_end_box() -> EndBoxWidgets {
 
     let fullscreen_button = osd_button("view-fullscreen-symbolic", &i18n("Fullscreen"));
 
-    end_box.append(&export_menu_button);
+    end_box.append(&export_menu_root);
     end_box.append(&subtitle_menu_button);
     end_box.append(&audio_track_menu_button);
     end_box.append(&fullscreen_button);
@@ -450,6 +451,14 @@ fn export_menu_items() -> Vec<BigMenuActionItem> {
 }
 
 #[cfg(test)]
+fn export_menu_action_names() -> Vec<String> {
+    export_menu_items()
+        .into_iter()
+        .map(|menu_item| menu_item.action)
+        .collect()
+}
+
+#[cfg(all(test, not(miri)))]
 fn build_export_menu_model() -> gio::Menu {
     build_flat_menu_model(&export_menu_items())
 }
@@ -483,21 +492,58 @@ mod tests {
     use super::*;
 
     #[test]
-    fn edit_export_menu_is_flat() {
-        let menu = build_export_menu_model();
-
+    fn edit_export_menu_actions_are_flat_window_actions() {
         assert_eq!(
-            menu_action_names(&menu),
+            export_menu_action_names(),
             [
-                "win.trim",
-                "win.extract-audio-mp3",
-                "win.extract-audio-m4a",
-                "win.extract-audio-flac",
-                "win.convert-mp4",
-                "win.convert-mkv",
-                "win.convert-webm",
+                "win.trim".to_string(),
+                "win.extract-audio-mp3".to_string(),
+                "win.extract-audio-m4a".to_string(),
+                "win.extract-audio-flac".to_string(),
+                "win.convert-mp4".to_string(),
+                "win.convert-mkv".to_string(),
+                "win.convert-webm".to_string(),
             ]
         );
+    }
+
+    #[test]
+    fn control_names_accept_canonical_and_legacy_aliases() {
+        assert_eq!(control_name("volume"), "volume");
+        assert_eq!(control_name("speed"), "speed");
+        assert_eq!(control_name("voice"), "voice");
+        assert_eq!(control_name("prev"), "prev");
+        assert_eq!(control_name("previous"), "prev");
+        assert_eq!(control_name("play"), "play");
+        assert_eq!(control_name("next"), "next");
+        assert_eq!(control_name("edit-export"), "edit-export");
+        assert_eq!(control_name("export"), "edit-export");
+        assert_eq!(control_name("subtitle"), "subtitle");
+        assert_eq!(control_name("subtitles"), "subtitle");
+        assert_eq!(control_name("audio-track"), "audio-track");
+        assert_eq!(control_name("audio"), "audio-track");
+        assert_eq!(control_name("fullscreen"), "fullscreen");
+        assert_eq!(control_name("unknown"), "");
+    }
+
+    #[test]
+    fn volume_icon_uses_muted_low_medium_high_thresholds() {
+        assert_eq!(volume_icon(-1.0), "audio-volume-muted-symbolic");
+        assert_eq!(volume_icon(0.0), "audio-volume-muted-symbolic");
+        assert_eq!(volume_icon(0.1), "audio-volume-low-symbolic");
+        assert_eq!(volume_icon(33.9), "audio-volume-low-symbolic");
+        assert_eq!(volume_icon(34.0), "audio-volume-medium-symbolic");
+        assert_eq!(volume_icon(66.9), "audio-volume-medium-symbolic");
+        assert_eq!(volume_icon(67.0), "audio-volume-high-symbolic");
+        assert_eq!(volume_icon(100.0), "audio-volume-high-symbolic");
+    }
+
+    #[cfg(not(miri))]
+    #[test]
+    fn edit_export_menu_is_flat_gio_menu() {
+        let menu = build_export_menu_model();
+
+        assert_eq!(menu_action_names(&menu), export_menu_action_names());
         for index in 0..menu.n_items() {
             assert!(menu.item_link(index, "section").is_none());
             assert!(menu.item_link(index, "submenu").is_none());

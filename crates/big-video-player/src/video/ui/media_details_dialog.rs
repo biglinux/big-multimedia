@@ -25,7 +25,7 @@ use big_relm4_components::list::copyable_detail_row::{
 };
 
 use crate::i18n::i18n;
-use crate::player::mpv_backend::{MpvBackend, TrackInfo};
+use crate::player::mpv_backend::{MpvBackend, TrackMetadata};
 
 /// Build one copyable detail row and register it for "Copy All".
 fn media_detail_row(title: &str, value: &str, lines: &BigDetailLines) -> adw::ActionRow {
@@ -222,7 +222,7 @@ fn build_audio_group(
             lines,
         ));
     }
-    let audio_properties = mpv.get_audio_info();
+    let audio_properties = mpv.get_audio_metadata();
     if audio_properties.sample_rate > 0 {
         group.add(&media_detail_row(
             &i18n("Sample Rate"),
@@ -266,7 +266,10 @@ fn build_streaming_group(
 
 /// One group per track type, shown only when it carries a meaningful choice
 /// (>1 video/audio track, or any subtitle track).
-fn build_track_groups(tracks: &[TrackInfo], lines: &BigDetailLines) -> Vec<adw::PreferencesGroup> {
+fn build_track_groups(
+    tracks: &[TrackMetadata],
+    lines: &BigDetailLines,
+) -> Vec<adw::PreferencesGroup> {
     let mut groups = Vec::new();
     let video: Vec<_> = tracks.iter().filter(|t| t.track_type == "video").collect();
     let audio: Vec<_> = tracks.iter().filter(|t| t.track_type == "audio").collect();
@@ -321,7 +324,7 @@ fn build_track_groups(tracks: &[TrackInfo], lines: &BigDetailLines) -> Vec<adw::
 }
 
 /// Display label for a track: its title, else its language, else `kind #id`.
-fn track_label(track: &TrackInfo, kind: &str) -> String {
+fn track_label(track: &TrackMetadata, kind: &str) -> String {
     if !track.title.is_empty() {
         track.title.clone()
     } else if !track.lang.is_empty() {

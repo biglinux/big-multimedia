@@ -8,7 +8,7 @@ impl VideoControlsBar {
     /// Build the subtitle + audio-track popover menus from the mpv track list.
     /// Each entry installs an action that selects the track via the live mpv
     /// backend (read from the shared slot at click time).
-    pub(super) fn populate_track_menus(&self, tracks: &[TrackInfo]) {
+    pub(super) fn populate_track_menus(&self, tracks: &[TrackMetadata]) {
         let sub_actions = gio::SimpleActionGroup::new();
         let mut subtitle_items = vec![BigMenuActionItem::new(
             i18n("Disable Subtitles"),
@@ -73,7 +73,7 @@ fn install_track_action(
 }
 
 /// Human-readable track label (id + title + lang + codec).
-fn track_label(track: &TrackInfo) -> String {
+fn track_label(track: &TrackMetadata) -> String {
     big_media_components::track_labels::mpv_track_label(
         track.id,
         &track.title,

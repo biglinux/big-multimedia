@@ -3,9 +3,10 @@
 //! shell's keybinding wiring, so only the viewer/rebind dialog is needed here.
 
 use adw::prelude::*;
-use big_app_kit::keybindings::{connect_shortcut_dialog_rebinds, ShortcutDef};
+use big_app_kit::keybindings::ShortcutDef;
 use big_relm4_components::input::shortcut_dialog::{
-    BigShortcutCategory, BigShortcutDialog, BigShortcutDialogSpec, BigShortcutEntry,
+    connect_shortcut_dialog_rebinds, BigShortcutCategory, BigShortcutDialog, BigShortcutDialogSpec,
+    BigShortcutEntry,
 };
 
 use crate::i18n::i18n;
