@@ -1,4 +1,5 @@
 use super::*;
+use big_media_components::surface::toggle_surface_fullscreened;
 
 impl VideoShell {
     /// Reflect an mpv event in the transport display + now-playing title.
@@ -372,7 +373,7 @@ impl VideoShell {
     ) {
         if let VideoControlsBarOutput::ToggleFullscreen = out {
             if let Some(root) = root {
-                root.set_fullscreened(!root.is_fullscreen());
+                let _ = toggle_surface_fullscreened(root);
             }
             return;
         }

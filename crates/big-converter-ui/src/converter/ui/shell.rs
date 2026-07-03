@@ -32,6 +32,7 @@ use big_media_components::converter::queue::BigConversionQueueMode;
 use big_media_components::converter::queue_component::{
     BigConverterQueue, BigConverterQueueInput, BigConverterQueueOutput,
 };
+use big_media_components::surface::set_surface_fullscreened;
 use big_os_kit::microdaemon::DurableJobSnapshot;
 use big_relm4_components::layout::toolbar_pane::{
     BigToolbarHeader, BigToolbarHeaderSpec, BigToolbarPane, BigToolbarPaneSpec,
@@ -657,7 +658,9 @@ impl ConverterShell {
             ShellMessage::VideoApplyAndConvert(result) => {
                 self.apply_video_edits_and_convert(*result, sender);
             }
-            ShellMessage::VideoFullscreen(fs) => self.window.set_fullscreened(fs),
+            ShellMessage::VideoFullscreen(fs) => {
+                let _ = set_surface_fullscreened(&self.window, fs);
+            }
             ShellMessage::VideoBack => {
                 if let Some(ve) = &self.video_editor {
                     ve.emit(VideoEditorInput::Unload);

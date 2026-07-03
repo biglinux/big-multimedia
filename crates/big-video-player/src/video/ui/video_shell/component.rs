@@ -9,9 +9,9 @@ use super::input_gestures::{wire_background_video_input, wire_osd_autohide, wire
 use super::render::{wire_close, wire_realize, FastRenderContextSlot, VideoRealizeOptions};
 use super::*;
 use big_media_components::surface::{
-    create_media_toast_overlay_root, mount_media_toast_content, BigMediaChrome,
-    BigMediaChromePlacement, BigMediaMenuSpec, BigMediaOverlayStack, BigMediaSidebarShell,
-    BigMediaSidebarSpec,
+    create_media_toast_overlay_root, mount_media_toast_content, toggle_surface_fullscreened,
+    BigMediaChrome, BigMediaChromePlacement, BigMediaMenuSpec, BigMediaOverlayStack,
+    BigMediaSidebarShell, BigMediaSidebarSpec,
 };
 #[cfg(all(test, not(miri)))]
 use big_relm4_components::layout::hamburger_menu::build_flat_menu_model;
@@ -716,7 +716,7 @@ impl Component for VideoShell {
                 }
                 VideoShellInput::ToggleFullscreen => {
                     if let Some(root) = window_ref {
-                        root.set_fullscreened(!root.is_fullscreen());
+                        let _ = toggle_surface_fullscreened(root);
                     }
                 }
                 VideoShellInput::SetPaneActivity(activity) => self.set_pane_activity(activity),
