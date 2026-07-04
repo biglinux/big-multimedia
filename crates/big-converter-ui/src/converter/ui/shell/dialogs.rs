@@ -183,6 +183,45 @@ impl ConverterShell {
     }
 }
 
+pub(super) fn show_daemon_recovery_dialog(
+    window: &adw::ApplicationWindow,
+    sender: &ComponentSender<ConverterShell>,
+    job_id: String,
+    status_text: Option<String>,
+) {
+    let body = status_text.unwrap_or_else(|| {
+        i18n("A background conversion stopped before it finished. The daemon will only restart it if the saved job is safe to run again.")
+    });
+    let dialog = big_app_kit::dialogs::choice_dialog(
+        &i18n("Recover background conversion?"),
+        &body,
+        "keep",
+        &i18n("Keep"),
+        "restart",
+        &[
+            (
+                "forget",
+                &i18n("Forget"),
+                adw::ResponseAppearance::Destructive,
+            ),
+            (
+                "restart",
+                &i18n("Restart"),
+                adw::ResponseAppearance::Suggested,
+            ),
+        ],
+    );
+    let s = sender.clone();
+    let win = window.clone();
+    glib::spawn_future_local(async move {
+        match dialog.choose_future(Some(&win)).await.as_str() {
+            "restart" => s.input(ShellMessage::DaemonRestartRequested(job_id)),
+            "forget" => s.input(ShellMessage::DaemonCleanupRequested(job_id)),
+            _ => {}
+        }
+    });
+}
+
 pub(super) fn show_file_chooser(
     window: &adw::ApplicationWindow,
     sender: &ComponentSender<ConverterShell>,

@@ -25,9 +25,7 @@ use relm4::{
 use big_media_components::converter::header_bar::{
     BigConverterHeader, BigConverterHeaderOutput, BigConverterHeaderText,
 };
-use big_media_components::converter::progress::{
-    BigConverterProgress, BigConverterProgressInput, BigConverterProgressOutput,
-};
+use big_media_components::converter::progress::{BigConverterProgress, BigConverterProgressOutput};
 use big_media_components::converter::queue::BigConversionQueueMode;
 use big_media_components::converter::queue_component::{
     BigConverterQueue, BigConverterQueueInput, BigConverterQueueOutput,
@@ -102,8 +100,18 @@ pub enum ShellMessage {
     StartConversion,
     /// `big-convertd` accepted or rejected the current batch.
     DaemonSubmitFinished(Result<DaemonJobAccepted, DaemonSubmitError>),
+    /// Existing `big-convertd` jobs found during startup reconciliation.
+    DaemonListFinished(Result<Vec<DurableJobSnapshot>, DaemonSubmitError>),
     /// Latest `big-convertd` snapshot for the tracked batch.
     DaemonSnapshot(Result<DurableJobSnapshot, DaemonSubmitError>),
+    /// User requested a daemon-managed restart for a known job.
+    DaemonRestartRequested(String),
+    /// `big-convertd` accepted or rejected a restart request.
+    DaemonRestartFinished(Result<DurableJobSnapshot, DaemonSubmitError>),
+    /// User asked to remove a terminal daemon job from the registry.
+    DaemonCleanupRequested(String),
+    /// `big-convertd` accepted or rejected cleanup.
+    DaemonCleanupFinished(Result<(), DaemonSubmitError>),
     /// `big-convertd` accepted or rejected a cancel request.
     DaemonCancelFinished(Result<(), DaemonSubmitError>),
     /// Cancel the in-flight conversion.
@@ -222,6 +230,7 @@ pub struct ConverterShell {
     converting: bool,
     daemon_job: Option<DaemonJobAccepted>,
     daemon_poll_in_flight: bool,
+    daemon_cleanup_job_id: Option<String>,
     editing_item_id: Option<u64>,
     current_audio_preview_item: Option<u64>,
     // Conversion progress counters for the live window title (the wrapped
@@ -538,6 +547,7 @@ impl Component for ConverterShell {
             converting: false,
             daemon_job: None,
             daemon_poll_in_flight: false,
+            daemon_cleanup_job_id: None,
             editing_item_id: None,
             current_audio_preview_item: None,
             progress_total: 0,
@@ -547,6 +557,7 @@ impl Component for ConverterShell {
         };
 
         model.load_saved_profile();
+        ConverterShell::load_daemon_jobs(&sender);
 
         ComponentParts { model, widgets: () }
     }
@@ -579,7 +590,20 @@ impl ConverterShell {
 
             ShellMessage::StartConversion => self.start_conversion(sender),
             ShellMessage::DaemonSubmitFinished(result) => self.finish_daemon_submit(result, sender),
+            ShellMessage::DaemonListFinished(result) => self.finish_daemon_list(result, sender),
             ShellMessage::DaemonSnapshot(result) => self.apply_daemon_snapshot(result, sender),
+            ShellMessage::DaemonRestartRequested(job_id) => {
+                ConverterShell::restart_daemon_job(job_id, sender);
+            }
+            ShellMessage::DaemonRestartFinished(result) => {
+                self.finish_daemon_restart(result, sender);
+            }
+            ShellMessage::DaemonCleanupRequested(job_id) => {
+                self.forget_daemon_job(job_id, sender);
+            }
+            ShellMessage::DaemonCleanupFinished(result) => {
+                ConverterShell::finish_daemon_cleanup(result);
+            }
             ShellMessage::DaemonCancelFinished(result) => self.finish_daemon_cancel(result),
             ShellMessage::CancelConversion => {
                 self.cancel_conversion(sender);
@@ -647,13 +671,7 @@ impl ConverterShell {
             ShellMessage::QueueEdit(path) => self.on_queue_edit(&path),
             ShellMessage::QueueReorder(order) => self.queue.reorder(&order),
 
-            ShellMessage::ProgressBack => {
-                self.queue.reset_non_done();
-                self.queue_view
-                    .emit(BigConverterQueueInput::ResetStatusIcons);
-                self.main_stack.set_visible_child_name("main");
-                self.progress.emit(BigConverterProgressInput::Reset);
-            }
+            ShellMessage::ProgressBack => self.return_to_queue_from_progress(sender),
 
             ShellMessage::VideoApplyAndConvert(result) => {
                 self.apply_video_edits_and_convert(*result, sender);

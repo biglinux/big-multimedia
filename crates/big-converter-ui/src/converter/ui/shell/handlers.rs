@@ -30,6 +30,7 @@ use big_media_runtime::cast::gpu::{GpuDevice, GpuType};
 use big_media_runtime::editor::audio_edit_page::AudioEditorInput;
 use big_media_runtime::editor::edit_page::{VideoEditResult, VideoEditorInput};
 
+use super::dialogs;
 use super::setup::to_queue_entry;
 use super::{ConverterShell, ShellMessage};
 
@@ -51,6 +52,14 @@ impl DaemonQueueEntryApplyResult {
 }
 
 impl ConverterShell {
+    pub(super) fn load_daemon_jobs(sender: &ComponentSender<ConverterShell>) {
+        let list_sender = sender.clone();
+        big_relm4_components::task::spawn_blocking_result(
+            crate::converter::daemon::list_conversions,
+            move |result| list_sender.input(ShellMessage::DaemonListFinished(result)),
+        );
+    }
+
     pub(super) fn load_saved_profile(&mut self) {
         let saved_out = self.settings.get_string(keys::OUTPUT_DIR);
         let default_out = if self.mode.is_audio() {
@@ -271,6 +280,27 @@ impl ConverterShell {
         }
     }
 
+    pub(super) fn finish_daemon_list(
+        &mut self,
+        result: Result<Vec<DurableJobSnapshot>, DaemonSubmitError>,
+        sender: &ComponentSender<ConverterShell>,
+    ) {
+        let snapshots = match result {
+            Ok(snapshots) => snapshots,
+            Err(error) => {
+                log::debug!("big-convertd startup list failed: {error}");
+                return;
+            }
+        };
+        if self.converting || self.daemon_job.is_some() {
+            return;
+        }
+        let Some(snapshot) = select_recoverable_snapshot(self.mode, snapshots) else {
+            return;
+        };
+        self.resume_daemon_snapshot(snapshot, sender);
+    }
+
     fn finish_daemon_handoff(&mut self, accepted: DaemonJobAccepted) {
         info!(
             "Conversion job {} handed off to big-convertd",
@@ -284,6 +314,53 @@ impl ConverterShell {
             app.send_notification(Some("conversion-daemon-queued"), &notification);
         }
         self.daemon_job = Some(accepted);
+    }
+
+    pub(super) fn restart_daemon_job(job_id: String, sender: &ComponentSender<ConverterShell>) {
+        let restart_sender = sender.clone();
+        big_relm4_components::task::spawn_blocking_result(
+            move || crate::converter::daemon::restart_conversion(job_id),
+            move |result| restart_sender.input(ShellMessage::DaemonRestartFinished(result)),
+        );
+    }
+
+    pub(super) fn finish_daemon_restart(
+        &mut self,
+        result: Result<DurableJobSnapshot, DaemonSubmitError>,
+        sender: &ComponentSender<ConverterShell>,
+    ) {
+        match result {
+            Ok(snapshot) => self.resume_daemon_snapshot(snapshot, sender),
+            Err(error) => {
+                log::warn!("big-convertd restart failed: {error}");
+            }
+        }
+    }
+
+    pub(super) fn cleanup_daemon_job(job_id: String, sender: &ComponentSender<ConverterShell>) {
+        let cleanup_sender = sender.clone();
+        big_relm4_components::task::spawn_blocking_result(
+            move || crate::converter::daemon::ack_cleanup_conversion(job_id),
+            move |result| cleanup_sender.input(ShellMessage::DaemonCleanupFinished(result)),
+        );
+    }
+
+    pub(super) fn forget_daemon_job(
+        &mut self,
+        job_id: String,
+        sender: &ComponentSender<ConverterShell>,
+    ) {
+        if self.daemon_cleanup_job_id.as_deref() == Some(job_id.as_str()) {
+            self.daemon_cleanup_job_id = None;
+            self.reset_progress_page_to_queue();
+        }
+        Self::cleanup_daemon_job(job_id, sender);
+    }
+
+    pub(super) fn finish_daemon_cleanup(result: Result<(), DaemonSubmitError>) {
+        if let Err(error) = result {
+            log::warn!("big-convertd cleanup failed: {error}");
+        }
     }
 
     pub(super) fn finish_daemon_cancel(&mut self, result: Result<(), DaemonSubmitError>) {
@@ -311,6 +388,24 @@ impl ConverterShell {
             .emit(BigConverterHeaderInput::SetConverting(false));
         self.converting = false;
         info!("Conversion cancelled by user");
+    }
+
+    pub(super) fn return_to_queue_from_progress(
+        &mut self,
+        sender: &ComponentSender<ConverterShell>,
+    ) {
+        if let Some(job_id) = self.daemon_cleanup_job_id.take() {
+            Self::cleanup_daemon_job(job_id, sender);
+        }
+        self.reset_progress_page_to_queue();
+    }
+
+    fn reset_progress_page_to_queue(&mut self) {
+        self.queue.reset_non_done();
+        self.queue_view
+            .emit(BigConverterQueueInput::ResetStatusIcons);
+        self.main_stack.set_visible_child_name("main");
+        self.progress.emit(BigConverterProgressInput::Reset);
     }
 
     #[allow(clippy::too_many_lines)] // queue-message drain — one arm per QueueMessage
@@ -474,7 +569,7 @@ impl ConverterShell {
     pub(super) fn apply_daemon_snapshot(
         &mut self,
         result: Result<DurableJobSnapshot, DaemonSubmitError>,
-        _sender: &ComponentSender<ConverterShell>,
+        sender: &ComponentSender<ConverterShell>,
     ) {
         self.daemon_poll_in_flight = false;
         let snapshot = match result {
@@ -490,6 +585,8 @@ impl ConverterShell {
         }
         let has_queue_entry_details =
             self.apply_daemon_queue_entry_details(snapshot.details.as_ref());
+        let job_id = snapshot.job_id.clone();
+        let status_text = snapshot.status_text.clone();
         match snapshot.state {
             DurableJobState::Queued | DurableJobState::Running | DurableJobState::Cancelling => {
                 if !has_queue_entry_details {
@@ -504,8 +601,44 @@ impl ConverterShell {
             }
             DurableJobState::Interrupted | DurableJobState::Failed => {
                 self.finish_daemon_queue_entries(DurableJobState::Failed, snapshot.status_text);
+                dialogs::show_daemon_recovery_dialog(&self.window, sender, job_id, status_text);
             }
         }
+    }
+
+    fn resume_daemon_snapshot(
+        &mut self,
+        snapshot: DurableJobSnapshot,
+        sender: &ComponentSender<ConverterShell>,
+    ) {
+        let Some(queue_entry_ids) = daemon_snapshot_queue_entry_ids(&snapshot) else {
+            log::warn!(
+                "big-convertd job {} has no restorable conversion details",
+                snapshot.job_id
+            );
+            return;
+        };
+        let Some(progress_rows) = daemon_snapshot_progress_rows(&snapshot) else {
+            log::warn!(
+                "big-convertd job {} has no restorable progress rows",
+                snapshot.job_id
+            );
+            return;
+        };
+        self.progress_total = progress_rows.len();
+        self.progress_done = 0;
+        self.progress
+            .emit(BigConverterProgressInput::SetConversions(progress_rows));
+        self.main_stack.set_visible_child_name("progress");
+        self.daemon_job = Some(DaemonJobAccepted {
+            job_id: snapshot.job_id.clone(),
+            queue_entry_ids,
+        });
+        let is_active = daemon_snapshot_is_active(snapshot.state);
+        self.converting = is_active;
+        self.header
+            .emit(BigConverterHeaderInput::SetConverting(is_active));
+        self.apply_daemon_snapshot(Ok(snapshot), sender);
     }
 
     fn apply_daemon_progress(&mut self, progress: Option<JobProgress>) {
@@ -657,6 +790,7 @@ impl ConverterShell {
         let Some(job) = self.daemon_job.take() else {
             return;
         };
+        let job_id = job.job_id.clone();
         self.daemon_poll_in_flight = false;
         for queue_entry_id in job.queue_entry_ids {
             match state {
@@ -700,6 +834,7 @@ impl ConverterShell {
         ));
         self.converting = false;
         self.progress.emit(BigConverterProgressInput::ShowComplete);
+        self.daemon_cleanup_job_id = Some(job_id);
         self.window.set_title(Some(&i18n(if self.mode.is_audio() {
             "Audio Converter"
         } else {
@@ -915,6 +1050,76 @@ fn cancel_daemon_job(sender: &ComponentSender<ConverterShell>, job_id: String) {
     );
 }
 
+fn select_recoverable_snapshot(
+    mode: crate::converter::app::ConverterMode,
+    snapshots: Vec<DurableJobSnapshot>,
+) -> Option<DurableJobSnapshot> {
+    snapshots
+        .into_iter()
+        .filter(|snapshot| daemon_snapshot_matches_mode(mode, snapshot))
+        .min_by_key(daemon_snapshot_priority)
+}
+
+fn daemon_snapshot_matches_mode(
+    mode: crate::converter::app::ConverterMode,
+    snapshot: &DurableJobSnapshot,
+) -> bool {
+    match snapshot.job_class.as_str() {
+        "audio-conversion" => mode.is_audio(),
+        "video-conversion" => !mode.is_audio(),
+        "batch-conversion" => true,
+        _ => false,
+    }
+}
+
+fn daemon_snapshot_priority(snapshot: &DurableJobSnapshot) -> u8 {
+    match snapshot.state {
+        DurableJobState::Queued | DurableJobState::Running | DurableJobState::Cancelling => 0,
+        DurableJobState::Interrupted | DurableJobState::Failed => 1,
+        DurableJobState::Completed | DurableJobState::Cancelled => 2,
+    }
+}
+
+fn daemon_snapshot_is_active(state: DurableJobState) -> bool {
+    matches!(
+        state,
+        DurableJobState::Queued | DurableJobState::Running | DurableJobState::Cancelling
+    )
+}
+
+fn daemon_snapshot_queue_entry_ids(snapshot: &DurableJobSnapshot) -> Option<Vec<u64>> {
+    let details = conversion_details_from_snapshot(snapshot)?;
+    let queue_entry_ids = details
+        .items
+        .iter()
+        .map(|conversion_input| conversion_input.daemon_entry_id)
+        .collect::<Vec<_>>();
+    (!queue_entry_ids.is_empty()).then_some(queue_entry_ids)
+}
+
+fn daemon_snapshot_progress_rows(snapshot: &DurableJobSnapshot) -> Option<Vec<(u64, PathBuf)>> {
+    let details = conversion_details_from_snapshot(snapshot)?;
+    let progress_rows = details
+        .items
+        .iter()
+        .map(|conversion_input| {
+            (
+                conversion_input.daemon_entry_id,
+                conversion_input.input.clone(),
+            )
+        })
+        .collect::<Vec<_>>();
+    (!progress_rows.is_empty()).then_some(progress_rows)
+}
+
+fn conversion_details_from_snapshot(snapshot: &DurableJobSnapshot) -> Option<ConversionJobDetails> {
+    snapshot
+        .details
+        .as_ref()
+        .and_then(|details| serde_json::from_value::<ConversionJobDetails>(details.clone()).ok())
+        .filter(|details| details.schema_version == 1)
+}
+
 fn daemon_failure_status_text(status_text: Option<String>) -> String {
     status_text.unwrap_or_else(|| i18n("Conversion failed"))
 }
@@ -946,6 +1151,7 @@ fn queue_progress_snapshot(
 #[cfg(test)]
 mod daemon_progress_tests {
     use super::*;
+    use crate::converter::app::ConverterMode;
 
     #[test]
     fn daemon_progress_snapshot_clamps_to_percent_units() {
@@ -983,5 +1189,67 @@ mod daemon_progress_tests {
         assert_eq!(progress_snapshot.size_bytes, 2048);
         assert_eq!(progress_snapshot.percent, 20.0);
         assert!(progress_snapshot.done);
+    }
+
+    #[test]
+    fn startup_recovery_prefers_active_daemon_jobs_for_mode() {
+        let failed_audio =
+            test_snapshot("audio-failed", "audio-conversion", DurableJobState::Failed);
+        let running_video = test_snapshot(
+            "video-running",
+            "video-conversion",
+            DurableJobState::Running,
+        );
+        let completed_video = test_snapshot(
+            "video-complete",
+            "video-conversion",
+            DurableJobState::Completed,
+        );
+
+        let selected = select_recoverable_snapshot(
+            ConverterMode::Video,
+            vec![failed_audio, completed_video, running_video],
+        )
+        .expect("selected video job");
+
+        assert_eq!(selected.job_id, "video-running");
+    }
+
+    #[test]
+    fn startup_recovery_reconstructs_daemon_progress_rows() {
+        let snapshot = test_snapshot("job-1", "video-conversion", DurableJobState::Interrupted);
+
+        let queue_entry_ids = daemon_snapshot_queue_entry_ids(&snapshot).expect("ids");
+        let progress_rows = daemon_snapshot_progress_rows(&snapshot).expect("rows");
+
+        assert_eq!(queue_entry_ids, vec![77]);
+        assert_eq!(progress_rows, vec![(77, PathBuf::from("/tmp/input.mp4"))]);
+    }
+
+    fn test_snapshot(job_id: &str, job_class: &str, state: DurableJobState) -> DurableJobSnapshot {
+        DurableJobSnapshot {
+            job_id: job_id.to_owned(),
+            job_class: job_class.to_owned(),
+            state,
+            progress: None,
+            status_text: None,
+            details: Some(
+                serde_json::to_value(ConversionJobDetails {
+                    schema_version: 1,
+                    items: vec![ConversionEntryDetails {
+                        daemon_entry_id: 77,
+                        entry_index: 0,
+                        input: PathBuf::from("/tmp/input.mp4"),
+                        output: Some(PathBuf::from("/tmp/output.mp4")),
+                        state: ConversionEntryState::Interrupted,
+                        progress: None,
+                        command: None,
+                        stderr_tail: Vec::new(),
+                        status_text: None,
+                    }],
+                })
+                .expect("details"),
+            ),
+        }
     }
 }
