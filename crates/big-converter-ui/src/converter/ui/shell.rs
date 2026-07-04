@@ -56,6 +56,7 @@ use big_media_runtime::editor::edit_page::{
     VideoEditResult, VideoEditor, VideoEditorInput, VideoEditorOutput,
 };
 
+mod daemon_handlers;
 mod dialogs;
 mod handlers;
 mod setup;
