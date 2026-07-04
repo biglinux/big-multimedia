@@ -132,15 +132,7 @@ pub fn attach_conversion(job_id: String) -> Result<DurableJobSnapshot, DaemonSub
     let event = request_single_event(MicrodaemonCommand::Attach {
         job_id: job_id.clone(),
     })?;
-    match event {
-        MicrodaemonEvent::JobSnapshot { snapshot } => Ok(snapshot),
-        MicrodaemonEvent::Error { code, message, .. } => {
-            Err(DaemonSubmitError::new(format!("{code}: {message}")))
-        }
-        other => Err(DaemonSubmitError::new(format!(
-            "unexpected attach response for {job_id}: {other:?}"
-        ))),
-    }
+    snapshot_from_event(event, "attach", &job_id)
 }
 
 /// Ask `big-convertd` to cancel a conversion job.
@@ -152,15 +144,46 @@ pub fn cancel_conversion(job_id: String) -> Result<(), DaemonSubmitError> {
     let event = request_single_event(MicrodaemonCommand::Cancel {
         job_id: job_id.clone(),
     })?;
-    match event {
-        MicrodaemonEvent::JobStateChanged { .. } => Ok(()),
-        MicrodaemonEvent::Error { code, message, .. } => {
-            Err(DaemonSubmitError::new(format!("{code}: {message}")))
-        }
-        other => Err(DaemonSubmitError::new(format!(
-            "unexpected cancel response for {job_id}: {other:?}"
-        ))),
-    }
+    unit_from_event(event, "cancel", &job_id)
+}
+
+/// Return all daemon conversion snapshots currently known by `big-convertd`.
+///
+/// # Errors
+///
+/// Returns an error when the daemon cannot be reached or returns a protocol
+/// response other than a job list.
+pub fn list_conversions() -> Result<Vec<DurableJobSnapshot>, DaemonSubmitError> {
+    let event = request_single_event(MicrodaemonCommand::List)?;
+    job_list_from_event(event)
+}
+
+/// Ask `big-convertd` to restart a failed/interrupted conversion when the daemon
+/// has a safe persisted restart spec.
+///
+/// # Errors
+///
+/// Returns an error when the daemon cannot be reached or rejects the restart.
+pub fn restart_conversion(job_id: String) -> Result<DurableJobSnapshot, DaemonSubmitError> {
+    request_snapshot_response(
+        MicrodaemonCommand::Restart {
+            job_id: job_id.clone(),
+        },
+        "restart",
+        &job_id,
+    )
+}
+
+/// Acknowledge cleanup of a terminal conversion job from the daemon registry.
+///
+/// # Errors
+///
+/// Returns an error when the daemon cannot be reached or rejects cleanup.
+pub fn ack_cleanup_conversion(job_id: String) -> Result<(), DaemonSubmitError> {
+    let event = request_single_event(MicrodaemonCommand::AckCleanup {
+        job_id: job_id.clone(),
+    })?;
+    unit_from_event(event, "cleanup", &job_id)
 }
 
 fn request_single_event(
@@ -171,6 +194,31 @@ fn request_single_event(
     stream.set_write_timeout(Some(DAEMON_IO_TIMEOUT))?;
     write_command(&mut stream, command)?;
     read_event(&mut stream)
+}
+
+fn request_snapshot_response(
+    command: MicrodaemonCommand,
+    action: &str,
+    job_id: &str,
+) -> Result<DurableJobSnapshot, DaemonSubmitError> {
+    let mut stream = UnixStream::connect(big_media_runtime::convertd::default_socket_path())?;
+    stream.set_read_timeout(Some(DAEMON_IO_TIMEOUT))?;
+    stream.set_write_timeout(Some(DAEMON_IO_TIMEOUT))?;
+    write_command(&mut stream, command)?;
+    loop {
+        match read_event(&mut stream)? {
+            MicrodaemonEvent::JobSnapshot { snapshot } => return Ok(snapshot),
+            MicrodaemonEvent::JobAccepted { .. } => {}
+            MicrodaemonEvent::Error { code, message, .. } => {
+                return Err(DaemonSubmitError::new(format!("{code}: {message}")));
+            }
+            other => {
+                return Err(DaemonSubmitError::new(format!(
+                    "unexpected {action} response for {job_id}: {other:?}"
+                )));
+            }
+        }
+    }
 }
 
 fn write_command(stream: &mut UnixStream, command: MicrodaemonCommand) -> io::Result<()> {
@@ -199,6 +247,52 @@ fn read_event(stream: &mut UnixStream) -> Result<MicrodaemonEvent, DaemonSubmitE
         MicrodaemonBody::Command { .. } => Err(DaemonSubmitError::new(
             "daemon returned a command frame instead of an event",
         )),
+    }
+}
+
+fn job_list_from_event(
+    event: MicrodaemonEvent,
+) -> Result<Vec<DurableJobSnapshot>, DaemonSubmitError> {
+    match event {
+        MicrodaemonEvent::JobList { jobs } => Ok(jobs),
+        MicrodaemonEvent::Error { code, message, .. } => {
+            Err(DaemonSubmitError::new(format!("{code}: {message}")))
+        }
+        other => Err(DaemonSubmitError::new(format!(
+            "unexpected list response: {other:?}"
+        ))),
+    }
+}
+
+fn snapshot_from_event(
+    event: MicrodaemonEvent,
+    action: &str,
+    job_id: &str,
+) -> Result<DurableJobSnapshot, DaemonSubmitError> {
+    match event {
+        MicrodaemonEvent::JobSnapshot { snapshot } => Ok(snapshot),
+        MicrodaemonEvent::Error { code, message, .. } => {
+            Err(DaemonSubmitError::new(format!("{code}: {message}")))
+        }
+        other => Err(DaemonSubmitError::new(format!(
+            "unexpected {action} response for {job_id}: {other:?}"
+        ))),
+    }
+}
+
+fn unit_from_event(
+    event: MicrodaemonEvent,
+    action: &str,
+    job_id: &str,
+) -> Result<(), DaemonSubmitError> {
+    match event {
+        MicrodaemonEvent::JobStateChanged { .. } | MicrodaemonEvent::JobList { .. } => Ok(()),
+        MicrodaemonEvent::Error { code, message, .. } => {
+            Err(DaemonSubmitError::new(format!("{code}: {message}")))
+        }
+        other => Err(DaemonSubmitError::new(format!(
+            "unexpected {action} response for {job_id}: {other:?}"
+        ))),
     }
 }
 
@@ -321,6 +415,7 @@ mod tests {
         AudioConfig, OutputConfig, ProfileMeta, SubtitleConfig, VideoConfig,
     };
     use crate::converter::queue::ConversionStatus;
+    use big_os_kit::microdaemon::{DurableJobState, JobProgress};
 
     fn test_profile() -> Profile {
         Profile {
@@ -366,6 +461,17 @@ mod tests {
             input_audio_channels: 2,
             skip_video_filters: true,
             probed: true,
+        }
+    }
+
+    fn test_snapshot(job_id: &str) -> DurableJobSnapshot {
+        DurableJobSnapshot {
+            job_id: job_id.to_owned(),
+            job_class: "video-conversion".to_owned(),
+            state: DurableJobState::Interrupted,
+            progress: Some(JobProgress::new(1, Some(100))),
+            status_text: Some("interrupted".to_owned()),
+            details: None,
         }
     }
 
@@ -470,6 +576,64 @@ mod tests {
         let err = DaemonSubmitError::new("boom");
         assert_eq!(err.message(), "boom");
         assert!(format!("{err}").contains("boom"));
+    }
+
+    #[test]
+    fn job_list_response_returns_snapshots() {
+        let jobs = job_list_from_event(MicrodaemonEvent::JobList {
+            jobs: vec![test_snapshot("job-1")],
+        })
+        .expect("job list");
+
+        assert_eq!(jobs.len(), 1);
+        assert_eq!(jobs[0].job_id, "job-1");
+    }
+
+    #[test]
+    fn snapshot_response_returns_snapshot_and_preserves_errors() {
+        let snapshot = snapshot_from_event(
+            MicrodaemonEvent::JobSnapshot {
+                snapshot: test_snapshot("job-1"),
+            },
+            "restart",
+            "job-1",
+        )
+        .expect("snapshot");
+        assert_eq!(snapshot.job_id, "job-1");
+
+        let error = snapshot_from_event(
+            MicrodaemonEvent::Error {
+                job_id: Some("job-1".to_owned()),
+                code: "conversion-not-restartable".to_owned(),
+                message: "not safe".to_owned(),
+            },
+            "restart",
+            "job-1",
+        )
+        .expect_err("error response");
+        assert!(error.message().contains("conversion-not-restartable"));
+    }
+
+    #[test]
+    fn cleanup_response_accepts_job_list_or_state_change() {
+        unit_from_event(
+            MicrodaemonEvent::JobList {
+                jobs: vec![test_snapshot("job-1")],
+            },
+            "cleanup",
+            "job-1",
+        )
+        .expect("cleanup job list");
+        unit_from_event(
+            MicrodaemonEvent::JobStateChanged {
+                job_id: "job-1".to_owned(),
+                state: DurableJobState::Cancelling,
+                status_text: Some("cancel requested".to_owned()),
+            },
+            "cancel",
+            "job-1",
+        )
+        .expect("cancel state");
     }
 
     #[test]
