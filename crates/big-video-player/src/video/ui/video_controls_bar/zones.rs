@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 use super::*;
 use crate::settings::keys;
 use big_media_components::player_chrome::{
@@ -5,10 +7,12 @@ use big_media_components::player_chrome::{
     setup_exclusive_hover_popover_group,
 };
 use big_relm4_components::feedback::tooltip;
+use big_relm4_components::input::zone_layout::{slot_key, ZoneLayout, ZonePlacement};
 use big_relm4_components::layout::hamburger_menu::{
     attach_popover_to_button, build_flat_action_popover_button, BigHamburgerMenuSpec,
     BigMenuActionItem,
 };
+use big_relm4_components::layout::zone_applier::apply_zone_layout;
 
 #[cfg(all(test, not(miri)))]
 use big_relm4_components::layout::hamburger_menu::{build_flat_menu_model, menu_action_names};
@@ -31,130 +35,101 @@ pub(crate) struct ButtonLayoutWidgets {
     pub(super) fullscreen_button: gtk::Button,
 }
 
-#[derive(Clone, Copy)]
-enum ButtonZone {
-    Left,
-    Center,
-    Right,
-}
-
 impl ButtonLayoutWidgets {
+    /// Reparent the OSD controls into their bottom-bar zones and apply
+    /// per-control visibility from the `ui-zone-*` / `ui-show-*` settings, via
+    /// the shared leak-safe [`apply_zone_layout`] primitive.
+    ///
+    /// The three `ui-zone-bottom-*` CSVs become a
+    /// [`ZoneLayout`](big_relm4_components::input::zone_layout::ZoneLayout) (each
+    /// token mapped through `control_name`, dropping unknown/legacy-aliased
+    /// entries); the applier reparents each control into its zone and appends any
+    /// control the CSVs omit to its default fallback slot. Visibility comes from
+    /// the `ui-show-*` flags — the voice control additionally gated on a
+    /// noise-reduction backend being installed.
     pub(crate) fn apply_settings(&self, settings: &Settings) {
-        let mut moved = Vec::new();
-        self.apply_zone(
-            ButtonZone::Left,
-            &settings.get_string(keys::UI_ZONE_BOTTOM_LEFT),
-            &mut moved,
-        );
-        self.apply_zone(
-            ButtonZone::Center,
-            &settings.get_string(keys::UI_ZONE_BOTTOM_CENTER),
-            &mut moved,
-        );
-        self.apply_zone(
-            ButtonZone::Right,
-            &settings.get_string(keys::UI_ZONE_BOTTOM_RIGHT),
-            &mut moved,
-        );
-        self.append_missing_defaults(&mut moved);
-        self.apply_visibility(settings);
-    }
+        let start = slot_key("bottom", ZonePlacement::Start);
+        let center = slot_key("bottom", ZonePlacement::Center);
+        let end = slot_key("bottom", ZonePlacement::End);
 
-    fn apply_zone(&self, zone: ButtonZone, csv: &str, moved: &mut Vec<&'static str>) {
-        for name in csv
-            .split(',')
-            .map(str::trim)
-            .filter(|name| !name.is_empty())
-        {
-            let name = control_name(name);
-            if name.is_empty() || moved.contains(&name) {
-                continue;
-            }
-            if self.move_control(zone, name) {
-                moved.push(name);
-            }
-        }
-    }
-
-    fn append_missing_defaults(&self, moved: &mut Vec<&'static str>) {
-        for (name, zone) in [
-            ("volume", ButtonZone::Left),
-            ("speed", ButtonZone::Left),
-            ("voice", ButtonZone::Left),
-            ("prev", ButtonZone::Center),
-            ("play", ButtonZone::Center),
-            ("next", ButtonZone::Center),
-            ("edit-export", ButtonZone::Right),
-            ("subtitle", ButtonZone::Right),
-            ("audio-track", ButtonZone::Right),
-            ("fullscreen", ButtonZone::Right),
+        // The three saved CSVs → an ordered ZoneLayout (aliases normalised,
+        // unknown ids dropped). Cross-zone dedup + missing-default fallback are
+        // the applier's job.
+        let mut layout = ZoneLayout::default();
+        for (csv_key, slot) in [
+            (keys::UI_ZONE_BOTTOM_LEFT, &start),
+            (keys::UI_ZONE_BOTTOM_CENTER, &center),
+            (keys::UI_ZONE_BOTTOM_RIGHT, &end),
         ] {
-            if !moved.contains(&name) && self.move_control(zone, name) {
-                moved.push(name);
-            }
+            let ids: Vec<String> = settings
+                .get_string(csv_key)
+                .split(',')
+                .map(str::trim)
+                .map(control_name)
+                .filter(|name| !name.is_empty())
+                .map(String::from)
+                .collect();
+            layout.slots.insert(slot.clone(), ids);
         }
-    }
 
-    fn move_control(&self, zone: ButtonZone, name: &str) -> bool {
-        let Some(widget) = self.control_widget(name) else {
-            return false;
-        };
-        let target = self.zone_box(zone);
-        if let Some(parent) = widget.parent() {
-            if parent == target.clone().upcast::<gtk::Widget>() {
-                return true;
-            }
-            widget.unparent();
-        }
-        target.append(&widget);
-        true
-    }
+        let controls: HashMap<String, gtk::Widget> = [
+            ("volume", self.volume_box.clone().upcast::<gtk::Widget>()),
+            ("speed", self.speed_box.clone().upcast()),
+            ("voice", self.voice_box.clone().upcast()),
+            ("prev", self.previous_button.clone().upcast()),
+            ("play", self.play_button.clone().upcast()),
+            ("next", self.next_button.clone().upcast()),
+            ("edit-export", self.export_menu_button.clone().upcast()),
+            ("subtitle", self.subtitle_menu_button.clone().upcast()),
+            ("audio-track", self.audio_track_menu_button.clone().upcast()),
+            ("fullscreen", self.fullscreen_button.clone().upcast()),
+        ]
+        .into_iter()
+        .map(|(id, widget)| (id.to_owned(), widget))
+        .collect();
 
-    fn apply_visibility(&self, settings: &Settings) {
-        self.volume_box
-            .set_visible(settings.get_bool(keys::UI_SHOW_VOLUME));
-        self.speed_box
-            .set_visible(settings.get_bool(keys::UI_SHOW_SPEED));
-        self.voice_box.set_visible(
-            settings.get_bool(keys::UI_SHOW_VOICE)
-                && crate::shared::audio_effects::has_noise_reduction_backend(),
-        );
-        self.previous_button
-            .set_visible(settings.get_bool(keys::UI_SHOW_PREV));
-        self.play_button
-            .set_visible(settings.get_bool(keys::UI_SHOW_PLAY));
-        self.next_button
-            .set_visible(settings.get_bool(keys::UI_SHOW_NEXT));
-        self.subtitle_menu_button
-            .set_visible(settings.get_bool(keys::UI_SHOW_SUBTITLE));
-        self.audio_track_menu_button
-            .set_visible(settings.get_bool(keys::UI_SHOW_AUDIO_TRACK));
-        self.fullscreen_button
-            .set_visible(settings.get_bool(keys::UI_SHOW_FULLSCREEN));
-    }
+        let slots = [
+            (start.as_str(), &self.start_zone),
+            (center.as_str(), &self.center_zone),
+            (end.as_str(), &self.end_zone),
+        ];
 
-    fn control_widget(&self, name: &str) -> Option<gtk::Widget> {
-        match control_name(name) {
-            "volume" => Some(self.volume_box.clone().upcast()),
-            "speed" => Some(self.speed_box.clone().upcast()),
-            "voice" => Some(self.voice_box.clone().upcast()),
-            "prev" => Some(self.previous_button.clone().upcast()),
-            "play" => Some(self.play_button.clone().upcast()),
-            "next" => Some(self.next_button.clone().upcast()),
-            "edit-export" => Some(self.export_menu_button.clone().upcast()),
-            "subtitle" => Some(self.subtitle_menu_button.clone().upcast()),
-            "audio-track" => Some(self.audio_track_menu_button.clone().upcast()),
-            "fullscreen" => Some(self.fullscreen_button.clone().upcast()),
-            _ => None,
-        }
-    }
+        let fallback = [
+            ("volume", start.as_str()),
+            ("speed", start.as_str()),
+            ("voice", start.as_str()),
+            ("prev", center.as_str()),
+            ("play", center.as_str()),
+            ("next", center.as_str()),
+            ("edit-export", end.as_str()),
+            ("subtitle", end.as_str()),
+            ("audio-track", end.as_str()),
+            ("fullscreen", end.as_str()),
+        ];
 
-    fn zone_box(&self, zone: ButtonZone) -> &gtk::Box {
-        match zone {
-            ButtonZone::Left => &self.start_zone,
-            ButtonZone::Center => &self.center_zone,
-            ButtonZone::Right => &self.end_zone,
-        }
+        // Visibility: the `ui-show-*` flags. `edit-export` has no flag (always
+        // shown → absent here so the applier leaves it visible). Voice is also
+        // gated on a real noise-reduction backend.
+        let visibility: HashMap<String, bool> = [
+            ("volume", settings.get_bool(keys::UI_SHOW_VOLUME)),
+            ("speed", settings.get_bool(keys::UI_SHOW_SPEED)),
+            (
+                "voice",
+                settings.get_bool(keys::UI_SHOW_VOICE)
+                    && crate::shared::audio_effects::has_noise_reduction_backend(),
+            ),
+            ("prev", settings.get_bool(keys::UI_SHOW_PREV)),
+            ("play", settings.get_bool(keys::UI_SHOW_PLAY)),
+            ("next", settings.get_bool(keys::UI_SHOW_NEXT)),
+            ("subtitle", settings.get_bool(keys::UI_SHOW_SUBTITLE)),
+            ("audio-track", settings.get_bool(keys::UI_SHOW_AUDIO_TRACK)),
+            ("fullscreen", settings.get_bool(keys::UI_SHOW_FULLSCREEN)),
+        ]
+        .into_iter()
+        .map(|(id, visible)| (id.to_owned(), visible))
+        .collect();
+
+        apply_zone_layout(&layout, &controls, &slots, &fallback, &visibility);
     }
 }
 
