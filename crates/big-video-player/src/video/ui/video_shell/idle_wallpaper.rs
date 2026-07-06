@@ -51,8 +51,17 @@ pub(super) fn spawn_apply(idle_bg: Rc<IdleBackground>) {
     if spawned.is_err() {
         return;
     }
+    // Weak: the ffmpeg blur can outlive a quick open→close. A strong
+    // `Rc<IdleBackground>` captured across the `recv().await` would pin the
+    // shell's `video_bg` box and the `gl_area` GL surface (and stale-write a
+    // display-wide CSS provider) for the whole blur after the shell is torn
+    // down. Upgrade-or-return leaves the live path byte-for-byte unchanged.
+    let idle_bg = Rc::downgrade(&idle_bg);
     glib::spawn_future_local(async move {
         if let Ok(path) = receiver.recv().await {
+            let Some(idle_bg) = idle_bg.upgrade() else {
+                return;
+            };
             if let Some(display) = gtk::gdk::Display::default() {
                 idle_bg.set_blurred_wallpaper(&path, &display);
             }
