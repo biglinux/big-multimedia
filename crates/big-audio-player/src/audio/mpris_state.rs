@@ -89,7 +89,10 @@ mod tests {
             ));
             fs::create_dir_all(&cache_home)?;
             let previous_cache_home = env::var_os("XDG_CACHE_HOME");
-            // FIXME: Audit that the environment access only happens in single-threaded code.
+            // SAFETY: the caller holds CACHE_ENVIRONMENT_LOCK across this override's
+            // whole lifetime, and this test is the crate's only env mutator; the sole
+            // reader, `save_mpris_art` (via `dirs::cache_dir`), runs only inside it. No
+            // other thread touches the environment concurrently.
             unsafe { env::set_var("XDG_CACHE_HOME", &cache_home) };
             Ok(Self {
                 previous_cache_home,
@@ -100,11 +103,12 @@ mod tests {
 
     impl Drop for CacheHomeOverride {
         fn drop(&mut self) {
+            // SAFETY: `CacheHomeOverride` is declared after `_environment_guard` in the
+            // test, so it drops first — this restore runs while CACHE_ENVIRONMENT_LOCK is
+            // still held, under the same single-env-accessor invariant as `activate`.
             if let Some(previous_cache_home) = &self.previous_cache_home {
-                // FIXME: Audit that the environment access only happens in single-threaded code.
                 unsafe { env::set_var("XDG_CACHE_HOME", previous_cache_home) };
             } else {
-                // FIXME: Audit that the environment access only happens in single-threaded code.
                 unsafe { env::remove_var("XDG_CACHE_HOME") };
             }
             let _ = fs::remove_dir_all(&self.cache_home);

@@ -7,7 +7,9 @@ impl AudioShell {
         sender: ComponentSender<Self>,
     ) {
         match message {
-            AudioShellInput::TracksDeletedFromStorage(ids) => self.reconcile_deleted_tracks(ids),
+            AudioShellInput::TracksDeletedFromStorage(ids) => {
+                self.reconcile_deleted_tracks(ids, &sender);
+            }
             AudioShellInput::Library(out) => self.handle_library(out, &sender),
             AudioShellInput::Playlist(out) => self.handle_playlist(out, &sender),
             AudioShellInput::Playback(out) | AudioShellInput::PlaybackRemote(out) => {

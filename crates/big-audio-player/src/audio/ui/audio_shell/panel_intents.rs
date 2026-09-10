@@ -345,26 +345,38 @@ impl AudioShell {
     /// Reconcile the queue + database after files were deleted off the main loop.
     /// Each track is located in the queue by **id** (not a stale index) so a
     /// queue change during the deletes can't drop the wrong entry.
-    pub(super) fn reconcile_deleted_tracks(&mut self, ids: Vec<i64>) {
+    pub(super) fn reconcile_deleted_tracks(
+        &mut self,
+        ids: Vec<i64>,
+        sender: &ComponentSender<Self>,
+    ) {
         if ids.is_empty() {
             return;
         }
-        for id in ids {
-            if let Some(index) = self.queue.tracks().iter().position(|t| t.id == id) {
+        for id in &ids {
+            if let Some(index) = self.queue.tracks().iter().position(|t| t.id == *id) {
                 self.queue.remove(index);
-            }
-            if let Some(db) = self.db.clone() {
-                spawn_db_query(
-                    db,
-                    move |conn| {
-                        let _ = queries::delete_track(conn, id);
-                    },
-                    |()| {},
-                );
             }
         }
         self.commit_queue();
-        // TODO R6d: rebuild the library tree (deleted tracks left the library).
+        // Delete every row in one connection lock (not N racing spawns), then
+        // rebuild the library tree once the deletes commit so the removed tracks
+        // leave the browse view. `spawn_db_query` runs on a pool, so ordering the
+        // rebuild after the deletes requires chaining it off their completion.
+        if let Some(db) = self.db.clone() {
+            let input = sender.input_sender().clone();
+            spawn_db_query(
+                db,
+                move |conn| {
+                    for id in ids {
+                        let _ = queries::delete_track(conn, id);
+                    }
+                },
+                move |()| {
+                    let _ = input.send(AudioShellInput::RebuildLibraryTree);
+                },
+            );
+        }
     }
 
     /// Download selected podcast episodes: a single episode prompts for a save
