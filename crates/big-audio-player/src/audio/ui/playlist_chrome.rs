@@ -8,11 +8,11 @@
 
 use adw::prelude::*;
 use big_app_kit::file_dialogs::FilePicker;
-use big_relm4_components::input::button_content::{build_button, BigButtonContentSpec};
+use big_relm4_components::input::button_content::{BigButtonContentSpec, build_button};
 use big_relm4_components::layout::{
     dialog_footer::{BigDialogFooter, BigDialogFooterSpec},
     dialog_page::BigDialogPage,
-    hamburger_menu::{build_flat_action_popover_button, BigHamburgerMenuSpec, BigMenuActionItem},
+    hamburger_menu::{BigHamburgerMenuSpec, BigMenuActionItem, build_flat_action_popover_button},
     preferences::BigPreferencesGroupSpec,
     toolbar_pane::{BigToolbarHeader, BigToolbarHeaderSpec},
 };

@@ -1,0 +1,67 @@
+[package]
+name = "big-media-data"
+publish = false
+version = "0.1.0"
+edition.workspace = true
+license.workspace = true
+description = "GTK-free data services for BigLinux media apps (SQLite library, settings store, radio/podcast/lastfm clients, downloads)"
+homepage.workspace = true
+repository.workspace = true
+authors.workspace = true
+rust-version.workspace = true
+keywords = ["biglinux", "media", "library", "sqlite", "settings"]
+categories = ["multimedia", "database"]
+autobins = false
+
+[lib]
+name = "big_media_data"
+path = "src/lib.rs"
+
+[dependencies]
+# Single policy home (GTK-free leaf) — see big-rust-components ARCHITECTURE §9-10.
+# The base dependency gives settings XDG dirs; `http-client` is feature-gated
+# below so lean settings-only consumers do not pull network helpers.
+big-os-kit = { workspace = true }
+# Pure parsers (Radio-Browser feed, media file-type knowledge) — GTK-free leaf.
+big-media-engines = { workspace = true, optional = true }
+
+serde_json = "1"
+thiserror = "2"
+log = "0.4"
+# SQLite music library (system libsqlite3 — never bundled).
+rusqlite = { version = "0.40.1", default-features = false, optional = true }
+# Same-directory temporary files for ffmpeg metadata rewrites.
+tempfile = { version = "3", optional = true }
+# Fast .gitignore-aware filesystem traversal (library/media scanning).
+ignore = { version = "0.4", optional = true }
+# Lightweight XML parsing (podcast/RSS, MusicBrainz, IPTV).
+roxmltree = { version = "0.21", optional = true }
+# MD5 hashing (Last.fm API signature) — GTK-free, replaces glib checksum.
+md-5 = { version = "0.11", optional = true }
+# Radio-Browser server discovery.
+dns-lookup = { version = "3", optional = true }
+# gettext translation (GTK-free string lookup).
+gettext-rs = { version = "0.7", features = ["gettext-system"] }
+
+[features]
+default = ["db", "library", "radio"]
+db = ["dep:rusqlite", "dep:big-media-engines"]
+library = [
+    "big-os-kit/http-client",
+    "dep:big-media-engines",
+    "dep:tempfile",
+    "dep:ignore",
+    "dep:roxmltree",
+    "dep:md-5",
+]
+radio = [
+    "big-os-kit/http-client",
+    "dep:big-media-engines",
+    "big-media-engines/radio-browser",
+    "dep:dns-lookup",
+]
+
+[package.metadata.cargo-machete]
+# Package names differ from crate names (imported as `md5` / `gettextrs`), which
+# cargo-machete cannot match — both are used (Last.fm sig / i18n).
+ignored = ["md-5", "gettext-rs", "big-media-engines"]

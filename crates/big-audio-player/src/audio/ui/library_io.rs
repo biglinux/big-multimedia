@@ -12,7 +12,7 @@ use gtk::glib;
 
 use big_app_kit::file_dialogs::FilePicker;
 use big_media_components::player_chrome::spawn_blocking_result;
-use big_relm4_components::input::button_content::{build_button, BigButtonContentSpec};
+use big_relm4_components::input::button_content::{BigButtonContentSpec, build_button};
 use big_relm4_components::layout::{
     dialog_footer::{BigDialogFooter, BigDialogFooterSpec},
     dialog_page::BigDialogPage,
@@ -26,6 +26,7 @@ use crate::db::models::{Track, WatchFolder};
 use crate::i18n::i18n;
 
 use super::library_panel::{LibraryPanel, LibraryPanelOutput};
+use big_media_runtime::i18n::gettext_noop;
 
 const MUSIC_FOLDERS_DIALOG_WIDTH: i32 = 600;
 const MUSIC_FOLDERS_DIALOG_HEIGHT: i32 = 560;
@@ -49,9 +50,9 @@ fn name_entry_dialog_spec() -> NameEntryDialogSpec {
         content_width: 420,
         content_height: 240,
         content_spacing: 12,
-        entry_title: "Playlist name",
-        cancel_label: "Cancel",
-        save_label: "Save",
+        entry_title: gettext_noop("Playlist name"),
+        cancel_label: gettext_noop("Cancel"),
+        save_label: gettext_noop("Save"),
         focus_select_start: 0,
         focus_select_end: -1,
     }
@@ -337,10 +338,10 @@ fn remove_row_from_list(clicked_button: &gtk::Button, list_weak: &glib::WeakRef<
     let Some(list) = list_weak.upgrade() else {
         return;
     };
-    if let Some(row) = clicked_button.ancestor(adw::ActionRow::static_type()) {
-        if let Some(row) = row.downcast_ref::<adw::ActionRow>() {
-            list.remove(row);
-        }
+    if let Some(row) = clicked_button.ancestor(adw::ActionRow::static_type())
+        && let Some(row) = row.downcast_ref::<adw::ActionRow>()
+    {
+        list.remove(row);
     }
 }
 
@@ -527,7 +528,7 @@ mod tests {
     #[cfg(not(miri))]
     use super::abbreviate_home;
     use super::render_m3u8;
-    use super::{name_entry_dialog_spec, normalized_playlist_name, NameEntryDialogSpec};
+    use super::{NameEntryDialogSpec, name_entry_dialog_spec, normalized_playlist_name};
     use crate::db::models::Track;
 
     #[cfg(not(miri))]

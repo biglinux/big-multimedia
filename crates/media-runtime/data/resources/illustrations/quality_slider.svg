@@ -1,0 +1,37 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="120" height="80" viewBox="0 0 120 80">
+  <!-- Quality comparison: low vs high -->
+  <!-- Low quality (pixelated) -->
+  <g transform="translate(10,14)">
+    <rect x="0" y="0" width="40" height="30" rx="2" fill="none" stroke="#999" stroke-width="1.5"/>
+    <!-- Pixel grid -->
+    <rect x="4" y="4" width="8" height="8" fill="#999" opacity="0.3"/>
+    <rect x="12" y="4" width="8" height="8" fill="#999" opacity="0.2"/>
+    <rect x="4" y="12" width="8" height="8" fill="#999" opacity="0.2"/>
+    <rect x="12" y="12" width="8" height="8" fill="#999" opacity="0.35"/>
+    <rect x="20" y="4" width="8" height="8" fill="#999" opacity="0.15"/>
+    <rect x="20" y="12" width="8" height="8" fill="#999" opacity="0.25"/>
+    <rect x="28" y="4" width="8" height="8" fill="#999" opacity="0.1"/>
+    <rect x="28" y="12" width="8" height="8" fill="#999" opacity="0.3"/>
+  </g>
+  <!-- Arrow -->
+  <path d="M56,30 L66,30" stroke="#3584e4" stroke-width="2" fill="none" marker-end="url(#qarr)"/>
+  <defs><marker id="qarr" viewBox="0 0 6 6" refX="5" refY="3" markerWidth="6" markerHeight="6" orient="auto"><path d="M0,0 L6,3 L0,6 Z" fill="#3584e4"/></marker></defs>
+  <!-- High quality (smooth) -->
+  <g transform="translate(70,14)">
+    <rect x="0" y="0" width="40" height="30" rx="2" fill="none" stroke="#3584e4" stroke-width="1.5"/>
+    <!-- Smooth gradient -->
+    <defs>
+      <linearGradient id="qgrad" x1="0" y1="0" x2="1" y2="1">
+        <stop offset="0%" stop-color="#3584e4" stop-opacity="0.1"/>
+        <stop offset="100%" stop-color="#3584e4" stop-opacity="0.4"/>
+      </linearGradient>
+    </defs>
+    <rect x="2" y="2" width="36" height="26" rx="1" fill="url(#qgrad)"/>
+  </g>
+  <!-- Quality slider -->
+  <rect x="20" y="56" width="80" height="4" rx="2" fill="#ddd"/>
+  <rect x="20" y="56" width="56" height="4" rx="2" fill="#3584e4"/>
+  <circle cx="76" cy="58" r="4" fill="#3584e4"/>
+  <text x="20" y="70" font-family="sans-serif" font-size="6" fill="#999">low</text>
+  <text x="96" y="70" font-family="sans-serif" font-size="6" fill="#3584e4">high</text>
+</svg>

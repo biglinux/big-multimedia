@@ -22,7 +22,7 @@ use big_relm4_components::layout::{
     preferences::BigPreferencesGroupSpec,
 };
 use big_relm4_components::list::bounded_list_box::{
-    clear_list_box_rows, BigBoundedListBox, BigBoundedListBoxSpec,
+    BigBoundedListBox, BigBoundedListBoxSpec, clear_list_box_rows,
 };
 use big_relm4_components::list::detail_row::{BigDetailRow, BigDetailRowSpec};
 use big_relm4_components::list::editable_action_row::{

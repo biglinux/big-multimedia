@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 80">
+  <!-- Vignette: dark edges around center -->
+  <rect x="20" y="12" width="80" height="56" rx="6" fill="#3584e4" opacity="0.05" stroke="#3584e4" stroke-width="1.2"/>
+  <!-- Vignette radial effect: progressively darker toward edges -->
+  <ellipse cx="60" cy="40" rx="35" ry="24" fill="#3584e4" opacity="0.04"/>
+  <ellipse cx="60" cy="40" rx="30" ry="20" fill="none" stroke="#3584e4" stroke-width="8" opacity="0.06"/>
+  <ellipse cx="60" cy="40" rx="36" ry="25" fill="none" stroke="#3584e4" stroke-width="10" opacity="0.08"/>
+  <ellipse cx="60" cy="40" rx="38" ry="27" fill="none" stroke="#3584e4" stroke-width="8" opacity="0.12"/>
+  <!-- Center bright spot -->
+  <circle cx="60" cy="40" r="10" fill="#f5c211" opacity="0.15"/>
+  <circle cx="60" cy="40" r="4" fill="#f5c211" opacity="0.3"/>
+</svg>

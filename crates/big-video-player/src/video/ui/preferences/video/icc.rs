@@ -5,15 +5,15 @@
 use adw::prelude::*;
 use big_relm4_components::input::dropdown_row::{BigDropdownRow, BigDropdownRowSpec};
 use big_relm4_components::layout::preferences::{
-    tracked_preferences_group, BigPreferencesGroupSpec,
+    BigPreferencesGroupSpec, tracked_preferences_group,
 };
 use std::sync::Arc;
 
 use crate::i18n::i18n;
 use crate::player::mpv_backend::MpvBackend;
-use crate::settings::{keys, Settings};
+use crate::settings::{Settings, keys};
 
-use super::super::{add_entry_row, add_switch_row, AdvancedWidgets};
+use super::super::{AdvancedWidgets, add_entry_row, add_switch_row};
 use super::illustration_assets::illustration;
 
 pub(super) fn build_icc_group(

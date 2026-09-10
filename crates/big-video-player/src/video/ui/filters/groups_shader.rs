@@ -20,9 +20,9 @@ use super::filter_specs::{
 use super::vf_row::illustration;
 use crate::config;
 use crate::i18n::i18n;
-use crate::player::mpv_backend::shader_gen::{self, ShaderParam};
 use crate::player::mpv_backend::MpvBackend;
-use crate::settings::{keys, Settings};
+use crate::player::mpv_backend::shader_gen::{self, ShaderParam};
+use crate::settings::{Settings, keys};
 use crate::shared::ui_helpers::DebouncedAction;
 
 /// GPU processing: sharpen (debounced), deband, sigmoid-upscaling,
@@ -353,10 +353,10 @@ pub(super) fn build_neural_group(
         if let Some(dir) = shader_gen::ravu_dir().to_str() {
             mpv.glsl_shader_remove_prefix(dir);
         }
-        if row.is_active() {
-            if let Some(path) = shader_gen::neural_upscaler_path(variant) {
-                mpv.glsl_shader_append(&path);
-            }
+        if row.is_active()
+            && let Some(path) = shader_gen::neural_upscaler_path(variant)
+        {
+            mpv.glsl_shader_append(&path);
         }
         settings.put_string(keys::NEURAL_UPSCALER, variant);
         on_filter_changed();

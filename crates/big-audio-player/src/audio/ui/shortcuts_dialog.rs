@@ -5,18 +5,18 @@
 use adw::prelude::*;
 use big_app_kit::keybindings::ShortcutDef;
 use big_relm4_components::input::shortcut_dialog::{
-    connect_shortcut_dialog_rebinds, BigShortcutCategory, BigShortcutDialog, BigShortcutDialogSpec,
-    BigShortcutEntry,
+    BigShortcutCategory, BigShortcutDialog, BigShortcutDialogSpec, BigShortcutEntry,
+    connect_shortcut_dialog_rebinds,
 };
 
 use crate::i18n::i18n;
-use crate::settings::{keys, Settings};
+use crate::settings::{Settings, keys};
 
 /// Present the keyboard-shortcuts dialog. Rebinds persist to
 /// `CUSTOM_KEYBINDINGS`; `parent` is the transient/capture parent.
 pub(crate) fn present_shortcuts(parent: &impl IsA<gtk::Window>, settings: &Settings) {
     use crate::audio::keybindings::{
-        display_accel, key_to_accel_string, resolve_accels, SHORTCUTS,
+        SHORTCUTS, display_accel, key_to_accel_string, resolve_accels,
     };
 
     let custom_str = settings.get_string(keys::CUSTOM_KEYBINDINGS);

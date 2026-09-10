@@ -1,23 +1,25 @@
 # big-multimedia
 
-Unified workspace for the BigLinux media suite — players and converters in one
-repo, because they share the same engine (`big-media-runtime`: mpv playback +
-ffmpeg conversion) and the same edit/format-quality components
-(`big_media_components::video::*`). Co-locating them lets the players embed the
-converter's clip/export surface in-process.
+Self-contained workspace for the BigLinux media **players** (audio + video).
+It vendors the media engine (`big-media-runtime`: mpv playback + ffmpeg export)
+and every shared component crate, so it builds with **no external `big-*` path
+dependencies** — the standalone batch converters now live in a separate project.
 
 | Crate (binary) | Role |
 |----------------|------|
 | `crates/big-video-player` | Video player + in-place **clip & export** (cut for social), simple convert, extract audio |
 | `crates/big-audio-player` | Audio player + in-place **trim & export**, simple convert |
-| `crates/big-video-converter` | Batch video converter (full editor + queue) |
-| `crates/big-audio-converter` | Batch audio converter |
 
-The players reuse the embeddable `big_converter_ui::embed` panel for the single-
-file edit/export path; the converters remain the batch powerhouse. All four also
-ship as `big-host` modules (`big-modules/big-{player,converter}-{audio,video}`).
+The players reuse `big_quick_export` (container/codec/quality options + a
+single-file export driver) for the in-place edit/export path, and hand batch
+work off to the external converter binary by name.
 
-GPL-3.0-or-later (all four link the GPL `big-media-runtime` → libmpv).
+Vendored under `crates/` (were external path deps, now workspace members):
+`media-runtime`, `foundation/*` (os-kit, audio-effects, media-engines,
+appearance, mpv-render, media-data), `app/*` (app-kit, app-kit-core),
+`ui/generic/big-relm4-components`, `ui/media/{big-media-components,big-player-ui}`,
+`dev/big-testkit`. These keep their upstream MIT license; the aggregate repo is
+GPL-3.0-or-later because the players link the GPL engine.
 
 ## Build
 
@@ -25,10 +27,9 @@ GPL-3.0-or-later (all four link the GPL `big-media-runtime` → libmpv).
 cargo build --workspace
 cargo run -p big-video-player
 cargo run -p big-audio-player
-cargo run -p big-video-converter
-cargo run -p big-audio-converter
 ```
 
-Per-crate `po/`, `resources/`, `data/`, `packaging/`, `build.rs`, and the audit
-doc-set stay under each crate; shared `rust-toolchain.toml`/`deny.toml`/`LICENSE`
-+ the workspace `Cargo.toml` live at the root.
+Per-crate `po/`, `resources/`, `data/`, `packaging/`, and `build.rs` stay under
+each crate; the workspace `Cargo.toml` (with `[workspace.package]` /
+`[workspace.dependencies]`), `clippy.toml`, `rust-toolchain.toml`, `deny.toml`,
+and `LICENSE` live at the root.

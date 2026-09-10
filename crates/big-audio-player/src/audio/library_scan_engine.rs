@@ -10,8 +10,8 @@ use std::collections::HashSet;
 use std::path::Path;
 use std::sync::PoisonError;
 
-use crate::db::queries;
 use crate::db::DbHandle;
+use crate::db::queries;
 use crate::library::{metadata, scanner};
 
 /// Scan `folder` into the library: register it as a watch folder, insert any
@@ -102,7 +102,7 @@ pub(crate) fn watch_folder_paths_blocking(db: &DbHandle) -> Vec<String> {
 mod tests {
     use super::*;
     use crate::db::models::Track;
-    use crate::db::{schema, DbHandle};
+    use crate::db::{DbHandle, schema};
     use big_media_runtime::Result as MediaResult;
     use rusqlite::Connection;
     use std::fs;
@@ -184,8 +184,8 @@ mod tests {
     }
 
     #[test]
-    fn scan_folder_adds_valid_audio_skips_invalid_audio_and_prunes_stale_rows(
-    ) -> std::result::Result<(), Box<dyn std::error::Error>> {
+    fn scan_folder_adds_valid_audio_skips_invalid_audio_and_prunes_stale_rows()
+    -> std::result::Result<(), Box<dyn std::error::Error>> {
         let db = memory_library_db()?;
         let scan_folder = unique_audio_scan_folder("mixed")?;
         let valid_track_path = scan_folder.join("valid.wav");
@@ -235,8 +235,8 @@ mod tests {
     }
 
     #[test]
-    fn watch_folder_paths_returns_every_registered_path_sorted_by_query(
-    ) -> std::result::Result<(), Box<dyn std::error::Error>> {
+    fn watch_folder_paths_returns_every_registered_path_sorted_by_query()
+    -> std::result::Result<(), Box<dyn std::error::Error>> {
         let db = memory_library_db()?;
         let scan_folder = unique_audio_scan_folder("watch-paths")?;
         let album_folder = scan_folder.join("albums");
@@ -262,8 +262,8 @@ mod tests {
     }
 
     #[test]
-    fn remove_watch_folder_removes_tracks_under_that_folder_but_preserves_nested_watch_folder(
-    ) -> std::result::Result<(), Box<dyn std::error::Error>> {
+    fn remove_watch_folder_removes_tracks_under_that_folder_but_preserves_nested_watch_folder()
+    -> std::result::Result<(), Box<dyn std::error::Error>> {
         let db = memory_library_db()?;
         let scan_folder = unique_audio_scan_folder("remove")?;
         let nested_folder = scan_folder.join("nested");

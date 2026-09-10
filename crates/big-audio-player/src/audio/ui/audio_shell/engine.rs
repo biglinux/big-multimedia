@@ -74,6 +74,22 @@ impl AudioShell {
                 self.playback_bar
                     .emit(AudioPlaybackBarInput::SetVolumeValue(vol));
             }
+            PlayerEvent::MuteChanged(muted) => {
+                let vol = *self
+                    .mpris_state
+                    .volume
+                    .lock()
+                    .unwrap_or_else(PoisonError::into_inner);
+                self.playback_bar
+                    .emit(AudioPlaybackBarInput::SetVolumeIndicator {
+                        label: format!("{vol:.0}"),
+                        icon: if muted {
+                            "audio-volume-muted-symbolic".to_string()
+                        } else {
+                            volume_icon(vol).to_string()
+                        },
+                    });
+            }
             PlayerEvent::FileLoaded(_) => {
                 if self.trim_active {
                     self.exit_trim_mode();

@@ -16,7 +16,7 @@
 //! diagnostic. Most Xtream panels support it. Engine-free helper; mirrors the
 //! legacy `iptv_view::xtream` until the V6 cutover deletes it.
 
-use big_app_kit::http_client::{http_get_with_headers, RequestHeaders};
+use big_app_kit::http_client::{RequestHeaders, http_get_with_headers};
 use big_app_kit::url::encode_query_value as urlencode;
 
 /// Build the `get.php` URL for a Xtream account and fetch the full M3U.

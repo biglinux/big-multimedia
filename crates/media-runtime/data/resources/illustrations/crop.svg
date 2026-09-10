@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 80">
+  <!-- Crop: L-shaped corner marks around a frame -->
+  <!-- Inner frame area -->
+  <rect x="32" y="18" width="56" height="44" rx="2" fill="#3584e4" opacity="0.08"/>
+  <!-- Top-left corner -->
+  <path d="M28,30 L28,18 L40,18" fill="none" stroke="#f5c211" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+  <!-- Top-right corner -->
+  <path d="M80,18 L92,18 L92,30" fill="none" stroke="#f5c211" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+  <!-- Bottom-left corner -->
+  <path d="M28,50 L28,62 L40,62" fill="none" stroke="#f5c211" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+  <!-- Bottom-right corner -->
+  <path d="M80,62 L92,62 L92,50" fill="none" stroke="#f5c211" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/>
+  <!-- Aspect ratio lines inside -->
+  <line x1="52" y1="18" x2="52" y2="62" stroke="#3584e4" stroke-width="1" stroke-dasharray="3,2" opacity="0.25"/>
+  <line x1="68" y1="18" x2="68" y2="62" stroke="#3584e4" stroke-width="1" stroke-dasharray="3,2" opacity="0.25"/>
+</svg>

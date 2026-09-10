@@ -35,7 +35,7 @@ use gtk::glib;
 use relm4::{Component, ComponentParts, ComponentSender};
 
 use crate::i18n::i18n;
-use crate::media::iptv::{parse_m3u_content, IptvChannel, IptvProvider, IptvProviderStore};
+use crate::media::iptv::{IptvChannel, IptvProvider, IptvProviderStore, parse_m3u_content};
 
 use channel_list::ChannelListView;
 use fetcher::{fetch_provider_channels, provider_identifier};

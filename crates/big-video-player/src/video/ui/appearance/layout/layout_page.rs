@@ -7,7 +7,7 @@ use big_relm4_components::layout::preferences::BigPreferencesGroupSpec;
 use std::rc::Rc;
 
 use crate::i18n::i18n;
-use crate::settings::{keys, Settings};
+use crate::settings::{Settings, keys};
 use crate::shared::preference_rows::add_spin_int_row;
 
 use super::super::illustration;

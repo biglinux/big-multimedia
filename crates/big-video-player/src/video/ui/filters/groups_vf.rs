@@ -13,7 +13,7 @@ use big_relm4_components::input::dropdown_row::{BigDropdownRow, BigDropdownRowSp
 use big_relm4_components::layout::preferences::BigPreferencesGroupSpec;
 
 use super::filter_specs::{colorize_vf, colortemp_vf, hqdn3d_vf, pixelize_vf};
-use super::vf_row::{build_vf_expander_row, illustration, VfFilterSpec};
+use super::vf_row::{VfFilterSpec, build_vf_expander_row, illustration};
 use crate::i18n::i18n;
 use crate::player::mpv_backend::MpvBackend;
 use crate::shared::ui_helpers::DebouncedAction;

@@ -31,7 +31,7 @@ use crate::cast::transcode::TranscodeFilters;
 use crate::i18n::{i18n, ni18n};
 use crate::player::mpv_backend::MpvBackend;
 
-use cast_target::{decide_cast_target, CastTarget, CastTargetError};
+use cast_target::{CastTarget, CastTargetError, decide_cast_target};
 
 /// Shared handle to the shell's live mpv backend (the dialog reads the current
 /// file + position when a device is picked). `None` until the surface realizes.

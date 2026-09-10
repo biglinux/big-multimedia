@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="120" height="80" viewBox="0 0 120 80">
+  <!-- Before: uneven volume bars -->
+  <g transform="translate(8,10)">
+    <rect x="0" y="40" width="8" height="20" rx="2" fill="#bbb"/>
+    <rect x="12" y="10" width="8" height="50" rx="2" fill="#bbb"/>
+    <rect x="24" y="30" width="8" height="30" rx="2" fill="#bbb"/>
+    <rect x="36" y="5" width="8" height="55" rx="2" fill="#bbb"/>
+  </g>
+  <!-- Arrow -->
+  <path d="M58,40 L66,40" stroke="#3584e4" stroke-width="2" fill="none" marker-end="url(#arr)"/>
+  <defs><marker id="arr" viewBox="0 0 6 6" refX="5" refY="3" markerWidth="6" markerHeight="6" orient="auto"><path d="M0,0 L6,3 L0,6 Z" fill="#3584e4"/></marker></defs>
+  <!-- After: even volume bars -->
+  <g transform="translate(72,10)">
+    <rect x="0" y="22" width="8" height="38" rx="2" fill="#3584e4"/>
+    <rect x="12" y="22" width="8" height="38" rx="2" fill="#3584e4"/>
+    <rect x="24" y="22" width="8" height="38" rx="2" fill="#3584e4"/>
+    <rect x="36" y="22" width="8" height="38" rx="2" fill="#3584e4"/>
+  </g>
+</svg>

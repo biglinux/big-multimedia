@@ -6,6 +6,7 @@ use crate::i18n::i18n;
 use crate::library::musicbrainz::MbMetadata;
 
 use super::TagEditFields;
+use big_media_runtime::i18n::gettext_noop;
 
 #[derive(Debug, Clone, Copy)]
 pub(super) struct TagEditFieldTextRefs<'a> {
@@ -79,12 +80,12 @@ pub(super) fn is_editable_text_changed(current_text: &str, original_text: &str) 
 pub(super) fn read_only_metadata_rows(track: &Track) -> Vec<ReadOnlyMetadataRow> {
     vec![
         ReadOnlyMetadataRow {
-            label: "Duration",
+            label: gettext_noop("Duration"),
             value: track.duration_display(),
             is_file_path: false,
         },
         ReadOnlyMetadataRow {
-            label: "Bitrate",
+            label: gettext_noop("Bitrate"),
             value: track.bitrate.map_or_else(
                 || "-".into(),
                 |bitrate| {
@@ -94,26 +95,26 @@ pub(super) fn read_only_metadata_rows(track: &Track) -> Vec<ReadOnlyMetadataRow>
             is_file_path: false,
         },
         ReadOnlyMetadataRow {
-            label: "Sample Rate",
+            label: gettext_noop("Sample Rate"),
             value: track
                 .sample_rate
                 .map_or_else(|| "-".into(), |rate| format!("{rate} Hz")),
             is_file_path: false,
         },
         ReadOnlyMetadataRow {
-            label: "Channels",
+            label: gettext_noop("Channels"),
             value: track
                 .channels
                 .map_or_else(|| "-".into(), |channels| channels.to_string()),
             is_file_path: false,
         },
         ReadOnlyMetadataRow {
-            label: "Format",
+            label: gettext_noop("Format"),
             value: track.format.as_deref().unwrap_or("-").to_string(),
             is_file_path: false,
         },
         ReadOnlyMetadataRow {
-            label: "File Size",
+            label: gettext_noop("File Size"),
             value: track.file_size.map_or_else(
                 || "-".into(),
                 |size| big_media_components::bytes::decimal_compact(size.max(0) as u64),
@@ -121,7 +122,7 @@ pub(super) fn read_only_metadata_rows(track: &Track) -> Vec<ReadOnlyMetadataRow>
             is_file_path: false,
         },
         ReadOnlyMetadataRow {
-            label: "File",
+            label: gettext_noop("File"),
             value: track.file_path.clone(),
             is_file_path: true,
         },

@@ -7,19 +7,19 @@
 //! the Relm4 `VideoShell` calls instead of the old `Window` method.
 
 use crate::shared::preference_rows::{
-    add_color_row, add_combo_row, add_entry_row, add_spin_double_row, add_spin_int_row,
-    add_switch_row, AdvancedWidgets,
+    AdvancedWidgets, add_color_row, add_combo_row, add_entry_row, add_spin_double_row,
+    add_spin_int_row, add_switch_row,
 };
 use adw::prelude::*;
 use big_player_ui::audio_preferences::{
-    create_player_audio_page as create_audio_page, PlayerAudioEffects, PlayerAudioPreferenceActions,
+    PlayerAudioEffects, PlayerAudioPreferenceActions, create_player_audio_page as create_audio_page,
 };
 use std::cell::RefCell;
 use std::rc::Rc;
 use std::sync::Arc;
 
 use crate::i18n::i18n;
-use crate::settings::{keys, Settings};
+use crate::settings::{Settings, keys};
 
 use crate::player::mpv_backend::{AudioEffects, MpvBackend};
 

@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 80">
+  <!-- Pixelize: mosaic pixel effect -->
+  <!-- Pixel grid -->
+  <rect x="20" y="12" width="80" height="56" rx="4" fill="#3584e4" opacity="0.04" stroke="#3584e4" stroke-width="1"/>
+  <!-- Large pixels -->
+  <rect x="24" y="16" width="14" height="12" fill="#3584e4" opacity="0.3"/>
+  <rect x="40" y="16" width="14" height="12" fill="#3584e4" opacity="0.15"/>
+  <rect x="56" y="16" width="14" height="12" fill="#f5c211" opacity="0.25"/>
+  <rect x="72" y="16" width="14" height="12" fill="#3584e4" opacity="0.2"/>
+  <rect x="88" y="16" width="8" height="12" fill="#3584e4" opacity="0.1"/>
+  <rect x="24" y="30" width="14" height="12" fill="#3584e4" opacity="0.12"/>
+  <rect x="40" y="30" width="14" height="12" fill="#3584e4" opacity="0.35"/>
+  <rect x="56" y="30" width="14" height="12" fill="#f5c211" opacity="0.15"/>
+  <rect x="72" y="30" width="14" height="12" fill="#3584e4" opacity="0.25"/>
+  <rect x="88" y="30" width="8" height="12" fill="#f5c211" opacity="0.2"/>
+  <rect x="24" y="44" width="14" height="12" fill="#f5c211" opacity="0.2"/>
+  <rect x="40" y="44" width="14" height="12" fill="#3584e4" opacity="0.18"/>
+  <rect x="56" y="44" width="14" height="12" fill="#3584e4" opacity="0.28"/>
+  <rect x="72" y="44" width="14" height="12" fill="#3584e4" opacity="0.1"/>
+  <rect x="88" y="44" width="8" height="12" fill="#3584e4" opacity="0.3"/>
+  <rect x="24" y="58" width="14" height="8" fill="#3584e4" opacity="0.22"/>
+  <rect x="40" y="58" width="14" height="8" fill="#f5c211" opacity="0.3"/>
+  <rect x="56" y="58" width="14" height="8" fill="#3584e4" opacity="0.08"/>
+  <rect x="72" y="58" width="14" height="8" fill="#3584e4" opacity="0.18"/>
+</svg>

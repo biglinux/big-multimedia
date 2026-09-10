@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 80">
+  <!-- Sharpen CAS: blurry → sharp edges -->
+  <rect x="8" y="18" width="44" height="44" rx="5" fill="#3584e4" opacity="0.10" stroke="#3584e4" stroke-width="1.2"/>
+  <!-- Blurry rectangle -->
+  <rect x="18" y="28" width="24" height="24" rx="2" fill="none" stroke="#3584e4" stroke-width="3" opacity="0.25"/>
+  <rect x="18" y="28" width="24" height="24" rx="2" fill="none" stroke="#3584e4" stroke-width="1" opacity="0.15"/>
+  <!-- Arrow -->
+  <path d="M56,40 L64,40" stroke="#3584e4" stroke-width="1.5" fill="none"/>
+  <polygon points="64,36 72,40 64,44" fill="#3584e4" opacity="0.6"/>
+  <!-- Sharp result -->
+  <rect x="76" y="18" width="36" height="44" rx="5" fill="#3584e4" opacity="0.10" stroke="#3584e4" stroke-width="1.2"/>
+  <rect x="84" y="28" width="20" height="24" rx="1" fill="none" stroke="#3584e4" stroke-width="2.5"/>
+  <!-- Sharp corner accents -->
+  <line x1="82" y1="28" x2="86" y2="28" stroke="#f5c211" stroke-width="2"/>
+  <line x1="84" y1="26" x2="84" y2="30" stroke="#f5c211" stroke-width="2"/>
+  <line x1="102" y1="28" x2="106" y2="28" stroke="#f5c211" stroke-width="2"/>
+  <line x1="104" y1="26" x2="104" y2="30" stroke="#f5c211" stroke-width="2"/>
+</svg>

@@ -2,10 +2,11 @@
 //!
 //! The audio player UI built on top of the shared `big-media-runtime`
 //! modules. The thin [`main`](../big_audio_player/index.html) binary calls
-//! [`run`]. Exposing the UI as a library (mirroring `big-converter-ui`) lets
+//! [`run`]. Exposing the UI as a library lets
 //! the Relm4 components compile as public API during the in-progress port,
 //! instead of tripping `dead_code` while built alongside the legacy path.
 
+use big_media_runtime::i18n::gettext_noop;
 pub use big_media_runtime::{
     cast, config, db, i18n, library, media, mpris, player, recent, settings, shared,
 };
@@ -26,7 +27,7 @@ struct AudioPlayerWindowSpec {
 
 fn audio_player_window_spec() -> AudioPlayerWindowSpec {
     AudioPlayerWindowSpec {
-        title: "Big Audio Player",
+        title: gettext_noop("Big Audio Player"),
         default_width: 1200,
         default_height: 720,
         minimum_width: 640,
@@ -67,8 +68,7 @@ pub struct AudioEmbed {
 }
 
 /// Open the audio-player shell as a window of the host's running
-/// application (multicall hosts: big-host). Mirrors
-/// `big_converter_ui::open_in_application`: performs the app-specific boot
+/// application (multicall hosts: big-host). Performs the app-specific boot
 /// exactly once (gettext — shared media domain —, numeric locale, component
 /// translator, favicon cache namespace, GResource bundles) and launches a
 /// detached [`audio::ui::audio_shell::AudioShell`]. The host keeps the
@@ -138,18 +138,8 @@ pub fn open_in_application() -> AudioEmbed {
 /// Multicall hosts call this right after [`open_in_application`] (or on
 /// re-invocation with files while the module is already open).
 pub fn open_paths(paths: Vec<String>) {
-    if let Some(message) = open_paths_message_for_shell(paths) {
+    if let Some(message) = audio::app::open_paths_message(paths) {
         audio::ui::audio_shell::send_to_shell(message);
-    }
-}
-
-fn open_paths_message_for_shell(
-    paths: Vec<String>,
-) -> Option<audio::ui::audio_shell::AudioShellInput> {
-    if paths.is_empty() {
-        None
-    } else {
-        Some(audio::ui::audio_shell::AudioShellInput::OpenPaths(paths))
     }
 }
 
@@ -214,22 +204,5 @@ mod tests {
         assert_eq!(spec.default_height, 720);
         assert_eq!(spec.minimum_width, 640);
         assert_eq!(spec.minimum_height, 400);
-    }
-
-    #[test]
-    fn empty_open_paths_do_not_emit_shell_message() {
-        assert!(open_paths_message_for_shell(Vec::new()).is_none());
-    }
-
-    #[test]
-    fn non_empty_open_paths_preserve_order_for_shell() {
-        let paths = vec!["first.ogg".to_string(), "second.flac".to_string()];
-
-        match open_paths_message_for_shell(paths) {
-            Some(audio::ui::audio_shell::AudioShellInput::OpenPaths(paths)) => {
-                assert_eq!(paths, ["first.ogg", "second.flac"]);
-            }
-            other => panic!("expected OpenPaths shell message, got {other:?}"),
-        }
     }
 }

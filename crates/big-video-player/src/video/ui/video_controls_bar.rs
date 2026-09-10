@@ -34,7 +34,9 @@ mod zones;
 
 use seek_preview::{build_seek_preview, wire_seek_hover, wire_thumb_consumer};
 use signals::wire_signals;
-use zones::{build_center_box, build_end_box, build_start_box, ButtonLayoutWidgets};
+use zones::{
+    ButtonLayoutWidgets, StartBoxWidgets, build_center_box, build_end_box, build_start_box,
+};
 
 /// Shared, interior-mutable handle to the live mpv backend (set by the shell
 /// once the surface realizes; `None` before that). The popover callbacks read
@@ -85,6 +87,11 @@ pub enum VideoControlsBarInput {
     /// Trim mode on/off — swaps the seek scale for the cut timeline + reveals the
     /// trim controls row.
     SetEditMode(bool),
+    /// Mirror an external mixer volume change (pavucontrol etc.) onto the volume
+    /// slider + readout, without pushing the value back to the sound server.
+    SetVolume(f64),
+    /// Mirror an external mixer mute change onto the volume button icon.
+    SetMuted(bool),
 }
 
 /// User intents emitted by the bar for the shell to act on.
@@ -126,6 +133,11 @@ pub struct VideoControlsBar {
     subtitle_menu_popover: gtk::Popover,
     audio_track_menu_button: gtk::Button,
     audio_track_menu_popover: gtk::Popover,
+    /// Volume slider + button (bottom-left) and the guard that mirrors external
+    /// mixer changes onto them without echoing back to the sound server.
+    volume_scale: gtk::Scale,
+    volume_button: gtk::Button,
+    suppress_volume: std::rc::Rc<std::cell::Cell<bool>>,
     /// Guard so programmatic scrub updates do not echo as user seek intents.
     suppress_seek: Rc<std::cell::Cell<bool>>,
     /// Live mpv handle shared with the popover callbacks (for track menus).
@@ -311,8 +323,17 @@ impl Component for VideoControlsBar {
         // ── center box ──────────────────────────────────────────────────────
         let center = gtk::CenterBox::new();
 
-        let (start_box, volume_box, speed_box, voice_box, hover_popovers) =
-            build_start_box(&init.settings, &init.mpv);
+        let StartBoxWidgets {
+            start_box,
+            volume_box,
+            speed_box,
+            voice_box,
+            hover_popovers,
+            readout_labels,
+            volume_scale,
+            volume_button,
+            suppress_volume,
+        } = build_start_box(&init.settings, &init.mpv);
         center.set_start_widget(Some(&start_box));
 
         let (controls_center, previous_button, play_button, next_button) = build_center_box();
@@ -346,7 +367,24 @@ impl Component for VideoControlsBar {
             .child(&init.trim_content)
             .build();
         root.append(&trim_controls_revealer);
-        root.append(&center);
+        // Responsive OSD: below a narrow width, hide the value readouts (volume %,
+        // speed, voice level) so the end-zone buttons never spill off the edge —
+        // the icons and controls stay usable in a small window.
+        let responsive = adw::BreakpointBin::builder()
+            .width_request(320)
+            .height_request(36)
+            .child(&center)
+            .build();
+        let breakpoint = adw::Breakpoint::new(adw::BreakpointCondition::new_length(
+            adw::BreakpointConditionLengthType::MaxWidth,
+            700.0,
+            adw::LengthUnit::Sp,
+        ));
+        for label in &readout_labels {
+            breakpoint.add_setter(label, "visible", Some(&false.to_value()));
+        }
+        responsive.add_breakpoint(breakpoint);
+        root.append(&responsive);
 
         wire_signals(
             &sender,
@@ -370,6 +408,9 @@ impl Component for VideoControlsBar {
             subtitle_menu_popover: end_widgets.subtitle_menu_popover,
             audio_track_menu_button: end_widgets.audio_track_menu_button,
             audio_track_menu_popover: end_widgets.audio_track_menu_popover,
+            volume_scale,
+            volume_button,
+            suppress_volume,
             suppress_seek,
             mpv: init.mpv,
             hover_popovers,
@@ -442,6 +483,20 @@ impl Component for VideoControlsBar {
                     .current_file
                     .lock()
                     .unwrap_or_else(std::sync::PoisonError::into_inner) = path;
+            }
+            VideoControlsBarInput::SetVolume(volume) => {
+                // Mirror the mixer onto the slider; the guard keeps the scale's
+                // handler from pushing the value straight back to the server.
+                self.suppress_volume.set(true);
+                self.volume_scale.set_value(volume);
+                self.suppress_volume.set(false);
+            }
+            VideoControlsBarInput::SetMuted(muted) => {
+                self.volume_button.set_icon_name(if muted {
+                    "audio-volume-muted-symbolic"
+                } else {
+                    zones::volume_icon(self.volume_scale.value())
+                });
             }
         }
     }

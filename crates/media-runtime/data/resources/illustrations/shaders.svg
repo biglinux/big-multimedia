@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="120" height="80" viewBox="0 0 120 80">
+  <!-- Wand body -->
+  <line x1="20" y1="60" x2="56" y2="24" stroke="#3584e4" stroke-width="3" stroke-linecap="round"/>
+  <!-- Wand tip glow -->
+  <circle cx="56" cy="24" r="4" fill="#f5c211" opacity="0.3"/>
+  <!-- Sparkle stars -->
+  <g fill="#f5c211">
+    <path d="M68,18 L70,14 L72,18 L76,20 L72,22 L70,26 L68,22 L64,20 Z"/>
+    <path d="M82,30 L83,27 L84,30 L87,31 L84,32 L83,35 L82,32 L79,31 Z" opacity="0.7"/>
+    <path d="M72,38 L73,36 L74,38 L76,39 L74,40 L73,42 L72,40 L70,39 Z" opacity="0.5"/>
+  </g>
+  <!-- Code snippet bracket -->
+  <text x="88" y="50" font-family="monospace" font-size="14" fill="#3584e4" opacity="0.5">{}</text>
+  <!-- Label -->
+  <text x="60" y="72" font-family="sans-serif" font-size="7" fill="#3584e4" text-anchor="middle">shader</text>
+</svg>

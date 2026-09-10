@@ -26,12 +26,12 @@ use crate::player::mpv_backend::fast_render::{
     FastRenderContext, SwRenderContext as SoftwareRenderContext,
 };
 use crate::player::mpv_backend::offload_renderer::VideoBackend;
-use crate::player::mpv_backend::{skip_mpv_render, video_surface, MpvBackend, PlayerEvent};
-use crate::settings::{keys, Settings};
+use crate::player::mpv_backend::{MpvBackend, PlayerEvent, skip_mpv_render, video_surface};
+use crate::settings::{Settings, keys};
 #[cfg(feature = "chromecast")]
 use crate::video::ui::cast::{VideoCastDialog, VideoCastDialogInit, VideoCastDialogOutput};
 use crate::video::ui::filters::{VideoFiltersDialog, VideoFiltersDialogInit};
-use crate::video::ui::gl_framebuffer::{get_gl_get_integerv, GL_FRAMEBUFFER_BINDING};
+use crate::video::ui::gl_framebuffer::{GL_FRAMEBUFFER_BINDING, get_gl_get_integerv};
 use crate::video::ui::iptv::{VideoIptvBrowser, VideoIptvBrowserOutput};
 use crate::video::ui::keyboard_shortcuts_dialog::show_video_keyboard_shortcuts_dialog;
 use crate::video::ui::media_adjust;
@@ -94,7 +94,7 @@ mod render;
 mod state_access;
 mod trim;
 
-pub use input::{send_to_shell, VideoShellInput};
+pub use input::{VideoShellInput, send_to_shell};
 
 use osd::{AspectSnap, IdleBackground, OsdState};
 
@@ -178,7 +178,7 @@ pub struct VideoShell {
     trim_progress_row: BigProgressRow,
     /// Shared re-encode options (container/codec/quality) — same vocabulary as
     /// the full converter; shown in the re-encode settings dialog.
-    trim_encode: big_converter_ui::encode_options::EncodeOptions,
+    trim_encode: big_quick_export::encode_options::EncodeOptions,
     /// Image adjustments applied on a precise export (seeded from the player,
     /// then editable in the settings dialog).
     trim_filters: Rc<RefCell<big_media_runtime::converter::profiles::VideoFilters>>,
@@ -204,7 +204,7 @@ pub struct VideoShell {
 
 #[cfg(test)]
 mod tests {
-    use super::{dialogs, VideoShellMode, DRAG_THRESHOLD, OSD_HIDE_DELAY_MS};
+    use super::{DRAG_THRESHOLD, OSD_HIDE_DELAY_MS, VideoShellMode, dialogs};
 
     #[test]
     fn shell_interaction_timing_constants_stay_ordered() {

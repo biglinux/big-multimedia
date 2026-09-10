@@ -4,7 +4,7 @@ use adw::prelude::*;
 use big_relm4_components::feedback::tooltip;
 use gtk::glib;
 
-use super::super::{schedule_search, BrowserState, FilterKind};
+use super::super::{BrowserState, FilterKind, schedule_search};
 use crate::i18n::{i18n, ni18n};
 use crate::media::playlist;
 

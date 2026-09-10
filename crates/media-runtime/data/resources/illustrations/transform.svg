@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 80">
+  <!-- Transform: rectangle with rotation arrow -->
+  <!-- Original rectangle (tilted slightly) -->
+  <g transform="translate(60,40)">
+    <rect x="-20" y="-14" width="40" height="28" rx="3" fill="#3584e4" opacity="0.2" stroke="#3584e4" stroke-width="1.5"/>
+    <!-- Play triangle inside to show it's video -->
+    <polygon points="-6,-8 8,0 -6,8" fill="#3584e4" opacity="0.4"/>
+  </g>
+  <!-- Circular rotation arrow around the rectangle -->
+  <path d="M32,14 A34,30 0 0,1 88,14" fill="none" stroke="#f5c211" stroke-width="2" stroke-linecap="round"/>
+  <path d="M88,14 L84,20 L92,18" fill="#f5c211" opacity="0.8"/>
+  <!-- Flip arrows below -->
+  <line x1="40" y1="66" x2="50" y2="66" stroke="#3584e4" stroke-width="1.5" opacity="0.4"/>
+  <line x1="50" y1="66" x2="47" y2="63" stroke="#3584e4" stroke-width="1.5" opacity="0.4"/>
+  <line x1="50" y1="66" x2="47" y2="69" stroke="#3584e4" stroke-width="1.5" opacity="0.4"/>
+  <line x1="80" y1="66" x2="70" y2="66" stroke="#3584e4" stroke-width="1.5" opacity="0.4"/>
+  <line x1="70" y1="66" x2="73" y2="63" stroke="#3584e4" stroke-width="1.5" opacity="0.4"/>
+  <line x1="70" y1="66" x2="73" y2="69" stroke="#3584e4" stroke-width="1.5" opacity="0.4"/>
+</svg>

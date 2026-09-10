@@ -1,5 +1,5 @@
 //! In-player quick export: extract audio from / re-encode the playing file
-//! using the shared converter engine (`big_converter_ui::export`), off the GTK
+//! using the shared converter engine (`big_quick_export::export`), off the GTK
 //! main loop. No external converter process, no leaving the player.
 //!
 //! Interactive multi-cut clip export lives in [`super::trim`]; this module keeps
@@ -7,8 +7,8 @@
 
 use std::path::{Path, PathBuf};
 
-use big_converter_ui::export::{run_single_export_blocking, QuickExportChoice, QuickExportFormat};
 use big_media_runtime::converter::profiles::VideoFilters;
+use big_quick_export::export::{QuickExportChoice, QuickExportFormat, run_single_export_blocking};
 
 use super::*;
 

@@ -5,9 +5,9 @@
 //! separate set). The provider slots live on the `AudioShell` so a re-apply
 //! (from the Appearance dialog's `on_changed`) replaces, never stacks.
 
-use big_relm4_components::theme::{apply_color_scheme, inject_palette_css, HIGH_CONTRAST_CSS};
+use big_relm4_components::theme::{HIGH_CONTRAST_CSS, apply_color_scheme, inject_palette_css};
 
-use crate::settings::{keys, Settings};
+use crate::settings::{Settings, keys};
 
 /// Apply the saved colour source, custom palette, and high-contrast override.
 /// `theme_slot`/`hc_slot` are the persistent provider slots (replaced in place).

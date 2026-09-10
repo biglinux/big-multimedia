@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="120" height="80" viewBox="0 0 120 80">
+  <!-- Main seekbar track -->
+  <rect x="10" y="54" width="100" height="4" rx="2" fill="#ddd"/>
+  <rect x="10" y="54" width="60" height="4" rx="2" fill="#3584e4"/>
+  <!-- Playhead dot -->
+  <circle cx="70" cy="56" r="5" fill="#3584e4"/>
+  <!-- Thumbnail popup -->
+  <rect x="48" y="12" width="36" height="28" rx="3" fill="none" stroke="#3584e4" stroke-width="1.5"/>
+  <rect x="50" y="14" width="32" height="24" rx="2" fill="#3584e4" opacity="0.1"/>
+  <!-- Play icon in thumbnail -->
+  <polygon points="61,22 61,32 70,27" fill="#3584e4" opacity="0.5"/>
+  <!-- Pointer line from thumb to seekbar -->
+  <line x1="66" y1="40" x2="66" y2="52" stroke="#3584e4" stroke-width="1" stroke-dasharray="2,2"/>
+  <!-- Timecode -->
+  <text x="66" y="48" font-family="monospace" font-size="6" fill="#3584e4" text-anchor="middle">1:23</text>
+</svg>

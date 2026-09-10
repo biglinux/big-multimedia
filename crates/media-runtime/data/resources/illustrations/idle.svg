@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="120" height="80" viewBox="0 0 120 80">
+  <!-- Hourglass shape -->
+  <path d="M40,14 L80,14 L64,40 L80,66 L40,66 L56,40 Z" fill="#3584e4" opacity="0.1" stroke="#3584e4" stroke-width="1.5"/>
+  <!-- Sand particles in top -->
+  <circle cx="56" cy="26" r="1.5" fill="#f5c211"/>
+  <circle cx="60" cy="24" r="1.5" fill="#f5c211"/>
+  <circle cx="64" cy="26" r="1.5" fill="#f5c211"/>
+  <!-- Falling sand -->
+  <circle cx="60" cy="38" r="1" fill="#f5c211" opacity="0.7"/>
+  <circle cx="60" cy="42" r="1" fill="#f5c211" opacity="0.5"/>
+  <!-- Sand pile at bottom -->
+  <path d="M50,58 Q55,52 60,54 Q65,52 70,58" fill="#f5c211" opacity="0.5"/>
+  <!-- Zzz sleep indicator -->
+  <text x="88" y="26" font-family="sans-serif" font-size="10" fill="#3584e4" opacity="0.5">z</text>
+  <text x="94" y="20" font-family="sans-serif" font-size="8" fill="#3584e4" opacity="0.35">z</text>
+</svg>

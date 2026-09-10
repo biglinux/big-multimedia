@@ -19,7 +19,7 @@ use big_relm4_components::input::zone_layout_editor::BigZoneLayoutEditor;
 use big_relm4_components::layout::preferences::BigPreferencesGroupSpec;
 
 use crate::i18n::i18n;
-use crate::settings::{keys, Settings};
+use crate::settings::{Settings, keys};
 
 /// The 13 video controls: `(id, label-msgid, icon, default "<bar>:<placement>"
 /// slot, the `ui-show-*` key)`. Defaults mirror `big_media_data::settings::defaults`.

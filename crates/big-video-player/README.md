@@ -4,7 +4,7 @@ Hardware-accelerated video player for BigLinux
 
 This repository is a BigLinux Rust desktop application. App code should stay
 thin and reuse tested crates from
-[big-rust-components](https://github.com/biglinux/big-rust-components).
+[big-multimedia](https://github.com/biglinux/big-multimedia).
 Profile: `media`.
 
 Native dependency policy: prefer distro/system libraries and dynamic linking.
@@ -13,9 +13,9 @@ acceptable, and `docs/native-deps-exceptions.md` records the exception.
 
 ## Status
 
-This split repository is standalone at the app layer. Runtime modules shared
-with the other multimedia apps live in the sibling `big-media-runtime`
-repository.
+This repository is self-contained: the media engine (`big-media-runtime`) and
+the shared component crates are vendored as workspace members under `crates/`,
+so it builds with no external `big-*` path dependencies.
 
 ## Build
 

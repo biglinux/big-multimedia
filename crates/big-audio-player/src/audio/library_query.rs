@@ -86,10 +86,10 @@ pub(crate) fn query_tracks_for_node(
             };
             filters.push((column.to_string(), node_key.to_string()));
 
-            if !node_secondary.is_empty() {
-                if let Some((parent_column, parent_value)) = node_secondary.split_once(':') {
-                    filters.push((parent_column.to_string(), parent_value.to_string()));
-                }
+            if !node_secondary.is_empty()
+                && let Some((parent_column, parent_value)) = node_secondary.split_once(':')
+            {
+                filters.push((parent_column.to_string(), parent_value.to_string()));
             }
 
             let filter_refs: Vec<(&str, &str)> = filters
@@ -173,21 +173,17 @@ pub(crate) fn build_library_tree_snapshot(
 
     let groups = queries::get_library_groups(conn, level0.column(), filter, &[], age_secs)
         .unwrap_or_default();
+    let ctx = GroupSubtreeCtx {
+        conn,
+        grouping,
+        filter,
+        age_secs,
+    };
     for (value, count) in &groups {
         if value.is_empty() {
             continue;
         }
-        level0_nodes.push(build_group_subtree(
-            conn,
-            grouping,
-            0,
-            level0,
-            value,
-            *count,
-            filter,
-            age_secs,
-            &[],
-        ));
+        level0_nodes.push(build_group_subtree(&ctx, 0, level0, value, *count, &[]));
     }
 
     LibraryTreeSnapshot {
@@ -195,18 +191,24 @@ pub(crate) fn build_library_tree_snapshot(
     }
 }
 
+/// Recursion-invariant context for [`build_group_subtree`]: the DB handle, the
+/// grouping spec, the active library filter, and the recency window — all
+/// unchanged as the tree descends.
+struct GroupSubtreeCtx<'a> {
+    conn: &'a rusqlite::Connection,
+    grouping: &'a LibraryGrouping,
+    filter: &'a str,
+    age_secs: Option<i64>,
+}
+
 /// Recursively build a group node + its children (sub-groups or, at max depth,
 /// file leaves). `parent_filters` accumulate the column/value path.
-#[allow(clippy::too_many_arguments)]
 fn build_group_subtree(
-    conn: &rusqlite::Connection,
-    grouping: &LibraryGrouping,
+    ctx: &GroupSubtreeCtx,
     level_idx: usize,
     group_by: GroupBy,
     value: &str,
     count: i64,
-    filter: &str,
-    age_secs: Option<i64>,
     parent_filters: &[(&str, &str)],
 ) -> LibraryTreeNode {
     let mut filters: Vec<(String, String)> = parent_filters
@@ -220,32 +222,28 @@ fn build_group_subtree(
         .collect();
 
     let next_idx = level_idx + 1;
-    let children = if next_idx >= grouping.depth() {
-        queries::get_library_tracks(conn, &filter_refs, filter, age_secs)
+    let children = if next_idx >= ctx.grouping.depth() {
+        queries::get_library_tracks(ctx.conn, &filter_refs, ctx.filter, ctx.age_secs)
             .unwrap_or_default()
             .iter()
             .map(file_node)
             .collect()
     } else {
-        let next = grouping.level(next_idx);
-        queries::get_library_groups(conn, next.column(), filter, &filter_refs, age_secs)
-            .unwrap_or_default()
-            .iter()
-            .filter(|(sub_value, _)| !sub_value.is_empty())
-            .map(|(sub_value, sub_count)| {
-                build_group_subtree(
-                    conn,
-                    grouping,
-                    next_idx,
-                    next,
-                    sub_value,
-                    *sub_count,
-                    filter,
-                    age_secs,
-                    &filter_refs,
-                )
-            })
-            .collect()
+        let next = ctx.grouping.level(next_idx);
+        queries::get_library_groups(
+            ctx.conn,
+            next.column(),
+            ctx.filter,
+            &filter_refs,
+            ctx.age_secs,
+        )
+        .unwrap_or_default()
+        .iter()
+        .filter(|(sub_value, _)| !sub_value.is_empty())
+        .map(|(sub_value, sub_count)| {
+            build_group_subtree(ctx, next_idx, next, sub_value, *sub_count, &filter_refs)
+        })
+        .collect()
     };
 
     LibraryTreeNode {
@@ -295,7 +293,6 @@ mod tests {
         Ok(conn)
     }
 
-    #[allow(clippy::too_many_arguments)]
     fn track(
         path: &str,
         artist: &str,
@@ -580,10 +577,12 @@ mod tests {
         };
         let tree_snapshot = build_library_tree_snapshot(&conn, &songs, "", None);
         assert_eq!(tree_snapshot.level0.len(), 5);
-        assert!(tree_snapshot
-            .level0
-            .iter()
-            .all(|node| node.kind == BrowserNodeKind::File && node.children.is_empty()));
+        assert!(
+            tree_snapshot
+                .level0
+                .iter()
+                .all(|node| node.kind == BrowserNodeKind::File && node.children.is_empty())
+        );
         Ok(())
     }
 
@@ -657,10 +656,12 @@ mod tests {
             levels: [GroupBy::Genre, GroupBy::None, GroupBy::None],
         };
         let tree_snapshot = build_library_tree_snapshot(&conn, &grouping, "", None);
-        assert!(tree_snapshot
-            .level0
-            .iter()
-            .all(|node| node.kind != BrowserNodeKind::VariousArtists));
+        assert!(
+            tree_snapshot
+                .level0
+                .iter()
+                .all(|node| node.kind != BrowserNodeKind::VariousArtists)
+        );
         Ok(())
     }
 }

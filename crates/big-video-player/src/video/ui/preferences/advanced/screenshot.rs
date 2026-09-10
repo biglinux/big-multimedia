@@ -4,7 +4,7 @@
 //! tagging / bit-depth are advanced-gated and self-register in `adv_widgets`.
 
 use adw::prelude::*;
-use big_relm4_components::layout::preferences::{track_widget_visibility, BigPreferencesGroupSpec};
+use big_relm4_components::layout::preferences::{BigPreferencesGroupSpec, track_widget_visibility};
 use std::sync::Arc;
 
 use crate::i18n::i18n;
@@ -104,10 +104,10 @@ pub(super) fn build_screenshot_group(
         "screenshot-directory",
         settings,
         move |v| {
-            if let Some(ref mpv) = m {
-                if !v.is_empty() {
-                    mpv.set_screenshot_directory(v);
-                }
+            if let Some(ref mpv) = m
+                && !v.is_empty()
+            {
+                mpv.set_screenshot_directory(v);
             }
         },
     );

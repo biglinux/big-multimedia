@@ -214,9 +214,8 @@ impl VideoShell {
         sender: &ComponentSender<Self>,
     ) {
         use big_relm4_components::display::sleep_timer::{
-            connect_sleep_timer_start_with_close, BigSleepTimerActiveLabels,
-            BigSleepTimerActivePage, BigSleepTimerActiveSpec, BigSleepTimerSetupPage,
-            BigSleepTimerSetupSpec,
+            BigSleepTimerActiveLabels, BigSleepTimerActivePage, BigSleepTimerActiveSpec,
+            BigSleepTimerSetupPage, BigSleepTimerSetupSpec, connect_sleep_timer_start_with_close,
         };
 
         let active = self.sleep_timer_is_armed();
@@ -355,10 +354,10 @@ impl VideoShell {
         }
         let next = remaining - 1;
         self.set_sleep_timer_remaining(next);
-        if next <= 10 {
-            if let Some(mpv) = self.mpv_handle().borrow().as_ref() {
-                mpv.set_volume(pre_fade * (f64::from(next) / 10.0));
-            }
+        if next <= 10
+            && let Some(mpv) = self.mpv_handle().borrow().as_ref()
+        {
+            mpv.set_volume(pre_fade * (f64::from(next) / 10.0));
         }
     }
 

@@ -2,7 +2,7 @@
 //! Clementine-style browser tree. Carries preset constructors + serde helpers
 //! used by the GSettings string key.
 
-use crate::i18n::i18n;
+use crate::i18n::{gettext_noop, i18n};
 
 use super::group_by::GroupBy;
 
@@ -77,14 +77,17 @@ impl LibraryGrouping {
     #[must_use]
     pub fn preset_definitions() -> Vec<(&'static str, Self)> {
         vec![
-            ("Songs", Self::songs()),
-            ("Artist → Album", Self::artist_album()),
-            ("Album", Self::album()),
-            ("Genre → Artist → Album", Self::genre_artist_album()),
-            ("Genre → Artist", Self::genre_artist()),
-            ("Year → Album", Self::year_album()),
-            ("Genre", Self::genre()),
-            ("Year", Self::year()),
+            (gettext_noop("Songs"), Self::songs()),
+            (gettext_noop("Artist → Album"), Self::artist_album()),
+            (gettext_noop("Album"), Self::album()),
+            (
+                gettext_noop("Genre → Artist → Album"),
+                Self::genre_artist_album(),
+            ),
+            (gettext_noop("Genre → Artist"), Self::genre_artist()),
+            (gettext_noop("Year → Album"), Self::year_album()),
+            (gettext_noop("Genre"), Self::genre()),
+            (gettext_noop("Year"), Self::year()),
         ]
     }
 

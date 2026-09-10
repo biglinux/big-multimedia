@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="120" height="80" viewBox="0 0 120 80">
+  <!-- Bold "B" letter large -->
+  <text x="38" y="56" font-family="sans-serif" font-weight="900" font-size="44" fill="#3584e4">B</text>
+  <!-- Thin "B" next to it for contrast -->
+  <text x="72" y="56" font-family="sans-serif" font-weight="200" font-size="44" fill="#999">B</text>
+  <!-- Underline emphasis -->
+  <line x1="32" y1="62" x2="58" y2="62" stroke="#3584e4" stroke-width="2"/>
+</svg>

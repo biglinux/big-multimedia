@@ -292,17 +292,17 @@ impl AudioShell {
     pub(super) fn handle_tab_changed(&mut self, name: &str) {
         if name == "podcast" {
             // Returning to the podcast tab restores a stashed episode queue.
-            if !self.podcast_mode {
-                if let Some((tracks, index)) = self.saved_podcast_queue.take() {
-                    self.saved_music_queue =
-                        Some((self.queue.tracks().to_vec(), self.queue.current_index()));
-                    self.podcast_mode = true;
-                    self.queue.set_tracks(tracks);
-                    if let Some(idx) = index {
-                        self.queue.jump_to(idx);
-                    }
-                    self.commit_queue();
+            if !self.podcast_mode
+                && let Some((tracks, index)) = self.saved_podcast_queue.take()
+            {
+                self.saved_music_queue =
+                    Some((self.queue.tracks().to_vec(), self.queue.current_index()));
+                self.podcast_mode = true;
+                self.queue.set_tracks(tracks);
+                if let Some(idx) = index {
+                    self.queue.jump_to(idx);
                 }
+                self.commit_queue();
             }
         } else if self.podcast_mode {
             // Leaving the podcast tab stashes the episode queue and restores music.
@@ -448,7 +448,7 @@ fn recording_saved_field(label: &str, value: &str) -> gtk::Box {
 mod tests {
     #[cfg(not(miri))]
     use super::recording_file_has_content;
-    use super::{recording_metadata_has_content, recording_saved_paths, RecordingSavedPaths};
+    use super::{RecordingSavedPaths, recording_metadata_has_content, recording_saved_paths};
     use std::path::Path;
     #[cfg(not(miri))]
     use std::{fs, io::Write};

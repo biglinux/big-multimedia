@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="120" height="80" viewBox="0 0 120 80">
+  <!-- Letter A with formatting -->
+  <text x="35" y="50" font-family="serif" font-size="36" font-weight="bold" fill="#3584e4">A</text>
+  <!-- Size indicator -->
+  <line x1="55" y1="52" x2="55" y2="22" stroke="#999" stroke-width="1.5"/>
+  <line x1="52" y1="22" x2="58" y2="22" stroke="#999" stroke-width="1.5"/>
+  <line x1="52" y1="52" x2="58" y2="52" stroke="#999" stroke-width="1.5"/>
+  <!-- Small text sample -->
+  <rect x="65" y="24" width="35" height="3" rx="1" fill="#3584e4" opacity="0.6"/>
+  <rect x="65" y="31" width="30" height="3" rx="1" fill="#3584e4" opacity="0.4"/>
+  <rect x="65" y="38" width="33" height="3" rx="1" fill="#3584e4" opacity="0.4"/>
+  <!-- Bold indicator -->
+  <text x="75" y="58" font-family="sans-serif" font-size="10" font-weight="bold" fill="#999">B</text>
+  <text x="87" y="58" font-family="sans-serif" font-size="10" font-style="italic" fill="#999">I</text>
+</svg>

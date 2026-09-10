@@ -1,0 +1,35 @@
+# Converter runtime config — non-profile knobs that callers used to hardcode.
+#
+# Loaded by `src/converter/runtime_config.rs` with system+user override:
+#   1. /usr/share/big-media-runtime/converter-runtime.toml
+#   2. ~/.config/big-media-runtime/converter-runtime.toml
+# Missing files are tolerated — code falls back to the same defaults below.
+
+[file_formats]
+video = [
+    "mp4", "mkv", "webm", "avi", "mov", "wmv", "flv",
+    "ts", "m2ts", "mts", "m4v", "mpg", "mpeg",
+    "3gp", "ogv", "vob", "f4v", "divx", "asf",
+]
+audio = [
+    "mp3", "flac", "wav", "aac", "ogg", "opus", "wma",
+    "m4a", "aiff", "aif", "ape", "wv", "ac3", "dts", "mka", "oga",
+]
+
+[adjustments]
+# Deadband — values within this distance of neutral skip filter emission.
+float_threshold = 0.001
+
+[adjustments.saturation]
+# Preview saturation maps 1:1 below neutral; above neutral the delta is
+# scaled by `above_neutral_scale` (preview 2.0 → ffmpeg 2.5 with scale=1.5).
+neutral = 1.0
+above_neutral_scale = 1.5
+
+[adjustments.contrast]
+# mpv exposes contrast as -100..=100 while FFmpeg `eq` receives a multiplier.
+# Converter/editor controls use preview space (0.0..=2.0, neutral 1.0) and
+# this mapping converts that value before building `eq=contrast=...`.
+neutral = 1.0
+below_neutral_scale = 1.0
+above_neutral_scale = 1.0

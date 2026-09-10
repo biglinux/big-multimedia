@@ -15,7 +15,7 @@ use big_relm4_components::{
     },
     list::{
         action_nav_row::{BigActionNavRow, BigActionNavRowSpec},
-        bounded_list_box::{clear_list_box_rows, BigBoundedListBox, BigBoundedListBoxSpec},
+        bounded_list_box::{BigBoundedListBox, BigBoundedListBoxSpec, clear_list_box_rows},
     },
 };
 use gtk::glib;
@@ -24,6 +24,7 @@ use relm4::Sender;
 use crate::audio::ui::audio_shell::AudioShellInput;
 use crate::cast::chromecast::CastSessionController;
 use crate::i18n::i18n;
+use big_media_runtime::i18n::gettext_noop;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 struct CastDialogSpec {
@@ -45,17 +46,17 @@ struct CastDialogSpec {
 
 fn cast_dialog_spec() -> CastDialogSpec {
     CastDialogSpec {
-        title: "Cast Audio",
+        title: gettext_noop("Cast Audio"),
         content_width: 560,
         content_height: 420,
         page_width: 520,
         page_height: 440,
         content_spacing: 12,
-        initial_status: "Searching for devices...",
-        list_accessible_label: "Cast devices",
-        device_action_label: "Cast to this device",
-        close_label: "Close",
-        stop_label: "Stop Casting",
+        initial_status: gettext_noop("Searching for devices..."),
+        list_accessible_label: gettext_noop("Cast devices"),
+        device_action_label: gettext_noop("Cast to this device"),
+        close_label: gettext_noop("Close"),
+        stop_label: gettext_noop("Stop Casting"),
         discovery_seconds: 8,
         poll_interval_ms: 800,
         list_row_limit: 16,

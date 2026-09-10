@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 80">
+  <!-- Gamma curve: S-curve showing midtone adjustment -->
+  <rect x="24" y="14" width="72" height="52" rx="4" fill="none" stroke="#3584e4" stroke-width="1.5" opacity="0.25"/>
+  <!-- Axis lines -->
+  <line x1="28" y1="62" x2="92" y2="62" stroke="#3584e4" stroke-width="1" opacity="0.3"/>
+  <line x1="28" y1="62" x2="28" y2="18" stroke="#3584e4" stroke-width="1" opacity="0.3"/>
+  <!-- Linear reference (diagonal) -->
+  <line x1="28" y1="62" x2="92" y2="18" stroke="#3584e4" stroke-width="1.5" stroke-dasharray="3,3" opacity="0.3"/>
+  <!-- Gamma curve (lifted midtones) -->
+  <path d="M28,62 C40,38 55,28 92,18" fill="none" stroke="#f5c211" stroke-width="2.5" stroke-linecap="round"/>
+  <!-- Dot on midtone -->
+  <circle cx="55" cy="34" r="3" fill="#f5c211"/>
+</svg>

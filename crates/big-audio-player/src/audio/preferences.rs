@@ -9,15 +9,16 @@ use std::rc::Rc;
 use std::sync::Arc;
 
 use big_player_ui::audio_preferences::{
-    create_player_audio_page as create_audio_page, PlayerAudioEffects, PlayerAudioPreferenceActions,
+    PlayerAudioEffects, PlayerAudioPreferenceActions, create_player_audio_page as create_audio_page,
 };
 use big_relm4_components::layout::preferences::BigPreferencesGroupSpec;
 
 use crate::i18n::i18n;
 use crate::player::mpv_backend::{AudioEffectsSnapshot, MpvBackend};
-use crate::settings::{keys, Settings};
-use crate::shared::preference_rows::{add_combo_row, AdvancedWidgets};
+use crate::settings::{Settings, keys};
+use crate::shared::preference_rows::{AdvancedWidgets, add_combo_row};
 use crate::shared::ui_helpers::illustration_auto as illustration;
+use big_media_runtime::i18n::gettext_noop;
 
 #[derive(Debug, Clone, Copy, PartialEq)]
 struct NumericAdjustmentSpec {
@@ -45,7 +46,7 @@ struct AudioPreferencesWindowSpec {
 
 fn music_page_chrome_spec() -> PreferencesPageChromeSpec {
     PreferencesPageChromeSpec {
-        title: "Music",
+        title: gettext_noop("Music"),
         icon_name: "emblem-music-symbolic",
     }
 }
@@ -72,7 +73,7 @@ fn crossfade_adjustment_spec() -> NumericAdjustmentSpec {
 
 fn audio_preferences_window_spec() -> AudioPreferencesWindowSpec {
     AudioPreferencesWindowSpec {
-        title: "Preferences",
+        title: gettext_noop("Preferences"),
         default_width: 550,
         default_height: 650,
         saved_width_key: keys::AUDIO_PREFS_WINDOW_WIDTH,

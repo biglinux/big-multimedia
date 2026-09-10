@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 80">
+  <!-- Color temperature: warm/cold gradient -->
+  <rect x="15" y="18" width="90" height="44" rx="6" fill="none" stroke="#3584e4" stroke-width="1"/>
+  <!-- Cool side (blue) -->
+  <rect x="15" y="18" width="30" height="44" rx="6" fill="#3584e4" opacity="0.2"/>
+  <!-- Warm side (yellow/orange) -->
+  <rect x="75" y="18" width="30" height="44" rx="6" fill="#f5c211" opacity="0.25"/>
+  <!-- Thermometer -->
+  <rect x="56" y="24" width="8" height="28" rx="4" fill="none" stroke="#3584e4" stroke-width="1.5"/>
+  <circle cx="60" cy="50" r="5" fill="#3584e4" opacity="0.3" stroke="#3584e4" stroke-width="1.2"/>
+  <rect x="58" y="32" width="4" height="18" rx="2" fill="#f5c211" opacity="0.6"/>
+  <!-- Temperature labels -->
+  <text x="30" y="44" font-size="7" text-anchor="middle" fill="#3584e4" font-family="sans-serif" opacity="0.6">Cool</text>
+  <text x="90" y="44" font-size="7" text-anchor="middle" fill="#f5c211" font-family="sans-serif" opacity="0.8">Warm</text>
+</svg>

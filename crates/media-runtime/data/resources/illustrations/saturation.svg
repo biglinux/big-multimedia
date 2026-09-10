@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 80">
+  <!-- Saturation: two circles - one vivid, one grey -->
+  <!-- Desaturated circle (left) -->
+  <circle cx="42" cy="40" r="18" fill="none" stroke="#888" stroke-width="2.5" opacity="0.5"/>
+  <circle cx="42" cy="40" r="10" fill="#888" opacity="0.3"/>
+  <!-- Arrow showing transformation -->
+  <line x1="63" y1="40" x2="73" y2="40" stroke="#3584e4" stroke-width="2" opacity="0.5" marker-end="url(#arrowS)"/>
+  <defs>
+    <marker id="arrowS" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto">
+      <path d="M0,0 L6,3 L0,6" fill="#3584e4" opacity="0.5"/>
+    </marker>
+  </defs>
+  <!-- Vivid circle (right) -->
+  <circle cx="88" cy="40" r="18" fill="none" stroke="#3584e4" stroke-width="2.5"/>
+  <circle cx="82" cy="36" r="6" fill="#e01b24" opacity="0.7"/>
+  <circle cx="92" cy="36" r="6" fill="#33d17a" opacity="0.7"/>
+  <circle cx="87" cy="46" r="6" fill="#3584e4" opacity="0.7"/>
+</svg>

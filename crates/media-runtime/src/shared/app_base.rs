@@ -1,0 +1,264 @@
+//! Bootstrap helpers shared by all binaries — env, gettext, locale,
+//! GResource registration, decoration-icon strip, About dialog builder.
+//! bigagents: app-local-adapter; binds app config, gettext, resources, settings.
+
+use gtk::gio;
+use gtk::glib;
+
+use crate::config;
+use crate::settings::{self, keys};
+use crate::shared::theming;
+
+/// Set an environment variable only when it is currently unset.
+pub fn set_default_env(name: &str, value: &str) {
+    if std::env::var_os(name).is_none() {
+        // SAFETY: bootstrap only / callers use from main() before threads
+        unsafe {
+            std::env::set_var(name, value);
+        }
+    }
+}
+
+/// Set an environment variable during bootstrap regardless of previous value.
+pub fn set_bootstrap_env(name: &str, value: &str) {
+    // SAFETY: bootstrap only / callers use from main() before threads
+    unsafe {
+        std::env::set_var(name, value);
+    }
+}
+
+/// Cap glibc malloc arenas to curb per-thread arena retention. Media apps spawn
+/// many short-lived worker threads (feed/metadata fetch, image decode, mpv);
+/// glibc's default of up to `8 × ncpu` arenas keeps large amounts of freed
+/// memory resident (measured ~75 MiB retained over repeated podcast loads). Two
+/// arenas preserve enough malloc concurrency while letting freed memory return
+/// to the OS. A caller-set `MALLOC_ARENA_MAX` wins. Call once from `main()`
+/// BEFORE any threads spawn.
+#[cfg(target_env = "gnu")]
+pub fn tune_allocator() {
+    if std::env::var_os("MALLOC_ARENA_MAX").is_some() {
+        return;
+    }
+    // SAFETY: mallopt is a libc bootstrap call; invoked from main() pre-threads.
+    unsafe {
+        // Cap arenas: the dominant per-thread retention lever.
+        libc::mallopt(libc::M_ARENA_MAX, 2);
+        // Route large transient buffers (feed XML, image decode) through mmap so
+        // they return to the OS immediately on free instead of fragmenting an
+        // arena. Fixed value also disables the dynamic threshold growth.
+        libc::mallopt(libc::M_MMAP_THRESHOLD, 64 * 1024);
+    }
+}
+
+/// No-op on non-glibc targets (mallopt/M_ARENA_MAX are glibc-specific).
+#[cfg(not(target_env = "gnu"))]
+pub fn tune_allocator() {}
+
+/// Return freed heap pages to the OS after a bursty allocation phase (e.g. a
+/// podcast feed parse + episode build). Counters glibc holding onto trimmed-but-
+/// not-released arena top space; cheap to call at user-paced moments.
+#[cfg(target_env = "gnu")]
+pub fn trim_allocator() {
+    // SAFETY: malloc_trim is always safe to call.
+    unsafe {
+        libc::malloc_trim(0);
+    }
+}
+
+/// No-op on non-glibc targets (malloc_trim is glibc-specific).
+#[cfg(not(target_env = "gnu"))]
+pub fn trim_allocator() {}
+
+pub fn init_logging(default_rust_log: &str) {
+    set_default_env("RUST_LOG", default_rust_log);
+    env_logger::init();
+}
+
+/// Falls back to `<repo>/locale` so `cargo run` works without an install step.
+pub fn init_gettext() {
+    gettextrs::setlocale(gettextrs::LocaleCategory::LcAll, "");
+    let locale_dir = resolve_locale_dir();
+    gettextrs::bindtextdomain(config::GETTEXT_PACKAGE, locale_dir)
+        .expect("Failed to bind textdomain");
+    gettextrs::textdomain(config::GETTEXT_PACKAGE).expect("Failed to set textdomain");
+}
+
+/// Probe pt_BR (maintainer locale) — `/usr/share/locale` exists on Linux even
+/// when our `.mo` files are not installed there.
+fn resolve_locale_dir() -> String {
+    // Each player packages its own copy of the shared catalog under a private
+    // dir (`/usr/share/<exe>/locale`) so the two co-installable packages never
+    // fight over one file in the system locale tree. Prefer it when present.
+    if let Some(private) = private_locale_dir() {
+        return private;
+    }
+    let installed = std::path::Path::new(config::LOCALEDIR)
+        .join("pt_BR/LC_MESSAGES")
+        .join(format!("{}.mo", config::GETTEXT_PACKAGE));
+    if installed.exists() {
+        return config::LOCALEDIR.to_string();
+    }
+    if let Some(dev) = dev_locale_dir() {
+        return dev;
+    }
+    config::LOCALEDIR.to_string()
+}
+
+/// `/usr/share/<exe-stem>/locale`, if it holds our installed catalog.
+fn private_locale_dir() -> Option<String> {
+    let exe = std::env::current_exe().ok()?;
+    let stem = exe.file_stem()?.to_str()?;
+    let dir = format!("/usr/share/{stem}/locale");
+    let probe = std::path::Path::new(&dir)
+        .join("pt_BR/LC_MESSAGES")
+        .join(format!("{}.mo", config::GETTEXT_PACKAGE));
+    probe.exists().then_some(dir)
+}
+
+fn dev_locale_dir() -> Option<String> {
+    let exe = std::env::current_exe().ok()?;
+    let exe_dir = exe.parent()?;
+    for rel in ["../../locale", "../locale", "locale"] {
+        let candidate = exe_dir.join(rel);
+        if candidate
+            .join("pt_BR/LC_MESSAGES")
+            .join(format!("{}.mo", config::GETTEXT_PACKAGE))
+            .exists()
+        {
+            return Some(candidate.to_string_lossy().into_owned());
+        }
+    }
+    None
+}
+
+/// libmpv parses numbers via libc and breaks under non-C decimal separators.
+pub fn init_numeric_locale() {
+    set_bootstrap_env("LC_NUMERIC", "C");
+    let c_locale = std::ffi::CString::new("C").expect("static string has no null bytes");
+    // SAFETY: bootstrap only / called from main() before threads
+    unsafe {
+        libc::setlocale(libc::LC_NUMERIC, c_locale.as_ptr());
+    }
+}
+
+pub fn register_resource_bytes(resource_bytes: &'static [u8]) {
+    let resource_blob = glib::Bytes::from_static(resource_bytes);
+    let resource = gio::Resource::from_data(&resource_blob).expect("Failed to load resources");
+    gio::resources_register(&resource);
+}
+
+pub fn apply_startup_color_scheme(
+    settings: &settings::Settings,
+    color_source_key: keys::StringKey,
+) {
+    theming::apply_color_scheme(&settings.get_string(color_source_key));
+}
+
+/// KDE Plasma's `icon:minimize,maximize,close` makes AdwHeaderBar render
+/// the app icon — modern libadwaita apps never show it. Strip the token.
+pub fn strip_decoration_icon() {
+    let Some(settings) = gtk::Settings::default() else {
+        return;
+    };
+    let Some(layout) = settings.gtk_decoration_layout() else {
+        return;
+    };
+    let raw = layout.as_str();
+    if !raw.contains("icon") {
+        return;
+    }
+    let cleaned: String = raw
+        .split(':')
+        .map(|side| {
+            side.split(',')
+                .filter(|tok| *tok != "icon")
+                .collect::<Vec<_>>()
+                .join(",")
+        })
+        .collect::<Vec<_>>()
+        .join(":");
+    settings.set_gtk_decoration_layout(Some(&cleaned));
+}
+
+pub struct AboutDialogConfig {
+    pub app_name: &'static str,
+    pub app_icon: &'static str,
+    /// Empty `""` to omit the comments line.
+    pub comments: &'static str,
+}
+
+/// Returns the dialog **before** presenting so callers can append credits.
+pub fn build_about_dialog(about_dialog_config: &AboutDialogConfig) -> adw::AboutDialog {
+    let mut builder = adw::AboutDialog::builder()
+        .application_name(about_dialog_config.app_name)
+        .application_icon(about_dialog_config.app_icon)
+        .developer_name("BigLinux")
+        .version(env!("CARGO_PKG_VERSION"))
+        .website("https://biglinux.com.br")
+        .license_type(gtk::License::Gpl30);
+
+    if !about_dialog_config.comments.is_empty() {
+        builder = builder.comments(about_dialog_config.comments);
+    }
+
+    builder.build()
+}
+
+// Pure logic extracted for testability — see `strip_decoration_icon`.
+#[cfg(test)]
+fn strip_icon_from_layout(raw: &str) -> String {
+    raw.split(':')
+        .map(|side| {
+            side.split(',')
+                .filter(|tok| *tok != "icon")
+                .collect::<Vec<_>>()
+                .join(",")
+        })
+        .collect::<Vec<_>>()
+        .join(":")
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn strip_icon_kde_layout() {
+        assert_eq!(
+            strip_icon_from_layout("icon:minimize,maximize,close"),
+            ":minimize,maximize,close"
+        );
+    }
+
+    #[test]
+    fn strip_icon_no_icon_present() {
+        let layout = "minimize,maximize:close";
+        assert_eq!(strip_icon_from_layout(layout), layout);
+    }
+
+    #[test]
+    fn strip_icon_icon_only_left() {
+        assert_eq!(strip_icon_from_layout("icon:close"), ":close");
+    }
+
+    #[test]
+    fn strip_icon_icon_in_middle() {
+        assert_eq!(
+            strip_icon_from_layout("icon,minimize:maximize,close"),
+            "minimize:maximize,close"
+        );
+    }
+
+    #[test]
+    fn strip_icon_empty_layout() {
+        assert_eq!(strip_icon_from_layout(""), "");
+    }
+
+    #[test]
+    fn strip_icon_no_colon() {
+        assert_eq!(
+            strip_icon_from_layout("icon,minimize,close"),
+            "minimize,close"
+        );
+    }
+}

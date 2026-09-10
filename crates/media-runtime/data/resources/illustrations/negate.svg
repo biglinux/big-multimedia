@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 80">
+  <!-- Negate: inverted colors -->
+  <rect x="10" y="18" width="44" height="44" rx="4" fill="#3584e4" opacity="0.08" stroke="#3584e4" stroke-width="1.2"/>
+  <!-- Original scene -->
+  <circle cx="32" cy="34" r="8" fill="#f5c211" opacity="0.5"/>
+  <rect x="18" y="46" width="28" height="10" rx="2" fill="#3584e4" opacity="0.2"/>
+  <!-- Arrow -->
+  <path d="M58,40 L66,40" stroke="#3584e4" stroke-width="1.5" fill="none"/>
+  <polygon points="66,36 74,40 66,44" fill="#3584e4" opacity="0.6"/>
+  <!-- Inverted scene -->
+  <rect x="78" y="18" width="34" height="44" rx="4" fill="#3584e4" opacity="0.35" stroke="#3584e4" stroke-width="1.2"/>
+  <circle cx="95" cy="34" r="8" fill="white" opacity="0.6"/>
+  <rect x="84" y="46" width="22" height="10" rx="2" fill="white" opacity="0.3"/>
+</svg>

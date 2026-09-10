@@ -1,10 +1,43 @@
 use super::*;
 
+/// Collapse the OSD when the top-level window loses focus. The overlay's root is
+/// only known once mounted, so the `is-active` handler is wired on `root-notify`.
+pub(super) fn wire_osd_focus_out(main_overlay: &gtk::Overlay, osd: &Rc<OsdState>) {
+    let osd = Rc::downgrade(osd);
+    main_overlay.connect_root_notify(move |overlay| {
+        let Some(window) = overlay.root().and_downcast::<gtk::Window>() else {
+            return;
+        };
+        let osd = osd.clone();
+        window.connect_is_active_notify(move |window| {
+            if !window.is_active()
+                && let Some(osd) = osd.upgrade()
+            {
+                osd.hide_on_focus_out();
+            }
+        });
+    });
+}
+
+/// Movement (px) below which a `motion` event is treated as "no movement".
+/// A playing `GLArea` makes GTK re-emit `motion` at the SAME coordinates every
+/// rendered frame; each re-emit would re-arm the idle timer, so the OSD would
+/// never fade while the pointer rests over the video. The small threshold also
+/// absorbs a resting hand's jitter.
+const OSD_MOTION_EPSILON_PX: f64 = 2.0;
+
 pub(super) fn wire_osd_autohide(main_overlay: &gtk::Overlay, osd: &Rc<OsdState>) {
     let motion = gtk::EventControllerMotion::new();
+    let last_pos = Rc::new(Cell::new((f64::NAN, f64::NAN)));
     {
         let osd = Rc::downgrade(osd);
-        motion.connect_motion(move |_, _, _| {
+        let last_pos = last_pos.clone();
+        motion.connect_motion(move |_, x, y| {
+            let (lx, ly) = last_pos.get();
+            if (x - lx).abs() < OSD_MOTION_EPSILON_PX && (y - ly).abs() < OSD_MOTION_EPSILON_PX {
+                return;
+            }
+            last_pos.set((x, y));
             if let Some(osd) = osd.upgrade() {
                 osd.show_and_schedule_hide();
             }
@@ -12,9 +45,13 @@ pub(super) fn wire_osd_autohide(main_overlay: &gtk::Overlay, osd: &Rc<OsdState>)
     }
     {
         let osd = Rc::downgrade(osd);
+        // Arm the idle timer instead of hiding at once: leaving the video (or the
+        // pointer moving onto a just-opened popover, which reads as a leave) must
+        // fade the OSD after the same delay, not instantly — and the delayed hide
+        // re-checks the guards, so an open header menu keeps the OSD (and itself).
         motion.connect_leave(move |_| {
             if let Some(osd) = osd.upgrade() {
-                osd.hide();
+                osd.show_and_schedule_hide();
             }
         });
     }

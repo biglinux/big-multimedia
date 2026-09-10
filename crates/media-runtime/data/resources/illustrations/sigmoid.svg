@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 80">
+  <!-- Sigmoid upscaling: smooth S-curve transfer function -->
+  <rect x="20" y="12" width="80" height="56" rx="5" fill="#3584e4" opacity="0.06" stroke="#3584e4" stroke-width="1"/>
+  <!-- Axes -->
+  <line x1="30" y1="60" x2="92" y2="60" stroke="#3584e4" stroke-width="1" opacity="0.4"/>
+  <line x1="30" y1="60" x2="30" y2="18" stroke="#3584e4" stroke-width="1" opacity="0.4"/>
+  <!-- Linear reference (dashed) -->
+  <line x1="30" y1="58" x2="90" y2="20" stroke="#3584e4" stroke-width="1" stroke-dasharray="3,3" opacity="0.25"/>
+  <!-- Sigmoid S-curve -->
+  <path d="M30,58 C40,58 45,56 55,40 C65,24 70,20 90,20" fill="none" stroke="#3584e4" stroke-width="2.5"/>
+  <!-- Highlight midtone region -->
+  <circle cx="55" cy="40" r="3" fill="#f5c211" opacity="0.6"/>
+  <!-- Labels -->
+  <text x="60" y="72" font-size="6" text-anchor="middle" fill="#3584e4" font-family="sans-serif" opacity="0.5">input</text>
+</svg>

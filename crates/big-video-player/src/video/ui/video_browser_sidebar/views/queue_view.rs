@@ -3,7 +3,7 @@ use std::rc::Rc;
 use adw::prelude::*;
 use gtk::{gdk, gio, glib};
 
-use super::super::{chrome, BrowserState};
+use super::super::{BrowserState, chrome};
 use super::model::{build_filter, build_store, finish_view};
 use super::shared::{set_accent, tooltip_set};
 use crate::media::playlist::{self, EntryKind, PlaylistEntry};
@@ -252,10 +252,10 @@ fn spawn_queue_media(
         if row_weak.upgrade().map(|r| r.widget_name()) != Some(token) {
             return;
         }
-        if let Some(dur) = meta.and_then(|m| m.duration_secs).filter(|d| *d > 0.0) {
-            if let Some(label) = dur_weak.upgrade() {
-                label.set_label(&format_duration_hms(dur));
-            }
+        if let Some(dur) = meta.and_then(|m| m.duration_secs).filter(|d| *d > 0.0)
+            && let Some(label) = dur_weak.upgrade()
+        {
+            label.set_label(&format_duration_hms(dur));
         }
     });
 }

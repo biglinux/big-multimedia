@@ -108,9 +108,8 @@ impl AudioShell {
     /// timer is armed, otherwise the setup page (duration + on-expiry action).
     pub(super) fn show_sleep_timer(&self, sender: &ComponentSender<Self>) {
         use big_relm4_components::display::sleep_timer::{
-            connect_sleep_timer_start_with_close, BigSleepTimerActiveLabels,
-            BigSleepTimerActivePage, BigSleepTimerActiveSpec, BigSleepTimerSetupPage,
-            BigSleepTimerSetupSpec,
+            BigSleepTimerActiveLabels, BigSleepTimerActivePage, BigSleepTimerActiveSpec,
+            BigSleepTimerSetupPage, BigSleepTimerSetupSpec, connect_sleep_timer_start_with_close,
         };
         use big_relm4_components::layout::dialog_page::BigDialogPage;
 
@@ -264,11 +263,11 @@ impl AudioShell {
             return;
         }
         self.sleep_timer_remaining -= 1;
-        if self.sleep_timer_remaining <= 10 {
-            if let Some(mpv) = &self.mpv {
-                let factor = f64::from(self.sleep_timer_remaining) / 10.0;
-                mpv.set_volume(self.sleep_timer_volume * factor);
-            }
+        if self.sleep_timer_remaining <= 10
+            && let Some(mpv) = &self.mpv
+        {
+            let factor = f64::from(self.sleep_timer_remaining) / 10.0;
+            mpv.set_volume(self.sleep_timer_volume * factor);
         }
     }
 

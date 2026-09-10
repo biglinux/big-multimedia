@@ -62,10 +62,10 @@ pub(super) fn wire_card_hover(state: &Rc<BrowserState>, card: &gtk::Box, picture
         let picture = picture.downgrade();
         let scrub_state = scrub_state.clone();
         move |_| {
-            if let Some(picture) = picture.upgrade() {
-                if let Some(original) = scrub_state.borrow().original.clone() {
-                    picture.set_paintable(Some(&original));
-                }
+            if let Some(picture) = picture.upgrade()
+                && let Some(original) = scrub_state.borrow().original.clone()
+            {
+                picture.set_paintable(Some(&original));
             }
         }
     });
@@ -170,12 +170,11 @@ fn cache_root() -> Option<PathBuf> {
 fn clip_key(path: &str) -> u64 {
     let mut hasher = DefaultHasher::new();
     path.hash(&mut hasher);
-    if let Ok(metadata) = std::fs::metadata(path) {
-        if let Ok(modified_time) = metadata.modified() {
-            if let Ok(modified_since_epoch) = modified_time.duration_since(std::time::UNIX_EPOCH) {
-                modified_since_epoch.as_secs().hash(&mut hasher);
-            }
-        }
+    if let Ok(metadata) = std::fs::metadata(path)
+        && let Ok(modified_time) = metadata.modified()
+        && let Ok(modified_since_epoch) = modified_time.duration_since(std::time::UNIX_EPOCH)
+    {
+        modified_since_epoch.as_secs().hash(&mut hasher);
     }
     hasher.finish()
 }

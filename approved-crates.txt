@@ -12,10 +12,10 @@ autocfg
 aws-lc-rs
 aws-lc-sys
 big-app-kit
-big-audio-converter
+big-app-kit-core
+big-appearance
 big-audio-effects
 big-audio-player
-big-converter-ui
 big-media-components
 big-media-data
 big-media-engines
@@ -23,8 +23,9 @@ big-media-runtime
 big-mpv-render
 big-os-kit
 big-player-ui
+big-quick-export
 big-relm4-components
-big-video-converter
+big-testkit
 big-video-player
 bitflags
 block

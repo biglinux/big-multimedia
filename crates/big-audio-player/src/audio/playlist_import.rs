@@ -14,14 +14,14 @@ const MAX_PLAYLIST_BYTES: u64 = 16 * 1024 * 1024;
 /// M3U entries are resolved against the playlist's directory. Oversize or
 /// unreadable files yield an empty list.
 pub(crate) fn parse_playlist_file_for_import(path: &Path) -> Vec<String> {
-    if let Ok(meta) = std::fs::metadata(path) {
-        if meta.len() > MAX_PLAYLIST_BYTES {
-            log::warn!(
-                "playlist import skip: {} bytes exceeds MAX_PLAYLIST_BYTES",
-                meta.len()
-            );
-            return Vec::new();
-        }
+    if let Ok(meta) = std::fs::metadata(path)
+        && meta.len() > MAX_PLAYLIST_BYTES
+    {
+        log::warn!(
+            "playlist import skip: {} bytes exceeds MAX_PLAYLIST_BYTES",
+            meta.len()
+        );
+        return Vec::new();
     }
     let Ok(content) = std::fs::read_to_string(path) else {
         return Vec::new();
@@ -35,10 +35,10 @@ pub(crate) fn parse_playlist_file_for_import(path: &Path) -> Vec<String> {
 
     if ext == "pls" {
         for line in content.lines() {
-            if let Some(path_val) = line.strip_prefix("File") {
-                if let Some((_num, fpath)) = path_val.split_once('=') {
-                    file_paths.push(fpath.to_string());
-                }
+            if let Some(path_val) = line.strip_prefix("File")
+                && let Some((_num, fpath)) = path_val.split_once('=')
+            {
+                file_paths.push(fpath.to_string());
             }
         }
     } else {
@@ -118,12 +118,13 @@ mod tests {
 
         assert_eq!(
             parse_playlist_file_for_import(&path),
-            vec![path
-                .parent()
-                .unwrap_or_else(|| Path::new(""))
-                .join("relative.mp3")
-                .to_string_lossy()
-                .to_string()]
+            vec![
+                path.parent()
+                    .unwrap_or_else(|| Path::new(""))
+                    .join("relative.mp3")
+                    .to_string_lossy()
+                    .to_string()
+            ]
         );
         let _ = std::fs::remove_file(&path);
         Ok(())

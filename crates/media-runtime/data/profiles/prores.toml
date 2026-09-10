@@ -1,0 +1,20 @@
+[profile]
+name = "ProRes (Editing)"
+description = "Apple ProRes for professional video editing"
+category = "professional"
+
+[video]
+codec = "prores"
+quality = "high"
+preset = "fast"
+
+[audio]
+handling = "encode"
+codec = "pcm"
+channels = "auto"
+
+[subtitles]
+handling = "none"
+
+[output]
+container = "mov"

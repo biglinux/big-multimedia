@@ -20,10 +20,10 @@ use big_media_components::time::playback_time;
 use big_relm4_components::feedback::tooltip::{
     self, icon_button, icon_toggle_button, labeled_icon_button,
 };
-use big_relm4_components::input::button_content::{build_button, BigButtonContentSpec};
+use big_relm4_components::input::button_content::{BigButtonContentSpec, build_button};
 use big_relm4_components::layout::widget_container::clear_box_children;
 use gtk::glib;
-use relm4::{gtk, Component, ComponentParts, ComponentSender};
+use relm4::{Component, ComponentParts, ComponentSender, gtk};
 
 use crate::i18n::i18n;
 
@@ -246,7 +246,9 @@ impl Component for VideoTrimBar {
         mode_group.set_active(0);
         tooltip::set(
             &mode_group,
-            i18n("Keep format copies the cut without re-encoding (fast); Re-encode applies the cut settings"),
+            i18n(
+                "Keep format copies the cut without re-encoding (fast); Re-encode applies the cut settings",
+            ),
         );
         mode_group.connect_active_notify(glib::clone!(
             #[strong]

@@ -5,7 +5,7 @@
 
 use adw::prelude::*;
 use big_relm4_components::layout::preferences::{
-    tracked_preferences_group, BigPreferencesGroupSpec,
+    BigPreferencesGroupSpec, tracked_preferences_group,
 };
 use std::sync::Arc;
 

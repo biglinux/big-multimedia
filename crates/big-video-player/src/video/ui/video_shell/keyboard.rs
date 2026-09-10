@@ -16,7 +16,6 @@ use crate::video::keybindings::{build_single_key_map, key_to_accel_string};
 const SEEK_SHORT_SECS: f64 = 5.0;
 const SEEK_LONG_SECS: f64 = 60.0;
 const VOLUME_STEP: f64 = 5.0;
-const VOLUME_MAX: f64 = 100.0;
 const SPEED_STEP: f64 = 0.1;
 const SPEED_MIN: f64 = 0.25;
 const SPEED_MAX: f64 = 4.0;
@@ -33,12 +32,16 @@ pub(super) fn wire_keyboard_shortcuts(
     let single_key_actions = build_single_key_map(&settings.get_string(keys::CUSTOM_KEYBINDINGS));
     let mpv = mpv.clone();
     let input = sender.input_sender().clone();
+    let settings = settings.clone();
     key_controller.connect_key_pressed(move |controller, keyval, _code, state| {
+        // Read the same volume ceiling the slider uses, so the keyboard step
+        // reaches the >100% boost region instead of a hardcoded 100 cap.
+        let volume_max = f64::from(settings.get_int(keys::VOLUME_MAX)).max(100.0);
         // Hardware media keys fire regardless of focus.
-        if let Some(action) = media_key_action(keyval) {
-            if dispatch_video_shortcut(action, &mpv, &input) {
-                return glib::Propagation::Stop;
-            }
+        if let Some(action) = media_key_action(keyval)
+            && dispatch_video_shortcut(action, &mpv, &input, volume_max)
+        {
+            return glib::Propagation::Stop;
         }
         if focus_accepts_text(controller) {
             return glib::Propagation::Proceed;
@@ -47,7 +50,7 @@ pub(super) fn wire_keyboard_shortcuts(
         let Some(action) = single_key_actions.get(accel.as_str()) else {
             return glib::Propagation::Proceed;
         };
-        if dispatch_video_shortcut(action, &mpv, &input) {
+        if dispatch_video_shortcut(action, &mpv, &input, volume_max) {
             glib::Propagation::Stop
         } else {
             glib::Propagation::Proceed
@@ -69,8 +72,8 @@ pub(super) fn wire_trim_keys(
     controller.set_propagation_phase(gtk::PropagationPhase::Capture);
     let input = sender.input_sender().clone();
     controller.connect_key_pressed(move |controller, keyval, _code, _state| {
-        use gtk::gdk::Key;
         use VideoShellInput as In;
+        use gtk::gdk::Key;
         if !trim_active.get() || focus_accepts_text(controller) {
             return glib::Propagation::Proceed;
         }
@@ -93,6 +96,7 @@ fn dispatch_video_shortcut(
     action: &str,
     mpv: &Rc<RefCell<Option<Arc<MpvBackend>>>>,
     input: &relm4::Sender<VideoShellInput>,
+    volume_max: f64,
 ) -> bool {
     use VideoShellInput as In;
     let message = match action {
@@ -123,7 +127,7 @@ fn dispatch_video_shortcut(
         "seek-backward" => mpv.seek(-SEEK_SHORT_SECS),
         "seek-forward-long" => mpv.seek(SEEK_LONG_SECS),
         "seek-backward-long" => mpv.seek(-SEEK_LONG_SECS),
-        "volume-up" => mpv.set_volume((mpv.get_volume() + VOLUME_STEP).min(VOLUME_MAX)),
+        "volume-up" => mpv.set_volume((mpv.get_volume() + VOLUME_STEP).min(volume_max)),
         "volume-down" => mpv.set_volume((mpv.get_volume() - VOLUME_STEP).max(0.0)),
         "mute" => mpv.toggle_mute(),
         "speed-up" => mpv.set_speed((mpv.get_speed() + SPEED_STEP).min(SPEED_MAX)),
@@ -191,7 +195,7 @@ mod tests {
             "playlist-prev",
         ] {
             assert!(
-                dispatch_video_shortcut(action, &mpv, &tx),
+                dispatch_video_shortcut(action, &mpv, &tx, 150.0),
                 "{action} should dispatch a shell message"
             );
         }
@@ -214,7 +218,7 @@ mod tests {
             "frame-step",
         ] {
             assert!(
-                !dispatch_video_shortcut(action, &mpv, &tx),
+                !dispatch_video_shortcut(action, &mpv, &tx, 150.0),
                 "{action} needs a live backend"
             );
         }
@@ -223,7 +227,12 @@ mod tests {
     #[test]
     fn unknown_action_is_unhandled() {
         let (tx, _rx) = relm4::channel::<VideoShellInput>();
-        assert!(!dispatch_video_shortcut("does-not-exist", &no_mpv(), &tx));
+        assert!(!dispatch_video_shortcut(
+            "does-not-exist",
+            &no_mpv(),
+            &tx,
+            150.0
+        ));
     }
 
     #[test]

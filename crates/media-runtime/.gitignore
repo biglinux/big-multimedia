@@ -1,0 +1,10 @@
+/target/
+/.cache/
+/.pytest_cache/
+/.idea/
+*.log
+*.tmp
+*.bak
+*.swp
+*~
+mutants.out*/

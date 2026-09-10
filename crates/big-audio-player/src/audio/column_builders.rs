@@ -178,12 +178,11 @@ pub(super) fn unbind_click_gestures(widget: &impl IsA<gtk::Widget>) {
     let mut to_remove = Vec::new();
     let ctrl = widget.observe_controllers();
     for i in 0..ctrl.n_items() {
-        if let Some(c) = ctrl.item(i) {
-            if c.downcast_ref::<gtk::GestureClick>().is_some() {
-                if let Ok(controller) = c.downcast::<gtk::EventController>() {
-                    to_remove.push(controller);
-                }
-            }
+        if let Some(c) = ctrl.item(i)
+            && c.downcast_ref::<gtk::GestureClick>().is_some()
+            && let Ok(controller) = c.downcast::<gtk::EventController>()
+        {
+            to_remove.push(controller);
         }
     }
     for c in to_remove {

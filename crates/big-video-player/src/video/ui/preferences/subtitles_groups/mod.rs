@@ -13,14 +13,14 @@ pub(in crate::video::ui::preferences) use special::build_special_formats_group;
 // Drop unused parent re-exports below; the warning list above covers it.
 
 use adw::prelude::*;
-use big_relm4_components::layout::preferences::{track_widget_visibility, BigPreferencesGroupSpec};
+use big_relm4_components::layout::preferences::{BigPreferencesGroupSpec, track_widget_visibility};
 use big_relm4_components::list::button_strip_row::{BigButtonStripRow, BigButtonStripRowSpec};
 use gtk::pango;
 use std::sync::Arc;
 
 use crate::i18n::i18n;
 use crate::player::mpv_backend::MpvBackend;
-use crate::settings::{keys, Settings};
+use crate::settings::{Settings, keys};
 
 use super::AdvancedWidgets;
 use super::{

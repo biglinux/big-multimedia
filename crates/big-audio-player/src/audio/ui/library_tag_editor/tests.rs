@@ -6,14 +6,14 @@ use gtk::glib;
 use crate::db::models::Track;
 use crate::library::musicbrainz::MbMetadata;
 
-use super::spec::{
-    collect_tag_edit_fields, is_editable_text_changed, musicbrainz_fill_plan, optional_entry_text,
-    read_only_metadata_rows, should_apply_musicbrainz_result, should_offer_musicbrainz_lookup,
-    MusicBrainzFillPlan, TagEditFieldTextRefs,
-};
 use super::TagEditFields;
 #[cfg(not(miri))]
 use super::TagEditorHandle;
+use super::spec::{
+    MusicBrainzFillPlan, TagEditFieldTextRefs, collect_tag_edit_fields, is_editable_text_changed,
+    musicbrainz_fill_plan, optional_entry_text, read_only_metadata_rows,
+    should_apply_musicbrainz_result, should_offer_musicbrainz_lookup,
+};
 
 fn track_with_read_only_metadata() -> Track {
     let mut track =

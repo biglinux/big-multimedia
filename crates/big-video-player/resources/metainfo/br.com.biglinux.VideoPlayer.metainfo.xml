@@ -48,7 +48,7 @@
     <control>touch</control>
   </supports>
   <releases>
-    <release version="1.0.0" date="2026-04-26">
+    <release version="0.1.0" date="2026-04-26">
       <description>
         <p>Initial Rust release with libadwaita UI, mpv backend, hardware decoding, and BigLinux desktop integration.</p>
         <p xml:lang="pt_BR">Primeira versão em Rust com interface libadwaita, backend mpv, decodificação acelerada por hardware e integração com o desktop BigLinux.</p>

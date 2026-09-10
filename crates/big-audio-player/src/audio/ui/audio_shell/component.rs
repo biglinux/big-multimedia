@@ -4,7 +4,7 @@ use super::mpris::build_mpris_service;
 use super::playback::transport_labels;
 use super::*;
 use big_media_components::surface::{create_media_toast_overlay_root, mount_media_toast_content};
-use big_relm4_components::input::button_content::{build_button_content, BigButtonContentSpec};
+use big_relm4_components::input::button_content::{BigButtonContentSpec, build_button_content};
 use big_relm4_components::layout::toolbar_pane::{
     BigToolbarHeader, BigToolbarHeaderSpec, BigToolbarPane, BigToolbarPaneSpec,
 };
@@ -60,11 +60,7 @@ impl Component for AudioShell {
         let initial_voice_active = initial_noise > 0.0;
         let initial_volume = {
             let v = f64::from(settings.get_int(keys::AUDIO_VOLUME));
-            if v > 0.0 {
-                v
-            } else {
-                100.0
-            }
+            if v > 0.0 { v } else { 100.0 }
         };
 
         // Child Controllers: each panel's Output → an AudioShellInput variant.

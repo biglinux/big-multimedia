@@ -18,8 +18,8 @@ use crate::i18n::i18n;
 use super::super::library_panel::{LibraryPanel, LibraryPanelInput, LibraryPanelOutput};
 use super::super::playlist_geom::find_clicked_position;
 use super::interaction::{
-    library_panel_node_selected_output, library_tree_context_target, library_tree_selection,
-    selected_leaf_drag_paths, LibraryTreeContextTarget,
+    LibraryTreeContextTarget, library_panel_node_selected_output, library_tree_context_target,
+    library_tree_selection, selected_leaf_drag_paths,
 };
 use super::model::{ChildStores, LeafTracks, LibraryTreeHandle};
 use super::presentation::{file_leaf_presentation, library_tree_row_presentation};
@@ -105,6 +105,13 @@ fn build_tree_factory(
             .show_initials(true)
             .visible(false)
             .build();
+        // The avatar is decorative (album art / artist initials). Hide it from
+        // the a11y tree so a screen reader announces the row as "{title}
+        // {artist} {duration}" rather than prefixing a redundant "Avatar of
+        // {artist}". (Standard GTK4 decorative-image treatment; the kwin-mcp
+        // AT-SPI dump still folds hidden nodes into the row name, so this is not
+        // observable there — it is on a real screen reader.)
+        avatar.update_state(&[gtk::accessible::State::Hidden(true)]);
         let text_box = gtk::Box::builder()
             .orientation(gtk::Orientation::Vertical)
             .hexpand(true)

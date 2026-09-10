@@ -37,7 +37,7 @@ impl AudioShell {
         let path = track.file_path.clone();
         let art_artist = track.artist.clone();
         let art_album = track.album.clone();
-        let gen = self.now_playing_gen;
+        let r#gen = self.now_playing_gen;
         let input = sender.input_sender().clone();
         spawn_blocking_result(
             move || {
@@ -51,7 +51,7 @@ impl AudioShell {
                 })
             },
             move |data| {
-                let _ = input.send(AudioShellInput::ArtResolved { gen, data });
+                let _ = input.send(AudioShellInput::ArtResolved { r#gen, data });
             },
         );
     }
@@ -103,12 +103,12 @@ impl AudioShell {
         );
         // Cache the art to disk off the main loop; the resulting `file://` URL
         // is applied back on the main thread once the write commits.
-        let gen = self.now_playing_gen;
+        let r#gen = self.now_playing_gen;
         let input = sender.input_sender().clone();
         spawn_blocking_result(
             move || save_mpris_art(&bytes),
             move |url| {
-                let _ = input.send(AudioShellInput::MprisArtSaved { gen, url });
+                let _ = input.send(AudioShellInput::MprisArtSaved { r#gen, url });
             },
         );
     }

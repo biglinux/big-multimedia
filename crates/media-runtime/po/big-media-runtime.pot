@@ -1,0 +1,6246 @@
+# SOME DESCRIPTIVE TITLE.
+# Copyright (C) YEAR BigLinux
+# This file is distributed under the same license as the big-media-runtime package.
+# FIRST AUTHOR <EMAIL@ADDRESS>, YEAR.
+#
+#, fuzzy
+msgid ""
+msgstr ""
+"Project-Id-Version: big-media-runtime 0.1.0\n"
+"Report-Msgid-Bugs-To: https://github.com/biglinux/big-multimedia/issues\n"
+"POT-Creation-Date: 2026-09-10 05:46-0300\n"
+"PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
+"Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
+"Language-Team: LANGUAGE <LL@li.org>\n"
+"Language: \n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=INTEGER; plural=EXPRESSION;\n"
+
+#: crates/big-audio-player/src/audio/appearance/dialogs.rs:43
+#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:292
+msgid "Effects"
+msgstr ""
+
+#: crates/big-audio-player/src/audio/keybindings.rs:14
+#: crates/big-audio-player/src/audio/ui/audio_shell/playback.rs:156
+#: crates/big-video-player/src/video/keybindings.rs:15
+#: crates/big-video-player/src/video/ui/video_shell/input_gestures.rs:128
+msgid "Play / Pause"
+msgstr ""
+
+#: crates/big-audio-player/src/audio/keybindings.rs:15
+#: crates/big-audio-player/src/audio/keybindings.rs:22
+#: crates/big-audio-player/src/audio/keybindings.rs:29
+#: crates/big-audio-player/src/audio/keybindings.rs:36
+#: crates/big-audio-player/src/audio/keybindings.rs:43
+#: crates/big-audio-player/src/audio/preferences.rs:117
+#: crates/big-video-player/src/video/keybindings.rs:16
+#: crates/big-video-player/src/video/keybindings.rs:23
+#: crates/big-video-player/src/video/keybindings.rs:30
+#: crates/big-video-player/src/video/keybindings.rs:37
+#: crates/big-video-player/src/video/keybindings.rs:44
+#: crates/big-video-player/src/video/keybindings.rs:51
+#: crates/big-video-player/src/video/keybindings.rs:58
+#: crates/big-video-player/src/video/keybindings.rs:65
+#: crates/big-video-player/src/video/keybindings.rs:72
+#: crates/big-video-player/src/video/keybindings.rs:79
+#: crates/big-video-player/src/video/keybindings.rs:86
+#: crates/big-video-player/src/video/keybindings.rs:93
+#: crates/big-video-player/src/video/keybindings.rs:100
+#: crates/big-video-player/src/video/keybindings.rs:107
+#: crates/big-video-player/src/video/keybindings.rs:114
+#: crates/big-video-player/src/video/ui/preferences/advanced/playback.rs:22
+msgid "Playback"
+msgstr ""
+
+#: crates/big-audio-player/src/audio/keybindings.rs:21
+msgid "Next Track"
+msgstr ""
+
+#: crates/big-audio-player/src/audio/keybindings.rs:28
+msgid "Previous Track"
+msgstr ""
+
+#: crates/big-audio-player/src/audio/keybindings.rs:35
+msgid "Next Track (single key)"
+msgstr ""
+
+#: crates/big-audio-player/src/audio/keybindings.rs:42
+msgid "Previous Track (single key)"
+msgstr ""
+
+#: crates/big-audio-player/src/audio/keybindings.rs:50
+msgid "Search"
+msgstr ""
+
+#: crates/big-audio-player/src/audio/keybindings.rs:51
+#: crates/big-audio-player/src/audio/keybindings.rs:58
+#: crates/big-audio-player/src/audio/keybindings.rs:65
+#: crates/big-video-player/src/video/keybindings.rs:274
+#: crates/big-video-player/src/video/keybindings.rs:281
+msgid "Navigation"
+msgstr ""
+
+#: crates/big-audio-player/src/audio/keybindings.rs:57
+msgid "Scroll to Playing"
+msgstr ""
+
+#: crates/big-audio-player/src/audio/keybindings.rs:64
+msgid "Select All"
+msgstr ""
+
+#: crates/big-audio-player/src/audio/keybindings.rs:72
+msgid "Manage Music Folders"
+msgstr ""
+
+#: crates/big-audio-player/src/audio/keybindings.rs:73
+#: crates/big-audio-player/src/audio/keybindings.rs:80
+msgid "Library"
+msgstr ""
+
+#: crates/big-audio-player/src/audio/keybindings.rs:79
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:117
+#: crates/big-video-player/src/video/ui/video_shell/component.rs:795
+#: crates/big-video-player/src/video/ui/video_shell/input_gestures.rs:133
+#: crates/media-runtime/src/shared/audio_effects_eq.rs:365
+#: crates/ui/media/big-media-components/src/audio/cleanup_dialog.rs:129
+#: crates/ui/media/big-media-components/src/audio/editor_panel.rs:118
+#: crates/ui/media/big-media-components/src/audio/equalizer_dialog.rs:99
+msgid "Equalizer"
+msgstr ""
+
+#: crates/big-audio-player/src/audio/keybindings.rs:87
+msgid "Toggle Shuffle"
+msgstr ""
+
+#: crates/big-audio-player/src/audio/keybindings.rs:88
+#: crates/big-audio-player/src/audio/keybindings.rs:95
+#: crates/big-audio-player/src/audio/keybindings.rs:102
+#: crates/big-audio-player/src/audio/keybindings.rs:109
+#: crates/big-audio-player/src/audio/keybindings.rs:116
+msgid "Queue"
+msgstr ""
+
+#: crates/big-audio-player/src/audio/keybindings.rs:94
+msgid "Toggle Repeat"
+msgstr ""
+
+#: crates/big-audio-player/src/audio/keybindings.rs:101
+#: crates/big-audio-player/src/audio/ui/audio_shell/queue_state.rs:103
+#: crates/big-video-player/src/video/ui/video_shell/playback.rs:297
+msgid "Undo"
+msgstr ""
+
+#: crates/big-audio-player/src/audio/keybindings.rs:108
+#: crates/big-audio-player/src/audio/ui/audio_shell/queue_state.rs:115
+msgid "Redo"
+msgstr ""
+
+#: crates/big-audio-player/src/audio/keybindings.rs:115
+#: crates/ui/media/big-media-components/src/converter/header_bar.rs:63
+msgid "Quit"
+msgstr ""
+
+#: crates/big-audio-player/src/audio/library_grouping/age_filter.rs:27
+msgid "All Time"
+msgstr ""
+
+#: crates/big-audio-player/src/audio/library_grouping/age_filter.rs:28
+msgid "Today"
+msgstr ""
+
+#: crates/big-audio-player/src/audio/library_grouping/age_filter.rs:29
+msgid "This Week"
+msgstr ""
+
+#: crates/big-audio-player/src/audio/library_grouping/age_filter.rs:30
+msgid "This Month"
+msgstr ""
+
+#: crates/big-audio-player/src/audio/library_grouping/age_filter.rs:31
+msgid "3 Months"
+msgstr ""
+
+#: crates/big-audio-player/src/audio/library_grouping/age_filter.rs:32
+msgid "This Year"
+msgstr ""
+
+#: crates/big-audio-player/src/audio/library_grouping/group_by.rs:38
+#: crates/big-video-player/src/video/ui/filters/groups_shader.rs:187
+#: crates/media-runtime/src/ui_labels.rs:127
+msgid "None"
+msgstr ""
+
+#: crates/big-audio-player/src/audio/library_grouping/group_by.rs:39
+#: crates/big-audio-player/src/audio/ui/library_detail_columns.rs:69
+#: crates/big-audio-player/src/audio/ui/library_tag_editor.rs:184
+#: crates/big-audio-player/src/audio/ui/playlist_columns.rs:106
+msgid "Artist"
+msgstr ""
+
+#: crates/big-audio-player/src/audio/library_grouping/group_by.rs:40
+#: crates/big-audio-player/src/audio/ui/library_tag_editor.rs:187
+msgid "Album Artist"
+msgstr ""
+
+#: crates/big-audio-player/src/audio/library_grouping/group_by.rs:41
+#: crates/big-audio-player/src/audio/library_grouping/grouping.rs:82
+#: crates/big-audio-player/src/audio/ui/library_detail_columns.rs:78
+#: crates/big-audio-player/src/audio/ui/library_tag_editor.rs:185
+#: crates/big-audio-player/src/audio/ui/playlist_columns.rs:115
+msgid "Album"
+msgstr ""
+
+#: crates/big-audio-player/src/audio/library_grouping/group_by.rs:42
+#: crates/big-audio-player/src/audio/library_grouping/grouping.rs:86
+#: crates/big-audio-player/src/audio/ui/library_detail_columns.rs:97
+#: crates/big-audio-player/src/audio/ui/library_tag_editor.rs:190
+#: crates/big-audio-player/src/audio/ui/playlist_columns.rs:137
+msgid "Genre"
+msgstr ""
+
+#: crates/big-audio-player/src/audio/library_grouping/group_by.rs:43
+#: crates/big-audio-player/src/audio/library_grouping/grouping.rs:87
+#: crates/big-audio-player/src/audio/ui/library_detail_columns.rs:111
+#: crates/big-audio-player/src/audio/ui/library_tag_editor.rs:191
+#: crates/big-audio-player/src/audio/ui/playlist_columns.rs:151
+msgid "Year"
+msgstr ""
+
+#: crates/big-audio-player/src/audio/library_grouping/group_by.rs:44
+#: crates/big-audio-player/src/audio/ui/audio_shell/export.rs:235
+#: crates/big-audio-player/src/audio/ui/library_detail_columns.rs:136
+#: crates/big-audio-player/src/audio/ui/library_tag_editor/spec.rs:112
+#: crates/big-audio-player/src/audio/ui/playlist_columns.rs:177
+#: crates/big-quick-export/src/encode_options.rs:70
+#: crates/big-video-player/src/video/ui/media_details_dialog.rs:96
+#: crates/big-video-player/src/video/ui/media_details_dialog.rs:242
+#: crates/big-video-player/src/video/ui/preferences/advanced/screenshot.rs:31
+#: crates/ui/media/big-media-components/src/media/file_metadata_dialog.rs:85
+msgid "Format"
+msgstr ""
+
+#: crates/big-audio-player/src/audio/library_grouping/grouping.rs:80
+msgid "Songs"
+msgstr ""
+
+#: crates/big-audio-player/src/audio/library_grouping/grouping.rs:81
+msgid "Artist → Album"
+msgstr ""
+
+#: crates/big-audio-player/src/audio/library_grouping/grouping.rs:83
+msgid "Genre → Artist → Album"
+msgstr ""
+
+#: crates/big-audio-player/src/audio/library_grouping/grouping.rs:84
+msgid "Genre → Artist"
+msgstr ""
+
+#: crates/big-audio-player/src/audio/library_grouping/grouping.rs:85
+msgid "Year → Album"
+msgstr ""
+
+#: crates/big-audio-player/src/audio/library_query.rs:130
+msgid "All Tracks"
+msgstr ""
+
+#: crates/big-audio-player/src/audio/library_query.rs:165
+#: crates/big-audio-player/src/audio/ui/library_tree/model.rs:194
+#: crates/big-audio-player/src/audio/ui/library_tree/presentation.rs:77
+#: crates/big-audio-player/src/audio/ui/library_tree/presentation_tests.rs:77
+#: crates/big-audio-player/src/audio/ui/library_tree.rs:112
+#: crates/big-audio-player/src/audio/ui/library_tree.rs:223
+#: crates/ui/media/big-player-ui/src/browser_node.rs:221
+msgid "Various Artists"
+msgstr ""
+
+#: crates/big-audio-player/src/audio/preferences.rs:49
+#: crates/big-audio-player/src/audio/ui/audio_shell/component.rs:140
+#: crates/big-audio-player/src/audio/ui/audio_shell/component.rs:180
+#: crates/big-video-player/src/video/keybindings.rs:245
+#: crates/big-video-player/src/video/keybindings.rs:252
+#: crates/big-video-player/src/video/keybindings.rs:259
+#: crates/big-video-player/src/video/keybindings.rs:266
+msgid "Music"
+msgstr ""
+
+#: crates/big-audio-player/src/audio/preferences.rs:76
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:125
+#: crates/big-video-player/src/video/ui/preferences/mod.rs:80
+#: crates/big-video-player/src/video/ui/video_shell/component.rs:816
+msgid "Preferences"
+msgstr ""
+
+#: crates/big-audio-player/src/audio/preferences.rs:118
+msgid "Control how your music is played"
+msgstr ""
+
+#: crates/big-audio-player/src/audio/preferences.rs:124
+msgid "Volume Leveling"
+msgstr ""
+
+#: crates/big-audio-player/src/audio/preferences.rs:126
+msgid ""
+"Makes all songs play at a similar volume so you don't need to adjust between "
+"tracks"
+msgstr ""
+
+#: crates/big-audio-player/src/audio/preferences.rs:128
+#: crates/big-video-player/src/video/ui/preferences/advanced/playback.rs:46
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/header.rs:167
+msgid "Off"
+msgstr ""
+
+#: crates/big-audio-player/src/audio/preferences.rs:128
+msgid "Per Song"
+msgstr ""
+
+#: crates/big-audio-player/src/audio/preferences.rs:128
+msgid "Per Album"
+msgstr ""
+
+#: crates/big-audio-player/src/audio/preferences.rs:142
+msgid "Volume Leveling Boost"
+msgstr ""
+
+#: crates/big-audio-player/src/audio/preferences.rs:144
+msgid ""
+"Fine-tune the volume leveling — positive values make it louder, negative "
+"softer"
+msgstr ""
+
+#: crates/big-audio-player/src/audio/preferences.rs:170
+msgid "Gapless Playback"
+msgstr ""
+
+#: crates/big-audio-player/src/audio/preferences.rs:171
+msgid ""
+"Remove silence between songs for a continuous listening experience — great "
+"for live albums and DJ mixes"
+msgstr ""
+
+#: crates/big-audio-player/src/audio/preferences.rs:188
+#: crates/big-video-player/src/video/ui/preferences/advanced/playback.rs:31
+msgid "Resume Playback"
+msgstr ""
+
+#: crates/big-audio-player/src/audio/preferences.rs:190
+msgid ""
+"When you play a song again, continue from where you left off instead of "
+"starting over"
+msgstr ""
+
+#: crates/big-audio-player/src/audio/preferences.rs:209
+msgid "Crossfade"
+msgstr ""
+
+#: crates/big-audio-player/src/audio/preferences.rs:211
+msgid ""
+"Blend the end of one song into the beginning of the next — set to 0 to "
+"disable"
+msgstr ""
+
+#: crates/big-audio-player/src/audio/preferences.rs:233
+msgid "Taskbar Progress"
+msgstr ""
+
+#: crates/big-audio-player/src/audio/preferences.rs:235
+msgid ""
+"Show a progress bar on the app icon in the taskbar while music is playing"
+msgstr ""
+
+#: crates/big-audio-player/src/audio/preferences.rs:255
+msgid ""
+"Keep a record of everything you listen to on ListenBrainz — a free, open-"
+"source music tracking service"
+msgstr ""
+
+#: crates/big-audio-player/src/audio/preferences.rs:261
+msgid "Enable ListenBrainz"
+msgstr ""
+
+#: crates/big-audio-player/src/audio/preferences.rs:265
+msgid "User Token"
+msgstr ""
+
+#: crates/big-audio-player/src/audio/ui/audio_shell/chrome.rs:44
+#: crates/big-audio-player/src/audio/ui/audio_shell/component.rs:152
+#: crates/big-audio-player/src/audio/ui/audio_shell/component.rs:182
+msgid "Radio"
+msgstr ""
+
+#: crates/big-audio-player/src/audio/ui/audio_shell/chrome.rs:86
+msgid "No track loaded"
+msgstr ""
+
+#: crates/big-audio-player/src/audio/ui/audio_shell/chrome.rs:90
+#: crates/big-audio-player/src/audio/ui/audio_shell/chrome.rs:103
+msgid "Cast failed"
+msgstr ""
+
+#: crates/big-audio-player/src/audio/ui/audio_shell/chrome.rs:102
+msgid "Casting to"
+msgstr ""
+
+#: crates/big-audio-player/src/audio/ui/audio_shell/chrome.rs:123
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:118
+#: crates/big-video-player/src/video/ui/menu_dialogs.rs:225
+msgid "Sleep Timer"
+msgstr ""
+
+#: crates/big-audio-player/src/audio/ui/audio_shell/chrome.rs:133
+#: crates/big-video-player/src/video/ui/menu_dialogs.rs:237
+msgid "Timer Active"
+msgstr ""
+
+#: crates/big-audio-player/src/audio/ui/audio_shell/chrome.rs:134
+#: crates/big-video-player/src/video/ui/menu_dialogs.rs:238
+msgid "Cancel Timer"
+msgstr ""
+
+#: crates/big-audio-player/src/audio/ui/audio_shell/chrome.rs:215
+#: crates/big-video-player/src/video/ui/menu_dialogs.rs:326
+msgid "Sleep timer started"
+msgstr ""
+
+#: crates/big-audio-player/src/audio/ui/audio_shell/chrome.rs:241
+#: crates/big-video-player/src/video/ui/menu_dialogs.rs:370
+msgid "Sleep timer: closing player"
+msgstr ""
+
+#: crates/big-audio-player/src/audio/ui/audio_shell/chrome.rs:249
+#: crates/big-video-player/src/video/ui/menu_dialogs.rs:378
+msgid "Sleep timer: suspending computer"
+msgstr ""
+
+#: crates/big-audio-player/src/audio/ui/audio_shell/chrome.rs:256
+#: crates/big-video-player/src/video/ui/menu_dialogs.rs:384
+msgid "Sleep timer: shutting down"
+msgstr ""
+
+#: crates/big-audio-player/src/audio/ui/audio_shell/chrome.rs:262
+#: crates/big-video-player/src/video/ui/menu_dialogs.rs:389
+msgid "Sleep timer: playback paused"
+msgstr ""
+
+#: crates/big-audio-player/src/audio/ui/audio_shell/component.rs:102
+msgid "Add current folder to Music Library"
+msgstr ""
+
+#: crates/big-audio-player/src/audio/ui/audio_shell/component.rs:103
+msgid "Add this folder to Music Library"
+msgstr ""
+
+#: crates/big-audio-player/src/audio/ui/audio_shell/component.rs:104
+msgid "Filter files…"
+msgstr ""
+
+#: crates/big-audio-player/src/audio/ui/audio_shell/component.rs:146
+#: crates/big-audio-player/src/audio/ui/audio_shell/component.rs:181
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/header.rs:22
+#: crates/big-video-player/src/video/ui/video_shell/component.rs:296
+msgid "Files"
+msgstr ""
+
+#: crates/big-audio-player/src/audio/ui/audio_shell/component.rs:158
+msgid "Podcasts"
+msgstr ""
+
+#: crates/big-audio-player/src/audio/ui/audio_shell/component.rs:185
+#: crates/ui/media/big-media-components/src/audio/equalizer_controls/labels.rs:26
+msgid "Podcast"
+msgstr ""
+
+#: crates/big-audio-player/src/audio/ui/audio_shell/component.rs:238
+#: crates/big-audio-player/src/audio/ui/audio_shell/playback.rs:168
+#: crates/big-audio-player/src/audio/ui/library_tag_editor.rs:277
+msgid "Album art"
+msgstr ""
+
+#: crates/big-audio-player/src/audio/ui/audio_shell/component.rs:240
+#: crates/big-audio-player/src/lib.rs:30 crates/big-audio-player/src/lib.rs:113
+msgid "Big Audio Player"
+msgstr ""
+
+#: crates/big-audio-player/src/audio/ui/audio_shell/component.rs:247
+msgid "Select a song to start"
+msgstr ""
+
+#: crates/big-audio-player/src/audio/ui/audio_shell/export.rs:39
+#: crates/big-video-player/src/video/ui/video_shell/export.rs:41
+msgid "Converting…"
+msgstr ""
+
+#: crates/big-audio-player/src/audio/ui/audio_shell/export.rs:45
+#: crates/big-audio-player/src/audio/ui/audio_shell/export.rs:228
+#: crates/big-audio-player/src/audio/ui/audio_shell/export.rs:357
+msgid "No local track is playing"
+msgstr ""
+
+#: crates/big-audio-player/src/audio/ui/audio_shell/export.rs:65
+msgid "Trim mode enabled"
+msgstr ""
+
+#: crates/big-audio-player/src/audio/ui/audio_shell/export.rs:152
+#: crates/big-video-player/src/video/ui/video_shell/trim/run.rs:302
+msgid "Start (seconds)"
+msgstr ""
+
+#: crates/big-audio-player/src/audio/ui/audio_shell/export.rs:157
+#: crates/big-video-player/src/video/ui/video_shell/trim/run.rs:306
+msgid "End (seconds)"
+msgstr ""
+
+#: crates/big-audio-player/src/audio/ui/audio_shell/export.rs:170
+msgid "Cut range"
+msgstr ""
+
+#: crates/big-audio-player/src/audio/ui/audio_shell/export.rs:172
+msgid "Use the clock buttons to copy the current playback position"
+msgstr ""
+
+#: crates/big-audio-player/src/audio/ui/audio_shell/export.rs:178
+msgid "End must be after start"
+msgstr ""
+
+#: crates/big-audio-player/src/audio/ui/audio_shell/export.rs:180
+#: crates/ui/media/big-player-ui/src/audio_trim_bar.rs:51
+msgid "Edit cut"
+msgstr ""
+
+#: crates/big-audio-player/src/audio/ui/audio_shell/export.rs:185
+#: crates/big-audio-player/src/audio/ui/audio_shell/export.rs:259
+#: crates/big-audio-player/src/audio/ui/library_dialogs.rs:78
+#: crates/big-audio-player/src/audio/ui/library_io.rs:54
+#: crates/big-audio-player/src/audio/ui/library_tag_editor.rs:127
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:190
+#: crates/big-audio-player/src/audio/ui/playlist_interactions.rs:542
+#: crates/big-audio-player/src/audio/ui/playlist_library_dialog/spec.rs:194
+#: crates/big-audio-player/src/audio/ui/playlist_library_dialog/spec.rs:205
+#: crates/big-audio-player/src/audio/ui/playlist_library_dialog/spec.rs:214
+#: crates/big-video-player/src/video/ui/iptv/providers_dialog.rs:162
+#: crates/big-video-player/src/video/ui/menu_dialogs.rs:58
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/fileops.rs:200
+#: crates/big-video-player/src/video/ui/video_shell/component.rs:180
+#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:227
+#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:358
+#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:472
+#: crates/big-video-player/src/video/ui/video_shell/trim/run.rs:345
+#: crates/media-runtime/src/editor/edit_page/segment_list.rs:140
+#: crates/media-runtime/src/shared/dialogs.rs:26
+#: crates/ui/generic/big-relm4-components/src/layout/saved_layouts_dialog.rs:50
+#: crates/ui/media/big-media-components/src/converter/header_bar.rs:57
+#: crates/ui/media/big-media-components/src/converter/progress/build.rs:310
+#: crates/ui/media/big-player-ui/src/podcast_panel.rs:575
+#: crates/ui/media/big-player-ui/src/radio_panel/widgets.rs:352
+msgid "Cancel"
+msgstr ""
+
+#: crates/big-audio-player/src/audio/ui/audio_shell/export.rs:185
+#: crates/big-video-player/src/video/ui/video_shell/trim/run.rs:345
+#: crates/ui/media/big-media-components/src/audio/editor_panel.rs:111
+msgid "Apply"
+msgstr ""
+
+#: crates/big-audio-player/src/audio/ui/audio_shell/export.rs:239
+#: crates/ui/media/big-player-ui/src/audio_preferences.rs:100
+msgid "Output"
+msgstr ""
+
+#: crates/big-audio-player/src/audio/ui/audio_shell/export.rs:243
+msgid "Join creates one file; separate creates one file per cut"
+msgstr ""
+
+#: crates/big-audio-player/src/audio/ui/audio_shell/export.rs:246
+msgid "Export marked cuts"
+msgstr ""
+
+#: crates/big-audio-player/src/audio/ui/audio_shell/export.rs:247
+msgid "selected cut ranges"
+msgstr ""
+
+#: crates/big-audio-player/src/audio/ui/audio_shell/export.rs:253
+msgid "Export Cuts"
+msgstr ""
+
+#: crates/big-audio-player/src/audio/ui/audio_shell/export.rs:259
+#: crates/big-video-player/src/video/ui/video_shell/trim/bar.rs:296
+msgid "Export"
+msgstr ""
+
+#: crates/big-audio-player/src/audio/ui/audio_shell/export.rs:458
+#: crates/big-video-player/src/video/ui/video_shell/export.rs:76
+msgid "Saved"
+msgstr ""
+
+#: crates/big-audio-player/src/audio/ui/audio_shell/export.rs:463
+#: crates/big-audio-player/src/audio/ui/library_io.rs:96
+#: crates/big-video-player/src/video/ui/video_shell/export.rs:81
+#: crates/big-video-player/src/video/ui/video_shell/trim/run.rs:235
+#: crates/big-video-player/src/video/ui/video_shell/trim/run.rs:534
+msgid "Export failed"
+msgstr ""
+
+#: crates/big-audio-player/src/audio/ui/audio_shell/export.rs:488
+msgid "Use current position"
+msgstr ""
+
+#: crates/big-audio-player/src/audio/ui/audio_shell/export.rs:490
+msgid "Use current playback position"
+msgstr ""
+
+#: crates/big-audio-player/src/audio/ui/audio_shell/panel_intents.rs:382
+msgid "Save Episode"
+msgstr ""
+
+#: crates/big-audio-player/src/audio/ui/audio_shell/panel_intents.rs:383
+#: crates/big-audio-player/src/audio/ui/library_io.rs:55
+#: crates/big-audio-player/src/audio/ui/library_io.rs:86
+#: crates/big-audio-player/src/audio/ui/library_tag_editor.rs:127
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:190
+#: crates/big-video-player/src/video/ui/iptv/providers_dialog.rs:162
+#: crates/media-runtime/src/editor/edit_page/segment_list.rs:142
+#: crates/ui/generic/big-relm4-components/src/layout/saved_layouts_dialog.rs:51
+msgid "Save"
+msgstr ""
+
+#: crates/big-audio-player/src/audio/ui/audio_shell/panel_intents.rs:390
+msgid "Save Episodes"
+msgstr ""
+
+#: crates/big-audio-player/src/audio/ui/audio_shell/playback.rs:154
+msgid "Seek position"
+msgstr ""
+
+#: crates/big-audio-player/src/audio/ui/audio_shell/playback.rs:155
+#: crates/big-video-player/src/video/ui/video_controls_bar.rs:258
+msgid "Cut timeline"
+msgstr ""
+
+#: crates/big-audio-player/src/audio/ui/audio_shell/playback.rs:157
+#: crates/big-video-player/src/video/ui/video_controls_bar/zones.rs:360
+#: crates/ui/media/big-media-components/src/video/editor_panel.rs:61
+msgid "Previous"
+msgstr ""
+
+#: crates/big-audio-player/src/audio/ui/audio_shell/playback.rs:158
+#: crates/big-video-player/src/video/ui/video_controls_bar/zones.rs:363
+#: crates/ui/media/big-media-components/src/video/editor_panel.rs:62
+msgid "Next"
+msgstr ""
+
+#: crates/big-audio-player/src/audio/ui/audio_shell/playback.rs:159
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/header.rs:165
+msgid "Shuffle"
+msgstr ""
+
+#: crates/big-audio-player/src/audio/ui/audio_shell/playback.rs:160
+#: crates/big-video-player/src/video/ui/preferences/advanced/playback.rs:45
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/header.rs:170
+msgid "Repeat"
+msgstr ""
+
+#: crates/big-audio-player/src/audio/ui/audio_shell/playback.rs:161
+#: crates/ui/media/big-media-components/src/audio/editor_panel.rs:120
+#: crates/ui/media/big-media-components/src/player_chrome.rs:298
+#: crates/ui/media/big-media-components/src/text.rs:75
+#: crates/ui/media/big-media-components/src/text.rs:83
+#: crates/ui/media/big-media-components/src/text.rs:92
+#: crates/ui/media/big-media-components/src/video/editor_panel.rs:67
+msgid "Volume"
+msgstr ""
+
+#: crates/big-audio-player/src/audio/ui/audio_shell/playback.rs:162
+#: crates/big-video-player/src/video/ui/video_controls_bar/zones.rs:196
+#: crates/ui/media/big-media-components/src/player_chrome.rs:309
+msgid "Speed"
+msgstr ""
+
+#: crates/big-audio-player/src/audio/ui/audio_shell/playback.rs:163
+#: crates/big-video-player/src/video/ui/video_controls_bar/zones.rs:211
+msgid "Voice Enhancement"
+msgstr ""
+
+#: crates/big-audio-player/src/audio/ui/audio_shell/playback.rs:164
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:119
+msgid "Trim & Export"
+msgstr ""
+
+#: crates/big-audio-player/src/audio/ui/audio_shell/playback.rs:165
+#: crates/ui/media/big-player-ui/src/lyrics_panel.rs:144
+msgid "Lyrics"
+msgstr ""
+
+#: crates/big-audio-player/src/audio/ui/audio_shell/playback.rs:166
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:88
+#: crates/big-audio-player/src/audio/ui/playlist_panel.rs:87
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/header.rs:24
+#: crates/big-video-player/src/video/ui/video_shell/component.rs:302
+msgid "Playlist"
+msgstr ""
+
+#: crates/big-audio-player/src/audio/ui/audio_shell/playback.rs:167
+msgid "Status"
+msgstr ""
+
+#: crates/big-audio-player/src/audio/ui/audio_shell/playlist_library_dialog_actions.rs:97
+msgid "Import Playlists Folder"
+msgstr ""
+
+#: crates/big-audio-player/src/audio/ui/audio_shell/playlist_library_dialog_actions.rs:163
+msgid "Export All Playlists"
+msgstr ""
+
+#: crates/big-audio-player/src/audio/ui/audio_shell/playlist_library_dialog_actions.rs:224
+#: crates/big-audio-player/src/audio/ui/library_io.rs:85
+msgid "Export Playlist"
+msgstr ""
+
+#: crates/big-audio-player/src/audio/ui/audio_shell/playlist_library_dialog_actions.rs:226
+msgid "M3U8 Playlist"
+msgstr ""
+
+#: crates/big-audio-player/src/audio/ui/audio_shell/playlist_library_dialog_actions.rs:240
+#: crates/big-audio-player/src/audio/ui/library_io.rs:122
+msgid "Import Playlist"
+msgstr ""
+
+#: crates/big-audio-player/src/audio/ui/audio_shell/playlist_library_dialog_actions.rs:241
+#: crates/big-audio-player/src/audio/ui/library_dialogs.rs:62
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/menu_actions.rs:182
+msgid "Playlists"
+msgstr ""
+
+#: crates/big-audio-player/src/audio/ui/audio_shell/queue_state.rs:105
+msgid "Nothing to undo"
+msgstr ""
+
+#: crates/big-audio-player/src/audio/ui/audio_shell/queue_state.rs:117
+msgid "Nothing to redo"
+msgstr ""
+
+#: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:36
+msgid "Scanning folder…"
+msgstr ""
+
+#: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:68
+msgid "Scanning library…"
+msgstr ""
+
+#: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:196
+msgid "Recording to"
+msgstr ""
+
+#: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:211
+msgid "Recording was not saved"
+msgstr ""
+
+#: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:230
+msgid "Loading feed…"
+msgstr ""
+
+#: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:261
+msgid "No episodes found"
+msgstr ""
+
+#: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:369
+msgid "Recording saved"
+msgstr ""
+
+#: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:375
+msgid "The recording was saved and is ready to open."
+msgstr ""
+
+#: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:379
+#: crates/big-audio-player/src/audio/ui/library_tag_editor/spec.rs:125
+#: crates/big-video-player/src/video/ui/media_details_dialog.rs:81
+msgid "File"
+msgstr ""
+
+#: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:383
+msgid "Folder"
+msgstr ""
+
+#: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:389
+#: crates/ui/media/big-media-components/src/media/file_metadata_dialog.rs:81
+msgid "Open Folder"
+msgstr ""
+
+#: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:394
+#: crates/big-audio-player/src/audio/ui/cast_dialog.rs:58
+#: crates/big-audio-player/src/audio/ui/library_dialogs.rs:64
+#: crates/big-video-player/src/video/ui/video_shell/component.rs:164
+#: crates/media-runtime/src/shared/dialogs.rs:7
+#: crates/media-runtime/src/shared/dialogs.rs:12
+#: crates/ui/generic/big-relm4-components/src/layout/saved_layouts_dialog.rs:40
+#: crates/ui/generic/big-relm4-components/src/layout/saved_layouts_dialog.rs:85
+#: crates/ui/generic/big-relm4-components/src/layout/saved_layouts_dialog.rs:136
+msgid "Close"
+msgstr ""
+
+#: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:394
+#: crates/big-video-player/src/video/ui/video_shell/actions.rs:147
+msgid "Open File"
+msgstr ""
+
+#: crates/big-audio-player/src/audio/ui/audio_shell/update.rs:44
+msgid "Library updated"
+msgstr ""
+
+#: crates/big-audio-player/src/audio/ui/audio_shell/update.rs:81
+msgid "Tags saved"
+msgstr ""
+
+#: crates/big-audio-player/src/audio/ui/audio_shell/update.rs:122
+msgid "Casting stopped"
+msgstr ""
+
+#: crates/big-audio-player/src/audio/ui/audio_shell/update.rs:164
+msgid "tracks imported"
+msgstr ""
+
+#: crates/big-audio-player/src/audio/ui/audio_shell/update.rs:176
+#: crates/big-video-player/src/video/ui/video_shell/component.rs:724
+msgid "Sleep timer cancelled"
+msgstr ""
+
+#: crates/big-audio-player/src/audio/ui/cast_dialog.rs:49
+msgid "Cast Audio"
+msgstr ""
+
+#: crates/big-audio-player/src/audio/ui/cast_dialog.rs:55
+msgid "Searching for devices..."
+msgstr ""
+
+#: crates/big-audio-player/src/audio/ui/cast_dialog.rs:56
+msgid "Cast devices"
+msgstr ""
+
+#: crates/big-audio-player/src/audio/ui/cast_dialog.rs:57
+msgid "Cast to this device"
+msgstr ""
+
+#: crates/big-audio-player/src/audio/ui/cast_dialog.rs:59
+msgid "Stop Casting"
+msgstr ""
+
+#: crates/big-audio-player/src/audio/ui/cast_dialog.rs:82
+msgid "device(s) found"
+msgstr ""
+
+#: crates/big-audio-player/src/audio/ui/library_detail_columns.rs:88
+#: crates/big-audio-player/src/audio/ui/library_tag_editor/spec.rs:83
+#: crates/big-audio-player/src/audio/ui/playlist_columns.rs:125
+#: crates/big-video-player/src/video/ui/media_details_dialog.rs:101
+#: crates/media-runtime/src/shared/sleep_timer.rs:23
+#: crates/ui/media/big-media-components/src/media/file_metadata_dialog.rs:83
+msgid "Duration"
+msgstr ""
+
+#: crates/big-audio-player/src/audio/ui/library_detail_columns.rs:121
+#: crates/big-audio-player/src/audio/ui/library_tag_editor/spec.rs:88
+#: crates/big-audio-player/src/audio/ui/playlist_columns.rs:161
+#: crates/big-video-player/src/video/ui/media_details_dialog.rs:168
+#: crates/big-video-player/src/video/ui/media_details_dialog.rs:220
+#: crates/media-runtime/src/media/metadata_cache/detailed_video_metadata.rs:133
+#: crates/media-runtime/src/media/metadata_cache/detailed_video_metadata.rs:179
+#: crates/ui/media/big-media-components/src/media/file_metadata_dialog.rs:86
+msgid "Bitrate"
+msgstr ""
+
+#: crates/big-audio-player/src/audio/ui/library_detail_columns.rs:369
+#: crates/big-audio-player/src/audio/ui/library_tag_editor.rs:183
+#: crates/big-audio-player/src/audio/ui/playlist_columns.rs:286
+#: crates/big-video-player/src/video/ui/media_details_dialog.rs:92
+#: crates/media-runtime/src/media/metadata_cache/detailed_video_metadata.rs:186
+#: crates/media-runtime/src/media/metadata_cache/detailed_video_metadata.rs:200
+msgid "Title"
+msgstr ""
+
+#: crates/big-audio-player/src/audio/ui/library_detail_columns.rs:399
+#: crates/big-audio-player/src/audio/ui/library_detail_columns.rs:447
+#: crates/big-audio-player/src/audio/ui/playlist_columns.rs:316
+#: crates/big-audio-player/src/audio/ui/playlist_columns.rs:366
+msgid "Rating"
+msgstr ""
+
+#: crates/big-audio-player/src/audio/ui/library_detail_columns.rs:472
+msgid "Add track to playlist"
+msgstr ""
+
+#: crates/big-audio-player/src/audio/ui/library_detail_interactions.rs:233
+#: crates/big-audio-player/src/audio/ui/library_tree/view.rs:463
+#: crates/big-audio-player/src/audio/ui/library_tree/view.rs:481
+#: crates/big-audio-player/src/audio/ui/playlist_interactions.rs:428
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/context_menu.rs:41
+#: crates/big-video-player/src/video/ui/video_controls_bar/zones.rs:361
+#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:227
+#: crates/media-runtime/src/shared/play_button.rs:14
+#: crates/ui/media/big-media-components/src/converter/queue.rs:323
+msgid "Play"
+msgstr ""
+
+#: crates/big-audio-player/src/audio/ui/library_detail_interactions.rs:243
+msgid "Play Next"
+msgstr ""
+
+#: crates/big-audio-player/src/audio/ui/library_detail_interactions.rs:250
+#: crates/big-audio-player/src/audio/ui/library_tree/view.rs:487
+msgid "Add to Queue"
+msgstr ""
+
+#: crates/big-audio-player/src/audio/ui/library_detail_interactions.rs:259
+#: crates/big-audio-player/src/audio/ui/library_tree/view.rs:494
+#: crates/big-audio-player/src/audio/ui/playlist_interactions.rs:457
+msgid "Add to Playlist…"
+msgstr ""
+
+#: crates/big-audio-player/src/audio/ui/library_detail_interactions.rs:266
+#: crates/big-audio-player/src/audio/ui/library_tree/view.rs:500
+#: crates/big-audio-player/src/audio/ui/playlist_interactions.rs:464
+msgid "Show in File Manager"
+msgstr ""
+
+#: crates/big-audio-player/src/audio/ui/library_detail_interactions.rs:275
+msgid "Edit Tags…"
+msgstr ""
+
+#: crates/big-audio-player/src/audio/ui/library_detail_interactions.rs:282
+#: crates/big-audio-player/src/audio/ui/library_tag_editor.rs:121
+#: crates/big-audio-player/src/audio/ui/library_tag_editor.rs:361
+#: crates/big-audio-player/src/audio/ui/library_tree/view.rs:508
+#: crates/big-audio-player/src/audio/ui/playlist_interactions.rs:450
+msgid "Track Info"
+msgstr ""
+
+#: crates/big-audio-player/src/audio/ui/library_dialogs.rs:56
+msgid "Add to Playlist"
+msgstr ""
+
+#: crates/big-audio-player/src/audio/ui/library_dialogs.rs:63
+msgid "No playlists yet"
+msgstr ""
+
+#: crates/big-audio-player/src/audio/ui/library_dialogs.rs:65
+#: crates/big-audio-player/src/audio/ui/library_dialogs.rs:73
+msgid "New Playlist"
+msgstr ""
+
+#: crates/big-audio-player/src/audio/ui/library_dialogs.rs:67
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/context_menu.rs:71
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/fileops.rs:72
+msgid "Add to playlist"
+msgstr ""
+
+#: crates/big-audio-player/src/audio/ui/library_dialogs.rs:77
+#: crates/big-audio-player/src/audio/ui/library_io.rs:53
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:184
+msgid "Playlist name"
+msgstr ""
+
+#: crates/big-audio-player/src/audio/ui/library_dialogs.rs:79
+msgid "Create"
+msgstr ""
+
+#: crates/big-audio-player/src/audio/ui/library_grouping_ui.rs:119
+#: crates/big-audio-player/src/audio/ui/library_grouping_ui.rs:120
+msgid "Library view mode"
+msgstr ""
+
+#: crates/big-audio-player/src/audio/ui/library_grouping_ui.rs:145
+#: crates/big-audio-player/src/audio/ui/library_grouping_ui.rs:147
+#: crates/big-audio-player/src/audio/ui/library_grouping_ui.rs:161
+msgid "Filter by date added"
+msgstr ""
+
+#: crates/big-audio-player/src/audio/ui/library_grouping_ui.rs:217
+#: crates/big-audio-player/src/audio/ui/library_grouping_ui.rs:218
+#: crates/big-audio-player/src/audio/ui/library_io.rs:298
+msgid "Add music folder"
+msgstr ""
+
+#: crates/big-audio-player/src/audio/ui/library_grouping_ui.rs:224
+msgid "Add Music Folder"
+msgstr ""
+
+#: crates/big-audio-player/src/audio/ui/library_grouping_ui.rs:237
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/metadata.rs:117
+msgid "Filter…"
+msgstr ""
+
+#: crates/big-audio-player/src/audio/ui/library_grouping_ui.rs:240
+msgid "Search library"
+msgstr ""
+
+#: crates/big-audio-player/src/audio/ui/library_io.rs:81
+msgid "No tracks to export"
+msgstr ""
+
+#: crates/big-audio-player/src/audio/ui/library_io.rs:94
+msgid "Playlist exported"
+msgstr ""
+
+#: crates/big-audio-player/src/audio/ui/library_io.rs:123
+#: crates/big-video-player/src/video/ui/menu_dialogs.rs:449
+#: crates/big-video-player/src/video/ui/video_shell/component.rs:278
+#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:358
+msgid "Open"
+msgstr ""
+
+#: crates/big-audio-player/src/audio/ui/library_io.rs:138
+msgid "No tracks to save"
+msgstr ""
+
+#: crates/big-audio-player/src/audio/ui/library_io.rs:144
+msgid "Save as Playlist"
+msgstr ""
+
+#: crates/big-audio-player/src/audio/ui/library_io.rs:145
+msgid "Enter a name for the new playlist"
+msgstr ""
+
+#: crates/big-audio-player/src/audio/ui/library_io.rs:169
+#: crates/big-audio-player/src/audio/ui/library_io.rs:178
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:114
+msgid "Music Folders"
+msgstr ""
+
+#: crates/big-audio-player/src/audio/ui/library_io.rs:217
+msgid "Monitored Folders"
+msgstr ""
+
+#: crates/big-audio-player/src/audio/ui/library_io.rs:227
+msgid ""
+"These folders are scanned for audio files. Removing a folder also removes "
+"its tracks from the library."
+msgstr ""
+
+#: crates/big-audio-player/src/audio/ui/library_io.rs:253
+msgid "Music folders"
+msgstr ""
+
+#: crates/big-audio-player/src/audio/ui/library_io.rs:257
+msgid "No folders added yet"
+msgstr ""
+
+#: crates/big-audio-player/src/audio/ui/library_io.rs:259
+msgid "Click the button below to add your first music folder"
+msgstr ""
+
+#: crates/big-audio-player/src/audio/ui/library_io.rs:297
+#: crates/ui/media/big-media-components/src/converter/header_bar.rs:54
+msgid "Add Folder"
+msgstr ""
+
+#: crates/big-audio-player/src/audio/ui/library_io.rs:309
+msgid "Select Music Folder"
+msgstr ""
+
+#: crates/big-audio-player/src/audio/ui/library_io.rs:316
+msgid "Scan Now"
+msgstr ""
+
+#: crates/big-audio-player/src/audio/ui/library_io.rs:317
+msgid "Scan all monitored folders now"
+msgstr ""
+
+#: crates/big-audio-player/src/audio/ui/library_io.rs:447
+msgid "Remove folder and its tracks"
+msgstr ""
+
+#: crates/big-audio-player/src/audio/ui/library_io.rs:451
+msgid "Remove folder"
+msgstr ""
+
+#: crates/big-audio-player/src/audio/ui/library_io.rs:460
+msgid ""
+"Add folders where your music files are stored. The player scans these "
+"folders to build your library, organizing tracks by artist, album, and genre "
+"automatically."
+msgstr ""
+
+#: crates/big-audio-player/src/audio/ui/library_io.rs:498
+msgid "Tips"
+msgstr ""
+
+#: crates/big-audio-player/src/audio/ui/library_io.rs:507
+msgid ""
+"• Supported formats: MP3, FLAC, OGG, Opus, M4A, WAV, WMA, AAC, APE, WavPack"
+msgstr ""
+
+#: crates/big-audio-player/src/audio/ui/library_io.rs:508
+msgid "• Subfolders are included automatically — no need to add each one"
+msgstr ""
+
+#: crates/big-audio-player/src/audio/ui/library_io.rs:510
+msgid ""
+"• Use the Files tab to play files from any folder without adding them to the "
+"library"
+msgstr ""
+
+#: crates/big-audio-player/src/audio/ui/library_panel.rs:311
+msgid "No Tracks"
+msgstr ""
+
+#: crates/big-audio-player/src/audio/ui/library_panel.rs:312
+msgid "Select an item on the left to view its tracks"
+msgstr ""
+
+#: crates/big-audio-player/src/audio/ui/library_panel.rs:386
+#: crates/big-audio-player/src/audio/ui/playlist_panel.rs:365
+msgid "Configure Columns…"
+msgstr ""
+
+#: crates/big-audio-player/src/audio/ui/library_panel.rs:386
+#: crates/big-audio-player/src/audio/ui/playlist_panel.rs:365
+msgid "Columns"
+msgstr ""
+
+#: crates/big-audio-player/src/audio/ui/library_panel.rs:439
+#: crates/big-audio-player/src/audio/ui/library_panel.rs:440
+msgid "Back to library"
+msgstr ""
+
+#: crates/big-audio-player/src/audio/ui/library_tag_editor.rs:192
+msgid "Track #"
+msgstr ""
+
+#: crates/big-audio-player/src/audio/ui/library_tag_editor.rs:193
+msgid "Disc #"
+msgstr ""
+
+#: crates/big-audio-player/src/audio/ui/library_tag_editor.rs:194
+msgid "Comment"
+msgstr ""
+
+#: crates/big-audio-player/src/audio/ui/library_tag_editor.rs:260
+msgid "File Info"
+msgstr ""
+
+#: crates/big-audio-player/src/audio/ui/library_tag_editor.rs:338
+#: crates/big-video-player/src/video/ui/media_details_dialog.rs:125
+msgid "Metadata"
+msgstr ""
+
+#: crates/big-audio-player/src/audio/ui/library_tag_editor.rs:445
+msgid "Lookup from MusicBrainz"
+msgstr ""
+
+#: crates/big-audio-player/src/audio/ui/library_tag_editor.rs:459
+msgid "Searching…"
+msgstr ""
+
+#: crates/big-audio-player/src/audio/ui/library_tag_editor/spec.rs:98
+#: crates/big-video-player/src/video/ui/media_details_dialog.rs:228
+#: crates/media-runtime/src/media/metadata_cache/detailed_video_metadata.rs:164
+#: crates/ui/media/big-media-components/src/media/file_metadata_dialog.rs:95
+msgid "Sample Rate"
+msgstr ""
+
+#: crates/big-audio-player/src/audio/ui/library_tag_editor/spec.rs:105
+#: crates/big-video-player/src/video/ui/media_details_dialog.rs:235
+#: crates/media-runtime/src/media/metadata_cache/detailed_video_metadata.rs:175
+#: crates/ui/media/big-media-components/src/media/file_metadata_dialog.rs:96
+#: crates/ui/media/big-player-ui/src/audio_preferences.rs:123
+msgid "Channels"
+msgstr ""
+
+#: crates/big-audio-player/src/audio/ui/library_tag_editor/spec.rs:117
+#: crates/big-video-player/src/video/ui/media_details_dialog.rs:84
+#: crates/ui/media/big-media-components/src/media/file_metadata_dialog.rs:82
+msgid "File Size"
+msgstr ""
+
+#: crates/big-audio-player/src/audio/ui/library_tag_editor/spec.rs:143
+msgid "Not found"
+msgstr ""
+
+#: crates/big-audio-player/src/audio/ui/library_tag_editor/spec.rs:175
+msgid "No new data found"
+msgstr ""
+
+#: crates/big-audio-player/src/audio/ui/library_tree/view.rs:50
+msgid "Music library"
+msgstr ""
+
+#: crates/big-audio-player/src/audio/ui/library_tree/view.rs:292
+msgid "Show tracks"
+msgstr ""
+
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:58
+msgid "Drag and drop files to create a playlist"
+msgstr ""
+
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:62
+msgid "Use the Music tab on the left to browse your library"
+msgstr ""
+
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:66
+msgid "Explore Radio and Podcasts in the sidebar tabs"
+msgstr ""
+
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:99
+#: crates/big-video-player/src/video/ui/video_shell/component.rs:152
+msgid "Main Menu"
+msgstr ""
+
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:112
+#: crates/big-audio-player/src/audio/ui/playlist_library_dialog/spec.rs:98
+msgid "Manage Playlists"
+msgstr ""
+
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:113
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:174
+msgid "Save Queue as Playlist"
+msgstr ""
+
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:115
+msgid "Remove Duplicates"
+msgstr ""
+
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:116
+msgid "Clear Queue"
+msgstr ""
+
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:120
+msgid "Convert to MP3"
+msgstr ""
+
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:121
+msgid "Convert to M4A"
+msgstr ""
+
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:122
+msgid "Convert to FLAC"
+msgstr ""
+
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:123
+#: crates/ui/media/big-player-ui/src/smartphone/dialog.rs:28
+msgid "Smartphone"
+msgstr ""
+
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:124
+#: crates/big-video-player/src/video/ui/video_shell/component.rs:817
+#: crates/ui/media/big-player-ui/src/appearance/window.rs:76
+msgid "Appearance"
+msgstr ""
+
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:128
+msgid "Cast"
+msgstr ""
+
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:130
+#: crates/big-audio-player/src/audio/ui/shortcuts_dialog.rs:28
+#: crates/big-video-player/src/video/ui/keyboard_shortcuts_dialog.rs:30
+#: crates/big-video-player/src/video/ui/video_shell/component.rs:818
+#: crates/ui/media/big-media-components/src/converter/header_bar.rs:61
+msgid "Keyboard Shortcuts"
+msgstr ""
+
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:131
+#: crates/big-video-player/src/video/ui/video_shell/component.rs:819
+#: crates/ui/media/big-media-components/src/converter/header_bar.rs:62
+msgid "About"
+msgstr ""
+
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:180
+#: crates/big-audio-player/src/audio/ui/playlist_library_dialog/spec.rs:191
+msgid "Name for the new playlist"
+msgstr ""
+
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:255
+msgid "Drop tracks here"
+msgstr ""
+
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:256
+msgid "or use ＋ to add from the library"
+msgstr ""
+
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:282
+msgid "Welcome to Big Audio Player"
+msgstr ""
+
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:290
+msgid ""
+"Add a folder with your music files to get started.\n"
+"Supported formats: MP3, FLAC, OGG, M4A, OPUS, WAV and more."
+msgstr ""
+
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:303
+msgid "Open Files"
+msgstr ""
+
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:304
+msgid "Open files"
+msgstr ""
+
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:314
+msgid "Open Audio Files"
+msgstr ""
+
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:315
+msgid "Audio Files"
+msgstr ""
+
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:337
+msgid "Quick tips"
+msgstr ""
+
+#: crates/big-audio-player/src/audio/ui/playlist_columns.rs:390
+msgid "Remove track"
+msgstr ""
+
+#: crates/big-audio-player/src/audio/ui/playlist_interactions.rs:76
+#: crates/big-audio-player/src/audio/ui/playlist_interactions.rs:78
+#: crates/ui/media/big-media-components/src/converter/queue.rs:376
+msgid "Remove from Queue"
+msgstr ""
+
+#: crates/big-audio-player/src/audio/ui/playlist_interactions.rs:99
+msgid "Download Episode…"
+msgstr ""
+
+#: crates/big-audio-player/src/audio/ui/playlist_interactions.rs:100
+msgid "Download Episodes…"
+msgstr ""
+
+#: crates/big-audio-player/src/audio/ui/playlist_interactions.rs:492
+msgid "Edit / Convert…"
+msgstr ""
+
+#: crates/big-audio-player/src/audio/ui/playlist_interactions.rs:534
+msgid "Delete permanently"
+msgstr ""
+
+#: crates/big-audio-player/src/audio/ui/playlist_interactions.rs:535
+msgid "Skip trash — cannot be undone"
+msgstr ""
+
+#: crates/big-audio-player/src/audio/ui/playlist_interactions.rs:542
+msgid "Delete"
+msgstr ""
+
+#: crates/big-audio-player/src/audio/ui/playlist_interactions.rs:571
+#: crates/big-audio-player/src/audio/ui/playlist_interactions.rs:573
+msgid "Delete from Storage"
+msgstr ""
+
+#: crates/big-audio-player/src/audio/ui/playlist_interactions.rs:581
+msgid "Move this file to the trash?"
+msgstr ""
+
+#: crates/big-audio-player/src/audio/ui/playlist_interactions.rs:587
+msgid "Move these files to the trash?"
+msgstr ""
+
+#: crates/big-audio-player/src/audio/ui/playlist_interactions.rs:589
+#: crates/big-audio-player/src/audio/ui/playlist_library_dialog/spec.rs:178
+#: crates/big-audio-player/src/audio/ui/playlist_panel.rs:98
+msgid "tracks"
+msgstr ""
+
+#: crates/big-audio-player/src/audio/ui/playlist_library_dialog.rs:220
+msgid "Saved playlists"
+msgstr ""
+
+#: crates/big-audio-player/src/audio/ui/playlist_library_dialog.rs:231
+msgid "Import / Export"
+msgstr ""
+
+#: crates/big-audio-player/src/audio/ui/playlist_library_dialog.rs:256
+#: crates/big-audio-player/src/audio/ui/playlist_library_dialog/spec.rs:189
+msgid "Save Current Queue"
+msgstr ""
+
+#: crates/big-audio-player/src/audio/ui/playlist_library_dialog.rs:277
+msgid "Generate"
+msgstr ""
+
+#: crates/big-audio-player/src/audio/ui/playlist_library_dialog.rs:278
+msgid "Build a playlist from your listening stats"
+msgstr ""
+
+#: crates/big-audio-player/src/audio/ui/playlist_library_dialog/spec.rs:99
+#: crates/big-audio-player/src/audio/ui/playlist_library_dialog/spec.rs:108
+msgid "Your Playlists"
+msgstr ""
+
+#: crates/big-audio-player/src/audio/ui/playlist_library_dialog/spec.rs:122
+msgid "No Saved Playlists"
+msgstr ""
+
+#: crates/big-audio-player/src/audio/ui/playlist_library_dialog/spec.rs:123
+msgid "Save the current queue, generate one from your stats, or import a file"
+msgstr ""
+
+#: crates/big-audio-player/src/audio/ui/playlist_library_dialog/spec.rs:131
+msgid "Import File…"
+msgstr ""
+
+#: crates/big-audio-player/src/audio/ui/playlist_library_dialog/spec.rs:136
+msgid "Import Folder…"
+msgstr ""
+
+#: crates/big-audio-player/src/audio/ui/playlist_library_dialog/spec.rs:141
+msgid "Export All…"
+msgstr ""
+
+#: crates/big-audio-player/src/audio/ui/playlist_library_dialog/spec.rs:162
+msgid "Load"
+msgstr ""
+
+#: crates/big-audio-player/src/audio/ui/playlist_library_dialog/spec.rs:176
+#: crates/big-audio-player/src/audio/ui/playlist_panel.rs:96
+msgid "track"
+msgstr ""
+
+#: crates/big-audio-player/src/audio/ui/playlist_library_dialog/spec.rs:183
+msgid "min"
+msgstr ""
+
+#: crates/big-audio-player/src/audio/ui/playlist_library_dialog/spec.rs:200
+msgid "Rename Playlist"
+msgstr ""
+
+#: crates/big-audio-player/src/audio/ui/playlist_library_dialog/spec.rs:202
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/fileops.rs:193
+msgid "New name"
+msgstr ""
+
+#: crates/big-audio-player/src/audio/ui/playlist_library_dialog/spec.rs:211
+msgid "Delete Playlist?"
+msgstr ""
+
+#: crates/big-audio-player/src/audio/ui/playlist_library_dialog/spec.rs:227
+msgid "This will permanently delete"
+msgstr ""
+
+#: crates/big-quick-export/src/encode_options.rs:73
+#: crates/big-video-player/src/video/ui/media_details_dialog.rs:149
+#: crates/big-video-player/src/video/ui/media_details_dialog.rs:216
+#: crates/media-runtime/src/converter/queue/processing.rs:107
+#: crates/media-runtime/src/media/metadata_cache/detailed_video_metadata.rs:114
+#: crates/media-runtime/src/media/metadata_cache/detailed_video_metadata.rs:149
+#: crates/media-runtime/src/media/metadata_cache/detailed_video_metadata.rs:194
+#: crates/ui/media/big-media-components/src/media/file_metadata_dialog.rs:90
+msgid "Codec"
+msgstr ""
+
+#: crates/big-quick-export/src/encode_options.rs:75
+msgid "Quality"
+msgstr ""
+
+#: crates/big-quick-export/src/encode_options.rs:81
+msgid "Re-encode options"
+msgstr ""
+
+#: crates/big-quick-export/src/encode_options.rs:83
+msgid ""
+"Choose the file type, video codec, and quality used to create the new clip."
+msgstr ""
+
+#: crates/big-video-player/src/lib.rs:29 crates/big-video-player/src/lib.rs:82
+#: crates/big-video-player/src/video/ui/video_shell/actions.rs:124
+msgid "Big Video Player"
+msgstr ""
+
+#: crates/big-video-player/src/lib.rs:109
+msgid "Video Background"
+msgstr ""
+
+#: crates/big-video-player/src/video/keybindings.rs:22
+msgid "Seek forward 5 s"
+msgstr ""
+
+#: crates/big-video-player/src/video/keybindings.rs:29
+msgid "Seek backward 5 s"
+msgstr ""
+
+#: crates/big-video-player/src/video/keybindings.rs:36
+msgid "Seek forward 30 s"
+msgstr ""
+
+#: crates/big-video-player/src/video/keybindings.rs:43
+msgid "Seek backward 30 s"
+msgstr ""
+
+#: crates/big-video-player/src/video/keybindings.rs:50
+msgid "Increase speed"
+msgstr ""
+
+#: crates/big-video-player/src/video/keybindings.rs:57
+msgid "Decrease speed"
+msgstr ""
+
+#: crates/big-video-player/src/video/keybindings.rs:64
+msgid "Reset speed to 1×"
+msgstr ""
+
+#: crates/big-video-player/src/video/keybindings.rs:71
+#: crates/big-video-player/src/video/keybindings.rs:273
+msgid "Next chapter"
+msgstr ""
+
+#: crates/big-video-player/src/video/keybindings.rs:78
+#: crates/big-video-player/src/video/keybindings.rs:280
+msgid "Previous chapter"
+msgstr ""
+
+#: crates/big-video-player/src/video/keybindings.rs:85
+msgid "Next in playlist"
+msgstr ""
+
+#: crates/big-video-player/src/video/keybindings.rs:92
+msgid "Previous in playlist"
+msgstr ""
+
+#: crates/big-video-player/src/video/keybindings.rs:99
+msgid "Next frame"
+msgstr ""
+
+#: crates/big-video-player/src/video/keybindings.rs:106
+msgid "Previous frame"
+msgstr ""
+
+#: crates/big-video-player/src/video/keybindings.rs:113
+msgid "Undo last seek"
+msgstr ""
+
+#: crates/big-video-player/src/video/keybindings.rs:121
+msgid "Toggle fullscreen"
+msgstr ""
+
+#: crates/big-video-player/src/video/keybindings.rs:122
+#: crates/big-video-player/src/video/keybindings.rs:129
+#: crates/big-video-player/src/video/keybindings.rs:136
+#: crates/big-video-player/src/video/keybindings.rs:143
+#: crates/big-video-player/src/video/keybindings.rs:150
+#: crates/big-video-player/src/video/keybindings.rs:157
+#: crates/big-video-player/src/video/keybindings.rs:164
+#: crates/big-video-player/src/video/keybindings.rs:171
+#: crates/big-video-player/src/video/ui/media_details_dialog.rs:148
+#: crates/big-video-player/src/video/ui/media_details_dialog.rs:282
+#: crates/big-video-player/src/video/ui/preferences/video/mod.rs:31
+msgid "Video"
+msgstr ""
+
+#: crates/big-video-player/src/video/keybindings.rs:128
+msgid "Toggle fullscreen (F11)"
+msgstr ""
+
+#: crates/big-video-player/src/video/keybindings.rs:135
+msgid "Exit fullscreen"
+msgstr ""
+
+#: crates/big-video-player/src/video/keybindings.rs:142
+msgid "Toggle deinterlace"
+msgstr ""
+
+#: crates/big-video-player/src/video/keybindings.rs:149
+msgid "Toggle hardware decoding"
+msgstr ""
+
+#: crates/big-video-player/src/video/keybindings.rs:156
+msgid "Increase panscan"
+msgstr ""
+
+#: crates/big-video-player/src/video/keybindings.rs:163
+msgid "Decrease panscan"
+msgstr ""
+
+#: crates/big-video-player/src/video/keybindings.rs:170
+msgid "Crop video"
+msgstr ""
+
+#: crates/big-video-player/src/video/keybindings.rs:178
+msgid "Volume up"
+msgstr ""
+
+#: crates/big-video-player/src/video/keybindings.rs:179
+#: crates/big-video-player/src/video/keybindings.rs:186
+#: crates/big-video-player/src/video/keybindings.rs:193
+#: crates/big-video-player/src/video/keybindings.rs:200
+#: crates/big-video-player/src/video/ui/media_details_dialog.rs:215
+#: crates/big-video-player/src/video/ui/media_details_dialog.rs:297
+#: crates/ui/media/big-media-components/src/audio/encoding_dialog.rs:80
+#: crates/ui/media/big-player-ui/src/audio_preferences.rs:95
+msgid "Audio"
+msgstr ""
+
+#: crates/big-video-player/src/video/keybindings.rs:185
+msgid "Volume down"
+msgstr ""
+
+#: crates/big-video-player/src/video/keybindings.rs:192
+msgid "Toggle mute"
+msgstr ""
+
+#: crates/big-video-player/src/video/keybindings.rs:199
+msgid "Toggle audio passthrough"
+msgstr ""
+
+#: crates/big-video-player/src/video/keybindings.rs:207
+msgid "Toggle secondary subtitles"
+msgstr ""
+
+#: crates/big-video-player/src/video/keybindings.rs:208
+#: crates/big-video-player/src/video/keybindings.rs:215
+#: crates/big-video-player/src/video/keybindings.rs:222
+#: crates/big-video-player/src/video/keybindings.rs:229
+#: crates/big-video-player/src/video/ui/preferences/subtitles.rs:25
+#: crates/big-video-player/src/video/ui/video_controls_bar/zones.rs:405
+#: crates/ui/media/big-media-components/src/subtitle/handling_dialog.rs:28
+msgid "Subtitles"
+msgstr ""
+
+#: crates/big-video-player/src/video/keybindings.rs:214
+msgid "Next subtitle"
+msgstr ""
+
+#: crates/big-video-player/src/video/keybindings.rs:221
+msgid "Previous subtitle"
+msgstr ""
+
+#: crates/big-video-player/src/video/keybindings.rs:228
+msgid "Cycle Closed Captions"
+msgstr ""
+
+#: crates/big-video-player/src/video/keybindings.rs:236
+#: crates/big-video-player/src/video/ui/video_shell/input_gestures.rs:130
+msgid "Screenshot"
+msgstr ""
+
+#: crates/big-video-player/src/video/keybindings.rs:237
+#: crates/big-video-player/src/video/ui/preferences/advanced/screenshot.rs:24
+msgid "Screenshots"
+msgstr ""
+
+#: crates/big-video-player/src/video/keybindings.rs:244
+msgid "Toggle shuffle"
+msgstr ""
+
+#: crates/big-video-player/src/video/keybindings.rs:251
+msgid "Cycle repeat mode"
+msgstr ""
+
+#: crates/big-video-player/src/video/keybindings.rs:258
+msgid "Cycle ReplayGain"
+msgstr ""
+
+#: crates/big-video-player/src/video/keybindings.rs:265
+msgid "Toggle gapless"
+msgstr ""
+
+#: crates/big-video-player/src/video/keybindings.rs:288
+msgid "Toggle file info overlay"
+msgstr ""
+
+#: crates/big-video-player/src/video/keybindings.rs:289
+#: crates/big-video-player/src/video/keybindings.rs:296
+#: crates/big-video-player/src/video/keybindings.rs:303
+#: crates/big-video-player/src/video/keybindings.rs:310
+#: crates/big-video-player/src/video/keybindings.rs:317
+#: crates/big-video-player/src/video/keybindings.rs:324
+#: crates/big-video-player/src/video/keybindings.rs:332
+#: crates/big-video-player/src/video/keybindings.rs:339
+#: crates/big-video-player/src/video/keybindings.rs:346
+msgid "Other"
+msgstr ""
+
+#: crates/big-video-player/src/video/keybindings.rs:295
+msgid "Open file"
+msgstr ""
+
+#: crates/big-video-player/src/video/keybindings.rs:302
+#: crates/big-video-player/src/video/ui/video_shell/actions.rs:159
+#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:208
+msgid "Open URL"
+msgstr ""
+
+#: crates/big-video-player/src/video/keybindings.rs:309
+msgid "Paste and play"
+msgstr ""
+
+#: crates/big-video-player/src/video/keybindings.rs:316
+#: crates/big-video-player/src/video/ui/video_controls_bar.rs:224
+#: crates/big-video-player/src/video/ui/video_controls_bar.rs:225
+msgid "Go to time"
+msgstr ""
+
+#: crates/big-video-player/src/video/keybindings.rs:323
+msgid "Cycle edition"
+msgstr ""
+
+#: crates/big-video-player/src/video/keybindings.rs:331
+msgid "Toggle files sidebar"
+msgstr ""
+
+#: crates/big-video-player/src/video/keybindings.rs:338
+msgid "Toggle playlist sidebar"
+msgstr ""
+
+#: crates/big-video-player/src/video/keybindings.rs:345
+msgid "Media information"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/appearance/layout/buttons_page.rs:140
+msgid "Video Title"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/appearance/layout/buttons_page.rs:182
+#: crates/big-video-player/src/video/ui/appearance/layout/layout_page.rs:111
+msgid "Buttons"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/appearance/layout/buttons_page.rs:186
+msgid "Button Layout"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/appearance/layout/buttons_page.rs:188
+msgid "Drag buttons between zones • Click to toggle visibility"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/appearance/layout/layout_page.rs:20
+msgid "Layout"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/appearance/layout/layout_page.rs:35
+msgid "Controls Bar"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/appearance/layout/layout_page.rs:37
+msgid "Adjust the shape and spacing of the player controls at the bottom"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/appearance/layout/layout_page.rs:112
+msgid "Customize the size and shape of player buttons"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/appearance/layout/layout_page.rs:116
+msgid "Custom Button Size"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/appearance/layout/layout_page.rs:118
+msgid "Set your own button size instead of the system default"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/appearance/layout/layout_page.rs:126
+msgid "Button Size"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/appearance/layout/layout_page.rs:142
+msgid "Button Border Radius"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/appearance/layout/layout_page.rs:194
+msgid "Window"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/appearance/layout/layout_page.rs:195
+msgid "Adjust the player window appearance"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/appearance/layout/layout_page.rs:199
+msgid "Custom Window Corner Radius"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/appearance/layout/layout_page.rs:201
+msgid "Set your own corner rounding instead of the system default"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/appearance/layout/layout_page.rs:209
+msgid "Window Corner Radius"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/appearance/layout/layout_page.rs:247
+msgid "Window Buttons Follow Custom Size"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/appearance/layout/layout_page.rs:248
+msgid "Also resize the minimize, maximize and close buttons"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/cast/mod.rs:143
+#: crates/big-video-player/src/video/ui/cast/mod.rs:225
+#: crates/big-video-player/src/video/ui/cast/mod.rs:233
+#: crates/big-video-player/src/video/ui/cast/mod.rs:407
+msgid "Searching for devices…"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/cast/mod.rs:172
+msgid "Refresh"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/cast/mod.rs:180
+msgid "Stop"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/cast/mod.rs:193
+msgid "Click on a device to start casting"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/cast/mod.rs:325
+#: crates/big-video-player/src/video/ui/cast/mod.rs:457
+msgid "No media loaded"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/cast/mod.rs:333
+msgid "Could not determine local IP"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/cast/mod.rs:371
+msgid "Connected to"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/cast/mod.rs:409
+msgid "No devices found"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/cast/mod.rs:414
+#, rust-format
+msgid "{} device found"
+msgid_plural "{} devices found"
+msgstr[0] ""
+msgstr[1] ""
+
+#: crates/big-video-player/src/video/ui/cast/mod.rs:460
+msgid "ffmpeg is not installed — required for transcoding"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/filters/groups_shader.rs:34
+msgid "GPU Processing"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/filters/groups_shader.rs:35
+msgid "Hardware-accelerated, no performance impact"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/filters/groups_shader.rs:44
+msgid "Deband"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/filters/groups_shader.rs:45
+msgid "Remove color banding artifacts"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/filters/groups_shader.rs:53
+msgid "Sigmoid Upscaling"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/filters/groups_shader.rs:54
+msgid "Reduces ringing when scaling video up"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/filters/groups_shader.rs:62
+msgid "Correct Downscaling"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/filters/groups_shader.rs:63
+msgid "Higher quality when scaling video down"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/filters/groups_shader.rs:77
+msgid "Sharpen"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/filters/groups_shader.rs:78
+msgid "GPU sharpening (unsharp mask)"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/filters/groups_shader.rs:94
+msgid "Amount"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/filters/groups_shader.rs:166
+msgid "GPU Upscaling Shaders"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/filters/groups_shader.rs:168
+msgid ""
+"Open-source GPU shaders that enhance image quality when upscaling. Choose "
+"one upscaler and adjust sharpening intensity."
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/filters/groups_shader.rs:185
+msgid "Upscaling Shader"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/filters/groups_shader.rs:188
+msgid "FidelityFX Super Resolution (FSR)"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/filters/groups_shader.rs:189
+msgid "CAS Upscaling"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/filters/groups_shader.rs:193
+msgid ""
+"Enhances image quality when the video resolution is lower than your display"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/filters/groups_shader.rs:215
+msgid "Sharpening Intensity"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/filters/groups_shader.rs:217
+msgid "Higher values produce a more visible sharpening effect"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/filters/groups_shader.rs:325
+msgid "Neural Network Upscaling"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/filters/groups_shader.rs:327
+msgid ""
+"AI-trained shader that reconstructs fine detail when upscaling video. Best "
+"for low-resolution content on high-resolution displays."
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/filters/groups_shader.rs:339
+msgid "RAVU Neural Upscaler"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/filters/groups_shader.rs:341
+msgid ""
+"Reconstructs detail lost during video compression — uses RAVU r4, the best "
+"fragment-shader neural upscaler available"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/filters/groups_shader.rs:375
+msgid "Anime / Cartoon Enhancement"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/filters/groups_shader.rs:377
+msgid ""
+"AI-powered shaders that restore and upscale animated content. Optimized for "
+"anime line art and cel-shaded styles."
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/filters/groups_shader.rs:391
+msgid "Anime4K Preset"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/filters/groups_shader.rs:393
+#: crates/big-video-player/src/video/ui/preferences/video/decoding.rs:36
+msgid "Disabled"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/filters/groups_shader.rs:394
+msgid "Quality A — Best (1080p sources)"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/filters/groups_shader.rs:395
+msgid "Quality B — Soft Restore (720p sources)"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/filters/groups_shader.rs:396
+msgid "Quality C — Fast (low-end GPU)"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/filters/groups_shader.rs:400
+msgid "Select a quality preset — higher quality uses more GPU power"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/filters/groups_shader.rs:435
+msgid "Shaders not installed"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/filters/groups_shader.rs:436
+msgid "Install the big-media-runtime package to get built-in shaders"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/filters/groups_shader.rs:444
+msgid "Neural upscaler shaders not installed"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/filters/groups_shader.rs:445
+msgid "Install the big-media-runtime package to get neural upscaling shaders"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/filters/groups_shader.rs:453
+msgid "Anime4K shaders not installed"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/filters/groups_shader.rs:454
+msgid "Install the big-media-runtime package to get Anime4K shaders"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:26
+msgid "Denoise and Sharpen"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:28
+msgid ""
+"Software filters that clean up or enhance the image. Useful for old or low-"
+"quality video sources."
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:39
+msgid "Denoise (hqdn3d)"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:40
+msgid "Reduces visual noise and grain from old or low-light footage"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:41
+#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:57
+#: crates/ui/media/big-media-components/src/audio/cleanup_dialog.rs:100
+msgid "Strength"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:55
+msgid "Sharpen (CAS)"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:56
+msgid "Software contrast-adaptive sharpening — works at any resolution"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:70
+msgid "Color"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:78
+msgid "Color Temperature"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:79
+msgid "Warm or cool tone (Kelvin)"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:80
+msgid "Temperature"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:94
+msgid "Vibrance"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:95
+msgid "Boost color saturation intelligently"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:96
+#: crates/ui/media/big-media-components/src/audio/cleanup_dialog.rs:114
+msgid "Intensity"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:113
+msgid "Colorize"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:114
+msgid "Apply a color tint overlay"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:125
+#: crates/big-video-player/src/video/ui/media_adjust.rs:557
+#: crates/ui/media/big-media-components/src/video/editor_sidebar.rs:60
+msgid "Hue"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:132
+#: crates/big-video-player/src/video/ui/media_adjust.rs:545
+#: crates/big-video-player/src/video/ui/preferences/video/hdr.rs:154
+#: crates/big-video-player/src/video/ui/preferences/video/icc.rs:69
+#: crates/ui/media/big-media-components/src/video/editor_sidebar.rs:59
+msgid "Saturation"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:139
+msgid "Mix"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:192
+msgid "Monochrome"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:193
+msgid "Cinematic black and white"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:214
+msgid "Style Presets"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:215
+msgid "One-click color grading effects"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:219
+msgid "Color Curves"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:220
+msgid "Predefined color grading looks"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:236
+#: crates/ui/media/big-media-components/src/audio/cleanup_dialog.rs:134
+#: crates/ui/media/big-media-components/src/audio/equalizer_controls.rs:165
+#: crates/ui/media/big-media-components/src/audio/equalizer_dialog.rs:102
+msgid "Preset"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:238
+msgid "Vintage"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:239
+msgid "Cross Process"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:240
+msgid "Darker"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:241
+msgid "Lighter"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:242
+msgid "More Contrast"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:243
+msgid "Strong Contrast"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:244
+msgid "Color Negative"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:294
+msgid "Creative visual effects and artistic transformations."
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:303
+msgid "Negate"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:304
+msgid "Invert all colors"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:310
+msgid "Grayscale"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:311
+msgid "Black and white image"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:317
+msgid "Vignette"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:318
+msgid "Darken edges of the image"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:324
+msgid "Edge Detect"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:325
+msgid "Detect and colorize edges"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:354
+msgid "Pixelize"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:355
+msgid "Mosaic / pixel art effect"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:356
+msgid "Block Size"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:369
+msgid "Gaussian Blur"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:370
+msgid "Smooth blur effect"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:371
+msgid "Sigma"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:384
+msgid "Motion Trail"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:385
+msgid "Slowly fading visual trail effect"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:386
+msgid "Decay"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/iptv/channel_list.rs:81
+msgid "Toggle favorite"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/iptv/channel_list.rs:153
+msgid "No channels"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/iptv/channel_list.rs:161
+#, rust-format
+msgid "{} channel"
+msgid_plural "{} channels"
+msgstr[0] ""
+msgstr[1] ""
+
+#: crates/big-video-player/src/video/ui/iptv/channel_list.rs:208
+#: crates/ui/media/big-player-ui/src/radio_panel/methods.rs:127
+msgid "Ungrouped"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/iptv/mod.rs:121
+#: crates/big-video-player/src/video/ui/iptv/mod.rs:137
+msgid "Provider"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/iptv/mod.rs:143
+msgid "Manage…"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/iptv/mod.rs:150
+msgid "Reload from provider"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/iptv/mod.rs:156
+#: crates/big-video-player/src/video/ui/iptv/mod.rs:161
+msgid "Search channels"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/iptv/mod.rs:206
+#: crates/big-video-player/src/video/ui/iptv/mod.rs:281
+msgid "No providers configured. Click “Manage…” to add one."
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/iptv/mod.rs:236
+msgid "Showing cached channels — updating…"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/iptv/mod.rs:303
+msgid "Reloading channels…"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/iptv/mod.rs:305
+msgid "Loading channels…"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/iptv/mod.rs:323
+msgid "Could not reach provider — showing cached copy if available."
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/iptv/providers_dialog.rs:45
+msgid "Add provider"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/iptv/providers_dialog.rs:54
+msgid "IPTV Providers"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/iptv/providers_dialog.rs:92
+msgid "No providers yet"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/iptv/providers_dialog.rs:93
+msgid "Add an IPTV provider to get started"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/iptv/providers_dialog.rs:102
+msgid "Edit"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/iptv/providers_dialog.rs:102
+msgid "Remove"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/iptv/providers_dialog.rs:156
+msgid "IPTV Provider"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/iptv/providers_dialog.rs:217
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/header.rs:153
+msgid "Name"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/iptv/providers_dialog.rs:226
+msgid "Type"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/iptv/providers_dialog.rs:228
+msgid "M3U URL"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/iptv/providers_dialog.rs:229
+msgid "Local M3U file"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/iptv/providers_dialog.rs:230
+msgid "Xtream Codes"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/iptv/providers_dialog.rs:240
+msgid "URL"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/iptv/providers_dialog.rs:244
+msgid "File path"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/iptv/providers_dialog.rs:248
+msgid "Server URL"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/iptv/providers_dialog.rs:249
+msgid "Username"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/iptv/providers_dialog.rs:251
+msgid "Password"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/iptv/providers_dialog.rs:275
+msgid "HTTP headers (optional)"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/iptv/providers_dialog.rs:276
+msgid "User-Agent"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/iptv/providers_dialog.rs:278
+msgid "Referer"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/keyboard_shortcuts_dialog.rs:64
+msgid "Play, pause, seek and navigate"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/keyboard_shortcuts_dialog.rs:65
+msgid "Chapter, edition and recent files"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/keyboard_shortcuts_dialog.rs:66
+msgid "Fullscreen, crop, aspect ratio"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/keyboard_shortcuts_dialog.rs:67
+msgid "Volume and audio track switching"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/keyboard_shortcuts_dialog.rs:68
+msgid "Subtitle track selection and timing"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/keyboard_shortcuts_dialog.rs:69
+msgid "Capture still frames"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/keyboard_shortcuts_dialog.rs:70
+msgid "Music-mode specific controls"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/keyboard_shortcuts_dialog.rs:71
+msgid "Miscellaneous shortcuts"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/media_adjust.rs:165
+msgid ""
+"Adjust timing when audio or subtitles are out of sync with the video. "
+"Positive values delay, negative values advance."
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/media_adjust.rs:177
+msgid "Subtitle Delay"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/media_adjust.rs:178
+msgid "Shift subtitles forward or backward in time"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/media_adjust.rs:183
+msgid "Audio Delay"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/media_adjust.rs:184
+msgid "Shift audio forward or backward in time"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/media_adjust.rs:199
+msgid "Reset to zero"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/media_adjust.rs:246
+#: crates/big-video-player/src/video/ui/video_shell/trim/run.rs:410
+#: crates/big-video-player/src/video/ui/video_shell/trim/run.rs:420
+#: crates/big-video-player/src/video/ui/video_shell/trim/run.rs:430
+#: crates/big-video-player/src/video/ui/video_shell/trim/run.rs:439
+#: crates/ui/media/big-media-components/src/video/editor_sidebar.rs:51
+msgid "Reset"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/media_adjust.rs:268
+#: crates/ui/media/big-media-components/src/video/editor_sidebar.rs:61
+msgid "Transform"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/media_adjust.rs:269
+msgid "Rotate or mirror the video picture"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/media_adjust.rs:274
+msgid "Rotation"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/media_adjust.rs:289
+msgid "Rotate Left"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/media_adjust.rs:294
+msgid "Reset Rotation"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/media_adjust.rs:299
+msgid "Rotate Right"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/media_adjust.rs:336
+msgid "Flip"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/media_adjust.rs:343
+msgid "Horizontal"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/media_adjust.rs:348
+msgid "Vertical"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/media_adjust.rs:382
+msgid "Crop"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/media_adjust.rs:383
+msgid "Crop video edges in pixels"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/media_adjust.rs:389
+#: crates/big-video-player/src/video/ui/media_adjust.rs:395
+#: crates/ui/generic/big-relm4-components/src/layout/tab_prefs.rs:128
+#: crates/ui/media/big-media-components/src/video/editor_panel.rs:72
+msgid "Left"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/media_adjust.rs:390
+#: crates/big-video-player/src/video/ui/media_adjust.rs:396
+#: crates/ui/media/big-media-components/src/video/editor_panel.rs:73
+msgid "Right"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/media_adjust.rs:391
+#: crates/big-video-player/src/video/ui/media_adjust.rs:397
+#: crates/ui/generic/big-relm4-components/src/layout/chrome_band_prefs.rs:30
+#: crates/ui/generic/big-relm4-components/src/layout/tab_prefs.rs:72
+#: crates/ui/media/big-media-components/src/video/editor_panel.rs:74
+msgid "Top"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/media_adjust.rs:392
+#: crates/big-video-player/src/video/ui/media_adjust.rs:398
+#: crates/ui/generic/big-relm4-components/src/layout/chrome_band_prefs.rs:31
+#: crates/ui/generic/big-relm4-components/src/layout/tab_prefs.rs:73
+#: crates/ui/media/big-media-components/src/video/editor_panel.rs:75
+msgid "Bottom"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/media_adjust.rs:408
+#: crates/ui/media/big-media-components/src/video/editor_panel.rs:76
+msgid "Reset crop"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/media_adjust.rs:509
+#: crates/big-video-player/src/video/ui/video_shell/trim/run.rs:415
+#: crates/ui/media/big-media-components/src/video/editor_sidebar.rs:58
+msgid "Contrast"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/media_adjust.rs:510
+msgid "Difference between dark and light areas"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/media_adjust.rs:521
+#: crates/big-video-player/src/video/ui/video_shell/trim/run.rs:405
+#: crates/ui/media/big-media-components/src/video/editor_sidebar.rs:57
+msgid "Brightness"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/media_adjust.rs:522
+msgid "Overall lightness of the image"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/media_adjust.rs:533
+msgid "Gamma"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/media_adjust.rs:534
+msgid "Midtone brightness — adjusts without clipping highlights or shadows"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/media_adjust.rs:546
+msgid "Color intensity — 0 = grayscale"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/media_adjust.rs:558
+msgid "Shift all colors around the color wheel"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/media_adjust.rs:570
+msgid "Image"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/media_adjust.rs:571
+msgid "Fine-tune colors and brightness of the video picture"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/media_adjust.rs:579
+#: crates/media-runtime/src/editor/audio_edit_page/actions.rs:169
+msgid "Zoom"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/media_adjust.rs:580
+msgid "Magnify the picture — 0 = fit window, 2 = double size"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/media_adjust.rs:591
+msgid "Pan & Scan"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/media_adjust.rs:592
+msgid "Crop edges to fill the window — useful for removing black bars"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/media_adjust.rs:604
+msgid "Zoom and Pan"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/media_adjust.rs:605
+msgid "Enlarge or reframe the video within the window"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/media_adjust.rs:647
+msgid "Audio and Subtitle Delay"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/media_adjust.rs:657
+msgid "Image and Video"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/media_details_dialog.rs:33
+#: crates/ui/media/big-media-components/src/media/file_metadata_dialog.rs:79
+msgid "Copy"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/media_details_dialog.rs:42
+msgid "Media Information"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/media_details_dialog.rs:50
+#: crates/ui/media/big-media-components/src/media/file_metadata_dialog.rs:80
+msgid "Copy All"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/media_details_dialog.rs:77
+#: crates/big-video-player/src/video/ui/preferences/advanced/mod.rs:32
+msgid "General"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/media_details_dialog.rs:109
+#: crates/big-video-player/src/video/ui/menu_dialogs.rs:198
+#: crates/big-video-player/src/video/ui/video_shell/component.rs:793
+msgid "Chapters"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/media_details_dialog.rs:152
+#: crates/media-runtime/src/media/metadata_cache/detailed_video_metadata.rs:117
+#: crates/media-runtime/src/player/mpv_backend/properties_core.rs:323
+#: crates/ui/media/big-media-components/src/media/file_metadata_dialog.rs:92
+msgid "Resolution"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/media_details_dialog.rs:160
+#: crates/media-runtime/src/media/metadata_cache/detailed_video_metadata.rs:123
+#: crates/ui/media/big-media-components/src/media/file_metadata_dialog.rs:94
+msgid "Frame Rate"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/media_details_dialog.rs:175
+msgid "Hardware Decoder"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/media_details_dialog.rs:182
+#: crates/media-runtime/src/media/metadata_cache/detailed_video_metadata.rs:129
+#: crates/ui/media/big-media-components/src/media/file_metadata_dialog.rs:93
+msgid "Pixel Format"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/media_details_dialog.rs:189
+#: crates/media-runtime/src/player/mpv_backend/properties_core.rs:358
+msgid "Colorspace"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/media_details_dialog.rs:193
+#: crates/media-runtime/src/player/mpv_backend/properties_core.rs:361
+msgid "Primaries"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/media_details_dialog.rs:198
+#: crates/media-runtime/src/player/mpv_backend/properties_core.rs:365
+msgid "HDR"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/media_details_dialog.rs:200
+#: crates/media-runtime/src/player/mpv_backend/properties_core.rs:367
+msgid "Transfer"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/media_details_dialog.rs:258
+msgid "Streaming"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/media_details_dialog.rs:260
+msgid "Cache"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/media_details_dialog.rs:279
+msgid "Video Tracks"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/media_details_dialog.rs:293
+msgid "Audio Tracks"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/media_details_dialog.rs:306
+msgid "Subtitle Tracks"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/media_details_dialog.rs:315
+msgid "Subtitle"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/menu_dialogs.rs:40
+msgid "Go to Time"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/menu_dialogs.rs:48
+msgid "Use H:MM:SS, M:SS, or seconds."
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/menu_dialogs.rs:51
+msgid "Playback time"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/menu_dialogs.rs:58
+msgid "Go"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/menu_dialogs.rs:119
+#: crates/big-video-player/src/video/ui/menu_dialogs.rs:123
+#: crates/big-video-player/src/video/ui/menu_dialogs.rs:461
+msgid "Screenshot failed"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/menu_dialogs.rs:163
+#: crates/big-video-player/src/video/ui/menu_dialogs.rs:168
+msgid "No chapters"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/menu_dialogs.rs:182
+msgid "Jump to chapter"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/menu_dialogs.rs:417
+msgid "Chapter"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/menu_dialogs.rs:448
+msgid "Screenshot saved"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/preferences/advanced/playback.rs:24
+msgid "General playback behavior such as resuming and looping"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/preferences/advanced/playback.rs:32
+msgid "Remember position when reopening files"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/preferences/advanced/playback.rs:46
+msgid "Repeat file"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/preferences/advanced/playback.rs:46
+msgid "Repeat playlist"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/preferences/advanced/playback.rs:48
+msgid "Repeat the current file or the entire playlist"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/preferences/advanced/playback.rs:96
+msgid "When Video Ends"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/preferences/advanced/playback.rs:98
+msgid "Choose what happens when the file or playlist finishes playing"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/preferences/advanced/playback.rs:104
+msgid "Keep last frame"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/preferences/advanced/playback.rs:105
+msgid "Always keep window"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/preferences/advanced/playback.rs:106
+msgid "Close window"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/preferences/advanced/playback.rs:110
+msgid "Window behavior"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/preferences/advanced/playback.rs:111
+msgid "What to do when the video finishes"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/preferences/advanced/playback.rs:130
+msgid "Pause at End"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/preferences/advanced/playback.rs:131
+msgid "Pause when reaching end of file"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/preferences/advanced/playback.rs:144
+msgid "Stay open"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/preferences/advanced/playback.rs:145
+msgid "Close player"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/preferences/advanced/playback.rs:146
+msgid "Close after first file"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/preferences/advanced/playback.rs:151
+msgid "Idle Mode"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/preferences/advanced/playback.rs:152
+msgid "What happens after the playlist finishes"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/preferences/advanced/screenshot.rs:25
+msgid "Format and save location for video screenshots"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/preferences/advanced/screenshot.rs:32
+msgid ""
+"JPEG is smaller, PNG preserves all quality, WebP offers the best of both"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/preferences/advanced/screenshot.rs:48
+msgid "JPEG Quality"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/preferences/advanced/screenshot.rs:49
+msgid "0-100 (only for JPEG format)"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/preferences/advanced/screenshot.rs:67
+msgid "PNG Compression"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/preferences/advanced/screenshot.rs:68
+msgid "0-9 (only for PNG format)"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/preferences/advanced/screenshot.rs:86
+msgid "Filename Template"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/preferences/advanced/screenshot.rs:87
+msgid "%F=filename, %p=time, %n=number"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/preferences/advanced/screenshot.rs:102
+msgid "Save Directory"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/preferences/advanced/screenshot.rs:103
+msgid "Leave empty for default Pictures folder"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/preferences/advanced/screenshot.rs:119
+msgid "Tag Colorspace"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/preferences/advanced/screenshot.rs:120
+msgid "Include color profile in screenshots"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/preferences/advanced/screenshot.rs:135
+msgid "High Bit Depth"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/preferences/advanced/screenshot.rs:136
+msgid "Use high bit depth for screenshots"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/preferences/advanced/system.rs:29
+msgid "Cache and Buffer"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/preferences/advanced/system.rs:31
+msgid "Buffer media data to reduce stuttering on slow or remote connections"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/preferences/advanced/system.rs:40
+msgid "Enable Cache"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/preferences/advanced/system.rs:41
+msgid "Buffer media data to reduce stuttering on slow connections"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/preferences/advanced/system.rs:55
+msgid "Cache Duration"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/preferences/advanced/system.rs:56
+msgid "Buffer length in seconds"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/preferences/advanced/system.rs:73
+msgid "Pause When Buffer Low"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/preferences/advanced/system.rs:74
+msgid "Pause playback while buffering catches up instead of stuttering"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/preferences/advanced/system.rs:88
+msgid "Cache on Disk"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/preferences/advanced/system.rs:89
+msgid "Store cache on disk instead of RAM — useful for very long streams"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/preferences/advanced/system.rs:103
+msgid "Demuxer Readahead"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/preferences/advanced/system.rs:104
+msgid "Readahead in seconds"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/preferences/advanced/system.rs:129
+msgid "Screensaver"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/preferences/advanced/system.rs:131
+msgid "Prevent the screen from going dark while watching videos"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/preferences/advanced/system.rs:138
+msgid "During playback"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/preferences/advanced/system.rs:139
+msgid "Never block"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/preferences/advanced/system.rs:140
+msgid "Always block"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/preferences/advanced/system.rs:145
+msgid "Block Screensaver"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/preferences/advanced/system.rs:146
+msgid "Prevent the screen from dimming while watching videos"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/preferences/advanced/system.rs:171
+msgid "GPU"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/preferences/advanced/system.rs:173
+msgid "Low-level GPU options for troubleshooting rendering issues"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/preferences/advanced/system.rs:181
+msgid "GPU Dumb Mode"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/preferences/advanced/system.rs:182
+msgid "Disable FBOs and shaders for low-end GPUs (requires restart)"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/preferences/advanced/system.rs:198
+msgid "Custom mpv Options"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/preferences/advanced/system.rs:200
+msgid ""
+"Extra mpv options applied on next startup — comma-separated key=value pairs"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/preferences/advanced/system.rs:208
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/header.rs:182
+msgid "Options"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/preferences/mod.rs:100
+msgid "Advanced"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/preferences/mod.rs:110
+msgid "Show all technical options across every page"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/preferences/mod.rs:124
+#: crates/big-video-player/src/video/ui/preferences/mod.rs:126
+#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:461
+#: crates/ui/media/big-media-components/src/converter/header_bar.rs:60
+msgid "Restore Defaults"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/preferences/subtitles_groups/mod.rs:39
+msgid "Font"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/preferences/subtitles_groups/mod.rs:40
+msgid "Typeface and size for subtitle text"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/preferences/subtitles_groups/mod.rs:51
+msgid "Font Family"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/preferences/subtitles_groups/mod.rs:52
+msgid "Choose a specific typeface for subtitles"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/preferences/subtitles_groups/mod.rs:84
+msgid "Font Size"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/preferences/subtitles_groups/mod.rs:85
+msgid "Larger values make subtitles easier to read from a distance"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/preferences/subtitles_groups/mod.rs:102
+msgid "Bold"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/preferences/subtitles_groups/mod.rs:103
+msgid "Makes subtitle text thicker and easier to read"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/preferences/subtitles_groups/mod.rs:123
+msgid "Colors and Outline"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/preferences/subtitles_groups/mod.rs:125
+msgid "Customize how subtitles look for better readability on any background"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/preferences/subtitles_groups/mod.rs:132
+msgid "Text Color"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/preferences/subtitles_groups/mod.rs:133
+msgid "Main color of subtitle text"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/preferences/subtitles_groups/mod.rs:147
+msgid "Outline Thickness"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/preferences/subtitles_groups/mod.rs:148
+msgid "Border around text — thicker makes it readable on bright backgrounds"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/preferences/subtitles_groups/mod.rs:166
+msgid "Outline Color"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/preferences/subtitles_groups/mod.rs:167
+msgid "Color of the border around subtitle text"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/preferences/subtitles_groups/mod.rs:182
+msgid "Shadow Color"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/preferences/subtitles_groups/mod.rs:183
+msgid "Shadow behind text — adjust alpha for transparency"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/preferences/subtitles_groups/mod.rs:198
+msgid "Shadow Offset"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/preferences/subtitles_groups/mod.rs:199
+msgid "Distance of shadow from text"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/preferences/subtitles_groups/mod.rs:224
+msgid "Language and Loading"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/preferences/subtitles_groups/mod.rs:226
+msgid "Language preferences and how external subtitle files are found"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/preferences/subtitles_groups/mod.rs:233
+msgid "Preferred Language"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/preferences/subtitles_groups/mod.rs:234
+msgid "Auto-selects your language when available (e.g. pt, en, ja)"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/preferences/subtitles_groups/mod.rs:246
+msgid "Approximate match"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/preferences/subtitles_groups/mod.rs:247
+msgid "Exact filename match"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/preferences/subtitles_groups/mod.rs:248
+msgid "Load all found"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/preferences/subtitles_groups/mod.rs:249
+msgid "Don't auto-load"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/preferences/subtitles_groups/mod.rs:254
+msgid "Auto-load Mode"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/preferences/subtitles_groups/mod.rs:255
+msgid "How to find external subtitle files next to the video"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/preferences/subtitles_groups/position.rs:28
+msgid "Position and Rendering"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/preferences/subtitles_groups/position.rs:29
+msgid "Control where and how subtitles are drawn on screen"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/preferences/subtitles_groups/position.rs:37
+msgid "Bottom Margin"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/preferences/subtitles_groups/position.rs:38
+msgid "Distance from the bottom of the window in pixels"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/preferences/subtitles_groups/position.rs:53
+msgid "Outline and Shadow"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/preferences/subtitles_groups/position.rs:54
+msgid "Opaque Box"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/preferences/subtitles_groups/position.rs:55
+msgid "Background Box"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/preferences/subtitles_groups/position.rs:60
+msgid "Border Style"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/preferences/subtitles_groups/position.rs:61
+msgid "How the outline and background around subtitle text are drawn"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/preferences/subtitles_groups/position.rs:80
+msgid "Scale with Window"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/preferences/subtitles_groups/position.rs:81
+msgid "Subtitle size follows window size"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/preferences/subtitles_groups/position.rs:95
+msgid "Scale Styled Subtitles"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/preferences/subtitles_groups/position.rs:96
+msgid ""
+"Also resize ASS/SSA subtitles (common in anime) when the window changes size"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/preferences/subtitles_groups/special.rs:28
+msgid "Special Formats"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/preferences/subtitles_groups/special.rs:30
+msgid ""
+"Options for SDH annotations, DVD/Blu-ray image subtitles and dual subtitles"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/preferences/subtitles_groups/special.rs:39
+msgid "Filter SDH Annotations"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/preferences/subtitles_groups/special.rs:40
+msgid "Remove [music], [applause] and other sound descriptions from subtitles"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/preferences/subtitles_groups/special.rs:54
+msgid "Aggressive SDH Filtering"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/preferences/subtitles_groups/special.rs:55
+msgid "More aggressive removal of SDH content"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/preferences/subtitles_groups/special.rs:69
+msgid "Blur Image Subtitles"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/preferences/subtitles_groups/special.rs:70
+msgid "Smooth pixelated DVD/Blu-ray subtitles"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/preferences/subtitles_groups/special.rs:88
+msgid "Grayscale Image Subtitles"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/preferences/subtitles_groups/special.rs:89
+msgid "Convert bitmap subtitles to grayscale"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/preferences/subtitles_groups/special.rs:102
+msgid "Enable Secondary Subtitle"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/preferences/subtitles_groups/special.rs:103
+msgid "Show a second subtitle track alongside the primary one"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/preferences/video/decoding.rs:23
+msgid "Hardware Decoding"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/preferences/video/decoding.rs:25
+msgid ""
+"Let your graphics card handle video decoding — smoother playback and lower "
+"CPU usage"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/preferences/video/decoding.rs:30
+msgid "Automatic (safe)"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/preferences/video/decoding.rs:31
+#: crates/big-video-player/src/video/ui/preferences/video/hdr.rs:35
+#: crates/big-video-player/src/video/ui/preferences/video/hdr.rs:150
+#: crates/big-video-player/src/video/ui/preferences/video/render_profile.rs:52
+#: crates/ui/media/big-media-components/src/converter/extra_dialog.rs:91
+msgid "Automatic"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/preferences/video/decoding.rs:41
+#: crates/big-video-player/src/video/ui/preferences/video/decoding.rs:60
+msgid "Hardware acceleration"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/preferences/video/decoding.rs:42
+msgid ""
+"Uses the GPU to decode video, reducing CPU usage. Auto-safe is recommended."
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/preferences/video/decoding.rs:62
+msgid "Recommended ON. Uses your GPU for smooth playback with less CPU usage"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/preferences/video/decoding.rs:84
+msgid "Fix interlaced video"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/preferences/video/decoding.rs:85
+msgid "Removes visible lines on old TV recordings and DVDs"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/preferences/video/gpu.rs:25
+msgid "GPU / Rendering"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/preferences/video/gpu.rs:26
+msgid "Custom shaders, window behavior and video preview"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/preferences/video/gpu.rs:34
+msgid "GLSL Shaders"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/preferences/video/gpu.rs:35
+msgid "Paths to .glsl files separated by commas — e.g. /path/to/anime4k.glsl"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/preferences/video/gpu.rs:49
+msgid "Auto-resize Window"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/preferences/video/gpu.rs:50
+msgid "Adjust window when video resolution changes"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/preferences/video/gpu.rs:63
+msgid "Seekbar Thumbnail Preview"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/preferences/video/gpu.rs:64
+msgid "Show video frame preview on seekbar hover"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/preferences/video/hdr.rs:28
+msgid "HDR / Tone Mapping"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/preferences/video/hdr.rs:29
+msgid "Adjust how HDR content is displayed on your screen"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/preferences/video/hdr.rs:40
+msgid "Clip (no mapping)"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/preferences/video/hdr.rs:45
+msgid "Tone Mapping Algorithm"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/preferences/video/hdr.rs:47
+msgid ""
+"How HDR brightness is mapped to your screen — Automatic works well for most "
+"displays"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/preferences/video/hdr.rs:67
+msgid "Display Peak Brightness"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/preferences/video/hdr.rs:68
+msgid "Target peak in nits (0 = auto)"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/preferences/video/hdr.rs:85
+msgid "Display Contrast"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/preferences/video/hdr.rs:86
+msgid "Contrast ratio (0 = infinite)"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/preferences/video/hdr.rs:103
+msgid "HDR Contrast Recovery"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/preferences/video/hdr.rs:104
+msgid "Recovery strength (0.0-2.0)"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/preferences/video/hdr.rs:122
+msgid "Compute HDR Peak Per Scene"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/preferences/video/hdr.rs:123
+msgid ""
+"Dynamically adjust brightness based on scene content for better HDR rendering"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/preferences/video/hdr.rs:137
+msgid "Colorspace Hint"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/preferences/video/hdr.rs:138
+msgid "Send HDR colorspace hint to display"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/preferences/video/hdr.rs:151
+msgid "Clip"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/preferences/video/hdr.rs:152
+#: crates/big-video-player/src/video/ui/preferences/video/icc.rs:67
+msgid "Perceptual"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/preferences/video/hdr.rs:153
+#: crates/big-video-player/src/video/ui/preferences/video/icc.rs:68
+msgid "Relative"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/preferences/video/hdr.rs:155
+#: crates/big-video-player/src/video/ui/preferences/video/icc.rs:70
+msgid "Absolute"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/preferences/video/hdr.rs:156
+msgid "Desaturate"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/preferences/video/hdr.rs:157
+msgid "Darken"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/preferences/video/hdr.rs:158
+msgid "Warn"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/preferences/video/hdr.rs:159
+msgid "Linear"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/preferences/video/hdr.rs:164
+msgid "Gamut Mapping Mode"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/preferences/video/hdr.rs:165
+msgid "How colors outside your display range are handled"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/preferences/video/icc.rs:26
+msgid "Color Management (ICC)"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/preferences/video/icc.rs:28
+msgid "Use your monitor’s color profile for accurate color reproduction"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/preferences/video/icc.rs:37
+msgid "Auto-detect ICC Profile"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/preferences/video/icc.rs:38
+msgid "Use your monitor color profile for accurate color reproduction"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/preferences/video/icc.rs:52
+msgid "ICC Profile Path"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/preferences/video/icc.rs:53
+msgid "Path to a custom ICC/ICM color profile file"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/preferences/video/icc.rs:65
+msgid "Rendering Intent"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/preferences/video/render_profile.rs:41
+#: crates/big-video-player/src/video/ui/preferences/video/render_profile.rs:51
+msgid "Video Output"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/preferences/video/render_profile.rs:43
+msgid ""
+"How video is rendered. Automatic uses the GPU when available and falls back "
+"to software."
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/preferences/video/render_profile.rs:52
+msgid "OpenGL (GPU)"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/preferences/video/render_profile.rs:52
+#: crates/ui/media/big-media-components/src/converter/extra_dialog.rs:92
+msgid "Software"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/preferences/video/render_profile.rs:55
+msgid "Software works without a GPU; applies to newly opened videos"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/preferences/video/render_profile.rs:90
+msgid "Rendering Quality"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/preferences/video/render_profile.rs:92
+msgid ""
+"Start with Balanced. Switch to Fast if you notice stuttering, or High "
+"Quality for movies."
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/preferences/video/render_profile.rs:102
+msgid "Video Profile"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/preferences/video/render_profile.rs:103
+msgid "⚡ Fast"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/preferences/video/render_profile.rs:103
+msgid "⚖ Balanced"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/preferences/video/render_profile.rs:103
+msgid "✨ High Quality"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/preferences/video/render_profile.rs:105
+msgid "Higher quality uses more GPU power"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/preferences/video/sync.rs:25
+msgid "Synchronization"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/preferences/video/sync.rs:27
+msgid "How video frames are timed to your display refresh rate"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/preferences/video/sync.rs:34
+msgid "Follow audio (default)"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/preferences/video/sync.rs:35
+msgid "Match display rate"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/preferences/video/sync.rs:36
+msgid "Match display (drop frames)"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/preferences/video/sync.rs:37
+msgid "Display free-run"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/preferences/video/sync.rs:42
+msgid "Video Sync"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/preferences/video/sync.rs:43
+msgid "How video frames are timed relative to your display"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/preferences/video/sync.rs:67
+msgid "Interpolation"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/preferences/video/sync.rs:68
+msgid "Smooth motion — requires a display sync mode above"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/preferences/video/sync.rs:82
+msgid "Interpolation Filter"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/preferences/video/sync.rs:83
+msgid "Algorithm used for motion smoothing"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/context_menu.rs:78
+msgid "Rename…"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/context_menu.rs:83
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/fileops.rs:83
+msgid "Move to trash"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/context_menu.rs:90
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/views/queue_view.rs:139
+msgid "Remove from playlist"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/context_menu.rs:105
+msgid "Open containing folder"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/empty_state.rs:11
+msgid "Load Folder"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/empty_state.rs:15
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/empty_state.rs:31
+#: crates/ui/media/big-media-components/src/converter/header_bar.rs:53
+msgid "Add Files"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/empty_state.rs:22
+msgid "Browse your videos"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/empty_state.rs:23
+msgid "Load a folder to explore, or add files to the playlist"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/empty_state.rs:38
+msgid "Your playlist is empty"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/empty_state.rs:39
+msgid "Add files to start watching"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/header.rs:30
+msgid "Load folder…"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/header.rs:43
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/header.rs:44
+msgid "Select"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/header.rs:51
+msgid "Add files…"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/header.rs:77
+msgid "Show as list"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/header.rs:79
+msgid "Show as grid"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/header.rs:104
+msgid "Choose Video Folder"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/header.rs:117
+msgid "Add Video Files"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/header.rs:118
+#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:186
+msgid "Video files"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/header.rs:150
+msgid "Include subfolders"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/header.rs:154
+msgid "Date"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/header.rs:155
+msgid "Size"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/header.rs:158
+msgid "Reverse order"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/header.rs:160
+msgid "Sort by"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/header.rs:168
+msgid "Current file"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/header.rs:169
+msgid "Whole playlist"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/header.rs:174
+msgid "Save playlist…"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/header.rs:175
+msgid "Load playlist…"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/header.rs:176
+msgid "Clear playlist"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/menu_actions.rs:167
+msgid "Save Playlist"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/menu_actions.rs:181
+msgid "Load Playlist"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/metadata.rs:25
+msgid "All"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/metadata.rs:26
+msgid "Folders"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/metadata.rs:27
+msgid "Videos"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/metadata.rs:143
+#, rust-format
+msgid "{} video"
+msgid_plural "{} videos"
+msgstr[0] ""
+msgstr[1] ""
+
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/metadata.rs:151
+#, rust-format
+msgid "(of {total})"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/metadata.rs:156
+#, rust-format
+msgid ""
+"Showing {shown} of {total} files found. Consider filtering by subfolder."
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/fileops.rs:23
+#, rust-format
+msgid "{} selected"
+msgid_plural "{} selected"
+msgstr[0] ""
+msgstr[1] ""
+
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/fileops.rs:55
+msgid "Send to converter"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/fileops.rs:66
+msgid "Move to folder…"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/fileops.rs:96
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/fileops.rs:97
+msgid "Done"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/fileops.rs:144
+msgid "Move to Folder"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/fileops.rs:161
+msgid "moved"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/fileops.rs:183
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/fileops.rs:200
+msgid "Rename"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/fileops.rs:189
+msgid "Choose a new file name."
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/fileops.rs:232
+msgid "Invalid name"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/fileops.rs:241
+msgid "A file with that name already exists"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/fileops.rs:256
+msgid "Rename failed"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/fileops.rs:308
+#, rust-format
+msgid "{} file {verb}"
+msgid_plural "{} files {verb}"
+msgstr[0] ""
+msgstr[1] ""
+
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/fileops.rs:312
+#, rust-format
+msgid "{ok} {verb}, {failed} failed"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/mod.rs:332
+msgid "Scanning…"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/views/model.rs:34
+msgid "Previous folder"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/video_controls_bar.rs:245
+msgid "Seek Position"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/video_controls_bar/seek_preview.rs:40
+msgid "Seek preview"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/video_controls_bar/tracks.rs:26
+msgid "Load Subtitle File…"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/video_controls_bar/tracks.rs:33
+msgid "Primary Subtitles"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/video_controls_bar/tracks.rs:34
+msgid "Disable Subtitles"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/video_controls_bar/tracks.rs:47
+msgid "Secondary Subtitles"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/video_controls_bar/tracks.rs:48
+msgid "Disable Secondary Subtitles"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/video_controls_bar/tracks.rs:86
+msgid "Subtitle files"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/video_controls_bar/tracks.rs:94
+msgid "Load Subtitle File"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/video_controls_bar/tracks.rs:177
+#: crates/media-runtime/src/editor/edit_page/render.rs:555
+msgid "Track"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/video_controls_bar/tracks.rs:178
+#: crates/media-runtime/src/editor/edit_page/render.rs:556
+msgid "external"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/video_controls_bar/zones.rs:183
+msgid "Mute"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/video_controls_bar/zones.rs:399
+msgid "Edit & Export"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/video_controls_bar/zones.rs:413
+msgid "Audio Track"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/video_controls_bar/zones.rs:419
+#: crates/big-video-player/src/video/ui/video_shell/input_gestures.rs:129
+msgid "Fullscreen"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/video_controls_bar/zones.rs:454
+msgid "Cut Video…"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/video_controls_bar/zones.rs:455
+msgid "Extract Audio as MP3"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/video_controls_bar/zones.rs:456
+msgid "Extract Audio as M4A"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/video_controls_bar/zones.rs:457
+msgid "Extract Audio as FLAC"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/video_controls_bar/zones.rs:458
+msgid "Convert to MP4"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/video_controls_bar/zones.rs:459
+msgid "Convert to MKV"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/video_controls_bar/zones.rs:460
+msgid "Convert to WebM"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/video_shell/actions.rs:131
+msgid "Drop a file or open one to start"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/video_shell/actions.rs:153
+#: crates/big-video-player/src/video/ui/video_shell/component.rs:770
+msgid "Open Recent"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/video_shell/component.rs:162
+msgid "Minimize"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/video_shell/component.rs:163
+msgid "Maximize"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/video_shell/component.rs:174
+#: crates/big-video-player/src/video/ui/video_shell/trim/run.rs:245
+msgid "Generating cut…"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/video_shell/component.rs:273
+msgid "Keep Above"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/video_shell/component.rs:769
+#: crates/big-video-player/src/video/ui/video_shell/input_gestures.rs:144
+msgid "Open File…"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/video_shell/component.rs:771
+#: crates/big-video-player/src/video/ui/video_shell/input_gestures.rs:145
+msgid "Open URL…"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/video_shell/component.rs:772
+msgid "Open Disc…"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/video_shell/component.rs:794
+msgid "Sleep Timer…"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/video_shell/component.rs:796
+#: crates/big-video-player/src/video/ui/video_shell/input_gestures.rs:135
+msgid "Audio & Subtitle Delay"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/video_shell/component.rs:801
+#: crates/big-video-player/src/video/ui/video_shell/input_gestures.rs:139
+msgid "Picture Adjustments"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/video_shell/component.rs:802
+#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:61
+msgid "Video Filters"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/video_shell/component.rs:803
+msgid "Stream Quality"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/video_shell/component.rs:804
+#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:177
+msgid "IPTV"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/video_shell/component.rs:807
+#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:16
+msgid "Cast to Device"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/video_shell/component.rs:815
+#: crates/big-video-player/src/video/ui/video_shell/input_gestures.rs:146
+msgid "Media Info"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:108
+msgid "Best available"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:110
+msgid "Highest video and audio quality"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:113
+msgid "Up to 1080p"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:115
+msgid "Prefer Full HD or lower"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:118
+msgid "Up to 720p"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:120
+msgid "Prefer HD or lower"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:123
+msgid "Up to 480p"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:125
+msgid "Prefer SD or lower"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:128
+msgid "Audio only"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:130
+msgid "Use the best audio stream"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:138
+msgid "Online Video Quality"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:147
+msgid "Use this quality"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:185
+msgid "Open Video"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:187
+msgid "Playlist files"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:188
+msgid "All files"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:217
+msgid "Supports YouTube, HTTP streams, RTSP, RTMP, DVD, and Blu-ray URLs."
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:221
+msgid "Media URL"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:281
+msgid "Recent Files"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:291
+msgid "No Recent Files"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:302
+msgid "Open recent file"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:332
+msgid "Open Disc"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:341
+msgid "Choose a disc type and enter the device, ISO, or folder path."
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:345
+msgid "Disc type"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:346
+msgid "DVD"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:346
+msgid "Blu-ray"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:349
+msgid "Disc device path"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:468
+msgid ""
+"Reset all settings to their default values? The application will need to be "
+"restarted for all changes to take effect."
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:472
+msgid "Restore"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/video_shell/export.rs:26
+msgid "Extracting audio…"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/video_shell/export.rs:55
+msgid "No file is playing"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/video_shell/export.rs:60
+msgid "Cannot export a network stream"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/video_shell/input_gestures.rs:65
+msgid "Choose Video…"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/video_shell/input_gestures.rs:66
+msgid "Pause / Resume"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/video_shell/playback.rs:100
+msgid "Could not play this file — it may be unsupported or corrupt."
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/video_shell/playback.rs:252
+msgid "Opening in converter…"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/video_shell/playback.rs:254
+msgid "Could not launch the converter"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/video_shell/playback.rs:285
+msgid "Could not move to trash"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/video_shell/playback.rs:290
+#, rust-format
+msgid "{} file moved to trash"
+msgid_plural "{} files moved to trash"
+msgstr[0] ""
+msgstr[1] ""
+
+#: crates/big-video-player/src/video/ui/video_shell/trim/bar.rs:140
+#, rust-format
+msgid "Cut start: {t} — mark the other end"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/video_shell/trim/bar.rs:142
+#: crates/ui/media/big-player-ui/src/audio_trim_bar.rs:45
+msgid "Mark more cuts or export"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/video_shell/trim/bar.rs:143
+msgid "Press M (or Mark) at the start and end of a cut"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/video_shell/trim/bar.rs:190
+msgid "Mark"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/video_shell/trim/bar.rs:191
+msgid "Mark a cut point at the current position (M)"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/video_shell/trim/bar.rs:196
+msgid "Clear all cuts"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/video_shell/trim/bar.rs:212
+msgid "Play only the marked cuts"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/video_shell/trim/bar.rs:242
+msgid "Keep format (fast)"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/video_shell/trim/bar.rs:245
+#: crates/media-runtime/src/ui_labels.rs:76
+msgid "Re-encode"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/video_shell/trim/bar.rs:249
+msgid ""
+"Keep format copies the cut without re-encoding (fast); Re-encode applies the "
+"cut settings"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/video_shell/trim/bar.rs:271
+msgid "Cut settings"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/video_shell/trim/bar.rs:284
+#: crates/ui/media/big-player-ui/src/audio_trim_bar.rs:49
+msgid "Exit trim mode"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/video_shell/trim/bar.rs:297
+msgid "Export the marked cuts"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/video_shell/trim/bar.rs:410
+#: crates/big-video-player/src/video/ui/video_shell/trim/bar.rs:412
+#: crates/ui/media/big-player-ui/src/audio_trim_bar.rs:50
+msgid "Edit cut times"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/video_shell/trim/bar.rs:422
+#: crates/ui/media/big-player-ui/src/audio_trim_bar.rs:52
+msgid "Remove this cut"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/video_shell/trim/run.rs:40
+#: crates/big-video-player/src/video/ui/video_shell/trim/run.rs:214
+msgid "Open a local video to cut it"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/video_shell/trim/run.rs:305
+#: crates/big-video-player/src/video/ui/video_shell/trim/run.rs:309
+#: crates/media-runtime/src/editor/edit_page/segment_list.rs:166
+#: crates/media-runtime/src/editor/edit_page/segment_list.rs:177
+msgid "s"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/video_shell/trim/run.rs:325
+msgid "Cut times"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/video_shell/trim/run.rs:330
+msgid "Hundredth-second precision; either order is fine"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/video_shell/trim/run.rs:340
+msgid "Edit Cut"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/video_shell/trim/run.rs:390
+msgid "Clip export settings"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/video_shell/trim/run.rs:398
+msgid "Image adjustments"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/video_shell/trim/run.rs:399
+msgid "Brightness, contrast, color intensity, and color balance"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/video_shell/trim/run.rs:425
+msgid "Color intensity"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/video_shell/trim/run.rs:434
+msgid "Color balance"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/video_shell/trim/run.rs:492
+msgid "Output files"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/video_shell/trim/run.rs:495
+msgid "When there are multiple cuts"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/video_shell/trim/run.rs:496
+msgid "Join into one file"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/video_shell/trim/run.rs:496
+msgid "Save each cut separately"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/video_shell/trim/run.rs:499
+msgid "One file is easier to share; separate files are easier to edit later"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/video_shell/trim/run.rs:531
+msgid "Clip exported"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/video_shell/trim/run.rs:532
+msgid "Export cancelled"
+msgstr ""
+
+#: crates/media-runtime/src/converter/queue/job.rs:169
+msgid "Input file not found"
+msgstr ""
+
+#: crates/media-runtime/src/converter/queue/job.rs:172
+msgid "Permission denied — check file permissions"
+msgstr ""
+
+#: crates/media-runtime/src/converter/queue/job.rs:175
+msgid "Disk full — free up space and try again"
+msgstr ""
+
+#: crates/media-runtime/src/converter/queue/job.rs:178
+msgid "File is corrupted or has an unsupported format"
+msgstr ""
+
+#: crates/media-runtime/src/converter/queue/job.rs:183
+msgid "Unsupported codec — try a different format"
+msgstr ""
+
+#: crates/media-runtime/src/converter/queue/job.rs:186
+msgid "Required encoder not available — check FFmpeg installation"
+msgstr ""
+
+#: crates/media-runtime/src/converter/queue/job.rs:189
+msgid "Unknown codec — install required codec support"
+msgstr ""
+
+#: crates/media-runtime/src/converter/queue/job.rs:192
+msgid "Output file already exists"
+msgstr ""
+
+#: crates/media-runtime/src/converter/queue/job.rs:195
+msgid "Could not open file — check path and permissions"
+msgstr ""
+
+#: crates/media-runtime/src/converter/queue/job.rs:207
+msgid "FFmpeg exited with code"
+msgstr ""
+
+#: crates/media-runtime/src/converter/queue/processing.rs:51
+msgid "Insufficient disk space"
+msgstr ""
+
+#: crates/media-runtime/src/converter/queue/processing.rs:52
+msgid "need"
+msgstr ""
+
+#: crates/media-runtime/src/converter/queue/processing.rs:54
+msgid "available"
+msgstr ""
+
+#: crates/media-runtime/src/converter/queue/processing.rs:108
+msgid "is not compatible with MP4 container in copy mode"
+msgstr ""
+
+#: crates/media-runtime/src/converter/queue/processing.rs:368
+msgid "Create output dir"
+msgstr ""
+
+#: crates/media-runtime/src/converter/queue/processing.rs:501
+msgid "All GPU stages failed"
+msgstr ""
+
+#: crates/media-runtime/src/editor/audio_edit_page/actions.rs:85
+msgid "Clear All Segments?"
+msgstr ""
+
+#: crates/media-runtime/src/editor/audio_edit_page/actions.rs:86
+msgid "All cut marks will be removed. This cannot be undone."
+msgstr ""
+
+#: crates/media-runtime/src/editor/audio_edit_page/actions.rs:88
+msgid "Clear All"
+msgstr ""
+
+#: crates/media-runtime/src/editor/audio_edit_page/actions.rs:170
+#: crates/ui/media/big-media-components/src/audio/editor_panel.rs:122
+msgid "Waveform zoom"
+msgstr ""
+
+#: crates/media-runtime/src/editor/audio_edit_page/segments.rs:185
+#: crates/media-runtime/src/editor/audio_edit_page/segments.rs:186
+#: crates/media-runtime/src/editor/edit_page/segment_list.rs:55
+#: crates/media-runtime/src/editor/edit_page/segment_list.rs:57
+msgid "Go to segment"
+msgstr ""
+
+#: crates/media-runtime/src/editor/audio_edit_page/segments.rs:202
+#: crates/media-runtime/src/editor/audio_edit_page/segments.rs:203
+#: crates/media-runtime/src/editor/edit_page/segment_list.rs:95
+#: crates/media-runtime/src/editor/edit_page/segment_list.rs:97
+msgid "Remove segment"
+msgstr ""
+
+#: crates/media-runtime/src/editor/edit_page/actions.rs:273
+msgid "Clear all segments?"
+msgstr ""
+
+#: crates/media-runtime/src/editor/edit_page/actions.rs:274
+msgid "Mark points and segment ranges will be removed."
+msgstr ""
+
+#: crates/media-runtime/src/editor/edit_page/actions.rs:276
+msgid "Clear"
+msgstr ""
+
+#: crates/media-runtime/src/editor/edit_page/build.rs:57
+msgid "Back to queue"
+msgstr ""
+
+#: crates/media-runtime/src/editor/edit_page/build.rs:61
+#: crates/ui/media/big-media-components/src/audio/editor_panel.rs:112
+msgid "Convert this file"
+msgstr ""
+
+#: crates/media-runtime/src/editor/edit_page/render.rs:522
+msgid "Frame"
+msgstr ""
+
+#: crates/media-runtime/src/editor/edit_page/render.rs:646
+#: crates/ui/media/big-media-components/src/video/editor_panel.rs:71
+msgid "No subtitles"
+msgstr ""
+
+#: crates/media-runtime/src/editor/edit_page/segment_list.rs:78
+#: crates/media-runtime/src/editor/edit_page/segment_list.rs:80
+msgid "Edit segment times"
+msgstr ""
+
+#: crates/media-runtime/src/editor/edit_page/segment_list.rs:139
+msgid "Edit Segment"
+msgstr ""
+
+#: crates/media-runtime/src/editor/edit_page/segment_list.rs:155
+msgid "Start:"
+msgstr ""
+
+#: crates/media-runtime/src/editor/edit_page/segment_list.rs:162
+#: crates/media-runtime/src/editor/edit_page/segment_list.rs:173
+msgid "h"
+msgstr ""
+
+#: crates/media-runtime/src/editor/edit_page/segment_list.rs:164
+#: crates/media-runtime/src/editor/edit_page/segment_list.rs:175
+msgid "m"
+msgstr ""
+
+#: crates/media-runtime/src/editor/edit_page/segment_list.rs:168
+#: crates/media-runtime/src/editor/edit_page/segment_list.rs:179
+msgid "cs"
+msgstr ""
+
+#: crates/media-runtime/src/editor/edit_page/segment_list.rs:170
+msgid "End:"
+msgstr ""
+
+#: crates/media-runtime/src/media/metadata_cache/detailed_video_metadata.rs:137
+#: crates/media-runtime/src/media/metadata_cache/detailed_video_metadata.rs:183
+#: crates/media-runtime/src/media/metadata_cache/detailed_video_metadata.rs:197
+#: crates/ui/media/big-media-components/src/media/file_metadata_dialog.rs:91
+#: crates/ui/media/big-player-ui/src/audio_preferences.rs:201
+msgid "Language"
+msgstr ""
+
+#: crates/media-runtime/src/media/metadata_cache/detailed_video_metadata.rs:154
+msgid "CD Quality"
+msgstr ""
+
+#: crates/media-runtime/src/media/metadata_cache/detailed_video_metadata.rs:156
+msgid "Hi-Res"
+msgstr ""
+
+#: crates/media-runtime/src/media/metadata_cache/detailed_video_metadata.rs:169
+#: crates/media-runtime/src/ui_labels.rs:113
+#: crates/media-runtime/src/ui_labels.rs:161
+msgid "Mono"
+msgstr ""
+
+#: crates/media-runtime/src/media/metadata_cache/detailed_video_metadata.rs:170
+#: crates/media-runtime/src/ui_labels.rs:114
+#: crates/media-runtime/src/ui_labels.rs:161
+msgid "Stereo"
+msgstr ""
+
+#: crates/media-runtime/src/media/metadata_cache/detailed_video_metadata.rs:171
+#: crates/media-runtime/src/ui_labels.rs:115
+msgid "5.1 Surround"
+msgstr ""
+
+#: crates/media-runtime/src/media/metadata_cache/detailed_video_metadata.rs:172
+msgid "7.1 Surround"
+msgstr ""
+
+#: crates/media-runtime/src/media/playlist_scan/display.rs:74
+msgid "Home"
+msgstr ""
+
+#: crates/media-runtime/src/player/mpv_backend/properties_core.rs:319
+#: crates/ui/media/big-media-components/src/video/encoding_dialog.rs:48
+msgid "Video Codec"
+msgstr ""
+
+#: crates/media-runtime/src/player/mpv_backend/properties_core.rs:327
+msgid "FPS"
+msgstr ""
+
+#: crates/media-runtime/src/player/mpv_backend/properties_core.rs:332
+msgid "Video Bitrate"
+msgstr ""
+
+#: crates/media-runtime/src/player/mpv_backend/properties_core.rs:337
+#: crates/ui/media/big-media-components/src/audio/encoding_dialog.rs:88
+msgid "Audio Codec"
+msgstr ""
+
+#: crates/media-runtime/src/player/mpv_backend/properties_core.rs:342
+#: crates/ui/media/big-media-components/src/audio/encoding_dialog.rs:92
+msgid "Audio Bitrate"
+msgstr ""
+
+#: crates/media-runtime/src/player/mpv_backend/properties_core.rs:348
+msgid "none (sw)"
+msgstr ""
+
+#: crates/media-runtime/src/player/mpv_backend/properties_core.rs:352
+msgid "HW Decoder"
+msgstr ""
+
+#: crates/media-runtime/src/player/mpv_backend/properties_core.rs:355
+msgid "Dropped Frames"
+msgstr ""
+
+#: crates/media-runtime/src/shared/audio_effects_eq.rs:100
+msgid ""
+"Boost or cut frequency bands to shape the sound. Use presets as a starting "
+"point."
+msgstr ""
+
+#: crates/media-runtime/src/shared/audio_effects_eq.rs:117
+msgid "Preset:"
+msgstr ""
+
+#: crates/media-runtime/src/shared/audio_effects_eq.rs:139
+msgid "Reset to Flat"
+msgstr ""
+
+#: crates/media-runtime/src/shared/audio_effects_eq.rs:207
+#: crates/media-runtime/src/shared/audio_effects_eq.rs:208
+msgid "Equalizer band"
+msgstr ""
+
+#: crates/media-runtime/src/shared/audio_effects.rs:41
+msgid "not installed"
+msgstr ""
+
+#: crates/media-runtime/src/shared/audio_effects.rs:192
+msgid ""
+"Powered by GTCRN — a neural network that separates voice from background "
+"noise in real time. The default settings work well for most cases."
+msgstr ""
+
+#: crates/media-runtime/src/shared/audio_effects.rs:233
+#: crates/ui/media/big-media-components/src/player_chrome.rs:324
+msgid "Noise reduction settings"
+msgstr ""
+
+#: crates/media-runtime/src/shared/audio_effects.rs:274
+msgid "Noise Reduction Model"
+msgstr ""
+
+#: crates/media-runtime/src/shared/audio_effects.rs:284
+msgid "Selects which AI model separates your voice from background noise."
+msgstr ""
+
+#: crates/media-runtime/src/shared/audio_effects.rs:300
+msgid ""
+"• DNS3 — General-purpose. Good at removing steady noises like fans, air "
+"conditioners, and hum."
+msgstr ""
+
+#: crates/media-runtime/src/shared/audio_effects.rs:311
+msgid ""
+"• VCTK — Trained on clear voices. Preserves more vocal detail and sounds "
+"more natural."
+msgstr ""
+
+#: crates/media-runtime/src/shared/audio_effects.rs:322
+msgid ""
+"• DeepFilterNet3 / DPDFNet HR — Full-band 48 kHz models. Cleaner output when "
+"the optional LADSPA plugins are installed."
+msgstr ""
+
+#: crates/media-runtime/src/shared/audio_effects.rs:337
+msgid "Noise reduction model"
+msgstr ""
+
+#: crates/media-runtime/src/shared/audio_effects.rs:374
+#: crates/ui/media/big-media-components/src/audio/cleanup_dialog.rs:108
+msgid "Voice Recovery"
+msgstr ""
+
+#: crates/media-runtime/src/shared/audio_effects.rs:384
+msgid ""
+"Noise reduction can sometimes muffle high-pitched parts of the voice. This "
+"slider restores those frequencies, making the voice sound more natural."
+msgstr ""
+
+#: crates/media-runtime/src/shared/audio_effects.rs:396
+msgid ""
+"Higher values recover more voice detail but may let a small amount of noise "
+"through. The default (0.75) is a good balance."
+msgstr ""
+
+#: crates/media-runtime/src/shared/audio_effects.rs:412
+msgid "Voice recovery level"
+msgstr ""
+
+#: crates/media-runtime/src/shared/play_button.rs:16
+msgid "Pause"
+msgstr ""
+
+#: crates/media-runtime/src/shared/shortcut_capture.rs:10
+msgid "Set Shortcut"
+msgstr ""
+
+#: crates/media-runtime/src/shared/shortcut_capture.rs:11
+msgid "Press the desired key combination…"
+msgstr ""
+
+#: crates/media-runtime/src/shared/shortcut_capture.rs:12
+msgid "Waiting…"
+msgstr ""
+
+#: crates/media-runtime/src/shared/shortcut_capture.rs:13
+msgid "Reset to Default"
+msgstr ""
+
+#: crates/media-runtime/src/shared/sleep_timer.rs:13
+msgid "Stop playback"
+msgstr ""
+
+#: crates/media-runtime/src/shared/sleep_timer.rs:14
+msgid "Close the player"
+msgstr ""
+
+#: crates/media-runtime/src/shared/sleep_timer.rs:15
+msgid "Suspend computer"
+msgstr ""
+
+#: crates/media-runtime/src/shared/sleep_timer.rs:16
+msgid "Shut down computer"
+msgstr ""
+
+#: crates/media-runtime/src/shared/sleep_timer.rs:22
+msgid "Set a timer to automatically stop playback or power down your system"
+msgstr ""
+
+#: crates/media-runtime/src/shared/sleep_timer.rs:24
+msgid "Minutes"
+msgstr ""
+
+#: crates/media-runtime/src/shared/sleep_timer.rs:25
+msgid "How long until the timer activates"
+msgstr ""
+
+#: crates/media-runtime/src/shared/sleep_timer.rs:26
+msgid "Action"
+msgstr ""
+
+#: crates/media-runtime/src/shared/sleep_timer.rs:27
+msgid "When timer ends"
+msgstr ""
+
+#: crates/media-runtime/src/shared/sleep_timer.rs:28
+msgid "Choose what happens when time runs out"
+msgstr ""
+
+#: crates/media-runtime/src/shared/sleep_timer.rs:29
+msgid "Start Timer"
+msgstr ""
+
+#: crates/media-runtime/src/ui_labels.rs:14
+#: crates/media-runtime/src/ui_labels.rs:135
+msgid "Copy (no re-encode)"
+msgstr ""
+
+#: crates/media-runtime/src/ui_labels.rs:15
+msgid "H.264 / AVC"
+msgstr ""
+
+#: crates/media-runtime/src/ui_labels.rs:16
+msgid "H.265 / HEVC"
+msgstr ""
+
+#: crates/media-runtime/src/ui_labels.rs:17
+msgid "AV1"
+msgstr ""
+
+#: crates/media-runtime/src/ui_labels.rs:18
+msgid "VP9"
+msgstr ""
+
+#: crates/media-runtime/src/ui_labels.rs:19
+msgid "ProRes"
+msgstr ""
+
+#: crates/media-runtime/src/ui_labels.rs:27
+msgid "Very High"
+msgstr ""
+
+#: crates/media-runtime/src/ui_labels.rs:28
+msgid "High"
+msgstr ""
+
+#: crates/media-runtime/src/ui_labels.rs:29
+msgid "Good"
+msgstr ""
+
+#: crates/media-runtime/src/ui_labels.rs:30
+msgid "Medium"
+msgstr ""
+
+#: crates/media-runtime/src/ui_labels.rs:31
+msgid "Low"
+msgstr ""
+
+#: crates/media-runtime/src/ui_labels.rs:32
+msgid "Very Low"
+msgstr ""
+
+#: crates/media-runtime/src/ui_labels.rs:33
+msgid "Super Low"
+msgstr ""
+
+#: crates/media-runtime/src/ui_labels.rs:41
+msgid "Ultra Fast"
+msgstr ""
+
+#: crates/media-runtime/src/ui_labels.rs:42
+msgid "Very Fast"
+msgstr ""
+
+#: crates/media-runtime/src/ui_labels.rs:43
+msgid "Fast"
+msgstr ""
+
+#: crates/media-runtime/src/ui_labels.rs:44
+#: crates/ui/generic/big-relm4-components/src/layout/tab_prefs.rs:135
+msgid "Balanced"
+msgstr ""
+
+#: crates/media-runtime/src/ui_labels.rs:45
+msgid "Slow"
+msgstr ""
+
+#: crates/media-runtime/src/ui_labels.rs:46
+msgid "Very Slow"
+msgstr ""
+
+#: crates/media-runtime/src/ui_labels.rs:54
+#: crates/media-runtime/src/ui_labels.rs:161
+msgid "Original"
+msgstr ""
+
+#: crates/media-runtime/src/ui_labels.rs:55
+msgid "4K (3840×2160)"
+msgstr ""
+
+#: crates/media-runtime/src/ui_labels.rs:56
+msgid "1440p (2560×1440)"
+msgstr ""
+
+#: crates/media-runtime/src/ui_labels.rs:57
+msgid "1080p (1920×1080)"
+msgstr ""
+
+#: crates/media-runtime/src/ui_labels.rs:58
+msgid "720p (1280×720)"
+msgstr ""
+
+#: crates/media-runtime/src/ui_labels.rs:59
+msgid "480p (854×480)"
+msgstr ""
+
+#: crates/media-runtime/src/ui_labels.rs:60
+msgid "360p (640×360)"
+msgstr ""
+
+#: crates/media-runtime/src/ui_labels.rs:61
+#: crates/media-runtime/src/ui_labels.rs:104
+#: crates/media-runtime/src/ui_labels.rs:116
+#: crates/ui/media/big-media-components/src/audio/equalizer_controls/labels.rs:32
+msgid "Custom"
+msgstr ""
+
+#: crates/media-runtime/src/ui_labels.rs:68
+msgid "MP4"
+msgstr ""
+
+#: crates/media-runtime/src/ui_labels.rs:68
+msgid "MKV"
+msgstr ""
+
+#: crates/media-runtime/src/ui_labels.rs:68
+msgid "MOV"
+msgstr ""
+
+#: crates/media-runtime/src/ui_labels.rs:68
+msgid "WebM"
+msgstr ""
+
+#: crates/media-runtime/src/ui_labels.rs:75
+msgid "Copy (no change)"
+msgstr ""
+
+#: crates/media-runtime/src/ui_labels.rs:77
+msgid "Remove audio"
+msgstr ""
+
+#: crates/media-runtime/src/ui_labels.rs:85
+#: crates/media-runtime/src/ui_labels.rs:140
+msgid "AAC"
+msgstr ""
+
+#: crates/media-runtime/src/ui_labels.rs:86
+#: crates/media-runtime/src/ui_labels.rs:141
+msgid "Opus"
+msgstr ""
+
+#: crates/media-runtime/src/ui_labels.rs:87
+#: crates/media-runtime/src/ui_labels.rs:136
+msgid "MP3"
+msgstr ""
+
+#: crates/media-runtime/src/ui_labels.rs:88
+msgid "AC3 / Dolby"
+msgstr ""
+
+#: crates/media-runtime/src/ui_labels.rs:89
+#: crates/media-runtime/src/ui_labels.rs:138
+msgid "FLAC (lossless)"
+msgstr ""
+
+#: crates/media-runtime/src/ui_labels.rs:90
+msgid "PCM (uncompressed)"
+msgstr ""
+
+#: crates/media-runtime/src/ui_labels.rs:98
+#: crates/media-runtime/src/ui_labels.rs:150
+msgid "64 kbps"
+msgstr ""
+
+#: crates/media-runtime/src/ui_labels.rs:99
+msgid "96 kbps"
+msgstr ""
+
+#: crates/media-runtime/src/ui_labels.rs:100
+#: crates/media-runtime/src/ui_labels.rs:151
+msgid "128 kbps"
+msgstr ""
+
+#: crates/media-runtime/src/ui_labels.rs:101
+#: crates/media-runtime/src/ui_labels.rs:152
+msgid "192 kbps"
+msgstr ""
+
+#: crates/media-runtime/src/ui_labels.rs:102
+#: crates/media-runtime/src/ui_labels.rs:153
+msgid "256 kbps"
+msgstr ""
+
+#: crates/media-runtime/src/ui_labels.rs:103
+#: crates/media-runtime/src/ui_labels.rs:154
+msgid "320 kbps"
+msgstr ""
+
+#: crates/media-runtime/src/ui_labels.rs:112
+msgid "Auto"
+msgstr ""
+
+#: crates/media-runtime/src/ui_labels.rs:124
+msgid "Extract to File"
+msgstr ""
+
+#: crates/media-runtime/src/ui_labels.rs:125
+msgid "Keep Embedded"
+msgstr ""
+
+#: crates/media-runtime/src/ui_labels.rs:126
+msgid "Burn into Video"
+msgstr ""
+
+#: crates/media-runtime/src/ui_labels.rs:137
+msgid "OGG Vorbis"
+msgstr ""
+
+#: crates/media-runtime/src/ui_labels.rs:139
+msgid "WAV (uncompressed)"
+msgstr ""
+
+#: crates/media-runtime/src/ui_labels.rs:149
+msgid "32 kbps"
+msgstr ""
+
+#: crates/ui/generic/big-relm4-components/src/input/appearance_page.rs:32
+msgid "Window Transparency"
+msgstr ""
+
+#: crates/ui/generic/big-relm4-components/src/input/appearance_page.rs:33
+msgid "Make the main window body show more of the desktop behind it."
+msgstr ""
+
+#: crates/ui/generic/big-relm4-components/src/input/appearance_page.rs:40
+msgid "Header Bar Transparency"
+msgstr ""
+
+#: crates/ui/generic/big-relm4-components/src/input/appearance_page.rs:41
+msgid ""
+"Make the header bar and window chrome show more of the desktop behind them."
+msgstr ""
+
+#: crates/ui/generic/big-relm4-components/src/input/appearance_page.rs:48
+msgid "Background Blur"
+msgstr ""
+
+#: crates/ui/generic/big-relm4-components/src/input/appearance_page.rs:50
+msgid ""
+"Blur the desktop behind transparent parts of the window when the compositor "
+"supports it."
+msgstr ""
+
+#: crates/ui/generic/big-relm4-components/src/input/read_only_inline_control.rs:171
+#: crates/ui/generic/big-relm4-components/src/input/read_only_inline_control.rs:199
+msgid "value"
+msgstr ""
+
+#: crates/ui/generic/big-relm4-components/src/layout/chrome_band_prefs.rs:32
+#: crates/ui/generic/big-relm4-components/src/layout/tab_prefs.rs:74
+msgid "Left side"
+msgstr ""
+
+#: crates/ui/generic/big-relm4-components/src/layout/chrome_band_prefs.rs:33
+#: crates/ui/generic/big-relm4-components/src/layout/tab_prefs.rs:75
+msgid "Right side"
+msgstr ""
+
+#: crates/ui/generic/big-relm4-components/src/layout/chrome_band_prefs.rs:34
+msgid "Hidden"
+msgstr ""
+
+#: crates/ui/generic/big-relm4-components/src/layout/chrome_band_prefs.rs:67
+msgid "Toolbar Position"
+msgstr ""
+
+#: crates/ui/generic/big-relm4-components/src/layout/chrome_band_prefs.rs:69
+msgid ""
+"Where the command toolbar lives: above or below the content, as a vertical "
+"strip on either side of the window, or hidden."
+msgstr ""
+
+#: crates/ui/generic/big-relm4-components/src/layout/custom_toolbar.rs:19
+#: crates/ui/generic/big-relm4-components/src/layout/window_shell.rs:1138
+msgid "Top toolbar"
+msgstr ""
+
+#: crates/ui/generic/big-relm4-components/src/layout/custom_toolbar.rs:20
+#: crates/ui/generic/big-relm4-components/src/layout/window_shell.rs:1139
+msgid "Bottom toolbar"
+msgstr ""
+
+#: crates/ui/generic/big-relm4-components/src/layout/custom_toolbar.rs:21
+#: crates/ui/generic/big-relm4-components/src/layout/window_shell.rs:1140
+msgid "Start toolbar"
+msgstr ""
+
+#: crates/ui/generic/big-relm4-components/src/layout/custom_toolbar.rs:22
+#: crates/ui/generic/big-relm4-components/src/layout/window_shell.rs:1141
+msgid "End toolbar"
+msgstr ""
+
+#: crates/ui/generic/big-relm4-components/src/layout/saved_layouts_dialog.rs:32
+msgid "Save Layout"
+msgstr ""
+
+#: crates/ui/generic/big-relm4-components/src/layout/saved_layouts_dialog.rs:34
+msgid "Nothing to capture yet — open what the layout should contain first."
+msgstr ""
+
+#: crates/ui/generic/big-relm4-components/src/layout/saved_layouts_dialog.rs:36
+msgid ""
+"Save what is open now as a layout you can reopen from the Layouts dialog."
+msgstr ""
+
+#: crates/ui/generic/big-relm4-components/src/layout/saved_layouts_dialog.rs:45
+#: crates/ui/generic/big-relm4-components/src/layout/saved_layouts_dialog.rs:48
+msgid "Layout name"
+msgstr ""
+
+#: crates/ui/generic/big-relm4-components/src/layout/saved_layouts_dialog.rs:80
+#: crates/ui/generic/big-relm4-components/src/layout/saved_layouts_dialog.rs:90
+msgid "Layouts"
+msgstr ""
+
+#: crates/ui/generic/big-relm4-components/src/layout/saved_layouts_dialog.rs:82
+msgid "No saved layouts yet. Use “Save Layout…” first."
+msgstr ""
+
+#: crates/ui/generic/big-relm4-components/src/layout/saved_layouts_dialog.rs:92
+msgid ""
+"Open a saved layout in this window — entries that no longer exist are "
+"skipped."
+msgstr ""
+
+#: crates/ui/generic/big-relm4-components/src/layout/saved_layouts_dialog.rs:99
+msgid "Saved layouts"
+msgstr ""
+
+#: crates/ui/generic/big-relm4-components/src/layout/saved_layouts_dialog.rs:111
+msgid "Delete layout"
+msgstr ""
+
+#: crates/ui/generic/big-relm4-components/src/layout/tab_group_chips.rs:46
+#, rust-format
+msgid "Click to expand {name}"
+msgstr ""
+
+#: crates/ui/generic/big-relm4-components/src/layout/tab_group_chips.rs:47
+#, rust-format
+msgid "Click to collapse {name}"
+msgstr ""
+
+#: crates/ui/generic/big-relm4-components/src/layout/tab_group_chips.rs:48
+#, rust-format
+msgid "Tab group {name}, collapsed"
+msgstr ""
+
+#: crates/ui/generic/big-relm4-components/src/layout/tab_group_chips.rs:49
+#, rust-format
+msgid "Tab group {name}, expanded"
+msgstr ""
+
+#: crates/ui/generic/big-relm4-components/src/layout/tab_prefs.rs:71
+msgid "Header bar"
+msgstr ""
+
+#: crates/ui/generic/big-relm4-components/src/layout/tab_prefs.rs:128
+msgid "Center"
+msgstr ""
+
+#: crates/ui/generic/big-relm4-components/src/layout/tab_prefs.rs:136
+msgid "Compact"
+msgstr ""
+
+#: crates/ui/generic/big-relm4-components/src/layout/tab_prefs.rs:137
+msgid "Underline"
+msgstr ""
+
+#: crates/ui/generic/big-relm4-components/src/layout/tab_prefs.rs:138
+msgid "Integrated"
+msgstr ""
+
+#: crates/ui/generic/big-relm4-components/src/layout/tab_prefs.rs:139
+msgid "Elevated"
+msgstr ""
+
+#: crates/ui/generic/big-relm4-components/src/layout/tab_prefs.rs:146
+msgid "Always"
+msgstr ""
+
+#: crates/ui/generic/big-relm4-components/src/layout/tab_prefs.rs:147
+msgid "On hover"
+msgstr ""
+
+#: crates/ui/generic/big-relm4-components/src/layout/tab_prefs.rs:148
+msgid "Active tab only"
+msgstr ""
+
+#: crates/ui/generic/big-relm4-components/src/layout/tab_prefs.rs:158
+msgid "Tab Position"
+msgstr ""
+
+#: crates/ui/generic/big-relm4-components/src/layout/tab_prefs.rs:160
+msgid ""
+"Where the tab strip lives: in the header bar, above or below the content, or "
+"as a vertical strip on either side of the window."
+msgstr ""
+
+#: crates/ui/generic/big-relm4-components/src/layout/tab_prefs.rs:169
+msgid "Tab Alignment"
+msgstr ""
+
+#: crates/ui/generic/big-relm4-components/src/layout/tab_prefs.rs:171
+msgid ""
+"Where new tabs anchor inside the strip. Left feels classic; centre keeps the "
+"row balanced when you rarely have many tabs."
+msgstr ""
+
+#: crates/ui/generic/big-relm4-components/src/layout/tab_prefs.rs:180
+msgid "Tab Theme"
+msgstr ""
+
+#: crates/ui/generic/big-relm4-components/src/layout/tab_prefs.rs:182
+msgid ""
+"Visual weight of the tab strip. Balanced is the default; Compact saves "
+"vertical space; Underline keeps the strip flat; Integrated blends the active "
+"tab into the terminal; Elevated lifts the active tab with a soft drop shadow."
+msgstr ""
+
+#: crates/ui/generic/big-relm4-components/src/layout/tab_prefs.rs:191
+msgid "Expand Tabs Evenly"
+msgstr ""
+
+#: crates/ui/generic/big-relm4-components/src/layout/tab_prefs.rs:192
+msgid "Use the full tab strip width and divide it equally between open tabs."
+msgstr ""
+
+#: crates/ui/generic/big-relm4-components/src/layout/tab_prefs.rs:198
+msgid "Tab Close Button"
+msgstr ""
+
+#: crates/ui/generic/big-relm4-components/src/layout/tab_prefs.rs:199
+msgid "Choose when close buttons are visible on tabs."
+msgstr ""
+
+#: crates/ui/generic/big-relm4-components/src/state/async_surface.rs:188
+msgid "Details"
+msgstr ""
+
+#: crates/ui/media/big-media-components/src/audio/cleanup_dialog.rs:90
+#: crates/ui/media/big-media-components/src/audio/editor_panel.rs:123
+#: crates/ui/media/big-media-components/src/video/editor_sidebar.rs:67
+msgid "Audio Settings"
+msgstr ""
+
+#: crates/ui/media/big-media-components/src/audio/cleanup_dialog.rs:92
+msgid ""
+"Improve your audio by removing noise, controlling volume and enhancing voice "
+"clarity."
+msgstr ""
+
+#: crates/ui/media/big-media-components/src/audio/cleanup_dialog.rs:94
+msgid "AI Noise Cleaning"
+msgstr ""
+
+#: crates/ui/media/big-media-components/src/audio/cleanup_dialog.rs:95
+msgid "Noise reduction LADSPA plugin not installed"
+msgstr ""
+
+#: crates/ui/media/big-media-components/src/audio/cleanup_dialog.rs:96
+msgid "Remove Background Noise"
+msgstr ""
+
+#: crates/ui/media/big-media-components/src/audio/cleanup_dialog.rs:98
+msgid ""
+"Uses a neural network to separate voice from noise. Strength controls how "
+"aggressively noise is removed."
+msgstr ""
+
+#: crates/ui/media/big-media-components/src/audio/cleanup_dialog.rs:101
+msgid "AI Model"
+msgstr ""
+
+#: crates/ui/media/big-media-components/src/audio/cleanup_dialog.rs:103
+msgid ""
+"DNS3 - General-purpose. Good at removing steady noise like fans, AC, and hum."
+msgstr ""
+
+#: crates/ui/media/big-media-components/src/audio/cleanup_dialog.rs:106
+msgid ""
+"DeepFilterNet3 / DPDFNet HR - Full-band 48 kHz models. Cleaner output when "
+"the optional LADSPA plugins are installed."
+msgstr ""
+
+#: crates/ui/media/big-media-components/src/audio/cleanup_dialog.rs:109
+msgid "Noise Gate"
+msgstr ""
+
+#: crates/ui/media/big-media-components/src/audio/cleanup_dialog.rs:110
+msgid "Silence Low Sounds"
+msgstr ""
+
+#: crates/ui/media/big-media-components/src/audio/cleanup_dialog.rs:112
+msgid ""
+"Mutes audio below a threshold - great for removing faint hum or room noise "
+"between speech."
+msgstr ""
+
+#: crates/ui/media/big-media-components/src/audio/cleanup_dialog.rs:115
+msgid "Audio Enhancement"
+msgstr ""
+
+#: crates/ui/media/big-media-components/src/audio/cleanup_dialog.rs:116
+msgid "Remove Low Rumble"
+msgstr ""
+
+#: crates/ui/media/big-media-components/src/audio/cleanup_dialog.rs:118
+msgid ""
+"Cuts low-frequency noise like wind, air conditioning or handling vibrations."
+msgstr ""
+
+#: crates/ui/media/big-media-components/src/audio/cleanup_dialog.rs:120
+msgid "Frequency (Hz)"
+msgstr ""
+
+#: crates/ui/media/big-media-components/src/audio/cleanup_dialog.rs:121
+msgid "Uniform Volume"
+msgstr ""
+
+#: crates/ui/media/big-media-components/src/audio/cleanup_dialog.rs:123
+msgid ""
+"Normalizes loudness to broadcast standard (ITU-R BS.1770, -16 LUFS). Makes "
+"all files similar volume."
+msgstr ""
+
+#: crates/ui/media/big-media-components/src/audio/cleanup_dialog.rs:125
+msgid "Compressor"
+msgstr ""
+
+#: crates/ui/media/big-media-components/src/audio/cleanup_dialog.rs:127
+msgid ""
+"Reduces the dynamic range - makes quiet parts louder and loud parts quieter."
+msgstr ""
+
+#: crates/ui/media/big-media-components/src/audio/cleanup_dialog.rs:131
+#: crates/ui/media/big-media-components/src/audio/equalizer_dialog.rs:100
+msgid "Adjust frequency balance. Use presets or drag individual bands."
+msgstr ""
+
+#: crates/ui/media/big-media-components/src/audio/cleanup_dialog.rs:133
+#: crates/ui/media/big-media-components/src/audio/equalizer_dialog.rs:101
+msgid "Enable equalizer"
+msgstr ""
+
+#: crates/ui/media/big-media-components/src/audio/editor_panel.rs:113
+msgid "Play/Pause"
+msgstr ""
+
+#: crates/ui/media/big-media-components/src/audio/editor_panel.rs:114
+msgid "Previous track"
+msgstr ""
+
+#: crates/ui/media/big-media-components/src/audio/editor_panel.rs:115
+msgid "Next track"
+msgstr ""
+
+#: crates/ui/media/big-media-components/src/audio/editor_panel.rs:116
+msgid "Play only selected area"
+msgstr ""
+
+#: crates/ui/media/big-media-components/src/audio/editor_panel.rs:117
+msgid "Auto-advance to next track"
+msgstr ""
+
+#: crates/ui/media/big-media-components/src/audio/editor_panel.rs:119
+#: crates/ui/media/big-media-components/src/video/editor_sidebar.rs:72
+msgid "Clear all segments"
+msgstr ""
+
+#: crates/ui/media/big-media-components/src/audio/editor_panel.rs:121
+#: crates/ui/media/big-media-components/src/player_chrome.rs:309
+#: crates/ui/media/big-media-components/src/video/editor_panel.rs:66
+msgid "Playback speed"
+msgstr ""
+
+#: crates/ui/media/big-media-components/src/audio/editor_panel.rs:124
+msgid "Audio timeline"
+msgstr ""
+
+#: crates/ui/media/big-media-components/src/audio/editor_panel.rs:125
+#: crates/ui/media/big-media-components/src/video/editor_sidebar.rs:69
+msgid "Trim Segments"
+msgstr ""
+
+#: crates/ui/media/big-media-components/src/audio/editor_panel.rs:126
+msgid "Press the mark button to create segments"
+msgstr ""
+
+#: crates/ui/media/big-media-components/src/audio/encoding_dialog.rs:82
+msgid ""
+"Configure how the audio track will be handled. Copying keeps the original "
+"quality. Re-encoding allows changes."
+msgstr ""
+
+#: crates/ui/media/big-media-components/src/audio/encoding_dialog.rs:84
+msgid "Audio Handling"
+msgstr ""
+
+#: crates/ui/media/big-media-components/src/audio/encoding_dialog.rs:86
+msgid ""
+"Choose what to do with the audio track. 'Copy' keeps the original. 'Re-"
+"encode' allows changing codec, bitrate and applying audio cleaning."
+msgstr ""
+
+#: crates/ui/media/big-media-components/src/audio/encoding_dialog.rs:90
+msgid ""
+"The format used to compress audio. AAC is widely compatible. Opus offers "
+"better quality at lower bitrates. Choose 'Copy' in audio handling to keep "
+"the original codec."
+msgstr ""
+
+#: crates/ui/media/big-media-components/src/audio/encoding_dialog.rs:94
+msgid ""
+"Higher bitrate means better audio quality but larger files. 192k is a good "
+"balance for most content."
+msgstr ""
+
+#: crates/ui/media/big-media-components/src/audio/encoding_dialog.rs:96
+msgid "Audio Channels"
+msgstr ""
+
+#: crates/ui/media/big-media-components/src/audio/encoding_dialog.rs:98
+msgid ""
+"'Default' keeps the original channel count from the source video. Stereo (2) "
+"is standard. Mono (1) for voice only. 5.1 (6) for surround sound."
+msgstr ""
+
+#: crates/ui/media/big-media-components/src/audio/encoding_dialog.rs:100
+#: crates/ui/media/big-media-components/src/video/encoding_dialog.rs:68
+msgid "Custom:"
+msgstr ""
+
+#: crates/ui/media/big-media-components/src/audio/equalizer_controls/labels.rs:23
+msgid "Default voice"
+msgstr ""
+
+#: crates/ui/media/big-media-components/src/audio/equalizer_controls/labels.rs:24
+msgid "Flat"
+msgstr ""
+
+#: crates/ui/media/big-media-components/src/audio/equalizer_controls/labels.rs:25
+msgid "Voice boost"
+msgstr ""
+
+#: crates/ui/media/big-media-components/src/audio/equalizer_controls/labels.rs:27
+msgid "Warm"
+msgstr ""
+
+#: crates/ui/media/big-media-components/src/audio/equalizer_controls/labels.rs:28
+msgid "Bright"
+msgstr ""
+
+#: crates/ui/media/big-media-components/src/audio/equalizer_controls/labels.rs:29
+msgid "De-esser"
+msgstr ""
+
+#: crates/ui/media/big-media-components/src/audio/equalizer_controls/labels.rs:30
+msgid "Bass cut"
+msgstr ""
+
+#: crates/ui/media/big-media-components/src/audio/equalizer_controls/labels.rs:31
+msgid "Presence"
+msgstr ""
+
+#: crates/ui/media/big-media-components/src/audio/noise_model_picker.rs:129
+msgid ""
+"DNS3 is a lightweight 16 kHz model that removes steady noise. DeepFilterNet3 "
+"and DPDFNet HR are full-band 48 kHz models. The lighter 16 kHz DPDFNet "
+"variants run inside a dedicated resampled chain — strong noise reduction at "
+"a fraction of the CPU."
+msgstr ""
+
+#: crates/ui/media/big-media-components/src/audio/noise_model_picker.rs:139
+msgid ""
+"DNS3 is a lightweight 16 kHz model that removes steady noise — good for "
+"podcasts."
+msgstr ""
+
+#: crates/ui/media/big-media-components/src/audio/noise_model_picker.rs:143
+msgid ""
+"DNS3 is a lightweight 16 kHz model that removes steady noise. DeepFilterNet3 "
+"is a full-band 48 kHz model with the cleanest output and the highest CPU "
+"cost."
+msgstr ""
+
+#: crates/ui/media/big-media-components/src/audio/noise_model_picker.rs:148
+msgid ""
+"DNS3 is a lightweight 16 kHz model that removes steady noise. DPDFNet HR "
+"variants are full-band 48 kHz models with strong noise reduction at a higher "
+"CPU cost."
+msgstr ""
+
+#: crates/ui/media/big-media-components/src/audio/noise_model_picker.rs:153
+msgid ""
+"DNS3 is a lightweight 16 kHz model that removes steady noise. DeepFilterNet3 "
+"and the DPDFNet HR variants are full-band 48 kHz models — the cleanest "
+"output, with the highest CPU cost."
+msgstr ""
+
+#: crates/ui/media/big-media-components/src/audio/noise_model_picker.rs:169
+msgid "GTCRN – DNS3 (16 kHz, strong)"
+msgstr ""
+
+#: crates/ui/media/big-media-components/src/audio/noise_model_picker.rs:175
+msgid "DeepFilterNet3 (48 kHz)"
+msgstr ""
+
+#: crates/ui/media/big-media-components/src/audio/noise_model_picker.rs:181
+msgid "DPDFNet-2 HR (48 kHz, balanced)"
+msgstr ""
+
+#: crates/ui/media/big-media-components/src/audio/noise_model_picker.rs:187
+msgid "DPDFNet-8 HR (48 kHz, premium)"
+msgstr ""
+
+#: crates/ui/media/big-media-components/src/audio/noise_model_picker.rs:214
+msgid "DPDFNet baseline (16 kHz, lightest)"
+msgstr ""
+
+#: crates/ui/media/big-media-components/src/audio/noise_model_picker.rs:220
+msgid "DPDFNet-2 (16 kHz, balanced)"
+msgstr ""
+
+#: crates/ui/media/big-media-components/src/audio/noise_model_picker.rs:226
+msgid "DPDFNet-4 (16 kHz, stronger)"
+msgstr ""
+
+#: crates/ui/media/big-media-components/src/audio/noise_model_picker.rs:232
+msgid "DPDFNet-8 (16 kHz, strongest)"
+msgstr ""
+
+#: crates/ui/media/big-media-components/src/converter/extra_dialog.rs:78
+msgid "Extra"
+msgstr ""
+
+#: crates/ui/media/big-media-components/src/converter/extra_dialog.rs:80
+msgid ""
+"Additional options for advanced users. The defaults work well for most cases."
+msgstr ""
+
+#: crates/ui/media/big-media-components/src/converter/extra_dialog.rs:82
+msgid "Additional FFmpeg Options"
+msgstr ""
+
+#: crates/ui/media/big-media-components/src/converter/extra_dialog.rs:84
+msgid ""
+"Custom flags passed directly to FFmpeg. Example: '-ss 60 -t 30' to convert "
+"only 30 seconds starting at 1 minute."
+msgstr ""
+
+#: crates/ui/media/big-media-components/src/converter/extra_dialog.rs:86
+msgid "e.g.: -ss 60 -t 30"
+msgstr ""
+
+#: crates/ui/media/big-media-components/src/converter/extra_dialog.rs:87
+msgid "Video Preview Rendering"
+msgstr ""
+
+#: crates/ui/media/big-media-components/src/converter/extra_dialog.rs:89
+msgid ""
+"How the video editor preview is rendered. 'Automatic' works best for most "
+"systems. Try 'Software' if you see display issues. Requires restart."
+msgstr ""
+
+#: crates/ui/media/big-media-components/src/converter/extra_dialog.rs:93
+msgid "Export / Import Profile"
+msgstr ""
+
+#: crates/ui/media/big-media-components/src/converter/extra_dialog.rs:95
+msgid ""
+"Save your current conversion settings to a file or load settings from a "
+"previously exported profile."
+msgstr ""
+
+#: crates/ui/media/big-media-components/src/converter/extra_dialog.rs:97
+msgid "Export Profile"
+msgstr ""
+
+#: crates/ui/media/big-media-components/src/converter/extra_dialog.rs:98
+msgid "Import Profile"
+msgstr ""
+
+#: crates/ui/media/big-media-components/src/converter/header_bar.rs:52
+#: crates/ui/media/big-player-ui/src/radio_panel/widgets.rs:352
+msgid "Add"
+msgstr ""
+
+#: crates/ui/media/big-media-components/src/converter/header_bar.rs:55
+msgid "Add Network File"
+msgstr ""
+
+#: crates/ui/media/big-media-components/src/converter/header_bar.rs:56
+msgid "Convert"
+msgstr ""
+
+#: crates/ui/media/big-media-components/src/converter/header_bar.rs:58
+msgid "Clear queue"
+msgstr ""
+
+#: crates/ui/media/big-media-components/src/converter/header_bar.rs:59
+msgid "files"
+msgstr ""
+
+#: crates/ui/media/big-media-components/src/converter/header_bar.rs:64
+msgid "Main menu"
+msgstr ""
+
+#: crates/ui/media/big-media-components/src/converter/progress/build.rs:48
+#: crates/ui/media/big-media-components/src/converter/progress/updates.rs:256
+msgid "Ready"
+msgstr ""
+
+#: crates/ui/media/big-media-components/src/converter/progress/build.rs:72
+#: crates/ui/media/big-media-components/src/converter/progress/build.rs:127
+msgid "Cancel All"
+msgstr ""
+
+#: crates/ui/media/big-media-components/src/converter/progress/build.rs:78
+msgid "Back to Queue"
+msgstr ""
+
+#: crates/ui/media/big-media-components/src/converter/progress/build.rs:121
+msgid "Cancel All Conversions?"
+msgstr ""
+
+#: crates/ui/media/big-media-components/src/converter/progress/build.rs:123
+msgid ""
+"This will stop all active conversions and skip pending items. This cannot be "
+"undone."
+msgstr ""
+
+#: crates/ui/media/big-media-components/src/converter/progress/build.rs:125
+msgid "Continue"
+msgstr ""
+
+#: crates/ui/media/big-media-components/src/converter/progress/build.rs:243
+msgid "Waiting in queue"
+msgstr ""
+
+#: crates/ui/media/big-media-components/src/converter/progress/build.rs:301
+msgid "Show conversion details"
+msgstr ""
+
+#: crates/ui/media/big-media-components/src/converter/progress/build.rs:312
+msgid "Cancel conversion"
+msgstr ""
+
+#: crates/ui/media/big-media-components/src/converter/progress/build.rs:331
+msgid "FFmpeg Command"
+msgstr ""
+
+#: crates/ui/media/big-media-components/src/converter/progress/build.rs:349
+msgid "FFmpeg Output"
+msgstr ""
+
+#: crates/ui/media/big-media-components/src/converter/progress/updates.rs:33
+#: crates/ui/media/big-media-components/src/converter/progress/updates.rs:227
+#: crates/ui/media/big-media-components/src/converter/progress/updates.rs:242
+msgid "Converting"
+msgstr ""
+
+#: crates/ui/media/big-media-components/src/converter/progress/updates.rs:51
+#: crates/ui/media/big-media-components/src/converter/progress/updates.rs:53
+#: crates/ui/media/big-media-components/src/converter/progress/updates.rs:127
+msgid "Converting..."
+msgstr ""
+
+#: crates/ui/media/big-media-components/src/converter/progress/updates.rs:143
+msgid "Completed"
+msgstr ""
+
+#: crates/ui/media/big-media-components/src/converter/progress/updates.rs:168
+#: crates/ui/media/big-player-ui/src/download_panel.rs:278
+msgid "Cancelled"
+msgstr ""
+
+#: crates/ui/media/big-media-components/src/converter/progress/updates.rs:183
+msgid "completed"
+msgstr ""
+
+#: crates/ui/media/big-media-components/src/converter/progress/updates.rs:186
+msgid "failed"
+msgstr ""
+
+#: crates/ui/media/big-media-components/src/converter/progress/updates.rs:189
+msgid "cancelled"
+msgstr ""
+
+#: crates/ui/media/big-media-components/src/converter/progress/updates.rs:192
+msgid "No files processed"
+msgstr ""
+
+#: crates/ui/media/big-media-components/src/converter/progress/updates.rs:198
+#: crates/ui/media/big-player-ui/src/download_panel.rs:291
+msgid "Complete"
+msgstr ""
+
+#: crates/ui/media/big-media-components/src/converter/progress/updates.rs:204
+msgid "All videos converted successfully!"
+msgstr ""
+
+#: crates/ui/media/big-media-components/src/converter/progress/updates.rs:210
+msgid "All conversions failed or were cancelled"
+msgstr ""
+
+#: crates/ui/media/big-media-components/src/converter/progress/updates.rs:246
+msgid "in parallel"
+msgstr ""
+
+#: crates/ui/media/big-media-components/src/converter/queue.rs:156
+msgid "No Audio Files"
+msgstr ""
+
+#: crates/ui/media/big-media-components/src/converter/queue.rs:158
+msgid "No Video Files"
+msgstr ""
+
+#: crates/ui/media/big-media-components/src/converter/queue.rs:166
+msgid "Drag files here or use the Add Files button"
+msgstr ""
+
+#: crates/ui/media/big-media-components/src/converter/queue.rs:352
+msgid "Open video editor for this file"
+msgstr ""
+
+#: crates/ui/media/big-media-components/src/converter/queue.rs:355
+msgid "Edit file"
+msgstr ""
+
+#: crates/ui/media/big-media-components/src/converter/queue.rs:409
+msgid "Open Containing Folder"
+msgstr ""
+
+#: crates/ui/media/big-media-components/src/converter/queue.rs:412
+msgid "More Information..."
+msgstr ""
+
+#: crates/ui/media/big-media-components/src/converter/queue.rs:413
+msgid "Delete from Disk..."
+msgstr ""
+
+#: crates/ui/media/big-media-components/src/media/file_metadata_dialog.rs:78
+msgid "File Information"
+msgstr ""
+
+#: crates/ui/media/big-media-components/src/media/file_metadata_dialog.rs:84
+msgid "Container"
+msgstr ""
+
+#: crates/ui/media/big-media-components/src/media/file_metadata_dialog.rs:87
+msgid "Video Stream"
+msgstr ""
+
+#: crates/ui/media/big-media-components/src/media/file_metadata_dialog.rs:88
+msgid "Audio Stream"
+msgstr ""
+
+#: crates/ui/media/big-media-components/src/media/file_metadata_dialog.rs:89
+msgid "Subtitle Stream"
+msgstr ""
+
+#: crates/ui/media/big-media-components/src/player_chrome.rs:298
+msgid "Volume level"
+msgstr ""
+
+#: crates/ui/media/big-media-components/src/player_chrome.rs:321
+msgid "Voice"
+msgstr ""
+
+#: crates/ui/media/big-media-components/src/player_chrome.rs:325
+msgid "Voice enhancement"
+msgstr ""
+
+#: crates/ui/media/big-media-components/src/subtitle/handling_dialog.rs:29
+msgid "Configure how subtitles are handled during conversion."
+msgstr ""
+
+#: crates/ui/media/big-media-components/src/subtitle/handling_dialog.rs:30
+msgid "Subtitle Handling"
+msgstr ""
+
+#: crates/ui/media/big-media-components/src/subtitle/handling_dialog.rs:32
+msgid ""
+"Choose how subtitles are included in the output. 'Embedded' keeps them "
+"inside the video file. 'Extract to .srt' creates separate subtitle files."
+msgstr ""
+
+#: crates/ui/media/big-media-components/src/subtitle/handling_dialog.rs:34
+msgid "Only Extract Subtitles"
+msgstr ""
+
+#: crates/ui/media/big-media-components/src/subtitle/handling_dialog.rs:36
+msgid ""
+"Skip video conversion entirely and only extract the subtitle tracks to .srt "
+"files."
+msgstr ""
+
+#: crates/ui/media/big-media-components/src/video/editor_panel.rs:54
+msgid "Timeline"
+msgstr ""
+
+#: crates/ui/media/big-media-components/src/video/editor_panel.rs:55
+msgid "Play/Pause (Space)"
+msgstr ""
+
+#: crates/ui/media/big-media-components/src/video/editor_panel.rs:56
+msgid "Mark point (M)"
+msgstr ""
+
+#: crates/ui/media/big-media-components/src/video/editor_panel.rs:57
+msgid "Seek back 5s"
+msgstr ""
+
+#: crates/ui/media/big-media-components/src/video/editor_panel.rs:58
+msgid "Seek forward 5s"
+msgstr ""
+
+#: crates/ui/media/big-media-components/src/video/editor_panel.rs:59
+msgid "Previous frame (,)"
+msgstr ""
+
+#: crates/ui/media/big-media-components/src/video/editor_panel.rs:60
+msgid "Next frame (.)"
+msgstr ""
+
+#: crates/ui/media/big-media-components/src/video/editor_panel.rs:63
+msgid "Fullscreen (F)"
+msgstr ""
+
+#: crates/ui/media/big-media-components/src/video/editor_panel.rs:64
+msgid "Playback position"
+msgstr ""
+
+#: crates/ui/media/big-media-components/src/video/editor_panel.rs:65
+msgid "Playback duration"
+msgstr ""
+
+#: crates/ui/media/big-media-components/src/video/editor_panel.rs:68
+msgid "Audio track"
+msgstr ""
+
+#: crates/ui/media/big-media-components/src/video/editor_panel.rs:69
+msgid "Subtitle track"
+msgstr ""
+
+#: crates/ui/media/big-media-components/src/video/editor_panel.rs:70
+msgid "No tracks loaded"
+msgstr ""
+
+#: crates/ui/media/big-media-components/src/video/editor_panel.rs:77
+msgid "Show grid overlay"
+msgstr ""
+
+#: crates/ui/media/big-media-components/src/video/editor_panel.rs:78
+msgid "Resolution:"
+msgstr ""
+
+#: crates/ui/media/big-media-components/src/video/editor_panel.rs:79
+msgid "Codec:"
+msgstr ""
+
+#: crates/ui/media/big-media-components/src/video/editor_panel.rs:80
+msgid "Size:"
+msgstr ""
+
+#: crates/ui/media/big-media-components/src/video/editor_panel.rs:81
+msgid "Duration:"
+msgstr ""
+
+#: crates/ui/media/big-media-components/src/video/editor_sidebar.rs:52
+msgid "Reset brightness"
+msgstr ""
+
+#: crates/ui/media/big-media-components/src/video/editor_sidebar.rs:53
+msgid "Reset contrast"
+msgstr ""
+
+#: crates/ui/media/big-media-components/src/video/editor_sidebar.rs:54
+msgid "Reset saturation"
+msgstr ""
+
+#: crates/ui/media/big-media-components/src/video/editor_sidebar.rs:55
+msgid "Reset hue"
+msgstr ""
+
+#: crates/ui/media/big-media-components/src/video/editor_sidebar.rs:56
+msgid "Video Adjustments"
+msgstr ""
+
+#: crates/ui/media/big-media-components/src/video/editor_sidebar.rs:62
+msgid "Rotate 90 left"
+msgstr ""
+
+#: crates/ui/media/big-media-components/src/video/editor_sidebar.rs:63
+msgid "Rotate 90 right"
+msgstr ""
+
+#: crates/ui/media/big-media-components/src/video/editor_sidebar.rs:64
+msgid "Flip horizontal"
+msgstr ""
+
+#: crates/ui/media/big-media-components/src/video/editor_sidebar.rs:65
+msgid "Flip vertical"
+msgstr ""
+
+#: crates/ui/media/big-media-components/src/video/editor_sidebar.rs:66
+msgid "Reset transform"
+msgstr ""
+
+#: crates/ui/media/big-media-components/src/video/editor_sidebar.rs:68
+msgid "Noise reduction, gate, normalize"
+msgstr ""
+
+#: crates/ui/media/big-media-components/src/video/editor_sidebar.rs:70
+msgid "Press M or use the mark button to add segments"
+msgstr ""
+
+#: crates/ui/media/big-media-components/src/video/editor_sidebar.rs:71
+msgid "Add segment manually"
+msgstr ""
+
+#: crates/ui/media/big-media-components/src/video/editor_sidebar.rs:73
+msgid "Output Mode"
+msgstr ""
+
+#: crates/ui/media/big-media-components/src/video/editor_sidebar.rs:74
+msgid "Join segments into one file"
+msgstr ""
+
+#: crates/ui/media/big-media-components/src/video/editor_sidebar.rs:75
+msgid "Save each segment as separate file"
+msgstr ""
+
+#: crates/ui/media/big-media-components/src/video/encoding_dialog.rs:40
+msgid "Video Encoding"
+msgstr ""
+
+#: crates/ui/media/big-media-components/src/video/encoding_dialog.rs:42
+msgid ""
+"Configure how your video will be encoded. The defaults work well for most "
+"cases."
+msgstr ""
+
+#: crates/ui/media/big-media-components/src/video/encoding_dialog.rs:44
+msgid "Output Format"
+msgstr ""
+
+#: crates/ui/media/big-media-components/src/video/encoding_dialog.rs:46
+msgid ""
+"The container that holds audio and video. MP4 is the most compatible. MKV "
+"supports all codecs."
+msgstr ""
+
+#: crates/ui/media/big-media-components/src/video/encoding_dialog.rs:50
+msgid ""
+"Choose the compression format. H.264 is the most compatible. H.265 and AV1 "
+"produce smaller files but need more processing power."
+msgstr ""
+
+#: crates/ui/media/big-media-components/src/video/encoding_dialog.rs:52
+msgid "Image Quality"
+msgstr ""
+
+#: crates/ui/media/big-media-components/src/video/encoding_dialog.rs:54
+msgid ""
+"Higher quality keeps more detail but creates larger files. 'Good' is a "
+"balanced choice for most videos."
+msgstr ""
+
+#: crates/ui/media/big-media-components/src/video/encoding_dialog.rs:56
+msgid "Output Resolution"
+msgstr ""
+
+#: crates/ui/media/big-media-components/src/video/encoding_dialog.rs:58
+msgid ""
+"Increasing beyond the original resolution does not improve quality. Reducing "
+"the resolution creates smaller files."
+msgstr ""
+
+#: crates/ui/media/big-media-components/src/video/encoding_dialog.rs:60
+msgid "Conversion Speed"
+msgstr ""
+
+#: crates/ui/media/big-media-components/src/video/encoding_dialog.rs:62
+msgid ""
+"Slower conversion produces smaller files. Faster presets create larger files "
+"but finish sooner."
+msgstr ""
+
+#: crates/ui/media/big-media-components/src/video/encoding_dialog.rs:64
+msgid "Software Decode"
+msgstr ""
+
+#: crates/ui/media/big-media-components/src/video/encoding_dialog.rs:66
+msgid ""
+"Use CPU for decoding instead of GPU. Enable if you see visual artifacts with "
+"GPU decoding."
+msgstr ""
+
+#: crates/ui/media/big-player-ui/src/appearance/audio_colors.rs:31
+#: crates/ui/media/big-player-ui/src/appearance/color_palette_controls.rs:114
+#: crates/ui/media/big-player-ui/src/appearance/video_colors.rs:34
+msgid "Color Source"
+msgstr ""
+
+#: crates/ui/media/big-player-ui/src/appearance/audio_colors.rs:33
+#: crates/ui/media/big-player-ui/src/appearance/video_colors.rs:36
+msgid "Follow System"
+msgstr ""
+
+#: crates/ui/media/big-player-ui/src/appearance/audio_colors.rs:34
+#: crates/ui/media/big-player-ui/src/appearance/video_colors.rs:37
+msgid "Light Theme"
+msgstr ""
+
+#: crates/ui/media/big-player-ui/src/appearance/audio_colors.rs:35
+#: crates/ui/media/big-player-ui/src/appearance/video_colors.rs:38
+msgid "Dark Theme"
+msgstr ""
+
+#: crates/ui/media/big-player-ui/src/appearance/audio_colors.rs:36
+#: crates/ui/media/big-player-ui/src/appearance/color_palette_controls.rs:134
+#: crates/ui/media/big-player-ui/src/appearance/video_colors.rs:40
+msgid "Custom Colors"
+msgstr ""
+
+#: crates/ui/media/big-player-ui/src/appearance/audio_colors.rs:40
+msgid ""
+"Follow System uses your desktop theme - Custom Colors lets you pick your own "
+"palette"
+msgstr ""
+
+#: crates/ui/media/big-player-ui/src/appearance/audio_colors.rs:75
+msgid "Accessibility"
+msgstr ""
+
+#: crates/ui/media/big-player-ui/src/appearance/audio_colors.rs:76
+msgid "Improve readability of secondary text and labels"
+msgstr ""
+
+#: crates/ui/media/big-player-ui/src/appearance/audio_colors.rs:80
+msgid "High Contrast Text"
+msgstr ""
+
+#: crates/ui/media/big-player-ui/src/appearance/audio_colors.rs:82
+msgid "Makes dim labels, subtitles and secondary text easier to read"
+msgstr ""
+
+#: crates/ui/media/big-player-ui/src/appearance/color_palette_controls.rs:108
+msgid "Colors"
+msgstr ""
+
+#: crates/ui/media/big-player-ui/src/appearance/color_palette_controls.rs:115
+msgid "Choose how the player gets its colors"
+msgstr ""
+
+#: crates/ui/media/big-player-ui/src/appearance/color_palette_controls.rs:135
+msgid "Pick your own colors or choose a preset theme"
+msgstr ""
+
+#: crates/ui/media/big-player-ui/src/appearance/color_palette_controls.rs:140
+msgid "Color Preset"
+msgstr ""
+
+#: crates/ui/media/big-player-ui/src/appearance/color_palette_controls.rs:142
+msgid "Start from a pre-made color scheme and customize from there"
+msgstr ""
+
+#: crates/ui/media/big-player-ui/src/appearance/color_palette_controls.rs:154
+msgid "Background Color"
+msgstr ""
+
+#: crates/ui/media/big-player-ui/src/appearance/color_palette_controls.rs:161
+msgid "Font Color"
+msgstr ""
+
+#: crates/ui/media/big-player-ui/src/appearance/color_palette_controls.rs:168
+msgid "Icon Color"
+msgstr ""
+
+#: crates/ui/media/big-player-ui/src/appearance/color_palette_controls.rs:175
+msgid "Dialogs and Menus Color"
+msgstr ""
+
+#: crates/ui/media/big-player-ui/src/appearance/video_colors.rs:39
+msgid "Video Colors"
+msgstr ""
+
+#: crates/ui/media/big-player-ui/src/appearance/video_colors.rs:44
+msgid ""
+"Follow System uses your desktop theme - Video Colors extracts colors from "
+"the current video"
+msgstr ""
+
+#: crates/ui/media/big-player-ui/src/appearance/video_colors.rs:55
+msgid "Background Opacity"
+msgstr ""
+
+#: crates/ui/media/big-player-ui/src/appearance/video_colors.rs:57
+msgid ""
+"How transparent the player background is - lower values let your desktop "
+"show through"
+msgstr ""
+
+#: crates/ui/media/big-player-ui/src/appearance/video_colors.rs:77
+msgid "Menu Opacity"
+msgstr ""
+
+#: crates/ui/media/big-player-ui/src/appearance/video_colors.rs:78
+msgid "How transparent menus and dialogs appear"
+msgstr ""
+
+#: crates/ui/media/big-player-ui/src/appearance/video_colors.rs:97
+msgid "Icon and Text Shadow"
+msgstr ""
+
+#: crates/ui/media/big-player-ui/src/appearance/video_colors.rs:98
+msgid ""
+"Makes controls easier to see when the background is transparent or very "
+"bright"
+msgstr ""
+
+#: crates/ui/media/big-player-ui/src/audio_preferences.rs:101
+msgid "Advanced audio output options"
+msgstr ""
+
+#: crates/ui/media/big-player-ui/src/audio_preferences.rs:108
+msgid "Audio Output"
+msgstr ""
+
+#: crates/ui/media/big-player-ui/src/audio_preferences.rs:109
+msgid ""
+"Which sound system to use - Auto works for most setups. Requires restart."
+msgstr ""
+
+#: crates/ui/media/big-player-ui/src/audio_preferences.rs:124
+msgid "Mix surround sound down to stereo or mono if needed"
+msgstr ""
+
+#: crates/ui/media/big-player-ui/src/audio_preferences.rs:141
+msgid "Processing"
+msgstr ""
+
+#: crates/ui/media/big-player-ui/src/audio_preferences.rs:142
+msgid "Audio enhancements applied while playing"
+msgstr ""
+
+#: crates/ui/media/big-player-ui/src/audio_preferences.rs:146
+msgid "Auto-level Volume"
+msgstr ""
+
+#: crates/ui/media/big-player-ui/src/audio_preferences.rs:148
+msgid "Automatically adjusts volume so all media plays at a similar loudness"
+msgstr ""
+
+#: crates/ui/media/big-player-ui/src/audio_preferences.rs:168
+msgid "Pitch Correction"
+msgstr ""
+
+#: crates/ui/media/big-player-ui/src/audio_preferences.rs:169
+msgid "Keep the original voice tone when playing faster or slower"
+msgstr ""
+
+#: crates/ui/media/big-player-ui/src/audio_preferences.rs:184
+msgid "Maximum Volume"
+msgstr ""
+
+#: crates/ui/media/big-player-ui/src/audio_preferences.rs:185
+msgid "Allow the volume slider to go above 100% for quiet recordings"
+msgstr ""
+
+#: crates/ui/media/big-player-ui/src/audio_preferences.rs:203
+msgid "Language preferences for media with multiple audio tracks"
+msgstr ""
+
+#: crates/ui/media/big-player-ui/src/audio_preferences.rs:210
+msgid "Preferred Audio Language"
+msgstr ""
+
+#: crates/ui/media/big-player-ui/src/audio_preferences.rs:211
+msgid "Automatically picks your language when available (e.g. pt, en, ja)"
+msgstr ""
+
+#: crates/ui/media/big-player-ui/src/audio_trim_bar.rs:40
+msgid "Mark cut point"
+msgstr ""
+
+#: crates/ui/media/big-player-ui/src/audio_trim_bar.rs:41
+msgid "Clear cuts"
+msgstr ""
+
+#: crates/ui/media/big-player-ui/src/audio_trim_bar.rs:42
+msgid "Play only marked cuts"
+msgstr ""
+
+#: crates/ui/media/big-player-ui/src/audio_trim_bar.rs:43
+msgid "cuts"
+msgstr ""
+
+#: crates/ui/media/big-player-ui/src/audio_trim_bar.rs:44
+#, rust-format
+msgid "Cut start: {t} - mark the other end"
+msgstr ""
+
+#: crates/ui/media/big-player-ui/src/audio_trim_bar.rs:46
+msgid "Press Mark at the start and end of each cut"
+msgstr ""
+
+#: crates/ui/media/big-player-ui/src/audio_trim_bar.rs:47
+msgid "Export cuts"
+msgstr ""
+
+#: crates/ui/media/big-player-ui/src/audio_trim_bar.rs:48
+msgid "Choose how to export the marked cuts"
+msgstr ""
+
+#: crates/ui/media/big-player-ui/src/download_panel.rs:87
+msgid "Downloads"
+msgstr ""
+
+#: crates/ui/media/big-player-ui/src/download_panel.rs:96
+msgid "Clear completed downloads"
+msgstr ""
+
+#: crates/ui/media/big-player-ui/src/download_panel.rs:106
+msgid "Hide downloads panel"
+msgstr ""
+
+#: crates/ui/media/big-player-ui/src/download_panel.rs:190
+msgid "Cancel download"
+msgstr ""
+
+#: crates/ui/media/big-player-ui/src/download_panel.rs:200
+msgid "Starting…"
+msgstr ""
+
+#: crates/ui/media/big-player-ui/src/file_browser.rs:108
+msgid "Filter files"
+msgstr ""
+
+#: crates/ui/media/big-player-ui/src/file_browser.rs:261
+msgid "File browser"
+msgstr ""
+
+#: crates/ui/media/big-player-ui/src/lyrics_panel.rs:155
+#: crates/ui/media/big-player-ui/src/lyrics_panel.rs:164
+msgid "Show only lyrics"
+msgstr ""
+
+#: crates/ui/media/big-player-ui/src/lyrics_panel.rs:161
+msgid "Show playlist"
+msgstr ""
+
+#: crates/ui/media/big-player-ui/src/lyrics_panel.rs:216
+msgid "Searching for lyrics…"
+msgstr ""
+
+#: crates/ui/media/big-player-ui/src/lyrics_panel.rs:242
+msgid "No lyrics found"
+msgstr ""
+
+#: crates/ui/media/big-player-ui/src/podcast_panel.rs:123
+msgid "Search podcasts…"
+msgstr ""
+
+#: crates/ui/media/big-player-ui/src/podcast_panel.rs:125
+msgid "Search podcasts"
+msgstr ""
+
+#: crates/ui/media/big-player-ui/src/podcast_panel.rs:146
+#: crates/ui/media/big-player-ui/src/podcast_panel.rs:147
+msgid "Add RSS feed"
+msgstr ""
+
+#: crates/ui/media/big-player-ui/src/podcast_panel.rs:176
+msgid "No Podcasts"
+msgstr ""
+
+#: crates/ui/media/big-player-ui/src/podcast_panel.rs:177
+msgid "Search for podcasts or add an RSS feed"
+msgstr ""
+
+#: crates/ui/media/big-player-ui/src/podcast_panel.rs:262
+msgid "Connection error — try again"
+msgstr ""
+
+#: crates/ui/media/big-player-ui/src/podcast_panel.rs:273
+msgid "Already subscribed"
+msgstr ""
+
+#: crates/ui/media/big-player-ui/src/podcast_panel.rs:277
+msgid "Subscribed!"
+msgstr ""
+
+#: crates/ui/media/big-player-ui/src/podcast_panel.rs:357
+msgid "Subscriptions"
+msgstr ""
+
+#: crates/ui/media/big-player-ui/src/podcast_panel.rs:381
+msgid "Search Results"
+msgstr ""
+
+#: crates/ui/media/big-player-ui/src/podcast_panel.rs:429
+msgid "Title unavailable"
+msgstr ""
+
+#: crates/ui/media/big-player-ui/src/podcast_panel.rs:431
+msgid "Loading…"
+msgstr ""
+
+#: crates/ui/media/big-player-ui/src/podcast_panel.rs:495
+msgid "Unsubscribe"
+msgstr ""
+
+#: crates/ui/media/big-player-ui/src/podcast_panel.rs:497
+msgid "Unsubscribe from podcast"
+msgstr ""
+
+#: crates/ui/media/big-player-ui/src/podcast_panel.rs:516
+#: crates/ui/media/big-player-ui/src/podcast_panel.rs:575
+msgid "Subscribe"
+msgstr ""
+
+#: crates/ui/media/big-player-ui/src/podcast_panel.rs:518
+msgid "Subscribe to podcast"
+msgstr ""
+
+#: crates/ui/media/big-player-ui/src/podcast_panel.rs:537
+msgid "episodes"
+msgstr ""
+
+#: crates/ui/media/big-player-ui/src/podcast_panel.rs:558
+msgid "Add RSS Feed"
+msgstr ""
+
+#: crates/ui/media/big-player-ui/src/podcast_panel.rs:564
+msgid "Paste the podcast RSS feed URL below."
+msgstr ""
+
+#: crates/ui/media/big-player-ui/src/podcast_panel.rs:566
+msgid "Feed"
+msgstr ""
+
+#: crates/ui/media/big-player-ui/src/podcast_panel.rs:568
+#: crates/ui/media/big-player-ui/src/podcast_panel.rs:571
+msgid "RSS feed URL"
+msgstr ""
+
+#: crates/ui/media/big-player-ui/src/radio_panel/methods.rs:122
+msgid "My Stations"
+msgstr ""
+
+#: crates/ui/media/big-player-ui/src/radio_panel/methods.rs:145
+#: crates/ui/media/big-player-ui/src/radio_panel/widgets.rs:300
+msgid "Explore Stations"
+msgstr ""
+
+#: crates/ui/media/big-player-ui/src/radio_panel.rs:311
+msgid "Radio station removed"
+msgstr ""
+
+#: crates/ui/media/big-player-ui/src/radio_panel/widgets.rs:39
+msgid "Remove station"
+msgstr ""
+
+#: crates/ui/media/big-player-ui/src/radio_panel/widgets.rs:51
+msgid "Add to my stations"
+msgstr ""
+
+#: crates/ui/media/big-player-ui/src/radio_panel/widgets.rs:80
+#: crates/ui/media/big-player-ui/src/radio_panel/widgets.rs:90
+#: crates/ui/media/big-player-ui/src/radio_panel/widgets.rs:91
+msgid "Record Stream"
+msgstr ""
+
+#: crates/ui/media/big-player-ui/src/radio_panel/widgets.rs:95
+#: crates/ui/media/big-player-ui/src/radio_panel/widgets.rs:96
+msgid "Stop Recording"
+msgstr ""
+
+#: crates/ui/media/big-player-ui/src/radio_panel/widgets.rs:167
+msgid "Search radios..."
+msgstr ""
+
+#: crates/ui/media/big-player-ui/src/radio_panel/widgets.rs:169
+msgid "Search radios"
+msgstr ""
+
+#: crates/ui/media/big-player-ui/src/radio_panel/widgets.rs:174
+msgid "All Genres"
+msgstr ""
+
+#: crates/ui/media/big-player-ui/src/radio_panel/widgets.rs:212
+#: crates/ui/media/big-player-ui/src/radio_panel/widgets.rs:213
+msgid "Filter by genre"
+msgstr ""
+
+#: crates/ui/media/big-player-ui/src/radio_panel/widgets.rs:220
+#: crates/ui/media/big-player-ui/src/radio_panel/widgets.rs:222
+msgid "Add station manually"
+msgstr ""
+
+#: crates/ui/media/big-player-ui/src/radio_panel/widgets.rs:286
+msgid "No radio stations"
+msgstr ""
+
+#: crates/ui/media/big-player-ui/src/radio_panel/widgets.rs:293
+msgid "Explore popular stations from your country or search by name"
+msgstr ""
+
+#: crates/ui/media/big-player-ui/src/radio_panel/widgets.rs:308
+msgid "Add Manually"
+msgstr ""
+
+#: crates/ui/media/big-player-ui/src/radio_panel/widgets.rs:325
+msgid "Add Radio Station"
+msgstr ""
+
+#: crates/ui/media/big-player-ui/src/radio_panel/widgets.rs:332
+msgid "Enter a station name and an http:// or https:// stream URL."
+msgstr ""
+
+#: crates/ui/media/big-player-ui/src/radio_panel/widgets.rs:335
+msgid "Station"
+msgstr ""
+
+#: crates/ui/media/big-player-ui/src/radio_panel/widgets.rs:337
+#: crates/ui/media/big-player-ui/src/radio_panel/widgets.rs:340
+msgid "Station Name"
+msgstr ""
+
+#: crates/ui/media/big-player-ui/src/radio_panel/widgets.rs:342
+#: crates/ui/media/big-player-ui/src/radio_panel/widgets.rs:346
+msgid "Station stream URL"
+msgstr ""
+
+#: crates/ui/media/big-player-ui/src/radio_panel/widgets.rs:412
+msgid "Radio station added"
+msgstr ""
+
+#: crates/ui/media/big-player-ui/src/smartphone/dialog.rs:37
+msgid "Web Remote"
+msgstr ""
+
+#: crates/ui/media/big-player-ui/src/smartphone/dialog.rs:39
+msgid ""
+"Turn on to control this player from a phone or tablet on the same network. "
+"Scan the QR code with the phone's camera to open the remote."
+msgstr ""
+
+#: crates/ui/media/big-player-ui/src/smartphone/dialog.rs:45
+msgid "Enable web remote"
+msgstr ""
+
+#: crates/ui/media/big-player-ui/src/smartphone/dialog.rs:50
+msgid "QR code"
+msgstr ""
+
+#: crates/ui/media/big-player-ui/src/smartphone/dialog.rs:63
+#: crates/ui/media/big-player-ui/src/smartphone/dialog.rs:150
+msgid "Web remote is off."
+msgstr ""
+
+#: crates/ui/media/big-player-ui/src/smartphone/dialog.rs:81
+msgid "KDE Connect / GSConnect"
+msgstr ""
+
+#: crates/ui/media/big-player-ui/src/smartphone/dialog.rs:83
+msgid ""
+"If you have KDE Connect (Plasma, Android) or GSConnect (GNOME) installed, "
+"your paired phone already shows media controls, track information and volume "
+"for this player - no extra setup is required on our side."
+msgstr ""
+
+#: crates/ui/media/big-player-ui/src/smartphone/dialog.rs:90
+msgid "Install KDE Connect on your phone"
+msgstr ""
+
+#: crates/ui/media/big-player-ui/src/smartphone/dialog.rs:92
+msgid ""
+"Open the link on the phone's app store. Pair once - then media keys, "
+"notifications and file sharing work both ways."
+msgstr ""
+
+#: crates/ui/media/big-player-ui/src/smartphone/dialog.rs:96
+msgid "Open KDE Connect download page"
+msgstr ""
+
+#: crates/ui/media/big-player-ui/src/smartphone/dialog.rs:136
+msgid "Scan the code with the phone's camera."
+msgstr ""
+
+#: crates/ui/media/big-player-ui/src/smartphone/dialog.rs:142
+msgid "Could not start server"
+msgstr ""

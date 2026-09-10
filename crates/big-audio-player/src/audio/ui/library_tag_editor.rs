@@ -33,9 +33,8 @@ use crate::i18n::i18n;
 
 use super::library_panel::{LibraryPanel, LibraryPanelOutput};
 use spec::{
-    collect_tag_edit_fields, is_editable_text_changed, musicbrainz_fill_plan,
+    TagEditFieldTextRefs, collect_tag_edit_fields, is_editable_text_changed, musicbrainz_fill_plan,
     read_only_metadata_rows, should_apply_musicbrainz_result, should_offer_musicbrainz_lookup,
-    TagEditFieldTextRefs,
 };
 
 /// Editable tag values collected from the dialog and shipped to the shell.

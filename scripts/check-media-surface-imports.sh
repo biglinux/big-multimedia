@@ -6,11 +6,16 @@ ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 FORBIDDEN='big_relm4_components::layout::media_window'
 FORBIDDEN_FULLSCREEN='set_fullscreened'
 
+# Scope to the player app crates only. The vendored component crates
+# (big-relm4-components, big-media-components) legitimately define and use the
+# media_window / fullscreen primitives the facade wraps.
+APPS=("$ROOT/crates/big-audio-player" "$ROOT/crates/big-video-player")
+
 matches="$(
-	grep -RIn --include='*.rs' "$FORBIDDEN" "$ROOT/crates" || true
+	grep -RIn --include='*.rs' "$FORBIDDEN" "${APPS[@]}" || true
 )"
 fullscreen_matches="$(
-	grep -RIn --include='*.rs' "$FORBIDDEN_FULLSCREEN" "$ROOT/crates" || true
+	grep -RIn --include='*.rs' "$FORBIDDEN_FULLSCREEN" "${APPS[@]}" || true
 )"
 
 if [[ -n "$matches" ]]; then

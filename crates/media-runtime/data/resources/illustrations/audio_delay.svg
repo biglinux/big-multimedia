@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 80">
+  <!-- Audio delay: speaker with wave + clock offset -->
+  <!-- Speaker icon -->
+  <rect x="22" y="30" width="10" height="20" rx="2" fill="#3584e4" opacity="0.5"/>
+  <polygon points="32,28 46,18 46,62 32,52" fill="#3584e4" opacity="0.3"/>
+  <!-- Sound waves -->
+  <path d="M52,28 Q60,40 52,52" fill="none" stroke="#3584e4" stroke-width="2" opacity="0.4"/>
+  <path d="M58,22 Q70,40 58,58" fill="none" stroke="#3584e4" stroke-width="2" opacity="0.25"/>
+  <!-- Clock icon -->
+  <circle cx="92" cy="34" r="14" fill="none" stroke="#f5c211" stroke-width="2"/>
+  <line x1="92" y1="34" x2="92" y2="26" stroke="#f5c211" stroke-width="2" stroke-linecap="round"/>
+  <line x1="92" y1="34" x2="99" y2="37" stroke="#f5c211" stroke-width="2" stroke-linecap="round"/>
+  <!-- Bidirectional arrow showing offset -->
+  <line x1="68" y1="56" x2="82" y2="56" stroke="#f5c211" stroke-width="1.5" opacity="0.5"/>
+  <path d="M68,56 L72,53 M68,56 L72,59" stroke="#f5c211" stroke-width="1.5" opacity="0.5"/>
+  <path d="M82,56 L78,53 M82,56 L78,59" stroke="#f5c211" stroke-width="1.5" opacity="0.5"/>
+</svg>

@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="120" height="80" viewBox="0 0 120 80">
+  <!-- Color wheel segments -->
+  <circle cx="60" cy="40" r="25" fill="none" stroke="#bbb" stroke-width="1"/>
+  <path d="M60,15 A25,25 0 0,1 81,27 L60,40 Z" fill="#e01b24" opacity="0.7"/>
+  <path d="M81,27 A25,25 0 0,1 81,53 L60,40 Z" fill="#f5c211" opacity="0.7"/>
+  <path d="M81,53 A25,25 0 0,1 60,65 L60,40 Z" fill="#33d17a" opacity="0.7"/>
+  <path d="M60,65 A25,25 0 0,1 39,53 L60,40 Z" fill="#3584e4" opacity="0.7"/>
+  <path d="M39,53 A25,25 0 0,1 39,27 L60,40 Z" fill="#9141ac" opacity="0.7"/>
+  <path d="M39,27 A25,25 0 0,1 60,15 L60,40 Z" fill="#ff7800" opacity="0.7"/>
+</svg>

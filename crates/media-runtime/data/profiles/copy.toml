@@ -1,0 +1,16 @@
+[profile]
+name = "Copy (Remux)"
+description = "Copy streams without re-encoding — fastest, lossless"
+category = "general"
+
+[video]
+codec = "copy"
+
+[audio]
+handling = "copy"
+
+[subtitles]
+handling = "embedded"
+
+[output]
+container = "mkv"

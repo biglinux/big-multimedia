@@ -37,6 +37,9 @@ fn build_player_window(
 fn embed_boot() {
     EMBED_BOOT.call_once(|| {
         shared::app_base::init_gettext();
+        // Route shared big-media-components strings through the same gettext
+        // domain init_gettext just bound (else they render untranslated here).
+        big_media_components::install_media_components_translator(big_media_runtime::i18n::i18n);
         // Read lazily at backend install (realize) — safe to default here.
         shared::app_base::set_default_env("BIG_MEDIA_DISABLE_GRAPHICS_OFFLOAD", "1");
         shared::app_base::init_numeric_locale();
@@ -115,8 +118,7 @@ pub fn mount_as_background_pane() -> big_relm4_components::pane::ControllerPane 
 }
 
 /// Open the video-player shell as a window of the host's running
-/// application (multicall hosts: big-host). Mirrors
-/// `big_converter_ui::open_in_application`: performs the app-specific boot
+/// application (multicall hosts: big-host). Performs the app-specific boot
 /// exactly once (gettext — shared media domain —, numeric locale, GResource
 /// bundles, the graphics-offload default) and launches a detached
 /// [`video::ui::video_shell::VideoShell`]. The host keeps the returned
@@ -174,6 +176,9 @@ pub fn run() -> gtk::glib::ExitCode {
         "big_media_runtime=info,big_video_player=info,lofty=error,glycin=error",
     );
     shared::app_base::init_gettext();
+    // Route shared big-media-components strings through the same gettext domain
+    // init_gettext just bound (else they render untranslated in the video app).
+    big_media_components::install_media_components_translator(big_media_runtime::i18n::i18n);
     // The video player renders libmpv into a GtkGLArea. Force (override, since the
     // session often exports GSK_RENDERER=cairo) the renderer that is stable for
     // that: "ngl" everywhere except NVIDIA proprietary, which needs the legacy

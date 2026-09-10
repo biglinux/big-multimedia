@@ -21,7 +21,7 @@ use big_relm4_components::layout::{
     dialog_page::BigDialogPage, preferences::BigPreferencesGroupSpec,
 };
 use big_relm4_components::list::copyable_detail_row::{
-    copy_all_button, BigCopyableDetailRow, BigCopyableDetailRowSpec, BigDetailLines,
+    BigCopyableDetailRow, BigCopyableDetailRowSpec, BigDetailLines, copy_all_button,
 };
 
 use crate::i18n::i18n;
@@ -335,9 +335,5 @@ fn track_label(track: &TrackMetadata, kind: &str) -> String {
 }
 
 fn selected_mark(selected: bool) -> &'static str {
-    if selected {
-        " ✓"
-    } else {
-        ""
-    }
+    if selected { " ✓" } else { "" }
 }

@@ -5,7 +5,7 @@
 
 use adw::prelude::*;
 use big_relm4_components::layout::preferences::{
-    tracked_preferences_group, BigPreferencesGroupSpec,
+    BigPreferencesGroupSpec, tracked_preferences_group,
 };
 use std::sync::Arc;
 
@@ -14,7 +14,7 @@ use crate::player::mpv_backend::MpvBackend;
 use crate::settings::Settings;
 
 use super::super::{
-    add_combo_row, add_spin_double_row, add_spin_int_row, add_switch_row, AdvancedWidgets,
+    AdvancedWidgets, add_combo_row, add_spin_double_row, add_spin_int_row, add_switch_row,
 };
 use super::illustration_assets::illustration;
 

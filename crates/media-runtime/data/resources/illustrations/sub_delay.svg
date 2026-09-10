@@ -1,0 +1,21 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 80">
+  <!-- Subtitle delay: text bubble with clock/offset -->
+  <!-- Subtitle bar at bottom -->
+  <rect x="20" y="50" width="60" height="14" rx="3" fill="#3584e4" opacity="0.2"/>
+  <line x1="26" y1="55" x2="52" y2="55" stroke="#3584e4" stroke-width="2" stroke-linecap="round" opacity="0.5"/>
+  <line x1="26" y1="60" x2="44" y2="60" stroke="#3584e4" stroke-width="2" stroke-linecap="round" opacity="0.3"/>
+  <!-- Clock icon -->
+  <circle cx="92" cy="34" r="14" fill="none" stroke="#f5c211" stroke-width="2"/>
+  <line x1="92" y1="34" x2="92" y2="26" stroke="#f5c211" stroke-width="2" stroke-linecap="round"/>
+  <line x1="92" y1="34" x2="99" y2="37" stroke="#f5c211" stroke-width="2" stroke-linecap="round"/>
+  <!-- Arrow showing shift -->
+  <path d="M58,34 L76,34" stroke="#3584e4" stroke-width="1.5" opacity="0.5" marker-end="url(#arrowSD)"/>
+  <defs>
+    <marker id="arrowSD" markerWidth="6" markerHeight="6" refX="5" refY="3" orient="auto">
+      <path d="M0,0 L6,3 L0,6" fill="#3584e4" opacity="0.5"/>
+    </marker>
+  </defs>
+  <!-- Video frame indicator -->
+  <rect x="20" y="18" width="40" height="26" rx="3" fill="none" stroke="#3584e4" stroke-width="1.5" opacity="0.3"/>
+  <polygon points="34,26 46,32 34,38" fill="#3584e4" opacity="0.3"/>
+</svg>

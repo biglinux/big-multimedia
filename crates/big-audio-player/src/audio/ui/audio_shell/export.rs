@@ -1,14 +1,14 @@
 //! In-player quick export for the audio player: convert or trim-and-export the
-//! playing track via the shared converter engine (`big_converter_ui::export`),
+//! playing track via the shared converter engine (`big_quick_export::export`),
 //! off the GTK main loop. No external converter process.
 
 use std::path::{Path, PathBuf};
 
-use big_converter_ui::export::{
-    build_single_export_queue, run_single_export_blocking, QuickExportChoice, QuickExportFormat,
-};
 use big_media_runtime::converter::profiles::VideoFilters;
 use big_media_runtime::converter::queue::{QueueMessage, SegmentOutputMode};
+use big_quick_export::export::{
+    QuickExportChoice, QuickExportFormat, build_single_export_queue, run_single_export_blocking,
+};
 use big_relm4_components::input::dropdown_row::{BigDropdownRow, BigDropdownRowSpec};
 use big_relm4_components::input::preference_cards::BigSpinRange;
 use big_relm4_components::input::spin_row::{BigSpinRow, BigSpinRowSpec};
@@ -97,12 +97,11 @@ impl AudioShell {
             }
             AudioTrimBarOutput::PlaySelection(active) => {
                 self.trim_play_selection = active;
-                if active {
-                    if let (Some((start, _)), Some(mpv)) =
+                if active
+                    && let (Some((start, _)), Some(mpv)) =
                         (self.trim_ranges.first().copied(), self.mpv.as_ref())
-                    {
-                        mpv.seek_absolute(start);
-                    }
+                {
+                    mpv.seek_absolute(start);
                 }
             }
             AudioTrimBarOutput::ExportRequested { ranges } => {

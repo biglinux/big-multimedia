@@ -41,11 +41,7 @@ mod imp {
                 .iter()
                 .filter_map(|f| f.path().map(|p| p.to_string_lossy().into_owned()))
                 .collect();
-            if !paths.is_empty() {
-                crate::video::ui::video_shell::send_to_shell(
-                    crate::video::ui::video_shell::VideoShellInput::OpenFiles(paths),
-                );
-            }
+            crate::open_paths(paths);
         }
 
         fn startup(&self) {

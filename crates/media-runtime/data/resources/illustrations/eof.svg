@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="120" height="80" viewBox="0 0 120 80">
+  <!-- Video frame with stop/end indicator -->
+  <rect x="20" y="15" width="55" height="35" rx="4" fill="none" stroke="#3584e4" stroke-width="2"/>
+  <!-- Play triangle inside frame -->
+  <polygon points="38,25 38,43 52,34" fill="#3584e4" opacity="0.3"/>
+  <!-- Progress bar -->
+  <rect x="20" y="55" width="55" height="4" rx="2" fill="#ddd"/>
+  <rect x="20" y="55" width="55" height="4" rx="2" fill="#3584e4"/>
+  <!-- Arrow to action -->
+  <line x1="80" y1="33" x2="95" y2="33" stroke="#e5a50a" stroke-width="2" stroke-linecap="round"/>
+  <polygon points="93,28 100,33 93,38" fill="#e5a50a"/>
+  <!-- Question mark for "what next?" -->
+  <text x="100" y="55" font-family="sans-serif" font-size="16" fill="#999" text-anchor="middle">?</text>
+</svg>

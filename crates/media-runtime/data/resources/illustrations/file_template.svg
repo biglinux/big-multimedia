@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="120" height="80" viewBox="0 0 120 80">
+  <!-- File icon -->
+  <path d="M35,10 L70,10 L82,22 L82,66 L35,66 Z" fill="none" stroke="#3584e4" stroke-width="1.5"/>
+  <path d="M70,10 L70,22 L82,22" fill="none" stroke="#3584e4" stroke-width="1.5"/>
+  <!-- Template placeholders -->
+  <rect x="42" y="30" width="14" height="8" rx="2" fill="#f5c211" opacity="0.3" stroke="#f5c211" stroke-width="1"/>
+  <text x="49" y="37" font-family="monospace" font-size="6" fill="#f5c211" text-anchor="middle">%F</text>
+  <rect x="60" y="30" width="14" height="8" rx="2" fill="#3584e4" opacity="0.2" stroke="#3584e4" stroke-width="1"/>
+  <text x="67" y="37" font-family="monospace" font-size="6" fill="#3584e4" text-anchor="middle">%p</text>
+  <!-- Resolved filename below -->
+  <text x="58" y="52" font-family="monospace" font-size="6" fill="#3584e4" text-anchor="middle" opacity="0.6">movie_01:23.png</text>
+</svg>

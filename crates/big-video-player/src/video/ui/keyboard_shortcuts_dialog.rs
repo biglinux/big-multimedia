@@ -10,14 +10,14 @@
 use adw::prelude::*;
 use big_app_kit::keybindings::ShortcutDef;
 use big_relm4_components::input::shortcut_dialog::{
-    connect_shortcut_dialog_rebinds, BigShortcutCategory, BigShortcutDialog, BigShortcutDialogSpec,
-    BigShortcutEntry,
+    BigShortcutCategory, BigShortcutDialog, BigShortcutDialogSpec, BigShortcutEntry,
+    connect_shortcut_dialog_rebinds,
 };
 
 use crate::i18n::i18n;
-use crate::settings::{keys, Settings};
+use crate::settings::{Settings, keys};
 use crate::video::keybindings::{
-    display_accel, key_to_accel_string, resolve_accels, CATEGORIES, SHORTCUTS,
+    CATEGORIES, SHORTCUTS, display_accel, key_to_accel_string, resolve_accels,
 };
 
 /// Present the keyboard-shortcuts dialog transient to `parent`, wiring

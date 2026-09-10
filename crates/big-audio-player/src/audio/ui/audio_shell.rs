@@ -20,7 +20,7 @@ mod queue_state;
 mod sources;
 mod update;
 
-pub use input::{send_to_shell, AudioShellInput};
+pub use input::{AudioShellInput, send_to_shell};
 
 use std::path::{Path, PathBuf};
 use std::sync::atomic::Ordering;
@@ -35,7 +35,7 @@ use crate::audio::library_grouping::{AgeFilter, LibraryGrouping};
 use crate::audio::library_query;
 use crate::audio::library_scan_engine;
 use crate::audio::lyrics_fetch_engine;
-use crate::audio::mpris_state::{save_mpris_art, SharedMprisState};
+use crate::audio::mpris_state::{SharedMprisState, save_mpris_art};
 use crate::audio::playlist_import;
 use crate::audio::queue_undo::QueueHistory;
 use crate::audio::ui::library_panel::{LibraryPanel, LibraryPanelInput, LibraryPanelOutput};
@@ -46,21 +46,21 @@ use crate::audio::ui::playlist_library_dialog::{
 };
 use crate::audio::ui::playlist_panel::{PlaylistPanel, PlaylistPanelInput, PlaylistPanelOutput};
 use crate::db::models::{RadioStation, Track, WatchFolder};
-use crate::db::queries_advanced::{update_track_metadata, TrackMetadataUpdate};
-use crate::db::{self, queries, DbHandle};
+use crate::db::queries_advanced::{TrackMetadataUpdate, update_track_metadata};
+use crate::db::{self, DbHandle, queries};
 use crate::i18n::i18n;
 use crate::mpris::{CommandCallback, Mpris, PlayerState, StateCallback};
 use crate::player::mpv_backend::{MpvBackend, PlayerEvent};
 use crate::player::queue::{PlayQueue, RepeatMode};
-use crate::settings::{keys, Settings};
+use crate::settings::{Settings, keys};
 use crate::shared::ui_helpers::spawn_db_query;
 use big_app_kit::file_dialogs::FilePicker;
 use big_app_kit::mpris::{
-    route_standard_playback_command, BigMprisPlaybackControls, BigMprisPlaybackFeedback,
+    BigMprisPlaybackControls, BigMprisPlaybackFeedback, route_standard_playback_command,
 };
 use big_media_components::media::file_metadata_dialog::{
-    show_media_file_metadata_dialog, BigMediaFileMetadataDialogLabels,
-    BigMediaFileMetadataDialogSpec,
+    BigMediaFileMetadataDialogLabels, BigMediaFileMetadataDialogSpec,
+    show_media_file_metadata_dialog,
 };
 use big_media_components::playback::audio_transport::{
     BigAudioTransportLabels, BigAudioTransportSpec,

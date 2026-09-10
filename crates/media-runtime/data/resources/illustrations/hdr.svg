@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="120" height="80" viewBox="0 0 120 80">
+  <!-- Sun (HDR bright) -->
+  <circle cx="40" cy="40" r="14" fill="none" stroke="#f5c211" stroke-width="2"/>
+  <line x1="40" y1="18" x2="40" y2="24" stroke="#f5c211" stroke-width="2"/>
+  <line x1="40" y1="56" x2="40" y2="62" stroke="#f5c211" stroke-width="2"/>
+  <line x1="18" y1="40" x2="24" y2="40" stroke="#f5c211" stroke-width="2"/>
+  <line x1="56" y1="40" x2="62" y2="40" stroke="#f5c211" stroke-width="2"/>
+  <!-- Arrow -->
+  <path d="M66,40 L76,40" stroke="#3584e4" stroke-width="2" fill="none" marker-end="url(#harr)"/>
+  <defs><marker id="harr" viewBox="0 0 6 6" refX="5" refY="3" markerWidth="6" markerHeight="6" orient="auto"><path d="M0,0 L6,3 L0,6 Z" fill="#3584e4"/></marker></defs>
+  <!-- Screen (mapped) -->
+  <rect x="80" y="28" width="28" height="24" rx="3" fill="none" stroke="#3584e4" stroke-width="2"/>
+  <rect x="84" y="32" width="20" height="16" rx="1" fill="#3584e4" opacity="0.15"/>
+</svg>

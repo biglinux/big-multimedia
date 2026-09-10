@@ -15,7 +15,7 @@
 use std::rc::Rc;
 
 use adw::prelude::*;
-use big_relm4_components::input::button_content::{build_button, BigButtonContentSpec};
+use big_relm4_components::input::button_content::{BigButtonContentSpec, build_button};
 use big_relm4_components::layout::{
     dialog_footer::{BigDialogFooter, BigDialogFooterSpec},
     dialog_page::BigDialogPage,
@@ -32,12 +32,11 @@ use relm4::{Component, ComponentParts, ComponentSender};
 
 use crate::i18n::i18n;
 use spec::{
-    accepted_playlist_name, delete_playlist_prompt_spec, empty_playlist_state_spec,
+    NamePromptSpec, accepted_playlist_name, delete_playlist_prompt_spec, empty_playlist_state_spec,
     generator_action_specs, import_export_action_specs, is_name_prompt_accept_enabled,
     localized_delete_playlist_description, localized_saved_playlist_subtitle,
     name_prompt_focus_selection, playlist_library_window_spec, rename_playlist_prompt_spec,
     save_current_queue_prompt_spec, saved_playlist_list_state, saved_playlist_row_spec,
-    NamePromptSpec,
 };
 
 /// `(id, name, track_count, total_secs)` for one saved playlist.

@@ -102,16 +102,15 @@ fn detect_bigshell_wallpaper() -> Option<PathBuf> {
     // shell.json absent → not a BigShell session → let the other detectors run.
     let text = std::fs::read_to_string(&config).ok()?;
 
-    if let Ok(value) = serde_json::from_str::<serde_json::Value>(&text) {
-        if let Some(raw) = value
+    if let Ok(value) = serde_json::from_str::<serde_json::Value>(&text)
+        && let Some(raw) = value
             .get("wallpaper")
             .and_then(|w| w.get("image_path"))
             .and_then(serde_json::Value::as_str)
-        {
-            let path = PathBuf::from(raw);
-            if path.is_file() {
-                return Some(path);
-            }
+    {
+        let path = PathBuf::from(raw);
+        if path.is_file() {
+            return Some(path);
         }
     }
 
@@ -177,12 +176,11 @@ fn detect_plasma_wallpaper() -> Option<PathBuf> {
                 line.contains("[Wallpaper][org.kde.image]") && line.ends_with("[General]");
             continue;
         }
-        if in_wallpaper_image {
-            if let Some(value) = line.strip_prefix("Image=") {
-                if let Some(image) = resolve_plasma_image(value.trim()) {
-                    return Some(image);
-                }
-            }
+        if in_wallpaper_image
+            && let Some(value) = line.strip_prefix("Image=")
+            && let Some(image) = resolve_plasma_image(value.trim())
+        {
+            return Some(image);
         }
     }
     None

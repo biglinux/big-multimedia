@@ -51,6 +51,8 @@ pub(super) fn build_seek_preview(anchor: &gtk::Widget) -> (gtk::Popover, gtk::Pi
 /// Wire the seek-bar hover preview: pointer motion over the bar shows the time
 /// (+ chapter name) at that position and requests a thumbnail frame; leave
 /// hides it. Mirrors the old `update_seek_hover_label`.
+// Nine unrelated GTK handles + shared state cells; bundling them into a struct
+// would only rename the fan-out, not reduce it.
 #[allow(clippy::too_many_arguments)]
 pub(super) fn wire_seek_hover(
     anchor: &gtk::Widget,

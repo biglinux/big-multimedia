@@ -7,8 +7,8 @@
 
 use std::sync::PoisonError;
 
-use crate::db::queries;
 use crate::db::DbHandle;
+use crate::db::queries;
 use crate::library::{lrclib, metadata};
 
 /// Resolve plain-text lyrics for `file_path`: embedded tag lyrics first, then a
@@ -25,10 +25,10 @@ pub(crate) fn fetch_lyrics_blocking(db: &DbHandle, file_path: &str) -> Option<St
             let conn = db.lock().unwrap_or_else(PoisonError::into_inner);
             queries::get_track_by_path(&conn, file_path).ok().flatten()
         };
-        if let Some(track) = track {
-            if let (Some(artist), Some(title)) = (&track.artist, &track.title) {
-                lyrics = lrclib::fetch_lyrics_with_fallback(artist, title, track.album.as_deref());
-            }
+        if let Some(track) = track
+            && let (Some(artist), Some(title)) = (&track.artist, &track.title)
+        {
+            lyrics = lrclib::fetch_lyrics_with_fallback(artist, title, track.album.as_deref());
         }
     }
 
@@ -66,7 +66,7 @@ mod tests {
     use super::fetch_lyrics_blocking;
     use super::strip_lrc_timestamps;
     #[cfg(not(miri))]
-    use crate::db::{schema, DbHandle};
+    use crate::db::{DbHandle, schema};
     #[cfg(not(miri))]
     use big_media_runtime::Result as MediaResult;
     #[cfg(not(miri))]
@@ -130,8 +130,8 @@ mod tests {
 
     #[cfg(not(miri))]
     #[test]
-    fn fetch_lyrics_prefers_sidecar_lrc_and_returns_plain_text(
-    ) -> std::result::Result<(), Box<dyn std::error::Error>> {
+    fn fetch_lyrics_prefers_sidecar_lrc_and_returns_plain_text()
+    -> std::result::Result<(), Box<dyn std::error::Error>> {
         let library_database = in_memory_library_database()?;
         let lyrics_fixture_folder = LyricsFixtureFolder::create()?;
         let audio_path = lyrics_fixture_folder.path.join("song.mp3");

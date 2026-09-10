@@ -1,0 +1,22 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 80">
+  <!-- Color wheel: 6 color segments in a ring -->
+  <g transform="translate(60,40)">
+    <circle r="26" fill="none" stroke="#3584e4" stroke-width="1" opacity="0.2"/>
+    <!-- Color segments as arcs -->
+    <path d="M0,-24 A24,24 0 0,1 20.8,-12" fill="none" stroke="#e01b24" stroke-width="6" stroke-linecap="round" opacity="0.8"/>
+    <path d="M20.8,-12 A24,24 0 0,1 20.8,12" fill="none" stroke="#f5c211" stroke-width="6" stroke-linecap="round" opacity="0.8"/>
+    <path d="M20.8,12 A24,24 0 0,1 0,24" fill="none" stroke="#33d17a" stroke-width="6" stroke-linecap="round" opacity="0.8"/>
+    <path d="M0,24 A24,24 0 0,1 -20.8,12" fill="none" stroke="#1a8cff" stroke-width="6" stroke-linecap="round" opacity="0.8"/>
+    <path d="M-20.8,12 A24,24 0 0,1 -20.8,-12" fill="none" stroke="#9141ac" stroke-width="6" stroke-linecap="round" opacity="0.8"/>
+    <path d="M-20.8,-12 A24,24 0 0,1 0,-24" fill="none" stroke="#ff7800" stroke-width="6" stroke-linecap="round" opacity="0.8"/>
+    <!-- Center dot -->
+    <circle r="4" fill="#3584e4" opacity="0.5"/>
+    <!-- Rotation arrow hint -->
+    <path d="M-8,-30 A32,32 0 0,1 8,-30" fill="none" stroke="#3584e4" stroke-width="1.5" opacity="0.4" marker-end="url(#arrowH)"/>
+  </g>
+  <defs>
+    <marker id="arrowH" markerWidth="5" markerHeight="5" refX="4" refY="2.5" orient="auto">
+      <path d="M0,0 L5,2.5 L0,5" fill="#3584e4" opacity="0.4"/>
+    </marker>
+  </defs>
+</svg>

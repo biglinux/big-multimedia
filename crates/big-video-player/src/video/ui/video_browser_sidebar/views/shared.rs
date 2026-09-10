@@ -2,7 +2,7 @@ use std::rc::Rc;
 
 use adw::prelude::*;
 
-use super::super::{chrome, BrowserState};
+use super::super::{BrowserState, chrome};
 
 /// Attach a right-click gesture that opens the per-row context menu for videos.
 pub(super) fn attach_context_menu(state: &Rc<BrowserState>, row: &gtk::Box) {

@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="120" height="80" viewBox="0 0 120 80">
+  <!-- Headphones -->
+  <path d="M30,50 Q30,20 60,20 Q90,20 90,50" fill="none" stroke="#3584e4" stroke-width="2.5" stroke-linecap="round"/>
+  <!-- Left ear cup -->
+  <rect x="24" y="46" width="12" height="20" rx="4" fill="#3584e4"/>
+  <!-- Right ear cup -->
+  <rect x="84" y="46" width="12" height="20" rx="4" fill="#3584e4"/>
+  <!-- Music note flowing -->
+  <ellipse cx="60" cy="52" rx="4" ry="3" fill="#e5a50a" transform="rotate(-15,60,52)"/>
+  <line x1="63.5" y1="51" x2="63.5" y2="38" stroke="#e5a50a" stroke-width="1.8"/>
+  <path d="M63.5,38 Q70,36 70,40 Q70,43 63.5,42" fill="#e5a50a"/>
+  <!-- Signal dots -->
+  <circle cx="50" cy="36" r="1.5" fill="#e5a50a" opacity="0.5"/>
+  <circle cx="70" cy="36" r="1.5" fill="#e5a50a" opacity="0.5"/>
+</svg>

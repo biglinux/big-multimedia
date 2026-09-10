@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 80">
+  <!-- Split circle: left dark, right light -->
+  <defs>
+    <clipPath id="cl"><circle cx="60" cy="40" r="26"/></clipPath>
+  </defs>
+  <circle cx="60" cy="40" r="26" fill="none" stroke="#3584e4" stroke-width="2.5" opacity="0.3"/>
+  <rect x="34" y="14" width="26" height="52" fill="#3584e4" opacity="0.85" clip-path="url(#cl)"/>
+  <rect x="60" y="14" width="26" height="52" fill="#3584e4" opacity="0.25" clip-path="url(#cl)"/>
+  <line x1="60" y1="14" x2="60" y2="66" stroke="#3584e4" stroke-width="1.5" opacity="0.5"/>
+</svg>

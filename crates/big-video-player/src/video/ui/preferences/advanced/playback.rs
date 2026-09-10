@@ -4,12 +4,12 @@
 
 use adw::prelude::*;
 use big_relm4_components::input::dropdown_row::{BigDropdownRow, BigDropdownRowSpec};
-use big_relm4_components::layout::preferences::{track_widget_visibility, BigPreferencesGroupSpec};
+use big_relm4_components::layout::preferences::{BigPreferencesGroupSpec, track_widget_visibility};
 use std::sync::Arc;
 
 use crate::i18n::i18n;
 use crate::player::mpv_backend::MpvBackend;
-use crate::settings::{keys, Settings};
+use crate::settings::{Settings, keys};
 
 use super::super::AdvancedWidgets;
 use super::super::{add_combo_row, add_switch_row};

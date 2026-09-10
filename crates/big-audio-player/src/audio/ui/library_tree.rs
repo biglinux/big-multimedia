@@ -42,20 +42,21 @@ mod view;
 use gtk::{gio, prelude::*};
 #[cfg(test)]
 use interaction::{
-    library_panel_node_selected_output, library_tree_context_target, library_tree_selection,
-    selected_leaf_drag_paths, LibraryTreeContextTarget, LibraryTreeSelection,
+    LibraryTreeContextTarget, LibraryTreeSelection, library_panel_node_selected_output,
+    library_tree_context_target, library_tree_selection, selected_leaf_drag_paths,
 };
 pub(super) use model::LibraryTreeHandle;
 #[cfg(test)]
 use model::{
+    BrowserNodeContract, ChildStores, DIVIDER_THRESHOLD, LeafTracks,
     browser_node_contract_for_tree_node, build_node_recursive, group_divider_letter,
-    to_browser_node, BrowserNodeContract, ChildStores, LeafTracks, DIVIDER_THRESHOLD,
+    to_browser_node,
 };
 pub use model::{LibraryTreeNode, LibraryTreeSnapshot};
 #[cfg(test)]
 use presentation::{
-    file_leaf_presentation, library_tree_row_presentation, FileLeafPresentation,
-    LibraryTreeAvatarPresentation,
+    FileLeafPresentation, LibraryTreeAvatarPresentation, file_leaf_presentation,
+    library_tree_row_presentation,
 };
 pub(super) use view::build_library_tree;
 
@@ -452,8 +453,8 @@ mod tests {
 
     #[cfg(not(miri))]
     #[test]
-    fn build_node_recursive_adds_letter_dividers_only_above_threshold(
-    ) -> std::result::Result<(), Box<dyn std::error::Error>> {
+    fn build_node_recursive_adds_letter_dividers_only_above_threshold()
+    -> std::result::Result<(), Box<dyn std::error::Error>> {
         let threshold_children = (0..DIVIDER_THRESHOLD)
             .map(|index| {
                 library_tree_node(
@@ -574,8 +575,8 @@ mod tests {
 
     #[cfg(not(miri))]
     #[test]
-    fn tree_handle_set_tree_splices_roots_and_replaces_child_state(
-    ) -> std::result::Result<(), Box<dyn std::error::Error>> {
+    fn tree_handle_set_tree_splices_roots_and_replaces_child_state()
+    -> std::result::Result<(), Box<dyn std::error::Error>> {
         let root_store = gio::ListStore::new::<BrowserNode>();
         let child_stores: ChildStores = Rc::new(RefCell::new(HashMap::new()));
         let leaf_tracks: LeafTracks = Rc::new(RefCell::new(HashMap::new()));

@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 80">
+  <!-- GPU Sharpen: sharpening kernel -->
+  <rect x="30" y="18" width="60" height="44" rx="5" fill="#3584e4" opacity="0.08" stroke="#3584e4" stroke-width="1.2"/>
+  <!-- Grid representing convolution kernel -->
+  <rect x="42" y="26" width="12" height="12" fill="#3584e4" opacity="0.1" stroke="#3584e4" stroke-width="0.8"/>
+  <rect x="54" y="26" width="12" height="12" fill="#3584e4" opacity="0.1" stroke="#3584e4" stroke-width="0.8"/>
+  <rect x="66" y="26" width="12" height="12" fill="#3584e4" opacity="0.1" stroke="#3584e4" stroke-width="0.8"/>
+  <rect x="42" y="38" width="12" height="12" fill="#3584e4" opacity="0.1" stroke="#3584e4" stroke-width="0.8"/>
+  <rect x="54" y="38" width="12" height="12" fill="#f5c211" opacity="0.3" stroke="#f5c211" stroke-width="1.2"/>
+  <rect x="66" y="38" width="12" height="12" fill="#3584e4" opacity="0.1" stroke="#3584e4" stroke-width="0.8"/>
+  <rect x="42" y="50" width="12" height="12" fill="#3584e4" opacity="0.1" stroke="#3584e4" stroke-width="0.8"/>
+  <rect x="54" y="50" width="12" height="12" fill="#3584e4" opacity="0.1" stroke="#3584e4" stroke-width="0.8"/>
+  <rect x="66" y="50" width="12" height="12" fill="#3584e4" opacity="0.1" stroke="#3584e4" stroke-width="0.8"/>
+  <!-- Center value -->
+  <text x="60" y="48" font-size="8" text-anchor="middle" fill="#f5c211" font-family="sans-serif" font-weight="bold">+</text>
+  <!-- Corner values -->
+  <text x="48" y="36" font-size="6" text-anchor="middle" fill="#3584e4" font-family="sans-serif" opacity="0.6">−</text>
+  <text x="72" y="36" font-size="6" text-anchor="middle" fill="#3584e4" font-family="sans-serif" opacity="0.6">−</text>
+</svg>

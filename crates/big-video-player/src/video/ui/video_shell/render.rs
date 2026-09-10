@@ -24,6 +24,8 @@ pub(super) struct VideoRealizeOptions {
 /// backend needs only a `gdk::Display` (per-screen, identical for any widget) +
 /// the overlay/gl_area, so mpv comes up whenever the content realizes in
 /// whatever window hosts it.
+// Unrelated GTK widgets, render-context slots, sender, and options — no
+// cohesive group to fold into a param struct without hiding the wiring.
 #[allow(clippy::too_many_arguments)]
 pub(super) fn wire_realize(
     realize_host: &impl IsA<gtk::Widget>,
@@ -120,7 +122,6 @@ pub(super) fn wire_realize(
 
 /// Wire the mpv render path: offload (DMA-BUF/GraphicsOffload) when available,
 /// GLArea fallback otherwise. Mirrors `init_render_context*` + `on_gl_render`.
-#[allow(clippy::too_many_arguments)]
 fn wire_render(
     mpv: &Arc<MpvBackend>,
     gl_area: &gtk::GLArea,

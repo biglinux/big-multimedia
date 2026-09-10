@@ -2,7 +2,7 @@ use std::rc::Rc;
 
 use adw::prelude::*;
 
-use super::super::{fileops, BrowserState, SidebarMode, VideoBrowserSidebarOutput};
+use super::super::{BrowserState, SidebarMode, VideoBrowserSidebarOutput, fileops};
 use crate::i18n::i18n;
 
 /// Per-row right-click menu (Play / Remove / Open containing folder). Keyed by

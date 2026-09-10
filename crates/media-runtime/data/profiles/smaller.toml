@@ -1,0 +1,21 @@
+[profile]
+name = "Smaller File"
+description = "Reduced file size with H.265/HEVC"
+category = "general"
+
+[video]
+codec = "h265"
+quality = "low"
+preset = "slow"
+
+[audio]
+handling = "encode"
+codec = "opus"
+bitrate = "96k"
+channels = "auto"
+
+[subtitles]
+handling = "none"
+
+[output]
+container = "mkv"

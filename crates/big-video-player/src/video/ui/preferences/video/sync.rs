@@ -4,7 +4,7 @@
 
 use adw::prelude::*;
 use big_relm4_components::layout::preferences::{
-    tracked_preferences_group, BigPreferencesGroupSpec,
+    BigPreferencesGroupSpec, tracked_preferences_group,
 };
 use std::sync::Arc;
 
@@ -12,7 +12,7 @@ use crate::i18n::i18n;
 use crate::player::mpv_backend::MpvBackend;
 use crate::settings::Settings;
 
-use super::super::{add_combo_row, add_switch_row, AdvancedWidgets};
+use super::super::{AdvancedWidgets, add_combo_row, add_switch_row};
 use super::illustration_assets::illustration;
 
 pub(super) fn build_video_sync_group(

@@ -5,8 +5,8 @@
 //! main thread) and the D-Bus thread reads them through an `Arc`. Ported out of
 //! the god-object `window::SharedMprisState` (survives the cutover).
 
-use std::sync::atomic::AtomicBool;
 use std::sync::Mutex;
+use std::sync::atomic::AtomicBool;
 
 /// `Sync`-safe snapshot of the current playback state for MPRIS.
 pub(crate) struct SharedMprisState {
@@ -89,7 +89,8 @@ mod tests {
             ));
             fs::create_dir_all(&cache_home)?;
             let previous_cache_home = env::var_os("XDG_CACHE_HOME");
-            env::set_var("XDG_CACHE_HOME", &cache_home);
+            // FIXME: Audit that the environment access only happens in single-threaded code.
+            unsafe { env::set_var("XDG_CACHE_HOME", &cache_home) };
             Ok(Self {
                 previous_cache_home,
                 cache_home,
@@ -100,17 +101,19 @@ mod tests {
     impl Drop for CacheHomeOverride {
         fn drop(&mut self) {
             if let Some(previous_cache_home) = &self.previous_cache_home {
-                env::set_var("XDG_CACHE_HOME", previous_cache_home);
+                // FIXME: Audit that the environment access only happens in single-threaded code.
+                unsafe { env::set_var("XDG_CACHE_HOME", previous_cache_home) };
             } else {
-                env::remove_var("XDG_CACHE_HOME");
+                // FIXME: Audit that the environment access only happens in single-threaded code.
+                unsafe { env::remove_var("XDG_CACHE_HOME") };
             }
             let _ = fs::remove_dir_all(&self.cache_home);
         }
     }
 
     #[test]
-    fn save_mpris_art_writes_bytes_to_app_cache_and_returns_file_uri(
-    ) -> std::result::Result<(), Box<dyn std::error::Error>> {
+    fn save_mpris_art_writes_bytes_to_app_cache_and_returns_file_uri()
+    -> std::result::Result<(), Box<dyn std::error::Error>> {
         let _environment_guard = CACHE_ENVIRONMENT_LOCK
             .lock()
             .unwrap_or_else(PoisonError::into_inner);

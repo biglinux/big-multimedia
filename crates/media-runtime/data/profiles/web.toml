@@ -1,0 +1,21 @@
+[profile]
+name = "Web / YouTube"
+description = "Optimized for web streaming — VP9 + Opus in WebM"
+category = "general"
+
+[video]
+codec = "vp9"
+quality = "medium"
+preset = "balanced"
+
+[audio]
+handling = "encode"
+codec = "opus"
+bitrate = "128k"
+channels = "stereo"
+
+[subtitles]
+handling = "none"
+
+[output]
+container = "webm"

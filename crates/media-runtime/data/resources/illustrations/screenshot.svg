@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="120" height="80" viewBox="0 0 120 80">
+  <!-- Camera icon -->
+  <rect x="30" y="25" width="60" height="40" rx="5" fill="none" stroke="#3584e4" stroke-width="2"/>
+  <circle cx="60" cy="45" r="12" fill="none" stroke="#3584e4" stroke-width="2"/>
+  <circle cx="60" cy="45" r="5" fill="#3584e4" opacity="0.3"/>
+  <!-- Flash -->
+  <rect x="45" y="20" width="30" height="8" rx="2" fill="none" stroke="#bbb" stroke-width="1.5"/>
+</svg>

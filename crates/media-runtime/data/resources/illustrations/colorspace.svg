@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="120" height="80" viewBox="0 0 120 80">
+  <!-- Color gamut triangle -->
+  <polygon points="60,12 20,62 100,62" fill="none" stroke="#3584e4" stroke-width="1.5"/>
+  <!-- Gradient fill inside -->
+  <polygon points="60,18 26,58 94,58" fill="#3584e4" opacity="0.08"/>
+  <!-- RGB dots at corners -->
+  <circle cx="60" cy="12" r="4" fill="#e01b24"/>
+  <circle cx="20" cy="62" r="4" fill="#26a269"/>
+  <circle cx="100" cy="62" r="4" fill="#3584e4"/>
+  <!-- Inner target point -->
+  <circle cx="60" cy="42" r="3" fill="#f5c211" stroke="#f5c211" stroke-width="1"/>
+  <!-- Crosshair around target -->
+  <line x1="54" y1="42" x2="57" y2="42" stroke="#f5c211" stroke-width="1"/>
+  <line x1="63" y1="42" x2="66" y2="42" stroke="#f5c211" stroke-width="1"/>
+  <line x1="60" y1="36" x2="60" y2="39" stroke="#f5c211" stroke-width="1"/>
+  <line x1="60" y1="45" x2="60" y2="48" stroke="#f5c211" stroke-width="1"/>
+</svg>

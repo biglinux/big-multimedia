@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="120" height="80" viewBox="0 0 120 80">
+  <!-- Moon crescent -->
+  <circle cx="50" cy="36" r="22" fill="#3584e4"/>
+  <circle cx="60" cy="30" r="18" fill="#f5f5f5"/>
+  <!-- Stars -->
+  <circle cx="36" cy="18" r="2" fill="#e5a50a"/>
+  <circle cx="28" cy="32" r="1.5" fill="#e5a50a"/>
+  <circle cx="40" cy="58" r="1.5" fill="#e5a50a"/>
+  <!-- Z z z -->
+  <text x="78" y="28" font-family="sans-serif" font-weight="bold" font-size="16" fill="#3584e4" opacity="0.9">Z</text>
+  <text x="88" y="42" font-family="sans-serif" font-weight="bold" font-size="12" fill="#3584e4" opacity="0.6">z</text>
+  <text x="94" y="52" font-family="sans-serif" font-weight="bold" font-size="9" fill="#3584e4" opacity="0.35">z</text>
+</svg>

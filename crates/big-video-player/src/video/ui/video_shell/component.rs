@@ -5,18 +5,20 @@ use super::actions::{
 use super::cast_snapshot::build_cast_filter_snapshot;
 use super::dialogs::reapply_theme;
 use super::input::{clear_shell_input, set_shell_input};
-use super::input_gestures::{wire_background_video_input, wire_osd_autohide, wire_video_input};
-use super::render::{wire_close, wire_realize, FastRenderContextSlot, VideoRealizeOptions};
+use super::input_gestures::{
+    wire_background_video_input, wire_osd_autohide, wire_osd_focus_out, wire_video_input,
+};
+use super::render::{FastRenderContextSlot, VideoRealizeOptions, wire_close, wire_realize};
 use super::*;
 use big_media_components::surface::{
-    create_media_toast_overlay_root, mount_media_toast_content, toggle_surface_fullscreened,
     BigMediaChrome, BigMediaChromePlacement, BigMediaMenuSpec, BigMediaOverlayStack,
-    BigMediaSidebarShell, BigMediaSidebarSpec,
+    BigMediaSidebarShell, BigMediaSidebarSpec, create_media_toast_overlay_root,
+    mount_media_toast_content, toggle_surface_fullscreened,
 };
 #[cfg(all(test, not(miri)))]
 use big_relm4_components::layout::hamburger_menu::build_flat_menu_model;
 use big_relm4_components::layout::hamburger_menu::{
-    build_flat_action_popover_button, BigHamburgerMenuSpec, BigMenuActionItem,
+    BigHamburgerMenuSpec, BigMenuActionItem, build_flat_action_popover_button,
 };
 
 impl Component for VideoShell {
@@ -115,7 +117,7 @@ impl Component for VideoShell {
 
         // Shared re-encode options (container/codec/quality) — same vocabulary as
         // the full converter, shown in the gear settings dialog (built lazily).
-        let trim_encode = big_converter_ui::encode_options::EncodeOptions::new();
+        let trim_encode = big_quick_export::encode_options::EncodeOptions::new();
 
         // Video surface: a black bg box is the overlay's main child; the GLArea
         // is an overlay child (the offload path hides it and stacks a
@@ -152,6 +154,12 @@ impl Component for VideoShell {
             },
             !is_background,
         );
+        // The OSD header floats over edge-to-edge video with the compositor's
+        // native title buttons disabled, so the standalone window has to draw
+        // its own minimize/maximize/close (the idle background pane has no chrome).
+        if !is_background {
+            chrome.show_end_window_controls(&i18n("Minimize"), &i18n("Maximize"), &i18n("Close"));
+        }
 
         // Slim, non-blocking export-progress strip: a shared `BigProgressRow`
         // (title · bar · percent/speed/ETA · Cancel) on a flat status bar docked
@@ -380,6 +388,9 @@ impl Component for VideoShell {
             wire_background_video_input(&main_overlay);
         } else {
             wire_osd_autohide(&main_overlay, &osd);
+            // Collapse the OSD when the window loses focus (alt-tab to another
+            // app), like other video players — not just on the idle timer.
+            wire_osd_focus_out(&main_overlay, &osd);
             // Pointer gestures over the video (mirrors the old `input/mod.rs`):
             // double-click → fullscreen, right-click → context menu, drag → move
             // the window (when not fullscreen).

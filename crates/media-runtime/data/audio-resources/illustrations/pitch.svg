@@ -1,0 +1,12 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="120" height="80" viewBox="0 0 120 80">
+  <!-- Music note (representing pitch unchanged) -->
+  <ellipse cx="30" cy="52" rx="8" ry="6" fill="#3584e4" transform="rotate(-15,30,52)"/>
+  <line x1="37" y1="50" x2="37" y2="18" stroke="#3584e4" stroke-width="2.5"/>
+  <path d="M37,18 Q48,14 48,24 Q48,30 37,28" fill="#3584e4"/>
+  <!-- Speed arrow (fast forward) -->
+  <polygon points="65,30 80,40 65,50" fill="#e5a50a"/>
+  <polygon points="80,30 95,40 80,50" fill="#e5a50a" opacity="0.5"/>
+  <!-- Equal sign (pitch stays same) -->
+  <line x1="100" y1="35" x2="112" y2="35" stroke="#3584e4" stroke-width="2.5" stroke-linecap="round"/>
+  <line x1="100" y1="45" x2="112" y2="45" stroke="#3584e4" stroke-width="2.5" stroke-linecap="round"/>
+</svg>

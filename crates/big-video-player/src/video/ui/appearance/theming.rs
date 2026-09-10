@@ -12,7 +12,7 @@
 //! dialog can reapply `ui-zone-bottom-*` and `ui-show-*` live while this module
 //! refreshes the CSS provider.
 
-use crate::settings::{keys, Settings};
+use crate::settings::{Settings, keys};
 
 /// All `ui-*` settings the OSD CSS reads, snapshotted once per apply.
 struct OsdCssConfig {
@@ -283,10 +283,10 @@ pub(in crate::video) fn apply_appearance(
     settings: &Settings,
     provider_slot: &mut Option<gtk::CssProvider>,
 ) {
-    if let Some(old) = provider_slot.as_ref() {
-        if let Some(display) = gtk::gdk::Display::default() {
-            gtk::style_context_remove_provider_for_display(&display, old);
-        }
+    if let Some(old) = provider_slot.as_ref()
+        && let Some(display) = gtk::gdk::Display::default()
+    {
+        gtk::style_context_remove_provider_for_display(&display, old);
     }
 
     let osd_css_config = OsdCssConfig::from_settings(settings);

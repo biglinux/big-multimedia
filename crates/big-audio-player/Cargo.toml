@@ -2,8 +2,8 @@
 name = "big-audio-player"
 publish = false
 version = "0.1.0"
-edition = "2021"
-rust-version = "1.93"
+edition.workspace = true
+rust-version.workspace = true
 license = "GPL-3.0-or-later"
 description = "BigLinux Big Audio Player"
 homepage = "https://github.com/biglinux/big-multimedia"
@@ -21,13 +21,13 @@ glib = "0.22"
 gio = "0.22"
 gdk = { version = "0.11", package = "gdk4" }
 pango = { version = "0.22", package = "pango" }
-big-media-runtime = { path = "../../../big-media-runtime", default-features = false, features = ["ui"] }
-big-player-ui = { path = "../../../big-rust-components/crates/ui/media/big-player-ui" }
-big-app-kit = { path = "../../../big-rust-components/crates/app/big-app-kit" }
-big-relm4-components = { path = "../../../big-rust-components/crates/ui/generic/big-relm4-components" }
-big-media-components = { path = "../../../big-rust-components/crates/ui/media/big-media-components" }
+big-media-runtime = { path = "../media-runtime", default-features = false, features = ["ui"] }
+big-player-ui = { path = "../ui/media/big-player-ui" }
+big-app-kit = { path = "../app/big-app-kit" }
+big-relm4-components = { path = "../ui/generic/big-relm4-components" }
+big-media-components = { path = "../ui/media/big-media-components" }
 # In-player quick export (convert / trim & export) reuses the converter engine.
-big-converter-ui = { path = "../big-converter-ui" }
+big-quick-export = { path = "../big-quick-export" }
 relm4 = { version = "0.11.0", default-features = false, features = ["libadwaita"] }
 async-channel = "2.5"
 dirs = "6"

@@ -10,10 +10,7 @@ all-features = true
 [advisories]
 version = 2
 yanked = "warn"
-ignore = [
-    # paste v1.0.15 unmaintained (archived). Reached via big-media-runtime → lofty.
-    { id = "RUSTSEC-2024-0436", reason = "transitive via lofty; no upstream fix" },
-]
+ignore = []
 
 [licenses]
 version = 2

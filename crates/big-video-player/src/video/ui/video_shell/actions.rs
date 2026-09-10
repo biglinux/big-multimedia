@@ -1,4 +1,4 @@
-use big_relm4_components::input::button_content::{build_button, BigButtonContentSpec};
+use big_relm4_components::input::button_content::{BigButtonContentSpec, build_button};
 
 use super::*;
 

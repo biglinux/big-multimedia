@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 80">
+  <!-- NV Sharpen: NVIDIA-style sharpening -->
+  <rect x="25" y="15" width="70" height="50" rx="5" fill="#3584e4" opacity="0.08" stroke="#3584e4" stroke-width="1.2"/>
+  <!-- Mountain landscape (blurry left, sharp right) -->
+  <polygon points="35,55 50,30 65,55" fill="none" stroke="#3584e4" stroke-width="1" opacity="0.3"/>
+  <polygon points="55,55 75,25 95,55" fill="none" stroke="#3584e4" stroke-width="2.2"/>
+  <!-- Sharpness lines radiating from center -->
+  <line x1="60" y1="38" x2="55" y2="33" stroke="#f5c211" stroke-width="1.5"/>
+  <line x1="60" y1="38" x2="65" y2="33" stroke="#f5c211" stroke-width="1.5"/>
+  <line x1="60" y1="38" x2="60" y2="32" stroke="#f5c211" stroke-width="1.5"/>
+  <line x1="60" y1="38" x2="55" y2="38" stroke="#f5c211" stroke-width="1.2" opacity="0.6"/>
+  <line x1="60" y1="38" x2="65" y2="38" stroke="#f5c211" stroke-width="1.2" opacity="0.6"/>
+</svg>

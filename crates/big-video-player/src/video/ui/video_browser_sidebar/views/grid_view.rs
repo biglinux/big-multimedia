@@ -362,11 +362,11 @@ fn spawn_thumbnail_load(
         if card_weak.upgrade().map(|c| c.widget_name()) != Some(token_quark) {
             return;
         }
-        if let Some(dur) = meta.and_then(|m| m.duration_secs).filter(|d| *d > 0.0) {
-            if let Some(badge) = badge_weak.upgrade() {
-                badge.set_label(&format_duration_hms(dur));
-                badge.set_visible(true);
-            }
+        if let Some(dur) = meta.and_then(|m| m.duration_secs).filter(|d| *d > 0.0)
+            && let Some(badge) = badge_weak.upgrade()
+        {
+            badge.set_label(&format_duration_hms(dur));
+            badge.set_visible(true);
         }
     });
 }

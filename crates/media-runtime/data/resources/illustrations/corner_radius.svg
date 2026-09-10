@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="120" height="80" viewBox="0 0 120 80">
+  <!-- Corner radius: box transforming from sharp to rounded -->
+  <!-- Sharp corner box (left) -->
+  <rect x="14" y="18" width="36" height="28" rx="0" fill="none" stroke="#3584e4" stroke-width="1.5" opacity="0.4" stroke-dasharray="3,2"/>
+  <!-- Arrow -->
+  <line x1="56" y1="32" x2="64" y2="32" stroke="#f5c211" stroke-width="1.5" stroke-linecap="round"/>
+  <polyline points="62,29 65,32 62,35" fill="none" stroke="#f5c211" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/>
+  <!-- Rounded corner box (right) -->
+  <rect x="70" y="18" width="36" height="28" rx="10" fill="none" stroke="#3584e4" stroke-width="2"/>
+  <!-- Highlight the rounded corners -->
+  <path d="M70,28 Q70,18 80,18" fill="none" stroke="#f5c211" stroke-width="2"/>
+  <path d="M96,18 Q106,18 106,28" fill="none" stroke="#f5c211" stroke-width="2"/>
+  <path d="M106,36 Q106,46 96,46" fill="none" stroke="#f5c211" stroke-width="2"/>
+  <path d="M80,46 Q70,46 70,36" fill="none" stroke="#f5c211" stroke-width="2"/>
+  <!-- Label: radius value -->
+  <text x="88" y="65" font-family="sans-serif" font-size="10" fill="#3584e4" text-anchor="middle" opacity="0.6">r = 10</text>
+</svg>

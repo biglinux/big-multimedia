@@ -2,7 +2,7 @@
 //! Independent of [`super::GroupBy`]; lives next to it because both feed the same
 //! query builder.
 
-use crate::i18n::i18n;
+use crate::i18n::{gettext_noop, i18n};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 pub enum AgeFilter {
@@ -24,12 +24,12 @@ impl AgeFilter {
     #[must_use]
     pub(super) const fn display_name_msgid(self) -> &'static str {
         match self {
-            Self::AllTime => "All Time",
-            Self::Today => "Today",
-            Self::ThisWeek => "This Week",
-            Self::ThisMonth => "This Month",
-            Self::ThreeMonths => "3 Months",
-            Self::ThisYear => "This Year",
+            Self::AllTime => gettext_noop("All Time"),
+            Self::Today => gettext_noop("Today"),
+            Self::ThisWeek => gettext_noop("This Week"),
+            Self::ThisMonth => gettext_noop("This Month"),
+            Self::ThreeMonths => gettext_noop("3 Months"),
+            Self::ThisYear => gettext_noop("This Year"),
         }
     }
 

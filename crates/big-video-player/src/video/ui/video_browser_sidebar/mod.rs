@@ -37,7 +37,7 @@ use big_relm4_components::layout::widget_container::clear_box_children;
 use gtk::{gio, glib};
 use relm4::{Component, ComponentParts, ComponentSender};
 
-use crate::settings::{keys, Settings};
+use crate::settings::{Settings, keys};
 
 /// Search-filter debounce (matches the old sidebar's typing latency).
 const SEARCH_DEBOUNCE: Duration = Duration::from_millis(150);
@@ -436,10 +436,10 @@ impl BrowserState {
         for p in [old_pos, new_pos] {
             if p >= 0 {
                 let idx = folder_count + p as u32;
-                if idx < store.n_items() {
-                    if let Some(item) = store.item(idx) {
-                        store.splice(idx, 1, &[item]);
-                    }
+                if idx < store.n_items()
+                    && let Some(item) = store.item(idx)
+                {
+                    store.splice(idx, 1, &[item]);
                 }
             }
         }

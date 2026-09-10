@@ -1,0 +1,74 @@
+[package]
+name = "big-quick-export"
+version = "0.1.0"
+edition = "2024"
+rust-version.workspace = true
+# Effective license is GPL-3.0-or-later, NOT the workspace MIT: this crate links
+# big-media-runtime (GPL-3.0-or-later), which forces copyleft on the linked result.
+# LGPL mpv (libmpv2) alone would permit MIT, but the GPL runtime dep does not.
+license = "GPL-3.0-or-later"
+description = "Single-file export / re-encode helpers for the BigLinux media players"
+publish = false  # internal workspace crate; not for crates.io
+repository = "https://github.com/biglinux/big-multimedia"
+
+[dependencies]
+adw = { version = "0.9", features = ["v1_9"], package = "libadwaita" }
+big-media-runtime = { path = "../media-runtime", default-features = false, features = ["ui"] }
+big-relm4-components = { path = "../ui/generic/big-relm4-components" }
+big-media-components = { path = "../ui/media/big-media-components" }
+
+[dev-dependencies]
+# Tempdir for the headless export smoke (tests/export_smoke.rs).
+tempfile = "3"
+big-media-runtime = { path = "../media-runtime", default-features = false, features = ["ui"] }
+
+[lints.clippy]
+pedantic = { level = "warn", priority = -1 }
+# Suppress noisy pedantic lints for GTK projects
+module_name_repetitions = "allow"
+must_use_candidate = "allow"
+missing_errors_doc = "allow"
+missing_panics_doc = "allow"
+cast_possible_truncation = "allow"
+cast_sign_loss = "allow"
+cast_precision_loss = "allow"
+cast_possible_wrap = "allow"
+doc_markdown = "allow"
+wildcard_imports = "allow"
+similar_names = "allow"
+many_single_char_names = "allow"
+items_after_statements = "allow"
+# Edition 2024 enables let-chains; legacy nested `if`+`if let` blocks now flag
+# this lint. Allow until the broader codebase is migrated.
+collapsible_if = "allow"
+option_if_let_else = "allow"
+needless_pass_by_value = "allow"
+format_push_string = "allow"
+struct_excessive_bools = "allow"
+fn_params_excessive_bools = "allow"
+clone_on_ref_ptr = "allow"
+ref_option = "allow"
+float_cmp = "allow"
+use_debug = "allow"
+unnecessary_debug_formatting = "allow"
+large_stack_arrays = "allow"
+implicit_hasher = "allow"
+missing_fields_in_debug = "allow"
+not_unsafe_ptr_arg_deref = "deny"
+ptr_as_ptr = "warn"
+dbg_macro = "warn"
+todo = "warn"
+rc_buffer = "warn"
+rc_mutex = "warn"
+verbose_file_reads = "warn"
+unseparated_literal_suffix = "warn"
+
+[lints.rust]
+unsafe_op_in_unsafe_fn = "warn"
+dead_code = "warn"
+unused_imports = "warn"
+unused_variables = "warn"
+unused_mut = "warn"
+unreachable_code = "warn"
+unreachable_patterns = "warn"
+trivial_numeric_casts = "warn"

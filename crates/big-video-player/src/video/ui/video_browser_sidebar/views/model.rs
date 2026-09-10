@@ -22,31 +22,29 @@ pub(super) fn build_store(
     let store = gio::ListStore::new::<glib::BoxedAnyObject>();
 
     // Recursive mode flattens the tree → no parent/sub folders to surface.
-    if !recursive_on {
-        if let Some(folder) = folder {
-            let folder_path = Path::new(folder);
-            if let Some(parent) = folder_path.parent() {
-                if parent.exists() {
-                    store.append(&glib::BoxedAnyObject::new(PlaylistEntry {
-                        path: parent.to_string_lossy().into_owned(),
-                        kind: EntryKind::ParentFolder,
-                        index: 0,
-                        display_name: i18n("Previous folder"),
-                    }));
-                }
-            }
-            for sub in subfolders {
-                let name = Path::new(sub)
-                    .file_name()
-                    .map(|n| n.to_string_lossy().into_owned())
-                    .unwrap_or_default();
-                store.append(&glib::BoxedAnyObject::new(PlaylistEntry {
-                    path: sub.clone(),
-                    kind: EntryKind::Folder,
-                    index: 0,
-                    display_name: name,
-                }));
-            }
+    if !recursive_on && let Some(folder) = folder {
+        let folder_path = Path::new(folder);
+        if let Some(parent) = folder_path.parent()
+            && parent.exists()
+        {
+            store.append(&glib::BoxedAnyObject::new(PlaylistEntry {
+                path: parent.to_string_lossy().into_owned(),
+                kind: EntryKind::ParentFolder,
+                index: 0,
+                display_name: i18n("Previous folder"),
+            }));
+        }
+        for sub in subfolders {
+            let name = Path::new(sub)
+                .file_name()
+                .map(|n| n.to_string_lossy().into_owned())
+                .unwrap_or_default();
+            store.append(&glib::BoxedAnyObject::new(PlaylistEntry {
+                path: sub.clone(),
+                kind: EntryKind::Folder,
+                index: 0,
+                display_name: name,
+            }));
         }
     }
 

@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<gresources>
+  <gresource prefix="/br/com/biglinux/AudioPlayer">
+    <file>illustrations/volume_leveling.svg</file>
+    <file>illustrations/volume_boost.svg</file>
+    <file>illustrations/gapless.svg</file>
+    <file>illustrations/resume.svg</file>
+    <file>illustrations/crossfade.svg</file>
+    <file>illustrations/normalize.svg</file>
+    <file>illustrations/max_volume.svg</file>
+    <file>illustrations/pitch.svg</file>
+    <file>illustrations/language.svg</file>
+    <file>illustrations/listenbrainz.svg</file>
+    <file>illustrations/colors.svg</file>
+    <file>illustrations/sleep_timer.svg</file>
+    <file>illustrations/timer_clock.svg</file>
+    <file>illustrations/sleep_action.svg</file>
+    <file>illustrations/taskbar_progress.svg</file>
+  </gresource>
+</gresources>

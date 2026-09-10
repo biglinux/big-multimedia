@@ -25,7 +25,7 @@ const AUDIO_ABOUT_CREDIT_LINES: &[&str] = &[
     "ListenBrainz https://listenbrainz.org",
 ];
 
-fn open_paths_message(paths: Vec<String>) -> Option<AudioShellInput> {
+pub(crate) fn open_paths_message(paths: Vec<String>) -> Option<AudioShellInput> {
     if paths.is_empty() {
         None
     } else {
@@ -58,7 +58,7 @@ fn audio_accel_action_name(action: &str) -> String {
 }
 
 fn resolved_audio_application_accels(custom_shortcuts: &str) -> Vec<(String, String)> {
-    use crate::audio::keybindings::{resolve_accels, SHORTCUTS};
+    use crate::audio::keybindings::{SHORTCUTS, resolve_accels};
 
     resolve_accels(SHORTCUTS, custom_shortcuts)
         .into_iter()
@@ -162,7 +162,7 @@ impl Application {
 /// Standalone startup calls this through [`Application`]; `big-host` modules
 /// call it during embed boot because they reuse the host `gtk::Application`.
 pub(crate) fn install_audio_accels(app: &gtk::Application) {
-    use crate::settings::{keys, Settings};
+    use crate::settings::{Settings, keys};
 
     let custom_str = Settings::for_audio().get_string(keys::CUSTOM_KEYBINDINGS);
 
@@ -225,9 +225,11 @@ mod tests {
         assert_eq!(config.app_icon, crate::config::audio::APP_ID);
         assert!(config.comments.contains("MusicBrainz"));
         assert_eq!(AUDIO_ABOUT_CREDIT_SECTION_HEADING, "Data Sources");
-        assert!(AUDIO_ABOUT_CREDIT_LINES
-            .iter()
-            .any(|source| source.contains("Radio Browser")));
+        assert!(
+            AUDIO_ABOUT_CREDIT_LINES
+                .iter()
+                .any(|source| source.contains("Radio Browser"))
+        );
     }
 
     #[test]

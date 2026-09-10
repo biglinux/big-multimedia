@@ -1,0 +1,20 @@
+[profile]
+name = "High Quality"
+description = "Best visual quality, larger files"
+category = "general"
+
+[video]
+codec = "h265"
+quality = "high"
+preset = "slow"
+
+[audio]
+handling = "encode"
+codec = "flac"
+channels = "auto"
+
+[subtitles]
+handling = "embedded"
+
+[output]
+container = "mkv"

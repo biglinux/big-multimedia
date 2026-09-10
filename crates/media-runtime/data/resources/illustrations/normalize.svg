@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="120" height="80" viewBox="0 0 120 80">
+  <!-- Before: loud and quiet waves -->
+  <g transform="translate(5,8)">
+    <path d="M5,35 Q15,10 25,35 Q35,60 45,35" fill="none" stroke="#bbb" stroke-width="2.5"/>
+    <text x="25" y="72" font-family="sans-serif" font-size="8" fill="#999" text-anchor="middle">loud</text>
+  </g>
+  <!-- Arrow -->
+  <path d="M56,40 L66,40" stroke="#3584e4" stroke-width="2" fill="none" marker-end="url(#narr)"/>
+  <defs><marker id="narr" viewBox="0 0 6 6" refX="5" refY="3" markerWidth="6" markerHeight="6" orient="auto"><path d="M0,0 L6,3 L0,6 Z" fill="#3584e4"/></marker></defs>
+  <!-- After: balanced wave -->
+  <g transform="translate(70,8)">
+    <path d="M5,35 Q15,18 25,35 Q35,52 45,35" fill="none" stroke="#3584e4" stroke-width="2.5"/>
+    <line x1="0" y1="20" x2="50" y2="20" stroke="#3584e4" stroke-width="0.8" stroke-dasharray="3,3" opacity="0.5"/>
+    <line x1="0" y1="50" x2="50" y2="50" stroke="#3584e4" stroke-width="0.8" stroke-dasharray="3,3" opacity="0.5"/>
+  </g>
+</svg>

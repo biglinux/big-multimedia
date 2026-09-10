@@ -9,10 +9,10 @@ use adw::prelude::*;
 use gtk::glib;
 use relm4::{ComponentController, ComponentSender};
 
-use big_converter_ui::export::{build_single_export_queue, QuickExportChoice};
 use big_media_components::time::playback_time;
 use big_media_runtime::converter::ffmpeg::progress::FfmpegProgressSnapshot;
 use big_media_runtime::converter::queue::{QueueMessage, SegmentOutputMode};
+use big_quick_export::export::{QuickExportChoice, build_single_export_queue};
 use big_relm4_components::input::dropdown_row::{BigDropdownRow, BigDropdownRowSpec};
 use big_relm4_components::input::inline_spin_set::{BigInlineSpinFieldSpec, BigInlineSpinSet};
 use big_relm4_components::input::preference_cards::BigSpinRange;
@@ -122,7 +122,7 @@ impl VideoShell {
         if let Some((idx, &(_, end))) = ranges
             .iter()
             .enumerate()
-            .find(|(_, &(s, e))| pos >= s - EPS && pos <= e + EPS)
+            .find(|&(_, &(s, e))| pos >= s - EPS && pos <= e + EPS)
         {
             if pos >= end - EPS {
                 let next = ranges.get(idx + 1).map_or(first_start, |&(s, _)| s);
@@ -176,13 +176,11 @@ impl VideoShell {
             }
             VideoTrimBarOutput::PlaySelection(on) => {
                 self.trim_play_selection.set(on);
-                if on {
-                    if let Some(mpv) = self.mpv.borrow().as_ref() {
-                        if let Some((start, _)) = self.trim_ranges.borrow().first().copied() {
-                            mpv.seek_absolute(start);
-                        }
-                        mpv.play();
+                if on && let Some(mpv) = self.mpv.borrow().as_ref() {
+                    if let Some((start, _)) = self.trim_ranges.borrow().first().copied() {
+                        mpv.seek_absolute(start);
                     }
+                    mpv.play();
                 }
             }
             VideoTrimBarOutput::EditSegment { id, start, end } => {

@@ -20,6 +20,7 @@ use crate::db::models::Track;
 use crate::i18n::i18n;
 
 use super::library_panel::{LibraryPanel, LibraryPanelOutput};
+use big_media_runtime::i18n::gettext_noop;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 struct AddToPlaylistDialogSpec {
@@ -52,30 +53,30 @@ struct NewPlaylistDialogSpec {
 
 fn add_to_playlist_dialog_spec() -> AddToPlaylistDialogSpec {
     AddToPlaylistDialogSpec {
-        title: "Add to Playlist",
+        title: gettext_noop("Add to Playlist"),
         content_width: 420,
         content_height: 360,
         page_width: 420,
         page_height: 320,
         content_spacing: 12,
-        list_accessible_label: "Playlists",
-        empty_label: "No playlists yet",
-        close_label: "Close",
-        new_playlist_label: "New Playlist",
+        list_accessible_label: gettext_noop("Playlists"),
+        empty_label: gettext_noop("No playlists yet"),
+        close_label: gettext_noop("Close"),
+        new_playlist_label: gettext_noop("New Playlist"),
         row_prefix_icon_name: "playlist-symbolic",
-        row_action_label: "Add to playlist",
+        row_action_label: gettext_noop("Add to playlist"),
     }
 }
 
 fn new_playlist_dialog_spec() -> NewPlaylistDialogSpec {
     NewPlaylistDialogSpec {
-        title: "New Playlist",
+        title: gettext_noop("New Playlist"),
         content_width: 420,
         content_height: 220,
         content_spacing: 12,
-        entry_title: "Playlist name",
-        cancel_label: "Cancel",
-        create_label: "Create",
+        entry_title: gettext_noop("Playlist name"),
+        cancel_label: gettext_noop("Cancel"),
+        create_label: gettext_noop("Create"),
         focus_select_start: 0,
         focus_select_end: -1,
     }

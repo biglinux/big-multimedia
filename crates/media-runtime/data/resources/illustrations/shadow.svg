@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="120" height="80" viewBox="0 0 120 80">
+  <!-- Shadow effect: text/icon with drop shadow -->
+  <!-- Shadow (offset) -->
+  <text x="42" y="40" font-family="sans-serif" font-size="28" font-weight="bold" fill="#000" opacity="0.3">A</text>
+  <!-- Foreground text -->
+  <text x="40" y="38" font-family="sans-serif" font-size="28" font-weight="bold" fill="#3584e4">A</text>
+  <!-- Play icon with shadow -->
+  <polygon points="72,22 72,48 92,35" fill="#000" opacity="0.3" transform="translate(2,2)"/>
+  <polygon points="72,22 72,48 92,35" fill="#f5c211"/>
+  <!-- Glow ring around icon -->
+  <circle cx="80" cy="55" r="8" fill="none" stroke="#3584e4" stroke-width="1" opacity="0.2"/>
+  <circle cx="80" cy="55" r="12" fill="none" stroke="#3584e4" stroke-width="0.5" opacity="0.1"/>
+  <!-- Label -->
+  <rect x="24" y="56" width="36" height="4" rx="2" fill="#3584e4" opacity="0.15"/>
+  <rect x="24" y="64" width="28" height="3" rx="1.5" fill="#3584e4" opacity="0.1"/>
+</svg>

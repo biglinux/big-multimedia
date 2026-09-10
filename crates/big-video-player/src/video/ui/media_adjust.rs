@@ -34,6 +34,7 @@ use big_relm4_components::layout::preferences::BigPreferencesGroupSpec;
 use crate::config::video::RESOURCE_PREFIX;
 use crate::i18n::i18n;
 use crate::player::mpv_backend::MpvBackend;
+use big_media_runtime::i18n::gettext_noop;
 
 /// Debounce window for live slider→mpv updates (matches the old 200 ms).
 const SLIDER_DEBOUNCE: Duration = Duration::from_millis(200);
@@ -173,14 +174,14 @@ fn build_delay_content(mpv: &Arc<MpvBackend>) -> gtk::Widget {
     let rows = [
         DelaySliderSpec {
             illustration: "sub_delay.svg",
-            title: "Subtitle Delay",
-            subtitle: "Shift subtitles forward or backward in time",
+            title: gettext_noop("Subtitle Delay"),
+            subtitle: gettext_noop("Shift subtitles forward or backward in time"),
             apply: |mpv, value| mpv.set_sub_delay(value),
         },
         DelaySliderSpec {
             illustration: "audio_delay.svg",
-            title: "Audio Delay",
-            subtitle: "Shift audio forward or backward in time",
+            title: gettext_noop("Audio Delay"),
+            subtitle: gettext_noop("Shift audio forward or backward in time"),
             apply: |mpv, value| mpv.set_audio_delay(value),
         },
     ];
@@ -505,8 +506,8 @@ fn build_image_content(
     let image_rows = [
         ImageSliderSpec {
             illustration: "contrast.svg",
-            title: "Contrast",
-            subtitle: "Difference between dark and light areas",
+            title: gettext_noop("Contrast"),
+            subtitle: gettext_noop("Difference between dark and light areas"),
             lower: -100.0,
             upper: 100.0,
             default: 0.0,
@@ -517,8 +518,8 @@ fn build_image_content(
         },
         ImageSliderSpec {
             illustration: "brightness.svg",
-            title: "Brightness",
-            subtitle: "Overall lightness of the image",
+            title: gettext_noop("Brightness"),
+            subtitle: gettext_noop("Overall lightness of the image"),
             lower: -100.0,
             upper: 100.0,
             default: 0.0,
@@ -529,8 +530,10 @@ fn build_image_content(
         },
         ImageSliderSpec {
             illustration: "gamma.svg",
-            title: "Gamma",
-            subtitle: "Midtone brightness — adjusts without clipping highlights or shadows",
+            title: gettext_noop("Gamma"),
+            subtitle: gettext_noop(
+                "Midtone brightness — adjusts without clipping highlights or shadows",
+            ),
             lower: -100.0,
             upper: 100.0,
             default: 0.0,
@@ -541,8 +544,8 @@ fn build_image_content(
         },
         ImageSliderSpec {
             illustration: "saturation.svg",
-            title: "Saturation",
-            subtitle: "Color intensity — 0 = grayscale",
+            title: gettext_noop("Saturation"),
+            subtitle: gettext_noop("Color intensity — 0 = grayscale"),
             lower: -100.0,
             upper: 100.0,
             default: 0.0,
@@ -553,8 +556,8 @@ fn build_image_content(
         },
         ImageSliderSpec {
             illustration: "hue.svg",
-            title: "Hue",
-            subtitle: "Shift all colors around the color wheel",
+            title: gettext_noop("Hue"),
+            subtitle: gettext_noop("Shift all colors around the color wheel"),
             lower: -100.0,
             upper: 100.0,
             default: 0.0,
@@ -575,8 +578,8 @@ fn build_image_content(
     let zoom_rows = [
         ImageSliderSpec {
             illustration: "zoom.svg",
-            title: "Zoom",
-            subtitle: "Magnify the picture — 0 = fit window, 2 = double size",
+            title: gettext_noop("Zoom"),
+            subtitle: gettext_noop("Magnify the picture — 0 = fit window, 2 = double size"),
             lower: 0.0,
             upper: 2.0,
             default: 0.0,
@@ -587,8 +590,10 @@ fn build_image_content(
         },
         ImageSliderSpec {
             illustration: "panscan.svg",
-            title: "Pan & Scan",
-            subtitle: "Crop edges to fill the window — useful for removing black bars",
+            title: gettext_noop("Pan & Scan"),
+            subtitle: gettext_noop(
+                "Crop edges to fill the window — useful for removing black bars",
+            ),
             lower: 0.0,
             upper: 1.0,
             default: 0.0,
@@ -671,7 +676,7 @@ pub(super) fn present_equalizer_dialog(
 
 #[cfg(test)]
 mod tests {
-    use super::{clamp_initial, crop_filter_from_margins, normalize_rotation, CropMargins};
+    use super::{CropMargins, clamp_initial, crop_filter_from_margins, normalize_rotation};
 
     #[test]
     fn in_range_value_passes_through() {

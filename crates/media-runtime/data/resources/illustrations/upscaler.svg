@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 80">
+  <!-- GPU Upscaling: small frame → big frame with GPU arrow -->
+  <!-- Small frame -->
+  <rect x="10" y="30" width="28" height="20" rx="3" fill="#3584e4" opacity="0.15" stroke="#3584e4" stroke-width="1.5"/>
+  <text x="24" y="43" font-size="8" text-anchor="middle" fill="#3584e4" font-family="sans-serif">SD</text>
+  <!-- Upscale arrow with GPU chip -->
+  <path d="M42,40 L56,40" stroke="#3584e4" stroke-width="1.5" fill="none"/>
+  <polygon points="56,36 64,40 56,44" fill="#f5c211"/>
+  <!-- Big frame -->
+  <rect x="68" y="18" width="44" height="44" rx="4" fill="#3584e4" opacity="0.10" stroke="#3584e4" stroke-width="1.8"/>
+  <text x="90" y="43" font-size="9" text-anchor="middle" fill="#3584e4" font-family="sans-serif" font-weight="bold">HD</text>
+  <!-- Quality sparkles -->
+  <circle cx="76" cy="26" r="2" fill="#f5c211" opacity="0.7"/>
+  <circle cx="104" cy="54" r="1.5" fill="#f5c211" opacity="0.6"/>
+  <circle cx="104" cy="26" r="1.8" fill="#f5c211" opacity="0.5"/>
+</svg>

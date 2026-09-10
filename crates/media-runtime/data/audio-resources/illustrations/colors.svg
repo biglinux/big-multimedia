@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="120" height="80" viewBox="0 0 120 80">
+  <!-- Color palette -->
+  <circle cx="40" cy="35" r="20" fill="#3584e4" opacity="0.7"/>
+  <circle cx="55" cy="25" r="16" fill="#e5a50a" opacity="0.6"/>
+  <circle cx="65" cy="42" r="18" fill="#e66100" opacity="0.5"/>
+  <circle cx="50" cy="50" r="14" fill="#c061cb" opacity="0.6"/>
+  <!-- Eyedropper tool -->
+  <g transform="translate(85,15) rotate(45)">
+    <rect x="-3" y="0" width="6" height="25" rx="2" fill="#666"/>
+    <polygon points="-3,25 3,25 0,32" fill="#666"/>
+    <rect x="-3" y="-5" width="6" height="8" rx="2" fill="#999"/>
+  </g>
+</svg>

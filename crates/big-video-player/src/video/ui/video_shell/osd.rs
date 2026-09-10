@@ -19,6 +19,9 @@ pub(super) struct OsdState {
     /// (scrub / play-pause) stays reachable while marking cuts. Shared (`Rc`)
     /// with the shell model and the trim key controller (one source of truth).
     pub(super) trim_active: Rc<Cell<bool>>,
+    /// Header/controls menu popovers, so [`Self::hide_on_focus_out`] can tell a
+    /// real alt-tab from the pseudo focus-out a menu's own grab triggers.
+    menu_popovers: Vec<gtk::Popover>,
 }
 
 impl OsdState {
@@ -36,7 +39,11 @@ impl OsdState {
         immersion.set_hide_cursor_when_idle(true);
         immersion.register_revealer(header_revealer);
         immersion.register_revealer(controls_revealer);
-        for popover in header_popovers.iter().chain(controls_popovers.iter()) {
+        let menu_popovers: Vec<gtk::Popover> = header_popovers
+            .into_iter()
+            .chain(controls_popovers)
+            .collect();
+        for popover in &menu_popovers {
             immersion.register_popover_hide_guard(popover);
         }
 
@@ -47,6 +54,7 @@ impl OsdState {
             is_paused: Cell::new(false),
             is_welcome_visible: Cell::new(is_welcome_visible),
             trim_active,
+            menu_popovers,
         });
         let state_weak = Rc::downgrade(&state);
         state.immersion.register_hide_guard(move || {
@@ -62,11 +70,27 @@ impl OsdState {
         self.immersion.show_now();
     }
 
-    /// Hide the header + controls and the cursor — unless a guard says otherwise
-    /// (welcome up, paused, or a header menu popover open). Mirrors the old
-    /// `hide_controls` bail-outs.
-    pub(super) fn hide(&self) {
-        self.immersion.hide_now();
+    /// Collapse the OSD when the window loses focus (alt-tab away). Bypasses the
+    /// paused guard — a paused video should still lose its overlay on focus-out,
+    /// like other players — but keeps the welcome screen and trim controls up.
+    pub(super) fn hide_on_focus_out(&self) {
+        // Opening a header menu (hamburger / open) grabs input, which the window
+        // reports as a focus-out. Don't tear down the OSD then — that would also
+        // hide the menu itself (a child of the header revealer). A real alt-tab
+        // happens with every menu closed, so this only skips the false positive.
+        let any_menu_open = self
+            .menu_popovers
+            .iter()
+            .any(gtk::prelude::WidgetExt::is_visible);
+        if !focus_out_should_hide(
+            self.is_welcome_visible.get(),
+            self.trim_active.get(),
+            any_menu_open,
+        ) {
+            return;
+        }
+        self.header_revealer.set_reveal_child(false);
+        self.controls_revealer.set_reveal_child(false);
     }
 
     /// Reveal the OSD now and (re)arm the auto-hide timer. Never arms the timer
@@ -76,8 +100,25 @@ impl OsdState {
     }
 
     fn should_keep_visible(&self) -> bool {
-        self.is_welcome_visible.get() || self.is_paused.get() || self.trim_active.get()
+        should_keep_osd_visible(
+            self.is_welcome_visible.get(),
+            self.is_paused.get(),
+            self.trim_active.get(),
+        )
     }
+}
+
+/// Pure: on a window focus-out, collapse the OSD only when nothing pins it — no
+/// welcome screen, not in trim mode, and no header menu open (a menu grab reads
+/// as a focus-out, and tearing down then would hide the just-opened menu too).
+fn focus_out_should_hide(welcome: bool, trim: bool, any_menu_open: bool) -> bool {
+    !welcome && !trim && !any_menu_open
+}
+
+/// Pure: keep the OSD shown while the welcome screen is up, playback is paused,
+/// or trim mode is active (the idle-hide timer is never armed while true).
+fn should_keep_osd_visible(welcome: bool, paused: bool, trim: bool) -> bool {
+    welcome || paused || trim
 }
 
 /// Static idle background behind the welcome screen (no video loaded). The gl
@@ -158,10 +199,10 @@ impl IdleBackground {
 
 impl Drop for IdleBackground {
     fn drop(&mut self) {
-        if let Some(provider) = self.provider.borrow_mut().take() {
-            if let Some(display) = gtk::gdk::Display::default() {
-                gtk::style_context_remove_provider_for_display(&display, &provider);
-            }
+        if let Some(provider) = self.provider.borrow_mut().take()
+            && let Some(display) = gtk::gdk::Display::default()
+        {
+            gtk::style_context_remove_provider_for_display(&display, &provider);
         }
     }
 }
@@ -223,12 +264,11 @@ pub(super) struct AspectSnap {
 impl AspectSnap {
     /// Refresh the cached aspect from the loaded video's pixel dimensions.
     fn update_aspect_from_mpv(&self) {
-        if let Some(mpv) = self.mpv.borrow().as_ref() {
-            if let Some((w, h)) = mpv.get_video_dimensions() {
-                if h > 0 {
-                    self.aspect.set(w as f64 / h as f64);
-                }
-            }
+        if let Some(mpv) = self.mpv.borrow().as_ref()
+            && let Some((w, h)) = mpv.get_video_dimensions()
+            && h > 0
+        {
+            self.aspect.set(w as f64 / h as f64);
         }
     }
 
@@ -263,11 +303,11 @@ impl AspectSnap {
         if !self.should_snap() || self.aspect.get() <= 0.0 {
             return;
         }
-        let gen = self.resize_gen.get().wrapping_add(1);
-        self.resize_gen.set(gen);
+        let r#gen = self.resize_gen.get().wrapping_add(1);
+        self.resize_gen.set(r#gen);
         let this = self.clone();
         glib::timeout_add_local_once(Duration::from_millis(300), move || {
-            if this.resize_gen.get() == gen {
+            if this.resize_gen.get() == r#gen {
                 this.snap();
             }
         });
@@ -322,7 +362,26 @@ fn aspect_snap_target(w: i32, h: i32, aspect: f64) -> Option<(i32, i32)> {
 
 #[cfg(test)]
 mod tests {
-    use super::aspect_snap_target;
+    use super::{aspect_snap_target, focus_out_should_hide, should_keep_osd_visible};
+
+    #[test]
+    fn focus_out_hides_only_when_unpinned() {
+        assert!(focus_out_should_hide(false, false, false));
+        assert!(!focus_out_should_hide(true, false, false), "welcome pins");
+        assert!(!focus_out_should_hide(false, true, false), "trim pins");
+        assert!(
+            !focus_out_should_hide(false, false, true),
+            "open menu pins (grab reads as focus-out)"
+        );
+    }
+
+    #[test]
+    fn osd_kept_visible_only_when_welcome_paused_or_trim() {
+        assert!(!should_keep_osd_visible(false, false, false));
+        assert!(should_keep_osd_visible(true, false, false));
+        assert!(should_keep_osd_visible(false, true, false));
+        assert!(should_keep_osd_visible(false, false, true));
+    }
 
     #[test]
     fn no_target_for_invalid_inputs() {

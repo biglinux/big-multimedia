@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="120" height="80" viewBox="0 0 120 80">
+  <!-- Video frame -->
+  <rect x="15" y="8" width="90" height="50" rx="4" fill="none" stroke="#999" stroke-width="1.5"/>
+  <rect x="19" y="12" width="82" height="42" rx="2" fill="#999" opacity="0.05"/>
+  <!-- Subtitle bar at bottom of frame -->
+  <rect x="30" y="42" width="60" height="10" rx="2" fill="#3584e4" opacity="0.15"/>
+  <text x="60" y="50" font-family="sans-serif" font-size="7" fill="white" text-anchor="middle">Hello, world!</text>
+  <!-- Position arrows -->
+  <path d="M60,60 L60,70" stroke="#3584e4" stroke-width="1.5"/>
+  <path d="M56,67 L60,72 L64,67" fill="#3584e4"/>
+  <!-- Margin indicator -->
+  <line x1="25" y1="42" x2="25" y2="56" stroke="#f5c211" stroke-width="1" stroke-dasharray="2,2"/>
+  <text x="12" y="50" font-family="sans-serif" font-size="6" fill="#f5c211">↕</text>
+</svg>

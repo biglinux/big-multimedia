@@ -354,13 +354,12 @@ fn gather_selected_tracks(
     let mut selected = Vec::with_capacity(bitset.size() as usize);
     for i in 0..bitset.size() {
         let vpos = bitset.nth(i as u32);
-        if let Some(idx) = resolve_queue_index(sort_model, store, vpos) {
-            if let Some(obj) = store
+        if let Some(idx) = resolve_queue_index(sort_model, store, vpos)
+            && let Some(obj) = store
                 .item(idx as u32)
                 .and_downcast::<glib::BoxedAnyObject>()
-            {
-                selected.push((idx, obj.borrow::<Track>().clone()));
-            }
+        {
+            selected.push((idx, obj.borrow::<Track>().clone()));
         }
     }
     selected
@@ -390,11 +389,11 @@ pub(super) fn wire_right_click_menu(
         };
         // Right-click on an unselected row replaces the selection so the menu
         // acts on what the user pointed at.
-        if let Some(pos) = find_clicked_position(&widget, x, y) {
-            if !sel.selection().contains(pos) {
-                sel.unselect_all();
-                sel.select_item(pos, false);
-            }
+        if let Some(pos) = find_clicked_position(&widget, x, y)
+            && !sel.selection().contains(pos)
+        {
+            sel.unselect_all();
+            sel.select_item(pos, false);
         }
         let selected = gather_selected_tracks(&sm, &st, &sel.selection());
         if selected.is_empty() {

@@ -80,12 +80,12 @@ pub(super) fn is_available() -> bool {
 /// command-line flags by the converter binary.
 pub(super) fn launch(paths: &[String]) {
     let [primary_subprocess, fallback_subprocess] = converter_launch_subprocesses(paths);
-    if let Err(primary_err) = primary_subprocess.spawn_detached() {
-        if let Err(fallback_err) = fallback_subprocess.spawn_detached() {
-            log::warn!(
-                "failed to launch audio converter (primary: {primary_err}; fallback: {fallback_err})"
-            );
-        }
+    if let Err(primary_err) = primary_subprocess.spawn_detached()
+        && let Err(fallback_err) = fallback_subprocess.spawn_detached()
+    {
+        log::warn!(
+            "failed to launch audio converter (primary: {primary_err}; fallback: {fallback_err})"
+        );
     }
 }
 

@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="120" height="80" viewBox="0 0 120 80">
+  <!-- Clock circle -->
+  <circle cx="60" cy="38" r="24" fill="none" stroke="#3584e4" stroke-width="2"/>
+  <!-- Clock face ticks -->
+  <line x1="60" y1="16" x2="60" y2="20" stroke="#3584e4" stroke-width="1.5"/>
+  <line x1="60" y1="56" x2="60" y2="60" stroke="#3584e4" stroke-width="1.5"/>
+  <line x1="38" y1="38" x2="42" y2="38" stroke="#3584e4" stroke-width="1.5"/>
+  <line x1="78" y1="38" x2="82" y2="38" stroke="#3584e4" stroke-width="1.5"/>
+  <!-- Hour hand -->
+  <line x1="60" y1="38" x2="60" y2="24" stroke="#3584e4" stroke-width="2.5" stroke-linecap="round"/>
+  <!-- Minute hand -->
+  <line x1="60" y1="38" x2="72" y2="30" stroke="#3584e4" stroke-width="2" stroke-linecap="round"/>
+  <!-- Center dot -->
+  <circle cx="60" cy="38" r="2.5" fill="#3584e4"/>
+  <!-- Seconds arc -->
+  <path d="M60,16 A22,22 0 0,1 80,28" fill="none" stroke="#f5c211" stroke-width="2" stroke-linecap="round"/>
+  <!-- Label -->
+  <text x="60" y="72" font-family="sans-serif" font-size="7" fill="#3584e4" text-anchor="middle">buffer</text>
+</svg>

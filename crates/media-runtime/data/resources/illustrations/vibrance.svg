@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 80">
+  <!-- Vibrance: color saturation boost -->
+  <!-- Muted circle (before) -->
+  <circle cx="35" cy="40" r="20" fill="#3584e4" opacity="0.08" stroke="#3584e4" stroke-width="1"/>
+  <circle cx="35" cy="40" r="12" fill="#3584e4" opacity="0.12"/>
+  <circle cx="35" cy="40" r="5" fill="#3584e4" opacity="0.2"/>
+  <!-- Arrow -->
+  <path d="M58,40 L66,40" stroke="#3584e4" stroke-width="1.5" fill="none"/>
+  <polygon points="66,36 74,40 66,44" fill="#f5c211" opacity="0.6"/>
+  <!-- Vibrant circle (after) -->
+  <circle cx="90" cy="40" r="20" fill="#f5c211" opacity="0.08" stroke="#f5c211" stroke-width="1"/>
+  <circle cx="90" cy="40" r="14" fill="#3584e4" opacity="0.15" stroke="#3584e4" stroke-width="1"/>
+  <circle cx="90" cy="40" r="8" fill="#3584e4" opacity="0.35"/>
+  <circle cx="90" cy="40" r="3" fill="#f5c211" opacity="0.7"/>
+</svg>

@@ -172,8 +172,8 @@ fn clicked_position_from_ancestor_chain<T>(
 #[cfg(test)]
 mod tests {
     use super::{
-        clicked_position_from_ancestor_chain, drop_position_from_metrics, effective_row_height,
-        reorder_drop_position_from_metrics, FALLBACK_ROW_HEIGHT,
+        FALLBACK_ROW_HEIGHT, clicked_position_from_ancestor_chain, drop_position_from_metrics,
+        effective_row_height, reorder_drop_position_from_metrics,
     };
 
     #[test]

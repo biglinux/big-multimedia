@@ -9,11 +9,11 @@ use crate::i18n::i18n;
 use crate::player::mpv_backend::MpvBackend;
 use crate::settings::Settings;
 
+use super::AdvancedWidgets;
 use super::subtitles_groups::{
     build_colors_outline_group, build_font_group, build_language_loading_group,
     build_position_rendering_group, build_special_formats_group,
 };
-use super::AdvancedWidgets;
 
 pub(super) fn create_subtitle_page(
     settings: &Settings,

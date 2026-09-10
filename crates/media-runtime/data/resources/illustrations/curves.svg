@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 80">
+  <!-- Color curves: S-curve on RGB channels -->
+  <rect x="15" y="10" width="90" height="60" rx="5" fill="#3584e4" opacity="0.05" stroke="#3584e4" stroke-width="1"/>
+  <!-- Grid lines -->
+  <line x1="20" y1="64" x2="100" y2="64" stroke="#3584e4" stroke-width="0.5" opacity="0.3"/>
+  <line x1="20" y1="40" x2="100" y2="40" stroke="#3584e4" stroke-width="0.5" opacity="0.2" stroke-dasharray="2,2"/>
+  <line x1="20" y1="16" x2="100" y2="16" stroke="#3584e4" stroke-width="0.5" opacity="0.3"/>
+  <line x1="20" y1="16" x2="20" y2="64" stroke="#3584e4" stroke-width="0.5" opacity="0.3"/>
+  <line x1="60" y1="16" x2="60" y2="64" stroke="#3584e4" stroke-width="0.5" opacity="0.2" stroke-dasharray="2,2"/>
+  <line x1="100" y1="16" x2="100" y2="64" stroke="#3584e4" stroke-width="0.5" opacity="0.3"/>
+  <!-- Diagonal reference -->
+  <line x1="20" y1="64" x2="100" y2="16" stroke="#3584e4" stroke-width="1" opacity="0.15"/>
+  <!-- S-curve (the "grading" curve) -->
+  <path d="M20,62 C35,62 40,56 50,42 C60,28 65,18 100,18" fill="none" stroke="#3584e4" stroke-width="2.5"/>
+  <!-- Control points -->
+  <circle cx="42" cy="52" r="3" fill="#f5c211" stroke="#f5c211" stroke-width="1"/>
+  <circle cx="78" cy="24" r="3" fill="#f5c211" stroke="#f5c211" stroke-width="1"/>
+</svg>

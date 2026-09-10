@@ -1,0 +1,32 @@
+[profile]
+name = "Audio Cleanup"
+description = "Extract and clean audio — noise reduction + normalization"
+category = "audio"
+
+[video]
+codec = "copy"
+
+[audio]
+handling = "encode"
+codec = "opus"
+bitrate = "128k"
+channels = "mono"
+
+[audio.noise_reduction]
+enabled = true
+strength = 0.7
+voice_recovery = 0.5
+model = 0
+
+[audio.effects]
+normalize = true
+hpf_enabled = true
+hpf_frequency = 80
+gate_enabled = true
+compressor_enabled = true
+
+[subtitles]
+handling = "none"
+
+[output]
+container = "ogg"

@@ -28,7 +28,7 @@ pub enum AudioShellInput {
     /// result from a track the user already skipped past.
     LyricsResolved {
         /// Track generation this fetch was started for.
-        gen: u64,
+        r#gen: u64,
         /// Plain-text lyrics, or `None` if not found.
         text: Option<String>,
     },
@@ -155,7 +155,7 @@ pub enum AudioShellInput {
     /// result → MPRIS metadata + blur bg.
     ArtResolved {
         /// Track generation this fetch was started for.
-        gen: u64,
+        r#gen: u64,
         /// Raw art bytes, or `None`.
         data: Option<Vec<u8>>,
     },
@@ -163,7 +163,7 @@ pub enum AudioShellInput {
     /// against a stale result → store `artUrl` + emit MPRIS metadata.
     MprisArtSaved {
         /// Track generation the cache write was started for.
-        gen: u64,
+        r#gen: u64,
         /// `file://` URL of the cached art, or `None` if the write failed.
         url: Option<String>,
     },

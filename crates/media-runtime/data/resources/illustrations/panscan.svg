@@ -1,0 +1,18 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 80">
+  <!-- Pan & Scan: frame with inner frame showing crop effect -->
+  <!-- Outer frame (original) -->
+  <rect x="20" y="16" width="80" height="48" rx="3" fill="none" stroke="#3584e4" stroke-width="1.5" stroke-dasharray="4,2" opacity="0.3"/>
+  <!-- Black bars on sides -->
+  <rect x="20" y="16" width="14" height="48" rx="0" fill="#3584e4" opacity="0.1"/>
+  <rect x="86" y="16" width="14" height="48" rx="0" fill="#3584e4" opacity="0.1"/>
+  <!-- Inner frame (cropped/panned view) -->
+  <rect x="34" y="16" width="52" height="48" rx="2" fill="none" stroke="#f5c211" stroke-width="2"/>
+  <!-- Arrows pointing outward from inner frame -->
+  <line x1="34" y1="40" x2="24" y2="40" stroke="#f5c211" stroke-width="1.5" opacity="0.6" marker-end="url(#arrowP)"/>
+  <line x1="86" y1="40" x2="96" y2="40" stroke="#f5c211" stroke-width="1.5" opacity="0.6" marker-end="url(#arrowP)"/>
+  <defs>
+    <marker id="arrowP" markerWidth="5" markerHeight="5" refX="4" refY="2.5" orient="auto">
+      <path d="M0,0 L5,2.5 L0,5" fill="#f5c211" opacity="0.6"/>
+    </marker>
+  </defs>
+</svg>

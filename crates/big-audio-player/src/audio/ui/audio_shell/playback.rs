@@ -25,10 +25,10 @@ impl AudioShell {
                 }
             }
             AudioPlaybackBarOutput::SeekChanged(pct) => {
-                if self.duration_secs > 0.0 {
-                    if let Some(mpv) = &self.mpv {
-                        mpv.seek_absolute(pct / 100.0 * self.duration_secs);
-                    }
+                if self.duration_secs > 0.0
+                    && let Some(mpv) = &self.mpv
+                {
+                    mpv.seek_absolute(pct / 100.0 * self.duration_secs);
                 }
             }
             AudioPlaybackBarOutput::SegmentEdgeAdjusted { id, start, end } => {
@@ -134,7 +134,7 @@ impl AudioShell {
         };
         self.lyrics
             .emit(LyricsPanelInput::SetState(LyricsState::Loading));
-        let gen = self.now_playing_gen;
+        let r#gen = self.now_playing_gen;
         let input = sender.input_sender().clone();
         glib::spawn_future_local(async move {
             let text = gio::spawn_blocking(move || {
@@ -143,7 +143,7 @@ impl AudioShell {
             .await
             .ok()
             .flatten();
-            let _ = input.send(AudioShellInput::LyricsResolved { gen, text });
+            let _ = input.send(AudioShellInput::LyricsResolved { r#gen, text });
         });
     }
 }

@@ -1,0 +1,13 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="120" height="80" viewBox="0 0 120 80">
+  <!-- Folder icon -->
+  <path d="M20,18 L44,18 L50,24 L96,24 L96,62 L20,62 Z" fill="#3584e4" opacity="0.1" stroke="#3584e4" stroke-width="1.5"/>
+  <!-- Folder tab -->
+  <path d="M20,18 L20,24 L96,24" fill="none" stroke="#3584e4" stroke-width="1.5"/>
+  <!-- File inside folder -->
+  <rect x="40" y="34" width="28" height="20" rx="2" fill="none" stroke="#3584e4" stroke-width="1" opacity="0.5"/>
+  <line x1="46" y1="40" x2="62" y2="40" stroke="#3584e4" stroke-width="1" opacity="0.3"/>
+  <line x1="46" y1="44" x2="58" y2="44" stroke="#3584e4" stroke-width="1" opacity="0.3"/>
+  <line x1="46" y1="48" x2="60" y2="48" stroke="#3584e4" stroke-width="1" opacity="0.3"/>
+  <!-- Path dots -->
+  <text x="58" y="72" font-family="monospace" font-size="6" fill="#3584e4" text-anchor="middle" opacity="0.6">/path/to/file</text>
+</svg>

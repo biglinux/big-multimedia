@@ -4,6 +4,7 @@
 use crate::i18n::i18n;
 
 use super::PlaylistLibraryDialogOutput;
+use big_media_runtime::i18n::gettext_noop;
 
 #[derive(Debug, PartialEq, Eq)]
 pub(super) struct PlaylistLibraryWindowSpec {
@@ -94,8 +95,8 @@ const GENERATORS: [(&str, &str, &str); 3] = [
 
 pub(super) fn playlist_library_window_spec() -> PlaylistLibraryWindowSpec {
     PlaylistLibraryWindowSpec {
-        title: "Manage Playlists",
-        content_title: "Your Playlists",
+        title: gettext_noop("Manage Playlists"),
+        content_title: gettext_noop("Your Playlists"),
         default_width: 820,
         default_height: 640,
     }
@@ -104,7 +105,7 @@ pub(super) fn playlist_library_window_spec() -> PlaylistLibraryWindowSpec {
 pub(super) fn saved_playlist_list_state(count: usize) -> SavedPlaylistListState {
     if count == 0 {
         SavedPlaylistListState {
-            content_title: "Your Playlists".to_string(),
+            content_title: gettext_noop("Your Playlists").to_string(),
             is_empty: true,
         }
     } else {
@@ -118,8 +119,10 @@ pub(super) fn saved_playlist_list_state(count: usize) -> SavedPlaylistListState 
 pub(super) fn empty_playlist_state_spec() -> EmptyPlaylistStateSpec {
     EmptyPlaylistStateSpec {
         icon_name: "view-list-symbolic",
-        title: "No Saved Playlists",
-        description: "Save the current queue, generate one from your stats, or import a file",
+        title: gettext_noop("No Saved Playlists"),
+        description: gettext_noop(
+            "Save the current queue, generate one from your stats, or import a file",
+        ),
     }
 }
 
@@ -127,17 +130,17 @@ pub(super) fn import_export_action_specs() -> Vec<PlaylistActionSpec> {
     vec![
         PlaylistActionSpec {
             icon_name: "document-import-symbolic",
-            label: "Import File…",
+            label: gettext_noop("Import File…"),
             action_kind: PlaylistActionKind::Import,
         },
         PlaylistActionSpec {
             icon_name: "folder-open-symbolic",
-            label: "Import Folder…",
+            label: gettext_noop("Import Folder…"),
             action_kind: PlaylistActionKind::ImportFolder,
         },
         PlaylistActionSpec {
             icon_name: "document-save-symbolic",
-            label: "Export All…",
+            label: gettext_noop("Export All…"),
             action_kind: PlaylistActionKind::ExportAll,
         },
     ]
@@ -158,7 +161,7 @@ pub(super) fn saved_playlist_row_spec(name: &str, count: i64, secs: f64) -> Save
     SavedPlaylistRowSpec {
         title: name.to_string(),
         subtitle: saved_playlist_subtitle(count, secs),
-        load_label: "Load",
+        load_label: gettext_noop("Load"),
         rename_tooltip: format!("Rename playlist: {name}"),
         export_tooltip: format!("Export playlist: {name}"),
         delete_tooltip: format!("Delete playlist: {name}"),
@@ -185,32 +188,32 @@ pub(super) fn localized_saved_playlist_subtitle(count: i64, secs: f64) -> String
 
 pub(super) fn save_current_queue_prompt_spec() -> NamePromptSpec {
     NamePromptSpec {
-        heading: "Save Current Queue",
+        heading: gettext_noop("Save Current Queue"),
         entry_label: "Playlist name",
-        placeholder: "Name for the new playlist",
+        placeholder: gettext_noop("Name for the new playlist"),
         prefill: String::new(),
         accept_label: "Save",
-        cancel_label: "Cancel",
+        cancel_label: gettext_noop("Cancel"),
     }
 }
 
 pub(super) fn rename_playlist_prompt_spec(current_name: &str) -> NamePromptSpec {
     NamePromptSpec {
-        heading: "Rename Playlist",
+        heading: gettext_noop("Rename Playlist"),
         entry_label: "Playlist name",
-        placeholder: "New name",
+        placeholder: gettext_noop("New name"),
         prefill: current_name.to_string(),
         accept_label: "Save",
-        cancel_label: "Cancel",
+        cancel_label: gettext_noop("Cancel"),
     }
 }
 
 pub(super) fn delete_playlist_prompt_spec(name: &str) -> DeletePromptSpec {
     DeletePromptSpec {
-        heading: "Delete Playlist?",
+        heading: gettext_noop("Delete Playlist?"),
         playlist_name: name.to_string(),
         accept_label: "Delete",
-        cancel_label: "Cancel",
+        cancel_label: gettext_noop("Cancel"),
         accept_css_class: "destructive-action",
     }
 }

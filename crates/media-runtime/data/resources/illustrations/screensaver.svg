@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="120" height="80" viewBox="0 0 120 80">
+  <!-- Monitor -->
+  <rect x="25" y="10" width="70" height="44" rx="4" fill="none" stroke="#3584e4" stroke-width="2"/>
+  <rect x="29" y="14" width="62" height="36" rx="2" fill="#3584e4" opacity="0.06"/>
+  <!-- Monitor stand -->
+  <line x1="60" y1="54" x2="60" y2="60" stroke="#3584e4" stroke-width="2"/>
+  <line x1="46" y1="60" x2="74" y2="60" stroke="#3584e4" stroke-width="2"/>
+  <!-- Moon on screen -->
+  <path d="M54,26 A8,8 0 1,0 54,38 A6,6 0 1,1 54,26" fill="#f5c211" opacity="0.6"/>
+  <!-- Zzz -->
+  <text x="70" y="28" font-family="sans-serif" font-size="8" fill="#999" opacity="0.6">z</text>
+  <text x="76" y="24" font-family="sans-serif" font-size="6" fill="#999" opacity="0.4">z</text>
+  <!-- No-entry slash -->
+  <circle cx="60" cy="32" r="16" fill="none" stroke="#e01b24" stroke-width="1.5" opacity="0.4"/>
+  <line x1="49" y1="23" x2="71" y2="41" stroke="#e01b24" stroke-width="1.5" opacity="0.4"/>
+</svg>

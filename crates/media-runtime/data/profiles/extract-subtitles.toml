@@ -1,0 +1,17 @@
+[profile]
+name = "Extract Subtitles"
+description = "Extract subtitle tracks to SRT files"
+category = "utility"
+
+[video]
+codec = "copy"
+
+[audio]
+handling = "none"
+
+[subtitles]
+handling = "extract"
+extract_only = true
+
+[output]
+container = "srt"

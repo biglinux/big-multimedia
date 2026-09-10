@@ -270,11 +270,11 @@ impl AudioShell {
                     .filter_map(|p| queries::get_track_by_path(conn, p).ok().flatten())
                     .map(|t| t.id)
                     .collect();
-                if !ids.is_empty() {
-                    if let Ok(playlist_id) = queries::create_playlist(conn, &name) {
-                        for id in &ids {
-                            let _ = queries::add_track_to_playlist(conn, playlist_id, *id);
-                        }
+                if !ids.is_empty()
+                    && let Ok(playlist_id) = queries::create_playlist(conn, &name)
+                {
+                    for id in &ids {
+                        let _ = queries::add_track_to_playlist(conn, playlist_id, *id);
                     }
                 }
                 ids.len()

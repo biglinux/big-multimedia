@@ -1,0 +1,33 @@
+[package]
+name = "big-player-ui"
+version = "0.1.0"
+publish = false  # consumed by sibling media-player apps via path dep (see ARCHITECTURE.md §8-10)
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+description = "Reusable Relm4 player-UI panels for BigLinux media players (engine-free: data + components only)"
+repository.workspace = true
+homepage.workspace = true
+authors.workspace = true
+keywords = ["gtk4", "relm4", "media-player", "biglinux", "ui"]
+categories = ["gui", "multimedia"]
+
+[dependencies]
+adw.workspace = true
+gtk.workspace = true
+relm4.workspace = true
+log.workspace = true
+big-relm4-components.workspace = true
+big-media-components.workspace = true
+big-audio-effects.workspace = true
+big-app-kit = { workspace = true, features = ["remote-control"] }
+big-os-kit = { workspace = true, features = ["http-client"] }
+# GTK-free data + parser leaves (now a sibling brc crate).
+big-media-data = { workspace = true, features = ["db", "library", "radio"] }
+# QR code rendering for the smartphone web-remote pairing dialog.
+qrcode = { version = "0.14", default-features = false }
+# Bounded favicon-texture cache (gdk::Texture).
+lru = "0.18"
+# Explore/favicon disk-cache JSON (de)serialization.
+serde_json = "1"
+# XDG cache dir for the favicon disk cache.

@@ -1,0 +1,45 @@
+[default]
+extend-ignore-identifiers-re = [
+    "Adw",
+    "adw",
+    "mpv",
+    "vaapi",
+    "nvenc",
+    "qsv",
+    "m3u",
+    "pls",
+    "cue",
+    "mpris",
+    "pipewire",
+    "i18nd?",
+]
+
+[default.extend-words]
+som = "som"
+# Relm4 framework + big-relm4-components crate (appears in prose/.txt/.md too).
+relm = "relm"
+Relm = "Relm"
+# flate2 compression crate.
+flate = "flate"
+# ffmpeg filtergraph audio-output pad label + audio-track variable.
+aout = "aout"
+atrack = "atrack"
+# GTK: a widget is "unparented" when removed from its parent.
+unparented = "unparented"
+# Niklaus Wirth (the median-selection algorithm in big-media-effects shaders).
+Wirth = "Wirth"
+
+[files]
+extend-exclude = [
+    "target/**",
+    "po/**/*.po",
+    "po/*.pot",
+    "build-locale/**",
+    "*.mo",
+    "*.svg",
+    # Generated lockfile (dependency hashes trip false positives).
+    "Cargo.lock",
+    # Vendored third-party GPU shaders (AMD FidelityFX CAS, NVIDIA NVScaler) —
+    # carry upstream typos we must not diverge from.
+    "data/shaders/**",
+]

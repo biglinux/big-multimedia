@@ -4,7 +4,7 @@ use std::rc::Rc;
 
 use adw::prelude::IsA;
 
-use crate::settings::{keys, Settings};
+use crate::settings::{Settings, keys};
 
 use big_player_ui::appearance::{create_video_colors_page, show_appearance_window};
 

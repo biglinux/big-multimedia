@@ -1,0 +1,26 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="120" height="80" viewBox="0 0 120 80">
+  <!-- Margin: space between element and container edge -->
+  <!-- Outer container -->
+  <rect x="12" y="8" width="96" height="64" rx="4" fill="none" stroke="#3584e4" stroke-width="1" opacity="0.3" stroke-dasharray="3,2"/>
+  <!-- Inner element -->
+  <rect x="30" y="20" width="60" height="40" rx="4" fill="#3584e4" opacity="0.15" stroke="#3584e4" stroke-width="1.5"/>
+  <!-- Margin indicators (double arrows) -->
+  <!-- Bottom margin -->
+  <line x1="60" y1="60" x2="60" y2="72" stroke="#f5c211" stroke-width="1.5"/>
+  <line x1="57" y1="61" x2="60" y2="60" stroke="#f5c211" stroke-width="1.5"/>
+  <line x1="63" y1="61" x2="60" y2="60" stroke="#f5c211" stroke-width="1.5"/>
+  <line x1="57" y1="71" x2="60" y2="72" stroke="#f5c211" stroke-width="1.5"/>
+  <line x1="63" y1="71" x2="60" y2="72" stroke="#f5c211" stroke-width="1.5"/>
+  <!-- Side margin (left) -->
+  <line x1="12" y1="40" x2="30" y2="40" stroke="#f5c211" stroke-width="1.5"/>
+  <line x1="13" y1="37" x2="12" y2="40" stroke="#f5c211" stroke-width="1.5"/>
+  <line x1="13" y1="43" x2="12" y2="40" stroke="#f5c211" stroke-width="1.5"/>
+  <line x1="29" y1="37" x2="30" y2="40" stroke="#f5c211" stroke-width="1.5"/>
+  <line x1="29" y1="43" x2="30" y2="40" stroke="#f5c211" stroke-width="1.5"/>
+  <!-- Side margin (right) -->
+  <line x1="90" y1="40" x2="108" y2="40" stroke="#f5c211" stroke-width="1.5"/>
+  <line x1="91" y1="37" x2="90" y2="40" stroke="#f5c211" stroke-width="1.5"/>
+  <line x1="91" y1="43" x2="90" y2="40" stroke="#f5c211" stroke-width="1.5"/>
+  <line x1="107" y1="37" x2="108" y2="40" stroke="#f5c211" stroke-width="1.5"/>
+  <line x1="107" y1="43" x2="108" y2="40" stroke="#f5c211" stroke-width="1.5"/>
+</svg>

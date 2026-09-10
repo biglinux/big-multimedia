@@ -23,11 +23,11 @@ pub(crate) fn add_key_controller(state: &Rc<BrowserState>, search_entry: &gtk::S
                 glib::Propagation::Stop
             }
             gtk::gdk::Key::Escape => {
-                if let Some(entry) = entry_weak.upgrade() {
-                    if entry.has_focus() || !entry.text().is_empty() {
-                        entry.set_text("");
-                        return glib::Propagation::Stop;
-                    }
+                if let Some(entry) = entry_weak.upgrade()
+                    && (entry.has_focus() || !entry.text().is_empty())
+                {
+                    entry.set_text("");
+                    return glib::Propagation::Stop;
                 }
                 glib::Propagation::Proceed
             }

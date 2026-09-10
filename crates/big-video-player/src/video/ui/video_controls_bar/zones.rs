@@ -7,10 +7,9 @@ use big_media_components::player_chrome::{
     setup_exclusive_hover_popover_group,
 };
 use big_relm4_components::feedback::tooltip;
-use big_relm4_components::input::zone_layout::{slot_key, ZoneLayout, ZonePlacement};
+use big_relm4_components::input::zone_layout::{ZoneLayout, ZonePlacement, slot_key};
 use big_relm4_components::layout::hamburger_menu::{
-    attach_popover_to_button, build_flat_action_popover_button, BigHamburgerMenuSpec,
-    BigMenuActionItem,
+    BigMenuActionItem, attach_popover_to_button, build_flat_action_popover,
 };
 use big_relm4_components::layout::zone_applier::apply_zone_layout;
 
@@ -153,10 +152,23 @@ fn control_name(name: &str) -> &'static str {
 /// exclusive-hover group wiring from the old `setup_hover_popovers`. Returns the
 /// box plus the three hover popovers so the shell's OSD auto-hide can keep the
 /// OSD shown while one is open.
-pub(super) fn build_start_box(
-    settings: &Settings,
-    mpv: &MpvSlot,
-) -> (gtk::Box, gtk::Box, gtk::Box, gtk::Box, Vec<gtk::Popover>) {
+/// START box widgets: the reparentable control boxes, the readout value labels
+/// the responsive breakpoint hides on a narrow bar, and the hover popovers.
+pub(super) struct StartBoxWidgets {
+    pub(super) start_box: gtk::Box,
+    pub(super) volume_box: gtk::Box,
+    pub(super) speed_box: gtk::Box,
+    pub(super) voice_box: gtk::Box,
+    pub(super) hover_popovers: Vec<gtk::Popover>,
+    pub(super) readout_labels: [gtk::Label; 3],
+    /// Volume scale + its button, plus the guard that lets the shell mirror an
+    /// external mixer change onto the scale without pushing it back to the server.
+    pub(super) volume_scale: gtk::Scale,
+    pub(super) volume_button: gtk::Button,
+    pub(super) suppress_volume: std::rc::Rc<std::cell::Cell<bool>>,
+}
+
+pub(super) fn build_start_box(settings: &Settings, mpv: &MpvSlot) -> StartBoxWidgets {
     let start_box = gtk::Box::builder()
         .orientation(gtk::Orientation::Horizontal)
         .spacing(2)
@@ -209,6 +221,10 @@ pub(super) fn build_start_box(
     let initial_volume = settings.get_double(keys::VOLUME) * 100.0;
     let (volume_popover, volume_scale) =
         build_volume_popover(&volume_box, maximum_volume, initial_volume);
+    // Set true while mirroring an external mixer change onto the scale, so the
+    // handler updates only the readout/icon and does not push the value back to
+    // the sound server (or clear mute) — which would fight the external change.
+    let suppress_volume = std::rc::Rc::new(std::cell::Cell::new(false));
     {
         // Capture the button weakly: the scale's handler must not keep the
         // button alive (mutual cycle → leak on close).
@@ -217,6 +233,7 @@ pub(super) fn build_start_box(
         // Weak label too: the popover can outlive teardown ordering — any
         // strong sibling capture here gets pinned with it.
         let volume_label_weak = volume_label.downgrade();
+        let suppress_volume = suppress_volume.clone();
         volume_scale.connect_value_changed(move |scale| {
             let value = scale.value();
             if let Some(volume_label) = volume_label_weak.upgrade() {
@@ -224,6 +241,9 @@ pub(super) fn build_start_box(
             }
             if let Some(volume_button) = volume_button_weak.upgrade() {
                 volume_button.set_icon_name(volume_icon(value));
+            }
+            if suppress_volume.get() {
+                return;
             }
             if let Some(mpv) = mpv.borrow().as_ref() {
                 mpv.set_volume(value);
@@ -313,13 +333,17 @@ pub(super) fn build_start_box(
     // The hover group keeps the popovers alive via the boxes' controllers; the
     // boxes are owned by `start_box`, so the returned handle can drop here.
 
-    (
+    StartBoxWidgets {
         start_box,
         volume_box,
         speed_box,
         voice_box,
-        vec![volume_popover, speed_popover, voice_popover],
-    )
+        hover_popovers: vec![volume_popover, speed_popover, voice_popover],
+        readout_labels: [volume_label, speed_label, voice_label],
+        volume_scale,
+        volume_button,
+        suppress_volume,
+    }
 }
 
 /// CENTER box: previous · play/pause · next.
@@ -363,16 +387,15 @@ pub(super) fn build_end_box() -> EndBoxWidgets {
     // Edit & Export: cut / extract audio / convert — moved out of the hamburger
     // menu to a footer button next to the subtitle control. Items target the same
     // `win.*` window actions, resolved against the player window's action group.
-    let export_menu = build_flat_action_popover_button(
-        &BigHamburgerMenuSpec::new(i18n("Edit & Export"))
-            .icon_name("edit-cut-symbolic")
-            .css_classes(["osd-btn"])
-            .items(export_menu_items()),
-    );
-    let export_menu_root = export_menu.root().clone();
-    let export_menu_button = export_menu.button().clone();
-    let export_menu_popover = export_menu.popover().clone();
-    export_menu_popover.set_position(gtk::PositionType::Top);
+    // Plain button + popover parented to the button, NOT
+    // `build_flat_action_popover_button`: that helper wraps the button in a box
+    // and installs a destroy handler on the wrapper that unparents the popover
+    // when the wrapper drops — which orphaned this popover so it opened at the
+    // window origin (top-left) then crashed.
+    let export_menu_button =
+        tooltip::icon_button("edit-cut-symbolic", &i18n("Edit & Export"), &["osd-btn"]);
+    let export_menu_popover = build_flat_action_popover(&export_menu_button, &export_menu_items());
+    setup_end_menu_popover(&export_menu_button, &export_menu_popover);
 
     let subtitle_menu_button = tooltip::icon_button(
         "media-view-subtitles-symbolic",
@@ -380,8 +403,7 @@ pub(super) fn build_end_box() -> EndBoxWidgets {
         &["osd-btn"],
     );
     let subtitle_menu_popover = gtk::Popover::new();
-    subtitle_menu_popover.set_position(gtk::PositionType::Top);
-    attach_popover_to_button(&subtitle_menu_button, &subtitle_menu_popover);
+    setup_end_menu_popover(&subtitle_menu_button, &subtitle_menu_popover);
 
     let audio_track_menu_button = tooltip::icon_button(
         "audio-x-generic-symbolic",
@@ -389,12 +411,11 @@ pub(super) fn build_end_box() -> EndBoxWidgets {
         &["osd-btn"],
     );
     let audio_track_menu_popover = gtk::Popover::new();
-    audio_track_menu_popover.set_position(gtk::PositionType::Top);
-    attach_popover_to_button(&audio_track_menu_button, &audio_track_menu_popover);
+    setup_end_menu_popover(&audio_track_menu_button, &audio_track_menu_popover);
 
     let fullscreen_button = osd_button("view-fullscreen-symbolic", &i18n("Fullscreen"));
 
-    end_box.append(&export_menu_root);
+    end_box.append(&export_menu_button);
     end_box.append(&subtitle_menu_button);
     end_box.append(&audio_track_menu_button);
     end_box.append(&fullscreen_button);
@@ -408,6 +429,18 @@ pub(super) fn build_end_box() -> EndBoxWidgets {
         audio_track_menu_popover,
         fullscreen_button,
     }
+}
+
+/// Anchor an end-zone menu popover to its button and open it upward, clear of the
+/// bottom bar. `set_autohide(false)` matches the start-zone controls: an autohide
+/// popover takes a Wayland grab that anchors to the window origin (top-left)
+/// instead of the button. The button click toggles it and selecting a row pops it
+/// down; the OSD keeps itself shown while it is open (see
+/// `VideoControlsBar::popovers`).
+fn setup_end_menu_popover(button: &gtk::Button, popover: &gtk::Popover) {
+    popover.set_position(gtk::PositionType::Top);
+    popover.set_autohide(false);
+    attach_popover_to_button(button, popover);
 }
 
 /// The Edit & Export menu (cut · extract audio · convert), targeting the
@@ -450,7 +483,7 @@ fn osd_button(icon_name: &str, label: &str) -> gtk::Button {
 }
 
 /// Volume icon for a 0..max level.
-fn volume_icon(value: f64) -> &'static str {
+pub(super) fn volume_icon(value: f64) -> &'static str {
     if value <= 0.0 {
         "audio-volume-muted-symbolic"
     } else if value < 34.0 {

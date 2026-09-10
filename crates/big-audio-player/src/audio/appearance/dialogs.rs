@@ -4,8 +4,9 @@ use adw::prelude::*;
 use std::rc::Rc;
 
 use crate::i18n::i18n;
-use crate::settings::{keys, Settings};
+use crate::settings::{Settings, keys};
 
+use big_media_runtime::i18n::gettext_noop;
 use big_player_ui::appearance::{create_audio_colors_page, show_appearance_window};
 use big_relm4_components::layout::preferences::BigPreferencesGroupSpec;
 
@@ -39,12 +40,11 @@ fn audio_appearance_window_spec() -> AudioAppearanceWindowSpec {
 
 fn audio_effects_page_spec() -> AudioEffectsPageSpec {
     AudioEffectsPageSpec {
-        title: "Effects",
+        title: gettext_noop("Effects"),
         icon_name: "applications-graphics-symbolic",
         group_title: "Playback Bar",
         album_art_background_title: "Album Art Background",
-        album_art_background_subtitle:
-            "Show the current cover as a blurred background behind the audio controls",
+        album_art_background_subtitle: "Show the current cover as a blurred background behind the audio controls",
         album_art_background_key: keys::AUDIO_ALBUM_ART_BG,
         album_art_background_default: true,
     }

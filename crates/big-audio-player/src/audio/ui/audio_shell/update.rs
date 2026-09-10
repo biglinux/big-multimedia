@@ -20,8 +20,8 @@ impl AudioShell {
                 let pos = lyrics_paned_position(self.lyrics_paned.height(), only_lyrics);
                 self.lyrics_paned.set_position(pos);
             }
-            AudioShellInput::LyricsResolved { gen, text } => {
-                if is_current_generation(gen, self.now_playing_gen) {
+            AudioShellInput::LyricsResolved { r#gen, text } => {
+                if is_current_generation(r#gen, self.now_playing_gen) {
                     if lyrics_text_is_meaningful(text.as_deref()) {
                         self.lyrics
                             .emit(LyricsPanelInput::SetText(text.unwrap_or_default()));
@@ -185,13 +185,13 @@ impl AudioShell {
                 );
             }
             AudioShellInput::MprisCommand(cmd, arg) => self.handle_mpris_command(&cmd, arg),
-            AudioShellInput::ArtResolved { gen, data } => {
-                if is_current_generation(gen, self.now_playing_gen) {
+            AudioShellInput::ArtResolved { r#gen, data } => {
+                if is_current_generation(r#gen, self.now_playing_gen) {
                     self.apply_resolved_art(data, &sender);
                 }
             }
-            AudioShellInput::MprisArtSaved { gen, url } => {
-                if is_current_generation(gen, self.now_playing_gen) {
+            AudioShellInput::MprisArtSaved { r#gen, url } => {
+                if is_current_generation(r#gen, self.now_playing_gen) {
                     self.apply_mpris_art_url(url);
                 }
             }

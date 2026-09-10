@@ -529,11 +529,7 @@ pub(super) fn build_disc_uri(response: &str, device: &str) -> Option<String> {
 }
 
 fn disc_kind_from_selected(selected: u32) -> &'static str {
-    if selected == 1 {
-        "bd"
-    } else {
-        "dvd"
-    }
+    if selected == 1 { "bd" } else { "dvd" }
 }
 
 fn accepted_open_url(input: &str) -> Option<String> {

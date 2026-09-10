@@ -1,0 +1,9 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="120" height="80" viewBox="0 0 120 80">
+  <!-- Sync wave 1 -->
+  <path d="M10,30 Q30,15 50,30 Q70,45 90,30 Q100,24 110,30" fill="none" stroke="#3584e4" stroke-width="2"/>
+  <!-- Sync wave 2 (display) -->
+  <path d="M10,50 Q30,35 50,50 Q70,65 90,50 Q100,44 110,50" fill="none" stroke="#f5c211" stroke-width="2"/>
+  <!-- Labels -->
+  <text x="110" y="28" font-family="sans-serif" font-size="7" fill="#3584e4">video</text>
+  <text x="110" y="48" font-family="sans-serif" font-size="7" fill="#f5c211">display</text>
+</svg>

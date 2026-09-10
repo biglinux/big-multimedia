@@ -1,0 +1,15 @@
+msrv = "1.98.1"
+
+cognitive-complexity-threshold = 25
+too-many-arguments-threshold = 8
+type-complexity-threshold = 300
+excessive-nesting-threshold = 10
+
+single-char-binding-names-threshold = 5
+enum-variant-name-threshold = 3
+struct-field-name-threshold = 3
+
+trivial-copy-size-limit = 16
+large-error-threshold = 256
+
+allowed-duplicate-crates = []

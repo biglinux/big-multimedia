@@ -6,9 +6,9 @@
 //! testable. Mirrors the legacy `iptv_view::browser` fetch helpers until the V6
 //! cutover deletes them.
 
-use crate::media::iptv::{parse_m3u_content, IptvChannel, IptvKind, IptvProvider};
+use crate::media::iptv::{IptvChannel, IptvKind, IptvProvider, parse_m3u_content};
 use crate::video::ui::iptv::{cache, xtream};
-use big_app_kit::http_client::{http_get_with_headers, RequestHeaders};
+use big_app_kit::http_client::{RequestHeaders, http_get_with_headers};
 
 /// Stable per-provider cache identifier. Fed through `cache::write`'s slugifier
 /// downstream, so any unsafe characters get sanitized there.

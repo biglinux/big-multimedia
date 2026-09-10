@@ -85,7 +85,20 @@ impl VideoShell {
                 self.controls
                     .emit(VideoControlsBarInput::SetChapters(chapters));
             }
+            PlayerEvent::VolumeChanged(volume) => {
+                self.controls.emit(VideoControlsBarInput::SetVolume(volume));
+            }
+            PlayerEvent::MuteChanged(muted) => {
+                self.controls.emit(VideoControlsBarInput::SetMuted(muted));
+            }
             PlayerEvent::MetadataChanged(_) => self.refresh_now_playing(root),
+            // Reason 4 = error (unsupported/corrupt/unreadable source). Other
+            // reasons (EOF=0, stop=2, quit=3, redirect=5) are a normal end of
+            // playback — surface only the error so the user gets feedback
+            // instead of a silent blank screen.
+            PlayerEvent::EndFile(4) => self.toast(&i18n(
+                "Could not play this file — it may be unsupported or corrupt.",
+            )),
             _ => {}
         }
     }
@@ -355,10 +368,10 @@ impl VideoShell {
     pub(super) fn on_cast(&self, out: VideoCastDialogOutput) {
         match out {
             VideoCastDialogOutput::Started { .. } => {
-                if let Some(mpv) = self.mpv.borrow().as_ref() {
-                    if !mpv.is_paused() {
-                        mpv.toggle_pause();
-                    }
+                if let Some(mpv) = self.mpv.borrow().as_ref()
+                    && !mpv.is_paused()
+                {
+                    mpv.toggle_pause();
                 }
             }
             VideoCastDialogOutput::Stopped => {}
@@ -711,8 +724,8 @@ mod resolve_open_files_tests {
 #[cfg(test)]
 mod dispatch_logic_tests {
     use super::{
-        is_same_playlist, needs_explicit_start_index, pane_activity_action, playlist_index_of,
-        seek_target_secs, PaneAction,
+        PaneAction, is_same_playlist, needs_explicit_start_index, pane_activity_action,
+        playlist_index_of, seek_target_secs,
     };
     use big_relm4_components::pane::PaneActivity;
 

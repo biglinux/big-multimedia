@@ -295,8 +295,8 @@ mod tests {
     use gtk::prelude::Cast;
 
     use super::{
-        collect_visual_tracks, collect_visual_tracks_from_tracks, detail_context_index,
-        detail_selection_action, DetailSelectionAction,
+        DetailSelectionAction, collect_visual_tracks, collect_visual_tracks_from_tracks,
+        detail_context_index, detail_selection_action,
     };
     use crate::db::models::Track;
 

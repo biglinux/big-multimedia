@@ -6,8 +6,8 @@
 //! the shell reuses its normal transport handlers. The status snapshot reads
 //! the thread-safe `SharedMprisState`, so it needs no main-loop bounce.
 
-use std::sync::atomic::Ordering;
 use std::sync::Arc;
+use std::sync::atomic::Ordering;
 
 use adw::prelude::*;
 use big_player_ui::playback_bar::AudioPlaybackBarOutput;

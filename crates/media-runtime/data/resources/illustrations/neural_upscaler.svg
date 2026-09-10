@@ -1,0 +1,38 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 120 80">
+  <!-- Neural Upscaling: pixelated frame → neural net → sharp frame -->
+  <!-- Pixelated small frame -->
+  <rect x="5" y="28" width="28" height="24" rx="3" fill="#e5a50a" opacity="0.12" stroke="#e5a50a" stroke-width="1.2"/>
+  <rect x="9" y="32" width="5" height="5" fill="#e5a50a" opacity="0.4"/>
+  <rect x="15" y="32" width="5" height="5" fill="#e5a50a" opacity="0.25"/>
+  <rect x="21" y="32" width="5" height="5" fill="#e5a50a" opacity="0.4"/>
+  <rect x="9" y="38" width="5" height="5" fill="#e5a50a" opacity="0.25"/>
+  <rect x="15" y="38" width="5" height="5" fill="#e5a50a" opacity="0.4"/>
+  <rect x="21" y="38" width="5" height="5" fill="#e5a50a" opacity="0.25"/>
+  <rect x="9" y="44" width="5" height="5" fill="#e5a50a" opacity="0.4"/>
+  <rect x="15" y="44" width="5" height="5" fill="#e5a50a" opacity="0.25"/>
+  <rect x="21" y="44" width="5" height="5" fill="#e5a50a" opacity="0.4"/>
+  <!-- Neural network nodes -->
+  <circle cx="44" cy="28" r="3" fill="#8ff0a4" opacity="0.7"/>
+  <circle cx="44" cy="40" r="3" fill="#8ff0a4" opacity="0.7"/>
+  <circle cx="44" cy="52" r="3" fill="#8ff0a4" opacity="0.7"/>
+  <circle cx="58" cy="32" r="3.5" fill="#3584e4" opacity="0.8"/>
+  <circle cx="58" cy="48" r="3.5" fill="#3584e4" opacity="0.8"/>
+  <circle cx="72" cy="40" r="4" fill="#c061cb" opacity="0.8"/>
+  <!-- Neural connections -->
+  <line x1="47" y1="28" x2="55" y2="32" stroke="#3584e4" stroke-width="0.8" opacity="0.4"/>
+  <line x1="47" y1="28" x2="55" y2="48" stroke="#3584e4" stroke-width="0.8" opacity="0.3"/>
+  <line x1="47" y1="40" x2="55" y2="32" stroke="#3584e4" stroke-width="0.8" opacity="0.4"/>
+  <line x1="47" y1="40" x2="55" y2="48" stroke="#3584e4" stroke-width="0.8" opacity="0.4"/>
+  <line x1="47" y1="52" x2="55" y2="32" stroke="#3584e4" stroke-width="0.8" opacity="0.3"/>
+  <line x1="47" y1="52" x2="55" y2="48" stroke="#3584e4" stroke-width="0.8" opacity="0.4"/>
+  <line x1="61" y1="32" x2="69" y2="40" stroke="#c061cb" stroke-width="0.8" opacity="0.5"/>
+  <line x1="61" y1="48" x2="69" y2="40" stroke="#c061cb" stroke-width="0.8" opacity="0.5"/>
+  <!-- Arrow -->
+  <path d="M77,40 L82,40" stroke="#3584e4" stroke-width="1.2" fill="none"/>
+  <polygon points="82,37 88,40 82,43" fill="#3584e4" opacity="0.8"/>
+  <!-- Sharp HD frame -->
+  <rect x="90" y="20" width="26" height="40" rx="3" fill="#3584e4" opacity="0.10" stroke="#3584e4" stroke-width="1.5"/>
+  <text x="103" y="43" font-size="8" text-anchor="middle" fill="#3584e4" font-family="sans-serif" font-weight="bold">HD</text>
+  <!-- Quality sparkle -->
+  <circle cx="109" cy="26" r="2" fill="#f5c211" opacity="0.7"/>
+</svg>

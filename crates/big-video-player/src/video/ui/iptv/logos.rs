@@ -18,7 +18,7 @@ use std::path::PathBuf;
 use gtk::glib;
 
 use crate::config;
-use big_app_kit::http_client::{http_get_bytes_with_headers, RequestHeaders};
+use big_app_kit::http_client::{RequestHeaders, http_get_bytes_with_headers};
 
 /// Logo cache directory, created on demand.
 #[must_use]
