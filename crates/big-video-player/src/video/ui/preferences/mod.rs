@@ -110,6 +110,10 @@ pub fn show_preferences(
             &i18n("Show all technical options across every page"),
         );
 
+        switch.update_relation(&[gtk::accessible::Relation::LabelledBy(&[label.upcast_ref()])]);
+        switch.update_property(&[gtk::accessible::Property::Description(&i18n(
+            "Show additional technical settings. Your current choices are kept.",
+        ))]);
         switch_box.append(&label);
         switch_box.append(&switch);
         hb.pack_end(&switch_box);

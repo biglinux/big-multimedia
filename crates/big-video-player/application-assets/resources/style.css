@@ -33,7 +33,6 @@ window.big-video-player {
 .osd-btn > button {
   border: none;
   box-shadow: none;
-  outline: none;
   margin: 0;
   transition: background 150ms ease-in-out, color 150ms ease-in-out;
 }
@@ -518,4 +517,11 @@ menubutton.osd-btn {
 }
 .effects-warning-btn:hover {
   color: #ffbf47;
+}
+
+/* Keep keyboard location visible over both light and dark video content. */
+.osd-btn:focus-visible,
+.osd-btn > button:focus-visible {
+  outline: 2px solid @accent_color;
+  outline-offset: 2px;
 }
