@@ -64,7 +64,7 @@ impl AudioShell {
             LibraryPanelOutput::AddTrackToPlaylist {
                 track_id,
                 playlist_id,
-            } => self.add_track_to_playlist(track_id, playlist_id),
+            } => self.add_track_to_playlist(track_id, playlist_id, sender),
             LibraryPanelOutput::CreatePlaylistWithTrack { name, track_id } => {
                 self.create_playlist_with_track(name, track_id, sender);
             }

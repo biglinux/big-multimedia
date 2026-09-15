@@ -4,18 +4,13 @@
 //! ([`LibraryGrouping::presets`]), an age-filter `DropDown` ([`AgeFilter::all`]),
 //! and a debounced `SearchEntry`. Each emits an `Output` intent — the shell owns
 //! the query + tree rebuild; this bar never touches the DB. The grouping model
-//! ([`crate::audio::library_grouping`]) is reused as-is; the 50 ms search
-//! debounce reuses [`big_relm4_components::input::debounce::BigDebouncedAction`]
+//! ([`crate::audio::library_grouping`]) is reused; search uses GTK’s single debounce
 //! (no hand-rolled `glib::timeout`).
-
-use std::time::Duration;
 
 use adw::prelude::*;
 use big_relm4_components::list::signal_factory;
 use gtk::glib;
 use relm4::ComponentSender;
-
-use big_relm4_components::input::debounce::BigDebouncedAction;
 
 use crate::audio::library_grouping::{AgeFilter, LibraryGrouping};
 use crate::audio::ui::playlist_geom::dropdown_list_factory;
@@ -23,9 +18,6 @@ use crate::i18n::i18n;
 
 use super::library_panel::{LibraryPanel, LibraryPanelOutput};
 
-/// 50 ms trailing-edge debounce for the search entry (matches the legacy
-/// rebuild cadence; one query per typing pause, not per keystroke).
-const SEARCH_DEBOUNCE: Duration = Duration::from_millis(50);
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 enum AgeFilterButtonChild {
@@ -229,29 +221,18 @@ fn build_add_folder_button(sender: &ComponentSender<LibraryPanel>) -> gtk::Butto
     add_folder_button
 }
 
-/// Debounced search entry → `SearchTextChanged(String)`. An empty query emits
-/// immediately (instant clear); non-empty queries fire one intent per pause via
-/// [`BigDebouncedAction`].
+/// GTK owns one debounce source, including cancellation when the field is cleared.
+/// A second timeout here used to republish a stale non-empty query after clear.
 fn build_search_entry(sender: &ComponentSender<LibraryPanel>) -> gtk::SearchEntry {
     let entry = gtk::SearchEntry::builder()
         .placeholder_text(i18n("Filter…"))
         .hexpand(true)
+        .search_delay(150)
         .build();
     entry.update_property(&[gtk::accessible::Property::Label(&i18n("Search library"))]);
-
-    let debouncer = BigDebouncedAction::new(SEARCH_DEBOUNCE);
     let out = sender.clone();
     entry.connect_search_changed(move |entry| {
-        let text = entry.text().to_string();
-        if text.is_empty() {
-            // Clearing the field restores the full tree without a delay.
-            let _ = out.output(LibraryPanelOutput::SearchTextChanged(String::new()));
-            return;
-        }
-        let out = out.clone();
-        debouncer.run(move || {
-            let _ = out.output(LibraryPanelOutput::SearchTextChanged(text));
-        });
+        let _ = out.output(LibraryPanelOutput::SearchTextChanged(entry.text().to_string()));
     });
     entry
 }

@@ -11,6 +11,8 @@ mod engine;
 mod export;
 mod input;
 mod library_store;
+mod library_generation;
+use library_generation::LibraryGeneration;
 mod metadata;
 mod mpris;
 mod panel_intents;
@@ -177,6 +179,8 @@ pub struct AudioShell {
     library_filter: String,
     /// Current age-filter dropdown index.
     library_age: u32,
+    /// Discards superseded library queries before work and before presentation.
+    library_generation: LibraryGeneration,
     /// Path of the loaded track (empty = nothing loaded).
     current_file: String,
     /// Last resolved cover bytes — kept so the blurred background can be toggled

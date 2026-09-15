@@ -562,6 +562,7 @@ impl Component for AudioShell {
                 library_grouping: initial_grouping,
                 library_filter: String::new(),
                 library_age: 0,
+                library_generation: LibraryGeneration::default(),
                 current_file: String::new(),
                 last_art_bytes: None,
                 is_playing: false,

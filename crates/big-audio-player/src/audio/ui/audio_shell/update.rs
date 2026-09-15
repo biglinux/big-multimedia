@@ -85,8 +85,21 @@ impl AudioShell {
             }
             AudioShellInput::NodeTracksResolved(tracks) => self.enqueue_tracks(tracks),
             AudioShellInput::RebuildLibraryTree => self.rebuild_library_tree(&sender),
-            AudioShellInput::LibraryTreeResolved(data) => {
-                self.library.emit(LibraryPanelInput::SetLibraryTree(data));
+            AudioShellInput::LibraryTreeResolved { generation, data } => {
+                if self.library_generation.is_current(generation) {
+                    self.library.emit(LibraryPanelInput::SetLibraryTree(data));
+                }
+            }
+            AudioShellInput::PlaylistMutationFinished(success) => {
+                if success {
+                    self.refresh_playlist_dialog_entries(&sender);
+                    self.notify(&i18n("Playlist updated"));
+                } else {
+                    self.notify(&i18n("The playlist could not be changed. Your previous playlist was kept."));
+                }
+            }
+            AudioShellInput::PlaylistReadFailed => {
+                self.notify(&i18n("Playlists could not be opened. Please try again."));
             }
             AudioShellInput::RefreshPlaylists => {
                 self.refresh_playlist_dialog_entries(&sender);

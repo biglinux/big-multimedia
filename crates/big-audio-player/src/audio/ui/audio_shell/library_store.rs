@@ -5,15 +5,23 @@ impl AudioShell {
         let Some(db) = self.db_read.clone().or_else(|| self.db.clone()) else {
             return;
         };
+        let ticket = self.library_generation.begin();
+        let generation = ticket.value;
         let grouping = self.library_grouping.clone();
         let filter = self.library_filter.clone();
         let age = AgeFilter::from_index(self.library_age).seconds_ago();
         let input = sender.input_sender().clone();
         spawn_db_query(
             db,
-            move |conn| library_query::build_library_tree_snapshot(conn, &grouping, &filter, age),
+            move |conn| {
+                if !ticket.is_current() { return None; }
+                let data = library_query::build_library_tree_snapshot(conn, &grouping, &filter, age);
+                ticket.is_current().then_some(data)
+            },
             move |data| {
-                let _ = input.send(AudioShellInput::LibraryTreeResolved(data));
+                if let Some(data) = data {
+                    let _ = input.send(AudioShellInput::LibraryTreeResolved { generation, data });
+                }
             },
         );
     }
@@ -26,11 +34,9 @@ impl AudioShell {
         let input = sender.input_sender().clone();
         spawn_db_query(
             db,
-            move |conn| {
-                let _ = queries::delete_playlist(conn, id);
-            },
-            move |()| {
-                let _ = input.send(AudioShellInput::RefreshPlaylists);
+            move |conn| queries::delete_playlist(conn, id).is_ok(),
+            move |success| {
+                let _ = input.send(AudioShellInput::PlaylistMutationFinished(success));
             },
         );
     }
@@ -45,29 +51,25 @@ impl AudioShell {
         spawn_db_query(
             db,
             move |conn| {
-                queries::get_all_playlists(conn)
-                    .unwrap_or_default()
-                    .into_iter()
-                    .map(|p| (p.id, p.name))
-                    .collect::<Vec<_>>()
+                queries::get_all_playlists(conn).map(|playlists| playlists.into_iter()
+                    .map(|p| (p.id, p.name)).collect::<Vec<_>>())
             },
             move |playlists| {
-                let _ = input.send(AudioShellInput::AddToPlaylistResolved { track, playlists });
+                match playlists {
+                    Ok(playlists) => { let _ = input.send(AudioShellInput::AddToPlaylistResolved { track, playlists }); }
+                    Err(_) => { let _ = input.send(AudioShellInput::PlaylistReadFailed); }
+                }
             },
         );
     }
 
-    /// Add a track to an existing playlist (fire-and-forget).
-    pub(super) fn add_track_to_playlist(&self, track_id: i64, playlist_id: i64) {
-        let Some(db) = self.db.clone() else {
-            return;
-        };
-        spawn_db_query(
-            db,
-            move |conn| {
-                let _ = queries::add_track_to_playlist(conn, playlist_id, track_id);
-            },
-            |()| {},
+    /// Add one track atomically and report failures instead of silently losing the action.
+    pub(super) fn add_track_to_playlist(&self, track_id: i64, playlist_id: i64, sender: &ComponentSender<Self>) {
+        let Some(db) = self.db.clone() else { return; };
+        let input = sender.input_sender().clone();
+        spawn_db_query(db,
+            move |conn| queries::add_track_to_playlist(conn, playlist_id, track_id).is_ok(),
+            move |success| { let _ = input.send(AudioShellInput::PlaylistMutationFinished(success)); },
         );
     }
 
@@ -78,21 +80,7 @@ impl AudioShell {
         track_id: i64,
         sender: &ComponentSender<Self>,
     ) {
-        let Some(db) = self.db.clone() else {
-            return;
-        };
-        let input = sender.input_sender().clone();
-        spawn_db_query(
-            db,
-            move |conn| {
-                if let Ok(playlist_id) = queries::create_playlist(conn, &name) {
-                    let _ = queries::add_track_to_playlist(conn, playlist_id, track_id);
-                }
-            },
-            move |()| {
-                let _ = input.send(AudioShellInput::RefreshPlaylists);
-            },
-        );
+        self.save_tracks_as_playlist_db(name, vec![track_id], sender);
     }
 
     /// Create a playlist from a set of track ids, then refresh manager data.
@@ -108,15 +96,9 @@ impl AudioShell {
         let input = sender.input_sender().clone();
         spawn_db_query(
             db,
-            move |conn| {
-                if let Ok(playlist_id) = queries::create_playlist(conn, &name) {
-                    for id in &track_ids {
-                        let _ = queries::add_track_to_playlist(conn, playlist_id, *id);
-                    }
-                }
-            },
-            move |()| {
-                let _ = input.send(AudioShellInput::RefreshPlaylists);
+            move |conn| queries::create_playlist_with_tracks(conn, &name, &track_ids).is_ok(),
+            move |success| {
+                let _ = input.send(AudioShellInput::PlaylistMutationFinished(success));
             },
         );
     }

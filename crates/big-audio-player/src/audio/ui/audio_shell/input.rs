@@ -66,7 +66,16 @@ pub enum AudioShellInput {
     /// after a grouping/search/age change).
     RebuildLibraryTree,
     /// The rebuilt library tree (async DB result) → push to the library panel.
-    LibraryTreeResolved(LibraryTreeSnapshot),
+    LibraryTreeResolved {
+        /// Current search/grouping/age generation.
+        generation: u64,
+        /// Snapshot built off the main thread.
+        data: LibraryTreeSnapshot,
+    },
+    /// A playlist mutation completed (false leaves the current view unchanged).
+    PlaylistMutationFinished(bool),
+    /// The playlist picker could not read its data.
+    PlaylistReadFailed,
     /// Reload playlist dialog data after any playlist DB change.
     RefreshPlaylists,
     /// Edited tags were written to file + DB → patch the queue + rebuild tree.
