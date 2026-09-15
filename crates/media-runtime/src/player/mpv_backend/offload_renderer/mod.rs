@@ -1,23 +1,11 @@
-//! Offload-based video rendering: bypasses GTK compositing via
-//! GdkDmabufTexture or GdkGLTexture + GtkGraphicsOffload → Wayland subsurface.
-//!
-//! Path 1 — MESA DMA-BUF (AMD/Intel, preferred): mpv → FBO → EGL MESA export
-//! → GdkDmabufTexture → GraphicsOffload → Wayland hw plane (zero GSK).
-//! Path 2 — GL texture fallback: mpv → FBO → glFlush → GdkGLTexture →
-//! GtkPicture → GraphicsOffload → Wayland subsurface.
-//!
-//! Path 1 is tried first. Proprietary NVIDIA is blocked before offload setup:
-//! its GdkGLTexture/GraphicsOffload path grows GPU memory while resizing, so
-//! the shared backend always uses GtkGLArea there.
-//!
-//! Split into submodules: `gl_fns` (GL constants + dlsym'd function
-//! pointers), `backend` (public `VideoBackend` enum + detect). The
-//! `OffloadRenderer` body stays here to keep the FBO/texture lifecycle
-//! local to one file. Public API preserved.
+//! GPU texture presentation through GtkGraphicsOffload. Offloading and direct
+//! scanout depend on GTK, the compositor and the driver; no end-to-end zero-copy
+//! or hardware-plane guarantee is implied. GL fallback remains available.
 
 mod backend;
 mod gl_fns;
 mod stats;
+mod texture_pool;
 
 use super::egl_dmabuf::{self, EglDmaBufFns};
 use crate::player::mpv_backend::fast_render::FastRenderContext;
@@ -25,6 +13,9 @@ use gtk::{gdk, prelude::*};
 use log::{debug, error, info, warn};
 use std::cell::Cell;
 use std::ffi::CStr;
+use std::rc::Rc;
+use gtk::glib::translate::{from_glib_full, ToGlibPtr};
+use texture_pool::{CurrentContext, TextureLease, TexturePool};
 
 use super::skip_mpv_render;
 use gl_fns::{
@@ -35,31 +26,21 @@ use stats::{RenderStatsSurfacePath, render_stats_report_for_interval};
 
 pub use backend::VideoBackend;
 
-/// Double-buffered GL textures: while the compositor reads one (via DMA-BUF
-/// or GdkGLTexture), mpv renders the other. Wrapped as `GdkDmabufTexture`
-/// (path 1, AMD/Intel) or `GdkGLTexture` (path 2 fallback) and
-/// displayed via `GtkPicture` inside `GtkGraphicsOffload`.
+/// A bounded three-slot GPU pool. GDK owns a lease on each published texture;
+/// neither resize, overwrite nor deletion is permitted until release.
 pub struct OffloadRenderer {
     gl_context: gdk::GLContext,
     gl: GlFns,
     picture: gtk::Picture,
-    offload: gtk::GraphicsOffload,
+    surface: gtk::Overlay,
     /// `Some` when MESA DMA-BUF export is available — path 1 is then tried first.
     egl: Option<EglDmaBufFns>,
     /// True after the first successful DMA-BUF export.
     dmabuf_active: Cell<bool>,
     /// True after an unsupported/non-linear modifier — locks the GL fallback.
     dmabuf_rejected: Cell<bool>,
-    textures: [u32; 2],
-    /// Re-attached to the current back-buffer texture each frame.
+    pool: TexturePool,
     fbo: u32,
-    /// 0 or 1 — back-buffer index for the next render.
-    current: Cell<usize>,
-    /// `0` until the first allocation.
-    width: Cell<i32>,
-    height: Cell<i32>,
-    /// Bypasses `has_new_frame()` once — used after window resize.
-    force_render: Cell<bool>,
     frame_count: Cell<u64>,
     skip_count: Cell<u64>,
     last_fps_log: Cell<std::time::Instant>,
@@ -105,7 +86,7 @@ impl OffloadRenderer {
         offload.set_black_background(true);
         offload.set_can_target(false);
 
-        gl_context.make_current();
+        let _current = CurrentContext::enter(&gl_context);
 
         let diagnostics = query_gl_diagnostics();
         if renderer_has_nvidia_resize_leak(&diagnostics.renderer) {
@@ -115,33 +96,30 @@ impl OffloadRenderer {
                  resize; using GtkGLArea fallback",
                 diagnostics.renderer
             );
-            gdk::GLContext::clear_current();
             return None;
         }
 
         // Requires a current GL context.
         let egl = egl_dmabuf::probe();
 
-        let mut textures = [0_u32; 2];
+        let pool = TexturePool::new(&gl_context, gl);
         let mut fbo = 0_u32;
+        unsafe { (gl.gen_framebuffers)(1, &raw mut fbo) };
 
-        // SAFETY: GL fns verified non-null in load(); context current.
-        unsafe {
-            (gl.gen_textures)(2, textures.as_mut_ptr());
-            (gl.gen_framebuffers)(1, &raw mut fbo);
-        }
-
-        gdk::GLContext::clear_current();
-
-        let dmabuf_label = if egl.is_some() {
-            "DMA-BUF (probe ok, modifier check on first frame)"
-        } else {
-            "GL texture"
-        };
-        info!(
-            "Offload renderer ready: textures [{}, {}], FBO {fbo}, path: {dmabuf_label}",
-            textures[0], textures[1]
-        );
+        // Allocation notifications, not a permanent frame-clock/timer. The
+        // transparent probe draws nothing; offload still directly owns Picture.
+        let surface = gtk::Overlay::new();
+        surface.set_hexpand(true);
+        surface.set_vexpand(true);
+        surface.set_can_target(false);
+        surface.set_child(Some(&offload));
+        let resize_probe = gtk::DrawingArea::new();
+        resize_probe.set_can_target(false);
+        resize_probe.set_opacity(0.0);
+        resize_probe.set_hexpand(true);
+        resize_probe.set_vexpand(true);
+        surface.add_overlay(&resize_probe);
+        pool.watch_resize(&resize_probe);
 
         // Compute shader compat diagnostic (GLES 3.1+ / GL 4.3+).
         if gl_context.is_legacy() {
@@ -157,30 +135,30 @@ impl OffloadRenderer {
             "GL version: {}, renderer: {}",
             diagnostics.version, diagnostics.renderer
         );
-        gdk::GLContext::clear_current();
 
         Some(Self {
             gl_context,
             gl,
             picture,
-            offload,
+            surface,
             egl,
             dmabuf_active: Cell::new(false),
             dmabuf_rejected: Cell::new(false),
-            textures,
+            pool,
             fbo,
-            current: Cell::new(0),
-            width: Cell::new(0),
-            height: Cell::new(0),
-            force_render: Cell::new(false),
             frame_count: Cell::new(0),
             skip_count: Cell::new(0),
             last_fps_log: Cell::new(std::time::Instant::now()),
         })
     }
 
-    pub fn widget(&self) -> &gtk::GraphicsOffload {
-        &self.offload
+    pub fn widget(&self) -> &gtk::Overlay {
+        &self.surface
+    }
+
+    /// The callback must use weak UI/backend references to avoid a cycle.
+    pub fn set_retry_callback(&self, callback: Rc<dyn Fn()>) {
+        self.pool.set_redraw(callback);
     }
 
     /// `true` when MESA DMA-BUF export is available — drives the
@@ -198,245 +176,155 @@ impl OffloadRenderer {
     /// margin in the GdkGLTexture path (NVIDIA): coords [0,1] map to the full
     /// backing texture, and GL textures don't support stride-based cropping
     /// the way DMA-BUF does.
-    fn ensure_size(&self, width: i32, height: i32) {
-        let cur_w = self.width.get();
-        let cur_h = self.height.get();
-
-        if cur_w == width && cur_h == height {
-            return;
-        }
-
-        let gl = &self.gl;
-
-        // SAFETY: own texture objects; positive dims (caller-checked).
+    fn prepare_slot(&self, index: usize, texture: u32, width: i32, height: i32) -> bool {
+        let changed = self.pool.dimensions(index) != (width, height);
+        // SAFETY: the slot is exclusively leased and GL is current.
         unsafe {
-            for &tex in &self.textures {
-                (gl.bind_texture)(GL_TEXTURE_2D, tex);
-                (gl.tex_parameteri)(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
-                (gl.tex_parameteri)(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-                (gl.tex_image_2d)(
-                    GL_TEXTURE_2D,
-                    0,
-                    GL_RGBA8 as i32,
-                    width,
-                    height,
-                    0,
-                    GL_RGBA,
-                    GL_UNSIGNED_BYTE,
-                    std::ptr::null(),
-                );
+            if changed {
+                (self.gl.bind_texture)(GL_TEXTURE_2D, texture);
+                (self.gl.tex_parameteri)(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+                (self.gl.tex_parameteri)(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
+                (self.gl.tex_image_2d)(GL_TEXTURE_2D, 0, GL_RGBA8 as i32, width, height,
+                    0, GL_RGBA, GL_UNSIGNED_BYTE, std::ptr::null());
+                (self.gl.bind_texture)(GL_TEXTURE_2D, 0);
             }
-            (gl.bind_texture)(GL_TEXTURE_2D, 0);
-        }
-
-        // SAFETY: own FBO/texture.
-        unsafe {
-            (gl.bind_framebuffer)(GL_FRAMEBUFFER, self.fbo);
-            (gl.framebuffer_texture_2d)(
-                GL_FRAMEBUFFER,
-                GL_COLOR_ATTACHMENT0,
-                GL_TEXTURE_2D,
-                self.textures[0],
-                0,
-            );
-            let status = (gl.check_framebuffer_status)(GL_FRAMEBUFFER);
+            (self.gl.bind_framebuffer)(GL_FRAMEBUFFER, self.fbo);
+            (self.gl.framebuffer_texture_2d)(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,
+                GL_TEXTURE_2D, texture, 0);
+            let status = (self.gl.check_framebuffer_status)(GL_FRAMEBUFFER);
             if status != GL_FRAMEBUFFER_COMPLETE {
+                (self.gl.bind_framebuffer)(GL_FRAMEBUFFER, 0);
                 error!("Offload FBO incomplete: 0x{status:X}");
+                return false;
             }
-            (gl.bind_framebuffer)(GL_FRAMEBUFFER, 0);
         }
-
-        self.width.set(width);
-        self.height.set(height);
-
-        debug!("Offload FBO resized to {width}x{height}");
+        if changed {
+            self.pool.set_dimensions(index, width, height);
+            debug!("Offload slot {index} resized to {width}x{height}");
+        }
+        true
     }
 
     /// Called from the main thread (via `glib::idle_add_once`). Renders into
     /// the back-buffer, then exports as DMA-BUF or wraps as GdkGLTexture.
     pub fn render_frame(&self, render_context: &FastRenderContext, width: i32, height: i32) {
+        let _current = CurrentContext::enter(&self.gl_context);
+        // update() must run with this exact context, including forced redraws.
+        let new_frame = render_context.has_new_frame();
+        let force = self.pool.take_force();
         if width <= 0 || height <= 0 {
+            self.pool.force();
             return;
         }
-
-        if skip_mpv_render() {
-            render_context.report_swap();
-            return;
-        }
-
-        // force_render bypasses has_new_frame for resize while paused.
-        let force = self.force_render.replace(false);
-        if !force && !render_context.has_new_frame() {
+        if skip_mpv_render() { return; }
+        if !new_frame && !force {
             self.skip_count.set(self.skip_count.get() + 1);
             return;
         }
-
+        let Some((index, lease)) = self.pool.acquire(&self.gl) else {
+            self.skip_count.set(self.skip_count.get() + 1);
+            return; // release callback retries the latest frame, never overwrites
+        };
+        let tex = lease.id();
+        if !self.prepare_slot(index, tex, width, height) { return; }
+        unsafe { (self.gl.viewport)(0, 0, width, height) };
+        let result = render_context.render(self.fbo as i32, width, height, false);
+        unsafe { (self.gl.bind_framebuffer)(GL_FRAMEBUFFER, 0) };
+        if result < 0 {
+            error!("Offload render failed: {result}");
+            return;
+        }
+        let texture = if self.egl.is_some() && !self.dmabuf_rejected.get() {
+            // DMA-BUF explicit-fence negotiation is not implemented here. Keep
+            // the correctness barrier; do NOT remove it on a performance guess.
+            unsafe { (self.gl.finish)() };
+            match self.try_create_dmabuf_texture(lease, width, height) {
+                Ok(texture) => texture,
+                Err(lease) => self.create_gl_texture(lease, width, height),
+            }
+        } else {
+            self.create_gl_texture(lease, width, height)
+        };
+        self.picture.set_paintable(Some(&texture));
+        render_context.report_swap();
         let count = self.frame_count.get() + 1;
         self.frame_count.set(count);
         let now = std::time::Instant::now();
-        let elapsed = now.duration_since(self.last_fps_log.get());
-        let surface_path = RenderStatsSurfacePath::from_dmabuf_active(self.dmabuf_active.get());
-        if let Some(render_stats_report) = render_stats_report_for_interval(
-            count,
-            self.skip_count.get(),
-            elapsed,
-            width,
-            height,
-            surface_path,
-        ) {
-            info!(
-                "Render stats: {:.1} fps, {} rendered, {} skipped, {}x{} ({})",
-                render_stats_report.frames_per_second,
-                render_stats_report.rendered_frames,
-                render_stats_report.skipped_frames,
-                render_stats_report.width,
-                render_stats_report.height,
-                render_stats_report.surface_path.label()
-            );
+        if let Some(report) = render_stats_report_for_interval(count, self.skip_count.get(),
+            now.duration_since(self.last_fps_log.get()), width, height,
+            RenderStatsSurfacePath::from_dmabuf_active(self.dmabuf_active.get())) {
+            info!("Render stats: {:.1} fps, {} rendered, {} skipped, {}x{} ({})",
+                report.frames_per_second, report.rendered_frames, report.skipped_frames,
+                report.width, report.height, report.surface_path.label());
             self.frame_count.set(0);
             self.skip_count.set(0);
             self.last_fps_log.set(now);
         }
-
-        self.gl_context.make_current();
-        self.ensure_size(width, height);
-
-        let idx = self.current.get();
-        let tex = self.textures[idx];
-
-        // SAFETY: own FBO/texture; valid dims.
-        unsafe {
-            (self.gl.bind_framebuffer)(GL_FRAMEBUFFER, self.fbo);
-            (self.gl.framebuffer_texture_2d)(
-                GL_FRAMEBUFFER,
-                GL_COLOR_ATTACHMENT0,
-                GL_TEXTURE_2D,
-                tex,
-                0,
-            );
-            (self.gl.viewport)(0, 0, width, height);
-        }
-
-        // flip_y=false keeps GL convention (Y=0 at bottom) — GDK flips on display.
-        render_context.render(self.fbo as i32, width, height, false);
-        render_context.report_swap();
-
-        // DMA-BUF needs glFinish (compositor reads immediately — in-flight work
-        // tears); GL-texture path only needs glFlush since GDK handles sync via
-        // the shared context.
-        // SAFETY: GL fns valid; pipeline sync per spec.
-        unsafe {
-            (self.gl.bind_framebuffer)(GL_FRAMEBUFFER, 0);
-            if self.egl.is_some() && !self.dmabuf_rejected.get() {
-                (self.gl.finish)();
-            } else {
-                (self.gl.flush)();
-            }
-        }
-
-        self.current.set(1 - idx);
-
-        let texture = if self.dmabuf_rejected.get() {
-            self.create_gl_texture(tex, width, height)
-        } else {
-            self.try_create_dmabuf_texture(tex, width, height)
-                .unwrap_or_else(|| self.create_gl_texture(tex, width, height))
-        };
-
-        self.picture.set_paintable(Some(&texture));
-
-        gdk::GLContext::clear_current();
     }
 
-    /// Zero-copy path: GPU → compositor hw overlay via GraphicsOffload.
-    /// `None` when EGL export is unavailable or has been rejected.
+    /// Export the slot without releasing its lease until GDK finishes reading.
     fn try_create_dmabuf_texture(
         &self,
-        gl_texture_id: u32,
+        lease: TextureLease,
         width: i32,
         height: i32,
-    ) -> Option<gdk::Texture> {
-        if self.dmabuf_rejected.get() {
-            return None;
-        }
-
-        let egl = self.egl.as_ref()?;
-
-        let Some(export) = egl_dmabuf::export_gl_texture(egl, gl_texture_id) else {
-            // Modifier rejected or driver fail — lock in the GL fallback.
+    ) -> std::result::Result<gdk::Texture, TextureLease> {
+        let Some(egl) = self.egl.as_ref() else { return Err(lease) };
+        let Some(export) = egl_dmabuf::export_gl_texture(egl, lease.id()) else {
             self.dmabuf_rejected.set(true);
-            return None;
+            return Err(lease);
         };
-
         let Some(display) = gdk::prelude::DrawContextExt::display(&self.gl_context) else {
-            warn!("DMA-BUF: no display on GL context");
-            return None;
+            self.dmabuf_rejected.set(true);
+            return Err(lease);
         };
-
-        let fd = export.fd;
-        let fourcc = export.fourcc;
-        let modifier = export.modifier;
-        let stride = export.stride;
-        let offset = export.offset;
-
-        // Ownership of fd transferred to GDK via the release closure.
-        std::mem::forget(export);
-
-        // SAFETY: fd is a valid EGL-exported DMA-BUF; release closes it on finalize.
-        let result = unsafe {
-            gdk::DmabufTextureBuilder::new()
-                .set_display(&display)
-                .set_width(width as u32)
-                .set_height(height as u32)
-                .set_fourcc(fourcc)
-                .set_modifier(modifier)
-                .set_n_planes(1)
-                .set_fd(0, fd)
-                .set_stride(0, stride)
-                .set_offset(0, offset)
-                .set_premultiplied(false)
-                .build_with_release_func(move || {
-                    libc::close(fd);
-                })
-        };
-
-        match result {
-            Ok(texture) => {
-                if !self.dmabuf_active.get() {
-                    info!(
-                        "DMA-BUF path activated: fourcc=0x{fourcc:08X}, \
-                         modifier=0x{modifier:016X}, {width}x{height}"
-                    );
-                    self.dmabuf_active.set(true);
-                }
-                Some(texture)
-            }
-            Err(e) => {
-                // Warn once, then fall back to GL silently.
-                if self.dmabuf_active.get() || self.frame_count.get() <= 1 {
-                    warn!("DMA-BUF texture failed, falling back to GL: {e}");
-                    self.dmabuf_active.set(false);
-                }
-                // mem::forget'd above — must close manually here.
-                unsafe {
-                    libc::close(fd);
-                }
-                None
-            }
+        let builder = gdk::DmabufTextureBuilder::new()
+            .set_display(&display).set_width(width as u32).set_height(height as u32)
+            .set_fourcc(export.fourcc).set_modifier(export.modifier).set_n_planes(1)
+            .set_fd(0, export.fd).set_stride(0, export.stride).set_offset(0, export.offset)
+            .set_premultiplied(false);
+        type Payload = (egl_dmabuf::DmaBufExport, TextureLease);
+        unsafe extern "C" fn release(data: *mut std::ffi::c_void) {
+            // Called only for a successfully-created texture, exactly once.
+            drop(unsafe { Box::from_raw(data.cast::<Payload>()) });
         }
+        let payload = Box::into_raw(Box::new((export, lease)));
+        let mut error = std::ptr::null_mut();
+        // Direct FFI deliberately reclaims release userdata on build failure.
+        // The gtk-rs convenience wrapper in the reviewed version did not do so.
+        let texture = unsafe { gdk::ffi::gdk_dmabuf_texture_builder_build(
+            builder.to_glib_none().0, Some(release), payload.cast(), &mut error,
+        ) };
+        if texture.is_null() {
+            self.dmabuf_rejected.set(true); // do not retry/import/glFinish every frame
+            self.dmabuf_active.set(false);
+            if !error.is_null() {
+                let error: gtk::glib::Error = unsafe { from_glib_full(error) };
+                warn!("DMA-BUF import rejected; using GL textures: {error}");
+            }
+            let (export, lease) = *unsafe { Box::from_raw(payload) };
+            drop(export); // close the fd; the lease is reused by GL fallback
+            return Err(lease);
+        }
+        self.dmabuf_active.set(true);
+        Ok(unsafe { from_glib_full(texture) })
     }
 
-    /// Universal fallback — GSK still composites, but works everywhere.
-    fn create_gl_texture(&self, gl_texture_id: u32, width: i32, height: i32) -> gdk::Texture {
+    fn create_gl_texture(&self, lease: TextureLease, width: i32, height: i32) -> gdk::Texture {
+        const GL_SYNC_GPU_COMMANDS_COMPLETE: u32 = 0x9117;
+        let fence = if let (Some(create), Some(_)) = (self.gl.fence_sync, self.gl.delete_sync) {
+            unsafe { create(GL_SYNC_GPU_COMMANDS_COMPLETE, 0) }
+        } else { std::ptr::null_mut() };
+        // A shared GL context is not, by itself, a producer/consumer fence.
+        unsafe {
+            if fence.is_null() { (self.gl.finish)(); } else { (self.gl.flush)(); }
+        }
+        lease.set_fence(fence as usize);
         let builder = gdk::GLTextureBuilder::new()
-            .set_context(Some(&self.gl_context))
-            .set_id(gl_texture_id)
-            .set_width(width)
-            .set_height(height)
-            .set_format(gdk::MemoryFormat::R8g8b8a8);
-        // SAFETY: GL texture valid; context current. No-op release keeps the
-        // persistent texture alive after the GdkGLTexture drops.
-        unsafe { builder.build_with_release_func(|| {}) }
+            .set_context(Some(&self.gl_context)).set_id(lease.id())
+            .set_width(width).set_height(height).set_format(gdk::MemoryFormat::R8g8b8a8)
+            .set_sync((!fence.is_null()).then_some(fence.cast_const()));
+        unsafe { builder.build_with_release_func(move || drop(lease)) }
     }
 
     /// Replaces GLArea's `queue_render` from the mpv update callback.
@@ -447,14 +335,14 @@ impl OffloadRenderer {
         overlay_height: i32,
         scale: i32,
     ) {
-        let w = overlay_width * scale;
-        let h = overlay_height * scale;
+        let Some(w) = overlay_width.checked_mul(scale) else { return };
+        let Some(h) = overlay_height.checked_mul(scale) else { return };
         self.render_frame(render_context, w, h);
     }
 
     /// Bypasses `has_new_frame()` once — needed after resize while paused.
     pub fn set_force_render(&self) {
-        self.force_render.set(true);
+        self.pool.force();
     }
 }
 
@@ -516,14 +404,11 @@ fn renderer_has_nvidia_resize_leak(renderer: &str) -> bool {
 
 impl Drop for OffloadRenderer {
     fn drop(&mut self) {
-        self.gl_context.make_current();
-
-        // SAFETY: own GL objects from try_new.
-        unsafe {
-            (self.gl.delete_framebuffers)(1, &raw const self.fbo);
-            (self.gl.delete_textures)(2, self.textures.as_ptr());
-        }
-        gdk::GLContext::clear_current();
+        let _current = CurrentContext::enter(&self.gl_context);
+        self.picture.set_paintable(None::<&gdk::Texture>);
+        // Slot textures and fences retire only after the final GDK lease. The
+        // framebuffer has no consumer and can be deleted on this thread now.
+        unsafe { (self.gl.delete_framebuffers)(1, &raw const self.fbo) };
         info!("Offload renderer destroyed");
     }
 }

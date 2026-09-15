@@ -18,6 +18,7 @@ pub struct FastRenderContext {
     // Dropped AFTER the C render context, including when a widget owns the
     // last reference. Raw unsafe constructors leave this unset.
     owner: Option<Arc<MpvBackend>>,
+    context_free: Option<Box<dyn FnOnce(*mut mpv_sys::mpv_render_context)>>,
 }
 
 // Intentionally !Send / !Sync: rendering and destruction belong to the thread
@@ -89,6 +90,7 @@ impl FastRenderContext {
             render_context,
             update_callback: None,
             owner: None,
+            context_free: None,
         })
     }
 
@@ -164,6 +166,15 @@ impl FastRenderContext {
         }
     }
 
+    /// GUI integrations retain the exact GL context for teardown. Raw unsafe
+    /// constructors retain their documented caller-managed context contract.
+    pub(super) fn set_context_free(
+        &mut self,
+        free: impl FnOnce(*mut mpv_sys::mpv_render_context) + 'static,
+    ) {
+        self.context_free = Some(Box::new(free));
+    }
+
     pub(super) fn with_owner(mut self, owner: Arc<MpvBackend>) -> Self {
         self.owner = Some(owner);
         self
@@ -182,9 +193,11 @@ impl Drop for FastRenderContext {
             );
         }
         self.update_callback.take();
-        // SAFETY: render_context came from new() and is freed exactly once here.
-        unsafe {
-            mpv_sys::mpv_render_context_free(self.render_context);
+        if let Some(free) = self.context_free.take() {
+            free(self.render_context);
+        } else {
+            // Raw constructors require the caller to keep GL current on drop.
+            unsafe { mpv_sys::mpv_render_context_free(self.render_context) };
         }
     }
 }
