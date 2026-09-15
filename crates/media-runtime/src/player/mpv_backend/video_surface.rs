@@ -92,7 +92,7 @@ pub fn install_best_backend(
 }
 
 pub fn create_render_context<F>(
-    mpv: &MpvBackend,
+    mpv: &std::sync::Arc<MpvBackend>,
     backend: Option<&VideoBackend>,
     gl_area: &gtk::GLArea,
     surface_name: &str,
