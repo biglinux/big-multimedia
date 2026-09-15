@@ -1,10 +1,9 @@
 //! Audio + Music preferences pages (output, processing, language, ReplayGain,
-//! crossfade, ListenBrainz). Also exposes `show_audio_preferences` for the
+//! and volume leveling). Also exposes `show_audio_preferences` for the
 //! standalone audio-player binary.
 
 use adw::prelude::*;
-use gtk::{gio, glib};
-use std::cell::{Cell, RefCell};
+use std::cell::RefCell;
 use std::rc::Rc;
 use std::sync::Arc;
 
@@ -56,16 +55,6 @@ fn replaygain_preamp_adjustment_spec() -> NumericAdjustmentSpec {
         lower: -15.0,
         upper: 15.0,
         step_increment: 0.5,
-        page_increment: 1.0,
-        page_size: 0.0,
-    }
-}
-
-fn crossfade_adjustment_spec() -> NumericAdjustmentSpec {
-    NumericAdjustmentSpec {
-        lower: 0.0,
-        upper: 12.0,
-        step_increment: 1.0,
         page_increment: 1.0,
         page_size: 0.0,
     }
@@ -168,7 +157,7 @@ pub(super) fn create_music_page(
 
     let gapless_row = adw::SwitchRow::builder()
         .title(i18n("Gapless Playback"))
-        .subtitle(i18n("Remove silence between songs for a continuous listening experience — great for live albums and DJ mixes"))
+        .subtitle(i18n("Play consecutive tracks without adding gaps. Silence inside a recording is kept."))
         .active(settings.get_bool(keys::GAPLESS_AUDIO))
         .build();
     gapless_row.add_prefix(&illustration("gapless.svg"));
@@ -204,29 +193,8 @@ pub(super) fn create_music_page(
     }
     playback_group.add(&resume_row);
 
-    let crossfade_adjustment = crossfade_adjustment_spec();
-    let crossfade_row = adw::SpinRow::builder()
-        .title(i18n("Crossfade"))
-        .subtitle(i18n(
-            "Blend the end of one song into the beginning of the next — set to 0 to disable",
-        ))
-        .adjustment(&gtk::Adjustment::new(
-            f64::from(settings.get_int(keys::CROSSFADE_SECS)),
-            crossfade_adjustment.lower,
-            crossfade_adjustment.upper,
-            crossfade_adjustment.step_increment,
-            crossfade_adjustment.page_increment,
-            crossfade_adjustment.page_size,
-        ))
-        .build();
-    crossfade_row.add_prefix(&illustration("crossfade.svg"));
-    {
-        let s = settings.clone();
-        crossfade_row.connect_value_notify(move |row| {
-            let _ = s.put_int(keys::CROSSFADE_SECS, row.value() as i32);
-        });
-    }
-    playback_group.add(&crossfade_row);
+    // Do not expose CROSSFADE_SECS until a two-track overlap engine consumes
+    // it. Existing saved values are deliberately retained for future migration.
 
     // Taskbar progress (KDE Plasma / Unity → Unity launcher protocol).
     let taskbar_row = adw::SwitchRow::builder()
@@ -251,82 +219,17 @@ pub(super) fn create_music_page(
 
     page.add(&playback_group);
 
-    let lb_group = BigPreferencesGroupSpec::new("ListenBrainz")
-        .description(i18n("Keep a record of everything you listen to on ListenBrainz — a free, open-source music tracking service"))
-        .build();
-
-    // Built empty; the on-disk config is read off the main loop below (a hung
-    // $HOME must not block the preferences dialog) and applied when it lands.
-    let lb_enabled = adw::SwitchRow::builder()
-        .title(i18n("Enable ListenBrainz"))
-        .build();
-    lb_enabled.add_prefix(&illustration("listenbrainz.svg"));
-
-    let lb_token = adw::EntryRow::builder().title(i18n("User Token")).build();
-
-    // Set while the freshly-loaded config is applied, so the change handlers
-    // below don't persist a half-applied value (e.g. enabled with no token yet).
-    let suppress = Rc::new(Cell::new(false));
-
-    let enabled_ref = lb_enabled.downgrade();
-    let suppress_token = Rc::clone(&suppress);
-    lb_token.connect_changed(move |entry| {
-        if suppress_token.get() {
-            return;
-        }
-        let Some(enabled_ref) = enabled_ref.upgrade() else {
-            return;
-        };
-        let token = entry.text().to_string();
-        let enabled = enabled_ref.is_active();
-        let listenbrainz_config = crate::library::listenbrainz::ListenBrainzConfig {
-            user_token: token,
-            enabled,
-        };
-        let _ = listenbrainz_config.save();
-    });
-
-    let token_ref = lb_token.downgrade();
-    let suppress_enabled = Rc::clone(&suppress);
-    lb_enabled.connect_active_notify(move |row| {
-        if suppress_enabled.get() {
-            return;
-        }
-        let Some(token_ref) = token_ref.upgrade() else {
-            return;
-        };
-        let token = token_ref.text().to_string();
-        let listenbrainz_config = crate::library::listenbrainz::ListenBrainzConfig {
-            user_token: token,
-            enabled: row.is_active(),
-        };
-        let _ = listenbrainz_config.save();
-    });
-
-    lb_group.add(&lb_enabled);
-    lb_group.add(&lb_token);
-    page.add(&lb_group);
-
-    {
-        let lb_enabled = lb_enabled.downgrade();
-        let lb_token = lb_token.downgrade();
-        glib::spawn_future_local(async move {
-            let config =
-                gio::spawn_blocking(crate::library::listenbrainz::ListenBrainzConfig::load)
-                    .await
-                    .ok()
-                    .flatten();
-            let Some(config) = config else {
-                return;
-            };
-            if let (Some(lb_enabled), Some(lb_token)) = (lb_enabled.upgrade(), lb_token.upgrade()) {
-                suppress.set(true);
-                lb_token.set_text(&config.user_token);
-                lb_enabled.set_active(config.enabled);
-                suppress.set(false);
-            }
-        });
-    }
+    // The data-service API exists, but this shell does not submit listens.
+    // Never accept a secret or present an enable switch for an unwired feature.
+    // Retain any existing on-disk configuration without reading its token here.
+    let integrations = BigPreferencesGroupSpec::new(i18n("Online services")).build();
+    integrations.add(
+        &adw::ActionRow::builder()
+            .title("ListenBrainz")
+            .subtitle(i18n("Not available in this player yet. No listening history is sent."))
+            .build(),
+    );
+    page.add(&integrations);
 
     page
 }
@@ -367,6 +270,7 @@ fn apply_player_audio_effects(mpv: &MpvBackend, effects: PlayerAudioEffects) {
 pub fn show_audio_preferences(
     parent: &impl IsA<gtk::Window>,
     settings: &Settings,
+    mpv: Option<&Arc<MpvBackend>>,
     on_taskbar_toggle: Option<Box<dyn Fn(bool) + 'static>>,
 ) {
     let window_spec = audio_preferences_window_spec();
@@ -375,19 +279,37 @@ pub fn show_audio_preferences(
         settings.get_int(window_spec.saved_height_key),
     );
 
-    let mpv: Option<Arc<MpvBackend>> = None;
     let is_advanced = settings.get_bool(keys::ADVANCED_MODE);
     let adv_widgets: AdvancedWidgets = Rc::new(RefCell::new(Vec::new()));
     let pages = [
         create_audio_page(
             settings,
-            audio_preference_actions(mpv.as_ref()),
+            audio_preference_actions(mpv),
             is_advanced,
             &adv_widgets,
             None,
         ),
-        create_music_page(settings, mpv.as_ref(), on_taskbar_toggle),
+        create_music_page(settings, mpv, on_taskbar_toggle),
     ];
+    // This switch must remain visible even when all technical groups are hidden.
+    let visibility_group = BigPreferencesGroupSpec::new(i18n("More options")).build();
+    let advanced = adw::SwitchRow::builder()
+        .title(i18n("Show technical settings"))
+        .subtitle(i18n("Show audio output and processing options. Hiding them keeps your choices."))
+        .active(is_advanced)
+        .build();
+    {
+        let settings = settings.clone();
+        advanced.connect_active_notify(move |row| {
+            let visible = row.is_active();
+            for widget in adv_widgets.borrow().iter() {
+                widget.set_visible(visible);
+            }
+            let _ = settings.put_bool(keys::ADVANCED_MODE, visible);
+        });
+    }
+    visibility_group.add(&advanced);
+    pages[0].add(&visibility_group);
 
     let s = settings.clone();
     big_player_ui::appearance::build_preferences_window(
@@ -445,16 +367,7 @@ mod tests {
                 page_size: 0.0,
             }
         );
-        assert_eq!(
-            crossfade_adjustment_spec(),
-            NumericAdjustmentSpec {
-                lower: 0.0,
-                upper: 12.0,
-                step_increment: 1.0,
-                page_increment: 1.0,
-                page_size: 0.0,
-            }
-        );
+
     }
 
     #[test]

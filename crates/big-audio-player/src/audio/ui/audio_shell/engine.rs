@@ -114,8 +114,8 @@ pub(super) fn build_mpv_backend(
     sender: &ComponentSender<AudioShell>,
     settings: &Settings,
 ) -> Option<Arc<MpvBackend>> {
-    let (tx, rx) = async_channel::unbounded::<PlayerEvent>();
-    let mpv = match MpvBackend::new_audio_only(tx) {
+    let (tx, rx) = async_channel::bounded::<PlayerEvent>(64);
+    let mpv = match MpvBackend::new_audio_only_with_output(tx, &settings.get_string(keys::AUDIO_OUTPUT)) {
         Ok(mpv) => mpv,
         Err(e) => {
             log::error!("failed to initialize mpv audio backend: {e}");
@@ -124,21 +124,15 @@ pub(super) fn build_mpv_backend(
     };
 
     let replaygain = settings.get_string(keys::REPLAYGAIN);
-    if !replaygain.is_empty() && replaygain != "no" {
-        mpv.set_replaygain(&replaygain);
-    }
-    let preamp = settings.get_double(keys::REPLAYGAIN_PREAMP);
-    if preamp.abs() > 0.01 {
-        mpv.set_replaygain_preamp(preamp);
-    }
-    let volume = f64::from(settings.get_int(keys::AUDIO_VOLUME));
-    mpv.set_volume(if volume > 0.0 { volume } else { 100.0 });
-    if settings.get_bool(keys::GAPLESS_AUDIO) {
-        mpv.set_gapless(true);
-    }
-    if settings.get_bool(keys::AUDIO_PITCH_CORRECTION) {
-        mpv.set_audio_pitch_correction(true);
-    }
+    mpv.set_replaygain(if replaygain.is_empty() { "no" } else { &replaygain });
+    mpv.set_replaygain_preamp(settings.get_double(keys::REPLAYGAIN_PREAMP));
+    // Zero is a deliberate user choice, not a missing setting.
+    mpv.set_volume(f64::from(restored_volume(settings.get_int_or(keys::AUDIO_VOLUME, 100))));
+    mpv.set_gapless(settings.get_bool(keys::GAPLESS_AUDIO));
+    mpv.set_audio_pitch_correction(settings.get_bool(keys::AUDIO_PITCH_CORRECTION));
+    mpv.set_audio_channels(&settings.get_string(keys::AUDIO_CHANNELS));
+    mpv.set_preferred_audio_lang(&settings.get_string(keys::PREFERRED_AUDIO_LANG));
+    mpv.set_volume_max(i64::from(settings.get_int_or(keys::VOLUME_MAX, 150)));
     mpv.set_save_position(settings.get_bool(keys::RESUME_PLAYBACK));
 
     let input = sender.input_sender().clone();
@@ -151,4 +145,21 @@ pub(super) fn build_mpv_backend(
     });
 
     Some(Arc::new(mpv))
+}
+
+fn restored_volume(saved: i32) -> i32 {
+    saved.clamp(0, 250)
+}
+
+#[cfg(test)]
+mod review_tests {
+    use super::restored_volume;
+
+    #[test]
+    fn saved_zero_does_not_restart_at_full_volume() {
+        assert_eq!(restored_volume(0), 0);
+        assert_eq!(restored_volume(-1), 0);
+        assert_eq!(restored_volume(65), 65);
+        assert_eq!(restored_volume(i32::MAX), 250);
+    }
 }

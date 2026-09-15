@@ -429,17 +429,9 @@ impl Component for AudioShell {
         }
 
         {
-            let root_weak = root.downgrade();
-            let s = settings.clone();
+            let input = sender.input_sender().clone();
             big_app_kit::desktop::install_action(&win_actions, "show-preferences", move || {
-                let Some(win) = root_weak
-                    .upgrade()
-                    .and_then(|content| content.root())
-                    .and_downcast::<gtk::Window>()
-                else {
-                    return;
-                };
-                crate::audio::preferences::show_audio_preferences(&win, &s, None);
+                let _ = input.send(AudioShellInput::ShowPreferences);
             });
         }
 

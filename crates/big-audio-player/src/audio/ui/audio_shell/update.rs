@@ -7,6 +7,24 @@ impl AudioShell {
         sender: ComponentSender<Self>,
     ) {
         match message {
+            AudioShellInput::ShowPreferences => {
+                if let Some(window) = self.toast_overlay.root().and_downcast::<gtk::Window>() {
+                    let input = sender.input_sender().clone();
+                    crate::audio::preferences::show_audio_preferences(
+                        &window,
+                        &self.settings,
+                        self.mpv.as_ref(),
+                        Some(Box::new(move |enabled| {
+                            let _ = input.send(AudioShellInput::TaskbarProgressChanged(enabled));
+                        })),
+                    );
+                }
+            }
+            AudioShellInput::TaskbarProgressChanged(enabled) => {
+                if let Some(mpris) = &self.mpris {
+                    mpris.set_taskbar_progress(enabled);
+                }
+            }
             AudioShellInput::TracksDeletedFromStorage(ids) => {
                 self.reconcile_deleted_tracks(ids, &sender);
             }

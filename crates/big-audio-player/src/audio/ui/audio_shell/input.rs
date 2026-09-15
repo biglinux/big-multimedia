@@ -131,6 +131,10 @@ pub enum AudioShellInput {
     PlaybackRemote(AudioPlaybackBarOutput),
     /// Open the sleep-timer dialog (main menu).
     ShowSleepTimer,
+    /// Open preferences bound to this shell's actual playback engine.
+    ShowPreferences,
+    /// Apply the persisted taskbar-progress choice without a restart.
+    TaskbarProgressChanged(bool),
     /// Arm the sleep timer for `minutes`, then perform `action` on expiry.
     SleepTimerStart {
         /// Countdown length in minutes.

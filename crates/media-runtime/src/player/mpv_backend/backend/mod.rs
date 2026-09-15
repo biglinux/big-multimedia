@@ -112,8 +112,17 @@ impl MpvBackend {
 
     /// Create a new MpvBackend in audio-only mode (no video output).
     pub fn new_audio_only(sender: async_channel::Sender<PlayerEvent>) -> Result<Self, MpvError> {
+        Self::new_audio_only_with_output(sender, "")
+    }
+
+    /// Create an audio engine using the saved output driver (empty means auto).
+    pub fn new_audio_only_with_output(
+        sender: async_channel::Sender<PlayerEvent>,
+        audio_output: &str,
+    ) -> Result<Self, MpvError> {
         let mpv = MpvClient::with_initializer(|init| {
             apply_audio_only_options(init)?;
+            apply_audio_output(init, audio_output);
             apply_watch_later(init, crate::config::audio::WATCH_LATER_RELATIVE)?;
             Ok(())
         })?;
