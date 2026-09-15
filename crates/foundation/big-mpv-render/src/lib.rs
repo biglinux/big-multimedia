@@ -30,11 +30,12 @@ pub const REQUIRED_MAIN_VIDEO_PATH: &[&str] = &[
     "GLArea fallback",
 ];
 
-/// Names of the copy paths that BigLinux apps **must not** use for the
-/// main video surface.
+/// CPU/screenshot paths excluded from the preferred **direct GPU** mode.
 ///
-/// These paths force a CPU round-trip and break the zero-copy contract
-/// that `big-video-player` and the `big-video-converter` editor rely on.
+/// This is not a ban on a usable software fallback. Memory textures and RGB
+/// buffers are allowed in [`VideoSurfaceMode::Compatibility`]. A software
+/// buffer may be leased without an extra CPU memcpy; it still is not evidence
+/// of an end-to-end GPU zero-copy path.
 pub const FORBIDDEN_MAIN_VIDEO_COPY_PATHS: &[&str] =
     &["Pixbuf", "MemoryTexture", "RGB buffers", "screenshots"];
 
@@ -63,22 +64,24 @@ pub enum MainVideoSurfacePath {
     GlAreaFallback,
     /// CPU-side GDK pixbuf copy.
     Pixbuf,
-    /// CPU-side GDK memory texture copy.
+    /// CPU-backed GDK memory texture (possibly leased without a CPU memcpy).
     MemoryTexture,
-    /// CPU-side RGB frame buffer copy.
+    /// CPU-side RGB frame buffer.
     RgbBuffer,
     /// Screenshot-based frame extraction path.
     Screenshot,
 }
 
 impl MainVideoSurfacePath {
-    /// Return whether this path is allowed for the main video surface.
+    /// Legacy shorthand for the preferred direct-GPU mode.
+    /// Use [`Self::is_allowed_for_mode`] for explicit compatibility fallback.
     #[must_use]
     pub const fn is_allowed_for_main_video_surface(self) -> bool {
         !self.is_cpu_copy_path()
     }
 
-    /// Return whether this path performs a CPU-side frame copy.
+    /// Legacy classification of CPU-backed/extraction paths, not a measurement
+    /// of copies performed. A memory texture can retain an existing buffer.
     #[must_use]
     pub const fn is_cpu_copy_path(self) -> bool {
         matches!(
@@ -87,12 +90,34 @@ impl MainVideoSurfacePath {
         )
     }
 
-    /// Return whether this path represents a GTK zero-copy handoff.
+    /// Return whether this path supports a GPU texture handoff. This historical
+    /// name is not proof of zero-copy decode, import, composition or scanout:
+    /// actual formats, modifiers, synchronization and driver behavior matter.
     #[must_use]
     pub const fn is_zero_copy_handoff(self) -> bool {
         matches!(self, Self::GdkDmabufTexture | Self::GdkGlTexture)
     }
+
+    /// Apply the explicit rendering mode rather than rejecting compatibility
+    /// merely because a machine cannot provide working OpenGL/offload.
+    #[must_use]
+    pub const fn is_allowed_for_mode(self, mode: VideoSurfaceMode) -> bool {
+        self.is_allowed_for_main_video_surface()
+            || matches!((mode, self),
+                (VideoSurfaceMode::Compatibility, Self::MemoryTexture | Self::RgbBuffer))
+    }
 }
+
+/// User intent/capability outcome for the main video surface. Direct rendering
+/// stays preferred; compatibility is a deliberate, observable fallback.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum VideoSurfaceMode {
+    /// Prefer the hardware/direct path; avoid CPU-backed frame transfer.
+    Direct,
+    /// Allow bounded software frame leases when GPU rendering is unavailable.
+    Compatibility,
+}
+
 
 /// Typed render-surface steps required by the direct main-video contract.
 pub const REQUIRED_DIRECT_VIDEO_SURFACE_PATH: &[MainVideoSurfacePath] = &[
@@ -366,6 +391,16 @@ mod tests {
                 MainVideoSurfacePath::GlAreaFallback,
             ]
         );
+    }
+
+    #[test]
+    fn compatibility_accepts_bounded_cpu_surfaces_but_not_screenshot_playback() {
+        for path in [MainVideoSurfacePath::MemoryTexture, MainVideoSurfacePath::RgbBuffer] {
+            assert!(path.is_allowed_for_mode(VideoSurfaceMode::Compatibility));
+            assert!(!path.is_allowed_for_mode(VideoSurfaceMode::Direct));
+        }
+        assert!(!MainVideoSurfacePath::Screenshot.is_allowed_for_mode(VideoSurfaceMode::Compatibility));
+        assert!(!MainVideoSurfacePath::Pixbuf.is_allowed_for_mode(VideoSurfaceMode::Compatibility));
     }
 
     #[test]
