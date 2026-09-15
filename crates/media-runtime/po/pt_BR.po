@@ -4731,7 +4731,7 @@ msgstr "Rápido"
 #: crates/media-runtime/src/ui_labels.rs:44
 #: crates/ui/generic/big-relm4-components/src/layout/tab_prefs.rs:135
 msgid "Balanced"
-msgstr "Balanceado"
+msgstr "Equilibrado"
 
 #: crates/media-runtime/src/ui_labels.rs:45
 msgid "Slow"
@@ -7287,3 +7287,96 @@ msgstr "Não foi possível iniciar o servidor"
 
 #~ msgid "Load playlist (.m3u/.m3u8)"
 #~ msgstr "Carregar lista de reprodução (.m3u/.m3u8)"
+
+
+#: crates/big-video-player/src/video/ui/preferences/video/render_profile.rs:47
+msgid "Automatic (recommended)"
+msgstr "Automático (recomendado)"
+
+#: crates/big-video-player/src/video/ui/preferences/video/render_profile.rs:49
+msgid "Close and reopen the player to apply this change"
+msgstr "Feche e abra novamente o player para aplicar esta alteração"
+
+#: crates/big-video-player/src/video/ui/preferences/video/render_profile.rs:47
+msgid "Compatibility (processor)"
+msgstr "Compatibilidade (processador)"
+
+#: crates/big-video-player/src/video/ui/preferences/video/render_profile.rs:37
+msgid "Keep Automatic unless the picture is missing or corrupted. Compatibility mode uses the processor and may use more energy."
+msgstr "Mantenha Automático, a menos que a imagem não apareça ou apresente defeitos. O modo de compatibilidade usa o processador e pode consumir mais energia."
+
+#: crates/big-video-player/src/video/ui/preferences/video/render_profile.rs:97
+msgid "Low resource use"
+msgstr "Baixo consumo de recursos"
+
+#: crates/big-video-player/src/video/ui/preferences/video/render_profile.rs:97
+msgid "More detail"
+msgstr "Mais detalhes"
+
+#: crates/big-video-player/src/video/ui/preferences/video/render_profile.rs:99
+msgid "More detail can increase graphics workload and battery use"
+msgstr "Mais detalhes podem exigir mais da placa gráfica e consumir mais bateria"
+
+#: crates/big-audio-player/src/audio/preferences.rs:295
+msgid "More options"
+msgstr "Mais opções"
+
+#: crates/big-audio-player/src/audio/preferences.rs:229
+msgid "Not available in this player yet. No listening history is sent."
+msgstr "Ainda não disponível neste player. Nenhum histórico de reprodução é enviado."
+
+#: crates/big-audio-player/src/audio/preferences.rs:225
+msgid "Online services"
+msgstr "Serviços on-line"
+
+#: crates/big-video-player/src/video/ui/preferences/video/render_profile.rs:47
+msgid "OpenGL with fallback"
+msgstr "OpenGL com alternativa automática"
+
+#: crates/big-video-player/src/video/ui/preferences/video/render_profile.rs:86 crates/big-video-player/src/video/ui/preferences/video/render_profile.rs:96
+msgid "Picture quality"
+msgstr "Qualidade da imagem"
+
+#: crates/big-audio-player/src/audio/preferences.rs:160
+msgid "Play consecutive tracks without adding gaps. Silence inside a recording is kept."
+msgstr "Reproduz faixas consecutivas sem acrescentar pausas. O silêncio que faz parte da gravação é preservado."
+
+#: crates/big-audio-player/src/audio/ui/audio_shell/update.rs:96
+msgid "Playlist updated"
+msgstr "Playlist atualizada"
+
+#: crates/big-audio-player/src/audio/ui/audio_shell/update.rs:102
+msgid "Playlists could not be opened. Please try again."
+msgstr "Não foi possível abrir as playlists. Tente novamente."
+
+#: crates/big-video-player/src/video/ui/preferences/mod.rs:114
+msgid "Show additional technical settings. Your current choices are kept."
+msgstr "Mostra configurações técnicas adicionais. Suas escolhas atuais são mantidas."
+
+#: crates/big-audio-player/src/audio/preferences.rs:298
+msgid "Show audio output and processing options. Hiding them keeps your choices."
+msgstr "Mostra opções de saída e processamento de áudio. Suas escolhas são mantidas ao ocultá-las."
+
+#: crates/big-audio-player/src/audio/preferences.rs:297
+msgid "Show technical settings"
+msgstr "Mostrar configurações técnicas"
+
+#: crates/big-audio-player/src/audio/ui/audio_shell/update.rs:98
+msgid "The playlist could not be changed. Your previous playlist was kept."
+msgstr "Não foi possível alterar a playlist. A versão anterior foi preservada."
+
+#: crates/big-video-player/src/video/ui/video_shell/render.rs:348
+msgid "The video area is too large for compatibility mode. Reduce the window size or select Automatic video output in Preferences."
+msgstr "A área do vídeo é grande demais para o modo de compatibilidade. Reduza a janela ou selecione a saída de vídeo Automático nas Preferências."
+
+#: crates/big-video-player/src/video/ui/video_shell/render.rs:352
+msgid "The video frame could not be displayed. Try Automatic video output in Preferences."
+msgstr "Não foi possível exibir a imagem do vídeo. Tente a saída de vídeo Automático nas Preferências."
+
+#: crates/big-video-player/src/video/ui/preferences/video/render_profile.rs:87
+msgid "Use Low resource use on older computers. Choose more detail only when playback stays smooth."
+msgstr "Em computadores antigos, use Baixo consumo de recursos. Escolha Mais detalhes somente se a reprodução continuar fluida."
+
+#: crates/big-video-player/src/video/ui/video_shell/render.rs:278
+msgid "Video could not start. Try Automatic video output in Preferences, or check that mpv is installed."
+msgstr "Não foi possível iniciar o vídeo. Nas Preferências, tente a saída de vídeo Automático ou verifique se o mpv está instalado."

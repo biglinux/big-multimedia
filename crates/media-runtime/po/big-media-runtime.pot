@@ -6244,3 +6244,96 @@ msgstr ""
 #: crates/ui/media/big-player-ui/src/smartphone/dialog.rs:142
 msgid "Could not start server"
 msgstr ""
+
+
+#: crates/big-video-player/src/video/ui/preferences/video/render_profile.rs:47
+msgid "Automatic (recommended)"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/preferences/video/render_profile.rs:49
+msgid "Close and reopen the player to apply this change"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/preferences/video/render_profile.rs:47
+msgid "Compatibility (processor)"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/preferences/video/render_profile.rs:37
+msgid "Keep Automatic unless the picture is missing or corrupted. Compatibility mode uses the processor and may use more energy."
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/preferences/video/render_profile.rs:97
+msgid "Low resource use"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/preferences/video/render_profile.rs:97
+msgid "More detail"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/preferences/video/render_profile.rs:99
+msgid "More detail can increase graphics workload and battery use"
+msgstr ""
+
+#: crates/big-audio-player/src/audio/preferences.rs:295
+msgid "More options"
+msgstr ""
+
+#: crates/big-audio-player/src/audio/preferences.rs:229
+msgid "Not available in this player yet. No listening history is sent."
+msgstr ""
+
+#: crates/big-audio-player/src/audio/preferences.rs:225
+msgid "Online services"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/preferences/video/render_profile.rs:47
+msgid "OpenGL with fallback"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/preferences/video/render_profile.rs:86 crates/big-video-player/src/video/ui/preferences/video/render_profile.rs:96
+msgid "Picture quality"
+msgstr ""
+
+#: crates/big-audio-player/src/audio/preferences.rs:160
+msgid "Play consecutive tracks without adding gaps. Silence inside a recording is kept."
+msgstr ""
+
+#: crates/big-audio-player/src/audio/ui/audio_shell/update.rs:96
+msgid "Playlist updated"
+msgstr ""
+
+#: crates/big-audio-player/src/audio/ui/audio_shell/update.rs:102
+msgid "Playlists could not be opened. Please try again."
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/preferences/mod.rs:114
+msgid "Show additional technical settings. Your current choices are kept."
+msgstr ""
+
+#: crates/big-audio-player/src/audio/preferences.rs:298
+msgid "Show audio output and processing options. Hiding them keeps your choices."
+msgstr ""
+
+#: crates/big-audio-player/src/audio/preferences.rs:297
+msgid "Show technical settings"
+msgstr ""
+
+#: crates/big-audio-player/src/audio/ui/audio_shell/update.rs:98
+msgid "The playlist could not be changed. Your previous playlist was kept."
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/video_shell/render.rs:348
+msgid "The video area is too large for compatibility mode. Reduce the window size or select Automatic video output in Preferences."
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/video_shell/render.rs:352
+msgid "The video frame could not be displayed. Try Automatic video output in Preferences."
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/preferences/video/render_profile.rs:87
+msgid "Use Low resource use on older computers. Choose more detail only when playback stays smooth."
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/video_shell/render.rs:278
+msgid "Video could not start. Try Automatic video output in Preferences, or check that mpv is installed."
+msgstr ""
