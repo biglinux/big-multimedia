@@ -53,6 +53,7 @@ fn env_value_names_nvidia_driver(value: &str) -> bool {
 pub(crate) mod egl_dmabuf;
 pub mod fast_render;
 pub mod frame_layout;
+pub mod software_frames;
 pub mod filters;
 /// GPU-offloaded video renderer: DMA-BUF export (MESA) or GdkGLTexture
 /// fallback → `GtkGraphicsOffload` → Wayland subsurface. Used by both the

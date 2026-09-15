@@ -252,7 +252,9 @@ impl SwRenderContext {
     /// at least `stride * height` bytes. Returns 0 on success, negative on error.
     #[inline]
     pub fn render_into(&self, buffer: &mut [u8], width: i32, height: i32, stride: usize) -> i32 {
-        if !super::frame_layout::buffer_fits(width, height, stride, buffer.len()) {
+        if buffer.as_ptr() as usize % 4 != 0
+            || !super::frame_layout::buffer_fits(width, height, stride, buffer.len())
+        {
             return -1;
         }
         let mut size: [i32; 2] = [width, height];

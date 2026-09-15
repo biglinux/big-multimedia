@@ -11,12 +11,20 @@ pub fn packed_layout(width: i32, height: i32) -> Option<(usize, usize)> {
     (length <= isize::MAX as usize).then_some((stride, length))
 }
 
+/// Pad rows to mpv's recommended SIMD alignment without changing image width.
+pub fn aligned_layout(width: i32, height: i32) -> Option<(usize, usize)> {
+    let (minimum, _) = packed_layout(width, height)?;
+    let stride = minimum.checked_add(63)? & !63;
+    let length = stride.checked_mul(usize::try_from(height).ok()?)?;
+    (length <= isize::MAX as usize).then_some((stride, length))
+}
+
 /// Padded rows are allowed, but never less than four bytes per pixel.
 pub fn buffer_fits(width: i32, height: i32, stride: usize, available: usize) -> bool {
     let Some((minimum_stride, _)) = packed_layout(width, height) else {
         return false;
     };
-    stride >= minimum_stride
+    stride % 4 == 0 && stride >= minimum_stride
         && stride.checked_mul(height as usize).is_some_and(|length| {
             length <= available && length <= isize::MAX as usize
         })
@@ -36,6 +44,8 @@ mod tests {
     #[test]
     fn rejects_short_rows_and_buffers() {
         assert!(!buffer_fits(3, 2, 8, 1024));
+        assert!(!buffer_fits(3, 2, 13, 1024));
+        assert_eq!(aligned_layout(3, 2), Some((64, 128)));
         assert!(!buffer_fits(3, 2, 16, 31));
     }
 

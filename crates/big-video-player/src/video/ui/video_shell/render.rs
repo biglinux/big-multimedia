@@ -172,6 +172,9 @@ fn wire_render(
             }
             Err(e) => {
                 error!("video: offload render context failed: {e}; trying software fallback");
+                if let Some(VideoBackend::Offload(renderer)) = video_backend.borrow().as_ref() {
+                    renderer.widget().set_visible(false);
+                }
                 wire_software_fallback(
                     mpv,
                     gl_area,
@@ -258,75 +261,100 @@ fn ensure_glarea_context(
     }
 }
 
-/// Software (no-GL) video path: mpv renders each frame into a CPU buffer that we
-/// publish as a `gdk::MemoryTexture` on `software_picture`. Driven by a ~60 fps
-/// main-thread timer gated on `has_new_frame` (idle when paused/static). Swaps
-/// the dead GLArea out for the picture. Used only when the GL render context
-/// could not be created.
+/// Compatibility renderer: wake on mpv updates, buffer release or resize, not
+/// on a permanent 16 ms timer. CPU pixels are leased to GBytes without a copy.
 fn wire_software_fallback(
     mpv: &Arc<MpvBackend>,
     gl_area: &gtk::GLArea,
     software_picture: &gtk::Picture,
     software_render_context_slot: &SoftwareRenderContextSlot,
 ) {
-    if software_render_context_slot.borrow().is_some() {
-        return;
-    }
-    let software_render_context = match mpv.create_sw_render_context() {
-        Ok(software_render_context) => software_render_context,
-        Err(e) => {
-            error!("video: software render context failed: {e}");
+    if software_render_context_slot.borrow().is_some() { return; }
+    let mut context = match mpv.create_sw_render_context() {
+        Ok(context) => context,
+        Err(error) => {
+            error!("video: software render context failed: {error}");
+            show_render_error(software_picture,
+                &i18n("Video could not start. Try Automatic video output in Preferences, or check that mpv is installed."));
             return;
         }
     };
-    software_render_context_slot.replace(Some(software_render_context));
+    let (wake, receiver) = async_channel::bounded::<()>(1);
+    let wake = Arc::new(wake);
+    let callback_wake = wake.clone();
+    context.set_update_callback(move || { let _ = callback_wake.try_send(()); });
+    software_render_context_slot.replace(Some(context));
     gl_area.set_visible(false);
     software_picture.set_visible(true);
-    log::info!("video: software render fallback active (no OpenGL)");
 
-    let software_frame_buffer: Rc<RefCell<Vec<u8>>> = Rc::new(RefCell::new(Vec::new()));
-    let software_render_context_slot = software_render_context_slot.clone();
-    let picture_weak = software_picture.downgrade();
-    glib::timeout_add_local(std::time::Duration::from_millis(16), move || {
-        let Some(picture) = picture_weak.upgrade() else {
-            return glib::ControlFlow::Break; // widget gone → stop + drop the context clone
-        };
-        let software_context_borrow = software_render_context_slot.borrow();
-        let Some(software_render_context) = software_context_borrow.as_ref() else {
-            return glib::ControlFlow::Break;
-        };
-        if software_render_context.has_new_frame() {
-            render_software_frame(&picture, software_render_context, &software_frame_buffer);
+    // Picture has no resize signal. A transparent DrawingArea in the same
+    // overlay observes allocation changes without polling or painting pixels.
+    if let Some(overlay) = software_picture.parent().and_downcast::<gtk::Overlay>() {
+        let probe = gtk::DrawingArea::new();
+        probe.set_can_target(false);
+        probe.set_opacity(0.0);
+        probe.set_hexpand(true);
+        probe.set_vexpand(true);
+        let resize_wake = wake.clone();
+        probe.connect_resize(move |_, _, _| { let _ = resize_wake.try_send(()); });
+        overlay.add_overlay(&probe);
+    }
+    let weak_wake = Arc::downgrade(&wake);
+    let slot = Rc::downgrade(software_render_context_slot);
+    let picture = software_picture.downgrade();
+    let pool = crate::player::mpv_backend::software_frames::SoftwareFramePool::default();
+    glib::spawn_future_local(async move {
+        let mut pending = true;
+        let mut last_size = (0, 0, 0);
+        let mut error_shown = false;
+        while receiver.recv().await.is_ok() {
+            let (Some(slot), Some(picture), Some(wake)) = (slot.upgrade(), picture.upgrade(), weak_wake.upgrade()) else { break };
+            let borrowed = slot.borrow();
+            let Some(context) = borrowed.as_ref() else { break };
+            let size = (picture.width(), picture.height(), picture.scale_factor());
+            pending |= context.has_new_frame() || size != last_size;
+            if !pending { continue; }
+            match render_software_frame(&picture, context, &pool, wake) {
+                Ok(true) => { pending = false; last_size = size; error_shown = false; }
+                Ok(false) => {} // all buffers retained or not yet allocated
+                Err(message) => {
+                    pending = false;
+                    if !error_shown { show_render_error(&picture, &message); error_shown = true; }
+                }
+            }
         }
-        glib::ControlFlow::Continue
     });
 }
 
-/// Render one mpv frame into `buffer` (bgr0) and publish it on `picture`.
+fn show_render_error(picture: &gtk::Picture, message: &str) {
+    if let Some(overlay) = picture.ancestor(adw::ToastOverlay::static_type()).and_downcast::<adw::ToastOverlay>() {
+        let toast = adw::Toast::new(message);
+        toast.set_timeout(0); // do not disappear before the user can read it
+        overlay.add_toast(toast);
+    }
+}
+
 fn render_software_frame(
     picture: &gtk::Picture,
-    software_render_context: &SoftwareRenderContext,
-    software_frame_buffer: &Rc<RefCell<Vec<u8>>>,
-) {
+    context: &SoftwareRenderContext,
+    pool: &crate::player::mpv_backend::software_frames::SoftwareFramePool,
+    wake: Arc<async_channel::Sender<()>>,
+) -> std::result::Result<bool, String> {
+    use crate::player::mpv_backend::frame_layout::aligned_layout;
     let scale = picture.scale_factor().max(1);
-    let width = picture.width() * scale;
-    let height = picture.height() * scale;
-    if width <= 0 || height <= 0 {
-        return; // not allocated yet — the next tick retries
+    let width = picture.width().checked_mul(scale).unwrap_or(0);
+    let height = picture.height().checked_mul(scale).unwrap_or(0);
+    if width <= 0 || height <= 0 { return Ok(false); }
+    let message = || i18n("The video area is too large for compatibility mode. Reduce the window size or select Automatic video output in Preferences.");
+    let (stride, length) = aligned_layout(width, height).ok_or_else(message)?;
+    let Some(mut frame) = pool.acquire(length, wake).map_err(|_| message())? else { return Ok(false) };
+    if context.render_into(frame.pixels_mut(), width, height, stride) < 0 {
+        return Err(i18n("The video frame could not be displayed. Try Automatic video output in Preferences."));
     }
-    let stride = width as usize * 4;
-    let needed = stride * height as usize;
-    let mut frame_buffer_borrow = software_frame_buffer.borrow_mut();
-    if frame_buffer_borrow.len() != needed {
-        frame_buffer_borrow.resize(needed, 0);
-    }
-    if software_render_context.render_into(&mut frame_buffer_borrow, width, height, stride) < 0 {
-        return;
-    }
-    let bytes = gtk::glib::Bytes::from(&frame_buffer_borrow[..]);
-    let texture =
-        gdk::MemoryTexture::new(width, height, gdk::MemoryFormat::B8g8r8x8, &bytes, stride);
+    let bytes = glib::Bytes::from_owned(frame);
+    let texture = gdk::MemoryTexture::new(width, height, gdk::MemoryFormat::B8g8r8x8, &bytes, stride);
     picture.set_paintable(Some(&texture));
+    Ok(true)
 }
 
 /// Render one mpv frame into the GLArea's framebuffer (fallback path).
@@ -339,9 +367,9 @@ fn render_glarea_frame(fast_render_context_slot: &FastRenderContextSlot, gl_area
         fast_render_context.report_swap();
         return;
     }
-    if !fast_render_context.has_new_frame() {
-        return;
-    }
+    // A GTK resize/expose request must redraw even while mpv is paused.
+    // Still service update() with the area's GL context current.
+    let _ = fast_render_context.has_new_frame();
     gl_area.attach_buffers();
     let mut framebuffer_binding: i32 = 0;
     if let Some(get_integerv) = get_gl_get_integerv() {
@@ -353,8 +381,8 @@ fn render_glarea_frame(fast_render_context_slot: &FastRenderContextSlot, gl_area
     video_surface::render_glarea_frame(
         fast_render_context,
         framebuffer_binding,
-        gl_area.width() * scale,
-        gl_area.height() * scale,
+        gl_area.width().checked_mul(scale).unwrap_or(0),
+        gl_area.height().checked_mul(scale).unwrap_or(0),
         true,
     );
 }
