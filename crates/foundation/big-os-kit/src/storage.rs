@@ -206,10 +206,12 @@ pub fn atomic_write_private(path: &Path, bytes: &[u8]) -> std::io::Result<()> {
 }
 
 // Remove partial files on every error, including serialization and fsync errors.
-struct TempFileCleanup(PathBuf);
+struct TempFileCleanup(Option<PathBuf>);
 impl Drop for TempFileCleanup {
     fn drop(&mut self) {
-        let _ = fs::remove_file(&self.0);
+        if let Some(path) = &self.0 {
+            let _ = fs::remove_file(path);
+        }
     }
 }
 
@@ -244,11 +246,12 @@ fn atomic_replace<E: From<std::io::Error>>(
     // Do not arm cleanup before exclusive creation succeeds: an existing
     // attacker-owned path must neither be followed nor removed by this code.
     let mut file = create_sibling_file(&temporary, private)?;
-    let _cleanup = TempFileCleanup(temporary.clone());
+    let mut cleanup = TempFileCleanup(Some(temporary.clone()));
     write(&mut file)?;
     file.sync_all()?;
     drop(file);
     fs::rename(&temporary, path)?;
+    cleanup.0 = None; // the old temporary name no longer belongs to us
     // Persist the directory entry as well as the file content on Unix.
     #[cfg(unix)]
     fs::File::open(parent)?.sync_all()?;

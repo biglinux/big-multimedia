@@ -7380,3 +7380,7 @@ msgstr "Em computadores antigos, use Baixo consumo de recursos. Escolha Mais det
 #: crates/big-video-player/src/video/ui/video_shell/render.rs:278
 msgid "Video could not start. Try Automatic video output in Preferences, or check that mpv is installed."
 msgstr "Não foi possível iniciar o vídeo. Nas Preferências, tente a saída de vídeo Automático ou verifique se o mpv está instalado."
+
+#: crates/ui/generic/big-relm4-components/src/feedback/hover_popover.rs:264
+msgid "Press Alt+Down to adjust. Press Escape to close."
+msgstr "Pressione Alt+Seta para baixo para ajustar. Pressione Esc para fechar."

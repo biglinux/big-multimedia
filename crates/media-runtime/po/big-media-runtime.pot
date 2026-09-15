@@ -6337,3 +6337,7 @@ msgstr ""
 #: crates/big-video-player/src/video/ui/video_shell/render.rs:278
 msgid "Video could not start. Try Automatic video output in Preferences, or check that mpv is installed."
 msgstr ""
+
+#: crates/ui/generic/big-relm4-components/src/feedback/hover_popover.rs:264
+msgid "Press Alt+Down to adjust. Press Escape to close."
+msgstr ""

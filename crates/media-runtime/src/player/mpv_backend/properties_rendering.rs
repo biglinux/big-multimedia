@@ -141,16 +141,28 @@ impl MpvBackend {
         });
     }
 
-    /// Create a context retaining the mpv backend until after render teardown.
-    pub fn create_fast_render_context(
+    /// Create a raw GL context retaining the backend through render teardown.
+    /// Prefer `video_surface::create_render_context` for a safe GTK integration.
+    ///
+    /// # Safety
+    /// The correct GL context must remain current for every render API call,
+    /// including destruction, and its native display must outlive this object.
+    pub unsafe fn create_fast_render_context(
         self: &std::sync::Arc<Self>,
     ) -> crate::error::Result<super::fast_render::FastRenderContext> {
-        self.create_fast_render_context_with_wayland_display(None, false)
+        // SAFETY: forwarded caller contract; no borrowed native display pointer.
+        unsafe { self.create_fast_render_context_with_wayland_display(None, false) }
     }
 
     /// Advanced control requires servicing every update callback on the render
     /// thread, with its GL context current. It does not enable shaders.
-    pub fn create_fast_render_context_with_wayland_display(
+    ///
+    /// # Safety
+    /// `wl_display`, when present, must be a live Wayland display for the entire
+    /// render-context lifetime. The creation GL context must be current for
+    /// render API calls and teardown. A raw native pointer cannot be accepted
+    /// through a safe API merely because the mpv handle itself is retained.
+    pub unsafe fn create_fast_render_context_with_wayland_display(
         self: &std::sync::Arc<Self>,
         wl_display: Option<*mut std::ffi::c_void>,
         advanced_control: bool,

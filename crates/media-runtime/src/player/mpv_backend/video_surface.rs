@@ -119,9 +119,14 @@ where
     // The render and property handlers share GTK's main thread. They cannot
     // promise advanced-control's no-core-wait contract. A dedicated render
     // actor is required before re-enabling direct-render advanced control.
-    let mut render_context =
-        mpv.create_fast_render_context_with_wayland_display(wl_display, false)?;
-    if let Some(context) = gdk::GLContext::current() {
+    let context = gdk::GLContext::current()
+        .ok_or_else(|| Error::mpv("No current GL context for the video surface"))?;
+    // SAFETY: the owning GTK thread made this GL context current above. It
+    // retains its display and is captured for exact-context teardown below.
+    let mut render_context = unsafe {
+        mpv.create_fast_render_context_with_wayland_display(wl_display, false)?
+    };
+    {
         render_context.set_context_free(move |raw| {
             let previous = gdk::GLContext::current();
             context.make_current();
