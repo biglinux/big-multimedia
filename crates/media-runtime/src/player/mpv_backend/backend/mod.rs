@@ -30,7 +30,6 @@ struct PollState {
     last_buffering: Option<bool>,
     last_eof: bool,
     last_title: String,
-    last_volume_poll: Option<std::time::Instant>,
     last_volume: Option<f64>,
     last_mute: Option<bool>,
     pending: Vec<PlayerEvent>,
@@ -74,14 +73,7 @@ pub struct MpvBackend {
     /// Tracks whether audio filters are currently set, so we can skip
     /// the expensive ao-reload when clearing an already-empty chain.
     pub(in crate::player::mpv_backend) has_af: AtomicBool,
-    /// `audio-client-name` mpv reports to the sound server (== `application.name`
-    /// on our sink-input). Used to locate our own stream for volume control.
-    pub(in crate::player::mpv_backend) audio_client_name: String,
-    /// Cached sink-input index for our stream (mpv recreates it per file, so this
-    /// is re-resolved when a `pactl` call finds it stale). Shared with the event
-    /// loop, which polls the stream to mirror external mixer changes back to the
-    /// UI. See `pactl_volume`.
-    pub(in crate::player::mpv_backend) pa_sink_input: Arc<Mutex<Option<u32>>>,
+    pub(in crate::player::mpv_backend) stream_volume: super::pactl_volume::StreamVolume,
 }
 
 // SAFETY: raw_mpv_handle points to an mpv_handle that lives as long as the Arc<Mutex<MpvClient>>.
@@ -151,9 +143,8 @@ impl MpvBackend {
         let load_flag = loading.clone();
         let mpv_clone = mpv.clone();
         let audio_client_name = init_options::audio_client_name();
-        let pa_sink_input = Arc::new(Mutex::new(None));
-        let poll_client = audio_client_name.clone();
-        let poll_cache = pa_sink_input.clone();
+        let stream_volume = super::pactl_volume::StreamVolume::new(audio_client_name);
+        let volume_state = stream_volume.shared();
 
         let event_sender = sender.clone();
         let event_thread = std::thread::Builder::new()
@@ -164,8 +155,7 @@ impl MpvBackend {
                     run_flag,
                     load_flag,
                     sender,
-                    poll_client,
-                    poll_cache,
+                    volume_state,
                 );
             })
             .expect("Failed to spawn mpv event thread");
@@ -179,8 +169,7 @@ impl MpvBackend {
             event_thread: Some(event_thread),
             event_sender,
             has_af: AtomicBool::new(false),
-            audio_client_name,
-            pa_sink_input,
+            stream_volume,
         }
     }
 
@@ -189,8 +178,7 @@ impl MpvBackend {
         running: Arc<AtomicBool>,
         loading: Arc<AtomicBool>,
         sender: async_channel::Sender<PlayerEvent>,
-        audio_client_name: String,
-        pa_sink_input: Arc<Mutex<Option<u32>>>,
+        volume_state: super::pactl_volume::Shared,
     ) {
         let mut poll = PollState::default();
         let mut outgoing = Vec::with_capacity(80);
@@ -206,6 +194,11 @@ impl MpvBackend {
             // Never wait for the UI while holding the mpv mutex: a UI handler
             // may need that same mutex before it can drain the bounded channel.
             for event in outgoing.drain(..) {
+                match &event {
+                    PlayerEvent::FileLoaded(_) => volume_state.set_active(true),
+                    PlayerEvent::EndFile(_) | PlayerEvent::Shutdown => volume_state.set_active(false),
+                    _ => {}
+                }
                 let shutdown = matches!(&event, PlayerEvent::Shutdown);
                 if sender.send_blocking(event).is_err() {
                     return;
@@ -215,7 +208,7 @@ impl MpvBackend {
                     return;
                 }
             }
-            Self::poll_stream_volume(&audio_client_name, &pa_sink_input, &sender, &mut poll);
+            Self::poll_stream_volume(&volume_state, &sender, &mut poll);
             // Position feedback stays smooth during playback, but a paused
             // player does not need to poll every property twenty times/second.
             let interval = if poll.last_paused == Some(true) { 200 } else { 50 };
@@ -224,25 +217,14 @@ impl MpvBackend {
         debug!("MPV event loop exited");
     }
 
-    /// Poll our sink-input's volume/mute (throttled) so a change made in the
-    /// system mixer shows on the in-app slider. Diff-gated: only emits on change.
+    /// Mirror the worker snapshot. Sound-server I/O never blocks mpv events.
     fn poll_stream_volume(
-        client_name: &str,
-        cache: &Arc<Mutex<Option<u32>>>,
+        volume_state: &super::pactl_volume::Shared,
         sender: &async_channel::Sender<PlayerEvent>,
         poll: &mut PollState,
     ) {
-        let now = std::time::Instant::now();
-        if poll
-            .last_volume_poll
-            .is_some_and(|last| now.duration_since(last) < std::time::Duration::from_millis(700))
-        {
-            return;
-        }
-        poll.last_volume_poll = Some(now);
-
-        // Single `pactl` query per tick for both volume and mute.
-        if let Some((volume, mute)) = super::pactl_volume::get_state(cache, client_name) {
+        // Reading the worker snapshot cannot spawn or wait on a process.
+        if let Some((volume, mute)) = volume_state.snapshot() {
             if poll
                 .last_volume
                 .is_none_or(|last| (last - volume).abs() > 0.5)

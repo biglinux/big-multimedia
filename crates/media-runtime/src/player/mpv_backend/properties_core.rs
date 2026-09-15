@@ -6,32 +6,26 @@ use crate::i18n::i18n;
 use super::MpvBackend;
 
 impl MpvBackend {
-    // Volume/mute drive our PipeWire/PulseAudio sink-input directly (via `pactl`),
-    // NOT an mpv property. mpv's software `volume` filter never reaches the sound
-    // server (mixer applets stay at 100%), and `ao-volume` is capped at 100 and
-    // uses a different scale than the mixer. Controlling the stream means the
-    // in-app value equals the value the system mixer shows (with >100% boost),
-    // and the server remembers it per client name. No-ops while nothing plays.
+    // Preserve per-stream mixer control, with a bounded background worker.
+    // Getters read cached/desired state and are safe to use from GTK handlers.
     pub fn set_volume(&self, volume: f64) {
-        super::pactl_volume::set_volume(&self.pa_sink_input, &self.audio_client_name, volume);
+        self.stream_volume.set_volume(volume);
     }
 
     pub fn get_volume(&self) -> f64 {
-        super::pactl_volume::get_volume(&self.pa_sink_input, &self.audio_client_name)
-            .unwrap_or(100.0)
+        self.stream_volume.snapshot().0
     }
 
     pub fn set_mute(&self, mute: bool) {
-        super::pactl_volume::set_mute(&self.pa_sink_input, &self.audio_client_name, mute);
+        self.stream_volume.set_mute(mute);
     }
 
     pub fn get_mute(&self) -> bool {
-        super::pactl_volume::get_mute(&self.audio_client_name).unwrap_or(false)
+        self.stream_volume.snapshot().1
     }
 
     pub fn toggle_mute(&self) {
-        let muted = super::pactl_volume::get_mute(&self.audio_client_name).unwrap_or(false);
-        super::pactl_volume::set_mute(&self.pa_sink_input, &self.audio_client_name, !muted);
+        self.stream_volume.set_mute(!self.get_mute());
     }
 
     pub fn get_position(&self) -> f64 {
