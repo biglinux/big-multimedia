@@ -149,25 +149,11 @@ impl<T: Serialize + DeserializeOwned> BigAtomicJsonStore<T> {
     /// Returns [`BigStorageError::Io`] for filesystem failures (mkdir, write, fsync,
     /// or rename), or [`BigStorageError::Json`] when serialization fails.
     pub fn write(&self, value: &T) -> Result<(), BigStorageError> {
-        if let Some(parent) = self.path.parent()
-            && !parent.as_os_str().is_empty()
-        {
-            fs::create_dir_all(parent)?;
-        }
-        let temporary_store_path = atomic_sibling_temp_path(&self.path);
-        {
-            let mut f = fs::File::create(&temporary_store_path)?;
-            serde_json::to_writer_pretty(&mut f, value)?;
-            f.write_all(b"\n")?;
-            f.sync_all()?;
-        }
-        match fs::rename(&temporary_store_path, &self.path) {
-            Ok(()) => Ok(()),
-            Err(e) => {
-                let _ = fs::remove_file(&temporary_store_path);
-                Err(BigStorageError::Io(e))
-            }
-        }
+        atomic_replace(&self.path, false, |file| {
+            serde_json::to_writer_pretty(&mut *file, value)?;
+            file.write_all(b"\n")?;
+            Ok(())
+        })
     }
 }
 
@@ -203,24 +189,70 @@ fn atomic_sibling_temp_path(target: &Path) -> PathBuf {
 /// Returns the underlying [`std::io::Error`] from the dir create, temp write,
 /// `fsync`, or rename.
 pub fn atomic_write(path: &Path, bytes: &[u8]) -> std::io::Result<()> {
-    if let Some(parent) = path.parent()
-        && !parent.as_os_str().is_empty()
-    {
-        fs::create_dir_all(parent)?;
+    atomic_replace(path, false, |file| file.write_all(bytes))
+}
+
+
+/// Atomically replace a secret file, creating it with owner-only permissions on
+/// Unix. Blocking: use a worker. This does not encrypt data or protect it from
+/// other processes running as the same user. Like `atomic_write`, a directory
+/// sync error can be reported after the new file has already been installed.
+///
+/// # Errors
+/// Returns I/O errors, or `Unsupported` on non-Unix targets without a private
+/// permissions implementation. Never falls back to a world-readable write.
+pub fn atomic_write_private(path: &Path, bytes: &[u8]) -> std::io::Result<()> {
+    atomic_replace(path, true, |file| file.write_all(bytes))
+}
+
+// Remove partial files on every error, including serialization and fsync errors.
+struct TempFileCleanup(PathBuf);
+impl Drop for TempFileCleanup {
+    fn drop(&mut self) {
+        let _ = fs::remove_file(&self.0);
     }
-    let temporary_write_path = atomic_sibling_temp_path(path);
-    {
-        let mut file = fs::File::create(&temporary_write_path)?;
-        file.write_all(bytes)?;
-        file.sync_all()?;
+}
+
+fn create_sibling_file(path: &Path, private: bool) -> std::io::Result<fs::File> {
+    let mut options = fs::OpenOptions::new();
+    // O_EXCL: never truncate or follow an existing (including dangling) symlink.
+    options.write(true).create_new(true);
+    #[cfg(unix)]
+    if private {
+        use std::os::unix::fs::OpenOptionsExt;
+        options.mode(0o600);
     }
-    match fs::rename(&temporary_write_path, path) {
-        Ok(()) => Ok(()),
-        Err(error) => {
-            let _ = fs::remove_file(&temporary_write_path);
-            Err(error)
-        }
+    #[cfg(not(unix))]
+    if private {
+        return Err(std::io::Error::new(
+            std::io::ErrorKind::Unsupported,
+            "private atomic files are not implemented on this platform",
+        ));
     }
+    options.open(path)
+}
+
+fn atomic_replace<E: From<std::io::Error>>(
+    path: &Path,
+    private: bool,
+    write: impl FnOnce(&mut fs::File) -> Result<(), E>,
+) -> Result<(), E> {
+    let parent = path.parent().filter(|p| !p.as_os_str().is_empty())
+        .unwrap_or_else(|| Path::new("."));
+    fs::create_dir_all(parent)?;
+    let temporary = atomic_sibling_temp_path(path);
+    // Do not arm cleanup before exclusive creation succeeds: an existing
+    // attacker-owned path must neither be followed nor removed by this code.
+    let mut file = create_sibling_file(&temporary, private)?;
+    let _cleanup = TempFileCleanup(temporary.clone());
+    write(&mut file)?;
+    file.sync_all()?;
+    drop(file);
+    fs::rename(&temporary, path)?;
+    // Persist the directory entry as well as the file content on Unix.
+    #[cfg(unix)]
+    fs::File::open(parent)?.sync_all()?;
+    Ok(())
 }
 
 /// Migration callback contract used by [`BigVersionedJsonStore`].
@@ -584,5 +616,43 @@ mod tests {
         assert_eq!(loaded.volume, 71);
         assert_eq!(loaded.theme, "wr");
         let _ = fs::remove_file(&path);
+    }
+}
+
+#[cfg(test)]
+mod review_atomic_tests {
+    use super::*;
+
+    #[cfg(unix)]
+    #[test]
+    fn exclusive_creation_never_follows_a_symlink() {
+        use std::os::unix::fs::symlink;
+        let base = std::env::temp_dir().join(format!("big-private-{}-{}",
+            std::process::id(), TEMP_SEQ.fetch_add(1, Ordering::Relaxed)));
+        fs::create_dir(&base).unwrap();
+        let victim = base.join("victim");
+        fs::write(&victim, b"keep").unwrap();
+        let link = base.join("temp");
+        symlink(&victim, &link).unwrap();
+        assert!(create_sibling_file(&link, true).is_err());
+        assert_eq!(fs::read(&victim).unwrap(), b"keep");
+        fs::remove_dir_all(base).unwrap();
+    }
+
+    #[test]
+    fn failed_write_preserves_old_content_and_removes_partial_file() {
+        let base = std::env::temp_dir().join(format!("big-rollback-{}-{}",
+            std::process::id(), TEMP_SEQ.fetch_add(1, Ordering::Relaxed)));
+        fs::create_dir(&base).unwrap();
+        let path = base.join("state");
+        fs::write(&path, b"old").unwrap();
+        let result: std::io::Result<()> = atomic_replace(&path, false, |file| {
+            file.write_all(b"partial")?;
+            Err(std::io::Error::other("injected write failure"))
+        });
+        assert!(result.is_err());
+        assert_eq!(fs::read(&path).unwrap(), b"old");
+        assert_eq!(fs::read_dir(&base).unwrap().count(), 1);
+        fs::remove_dir_all(base).unwrap();
     }
 }

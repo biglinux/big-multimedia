@@ -86,7 +86,7 @@ impl BigSubprocessAllowList {
     /// Returns `true` when the program is permitted.
     #[must_use]
     pub fn permits(&self, program: &str) -> bool {
-        self.allowed.is_empty() || self.allowed.contains(program)
+        self.allowed.contains(program)
     }
 }
 
@@ -780,3 +780,23 @@ fn redact_in_place(needles: &[String], buf: &mut Vec<u8>) {
 
 #[cfg(test)]
 mod tests;
+
+#[cfg(test)]
+mod review_allow_list_tests {
+    use super::*;
+
+    #[test]
+    fn empty_allow_list_denies_every_program() {
+        let policy = BigSubprocessAllowList::default();
+        assert!(!policy.permits("sh"));
+        assert!(!policy.permits("/usr/bin/true"));
+    }
+
+    #[test]
+    fn permission_matches_the_exact_executable() {
+        let policy = BigSubprocessAllowList::new(["pactl"]);
+        assert!(policy.permits("pactl"));
+        assert!(!policy.permits("/tmp/pactl"));
+        assert!(!policy.permits("sh"));
+    }
+}
