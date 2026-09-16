@@ -34,16 +34,29 @@ impl ListenBrainzConfig {
 
     fn from_json(text: &str) -> Option<Self> {
         let value: serde_json::Value = serde_json::from_str(text).ok()?;
+        let enabled = match value.get("enabled") {
+            None => false, Some(serde_json::Value::Bool(value)) => *value, _ => return None,
+        };
         Some(Self {
             user_token: value.get("user_token")?.as_str()?.to_string(),
             // Possession of a token is not consent to publish listening history.
-            enabled: value.get("enabled").and_then(serde_json::Value::as_bool).unwrap_or(false),
+            enabled,
         })
     }
 
-    pub fn load() -> Option<Self> {
-        Self::from_json(&std::fs::read_to_string(Self::config_path()?).ok()?)
+    pub fn try_load() -> Result<Option<Self>> {
+        let path = Self::config_path().ok_or_else(|| std::io::Error::new(
+            std::io::ErrorKind::NotFound, "Private user configuration directory unavailable"))?;
+        let Some(bytes) = big_os_kit::storage::read_regular_limited(&path, 64 * 1024)? else { return Ok(None); };
+        let config = Self::from_json(std::str::from_utf8(&bytes)?)
+            .ok_or_else(|| crate::Error::internal("Invalid ListenBrainz configuration"))?;
+        if config.user_token.len() > 4096 || config.user_token.chars().any(char::is_control) {
+            return Err(crate::Error::internal("Invalid ListenBrainz token"));
+        }
+        Ok(Some(config))
     }
+    /// Legacy read-only adapter. Editing flows must use try_load.
+    pub fn load() -> Option<Self> { Self::try_load().ok().flatten() }
 
     pub fn save(&self) -> Result<()> {
         let path = Self::config_path().ok_or_else(|| std::io::Error::new(
@@ -53,6 +66,9 @@ impl ListenBrainzConfig {
     }
 
     fn save_to_path(&self, path: &Path) -> Result<()> {
+        if self.user_token.len() > 4096 || self.user_token.chars().any(char::is_control) {
+            return Err(crate::Error::internal("Invalid ListenBrainz token"));
+        }
         let json = serde_json::to_vec_pretty(&serde_json::json!({
             "user_token": self.user_token,
             "enabled": self.enabled,
@@ -69,14 +85,16 @@ pub fn scrobble(
     track: &str,
     album: &str,
     duration_secs: i64,
+    started_at: u64,
 ) {
-    if !config.enabled || config.user_token.is_empty() || artist.is_empty() || track.is_empty() {
+    if !config.enabled || config.user_token.is_empty() || artist.is_empty() || track.is_empty()
+        || [artist, track, album].iter().any(|s| s.len() > 4096) {
         return;
     }
 
-    let timestamp = SystemTime::now()
-        .duration_since(UNIX_EPOCH)
-        .map_or(0, |d| d.as_secs());
+    let Ok(now) = SystemTime::now().duration_since(UNIX_EPOCH) else { return; };
+    if started_at == 0 || started_at > now.as_secs() { return; }
+    let timestamp = started_at;
 
     let payload = build_scrobble_payload(artist, track, album, duration_secs, timestamp);
 
@@ -93,7 +111,8 @@ pub fn scrobble(
 }
 
 pub fn update_now_playing(config: &ListenBrainzConfig, artist: &str, track: &str, album: &str) {
-    if !config.enabled || config.user_token.is_empty() || artist.is_empty() || track.is_empty() {
+    if !config.enabled || config.user_token.is_empty() || artist.is_empty() || track.is_empty()
+        || [artist, track, album].iter().any(|s| s.len() > 4096) {
         return;
     }
 
@@ -221,7 +240,7 @@ mod tests {
             user_token: "tok".to_string(),
             enabled: false,
         };
-        scrobble(&listenbrainz_config, "A", "T", "Al", 100);
+        scrobble(&listenbrainz_config, "A", "T", "Al", 100, 1);
     }
 
     #[test]
@@ -230,7 +249,7 @@ mod tests {
             user_token: String::new(),
             enabled: true,
         };
-        scrobble(&listenbrainz_config, "A", "T", "Al", 100);
+        scrobble(&listenbrainz_config, "A", "T", "Al", 100, 1);
     }
 
     #[test]
@@ -239,7 +258,7 @@ mod tests {
             user_token: "tok".to_string(),
             enabled: true,
         };
-        scrobble(&listenbrainz_config, "", "T", "Al", 100);
+        scrobble(&listenbrainz_config, "", "T", "Al", 100, 1);
     }
 
     #[test]
@@ -248,7 +267,7 @@ mod tests {
             user_token: "tok".to_string(),
             enabled: true,
         };
-        scrobble(&listenbrainz_config, "A", "", "Al", 100);
+        scrobble(&listenbrainz_config, "A", "", "Al", 100, 1);
     }
 
     #[test]
