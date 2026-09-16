@@ -24,7 +24,7 @@ pub(super) fn player_property(prop: &str, s: &PlayerState) -> Option<Variant> {
 pub(super) fn get_player_property(prop: &str, state: &StateCallback) -> Option<Variant> { player_property(prop, &state()) }
 pub(super) fn get_root_property(prop: &str, desktop: &str) -> Option<Variant> {
     match prop {
-        "Identity" => Some("Big Audio Player".to_variant()), "DesktopEntry" => Some(desktop.to_variant()),
+        "Identity" => Some((if desktop.contains("AudioPlayer") { "Big Audio Player" } else { "Big Media Player" }).to_variant()), "DesktopEntry" => Some(desktop.to_variant()),
         "CanQuit" | "CanRaise" => Some(true.to_variant()),
         "HasTrackList" | "Fullscreen" | "CanSetFullscreen" => Some(false.to_variant()),
         "SupportedUriSchemes" => Some(vec!["file", "http", "https"].to_variant()),

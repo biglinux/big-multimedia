@@ -50,7 +50,7 @@ fn taskbar_progress_launcher_entry_update(
         return None;
     }
 
-    if duration_secs > 0.0 {
+    if duration_secs.is_finite() && duration_secs > 0.0 && position_secs.is_finite() && position_secs >= 0.0 {
         Some(LauncherEntryUpdate {
             desktop_uri: desktop_application_uri(desktop_id),
             is_visible: true,

@@ -562,3 +562,5 @@ crates/ui/media/big-player-ui/src/radio_panel/widgets.rs
 crates/ui/media/big-player-ui/src/smartphone/dialog.rs
 crates/ui/media/big-player-ui/src/smartphone/mod.rs
 crates/ui/media/big-player-ui/src/smartphone/qr.rs
+crates/foundation/big-media-data/src/i18n.rs
+crates/media-runtime/src/converter/queue/validation.rs

@@ -6341,3 +6341,238 @@ msgstr ""
 #: crates/ui/generic/big-relm4-components/src/feedback/hover_popover.rs:264
 msgid "Press Alt+Down to adjust. Press Escape to close."
 msgstr ""
+
+#. Correction series 2026-09-16; Portuguese text requires human contextual review.
+#: crates/media-runtime/src/converter/queue/validation.rs
+msgid "A cover image is not the requested video stream"
+msgstr ""
+
+#. Correction series 2026-09-16; Portuguese text requires human contextual review.
+#: crates/media-runtime/src/converter/queue/processing.rs
+msgid "An output already exists. Choose a new name; it will not be replaced"
+msgstr ""
+
+#. Correction series 2026-09-16; Portuguese text requires human contextual review.
+#: crates/media-runtime/src/converter/queue/processing.rs
+msgid "Changing audio speed in a video needs matching video timing; use normal speed or audio-only export"
+msgstr ""
+
+#. Correction series 2026-09-16; Portuguese text requires human contextual review.
+#: crates/media-runtime/src/converter/queue/processing.rs
+msgid "Choose a playback speed between 0.25 and 4"
+msgstr ""
+
+#. Correction series 2026-09-16; Portuguese text requires human contextual review.
+#: crates/media-runtime/src/converter/queue/processing.rs
+msgid "Could not complete concatenation"
+msgstr ""
+
+#. Correction series 2026-09-16; Portuguese text requires human contextual review.
+#: crates/media-runtime/src/converter/queue/validation.rs
+msgid "Could not inspect exported file"
+msgstr ""
+
+#. Correction series 2026-09-16; Portuguese text requires human contextual review.
+#: crates/big-audio-player/src/audio/ui/audio_shell/export.rs
+msgid "Could not verify exported files"
+msgstr ""
+
+#. Correction series 2026-09-16; Portuguese text requires human contextual review.
+#: crates/media-runtime/src/converter/queue/processing.rs
+msgid "Could not verify source streams"
+msgstr ""
+
+#. Correction series 2026-09-16; Portuguese text requires human contextual review.
+#: crates/media-runtime/src/converter/queue/processing.rs
+msgid "Could not verify the source media"
+msgstr ""
+
+#. Correction series 2026-09-16; Portuguese text requires human contextual review.
+#: crates/media-runtime/src/converter/queue/validation.rs
+msgid "Cuts must be inside the verified media duration"
+msgstr ""
+
+#. Correction series 2026-09-16; Portuguese text requires human contextual review.
+#: crates/media-runtime/src/converter/queue/validation.rs
+msgid "Export has no readable stream list"
+msgstr ""
+
+#. Correction series 2026-09-16; Portuguese text requires human contextual review.
+#: crates/media-runtime/src/converter/queue/processing.rs
+msgid "Export incomplete. Any files already published were kept; the source is unchanged"
+msgstr ""
+
+#. Correction series 2026-09-16; Portuguese text requires human contextual review.
+#: crates/media-runtime/src/converter/queue/processing.rs
+msgid "Export requires a regular local source file"
+msgstr ""
+
+#. Correction series 2026-09-16; Portuguese text requires human contextual review.
+#: crates/media-runtime/src/converter/queue/validation.rs
+msgid "Exported audio has no channels"
+msgstr ""
+
+#. Correction series 2026-09-16; Portuguese text requires human contextual review.
+#: crates/media-runtime/src/converter/queue/validation.rs
+msgid "Exported codec differs from the plan"
+msgstr ""
+
+#. Correction series 2026-09-16; Portuguese text requires human contextual review.
+#: crates/media-runtime/src/converter/queue/validation.rs
+msgid "Exported duration could not be verified"
+msgstr ""
+
+#. Correction series 2026-09-16; Portuguese text requires human contextual review.
+#: crates/media-runtime/src/converter/queue/validation.rs
+msgid "Exported duration differs from the plan. Use precise re-encoding for exact cuts"
+msgstr ""
+
+#. Correction series 2026-09-16; Portuguese text requires human contextual review.
+#: crates/media-runtime/src/converter/queue/validation.rs
+msgid "Exported file is empty or is not regular"
+msgstr ""
+
+#. Correction series 2026-09-16; Portuguese text requires human contextual review.
+#: crates/media-runtime/src/converter/queue/validation.rs
+msgid "Exported stream count differs from the plan"
+msgstr ""
+
+#. Correction series 2026-09-16; Portuguese text requires human contextual review.
+#: crates/media-runtime/src/converter/queue/validation.rs
+msgid "Exported subtitle count differs from the plan"
+msgstr ""
+
+#. Correction series 2026-09-16; Portuguese text requires human contextual review.
+#: crates/media-runtime/src/converter/queue/validation.rs
+msgid "Exported video dimensions are invalid"
+msgstr ""
+
+#. Correction series 2026-09-16; Portuguese text requires human contextual review.
+#: crates/media-runtime/src/converter/queue/processing.rs
+msgid "Invalid concat path"
+msgstr ""
+
+#. Correction series 2026-09-16; Portuguese text requires human contextual review.
+#: crates/media-runtime/src/converter/queue/validation.rs
+msgid "Invalid export duration or too many cut ranges"
+msgstr ""
+
+#. Correction series 2026-09-16; Portuguese text requires human contextual review.
+#: crates/media-runtime/src/converter/queue/processing.rs
+msgid "Invalid total export duration"
+msgstr ""
+
+#. Correction series 2026-09-16; Portuguese text requires human contextual review.
+#: crates/media-runtime/src/converter/queue/processing.rs
+msgid "No conversion stage completed"
+msgstr ""
+
+#. Correction series 2026-09-16; Portuguese text requires human contextual review.
+#: crates/media-runtime/src/converter/queue/processing.rs
+msgid "No output was generated"
+msgstr ""
+
+#. Correction series 2026-09-16; Portuguese text requires human contextual review.
+#: crates/media-runtime/src/converter/queue/processing.rs
+msgid "Originals are kept. Verify the exported files before deleting anything."
+msgstr ""
+
+#. Correction series 2026-09-16; Portuguese text requires human contextual review.
+#: crates/media-runtime/src/converter/queue/processing.rs
+msgid "Output was created, but durability could not be confirmed. Keep the source and verify the output"
+msgstr ""
+
+#. Correction series 2026-09-16; Portuguese text requires human contextual review.
+#: crates/big-video-player/src/video/ui/menu_dialogs.rs
+msgid "Screenshot saved; disk synchronization could not be confirmed"
+msgstr ""
+
+#. Correction series 2026-09-16; Portuguese text requires human contextual review.
+#: crates/big-video-player/src/video/ui/video_shell/playback.rs
+msgid "Screenshot timed out; cancellation requested"
+msgstr ""
+
+#. Correction series 2026-09-16; Portuguese text requires human contextual review.
+#: crates/media-runtime/src/converter/queue/processing.rs
+msgid "Source changed during export; no result was published"
+msgstr ""
+
+#. Correction series 2026-09-16; Portuguese text requires human contextual review.
+#: crates/media-runtime/src/converter/queue/validation.rs
+msgid "Source streams could not be verified"
+msgstr ""
+
+#. Correction series 2026-09-16; Portuguese text requires human contextual review.
+#: crates/media-runtime/src/converter/queue/processing.rs
+msgid "Source was replaced during export; no result was published"
+msgstr ""
+
+#. Correction series 2026-09-16; Portuguese text requires human contextual review.
+#: crates/media-runtime/src/converter/queue/validation.rs
+msgid "Subtitle streams could not be verified"
+msgstr ""
+
+#. Correction series 2026-09-16; Portuguese text requires human contextual review.
+#: crates/big-audio-player/src/audio/ui/audio_shell/export.rs
+msgid "The export ended without a completed result"
+msgstr ""
+
+#. Correction series 2026-09-16; Portuguese text requires human contextual review.
+#: crates/big-video-player/src/video/ui/video_shell/trim/run.rs
+msgid "The export ended without confirming completion"
+msgstr ""
+
+#. Correction series 2026-09-16; Portuguese text requires human contextual review.
+#: crates/big-audio-player/src/audio/ui/audio_shell/export.rs
+msgid "The export worker stopped before completion"
+msgstr ""
+
+#. Correction series 2026-09-16; Portuguese text requires human contextual review.
+#: crates/big-audio-player/src/audio/ui/audio_shell/update.rs
+msgid "The library could not be read. Previous results were kept; try searching again."
+msgstr ""
+
+#. Correction series 2026-09-16; Portuguese text requires human contextual review.
+#: crates/big-audio-player/src/audio/ui/audio_shell/update.rs
+msgid "The operation was incomplete. Imported tracks were kept; check the folder and try again."
+msgstr ""
+
+#. Correction series 2026-09-16; Portuguese text requires human contextual review.
+#: crates/media-runtime/src/converter/queue/validation.rs
+msgid "The plan has no audio or video output"
+msgstr ""
+
+#. Correction series 2026-09-16; Portuguese text requires human contextual review.
+#: crates/media-runtime/src/converter/queue/validation.rs
+msgid "The selected audio stream is missing"
+msgstr ""
+
+#. Correction series 2026-09-16; Portuguese text requires human contextual review.
+#: crates/media-runtime/src/converter/queue/validation.rs
+msgid "The selected video stream is missing"
+msgstr ""
+
+#. Correction series 2026-09-16; Portuguese text requires human contextual review.
+#: crates/media-runtime/src/converter/queue/processing.rs
+msgid "This concat list needs UTF-8 paths"
+msgstr ""
+
+#. Correction series 2026-09-16; Portuguese text requires human contextual review.
+#: crates/media-runtime/src/converter/queue/validation.rs
+msgid "Too many output streams"
+msgstr ""
+
+#. Correction series 2026-09-16; Portuguese text requires human contextual review.
+#: crates/media-runtime/src/converter/queue/validation.rs
+msgid "Too many source streams"
+msgstr ""
+
+#. Correction series 2026-09-16; Portuguese text requires human contextual review.
+#: crates/media-runtime/src/converter/queue/validation.rs
+msgid "Unknown source audio codec"
+msgstr ""
+
+#. Correction series 2026-09-16; Portuguese text requires human contextual review.
+#: crates/media-runtime/src/converter/queue/validation.rs
+msgid "Unknown source video codec"
+msgstr ""
