@@ -271,7 +271,8 @@ impl VideoIptvBrowser {
 
     /// Reload the store after a CRUD edit and refresh the dropdown.
     fn on_providers_changed(&mut self, sender: &ComponentSender<Self>) {
-        *self.store.borrow_mut() = IptvProviderStore::load();
+        // The shared model already contains these edits; disk persistence may
+        // still be pending. Reloading now would replace them with older bytes.
         self.repopulate_provider_dropdown();
         if self.provider_model.n_items() > 0 {
             sender.input(VideoIptvBrowserInput::ProviderSelected(0));

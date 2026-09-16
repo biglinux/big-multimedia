@@ -13,7 +13,7 @@ mod quality;
 mod tests;
 mod types;
 
-pub use io::{load_all_profiles, load_profile, save_user_profile};
+pub use io::{load_all_profiles, load_profile, save_user_profile, save_user_profile_async};
 pub use output::{resolve_audio_output_name, resolve_container, resolve_output_name};
 pub use quality::{preset_to_ffmpeg, quality_to_crf};
 pub use types::{

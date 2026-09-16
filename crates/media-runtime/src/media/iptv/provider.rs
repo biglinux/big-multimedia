@@ -9,7 +9,6 @@
 //! `~/.config/big-video-player/iptv-providers.toml`). The file is
 //! human-editable: users should be able to copy it between machines.
 
-use std::fs;
 use std::path::PathBuf;
 
 use serde::{Deserialize, Serialize};
@@ -19,7 +18,7 @@ use serde::{Deserialize, Serialize};
 /// `M3uUrl` / `M3uLocal` cover the vast majority of real-world usage;
 /// `Xtream` adds support for the Xtream Codes API used by commercial
 /// panels (category listing, VOD, series).
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(tag = "type", rename_all = "snake_case")]
 pub enum IptvKind {
     /// Remote M3U/M3U8 URL fetched over HTTP(S).
@@ -34,22 +33,28 @@ pub enum IptvKind {
     },
 }
 
+impl std::fmt::Debug for IptvKind {
+    fn fmt(&self,f:&mut std::fmt::Formatter<'_>)->std::fmt::Result {
+        f.write_str(match self { Self::M3uUrl {..}=>"M3uUrl(<redacted>)", Self::M3uLocal {..}=>"M3uLocal(<path>)", Self::Xtream {..}=>"Xtream(<redacted>)" })
+    }
+}
+
 impl IptvKind {
     /// Human-readable single-line summary for the management dialog.
     #[must_use]
     pub fn summary(&self) -> String {
         match self {
-            IptvKind::M3uUrl { url } => url.clone(),
+            IptvKind::M3uUrl { url } => big_os_kit::url::redact_url(url),
             IptvKind::M3uLocal { path } => path.clone(),
             IptvKind::Xtream {
                 server, username, ..
-            } => format!("{server} ({username})"),
+            } => format!("{} ({username})", big_os_kit::url::redact_url(server)),
         }
     }
 }
 
 /// One configured IPTV source.
-#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct IptvProvider {
     /// User-facing name (`"My IPTV"`, `"Free List"`, …).
     pub name: String,
@@ -66,6 +71,12 @@ pub struct IptvProvider {
     /// Deserialises to 0 if absent; reassigned on every save.
     #[serde(default)]
     pub order: u32,
+}
+
+impl std::fmt::Debug for IptvProvider {
+    fn fmt(&self, f:&mut std::fmt::Formatter<'_>)->std::fmt::Result {
+        f.debug_struct("IptvProvider").field("source",&self.source).finish_non_exhaustive()
+    }
 }
 
 impl IptvProvider {
@@ -93,52 +104,57 @@ impl Default for IptvProvider {
     }
 }
 
-/// On-disk container; `#[serde(default)]` keeps `providers = []` when file
-/// is missing or corrupt so we never surface parse errors to the user.
+/// On-disk provider container. A missing file may start empty; a corrupt file
+/// blocks persistence and is surfaced through save_status instead of being erased.
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct IptvProviderStore {
     #[serde(default)]
     pub providers: Vec<IptvProvider>,
+    #[serde(skip)]
+    persistence: Option<big_os_kit::deferred::Document>,
 }
 
 impl IptvProviderStore {
-    /// Return the canonical config-file path, creating the parent dir if
-    /// it does not exist yet.
+    /// Location only: no directories are created on the GUI thread.
     pub fn config_path() -> PathBuf {
-        let base = glib::user_config_dir().join(crate::config::video::CONFIG_DIR);
-        let _ = fs::create_dir_all(&base);
-        base.join("iptv-providers.toml")
+        big_os_kit::xdg_dirs::config_dir().map(|p|p.join(crate::config::video::CONFIG_DIR).join("iptv-providers.toml")).unwrap_or_default()
     }
 
-    /// Read the store from disk; missing/corrupt file yields an empty store.
+    /// Read bounded state. Corruption is retained as a blocked writer, never
+    /// interpreted as permission to replace the original with an empty store.
     #[must_use]
     pub fn load() -> Self {
-        let path = Self::config_path();
-        let Ok(content) = fs::read_to_string(&path) else {
-            return Self::default();
-        };
-        toml::from_str(&content).unwrap_or_else(|err| {
-            log::warn!("iptv providers file unreadable ({err}); starting fresh");
-            Self::default()
-        })
-    }
-
-    /// Atomically write the store to disk. Errors are logged but not
-    /// propagated — the in-memory state is authoritative for the session.
-    pub fn save(&mut self) {
-        for (i, p) in self.providers.iter_mut().enumerate() {
-            p.order = u32::try_from(i).unwrap_or(u32::MAX);
-        }
-        let path = Self::config_path();
-        match toml::to_string_pretty(self) {
-            Ok(serialized) => {
-                if let Err(e) = fs::write(&path, serialized) {
-                    log::warn!("failed to write {}: {e}", path.display());
+        use big_os_kit::{deferred::Document,storage::read_regular_limited};
+        let path=Self::config_path();
+        let (mut store,writer)=match read_regular_limited(&path,big_os_kit::deferred::MAX_BYTES) {
+            Ok(None)=>(Self::default(),Document::reviewed(path,None)),
+            Ok(Some(bytes))=>{
+                let decoded=std::str::from_utf8(&bytes).ok().and_then(|text|toml::from_str::<Self>(text).ok());
+                match decoded {
+                    Some(store) if store.providers.len()<=256 =>(store,Document::reviewed(path,Some(bytes))),
+                    _=>(Self::default(),Document::blocked(path)),
                 }
             }
-            Err(e) => log::warn!("failed to serialize iptv providers: {e}"),
+            Err(_)=>(Self::default(),Document::blocked(path)),
+        };
+        store.persistence=Some(writer); store
+    }
+
+    /// Save admission only. Acknowledged disk state is exposed by `save_status`.
+    pub fn save(&mut self) {
+        let writer=self.persistence.get_or_insert_with(||big_os_kit::deferred::Document::reviewed(Self::config_path(),None));
+        if self.providers.len()>256 { writer.reject_update(); log::warn!("too many IPTV providers; not saved"); return; }
+        for (i,provider) in self.providers.iter_mut().enumerate() { provider.order=i as u32; }
+        let writer=writer.clone();
+        match toml::to_string_pretty(self) {
+            Ok(bytes)=>{ if writer.replace(bytes.into_bytes()).is_err() { log::warn!("IPTV provider preferences not saved; inspect save status"); } }
+            Err(_)=>{writer.reject_update();log::warn!("IPTV provider encoding failed");},
         }
     }
+    /// Observable result; no credential bytes are exposed.
+    pub fn save_status(&self) -> Option<big_os_kit::deferred::Status> { self.persistence.as_ref().map(|p|p.status()) }
+    /// Retry a pending durability failure without overwriting an external change.
+    pub fn retry_save(&self) { if let Some(p)=&self.persistence { let _=p.retry(); } }
 
     pub fn add(&mut self, provider: IptvProvider) {
         self.providers.push(provider);
@@ -160,9 +176,6 @@ impl IptvProviderStore {
     }
 }
 
-// glib brought in via gtk re-export where available; import explicitly so
-// this module compiles even without the broader UI imports.
-use gtk::glib;
 
 #[cfg(test)]
 mod tests {
@@ -209,6 +222,7 @@ mod tests {
                     order: 1,
                 },
             ],
+            ..IptvProviderStore::default()
         };
         let s = toml::to_string_pretty(&store).expect("serialize");
         let back: IptvProviderStore = toml::from_str(&s).expect("deserialize");

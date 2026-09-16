@@ -9,53 +9,54 @@
 //! `iptv_view::favorites` until the V6 cutover deletes it.
 
 use std::collections::BTreeSet;
-use std::fs;
 use std::path::PathBuf;
 
-use gtk::glib;
 use serde::{Deserialize, Serialize};
 
 use crate::config;
-use crate::video::redaction::redact_path;
 
 /// Flat set of starred channel stream URLs, persisted as JSON.
-#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+#[derive(Clone, Default, Serialize, Deserialize)]
 pub struct IptvFavorites {
     #[serde(default)]
     urls: BTreeSet<String>,
+    #[serde(skip)]
+    persistence: Option<big_os_kit::deferred::Document>,
 }
 
+impl std::fmt::Debug for IptvFavorites {
+    fn fmt(&self,f:&mut std::fmt::Formatter<'_>)->std::fmt::Result {
+        f.debug_struct("IptvFavorites").field("entries",&self.urls.len()).finish_non_exhaustive()
+    }
+}
 impl IptvFavorites {
     fn path() -> PathBuf {
-        let base = glib::user_config_dir().join(config::video::CONFIG_DIR);
-        let _ = fs::create_dir_all(&base);
-        base.join("iptv-favorites.json")
+        big_os_kit::xdg_dirs::config_dir().map(|p|p.join(config::video::CONFIG_DIR).join("iptv-favorites.json")).unwrap_or_default()
     }
-
     #[must_use]
     pub fn load() -> Self {
-        let path = Self::path();
-        let Ok(content) = fs::read_to_string(&path) else {
-            return Self::default();
+        use big_os_kit::{deferred::Document, storage::read_regular_limited};
+        let path=Self::path();
+        let (mut favorites,writer)=match read_regular_limited(&path,big_os_kit::deferred::MAX_BYTES) {
+            Ok(None)=>(Self::default(),Document::reviewed(path,None)),
+            Ok(Some(bytes))=>match serde_json::from_slice::<Self>(&bytes) {
+                Ok(value)=>(value,Document::reviewed(path,Some(bytes))),
+                Err(_)=>(Self::default(),Document::blocked(path)),
+            },
+            Err(_)=>(Self::default(),Document::blocked(path)),
         };
-        serde_json::from_str(&content).unwrap_or_else(|err| {
-            log::warn!("iptv favorites file unreadable ({err}); starting fresh");
-            Self::default()
-        })
+        favorites.persistence=Some(writer); favorites
     }
-
-    pub fn save(&self) {
-        let path = Self::path();
-        match serde_json::to_string_pretty(self) {
-            Ok(s) => {
-                if let Err(e) = fs::write(&path, s) {
-                    // PII: redact user-home path.
-                    log::warn!("failed to write {}: {e}", redact_path(&path));
-                }
-            }
-            Err(e) => log::warn!("favorites serialize: {e}"),
+    /// Admission is not disk success. See save_status for acknowledgement.
+    pub fn save(&mut self) {
+        let writer=self.persistence.get_or_insert_with(||big_os_kit::deferred::Document::reviewed(Self::path(),None)).clone();
+        match serde_json::to_vec_pretty(self) {
+            Ok(bytes)=>{ if writer.replace(bytes).is_err() { log::warn!("IPTV favorites are session-only until save is retried"); } }
+            Err(_)=>{writer.reject_update();log::warn!("IPTV favorites encoding failed");},
         }
     }
+    pub fn save_status(&self) -> Option<big_os_kit::deferred::Status> { self.persistence.as_ref().map(|p|p.status()) }
+    pub fn retry_save(&self) { if let Some(p)=&self.persistence { let _=p.retry(); } }
 
     #[must_use]
     pub fn contains(&self, url: &str) -> bool {

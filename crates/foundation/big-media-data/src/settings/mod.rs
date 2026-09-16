@@ -13,7 +13,7 @@ mod store;
 #[cfg(test)]
 mod tests;
 
-pub use store::Settings;
+pub use store::{Settings, SavePhase, SaveStatus};
 
 struct Inner {
     settings_values: HashMap<String, String>,
@@ -22,4 +22,12 @@ struct Inner {
     disk_bytes: Option<Vec<u8>>,
     load_error: Option<String>,
     durability_pending: bool,
+    revision: u64,
+    persisted_revision: u64,
+    save_queued: bool,
+    phase: store::SavePhase,
+    save_error: Option<String>,
+    // Never acquire this lock on the GUI thread. It serializes disk transactions
+    // without holding the in-memory model across filesystem operations.
+    disk_lock: std::sync::Arc<std::sync::Mutex<()>>,
 }

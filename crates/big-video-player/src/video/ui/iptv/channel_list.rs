@@ -95,8 +95,15 @@ impl ChannelListView {
         };
 
         let view = MediaListView::new(on_activate, build_suffix);
+        let wrapper=gtk::Box::new(gtk::Orientation::Vertical,6);
+        let status_store=favorites.clone(); let retry_store=favorites.clone();
+        wrapper.append(&crate::settings::saving::document_status(
+            move ||status_store.borrow().save_status(),
+            move ||retry_store.borrow().retry_save(),
+        ));
+        wrapper.append(&view.widget);
         Self {
-            root: view.widget.clone(),
+            root: wrapper.upcast(),
             view,
             all_channels,
             favorites,
@@ -129,7 +136,8 @@ impl ChannelListView {
     /// Re-read the favorites file and re-splice so visible stars reflect
     /// cross-instance toggles.
     pub fn reload_favorites(&self) {
-        self.favorites.replace(IptvFavorites::load());
+        // Retain pending local edits. Cross-instance conflicts are explicit in
+        // save status; a star toggle is not a request to discard this model.
         let query = self.last_query.borrow().clone();
         self.resplice(&query);
     }

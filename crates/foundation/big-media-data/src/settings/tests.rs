@@ -137,3 +137,10 @@ fn shared_handles_and_external_conflict_are_not_lost_updates() {
     let _ = std::fs::remove_file(&path);
     let _ = std::fs::remove_file(path.with_file_name(format!("settings-review-{}.conf.lock", std::process::id())));
 }
+
+#[test]
+fn memory_only_cannot_confirm_even_an_unedited_save() {
+    let settings=Settings::memory_only();
+    assert!(settings.try_flush().is_err());
+    assert_eq!(settings.save_status().phase, SavePhase::Failed);
+}

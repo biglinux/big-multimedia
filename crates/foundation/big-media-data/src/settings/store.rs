@@ -15,6 +15,14 @@ use big_os_kit::storage::{self, CommitOutcome};
 
 type Shared = Arc<RwLock<Inner>>;
 static STORES: OnceLock<Mutex<HashMap<PathBuf, Weak<RwLock<Inner>>>>> = OnceLock::new();
+// Includes memory-only handles as well as path-backed stores. Weak registration
+// never keeps a closed settings document alive and performs no filesystem I/O.
+static OBSERVED: OnceLock<Mutex<Vec<Weak<RwLock<Inner>>>>> = OnceLock::new();
+fn observe(inner:&Shared) {
+    let mut items=OBSERVED.get_or_init(||Mutex::new(Vec::new())).lock().unwrap_or_else(std::sync::PoisonError::into_inner);
+    items.retain(|item|item.strong_count()>0);items.push(Arc::downgrade(inner));
+}
+
 
 fn parse(content: &[u8]) -> io::Result<HashMap<String, String>> {
     let text = std::str::from_utf8(content).map_err(|_| io::Error::new(io::ErrorKind::InvalidData, "settings are not UTF-8"))?;
@@ -44,24 +52,15 @@ fn serialize(values: &HashMap<String, String>) -> io::Result<Vec<u8>> {
     Ok(bytes)
 }
 
-fn commit(inner: &mut Inner, values: HashMap<String, String>) -> io::Result<CommitOutcome> {
-    if inner.path.as_os_str().is_empty() { return Err(io::Error::new(io::ErrorKind::NotFound, "settings are in memory only; no configuration directory")); }
-    if let Some(error) = &inner.load_error { return Err(io::Error::new(io::ErrorKind::InvalidData, format!("settings were not loaded safely; not replacing the file: {error}"))); }
-    let bytes = serialize(&values)?;
-    if let Some(parent) = inner.path.parent() { fs::create_dir_all(parent)?; }
-    let _lock = storage::WriteLock::try_acquire(&inner.path)?;
-    let current = storage::read_regular_limited(&inner.path, LIMIT)?;
-    if current != inner.disk_bytes {
-        return Err(io::Error::new(io::ErrorKind::AlreadyExists, "settings changed in another process; reopen before saving"));
-    }
-    let receipt = storage::atomic_write_private_receipt(&inner.path, &bytes)?;
-    // Both Ok variants have published: update the expected disk revision now.
-    // Another local mutation cannot race this sync operation: Inner is write-locked.
-    inner.settings_values = values;
-    inner.disk_bytes = Some(bytes);
-    inner.dirty = false;
-    inner.durability_pending = matches!(&receipt, CommitOutcome::PublishedNotSynced(_));
-    Ok(receipt)
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum SavePhase { Saved, Pending, Saving, DurabilityPending, Failed }
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct SaveStatus {
+    pub phase: SavePhase,
+    pub revision: u64,
+    pub persisted_revision: u64,
+    pub error: Option<String>,
 }
 
 #[derive(Clone)]
@@ -98,10 +97,13 @@ impl Settings {
     /// Isolated unsaved state; cannot silently fall back to a shared temp path.
     #[must_use]
     pub fn memory_only() -> Self {
-        Self { inner: Arc::new(RwLock::new(Inner {
+        let inner = Arc::new(RwLock::new(Inner {
             settings_values: defaults::defaults(), path: PathBuf::new(), dirty: false,
             disk_bytes: None, load_error: None, durability_pending: false,
-        })) }
+            revision: 0, persisted_revision: 0, save_queued: false,
+            phase: SavePhase::Failed, save_error: Some("No private settings directory is available".into()), disk_lock: Arc::new(Mutex::new(())),
+        }));
+        observe(&inner); Self { inner }
     }
 
     pub(super) fn from_path(mut path: PathBuf) -> Self {
@@ -124,10 +126,15 @@ impl Settings {
             Ok(None) => (None, None),
             Err(error) => (None, Some(error.to_string())),
         };
+        let phase = if load_error.is_some() { SavePhase::Failed } else { SavePhase::Saved };
+        let save_error = load_error.clone();
         let inner: Shared = Arc::new(RwLock::new(Inner {
             settings_values: values, path: path.clone(), dirty: false, disk_bytes,
             load_error, durability_pending: false,
+            revision: 0, persisted_revision: 0, save_queued: false,
+            phase, save_error, disk_lock: Arc::new(Mutex::new(())),
         }));
+        observe(&inner);
         stores.insert(path, Arc::downgrade(&inner));
         Self { inner }
     }
@@ -223,7 +230,12 @@ impl Settings {
         self.debug_check_key(key);
         let mut inner = self.inner.write().unwrap_or_else(std::sync::PoisonError::into_inner);
         if inner.settings_values.get(key).is_some_and(|old| old == value) { return true; }
-        inner.settings_values.insert(key.into(), value.into()); inner.dirty = true;
+        inner.settings_values.insert(key.into(), value.into());
+        inner.dirty = true;
+        inner.revision = inner.revision.wrapping_add(1);
+        inner.phase = SavePhase::Pending;
+        drop(inner);
+        let _ = self.request_flush();
         true
     }
     pub fn set_boolean(&self, key: &str, value: bool) -> bool { self.set_string(key, if value { "true" } else { "false" }) }
@@ -271,30 +283,117 @@ impl Settings {
         self.set_string(key.0, value)
     }
 
-    /// Blocking durable save. Run on a worker when called during interaction.
-    /// A publication receipt distinguishes a completed write from fsync failure.
+    /// Whether any live settings owner has edits not confirmed as durable.
+    /// In a single-process host this intentionally covers all mounted players.
+    pub fn any_unsaved() -> bool {
+        let refs=OBSERVED.get().map(|items|items.lock().unwrap_or_else(std::sync::PoisonError::into_inner).clone()).unwrap_or_default();
+        refs.iter().filter_map(Weak::upgrade).any(|owner|{
+            let state=owner.read().unwrap_or_else(std::sync::PoisonError::into_inner);
+            state.dirty || state.durability_pending
+        })
+    }
+
+    pub fn save_status(&self) -> SaveStatus {
+        let inner = self.inner.read().unwrap_or_else(std::sync::PoisonError::into_inner);
+        SaveStatus { phase: inner.phase, revision: inner.revision,
+            persisted_revision: inner.persisted_revision, error: inner.save_error.clone() }
+    }
+
+    /// Non-blocking, coalesced admission. User-visible status remains Pending /
+    /// Saving until the actual disk transaction completes. A dropped dialog does
+    /// not cancel an admitted write. No mutex guarding GUI state spans disk I/O.
+    pub fn request_flush(&self) -> io::Result<()> {
+        {
+            let mut inner = self.inner.write().unwrap_or_else(std::sync::PoisonError::into_inner);
+            if inner.save_queued || (!inner.dirty && !inner.durability_pending) { return Ok(()); }
+            inner.save_queued = true;
+            inner.phase = SavePhase::Pending;
+        }
+        let settings = self.clone();
+        let result = big_os_kit::background::submit(move || {
+            let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| settings.try_flush()))
+                .unwrap_or_else(|_| Err(io::Error::other("settings persistence task panicked")));
+            let retry_latest = {
+                let mut inner = settings.inner.write().unwrap_or_else(std::sync::PoisonError::into_inner);
+                inner.save_queued = false;
+                if let Err(error) = &result { inner.phase = SavePhase::Failed; inner.save_error = Some(error.to_string()); }
+                // Do not spin on a failing disk. A retry is explicit or follows
+                // a later edit. Only a newer revision after success is coalesced.
+                result.is_ok() && inner.dirty
+            };
+            if retry_latest { let _ = settings.request_flush(); }
+        });
+        if let Err(error) = &result {
+            let mut inner = self.inner.write().unwrap_or_else(std::sync::PoisonError::into_inner);
+            inner.save_queued = false;
+            inner.phase = SavePhase::Failed;
+            inner.save_error = Some(error.to_string());
+        }
+        result
+    }
+
+    /// Worker-only durable transaction. Snapshot/commit/finalize separates the
+    /// disk lock from the fast memory lock. The generation check preserves edits
+    /// made while an older generation was on disk.
     pub fn try_flush(&self) -> io::Result<CommitOutcome> {
-        let mut inner = self.inner.write().unwrap_or_else(std::sync::PoisonError::into_inner);
-        if !inner.dirty {
-            if inner.durability_pending {
-                return Ok(match storage::sync_parent(&inner.path) {
-                    Ok(()) => { inner.durability_pending = false; CommitOutcome::Durable }
+        let disk_lock = self.inner.read().unwrap_or_else(std::sync::PoisonError::into_inner).disk_lock.clone();
+        let _transaction = disk_lock.lock().unwrap_or_else(std::sync::PoisonError::into_inner);
+        let (path, expected, values, revision, dirty, durability, load_error) = {
+            let mut inner = self.inner.write().unwrap_or_else(std::sync::PoisonError::into_inner);
+            if inner.path.as_os_str().is_empty() || inner.load_error.is_some() {
+                inner.phase = SavePhase::Failed;
+                return Err(io::Error::new(io::ErrorKind::InvalidData,
+                    "settings are not backed by a safely readable private file"));
+            }
+            if !inner.dirty && !inner.durability_pending { return Ok(CommitOutcome::Durable); }
+            inner.phase = SavePhase::Saving;
+            (inner.path.clone(), inner.disk_bytes.clone(), inner.settings_values.clone(),
+             inner.revision, inner.dirty, inner.durability_pending, inner.load_error.clone())
+        };
+        let mut published_bytes = None;
+        let result = (|| {
+            if path.as_os_str().is_empty() { return Err(io::Error::new(io::ErrorKind::NotFound, "settings are in memory only")); }
+            if load_error.is_some() { return Err(io::Error::new(io::ErrorKind::InvalidData, "settings could not be read safely; not replacing them")); }
+            if let Some(parent) = path.parent() { fs::create_dir_all(parent)?; }
+            let _file_lock = storage::WriteLock::try_acquire(&path)?;
+            if storage::read_regular_limited(&path, LIMIT)? != expected {
+                return Err(io::Error::new(io::ErrorKind::AlreadyExists, "settings changed in another process; reopen before saving"));
+            }
+            if !dirty && durability {
+                return Ok(match storage::sync_parent(&path) {
+                    Ok(()) => CommitOutcome::Durable,
                     Err(error) => CommitOutcome::PublishedNotSynced(error),
                 });
             }
-            return Ok(CommitOutcome::Durable);
+            let bytes = serialize(&values)?;
+            let receipt = storage::atomic_write_private_receipt(&path, &bytes)?;
+            published_bytes = Some(bytes);
+            Ok(receipt)
+        })();
+        let mut inner = self.inner.write().unwrap_or_else(std::sync::PoisonError::into_inner);
+        match &result {
+            Ok(receipt) => {
+                if let Some(bytes) = published_bytes {
+                    inner.disk_bytes = Some(bytes);
+                    inner.persisted_revision = revision;
+                    inner.dirty = inner.revision != revision;
+                }
+                inner.durability_pending = matches!(receipt, CommitOutcome::PublishedNotSynced(_));
+                inner.phase = if inner.dirty { SavePhase::Pending }
+                    else if inner.durability_pending { SavePhase::DurabilityPending }
+                    else { SavePhase::Saved };
+                inner.save_error = match receipt {
+                    CommitOutcome::PublishedNotSynced(_) => Some("Published, but durable storage is not confirmed".into()),
+                    CommitOutcome::Durable => None,
+                };
+            }
+            Err(error) => { inner.phase = SavePhase::Failed; inner.save_error = Some(error.to_string()); }
         }
-        let values = inner.settings_values.clone();
-        commit(&mut inner, values)
+        result
     }
 
-    pub fn flush(&self) {
-        match self.try_flush() {
-            Ok(CommitOutcome::Durable) => {},
-            Ok(CommitOutcome::PublishedNotSynced(error)) => error!("Settings applied; durability unconfirmed: {error}"),
-            Err(error) => error!("Settings not saved; changes remain pending: {error}"),
-        }
-    }
+    /// Compatibility entry point: queues work; never claims synchronous success.
+    pub fn flush(&self) { if let Err(error) = self.request_flush() { error!("settings save not queued: {error}"); } }
 
     pub fn migrate_audio_appearance(&self) {
         let mut inner = self.inner.write().unwrap_or_else(std::sync::PoisonError::into_inner);
@@ -314,6 +413,8 @@ impl Settings {
         }
         inner.settings_values.insert("audio-appearance-migrated".into(), "true".into());
         inner.dirty = true;
+        inner.revision = inner.revision.wrapping_add(1);
+        inner.phase = SavePhase::Pending;
         drop(inner); self.flush();
     }
 
@@ -324,6 +425,8 @@ impl Settings {
             inner.settings_values.insert(key, value);
         }
         inner.dirty = true;
+        inner.revision = inner.revision.wrapping_add(1);
+        inner.phase = SavePhase::Pending;
         drop(inner); self.flush();
     }
 
@@ -339,13 +442,21 @@ impl Settings {
         Ok(())
     }
 
+    /// Worker-only import. Refuse to replace edits made while reading the file.
     pub fn import_from(&self, path: &str) -> Result<()> {
+        let revision = self.save_status().revision;
         let bytes = storage::read_regular_limited(std::path::Path::new(path), LIMIT)?
             .ok_or_else(|| io::Error::new(io::ErrorKind::NotFound, "import file missing"))?;
-        let imported = parse(&bytes)?; // validate ALL entries before mutation
-        let mut inner = self.inner.write().unwrap_or_else(std::sync::PoisonError::into_inner);
-        let mut values = inner.settings_values.clone(); values.extend(imported);
-        commit(&mut inner, values)?.into_io_result()?;
+        let imported = parse(&bytes)?;
+        {
+            let mut inner = self.inner.write().unwrap_or_else(std::sync::PoisonError::into_inner);
+            if inner.revision != revision { return Err(io::Error::new(io::ErrorKind::AlreadyExists, "settings changed while import was being read").into()); }
+            inner.settings_values.extend(imported);
+            inner.revision = inner.revision.wrapping_add(1);
+            inner.dirty = true;
+            inner.phase = SavePhase::Pending;
+        }
+        self.try_flush()?.into_io_result()?;
         Ok(())
     }
 }

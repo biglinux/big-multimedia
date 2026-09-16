@@ -103,6 +103,8 @@ pub(super) fn create_music_page(
         .icon_name(page_spec.icon_name)
         .build();
 
+    page.add(&super::account_security::group());
+
     let playback_group = BigPreferencesGroupSpec::new(i18n("Playback"))
         .description(i18n("Control how your music is played"))
         .build();
@@ -290,6 +292,7 @@ pub fn show_audio_preferences(
             None,
         ),
         create_music_page(settings, mpv, on_taskbar_toggle),
+        crate::settings::saving_page(settings),
     ];
     // This switch must remain visible even when all technical groups are hidden.
     let visibility_group = BigPreferencesGroupSpec::new(i18n("More options")).build();

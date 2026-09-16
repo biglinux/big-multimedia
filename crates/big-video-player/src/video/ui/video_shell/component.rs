@@ -41,6 +41,7 @@ impl Component for VideoShell {
         root: Self::Root,
         sender: ComponentSender<Self>,
     ) -> ComponentParts<Self> {
+        crate::settings::bind_write_drain(&root);
         let settings = Settings::for_video();
         let is_background = mode.is_background();
 

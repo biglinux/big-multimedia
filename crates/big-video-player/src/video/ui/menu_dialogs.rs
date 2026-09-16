@@ -380,20 +380,20 @@ impl VideoShell {
                 self.notify(&i18n("Sleep timer: closing player"));
                 glib::timeout_add_local_once(std::time::Duration::from_secs(2), || {
                     if let Some(app) = gtk::gio::Application::default() {
-                        app.quit();
+                        crate::settings::saving::quit_after_writes(&app);
                     }
                 });
             }
             "suspend" => {
                 self.notify(&i18n("Sleep timer: suspending computer"));
                 glib::timeout_add_local_once(std::time::Duration::from_secs(2), || {
-                    let _ = big_app_kit::desktop::BigSystemPowerAction::Suspend.spawn_detached();
+                    crate::settings::saving::after_writes(|| { let _ = big_app_kit::desktop::BigSystemPowerAction::Suspend.spawn_detached(); });
                 });
             }
             "poweroff" => {
                 self.notify(&i18n("Sleep timer: shutting down"));
                 glib::timeout_add_local_once(std::time::Duration::from_secs(2), || {
-                    let _ = big_app_kit::desktop::BigSystemPowerAction::PowerOff.spawn_detached();
+                    crate::settings::saving::after_writes(|| { let _ = big_app_kit::desktop::BigSystemPowerAction::PowerOff.spawn_detached(); });
                 });
             }
             _ => self.notify(&i18n("Sleep timer: playback paused")),

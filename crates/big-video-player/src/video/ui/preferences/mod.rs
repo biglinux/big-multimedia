@@ -56,6 +56,7 @@ pub fn show_preferences(
     let simple_widgets: AdvancedWidgets = Rc::new(RefCell::new(Vec::new()));
 
     let pages = [
+        crate::settings::saving_page(settings),
         create_video_page(
             settings,
             mpv.as_ref(),
