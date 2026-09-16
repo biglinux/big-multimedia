@@ -7,7 +7,6 @@
 //! the thread-safe `SharedMprisState`, so it needs no main-loop bounce.
 
 use std::sync::Arc;
-use std::sync::atomic::Ordering;
 
 use adw::prelude::*;
 use big_player_ui::playback_bar::AudioPlaybackBarOutput;
@@ -48,13 +47,14 @@ fn build_handlers(input: Sender<AudioShellInput>, state: Arc<SharedMprisState>) 
     });
 
     let st = state.clone();
-    let status: Arc<dyn Fn() -> StatusSnapshot + Send + Sync> = Arc::new(move || StatusSnapshot {
-        playing: !st.paused.load(Ordering::Relaxed),
-        title: st.title.lock().map(|g| g.clone()).unwrap_or_default(),
-        artist: st.artist.lock().map(|g| g.clone()).unwrap_or_default(),
-        position_s: st.position.lock().map_or(0.0, |g| *g),
-        duration_s: st.duration.lock().map_or(0.0, |g| *g),
-        volume: st.volume.lock().map_or(0.0, |g| *g),
+    let status: Arc<dyn Fn() -> StatusSnapshot + Send + Sync> = Arc::new(move || {
+        let snapshot = st.snapshot.lock().unwrap_or_else(std::sync::PoisonError::into_inner);
+        StatusSnapshot {
+            playing: snapshot.status == crate::mpris::PlaybackStatus::Playing,
+            title: snapshot.title.clone(), artist: snapshot.artist.clone(),
+            position_s: snapshot.position_secs, duration_s: snapshot.duration_secs,
+            volume: snapshot.volume_pct,
+        }
     });
 
     RemoteHandlers {

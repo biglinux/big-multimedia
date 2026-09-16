@@ -20,7 +20,7 @@ use std::net::TcpListener;
 use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::thread;
-use std::time::{Duration, SystemTime, UNIX_EPOCH};
+use std::time::{Duration, Instant};
 
 use log::{info, warn};
 
@@ -82,6 +82,7 @@ impl Drop for ServerHandle {
 
 /// Returns once the listener is bound; serves on a worker thread thereafter.
 pub fn start(handlers: RemoteHandlers) -> Result<ServerHandle, String> {
+    let token = make_token().map_err(|_| "Secure randomness is unavailable; remote control was not started".to_owned())?;
     let listener = TcpListener::bind("0.0.0.0:0").map_err(|e| format!("bind: {e}"))?;
     let port = listener
         .local_addr()
@@ -90,18 +91,21 @@ pub fn start(handlers: RemoteHandlers) -> Result<ServerHandle, String> {
     let server =
         tiny_http::Server::from_listener(listener, None).map_err(|e| format!("http: {e}"))?;
 
-    let token = make_token();
     let stop = Arc::new(AtomicBool::new(false));
     let stop_for_thread = Arc::clone(&stop);
     let token_for_thread = token.clone();
 
-    thread::spawn(move || {
+    thread::Builder::new().name("media-remote".into()).spawn(move || {
+        let mut rate = CommandRate { start: Instant::now(), count: 0 };
         loop {
             if stop_for_thread.load(Ordering::Relaxed) {
                 break;
             }
             match server.recv_timeout(Duration::from_millis(500)) {
-                Ok(Some(request)) => handle(request, &token_for_thread, &handlers),
+                Ok(Some(request)) => {
+                    if stop_for_thread.load(Ordering::Acquire) { respond(request, "Remote disabled", 503, "text/plain"); break; }
+                    handle(request, &token_for_thread, &handlers, &mut rate);
+                }
                 Ok(None) => {}
                 Err(e) => {
                     warn!("web-remote recv error: {e}");
@@ -110,68 +114,89 @@ pub fn start(handlers: RemoteHandlers) -> Result<ServerHandle, String> {
             }
         }
         info!("web-remote stopped on port {port}");
-    });
+    }).map_err(|_| "Could not start remote control worker".to_owned())?;
 
     info!("web-remote listening on port {port}");
     Ok(ServerHandle { port, token, stop })
 }
 
-fn handle(request: tiny_http::Request, token: &str, handlers: &RemoteHandlers) {
-    let expected_prefix = format!("/{token}");
-    if !request.url().starts_with(&expected_prefix) {
-        let _ =
-            request.respond(tiny_http::Response::from_string("Not Found").with_status_code(404));
-        return;
+struct CommandRate { start: Instant, count: u32 }
+impl CommandRate {
+    fn allow(&mut self) -> bool {
+        if self.start.elapsed() >= Duration::from_secs(1) { self.start = Instant::now(); self.count = 0; }
+        if self.count >= 24 { return false; }
+        self.count += 1; true
     }
-    let tail = &request.url()[expected_prefix.len()..];
+}
+fn route<'a>(url: &'a str, token: &str) -> Option<&'a str> {
+    url.strip_prefix(&format!("/{token}/"))
+}
+fn header<'a>(request: &'a tiny_http::Request, name: &'static str) -> Option<&'a str> {
+    request.headers().iter().find(|h| h.field.equiv(name)).map(|h| h.value.as_str())
+}
+fn same_origin(request: &tiny_http::Request) -> bool {
+    if header(request, "Sec-Fetch-Site").is_some_and(|site| !matches!(site, "same-origin" | "none")) { return false; }
+    if let Some(origin) = header(request, "Origin") {
+        let Some(host) = header(request, "Host") else { return false; };
+        if !origin.eq_ignore_ascii_case(&format!("http://{host}")) { return false; }
+    }
+    true
+}
+fn handle(request: tiny_http::Request, token: &str, handlers: &RemoteHandlers, rate: &mut CommandRate) {
+    let tail = match route(request.url(), token) {
+        Some(tail) => tail,
+        None => {
+            if request.url() == format!("/{token}") && request.method() == &tiny_http::Method::Get {
+                let mut response = tiny_http::Response::from_string("").with_status_code(308);
+                response.add_header(tiny_http::Header::from_bytes("Location", format!("/{token}/")).expect("generated header"));
+                security_headers(&mut response);
+                let _ = request.respond(response);
+            } else { respond(request, "Not Found", 404, "text/plain"); }
+            return;
+        }
+    };
     let (path, query) = tail.split_once('?').unwrap_or((tail, ""));
-    let path = path.trim_start_matches('/');
-
+    // No request bodies are needed for this command API. Reject oversized or
+    // chunked requests rather than draining an untrusted upload on this worker.
+    if request.url().len() > 2048 || request.body_length().unwrap_or(0) != 0 || header(&request, "Transfer-Encoding").is_some() {
+        respond(request, "Unsupported request body", 413, "text/plain"); return;
+    }
+    let mutation = matches!(path, "play-pause" | "next" | "prev" | "volume");
+    if (mutation && request.method() != &tiny_http::Method::Post)
+        || (!mutation && request.method() != &tiny_http::Method::Get) {
+        respond(request, "Method Not Allowed", 405, "text/plain"); return;
+    }
+    if !same_origin(&request) || (mutation && header(&request, "X-Big-Media-Remote") != Some("1")) {
+        respond(request, "Forbidden", 403, "text/plain"); return;
+    }
+    if mutation && !rate.allow() { respond(request, "Too Many Requests", 429, "text/plain"); return; }
     match path {
-        "" | "index.html" => respond_html(request, INDEX_HTML),
-        "status" => respond_json(request, &status_json(&(handlers.status)())),
-        "play-pause" => {
-            (handlers.play_pause)();
-            respond_ok(request);
-        }
-        "next" => {
-            (handlers.next)();
-            respond_ok(request);
-        }
-        "prev" => {
-            (handlers.prev)();
-            respond_ok(request);
-        }
+        "" | "index.html" => respond(request, INDEX_HTML, 200, "text/html; charset=utf-8"),
+        "remote.css" => respond(request, INDEX_CSS, 200, "text/css; charset=utf-8"),
+        "remote.js" => respond(request, INDEX_JS, 200, "text/javascript; charset=utf-8"),
+        "status" => { let body = status_json(&(handlers.status)()); respond(request, &body, 200, "application/json; charset=utf-8"); }
+        "play-pause" => { (handlers.play_pause)(); respond(request, "ok", 200, "text/plain"); }
+        "next" => { (handlers.next)(); respond(request, "ok", 200, "text/plain"); }
+        "prev" => { (handlers.prev)(); respond(request, "ok", 200, "text/plain"); }
         "volume" => {
-            if let Some(volume) = parse_volume(query) {
-                (handlers.set_volume)(volume);
-            }
-            respond_ok(request);
+            let Some(volume) = parse_volume(query) else { respond(request, "Invalid volume", 400, "text/plain"); return; };
+            (handlers.set_volume)(volume); respond(request, "ok", 200, "text/plain");
         }
-        _ => {
-            let _ = request
-                .respond(tiny_http::Response::from_string("Not Found").with_status_code(404));
-        }
+        _ => respond(request, "Not Found", 404, "text/plain"),
     }
 }
-
-fn respond_html(request: tiny_http::Request, body: &'static str) {
-    let header = tiny_http::Header::from_bytes(&b"Content-Type"[..], b"text/html; charset=utf-8")
-        .expect("static header");
-    let response = tiny_http::Response::from_string(body).with_header(header);
-    let _ = request.respond(response);
+fn security_headers<R: Read>(response: &mut tiny_http::Response<R>) {
+    for (name, value) in [
+        ("Cache-Control", "no-store"), ("Referrer-Policy", "no-referrer"), ("X-Content-Type-Options", "nosniff"),
+        ("X-Frame-Options", "DENY"), ("Connection", "close"),
+        ("Content-Security-Policy", "default-src 'none'; script-src 'self'; style-src 'self'; connect-src 'self'; base-uri 'none'; frame-ancestors 'none'; form-action 'none'"),
+    ] { response.add_header(tiny_http::Header::from_bytes(name, value).expect("static header")); }
 }
-
-fn respond_json(request: tiny_http::Request, body: &str) {
-    let header =
-        tiny_http::Header::from_bytes(&b"Content-Type"[..], b"application/json; charset=utf-8")
-            .expect("static header");
-    let response = tiny_http::Response::from_string(body).with_header(header);
+fn respond(request: tiny_http::Request, body: &str, status: u16, mime: &str) {
+    let mut response = tiny_http::Response::from_string(body).with_status_code(status)
+        .with_header(tiny_http::Header::from_bytes("Content-Type", mime).expect("static content type"));
+    security_headers(&mut response);
     let _ = request.respond(response);
-}
-
-fn respond_ok(request: tiny_http::Request) {
-    let _ = request.respond(tiny_http::Response::from_string("ok"));
 }
 
 fn status_json(status_snapshot: &StatusSnapshot) -> String {
@@ -179,11 +204,11 @@ fn status_json(status_snapshot: &StatusSnapshot) -> String {
     format!(
         "{{\"playing\":{},\"title\":\"{}\",\"artist\":\"{}\",\"position\":{:.3},\"duration\":{:.3},\"volume\":{:.1}}}",
         status_snapshot.playing,
-        escape_json(&status_snapshot.title),
-        escape_json(&status_snapshot.artist),
-        status_snapshot.position_s,
-        status_snapshot.duration_s,
-        status_snapshot.volume,
+        escape_json(&status_snapshot.title.chars().take(2048).collect::<String>()),
+        escape_json(&status_snapshot.artist.chars().take(2048).collect::<String>()),
+        finite(status_snapshot.position_s),
+        finite(status_snapshot.duration_s),
+        finite(status_snapshot.volume).min(100.0),
     )
 }
 
@@ -205,38 +230,18 @@ fn escape_json(raw_text: &str) -> String {
     escaped_text
 }
 
+fn finite(value: f64) -> f64 { if value.is_finite() { value.max(0.0) } else { 0.0 } }
 fn parse_volume(query: &str) -> Option<f64> {
-    for pair in query.split('&') {
-        if let Some(v) = pair.strip_prefix("v=") {
-            return v.parse::<f64>().ok().map(|v| v.clamp(0.0, 100.0));
-        }
-    }
-    None
+    let mut volumes = query.split('&').filter_map(|pair| pair.strip_prefix("v="));
+    let value: f64 = volumes.next()?.parse().ok()?;
+    if volumes.next().is_some() || !value.is_finite() { return None; }
+    Some(value.clamp(0.0, 100.0))
 }
-
-fn make_token() -> String {
-    let mut bytes = [0_u8; 16];
-    if let Ok(mut urandom_file) = std::fs::File::open("/dev/urandom")
-        && urandom_file.read_exact(&mut bytes).is_ok()
-    {
-        return hex(&bytes);
-    }
-    warn!("web-remote: /dev/urandom unavailable, using degraded token source");
-    let now = SystemTime::now()
-        .duration_since(UNIX_EPOCH)
-        .map_or(0, |d| d.as_nanos());
-    let pid = u128::from(std::process::id());
-    degraded_token_from_seed(now, pid)
+fn token_from_reader(mut reader: impl Read) -> std::io::Result<String> {
+    let mut bytes = [0_u8;16]; reader.read_exact(&mut bytes)?; Ok(hex(&bytes))
 }
-
-fn degraded_token_from_seed(now: u128, pid: u128) -> String {
-    let mut mix = now ^ (pid << 64);
-    let mut bytes = [0_u8; 16];
-    for byte in &mut bytes {
-        *byte = (mix & 0xff) as u8;
-        mix = mix.rotate_left(7).wrapping_mul(0x9E37_79B9_7F4A_7C15);
-    }
-    hex(&bytes)
+fn make_token() -> std::io::Result<String> {
+    token_from_reader(std::fs::File::open("/dev/urandom")?)
 }
 
 fn hex(bytes: &[u8]) -> String {
@@ -250,6 +255,8 @@ fn hex(bytes: &[u8]) -> String {
 }
 
 const INDEX_HTML: &str = include_str!("remote_control.html");
+const INDEX_CSS: &str = include_str!("remote_control.css");
+const INDEX_JS: &str = include_str!("remote_control.js");
 
 #[cfg(test)]
 mod tests {
@@ -304,28 +311,19 @@ mod tests {
 
     #[test]
     fn token_is_32_hex_chars() {
-        let t = make_token();
+        let t = make_token().unwrap();
         assert_eq!(t.len(), 32);
         assert!(t.chars().all(|c| c.is_ascii_hexdigit()));
         assert!(t.chars().all(|c| !c.is_ascii_uppercase()));
     }
 
     #[test]
-    fn degraded_token_fallback_mixes_timestamp_and_runtime_identifier() {
-        assert_eq!(
-            degraded_token_from_seed(
-                0x0123_4567_89ab_cdef_0011_2233_4455_6677,
-                0x0102_0304_0506_0708,
-            ),
-            "7780dfc160b1cce8934b4af8caf19557"
-        );
-        assert_ne!(
-            degraded_token_from_seed(
-                0x0123_4567_89ab_cdef_0011_2233_4455_6677,
-                0x0102_0304_0506_0709,
-            ),
-            "7780dfc160b1cce8934b4af8caf19557"
-        );
+    fn token_failure_is_closed_and_routes_have_an_exact_boundary() {
+        assert!(token_from_reader(std::io::Cursor::new([])).is_err());
+        assert!(route("/secret-extra/status", "secret").is_none());
+        assert_eq!(route("/secret/status", "secret"), Some("status"));
+        assert_eq!(parse_volume("v=NaN"), None);
+        assert_eq!(parse_volume("v=2&v=3"), None);
     }
 
     #[test]
@@ -426,6 +424,9 @@ mod tests {
         assert_eq!(status_value["title"], "Remote \"Track\"");
         assert_eq!(status_count.load(Ordering::Relaxed), 1);
 
+        let denied = send_http_request(server_handle.port, "GET", &format!("{token_path}/play-pause"));
+        assert!(denied.starts_with("HTTP/1.1 405"));
+        assert_eq!(play_pause_count.load(Ordering::Relaxed), 0);
         assert_ok_response(&send_http_request(
             server_handle.port,
             "POST",
@@ -470,7 +471,7 @@ mod tests {
             .set_write_timeout(Some(Duration::from_secs(2)))
             .unwrap();
         let request = format!(
-            "{method} {request_target} HTTP/1.1\r\nHost: 127.0.0.1\r\nConnection: close\r\n\r\n"
+            "{method} {request_target} HTTP/1.1\r\nHost: 127.0.0.1\r\nX-Big-Media-Remote: 1\r\nContent-Length: 0\r\nConnection: close\r\n\r\n"
         );
         stream.write_all(request.as_bytes()).unwrap();
 
