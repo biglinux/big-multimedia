@@ -5,12 +5,11 @@
 use crate::error::Result;
 use big_os_kit::http_client::http_post_json;
 use log::{info, warn};
-use std::path::{Path, PathBuf};
+#[cfg(test)]
+use std::path::Path;
 use std::time::{SystemTime, UNIX_EPOCH};
 
 const API_URL: &str = "https://api.listenbrainz.org/1/submit-listens";
-const CONFIG_DIR: &str = "big-audio-player";
-const CONFIG_FILE: &str = "listenbrainz.json";
 
 #[derive(Clone)]
 pub struct ListenBrainzConfig {
@@ -28,10 +27,6 @@ impl std::fmt::Debug for ListenBrainzConfig {
 }
 
 impl ListenBrainzConfig {
-    fn config_path() -> Option<PathBuf> {
-        Some(big_os_kit::xdg_dirs::config_dir()?.join(CONFIG_DIR).join(CONFIG_FILE))
-    }
-
     fn from_json(text: &str) -> Option<Self> {
         let value: serde_json::Value = serde_json::from_str(text).ok()?;
         let enabled = match value.get("enabled") {
@@ -45,9 +40,7 @@ impl ListenBrainzConfig {
     }
 
     pub fn try_load() -> Result<Option<Self>> {
-        let path = Self::config_path().ok_or_else(|| std::io::Error::new(
-            std::io::ErrorKind::NotFound, "Private user configuration directory unavailable"))?;
-        let Some(bytes) = big_os_kit::storage::read_regular_limited(&path, 64 * 1024)? else { return Ok(None); };
+        let Some(bytes) = super::accounts::load(super::accounts::Provider::ListenBrainz)? else { return Ok(None); };
         let config = Self::from_json(std::str::from_utf8(&bytes)?)
             .ok_or_else(|| crate::Error::internal("Invalid ListenBrainz configuration"))?;
         if config.user_token.len() > 4096 || config.user_token.chars().any(char::is_control) {
@@ -58,13 +51,22 @@ impl ListenBrainzConfig {
     /// Legacy read-only adapter. Editing flows must use try_load.
     pub fn load() -> Option<Self> { Self::try_load().ok().flatten() }
 
+    /// Explicit worker-only save. Secret Service failure never falls back to a file.
     pub fn save(&self) -> Result<()> {
-        let path = Self::config_path().ok_or_else(|| std::io::Error::new(
-            std::io::ErrorKind::NotFound, "user configuration directory is unavailable",
-        ))?;
-        self.save_to_path(&path)
+        let provider = super::accounts::Provider::ListenBrainz;
+        let reviewed = super::accounts::review(provider)?;
+        if reviewed.kind != super::accounts::StorageKind::NotConfigured {
+            return Err(crate::Error::internal("Editing existing credentials requires accounts::save_reviewed with the loaded revision"));
+        }
+        let bytes = serde_json::to_vec(&serde_json::json!({"user_token":self.user_token,"enabled":self.enabled}))?;
+        let cancel = std::sync::atomic::AtomicBool::new(false);
+        match super::accounts::save_reviewed(&reviewed,&bytes,&cancel)? {
+            super::accounts::SaveOutcome::Protected => Ok(()),
+            super::accounts::SaveOutcome::ProtectedCleanupPending => Err(crate::Error::internal("Account protected; old credential cleanup needs attention")),
+        }
     }
 
+    #[cfg(test)]
     fn save_to_path(&self, path: &Path) -> Result<()> {
         if self.user_token.len() > 4096 || self.user_token.chars().any(char::is_control) {
             return Err(crate::Error::internal("Invalid ListenBrainz token"));

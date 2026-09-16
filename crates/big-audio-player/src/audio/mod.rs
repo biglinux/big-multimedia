@@ -23,6 +23,8 @@ mod mpris_state;
 mod playlist_import;
 /// Audio + Music preferences window — restored app-local.
 pub mod preferences;
+mod account_security;
+mod account_editor;
 /// Pure (GTK-free) snapshot-based queue undo/redo (survives the cutover).
 mod queue_undo;
 pub mod ui;

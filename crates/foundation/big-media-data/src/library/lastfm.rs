@@ -5,12 +5,9 @@ use crate::error::Result;
 use big_os_kit::http_client::http_post_form_response;
 use log::{info, warn};
 use std::collections::BTreeMap;
-use std::path::PathBuf;
 use std::time::{SystemTime, UNIX_EPOCH};
 
 const API_URL: &str = "https://ws.audioscrobbler.com/2.0/";
-const CONFIG_DIR: &str = "big-audio-player";
-const CONFIG_FILE: &str = "lastfm.json";
 
 #[derive(Clone)]
 pub struct LastFmConfig {
@@ -28,10 +25,6 @@ impl std::fmt::Debug for LastFmConfig {
     }
 }
 impl LastFmConfig {
-    fn config_path() -> std::io::Result<PathBuf> {
-        big_os_kit::xdg_dirs::config_dir().map(|p| p.join(CONFIG_DIR).join(CONFIG_FILE))
-            .ok_or_else(|| std::io::Error::new(std::io::ErrorKind::NotFound, "Private user configuration directory unavailable"))
-    }
     fn from_bytes(bytes: &[u8]) -> Result<Self> {
         let value: serde_json::Value = serde_json::from_slice(bytes)?;
         let field = |name: &str| -> Result<String> {
@@ -48,26 +41,27 @@ impl LastFmConfig {
     }
     /// Distinguishes absence from corrupt/oversized/symlink configuration.
     pub fn try_load() -> Result<Option<Self>> {
-        big_os_kit::storage::read_regular_limited(&Self::config_path()?, 64 * 1024)?
+        super::accounts::load(super::accounts::Provider::LastFm)?
             .map(|bytes| Self::from_bytes(&bytes)).transpose()
     }
     /// Legacy read-only adapter. Editors must use try_load and refuse to
     /// overwrite a configuration that could not be read.
     pub fn load() -> Option<Self> { Self::try_load().ok().flatten() }
-    /// Legacy private-file storage, not a vault. This API is NOT a fallback from
-    /// a locked/failed Secret Service; no automatic credential migration occurs.
+    /// Worker-only save to Secret Service; never writes plaintext credentials.
     pub fn save(&self) -> Result<()> {
-        if [&self.api_key, &self.api_secret, &self.session_key, &self.username].iter()
-            .any(|text| text.len() > 4096 || text.chars().any(char::is_control)) {
-            return Err(crate::Error::internal("Invalid Last.fm configuration"));
+        let reviewed = super::accounts::review(super::accounts::Provider::LastFm)?;
+        if reviewed.kind != super::accounts::StorageKind::NotConfigured {
+            return Err(crate::Error::internal("Editing existing credentials requires accounts::save_reviewed with the loaded revision"));
         }
-        let path = Self::config_path()?;
-        let json = serde_json::to_vec_pretty(&serde_json::json!({
-            "api_key":self.api_key, "api_secret":self.api_secret,
-            "session_key":self.session_key,"username":self.username,"enabled":self.enabled,
+        let bytes = serde_json::to_vec(&serde_json::json!({
+            "api_key":self.api_key,"api_secret":self.api_secret,"session_key":self.session_key,
+            "username":self.username,"enabled":self.enabled,
         }))?;
-        big_os_kit::storage::atomic_write_private(&path, &json)?;
-        Ok(())
+        let cancel = std::sync::atomic::AtomicBool::new(false);
+        match super::accounts::save_reviewed(&reviewed,&bytes,&cancel)? {
+            super::accounts::SaveOutcome::Protected => Ok(()),
+            super::accounts::SaveOutcome::ProtectedCleanupPending => Err(crate::Error::internal("Account protected; old credential cleanup needs attention")),
+        }
     }
 }
 
