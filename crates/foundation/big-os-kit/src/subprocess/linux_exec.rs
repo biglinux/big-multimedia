@@ -52,7 +52,7 @@ fn exited_unreaped(pid: u32) -> io::Result<bool> {
     Ok(unsafe { info.si_pid() } != 0)
 }
 
-fn read_turn<R: Read>(pipe: &mut Option<R>, output: &mut Vec<u8>, name: &'static str) -> Result<(), Error> {
+fn read_turn<R: Read>(pipe: &mut Option<R>, output: &mut Vec<u8>, name: &'static str, observer: &mut dyn FnMut(&[u8]) -> io::Result<()>) -> Result<(), Error> {
     // At most 64 KiB per turn: a constantly readable producer must not starve
     // cancellation, deadline checks, stdin or the other output stream.
     let mut buf = [0_u8; 8192];
@@ -64,6 +64,7 @@ fn read_turn<R: Read>(pipe: &mut Option<R>, output: &mut Vec<u8>, name: &'static
                 if n > DEFAULT_MAX_CAPTURE_BYTES.saturating_sub(output.len()) {
                     return Err(Error::OutputLimit { stream: name, limit: DEFAULT_MAX_CAPTURE_BYTES });
                 }
+                observer(&buf[..n]).map_err(Error::Io)?;
                 output.extend_from_slice(&buf[..n]);
             }
             Err(error) if error.kind() == io::ErrorKind::Interrupted => continue,
@@ -75,6 +76,10 @@ fn read_turn<R: Read>(pipe: &mut Option<R>, output: &mut Vec<u8>, name: &'static
 }
 
 pub(super) fn run(spec: &BigSubprocessSpec, cancel: &AtomicBool) -> Result<BigSubprocessOutput, Error> {
+    run_observed(spec, cancel, &mut |_| Ok(()))
+}
+pub(super) fn run_observed(spec: &BigSubprocessSpec, cancel: &AtomicBool,
+    observer: &mut dyn FnMut(&[u8]) -> io::Result<()>) -> Result<BigSubprocessOutput, Error> {
     let deadline = Instant::now().checked_add(spec.timeout)
         .ok_or_else(|| Error::Io(io::Error::new(io::ErrorKind::InvalidInput, "timeout is too large")))?;
     if cancel.load(Ordering::Acquire) { return Err(Error::Cancelled); }
@@ -101,8 +106,8 @@ pub(super) fn run(spec: &BigSubprocessSpec, cancel: &AtomicBool) -> Result<BigSu
     loop {
         if cancel.load(Ordering::Acquire) { return Err(Error::Cancelled); }
         if Instant::now() >= deadline { return Err(Error::Timeout); }
-        read_turn(&mut stdout, &mut out, "stdout")?;
-        read_turn(&mut stderr, &mut err, "stderr")?;
+        read_turn(&mut stdout, &mut out, "stdout", &mut |_| Ok(()))?;
+        read_turn(&mut stderr, &mut err, "stderr", observer)?;
         if written == bytes.len() { input = None; }
         if let Some(pipe) = input.as_mut() {
             let end = written.saturating_add(65536).min(bytes.len());
@@ -124,8 +129,15 @@ pub(super) fn run(spec: &BigSubprocessSpec, cancel: &AtomicBool) -> Result<BigSu
         };
         if exited && input.is_none() && stdout.is_none() && stderr.is_none() {
             // Reap only once the operation is complete. try_wait cannot block.
-            let status = owner.child.as_mut().expect("owned child").try_wait().map_err(Error::Io)?
-                .ok_or_else(|| Error::Io(io::Error::other("child exit notification disappeared")))?;
+            let result = owner.child.as_mut().expect("owned child").try_wait();
+            let status = match result {
+                Ok(Some(status)) => status,
+                Ok(None) => return Err(Error::Io(io::Error::other("child exit notification disappeared"))),
+                Err(error) => {
+                    if error.raw_os_error() == Some(libc::ECHILD) { owner.may_signal = false; }
+                    return Err(Error::Io(error));
+                }
+            };
             owner.child = None; // never signal after collection/reuse is possible
             redact_in_place(&spec.redact_substrings, &mut out);
             redact_in_place(&spec.redact_substrings, &mut err);

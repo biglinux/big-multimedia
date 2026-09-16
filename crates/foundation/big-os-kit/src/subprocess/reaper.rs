@@ -10,9 +10,9 @@ struct State { reserved: usize, children: Vec<Child> }
 struct Collector { state: Mutex<State>, wake: Condvar }
 static COLLECTOR: Mutex<Option<Arc<Collector>>> = Mutex::new(None);
 
-pub(super) struct Permit { collector: Arc<Collector>, active: bool }
+pub(crate) struct Permit { collector: Arc<Collector>, active: bool }
 impl Permit {
-    pub(super) fn reserve() -> io::Result<Self> {
+    pub(crate) fn reserve() -> io::Result<Self> {
         let collector = {
             let mut slot = COLLECTOR.lock().unwrap_or_else(PoisonError::into_inner);
             if slot.is_none() {
@@ -39,7 +39,7 @@ impl Permit {
         Ok(Self { collector, active: true })
     }
 
-    pub(super) fn defer(mut self, child: Child) {
+    pub(crate) fn defer(mut self, child: Child) {
         let mut state = self.collector.state.lock().unwrap_or_else(PoisonError::into_inner);
         // The pre-reserved slot bounds the vector; this path cannot fail due to
         // thread creation. The collector now owns the slot and the Child.

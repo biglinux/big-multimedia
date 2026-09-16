@@ -513,3 +513,13 @@ fn full_duplex_large_input_and_output_do_not_deadlock() {
     assert!(result.status.success());
     assert_eq!(result.stdout.len(), 131072);
 }
+
+#[test]
+#[cfg_attr(miri, ignore)]
+#[cfg(target_os = "linux")]
+fn stderr_observer_error_stops_the_operation() {
+    let result = BigSubprocessSpec::builder().program("sh").args(["-c", "printf progress >&2; sleep 2"])
+        .timeout(Duration::from_secs(5)).build()
+        .run_cancellable_with_stderr(&AtomicBool::new(false), &mut |_| Err(std::io::Error::other("consumer closed")));
+    assert!(matches!(result, Err(BigSubprocessError::Io(_))));
+}

@@ -351,6 +351,22 @@ impl BigSubprocessSpec {
         run_resolved(self, &resolved, cancel)
     }
 
+    /// Run with bounded, incremental stderr observation on the supervising
+    /// thread. The observer MUST NOT block (use try_send for progress); its I/O
+    /// error cancels the process group. Bytes are untrusted and unredacted here:
+    /// parse only protocol fields, never forward them wholesale to logs/UI.
+    /// Capture limits still apply and truncation is never reported as success.
+    pub fn run_cancellable_with_stderr(
+        &self, cancel: &AtomicBool,
+        observer: &mut dyn FnMut(&[u8]) -> std::io::Result<()>,
+    ) -> Result<BigSubprocessOutput, BigSubprocessError> {
+        self.try_resolved()?;
+        #[cfg(target_os = "linux")]
+        { linux_exec::run_observed(self, cancel, observer) }
+        #[cfg(not(target_os = "linux"))]
+        { let _ = (cancel, observer); Err(BigSubprocessError::Io(std::io::Error::new(std::io::ErrorKind::Unsupported, "bounded observation requires Linux"))) }
+    }
+
     /// Spawn the subprocess without waiting and return a
     /// [`BigSubprocessChild`] handle for streaming and lifecycle control.
     ///
@@ -424,7 +440,7 @@ pub fn set_spawn_observer(observer: impl Fn(u32, &str) + Send + Sync + 'static) 
     let _ = SPAWN_OBSERVER.set(Box::new(observer));
 }
 
-fn notify_spawn_observer(pid: u32, program: &str) {
+pub(crate) fn notify_spawn_observer(pid: u32, program: &str) {
     if let Some(observer) = SPAWN_OBSERVER.get() {
         observer(pid, program);
     }
@@ -670,7 +686,7 @@ fn build_command(spec: &BigSubprocessSpec) -> std::process::Command {
 
 #[cfg(target_os = "linux")]
 mod linux_exec;
-mod reaper;
+pub(crate) mod reaper;
 
 fn run_resolved(
     spec: &BigSubprocessSpec,
