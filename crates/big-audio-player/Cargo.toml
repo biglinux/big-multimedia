@@ -24,6 +24,7 @@ pango = { version = "0.22", package = "pango" }
 big-media-runtime = { path = "../media-runtime", default-features = false, features = ["ui"] }
 big-player-ui = { path = "../ui/media/big-player-ui" }
 big-app-kit = { path = "../app/big-app-kit" }
+big-os-kit.workspace = true
 big-relm4-components = { path = "../ui/generic/big-relm4-components" }
 big-media-components = { path = "../ui/media/big-media-components" }
 # In-player quick export (convert / trim & export) reuses the converter engine.

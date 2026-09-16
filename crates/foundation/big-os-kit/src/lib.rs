@@ -13,8 +13,7 @@
 //!   redaction, allow-list, and a spawn-handle for long-running children.
 //! - [`storage`]: atomic JSON persistence (temp + rename) and a versioned
 //!   forward-migration envelope.
-//! - [`keyring`]: typed secret-store trait, an in-memory test backend, and
-//!   (feature `libsecret-system-backend`) a system libsecret backend.
+//! - [`keyring`]: a typed worker-only boundary to libsecret Secret Service.
 //! - [`microdaemon`]: GTK-free versioned frame protocol shared by the small
 //!   per-user daemons that own durable work.
 //!
@@ -46,3 +45,14 @@ pub mod url;
 /// Local webcam/video-node inventory helpers.
 /// XDG directory resolution for BigLinux desktop apps.
 pub mod xdg_dirs;
+
+/// Bounded serial executor for application persistence.
+pub mod background;
+
+/// Bounded hashing of documents and opened files for durable receipts.
+pub mod digest;
+/// Worker-only Secret Service access through libsecret's secret-tool.
+pub mod keyring;
+
+/// Observable, coalesced private state writes off the GUI thread.
+pub mod deferred;

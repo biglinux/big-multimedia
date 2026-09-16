@@ -141,7 +141,6 @@ dependencies = [
  "big-os-kit",
  "log",
  "serde_json",
- "tiny_http",
 ]
 
 [[package]]
@@ -168,6 +167,7 @@ dependencies = [
  "big-app-kit",
  "big-media-components",
  "big-media-runtime",
+ "big-os-kit",
  "big-player-ui",
  "big-quick-export",
  "big-relm4-components",
@@ -270,6 +270,7 @@ dependencies = [
  "bon",
  "libc",
  "log",
+ "ring",
  "serde",
  "serde_json",
  "thiserror 2.0.18",
@@ -338,6 +339,7 @@ dependencies = [
 name = "big-video-player"
 version = "0.1.0"
 dependencies = [
+ "big-os-kit",
  "async-channel",
  "big-app-kit",
  "big-media-components",
