@@ -7,48 +7,61 @@ use log::error;
 use super::{Inner, defaults, keys};
 use crate::error::Result;
 
-fn save_to_file(inner: &Inner) {
-    if let Some(dir) = inner.path.parent()
-        && let Err(e) = fs::create_dir_all(dir)
-    {
-        error!("Failed to create config dir: {e}");
-        return;
-    }
+const LIMIT: usize = 1024 * 1024;
+use std::collections::HashMap;
+use std::sync::{Mutex, OnceLock, Weak};
+use std::io;
+use big_os_kit::storage::{self, CommitOutcome};
 
-    let mut entries: Vec<_> = inner.settings_values.iter().collect();
-    entries.sort_by_key(|(key, _)| *key);
+type Shared = Arc<RwLock<Inner>>;
+static STORES: OnceLock<Mutex<HashMap<PathBuf, Weak<RwLock<Inner>>>>> = OnceLock::new();
 
-    let mut content = String::new();
-    for (key, value) in entries {
-        content.push_str(key);
-        content.push('=');
-        content.push_str(value);
-        content.push('\n');
-    }
-
-    // Atomic write: a crash mid-write must not truncate or corrupt the user's
-    // settings. Write to a sibling temp file, flush it to disk, then rename
-    // over the target (rename is atomic on the same filesystem).
-    if let Err(e) = write_atomic(&inner.path, content.as_bytes()) {
-        error!("Failed to save settings: {e}");
-    }
-}
-
-fn write_atomic(path: &std::path::Path, bytes: &[u8]) -> std::io::Result<()> {
-    use std::io::Write;
-    let temporary_settings_path = path.with_extension("conf.tmp");
-    {
-        let mut file = fs::File::create(&temporary_settings_path)?;
-        file.write_all(bytes)?;
-        file.sync_all()?;
-    }
-    match fs::rename(&temporary_settings_path, path) {
-        Ok(()) => Ok(()),
-        Err(e) => {
-            let _ = fs::remove_file(&temporary_settings_path);
-            Err(e)
+fn parse(content: &[u8]) -> io::Result<HashMap<String, String>> {
+    let text = std::str::from_utf8(content).map_err(|_| io::Error::new(io::ErrorKind::InvalidData, "settings are not UTF-8"))?;
+    let mut values = HashMap::new();
+    for line in text.lines() {
+        let line = line.trim();
+        if line.is_empty() || line.starts_with('#') { continue; }
+        let (key, value) = line.split_once('=').ok_or_else(|| io::Error::new(io::ErrorKind::InvalidData, "invalid settings line"))?;
+        let key = key.trim();
+        if !super::schema::valid(key, value) || values.insert(key.into(), value.into()).is_some() {
+            return Err(io::Error::new(io::ErrorKind::InvalidData, "invalid or duplicate setting"));
         }
     }
+    Ok(values)
+}
+
+fn serialize(values: &HashMap<String, String>) -> io::Result<Vec<u8>> {
+    let mut entries: Vec<_> = values.iter().collect(); entries.sort_by_key(|(key, _)| *key);
+    let mut bytes = Vec::new();
+    for (key, value) in entries {
+        if !super::schema::valid(key, value) || key.len() + value.len() + 2 > LIMIT.saturating_sub(bytes.len()) {
+            return Err(io::Error::new(io::ErrorKind::InvalidData, "invalid or excessive settings"));
+        }
+        bytes.extend_from_slice(key.as_bytes()); bytes.push(b'=');
+        bytes.extend_from_slice(value.as_bytes()); bytes.push(b'\n');
+    }
+    Ok(bytes)
+}
+
+fn commit(inner: &mut Inner, values: HashMap<String, String>) -> io::Result<CommitOutcome> {
+    if inner.path.as_os_str().is_empty() { return Err(io::Error::new(io::ErrorKind::NotFound, "settings are in memory only; no configuration directory")); }
+    if let Some(error) = &inner.load_error { return Err(io::Error::new(io::ErrorKind::InvalidData, format!("settings were not loaded safely; not replacing the file: {error}"))); }
+    let bytes = serialize(&values)?;
+    if let Some(parent) = inner.path.parent() { fs::create_dir_all(parent)?; }
+    let _lock = storage::WriteLock::try_acquire(&inner.path)?;
+    let current = storage::read_regular_limited(&inner.path, LIMIT)?;
+    if current != inner.disk_bytes {
+        return Err(io::Error::new(io::ErrorKind::AlreadyExists, "settings changed in another process; reopen before saving"));
+    }
+    let receipt = storage::atomic_write_private_receipt(&inner.path, &bytes)?;
+    // Both Ok variants have published: update the expected disk revision now.
+    // Another local mutation cannot race this sync operation: Inner is write-locked.
+    inner.settings_values = values;
+    inner.disk_bytes = Some(bytes);
+    inner.dirty = false;
+    inner.durability_pending = matches!(&receipt, CommitOutcome::PublishedNotSynced(_));
+    Ok(receipt)
 }
 
 #[derive(Clone)]
@@ -76,35 +89,47 @@ impl Settings {
     /// Stores at `~/.config/<app_name>/settings.conf`.
     #[must_use]
     pub fn new(app_name: &str) -> Self {
-        let config_dir = big_os_kit::xdg_dirs::config_dir()
-            .unwrap_or_else(|| {
-                big_os_kit::xdg_dirs::home_dir()
-                    .unwrap_or_else(|| PathBuf::from("/tmp"))
-                    .join(".config")
-            })
-            .join(app_name);
-        let path = config_dir.join("settings.conf");
+        let Some(config_dir) = big_os_kit::xdg_dirs::config_dir() else {
+            return Self::memory_only();
+        };
+        Self::from_path(config_dir.join(app_name).join("settings.conf"))
+    }
 
-        let mut settings_values = defaults::defaults();
-        if let Ok(content) = fs::read_to_string(&path) {
-            for line in content.lines() {
-                let line = line.trim();
-                if line.is_empty() || line.starts_with('#') {
-                    continue;
-                }
-                if let Some((key, value)) = line.split_once('=') {
-                    settings_values.insert(key.trim().to_string(), value.to_string());
-                }
-            }
-        }
+    /// Isolated unsaved state; cannot silently fall back to a shared temp path.
+    #[must_use]
+    pub fn memory_only() -> Self {
+        Self { inner: Arc::new(RwLock::new(Inner {
+            settings_values: defaults::defaults(), path: PathBuf::new(), dirty: false,
+            disk_bytes: None, load_error: None, durability_pending: false,
+        })) }
+    }
 
-        Self {
-            inner: Arc::new(RwLock::new(Inner {
-                settings_values,
-                path,
-                dirty: false,
-            })),
+    pub(super) fn from_path(mut path: PathBuf) -> Self {
+        // Normalize existing parents. Nonexistent parents retain an absolute
+        // lexical path; this registry is not a universal hard-link alias map.
+        if let (Some(parent), Some(name)) = (path.parent(), path.file_name()) {
+            if let Ok(parent) = fs::canonicalize(parent) { path = parent.join(name); }
         }
+        let stores = STORES.get_or_init(|| Mutex::new(HashMap::new()));
+        let mut stores = stores.lock().unwrap_or_else(std::sync::PoisonError::into_inner);
+        stores.retain(|_, value| value.strong_count() > 0);
+        if let Some(inner) = stores.get(&path).and_then(Weak::upgrade) { return Self { inner }; }
+        let loaded = storage::read_regular_limited(&path, LIMIT);
+        let mut values = defaults::defaults();
+        let (disk_bytes, load_error) = match loaded {
+            Ok(Some(bytes)) => match parse(&bytes) {
+                Ok(saved) => { values.extend(saved); (Some(bytes), None) }
+                Err(error) => (Some(bytes), Some(error.to_string())),
+            },
+            Ok(None) => (None, None),
+            Err(error) => (None, Some(error.to_string())),
+        };
+        let inner: Shared = Arc::new(RwLock::new(Inner {
+            settings_values: values, path: path.clone(), dirty: false, disk_bytes,
+            load_error, durability_pending: false,
+        }));
+        stores.insert(path, Arc::downgrade(&inner));
+        Self { inner }
     }
 
     pub(crate) fn defaults() -> std::collections::HashMap<String, String> {
@@ -189,61 +214,21 @@ impl Settings {
         inner
             .settings_values
             .get(key)
-            .and_then(|value| value.parse().ok())
+            .and_then(|value| value.parse::<f64>().ok()).filter(|value| value.is_finite())
             .unwrap_or(0.0)
     }
 
     pub fn set_string(&self, key: &str, value: &str) -> bool {
+        if !super::schema::valid(key, value) { return false; }
         self.debug_check_key(key);
-        let mut inner = self
-            .inner
-            .write()
-            .unwrap_or_else(std::sync::PoisonError::into_inner);
-        inner
-            .settings_values
-            .insert(key.to_string(), value.to_string());
-        inner.dirty = true;
+        let mut inner = self.inner.write().unwrap_or_else(std::sync::PoisonError::into_inner);
+        if inner.settings_values.get(key).is_some_and(|old| old == value) { return true; }
+        inner.settings_values.insert(key.into(), value.into()); inner.dirty = true;
         true
     }
-
-    pub fn set_boolean(&self, key: &str, value: bool) -> bool {
-        self.debug_check_key(key);
-        let mut inner = self
-            .inner
-            .write()
-            .unwrap_or_else(std::sync::PoisonError::into_inner);
-        inner
-            .settings_values
-            .insert(key.to_string(), value.to_string());
-        inner.dirty = true;
-        true
-    }
-
-    pub fn set_int(&self, key: &str, value: i32) -> bool {
-        self.debug_check_key(key);
-        let mut inner = self
-            .inner
-            .write()
-            .unwrap_or_else(std::sync::PoisonError::into_inner);
-        inner
-            .settings_values
-            .insert(key.to_string(), value.to_string());
-        inner.dirty = true;
-        true
-    }
-
-    pub fn set_double(&self, key: &str, value: f64) -> bool {
-        self.debug_check_key(key);
-        let mut inner = self
-            .inner
-            .write()
-            .unwrap_or_else(std::sync::PoisonError::into_inner);
-        inner
-            .settings_values
-            .insert(key.to_string(), value.to_string());
-        inner.dirty = true;
-        true
-    }
+    pub fn set_boolean(&self, key: &str, value: bool) -> bool { self.set_string(key, if value { "true" } else { "false" }) }
+    pub fn set_int(&self, key: &str, value: i32) -> bool { self.set_string(key, &value.to_string()) }
+    pub fn set_double(&self, key: &str, value: f64) -> bool { value.is_finite() && self.set_string(key, &value.to_string()) }
 
     #[must_use]
     pub fn get_bool(&self, key: keys::BoolKey) -> bool {
@@ -286,126 +271,81 @@ impl Settings {
         self.set_string(key.0, value)
     }
 
+    /// Blocking durable save. Run on a worker when called during interaction.
+    /// A publication receipt distinguishes a completed write from fsync failure.
+    pub fn try_flush(&self) -> io::Result<CommitOutcome> {
+        let mut inner = self.inner.write().unwrap_or_else(std::sync::PoisonError::into_inner);
+        if !inner.dirty {
+            if inner.durability_pending {
+                return Ok(match storage::sync_parent(&inner.path) {
+                    Ok(()) => { inner.durability_pending = false; CommitOutcome::Durable }
+                    Err(error) => CommitOutcome::PublishedNotSynced(error),
+                });
+            }
+            return Ok(CommitOutcome::Durable);
+        }
+        let values = inner.settings_values.clone();
+        commit(&mut inner, values)
+    }
+
     pub fn flush(&self) {
-        let mut inner = self
-            .inner
-            .write()
-            .unwrap_or_else(std::sync::PoisonError::into_inner);
-        if inner.dirty {
-            save_to_file(&inner);
-            inner.dirty = false;
+        match self.try_flush() {
+            Ok(CommitOutcome::Durable) => {},
+            Ok(CommitOutcome::PublishedNotSynced(error)) => error!("Settings applied; durability unconfirmed: {error}"),
+            Err(error) => error!("Settings not saved; changes remain pending: {error}"),
         }
     }
 
-    /// One-time copy of `ui-*` colors to `audio-ui-*` so existing users keep
-    /// their video-player palette in the audio binary without re-applying it.
     pub fn migrate_audio_appearance(&self) {
-        let needs_migrate = {
-            let inner = self
-                .inner
-                .read()
-                .unwrap_or_else(std::sync::PoisonError::into_inner);
-            let defaults = Self::defaults();
-            let pairs = [
-                ("audio-ui-color-source", "ui-color-source"),
-                ("audio-ui-bg-color", "ui-bg-color"),
-                ("audio-ui-font-color", "ui-font-color"),
-                ("audio-ui-icon-color", "ui-icon-color"),
-                ("audio-ui-dialog-color", "ui-dialog-color"),
-            ];
-            let mut changed = false;
-            for (audio_key, video_key) in &pairs {
-                let audio_value = inner
-                    .settings_values
-                    .get(*audio_key)
-                    .cloned()
-                    .unwrap_or_default();
-                let default_value = defaults.get(*audio_key).cloned().unwrap_or_default();
-                let video_value = inner
-                    .settings_values
-                    .get(*video_key)
-                    .cloned()
-                    .unwrap_or_default();
-                if audio_value == default_value && video_value != default_value {
-                    changed = true;
-                    break;
+        let mut inner = self.inner.write().unwrap_or_else(std::sync::PoisonError::into_inner);
+        if inner.settings_values.get("audio-appearance-migrated").is_some_and(|s| s == "true") { return; }
+        let defaults = defaults::defaults();
+        for (audio, video) in [
+            ("audio-ui-color-source", "ui-color-source"), ("audio-ui-bg-color", "ui-bg-color"),
+            ("audio-ui-font-color", "ui-font-color"), ("audio-ui-icon-color", "ui-icon-color"),
+            ("audio-ui-dialog-color", "ui-dialog-color"),
+        ] {
+            // Never overwrite an already personalized audio value.
+            if inner.settings_values.get(audio) == defaults.get(audio) {
+                if let Some(value) = inner.settings_values.get(video).cloned() {
+                    inner.settings_values.insert(audio.into(), value);
                 }
             }
-            if changed { Some(pairs) } else { None }
-        };
-
-        if let Some(pairs) = needs_migrate {
-            let mut inner = self
-                .inner
-                .write()
-                .unwrap_or_else(std::sync::PoisonError::into_inner);
-            for (audio_key, video_key) in &pairs {
-                if let Some(value) = inner.settings_values.get(*video_key).cloned() {
-                    inner
-                        .settings_values
-                        .insert((*audio_key).to_string(), value);
-                }
-            }
-            inner.dirty = true;
-            save_to_file(&inner);
-            inner.dirty = false;
         }
+        inner.settings_values.insert("audio-appearance-migrated".into(), "true".into());
+        inner.dirty = true;
+        drop(inner); self.flush();
     }
 
     pub fn reset_to_defaults(&self) {
-        let mut inner = self
-            .inner
-            .write()
-            .unwrap_or_else(std::sync::PoisonError::into_inner);
-        let defaults = Self::defaults();
-        for (key, value) in &defaults {
-            match key.as_str() {
-                "window-width" | "window-height" | "window-maximized" => continue,
-                _ => {}
-            }
-            inner.settings_values.insert(key.clone(), value.clone());
+        let mut inner = self.inner.write().unwrap_or_else(std::sync::PoisonError::into_inner);
+        for (key, value) in defaults::defaults() {
+            if matches!(key.as_str(), "window-width" | "window-height" | "window-maximized") { continue; }
+            inner.settings_values.insert(key, value);
         }
-        save_to_file(&inner);
-        inner.dirty = false;
+        inner.dirty = true;
+        drop(inner); self.flush();
     }
 
     pub fn export_to(&self, path: &str) -> Result<()> {
-        let inner = self
-            .inner
-            .read()
-            .unwrap_or_else(std::sync::PoisonError::into_inner);
-        let mut entries: Vec<_> = inner.settings_values.iter().collect();
-        entries.sort_by_key(|(key, _)| *key);
-        let mut content = String::new();
-        for (key, value) in entries {
-            content.push_str(key);
-            content.push('=');
-            content.push_str(value);
-            content.push('\n');
-        }
-        fs::write(path, &content)?;
+        let bytes = {
+            let inner = self.inner.read().unwrap_or_else(std::sync::PoisonError::into_inner);
+            serialize(&inner.settings_values)?
+        };
+        let target = std::path::Path::new(path);
+        let staged = storage::StagedFile::new(target)?;
+        fs::write(staged.path(), &bytes)?;
+        staged.publish(target)?.into_io_result()?;
         Ok(())
     }
 
     pub fn import_from(&self, path: &str) -> Result<()> {
-        let content = fs::read_to_string(path)?;
-        let mut inner = self
-            .inner
-            .write()
-            .unwrap_or_else(std::sync::PoisonError::into_inner);
-        for line in content.lines() {
-            let line = line.trim();
-            if line.is_empty() || line.starts_with('#') {
-                continue;
-            }
-            if let Some((key, value)) = line.split_once('=') {
-                inner
-                    .settings_values
-                    .insert(key.trim().to_string(), value.trim().to_string());
-            }
-        }
-        save_to_file(&inner);
-        inner.dirty = false;
+        let bytes = storage::read_regular_limited(std::path::Path::new(path), LIMIT)?
+            .ok_or_else(|| io::Error::new(io::ErrorKind::NotFound, "import file missing"))?;
+        let imported = parse(&bytes)?; // validate ALL entries before mutation
+        let mut inner = self.inner.write().unwrap_or_else(std::sync::PoisonError::into_inner);
+        let mut values = inner.settings_values.clone(); values.extend(imported);
+        commit(&mut inner, values)?.into_io_result()?;
         Ok(())
     }
 }

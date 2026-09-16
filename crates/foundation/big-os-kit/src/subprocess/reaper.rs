@@ -73,7 +73,8 @@ impl Collector {
                 Err(error) if error.raw_os_error() == Some(libc::ECHILD) => false,
                 _ => true,
             });
-            state.reserved -= before - state.children.len();
+            let collected = before - state.children.len();
+            state.reserved -= collected;
             state = self.wake.wait_timeout(state, Duration::from_millis(100))
                 .unwrap_or_else(PoisonError::into_inner).0;
         }

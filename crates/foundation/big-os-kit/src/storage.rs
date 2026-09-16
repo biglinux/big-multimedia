@@ -32,6 +32,9 @@
 
 use std::fs;
 use std::io::Write;
+
+mod transaction;
+pub use transaction::{CommitOutcome, StagedFile, WriteLock, read_regular_limited, sync_parent};
 use std::marker::PhantomData;
 use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicU64, Ordering};
@@ -99,6 +102,7 @@ static TEMP_SEQ: AtomicU64 = AtomicU64::new(0);
 pub struct BigAtomicJsonStore<T> {
     path: PathBuf,
     _marker: PhantomData<T>,
+    max_bytes: usize,
 }
 
 impl<T> BigAtomicJsonStore<T> {
@@ -111,7 +115,15 @@ impl<T> BigAtomicJsonStore<T> {
         Self {
             path: path.into(),
             _marker: PhantomData,
+            max_bytes: 16 * 1024 * 1024,
         }
+    }
+
+    /// Override the default 16 MiB JSON limit for a documented data type.
+    #[must_use]
+    pub fn with_max_bytes(mut self, max_bytes: usize) -> Self {
+        self.max_bytes = max_bytes;
+        self
     }
 
     /// Return a reference to the `path` exposed by this [`BigAtomicJsonStore`].
@@ -132,12 +144,12 @@ impl<T: Serialize + DeserializeOwned> BigAtomicJsonStore<T> {
     /// Returns [`BigStorageError::Io`] for filesystem read failures (other than missing
     /// file, which yields `Ok(None)`), or [`BigStorageError::Json`] when parsing fails.
     pub fn read(&self) -> Result<Option<T>, BigStorageError> {
-        match fs::read(&self.path) {
-            Ok(bytes) => {
+        match read_regular_limited(&self.path, self.max_bytes) {
+            Ok(Some(bytes)) => {
                 let value: T = serde_json::from_slice(&bytes)?;
                 Ok(Some(value))
             }
-            Err(e) if e.kind() == std::io::ErrorKind::NotFound => Ok(None),
+            Ok(None) => Ok(None),
             Err(e) => Err(BigStorageError::Io(e)),
         }
     }
@@ -150,8 +162,9 @@ impl<T: Serialize + DeserializeOwned> BigAtomicJsonStore<T> {
     /// or rename), or [`BigStorageError::Json`] when serialization fails.
     pub fn write(&self, value: &T) -> Result<(), BigStorageError> {
         atomic_replace(&self.path, false, |file| {
-            serde_json::to_writer_pretty(&mut *file, value)?;
-            file.write_all(b"\n")?;
+            let mut bounded = LimitedWriter { file, remaining: self.max_bytes };
+            serde_json::to_writer_pretty(&mut bounded, value)?;
+            bounded.write_all(b"\n")?;
             Ok(())
         })
     }
@@ -160,12 +173,8 @@ impl<T: Serialize + DeserializeOwned> BigAtomicJsonStore<T> {
 fn atomic_sibling_temp_path(target: &Path) -> PathBuf {
     let seq = TEMP_SEQ.fetch_add(1, Ordering::Relaxed);
     let pid = std::process::id();
-    let name = target
-        .file_name()
-        .map(|s| s.to_string_lossy().into_owned())
-        .unwrap_or_else(|| "store".to_string());
     let parent = target.parent().unwrap_or_else(|| Path::new("."));
-    parent.join(format!(".{name}.tmp.{pid}.{seq}"))
+    parent.join(format!(".big-state.tmp.{pid}.{seq}"))
 }
 
 /// Atomically write `bytes` to `path`: write a uniquely-named sibling temp file,
@@ -183,7 +192,8 @@ fn atomic_sibling_temp_path(target: &Path) -> PathBuf {
 /// file's permissions/owner (default umask), not the previous file's, and any
 /// hard links to the old inode are left pointing at the old contents. Right for
 /// config/state and fresh files; for editing a user document whose mode must be
-/// preserved, write in place instead.
+/// preserved, use a document-specific atomic save policy preserving mode/ACLs.
+/// Blind in-place writes are not recommended because they lose crash atomicity.
 ///
 /// # Errors
 /// Returns the underlying [`std::io::Error`] from the dir create, temp write,
@@ -234,11 +244,11 @@ fn create_sibling_file(path: &Path, private: bool) -> std::io::Result<fs::File> 
     options.open(path)
 }
 
-fn atomic_replace<E: From<std::io::Error>>(
+fn atomic_replace_receipt<E: From<std::io::Error>>(
     path: &Path,
     private: bool,
     write: impl FnOnce(&mut fs::File) -> Result<(), E>,
-) -> Result<(), E> {
+) -> Result<CommitOutcome, E> {
     let parent = path.parent().filter(|p| !p.as_os_str().is_empty())
         .unwrap_or_else(|| Path::new("."));
     fs::create_dir_all(parent)?;
@@ -253,9 +263,35 @@ fn atomic_replace<E: From<std::io::Error>>(
     fs::rename(&temporary, path)?;
     cleanup.0 = None; // the old temporary name no longer belongs to us
     // Persist the directory entry as well as the file content on Unix.
-    #[cfg(unix)]
-    fs::File::open(parent)?.sync_all()?;
-    Ok(())
+    Ok(match sync_parent(path) {
+        Ok(()) => CommitOutcome::Durable,
+        Err(error) => CommitOutcome::PublishedNotSynced(error),
+    })
+}
+
+fn atomic_replace<E: From<std::io::Error>>(
+    path: &Path, private: bool, write: impl FnOnce(&mut fs::File) -> Result<(), E>,
+) -> Result<(), E> {
+    atomic_replace_receipt(path, private, write)?.into_io_result().map_err(E::from)
+}
+
+/// Publish private internal state with an explicit publication/durability receipt.
+/// Err means publication did not happen; PublishedNotSynced means it DID happen.
+pub fn atomic_write_private_receipt(path: &Path, bytes: &[u8]) -> std::io::Result<CommitOutcome> {
+    atomic_replace_receipt(path, true, |file| file.write_all(bytes))
+}
+
+struct LimitedWriter<'a> { file: &'a mut fs::File, remaining: usize }
+impl Write for LimitedWriter<'_> {
+    fn write(&mut self, bytes: &[u8]) -> std::io::Result<usize> {
+        if bytes.len() > self.remaining {
+            return Err(std::io::Error::new(std::io::ErrorKind::InvalidData, "serialized state exceeds limit"));
+        }
+        let written = self.file.write(bytes)?;
+        self.remaining -= written;
+        Ok(written)
+    }
+    fn flush(&mut self) -> std::io::Result<()> { self.file.flush() }
 }
 
 /// Migration callback contract used by [`BigVersionedJsonStore`].

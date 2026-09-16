@@ -8,6 +8,7 @@ use std::path::PathBuf;
 pub mod keys;
 
 mod defaults;
+mod schema;
 mod store;
 #[cfg(test)]
 mod tests;
@@ -18,4 +19,7 @@ struct Inner {
     settings_values: HashMap<String, String>,
     path: PathBuf,
     dirty: bool,
+    disk_bytes: Option<Vec<u8>>,
+    load_error: Option<String>,
+    durability_pending: bool,
 }
