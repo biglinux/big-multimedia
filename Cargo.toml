@@ -78,8 +78,8 @@ big-mpv-render = { path = "crates/foundation/big-mpv-render", version = "0.1.0" 
 
 [profile.release]
 opt-level = 3
-# Fat LTO: ~10% smaller binary + slightly faster runtime. Build time 2-3×
-# slower than thin LTO. Zero runtime CPU/memory penalty.
+# Fat LTO is the project's release choice, not a measured improvement here.
+# Compare size, build cost and runtime with thin LTO on the target before claiming gains.
 lto = "fat"
 codegen-units = 1
 strip = "symbols"

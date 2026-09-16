@@ -1,150 +1,64 @@
-# big-audio-player — Architecture
+# big-audio-player — arquitetura vigente do candidato
 
-## 1. Purpose
+Conferida na árvore corrigida em 16/09/2026. **Revisão de fonte; compilação e execução GTK/mpv não realizadas.**
 
-GTK4/libadwaita audio player for BigLinux written in Rust (edition 2021,
-toolchain 1.93, GPL-3.0-or-later). Single binary, single-crate project that
-depends on the shared `big-media-runtime` (mpv/GStreamer playback runtime)
-and the BigLinux UI kit (`big-app-kit`, `big-relm4-components`,
-`big-media-components`). Features: local library + queue, playlists
-(M3U/PLS, smart), browser (artist/album/genre/folder), radio (search,
-favicons, explore cache), podcasts (search + feed fetch), lyrics panel,
-album-art (file + MPRIS), Apple-Music-style detail view, podcasts queue,
-preferences. Hands off transcoding to `big-audio-converter` /
-`big-video-converter`.
+## Organização real
 
-## 2. Crate layout (real paths)
+O aplicativo pertence ao workspace raiz com 16 crates. Os manifests declaram edição 2024,
+Rust 1.98.1, gtk4 0.11 com a feature de GTK 4.22, libadwaita 0.9 com a feature de 1.9 e
+Relm4 0.11. Esses números são requisitos do projeto, não prova de disponibilidade do ambiente.
 
-- `src/main.rs` — entrypoint; wires `App` + resources.
-- `src/resources.rs` — compiled gresources loader.
-- `src/audio/app.rs` — `adw::Application`.
-- `src/audio/window/` — `imp::Window` (subclass) + `mod.rs`; state
-  fields, `glib::SourceId`s, event sender.
-- `src/audio/window/playback/` — `events.rs` (`PlayerEvent`),
-  track/queue glue to `big-media-runtime`.
-- `src/audio/window/library/`, `library_scan/`, `browser/`, `detail/`,
-  `radio/`, `radio_search/`, `podcast.rs`, `podcast_feeds.rs`,
-  `playlists/`, `playlists_io.rs`, `playlists_smart.rs`,
-  `actions/`, `actions_setup/`, `dialogs.rs`, `detail_dialogs/`,
-  `imp.rs`, `imp_close.rs`, `imp_constructed.rs`, `setup.rs`,
-  `state.rs`, `theming.rs`, `views.rs`, `album_art.rs`,
-  `smartphone.rs`.
-- `src/audio/queue_view/` — queue widget + persistence.
-- `src/audio/lyrics_panel.rs`, `popovers.rs`, `preferences.rs`,
-  `keybindings.rs`, `appearance/`, `column_helpers.rs`,
-  `library_grouping/`, `playlist_dialog/`, `playlist_panel/`,
-  `browser_node.rs`.
-- `src/audio/download_manager/` — podcast/episode downloads.
-- `src/audio/converter_launcher.rs` — argv-safe spawn of external
-  converter (only `Command::new` site).
-- Shared workspaces (path deps): `big-media-runtime` (playback),
-  `big-app-kit`, `big-relm4-components`, `big-media-components`.
+`src/audio/app.rs` inicia o aplicativo; `src/audio/ui/audio_shell/` contém o componente
+Relm4. Não orientar mudanças para a antiga organização `window/imp`. O motor compartilhado
+está em `crates/media-runtime/src/player/mpv_backend/`. Preferências, biblioteca e contas
+estão em `foundation/big-media-data`; processos, transporte e persistência em
+`foundation/big-os-kit`; integrações desktop em `app/big-app-kit` e `app/big-app-kit-core`.
+Os componentes GTK reutilizáveis ficam em `ui/`.
 
-## 3. State machine + message flow (GUI)
+## Contratos implementados nesta correção
 
-Not Relm4 — the window is a `glib::Object` subclass (`audio::window::imp`)
-with `RefCell` fields. Event flow:
+Os comandos de UI não substituem a confirmação do motor. Volume e mute usam o mpv, sem
+polling externo de pactl para cada mudança. O serviço MPRIS compartilhado e seu adaptador
+de áudio preservam Playing/Paused/Stopped, identificam a faixa, validam SetPosition no
+ponto de aplicação e usam eventos nativos para Seeked; a revisão não acrescentou um novo
+serviço MPRIS completo ao aplicativo de vídeo.
 
-- Bootstrap: `audio::app::App::activate` → `Window::new` → `setup.rs`
-  creates `async_channel::unbounded::<PlayerEvent>()`. The sender lives
-  in `imp.event_sender: RefCell<Option<Sender<PlayerEvent>>>`; the
-  receiver is consumed on a `glib::spawn_future_local` driver task.
-- Player state: `Idle → Loading(track) → Playing → Paused → Ended →
-  NextTrack` (loop), driven by `big-media-runtime` callbacks routed
-  through `PlayerEvent`.
-- Library scan: `Idle → Scanning(progress) → Indexing → Ready`;
-  scan task lives off-thread, reports via the same event sender.
-- Album art / lyrics / radio explore / podcast fetch: each is a
-  `(Sender, Receiver)` pair on `async-channel`, the producer runs on
-  `std::thread::spawn` or `gio::spawn_blocking`, the consumer on
-  `glib::spawn_future_local`.
-- Persistence: queue (`queue_view::persistence`), window state,
-  playlists. Dirty-flag-coalesced flushes via timeout source.
-- Close: `imp_close.rs` cancels every `glib::SourceId`, persists state,
-  drops `event_sender`.
+O renderer retém o core e o contexto GL e não reutiliza uma textura entregue ao GTK antes
+da liberação do consumidor. A cópia do caminho por software é deliberada para manter a
+imagem imutável. Nenhum caminho fornece prova de zero-copy global, direct scanout ou
+compatibilidade de driver. O encerramento do host deve drenar leases enquanto a infraestrutura
+GL/GTK necessária continua disponível.
 
-## 4. Async boundaries
+Screenshots pertencem ao backend: cancelamento retira a intenção de publicação, mas não
+libera o arquivo de um escritor ainda ativo. Saídas ficam em staging privado até resposta
+terminal; publicar nunca substitui um destino existente. O mesmo princípio vale para
+exportação, com comparação do ffprobe ao plano e preservação do original. Split pode
+publicar parte dos arquivos antes de uma falha: não há transação atômica de múltiplos destinos.
 
-- **GTK main loop (`glib::MainContext`).** All widget updates, all
-  playback transitions, all `gio::Settings` writes.
-- **`glib::spawn_future_local`.** Drives the `PlayerEvent` receiver and
-  per-feature receivers (lyrics, album art, podcasts).
-- **`gio::spawn_blocking`.** Used for: podcast search (`window/podcast.rs`),
-  feed fetch (`podcast_feeds.rs`, `queue_view/persistence.rs`), thumbnail
-  decode (`window/browser/thumbnail.rs`, `context_menu.rs`).
-- **`std::thread::spawn`.** Album art fetch (`album_art.rs:43`), lyrics
-  fetch (`lyrics_panel.rs:229`), feed parse (`podcast_feeds.rs:284`).
-  Each hands results back via `async_channel::bounded(1)`.
-- **`async-channel`.** Sole cross-thread signaling primitive. No
-  `tokio` runtime is linked.
-- **`glib::SourceId`.** Every reassignable timer field has a matching
-  `.take().remove()` cancel (INVARIANTS.md §Stage 6).
-- **`glib::clone!` discipline.** Zero `#[strong]` self captures
-  (INVARIANTS.md §Stage 6).
+Persistência distingue falha anterior à publicação de publicação com durabilidade
+incerta. Preferências compartilham estado no processo e usam comparação da revisão sob
+lock cooperativo. Isso não é isolamento contra escritores maliciosos do mesmo usuário;
+as gravações de todas as telas ainda não foram movidas para um worker único.
 
-## 5. External processes (`Command::new`)
+## Fluxos e recursos restantes
 
-- `src/audio/converter_launcher.rs:20` — `Command::new("big-audio-converter")`.
-  Argv invariant: `.arg("--")` sentinel before any user-supplied path.
-  Defended by INVARIANTS.md §Stage 5 H1.
-- `src/audio/converter_launcher.rs:27` — fallback
-  `Command::new("big-video-converter")` with identical `--` invariant.
+Resultados antigos de busca são descartados por geração e há somente um pedido pesado
+ativo mais o mais recente pendente. Erro não é resultado vazio; mídias em discos ausentes
+não são apagadas automaticamente. Demais consultas e telas não receberam certificação
+integral de todos os caminhos.
 
-No other `Command::new` callers exist. Playback uses
-`big-media-runtime` (mpv/GStreamer) over FFI, not subprocess.
+HTTP usa curl gerenciado, com dados por stdin e retorno terminal verificado; permanece um
+processo por requisição, não um pool. Remoto HTTP é opt-in para LAN confiável, não TLS.
+Credenciais locais são privadas e limitadas, mas não foi feita migração para Secret Service.
+Callbacks e coleções limitados não demonstram por si só ausência de bloqueio ou baixo PSS.
 
-## 6. Security posture
+## Validação
 
-- **Argv terminator.** `--` before user-path arg in `converter_launcher.rs`
-  is the only subprocess boundary; INVARIANTS.md §Stage 5 H1 guards it
-  with a grep regression.
-- **Playlist size cap.** `MAX_PLAYLIST_BYTES = 16 MiB` in
-  `src/audio/window/playlists/mod.rs:8`; defended by
-  `import_rejects_oversize_playlist` + `import_accepts_small_playlist`.
-- **Typed validators.** Playlist parsing, smart-playlist predicates,
-  podcast URL parsing all reject malformed input before reaching IO.
-- **No `/tmp` fallback.** Favicon, explore, MPRIS-art caches return
-  `Option<PathBuf>` from `dirs::cache_dir`; callers early-return on
-  `None` (INVARIANTS.md §Stage 6).
-- **`SourceId` discipline + `#[weak]` captures.** No ref cycles, no
-  hidden self-strong holds (INVARIANTS.md §Stage 6).
-- **License-clean deps.** `cargo deny check` gate; one waiver
-  (`RUSTSEC-2024-0436` paste via lofty) documented in `deny.toml`.
-- **Atomic writes.** Settings + queue state via `big-app-kit`
-  atomic-write helpers (consumed indirectly).
-- **No polkit.** Not a privileged app.
-- **`SAFETY` blocks.** Minimal `unsafe` in this crate; the FFI surface
-  lives in `big-media-runtime`.
+Na raiz, `python3 scripts/audit-final/run.py --output /caminho/novo-logs` executa os gates
+estáticos. `--mechanisms` usa curl/FFmpeg já instalados com dados sintéticos; `--browser`
+usa os assets reais com transporte simulado. Nenhum desses testes compila o Rust.
 
-## 7. Testing strategy
-
-- **Unit tests.** Inline `#[cfg(test)]` modules per module (playlist
-  parser, smart-playlist filter, browser node ordering, lyrics matcher).
-- **Integration tests.** Lightweight — most tests are inline.
-- **Regression grep tests.** Argv-terminator regression for the
-  converter spawn (INVARIANTS.md §Stage 5).
-- **Performance budgets.** Stripped binary ≤ 25 MiB (current 18.08),
-  click-to-play p50 ≤ 80 ms / p99 ≤ 300 ms, RSS budgets (INVARIANTS.md
-  §Stage 7). Measured via `Makefile.ci`.
-- **AT-SPI / a11y.** External validation through the `linux-ui-a11y`
-  harness; no in-tree AT-SPI runner.
-- **VM smoke.** `packaging/pacman/PKGBUILD` smoke build.
-- **CI.** `.github/workflows/ci.yml` (deny + fmt + clippy + test +
-  budgets).
-
-## 8. Packaging
-
-- **PKGBUILD.** `packaging/pacman/PKGBUILD` (Arch / Manjaro / BigLinux).
-- **Flatpak.** `packaging/flatpak/` manifest (sandboxed runtime).
-- **Nix.** `packaging/nix/` flake for reproducible builds.
-- **Desktop file.** `resources/applications/br.com.biglinux.AudioPlayer.desktop`
-  (also installed copy under `application-assets/desktop-integration/`).
-- **AppStream metainfo.** `resources/metainfo/br.com.biglinux.AudioPlayer.metainfo.xml`.
-- **Polkit.** None (no privileged actions).
-- **i18n.** Strings route through `big_media_runtime::i18n`; gettext is
-  initialized in `src/main.rs` via `shared::app_base::init_gettext()`. No
-  `po/` catalog in this repo — translation catalogs live in
-  `big-media-runtime`.
-- **Build script.** `build.rs` compiles gresources at build time.
-- **Optdeps.** `big-audio-converter` (preferred) or `big-video-converter`
-  (fallback) for transcoding.
+`scripts/audit-final/native-check.sh` é exclusivamente para o agente integrador em ambiente
+já preparado; não instala ferramentas e foi apenas conferido quanto à sintaxe Bash.
+O relatório do pacote distingue alterações candidatas, testes auxiliares executados e gates
+nativos. A arquitetura anterior está arquivada em `docs/architecture-historical.md`.
