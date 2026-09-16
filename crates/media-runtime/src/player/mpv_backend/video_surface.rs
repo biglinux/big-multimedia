@@ -119,6 +119,7 @@ where
     // The render and property handlers share GTK's main thread. They cannot
     // promise advanced-control's no-core-wait contract. A dedicated render
     // actor is required before re-enabling direct-render advanced control.
+    // Disabling it does NOT remove libmpv's other no-cyclic-wait obligations.
     let context = gdk::GLContext::current()
         .ok_or_else(|| Error::mpv("No current GL context for the video surface"))?;
     // SAFETY: the owning GTK thread made this GL context current above. It
@@ -127,16 +128,17 @@ where
         mpv.create_fast_render_context_with_wayland_display(wl_display, false)?
     };
     {
-        render_context.set_context_free(move |raw| {
-            let previous = gdk::GLContext::current();
-            context.make_current();
-            // SAFETY: the exact creation context and the mpv owner are alive.
-            unsafe { mpv_sys::mpv_render_context_free(raw) };
-            if let Some(previous) = previous {
-                previous.make_current();
-            } else {
-                gdk::GLContext::clear_current();
+        render_context.set_context_scope(move |action| {
+            struct Restore(Option<gdk::GLContext>);
+            impl Drop for Restore {
+                fn drop(&mut self) {
+                    if let Some(previous) = &self.0 { previous.make_current(); }
+                    else { gdk::GLContext::clear_current(); }
+                }
             }
+            let _restore = Restore(gdk::GLContext::current());
+            context.make_current();
+            action();
         });
     }
     if let Some(VideoBackend::Offload(renderer)) = backend {
@@ -179,7 +181,6 @@ pub fn render_glarea_frame(
     }
 
     render_context.render(framebuffer, width, height, flip_y);
-    render_context.report_swap();
 }
 
 fn install_glarea_update_callback(render_context: &mut FastRenderContext, gl_area: &gtk::GLArea) {

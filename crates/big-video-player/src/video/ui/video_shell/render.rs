@@ -364,7 +364,7 @@ fn render_glarea_frame(fast_render_context_slot: &FastRenderContextSlot, gl_area
         return;
     };
     if skip_mpv_render() {
-        fast_render_context.report_swap();
+
         return;
     }
     // A GTK resize/expose request must redraw even while mpv is paused.

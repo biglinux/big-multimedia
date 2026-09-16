@@ -18,7 +18,7 @@ pub struct FastRenderContext {
     // Dropped AFTER the C render context, including when a widget owns the
     // last reference. Raw unsafe constructors leave this unset.
     owner: Option<Arc<MpvBackend>>,
-    context_free: Option<Box<dyn FnOnce(*mut mpv_sys::mpv_render_context)>>,
+    context_scope: Option<Box<dyn Fn(&mut dyn FnMut())>>,
 }
 
 // Intentionally !Send / !Sync: rendering and destruction belong to the thread
@@ -26,7 +26,9 @@ pub struct FastRenderContext {
 
 impl FastRenderContext {
     /// # Safety
-    /// `mpv` must be a valid, non-null mpv handle that outlives the returned context.
+    /// `mpv` must be valid, non-null and outlive the returned context. The exact
+    /// creation GL context must be current for every call and destruction unless
+    /// the GTK integration installs a context scope before exposing this wrapper.
     pub unsafe fn new(mpv: *mut mpv_sys::mpv_handle) -> Result<Self> {
         unsafe { Self::new_with_wayland_display(mpv, None, false) }
     }
@@ -90,13 +92,14 @@ impl FastRenderContext {
             render_context,
             update_callback: None,
             owner: None,
-            context_free: None,
+            context_scope: None,
         })
     }
 
     /// Returns 0 on success, negative mpv error code on failure.
     #[inline]
     pub fn render(&self, fbo: i32, width: i32, height: i32, flip_y: bool) -> i32 {
+        if width <= 0 || height <= 0 { return -4; }
         let mut fbo_struct = mpv_sys::mpv_opengl_fbo {
             fbo,
             w: width,
@@ -121,14 +124,17 @@ impl FastRenderContext {
         ];
 
         // SAFETY: render_context valid; params valid for the synchronous call duration.
-        unsafe { mpv_sys::mpv_render_context_render(self.render_context, params.as_mut_ptr()) }
+        self.with_current(|| unsafe {
+            mpv_sys::mpv_render_context_render(self.render_context, params.as_mut_ptr())
+        })
     }
 
-    /// Improves mpv A/V timing.
+    /// Optional confirmed presentation notification. Do not call when merely
+    /// submitting a paintable or queuing a GTK draw; that is not a page flip.
     #[inline]
     pub fn report_swap(&self) {
-        // SAFETY: render_context valid; report_swap has no preconditions.
-        unsafe { mpv_sys::mpv_render_context_report_swap(self.render_context) }
+        // SAFETY: retained render context; GUI installs its creation-context scope.
+        self.with_current(|| unsafe { mpv_sys::mpv_render_context_report_swap(self.render_context) })
     }
 
     /// `true` when `render()` would produce a different image.
@@ -136,43 +142,38 @@ impl FastRenderContext {
     pub fn has_new_frame(&self) -> bool {
         // SAFETY: caller is on the owning render thread with its GL context
         // current. This is NOT callable from the mpv update callback.
-        let flags = unsafe { mpv_sys::mpv_render_context_update(self.render_context) };
+        let flags = self.with_current(|| unsafe {
+            mpv_sys::mpv_render_context_update(self.render_context)
+        });
         (flags & u64::from(mpv_sys::mpv_render_update_flag_MPV_RENDER_UPDATE_FRAME)) != 0
     }
 
     /// Callback fires from an mpv internal thread — do NOT call mpv API from it.
     /// Schedule work on the main thread instead (e.g. `glib::idle_add_once`).
     pub fn set_update_callback<F: Fn() + Send + Sync + 'static>(&mut self, callback: F) {
-        // Detach first: replacing the Rust allocation while mpv still has its
-        // address can leave an in-flight callback dereferencing freed memory.
-        unsafe {
-            mpv_sys::mpv_render_context_set_update_callback(
-                self.render_context,
-                None,
-                std::ptr::null_mut(),
-            );
-        }
+        self.with_current(|| unsafe {
+            mpv_sys::mpv_render_context_set_update_callback(self.render_context, None, std::ptr::null_mut());
+        });
         self.update_callback = Some(Box::new(UpdateCallback(Box::new(callback))));
-        let userdata = self.update_callback.as_mut().expect("callback just installed");
-        let userdata = std::ptr::from_mut(userdata.as_mut()).cast();
-        // Registration can invoke the callback immediately. The allocation is
-        // already owned by self and remains alive until unregistration.
-        unsafe {
-            mpv_sys::mpv_render_context_set_update_callback(
-                self.render_context,
-                Some(update_wrapper),
-                userdata,
-            );
-        }
+        let userdata = std::ptr::from_mut(self.update_callback.as_mut().expect("installed").as_mut()).cast();
+        self.with_current(|| unsafe {
+            mpv_sys::mpv_render_context_set_update_callback(self.render_context, Some(update_wrapper), userdata);
+        });
     }
 
-    /// GUI integrations retain the exact GL context for teardown. Raw unsafe
-    /// constructors retain their documented caller-managed context contract.
-    pub(super) fn set_context_free(
-        &mut self,
-        free: impl FnOnce(*mut mpv_sys::mpv_render_context) + 'static,
-    ) {
-        self.context_free = Some(Box::new(free));
+    /// Install the GUI-owned context scope once, before registering callbacks.
+    /// The scope must call its action exactly once and restore the prior context.
+    pub(super) fn set_context_scope(&mut self, scope: impl Fn(&mut dyn FnMut()) + 'static) {
+        self.context_scope = Some(Box::new(scope));
+    }
+
+    fn with_current<T>(&self, action: impl FnOnce() -> T) -> T {
+        // Both closures and their result live on the stack: no per-frame heap allocation.
+        let mut action = Some(action);
+        let mut result = None;
+        let mut run = || { result = Some(action.take().expect("context action called once")()); };
+        if let Some(scope) = &self.context_scope { scope(&mut run); } else { run(); }
+        result.expect("context scope must invoke its action")
     }
 
     pub(super) fn with_owner(mut self, owner: Arc<MpvBackend>) -> Self {
@@ -183,22 +184,13 @@ impl FastRenderContext {
 
 impl Drop for FastRenderContext {
     fn drop(&mut self) {
-        // Unregister before dropping the callback box so mpv never observes a
-        // stale callback pointer during render-context teardown.
-        unsafe {
-            mpv_sys::mpv_render_context_set_update_callback(
-                self.render_context,
-                None,
-                std::ptr::null_mut(),
-            );
-        }
+        // Keep userdata AND core owner alive until native teardown completes.
+        // Unregistration itself is performed with the creation context current.
+        self.with_current(|| unsafe {
+            mpv_sys::mpv_render_context_set_update_callback(self.render_context, None, std::ptr::null_mut());
+            mpv_sys::mpv_render_context_free(self.render_context);
+        });
         self.update_callback.take();
-        if let Some(free) = self.context_free.take() {
-            free(self.render_context);
-        } else {
-            // Raw constructors require the caller to keep GL current on drop.
-            unsafe { mpv_sys::mpv_render_context_free(self.render_context) };
-        }
     }
 }
 

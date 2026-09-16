@@ -76,7 +76,7 @@ impl OffloadRenderer {
         let picture = gtk::Picture::new();
         picture.set_hexpand(true);
         picture.set_vexpand(true);
-        picture.set_content_fit(gtk::ContentFit::Fill);
+        picture.set_content_fit(gtk::ContentFit::Contain);
         picture.set_can_target(false);
 
         let offload = gtk::GraphicsOffload::new(Some(&picture));
@@ -212,10 +212,10 @@ impl OffloadRenderer {
         // update() must run with this exact context, including forced redraws.
         let new_frame = render_context.has_new_frame();
         let force = self.pool.take_force();
-        if width <= 0 || height <= 0 {
+        let Some((width, height)) = super::frame_layout::bounded_surface(width, height) else {
             self.pool.force();
             return;
-        }
+        };
         if skip_mpv_render() { return; }
         if !new_frame && !force {
             self.skip_count.set(self.skip_count.get() + 1);
@@ -246,7 +246,7 @@ impl OffloadRenderer {
             self.create_gl_texture(lease, width, height)
         };
         self.picture.set_paintable(Some(&texture));
-        render_context.report_swap();
+
         let count = self.frame_count.get() + 1;
         self.frame_count.set(count);
         let now = std::time::Instant::now();

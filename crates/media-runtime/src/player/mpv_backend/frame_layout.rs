@@ -57,3 +57,28 @@ mod tests {
         assert!(!buffer_fits(1, 2, usize::MAX, usize::MAX));
     }
 }
+
+/// Aspect-preserving allocation ceiling for offload textures, not total process
+/// or GPU memory. Each of the three retained slots is individually bounded.
+pub fn bounded_surface(width: i32, height: i32) -> Option<(i32, i32)> {
+    const MAX_EDGE: i32 = 4096;
+    const MAX_PIXELS: f64 = 3840.0 * 2160.0;
+    if width <= 0 || height <= 0 { return None; }
+    let w = f64::from(width); let h = f64::from(height);
+    let scale = (MAX_PIXELS / (w * h)).sqrt()
+        .min(f64::from(MAX_EDGE) / w).min(f64::from(MAX_EDGE) / h).min(1.0);
+    Some(((w * scale).floor().max(1.0) as i32, (h * scale).floor().max(1.0) as i32))
+}
+
+#[cfg(test)]
+mod bounded_surface_tests {
+    use super::*;
+    #[test]
+    fn bounds_scale_without_stretching_or_overflow() {
+        assert_eq!(bounded_surface(1920, 1080), Some((1920, 1080)));
+        assert_eq!(bounded_surface(7680, 4320), Some((3840, 2160)));
+        assert_eq!(bounded_surface(0, 100), None);
+        let (w, h) = bounded_surface(i32::MAX, 1).unwrap();
+        assert!(w <= 4096 && h >= 1);
+    }
+}

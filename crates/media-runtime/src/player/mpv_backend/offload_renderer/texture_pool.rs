@@ -68,7 +68,10 @@ impl Drop for TextureLease {
 }
 
 pub(super) struct TexturePool {
-    resources: [Arc<TextureResource>; SLOT_COUNT],
+    resources: Vec<Arc<TextureResource>>,
+    retired_rx: async_channel::Receiver<RetiredTexture>,
+    context: gdk::GLContext,
+    gl: GlFns,
     dimensions: [Cell<(i32, i32)>; SLOT_COUNT],
     signals: Rc<Signals>,
     wake: async_channel::Sender<()>,
@@ -94,10 +97,11 @@ impl TexturePool {
         });
         // This future has no Sender and no pointer back to the pool. After the
         // renderer AND the final GDK texture disappear the channel closes.
-        let context = context.clone();
+        let owned_context = context.clone();
+        let retired_for_future = retired_rx.clone();
         glib::spawn_future_local(async move {
-            while let Ok((id, fence)) = retired_rx.recv().await {
-                let _current = CurrentContext::enter(&context);
+            while let Ok((id, fence)) = retired_for_future.recv().await {
+                let _current = CurrentContext::enter(&owned_context);
                 unsafe {
                     if fence != 0 && let Some(delete) = gl.delete_sync {
                         delete(fence as *mut std::ffi::c_void);
@@ -107,10 +111,11 @@ impl TexturePool {
             }
         });
         Self {
-            resources: std::array::from_fn(|i| Arc::new(TextureResource {
+            resources: (0..SLOT_COUNT).map(|i| Arc::new(TextureResource {
                 id: ids[i], busy: AtomicBool::new(false), fence: AtomicUsize::new(0),
                 retired: retired.clone(), wake: wake.clone(),
-            })),
+            })).collect(),
+            retired_rx, context: context.clone(), gl,
             dimensions: std::array::from_fn(|_| Cell::new((0, 0))),
             signals, wake,
         }
@@ -177,5 +182,25 @@ mod tests {
     fn release_token_is_send_without_gtk_objects() {
         fn assert_send<T: Send>() {}
         assert_send::<TextureLease>();
+    }
+}
+
+impl Drop for TexturePool {
+    fn drop(&mut self) {
+        self.signals.redraw.borrow_mut().take();
+        // Retire every unleased resource synchronously while the context exists.
+        // Truly leased textures remain alive; their receiver retains the context
+        // for a later GTK-loop iteration. The host must keep that loop running
+        // until external paintables are released; never free still-busy textures.
+        self.resources.clear();
+        let _current = CurrentContext::enter(&self.context);
+        while let Ok((id, fence)) = self.retired_rx.try_recv() {
+            unsafe {
+                if fence != 0 && let Some(delete) = self.gl.delete_sync {
+                    delete(fence as *mut std::ffi::c_void);
+                }
+                (self.gl.delete_textures)(1, &id);
+            }
+        }
     }
 }
