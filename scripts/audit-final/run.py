@@ -20,11 +20,22 @@ def main():
            ('archive-unit-tests',[sys.executable,'scripts/audit-final/test_artifact_checks.py']),
            ('inherited-review-gates',[sys.executable,'scripts/review-check.py']),
            ('source-contracts',[sys.executable,'scripts/audit-final/source_checks.py',str(root),'--json',str(output/'source-checks.json')]),
+           ('pending-task-contracts',[sys.executable,'scripts/audit-final/pending_tasks_checks.py',str(root),'--json',str(output/'pending-tasks.json')]),
+           ('pending-task-checker-regressions',[sys.executable,'scripts/audit-final/test_pending_tasks_checks.py']),
            ('javascript-syntax',['node','--check','crates/app/big-app-kit-core/src/remote_control.js'])]
     for path in sorted((root/'scripts/audit-final').glob('*.sh')):tasks.append(('syntax-'+path.stem,['bash','-n',str(path)]))
     if args.mechanisms:tasks.append(('local-mechanisms',[sys.executable,'scripts/audit-final/mechanism_tests.py']))
     if args.browser:tasks.append(('mock-transport-browser',[sys.executable,'scripts/audit-final/browser_tests.py',str(root),str(output/'browser')]))
-    results=[run(name,cmd,root,output/(name+'.log'),45) for name,cmd in tasks]
+    results=[]
+    for name,cmd in tasks:
+        results.append(run(name,cmd,root,output/(name+'.log'),45))
+        # Persist each actual exit status. If the review tool is interrupted,
+        # completed commands remain evidence without inventing an all-PASS run.
+        checkpoint=output/'gate-progress.json'
+        temporary=output/'gate-progress.json.tmp'
+        temporary.write_text(json.dumps({'complete':False,'commands':results},ensure_ascii=False,indent=2)+'\n')
+        temporary.replace(checkpoint)
+
     native=['Rust compilation','cargo test','rustfmt','Clippy','msgfmt','GTK/mpv playback','D-Bus MPRIS session','GPU/Wayland/X11','Orca/AT-SPI','player benchmarks']
     report={'commands':results,'native_not_executed':native,'rust_installed':False,
             'availability':{tool:shutil.which(tool) for tool in ['rustc','cargo','rustfmt','msgfmt','node','curl','ffmpeg','ffprobe','chromium']},

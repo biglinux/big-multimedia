@@ -7623,3 +7623,553 @@ msgstr "A codificação do vídeo de origem é desconhecida"
 #: crates/big-video-player/src/video/ui/menu_dialogs.rs
 msgid "Screenshot queue is full; wait for pending captures"
 msgstr "A fila de capturas está cheia; aguarde as capturas pendentes"
+
+#. New asynchronous save/recovery interface; manual AI translation, human review pending.
+#: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs crates/media-runtime/src/settings/messages.rs
+msgid "A library scan is already running. Cancel it or wait for its result."
+msgstr "Já há uma verificação da biblioteca em andamento. Cancele-a ou aguarde o resultado."
+
+#. New asynchronous save/recovery interface; manual AI translation, human review pending.
+#: crates/big-audio-player/src/audio/account_editor.rs crates/media-runtime/src/settings/messages.rs
+msgid "A save is pending. Re-enter exactly the intended credentials to retry that same transaction, or close and use Recover account. A different payload will be refused."
+msgstr "Há um salvamento pendente. Digite novamente as mesmas credenciais para repetir a operação ou feche e use “Recuperar conta”. Dados diferentes serão recusados."
+
+#. New asynchronous save/recovery interface; manual AI translation, human review pending.
+#: crates/big-audio-player/src/audio/account_editor.rs crates/media-runtime/src/settings/messages.rs
+msgid "API key"
+msgstr "Chave da API"
+
+#. New asynchronous save/recovery interface; manual AI translation, human review pending.
+#: crates/big-audio-player/src/audio/account_editor.rs crates/media-runtime/src/settings/messages.rs
+msgid "API secret"
+msgstr "Segredo da API"
+
+#. New asynchronous save/recovery interface; manual AI translation, human review pending.
+#: crates/big-audio-player/src/audio/ui/unavailable_dialog.rs crates/media-runtime/src/settings/messages.rs
+msgid "Access could not be verified — check permissions before reviewing"
+msgstr "Não foi possível verificar o acesso — confira as permissões antes de revisar"
+
+#. New asynchronous save/recovery interface; manual AI translation, human review pending.
+#: crates/big-audio-player/src/audio/account_editor.rs crates/media-runtime/src/settings/messages.rs
+msgid "Account credentials"
+msgstr "Credenciais da conta"
+
+#. New asynchronous save/recovery interface; manual AI translation, human review pending.
+#: crates/media-runtime/src/settings/messages.rs crates/media-runtime/src/settings/saving.rs
+msgid "All preferences are saved."
+msgstr "Todas as preferências estão salvas."
+
+#. New asynchronous save/recovery interface; manual AI translation, human review pending.
+#: crates/big-audio-player/src/audio/account_security.rs crates/media-runtime/src/settings/messages.rs
+msgid "An account operation was interrupted. Recover it before making another change."
+msgstr "Uma operação da conta foi interrompida. Recupere-a antes de fazer outra alteração."
+
+#. New asynchronous save/recovery interface; manual AI translation, human review pending.
+#: crates/big-audio-player/src/audio/ui/unavailable_dialog.rs crates/media-runtime/src/settings/messages.rs
+msgid "Available again"
+msgstr "Disponível novamente"
+
+#. New asynchronous save/recovery interface; manual AI translation, human review pending.
+#: crates/big-audio-player/src/audio/ui/scan_progress.rs crates/media-runtime/src/settings/messages.rs
+msgid "Cancel scan"
+msgstr "Cancelar verificação"
+
+#. New asynchronous save/recovery interface; manual AI translation, human review pending.
+#: crates/big-audio-player/src/audio/ui/scan_progress.rs crates/media-runtime/src/settings/messages.rs
+msgid "Cancellation requested. Finishing the current safe step…"
+msgstr "Cancelamento solicitado. Concluindo a etapa atual com segurança…"
+
+#. New asynchronous save/recovery interface; manual AI translation, human review pending.
+#: crates/media-runtime/src/settings/messages.rs crates/media-runtime/src/settings/saving.rs
+msgid "Changes are saved."
+msgstr "As alterações estão salvas."
+
+#. New asynchronous save/recovery interface; manual AI translation, human review pending.
+#: crates/media-runtime/src/settings/messages.rs crates/media-runtime/src/settings/saving.rs
+msgid "Changes were applied, but safe storage is not confirmed. Retry saving."
+msgstr "As alterações foram aplicadas, mas sua gravação segura não foi confirmada. Tente salvar novamente."
+
+#. New asynchronous save/recovery interface; manual AI translation, human review pending.
+#: crates/media-runtime/src/settings/messages.rs crates/media-runtime/src/settings/saving.rs
+msgid "Changes work for this session but could not be saved. Check storage or close other instances, then retry."
+msgstr "As alterações valem nesta sessão, mas não puderam ser salvas. Verifique o armazenamento ou feche outras instâncias e tente novamente."
+
+#. New asynchronous save/recovery interface; manual AI translation, human review pending.
+#: crates/big-audio-player/src/audio/ui/unavailable_dialog.rs crates/media-runtime/src/settings/messages.rs
+msgid "Check again"
+msgstr "Verificar novamente"
+
+#. New asynchronous save/recovery interface; manual AI translation, human review pending.
+#: crates/big-audio-player/src/audio/account_security.rs crates/media-runtime/src/settings/messages.rs
+msgid "Check keyring access"
+msgstr "Verificar acesso ao cofre"
+
+#. New asynchronous save/recovery interface; manual AI translation, human review pending.
+#: crates/big-audio-player/src/audio/account_security.rs crates/media-runtime/src/settings/messages.rs
+msgid "Checking saved credentials…"
+msgstr "Verificando as credenciais salvas…"
+
+#. New asynchronous save/recovery interface; manual AI translation, human review pending.
+#: crates/big-audio-player/src/audio/ui/unavailable_dialog.rs crates/media-runtime/src/settings/messages.rs
+msgid "Checking the library…"
+msgstr "Verificando a biblioteca…"
+
+#. New asynchronous save/recovery interface; manual AI translation, human review pending.
+#: crates/big-audio-player/src/audio/account_security.rs crates/media-runtime/src/settings/messages.rs
+msgid "Configure"
+msgstr "Configurar"
+
+#. New asynchronous save/recovery interface; manual AI translation, human review pending.
+#: crates/big-audio-player/src/audio/ui/unavailable_dialog.rs crates/media-runtime/src/settings/messages.rs
+msgid "Continue checking"
+msgstr "Continuar verificação"
+
+#. New asynchronous save/recovery interface; manual AI translation, human review pending.
+#: crates/big-audio-player/src/audio/ui/unavailable_dialog.rs crates/media-runtime/src/settings/messages.rs
+msgid "Continue to check the next part of your library."
+msgstr "Continue para verificar a próxima parte da biblioteca."
+
+#. New asynchronous save/recovery interface; manual AI translation, human review pending.
+#: crates/big-audio-player/src/audio/account_security.rs crates/media-runtime/src/settings/messages.rs
+msgid "Credentials"
+msgstr "Credenciais"
+
+#. New asynchronous save/recovery interface; manual AI translation, human review pending.
+#: crates/big-audio-player/src/audio/account_editor.rs crates/media-runtime/src/settings/messages.rs
+msgid "Credentials are protected in your keyring."
+msgstr "As credenciais estão protegidas no cofre de senhas."
+
+#. New asynchronous save/recovery interface; manual AI translation, human review pending.
+#: crates/big-audio-player/src/audio/account_editor.rs crates/media-runtime/src/settings/messages.rs
+msgid "Credentials are protected, but cleanup needs recovery. Close this editor and use Recover account."
+msgstr "As credenciais estão protegidas, mas a limpeza precisa de recuperação. Feche este editor e use “Recuperar conta”."
+
+#. New asynchronous save/recovery interface; manual AI translation, human review pending.
+#: crates/big-audio-player/src/audio/account_security.rs crates/media-runtime/src/settings/messages.rs
+msgid "Credentials are protected. Cleanup of an older keyring item needs attention; retry recovery."
+msgstr "As credenciais estão protegidas. A remoção de um item antigo do cofre ainda precisa ser confirmada; tente recuperar a operação novamente."
+
+#. New asynchronous save/recovery interface; manual AI translation, human review pending.
+#: crates/big-audio-player/src/audio/account_editor.rs crates/media-runtime/src/settings/messages.rs
+msgid "Credentials are saved only in your desktop keyring. Existing listening-history consent is preserved; this does not activate an unavailable integration."
+msgstr "As credenciais são salvas somente no cofre de senhas do sistema. A escolha atual sobre compartilhar o histórico de reprodução é mantida; isso não ativa uma integração indisponível."
+
+#. New asynchronous save/recovery interface; manual AI translation, human review pending.
+#: crates/big-audio-player/src/audio/account_security.rs crates/media-runtime/src/settings/messages.rs
+msgid "Credentials are still in a private file. Protect them in your desktop keyring."
+msgstr "As credenciais ainda estão em um arquivo privado. Proteja-as no cofre de senhas do sistema."
+
+#. New asynchronous save/recovery interface; manual AI translation, human review pending.
+#: crates/big-audio-player/src/audio/account_security.rs crates/media-runtime/src/settings/messages.rs
+msgid "Credentials are stored in the desktop keyring."
+msgstr "As credenciais estão armazenadas no cofre de senhas do sistema."
+
+#. New asynchronous save/recovery interface; manual AI translation, human review pending.
+#: crates/big-audio-player/src/audio/account_editor.rs crates/media-runtime/src/settings/messages.rs
+msgid "Credentials could not be read safely. Unlock the keyring and reopen this editor."
+msgstr "Não foi possível ler as credenciais com segurança. Desbloqueie o cofre de senhas e reabra este editor."
+
+#. New asynchronous save/recovery interface; manual AI translation, human review pending.
+#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs crates/media-runtime/src/settings/messages.rs
+msgid "Defaults are applied for this session; saving continues in the background."
+msgstr "Os padrões foram aplicados nesta sessão; o salvamento continua em segundo plano."
+
+#. New asynchronous save/recovery interface; manual AI translation, human review pending.
+#: crates/big-audio-player/src/audio/account_editor.rs crates/media-runtime/src/settings/messages.rs
+msgid "Edit the credentials, then save. Closing without saving discards your edits."
+msgstr "Edite as credenciais e salve. Fechar sem salvar descarta as alterações."
+
+#. New asynchronous save/recovery interface; manual AI translation, human review pending.
+#: crates/big-audio-player/src/audio/ui/unavailable_dialog.rs crates/media-runtime/src/settings/messages.rs
+msgid "End of this review snapshot. Restart to include new imports."
+msgstr "Fim desta revisão. Reinicie para incluir novas importações."
+
+#. New asynchronous save/recovery interface; manual AI translation, human review pending.
+#: crates/big-audio-player/src/audio/ui/scan_progress.rs crates/media-runtime/src/settings/messages.rs
+msgid "Examined"
+msgstr "Verificados"
+
+#. New asynchronous save/recovery interface; manual AI translation, human review pending.
+#: crates/media-runtime/src/converter/queue/processing.rs crates/media-runtime/src/settings/messages.rs
+msgid "Export at most 128 separate outputs per job."
+msgstr "Exporte no máximo 128 arquivos separados por tarefa."
+
+#. New asynchronous save/recovery interface; manual AI translation, human review pending.
+#: crates/big-audio-player/src/audio/ui/audio_shell/playlist_library_dialog_actions.rs crates/media-runtime/src/settings/messages.rs
+msgid "Export was not fully completed. Published files were kept; choose an empty destination and try again."
+msgstr "A exportação não foi concluída por completo. Os arquivos já exportados foram preservados; escolha um destino vazio e tente novamente."
+
+#. New asynchronous save/recovery interface; manual AI translation, human review pending.
+#: crates/big-audio-player/src/audio/account_editor.rs crates/media-runtime/src/settings/messages.rs
+msgid "Fill every credential field with a valid value."
+msgstr "Preencha todos os campos de credenciais com valores válidos."
+
+#. New asynchronous save/recovery interface; manual AI translation, human review pending.
+#: crates/big-audio-player/src/audio/ui/audio_shell/update.rs crates/big-audio-player/src/audio/ui/scan_progress.rs crates/media-runtime/src/settings/messages.rs
+msgid "Imported"
+msgstr "Importados"
+
+#. New asynchronous save/recovery interface; manual AI translation, human review pending.
+#: crates/big-audio-player/src/audio/ui/audio_shell/update.rs crates/media-runtime/src/settings/messages.rs
+msgid "Library scan finished."
+msgstr "Verificação da biblioteca concluída."
+
+#. New asynchronous save/recovery interface; manual AI translation, human review pending.
+#: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs crates/media-runtime/src/settings/messages.rs
+msgid "Library scanning is busy. Try again after another scan finishes."
+msgstr "A verificação da biblioteca está ocupada. Tente novamente quando outra verificação terminar."
+
+#. New asynchronous save/recovery interface; manual AI translation, human review pending.
+#: crates/big-audio-player/src/audio/account_security.rs crates/media-runtime/src/settings/messages.rs
+msgid "Move existing account credentials to your desktop keyring. This does not enable listening-history sharing."
+msgstr "Mova as credenciais das contas existentes para o cofre de senhas do sistema. Isso não ativa o compartilhamento do histórico de reprodução."
+
+#. New asynchronous save/recovery interface; manual AI translation, human review pending.
+#: crates/big-audio-player/src/audio/account_security.rs crates/media-runtime/src/settings/messages.rs
+msgid "No credentials are saved for this account."
+msgstr "Não há credenciais salvas para esta conta."
+
+#. New asynchronous save/recovery interface; manual AI translation, human review pending.
+#: crates/big-audio-player/src/audio/ui/unavailable_dialog.rs crates/media-runtime/src/settings/messages.rs
+msgid "Not found — select only if you want to forget this library record"
+msgstr "Não encontrado — selecione somente para remover este registro da biblioteca"
+
+#. New asynchronous save/recovery interface; manual AI translation, human review pending.
+#: crates/big-audio-player/src/audio/ui/audio_shell/playlist_library_dialog_actions.rs crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/menu_actions.rs crates/media-runtime/src/settings/messages.rs
+msgid "Playlist export"
+msgstr "Exportação de lista de reprodução"
+
+#. New asynchronous save/recovery interface; manual AI translation, human review pending.
+#: crates/big-audio-player/src/audio/ui/library_io.rs crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/menu_actions.rs crates/media-runtime/src/settings/messages.rs
+msgid "Playlist export could not be confirmed. Existing files were kept; choose a new name and retry."
+msgstr "Não foi possível confirmar a exportação da lista de reprodução. Os arquivos existentes foram mantidos; escolha um novo nome e tente novamente."
+
+#. New asynchronous save/recovery interface; manual AI translation, human review pending.
+#: crates/big-audio-player/src/audio/ui/audio_shell/playlist_library_dialog_actions.rs crates/media-runtime/src/settings/messages.rs
+msgid "Playlist exported."
+msgstr "Lista de reprodução exportada."
+
+#. New asynchronous save/recovery interface; manual AI translation, human review pending.
+#: crates/big-audio-player/src/audio/ui/audio_shell/update.rs crates/media-runtime/src/settings/messages.rs
+msgid "Playlist import was not fully completed. Previously confirmed imports were kept."
+msgstr "A importação das listas de reprodução não foi concluída por completo. As importações já confirmadas foram mantidas."
+
+#. New asynchronous save/recovery interface; manual AI translation, human review pending.
+#: crates/big-audio-player/src/audio/ui/audio_shell/playlist_library_dialog_actions.rs crates/media-runtime/src/settings/messages.rs
+msgid "Playlists exported"
+msgstr "Listas de reprodução exportadas"
+
+#. New asynchronous save/recovery interface; manual AI translation, human review pending.
+#: crates/big-audio-player/src/audio/account_security.rs crates/media-runtime/src/settings/messages.rs
+msgid "Protect credentials"
+msgstr "Proteger credenciais"
+
+#. New asynchronous save/recovery interface; manual AI translation, human review pending.
+#: crates/big-audio-player/src/audio/ui/scan_progress.rs crates/media-runtime/src/settings/messages.rs
+msgid "Reading media information…"
+msgstr "Lendo informações da mídia…"
+
+#. New asynchronous save/recovery interface; manual AI translation, human review pending.
+#: crates/big-audio-player/src/audio/ui/unavailable_dialog.rs crates/media-runtime/src/settings/messages.rs
+msgid "Rechecking the selection and updating the library…"
+msgstr "Verificando novamente a seleção e atualizando a biblioteca…"
+
+#. New asynchronous save/recovery interface; manual AI translation, human review pending.
+#: crates/big-audio-player/src/audio/ui/unavailable_dialog.rs crates/media-runtime/src/settings/messages.rs
+msgid "Reconnect external drives before reviewing. Removing records forgets their ratings and saved playlist links, but never deletes media files or interrupts current playback."
+msgstr "Reconecte as unidades externas antes de revisar. Remover registros apaga suas avaliações e os vínculos com listas salvas, mas não apaga arquivos de mídia nem interrompe a reprodução atual."
+
+#. New asynchronous save/recovery interface; manual AI translation, human review pending.
+#: crates/big-audio-player/src/audio/account_security.rs crates/media-runtime/src/settings/messages.rs
+msgid "Recover account"
+msgstr "Recuperar conta"
+
+#. New asynchronous save/recovery interface; manual AI translation, human review pending.
+#: crates/big-audio-player/src/audio/account_security.rs crates/media-runtime/src/settings/messages.rs
+msgid "Reload"
+msgstr "Recarregar"
+
+#. New asynchronous save/recovery interface; manual AI translation, human review pending.
+#: crates/big-audio-player/src/audio/ui/unavailable_dialog.rs crates/media-runtime/src/settings/messages.rs
+msgid "Remote items are not checked as local files"
+msgstr "Itens remotos não são verificados como arquivos locais"
+
+#. New asynchronous save/recovery interface; manual AI translation, human review pending.
+#: crates/big-audio-player/src/audio/ui/unavailable_dialog.rs crates/media-runtime/src/settings/messages.rs
+msgid "Remote or unsupported location — not eligible for removal here"
+msgstr "Local remoto ou não compatível — não pode ser removido por esta revisão"
+
+#. New asynchronous save/recovery interface; manual AI translation, human review pending.
+#: crates/big-audio-player/src/audio/ui/library_io.rs crates/media-runtime/src/settings/messages.rs
+msgid "Removal requested. Reopen this list after the operation finishes."
+msgstr "Remoção solicitada. Reabra esta lista após o término da operação."
+
+#. New asynchronous save/recovery interface; manual AI translation, human review pending.
+#: crates/big-audio-player/src/audio/ui/unavailable_dialog.rs crates/media-runtime/src/settings/messages.rs
+msgid "Removal was not confirmed. A file may be available again or a record changed. Check again before selecting records."
+msgstr "A remoção não foi confirmada. Um arquivo pode ter voltado a estar disponível ou um registro pode ter mudado. Verifique novamente antes de selecionar registros."
+
+#. New asynchronous save/recovery interface; manual AI translation, human review pending.
+#: crates/big-audio-player/src/audio/ui/unavailable_dialog.rs crates/media-runtime/src/settings/messages.rs
+msgid "Remove records"
+msgstr "Remover registros"
+
+#. New asynchronous save/recovery interface; manual AI translation, human review pending.
+#: crates/big-audio-player/src/audio/ui/unavailable_dialog.rs crates/media-runtime/src/settings/messages.rs
+msgid "Remove selected library records?"
+msgstr "Remover os registros selecionados da biblioteca?"
+
+#. New asynchronous save/recovery interface; manual AI translation, human review pending.
+#: crates/big-audio-player/src/audio/ui/unavailable_dialog.rs crates/media-runtime/src/settings/messages.rs
+msgid "Remove selected records"
+msgstr "Remover registros selecionados"
+
+#. New asynchronous save/recovery interface; manual AI translation, human review pending.
+#: crates/big-audio-player/src/audio/ui/unavailable_dialog.rs crates/media-runtime/src/settings/messages.rs
+msgid "Restart review"
+msgstr "Reiniciar revisão"
+
+#. New asynchronous save/recovery interface; manual AI translation, human review pending.
+#: crates/media-runtime/src/settings/messages.rs crates/media-runtime/src/settings/saving.rs
+msgid "Retry saving"
+msgstr "Tentar salvar novamente"
+
+#. New asynchronous save/recovery interface; manual AI translation, human review pending.
+#: crates/big-audio-player/src/audio/ui/audio_shell/export.rs crates/media-runtime/src/settings/messages.rs
+msgid "Retrying this export reuses only complete files whose source, settings and contents match their saved receipts. Other existing files are never replaced. Keep the receipts beside the outputs."
+msgstr "Ao repetir a exportação, somente arquivos completos cuja origem, configurações e conteúdo correspondam aos comprovantes salvos serão reutilizados. Outros arquivos existentes não serão substituídos. Mantenha os comprovantes junto aos arquivos exportados."
+
+#. New asynchronous save/recovery interface; manual AI translation, human review pending.
+#: crates/big-audio-player/src/audio/ui/library_io.rs crates/big-audio-player/src/audio/ui/unavailable_dialog.rs crates/media-runtime/src/settings/messages.rs
+msgid "Review unavailable files"
+msgstr "Revisar arquivos indisponíveis"
+
+#. New asynchronous save/recovery interface; manual AI translation, human review pending.
+#: crates/big-audio-player/src/audio/account_editor.rs crates/media-runtime/src/settings/messages.rs
+msgid "Save in keyring"
+msgstr "Salvar no cofre de senhas"
+
+#. New asynchronous save/recovery interface; manual AI translation, human review pending.
+#: crates/media-runtime/src/settings/messages.rs crates/media-runtime/src/settings/saving.rs
+msgid "Save status"
+msgstr "Estado do salvamento"
+
+#. New asynchronous save/recovery interface; manual AI translation, human review pending.
+#: crates/big-audio-player/src/audio/account_security.rs crates/media-runtime/src/settings/messages.rs
+msgid "Saved account data could not be read safely. Check permissions and reload; no changes were made."
+msgstr "Não foi possível ler os dados salvos da conta com segurança. Verifique as permissões e recarregue; nenhuma alteração foi feita."
+
+#. New asynchronous save/recovery interface; manual AI translation, human review pending.
+#: crates/big-audio-player/src/audio/account_security.rs crates/media-runtime/src/settings/messages.rs
+msgid "Saved account security"
+msgstr "Segurança das contas salvas"
+
+#. New asynchronous save/recovery interface; manual AI translation, human review pending.
+#: crates/big-audio-player/src/audio/account_editor.rs crates/media-runtime/src/settings/messages.rs
+msgid "Saved credentials are invalid. No changes were made."
+msgstr "As credenciais salvas são inválidas. Nenhuma alteração foi feita."
+
+#. New asynchronous save/recovery interface; manual AI translation, human review pending.
+#: crates/media-runtime/src/settings/messages.rs crates/media-runtime/src/settings/saving.rs
+msgid "Saving preferences"
+msgstr "Salvamento das preferências"
+
+#. New asynchronous save/recovery interface; manual AI translation, human review pending.
+#: crates/big-audio-player/src/audio/account_editor.rs crates/media-runtime/src/settings/messages.rs
+msgid "Saving was not fully confirmed. Close this editor, reload and recover the pending operation. No plaintext fallback was used."
+msgstr "O salvamento não foi confirmado por completo. Feche este editor, recarregue e recupere a operação pendente. As credenciais não foram salvas em texto sem proteção."
+
+#. New asynchronous save/recovery interface; manual AI translation, human review pending.
+#: crates/media-runtime/src/settings/messages.rs crates/media-runtime/src/settings/saving.rs
+msgid "Saving your changes…"
+msgstr "Salvando suas alterações…"
+
+#. New asynchronous save/recovery interface; manual AI translation, human review pending.
+#: crates/big-audio-player/src/audio/ui/audio_shell/update.rs crates/media-runtime/src/settings/messages.rs
+msgid "Scan cancelled. Earlier confirmed imports were kept."
+msgstr "Verificação cancelada. As importações já confirmadas foram mantidas."
+
+#. New asynchronous save/recovery interface; manual AI translation, human review pending.
+#: crates/big-audio-player/src/audio/ui/audio_shell/update.rs crates/media-runtime/src/settings/messages.rs
+msgid "Scan incomplete. Earlier confirmed imports were kept; check storage and retry."
+msgstr "Verificação incompleta. As importações já confirmadas foram mantidas; verifique o armazenamento e tente novamente."
+
+#. New asynchronous save/recovery interface; manual AI translation, human review pending.
+#: crates/big-audio-player/src/audio/ui/scan_progress.rs crates/media-runtime/src/settings/messages.rs
+msgid "Scanning the library"
+msgstr "Verificando a biblioteca"
+
+#. New asynchronous save/recovery interface; manual AI translation, human review pending.
+#: crates/big-audio-player/src/audio/ui/unavailable_dialog.rs crates/media-runtime/src/settings/messages.rs
+msgid "Select the missing records you want to remove."
+msgstr "Selecione os registros de arquivos não encontrados que deseja remover."
+
+#. New asynchronous save/recovery interface; manual AI translation, human review pending.
+#: crates/big-audio-player/src/audio/ui/unavailable_dialog.rs crates/media-runtime/src/settings/messages.rs
+msgid "Selected records"
+msgstr "Registros selecionados"
+
+#. New asynchronous save/recovery interface; manual AI translation, human review pending.
+#: crates/big-audio-player/src/audio/account_editor.rs crates/media-runtime/src/settings/messages.rs
+msgid "Session key"
+msgstr "Chave de sessão"
+
+#. New asynchronous save/recovery interface; manual AI translation, human review pending.
+#: crates/big-audio-player/src/audio/ui/audio_shell/update.rs crates/big-audio-player/src/audio/ui/scan_progress.rs crates/media-runtime/src/settings/messages.rs
+msgid "Skipped"
+msgstr "Ignorados"
+
+#. New asynchronous save/recovery interface; manual AI translation, human review pending.
+#: crates/big-audio-player/src/audio/ui/library_io.rs crates/media-runtime/src/settings/messages.rs
+msgid "Stop monitoring this folder; keep its tracks"
+msgstr "Parar de monitorar esta pasta e manter suas faixas"
+
+#. New asynchronous save/recovery interface; manual AI translation, human review pending.
+#: crates/big-audio-player/src/audio/account_editor.rs crates/media-runtime/src/settings/messages.rs
+msgid "The combined credentials are too large for the keyring helper."
+msgstr "O conjunto de credenciais excede o limite da ferramenta do cofre de senhas."
+
+#. New asynchronous save/recovery interface; manual AI translation, human review pending.
+#: crates/big-audio-player/src/audio/ui/unavailable_dialog.rs crates/media-runtime/src/settings/messages.rs
+msgid "The library could not be checked completely. Previous results are kept. Check the drive or database and retry."
+msgstr "Não foi possível verificar toda a biblioteca. Os resultados anteriores foram mantidos. Verifique a unidade ou o banco de dados e tente novamente."
+
+#. New asynchronous save/recovery interface; manual AI translation, human review pending.
+#: crates/big-audio-player/src/audio/account_security.rs crates/media-runtime/src/settings/messages.rs
+msgid "The operation was not fully confirmed. Unlock the keyring, reload and retry recovery. No plaintext fallback was used."
+msgstr "A operação não foi confirmada por completo. Desbloqueie o cofre, recarregue e tente recuperar novamente. As credenciais não foram salvas em texto sem proteção."
+
+#. New asynchronous save/recovery interface; manual AI translation, human review pending.
+#: crates/big-audio-player/src/audio/ui/audio_shell/panel_intents.rs crates/media-runtime/src/settings/messages.rs
+msgid "The playlist could not be read safely. Check its format and permissions."
+msgstr "Não foi possível ler a lista de reprodução com segurança. Verifique o formato e as permissões."
+
+#. New asynchronous save/recovery interface; manual AI translation, human review pending.
+#: crates/big-audio-player/src/audio/ui/audio_shell/playlist_library_dialog_actions.rs crates/media-runtime/src/settings/messages.rs
+msgid "The playlist was not exported. Check storage or choose a new filename; existing files were not replaced."
+msgstr "A lista de reprodução não foi exportada. Verifique o armazenamento ou escolha outro nome; os arquivos existentes não foram substituídos."
+
+#. New asynchronous save/recovery interface; manual AI translation, human review pending.
+#: crates/media-runtime/src/converter/queue/processing.rs crates/media-runtime/src/settings/messages.rs
+msgid "The source or external subtitles changed. Existing exports were kept; review the plan again."
+msgstr "A mídia de origem ou as legendas externas mudaram. As exportações existentes foram mantidas; revise as configurações novamente."
+
+#. New asynchronous save/recovery interface; manual AI translation, human review pending.
+#: crates/big-audio-player/src/audio/ui/unavailable_dialog.rs crates/media-runtime/src/settings/messages.rs
+msgid "Their ratings and saved playlist links will be removed. Media files will not be deleted. A restored file or changed record cancels the whole selection."
+msgstr "As avaliações e os vínculos com listas salvas serão removidos. Os arquivos de mídia não serão apagados. Se um arquivo voltar a estar disponível ou um registro mudar, toda a remoção será cancelada."
+
+#. New asynchronous save/recovery interface; manual AI translation, human review pending.
+#: crates/big-audio-player/src/audio/ui/audio_shell/panel_intents.rs crates/media-runtime/src/settings/messages.rs
+msgid "This folder name cannot yet be stored in the library. No path was changed or imported."
+msgstr "O nome desta pasta ainda não pode ser armazenado na biblioteca. Nenhum caminho foi alterado ou importado."
+
+#. New asynchronous save/recovery interface; manual AI translation, human review pending.
+#: crates/big-audio-player/src/audio/ui/unavailable_dialog.rs crates/media-runtime/src/settings/messages.rs
+msgid "This location is not a regular media file"
+msgstr "Este local não é um arquivo de mídia comum"
+
+#. New asynchronous save/recovery interface; manual AI translation, human review pending.
+#: crates/big-audio-player/src/audio/account_editor.rs crates/media-runtime/src/settings/messages.rs
+msgid "User token"
+msgstr "Token do usuário"
+
+#. New asynchronous save/recovery interface; manual AI translation, human review pending.
+#: crates/media-runtime/src/converter/queue/processing.rs crates/media-runtime/src/settings/messages.rs
+msgid "Verified completed export reused: source, plan and output receipts match."
+msgstr "Exportação concluída reutilizada após verificação: a origem, as configurações e o arquivo correspondem ao comprovante."
+
+#. New asynchronous save/recovery interface; manual AI translation, human review pending.
+#: crates/big-audio-player/src/audio/ui/audio_shell/export.rs crates/big-video-player/src/video/ui/video_shell/trim/run.rs crates/media-runtime/src/settings/messages.rs
+msgid "Verified completed outputs can be reused when retrying. Existing files without a matching receipt are kept."
+msgstr "Arquivos já exportados podem ser reutilizados após a verificação. Arquivos existentes sem um comprovante correspondente serão preservados."
+
+#. New asynchronous save/recovery interface; manual AI translation, human review pending.
+#: crates/big-audio-player/src/audio/account_editor.rs crates/big-audio-player/src/audio/account_security.rs crates/media-runtime/src/settings/messages.rs
+msgid "Waiting for your keyring. Unlock it if prompted…"
+msgstr "Aguardando o cofre de senhas. Desbloqueie-o se solicitado…"
+
+#. New asynchronous save/recovery interface; manual AI translation, human review pending.
+#: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs crates/media-runtime/src/settings/messages.rs
+msgid "Watch folders could not be read. Previous settings were kept."
+msgstr "Não foi possível ler a lista de pastas monitoradas. As configurações anteriores foram mantidas."
+
+#. New asynchronous save/recovery interface; manual AI translation, human review pending.
+#: crates/big-audio-player/src/audio/ui/scan_progress.rs crates/media-runtime/src/settings/messages.rs
+msgid "You can keep using the player. Cancelling keeps earlier confirmed imports and never deletes media files."
+msgstr "Você pode continuar usando o player. Ao cancelar, as importações já confirmadas serão mantidas e nenhum arquivo de mídia será apagado."
+
+#. New asynchronous save/recovery interface; manual AI translation, human review pending.
+#: crates/media-runtime/src/settings/messages.rs crates/media-runtime/src/settings/saving.rs
+msgid "Your preferences are saved automatically."
+msgstr "Suas preferências são salvas automaticamente."
+
+#. New asynchronous save/recovery interface; manual AI translation, human review pending.
+#: crates/big-audio-player/src/audio/ui/unavailable_dialog.rs crates/media-runtime/src/settings/messages.rs
+msgid "records checked"
+msgstr "registros verificados"
+
+#. New asynchronous save/recovery interface; manual AI translation, human review pending.
+#: crates/big-audio-player/src/audio/ui/unavailable_dialog.rs crates/media-runtime/src/settings/messages.rs
+msgid "records need review"
+msgstr "registros precisam de revisão"
+
+#. New asynchronous import feedback; manual AI translation, human review pending.
+#: crates/big-audio-player/src/audio/ui/audio_shell/playlist_library_dialog_actions.rs crates/media-runtime/src/settings/messages.rs
+msgid "Too many entries in the chosen folder"
+msgstr "Há muitas entradas na pasta escolhida."
+
+#. New asynchronous import feedback; manual AI translation, human review pending.
+#: crates/big-audio-player/src/audio/ui/audio_shell/playlist_library_dialog_actions.rs crates/media-runtime/src/settings/messages.rs
+msgid "Choose at most 100 playlist files per import"
+msgstr "Escolha no máximo 100 arquivos de listas de reprodução por importação."
+
+#. New asynchronous import feedback; manual AI translation, human review pending.
+#: crates/big-audio-player/src/audio/ui/audio_shell/playlist_library_dialog_actions.rs crates/media-runtime/src/settings/messages.rs
+msgid "Import stopped. Confirmed tracks were kept"
+msgstr "A importação foi interrompida. As faixas já confirmadas foram mantidas"
+
+#. New asynchronous import feedback; manual AI translation, human review pending.
+#: crates/big-audio-player/src/audio/ui/audio_shell/playlist_library_dialog_actions.rs crates/media-runtime/src/settings/messages.rs
+msgid "Too many playlists for one export"
+msgstr "Há muitas listas de reprodução para uma única exportação."
+
+#. New asynchronous import feedback; manual AI translation, human review pending.
+#: crates/big-audio-player/src/audio/ui/audio_shell/playlist_library_dialog_actions.rs crates/media-runtime/src/settings/messages.rs
+msgid "Export stopped. Confirmed outputs were kept"
+msgstr "A exportação foi interrompida. Os arquivos já confirmados foram mantidos"
+
+#. New asynchronous import feedback; manual AI translation, human review pending.
+#: crates/big-audio-player/src/audio/ui/audio_shell/playlist_library_dialog_actions.rs crates/media-runtime/src/settings/messages.rs
+msgid "The batch import limit was reached. Split the playlists into smaller imports."
+msgstr "O limite de importação do lote foi atingido. Divida as listas em importações menores."
+
+#. Closing with unconfirmed changes; manual AI translation, human review pending.
+#: crates/media-runtime/src/settings/saving.rs crates/media-runtime/src/settings/messages.rs
+msgid "Finishing pending work"
+msgstr "Concluindo as operações pendentes"
+
+#. Closing with unconfirmed changes; manual AI translation, human review pending.
+#: crates/media-runtime/src/settings/saving.rs crates/media-runtime/src/settings/messages.rs
+msgid "Saves and exports are still finishing. The window will close afterwards. Keeping it open does not cancel those operations."
+msgstr "Os salvamentos e as exportações ainda estão em andamento. A janela será fechada ao terminar. Mantê-la aberta não cancela essas operações."
+
+#. Closing with unconfirmed changes; manual AI translation, human review pending.
+#: crates/media-runtime/src/settings/saving.rs crates/media-runtime/src/settings/messages.rs
+msgid "Keep open"
+msgstr "Manter aberto"
+
+#. Closing with unconfirmed changes; manual AI translation, human review pending.
+#: crates/media-runtime/src/settings/saving.rs crates/media-runtime/src/settings/messages.rs
+msgid "Some changes are not confirmed as saved"
+msgstr "Algumas alterações ainda não têm confirmação de salvamento"
+
+#. Closing with unconfirmed changes; manual AI translation, human review pending.
+#: crates/media-runtime/src/settings/saving.rs crates/media-runtime/src/settings/messages.rs
+msgid "Keep the player open to review saving errors and retry. Continuing may discard unsaved session changes; it does not mark them as saved."
+msgstr "Mantenha o player aberto para verificar os erros e tentar salvar novamente. Continuar pode descartar alterações não salvas desta sessão; isso não as marca como salvas."
+
+#. Closing with unconfirmed changes; manual AI translation, human review pending.
+#: crates/media-runtime/src/settings/saving.rs crates/media-runtime/src/settings/messages.rs
+msgid "Continue without saved changes"
+msgstr "Continuar sem salvar essas alterações"

@@ -12,6 +12,11 @@ def check(root: Path) -> dict:
         except Exception as e:detail=str(e);status='FAIL'
         results.append({'name':name,'status':status,'scope':scope,'detail':detail})
     def text(name):return (root/name).read_text()
+    def ordered(source,*needles):
+        # Missing tokens are an explicit failing contract, not an uncaught
+        # ValueError that prevents the remaining independent gates from running.
+        positions=[source.find(needle) for needle in needles]
+        return all(position>=0 for position in positions) and positions==sorted(positions)
     def must(condition,message):
         if not condition:raise AssertionError(message)
     def manifests():
@@ -64,7 +69,7 @@ def check(root: Path) -> dict:
         ('PublishedNotSynced' in storage,'durability receipt missing'),
         ('fs::hard_link(&self.path, target)' in storage,'no-replace publication missing'),
         ('fs::remove_file(target)' not in storage,'deletes public target'),
-        (settings.index('WriteLock::try_acquire')<settings.index('current != inner.disk_bytes')<settings.index('atomic_write_private_receipt'),'revision compare not inside transaction'),
+        (ordered(settings[settings.index('pub fn try_flush'):], 'WriteLock::try_acquire', 'read_regular_limited', '!= expected', 'atomic_write_private_receipt'), 'review comparison/publication not in one transaction'),
         ('durability_pending' in settings,'receipt retry lost'),('load_error' in settings,'bad read not blocked')])
     shots=text('crates/media-runtime/src/player/mpv_backend/screenshots.rs');client=text('crates/media-runtime/src/player/mpv_backend/backend/client.rs');backend=text('crates/media-runtime/src/player/mpv_backend/backend/mod.rs')
     withdrawal=shots.split('fn withdraw_expired',1)[1].split('pub(super) fn complete',1)[0]
@@ -82,10 +87,11 @@ def check(root: Path) -> dict:
         ('state.track_id.as_deref() == Some(id)' in props,'stale TrackId applied'),
         ('PlayerEvent::Seeked' in text('crates/big-audio-player/src/audio/ui/audio_shell/engine.rs'),'native seek not routed')])
     process=text('crates/media-runtime/src/converter/queue/processing.rs');job=text('crates/media-runtime/src/converter/queue/job.rs');validate=text('crates/media-runtime/src/converter/queue/validation.rs')
+    receipts=text('crates/media-runtime/src/converter/queue/receipts.rs')
     contract('Export validation and ownership',[
         ('std::fs::remove_file' not in process,'processing unlinks a final/original path'),
         ('if delete_source' in process and 'Originals are kept' in process,'implicit original deletion'),
-        ('validate_output' in process and 'stage.publish' in process,'publication without validation'),
+        ('validate_output_cancellable' in process and 'receipts[index].publish' in process and 'stage.publish' in receipts,'publication without validation and receipt'),
         ('attached_pic' in validate,'cover can satisfy a real-video plan'),
         ('selected.len() != usize::from' in validate,'expected stream count not enforced'),
         ('run_cancellable_with_stderr' in job,'FFmpeg bypasses managed process ownership'),
@@ -100,10 +106,10 @@ def check(root: Path) -> dict:
     remote=text('crates/app/big-app-kit-core/src/remote_control.rs')
     contract('Remote security boundaries',[
         ('format!("/{token}/")' in remote,'token prefix collision'),
-        ('tiny_http::Method::Post' in remote and 'X-Big-Media-Remote' in remote,'mutating GET'),
+        ('request.method != "POST"' in remote and 'x-big-media-remote' in remote,'mutating GET'),
         ('fallback' not in remote.split('fn make_token',1)[1].split('fn hex',1)[0],'predictable token fallback'),
         ('finite(status_snapshot.position_s)' in remote,'NaN JSON'),
-        ("name: &'static str" in remote,'tiny_http equiv lifetime mismatch')])
+        ('stream.set_nonblocking(true)' in remote and 'HEADER_DEADLINE' in remote and 'WRITE_DEADLINE' in remote,'unbounded accepted client')])
     return {'scope':'Static/lexical checks only; no Rust build, native UI or driver execution', 'checks':results,
             'passed':sum(r['status']=='PASS' for r in results),'failed':sum(r['status']=='FAIL' for r in results),
             'blocked':sum(r['status']=='BLOCKED' for r in results)}
