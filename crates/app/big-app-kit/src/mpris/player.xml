@@ -6,6 +6,7 @@
         <method name='PlayPause'/>
         <method name='Stop'/>
         <method name='Play'/>
+        <method name='OpenUri'><arg direction='in' name='Uri' type='s'/></method>
         <method name='Seek'>
             <arg direction='in' name='Offset' type='x'/>
         </method>
@@ -22,7 +23,7 @@
         <property name='Shuffle' type='b' access='readwrite'/>
         <property name='Metadata' type='a{sv}' access='read'/>
         <property name='Volume' type='d' access='readwrite'/>
-        <property name='Position' type='x' access='read'/>
+        <property name='Position' type='x' access='read'><annotation name='org.freedesktop.DBus.Property.EmitsChangedSignal' value='false'/></property>
         <property name='MinimumRate' type='d' access='read'/>
         <property name='MaximumRate' type='d' access='read'/>
         <property name='CanGoNext' type='b' access='read'/>
@@ -30,6 +31,6 @@
         <property name='CanPlay' type='b' access='read'/>
         <property name='CanPause' type='b' access='read'/>
         <property name='CanSeek' type='b' access='read'/>
-        <property name='CanControl' type='b' access='read'/>
+        <property name='CanControl' type='b' access='read'><annotation name='org.freedesktop.DBus.Property.EmitsChangedSignal' value='false'/></property>
     </interface>
 </node>

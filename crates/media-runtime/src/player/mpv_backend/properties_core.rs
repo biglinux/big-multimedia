@@ -49,9 +49,13 @@ impl MpvBackend {
     }
 
     pub fn set_speed(&self, speed: f64) {
-        self.with_mpv(|m| {
-            let _ = m.set_property("speed", speed);
-        });
+        if speed.is_finite() && (0.25..=4.0).contains(&speed) {
+            let _ = self.queue_command("set", &["speed", &speed.to_string()]);
+        }
+    }
+
+    pub fn is_seekable(&self) -> bool {
+        self.with_mpv(|m| Self::get_bool_property(m, "seekable").unwrap_or(false))
     }
 
     pub fn get_speed(&self) -> f64 {
@@ -264,21 +268,11 @@ impl MpvBackend {
         });
     }
 
-    /// Switch the demuxer cache profile at runtime. Cheap (mpv truncates
-    /// in-place); safe to call between tracks. Podcast/audiobook mode
-    /// cuts ~120 MB RSS off long-form playback vs the `Music` default.
+    /// Queue a cache policy, not a measured memory-saving guarantee. Confirm
+    /// behavior and total process/GPU memory on the actual decoder and media.
     pub fn set_audio_cache_profile(&self, profile: super::types::AudioCacheProfile) {
-        self.with_mpv(|m| {
-            let _ = m.set_property("demuxer-max-bytes", profile.forward_bytes().to_string());
-            let _ = m.set_property("demuxer-max-back-bytes", profile.back_bytes().to_string());
-            log::info!(
-                "audio cache profile -> {:?} ({}+{}, cap {} MiB)",
-                profile,
-                profile.forward_bytes(),
-                profile.back_bytes(),
-                profile.total_mib()
-            );
-        });
+        let _ = self.queue_command("set", &["demuxer-max-bytes", &profile.forward_bytes().to_string()]);
+        let _ = self.queue_command("set", &["demuxer-max-back-bytes", &profile.back_bytes().to_string()]);
     }
 
     pub fn set_cache_pause(&self, enable: bool) {

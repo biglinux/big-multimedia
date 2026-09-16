@@ -141,6 +141,7 @@ impl AudioShell {
                 }
             }
             RadioPanelOutput::PlayStation { url, name, .. } => {
+                self.mpris_state.invalidate();
                 self.is_playing = true;
                 self.is_stream = true;
                 self.radio_station_name = name;

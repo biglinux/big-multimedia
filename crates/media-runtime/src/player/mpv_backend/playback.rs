@@ -21,6 +21,26 @@ pub fn profile_for_uri(target: &str) -> Option<AudioCacheProfile> {
 }
 
 impl MpvBackend {
+    pub(super) fn queue_command(&self, command: &str, arguments: &[&str]) -> Result<(), super::MpvError> {
+        let mut strings = Vec::with_capacity(arguments.len() + 1);
+        strings.push(CString::new(command)?);
+        for arg in arguments { strings.push(CString::new(*arg)?); }
+        let mut args: Vec<*const std::os::raw::c_char> = strings.iter().map(|s| s.as_ptr()).collect();
+        args.push(std::ptr::null());
+        let status = unsafe { mpv_sys::mpv_command_async(self.raw_mpv_handle, 0, args.as_mut_ptr()) };
+        if status < 0 { Err(super::MpvError::Raw(status)) } else { Ok(()) }
+    }
+    /// Per-file pause is supplied before load, never Play immediately followed by Pause.
+    pub fn load_audio_paused(&self, path: &str, profile: AudioCacheProfile, paused: bool) {
+        if self.audio_only { self.set_audio_cache_profile(profile); }
+        self.loading.store(true, Ordering::Relaxed);
+        let options = if paused { "resume-playback=no,pause=yes" } else { "resume-playback=no,pause=no" };
+        if let Err(error) = self.queue_command("loadfile", &[path, "replace", "-1", options]) {
+            self.loading.store(false, Ordering::Relaxed);
+            log::warn!("Could not enqueue media load: {error}");
+        }
+    }
+
     pub fn load_file_with_audio_profile(&self, path: &str, profile: AudioCacheProfile, from_start: bool) {
         if self.audio_only { self.set_audio_cache_profile(profile); }
         self.load_inner(path, from_start);
@@ -44,8 +64,8 @@ impl MpvBackend {
     fn load_inner(&self, path: &str, from_start: bool) {
         self.loading.store(true, Ordering::Relaxed);
         let result = if from_start {
-            self.with_mpv(|m| m.command("loadfile", &[path, "replace", "-1", "resume-playback=no"]))
-        } else { self.with_mpv(|m| m.command("loadfile", &[path, "replace"])) };
+            self.queue_command("loadfile", &[path, "replace", "-1", "resume-playback=no"])
+        } else { self.queue_command("loadfile", &[path, "replace"]) };
         if let Err(error) = result {
             self.loading.store(false, Ordering::Relaxed);
             error!("Failed to load {}: {error}", big_os_kit::url::MediaLogTarget(path));
@@ -53,79 +73,21 @@ impl MpvBackend {
     }
 
     pub fn load_file_append(&self, path: &str) {
-        if let Err(e) = self.with_mpv(|m| m.command("loadfile", &[path, "append-play"])) {
+        if let Err(e) = self.queue_command("loadfile", &[path, "append-play"]) {
             error!("Failed to append {}: {e}", big_os_kit::url::MediaLogTarget(path));
         }
     }
 
-    pub fn play(&self) {
-        self.with_mpv(|m| {
-            let _ = m.set_property("pause", false);
-        });
-    }
-
-    pub fn pause(&self) {
-        self.with_mpv(|m| {
-            let _ = m.set_property("pause", true);
-        });
-    }
-
-    pub fn toggle_pause(&self) {
-        self.with_mpv(|m| match Self::get_bool_property(m, "pause") {
-            Ok(paused) => {
-                info!("toggle_pause: paused={paused}, setting to {}", !paused);
-                if let Err(e) = m.set_property("pause", !paused) {
-                    error!("toggle_pause: set_property failed: {e}");
-                }
-            }
-            Err(e) => {
-                error!("toggle_pause: get_bool_property failed: {e}");
-            }
-        });
-    }
-
-    pub fn stop(&self) {
-        self.with_mpv(|m| {
-            let _ = m.command("stop", &[]);
-        });
-    }
-
+    pub fn play(&self) { let _ = self.queue_command("set", &["pause", "no"]); }
+    pub fn pause(&self) { let _ = self.queue_command("set", &["pause", "yes"]); }
+    pub fn toggle_pause(&self) { let _ = self.queue_command("cycle", &["pause"]); }
+    pub fn stop(&self) { let _ = self.queue_command("stop", &[]); }
     pub fn seek(&self, seconds: f64) {
-        self.with_mpv(|m| {
-            let _ = m.command("seek", &[&seconds.to_string(), "relative"]);
-        });
+        if seconds.is_finite() { let _ = self.queue_command("seek", &[&seconds.to_string(), "relative"]); }
     }
-
-    pub fn seek_absolute(&self, seconds: f64) {
-        self.with_mpv(|m| {
-            let _ = m.command("seek", &[&seconds.to_string(), "absolute"]);
-        });
-    }
-
-    /// Non-blocking exact seek for live seekbar preview.
-    /// `mpv_command_async` on the raw handle — no mutex contention.
+    pub fn seek_absolute(&self, seconds: f64) { self.seek_absolute_async(seconds); }
     pub fn seek_absolute_async(&self, seconds: f64) {
-        let Ok(secs_str) = CString::new(seconds.to_string()) else {
-            return;
-        };
-        let cmd = CString::new("seek").expect("static literal");
-        let flags = CString::new("absolute").expect("static literal");
-        let mut args: Vec<*const std::os::raw::c_char> = vec![
-            cmd.as_ptr(),
-            secs_str.as_ptr(),
-            flags.as_ptr(),
-            std::ptr::null(),
-        ];
-        // SAFETY: `mpv_command_async` is thread-safe on the same handle;
-        // raw_mpv_handle outlives this call (held by MpvBackend); CStrings
-        // live until after the call returns.
-        unsafe {
-            mpv_sys::mpv_command_async(
-                self.raw_mpv_handle,
-                0, // reply_userdata=0 — reply is discarded.
-                args.as_mut_ptr(),
-            );
-        }
+        if seconds.is_finite() && seconds >= 0.0 { let _ = self.queue_command("seek", &[&seconds.to_string(), "absolute"]); }
     }
 
     /// Queue a PNG screenshot into private staging. Call off the GTK thread:

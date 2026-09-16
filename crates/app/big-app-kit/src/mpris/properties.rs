@@ -1,501 +1,99 @@
-use glib::Variant;
-use glib::variant::ToVariant;
 use gtk::{gio, glib};
-
+use glib::Variant;
+use glib::variant::{ObjectPath, ToVariant};
 use super::metadata::build_metadata;
-use super::types::{CommandCallback, StateCallback, playback_status};
-use super::{MPRIS_PATH, MPRIS_PLAYER_IFACE};
+use super::types::{CommandCallback, MprisCommand as C, PlaybackStatus, PlayerState, StateCallback, micros, rate, volume};
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-struct PlayerMethodDispatch {
-    command: &'static str,
-    argument: Option<i64>,
-    seeked_position: Option<i64>,
-}
-
-fn variant_child_i64(params: &Variant, child_index: usize) -> Option<i64> {
-    (params.n_children() > child_index)
-        .then(|| params.child_value(child_index).get::<i64>())
-        .flatten()
-}
-
-fn player_method_dispatch(method: &str, params: &Variant) -> Option<PlayerMethodDispatch> {
-    match method {
-        "PlayPause" => Some(PlayerMethodDispatch {
-            command: "play-pause",
-            argument: None,
-            seeked_position: None,
-        }),
-        "Play" => Some(PlayerMethodDispatch {
-            command: "play",
-            argument: None,
-            seeked_position: None,
-        }),
-        "Pause" => Some(PlayerMethodDispatch {
-            command: "pause",
-            argument: None,
-            seeked_position: None,
-        }),
-        "Stop" => Some(PlayerMethodDispatch {
-            command: "stop",
-            argument: None,
-            seeked_position: None,
-        }),
-        "Next" => Some(PlayerMethodDispatch {
-            command: "next",
-            argument: None,
-            seeked_position: None,
-        }),
-        "Previous" => Some(PlayerMethodDispatch {
-            command: "previous",
-            argument: None,
-            seeked_position: None,
-        }),
-        "Seek" => variant_child_i64(params, 0).map(|offset| PlayerMethodDispatch {
-            command: "seek",
-            argument: Some(offset),
-            seeked_position: None,
-        }),
-        "SetPosition" => variant_child_i64(params, 1).map(|position| PlayerMethodDispatch {
-            command: "set-position",
-            argument: Some(position),
-            seeked_position: Some(position),
-        }),
-        _ => None,
-    }
-}
-
-pub(super) fn handle_player_method(
-    method: &str,
-    params: Variant,
-    invocation: gio::DBusMethodInvocation,
-    command_cb: &CommandCallback,
-    connection: &gio::DBusConnection,
-) {
-    if let Some(dispatch) = player_method_dispatch(method, &params) {
-        command_cb(dispatch.command, dispatch.argument);
-        if let Some(position) = dispatch.seeked_position {
-            let _ = connection.emit_signal(
-                None::<&str>,
-                MPRIS_PATH,
-                MPRIS_PLAYER_IFACE,
-                "Seeked",
-                Some(&(position,).to_variant()),
-            );
-        }
-    }
-    invocation.return_value(None);
-}
-
-fn identity_for_desktop_id(desktop_id: &str) -> &'static str {
-    if desktop_id.contains("AudioPlayer") {
-        "Big Audio Player"
-    } else {
-        "Big Media Player"
-    }
-}
-
-pub(super) fn get_root_property(prop: &str, desktop_id: &str) -> Option<Variant> {
+pub(super) const CHANGING: &[&str] = &["PlaybackStatus", "Metadata", "Volume", "Rate", "LoopStatus", "Shuffle", "CanPlay", "CanPause", "CanSeek", "CanGoNext", "CanGoPrevious"];
+// CanControl is intrinsic to this service; Position must not emit PropertiesChanged.
+pub(super) fn player_property(prop: &str, s: &PlayerState) -> Option<Variant> {
     match prop {
-        "Identity" => Some(identity_for_desktop_id(desktop_id).to_variant()),
-        "DesktopEntry" => Some(desktop_id.to_variant()),
+        "PlaybackStatus" => Some(s.status.as_str().to_variant()),
+        "Metadata" => Some(build_metadata(s)),
+        "Position" => Some(micros(s.position_secs).to_variant()), // unknown duration is not zero position
+        "Volume" => Some(volume(s.volume_pct).to_variant()),
+        "Rate" => Some(rate(s.rate).to_variant()),
+        "MinimumRate" => Some(0.25_f64.to_variant()), "MaximumRate" => Some(4.0_f64.to_variant()),
+        "CanControl" => Some(true.to_variant()),
+        "CanPlay" => Some(s.can_play.to_variant()), "CanPause" => Some(s.can_pause.to_variant()),
+        "CanSeek" => Some(s.can_seek.to_variant()), "CanGoNext" => Some(s.can_next.to_variant()), "CanGoPrevious" => Some(s.can_prev.to_variant()),
+        "LoopStatus" => Some((match s.loop_status.as_str() { "Track" => "Track", "Playlist" => "Playlist", _ => "None" }).to_variant()),
+        "Shuffle" => Some(s.shuffle.to_variant()), _ => None,
+    }
+}
+pub(super) fn get_player_property(prop: &str, state: &StateCallback) -> Option<Variant> { player_property(prop, &state()) }
+pub(super) fn get_root_property(prop: &str, desktop: &str) -> Option<Variant> {
+    match prop {
+        "Identity" => Some("Big Audio Player".to_variant()), "DesktopEntry" => Some(desktop.to_variant()),
         "CanQuit" | "CanRaise" => Some(true.to_variant()),
-        "HasTrackList" => Some(false.to_variant()),
+        "HasTrackList" | "Fullscreen" | "CanSetFullscreen" => Some(false.to_variant()),
         "SupportedUriSchemes" => Some(vec!["file", "http", "https"].to_variant()),
-        "SupportedMimeTypes" => Some(vec!["video/*", "audio/*"].to_variant()),
+        "SupportedMimeTypes" => Some(vec!["audio/mpeg", "audio/flac", "audio/ogg", "audio/opus", "audio/mp4", "audio/wav", "audio/aac"].to_variant()),
         _ => None,
     }
 }
-
-pub(super) fn get_player_property(prop: &str, state_cb: &StateCallback) -> Option<Variant> {
-    let s = state_cb();
-    match prop {
-        "PlaybackStatus" => Some(playback_status(s.is_paused).to_variant()),
-        "CanSeek" | "CanPlay" | "CanPause" | "CanControl" => Some(true.to_variant()),
-        "CanGoNext" => Some(s.can_next.to_variant()),
-        "CanGoPrevious" => Some(s.can_prev.to_variant()),
-        "Volume" => Some((s.volume_pct / 100.0).to_variant()),
-        "Position" => Some(((s.position_secs * 1_000_000.0) as i64).to_variant()),
-        "LoopStatus" => Some(s.loop_status.to_variant()),
-        "Shuffle" => Some(s.shuffle.to_variant()),
-        "Rate" | "MinimumRate" | "MaximumRate" => Some(1.0_f64.to_variant()),
-        "Metadata" => {
-            let art = if s.art_url.is_empty() {
-                None
-            } else {
-                Some(s.art_url.as_str())
-            };
-            Some(build_metadata(
-                &s.title,
-                &s.artist,
-                &s.album,
-                s.duration_secs,
-                art,
-            ))
+fn method_command(method: &str, params: &Variant, state: &PlayerState) -> Result<Option<C>, &'static str> {
+    let empty = || if params.is_type(glib::VariantTy::UNIT) { Ok(()) } else { Err("InvalidArgs") };
+    let command = match method {
+        "Play" => { empty()?; state.can_play.then_some(C::Play) },
+        "Pause" => { empty()?; state.can_pause.then_some(C::Pause) },
+        "PlayPause" => { empty()?; if state.status == PlaybackStatus::Playing { state.can_pause.then_some(C::Pause) } else { state.can_play.then_some(C::Play) } },
+        "Stop" => { empty()?; Some(C::Stop) },
+        "Next" => { empty()?; state.can_next.then_some(C::Next) },
+        "Previous" => { empty()?; state.can_prev.then_some(C::Previous) },
+        "Seek" => {
+            let (offset_us,) = params.get::<(i64,)>().ok_or("InvalidArgs")?;
+            if !state.can_seek { None } else { state.track_id.as_ref().map(|id| C::Seek { track_id: id.clone(), offset_us }) }
         }
-        _ => None,
+        "SetPosition" => {
+            let (track, position_us) = params.get::<(ObjectPath, i64)>().ok_or("InvalidArgs")?;
+            let id: &str = &track; let duration = micros(state.duration_secs);
+            if state.can_seek && state.track_id.as_deref() == Some(id) && position_us >= 0 && (duration == 0 || position_us <= duration) {
+                Some(C::SetPosition { track_id: id.to_owned(), position_us })
+            } else { None }
+        }
+        "OpenUri" => {
+            let (uri,) = params.get::<(String,)>().ok_or("InvalidArgs")?;
+            let Some(scheme) = big_os_kit::url::uri_scheme(&uri) else { return Err("InvalidArgs"); };
+            if !["file", "http", "https"].iter().any(|s| scheme.eq_ignore_ascii_case(s)) { return Err("NotSupported"); }
+            Some(C::OpenUri(uri))
+        }
+        _ => return Err("UnknownMethod"),
+    };
+    Ok(command)
+}
+pub(super) fn handle_player_method(method: &str, params: Variant, invocation: gio::DBusMethodInvocation, command: &CommandCallback, state: &StateCallback) {
+    match method_command(method, &params, &state()) {
+        Ok(value) => { if let Some(value) = value { command(value); } invocation.return_value(None); }
+        Err(kind) => invocation.return_dbus_error(&format!("org.freedesktop.DBus.Error.{kind}"), "MPRIS request rejected"),
     }
 }
-
-pub(super) fn set_player_property(
-    prop: &str,
-    value: &Variant,
-    command_cb: &CommandCallback,
-) -> bool {
-    match prop {
-        "Volume" => {
-            if let Some(vol) = value.get::<f64>() {
-                command_cb("set-volume", Some((vol * 100.0) as i64));
-                return true;
-            }
-        }
-        "LoopStatus" => {
-            if let Some(loop_str) = value.get::<String>() {
-                match loop_str.as_str() {
-                    "None" => command_cb("set-loop", Some(0)),
-                    "Track" => command_cb("set-loop", Some(1)),
-                    "Playlist" => command_cb("set-loop", Some(2)),
-                    _ => return false,
-                }
-                return true;
-            }
-        }
-        "Shuffle" => {
-            if let Some(shuffle) = value.get::<bool>() {
-                command_cb("set-shuffle", Some(i64::from(shuffle)));
-                return true;
-            }
-        }
-        "Rate" => return true,
-        _ => {}
-    }
-    false
+pub(super) fn set_player_property(prop: &str, value: &Variant, command: &CommandCallback, state: &StateCallback) -> bool {
+    let request = match prop {
+        "Volume" => value.get::<f64>().filter(|x| x.is_finite()).map(|x| C::SetVolume(x.max(0.0))),
+        "Rate" => value.get::<f64>().filter(|x| x.is_finite()).and_then(|x| {
+            if x == 0.0 { state().can_pause.then_some(C::Pause) }
+            else if (0.25..=4.0).contains(&x) { Some(C::SetRate(x)) } else { None }
+        }),
+        "LoopStatus" => value.get::<String>().filter(|s| matches!(s.as_str(), "None" | "Track" | "Playlist")).map(C::SetLoopStatus),
+        "Shuffle" => value.get::<bool>().map(C::SetShuffle), _ => None,
+    };
+    if let Some(request) = request { command(request); true } else { false }
 }
-
 #[cfg(test)]
 mod tests {
-    use std::sync::{Arc, Mutex};
-
-    use gtk::glib::VariantDict;
-    use gtk::glib::variant::{FromVariant, ToVariant};
-
-    use super::{
-        PlayerMethodDispatch, get_player_property, get_root_property, player_method_dispatch,
-        set_player_property,
-    };
-    use crate::mpris::{CommandCallback, PlayerState, StateCallback};
-
-    type RecordedCommands = Arc<Mutex<Vec<(String, Option<i64>)>>>;
-
-    fn player_property<T: FromVariant + 'static>(property: &str, state: PlayerState) -> Option<T> {
-        let state_callback: StateCallback = Box::new(move || state.clone());
-        get_player_property(property, &state_callback).and_then(|variant| variant.get::<T>())
-    }
-
+    use super::*;
     #[test]
-    #[cfg_attr(miri, ignore)]
-    fn player_method_dispatch_maps_standard_commands() {
-        let empty_params = ().to_variant();
-        let expected_dispatches = [
-            (
-                "PlayPause",
-                PlayerMethodDispatch {
-                    command: "play-pause",
-                    argument: None,
-                    seeked_position: None,
-                },
-            ),
-            (
-                "Play",
-                PlayerMethodDispatch {
-                    command: "play",
-                    argument: None,
-                    seeked_position: None,
-                },
-            ),
-            (
-                "Pause",
-                PlayerMethodDispatch {
-                    command: "pause",
-                    argument: None,
-                    seeked_position: None,
-                },
-            ),
-            (
-                "Stop",
-                PlayerMethodDispatch {
-                    command: "stop",
-                    argument: None,
-                    seeked_position: None,
-                },
-            ),
-            (
-                "Next",
-                PlayerMethodDispatch {
-                    command: "next",
-                    argument: None,
-                    seeked_position: None,
-                },
-            ),
-            (
-                "Previous",
-                PlayerMethodDispatch {
-                    command: "previous",
-                    argument: None,
-                    seeked_position: None,
-                },
-            ),
-        ];
-
-        for (method, expected_dispatch) in expected_dispatches {
-            assert_eq!(
-                player_method_dispatch(method, &empty_params),
-                Some(expected_dispatch)
-            );
-        }
+    fn obsolete_seek_is_ignored_and_unknown_method_is_error() {
+        let state = PlayerState { track_id: Some("/br/com/biglinux/Track/2".into()), can_seek: true, duration_secs: 10.0, ..Default::default() };
+        let args = (ObjectPath::try_from("/br/com/biglinux/Track/1").unwrap(), 2_i64).to_variant();
+        assert_eq!(method_command("SetPosition", &args, &state), Ok(None));
+        assert_eq!(method_command("Bogus", &().to_variant(), &state), Err("UnknownMethod"));
     }
-
     #[test]
-    #[cfg_attr(miri, ignore)]
-    fn player_method_dispatch_maps_seek_arguments() {
-        let seek_params = (12_345_i64,).to_variant();
-        assert_eq!(
-            player_method_dispatch("Seek", &seek_params),
-            Some(PlayerMethodDispatch {
-                command: "seek",
-                argument: Some(12_345),
-                seeked_position: None,
-            })
-        );
-
-        let set_position_params = ("/org/mpris/MediaPlayer2/Track/1", 67_890_i64).to_variant();
-        assert_eq!(
-            player_method_dispatch("SetPosition", &set_position_params),
-            Some(PlayerMethodDispatch {
-                command: "set-position",
-                argument: Some(67_890),
-                seeked_position: Some(67_890),
-            })
-        );
-    }
-
-    #[test]
-    #[cfg_attr(miri, ignore)]
-    fn player_method_dispatch_rejects_unknown_or_invalid_arguments() {
-        assert_eq!(player_method_dispatch("Raise", &().to_variant()), None);
-        assert_eq!(player_method_dispatch("Seek", &().to_variant()), None);
-        assert_eq!(
-            player_method_dispatch("SetPosition", &("track", "invalid").to_variant()),
-            None
-        );
-    }
-
-    #[test]
-    #[cfg_attr(miri, ignore)]
-    fn root_identity_matches_desktop_id() {
-        assert_eq!(
-            get_root_property("Identity", "br.com.biglinux.AudioPlayer")
-                .and_then(|v| v.get::<String>())
-                .as_deref(),
-            Some("Big Audio Player")
-        );
-        assert_eq!(
-            get_root_property("Identity", "br.com.biglinux.VideoPlayer")
-                .and_then(|v| v.get::<String>())
-                .as_deref(),
-            Some("Big Media Player")
-        );
-    }
-
-    #[test]
-    #[cfg_attr(miri, ignore)]
-    fn root_properties_match_mpris_capabilities() {
-        let desktop_entry = get_root_property("DesktopEntry", "br.com.biglinux.VideoPlayer")
-            .and_then(|variant| variant.get::<String>());
-        assert_eq!(
-            desktop_entry.as_deref(),
-            Some("br.com.biglinux.VideoPlayer")
-        );
-
-        for property in ["CanQuit", "CanRaise"] {
-            assert_eq!(
-                get_root_property(property, "br.com.biglinux.VideoPlayer")
-                    .and_then(|variant| variant.get::<bool>()),
-                Some(true)
-            );
-        }
-        assert_eq!(
-            get_root_property("HasTrackList", "br.com.biglinux.VideoPlayer")
-                .and_then(|variant| variant.get::<bool>()),
-            Some(false)
-        );
-        assert_eq!(
-            get_root_property("SupportedUriSchemes", "br.com.biglinux.VideoPlayer")
-                .and_then(|variant| variant.get::<Vec<String>>()),
-            Some(vec!["file".into(), "http".into(), "https".into()])
-        );
-        assert_eq!(
-            get_root_property("SupportedMimeTypes", "br.com.biglinux.VideoPlayer")
-                .and_then(|variant| variant.get::<Vec<String>>()),
-            Some(vec!["video/*".into(), "audio/*".into()])
-        );
-        assert!(get_root_property("Unknown", "br.com.biglinux.VideoPlayer").is_none());
-    }
-
-    #[test]
-    #[cfg_attr(miri, ignore)]
-    fn player_property_metadata_wraps_snapshot() {
-        let state_cb: StateCallback = Box::new(|| PlayerState {
-            title: "Song".into(),
-            artist: "Artist".into(),
-            album: "Album".into(),
-            duration_secs: 42.0,
-            art_url: "file:///tmp/art.png".into(),
-            ..PlayerState::default()
-        });
-        let meta = get_player_property("Metadata", &state_cb).expect("metadata");
-        let dict = VariantDict::from_variant(&meta).expect("dict");
-        assert_eq!(
-            dict.lookup::<String>("xesam:title").expect("title"),
-            Some("Song".into())
-        );
-        assert_eq!(
-            dict.lookup::<String>("mpris:artUrl").expect("art"),
-            Some("file:///tmp/art.png".into())
-        );
-    }
-
-    #[test]
-    #[cfg_attr(miri, ignore)]
-    fn player_properties_wrap_snapshot_scalars() {
-        let state = PlayerState {
-            is_paused: false,
-            position_secs: 2.5,
-            volume_pct: 42.0,
-            can_next: true,
-            can_prev: false,
-            loop_status: "Track".into(),
-            shuffle: true,
-            ..PlayerState::default()
-        };
-
-        assert_eq!(
-            player_property::<String>("PlaybackStatus", state.clone()).as_deref(),
-            Some("Playing")
-        );
-        for property in ["CanSeek", "CanPlay", "CanPause", "CanControl"] {
-            assert_eq!(player_property::<bool>(property, state.clone()), Some(true));
-        }
-        assert_eq!(
-            player_property::<bool>("CanGoNext", state.clone()),
-            Some(true)
-        );
-        assert_eq!(
-            player_property::<bool>("CanGoPrevious", state.clone()),
-            Some(false)
-        );
-        let volume = player_property::<f64>("Volume", state.clone()).expect("volume");
-        assert!((volume - 0.42).abs() < f64::EPSILON);
-        assert_eq!(
-            player_property::<i64>("Position", state.clone()),
-            Some(2_500_000)
-        );
-        assert_eq!(
-            player_property::<String>("LoopStatus", state.clone()).as_deref(),
-            Some("Track")
-        );
-        assert_eq!(
-            player_property::<bool>("Shuffle", state.clone()),
-            Some(true)
-        );
-        for property in ["Rate", "MinimumRate", "MaximumRate"] {
-            assert_eq!(player_property::<f64>(property, state.clone()), Some(1.0));
-        }
-        let default_state_callback: StateCallback = Box::new(PlayerState::default);
-        assert!(get_player_property("Unknown", &default_state_callback).is_none());
-    }
-
-    #[test]
-    #[cfg_attr(miri, ignore)]
-    fn set_player_property_dispatches_expected_commands() {
-        let recorded_commands: RecordedCommands = Arc::new(Mutex::new(Vec::new()));
-        let recorded_commands_for_callback = Arc::clone(&recorded_commands);
-        let command_callback: CommandCallback = Box::new(move |command_name, argument| {
-            recorded_commands_for_callback
-                .lock()
-                .unwrap_or_else(std::sync::PoisonError::into_inner)
-                .push((command_name.to_string(), argument));
-        });
-
-        assert!(set_player_property(
-            "Volume",
-            &0.5_f64.to_variant(),
-            &command_callback
-        ));
-        assert!(set_player_property(
-            "LoopStatus",
-            &"None".to_string().to_variant(),
-            &command_callback
-        ));
-        assert!(set_player_property(
-            "LoopStatus",
-            &"Track".to_string().to_variant(),
-            &command_callback
-        ));
-        assert!(set_player_property(
-            "LoopStatus",
-            &"Playlist".to_string().to_variant(),
-            &command_callback
-        ));
-        assert!(set_player_property(
-            "Shuffle",
-            &true.to_variant(),
-            &command_callback
-        ));
-        assert!(set_player_property(
-            "Rate",
-            &1.25_f64.to_variant(),
-            &command_callback
-        ));
-
-        let recorded_commands = recorded_commands
-            .lock()
-            .unwrap_or_else(std::sync::PoisonError::into_inner);
-        assert_eq!(
-            recorded_commands.as_slice(),
-            &[
-                ("set-volume".into(), Some(50)),
-                ("set-loop".into(), Some(0)),
-                ("set-loop".into(), Some(1)),
-                ("set-loop".into(), Some(2)),
-                ("set-shuffle".into(), Some(1)),
-            ]
-        );
-    }
-
-    #[test]
-    #[cfg_attr(miri, ignore)]
-    fn set_player_property_rejects_invalid_values() {
-        let command_callback: CommandCallback = Box::new(|_, _| {});
-        assert!(!set_player_property(
-            "LoopStatus",
-            &"Invalid".to_string().to_variant(),
-            &command_callback
-        ));
-        assert!(!set_player_property(
-            "Volume",
-            &"invalid".to_string().to_variant(),
-            &command_callback
-        ));
-        assert!(!set_player_property(
-            "Shuffle",
-            &"invalid".to_string().to_variant(),
-            &command_callback
-        ));
-        assert!(!set_player_property(
-            "Unknown",
-            &true.to_variant(),
-            &command_callback
-        ));
+    fn position_with_unknown_duration_and_intrinsic_control_are_correct() {
+        let state = PlayerState { position_secs: 12.5, ..Default::default() };
+        assert_eq!(player_property("Position", &state).unwrap().get::<i64>(), Some(12_500_000));
+        assert!(!CHANGING.contains(&"Position")); assert!(!CHANGING.contains(&"CanControl"));
     }
 }

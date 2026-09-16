@@ -21,9 +21,9 @@ impl AudioShell {
             PlayerEvent::PauseChanged(paused) => {
                 self.is_playing = !paused;
                 self.mpris_state.paused.store(paused, Ordering::Relaxed);
-                if let Some(mpris) = &self.mpris {
-                    mpris.emit_playback_status(paused);
-                }
+                let mut status = self.mpris_state.status.lock().unwrap_or_else(PoisonError::into_inner);
+                // A pause-property echo after Stop does not resume playback.
+                if *status != PlaybackStatus::Stopped { *status = if paused { PlaybackStatus::Paused } else { PlaybackStatus::Playing }; }
                 self.playback_bar
                     .emit(AudioPlaybackBarInput::SetPaused(paused));
             }
@@ -33,9 +33,7 @@ impl AudioShell {
                     .position
                     .lock()
                     .unwrap_or_else(PoisonError::into_inner) = secs;
-                if let Some(mpris) = &self.mpris {
-                    mpris.update_taskbar_progress(secs, self.duration_secs);
-                }
+
                 self.playback_bar
                     .emit(AudioPlaybackBarInput::SetPosition(time::playback_time(
                         secs,
@@ -91,6 +89,12 @@ impl AudioShell {
                     });
             }
             PlayerEvent::FileLoaded(_) => {
+                self.mpris_state.selected();
+                let paused = self.mpv.as_ref().is_none_or(|mpv| mpv.is_paused());
+                self.is_playing = !paused;
+                self.mpris_state.paused.store(paused, Ordering::Relaxed);
+                *self.mpris_state.status.lock().unwrap_or_else(PoisonError::into_inner) = if paused { PlaybackStatus::Paused } else { PlaybackStatus::Playing };
+                self.mpris_state.seekable.store(self.mpv.as_ref().is_some_and(|mpv| mpv.is_seekable()), Ordering::Relaxed);
                 if self.trim_active {
                     self.exit_trim_mode();
                 }
@@ -102,6 +106,14 @@ impl AudioShell {
                 self.fetch_lyrics_for_current(sender);
                 self.push_mpris_metadata(sender);
             }
+            PlayerEvent::Seeked(position) if position.is_finite() && position >= 0.0 => {
+                *self.mpris_state.position.lock().unwrap_or_else(PoisonError::into_inner) = position;
+                if let Some(mpris) = &self.mpris { mpris.emit_seeked((position * 1_000_000.0).min(i64::MAX as f64).round() as i64); }
+            }
+            PlayerEvent::RateChanged(rate) if rate.is_finite() && rate > 0.0 => {
+                *self.mpris_state.rate.lock().unwrap_or_else(PoisonError::into_inner) = rate;
+            }
+            PlayerEvent::Shutdown => { self.mpris_state.invalidate(); *self.mpris_state.status.lock().unwrap_or_else(PoisonError::into_inner) = PlaybackStatus::Stopped; }
             _ => {}
         }
     }

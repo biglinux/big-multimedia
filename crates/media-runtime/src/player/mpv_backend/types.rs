@@ -111,6 +111,9 @@ pub enum PlayerEvent {
     PositionChanged(f64),
     DurationChanged(f64),
     PauseChanged(bool),
+    /// Native discontinuity after SEEK followed by PLAYBACK_RESTART.
+    Seeked(f64),
+    RateChanged(f64),
     VolumeChanged(f64),
     MuteChanged(bool),
     FileLoaded(String),

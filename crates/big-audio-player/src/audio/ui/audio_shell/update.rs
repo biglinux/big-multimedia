@@ -217,7 +217,7 @@ impl AudioShell {
                     &sender,
                 );
             }
-            AudioShellInput::MprisCommand(cmd, arg) => self.handle_mpris_command(&cmd, arg),
+            AudioShellInput::MprisCommand(command) => self.handle_mpris_command(command),
             AudioShellInput::ArtResolved { r#gen, data } => {
                 if is_current_generation(r#gen, self.now_playing_gen) {
                     self.apply_resolved_art(data, &sender);

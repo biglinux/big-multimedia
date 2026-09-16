@@ -580,6 +580,7 @@ impl Component for AudioShell {
         // every sibling module/surface keep running.
         big_app_kit::containment::contain_embedded_update(root, "player-audio", || {
             self.handle_shell_input(message, sender);
+            self.publish_mpris_snapshot();
         });
     }
 }

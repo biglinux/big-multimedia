@@ -161,9 +161,8 @@ pub enum AudioShellInput {
     Redo,
     /// Toggle shuffle from a keyboard/action shortcut.
     ToggleShuffleShortcut,
-    /// An MPRIS D-Bus command (`cmd`, optional µs/index arg) routed onto the
-    /// main thread.
-    MprisCommand(String, Option<i64>),
+    /// Typed MPRIS command, with track identity preserved across thread dispatch.
+    MprisCommand(MprisCommand),
     /// Album art resolved for a track (async); `gen` guards against a stale
     /// result → MPRIS metadata + blur bg.
     ArtResolved {

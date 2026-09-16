@@ -380,6 +380,8 @@ pub enum MpvEvent {
         change: MpvPropertyValue,
     },
     CommandReply { id: u64, error: c_int },
+    Seek,
+    PlaybackRestart,
     Other,
 }
 
@@ -416,6 +418,8 @@ fn map_event(event: &mpv_sys::mpv_event) -> Option<Result<MpvEvent>> {
 
     Some(match event.event_id {
         mpv_sys::mpv_event_id_MPV_EVENT_FILE_LOADED => Ok(MpvEvent::FileLoaded),
+        mpv_sys::mpv_event_id_MPV_EVENT_SEEK => Ok(MpvEvent::Seek),
+        mpv_sys::mpv_event_id_MPV_EVENT_PLAYBACK_RESTART => Ok(MpvEvent::PlaybackRestart),
         mpv_sys::mpv_event_id_MPV_EVENT_END_FILE => map_end_file_event(event.data),
         mpv_sys::mpv_event_id_MPV_EVENT_SHUTDOWN => Ok(MpvEvent::Shutdown),
         mpv_sys::mpv_event_id_MPV_EVENT_PROPERTY_CHANGE => map_property_event(event.data),

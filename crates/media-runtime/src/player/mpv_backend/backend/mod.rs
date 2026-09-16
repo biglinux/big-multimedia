@@ -32,6 +32,8 @@ struct PollState {
     last_title: String,
     last_volume: Option<f64>,
     last_mute: Option<bool>,
+    last_rate: Option<f64>,
+    seek_pending: bool,
     pending: Vec<PlayerEvent>,
 }
 
@@ -40,6 +42,7 @@ impl PollState {
         self.last_pos = -1.0;
         self.last_dur = -1.0;
         self.last_eof = false;
+        self.seek_pending = false;
     }
 }
 
@@ -307,6 +310,15 @@ impl MpvBackend {
         loop {
             // Resolve and own the event data before the next wait_event call.
             let mapped = match mpv_guard.wait_event(0.0)? {
+                Ok(MpvEvent::Seek) => { poll.seek_pending = true; continue; }
+                Ok(MpvEvent::PlaybackRestart) => {
+                    if std::mem::take(&mut poll.seek_pending) {
+                        if let Ok(position) = mpv_guard.get_property::<f64>("time-pos") {
+                            if position.is_finite() && position >= 0.0 { return Some(PlayerEvent::Seeked(position)); }
+                        }
+                    }
+                    continue;
+                }
                 Ok(MpvEvent::FileLoaded) => MappedEvent::FileLoaded,
                 Ok(MpvEvent::EndFile(reason)) => MappedEvent::EndFile(reason),
                 Ok(MpvEvent::Shutdown) => MappedEvent::Shutdown,
@@ -347,6 +359,7 @@ impl MpvBackend {
                 PlayerEvent::FileLoaded(title)
             }
             MappedEvent::EndFile(reason) => {
+                poll.seek_pending = false;
                 poll.last_eof = true;
                 log::debug!("[MPV-EVENT] EndFile reason={reason} (from mpv event queue)");
                 PlayerEvent::EndFile(reason)
@@ -395,6 +408,11 @@ impl MpvBackend {
                 outgoing.push(PlayerEvent::EndFile(0));
             }
             poll.last_eof = eof;
+        }
+        if let Ok(rate) = mpv_guard.get_property::<f64>("speed") {
+            if rate.is_finite() && rate > 0.0 && poll.last_rate != Some(rate) {
+                poll.last_rate = Some(rate); outgoing.push(PlayerEvent::RateChanged(rate));
+            }
         }
         if let Ok(title) = mpv_guard.get_property::<String>("media-title")
             && !title.is_empty()
