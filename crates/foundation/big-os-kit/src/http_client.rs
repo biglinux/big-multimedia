@@ -1,14 +1,15 @@
 //! Shared HTTP client policy backed by the system `curl` command.
 //!
 //! The crate keeps the HTTP policy centralized without linking Rust TLS/crypto
-//! stacks into every consumer. `curl` is executed with argv-only arguments,
-//! explicit timeouts, bounded reads, and validated header values.
+//! stacks into every consumer. Sensitive URL, header and body data goes through
+//! curl configuration on stdin, with explicit deadlines and bounded readers.
 
-use std::io::{Cursor, Read, Write};
-use std::process::{Child, ChildStdout, Command, Stdio};
+use std::io::{BufReader, Read, Write};
+use std::process::{Command, Stdio};
 use std::time::Duration;
 
-use crate::url::RedactedUrl;
+use crate::url::MediaLogTarget;
+mod transport;
 
 const CURL: &str = "curl";
 const USER_AGENT: &str = "BigLinuxRustApp/0.1 (https://github.com/biglinux/big-rust-components)";
@@ -67,28 +68,6 @@ struct CurlHeaders {
     content_length: Option<u64>,
 }
 
-struct CurlBodyReader {
-    child: Child,
-    buffered: Cursor<Vec<u8>>,
-    stdout: ChildStdout,
-}
-
-impl Read for CurlBodyReader {
-    fn read(&mut self, buf: &mut [u8]) -> std::io::Result<usize> {
-        if self.buffered.position() < self.buffered.get_ref().len() as u64 {
-            return self.buffered.read(buf);
-        }
-        self.stdout.read(buf)
-    }
-}
-
-impl Drop for CurlBodyReader {
-    fn drop(&mut self) {
-        let _ = self.child.kill();
-        let _ = self.child.wait();
-    }
-}
-
 /// DNS/lookup failures are permanent per invocation — never retry.
 fn is_dns_error(err: &str) -> bool {
     err.contains("code 6")
@@ -110,7 +89,7 @@ pub fn http_get_fast(url: &str) -> Option<String> {
 }
 
 fn http_get_single(url: &str, timeout: Duration) -> Option<String> {
-    let url_log = RedactedUrl(url);
+    let url_log = MediaLogTarget(url);
     match curl_bytes(
         HttpMethod::Get,
         url,
@@ -134,7 +113,7 @@ fn http_get_single(url: &str, timeout: Duration) -> Option<String> {
 }
 
 fn http_get_with_retry_timeout(url: &str, timeout: Duration) -> Option<String> {
-    let url_log = RedactedUrl(url);
+    let url_log = MediaLogTarget(url);
     for attempt in 0..2 {
         match curl_bytes(
             HttpMethod::Get,
@@ -195,17 +174,15 @@ pub fn http_get_json(url: &str) -> Option<String> {
 /// callers can branch on 200 vs 4xx/5xx. **No retry** — scrobbles must not
 /// double-post; signature is the caller's responsibility.
 pub fn http_post_form(url: &str, form_body: &str) -> Result<u16, String> {
-    curl_bytes(
-        HttpMethod::Post,
-        url,
-        &RequestHeaders::default(),
+    http_post_form_response(url, form_body).map(|response| response.status)
+}
+
+/// Complete bounded response. Providers may reject an operation in the body of
+/// an HTTP 200 response; callers must inspect that semantic result. No retries.
+pub fn http_post_form_response(url: &str, form_body: &str) -> Result<HttpResponseBytes, String> {
+    curl_bytes(HttpMethod::Post, url, &RequestHeaders::default(),
         &[("Content-Type", "application/x-www-form-urlencoded")],
-        Some(form_body.as_bytes()),
-        1024 * 1024,
-        Duration::from_secs(TIMEOUT_SECS),
-        false,
-    )
-    .map(|resp| resp.status)
+        Some(form_body.as_bytes()), 1024 * 1024, Duration::from_secs(TIMEOUT_SECS), false)
 }
 
 /// JSON POST + optional auth header (e.g. `("Authorization", "Token xyz")`
@@ -451,7 +428,7 @@ fn http_get_text_with_headers(
     timeout: Duration,
     follow_redirects: bool,
 ) -> Option<String> {
-    let url_log = RedactedUrl(url);
+    let url_log = MediaLogTarget(url);
     for attempt in 0..2 {
         match curl_bytes(
             HttpMethod::Get,
@@ -496,203 +473,109 @@ fn http_get_text_with_headers(
     None
 }
 
-fn curl_bytes(
-    method: HttpMethod,
-    url: &str,
-    headers: &RequestHeaders<'_>,
-    extra_headers: &[(&str, &str)],
-    body: Option<&[u8]>,
-    max_bytes: u64,
-    timeout: Duration,
-    follow_redirects: bool,
-) -> Result<HttpResponseBytes, String> {
-    let mut child = spawn_curl(
-        method,
-        url,
-        headers,
-        extra_headers,
-        body,
-        timeout,
-        follow_redirects,
-    )?;
-    if let Some(body) = body {
-        write_request_body(&mut child, body)?;
-    }
-    let mut stdout = child
-        .stdout
-        .take()
-        .ok_or_else(|| "curl stdout unavailable".to_owned())?;
-    let parsed_headers = read_final_headers(&mut stdout, follow_redirects)?;
-    let bytes = match read_capped(&mut stdout, max_bytes) {
-        Ok(bytes) => bytes,
-        Err(error) => {
-            let _ = child.kill();
-            let _ = child.wait();
-            return Err(error);
-        }
-    };
-    wait_for_success(child)?;
-    Ok(HttpResponseBytes {
-        status: parsed_headers.status,
-        final_url: url.to_owned(),
-        content_type: parsed_headers.content_type,
-        bytes,
-    })
+fn curl_bytes(method: HttpMethod, url: &str, headers: &RequestHeaders<'_>, extra_headers: &[(&str, &str)],
+    body: Option<&[u8]>, max_bytes: u64, timeout: Duration, follow_redirects: bool) -> Result<HttpResponseBytes, String> {
+    let mut response = curl_stream(method, url, headers, extra_headers, body, timeout, follow_redirects)?;
+    let bytes = read_capped(response.reader.as_mut(), max_bytes)?;
+    Ok(HttpResponseBytes { status: response.status, final_url: response.final_url, content_type: response.content_type, bytes })
 }
 
-fn curl_stream(
-    method: HttpMethod,
-    url: &str,
-    headers: &RequestHeaders<'_>,
-    extra_headers: &[(&str, &str)],
-    body: Option<&[u8]>,
-    timeout: Duration,
-    follow_redirects: bool,
-) -> Result<HttpStreamResponse, String> {
-    let mut child = spawn_curl(
-        method,
-        url,
-        headers,
-        extra_headers,
-        body,
-        timeout,
-        follow_redirects,
-    )?;
-    if let Some(body) = body {
-        write_request_body(&mut child, body)?;
-    }
-    let mut stdout = child
-        .stdout
-        .take()
-        .ok_or_else(|| "curl stdout unavailable".to_owned())?;
-    let parsed_headers = match read_final_headers(&mut stdout, follow_redirects) {
-        Ok(headers) => headers,
-        Err(error) => {
-            let _ = child.kill();
-            let _ = child.wait();
-            return Err(error);
-        }
-    };
-    Ok(HttpStreamResponse {
-        status: parsed_headers.status,
-        final_url: url.to_owned(),
-        content_type: parsed_headers.content_type,
-        content_length: parsed_headers.content_length,
-        reader: Box::new(CurlBodyReader {
-            child,
-            buffered: Cursor::new(Vec::new()),
-            stdout,
-        }),
-    })
-}
-
-fn spawn_curl(
-    method: HttpMethod,
-    url: &str,
-    headers: &RequestHeaders<'_>,
-    extra_headers: &[(&str, &str)],
-    body: Option<&[u8]>,
-    timeout: Duration,
-    follow_redirects: bool,
-) -> Result<Child, String> {
+fn curl_stream(method: HttpMethod, url: &str, headers: &RequestHeaders<'_>, extra_headers: &[(&str, &str)],
+    body: Option<&[u8]>, timeout: Duration, follow_redirects: bool) -> Result<HttpStreamResponse, String> {
     validate_url(url)?;
-    let mut command = base_curl(timeout, headers.user_agent);
-    command
-        .arg("--request")
-        .arg(match method {
-            HttpMethod::Get => "GET",
-            HttpMethod::Post => "POST",
-        })
-        .arg("--include");
-    if follow_redirects {
-        command
-            .arg("--location")
-            .arg("--max-redirs")
-            .arg(DEFAULT_MAX_REDIRECTS.to_string());
-    }
-    for (name, value) in headers.pairs() {
-        push_header_arg(&mut command, name, value)?;
-    }
-    for (name, value) in extra_headers.iter().copied() {
-        if !value.is_empty() {
-            push_header_arg(&mut command, name, value)?;
-        }
-    }
-    if body.is_some() {
-        command.arg("--data-binary").arg("@-").stdin(Stdio::piped());
-    }
-    command
-        .arg("--url")
-        .arg(url)
-        .stdout(Stdio::piped())
-        .spawn()
-        .map_err(|e| format!("spawn curl: {e}"))
+    if timeout.is_zero() || timeout > Duration::from_secs(7200) { return Err("Invalid HTTP timeout".into()); }
+    // Custom headers may contain provider-specific secrets curl cannot recognize.
+    // Do not forward them (or a private Referer) to an automatically redirected host.
+    let follow = follow_redirects && headers.referer.is_empty() && extra_headers.iter().all(|(name, value)| {
+        // These are fixed public negotiation headers used by metadata callers;
+        // unknown/custom headers stay on the original host.
+        name.eq_ignore_ascii_case("Accept") && matches!(*value, "application/json" | "text/html" | "*/*")
+    });
+    let config = request_config(method, url, headers, extra_headers, body)?;
+    let mut command = base_curl(timeout);
+    command.args(["--include", "--suppress-connect-headers"]);
+    if follow { command.args(["--location", "--max-redirs", &DEFAULT_MAX_REDIRECTS.to_string()]); }
+    command.args(["--proto-redir", if url.get(..6).is_some_and(|v| v.eq_ignore_ascii_case("https:")) { "=https" } else { "=http,https" }]);
+    let transport = transport::Transport::new(command, config.as_bytes(), timeout).map_err(|e| e.to_string())?;
+    // This SAME reader goes into the response: any prefetched body bytes survive
+    // header parsing. EOF verifies the child exit status, not just pipe closure.
+    let mut reader = BufReader::new(transport);
+    let parsed = read_final_headers(&mut reader, follow)?;
+    Ok(HttpStreamResponse {
+        status: parsed.status, final_url: url.to_owned(), content_type: parsed.content_type,
+        content_length: parsed.content_length, reader: Box::new(reader),
+    })
 }
-
-fn base_curl(timeout: Duration, user_agent: &str) -> Command {
+fn base_curl(timeout: Duration) -> Command {
     let mut command = Command::new(CURL);
-    command
-        .arg("--silent")
-        .arg("--show-error")
-        .arg("--connect-timeout")
-        .arg(FAST_TIMEOUT_SECS.to_string())
-        .arg("--max-time")
-        .arg(timeout.as_secs_f64().to_string())
-        .arg("--user-agent")
-        .arg(if user_agent.is_empty() {
-            USER_AGENT
-        } else {
-            user_agent
-        })
-        .stdin(Stdio::null())
-        .stderr(Stdio::null());
+    // --disable MUST be the first parameter. All untrusted values go through
+    // stdin configuration; none are command-line arguments or environment values.
+    command.args(["--disable", "--silent", "--show-error", "--globoff", "--proto", "=http,https",
+        "--connect-timeout", &timeout.as_secs_f64().min(5.0).to_string(),
+        "--max-time", &timeout.as_secs_f64().to_string(), "--config", "-"])
+        .stdin(Stdio::piped()).stdout(Stdio::piped()).stderr(Stdio::null());
     command
 }
-
+const MAX_REQUEST_CONFIG: usize = 2 * 1024 * 1024;
+fn config_value(config: &mut String, name: &str, value: &str) -> Result<(), String> {
+    if value.len() > MAX_REQUEST_CONFIG || value.contains('\0') { return Err("Invalid or excessive curl configuration value".into()); }
+    config.push_str(name); config.push_str(" = \"");
+    for ch in value.chars() {
+        match ch { '\\' => config.push_str("\\\\"), '"' => config.push_str("\\\""), '\r' => config.push_str("\\r"),
+            '\n' => config.push_str("\\n"), '\t' => config.push_str("\\t"), '\u{000b}' => config.push_str("\\v"), other => config.push(other) }
+        if config.len() > MAX_REQUEST_CONFIG { return Err("Curl configuration exceeds its limit".into()); }
+    }
+    config.push_str("\"\n");
+    if config.len() > MAX_REQUEST_CONFIG { return Err("Curl configuration exceeds its limit".into()); }
+    Ok(())
+}
+fn request_config(method: HttpMethod, url: &str, headers: &RequestHeaders<'_>, extra: &[(&str, &str)], body: Option<&[u8]>) -> Result<String, String> {
+    let mut config = String::new();
+    config_value(&mut config, "url", url)?;
+    config_value(&mut config, "request", match method { HttpMethod::Get => "GET", HttpMethod::Post => "POST" })?;
+    let user_agent = if headers.user_agent.is_empty() { USER_AGENT } else { headers.user_agent };
+    validate_header_value(user_agent)?;
+    config_value(&mut config, "user-agent", user_agent)?;
+    for (name, value) in headers.pairs().into_iter().chain(extra.iter().copied()) {
+        if value.is_empty() { continue; }
+        validate_header_name(name)?; validate_header_value(value)?;
+        config_value(&mut config, "header", &format!("{name}: {value}"))?;
+    }
+    if let Some(body) = body {
+        // Public POST methods accept JSON/form text, not arbitrary binary files.
+        let text = std::str::from_utf8(body).map_err(|_| "POST text is not UTF-8")?;
+        config_value(&mut config, "data-raw", text)?;
+    }
+    Ok(config)
+}
 fn validate_url(url: &str) -> Result<(), String> {
-    if url.contains('\0') {
-        return Err("URL contains a NUL byte".to_owned());
+    if url.len() > 65536 || url.chars().any(|ch| ch.is_control() || ch.is_whitespace()) { return Err("Invalid HTTP URL".into()); }
+    let (scheme, authority) = url.split_once("://").ok_or("HTTP URL requires a scheme and authority")?;
+    if !(scheme.eq_ignore_ascii_case("https") || scheme.eq_ignore_ascii_case("http")) || authority.is_empty() || authority.starts_with('/') {
+        return Err("Only HTTP and HTTPS URLs are supported".into());
     }
     Ok(())
 }
-
-fn push_header_arg(command: &mut Command, name: &str, value: &str) -> Result<(), String> {
-    validate_header_name(name)?;
-    validate_header_value(value)?;
-    command.arg("--header").arg(format!("{name}: {value}"));
-    Ok(())
-}
-
-fn validate_header_name(value: &str) -> Result<(), String> {
-    if value.is_empty() || value.contains(':') || value.contains('\r') || value.contains('\n') {
-        return Err("HTTP header name is invalid".to_owned());
+fn validate_header_name(name: &str) -> Result<(), String> {
+    if name.is_empty() || name.len() > 256 || !name.bytes().all(|b| b.is_ascii_alphanumeric() || b"!#$%&'*+-.^_`|~".contains(&b)) {
+        return Err("HTTP header name is invalid".into());
     }
     Ok(())
 }
-
 fn validate_header_value(value: &str) -> Result<(), String> {
-    if value.contains('\r') || value.contains('\n') {
-        return Err("HTTP header contains a newline".to_owned());
-    }
+    if value.len() > 65536 || value.chars().any(|ch| ch.is_control() && ch != '\t') { return Err("HTTP header value is invalid".into()); }
     Ok(())
-}
-
-fn write_request_body(child: &mut Child, body: &[u8]) -> Result<(), String> {
-    let mut stdin = child
-        .stdin
-        .take()
-        .ok_or_else(|| "curl stdin unavailable".to_owned())?;
-    stdin
-        .write_all(body)
-        .map_err(|e| format!("write curl stdin: {e}"))
 }
 
 fn read_final_headers(
-    stdout: &mut ChildStdout,
+    stdout: &mut impl Read,
     follow_redirects: bool,
 ) -> Result<CurlHeaders, String> {
-    loop {
+    let mut total = 0_usize;
+    for _ in 0..=usize::from(DEFAULT_MAX_REDIRECTS) + 8 {
         let headers = read_one_header_block(stdout)?;
+        total += headers.len();
+        if total > MAX_HEADER_BYTES { return Err("HTTP headers exceeded total byte limit".into()); }
         let status = parse_status(&headers)?;
         let location = parse_header_value(&headers, "location");
         if (100..200).contains(&status)
@@ -709,9 +592,10 @@ fn read_final_headers(
             content_length,
         });
     }
+    Err("Too many HTTP header blocks".into())
 }
 
-fn read_one_header_block(stdout: &mut ChildStdout) -> Result<Vec<u8>, String> {
+fn read_one_header_block(stdout: &mut impl Read) -> Result<Vec<u8>, String> {
     let mut headers = Vec::new();
     let mut byte = [0_u8; 1];
     while headers.len() <= MAX_HEADER_BYTES {
@@ -753,8 +637,11 @@ fn parse_header_value(headers: &[u8], name: &str) -> Option<String> {
 }
 
 fn read_capped(reader: &mut dyn Read, max_bytes: u64) -> Result<Vec<u8>, String> {
+    // Use copy_stream_with_progress for larger downloads instead of allocating
+    // arbitrary user-controlled caps in memory.
+    if max_bytes > 64 * 1024 * 1024 { return Err("Buffered HTTP limit exceeds 64 MiB; use streaming copy".into()); }
     let mut body = Vec::new();
-    let mut limited = reader.take(max_bytes + 1);
+    let mut limited = reader.take(max_bytes.saturating_add(1));
     limited
         .read_to_end(&mut body)
         .map_err(|e| format!("read curl body: {e}"))?;
@@ -762,17 +649,6 @@ fn read_capped(reader: &mut dyn Read, max_bytes: u64) -> Result<Vec<u8>, String>
         return Err(format!("response body exceeded {max_bytes} bytes cap"));
     }
     Ok(body)
-}
-
-fn wait_for_success(mut child: Child) -> Result<(), String> {
-    let status = child.wait().map_err(|e| format!("wait curl: {e}"))?;
-    if status.success() {
-        Ok(())
-    } else if let Some(code) = status.code() {
-        Err(format!("curl exited with code {code}"))
-    } else {
-        Err(format!("curl exited with status {status}"))
-    }
 }
 
 #[cfg(test)]
@@ -857,16 +733,12 @@ mod tests {
 
     #[test]
     fn rejects_header_newlines() {
-        let mut command = Command::new(CURL);
-        assert!(
-            push_header_arg(&mut command, "Authorization", "Bearer ok\nInjected: yes").is_err()
-        );
+        assert!(validate_header_value("Bearer ok\nInjected: yes").is_err());
     }
 
     #[test]
     fn rejects_invalid_header_name() {
-        let mut command = Command::new(CURL);
-        assert!(push_header_arg(&mut command, "Bad:Header", "value").is_err());
+        assert!(validate_header_name("Bad:Header").is_err());
     }
 
     #[test]
@@ -887,5 +759,32 @@ mod tests {
             parse_header_value(headers, "content-length"),
             Some("42".to_owned())
         );
+    }
+}
+
+#[cfg(test)]
+mod transport_contract_tests {
+    use super::*;
+    #[test]
+    fn config_keeps_secrets_off_argv_and_treats_at_sign_literally() {
+        let config = request_config(HttpMethod::Post, "https://example.invalid/?token=secret", &RequestHeaders::default(),
+            &[("Authorization", "Bearer secret")], Some(b"@file\nquoted\"\\value")).unwrap();
+        assert!(config.contains("data-raw = \"@file\\nquoted\\\"\\\\value\""));
+        let args: Vec<_> = base_curl(Duration::from_secs(10)).get_args().map(|s| s.to_string_lossy().into_owned()).collect();
+        assert_eq!(args[0], "--disable");
+        assert!(!args.iter().any(|arg| arg.contains("secret")));
+    }
+    #[test]
+    fn buffered_header_parser_preserves_prefetched_body() {
+        let bytes = b"HTTP/1.1 200 OK\r\nContent-Length: 4\r\n\r\nbody";
+        let mut reader = BufReader::new(std::io::Cursor::new(bytes));
+        assert_eq!(read_final_headers(&mut reader, false).unwrap().status, 200);
+        assert_eq!(read_capped(&mut reader, 4).unwrap(), b"body");
+    }
+    #[test]
+    fn invalid_headers_and_unbounded_caps_are_rejected() {
+        assert!(validate_header_name("Bad:Name").is_err());
+        assert!(validate_header_value("bad\0value").is_err());
+        assert!(read_capped(&mut std::io::Cursor::new([]), u64::MAX).is_err());
     }
 }
