@@ -10,8 +10,7 @@ pub fn get_most_played(conn: &Connection, limit: u32) -> crate::Result<Vec<Track
     let mut stmt = conn.prepare(&sql)?;
     let tracks = stmt
         .query_map(params![limit], row_to_track)?
-        .filter_map(std::result::Result::ok)
-        .collect();
+        .collect::<rusqlite::Result<Vec<_>>>()?;
     Ok(tracks)
 }
 
@@ -20,8 +19,7 @@ pub fn get_recently_added(conn: &Connection, limit: u32) -> crate::Result<Vec<Tr
     let mut stmt = conn.prepare(&sql)?;
     let tracks = stmt
         .query_map(params![limit], row_to_track)?
-        .filter_map(std::result::Result::ok)
-        .collect();
+        .collect::<rusqlite::Result<Vec<_>>>()?;
     Ok(tracks)
 }
 
@@ -31,8 +29,7 @@ pub fn get_never_played(conn: &Connection, limit: u32) -> crate::Result<Vec<Trac
     let mut stmt = conn.prepare(&sql)?;
     let tracks = stmt
         .query_map(params![limit], row_to_track)?
-        .filter_map(std::result::Result::ok)
-        .collect();
+        .collect::<rusqlite::Result<Vec<_>>>()?;
     Ok(tracks)
 }
 

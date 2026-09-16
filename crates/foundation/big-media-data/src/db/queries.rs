@@ -1,7 +1,7 @@
 //! Database query functions — CRUD operations for tracks, playlists,
 //! watch folders, smart playlists, and play history.
 
-use rusqlite::{Connection, Row, params};
+use rusqlite::{Connection, Row, OptionalExtension, params};
 
 use super::models::{Playlist, Track, WatchFolder};
 
@@ -146,7 +146,7 @@ pub fn delete_track(conn: &Connection, track_id: i64) -> crate::Result<()> {
 pub fn get_track_by_path(conn: &Connection, path: &str) -> crate::Result<Option<Track>> {
     let sql = format!("SELECT {TRACK_COLUMNS} FROM tracks WHERE file_path = ?1");
     let mut stmt = conn.prepare(&sql)?;
-    let track = stmt.query_row([path], row_to_track).ok();
+    let track = stmt.query_row([path], row_to_track).optional()?;
     Ok(track)
 }
 
@@ -324,8 +324,7 @@ pub fn get_playlist_tracks(conn: &Connection, playlist_id: i64) -> crate::Result
     let mut stmt = conn.prepare(&sql)?;
     let tracks = stmt
         .query_map(params![playlist_id], row_to_track)?
-        .filter_map(std::result::Result::ok)
-        .collect();
+        .collect::<rusqlite::Result<Vec<_>>>()?;
     Ok(tracks)
 }
 

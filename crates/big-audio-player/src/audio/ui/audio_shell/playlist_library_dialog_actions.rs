@@ -9,18 +9,18 @@ impl AudioShell {
         spawn_db_query(
             db,
             move |conn| {
-                queries::get_all_playlists(conn)
-                    .unwrap_or_default()
-                    .into_iter()
-                    .map(|playlist| {
-                        let (count, dur) =
-                            queries::get_playlist_stats(conn, playlist.id).unwrap_or((0, 0.0));
-                        (playlist.id, playlist.name, count, dur)
-                    })
-                    .collect::<Vec<_>>()
+                let playlists = queries::get_all_playlists(conn)?;
+                playlists.into_iter().map(|playlist| {
+                    let (count, dur) = queries::get_playlist_stats(conn, playlist.id)?;
+                    Ok((playlist.id, playlist.name, count, dur))
+                }).collect::<big_media_runtime::Result<Vec<_>>>()
             },
-            move |entries| {
-                let _ = input.send(AudioShellInput::ManagePlaylistsResolved(entries));
+            move |result| {
+                let message = match result {
+                    Ok(entries) => AudioShellInput::ManagePlaylistsResolved(entries),
+                    Err(_) => AudioShellInput::PlaylistReadFailed,
+                };
+                let _ = input.send(message);
             },
         );
     }
@@ -34,9 +34,13 @@ impl AudioShell {
         let input = sender.input_sender().clone();
         spawn_db_query(
             db,
-            move |conn| queries::get_playlist_tracks(conn, id).unwrap_or_default(),
-            move |tracks| {
-                let _ = input.send(AudioShellInput::PlaylistTracksForQueue(tracks));
+            move |conn| queries::get_playlist_tracks(conn, id),
+            move |result| {
+                let message = match result {
+                    Ok(tracks) => AudioShellInput::PlaylistTracksForQueue(tracks),
+                    Err(_) => AudioShellInput::PlaylistReadFailed,
+                };
+                let _ = input.send(message);
             },
         );
     }
@@ -79,13 +83,17 @@ impl AudioShell {
         spawn_db_query(
             db,
             move |conn| match kind.as_str() {
-                "most-played" => queries::get_most_played(conn, 100).unwrap_or_default(),
-                "recently-added" => queries::get_recently_added(conn, 100).unwrap_or_default(),
-                "never-played" => queries::get_never_played(conn, 100).unwrap_or_default(),
-                _ => Vec::new(),
+                "most-played" => queries::get_most_played(conn, 100),
+                "recently-added" => queries::get_recently_added(conn, 100),
+                "never-played" => queries::get_never_played(conn, 100),
+                _ => Err(big_media_runtime::Error::invalid_argument("playlist", "Unknown smart playlist")),
             },
-            move |tracks| {
-                let _ = input.send(AudioShellInput::PlaylistTracksForQueue(tracks));
+            move |result| {
+                let message = match result {
+                    Ok(tracks) => AudioShellInput::PlaylistTracksForQueue(tracks),
+                    Err(_) => AudioShellInput::PlaylistReadFailed,
+                };
+                let _ = input.send(message);
             },
         );
     }
@@ -102,94 +110,75 @@ impl AudioShell {
         );
     }
 
-    /// Parse + save every playlist file in `folder` (off-thread).
-    pub(super) fn import_playlist_folder_db(
-        &self,
-        folder: PathBuf,
-        sender: &ComponentSender<Self>,
-    ) {
-        let Some(db) = self.db.clone() else {
-            return;
-        };
-        let input = sender.input_sender().clone();
-        spawn_db_query(
-            db,
-            move |conn| {
-                let Ok(entries) = std::fs::read_dir(&folder) else {
-                    return 0_usize;
-                };
-                let mut total = 0_usize;
-                for entry in entries.flatten() {
-                    let path = entry.path();
-                    let is_playlist = path.extension().and_then(|e| e.to_str()).is_some_and(|e| {
-                        matches!(e.to_ascii_lowercase().as_str(), "m3u" | "m3u8" | "pls")
-                    });
-                    if !is_playlist {
-                        continue;
-                    }
-                    let ids: Vec<i64> = playlist_import::parse_playlist_file_for_import(&path)
-                        .iter()
-                        .filter_map(|p| queries::get_track_by_path(conn, p).ok().flatten())
-                        .map(|t| t.id)
-                        .collect();
-                    if ids.is_empty() {
-                        continue;
-                    }
-                    let name = path.file_stem().map_or_else(
-                        || "Imported".to_string(),
-                        |s| s.to_string_lossy().into_owned(),
-                    );
-                    if let Ok(playlist_id) = queries::create_playlist(conn, &name) {
-                        for id in &ids {
-                            let _ = queries::add_track_to_playlist(conn, playlist_id, *id);
-                        }
-                        total += ids.len();
-                    }
+    /// Import one bounded file at a time; parse outside the DB lock. Each
+    /// playlist is committed atomically, and later failure preserves prior ones.
+    pub(super) fn import_playlist_folder_db(&self,folder:PathBuf,sender:&ComponentSender<Self>) {
+        let Some(db)=self.db.clone()else{return;};let input=sender.input_sender().clone();
+        crate::settings::acknowledged_task(false,move || {
+            let mut paths=Vec::new();
+            for (index,entry) in std::fs::read_dir(folder)?.enumerate(){
+                if index>=4096{return Err(std::io::Error::other(i18n("Too many entries in the chosen folder")));}
+                let path=entry?.path();
+                if path.extension().and_then(|e|e.to_str()).is_some_and(|e|matches!(e.to_ascii_lowercase().as_str(),"m3u"|"m3u8"|"pls")){
+                    paths.push(path);
+                    if paths.len()>100{return Err(std::io::Error::other(i18n("Choose at most 100 playlist files per import")));}
                 }
-                total
-            },
-            move |total| {
-                let _ = input.send(AudioShellInput::PlaylistImported(total));
-            },
-        );
+            }
+            paths.sort();let mut total=0usize;
+            for path in paths {
+                let name=path.file_stem().and_then(|s|s.to_str()).unwrap_or("Imported");
+                match import_one_playlist(&db,&path,name,100_000-total){
+                    Ok(added)=>total+=added,
+                    Err(_)=>return Err(std::io::Error::other(format!("{}: {total}",i18n("Import stopped. Confirmed tracks were kept")))),
+                }
+            }
+            Ok(total)
+        },move |result|{let _=input.send(AudioShellInput::PlaylistImported(result.map_err(|e|e.to_string())));});
     }
 
-    /// Export every saved playlist as `<name>.m3u8` into a chosen folder.
+    /// Export private snapshots on the persistence worker. Publication never
+    /// replaces an existing document; a partial set is reported and retained.
     pub(super) fn export_all_playlists(&self) {
-        let Some(db) = self.db_read.clone().or_else(|| self.db.clone()) else {
-            return;
-        };
-        let parent = self.window();
-        FilePicker::open_folder(i18n("Export All Playlists")).select_folder_optional(
-            parent.as_ref(),
-            move |folder| {
-                spawn_db_query(
-                    db,
-                    move |conn| {
-                        let playlists = queries::get_all_playlists(conn).unwrap_or_default();
-                        for playlist in playlists {
-                            let tracks =
-                                queries::get_playlist_tracks(conn, playlist.id).unwrap_or_default();
-                            if tracks.is_empty() {
-                                continue;
-                            }
-                            let file = folder.join(format!(
-                                "{}.m3u8",
-                                big_app_kit::files::sanitize_filename_stem_preserve_unicode(
-                                    &playlist.name,
-                                    "playlist",
-                                )
-                            ));
-                            let _ = std::fs::write(
-                                &file,
-                                crate::audio::ui::library_io::render_m3u8(&tracks),
-                            );
-                        }
-                    },
-                    move |()| {},
-                );
-            },
-        );
+        let Some(db) = self.db_read.clone().or_else(|| self.db.clone()) else { return; };
+        let parent = self.window(); let weak_parent = parent.as_ref().map(|window| window.downgrade());
+        FilePicker::open_folder(i18n("Export All Playlists")).select_folder_optional(parent.as_ref(), move |folder| {
+            crate::settings::acknowledged_task(false, move || {
+                let playlists = {
+                    let conn = db.lock().map_err(|_| std::io::Error::other("Library unavailable"))?;
+                    let mut statement = conn.prepare("SELECT id,name FROM playlists ORDER BY id LIMIT 1001").map_err(std::io::Error::other)?;
+                    let rows = statement.query_map([], |row| Ok((row.get::<_, i64>(0)?, row.get::<_, String>(1)?))).map_err(std::io::Error::other)?;
+                    rows.collect::<rusqlite::Result<Vec<_>>>().map_err(std::io::Error::other)?
+                };
+                if playlists.len() > 1000 { return Err(std::io::Error::other(i18n("Too many playlists for one export"))); }
+                let mut published = 0;
+                for (id, name) in playlists {
+                    let result = (|| -> std::io::Result<()> {
+                        let items = {
+                            let conn = db.lock().map_err(|_| std::io::Error::other("Library unavailable"))?;
+                            let tracks = queries::get_playlist_tracks(&conn, id).map_err(std::io::Error::other)?;
+                            tracks.into_iter().map(|track| track.file_path).collect::<Vec<_>>()
+                        };
+                        let name = big_app_kit::files::sanitize_filename_stem_preserve_unicode(&name, "playlist");
+                        // ID disambiguates equal/sanitized names without overwriting.
+                        let target = folder.join(format!("{name}-{id}.m3u8"));
+                        crate::media::playlist_scan::write_m3u(&target, &items).map_err(std::io::Error::other)
+                    })();
+                    if result.is_err() {
+                        return Err(std::io::Error::other(format!("{}: {published}",i18n("Export stopped. Confirmed outputs were kept"))));
+                    }
+                    published += 1;
+                }
+                Ok(published)
+            }, move |result| {
+                let Some(parent) = weak_parent.as_ref().and_then(glib::WeakRef::upgrade) else { return; };
+                let body = match result {
+                    Ok(count) => format!("{}: {count}", i18n("Playlists exported")),
+                    Err(error) => format!("{} {error}", i18n("Export was not fully completed. Published files were kept; choose an empty destination and try again.")),
+                };
+                let dialog = adw::AlertDialog::builder().heading(i18n("Playlist export")).body(body).build();
+                dialog.add_response("close", &i18n("Close")); dialog.present(Some(&parent));
+            });
+        });
     }
 
     /// Persist a playlist rename, then refresh the playlist dialog.
@@ -198,40 +187,33 @@ impl AudioShell {
             let input = sender.input_sender().clone();
             spawn_db_query(
                 db,
-                move |conn| {
-                    let _ = queries::rename_playlist(conn, id, &name);
-                },
-                move |()| {
-                    let _ = input.send(AudioShellInput::RefreshPlaylists);
-                },
+                move |conn| queries::rename_playlist(conn, id, &name).is_ok(),
+                move |success| { let _ = input.send(AudioShellInput::PlaylistMutationFinished(success)); },
             );
         }
     }
 
-    /// Export a playlist to an `.m3u8` file chosen by the user.
+    /// Export with an acknowledged disk task; read failures never become an
+    /// empty successful playlist, and a chosen existing document stays intact.
     pub(super) fn export_playlist(&self, id: i64) {
-        let Some(db) = self.db_read.clone().or_else(|| self.db.clone()) else {
-            return;
-        };
-        let parent = self.window();
-        spawn_db_query(
-            db,
-            move |conn| queries::get_playlist_tracks(conn, id).unwrap_or_default(),
-            move |tracks| {
-                if tracks.is_empty() {
-                    return;
-                }
-                FilePicker::save_file(i18n("Export Playlist"))
-                    .initial_name("playlist.m3u8")
-                    .filter(&i18n("M3U8 Playlist"), &["m3u8", "m3u"])
-                    .save_optional(parent.as_ref(), move |path| {
-                        let _ = std::fs::write(
-                            &path,
-                            crate::audio::ui::library_io::render_m3u8(&tracks),
-                        );
-                    });
-            },
-        );
+        let Some(db) = self.db_read.clone().or_else(|| self.db.clone()) else { return; };
+        let parent = self.window(); let weak_parent = parent.as_ref().map(|window| window.downgrade());
+        FilePicker::save_file(i18n("Export Playlist")).initial_name("playlist.m3u8")
+            .filter(&i18n("M3U8 Playlist"), &["m3u8", "m3u"]).save_optional(parent.as_ref(), move |path| {
+                crate::settings::acknowledged_task(false, move || {
+                    let items = {
+                        let conn = db.lock().map_err(|_| std::io::Error::other("Library unavailable"))?;
+                        queries::get_playlist_tracks(&conn, id).map_err(std::io::Error::other)?
+                            .into_iter().map(|track| track.file_path).collect::<Vec<_>>()
+                    };
+                    crate::media::playlist_scan::write_m3u(&path, &items).map_err(std::io::Error::other)
+                }, move |result| {
+                    let Some(parent) = weak_parent.as_ref().and_then(glib::WeakRef::upgrade) else { return; };
+                    let text = i18n(if result.is_ok() { "Playlist exported." } else { "The playlist was not exported. Check storage or choose a new filename; existing files were not replaced." });
+                    let dialog = adw::AlertDialog::builder().heading(i18n("Playlist export")).body(text).build();
+                    dialog.add_response("close", &i18n("Close")); dialog.present(Some(&parent));
+                });
+            });
     }
 
     /// Import a playlist file → resolve its paths → save as a new playlist.
@@ -244,44 +226,41 @@ impl AudioShell {
                     || "Imported".to_string(),
                     |s| s.to_string_lossy().into_owned(),
                 );
-                let path = path.to_string_lossy().into_owned();
                 let _ = input.send(AudioShellInput::ImportPlaylistFile { path, name });
             });
     }
 
-    /// Parse an imported playlist file, match its entries to library tracks, and
-    /// save them as a new playlist. Reports how many tracks were added.
-    pub(super) fn import_playlist_file(
-        &self,
-        path: String,
-        name: String,
-        sender: &ComponentSender<Self>,
-    ) {
-        let Some(db) = self.db.clone() else {
-            return;
-        };
-        let input = sender.input_sender().clone();
-        spawn_db_query(
-            db,
-            move |conn| {
-                let paths = playlist_import::parse_playlist_file_for_import(Path::new(&path));
-                let ids: Vec<i64> = paths
-                    .iter()
-                    .filter_map(|p| queries::get_track_by_path(conn, p).ok().flatten())
-                    .map(|t| t.id)
-                    .collect();
-                if !ids.is_empty()
-                    && let Ok(playlist_id) = queries::create_playlist(conn, &name)
-                {
-                    for id in &ids {
-                        let _ = queries::add_track_to_playlist(conn, playlist_id, *id);
-                    }
-                }
-                ids.len()
-            },
-            move |added| {
-                let _ = input.send(AudioShellInput::PlaylistImported(added));
-            },
-        );
+    /// Parse outside the database lock; report only an acknowledged transaction.
+    pub(super) fn import_playlist_file(&self,path:PathBuf,name:String,sender:&ComponentSender<Self>) {
+        let Some(db)=self.db.clone()else{return;};let input=sender.input_sender().clone();
+        crate::settings::acknowledged_task(false,move||import_one_playlist(&db,&path,&name,100_000),move|result|{
+            let _=input.send(AudioShellInput::PlaylistImported(result.map_err(|e|e.to_string())));
+        });
     }
+}
+
+fn import_one_playlist(db:&DbHandle,path:&Path,name:&str,remaining:usize)->std::io::Result<usize> {
+    if name.is_empty()||name.len()>1024||name.chars().any(char::is_control){return Err(std::io::Error::other("Invalid playlist name"));}
+    let paths=playlist_import::parse_playlist_file_for_import(path)?;
+    if paths.len()>remaining{return Err(std::io::Error::other(i18n("The batch import limit was reached. Split the playlists into smaller imports.")));}
+    // Short lock wait, never a GUI lock. Busy databases produce a retryable
+    // error instead of holding up all later saves indefinitely.
+    let until=std::time::Instant::now()+std::time::Duration::from_secs(2);
+    let conn=loop {
+        match db.try_lock(){
+            Ok(conn)=>break conn,
+            Err(std::sync::TryLockError::Poisoned(_))=>return Err(std::io::Error::other("Library unavailable")),
+            Err(std::sync::TryLockError::WouldBlock)=>{
+                if std::time::Instant::now()>=until{return Err(std::io::Error::new(std::io::ErrorKind::WouldBlock,"Library busy; retry import"));}
+                std::thread::sleep(std::time::Duration::from_millis(5));
+            }
+        }
+    };
+    let mut ids=Vec::new();
+    for path in paths {
+        if let Some(track)=queries::get_track_by_path(&conn,&path).map_err(std::io::Error::other)? {ids.push(track.id);}
+    }
+    if ids.is_empty(){return Ok(0);}
+    queries::create_playlist_with_tracks(&conn,name,&ids).map_err(std::io::Error::other)?;
+    Ok(ids.len())
 }
