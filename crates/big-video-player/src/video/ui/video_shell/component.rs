@@ -546,6 +546,7 @@ impl Component for VideoShell {
                 idle_bg,
                 buffering_overlay,
                 toast_overlay,
+                screenshot_owner: Arc::new(std::sync::atomic::AtomicBool::new(true)),
                 win_actions,
                 sleep_timer_source: None,
                 activity_paused_playback: Cell::new(false),
@@ -700,7 +701,8 @@ impl Component for VideoShell {
                         self.show_goto_time_dialog(root);
                     }
                 }
-                VideoShellInput::Screenshot => self.take_screenshot(),
+                VideoShellInput::Screenshot => self.take_screenshot(&sender),
+                VideoShellInput::ScreenshotQueueFailed => self.notify(&i18n("Screenshot failed")),
                 VideoShellInput::ShowChapters => {
                     if let Some(root) = window_ref {
                         self.show_chapters_dialog(root, &sender);
@@ -748,6 +750,7 @@ impl Drop for VideoShell {
         clear_shell_input(self.shell_input_token);
         // Abort any in-flight clip export so a closing window does not leave an
         // orphaned ffmpeg worker running.
+        self.screenshot_owner.store(false, std::sync::atomic::Ordering::Release);
         self.cancel_trim_export();
         if let Some(source) = self.sleep_timer_source.take() {
             source.remove();

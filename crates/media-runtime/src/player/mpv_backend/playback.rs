@@ -128,37 +128,23 @@ impl MpvBackend {
         }
     }
 
-    /// Capture a screenshot WITHOUT blocking the GTK main thread. The
-    /// synchronous `screenshot-to-file` command deadlocks under the libmpv
-    /// render API: it blocks the caller (and holds the client mutex) until mpv's
-    /// playloop completes the command, but the playloop needs the main thread to
-    /// run the render callback — so the main thread waits on mpv while mpv waits
-    /// on the main thread. `mpv_command_async` returns immediately and mpv writes
-    /// the file on its own thread. `mode`: `"subtitles"` | `"video"` | `"window"`.
-    pub fn screenshot_to_file_async(&self, path: &str, mode: &str) {
-        let (Ok(cmd), Ok(path_c), Ok(mode_c)) = (
-            CString::new("screenshot-to-file"),
-            CString::new(path),
-            CString::new(mode),
-        ) else {
-            return;
-        };
-        let mut args: Vec<*const std::os::raw::c_char> = vec![
-            cmd.as_ptr(),
-            path_c.as_ptr(),
-            mode_c.as_ptr(),
-            std::ptr::null(),
-        ];
-        // SAFETY: `mpv_command_async` is thread-safe on the same handle; raw_mpv_handle
-        // outlives this call (held by MpvBackend); the CStrings live until the
-        // call returns (mpv copies the argv strings).
-        unsafe {
-            mpv_sys::mpv_command_async(
-                self.raw_mpv_handle,
-                0, // reply_userdata=0 — reply is discarded.
-                args.as_mut_ptr(),
-            );
-        }
+    /// Queue a PNG screenshot into private staging. Call off the GTK thread:
+    /// staging setup performs filesystem I/O. The backend retains resources
+    /// through cancellation until a terminal receipt or native termination.
+    pub fn screenshot_to_file_async(
+        &self, target: &std::path::Path, alive: std::sync::Arc<std::sync::atomic::AtomicBool>,
+    ) -> std::io::Result<u64> {
+        let stage = big_os_kit::storage::StagedFile::new(target)?;
+        let command = CString::new("screenshot-to-file").expect("literal");
+        let path = CString::new(stage.path().to_str().ok_or_else(|| std::io::Error::other("screenshot path is not UTF-8"))?)?;
+        let mode = CString::new("video").expect("literal");
+        let mut args = [command.as_ptr(), path.as_ptr(), mode.as_ptr(), std::ptr::null()];
+        let id = self.screenshots.register(stage, target.to_path_buf(), alive)?;
+        let status = unsafe { mpv_sys::mpv_command_async(self.raw_mpv_handle, id, args.as_mut_ptr()) };
+        if status < 0 {
+            self.screenshots.rejected(id);
+            Err(std::io::Error::other(format!("screenshot command rejected: {status}")))
+        } else { Ok(id) }
     }
 
     pub fn playlist_next(&self) {

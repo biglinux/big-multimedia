@@ -106,37 +106,30 @@ impl VideoShell {
         dialog.present(Some(root));
     }
 
-    /// Capture the current frame to the XDG Pictures dir (home fallback) via the
-    /// NON-BLOCKING `screenshot_to_file_async`, then poll for the file on the main
-    /// loop and toast the result with an Open button. The synchronous command
-    /// froze the player under the libmpv render API (main-thread ⇄ mpv playloop
-    /// deadlock); the async fire + bounded poll keeps the UI responsive. No-op +
-    /// "failed" toast when nothing is playing.
-    pub(super) fn take_screenshot(&self) {
-        let mpv_ref = self.mpv_handle();
-        let mpv_borrow = mpv_ref.borrow();
-        let Some(mpv) = mpv_borrow.as_ref() else {
-            self.notify(&i18n("Screenshot failed"));
-            return;
+    /// Request off-thread staging; success is delivered by a terminal mpv reply.
+    pub(super) fn take_screenshot(&self, sender: &ComponentSender<Self>) {
+        let Some(mpv) = self.mpv_handle().borrow().as_ref().cloned() else {
+            self.notify(&i18n("Screenshot failed")); return;
         };
         if mpv.get_current_file().is_none() {
-            self.notify(&i18n("Screenshot failed"));
-            return;
+            self.notify(&i18n("Screenshot failed")); return;
         }
-
-        let dir = screenshot_dir();
-        let _ = std::fs::create_dir_all(&dir);
-        let title = mpv.get_media_title().unwrap_or_default();
-        let timestamp = glib::real_time() / 1_000_000; // µs → s
-        let path = dir.join(screenshot_filename(&title, timestamp));
-
-        // Fire async (mpv writes the file on its own thread); the path is
-        // app-derived (no untrusted input). "video" = the decoded frame without
-        // OSD/subtitles.
-        mpv.screenshot_to_file_async(&path.to_string_lossy(), "video");
-        drop(mpv_borrow);
-
-        schedule_screenshot_toast(self.toast_overlay().clone(), path);
+        let Some(directory) = dirs::picture_dir().or_else(dirs::home_dir) else {
+            self.notify(&i18n("Screenshot failed")); return;
+        };
+        // Metadata titles can contain secrets or exceed NAME_MAX. The public
+        // filename is deliberately independent of the media title/URL.
+        static SEQ: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(1);
+        let target = directory.join(format!("screenshot-{}-{}.png", glib::real_time(), SEQ.fetch_add(1, std::sync::atomic::Ordering::Relaxed)));
+        let alive = self.screenshot_owner.clone();
+        let input = sender.input_sender().clone();
+        glib::spawn_future_local(async move {
+            let result = gio::spawn_blocking(move || {
+                std::fs::create_dir_all(&directory)?;
+                mpv.screenshot_to_file_async(&target, alive)
+            }).await;
+            if !matches!(result, Ok(Ok(_))) { let _ = input.send(VideoShellInput::ScreenshotQueueFailed); }
+        });
     }
 
     /// Jump to chapter `idx` (from the chapter list dialog). Drives
@@ -427,54 +420,20 @@ fn chapter_title_with_prefix(raw: String, index: i64, chapter_prefix: &str) -> S
     }
 }
 
-/// Poll (bounded, on the main loop) for the async screenshot to land at `path`,
-/// then toast the outcome: "saved" with an Open button on success, "failed"
-/// after the timeout. Polling keeps the UI responsive — the capture itself runs
-/// off-thread inside mpv (see [`take_screenshot`]).
-fn schedule_screenshot_toast(overlay: adw::ToastOverlay, path: PathBuf) {
-    // ~120 ms × 25 = 3 s ceiling; mpv normally writes within a frame or two.
-    const POLL_MS: u64 = 120;
-    const MAX_ATTEMPTS: u32 = 25;
-    let attempts = Rc::new(Cell::new(0_u32));
-    glib::timeout_add_local(Duration::from_millis(POLL_MS), move || {
-        if path.exists() {
-            let name = path
-                .file_name()
-                .unwrap_or_default()
-                .to_string_lossy()
-                .into_owned();
-            let toast = adw::Toast::builder()
-                .title(format!("{}: {name}", i18n("Screenshot saved")))
-                .button_label(i18n("Open"))
-                .timeout(5)
-                .build();
-            let open_path = path.clone();
-            toast.connect_button_clicked(move |_| {
-                big_app_kit::desktop::open_file(&open_path);
-            });
-            overlay.add_toast(toast);
-            return glib::ControlFlow::Break;
-        }
-        attempts.set(attempts.get() + 1);
-        if attempts.get() >= MAX_ATTEMPTS {
-            overlay.add_toast(adw::Toast::new(&i18n("Screenshot failed")));
-            return glib::ControlFlow::Break;
-        }
-        glib::ControlFlow::Continue
-    });
-}
-
-/// XDG Pictures dir for screenshots, falling back to home.
-fn screenshot_dir() -> PathBuf {
-    dirs::picture_dir()
-        .or_else(dirs::home_dir)
-        .unwrap_or_else(|| PathBuf::from("."))
+/// Called only after terminal completion and no-replace publication.
+pub(super) fn show_screenshot_result(overlay: &adw::ToastOverlay, path: PathBuf, durable: bool) {
+    let message = if durable { i18n("Screenshot saved") }
+        else { i18n("Screenshot saved; disk synchronization could not be confirmed") };
+    let toast = adw::Toast::builder().title(message).button_label(i18n("Open")).timeout(5).build();
+    toast.connect_button_clicked(move |_| { big_app_kit::desktop::open_file(&path); });
+    overlay.add_toast(toast);
 }
 
 /// Derive a safe screenshot filename from the media title and a unix timestamp:
 /// `<sanitized-title>_<ts>.png`. Non-alphanumeric chars (except `-_.`) become
 /// `_`, and any `..` run is collapsed to `_`; an empty/blank title falls back to
 /// `screenshot`. Path-safe — the result never contains separators or `..`.
+#[cfg(test)]
 fn screenshot_filename(title: &str, timestamp: i64) -> String {
     let sanitized: String = title
         .chars()

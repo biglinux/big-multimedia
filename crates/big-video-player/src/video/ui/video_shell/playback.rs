@@ -92,6 +92,16 @@ impl VideoShell {
                 self.controls.emit(VideoControlsBarInput::SetMuted(muted));
             }
             PlayerEvent::MetadataChanged(_) => self.refresh_now_playing(root),
+            PlayerEvent::ScreenshotFinished { result, .. } => match result {
+                crate::player::mpv_backend::ScreenshotResult::Saved { path, durability_confirmed } => {
+                    super::menu_dialogs::show_screenshot_result(&self.toast_overlay, path, durability_confirmed);
+                }
+                crate::player::mpv_backend::ScreenshotResult::Failed => self.toast(&i18n("Screenshot failed")),
+                crate::player::mpv_backend::ScreenshotResult::Cancelled => {},
+            },
+            PlayerEvent::ScreenshotTimedOut { .. } => {
+                self.toast(&i18n("Screenshot timed out; cancellation requested"));
+            }
             // Reason 4 = error (unsupported/corrupt/unreadable source). Other
             // reasons (EOF=0, stop=2, quit=3, redirect=5) are a normal end of
             // playback — surface only the error so the user gets feedback

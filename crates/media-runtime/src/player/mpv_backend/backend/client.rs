@@ -379,6 +379,7 @@ pub enum MpvEvent {
         name: String,
         change: MpvPropertyValue,
     },
+    CommandReply { id: u64, error: c_int },
     Other,
 }
 
@@ -406,6 +407,9 @@ fn map_event(event: &mpv_sys::mpv_event) -> Option<Result<MpvEvent>> {
     if event.event_id == mpv_sys::mpv_event_id_MPV_EVENT_NONE {
         return None;
     }
+    if event.event_id == mpv_sys::mpv_event_id_MPV_EVENT_COMMAND_REPLY {
+        return Some(Ok(MpvEvent::CommandReply { id: event.reply_userdata, error: event.error }));
+    }
     if event.error < 0 {
         return Some(Err(MpvError::Raw(event.error)));
     }
@@ -425,10 +429,7 @@ fn map_end_file_event(event_payload: *mut c_void) -> Result<MpvEvent> {
     }
     // SAFETY: MPV_EVENT_END_FILE carries `mpv_event_end_file`.
     let event = unsafe { &*event_payload.cast::<mpv_sys::mpv_event_end_file>() };
-    if event.error < 0 {
-        return Err(MpvError::Raw(event.error));
-    }
-    Ok(MpvEvent::EndFile(event.reason))
+    Ok(MpvEvent::EndFile(if event.error < 0 { 4 } else { event.reason }))
 }
 
 fn map_property_event(event_payload: *mut c_void) -> Result<MpvEvent> {

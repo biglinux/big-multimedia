@@ -53,6 +53,7 @@ enum MappedEvent {
     Duration(f64),
     Paused(bool),
     Volume(f64),
+    CommandReply { id: u64, error: i32 },
 }
 
 pub struct MpvBackend {
@@ -69,6 +70,7 @@ pub struct MpvBackend {
     /// spurious EndFile(0) events that cause unwanted queue advance.
     pub(in crate::player::mpv_backend) loading: Arc<AtomicBool>,
     pub(in crate::player::mpv_backend) audio_only: bool,
+    pub(in crate::player::mpv_backend) screenshots: Arc<super::screenshots::Screenshots>,
     event_thread: Option<std::thread::JoinHandle<()>>,
     event_sender: async_channel::Sender<PlayerEvent>,
     /// Tracks whether audio filters are currently set, so we can skip
@@ -157,6 +159,8 @@ impl MpvBackend {
         let stream_volume = super::pactl_volume::StreamVolume::new(audio_client_name);
         let volume_state = stream_volume.shared();
 
+        let screenshots = Arc::new(super::screenshots::Screenshots::new());
+        let screenshots_for_thread = screenshots.clone();
         let event_sender = sender.clone();
         let event_thread = std::thread::Builder::new()
             .name(thread_name.into())
@@ -167,6 +171,7 @@ impl MpvBackend {
                     load_flag,
                     sender,
                     volume_state,
+                    screenshots_for_thread,
                 );
             })
             .expect("Failed to spawn mpv event thread");
@@ -178,6 +183,7 @@ impl MpvBackend {
             running,
             loading,
             audio_only,
+            screenshots,
             event_thread: Some(event_thread),
             event_sender,
             has_af: AtomicBool::new(false),
@@ -191,11 +197,30 @@ impl MpvBackend {
         loading: Arc<AtomicBool>,
         sender: async_channel::Sender<PlayerEvent>,
         volume_state: super::pactl_volume::Shared,
+        screenshots: Arc<super::screenshots::Screenshots>,
     ) {
         let mut poll = PollState::default();
         let mut outgoing = Vec::with_capacity(80);
+        let mut pending = std::collections::VecDeque::with_capacity(96);
+        let handle = mpv.lock().unwrap_or_else(std::sync::PoisonError::into_inner).raw_handle();
 
         while running.load(Ordering::Relaxed) && !sender.is_closed() {
+            for id in screenshots.withdraw_expired() {
+                // The registry still owns the staging file until terminal receipt.
+                unsafe { mpv_sys::mpv_abort_async_command(handle, id); }
+                pending.push_back(PlayerEvent::ScreenshotTimedOut { id });
+            }
+            while let Some(event) = pending.pop_front() {
+                match sender.try_send(event) {
+                    Ok(()) => {},
+                    Err(async_channel::TrySendError::Full(event)) => { pending.push_front(event); break; },
+                    Err(async_channel::TrySendError::Closed(_)) => return,
+                }
+            }
+            if !pending.is_empty() {
+                std::thread::sleep(std::time::Duration::from_millis(10));
+                continue;
+            }
             {
                 let mut guard = mpv
                     .lock()
@@ -206,19 +231,19 @@ impl MpvBackend {
             // Never wait for the UI while holding the mpv mutex: a UI handler
             // may need that same mutex before it can drain the bounded channel.
             for event in outgoing.drain(..) {
+                let event = match event {
+                    PlayerEvent::AsyncCommandReply { id, error } => {
+                        let Some(result) = screenshots.complete(id, error) else { continue; };
+                        PlayerEvent::ScreenshotFinished { id, result }
+                    }
+                    other => other,
+                };
                 match &event {
                     PlayerEvent::FileLoaded(_) => volume_state.set_active(true),
                     PlayerEvent::EndFile(_) | PlayerEvent::Shutdown => volume_state.set_active(false),
                     _ => {}
                 }
-                let shutdown = matches!(&event, PlayerEvent::Shutdown);
-                if sender.send_blocking(event).is_err() {
-                    return;
-                }
-                if shutdown {
-                    running.store(false, Ordering::Relaxed);
-                    return;
-                }
+                pending.push_back(event);
             }
             Self::poll_stream_volume(&volume_state, &sender, &mut poll);
             // Position feedback stays smooth during playback, but a paused
@@ -285,6 +310,8 @@ impl MpvBackend {
                 Ok(MpvEvent::FileLoaded) => MappedEvent::FileLoaded,
                 Ok(MpvEvent::EndFile(reason)) => MappedEvent::EndFile(reason),
                 Ok(MpvEvent::Shutdown) => MappedEvent::Shutdown,
+                Ok(MpvEvent::CommandReply { id: 0, .. }) => continue,
+                Ok(MpvEvent::CommandReply { id, error }) => MappedEvent::CommandReply { id, error },
                 Ok(MpvEvent::PropertyChange { name, change }) => match (name.as_str(), change) {
                     ("time-pos", MpvPropertyValue::Double(v)) => MappedEvent::Position(v),
                     ("duration", MpvPropertyValue::Double(v)) => MappedEvent::Duration(v),
@@ -329,6 +356,7 @@ impl MpvBackend {
             MappedEvent::Duration(v) => PlayerEvent::DurationChanged(v),
             MappedEvent::Paused(v) => PlayerEvent::PauseChanged(v),
             MappedEvent::Volume(v) => PlayerEvent::VolumeChanged(v),
+            MappedEvent::CommandReply { id, error } => PlayerEvent::AsyncCommandReply { id, error },
         }
     }
 
@@ -488,6 +516,7 @@ impl Drop for MpvBackend {
             .lock()
             .unwrap_or_else(std::sync::PoisonError::into_inner)
             .terminate_destroy();
+        self.screenshots.clear_after_termination();
 
         info!("MpvBackend dropped (mpv_terminate_destroy)");
     }

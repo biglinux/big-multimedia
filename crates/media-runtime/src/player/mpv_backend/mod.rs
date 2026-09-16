@@ -4,6 +4,8 @@
 //! supporting property observation, audio filter chains, and OpenGL rendering.
 
 mod backend;
+mod screenshots;
+pub use screenshots::ScreenshotResult;
 mod pactl_volume;
 mod types;
 

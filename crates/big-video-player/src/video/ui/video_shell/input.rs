@@ -72,6 +72,7 @@ pub enum VideoShellInput {
     ShowGotoTime,
     /// Capture the current frame to the Pictures dir (Playback menu).
     Screenshot,
+    ScreenshotQueueFailed,
     /// Open the chapter list dialog (Playback menu).
     ShowChapters,
     /// Jump to chapter `idx` (chapter list dialog).
