@@ -145,7 +145,7 @@ impl AudioShell {
                 self.is_stream = true;
                 self.radio_station_name = name;
                 if let Some(mpv) = &self.mpv {
-                    mpv.load_file(&url);
+                    mpv.load_file_with_audio_profile(&url, crate::player::mpv_backend::AudioCacheProfile::Radio, false);
                     mpv.play();
                 }
                 self.current_file.clone_from(&url);

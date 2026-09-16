@@ -8,7 +8,8 @@ impl AudioShell {
         self.is_playing = true;
         self.is_stream = false;
         if let Some(mpv) = &self.mpv {
-            mpv.load_file_from_start(&path);
+            let profile = if self.podcast_mode { crate::player::mpv_backend::AudioCacheProfile::Podcast } else { crate::player::mpv_backend::AudioCacheProfile::Music };
+            mpv.load_file_with_audio_profile(&path, profile, true);
             mpv.play();
         }
         self.current_file = path;

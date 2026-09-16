@@ -8,67 +8,53 @@ use log::{error, info};
 use super::MpvBackend;
 use super::types::AudioCacheProfile;
 
-/// Heuristic: pick a sensible cache profile from the URL/path. Network
-/// streams get a larger forward window for jitter; local files keep the
-/// caller-set profile (Music or Podcast). Callers in the app layer can
-/// always override afterwards with [`MpvBackend::set_audio_cache_profile`].
+/// Fallback audio policy only. Panels with known intent override this heuristic.
 #[must_use]
-pub fn profile_for_uri(path: &str) -> Option<AudioCacheProfile> {
-    let lower = path.to_ascii_lowercase();
-    if lower.starts_with("http://")
-        || lower.starts_with("https://")
-        || lower.starts_with("rtsp://")
-        || lower.starts_with("rtmp://")
-        || lower.starts_with("mms://")
-    {
-        // Playlist extensions usually indicate live radio; bare http to an
-        // .mp3/.ogg is more likely a podcast download URL, which doesn't
-        // need the larger forward window. Default the rest to Radio.
-        for ext in [".mp3", ".m4a", ".ogg", ".opus", ".flac"] {
-            if lower.ends_with(ext) {
-                return Some(AudioCacheProfile::Podcast);
-            }
-        }
-        return Some(AudioCacheProfile::Radio);
-    }
-    None
+pub fn profile_for_uri(target: &str) -> Option<AudioCacheProfile> {
+    let scheme = big_os_kit::url::uri_scheme(target)?;
+    if !["http", "https", "rtsp", "rtmp", "mms"].iter().any(|s| scheme.eq_ignore_ascii_case(s)) { return None; }
+    let path = big_os_kit::url::uri_path(target);
+    let extension = path.rsplit('/').next().unwrap_or("").rsplit_once('.').map(|(_, e)| e);
+    Some(if extension.is_some_and(|e| ["mp3", "m4a", "ogg", "opus", "flac"].iter().any(|v| e.eq_ignore_ascii_case(v))) {
+        AudioCacheProfile::Podcast
+    } else { AudioCacheProfile::Radio })
 }
 
 impl MpvBackend {
-    pub fn load_file(&self, path: &str) {
-        if let Some(profile) = profile_for_uri(path) {
-            self.set_audio_cache_profile(profile);
-        }
-        self.loading.store(true, Ordering::Relaxed);
-        if let Err(e) = self.with_mpv(|m| m.command("loadfile", &[path, "replace"])) {
-            self.loading.store(false, Ordering::Relaxed);
-            error!("Failed to load file '{path}': {e}");
-        }
+    pub fn load_file_with_audio_profile(&self, path: &str, profile: AudioCacheProfile, from_start: bool) {
+        if self.audio_only { self.set_audio_cache_profile(profile); }
+        self.load_inner(path, from_start);
     }
 
-    /// Bypasses watch-later — resuming a fully-played file would EOF instantly
-    /// and confuse the queue (next/prev/double-click flows).
-    pub fn load_file_from_start(&self, path: &str) {
-        // Match load_file: size the demuxer cache to the stream kind. Podcast
-        // autoplay reaches mpv through here, so without this it would keep the
-        // 40 MiB Music cache instead of the 10 MiB Podcast cache (~30 MiB/stream).
-        if let Some(profile) = profile_for_uri(path) {
-            self.set_audio_cache_profile(profile);
+    pub fn load_file(&self, path: &str) {
+        if self.audio_only {
+            self.set_audio_cache_profile(profile_for_uri(path).unwrap_or(AudioCacheProfile::Music));
         }
+        self.load_inner(path, false);
+    }
+
+    /// Bypass watch-later for an explicit new queue occurrence.
+    pub fn load_file_from_start(&self, path: &str) {
+        if self.audio_only {
+            self.set_audio_cache_profile(profile_for_uri(path).unwrap_or(AudioCacheProfile::Music));
+        }
+        self.load_inner(path, true);
+    }
+
+    fn load_inner(&self, path: &str, from_start: bool) {
         self.loading.store(true, Ordering::Relaxed);
-        // loadfile args: url, flags, index (-1=default), options.
-        // `resume-playback=no` overrides watch-later for this file only.
-        if let Err(e) =
+        let result = if from_start {
             self.with_mpv(|m| m.command("loadfile", &[path, "replace", "-1", "resume-playback=no"]))
-        {
+        } else { self.with_mpv(|m| m.command("loadfile", &[path, "replace"])) };
+        if let Err(error) = result {
             self.loading.store(false, Ordering::Relaxed);
-            error!("Failed to load file '{path}': {e}");
+            error!("Failed to load {}: {error}", big_os_kit::url::MediaLogTarget(path));
         }
     }
 
     pub fn load_file_append(&self, path: &str) {
         if let Err(e) = self.with_mpv(|m| m.command("loadfile", &[path, "append-play"])) {
-            error!("Failed to append file '{path}': {e}");
+            error!("Failed to append {}: {e}", big_os_kit::url::MediaLogTarget(path));
         }
     }
 

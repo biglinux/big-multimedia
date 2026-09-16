@@ -68,6 +68,7 @@ pub struct MpvBackend {
     /// Suppresses the eof-reached poll during file transitions to prevent
     /// spurious EndFile(0) events that cause unwanted queue advance.
     pub(in crate::player::mpv_backend) loading: Arc<AtomicBool>,
+    pub(in crate::player::mpv_backend) audio_only: bool,
     event_thread: Option<std::thread::JoinHandle<()>>,
     event_sender: async_channel::Sender<PlayerEvent>,
     /// Tracks whether audio filters are currently set, so we can skip
@@ -106,7 +107,7 @@ impl MpvBackend {
             mpv,
             sender,
             "mpv-events",
-            "MpvBackend initialized",
+            "MpvBackend initialized", false,
         ))
     }
 
@@ -131,7 +132,7 @@ impl MpvBackend {
             mpv,
             sender,
             "mpv-audio-events",
-            "MpvBackend initialized (audio-only)",
+            "MpvBackend initialized (audio-only)", true,
         ))
     }
 
@@ -140,6 +141,7 @@ impl MpvBackend {
         sender: async_channel::Sender<PlayerEvent>,
         thread_name: &str,
         init_log: &str,
+        audio_only: bool,
     ) -> Self {
         let mpv = Arc::new(Mutex::new(mpv));
         let raw_mpv_handle = mpv
@@ -175,6 +177,7 @@ impl MpvBackend {
             raw_mpv_handle,
             running,
             loading,
+            audio_only,
             event_thread: Some(event_thread),
             event_sender,
             has_af: AtomicBool::new(false),

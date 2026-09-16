@@ -1,7 +1,7 @@
 //! RFC 3986 percent-encoding helpers for URL query values.
 
 /// Query-parameter keys (matched case-insensitively) whose values [`redact_url`]
-/// masks before a URL is logged. Covers Xtream Codes credentials
+/// masks in the compatibility redactor. Covers Xtream Codes credentials
 /// (`username`/`password`) and common token/secret parameter names.
 const SENSITIVE_QUERY_KEYS: &[&str] = &[
     "password",
@@ -17,13 +17,62 @@ const SENSITIVE_QUERY_KEYS: &[&str] = &[
     "key",
     "auth",
     "session",
-    "sid",
+    "sid", "sig", "signature", "credential", "refresh_token", "id_token",
+    "x-amz-credential", "x-amz-signature", "x-amz-security-token",
+    "x-goog-credential", "x-goog-signature", "policy", "key-pair-id",
 ];
 
+fn hex(byte: u8) -> Option<u8> {
+    match byte { b'0'..=b'9' => Some(byte-b'0'), b'a'..=b'f' => Some(byte-b'a'+10), b'A'..=b'F' => Some(byte-b'A'+10), _ => None }
+}
 fn is_sensitive_query_key(key: &str) -> bool {
-    SENSITIVE_QUERY_KEYS
-        .iter()
-        .any(|sensitive| key.eq_ignore_ascii_case(sensitive))
+    // Bound decoding work. Malformed/oversize encoded keys are treated as
+    // sensitive rather than creating a redaction bypass.
+    if key.len() > 512 { return true; }
+    let mut decoded = Vec::with_capacity(key.len());
+    let bytes = key.as_bytes(); let mut index = 0;
+    while index < bytes.len() {
+        if bytes[index] == b'%' {
+            let Some(value) = bytes.get(index+1).and_then(|a| hex(*a)).zip(bytes.get(index+2).and_then(|b| hex(*b))) else { return true; };
+            decoded.push(value.0*16+value.1); index += 3;
+        } else { decoded.push(bytes[index]); index += 1; }
+    }
+    SENSITIVE_QUERY_KEYS.iter().any(|sensitive| decoded.eq_ignore_ascii_case(sensitive.as_bytes()))
+}
+
+/// Syntactic RFC 3986 scheme, without allocating or changing the original URI.
+#[must_use]
+pub fn uri_scheme(value: &str) -> Option<&str> {
+    let (scheme, _) = value.split_once(':')?;
+    let mut bytes = scheme.bytes();
+    if !bytes.next().is_some_and(|c| c.is_ascii_alphabetic())
+        || !bytes.all(|c| c.is_ascii_alphanumeric() || matches!(c, b'+' | b'-' | b'.')) { return None; }
+    Some(scheme)
+}
+
+/// URI path without authority, query or fragment. Does not decode path bytes.
+/// A bare authority such as https://radio.mp3 has an EMPTY path, not an MP3 file.
+#[must_use]
+pub fn uri_path(value: &str) -> &str {
+    let clean = &value[..value.find(['?', '#']).unwrap_or(value.len())];
+    let Some(scheme) = uri_scheme(clean) else { return clean; };
+    let rest = &clean[scheme.len()+1..];
+    if let Some(authority) = rest.strip_prefix("//") {
+        authority.find('/').map_or("", |slash| &authority[slash..])
+    } else { rest }
+}
+
+/// Privacy-first diagnostic wrapper. It intentionally logs only the scheme (or
+/// 'local media'), never the path, authority, query or fragment, which may all
+/// carry provider-specific credentials. The playback target itself is untouched.
+pub struct MediaLogTarget<'a>(pub &'a str);
+impl std::fmt::Display for MediaLogTarget<'_> {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match uri_scheme(self.0).filter(|s| s.len() <= 32) {
+            Some(scheme) => write!(f, "{scheme} media"),
+            None => f.write_str("local media"),
+        }
+    }
 }
 
 /// Mask the `userinfo` (`user:pass@`) component of a URL authority, if present.
@@ -35,7 +84,7 @@ fn redact_userinfo(base: &str) -> String {
     let rest = &base[authority_start..];
     let authority_end = rest.find('/').unwrap_or(rest.len());
     let authority = &rest[..authority_end];
-    match authority.find('@') {
+    match authority.rfind('@') {
         Some(at) => format!(
             "{}***@{}{}",
             &base[..authority_start],
@@ -46,13 +95,16 @@ fn redact_userinfo(base: &str) -> String {
     }
 }
 
-/// Mask credentials in a URL so it is safe to log: the authority `userinfo`
+/// Best-effort known-parameter redaction (not a universal log sanitizer): the authority `userinfo`
 /// (`user:pass@`) and the values of sensitive query parameters (see
 /// `SENSITIVE_QUERY_KEYS` — e.g. Xtream `username`/`password`) become `***`.
 /// Best-effort string rewrite that never fails; a non-URL string is returned
 /// unchanged apart from any `key=value` query pairs it recognizes.
 #[must_use]
 pub fn redact_url(url: &str) -> String {
+    // Fragments often contain OAuth responses. Do not retain arbitrary fragment
+    // data in this compatibility redactor.
+    let (url, fragment) = url.split_once('#').map_or((url, false), |(base, _)| (base, true));
     let (base, query) = match url.split_once('?') {
         Some((base, query)) => (base, Some(query)),
         None => (url, None),
@@ -75,13 +127,14 @@ pub fn redact_url(url: &str) -> String {
             }
         }
     }
+    if fragment { out.push_str("#***"); }
     out
 }
 
 /// Lazy [`Display`](std::fmt::Display) wrapper that redacts a URL only when it is
 /// actually formatted — so passing `RedactedUrl(url)` to a `log::debug!` costs
-/// nothing when the log level is disabled, yet never leaks credentials when it
-/// fires. See [`redact_url`].
+/// nothing when disabled. For untrusted/provider-specific media targets use
+/// [`MediaLogTarget`], because unknown keys and path tokens are not recognized.
 pub struct RedactedUrl<'a>(pub &'a str);
 
 impl std::fmt::Display for RedactedUrl<'_> {
@@ -108,7 +161,7 @@ pub fn encode_query_value(value: &str) -> String {
 /// Return the final URL path segment when it looks like a filename.
 #[must_use]
 pub fn filename_from_url_path(url: &str, fallback_filename: &str) -> String {
-    url.rsplit('/')
+    uri_path(url).rsplit('/')
         .next()
         .and_then(|segment| {
             let name = segment.split('?').next().unwrap_or(segment);
@@ -204,4 +257,16 @@ mod tests {
             "fallback.mp3"
         );
     }
+    #[test]
+    fn encoded_secrets_and_fragments_are_redacted() {
+        assert_eq!(redact_url("https://h/a?%74oken=secret&X-Amz-Signature=proof#access_token=hidden"), "https://h/a?%74oken=***&X-Amz-Signature=***#***");
+        assert_eq!(format!("{}", MediaLogTarget("https://user:secret@h/path-token?q=secret")), "https media");
+    }
+    #[test]
+    fn authority_is_not_a_filename() {
+        assert_eq!(uri_path("https://radio.mp3"), "");
+        assert_eq!(uri_path("HTTPS://radio/episode.MP3?sig=x#part"), "/episode.MP3");
+        assert_eq!(filename_from_url_path("https://radio.mp3", "fallback"), "fallback");
+    }
+
 }

@@ -105,7 +105,7 @@ fn rotate_servers(mut servers: Vec<String>) -> Vec<String> {
 pub fn radio_browser_get_with_fallback(path: &str, servers: &[String]) -> Option<String> {
     for server in servers {
         let url = format!("https://{server}{path}");
-        debug!("[radio] trying {url}");
+        debug!("[radio] trying {}", big_os_kit::url::MediaLogTarget(&url));
         match http_get_fast(&url) {
             Some(body) => return Some(body),
             None => debug!("[radio] server {server} failed, trying next"),
