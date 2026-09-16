@@ -3,8 +3,7 @@
 
 use super::job::friendly_ffmpeg_error;
 use super::support::{
-    ensure_entry_probed, is_resume_output_complete, promote_resume_output,
-    resume_partial_output_path, segment_output_path,
+    ensure_entry_probed, segment_output_path,
 };
 use super::*;
 use crate::converter::ffmpeg::TrimRange;
@@ -108,13 +107,13 @@ fn friendly_error_failed_to_open() {
 }
 
 #[test]
-fn friendly_error_fallback_last_error_line() {
+fn friendly_error_never_echoes_untrusted_stderr() {
     let lines = vec![
         "some info output".into(),
         "Conversion failed with error xyz".into(),
     ];
     let worker_message = friendly_ffmpeg_error(&lines, 2);
-    assert_eq!(worker_message, "Conversion failed with error xyz");
+    assert_eq!(worker_message, "FFmpeg exited with code 2");
 }
 
 #[test]
@@ -215,38 +214,6 @@ fn segment_output_path_formats_with_padding() {
         Path::new("/tmp/input.mp4"),
     );
     assert_eq!(out, PathBuf::from("/tmp/video_part02.mp4"));
-}
-
-#[test]
-fn resume_partial_output_path_keeps_muxer_extension_and_sanitizes_job_key() {
-    let out =
-        resume_partial_output_path(Path::new("/tmp/video final.mp4"), "job/with spaces", 7, 2);
-    assert_eq!(
-        out,
-        PathBuf::from("/tmp/.big-convertd-job_with_spaces-i7-s2.part.mp4")
-    );
-}
-
-#[test]
-fn promote_resume_output_renames_partial_and_keeps_existing_final() {
-    let dir =
-        std::env::temp_dir().join(format!("big-converter-resume-test-{}", std::process::id()));
-    let _ = std::fs::remove_dir_all(&dir);
-    std::fs::create_dir_all(&dir).expect("create test dir");
-    let partial = dir.join(".part.mp4");
-    let final_output = dir.join("final.mp4");
-
-    std::fs::write(&partial, b"video").expect("write partial");
-    promote_resume_output(&partial, &final_output).expect("promote partial");
-    assert!(!partial.exists());
-    assert!(is_resume_output_complete(&final_output));
-    assert_eq!(std::fs::read(&final_output).expect("read final"), b"video");
-
-    std::fs::write(&partial, b"new").expect("write second partial");
-    promote_resume_output(&partial, &final_output).expect("existing final wins");
-    assert_eq!(std::fs::read(&final_output).expect("read final"), b"video");
-    assert!(!partial.exists());
-    let _ = std::fs::remove_dir_all(&dir);
 }
 
 #[test]

@@ -5,6 +5,7 @@
 
 mod job;
 mod processing;
+mod validation;
 mod support;
 mod types;
 
@@ -41,7 +42,7 @@ pub struct ConversionQueue {
     resume_context: Option<ConversionResumeContext>,
     /// Hands `add_file` probes to the background worker (see
     /// [`spawn_probe_worker`]); results come back as [`QueueMessage::Probed`].
-    probe_tx: std::sync::mpsc::Sender<ProbeRequest>,
+    probe_tx: std::sync::mpsc::SyncSender<ProbeRequest>,
     pub delete_source: bool,
     pub audio_only_mode: bool,
 }
@@ -55,7 +56,7 @@ impl Default for ConversionQueue {
 impl ConversionQueue {
     #[must_use]
     pub fn new() -> Self {
-        let (sender, receiver) = async_channel::unbounded();
+        let (sender, receiver) = async_channel::bounded(256);
         let probe_tx = spawn_probe_worker(sender.clone());
         let gpus = detect_all_gpus();
         let default_gpu = gpus.first().cloned().unwrap_or(GpuDevice {
@@ -168,7 +169,7 @@ impl ConversionQueue {
         };
         #[cfg(miri)]
         let probe_request = ProbeRequest;
-        let _ = self.probe_tx.send(probe_request);
+        let _ = self.probe_tx.try_send(probe_request);
 
         let queue_entry = ConversionQueueEntry {
             id,
@@ -462,8 +463,8 @@ struct ProbeRequest {
 #[cfg(miri)]
 fn spawn_probe_worker(
     _sender: async_channel::Sender<QueueMessage>,
-) -> std::sync::mpsc::Sender<ProbeRequest> {
-    let (tx, _rx) = std::sync::mpsc::channel::<ProbeRequest>();
+) -> std::sync::mpsc::SyncSender<ProbeRequest> {
+    let (tx, _rx) = std::sync::mpsc::sync_channel::<ProbeRequest>(64);
     tx
 }
 
@@ -473,12 +474,13 @@ fn spawn_probe_worker(
 #[cfg(not(miri))]
 fn spawn_probe_worker(
     sender: async_channel::Sender<QueueMessage>,
-) -> std::sync::mpsc::Sender<ProbeRequest> {
-    let (tx, rx) = std::sync::mpsc::channel::<ProbeRequest>();
+) -> std::sync::mpsc::SyncSender<ProbeRequest> {
+    let (tx, rx) = std::sync::mpsc::sync_channel::<ProbeRequest>(64);
     let spawned = std::thread::Builder::new()
         .name("converter-probe".into())
         .spawn(move || {
             while let Ok(request) = rx.recv() {
+                if sender.is_closed() { break; }
                 let duration_secs = progress::probe_duration(&request.input);
                 let input_audio_channels = progress::probe_audio_channels(&request.input);
                 let skip_video_filters =

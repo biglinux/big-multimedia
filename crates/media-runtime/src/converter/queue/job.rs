@@ -1,161 +1,60 @@
-//! Single-job runner: spawn ffmpeg in its own process group (setsid so
-//! cancel kills the whole tree, including grandchildren), watcher thread
-//! enforces 2h hard timeout + cancel signal (SIGTERM, then SIGKILL after
-//! 3s), live stderr is forwarded as both progress events and individual
-//! lines, and `friendly_ffmpeg_error` translates known stderr fingerprints
-//! into user-facing pt-BR messages.
-
-use crate::converter::ffmpeg::FfmpegJob;
-use crate::converter::ffmpeg::progress;
+//! Supervised FFmpeg execution. No watcher threads, blocking pipe joins, or
+//! process-group signal after PID collection. All diagnostics are sanitized.
+use crate::converter::ffmpeg::{FfmpegJob, progress};
 use crate::error::{Error, Result};
-use std::io::BufReader;
-use std::process::Stdio;
-use std::sync::Arc;
-use std::sync::atomic::{AtomicBool, Ordering};
-
+use std::sync::{Arc, atomic::{AtomicBool, Ordering}};
+use std::time::Duration;
+use big_os_kit::subprocess::{BigSubprocessSpec, BigSubprocessOutputMode, BigSubprocessError};
 use super::{ConversionQueueEntry, QueueMessage};
 
-pub(crate) fn run_job(
-    job: &FfmpegJob,
-    queue_entry: &ConversionQueueEntry,
-    cancel: &Arc<AtomicBool>,
-    sender: &async_channel::Sender<QueueMessage>,
-) -> Result<()> {
-    let mut cmd = job.build_command();
-    cmd.stderr(Stdio::piped());
-    cmd.stdout(Stdio::null());
-
-    let cmd_display = format!("{cmd:?}");
-    let _ = sender.send_blocking(QueueMessage::Started {
-        entry_id: queue_entry.id,
-        command: cmd_display,
-    });
-
-    #[cfg(unix)]
-    {
-        use std::os::unix::process::CommandExt;
-        // SAFETY: pre_exec runs after fork, setsid creates new process group
-        unsafe {
-            cmd.pre_exec(|| {
-                libc::setsid();
-                Ok(())
-            });
-        }
-    }
-
-    let mut child = cmd
-        .spawn()
-        .map_err(|e| Error::ffmpeg("ffmpeg", None, format!("spawn: {e}")))?;
-
-    let stderr = child
-        .stderr
-        .take()
-        .ok_or_else(|| Error::ffmpeg("ffmpeg", None, "no stderr pipe"))?;
-
-    let child_pid = child.id();
-    let cancel_arc = Arc::new(AtomicBool::new(false));
-    let cancel_watcher = cancel_arc.clone();
-    let cancel_flag = cancel.clone();
-    let watcher_handle = std::thread::Builder::new()
-        .name("cancel-watcher".into())
-        .spawn(move || {
-            const TIMEOUT_MS: u64 = 2 * 60 * 60 * 1000;
-            let mut elapsed_ms: u64 = 0;
-            loop {
-                std::thread::sleep(std::time::Duration::from_millis(100));
-                elapsed_ms += 100;
-                let should_kill = cancel_flag.load(Ordering::Relaxed) || elapsed_ms >= TIMEOUT_MS;
-                if should_kill {
-                    if elapsed_ms >= TIMEOUT_MS {
-                        log::warn!("Conversion timeout reached (2h), killing process");
-                    }
-                    #[cfg(unix)]
-                    {
-                        // SAFETY: negative pid targets the process group created via setsid.
-                        unsafe {
-                            libc::kill(-(child_pid as i32), libc::SIGTERM);
-                        }
-                        std::thread::sleep(std::time::Duration::from_secs(3));
-                        // SAFETY: same process group semantics as above.
-                        unsafe {
-                            libc::kill(-(child_pid as i32), libc::SIGKILL);
-                        }
-                    }
-                    #[cfg(not(unix))]
-                    {
-                        let _ = child_pid;
-                    }
-                    cancel_watcher.store(true, Ordering::Relaxed);
-                    return;
-                }
-                if cancel_watcher.load(Ordering::Relaxed) {
-                    return;
-                }
-            }
-        })
-        .ok();
-
-    let reader = BufReader::new(stderr);
-    let entry_id = queue_entry.id;
-    let sender_for_progress = sender.clone();
-    let cancel_for_progress = cancel.clone();
-
-    // Percent must track THIS job's processed span, not the whole media: when a
-    // trim/cut is active ffmpeg only encodes `[start, end]` (input `-ss` + `-t`),
-    // so a 5%-long cut would otherwise read as 100% and "finish" at 5%.
-    let progress_duration = job.trim.effective_duration(queue_entry.duration_secs);
-    let error_lines = progress::parse_progress_live(
-        reader,
-        progress_duration,
-        move |progress_snapshot| {
-            if cancel_for_progress.load(Ordering::Relaxed) {
-                return;
-            }
-            let _ = sender_for_progress.send_blocking(QueueMessage::Progress {
-                entry_id,
-                progress_snapshot,
-            });
-        },
-        {
-            let sender_for_lines = sender.clone();
-            move |line: &str| {
-                let _ = sender_for_lines.send_blocking(QueueMessage::StderrLine {
-                    entry_id,
-                    line: line.to_string(),
-                });
-            }
-        },
-    );
-
-    if !error_lines.is_empty() {
-        let _ = sender.send_blocking(QueueMessage::StderrLog {
-            entry_id,
-            lines: error_lines.clone(),
-        });
-    }
-
-    cancel_arc.store(true, Ordering::Relaxed);
-    if let Some(handle) = watcher_handle {
-        let _ = handle.join();
-    }
-
-    if cancel.load(Ordering::Relaxed) {
-        let _ = child.kill();
-        let _ = child.wait();
+pub(crate) fn run_job(job: &FfmpegJob, entry: &ConversionQueueEntry,
+    cancel: &Arc<AtomicBool>, sender: &async_channel::Sender<QueueMessage>) -> Result<()> {
+    let command = job.build_command();
+    let spec = BigSubprocessSpec::builder().program("ffmpeg")
+        .args(command.get_args()).stdout(BigSubprocessOutputMode::Null)
+        .timeout(Duration::from_secs(2 * 60 * 60)).build();
+    if sender.send_blocking(QueueMessage::Started { entry_id: entry.id,
+        command: "ffmpeg (private paths and credentials omitted)".into() }).is_err() {
         return Err(Error::Cancelled);
     }
-
-    let status = child.wait()?;
-    if status.success() {
+    let mut partial = Vec::new(); let mut record = Vec::new();
+    let duration = job.trim.effective_duration(entry.duration_secs);
+    let output = spec.run_cancellable_with_stderr(cancel, &mut |chunk| {
+        if sender.is_closed() { return Err(std::io::Error::other("progress consumer closed")); }
+        for &byte in chunk {
+            if byte != b'\n' {
+                if partial.len() >= 8192 { return Err(std::io::Error::other("FFmpeg diagnostic line exceeded limit")); }
+                partial.push(byte); continue;
+            }
+            let line = String::from_utf8_lossy(&partial);
+            if let Some((key, _)) = line.split_once('=') {
+                // Accept only numeric protocol fields, never raw paths/URLs.
+                if matches!(key, "out_time" | "out_time_us" | "out_time_ms" | "frame" | "fps" | "speed" | "total_size" | "bitrate" | "progress") {
+                    if record.len() + partial.len() + 1 > 32768 { return Err(std::io::Error::other("FFmpeg progress record exceeded limit")); }
+                    record.extend_from_slice(&partial); record.push(b'\n');
+                    if key == "progress" {
+                        let _ = progress::parse_progress(std::io::Cursor::new(&record), duration, |snapshot| {
+                            if [snapshot.time_secs, snapshot.percent, snapshot.speed, snapshot.eta_secs, snapshot.fps, snapshot.bitrate_kbps].iter().all(|n| n.is_finite()) {
+                                // Lossy progress is replaceable; terminal outcomes use the reliable queue path.
+                                let _ = sender.try_send(QueueMessage::Progress { entry_id: entry.id, progress_snapshot: snapshot });
+                            }
+                        });
+                        record.clear();
+                    }
+                }
+            }
+            partial.clear();
+        }
         Ok(())
-    } else {
-        let code = status.code();
-        Err(Error::ffmpeg(
-            "ffmpeg",
-            code,
-            friendly_ffmpeg_error(&error_lines, code.unwrap_or(-1)),
-        ))
-    }
+    }).map_err(|error| match error {
+        BigSubprocessError::Cancelled => Error::Cancelled,
+        other => Error::ffmpeg("ffmpeg", None, other.to_string()),
+    })?;
+    if cancel.load(Ordering::Acquire) { return Err(Error::Cancelled); }
+    if output.status.success() { return Ok(()); }
+    // Use only known static categories; never forward untrusted stderr verbatim.
+    let lines: Vec<String> = output.stderr_lossy().lines().rev().take(20).map(str::to_owned).collect();
+    Err(Error::ffmpeg("ffmpeg", output.status.code(), friendly_ffmpeg_error(&lines, output.status.code().unwrap_or(-1))))
 }
 
 #[must_use]
@@ -193,15 +92,6 @@ pub(crate) fn friendly_ffmpeg_error(lines: &[String], code: i32) -> String {
     }
     if lower.contains("could not open") || lower.contains("failed to open") {
         return i18n("Could not open file — check path and permissions");
-    }
-
-    if let Some(last) = lines.iter().rev().find(|line| {
-        let lower_line = line.to_lowercase();
-        lower_line.contains("error")
-            || lower_line.contains("invalid")
-            || lower_line.contains("failed")
-    }) {
-        return last.clone();
     }
 
     format!("{} {code}", i18n("FFmpeg exited with code"))

@@ -378,49 +378,15 @@ impl AudioShell {
 }
 
 fn local_input_path(input: &str) -> Option<PathBuf> {
-    let input = input.trim();
-    if input.is_empty() {
-        return None;
-    }
-    if input.starts_with("file://") {
-        return local_file_uri_path(input);
-    }
-    if input.contains("://") {
-        return None;
+    if input.trim().is_empty() { return None; }
+    if let Some((scheme, rest)) = input.split_once("://") {
+        if !scheme.eq_ignore_ascii_case("file") { return None; }
+        let authority = rest.split('/').next()?;
+        if !authority.is_empty() && !authority.eq_ignore_ascii_case("localhost") { return None; }
+        use gtk::gio::prelude::FileExt;
+        return gtk::gio::File::for_uri(input).path();
     }
     Some(PathBuf::from(input))
-}
-
-fn local_file_uri_path(input: &str) -> Option<PathBuf> {
-    let path_part = input.strip_prefix("file://")?;
-    let local_path = path_part.strip_prefix("localhost/").map_or_else(
-        || path_part.to_string(),
-        |path_after_host| format!("/{path_after_host}"),
-    );
-    if !local_path.starts_with('/') {
-        return None;
-    }
-    Some(PathBuf::from(percent_decode_uri_path(&local_path)))
-}
-
-fn percent_decode_uri_path(input: &str) -> String {
-    let bytes = input.as_bytes();
-    let mut decoded_bytes = Vec::with_capacity(bytes.len());
-    let mut index = 0;
-    while index < bytes.len() {
-        if bytes[index] == b'%' && index + 2 < bytes.len() {
-            let high_nibble = (bytes[index + 1] as char).to_digit(16);
-            let low_nibble = (bytes[index + 2] as char).to_digit(16);
-            if let (Some(high_nibble), Some(low_nibble)) = (high_nibble, low_nibble) {
-                decoded_bytes.push((high_nibble * 16 + low_nibble) as u8);
-                index += 3;
-                continue;
-            }
-        }
-        decoded_bytes.push(bytes[index]);
-        index += 1;
-    }
-    String::from_utf8_lossy(&decoded_bytes).into_owned()
 }
 
 fn run_segment_export_blocking(
@@ -430,7 +396,8 @@ fn run_segment_export_blocking(
     segments: &[(f64, f64)],
     split: bool,
 ) -> Result<PathBuf, String> {
-    let (mut queue, _id, output) = build_single_export_queue(input, output_dir, choice, segments);
+    big_quick_export::export::validate_export_segments(segments)?;
+    let (mut queue, id, output) = build_single_export_queue(input, output_dir, choice, segments);
     if output.as_os_str().is_empty() {
         return Err("export item vanished before start".to_string());
     }
@@ -439,12 +406,29 @@ fn run_segment_export_blocking(
     }
 
     queue.start();
+    let mut completed = false;
     loop {
         match queue.receiver().recv_blocking() {
-            Ok(QueueMessage::AllDone) => return Ok(output),
-            Ok(QueueMessage::Failed { error, .. }) => return Err(error),
-            Ok(_) => {}
-            Err(_) => return Err("export worker stopped before completion".to_string()),
+            Ok(QueueMessage::Done { entry_id }) if entry_id == id => completed = true,
+            Ok(QueueMessage::Cancelled { entry_id }) if entry_id == id => return Err(i18n("Export cancelled")),
+            Ok(QueueMessage::Failed { entry_id, error }) if entry_id == id => return Err(error),
+            Ok(QueueMessage::AllDone) => {
+                if !completed { return Err(i18n("The export ended without a completed result")); }
+                // Split output has no file at the joined output name. Report the
+                // directory containing the separately validated/published files.
+                let result = if split && segments.len() > 1 {
+                    output.parent().unwrap_or(std::path::Path::new(".")).to_path_buf()
+                } else { output };
+                let metadata = std::fs::metadata(&result).map_err(|_| i18n("Could not verify exported files"))?;
+                if split && segments.len() > 1 {
+                    if !metadata.is_dir() { return Err(i18n("Could not verify exported files")); }
+                } else if !metadata.is_file() || metadata.len() == 0 {
+                    return Err(i18n("Could not verify exported files"));
+                }
+                return Ok(result);
+            }
+            Ok(_) => {},
+            Err(_) => return Err(i18n("The export worker stopped before completion")),
         }
     }
 }
