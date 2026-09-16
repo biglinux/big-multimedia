@@ -25,6 +25,20 @@ use big_relm4_components::layout::{
 };
 use big_relm4_components::list::navigation_row::{BigNavigationRow, BigNavigationRowSpec};
 
+// Bound setup tasks as well as accepted native requests. The global admission
+// counter covers concurrent windows in the single-process host.
+static SCREENSHOT_PREPARATIONS: std::sync::atomic::AtomicUsize = std::sync::atomic::AtomicUsize::new(0);
+struct ScreenshotPreparation;
+impl ScreenshotPreparation {
+    fn acquire() -> Option<Self> {
+        SCREENSHOT_PREPARATIONS.fetch_update(std::sync::atomic::Ordering::AcqRel,
+            std::sync::atomic::Ordering::Acquire, |count| (count < 8).then_some(count + 1)).ok().map(|_| Self)
+    }
+}
+impl Drop for ScreenshotPreparation {
+    fn drop(&mut self) { SCREENSHOT_PREPARATIONS.fetch_sub(1, std::sync::atomic::Ordering::AcqRel); }
+}
+
 impl VideoShell {
     /// Show a transient toast in the window's toast overlay. Mirrors the old
     /// `toast_overlay.add_toast` feedback used by every ported handler.
@@ -108,6 +122,9 @@ impl VideoShell {
 
     /// Request off-thread staging; success is delivered by a terminal mpv reply.
     pub(super) fn take_screenshot(&self, sender: &ComponentSender<Self>) {
+        let Some(permit) = ScreenshotPreparation::acquire() else {
+            self.notify(&i18n("Screenshot queue is full; wait for pending captures")); return;
+        };
         let Some(mpv) = self.mpv_handle().borrow().as_ref().cloned() else {
             self.notify(&i18n("Screenshot failed")); return;
         };
@@ -124,6 +141,7 @@ impl VideoShell {
         let alive = self.screenshot_owner.clone();
         let input = sender.input_sender().clone();
         glib::spawn_future_local(async move {
+            let _permit = permit;
             let result = gio::spawn_blocking(move || {
                 std::fs::create_dir_all(&directory)?;
                 mpv.screenshot_to_file_async(&target, alive)

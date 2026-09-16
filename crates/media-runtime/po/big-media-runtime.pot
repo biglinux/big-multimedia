@@ -6576,3 +6576,7 @@ msgstr ""
 #: crates/media-runtime/src/converter/queue/validation.rs
 msgid "Unknown source video codec"
 msgstr ""
+
+#: crates/big-video-player/src/video/ui/menu_dialogs.rs
+msgid "Screenshot queue is full; wait for pending captures"
+msgstr ""

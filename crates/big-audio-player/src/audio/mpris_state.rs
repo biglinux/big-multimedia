@@ -80,15 +80,36 @@ pub(crate) fn save_mpris_art(data: &[u8]) -> Option<String> {
     use gtk::gio::prelude::FileExt;
     const LIMIT: usize = 16 * 1024 * 1024;
     if data.is_empty() || data.len() > LIMIT { return None; }
-    let cache_dir = dirs::cache_dir()?.join("big-audio-player");
+    let cache_dir = dirs::cache_dir()?.join("big-audio-player").join("mpris-art-cache");
     std::fs::create_dir_all(&cache_dir).ok()?;
-    // Stable content identity prevents an older generation's write from
-    // changing the image behind an already-published URI. This is cache naming,
-    // not an authentication or integrity hash.
-    use std::hash::{Hash, Hasher};
-    let mut hash = std::collections::hash_map::DefaultHasher::new(); data.hash(&mut hash);
-    let art_path = cache_dir.join(format!("mpris-art-{:016x}.jpg", hash.finish()));
-    std::fs::write(&art_path, data).ok()?;
+    // Cooperative workers/processes share one short nonblocking cache lock.
+    // This directory contains cache entries only, never original artwork.
+    let _lock = big_app_kit::storage::WriteLock::try_acquire(&cache_dir.join("index")).ok()?;
+    let mut entries = Vec::new();
+    for (index, entry) in std::fs::read_dir(&cache_dir).ok()?.enumerate() {
+        if index >= 128 { return None; } // do not scan arbitrary unbounded trees
+        let entry = entry.ok()?;
+        let name = entry.file_name(); let name = name.to_str()?;
+        if name.starts_with("mpris-art-") && name.ends_with(".jpg") && entry.file_type().ok()?.is_file() {
+            let metadata = entry.metadata().ok()?;
+            entries.push((metadata.modified().ok()?, metadata.len(), entry.path()));
+        }
+    }
+    entries.sort_by_key(|entry| entry.0);
+    let mut bytes = entries.iter().try_fold(0_u64, |sum, entry| sum.checked_add(entry.1))?;
+    let mut count = entries.len();
+    for (_, size, path) in &entries {
+        if count < 32 && bytes.saturating_add(data.len() as u64) <= 64 * 1024 * 1024 { break; }
+        std::fs::remove_file(path).ok()?; count -= 1; bytes = bytes.saturating_sub(*size);
+    }
+    static NEXT: AtomicU64 = AtomicU64::new(0);
+    let nonce = NEXT.fetch_add(1, Ordering::Relaxed);
+    let art_path = cache_dir.join(format!("mpris-art-{}-{}-{nonce}.jpg", std::process::id(), gtk::glib::real_time()));
+    let stage = big_app_kit::storage::StagedFile::new(&art_path).ok()?;
+    std::fs::write(stage.path(), data).ok()?;
+    // Both receipts mean publication happened; cache durability uncertainty is
+    // not a reason to overwrite the published entry with an older generation.
+    let _receipt = stage.publish(&art_path).ok()?;
     Some(gtk::gio::File::for_path(&art_path).uri().to_string())
 }
 

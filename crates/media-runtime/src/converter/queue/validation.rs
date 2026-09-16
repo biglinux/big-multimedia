@@ -99,7 +99,7 @@ pub(super) fn validate_probe(output: &Value, wanted: &Expectation) -> Result<()>
     let duration = number(output.pointer("/format/duration")).filter(|n| *n > 0.0)
         .ok_or_else(|| invalid(&i18n("Exported duration could not be verified")))?;
     if wanted.duration > 0.0 {
-        let tolerance = 2.0_f64.max(wanted.duration * 0.02);
+        let tolerance = (wanted.duration * 0.02).clamp(0.05, 2.0);
         if (duration - wanted.duration).abs() > tolerance {
             return Err(invalid(&i18n("Exported duration differs from the plan. Use precise re-encoding for exact cuts")));
         }
@@ -137,5 +137,8 @@ mod tests {
         assert!(validate_probe(&probe, &plan).is_ok());
         probe["format"]["duration"] = serde_json::json!("1.0");
         assert!(validate_probe(&probe, &plan).is_err());
+        let short = Expectation { duration: 1.0, ..plan };
+        probe["format"]["duration"] = serde_json::json!("0.1");
+        assert!(validate_probe(&probe, &short).is_err());
     }
 }

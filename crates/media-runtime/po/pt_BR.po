@@ -7619,3 +7619,7 @@ msgstr "A codificação do áudio de origem é desconhecida"
 #: crates/media-runtime/src/converter/queue/validation.rs
 msgid "Unknown source video codec"
 msgstr "A codificação do vídeo de origem é desconhecida"
+
+#: crates/big-video-player/src/video/ui/menu_dialogs.rs
+msgid "Screenshot queue is full; wait for pending captures"
+msgstr "A fila de capturas está cheia; aguarde as capturas pendentes"
