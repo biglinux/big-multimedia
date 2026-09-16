@@ -6,7 +6,7 @@
 //! the shell reuses its normal transport handlers. The status snapshot reads
 //! the thread-safe `SharedMprisState`, so it needs no main-loop bounce.
 
-use std::sync::Arc;
+use std::sync::{Arc, atomic::{AtomicBool, AtomicUsize, Ordering}};
 
 use adw::prelude::*;
 use big_player_ui::playback_bar::AudioPlaybackBarOutput;
@@ -22,28 +22,46 @@ pub(crate) fn present_smartphone(
     input: Sender<AudioShellInput>,
     mpris_state: Arc<SharedMprisState>,
 ) {
-    big_player_ui::smartphone::present(parent, move || {
-        build_handlers(input.clone(), mpris_state.clone())
+    big_player_ui::smartphone::present(parent, move |revoked| {
+        build_handlers(input.clone(), mpris_state.clone(), revoked)
     });
 }
 
-fn build_handlers(input: Sender<AudioShellInput>, state: Arc<SharedMprisState>) -> RemoteHandlers {
-    let remote = |input: Sender<AudioShellInput>, out: AudioPlaybackBarOutput| {
-        let _ = input.send(AudioShellInput::PlaybackRemote(out));
-    };
+/// One slot held from network admission until GUI consumption or channel drop.
+#[derive(Debug)]
+pub(crate) struct RemoteActionPermit {
+    revoked: Arc<AtomicBool>,
+    pending: Arc<AtomicUsize>,
+}
+impl RemoteActionPermit {
+    pub(crate) fn is_live(&self) -> bool { !self.revoked.load(Ordering::Acquire) }
+}
+impl Drop for RemoteActionPermit { fn drop(&mut self) { self.pending.fetch_sub(1, Ordering::Release); } }
+fn build_handlers(input: Sender<AudioShellInput>, state: Arc<SharedMprisState>, revoked: Arc<AtomicBool>) -> RemoteHandlers {
+    let pending=Arc::new(AtomicUsize::new(0));
+    let remote = Arc::new(move |input: Sender<AudioShellInput>, out: AudioPlaybackBarOutput| -> bool {
+        if revoked.load(Ordering::Acquire) { return false; }
+        if pending.fetch_update(Ordering::AcqRel,Ordering::Acquire,|n|(n<16).then_some(n+1)).is_err() { return false; }
+        let permit=RemoteActionPermit {revoked:revoked.clone(),pending:pending.clone()};
+        input.send(AudioShellInput::PlaybackRemote {command:out,permit}).is_ok()
+    });
 
     let i = input.clone();
-    let play_pause: Arc<dyn Fn() + Send + Sync> =
-        Arc::new(move || remote(i.clone(), AudioPlaybackBarOutput::TogglePlay));
+    let dispatch=remote.clone();
+    let play_pause: Arc<dyn Fn() -> bool + Send + Sync> =
+        Arc::new(move || dispatch(i.clone(), AudioPlaybackBarOutput::TogglePlay));
     let i = input.clone();
-    let next: Arc<dyn Fn() + Send + Sync> =
-        Arc::new(move || remote(i.clone(), AudioPlaybackBarOutput::Next));
+    let dispatch=remote.clone();
+    let next: Arc<dyn Fn() -> bool + Send + Sync> =
+        Arc::new(move || dispatch(i.clone(), AudioPlaybackBarOutput::Next));
     let i = input.clone();
-    let prev: Arc<dyn Fn() + Send + Sync> =
-        Arc::new(move || remote(i.clone(), AudioPlaybackBarOutput::Previous));
+    let dispatch=remote.clone();
+    let prev: Arc<dyn Fn() -> bool + Send + Sync> =
+        Arc::new(move || dispatch(i.clone(), AudioPlaybackBarOutput::Previous));
     let i = input.clone();
-    let set_volume: Arc<dyn Fn(f64) + Send + Sync> = Arc::new(move |percent: f64| {
-        remote(i.clone(), AudioPlaybackBarOutput::VolumeChanged(percent));
+    let dispatch=remote.clone();
+    let set_volume: Arc<dyn Fn(f64) -> bool + Send + Sync> = Arc::new(move |percent: f64| {
+        dispatch(i.clone(), AudioPlaybackBarOutput::VolumeChanged(percent))
     });
 
     let st = state.clone();

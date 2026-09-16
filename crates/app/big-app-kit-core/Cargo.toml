@@ -15,15 +15,12 @@ categories = ["config"]
 [dependencies]
 serde_json.workspace = true
 big-os-kit.workspace = true
-# `remote-control` only. `log` and the LAN-bindable control server (tiny_http)
-# stay out of the default build so a consumer never links them unasked.
+# Remote-control logging is opt-in. The endpoint itself uses bounded std sockets.
 log = { workspace = true, optional = true }
-tiny_http = { workspace = true, optional = true }
 
 # Network + control-server features are opt-in. `http-client` forwards to the
-# single HTTP-policy home in big-os-kit; `remote-control` pulls the tiny_http
-# endpoint. Default is empty.
+# single HTTP-policy home in big-os-kit. Default is empty.
 [features]
 default = []
 http-client = ["big-os-kit/http-client"]
-remote-control = ["dep:tiny_http", "dep:log"]
+remote-control = ["dep:log"]
