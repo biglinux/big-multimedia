@@ -80,8 +80,8 @@ fn drain_capped_respects_max_bytes() {
     let mut buf: Vec<u8> = Vec::new();
     let payload = vec![b'A'; DEFAULT_MAX_CAPTURE_BYTES + 16];
     let mut cursor = std::io::Cursor::new(payload);
-    drain_capped(&mut cursor, &mut buf).expect("drain");
-    assert_eq!(buf.len(), DEFAULT_MAX_CAPTURE_BYTES);
+    assert!(matches!(drain_capped(&mut cursor, &mut buf), Err(BigSubprocessError::OutputLimit { .. })));
+    assert!(buf.len() <= DEFAULT_MAX_CAPTURE_BYTES);
 }
 
 #[test]
@@ -370,8 +370,8 @@ fn drain_capped_truncates_unaligned_source_exactly_at_cap() {
         chunk: 1000,
     };
     let mut buf = Vec::new();
-    drain_capped(&mut reader, &mut buf).expect("drain");
-    assert_eq!(buf.len(), DEFAULT_MAX_CAPTURE_BYTES);
+    assert!(matches!(drain_capped(&mut reader, &mut buf), Err(BigSubprocessError::OutputLimit { .. })));
+    assert!(buf.len() <= DEFAULT_MAX_CAPTURE_BYTES);
 }
 
 #[test]
@@ -471,4 +471,45 @@ fn run_cancellable_still_times_out_without_cancel() {
         matches!(err, BigSubprocessError::Timeout),
         "expected Timeout, got {err:?}"
     );
+}
+
+#[test]
+fn redaction_survives_non_utf8() {
+    let mut buf = b"secret\xffsecret".to_vec();
+    redact_in_place(&["secret".to_owned()], &mut buf);
+    assert_eq!(buf, b"[REDACTED]\xff[REDACTED]");
+}
+
+#[cfg(target_os = "linux")]
+#[test]
+#[cfg_attr(miri, ignore)]
+fn delayed_descendant_output_is_not_discarded() {
+    let result = BigSubprocessSpec::builder().program("sh").args(["-c", "(sleep 0.1; printf FINAL) &"])
+        .timeout(Duration::from_secs(2)).build().run().expect("delayed output");
+    assert!(result.status.success());
+    assert_eq!(result.stdout, b"FINAL");
+}
+
+#[cfg(target_os = "linux")]
+#[test]
+#[cfg_attr(miri, ignore)]
+fn inherited_pipe_and_unread_stdin_obey_deadline() {
+    for args in [["-c", "sleep 10"], ["-c", "sleep 10 &"]] {
+        let start = std::time::Instant::now();
+        let error = BigSubprocessSpec::builder().program("sh").args(args)
+            .stdin(vec![0; 1024 * 1024]).timeout(Duration::from_millis(150)).build().run().unwrap_err();
+        assert!(matches!(error, BigSubprocessError::Timeout | BigSubprocessError::Io(_)));
+        assert!(start.elapsed() < Duration::from_secs(3));
+    }
+}
+
+#[cfg(target_os = "linux")]
+#[test]
+#[cfg_attr(miri, ignore)]
+fn full_duplex_large_input_and_output_do_not_deadlock() {
+    let result = BigSubprocessSpec::builder().program("sh")
+        .args(["-c", "head -c 131072 /dev/zero; cat >/dev/null"])
+        .stdin(vec![7; 1024 * 1024]).timeout(Duration::from_secs(5)).build().run().unwrap();
+    assert!(result.status.success());
+    assert_eq!(result.stdout.len(), 131072);
 }

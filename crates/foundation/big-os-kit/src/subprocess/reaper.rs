@@ -1,0 +1,81 @@
+//! Bounded process-wide child collector. Start/reserve BEFORE spawning.
+//! Never creates one thread per child, never calls blocking Child::wait().
+use std::process::Child;
+use std::sync::{Arc, Condvar, Mutex, PoisonError};
+use std::time::Duration;
+use std::io;
+
+const MAX_CHILDREN: usize = 128;
+struct State { reserved: usize, children: Vec<Child> }
+struct Collector { state: Mutex<State>, wake: Condvar }
+static COLLECTOR: Mutex<Option<Arc<Collector>>> = Mutex::new(None);
+
+pub(super) struct Permit { collector: Arc<Collector>, active: bool }
+impl Permit {
+    pub(super) fn reserve() -> io::Result<Self> {
+        let collector = {
+            let mut slot = COLLECTOR.lock().unwrap_or_else(PoisonError::into_inner);
+            if slot.is_none() {
+                let collector = Arc::new(Collector {
+                    state: Mutex::new(State { reserved: 0, children: Vec::with_capacity(MAX_CHILDREN) }),
+                    wake: Condvar::new(),
+                });
+                let worker = Arc::clone(&collector);
+                // Failure propagates before a child exists. No fallible spawn
+                // or allocation is needed on an error-cleanup path later.
+                std::thread::Builder::new().name("big-child-reaper".into())
+                    .spawn(move || worker.run())?;
+                *slot = Some(collector);
+            }
+            Arc::clone(slot.as_ref().expect("collector initialized above"))
+        };
+        {
+            let mut state = collector.state.lock().unwrap_or_else(PoisonError::into_inner);
+            if state.reserved == MAX_CHILDREN {
+                return Err(io::Error::new(io::ErrorKind::WouldBlock, "too many managed subprocesses"));
+            }
+            state.reserved += 1;
+        }
+        Ok(Self { collector, active: true })
+    }
+
+    pub(super) fn defer(mut self, child: Child) {
+        let mut state = self.collector.state.lock().unwrap_or_else(PoisonError::into_inner);
+        // The pre-reserved slot bounds the vector; this path cannot fail due to
+        // thread creation. The collector now owns the slot and the Child.
+        state.children.push(child);
+        self.active = false;
+        self.collector.wake.notify_one();
+    }
+}
+impl Drop for Permit {
+    fn drop(&mut self) {
+        if self.active {
+            let mut state = self.collector.state.lock().unwrap_or_else(PoisonError::into_inner);
+            state.reserved -= 1;
+        }
+    }
+}
+impl Collector {
+    fn run(&self) {
+        let mut state = self.state.lock().unwrap_or_else(PoisonError::into_inner);
+        loop {
+            if state.children.is_empty() {
+                state = self.wake.wait(state).unwrap_or_else(PoisonError::into_inner);
+                continue;
+            }
+            let before = state.children.len();
+            state.children.retain_mut(|child| match child.try_wait() {
+                Ok(Some(_)) => false,
+                // ECHILD means an external SIGCHLD handler already collected
+                // it. Never signal a recycled PID. Other errors remain retryable.
+                #[cfg(unix)]
+                Err(error) if error.raw_os_error() == Some(libc::ECHILD) => false,
+                _ => true,
+            });
+            state.reserved -= before - state.children.len();
+            state = self.wake.wait_timeout(state, Duration::from_millis(100))
+                .unwrap_or_else(PoisonError::into_inner).0;
+        }
+    }
+}
