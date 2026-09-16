@@ -178,6 +178,8 @@ pub struct AudioShell {
     library_age: u32,
     /// Discards superseded library queries before work and before presentation.
     library_generation: LibraryGeneration,
+    /// At most one import owned by this shell; dropping the shell cancels it.
+    scan_slot: library_scan_engine::ScanSlot,
     library_queries: library_generation::LatestMailbox<library_store::TreeRequest>,
     /// Path of the loaded track (empty = nothing loaded).
     current_file: String,

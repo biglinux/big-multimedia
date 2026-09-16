@@ -47,6 +47,8 @@ pub enum AudioShellInput {
     RadioStationsResolved(Vec<RadioStation>),
     /// A folder scan finished → rebuild the library tree + playlist dialog data.
     ScanFinished(bool),
+    /// A bounded, cancellable import finished (earlier commits are preserved).
+    LibraryScanFinished { control: Arc<library_scan_engine::ScanControl>, report: library_scan_engine::ScanReport },
     /// Dropped/opened paths resolved to library tracks (async DB result) →
     /// insert into the queue at `insert_pos`.
     DroppedResolved {
@@ -128,17 +130,20 @@ pub enum AudioShellInput {
     /// An imported playlist file was chosen → parse + save as a new playlist.
     ImportPlaylistFile {
         /// Absolute path to the `.m3u`/`.pls` file.
-        path: String,
+        path: PathBuf,
         /// Suggested playlist name (file stem).
         name: String,
     },
     /// A folder was chosen for batch import → parse every playlist file in it.
     ImportPlaylistFolder(PathBuf),
     /// Import finished → `usize` tracks were matched and added.
-    PlaylistImported(usize),
+    PlaylistImported(Result<usize, String>),
     /// A transport command from the smartphone remote (worker thread) — reuses
     /// the normal playback handler.
-    PlaybackRemote(AudioPlaybackBarOutput),
+    PlaybackRemote {
+        command: AudioPlaybackBarOutput,
+        permit: crate::audio::ui::smartphone_dialog::RemoteActionPermit,
+    },
     /// Open the sleep-timer dialog (main menu).
     ShowSleepTimer,
     /// Open preferences bound to this shell's actual playback engine.

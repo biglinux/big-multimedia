@@ -87,21 +87,22 @@ pub(super) fn export_detail_m3u8(
         .initial_name("playlist.m3u8")
         .pattern_filter("M3U8 Playlist", &["*.m3u8", "*.m3u"])
         .save(parent, move |path| {
-            spawn_blocking_result(
-                move || std::fs::write(&path, render_m3u8(&tracks)).is_ok(),
-                move |ok| {
-                    let notification_message = if ok {
-                        i18n("Playlist exported")
-                    } else {
-                        i18n("Export failed")
-                    };
-                    let _ = out.output(LibraryPanelOutput::Notify(notification_message));
+            crate::settings::saving::acknowledged_task(false,
+                move || {
+                    let items:Vec<_>=tracks.into_iter().map(|t|t.file_path).collect();
+                    crate::media::playlist_scan::write_m3u(&path,&items)
+                        .map_err(|_|std::io::Error::other("Playlist export could not be confirmed"))
+                },
+                move |result| {
+                    let message=if result.is_ok() {i18n("Playlist exported")} else {i18n("Playlist export could not be confirmed. Existing files were kept; choose a new name and retry.")};
+                    let _=out.output(LibraryPanelOutput::Notify(message));
                 },
             );
         });
 }
 
 /// Render the `#EXTM3U` body for `tracks` (pure; off-thread caller).
+#[cfg(test)]
 pub(crate) fn render_m3u8(tracks: &[Track]) -> String {
     let mut content = String::from("#EXTM3U\n");
     for t in tracks {
@@ -173,6 +174,11 @@ pub(super) fn show_manage_folders(
     content.append(&build_intro_label());
     content.append(&build_folders_card(parent, folders, sender));
     content.append(&build_tips_card());
+    let review = gtk::Button::with_label(&i18n("Review unavailable files"));
+    let out = sender.clone();
+    review.connect_clicked(move |_| { let _ = out.output(LibraryPanelOutput::ReviewUnavailable); });
+    content.append(&review);
+
 
     let dialog = adw::Dialog::builder()
         .title(i18n("Music Folders"))
@@ -225,7 +231,7 @@ fn build_folders_card(
     let desc = gtk::Label::builder()
         .label(i18n(
             "These folders are scanned for audio files. \
-             Removing a folder also removes its tracks from the library.",
+             Removing a folder stops monitoring it. Tracks and ratings are kept until you explicitly review unavailable files.",
         ))
         .wrap(true)
         .xalign(0.0)
@@ -274,10 +280,10 @@ fn build_folders_list(
         let remove_folder_button = build_remove_button(&folder_label);
         let folder_id = folder.id;
         let out = sender.clone();
-        let list_weak = list.downgrade();
         remove_folder_button.connect_clicked(move |button| {
             let _ = out.output(LibraryPanelOutput::RemoveWatchFolder { id: folder_id });
-            remove_row_from_list(button, &list_weak);
+            button.set_sensitive(false);
+            big_relm4_components::feedback::tooltip::set(button, i18n("Removal requested. Reopen this list after the operation finishes."));
         });
         strip.append(&remove_folder_button);
         list.append(&strip.into_root());
@@ -318,31 +324,9 @@ fn build_folder_buttons(parent: &gtk::Window, sender: &ComponentSender<LibraryPa
             .css_class("pill"),
     );
     let out_scan = sender.clone();
-    scan_now_button.connect_clicked(move |button| {
-        button.set_sensitive(false);
-        let _ = out_scan.output(LibraryPanelOutput::ScanNow);
-        let scan_now_button_weak = button.downgrade();
-        glib::timeout_add_seconds_local_once(3, move || {
-            if let Some(button) = scan_now_button_weak.upgrade() {
-                button.set_sensitive(true);
-            }
-        });
-    });
+    scan_now_button.connect_clicked(move |_| { let _ = out_scan.output(LibraryPanelOutput::ScanNow); });
     buttons.append(&scan_now_button);
     buttons
-}
-
-/// Optimistic removal of the clicked row's `ActionRow` from `list` so the
-/// dialog updates immediately (the shell deletes the row from the DB).
-fn remove_row_from_list(clicked_button: &gtk::Button, list_weak: &glib::WeakRef<gtk::ListBox>) {
-    let Some(list) = list_weak.upgrade() else {
-        return;
-    };
-    if let Some(row) = clicked_button.ancestor(adw::ActionRow::static_type())
-        && let Some(row) = row.downcast_ref::<adw::ActionRow>()
-    {
-        list.remove(row);
-    }
 }
 
 /// A small shared-chrome dialog with a single name entry; calls `on_save` with
@@ -444,7 +428,7 @@ fn build_remove_button(folder_label: &str) -> gtk::Button {
         .build();
     big_relm4_components::feedback::tooltip::set(
         &remove_folder_button,
-        i18n("Remove folder and its tracks"),
+        i18n("Stop monitoring this folder; keep its tracks"),
     );
     remove_folder_button.update_property(&[gtk::accessible::Property::Label(&format!(
         "{}: {folder_label}",

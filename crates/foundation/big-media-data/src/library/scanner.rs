@@ -30,10 +30,17 @@ fn insert_batch(conn: &Connection, tracks: &[Track]) -> Result<usize> {
     tx.commit()?; Ok(tracks.len())
 }
 /// Visit audio paths without collecting them; traversal errors remain explicit.
-pub fn visit_audio_files(folder: &str, mut visit: impl FnMut(&Path) -> Result<()>) -> Result<()> {
+pub fn visit_audio_files(folder: &str, visit: impl FnMut(&Path) -> Result<()>) -> Result<()> {
+    visit_audio_files_cancellable(folder,&std::sync::atomic::AtomicBool::new(false),visit)
+}
+/// Cancellation is checked between directory entries; a kernel filesystem call
+/// itself is not forcibly interruptible by this cooperative API.
+pub fn visit_audio_files_cancellable(folder:&str,cancelled:&std::sync::atomic::AtomicBool,mut visit:impl FnMut(&Path)->Result<()>)->Result<()> {
+    if cancelled.load(std::sync::atomic::Ordering::Acquire) {return Err(crate::Error::Cancelled);}
     if !std::fs::metadata(folder)?.is_dir() { return Err(crate::Error::invalid_argument("folder", "choose an available directory")); }
     for entry in ignore::WalkBuilder::new(folder).hidden(false).ignore(false)
         .git_ignore(false).git_global(false).git_exclude(false).follow_links(false).build() {
+        if cancelled.load(std::sync::atomic::Ordering::Acquire) {return Err(crate::Error::Cancelled);}
         let entry = entry.map_err(|_| crate::Error::internal("directory traversal incomplete; earlier import batches were preserved"))?;
         if entry.file_type().is_some_and(|ty| ty.is_file()) {
             if entry.path().extension().and_then(|ext| ext.to_str()).is_some_and(|ext| AUDIO_EXTENSIONS.iter().any(|known| ext.eq_ignore_ascii_case(known))) {

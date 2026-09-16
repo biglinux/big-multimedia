@@ -6,6 +6,8 @@ pub mod models;
 pub mod queries;
 pub mod queries_advanced;
 pub mod schema;
+/// Explicit, non-destructive review of unavailable media references.
+pub mod unavailable;
 
 use log::info;
 use rusqlite::Connection;

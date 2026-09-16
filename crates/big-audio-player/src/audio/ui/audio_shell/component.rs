@@ -39,6 +39,7 @@ impl Component for AudioShell {
         root: Self::Root,
         sender: ComponentSender<Self>,
     ) -> ComponentParts<Self> {
+        crate::settings::bind_write_drain(&root);
         // Window-scoped actions go in a "win" group inserted on the Root, so they
         // travel with the content into whatever window hosts it (instead of being
         // bound to a specific `ApplicationWindow`).
@@ -563,6 +564,7 @@ impl Component for AudioShell {
                 library_filter: String::new(),
                 library_age: 0,
                 library_generation: LibraryGeneration::default(),
+                scan_slot: library_scan_engine::ScanSlot::default(),
                 library_queries: library_generation::LatestMailbox::default(),
                 current_file: String::new(),
                 last_art_bytes: None,
