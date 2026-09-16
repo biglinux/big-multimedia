@@ -46,7 +46,7 @@ pub enum AudioShellInput {
     /// Saved radio stations resolved (async DB result) → push to the radio panel.
     RadioStationsResolved(Vec<RadioStation>),
     /// A folder scan finished → rebuild the library tree + playlist dialog data.
-    ScanFinished,
+    ScanFinished(bool),
     /// Dropped/opened paths resolved to library tracks (async DB result) →
     /// insert into the queue at `insert_pos`.
     DroppedResolved {
@@ -65,6 +65,7 @@ pub enum AudioShellInput {
     /// Rebuild the library tree from the current grouping/filter/age (boot +
     /// after a grouping/search/age change).
     RebuildLibraryTree,
+    LibraryTreeFailed { generation: u64 },
     /// The rebuilt library tree (async DB result) → push to the library panel.
     LibraryTreeResolved {
         /// Current search/grouping/age generation.

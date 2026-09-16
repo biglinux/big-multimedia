@@ -36,26 +36,24 @@ impl AudioShell {
             .emit(AudioPlaybackBarInput::SetStatus(i18n("Scanning folder…")));
         let input = sender.input_sender().clone();
         glib::spawn_future_local(async move {
-            let _ = gio::spawn_blocking(move || {
+            let complete = matches!(gio::spawn_blocking(move || {
                 library_scan_engine::scan_folder_blocking(&db, &folder)
-            })
-            .await;
-            let _ = input.send(AudioShellInput::ScanFinished);
+            }).await, Ok(Ok((_, 0))));
+            let _ = input.send(AudioShellInput::ScanFinished(complete));
         });
     }
 
-    /// Remove a watch folder (+ its tracks) off-thread, then refresh.
+    /// Stop monitoring a watch folder, preserving its tracks, then refresh.
     pub(super) fn remove_watch_folder(&self, id: i64, sender: &ComponentSender<Self>) {
         let Some(db) = self.db.clone() else {
             return;
         };
         let input = sender.input_sender().clone();
         glib::spawn_future_local(async move {
-            let _ = gio::spawn_blocking(move || {
+            let complete = matches!(gio::spawn_blocking(move || {
                 library_scan_engine::remove_watch_folder_blocking(&db, id)
-            })
-            .await;
-            let _ = input.send(AudioShellInput::ScanFinished);
+            }).await, Ok(true));
+            let _ = input.send(AudioShellInput::ScanFinished(complete));
         });
     }
 
@@ -68,13 +66,15 @@ impl AudioShell {
             .emit(AudioPlaybackBarInput::SetStatus(i18n("Scanning library…")));
         let input = sender.input_sender().clone();
         glib::spawn_future_local(async move {
-            let _ = gio::spawn_blocking(move || {
-                for folder in library_scan_engine::watch_folder_paths_blocking(&db) {
-                    let _ = library_scan_engine::scan_folder_blocking(&db, &folder);
+            let complete = matches!(gio::spawn_blocking(move || {
+                let Ok(folders) = library_scan_engine::watch_folder_paths_blocking(&db) else { return false; };
+                let mut complete = true;
+                for folder in folders {
+                    if !matches!(library_scan_engine::scan_folder_blocking(&db, &folder), Ok((_, 0))) { complete = false; }
                 }
-            })
-            .await;
-            let _ = input.send(AudioShellInput::ScanFinished);
+                complete
+            }).await, Ok(true));
+            let _ = input.send(AudioShellInput::ScanFinished(complete));
         });
     }
 

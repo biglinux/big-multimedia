@@ -1,112 +1,57 @@
-//! Parallel audio-file scanner — uses `ignore` crate's walker (drives all
-//! cores) and inserts new tracks while pruning stale ones.
-
-use log::{debug, info, warn};
+//! Streaming discovery; unavailable files are never an instruction to delete rows.
 use rusqlite::Connection;
 use std::path::{Path, PathBuf};
-use std::sync::Mutex;
-
-use crate::db::queries;
-use crate::error::Result;
-use crate::library::metadata;
-
+use crate::{db::{queries, models::Track}, error::Result, library::metadata};
 pub use big_media_engines::media_files::AUDIO_EXTENSIONS;
 
-/// Inserts new tracks and prunes entries whose files have been deleted.
-/// Returns the count of newly added tracks.
+/// Partial commits are possible on later I/O failure; the caller must report that
+/// a failed scan may already have imported earlier batches. No deletion occurs.
 pub fn scan_library(conn: &Connection, folder: &str) -> Result<usize> {
-    let files = discover_audio_files(folder)?;
-    info!("Discovered {} audio files in {folder}", files.len());
-
-    let existing_paths = queries::get_all_file_paths(conn)?;
-    let existing_set: std::collections::HashSet<&str> = existing_paths
-        .iter()
-        .map(std::string::String::as_str)
-        .collect();
-
-    let mut added = 0_usize;
-
-    let tx_result = {
-        let tx = conn.unchecked_transaction()?;
-
-        for path in &files {
-            let path_str = path.to_string_lossy();
-            if existing_set.contains(path_str.as_ref()) {
-                continue;
-            }
-            match metadata::read_track_metadata(&path_str) {
-                Ok(track) => match queries::insert_track(&tx, &track) {
-                    Err(e) => {
-                        warn!("Failed to insert {path_str}: {e}");
-                    }
-                    _ => {
-                        added += 1;
-                    }
-                },
-                Err(e) => {
-                    debug!("Skipping {path_str}: {e}");
-                }
-            }
+    let mut added = 0; let mut batch: Vec<Track> = Vec::with_capacity(64);
+    visit_audio_files(folder, |path| {
+        let Some(path) = path.to_str() else {
+            return Err(crate::Error::invalid_argument("path", "non-UTF-8 library path needs lossless schema support"));
+        };
+        let exists: bool = conn.query_row("SELECT EXISTS(SELECT 1 FROM tracks WHERE file_path=?1)", [path], |row| row.get(0))?;
+        if exists { return Ok(()); }
+        match metadata::read_track_metadata(path) {
+            Ok(track) => batch.push(track),
+            Err(_) => return Err(crate::Error::internal("metadata could not be read; earlier import batches were preserved")),
         }
-
-        tx.commit()
-    };
-
-    tx_result?;
-
-    let stale_paths: Vec<&str> = existing_paths
-        .iter()
-        .filter(|p| !Path::new(p).exists())
-        .map(std::string::String::as_str)
-        .collect();
-
-    if !stale_paths.is_empty() {
-        let removed = stale_paths.len();
-        for path in &stale_paths {
-            if let Err(e) = conn.execute("DELETE FROM tracks WHERE file_path = ?1", [path]) {
-                warn!("Failed removing stale track {path}: {e}");
-            }
-        }
-        info!("Removed {removed} stale entries");
-    }
-    info!("Scan complete: {added} new tracks added from {folder}");
+        if batch.len() == 64 { added += insert_batch(conn, &batch)?; batch.clear(); }
+        Ok(())
+    })?;
+    if !batch.is_empty() { added += insert_batch(conn, &batch)?; }
     Ok(added)
 }
-
+fn insert_batch(conn: &Connection, tracks: &[Track]) -> Result<usize> {
+    let tx = conn.unchecked_transaction()?;
+    for track in tracks { queries::insert_track(&tx, track)?; }
+    tx.commit()?; Ok(tracks.len())
+}
+/// Visit audio paths without collecting them; traversal errors remain explicit.
+pub fn visit_audio_files(folder: &str, mut visit: impl FnMut(&Path) -> Result<()>) -> Result<()> {
+    if !std::fs::metadata(folder)?.is_dir() { return Err(crate::Error::invalid_argument("folder", "choose an available directory")); }
+    for entry in ignore::WalkBuilder::new(folder).hidden(false).ignore(false)
+        .git_ignore(false).git_global(false).git_exclude(false).follow_links(false).build() {
+        let entry = entry.map_err(|_| crate::Error::internal("directory traversal incomplete; earlier import batches were preserved"))?;
+        if entry.file_type().is_some_and(|ty| ty.is_file()) {
+            if entry.path().extension().and_then(|ext| ext.to_str()).is_some_and(|ext| AUDIO_EXTENSIONS.iter().any(|known| ext.eq_ignore_ascii_case(known))) {
+                visit(entry.path())?;
+            }
+        }
+    }
+    Ok(())
+}
+/// Compatibility collector for callers that explicitly need a list. Unlike the
+/// scanner this API materializes paths and therefore has an explicit safety cap.
 pub fn discover_audio_files(folder: &str) -> Result<Vec<PathBuf>> {
-    let files: Mutex<Vec<PathBuf>> = Mutex::new(Vec::new());
-
-    ignore::WalkBuilder::new(folder)
-        .hidden(false)
-        .ignore(false)
-        .git_ignore(false)
-        .git_global(false)
-        .git_exclude(false)
-        .build_parallel()
-        .run(|| {
-            let files = &files;
-            Box::new(move |entry| {
-                if let Ok(entry) = entry {
-                    let is_file = entry.file_type().is_some_and(|ft| ft.is_file());
-                    if is_file
-                        && big_media_engines::media_files::is_audio_file(
-                            &entry.path().to_string_lossy(),
-                        )
-                    {
-                        files
-                            .lock()
-                            .unwrap_or_else(std::sync::PoisonError::into_inner)
-                            .push(entry.into_path());
-                    }
-                }
-                ignore::WalkState::Continue
-            })
-        });
-
-    // Walker has joined by here — `into_inner()` cannot be poisoned.
-    Ok(files
-        .into_inner()
-        .expect("walker must be finished before collecting files"))
+    let mut files = Vec::new();
+    visit_audio_files(folder, |path| {
+        if files.len() >= 100_000 { return Err(crate::Error::internal("too many paths for a collected scan")); }
+        files.push(path.to_owned()); Ok(())
+    })?;
+    files.sort_unstable(); files.dedup(); Ok(files)
 }
 
 #[cfg(test)]
@@ -206,6 +151,6 @@ mod tests {
     fn discover_nonexistent_folder_returns_error() {
         // `ignore` may return Ok([]) or Err — assert only that it doesn't panic.
         let result = discover_audio_files("/tmp/bmp-test-nonexistent-xyz-9999");
-        let _ = result;
+        assert!(result.is_err());
     }
 }

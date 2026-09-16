@@ -178,6 +178,7 @@ pub struct AudioShell {
     library_age: u32,
     /// Discards superseded library queries before work and before presentation.
     library_generation: LibraryGeneration,
+    library_queries: library_generation::LatestMailbox<library_store::TreeRequest>,
     /// Path of the loaded track (empty = nothing loaded).
     current_file: String,
     /// Last resolved cover bytes — kept so the blurred background can be toggled

@@ -1,29 +1,36 @@
 use super::*;
 
+pub(super) struct TreeRequest {
+    db: DbHandle, ticket: library_generation::LibraryTicket,
+    grouping: LibraryGrouping, filter: String, age: Option<i64>,
+}
+fn start_tree(mailbox: library_generation::LatestMailbox<TreeRequest>, input: relm4::Sender<AudioShellInput>, request: TreeRequest) {
+    let generation = request.ticket.value;
+    glib::spawn_future_local(async move {
+        let result = gio::spawn_blocking(move || {
+            if !request.ticket.is_current() { return Ok(None); }
+            let conn = request.db.lock().map_err(|_| "library lock failed")?;
+            if !request.ticket.is_current() { return Ok(None); }
+            let tree = library_query::try_build_library_tree_snapshot(&conn, &request.grouping, &request.filter, request.age)?;
+            Ok::<_, &'static str>(request.ticket.is_current().then_some(tree))
+        }).await;
+        match result {
+            Ok(Ok(Some(data))) => { let _ = input.send(AudioShellInput::LibraryTreeResolved { generation, data }); }
+            Ok(Ok(None)) => {}, // stale: do not display empty results or an error
+            _ => { let _ = input.send(AudioShellInput::LibraryTreeFailed { generation }); }
+        }
+        if let Some(next) = mailbox.complete() { start_tree(mailbox, input, next); }
+    });
+}
 impl AudioShell {
     pub(super) fn rebuild_library_tree(&self, sender: &ComponentSender<Self>) {
-        let Some(db) = self.db_read.clone().or_else(|| self.db.clone()) else {
-            return;
-        };
-        let ticket = self.library_generation.begin();
-        let generation = ticket.value;
-        let grouping = self.library_grouping.clone();
-        let filter = self.library_filter.clone();
-        let age = AgeFilter::from_index(self.library_age).seconds_ago();
-        let input = sender.input_sender().clone();
-        spawn_db_query(
-            db,
-            move |conn| {
-                if !ticket.is_current() { return None; }
-                let data = library_query::build_library_tree_snapshot(conn, &grouping, &filter, age);
-                ticket.is_current().then_some(data)
-            },
-            move |data| {
-                if let Some(data) = data {
-                    let _ = input.send(AudioShellInput::LibraryTreeResolved { generation, data });
-                }
-            },
-        );
+        let Some(db) = self.db_read.clone().or_else(|| self.db.clone()) else { return; };
+        let request = TreeRequest { db, ticket: self.library_generation.begin(),
+            grouping: self.library_grouping.clone(), filter: self.library_filter.clone(),
+            age: AgeFilter::from_index(self.library_age).seconds_ago() };
+        if let Some(request) = self.library_queries.submit(request) {
+            start_tree(self.library_queries.clone(), sender.input_sender().clone(), request);
+        }
     }
 
     /// Delete a custom playlist, then refresh the manager dialog.

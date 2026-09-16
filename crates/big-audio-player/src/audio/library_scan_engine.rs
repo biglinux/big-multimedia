@@ -1,101 +1,55 @@
-//! Pure (GTK-free) library folder scanner for the Relm4 `AudioShell`.
-//!
-//! Ported out of the god-object `window::library_scan::scan` (which was an
-//! `impl Window` method) so the shell can run it off-thread without a GTK
-//! widget. Discovers audio files, reads tags, batch-inserts, and prunes stale
-//! rows. The shell wraps it in `gio::spawn_blocking` and refreshes the tree on
-//! completion; live progress (the old 250 ms status-label poll) is dropped.
-
-use std::collections::HashSet;
+//! Bounded metadata import. A scan never deletes unavailable tracks.
+//! One batch has at most 64 records; filesystem metadata is read outside the
+//! DB mutex and transaction. Earlier committed batches survive later failures.
 use std::path::Path;
 use std::sync::PoisonError;
-
-use crate::db::DbHandle;
-use crate::db::queries;
+use crate::db::{DbHandle, queries};
+use crate::db::models::Track;
 use crate::library::{metadata, scanner};
 
-/// Scan `folder` into the library: register it as a watch folder, insert any
-/// newly-discovered tracks (batched), and prune entries whose files vanished.
-/// Returns `(added, skipped)`.
 pub(crate) fn scan_folder_blocking(db: &DbHandle, folder: &str) -> Result<(usize, usize), String> {
+    if !std::fs::metadata(folder).map_err(|_| "Folder is unavailable")?.is_dir() {
+        return Err("Choose an available folder".into());
+    }
     {
-        let conn = db.lock().unwrap_or_else(PoisonError::into_inner);
-        let _ = queries::add_watch_folder(&conn, folder);
+        let conn = db.lock().map_err(|_| "Library connection failed")?;
+        queries::add_watch_folder(&conn, folder).map_err(|_| "Could not save watch folder")?;
     }
-
-    let existing: HashSet<String> = {
-        let conn = db.lock().unwrap_or_else(PoisonError::into_inner);
-        queries::get_all_file_paths(&conn)
-            .unwrap_or_default()
-            .into_iter()
-            .collect()
-    };
-
-    let files = scanner::discover_audio_files(folder).map_err(|e| e.to_string())?;
-    let total = files.len();
-
-    let mut new_tracks = Vec::new();
-    let mut skipped = 0_usize;
-    for path in &files {
-        let path_str = path.to_string_lossy();
-        if existing.contains(path_str.as_ref()) {
-            continue;
+    let mut batch: Vec<Track> = Vec::with_capacity(64);
+    let mut added = 0; let mut skipped = 0;
+    scanner::visit_audio_files(folder, |path| {
+        let path = path.to_str().ok_or_else(|| std::io::Error::other("Non-UTF-8 paths require a library schema migration"))?;
+        let exists: bool = {
+            let conn = db.lock().map_err(|_| std::io::Error::other("Library connection failed"))?;
+            conn.query_row("SELECT EXISTS(SELECT 1 FROM tracks WHERE file_path=?1)", [path], |row| row.get(0))?
+        };
+        if exists { return Ok(()); }
+        match metadata::read_track_metadata(path) {
+            Ok(track) => batch.push(track),
+            Err(_) => skipped += 1,
         }
-        match metadata::read_track_metadata(&path_str) {
-            Ok(track) => new_tracks.push(track),
-            Err(e) => {
-                log::debug!("scan skip {path_str}: {e}");
-                skipped += 1;
-            }
-        }
-    }
-
-    let mut added = 0_usize;
-    for chunk in new_tracks.chunks(50) {
-        let conn = db.lock().unwrap_or_else(PoisonError::into_inner);
-        let txx = conn.unchecked_transaction().map_err(|e| e.to_string())?;
-        for track in chunk {
-            if queries::insert_track(&txx, track).is_ok() {
-                added += 1;
-            }
-        }
-        txx.commit().map_err(|e| e.to_string())?;
-    }
-
-    {
-        let conn = db.lock().unwrap_or_else(PoisonError::into_inner);
-        let stale = queries::get_all_file_paths(&conn).unwrap_or_default();
-        for path in stale.iter().filter(|p| !Path::new(p).exists()) {
-            let _ = conn.execute("DELETE FROM tracks WHERE file_path = ?1", [path]);
-        }
-    }
-
-    log::info!("scan {folder}: +{added} new, {skipped} skipped of {total}");
+        if batch.len() == 64 { added += insert_scan_batch(db, &batch)?; batch.clear(); }
+        Ok(())
+    }).map_err(|_| "Scan was incomplete; earlier imports were kept".to_owned())?;
+    if !batch.is_empty() { added += insert_scan_batch(db, &batch).map_err(|_| "Import was incomplete; earlier batches were kept")?; }
     Ok((added, skipped))
 }
-
-/// Remove a watch folder by id (its tracks too), returning `true` on success.
-pub(crate) fn remove_watch_folder_blocking(db: &DbHandle, folder_id: i64) -> bool {
-    let conn = db.lock().unwrap_or_else(PoisonError::into_inner);
-    let path = queries::get_watch_folders(&conn)
-        .unwrap_or_default()
-        .into_iter()
-        .find(|f| f.id == folder_id)
-        .map(|f| f.path);
-    if let Some(path) = path {
-        let _ = queries::remove_tracks_in_folder(&conn, &path);
-    }
-    queries::remove_watch_folder(&conn, folder_id).is_ok()
+fn insert_scan_batch(db: &DbHandle, tracks: &[Track]) -> std::io::Result<usize> {
+    let conn = db.lock().map_err(|_| std::io::Error::other("Library connection failed"))?;
+    let tx = conn.unchecked_transaction().map_err(|_| std::io::Error::other("Library write failed"))?;
+    for track in tracks { queries::insert_track(&tx, track).map_err(|_| std::io::Error::other("Library write failed"))?; }
+    tx.commit().map_err(|_| std::io::Error::other("Library commit failed"))?;
+    Ok(tracks.len())
 }
-
-/// All watch-folder paths (for a rescan-all).
-pub(crate) fn watch_folder_paths_blocking(db: &DbHandle) -> Vec<String> {
-    let conn = db.lock().unwrap_or_else(PoisonError::into_inner);
-    queries::get_watch_folders(&conn)
-        .unwrap_or_default()
-        .into_iter()
-        .map(|f| f.path)
-        .collect()
+/// Stop monitoring only. Removing tracks/ratings/playlists is a separate,
+/// destructive user decision and must not be inferred from removing a watch.
+pub(crate) fn remove_watch_folder_blocking(db: &DbHandle, folder_id: i64) -> bool {
+    db.lock().is_ok_and(|conn| queries::remove_watch_folder(&conn, folder_id).is_ok())
+}
+pub(crate) fn watch_folder_paths_blocking(db: &DbHandle) -> Result<Vec<String>, String> {
+    let conn = db.lock().map_err(|_| "Library connection failed")?;
+    Ok(queries::get_watch_folders(&conn).map_err(|_| "Could not read watch folders")?
+        .into_iter().map(|folder| folder.path).collect())
 }
 
 #[cfg(all(test, not(miri)))]
@@ -184,7 +138,7 @@ mod tests {
     }
 
     #[test]
-    fn scan_folder_adds_valid_audio_skips_invalid_audio_and_prunes_stale_rows()
+    fn scan_folder_imports_bounded_batches_and_preserves_unavailable_rows()
     -> std::result::Result<(), Box<dyn std::error::Error>> {
         let db = memory_library_db()?;
         let scan_folder = unique_audio_scan_folder("mixed")?;
@@ -218,8 +172,8 @@ mod tests {
             "valid WAV file should be inserted into the library"
         );
         assert!(
-            !track_paths.contains(&stale_track_path.to_string_lossy().into_owned()),
-            "stale track row should be pruned during scan"
+            track_paths.contains(&stale_track_path.to_string_lossy().into_owned()),
+            "unavailable track metadata must be preserved"
         );
         assert!(
             !track_paths.contains(&invalid_track_path.to_string_lossy().into_owned()),
@@ -248,7 +202,7 @@ mod tests {
             queries::add_watch_folder(&conn, &scan_folder.to_string_lossy())?;
         }
 
-        let watch_folder_paths = watch_folder_paths_blocking(&db);
+        let watch_folder_paths = watch_folder_paths_blocking(&db)?;
         assert_eq!(
             watch_folder_paths,
             vec![
@@ -262,7 +216,7 @@ mod tests {
     }
 
     #[test]
-    fn remove_watch_folder_removes_tracks_under_that_folder_but_preserves_nested_watch_folder()
+    fn remove_watch_folder_preserves_tracks_and_nested_watch_folder()
     -> std::result::Result<(), Box<dyn std::error::Error>> {
         let db = memory_library_db()?;
         let scan_folder = unique_audio_scan_folder("remove")?;
@@ -297,8 +251,8 @@ mod tests {
 
         let remaining_track_paths = queries::get_all_file_paths(&conn)?;
         assert!(
-            !remaining_track_paths.contains(&parent_track_path.to_string_lossy().into_owned()),
-            "track directly under removed folder should be removed"
+            remaining_track_paths.contains(&parent_track_path.to_string_lossy().into_owned()),
+            "unwatching a folder does not delete tracks"
         );
         assert!(
             remaining_track_paths.contains(&nested_track_path.to_string_lossy().into_owned()),

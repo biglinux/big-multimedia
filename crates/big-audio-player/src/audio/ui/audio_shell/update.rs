@@ -59,9 +59,12 @@ impl AudioShell {
             AudioShellInput::RadioStationsResolved(stations) => {
                 self.radio.emit(RadioPanelInput::RefreshStations(stations));
             }
-            AudioShellInput::ScanFinished => {
-                self.playback_bar
-                    .emit(AudioPlaybackBarInput::SetStatus(i18n("Library updated")));
+            AudioShellInput::ScanFinished(complete) => {
+                self.playback_bar.emit(AudioPlaybackBarInput::SetStatus(if complete {
+                    i18n("Library updated")
+                } else {
+                    i18n("The operation was incomplete. Imported tracks were kept; check the folder and try again.")
+                }));
                 self.rebuild_library_tree(&sender);
                 self.refresh_playlist_dialog_entries(&sender);
             }
@@ -85,6 +88,11 @@ impl AudioShell {
             }
             AudioShellInput::NodeTracksResolved(tracks) => self.enqueue_tracks(tracks),
             AudioShellInput::RebuildLibraryTree => self.rebuild_library_tree(&sender),
+            AudioShellInput::LibraryTreeFailed { generation } => {
+                if self.library_generation.is_current(generation) {
+                    self.playback_bar.emit(AudioPlaybackBarInput::SetStatus(i18n("The library could not be read. Previous results were kept; try searching again.")));
+                }
+            }
             AudioShellInput::LibraryTreeResolved { generation, data } => {
                 if self.library_generation.is_current(generation) {
                     self.library.emit(LibraryPanelInput::SetLibraryTree(data));
