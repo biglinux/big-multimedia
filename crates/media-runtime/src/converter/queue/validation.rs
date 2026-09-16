@@ -107,11 +107,15 @@ pub(super) fn validate_probe(output: &Value, wanted: &Expectation) -> Result<()>
     Ok(())
 }
 pub(super) fn validate_output(path: &Path, wanted: &Expectation) -> Result<()> {
+    validate_output_cancellable(path, wanted, &std::sync::atomic::AtomicBool::new(false))
+}
+pub(super) fn validate_output_cancellable(path: &Path, wanted: &Expectation, cancel: &std::sync::atomic::AtomicBool) -> Result<()> {
     let metadata = std::fs::symlink_metadata(path)?;
     if !metadata.is_file() || metadata.len() == 0 { return Err(invalid(&i18n("Exported file is empty or is not regular"))); }
-    let probe = progress::probe_media_metadata(path).ok_or_else(|| invalid(&i18n("Could not inspect exported file")))?;
+    let probe = progress::probe_media_metadata_cancellable(path, cancel)?;
     validate_probe(&probe, wanted)
 }
+
 #[cfg(test)]
 mod tests {
     use super::*;

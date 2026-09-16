@@ -5,6 +5,7 @@
 
 mod job;
 mod processing;
+mod receipts;
 mod validation;
 mod support;
 mod types;
@@ -37,6 +38,7 @@ pub struct ConversionQueue {
     gpus: Vec<GpuDevice>,
     output_dir: PathBuf,
     cancel: Arc<AtomicBool>,
+    running: Arc<AtomicBool>,
     sender: async_channel::Sender<QueueMessage>,
     receiver: async_channel::Receiver<QueueMessage>,
     resume_context: Option<ConversionResumeContext>,
@@ -79,9 +81,10 @@ impl ConversionQueue {
             gpus: vec![default_gpu],
             output_dir: big_os_kit::xdg_dirs::video_dir().unwrap_or_else(|| PathBuf::from(".")),
             cancel: Arc::new(AtomicBool::new(false)),
+            running: Arc::new(AtomicBool::new(false)),
             sender,
             receiver,
-            resume_context: None,
+            resume_context: Some(ConversionResumeContext { job_key: "verified-receipt-v1".into() }),
             delete_source: false,
             audio_only_mode: false,
         }
@@ -93,6 +96,12 @@ impl ConversionQueue {
             self.output_dir =
                 big_os_kit::xdg_dirs::audio_dir().unwrap_or_else(|| PathBuf::from("."));
         }
+    }
+
+    /// Reuse only outputs whose source, plan, digest and media validation match
+    /// their durable receipt. This is not mid-bitstream continuation.
+    pub fn set_verified_resume(&mut self, enabled: bool) {
+        self.resume_context = enabled.then(|| ConversionResumeContext { job_key: "verified-receipt-v1".into() });
     }
 
     #[must_use]
@@ -154,7 +163,18 @@ impl ConversionQueue {
         } else {
             profiles::resolve_output_name(&self.profile, &input)
         };
-        let output = dedup_output_path(&self.output_dir.join(output_name), &input);
+        let requested = self.output_dir.join(output_name);
+        let output = if self.resume_context.is_some() {
+            // The same plan must map to the same output across sessions. Avoid
+            // probing existence in GTK; the worker verifies receipts and refuses
+            // unknown outputs. Preserve the input even when names coincide.
+            if requested == input {
+                let mut stem = requested.file_stem().unwrap_or_default().to_os_string();
+                stem.push("_converted");
+                if let Some(extension) = requested.extension() { stem.push("."); stem.push(extension); }
+                requested.with_file_name(stem)
+            } else { requested }
+        } else { dedup_output_path(&requested, &input) };
         // Probe OFF the main thread: duration + audio channels + HEVC-10bit
         // detection are three ffprobe runs PER FILE — synchronous here they
         // froze every window of an embedding host while adding a batch. The
@@ -295,7 +315,16 @@ impl ConversionQueue {
     }
 
     pub fn start(&mut self) {
-        self.cancel.store(false, Ordering::Relaxed);
+        if self.sender.is_closed() || self.running.compare_exchange(
+            false, true, Ordering::AcqRel, Ordering::Acquire,
+        ).is_err() {
+            // Repeated clicks must not reset a live worker's cancellation flag
+            // or start two writers for the same output plan.
+            log::warn!("export queue is already running or closed");
+            return;
+        }
+        let run = QueueRun { running:self.running.clone(), sender:self.sender.clone(), cancel:self.cancel.clone() };
+        self.cancel.store(false, Ordering::Release);
 
         let items: Vec<ConversionQueueEntry> = self
             .items
@@ -312,9 +341,12 @@ impl ConversionQueue {
         let delete_source = self.delete_source;
         let audio_only_mode = self.audio_only_mode;
 
-        std::thread::Builder::new()
+        let drain = big_os_kit::background::track_operation();
+        let spawned = std::thread::Builder::new()
             .name("converter-queue".into())
             .spawn(move || {
+                let _drain = drain;
+                let _run = run;
                 if gpus.len() > 1 && items.len() > 1 {
                     let mut gpu_batches: Vec<Vec<ConversionQueueEntry>> =
                         vec![Vec::new(); gpus.len()];
@@ -368,8 +400,19 @@ impl ConversionQueue {
                     );
                 }
                 let _ = sender.send_blocking(QueueMessage::AllDone);
-            })
-            .expect("spawn converter thread");
+            });
+        if spawned.is_err() {
+            for entry in &mut self.items {
+                if entry.status == ConversionStatus::Pending {
+                    entry.status = ConversionStatus::Failed("Could not start export worker".into());
+                    let _ = self.sender.try_send(QueueMessage::Failed { entry_id: entry.id, error: "Could not start export worker".into() });
+                }
+            }
+            // Never leave a blocking consumer waiting for a worker that did not
+            // start, even when its message buffer was already occupied by probes.
+            self.sender.close();
+            return;
+        }
 
         for queue_entry in &mut self.items {
             if matches!(queue_entry.status, ConversionStatus::Pending) {
@@ -497,4 +540,26 @@ fn spawn_probe_worker(
         log::error!("converter probe worker failed to spawn: {error}");
     }
     tx
+}
+
+impl Drop for ConversionQueue {
+    fn drop(&mut self) {
+        self.cancel.store(true, Ordering::Release);
+        // Wake a producer stalled on a full progress channel. Its cancellation
+        // path owns and cleans only its private staging, not published outputs.
+        self.sender.close();
+    }
+}
+
+// Cleared on completion, spawn failure or unwind; never reset cancellation of
+// the previous run before it has actually terminated.
+struct QueueRun { running:Arc<AtomicBool>, sender:async_channel::Sender<QueueMessage>, cancel:Arc<AtomicBool> }
+impl Drop for QueueRun {
+    fn drop(&mut self) {
+        if std::thread::panicking() {
+            self.cancel.store(true, Ordering::Release);
+            self.sender.close();
+        }
+        self.running.store(false, Ordering::Release);
+    }
 }

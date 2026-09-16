@@ -11,98 +11,26 @@ use std::path::{Path, PathBuf};
 use std::sync::{Arc, atomic::{AtomicBool, Ordering}};
 use std::time::Duration;
 use big_os_kit::subprocess::{BigSubprocessSpec, BigSubprocessOutputMode};
-use big_os_kit::storage::{StagedFile, CommitOutcome};
+use big_os_kit::storage::StagedFile;
+use super::receipts::{self, Receipt};
 use super::job::run_job;
 use super::support::{available_disk_space, ensure_entry_probed, segment_output_path};
 use super::{ConversionQueueEntry, ConversionResumeContext, QueueMessage, SegmentOutputMode};
 use crate::error::{Error, Result};
-use super::validation::{Expectation, validate_ranges, validate_output};
+use super::validation::{Expectation, validate_ranges, validate_output_cancellable};
 
 // Pre-flight: 1.5× input as headroom. Indeterminate size/space → let
 // ffmpeg fail later instead of blocking here.
-fn has_enough_disk_space(
-    queue_entry: &ConversionQueueEntry,
-    sender: &async_channel::Sender<QueueMessage>,
-) -> bool {
-    let Some(parent) = queue_entry.output.parent() else {
-        return true;
-    };
-    let Ok(input_meta) = std::fs::metadata(&queue_entry.input) else {
-        return true;
-    };
-    let needed = input_meta.len().saturating_add(input_meta.len() / 2);
-    let Some(available) = available_disk_space(parent) else {
-        return true;
-    };
-    if available >= needed {
-        return true;
+fn require_disk_space(entry: &ConversionQueueEntry) -> Result<()> {
+    let Some(parent) = entry.output.parent() else { return Ok(()); };
+    let input = std::fs::metadata(&entry.input)?;
+    let needed = input.len().saturating_add(input.len() / 2);
+    let Some(available) = available_disk_space(parent) else { return Ok(()); };
+    if available < needed {
+        return Err(failure(&format!("{}: {} ~{}, {} {}", i18n("Insufficient disk space"),
+            i18n("need"), decimal_compact(needed), i18n("available"), decimal_compact(available))));
     }
-    let _ = sender.send_blocking(QueueMessage::Failed {
-        entry_id: queue_entry.id,
-        error: format!(
-            "{}: {} ~{}, {} {}",
-            i18n("Insufficient disk space"),
-            i18n("need"),
-            decimal_compact(needed),
-            i18n("available"),
-            decimal_compact(available),
-        ),
-    });
-    false
-}
-
-// MP4 + copy mode: ffmpeg would re-mux-refuse non-MP4-compatible codecs;
-// catch them up front so the user gets a clear error.
-fn is_mp4_copy_compatible(
-    queue_entry: &ConversionQueueEntry,
-    profile: &Profile,
-    sender: &async_channel::Sender<QueueMessage>,
-) -> bool {
-    if profile.video.codec != "copy" {
-        return true;
-    }
-    let out_ext = queue_entry
-        .output
-        .extension()
-        .and_then(|ext| ext.to_str())
-        .unwrap_or("")
-        .to_lowercase();
-    if out_ext != "mp4" {
-        return true;
-    }
-    let Some(media_metadata) = progress::probe_media_metadata(&queue_entry.input) else {
-        let _ = sender.send_blocking(QueueMessage::Failed { entry_id: queue_entry.id, error: i18n("Could not verify source streams") });
-        return false;
-    };
-    let Some(streams) = media_metadata.get("streams").and_then(|v| v.as_array()) else {
-        return true;
-    };
-    let incompat = streams.iter().find(|stream| {
-        let codec = stream
-            .get("codec_name")
-            .and_then(|v| v.as_str())
-            .unwrap_or("");
-        match stream.get("codec_type").and_then(|v| v.as_str()) {
-            Some(codec_type) => !is_mp4_copy_compatible_stream(codec_type, codec),
-            _ => false,
-        }
-    });
-    let Some(bad) = incompat else {
-        return true;
-    };
-    let codec = bad
-        .get("codec_name")
-        .and_then(|v| v.as_str())
-        .unwrap_or("?");
-    let _ = sender.send_blocking(QueueMessage::Failed {
-        entry_id: queue_entry.id,
-        error: format!(
-            "{} '{codec}' {}",
-            i18n("Codec"),
-            i18n("is not compatible with MP4 container in copy mode"),
-        ),
-    });
-    false
+    Ok(())
 }
 
 fn build_stage_list(gpu: &GpuDevice) -> Vec<(GpuStage, GpuDevice)> {
@@ -144,16 +72,26 @@ fn resolve_final_outputs(
 }
 
 
+fn recheck_plan(entry: &ConversionQueueEntry, profile: &Profile, segments: &[TrimRange], source: &str,
+    expected_plan: &str, audio_only: bool, cancel: &AtomicBool) -> Result<()> {
+    if cancel.load(Ordering::Acquire) { return Err(Error::Cancelled); }
+    if receipts::hash_file(&entry.input, cancel)? != source ||
+        receipts::plan(entry, profile, segments, source, audio_only, cancel)? != expected_plan {
+        return Err(failure(&i18n("The source or external subtitles changed. Existing exports were kept; review the plan again.")));
+    }
+    Ok(())
+}
+
 fn failure(message: &str) -> Error { Error::ffmpeg("ffmpeg", None, message.to_owned()) }
 
 fn convert_one(entry: &mut ConversionQueueEntry, profile: &Profile, gpu: &GpuDevice,
-    cancel: &Arc<AtomicBool>, sender: &async_channel::Sender<QueueMessage>, audio_only: bool) -> Result<()> {
+    cancel: &Arc<AtomicBool>, sender: &async_channel::Sender<QueueMessage>, audio_only: bool, resume: bool) -> Result<()> {
     if cancel.load(Ordering::Acquire) { return Err(Error::Cancelled); }
     ensure_entry_probed(entry, &profile.video.codec);
     let source = std::fs::metadata(&entry.input)?;
     if !source.is_file() { return Err(failure(&i18n("Export requires a regular local source file"))); }
-    let input = progress::probe_media_metadata(&entry.input)
-        .ok_or_else(|| failure(&i18n("Could not verify the source media")))?;
+    let source_hash = receipts::hash_file(&entry.input, cancel)?;
+    let input = progress::probe_media_metadata_cancellable(&entry.input, cancel)?;
     entry.duration_secs = super::validation::number(input.pointer("/format/duration")).filter(|n| *n > 0.0).unwrap_or(0.0);
     // Probe failure is not an empty successful media record.
     let segments = if entry.segments.is_empty() { vec![TrimRange::default()] } else { entry.segments.clone() };
@@ -168,25 +106,48 @@ fn convert_one(entry: &mut ConversionQueueEntry, profile: &Profile, gpu: &GpuDev
     let needs_concat = segments.len() > 1 && entry.segment_mode == SegmentOutputMode::Join;
     let split = entry.segment_mode == SegmentOutputMode::Split;
     let finals = resolve_final_outputs(entry, segments.len(), needs_concat, split);
-    if finals.iter().any(|p| std::fs::symlink_metadata(p).is_ok()) {
-        return Err(failure(&i18n("An output already exists. Choose a new name; it will not be replaced")));
-    }
+    if finals.len() > 128 { return Err(failure(&i18n("Export at most 128 separate outputs per job."))); }
     let parent = entry.output.parent().filter(|p| !p.as_os_str().is_empty()).unwrap_or(Path::new("."));
     std::fs::create_dir_all(parent)?;
     let subtitles = subtitle::probe_subtitles(&entry.input);
+    let fingerprint = receipts::plan(entry, profile, &segments, &source_hash, audio_only, cancel)?;
+    let base_expectation = Expectation::for_entry(entry, profile, audio_only, &input, &subtitles)?;
+    let mut expectations = Vec::with_capacity(segments.len());
+    let mut expected_total = 0.0;
+    for segment in &segments {
+        let mut expected = base_expectation.clone();
+        expected.duration = segment.effective_duration(entry.duration_secs);
+        if audio_only && profile.audio.handling != "copy" { expected.duration /= speed; }
+        expected_total += expected.duration;
+        if !expected_total.is_finite() { return Err(failure(&i18n("Invalid total export duration"))); }
+        expectations.push(expected);
+    }
+    let output_expectations = if needs_concat {
+        let mut expected = base_expectation.clone(); expected.duration = expected_total; vec![expected]
+    } else { expectations.clone() };
+    let mut receipts = Vec::new(); let mut reused = Vec::new();
+    // Hold all per-output locks before conversion; this also rejects duplicate
+    // target names without doing expensive conversion work.
+    for (target, expected) in finals.iter().zip(&output_expectations) {
+        let receipt = Receipt::open(target, &fingerprint)?;
+        reused.push(receipt.completed(expected, cancel, resume)?);
+        receipts.push(receipt);
+    }
+    if reused.iter().all(|&done| done) {
+        recheck_plan(entry, profile, &segments, &source_hash, &fingerprint, audio_only, cancel)?;
+        let _ = sender.try_send(QueueMessage::StderrLine { entry_id: entry.id,
+            line: i18n("Verified completed export reused: source, plan and output receipts match.") });
+        return Ok(());
+    }
+    require_disk_space(entry)?;
     let stages = build_stage_list(gpu);
     let mut temporary = Vec::new();
-    let mut expected_total = 0.0;
-    let mut common_expectation = None;
     for (index, segment) in segments.iter().enumerate() {
         if cancel.load(Ordering::Acquire) { return Err(Error::Cancelled); }
+        if split && reused[index] { continue; }
         let desired = if split { &finals[index] } else { &entry.output };
         let stage = StagedFile::new(desired)?;
-        let mut expectation = Expectation::for_entry(entry, profile, audio_only, &input, &subtitles)?;
-        expectation.duration = segment.effective_duration(entry.duration_secs);
-        if audio_only && profile.audio.handling != "copy" { expectation.duration /= speed; }
-        expected_total += expectation.duration;
-        if !expected_total.is_finite() { return Err(failure(&i18n("Invalid total export duration"))); }
+        let expectation = &expectations[index];
         let mut last = None;
         let mut success = false;
         for (attempt, (gpu_stage, device)) in stages.iter().enumerate() {
@@ -204,27 +165,24 @@ fn convert_one(entry: &mut ConversionQueueEntry, profile: &Profile, gpu: &GpuDev
                 input_audio_channels: entry.input_audio_channels, subtitle_streams: subtitles.clone(),
                 skip_video_filters: entry.skip_video_filters, audio_only,
             };
-            match run_job(&job, entry, cancel, sender).and_then(|()| validate_output(stage.path(), &expectation)) {
+            match run_job(&job, entry, cancel, sender).and_then(|()| validate_output_cancellable(stage.path(), expectation, cancel)) {
                 Ok(()) => { success = true; break; }
                 Err(Error::Cancelled) => return Err(Error::Cancelled),
                 Err(error) => last = Some(error),
             }
         }
         if !success { return Err(last.unwrap_or_else(|| failure(&i18n("No conversion stage completed")))); }
-        common_expectation = Some(expectation);
-        temporary.push(stage);
+        temporary.push((index, stage));
     }
     let mut publications = Vec::new();
     if needs_concat {
         let joined = StagedFile::new(&entry.output)?;
         concat_segments(&temporary, joined.path(), cancel)?;
-        let mut expected = common_expectation.ok_or_else(|| failure(&i18n("No output was generated")))?;
-        expected.duration = expected_total;
-        validate_output(joined.path(), &expected)?;
-        publications.push((joined, entry.output.clone()));
+        validate_output_cancellable(joined.path(), &output_expectations[0], cancel)?;
+        publications.push((0, joined));
         // Each segment and its private directory is removed by its own guard.
     } else {
-        for (stage, target) in temporary.into_iter().zip(finals) { publications.push((stage, target)); }
+        publications.extend(temporary);
     }
     let after = std::fs::metadata(&entry.input)?;
     #[cfg(unix)] {
@@ -236,15 +194,10 @@ fn convert_one(entry: &mut ConversionQueueEntry, profile: &Profile, gpu: &GpuDev
     if source.len() != after.len() || source.modified()? != after.modified()? {
         return Err(failure(&i18n("Source changed during export; no result was published")));
     }
-    for (stage, target) in publications {
+    recheck_plan(entry, profile, &segments, &source_hash, &fingerprint, audio_only, cancel)?;
+    for (index, stage) in publications {
         if cancel.load(Ordering::Acquire) { return Err(Error::Cancelled); }
-        match stage.publish(&target)? {
-            CommitOutcome::Durable => {},
-            CommitOutcome::PublishedNotSynced(_) => {
-                // Publication already happened. Never retry over or delete it.
-                return Err(failure(&i18n("Output was created, but durability could not be confirmed. Keep the source and verify the output")));
-            }
-        }
+        receipts[index].publish(&stage, cancel)?;
     }
     Ok(())
 }
@@ -252,18 +205,16 @@ fn convert_one(entry: &mut ConversionQueueEntry, profile: &Profile, gpu: &GpuDev
 pub(crate) fn run_conversion_queue_worker(mut items: Vec<ConversionQueueEntry>, profile: &Profile,
     gpu: &GpuDevice, cancel: &Arc<AtomicBool>, sender: &async_channel::Sender<QueueMessage>,
     resume_context: Option<ConversionResumeContext>, delete_source: bool, audio_only_mode: bool) {
-    // Existence alone is not a resume receipt. Until a versioned input+plan+output
-    // journal is available, refuse pre-existing destinations instead of silently
-    // counting an unrelated or truncated file as a completed job.
-    if resume_context.is_some() { info!("Resume verifies jobs normally; existing outputs are not inferred as complete"); }
+    // Resume is allowed only through exact persistent receipts. The namespace
+    // is a policy marker; it is not substituted for source or output digests.
+    let resume = resume_context.as_ref().is_some_and(|context| context.job_key == "verified-receipt-v1");
     if delete_source {
         let _ = sender.send_blocking(QueueMessage::StderrLine { entry_id: 0,
             line: i18n("Originals are kept. Verify the exported files before deleting anything.") });
     }
     for entry in &mut items {
         if cancel.load(Ordering::Acquire) { break; }
-        if !has_enough_disk_space(entry, sender) || !is_mp4_copy_compatible(entry, profile, sender) { continue; }
-        match convert_one(entry, profile, gpu, cancel, sender, audio_only_mode) {
+        match convert_one(entry, profile, gpu, cancel, sender, audio_only_mode, resume) {
             Ok(()) => { let _ = sender.send_blocking(QueueMessage::Done { entry_id: entry.id }); }
             Err(Error::Cancelled) => {
                 let _ = sender.send_blocking(QueueMessage::Cancelled { entry_id: entry.id }); break;
@@ -282,12 +233,12 @@ fn concat_line(path: &Path) -> Result<String> {
     if path.bytes().any(|b| matches!(b, 0 | b'\r' | b'\n')) { return Err(failure(&i18n("Invalid concat path"))); }
     Ok(format!("file '{}'\n", path.replace('\'', "'\\''")))
 }
-fn concat_segments(segments: &[StagedFile], output: &Path, cancel: &AtomicBool) -> Result<()> {
+fn concat_segments(segments: &[(usize, StagedFile)], output: &Path, cancel: &AtomicBool) -> Result<()> {
     use std::io::Write;
     let list = StagedFile::new(&output.with_file_name("concat.ffconcat"))?;
     {
         let mut file = std::fs::OpenOptions::new().write(true).truncate(true).open(list.path())?;
-        for segment in segments { file.write_all(concat_line(&std::fs::canonicalize(segment.path())?)?.as_bytes())?; }
+        for (_, segment) in segments { file.write_all(concat_line(&std::fs::canonicalize(segment.path())?)?.as_bytes())?; }
     }
     // The files already contain per-segment timing/subtitle selection. Mapping
     // all streams from the concat demuxer avoids duplicate manually merged subs.
@@ -302,6 +253,7 @@ fn concat_segments(segments: &[StagedFile], output: &Path, cancel: &AtomicBool) 
     if result.status.success() { Ok(()) } else { Err(failure(&i18n("Could not complete concatenation"))) }
 }
 
+#[cfg(test)]
 fn is_mp4_copy_compatible_stream(codec_type: &str, codec: &str) -> bool {
     const MP4_VIDEO_CODECS: &[&str] = &["h264", "hevc", "h265", "mpeg4", "av1"];
     const MP4_AUDIO_CODECS: &[&str] = &["aac", "mp3", "ac3", "eac3", "flac", "opus", "alac"];

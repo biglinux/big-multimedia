@@ -239,6 +239,7 @@ impl VideoShell {
 
         // Slim strip: start indeterminate, reveal it above the transport. The
         // video keeps playing behind it.
+        self.notify(&i18n("Verified completed outputs can be reused when retrying. Existing files without a matching receipt are kept."));
         let title = i18n("Generating cut…");
         self.trim_progress_row
             .update(&BigProgressRowSpec::indeterminate(

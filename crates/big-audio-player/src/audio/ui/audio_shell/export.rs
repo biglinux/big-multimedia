@@ -247,6 +247,9 @@ impl AudioShell {
             .build();
         group.add(format_row.root());
         group.add(output_row.root());
+        let resume_note=gtk::Label::new(Some(&i18n("Retrying this export reuses only complete files whose source, settings and contents match their saved receipts. Other existing files are never replaced. Keep the receipts beside the outputs.")));
+        resume_note.set_wrap(true);resume_note.set_xalign(0.0);group.add(&resume_note);
+
 
         let dialog = adw::Dialog::builder()
             .title(i18n("Export Cuts"))
@@ -360,6 +363,7 @@ impl AudioShell {
             .parent()
             .map_or_else(|| PathBuf::from("."), Path::to_path_buf);
         self.notify(busy_message);
+        self.notify(&i18n("Verified completed outputs can be reused when retrying. Existing files without a matching receipt are kept."));
         let toast_overlay = self.toast_overlay.clone();
         big_media_components::player_chrome::spawn_blocking_result(
             move || run_single_export_blocking(input, output_dir, &choice, &segments),
