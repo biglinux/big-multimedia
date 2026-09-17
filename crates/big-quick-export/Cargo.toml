@@ -13,14 +13,14 @@ repository = "https://github.com/biglinux/big-multimedia"
 
 [dependencies]
 adw = { version = "0.9", features = ["v1_9"], package = "libadwaita" }
-big-media-runtime = { path = "../media-runtime", default-features = false, features = ["ui"] }
+big-media-runtime = { path = "../media-runtime", default-features = false }
 big-relm4-components = { path = "../ui/generic/big-relm4-components" }
 big-media-components = { path = "../ui/media/big-media-components" }
 
 [dev-dependencies]
 # Tempdir for the headless export smoke (tests/export_smoke.rs).
 tempfile = "3"
-big-media-runtime = { path = "../media-runtime", default-features = false, features = ["ui"] }
+big-media-runtime = { path = "../media-runtime", default-features = false }
 
 [lints.clippy]
 pedantic = { level = "warn", priority = -1 }

@@ -90,12 +90,6 @@ impl MpvBackend {
         });
     }
 
-    pub fn set_preferred_audio_lang(&self, lang: &str) {
-        self.with_mpv(|m| {
-            let _ = m.set_property("alang", lang.to_string());
-        });
-    }
-
     pub fn set_sub_auto(&self, mode: &str) {
         self.with_mpv(|m| {
             let _ = m.set_property("sub-auto", mode.to_string());

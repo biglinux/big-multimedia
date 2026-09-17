@@ -3,6 +3,10 @@
 
 #[cfg(test)]
 use big_media_components::initials_avatar::{extract_initials, hsl_to_rgb};
+// Only the radio panel's explore cache needs the radio data types. `media_list`
+// (which the video player mounts) uses the texture cache above and nothing else,
+// so gating here keeps `big-media-data/radio` out of the video build.
+#[cfg(feature = "audio-panels")]
 use big_media_data::radio::RadioExploreEntry;
 use big_os_kit::http_client::{RequestHeaders, http_get_bytes_capped};
 use gtk::gdk;
@@ -122,6 +126,7 @@ fn explore_cache_path() -> Option<std::path::PathBuf> {
 
 /// Persist the popular/explore station list to the XDG cache as JSON.
 /// No-ops (with a warning) if no cache dir is available.
+#[cfg(feature = "audio-panels")]
 pub fn save_explore_cache(results: &[RadioExploreEntry]) {
     let Some(path) = explore_cache_path() else {
         warn!("[radio] explore cache: no XDG cache dir; skipping save");
@@ -147,6 +152,7 @@ pub fn save_explore_cache(results: &[RadioExploreEntry]) {
 
 /// Load the cached popular/explore station list, or an empty vec when the
 /// cache is missing or unreadable.
+#[cfg(feature = "audio-panels")]
 pub fn load_explore_cache() -> Vec<RadioExploreEntry> {
     let Some(path) = explore_cache_path() else {
         return Vec::new();
@@ -242,6 +248,7 @@ mod tests {
         assert_ne!(k1, k2);
     }
 
+    #[cfg(feature = "audio-panels")]
     #[test]
     fn explore_cache_roundtrip() {
         let entries: Vec<RadioExploreEntry> = vec![
@@ -370,6 +377,7 @@ mod tests {
         assert_eq!(k1.len(), 16);
     }
 
+    #[cfg(feature = "audio-panels")]
     #[test]
     fn explore_cache_empty_roundtrip() {
         let entries: Vec<RadioExploreEntry> = vec![];

@@ -6,9 +6,7 @@
 //! API during the in-progress port instead of tripping `dead_code` while built
 //! alongside the legacy god-object path.
 
-pub use big_media_runtime::{
-    cast, config, i18n, library, media, mpris, player, recent, settings, shared,
-};
+pub use big_media_runtime::{cast, config, i18n, media, mpris, player, recent, settings, shared};
 
 mod resources;
 pub mod video;

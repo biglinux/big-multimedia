@@ -79,29 +79,48 @@ tempfile = "3"
 
 [features]
 # Keep the runtime's default footprint GTK/mpv-free. Apps that mount player or
-# editor UI must request `ui` explicitly; daemon/data consumers stay lean.
+# editor UI request `audio` or `video`; daemon/data consumers stay lean.
+#
+# Gates are purely additive: no `cfg(not(...))`, and no item defined twice under
+# exclusive gates, so `--all-features` stays buildable.
 default = []
-ui = [
+
+# The GTK/relm4/mpv stack plus the modules both players need. Not selected
+# directly by an app; `audio` and `video` pull it in.
+ui-core = [
     "dep:adw",
     "dep:gtk",
     "dep:glib",
     "dep:gio",
     "dep:gdk",
-    "dep:gdk-wayland-sys",
     "dep:relm4",
     "dep:mpv-sys",
     "dep:big-app-kit",
     "dep:big-relm4-components",
     "dep:big-media-components",
-    "dep:big-mpv-render",
+    "dep:md-5",
+]
+# Audio player: the SQLite music library, radio directory and podcast data.
+audio = [
+    "ui-core",
     "big-media-data/db",
     "big-media-data/library",
     "big-media-data/radio",
     "dep:rusqlite",
-    "dep:md-5",
 ]
+# Video player: the mpv render pipeline (GL surface, DMA-BUF offload, shaders).
+video = [
+    "ui-core",
+    "dep:big-mpv-render",
+    "dep:gdk-wayland-sys",
+]
+# Union kept so any consumer still asking for `ui` keeps building.
+ui = ["audio", "video"]
+# Rebased on `ui-core` on purpose: the video PKGBUILD builds with
+# `--features chromecast`, and implying `ui` there would undo the split for the
+# binary that actually ships.
 chromecast = [
-    "ui",
+    "ui-core",
     "dep:rust_cast",
 ]
 # Gates slow property tests so default `cargo test` stays fast. CI runs

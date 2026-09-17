@@ -419,4 +419,10 @@ impl MpvBackend {
             let _ = m.set_property("input-ipc-server", path.to_string());
         });
     }
+
+    pub fn set_preferred_audio_lang(&self, lang: &str) {
+        self.with_mpv(|m| {
+            let _ = m.set_property("alang", lang.to_string());
+        });
+    }
 }

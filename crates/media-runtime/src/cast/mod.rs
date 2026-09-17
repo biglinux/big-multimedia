@@ -3,9 +3,9 @@
 #[cfg(feature = "chromecast")]
 pub mod chromecast;
 pub mod gpu;
-#[cfg(feature = "ui")]
+#[cfg(feature = "ui-core")]
 pub mod probe;
-#[cfg(feature = "ui")]
+#[cfg(feature = "ui-core")]
 pub(crate) mod sandbox;
-#[cfg(feature = "ui")]
+#[cfg(feature = "ui-core")]
 pub mod transcode;

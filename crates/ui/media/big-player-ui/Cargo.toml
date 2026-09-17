@@ -12,6 +12,13 @@ authors.workspace = true
 keywords = ["gtk4", "relm4", "media-player", "biglinux", "ui"]
 categories = ["gui", "multimedia"]
 
+[features]
+default = []
+# The 10 panels only the audio player mounts (podcast, radio, lyrics, downloads,
+# file browser, smartphone remote, transport bar). The video player needs six
+# modules and none of these.
+audio-panels = ["big-media-data/db", "big-media-data/library", "big-media-data/radio"]
+
 [dependencies]
 adw.workspace = true
 gtk.workspace = true
@@ -23,7 +30,7 @@ big-audio-effects.workspace = true
 big-app-kit = { workspace = true, features = ["remote-control"] }
 big-os-kit = { workspace = true, features = ["http-client"] }
 # GTK-free data + parser leaves (now a sibling brc crate).
-big-media-data = { workspace = true, features = ["db", "library", "radio"] }
+big-media-data = { workspace = true, default-features = false }
 # QR code rendering for the smartphone web-remote pairing dialog.
 qrcode = { version = "0.14", default-features = false }
 # Bounded favicon-texture cache (gdk::Texture).
