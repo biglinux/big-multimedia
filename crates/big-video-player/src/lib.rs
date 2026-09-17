@@ -6,6 +6,24 @@
 //! API during the in-progress port instead of tripping `dead_code` while built
 //! alongside the legacy god-object path.
 
+/// Process-wide allocator. glibc malloc fragments under GTK's many-small,
+/// many-thread allocation pattern and does not give the pages back; jemalloc's
+/// size classes and decay do. Built unprefixed on purpose, so GTK, GLib and
+/// libmpv allocate through it too — replacing only Rust's allocator would leave
+/// the allocations that dominate this process on glibc.
+#[cfg(target_env = "gnu")]
+#[global_allocator]
+static GLOBAL: tikv_jemallocator::Jemalloc = tikv_jemallocator::Jemalloc;
+
+/// jemalloc reads this symbol at first allocation, before `main`, so the arena
+/// cap cannot be applied from `run()` the way the glibc `mallopt` calls were.
+/// One arena trades a little allocator concurrency for no per-thread arena
+/// retention. `MALLOC_CONF` in the environment still wins over this default.
+#[cfg(target_env = "gnu")]
+#[unsafe(no_mangle)]
+#[allow(non_upper_case_globals)]
+pub static _rjem_malloc_conf: &[u8] = b"narenas:1,dirty_decay_ms:0,muzzy_decay_ms:0\0";
+
 pub use big_media_runtime::{
     cast, config, i18n, library, media, mpris, player, recent, settings, shared,
 };
@@ -170,8 +188,6 @@ fn nvidia_proprietary_driver_in_use() -> bool {
 pub fn run() -> gtk::glib::ExitCode {
     // Cap malloc arenas before any threads spawn — curbs per-thread arena
     // retention from media worker threads (decode / probe / image). Large frame
-    // buffers exceed the mmap threshold so decode is unaffected.
-    shared::app_base::tune_allocator();
     shared::app_base::init_logging(
         "big_media_runtime=info,big_video_player=info,lofty=error,glycin=error",
     );

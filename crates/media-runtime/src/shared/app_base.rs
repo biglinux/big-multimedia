@@ -27,48 +27,6 @@ pub fn set_bootstrap_env(name: &str, value: &str) {
     }
 }
 
-/// Cap glibc malloc arenas to curb per-thread arena retention. Media apps spawn
-/// many short-lived worker threads (feed/metadata fetch, image decode, mpv);
-/// glibc's default of up to `8 × ncpu` arenas keeps large amounts of freed
-/// memory resident (measured ~75 MiB retained over repeated podcast loads). Two
-/// arenas preserve enough malloc concurrency while letting freed memory return
-/// to the OS. A caller-set `MALLOC_ARENA_MAX` wins. Call once from `main()`
-/// BEFORE any threads spawn.
-#[cfg(target_env = "gnu")]
-pub fn tune_allocator() {
-    if std::env::var_os("MALLOC_ARENA_MAX").is_some() {
-        return;
-    }
-    // SAFETY: mallopt is a libc bootstrap call; invoked from main() pre-threads.
-    unsafe {
-        // Cap arenas: the dominant per-thread retention lever.
-        libc::mallopt(libc::M_ARENA_MAX, 2);
-        // Route large transient buffers (feed XML, image decode) through mmap so
-        // they return to the OS immediately on free instead of fragmenting an
-        // arena. Fixed value also disables the dynamic threshold growth.
-        libc::mallopt(libc::M_MMAP_THRESHOLD, 64 * 1024);
-    }
-}
-
-/// No-op on non-glibc targets (mallopt/M_ARENA_MAX are glibc-specific).
-#[cfg(not(target_env = "gnu"))]
-pub fn tune_allocator() {}
-
-/// Return freed heap pages to the OS after a bursty allocation phase (e.g. a
-/// podcast feed parse + episode build). Counters glibc holding onto trimmed-but-
-/// not-released arena top space; cheap to call at user-paced moments.
-#[cfg(target_env = "gnu")]
-pub fn trim_allocator() {
-    // SAFETY: malloc_trim is always safe to call.
-    unsafe {
-        libc::malloc_trim(0);
-    }
-}
-
-/// No-op on non-glibc targets (malloc_trim is glibc-specific).
-#[cfg(not(target_env = "gnu"))]
-pub fn trim_allocator() {}
-
 pub fn init_logging(default_rust_log: &str) {
     set_default_env("RUST_LOG", default_rust_log);
     env_logger::init();
