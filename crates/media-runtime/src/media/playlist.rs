@@ -255,7 +255,7 @@ mod tests {
             .collect();
 
         let m3u_path = dir.join("test.m3u8");
-        write_m3u(&m3u_path, &files);
+        write_m3u(&m3u_path, &files).unwrap();
 
         let parsed = parse_m3u(&m3u_path);
         assert_eq!(parsed, files);

@@ -11,6 +11,6 @@ mod dialog;
 pub use dialog::bind_dialog_size_persistence;
 
 pub mod saving;
-pub use saving::{acknowledged_task, saving_page, bind_write_drain};
+pub use saving::{acknowledged_task, bind_write_drain, saving_page};
 
 mod messages;

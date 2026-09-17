@@ -267,7 +267,10 @@ fn install_keyboard_access(
     }
     // Keep Enter/Space available for the button's original action (e.g. mute).
     // Install on both surfaces: a popover may have its own native event root.
-    for widget in [anchor.upcast_ref::<gtk::Widget>(), popover.upcast_ref::<gtk::Widget>()] {
+    for widget in [
+        anchor.upcast_ref::<gtk::Widget>(),
+        popover.upcast_ref::<gtk::Widget>(),
+    ] {
         let controller = gtk::EventControllerKey::new();
         controller.set_propagation_phase(gtk::PropagationPhase::Capture);
         let anchor = anchor.downgrade();

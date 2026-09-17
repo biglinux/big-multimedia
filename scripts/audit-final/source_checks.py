@@ -4,6 +4,8 @@ from __future__ import annotations
 import argparse,ast,json,re,subprocess,tomllib,xml.etree.ElementTree as ET
 from pathlib import Path
 
+from source_text import Source
+
 def check(root: Path) -> dict:
     results=[]
     def record(name,func,scope='static/source'):
@@ -11,7 +13,10 @@ def check(root: Path) -> dict:
         except ImportError as e:detail=str(e);status='BLOCKED'
         except Exception as e:detail=str(e);status='FAIL'
         results.append({'name':name,'status':status,'scope':scope,'detail':detail})
-    def text(name):return (root/name).read_text()
+    def text(name):
+        raw=(root/name).read_text()
+        # Rust sources are rustfmt-formatted, so contracts match wrapping-independently.
+        return Source(raw) if name.endswith('.rs') else raw
     def ordered(source,*needles):
         # Missing tokens are an explicit failing contract, not an uncaught
         # ValueError that prevents the remaining independent gates from running.

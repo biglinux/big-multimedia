@@ -83,7 +83,7 @@ fn build_widget_tree() -> EditPageBuild {
     toolbar_pane.set_content(&paned);
     let toolbar_view = toolbar_pane.into_root();
 
-    let mpv = Rc::new(RefCell::new(None::<MpvBackend>));
+    let mpv = Rc::new(RefCell::new(None::<std::sync::Arc<MpvBackend>>));
     let render_context = Rc::new(RefCell::new(None::<FastRenderContext>));
     let video_backend: Rc<
         RefCell<Option<crate::player::mpv_backend::offload_renderer::VideoBackend>>,

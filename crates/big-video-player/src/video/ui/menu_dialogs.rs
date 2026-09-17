@@ -7,10 +7,7 @@
 //! The pure helpers (`parse_goto_seconds`, `sleep_minutes_to_secs`,
 //! `screenshot_filename`) carry the testable logic.
 
-use std::cell::Cell;
 use std::path::PathBuf;
-use std::rc::Rc;
-use std::time::Duration;
 
 use adw::prelude::*;
 use gtk::glib;
@@ -27,16 +24,25 @@ use big_relm4_components::list::navigation_row::{BigNavigationRow, BigNavigation
 
 // Bound setup tasks as well as accepted native requests. The global admission
 // counter covers concurrent windows in the single-process host.
-static SCREENSHOT_PREPARATIONS: std::sync::atomic::AtomicUsize = std::sync::atomic::AtomicUsize::new(0);
+static SCREENSHOT_PREPARATIONS: std::sync::atomic::AtomicUsize =
+    std::sync::atomic::AtomicUsize::new(0);
 struct ScreenshotPreparation;
 impl ScreenshotPreparation {
     fn acquire() -> Option<Self> {
-        SCREENSHOT_PREPARATIONS.fetch_update(std::sync::atomic::Ordering::AcqRel,
-            std::sync::atomic::Ordering::Acquire, |count| (count < 8).then_some(count + 1)).ok().map(|_| Self)
+        SCREENSHOT_PREPARATIONS
+            .fetch_update(
+                std::sync::atomic::Ordering::AcqRel,
+                std::sync::atomic::Ordering::Acquire,
+                |count| (count < 8).then_some(count + 1),
+            )
+            .ok()
+            .map(|_| Self)
     }
 }
 impl Drop for ScreenshotPreparation {
-    fn drop(&mut self) { SCREENSHOT_PREPARATIONS.fetch_sub(1, std::sync::atomic::Ordering::AcqRel); }
+    fn drop(&mut self) {
+        SCREENSHOT_PREPARATIONS.fetch_sub(1, std::sync::atomic::Ordering::AcqRel);
+    }
 }
 
 impl VideoShell {
@@ -123,30 +129,41 @@ impl VideoShell {
     /// Request off-thread staging; success is delivered by a terminal mpv reply.
     pub(super) fn take_screenshot(&self, sender: &ComponentSender<Self>) {
         let Some(permit) = ScreenshotPreparation::acquire() else {
-            self.notify(&i18n("Screenshot queue is full; wait for pending captures")); return;
+            self.notify(&i18n("Screenshot queue is full; wait for pending captures"));
+            return;
         };
         let Some(mpv) = self.mpv_handle().borrow().as_ref().cloned() else {
-            self.notify(&i18n("Screenshot failed")); return;
+            self.notify(&i18n("Screenshot failed"));
+            return;
         };
         if mpv.get_current_file().is_none() {
-            self.notify(&i18n("Screenshot failed")); return;
+            self.notify(&i18n("Screenshot failed"));
+            return;
         }
         let Some(directory) = dirs::picture_dir().or_else(dirs::home_dir) else {
-            self.notify(&i18n("Screenshot failed")); return;
+            self.notify(&i18n("Screenshot failed"));
+            return;
         };
         // Metadata titles can contain secrets or exceed NAME_MAX. The public
         // filename is deliberately independent of the media title/URL.
         static SEQ: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(1);
-        let target = directory.join(format!("screenshot-{}-{}.png", glib::real_time(), SEQ.fetch_add(1, std::sync::atomic::Ordering::Relaxed)));
-        let alive = self.screenshot_owner.clone();
+        let target = directory.join(format!(
+            "screenshot-{}-{}.png",
+            glib::real_time(),
+            SEQ.fetch_add(1, std::sync::atomic::Ordering::Relaxed)
+        ));
+        let alive = self.screenshot_owner().clone();
         let input = sender.input_sender().clone();
         glib::spawn_future_local(async move {
             let _permit = permit;
             let result = gio::spawn_blocking(move || {
                 std::fs::create_dir_all(&directory)?;
                 mpv.screenshot_to_file_async(&target, alive)
-            }).await;
-            if !matches!(result, Ok(Ok(_))) { let _ = input.send(VideoShellInput::ScreenshotQueueFailed); }
+            })
+            .await;
+            if !matches!(result, Ok(Ok(_))) {
+                let _ = input.send(VideoShellInput::ScreenshotQueueFailed);
+            }
         });
     }
 
@@ -387,13 +404,19 @@ impl VideoShell {
             "suspend" => {
                 self.notify(&i18n("Sleep timer: suspending computer"));
                 glib::timeout_add_local_once(std::time::Duration::from_secs(2), || {
-                    crate::settings::saving::after_writes(|| { let _ = big_app_kit::desktop::BigSystemPowerAction::Suspend.spawn_detached(); });
+                    crate::settings::saving::after_writes(|| {
+                        let _ =
+                            big_app_kit::desktop::BigSystemPowerAction::Suspend.spawn_detached();
+                    });
                 });
             }
             "poweroff" => {
                 self.notify(&i18n("Sleep timer: shutting down"));
                 glib::timeout_add_local_once(std::time::Duration::from_secs(2), || {
-                    crate::settings::saving::after_writes(|| { let _ = big_app_kit::desktop::BigSystemPowerAction::PowerOff.spawn_detached(); });
+                    crate::settings::saving::after_writes(|| {
+                        let _ =
+                            big_app_kit::desktop::BigSystemPowerAction::PowerOff.spawn_detached();
+                    });
                 });
             }
             _ => self.notify(&i18n("Sleep timer: playback paused")),
@@ -440,10 +463,19 @@ fn chapter_title_with_prefix(raw: String, index: i64, chapter_prefix: &str) -> S
 
 /// Called only after terminal completion and no-replace publication.
 pub(super) fn show_screenshot_result(overlay: &adw::ToastOverlay, path: PathBuf, durable: bool) {
-    let message = if durable { i18n("Screenshot saved") }
-        else { i18n("Screenshot saved; disk synchronization could not be confirmed") };
-    let toast = adw::Toast::builder().title(message).button_label(i18n("Open")).timeout(5).build();
-    toast.connect_button_clicked(move |_| { big_app_kit::desktop::open_file(&path); });
+    let message = if durable {
+        i18n("Screenshot saved")
+    } else {
+        i18n("Screenshot saved; disk synchronization could not be confirmed")
+    };
+    let toast = adw::Toast::builder()
+        .title(message)
+        .button_label(i18n("Open"))
+        .timeout(5)
+        .build();
+    toast.connect_button_clicked(move |_| {
+        big_app_kit::desktop::open_file(&path);
+    });
     overlay.add_toast(toast);
 }
 

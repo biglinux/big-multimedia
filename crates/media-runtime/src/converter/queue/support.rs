@@ -3,7 +3,7 @@
 //! None elsewhere), human-readable byte sizes, and the HEVC-10bit→H.264
 //! shortcut detector that lets the GPU stage skip the SW filter chain.
 
-use std::path::{Path, PathBuf};
+use std::path::Path;
 use std::time::Duration;
 
 pub(crate) use big_media_engines::output_paths::{dedup_output_path, segment_output_path};

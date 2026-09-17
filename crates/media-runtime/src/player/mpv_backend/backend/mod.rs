@@ -112,7 +112,8 @@ impl MpvBackend {
             mpv,
             sender,
             "mpv-events",
-            "MpvBackend initialized", false,
+            "MpvBackend initialized",
+            false,
         ))
     }
 
@@ -137,7 +138,8 @@ impl MpvBackend {
             mpv,
             sender,
             "mpv-audio-events",
-            "MpvBackend initialized (audio-only)", true,
+            "MpvBackend initialized (audio-only)",
+            true,
         ))
     }
 
@@ -205,18 +207,26 @@ impl MpvBackend {
         let mut poll = PollState::default();
         let mut outgoing = Vec::with_capacity(80);
         let mut pending = std::collections::VecDeque::with_capacity(96);
-        let handle = mpv.lock().unwrap_or_else(std::sync::PoisonError::into_inner).raw_handle();
+        let handle = mpv
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner)
+            .raw_handle();
 
         while running.load(Ordering::Relaxed) && !sender.is_closed() {
             for id in screenshots.withdraw_expired() {
                 // The registry still owns the staging file until terminal receipt.
-                unsafe { mpv_sys::mpv_abort_async_command(handle, id); }
+                unsafe {
+                    mpv_sys::mpv_abort_async_command(handle, id);
+                }
                 pending.push_back(PlayerEvent::ScreenshotTimedOut { id });
             }
             while let Some(event) = pending.pop_front() {
                 match sender.try_send(event) {
-                    Ok(()) => {},
-                    Err(async_channel::TrySendError::Full(event)) => { pending.push_front(event); break; },
+                    Ok(()) => {}
+                    Err(async_channel::TrySendError::Full(event)) => {
+                        pending.push_front(event);
+                        break;
+                    }
                     Err(async_channel::TrySendError::Closed(_)) => return,
                 }
             }
@@ -236,14 +246,18 @@ impl MpvBackend {
             for event in outgoing.drain(..) {
                 let event = match event {
                     PlayerEvent::AsyncCommandReply { id, error } => {
-                        let Some(result) = screenshots.complete(id, error) else { continue; };
+                        let Some(result) = screenshots.complete(id, error) else {
+                            continue;
+                        };
                         PlayerEvent::ScreenshotFinished { id, result }
                     }
                     other => other,
                 };
                 match &event {
                     PlayerEvent::FileLoaded(_) => volume_state.set_active(true),
-                    PlayerEvent::EndFile(_) | PlayerEvent::Shutdown => volume_state.set_active(false),
+                    PlayerEvent::EndFile(_) | PlayerEvent::Shutdown => {
+                        volume_state.set_active(false);
+                    }
                     _ => {}
                 }
                 pending.push_back(event);
@@ -251,7 +265,11 @@ impl MpvBackend {
             Self::poll_stream_volume(&volume_state, &sender, &mut poll);
             // Position feedback stays smooth during playback, but a paused
             // player does not need to poll every property twenty times/second.
-            let interval = if poll.last_paused == Some(true) { 200 } else { 50 };
+            let interval = if poll.last_paused == Some(true) {
+                200
+            } else {
+                50
+            };
             std::thread::sleep(std::time::Duration::from_millis(interval));
         }
         debug!("MPV event loop exited");
@@ -310,12 +328,17 @@ impl MpvBackend {
         loop {
             // Resolve and own the event data before the next wait_event call.
             let mapped = match mpv_guard.wait_event(0.0)? {
-                Ok(MpvEvent::Seek) => { poll.seek_pending = true; continue; }
+                Ok(MpvEvent::Seek) => {
+                    poll.seek_pending = true;
+                    continue;
+                }
                 Ok(MpvEvent::PlaybackRestart) => {
-                    if std::mem::take(&mut poll.seek_pending) {
-                        if let Ok(position) = mpv_guard.get_property::<f64>("time-pos") {
-                            if position.is_finite() && position >= 0.0 { return Some(PlayerEvent::Seeked(position)); }
-                        }
+                    if std::mem::take(&mut poll.seek_pending)
+                        && let Ok(position) = mpv_guard.get_property::<f64>("time-pos")
+                        && position.is_finite()
+                        && position >= 0.0
+                    {
+                        return Some(PlayerEvent::Seeked(position));
                     }
                     continue;
                 }
@@ -409,10 +432,13 @@ impl MpvBackend {
             }
             poll.last_eof = eof;
         }
-        if let Ok(rate) = mpv_guard.get_property::<f64>("speed") {
-            if rate.is_finite() && rate > 0.0 && poll.last_rate != Some(rate) {
-                poll.last_rate = Some(rate); outgoing.push(PlayerEvent::RateChanged(rate));
-            }
+        if let Ok(rate) = mpv_guard.get_property::<f64>("speed")
+            && rate.is_finite()
+            && rate > 0.0
+            && poll.last_rate != Some(rate)
+        {
+            poll.last_rate = Some(rate);
+            outgoing.push(PlayerEvent::RateChanged(rate));
         }
         if let Ok(title) = mpv_guard.get_property::<String>("media-title")
             && !title.is_empty()

@@ -80,7 +80,10 @@ pub enum VideoShellInput {
     /// Open the sleep-timer dialog (Playback menu).
     ShowSleepTimer,
     /// Arm the sleep timer for `minutes`, running `action` on expiry.
-    SleepTimerStart { minutes: u32, action: String },
+    SleepTimerStart {
+        minutes: u32,
+        action: String,
+    },
     /// Disarm the sleep timer.
     SleepTimerCancel,
     /// One sleep-timer countdown tick (1 s).

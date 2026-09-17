@@ -5,7 +5,10 @@ use super::gl_fns::GlFns;
 use gtk::{gdk, glib, prelude::*};
 use std::cell::{Cell, RefCell};
 use std::rc::Rc;
-use std::sync::{Arc, atomic::{AtomicBool, AtomicUsize, Ordering}};
+use std::sync::{
+    Arc,
+    atomic::{AtomicBool, AtomicUsize, Ordering},
+};
 
 const SLOT_COUNT: usize = 3;
 type RetiredTexture = (u32, usize);
@@ -47,7 +50,9 @@ impl Drop for TextureResource {
     fn drop(&mut self) {
         // Exactly SLOT_COUNT resources exist: at most three retirement messages.
         // The receiver owns the GL context and deletes on its original thread.
-        let _ = self.retired.try_send((self.id, self.fence.load(Ordering::Acquire)));
+        let _ = self
+            .retired
+            .try_send((self.id, self.fence.load(Ordering::Acquire)));
     }
 }
 
@@ -55,7 +60,9 @@ impl Drop for TextureResource {
 /// GDK's potentially non-main release thread.
 pub(super) struct TextureLease(Arc<TextureResource>);
 impl TextureLease {
-    pub(super) fn id(&self) -> u32 { self.0.id }
+    pub(super) fn id(&self) -> u32 {
+        self.0.id
+    }
     pub(super) fn set_fence(&self, fence: usize) {
         self.0.fence.store(fence, Ordering::Release);
     }
@@ -91,7 +98,9 @@ impl TexturePool {
                 let Some(signals) = weak.upgrade() else { break };
                 if signals.pending.replace(false) || signals.force.get() {
                     let callback = signals.redraw.borrow().clone();
-                    if let Some(callback) = callback { callback(); }
+                    if let Some(callback) = callback {
+                        callback();
+                    }
                 }
             }
         });
@@ -103,30 +112,48 @@ impl TexturePool {
             while let Ok((id, fence)) = retired_for_future.recv().await {
                 let _current = CurrentContext::enter(&owned_context);
                 unsafe {
-                    if fence != 0 && let Some(delete) = gl.delete_sync {
+                    if fence != 0
+                        && let Some(delete) = gl.delete_sync
+                    {
                         delete(fence as *mut std::ffi::c_void);
                     }
-                    (gl.delete_textures)(1, &id);
+                    (gl.delete_textures)(1, &raw const id);
                 }
             }
         });
         Self {
-            resources: (0..SLOT_COUNT).map(|i| Arc::new(TextureResource {
-                id: ids[i], busy: AtomicBool::new(false), fence: AtomicUsize::new(0),
-                retired: retired.clone(), wake: wake.clone(),
-            })).collect(),
-            retired_rx, context: context.clone(), gl,
+            resources: (0..SLOT_COUNT)
+                .map(|i| {
+                    Arc::new(TextureResource {
+                        id: ids[i],
+                        busy: AtomicBool::new(false),
+                        fence: AtomicUsize::new(0),
+                        retired: retired.clone(),
+                        wake: wake.clone(),
+                    })
+                })
+                .collect(),
+            retired_rx,
+            context: context.clone(),
+            gl,
             dimensions: std::array::from_fn(|_| Cell::new((0, 0))),
-            signals, wake,
+            signals,
+            wake,
         }
     }
 
     pub(super) fn acquire(&self, gl: &GlFns) -> Option<(usize, TextureLease)> {
         for (i, resource) in self.resources.iter().enumerate() {
-            if resource.busy.compare_exchange(false, true, Ordering::AcqRel, Ordering::Acquire).is_ok() {
+            if resource
+                .busy
+                .compare_exchange(false, true, Ordering::AcqRel, Ordering::Acquire)
+                .is_ok()
+            {
                 // The previous GDK consumer is finished; its fence may now go.
                 let fence = resource.fence.swap(0, Ordering::AcqRel);
-                if fence != 0 && let Some(delete) = gl.delete_sync {
+                if fence != 0
+                    && let Some(delete) = gl.delete_sync
+                {
                     unsafe { delete(fence as *mut std::ffi::c_void) };
                 }
                 return Some((i, TextureLease(Arc::clone(resource))));
@@ -142,8 +169,12 @@ impl TexturePool {
     pub(super) fn set_dimensions(&self, index: usize, width: i32, height: i32) {
         self.dimensions[index].set((width, height));
     }
-    pub(super) fn take_force(&self) -> bool { self.signals.force.replace(false) }
-    pub(super) fn force(&self) { self.signals.force.set(true); }
+    pub(super) fn take_force(&self) -> bool {
+        self.signals.force.replace(false)
+    }
+    pub(super) fn force(&self) {
+        self.signals.force.set(true);
+    }
     pub(super) fn set_redraw(&self, callback: Rc<dyn Fn()>) {
         self.signals.redraw.replace(Some(callback));
     }
@@ -159,6 +190,28 @@ impl TexturePool {
     }
 }
 
+impl Drop for TexturePool {
+    fn drop(&mut self) {
+        self.signals.redraw.borrow_mut().take();
+        // Retire every unleased resource synchronously while the context exists.
+        // Truly leased textures remain alive; their receiver retains the context
+        // for a later GTK-loop iteration. The host must keep that loop running
+        // until external paintables are released; never free still-busy textures.
+        self.resources.clear();
+        let _current = CurrentContext::enter(&self.context);
+        while let Ok((id, fence)) = self.retired_rx.try_recv() {
+            unsafe {
+                if fence != 0
+                    && let Some(delete) = self.gl.delete_sync
+                {
+                    delete(fence as *mut std::ffi::c_void);
+                }
+                (self.gl.delete_textures)(1, &raw const id);
+            }
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -168,7 +221,11 @@ mod tests {
         let (tx, rx) = async_channel::bounded(3);
         let (wake, wake_rx) = async_channel::bounded(1);
         let resource = Arc::new(TextureResource {
-            id: 42, busy: AtomicBool::new(true), fence: AtomicUsize::new(7), retired: tx, wake,
+            id: 42,
+            busy: AtomicBool::new(true),
+            fence: AtomicUsize::new(7),
+            retired: tx,
+            wake,
         });
         let lease = TextureLease(resource.clone());
         drop(resource); // renderer drops first
@@ -182,25 +239,5 @@ mod tests {
     fn release_token_is_send_without_gtk_objects() {
         fn assert_send<T: Send>() {}
         assert_send::<TextureLease>();
-    }
-}
-
-impl Drop for TexturePool {
-    fn drop(&mut self) {
-        self.signals.redraw.borrow_mut().take();
-        // Retire every unleased resource synchronously while the context exists.
-        // Truly leased textures remain alive; their receiver retains the context
-        // for a later GTK-loop iteration. The host must keep that loop running
-        // until external paintables are released; never free still-busy textures.
-        self.resources.clear();
-        let _current = CurrentContext::enter(&self.context);
-        while let Ok((id, fence)) = self.retired_rx.try_recv() {
-            unsafe {
-                if fence != 0 && let Some(delete) = self.gl.delete_sync {
-                    delete(fence as *mut std::ffi::c_void);
-                }
-                (self.gl.delete_textures)(1, &id);
-            }
-        }
     }
 }

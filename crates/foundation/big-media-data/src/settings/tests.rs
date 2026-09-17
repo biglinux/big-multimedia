@@ -135,12 +135,14 @@ fn shared_handles_and_external_conflict_are_not_lost_updates() {
     assert_eq!(std::fs::read(&path).unwrap(), b"volume=21\n");
     assert_eq!(a.get_double(keys::VOLUME), 30.0);
     let _ = std::fs::remove_file(&path);
-    let _ = std::fs::remove_file(path.with_file_name(format!("settings-review-{}.conf.lock", std::process::id())));
+    let _ = std::fs::remove_file(
+        path.with_file_name(format!("settings-review-{}.conf.lock", std::process::id())),
+    );
 }
 
 #[test]
 fn memory_only_cannot_confirm_even_an_unedited_save() {
-    let settings=Settings::memory_only();
+    let settings = Settings::memory_only();
     assert!(settings.try_flush().is_err());
     assert_eq!(settings.save_status().phase, SavePhase::Failed);
 }

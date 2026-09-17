@@ -269,20 +269,28 @@ fn wire_software_fallback(
     software_picture: &gtk::Picture,
     software_render_context_slot: &SoftwareRenderContextSlot,
 ) {
-    if software_render_context_slot.borrow().is_some() { return; }
+    if software_render_context_slot.borrow().is_some() {
+        return;
+    }
     let mut context = match mpv.create_sw_render_context() {
         Ok(context) => context,
         Err(error) => {
             error!("video: software render context failed: {error}");
-            show_render_error(software_picture,
-                &i18n("Video could not start. Try Automatic video output in Preferences, or check that mpv is installed."));
+            show_render_error(
+                software_picture,
+                &i18n(
+                    "Video could not start. Try Automatic video output in Preferences, or check that mpv is installed.",
+                ),
+            );
             return;
         }
     };
     let (wake, receiver) = async_channel::bounded::<()>(1);
     let wake = Arc::new(wake);
     let callback_wake = wake.clone();
-    context.set_update_callback(move || { let _ = callback_wake.try_send(()); });
+    context.set_update_callback(move || {
+        let _ = callback_wake.try_send(());
+    });
     software_render_context_slot.replace(Some(context));
     gl_area.set_visible(false);
     software_picture.set_visible(true);
@@ -296,7 +304,9 @@ fn wire_software_fallback(
         probe.set_hexpand(true);
         probe.set_vexpand(true);
         let resize_wake = wake.clone();
-        probe.connect_resize(move |_, _, _| { let _ = resize_wake.try_send(()); });
+        probe.connect_resize(move |_, _, _| {
+            let _ = resize_wake.try_send(());
+        });
         overlay.add_overlay(&probe);
     }
     let weak_wake = Arc::downgrade(&wake);
@@ -308,18 +318,33 @@ fn wire_software_fallback(
         let mut last_size = (0, 0, 0);
         let mut error_shown = false;
         while receiver.recv().await.is_ok() {
-            let (Some(slot), Some(picture), Some(wake)) = (slot.upgrade(), picture.upgrade(), weak_wake.upgrade()) else { break };
+            let (Some(slot), Some(picture), Some(wake)) =
+                (slot.upgrade(), picture.upgrade(), weak_wake.upgrade())
+            else {
+                break;
+            };
             let borrowed = slot.borrow();
-            let Some(context) = borrowed.as_ref() else { break };
+            let Some(context) = borrowed.as_ref() else {
+                break;
+            };
             let size = (picture.width(), picture.height(), picture.scale_factor());
             pending |= context.has_new_frame() || size != last_size;
-            if !pending { continue; }
+            if !pending {
+                continue;
+            }
             match render_software_frame(&picture, context, &pool, wake) {
-                Ok(true) => { pending = false; last_size = size; error_shown = false; }
+                Ok(true) => {
+                    pending = false;
+                    last_size = size;
+                    error_shown = false;
+                }
                 Ok(false) => {} // all buffers retained or not yet allocated
                 Err(message) => {
                     pending = false;
-                    if !error_shown { show_render_error(&picture, &message); error_shown = true; }
+                    if !error_shown {
+                        show_render_error(&picture, &message);
+                        error_shown = true;
+                    }
                 }
             }
         }
@@ -327,7 +352,10 @@ fn wire_software_fallback(
 }
 
 fn show_render_error(picture: &gtk::Picture, message: &str) {
-    if let Some(overlay) = picture.ancestor(adw::ToastOverlay::static_type()).and_downcast::<adw::ToastOverlay>() {
+    if let Some(overlay) = picture
+        .ancestor(adw::ToastOverlay::static_type())
+        .and_downcast::<adw::ToastOverlay>()
+    {
         let toast = adw::Toast::new(message);
         toast.set_timeout(0); // do not disappear before the user can read it
         overlay.add_toast(toast);
@@ -344,15 +372,26 @@ fn render_software_frame(
     let scale = picture.scale_factor().max(1);
     let width = picture.width().checked_mul(scale).unwrap_or(0);
     let height = picture.height().checked_mul(scale).unwrap_or(0);
-    if width <= 0 || height <= 0 { return Ok(false); }
-    let message = || i18n("The video area is too large for compatibility mode. Reduce the window size or select Automatic video output in Preferences.");
+    if width <= 0 || height <= 0 {
+        return Ok(false);
+    }
+    let message = || {
+        i18n(
+            "The video area is too large for compatibility mode. Reduce the window size or select Automatic video output in Preferences.",
+        )
+    };
     let (stride, length) = aligned_layout(width, height).ok_or_else(message)?;
-    let Some(mut frame) = pool.acquire(length, wake).map_err(|_| message())? else { return Ok(false) };
+    let Some(mut frame) = pool.acquire(length, wake).map_err(|_| message())? else {
+        return Ok(false);
+    };
     if context.render_into(frame.pixels_mut(), width, height, stride) < 0 {
-        return Err(i18n("The video frame could not be displayed. Try Automatic video output in Preferences."));
+        return Err(i18n(
+            "The video frame could not be displayed. Try Automatic video output in Preferences.",
+        ));
     }
     let bytes = glib::Bytes::from_owned(frame);
-    let texture = gdk::MemoryTexture::new(width, height, gdk::MemoryFormat::B8g8r8x8, &bytes, stride);
+    let texture =
+        gdk::MemoryTexture::new(width, height, gdk::MemoryFormat::B8g8r8x8, &bytes, stride);
     picture.set_paintable(Some(&texture));
     Ok(true)
 }
@@ -364,7 +403,6 @@ fn render_glarea_frame(fast_render_context_slot: &FastRenderContextSlot, gl_area
         return;
     };
     if skip_mpv_render() {
-
         return;
     }
     // A GTK resize/expose request must redraw even while mpv is paused.

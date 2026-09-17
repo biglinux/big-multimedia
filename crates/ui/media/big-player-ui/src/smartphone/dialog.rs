@@ -128,10 +128,11 @@ where
     enable_row.connect_active_notify(move |switch| {
         let active = switch.is_active();
         if active {
-            let revoked=Arc::new(AtomicBool::new(false));
+            let revoked = Arc::new(AtomicBool::new(false));
             match remote_control::start_scoped(
                 "0.0.0.0:0".parse().expect("static socket address"),
-                (build_for_toggle)(revoked.clone()), revoked,
+                (build_for_toggle)(revoked.clone()),
+                revoked,
             ) {
                 Ok(handle) => {
                     let ip = detect_lan_ip().unwrap_or_else(|| "127.0.0.1".to_string());

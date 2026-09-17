@@ -20,7 +20,11 @@ struct LauncherEntryUpdate {
 }
 
 fn root_method_command(method: &str) -> Option<MprisCommand> {
-    match method { "Raise" => Some(MprisCommand::Raise), "Quit" => Some(MprisCommand::Quit), _ => None }
+    match method {
+        "Raise" => Some(MprisCommand::Raise),
+        "Quit" => Some(MprisCommand::Quit),
+        _ => None,
+    }
 }
 
 fn private_session_connection_flags() -> gio::DBusConnectionFlags {
@@ -50,7 +54,11 @@ fn taskbar_progress_launcher_entry_update(
         return None;
     }
 
-    if duration_secs.is_finite() && duration_secs > 0.0 && position_secs.is_finite() && position_secs >= 0.0 {
+    if duration_secs.is_finite()
+        && duration_secs > 0.0
+        && position_secs.is_finite()
+        && position_secs >= 0.0
+    {
         Some(LauncherEntryUpdate {
             desktop_uri: desktop_application_uri(desktop_id),
             is_visible: true,
@@ -156,8 +164,6 @@ impl Mpris {
             }
         };
 
-
-
         let command_cb = Arc::new(command_cb);
         let state_cb = Arc::new(state_cb);
         let prev_state = previous_state();
@@ -172,7 +178,10 @@ impl Mpris {
                         if let Some(command) = root_method_command(method) {
                             cmd(command);
                         } else {
-                            invocation.return_dbus_error("org.freedesktop.DBus.Error.UnknownMethod", "Unknown root method");
+                            invocation.return_dbus_error(
+                                "org.freedesktop.DBus.Error.UnknownMethod",
+                                "Unknown root method",
+                            );
                             return;
                         }
                         invocation.return_value(None);
@@ -355,9 +364,6 @@ impl Mpris {
             update.progress,
         );
     }
-
-    /// Emit the playback status signal on the active D-Bus connection.
-
 }
 
 impl Drop for Mpris {
@@ -384,6 +390,9 @@ mod tests {
     }
     #[test]
     fn private_bus_flags_are_preserved() {
-        assert!(private_session_connection_flags().contains(gio::DBusConnectionFlags::MESSAGE_BUS_CONNECTION));
+        assert!(
+            private_session_connection_flags()
+                .contains(gio::DBusConnectionFlags::MESSAGE_BUS_CONNECTION)
+        );
     }
 }

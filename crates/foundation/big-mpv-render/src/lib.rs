@@ -103,8 +103,13 @@ impl MainVideoSurfacePath {
     #[must_use]
     pub const fn is_allowed_for_mode(self, mode: VideoSurfaceMode) -> bool {
         self.is_allowed_for_main_video_surface()
-            || matches!((mode, self),
-                (VideoSurfaceMode::Compatibility, Self::MemoryTexture | Self::RgbBuffer))
+            || matches!(
+                (mode, self),
+                (
+                    VideoSurfaceMode::Compatibility,
+                    Self::MemoryTexture | Self::RgbBuffer
+                )
+            )
     }
 }
 
@@ -117,7 +122,6 @@ pub enum VideoSurfaceMode {
     /// Allow bounded software frame leases when GPU rendering is unavailable.
     Compatibility,
 }
-
 
 /// Typed render-surface steps required by the direct main-video contract.
 pub const REQUIRED_DIRECT_VIDEO_SURFACE_PATH: &[MainVideoSurfacePath] = &[
@@ -395,11 +399,16 @@ mod tests {
 
     #[test]
     fn compatibility_accepts_bounded_cpu_surfaces_but_not_screenshot_playback() {
-        for path in [MainVideoSurfacePath::MemoryTexture, MainVideoSurfacePath::RgbBuffer] {
+        for path in [
+            MainVideoSurfacePath::MemoryTexture,
+            MainVideoSurfacePath::RgbBuffer,
+        ] {
             assert!(path.is_allowed_for_mode(VideoSurfaceMode::Compatibility));
             assert!(!path.is_allowed_for_mode(VideoSurfaceMode::Direct));
         }
-        assert!(!MainVideoSurfacePath::Screenshot.is_allowed_for_mode(VideoSurfaceMode::Compatibility));
+        assert!(
+            !MainVideoSurfacePath::Screenshot.is_allowed_for_mode(VideoSurfaceMode::Compatibility)
+        );
         assert!(!MainVideoSurfacePath::Pixbuf.is_allowed_for_mode(VideoSurfaceMode::Compatibility));
     }
 

@@ -159,7 +159,9 @@ pub(super) fn create_music_page(
 
     let gapless_row = adw::SwitchRow::builder()
         .title(i18n("Gapless Playback"))
-        .subtitle(i18n("Play consecutive tracks without adding gaps. Silence inside a recording is kept."))
+        .subtitle(i18n(
+            "Play consecutive tracks without adding gaps. Silence inside a recording is kept.",
+        ))
         .active(settings.get_bool(keys::GAPLESS_AUDIO))
         .build();
     gapless_row.add_prefix(&illustration("gapless.svg"));
@@ -228,7 +230,9 @@ pub(super) fn create_music_page(
     integrations.add(
         &adw::ActionRow::builder()
             .title("ListenBrainz")
-            .subtitle(i18n("Not available in this player yet. No listening history is sent."))
+            .subtitle(i18n(
+                "Not available in this player yet. No listening history is sent.",
+            ))
             .build(),
     );
     page.add(&integrations);
@@ -298,7 +302,9 @@ pub fn show_audio_preferences(
     let visibility_group = BigPreferencesGroupSpec::new(i18n("More options")).build();
     let advanced = adw::SwitchRow::builder()
         .title(i18n("Show technical settings"))
-        .subtitle(i18n("Show audio output and processing options. Hiding them keeps your choices."))
+        .subtitle(i18n(
+            "Show audio output and processing options. Hiding them keeps your choices.",
+        ))
         .active(is_advanced)
         .build();
     {
@@ -370,7 +376,6 @@ mod tests {
                 page_size: 0.0,
             }
         );
-
     }
 
     #[test]

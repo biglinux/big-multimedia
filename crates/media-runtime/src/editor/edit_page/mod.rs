@@ -22,6 +22,7 @@ pub use component::{VideoEditResult, VideoEditor, VideoEditorInput, VideoEditorO
 
 use std::cell::{Cell, RefCell};
 use std::rc::Rc;
+use std::sync::Arc;
 
 use gtk::glib;
 
@@ -129,7 +130,7 @@ pub struct EditPage {
     video_height: Rc<Cell<i64>>,
     file_path: Rc<RefCell<Option<String>>>,
 
-    mpv: Rc<RefCell<Option<MpvBackend>>>,
+    mpv: Rc<RefCell<Option<Arc<MpvBackend>>>>,
     render_ctx: Rc<RefCell<Option<FastRenderContext>>>,
     // Mirrors the player offload path: hw-plane scanout on Wayland+MESA, GLArea fallback otherwise.
     video_backend: Rc<RefCell<Option<crate::player::mpv_backend::offload_renderer::VideoBackend>>>,

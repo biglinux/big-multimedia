@@ -19,14 +19,19 @@ struct Storage {
 impl Storage {
     fn resize(&mut self, len: usize) -> std::io::Result<()> {
         if len > MAX_FRAME_BYTES {
-            return Err(std::io::Error::new(std::io::ErrorKind::InvalidInput, "software frame exceeds memory limit"));
+            return Err(std::io::Error::new(
+                std::io::ErrorKind::InvalidInput,
+                "software frame exceeds memory limit",
+            ));
         }
         let count = len.div_ceil(64);
         if self.blocks.capacity() > count.saturating_mul(2) {
             self.blocks = Vec::new(); // release oversized storage after a resize
         }
         if count > self.blocks.len() {
-            self.blocks.try_reserve_exact(count - self.blocks.len()).map_err(std::io::Error::other)?;
+            self.blocks
+                .try_reserve_exact(count - self.blocks.len())
+                .map_err(std::io::Error::other)?;
         }
         self.blocks.resize(count, Block([0; 64]));
         self.len = len;
@@ -52,7 +57,10 @@ struct PoolState {
 pub struct SoftwareFramePool(Arc<Mutex<PoolState>>);
 impl Default for SoftwareFramePool {
     fn default() -> Self {
-        Self(Arc::new(Mutex::new(PoolState { free: Vec::with_capacity(SLOT_COUNT), created: 0 })))
+        Self(Arc::new(Mutex::new(PoolState {
+            free: Vec::with_capacity(SLOT_COUNT),
+            created: 0,
+        })))
     }
 }
 impl SoftwareFramePool {
@@ -63,7 +71,10 @@ impl SoftwareFramePool {
         len: usize,
         wake: Arc<async_channel::Sender<()>>,
     ) -> std::io::Result<Option<SoftwareFrame>> {
-        let mut state = self.0.lock().unwrap_or_else(std::sync::PoisonError::into_inner);
+        let mut state = self
+            .0
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner);
         let mut storage = if let Some(storage) = state.free.pop() {
             storage
         } else if state.created < SLOT_COUNT {
@@ -74,10 +85,18 @@ impl SoftwareFramePool {
         };
         drop(state); // never allocate a frame while holding the release mutex
         if let Err(error) = storage.resize(len) {
-            self.0.lock().unwrap_or_else(std::sync::PoisonError::into_inner).free.push(storage);
+            self.0
+                .lock()
+                .unwrap_or_else(std::sync::PoisonError::into_inner)
+                .free
+                .push(storage);
             return Err(error);
         }
-        Ok(Some(SoftwareFrame { storage, pool: Arc::downgrade(&self.0), wake }))
+        Ok(Some(SoftwareFrame {
+            storage,
+            pool: Arc::downgrade(&self.0),
+            wake,
+        }))
     }
 }
 
@@ -89,16 +108,22 @@ pub struct SoftwareFrame {
 }
 impl SoftwareFrame {
     /// Exclusive access before handing the frame to the immutable consumer.
-    pub fn pixels_mut(&mut self) -> &mut [u8] { self.storage.bytes_mut() }
+    pub fn pixels_mut(&mut self) -> &mut [u8] {
+        self.storage.bytes_mut()
+    }
 }
 impl AsRef<[u8]> for SoftwareFrame {
-    fn as_ref(&self) -> &[u8] { self.storage.bytes() }
+    fn as_ref(&self) -> &[u8] {
+        self.storage.bytes()
+    }
 }
 impl Drop for SoftwareFrame {
     fn drop(&mut self) {
         if let Some(pool) = self.pool.upgrade() {
-            pool.lock().unwrap_or_else(std::sync::PoisonError::into_inner)
-                .free.push(std::mem::take(&mut self.storage));
+            pool.lock()
+                .unwrap_or_else(std::sync::PoisonError::into_inner)
+                .free
+                .push(std::mem::take(&mut self.storage));
             let _ = self.wake.try_send(());
         }
     }
@@ -133,6 +158,10 @@ mod tests {
     #[test]
     fn oversized_frames_fail_before_allocation() {
         let (wake, _) = async_channel::bounded(1);
-        assert!(SoftwareFramePool::default().acquire(MAX_FRAME_BYTES + 1, Arc::new(wake)).is_err());
+        assert!(
+            SoftwareFramePool::default()
+                .acquire(MAX_FRAME_BYTES + 1, Arc::new(wake))
+                .is_err()
+        );
     }
 }

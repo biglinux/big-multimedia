@@ -156,16 +156,35 @@ pub fn probe_media_metadata(path: &std::path::Path) -> Option<serde_json::Value>
 }
 
 /// Verify terminal ffprobe success; cancellation is not an empty metadata record.
-pub fn probe_media_metadata_cancellable(path: &std::path::Path, cancel: &std::sync::atomic::AtomicBool) -> crate::Result<serde_json::Value> {
-    let output = BigSubprocessSpec::builder().program("ffprobe")
-        .args(["-v", "quiet", "-print_format", "json", "-show_format", "-show_streams", "--"])
-        .arg(path).stderr(BigSubprocessOutputMode::Null).timeout(Duration::from_secs(10)).build()
-        .run_cancellable(cancel).map_err(|error| match error {
+pub fn probe_media_metadata_cancellable(
+    path: &std::path::Path,
+    cancel: &std::sync::atomic::AtomicBool,
+) -> crate::Result<serde_json::Value> {
+    let output = BigSubprocessSpec::builder()
+        .program("ffprobe")
+        .args([
+            "-v",
+            "quiet",
+            "-print_format",
+            "json",
+            "-show_format",
+            "-show_streams",
+            "--",
+        ])
+        .arg(path)
+        .stderr(BigSubprocessOutputMode::Null)
+        .timeout(Duration::from_secs(10))
+        .build()
+        .run_cancellable(cancel)
+        .map_err(|error| match error {
             big_os_kit::subprocess::BigSubprocessError::Cancelled => crate::Error::Cancelled,
             _ => crate::Error::internal("Media probe did not complete"),
         })?;
-    if !output.status.success() { return Err(crate::Error::internal("Media probe failed")); }
-    serde_json::from_slice(&output.stdout).map_err(|_| crate::Error::internal("Invalid media probe response"))
+    if !output.status.success() {
+        return Err(crate::Error::internal("Media probe failed"));
+    }
+    serde_json::from_slice(&output.stdout)
+        .map_err(|_| crate::Error::internal("Invalid media probe response"))
 }
 
 #[cfg(test)]

@@ -271,8 +271,8 @@ impl MpvBackend {
     /// Queue a cache policy, not a measured memory-saving guarantee. Confirm
     /// behavior and total process/GPU memory on the actual decoder and media.
     pub fn set_audio_cache_profile(&self, profile: super::types::AudioCacheProfile) {
-        let _ = self.queue_command("set", &["demuxer-max-bytes", &profile.forward_bytes().to_string()]);
-        let _ = self.queue_command("set", &["demuxer-max-back-bytes", &profile.back_bytes().to_string()]);
+        let _ = self.queue_command("set", &["demuxer-max-bytes", profile.forward_bytes()]);
+        let _ = self.queue_command("set", &["demuxer-max-back-bytes", profile.back_bytes()]);
     }
 
     pub fn set_cache_pause(&self, enable: bool) {

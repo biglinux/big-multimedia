@@ -258,7 +258,8 @@ impl VideoShell {
         let row = self.trim_progress_row.clone();
         let shell = sender.input_sender().clone();
         glib::spawn_future_local(async move {
-            let mut outcome = TrimExportOutcome::Failed(i18n("The export ended without confirming completion"));
+            let mut outcome =
+                TrimExportOutcome::Failed(i18n("The export ended without confirming completion"));
             while let Ok(msg) = receiver.recv().await {
                 match msg {
                     QueueMessage::Progress {

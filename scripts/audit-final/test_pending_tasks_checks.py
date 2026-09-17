@@ -3,6 +3,7 @@
 from pathlib import Path
 import unittest
 from pending_tasks_checks import PATHS,check
+from source_text import compact
 ROOT=Path(__file__).resolve().parents[2]
 
 class ContractCheckerTests(unittest.TestCase):
@@ -13,9 +14,12 @@ class ContractCheckerTests(unittest.TestCase):
         self.assertFalse(result['native_executed'])
 
     def mutated(self,key,old,new,gate):
-        original=(ROOT/PATHS[key]).read_text()
+        # Mutate the whitespace-stripped source: the checker compares the same
+        # way, so a rustfmt re-wrap cannot silently stop a regression case from
+        # matching (which would make the case pass without testing anything).
+        original=compact((ROOT/PATHS[key]).read_text());old=compact(old)
         self.assertIn(old,original,('mutation no longer matches source',key,old))
-        mutated=original.replace(old,new)
+        mutated=original.replace(old,compact(new))
         result=check(ROOT,{PATHS[key]:mutated})
         group=next(item for item in result['results'] if item['name']==gate)
         self.assertEqual(group['status'],'FAIL',group)

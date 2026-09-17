@@ -34,10 +34,10 @@ use std::fs;
 use std::io::Write;
 
 mod transaction;
-pub use transaction::{CommitOutcome, StagedFile, WriteLock, read_regular_limited, sync_parent};
 use std::marker::PhantomData;
 use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicU64, Ordering};
+pub use transaction::{CommitOutcome, StagedFile, WriteLock, read_regular_limited, sync_parent};
 
 use serde::{Serialize, de::DeserializeOwned};
 
@@ -162,7 +162,10 @@ impl<T: Serialize + DeserializeOwned> BigAtomicJsonStore<T> {
     /// or rename), or [`BigStorageError::Json`] when serialization fails.
     pub fn write(&self, value: &T) -> Result<(), BigStorageError> {
         atomic_replace(&self.path, false, |file| {
-            let mut bounded = LimitedWriter { file, remaining: self.max_bytes };
+            let mut bounded = LimitedWriter {
+                file,
+                remaining: self.max_bytes,
+            };
             serde_json::to_writer_pretty(&mut bounded, value)?;
             bounded.write_all(b"\n")?;
             Ok(())
@@ -201,7 +204,6 @@ fn atomic_sibling_temp_path(target: &Path) -> PathBuf {
 pub fn atomic_write(path: &Path, bytes: &[u8]) -> std::io::Result<()> {
     atomic_replace(path, false, |file| file.write_all(bytes))
 }
-
 
 /// Atomically replace a secret file, creating it with owner-only permissions on
 /// Unix. Blocking: use a worker. This does not encrypt data or protect it from
@@ -249,7 +251,9 @@ fn atomic_replace_receipt<E: From<std::io::Error>>(
     private: bool,
     write: impl FnOnce(&mut fs::File) -> Result<(), E>,
 ) -> Result<CommitOutcome, E> {
-    let parent = path.parent().filter(|p| !p.as_os_str().is_empty())
+    let parent = path
+        .parent()
+        .filter(|p| !p.as_os_str().is_empty())
         .unwrap_or_else(|| Path::new("."));
     fs::create_dir_all(parent)?;
     let temporary = atomic_sibling_temp_path(path);
@@ -270,9 +274,13 @@ fn atomic_replace_receipt<E: From<std::io::Error>>(
 }
 
 fn atomic_replace<E: From<std::io::Error>>(
-    path: &Path, private: bool, write: impl FnOnce(&mut fs::File) -> Result<(), E>,
+    path: &Path,
+    private: bool,
+    write: impl FnOnce(&mut fs::File) -> Result<(), E>,
 ) -> Result<(), E> {
-    atomic_replace_receipt(path, private, write)?.into_io_result().map_err(E::from)
+    atomic_replace_receipt(path, private, write)?
+        .into_io_result()
+        .map_err(E::from)
 }
 
 /// Publish private internal state with an explicit publication/durability receipt.
@@ -281,17 +289,25 @@ pub fn atomic_write_private_receipt(path: &Path, bytes: &[u8]) -> std::io::Resul
     atomic_replace_receipt(path, true, |file| file.write_all(bytes))
 }
 
-struct LimitedWriter<'a> { file: &'a mut fs::File, remaining: usize }
+struct LimitedWriter<'a> {
+    file: &'a mut fs::File,
+    remaining: usize,
+}
 impl Write for LimitedWriter<'_> {
     fn write(&mut self, bytes: &[u8]) -> std::io::Result<usize> {
         if bytes.len() > self.remaining {
-            return Err(std::io::Error::new(std::io::ErrorKind::InvalidData, "serialized state exceeds limit"));
+            return Err(std::io::Error::new(
+                std::io::ErrorKind::InvalidData,
+                "serialized state exceeds limit",
+            ));
         }
         let written = self.file.write(bytes)?;
         self.remaining -= written;
         Ok(written)
     }
-    fn flush(&mut self) -> std::io::Result<()> { self.file.flush() }
+    fn flush(&mut self) -> std::io::Result<()> {
+        self.file.flush()
+    }
 }
 
 /// Migration callback contract used by [`BigVersionedJsonStore`].
@@ -666,8 +682,11 @@ mod review_atomic_tests {
     #[test]
     fn exclusive_creation_never_follows_a_symlink() {
         use std::os::unix::fs::symlink;
-        let base = std::env::temp_dir().join(format!("big-private-{}-{}",
-            std::process::id(), TEMP_SEQ.fetch_add(1, Ordering::Relaxed)));
+        let base = std::env::temp_dir().join(format!(
+            "big-private-{}-{}",
+            std::process::id(),
+            TEMP_SEQ.fetch_add(1, Ordering::Relaxed)
+        ));
         fs::create_dir(&base).unwrap();
         let victim = base.join("victim");
         fs::write(&victim, b"keep").unwrap();
@@ -680,8 +699,11 @@ mod review_atomic_tests {
 
     #[test]
     fn failed_write_preserves_old_content_and_removes_partial_file() {
-        let base = std::env::temp_dir().join(format!("big-rollback-{}-{}",
-            std::process::id(), TEMP_SEQ.fetch_add(1, Ordering::Relaxed)));
+        let base = std::env::temp_dir().join(format!(
+            "big-rollback-{}-{}",
+            std::process::id(),
+            TEMP_SEQ.fetch_add(1, Ordering::Relaxed)
+        ));
         fs::create_dir(&base).unwrap();
         let path = base.join("state");
         fs::write(&path, b"old").unwrap();

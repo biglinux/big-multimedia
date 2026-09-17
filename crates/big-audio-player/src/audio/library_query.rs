@@ -111,7 +111,8 @@ pub(crate) fn try_build_library_tree_snapshot(
     filter: &str,
     age_secs: Option<i64>,
 ) -> Result<LibraryTreeSnapshot, &'static str> {
-    let total = queries::get_library_track_count(conn, filter, age_secs).map_err(|_| "library count failed")?;
+    let total = queries::get_library_track_count(conn, filter, age_secs)
+        .map_err(|_| "library count failed")?;
     if total == 0 {
         return Ok(LibraryTreeSnapshot::default());
     }
@@ -119,7 +120,8 @@ pub(crate) fn try_build_library_tree_snapshot(
     let level0 = grouping.level(0);
     if level0 == GroupBy::None {
         // Songs view: flat file leaves, no grouping.
-        let tracks = queries::get_library_tracks(conn, &[], filter, age_secs).map_err(|_| "library query failed")?;
+        let tracks = queries::get_library_tracks(conn, &[], filter, age_secs)
+            .map_err(|_| "library query failed")?;
         return Ok(LibraryTreeSnapshot {
             level0: tracks.iter().map(file_node).collect(),
         });
@@ -137,7 +139,8 @@ pub(crate) fn try_build_library_tree_snapshot(
 
     // "Various Artists" bucket (compilations) — only under an artist top level.
     let compilations = if matches!(level0, GroupBy::Artist | GroupBy::AlbumArtist) {
-        queries::get_compilation_albums(conn, filter, &[], age_secs).map_err(|_| "library query failed")?
+        queries::get_compilation_albums(conn, filter, &[], age_secs)
+            .map_err(|_| "library query failed")?
     } else {
         Vec::new()
     };
@@ -279,7 +282,12 @@ fn file_node(track: &Track) -> LibraryTreeNode {
 }
 
 #[cfg(test)]
-fn build_library_tree_snapshot(conn: &rusqlite::Connection, grouping: &LibraryGrouping, filter: &str, age: Option<i64>) -> LibraryTreeSnapshot {
+fn build_library_tree_snapshot(
+    conn: &rusqlite::Connection,
+    grouping: &LibraryGrouping,
+    filter: &str,
+    age: Option<i64>,
+) -> LibraryTreeSnapshot {
     try_build_library_tree_snapshot(conn, grouping, filter, age).expect("valid test fixture")
 }
 

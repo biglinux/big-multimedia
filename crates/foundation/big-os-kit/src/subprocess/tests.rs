@@ -80,7 +80,10 @@ fn drain_capped_respects_max_bytes() {
     let mut buf: Vec<u8> = Vec::new();
     let payload = vec![b'A'; DEFAULT_MAX_CAPTURE_BYTES + 16];
     let mut cursor = std::io::Cursor::new(payload);
-    assert!(matches!(drain_capped(&mut cursor, &mut buf), Err(BigSubprocessError::OutputLimit { .. })));
+    assert!(matches!(
+        drain_capped(&mut cursor, &mut buf),
+        Err(BigSubprocessError::OutputLimit { .. })
+    ));
     assert!(buf.len() <= DEFAULT_MAX_CAPTURE_BYTES);
 }
 
@@ -370,7 +373,10 @@ fn drain_capped_truncates_unaligned_source_exactly_at_cap() {
         chunk: 1000,
     };
     let mut buf = Vec::new();
-    assert!(matches!(drain_capped(&mut reader, &mut buf), Err(BigSubprocessError::OutputLimit { .. })));
+    assert!(matches!(
+        drain_capped(&mut reader, &mut buf),
+        Err(BigSubprocessError::OutputLimit { .. })
+    ));
     assert!(buf.len() <= DEFAULT_MAX_CAPTURE_BYTES);
 }
 
@@ -484,8 +490,13 @@ fn redaction_survives_non_utf8() {
 #[test]
 #[cfg_attr(miri, ignore)]
 fn delayed_descendant_output_is_not_discarded() {
-    let result = BigSubprocessSpec::builder().program("sh").args(["-c", "(sleep 0.1; printf FINAL) &"])
-        .timeout(Duration::from_secs(2)).build().run().expect("delayed output");
+    let result = BigSubprocessSpec::builder()
+        .program("sh")
+        .args(["-c", "(sleep 0.1; printf FINAL) &"])
+        .timeout(Duration::from_secs(2))
+        .build()
+        .run()
+        .expect("delayed output");
     assert!(result.status.success());
     assert_eq!(result.stdout, b"FINAL");
 }
@@ -496,9 +507,18 @@ fn delayed_descendant_output_is_not_discarded() {
 fn inherited_pipe_and_unread_stdin_obey_deadline() {
     for args in [["-c", "sleep 10"], ["-c", "sleep 10 &"]] {
         let start = std::time::Instant::now();
-        let error = BigSubprocessSpec::builder().program("sh").args(args)
-            .stdin(vec![0; 1024 * 1024]).timeout(Duration::from_millis(150)).build().run().unwrap_err();
-        assert!(matches!(error, BigSubprocessError::Timeout | BigSubprocessError::Io(_)));
+        let error = BigSubprocessSpec::builder()
+            .program("sh")
+            .args(args)
+            .stdin(vec![0; 1024 * 1024])
+            .timeout(Duration::from_millis(150))
+            .build()
+            .run()
+            .unwrap_err();
+        assert!(matches!(
+            error,
+            BigSubprocessError::Timeout | BigSubprocessError::Io(_)
+        ));
         assert!(start.elapsed() < Duration::from_secs(3));
     }
 }
@@ -507,9 +527,14 @@ fn inherited_pipe_and_unread_stdin_obey_deadline() {
 #[test]
 #[cfg_attr(miri, ignore)]
 fn full_duplex_large_input_and_output_do_not_deadlock() {
-    let result = BigSubprocessSpec::builder().program("sh")
+    let result = BigSubprocessSpec::builder()
+        .program("sh")
         .args(["-c", "head -c 131072 /dev/zero; cat >/dev/null"])
-        .stdin(vec![7; 1024 * 1024]).timeout(Duration::from_secs(5)).build().run().unwrap();
+        .stdin(vec![7; 1024 * 1024])
+        .timeout(Duration::from_secs(5))
+        .build()
+        .run()
+        .unwrap();
     assert!(result.status.success());
     assert_eq!(result.stdout.len(), 131072);
 }
@@ -518,8 +543,13 @@ fn full_duplex_large_input_and_output_do_not_deadlock() {
 #[cfg_attr(miri, ignore)]
 #[cfg(target_os = "linux")]
 fn stderr_observer_error_stops_the_operation() {
-    let result = BigSubprocessSpec::builder().program("sh").args(["-c", "printf progress >&2; sleep 2"])
-        .timeout(Duration::from_secs(5)).build()
-        .run_cancellable_with_stderr(&AtomicBool::new(false), &mut |_| Err(std::io::Error::other("consumer closed")));
+    let result = BigSubprocessSpec::builder()
+        .program("sh")
+        .args(["-c", "printf progress >&2; sleep 2"])
+        .timeout(Duration::from_secs(5))
+        .build()
+        .run_cancellable_with_stderr(&AtomicBool::new(false), &mut |_| {
+            Err(std::io::Error::other("consumer closed"))
+        });
     assert!(matches!(result, Err(BigSubprocessError::Io(_))));
 }

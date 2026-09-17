@@ -2,9 +2,7 @@
 //! transitions, segment ordering/clearing, QueueMessage handling.
 
 use super::job::friendly_ffmpeg_error;
-use super::support::{
-    ensure_entry_probed, segment_output_path,
-};
+use super::support::{ensure_entry_probed, segment_output_path};
 use super::*;
 use crate::converter::ffmpeg::TrimRange;
 use crate::converter::file_validator::format_size;

@@ -10,8 +10,8 @@ mod component;
 mod engine;
 mod export;
 mod input;
-mod library_store;
 mod library_generation;
+mod library_store;
 use library_generation::LibraryGeneration;
 mod metadata;
 mod mpris;
@@ -51,8 +51,10 @@ use crate::db::models::{RadioStation, Track, WatchFolder};
 use crate::db::queries_advanced::{TrackMetadataUpdate, update_track_metadata};
 use crate::db::{self, DbHandle, queries};
 use crate::i18n::i18n;
-use crate::mpris::{CommandCallback, Mpris, MprisCommand, PlaybackStatus, PlayerState, StateCallback};
-use crate::player::mpv_backend::{MpvBackend, PlayerEvent};
+use crate::mpris::{
+    CommandCallback, Mpris, MprisCommand, PlaybackStatus, PlayerState, StateCallback,
+};
+use crate::player::mpv_backend::{AudioCacheProfile, MpvBackend, PlayerEvent};
 use crate::player::queue::{PlayQueue, RepeatMode};
 use crate::settings::{Settings, keys};
 use crate::shared::ui_helpers::spawn_db_query;

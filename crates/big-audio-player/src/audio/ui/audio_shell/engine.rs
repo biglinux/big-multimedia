@@ -21,9 +21,19 @@ impl AudioShell {
             PlayerEvent::PauseChanged(paused) => {
                 self.is_playing = !paused;
                 self.mpris_state.paused.store(paused, Ordering::Relaxed);
-                let mut status = self.mpris_state.status.lock().unwrap_or_else(PoisonError::into_inner);
+                let mut status = self
+                    .mpris_state
+                    .status
+                    .lock()
+                    .unwrap_or_else(PoisonError::into_inner);
                 // A pause-property echo after Stop does not resume playback.
-                if *status != PlaybackStatus::Stopped { *status = if paused { PlaybackStatus::Paused } else { PlaybackStatus::Playing }; }
+                if *status != PlaybackStatus::Stopped {
+                    *status = if paused {
+                        PlaybackStatus::Paused
+                    } else {
+                        PlaybackStatus::Playing
+                    };
+                }
                 self.playback_bar
                     .emit(AudioPlaybackBarInput::SetPaused(paused));
             }
@@ -93,8 +103,19 @@ impl AudioShell {
                 let paused = self.mpv.as_ref().is_none_or(|mpv| mpv.is_paused());
                 self.is_playing = !paused;
                 self.mpris_state.paused.store(paused, Ordering::Relaxed);
-                *self.mpris_state.status.lock().unwrap_or_else(PoisonError::into_inner) = if paused { PlaybackStatus::Paused } else { PlaybackStatus::Playing };
-                self.mpris_state.seekable.store(self.mpv.as_ref().is_some_and(|mpv| mpv.is_seekable()), Ordering::Relaxed);
+                *self
+                    .mpris_state
+                    .status
+                    .lock()
+                    .unwrap_or_else(PoisonError::into_inner) = if paused {
+                    PlaybackStatus::Paused
+                } else {
+                    PlaybackStatus::Playing
+                };
+                self.mpris_state.seekable.store(
+                    self.mpv.as_ref().is_some_and(|mpv| mpv.is_seekable()),
+                    Ordering::Relaxed,
+                );
                 if self.trim_active {
                     self.exit_trim_mode();
                 }
@@ -107,13 +128,30 @@ impl AudioShell {
                 self.push_mpris_metadata(sender);
             }
             PlayerEvent::Seeked(position) if position.is_finite() && position >= 0.0 => {
-                *self.mpris_state.position.lock().unwrap_or_else(PoisonError::into_inner) = position;
-                if let Some(mpris) = &self.mpris { mpris.emit_seeked((position * 1_000_000.0).min(i64::MAX as f64).round() as i64); }
+                *self
+                    .mpris_state
+                    .position
+                    .lock()
+                    .unwrap_or_else(PoisonError::into_inner) = position;
+                if let Some(mpris) = &self.mpris {
+                    mpris.emit_seeked((position * 1_000_000.0).min(i64::MAX as f64).round() as i64);
+                }
             }
             PlayerEvent::RateChanged(rate) if rate.is_finite() && rate > 0.0 => {
-                *self.mpris_state.rate.lock().unwrap_or_else(PoisonError::into_inner) = rate;
+                *self
+                    .mpris_state
+                    .rate
+                    .lock()
+                    .unwrap_or_else(PoisonError::into_inner) = rate;
             }
-            PlayerEvent::Shutdown => { self.mpris_state.invalidate(); *self.mpris_state.status.lock().unwrap_or_else(PoisonError::into_inner) = PlaybackStatus::Stopped; }
+            PlayerEvent::Shutdown => {
+                self.mpris_state.invalidate();
+                *self
+                    .mpris_state
+                    .status
+                    .lock()
+                    .unwrap_or_else(PoisonError::into_inner) = PlaybackStatus::Stopped;
+            }
             _ => {}
         }
     }
@@ -127,7 +165,10 @@ pub(super) fn build_mpv_backend(
     settings: &Settings,
 ) -> Option<Arc<MpvBackend>> {
     let (tx, rx) = async_channel::bounded::<PlayerEvent>(64);
-    let mpv = match MpvBackend::new_audio_only_with_output(tx, &settings.get_string(keys::AUDIO_OUTPUT)) {
+    let mpv = match MpvBackend::new_audio_only_with_output(
+        tx,
+        &settings.get_string(keys::AUDIO_OUTPUT),
+    ) {
         Ok(mpv) => mpv,
         Err(e) => {
             log::error!("failed to initialize mpv audio backend: {e}");
@@ -136,10 +177,16 @@ pub(super) fn build_mpv_backend(
     };
 
     let replaygain = settings.get_string(keys::REPLAYGAIN);
-    mpv.set_replaygain(if replaygain.is_empty() { "no" } else { &replaygain });
+    mpv.set_replaygain(if replaygain.is_empty() {
+        "no"
+    } else {
+        &replaygain
+    });
     mpv.set_replaygain_preamp(settings.get_double(keys::REPLAYGAIN_PREAMP));
     // Zero is a deliberate user choice, not a missing setting.
-    mpv.set_volume(f64::from(restored_volume(settings.get_int_or(keys::AUDIO_VOLUME, 100))));
+    mpv.set_volume(f64::from(restored_volume(
+        settings.get_int_or(keys::AUDIO_VOLUME, 100),
+    )));
     mpv.set_gapless(settings.get_bool(keys::GAPLESS_AUDIO));
     mpv.set_audio_pitch_correction(settings.get_bool(keys::AUDIO_PITCH_CORRECTION));
     mpv.set_audio_channels(&settings.get_string(keys::AUDIO_CHANNELS));

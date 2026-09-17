@@ -3,7 +3,7 @@
 use std::ffi::CString;
 use std::sync::atomic::Ordering;
 
-use log::{error, info};
+use log::error;
 
 use super::MpvBackend;
 use super::types::AudioCacheProfile;
@@ -12,37 +12,80 @@ use super::types::AudioCacheProfile;
 #[must_use]
 pub fn profile_for_uri(target: &str) -> Option<AudioCacheProfile> {
     let scheme = big_os_kit::url::uri_scheme(target)?;
-    if !["http", "https", "rtsp", "rtmp", "mms"].iter().any(|s| scheme.eq_ignore_ascii_case(s)) { return None; }
+    if !["http", "https", "rtsp", "rtmp", "mms"]
+        .iter()
+        .any(|s| scheme.eq_ignore_ascii_case(s))
+    {
+        return None;
+    }
     let path = big_os_kit::url::uri_path(target);
-    let extension = path.rsplit('/').next().unwrap_or("").rsplit_once('.').map(|(_, e)| e);
-    Some(if extension.is_some_and(|e| ["mp3", "m4a", "ogg", "opus", "flac"].iter().any(|v| e.eq_ignore_ascii_case(v))) {
-        AudioCacheProfile::Podcast
-    } else { AudioCacheProfile::Radio })
+    let extension = path
+        .rsplit('/')
+        .next()
+        .unwrap_or("")
+        .rsplit_once('.')
+        .map(|(_, e)| e);
+    Some(
+        if extension.is_some_and(|e| {
+            ["mp3", "m4a", "ogg", "opus", "flac"]
+                .iter()
+                .any(|v| e.eq_ignore_ascii_case(v))
+        }) {
+            AudioCacheProfile::Podcast
+        } else {
+            AudioCacheProfile::Radio
+        },
+    )
 }
 
 impl MpvBackend {
-    pub(super) fn queue_command(&self, command: &str, arguments: &[&str]) -> Result<(), super::MpvError> {
+    pub(super) fn queue_command(
+        &self,
+        command: &str,
+        arguments: &[&str],
+    ) -> Result<(), super::MpvError> {
         let mut strings = Vec::with_capacity(arguments.len() + 1);
         strings.push(CString::new(command)?);
-        for arg in arguments { strings.push(CString::new(*arg)?); }
-        let mut args: Vec<*const std::os::raw::c_char> = strings.iter().map(|s| s.as_ptr()).collect();
+        for arg in arguments {
+            strings.push(CString::new(*arg)?);
+        }
+        let mut args: Vec<*const std::os::raw::c_char> =
+            strings.iter().map(|s| s.as_ptr()).collect();
         args.push(std::ptr::null());
-        let status = unsafe { mpv_sys::mpv_command_async(self.raw_mpv_handle, 0, args.as_mut_ptr()) };
-        if status < 0 { Err(super::MpvError::Raw(status)) } else { Ok(()) }
+        let status =
+            unsafe { mpv_sys::mpv_command_async(self.raw_mpv_handle, 0, args.as_mut_ptr()) };
+        if status < 0 {
+            Err(super::MpvError::Raw(status))
+        } else {
+            Ok(())
+        }
     }
     /// Per-file pause is supplied before load, never Play immediately followed by Pause.
     pub fn load_audio_paused(&self, path: &str, profile: AudioCacheProfile, paused: bool) {
-        if self.audio_only { self.set_audio_cache_profile(profile); }
+        if self.audio_only {
+            self.set_audio_cache_profile(profile);
+        }
         self.loading.store(true, Ordering::Relaxed);
-        let options = if paused { "resume-playback=no,pause=yes" } else { "resume-playback=no,pause=no" };
+        let options = if paused {
+            "resume-playback=no,pause=yes"
+        } else {
+            "resume-playback=no,pause=no"
+        };
         if let Err(error) = self.queue_command("loadfile", &[path, "replace", "-1", options]) {
             self.loading.store(false, Ordering::Relaxed);
             log::warn!("Could not enqueue media load: {error}");
         }
     }
 
-    pub fn load_file_with_audio_profile(&self, path: &str, profile: AudioCacheProfile, from_start: bool) {
-        if self.audio_only { self.set_audio_cache_profile(profile); }
+    pub fn load_file_with_audio_profile(
+        &self,
+        path: &str,
+        profile: AudioCacheProfile,
+        from_start: bool,
+    ) {
+        if self.audio_only {
+            self.set_audio_cache_profile(profile);
+        }
         self.load_inner(path, from_start);
     }
 
@@ -65,48 +108,89 @@ impl MpvBackend {
         self.loading.store(true, Ordering::Relaxed);
         let result = if from_start {
             self.queue_command("loadfile", &[path, "replace", "-1", "resume-playback=no"])
-        } else { self.queue_command("loadfile", &[path, "replace"]) };
+        } else {
+            self.queue_command("loadfile", &[path, "replace"])
+        };
         if let Err(error) = result {
             self.loading.store(false, Ordering::Relaxed);
-            error!("Failed to load {}: {error}", big_os_kit::url::MediaLogTarget(path));
+            error!(
+                "Failed to load {}: {error}",
+                big_os_kit::url::MediaLogTarget(path)
+            );
         }
     }
 
     pub fn load_file_append(&self, path: &str) {
         if let Err(e) = self.queue_command("loadfile", &[path, "append-play"]) {
-            error!("Failed to append {}: {e}", big_os_kit::url::MediaLogTarget(path));
+            error!(
+                "Failed to append {}: {e}",
+                big_os_kit::url::MediaLogTarget(path)
+            );
         }
     }
 
-    pub fn play(&self) { let _ = self.queue_command("set", &["pause", "no"]); }
-    pub fn pause(&self) { let _ = self.queue_command("set", &["pause", "yes"]); }
-    pub fn toggle_pause(&self) { let _ = self.queue_command("cycle", &["pause"]); }
-    pub fn stop(&self) { let _ = self.queue_command("stop", &[]); }
-    pub fn seek(&self, seconds: f64) {
-        if seconds.is_finite() { let _ = self.queue_command("seek", &[&seconds.to_string(), "relative"]); }
+    pub fn play(&self) {
+        let _ = self.queue_command("set", &["pause", "no"]);
     }
-    pub fn seek_absolute(&self, seconds: f64) { self.seek_absolute_async(seconds); }
+    pub fn pause(&self) {
+        let _ = self.queue_command("set", &["pause", "yes"]);
+    }
+    pub fn toggle_pause(&self) {
+        let _ = self.queue_command("cycle", &["pause"]);
+    }
+    pub fn stop(&self) {
+        let _ = self.queue_command("stop", &[]);
+    }
+    pub fn seek(&self, seconds: f64) {
+        if seconds.is_finite() {
+            let _ = self.queue_command("seek", &[&seconds.to_string(), "relative"]);
+        }
+    }
+    pub fn seek_absolute(&self, seconds: f64) {
+        self.seek_absolute_async(seconds);
+    }
     pub fn seek_absolute_async(&self, seconds: f64) {
-        if seconds.is_finite() && seconds >= 0.0 { let _ = self.queue_command("seek", &[&seconds.to_string(), "absolute"]); }
+        if seconds.is_finite() && seconds >= 0.0 {
+            let _ = self.queue_command("seek", &[&seconds.to_string(), "absolute"]);
+        }
     }
 
     /// Queue a PNG screenshot into private staging. Call off the GTK thread:
     /// staging setup performs filesystem I/O. The backend retains resources
     /// through cancellation until a terminal receipt or native termination.
     pub fn screenshot_to_file_async(
-        &self, target: &std::path::Path, alive: std::sync::Arc<std::sync::atomic::AtomicBool>,
+        &self,
+        target: &std::path::Path,
+        alive: std::sync::Arc<std::sync::atomic::AtomicBool>,
     ) -> std::io::Result<u64> {
         let stage = big_os_kit::storage::StagedFile::new(target)?;
         let command = CString::new("screenshot-to-file").expect("literal");
-        let path = CString::new(stage.path().to_str().ok_or_else(|| std::io::Error::other("screenshot path is not UTF-8"))?)?;
+        let path = CString::new(
+            stage
+                .path()
+                .to_str()
+                .ok_or_else(|| std::io::Error::other("screenshot path is not UTF-8"))?,
+        )?;
         let mode = CString::new("video").expect("literal");
-        let mut args = [command.as_ptr(), path.as_ptr(), mode.as_ptr(), std::ptr::null()];
-        let id = self.screenshots.register(stage, target.to_path_buf(), alive)?;
-        let status = unsafe { mpv_sys::mpv_command_async(self.raw_mpv_handle, id, args.as_mut_ptr()) };
+        let mut args = [
+            command.as_ptr(),
+            path.as_ptr(),
+            mode.as_ptr(),
+            std::ptr::null(),
+        ];
+        let id = self
+            .screenshots
+            .register(stage, target.to_path_buf(), alive)?;
+        let status =
+            unsafe { mpv_sys::mpv_command_async(self.raw_mpv_handle, id, args.as_mut_ptr()) };
         if status < 0 {
             self.screenshots.rejected(id);
-            Err(std::io::Error::other(format!("screenshot command rejected: {status}")))
-        } else { Ok(id) }
+            Err(std::io::Error::other(format!(
+                "screenshot command rejected: {status}"
+            )))
+        } else {
+            Ok(id)
+        }
     }
 
     pub fn playlist_next(&self) {

@@ -1,25 +1,65 @@
 use super::*;
 
 impl AudioShell {
-    pub(super) fn play_current(&mut self) { self.play_current_as(PlaybackStatus::Playing); }
+    pub(super) fn play_current(&mut self) {
+        self.play_current_as(PlaybackStatus::Playing);
+    }
 
     pub(super) fn play_current_as(&mut self, status: PlaybackStatus) {
-        let Some(path) = self.queue.current().map(|track| track.file_path.clone()) else { return; };
+        let Some(path) = self.queue.current().map(|track| track.file_path.clone()) else {
+            return;
+        };
         self.mpris_state.invalidate();
-        self.current_file = path.clone(); self.is_stream = false;
+        self.current_file.clone_from(&path);
+        self.is_stream = false;
         self.is_playing = status == PlaybackStatus::Playing;
         if status == PlaybackStatus::Stopped {
             // Select the next item without starting decoder/audio output.
             self.mpris_state.selected();
-            *self.mpris_state.status.lock().unwrap_or_else(PoisonError::into_inner) = status;
-            *self.mpris_state.position.lock().unwrap_or_else(PoisonError::into_inner) = 0.0;
+            *self
+                .mpris_state
+                .status
+                .lock()
+                .unwrap_or_else(PoisonError::into_inner) = status;
+            *self
+                .mpris_state
+                .position
+                .lock()
+                .unwrap_or_else(PoisonError::into_inner) = 0.0;
         } else if let Some(mpv) = &self.mpv {
-            let profile = if self.podcast_mode { AudioCacheProfile::Podcast } else { AudioCacheProfile::Music };
+            let profile = if self.podcast_mode {
+                AudioCacheProfile::Podcast
+            } else {
+                AudioCacheProfile::Music
+            };
             mpv.load_audio_paused(&path, profile, status == PlaybackStatus::Paused);
         }
         self.sync_now_playing();
     }
 
+    /// Persist the queue track ids to the DB (fire-and-forget).
+    pub(super) fn save_queue_to_db(&self) {
+        let Some(db) = self.db.clone() else {
+            return;
+        };
+        let track_ids: Vec<i64> = self.queue.tracks().iter().map(|t| t.id).collect();
+        spawn_db_query(
+            db,
+            move |conn| {
+                let _ = queries::save_queue(conn, &track_ids);
+            },
+            |()| {},
+        );
+    }
+
+    /// Push the queue to the panels and persist it — call after any track-set
+    /// mutation (add / remove / reorder / clear / dedupe / set).
+    pub(super) fn commit_queue(&self) {
+        self.sync_queue_to_panels();
+        self.save_queue_to_db();
+    }
+
+    /// Start playback only when nothing is currently playing (used by enqueue).
     pub(super) fn play_if_idle(&mut self) {
         if !self.is_playing || self.current_file.is_empty() {
             let last = self.queue.len().saturating_sub(1);

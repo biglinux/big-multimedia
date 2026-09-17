@@ -4,10 +4,10 @@
 //! on stdin, never argv/attributes. It may prompt to unlock the default collection.
 //! A missing helper, locked service, declined prompt, timeout or missing referenced
 //! item is an error; no case authorizes writing plaintext instead.
+use crate::subprocess::BigSubprocessSpec;
 use std::io;
 use std::sync::atomic::AtomicBool;
 use std::time::Duration;
-use crate::subprocess::BigSubprocessSpec;
 
 /// Limit below secret-tool's 8192-byte stdin buffer (including future metadata).
 pub const MAX_SECRET_BYTES: usize = 7900;
@@ -26,32 +26,82 @@ pub struct SecretService<'a> {
     pub cancelled: &'a AtomicBool,
 }
 fn validate(scope: &str, id: &str) -> io::Result<()> {
-    if !matches!(scope, "lastfm" | "listenbrainz") || id.len()!=32 || !id.bytes().all(|b| b.is_ascii_hexdigit()) {
-        return Err(io::Error::new(io::ErrorKind::InvalidInput,"invalid owned secret reference"));
-    } Ok(())
+    if !matches!(scope, "lastfm" | "listenbrainz")
+        || id.len() != 32
+        || !id.bytes().all(|b| b.is_ascii_hexdigit())
+    {
+        return Err(io::Error::new(
+            io::ErrorKind::InvalidInput,
+            "invalid owned secret reference",
+        ));
+    }
+    Ok(())
 }
 impl SecretService<'_> {
     fn run(&self, verb: &str, scope: &str, id: &str, input: Option<&[u8]>) -> io::Result<Vec<u8>> {
-        validate(scope,id)?;
-        if input.is_some_and(|v| v.is_empty() || v.len()>MAX_SECRET_BYTES || std::str::from_utf8(v).is_err() || v.contains(&0)) {
-            return Err(io::Error::new(io::ErrorKind::InvalidInput,"credential payload exceeds Secret Service limits"));
+        validate(scope, id)?;
+        if input.is_some_and(|v| {
+            v.is_empty()
+                || v.len() > MAX_SECRET_BYTES
+                || std::str::from_utf8(v).is_err()
+                || v.contains(&0)
+        }) {
+            return Err(io::Error::new(
+                io::ErrorKind::InvalidInput,
+                "credential payload exceeds Secret Service limits",
+            ));
         }
         let mut arguments = vec![verb.to_owned()];
-        if verb=="store" { arguments.extend(["--label=Big Multimedia account".into(),"--collection=default".into()]); }
-        arguments.extend(["application".into(),"big-multimedia".into(),"scope".into(),scope.into(),"item".into(),id.into()]);
-        let builder = BigSubprocessSpec::builder().program("secret-tool").args(arguments).timeout(Duration::from_secs(30));
-        let result = if let Some(value)=input { builder.stdin(value.to_vec()).build().run_cancellable(self.cancelled) }
-                     else { builder.build().run_cancellable(self.cancelled) };
+        if verb == "store" {
+            arguments.extend([
+                "--label=Big Multimedia account".into(),
+                "--collection=default".into(),
+            ]);
+        }
+        arguments.extend([
+            "application".into(),
+            "big-multimedia".into(),
+            "scope".into(),
+            scope.into(),
+            "item".into(),
+            id.into(),
+        ]);
+        let builder = BigSubprocessSpec::builder()
+            .program("secret-tool")
+            .args(arguments)
+            .timeout(Duration::from_secs(30));
+        let result = if let Some(value) = input {
+            builder
+                .stdin(value.to_vec())
+                .build()
+                .run_cancellable(self.cancelled)
+        } else {
+            builder.build().run_cancellable(self.cancelled)
+        };
         // Deliberately do not expose stdout/stderr or the formatted subprocess
         // error: provider diagnostics are not guaranteed to redact secrets.
-        let result=result.map_err(|_| io::Error::other("Secret Service operation unavailable, cancelled or not confirmed"))?;
-        if !result.status.success() { return Err(io::Error::other("Secret Service item unavailable; unlock the keyring and retry")); }
-        if result.stdout.len()>MAX_SECRET_BYTES { return Err(io::Error::other("Secret Service response is too large")); }
+        let result = result.map_err(|_| {
+            io::Error::other("Secret Service operation unavailable, cancelled or not confirmed")
+        })?;
+        if !result.status.success() {
+            return Err(io::Error::other(
+                "Secret Service item unavailable; unlock the keyring and retry",
+            ));
+        }
+        if result.stdout.len() > MAX_SECRET_BYTES {
+            return Err(io::Error::other("Secret Service response is too large"));
+        }
         Ok(result.stdout)
     }
 }
 impl Vault for SecretService<'_> {
-    fn store(&self, scope:&str, id:&str, value:&[u8])->io::Result<()> { self.run("store",scope,id,Some(value)).map(|_|()) }
-    fn lookup(&self, scope:&str, id:&str)->io::Result<Vec<u8>> { self.run("lookup",scope,id,None) }
-    fn clear(&self, scope:&str, id:&str)->io::Result<()> { self.run("clear",scope,id,None).map(|_|()) }
+    fn store(&self, scope: &str, id: &str, value: &[u8]) -> io::Result<()> {
+        self.run("store", scope, id, Some(value)).map(|_| ())
+    }
+    fn lookup(&self, scope: &str, id: &str) -> io::Result<Vec<u8>> {
+        self.run("lookup", scope, id, None)
+    }
+    fn clear(&self, scope: &str, id: &str) -> io::Result<()> {
+        self.run("clear", scope, id, None).map(|_| ())
+    }
 }

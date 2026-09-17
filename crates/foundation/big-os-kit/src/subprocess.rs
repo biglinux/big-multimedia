@@ -46,7 +46,7 @@
 use std::collections::HashSet;
 use std::ffi::OsString;
 use std::path::PathBuf;
-use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::atomic::AtomicBool;
 use std::time::Duration;
 
 use bon::Builder;
@@ -357,14 +357,23 @@ impl BigSubprocessSpec {
     /// parse only protocol fields, never forward them wholesale to logs/UI.
     /// Capture limits still apply and truncation is never reported as success.
     pub fn run_cancellable_with_stderr(
-        &self, cancel: &AtomicBool,
+        &self,
+        cancel: &AtomicBool,
         observer: &mut dyn FnMut(&[u8]) -> std::io::Result<()>,
     ) -> Result<BigSubprocessOutput, BigSubprocessError> {
         self.try_resolved()?;
         #[cfg(target_os = "linux")]
-        { linux_exec::run_observed(self, cancel, observer) }
+        {
+            linux_exec::run_observed(self, cancel, observer)
+        }
         #[cfg(not(target_os = "linux"))]
-        { let _ = (cancel, observer); Err(BigSubprocessError::Io(std::io::Error::new(std::io::ErrorKind::Unsupported, "bounded observation requires Linux"))) }
+        {
+            let _ = (cancel, observer);
+            Err(BigSubprocessError::Io(std::io::Error::new(
+                std::io::ErrorKind::Unsupported,
+                "bounded observation requires Linux",
+            )))
+        }
     }
 
     /// Spawn the subprocess without waiting and return a
@@ -694,44 +703,68 @@ fn run_resolved(
     cancel: &AtomicBool,
 ) -> Result<BigSubprocessOutput, BigSubprocessError> {
     #[cfg(target_os = "linux")]
-    { linux_exec::run(spec, cancel) }
+    {
+        linux_exec::run(spec, cancel)
+    }
     #[cfg(not(target_os = "linux"))]
-    { let _ = (spec, cancel); Err(BigSubprocessError::Io(std::io::Error::new(
-        std::io::ErrorKind::Unsupported, "bounded run requires the Linux pipe supervisor"))) }
+    {
+        let _ = (spec, cancel);
+        Err(BigSubprocessError::Io(std::io::Error::new(
+            std::io::ErrorKind::Unsupported,
+            "bounded run requires the Linux pipe supervisor",
+        )))
+    }
 }
 
 #[cfg(test)]
-fn drain_capped<R: std::io::Read>(reader: &mut R, buf: &mut Vec<u8>) -> Result<(), BigSubprocessError> {
+fn drain_capped<R: std::io::Read>(
+    reader: &mut R,
+    buf: &mut Vec<u8>,
+) -> Result<(), BigSubprocessError> {
     let mut chunk = [0_u8; 8192];
     loop {
         match reader.read(&mut chunk) {
             Ok(0) => return Ok(()),
             Ok(n) => {
                 if n > DEFAULT_MAX_CAPTURE_BYTES.saturating_sub(buf.len()) {
-                    return Err(BigSubprocessError::OutputLimit { stream: "capture", limit: DEFAULT_MAX_CAPTURE_BYTES });
+                    return Err(BigSubprocessError::OutputLimit {
+                        stream: "capture",
+                        limit: DEFAULT_MAX_CAPTURE_BYTES,
+                    });
                 }
                 buf.extend_from_slice(&chunk[..n]);
             }
-            Err(error) if error.kind() == std::io::ErrorKind::Interrupted => {},
+            Err(error) if error.kind() == std::io::ErrorKind::Interrupted => {}
             Err(error) => return Err(BigSubprocessError::Io(error)),
         }
     }
 }
 
 fn redact_in_place(needles: &[String], buf: &mut Vec<u8>) {
-    if needles.iter().all(String::is_empty) { return; }
+    if needles.iter().all(String::is_empty) {
+        return;
+    }
     let mut out = Vec::with_capacity(buf.len().min(DEFAULT_MAX_CAPTURE_BYTES));
     let mut pos = 0;
     // Match only original bytes, longest match first. Redaction never skips a
     // buffer merely because another byte in it is invalid UTF-8.
     while pos < buf.len() && out.len() < DEFAULT_MAX_CAPTURE_BYTES {
-        let length = needles.iter().filter(|n| !n.is_empty() && buf[pos..].starts_with(n.as_bytes()))
-            .map(String::len).max();
+        let length = needles
+            .iter()
+            .filter(|n| !n.is_empty() && buf[pos..].starts_with(n.as_bytes()))
+            .map(String::len)
+            .max();
         if let Some(length) = length {
             let marker = b"[REDACTED]";
-            if marker.len() > DEFAULT_MAX_CAPTURE_BYTES - out.len() { break; }
-            out.extend_from_slice(marker); pos += length;
-        } else { out.push(buf[pos]); pos += 1; }
+            if marker.len() > DEFAULT_MAX_CAPTURE_BYTES - out.len() {
+                break;
+            }
+            out.extend_from_slice(marker);
+            pos += length;
+        } else {
+            out.push(buf[pos]);
+            pos += 1;
+        }
     }
     *buf = out;
 }

@@ -13,36 +13,55 @@ use crate::error::{Error, Result};
 const SYSTEM_PROFILES_DIR: &str = crate::config::runtime::PROFILES_DIR;
 
 fn user_profiles_dir() -> Option<PathBuf> {
-    big_os_kit::xdg_dirs::config_dir().map(|p|p.join(crate::config::runtime::USER_PROFILES_RELATIVE))
+    big_os_kit::xdg_dirs::config_dir()
+        .map(|p| p.join(crate::config::runtime::USER_PROFILES_RELATIVE))
 }
 
 pub fn load_profile(path: &Path) -> Result<Profile> {
-    let bytes=big_os_kit::storage::read_regular_limited(path,1024*1024)?
-        .ok_or_else(||io::Error::new(io::ErrorKind::NotFound,"profile not found"))?;
-    let content=std::str::from_utf8(&bytes).map_err(|_|Error::invalid_argument("profile","Profile is not UTF-8"))?;
-    toml::from_str(content).map_err(|_|Error::invalid_argument("profile","Invalid profile document"))
+    let bytes = big_os_kit::storage::read_regular_limited(path, 1024 * 1024)?
+        .ok_or_else(|| io::Error::new(io::ErrorKind::NotFound, "profile not found"))?;
+    let content = std::str::from_utf8(&bytes)
+        .map_err(|_| Error::invalid_argument("profile", "Profile is not UTF-8"))?;
+    toml::from_str(content)
+        .map_err(|_| Error::invalid_argument("profile", "Invalid profile document"))
 }
 
 // Intentionally returns `io::Error` rather than the crate `Error`: callers
 // match on `io::ErrorKind::PermissionDenied` / `NotFound` etc. directly
 // (XDG profile dir handling needs the underlying kind, not a string
 // wrap). Keep this narrower type until the matching call-sites migrate.
-/// Worker-only, create-new publication. Use save_user_profile_async from GTK.
+/// Worker-only, create-new publication. Never call this on the GTK thread.
 pub fn save_user_profile(
     filename: &str,
     profile: &Profile,
 ) -> std::result::Result<PathBuf, io::Error> {
-    let name=Path::new(filename);
-    if name.components().count()!=1 || name.file_name().and_then(|n|n.to_str())!=Some(filename) || name.extension().and_then(|n|n.to_str())!=Some("toml") {
-        return Err(io::Error::new(io::ErrorKind::InvalidInput,"Choose a plain .toml profile filename"));
+    let name = Path::new(filename);
+    if name.components().count() != 1
+        || name.file_name().and_then(|n| n.to_str()) != Some(filename)
+        || name.extension().and_then(|n| n.to_str()) != Some("toml")
+    {
+        return Err(io::Error::new(
+            io::ErrorKind::InvalidInput,
+            "Choose a plain .toml profile filename",
+        ));
     }
-    let dir=user_profiles_dir().ok_or_else(||io::Error::new(io::ErrorKind::NotFound,"User configuration directory is unavailable"))?;
+    let dir = user_profiles_dir().ok_or_else(|| {
+        io::Error::new(
+            io::ErrorKind::NotFound,
+            "User configuration directory is unavailable",
+        )
+    })?;
     fs::create_dir_all(&dir)?;
-    let path=dir.join(filename);
+    let path = dir.join(filename);
     let content = toml::to_string_pretty(profile).map_err(|e| io::Error::other(e.to_string()))?;
-    if content.len()>1024*1024 {return Err(io::Error::new(io::ErrorKind::InvalidInput,"Profile exceeds 1 MiB"));}
-    let stage=big_os_kit::storage::StagedFile::new(&path)?;
-    fs::write(stage.path(),content)?;
+    if content.len() > 1024 * 1024 {
+        return Err(io::Error::new(
+            io::ErrorKind::InvalidInput,
+            "Profile exceeds 1 MiB",
+        ));
+    }
+    let stage = big_os_kit::storage::StagedFile::new(&path)?;
+    fs::write(stage.path(), content)?;
     stage.publish(&path)?.into_io_result()?;
     Ok(path)
 }
@@ -58,7 +77,9 @@ pub fn load_all_profiles() -> BTreeMap<String, Profile> {
         load_dev_profiles(&mut profiles);
     }
 
-    if let Some(dir)=user_profiles_dir() {load_profiles_from_dir(&dir,&mut profiles);}
+    if let Some(dir) = user_profiles_dir() {
+        load_profiles_from_dir(&dir, &mut profiles);
+    }
 
     info!("Loaded {} profiles", profiles.len());
     profiles
@@ -109,9 +130,4 @@ fn load_profiles_from_dir(dir: &Path, profiles: &mut BTreeMap<String, Profile>) 
             }
         }
     }
-}
-
-/// GUI-safe profile export with an acknowledged result. Existing files survive.
-pub fn save_user_profile_async(filename:String,profile:Profile,done:impl FnOnce(io::Result<PathBuf>)+'static) {
-    crate::settings::saving::acknowledged_task(false, move ||save_user_profile(&filename,&profile),done);
 }

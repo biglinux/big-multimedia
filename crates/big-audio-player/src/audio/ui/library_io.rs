@@ -11,7 +11,6 @@ use adw::prelude::*;
 use gtk::glib;
 
 use big_app_kit::file_dialogs::FilePicker;
-use big_media_components::player_chrome::spawn_blocking_result;
 use big_relm4_components::input::button_content::{BigButtonContentSpec, build_button};
 use big_relm4_components::layout::{
     dialog_footer::{BigDialogFooter, BigDialogFooterSpec},
@@ -176,9 +175,10 @@ pub(super) fn show_manage_folders(
     content.append(&build_tips_card());
     let review = gtk::Button::with_label(&i18n("Review unavailable files"));
     let out = sender.clone();
-    review.connect_clicked(move |_| { let _ = out.output(LibraryPanelOutput::ReviewUnavailable); });
+    review.connect_clicked(move |_| {
+        let _ = out.output(LibraryPanelOutput::ReviewUnavailable);
+    });
     content.append(&review);
-
 
     let dialog = adw::Dialog::builder()
         .title(i18n("Music Folders"))
@@ -283,7 +283,10 @@ fn build_folders_list(
         remove_folder_button.connect_clicked(move |button| {
             let _ = out.output(LibraryPanelOutput::RemoveWatchFolder { id: folder_id });
             button.set_sensitive(false);
-            big_relm4_components::feedback::tooltip::set(button, i18n("Removal requested. Reopen this list after the operation finishes."));
+            big_relm4_components::feedback::tooltip::set(
+                button,
+                i18n("Removal requested. Reopen this list after the operation finishes."),
+            );
         });
         strip.append(&remove_folder_button);
         list.append(&strip.into_root());
@@ -324,7 +327,9 @@ fn build_folder_buttons(parent: &gtk::Window, sender: &ComponentSender<LibraryPa
             .css_class("pill"),
     );
     let out_scan = sender.clone();
-    scan_now_button.connect_clicked(move |_| { let _ = out_scan.output(LibraryPanelOutput::ScanNow); });
+    scan_now_button.connect_clicked(move |_| {
+        let _ = out_scan.output(LibraryPanelOutput::ScanNow);
+    });
     buttons.append(&scan_now_button);
     buttons
 }

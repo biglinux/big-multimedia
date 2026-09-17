@@ -49,11 +49,13 @@ pub fn present_providers_dialog(
         BigBoundedListBox::new(BigBoundedListBoxSpec::new(24).css_class("boxed-list"));
     let list = provider_list.root().clone();
     page.content().append(&list);
-    let status_store=store.clone(); let retry_store=store.clone();
-    page.content().append(&crate::settings::saving::document_status(
-        move ||status_store.borrow().save_status(),
-        move ||retry_store.borrow().retry_save(),
-    ));
+    let status_store = store.clone();
+    let retry_store = store.clone();
+    page.content()
+        .append(&crate::settings::saving::document_status(
+            move || status_store.borrow().save_status(),
+            move || retry_store.borrow().retry_save(),
+        ));
 
     let dialog = adw::Dialog::builder()
         .title(i18n("IPTV Providers"))

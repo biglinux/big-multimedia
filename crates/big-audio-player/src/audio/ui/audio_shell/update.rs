@@ -32,7 +32,9 @@ impl AudioShell {
             AudioShellInput::Playlist(out) => self.handle_playlist(out, &sender),
             AudioShellInput::Playback(out) => self.handle_playback(out, &sender),
             AudioShellInput::PlaybackRemote { command, permit } => {
-                if permit.is_live() { self.handle_playback(command, &sender); }
+                if permit.is_live() {
+                    self.handle_playback(command, &sender);
+                }
                 // Drop releases bounded admission even when the session was revoked.
             }
             AudioShellInput::Trim(out) => self.handle_trim(out, &sender),
@@ -62,13 +64,33 @@ impl AudioShell {
                 self.radio.emit(RadioPanelInput::RefreshStations(stations));
             }
             AudioShellInput::LibraryScanFinished { control, report } => {
-                let current = self.scan_slot.0.borrow().as_ref().is_some_and(|active| Arc::ptr_eq(active, &control));
-                if current { self.scan_slot.0.borrow_mut().take(); }
+                let current = self
+                    .scan_slot
+                    .0
+                    .borrow()
+                    .as_ref()
+                    .is_some_and(|active| Arc::ptr_eq(active, &control));
+                if current {
+                    self.scan_slot.0.borrow_mut().take();
+                }
                 self.rebuild_library_tree(&sender);
-                let status = if report.cancelled { i18n("Scan cancelled. Earlier confirmed imports were kept.") }
-                    else if report.failed { i18n("Scan incomplete. Earlier confirmed imports were kept; check storage and retry.") }
-                    else { i18n("Library scan finished.") };
-                self.playback_bar.emit(AudioPlaybackBarInput::SetStatus(format!("{status} {}: {} · {}: {}", i18n("Imported"), report.imported, i18n("Skipped"), report.skipped)));
+                let status = if report.cancelled {
+                    i18n("Scan cancelled. Earlier confirmed imports were kept.")
+                } else if report.failed {
+                    i18n(
+                        "Scan incomplete. Earlier confirmed imports were kept; check storage and retry.",
+                    )
+                } else {
+                    i18n("Library scan finished.")
+                };
+                self.playback_bar
+                    .emit(AudioPlaybackBarInput::SetStatus(format!(
+                        "{status} {}: {} · {}: {}",
+                        i18n("Imported"),
+                        report.imported,
+                        i18n("Skipped"),
+                        report.skipped
+                    )));
             }
             AudioShellInput::ScanFinished(complete) => {
                 self.playback_bar.emit(AudioPlaybackBarInput::SetStatus(if complete {
@@ -114,7 +136,9 @@ impl AudioShell {
                     self.refresh_playlist_dialog_entries(&sender);
                     self.notify(&i18n("Playlist updated"));
                 } else {
-                    self.notify(&i18n("The playlist could not be changed. Your previous playlist was kept."));
+                    self.notify(&i18n(
+                        "The playlist could not be changed. Your previous playlist was kept.",
+                    ));
                 }
             }
             AudioShellInput::PlaylistReadFailed => {
@@ -231,6 +255,7 @@ impl AudioShell {
                 self.notify(&i18n("Sleep timer cancelled"));
             }
             AudioShellInput::SleepTick => self.sleep_tick(),
+            AudioShellInput::Notify(message) => self.notify(&message),
             AudioShellInput::Undo => self.undo_queue(),
             AudioShellInput::Redo => self.redo_queue(),
             AudioShellInput::ToggleShuffleShortcut => {

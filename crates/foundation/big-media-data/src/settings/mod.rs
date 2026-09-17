@@ -13,7 +13,7 @@ mod store;
 #[cfg(test)]
 mod tests;
 
-pub use store::{Settings, SavePhase, SaveStatus};
+pub use store::{SavePhase, SaveStatus, Settings};
 
 struct Inner {
     settings_values: HashMap<String, String>,

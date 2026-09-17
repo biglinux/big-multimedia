@@ -1,22 +1,24 @@
+use big_os_kit::subprocess::{BigSubprocessError, BigSubprocessSpec};
 use std::fs;
 use std::io::Write;
 use std::path::Path;
 use std::process::{Command, Stdio};
-use std::time::{SystemTime,Duration};
-use std::sync::atomic::{AtomicBool,Ordering};
-use big_os_kit::subprocess::{BigSubprocessSpec,BigSubprocessError};
+use std::sync::atomic::{AtomicBool, Ordering};
+use std::time::{Duration, SystemTime};
 
 use crate::db::models::Track;
 use crate::error::{Error, Result};
 
 pub fn read_track_metadata(path: &str) -> Result<Track> {
-    read_track_metadata_cancellable(path,&AtomicBool::new(false))
+    read_track_metadata_cancellable(path, &AtomicBool::new(false))
 }
 /// Worker-only metadata probe bounded by the shared process supervisor.
-pub fn read_track_metadata_cancellable(path: &str, cancelled:&AtomicBool) -> Result<Track> {
-    if cancelled.load(Ordering::Acquire) {return Err(Error::Cancelled);}
+pub fn read_track_metadata_cancellable(path: &str, cancelled: &AtomicBool) -> Result<Track> {
+    if cancelled.load(Ordering::Acquire) {
+        return Err(Error::Cancelled);
+    }
     let file_path = Path::new(path);
-    let probe = ffprobe_json_cancellable(path,cancelled)?;
+    let probe = ffprobe_json_cancellable(path, cancelled)?;
 
     let file_meta = fs::metadata(file_path).ok();
     let file_size = file_meta.as_ref().map(|m| m.len() as i64);
@@ -44,7 +46,7 @@ pub fn read_track_metadata_cancellable(path: &str, cancelled:&AtomicBool) -> Res
     let disc_number = tag_value(&probe, &["disc", "discnumber"]).and_then(|s| parse_tag_i32(&s));
     let year = tag_value(&probe, &["date", "year"]).and_then(|s| parse_year(&s));
     let genre = tag_value(&probe, &["genre"]);
-    let art_hash = extract_album_art_cancellable(path,cancelled).map(|data| {
+    let art_hash = extract_album_art_cancellable(path, cancelled).map(|data| {
         use std::collections::hash_map::DefaultHasher;
         use std::hash::{Hash, Hasher};
         let mut hasher = DefaultHasher::new();
@@ -57,9 +59,17 @@ pub fn read_track_metadata_cancellable(path: &str, cancelled:&AtomicBool) -> Res
         .and_then(|t| t.duration_since(SystemTime::UNIX_EPOCH).ok())
         .map(|d| d.as_secs() as i64);
 
-    if cancelled.load(Ordering::Acquire) {return Err(Error::Cancelled);}
-    if [&title,&artist,&album,&album_artist,&genre].iter().any(|v|v.as_ref().is_some_and(|v|v.len()>4096)) {
-        return Err(Error::invalid_argument("metadata","Media text fields exceed their limit"));
+    if cancelled.load(Ordering::Acquire) {
+        return Err(Error::Cancelled);
+    }
+    if [&title, &artist, &album, &album_artist, &genre]
+        .iter()
+        .any(|v| v.as_ref().is_some_and(|v| v.len() > 4096))
+    {
+        return Err(Error::invalid_argument(
+            "metadata",
+            "Media text fields exceed their limit",
+        ));
     }
     Ok(Track {
         id: 0,
@@ -146,11 +156,13 @@ pub fn write_track_tags(path: &str, edits: &TagEdits) -> Result<()> {
 /// Embedded picture first; falls back to sibling Cover/folder/front/album/
 /// albumart/thumb × jpg/jpeg/png/webp.
 pub fn extract_album_art(path: &str) -> Option<Vec<u8>> {
-    extract_album_art_cancellable(path,&AtomicBool::new(false))
+    extract_album_art_cancellable(path, &AtomicBool::new(false))
 }
-fn extract_album_art_cancellable(path:&str,cancelled:&AtomicBool)->Option<Vec<u8>> {
-    if cancelled.load(Ordering::Acquire) {return None;}
-    if let Some(data) = extract_embedded_album_art(path,cancelled) {
+fn extract_album_art_cancellable(path: &str, cancelled: &AtomicBool) -> Option<Vec<u8>> {
+    if cancelled.load(Ordering::Acquire) {
+        return None;
+    }
+    if let Some(data) = extract_embedded_album_art(path, cancelled) {
         return Some(data);
     }
 
@@ -163,8 +175,11 @@ fn extract_album_art_cancellable(path:&str,cancelled:&AtomicBool)->Option<Vec<u8
     for name in COVER_NAMES {
         for ext in EXTENSIONS {
             let candidate = dir.join(format!("{name}.{ext}"));
-            if cancelled.load(Ordering::Acquire) {return None;}
-            if let Ok(Some(data)) = big_os_kit::storage::read_regular_limited(&candidate,16*1024*1024)
+            if cancelled.load(Ordering::Acquire) {
+                return None;
+            }
+            if let Ok(Some(data)) =
+                big_os_kit::storage::read_regular_limited(&candidate, 16 * 1024 * 1024)
                 && !data.is_empty()
             {
                 return Some(data);
@@ -192,16 +207,34 @@ pub fn extract_lyrics(path: &str) -> Option<String> {
     .filter(|s| !s.is_empty())
 }
 
-fn ffprobe_json(path:&str)->Result<serde_json::Value> {
-    ffprobe_json_cancellable(path,&AtomicBool::new(false))
+fn ffprobe_json(path: &str) -> Result<serde_json::Value> {
+    ffprobe_json_cancellable(path, &AtomicBool::new(false))
 }
-fn ffprobe_json_cancellable(path:&str,cancelled:&AtomicBool)->Result<serde_json::Value> {
-    let result=BigSubprocessSpec::builder().program("ffprobe")
-        .args(["-v","quiet","-print_format","json","-show_streams","-show_format","--",path])
-        .timeout(Duration::from_secs(30)).build().run_cancellable(cancelled)
-        .map_err(|e| match e {BigSubprocessError::Cancelled=>Error::Cancelled,_=>Error::invalid_argument("audio_file","Could not complete the media probe")})?;
-    if !result.status.success() {return Err(Error::invalid_argument("audio_file","Media probe failed"));}
-    serde_json::from_slice(&result.stdout).map_err(|_|Error::invalid_argument("audio_file","Invalid media probe response"))
+fn ffprobe_json_cancellable(path: &str, cancelled: &AtomicBool) -> Result<serde_json::Value> {
+    let result = BigSubprocessSpec::builder()
+        .program("ffprobe")
+        .args([
+            "-v",
+            "quiet",
+            "-print_format",
+            "json",
+            "-show_streams",
+            "-show_format",
+            "--",
+            path,
+        ])
+        .timeout(Duration::from_secs(30))
+        .build()
+        .run_cancellable(cancelled)
+        .map_err(|e| match e {
+            BigSubprocessError::Cancelled => Error::Cancelled,
+            _ => Error::invalid_argument("audio_file", "Could not complete the media probe"),
+        })?;
+    if !result.status.success() {
+        return Err(Error::invalid_argument("audio_file", "Media probe failed"));
+    }
+    serde_json::from_slice(&result.stdout)
+        .map_err(|_| Error::invalid_argument("audio_file", "Invalid media probe response"))
 }
 
 fn first_audio_stream(root: &serde_json::Value) -> Option<&serde_json::Value> {
@@ -216,7 +249,7 @@ fn probe_number(value: &serde_json::Value) -> Option<f64> {
     value
         .as_f64()
         .or_else(|| value.as_str().and_then(|text| text.parse().ok()))
-        .filter(|number|number.is_finite()&&*number>=0.0)
+        .filter(|number| number.is_finite() && *number >= 0.0)
 }
 
 fn probe_i32(value: &serde_json::Value) -> Option<i32> {
@@ -285,11 +318,33 @@ fn add_metadata_args(command: &mut Command, edits: &TagEdits) {
     }
 }
 
-fn extract_embedded_album_art(path:&str,cancelled:&AtomicBool)->Option<Vec<u8>> {
-    let output=BigSubprocessSpec::builder().program("ffmpeg")
-        .args(["-nostdin","-hide_banner","-loglevel","error","-i",path,"-map","0:v:0","-frames:v","1","-f","image2pipe","pipe:1"])
-        .timeout(Duration::from_secs(30)).build().run_cancellable(cancelled).ok()?;
-    if output.status.success()&&!output.stdout.is_empty() {Some(output.stdout)} else {None}
+fn extract_embedded_album_art(path: &str, cancelled: &AtomicBool) -> Option<Vec<u8>> {
+    let output = BigSubprocessSpec::builder()
+        .program("ffmpeg")
+        .args([
+            "-nostdin",
+            "-hide_banner",
+            "-loglevel",
+            "error",
+            "-i",
+            path,
+            "-map",
+            "0:v:0",
+            "-frames:v",
+            "1",
+            "-f",
+            "image2pipe",
+            "pipe:1",
+        ])
+        .timeout(Duration::from_secs(30))
+        .build()
+        .run_cancellable(cancelled)
+        .ok()?;
+    if output.status.success() && !output.stdout.is_empty() {
+        Some(output.stdout)
+    } else {
+        None
+    }
 }
 
 fn sync_parent_dir(parent: &Path) {

@@ -48,7 +48,10 @@ pub enum AudioShellInput {
     /// A folder scan finished → rebuild the library tree + playlist dialog data.
     ScanFinished(bool),
     /// A bounded, cancellable import finished (earlier commits are preserved).
-    LibraryScanFinished { control: Arc<library_scan_engine::ScanControl>, report: library_scan_engine::ScanReport },
+    LibraryScanFinished {
+        control: Arc<library_scan_engine::ScanControl>,
+        report: library_scan_engine::ScanReport,
+    },
     /// Dropped/opened paths resolved to library tracks (async DB result) →
     /// insert into the queue at `insert_pos`.
     DroppedResolved {
@@ -67,7 +70,9 @@ pub enum AudioShellInput {
     /// Rebuild the library tree from the current grouping/filter/age (boot +
     /// after a grouping/search/age change).
     RebuildLibraryTree,
-    LibraryTreeFailed { generation: u64 },
+    LibraryTreeFailed {
+        generation: u64,
+    },
     /// The rebuilt library tree (async DB result) → push to the library panel.
     LibraryTreeResolved {
         /// Current search/grouping/age generation.
@@ -161,6 +166,9 @@ pub enum AudioShellInput {
     SleepTimerCancel,
     /// One-second sleep-timer countdown tick.
     SleepTick,
+    /// Show a transient toast — used by workers that must report a failure
+    /// without leaving the previous result on screen as if it had succeeded.
+    Notify(String),
     /// Undo the last queue edit (Ctrl+Z).
     Undo,
     /// Redo the last undone queue edit (Ctrl+Shift+Z / Ctrl+Y).

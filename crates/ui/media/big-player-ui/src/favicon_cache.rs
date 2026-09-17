@@ -93,7 +93,11 @@ pub fn fetch_favicon_bytes(url: &str) -> Option<Vec<u8>> {
         }
     };
     if favicon_response.status != 200 {
-        log::debug!("[radio] favicon HTTP {}: {}", favicon_response.status, big_os_kit::url::MediaLogTarget(url));
+        log::debug!(
+            "[radio] favicon HTTP {}: {}",
+            favicon_response.status,
+            big_os_kit::url::MediaLogTarget(url)
+        );
         return None;
     }
     let favicon_bytes = favicon_response.bytes;

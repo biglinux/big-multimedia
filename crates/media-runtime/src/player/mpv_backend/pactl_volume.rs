@@ -35,11 +35,17 @@ impl Shared {
 
     pub(super) fn snapshot(&self) -> Option<(f64, bool)> {
         let state = self.0.0.lock().unwrap_or_else(PoisonError::into_inner);
-        if state.observed.is_none() && state.desired_volume.is_none() && state.desired_mute.is_none() {
+        if state.observed.is_none()
+            && state.desired_volume.is_none()
+            && state.desired_mute.is_none()
+        {
             return None;
         }
         let (volume, mute) = state.observed.unwrap_or((100.0, false));
-        Some((state.desired_volume.unwrap_or(volume), state.desired_mute.unwrap_or(mute)))
+        Some((
+            state.desired_volume.unwrap_or(volume),
+            state.desired_mute.unwrap_or(mute),
+        ))
     }
 }
 
@@ -60,7 +66,11 @@ impl StreamVolume {
             .spawn(move || run_worker(&worker_shared, &worker_cancel, &client_name))
             .map_err(|error| log::error!("Cannot start stream-volume worker: {error}"))
             .ok();
-        Self { shared, cancelled, worker }
+        Self {
+            shared,
+            cancelled,
+            worker,
+        }
     }
 
     pub(super) fn shared(&self) -> Shared {
@@ -75,14 +85,24 @@ impl StreamVolume {
         if !percent.is_finite() {
             return;
         }
-        let mut state = self.shared.0.0.lock().unwrap_or_else(PoisonError::into_inner);
+        let mut state = self
+            .shared
+            .0
+            .0
+            .lock()
+            .unwrap_or_else(PoisonError::into_inner);
         state.desired_volume = Some(percent.clamp(0.0, 250.0).round());
         state.dirty = true;
         self.shared.0.1.notify_one();
     }
 
     pub(super) fn set_mute(&self, mute: bool) {
-        let mut state = self.shared.0.0.lock().unwrap_or_else(PoisonError::into_inner);
+        let mut state = self
+            .shared
+            .0
+            .0
+            .lock()
+            .unwrap_or_else(PoisonError::into_inner);
         state.desired_mute = Some(mute);
         state.dirty = true;
         self.shared.0.1.notify_one();
@@ -94,7 +114,12 @@ impl Drop for StreamVolume {
         // Pair cancellation with the condition-variable mutex to avoid losing
         // the notification between the worker's predicate check and wait.
         {
-            let _state = self.shared.0.0.lock().unwrap_or_else(PoisonError::into_inner);
+            let _state = self
+                .shared
+                .0
+                .0
+                .lock()
+                .unwrap_or_else(PoisonError::into_inner);
             self.cancelled.store(true, Ordering::Relaxed);
             self.shared.0.1.notify_one();
         }
@@ -162,13 +187,20 @@ fn select_input(inputs: Vec<SinkInput>, client_name: &str, pid: &str) -> Option<
 
 fn find(client_name: &str, cancel: &AtomicBool) -> Option<SinkInput> {
     let out = pactl(&["-f", "json", "list", "sink-inputs"], cancel)?;
-    select_input(serde_json::from_slice(&out).ok()?, client_name, &std::process::id().to_string())
+    select_input(
+        serde_json::from_slice(&out).ok()?,
+        client_name,
+        &std::process::id().to_string(),
+    )
 }
 
 fn input_volume(input: &SinkInput) -> Option<f64> {
     // Deterministic for unequal channel gains; HashMap iteration order must not
     // make a single slider jump randomly between left and right channel levels.
-    input.volume.values().filter_map(|channel| parse_percent(&channel.value_percent))
+    input
+        .volume
+        .values()
+        .filter_map(|channel| parse_percent(&channel.value_percent))
         .reduce(f64::max)
 }
 
@@ -186,10 +218,18 @@ fn run_worker(shared: &Shared, cancel: &AtomicBool, client_name: &str) {
                     break;
                 }
                 state = if state.active {
-                    shared.0.1.wait_timeout(state, next_poll.saturating_duration_since(Instant::now()))
-                        .unwrap_or_else(PoisonError::into_inner).0
+                    shared
+                        .0
+                        .1
+                        .wait_timeout(state, next_poll.saturating_duration_since(Instant::now()))
+                        .unwrap_or_else(PoisonError::into_inner)
+                        .0
                 } else {
-                    shared.0.1.wait(state).unwrap_or_else(PoisonError::into_inner)
+                    shared
+                        .0
+                        .1
+                        .wait(state)
+                        .unwrap_or_else(PoisonError::into_inner)
                 };
             }
             state.dirty = false;
@@ -200,16 +240,32 @@ fn run_worker(shared: &Shared, cancel: &AtomicBool, client_name: &str) {
         if let Some(input) = find(client_name, cancel) {
             let id = input.index.to_string();
             let volume_ok = volume.is_some_and(|value| {
-                pactl(&["set-sink-input-volume", &id, &format!("{value}%")], cancel).is_some()
+                pactl(
+                    &["set-sink-input-volume", &id, &format!("{value}%")],
+                    cancel,
+                )
+                .is_some()
             });
             let mute_ok = mute.is_some_and(|value| {
-                pactl(&["set-sink-input-mute", &id, if value { "1" } else { "0" }], cancel).is_some()
+                pactl(
+                    &["set-sink-input-mute", &id, if value { "1" } else { "0" }],
+                    cancel,
+                )
+                .is_some()
             });
             let mut state = shared.0.0.lock().unwrap_or_else(PoisonError::into_inner);
             if let Some(observed_volume) = input_volume(&input) {
                 state.observed = Some((
-                    if volume_ok { volume.unwrap_or(observed_volume) } else { observed_volume },
-                    if mute_ok { mute.unwrap_or(input.mute) } else { input.mute },
+                    if volume_ok {
+                        volume.unwrap_or(observed_volume)
+                    } else {
+                        observed_volume
+                    },
+                    if mute_ok {
+                        mute.unwrap_or(input.mute)
+                    } else {
+                        input.mute
+                    },
                 ));
             }
             // Clear only the version just applied; edits arriving during I/O
@@ -246,23 +302,41 @@ mod tests {
     }
 
     fn stream(index: u32, pid: &str) -> SinkInput {
-        SinkInput { index, mute: false, properties: Properties {
-            application_name: "player".into(), process_id: pid.into(),
-        }, volume: Default::default() }
+        SinkInput {
+            index,
+            mute: false,
+            properties: Properties {
+                application_name: "player".into(),
+                process_id: pid.into(),
+            },
+            volume: std::collections::HashMap::default(),
+        }
     }
 
     #[test]
     fn never_controls_a_different_process_or_ambiguous_stream() {
         assert!(select_input(vec![stream(1, "other")], "player", "ours").is_none());
-        assert!(select_input(vec![stream(1, "ours"), stream(2, "ours")], "player", "ours").is_none());
-        assert_eq!(select_input(vec![stream(1, "other"), stream(2, "ours")], "player", "ours").unwrap().index, 2);
+        assert!(
+            select_input(vec![stream(1, "ours"), stream(2, "ours")], "player", "ours").is_none()
+        );
+        assert_eq!(
+            select_input(
+                vec![stream(1, "other"), stream(2, "ours")],
+                "player",
+                "ours"
+            )
+            .unwrap()
+            .index,
+            2
+        );
     }
 
     #[test]
     fn latest_desired_value_wins_without_io() {
         let volume = StreamVolume {
             shared: Shared(Arc::new((Mutex::new(State::default()), Condvar::new()))),
-            cancelled: Arc::new(AtomicBool::new(false)), worker: None,
+            cancelled: Arc::new(AtomicBool::new(false)),
+            worker: None,
         };
         for value in 0..1000 {
             volume.set_volume(f64::from(value));

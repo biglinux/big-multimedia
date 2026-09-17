@@ -126,9 +126,17 @@ pub enum PlayerEvent {
     /// (radio streams / slow network). Derived from `paused-for-cache` property.
     Buffering(bool),
     /// Internal native receipt, consumed by the backend before UI delivery.
-    AsyncCommandReply { id: u64, error: i32 },
-    ScreenshotFinished { id: u64, result: super::ScreenshotResult },
-    ScreenshotTimedOut { id: u64 },
+    AsyncCommandReply {
+        id: u64,
+        error: i32,
+    },
+    ScreenshotFinished {
+        id: u64,
+        result: super::ScreenshotResult,
+    },
+    ScreenshotTimedOut {
+        id: u64,
+    },
     RenderUpdate,
     Shutdown,
 }

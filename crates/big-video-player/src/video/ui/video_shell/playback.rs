@@ -93,11 +93,20 @@ impl VideoShell {
             }
             PlayerEvent::MetadataChanged(_) => self.refresh_now_playing(root),
             PlayerEvent::ScreenshotFinished { result, .. } => match result {
-                crate::player::mpv_backend::ScreenshotResult::Saved { path, durability_confirmed } => {
-                    super::menu_dialogs::show_screenshot_result(&self.toast_overlay, path, durability_confirmed);
+                crate::player::mpv_backend::ScreenshotResult::Saved {
+                    path,
+                    durability_confirmed,
+                } => {
+                    crate::video::ui::menu_dialogs::show_screenshot_result(
+                        &self.toast_overlay,
+                        path,
+                        durability_confirmed,
+                    );
                 }
-                crate::player::mpv_backend::ScreenshotResult::Failed => self.toast(&i18n("Screenshot failed")),
-                crate::player::mpv_backend::ScreenshotResult::Cancelled => {},
+                crate::player::mpv_backend::ScreenshotResult::Failed => {
+                    self.toast(&i18n("Screenshot failed"));
+                }
+                crate::player::mpv_backend::ScreenshotResult::Cancelled => {}
             },
             PlayerEvent::ScreenshotTimedOut { .. } => {
                 self.toast(&i18n("Screenshot timed out; cancellation requested"));
@@ -242,7 +251,7 @@ impl VideoShell {
     }
 
     /// Show a transient toast on the player's toast overlay.
-    fn toast(&self, message: &str) {
+    pub(super) fn toast(&self, message: &str) {
         self.toast_overlay.add_toast(adw::Toast::new(message));
     }
 

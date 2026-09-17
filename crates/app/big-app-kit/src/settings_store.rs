@@ -17,12 +17,11 @@ use std::time::{SystemTime, UNIX_EPOCH};
 use serde::{Deserialize, Serialize};
 use serde_json::{Map, Value};
 
-use big_os_kit::storage::{self, BigStorageError};
 use big_os_kit::deferred::{Document, Status};
+use big_os_kit::storage::{self, BigStorageError};
 
 /// On-disk envelope schema version (`_version`).
 pub const BIG_SETTINGS_SCHEMA_VERSION: u32 = 1;
-
 
 /// Wildcard key passed to listeners when every setting may have changed.
 pub const BIG_SETTINGS_ALL_KEYS: &str = "*";
@@ -293,7 +292,9 @@ impl BigSettingsStore {
     }
 
     /// Acknowledged state of the background save, distinct from admission.
-    pub fn save_status(&self) -> Status { self.state.borrow().persistence.status() }
+    pub fn save_status(&self) -> Status {
+        self.state.borrow().persistence.status()
+    }
 }
 
 fn save_if_dirty(state: &mut SettingsState) -> Result<(), BigStorageError> {
@@ -324,33 +325,60 @@ fn save_if_dirty(state: &mut SettingsState) -> Result<(), BigStorageError> {
     );
     doc.insert("settings".to_owned(), Value::Object(state.entries.clone()));
     let bytes = serde_json::to_vec_pretty(&Value::Object(doc)).map_err(|error| {
-        state.persistence.reject_update(); BigStorageError::Json(error)
+        state.persistence.reject_update();
+        BigStorageError::Json(error)
     })?;
-    state.persistence.replace(bytes).map_err(BigStorageError::Io)?;
+    state
+        .persistence
+        .replace(bytes)
+        .map_err(BigStorageError::Io)?;
     state.metadata = Some(metadata);
     state.dirty = false;
     Ok(())
 }
 
-fn load_document(path: &Path) -> Result<(Map<String, Value>, Option<BigSettingsMetadata>), BigStorageError> {
+fn load_document(
+    path: &Path,
+) -> Result<(Map<String, Value>, Option<BigSettingsMetadata>), BigStorageError> {
     load_snapshot(path).map(|(entries, metadata, _)| (entries, metadata))
 }
-fn load_snapshot(path: &Path) -> Result<(Map<String, Value>, Option<BigSettingsMetadata>, Option<Vec<u8>>), BigStorageError> {
+/// Parsed entries, their metadata, and the exact bytes they were read from
+/// (kept so a later write can detect an external edit).
+type Snapshot = (
+    Map<String, Value>,
+    Option<BigSettingsMetadata>,
+    Option<Vec<u8>>,
+);
+
+fn load_snapshot(path: &Path) -> Result<Snapshot, BigStorageError> {
     let Some(bytes) = storage::read_regular_limited(path, big_os_kit::deferred::MAX_BYTES)? else {
         return Ok((Map::new(), None, None));
     };
     let value: Value = serde_json::from_slice(&bytes)?;
     let Value::Object(obj) = value else {
-        return Err(BigStorageError::Io(std::io::Error::other("settings file must be an object")));
+        return Err(BigStorageError::Io(std::io::Error::other(
+            "settings file must be an object",
+        )));
     };
-    if obj.contains_key("_version") || obj.contains_key("settings") || obj.contains_key("metadata") {
-        if obj.get("_version").and_then(Value::as_u64) != Some(u64::from(BIG_SETTINGS_SCHEMA_VERSION)) {
-            return Err(BigStorageError::Io(std::io::Error::other("unsupported settings schema")));
+    if obj.contains_key("_version") || obj.contains_key("settings") || obj.contains_key("metadata")
+    {
+        if obj.get("_version").and_then(Value::as_u64)
+            != Some(u64::from(BIG_SETTINGS_SCHEMA_VERSION))
+        {
+            return Err(BigStorageError::Io(std::io::Error::other(
+                "unsupported settings schema",
+            )));
         }
-        let entries = obj.get("settings").and_then(Value::as_object).cloned()
+        let entries = obj
+            .get("settings")
+            .and_then(Value::as_object)
+            .cloned()
             .ok_or_else(|| std::io::Error::other("settings map missing or malformed"))?;
-        let metadata: BigSettingsMetadata = serde_json::from_value(obj.get("metadata").cloned()
-            .ok_or_else(||std::io::Error::other("settings metadata missing"))?)?;
+        let metadata: BigSettingsMetadata = serde_json::from_value(
+            obj.get("metadata")
+                .cloned()
+                .ok_or_else(|| std::io::Error::other("settings metadata missing"))?,
+        )?;
         Ok((entries, Some(metadata), Some(bytes)))
     } else {
         Ok((obj, None, Some(bytes)))
@@ -474,9 +502,21 @@ mod tests {
         let deadline = std::time::Instant::now() + std::time::Duration::from_secs(5);
         loop {
             let status = store.save_status();
-            if status.phase == big_os_kit::deferred::Phase::Saved { return; }
-            assert!(!matches!(status.phase, big_os_kit::deferred::Phase::Failed | big_os_kit::deferred::Phase::DurabilityPending), "save failed: {status:?}");
-            assert!(std::time::Instant::now() < deadline, "save acknowledgment timed out: {status:?}");
+            if status.phase == big_os_kit::deferred::Phase::Saved {
+                return;
+            }
+            assert!(
+                !matches!(
+                    status.phase,
+                    big_os_kit::deferred::Phase::Failed
+                        | big_os_kit::deferred::Phase::DurabilityPending
+                ),
+                "save failed: {status:?}"
+            );
+            assert!(
+                std::time::Instant::now() < deadline,
+                "save acknowledgment timed out: {status:?}"
+            );
             std::thread::sleep(std::time::Duration::from_millis(5));
         }
     }
@@ -790,6 +830,10 @@ mod tests {
         let imported_zero =
             import_legacy_settings(&store_dirty, &missing, is_suite_setting_key).expect("import");
         assert_eq!(imported_zero, 0);
-        assert_eq!(store_dirty.save_status().revision, revision, "a zero-key import makes no new edit");
+        assert_eq!(
+            store_dirty.save_status().revision,
+            revision,
+            "a zero-key import makes no new edit"
+        );
     }
 }

@@ -9,6 +9,8 @@ from __future__ import annotations
 import argparse,ast,json,re
 from pathlib import Path
 
+from source_text import Source,compact
+
 PATHS={
  'settings':'crates/foundation/big-media-data/src/settings/store.rs',
  'deferred':'crates/foundation/big-os-kit/src/deferred.rs',
@@ -37,7 +39,7 @@ def ordered(text,*needles):
  for needle in needles:
   found=text.find(needle,cursor)
   if found<0:return False
-  cursor=found+len(needle)
+  cursor=found+len(compact(needle))
  return True
 
 def after(text,marker):
@@ -64,9 +66,13 @@ def catalogue(text):
 
 def check(root:Path,overrides:dict[str,str]|None=None):
  overrides=overrides or {};results=[]
- def read(key):
+ def raw(key):
   name=PATHS.get(key,key)
   return overrides[name] if name in overrides else (root/name).read_text()
+ def read(key):
+  # Rust sources are rustfmt-formatted, so contracts match wrapping-independently.
+  name=PATHS.get(key,key);text=raw(key)
+  return Source(text) if name.endswith('.rs') else text
  def gate(name,callback):
   try:detail=callback();status='PASS'
   except Exception as exc:status='FAIL';detail=str(exc)
@@ -163,7 +169,7 @@ def check(root:Path,overrides:dict[str,str]|None=None):
  gate('Owned jobs and shutdown',lifecycle)
 
  def messages():
-  src=read('messages');msgs=[json.loads(x) for x in re.findall(r'gettext_noop\(("(?:[^"\\]|\\.)*")\)',src)]
+  src=raw('messages');msgs=[json.loads(x) for x in re.findall(r'gettext_noop\(("(?:[^"\\]|\\.)*")\)',src)]
   pot=catalogue(read('crates/media-runtime/po/big-media-runtime.pot'));pt=catalogue(read('crates/media-runtime/po/pt_BR.po'))
   require(msgs and len(msgs)==len(set(msgs)),'catalog anchors empty or duplicated')
   missing=[x for x in msgs if x not in pot or not pt.get(x)]

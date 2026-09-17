@@ -1,51 +1,109 @@
 //! Streaming discovery; unavailable files are never an instruction to delete rows.
+use crate::{
+    db::{models::Track, queries},
+    error::Result,
+    library::metadata,
+};
+pub use big_media_engines::media_files::AUDIO_EXTENSIONS;
 use rusqlite::Connection;
 use std::path::{Path, PathBuf};
-use crate::{db::{queries, models::Track}, error::Result, library::metadata};
-pub use big_media_engines::media_files::AUDIO_EXTENSIONS;
 
 /// Partial commits are possible on later I/O failure; the caller must report that
 /// a failed scan may already have imported earlier batches. No deletion occurs.
 pub fn scan_library(conn: &Connection, folder: &str) -> Result<usize> {
-    let mut added = 0; let mut batch: Vec<Track> = Vec::with_capacity(64);
+    let mut added = 0;
+    let mut batch: Vec<Track> = Vec::with_capacity(64);
     visit_audio_files(folder, |path| {
         let Some(path) = path.to_str() else {
-            return Err(crate::Error::invalid_argument("path", "non-UTF-8 library path needs lossless schema support"));
+            return Err(crate::Error::invalid_argument(
+                "path",
+                "non-UTF-8 library path needs lossless schema support",
+            ));
         };
-        let exists: bool = conn.query_row("SELECT EXISTS(SELECT 1 FROM tracks WHERE file_path=?1)", [path], |row| row.get(0))?;
-        if exists { return Ok(()); }
+        let exists: bool = conn.query_row(
+            "SELECT EXISTS(SELECT 1 FROM tracks WHERE file_path=?1)",
+            [path],
+            |row| row.get(0),
+        )?;
+        if exists {
+            return Ok(());
+        }
         match metadata::read_track_metadata(path) {
             Ok(track) => batch.push(track),
-            Err(_) => return Err(crate::Error::internal("metadata could not be read; earlier import batches were preserved")),
+            Err(_) => {
+                return Err(crate::Error::internal(
+                    "metadata could not be read; earlier import batches were preserved",
+                ));
+            }
         }
-        if batch.len() == 64 { added += insert_batch(conn, &batch)?; batch.clear(); }
+        if batch.len() == 64 {
+            added += insert_batch(conn, &batch)?;
+            batch.clear();
+        }
         Ok(())
     })?;
-    if !batch.is_empty() { added += insert_batch(conn, &batch)?; }
+    if !batch.is_empty() {
+        added += insert_batch(conn, &batch)?;
+    }
     Ok(added)
 }
 fn insert_batch(conn: &Connection, tracks: &[Track]) -> Result<usize> {
     let tx = conn.unchecked_transaction()?;
-    for track in tracks { queries::insert_track(&tx, track)?; }
-    tx.commit()?; Ok(tracks.len())
+    for track in tracks {
+        queries::insert_track(&tx, track)?;
+    }
+    tx.commit()?;
+    Ok(tracks.len())
 }
 /// Visit audio paths without collecting them; traversal errors remain explicit.
 pub fn visit_audio_files(folder: &str, visit: impl FnMut(&Path) -> Result<()>) -> Result<()> {
-    visit_audio_files_cancellable(folder,&std::sync::atomic::AtomicBool::new(false),visit)
+    visit_audio_files_cancellable(folder, &std::sync::atomic::AtomicBool::new(false), visit)
 }
 /// Cancellation is checked between directory entries; a kernel filesystem call
 /// itself is not forcibly interruptible by this cooperative API.
-pub fn visit_audio_files_cancellable(folder:&str,cancelled:&std::sync::atomic::AtomicBool,mut visit:impl FnMut(&Path)->Result<()>)->Result<()> {
-    if cancelled.load(std::sync::atomic::Ordering::Acquire) {return Err(crate::Error::Cancelled);}
-    if !std::fs::metadata(folder)?.is_dir() { return Err(crate::Error::invalid_argument("folder", "choose an available directory")); }
-    for entry in ignore::WalkBuilder::new(folder).hidden(false).ignore(false)
-        .git_ignore(false).git_global(false).git_exclude(false).follow_links(false).build() {
-        if cancelled.load(std::sync::atomic::Ordering::Acquire) {return Err(crate::Error::Cancelled);}
-        let entry = entry.map_err(|_| crate::Error::internal("directory traversal incomplete; earlier import batches were preserved"))?;
-        if entry.file_type().is_some_and(|ty| ty.is_file()) {
-            if entry.path().extension().and_then(|ext| ext.to_str()).is_some_and(|ext| AUDIO_EXTENSIONS.iter().any(|known| ext.eq_ignore_ascii_case(known))) {
-                visit(entry.path())?;
-            }
+pub fn visit_audio_files_cancellable(
+    folder: &str,
+    cancelled: &std::sync::atomic::AtomicBool,
+    mut visit: impl FnMut(&Path) -> Result<()>,
+) -> Result<()> {
+    if cancelled.load(std::sync::atomic::Ordering::Acquire) {
+        return Err(crate::Error::Cancelled);
+    }
+    if !std::fs::metadata(folder)?.is_dir() {
+        return Err(crate::Error::invalid_argument(
+            "folder",
+            "choose an available directory",
+        ));
+    }
+    for entry in ignore::WalkBuilder::new(folder)
+        .hidden(false)
+        .ignore(false)
+        .git_ignore(false)
+        .git_global(false)
+        .git_exclude(false)
+        .follow_links(false)
+        .build()
+    {
+        if cancelled.load(std::sync::atomic::Ordering::Acquire) {
+            return Err(crate::Error::Cancelled);
+        }
+        let entry = entry.map_err(|_| {
+            crate::Error::internal(
+                "directory traversal incomplete; earlier import batches were preserved",
+            )
+        })?;
+        if entry.file_type().is_some_and(|ty| ty.is_file())
+            && entry
+                .path()
+                .extension()
+                .and_then(|ext| ext.to_str())
+                .is_some_and(|ext| {
+                    AUDIO_EXTENSIONS
+                        .iter()
+                        .any(|known| ext.eq_ignore_ascii_case(known))
+                })
+        {
+            visit(entry.path())?;
         }
     }
     Ok(())
@@ -55,10 +113,17 @@ pub fn visit_audio_files_cancellable(folder:&str,cancelled:&std::sync::atomic::A
 pub fn discover_audio_files(folder: &str) -> Result<Vec<PathBuf>> {
     let mut files = Vec::new();
     visit_audio_files(folder, |path| {
-        if files.len() >= 100_000 { return Err(crate::Error::internal("too many paths for a collected scan")); }
-        files.push(path.to_owned()); Ok(())
+        if files.len() >= 100_000 {
+            return Err(crate::Error::internal(
+                "too many paths for a collected scan",
+            ));
+        }
+        files.push(path.to_owned());
+        Ok(())
     })?;
-    files.sort_unstable(); files.dedup(); Ok(files)
+    files.sort_unstable();
+    files.dedup();
+    Ok(files)
 }
 
 #[cfg(test)]

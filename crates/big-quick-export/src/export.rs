@@ -59,7 +59,22 @@ impl QuickExportChoice {
             .extension()
             .and_then(|ext| ext.to_str())
             .map(str::to_ascii_lowercase)
-            .filter(|ext| matches!(ext.as_str(), "mkv" | "mp4" | "mov" | "webm" | "avi" | "ts" | "m2ts" | "mpeg" | "mpg" | "flv" | "ogv"))
+            .filter(|ext| {
+                matches!(
+                    ext.as_str(),
+                    "mkv"
+                        | "mp4"
+                        | "mov"
+                        | "webm"
+                        | "avi"
+                        | "ts"
+                        | "m2ts"
+                        | "mpeg"
+                        | "mpg"
+                        | "flv"
+                        | "ogv"
+                )
+            })
             .unwrap_or_else(|| "mkv".to_string());
         Self {
             format: QuickExportFormat::Video {
@@ -223,7 +238,11 @@ pub fn build_single_export_queue(
 /// Reject malformed cut lists before spawning/probing; the worker additionally
 /// validates against the authoritative probed duration.
 pub fn validate_export_segments(segments: &[(f64, f64)]) -> Result<(), String> {
-    if segments.len() > 10_000 || segments.iter().any(|&(a,b)| !a.is_finite() || !b.is_finite() || a < 0.0 || b <= a) {
+    if segments.len() > 10_000
+        || segments
+            .iter()
+            .any(|&(a, b)| !a.is_finite() || !b.is_finite() || a < 0.0 || b <= a)
+    {
         return Err("Each cut needs a finite start and a later end".into());
     }
     Ok(())
@@ -262,11 +281,18 @@ pub fn run_single_export_blocking(
     loop {
         match queue.receiver().recv_blocking() {
             Ok(QueueMessage::Done { entry_id }) if entry_id == id => completed = true,
-            Ok(QueueMessage::Cancelled { entry_id }) if entry_id == id => return Err("Export was cancelled".into()),
+            Ok(QueueMessage::Cancelled { entry_id }) if entry_id == id => {
+                return Err("Export was cancelled".into());
+            }
             Ok(QueueMessage::AllDone) => {
-                if !completed { return Err("The queue ended without a completed output".into()); }
-                let metadata = std::fs::symlink_metadata(&output).map_err(|_| "The published output is unavailable")?;
-                if !metadata.is_file() || metadata.len() == 0 { return Err("The published output is not a nonempty regular file".into()); }
+                if !completed {
+                    return Err("The queue ended without a completed output".into());
+                }
+                let metadata = std::fs::symlink_metadata(&output)
+                    .map_err(|_| "The published output is unavailable")?;
+                if !metadata.is_file() || metadata.len() == 0 {
+                    return Err("The published output is not a nonempty regular file".into());
+                }
                 return Ok(output);
             }
             Ok(QueueMessage::Failed { entry_id, error }) if entry_id == id => return Err(error),

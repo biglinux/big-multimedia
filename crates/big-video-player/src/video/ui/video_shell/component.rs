@@ -751,7 +751,8 @@ impl Drop for VideoShell {
         clear_shell_input(self.shell_input_token);
         // Abort any in-flight clip export so a closing window does not leave an
         // orphaned ffmpeg worker running.
-        self.screenshot_owner.store(false, std::sync::atomic::Ordering::Release);
+        self.screenshot_owner
+            .store(false, std::sync::atomic::Ordering::Release);
         self.cancel_trim_export();
         if let Some(source) = self.sleep_timer_source.take() {
             source.remove();

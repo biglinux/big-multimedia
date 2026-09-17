@@ -34,8 +34,12 @@ pub enum IptvKind {
 }
 
 impl std::fmt::Debug for IptvKind {
-    fn fmt(&self,f:&mut std::fmt::Formatter<'_>)->std::fmt::Result {
-        f.write_str(match self { Self::M3uUrl {..}=>"M3uUrl(<redacted>)", Self::M3uLocal {..}=>"M3uLocal(<path>)", Self::Xtream {..}=>"Xtream(<redacted>)" })
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(match self {
+            Self::M3uUrl { .. } => "M3uUrl(<redacted>)",
+            Self::M3uLocal { .. } => "M3uLocal(<path>)",
+            Self::Xtream { .. } => "Xtream(<redacted>)",
+        })
     }
 }
 
@@ -74,8 +78,10 @@ pub struct IptvProvider {
 }
 
 impl std::fmt::Debug for IptvProvider {
-    fn fmt(&self, f:&mut std::fmt::Formatter<'_>)->std::fmt::Result {
-        f.debug_struct("IptvProvider").field("source",&self.source).finish_non_exhaustive()
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("IptvProvider")
+            .field("source", &self.source)
+            .finish_non_exhaustive()
     }
 }
 
@@ -117,44 +123,75 @@ pub struct IptvProviderStore {
 impl IptvProviderStore {
     /// Location only: no directories are created on the GUI thread.
     pub fn config_path() -> PathBuf {
-        big_os_kit::xdg_dirs::config_dir().map(|p|p.join(crate::config::video::CONFIG_DIR).join("iptv-providers.toml")).unwrap_or_default()
+        big_os_kit::xdg_dirs::config_dir()
+            .map(|p| {
+                p.join(crate::config::video::CONFIG_DIR)
+                    .join("iptv-providers.toml")
+            })
+            .unwrap_or_default()
     }
 
     /// Read bounded state. Corruption is retained as a blocked writer, never
     /// interpreted as permission to replace the original with an empty store.
     #[must_use]
     pub fn load() -> Self {
-        use big_os_kit::{deferred::Document,storage::read_regular_limited};
-        let path=Self::config_path();
-        let (mut store,writer)=match read_regular_limited(&path,big_os_kit::deferred::MAX_BYTES) {
-            Ok(None)=>(Self::default(),Document::reviewed(path,None)),
-            Ok(Some(bytes))=>{
-                let decoded=std::str::from_utf8(&bytes).ok().and_then(|text|toml::from_str::<Self>(text).ok());
+        use big_os_kit::{deferred::Document, storage::read_regular_limited};
+        let path = Self::config_path();
+        let (mut store, writer) = match read_regular_limited(&path, big_os_kit::deferred::MAX_BYTES)
+        {
+            Ok(None) => (Self::default(), Document::reviewed(path, None)),
+            Ok(Some(bytes)) => {
+                let decoded = std::str::from_utf8(&bytes)
+                    .ok()
+                    .and_then(|text| toml::from_str::<Self>(text).ok());
                 match decoded {
-                    Some(store) if store.providers.len()<=256 =>(store,Document::reviewed(path,Some(bytes))),
-                    _=>(Self::default(),Document::blocked(path)),
+                    Some(store) if store.providers.len() <= 256 => {
+                        (store, Document::reviewed(path, Some(bytes)))
+                    }
+                    _ => (Self::default(), Document::blocked(path)),
                 }
             }
-            Err(_)=>(Self::default(),Document::blocked(path)),
+            Err(_) => (Self::default(), Document::blocked(path)),
         };
-        store.persistence=Some(writer); store
+        store.persistence = Some(writer);
+        store
     }
 
     /// Save admission only. Acknowledged disk state is exposed by `save_status`.
     pub fn save(&mut self) {
-        let writer=self.persistence.get_or_insert_with(||big_os_kit::deferred::Document::reviewed(Self::config_path(),None));
-        if self.providers.len()>256 { writer.reject_update(); log::warn!("too many IPTV providers; not saved"); return; }
-        for (i,provider) in self.providers.iter_mut().enumerate() { provider.order=i as u32; }
-        let writer=writer.clone();
-        match toml::to_string_pretty(self) {
-            Ok(bytes)=>{ if writer.replace(bytes.into_bytes()).is_err() { log::warn!("IPTV provider preferences not saved; inspect save status"); } }
-            Err(_)=>{writer.reject_update();log::warn!("IPTV provider encoding failed");},
+        let writer = self.persistence.get_or_insert_with(|| {
+            big_os_kit::deferred::Document::reviewed(Self::config_path(), None)
+        });
+        if self.providers.len() > 256 {
+            writer.reject_update();
+            log::warn!("too many IPTV providers; not saved");
+            return;
+        }
+        for (i, provider) in self.providers.iter_mut().enumerate() {
+            provider.order = i as u32;
+        }
+        let writer = writer.clone();
+        if let Ok(bytes) = toml::to_string_pretty(self) {
+            if writer.replace(bytes.into_bytes()).is_err() {
+                log::warn!("IPTV provider preferences not saved; inspect save status");
+            }
+        } else {
+            writer.reject_update();
+            log::warn!("IPTV provider encoding failed");
         }
     }
     /// Observable result; no credential bytes are exposed.
-    pub fn save_status(&self) -> Option<big_os_kit::deferred::Status> { self.persistence.as_ref().map(|p|p.status()) }
+    pub fn save_status(&self) -> Option<big_os_kit::deferred::Status> {
+        self.persistence
+            .as_ref()
+            .map(big_os_kit::deferred::Document::status)
+    }
     /// Retry a pending durability failure without overwriting an external change.
-    pub fn retry_save(&self) { if let Some(p)=&self.persistence { let _=p.retry(); } }
+    pub fn retry_save(&self) {
+        if let Some(p) = &self.persistence {
+            let _ = p.retry();
+        }
+    }
 
     pub fn add(&mut self, provider: IptvProvider) {
         self.providers.push(provider);
@@ -175,7 +212,6 @@ impl IptvProviderStore {
         }
     }
 }
-
 
 #[cfg(test)]
 mod tests {

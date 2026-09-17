@@ -18,7 +18,6 @@ use crate::i18n::i18n;
 
 use super::library_panel::{LibraryPanel, LibraryPanelOutput};
 
-
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 enum AgeFilterButtonChild {
     Icon,
@@ -232,7 +231,9 @@ fn build_search_entry(sender: &ComponentSender<LibraryPanel>) -> gtk::SearchEntr
     entry.update_property(&[gtk::accessible::Property::Label(&i18n("Search library"))]);
     let out = sender.clone();
     entry.connect_search_changed(move |entry| {
-        let _ = out.output(LibraryPanelOutput::SearchTextChanged(entry.text().to_string()));
+        let _ = out.output(LibraryPanelOutput::SearchTextChanged(
+            entry.text().to_string(),
+        ));
     });
     entry
 }

@@ -8,7 +8,7 @@ pub fn packed_layout(width: i32, height: i32) -> Option<(usize, usize)> {
     }
     let stride = usize::try_from(width).ok()?.checked_mul(4)?;
     let length = stride.checked_mul(usize::try_from(height).ok()?)?;
-    (length <= isize::MAX as usize).then_some((stride, length))
+    isize::try_from(length).is_ok().then_some((stride, length))
 }
 
 /// Pad rows to mpv's recommended SIMD alignment without changing image width.
@@ -16,7 +16,7 @@ pub fn aligned_layout(width: i32, height: i32) -> Option<(usize, usize)> {
     let (minimum, _) = packed_layout(width, height)?;
     let stride = minimum.checked_add(63)? & !63;
     let length = stride.checked_mul(usize::try_from(height).ok()?)?;
-    (length <= isize::MAX as usize).then_some((stride, length))
+    isize::try_from(length).is_ok().then_some((stride, length))
 }
 
 /// Padded rows are allowed, but never less than four bytes per pixel.
@@ -24,10 +24,11 @@ pub fn buffer_fits(width: i32, height: i32, stride: usize, available: usize) -> 
     let Some((minimum_stride, _)) = packed_layout(width, height) else {
         return false;
     };
-    stride % 4 == 0 && stride >= minimum_stride
-        && stride.checked_mul(height as usize).is_some_and(|length| {
-            length <= available && length <= isize::MAX as usize
-        })
+    stride.is_multiple_of(4)
+        && stride >= minimum_stride
+        && stride
+            .checked_mul(height as usize)
+            .is_some_and(|length| length <= available && isize::try_from(length).is_ok())
 }
 
 #[cfg(test)]
@@ -63,11 +64,20 @@ mod tests {
 pub fn bounded_surface(width: i32, height: i32) -> Option<(i32, i32)> {
     const MAX_EDGE: i32 = 4096;
     const MAX_PIXELS: f64 = 3840.0 * 2160.0;
-    if width <= 0 || height <= 0 { return None; }
-    let w = f64::from(width); let h = f64::from(height);
-    let scale = (MAX_PIXELS / (w * h)).sqrt()
-        .min(f64::from(MAX_EDGE) / w).min(f64::from(MAX_EDGE) / h).min(1.0);
-    Some(((w * scale).floor().max(1.0) as i32, (h * scale).floor().max(1.0) as i32))
+    if width <= 0 || height <= 0 {
+        return None;
+    }
+    let w = f64::from(width);
+    let h = f64::from(height);
+    let scale = (MAX_PIXELS / (w * h))
+        .sqrt()
+        .min(f64::from(MAX_EDGE) / w)
+        .min(f64::from(MAX_EDGE) / h)
+        .min(1.0);
+    Some((
+        (w * scale).floor().max(1.0) as i32,
+        (h * scale).floor().max(1.0) as i32,
+    ))
 }
 
 #[cfg(test)]

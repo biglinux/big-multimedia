@@ -32,7 +32,7 @@ impl RecentStore {
     pub fn new(state_dir: impl Into<PathBuf>, max_entries: usize) -> Self {
         Self {
             state_dir: state_dir.into(),
-            max_entries: max_entries.clamp(1,10_000),
+            max_entries: max_entries.clamp(1, 10_000),
         }
     }
 
@@ -54,19 +54,33 @@ impl RecentStore {
         self.try_load(kind).unwrap_or_default()
     }
     /// Bounded regular-file read with explicit errors; never erase malformed history.
-    pub fn try_load(&self,kind:&str)->Result<Vec<RecentEntry>,String> {
+    pub fn try_load(&self, kind: &str) -> Result<Vec<RecentEntry>, String> {
         self.validate(kind)?;
-        let Some(bytes)=big_os_kit::storage::read_regular_limited(&self.path_for_kind(kind),1024*1024).map_err(|_|"Could not read recent history")? else {return Ok(Vec::new())};
-        let text=std::str::from_utf8(&bytes).map_err(|_|"Recent history is not UTF-8")?;
-        let mut entries=Vec::new();
-        for line in text.lines().filter(|l|!l.trim().is_empty()) {
+        let Some(bytes) =
+            big_os_kit::storage::read_regular_limited(&self.path_for_kind(kind), 1024 * 1024)
+                .map_err(|_| "Could not read recent history")?
+        else {
+            return Ok(Vec::new());
+        };
+        let text = std::str::from_utf8(&bytes).map_err(|_| "Recent history is not UTF-8")?;
+        let mut entries = Vec::new();
+        for line in text.lines().filter(|l| !l.trim().is_empty()) {
             entries.push(parse_recent_line(line).ok_or("Invalid recent history")?);
-            if entries.len()>10_000 {return Err("Recent history is too large".into());}
+            if entries.len() > 10_000 {
+                return Err("Recent history is too large".into());
+            }
         }
-        entries.sort_by_key(|entry|std::cmp::Reverse(entry.timestamp));entries.truncate(self.max_entries);Ok(entries)
+        entries.sort_by_key(|entry| std::cmp::Reverse(entry.timestamp));
+        entries.truncate(self.max_entries);
+        Ok(entries)
     }
-    fn validate(&self,kind:&str)->Result<(),String> {
-        if !self.state_dir.is_absolute() || kind.len()>64 || !kind.bytes().all(|b|b.is_ascii_alphanumeric()||b==b'-'||b==b'_') {
+    fn validate(&self, kind: &str) -> Result<(), String> {
+        if !self.state_dir.is_absolute()
+            || kind.len() > 64
+            || !kind
+                .bytes()
+                .all(|b| b.is_ascii_alphanumeric() || b == b'-' || b == b'_')
+        {
             return Err("Invalid recent-history location".into());
         }
         Ok(())
@@ -79,11 +93,15 @@ impl RecentStore {
         }
 
         self.validate(kind)?;
-        fs::create_dir_all(&self.state_dir).map_err(|_|"Could not create recent directory")?;
-        let _lock=big_os_kit::storage::WriteLock::try_acquire(&self.path_for_kind(kind)).map_err(|_|"Recent history busy")?;
-        let canonical=match fs::canonicalize(file_path) {
-            Ok(path)=>path.to_str().ok_or("Recent history requires a UTF-8 path")?.to_owned(),
-            Err(_)=>file_path.to_owned(),
+        fs::create_dir_all(&self.state_dir).map_err(|_| "Could not create recent directory")?;
+        let _lock = big_os_kit::storage::WriteLock::try_acquire(&self.path_for_kind(kind))
+            .map_err(|_| "Recent history busy")?;
+        let canonical = match fs::canonicalize(file_path) {
+            Ok(path) => path
+                .to_str()
+                .ok_or("Recent history requires a UTF-8 path")?
+                .to_owned(),
+            Err(_) => file_path.to_owned(),
         };
         let mut entries = self.try_load(kind)?;
         entries.retain(|entry| entry.path != canonical);
@@ -101,10 +119,13 @@ impl RecentStore {
     /// Return the current `clear` value held by this [`RecentStore`].
     pub fn clear(&self, kind: &str) -> Result<(), String> {
         self.validate(kind)?;
-        fs::create_dir_all(&self.state_dir).map_err(|_|"Could not create recent directory")?;
-        let path=self.path_for_kind(kind);
-        let _lock=big_os_kit::storage::WriteLock::try_acquire(&path).map_err(|_|"Recent history busy")?;
-        big_os_kit::storage::atomic_write_private_receipt(&path,b"").and_then(|r|r.into_io_result()).map_err(|_|"Recent history clear was not confirmed".into())
+        fs::create_dir_all(&self.state_dir).map_err(|_| "Could not create recent directory")?;
+        let path = self.path_for_kind(kind);
+        let _lock = big_os_kit::storage::WriteLock::try_acquire(&path)
+            .map_err(|_| "Recent history busy")?;
+        big_os_kit::storage::atomic_write_private_receipt(&path, b"")
+            .and_then(|r| r.into_io_result())
+            .map_err(|_| "Recent history clear was not confirmed".into())
     }
 
     fn save(&self, entries: &[RecentEntry], kind: &str) -> Result<(), String> {
@@ -117,8 +138,12 @@ impl RecentStore {
             .map(|entry| json!({"path": entry.path, "ts": entry.timestamp}).to_string())
             .collect::<Vec<_>>()
             .join("\n");
-        if content.len()>1024*1024 {return Err("Recent history exceeds limit".into());}
-        big_os_kit::storage::atomic_write_private_receipt(&path,content.as_bytes()).and_then(|r|r.into_io_result()).map_err(|_|"Recent history save was not confirmed".into())
+        if content.len() > 1024 * 1024 {
+            return Err("Recent history exceeds limit".into());
+        }
+        big_os_kit::storage::atomic_write_private_receipt(&path, content.as_bytes())
+            .and_then(|r| r.into_io_result())
+            .map_err(|_| "Recent history save was not confirmed".into())
     }
 }
 

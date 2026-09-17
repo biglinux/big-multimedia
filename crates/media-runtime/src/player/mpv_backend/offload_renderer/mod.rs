@@ -9,12 +9,12 @@ mod texture_pool;
 
 use super::egl_dmabuf::{self, EglDmaBufFns};
 use crate::player::mpv_backend::fast_render::FastRenderContext;
+use gtk::glib::translate::{ToGlibPtr, from_glib_full};
 use gtk::{gdk, prelude::*};
 use log::{debug, error, info, warn};
 use std::cell::Cell;
 use std::ffi::CStr;
 use std::rc::Rc;
-use gtk::glib::translate::{from_glib_full, ToGlibPtr};
 use texture_pool::{CurrentContext, TextureLease, TexturePool};
 
 use super::skip_mpv_render;
@@ -184,13 +184,27 @@ impl OffloadRenderer {
                 (self.gl.bind_texture)(GL_TEXTURE_2D, texture);
                 (self.gl.tex_parameteri)(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
                 (self.gl.tex_parameteri)(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_LINEAR);
-                (self.gl.tex_image_2d)(GL_TEXTURE_2D, 0, GL_RGBA8 as i32, width, height,
-                    0, GL_RGBA, GL_UNSIGNED_BYTE, std::ptr::null());
+                (self.gl.tex_image_2d)(
+                    GL_TEXTURE_2D,
+                    0,
+                    GL_RGBA8 as i32,
+                    width,
+                    height,
+                    0,
+                    GL_RGBA,
+                    GL_UNSIGNED_BYTE,
+                    std::ptr::null(),
+                );
                 (self.gl.bind_texture)(GL_TEXTURE_2D, 0);
             }
             (self.gl.bind_framebuffer)(GL_FRAMEBUFFER, self.fbo);
-            (self.gl.framebuffer_texture_2d)(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0,
-                GL_TEXTURE_2D, texture, 0);
+            (self.gl.framebuffer_texture_2d)(
+                GL_FRAMEBUFFER,
+                GL_COLOR_ATTACHMENT0,
+                GL_TEXTURE_2D,
+                texture,
+                0,
+            );
             let status = (self.gl.check_framebuffer_status)(GL_FRAMEBUFFER);
             if status != GL_FRAMEBUFFER_COMPLETE {
                 (self.gl.bind_framebuffer)(GL_FRAMEBUFFER, 0);
@@ -216,7 +230,9 @@ impl OffloadRenderer {
             self.pool.force();
             return;
         };
-        if skip_mpv_render() { return; }
+        if skip_mpv_render() {
+            return;
+        }
         if !new_frame && !force {
             self.skip_count.set(self.skip_count.get() + 1);
             return;
@@ -226,7 +242,9 @@ impl OffloadRenderer {
             return; // release callback retries the latest frame, never overwrites
         };
         let tex = lease.id();
-        if !self.prepare_slot(index, tex, width, height) { return; }
+        if !self.prepare_slot(index, tex, width, height) {
+            return;
+        }
         unsafe { (self.gl.viewport)(0, 0, width, height) };
         let result = render_context.render(self.fbo as i32, width, height, false);
         unsafe { (self.gl.bind_framebuffer)(GL_FRAMEBUFFER, 0) };
@@ -250,12 +268,23 @@ impl OffloadRenderer {
         let count = self.frame_count.get() + 1;
         self.frame_count.set(count);
         let now = std::time::Instant::now();
-        if let Some(report) = render_stats_report_for_interval(count, self.skip_count.get(),
-            now.duration_since(self.last_fps_log.get()), width, height,
-            RenderStatsSurfacePath::from_dmabuf_active(self.dmabuf_active.get())) {
-            info!("Render stats: {:.1} fps, {} rendered, {} skipped, {}x{} ({})",
-                report.frames_per_second, report.rendered_frames, report.skipped_frames,
-                report.width, report.height, report.surface_path.label());
+        if let Some(report) = render_stats_report_for_interval(
+            count,
+            self.skip_count.get(),
+            now.duration_since(self.last_fps_log.get()),
+            width,
+            height,
+            RenderStatsSurfacePath::from_dmabuf_active(self.dmabuf_active.get()),
+        ) {
+            info!(
+                "Render stats: {:.1} fps, {} rendered, {} skipped, {}x{} ({})",
+                report.frames_per_second,
+                report.rendered_frames,
+                report.skipped_frames,
+                report.width,
+                report.height,
+                report.surface_path.label()
+            );
             self.frame_count.set(0);
             self.skip_count.set(0);
             self.last_fps_log.set(now);
@@ -269,7 +298,9 @@ impl OffloadRenderer {
         width: i32,
         height: i32,
     ) -> std::result::Result<gdk::Texture, TextureLease> {
-        let Some(egl) = self.egl.as_ref() else { return Err(lease) };
+        let Some(egl) = self.egl.as_ref() else {
+            return Err(lease);
+        };
         let Some(export) = egl_dmabuf::export_gl_texture(egl, lease.id()) else {
             self.dmabuf_rejected.set(true);
             return Err(lease);
@@ -278,11 +309,23 @@ impl OffloadRenderer {
             self.dmabuf_rejected.set(true);
             return Err(lease);
         };
-        let builder = gdk::DmabufTextureBuilder::new()
-            .set_display(&display).set_width(width as u32).set_height(height as u32)
-            .set_fourcc(export.fourcc).set_modifier(export.modifier).set_n_planes(1)
-            .set_fd(0, export.fd).set_stride(0, export.stride).set_offset(0, export.offset)
-            .set_premultiplied(false);
+        // SAFETY: `set_fd` requires the descriptor to stay open for as long as
+        // the builder and the texture it produces may read it. `export` owns
+        // the fd and moves into the release payload below, so it outlives both
+        // the successful texture and the build-failure path that drops it.
+        let builder = unsafe {
+            gdk::DmabufTextureBuilder::new()
+                .set_display(&display)
+                .set_width(width as u32)
+                .set_height(height as u32)
+                .set_fourcc(export.fourcc)
+                .set_modifier(export.modifier)
+                .set_n_planes(1)
+                .set_fd(0, export.fd)
+                .set_stride(0, export.stride)
+                .set_offset(0, export.offset)
+                .set_premultiplied(false)
+        };
         type Payload = (egl_dmabuf::DmaBufExport, TextureLease);
         unsafe extern "C" fn release(data: *mut std::ffi::c_void) {
             // Called only for a successfully-created texture, exactly once.
@@ -292,9 +335,14 @@ impl OffloadRenderer {
         let mut error = std::ptr::null_mut();
         // Direct FFI deliberately reclaims release userdata on build failure.
         // The gtk-rs convenience wrapper in the reviewed version did not do so.
-        let texture = unsafe { gdk::ffi::gdk_dmabuf_texture_builder_build(
-            builder.to_glib_none().0, Some(release), payload.cast(), &mut error,
-        ) };
+        let texture = unsafe {
+            gdk::ffi::gdk_dmabuf_texture_builder_build(
+                builder.to_glib_none().0,
+                Some(release),
+                payload.cast(),
+                &raw mut error,
+            )
+        };
         if texture.is_null() {
             self.dmabuf_rejected.set(true); // do not retry/import/glFinish every frame
             self.dmabuf_active.set(false);
@@ -314,15 +362,24 @@ impl OffloadRenderer {
         const GL_SYNC_GPU_COMMANDS_COMPLETE: u32 = 0x9117;
         let fence = if let (Some(create), Some(_)) = (self.gl.fence_sync, self.gl.delete_sync) {
             unsafe { create(GL_SYNC_GPU_COMMANDS_COMPLETE, 0) }
-        } else { std::ptr::null_mut() };
+        } else {
+            std::ptr::null_mut()
+        };
         // A shared GL context is not, by itself, a producer/consumer fence.
         unsafe {
-            if fence.is_null() { (self.gl.finish)(); } else { (self.gl.flush)(); }
+            if fence.is_null() {
+                (self.gl.finish)();
+            } else {
+                (self.gl.flush)();
+            }
         }
         lease.set_fence(fence as usize);
         let builder = gdk::GLTextureBuilder::new()
-            .set_context(Some(&self.gl_context)).set_id(lease.id())
-            .set_width(width).set_height(height).set_format(gdk::MemoryFormat::R8g8b8a8)
+            .set_context(Some(&self.gl_context))
+            .set_id(lease.id())
+            .set_width(width)
+            .set_height(height)
+            .set_format(gdk::MemoryFormat::R8g8b8a8)
             .set_sync((!fence.is_null()).then_some(fence.cast_const()));
         unsafe { builder.build_with_release_func(move || drop(lease)) }
     }
@@ -335,8 +392,12 @@ impl OffloadRenderer {
         overlay_height: i32,
         scale: i32,
     ) {
-        let Some(w) = overlay_width.checked_mul(scale) else { return };
-        let Some(h) = overlay_height.checked_mul(scale) else { return };
+        let Some(w) = overlay_width.checked_mul(scale) else {
+            return;
+        };
+        let Some(h) = overlay_height.checked_mul(scale) else {
+            return;
+        };
         self.render_frame(render_context, w, h);
     }
 

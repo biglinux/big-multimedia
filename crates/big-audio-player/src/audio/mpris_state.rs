@@ -5,9 +5,9 @@
 //! main thread) and the D-Bus thread reads them through an `Arc`. Ported out of
 //! the god-object `window::SharedMprisState` (survives the cutover).
 
+use crate::mpris::{PlaybackStatus, PlayerState};
 use std::sync::Mutex;
 use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
-use crate::mpris::{PlaybackStatus, PlayerState};
 
 /// `Sync`-safe snapshot of the current playback state for MPRIS.
 pub(crate) struct SharedMprisState {
@@ -43,8 +43,11 @@ impl Default for SharedMprisState {
     fn default() -> Self {
         Self {
             snapshot: Mutex::new(PlayerState::default()),
-            status: Mutex::new(PlaybackStatus::Stopped), track_id: Mutex::new(None),
-            sequence: AtomicU64::new(1), rate: Mutex::new(1.0), seekable: AtomicBool::new(false),
+            status: Mutex::new(PlaybackStatus::Stopped),
+            track_id: Mutex::new(None),
+            sequence: AtomicU64::new(1),
+            rate: Mutex::new(1.0),
+            seekable: AtomicBool::new(false),
             paused: AtomicBool::new(true),
             position: Mutex::new(0.0),
             duration: Mutex::new(0.0),
@@ -62,10 +65,17 @@ impl Default for SharedMprisState {
 impl SharedMprisState {
     pub(crate) fn selected(&self) {
         let id = self.sequence.fetch_add(1, Ordering::Relaxed);
-        *self.track_id.lock().unwrap_or_else(std::sync::PoisonError::into_inner) = Some(format!("/br/com/biglinux/AudioPlayer/Track/{id}"));
+        *self
+            .track_id
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner) =
+            Some(format!("/br/com/biglinux/AudioPlayer/Track/{id}"));
     }
     pub(crate) fn invalidate(&self) {
-        self.track_id.lock().unwrap_or_else(std::sync::PoisonError::into_inner).take();
+        self.track_id
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner)
+            .take();
         self.seekable.store(false, Ordering::Relaxed);
     }
 }
@@ -79,32 +89,54 @@ impl SharedMprisState {
 pub(crate) fn save_mpris_art(data: &[u8]) -> Option<String> {
     use gtk::gio::prelude::FileExt;
     const LIMIT: usize = 16 * 1024 * 1024;
-    if data.is_empty() || data.len() > LIMIT { return None; }
-    let cache_dir = dirs::cache_dir()?.join("big-audio-player").join("mpris-art-cache");
+    if data.is_empty() || data.len() > LIMIT {
+        return None;
+    }
+    let cache_dir = dirs::cache_dir()?
+        .join("big-audio-player")
+        .join("mpris-art-cache");
     std::fs::create_dir_all(&cache_dir).ok()?;
     // Cooperative workers/processes share one short nonblocking cache lock.
     // This directory contains cache entries only, never original artwork.
     let _lock = big_app_kit::storage::WriteLock::try_acquire(&cache_dir.join("index")).ok()?;
     let mut entries = Vec::new();
     for (index, entry) in std::fs::read_dir(&cache_dir).ok()?.enumerate() {
-        if index >= 128 { return None; } // do not scan arbitrary unbounded trees
+        if index >= 128 {
+            return None;
+        } // do not scan arbitrary unbounded trees
         let entry = entry.ok()?;
-        let name = entry.file_name(); let name = name.to_str()?;
-        if name.starts_with("mpris-art-") && name.ends_with(".jpg") && entry.file_type().ok()?.is_file() {
+        let name = entry.file_name();
+        let name = name.to_str()?;
+        if name.starts_with("mpris-art-")
+            && std::path::Path::new(name)
+                .extension()
+                .is_some_and(|ext| ext.eq_ignore_ascii_case("jpg"))
+            && entry.file_type().ok()?.is_file()
+        {
             let metadata = entry.metadata().ok()?;
             entries.push((metadata.modified().ok()?, metadata.len(), entry.path()));
         }
     }
     entries.sort_by_key(|entry| entry.0);
-    let mut bytes = entries.iter().try_fold(0_u64, |sum, entry| sum.checked_add(entry.1))?;
+    let mut bytes = entries
+        .iter()
+        .try_fold(0_u64, |sum, entry| sum.checked_add(entry.1))?;
     let mut count = entries.len();
     for (_, size, path) in &entries {
-        if count < 32 && bytes.saturating_add(data.len() as u64) <= 64 * 1024 * 1024 { break; }
-        std::fs::remove_file(path).ok()?; count -= 1; bytes = bytes.saturating_sub(*size);
+        if count < 32 && bytes.saturating_add(data.len() as u64) <= 64 * 1024 * 1024 {
+            break;
+        }
+        std::fs::remove_file(path).ok()?;
+        count -= 1;
+        bytes = bytes.saturating_sub(*size);
     }
     static NEXT: AtomicU64 = AtomicU64::new(0);
     let nonce = NEXT.fetch_add(1, Ordering::Relaxed);
-    let art_path = cache_dir.join(format!("mpris-art-{}-{}-{nonce}.jpg", std::process::id(), gtk::glib::real_time()));
+    let art_path = cache_dir.join(format!(
+        "mpris-art-{}-{}-{nonce}.jpg",
+        std::process::id(),
+        gtk::glib::real_time()
+    ));
     let stage = big_app_kit::storage::StagedFile::new(&art_path).ok()?;
     std::fs::write(stage.path(), data).ok()?;
     // Both receipts mean publication happened; cache durability uncertainty is
@@ -118,9 +150,12 @@ mod identity_tests {
     use super::*;
     #[test]
     fn load_occurrences_do_not_share_track_id() {
-        let state = SharedMprisState::default(); state.selected();
+        let state = SharedMprisState::default();
+        state.selected();
         let first = state.track_id.lock().unwrap().clone();
-        state.selected(); assert_ne!(*state.track_id.lock().unwrap(), first);
-        state.invalidate(); assert!(state.track_id.lock().unwrap().is_none());
+        state.selected();
+        assert_ne!(*state.track_id.lock().unwrap(), first);
+        state.invalidate();
+        assert!(state.track_id.lock().unwrap().is_none());
     }
 }

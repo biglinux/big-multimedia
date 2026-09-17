@@ -496,7 +496,9 @@ impl VideoShell {
     /// restart picks up the new values (mpv is configured at startup).
     pub(super) fn restore_all_defaults(&self) {
         self.settings.reset_to_defaults();
-        self.toast(&i18n("Defaults are applied for this session; saving continues in the background."));
+        self.toast(&i18n(
+            "Defaults are applied for this session; saving continues in the background.",
+        ));
     }
 }
 

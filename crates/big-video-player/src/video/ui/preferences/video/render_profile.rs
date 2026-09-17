@@ -44,11 +44,13 @@ pub(super) fn build_video_output_group(settings: &Settings) -> adw::PreferencesG
     let (row, dropdown) = BigDropdownRow::new(
         BigDropdownRowSpec::new(
             i18n("Video Output"),
-            [i18n("Automatic (recommended)"), i18n("OpenGL with fallback"), i18n("Compatibility (processor)")],
+            [
+                i18n("Automatic (recommended)"),
+                i18n("OpenGL with fallback"),
+                i18n("Compatibility (processor)"),
+            ],
         )
-        .subtitle(i18n(
-            "Close and reopen the player to apply this change",
-        )),
+        .subtitle(i18n("Close and reopen the player to apply this change")),
     )
     .into_parts();
     row.add_prefix(&illustration("render_profile.svg"));
@@ -94,9 +96,15 @@ pub(super) fn build_render_profile_group(
     let (profile_row, profile_dropdown) = BigDropdownRow::new(
         BigDropdownRowSpec::new(
             i18n("Picture quality"),
-            [i18n("Low resource use"), i18n("Balanced"), i18n("More detail")],
+            [
+                i18n("Low resource use"),
+                i18n("Balanced"),
+                i18n("More detail"),
+            ],
         )
-        .subtitle(i18n("More detail can increase graphics workload and battery use")),
+        .subtitle(i18n(
+            "More detail can increase graphics workload and battery use",
+        )),
     )
     .into_parts();
     profile_row.add_prefix(&illustration("render_profile.svg"));

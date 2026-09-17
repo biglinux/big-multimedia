@@ -8,6 +8,7 @@ use adw::prelude::*;
 use gtk::glib;
 use std::cell::{Cell, RefCell};
 use std::rc::Rc;
+use std::sync::Arc;
 
 use super::actions::toggle_fullscreen_state;
 use super::build::EditPageBuild;
@@ -469,7 +470,7 @@ fn install_drag_end(
     scales: CropScalesWeak,
     video_width: Rc<Cell<i64>>,
     video_height: Rc<Cell<i64>>,
-    mpv: Rc<RefCell<Option<crate::player::mpv_backend::MpvBackend>>>,
+    mpv: Rc<RefCell<Option<Arc<crate::player::mpv_backend::MpvBackend>>>>,
 ) {
     drag.connect_drag_end(move |_, _, _| {
         let w = video_width.get();

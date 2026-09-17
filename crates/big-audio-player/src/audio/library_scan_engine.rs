@@ -1,109 +1,221 @@
 //! Bounded metadata import. A scan never deletes unavailable tracks.
 //! One batch has at most 64 records; filesystem metadata is read outside the
 //! DB mutex and transaction. Earlier committed batches survive later failures.
+use crate::db::models::Track;
+use crate::db::{DbHandle, queries};
+use crate::library::{metadata, scanner};
 #[cfg(test)]
 use std::path::Path;
 #[cfg(test)]
 use std::sync::PoisonError;
-use crate::db::{DbHandle, queries};
-use crate::db::models::Track;
-use crate::library::{metadata, scanner};
 
-use std::sync::{Arc,MutexGuard,TryLockError};
-use std::sync::atomic::{AtomicBool,AtomicUsize,Ordering};
+use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
+use std::sync::{Arc, MutexGuard, TryLockError};
 /// Live counters contain no media names and need no UI-thread mutex.
-#[derive(Debug,Default)]
-pub(crate) struct ScanControl {
-    pub cancelled:AtomicBool,pub finished:AtomicBool,pub failed:AtomicBool,pub examined:AtomicUsize,
-    pub imported:AtomicUsize,pub skipped:AtomicUsize,
+#[derive(Debug, Default)]
+pub struct ScanControl {
+    pub cancelled: AtomicBool,
+    pub finished: AtomicBool,
+    pub failed: AtomicBool,
+    pub examined: AtomicUsize,
+    pub imported: AtomicUsize,
+    pub skipped: AtomicUsize,
 }
-#[derive(Debug,Clone,Default)]
-pub(crate) struct ScanReport {pub imported:usize,pub skipped:usize,pub cancelled:bool,pub failed:bool}
+#[derive(Debug, Clone, Default)]
+pub struct ScanReport {
+    pub imported: usize,
+    pub skipped: usize,
+    pub cancelled: bool,
+    pub failed: bool,
+}
 impl ScanControl {
-    pub fn report(&self,failed:bool)->ScanReport {ScanReport{imported:self.imported.load(Ordering::Acquire),skipped:self.skipped.load(Ordering::Acquire),cancelled:self.cancelled.load(Ordering::Acquire),failed}}
+    pub fn report(&self, failed: bool) -> ScanReport {
+        ScanReport {
+            imported: self.imported.load(Ordering::Acquire),
+            skipped: self.skipped.load(Ordering::Acquire),
+            cancelled: self.cancelled.load(Ordering::Acquire),
+            failed,
+        }
+    }
 }
 /// Slot owned by the shell; dropping the component revokes an in-flight scan.
 #[derive(Default)]
 pub(crate) struct ScanSlot(pub std::cell::RefCell<Option<Arc<ScanControl>>>);
-impl Drop for ScanSlot {fn drop(&mut self){if let Some(control)=self.0.get_mut().take(){control.cancelled.store(true,Ordering::Release);}}}
+impl Drop for ScanSlot {
+    fn drop(&mut self) {
+        if let Some(control) = self.0.get_mut().take() {
+            control.cancelled.store(true, Ordering::Release);
+        }
+    }
+}
 const MAX_SCANS: usize = 2;
 static ACTIVE_SCANS: AtomicUsize = AtomicUsize::new(0);
 /// A bound on admitted scans, not merely on threads actively consuming CPU.
-pub(crate) struct ScanAdmission { _drain: big_os_kit::background::OperationGuard }
+pub(crate) struct ScanAdmission {
+    _drain: big_os_kit::background::OperationGuard,
+}
 impl ScanAdmission {
     pub(crate) fn reserve() -> Option<Self> {
-        ACTIVE_SCANS.fetch_update(Ordering::AcqRel, Ordering::Acquire, |count| (count < MAX_SCANS).then_some(count + 1)).ok().map(|_| Self { _drain: big_os_kit::background::track_operation() })
+        ACTIVE_SCANS
+            .fetch_update(Ordering::AcqRel, Ordering::Acquire, |count| {
+                (count < MAX_SCANS).then_some(count + 1)
+            })
+            .ok()
+            .map(|_| Self {
+                _drain: big_os_kit::background::track_operation(),
+            })
     }
 }
-impl Drop for ScanAdmission { fn drop(&mut self) { ACTIVE_SCANS.fetch_sub(1, Ordering::AcqRel); } }
-fn lock_db<'a>(db:&'a DbHandle,cancelled:&AtomicBool)->Result<MutexGuard<'a,rusqlite::Connection>,String> {
+impl Drop for ScanAdmission {
+    fn drop(&mut self) {
+        ACTIVE_SCANS.fetch_sub(1, Ordering::AcqRel);
+    }
+}
+fn lock_db<'a>(
+    db: &'a DbHandle,
+    cancelled: &AtomicBool,
+) -> Result<MutexGuard<'a, rusqlite::Connection>, String> {
     loop {
-        if cancelled.load(Ordering::Acquire) {return Err("Scan cancelled".into());}
+        if cancelled.load(Ordering::Acquire) {
+            return Err("Scan cancelled".into());
+        }
         match db.try_lock() {
-            Ok(conn)=>return Ok(conn),
-            Err(TryLockError::WouldBlock)=>std::thread::sleep(std::time::Duration::from_millis(5)),
-            Err(TryLockError::Poisoned(_))=>return Err("Library connection failed".into()),
+            Ok(conn) => return Ok(conn),
+            Err(TryLockError::WouldBlock) => {
+                std::thread::sleep(std::time::Duration::from_millis(5));
+            }
+            Err(TryLockError::Poisoned(_)) => return Err("Library connection failed".into()),
         }
     }
 }
-pub(crate) fn scan_folder_blocking(db:&DbHandle,folder:&str)->Result<(usize,usize),String> {
-    let control=ScanControl::default();scan_folder_cancellable(db,folder,&control)?;
-    Ok((control.imported.load(Ordering::Acquire),control.skipped.load(Ordering::Acquire)))
+#[cfg(test)]
+pub(crate) fn scan_folder_blocking(db: &DbHandle, folder: &str) -> Result<(usize, usize), String> {
+    let control = ScanControl::default();
+    scan_folder_cancellable(db, folder, &control)?;
+    Ok((
+        control.imported.load(Ordering::Acquire),
+        control.skipped.load(Ordering::Acquire),
+    ))
 }
-pub(crate) fn scan_folder_cancellable(db:&DbHandle,folder:&str,control:&ScanControl)->Result<(),String> {
-    let cancelled=&control.cancelled;
-    if cancelled.load(Ordering::Acquire) {return Err("Scan cancelled".into());}
-    if !std::fs::metadata(folder).map_err(|_|"Folder is unavailable")?.is_dir() {return Err("Choose an available folder".into());}
-    {let conn=lock_db(db,cancelled)?;queries::add_watch_folder(&conn,folder).map_err(|_|"Could not save watch folder")?;}
-    let mut batch:Vec<Track>=Vec::with_capacity(64);
-    scanner::visit_audio_files_cancellable(folder,cancelled,|path| {
-        control.examined.fetch_add(1,Ordering::Relaxed);
-        let path=path.to_str().ok_or_else(||std::io::Error::other("Non-UTF-8 path cannot be imported losslessly"))?;
-        let exists:bool={let conn=lock_db(db,cancelled).map_err(std::io::Error::other)?;
-            conn.query_row("SELECT EXISTS(SELECT 1 FROM tracks WHERE file_path=?1)",[path],|r|r.get(0))?};
-        if exists {return Ok(());}
-        match metadata::read_track_metadata_cancellable(path,cancelled) {
-            Ok(track)=>batch.push(track),
-            Err(big_media_runtime::Error::Cancelled)=>return Err(big_media_runtime::Error::Cancelled),
-            Err(_)=>{control.skipped.fetch_add(1,Ordering::Relaxed);},
+pub(crate) fn scan_folder_cancellable(
+    db: &DbHandle,
+    folder: &str,
+    control: &ScanControl,
+) -> Result<(), String> {
+    let cancelled = &control.cancelled;
+    if cancelled.load(Ordering::Acquire) {
+        return Err("Scan cancelled".into());
+    }
+    if !std::fs::metadata(folder)
+        .map_err(|_| "Folder is unavailable")?
+        .is_dir()
+    {
+        return Err("Choose an available folder".into());
+    }
+    {
+        let conn = lock_db(db, cancelled)?;
+        queries::add_watch_folder(&conn, folder).map_err(|_| "Could not save watch folder")?;
+    }
+    let mut batch: Vec<Track> = Vec::with_capacity(64);
+    scanner::visit_audio_files_cancellable(folder, cancelled, |path| {
+        control.examined.fetch_add(1, Ordering::Relaxed);
+        let path = path
+            .to_str()
+            .ok_or_else(|| std::io::Error::other("Non-UTF-8 path cannot be imported losslessly"))?;
+        let exists: bool = {
+            let conn = lock_db(db, cancelled).map_err(std::io::Error::other)?;
+            conn.query_row(
+                "SELECT EXISTS(SELECT 1 FROM tracks WHERE file_path=?1)",
+                [path],
+                |r| r.get(0),
+            )?
+        };
+        if exists {
+            return Ok(());
         }
-        if batch.len()==64 {let count=insert_scan_batch(db,&batch,cancelled)?;control.imported.fetch_add(count,Ordering::Release);batch.clear();}
+        match metadata::read_track_metadata_cancellable(path, cancelled) {
+            Ok(track) => batch.push(track),
+            Err(big_media_runtime::Error::Cancelled) => {
+                return Err(big_media_runtime::Error::Cancelled);
+            }
+            Err(_) => {
+                control.skipped.fetch_add(1, Ordering::Relaxed);
+            }
+        }
+        if batch.len() == 64 {
+            let count = insert_scan_batch(db, &batch, cancelled)?;
+            control.imported.fetch_add(count, Ordering::Release);
+            batch.clear();
+        }
         Ok(())
-    }).map_err(|_|"Scan incomplete; confirmed batches were kept".to_owned())?;
+    })
+    .map_err(|_| "Scan incomplete; confirmed batches were kept".to_owned())?;
     if !batch.is_empty() {
-        let count=insert_scan_batch(db,&batch,cancelled).map_err(|_|"Scan incomplete; confirmed batches were kept")?;
-        control.imported.fetch_add(count,Ordering::Release);
+        let count = insert_scan_batch(db, &batch, cancelled)
+            .map_err(|_| "Scan incomplete; confirmed batches were kept")?;
+        control.imported.fetch_add(count, Ordering::Release);
     }
     Ok(())
 }
-fn insert_scan_batch(db:&DbHandle,tracks:&[Track],cancelled:&AtomicBool)->std::io::Result<usize> {
-    let conn=lock_db(db,cancelled).map_err(std::io::Error::other)?;
-    let tx=conn.unchecked_transaction().map_err(|_|std::io::Error::other("Library write failed"))?;
+fn insert_scan_batch(
+    db: &DbHandle,
+    tracks: &[Track],
+    cancelled: &AtomicBool,
+) -> std::io::Result<usize> {
+    let conn = lock_db(db, cancelled).map_err(std::io::Error::other)?;
+    let tx = conn
+        .unchecked_transaction()
+        .map_err(|_| std::io::Error::other("Library write failed"))?;
     for track in tracks {
-        if cancelled.load(Ordering::Acquire) {return Err(std::io::Error::new(std::io::ErrorKind::Interrupted,"Scan cancelled"));}
-        queries::insert_track(&tx,track).map_err(|_|std::io::Error::other("Library write failed"))?;
+        if cancelled.load(Ordering::Acquire) {
+            return Err(std::io::Error::new(
+                std::io::ErrorKind::Interrupted,
+                "Scan cancelled",
+            ));
+        }
+        queries::insert_track(&tx, track)
+            .map_err(|_| std::io::Error::other("Library write failed"))?;
     }
-    if cancelled.load(Ordering::Acquire) {return Err(std::io::Error::new(std::io::ErrorKind::Interrupted,"Scan cancelled"));}
-    tx.commit().map_err(|_|std::io::Error::other("Library commit failed"))?;Ok(tracks.len())
+    if cancelled.load(Ordering::Acquire) {
+        return Err(std::io::Error::new(
+            std::io::ErrorKind::Interrupted,
+            "Scan cancelled",
+        ));
+    }
+    tx.commit()
+        .map_err(|_| std::io::Error::other("Library commit failed"))?;
+    Ok(tracks.len())
 }
 /// Stop monitoring only. Removing tracks/ratings/playlists is a separate,
 /// destructive user decision and must not be inferred from removing a watch.
 pub(crate) fn remove_watch_folder_blocking(db: &DbHandle, folder_id: i64) -> bool {
-    db.lock().is_ok_and(|conn| queries::remove_watch_folder(&conn, folder_id).is_ok())
+    db.lock()
+        .is_ok_and(|conn| queries::remove_watch_folder(&conn, folder_id).is_ok())
 }
+#[cfg(test)]
 pub(crate) fn watch_folder_paths_blocking(db: &DbHandle) -> Result<Vec<String>, String> {
     watch_folder_paths_cancellable(db, &AtomicBool::new(false))
 }
-pub(crate) fn watch_folder_paths_cancellable(db: &DbHandle, cancelled: &AtomicBool) -> Result<Vec<String>, String> {
+pub(crate) fn watch_folder_paths_cancellable(
+    db: &DbHandle,
+    cancelled: &AtomicBool,
+) -> Result<Vec<String>, String> {
     let conn = lock_db(db, cancelled)?;
-    let mut stmt = conn.prepare("SELECT path FROM watch_folders ORDER BY path LIMIT 1025")
+    let mut stmt = conn
+        .prepare("SELECT path FROM watch_folders ORDER BY path LIMIT 1025")
         .map_err(|_| "Could not read watch folders")?;
-    let paths = stmt.query_map([], |row| row.get::<_, String>(0)).map_err(|_| "Could not read watch folders")?;
+    let paths = stmt
+        .query_map([], |row| row.get::<_, String>(0))
+        .map_err(|_| "Could not read watch folders")?;
     let mut result = Vec::new();
     for path in paths {
-        if cancelled.load(Ordering::Acquire) { return Err("Scan cancelled".into()); }
+        if cancelled.load(Ordering::Acquire) {
+            return Err("Scan cancelled".into());
+        }
         let path = path.map_err(|_| "Could not read watch folders")?;
-        if result.len() == 1024 || path.len() > 4096 { return Err("Watch-folder safety limit exceeded".into()); }
+        if result.len() == 1024 || path.len() > 4096 {
+            return Err("Watch-folder safety limit exceeded".into());
+        }
         result.push(path);
     }
     Ok(result)

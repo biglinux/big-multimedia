@@ -30,7 +30,9 @@ impl ListenBrainzConfig {
     fn from_json(text: &str) -> Option<Self> {
         let value: serde_json::Value = serde_json::from_str(text).ok()?;
         let enabled = match value.get("enabled") {
-            None => false, Some(serde_json::Value::Bool(value)) => *value, _ => return None,
+            None => false,
+            Some(serde_json::Value::Bool(value)) => *value,
+            _ => return None,
         };
         Some(Self {
             user_token: value.get("user_token")?.as_str()?.to_string(),
@@ -40,7 +42,9 @@ impl ListenBrainzConfig {
     }
 
     pub fn try_load() -> Result<Option<Self>> {
-        let Some(bytes) = super::accounts::load(super::accounts::Provider::ListenBrainz)? else { return Ok(None); };
+        let Some(bytes) = super::accounts::load(super::accounts::Provider::ListenBrainz)? else {
+            return Ok(None);
+        };
         let config = Self::from_json(std::str::from_utf8(&bytes)?)
             .ok_or_else(|| crate::Error::internal("Invalid ListenBrainz configuration"))?;
         if config.user_token.len() > 4096 || config.user_token.chars().any(char::is_control) {
@@ -49,20 +53,28 @@ impl ListenBrainzConfig {
         Ok(Some(config))
     }
     /// Legacy read-only adapter. Editing flows must use try_load.
-    pub fn load() -> Option<Self> { Self::try_load().ok().flatten() }
+    pub fn load() -> Option<Self> {
+        Self::try_load().ok().flatten()
+    }
 
     /// Explicit worker-only save. Secret Service failure never falls back to a file.
     pub fn save(&self) -> Result<()> {
         let provider = super::accounts::Provider::ListenBrainz;
         let reviewed = super::accounts::review(provider)?;
         if reviewed.kind != super::accounts::StorageKind::NotConfigured {
-            return Err(crate::Error::internal("Editing existing credentials requires accounts::save_reviewed with the loaded revision"));
+            return Err(crate::Error::internal(
+                "Editing existing credentials requires accounts::save_reviewed with the loaded revision",
+            ));
         }
-        let bytes = serde_json::to_vec(&serde_json::json!({"user_token":self.user_token,"enabled":self.enabled}))?;
+        let bytes = serde_json::to_vec(
+            &serde_json::json!({"user_token":self.user_token,"enabled":self.enabled}),
+        )?;
         let cancel = std::sync::atomic::AtomicBool::new(false);
-        match super::accounts::save_reviewed(&reviewed,&bytes,&cancel)? {
+        match super::accounts::save_reviewed(&reviewed, &bytes, &cancel)? {
             super::accounts::SaveOutcome::Protected => Ok(()),
-            super::accounts::SaveOutcome::ProtectedCleanupPending => Err(crate::Error::internal("Account protected; old credential cleanup needs attention")),
+            super::accounts::SaveOutcome::ProtectedCleanupPending => Err(crate::Error::internal(
+                "Account protected; old credential cleanup needs attention",
+            )),
         }
     }
 
@@ -89,13 +101,21 @@ pub fn scrobble(
     duration_secs: i64,
     started_at: u64,
 ) {
-    if !config.enabled || config.user_token.is_empty() || artist.is_empty() || track.is_empty()
-        || [artist, track, album].iter().any(|s| s.len() > 4096) {
+    if !config.enabled
+        || config.user_token.is_empty()
+        || artist.is_empty()
+        || track.is_empty()
+        || [artist, track, album].iter().any(|s| s.len() > 4096)
+    {
         return;
     }
 
-    let Ok(now) = SystemTime::now().duration_since(UNIX_EPOCH) else { return; };
-    if started_at == 0 || started_at > now.as_secs() { return; }
+    let Ok(now) = SystemTime::now().duration_since(UNIX_EPOCH) else {
+        return;
+    };
+    if started_at == 0 || started_at > now.as_secs() {
+        return;
+    }
     let timestamp = started_at;
 
     let payload = build_scrobble_payload(artist, track, album, duration_secs, timestamp);
@@ -113,8 +133,12 @@ pub fn scrobble(
 }
 
 pub fn update_now_playing(config: &ListenBrainzConfig, artist: &str, track: &str, album: &str) {
-    if !config.enabled || config.user_token.is_empty() || artist.is_empty() || track.is_empty()
-        || [artist, track, album].iter().any(|s| s.len() > 4096) {
+    if !config.enabled
+        || config.user_token.is_empty()
+        || artist.is_empty()
+        || track.is_empty()
+        || [artist, track, album].iter().any(|s| s.len() > 4096)
+    {
         return;
     }
 
@@ -186,9 +210,21 @@ mod tests {
 
     #[test]
     fn missing_consent_does_not_enable_listening_history() {
-        assert!(!ListenBrainzConfig::from_json(r#"{"user_token":"abc"}"#).unwrap().enabled);
-        assert!(!ListenBrainzConfig::from_json(r#"{"user_token":"abc","enabled":false}"#).unwrap().enabled);
-        assert!(ListenBrainzConfig::from_json(r#"{"user_token":"abc","enabled":true}"#).unwrap().enabled);
+        assert!(
+            !ListenBrainzConfig::from_json(r#"{"user_token":"abc"}"#)
+                .unwrap()
+                .enabled
+        );
+        assert!(
+            !ListenBrainzConfig::from_json(r#"{"user_token":"abc","enabled":false}"#)
+                .unwrap()
+                .enabled
+        );
+        assert!(
+            ListenBrainzConfig::from_json(r#"{"user_token":"abc","enabled":true}"#)
+                .unwrap()
+                .enabled
+        );
     }
 
     #[cfg(unix)]
@@ -199,12 +235,19 @@ mod tests {
         let path = dir.path().join("listenbrainz.json");
         std::fs::write(&path, b"old").unwrap();
         std::fs::set_permissions(&path, std::fs::Permissions::from_mode(0o644)).unwrap();
-        let config = ListenBrainzConfig { user_token: "secret-token".into(), enabled: false };
+        let config = ListenBrainzConfig {
+            user_token: "secret-token".into(),
+            enabled: false,
+        };
         config.save_to_path(&path).unwrap();
-        let loaded = ListenBrainzConfig::from_json(&std::fs::read_to_string(&path).unwrap()).unwrap();
+        let loaded =
+            ListenBrainzConfig::from_json(&std::fs::read_to_string(&path).unwrap()).unwrap();
         assert_eq!(loaded.user_token, config.user_token);
         assert!(!loaded.enabled);
-        assert_eq!(std::fs::metadata(&path).unwrap().permissions().mode() & 0o077, 0);
+        assert_eq!(
+            std::fs::metadata(&path).unwrap().permissions().mode() & 0o077,
+            0
+        );
         assert_eq!(std::fs::read_dir(dir.path()).unwrap().count(), 1);
         assert!(!format!("{config:?}").contains("secret-token"));
     }
@@ -212,7 +255,10 @@ mod tests {
     #[test]
     fn duration_conversion_cannot_overflow() {
         let payload = build_scrobble_payload("A", "T", "", i64::MAX, 1);
-        assert_eq!(payload["payload"][0]["track_metadata"]["additional_info"]["duration_ms"], i64::MAX);
+        assert_eq!(
+            payload["payload"][0]["track_metadata"]["additional_info"]["duration_ms"],
+            i64::MAX
+        );
     }
 
     #[test]

@@ -124,16 +124,18 @@ where
         .ok_or_else(|| Error::mpv("No current GL context for the video surface"))?;
     // SAFETY: the owning GTK thread made this GL context current above. It
     // retains its display and is captured for exact-context teardown below.
-    let mut render_context = unsafe {
-        mpv.create_fast_render_context_with_wayland_display(wl_display, false)?
-    };
+    let mut render_context =
+        unsafe { mpv.create_fast_render_context_with_wayland_display(wl_display, false)? };
     {
         render_context.set_context_scope(move |action| {
             struct Restore(Option<gdk::GLContext>);
             impl Drop for Restore {
                 fn drop(&mut self) {
-                    if let Some(previous) = &self.0 { previous.make_current(); }
-                    else { gdk::GLContext::clear_current(); }
+                    if let Some(previous) = &self.0 {
+                        previous.make_current();
+                    } else {
+                        gdk::GLContext::clear_current();
+                    }
                 }
             }
             let _restore = Restore(gdk::GLContext::current());

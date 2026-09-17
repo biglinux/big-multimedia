@@ -31,13 +31,25 @@ impl AudioShell {
     }
 
     fn start_library_scan(&self, folders: Option<Vec<String>>, sender: &ComponentSender<Self>) {
-        if self.scan_slot.0.borrow().as_ref().is_some_and(|control| !control.finished.load(Ordering::Acquire)) {
-            self.notify(&i18n("A library scan is already running. Cancel it or wait for its result."));
+        if self
+            .scan_slot
+            .0
+            .borrow()
+            .as_ref()
+            .is_some_and(|control| !control.finished.load(Ordering::Acquire))
+        {
+            self.notify(&i18n(
+                "A library scan is already running. Cancel it or wait for its result.",
+            ));
             return;
         }
-        let Some(db) = self.db.clone() else { return; };
+        let Some(db) = self.db.clone() else {
+            return;
+        };
         let Some(admission) = library_scan_engine::ScanAdmission::reserve() else {
-            self.notify(&i18n("Library scanning is busy. Try again after another scan finishes."));
+            self.notify(&i18n(
+                "Library scanning is busy. Try again after another scan finishes.",
+            ));
             return;
         };
         let control = Arc::new(library_scan_engine::ScanControl::default());
@@ -45,21 +57,28 @@ impl AudioShell {
         if let Some(parent) = self.window() {
             super::super::scan_progress::show(&parent, control.clone());
         }
-        self.playback_bar.emit(AudioPlaybackBarInput::SetStatus(i18n("Scanning library…")));
-        let worker_control = control.clone(); let input = sender.input_sender().clone();
+        self.playback_bar
+            .emit(AudioPlaybackBarInput::SetStatus(i18n("Scanning library…")));
+        let worker_control = control.clone();
+        let input = sender.input_sender().clone();
         glib::spawn_future_local(async move {
             let result = gio::spawn_blocking(move || {
                 let _admission = admission;
                 let folders = match folders {
                     Some(folders) => folders,
-                    None => library_scan_engine::watch_folder_paths_cancellable(&db, &worker_control.cancelled)?,
+                    None => library_scan_engine::watch_folder_paths_cancellable(
+                        &db,
+                        &worker_control.cancelled,
+                    )?,
                 };
                 for folder in folders {
                     library_scan_engine::scan_folder_cancellable(&db, &folder, &worker_control)?;
                 }
                 Ok::<(), String>(())
-            }).await;
-            let failed = !matches!(result, Ok(Ok(()))) && !control.cancelled.load(Ordering::Acquire);
+            })
+            .await;
+            let failed =
+                !matches!(result, Ok(Ok(()))) && !control.cancelled.load(Ordering::Acquire);
             control.failed.store(failed, Ordering::Release);
             control.finished.store(true, Ordering::Release);
             let report = control.report(failed);
@@ -74,9 +93,13 @@ impl AudioShell {
         };
         let input = sender.input_sender().clone();
         glib::spawn_future_local(async move {
-            let complete = matches!(gio::spawn_blocking(move || {
-                library_scan_engine::remove_watch_folder_blocking(&db, id)
-            }).await, Ok(true));
+            let complete = matches!(
+                gio::spawn_blocking(move || {
+                    library_scan_engine::remove_watch_folder_blocking(&db, id)
+                })
+                .await,
+                Ok(true)
+            );
             let _ = input.send(AudioShellInput::ScanFinished(complete));
         });
     }
@@ -92,17 +115,15 @@ impl AudioShell {
             return;
         };
         let input = sender.input_sender().clone();
-        spawn_db_query(
-            db,
-            queries::get_watch_folders,
-            move |folders| {
-                let message = match folders {
-                    Ok(folders) => AudioShellInput::ManageFoldersResolved(folders),
-                    Err(_) => AudioShellInput::Notify(i18n("Watch folders could not be read. Previous settings were kept.")),
-                };
-                let _ = input.send(message);
-            },
-        );
+        spawn_db_query(db, queries::get_watch_folders, move |folders| {
+            let message = match folders {
+                Ok(folders) => AudioShellInput::ManageFoldersResolved(folders),
+                Err(_) => AudioShellInput::Notify(i18n(
+                    "Watch folders could not be read. Previous settings were kept.",
+                )),
+            };
+            let _ = input.send(message);
+        });
     }
 
     /// Resolve a radio-panel intent: station CRUD (DB) + stream playback (mpv).
@@ -158,7 +179,11 @@ impl AudioShell {
                 self.is_stream = true;
                 self.radio_station_name = name;
                 if let Some(mpv) = &self.mpv {
-                    mpv.load_file_with_audio_profile(&url, crate::player::mpv_backend::AudioCacheProfile::Radio, false);
+                    mpv.load_file_with_audio_profile(
+                        &url,
+                        crate::player::mpv_backend::AudioCacheProfile::Radio,
+                        false,
+                    );
                     mpv.play();
                 }
                 self.current_file.clone_from(&url);

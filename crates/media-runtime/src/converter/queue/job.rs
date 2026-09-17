@@ -1,60 +1,132 @@
 //! Supervised FFmpeg execution. No watcher threads, blocking pipe joins, or
 //! process-group signal after PID collection. All diagnostics are sanitized.
+use super::{ConversionQueueEntry, QueueMessage};
 use crate::converter::ffmpeg::{FfmpegJob, progress};
 use crate::error::{Error, Result};
-use std::sync::{Arc, atomic::{AtomicBool, Ordering}};
+use big_os_kit::subprocess::{BigSubprocessError, BigSubprocessOutputMode, BigSubprocessSpec};
+use std::sync::{
+    Arc,
+    atomic::{AtomicBool, Ordering},
+};
 use std::time::Duration;
-use big_os_kit::subprocess::{BigSubprocessSpec, BigSubprocessOutputMode, BigSubprocessError};
-use super::{ConversionQueueEntry, QueueMessage};
 
-pub(crate) fn run_job(job: &FfmpegJob, entry: &ConversionQueueEntry,
-    cancel: &Arc<AtomicBool>, sender: &async_channel::Sender<QueueMessage>) -> Result<()> {
+pub(crate) fn run_job(
+    job: &FfmpegJob,
+    entry: &ConversionQueueEntry,
+    cancel: &Arc<AtomicBool>,
+    sender: &async_channel::Sender<QueueMessage>,
+) -> Result<()> {
     let command = job.build_command();
-    let spec = BigSubprocessSpec::builder().program("ffmpeg")
-        .args(command.get_args()).stdout(BigSubprocessOutputMode::Null)
-        .timeout(Duration::from_secs(2 * 60 * 60)).build();
-    if sender.send_blocking(QueueMessage::Started { entry_id: entry.id,
-        command: "ffmpeg (private paths and credentials omitted)".into() }).is_err() {
+    let spec = BigSubprocessSpec::builder()
+        .program("ffmpeg")
+        .args(command.get_args())
+        .stdout(BigSubprocessOutputMode::Null)
+        .timeout(Duration::from_hours(2))
+        .build();
+    if sender
+        .send_blocking(QueueMessage::Started {
+            entry_id: entry.id,
+            command: "ffmpeg (private paths and credentials omitted)".into(),
+        })
+        .is_err()
+    {
         return Err(Error::Cancelled);
     }
-    let mut partial = Vec::new(); let mut record = Vec::new();
+    let mut partial = Vec::new();
+    let mut record = Vec::new();
     let duration = job.trim.effective_duration(entry.duration_secs);
-    let output = spec.run_cancellable_with_stderr(cancel, &mut |chunk| {
-        if sender.is_closed() { return Err(std::io::Error::other("progress consumer closed")); }
-        for &byte in chunk {
-            if byte != b'\n' {
-                if partial.len() >= 8192 { return Err(std::io::Error::other("FFmpeg diagnostic line exceeded limit")); }
-                partial.push(byte); continue;
+    let output = spec
+        .run_cancellable_with_stderr(cancel, &mut |chunk| {
+            if sender.is_closed() {
+                return Err(std::io::Error::other("progress consumer closed"));
             }
-            let line = String::from_utf8_lossy(&partial);
-            if let Some((key, _)) = line.split_once('=') {
-                // Accept only numeric protocol fields, never raw paths/URLs.
-                if matches!(key, "out_time" | "out_time_us" | "out_time_ms" | "frame" | "fps" | "speed" | "total_size" | "bitrate" | "progress") {
-                    if record.len() + partial.len() + 1 > 32768 { return Err(std::io::Error::other("FFmpeg progress record exceeded limit")); }
-                    record.extend_from_slice(&partial); record.push(b'\n');
-                    if key == "progress" {
-                        let _ = progress::parse_progress(std::io::Cursor::new(&record), duration, |snapshot| {
-                            if [snapshot.time_secs, snapshot.percent, snapshot.speed, snapshot.eta_secs, snapshot.fps, snapshot.bitrate_kbps].iter().all(|n| n.is_finite()) {
-                                // Lossy progress is replaceable; terminal outcomes use the reliable queue path.
-                                let _ = sender.try_send(QueueMessage::Progress { entry_id: entry.id, progress_snapshot: snapshot });
-                            }
-                        });
-                        record.clear();
+            for &byte in chunk {
+                if byte != b'\n' {
+                    if partial.len() >= 8192 {
+                        return Err(std::io::Error::other(
+                            "FFmpeg diagnostic line exceeded limit",
+                        ));
+                    }
+                    partial.push(byte);
+                    continue;
+                }
+                let line = String::from_utf8_lossy(&partial);
+                if let Some((key, _)) = line.split_once('=') {
+                    // Accept only numeric protocol fields, never raw paths/URLs.
+                    if matches!(
+                        key,
+                        "out_time"
+                            | "out_time_us"
+                            | "out_time_ms"
+                            | "frame"
+                            | "fps"
+                            | "speed"
+                            | "total_size"
+                            | "bitrate"
+                            | "progress"
+                    ) {
+                        if record.len() + partial.len() + 1 > 32768 {
+                            return Err(std::io::Error::other(
+                                "FFmpeg progress record exceeded limit",
+                            ));
+                        }
+                        record.extend_from_slice(&partial);
+                        record.push(b'\n');
+                        if key == "progress" {
+                            let _ = progress::parse_progress(
+                                std::io::Cursor::new(&record),
+                                duration,
+                                |snapshot| {
+                                    if [
+                                        snapshot.time_secs,
+                                        snapshot.percent,
+                                        snapshot.speed,
+                                        snapshot.eta_secs,
+                                        snapshot.fps,
+                                        snapshot.bitrate_kbps,
+                                    ]
+                                    .iter()
+                                    .all(|n| n.is_finite())
+                                    {
+                                        // Lossy progress is replaceable; terminal outcomes use the reliable queue path.
+                                        let _ = sender.try_send(QueueMessage::Progress {
+                                            entry_id: entry.id,
+                                            progress_snapshot: snapshot,
+                                        });
+                                    }
+                                },
+                            );
+                            record.clear();
+                        }
                     }
                 }
+                partial.clear();
             }
-            partial.clear();
-        }
-        Ok(())
-    }).map_err(|error| match error {
-        BigSubprocessError::Cancelled => Error::Cancelled,
-        other => Error::ffmpeg("ffmpeg", None, other.to_string()),
-    })?;
-    if cancel.load(Ordering::Acquire) { return Err(Error::Cancelled); }
-    if output.status.success() { return Ok(()); }
+            Ok(())
+        })
+        .map_err(|error| match error {
+            BigSubprocessError::Cancelled => Error::Cancelled,
+            other => Error::ffmpeg("ffmpeg", None, other.to_string()),
+        })?;
+    if cancel.load(Ordering::Acquire) {
+        return Err(Error::Cancelled);
+    }
+    if output.status.success() {
+        return Ok(());
+    }
     // Use only known static categories; never forward untrusted stderr verbatim.
-    let lines: Vec<String> = output.stderr_lossy().lines().rev().take(20).map(str::to_owned).collect();
-    Err(Error::ffmpeg("ffmpeg", output.status.code(), friendly_ffmpeg_error(&lines, output.status.code().unwrap_or(-1))))
+    let lines: Vec<String> = output
+        .stderr_lossy()
+        .lines()
+        .rev()
+        .take(20)
+        .map(str::to_owned)
+        .collect();
+    Err(Error::ffmpeg(
+        "ffmpeg",
+        output.status.code(),
+        friendly_ffmpeg_error(&lines, output.status.code().unwrap_or(-1)),
+    ))
 }
 
 #[must_use]

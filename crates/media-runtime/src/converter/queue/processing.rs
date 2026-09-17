@@ -1,34 +1,47 @@
 //! Private staged exports. Every expected stream and duration is checked before
 //! no-replace publication. Published files and originals are never error cleanup.
 //! Split publication is per-file, not an all-files atomic transaction.
+use super::job::run_job;
+use super::receipts::{self, Receipt};
+use super::support::{available_disk_space, ensure_entry_probed, segment_output_path};
+use super::validation::{Expectation, validate_output_cancellable, validate_ranges};
+use super::{ConversionQueueEntry, ConversionResumeContext, QueueMessage, SegmentOutputMode};
 use crate::cast::gpu::{GpuDevice, GpuType};
 use crate::converter::ffmpeg::{FfmpegJob, GpuStage, TrimRange};
 use crate::converter::profiles::Profile;
 use crate::converter::{ffmpeg::progress, subtitle};
-use crate::i18n::i18n;
-use log::{info, warn};
-use std::path::{Path, PathBuf};
-use std::sync::{Arc, atomic::{AtomicBool, Ordering}};
-use std::time::Duration;
-use big_os_kit::subprocess::{BigSubprocessSpec, BigSubprocessOutputMode};
-use big_os_kit::storage::StagedFile;
-use super::receipts::{self, Receipt};
-use super::job::run_job;
-use super::support::{available_disk_space, ensure_entry_probed, segment_output_path};
-use super::{ConversionQueueEntry, ConversionResumeContext, QueueMessage, SegmentOutputMode};
 use crate::error::{Error, Result};
-use super::validation::{Expectation, validate_ranges, validate_output_cancellable};
+use crate::i18n::i18n;
+use big_os_kit::storage::StagedFile;
+use big_os_kit::subprocess::{BigSubprocessOutputMode, BigSubprocessSpec};
+use log::warn;
+use std::path::{Path, PathBuf};
+use std::sync::{
+    Arc,
+    atomic::{AtomicBool, Ordering},
+};
+use std::time::Duration;
 
 // Pre-flight: 1.5× input as headroom. Indeterminate size/space → let
 // ffmpeg fail later instead of blocking here.
 fn require_disk_space(entry: &ConversionQueueEntry) -> Result<()> {
-    let Some(parent) = entry.output.parent() else { return Ok(()); };
+    let Some(parent) = entry.output.parent() else {
+        return Ok(());
+    };
     let input = std::fs::metadata(&entry.input)?;
     let needed = input.len().saturating_add(input.len() / 2);
-    let Some(available) = available_disk_space(parent) else { return Ok(()); };
+    let Some(available) = available_disk_space(parent) else {
+        return Ok(());
+    };
     if available < needed {
-        return Err(failure(&format!("{}: {} ~{}, {} {}", i18n("Insufficient disk space"),
-            i18n("need"), decimal_compact(needed), i18n("available"), decimal_compact(available))));
+        return Err(failure(&format!(
+            "{}: {} ~{}, {} {}",
+            i18n("Insufficient disk space"),
+            i18n("need"),
+            decimal_compact(needed),
+            i18n("available"),
+            decimal_compact(available)
+        )));
     }
     Ok(())
 }
@@ -71,43 +84,85 @@ fn resolve_final_outputs(
         .collect()
 }
 
-
-fn recheck_plan(entry: &ConversionQueueEntry, profile: &Profile, segments: &[TrimRange], source: &str,
-    expected_plan: &str, audio_only: bool, cancel: &AtomicBool) -> Result<()> {
-    if cancel.load(Ordering::Acquire) { return Err(Error::Cancelled); }
-    if receipts::hash_file(&entry.input, cancel)? != source ||
-        receipts::plan(entry, profile, segments, source, audio_only, cancel)? != expected_plan {
-        return Err(failure(&i18n("The source or external subtitles changed. Existing exports were kept; review the plan again.")));
+fn recheck_plan(
+    entry: &ConversionQueueEntry,
+    profile: &Profile,
+    segments: &[TrimRange],
+    source: &str,
+    expected_plan: &str,
+    audio_only: bool,
+    cancel: &AtomicBool,
+) -> Result<()> {
+    if cancel.load(Ordering::Acquire) {
+        return Err(Error::Cancelled);
+    }
+    if receipts::hash_file(&entry.input, cancel)? != source
+        || receipts::plan(entry, profile, segments, source, audio_only, cancel)? != expected_plan
+    {
+        return Err(failure(&i18n(
+            "The source or external subtitles changed. Existing exports were kept; review the plan again.",
+        )));
     }
     Ok(())
 }
 
-fn failure(message: &str) -> Error { Error::ffmpeg("ffmpeg", None, message.to_owned()) }
+fn failure(message: &str) -> Error {
+    Error::ffmpeg("ffmpeg", None, message.to_owned())
+}
 
-fn convert_one(entry: &mut ConversionQueueEntry, profile: &Profile, gpu: &GpuDevice,
-    cancel: &Arc<AtomicBool>, sender: &async_channel::Sender<QueueMessage>, audio_only: bool, resume: bool) -> Result<()> {
-    if cancel.load(Ordering::Acquire) { return Err(Error::Cancelled); }
+fn convert_one(
+    entry: &mut ConversionQueueEntry,
+    profile: &Profile,
+    gpu: &GpuDevice,
+    cancel: &Arc<AtomicBool>,
+    sender: &async_channel::Sender<QueueMessage>,
+    audio_only: bool,
+    resume: bool,
+) -> Result<()> {
+    if cancel.load(Ordering::Acquire) {
+        return Err(Error::Cancelled);
+    }
     ensure_entry_probed(entry, &profile.video.codec);
     let source = std::fs::metadata(&entry.input)?;
-    if !source.is_file() { return Err(failure(&i18n("Export requires a regular local source file"))); }
+    if !source.is_file() {
+        return Err(failure(&i18n(
+            "Export requires a regular local source file",
+        )));
+    }
     let source_hash = receipts::hash_file(&entry.input, cancel)?;
     let input = progress::probe_media_metadata_cancellable(&entry.input, cancel)?;
-    entry.duration_secs = super::validation::number(input.pointer("/format/duration")).filter(|n| *n > 0.0).unwrap_or(0.0);
+    entry.duration_secs = super::validation::number(input.pointer("/format/duration"))
+        .filter(|n| *n > 0.0)
+        .unwrap_or(0.0);
     // Probe failure is not an empty successful media record.
-    let segments = if entry.segments.is_empty() { vec![TrimRange::default()] } else { entry.segments.clone() };
+    let segments = if entry.segments.is_empty() {
+        vec![TrimRange::default()]
+    } else {
+        entry.segments.clone()
+    };
     validate_ranges(&segments, entry.duration_secs)?;
     let speed = profile.audio.effects.speed;
     if !speed.is_finite() || !(0.25..=4.0).contains(&speed) {
         return Err(failure(&i18n("Choose a playback speed between 0.25 and 4")));
     }
     if !audio_only && profile.audio.handling != "none" && (speed - 1.0).abs() > 0.001 {
-        return Err(failure(&i18n("Changing audio speed in a video needs matching video timing; use normal speed or audio-only export")));
+        return Err(failure(&i18n(
+            "Changing audio speed in a video needs matching video timing; use normal speed or audio-only export",
+        )));
     }
     let needs_concat = segments.len() > 1 && entry.segment_mode == SegmentOutputMode::Join;
     let split = entry.segment_mode == SegmentOutputMode::Split;
     let finals = resolve_final_outputs(entry, segments.len(), needs_concat, split);
-    if finals.len() > 128 { return Err(failure(&i18n("Export at most 128 separate outputs per job."))); }
-    let parent = entry.output.parent().filter(|p| !p.as_os_str().is_empty()).unwrap_or(Path::new("."));
+    if finals.len() > 128 {
+        return Err(failure(&i18n(
+            "Export at most 128 separate outputs per job.",
+        )));
+    }
+    let parent = entry
+        .output
+        .parent()
+        .filter(|p| !p.as_os_str().is_empty())
+        .unwrap_or(Path::new("."));
     std::fs::create_dir_all(parent)?;
     let subtitles = subtitle::probe_subtitles(&entry.input);
     let fingerprint = receipts::plan(entry, profile, &segments, &source_hash, audio_only, cancel)?;
@@ -117,15 +172,24 @@ fn convert_one(entry: &mut ConversionQueueEntry, profile: &Profile, gpu: &GpuDev
     for segment in &segments {
         let mut expected = base_expectation.clone();
         expected.duration = segment.effective_duration(entry.duration_secs);
-        if audio_only && profile.audio.handling != "copy" { expected.duration /= speed; }
+        if audio_only && profile.audio.handling != "copy" {
+            expected.duration /= speed;
+        }
         expected_total += expected.duration;
-        if !expected_total.is_finite() { return Err(failure(&i18n("Invalid total export duration"))); }
+        if !expected_total.is_finite() {
+            return Err(failure(&i18n("Invalid total export duration")));
+        }
         expectations.push(expected);
     }
     let output_expectations = if needs_concat {
-        let mut expected = base_expectation.clone(); expected.duration = expected_total; vec![expected]
-    } else { expectations.clone() };
-    let mut receipts = Vec::new(); let mut reused = Vec::new();
+        let mut expected = base_expectation.clone();
+        expected.duration = expected_total;
+        vec![expected]
+    } else {
+        expectations.clone()
+    };
+    let mut receipts = Vec::new();
+    let mut reused = Vec::new();
     // Hold all per-output locks before conversion; this also rejects duplicate
     // target names without doing expensive conversion work.
     for (target, expected) in finals.iter().zip(&output_expectations) {
@@ -134,44 +198,82 @@ fn convert_one(entry: &mut ConversionQueueEntry, profile: &Profile, gpu: &GpuDev
         receipts.push(receipt);
     }
     if reused.iter().all(|&done| done) {
-        recheck_plan(entry, profile, &segments, &source_hash, &fingerprint, audio_only, cancel)?;
-        let _ = sender.try_send(QueueMessage::StderrLine { entry_id: entry.id,
-            line: i18n("Verified completed export reused: source, plan and output receipts match.") });
+        recheck_plan(
+            entry,
+            profile,
+            &segments,
+            &source_hash,
+            &fingerprint,
+            audio_only,
+            cancel,
+        )?;
+        let _ = sender.try_send(QueueMessage::StderrLine {
+            entry_id: entry.id,
+            line: i18n("Verified completed export reused: source, plan and output receipts match."),
+        });
         return Ok(());
     }
     require_disk_space(entry)?;
     let stages = build_stage_list(gpu);
     let mut temporary = Vec::new();
     for (index, segment) in segments.iter().enumerate() {
-        if cancel.load(Ordering::Acquire) { return Err(Error::Cancelled); }
-        if split && reused[index] { continue; }
+        if cancel.load(Ordering::Acquire) {
+            return Err(Error::Cancelled);
+        }
+        if split && reused[index] {
+            continue;
+        }
         let desired = if split { &finals[index] } else { &entry.output };
         let stage = StagedFile::new(desired)?;
         let expectation = &expectations[index];
         let mut last = None;
         let mut success = false;
         for (attempt, (gpu_stage, device)) in stages.iter().enumerate() {
-            if cancel.load(Ordering::Acquire) { return Err(Error::Cancelled); }
+            if cancel.load(Ordering::Acquire) {
+                return Err(Error::Cancelled);
+            }
             if attempt > 0 {
-                let name = match gpu_stage { GpuStage::FullGpu => "full-gpu", GpuStage::PartialGpu => "partial-gpu", GpuStage::Software => "software" };
-                let _ = sender.try_send(QueueMessage::GpuFallback { entry_id: entry.id, stage: name });
+                let name = match gpu_stage {
+                    GpuStage::FullGpu => "full-gpu",
+                    GpuStage::PartialGpu => "partial-gpu",
+                    GpuStage::Software => "software",
+                };
+                let _ = sender.try_send(QueueMessage::GpuFallback {
+                    entry_id: entry.id,
+                    stage: name,
+                });
             }
             let job = FfmpegJob {
-                input: entry.input.clone(), output: stage.path().to_path_buf(),
-                profile: profile.clone(), gpu: device.clone(), stage: *gpu_stage,
-                trim: segment.clone(), subtitle: entry.subtitle.clone(),
-                audio_track: entry.audio_track, video_track: entry.video_track,
-                crop: entry.crop.clone(), video_overrides: entry.video_overrides.clone(),
-                input_audio_channels: entry.input_audio_channels, subtitle_streams: subtitles.clone(),
-                skip_video_filters: entry.skip_video_filters, audio_only,
+                input: entry.input.clone(),
+                output: stage.path().to_path_buf(),
+                profile: profile.clone(),
+                gpu: device.clone(),
+                stage: *gpu_stage,
+                trim: segment.clone(),
+                subtitle: entry.subtitle.clone(),
+                audio_track: entry.audio_track,
+                video_track: entry.video_track,
+                crop: entry.crop.clone(),
+                video_overrides: entry.video_overrides.clone(),
+                input_audio_channels: entry.input_audio_channels,
+                subtitle_streams: subtitles.clone(),
+                skip_video_filters: entry.skip_video_filters,
+                audio_only,
             };
-            match run_job(&job, entry, cancel, sender).and_then(|()| validate_output_cancellable(stage.path(), expectation, cancel)) {
-                Ok(()) => { success = true; break; }
+            match run_job(&job, entry, cancel, sender)
+                .and_then(|()| validate_output_cancellable(stage.path(), expectation, cancel))
+            {
+                Ok(()) => {
+                    success = true;
+                    break;
+                }
                 Err(Error::Cancelled) => return Err(Error::Cancelled),
                 Err(error) => last = Some(error),
             }
         }
-        if !success { return Err(last.unwrap_or_else(|| failure(&i18n("No conversion stage completed")))); }
+        if !success {
+            return Err(last.unwrap_or_else(|| failure(&i18n("No conversion stage completed"))));
+        }
         temporary.push((index, stage));
     }
     let mut publications = Vec::new();
@@ -185,39 +287,70 @@ fn convert_one(entry: &mut ConversionQueueEntry, profile: &Profile, gpu: &GpuDev
         publications.extend(temporary);
     }
     let after = std::fs::metadata(&entry.input)?;
-    #[cfg(unix)] {
+    #[cfg(unix)]
+    {
         use std::os::unix::fs::MetadataExt;
         if source.dev() != after.dev() || source.ino() != after.ino() {
-            return Err(failure(&i18n("Source was replaced during export; no result was published")));
+            return Err(failure(&i18n(
+                "Source was replaced during export; no result was published",
+            )));
         }
     }
     if source.len() != after.len() || source.modified()? != after.modified()? {
-        return Err(failure(&i18n("Source changed during export; no result was published")));
+        return Err(failure(&i18n(
+            "Source changed during export; no result was published",
+        )));
     }
-    recheck_plan(entry, profile, &segments, &source_hash, &fingerprint, audio_only, cancel)?;
+    recheck_plan(
+        entry,
+        profile,
+        &segments,
+        &source_hash,
+        &fingerprint,
+        audio_only,
+        cancel,
+    )?;
     for (index, stage) in publications {
-        if cancel.load(Ordering::Acquire) { return Err(Error::Cancelled); }
+        if cancel.load(Ordering::Acquire) {
+            return Err(Error::Cancelled);
+        }
         receipts[index].publish(&stage, cancel)?;
     }
     Ok(())
 }
 
-pub(crate) fn run_conversion_queue_worker(mut items: Vec<ConversionQueueEntry>, profile: &Profile,
-    gpu: &GpuDevice, cancel: &Arc<AtomicBool>, sender: &async_channel::Sender<QueueMessage>,
-    resume_context: Option<ConversionResumeContext>, delete_source: bool, audio_only_mode: bool) {
+pub(crate) fn run_conversion_queue_worker(
+    mut items: Vec<ConversionQueueEntry>,
+    profile: &Profile,
+    gpu: &GpuDevice,
+    cancel: &Arc<AtomicBool>,
+    sender: &async_channel::Sender<QueueMessage>,
+    resume_context: Option<ConversionResumeContext>,
+    delete_source: bool,
+    audio_only_mode: bool,
+) {
     // Resume is allowed only through exact persistent receipts. The namespace
     // is a policy marker; it is not substituted for source or output digests.
-    let resume = resume_context.as_ref().is_some_and(|context| context.job_key == "verified-receipt-v1");
+    let resume = resume_context
+        .as_ref()
+        .is_some_and(|context| context.job_key == "verified-receipt-v1");
     if delete_source {
-        let _ = sender.send_blocking(QueueMessage::StderrLine { entry_id: 0,
-            line: i18n("Originals are kept. Verify the exported files before deleting anything.") });
+        let _ = sender.send_blocking(QueueMessage::StderrLine {
+            entry_id: 0,
+            line: i18n("Originals are kept. Verify the exported files before deleting anything."),
+        });
     }
     for entry in &mut items {
-        if cancel.load(Ordering::Acquire) { break; }
+        if cancel.load(Ordering::Acquire) {
+            break;
+        }
         match convert_one(entry, profile, gpu, cancel, sender, audio_only_mode, resume) {
-            Ok(()) => { let _ = sender.send_blocking(QueueMessage::Done { entry_id: entry.id }); }
+            Ok(()) => {
+                let _ = sender.send_blocking(QueueMessage::Done { entry_id: entry.id });
+            }
             Err(Error::Cancelled) => {
-                let _ = sender.send_blocking(QueueMessage::Cancelled { entry_id: entry.id }); break;
+                let _ = sender.send_blocking(QueueMessage::Cancelled { entry_id: entry.id });
+                break;
             }
             Err(error) => {
                 warn!("Export did not complete: {error}");
@@ -229,28 +362,62 @@ pub(crate) fn run_conversion_queue_worker(mut items: Vec<ConversionQueueEntry>, 
 }
 
 fn concat_line(path: &Path) -> Result<String> {
-    let path = path.to_str().ok_or_else(|| failure(&i18n("This concat list needs UTF-8 paths")))?;
-    if path.bytes().any(|b| matches!(b, 0 | b'\r' | b'\n')) { return Err(failure(&i18n("Invalid concat path"))); }
+    let path = path
+        .to_str()
+        .ok_or_else(|| failure(&i18n("This concat list needs UTF-8 paths")))?;
+    if path.bytes().any(|b| matches!(b, 0 | b'\r' | b'\n')) {
+        return Err(failure(&i18n("Invalid concat path")));
+    }
     Ok(format!("file '{}'\n", path.replace('\'', "'\\''")))
 }
-fn concat_segments(segments: &[(usize, StagedFile)], output: &Path, cancel: &AtomicBool) -> Result<()> {
+fn concat_segments(
+    segments: &[(usize, StagedFile)],
+    output: &Path,
+    cancel: &AtomicBool,
+) -> Result<()> {
     use std::io::Write;
     let list = StagedFile::new(&output.with_file_name("concat.ffconcat"))?;
     {
-        let mut file = std::fs::OpenOptions::new().write(true).truncate(true).open(list.path())?;
-        for (_, segment) in segments { file.write_all(concat_line(&std::fs::canonicalize(segment.path())?)?.as_bytes())?; }
+        let mut file = std::fs::OpenOptions::new()
+            .write(true)
+            .truncate(true)
+            .open(list.path())?;
+        for (_, segment) in segments {
+            file.write_all(concat_line(&std::fs::canonicalize(segment.path())?)?.as_bytes())?;
+        }
     }
     // The files already contain per-segment timing/subtitle selection. Mapping
     // all streams from the concat demuxer avoids duplicate manually merged subs.
-    let result = BigSubprocessSpec::builder().program("ffmpeg")
-        .args(["-nostdin", "-hide_banner", "-loglevel", "error", "-y", "-f", "concat", "-safe", "0", "-i"])
-        .arg(list.path()).args(["-map", "0", "-c", "copy", "--"]).arg(output)
-        .stdout(BigSubprocessOutputMode::Null).timeout(Duration::from_secs(2 * 60 * 60)).build()
-        .run_cancellable(cancel).map_err(|e| match e {
+    let result = BigSubprocessSpec::builder()
+        .program("ffmpeg")
+        .args([
+            "-nostdin",
+            "-hide_banner",
+            "-loglevel",
+            "error",
+            "-y",
+            "-f",
+            "concat",
+            "-safe",
+            "0",
+            "-i",
+        ])
+        .arg(list.path())
+        .args(["-map", "0", "-c", "copy", "--"])
+        .arg(output)
+        .stdout(BigSubprocessOutputMode::Null)
+        .timeout(Duration::from_hours(2))
+        .build()
+        .run_cancellable(cancel)
+        .map_err(|e| match e {
             big_os_kit::subprocess::BigSubprocessError::Cancelled => Error::Cancelled,
             _ => failure(&i18n("Could not complete concatenation")),
         })?;
-    if result.status.success() { Ok(()) } else { Err(failure(&i18n("Could not complete concatenation"))) }
+    if result.status.success() {
+        Ok(())
+    } else {
+        Err(failure(&i18n("Could not complete concatenation")))
+    }
 }
 
 #[cfg(test)]

@@ -253,7 +253,10 @@ impl CastSessionController {
             });
         }
 
-        info!("Cast switched to {}", big_os_kit::url::MediaLogTarget(&new_file_path));
+        info!(
+            "Cast switched to {}",
+            big_os_kit::url::MediaLogTarget(new_file_path)
+        );
         Ok(())
     }
 }

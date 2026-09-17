@@ -1,7 +1,7 @@
 //! Database query functions — CRUD operations for tracks, playlists,
 //! watch folders, smart playlists, and play history.
 
-use rusqlite::{Connection, Row, OptionalExtension, params};
+use rusqlite::{Connection, OptionalExtension, Row, params};
 
 use super::models::{Playlist, Track, WatchFolder};
 
@@ -253,12 +253,16 @@ pub fn create_playlist(conn: &Connection, name: &str) -> crate::Result<i64> {
 /// Create a whole playlist in one transaction: all tracks, or no new playlist.
 /// Duplicate ids in a queue are collapsed in first-occurrence order because the
 /// persisted playlist schema permits one entry per track. No nested transaction.
-pub fn create_playlist_with_tracks(conn: &Connection, name: &str, ids: &[i64]) -> crate::Result<i64> {
+pub fn create_playlist_with_tracks(
+    conn: &Connection,
+    name: &str,
+    ids: &[i64],
+) -> crate::Result<i64> {
     let tx = conn.unchecked_transaction()?;
     let playlist_id = create_playlist(&tx, name)?;
     {
         let mut statement = tx.prepare(
-            "INSERT INTO playlist_tracks (playlist_id, track_id, position) VALUES (?1, ?2, ?3)"
+            "INSERT INTO playlist_tracks (playlist_id, track_id, position) VALUES (?1, ?2, ?3)",
         )?;
         let mut seen = std::collections::HashSet::new();
         let mut position = 0_i64;
@@ -338,7 +342,10 @@ pub fn rename_playlist(conn: &Connection, playlist_id: i64, new_name: &str) -> c
 
 pub fn delete_playlist(conn: &Connection, playlist_id: i64) -> crate::Result<()> {
     let tx = conn.unchecked_transaction()?;
-    tx.execute("DELETE FROM playlist_tracks WHERE playlist_id = ?1", params![playlist_id])?;
+    tx.execute(
+        "DELETE FROM playlist_tracks WHERE playlist_id = ?1",
+        params![playlist_id],
+    )?;
     tx.execute("DELETE FROM playlists WHERE id = ?1", params![playlist_id])?;
     tx.commit()?;
     Ok(())
@@ -641,7 +648,9 @@ mod playlist_atomicity_tests {
         let conn = database();
         assert!(create_playlist_with_tracks(&conn, "Failed", &[1, 999999]).is_err());
         assert!(get_all_playlists(&conn).unwrap().is_empty());
-        let count: i64 = conn.query_row("SELECT COUNT(*) FROM playlist_tracks", [], |r| r.get(0)).unwrap();
+        let count: i64 = conn
+            .query_row("SELECT COUNT(*) FROM playlist_tracks", [], |r| r.get(0))
+            .unwrap();
         assert_eq!(count, 0);
     }
 
@@ -649,7 +658,11 @@ mod playlist_atomicity_tests {
     fn batch_keeps_first_occurrence_order_and_one_row_per_track() {
         let conn = database();
         let id = create_playlist_with_tracks(&conn, "Saved", &[2, 1, 2]).unwrap();
-        let ids: Vec<_> = get_playlist_tracks(&conn, id).unwrap().iter().map(|t| t.id).collect();
+        let ids: Vec<_> = get_playlist_tracks(&conn, id)
+            .unwrap()
+            .iter()
+            .map(|t| t.id)
+            .collect();
         assert_eq!(ids, [2, 1]);
     }
 
@@ -657,8 +670,11 @@ mod playlist_atomicity_tests {
     fn failed_delete_keeps_playlist_and_membership() {
         let conn = database();
         let id = create_playlist_with_tracks(&conn, "Kept", &[1, 2]).unwrap();
-        conn.execute_batch("CREATE TRIGGER block_delete BEFORE DELETE ON playlists
-            BEGIN SELECT RAISE(ABORT, 'injected failure'); END;").unwrap();
+        conn.execute_batch(
+            "CREATE TRIGGER block_delete BEFORE DELETE ON playlists
+            BEGIN SELECT RAISE(ABORT, 'injected failure'); END;",
+        )
+        .unwrap();
         assert!(delete_playlist(&conn, id).is_err());
         assert_eq!(get_playlist_tracks(&conn, id).unwrap().len(), 2);
         assert_eq!(get_all_playlists(&conn).unwrap().len(), 1);

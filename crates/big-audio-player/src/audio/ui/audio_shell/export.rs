@@ -247,9 +247,12 @@ impl AudioShell {
             .build();
         group.add(format_row.root());
         group.add(output_row.root());
-        let resume_note=gtk::Label::new(Some(&i18n("Retrying this export reuses only complete files whose source, settings and contents match their saved receipts. Other existing files are never replaced. Keep the receipts beside the outputs.")));
-        resume_note.set_wrap(true);resume_note.set_xalign(0.0);group.add(&resume_note);
-
+        let resume_note = gtk::Label::new(Some(&i18n(
+            "Retrying this export reuses only complete files whose source, settings and contents match their saved receipts. Other existing files are never replaced. Keep the receipts beside the outputs.",
+        )));
+        resume_note.set_wrap(true);
+        resume_note.set_xalign(0.0);
+        group.add(&resume_note);
 
         let dialog = adw::Dialog::builder()
             .title(i18n("Export Cuts"))
@@ -382,11 +385,17 @@ impl AudioShell {
 }
 
 fn local_input_path(input: &str) -> Option<PathBuf> {
-    if input.trim().is_empty() { return None; }
+    if input.trim().is_empty() {
+        return None;
+    }
     if let Some((scheme, rest)) = input.split_once("://") {
-        if !scheme.eq_ignore_ascii_case("file") { return None; }
+        if !scheme.eq_ignore_ascii_case("file") {
+            return None;
+        }
         let authority = rest.split('/').next()?;
-        if !authority.is_empty() && !authority.eq_ignore_ascii_case("localhost") { return None; }
+        if !authority.is_empty() && !authority.eq_ignore_ascii_case("localhost") {
+            return None;
+        }
         use gtk::gio::prelude::FileExt;
         return gtk::gio::File::for_uri(input).path();
     }
@@ -414,24 +423,36 @@ fn run_segment_export_blocking(
     loop {
         match queue.receiver().recv_blocking() {
             Ok(QueueMessage::Done { entry_id }) if entry_id == id => completed = true,
-            Ok(QueueMessage::Cancelled { entry_id }) if entry_id == id => return Err(i18n("Export cancelled")),
+            Ok(QueueMessage::Cancelled { entry_id }) if entry_id == id => {
+                return Err(i18n("Export cancelled"));
+            }
             Ok(QueueMessage::Failed { entry_id, error }) if entry_id == id => return Err(error),
             Ok(QueueMessage::AllDone) => {
-                if !completed { return Err(i18n("The export ended without a completed result")); }
+                if !completed {
+                    return Err(i18n("The export ended without a completed result"));
+                }
                 // Split output has no file at the joined output name. Report the
                 // directory containing the separately validated/published files.
                 let result = if split && segments.len() > 1 {
-                    output.parent().unwrap_or(std::path::Path::new(".")).to_path_buf()
-                } else { output };
-                let metadata = std::fs::metadata(&result).map_err(|_| i18n("Could not verify exported files"))?;
+                    output
+                        .parent()
+                        .unwrap_or(std::path::Path::new("."))
+                        .to_path_buf()
+                } else {
+                    output
+                };
+                let metadata = std::fs::metadata(&result)
+                    .map_err(|_| i18n("Could not verify exported files"))?;
                 if split && segments.len() > 1 {
-                    if !metadata.is_dir() { return Err(i18n("Could not verify exported files")); }
+                    if !metadata.is_dir() {
+                        return Err(i18n("Could not verify exported files"));
+                    }
                 } else if !metadata.is_file() || metadata.len() == 0 {
                     return Err(i18n("Could not verify exported files"));
                 }
                 return Ok(result);
             }
-            Ok(_) => {},
+            Ok(_) => {}
             Err(_) => return Err(i18n("The export worker stopped before completion")),
         }
     }
