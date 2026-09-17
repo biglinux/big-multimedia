@@ -30,6 +30,7 @@ pub fn skip_mpv_render() -> bool {
     })
 }
 
+#[cfg(feature = "video")]
 pub(crate) fn is_proprietary_nvidia_session() -> bool {
     use std::sync::OnceLock;
     static IS_NVIDIA: OnceLock<bool> = OnceLock::new();
@@ -48,6 +49,7 @@ pub(crate) fn is_proprietary_nvidia_session() -> bool {
     })
 }
 
+#[cfg(feature = "video")]
 fn env_value_names_nvidia_driver(value: &str) -> bool {
     value.to_ascii_lowercase().contains("nvidia")
 }

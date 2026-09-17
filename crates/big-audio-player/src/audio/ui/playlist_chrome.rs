@@ -12,7 +12,7 @@ use big_relm4_components::input::button_content::{BigButtonContentSpec, build_bu
 use big_relm4_components::layout::{
     dialog_footer::{BigDialogFooter, BigDialogFooterSpec},
     dialog_page::BigDialogPage,
-    hamburger_menu::{BigHamburgerMenuSpec, BigMenuActionItem, build_flat_action_popover_button},
+    hamburger_menu::{BigHamburgerMenuSpec, BigMenuActionItem, build_hamburger_menu_button},
     preferences::BigPreferencesGroupSpec,
     toolbar_pane::{BigToolbarHeader, BigToolbarHeaderSpec},
 };
@@ -97,12 +97,15 @@ pub(super) fn build_toolbar(
     );
 
     let main_menu_label = i18n("Main Menu");
-    let menu_button = build_flat_action_popover_button(
-        &BigHamburgerMenuSpec::new(main_menu_label).items(main_menu_items()),
+    // Standard Adwaita header hamburger: a flat GtkMenuButton owning its popover
+    // for its whole life, like the converter header bar.
+    let menu_button = build_hamburger_menu_button(
+        &BigHamburgerMenuSpec::new(main_menu_label)
+            .css_classes(["flat"])
+            .items(main_menu_items()),
     );
-    let menu_root = menu_button.root().clone();
-    install_queue_menu_actions(menu_button.button(), sender);
-    bar.pack_end(&menu_root);
+    install_queue_menu_actions(&menu_button, sender);
+    bar.pack_end(&menu_button);
 
     (bar.into_root(), header_label)
 }
@@ -133,7 +136,10 @@ fn main_menu_items() -> Vec<BigMenuActionItem> {
     items
 }
 
-fn install_queue_menu_actions(menu_button: &gtk::Button, sender: &ComponentSender<PlaylistPanel>) {
+fn install_queue_menu_actions(
+    menu_button: &gtk::MenuButton,
+    sender: &ComponentSender<PlaylistPanel>,
+) {
     let actions = gio::SimpleActionGroup::new();
 
     {
