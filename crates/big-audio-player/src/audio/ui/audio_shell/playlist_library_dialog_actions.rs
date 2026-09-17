@@ -182,7 +182,7 @@ impl AudioShell {
         let Some(db) = self.db_read.clone().or_else(|| self.db.clone()) else {
             return;
         };
-        let parent = self.window();
+        let parent = self.playlist_library_parent();
         let weak_parent = parent.as_ref().map(glib::object::ObjectExt::downgrade);
         FilePicker::open_folder(i18n("Export All Playlists")).select_folder_optional(parent.as_ref(), move |folder| {
             crate::settings::acknowledged_task(false, move || {
@@ -244,7 +244,7 @@ impl AudioShell {
         let Some(db) = self.db_read.clone().or_else(|| self.db.clone()) else {
             return;
         };
-        let parent = self.window();
+        let parent = self.playlist_library_parent();
         let weak_parent = parent.as_ref().map(glib::object::ObjectExt::downgrade);
         FilePicker::save_file(i18n("Export Playlist")).initial_name("playlist.m3u8")
             .filter(&i18n("M3U8 Playlist"), &["m3u8", "m3u"]).save_optional(parent.as_ref(), move |path| {

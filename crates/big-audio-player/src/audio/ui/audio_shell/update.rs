@@ -74,6 +74,9 @@ impl AudioShell {
                     self.scan_slot.0.borrow_mut().take();
                 }
                 self.rebuild_library_tree(&sender);
+                // An import changes which tracks a playlist can offer, so the
+                // open dialog goes stale exactly as it does after `ScanFinished`.
+                self.refresh_playlist_dialog_entries(&sender);
                 let status = if report.cancelled {
                     i18n("Scan cancelled. Earlier confirmed imports were kept.")
                 } else if report.failed {

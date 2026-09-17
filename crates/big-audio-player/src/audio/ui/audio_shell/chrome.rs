@@ -66,6 +66,17 @@ impl AudioShell {
             .and_downcast::<gtk::Window>()
     }
 
+    /// Parent for feedback raised by a playlist-library action. That library is
+    /// its own modal `adw::Window`, so an alert parented to the main window is
+    /// created and announced but stays underneath it, unseen and undismissable.
+    pub(super) fn playlist_library_parent(&self) -> Option<gtk::Window> {
+        let library = self.playlist_library_dialog.widget();
+        if library.is_visible() {
+            return Some(library.clone().upcast());
+        }
+        self.window()
+    }
+
     /// Bundled illustration loader (audio-player gresource path).
     pub(super) fn illustration(filename: &str) -> gtk::Image {
         crate::shared::ui_helpers::illustration(
