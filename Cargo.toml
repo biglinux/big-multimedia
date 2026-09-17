@@ -40,13 +40,6 @@ homepage = "https://github.com/biglinux/big-multimedia"
 authors = ["BigLinux contributors"]
 
 [workspace.dependencies]
-# Replaces glibc malloc process-wide (unprefixed: GTK/GLib/mpv allocate through
-# it too, not only the Rust heap). glibc fragments badly under the many-small,
-# many-thread allocation pattern GTK and the media stack produce.
-# `disable_initial_exec_tls` is required, not optional: GTK modules, libmpv and
-# the GL drivers all dlopen, and jemalloc built with initial-exec TLS then fails
-# its first allocation inside a dlopen'd library ("failed to allocate 8 bytes").
-tikv-jemallocator = { version = "0.7", features = ["disable_initial_exec_tls"] }
 adw = { version = "0.9", features = ["v1_9"], package = "libadwaita" }
 gtk = { version = "0.11", features = ["v4_22"], package = "gtk4" }
 relm4 = { version = "0.11.0", features = ["libadwaita"] }

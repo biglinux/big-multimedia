@@ -168,11 +168,10 @@ fn nvidia_proprietary_driver_in_use() -> bool {
 /// then run the GTK application. Returns the process exit code.
 #[must_use]
 pub fn run() -> gtk::glib::ExitCode {
-    // Stays on glibc malloc: its mmap threshold returns the large, short-lived
-    // decode buffers to the OS on free. jemalloc measured 106 MB worse here.
+    // Only reached when the app was NOT started through `big-jemalloc-run` (or
+    // when jemalloc is absent): the desktop entries preload it, and a preloaded
+    // allocator ignores these. Keeps the direct-from-a-shell path sane.
     shared::app_base::tune_allocator();
-    // Cap malloc arenas before any threads spawn — curbs per-thread arena
-    // retention from media worker threads (decode / probe / image). Large frame
     shared::app_base::init_logging(
         "big_media_runtime=info,big_video_player=info,lofty=error,glycin=error",
     );

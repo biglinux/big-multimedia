@@ -38,10 +38,6 @@ rusqlite = "0.40.1"
 # Keyring payloads are stored as one JSON object per provider.
 serde_json.workspace = true
 
-# glibc malloc only; the allocator is replaced process-wide on gnu targets.
-[target.'cfg(target_env = "gnu")'.dependencies]
-tikv-jemallocator.workspace = true
-
 [lints.clippy]
 pedantic = { level = "warn", priority = -1 }
 # Suppress noisy pedantic lints for GTK projects

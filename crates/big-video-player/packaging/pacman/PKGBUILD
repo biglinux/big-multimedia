@@ -8,7 +8,7 @@
 
 pkgname=big-video-player
 pkgver=0.1.0
-pkgrel=21
+pkgrel=22
 pkgdesc='Hardware-accelerated video player for BigLinux'
 arch=('x86_64')
 url='https://github.com/biglinux/big-multimedia'
@@ -27,6 +27,11 @@ conflicts=('big-player-video' 'bigvideo')
 provides=('bigvideo=0.1.0-7')
 # cmake builds aws-lc-sys (rustls backend pulled in by rust_cast for Chromecast).
 makedepends=('cargo' 'pkgconf' 'gettext' 'cmake')
+# The desktop entry launches through `big-jemalloc-run`, which preloads the
+# patched jemalloc (the C23 free_sized NULL fix GTK4/GLib needs) and keeps it
+# out of child processes. Optional: the runner is a no-op when either piece is
+# missing, and the binary then falls back to glibc malloc.
+optdepends=('big-jemalloc-scope: lower resident memory under GTK4 (measured -26% on the audio player)')
 
 # Absolute path to the big-multimedia workspace root that owns this PKGBUILD.
 _wsroot() {

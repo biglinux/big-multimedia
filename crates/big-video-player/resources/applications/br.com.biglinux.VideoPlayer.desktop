@@ -6,7 +6,8 @@ GenericName=Video Player
 GenericName[pt_BR]=Reprodutor de vídeo
 Comment=Hardware-accelerated video player for BigLinux
 Comment[pt_BR]=Reprodutor de vídeo com aceleração de hardware para o BigLinux
-Exec=big-video-player %F
+Exec=env MALLOC_CONF=narenas:1,dirty_decay_ms:0,muzzy_decay_ms:0,oversize_threshold:131072,retain:false big-jemalloc-run big-video-player %F
+TryExec=big-video-player
 Icon=big-video-player
 Terminal=false
 Categories=AudioVideo;Video;Player;

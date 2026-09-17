@@ -211,8 +211,6 @@ temp-dir
 tempfile
 thiserror
 thiserror-impl
-tikv-jemalloc-sys
-tikv-jemallocator
 tiny_http
 tokio
 tokio-macros
