@@ -27,6 +27,31 @@ pub fn set_bootstrap_env(name: &str, value: &str) {
     }
 }
 
+/// Cap glibc malloc arenas and route large buffers straight to `mmap`.
+///
+/// The video player stays on glibc malloc: measured against jemalloc on one
+/// machine, same session and same 1080p file, glibc held 390 MB Pss against
+/// jemalloc's 496 MB (451 MB with `retain:false`). Decoded-frame buffers are
+/// large and short-lived, which is exactly what `M_MMAP_THRESHOLD` handles well
+/// — they go straight back to the OS on free instead of sitting in an arena.
+/// A caller-set `MALLOC_ARENA_MAX` wins. Call once from `main()` BEFORE any
+/// threads spawn.
+#[cfg(target_env = "gnu")]
+pub fn tune_allocator() {
+    if std::env::var_os("MALLOC_ARENA_MAX").is_some() {
+        return;
+    }
+    // SAFETY: mallopt is a libc bootstrap call; invoked from main() pre-threads.
+    unsafe {
+        libc::mallopt(libc::M_ARENA_MAX, 2);
+        libc::mallopt(libc::M_MMAP_THRESHOLD, 64 * 1024);
+    }
+}
+
+/// No-op on non-glibc targets (mallopt/M_ARENA_MAX are glibc-specific).
+#[cfg(not(target_env = "gnu"))]
+pub fn tune_allocator() {}
+
 pub fn init_logging(default_rust_log: &str) {
     set_default_env("RUST_LOG", default_rust_log);
     env_logger::init();
