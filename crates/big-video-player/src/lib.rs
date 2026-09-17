@@ -61,35 +61,6 @@ pub struct VideoEmbed {
     pub controller: relm4::Controller<video::ui::video_shell::VideoShell>,
 }
 
-/// Mount the video player as a `PaneContent` — a unified-shell media pane
-/// (RESTRUCTURE K2-T5). The shell Root is window-agnostic content (ADR D14), so
-/// this wraps it in a `ControllerPane` carrying the controller as keepalive.
-/// (mpv/GL realize when the content lands in a window; real-hardware GL
-/// validation of playback is still required — see the doc's B4 GL gate.)
-#[must_use]
-pub fn mount_as_pane() -> big_relm4_components::pane::ControllerPane {
-    use big_relm4_components::pane::{ControllerPane, KeyboardNeed};
-    use relm4::{Component, ComponentController};
-
-    embed_boot();
-    let controller = video::ui::video_shell::VideoShell::builder()
-        .launch(video::ui::video_shell::VideoShellMode::Player)
-        .detach();
-    let root = controller.widget().clone();
-    let sender = controller.sender().clone();
-    ControllerPane::new(
-        &root,
-        i18n::i18n("Big Video Player"),
-        KeyboardNeed::OnDemand,
-        controller,
-    )
-    .with_activity(move |activity| {
-        let _ = sender.send(video::ui::video_shell::VideoShellInput::SetPaneActivity(
-            activity,
-        ));
-    })
-}
-
 /// Mount only the mpv-backed video surface as desktop-background content.
 /// This keeps the optimized video render path from the full player but omits
 /// its header, transport controls, welcome screen, sidebar, and window gestures.

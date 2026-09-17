@@ -7,4 +7,3 @@ pub mod equalizer_controls;
 pub mod equalizer_dialog;
 pub mod labels;
 pub mod noise_model_picker;
-pub mod slider_rows;

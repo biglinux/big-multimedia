@@ -91,31 +91,6 @@ fn embed_boot() {
     });
 }
 
-/// Mount the audio player as a `PaneContent` — the unified-shell media pane
-/// (RESTRUCTURE K2-T5, the first concrete media pane). The shell Root is window-
-/// agnostic content (ADR D14), so this wraps it in a `ControllerPane` instead of
-/// a window: the returned pane carries the shell controller as its keepalive
-/// (dropping the pane shuts the shell down) and reports `OnDemand` keyboard need.
-/// A container (`BigPaneTabs`, the background host, …) mounts it like any pane.
-#[must_use]
-pub fn mount_as_pane() -> big_relm4_components::pane::ControllerPane {
-    use big_relm4_components::pane::{ControllerPane, KeyboardNeed};
-    use relm4::{Component, ComponentController};
-
-    embed_boot();
-    let controller = audio::ui::audio_shell::AudioShell::builder()
-        .launch(())
-        .detach();
-    // Clone the root handle so `controller` can move into the pane as the keepalive.
-    let root = controller.widget().clone();
-    ControllerPane::new(
-        &root,
-        i18n::i18n("Big Audio Player"),
-        KeyboardNeed::OnDemand,
-        controller,
-    )
-}
-
 pub fn open_in_application() -> AudioEmbed {
     use gtk::prelude::*;
     use relm4::{Component, ComponentController};

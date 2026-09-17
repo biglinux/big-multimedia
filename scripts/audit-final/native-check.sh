@@ -39,6 +39,11 @@ run_gate unit cargo test --locked --workspace --lib
 run_gate clippy cargo clippy --locked --workspace --all-targets --all-features -- -D warnings
 run_gate full-features cargo check --locked --workspace --all-features --all-targets
 run_gate minimal cargo check --locked --workspace --no-default-features
+# The workspace steps above unify Cargo features and build every target, so a
+# player that no longer compiles in the configuration its package actually ships
+# still passes them. These two mirror the PKGBUILDs instead.
+run_gate audio-package cargo check --locked -p big-audio-player --all-targets
+run_gate video-package cargo check --locked -p big-video-player --all-targets --features chromecast
 run_gate translations msgfmt --check --check-format -o /dev/null crates/media-runtime/po/pt_BR.po
 # Repeat against pristine baseline with identical tools to separate inherited failures.
 # Integration/UI tests require controlled fixtures, display and D-Bus; see guide.

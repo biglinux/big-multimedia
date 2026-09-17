@@ -17,16 +17,6 @@
 //! that turn them into GTK trees live in sibling modules. [`async_surface`] is
 //! the one GTK orchestrator here — it composes those specs into a live surface.
 
-pub mod async_surface;
 pub mod empty;
-pub mod error;
-pub mod loading;
-pub mod retry;
-pub mod skeleton;
 
-pub use async_surface::*;
 pub use empty::*;
-pub use error::*;
-pub use loading::*;
-pub use retry::*;
-pub use skeleton::*;
