@@ -2,29 +2,38 @@
 //! Uses stack-allocated render params for the hot frame path.
 
 use std::ffi::c_void;
+use std::sync::Arc;
+
+use super::MpvBackend;
+
+// A sized allocation provides a stable C userdata pointer to the trait object.
+// Callbacks can execute on mpv threads; never capture GTK objects directly.
+struct UpdateCallback(Box<dyn Fn() + Send + Sync>);
+
+/// Makes the creation GL context current around every render/teardown call.
+type ContextScope = Box<dyn Fn(&mut dyn FnMut())>;
 
 use crate::error::{Error, Result};
 
 pub struct FastRenderContext {
     render_context: *mut mpv_sys::mpv_render_context,
-    update_callback_cleanup: Option<Box<dyn FnOnce()>>,
+    update_callback: Option<Box<UpdateCallback>>,
+    // Dropped AFTER the C render context, including when a widget owns the
+    // last reference. Raw unsafe constructors leave this unset.
+    owner: Option<Arc<MpvBackend>>,
+    context_scope: Option<ContextScope>,
 }
 
-// SAFETY: `mpv_render_context` is documented by libmpv as thread-compatible:
-// it may be moved between threads as long as a single thread calls its
-// non-`set_update_callback` API at a time. We never share a
-// `FastRenderContext` across threads (no `Sync` impl), only transfer
-// ownership. The optional `update_callback_cleanup` closure is itself
-// `FnOnce + 'static` and `Send`-bound by GTK's main-context spawn API
-// used at the call site, so moving the struct does not violate any
-// internal pointer invariant.
-unsafe impl Send for FastRenderContext {}
+// Intentionally !Send / !Sync: rendering and destruction belong to the thread
+// owning the current GL context. The raw C handle must not bypass GTK affinity.
 
 impl FastRenderContext {
     /// # Safety
-    /// `mpv` must be a valid, non-null mpv handle that outlives the returned context.
+    /// `mpv` must be valid, non-null and outlive the returned context. The exact
+    /// creation GL context must be current for every call and destruction unless
+    /// the GTK integration installs a context scope before exposing this wrapper.
     pub unsafe fn new(mpv: *mut mpv_sys::mpv_handle) -> Result<Self> {
-        unsafe { Self::new_with_wayland_display(mpv, None, true) }
+        unsafe { Self::new_with_wayland_display(mpv, None, false) }
     }
 
     /// # Safety
@@ -41,10 +50,8 @@ impl FastRenderContext {
         };
 
         let api_type = b"opengl\0";
-        // Advanced control enables mpv's threaded/offscreen render (needed by the
-        // GraphicsOffload path). It DEADLOCKS on software GL (llvmpipe) in a
-        // plain GtkGLArea, so the GLArea/no-GPU path uses simple mode — matching
-        // Celluloid, which renders fine on llvmpipe.
+        // Advanced control imposes an update-on-every-callback obligation on
+        // the embedding application. It is not a shader/quality preset.
         let mut advanced: i32 = i32::from(advanced_control);
         let mut params = [
             mpv_sys::mpv_render_param {
@@ -55,7 +62,7 @@ impl FastRenderContext {
                 type_: mpv_sys::mpv_render_param_type_MPV_RENDER_PARAM_OPENGL_INIT_PARAMS,
                 data: std::ptr::addr_of!(init_params) as *mut c_void,
             },
-            // Required for user shaders, FBO management, and full libplacebo pipeline.
+            // Enable only for an integration that services all render updates.
             mpv_sys::mpv_render_param {
                 type_: mpv_sys::mpv_render_param_type_MPV_RENDER_PARAM_ADVANCED_CONTROL,
                 data: std::ptr::addr_of_mut!(advanced).cast(),
@@ -86,13 +93,18 @@ impl FastRenderContext {
 
         Ok(Self {
             render_context,
-            update_callback_cleanup: None,
+            update_callback: None,
+            owner: None,
+            context_scope: None,
         })
     }
 
     /// Returns 0 on success, negative mpv error code on failure.
     #[inline]
     pub fn render(&self, fbo: i32, width: i32, height: i32, flip_y: bool) -> i32 {
+        if width <= 0 || height <= 0 {
+            return -4;
+        }
         let mut fbo_struct = mpv_sys::mpv_opengl_fbo {
             fbo,
             w: width,
@@ -117,66 +129,93 @@ impl FastRenderContext {
         ];
 
         // SAFETY: render_context valid; params valid for the synchronous call duration.
-        unsafe { mpv_sys::mpv_render_context_render(self.render_context, params.as_mut_ptr()) }
+        self.with_current(|| unsafe {
+            mpv_sys::mpv_render_context_render(self.render_context, params.as_mut_ptr())
+        })
     }
 
-    /// Improves mpv A/V timing.
+    /// Optional confirmed presentation notification. Do not call when merely
+    /// submitting a paintable or queuing a GTK draw; that is not a page flip.
     #[inline]
     pub fn report_swap(&self) {
-        // SAFETY: render_context valid; report_swap has no preconditions.
-        unsafe { mpv_sys::mpv_render_context_report_swap(self.render_context) }
+        // SAFETY: retained render context; GUI installs its creation-context scope.
+        self.with_current(|| unsafe {
+            mpv_sys::mpv_render_context_report_swap(self.render_context);
+        });
     }
 
     /// `true` when `render()` would produce a different image.
     #[inline]
     pub fn has_new_frame(&self) -> bool {
-        // SAFETY: render_context valid; mpv_render_context_update is thread-safe.
-        let flags = unsafe { mpv_sys::mpv_render_context_update(self.render_context) };
+        // SAFETY: caller is on the owning render thread with its GL context
+        // current. This is NOT callable from the mpv update callback.
+        let flags = self
+            .with_current(|| unsafe { mpv_sys::mpv_render_context_update(self.render_context) });
         (flags & u64::from(mpv_sys::mpv_render_update_flag_MPV_RENDER_UPDATE_FRAME)) != 0
     }
 
     /// Callback fires from an mpv internal thread — do NOT call mpv API from it.
     /// Schedule work on the main thread instead (e.g. `glib::idle_add_once`).
-    pub fn set_update_callback<F: Fn() + Send + 'static>(&mut self, callback: F) {
-        if let Some(cleanup) = self.update_callback_cleanup.take() {
-            cleanup();
-        }
-
-        let raw_callback = Box::into_raw(Box::new(callback));
-        self.update_callback_cleanup = Some(Box::new(move || {
-            // SAFETY: raw_callback came from Box::into_raw above.
-            unsafe { drop(Box::from_raw(raw_callback)) };
-        }));
-
-        // SAFETY: raw_callback points to a valid F that lives until cleanup.
-        unsafe {
-            mpv_sys::mpv_render_context_set_update_callback(
-                self.render_context,
-                Some(update_wrapper::<F>),
-                raw_callback.cast(),
-            );
-        }
-    }
-}
-
-impl Drop for FastRenderContext {
-    fn drop(&mut self) {
-        // Unregister before dropping the callback box so mpv never observes a
-        // stale callback pointer during render-context teardown.
-        unsafe {
+    pub fn set_update_callback<F: Fn() + Send + Sync + 'static>(&mut self, callback: F) {
+        self.with_current(|| unsafe {
             mpv_sys::mpv_render_context_set_update_callback(
                 self.render_context,
                 None,
                 std::ptr::null_mut(),
             );
+        });
+        self.update_callback = Some(Box::new(UpdateCallback(Box::new(callback))));
+        let userdata =
+            std::ptr::from_mut(self.update_callback.as_mut().expect("installed").as_mut()).cast();
+        self.with_current(|| unsafe {
+            mpv_sys::mpv_render_context_set_update_callback(
+                self.render_context,
+                Some(update_wrapper),
+                userdata,
+            );
+        });
+    }
+
+    /// Install the GUI-owned context scope once, before registering callbacks.
+    /// The scope must call its action exactly once and restore the prior context.
+    pub(super) fn set_context_scope(&mut self, scope: impl Fn(&mut dyn FnMut()) + 'static) {
+        self.context_scope = Some(Box::new(scope));
+    }
+
+    fn with_current<T>(&self, action: impl FnOnce() -> T) -> T {
+        // Both closures and their result live on the stack: no per-frame heap allocation.
+        let mut action = Some(action);
+        let mut result = None;
+        let mut run = || {
+            result = Some(action.take().expect("context action called once")());
+        };
+        if let Some(scope) = &self.context_scope {
+            scope(&mut run);
+        } else {
+            run();
         }
-        if let Some(cleanup) = self.update_callback_cleanup.take() {
-            cleanup();
-        }
-        // SAFETY: render_context came from new() and is freed exactly once here.
-        unsafe {
+        result.expect("context scope must invoke its action")
+    }
+
+    pub(super) fn with_owner(mut self, owner: Arc<MpvBackend>) -> Self {
+        self.owner = Some(owner);
+        self
+    }
+}
+
+impl Drop for FastRenderContext {
+    fn drop(&mut self) {
+        // Keep userdata AND core owner alive until native teardown completes.
+        // Unregistration itself is performed with the creation context current.
+        self.with_current(|| unsafe {
+            mpv_sys::mpv_render_context_set_update_callback(
+                self.render_context,
+                None,
+                std::ptr::null_mut(),
+            );
             mpv_sys::mpv_render_context_free(self.render_context);
-        }
+        });
+        self.update_callback.take();
     }
 }
 
@@ -187,12 +226,11 @@ impl Drop for FastRenderContext {
 /// `gdk::MemoryFormat::B8g8r8x8`.
 pub struct SwRenderContext {
     render_context: *mut mpv_sys::mpv_render_context,
-    update_callback_cleanup: Option<Box<dyn FnOnce()>>,
+    update_callback: Option<Box<UpdateCallback>>,
+    // Dropped AFTER the C render context, including when a widget owns the
+    // last reference. Raw unsafe constructors leave this unset.
+    owner: Option<Arc<MpvBackend>>,
 }
-
-// SAFETY: same thread-compatibility contract as `FastRenderContext` — ownership
-// is transferred between threads, never shared (no `Sync`).
-unsafe impl Send for SwRenderContext {}
 
 impl SwRenderContext {
     /// # Safety
@@ -222,7 +260,8 @@ impl SwRenderContext {
         }
         Ok(Self {
             render_context,
-            update_callback_cleanup: None,
+            update_callback: None,
+            owner: None,
         })
     }
 
@@ -230,7 +269,9 @@ impl SwRenderContext {
     /// at least `stride * height` bytes. Returns 0 on success, negative on error.
     #[inline]
     pub fn render_into(&self, buffer: &mut [u8], width: i32, height: i32, stride: usize) -> i32 {
-        if width <= 0 || height <= 0 || buffer.len() < stride.saturating_mul(height as usize) {
+        if !(buffer.as_ptr() as usize).is_multiple_of(4)
+            || !super::frame_layout::buffer_fits(width, height, stride, buffer.len())
+        {
             return -1;
         }
         let mut size: [i32; 2] = [width, height];
@@ -265,30 +306,43 @@ impl SwRenderContext {
     /// `true` when a new frame is available to render.
     #[inline]
     pub fn has_new_frame(&self) -> bool {
-        // SAFETY: render_context valid; update query is thread-safe.
+        // SAFETY: called on the owning render thread, never from the callback.
         let flags = unsafe { mpv_sys::mpv_render_context_update(self.render_context) };
         (flags & u64::from(mpv_sys::mpv_render_update_flag_MPV_RENDER_UPDATE_FRAME)) != 0
     }
 
     /// Callback fires from an mpv internal thread — schedule work on the main
     /// thread (e.g. `glib::idle_add_once`), never call mpv API from it.
-    pub fn set_update_callback<F: Fn() + Send + 'static>(&mut self, callback: F) {
-        if let Some(cleanup) = self.update_callback_cleanup.take() {
-            cleanup();
-        }
-        let raw_callback = Box::into_raw(Box::new(callback));
-        self.update_callback_cleanup = Some(Box::new(move || {
-            // SAFETY: raw_callback came from Box::into_raw above.
-            unsafe { drop(Box::from_raw(raw_callback)) };
-        }));
-        // SAFETY: raw_callback points to a valid F that lives until cleanup.
+    pub fn set_update_callback<F: Fn() + Send + Sync + 'static>(&mut self, callback: F) {
+        // Detach first: replacing the Rust allocation while mpv still has its
+        // address can leave an in-flight callback dereferencing freed memory.
         unsafe {
             mpv_sys::mpv_render_context_set_update_callback(
                 self.render_context,
-                Some(update_wrapper::<F>),
-                raw_callback.cast(),
+                None,
+                std::ptr::null_mut(),
             );
         }
+        self.update_callback = Some(Box::new(UpdateCallback(Box::new(callback))));
+        let userdata = self
+            .update_callback
+            .as_mut()
+            .expect("callback just installed");
+        let userdata = std::ptr::from_mut(userdata.as_mut()).cast();
+        // Registration can invoke the callback immediately. The allocation is
+        // already owned by self and remains alive until unregistration.
+        unsafe {
+            mpv_sys::mpv_render_context_set_update_callback(
+                self.render_context,
+                Some(update_wrapper),
+                userdata,
+            );
+        }
+    }
+
+    pub(super) fn with_owner(mut self, owner: Arc<MpvBackend>) -> Self {
+        self.owner = Some(owner);
+        self
     }
 }
 
@@ -301,9 +355,7 @@ impl Drop for SwRenderContext {
                 std::ptr::null_mut(),
             );
         }
-        if let Some(cleanup) = self.update_callback_cleanup.take() {
-            cleanup();
-        }
+        self.update_callback.take();
         // SAFETY: render_context came from new() and is freed exactly once here.
         unsafe {
             mpv_sys::mpv_render_context_free(self.render_context);
@@ -311,11 +363,12 @@ impl Drop for SwRenderContext {
     }
 }
 
-/// SAFETY: `render_context` must point to a valid `F` created by `Box::into_raw`. mpv
-/// guarantees the callback is not called after the context is freed or a
-/// different callback is set.
-unsafe extern "C" fn update_wrapper<F: Fn() + Send + 'static>(render_context: *mut c_void) {
-    unsafe { (*(render_context as *const F))() }
+/// SAFETY: userdata points to the sized allocation retained by its context.
+/// The callback is detached before dropping that allocation.
+unsafe extern "C" fn update_wrapper(userdata: *mut c_void) {
+    // A panic may not cross the C ABI boundary (release uses panic=abort).
+    let callback = unsafe { &*userdata.cast::<UpdateCallback>() };
+    (callback.0)();
 }
 
 /// SAFETY: `name` is a valid null-terminated string from mpv. `dlsym` with
@@ -335,8 +388,8 @@ mod tests {
     fn render_param_array_is_stack_allocated() {
         assert_eq!(
             std::mem::size_of::<mpv_sys::mpv_render_param>(),
-            16,
-            "mpv_render_param should be 16 bytes (type u32 + padding + pointer)"
+            2 * std::mem::size_of::<usize>(),
+            "mpv_render_param is a C enum followed by an aligned pointer"
         );
         assert_eq!(
             std::mem::size_of::<mpv_sys::mpv_opengl_fbo>(),
@@ -346,8 +399,8 @@ mod tests {
     }
 
     #[test]
-    fn fast_render_context_is_send() {
-        fn assert_send<T: Send>() {}
-        assert_send::<FastRenderContext>();
+    fn callback_can_be_shared_between_mpv_threads() {
+        fn assert_send_sync<T: Send + Sync>() {}
+        assert_send_sync::<UpdateCallback>();
     }
 }

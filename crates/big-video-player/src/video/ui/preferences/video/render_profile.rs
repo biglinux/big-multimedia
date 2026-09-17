@@ -1,15 +1,10 @@
-//! Simple-mode "Rendering Quality" group: combo of Fast / Balanced / High
-//! Quality presets. Selecting a preset writes individual settings keys
-//! (sync / interpolation / tscale / compute-peak) so the advanced UI stays
-//! in sync, then calls `apply_render_profile` for keys without settings
-//! mirror. Group is gated by `!is_advanced` (advanced view shows the
-//! per-feature rows directly).
+//! Always-visible picture quality summary, with resource-cost guidance.
+//! Preset changes are persisted and applied to the current backend. Individual
+//! technical rows are still rebuilt from settings when preferences reopen.
 
 use adw::prelude::*;
 use big_relm4_components::input::dropdown_row::{BigDropdownRow, BigDropdownRowSpec};
-use big_relm4_components::layout::preferences::{
-    BigPreferencesGroupSpec, tracked_preferences_group,
-};
+use big_relm4_components::layout::preferences::BigPreferencesGroupSpec;
 use std::sync::Arc;
 
 use crate::i18n::i18n;
@@ -35,12 +30,12 @@ fn sync_profile_to_settings(settings: &Settings, profile: &str) {
 /// Always-visible "Video Output" group: how frames are rendered — Automatic
 /// (GPU when viable, software fallback), OpenGL (force GPU/offload), or Software
 /// (force the no-GL path; plays without a GPU). Bound to `keys::RENDER_MODE`,
-/// default Automatic. Takes effect on newly opened videos (the render path is
-/// wired when the content realizes).
+/// default Automatic. Requires recreating the player content (normally by
+/// closing and reopening the player), not merely loading another file.
 pub(super) fn build_video_output_group(settings: &Settings) -> adw::PreferencesGroup {
     let group = BigPreferencesGroupSpec::new(i18n("Video Output"))
         .description(i18n(
-            "How video is rendered. Automatic uses the GPU when available and falls back to software.",
+            "Keep Automatic unless the picture is missing or corrupted. Compatibility mode uses the processor and may use more energy.",
         ))
         .build();
 
@@ -49,11 +44,13 @@ pub(super) fn build_video_output_group(settings: &Settings) -> adw::PreferencesG
     let (row, dropdown) = BigDropdownRow::new(
         BigDropdownRowSpec::new(
             i18n("Video Output"),
-            [i18n("Automatic"), i18n("OpenGL (GPU)"), i18n("Software")],
+            [
+                i18n("Automatic (recommended)"),
+                i18n("OpenGL with fallback"),
+                i18n("Compatibility (processor)"),
+            ],
         )
-        .subtitle(i18n(
-            "Software works without a GPU; applies to newly opened videos",
-        )),
+        .subtitle(i18n("Close and reopen the player to apply this change")),
     )
     .into_parts();
     row.add_prefix(&illustration("render_profile.svg"));
@@ -83,26 +80,31 @@ pub(super) fn build_video_output_group(settings: &Settings) -> adw::PreferencesG
 pub(super) fn build_render_profile_group(
     settings: &Settings,
     mpv: Option<&Arc<MpvBackend>>,
-    is_advanced: bool,
-    simple_widgets: &AdvancedWidgets,
+    _is_advanced: bool,
+    _simple_widgets: &AdvancedWidgets,
 ) -> adw::PreferencesGroup {
-    let group = tracked_preferences_group(
-        BigPreferencesGroupSpec::new(i18n("Rendering Quality"))
-            .description(i18n(
-                "Start with Balanced. Switch to Fast if you notice stuttering, or High Quality for movies.",
-            ))
-            .visible(!is_advanced),
-        simple_widgets,
-    );
+    // Keep the summary visible when technical details are revealed, so the
+    // user's chosen preset does not disappear when switching modes.
+    let group = BigPreferencesGroupSpec::new(i18n("Picture quality"))
+        .description(i18n(
+            "Use Low resource use on older computers. Choose more detail only when playback stays smooth.",
+        ))
+        .build();
 
     let profile_values: &[&str] = &["default", "balanced", "high-quality"];
 
     let (profile_row, profile_dropdown) = BigDropdownRow::new(
         BigDropdownRowSpec::new(
-            i18n("Video Profile"),
-            [i18n("⚡ Fast"), i18n("⚖ Balanced"), i18n("✨ High Quality")],
+            i18n("Picture quality"),
+            [
+                i18n("Low resource use"),
+                i18n("Balanced"),
+                i18n("More detail"),
+            ],
         )
-        .subtitle(i18n("Higher quality uses more GPU power")),
+        .subtitle(i18n(
+            "More detail can increase graphics workload and battery use",
+        )),
     )
     .into_parts();
     profile_row.add_prefix(&illustration("render_profile.svg"));

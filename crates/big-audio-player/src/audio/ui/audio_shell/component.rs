@@ -39,6 +39,7 @@ impl Component for AudioShell {
         root: Self::Root,
         sender: ComponentSender<Self>,
     ) -> ComponentParts<Self> {
+        crate::settings::bind_write_drain(&root);
         // Window-scoped actions go in a "win" group inserted on the Root, so they
         // travel with the content into whatever window hosts it (instead of being
         // bound to a specific `ApplicationWindow`).
@@ -429,17 +430,9 @@ impl Component for AudioShell {
         }
 
         {
-            let root_weak = root.downgrade();
-            let s = settings.clone();
+            let input = sender.input_sender().clone();
             big_app_kit::desktop::install_action(&win_actions, "show-preferences", move || {
-                let Some(win) = root_weak
-                    .upgrade()
-                    .and_then(|content| content.root())
-                    .and_downcast::<gtk::Window>()
-                else {
-                    return;
-                };
-                crate::audio::preferences::show_audio_preferences(&win, &s, None);
+                let _ = input.send(AudioShellInput::ShowPreferences);
             });
         }
 
@@ -570,6 +563,9 @@ impl Component for AudioShell {
                 library_grouping: initial_grouping,
                 library_filter: String::new(),
                 library_age: 0,
+                library_generation: LibraryGeneration::default(),
+                scan_slot: library_scan_engine::ScanSlot::default(),
+                library_queries: library_generation::LatestMailbox::default(),
                 current_file: String::new(),
                 last_art_bytes: None,
                 is_playing: false,
@@ -587,6 +583,7 @@ impl Component for AudioShell {
         // every sibling module/surface keep running.
         big_app_kit::containment::contain_embedded_update(root, "player-audio", || {
             self.handle_shell_input(message, sender);
+            self.publish_mpris_snapshot();
         });
     }
 }

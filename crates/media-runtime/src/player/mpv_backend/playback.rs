@@ -3,175 +3,193 @@
 use std::ffi::CString;
 use std::sync::atomic::Ordering;
 
-use log::{error, info};
+use log::error;
 
 use super::MpvBackend;
 use super::types::AudioCacheProfile;
 
-/// Heuristic: pick a sensible cache profile from the URL/path. Network
-/// streams get a larger forward window for jitter; local files keep the
-/// caller-set profile (Music or Podcast). Callers in the app layer can
-/// always override afterwards with [`MpvBackend::set_audio_cache_profile`].
+/// Fallback audio policy only. Panels with known intent override this heuristic.
 #[must_use]
-pub fn profile_for_uri(path: &str) -> Option<AudioCacheProfile> {
-    let lower = path.to_ascii_lowercase();
-    if lower.starts_with("http://")
-        || lower.starts_with("https://")
-        || lower.starts_with("rtsp://")
-        || lower.starts_with("rtmp://")
-        || lower.starts_with("mms://")
+pub fn profile_for_uri(target: &str) -> Option<AudioCacheProfile> {
+    let scheme = big_os_kit::url::uri_scheme(target)?;
+    if !["http", "https", "rtsp", "rtmp", "mms"]
+        .iter()
+        .any(|s| scheme.eq_ignore_ascii_case(s))
     {
-        // Playlist extensions usually indicate live radio; bare http to an
-        // .mp3/.ogg is more likely a podcast download URL, which doesn't
-        // need the larger forward window. Default the rest to Radio.
-        for ext in [".mp3", ".m4a", ".ogg", ".opus", ".flac"] {
-            if lower.ends_with(ext) {
-                return Some(AudioCacheProfile::Podcast);
-            }
-        }
-        return Some(AudioCacheProfile::Radio);
+        return None;
     }
-    None
+    let path = big_os_kit::url::uri_path(target);
+    let extension = path
+        .rsplit('/')
+        .next()
+        .unwrap_or("")
+        .rsplit_once('.')
+        .map(|(_, e)| e);
+    Some(
+        if extension.is_some_and(|e| {
+            ["mp3", "m4a", "ogg", "opus", "flac"]
+                .iter()
+                .any(|v| e.eq_ignore_ascii_case(v))
+        }) {
+            AudioCacheProfile::Podcast
+        } else {
+            AudioCacheProfile::Radio
+        },
+    )
 }
 
 impl MpvBackend {
-    pub fn load_file(&self, path: &str) {
-        if let Some(profile) = profile_for_uri(path) {
+    pub(super) fn queue_command(
+        &self,
+        command: &str,
+        arguments: &[&str],
+    ) -> Result<(), super::MpvError> {
+        let mut strings = Vec::with_capacity(arguments.len() + 1);
+        strings.push(CString::new(command)?);
+        for arg in arguments {
+            strings.push(CString::new(*arg)?);
+        }
+        let mut args: Vec<*const std::os::raw::c_char> =
+            strings.iter().map(|s| s.as_ptr()).collect();
+        args.push(std::ptr::null());
+        let status =
+            unsafe { mpv_sys::mpv_command_async(self.raw_mpv_handle, 0, args.as_mut_ptr()) };
+        if status < 0 {
+            Err(super::MpvError::Raw(status))
+        } else {
+            Ok(())
+        }
+    }
+    /// Per-file pause is supplied before load, never Play immediately followed by Pause.
+    pub fn load_audio_paused(&self, path: &str, profile: AudioCacheProfile, paused: bool) {
+        if self.audio_only {
             self.set_audio_cache_profile(profile);
         }
         self.loading.store(true, Ordering::Relaxed);
-        if let Err(e) = self.with_mpv(|m| m.command("loadfile", &[path, "replace"])) {
+        let options = if paused {
+            "resume-playback=no,pause=yes"
+        } else {
+            "resume-playback=no,pause=no"
+        };
+        if let Err(error) = self.queue_command("loadfile", &[path, "replace", "-1", options]) {
             self.loading.store(false, Ordering::Relaxed);
-            error!("Failed to load file '{path}': {e}");
+            log::warn!("Could not enqueue media load: {error}");
         }
     }
 
-    /// Bypasses watch-later — resuming a fully-played file would EOF instantly
-    /// and confuse the queue (next/prev/double-click flows).
-    pub fn load_file_from_start(&self, path: &str) {
-        // Match load_file: size the demuxer cache to the stream kind. Podcast
-        // autoplay reaches mpv through here, so without this it would keep the
-        // 40 MiB Music cache instead of the 10 MiB Podcast cache (~30 MiB/stream).
-        if let Some(profile) = profile_for_uri(path) {
+    pub fn load_file_with_audio_profile(
+        &self,
+        path: &str,
+        profile: AudioCacheProfile,
+        from_start: bool,
+    ) {
+        if self.audio_only {
             self.set_audio_cache_profile(profile);
         }
+        self.load_inner(path, from_start);
+    }
+
+    pub fn load_file(&self, path: &str) {
+        if self.audio_only {
+            self.set_audio_cache_profile(profile_for_uri(path).unwrap_or(AudioCacheProfile::Music));
+        }
+        self.load_inner(path, false);
+    }
+
+    /// Bypass watch-later for an explicit new queue occurrence.
+    pub fn load_file_from_start(&self, path: &str) {
+        if self.audio_only {
+            self.set_audio_cache_profile(profile_for_uri(path).unwrap_or(AudioCacheProfile::Music));
+        }
+        self.load_inner(path, true);
+    }
+
+    fn load_inner(&self, path: &str, from_start: bool) {
         self.loading.store(true, Ordering::Relaxed);
-        // loadfile args: url, flags, index (-1=default), options.
-        // `resume-playback=no` overrides watch-later for this file only.
-        if let Err(e) =
-            self.with_mpv(|m| m.command("loadfile", &[path, "replace", "-1", "resume-playback=no"]))
-        {
+        let result = if from_start {
+            self.queue_command("loadfile", &[path, "replace", "-1", "resume-playback=no"])
+        } else {
+            self.queue_command("loadfile", &[path, "replace"])
+        };
+        if let Err(error) = result {
             self.loading.store(false, Ordering::Relaxed);
-            error!("Failed to load file '{path}': {e}");
+            error!(
+                "Failed to load {}: {error}",
+                big_os_kit::url::MediaLogTarget(path)
+            );
         }
     }
 
     pub fn load_file_append(&self, path: &str) {
-        if let Err(e) = self.with_mpv(|m| m.command("loadfile", &[path, "append-play"])) {
-            error!("Failed to append file '{path}': {e}");
+        if let Err(e) = self.queue_command("loadfile", &[path, "append-play"]) {
+            error!(
+                "Failed to append {}: {e}",
+                big_os_kit::url::MediaLogTarget(path)
+            );
         }
     }
 
     pub fn play(&self) {
-        self.with_mpv(|m| {
-            let _ = m.set_property("pause", false);
-        });
+        let _ = self.queue_command("set", &["pause", "no"]);
     }
-
     pub fn pause(&self) {
-        self.with_mpv(|m| {
-            let _ = m.set_property("pause", true);
-        });
+        let _ = self.queue_command("set", &["pause", "yes"]);
     }
-
     pub fn toggle_pause(&self) {
-        self.with_mpv(|m| match Self::get_bool_property(m, "pause") {
-            Ok(paused) => {
-                info!("toggle_pause: paused={paused}, setting to {}", !paused);
-                if let Err(e) = m.set_property("pause", !paused) {
-                    error!("toggle_pause: set_property failed: {e}");
-                }
-            }
-            Err(e) => {
-                error!("toggle_pause: get_bool_property failed: {e}");
-            }
-        });
+        let _ = self.queue_command("cycle", &["pause"]);
     }
-
     pub fn stop(&self) {
-        self.with_mpv(|m| {
-            let _ = m.command("stop", &[]);
-        });
+        let _ = self.queue_command("stop", &[]);
     }
-
     pub fn seek(&self, seconds: f64) {
-        self.with_mpv(|m| {
-            let _ = m.command("seek", &[&seconds.to_string(), "relative"]);
-        });
+        if seconds.is_finite() {
+            let _ = self.queue_command("seek", &[&seconds.to_string(), "relative"]);
+        }
     }
-
     pub fn seek_absolute(&self, seconds: f64) {
-        self.with_mpv(|m| {
-            let _ = m.command("seek", &[&seconds.to_string(), "absolute"]);
-        });
+        self.seek_absolute_async(seconds);
     }
-
-    /// Non-blocking exact seek for live seekbar preview.
-    /// `mpv_command_async` on the raw handle — no mutex contention.
     pub fn seek_absolute_async(&self, seconds: f64) {
-        let Ok(secs_str) = CString::new(seconds.to_string()) else {
-            return;
-        };
-        let cmd = CString::new("seek").expect("static literal");
-        let flags = CString::new("absolute").expect("static literal");
-        let mut args: Vec<*const std::os::raw::c_char> = vec![
-            cmd.as_ptr(),
-            secs_str.as_ptr(),
-            flags.as_ptr(),
-            std::ptr::null(),
-        ];
-        // SAFETY: `mpv_command_async` is thread-safe on the same handle;
-        // raw_mpv_handle outlives this call (held by MpvBackend); CStrings
-        // live until after the call returns.
-        unsafe {
-            mpv_sys::mpv_command_async(
-                self.raw_mpv_handle,
-                0, // reply_userdata=0 — reply is discarded.
-                args.as_mut_ptr(),
-            );
+        if seconds.is_finite() && seconds >= 0.0 {
+            let _ = self.queue_command("seek", &[&seconds.to_string(), "absolute"]);
         }
     }
 
-    /// Capture a screenshot WITHOUT blocking the GTK main thread. The
-    /// synchronous `screenshot-to-file` command deadlocks under the libmpv
-    /// render API: it blocks the caller (and holds the client mutex) until mpv's
-    /// playloop completes the command, but the playloop needs the main thread to
-    /// run the render callback — so the main thread waits on mpv while mpv waits
-    /// on the main thread. `mpv_command_async` returns immediately and mpv writes
-    /// the file on its own thread. `mode`: `"subtitles"` | `"video"` | `"window"`.
-    pub fn screenshot_to_file_async(&self, path: &str, mode: &str) {
-        let (Ok(cmd), Ok(path_c), Ok(mode_c)) = (
-            CString::new("screenshot-to-file"),
-            CString::new(path),
-            CString::new(mode),
-        ) else {
-            return;
-        };
-        let mut args: Vec<*const std::os::raw::c_char> = vec![
-            cmd.as_ptr(),
-            path_c.as_ptr(),
-            mode_c.as_ptr(),
+    /// Queue a PNG screenshot into private staging. Call off the GTK thread:
+    /// staging setup performs filesystem I/O. The backend retains resources
+    /// through cancellation until a terminal receipt or native termination.
+    pub fn screenshot_to_file_async(
+        &self,
+        target: &std::path::Path,
+        alive: std::sync::Arc<std::sync::atomic::AtomicBool>,
+    ) -> std::io::Result<u64> {
+        let stage = big_os_kit::storage::StagedFile::new(target)?;
+        let command = CString::new("screenshot-to-file").expect("literal");
+        let path = CString::new(
+            stage
+                .path()
+                .to_str()
+                .ok_or_else(|| std::io::Error::other("screenshot path is not UTF-8"))?,
+        )?;
+        let mode = CString::new("video").expect("literal");
+        let mut args = [
+            command.as_ptr(),
+            path.as_ptr(),
+            mode.as_ptr(),
             std::ptr::null(),
         ];
-        // SAFETY: `mpv_command_async` is thread-safe on the same handle; raw_mpv_handle
-        // outlives this call (held by MpvBackend); the CStrings live until the
-        // call returns (mpv copies the argv strings).
-        unsafe {
-            mpv_sys::mpv_command_async(
-                self.raw_mpv_handle,
-                0, // reply_userdata=0 — reply is discarded.
-                args.as_mut_ptr(),
-            );
+        let id = self
+            .screenshots
+            .register(stage, target.to_path_buf(), alive)?;
+        let status =
+            unsafe { mpv_sys::mpv_command_async(self.raw_mpv_handle, id, args.as_mut_ptr()) };
+        if status < 0 {
+            self.screenshots.rejected(id);
+            Err(std::io::Error::other(format!(
+                "screenshot command rejected: {status}"
+            )))
+        } else {
+            Ok(id)
         }
     }
 

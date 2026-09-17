@@ -1,7 +1,7 @@
 //! Database query functions — CRUD operations for tracks, playlists,
 //! watch folders, smart playlists, and play history.
 
-use rusqlite::{Connection, Row, params};
+use rusqlite::{Connection, OptionalExtension, Row, params};
 
 use super::models::{Playlist, Track, WatchFolder};
 
@@ -146,7 +146,7 @@ pub fn delete_track(conn: &Connection, track_id: i64) -> crate::Result<()> {
 pub fn get_track_by_path(conn: &Connection, path: &str) -> crate::Result<Option<Track>> {
     let sql = format!("SELECT {TRACK_COLUMNS} FROM tracks WHERE file_path = ?1");
     let mut stmt = conn.prepare(&sql)?;
-    let track = stmt.query_row([path], row_to_track).ok();
+    let track = stmt.query_row([path], row_to_track).optional()?;
     Ok(track)
 }
 
@@ -250,6 +250,33 @@ pub fn create_playlist(conn: &Connection, name: &str) -> crate::Result<i64> {
     Ok(conn.last_insert_rowid())
 }
 
+/// Create a whole playlist in one transaction: all tracks, or no new playlist.
+/// Duplicate ids in a queue are collapsed in first-occurrence order because the
+/// persisted playlist schema permits one entry per track. No nested transaction.
+pub fn create_playlist_with_tracks(
+    conn: &Connection,
+    name: &str,
+    ids: &[i64],
+) -> crate::Result<i64> {
+    let tx = conn.unchecked_transaction()?;
+    let playlist_id = create_playlist(&tx, name)?;
+    {
+        let mut statement = tx.prepare(
+            "INSERT INTO playlist_tracks (playlist_id, track_id, position) VALUES (?1, ?2, ?3)",
+        )?;
+        let mut seen = std::collections::HashSet::new();
+        let mut position = 0_i64;
+        for &track_id in ids {
+            if seen.insert(track_id) {
+                statement.execute(params![playlist_id, track_id, position])?;
+                position += 1;
+            }
+        }
+    }
+    tx.commit()?;
+    Ok(playlist_id)
+}
+
 /// Returns (track_count, total_duration_secs) for a playlist.
 pub fn get_playlist_stats(conn: &Connection, playlist_id: i64) -> crate::Result<(i64, f64)> {
     // caveman: ? lifts rusqlite::Error into crate::Error via #[from]
@@ -273,8 +300,7 @@ pub fn get_all_playlists(conn: &Connection) -> crate::Result<Vec<Playlist>> {
                 created_at: row.get(2)?,
             })
         })?
-        .filter_map(std::result::Result::ok)
-        .collect();
+        .collect::<rusqlite::Result<Vec<_>>>()?;
     Ok(playlists)
 }
 
@@ -283,14 +309,11 @@ pub fn add_track_to_playlist(
     playlist_id: i64,
     track_id: i64,
 ) -> crate::Result<()> {
-    let max_pos: i32 = conn.query_row(
-        "SELECT COALESCE(MAX(position), -1) FROM playlist_tracks WHERE playlist_id = ?1",
-        params![playlist_id],
-        |row| row.get(0),
-    )?;
+    // One SQL statement avoids racing a separate MAX(position) read and insert.
     conn.execute(
-        "INSERT INTO playlist_tracks (playlist_id, track_id, position) VALUES (?1, ?2, ?3)",
-        params![playlist_id, track_id, max_pos + 1],
+        "INSERT INTO playlist_tracks (playlist_id, track_id, position)
+         SELECT ?1, ?2, COALESCE(MAX(position), -1) + 1 FROM playlist_tracks WHERE playlist_id = ?1",
+        params![playlist_id, track_id],
     )?;
     Ok(())
 }
@@ -305,8 +328,7 @@ pub fn get_playlist_tracks(conn: &Connection, playlist_id: i64) -> crate::Result
     let mut stmt = conn.prepare(&sql)?;
     let tracks = stmt
         .query_map(params![playlist_id], row_to_track)?
-        .filter_map(std::result::Result::ok)
-        .collect();
+        .collect::<rusqlite::Result<Vec<_>>>()?;
     Ok(tracks)
 }
 
@@ -319,11 +341,13 @@ pub fn rename_playlist(conn: &Connection, playlist_id: i64, new_name: &str) -> c
 }
 
 pub fn delete_playlist(conn: &Connection, playlist_id: i64) -> crate::Result<()> {
-    conn.execute(
+    let tx = conn.unchecked_transaction()?;
+    tx.execute(
         "DELETE FROM playlist_tracks WHERE playlist_id = ?1",
         params![playlist_id],
     )?;
-    conn.execute("DELETE FROM playlists WHERE id = ?1", params![playlist_id])?;
+    tx.execute("DELETE FROM playlists WHERE id = ?1", params![playlist_id])?;
+    tx.commit()?;
     Ok(())
 }
 
@@ -604,5 +628,55 @@ mod tests {
         let remaining = get_playlist_tracks(&conn, pl).unwrap();
         assert_eq!(remaining.len(), 1);
         assert_eq!(remaining[0].file_path, "/m/b.mp3");
+    }
+}
+
+#[cfg(test)]
+mod playlist_atomicity_tests {
+    use super::*;
+
+    fn database() -> Connection {
+        let conn = Connection::open_in_memory().unwrap();
+        super::super::schema::run_migrations(&conn).unwrap();
+        conn.execute_batch("PRAGMA foreign_keys = ON;
+            INSERT INTO tracks (file_path, title) VALUES ('/one.flac', 'One'), ('/two.flac', 'Two');").unwrap();
+        conn
+    }
+
+    #[test]
+    fn invalid_track_rolls_back_the_entire_new_playlist() {
+        let conn = database();
+        assert!(create_playlist_with_tracks(&conn, "Failed", &[1, 999999]).is_err());
+        assert!(get_all_playlists(&conn).unwrap().is_empty());
+        let count: i64 = conn
+            .query_row("SELECT COUNT(*) FROM playlist_tracks", [], |r| r.get(0))
+            .unwrap();
+        assert_eq!(count, 0);
+    }
+
+    #[test]
+    fn batch_keeps_first_occurrence_order_and_one_row_per_track() {
+        let conn = database();
+        let id = create_playlist_with_tracks(&conn, "Saved", &[2, 1, 2]).unwrap();
+        let ids: Vec<_> = get_playlist_tracks(&conn, id)
+            .unwrap()
+            .iter()
+            .map(|t| t.id)
+            .collect();
+        assert_eq!(ids, [2, 1]);
+    }
+
+    #[test]
+    fn failed_delete_keeps_playlist_and_membership() {
+        let conn = database();
+        let id = create_playlist_with_tracks(&conn, "Kept", &[1, 2]).unwrap();
+        conn.execute_batch(
+            "CREATE TRIGGER block_delete BEFORE DELETE ON playlists
+            BEGIN SELECT RAISE(ABORT, 'injected failure'); END;",
+        )
+        .unwrap();
+        assert!(delete_playlist(&conn, id).is_err());
+        assert_eq!(get_playlist_tracks(&conn, id).unwrap().len(), 2);
+        assert_eq!(get_all_playlists(&conn).unwrap().len(), 1);
     }
 }

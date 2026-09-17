@@ -2,6 +2,7 @@
 
 use std::cell::RefCell;
 use std::rc::Rc;
+use std::sync::{Arc, atomic::AtomicBool};
 
 use adw::prelude::*;
 use big_app_kit::remote_control::{self, RemoteHandlers, ServerHandle};
@@ -22,7 +23,7 @@ fn detect_lan_ip() -> Option<String> {
 /// Present the smartphone web-remote dialog.
 pub fn present<F>(parent: &impl IsA<gtk::Widget>, build_remote: F)
 where
-    F: Fn() -> RemoteHandlers + 'static,
+    F: Fn(Arc<AtomicBool>) -> RemoteHandlers + 'static,
 {
     let dialog = adw::Dialog::builder()
         .title(i18n("Smartphone"))
@@ -37,6 +38,7 @@ where
     let remote_group = BigPreferencesGroupSpec::new(i18n("Web Remote"))
         .description(i18n(
             "Turn on to control this player from a phone or tablet on the same network. \
+             HTTP is not encrypted: use only a trusted private network. \
              Scan the QR code with the phone's camera to open the remote.",
         ))
         .build();
@@ -126,7 +128,12 @@ where
     enable_row.connect_active_notify(move |switch| {
         let active = switch.is_active();
         if active {
-            match remote_control::start((build_for_toggle)()) {
+            let revoked = Arc::new(AtomicBool::new(false));
+            match remote_control::start_scoped(
+                "0.0.0.0:0".parse().expect("static socket address"),
+                (build_for_toggle)(revoked.clone()),
+                revoked,
+            ) {
                 Ok(handle) => {
                     let ip = detect_lan_ip().unwrap_or_else(|| "127.0.0.1".to_string());
                     let url = format!("http://{}:{}/{}/", ip, handle.port, handle.token);

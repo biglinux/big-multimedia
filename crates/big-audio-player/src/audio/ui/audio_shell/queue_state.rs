@@ -2,16 +2,38 @@ use super::*;
 
 impl AudioShell {
     pub(super) fn play_current(&mut self) {
-        let Some(path) = self.queue.current().map(|t| t.file_path.clone()) else {
+        self.play_current_as(PlaybackStatus::Playing);
+    }
+
+    pub(super) fn play_current_as(&mut self, status: PlaybackStatus) {
+        let Some(path) = self.queue.current().map(|track| track.file_path.clone()) else {
             return;
         };
-        self.is_playing = true;
+        self.mpris_state.invalidate();
+        self.current_file.clone_from(&path);
         self.is_stream = false;
-        if let Some(mpv) = &self.mpv {
-            mpv.load_file_from_start(&path);
-            mpv.play();
+        self.is_playing = status == PlaybackStatus::Playing;
+        if status == PlaybackStatus::Stopped {
+            // Select the next item without starting decoder/audio output.
+            self.mpris_state.selected();
+            *self
+                .mpris_state
+                .status
+                .lock()
+                .unwrap_or_else(PoisonError::into_inner) = status;
+            *self
+                .mpris_state
+                .position
+                .lock()
+                .unwrap_or_else(PoisonError::into_inner) = 0.0;
+        } else if let Some(mpv) = &self.mpv {
+            let profile = if self.podcast_mode {
+                AudioCacheProfile::Podcast
+            } else {
+                AudioCacheProfile::Music
+            };
+            mpv.load_audio_paused(&path, profile, status == PlaybackStatus::Paused);
         }
-        self.current_file = path;
         self.sync_now_playing();
     }
 

@@ -22,15 +22,34 @@ pub fn parse_iptv_m3u(path: &Path) -> Vec<IptvChannel> {
     parse_m3u_file(path)
 }
 
-pub fn write_m3u(path: &Path, items: &[String]) {
+/// Worker-only export. Never overwrite an existing user document and never
+/// report success from an ignored filesystem error. Embedded newlines in paths
+/// cannot be represented faithfully in M3U and are rejected.
+pub fn write_m3u(path: &Path, items: &[String]) -> Result<()> {
+    const MAX_BYTES: usize = 16 * 1024 * 1024;
+    if items.len() > 100_000 {
+        return Err(crate::Error::internal("Too many playlist entries"));
+    }
     let mut content = String::from("#EXTM3U\n");
     for item in items {
-        let name = display_name(item);
-        content.push_str(&format!("#EXTINF:0,{name}\n"));
-        content.push_str(item);
-        content.push('\n');
+        if item.bytes().any(|b| matches!(b, 0 | b'\r' | b'\n')) {
+            return Err(crate::Error::internal(
+                "A playlist path contains a line break",
+            ));
+        }
+        let name = display_name(item).replace(['\r', '\n'], " ");
+        if content.len() + item.len() + name.len() + 16 > MAX_BYTES {
+            return Err(crate::Error::internal("Playlist export exceeds its limit"));
+        }
+        content.push_str(&format!("#EXTINF:0,{name}\n{item}\n"));
     }
-    let _ = std::fs::write(path, &content);
+    if let Some(parent) = path.parent().filter(|p| !p.as_os_str().is_empty()) {
+        std::fs::create_dir_all(parent)?;
+    }
+    let stage = big_os_kit::storage::StagedFile::new(path)?;
+    std::fs::write(stage.path(), content)?;
+    stage.publish(path)?.into_io_result()?;
+    Ok(())
 }
 
 #[must_use]
@@ -55,8 +74,7 @@ pub fn parse_playlist_file(path: &str) -> Vec<String> {
 }
 
 pub fn export_m3u(paths: &[String], output_path: &str) -> Result<()> {
-    write_m3u(Path::new(output_path), paths);
-    Ok(())
+    write_m3u(Path::new(output_path), paths)
 }
 
 pub(crate) fn parse_pls_file(path: &Path) -> Vec<String> {

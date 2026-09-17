@@ -72,6 +72,7 @@ pub enum VideoShellInput {
     ShowGotoTime,
     /// Capture the current frame to the Pictures dir (Playback menu).
     Screenshot,
+    ScreenshotQueueFailed,
     /// Open the chapter list dialog (Playback menu).
     ShowChapters,
     /// Jump to chapter `idx` (chapter list dialog).
@@ -79,7 +80,10 @@ pub enum VideoShellInput {
     /// Open the sleep-timer dialog (Playback menu).
     ShowSleepTimer,
     /// Arm the sleep timer for `minutes`, running `action` on expiry.
-    SleepTimerStart { minutes: u32, action: String },
+    SleepTimerStart {
+        minutes: u32,
+        action: String,
+    },
     /// Disarm the sleep timer.
     SleepTimerCancel,
     /// One sleep-timer countdown tick (1 s).

@@ -1,30 +1,133 @@
-//! Direct control of THIS process's PipeWire/PulseAudio playback stream volume,
-//! so the in-app volume *is* the sink-input volume the system mixer shows — the
-//! same percentage, and with >100% boost. mpv's own controls can't do this:
-//! software `volume` never reaches the sound server (the mixer stays at 100%),
-//! and `ao-volume` is capped at 100 and uses a different (linear-amplitude)
-//! scale than the mixer's perceptual one. Best-effort via `pactl` (present with
-//! PulseAudio or pipewire-pulse); every function no-ops when it is missing or
-//! nothing is playing, in which case the sound server restores the last level
-//! for our stable client name (`module-stream-restore`).
+//! Compatibility bridge for per-stream PulseAudio / pipewire-pulse volume.
 //!
-//! Writes (`set_volume`/`set_mute`) run OFF the GTK main loop on a detached
-//! thread — a `pactl` round-trip is a few milliseconds and the volume slider
-//! fires many changes per drag. A per-operation generation counter coalesces a
-//! burst to its latest value: an older write sees a newer generation and skips,
-//! so the last drag position wins without blocking or queuing.
+//! One worker per mpv instance serialises and coalesces writes. UI access is a
+//! cached snapshot, never a subprocess. Polling stops without a loaded file.
+//! This is a bounded compatibility path, not a native sound-server connection;
+//! a subscription-based native backend remains the preferred follow-up.
 
-use std::process::Command;
-use std::sync::atomic::{AtomicU64, Ordering};
-use std::sync::{Arc, Mutex, PoisonError};
-use std::thread;
+use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::{Arc, Condvar, Mutex, PoisonError};
+use std::thread::JoinHandle;
+use std::time::{Duration, Instant};
 
+use big_os_kit::subprocess::{BigSubprocessOutputMode, BigSubprocessSpec};
 use serde::Deserialize;
 
-static VOLUME_GEN: AtomicU64 = AtomicU64::new(0);
-static MUTE_GEN: AtomicU64 = AtomicU64::new(0);
+#[derive(Default)]
+struct State {
+    active: bool,
+    dirty: bool,
+    desired_volume: Option<f64>,
+    desired_mute: Option<bool>,
+    observed: Option<(f64, bool)>,
+}
 
-type Cache = Arc<Mutex<Option<u32>>>;
+#[derive(Clone)]
+pub(super) struct Shared(Arc<(Mutex<State>, Condvar)>);
+
+impl Shared {
+    pub(super) fn set_active(&self, active: bool) {
+        let mut state = self.0.0.lock().unwrap_or_else(PoisonError::into_inner);
+        state.active = active;
+        state.dirty = true;
+        self.0.1.notify_one();
+    }
+
+    pub(super) fn snapshot(&self) -> Option<(f64, bool)> {
+        let state = self.0.0.lock().unwrap_or_else(PoisonError::into_inner);
+        if state.observed.is_none()
+            && state.desired_volume.is_none()
+            && state.desired_mute.is_none()
+        {
+            return None;
+        }
+        let (volume, mute) = state.observed.unwrap_or((100.0, false));
+        Some((
+            state.desired_volume.unwrap_or(volume),
+            state.desired_mute.unwrap_or(mute),
+        ))
+    }
+}
+
+pub(super) struct StreamVolume {
+    shared: Shared,
+    cancelled: Arc<AtomicBool>,
+    worker: Option<JoinHandle<()>>,
+}
+
+impl StreamVolume {
+    pub(super) fn new(client_name: String) -> Self {
+        let shared = Shared(Arc::new((Mutex::new(State::default()), Condvar::new())));
+        let cancelled = Arc::new(AtomicBool::new(false));
+        let worker_shared = shared.clone();
+        let worker_cancel = Arc::clone(&cancelled);
+        let worker = std::thread::Builder::new()
+            .name("player-stream-volume".into())
+            .spawn(move || run_worker(&worker_shared, &worker_cancel, &client_name))
+            .map_err(|error| log::error!("Cannot start stream-volume worker: {error}"))
+            .ok();
+        Self {
+            shared,
+            cancelled,
+            worker,
+        }
+    }
+
+    pub(super) fn shared(&self) -> Shared {
+        self.shared.clone()
+    }
+
+    pub(super) fn snapshot(&self) -> (f64, bool) {
+        self.shared.snapshot().unwrap_or((100.0, false))
+    }
+
+    pub(super) fn set_volume(&self, percent: f64) {
+        if !percent.is_finite() {
+            return;
+        }
+        let mut state = self
+            .shared
+            .0
+            .0
+            .lock()
+            .unwrap_or_else(PoisonError::into_inner);
+        state.desired_volume = Some(percent.clamp(0.0, 250.0).round());
+        state.dirty = true;
+        self.shared.0.1.notify_one();
+    }
+
+    pub(super) fn set_mute(&self, mute: bool) {
+        let mut state = self
+            .shared
+            .0
+            .0
+            .lock()
+            .unwrap_or_else(PoisonError::into_inner);
+        state.desired_mute = Some(mute);
+        state.dirty = true;
+        self.shared.0.1.notify_one();
+    }
+}
+
+impl Drop for StreamVolume {
+    fn drop(&mut self) {
+        // Pair cancellation with the condition-variable mutex to avoid losing
+        // the notification between the worker's predicate check and wait.
+        {
+            let _state = self
+                .shared
+                .0
+                .0
+                .lock()
+                .unwrap_or_else(PoisonError::into_inner);
+            self.cancelled.store(true, Ordering::Relaxed);
+            self.shared.0.1.notify_one();
+        }
+        if let Some(worker) = self.worker.take() {
+            let _ = worker.join();
+        }
+    }
+}
 
 #[derive(Deserialize)]
 struct SinkInput {
@@ -47,136 +150,200 @@ struct Properties {
 
 #[derive(Deserialize)]
 struct VolumeChannel {
-    /// pactl reports e.g. `"55%"` (perceptual, the value the mixer shows).
     value_percent: String,
 }
 
-/// Parse pactl's `"55%"` channel value into a plain percentage.
 fn parse_percent(value: &str) -> Option<f64> {
-    value.trim().trim_end_matches('%').trim().parse().ok()
+    let value: f64 = value.trim().trim_end_matches('%').trim().parse().ok()?;
+    (value.is_finite() && value >= 0.0).then_some(value)
 }
 
-fn pactl(args: &[&str]) -> Option<std::process::Output> {
-    Command::new("pactl")
-        .args(args)
-        .output()
-        .ok()
-        .filter(|out| out.status.success())
-}
-
-/// Our own playback stream, matched by the `application.name` mpv reports (the
-/// `audio-client-name`, i.e. the program name). When several streams share the
-/// name (a second instance of the same player), prefer the one whose
-/// `application.process.id` is ours so each instance controls its own stream.
-fn find(client_name: &str) -> Option<SinkInput> {
-    let out = pactl(&["-f", "json", "list", "sink-inputs"])?;
-    let inputs: Vec<SinkInput> = serde_json::from_slice(&out.stdout).ok()?;
-    let mut ours: Vec<SinkInput> = inputs
-        .into_iter()
-        .filter(|input| input.properties.application_name == client_name)
-        .collect();
-    if ours.is_empty() {
+fn pactl(args: &[&str], cancel: &AtomicBool) -> Option<Vec<u8>> {
+    if cancel.load(Ordering::Relaxed) {
         return None;
     }
-    let pid = std::process::id().to_string();
-    let idx = ours
-        .iter()
-        .position(|input| input.properties.process_id == pid)
-        .unwrap_or(0);
-    Some(ours.swap_remove(idx))
+    let output = BigSubprocessSpec::builder()
+        .program("pactl")
+        .args(args.iter().copied())
+        .env("LC_ALL", "C")
+        .timeout(Duration::from_secs(2))
+        .stdout(BigSubprocessOutputMode::Capture)
+        .stderr(BigSubprocessOutputMode::Null)
+        .build()
+        .run_cancellable(cancel)
+        .ok()?;
+    output.status.success().then_some(output.stdout)
 }
 
-fn cached_id(cache: &Cache, client_name: &str) -> Option<u32> {
-    let mut guard = cache.lock().unwrap_or_else(PoisonError::into_inner);
-    if guard.is_none() {
-        *guard = find(client_name).map(|input| input.index);
-    }
-    *guard
+/// Never fall back to another process with the same application name, and do
+/// not guess when multiple mpv streams in this process are indistinguishable.
+fn select_input(inputs: Vec<SinkInput>, client_name: &str, pid: &str) -> Option<SinkInput> {
+    let mut matches = inputs.into_iter().filter(|input| {
+        input.properties.application_name == client_name && input.properties.process_id == pid
+    });
+    let first = matches.next()?;
+    matches.next().is_none().then_some(first)
 }
 
-fn invalidate(cache: &Cache) {
-    *cache.lock().unwrap_or_else(PoisonError::into_inner) = None;
+fn find(client_name: &str, cancel: &AtomicBool) -> Option<SinkInput> {
+    let out = pactl(&["-f", "json", "list", "sink-inputs"], cancel)?;
+    select_input(
+        serde_json::from_slice(&out).ok()?,
+        client_name,
+        &std::process::id().to_string(),
+    )
 }
 
-/// Apply a `set-sink-input-*` verb to our stream. mpv recreates the stream (new
-/// index) per file, so a stale cached index is dropped and re-resolved once.
-fn apply(cache: &Cache, client_name: &str, verb: &str, value: &str) {
-    for _ in 0..2 {
-        let Some(id) = cached_id(cache, client_name) else {
-            return;
+fn input_volume(input: &SinkInput) -> Option<f64> {
+    // Deterministic for unequal channel gains; HashMap iteration order must not
+    // make a single slider jump randomly between left and right channel levels.
+    input
+        .volume
+        .values()
+        .filter_map(|channel| parse_percent(&channel.value_percent))
+        .reduce(f64::max)
+}
+
+fn run_worker(shared: &Shared, cancel: &AtomicBool, client_name: &str) {
+    let mut next_poll = Instant::now();
+    let mut missing_delay = Duration::from_millis(250);
+    loop {
+        let (volume, mute) = {
+            let mut state = shared.0.0.lock().unwrap_or_else(PoisonError::into_inner);
+            loop {
+                if cancel.load(Ordering::Relaxed) {
+                    return;
+                }
+                if state.active && (state.dirty || Instant::now() >= next_poll) {
+                    break;
+                }
+                state = if state.active {
+                    shared
+                        .0
+                        .1
+                        .wait_timeout(state, next_poll.saturating_duration_since(Instant::now()))
+                        .unwrap_or_else(PoisonError::into_inner)
+                        .0
+                } else {
+                    shared
+                        .0
+                        .1
+                        .wait(state)
+                        .unwrap_or_else(PoisonError::into_inner)
+                };
+            }
+            state.dirty = false;
+            (state.desired_volume, state.desired_mute)
         };
-        if pactl(&[verb, &id.to_string(), value]).is_some() {
-            return;
+        // Do not retain an index across ticks: mpv can replace its sink-input,
+        // and a stale index must not direct a later write at another stream.
+        if let Some(input) = find(client_name, cancel) {
+            let id = input.index.to_string();
+            let volume_ok = volume.is_some_and(|value| {
+                pactl(
+                    &["set-sink-input-volume", &id, &format!("{value}%")],
+                    cancel,
+                )
+                .is_some()
+            });
+            let mute_ok = mute.is_some_and(|value| {
+                pactl(
+                    &["set-sink-input-mute", &id, if value { "1" } else { "0" }],
+                    cancel,
+                )
+                .is_some()
+            });
+            let mut state = shared.0.0.lock().unwrap_or_else(PoisonError::into_inner);
+            if let Some(observed_volume) = input_volume(&input) {
+                state.observed = Some((
+                    if volume_ok {
+                        volume.unwrap_or(observed_volume)
+                    } else {
+                        observed_volume
+                    },
+                    if mute_ok {
+                        mute.unwrap_or(input.mute)
+                    } else {
+                        input.mute
+                    },
+                ));
+            }
+            // Clear only the version just applied; edits arriving during I/O
+            // remain pending and will be the next operation, never reordered.
+            if volume_ok && state.desired_volume == volume {
+                state.desired_volume = None;
+            }
+            if mute_ok && state.desired_mute == mute {
+                state.desired_mute = None;
+            }
+            missing_delay = Duration::from_millis(250);
+            next_poll = Instant::now() + Duration::from_secs(2);
+        } else {
+            // FileLoaded may precede audio stream creation. Retain requested
+            // values and retry with bounded backoff rather than dropping them.
+            next_poll = Instant::now() + missing_delay;
+            missing_delay = (missing_delay * 2).min(Duration::from_secs(8));
         }
-        invalidate(cache);
     }
-}
-
-/// Set our stream to `percent` on the mixer's scale (100 = 0 dB, up to ~150 for
-/// boost). The sound server remembers it per client name across files/sessions.
-/// Applied on a detached thread; a newer call supersedes this one.
-pub fn set_volume(cache: &Cache, client_name: &str, percent: f64) {
-    let generation = VOLUME_GEN.fetch_add(1, Ordering::Relaxed) + 1;
-    let value = format!("{}%", percent.clamp(0.0, 250.0).round() as i64);
-    let cache = Arc::clone(cache);
-    let client_name = client_name.to_string();
-    thread::spawn(move || {
-        if VOLUME_GEN.load(Ordering::Relaxed) == generation {
-            apply(&cache, &client_name, "set-sink-input-volume", &value);
-        }
-    });
-}
-
-pub fn set_mute(cache: &Cache, client_name: &str, mute: bool) {
-    let generation = MUTE_GEN.fetch_add(1, Ordering::Relaxed) + 1;
-    let value = if mute { "1" } else { "0" };
-    let cache = Arc::clone(cache);
-    let client_name = client_name.to_string();
-    thread::spawn(move || {
-        if MUTE_GEN.load(Ordering::Relaxed) == generation {
-            apply(&cache, &client_name, "set-sink-input-mute", value);
-        }
-    });
-}
-
-/// Current `(volume percent, muted)` for our stream in a single `pactl` query,
-/// or `None` while nothing plays. Used by the mixer-mirroring poll.
-pub fn get_state(cache: &Cache, client_name: &str) -> Option<(f64, bool)> {
-    let input = find(client_name)?;
-    *cache.lock().unwrap_or_else(PoisonError::into_inner) = Some(input.index);
-    let volume = parse_percent(&input.volume.values().next()?.value_percent)?;
-    Some((volume, input.mute))
-}
-
-/// Current stream volume on the mixer's scale, or `None` while nothing plays.
-pub fn get_volume(cache: &Cache, client_name: &str) -> Option<f64> {
-    get_state(cache, client_name).map(|(volume, _)| volume)
-}
-
-pub fn get_mute(client_name: &str) -> Option<bool> {
-    Some(find(client_name)?.mute)
 }
 
 #[cfg(test)]
 mod tests {
-    use super::parse_percent;
+    use super::*;
 
     #[test]
-    fn parse_percent_reads_plain_and_padded() {
-        assert_eq!(parse_percent("55%"), Some(55.0));
+    fn percentages_are_finite_and_nonnegative() {
         assert_eq!(parse_percent(" 130% "), Some(130.0));
         assert_eq!(parse_percent("0%"), Some(0.0));
-    }
-
-    #[test]
-    fn parse_percent_rejects_garbage() {
-        assert_eq!(parse_percent(""), None);
-        assert_eq!(parse_percent("%"), None);
-        assert_eq!(parse_percent("loud"), None);
-    }
-
-    #[test]
-    fn parse_percent_handles_missing_suffix() {
         assert_eq!(parse_percent("42"), Some(42.0));
+        for invalid in ["", "%", "NaN%", "inf", "-1%", "loud"] {
+            assert_eq!(parse_percent(invalid), None);
+        }
+    }
+
+    fn stream(index: u32, pid: &str) -> SinkInput {
+        SinkInput {
+            index,
+            mute: false,
+            properties: Properties {
+                application_name: "player".into(),
+                process_id: pid.into(),
+            },
+            volume: std::collections::HashMap::default(),
+        }
+    }
+
+    #[test]
+    fn never_controls_a_different_process_or_ambiguous_stream() {
+        assert!(select_input(vec![stream(1, "other")], "player", "ours").is_none());
+        assert!(
+            select_input(vec![stream(1, "ours"), stream(2, "ours")], "player", "ours").is_none()
+        );
+        assert_eq!(
+            select_input(
+                vec![stream(1, "other"), stream(2, "ours")],
+                "player",
+                "ours"
+            )
+            .unwrap()
+            .index,
+            2
+        );
+    }
+
+    #[test]
+    fn latest_desired_value_wins_without_io() {
+        let volume = StreamVolume {
+            shared: Shared(Arc::new((Mutex::new(State::default()), Condvar::new()))),
+            cancelled: Arc::new(AtomicBool::new(false)),
+            worker: None,
+        };
+        for value in 0..1000 {
+            volume.set_volume(f64::from(value));
+        }
+        volume.set_volume(42.0);
+        volume.set_volume(f64::NAN);
+        volume.set_mute(true);
+        assert_eq!(volume.snapshot(), (42.0, true));
     }
 }

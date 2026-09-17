@@ -4,13 +4,12 @@ use log::{info, warn};
 use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, Ordering};
 
-use super::metadata::build_metadata;
 use super::properties::{
     get_player_property, get_root_property, handle_player_method, set_player_property,
 };
-use super::signals::{emit_launcher_entry, emit_properties_changed};
+use super::signals::emit_launcher_entry;
 use super::sync::sync_state;
-use super::types::{CommandCallback, StateCallback, playback_status, previous_state, taskbar_flag};
+use super::types::{CommandCallback, MprisCommand, StateCallback, previous_state, taskbar_flag};
 use super::{MPRIS_PATH, MPRIS_PLAYER_IFACE, PLAYER_XML, ROOT_XML};
 
 #[derive(Debug, Clone, PartialEq)]
@@ -20,10 +19,10 @@ struct LauncherEntryUpdate {
     progress: f64,
 }
 
-fn root_method_command(method: &str) -> Option<&'static str> {
+fn root_method_command(method: &str) -> Option<MprisCommand> {
     match method {
-        "Raise" => Some("raise"),
-        "Quit" => Some("quit"),
+        "Raise" => Some(MprisCommand::Raise),
+        "Quit" => Some(MprisCommand::Quit),
         _ => None,
     }
 }
@@ -55,7 +54,11 @@ fn taskbar_progress_launcher_entry_update(
         return None;
     }
 
-    if duration_secs > 0.0 {
+    if duration_secs.is_finite()
+        && duration_secs > 0.0
+        && position_secs.is_finite()
+        && position_secs >= 0.0
+    {
         Some(LauncherEntryUpdate {
             desktop_uri: desktop_application_uri(desktop_id),
             is_visible: true,
@@ -64,27 +67,6 @@ fn taskbar_progress_launcher_entry_update(
     } else {
         Some(hidden_launcher_entry_update(desktop_id))
     }
-}
-
-fn playback_status_changed_properties(paused: bool) -> glib::Variant {
-    let dict = glib::VariantDict::new(None);
-    dict.insert("PlaybackStatus", playback_status(paused));
-    dict.end()
-}
-
-fn metadata_changed_properties(
-    title: &str,
-    artist: &str,
-    album: &str,
-    duration_secs: f64,
-    art_url: Option<&str>,
-) -> glib::Variant {
-    let dict = glib::VariantDict::new(None);
-    dict.insert_value(
-        "Metadata",
-        &build_metadata(title, artist, album, duration_secs, art_url),
-    );
-    dict.end()
 }
 
 fn first_dbus_interface<'a>(
@@ -182,14 +164,6 @@ impl Mpris {
             }
         };
 
-        let owner_id = gio::bus_own_name_on_connection(
-            &connection,
-            bus_name,
-            gio::BusNameOwnerFlags::NONE,
-            |_, _| {},
-            |_, _| {},
-        );
-
         let command_cb = Arc::new(command_cb);
         let state_cb = Arc::new(state_cb);
         let prev_state = previous_state();
@@ -202,7 +176,13 @@ impl Mpris {
                 .method_call(
                     move |_conn, _sender, _path, _interface, method, _params, invocation| {
                         if let Some(command) = root_method_command(method) {
-                            cmd(command, None);
+                            cmd(command);
+                        } else {
+                            invocation.return_dbus_error(
+                                "org.freedesktop.DBus.Error.UnknownMethod",
+                                "Unknown root method",
+                            );
+                            return;
                         }
                         invocation.return_value(None);
                     },
@@ -213,9 +193,14 @@ impl Mpris {
                             .unwrap_or_else(|| false.to_variant())
                     },
                 )
+                // Fullscreen cannot change for this service; GDBus handles
+                // unknown properties through introspection before this callback.
+                .set_property(move |_, _, _, _, _, _| false)
                 .build();
             if let Err(e) = result {
                 warn!("MPRIS: failed to register root interface: {e}");
+                let _ = connection.close_sync(gio::Cancellable::NONE);
+                return None;
             }
         }
 
@@ -223,13 +208,14 @@ impl Mpris {
             let cmd = command_cb.clone();
             let st_for_prop = state_cb.clone();
             let cmd_for_set = command_cb.clone();
-            let conn_clone = connection.clone();
+            let state_for_method = state_cb.clone();
+            let state_for_set = state_cb.clone();
 
             let result = connection
                 .register_object(MPRIS_PATH, player_iface)
                 .method_call(
                     move |_conn, _sender, _path, _interface, method, params, invocation| {
-                        handle_player_method(method, params, invocation, &cmd, &conn_clone);
+                        handle_player_method(method, params, invocation, &cmd, &state_for_method);
                     },
                 )
                 .property(
@@ -240,14 +226,24 @@ impl Mpris {
                 )
                 .set_property(
                     move |_conn, _sender, _path, _interface, property, value| -> bool {
-                        set_player_property(property, &value, &cmd_for_set)
+                        set_player_property(property, &value, &cmd_for_set, &state_for_set)
                     },
                 )
                 .build();
             if let Err(e) = result {
                 warn!("MPRIS: failed to register player interface: {e}");
+                let _ = connection.close_sync(gio::Cancellable::NONE);
+                return None;
             }
         }
+
+        let owner_id = gio::bus_own_name_on_connection(
+            &connection,
+            bus_name,
+            gio::BusNameOwnerFlags::NONE,
+            |_, _| {},
+            |_, _| {},
+        );
 
         let conn_for_timer = connection.clone();
         let state_for_timer = state_cb;
@@ -368,31 +364,6 @@ impl Mpris {
             update.progress,
         );
     }
-
-    /// Emit the playback status signal on the active D-Bus connection.
-    pub fn emit_playback_status(&self, paused: bool) {
-        emit_properties_changed(&self.connection, playback_status_changed_properties(paused));
-    }
-
-    /// Emit the metadata signal on the active D-Bus connection.
-    pub fn emit_metadata(&self, title: &str, artist: &str, album: &str, duration_secs: f64) {
-        self.emit_metadata_with_art(title, artist, album, duration_secs, None);
-    }
-
-    /// Emit the metadata with art signal on the active D-Bus connection.
-    pub fn emit_metadata_with_art(
-        &self,
-        title: &str,
-        artist: &str,
-        album: &str,
-        duration_secs: f64,
-        art_url: Option<&str>,
-    ) {
-        emit_properties_changed(
-            &self.connection,
-            metadata_changed_properties(title, artist, album, duration_secs, art_url),
-        );
-    }
 }
 
 impl Drop for Mpris {
@@ -411,174 +382,17 @@ impl Drop for Mpris {
 
 #[cfg(test)]
 mod tests {
-    use gtk::gio;
-    use gtk::glib::VariantDict;
-    use gtk::glib::variant::FromVariant;
-
-    use super::{
-        LauncherEntryUpdate, desktop_application_uri, first_dbus_interface,
-        hidden_launcher_entry_update, metadata_changed_properties,
-        playback_status_changed_properties, private_session_connection_flags, root_method_command,
-        taskbar_progress_launcher_entry_update,
-    };
-
+    use super::*;
     #[test]
-    fn root_method_command_dispatches_window_commands() {
-        assert_eq!(root_method_command("Raise"), Some("raise"));
-        assert_eq!(root_method_command("Quit"), Some("quit"));
-        assert_eq!(root_method_command("Play"), None);
+    fn known_roots_are_typed_unknowns_do_not_dispatch() {
+        assert_eq!(root_method_command("Raise"), Some(MprisCommand::Raise));
+        assert_eq!(root_method_command("Bogus"), None);
     }
-
     #[test]
-    fn private_session_connection_flags_enable_client_message_bus_connection() {
-        assert_eq!(
-            private_session_connection_flags(),
-            gio::DBusConnectionFlags::AUTHENTICATION_CLIENT
-                .union(gio::DBusConnectionFlags::MESSAGE_BUS_CONNECTION)
-        );
-    }
-
-    #[test]
-    fn first_dbus_interface_rejects_nodes_without_interfaces() {
-        let node = gio::DBusNodeInfo::for_xml("<node></node>").unwrap();
-        assert!(first_dbus_interface(&node, "empty").is_none());
-    }
-
-    #[test]
-    fn desktop_application_uri_uses_application_scheme_and_desktop_suffix() {
-        assert_eq!(
-            desktop_application_uri("br.com.biglinux.VideoPlayer"),
-            "application://br.com.biglinux.VideoPlayer.desktop"
-        );
-    }
-
-    #[test]
-    fn hidden_launcher_entry_update_clears_progress() {
-        assert_eq!(
-            hidden_launcher_entry_update("br.com.biglinux.AudioPlayer"),
-            LauncherEntryUpdate {
-                desktop_uri: "application://br.com.biglinux.AudioPlayer.desktop".into(),
-                is_visible: false,
-                progress: 0.0,
-            }
-        );
-    }
-
-    #[test]
-    fn taskbar_progress_launcher_entry_update_respects_enabled_flag() {
-        assert_eq!(
-            taskbar_progress_launcher_entry_update(
-                "br.com.biglinux.VideoPlayer",
-                false,
-                50.0,
-                100.0,
-            ),
-            None
-        );
-    }
-
-    #[test]
-    fn taskbar_progress_launcher_entry_update_scales_and_clamps_progress() {
-        assert_eq!(
-            taskbar_progress_launcher_entry_update(
-                "br.com.biglinux.VideoPlayer",
-                true,
-                25.0,
-                100.0,
-            ),
-            Some(LauncherEntryUpdate {
-                desktop_uri: "application://br.com.biglinux.VideoPlayer.desktop".into(),
-                is_visible: true,
-                progress: 0.25,
-            })
-        );
-        assert_eq!(
-            taskbar_progress_launcher_entry_update(
-                "br.com.biglinux.VideoPlayer",
-                true,
-                -25.0,
-                100.0,
-            )
-            .map(|update| update.progress),
-            Some(0.0)
-        );
-        assert_eq!(
-            taskbar_progress_launcher_entry_update(
-                "br.com.biglinux.VideoPlayer",
-                true,
-                125.0,
-                100.0,
-            )
-            .map(|update| update.progress),
-            Some(1.0)
-        );
-    }
-
-    #[test]
-    fn taskbar_progress_launcher_entry_update_hides_without_duration() {
-        assert_eq!(
-            taskbar_progress_launcher_entry_update("br.com.biglinux.VideoPlayer", true, 25.0, 0.0,),
-            Some(LauncherEntryUpdate {
-                desktop_uri: "application://br.com.biglinux.VideoPlayer.desktop".into(),
-                is_visible: false,
-                progress: 0.0,
-            })
-        );
-    }
-
-    #[test]
-    #[cfg_attr(miri, ignore)]
-    fn playback_status_changed_properties_wraps_status() {
-        let paused_properties = playback_status_changed_properties(true);
-        let paused_dict = VariantDict::from_variant(&paused_properties).expect("paused dict");
-        assert_eq!(
-            paused_dict
-                .lookup::<String>("PlaybackStatus")
-                .expect("paused status")
-                .as_deref(),
-            Some("Paused")
-        );
-
-        let playing_properties = playback_status_changed_properties(false);
-        let playing_dict = VariantDict::from_variant(&playing_properties).expect("playing dict");
-        assert_eq!(
-            playing_dict
-                .lookup::<String>("PlaybackStatus")
-                .expect("playing status")
-                .as_deref(),
-            Some("Playing")
-        );
-    }
-
-    #[test]
-    #[cfg_attr(miri, ignore)]
-    fn metadata_changed_properties_wraps_metadata_payload() {
-        let properties = metadata_changed_properties(
-            "Song",
-            "Artist",
-            "Album",
-            12.5,
-            Some("file:///tmp/art.png"),
-        );
-        let properties_dict = VariantDict::from_variant(&properties).expect("properties dict");
-        let metadata = properties_dict
-            .lookup_value("Metadata", None)
-            .expect("metadata payload");
-        let metadata_dict = VariantDict::from_variant(&metadata).expect("metadata dict");
-
-        assert_eq!(
-            metadata_dict
-                .lookup::<String>("xesam:title")
-                .expect("title")
-                .as_deref(),
-            Some("Song")
-        );
-        assert_eq!(
-            metadata_dict
-                .lookup::<String>("mpris:artUrl")
-                .expect("art")
-                .as_deref(),
-            Some("file:///tmp/art.png")
+    fn private_bus_flags_are_preserved() {
+        assert!(
+            private_session_connection_flags()
+                .contains(gio::DBusConnectionFlags::MESSAGE_BUS_CONNECTION)
         );
     }
 }

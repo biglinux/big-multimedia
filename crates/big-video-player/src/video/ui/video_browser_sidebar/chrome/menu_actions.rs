@@ -167,7 +167,17 @@ fn save_playlist(state: &Rc<BrowserState>) {
     FilePicker::new(i18n("Save Playlist"))
         .initial_name("playlist.m3u8")
         .save(&window, move |path| {
-            playlist::write_m3u(&path, &state.queue.borrow());
+            let items=state.queue.borrow().clone();
+            let parent=state.window().map(|w|w.downgrade());
+            crate::settings::saving::acknowledged_task(false, move || {
+                playlist::write_m3u(&path,&items).map_err(|_|std::io::Error::other("Playlist export failed; existing files were kept"))
+            }, move |result| {
+                if let Some(parent)=parent.and_then(|p|p.upgrade()) {
+                    let message=if result.is_ok() {i18n("Playlist exported")} else {i18n("Playlist export could not be confirmed. Existing files were kept; choose a new name and retry.")};
+                    let alert=adw::AlertDialog::builder().heading(i18n("Playlist export")).body(message).build();
+                    alert.add_response("close",&i18n("Close")); alert.present(Some(&parent));
+                }
+            });
         });
 }
 

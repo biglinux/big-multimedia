@@ -105,24 +105,26 @@ pub(crate) fn query_tracks_for_node(
 /// Build the full nested library tree (the `SetLibraryTree` payload) from the
 /// group + recursive child queries — the producer side of the atomic preload.
 /// Mirrors `window::library::{rebuild,populate,preload}` but emits pure data.
-pub(crate) fn build_library_tree_snapshot(
+pub(crate) fn try_build_library_tree_snapshot(
     conn: &rusqlite::Connection,
     grouping: &LibraryGrouping,
     filter: &str,
     age_secs: Option<i64>,
-) -> LibraryTreeSnapshot {
-    let total = queries::get_library_track_count(conn, filter, age_secs).unwrap_or(0);
+) -> Result<LibraryTreeSnapshot, &'static str> {
+    let total = queries::get_library_track_count(conn, filter, age_secs)
+        .map_err(|_| "library count failed")?;
     if total == 0 {
-        return LibraryTreeSnapshot::default();
+        return Ok(LibraryTreeSnapshot::default());
     }
 
     let level0 = grouping.level(0);
     if level0 == GroupBy::None {
         // Songs view: flat file leaves, no grouping.
-        let tracks = queries::get_library_tracks(conn, &[], filter, age_secs).unwrap_or_default();
-        return LibraryTreeSnapshot {
+        let tracks = queries::get_library_tracks(conn, &[], filter, age_secs)
+            .map_err(|_| "library query failed")?;
+        return Ok(LibraryTreeSnapshot {
             level0: tracks.iter().map(file_node).collect(),
-        };
+        });
     }
 
     let mut level0_nodes = vec![LibraryTreeNode {
@@ -137,7 +139,8 @@ pub(crate) fn build_library_tree_snapshot(
 
     // "Various Artists" bucket (compilations) — only under an artist top level.
     let compilations = if matches!(level0, GroupBy::Artist | GroupBy::AlbumArtist) {
-        queries::get_compilation_albums(conn, filter, &[], age_secs).unwrap_or_default()
+        queries::get_compilation_albums(conn, filter, &[], age_secs)
+            .map_err(|_| "library query failed")?
     } else {
         Vec::new()
     };
@@ -148,8 +151,8 @@ pub(crate) fn build_library_tree_snapshot(
             .map(|(album, count)| {
                 let filters = [("album", album.as_str())];
                 let tracks = queries::get_library_tracks(conn, &filters, filter, age_secs)
-                    .unwrap_or_default();
-                LibraryTreeNode {
+                    .map_err(|_| "library query failed")?;
+                Ok::<_, &'static str>(LibraryTreeNode {
                     kind: BrowserNodeKind::Album,
                     label: album.clone(),
                     key: album.clone(),
@@ -157,9 +160,9 @@ pub(crate) fn build_library_tree_snapshot(
                     secondary: "Various Artists".to_string(),
                     children: tracks.iter().map(file_node).collect(),
                     track: None,
-                }
+                })
             })
-            .collect();
+            .collect::<Result<Vec<_>, _>>()?;
         level0_nodes.push(LibraryTreeNode {
             kind: BrowserNodeKind::VariousArtists,
             label: i18n("Various Artists"),
@@ -172,7 +175,7 @@ pub(crate) fn build_library_tree_snapshot(
     }
 
     let groups = queries::get_library_groups(conn, level0.column(), filter, &[], age_secs)
-        .unwrap_or_default();
+        .map_err(|_| "library query failed")?;
     let ctx = GroupSubtreeCtx {
         conn,
         grouping,
@@ -183,12 +186,12 @@ pub(crate) fn build_library_tree_snapshot(
         if value.is_empty() {
             continue;
         }
-        level0_nodes.push(build_group_subtree(&ctx, 0, level0, value, *count, &[]));
+        level0_nodes.push(build_group_subtree(&ctx, 0, level0, value, *count, &[])?);
     }
 
-    LibraryTreeSnapshot {
+    Ok(LibraryTreeSnapshot {
         level0: level0_nodes,
-    }
+    })
 }
 
 /// Recursion-invariant context for [`build_group_subtree`]: the DB handle, the
@@ -210,7 +213,7 @@ fn build_group_subtree(
     value: &str,
     count: i64,
     parent_filters: &[(&str, &str)],
-) -> LibraryTreeNode {
+) -> Result<LibraryTreeNode, &'static str> {
     let mut filters: Vec<(String, String)> = parent_filters
         .iter()
         .map(|(column, val)| ((*column).to_string(), (*val).to_string()))
@@ -224,7 +227,7 @@ fn build_group_subtree(
     let next_idx = level_idx + 1;
     let children = if next_idx >= ctx.grouping.depth() {
         queries::get_library_tracks(ctx.conn, &filter_refs, ctx.filter, ctx.age_secs)
-            .unwrap_or_default()
+            .map_err(|_| "library query failed")?
             .iter()
             .map(file_node)
             .collect()
@@ -237,16 +240,16 @@ fn build_group_subtree(
             &filter_refs,
             ctx.age_secs,
         )
-        .unwrap_or_default()
+        .map_err(|_| "library query failed")?
         .iter()
         .filter(|(sub_value, _)| !sub_value.is_empty())
         .map(|(sub_value, sub_count)| {
             build_group_subtree(ctx, next_idx, next, sub_value, *sub_count, &filter_refs)
         })
-        .collect()
+        .collect::<Result<Vec<_>, _>>()?
     };
 
-    LibraryTreeNode {
+    Ok(LibraryTreeNode {
         kind: group_by.node_kind(),
         label: value.to_string(),
         key: value.to_string(),
@@ -254,7 +257,7 @@ fn build_group_subtree(
         secondary: String::new(),
         children,
         track: None,
-    }
+    })
 }
 
 /// A file-leaf node carrying the full track (drag/export) + the tab-joined
@@ -276,6 +279,16 @@ fn file_node(track: &Track) -> LibraryTreeNode {
         children: Vec::new(),
         track: Some(track.clone()),
     }
+}
+
+#[cfg(test)]
+fn build_library_tree_snapshot(
+    conn: &rusqlite::Connection,
+    grouping: &LibraryGrouping,
+    filter: &str,
+    age: Option<i64>,
+) -> LibraryTreeSnapshot {
+    try_build_library_tree_snapshot(conn, grouping, filter, age).expect("valid test fixture")
 }
 
 #[cfg(all(test, not(miri)))]

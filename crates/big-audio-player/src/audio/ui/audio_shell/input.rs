@@ -46,7 +46,12 @@ pub enum AudioShellInput {
     /// Saved radio stations resolved (async DB result) → push to the radio panel.
     RadioStationsResolved(Vec<RadioStation>),
     /// A folder scan finished → rebuild the library tree + playlist dialog data.
-    ScanFinished,
+    ScanFinished(bool),
+    /// A bounded, cancellable import finished (earlier commits are preserved).
+    LibraryScanFinished {
+        control: Arc<library_scan_engine::ScanControl>,
+        report: library_scan_engine::ScanReport,
+    },
     /// Dropped/opened paths resolved to library tracks (async DB result) →
     /// insert into the queue at `insert_pos`.
     DroppedResolved {
@@ -65,8 +70,20 @@ pub enum AudioShellInput {
     /// Rebuild the library tree from the current grouping/filter/age (boot +
     /// after a grouping/search/age change).
     RebuildLibraryTree,
+    LibraryTreeFailed {
+        generation: u64,
+    },
     /// The rebuilt library tree (async DB result) → push to the library panel.
-    LibraryTreeResolved(LibraryTreeSnapshot),
+    LibraryTreeResolved {
+        /// Current search/grouping/age generation.
+        generation: u64,
+        /// Snapshot built off the main thread.
+        data: LibraryTreeSnapshot,
+    },
+    /// A playlist mutation completed (false leaves the current view unchanged).
+    PlaylistMutationFinished(bool),
+    /// The playlist picker could not read its data.
+    PlaylistReadFailed,
     /// Reload playlist dialog data after any playlist DB change.
     RefreshPlaylists,
     /// Edited tags were written to file + DB → patch the queue + rebuild tree.
@@ -118,19 +135,26 @@ pub enum AudioShellInput {
     /// An imported playlist file was chosen → parse + save as a new playlist.
     ImportPlaylistFile {
         /// Absolute path to the `.m3u`/`.pls` file.
-        path: String,
+        path: PathBuf,
         /// Suggested playlist name (file stem).
         name: String,
     },
     /// A folder was chosen for batch import → parse every playlist file in it.
     ImportPlaylistFolder(PathBuf),
     /// Import finished → `usize` tracks were matched and added.
-    PlaylistImported(usize),
+    PlaylistImported(Result<usize, String>),
     /// A transport command from the smartphone remote (worker thread) — reuses
     /// the normal playback handler.
-    PlaybackRemote(AudioPlaybackBarOutput),
+    PlaybackRemote {
+        command: AudioPlaybackBarOutput,
+        permit: crate::audio::ui::smartphone_dialog::RemoteActionPermit,
+    },
     /// Open the sleep-timer dialog (main menu).
     ShowSleepTimer,
+    /// Open preferences bound to this shell's actual playback engine.
+    ShowPreferences,
+    /// Apply the persisted taskbar-progress choice without a restart.
+    TaskbarProgressChanged(bool),
     /// Arm the sleep timer for `minutes`, then perform `action` on expiry.
     SleepTimerStart {
         /// Countdown length in minutes.
@@ -142,15 +166,17 @@ pub enum AudioShellInput {
     SleepTimerCancel,
     /// One-second sleep-timer countdown tick.
     SleepTick,
+    /// Show a transient toast — used by workers that must report a failure
+    /// without leaving the previous result on screen as if it had succeeded.
+    Notify(String),
     /// Undo the last queue edit (Ctrl+Z).
     Undo,
     /// Redo the last undone queue edit (Ctrl+Shift+Z / Ctrl+Y).
     Redo,
     /// Toggle shuffle from a keyboard/action shortcut.
     ToggleShuffleShortcut,
-    /// An MPRIS D-Bus command (`cmd`, optional µs/index arg) routed onto the
-    /// main thread.
-    MprisCommand(String, Option<i64>),
+    /// Typed MPRIS command, with track identity preserved across thread dispatch.
+    MprisCommand(MprisCommand),
     /// Album art resolved for a track (async); `gen` guards against a stale
     /// result → MPRIS metadata + blur bg.
     ArtResolved {

@@ -15,6 +15,7 @@ default = []
 chromecast = ["big-media-runtime/chromecast"]
 
 [dependencies]
+big-os-kit.workspace = true
 adw = { version = "0.9", features = ["v1_9"], package = "libadwaita" }
 gtk = { version = "0.11", features = ["v4_22"], package = "gtk4" }
 glib = "0.22"

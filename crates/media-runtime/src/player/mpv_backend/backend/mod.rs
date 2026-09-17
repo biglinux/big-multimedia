@@ -30,9 +30,10 @@ struct PollState {
     last_buffering: Option<bool>,
     last_eof: bool,
     last_title: String,
-    last_volume_poll: Option<std::time::Instant>,
     last_volume: Option<f64>,
     last_mute: Option<bool>,
+    last_rate: Option<f64>,
+    seek_pending: bool,
     pending: Vec<PlayerEvent>,
 }
 
@@ -41,6 +42,7 @@ impl PollState {
         self.last_pos = -1.0;
         self.last_dur = -1.0;
         self.last_eof = false;
+        self.seek_pending = false;
     }
 }
 
@@ -54,6 +56,7 @@ enum MappedEvent {
     Duration(f64),
     Paused(bool),
     Volume(f64),
+    CommandReply { id: u64, error: i32 },
 }
 
 pub struct MpvBackend {
@@ -69,18 +72,14 @@ pub struct MpvBackend {
     /// Suppresses the eof-reached poll during file transitions to prevent
     /// spurious EndFile(0) events that cause unwanted queue advance.
     pub(in crate::player::mpv_backend) loading: Arc<AtomicBool>,
+    pub(in crate::player::mpv_backend) audio_only: bool,
+    pub(in crate::player::mpv_backend) screenshots: Arc<super::screenshots::Screenshots>,
     event_thread: Option<std::thread::JoinHandle<()>>,
+    event_sender: async_channel::Sender<PlayerEvent>,
     /// Tracks whether audio filters are currently set, so we can skip
     /// the expensive ao-reload when clearing an already-empty chain.
     pub(in crate::player::mpv_backend) has_af: AtomicBool,
-    /// `audio-client-name` mpv reports to the sound server (== `application.name`
-    /// on our sink-input). Used to locate our own stream for volume control.
-    pub(in crate::player::mpv_backend) audio_client_name: String,
-    /// Cached sink-input index for our stream (mpv recreates it per file, so this
-    /// is re-resolved when a `pactl` call finds it stale). Shared with the event
-    /// loop, which polls the stream to mirror external mixer changes back to the
-    /// UI. See `pactl_volume`.
-    pub(in crate::player::mpv_backend) pa_sink_input: Arc<Mutex<Option<u32>>>,
+    pub(in crate::player::mpv_backend) stream_volume: super::pactl_volume::StreamVolume,
 }
 
 // SAFETY: raw_mpv_handle points to an mpv_handle that lives as long as the Arc<Mutex<MpvClient>>.
@@ -114,13 +113,23 @@ impl MpvBackend {
             sender,
             "mpv-events",
             "MpvBackend initialized",
+            false,
         ))
     }
 
     /// Create a new MpvBackend in audio-only mode (no video output).
     pub fn new_audio_only(sender: async_channel::Sender<PlayerEvent>) -> Result<Self, MpvError> {
+        Self::new_audio_only_with_output(sender, "")
+    }
+
+    /// Create an audio engine using the saved output driver (empty means auto).
+    pub fn new_audio_only_with_output(
+        sender: async_channel::Sender<PlayerEvent>,
+        audio_output: &str,
+    ) -> Result<Self, MpvError> {
         let mpv = MpvClient::with_initializer(|init| {
             apply_audio_only_options(init)?;
+            apply_audio_output(init, audio_output);
             apply_watch_later(init, crate::config::audio::WATCH_LATER_RELATIVE)?;
             Ok(())
         })?;
@@ -130,6 +139,7 @@ impl MpvBackend {
             sender,
             "mpv-audio-events",
             "MpvBackend initialized (audio-only)",
+            true,
         ))
     }
 
@@ -138,6 +148,7 @@ impl MpvBackend {
         sender: async_channel::Sender<PlayerEvent>,
         thread_name: &str,
         init_log: &str,
+        audio_only: bool,
     ) -> Self {
         let mpv = Arc::new(Mutex::new(mpv));
         let raw_mpv_handle = mpv
@@ -150,10 +161,12 @@ impl MpvBackend {
         let load_flag = loading.clone();
         let mpv_clone = mpv.clone();
         let audio_client_name = init_options::audio_client_name();
-        let pa_sink_input = Arc::new(Mutex::new(None));
-        let poll_client = audio_client_name.clone();
-        let poll_cache = pa_sink_input.clone();
+        let stream_volume = super::pactl_volume::StreamVolume::new(audio_client_name);
+        let volume_state = stream_volume.shared();
 
+        let screenshots = Arc::new(super::screenshots::Screenshots::new());
+        let screenshots_for_thread = screenshots.clone();
+        let event_sender = sender.clone();
         let event_thread = std::thread::Builder::new()
             .name(thread_name.into())
             .spawn(move || {
@@ -162,8 +175,8 @@ impl MpvBackend {
                     run_flag,
                     load_flag,
                     sender,
-                    poll_client,
-                    poll_cache,
+                    volume_state,
+                    screenshots_for_thread,
                 );
             })
             .expect("Failed to spawn mpv event thread");
@@ -174,10 +187,12 @@ impl MpvBackend {
             raw_mpv_handle,
             running,
             loading,
+            audio_only,
+            screenshots,
             event_thread: Some(event_thread),
+            event_sender,
             has_af: AtomicBool::new(false),
-            audio_client_name,
-            pa_sink_input,
+            stream_volume,
         }
     }
 
@@ -186,49 +201,88 @@ impl MpvBackend {
         running: Arc<AtomicBool>,
         loading: Arc<AtomicBool>,
         sender: async_channel::Sender<PlayerEvent>,
-        audio_client_name: String,
-        pa_sink_input: Arc<Mutex<Option<u32>>>,
+        volume_state: super::pactl_volume::Shared,
+        screenshots: Arc<super::screenshots::Screenshots>,
     ) {
         let mut poll = PollState::default();
+        let mut outgoing = Vec::with_capacity(80);
+        let mut pending = std::collections::VecDeque::with_capacity(96);
+        let handle = mpv
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner)
+            .raw_handle();
 
-        while running.load(Ordering::Relaxed) {
+        while running.load(Ordering::Relaxed) && !sender.is_closed() {
+            for id in screenshots.withdraw_expired() {
+                // The registry still owns the staging file until terminal receipt.
+                unsafe {
+                    mpv_sys::mpv_abort_async_command(handle, id);
+                }
+                pending.push_back(PlayerEvent::ScreenshotTimedOut { id });
+            }
+            while let Some(event) = pending.pop_front() {
+                match sender.try_send(event) {
+                    Ok(()) => {}
+                    Err(async_channel::TrySendError::Full(event)) => {
+                        pending.push_front(event);
+                        break;
+                    }
+                    Err(async_channel::TrySendError::Closed(_)) => return,
+                }
+            }
+            if !pending.is_empty() {
+                std::thread::sleep(std::time::Duration::from_millis(10));
+                continue;
+            }
             {
-                let mut mpv_guard = mpv
+                let mut guard = mpv
                     .lock()
                     .unwrap_or_else(std::sync::PoisonError::into_inner);
-                if !Self::drain_event_queue(&mut mpv_guard, &running, &loading, &sender, &mut poll)
-                {
-                    return;
-                }
-                Self::poll_properties(&mpv_guard, &loading, &sender, &mut poll);
+                Self::drain_event_queue(&mut guard, &loading, &mut poll, &mut outgoing);
+                Self::poll_properties(&guard, &loading, &mut poll, &mut outgoing);
             }
-            // Mirror external mixer changes (pavucontrol etc.) back to the UI.
-            // Outside the mpv lock — it shells `pactl`, and only every ~700 ms.
-            Self::poll_stream_volume(&audio_client_name, &pa_sink_input, &sender, &mut poll);
-            std::thread::sleep(std::time::Duration::from_millis(50));
+            // Never wait for the UI while holding the mpv mutex: a UI handler
+            // may need that same mutex before it can drain the bounded channel.
+            for event in outgoing.drain(..) {
+                let event = match event {
+                    PlayerEvent::AsyncCommandReply { id, error } => {
+                        let Some(result) = screenshots.complete(id, error) else {
+                            continue;
+                        };
+                        PlayerEvent::ScreenshotFinished { id, result }
+                    }
+                    other => other,
+                };
+                match &event {
+                    PlayerEvent::FileLoaded(_) => volume_state.set_active(true),
+                    PlayerEvent::EndFile(_) | PlayerEvent::Shutdown => {
+                        volume_state.set_active(false);
+                    }
+                    _ => {}
+                }
+                pending.push_back(event);
+            }
+            Self::poll_stream_volume(&volume_state, &sender, &mut poll);
+            // Position feedback stays smooth during playback, but a paused
+            // player does not need to poll every property twenty times/second.
+            let interval = if poll.last_paused == Some(true) {
+                200
+            } else {
+                50
+            };
+            std::thread::sleep(std::time::Duration::from_millis(interval));
         }
         debug!("MPV event loop exited");
     }
 
-    /// Poll our sink-input's volume/mute (throttled) so a change made in the
-    /// system mixer shows on the in-app slider. Diff-gated: only emits on change.
+    /// Mirror the worker snapshot. Sound-server I/O never blocks mpv events.
     fn poll_stream_volume(
-        client_name: &str,
-        cache: &Arc<Mutex<Option<u32>>>,
+        volume_state: &super::pactl_volume::Shared,
         sender: &async_channel::Sender<PlayerEvent>,
         poll: &mut PollState,
     ) {
-        let now = std::time::Instant::now();
-        if poll
-            .last_volume_poll
-            .is_some_and(|last| now.duration_since(last) < std::time::Duration::from_millis(700))
-        {
-            return;
-        }
-        poll.last_volume_poll = Some(now);
-
-        // Single `pactl` query per tick for both volume and mute.
-        if let Some((volume, mute)) = super::pactl_volume::get_state(cache, client_name) {
+        // Reading the worker snapshot cannot spawn or wait on a process.
+        if let Some((volume, mute)) = volume_state.snapshot() {
             if poll
                 .last_volume
                 .is_none_or(|last| (last - volume).abs() > 0.5)
@@ -243,25 +297,24 @@ impl MpvBackend {
         }
     }
 
-    /// Drain mpv's queued events. Returns `false` if the sender closed
-    /// (caller must exit the event loop).
+    /// Collect owned events under the mpv lock, without sending or waiting.
+    /// A bounded batch prevents an event burst monopolising the client mutex.
     fn drain_event_queue(
         mpv_guard: &mut MpvClient,
-        running: &Arc<AtomicBool>,
         loading: &Arc<AtomicBool>,
-        sender: &async_channel::Sender<PlayerEvent>,
         poll: &mut PollState,
-    ) -> bool {
-        while let Some(player_event) = Self::next_event(mpv_guard, loading, poll) {
-            if matches!(player_event, PlayerEvent::Shutdown) {
-                running.store(false, Ordering::Relaxed);
-            }
-            if sender.send_blocking(player_event).is_err() {
-                running.store(false, Ordering::Relaxed);
-                return false;
+        outgoing: &mut Vec<PlayerEvent>,
+    ) {
+        for _ in 0..64 {
+            let Some(event) = Self::next_event(mpv_guard, loading, poll) else {
+                break;
+            };
+            let shutdown = matches!(&event, PlayerEvent::Shutdown);
+            outgoing.push(event);
+            if shutdown {
+                break;
             }
         }
-        true
     }
 
     /// Pull one event from mpv. Returns `None` when the queue is empty
@@ -275,9 +328,25 @@ impl MpvBackend {
         loop {
             // Resolve and own the event data before the next wait_event call.
             let mapped = match mpv_guard.wait_event(0.0)? {
+                Ok(MpvEvent::Seek) => {
+                    poll.seek_pending = true;
+                    continue;
+                }
+                Ok(MpvEvent::PlaybackRestart) => {
+                    if std::mem::take(&mut poll.seek_pending)
+                        && let Ok(position) = mpv_guard.get_property::<f64>("time-pos")
+                        && position.is_finite()
+                        && position >= 0.0
+                    {
+                        return Some(PlayerEvent::Seeked(position));
+                    }
+                    continue;
+                }
                 Ok(MpvEvent::FileLoaded) => MappedEvent::FileLoaded,
                 Ok(MpvEvent::EndFile(reason)) => MappedEvent::EndFile(reason),
                 Ok(MpvEvent::Shutdown) => MappedEvent::Shutdown,
+                Ok(MpvEvent::CommandReply { id: 0, .. }) => continue,
+                Ok(MpvEvent::CommandReply { id, error }) => MappedEvent::CommandReply { id, error },
                 Ok(MpvEvent::PropertyChange { name, change }) => match (name.as_str(), change) {
                     ("time-pos", MpvPropertyValue::Double(v)) => MappedEvent::Position(v),
                     ("duration", MpvPropertyValue::Double(v)) => MappedEvent::Duration(v),
@@ -313,6 +382,7 @@ impl MpvBackend {
                 PlayerEvent::FileLoaded(title)
             }
             MappedEvent::EndFile(reason) => {
+                poll.seek_pending = false;
                 poll.last_eof = true;
                 log::debug!("[MPV-EVENT] EndFile reason={reason} (from mpv event queue)");
                 PlayerEvent::EndFile(reason)
@@ -322,6 +392,7 @@ impl MpvBackend {
             MappedEvent::Duration(v) => PlayerEvent::DurationChanged(v),
             MappedEvent::Paused(v) => PlayerEvent::PauseChanged(v),
             MappedEvent::Volume(v) => PlayerEvent::VolumeChanged(v),
+            MappedEvent::CommandReply { id, error } => PlayerEvent::AsyncCommandReply { id, error },
         }
     }
 
@@ -330,38 +401,44 @@ impl MpvBackend {
     fn poll_properties(
         mpv_guard: &MpvClient,
         loading: &Arc<AtomicBool>,
-        sender: &async_channel::Sender<PlayerEvent>,
         poll: &mut PollState,
+        outgoing: &mut Vec<PlayerEvent>,
     ) {
-        for pending in poll.pending.drain(..) {
-            let _ = sender.send_blocking(pending);
-        }
+        outgoing.append(&mut poll.pending);
         if let Ok(pos) = mpv_guard.get_property::<f64>("time-pos")
             && (pos - poll.last_pos).abs() > 0.05
         {
             poll.last_pos = pos;
-            let _ = sender.try_send(PlayerEvent::PositionChanged(pos));
+            outgoing.push(PlayerEvent::PositionChanged(pos));
         }
         if let Ok(dur) = mpv_guard.get_property::<f64>("duration")
             && (dur - poll.last_dur).abs() > 0.1
         {
             poll.last_dur = dur;
-            let _ = sender.try_send(PlayerEvent::DurationChanged(dur));
+            outgoing.push(PlayerEvent::DurationChanged(dur));
         }
         if let Ok(paused) = Self::get_bool_property(mpv_guard, "pause")
             && poll.last_paused != Some(paused)
         {
             poll.last_paused = Some(paused);
-            let _ = sender.try_send(PlayerEvent::PauseChanged(paused));
+            outgoing.push(PlayerEvent::PauseChanged(paused));
         }
         if loading.load(Ordering::Relaxed) {
             log::debug!("[MPV-POLL] skipping eof-reached check (loading=true)");
         } else if let Ok(eof) = Self::get_bool_property(mpv_guard, "eof-reached") {
             if eof && !poll.last_eof {
                 log::debug!("[MPV-POLL] eof-reached=true, sending synthetic EndFile(0)");
-                let _ = sender.try_send(PlayerEvent::EndFile(0));
+                outgoing.push(PlayerEvent::EndFile(0));
             }
             poll.last_eof = eof;
+        }
+        if let Ok(rate) = mpv_guard.get_property::<f64>("speed")
+            && rate.is_finite()
+            && rate > 0.0
+            && poll.last_rate != Some(rate)
+        {
+            poll.last_rate = Some(rate);
+            outgoing.push(PlayerEvent::RateChanged(rate));
         }
         if let Ok(title) = mpv_guard.get_property::<String>("media-title")
             && !title.is_empty()
@@ -373,13 +450,13 @@ impl MpvBackend {
             if let Ok(artist) = mpv_guard.get_property::<String>("metadata/by-key/artist") {
                 meta.insert("artist".to_string(), artist);
             }
-            let _ = sender.try_send(PlayerEvent::MetadataChanged(meta));
+            outgoing.push(PlayerEvent::MetadataChanged(meta));
         }
         if let Ok(buffering) = Self::get_bool_property(mpv_guard, "paused-for-cache")
             && poll.last_buffering != Some(buffering)
         {
             poll.last_buffering = Some(buffering);
-            let _ = sender.try_send(PlayerEvent::Buffering(buffering));
+            outgoing.push(PlayerEvent::Buffering(buffering));
         }
     }
 
@@ -472,6 +549,9 @@ impl MpvBackend {
 impl Drop for MpvBackend {
     fn drop(&mut self) {
         self.running.store(false, Ordering::Relaxed);
+        // A full channel may have the worker waiting for a GUI that is itself
+        // inside Drop. Closing wakes send_blocking before joining the worker.
+        self.event_sender.close();
         if let Some(handle) = self.event_thread.take() {
             let _ = handle.join();
         }
@@ -480,6 +560,7 @@ impl Drop for MpvBackend {
             .lock()
             .unwrap_or_else(std::sync::PoisonError::into_inner)
             .terminate_destroy();
+        self.screenshots.clear_after_termination();
 
         info!("MpvBackend dropped (mpv_terminate_destroy)");
     }

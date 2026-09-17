@@ -21,8 +21,18 @@ impl AudioShell {
             PlayerEvent::PauseChanged(paused) => {
                 self.is_playing = !paused;
                 self.mpris_state.paused.store(paused, Ordering::Relaxed);
-                if let Some(mpris) = &self.mpris {
-                    mpris.emit_playback_status(paused);
+                let mut status = self
+                    .mpris_state
+                    .status
+                    .lock()
+                    .unwrap_or_else(PoisonError::into_inner);
+                // A pause-property echo after Stop does not resume playback.
+                if *status != PlaybackStatus::Stopped {
+                    *status = if paused {
+                        PlaybackStatus::Paused
+                    } else {
+                        PlaybackStatus::Playing
+                    };
                 }
                 self.playback_bar
                     .emit(AudioPlaybackBarInput::SetPaused(paused));
@@ -33,9 +43,7 @@ impl AudioShell {
                     .position
                     .lock()
                     .unwrap_or_else(PoisonError::into_inner) = secs;
-                if let Some(mpris) = &self.mpris {
-                    mpris.update_taskbar_progress(secs, self.duration_secs);
-                }
+
                 self.playback_bar
                     .emit(AudioPlaybackBarInput::SetPosition(time::playback_time(
                         secs,
@@ -91,6 +99,23 @@ impl AudioShell {
                     });
             }
             PlayerEvent::FileLoaded(_) => {
+                self.mpris_state.selected();
+                let paused = self.mpv.as_ref().is_none_or(|mpv| mpv.is_paused());
+                self.is_playing = !paused;
+                self.mpris_state.paused.store(paused, Ordering::Relaxed);
+                *self
+                    .mpris_state
+                    .status
+                    .lock()
+                    .unwrap_or_else(PoisonError::into_inner) = if paused {
+                    PlaybackStatus::Paused
+                } else {
+                    PlaybackStatus::Playing
+                };
+                self.mpris_state.seekable.store(
+                    self.mpv.as_ref().is_some_and(|mpv| mpv.is_seekable()),
+                    Ordering::Relaxed,
+                );
                 if self.trim_active {
                     self.exit_trim_mode();
                 }
@@ -101,6 +126,31 @@ impl AudioShell {
                 self.sync_now_playing_card();
                 self.fetch_lyrics_for_current(sender);
                 self.push_mpris_metadata(sender);
+            }
+            PlayerEvent::Seeked(position) if position.is_finite() && position >= 0.0 => {
+                *self
+                    .mpris_state
+                    .position
+                    .lock()
+                    .unwrap_or_else(PoisonError::into_inner) = position;
+                if let Some(mpris) = &self.mpris {
+                    mpris.emit_seeked((position * 1_000_000.0).min(i64::MAX as f64).round() as i64);
+                }
+            }
+            PlayerEvent::RateChanged(rate) if rate.is_finite() && rate > 0.0 => {
+                *self
+                    .mpris_state
+                    .rate
+                    .lock()
+                    .unwrap_or_else(PoisonError::into_inner) = rate;
+            }
+            PlayerEvent::Shutdown => {
+                self.mpris_state.invalidate();
+                *self
+                    .mpris_state
+                    .status
+                    .lock()
+                    .unwrap_or_else(PoisonError::into_inner) = PlaybackStatus::Stopped;
             }
             _ => {}
         }
@@ -114,8 +164,11 @@ pub(super) fn build_mpv_backend(
     sender: &ComponentSender<AudioShell>,
     settings: &Settings,
 ) -> Option<Arc<MpvBackend>> {
-    let (tx, rx) = async_channel::unbounded::<PlayerEvent>();
-    let mpv = match MpvBackend::new_audio_only(tx) {
+    let (tx, rx) = async_channel::bounded::<PlayerEvent>(64);
+    let mpv = match MpvBackend::new_audio_only_with_output(
+        tx,
+        &settings.get_string(keys::AUDIO_OUTPUT),
+    ) {
         Ok(mpv) => mpv,
         Err(e) => {
             log::error!("failed to initialize mpv audio backend: {e}");
@@ -124,21 +177,21 @@ pub(super) fn build_mpv_backend(
     };
 
     let replaygain = settings.get_string(keys::REPLAYGAIN);
-    if !replaygain.is_empty() && replaygain != "no" {
-        mpv.set_replaygain(&replaygain);
-    }
-    let preamp = settings.get_double(keys::REPLAYGAIN_PREAMP);
-    if preamp.abs() > 0.01 {
-        mpv.set_replaygain_preamp(preamp);
-    }
-    let volume = f64::from(settings.get_int(keys::AUDIO_VOLUME));
-    mpv.set_volume(if volume > 0.0 { volume } else { 100.0 });
-    if settings.get_bool(keys::GAPLESS_AUDIO) {
-        mpv.set_gapless(true);
-    }
-    if settings.get_bool(keys::AUDIO_PITCH_CORRECTION) {
-        mpv.set_audio_pitch_correction(true);
-    }
+    mpv.set_replaygain(if replaygain.is_empty() {
+        "no"
+    } else {
+        &replaygain
+    });
+    mpv.set_replaygain_preamp(settings.get_double(keys::REPLAYGAIN_PREAMP));
+    // Zero is a deliberate user choice, not a missing setting.
+    mpv.set_volume(f64::from(restored_volume(
+        settings.get_int_or(keys::AUDIO_VOLUME, 100),
+    )));
+    mpv.set_gapless(settings.get_bool(keys::GAPLESS_AUDIO));
+    mpv.set_audio_pitch_correction(settings.get_bool(keys::AUDIO_PITCH_CORRECTION));
+    mpv.set_audio_channels(&settings.get_string(keys::AUDIO_CHANNELS));
+    mpv.set_preferred_audio_lang(&settings.get_string(keys::PREFERRED_AUDIO_LANG));
+    mpv.set_volume_max(i64::from(settings.get_int_or(keys::VOLUME_MAX, 150)));
     mpv.set_save_position(settings.get_bool(keys::RESUME_PLAYBACK));
 
     let input = sender.input_sender().clone();
@@ -151,4 +204,21 @@ pub(super) fn build_mpv_backend(
     });
 
     Some(Arc::new(mpv))
+}
+
+fn restored_volume(saved: i32) -> i32 {
+    saved.clamp(0, 250)
+}
+
+#[cfg(test)]
+mod review_tests {
+    use super::restored_volume;
+
+    #[test]
+    fn saved_zero_does_not_restart_at_full_volume() {
+        assert_eq!(restored_volume(0), 0);
+        assert_eq!(restored_volume(-1), 0);
+        assert_eq!(restored_volume(65), 65);
+        assert_eq!(restored_volume(i32::MAX), 250);
+    }
 }

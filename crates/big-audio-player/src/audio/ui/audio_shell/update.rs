@@ -7,13 +7,35 @@ impl AudioShell {
         sender: ComponentSender<Self>,
     ) {
         match message {
+            AudioShellInput::ShowPreferences => {
+                if let Some(window) = self.toast_overlay.root().and_downcast::<gtk::Window>() {
+                    let input = sender.input_sender().clone();
+                    crate::audio::preferences::show_audio_preferences(
+                        &window,
+                        &self.settings,
+                        self.mpv.as_ref(),
+                        Some(Box::new(move |enabled| {
+                            let _ = input.send(AudioShellInput::TaskbarProgressChanged(enabled));
+                        })),
+                    );
+                }
+            }
+            AudioShellInput::TaskbarProgressChanged(enabled) => {
+                if let Some(mpris) = &self.mpris {
+                    mpris.set_taskbar_progress(enabled);
+                }
+            }
             AudioShellInput::TracksDeletedFromStorage(ids) => {
                 self.reconcile_deleted_tracks(ids, &sender);
             }
             AudioShellInput::Library(out) => self.handle_library(out, &sender),
             AudioShellInput::Playlist(out) => self.handle_playlist(out, &sender),
-            AudioShellInput::Playback(out) | AudioShellInput::PlaybackRemote(out) => {
-                self.handle_playback(out, &sender);
+            AudioShellInput::Playback(out) => self.handle_playback(out, &sender),
+            AudioShellInput::PlaybackRemote { command, permit } => {
+                if permit.is_live() {
+                    self.handle_playback(command, &sender);
+                }
+                // Drop releases bounded admission even when the session was revoked.
             }
             AudioShellInput::Trim(out) => self.handle_trim(out, &sender),
             AudioShellInput::Files(out) => self.handle_files(out, &sender),
@@ -41,9 +63,44 @@ impl AudioShell {
             AudioShellInput::RadioStationsResolved(stations) => {
                 self.radio.emit(RadioPanelInput::RefreshStations(stations));
             }
-            AudioShellInput::ScanFinished => {
+            AudioShellInput::LibraryScanFinished { control, report } => {
+                let current = self
+                    .scan_slot
+                    .0
+                    .borrow()
+                    .as_ref()
+                    .is_some_and(|active| Arc::ptr_eq(active, &control));
+                if current {
+                    self.scan_slot.0.borrow_mut().take();
+                }
+                self.rebuild_library_tree(&sender);
+                // An import changes which tracks a playlist can offer, so the
+                // open dialog goes stale exactly as it does after `ScanFinished`.
+                self.refresh_playlist_dialog_entries(&sender);
+                let status = if report.cancelled {
+                    i18n("Scan cancelled. Earlier confirmed imports were kept.")
+                } else if report.failed {
+                    i18n(
+                        "Scan incomplete. Earlier confirmed imports were kept; check storage and retry.",
+                    )
+                } else {
+                    i18n("Library scan finished.")
+                };
                 self.playback_bar
-                    .emit(AudioPlaybackBarInput::SetStatus(i18n("Library updated")));
+                    .emit(AudioPlaybackBarInput::SetStatus(format!(
+                        "{status} {}: {} · {}: {}",
+                        i18n("Imported"),
+                        report.imported,
+                        i18n("Skipped"),
+                        report.skipped
+                    )));
+            }
+            AudioShellInput::ScanFinished(complete) => {
+                self.playback_bar.emit(AudioPlaybackBarInput::SetStatus(if complete {
+                    i18n("Library updated")
+                } else {
+                    i18n("The operation was incomplete. Imported tracks were kept; check the folder and try again.")
+                }));
                 self.rebuild_library_tree(&sender);
                 self.refresh_playlist_dialog_entries(&sender);
             }
@@ -67,8 +124,28 @@ impl AudioShell {
             }
             AudioShellInput::NodeTracksResolved(tracks) => self.enqueue_tracks(tracks),
             AudioShellInput::RebuildLibraryTree => self.rebuild_library_tree(&sender),
-            AudioShellInput::LibraryTreeResolved(data) => {
-                self.library.emit(LibraryPanelInput::SetLibraryTree(data));
+            AudioShellInput::LibraryTreeFailed { generation } => {
+                if self.library_generation.is_current(generation) {
+                    self.playback_bar.emit(AudioPlaybackBarInput::SetStatus(i18n("The library could not be read. Previous results were kept; try searching again.")));
+                }
+            }
+            AudioShellInput::LibraryTreeResolved { generation, data } => {
+                if self.library_generation.is_current(generation) {
+                    self.library.emit(LibraryPanelInput::SetLibraryTree(data));
+                }
+            }
+            AudioShellInput::PlaylistMutationFinished(success) => {
+                if success {
+                    self.refresh_playlist_dialog_entries(&sender);
+                    self.notify(&i18n("Playlist updated"));
+                } else {
+                    self.notify(&i18n(
+                        "The playlist could not be changed. Your previous playlist was kept.",
+                    ));
+                }
+            }
+            AudioShellInput::PlaylistReadFailed => {
+                self.notify(&i18n("Playlists could not be opened. Please try again."));
             }
             AudioShellInput::RefreshPlaylists => {
                 self.refresh_playlist_dialog_entries(&sender);
@@ -162,8 +239,11 @@ impl AudioShell {
             AudioShellInput::ImportPlaylistFolder(folder) => {
                 self.import_playlist_folder_db(folder, &sender);
             }
-            AudioShellInput::PlaylistImported(added) => {
-                self.notify(&format!("{added} {}", i18n("tracks imported")));
+            AudioShellInput::PlaylistImported(result) => {
+                match result {
+                    Ok(added)=>self.notify(&format!("{added} {}",i18n("tracks imported"))),
+                    Err(error)=>self.notify(&format!("{} {error}",i18n("Playlist import was not fully completed. Previously confirmed imports were kept."))),
+                }
                 sender.input(AudioShellInput::RefreshPlaylists);
             }
             AudioShellInput::ShowSleepTimer => self.show_sleep_timer(&sender),
@@ -178,6 +258,7 @@ impl AudioShell {
                 self.notify(&i18n("Sleep timer cancelled"));
             }
             AudioShellInput::SleepTick => self.sleep_tick(),
+            AudioShellInput::Notify(message) => self.notify(&message),
             AudioShellInput::Undo => self.undo_queue(),
             AudioShellInput::Redo => self.redo_queue(),
             AudioShellInput::ToggleShuffleShortcut => {
@@ -186,7 +267,7 @@ impl AudioShell {
                     &sender,
                 );
             }
-            AudioShellInput::MprisCommand(cmd, arg) => self.handle_mpris_command(&cmd, arg),
+            AudioShellInput::MprisCommand(command) => self.handle_mpris_command(command),
             AudioShellInput::ArtResolved { r#gen, data } => {
                 if is_current_generation(r#gen, self.now_playing_gen) {
                     self.apply_resolved_art(data, &sender);

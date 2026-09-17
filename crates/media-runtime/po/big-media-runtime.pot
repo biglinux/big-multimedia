@@ -6244,3 +6244,889 @@ msgstr ""
 #: crates/ui/media/big-player-ui/src/smartphone/dialog.rs:142
 msgid "Could not start server"
 msgstr ""
+
+
+#: crates/big-video-player/src/video/ui/preferences/video/render_profile.rs:47
+msgid "Automatic (recommended)"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/preferences/video/render_profile.rs:49
+msgid "Close and reopen the player to apply this change"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/preferences/video/render_profile.rs:47
+msgid "Compatibility (processor)"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/preferences/video/render_profile.rs:37
+msgid "Keep Automatic unless the picture is missing or corrupted. Compatibility mode uses the processor and may use more energy."
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/preferences/video/render_profile.rs:97
+msgid "Low resource use"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/preferences/video/render_profile.rs:97
+msgid "More detail"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/preferences/video/render_profile.rs:99
+msgid "More detail can increase graphics workload and battery use"
+msgstr ""
+
+#: crates/big-audio-player/src/audio/preferences.rs:295
+msgid "More options"
+msgstr ""
+
+#: crates/big-audio-player/src/audio/preferences.rs:229
+msgid "Not available in this player yet. No listening history is sent."
+msgstr ""
+
+#: crates/big-audio-player/src/audio/preferences.rs:225
+msgid "Online services"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/preferences/video/render_profile.rs:47
+msgid "OpenGL with fallback"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/preferences/video/render_profile.rs:86 crates/big-video-player/src/video/ui/preferences/video/render_profile.rs:96
+msgid "Picture quality"
+msgstr ""
+
+#: crates/big-audio-player/src/audio/preferences.rs:160
+msgid "Play consecutive tracks without adding gaps. Silence inside a recording is kept."
+msgstr ""
+
+#: crates/big-audio-player/src/audio/ui/audio_shell/update.rs:96
+msgid "Playlist updated"
+msgstr ""
+
+#: crates/big-audio-player/src/audio/ui/audio_shell/update.rs:102
+msgid "Playlists could not be opened. Please try again."
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/preferences/mod.rs:114
+msgid "Show additional technical settings. Your current choices are kept."
+msgstr ""
+
+#: crates/big-audio-player/src/audio/preferences.rs:298
+msgid "Show audio output and processing options. Hiding them keeps your choices."
+msgstr ""
+
+#: crates/big-audio-player/src/audio/preferences.rs:297
+msgid "Show technical settings"
+msgstr ""
+
+#: crates/big-audio-player/src/audio/ui/audio_shell/update.rs:98
+msgid "The playlist could not be changed. Your previous playlist was kept."
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/video_shell/render.rs:348
+msgid "The video area is too large for compatibility mode. Reduce the window size or select Automatic video output in Preferences."
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/video_shell/render.rs:352
+msgid "The video frame could not be displayed. Try Automatic video output in Preferences."
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/preferences/video/render_profile.rs:87
+msgid "Use Low resource use on older computers. Choose more detail only when playback stays smooth."
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/video_shell/render.rs:278
+msgid "Video could not start. Try Automatic video output in Preferences, or check that mpv is installed."
+msgstr ""
+
+#: crates/ui/generic/big-relm4-components/src/feedback/hover_popover.rs:264
+msgid "Press Alt+Down to adjust. Press Escape to close."
+msgstr ""
+
+#. Correction series 2026-09-16; Portuguese text requires human contextual review.
+#: crates/media-runtime/src/converter/queue/validation.rs
+msgid "A cover image is not the requested video stream"
+msgstr ""
+
+#. Correction series 2026-09-16; Portuguese text requires human contextual review.
+#: crates/media-runtime/src/converter/queue/processing.rs
+msgid "An output already exists. Choose a new name; it will not be replaced"
+msgstr ""
+
+#. Correction series 2026-09-16; Portuguese text requires human contextual review.
+#: crates/media-runtime/src/converter/queue/processing.rs
+msgid "Changing audio speed in a video needs matching video timing; use normal speed or audio-only export"
+msgstr ""
+
+#. Correction series 2026-09-16; Portuguese text requires human contextual review.
+#: crates/media-runtime/src/converter/queue/processing.rs
+msgid "Choose a playback speed between 0.25 and 4"
+msgstr ""
+
+#. Correction series 2026-09-16; Portuguese text requires human contextual review.
+#: crates/media-runtime/src/converter/queue/processing.rs
+msgid "Could not complete concatenation"
+msgstr ""
+
+#. Correction series 2026-09-16; Portuguese text requires human contextual review.
+#: crates/media-runtime/src/converter/queue/validation.rs
+msgid "Could not inspect exported file"
+msgstr ""
+
+#. Correction series 2026-09-16; Portuguese text requires human contextual review.
+#: crates/big-audio-player/src/audio/ui/audio_shell/export.rs
+msgid "Could not verify exported files"
+msgstr ""
+
+#. Correction series 2026-09-16; Portuguese text requires human contextual review.
+#: crates/media-runtime/src/converter/queue/processing.rs
+msgid "Could not verify source streams"
+msgstr ""
+
+#. Correction series 2026-09-16; Portuguese text requires human contextual review.
+#: crates/media-runtime/src/converter/queue/processing.rs
+msgid "Could not verify the source media"
+msgstr ""
+
+#. Correction series 2026-09-16; Portuguese text requires human contextual review.
+#: crates/media-runtime/src/converter/queue/validation.rs
+msgid "Cuts must be inside the verified media duration"
+msgstr ""
+
+#. Correction series 2026-09-16; Portuguese text requires human contextual review.
+#: crates/media-runtime/src/converter/queue/validation.rs
+msgid "Export has no readable stream list"
+msgstr ""
+
+#. Correction series 2026-09-16; Portuguese text requires human contextual review.
+#: crates/media-runtime/src/converter/queue/processing.rs
+msgid "Export incomplete. Any files already published were kept; the source is unchanged"
+msgstr ""
+
+#. Correction series 2026-09-16; Portuguese text requires human contextual review.
+#: crates/media-runtime/src/converter/queue/processing.rs
+msgid "Export requires a regular local source file"
+msgstr ""
+
+#. Correction series 2026-09-16; Portuguese text requires human contextual review.
+#: crates/media-runtime/src/converter/queue/validation.rs
+msgid "Exported audio has no channels"
+msgstr ""
+
+#. Correction series 2026-09-16; Portuguese text requires human contextual review.
+#: crates/media-runtime/src/converter/queue/validation.rs
+msgid "Exported codec differs from the plan"
+msgstr ""
+
+#. Correction series 2026-09-16; Portuguese text requires human contextual review.
+#: crates/media-runtime/src/converter/queue/validation.rs
+msgid "Exported duration could not be verified"
+msgstr ""
+
+#. Correction series 2026-09-16; Portuguese text requires human contextual review.
+#: crates/media-runtime/src/converter/queue/validation.rs
+msgid "Exported duration differs from the plan. Use precise re-encoding for exact cuts"
+msgstr ""
+
+#. Correction series 2026-09-16; Portuguese text requires human contextual review.
+#: crates/media-runtime/src/converter/queue/validation.rs
+msgid "Exported file is empty or is not regular"
+msgstr ""
+
+#. Correction series 2026-09-16; Portuguese text requires human contextual review.
+#: crates/media-runtime/src/converter/queue/validation.rs
+msgid "Exported stream count differs from the plan"
+msgstr ""
+
+#. Correction series 2026-09-16; Portuguese text requires human contextual review.
+#: crates/media-runtime/src/converter/queue/validation.rs
+msgid "Exported subtitle count differs from the plan"
+msgstr ""
+
+#. Correction series 2026-09-16; Portuguese text requires human contextual review.
+#: crates/media-runtime/src/converter/queue/validation.rs
+msgid "Exported video dimensions are invalid"
+msgstr ""
+
+#. Correction series 2026-09-16; Portuguese text requires human contextual review.
+#: crates/media-runtime/src/converter/queue/processing.rs
+msgid "Invalid concat path"
+msgstr ""
+
+#. Correction series 2026-09-16; Portuguese text requires human contextual review.
+#: crates/media-runtime/src/converter/queue/validation.rs
+msgid "Invalid export duration or too many cut ranges"
+msgstr ""
+
+#. Correction series 2026-09-16; Portuguese text requires human contextual review.
+#: crates/media-runtime/src/converter/queue/processing.rs
+msgid "Invalid total export duration"
+msgstr ""
+
+#. Correction series 2026-09-16; Portuguese text requires human contextual review.
+#: crates/media-runtime/src/converter/queue/processing.rs
+msgid "No conversion stage completed"
+msgstr ""
+
+#. Correction series 2026-09-16; Portuguese text requires human contextual review.
+#: crates/media-runtime/src/converter/queue/processing.rs
+msgid "No output was generated"
+msgstr ""
+
+#. Correction series 2026-09-16; Portuguese text requires human contextual review.
+#: crates/media-runtime/src/converter/queue/processing.rs
+msgid "Originals are kept. Verify the exported files before deleting anything."
+msgstr ""
+
+#. Correction series 2026-09-16; Portuguese text requires human contextual review.
+#: crates/media-runtime/src/converter/queue/processing.rs
+msgid "Output was created, but durability could not be confirmed. Keep the source and verify the output"
+msgstr ""
+
+#. Correction series 2026-09-16; Portuguese text requires human contextual review.
+#: crates/big-video-player/src/video/ui/menu_dialogs.rs
+msgid "Screenshot saved; disk synchronization could not be confirmed"
+msgstr ""
+
+#. Correction series 2026-09-16; Portuguese text requires human contextual review.
+#: crates/big-video-player/src/video/ui/video_shell/playback.rs
+msgid "Screenshot timed out; cancellation requested"
+msgstr ""
+
+#. Correction series 2026-09-16; Portuguese text requires human contextual review.
+#: crates/media-runtime/src/converter/queue/processing.rs
+msgid "Source changed during export; no result was published"
+msgstr ""
+
+#. Correction series 2026-09-16; Portuguese text requires human contextual review.
+#: crates/media-runtime/src/converter/queue/validation.rs
+msgid "Source streams could not be verified"
+msgstr ""
+
+#. Correction series 2026-09-16; Portuguese text requires human contextual review.
+#: crates/media-runtime/src/converter/queue/processing.rs
+msgid "Source was replaced during export; no result was published"
+msgstr ""
+
+#. Correction series 2026-09-16; Portuguese text requires human contextual review.
+#: crates/media-runtime/src/converter/queue/validation.rs
+msgid "Subtitle streams could not be verified"
+msgstr ""
+
+#. Correction series 2026-09-16; Portuguese text requires human contextual review.
+#: crates/big-audio-player/src/audio/ui/audio_shell/export.rs
+msgid "The export ended without a completed result"
+msgstr ""
+
+#. Correction series 2026-09-16; Portuguese text requires human contextual review.
+#: crates/big-video-player/src/video/ui/video_shell/trim/run.rs
+msgid "The export ended without confirming completion"
+msgstr ""
+
+#. Correction series 2026-09-16; Portuguese text requires human contextual review.
+#: crates/big-audio-player/src/audio/ui/audio_shell/export.rs
+msgid "The export worker stopped before completion"
+msgstr ""
+
+#. Correction series 2026-09-16; Portuguese text requires human contextual review.
+#: crates/big-audio-player/src/audio/ui/audio_shell/update.rs
+msgid "The library could not be read. Previous results were kept; try searching again."
+msgstr ""
+
+#. Correction series 2026-09-16; Portuguese text requires human contextual review.
+#: crates/big-audio-player/src/audio/ui/audio_shell/update.rs
+msgid "The operation was incomplete. Imported tracks were kept; check the folder and try again."
+msgstr ""
+
+#. Correction series 2026-09-16; Portuguese text requires human contextual review.
+#: crates/media-runtime/src/converter/queue/validation.rs
+msgid "The plan has no audio or video output"
+msgstr ""
+
+#. Correction series 2026-09-16; Portuguese text requires human contextual review.
+#: crates/media-runtime/src/converter/queue/validation.rs
+msgid "The selected audio stream is missing"
+msgstr ""
+
+#. Correction series 2026-09-16; Portuguese text requires human contextual review.
+#: crates/media-runtime/src/converter/queue/validation.rs
+msgid "The selected video stream is missing"
+msgstr ""
+
+#. Correction series 2026-09-16; Portuguese text requires human contextual review.
+#: crates/media-runtime/src/converter/queue/processing.rs
+msgid "This concat list needs UTF-8 paths"
+msgstr ""
+
+#. Correction series 2026-09-16; Portuguese text requires human contextual review.
+#: crates/media-runtime/src/converter/queue/validation.rs
+msgid "Too many output streams"
+msgstr ""
+
+#. Correction series 2026-09-16; Portuguese text requires human contextual review.
+#: crates/media-runtime/src/converter/queue/validation.rs
+msgid "Too many source streams"
+msgstr ""
+
+#. Correction series 2026-09-16; Portuguese text requires human contextual review.
+#: crates/media-runtime/src/converter/queue/validation.rs
+msgid "Unknown source audio codec"
+msgstr ""
+
+#. Correction series 2026-09-16; Portuguese text requires human contextual review.
+#: crates/media-runtime/src/converter/queue/validation.rs
+msgid "Unknown source video codec"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/menu_dialogs.rs
+msgid "Screenshot queue is full; wait for pending captures"
+msgstr ""
+
+#. New asynchronous save/recovery interface; manual AI translation, human review pending.
+#: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs crates/media-runtime/src/settings/messages.rs
+msgid "A library scan is already running. Cancel it or wait for its result."
+msgstr ""
+
+#. New asynchronous save/recovery interface; manual AI translation, human review pending.
+#: crates/big-audio-player/src/audio/account_editor.rs crates/media-runtime/src/settings/messages.rs
+msgid "A save is pending. Re-enter exactly the intended credentials to retry that same transaction, or close and use Recover account. A different payload will be refused."
+msgstr ""
+
+#. New asynchronous save/recovery interface; manual AI translation, human review pending.
+#: crates/big-audio-player/src/audio/account_editor.rs crates/media-runtime/src/settings/messages.rs
+msgid "API key"
+msgstr ""
+
+#. New asynchronous save/recovery interface; manual AI translation, human review pending.
+#: crates/big-audio-player/src/audio/account_editor.rs crates/media-runtime/src/settings/messages.rs
+msgid "API secret"
+msgstr ""
+
+#. New asynchronous save/recovery interface; manual AI translation, human review pending.
+#: crates/big-audio-player/src/audio/ui/unavailable_dialog.rs crates/media-runtime/src/settings/messages.rs
+msgid "Access could not be verified — check permissions before reviewing"
+msgstr ""
+
+#. New asynchronous save/recovery interface; manual AI translation, human review pending.
+#: crates/big-audio-player/src/audio/account_editor.rs crates/media-runtime/src/settings/messages.rs
+msgid "Account credentials"
+msgstr ""
+
+#. New asynchronous save/recovery interface; manual AI translation, human review pending.
+#: crates/media-runtime/src/settings/messages.rs crates/media-runtime/src/settings/saving.rs
+msgid "All preferences are saved."
+msgstr ""
+
+#. New asynchronous save/recovery interface; manual AI translation, human review pending.
+#: crates/big-audio-player/src/audio/account_security.rs crates/media-runtime/src/settings/messages.rs
+msgid "An account operation was interrupted. Recover it before making another change."
+msgstr ""
+
+#. New asynchronous save/recovery interface; manual AI translation, human review pending.
+#: crates/big-audio-player/src/audio/ui/unavailable_dialog.rs crates/media-runtime/src/settings/messages.rs
+msgid "Available again"
+msgstr ""
+
+#. New asynchronous save/recovery interface; manual AI translation, human review pending.
+#: crates/big-audio-player/src/audio/ui/scan_progress.rs crates/media-runtime/src/settings/messages.rs
+msgid "Cancel scan"
+msgstr ""
+
+#. New asynchronous save/recovery interface; manual AI translation, human review pending.
+#: crates/big-audio-player/src/audio/ui/scan_progress.rs crates/media-runtime/src/settings/messages.rs
+msgid "Cancellation requested. Finishing the current safe step…"
+msgstr ""
+
+#. New asynchronous save/recovery interface; manual AI translation, human review pending.
+#: crates/media-runtime/src/settings/messages.rs crates/media-runtime/src/settings/saving.rs
+msgid "Changes are saved."
+msgstr ""
+
+#. New asynchronous save/recovery interface; manual AI translation, human review pending.
+#: crates/media-runtime/src/settings/messages.rs crates/media-runtime/src/settings/saving.rs
+msgid "Changes were applied, but safe storage is not confirmed. Retry saving."
+msgstr ""
+
+#. New asynchronous save/recovery interface; manual AI translation, human review pending.
+#: crates/media-runtime/src/settings/messages.rs crates/media-runtime/src/settings/saving.rs
+msgid "Changes work for this session but could not be saved. Check storage or close other instances, then retry."
+msgstr ""
+
+#. New asynchronous save/recovery interface; manual AI translation, human review pending.
+#: crates/big-audio-player/src/audio/ui/unavailable_dialog.rs crates/media-runtime/src/settings/messages.rs
+msgid "Check again"
+msgstr ""
+
+#. New asynchronous save/recovery interface; manual AI translation, human review pending.
+#: crates/big-audio-player/src/audio/account_security.rs crates/media-runtime/src/settings/messages.rs
+msgid "Check keyring access"
+msgstr ""
+
+#. New asynchronous save/recovery interface; manual AI translation, human review pending.
+#: crates/big-audio-player/src/audio/account_security.rs crates/media-runtime/src/settings/messages.rs
+msgid "Checking saved credentials…"
+msgstr ""
+
+#. New asynchronous save/recovery interface; manual AI translation, human review pending.
+#: crates/big-audio-player/src/audio/ui/unavailable_dialog.rs crates/media-runtime/src/settings/messages.rs
+msgid "Checking the library…"
+msgstr ""
+
+#. New asynchronous save/recovery interface; manual AI translation, human review pending.
+#: crates/big-audio-player/src/audio/account_security.rs crates/media-runtime/src/settings/messages.rs
+msgid "Configure"
+msgstr ""
+
+#. New asynchronous save/recovery interface; manual AI translation, human review pending.
+#: crates/big-audio-player/src/audio/ui/unavailable_dialog.rs crates/media-runtime/src/settings/messages.rs
+msgid "Continue checking"
+msgstr ""
+
+#. New asynchronous save/recovery interface; manual AI translation, human review pending.
+#: crates/big-audio-player/src/audio/ui/unavailable_dialog.rs crates/media-runtime/src/settings/messages.rs
+msgid "Continue to check the next part of your library."
+msgstr ""
+
+#. New asynchronous save/recovery interface; manual AI translation, human review pending.
+#: crates/big-audio-player/src/audio/account_security.rs crates/media-runtime/src/settings/messages.rs
+msgid "Credentials"
+msgstr ""
+
+#. New asynchronous save/recovery interface; manual AI translation, human review pending.
+#: crates/big-audio-player/src/audio/account_editor.rs crates/media-runtime/src/settings/messages.rs
+msgid "Credentials are protected in your keyring."
+msgstr ""
+
+#. New asynchronous save/recovery interface; manual AI translation, human review pending.
+#: crates/big-audio-player/src/audio/account_editor.rs crates/media-runtime/src/settings/messages.rs
+msgid "Credentials are protected, but cleanup needs recovery. Close this editor and use Recover account."
+msgstr ""
+
+#. New asynchronous save/recovery interface; manual AI translation, human review pending.
+#: crates/big-audio-player/src/audio/account_security.rs crates/media-runtime/src/settings/messages.rs
+msgid "Credentials are protected. Cleanup of an older keyring item needs attention; retry recovery."
+msgstr ""
+
+#. New asynchronous save/recovery interface; manual AI translation, human review pending.
+#: crates/big-audio-player/src/audio/account_editor.rs crates/media-runtime/src/settings/messages.rs
+msgid "Credentials are saved only in your desktop keyring. Existing listening-history consent is preserved; this does not activate an unavailable integration."
+msgstr ""
+
+#. New asynchronous save/recovery interface; manual AI translation, human review pending.
+#: crates/big-audio-player/src/audio/account_security.rs crates/media-runtime/src/settings/messages.rs
+msgid "Credentials are still in a private file. Protect them in your desktop keyring."
+msgstr ""
+
+#. New asynchronous save/recovery interface; manual AI translation, human review pending.
+#: crates/big-audio-player/src/audio/account_security.rs crates/media-runtime/src/settings/messages.rs
+msgid "Credentials are stored in the desktop keyring."
+msgstr ""
+
+#. New asynchronous save/recovery interface; manual AI translation, human review pending.
+#: crates/big-audio-player/src/audio/account_editor.rs crates/media-runtime/src/settings/messages.rs
+msgid "Credentials could not be read safely. Unlock the keyring and reopen this editor."
+msgstr ""
+
+#. New asynchronous save/recovery interface; manual AI translation, human review pending.
+#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs crates/media-runtime/src/settings/messages.rs
+msgid "Defaults are applied for this session; saving continues in the background."
+msgstr ""
+
+#. New asynchronous save/recovery interface; manual AI translation, human review pending.
+#: crates/big-audio-player/src/audio/account_editor.rs crates/media-runtime/src/settings/messages.rs
+msgid "Edit the credentials, then save. Closing without saving discards your edits."
+msgstr ""
+
+#. New asynchronous save/recovery interface; manual AI translation, human review pending.
+#: crates/big-audio-player/src/audio/ui/unavailable_dialog.rs crates/media-runtime/src/settings/messages.rs
+msgid "End of this review snapshot. Restart to include new imports."
+msgstr ""
+
+#. New asynchronous save/recovery interface; manual AI translation, human review pending.
+#: crates/big-audio-player/src/audio/ui/scan_progress.rs crates/media-runtime/src/settings/messages.rs
+msgid "Examined"
+msgstr ""
+
+#. New asynchronous save/recovery interface; manual AI translation, human review pending.
+#: crates/media-runtime/src/converter/queue/processing.rs crates/media-runtime/src/settings/messages.rs
+msgid "Export at most 128 separate outputs per job."
+msgstr ""
+
+#. New asynchronous save/recovery interface; manual AI translation, human review pending.
+#: crates/big-audio-player/src/audio/ui/audio_shell/playlist_library_dialog_actions.rs crates/media-runtime/src/settings/messages.rs
+msgid "Export was not fully completed. Published files were kept; choose an empty destination and try again."
+msgstr ""
+
+#. New asynchronous save/recovery interface; manual AI translation, human review pending.
+#: crates/big-audio-player/src/audio/account_editor.rs crates/media-runtime/src/settings/messages.rs
+msgid "Fill every credential field with a valid value."
+msgstr ""
+
+#. New asynchronous save/recovery interface; manual AI translation, human review pending.
+#: crates/big-audio-player/src/audio/ui/audio_shell/update.rs crates/big-audio-player/src/audio/ui/scan_progress.rs crates/media-runtime/src/settings/messages.rs
+msgid "Imported"
+msgstr ""
+
+#. New asynchronous save/recovery interface; manual AI translation, human review pending.
+#: crates/big-audio-player/src/audio/ui/audio_shell/update.rs crates/media-runtime/src/settings/messages.rs
+msgid "Library scan finished."
+msgstr ""
+
+#. New asynchronous save/recovery interface; manual AI translation, human review pending.
+#: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs crates/media-runtime/src/settings/messages.rs
+msgid "Library scanning is busy. Try again after another scan finishes."
+msgstr ""
+
+#. New asynchronous save/recovery interface; manual AI translation, human review pending.
+#: crates/big-audio-player/src/audio/account_security.rs crates/media-runtime/src/settings/messages.rs
+msgid "Move existing account credentials to your desktop keyring. This does not enable listening-history sharing."
+msgstr ""
+
+#. New asynchronous save/recovery interface; manual AI translation, human review pending.
+#: crates/big-audio-player/src/audio/account_security.rs crates/media-runtime/src/settings/messages.rs
+msgid "No credentials are saved for this account."
+msgstr ""
+
+#. New asynchronous save/recovery interface; manual AI translation, human review pending.
+#: crates/big-audio-player/src/audio/ui/unavailable_dialog.rs crates/media-runtime/src/settings/messages.rs
+msgid "Not found — select only if you want to forget this library record"
+msgstr ""
+
+#. New asynchronous save/recovery interface; manual AI translation, human review pending.
+#: crates/big-audio-player/src/audio/ui/audio_shell/playlist_library_dialog_actions.rs crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/menu_actions.rs crates/media-runtime/src/settings/messages.rs
+msgid "Playlist export"
+msgstr ""
+
+#. New asynchronous save/recovery interface; manual AI translation, human review pending.
+#: crates/big-audio-player/src/audio/ui/library_io.rs crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/menu_actions.rs crates/media-runtime/src/settings/messages.rs
+msgid "Playlist export could not be confirmed. Existing files were kept; choose a new name and retry."
+msgstr ""
+
+#. New asynchronous save/recovery interface; manual AI translation, human review pending.
+#: crates/big-audio-player/src/audio/ui/audio_shell/playlist_library_dialog_actions.rs crates/media-runtime/src/settings/messages.rs
+msgid "Playlist exported."
+msgstr ""
+
+#. New asynchronous save/recovery interface; manual AI translation, human review pending.
+#: crates/big-audio-player/src/audio/ui/audio_shell/update.rs crates/media-runtime/src/settings/messages.rs
+msgid "Playlist import was not fully completed. Previously confirmed imports were kept."
+msgstr ""
+
+#. New asynchronous save/recovery interface; manual AI translation, human review pending.
+#: crates/big-audio-player/src/audio/ui/audio_shell/playlist_library_dialog_actions.rs crates/media-runtime/src/settings/messages.rs
+msgid "Playlists exported"
+msgstr ""
+
+#. New asynchronous save/recovery interface; manual AI translation, human review pending.
+#: crates/big-audio-player/src/audio/account_security.rs crates/media-runtime/src/settings/messages.rs
+msgid "Protect credentials"
+msgstr ""
+
+#. New asynchronous save/recovery interface; manual AI translation, human review pending.
+#: crates/big-audio-player/src/audio/ui/scan_progress.rs crates/media-runtime/src/settings/messages.rs
+msgid "Reading media information…"
+msgstr ""
+
+#. New asynchronous save/recovery interface; manual AI translation, human review pending.
+#: crates/big-audio-player/src/audio/ui/unavailable_dialog.rs crates/media-runtime/src/settings/messages.rs
+msgid "Rechecking the selection and updating the library…"
+msgstr ""
+
+#. New asynchronous save/recovery interface; manual AI translation, human review pending.
+#: crates/big-audio-player/src/audio/ui/unavailable_dialog.rs crates/media-runtime/src/settings/messages.rs
+msgid "Reconnect external drives before reviewing. Removing records forgets their ratings and saved playlist links, but never deletes media files or interrupts current playback."
+msgstr ""
+
+#. New asynchronous save/recovery interface; manual AI translation, human review pending.
+#: crates/big-audio-player/src/audio/account_security.rs crates/media-runtime/src/settings/messages.rs
+msgid "Recover account"
+msgstr ""
+
+#. New asynchronous save/recovery interface; manual AI translation, human review pending.
+#: crates/big-audio-player/src/audio/account_security.rs crates/media-runtime/src/settings/messages.rs
+msgid "Reload"
+msgstr ""
+
+#. New asynchronous save/recovery interface; manual AI translation, human review pending.
+#: crates/big-audio-player/src/audio/ui/unavailable_dialog.rs crates/media-runtime/src/settings/messages.rs
+msgid "Remote items are not checked as local files"
+msgstr ""
+
+#. New asynchronous save/recovery interface; manual AI translation, human review pending.
+#: crates/big-audio-player/src/audio/ui/unavailable_dialog.rs crates/media-runtime/src/settings/messages.rs
+msgid "Remote or unsupported location — not eligible for removal here"
+msgstr ""
+
+#. New asynchronous save/recovery interface; manual AI translation, human review pending.
+#: crates/big-audio-player/src/audio/ui/library_io.rs crates/media-runtime/src/settings/messages.rs
+msgid "Removal requested. Reopen this list after the operation finishes."
+msgstr ""
+
+#. New asynchronous save/recovery interface; manual AI translation, human review pending.
+#: crates/big-audio-player/src/audio/ui/unavailable_dialog.rs crates/media-runtime/src/settings/messages.rs
+msgid "Removal was not confirmed. A file may be available again or a record changed. Check again before selecting records."
+msgstr ""
+
+#. New asynchronous save/recovery interface; manual AI translation, human review pending.
+#: crates/big-audio-player/src/audio/ui/unavailable_dialog.rs crates/media-runtime/src/settings/messages.rs
+msgid "Remove records"
+msgstr ""
+
+#. New asynchronous save/recovery interface; manual AI translation, human review pending.
+#: crates/big-audio-player/src/audio/ui/unavailable_dialog.rs crates/media-runtime/src/settings/messages.rs
+msgid "Remove selected library records?"
+msgstr ""
+
+#. New asynchronous save/recovery interface; manual AI translation, human review pending.
+#: crates/big-audio-player/src/audio/ui/unavailable_dialog.rs crates/media-runtime/src/settings/messages.rs
+msgid "Remove selected records"
+msgstr ""
+
+#. New asynchronous save/recovery interface; manual AI translation, human review pending.
+#: crates/big-audio-player/src/audio/ui/unavailable_dialog.rs crates/media-runtime/src/settings/messages.rs
+msgid "Restart review"
+msgstr ""
+
+#. New asynchronous save/recovery interface; manual AI translation, human review pending.
+#: crates/media-runtime/src/settings/messages.rs crates/media-runtime/src/settings/saving.rs
+msgid "Retry saving"
+msgstr ""
+
+#. New asynchronous save/recovery interface; manual AI translation, human review pending.
+#: crates/big-audio-player/src/audio/ui/audio_shell/export.rs crates/media-runtime/src/settings/messages.rs
+msgid "Retrying this export reuses only complete files whose source, settings and contents match their saved receipts. Other existing files are never replaced. Keep the receipts beside the outputs."
+msgstr ""
+
+#. New asynchronous save/recovery interface; manual AI translation, human review pending.
+#: crates/big-audio-player/src/audio/ui/library_io.rs crates/big-audio-player/src/audio/ui/unavailable_dialog.rs crates/media-runtime/src/settings/messages.rs
+msgid "Review unavailable files"
+msgstr ""
+
+#. New asynchronous save/recovery interface; manual AI translation, human review pending.
+#: crates/big-audio-player/src/audio/account_editor.rs crates/media-runtime/src/settings/messages.rs
+msgid "Save in keyring"
+msgstr ""
+
+#. New asynchronous save/recovery interface; manual AI translation, human review pending.
+#: crates/media-runtime/src/settings/messages.rs crates/media-runtime/src/settings/saving.rs
+msgid "Save status"
+msgstr ""
+
+#. New asynchronous save/recovery interface; manual AI translation, human review pending.
+#: crates/big-audio-player/src/audio/account_security.rs crates/media-runtime/src/settings/messages.rs
+msgid "Saved account data could not be read safely. Check permissions and reload; no changes were made."
+msgstr ""
+
+#. New asynchronous save/recovery interface; manual AI translation, human review pending.
+#: crates/big-audio-player/src/audio/account_security.rs crates/media-runtime/src/settings/messages.rs
+msgid "Saved account security"
+msgstr ""
+
+#. New asynchronous save/recovery interface; manual AI translation, human review pending.
+#: crates/big-audio-player/src/audio/account_editor.rs crates/media-runtime/src/settings/messages.rs
+msgid "Saved credentials are invalid. No changes were made."
+msgstr ""
+
+#. New asynchronous save/recovery interface; manual AI translation, human review pending.
+#: crates/media-runtime/src/settings/messages.rs crates/media-runtime/src/settings/saving.rs
+msgid "Saving preferences"
+msgstr ""
+
+#. New asynchronous save/recovery interface; manual AI translation, human review pending.
+#: crates/big-audio-player/src/audio/account_editor.rs crates/media-runtime/src/settings/messages.rs
+msgid "Saving was not fully confirmed. Close this editor, reload and recover the pending operation. No plaintext fallback was used."
+msgstr ""
+
+#. New asynchronous save/recovery interface; manual AI translation, human review pending.
+#: crates/media-runtime/src/settings/messages.rs crates/media-runtime/src/settings/saving.rs
+msgid "Saving your changes…"
+msgstr ""
+
+#. New asynchronous save/recovery interface; manual AI translation, human review pending.
+#: crates/big-audio-player/src/audio/ui/audio_shell/update.rs crates/media-runtime/src/settings/messages.rs
+msgid "Scan cancelled. Earlier confirmed imports were kept."
+msgstr ""
+
+#. New asynchronous save/recovery interface; manual AI translation, human review pending.
+#: crates/big-audio-player/src/audio/ui/audio_shell/update.rs crates/media-runtime/src/settings/messages.rs
+msgid "Scan incomplete. Earlier confirmed imports were kept; check storage and retry."
+msgstr ""
+
+#. New asynchronous save/recovery interface; manual AI translation, human review pending.
+#: crates/big-audio-player/src/audio/ui/scan_progress.rs crates/media-runtime/src/settings/messages.rs
+msgid "Scanning the library"
+msgstr ""
+
+#. New asynchronous save/recovery interface; manual AI translation, human review pending.
+#: crates/big-audio-player/src/audio/ui/unavailable_dialog.rs crates/media-runtime/src/settings/messages.rs
+msgid "Select the missing records you want to remove."
+msgstr ""
+
+#. New asynchronous save/recovery interface; manual AI translation, human review pending.
+#: crates/big-audio-player/src/audio/ui/unavailable_dialog.rs crates/media-runtime/src/settings/messages.rs
+msgid "Selected records"
+msgstr ""
+
+#. New asynchronous save/recovery interface; manual AI translation, human review pending.
+#: crates/big-audio-player/src/audio/account_editor.rs crates/media-runtime/src/settings/messages.rs
+msgid "Session key"
+msgstr ""
+
+#. New asynchronous save/recovery interface; manual AI translation, human review pending.
+#: crates/big-audio-player/src/audio/ui/audio_shell/update.rs crates/big-audio-player/src/audio/ui/scan_progress.rs crates/media-runtime/src/settings/messages.rs
+msgid "Skipped"
+msgstr ""
+
+#. New asynchronous save/recovery interface; manual AI translation, human review pending.
+#: crates/big-audio-player/src/audio/ui/library_io.rs crates/media-runtime/src/settings/messages.rs
+msgid "Stop monitoring this folder; keep its tracks"
+msgstr ""
+
+#. New asynchronous save/recovery interface; manual AI translation, human review pending.
+#: crates/big-audio-player/src/audio/account_editor.rs crates/media-runtime/src/settings/messages.rs
+msgid "The combined credentials are too large for the keyring helper."
+msgstr ""
+
+#. New asynchronous save/recovery interface; manual AI translation, human review pending.
+#: crates/big-audio-player/src/audio/ui/unavailable_dialog.rs crates/media-runtime/src/settings/messages.rs
+msgid "The library could not be checked completely. Previous results are kept. Check the drive or database and retry."
+msgstr ""
+
+#. New asynchronous save/recovery interface; manual AI translation, human review pending.
+#: crates/big-audio-player/src/audio/account_security.rs crates/media-runtime/src/settings/messages.rs
+msgid "The operation was not fully confirmed. Unlock the keyring, reload and retry recovery. No plaintext fallback was used."
+msgstr ""
+
+#. New asynchronous save/recovery interface; manual AI translation, human review pending.
+#: crates/big-audio-player/src/audio/ui/audio_shell/panel_intents.rs crates/media-runtime/src/settings/messages.rs
+msgid "The playlist could not be read safely. Check its format and permissions."
+msgstr ""
+
+#. New asynchronous save/recovery interface; manual AI translation, human review pending.
+#: crates/big-audio-player/src/audio/ui/audio_shell/playlist_library_dialog_actions.rs crates/media-runtime/src/settings/messages.rs
+msgid "The playlist was not exported. Check storage or choose a new filename; existing files were not replaced."
+msgstr ""
+
+#. New asynchronous save/recovery interface; manual AI translation, human review pending.
+#: crates/media-runtime/src/converter/queue/processing.rs crates/media-runtime/src/settings/messages.rs
+msgid "The source or external subtitles changed. Existing exports were kept; review the plan again."
+msgstr ""
+
+#. New asynchronous save/recovery interface; manual AI translation, human review pending.
+#: crates/big-audio-player/src/audio/ui/unavailable_dialog.rs crates/media-runtime/src/settings/messages.rs
+msgid "Their ratings and saved playlist links will be removed. Media files will not be deleted. A restored file or changed record cancels the whole selection."
+msgstr ""
+
+#. New asynchronous save/recovery interface; manual AI translation, human review pending.
+#: crates/big-audio-player/src/audio/ui/audio_shell/panel_intents.rs crates/media-runtime/src/settings/messages.rs
+msgid "This folder name cannot yet be stored in the library. No path was changed or imported."
+msgstr ""
+
+#. New asynchronous save/recovery interface; manual AI translation, human review pending.
+#: crates/big-audio-player/src/audio/ui/unavailable_dialog.rs crates/media-runtime/src/settings/messages.rs
+msgid "This location is not a regular media file"
+msgstr ""
+
+#. New asynchronous save/recovery interface; manual AI translation, human review pending.
+#: crates/big-audio-player/src/audio/account_editor.rs crates/media-runtime/src/settings/messages.rs
+msgid "User token"
+msgstr ""
+
+#. New asynchronous save/recovery interface; manual AI translation, human review pending.
+#: crates/media-runtime/src/converter/queue/processing.rs crates/media-runtime/src/settings/messages.rs
+msgid "Verified completed export reused: source, plan and output receipts match."
+msgstr ""
+
+#. New asynchronous save/recovery interface; manual AI translation, human review pending.
+#: crates/big-audio-player/src/audio/ui/audio_shell/export.rs crates/big-video-player/src/video/ui/video_shell/trim/run.rs crates/media-runtime/src/settings/messages.rs
+msgid "Verified completed outputs can be reused when retrying. Existing files without a matching receipt are kept."
+msgstr ""
+
+#. New asynchronous save/recovery interface; manual AI translation, human review pending.
+#: crates/big-audio-player/src/audio/account_editor.rs crates/big-audio-player/src/audio/account_security.rs crates/media-runtime/src/settings/messages.rs
+msgid "Waiting for your keyring. Unlock it if prompted…"
+msgstr ""
+
+#. New asynchronous save/recovery interface; manual AI translation, human review pending.
+#: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs crates/media-runtime/src/settings/messages.rs
+msgid "Watch folders could not be read. Previous settings were kept."
+msgstr ""
+
+#. New asynchronous save/recovery interface; manual AI translation, human review pending.
+#: crates/big-audio-player/src/audio/ui/scan_progress.rs crates/media-runtime/src/settings/messages.rs
+msgid "You can keep using the player. Cancelling keeps earlier confirmed imports and never deletes media files."
+msgstr ""
+
+#. New asynchronous save/recovery interface; manual AI translation, human review pending.
+#: crates/media-runtime/src/settings/messages.rs crates/media-runtime/src/settings/saving.rs
+msgid "Your preferences are saved automatically."
+msgstr ""
+
+#. New asynchronous save/recovery interface; manual AI translation, human review pending.
+#: crates/big-audio-player/src/audio/ui/unavailable_dialog.rs crates/media-runtime/src/settings/messages.rs
+msgid "records checked"
+msgstr ""
+
+#. New asynchronous save/recovery interface; manual AI translation, human review pending.
+#: crates/big-audio-player/src/audio/ui/unavailable_dialog.rs crates/media-runtime/src/settings/messages.rs
+msgid "records need review"
+msgstr ""
+
+#. New asynchronous import feedback; manual AI translation, human review pending.
+#: crates/big-audio-player/src/audio/ui/audio_shell/playlist_library_dialog_actions.rs crates/media-runtime/src/settings/messages.rs
+msgid "Too many entries in the chosen folder"
+msgstr ""
+
+#. New asynchronous import feedback; manual AI translation, human review pending.
+#: crates/big-audio-player/src/audio/ui/audio_shell/playlist_library_dialog_actions.rs crates/media-runtime/src/settings/messages.rs
+msgid "Choose at most 100 playlist files per import"
+msgstr ""
+
+#. New asynchronous import feedback; manual AI translation, human review pending.
+#: crates/big-audio-player/src/audio/ui/audio_shell/playlist_library_dialog_actions.rs crates/media-runtime/src/settings/messages.rs
+msgid "Import stopped. Confirmed tracks were kept"
+msgstr ""
+
+#. New asynchronous import feedback; manual AI translation, human review pending.
+#: crates/big-audio-player/src/audio/ui/audio_shell/playlist_library_dialog_actions.rs crates/media-runtime/src/settings/messages.rs
+msgid "Too many playlists for one export"
+msgstr ""
+
+#. New asynchronous import feedback; manual AI translation, human review pending.
+#: crates/big-audio-player/src/audio/ui/audio_shell/playlist_library_dialog_actions.rs crates/media-runtime/src/settings/messages.rs
+msgid "Export stopped. Confirmed outputs were kept"
+msgstr ""
+
+#. New asynchronous import feedback; manual AI translation, human review pending.
+#: crates/big-audio-player/src/audio/ui/audio_shell/playlist_library_dialog_actions.rs crates/media-runtime/src/settings/messages.rs
+msgid "The batch import limit was reached. Split the playlists into smaller imports."
+msgstr ""
+
+#. Closing with unconfirmed changes; manual AI translation, human review pending.
+#: crates/media-runtime/src/settings/saving.rs crates/media-runtime/src/settings/messages.rs
+msgid "Finishing pending work"
+msgstr ""
+
+#. Closing with unconfirmed changes; manual AI translation, human review pending.
+#: crates/media-runtime/src/settings/saving.rs crates/media-runtime/src/settings/messages.rs
+msgid "Saves and exports are still finishing. The window will close afterwards. Keeping it open does not cancel those operations."
+msgstr ""
+
+#. Closing with unconfirmed changes; manual AI translation, human review pending.
+#: crates/media-runtime/src/settings/saving.rs crates/media-runtime/src/settings/messages.rs
+msgid "Keep open"
+msgstr ""
+
+#. Closing with unconfirmed changes; manual AI translation, human review pending.
+#: crates/media-runtime/src/settings/saving.rs crates/media-runtime/src/settings/messages.rs
+msgid "Some changes are not confirmed as saved"
+msgstr ""
+
+#. Closing with unconfirmed changes; manual AI translation, human review pending.
+#: crates/media-runtime/src/settings/saving.rs crates/media-runtime/src/settings/messages.rs
+msgid "Keep the player open to review saving errors and retry. Continuing may discard unsaved session changes; it does not mark them as saved."
+msgstr ""
+
+#. Closing with unconfirmed changes; manual AI translation, human review pending.
+#: crates/media-runtime/src/settings/saving.rs crates/media-runtime/src/settings/messages.rs
+msgid "Continue without saved changes"
+msgstr ""

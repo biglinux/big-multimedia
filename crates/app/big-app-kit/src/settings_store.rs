@@ -1,29 +1,27 @@
 // SPDX-FileCopyrightText: 2026 BigLinux contributors
 // SPDX-License-Identifier: MIT
 
-//! The suite settings store: one JSON document per app, debounced atomic
+//! The suite settings store: one JSON document per app, coalesced asynchronous atomic
 //! persistence, and key-scoped change listeners.
 //!
 //! Apps own their keys and defaults; this store owns loading, default
-//! merging, dirty tracking, the save debounce, and the on-disk envelope
+//! merging, dirty tracking, background persistence, and the on-disk envelope
 //! (`{_version, metadata, settings}`). Promoted from big-terminal
 //! (platform-consolidation M1); big-filemanager and big-editor adopt next.
 
 use std::cell::RefCell;
 use std::path::{Path, PathBuf};
 use std::rc::Rc;
-use std::time::{Duration, SystemTime, UNIX_EPOCH};
+use std::time::{SystemTime, UNIX_EPOCH};
 
-use gtk::glib;
 use serde::{Deserialize, Serialize};
 use serde_json::{Map, Value};
 
-use big_os_kit::storage::{BigStorageError, atomic_write};
+use big_os_kit::deferred::{Document, Status};
+use big_os_kit::storage::{self, BigStorageError};
 
 /// On-disk envelope schema version (`_version`).
 pub const BIG_SETTINGS_SCHEMA_VERSION: u32 = 1;
-
-const SAVE_DEBOUNCE: Duration = Duration::from_millis(350);
 
 /// Wildcard key passed to listeners when every setting may have changed.
 pub const BIG_SETTINGS_ALL_KEYS: &str = "*";
@@ -44,12 +42,11 @@ pub struct BigSettingsMetadata {
 pub type BigSettingsListener = Rc<dyn Fn(&str) -> bool>;
 
 struct SettingsState {
-    path: PathBuf,
     app_version: String,
     entries: Map<String, Value>,
     metadata: Option<BigSettingsMetadata>,
     dirty: bool,
-    save_source: Option<glib::SourceId>,
+    persistence: Document,
     listeners: Vec<BigSettingsListener>,
 }
 
@@ -75,20 +72,21 @@ impl BigSettingsStore {
         app_version: &str,
         defaults: &Map<String, Value>,
     ) -> Result<Self, BigStorageError> {
-        let (entries, metadata) = load_document(path)?;
+        let (entries, metadata, bytes) = load_snapshot(path)?;
         Ok(Self::assemble(
             path,
             app_version,
             defaults,
             entries,
             metadata,
+            Some(bytes),
         ))
     }
 
     /// Fresh in-memory document for `path` with `defaults` applied.
     #[must_use]
     pub fn blank(path: &Path, app_version: &str, defaults: &Map<String, Value>) -> Self {
-        Self::assemble(path, app_version, defaults, Map::new(), None)
+        Self::assemble(path, app_version, defaults, Map::new(), None, None)
     }
 
     fn assemble(
@@ -97,18 +95,23 @@ impl BigSettingsStore {
         defaults: &Map<String, Value>,
         mut entries: Map<String, Value>,
         metadata: Option<BigSettingsMetadata>,
+        reviewed: Option<Option<Vec<u8>>>,
     ) -> Self {
         for (key, value) in defaults {
             entries.entry(key.clone()).or_insert_with(|| value.clone());
         }
         Self {
             state: Rc::new(RefCell::new(SettingsState {
-                path: path.to_path_buf(),
                 app_version: app_version.to_owned(),
                 entries,
                 metadata,
                 dirty: false,
-                save_source: None,
+                persistence: match reviewed {
+                    Some(bytes) => Document::reviewed(path.to_path_buf(), bytes),
+                    // A blank fallback must never erase an unreadable existing
+                    // file. The worker compares against confirmed absence.
+                    None => Document::reviewed(path.to_path_buf(), None),
+                },
                 listeners: Vec::new(),
             })),
         }
@@ -184,7 +187,7 @@ impl BigSettingsStore {
         }
     }
 
-    /// Set `key` to `value`; no-op when unchanged. Schedules the debounced
+    /// Set `key` to `value`; no-op when unchanged. Schedules a coalesced background
     /// save and notifies listeners with `key`.
     pub fn set(&self, key: &str, value: Value) {
         {
@@ -199,7 +202,7 @@ impl BigSettingsStore {
         self.notify(key);
     }
 
-    /// Remove `key`; no-op when absent. Debounces and notifies like
+    /// Remove `key`; no-op when absent. Queues and notifies like
     /// [`BigSettingsStore::set`].
     pub fn remove(&self, key: &str) {
         {
@@ -213,7 +216,7 @@ impl BigSettingsStore {
         self.notify(key);
     }
 
-    /// Drop every entry, re-apply `defaults`, save immediately, and notify
+    /// Drop every entry, re-apply `defaults`, queue a save, and notify
     /// listeners with [`BIG_SETTINGS_ALL_KEYS`].
     ///
     /// # Errors
@@ -223,7 +226,6 @@ impl BigSettingsStore {
     pub fn reset_to_defaults(&self, defaults: &Map<String, Value>) -> Result<(), BigStorageError> {
         {
             let mut state = self.state.borrow_mut();
-            cancel_pending_save(&mut state);
             state.entries.clear();
             for (key, value) in defaults {
                 state.entries.insert(key.clone(), value.clone());
@@ -235,15 +237,16 @@ impl BigSettingsStore {
         result
     }
 
-    /// Cancel any pending debounce and save now when dirty.
+    /// Admit the latest snapshot to the background writer without waiting for I/O.
+    /// Historical name retained for callers; use `save_status()` to distinguish
+    /// Saved, Pending, Failed and publication with unconfirmed durability.
     ///
     /// # Errors
     ///
-    /// Returns [`BigStorageError`] from the atomic write; the document
-    /// stays dirty so a later flush retries.
+    /// Returns an encoding/admission error. Disk errors arrive in `save_status()`;
+    /// newer generations remain pending and failures require an explicit retry.
     pub fn flush_now(&self) -> Result<(), BigStorageError> {
         let mut state = self.state.borrow_mut();
-        cancel_pending_save(&mut state);
         save_if_dirty(&mut state)
     }
 
@@ -283,32 +286,23 @@ impl BigSettingsStore {
     }
 
     fn schedule_save(&self) {
-        let weak = Rc::downgrade(&self.state);
-        let mut state = self.state.borrow_mut();
-        cancel_pending_save(&mut state);
-        state.save_source = Some(glib::timeout_add_local_once(SAVE_DEBOUNCE, move || {
-            let Some(state) = weak.upgrade() else { return };
-            let mut state = state.borrow_mut();
-            state.save_source = None;
-            if let Err(e) = save_if_dirty(&mut state) {
-                log::warn!("debounced settings save failed: {e}");
-            }
-        }));
+        if let Err(error) = self.flush_now() {
+            log::warn!("settings save was not admitted: {error}");
+        }
     }
-}
 
-fn cancel_pending_save(state: &mut SettingsState) {
-    if let Some(source) = state.save_source.take() {
-        source.remove();
+    /// Acknowledged state of the background save, distinct from admission.
+    pub fn save_status(&self) -> Status {
+        self.state.borrow().persistence.status()
     }
 }
 
 fn save_if_dirty(state: &mut SettingsState) -> Result<(), BigStorageError> {
     if !state.dirty {
-        return Ok(());
+        return state.persistence.retry().map_err(BigStorageError::Io);
     }
     let now = now_secs();
-    let metadata = match state.metadata.take() {
+    let metadata = match state.metadata.clone() {
         Some(mut m) => {
             m.modified_at = now;
             state.app_version.clone_into(&mut m.version);
@@ -330,8 +324,14 @@ fn save_if_dirty(state: &mut SettingsState) -> Result<(), BigStorageError> {
         serde_json::to_value(&metadata).map_err(BigStorageError::Json)?,
     );
     doc.insert("settings".to_owned(), Value::Object(state.entries.clone()));
-    let bytes = serde_json::to_vec_pretty(&Value::Object(doc)).map_err(BigStorageError::Json)?;
-    atomic_write(&state.path, &bytes).map_err(BigStorageError::Io)?;
+    let bytes = serde_json::to_vec_pretty(&Value::Object(doc)).map_err(|error| {
+        state.persistence.reject_update();
+        BigStorageError::Json(error)
+    })?;
+    state
+        .persistence
+        .replace(bytes)
+        .map_err(BigStorageError::Io)?;
     state.metadata = Some(metadata);
     state.dirty = false;
     Ok(())
@@ -340,33 +340,48 @@ fn save_if_dirty(state: &mut SettingsState) -> Result<(), BigStorageError> {
 fn load_document(
     path: &Path,
 ) -> Result<(Map<String, Value>, Option<BigSettingsMetadata>), BigStorageError> {
-    let bytes = match std::fs::read(path) {
-        Ok(bytes) => bytes,
-        Err(e) if e.kind() == std::io::ErrorKind::NotFound => {
-            return Ok((Map::new(), None));
-        }
-        Err(e) => return Err(BigStorageError::Io(e)),
+    load_snapshot(path).map(|(entries, metadata, _)| (entries, metadata))
+}
+/// Parsed entries, their metadata, and the exact bytes they were read from
+/// (kept so a later write can detect an external edit).
+type Snapshot = (
+    Map<String, Value>,
+    Option<BigSettingsMetadata>,
+    Option<Vec<u8>>,
+);
+
+fn load_snapshot(path: &Path) -> Result<Snapshot, BigStorageError> {
+    let Some(bytes) = storage::read_regular_limited(path, big_os_kit::deferred::MAX_BYTES)? else {
+        return Ok((Map::new(), None, None));
     };
-    let value: Value = serde_json::from_slice(&bytes).map_err(BigStorageError::Json)?;
+    let value: Value = serde_json::from_slice(&bytes)?;
     let Value::Object(obj) = value else {
         return Err(BigStorageError::Io(std::io::Error::other(
-            "settings file must be a JSON object",
+            "settings file must be an object",
         )));
     };
-    if obj.contains_key("settings") && obj.contains_key("metadata") {
+    if obj.contains_key("_version") || obj.contains_key("settings") || obj.contains_key("metadata")
+    {
+        if obj.get("_version").and_then(Value::as_u64)
+            != Some(u64::from(BIG_SETTINGS_SCHEMA_VERSION))
+        {
+            return Err(BigStorageError::Io(std::io::Error::other(
+                "unsupported settings schema",
+            )));
+        }
         let entries = obj
             .get("settings")
             .and_then(Value::as_object)
             .cloned()
-            .unwrap_or_default();
-        let metadata = obj
-            .get("metadata")
-            .cloned()
-            .and_then(|m| serde_json::from_value(m).ok());
-        Ok((entries, metadata))
+            .ok_or_else(|| std::io::Error::other("settings map missing or malformed"))?;
+        let metadata: BigSettingsMetadata = serde_json::from_value(
+            obj.get("metadata")
+                .cloned()
+                .ok_or_else(|| std::io::Error::other("settings metadata missing"))?,
+        )?;
+        Ok((entries, Some(metadata), Some(bytes)))
     } else {
-        // Legacy layout: bare settings map at the document root.
-        Ok((obj, None))
+        Ok((obj, None, Some(bytes)))
     }
 }
 
@@ -475,15 +490,35 @@ mod tests {
             .expect("open blank store")
     }
 
-    /// `set`/`remove` attach the debounce timer to glib's *global* default main
-    /// context, whose `acquire()` panics when another thread already holds it.
-    /// The test runner is multi-threaded, so tests that schedule a save take
-    /// this process-wide lock to serialize the attach. Poison is ignored: a
-    /// panicking test must not cascade into the rest.
+    /// Isolate disk assertions from other tests; production saves still use
+    /// exactly the same asynchronous worker and acknowledgment protocol.
     fn save_guard() -> std::sync::MutexGuard<'static, ()> {
         static LOCK: std::sync::Mutex<()> = std::sync::Mutex::new(());
         LOCK.lock()
             .unwrap_or_else(std::sync::PoisonError::into_inner)
+    }
+
+    fn wait_saved(store: &BigSettingsStore) {
+        let deadline = std::time::Instant::now() + std::time::Duration::from_secs(5);
+        loop {
+            let status = store.save_status();
+            if status.phase == big_os_kit::deferred::Phase::Saved {
+                return;
+            }
+            assert!(
+                !matches!(
+                    status.phase,
+                    big_os_kit::deferred::Phase::Failed
+                        | big_os_kit::deferred::Phase::DurabilityPending
+                ),
+                "save failed: {status:?}"
+            );
+            assert!(
+                std::time::Instant::now() < deadline,
+                "save acknowledgment timed out: {status:?}"
+            );
+            std::thread::sleep(std::time::Duration::from_millis(5));
+        }
     }
 
     #[test]
@@ -501,7 +536,8 @@ mod tests {
         let path = dir.path().join("settings.json");
         let store = store_in(&dir);
         store.set("font", json!("Fira Code 11"));
-        store.flush_now().expect("flush");
+        store.flush_now().expect("admitted");
+        wait_saved(&store);
 
         let raw: Value =
             serde_json::from_slice(&std::fs::read(&path).expect("read")).expect("json");
@@ -553,6 +589,7 @@ mod tests {
         store.set("font", json!("New 1")); // unchanged: no notify
         store.set("font", json!("New 2"));
         assert_eq!(*seen.borrow(), vec!["font".to_owned(), "font".to_owned()]);
+        wait_saved(&store);
     }
 
     #[test]
@@ -570,6 +607,7 @@ mod tests {
         store.reset_to_defaults(&defaults()).expect("reset");
         assert_eq!(store.string_or("font", "?"), "Monospace 12");
         assert!(hits.borrow().contains(&BIG_SETTINGS_ALL_KEYS.to_owned()));
+        wait_saved(&store);
     }
 
     #[test]
@@ -607,6 +645,7 @@ mod tests {
         assert_eq!(fresh.string_or("ai_assistant_provider", "?"), "openrouter");
         assert_eq!(fresh.value("ai_panel_side"), None);
         assert_eq!(fresh.value("font"), None);
+        wait_saved(&store);
     }
 
     #[test]
@@ -652,6 +691,7 @@ mod tests {
         // Present but wrong type ("font" is a string) → fallback.
         assert_eq!(store.i64_or("font", 7), 7);
         assert!(!store.bool_or("font", false));
+        wait_saved(&store);
     }
 
     #[test]
@@ -666,6 +706,7 @@ mod tests {
             keys,
             vec!["extra".to_owned(), "font".to_owned(), "opacity".to_owned()]
         );
+        wait_saved(&store);
     }
 
     #[test]
@@ -680,6 +721,7 @@ mod tests {
         store.merge_defaults(&more);
         assert_eq!(store.string_or("font", "?"), "User Choice", "existing kept");
         assert_eq!(store.string_or("newkey", "?"), "added", "unset filled");
+        wait_saved(&store);
     }
 
     #[test]
@@ -722,22 +764,13 @@ mod tests {
     }
 
     #[test]
-    fn partial_envelope_keys_load_as_legacy_root() {
+    fn partial_envelope_keys_are_not_silently_reinterpreted() {
         let dir = tempfile::tempdir().expect("tempdir");
         let path = dir.path().join("settings.json");
-        // Has "settings" but NOT "metadata": not a full envelope, so the whole
-        // object is the legacy bare-root settings map.
-        std::fs::write(&path, r#"{"settings":{"nested":1},"font":"Root 8"}"#).expect("seed");
-        let store = BigSettingsStore::open(&path, "1.0", &Map::new()).expect("open");
-        assert_eq!(
-            store.string_or("font", "?"),
-            "Root 8",
-            "top-level key is an entry"
-        );
-        assert!(
-            store.value("settings").is_some(),
-            "the `settings` object is itself a stored value in legacy layout"
-        );
+        let bytes = br#"{"settings":{"nested":1},"font":"Root 8"}"#;
+        std::fs::write(&path, bytes).unwrap();
+        assert!(BigSettingsStore::open(&path, "1.0", &Map::new()).is_err());
+        assert_eq!(std::fs::read(&path).unwrap(), bytes);
     }
 
     #[test]
@@ -747,7 +780,8 @@ mod tests {
         let path = dir.path().join("settings.json");
         let store = BigSettingsStore::blank(&path, "9.9", &Map::new());
         store.set("k", json!(1));
-        store.flush_now().expect("flush");
+        store.flush_now().expect("admitted");
+        wait_saved(&store);
         let raw: Value =
             serde_json::from_slice(&std::fs::read(&path).expect("read")).expect("json");
         let created = raw["metadata"]["created_at"].as_f64().expect("created_at");
@@ -782,21 +816,24 @@ mod tests {
         let imported =
             import_legacy_settings(&store, &legacy, is_suite_setting_key).expect("import");
         assert_eq!(imported, 1);
-        assert!(dst.exists(), "a non-empty import must flush to disk");
+        wait_saved(&store);
+        assert!(dst.exists(), "an acknowledged import is on disk");
 
         // (b) importing 0 keys must NOT flush, even when the store is already
         // dirty — guards `imported > 0` against `>= 0`.
         let dst_dirty = dir.path().join("dirty.json");
         let store_dirty = BigSettingsStore::blank(&dst_dirty, "1.0", &Map::new());
-        store_dirty.set("pending", json!(1)); // dirty, but the debounce never fires here
-        assert!(!dst_dirty.exists(), "no write before flush");
+        store_dirty.set("pending", json!(1));
+        wait_saved(&store_dirty);
+        let revision = store_dirty.save_status().revision;
         let missing = dir.path().join("absent.json");
         let imported_zero =
             import_legacy_settings(&store_dirty, &missing, is_suite_setting_key).expect("import");
         assert_eq!(imported_zero, 0);
-        assert!(
-            !dst_dirty.exists(),
-            "a zero-key import must not flush a dirty store to disk"
+        assert_eq!(
+            store_dirty.save_status().revision,
+            revision,
+            "a zero-key import makes no new edit"
         );
     }
 }

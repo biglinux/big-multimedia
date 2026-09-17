@@ -4,6 +4,8 @@
 //! supporting property observation, audio filter chains, and OpenGL rendering.
 
 mod backend;
+mod screenshots;
+pub use screenshots::ScreenshotResult;
 mod pactl_volume;
 mod types;
 
@@ -53,6 +55,7 @@ fn env_value_names_nvidia_driver(value: &str) -> bool {
 pub(crate) mod egl_dmabuf;
 pub mod fast_render;
 pub mod filters;
+pub mod frame_layout;
 /// GPU-offloaded video renderer: DMA-BUF export (MESA) or GdkGLTexture
 /// fallback → `GtkGraphicsOffload` → Wayland subsurface. Used by both the
 /// video player and the video converter's edit page.
@@ -64,6 +67,7 @@ mod properties_rendering;
 mod properties_subtitles;
 mod properties_video;
 pub mod shader_gen;
+pub mod software_frames;
 pub mod video_surface;
 
 #[cfg(test)]

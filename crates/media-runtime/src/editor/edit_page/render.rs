@@ -10,6 +10,7 @@ use log::{error, info};
 use std::cell::Cell;
 use std::path::Path;
 use std::rc::Rc;
+use std::sync::Arc;
 
 use std::cell::RefCell;
 
@@ -18,7 +19,7 @@ use crate::player::mpv_backend::video_surface;
 use crate::player::mpv_backend::{MpvBackend, PlayerEvent, TrackMetadata};
 use big_relm4_components::layout::widget_container::clear_box_children;
 
-type MpvSlot = Rc<RefCell<Option<MpvBackend>>>;
+type MpvSlot = Rc<RefCell<Option<Arc<MpvBackend>>>>;
 
 use super::EditPage;
 use super::build::EditPageBuild;
@@ -175,8 +176,11 @@ impl EditPage {
         let (sender, receiver) = async_channel::unbounded();
         match crate::player::mpv_backend::MpvBackend::new(sender, "", "") {
             Ok(mpv) => {
-                info!("Editor: preparing to load {path_str}");
-                *self.mpv.borrow_mut() = Some(mpv);
+                info!(
+                    "Editor: preparing to load {}",
+                    big_os_kit::url::MediaLogTarget(&path_str)
+                );
+                *self.mpv.borrow_mut() = Some(Arc::new(mpv));
                 self.setup_gl_rendering(Some(path_str));
                 self.setup_event_receiver(receiver);
                 self.populate_track_menus_delayed();
@@ -360,7 +364,7 @@ impl EditPage {
         if let Some(ref path) = file_to_load
             && let Some(ref mpv) = *self.mpv.borrow()
         {
-            info!("Editor: loading {path}");
+            info!("Editor: loading {}", big_os_kit::url::MediaLogTarget(path));
             mpv.load_file(path);
         }
     }

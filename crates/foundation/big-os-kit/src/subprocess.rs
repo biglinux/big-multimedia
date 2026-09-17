@@ -46,7 +46,7 @@
 use std::collections::HashSet;
 use std::ffi::OsString;
 use std::path::PathBuf;
-use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::atomic::AtomicBool;
 use std::time::Duration;
 
 use bon::Builder;
@@ -86,7 +86,7 @@ impl BigSubprocessAllowList {
     /// Returns `true` when the program is permitted.
     #[must_use]
     pub fn permits(&self, program: &str) -> bool {
-        self.allowed.is_empty() || self.allowed.contains(program)
+        self.allowed.contains(program)
     }
 }
 
@@ -304,8 +304,13 @@ impl BigSubprocessSpec {
     /// Spawn the subprocess synchronously and wait for completion.
     ///
     /// Captures stdout/stderr if their modes are [`BigSubprocessOutputMode::Capture`].
-    /// Returns when the child exits or when the timeout elapses, whichever first.
-    /// On timeout the child is killed and [`BigSubprocessError::Timeout`] is returned.
+    /// Linux: returns after the leader exits AND captured pipes reach EOF.
+    /// The deadline supervises stdin, both captured outputs and descendant-held
+    /// pipes. Creation/system-call latency is not a hard real-time guarantee.
+    /// Timeout/cancel/overflow kills the owned process group; collection is
+    /// deferred without a blocking join. `spawn()` retains its caller-owned API.
+    /// Captures exceeding the limit fail explicitly rather than truncating.
+    /// Non-Linux bounded execution returns Unsupported before creating a child.
     ///
     /// # Errors
     ///
@@ -327,8 +332,8 @@ impl BigSubprocessSpec {
     /// kill path as timeout) and [`BigSubprocessError::Cancelled`] is returned.
     ///
     /// The flag is polled on the same ~20 ms cadence as the deadline, so a
-    /// flipped `cancel` terminates the child within one tick regardless of the
-    /// spec timeout. Share the flag with the UI thread (e.g. `Arc<AtomicBool>`
+    /// flipped `cancel` is checked between bounded I/O turns; scheduling and
+    /// process creation latency can exceed this polling interval. Share the flag with the UI thread (e.g. `Arc<AtomicBool>`
     /// flipped on component teardown) to bind a subprocess to a widget
     /// lifetime; see
     /// [`big_relm4_components::task`](../../big_relm4_components/task/index.html)
@@ -344,6 +349,31 @@ impl BigSubprocessSpec {
     ) -> Result<BigSubprocessOutput, BigSubprocessError> {
         let resolved = self.try_resolved()?;
         run_resolved(self, &resolved, cancel)
+    }
+
+    /// Run with bounded, incremental stderr observation on the supervising
+    /// thread. The observer MUST NOT block (use try_send for progress); its I/O
+    /// error cancels the process group. Bytes are untrusted and unredacted here:
+    /// parse only protocol fields, never forward them wholesale to logs/UI.
+    /// Capture limits still apply and truncation is never reported as success.
+    pub fn run_cancellable_with_stderr(
+        &self,
+        cancel: &AtomicBool,
+        observer: &mut dyn FnMut(&[u8]) -> std::io::Result<()>,
+    ) -> Result<BigSubprocessOutput, BigSubprocessError> {
+        self.try_resolved()?;
+        #[cfg(target_os = "linux")]
+        {
+            linux_exec::run_observed(self, cancel, observer)
+        }
+        #[cfg(not(target_os = "linux"))]
+        {
+            let _ = (cancel, observer);
+            Err(BigSubprocessError::Io(std::io::Error::new(
+                std::io::ErrorKind::Unsupported,
+                "bounded observation requires Linux",
+            )))
+        }
     }
 
     /// Spawn the subprocess without waiting and return a
@@ -381,7 +411,7 @@ impl BigSubprocessSpec {
     /// output nor waits.
     ///
     /// stdin/stdout/stderr are redirected to null regardless of the spec's
-    /// capture modes; the child is not reaped by this process. Validation
+    /// capture modes; a bounded shared worker reaps the child. Validation
     /// applies as in [`Self::spawn`].
     ///
     /// # Errors
@@ -390,12 +420,15 @@ impl BigSubprocessSpec {
     pub fn spawn_detached(&self) -> Result<(), BigSubprocessError> {
         use std::process::Stdio;
         self.try_resolved()?;
+        let permit = reaper::Permit::reserve().map_err(BigSubprocessError::Io)?;
         let mut cmd = build_command(self);
         cmd.stdin(Stdio::null());
         cmd.stdout(Stdio::null());
         cmd.stderr(Stdio::null());
         let detached_child = cmd.spawn().map_err(BigSubprocessError::Spawn)?;
-        notify_spawn_observer(detached_child.id(), &self.program);
+        let pid = detached_child.id();
+        permit.defer(detached_child);
+        notify_spawn_observer(pid, &self.program);
         Ok(())
     }
 }
@@ -416,7 +449,7 @@ pub fn set_spawn_observer(observer: impl Fn(u32, &str) + Send + Sync + 'static) 
     let _ = SPAWN_OBSERVER.set(Box::new(observer));
 }
 
-fn notify_spawn_observer(pid: u32, program: &str) {
+pub(crate) fn notify_spawn_observer(pid: u32, program: &str) {
     if let Some(observer) = SPAWN_OBSERVER.get() {
         observer(pid, program);
     }
@@ -587,7 +620,15 @@ pub enum BigSubprocessError {
     /// I/O error while reading stdout/stderr or writing stdin.
     #[error("subprocess i/o error: {0}")]
     Io(#[source] std::io::Error),
-    /// Configured timeout elapsed before the child exited.
+    /// Capture exceeded the documented memory limit; no partial success is returned.
+    #[error("subprocess {stream} exceeded capture limit of {limit} bytes")]
+    OutputLimit {
+        /// Output stream that exceeded its cap.
+        stream: &'static str,
+        /// Maximum bytes retained for one output stream.
+        limit: usize,
+    },
+    /// Configured timeout elapsed before all requested I/O completed.
     #[error("subprocess timed out")]
     Timeout,
     /// External cancellation flag was set before the child exited. The child
@@ -652,131 +693,101 @@ fn build_command(spec: &BigSubprocessSpec) -> std::process::Command {
     cmd
 }
 
-/// Why the wait loop stopped: normal exit, deadline, or external cancel.
-/// Cancel and timeout share the same kill path but map to distinct errors.
-enum WaitOutcome {
-    Exited(std::process::ExitStatus),
-    TimedOut,
-    Cancelled,
-}
+#[cfg(target_os = "linux")]
+mod linux_exec;
+pub(crate) mod reaper;
 
 fn run_resolved(
     spec: &BigSubprocessSpec,
     _resolved: &BigSubprocessResolved,
     cancel: &AtomicBool,
 ) -> Result<BigSubprocessOutput, BigSubprocessError> {
-    use std::io::Write;
-
-    let mut cmd = build_command(spec);
-    let mut child = cmd.spawn().map_err(BigSubprocessError::Spawn)?;
-    notify_spawn_observer(child.id(), &spec.program);
-
-    if let (Some(bytes), Some(mut stdin)) = (spec.stdin.as_ref(), child.stdin.take()) {
-        stdin.write_all(bytes).map_err(BigSubprocessError::Io)?;
-        drop(stdin);
+    #[cfg(target_os = "linux")]
+    {
+        linux_exec::run(spec, cancel)
     }
-
-    // Drain stdout/stderr on dedicated threads. A child that writes more than
-    // the OS pipe buffer (~64 KiB) blocks on write until a reader consumes it;
-    // if we only drained after the child exited (try_wait), the child would
-    // never exit and run() would spin to the timeout. e.g. `pw-dump` emits
-    // ~300 KiB and deadlocked the whole 30 s timeout. Reading concurrently fixes
-    // every large-output subprocess.
-    let stdout_reader = child.stdout.take().map(|mut pipe| {
-        std::thread::spawn(move || {
-            let mut buf = Vec::new();
-            let _ = drain_capped(&mut pipe, &mut buf);
-            buf
-        })
-    });
-    let stderr_reader = child.stderr.take().map(|mut pipe| {
-        std::thread::spawn(move || {
-            let mut buf = Vec::new();
-            let _ = drain_capped(&mut pipe, &mut buf);
-            buf
-        })
-    });
-
-    let deadline = std::time::Instant::now() + spec.timeout;
-    let outcome = loop {
-        match child.try_wait().map_err(BigSubprocessError::Io)? {
-            Some(status) => break WaitOutcome::Exited(status),
-            None => {
-                // Cancel is the caller's explicit intent — check it before the
-                // deadline. Both take the same kill/wait path.
-                if cancel.load(Ordering::Relaxed) {
-                    let _ = child.kill();
-                    let _ = child.wait();
-                    break WaitOutcome::Cancelled;
-                }
-                if std::time::Instant::now() >= deadline {
-                    let _ = child.kill();
-                    let _ = child.wait();
-                    break WaitOutcome::TimedOut;
-                }
-                std::thread::sleep(Duration::from_millis(20));
-            }
-        }
-    };
-
-    // Join the reader threads once, after the child has exited or been killed
-    // (its pipes are now closed, so the reads complete).
-    let mut stdout_buf = stdout_reader.map_or_else(Vec::new, |h| h.join().unwrap_or_default());
-    let mut stderr_buf = stderr_reader.map_or_else(Vec::new, |h| h.join().unwrap_or_default());
-
-    let status = match outcome {
-        WaitOutcome::Exited(status) => status,
-        WaitOutcome::TimedOut => return Err(BigSubprocessError::Timeout),
-        WaitOutcome::Cancelled => return Err(BigSubprocessError::Cancelled),
-    };
-    let code = status.code();
-    redact_in_place(&spec.redact_substrings, &mut stdout_buf);
-    redact_in_place(&spec.redact_substrings, &mut stderr_buf);
-    Ok(BigSubprocessOutput {
-        status: BigSubprocessStatus::Exited(code),
-        stdout: stdout_buf,
-        stderr: stderr_buf,
-    })
+    #[cfg(not(target_os = "linux"))]
+    {
+        let _ = (spec, cancel);
+        Err(BigSubprocessError::Io(std::io::Error::new(
+            std::io::ErrorKind::Unsupported,
+            "bounded run requires the Linux pipe supervisor",
+        )))
+    }
 }
 
+#[cfg(test)]
 fn drain_capped<R: std::io::Read>(
     reader: &mut R,
     buf: &mut Vec<u8>,
 ) -> Result<(), BigSubprocessError> {
-    let mut chunk = [0u8; 8192];
+    let mut chunk = [0_u8; 8192];
     loop {
-        if buf.len() >= DEFAULT_MAX_CAPTURE_BYTES {
-            // Stop reading to bound memory; remaining output is dropped.
-            break;
-        }
         match reader.read(&mut chunk) {
-            Ok(0) => break,
+            Ok(0) => return Ok(()),
             Ok(n) => {
-                let remaining = DEFAULT_MAX_CAPTURE_BYTES - buf.len();
-                buf.extend_from_slice(&chunk[..n.min(remaining)]);
+                if n > DEFAULT_MAX_CAPTURE_BYTES.saturating_sub(buf.len()) {
+                    return Err(BigSubprocessError::OutputLimit {
+                        stream: "capture",
+                        limit: DEFAULT_MAX_CAPTURE_BYTES,
+                    });
+                }
+                buf.extend_from_slice(&chunk[..n]);
             }
-            Err(e) if e.kind() == std::io::ErrorKind::Interrupted => continue,
-            Err(e) => return Err(BigSubprocessError::Io(e)),
+            Err(error) if error.kind() == std::io::ErrorKind::Interrupted => {}
+            Err(error) => return Err(BigSubprocessError::Io(error)),
         }
     }
-    Ok(())
 }
 
 fn redact_in_place(needles: &[String], buf: &mut Vec<u8>) {
-    if needles.is_empty() {
+    if needles.iter().all(String::is_empty) {
         return;
     }
-    let Ok(text) = std::str::from_utf8(buf) else {
-        return;
-    };
-    let mut redacted = text.to_string();
-    for needle in needles {
-        if !needle.is_empty() {
-            redacted = redacted.replace(needle, "[REDACTED]");
+    let mut out = Vec::with_capacity(buf.len().min(DEFAULT_MAX_CAPTURE_BYTES));
+    let mut pos = 0;
+    // Match only original bytes, longest match first. Redaction never skips a
+    // buffer merely because another byte in it is invalid UTF-8.
+    while pos < buf.len() && out.len() < DEFAULT_MAX_CAPTURE_BYTES {
+        let length = needles
+            .iter()
+            .filter(|n| !n.is_empty() && buf[pos..].starts_with(n.as_bytes()))
+            .map(String::len)
+            .max();
+        if let Some(length) = length {
+            let marker = b"[REDACTED]";
+            if marker.len() > DEFAULT_MAX_CAPTURE_BYTES - out.len() {
+                break;
+            }
+            out.extend_from_slice(marker);
+            pos += length;
+        } else {
+            out.push(buf[pos]);
+            pos += 1;
         }
     }
-    *buf = redacted.into_bytes();
+    *buf = out;
 }
 
 #[cfg(test)]
 mod tests;
+
+#[cfg(test)]
+mod review_allow_list_tests {
+    use super::*;
+
+    #[test]
+    fn empty_allow_list_denies_every_program() {
+        let policy = BigSubprocessAllowList::default();
+        assert!(!policy.permits("sh"));
+        assert!(!policy.permits("/usr/bin/true"));
+    }
+
+    #[test]
+    fn permission_matches_the_exact_executable() {
+        let policy = BigSubprocessAllowList::new(["pactl"]);
+        assert!(policy.permits("pactl"));
+        assert!(!policy.permits("/tmp/pactl"));
+        assert!(!policy.permits("sh"));
+    }
+}

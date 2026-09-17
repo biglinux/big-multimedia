@@ -237,9 +237,9 @@ impl VideoShell {
             queue.set_pending_segment_mode(SegmentOutputMode::Split);
         }
 
-        let _ = id;
         // Slim strip: start indeterminate, reveal it above the transport. The
         // video keeps playing behind it.
+        self.notify(&i18n("Verified completed outputs can be reused when retrying. Existing files without a matching receipt are kept."));
         let title = i18n("Generating cut…");
         self.trim_progress_row
             .update(&BigProgressRowSpec::indeterminate(
@@ -258,7 +258,8 @@ impl VideoShell {
         let row = self.trim_progress_row.clone();
         let shell = sender.input_sender().clone();
         glib::spawn_future_local(async move {
-            let mut outcome: TrimExportOutcome = TrimExportOutcome::Ok;
+            let mut outcome =
+                TrimExportOutcome::Failed(i18n("The export ended without confirming completion"));
             while let Ok(msg) = receiver.recv().await {
                 match msg {
                     QueueMessage::Progress {
@@ -271,10 +272,13 @@ impl VideoShell {
                             status,
                         ));
                     }
-                    QueueMessage::Failed { error, .. } => {
+                    QueueMessage::Done { entry_id } if entry_id == id => {
+                        outcome = TrimExportOutcome::Ok;
+                    }
+                    QueueMessage::Failed { entry_id, error } if entry_id == id => {
                         outcome = TrimExportOutcome::Failed(error);
                     }
-                    QueueMessage::Cancelled { .. } => {
+                    QueueMessage::Cancelled { entry_id } if entry_id == id => {
                         outcome = TrimExportOutcome::Cancelled;
                     }
                     QueueMessage::AllDone => break,

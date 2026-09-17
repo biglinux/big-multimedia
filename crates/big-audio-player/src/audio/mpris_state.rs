@@ -5,11 +5,18 @@
 //! main thread) and the D-Bus thread reads them through an `Arc`. Ported out of
 //! the god-object `window::SharedMprisState` (survives the cutover).
 
+use crate::mpris::{PlaybackStatus, PlayerState};
 use std::sync::Mutex;
-use std::sync::atomic::AtomicBool;
+use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
 
 /// `Sync`-safe snapshot of the current playback state for MPRIS.
 pub(crate) struct SharedMprisState {
+    pub(crate) snapshot: Mutex<PlayerState>,
+    pub(crate) status: Mutex<PlaybackStatus>,
+    pub(crate) track_id: Mutex<Option<String>>,
+    sequence: AtomicU64,
+    pub(crate) rate: Mutex<f64>,
+    pub(crate) seekable: AtomicBool,
     /// Whether playback is paused.
     pub(crate) paused: AtomicBool,
     /// Current position (seconds).
@@ -28,13 +35,19 @@ pub(crate) struct SharedMprisState {
     pub(crate) loop_status: Mutex<String>,
     /// Whether shuffle is on.
     pub(crate) shuffle: AtomicBool,
-    /// `file://` URL of cached art (MPRIS requires file:// for `mpris:artUrl`).
+    /// `file://` URL of cached art (this player uses local cache URIs).
     pub(crate) art_url: Mutex<String>,
 }
 
 impl Default for SharedMprisState {
     fn default() -> Self {
         Self {
+            snapshot: Mutex::new(PlayerState::default()),
+            status: Mutex::new(PlaybackStatus::Stopped),
+            track_id: Mutex::new(None),
+            sequence: AtomicU64::new(1),
+            rate: Mutex::new(1.0),
+            seekable: AtomicBool::new(false),
             paused: AtomicBool::new(true),
             position: Mutex::new(0.0),
             duration: Mutex::new(0.0),
@@ -49,102 +62,100 @@ impl Default for SharedMprisState {
     }
 }
 
-/// MPRIS spec requires `artUrl` to be a `file://` URL — write the art bytes to
+impl SharedMprisState {
+    pub(crate) fn selected(&self) {
+        let id = self.sequence.fetch_add(1, Ordering::Relaxed);
+        *self
+            .track_id
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner) =
+            Some(format!("/br/com/biglinux/AudioPlayer/Track/{id}"));
+    }
+    pub(crate) fn invalidate(&self) {
+        self.track_id
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner)
+            .take();
+        self.seekable.store(false, Ordering::Relaxed);
+    }
+}
+
+/// This player caches `artUrl` as a local `file://` URI — write the art bytes to
 /// the app cache and return the URL. Refuses to write when `dirs::cache_dir()`
 /// is unavailable rather than falling back to world-writable `/tmp`.
 ///
 /// Blocking (`create_dir_all` + `write`): run off the GTK main thread (see
 /// `AudioShell::apply_resolved_art`, which offloads it via `spawn_blocking_result`).
 pub(crate) fn save_mpris_art(data: &[u8]) -> Option<String> {
-    let cache_dir = dirs::cache_dir()?.join("big-audio-player");
+    use gtk::gio::prelude::FileExt;
+    const LIMIT: usize = 16 * 1024 * 1024;
+    if data.is_empty() || data.len() > LIMIT {
+        return None;
+    }
+    let cache_dir = dirs::cache_dir()?
+        .join("big-audio-player")
+        .join("mpris-art-cache");
     std::fs::create_dir_all(&cache_dir).ok()?;
-    let art_path = cache_dir.join("mpris-art.jpg");
-    std::fs::write(&art_path, data).ok()?;
-    Some(format!("file://{}", art_path.display()))
+    // Cooperative workers/processes share one short nonblocking cache lock.
+    // This directory contains cache entries only, never original artwork.
+    let _lock = big_app_kit::storage::WriteLock::try_acquire(&cache_dir.join("index")).ok()?;
+    let mut entries = Vec::new();
+    for (index, entry) in std::fs::read_dir(&cache_dir).ok()?.enumerate() {
+        if index >= 128 {
+            return None;
+        } // do not scan arbitrary unbounded trees
+        let entry = entry.ok()?;
+        let name = entry.file_name();
+        let name = name.to_str()?;
+        if name.starts_with("mpris-art-")
+            && std::path::Path::new(name)
+                .extension()
+                .is_some_and(|ext| ext.eq_ignore_ascii_case("jpg"))
+            && entry.file_type().ok()?.is_file()
+        {
+            let metadata = entry.metadata().ok()?;
+            entries.push((metadata.modified().ok()?, metadata.len(), entry.path()));
+        }
+    }
+    entries.sort_by_key(|entry| entry.0);
+    let mut bytes = entries
+        .iter()
+        .try_fold(0_u64, |sum, entry| sum.checked_add(entry.1))?;
+    let mut count = entries.len();
+    for (_, size, path) in &entries {
+        if count < 32 && bytes.saturating_add(data.len() as u64) <= 64 * 1024 * 1024 {
+            break;
+        }
+        std::fs::remove_file(path).ok()?;
+        count -= 1;
+        bytes = bytes.saturating_sub(*size);
+    }
+    static NEXT: AtomicU64 = AtomicU64::new(0);
+    let nonce = NEXT.fetch_add(1, Ordering::Relaxed);
+    let art_path = cache_dir.join(format!(
+        "mpris-art-{}-{}-{nonce}.jpg",
+        std::process::id(),
+        gtk::glib::real_time()
+    ));
+    let stage = big_app_kit::storage::StagedFile::new(&art_path).ok()?;
+    std::fs::write(stage.path(), data).ok()?;
+    // Both receipts mean publication happened; cache durability uncertainty is
+    // not a reason to overwrite the published entry with an older generation.
+    let _receipt = stage.publish(&art_path).ok()?;
+    Some(gtk::gio::File::for_path(&art_path).uri().to_string())
 }
 
-#[cfg(all(test, not(miri)))]
-mod tests {
-    use super::save_mpris_art;
-    use std::env;
-    use std::ffi::OsString;
-    use std::fs;
-    use std::path::PathBuf;
-    use std::sync::{Mutex, PoisonError};
-    use std::time::{SystemTime, UNIX_EPOCH};
-
-    static CACHE_ENVIRONMENT_LOCK: Mutex<()> = Mutex::new(());
-
-    struct CacheHomeOverride {
-        previous_cache_home: Option<OsString>,
-        cache_home: PathBuf,
-    }
-
-    impl CacheHomeOverride {
-        fn activate() -> std::result::Result<Self, Box<dyn std::error::Error>> {
-            let unique_suffix = SystemTime::now().duration_since(UNIX_EPOCH)?.as_nanos();
-            let cache_home = env::temp_dir().join(format!(
-                "big-audio-mpris-cache-{}-{unique_suffix}",
-                std::process::id()
-            ));
-            fs::create_dir_all(&cache_home)?;
-            let previous_cache_home = env::var_os("XDG_CACHE_HOME");
-            // SAFETY: the caller holds CACHE_ENVIRONMENT_LOCK across this override's
-            // whole lifetime, and this test is the crate's only env mutator; the sole
-            // reader, `save_mpris_art` (via `dirs::cache_dir`), runs only inside it. No
-            // other thread touches the environment concurrently.
-            unsafe { env::set_var("XDG_CACHE_HOME", &cache_home) };
-            Ok(Self {
-                previous_cache_home,
-                cache_home,
-            })
-        }
-    }
-
-    impl Drop for CacheHomeOverride {
-        fn drop(&mut self) {
-            // SAFETY: `CacheHomeOverride` is declared after `_environment_guard` in the
-            // test, so it drops first — this restore runs while CACHE_ENVIRONMENT_LOCK is
-            // still held, under the same single-env-accessor invariant as `activate`.
-            if let Some(previous_cache_home) = &self.previous_cache_home {
-                unsafe { env::set_var("XDG_CACHE_HOME", previous_cache_home) };
-            } else {
-                unsafe { env::remove_var("XDG_CACHE_HOME") };
-            }
-            let _ = fs::remove_dir_all(&self.cache_home);
-        }
-    }
-
+#[cfg(test)]
+mod identity_tests {
+    use super::*;
     #[test]
-    fn save_mpris_art_writes_bytes_to_app_cache_and_returns_file_uri()
-    -> std::result::Result<(), Box<dyn std::error::Error>> {
-        let _environment_guard = CACHE_ENVIRONMENT_LOCK
-            .lock()
-            .unwrap_or_else(PoisonError::into_inner);
-        let cache_home_override = CacheHomeOverride::activate()?;
-        let art_bytes = b"jpeg bytes for mpris";
-
-        let art_url = save_mpris_art(art_bytes)
-            .ok_or_else(|| std::io::Error::other("cache dir should be available"))?;
-        let art_path = PathBuf::from(
-            art_url
-                .strip_prefix("file://")
-                .ok_or_else(|| std::io::Error::other("MPRIS art URL should use file scheme"))?,
-        );
-
-        assert_eq!(
-            art_path,
-            cache_home_override
-                .cache_home
-                .join("big-audio-player")
-                .join("mpris-art.jpg")
-        );
-        assert_eq!(
-            fs::read(&art_path)?,
-            art_bytes,
-            "MPRIS art cache should contain the bytes supplied by the caller"
-        );
-
-        Ok(())
+    fn load_occurrences_do_not_share_track_id() {
+        let state = SharedMprisState::default();
+        state.selected();
+        let first = state.track_id.lock().unwrap().clone();
+        state.selected();
+        assert_ne!(*state.track_id.lock().unwrap(), first);
+        state.invalidate();
+        assert!(state.track_id.lock().unwrap().is_none());
     }
 }

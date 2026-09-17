@@ -127,7 +127,7 @@ fn apply_progress_field(snapshot: &mut FfmpegProgressSnapshot, key: &str, value:
         "frame" => snapshot.frame = value.parse().unwrap_or(0),
         "fps" => snapshot.fps = value.trim().parse().unwrap_or(0.0),
         "out_time_us" => snapshot.time_secs = value.parse::<f64>().unwrap_or(0.0) / 1_000_000.0,
-        "out_time_ms" => snapshot.time_secs = value.parse::<f64>().unwrap_or(0.0) / 1_000.0,
+        "out_time_ms" => snapshot.time_secs = value.parse::<f64>().unwrap_or(0.0) / 1_000_000.0,
         "out_time" => snapshot.time_secs = parse_time(value),
         "total_size" => snapshot.size_bytes = value.parse().unwrap_or(0),
         "bitrate" => {
@@ -207,7 +207,7 @@ progress=end\n";
         let progress_lines = "\
 out_time_us=5000000\n\
 progress=continue\n\
-out_time_ms=7000\n\
+out_time_ms=7000000\n\
 frame=42\n\
 fps=29.97\n\
 bitrate=1234.5kbits/s\n\

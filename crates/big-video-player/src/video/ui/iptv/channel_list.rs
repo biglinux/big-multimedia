@@ -37,7 +37,6 @@ pub struct ChannelListView {
     pub root: gtk::Widget,
     view: MediaListView,
     all_channels: Rc<RefCell<Vec<IptvChannel>>>,
-    favorites: Rc<RefCell<IptvFavorites>>,
     user_agent: Rc<RefCell<String>>,
     referer: Rc<RefCell<String>>,
     last_query: RefCell<String>,
@@ -95,11 +94,18 @@ impl ChannelListView {
         };
 
         let view = MediaListView::new(on_activate, build_suffix);
+        let wrapper = gtk::Box::new(gtk::Orientation::Vertical, 6);
+        let status_store = favorites.clone();
+        let retry_store = favorites.clone();
+        wrapper.append(&crate::settings::saving::document_status(
+            move || status_store.borrow().save_status(),
+            move || retry_store.borrow().retry_save(),
+        ));
+        wrapper.append(&view.widget);
         Self {
-            root: view.widget.clone(),
+            root: wrapper.upcast(),
             view,
             all_channels,
-            favorites,
             user_agent: Rc::new(RefCell::new(String::new())),
             referer: Rc::new(RefCell::new(String::new())),
             last_query: RefCell::new(String::new()),
@@ -126,10 +132,10 @@ impl ChannelListView {
         self.resplice(query);
     }
 
-    /// Re-read the favorites file and re-splice so visible stars reflect
-    /// cross-instance toggles.
+    /// Re-splice so visible stars reflect cross-instance favorite toggles.
     pub fn reload_favorites(&self) {
-        self.favorites.replace(IptvFavorites::load());
+        // Retain pending local edits. Cross-instance conflicts are explicit in
+        // save status; a star toggle is not a request to discard this model.
         let query = self.last_query.borrow().clone();
         self.resplice(&query);
     }

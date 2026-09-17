@@ -6,7 +6,7 @@
 use adw::prelude::*;
 use relm4::gtk;
 use relm4::gtk::glib;
-use std::cell::RefCell;
+use std::cell::{Cell, RefCell};
 use std::rc::Rc;
 
 /// DEFAULT HOVER CLOSE DELAY MS constant.
@@ -16,7 +16,13 @@ thread_local! {
     static POPOVER_REGISTRY: RefCell<Vec<glib::WeakRef<gtk::Popover>>> = const { RefCell::new(Vec::new()) };
 }
 
-type PendingClose = Rc<RefCell<Option<glib::SourceId>>>;
+#[derive(Default)]
+struct CloseState {
+    source: RefCell<Option<glib::SourceId>>,
+    keyboard_focus: Cell<bool>,
+}
+
+type PendingClose = Rc<CloseState>;
 
 /// Build a non-autohiding popover with a vertical content box and a
 /// title label. Returns both the popover and the inner box so the
@@ -34,6 +40,7 @@ pub fn build_vertical_popover_shell(
     );
     popover.set_position(gtk::PositionType::Top);
     popover.set_autohide(false);
+    popover.update_property(&[gtk::accessible::Property::Label(title)]);
 
     let content = gtk::Box::new(gtk::Orientation::Vertical, spacing);
     content.set_margin_top(8);
@@ -56,7 +63,7 @@ pub fn setup_hover_controller_exclusive(
 ) {
     register_popover(popover);
 
-    let close_id: PendingClose = Rc::new(RefCell::new(None));
+    let close_id: PendingClose = Rc::new(CloseState::default());
     // Weak: the group members' controllers cross-reference every popover —
     // strong `others` lists form a ring that pins all of them (plus the
     // widgets their scale handlers capture) after window close.
@@ -112,7 +119,10 @@ pub fn setup_hover_controller_exclusive(
     let click = gtk::GestureClick::new();
     {
         let popover = popover.clone();
+        let others = others.clone();
+        let close_id = close_id.clone();
         click.connect_released(move |_, _, _, _| {
+            cancel_pending_close(&close_id);
             popdown_all_others(&popover, &others);
             if !popover.is_visible() {
                 popover.popup();
@@ -120,6 +130,35 @@ pub fn setup_hover_controller_exclusive(
         });
     }
     hover_box.add_controller(click);
+
+    // Pointer departure must not close controls a keyboard user is adjusting.
+    let focus = gtk::EventControllerFocus::new();
+    {
+        let state = close_id.clone();
+        focus.connect_enter(move |_| {
+            state.keyboard_focus.set(true);
+            cancel_pending_close(&state);
+        });
+    }
+    {
+        let state = close_id.clone();
+        let popover = popover.downgrade();
+        focus.connect_leave(move |_| {
+            state.keyboard_focus.set(false);
+            if let Some(popover) = popover.upgrade() {
+                schedule_popover_close(&popover, &state);
+            }
+        });
+    }
+    popover.add_controller(focus);
+    {
+        let state = close_id.clone();
+        popover.connect_unmap(move |_| {
+            state.keyboard_focus.set(false);
+            cancel_pending_close(&state);
+        });
+    }
+    install_keyboard_access(hover_box, popover, &others, &close_id);
 }
 
 /// Convenience: register every `(hover_box, popover)` pair as a
@@ -189,22 +228,78 @@ fn popdown_all_others(current: &gtk::Popover, explicit_others: &[glib::WeakRef<g
 }
 
 fn cancel_pending_close(close_id: &PendingClose) {
-    if let Some(id) = close_id.borrow_mut().take() {
+    if let Some(id) = close_id.source.borrow_mut().take() {
         id.remove();
     }
 }
 
 fn schedule_popover_close(popover: &gtk::Popover, close_id: &PendingClose) {
-    let popover = popover.clone();
-    let close_id_for_timer = close_id.clone();
+    cancel_pending_close(close_id);
+    if close_id.keyboard_focus.get() {
+        return;
+    }
+    let popover = popover.downgrade();
+    let state = close_id.clone();
     let id = glib::timeout_add_local_once(
         std::time::Duration::from_millis(DEFAULT_HOVER_CLOSE_DELAY_MS),
         move || {
-            popover.popdown();
-            close_id_for_timer.borrow_mut().take();
+            // Clear before popdown: unmap/focus signals may re-enter this code.
+            state.source.borrow_mut().take();
+            if !state.keyboard_focus.get()
+                && let Some(popover) = popover.upgrade()
+            {
+                popover.popdown();
+            }
         },
     );
-    close_id.borrow_mut().replace(id);
+    close_id.source.borrow_mut().replace(id);
+}
+
+fn install_keyboard_access(
+    anchor: &gtk::Box,
+    popover: &gtk::Popover,
+    others: &[glib::WeakRef<gtk::Popover>],
+    state: &PendingClose,
+) {
+    let description = crate::i18n::t("Press Alt+Down to adjust. Press Escape to close.");
+    if let Some(control) = anchor.first_child() {
+        control.update_property(&[gtk::accessible::Property::Description(&description)]);
+    }
+    // Keep Enter/Space available for the button's original action (e.g. mute).
+    // Install on both surfaces: a popover may have its own native event root.
+    for widget in [
+        anchor.upcast_ref::<gtk::Widget>(),
+        popover.upcast_ref::<gtk::Widget>(),
+    ] {
+        let controller = gtk::EventControllerKey::new();
+        controller.set_propagation_phase(gtk::PropagationPhase::Capture);
+        let anchor = anchor.downgrade();
+        let popover = popover.downgrade();
+        let others = others.to_vec();
+        let state = state.clone();
+        controller.connect_key_pressed(move |_, key, _, modifiers| {
+            let Some(popover) = popover.upgrade() else {
+                return glib::Propagation::Proceed;
+            };
+            if key == gtk::gdk::Key::Escape && popover.is_visible() {
+                cancel_pending_close(&state);
+                popover.popdown();
+                if let Some(anchor) = anchor.upgrade() {
+                    anchor.child_focus(gtk::DirectionType::TabForward);
+                }
+                return glib::Propagation::Stop;
+            }
+            if key == gtk::gdk::Key::Down && modifiers.contains(gtk::gdk::ModifierType::ALT_MASK) {
+                cancel_pending_close(&state);
+                popdown_all_others(&popover, &others);
+                popover.popup();
+                popover.child_focus(gtk::DirectionType::TabForward);
+                return glib::Propagation::Stop;
+            }
+            glib::Propagation::Proceed
+        });
+        widget.add_controller(controller);
+    }
 }
 
 #[cfg(test)]

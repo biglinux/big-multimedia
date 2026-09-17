@@ -5,51 +5,89 @@
 use crate::error::Result;
 use big_os_kit::http_client::http_post_json;
 use log::{info, warn};
-use std::path::PathBuf;
+#[cfg(test)]
+use std::path::Path;
 use std::time::{SystemTime, UNIX_EPOCH};
 
 const API_URL: &str = "https://api.listenbrainz.org/1/submit-listens";
-const CONFIG_DIR: &str = "big-audio-player";
-const CONFIG_FILE: &str = "listenbrainz.json";
 
-#[derive(Debug, Clone)]
+#[derive(Clone)]
 pub struct ListenBrainzConfig {
     pub user_token: String,
     pub enabled: bool,
 }
 
-impl ListenBrainzConfig {
-    fn config_path() -> PathBuf {
-        big_os_kit::xdg_dirs::config_dir()
-            .unwrap_or_else(|| PathBuf::from("."))
-            .join(CONFIG_DIR)
-            .join(CONFIG_FILE)
+impl std::fmt::Debug for ListenBrainzConfig {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("ListenBrainzConfig")
+            .field("user_token", &"[redacted]")
+            .field("enabled", &self.enabled)
+            .finish()
     }
+}
 
-    pub fn load() -> Option<Self> {
-        let path = Self::config_path();
-        let config_text = std::fs::read_to_string(path).ok()?;
-        let config_json: serde_json::Value = serde_json::from_str(&config_text).ok()?;
+impl ListenBrainzConfig {
+    fn from_json(text: &str) -> Option<Self> {
+        let value: serde_json::Value = serde_json::from_str(text).ok()?;
+        let enabled = match value.get("enabled") {
+            None => false,
+            Some(serde_json::Value::Bool(value)) => *value,
+            _ => return None,
+        };
         Some(Self {
-            user_token: config_json.get("user_token")?.as_str()?.to_string(),
-            enabled: config_json
-                .get("enabled")
-                .and_then(serde_json::Value::as_bool)
-                .unwrap_or(true),
+            user_token: value.get("user_token")?.as_str()?.to_string(),
+            // Possession of a token is not consent to publish listening history.
+            enabled,
         })
     }
 
-    pub fn save(&self) -> Result<()> {
-        let path = Self::config_path();
-        if let Some(parent) = path.parent() {
-            std::fs::create_dir_all(parent)?;
+    pub fn try_load() -> Result<Option<Self>> {
+        let Some(bytes) = super::accounts::load(super::accounts::Provider::ListenBrainz)? else {
+            return Ok(None);
+        };
+        let config = Self::from_json(std::str::from_utf8(&bytes)?)
+            .ok_or_else(|| crate::Error::internal("Invalid ListenBrainz configuration"))?;
+        if config.user_token.len() > 4096 || config.user_token.chars().any(char::is_control) {
+            return Err(crate::Error::internal("Invalid ListenBrainz token"));
         }
-        let config_json = serde_json::json!({
+        Ok(Some(config))
+    }
+    /// Legacy read-only adapter. Editing flows must use try_load.
+    pub fn load() -> Option<Self> {
+        Self::try_load().ok().flatten()
+    }
+
+    /// Explicit worker-only save. Secret Service failure never falls back to a file.
+    pub fn save(&self) -> Result<()> {
+        let provider = super::accounts::Provider::ListenBrainz;
+        let reviewed = super::accounts::review(provider)?;
+        if reviewed.kind != super::accounts::StorageKind::NotConfigured {
+            return Err(crate::Error::internal(
+                "Editing existing credentials requires accounts::save_reviewed with the loaded revision",
+            ));
+        }
+        let bytes = serde_json::to_vec(
+            &serde_json::json!({"user_token":self.user_token,"enabled":self.enabled}),
+        )?;
+        let cancel = std::sync::atomic::AtomicBool::new(false);
+        match super::accounts::save_reviewed(&reviewed, &bytes, &cancel)? {
+            super::accounts::SaveOutcome::Protected => Ok(()),
+            super::accounts::SaveOutcome::ProtectedCleanupPending => Err(crate::Error::internal(
+                "Account protected; old credential cleanup needs attention",
+            )),
+        }
+    }
+
+    #[cfg(test)]
+    fn save_to_path(&self, path: &Path) -> Result<()> {
+        if self.user_token.len() > 4096 || self.user_token.chars().any(char::is_control) {
+            return Err(crate::Error::internal("Invalid ListenBrainz token"));
+        }
+        let json = serde_json::to_vec_pretty(&serde_json::json!({
             "user_token": self.user_token,
             "enabled": self.enabled,
-        });
-        let json = serde_json::to_string_pretty(&config_json)?;
-        std::fs::write(path, json)?;
+        }))?;
+        big_os_kit::storage::atomic_write_private(path, &json)?;
         Ok(())
     }
 }
@@ -61,40 +99,26 @@ pub fn scrobble(
     track: &str,
     album: &str,
     duration_secs: i64,
+    started_at: u64,
 ) {
-    if !config.enabled || config.user_token.is_empty() || artist.is_empty() || track.is_empty() {
+    if !config.enabled
+        || config.user_token.is_empty()
+        || artist.is_empty()
+        || track.is_empty()
+        || [artist, track, album].iter().any(|s| s.len() > 4096)
+    {
         return;
     }
 
-    let timestamp = SystemTime::now()
-        .duration_since(UNIX_EPOCH)
-        .map_or(0, |d| d.as_secs());
-
-    let mut additional = serde_json::Map::new();
-    if !album.is_empty() {
-        additional.insert(
-            "release_name".into(),
-            serde_json::Value::String(album.to_string()),
-        );
+    let Ok(now) = SystemTime::now().duration_since(UNIX_EPOCH) else {
+        return;
+    };
+    if started_at == 0 || started_at > now.as_secs() {
+        return;
     }
-    if duration_secs > 0 {
-        additional.insert(
-            "duration_ms".into(),
-            serde_json::Value::Number((duration_secs * 1000).into()),
-        );
-    }
+    let timestamp = started_at;
 
-    let payload = serde_json::json!({
-        "listen_type": "single",
-        "payload": [{
-            "listened_at": timestamp,
-            "track_metadata": {
-                "artist_name": artist,
-                "track_name": track,
-                "additional_info": additional,
-            }
-        }]
-    });
+    let payload = build_scrobble_payload(artist, track, album, duration_secs, timestamp);
 
     let auth = format!("Token {}", config.user_token);
     match http_post_json(
@@ -102,14 +126,19 @@ pub fn scrobble(
         &payload.to_string(),
         Some(("Authorization", &auth)),
     ) {
-        Ok(200) => info!("ListenBrainz scrobble OK: {artist} - {track}"),
+        Ok(200) => info!("ListenBrainz listen submitted"),
         Ok(code) => warn!("ListenBrainz scrobble failed: HTTP {code}"),
         Err(e) => warn!("ListenBrainz scrobble error: {e}"),
     }
 }
 
 pub fn update_now_playing(config: &ListenBrainzConfig, artist: &str, track: &str, album: &str) {
-    if !config.enabled || config.user_token.is_empty() || artist.is_empty() || track.is_empty() {
+    if !config.enabled
+        || config.user_token.is_empty()
+        || artist.is_empty()
+        || track.is_empty()
+        || [artist, track, album].iter().any(|s| s.len() > 4096)
+    {
         return;
     }
 
@@ -140,8 +169,7 @@ pub fn update_now_playing(config: &ListenBrainzConfig, artist: &str, track: &str
     );
 }
 
-/// Test-only: payload builder mirroring `scrobble()`, returns the JSON value.
-#[cfg(test)]
+/// Shared production payload builder, exercised directly by unit tests.
 fn build_scrobble_payload(
     artist: &str,
     track: &str,
@@ -159,7 +187,7 @@ fn build_scrobble_payload(
     if duration_secs > 0 {
         additional.insert(
             "duration_ms".into(),
-            serde_json::Value::Number((duration_secs * 1000).into()),
+            serde_json::Value::Number(duration_secs.saturating_mul(1000).into()),
         );
     }
 
@@ -181,54 +209,56 @@ mod tests {
     use super::*;
 
     #[test]
-    fn config_defaults_enabled_true() {
-        let json = r#"{"user_token": "abc123"}"#;
-        let config_json: serde_json::Value = serde_json::from_str(json).unwrap();
-        let enabled = config_json
-            .get("enabled")
-            .and_then(serde_json::Value::as_bool)
-            .unwrap_or(true);
-        assert!(enabled);
+    fn missing_consent_does_not_enable_listening_history() {
+        assert!(
+            !ListenBrainzConfig::from_json(r#"{"user_token":"abc"}"#)
+                .unwrap()
+                .enabled
+        );
+        assert!(
+            !ListenBrainzConfig::from_json(r#"{"user_token":"abc","enabled":false}"#)
+                .unwrap()
+                .enabled
+        );
+        assert!(
+            ListenBrainzConfig::from_json(r#"{"user_token":"abc","enabled":true}"#)
+                .unwrap()
+                .enabled
+        );
     }
 
+    #[cfg(unix)]
     #[test]
-    fn config_explicit_disabled() {
-        let json = r#"{"user_token": "abc123", "enabled": false}"#;
-        let config_json: serde_json::Value = serde_json::from_str(json).unwrap();
-        let enabled = config_json
-            .get("enabled")
-            .and_then(serde_json::Value::as_bool)
-            .unwrap_or(true);
-        assert!(!enabled);
-    }
-
-    #[test]
-    fn config_save_load_roundtrip() {
-        let dir = std::env::temp_dir().join("bmp-test-listenbrainz");
-        let _ = std::fs::create_dir_all(&dir);
-        let path = dir.join("listenbrainz-test.json");
-
-        let listenbrainz_config = ListenBrainzConfig {
-            user_token: "test-token-xyz".to_string(),
+    fn actual_config_writer_is_atomic_and_private() {
+        use std::os::unix::fs::PermissionsExt;
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir.path().join("listenbrainz.json");
+        std::fs::write(&path, b"old").unwrap();
+        std::fs::set_permissions(&path, std::fs::Permissions::from_mode(0o644)).unwrap();
+        let config = ListenBrainzConfig {
+            user_token: "secret-token".into(),
             enabled: false,
         };
-
-        let config_json = serde_json::json!({
-            "user_token": listenbrainz_config.user_token,
-            "enabled": listenbrainz_config.enabled,
-        });
-        std::fs::write(&path, serde_json::to_string_pretty(&config_json).unwrap()).unwrap();
-
-        let config_text = std::fs::read_to_string(&path).unwrap();
-        let parsed: serde_json::Value = serde_json::from_str(&config_text).unwrap();
+        config.save_to_path(&path).unwrap();
+        let loaded =
+            ListenBrainzConfig::from_json(&std::fs::read_to_string(&path).unwrap()).unwrap();
+        assert_eq!(loaded.user_token, config.user_token);
+        assert!(!loaded.enabled);
         assert_eq!(
-            parsed.get("user_token").unwrap().as_str().unwrap(),
-            "test-token-xyz"
+            std::fs::metadata(&path).unwrap().permissions().mode() & 0o077,
+            0
         );
-        assert!(!parsed.get("enabled").unwrap().as_bool().unwrap());
+        assert_eq!(std::fs::read_dir(dir.path()).unwrap().count(), 1);
+        assert!(!format!("{config:?}").contains("secret-token"));
+    }
 
-        let _ = std::fs::remove_file(&path);
-        let _ = std::fs::remove_dir(&dir);
+    #[test]
+    fn duration_conversion_cannot_overflow() {
+        let payload = build_scrobble_payload("A", "T", "", i64::MAX, 1);
+        assert_eq!(
+            payload["payload"][0]["track_metadata"]["additional_info"]["duration_ms"],
+            i64::MAX
+        );
     }
 
     #[test]
@@ -258,7 +288,7 @@ mod tests {
             user_token: "tok".to_string(),
             enabled: false,
         };
-        scrobble(&listenbrainz_config, "A", "T", "Al", 100);
+        scrobble(&listenbrainz_config, "A", "T", "Al", 100, 1);
     }
 
     #[test]
@@ -267,7 +297,7 @@ mod tests {
             user_token: String::new(),
             enabled: true,
         };
-        scrobble(&listenbrainz_config, "A", "T", "Al", 100);
+        scrobble(&listenbrainz_config, "A", "T", "Al", 100, 1);
     }
 
     #[test]
@@ -276,7 +306,7 @@ mod tests {
             user_token: "tok".to_string(),
             enabled: true,
         };
-        scrobble(&listenbrainz_config, "", "T", "Al", 100);
+        scrobble(&listenbrainz_config, "", "T", "Al", 100, 1);
     }
 
     #[test]
@@ -285,7 +315,7 @@ mod tests {
             user_token: "tok".to_string(),
             enabled: true,
         };
-        scrobble(&listenbrainz_config, "A", "", "Al", 100);
+        scrobble(&listenbrainz_config, "A", "", "Al", 100, 1);
     }
 
     #[test]

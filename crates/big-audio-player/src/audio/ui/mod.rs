@@ -45,3 +45,9 @@ pub(crate) mod shortcuts_dialog;
 pub(crate) mod smartphone_dialog;
 /// Audio appearance application (palette + high-contrast CSS providers).
 pub(crate) mod theming;
+
+/// Paged review and confirmed removal of unavailable library records.
+mod unavailable_dialog;
+
+/// Import progress and cooperative cancellation without blocking GTK.
+mod scan_progress;

@@ -59,7 +59,22 @@ impl QuickExportChoice {
             .extension()
             .and_then(|ext| ext.to_str())
             .map(str::to_ascii_lowercase)
-            .filter(|ext| !ext.is_empty())
+            .filter(|ext| {
+                matches!(
+                    ext.as_str(),
+                    "mkv"
+                        | "mp4"
+                        | "mov"
+                        | "webm"
+                        | "avi"
+                        | "ts"
+                        | "m2ts"
+                        | "mpeg"
+                        | "mpg"
+                        | "flv"
+                        | "ogv"
+                )
+            })
             .unwrap_or_else(|| "mkv".to_string());
         Self {
             format: QuickExportFormat::Video {
@@ -220,6 +235,19 @@ pub fn build_single_export_queue(
     (queue, id, output)
 }
 
+/// Reject malformed cut lists before spawning/probing; the worker additionally
+/// validates against the authoritative probed duration.
+pub fn validate_export_segments(segments: &[(f64, f64)]) -> Result<(), String> {
+    if segments.len() > 10_000
+        || segments
+            .iter()
+            .any(|&(a, b)| !a.is_finite() || !b.is_finite() || a < 0.0 || b <= a)
+    {
+        return Err("Each cut needs a finite start and a later end".into());
+    }
+    Ok(())
+}
+
 /// Run a single-file quick export to completion on the **calling thread** and
 /// return the output path (or an error string).
 ///
@@ -242,16 +270,32 @@ pub fn run_single_export_blocking(
     choice: &QuickExportChoice,
     segments: &[(f64, f64)],
 ) -> Result<PathBuf, String> {
-    let (mut queue, _id, output) = build_single_export_queue(input, output_dir, choice, segments);
+    validate_export_segments(segments)?;
+    let (mut queue, id, output) = build_single_export_queue(input, output_dir, choice, segments);
     if output.as_os_str().is_empty() {
         return Err("export item vanished before start".to_string());
     }
 
     queue.start();
+    let mut completed = false;
     loop {
         match queue.receiver().recv_blocking() {
-            Ok(QueueMessage::AllDone) => return Ok(output),
-            Ok(QueueMessage::Failed { error, .. }) => return Err(error),
+            Ok(QueueMessage::Done { entry_id }) if entry_id == id => completed = true,
+            Ok(QueueMessage::Cancelled { entry_id }) if entry_id == id => {
+                return Err("Export was cancelled".into());
+            }
+            Ok(QueueMessage::AllDone) => {
+                if !completed {
+                    return Err("The queue ended without a completed output".into());
+                }
+                let metadata = std::fs::symlink_metadata(&output)
+                    .map_err(|_| "The published output is unavailable")?;
+                if !metadata.is_file() || metadata.len() == 0 {
+                    return Err("The published output is not a nonempty regular file".into());
+                }
+                return Ok(output);
+            }
+            Ok(QueueMessage::Failed { entry_id, error }) if entry_id == id => return Err(error),
             Ok(_) => {}
             Err(_) => return Err("export worker stopped before completion".to_string()),
         }

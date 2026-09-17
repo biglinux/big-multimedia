@@ -2,17 +2,14 @@
 //! Config: `~/.config/big-audio-player/lastfm.json` (legacy app dirname).
 
 use crate::error::Result;
-use big_os_kit::http_client::http_post_form;
+use big_os_kit::http_client::http_post_form_response;
 use log::{info, warn};
 use std::collections::BTreeMap;
-use std::path::PathBuf;
 use std::time::{SystemTime, UNIX_EPOCH};
 
 const API_URL: &str = "https://ws.audioscrobbler.com/2.0/";
-const CONFIG_DIR: &str = "big-audio-player";
-const CONFIG_FILE: &str = "lastfm.json";
 
-#[derive(Debug, Clone)]
+#[derive(Clone)]
 pub struct LastFmConfig {
     pub api_key: String,
     pub api_secret: String,
@@ -21,46 +18,86 @@ pub struct LastFmConfig {
     pub enabled: bool,
 }
 
-impl LastFmConfig {
-    fn config_path() -> PathBuf {
-        big_os_kit::xdg_dirs::config_dir()
-            .unwrap_or_else(|| PathBuf::from("."))
-            .join(CONFIG_DIR)
-            .join(CONFIG_FILE)
+impl std::fmt::Debug for LastFmConfig {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.debug_struct("LastFmConfig")
+            .field("credentials", &"[redacted]")
+            .field("enabled", &self.enabled)
+            .finish()
     }
-
-    pub fn load() -> Option<Self> {
-        let path = Self::config_path();
-        let config_text = std::fs::read_to_string(path).ok()?;
-        let config_json: serde_json::Value = serde_json::from_str(&config_text).ok()?;
-        Some(Self {
-            api_key: config_json.get("api_key")?.as_str()?.to_string(),
-            api_secret: config_json.get("api_secret")?.as_str()?.to_string(),
-            session_key: config_json.get("session_key")?.as_str()?.to_string(),
-            username: config_json.get("username")?.as_str()?.to_string(),
-            enabled: config_json
-                .get("enabled")
-                .and_then(serde_json::Value::as_bool)
-                .unwrap_or(true),
+}
+impl LastFmConfig {
+    fn from_bytes(bytes: &[u8]) -> Result<Self> {
+        let value: serde_json::Value = serde_json::from_slice(bytes)?;
+        let field = |name: &str| -> Result<String> {
+            value
+                .get(name)
+                .and_then(serde_json::Value::as_str)
+                .filter(|text| text.len() <= 4096 && !text.chars().any(char::is_control))
+                .map(str::to_owned)
+                .ok_or_else(|| crate::Error::internal("Invalid Last.fm configuration field"))
+        };
+        let enabled = match value.get("enabled") {
+            None => false,
+            Some(serde_json::Value::Bool(v)) => *v,
+            _ => return Err(crate::Error::internal("Invalid Last.fm consent flag")),
+        };
+        Ok(Self {
+            api_key: field("api_key")?,
+            api_secret: field("api_secret")?,
+            session_key: field("session_key")?,
+            username: field("username")?,
+            enabled,
         })
     }
-
-    pub fn save(&self) -> Result<()> {
-        let path = Self::config_path();
-        if let Some(parent) = path.parent() {
-            std::fs::create_dir_all(parent)?;
-        }
-        let config_json = serde_json::json!({
-            "api_key": self.api_key,
-            "api_secret": self.api_secret,
-            "session_key": self.session_key,
-            "username": self.username,
-            "enabled": self.enabled,
-        });
-        let json = serde_json::to_string_pretty(&config_json)?;
-        std::fs::write(path, json)?;
-        Ok(())
+    /// Distinguishes absence from corrupt/oversized/symlink configuration.
+    pub fn try_load() -> Result<Option<Self>> {
+        super::accounts::load(super::accounts::Provider::LastFm)?
+            .map(|bytes| Self::from_bytes(&bytes))
+            .transpose()
     }
+    /// Legacy read-only adapter. Editors must use try_load and refuse to
+    /// overwrite a configuration that could not be read.
+    pub fn load() -> Option<Self> {
+        Self::try_load().ok().flatten()
+    }
+    /// Worker-only save to Secret Service; never writes plaintext credentials.
+    pub fn save(&self) -> Result<()> {
+        let reviewed = super::accounts::review(super::accounts::Provider::LastFm)?;
+        if reviewed.kind != super::accounts::StorageKind::NotConfigured {
+            return Err(crate::Error::internal(
+                "Editing existing credentials requires accounts::save_reviewed with the loaded revision",
+            ));
+        }
+        let bytes = serde_json::to_vec(&serde_json::json!({
+            "api_key":self.api_key,"api_secret":self.api_secret,"session_key":self.session_key,
+            "username":self.username,"enabled":self.enabled,
+        }))?;
+        let cancel = std::sync::atomic::AtomicBool::new(false);
+        match super::accounts::save_reviewed(&reviewed, &bytes, &cancel)? {
+            super::accounts::SaveOutcome::Protected => Ok(()),
+            super::accounts::SaveOutcome::ProtectedCleanupPending => Err(crate::Error::internal(
+                "Account protected; old credential cleanup needs attention",
+            )),
+        }
+    }
+}
+
+fn provider_accepted(status: u16, bytes: &[u8], scrobble: bool) -> bool {
+    let Ok(value) = serde_json::from_slice::<serde_json::Value>(bytes) else {
+        return false;
+    };
+    if status != 200 || value.get("error").is_some() {
+        return false;
+    }
+    if scrobble {
+        return value
+            .pointer("/scrobbles/@attr/accepted")
+            .is_some_and(|accepted| {
+                accepted.as_str() == Some("1") || accepted.as_u64() == Some(1)
+            });
+    }
+    value.get("nowplaying").is_some()
 }
 
 /// `md5(key1value1key2value2...secret)` — keys must be alphabetically sorted
@@ -84,15 +121,34 @@ fn api_sig(params: &BTreeMap<&str, &str>, secret: &str) -> String {
 }
 
 /// Blocking — call from a worker thread.
-pub fn scrobble(config: &LastFmConfig, artist: &str, track: &str, album: &str, duration_secs: i64) {
-    if !config.enabled || artist.is_empty() || track.is_empty() {
+pub fn scrobble(
+    config: &LastFmConfig,
+    artist: &str,
+    track: &str,
+    album: &str,
+    duration_secs: i64,
+    started_at: u64,
+) {
+    if !config.enabled
+        || config.api_key.is_empty()
+        || config.api_secret.is_empty()
+        || config.session_key.is_empty()
+        || artist.is_empty()
+        || track.is_empty()
+        || [artist, track, album].iter().any(|s| s.len() > 4096)
+    {
         return;
     }
 
-    let timestamp = SystemTime::now()
-        .duration_since(UNIX_EPOCH)
-        .map(|d| d.as_secs().to_string())
-        .unwrap_or_default();
+    // The caller supplies the actual start, not the time of submission. It is
+    // also responsible for consent and actual listening eligibility.
+    let Ok(now) = SystemTime::now().duration_since(UNIX_EPOCH) else {
+        return;
+    };
+    if started_at == 0 || started_at > now.as_secs() || duration_secs <= 30 {
+        return;
+    }
+    let timestamp = started_at.to_string();
     let duration_seconds_text = duration_secs.to_string();
 
     let mut params = BTreeMap::new();
@@ -125,15 +181,24 @@ pub fn scrobble(config: &LastFmConfig, artist: &str, track: &str, album: &str, d
         .collect::<Vec<_>>()
         .join("&");
 
-    match http_post_form(API_URL, &body) {
-        Ok(200) => info!("Last.fm scrobble OK: {artist} - {track}"),
-        Ok(code) => warn!("Last.fm scrobble failed: HTTP {code}"),
-        Err(e) => warn!("Last.fm scrobble error: {e}"),
+    match http_post_form_response(API_URL, &body) {
+        Ok(response) if provider_accepted(response.status, &response.bytes, true) => {
+            info!("Last.fm confirmed one scrobble")
+        }
+        Ok(_) => warn!("Last.fm did not confirm the scrobble"),
+        Err(_) => warn!("Last.fm transport failed"),
     }
 }
 
 pub fn update_now_playing(config: &LastFmConfig, artist: &str, track: &str, album: &str) {
-    if !config.enabled || artist.is_empty() || track.is_empty() {
+    if !config.enabled
+        || config.api_key.is_empty()
+        || config.api_secret.is_empty()
+        || config.session_key.is_empty()
+        || artist.is_empty()
+        || track.is_empty()
+        || [artist, track, album].iter().any(|s| s.len() > 4096)
+    {
         return;
     }
 
@@ -163,7 +228,10 @@ pub fn update_now_playing(config: &LastFmConfig, artist: &str, track: &str, albu
         .collect::<Vec<_>>()
         .join("&");
 
-    let _ = http_post_form(API_URL, &body);
+    match http_post_form_response(API_URL, &body) {
+        Ok(response) if provider_accepted(response.status, &response.bytes, false) => {}
+        _ => warn!("Last.fm did not confirm now-playing"),
+    }
 }
 
 #[cfg(test)]
@@ -185,5 +253,34 @@ mod tests {
         let api_signature = api_sig(&params, "secret");
         assert_eq!(api_signature.len(), 32);
         assert!(api_signature.chars().all(|c| c.is_ascii_hexdigit()));
+    }
+}
+
+#[cfg(test)]
+mod privacy_tests {
+    use super::*;
+    #[test]
+    fn debug_does_not_disclose_secrets_and_missing_consent_is_off() {
+        let config = LastFmConfig::from_bytes(br#"{"api_key":"private-key","api_secret":"private-secret","session_key":"private-session","username":"private-name"}"#).unwrap();
+        assert!(!config.enabled);
+        assert!(!format!("{config:?}").contains("private-"));
+    }
+    #[test]
+    fn http_success_does_not_mean_provider_accepted() {
+        assert!(!provider_accepted(
+            200,
+            br#"{"error":9,"message":"private details"}"#,
+            true
+        ));
+        assert!(!provider_accepted(
+            200,
+            br#"{"scrobbles":{"@attr":{"accepted":"0","ignored":"1"}}}"#,
+            true
+        ));
+        assert!(provider_accepted(
+            200,
+            br#"{"scrobbles":{"@attr":{"accepted":"1","ignored":"0"}}}"#,
+            true
+        ));
     }
 }

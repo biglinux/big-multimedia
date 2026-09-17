@@ -10,7 +10,9 @@ mod component;
 mod engine;
 mod export;
 mod input;
+mod library_generation;
 mod library_store;
+use library_generation::LibraryGeneration;
 mod metadata;
 mod mpris;
 mod panel_intents;
@@ -49,15 +51,14 @@ use crate::db::models::{RadioStation, Track, WatchFolder};
 use crate::db::queries_advanced::{TrackMetadataUpdate, update_track_metadata};
 use crate::db::{self, DbHandle, queries};
 use crate::i18n::i18n;
-use crate::mpris::{CommandCallback, Mpris, PlayerState, StateCallback};
-use crate::player::mpv_backend::{MpvBackend, PlayerEvent};
+use crate::mpris::{
+    CommandCallback, Mpris, MprisCommand, PlaybackStatus, PlayerState, StateCallback,
+};
+use crate::player::mpv_backend::{AudioCacheProfile, MpvBackend, PlayerEvent};
 use crate::player::queue::{PlayQueue, RepeatMode};
 use crate::settings::{Settings, keys};
 use crate::shared::ui_helpers::spawn_db_query;
 use big_app_kit::file_dialogs::FilePicker;
-use big_app_kit::mpris::{
-    BigMprisPlaybackControls, BigMprisPlaybackFeedback, route_standard_playback_command,
-};
 use big_media_components::media::file_metadata_dialog::{
     BigMediaFileMetadataDialogLabels, BigMediaFileMetadataDialogSpec,
     show_media_file_metadata_dialog,
@@ -177,6 +178,11 @@ pub struct AudioShell {
     library_filter: String,
     /// Current age-filter dropdown index.
     library_age: u32,
+    /// Discards superseded library queries before work and before presentation.
+    library_generation: LibraryGeneration,
+    /// At most one import owned by this shell; dropping the shell cancels it.
+    scan_slot: library_scan_engine::ScanSlot,
+    library_queries: library_generation::LatestMailbox<library_store::TreeRequest>,
     /// Path of the loaded track (empty = nothing loaded).
     current_file: String,
     /// Last resolved cover bytes — kept so the blurred background can be toggled

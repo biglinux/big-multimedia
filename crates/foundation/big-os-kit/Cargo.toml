@@ -19,6 +19,8 @@ serde_json.workspace = true
 bon.workspace = true
 thiserror.workspace = true
 log.workspace = true
+# Reuse the exact ring release already locked by the workspace for SHA-256 receipts.
+ring = "0.17.14"
 # glibc-only `malloc_trim` (mem::trim_arenas) — return freed arenas to the OS.
 libc.workspace = true
 

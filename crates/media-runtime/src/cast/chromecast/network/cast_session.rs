@@ -110,7 +110,10 @@ pub(in crate::cast::chromecast) fn cast_session_loop(
                     seek_secs,
                     live,
                 } => {
-                    info!("Cast reload media: {url} (seek {seek_secs:.1}s, live={live})");
+                    info!(
+                        "Cast reload {} (seek {seek_secs:.1}s, live={live})",
+                        big_os_kit::url::MediaLogTarget(&url)
+                    );
                     let host2 = host.to_string();
                     let transport_id2 = transport_id.clone();
                     let session_id2 = app.session_id.clone();

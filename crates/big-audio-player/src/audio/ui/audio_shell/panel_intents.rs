@@ -64,7 +64,7 @@ impl AudioShell {
             LibraryPanelOutput::AddTrackToPlaylist {
                 track_id,
                 playlist_id,
-            } => self.add_track_to_playlist(track_id, playlist_id),
+            } => self.add_track_to_playlist(track_id, playlist_id, sender),
             LibraryPanelOutput::CreatePlaylistWithTrack { name, track_id } => {
                 self.create_playlist_with_track(name, track_id, sender);
             }
@@ -72,7 +72,19 @@ impl AudioShell {
                 self.save_tracks_as_playlist_db(name, track_ids, sender);
             }
             LibraryPanelOutput::AddWatchFolder { path } => {
-                self.scan_folder(path.to_string_lossy().into_owned(), sender);
+                match path.to_str() {
+                    Some(path)=>self.scan_folder(path.to_owned(),sender),
+                    None=>self.notify(&i18n("This folder name cannot yet be stored in the library. No path was changed or imported.")),
+                }
+            }
+            LibraryPanelOutput::ReviewUnavailable => {
+                if let (Some(parent), Some(db)) = (self.window(), self.db.clone()) {
+                    let input = sender.input_sender().clone();
+                    super::super::unavailable_dialog::show(&parent, db, move || {
+                        let _ = input.send(AudioShellInput::RebuildLibraryTree);
+                        let _ = input.send(AudioShellInput::RefreshPlaylists);
+                    });
+                }
             }
             LibraryPanelOutput::ScanNow => self.scan_all_watch_folders(sender),
             LibraryPanelOutput::RemoveWatchFolder { id } => self.remove_watch_folder(id, sender),
@@ -90,10 +102,12 @@ impl AudioShell {
                 let input = sender.input_sender().clone();
                 spawn_blocking_result(
                     move || playlist_import::parse_playlist_file_for_import(&path),
-                    move |paths| {
-                        if !paths.is_empty() {
-                            let _ = input.send(AudioShellInput::ImportPaths(paths));
-                        }
+                    move |result| {
+                        let message=match result {
+                            Ok(paths)=>AudioShellInput::ImportPaths(paths),
+                            Err(_)=>AudioShellInput::Notify(i18n("The playlist could not be read safely. Check its format and permissions.")),
+                        };
+                        let _=input.send(message);
                     },
                 );
             }

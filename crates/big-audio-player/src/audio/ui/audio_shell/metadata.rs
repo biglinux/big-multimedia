@@ -29,11 +29,7 @@ impl AudioShell {
                 .unwrap_or_else(PoisonError::into_inner)
                 .clone_from(&album);
         }
-        if let Some(mpris) = &self.mpris {
-            mpris.emit_metadata(&title, &artist, &album, self.duration_secs);
-        }
 
-        // Album art: embedded tag first, Cover Art Archive fallback. Off-thread.
         let path = track.file_path.clone();
         let art_artist = track.artist.clone();
         let art_album = track.album.clone();
@@ -124,24 +120,5 @@ impl AudioShell {
             .lock()
             .unwrap_or_else(PoisonError::into_inner)
             .clone_from(&url);
-        if let Some(mpris) = &self.mpris {
-            let state = &self.mpris_state;
-            let title = state
-                .title
-                .lock()
-                .unwrap_or_else(PoisonError::into_inner)
-                .clone();
-            let artist = state
-                .artist
-                .lock()
-                .unwrap_or_else(PoisonError::into_inner)
-                .clone();
-            let album = state
-                .album
-                .lock()
-                .unwrap_or_else(PoisonError::into_inner)
-                .clone();
-            mpris.emit_metadata_with_art(&title, &artist, &album, self.duration_secs, Some(&url));
-        }
     }
 }

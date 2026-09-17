@@ -11,6 +11,12 @@ impl VideoShell {
         &self.mpv
     }
 
+    /// Liveness flag a queued screenshot checks before publishing its file;
+    /// cleared on shutdown so a late write cannot outlive the shell.
+    pub(crate) fn screenshot_owner(&self) -> &Arc<std::sync::atomic::AtomicBool> {
+        &self.screenshot_owner
+    }
+
     /// Player settings (for the sleep-timer dialog persistence).
     pub(crate) fn settings_handle(&self) -> &Settings {
         &self.settings

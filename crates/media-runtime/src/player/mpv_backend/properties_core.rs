@@ -6,32 +6,26 @@ use crate::i18n::i18n;
 use super::MpvBackend;
 
 impl MpvBackend {
-    // Volume/mute drive our PipeWire/PulseAudio sink-input directly (via `pactl`),
-    // NOT an mpv property. mpv's software `volume` filter never reaches the sound
-    // server (mixer applets stay at 100%), and `ao-volume` is capped at 100 and
-    // uses a different scale than the mixer. Controlling the stream means the
-    // in-app value equals the value the system mixer shows (with >100% boost),
-    // and the server remembers it per client name. No-ops while nothing plays.
+    // Preserve per-stream mixer control, with a bounded background worker.
+    // Getters read cached/desired state and are safe to use from GTK handlers.
     pub fn set_volume(&self, volume: f64) {
-        super::pactl_volume::set_volume(&self.pa_sink_input, &self.audio_client_name, volume);
+        self.stream_volume.set_volume(volume);
     }
 
     pub fn get_volume(&self) -> f64 {
-        super::pactl_volume::get_volume(&self.pa_sink_input, &self.audio_client_name)
-            .unwrap_or(100.0)
+        self.stream_volume.snapshot().0
     }
 
     pub fn set_mute(&self, mute: bool) {
-        super::pactl_volume::set_mute(&self.pa_sink_input, &self.audio_client_name, mute);
+        self.stream_volume.set_mute(mute);
     }
 
     pub fn get_mute(&self) -> bool {
-        super::pactl_volume::get_mute(&self.audio_client_name).unwrap_or(false)
+        self.stream_volume.snapshot().1
     }
 
     pub fn toggle_mute(&self) {
-        let muted = super::pactl_volume::get_mute(&self.audio_client_name).unwrap_or(false);
-        super::pactl_volume::set_mute(&self.pa_sink_input, &self.audio_client_name, !muted);
+        self.stream_volume.set_mute(!self.get_mute());
     }
 
     pub fn get_position(&self) -> f64 {
@@ -55,9 +49,13 @@ impl MpvBackend {
     }
 
     pub fn set_speed(&self, speed: f64) {
-        self.with_mpv(|m| {
-            let _ = m.set_property("speed", speed);
-        });
+        if speed.is_finite() && (0.25..=4.0).contains(&speed) {
+            let _ = self.queue_command("set", &["speed", &speed.to_string()]);
+        }
+    }
+
+    pub fn is_seekable(&self) -> bool {
+        self.with_mpv(|m| Self::get_bool_property(m, "seekable").unwrap_or(false))
     }
 
     pub fn get_speed(&self) -> f64 {
@@ -270,21 +268,11 @@ impl MpvBackend {
         });
     }
 
-    /// Switch the demuxer cache profile at runtime. Cheap (mpv truncates
-    /// in-place); safe to call between tracks. Podcast/audiobook mode
-    /// cuts ~120 MB RSS off long-form playback vs the `Music` default.
+    /// Queue a cache policy, not a measured memory-saving guarantee. Confirm
+    /// behavior and total process/GPU memory on the actual decoder and media.
     pub fn set_audio_cache_profile(&self, profile: super::types::AudioCacheProfile) {
-        self.with_mpv(|m| {
-            let _ = m.set_property("demuxer-max-bytes", profile.forward_bytes().to_string());
-            let _ = m.set_property("demuxer-max-back-bytes", profile.back_bytes().to_string());
-            log::info!(
-                "audio cache profile -> {:?} ({}+{}, cap {} MiB)",
-                profile,
-                profile.forward_bytes(),
-                profile.back_bytes(),
-                profile.total_mib()
-            );
-        });
+        let _ = self.queue_command("set", &["demuxer-max-bytes", profile.forward_bytes()]);
+        let _ = self.queue_command("set", &["demuxer-max-back-bytes", profile.back_bytes()]);
     }
 
     pub fn set_cache_pause(&self, enable: bool) {

@@ -26,9 +26,9 @@ const EGL_NONE: EglInteger = 0x3038;
 
 const DRM_FORMAT_MOD_LINEAR: u64 = 0;
 
-/// Vendor-tiled layouts (NVIDIA block-linear, Intel X/Y-tiling) cause band
-/// artifacts or compositor stalls because GDK's EGL import does not detile or
-/// synchronize every layout correctly. Only linear is safe by default.
+/// Conservative policy of this backend, not a universal driver limitation.
+/// Widen this only after negotiating the display's supported format/modifier
+/// pairs and validating the producer/consumer synchronization contract.
 fn is_modifier_linear(modifier: u64) -> bool {
     modifier == DRM_FORMAT_MOD_LINEAR
 }
@@ -75,20 +75,14 @@ impl EglDmaBufFns {
         // GTK loads libEGL internally but may not export symbols to RTLD_DEFAULT.
         // SAFETY: RTLD_NOLOAD first tries an existing handle, then falls back
         // to loading fresh.
-        let lib = unsafe {
-            let handle = libc::dlopen(c"libEGL.so.1".as_ptr(), libc::RTLD_LAZY | libc::RTLD_NOLOAD);
-            if handle.is_null() {
-                let handle =
-                    libc::dlopen(c"libEGL.so.1".as_ptr(), libc::RTLD_LAZY | libc::RTLD_LOCAL);
-                if handle.is_null() {
-                    warn!("EGL DMA-BUF: cannot load libEGL.so.1");
-                    return None;
-                }
-                handle
-            } else {
-                handle
-            }
-        };
+        static EGL_LIBRARY: std::sync::OnceLock<usize> = std::sync::OnceLock::new();
+        let lib = *EGL_LIBRARY.get_or_init(|| unsafe {
+            libc::dlopen(c"libEGL.so.1".as_ptr(), libc::RTLD_LAZY | libc::RTLD_LOCAL) as usize
+        }) as *mut c_void;
+        if lib.is_null() {
+            warn!("EGL DMA-BUF: cannot load libEGL.so.1");
+            return None;
+        }
 
         /// SAFETY: lib must be a valid dlopen handle, name null-terminated.
         unsafe fn dlsym_fn<F>(lib: *mut c_void, name: &[u8]) -> Option<F> {
@@ -207,22 +201,26 @@ pub(crate) fn export_gl_texture(egl: &EglDmaBufFns, gl_texture_id: u32) -> Optio
 
         let mut fourcc: i32 = 0;
         let mut num_planes: i32 = 0;
-        let mut modifier: u64 = 0;
+        // The query writes one modifier per plane (up to four), even before
+        // we can reject a multi-plane image. A single u64 is not a valid array.
+        let mut modifiers = [0_u64; 4];
 
         let query_ok = (egl.export_query)(
             dpy,
             image,
             &raw mut fourcc,
             &raw mut num_planes,
-            &raw mut modifier,
+            modifiers.as_mut_ptr(),
         );
-        if query_ok != EGL_TRUE || num_planes < 1 {
+        if query_ok != EGL_TRUE || num_planes != 1 {
             warn!("DMA-BUF export: query failed (ok={query_ok}, planes={num_planes})");
             (egl.destroy_image)(dpy, image);
             return None;
         }
 
-        // Non-linear/implicit layouts are not safe for direct GDK DMA-BUF import.
+        let modifier = modifiers[0];
+
+        // This implementation currently opts into explicitly linear layouts only.
         if !is_modifier_linear(modifier) {
             let vendor = (modifier >> 56) as u8;
             info!(
@@ -233,7 +231,7 @@ pub(crate) fn export_gl_texture(egl: &EglDmaBufFns, gl_texture_id: u32) -> Optio
             return None;
         }
 
-        // Up to 4 planes — single-plane RGBA expected.
+        // Exactly one plane was confirmed BEFORE handing these arrays to C.
         let mut fds = [-1_i32; 4];
         let mut strides = [0_i32; 4];
         let mut offsets = [0_i32; 4];
@@ -249,7 +247,7 @@ pub(crate) fn export_gl_texture(egl: &EglDmaBufFns, gl_texture_id: u32) -> Optio
         // DMA-BUF fd keeps the buffer alive after image destruction.
         (egl.destroy_image)(dpy, image);
 
-        if export_ok != EGL_TRUE || fds[0] < 0 {
+        if export_ok != EGL_TRUE || fds[0] < 0 || strides[0] <= 0 || offsets[0] < 0 {
             warn!("DMA-BUF export: eglExportDMABUFImageMESA failed");
             for &fd in &fds {
                 if fd >= 0 {

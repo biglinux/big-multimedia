@@ -111,6 +111,9 @@ pub enum PlayerEvent {
     PositionChanged(f64),
     DurationChanged(f64),
     PauseChanged(bool),
+    /// Native discontinuity after SEEK followed by PLAYBACK_RESTART.
+    Seeked(f64),
+    RateChanged(f64),
     VolumeChanged(f64),
     MuteChanged(bool),
     FileLoaded(String),
@@ -122,6 +125,18 @@ pub enum PlayerEvent {
     /// Buffering state change — true when mpv is paused waiting for cache data
     /// (radio streams / slow network). Derived from `paused-for-cache` property.
     Buffering(bool),
+    /// Internal native receipt, consumed by the backend before UI delivery.
+    AsyncCommandReply {
+        id: u64,
+        error: i32,
+    },
+    ScreenshotFinished {
+        id: u64,
+        result: super::ScreenshotResult,
+    },
+    ScreenshotTimedOut {
+        id: u64,
+    },
     RenderUpdate,
     Shutdown,
 }

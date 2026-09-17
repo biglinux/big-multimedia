@@ -1,114 +1,49 @@
-//! Queue worker pipeline: per-queue_entry disk-space + MP4 copy-mode pre-flight,
-//! GPU-stage fallback (FullGpu → PartialGpu → Software), per-segment ffmpeg
-//! invocation, optional concat (join mode) or numbered split, source delete
-//! gated by ≥1/7 input/output ratio. Concat embeds per-segment merged subs
-//! through the ffmpeg concat demuxer.
-
+//! Private staged exports. Every expected stream and duration is checked before
+//! no-replace publication. Published files and originals are never error cleanup.
+//! Split publication is per-file, not an all-files atomic transaction.
+use super::job::run_job;
+use super::receipts::{self, Receipt};
+use super::support::{available_disk_space, ensure_entry_probed, segment_output_path};
+use super::validation::{Expectation, validate_output_cancellable, validate_ranges};
+use super::{ConversionQueueEntry, ConversionResumeContext, QueueMessage, SegmentOutputMode};
 use crate::cast::gpu::{GpuDevice, GpuType};
 use crate::converter::ffmpeg::{FfmpegJob, GpuStage, TrimRange};
 use crate::converter::profiles::Profile;
 use crate::converter::{ffmpeg::progress, subtitle};
-use crate::i18n::i18n;
-use log::{info, warn};
-use std::path::{Path, PathBuf};
-use std::sync::Arc;
-use std::sync::atomic::{AtomicBool, Ordering};
-use std::time::Duration;
-
-use big_os_kit::subprocess::{BigSubprocessOutputMode, BigSubprocessSpec};
-
-use super::job::run_job;
-use super::support::{
-    available_disk_space, ensure_entry_probed, is_resume_output_complete, promote_resume_output,
-    resume_partial_output_path, segment_output_path,
-};
-use super::{ConversionQueueEntry, ConversionResumeContext, QueueMessage, SegmentOutputMode};
 use crate::error::{Error, Result};
+use crate::i18n::i18n;
+use big_os_kit::storage::StagedFile;
+use big_os_kit::subprocess::{BigSubprocessOutputMode, BigSubprocessSpec};
+use log::warn;
+use std::path::{Path, PathBuf};
+use std::sync::{
+    Arc,
+    atomic::{AtomicBool, Ordering},
+};
+use std::time::Duration;
 
 // Pre-flight: 1.5× input as headroom. Indeterminate size/space → let
 // ffmpeg fail later instead of blocking here.
-fn has_enough_disk_space(
-    queue_entry: &ConversionQueueEntry,
-    sender: &async_channel::Sender<QueueMessage>,
-) -> bool {
-    let Some(parent) = queue_entry.output.parent() else {
-        return true;
+fn require_disk_space(entry: &ConversionQueueEntry) -> Result<()> {
+    let Some(parent) = entry.output.parent() else {
+        return Ok(());
     };
-    let Ok(input_meta) = std::fs::metadata(&queue_entry.input) else {
-        return true;
-    };
-    let needed = input_meta.len() * 3 / 2;
+    let input = std::fs::metadata(&entry.input)?;
+    let needed = input.len().saturating_add(input.len() / 2);
     let Some(available) = available_disk_space(parent) else {
-        return true;
+        return Ok(());
     };
-    if available >= needed {
-        return true;
-    }
-    let _ = sender.send_blocking(QueueMessage::Failed {
-        entry_id: queue_entry.id,
-        error: format!(
+    if available < needed {
+        return Err(failure(&format!(
             "{}: {} ~{}, {} {}",
             i18n("Insufficient disk space"),
             i18n("need"),
             decimal_compact(needed),
             i18n("available"),
-            decimal_compact(available),
-        ),
-    });
-    false
-}
-
-// MP4 + copy mode: ffmpeg would re-mux-refuse non-MP4-compatible codecs;
-// catch them up front so the user gets a clear error.
-fn is_mp4_copy_compatible(
-    queue_entry: &ConversionQueueEntry,
-    profile: &Profile,
-    sender: &async_channel::Sender<QueueMessage>,
-) -> bool {
-    if profile.video.codec != "copy" {
-        return true;
+            decimal_compact(available)
+        )));
     }
-    let out_ext = queue_entry
-        .output
-        .extension()
-        .and_then(|ext| ext.to_str())
-        .unwrap_or("")
-        .to_lowercase();
-    if out_ext != "mp4" {
-        return true;
-    }
-    let Some(media_metadata) = progress::probe_media_metadata(&queue_entry.input) else {
-        return true;
-    };
-    let Some(streams) = media_metadata.get("streams").and_then(|v| v.as_array()) else {
-        return true;
-    };
-    let incompat = streams.iter().find(|stream| {
-        let codec = stream
-            .get("codec_name")
-            .and_then(|v| v.as_str())
-            .unwrap_or("");
-        match stream.get("codec_type").and_then(|v| v.as_str()) {
-            Some(codec_type) => !is_mp4_copy_compatible_stream(codec_type, codec),
-            _ => false,
-        }
-    });
-    let Some(bad) = incompat else {
-        return true;
-    };
-    let codec = bad
-        .get("codec_name")
-        .and_then(|v| v.as_str())
-        .unwrap_or("?");
-    let _ = sender.send_blocking(QueueMessage::Failed {
-        entry_id: queue_entry.id,
-        error: format!(
-            "{} '{codec}' {}",
-            i18n("Codec"),
-            i18n("is not compatible with MP4 container in copy mode"),
-        ),
-    });
-    false
+    Ok(())
 }
 
 fn build_stage_list(gpu: &GpuDevice) -> Vec<(GpuStage, GpuDevice)> {
@@ -125,58 +60,6 @@ fn build_stage_list(gpu: &GpuDevice) -> Vec<(GpuStage, GpuDevice)> {
             (GpuStage::PartialGpu, gpu.clone()),
             (GpuStage::Software, cpu()),
         ]
-    }
-}
-
-// 1/7 floor guards against deleting source when output is tiny/corrupted.
-fn maybe_delete_source(queue_entry: &ConversionQueueEntry, produced_outputs: &[PathBuf]) {
-    let input_size = std::fs::metadata(&queue_entry.input).map_or(0, |meta| meta.len());
-    let output_size = produced_outputs
-        .iter()
-        .filter_map(|path| std::fs::metadata(path).ok().map(|meta| meta.len()))
-        .sum::<u64>();
-    if input_size > 0 && output_size > input_size / 7 {
-        match std::fs::remove_file(&queue_entry.input) {
-            Ok(()) => info!("Deleted source: {}", queue_entry.input.display()),
-            Err(e) => warn!("Delete source failed {}: {e}", queue_entry.input.display()),
-        }
-    } else {
-        warn!("Skipped delete: output {output_size}B too small vs input {input_size}B");
-    }
-}
-
-fn resolve_segment_output(
-    queue_entry: &ConversionQueueEntry,
-    segment_idx: usize,
-    total_segments: usize,
-    needs_concat: bool,
-    split_mode: bool,
-    temp_files: &mut Vec<PathBuf>,
-) -> PathBuf {
-    if needs_concat {
-        let stem = queue_entry
-            .output
-            .file_stem()
-            .unwrap_or_default()
-            .to_string_lossy();
-        let ext = queue_entry
-            .output
-            .extension()
-            .unwrap_or_default()
-            .to_string_lossy();
-        let dir = queue_entry.output.parent().unwrap_or(Path::new("."));
-        let temp_file = dir.join(format!(".{stem}_seg{segment_idx}.{ext}"));
-        temp_files.push(temp_file.clone());
-        temp_file
-    } else if total_segments > 1 && split_mode {
-        segment_output_path(
-            &queue_entry.output,
-            segment_idx,
-            total_segments,
-            &queue_entry.input,
-        )
-    } else {
-        queue_entry.output.clone()
     }
 }
 
@@ -201,135 +84,239 @@ fn resolve_final_outputs(
         .collect()
 }
 
-fn skip_completed_resume_outputs(
-    queue_entry: &ConversionQueueEntry,
-    final_outputs: &[PathBuf],
-    sender: &async_channel::Sender<QueueMessage>,
-) -> bool {
-    if final_outputs.is_empty()
-        || !final_outputs
-            .iter()
-            .all(|path| is_resume_output_complete(path))
-    {
-        return false;
-    }
-    info!(
-        "Skipping completed conversion output for {}",
-        queue_entry.input.display()
-    );
-    let progress = progress::FfmpegProgressSnapshot {
-        percent: 100.0,
-        done: true,
-        ..Default::default()
-    };
-    let _ = sender.send_blocking(QueueMessage::Progress {
-        entry_id: queue_entry.id,
-        progress_snapshot: progress,
-    });
-    true
-}
-
-fn output_path_for_resume(
-    final_output: &Path,
-    resume_context: Option<&ConversionResumeContext>,
-    entry_id: u64,
-    segment_idx: usize,
-) -> PathBuf {
-    resume_context.map_or_else(
-        || final_output.to_path_buf(),
-        |context| resume_partial_output_path(final_output, &context.job_key, entry_id, segment_idx),
-    )
-}
-
-fn promote_output_for_resume(
-    partial_output: &Path,
-    final_output: &Path,
-    resume_context: Option<&ConversionResumeContext>,
+fn recheck_plan(
+    entry: &ConversionQueueEntry,
+    profile: &Profile,
+    segments: &[TrimRange],
+    source: &str,
+    expected_plan: &str,
+    audio_only: bool,
+    cancel: &AtomicBool,
 ) -> Result<()> {
-    if resume_context.is_some() {
-        promote_resume_output(partial_output, final_output).map_err(|error| {
-            Error::Io(std::io::Error::new(
-                error.kind(),
-                format!(
-                    "promote {} to {}: {error}",
-                    partial_output.display(),
-                    final_output.display()
-                ),
-            ))
-        })?;
+    if cancel.load(Ordering::Acquire) {
+        return Err(Error::Cancelled);
+    }
+    if receipts::hash_file(&entry.input, cancel)? != source
+        || receipts::plan(entry, profile, segments, source, audio_only, cancel)? != expected_plan
+    {
+        return Err(failure(&i18n(
+            "The source or external subtitles changed. Existing exports were kept; review the plan again.",
+        )));
     }
     Ok(())
 }
 
-#[allow(clippy::too_many_arguments)]
-fn run_stages(
-    queue_entry: &ConversionQueueEntry,
-    segment: &TrimRange,
-    seg_output: &Path,
-    stages: &[(GpuStage, GpuDevice)],
+fn failure(message: &str) -> Error {
+    Error::ffmpeg("ffmpeg", None, message.to_owned())
+}
+
+fn convert_one(
+    entry: &mut ConversionQueueEntry,
     profile: &Profile,
-    subtitle_streams: &[subtitle::SubtitleStream],
-    audio_only_mode: bool,
+    gpu: &GpuDevice,
     cancel: &Arc<AtomicBool>,
     sender: &async_channel::Sender<QueueMessage>,
-    resume_context: Option<&ConversionResumeContext>,
-    segment_idx: usize,
-) -> bool {
-    let ffmpeg_output =
-        output_path_for_resume(seg_output, resume_context, queue_entry.id, segment_idx);
-    for (stage_idx, (stage, stage_gpu)) in stages.iter().enumerate() {
-        if cancel.load(Ordering::Relaxed) {
-            return false;
+    audio_only: bool,
+    resume: bool,
+) -> Result<()> {
+    if cancel.load(Ordering::Acquire) {
+        return Err(Error::Cancelled);
+    }
+    ensure_entry_probed(entry, &profile.video.codec);
+    let source = std::fs::metadata(&entry.input)?;
+    if !source.is_file() {
+        return Err(failure(&i18n(
+            "Export requires a regular local source file",
+        )));
+    }
+    let source_hash = receipts::hash_file(&entry.input, cancel)?;
+    let input = progress::probe_media_metadata_cancellable(&entry.input, cancel)?;
+    entry.duration_secs = super::validation::number(input.pointer("/format/duration"))
+        .filter(|n| *n > 0.0)
+        .unwrap_or(0.0);
+    // Probe failure is not an empty successful media record.
+    let segments = if entry.segments.is_empty() {
+        vec![TrimRange::default()]
+    } else {
+        entry.segments.clone()
+    };
+    validate_ranges(&segments, entry.duration_secs)?;
+    let speed = profile.audio.effects.speed;
+    if !speed.is_finite() || !(0.25..=4.0).contains(&speed) {
+        return Err(failure(&i18n("Choose a playback speed between 0.25 and 4")));
+    }
+    if !audio_only && profile.audio.handling != "none" && (speed - 1.0).abs() > 0.001 {
+        return Err(failure(&i18n(
+            "Changing audio speed in a video needs matching video timing; use normal speed or audio-only export",
+        )));
+    }
+    let needs_concat = segments.len() > 1 && entry.segment_mode == SegmentOutputMode::Join;
+    let split = entry.segment_mode == SegmentOutputMode::Split;
+    let finals = resolve_final_outputs(entry, segments.len(), needs_concat, split);
+    if finals.len() > 128 {
+        return Err(failure(&i18n(
+            "Export at most 128 separate outputs per job.",
+        )));
+    }
+    let parent = entry
+        .output
+        .parent()
+        .filter(|p| !p.as_os_str().is_empty())
+        .unwrap_or(Path::new("."));
+    std::fs::create_dir_all(parent)?;
+    let subtitles = subtitle::probe_subtitles(&entry.input);
+    let fingerprint = receipts::plan(entry, profile, &segments, &source_hash, audio_only, cancel)?;
+    let base_expectation = Expectation::for_entry(entry, profile, audio_only, &input, &subtitles)?;
+    let mut expectations = Vec::with_capacity(segments.len());
+    let mut expected_total = 0.0;
+    for segment in &segments {
+        let mut expected = base_expectation.clone();
+        expected.duration = segment.effective_duration(entry.duration_secs);
+        if audio_only && profile.audio.handling != "copy" {
+            expected.duration /= speed;
         }
-        if stage_idx > 0 {
-            let stage_name = match stage {
-                GpuStage::PartialGpu => "partial-gpu",
-                GpuStage::Software => "software",
-                GpuStage::FullGpu => "full-gpu",
+        expected_total += expected.duration;
+        if !expected_total.is_finite() {
+            return Err(failure(&i18n("Invalid total export duration")));
+        }
+        expectations.push(expected);
+    }
+    let output_expectations = if needs_concat {
+        let mut expected = base_expectation.clone();
+        expected.duration = expected_total;
+        vec![expected]
+    } else {
+        expectations.clone()
+    };
+    let mut receipts = Vec::new();
+    let mut reused = Vec::new();
+    // Hold all per-output locks before conversion; this also rejects duplicate
+    // target names without doing expensive conversion work.
+    for (target, expected) in finals.iter().zip(&output_expectations) {
+        let receipt = Receipt::open(target, &fingerprint)?;
+        reused.push(receipt.completed(expected, cancel, resume)?);
+        receipts.push(receipt);
+    }
+    if reused.iter().all(|&done| done) {
+        recheck_plan(
+            entry,
+            profile,
+            &segments,
+            &source_hash,
+            &fingerprint,
+            audio_only,
+            cancel,
+        )?;
+        let _ = sender.try_send(QueueMessage::StderrLine {
+            entry_id: entry.id,
+            line: i18n("Verified completed export reused: source, plan and output receipts match."),
+        });
+        return Ok(());
+    }
+    require_disk_space(entry)?;
+    let stages = build_stage_list(gpu);
+    let mut temporary = Vec::new();
+    for (index, segment) in segments.iter().enumerate() {
+        if cancel.load(Ordering::Acquire) {
+            return Err(Error::Cancelled);
+        }
+        if split && reused[index] {
+            continue;
+        }
+        let desired = if split { &finals[index] } else { &entry.output };
+        let stage = StagedFile::new(desired)?;
+        let expectation = &expectations[index];
+        let mut last = None;
+        let mut success = false;
+        for (attempt, (gpu_stage, device)) in stages.iter().enumerate() {
+            if cancel.load(Ordering::Acquire) {
+                return Err(Error::Cancelled);
+            }
+            if attempt > 0 {
+                let name = match gpu_stage {
+                    GpuStage::FullGpu => "full-gpu",
+                    GpuStage::PartialGpu => "partial-gpu",
+                    GpuStage::Software => "software",
+                };
+                let _ = sender.try_send(QueueMessage::GpuFallback {
+                    entry_id: entry.id,
+                    stage: name,
+                });
+            }
+            let job = FfmpegJob {
+                input: entry.input.clone(),
+                output: stage.path().to_path_buf(),
+                profile: profile.clone(),
+                gpu: device.clone(),
+                stage: *gpu_stage,
+                trim: segment.clone(),
+                subtitle: entry.subtitle.clone(),
+                audio_track: entry.audio_track,
+                video_track: entry.video_track,
+                crop: entry.crop.clone(),
+                video_overrides: entry.video_overrides.clone(),
+                input_audio_channels: entry.input_audio_channels,
+                subtitle_streams: subtitles.clone(),
+                skip_video_filters: entry.skip_video_filters,
+                audio_only,
             };
-            let _ = sender.send_blocking(QueueMessage::GpuFallback {
-                entry_id: queue_entry.id,
-                stage: stage_name,
-            });
-        }
-        let job = FfmpegJob {
-            input: queue_entry.input.clone(),
-            output: ffmpeg_output.clone(),
-            profile: profile.clone(),
-            gpu: stage_gpu.clone(),
-            stage: *stage,
-            trim: segment.clone(),
-            subtitle: queue_entry.subtitle.clone(),
-            audio_track: queue_entry.audio_track,
-            video_track: queue_entry.video_track,
-            crop: queue_entry.crop.clone(),
-            video_overrides: queue_entry.video_overrides.clone(),
-            input_audio_channels: queue_entry.input_audio_channels,
-            subtitle_streams: subtitle_streams.to_vec(),
-            skip_video_filters: queue_entry.skip_video_filters,
-            audio_only: audio_only_mode,
-        };
-        match run_job(&job, queue_entry, cancel, sender) {
-            Ok(()) => match promote_output_for_resume(&ffmpeg_output, seg_output, resume_context) {
-                Ok(()) => return true,
-                Err(error) => {
-                    warn!(
-                        "Promote output failed for {}: {error}",
-                        seg_output.display()
-                    );
-                    let _ = std::fs::remove_file(&ffmpeg_output);
+            match run_job(&job, entry, cancel, sender)
+                .and_then(|()| validate_output_cancellable(stage.path(), expectation, cancel))
+            {
+                Ok(()) => {
+                    success = true;
+                    break;
                 }
-            },
-            Err(error) => {
-                warn!(
-                    "Stage {stage:?} failed for {}: {error}",
-                    queue_entry.input.display()
-                );
-                let _ = std::fs::remove_file(&ffmpeg_output);
+                Err(Error::Cancelled) => return Err(Error::Cancelled),
+                Err(error) => last = Some(error),
             }
         }
+        if !success {
+            return Err(last.unwrap_or_else(|| failure(&i18n("No conversion stage completed"))));
+        }
+        temporary.push((index, stage));
     }
-    false
+    let mut publications = Vec::new();
+    if needs_concat {
+        let joined = StagedFile::new(&entry.output)?;
+        concat_segments(&temporary, joined.path(), cancel)?;
+        validate_output_cancellable(joined.path(), &output_expectations[0], cancel)?;
+        publications.push((0, joined));
+        // Each segment and its private directory is removed by its own guard.
+    } else {
+        publications.extend(temporary);
+    }
+    let after = std::fs::metadata(&entry.input)?;
+    #[cfg(unix)]
+    {
+        use std::os::unix::fs::MetadataExt;
+        if source.dev() != after.dev() || source.ino() != after.ino() {
+            return Err(failure(&i18n(
+                "Source was replaced during export; no result was published",
+            )));
+        }
+    }
+    if source.len() != after.len() || source.modified()? != after.modified()? {
+        return Err(failure(&i18n(
+            "Source changed during export; no result was published",
+        )));
+    }
+    recheck_plan(
+        entry,
+        profile,
+        &segments,
+        &source_hash,
+        &fingerprint,
+        audio_only,
+        cancel,
+    )?;
+    for (index, stage) in publications {
+        if cancel.load(Ordering::Acquire) {
+            return Err(Error::Cancelled);
+        }
+        receipts[index].publish(&stage, cancel)?;
+    }
+    Ok(())
 }
 
 pub(crate) fn run_conversion_queue_worker(
@@ -342,241 +329,98 @@ pub(crate) fn run_conversion_queue_worker(
     delete_source: bool,
     audio_only_mode: bool,
 ) {
-    for queue_entry in &mut items {
-        if cancel.load(Ordering::Relaxed) {
+    // Resume is allowed only through exact persistent receipts. The namespace
+    // is a policy marker; it is not substituted for source or output digests.
+    let resume = resume_context
+        .as_ref()
+        .is_some_and(|context| context.job_key == "verified-receipt-v1");
+    if delete_source {
+        let _ = sender.send_blocking(QueueMessage::StderrLine {
+            entry_id: 0,
+            line: i18n("Originals are kept. Verify the exported files before deleting anything."),
+        });
+    }
+    for entry in &mut items {
+        if cancel.load(Ordering::Acquire) {
             break;
         }
-        // Close the probe-vs-start race: if the background probe worker has not
-        // answered for this queue_entry yet, fill its metadata inline here (worker
-        // thread, never the main loop) so the ffmpeg command is built from real
-        // duration / audio-channel / HEVC-skip values, not add_file defaults.
-        ensure_entry_probed(queue_entry, &profile.video.codec);
-        info!(
-            "Converting: {} → {}",
-            queue_entry.input.display(),
-            queue_entry.output.display()
-        );
-        if !has_enough_disk_space(queue_entry, sender)
-            || !is_mp4_copy_compatible(queue_entry, profile, sender)
-        {
-            continue;
-        }
-        if let Some(parent) = queue_entry.output.parent()
-            && let Err(error) = std::fs::create_dir_all(parent)
-        {
-            let _ = sender.send_blocking(QueueMessage::Failed {
-                entry_id: queue_entry.id,
-                error: format!("{}: {error}", i18n("Create output dir")),
-            });
-            continue;
-        }
-
-        let subtitle_streams = subtitle::probe_subtitles(&queue_entry.input);
-        let stages = build_stage_list(gpu);
-        let effective_segments = if queue_entry.segments.is_empty() {
-            vec![TrimRange::default()]
-        } else {
-            queue_entry.segments.clone()
-        };
-        let total_segments = effective_segments.len();
-        let split_mode = queue_entry.segment_mode == SegmentOutputMode::Split;
-        let needs_concat = total_segments > 1 && !split_mode;
-        let final_outputs =
-            resolve_final_outputs(queue_entry, total_segments, needs_concat, split_mode);
-        if resume_context.is_some()
-            && skip_completed_resume_outputs(queue_entry, &final_outputs, sender)
-        {
-            if delete_source {
-                maybe_delete_source(queue_entry, &final_outputs);
+        match convert_one(entry, profile, gpu, cancel, sender, audio_only_mode, resume) {
+            Ok(()) => {
+                let _ = sender.send_blocking(QueueMessage::Done { entry_id: entry.id });
             }
-            let _ = sender.send_blocking(QueueMessage::Done {
-                entry_id: queue_entry.id,
-            });
-            continue;
-        }
-
-        let mut temp_files: Vec<PathBuf> = Vec::new();
-        let mut produced_outputs: Vec<PathBuf> = Vec::new();
-        let mut succeeded = false;
-
-        for (seg_idx, segment) in effective_segments.iter().enumerate() {
-            if cancel.load(Ordering::Relaxed) {
+            Err(Error::Cancelled) => {
+                let _ = sender.send_blocking(QueueMessage::Cancelled { entry_id: entry.id });
                 break;
             }
-            let seg_output = resolve_segment_output(
-                queue_entry,
-                seg_idx,
-                total_segments,
-                needs_concat,
-                split_mode,
-                &mut temp_files,
-            );
-            if resume_context.is_some() && is_resume_output_complete(&seg_output) {
-                info!("Skipping completed segment {}", seg_output.display());
-                produced_outputs.push(seg_output);
-                succeeded = true;
-                continue;
+            Err(error) => {
+                warn!("Export did not complete: {error}");
+                let _ = sender.send_blocking(QueueMessage::Failed { entry_id: entry.id,
+                    error: format!("{}: {error}", i18n("Export incomplete. Any files already published were kept; the source is unchanged")) });
             }
-            let seg_ok = run_stages(
-                queue_entry,
-                segment,
-                &seg_output,
-                &stages,
-                profile,
-                &subtitle_streams,
-                audio_only_mode,
-                cancel,
-                sender,
-                resume_context.as_ref(),
-                seg_idx,
-            );
-            if !seg_ok {
-                for temp_file in &temp_files {
-                    let _ = std::fs::remove_file(temp_file);
-                }
-                succeeded = false;
-                break;
-            }
-            produced_outputs.push(seg_output);
-            succeeded = true;
-        }
-
-        if succeeded && needs_concat && !cancel.load(Ordering::Relaxed) {
-            let subtitle_temp_dir = std::env::temp_dir().join("big-video-converter");
-            let _ = std::fs::create_dir_all(&subtitle_temp_dir);
-            let merged_subs = crate::converter::subtitle::build_joined_subtitle_files(
-                &queue_entry.input,
-                &queue_entry.segments,
-                &subtitle_temp_dir,
-            );
-            let concat_output = output_path_for_resume(
-                &queue_entry.output,
-                resume_context.as_ref(),
-                queue_entry.id,
-                0,
-            );
-            match concat_segments(&temp_files, &concat_output, &merged_subs) {
-                Err(error) => {
-                    warn!(
-                        "Concat failed for {}: {error}",
-                        queue_entry.output.display()
-                    );
-                    let _ = std::fs::remove_file(&concat_output);
-                    succeeded = false;
-                }
-                _ => {
-                    if let Err(error) = promote_output_for_resume(
-                        &concat_output,
-                        &queue_entry.output,
-                        resume_context.as_ref(),
-                    ) {
-                        warn!(
-                            "Promote concat output failed for {}: {error}",
-                            queue_entry.output.display()
-                        );
-                        let _ = std::fs::remove_file(&concat_output);
-                        succeeded = false;
-                    }
-                }
-            }
-            for temp_file in &temp_files {
-                let _ = std::fs::remove_file(temp_file);
-            }
-            if succeeded {
-                produced_outputs = vec![queue_entry.output.clone()];
-            }
-        }
-
-        if cancel.load(Ordering::Relaxed) {
-            let _ = sender.send_blocking(QueueMessage::Cancelled {
-                entry_id: queue_entry.id,
-            });
-            break;
-        }
-        if succeeded {
-            if delete_source {
-                maybe_delete_source(queue_entry, &produced_outputs);
-            }
-            let _ = sender.send_blocking(QueueMessage::Done {
-                entry_id: queue_entry.id,
-            });
-        } else {
-            let _ = sender.send_blocking(QueueMessage::Failed {
-                entry_id: queue_entry.id,
-                error: i18n("All GPU stages failed"),
-            });
         }
     }
-
-    // Leftover items remain Pending; the coordinator transitions them to Cancelled.
 }
 
+fn concat_line(path: &Path) -> Result<String> {
+    let path = path
+        .to_str()
+        .ok_or_else(|| failure(&i18n("This concat list needs UTF-8 paths")))?;
+    if path.bytes().any(|b| matches!(b, 0 | b'\r' | b'\n')) {
+        return Err(failure(&i18n("Invalid concat path")));
+    }
+    Ok(format!("file '{}'\n", path.replace('\'', "'\\''")))
+}
 fn concat_segments(
-    segments: &[PathBuf],
+    segments: &[(usize, StagedFile)],
     output: &Path,
-    merged_subs: &[(PathBuf, String)],
+    cancel: &AtomicBool,
 ) -> Result<()> {
     use std::io::Write;
-
-    let dir = output.parent().unwrap_or(Path::new("."));
-    let concat_list = dir.join(".concat_list.txt");
-
+    let list = StagedFile::new(&output.with_file_name("concat.ffconcat"))?;
     {
-        let mut file = std::fs::File::create(&concat_list)?;
-        for segment in segments {
-            writeln!(file, "file '{}'", segment.display())?;
+        let mut file = std::fs::OpenOptions::new()
+            .write(true)
+            .truncate(true)
+            .open(list.path())?;
+        for (_, segment) in segments {
+            file.write_all(concat_line(&std::fs::canonicalize(segment.path())?)?.as_bytes())?;
         }
     }
-
-    let mut command = BigSubprocessSpec::builder()
+    // The files already contain per-segment timing/subtitle selection. Mapping
+    // all streams from the concat demuxer avoids duplicate manually merged subs.
+    let result = BigSubprocessSpec::builder()
         .program("ffmpeg")
-        .args(["-y", "-f", "concat", "-safe", "0", "-i"])
-        .arg(&concat_list);
-
-    for (sub_path, _) in merged_subs {
-        command = command.args(["-i"]).arg(sub_path);
-    }
-
-    command = command.args(["-c", "copy"]);
-
-    if !merged_subs.is_empty() {
-        command = command.args(["-map", "0"]);
-        for (index, (_, lang)) in merged_subs.iter().enumerate() {
-            command = command.args(["-map", &format!("{}:0", index + 1)]);
-            command = command.args([
-                &format!("-metadata:s:s:{index}"),
-                &format!("language={lang}"),
-            ]);
-        }
-        command = command.args(["-c:s", "srt"]);
-    }
-
-    let out = command
-        .arg("--")
+        .args([
+            "-nostdin",
+            "-hide_banner",
+            "-loglevel",
+            "error",
+            "-y",
+            "-f",
+            "concat",
+            "-safe",
+            "0",
+            "-i",
+        ])
+        .arg(list.path())
+        .args(["-map", "0", "-c", "copy", "--"])
         .arg(output)
         .stdout(BigSubprocessOutputMode::Null)
-        .stderr(BigSubprocessOutputMode::Null)
-        .timeout(Duration::from_mins(1))
+        .timeout(Duration::from_hours(2))
         .build()
-        .run()
-        .map_err(|e| Error::ffmpeg("ffmpeg", None, e.to_string()))?;
-
-    let _ = std::fs::remove_file(&concat_list);
-    for (sub_path, _) in merged_subs {
-        let _ = std::fs::remove_file(sub_path);
-    }
-
-    if out.status.success() {
+        .run_cancellable(cancel)
+        .map_err(|e| match e {
+            big_os_kit::subprocess::BigSubprocessError::Cancelled => Error::Cancelled,
+            _ => failure(&i18n("Could not complete concatenation")),
+        })?;
+    if result.status.success() {
         Ok(())
     } else {
-        Err(Error::ffmpeg(
-            "ffmpeg",
-            out.status.code(),
-            "concat segments failed",
-        ))
+        Err(failure(&i18n("Could not complete concatenation")))
     }
 }
 
+#[cfg(test)]
 fn is_mp4_copy_compatible_stream(codec_type: &str, codec: &str) -> bool {
     const MP4_VIDEO_CODECS: &[&str] = &["h264", "hevc", "h265", "mpeg4", "av1"];
     const MP4_AUDIO_CODECS: &[&str] = &["aac", "mp3", "ac3", "eac3", "flac", "opus", "alac"];
@@ -680,32 +524,6 @@ mod processing_tests {
             skip_video_filters: false,
             probed: true,
         }
-    }
-
-    #[test]
-    fn resolve_segment_output_picks_temp_concat_split_or_passthrough() {
-        let it = queue_entry("/tmp/bbt_resolve_dst/movie.mp4");
-
-        // needs_concat → hidden temp file in the output dir, recorded for cleanup.
-        let mut temp = Vec::new();
-        let concat = resolve_segment_output(&it, 0, 2, true, false, &mut temp);
-        assert_eq!(
-            concat,
-            PathBuf::from("/tmp/bbt_resolve_dst/.movie_seg0.mp4")
-        );
-        assert_eq!(temp, vec![concat.clone()]);
-
-        // Single segment, no concat → the real output path, nothing recorded.
-        let mut temp2 = Vec::new();
-        let single = resolve_segment_output(&it, 0, 1, false, false, &mut temp2);
-        assert_eq!(single, it.output);
-        assert!(temp2.is_empty());
-
-        // Multi-segment split → per-part path (zero-padded part index).
-        let mut temp3 = Vec::new();
-        let part = resolve_segment_output(&it, 0, 2, false, true, &mut temp3);
-        assert_eq!(part, PathBuf::from("/tmp/bbt_resolve_dst/movie_part01.mp4"));
-        assert!(temp3.is_empty());
     }
 
     #[test]

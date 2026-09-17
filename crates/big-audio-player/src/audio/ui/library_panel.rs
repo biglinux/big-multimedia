@@ -233,11 +233,13 @@ pub enum LibraryPanelOutput {
         /// Folder path.
         path: PathBuf,
     },
-    /// Remove a watched folder + its tracks.
+    /// Stop monitoring a folder; retain its tracks until explicit review.
     RemoveWatchFolder {
         /// Folder DB id.
         id: i64,
     },
+    /// Review missing records without deleting files from disk.
+    ReviewUnavailable,
     /// Rescan all watched folders.
     ScanNow,
     /// Add a track to an existing playlist.

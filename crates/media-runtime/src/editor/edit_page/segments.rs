@@ -6,6 +6,7 @@ use adw::prelude::*;
 use big_relm4_components::list::bounded_list_box::clear_list_box_rows;
 use std::cell::{Cell, RefCell};
 use std::rc::Rc;
+use std::sync::Arc;
 
 use gtk::gdk;
 
@@ -23,7 +24,7 @@ use super::{Callback, EditPage, TrimSegment, fire};
 #[derive(Clone)]
 pub(super) struct SegListActions {
     pub(super) segments: Rc<RefCell<Vec<TrimSegment>>>,
-    pub(super) mpv: Rc<RefCell<Option<MpvBackend>>>,
+    pub(super) mpv: Rc<RefCell<Option<Arc<MpvBackend>>>>,
     overlay: gtk::glib::WeakRef<gtk::DrawingArea>,
     pub(super) on_changed: Callback<Vec<TrimSegment>>,
     listbox: gtk::glib::WeakRef<gtk::ListBox>,
@@ -61,7 +62,7 @@ pub(super) fn install_segment_overlay_behavior(build: &EditPageBuild) {
 }
 
 pub(super) fn handle_mark_action(
-    mpv: &Rc<RefCell<Option<MpvBackend>>>,
+    mpv: &Rc<RefCell<Option<Arc<MpvBackend>>>>,
     mark_point: &Rc<Cell<Option<f64>>>,
     mark_button: &gtk::Button,
     context: &SegListActions,

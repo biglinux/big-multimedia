@@ -1,187 +1,265 @@
 use super::*;
 
 impl AudioShell {
-    pub(super) fn handle_mpris_command(&mut self, cmd: &str, arg: Option<i64>) {
-        if let Some(mpv) = &self.mpv {
-            let toggle_pause = || mpv.toggle_pause();
-            let play = || mpv.play();
-            let pause = || mpv.pause();
-            let stop = || mpv.stop();
-            let set_volume = |volume| mpv.set_volume(volume);
-            let controls = BigMprisPlaybackControls {
-                toggle_pause: &toggle_pause,
-                play: &play,
-                pause: &pause,
-                stop: &stop,
-                set_volume: &set_volume,
-            };
-            if let Some(mpris) = self.mpris.as_ref() {
-                let is_paused = || mpv.is_paused();
-                let position = || mpv.get_position();
-                let duration = || mpv.get_duration();
-                let emit_playback_status = |is_paused| mpris.emit_playback_status(is_paused);
-                let update_taskbar_progress = |position, duration| {
-                    mpris.update_taskbar_progress(position, duration);
-                };
-                let hide_taskbar_progress = || mpris.hide_taskbar_progress();
-                let feedback = BigMprisPlaybackFeedback {
-                    is_paused: &is_paused,
-                    position: &position,
-                    duration: &duration,
-                    emit_playback_status: &emit_playback_status,
-                    update_taskbar_progress: &update_taskbar_progress,
-                    hide_taskbar_progress: &hide_taskbar_progress,
-                };
-                if route_standard_playback_command(cmd, arg, &controls, Some(&feedback)) {
+    pub(super) fn handle_mpris_command(&mut self, command: MprisCommand) {
+        // Revalidate track-bound commands here, after the D-Bus -> GTK hop.
+        let state = self
+            .mpris_state
+            .snapshot
+            .lock()
+            .unwrap_or_else(PoisonError::into_inner)
+            .clone();
+        let current_id = self
+            .mpris_state
+            .track_id
+            .lock()
+            .unwrap_or_else(PoisonError::into_inner)
+            .clone();
+        match command {
+            MprisCommand::Raise => {
+                if let Some(window) = self.window() {
+                    window.present();
+                }
+            }
+            MprisCommand::Quit => {
+                if let Some(window) = self.window() {
+                    window.close();
+                }
+            }
+            MprisCommand::Next | MprisCommand::Previous => {
+                if (matches!(command, MprisCommand::Next) && !state.can_next)
+                    || (matches!(command, MprisCommand::Previous) && !state.can_prev)
+                {
                     return;
                 }
-            } else if route_standard_playback_command(cmd, arg, &controls, None) {
-                return;
-            }
-        }
-        match cmd {
-            "raise" => {
-                if let Some(win) = self.window() {
-                    win.present();
-                }
-            }
-            "quit" => {
-                if let Some(win) = self.window() {
-                    win.close();
-                }
-            }
-            "next" if self.queue.advance().is_some() => {
-                self.play_current();
-                self.sync_queue_to_panels();
-            }
-            "previous" if self.queue.previous().is_some() => {
-                self.play_current();
-                self.sync_queue_to_panels();
-            }
-            "seek" => {
-                if let Some(offset_us) = arg {
-                    let offset_secs = offset_us as f64 / 1_000_000.0;
-                    if let Some(mpv) = &self.mpv {
-                        mpv.seek(offset_secs);
+                let status = state.status;
+                let moved = if matches!(command, MprisCommand::Previous) {
+                    self.queue.previous().is_some()
+                } else {
+                    // Repeat-one applies to EOF, not an explicit Next request.
+                    let repeat = self.queue.repeat();
+                    if repeat == RepeatMode::One {
+                        self.queue.set_repeat(RepeatMode::None);
                     }
-                    if let Some(mpris) = &self.mpris {
-                        let pos = *self
-                            .mpris_state
-                            .position
-                            .lock()
-                            .unwrap_or_else(PoisonError::into_inner);
-                        let seeked = pos + offset_secs;
-                        mpris.emit_seeked((seeked * 1_000_000.0) as i64);
-                        mpris.update_taskbar_progress(seeked, self.duration_secs);
-                    }
-                }
-            }
-            "set-position" => {
-                if let Some(pos_us) = arg {
-                    let pos_secs = pos_us as f64 / 1_000_000.0;
-                    if let Some(mpv) = &self.mpv {
-                        mpv.seek_absolute(pos_secs);
-                    }
-                    if let Some(mpris) = &self.mpris {
-                        mpris.emit_seeked(pos_us);
-                        mpris.update_taskbar_progress(pos_secs, self.duration_secs);
-                    }
-                }
-            }
-            "set-loop" => {
-                if let Some(mode) = arg {
-                    let repeat = match mode {
-                        1 => RepeatMode::One,
-                        2 => RepeatMode::All,
-                        _ => RepeatMode::None,
-                    };
+                    let moved = self.queue.advance().is_some();
                     self.queue.set_repeat(repeat);
-                    let loop_str = match repeat {
-                        RepeatMode::None => "None",
-                        RepeatMode::One => "Track",
-                        RepeatMode::All => "Playlist",
-                    };
-                    *self
-                        .mpris_state
-                        .loop_status
-                        .lock()
-                        .unwrap_or_else(PoisonError::into_inner) = loop_str.to_string();
-                    self.playback_bar
-                        .emit(AudioPlaybackBarInput::SetRepeat(repeat));
+                    moved
+                };
+                if moved {
+                    self.play_current_as(status);
+                    self.sync_queue_to_panels();
                 }
             }
-            "set-shuffle" => {
-                if let Some(val) = arg {
-                    let shuffle = val != 0;
-                    self.queue.set_shuffle(shuffle);
-                    self.mpris_state.shuffle.store(shuffle, Ordering::Relaxed);
-                    self.playback_bar
-                        .emit(AudioPlaybackBarInput::SetShuffleActive(shuffle));
+            MprisCommand::Play | MprisCommand::PlayPause => {
+                if state.status == PlaybackStatus::Stopped {
+                    if self.is_stream && !self.current_file.is_empty() {
+                        self.mpris_state.invalidate();
+                        if let Some(mpv) = &self.mpv {
+                            mpv.load_file_with_audio_profile(
+                                &self.current_file,
+                                AudioCacheProfile::Radio,
+                                false,
+                            );
+                        }
+                    } else {
+                        self.play_current();
+                    }
+                } else if let Some(mpv) = &self.mpv {
+                    if matches!(command, MprisCommand::PlayPause) {
+                        mpv.toggle_pause();
+                    } else {
+                        mpv.play();
+                    }
                 }
             }
-            _ => {}
+            MprisCommand::Pause => {
+                if let Some(mpv) = &self.mpv {
+                    mpv.pause();
+                }
+            }
+            MprisCommand::Stop => {
+                if let Some(mpv) = &self.mpv {
+                    mpv.stop();
+                }
+            }
+            MprisCommand::Seek {
+                track_id,
+                offset_us,
+            } => {
+                if current_id.as_deref() != Some(track_id.as_str()) || !state.can_seek {
+                    return;
+                }
+                let target = state.position_secs + offset_us as f64 / 1_000_000.0;
+                if state.duration_secs > 0.0 && target > state.duration_secs {
+                    if state.can_next {
+                        self.handle_mpris_command(MprisCommand::Next);
+                    }
+                } else if let Some(mpv) = &self.mpv {
+                    mpv.seek_absolute_async(target.max(0.0));
+                }
+            }
+            MprisCommand::SetPosition {
+                track_id,
+                position_us,
+            } => {
+                if current_id.as_deref() != Some(track_id.as_str())
+                    || !state.can_seek
+                    || position_us < 0
+                {
+                    return;
+                }
+                let target = position_us as f64 / 1_000_000.0;
+                if state.duration_secs > 0.0 && target > state.duration_secs {
+                    return;
+                }
+                if let Some(mpv) = &self.mpv {
+                    mpv.seek_absolute_async(target);
+                }
+            }
+            MprisCommand::OpenUri(uri) => {
+                let file = gio::File::for_uri(&uri);
+                let path = file
+                    .path()
+                    .and_then(|p| p.to_str().map(str::to_owned))
+                    .unwrap_or(uri);
+                self.snapshot_queue();
+                self.podcast_mode = false;
+                self.queue.set_tracks(vec![Track::new_external_path(path)]);
+                self.play_current();
+                self.commit_queue();
+            }
+            MprisCommand::SetVolume(volume) => {
+                if volume.is_finite()
+                    && let Some(mpv) = &self.mpv
+                {
+                    mpv.set_volume((volume * 100.0).clamp(0.0, 250.0));
+                }
+            }
+            MprisCommand::SetRate(rate) => {
+                if rate.is_finite()
+                    && (0.25..=4.0).contains(&rate)
+                    && let Some(mpv) = &self.mpv
+                {
+                    mpv.set_speed(rate);
+                }
+            }
+            MprisCommand::SetLoopStatus(mode) => {
+                self.queue.set_repeat(match mode.as_str() {
+                    "Track" => RepeatMode::One,
+                    "Playlist" => RepeatMode::All,
+                    _ => RepeatMode::None,
+                });
+                *self
+                    .mpris_state
+                    .loop_status
+                    .lock()
+                    .unwrap_or_else(PoisonError::into_inner) = mode;
+                self.playback_bar
+                    .emit(AudioPlaybackBarInput::SetRepeat(self.queue.repeat()));
+            }
+            MprisCommand::SetShuffle(shuffle) => {
+                self.queue.set_shuffle(shuffle);
+                self.mpris_state.shuffle.store(shuffle, Ordering::Relaxed);
+                self.playback_bar
+                    .emit(AudioPlaybackBarInput::SetShuffleActive(shuffle));
+            }
         }
     }
-}
 
-/// Build the MPRIS2 D-Bus service: a command callback that forwards onto the
-/// main thread via the shell input, and a state callback that reads the shared
-/// snapshot. Returns `None` if the session bus is unavailable.
-pub(super) fn build_mpris_service(
-    sender: &ComponentSender<AudioShell>,
-    state: &Arc<SharedMprisState>,
-    settings: &Settings,
-) -> Option<Mpris> {
-    let cmd_sender = sender.input_sender().clone();
-    let command_cb: CommandCallback = Box::new(move |cmd, arg| {
-        let _ = cmd_sender.send(AudioShellInput::MprisCommand(cmd.to_string(), arg));
-    });
-
-    let state_for_cb = Arc::clone(state);
-    let state_cb: StateCallback = Box::new(move || {
-        let s = &state_for_cb;
-        PlayerState {
-            is_paused: s.paused.load(Ordering::Relaxed),
-            position_secs: *s.position.lock().unwrap_or_else(PoisonError::into_inner),
-            duration_secs: *s.duration.lock().unwrap_or_else(PoisonError::into_inner),
-            volume_pct: *s.volume.lock().unwrap_or_else(PoisonError::into_inner),
-            title: s
-                .title
-                .lock()
-                .unwrap_or_else(PoisonError::into_inner)
-                .clone(),
-            artist: s
-                .artist
-                .lock()
-                .unwrap_or_else(PoisonError::into_inner)
-                .clone(),
-            album: s
-                .album
-                .lock()
-                .unwrap_or_else(PoisonError::into_inner)
-                .clone(),
-            can_next: true,
-            can_prev: true,
-            loop_status: s
-                .loop_status
-                .lock()
-                .unwrap_or_else(PoisonError::into_inner)
-                .clone(),
-            shuffle: s.shuffle.load(Ordering::Relaxed),
+    /// Publish atomically after a whole GTK message, never partially from a bus
+    /// callback. Data acquisition is memory-only; no native call or file I/O.
+    pub(super) fn publish_mpris_snapshot(&self) {
+        let s = &self.mpris_state;
+        let status = *s.status.lock().unwrap_or_else(PoisonError::into_inner);
+        let track_id = s
+            .track_id
+            .lock()
+            .unwrap_or_else(PoisonError::into_inner)
+            .clone();
+        let present = track_id.is_some();
+        let operational = self.mpv.is_some();
+        let can_next = !self.is_stream
+            && self.queue.len() > 1
+            && (self.queue.shuffle()
+                || self.queue.repeat() == RepeatMode::All
+                || self
+                    .queue
+                    .current_index()
+                    .is_some_and(|i| i + 1 < self.queue.len()));
+        let (title, artist, album) = if self.is_stream {
+            (
+                self.radio_station_name.clone(),
+                i18n("Radio"),
+                String::new(),
+            )
+        } else if let Some(track) = self.queue.current() {
+            (
+                track.display_title().to_owned(),
+                track.display_artist().to_owned(),
+                track.album.clone().unwrap_or_default(),
+            )
+        } else {
+            (String::new(), String::new(), String::new())
+        };
+        let snapshot = PlayerState {
+            status,
+            track_id,
+            position_secs: finite(*s.position.lock().unwrap_or_else(PoisonError::into_inner)),
+            duration_secs: finite(*s.duration.lock().unwrap_or_else(PoisonError::into_inner)),
+            volume_pct: finite(*s.volume.lock().unwrap_or_else(PoisonError::into_inner)),
+            rate: *s.rate.lock().unwrap_or_else(PoisonError::into_inner),
+            title,
+            artist,
+            album,
             art_url: s
                 .art_url
                 .lock()
                 .unwrap_or_else(PoisonError::into_inner)
                 .clone(),
-        }
-    });
+            loop_status: s
+                .loop_status
+                .lock()
+                .unwrap_or_else(PoisonError::into_inner)
+                .clone(),
+            shuffle: self.queue.shuffle(),
+            can_next: operational && can_next,
+            can_prev: operational && !self.is_stream && self.queue.len() > 1,
+            can_play: operational
+                && (present
+                    || !self.queue.is_empty()
+                    || (self.is_stream && !self.current_file.is_empty())),
+            can_pause: operational && present,
+            can_seek: operational && present && s.seekable.load(Ordering::Relaxed),
+        };
+        *s.snapshot.lock().unwrap_or_else(PoisonError::into_inner) = snapshot;
+    }
+}
+fn finite(x: f64) -> f64 {
+    if x.is_finite() { x.max(0.0) } else { 0.0 }
+}
 
-    let taskbar_enabled = settings.get_bool_or(keys::TASKBAR_PROGRESS, true);
+pub(super) fn build_mpris_service(
+    sender: &ComponentSender<AudioShell>,
+    state: &Arc<SharedMprisState>,
+    settings: &Settings,
+) -> Option<Mpris> {
+    let input = sender.input_sender().clone();
+    let command_cb: CommandCallback = Box::new(move |command| {
+        let _ = input.send(AudioShellInput::MprisCommand(command));
+    });
+    let state = state.clone();
+    let state_cb: StateCallback = Box::new(move || {
+        state
+            .snapshot
+            .lock()
+            .unwrap_or_else(PoisonError::into_inner)
+            .clone()
+    });
     Mpris::new_with_name(
         "org.mpris.MediaPlayer2.BigAudioPlayer",
         crate::config::audio::APP_ID,
         command_cb,
         state_cb,
-        taskbar_enabled,
+        settings.get_bool_or(keys::TASKBAR_PROGRESS, true),
     )
 }

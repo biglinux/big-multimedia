@@ -1,0 +1,63 @@
+
+  :root {
+    --bg: #1e1e1e;
+    --surface: #2a2a2a;
+    --accent: #3584e4;
+    --text: #ffffff;
+    --muted: #a0a0a0;
+  }
+  @media (prefers-color-scheme: light) {
+    :root { --bg:#fafafa; --surface:#ffffff; --text:#1e1e1e; --muted:#606060; }
+  }
+  * { box-sizing: border-box; }
+  html, body {
+    margin: 0; padding: 0; height: 100%;
+    background: var(--bg); color: var(--text);
+    font-family: -apple-system, "Segoe UI", Roboto, Cantarell, sans-serif;
+    touch-action: manipulation;
+    -webkit-tap-highlight-color: transparent;
+  }
+  main {
+    max-width: 480px; margin: 0 auto; padding: 24px 20px;
+    display: flex; flex-direction: column; gap: 20px;
+    min-height: 100%;
+  }
+  .card {
+    background: var(--surface); border-radius: 16px;
+    padding: 20px; text-align: center;
+  }
+  .title { font-size: 1.3rem; font-weight: 600; margin: 0 0 4px; }
+  .artist { color: var(--muted); font-size: 1rem; margin: 0 0 16px; }
+  .times { display: flex; justify-content: space-between; color: var(--muted); font-size: 0.85rem; margin-top: 6px; }
+  progress {
+    width: 100%; height: 6px; border: none; background: transparent;
+  }
+  progress::-webkit-progress-bar { background: #00000022; border-radius: 3px; }
+  progress::-webkit-progress-value { background: var(--accent); border-radius: 3px; }
+  progress::-moz-progress-bar { background: var(--accent); border-radius: 3px; }
+  .controls {
+    display: flex; gap: 16px; justify-content: center; align-items: center;
+  }
+  button {
+    border: 0; border-radius: 50%; background: var(--surface); color: var(--text);
+    width: 64px; height: 64px; font-size: 1.6rem; cursor: pointer;
+    transition: transform 0.1s ease, background 0.15s ease;
+  }
+  button:active { transform: scale(0.94); background: var(--accent); }
+  button.primary {
+    width: 84px; height: 84px; background: var(--accent); color: #fff; font-size: 2rem;
+  }
+  .volume { display: flex; align-items: center; gap: 12px; }
+  .volume input[type=range] { flex: 1; accent-color: var(--accent); }
+  footer { text-align: center; color: var(--muted); font-size: 0.8rem; margin-top: auto; padding-top: 12px; }
+
+button { min-height:3rem; width:auto; height:auto; border-radius:12px; padding:0.7rem; font-size:1rem; }
+button.primary { width:auto; height:auto; font-size:1rem; }
+.controls { flex-wrap:wrap; gap:0.5rem; }
+button:focus-visible, input:focus-visible { outline:3px solid var(--accent); outline-offset:4px; }
+button:disabled, input:disabled { opacity:0.65; cursor:default; }
+.title, .artist, footer, #connection { overflow-wrap:anywhere; }
+.volume { flex-wrap:wrap; }
+.volume input[type=range] { min-width:0; width:100%; flex-basis:100%; min-height:44px; }
+#connection { text-align:center; min-height:2.5em; }
+@media (prefers-reduced-motion: reduce) { button { transition:none; } button:active { transform:none; } }

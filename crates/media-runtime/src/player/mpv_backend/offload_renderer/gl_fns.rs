@@ -27,6 +27,7 @@ pub(super) type GlViewportFn = unsafe extern "C" fn(i32, i32, i32, i32);
 pub(super) type GlFlushFn = unsafe extern "C" fn();
 pub(super) type GlFinishFn = unsafe extern "C" fn();
 
+#[derive(Clone, Copy)]
 pub(super) struct GlFns {
     pub(super) gen_textures: GlGenTexturesFn,
     pub(super) delete_textures: GlDeleteTexturesFn,
@@ -41,6 +42,8 @@ pub(super) struct GlFns {
     pub(super) viewport: GlViewportFn,
     pub(super) flush: GlFlushFn,
     pub(super) finish: GlFinishFn,
+    pub(super) fence_sync: Option<unsafe extern "C" fn(u32, u32) -> *mut std::ffi::c_void>,
+    pub(super) delete_sync: Option<unsafe extern "C" fn(*mut std::ffi::c_void)>,
 }
 
 impl GlFns {
@@ -82,6 +85,8 @@ impl GlFns {
                 viewport: sym(b"glViewport\0")?,
                 flush: sym(b"glFlush\0")?,
                 finish: sym(b"glFinish\0")?,
+                fence_sync: sym(b"glFenceSync\0"),
+                delete_sync: sym(b"glDeleteSync\0"),
             })
         }
     }

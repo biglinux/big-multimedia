@@ -123,6 +123,15 @@ impl BigDropdownRow {
         let dropdown = gtk::DropDown::from_strings(&label_refs);
         dropdown.set_selected(resolved.selected);
         dropdown.set_valign(gtk::Align::Center);
+        // The suffix is independently focusable; the row title alone does not
+        // give the focused dropdown a reliable accessible name.
+        let accessible_title = accessible_text(&spec.title, spec.allow_markup);
+        dropdown.update_property(&[gtk::accessible::Property::Label(&accessible_title)]);
+        if let Some(subtitle) = spec.subtitle.as_deref() {
+            let description = accessible_text(subtitle, spec.allow_markup);
+            dropdown.update_property(&[gtk::accessible::Property::Description(&description)]);
+        }
+        dropdown.set_sensitive(!resolved.labels.is_empty());
         root.add_suffix(&dropdown);
         root.set_activatable_widget(Some(&dropdown));
 
@@ -151,6 +160,15 @@ impl BigDropdownRow {
     #[must_use]
     pub fn into_parts(self) -> (adw::ActionRow, gtk::DropDown) {
         (self.root, self.dropdown)
+    }
+}
+
+fn accessible_text(text: &str, allow_markup: bool) -> String {
+    if allow_markup {
+        gtk::pango::parse_markup(text, '\0')
+            .map_or_else(|_| text.to_owned(), |(_, plain, _)| plain.to_string())
+    } else {
+        text.to_owned()
     }
 }
 

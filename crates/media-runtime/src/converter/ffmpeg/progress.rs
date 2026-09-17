@@ -149,8 +149,17 @@ pub fn probe_audio_channels(path: &std::path::Path) -> u32 {
     }
 }
 
-/// Probe `path` with `ffprobe -print_format json` and parse the result.
+/// Probe on a worker with a bounded deadline. Compatibility wrapper for callers
+/// without a cancellation token; queue verification uses the cancellable API.
 pub fn probe_media_metadata(path: &std::path::Path) -> Option<serde_json::Value> {
+    probe_media_metadata_cancellable(path, &std::sync::atomic::AtomicBool::new(false)).ok()
+}
+
+/// Verify terminal ffprobe success; cancellation is not an empty metadata record.
+pub fn probe_media_metadata_cancellable(
+    path: &std::path::Path,
+    cancel: &std::sync::atomic::AtomicBool,
+) -> crate::Result<serde_json::Value> {
     let output = BigSubprocessSpec::builder()
         .program("ffprobe")
         .args([
@@ -166,13 +175,16 @@ pub fn probe_media_metadata(path: &std::path::Path) -> Option<serde_json::Value>
         .stderr(BigSubprocessOutputMode::Null)
         .timeout(Duration::from_secs(10))
         .build()
-        .run()
-        .ok()?;
-    if output.status.success() {
-        serde_json::from_slice(&output.stdout).ok()
-    } else {
-        None
+        .run_cancellable(cancel)
+        .map_err(|error| match error {
+            big_os_kit::subprocess::BigSubprocessError::Cancelled => crate::Error::Cancelled,
+            _ => crate::Error::internal("Media probe did not complete"),
+        })?;
+    if !output.status.success() {
+        return Err(crate::Error::internal("Media probe failed"));
     }
+    serde_json::from_slice(&output.stdout)
+        .map_err(|_| crate::Error::internal("Invalid media probe response"))
 }
 
 #[cfg(test)]

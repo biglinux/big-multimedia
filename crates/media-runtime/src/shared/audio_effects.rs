@@ -128,21 +128,10 @@ fn gtcrn_control_bytes(controls: &GtcrnControls) -> [u8; 24] {
 
 /// Atomic write: temp file + rename avoids truncation races.
 fn atomic_write(path: &std::path::Path, payload_bytes: &[u8]) {
-    let temporary_path = path.with_extension("tmp");
-    match std::fs::write(&temporary_path, payload_bytes) {
-        Ok(()) => {
-            if let Err(e) = std::fs::rename(&temporary_path, path) {
-                warn!(
-                    "NR: rename {} → {} failed: {e}",
-                    temporary_path.display(),
-                    path.display()
-                );
-                let _ = std::fs::write(path, payload_bytes);
-            }
-        }
-        Err(e) => {
-            warn!("NR: write {} failed: {e}", temporary_path.display());
-        }
+    if let Err(error) =
+        big_os_kit::background::write_private(path.to_owned(), payload_bytes.to_vec())
+    {
+        warn!("NR controls were not queued: {error}");
     }
 }
 
@@ -208,6 +197,14 @@ pub fn create_nr_settings_dialog(settings: &crate::settings::Settings) -> adw::W
     intro.add_css_class("dim-label");
     intro.set_margin_bottom(4);
     content.append(&intro);
+    let status_path = glib::user_runtime_dir().join("gtcrn-ladspa-controls");
+    let retry_path = status_path.clone();
+    content.append(&crate::settings::saving::document_status(
+        move || big_os_kit::background::live_status(&status_path),
+        move || {
+            let _ = big_os_kit::background::retry_live(&retry_path);
+        },
+    ));
 
     let (model_card, model_dropdown) = build_model_card(settings);
     content.append(&model_card);
@@ -252,6 +249,7 @@ pub fn create_nr_settings_dialog(settings: &crate::settings::Settings) -> adw::W
     let toolbar_view = toolbar_pane.into_root();
     dialog.set_content(Some(&toolbar_view));
 
+    crate::settings::saving::bind_write_drain(&dialog);
     dialog
 }
 

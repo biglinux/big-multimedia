@@ -141,21 +141,34 @@ impl MpvBackend {
         });
     }
 
-    /// Stack-allocated params for the mpv render API hot path.
-    pub fn create_fast_render_context(
-        &self,
+    /// Create a raw GL context retaining the backend through render teardown.
+    /// Prefer `video_surface::create_render_context` for a safe GTK integration.
+    ///
+    /// # Safety
+    /// The correct GL context must remain current for every render API call,
+    /// including destruction, and its native display must outlive this object.
+    pub unsafe fn create_fast_render_context(
+        self: &std::sync::Arc<Self>,
     ) -> crate::error::Result<super::fast_render::FastRenderContext> {
-        self.create_fast_render_context_with_wayland_display(None, true)
+        // SAFETY: forwarded caller contract; no borrowed native display pointer.
+        unsafe { self.create_fast_render_context_with_wayland_display(None, false) }
     }
 
-    /// `advanced_control` enables mpv's threaded render (for GraphicsOffload);
-    /// pass `false` for the plain GLArea path (it deadlocks on software GL).
-    pub fn create_fast_render_context_with_wayland_display(
-        &self,
+    /// Advanced control requires servicing every update callback on the render
+    /// thread, with its GL context current. It does not enable shaders.
+    ///
+    /// # Safety
+    /// `wl_display`, when present, must be a live Wayland display for the entire
+    /// render-context lifetime. The creation GL context must be current for
+    /// render API calls and teardown. A raw native pointer cannot be accepted
+    /// through a safe API merely because the mpv handle itself is retained.
+    pub unsafe fn create_fast_render_context_with_wayland_display(
+        self: &std::sync::Arc<Self>,
         wl_display: Option<*mut std::ffi::c_void>,
         advanced_control: bool,
     ) -> crate::error::Result<super::fast_render::FastRenderContext> {
-        // SAFETY: raw_mpv_handle outlives the render context — MpvBackend owns both.
+        // SAFETY: with_owner retains this backend until AFTER the C render
+        // context is freed. The caller provides the current GL/display context.
         unsafe {
             super::fast_render::FastRenderContext::new_with_wayland_display(
                 self.raw_mpv_handle,
@@ -163,14 +176,15 @@ impl MpvBackend {
                 advanced_control,
             )
         }
+        .map(|context| context.with_owner(std::sync::Arc::clone(self)))
     }
 
-    /// Software (CPU) render context — the no-GL fallback for hosts without an
-    /// OpenGL context. Renders frames into a byte buffer instead of an FBO.
+    /// Software fallback, retaining the C mpv handle for the context lifetime.
     pub fn create_sw_render_context(
-        &self,
+        self: &std::sync::Arc<Self>,
     ) -> crate::error::Result<super::fast_render::SwRenderContext> {
-        // SAFETY: raw_mpv_handle outlives the render context — MpvBackend owns both.
+        // SAFETY: the returned context owns a strong backend reference.
         unsafe { super::fast_render::SwRenderContext::new(self.raw_mpv_handle) }
+            .map(|context| context.with_owner(std::sync::Arc::clone(self)))
     }
 }

@@ -1,101 +1,224 @@
-//! Pure (GTK-free) library folder scanner for the Relm4 `AudioShell`.
-//!
-//! Ported out of the god-object `window::library_scan::scan` (which was an
-//! `impl Window` method) so the shell can run it off-thread without a GTK
-//! widget. Discovers audio files, reads tags, batch-inserts, and prunes stale
-//! rows. The shell wraps it in `gio::spawn_blocking` and refreshes the tree on
-//! completion; live progress (the old 250 ms status-label poll) is dropped.
-
-use std::collections::HashSet;
+//! Bounded metadata import. A scan never deletes unavailable tracks.
+//! One batch has at most 64 records; filesystem metadata is read outside the
+//! DB mutex and transaction. Earlier committed batches survive later failures.
+use crate::db::models::Track;
+use crate::db::{DbHandle, queries};
+use crate::library::{metadata, scanner};
+#[cfg(test)]
 use std::path::Path;
+#[cfg(test)]
 use std::sync::PoisonError;
 
-use crate::db::DbHandle;
-use crate::db::queries;
-use crate::library::{metadata, scanner};
-
-/// Scan `folder` into the library: register it as a watch folder, insert any
-/// newly-discovered tracks (batched), and prune entries whose files vanished.
-/// Returns `(added, skipped)`.
+use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
+use std::sync::{Arc, MutexGuard, TryLockError};
+/// Live counters contain no media names and need no UI-thread mutex.
+#[derive(Debug, Default)]
+pub struct ScanControl {
+    pub cancelled: AtomicBool,
+    pub finished: AtomicBool,
+    pub failed: AtomicBool,
+    pub examined: AtomicUsize,
+    pub imported: AtomicUsize,
+    pub skipped: AtomicUsize,
+}
+#[derive(Debug, Clone, Default)]
+pub struct ScanReport {
+    pub imported: usize,
+    pub skipped: usize,
+    pub cancelled: bool,
+    pub failed: bool,
+}
+impl ScanControl {
+    pub fn report(&self, failed: bool) -> ScanReport {
+        ScanReport {
+            imported: self.imported.load(Ordering::Acquire),
+            skipped: self.skipped.load(Ordering::Acquire),
+            cancelled: self.cancelled.load(Ordering::Acquire),
+            failed,
+        }
+    }
+}
+/// Slot owned by the shell; dropping the component revokes an in-flight scan.
+#[derive(Default)]
+pub(crate) struct ScanSlot(pub std::cell::RefCell<Option<Arc<ScanControl>>>);
+impl Drop for ScanSlot {
+    fn drop(&mut self) {
+        if let Some(control) = self.0.get_mut().take() {
+            control.cancelled.store(true, Ordering::Release);
+        }
+    }
+}
+const MAX_SCANS: usize = 2;
+static ACTIVE_SCANS: AtomicUsize = AtomicUsize::new(0);
+/// A bound on admitted scans, not merely on threads actively consuming CPU.
+pub(crate) struct ScanAdmission {
+    _drain: big_os_kit::background::OperationGuard,
+}
+impl ScanAdmission {
+    pub(crate) fn reserve() -> Option<Self> {
+        ACTIVE_SCANS
+            .fetch_update(Ordering::AcqRel, Ordering::Acquire, |count| {
+                (count < MAX_SCANS).then_some(count + 1)
+            })
+            .ok()
+            .map(|_| Self {
+                _drain: big_os_kit::background::track_operation(),
+            })
+    }
+}
+impl Drop for ScanAdmission {
+    fn drop(&mut self) {
+        ACTIVE_SCANS.fetch_sub(1, Ordering::AcqRel);
+    }
+}
+fn lock_db<'a>(
+    db: &'a DbHandle,
+    cancelled: &AtomicBool,
+) -> Result<MutexGuard<'a, rusqlite::Connection>, String> {
+    loop {
+        if cancelled.load(Ordering::Acquire) {
+            return Err("Scan cancelled".into());
+        }
+        match db.try_lock() {
+            Ok(conn) => return Ok(conn),
+            Err(TryLockError::WouldBlock) => {
+                std::thread::sleep(std::time::Duration::from_millis(5));
+            }
+            Err(TryLockError::Poisoned(_)) => return Err("Library connection failed".into()),
+        }
+    }
+}
+#[cfg(test)]
 pub(crate) fn scan_folder_blocking(db: &DbHandle, folder: &str) -> Result<(usize, usize), String> {
-    {
-        let conn = db.lock().unwrap_or_else(PoisonError::into_inner);
-        let _ = queries::add_watch_folder(&conn, folder);
-    }
-
-    let existing: HashSet<String> = {
-        let conn = db.lock().unwrap_or_else(PoisonError::into_inner);
-        queries::get_all_file_paths(&conn)
-            .unwrap_or_default()
-            .into_iter()
-            .collect()
-    };
-
-    let files = scanner::discover_audio_files(folder).map_err(|e| e.to_string())?;
-    let total = files.len();
-
-    let mut new_tracks = Vec::new();
-    let mut skipped = 0_usize;
-    for path in &files {
-        let path_str = path.to_string_lossy();
-        if existing.contains(path_str.as_ref()) {
-            continue;
-        }
-        match metadata::read_track_metadata(&path_str) {
-            Ok(track) => new_tracks.push(track),
-            Err(e) => {
-                log::debug!("scan skip {path_str}: {e}");
-                skipped += 1;
-            }
-        }
-    }
-
-    let mut added = 0_usize;
-    for chunk in new_tracks.chunks(50) {
-        let conn = db.lock().unwrap_or_else(PoisonError::into_inner);
-        let txx = conn.unchecked_transaction().map_err(|e| e.to_string())?;
-        for track in chunk {
-            if queries::insert_track(&txx, track).is_ok() {
-                added += 1;
-            }
-        }
-        txx.commit().map_err(|e| e.to_string())?;
-    }
-
-    {
-        let conn = db.lock().unwrap_or_else(PoisonError::into_inner);
-        let stale = queries::get_all_file_paths(&conn).unwrap_or_default();
-        for path in stale.iter().filter(|p| !Path::new(p).exists()) {
-            let _ = conn.execute("DELETE FROM tracks WHERE file_path = ?1", [path]);
-        }
-    }
-
-    log::info!("scan {folder}: +{added} new, {skipped} skipped of {total}");
-    Ok((added, skipped))
+    let control = ScanControl::default();
+    scan_folder_cancellable(db, folder, &control)?;
+    Ok((
+        control.imported.load(Ordering::Acquire),
+        control.skipped.load(Ordering::Acquire),
+    ))
 }
-
-/// Remove a watch folder by id (its tracks too), returning `true` on success.
+pub(crate) fn scan_folder_cancellable(
+    db: &DbHandle,
+    folder: &str,
+    control: &ScanControl,
+) -> Result<(), String> {
+    let cancelled = &control.cancelled;
+    if cancelled.load(Ordering::Acquire) {
+        return Err("Scan cancelled".into());
+    }
+    if !std::fs::metadata(folder)
+        .map_err(|_| "Folder is unavailable")?
+        .is_dir()
+    {
+        return Err("Choose an available folder".into());
+    }
+    {
+        let conn = lock_db(db, cancelled)?;
+        queries::add_watch_folder(&conn, folder).map_err(|_| "Could not save watch folder")?;
+    }
+    let mut batch: Vec<Track> = Vec::with_capacity(64);
+    scanner::visit_audio_files_cancellable(folder, cancelled, |path| {
+        control.examined.fetch_add(1, Ordering::Relaxed);
+        let path = path
+            .to_str()
+            .ok_or_else(|| std::io::Error::other("Non-UTF-8 path cannot be imported losslessly"))?;
+        let exists: bool = {
+            let conn = lock_db(db, cancelled).map_err(std::io::Error::other)?;
+            conn.query_row(
+                "SELECT EXISTS(SELECT 1 FROM tracks WHERE file_path=?1)",
+                [path],
+                |r| r.get(0),
+            )?
+        };
+        if exists {
+            return Ok(());
+        }
+        match metadata::read_track_metadata_cancellable(path, cancelled) {
+            Ok(track) => batch.push(track),
+            Err(big_media_runtime::Error::Cancelled) => {
+                return Err(big_media_runtime::Error::Cancelled);
+            }
+            Err(_) => {
+                control.skipped.fetch_add(1, Ordering::Relaxed);
+            }
+        }
+        if batch.len() == 64 {
+            let count = insert_scan_batch(db, &batch, cancelled)?;
+            control.imported.fetch_add(count, Ordering::Release);
+            batch.clear();
+        }
+        Ok(())
+    })
+    .map_err(|_| "Scan incomplete; confirmed batches were kept".to_owned())?;
+    if !batch.is_empty() {
+        let count = insert_scan_batch(db, &batch, cancelled)
+            .map_err(|_| "Scan incomplete; confirmed batches were kept")?;
+        control.imported.fetch_add(count, Ordering::Release);
+    }
+    Ok(())
+}
+fn insert_scan_batch(
+    db: &DbHandle,
+    tracks: &[Track],
+    cancelled: &AtomicBool,
+) -> std::io::Result<usize> {
+    let conn = lock_db(db, cancelled).map_err(std::io::Error::other)?;
+    let tx = conn
+        .unchecked_transaction()
+        .map_err(|_| std::io::Error::other("Library write failed"))?;
+    for track in tracks {
+        if cancelled.load(Ordering::Acquire) {
+            return Err(std::io::Error::new(
+                std::io::ErrorKind::Interrupted,
+                "Scan cancelled",
+            ));
+        }
+        queries::insert_track(&tx, track)
+            .map_err(|_| std::io::Error::other("Library write failed"))?;
+    }
+    if cancelled.load(Ordering::Acquire) {
+        return Err(std::io::Error::new(
+            std::io::ErrorKind::Interrupted,
+            "Scan cancelled",
+        ));
+    }
+    tx.commit()
+        .map_err(|_| std::io::Error::other("Library commit failed"))?;
+    Ok(tracks.len())
+}
+/// Stop monitoring only. Removing tracks/ratings/playlists is a separate,
+/// destructive user decision and must not be inferred from removing a watch.
 pub(crate) fn remove_watch_folder_blocking(db: &DbHandle, folder_id: i64) -> bool {
-    let conn = db.lock().unwrap_or_else(PoisonError::into_inner);
-    let path = queries::get_watch_folders(&conn)
-        .unwrap_or_default()
-        .into_iter()
-        .find(|f| f.id == folder_id)
-        .map(|f| f.path);
-    if let Some(path) = path {
-        let _ = queries::remove_tracks_in_folder(&conn, &path);
-    }
-    queries::remove_watch_folder(&conn, folder_id).is_ok()
+    db.lock()
+        .is_ok_and(|conn| queries::remove_watch_folder(&conn, folder_id).is_ok())
 }
-
-/// All watch-folder paths (for a rescan-all).
-pub(crate) fn watch_folder_paths_blocking(db: &DbHandle) -> Vec<String> {
-    let conn = db.lock().unwrap_or_else(PoisonError::into_inner);
-    queries::get_watch_folders(&conn)
-        .unwrap_or_default()
-        .into_iter()
-        .map(|f| f.path)
-        .collect()
+#[cfg(test)]
+pub(crate) fn watch_folder_paths_blocking(db: &DbHandle) -> Result<Vec<String>, String> {
+    watch_folder_paths_cancellable(db, &AtomicBool::new(false))
+}
+pub(crate) fn watch_folder_paths_cancellable(
+    db: &DbHandle,
+    cancelled: &AtomicBool,
+) -> Result<Vec<String>, String> {
+    let conn = lock_db(db, cancelled)?;
+    let mut stmt = conn
+        .prepare("SELECT path FROM watch_folders ORDER BY path LIMIT 1025")
+        .map_err(|_| "Could not read watch folders")?;
+    let paths = stmt
+        .query_map([], |row| row.get::<_, String>(0))
+        .map_err(|_| "Could not read watch folders")?;
+    let mut result = Vec::new();
+    for path in paths {
+        if cancelled.load(Ordering::Acquire) {
+            return Err("Scan cancelled".into());
+        }
+        let path = path.map_err(|_| "Could not read watch folders")?;
+        if result.len() == 1024 || path.len() > 4096 {
+            return Err("Watch-folder safety limit exceeded".into());
+        }
+        result.push(path);
+    }
+    Ok(result)
 }
 
 #[cfg(all(test, not(miri)))]
@@ -184,7 +307,7 @@ mod tests {
     }
 
     #[test]
-    fn scan_folder_adds_valid_audio_skips_invalid_audio_and_prunes_stale_rows()
+    fn scan_folder_imports_bounded_batches_and_preserves_unavailable_rows()
     -> std::result::Result<(), Box<dyn std::error::Error>> {
         let db = memory_library_db()?;
         let scan_folder = unique_audio_scan_folder("mixed")?;
@@ -218,8 +341,8 @@ mod tests {
             "valid WAV file should be inserted into the library"
         );
         assert!(
-            !track_paths.contains(&stale_track_path.to_string_lossy().into_owned()),
-            "stale track row should be pruned during scan"
+            track_paths.contains(&stale_track_path.to_string_lossy().into_owned()),
+            "unavailable track metadata must be preserved"
         );
         assert!(
             !track_paths.contains(&invalid_track_path.to_string_lossy().into_owned()),
@@ -248,7 +371,7 @@ mod tests {
             queries::add_watch_folder(&conn, &scan_folder.to_string_lossy())?;
         }
 
-        let watch_folder_paths = watch_folder_paths_blocking(&db);
+        let watch_folder_paths = watch_folder_paths_blocking(&db)?;
         assert_eq!(
             watch_folder_paths,
             vec![
@@ -262,7 +385,7 @@ mod tests {
     }
 
     #[test]
-    fn remove_watch_folder_removes_tracks_under_that_folder_but_preserves_nested_watch_folder()
+    fn remove_watch_folder_preserves_tracks_and_nested_watch_folder()
     -> std::result::Result<(), Box<dyn std::error::Error>> {
         let db = memory_library_db()?;
         let scan_folder = unique_audio_scan_folder("remove")?;
@@ -297,8 +420,8 @@ mod tests {
 
         let remaining_track_paths = queries::get_all_file_paths(&conn)?;
         assert!(
-            !remaining_track_paths.contains(&parent_track_path.to_string_lossy().into_owned()),
-            "track directly under removed folder should be removed"
+            remaining_track_paths.contains(&parent_track_path.to_string_lossy().into_owned()),
+            "unwatching a folder does not delete tracks"
         );
         assert!(
             remaining_track_paths.contains(&nested_track_path.to_string_lossy().into_owned()),

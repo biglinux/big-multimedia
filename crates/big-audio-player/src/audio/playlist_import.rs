@@ -1,144 +1,189 @@
-//! Pure (GTK-free) M3U/M3U8/PLS import parser for the Relm4 `AudioShell`.
-//!
-//! Ported out of the god-object `window::playlists` so the shell can parse an
-//! imported playlist off-thread, then resolve the paths against the library and
-//! insert them into the queue. Returns raw file paths in playlist order.
+//! Bounded native-path playlist import. Failure is distinct from an empty list.
+use std::{io, path::Path};
+const MAX_PLAYLIST_BYTES: usize = 16 * 1024 * 1024;
+const MAX_ENTRIES: usize = 100_000;
 
-use std::path::Path;
-
-/// Hard cap to bound memory of a hostile / corrupted M3U/PLS file. 16 MiB fits
-/// any realistic personal playlist (≈ 200 000 entries at 80 chars/line).
-const MAX_PLAYLIST_BYTES: u64 = 16 * 1024 * 1024;
-
-/// Parse an `.m3u`/`.m3u8`/`.pls` file into its referenced file paths. Relative
-/// M3U entries are resolved against the playlist's directory. Oversize or
-/// unreadable files yield an empty list.
-pub(crate) fn parse_playlist_file_for_import(path: &Path) -> Vec<String> {
-    if let Ok(meta) = std::fs::metadata(path)
-        && meta.len() > MAX_PLAYLIST_BYTES
-    {
-        log::warn!(
-            "playlist import skip: {} bytes exceeds MAX_PLAYLIST_BYTES",
-            meta.len()
-        );
-        return Vec::new();
+pub(crate) fn parse_playlist_file_for_import(path: &Path) -> io::Result<Vec<String>> {
+    let bytes = big_os_kit::storage::read_regular_limited(path, MAX_PLAYLIST_BYTES)?
+        .ok_or_else(|| io::Error::new(io::ErrorKind::NotFound, "playlist unavailable"))?;
+    let content = std::str::from_utf8(&bytes)
+        .map_err(|_| io::Error::new(io::ErrorKind::InvalidData, "playlist is not valid UTF-8"))?;
+    parse_content(path, content)
+}
+fn entry(base: &Path, line: &str) -> io::Result<String> {
+    if line.is_empty() || line.len() > 4096 || line.chars().any(char::is_control) {
+        return Err(io::Error::new(
+            io::ErrorKind::InvalidData,
+            "invalid or oversized playlist entry",
+        ));
     }
-    let Ok(content) = std::fs::read_to_string(path) else {
-        return Vec::new();
-    };
-
-    let mut file_paths = Vec::new();
-    let ext = path
+    let uri = line.split_once(':').is_some_and(|(scheme, _)| {
+        let mut chars = scheme.chars();
+        chars.next().is_some_and(|c| c.is_ascii_alphabetic())
+            && chars.all(|c| c.is_ascii_alphanumeric() || matches!(c, '+' | '-' | '.'))
+    });
+    if Path::new(line).is_absolute() || uri {
+        return Ok(line.into());
+    }
+    base.join(line)
+        .to_str()
+        .map(str::to_owned)
+        .ok_or_else(|| io::Error::new(io::ErrorKind::InvalidData, "playlist path is not UTF-8"))
+}
+fn parse_content(path: &Path, content: &str) -> io::Result<Vec<String>> {
+    let base = path.parent().unwrap_or(Path::new("."));
+    let mut result = Vec::new();
+    if path
         .extension()
-        .map(|e| e.to_string_lossy().to_lowercase())
-        .unwrap_or_default();
-
-    if ext == "pls" {
+        .and_then(|e| e.to_str())
+        .is_some_and(|e| e.eq_ignore_ascii_case("pls"))
+    {
+        let mut ordered = std::collections::BTreeMap::new();
         for line in content.lines() {
-            if let Some(path_val) = line.strip_prefix("File")
-                && let Some((_num, fpath)) = path_val.split_once('=')
+            if let Some((key, value)) = line.split_once('=')
+                && let Some(index) = key.strip_prefix("File")
             {
-                file_paths.push(fpath.to_string());
+                let index = index
+                    .parse::<u32>()
+                    .map_err(|_| io::Error::new(io::ErrorKind::InvalidData, "invalid PLS index"))?;
+                if index == 0 || ordered.insert(index, entry(base, value)?).is_some() {
+                    return Err(io::Error::new(
+                        io::ErrorKind::InvalidData,
+                        "duplicate PLS index",
+                    ));
+                }
+                if ordered.len() > MAX_ENTRIES {
+                    return Err(io::Error::new(
+                        io::ErrorKind::InvalidData,
+                        "too many playlist entries",
+                    ));
+                }
             }
         }
+        result.extend(ordered.into_values());
     } else {
-        let base_dir = path.parent().map(Path::to_path_buf);
-        for line in content.lines() {
-            let line = line.trim();
-            if line.is_empty() || line.starts_with('#') {
+        for line in content.strip_prefix('\u{feff}').unwrap_or(content).lines() {
+            if line.trim().is_empty() || line.starts_with('#') {
                 continue;
             }
-            let resolved = if Path::new(line).is_absolute() {
-                line.to_string()
-            } else if let Some(ref base) = base_dir {
-                base.join(line).to_string_lossy().to_string()
-            } else {
-                line.to_string()
-            };
-            file_paths.push(resolved);
+            result.push(entry(base, line)?);
+            if result.len() > MAX_ENTRIES {
+                return Err(io::Error::new(
+                    io::ErrorKind::InvalidData,
+                    "too many playlist entries",
+                ));
+            }
         }
     }
-
-    file_paths
+    Ok(result)
 }
-
-#[cfg(all(test, not(miri)))]
+#[cfg(test)]
 mod tests {
     use super::*;
-    use std::io::Write;
-
     #[test]
-    fn playlist_byte_limit_is_sixteen_mib() {
-        assert_eq!(MAX_PLAYLIST_BYTES, 16_777_216);
-    }
-
-    #[test]
-    fn import_rejects_oversize_playlist() -> std::io::Result<()> {
-        let path = std::env::temp_dir().join("bap-import-oversize.m3u");
-        let mut f = std::fs::File::create(&path)?;
-        // Seek past the cap to avoid materializing 16 MiB.
-        use std::io::Seek;
-        f.seek(std::io::SeekFrom::Start(MAX_PLAYLIST_BYTES))?;
-        f.write_all(b"x")?;
-        drop(f);
-
-        assert!(parse_playlist_file_for_import(&path).is_empty());
-        let _ = std::fs::remove_file(&path);
-        Ok(())
-    }
-
-    #[test]
-    fn import_accepts_playlist_at_exact_byte_limit() -> std::io::Result<()> {
-        let path = std::env::temp_dir().join("bap-import-exact-limit.m3u");
-        let file = std::fs::File::create(&path)?;
-        file.set_len(MAX_PLAYLIST_BYTES)?;
-        drop(file);
-
-        assert!(!parse_playlist_file_for_import(&path).is_empty());
-        let _ = std::fs::remove_file(&path);
-        Ok(())
-    }
-
-    #[test]
-    fn import_accepts_small_playlist() -> std::io::Result<()> {
-        let path = std::env::temp_dir().join("bap-import-small.m3u");
-        std::fs::write(&path, b"/music/a.mp3\n/music/b.flac\n")?;
+    fn relative_paths_preserve_spaces() {
         assert_eq!(
-            parse_playlist_file_for_import(&path),
-            vec!["/music/a.mp3".to_string(), "/music/b.flac".to_string()]
+            parse_content(Path::new("/music/list.m3u"), "#EXTM3U\n song.ogg \n").unwrap(),
+            ["/music/ song.ogg "]
         );
-        let _ = std::fs::remove_file(&path);
-        Ok(())
     }
-
     #[test]
-    fn import_ignores_blank_and_comment_lines() -> std::io::Result<()> {
-        let path = std::env::temp_dir().join("bap-import-comments.m3u");
-        std::fs::write(&path, b"#EXTM3U\n\nrelative.mp3\n")?;
-
+    fn remote_uri_is_not_made_into_a_local_path() {
         assert_eq!(
-            parse_playlist_file_for_import(&path),
-            vec![
-                path.parent()
-                    .unwrap_or_else(|| Path::new(""))
-                    .join("relative.mp3")
-                    .to_string_lossy()
-                    .to_string()
-            ]
+            parse_content(Path::new("/music/l.m3u"), "https://host/song.mp3?x=1\n").unwrap(),
+            ["https://host/song.mp3?x=1"]
         );
-        let _ = std::fs::remove_file(&path);
-        Ok(())
     }
-
     #[test]
-    fn import_parses_pls_file_entries() -> std::io::Result<()> {
-        let path = std::env::temp_dir().join("bap-import.pls");
-        std::fs::write(&path, b"[playlist]\nFile1=/m/a.mp3\nFile2=/m/b.ogg\n")?;
+    fn malformed_and_nul_entries_are_errors() {
+        assert!(parse_content(Path::new("a.m3u"), "bad\0path").is_err());
+        assert!(parse_content(Path::new("a.pls"), "File1=a\nFile1=b").is_err());
+    }
+    #[test]
+    fn pls_is_sorted_by_index() {
         assert_eq!(
-            parse_playlist_file_for_import(&path),
-            vec!["/m/a.mp3".to_string(), "/m/b.ogg".to_string()]
+            parse_content(
+                Path::new("/music/l.pls"),
+                "[playlist]\nFile2=b.mp3\nFile1=a.mp3"
+            )
+            .unwrap(),
+            ["/music/a.mp3", "/music/b.mp3"]
         );
-        let _ = std::fs::remove_file(&path);
-        Ok(())
+    }
+    #[test]
+    fn empty_is_distinct_from_unreadable() {
+        assert!(
+            parse_content(Path::new("/music/l"), "# empty")
+                .unwrap()
+                .is_empty()
+        );
+    }
+    // Preserve boundary coverage from the old parser while correcting its
+    // contract: malformed data and unreadable files are errors, not empty lists.
+    #[cfg(not(miri))]
+    struct TestDirectory(std::path::PathBuf);
+    #[cfg(not(miri))]
+    impl TestDirectory {
+        fn new() -> Self {
+            static NEXT: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(0);
+            let nonce = NEXT.fetch_add(1, std::sync::atomic::Ordering::Relaxed);
+            let dir = std::env::temp_dir()
+                .join(format!("playlist-import-r2-{}-{nonce}", std::process::id()));
+            // Refuse collision; never remove or reuse a preexisting directory.
+            std::fs::create_dir(&dir).unwrap();
+            Self(dir)
+        }
+    }
+    #[cfg(not(miri))]
+    impl Drop for TestDirectory {
+        fn drop(&mut self) {
+            let _ = std::fs::remove_dir_all(&self.0);
+        }
+    }
+    #[test]
+    #[cfg_attr(miri, ignore)]
+    #[cfg(not(miri))]
+    fn oversize_file_is_an_error_without_reading_its_entire_body() {
+        let dir = TestDirectory::new();
+        let path = dir.0.join("large.m3u");
+        std::fs::File::create(&path)
+            .unwrap()
+            .set_len(MAX_PLAYLIST_BYTES as u64 + 1)
+            .unwrap();
+        assert!(parse_playlist_file_for_import(&path).is_err());
+    }
+    #[test]
+    #[cfg_attr(miri, ignore)]
+    #[cfg(not(miri))]
+    fn exact_byte_limit_is_valid_only_with_valid_content() {
+        let dir = TestDirectory::new();
+        let path = dir.0.join("boundary.m3u");
+        // A comment-only playlist is valid and empty even at the byte ceiling.
+        std::fs::write(&path, vec![b'#'; MAX_PLAYLIST_BYTES]).unwrap();
+        assert!(parse_playlist_file_for_import(&path).unwrap().is_empty());
+        // The previous test accepted a sparse NUL file at this same size.
+        std::fs::write(&path, vec![0_u8; MAX_PLAYLIST_BYTES]).unwrap();
+        assert!(parse_playlist_file_for_import(&path).is_err());
+    }
+    #[test]
+    #[cfg_attr(miri, ignore)]
+    #[cfg(not(miri))]
+    fn missing_and_invalid_utf8_are_errors_not_empty_playlists() {
+        let dir = TestDirectory::new();
+        let path = dir.0.join("missing.m3u");
+        assert_eq!(
+            parse_playlist_file_for_import(&path).unwrap_err().kind(),
+            io::ErrorKind::NotFound
+        );
+        std::fs::write(&path, [0xff_u8, 0xfe]).unwrap();
+        assert_eq!(
+            parse_playlist_file_for_import(&path).unwrap_err().kind(),
+            io::ErrorKind::InvalidData
+        );
+    }
+    #[test]
+    fn entry_count_is_bounded() {
+        let content = "song.ogg\n".repeat(MAX_ENTRIES + 1);
+        assert!(parse_content(Path::new("/music/list.m3u"), &content).is_err());
     }
 }

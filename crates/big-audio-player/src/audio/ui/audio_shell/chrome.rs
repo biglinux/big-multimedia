@@ -66,6 +66,17 @@ impl AudioShell {
             .and_downcast::<gtk::Window>()
     }
 
+    /// Parent for feedback raised by a playlist-library action. That library is
+    /// its own modal `adw::Window`, so an alert parented to the main window is
+    /// created and announced but stays underneath it, unseen and undismissable.
+    pub(super) fn playlist_library_parent(&self) -> Option<gtk::Window> {
+        let library = self.playlist_library_dialog.widget();
+        if library.is_visible() {
+            return Some(library.clone().upcast());
+        }
+        self.window()
+    }
+
     /// Bundled illustration loader (audio-player gresource path).
     pub(super) fn illustration(filename: &str) -> gtk::Image {
         crate::shared::ui_helpers::illustration(
@@ -240,22 +251,26 @@ impl AudioShell {
                     self.notify(&i18n("Sleep timer: closing player"));
                     glib::timeout_add_local_once(std::time::Duration::from_secs(2), || {
                         if let Some(app) = gtk::gio::Application::default() {
-                            app.quit();
+                            crate::settings::saving::quit_after_writes(&app);
                         }
                     });
                 }
                 "suspend" => {
                     self.notify(&i18n("Sleep timer: suspending computer"));
                     glib::timeout_add_local_once(std::time::Duration::from_secs(2), || {
-                        let _ =
-                            big_app_kit::desktop::BigSystemPowerAction::Suspend.spawn_detached();
+                        crate::settings::saving::after_writes(|| {
+                            let _ = big_app_kit::desktop::BigSystemPowerAction::Suspend
+                                .spawn_detached();
+                        });
                     });
                 }
                 "poweroff" => {
                     self.notify(&i18n("Sleep timer: shutting down"));
                     glib::timeout_add_local_once(std::time::Duration::from_secs(2), || {
-                        let _ =
-                            big_app_kit::desktop::BigSystemPowerAction::PowerOff.spawn_detached();
+                        crate::settings::saving::after_writes(|| {
+                            let _ = big_app_kit::desktop::BigSystemPowerAction::PowerOff
+                                .spawn_detached();
+                        });
                     });
                 }
                 _ => self.notify(&i18n("Sleep timer: playback paused")),

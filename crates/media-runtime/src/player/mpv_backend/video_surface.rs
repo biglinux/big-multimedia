@@ -92,7 +92,7 @@ pub fn install_best_backend(
 }
 
 pub fn create_render_context<F>(
-    mpv: &MpvBackend,
+    mpv: &std::sync::Arc<MpvBackend>,
     backend: Option<&VideoBackend>,
     gl_area: &gtk::GLArea,
     surface_name: &str,
@@ -116,13 +116,37 @@ where
     if wl_display.is_some() {
         info!("{surface_name}: passing Wayland display to libmpv render context");
     }
-    // Advanced control only for the offload path (threaded render); the plain
-    // GLArea path uses simple mode — advanced control deadlocks on software GL.
-    let is_offload = matches!(backend, Some(VideoBackend::Offload(_)));
+    // The render and property handlers share GTK's main thread. They cannot
+    // promise advanced-control's no-core-wait contract. A dedicated render
+    // actor is required before re-enabling direct-render advanced control.
+    // Disabling it does NOT remove libmpv's other no-cyclic-wait obligations.
+    let context = gdk::GLContext::current()
+        .ok_or_else(|| Error::mpv("No current GL context for the video surface"))?;
+    // SAFETY: the owning GTK thread made this GL context current above. It
+    // retains its display and is captured for exact-context teardown below.
     let mut render_context =
-        mpv.create_fast_render_context_with_wayland_display(wl_display, is_offload)?;
-    if is_offload {
-        install_main_thread_update_callback(&mut render_context, on_offload_frame);
+        unsafe { mpv.create_fast_render_context_with_wayland_display(wl_display, false)? };
+    {
+        render_context.set_context_scope(move |action| {
+            struct Restore(Option<gdk::GLContext>);
+            impl Drop for Restore {
+                fn drop(&mut self) {
+                    if let Some(previous) = &self.0 {
+                        previous.make_current();
+                    } else {
+                        gdk::GLContext::clear_current();
+                    }
+                }
+            }
+            let _restore = Restore(gdk::GLContext::current());
+            context.make_current();
+            action();
+        });
+    }
+    if let Some(VideoBackend::Offload(renderer)) = backend {
+        let callback: std::rc::Rc<dyn Fn()> = std::rc::Rc::new(on_offload_frame);
+        renderer.set_retry_callback(callback.clone());
+        install_main_thread_update_callback(&mut render_context, move || callback());
     } else {
         install_glarea_update_callback(&mut render_context, gl_area);
     }
@@ -159,7 +183,6 @@ pub fn render_glarea_frame(
     }
 
     render_context.render(framebuffer, width, height, flip_y);
-    render_context.report_swap();
 }
 
 fn install_glarea_update_callback(render_context: &mut FastRenderContext, gl_area: &gtk::GLArea) {

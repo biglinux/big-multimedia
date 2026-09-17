@@ -24,8 +24,8 @@ viewswitcher > button {
     margin: 2px 1px;
     font-weight: 400;
     font-size: 0.85em;
-    opacity: 0.7;
-    transition: all 200ms ease;
+    opacity: 1.0;
+    transition: background-color 200ms ease;
 }
 
 viewswitcher > button > box {
@@ -48,8 +48,8 @@ viewswitcher > button label {
     min-width: 0;
     margin: 2px 1px;
     font-size: 0.85em;
-    opacity: 0.65;
-    transition: all 200ms ease;
+    opacity: 1.0;
+    transition: background-color 200ms ease;
 }
 
 .tab-btn:checked {
@@ -340,7 +340,7 @@ columnview > listview > row.now-playing {
     min-height: 18px;
     margin: -7px;
     border-radius: 50%;
-    transition: all 200ms ease;
+    transition: background-color 200ms ease;
 }
 
 .playback-bar scale:hover slider {
@@ -456,7 +456,7 @@ popover scale.vertical:not(.volume-scale):not(.voice-scale) highlight {
     min-height: 32px;
     border-radius: 50%;
     padding: 4px;
-    transition: all 200ms ease;
+    transition: background-color 200ms ease;
 }
 
 .playback-bar button.flat:hover,
@@ -470,7 +470,7 @@ popover scale.vertical:not(.volume-scale):not(.voice-scale) highlight {
     min-height: 44px;
     border-radius: 50%;
     box-shadow: 0 2px 8px alpha(@accent_bg_color, 0.3);
-    transition: all 250ms ease;
+    transition: background-color 250ms ease;
 }
 
 .playback-bar button.circular.suggested-action:hover {
@@ -584,7 +584,7 @@ columnview > listview > row button.circular {
     transition: opacity 200ms ease;
 }
 columnview > listview > row:hover button.circular {
-    opacity: 0.7;
+    opacity: 1.0;
 }
 columnview > listview > row button.circular:hover {
     opacity: 1;
@@ -661,4 +661,10 @@ columnview > listview > row button.circular:hover {
 .download-panel-row progressbar progress {
     min-height: 6px;
     border-radius: 3px;
+}
+
+/* Tab labels remain readable; selection is expressed by background and weight. */
+.tab-btn:focus-visible {
+    outline: 2px solid @accent_color;
+    outline-offset: 2px;
 }

@@ -16,7 +16,7 @@ impl FfmpegJob {
         let mut cmd = Command::new("ffmpeg");
         cmd.stdin(Stdio::null());
 
-        cmd.arg("-y");
+        cmd.args(["-nostdin", "-hide_banner", "-nostats", "-y"]);
 
         if self.stage == GpuStage::FullGpu {
             self.add_hw_init_args(&mut cmd);
@@ -28,7 +28,7 @@ impl FfmpegJob {
         if let Some(start) = self.trim.start {
             cmd.args(["-ss", &ffmpeg_timestamp(start)]);
         }
-        cmd.args(["-i", &self.input.to_string_lossy()]);
+        cmd.arg("-i").arg(&self.input);
 
         if let Some(end) = self.trim.end {
             let duration = end - self.trim.start.unwrap_or(0.0);
@@ -38,7 +38,7 @@ impl FfmpegJob {
         }
 
         if let SubtitleInput::ExternalFile(ref path) = self.subtitle {
-            cmd.args(["-i", &path.to_string_lossy()]);
+            cmd.arg("-i").arg(path);
         }
 
         if self.audio_only {
@@ -58,7 +58,9 @@ impl FfmpegJob {
             let container = profiles::resolve_container(&self.profile);
             let needs_filter = matches!(container, "mp4" | "mov" | "m4v");
 
-            if needs_filter && !self.subtitle_streams.is_empty() {
+            if matches!(self.subtitle, SubtitleInput::ExternalFile(_)) {
+                cmd.args(["-map", "1:s:0"]);
+            } else if needs_filter && !self.subtitle_streams.is_empty() {
                 for ss in &self.subtitle_streams {
                     if !ss.is_bitmap {
                         cmd.args(["-map", &format!("0:{}", ss.index)]);
@@ -102,7 +104,7 @@ impl FfmpegJob {
         // user-controlled paths beginning with `-`.
         cmd.arg("--").arg(&self.output);
 
-        info!("FFmpeg command: {cmd:?}");
+        info!("FFmpeg command prepared (media paths omitted)");
         cmd
     }
 

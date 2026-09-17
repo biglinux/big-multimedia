@@ -7,6 +7,8 @@ pub mod appearance;
 // Relocated to big-player-ui (engine-free UI crate); re-exported so the
 // app-local `ui::library_tree` can resolve `crate::audio::browser_node::*`.
 pub use big_player_ui::browser_node;
+mod account_editor;
+mod account_security;
 mod column_builders;
 mod converter_launcher;
 pub mod keybindings;

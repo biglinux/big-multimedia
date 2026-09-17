@@ -24,6 +24,7 @@ pango = { version = "0.22", package = "pango" }
 big-media-runtime = { path = "../media-runtime", default-features = false, features = ["ui"] }
 big-player-ui = { path = "../ui/media/big-player-ui" }
 big-app-kit = { path = "../app/big-app-kit" }
+big-os-kit.workspace = true
 big-relm4-components = { path = "../ui/generic/big-relm4-components" }
 big-media-components = { path = "../ui/media/big-media-components" }
 # In-player quick export (convert / trim & export) reuses the converter engine.
@@ -34,6 +35,8 @@ dirs = "6"
 log = "0.4"
 lru = "0.18"
 rusqlite = "0.40.1"
+# Keyring payloads are stored as one JSON object per provider.
+serde_json.workspace = true
 
 [lints.clippy]
 pedantic = { level = "warn", priority = -1 }
