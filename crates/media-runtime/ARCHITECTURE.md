@@ -5,16 +5,15 @@
 > download, media, recent) move to a new sibling crate `big-media-data`;
 > the reusable Relm4 player panels (`player_ui`) move to
 > `big-rust-components/crates/big-player-ui`; this crate slims to **engines
-> only** (mpv player, ffmpeg converter, cast, camera, editor, mpris).
+> only** (mpv player, cast, camera, mpris).
 > Placement rule + target graph: `big-rust-components/ARCHITECTURE.md` §9–10.
 > Each phase keeps `pub use` shims so consumers never break mid-migration.
 
 ## 1. Purpose
 
 `big-media-runtime` is the shared library that backs every BigLinux media
-application (`big-audio-player`, `big-video-player`, `big-audio-converter`,
-`big-video-converter`). It owns the mpv-driven playback core, the ffmpeg
-batch converter, the SQLite music library, Chromecast discovery and HTTP
+player (`big-audio-player`, `big-video-player`). It owns the mpv-driven
+playback core, the SQLite music library, Chromecast discovery and HTTP
 streaming, MPRIS D-Bus integration, settings persistence, and app-facing
 runtime adapters. The crate is a single
 library; per-app binaries live in sibling repositories that consume it.
@@ -27,9 +26,6 @@ big_media_runtime`. Modules under `src/`:
 - `cast/` — Cast-oriented helpers: `gpu/` detection (VAAPI/NVENC),
   `probe.rs` ffprobe wrappers, `transcode/` sessions, and optional
   `chromecast/network/avahi.rs` discovery behind the `chromecast` feature.
-- `converter/` — Batch converter: `queue/` job state machine, `ffmpeg/`
-  command builder, `subtitle.rs` extraction, `profiles/` presets,
-  `file_validator.rs`, `runtime_config.rs`.
 - `db/` — SQLite music library: `schema.rs`, `queries.rs`,
   `queries_advanced/`, `fts.rs`, `models.rs` (rusqlite).
 - `library/` — Library scanner + online metadata: `scanner.rs` (ignore
@@ -43,13 +39,14 @@ big_media_runtime`. Modules under `src/`:
 - `settings/` — Persistent key/value store: `store.rs`, `keys.rs`,
   `defaults.rs`, `dialog.rs`, `tests.rs`.
 - `shared/` — Temporary app-facing adapters while R4 completes:
-  `app_base.rs`, `audio_effects.rs`, `audio_effects_eq.rs`, `popovers.rs`,
+  `app_base.rs`, `audio_effects.rs`, `audio_effects_eq.rs`,
+  `converter_handoff.rs` (opens the converter GUIs with marked cuts), `popovers.rs`,
   `preference_rows.rs`, `shortcut_capture.rs`, `sleep_timer.rs`,
   `smartphone/`, `theming.rs`, `tooltip.rs`, `ui_helpers.rs`.
   Player appearance and audio preference pages live in
   `big-rust-components/crates/big-player-ui`.
 - `config.rs`, `error.rs`, `i18n.rs`, `recent.rs`, `resources.rs`,
-  `ui_labels.rs`, `fuzz_entry.rs` (feature `fuzzing`).
+  `fuzz_entry.rs` (feature `fuzzing`).
 
 Upstream dependency direction: `big-audio-effects`, `big-app-kit`,
 `big-relm4-components`, `big-media-components`, `big-mpv-render` (all from
@@ -63,13 +60,13 @@ Upstream dependency direction: `big-audio-effects`, `big-app-kit`,
                           v
    shared/ adapters + big-player-ui pages
                           |
-        +-----------------+------------------+
-        v                 v                  v
-    player/           converter/           cast/
-    mpv_backend        queue                transcode
-        |               | ffmpeg cmd        | ffprobe + ffmpeg
-        v               v                   v
-       mpv          ffmpeg subprocess   tiny_http server -> Chromecast
+        +-------------------------+
+        v                         v
+    player/                     cast/
+    mpv_backend                 transcode
+        |                         | ffprobe + ffmpeg
+        v                         v
+       mpv                  tiny_http server -> Chromecast
         |
         +--> mpris/ (D-Bus notifications)
         +--> recent.rs (XDG state)
@@ -78,10 +75,6 @@ Upstream dependency direction: `big-audio-effects`, `big-app-kit`,
    library/scanner --(metadata via lofty)--> db/
                     --(online lookup via big-os-kit/system curl)--> lastfm / mb / listenbrainz / lrclib
 ```
-
-Converter queue state machine (per job): `Queued -> Probing -> Running ->
-{Done, Failed, Cancelled}`. Transitions managed by
-`converter/queue/processing.rs`; observers are `async_channel` consumers.
 
 Cast session state: `Discovered -> Probed (codecs) -> Selected (direct |
 transcode) -> Streaming -> Stopped`. Transcoded paths spawn ffmpeg with
@@ -94,7 +87,7 @@ without linking CASTV2/TLS/protobuf.
 
 - GTK main loop drives Relm4 components; runtime exposes no separate tokio
   runtime.
-- `async-channel` (multi-producer, single-consumer) carries cast/converter
+- `async-channel` (multi-producer, single-consumer) carries cast
   progress events from worker threads to UI components.
 - `big_os_kit::http_client` calls run on dedicated `std::thread::spawn`
   workers (blocking system `curl` I/O); results posted back via
@@ -119,20 +112,16 @@ Every `Command::new` site + argv invariant:
 | `media/playlist_scan/display.rs:13,28,40` `gio` | `info` / `list` / restore — argv built from static strings + sanitized URI. |
 | `media/playlist_scan/scan.rs:68` `fd` | Patterns + `--type f --extension` static; root path canonicalized. |
 | `media/metadata_cache/probe.rs:132`, `media/metadata_cache/full_info.rs:23` `ffprobe` | `-v error -print_format json -show_format -show_streams <abs path>`. |
-| `converter/file_validator.rs:44` `ffmpeg` | Validation pass: `-v error -i <abs path> -f null -`. |
-| `converter/subtitle.rs:{90,170,279}` `ffmpeg`/`ffprobe` | Stream extraction; subtitle stream index is a `u32` from probe output. |
-| `converter/ffmpeg/command.rs:10` `ffmpeg` | Master encoder. Argv built by typed `FfmpegArgs` builder; never includes `-i` with shell metacharacters. |
-| `converter/queue/processing.rs:369` `ffmpeg` | Same builder reused by queue runner. |
-| `converter/queue/support.rs:58` `ffprobe` | Static flags. |
 | `cast/probe.rs:{26,53,68}`, `cast/transcode/probe.rs:29` `ffprobe` | Codec / format introspection. |
 | `cast/gpu/detect.rs:{10,49,73}` `vainfo`, `lspci`, `nvidia-smi` | Hardware capability probe. Static argv only; output parsed as text. |
 | `cast/gpu/ffmpeg.rs:{6,19}` `ffmpeg` | Encoder-list probes (`-encoders`, `-hwaccels`). Static argv. |
 | `cast/transcode/session.rs:{141,254}` `ffmpeg` | Live transcode. Output URL is `pipe:1` into the local `tiny_http` server. |
 | `cast/chromecast/network/avahi.rs:9` `avahi-browse` | `-r -t -p _googlecast._tcp` static argv. |
+| `shared/converter_handoff.rs` `big-{video,audio}-converter-gui` | Fixed program names; `--segments=START-END,...` from player state, then `--` and the file paths. |
 
 Invariants:
 - No `Command::new` ever sees a user-controlled binary name; all are
-  fixed-string system tools.
+  fixed-string system tools or the fixed converter GUI names.
 - Path arguments are always `&Path` / `&OsStr`, never formatted into a
   shell string.
 - Subtitle stream indices and probe-derived integers are validated before
@@ -141,7 +130,7 @@ Invariants:
 ## 6. Security Posture
 
 - `unsafe` is scoped: the mpv/EGL/GL FFI boundary plus a small set of libc
-  calls (`libc::statvfs` in `converter/queue/support.rs`, `libc::setlocale`
+  calls (`libc::setlocale`
   and `std::env::set_var` in `shared/app_base.rs`). The crate does **not**
   `#![forbid(unsafe_code)]`. Gated by `unsafe_op_in_unsafe_fn = "warn"` and
   `not_unsafe_ptr_arg_deref = "deny"` (clippy lints in `Cargo.toml`).
@@ -158,8 +147,6 @@ Invariants:
   serves only the active transcode session (token-gated path).
 - Fuzz feature (`fuzzing`) exposes `fuzz_entry::*` wrappers around
   parsers (subtitle, playlist, IPTV). Never enabled in release.
-- i18n strings round-tripped through gettext; round-trip test in
-  `tests/ui_labels_pot_roundtrip.rs`.
 
 ## 7. Testing Strategy
 
@@ -167,7 +154,6 @@ Invariants:
 - Property: `tests/filter_chain_props.rs` (proptest) for ffmpeg filter
   composition; gated by `fuzz` feature for slow cases.
 - Security regression: `tests/sql_injection.rs`.
-- POT round-trip: `tests/ui_labels_pot_roundtrip.rs`.
 - Fuzz: feature-gated `fuzz_entry` consumed by sibling `fuzz/` crates in
   the parent workspace.
 - Lints: `clippy::pedantic` (with documented allow-list in `Cargo.toml`)
@@ -181,8 +167,6 @@ Invariants:
 path dependency by:
 
 - `big-audio-player`, `big-video-player` (BigLinux media players)
-- `big-audio-converter`, `big-video-converter` (BigLinux converters)
-- `big-rust-components/crates/big-converter-ui` (shared converter UI tree)
 
 Each consuming app's PKGBUILD declares the system-level runtime deps that
 this crate's external processes require: `ffmpeg`, `mpv` (libmpv ≥ render

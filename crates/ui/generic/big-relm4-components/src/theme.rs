@@ -109,20 +109,6 @@ pub fn inject_palette_css(css: &str, provider_slot: &mut Option<gtk::CssProvider
     provider.load_from_string(css);
 }
 
-/// Load process-wide application CSS at application priority.
-pub fn load_app_css(css: &str) {
-    let provider = gtk::CssProvider::new();
-    provider.load_from_string(css);
-
-    if let Some(display) = gtk::gdk::Display::default() {
-        gtk::style_context_add_provider_for_display(
-            &display,
-            &provider,
-            gtk::STYLE_PROVIDER_PRIORITY_APPLICATION,
-        );
-    }
-}
-
 /// Run `on_dark_changed(is_dark)` whenever the libadwaita dark state flips.
 ///
 /// Listens on the process-wide [`adw::StyleManager`] `dark` property, so it

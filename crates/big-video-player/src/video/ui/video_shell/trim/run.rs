@@ -1,39 +1,24 @@
 //! Shell-side trim glue (`impl VideoShell`): enter/exit trim mode, mark cuts at
-//! the live mpv position, paint the cuts on the transport seek bar, and drive the
-//! export through the shared conversion queue. Also hosts the two trim dialogs:
-//! the manual segment time-edit form and the re-encode settings dialog.
+//! the live mpv position, paint the cuts on the transport seek bar, and hand them
+//! to the video converter. Also hosts the manual segment time-edit form.
 
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 
 use adw::prelude::*;
 use gtk::glib;
-use relm4::{ComponentController, ComponentSender};
+use relm4::ComponentController;
 
-use big_media_components::time::playback_time;
-use big_media_runtime::converter::ffmpeg::progress::FfmpegProgressSnapshot;
-use big_media_runtime::converter::queue::{QueueMessage, SegmentOutputMode};
-use big_quick_export::export::{
-    QuickExportChoice, build_single_export_queue, validate_export_segments, verify_published_output,
-};
-use big_relm4_components::input::dropdown_row::{BigDropdownRow, BigDropdownRowSpec};
 use big_relm4_components::input::inline_spin_set::{BigInlineSpinFieldSpec, BigInlineSpinSet};
 use big_relm4_components::input::preference_cards::BigSpinRange;
-use big_relm4_components::input::slider_row::{BigSliderRow, BigSliderRowSpec};
-use big_relm4_components::layout::advanced_disclosure::advanced_disclosure;
 use big_relm4_components::layout::dialog_footer::{BigDialogFooter, BigDialogFooterSpec};
 use big_relm4_components::layout::dialog_page::BigDialogPage;
-use big_relm4_components::layout::preferences::BigPreferencesGroupSpec;
-use big_relm4_components::layout::preferences_dialog::{
-    BigPreferencesDialog, BigPreferencesDialogSpec,
-};
-use big_relm4_components::list::progress_row::BigProgressRowSpec;
 
 use crate::i18n::i18n;
+use crate::shared::converter_handoff;
 use crate::video::ui::video_controls_bar::VideoControlsBarInput;
 
-use super::super::{VideoShell, VideoShellInput};
+use super::super::VideoShell;
 use super::bar::{VideoTrimBarInput, VideoTrimBarOutput};
-use super::state::CutMode;
 
 impl VideoShell {
     /// Enter the interactive trim mode (no-op without a local file playing).
@@ -42,7 +27,6 @@ impl VideoShell {
             self.notify(&i18n("Open a local video to cut it"));
             return;
         }
-        *self.trim_filters.borrow_mut() = self.current_video_filters();
         self.trim_active.set(true);
         // Pin the OSD so the transport (scrub/play) stays available while cutting
         // (the OSD shares this same flag) and turn the seek bar into the cut
@@ -163,7 +147,6 @@ impl VideoShell {
         &mut self,
         out: VideoTrimBarOutput,
         root: Option<&adw::ApplicationWindow>,
-        sender: &ComponentSender<Self>,
     ) {
         match out {
             VideoTrimBarOutput::SegmentsChanged { segments, pending } => {
@@ -190,113 +173,11 @@ impl VideoShell {
                     self.show_segment_edit_dialog(id, start, end, root);
                 }
             }
-            VideoTrimBarOutput::OpenEncodeConfig => {
-                if let Some(root) = root {
-                    self.show_encode_config_dialog(root);
-                }
-            }
             VideoTrimBarOutput::Exit => self.exit_trim_mode(),
-            VideoTrimBarOutput::ExportRequested { ranges, mode } => {
-                self.start_trim_export(&ranges, mode, sender);
+            VideoTrimBarOutput::ExportRequested { ranges } => {
+                self.open_in_converter(converter_handoff::VIDEO_CONVERTER, &ranges);
             }
         }
-    }
-
-    /// Build + start the clip export, show the progress page, and stream queue
-    /// messages into it until completion.
-    fn start_trim_export(
-        &mut self,
-        ranges: &[(f64, f64)],
-        mode: CutMode,
-        sender: &ComponentSender<Self>,
-    ) {
-        let Some(input) = self.current_local_input() else {
-            self.notify(&i18n("Open a local video to cut it"));
-            return;
-        };
-        if let Err(error) = validate_export_segments(ranges) {
-            self.notify(&format!("{}: {error}", i18n("Export failed")));
-            return;
-        }
-        let output_dir = input
-            .parent()
-            .map_or_else(|| PathBuf::from("."), Path::to_path_buf);
-
-        let choice = match mode {
-            CutMode::Fast => QuickExportChoice::keep_format(&input),
-            // Precise: re-encode with the SAME container/codec/quality options the
-            // full converter offers (shared `EncodeOptions`) plus the editor
-            // colour adjustments from the settings dialog.
-            CutMode::Precise => self
-                .trim_encode
-                .choice()
-                .to_quick_choice(self.trim_filters.borrow().clone()),
-        };
-
-        let (mut queue, id, output) =
-            build_single_export_queue(input.clone(), output_dir, &choice, ranges);
-        if output.as_os_str().is_empty() {
-            self.notify(&i18n("Export failed"));
-            return;
-        }
-        if self.trim_split.get() {
-            queue.set_pending_segment_mode(SegmentOutputMode::Split);
-        }
-
-        // Slim strip: start indeterminate, reveal it above the transport. The
-        // video keeps playing behind it.
-        let title = i18n("Generating cut…");
-        self.trim_progress_row
-            .update(&BigProgressRowSpec::indeterminate(
-                title.clone(),
-                String::new(),
-            ));
-        self.trim_progress_revealer.set_reveal_child(true);
-        self.trim.emit(VideoTrimBarInput::SetBusy(true));
-
-        queue.start();
-        let receiver = queue.receiver().clone();
-        *self.trim_queue.borrow_mut() = Some(queue);
-
-        // Drive the strip directly (local future = main thread; the row holds GTK
-        // widgets). No per-file rows / command log — just the live cut progress.
-        let row = self.trim_progress_row.clone();
-        let shell = sender.input_sender().clone();
-        // Split mode publishes one file per cut; a joined export has one output.
-        let joined_output = (!self.trim_split.get()).then_some(output);
-        glib::spawn_future_local(async move {
-            let mut outcome =
-                TrimExportOutcome::Failed(i18n("The export ended without confirming completion"));
-            while let Ok(msg) = receiver.recv().await {
-                match msg {
-                    QueueMessage::Progress {
-                        progress_snapshot, ..
-                    } => {
-                        let (fraction, status) = trim_progress_status(&progress_snapshot);
-                        row.update(&BigProgressRowSpec::determinate(
-                            title.clone(),
-                            fraction,
-                            status,
-                        ));
-                    }
-                    QueueMessage::Done { entry_id } if entry_id == id => {
-                        outcome = match joined_output.as_deref().map(verify_published_output) {
-                            Some(Err(error)) => TrimExportOutcome::Failed(error),
-                            _ => TrimExportOutcome::Ok,
-                        };
-                    }
-                    QueueMessage::Failed { entry_id, error } if entry_id == id => {
-                        outcome = TrimExportOutcome::Failed(error);
-                    }
-                    QueueMessage::Cancelled { entry_id } if entry_id == id => {
-                        outcome = TrimExportOutcome::Cancelled;
-                    }
-                    QueueMessage::AllDone => break,
-                    _ => {}
-                }
-            }
-            let _ = shell.send(VideoShellInput::TrimExportFinished(outcome));
-        });
     }
 
     /// Manual time-edit form for one cut: two hundredth-second spin rows seeded
@@ -389,173 +270,6 @@ impl VideoShell {
         dialog.present(Some(root));
     }
 
-    /// Re-encode settings dialog (the gear): container/codec/quality (shared with
-    /// the converter) + colour adjustments (editor sliders) + output layout.
-    /// Built once and reused (the shared `EncodeOptions` group stays parented).
-    fn show_encode_config_dialog(&self, root: &adw::ApplicationWindow) {
-        if let Some(window) = self.trim_encode_dialog.borrow().as_ref() {
-            window.present();
-            return;
-        }
-
-        let dialog = BigPreferencesDialog::new(
-            &BigPreferencesDialogSpec::new(i18n("Clip export settings")).size(560, 656),
-        );
-        dialog.action_bar().set_visible(false);
-        dialog.add_group(self.trim_encode.group());
-
-        // Colour adjustments (imported editor slider component) → VideoFilters.
-        let adjust = BigPreferencesGroupSpec::untitled().build();
-        let adjust_row = advanced_disclosure(
-            &i18n("Image adjustments"),
-            &i18n("Brightness, contrast, color intensity, and color balance"),
-            false,
-        );
-        let current_filters = self.trim_filters.borrow().clone();
-        let (brightness_row, brightness_scale, brightness_reset) =
-            BigSliderRow::new(BigSliderRowSpec::new(
-                i18n("Brightness"),
-                -1.0,
-                1.0,
-                current_filters.brightness,
-                0.05,
-                i18n("Reset"),
-            ))
-            .into_parts();
-        let (contrast_row, contrast_scale, contrast_reset) =
-            BigSliderRow::new(BigSliderRowSpec::new(
-                i18n("Contrast"),
-                0.0,
-                2.0,
-                current_filters.contrast,
-                0.05,
-                i18n("Reset"),
-            ))
-            .into_parts();
-        let (saturation_row, saturation_scale, saturation_reset) =
-            BigSliderRow::new(BigSliderRowSpec::new(
-                i18n("Color intensity"),
-                0.0,
-                2.0,
-                current_filters.saturation,
-                0.05,
-                i18n("Reset"),
-            ))
-            .into_parts();
-        let (hue_row, hue_scale, hue_reset) = BigSliderRow::new(BigSliderRowSpec::new(
-            i18n("Color balance"),
-            -1.0,
-            1.0,
-            current_filters.hue,
-            0.05,
-            i18n("Reset"),
-        ))
-        .into_parts();
-        adjust_row.add_row(&brightness_row);
-        adjust_row.add_row(&contrast_row);
-        adjust_row.add_row(&saturation_row);
-        adjust_row.add_row(&hue_row);
-        adjust.add(&adjust_row);
-        dialog.add_group(&adjust);
-
-        let filters = self.trim_filters.clone();
-        brightness_scale.connect_value_changed(glib::clone!(
-            #[strong]
-            filters,
-            move |s| filters.borrow_mut().brightness = s.value()
-        ));
-        contrast_scale.connect_value_changed(glib::clone!(
-            #[strong]
-            filters,
-            move |s| filters.borrow_mut().contrast = s.value()
-        ));
-        saturation_scale.connect_value_changed(glib::clone!(
-            #[strong]
-            filters,
-            move |s| filters.borrow_mut().saturation = s.value()
-        ));
-        hue_scale.connect_value_changed(glib::clone!(
-            #[strong]
-            filters,
-            move |s| filters.borrow_mut().hue = s.value()
-        ));
-        brightness_reset.connect_clicked(glib::clone!(
-            #[weak]
-            brightness_scale,
-            move |_| brightness_scale.set_value(0.0)
-        ));
-        contrast_reset.connect_clicked(glib::clone!(
-            #[weak]
-            contrast_scale,
-            move |_| contrast_scale.set_value(1.0)
-        ));
-        saturation_reset.connect_clicked(glib::clone!(
-            #[weak]
-            saturation_scale,
-            move |_| saturation_scale.set_value(1.0)
-        ));
-        hue_reset.connect_clicked(glib::clone!(
-            #[weak]
-            hue_scale,
-            move |_| hue_scale.set_value(0.0)
-        ));
-
-        // Output layout: join the cuts into one file or save each separately.
-        let output = BigPreferencesGroupSpec::new(i18n("Output files")).build();
-        let output_row = BigDropdownRow::new(
-            BigDropdownRowSpec::new(
-                i18n("When there are multiple cuts"),
-                [i18n("Join into one file"), i18n("Save each cut separately")],
-            )
-            .subtitle(i18n(
-                "One file is easier to share; separate files are easier to edit later",
-            ))
-            .selected(u32::from(self.trim_split.get())),
-        );
-        let split = self.trim_split.clone();
-        output_row
-            .dropdown()
-            .connect_selected_notify(move |dropdown| split.set(dropdown.selected() == 1));
-        output.add(output_row.root());
-        dialog.add_group(&output);
-
-        let window = dialog.window().clone();
-        // Hide (not destroy) on close so the shared group stays parented + the
-        // settings persist for the next open.
-        window.connect_close_request(|window| {
-            window.set_visible(false);
-            glib::Propagation::Stop
-        });
-        *self.trim_encode_dialog.borrow_mut() = Some(window.clone());
-        dialog.present(root);
-    }
-
-    /// Finish an export: hide the strip, re-enable the bar, drop the queue,
-    /// toast the outcome.
-    pub(in crate::video::ui::video_shell) fn finish_trim_export(
-        &mut self,
-        outcome: TrimExportOutcome,
-    ) {
-        self.trim_progress_revealer.set_reveal_child(false);
-        self.trim.emit(VideoTrimBarInput::SetBusy(false));
-        *self.trim_queue.borrow_mut() = None;
-        match outcome {
-            TrimExportOutcome::Ok => self.notify(&i18n("Clip exported")),
-            TrimExportOutcome::Cancelled => self.notify(&i18n("Export cancelled")),
-            TrimExportOutcome::Failed(error) => {
-                self.notify(&format!("{}: {error}", i18n("Export failed")));
-            }
-        }
-    }
-
-    /// Cancel any in-flight export (used on teardown so a closing window does not
-    /// leave an ffmpeg worker running).
-    pub(in crate::video::ui::video_shell) fn cancel_trim_export(&self) {
-        if let Some(queue) = self.trim_queue.borrow().as_ref() {
-            queue.cancel();
-        }
-    }
-
     /// The current local (non-stream) input path, or `None`.
     fn current_local_input(&self) -> Option<PathBuf> {
         let path = self
@@ -584,21 +298,6 @@ impl VideoShell {
     }
 }
 
-/// Build the slim strip's `(fraction, status)` from a queue progress sample:
-/// `42% · 1.8× · ETA 0:12`. Speed/ETA are dropped when unknown (e.g. the
-/// near-instant stream-copy of the fast path).
-fn trim_progress_status(progress: &FfmpegProgressSnapshot) -> (f64, String) {
-    let fraction = (progress.percent / 100.0).clamp(0.0, 1.0);
-    let mut parts = vec![format!("{:.0}%", progress.percent)];
-    if progress.speed > 0.0 {
-        parts.push(format!("{:.1}×", progress.speed));
-    }
-    if progress.eta_secs > 0.0 {
-        parts.push(format!("ETA {}", playback_time(progress.eta_secs)));
-    }
-    (fraction, parts.join(" · "))
-}
-
 /// Inset the video layers (GraphicsOffload / GLArea / software Picture) of
 /// `overlay` by `top`/`bottom` margins so the full frame shows clear of the
 /// pinned trim bars; `(0, 0)` restores edge-to-edge. The OSD bars + welcome /
@@ -616,16 +315,4 @@ fn apply_video_inset(overlay: &gtk::Overlay, top: i32, bottom: i32) {
         }
         child = next;
     }
-}
-
-/// Terminal state of a clip export, carried back to the shell. Public because it
-/// travels in the public [`VideoShellInput`] enum.
-#[derive(Debug)]
-pub enum TrimExportOutcome {
-    /// Completed successfully.
-    Ok,
-    /// The user cancelled.
-    Cancelled,
-    /// FFmpeg / queue failed with this message.
-    Failed(String),
 }

@@ -278,12 +278,6 @@ exclude_re = [
     # mutates widgets. The all-widget boolean contract and fill-plan behavior
     # are display-free tested; stale weak refs are covered separately.
     'crates/big-audio-player/src/audio/ui/library_tag_editor\.rs:.*delete ! in TagEditorHandle::apply_musicbrainz_result',
-    # Fire-and-forget export and daemon cancel are live process/socket
-    # boundaries. Queue/profile construction, protocol frame read/write, error
-    # handling, and job spec serialization are unit-tested without launching
-    # FFmpeg or requiring big-convertd to be running.
-    'crates/big-converter-ui/src/export\.rs:.*replace run_single_export_blocking -> Result<PathBuf, String> with Ok\(Default::default\(\)\)',
-    'cancel_conversion',
     # Thin binary entrypoint delegates to the tested host-module launcher. Unit
     # mutation of `main` itself would only prove that tests do not exec the
     # process entrypoint.

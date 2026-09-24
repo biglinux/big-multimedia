@@ -167,7 +167,7 @@ impl AudioShell {
                 self.settings
                     .put_string(keys::PLAYLIST_COLUMN_WIDTHS, &spec);
             }
-            PlaylistPanelOutput::ConvertTracks(paths) => converter_launcher::launch(&paths),
+            PlaylistPanelOutput::ConvertTracks(paths) => self.launch_converter(&paths, &[]),
             PlaylistPanelOutput::RevealInFileManager(path) => {
                 big_app_kit::desktop::reveal_in_file_manager(Path::new(&path));
             }

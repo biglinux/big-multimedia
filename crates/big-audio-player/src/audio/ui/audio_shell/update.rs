@@ -73,7 +73,7 @@ impl AudioShell {
                 }
                 // Drop releases bounded admission even when the session was revoked.
             }
-            AudioShellInput::Trim(out) => self.handle_trim(out, &sender),
+            AudioShellInput::Trim(out) => self.handle_trim(out),
             AudioShellInput::Files(out) => self.handle_files(out, &sender),
             AudioShellInput::Radio(out) => self.handle_radio(out, &sender),
             AudioShellInput::Lyrics(LyricsPanelOutput::ExpandToggled(only_lyrics)) => {
@@ -304,9 +304,8 @@ impl AudioShell {
                 sender.input(AudioShellInput::RefreshPlaylists);
             }
             AudioShellInput::ShowSleepTimer => self.show_sleep_timer(&sender),
-            AudioShellInput::ConvertTrack(codec) => self.convert_track(&codec),
+            AudioShellInput::ConvertTrack => self.open_in_converter(&[]),
             AudioShellInput::ShowTrimExport => self.enter_trim_mode(),
-            AudioShellInput::TrimExportFinished(result) => self.finish_trim_export(result),
             AudioShellInput::SleepTimerStart { minutes, action } => {
                 self.start_sleep_timer(sleep_timer_seconds(minutes), action, &sender);
             }

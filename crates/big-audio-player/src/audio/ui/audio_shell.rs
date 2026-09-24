@@ -33,7 +33,6 @@ use adw::prelude::*;
 use gtk::{gdk, gio, glib};
 use relm4::{Component, ComponentController, ComponentParts, ComponentSender, Controller};
 
-use crate::audio::converter_launcher;
 use crate::audio::library_grouping::{AgeFilter, LibraryGrouping};
 use crate::audio::library_query;
 use crate::audio::library_scan_engine;
@@ -55,6 +54,7 @@ use crate::i18n::i18n;
 use crate::player::mpv_backend::{AudioCacheProfile, MpvBackend, PlayerEvent};
 use crate::player::queue::{PlayQueue, RepeatMode};
 use crate::settings::{Settings, keys};
+use crate::shared::converter_handoff;
 use crate::shared::spawn::spawn_db_query;
 use big_app_kit::file_dialogs::FilePicker;
 use big_app_kit::mpris::{

@@ -3,8 +3,8 @@
 
 //! Shared audio playback bar for BigLinux media apps.
 //!
-//! The audio transport differs from [`crate::video::transport::BigVideoTransport`]:
-//! it carries hover-driven volume/speed/voice controls, shuffle/repeat toggles,
+//! Unlike a video transport, the audio one
+//! carries hover-driven volume/speed/voice controls, shuffle/repeat toggles,
 //! a lyrics toggle and a playlist button, plus a status label and a blurred
 //! album-art background — and it has no fullscreen or frame-step controls.
 //!

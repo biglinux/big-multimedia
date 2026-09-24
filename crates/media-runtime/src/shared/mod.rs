@@ -1,4 +1,4 @@
-//! Cross-cutting helpers consumed by audio/, video/, and converter/.
+//! Cross-cutting helpers consumed by the audio and video players.
 
 /// Shared application helpers (file path extraction, color scheme, about dialog).
 pub mod app_base;
@@ -7,6 +7,8 @@ pub mod audio_effects;
 mod audio_effects_eq;
 /// Persist `gtk::ColumnView` column widths to settings.
 pub mod column_persist;
+/// Hand files (and marked cuts) to the external converter GUIs.
+pub mod converter_handoff;
 /// `AdwAlertDialog` builders (content / error / confirm).
 pub mod dialogs;
 /// Illustration image builders backed by GResource icons.

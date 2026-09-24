@@ -23,7 +23,6 @@ big-media-runtime
 big-mpv-render
 big-os-kit
 big-player-ui
-big-quick-export
 big-relm4-components
 big-testkit
 big-video-player

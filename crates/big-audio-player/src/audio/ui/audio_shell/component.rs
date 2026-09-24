@@ -484,20 +484,19 @@ impl Component for AudioShell {
             let _ = playlists_sender.send(AudioShellInput::ShowManagePlaylists);
         });
 
+        // Cutting and converting happen in the audio converter GUI; grey both
+        // out when it is not installed.
+        let converter = converter_handoff::is_installed(converter_handoff::AUDIO_CONVERTER);
         let trim_sender = sender.input_sender().clone();
         big_app_kit::desktop::install_action(&win_actions, "trim-export", move || {
             let _ = trim_sender.send(AudioShellInput::ShowTrimExport);
-        });
-        for (name, codec) in [
-            ("convert-mp3", "mp3"),
-            ("convert-m4a", "aac"),
-            ("convert-flac", "flac"),
-        ] {
-            let convert_sender = sender.input_sender().clone();
-            big_app_kit::desktop::install_action(&win_actions, name, move || {
-                let _ = convert_sender.send(AudioShellInput::ConvertTrack(codec.to_string()));
-            });
-        }
+        })
+        .set_enabled(converter);
+        let convert_sender = sender.input_sender().clone();
+        big_app_kit::desktop::install_action(&win_actions, "convert", move || {
+            let _ = convert_sender.send(AudioShellInput::ConvertTrack);
+        })
+        .set_enabled(converter);
 
         // Engine: DB + mpv (built once at init). The event loop forwards
         // PlayerEvents into the shell.

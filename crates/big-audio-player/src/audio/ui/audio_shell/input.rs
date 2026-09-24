@@ -209,13 +209,10 @@ pub enum AudioShellInput {
         /// `(id, name)` of existing playlists.
         playlists: Vec<(i64, String)>,
     },
-    /// Convert the current track to `codec` (mp3/aac/flac) beside it — runs off
-    /// the main loop via the in-process quick-export engine.
-    ConvertTrack(String),
+    /// Open the current track in the audio converter.
+    ConvertTrack,
     /// Enter visual Trim & Export mode for the current track.
     ShowTrimExport,
-    /// Visual trim export finished on a worker thread.
-    TrimExportFinished(Result<PathBuf, String>),
 }
 
 thread_local! {

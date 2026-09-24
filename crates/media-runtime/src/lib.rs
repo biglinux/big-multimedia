@@ -5,14 +5,9 @@ pub mod cast;
 /// Compile-time configuration constants (paths, domain names).
 /// Moved to the GTK-free `big-media-data` crate; re-exported for compat.
 pub use big_media_data::config;
-/// Batch video converter with GPU acceleration.
-pub mod converter;
 /// SQLite database layer for the music library (in `big-media-data`).
 #[cfg(feature = "audio")]
 pub use big_media_data::db;
-/// Media editor UI components (video + audio), reusable across media apps.
-#[cfg(feature = "video")]
-pub mod editor;
 /// Unified `Error` enum + crate-wide `Result<T>` alias (in `big-media-data`).
 pub use big_media_data::error;
 // Re-export at crate root so consumers can write
@@ -46,7 +41,3 @@ pub mod settings;
 /// Code shared between audio and video players.
 #[cfg(feature = "ui-core")]
 pub mod shared;
-/// Locale-aware UI label arrays shared by converter front-ends.
-/// Ungated: it needs nothing but `i18n`, and `big-quick-export` depends on it
-/// without wanting the GTK stack.
-pub mod ui_labels;

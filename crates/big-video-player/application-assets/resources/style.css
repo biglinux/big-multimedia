@@ -96,15 +96,6 @@ menubutton.osd-btn {
   padding: 4px 14px 0 14px;
 }
 
-/* Slim export-progress strip docked directly above the transport (the video
-   keeps playing behind it). Theme-adaptive translucent surface so it reads as
-   an extension of the bottom controls, not a separate dark card. */
-.trim-progress {
-  padding: 6px 16px;
-  background: alpha(@window_bg_color, 0.92);
-  border-top: 1px solid alpha(@borders, 0.4);
-}
-
 /* Playlist rows — use named colors for theme integration */
 .playlist-row {
   padding: 6px 12px;

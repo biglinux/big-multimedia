@@ -21,7 +21,6 @@ SOURCES=(
   crates/media-runtime/src
   crates/big-video-player/src
   crates/big-audio-player/src
-  crates/big-quick-export/src
   crates/ui/generic/big-relm4-components/src
   crates/ui/media/big-media-components/src
   crates/ui/media/big-player-ui/src

@@ -10,12 +10,6 @@ impl MpvBackend {
         });
     }
 
-    pub fn disable_subtitles(&self) {
-        self.with_mpv(|m| {
-            let _ = m.set_property("sid", false);
-        });
-    }
-
     pub fn add_subtitle_file(&self, path: &str) {
         self.with_mpv(|m| {
             let _ = m.command("sub-add", &[path, "auto"]);

@@ -164,20 +164,6 @@ impl BigIllustrationCard {
         Self::new_optional(spec, Some(control.as_ref()))
     }
 
-    /// Creates a new with extra.
-    #[must_use]
-    pub fn new_with_extra(
-        spec: BigIllustrationCardSpec,
-        control: &impl IsA<gtk::Widget>,
-        extra: Option<&impl IsA<gtk::Widget>>,
-    ) -> Self {
-        let card = Self::new_optional(spec, Some(control.as_ref()));
-        if let Some(extra) = extra {
-            card.add_row(&extra_box(extra, DEFAULT_INNER_MARGIN));
-        }
-        card
-    }
-
     /// Creates a new optional.
     #[must_use]
     pub fn new_optional(spec: BigIllustrationCardSpec, control: Option<&gtk::Widget>) -> Self {
@@ -403,15 +389,6 @@ fn picture_slot(width: i32, height: i32) -> gtk::Box {
     slot.set_vexpand(false);
     slot.set_overflow(gtk::Overflow::Hidden);
     slot
-}
-
-fn extra_box(extra: &impl IsA<gtk::Widget>, inner_margin: i32) -> gtk::Box {
-    let box_ = gtk::Box::new(gtk::Orientation::Vertical, 4);
-    box_.set_margin_start(inner_margin);
-    box_.set_margin_end(inner_margin);
-    box_.set_margin_bottom(inner_margin);
-    box_.append(extra.as_ref());
-    box_
 }
 
 #[cfg(test)]

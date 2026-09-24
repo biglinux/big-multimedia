@@ -298,26 +298,11 @@ impl VideoShell {
         self.toast_overlay.add_toast(adw::Toast::new(message));
     }
 
-    /// Launch big-video-converter with the chosen files (it accepts files via
-    /// `HANDLES_OPEN`, so an already-running instance enqueues them).
+    /// Queue the chosen files in the video converter (an already-running
+    /// instance enqueues them).
     fn send_to_converter(&self, paths: &[String]) {
-        if paths.is_empty() {
-            return;
-        }
-        // argv array (no shell); paths are existing local files from the scan.
-        // `--` keeps a name starting with `-` from reading as an option.
-        let spawned = big_app_kit::subprocess::BigSubprocessSpec::builder()
-            // The GUI: plain `big-video-converter` is the headless CLI, which
-            // would start converting the first file with default settings.
-            .program("big-video-converter-gui")
-            .arg("--")
-            .args(paths.iter().cloned())
-            .build()
-            .spawn_detached();
-        if spawned.is_ok() {
-            self.toast(&i18n("Opening in converter…"));
-        } else {
-            self.toast(&i18n("Could not launch the converter"));
+        if !paths.is_empty() {
+            self.launch_converter(converter_handoff::VIDEO_CONVERTER, paths, &[]);
         }
     }
 

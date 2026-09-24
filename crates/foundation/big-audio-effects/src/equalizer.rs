@@ -110,12 +110,6 @@ pub const VOICE_EQ_PRESET_BANDS: [[f32; EQ_BAND_COUNT]; 10] = [
     [0.0; EQ_BAND_COUNT],
 ];
 
-/// FFmpeg `equalizer` filter bandwidth in octaves.
-///
-/// Matches the slope users hear in the mpv-based players, so converter
-/// output renders the same EQ curve as live playback.
-pub const CONVERTER_EQ_BANDWIDTH_OCTAVES: f64 = 1.5;
-
 /// Resolve a preset identifier to its index in [`EQ_PRESET_IDS`].
 ///
 /// Unknown identifiers fall back to index `0` (the flat preset) so

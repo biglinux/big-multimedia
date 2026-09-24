@@ -8,10 +8,6 @@ pub mod runtime {
     pub const GETTEXT_PACKAGE: &str = "big-media-runtime";
     pub const SYSTEM_DATA_DIR: &str = "/usr/share/big-media-runtime";
     pub const SHADERS_DIR: &str = "/usr/share/big-media-runtime/shaders";
-    pub const CONVERTER_CONFIG_PATH: &str = "/usr/share/big-media-runtime/converter-runtime.toml";
-    pub const CONVERTER_CONFIG_RELATIVE: &str = "big-media-runtime/converter-runtime.toml";
-    pub const PROFILES_DIR: &str = "/usr/share/big-media-runtime/profiles";
-    pub const USER_PROFILES_RELATIVE: &str = "big-media-runtime/profiles";
 }
 
 pub mod video {

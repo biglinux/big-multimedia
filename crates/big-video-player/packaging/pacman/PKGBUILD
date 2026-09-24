@@ -7,8 +7,8 @@
 # in place against the workspace root (four levels up from this file).
 
 pkgname=big-video-player
-pkgver=0.1.0
-pkgrel=23
+pkgver=$(date +%y.%m.%d)
+pkgrel=$(date +%H%M)
 pkgdesc='Hardware-accelerated video player for BigLinux'
 arch=('x86_64')
 url='https://github.com/biglinux/big-multimedia'
@@ -25,6 +25,10 @@ depends=('gtk4' 'libadwaita' 'mpv' 'ffmpeg' 'libpulse' 'avahi' 'bubblewrap')
 replaces=('big-player-video' 'bigvideo')
 conflicts=('big-player-video' 'bigvideo')
 provides=('bigvideo=0.1.0-7')
+# Cutting, converting and extracting audio hand the file to the BigLinux
+# converter GUIs; without them those menu entries are greyed out.
+optdepends=('big-video-converter: cut and convert videos'
+            'big-audio-converter: extract audio from videos')
 # cmake builds aws-lc-sys (rustls backend pulled in by rust_cast for Chromecast).
 makedepends=('cargo' 'pkgconf' 'gettext' 'cmake')
 

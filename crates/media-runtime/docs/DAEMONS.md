@@ -8,7 +8,6 @@ control, progress parsing, cancellation, retry, and recovery.
 
 | Daemon | Owner | Responsibility | Reattach |
 |---|---|---|---|
-| `big-convertd` | `big-media-runtime` | conversion, transcode, extract, queue, progress, output collision, cleanup | required |
 | `bigcam-recordd` | `bigcam` or runtime adapter | camera/screen/microphone recording state and file finalization | required |
 | `big-terminal-ptyd` | `big-terminal` | shell and SSH PTY sessions | required |
 | `big-fileopsd` | `big-filemanager` | copy, move, delete, trash, remote file operations | required |
@@ -27,9 +26,8 @@ control, progress parsing, cancellation, retry, and recovery.
 
 ## Media Runtime Responsibilities
 
-- `big-convertd` is the single owner of converter queue state.
-- FFmpeg progress parsing has one canonical implementation.
-- Output path collision handling has one canonical implementation.
+- Conversion is owned by the external converter GUIs; players only hand files
+  and marked cuts to them (`shared::converter_handoff`).
 - mpv/GStreamer/FFmpeg commands that can block run outside the GTK main loop.
 - Camera source descriptors shared with `bigcam` use one canonical data model.
 
@@ -45,7 +43,6 @@ control, progress parsing, cancellation, retry, and recovery.
 
 ## Acceptance
 
-- Converter UI submits to `big-convertd` and renders snapshots/events.
 - Reopen after UI close lists previous in-progress and completed jobs.
 - Crash/restart tests cover daemon journal recovery.
 - Deny-path tests cover invalid frames, unsafe output paths, cancellation races,

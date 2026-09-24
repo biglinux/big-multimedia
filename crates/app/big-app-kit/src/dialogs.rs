@@ -32,38 +32,6 @@ pub fn content_dialog(heading: &str, close_label: &str) -> (adw::AlertDialog, gt
     (dialog, content)
 }
 
-/// Build a two-button dialog (cancel + custom action) with an empty
-/// content box. `destructive = true` styles the action button in red.
-pub fn content_action_dialog(
-    heading: &str,
-    cancel_label: &str,
-    confirm_id: &str,
-    confirm_label: &str,
-    destructive: bool,
-) -> (adw::AlertDialog, gtk::Box) {
-    let dialog = adw::AlertDialog::builder()
-        .heading(heading)
-        .close_response("cancel")
-        .default_response(confirm_id)
-        .build();
-    dialog.update_property(&[gtk::accessible::Property::Label(heading)]);
-    dialog.add_response("cancel", cancel_label);
-    dialog.add_response(confirm_id, confirm_label);
-    dialog.set_response_appearance(
-        confirm_id,
-        if destructive {
-            adw::ResponseAppearance::Destructive
-        } else {
-            adw::ResponseAppearance::Suggested
-        },
-    );
-    let content = gtk::Box::new(gtk::Orientation::Vertical, 12);
-    content.set_margin_start(16);
-    content.set_margin_end(16);
-    dialog.set_extra_child(Some(&content));
-    (dialog, content)
-}
-
 /// Build a one-button error dialog with the close button as both
 /// default and close response.
 pub fn error_dialog(heading: &str, body: &str, close_label: &str) -> adw::AlertDialog {

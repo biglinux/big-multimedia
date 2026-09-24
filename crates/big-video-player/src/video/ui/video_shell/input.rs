@@ -2,7 +2,7 @@ use super::*;
 
 use std::sync::atomic::{AtomicU64, Ordering};
 
-use super::trim::{TrimExportOutcome, VideoTrimBarOutput};
+use super::trim::VideoTrimBarOutput;
 
 #[derive(Debug)]
 pub enum VideoShellInput {
@@ -96,25 +96,19 @@ pub enum VideoShellInput {
     ToggleFullscreen,
     /// Activity transition from a pane host such as the shell desktop.
     SetPaneActivity(big_relm4_components::pane::PaneActivity),
-    /// Extract the current file's audio to `codec` (mp3/m4a/flac) beside it —
-    /// runs off the main loop via the in-process quick-export engine.
-    ExtractAudio(String),
-    /// Re-encode the current file into `container` (mp4/mkv/webm) beside it —
-    /// the simple one-file convert; runs off the main loop.
-    QuickConvert(String),
-    /// Enter the interactive trim mode (timeline + multi-cut export).
+    /// Open the current file in the audio converter to keep only its audio.
+    ExtractAudio,
+    /// Open the current file in the video converter.
+    Convert,
+    /// Enter the interactive trim mode (mark cuts, hand them to the converter).
     EnterTrimMode,
     /// Leave the interactive trim mode.
     ExitTrimMode,
     /// A typed effect emitted by the trim bar (seek preview / export / exit).
     TrimBar(VideoTrimBarOutput),
-    /// Cancel the in-flight clip export (slim progress strip's Cancel button).
-    TrimCancelExport,
     /// Mark a cut point at the live playback position (keyboard `M`). Two marks
     /// (in any order) make a cut.
     TrimMark,
-    /// A clip export finished (success / cancellation / failure).
-    TrimExportFinished(TrimExportOutcome),
     /// A command from the MPRIS2 D-Bus service (media keys, desktop widgets).
     Mpris(big_app_kit::mpris::MprisCommand),
 }

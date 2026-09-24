@@ -10,7 +10,6 @@ pub use big_player_ui::browser_node;
 mod account_editor;
 mod account_security;
 mod column_builders;
-mod converter_launcher;
 pub mod keybindings;
 pub mod library_grouping;
 /// Pure library node → track resolution (survives the window/ cutover).

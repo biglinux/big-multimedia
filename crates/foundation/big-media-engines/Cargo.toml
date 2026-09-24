@@ -5,12 +5,12 @@ publish = false  # consumed by sibling apps via path dep, not crates.io (see ARC
 edition.workspace = true
 rust-version.workspace = true
 license.workspace = true
-description = "Display-free media helpers (FFmpeg output, file types, output naming, play queue) for BigLinux apps"
+description = "Display-free media helpers (file types, play queue) for BigLinux apps"
 repository.workspace = true
 homepage.workspace = true
 authors.workspace = true
 readme = "README.md"
-keywords = ["ffmpeg", "media", "queue", "biglinux"]
+keywords = ["media", "queue", "biglinux"]
 categories = ["multimedia", "parser-implementations"]
 
 [dependencies]

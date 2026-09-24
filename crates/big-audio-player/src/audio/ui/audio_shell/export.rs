@@ -1,15 +1,9 @@
-//! In-player quick export for the audio player: convert or trim-and-export the
-//! playing track via the shared converter engine (`big_quick_export::export`),
-//! off the GTK main loop. No external converter process.
+//! Trim & Export and Convert for the audio player: mark cuts on the playing
+//! track, then hand the track (and the cuts) to the audio converter GUI. The
+//! player converts nothing itself.
 
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 
-use big_media_runtime::converter::profiles::VideoFilters;
-use big_media_runtime::converter::queue::{QueueMessage, SegmentOutputMode};
-use big_quick_export::export::{
-    QuickExportChoice, QuickExportFormat, build_single_export_queue, run_single_export_blocking,
-};
-use big_relm4_components::input::dropdown_row::{BigDropdownRow, BigDropdownRowSpec};
 use big_relm4_components::input::preference_cards::BigSpinRange;
 use big_relm4_components::input::spin_row::{BigSpinRow, BigSpinRowSpec};
 use big_relm4_components::layout::dialog_footer::{BigDialogFooter, BigDialogFooterSpec};
@@ -18,25 +12,27 @@ use big_relm4_components::layout::preferences::BigPreferencesGroupSpec;
 
 use super::*;
 
-/// `(label, codec)` for the audio output chooser; container is derived from the
-/// codec by the export engine.
-const AUDIO_FORMATS: [(&str, &str); 3] = [("MP3", "mp3"), ("M4A", "aac"), ("FLAC", "flac")];
-const AUDIO_SEGMENT_OUTPUTS: [(&str, bool); 2] = [
-    ("Join cuts into one file", false),
-    ("Save each cut separately", true),
-];
-
 impl AudioShell {
-    /// Convert the playing track to `codec` (mp3/aac/flac) beside it.
-    pub(super) fn convert_track(&self, codec: &str) {
-        let choice = QuickExportChoice {
-            format: QuickExportFormat::Audio {
-                codec: codec.to_string(),
-                bitrate: "192k".into(),
-            },
-            filters: VideoFilters::default(),
+    /// Open the current local track in the audio converter, keeping only `cuts`
+    /// when any.
+    pub(super) fn open_in_converter(&self, cuts: &[(f64, f64)]) {
+        let Some(input) = self.current_local_input() else {
+            self.notify(&i18n("No local track is playing"));
+            return;
         };
-        self.run_track_export(choice, Vec::new(), &i18n("Converting…"));
+        self.launch_converter(&[input.to_string_lossy().into_owned()], cuts);
+    }
+
+    /// Spawn the audio converter with `paths` (and `cuts`); toast a failure.
+    pub(super) fn launch_converter(&self, paths: &[String], cuts: &[(f64, f64)]) {
+        let program = converter_handoff::AUDIO_CONVERTER;
+        match converter_handoff::open(program, paths, cuts) {
+            Ok(()) => self.notify(&i18n("Opening in converter…")),
+            Err(error) => {
+                log::warn!("could not launch {program}: {error}");
+                self.notify(&i18n("Could not launch the converter"));
+            }
+        }
     }
 
     /// Enter visual trim mode on the current local track.
@@ -74,11 +70,7 @@ impl AudioShell {
     }
 
     /// Handle a typed output from the visual trim bar.
-    pub(super) fn handle_trim(
-        &mut self,
-        output: AudioTrimBarOutput,
-        sender: &ComponentSender<Self>,
-    ) {
+    pub(super) fn handle_trim(&mut self, output: AudioTrimBarOutput) {
         match output {
             AudioTrimBarOutput::SegmentsChanged { segments, pending } => {
                 let mut ranges: Vec<(f64, f64)> = segments
@@ -104,9 +96,7 @@ impl AudioShell {
                     mpv.seek_absolute(start);
                 }
             }
-            AudioTrimBarOutput::ExportRequested { ranges } => {
-                self.show_trim_export_options(ranges, sender);
-            }
+            AudioTrimBarOutput::ExportRequested { ranges } => self.open_in_converter(&ranges),
             AudioTrimBarOutput::Exit => self.exit_trim_mode(),
         }
     }
@@ -135,13 +125,6 @@ impl AudioShell {
         if self.trim_active {
             self.trim.emit(AudioTrimBarInput::SetDuration(duration));
         }
-    }
-
-    /// Re-enable the trim controls after a background export completes.
-    pub(super) fn finish_trim_export(&self, result: Result<PathBuf, String>) {
-        self.trim.emit(AudioTrimBarInput::SetBusy(false));
-        self.toast_overlay
-            .add_toast(adw::Toast::new(&export_message(&result)));
     }
 
     fn show_segment_edit_dialog(&self, id: u64, start: f64, end: f64) {
@@ -222,101 +205,6 @@ impl AudioShell {
         dialog.present(self.window().as_ref());
     }
 
-    fn show_trim_export_options(&self, ranges: Vec<(f64, f64)>, sender: &ComponentSender<Self>) {
-        let Some(input) = self.current_local_input() else {
-            self.notify(&i18n("No local track is playing"));
-            return;
-        };
-        let output_dir = input
-            .parent()
-            .map_or_else(|| PathBuf::from("."), Path::to_path_buf);
-        let format_row = BigDropdownRow::new(BigDropdownRowSpec::new(
-            i18n("Format"),
-            AUDIO_FORMATS.iter().map(|(label, _)| *label),
-        ));
-        let output_row = BigDropdownRow::new(BigDropdownRowSpec::new(
-            i18n("Output"),
-            AUDIO_SEGMENT_OUTPUTS.iter().map(|(label, _)| i18n(label)),
-        ));
-        output_row.root().set_subtitle(&i18n(
-            "Join creates one file; separate creates one file per cut",
-        ));
-
-        let group = BigPreferencesGroupSpec::new(i18n("Export marked cuts"))
-            .description(format!("{} {}", ranges.len(), i18n("selected cut ranges")))
-            .build();
-        group.add(format_row.root());
-        group.add(output_row.root());
-        let resume_note = gtk::Label::new(Some(&i18n(
-            "Retrying this export reuses only complete files whose source, settings and contents match their saved receipts. Other existing files are never replaced. Keep the receipts beside the outputs.",
-        )));
-        resume_note.set_wrap(true);
-        resume_note.set_xalign(0.0);
-        group.add(&resume_note);
-
-        let dialog = adw::Dialog::builder()
-            .title(i18n("Export Cuts"))
-            .content_width(460)
-            .content_height(360)
-            .build();
-        let page = BigDialogPage::scrolled_clamped(430, 320);
-        let footer =
-            BigDialogFooter::new(&BigDialogFooterSpec::new(i18n("Cancel"), i18n("Export")));
-        page.content().append(&group);
-        page.root().add_bottom_bar(footer.root());
-        dialog.set_child(Some(&page.into_root()));
-
-        let dialog_ref = dialog.downgrade();
-        footer.cancel_button().connect_clicked(move |_| {
-            if let Some(dialog) = dialog_ref.upgrade() {
-                dialog.close();
-            }
-        });
-
-        let format_dropdown = format_row.dropdown().clone();
-        let output_dropdown = output_row.dropdown().clone();
-        let input_sender = sender.input_sender().clone();
-        let trim = self.trim.sender().clone();
-        let dialog_ref = dialog.downgrade();
-        footer.accept_button().connect_clicked(glib::clone!(
-            #[weak]
-            format_dropdown,
-            #[weak]
-            output_dropdown,
-            move |_| {
-                let codec = AUDIO_FORMATS
-                    .get(format_dropdown.selected() as usize)
-                    .map_or("mp3", |(_, codec)| *codec);
-                let split = AUDIO_SEGMENT_OUTPUTS
-                    .get(output_dropdown.selected() as usize)
-                    .is_some_and(|(_, split)| *split);
-                let choice = QuickExportChoice {
-                    format: QuickExportFormat::Audio {
-                        codec: codec.to_string(),
-                        bitrate: "192k".into(),
-                    },
-                    filters: VideoFilters::default(),
-                };
-                let _ = trim.send(AudioTrimBarInput::SetBusy(true));
-                let input = input.clone();
-                let output_dir = output_dir.clone();
-                let ranges = ranges.clone();
-                let input_sender = input_sender.clone();
-                big_media_components::player_chrome::spawn_blocking_result(
-                    move || run_segment_export_blocking(input, output_dir, &choice, &ranges, split),
-                    move |result| {
-                        let _ = input_sender.send(AudioShellInput::TrimExportFinished(result));
-                    },
-                );
-                if let Some(dialog) = dialog_ref.upgrade() {
-                    dialog.close();
-                }
-            }
-        ));
-
-        dialog.present(self.window().as_ref());
-    }
-
     fn apply_trim_play_selection(&self, position: f64) {
         let Some((first_start, _)) = self.trim_ranges.first().copied() else {
             return;
@@ -350,29 +238,6 @@ impl AudioShell {
         }
     }
 
-    /// Resolve the current local track, then run `choice` (with optional trim
-    /// `segments`) on a worker thread and toast the outcome.
-    fn run_track_export(
-        &self,
-        choice: QuickExportChoice,
-        segments: Vec<(f64, f64)>,
-        busy_message: &str,
-    ) {
-        let Some(input) = self.current_local_input() else {
-            self.notify(&i18n("No local track is playing"));
-            return;
-        };
-        let output_dir = input
-            .parent()
-            .map_or_else(|| PathBuf::from("."), Path::to_path_buf);
-        self.notify(busy_message);
-        let toast_overlay = self.toast_overlay.clone();
-        big_media_components::player_chrome::spawn_blocking_result(
-            move || run_single_export_blocking(input, output_dir, &choice, &segments),
-            move |result| toast_overlay.add_toast(adw::Toast::new(&export_message(&result))),
-        );
-    }
-
     fn current_local_input(&self) -> Option<PathBuf> {
         let input = self
             .mpv
@@ -399,76 +264,6 @@ fn local_input_path(input: &str) -> Option<PathBuf> {
         return gtk::gio::File::for_uri(input).path();
     }
     Some(PathBuf::from(input))
-}
-
-fn run_segment_export_blocking(
-    input: PathBuf,
-    output_dir: PathBuf,
-    choice: &QuickExportChoice,
-    segments: &[(f64, f64)],
-    split: bool,
-) -> Result<PathBuf, String> {
-    big_quick_export::export::validate_export_segments(segments)?;
-    let (mut queue, id, output) = build_single_export_queue(input, output_dir, choice, segments);
-    if output.as_os_str().is_empty() {
-        return Err("export item vanished before start".to_string());
-    }
-    if split {
-        queue.set_pending_segment_mode(SegmentOutputMode::Split);
-    }
-
-    queue.start();
-    let mut completed = false;
-    loop {
-        match queue.receiver().recv_blocking() {
-            Ok(QueueMessage::Done { entry_id }) if entry_id == id => completed = true,
-            Ok(QueueMessage::Cancelled { entry_id }) if entry_id == id => {
-                return Err(i18n("Export cancelled"));
-            }
-            Ok(QueueMessage::Failed { entry_id, error }) if entry_id == id => return Err(error),
-            Ok(QueueMessage::AllDone) => {
-                if !completed {
-                    return Err(i18n("The export ended without a completed result"));
-                }
-                // Split output has no file at the joined output name. Report the
-                // directory containing the separately validated/published files.
-                let result = if split && segments.len() > 1 {
-                    output
-                        .parent()
-                        .unwrap_or(std::path::Path::new("."))
-                        .to_path_buf()
-                } else {
-                    output
-                };
-                let metadata = std::fs::metadata(&result)
-                    .map_err(|_| i18n("Could not verify exported files"))?;
-                if split && segments.len() > 1 {
-                    if !metadata.is_dir() {
-                        return Err(i18n("Could not verify exported files"));
-                    }
-                } else if !metadata.is_file() || metadata.len() == 0 {
-                    return Err(i18n("Could not verify exported files"));
-                }
-                return Ok(result);
-            }
-            Ok(_) => {}
-            Err(_) => return Err(i18n("The export worker stopped before completion")),
-        }
-    }
-}
-
-/// Human-readable toast for a finished export.
-fn export_message(result: &Result<PathBuf, String>) -> String {
-    match result {
-        Ok(path) => format!(
-            "{} {}",
-            i18n("Saved"),
-            path.file_name()
-                .and_then(|n| n.to_str())
-                .unwrap_or_default()
-        ),
-        Err(error) => format!("{}: {error}", i18n("Export failed")),
-    }
 }
 
 fn error_label(label: &str) -> gtk::Label {

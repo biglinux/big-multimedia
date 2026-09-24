@@ -7,6 +7,5 @@ pub mod copyable_detail_row;
 pub mod detail_row;
 pub mod editable_action_row;
 pub mod navigation_row;
-pub mod progress_row;
 mod row_core;
 pub mod signal_factory;

@@ -1,109 +1,44 @@
-//! In-player quick export: extract audio from / re-encode the playing file
-//! using the shared converter engine (`big_quick_export::export`), off the GTK
-//! main loop. No external converter process, no leaving the player.
-//!
-//! Interactive multi-cut clip export lives in [`super::trim`]; this module keeps
-//! the one-shot "extract audio" / "convert to" menu actions.
-
-use std::path::{Path, PathBuf};
-
-use big_media_runtime::converter::profiles::VideoFilters;
-use big_quick_export::export::{QuickExportChoice, QuickExportFormat, run_single_export_blocking};
+//! Edit & Export menu actions: hand the playing file to a converter GUI. The
+//! player converts nothing itself; [`super::trim`] adds the cuts marked here.
 
 use super::*;
 
 impl VideoShell {
-    /// Extract the playing file's audio to `codec` (mp3/aac/flac) beside it.
-    pub(super) fn extract_audio(&self, codec: &str) {
-        self.run_quick_export(
-            QuickExportChoice {
-                format: QuickExportFormat::Audio {
-                    codec: codec.to_string(),
-                    bitrate: "192k".into(),
-                },
-                filters: VideoFilters::default(),
-            },
-            &i18n("Extracting audio…"),
-        );
-    }
-
-    /// Re-encode the playing file into `container` (mp4/mkv/webm) beside it.
-    pub(super) fn quick_convert(&self, container: &str) {
-        self.run_quick_export(
-            QuickExportChoice {
-                format: QuickExportFormat::Video {
-                    container: container.to_string(),
-                    codec: "h264".into(),
-                    quality: "good".into(),
-                },
-                filters: self.current_video_filters(),
-            },
-            &i18n("Converting…"),
-        );
-    }
-
-    /// Resolve the current local file, then run `choice` on a worker thread and
-    /// toast the outcome. No-op (with a toast) when nothing local is playing.
-    fn run_quick_export(&self, choice: QuickExportChoice, busy_message: &str) {
+    /// Open the playing local file in `program`, keeping only `cuts` when any.
+    pub(in crate::video::ui::video_shell) fn open_in_converter(
+        &self,
+        program: &str,
+        cuts: &[(f64, f64)],
+    ) {
         let Some(input) = self
             .mpv
             .borrow()
             .as_ref()
             .and_then(|mpv| mpv.get_current_file())
         else {
-            self.toast_overlay
-                .add_toast(adw::Toast::new(&i18n("No file is playing")));
+            self.toast(&i18n("No file is playing"));
             return;
         };
         if super::playback::is_remote_uri(&input) {
-            self.toast_overlay
-                .add_toast(adw::Toast::new(&i18n("Cannot export a network stream")));
+            self.toast(&i18n("Cannot export a network stream"));
             return;
         }
-        let input = PathBuf::from(&input);
-        let output_dir = input
-            .parent()
-            .map_or_else(|| PathBuf::from("."), Path::to_path_buf);
-
-        self.toast_overlay.add_toast(adw::Toast::new(busy_message));
-        let toast_overlay = self.toast_overlay.clone();
-        big_media_components::player_chrome::spawn_blocking_result(
-            move || run_single_export_blocking(input, output_dir, &choice, &[]),
-            move |result| {
-                let message = match result {
-                    Ok(path) => format!(
-                        "{} {}",
-                        i18n("Saved"),
-                        path.file_name()
-                            .and_then(|n| n.to_str())
-                            .unwrap_or_default()
-                    ),
-                    Err(error) => format!("{}: {error}", i18n("Export failed")),
-                };
-                toast_overlay.add_toast(adw::Toast::new(&message));
-            },
-        );
+        self.launch_converter(program, &[input], cuts);
     }
 
-    pub(in crate::video::ui::video_shell) fn current_video_filters(&self) -> VideoFilters {
-        let Some(mpv) = self.mpv.borrow().as_ref().cloned() else {
-            return VideoFilters::default();
-        };
-
-        VideoFilters {
-            brightness: mpv_equalizer_offset(mpv.get_brightness()),
-            contrast: mpv_equalizer_multiplier(mpv.get_contrast(), 0.0, 2.0),
-            saturation: mpv_equalizer_multiplier(mpv.get_saturation(), 0.0, 2.0),
-            hue: mpv_equalizer_offset(mpv.get_hue()),
-            ..VideoFilters::default()
+    /// Spawn `program` with `paths` (and `cuts`) and toast the outcome.
+    pub(in crate::video::ui::video_shell) fn launch_converter(
+        &self,
+        program: &str,
+        paths: &[String],
+        cuts: &[(f64, f64)],
+    ) {
+        match converter_handoff::open(program, paths, cuts) {
+            Ok(()) => self.toast(&i18n("Opening in converter…")),
+            Err(error) => {
+                log::warn!("could not launch {program}: {error}");
+                self.toast(&i18n("Could not launch the converter"));
+            }
         }
     }
-}
-
-fn mpv_equalizer_offset(value: i64) -> f64 {
-    (value as f64 / 100.0).clamp(-1.0, 1.0)
-}
-
-fn mpv_equalizer_multiplier(value: i64, lower: f64, upper: f64) -> f64 {
-    (1.0 + value as f64 / 100.0).clamp(lower, upper)
 }

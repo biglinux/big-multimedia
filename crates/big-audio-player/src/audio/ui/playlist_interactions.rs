@@ -17,12 +17,12 @@ use big_relm4_components::layout::{
     preferences::BigPreferencesGroupSpec,
 };
 
-use crate::audio::converter_launcher;
 use crate::audio::ui::playlist_geom::{
     find_clicked_position, find_drop_position, find_reorder_drop_position,
 };
 use crate::db::models::Track;
 use crate::i18n::i18n;
+use crate::shared::converter_handoff;
 
 use super::playlist_panel::{PlaylistPanel, PlaylistPanelOutput};
 
@@ -485,7 +485,7 @@ fn show_track_context_menu(
             show_delete_confirm(parent.as_ref(), items.clone(), &out);
         });
     }
-    if converter_launcher::is_available() {
+    if converter_handoff::is_installed(converter_handoff::AUDIO_CONVERTER) {
         let out = sender.clone();
         let paths: Vec<String> = selected.iter().map(|(_, t)| t.file_path.clone()).collect();
         menu.append_button(i18n("Edit / Convert…"), &[], move || {

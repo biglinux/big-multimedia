@@ -64,7 +64,7 @@ pub fn probe_detailed_video_metadata(path: &str) -> Option<DetailedVideoMetadata
     let duration = format["duration"]
         .as_str()
         .and_then(|d| d.parse::<f64>().ok())
-        .map(crate::converter::ffmpeg::ffmpeg_timestamp);
+        .map(ffmpeg_timestamp);
     let format_name = format["format_long_name"].as_str().map(String::from);
     let bitrate = format["bit_rate"].as_str().and_then(|b| {
         b.parse::<f64>()
@@ -194,4 +194,16 @@ pub(super) fn parse_subtitle_stream(stream: &Value) -> Vec<(String, String)> {
         fields.push((i18n("Title"), title.to_string()));
     }
     fields
+}
+
+/// `HH:MM:SS.mmm`, the form ffmpeg itself prints durations in.
+fn ffmpeg_timestamp(s: f64) -> String {
+    let total_ms = (s.max(0.0) * 1000.0).round() as u64;
+    format!(
+        "{:02}:{:02}:{:02}.{:03}",
+        total_ms / 3_600_000,
+        total_ms / 60_000 % 60,
+        total_ms / 1000 % 60,
+        total_ms % 1000
+    )
 }

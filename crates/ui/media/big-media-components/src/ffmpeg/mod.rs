@@ -1,4 +1,3 @@
-//! ffmpeg helpers: label maps and progress parsing.
+//! ffmpeg helpers: codec label maps.
 
 pub mod labels;
-pub mod progress;

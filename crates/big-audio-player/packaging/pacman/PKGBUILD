@@ -7,8 +7,8 @@
 # in place against the workspace root (four levels up from this file).
 
 pkgname=big-audio-player
-pkgver=0.1.0
-pkgrel=10
+pkgver=$(date +%y.%m.%d)
+pkgrel=$(date +%H%M)
 pkgdesc='Music and audio player for BigLinux'
 arch=('x86_64')
 url='https://github.com/biglinux/big-multimedia'
@@ -16,6 +16,9 @@ license=('GPL-3.0-or-later')
 # libpulse provides `pactl`, used to drive the PipeWire/PulseAudio stream volume
 # (same backend as the video player).
 depends=('gtk4' 'libadwaita' 'mpv' 'ffmpeg' 'libpulse')
+# Trim & Export and Convert hand the track to the BigLinux audio converter
+# GUI; without it those menu entries are greyed out.
+optdepends=('big-audio-converter: trim and convert tracks')
 makedepends=('cargo' 'pkgconf' 'gettext')
 
 # Absolute path to the big-multimedia workspace root that owns this PKGBUILD.

@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: big-media-runtime 2.0.0\n"
 "Report-Msgid-Bugs-To: https://github.com/biglinux/big-multimedia/issues\n"
-"POT-Creation-Date: 2026-09-24 02:18-0300\n"
+"POT-Creation-Date: 2026-09-24 02:59-0300\n"
 "PO-Revision-Date: 2026-05-29 05:37-0300\n"
 "Last-Translator: Automatically generated\n"
 "Language-Team: none\n"
@@ -54,7 +54,7 @@ msgstr "Salvar no cofre de senhas"
 #: crates/big-audio-player/src/audio/ui/library_dialogs.rs:64
 #: crates/big-audio-player/src/audio/ui/unavailable_dialog.rs:75
 #: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/menu_actions.rs:199
-#: crates/big-video-player/src/video/ui/video_shell/component.rs:162
+#: crates/big-video-player/src/video/ui/video_shell/component.rs:158
 msgid "Close"
 msgstr "Fechar"
 
@@ -239,11 +239,9 @@ msgstr "Biblioteca"
 
 #: crates/big-audio-player/src/audio/keybindings.rs:79
 #: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:120
-#: crates/big-video-player/src/video/ui/video_shell/component.rs:817
+#: crates/big-video-player/src/video/ui/video_shell/component.rs:763
 #: crates/big-video-player/src/video/ui/video_shell/input_gestures.rs:133
 #: crates/media-runtime/src/shared/audio_effects_eq.rs:365
-#: crates/ui/media/big-media-components/src/audio/cleanup_dialog.rs:129
-#: crates/ui/media/big-media-components/src/audio/editor_panel.rs:118
 msgid "Equalizer"
 msgstr "Equalizador"
 
@@ -265,7 +263,7 @@ msgstr "Alternar repetição"
 
 #: crates/big-audio-player/src/audio/keybindings.rs:101
 #: crates/big-audio-player/src/audio/ui/audio_shell/queue_state.rs:182
-#: crates/big-video-player/src/video/ui/video_shell/playback.rs:356
+#: crates/big-video-player/src/video/ui/video_shell/playback.rs:343
 msgid "Undo"
 msgstr "Desfazer"
 
@@ -275,7 +273,6 @@ msgid "Redo"
 msgstr "Refazer"
 
 #: crates/big-audio-player/src/audio/keybindings.rs:115
-#: crates/ui/media/big-media-components/src/converter/header_bar.rs:63
 msgid "Quit"
 msgstr "Sair"
 
@@ -305,7 +302,6 @@ msgstr "Este ano"
 
 #: crates/big-audio-player/src/audio/library_grouping/group_by.rs:38
 #: crates/big-video-player/src/video/ui/filters/groups_shader.rs:187
-#: crates/media-runtime/src/ui_labels.rs:127
 msgid "None"
 msgstr "Nenhum"
 
@@ -346,11 +342,9 @@ msgid "Year"
 msgstr "Ano"
 
 #: crates/big-audio-player/src/audio/library_grouping/group_by.rs:44
-#: crates/big-audio-player/src/audio/ui/audio_shell/export.rs:234
 #: crates/big-audio-player/src/audio/ui/library_detail_columns.rs:136
 #: crates/big-audio-player/src/audio/ui/library_tag_editor/spec.rs:112
 #: crates/big-audio-player/src/audio/ui/playlist_columns.rs:177
-#: crates/big-quick-export/src/encode_options.rs:70
 #: crates/big-video-player/src/video/ui/media_details_dialog.rs:96
 #: crates/big-video-player/src/video/ui/media_details_dialog.rs:242
 #: crates/big-video-player/src/video/ui/preferences/advanced/screenshot.rs:31
@@ -403,9 +397,9 @@ msgid "Music"
 msgstr "Música"
 
 #: crates/big-audio-player/src/audio/preferences.rs:65
-#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:128
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:126
 #: crates/big-video-player/src/video/ui/preferences/mod.rs:81
-#: crates/big-video-player/src/video/ui/video_shell/component.rs:838
+#: crates/big-video-player/src/video/ui/video_shell/component.rs:784
 msgid "Preferences"
 msgstr "Preferências"
 
@@ -587,7 +581,7 @@ msgstr "Filtrar arquivos…"
 #: crates/big-audio-player/src/audio/ui/audio_shell/component.rs:143
 #: crates/big-audio-player/src/audio/ui/audio_shell/component.rs:178
 #: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/header.rs:22
-#: crates/big-video-player/src/video/ui/video_shell/component.rs:293
+#: crates/big-video-player/src/video/ui/video_shell/component.rs:249
 msgid "Files"
 msgstr "Arquivos"
 
@@ -630,54 +624,57 @@ msgstr ""
 msgid "Retry saving"
 msgstr "Tentar salvar novamente"
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/export.rs:39
-#: crates/big-video-player/src/video/ui/video_shell/export.rs:41
-msgid "Converting…"
-msgstr "Convertendo…"
-
-#: crates/big-audio-player/src/audio/ui/audio_shell/export.rs:45
-#: crates/big-audio-player/src/audio/ui/audio_shell/export.rs:227
-#: crates/big-audio-player/src/audio/ui/audio_shell/export.rs:362
+#: crates/big-audio-player/src/audio/ui/audio_shell/export.rs:20
+#: crates/big-audio-player/src/audio/ui/audio_shell/export.rs:41
 msgid "No local track is playing"
 msgstr "Nenhuma faixa local em reprodução"
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/export.rs:65
+#: crates/big-audio-player/src/audio/ui/audio_shell/export.rs:30
+#: crates/big-video-player/src/video/ui/video_shell/export.rs:37
+msgid "Opening in converter…"
+msgstr "Abrindo no conversor…"
+
+#: crates/big-audio-player/src/audio/ui/audio_shell/export.rs:33
+#: crates/big-video-player/src/video/ui/video_shell/export.rs:40
+msgid "Could not launch the converter"
+msgstr "Não foi possível abrir o conversor"
+
+#: crates/big-audio-player/src/audio/ui/audio_shell/export.rs:61
 msgid "Trim mode enabled"
 msgstr "Modo de corte ativado"
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/export.rs:151
-#: crates/big-video-player/src/video/ui/video_shell/trim/run.rs:314
+#: crates/big-audio-player/src/audio/ui/audio_shell/export.rs:134
+#: crates/big-video-player/src/video/ui/video_shell/trim/run.rs:195
 msgid "Start (seconds)"
 msgstr "Início (segundos)"
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/export.rs:156
-#: crates/big-video-player/src/video/ui/video_shell/trim/run.rs:318
+#: crates/big-audio-player/src/audio/ui/audio_shell/export.rs:139
+#: crates/big-video-player/src/video/ui/video_shell/trim/run.rs:199
 msgid "End (seconds)"
 msgstr "Fim (segundos)"
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/export.rs:169
+#: crates/big-audio-player/src/audio/ui/audio_shell/export.rs:152
 msgid "Cut range"
 msgstr "Intervalo do corte"
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/export.rs:171
+#: crates/big-audio-player/src/audio/ui/audio_shell/export.rs:154
 msgid "Use the clock buttons to copy the current playback position"
 msgstr "Use os botões de relógio para copiar a posição de reprodução atual"
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/export.rs:177
+#: crates/big-audio-player/src/audio/ui/audio_shell/export.rs:160
 msgid "End must be after start"
 msgstr "O fim deve ser depois do início"
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/export.rs:179
+#: crates/big-audio-player/src/audio/ui/audio_shell/export.rs:162
 #: crates/ui/media/big-player-ui/src/audio_trim_bar.rs:51
 msgid "Edit cut"
 msgstr "Editar corte"
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/export.rs:184
-#: crates/big-audio-player/src/audio/ui/audio_shell/export.rs:264
+#: crates/big-audio-player/src/audio/ui/audio_shell/export.rs:167
 #: crates/big-audio-player/src/audio/ui/library_dialogs.rs:78
 #: crates/big-audio-player/src/audio/ui/library_io.rs:53
 #: crates/big-audio-player/src/audio/ui/library_tag_editor.rs:146
-#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:196
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:194
 #: crates/big-audio-player/src/audio/ui/playlist_interactions.rs:541
 #: crates/big-audio-player/src/audio/ui/playlist_library_dialog/spec.rs:196
 #: crates/big-audio-player/src/audio/ui/playlist_library_dialog/spec.rs:207
@@ -686,102 +683,25 @@ msgstr "Editar corte"
 #: crates/big-video-player/src/video/ui/iptv/providers_dialog.rs:169
 #: crates/big-video-player/src/video/ui/menu_dialogs.rs:78
 #: crates/big-video-player/src/video/ui/video_browser_sidebar/fileops.rs:200
-#: crates/big-video-player/src/video/ui/video_shell/component.rs:177
 #: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:227
 #: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:358
 #: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:472
-#: crates/big-video-player/src/video/ui/video_shell/trim/run.rs:357
-#: crates/media-runtime/src/editor/edit_page/segment_list.rs:140
-#: crates/media-runtime/src/shared/dialogs.rs:16
-#: crates/ui/media/big-media-components/src/converter/header_bar.rs:57
-#: crates/ui/media/big-media-components/src/converter/progress/build.rs:310
+#: crates/big-video-player/src/video/ui/video_shell/trim/run.rs:238
 #: crates/ui/media/big-player-ui/src/podcast_panel.rs:575
 #: crates/ui/media/big-player-ui/src/radio_panel/widgets.rs:352
 msgid "Cancel"
 msgstr "Cancelar"
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/export.rs:184
-#: crates/big-video-player/src/video/ui/video_shell/trim/run.rs:357
-#: crates/ui/media/big-media-components/src/audio/editor_panel.rs:111
+#: crates/big-audio-player/src/audio/ui/audio_shell/export.rs:167
+#: crates/big-video-player/src/video/ui/video_shell/trim/run.rs:238
 msgid "Apply"
 msgstr "Aplicar"
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/export.rs:238
-#: crates/ui/media/big-player-ui/src/audio_preferences.rs:100
-msgid "Output"
-msgstr "Saída"
-
-#: crates/big-audio-player/src/audio/ui/audio_shell/export.rs:242
-msgid "Join creates one file; separate creates one file per cut"
-msgstr "Juntar cria um arquivo; separar cria um arquivo por corte"
-
-#: crates/big-audio-player/src/audio/ui/audio_shell/export.rs:245
-msgid "Export marked cuts"
-msgstr "Exportar cortes marcados"
-
-#: crates/big-audio-player/src/audio/ui/audio_shell/export.rs:246
-msgid "selected cut ranges"
-msgstr "intervalos de corte selecionados"
-
-#: crates/big-audio-player/src/audio/ui/audio_shell/export.rs:251
-#: crates/media-runtime/src/settings/messages.rs:94
-msgid ""
-"Retrying this export reuses only complete files whose source, settings and "
-"contents match their saved receipts. Other existing files are never "
-"replaced. Keep the receipts beside the outputs."
-msgstr ""
-"Ao repetir a exportação, somente arquivos completos cuja origem, "
-"configurações e conteúdo correspondam aos comprovantes salvos serão "
-"reutilizados. Outros arquivos existentes não serão substituídos. Mantenha os "
-"comprovantes junto aos arquivos exportados."
-
-#: crates/big-audio-player/src/audio/ui/audio_shell/export.rs:258
-msgid "Export Cuts"
-msgstr "Exportar cortes"
-
-#: crates/big-audio-player/src/audio/ui/audio_shell/export.rs:264
-#: crates/big-video-player/src/video/ui/video_shell/trim/bar.rs:298
-msgid "Export"
-msgstr "Exportar"
-
-#: crates/big-audio-player/src/audio/ui/audio_shell/export.rs:426
-#: crates/big-quick-export/src/export.rs:276
-#: crates/big-video-player/src/video/ui/video_shell/trim/run.rs:544
-msgid "Export cancelled"
-msgstr "Exportação cancelada"
-
-#: crates/big-audio-player/src/audio/ui/audio_shell/export.rs:431
-msgid "The export ended without a completed result"
-msgstr "A exportação terminou sem confirmar um resultado concluído"
-
-#: crates/big-audio-player/src/audio/ui/audio_shell/export.rs:444
-#: crates/big-audio-player/src/audio/ui/audio_shell/export.rs:447
-#: crates/big-audio-player/src/audio/ui/audio_shell/export.rs:450
-msgid "Could not verify exported files"
-msgstr "Não foi possível verificar os arquivos exportados"
-
-#: crates/big-audio-player/src/audio/ui/audio_shell/export.rs:455
-msgid "The export worker stopped before completion"
-msgstr "O processo de exportação parou antes de concluir o trabalho"
-
-#: crates/big-audio-player/src/audio/ui/audio_shell/export.rs:465
-#: crates/big-video-player/src/video/ui/video_shell/export.rs:76
-msgid "Saved"
-msgstr "Salvo"
-
-#: crates/big-audio-player/src/audio/ui/audio_shell/export.rs:470
-#: crates/big-video-player/src/video/ui/video_shell/export.rs:81
-#: crates/big-video-player/src/video/ui/video_shell/trim/run.rs:218
-#: crates/big-video-player/src/video/ui/video_shell/trim/run.rs:239
-#: crates/big-video-player/src/video/ui/video_shell/trim/run.rs:546
-msgid "Export failed"
-msgstr "Falha na exportação"
-
-#: crates/big-audio-player/src/audio/ui/audio_shell/export.rs:495
+#: crates/big-audio-player/src/audio/ui/audio_shell/export.rs:290
 msgid "Use current position"
 msgstr "Usar posição atual"
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/export.rs:497
+#: crates/big-audio-player/src/audio/ui/audio_shell/export.rs:292
 msgid "Use current playback position"
 msgstr "Usar posição de reprodução atual"
 
@@ -815,9 +735,8 @@ msgstr "Salvar Episódio"
 #: crates/big-audio-player/src/audio/ui/library_io.rs:54
 #: crates/big-audio-player/src/audio/ui/library_io.rs:85
 #: crates/big-audio-player/src/audio/ui/library_tag_editor.rs:146
-#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:196
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:194
 #: crates/big-video-player/src/video/ui/iptv/providers_dialog.rs:169
-#: crates/media-runtime/src/editor/edit_page/segment_list.rs:142
 msgid "Save"
 msgstr "Salvar"
 
@@ -836,13 +755,11 @@ msgstr "Linha do tempo dos cortes"
 
 #: crates/big-audio-player/src/audio/ui/audio_shell/playback.rs:155
 #: crates/big-video-player/src/video/ui/video_controls_bar/zones.rs:357
-#: crates/ui/media/big-media-components/src/video/editor_panel.rs:61
 msgid "Previous"
 msgstr "Anterior"
 
 #: crates/big-audio-player/src/audio/ui/audio_shell/playback.rs:156
 #: crates/big-video-player/src/video/ui/video_controls_bar/zones.rs:360
-#: crates/ui/media/big-media-components/src/video/editor_panel.rs:62
 msgid "Next"
 msgstr "Próximo"
 
@@ -858,12 +775,10 @@ msgid "Repeat"
 msgstr "Repetir"
 
 #: crates/big-audio-player/src/audio/ui/audio_shell/playback.rs:159
-#: crates/ui/media/big-media-components/src/audio/editor_panel.rs:120
 #: crates/ui/media/big-media-components/src/player_chrome.rs:298
 #: crates/ui/media/big-media-components/src/text.rs:75
 #: crates/ui/media/big-media-components/src/text.rs:83
 #: crates/ui/media/big-media-components/src/text.rs:92
-#: crates/ui/media/big-media-components/src/video/editor_panel.rs:67
 msgid "Volume"
 msgstr "Volume"
 
@@ -892,7 +807,7 @@ msgstr "Letra"
 #: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:88
 #: crates/big-audio-player/src/audio/ui/playlist_panel.rs:87
 #: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/header.rs:24
-#: crates/big-video-player/src/video/ui/video_shell/component.rs:299
+#: crates/big-video-player/src/video/ui/video_shell/component.rs:255
 msgid "Playlist"
 msgstr "Lista de reprodução"
 
@@ -1058,7 +973,7 @@ msgid "Open Folder"
 msgstr "Abrir pasta"
 
 #: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:443
-#: crates/big-video-player/src/video/ui/video_shell/actions.rs:147
+#: crates/big-video-player/src/video/ui/video_shell/actions.rs:141
 msgid "Open File"
 msgstr "Abrir arquivo"
 
@@ -1146,8 +1061,8 @@ msgstr ""
 "A importação das listas de reprodução não foi concluída por completo. As "
 "importações já confirmadas foram mantidas."
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/update.rs:315
-#: crates/big-video-player/src/video/ui/video_shell/component.rs:744
+#: crates/big-audio-player/src/audio/ui/audio_shell/update.rs:314
+#: crates/big-video-player/src/video/ui/video_shell/component.rs:693
 msgid "Sleep timer cancelled"
 msgstr "Temporizador de sono cancelado"
 
@@ -1223,7 +1138,6 @@ msgstr "Adicionar faixa à lista de reprodução"
 #: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/context_menu.rs:41
 #: crates/big-video-player/src/video/ui/video_controls_bar/zones.rs:358
 #: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:227
-#: crates/ui/media/big-media-components/src/converter/queue.rs:323
 msgid "Play"
 msgstr "Reproduzir"
 
@@ -1281,7 +1195,7 @@ msgstr "Adicionar à lista de reprodução"
 
 #: crates/big-audio-player/src/audio/ui/library_dialogs.rs:77
 #: crates/big-audio-player/src/audio/ui/library_io.rs:52
-#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:190
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:188
 msgid "Playlist name"
 msgstr "Nome da lista de reprodução"
 
@@ -1340,7 +1254,7 @@ msgstr ""
 
 #: crates/big-audio-player/src/audio/ui/library_io.rs:123
 #: crates/big-video-player/src/video/ui/menu_dialogs.rs:479
-#: crates/big-video-player/src/video/ui/video_shell/component.rs:275
+#: crates/big-video-player/src/video/ui/video_shell/component.rs:231
 #: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:358
 msgid "Open"
 msgstr "Abrir"
@@ -1401,7 +1315,6 @@ msgid "Removal requested. Reopen this list after the operation finishes."
 msgstr "Remoção solicitada. Reabra esta lista após o término da operação."
 
 #: crates/big-audio-player/src/audio/ui/library_io.rs:306
-#: crates/ui/media/big-media-components/src/converter/header_bar.rs:54
 msgid "Add Folder"
 msgstr "Adicionar pasta"
 
@@ -1562,7 +1475,7 @@ msgid "Explore Radio and Podcasts in the sidebar tabs"
 msgstr "Explore Rádio e Podcasts nas abas da barra lateral"
 
 #: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:99
-#: crates/big-video-player/src/video/ui/video_shell/component.rs:153
+#: crates/big-video-player/src/video/ui/video_shell/component.rs:149
 msgid "Main Menu"
 msgstr "Menu principal"
 
@@ -1572,7 +1485,7 @@ msgid "Manage Playlists"
 msgstr "Gerenciar listas de reprodução"
 
 #: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:116
-#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:180
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:178
 msgid "Save Queue as Playlist"
 msgstr "Salvar fila como lista de reprodução"
 
@@ -1585,64 +1498,55 @@ msgid "Clear Queue"
 msgstr "Limpar fila"
 
 #: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:123
-msgid "Convert to MP3"
-msgstr "Converter para MP3"
+#: crates/big-video-player/src/video/ui/video_controls_bar/zones.rs:453
+msgid "Convert…"
+msgstr "Converter…"
 
 #: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:124
-msgid "Convert to M4A"
-msgstr "Converter para M4A"
-
-#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:125
-msgid "Convert to FLAC"
-msgstr "Converter para FLAC"
-
-#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:126
 #: crates/ui/media/big-player-ui/src/smartphone/dialog.rs:29
 msgid "Smartphone"
 msgstr "Smartphone"
 
-#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:127
-#: crates/big-video-player/src/video/ui/video_shell/component.rs:839
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:125
+#: crates/big-video-player/src/video/ui/video_shell/component.rs:785
 #: crates/ui/media/big-player-ui/src/appearance/window.rs:76
 msgid "Appearance"
 msgstr "Aparência"
 
-#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:131
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:129
 msgid "Cast"
 msgstr "Transmitir"
 
-#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:133
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:131
 #: crates/big-audio-player/src/audio/ui/shortcuts_dialog.rs:28
 #: crates/big-video-player/src/video/ui/keyboard_shortcuts_dialog.rs:30
-#: crates/big-video-player/src/video/ui/video_shell/component.rs:840
-#: crates/ui/media/big-media-components/src/converter/header_bar.rs:61
+#: crates/big-video-player/src/video/ui/video_shell/component.rs:786
 msgid "Keyboard Shortcuts"
 msgstr "Atalhos de teclado"
 
-#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:134
-#: crates/big-video-player/src/video/ui/video_shell/component.rs:841
-#: crates/ui/media/big-media-components/src/converter/header_bar.rs:62
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:132
+#: crates/big-video-player/src/video/ui/video_shell/component.rs:787
 msgid "About"
 msgstr "Sobre"
 
-#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:186
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:184
 #: crates/big-audio-player/src/audio/ui/playlist_library_dialog/spec.rs:193
 msgid "Name for the new playlist"
 msgstr "Nome da nova lista de reprodução"
 
-#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:261
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:259
 msgid "Drop tracks here"
 msgstr "Solte faixas aqui"
 
-#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:262
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:260
 msgid "or use ＋ to add from the library"
 msgstr "ou use ＋ para adicionar da biblioteca"
 
-#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:288
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:286
 msgid "Welcome to Big Audio Player"
 msgstr "Bem-vindo ao Big Audio Player"
 
-#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:296
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:294
 msgid ""
 "Add a folder with your music files to get started.\n"
 "Supported formats: MP3, FLAC, OGG, M4A, OPUS, WAV and more."
@@ -1650,23 +1554,23 @@ msgstr ""
 "Adicione uma pasta com seus arquivos de música para começar.\n"
 "Formatos suportados: MP3, FLAC, OGG, M4A, OPUS, WAV e mais."
 
-#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:309
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:307
 msgid "Open Files"
 msgstr "Abrir arquivos"
 
-#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:310
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:308
 msgid "Open files"
 msgstr "Abrir arquivos"
 
-#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:320
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:318
 msgid "Open Audio Files"
 msgstr "Abrir arquivos de áudio"
 
-#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:321
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:319
 msgid "Audio Files"
 msgstr "Arquivos de áudio"
 
-#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:343
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:341
 msgid "Quick tips"
 msgstr "Dicas rápidas"
 
@@ -1676,7 +1580,6 @@ msgstr "Remover faixa"
 
 #: crates/big-audio-player/src/audio/ui/playlist_interactions.rs:76
 #: crates/big-audio-player/src/audio/ui/playlist_interactions.rs:78
-#: crates/ui/media/big-media-components/src/converter/queue.rs:376
 msgid "Remove from Queue"
 msgstr "Remover da fila"
 
@@ -1956,55 +1859,8 @@ msgstr ""
 "ou um registro pode ter mudado. Verifique novamente antes de selecionar "
 "registros."
 
-#: crates/big-quick-export/src/encode_options.rs:73
-#: crates/big-video-player/src/video/ui/media_details_dialog.rs:149
-#: crates/big-video-player/src/video/ui/media_details_dialog.rs:216
-#: crates/media-runtime/src/media/metadata_cache/detailed_video_metadata.rs:110
-#: crates/media-runtime/src/media/metadata_cache/detailed_video_metadata.rs:143
-#: crates/media-runtime/src/media/metadata_cache/detailed_video_metadata.rs:188
-#: crates/ui/media/big-media-components/src/media/file_metadata_dialog.rs:90
-msgid "Codec"
-msgstr "Codec"
-
-#: crates/big-quick-export/src/encode_options.rs:75
-msgid "Quality"
-msgstr "Qualidade"
-
-#: crates/big-quick-export/src/encode_options.rs:81
-msgid "Re-encode options"
-msgstr "Opções de recodificação"
-
-#: crates/big-quick-export/src/encode_options.rs:83
-msgid ""
-"Choose the file type, video codec, and quality used to create the new clip."
-msgstr ""
-"Escolha o tipo de arquivo, o codec de vídeo e a qualidade usados para criar "
-"o novo clipe."
-
-#: crates/big-quick-export/src/export.rs:222
-msgid "Each cut needs a finite start and a later end"
-msgstr "Cada corte precisa de um início válido e de um fim posterior"
-
-#: crates/big-quick-export/src/export.rs:235
-#: crates/big-quick-export/src/export.rs:237
-msgid "The exported file is missing or empty"
-msgstr "O arquivo exportado não existe ou está vazio"
-
-#: crates/big-quick-export/src/export.rs:267
-msgid "The export could not start"
-msgstr "Não foi possível iniciar a exportação"
-
-#: crates/big-quick-export/src/export.rs:280
-#: crates/big-video-player/src/video/ui/video_shell/trim/run.rs:269
-msgid "The export ended without confirming completion"
-msgstr "A exportação terminou sem confirmar sua conclusão"
-
-#: crates/big-quick-export/src/export.rs:287
-msgid "The export stopped before it finished"
-msgstr "A exportação parou antes de terminar"
-
 #: crates/big-video-player/src/lib.rs:27
-#: crates/big-video-player/src/video/ui/video_shell/actions.rs:124
+#: crates/big-video-player/src/video/ui/video_shell/actions.rs:118
 msgid "Big Video Player"
 msgstr "Big Video Player"
 
@@ -2214,7 +2070,7 @@ msgid "Open file"
 msgstr "Abrir arquivo"
 
 #: crates/big-video-player/src/video/keybindings.rs:302
-#: crates/big-video-player/src/video/ui/video_shell/actions.rs:159
+#: crates/big-video-player/src/video/ui/video_shell/actions.rs:153
 #: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:208
 msgid "Open URL"
 msgstr "Abrir URL"
@@ -2562,7 +2418,6 @@ msgstr "Reduz ruído visual e granulação de imagens antigas ou com pouca luz"
 
 #: crates/big-video-player/src/video/ui/filters/groups_vf.rs:41
 #: crates/big-video-player/src/video/ui/filters/groups_vf.rs:57
-#: crates/ui/media/big-media-components/src/audio/cleanup_dialog.rs:100
 msgid "Strength"
 msgstr "Intensidade"
 
@@ -2601,7 +2456,6 @@ msgid "Boost color saturation intelligently"
 msgstr "Aumenta a saturação de cor de forma inteligente"
 
 #: crates/big-video-player/src/video/ui/filters/groups_vf.rs:96
-#: crates/ui/media/big-media-components/src/audio/cleanup_dialog.rs:114
 msgid "Intensity"
 msgstr "Intensidade"
 
@@ -2615,7 +2469,6 @@ msgstr "Aplica uma sobreposição de tonalidade de cor"
 
 #: crates/big-video-player/src/video/ui/filters/groups_vf.rs:125
 #: crates/big-video-player/src/video/ui/media_adjust.rs:560
-#: crates/ui/media/big-media-components/src/video/editor_sidebar.rs:60
 msgid "Hue"
 msgstr "Matiz"
 
@@ -2623,7 +2476,6 @@ msgstr "Matiz"
 #: crates/big-video-player/src/video/ui/media_adjust.rs:548
 #: crates/big-video-player/src/video/ui/preferences/video/hdr.rs:154
 #: crates/big-video-player/src/video/ui/preferences/video/icc.rs:69
-#: crates/ui/media/big-media-components/src/video/editor_sidebar.rs:59
 msgid "Saturation"
 msgstr "Saturação"
 
@@ -2656,7 +2508,6 @@ msgid "Predefined color grading looks"
 msgstr "Aparências de gradação de cor predefinidas"
 
 #: crates/big-video-player/src/video/ui/filters/groups_vf.rs:235
-#: crates/ui/media/big-media-components/src/audio/cleanup_dialog.rs:134
 #: crates/ui/media/big-media-components/src/audio/equalizer_controls.rs:165
 msgid "Preset"
 msgstr "Predefinição"
@@ -2964,16 +2815,10 @@ msgid "Reset to zero"
 msgstr "Redefinir para zero"
 
 #: crates/big-video-player/src/video/ui/media_adjust.rs:249
-#: crates/big-video-player/src/video/ui/video_shell/trim/run.rs:422
-#: crates/big-video-player/src/video/ui/video_shell/trim/run.rs:432
-#: crates/big-video-player/src/video/ui/video_shell/trim/run.rs:442
-#: crates/big-video-player/src/video/ui/video_shell/trim/run.rs:451
-#: crates/ui/media/big-media-components/src/video/editor_sidebar.rs:51
 msgid "Reset"
 msgstr "Redefinir"
 
 #: crates/big-video-player/src/video/ui/media_adjust.rs:271
-#: crates/ui/media/big-media-components/src/video/editor_sidebar.rs:61
 msgid "Transform"
 msgstr "Transformar"
 
@@ -3019,36 +2864,29 @@ msgstr "Recortar as bordas do vídeo em pixels"
 
 #: crates/big-video-player/src/video/ui/media_adjust.rs:392
 #: crates/big-video-player/src/video/ui/media_adjust.rs:398
-#: crates/ui/media/big-media-components/src/video/editor_panel.rs:72
 msgid "Left"
 msgstr "Esquerda"
 
 #: crates/big-video-player/src/video/ui/media_adjust.rs:393
 #: crates/big-video-player/src/video/ui/media_adjust.rs:399
-#: crates/ui/media/big-media-components/src/video/editor_panel.rs:73
 msgid "Right"
 msgstr "Direita"
 
 #: crates/big-video-player/src/video/ui/media_adjust.rs:394
 #: crates/big-video-player/src/video/ui/media_adjust.rs:400
-#: crates/ui/media/big-media-components/src/video/editor_panel.rs:74
 msgid "Top"
 msgstr "Superior"
 
 #: crates/big-video-player/src/video/ui/media_adjust.rs:395
 #: crates/big-video-player/src/video/ui/media_adjust.rs:401
-#: crates/ui/media/big-media-components/src/video/editor_panel.rs:75
 msgid "Bottom"
 msgstr "Inferior"
 
 #: crates/big-video-player/src/video/ui/media_adjust.rs:411
-#: crates/ui/media/big-media-components/src/video/editor_panel.rs:76
 msgid "Reset crop"
 msgstr "Redefinir recorte"
 
 #: crates/big-video-player/src/video/ui/media_adjust.rs:510
-#: crates/big-video-player/src/video/ui/video_shell/trim/run.rs:427
-#: crates/ui/media/big-media-components/src/video/editor_sidebar.rs:58
 msgid "Contrast"
 msgstr "Contraste"
 
@@ -3057,8 +2895,6 @@ msgid "Difference between dark and light areas"
 msgstr "Diferença entre áreas claras e escuras"
 
 #: crates/big-video-player/src/video/ui/media_adjust.rs:522
-#: crates/big-video-player/src/video/ui/video_shell/trim/run.rs:417
-#: crates/ui/media/big-media-components/src/video/editor_sidebar.rs:57
 msgid "Brightness"
 msgstr "Brilho"
 
@@ -3091,7 +2927,6 @@ msgid "Fine-tune colors and brightness of the video picture"
 msgstr "Ajuste fino de cores e brilho da imagem do vídeo"
 
 #: crates/big-video-player/src/video/ui/media_adjust.rs:582
-#: crates/media-runtime/src/editor/audio_edit_page/actions.rs:169
 msgid "Zoom"
 msgstr "Zoom"
 
@@ -3145,9 +2980,18 @@ msgstr "Geral"
 
 #: crates/big-video-player/src/video/ui/media_details_dialog.rs:109
 #: crates/big-video-player/src/video/ui/menu_dialogs.rs:226
-#: crates/big-video-player/src/video/ui/video_shell/component.rs:815
+#: crates/big-video-player/src/video/ui/video_shell/component.rs:761
 msgid "Chapters"
 msgstr "Capítulos"
+
+#: crates/big-video-player/src/video/ui/media_details_dialog.rs:149
+#: crates/big-video-player/src/video/ui/media_details_dialog.rs:216
+#: crates/media-runtime/src/media/metadata_cache/detailed_video_metadata.rs:110
+#: crates/media-runtime/src/media/metadata_cache/detailed_video_metadata.rs:143
+#: crates/media-runtime/src/media/metadata_cache/detailed_video_metadata.rs:188
+#: crates/ui/media/big-media-components/src/media/file_metadata_dialog.rs:90
+msgid "Codec"
+msgstr "Codec"
 
 #: crates/big-video-player/src/video/ui/media_details_dialog.rs:152
 #: crates/media-runtime/src/media/metadata_cache/detailed_video_metadata.rs:113
@@ -3234,7 +3078,7 @@ msgstr "A fila de capturas está cheia; aguarde as capturas pendentes"
 #: crates/big-video-player/src/video/ui/menu_dialogs.rs:136
 #: crates/big-video-player/src/video/ui/menu_dialogs.rs:140
 #: crates/big-video-player/src/video/ui/menu_dialogs.rs:144
-#: crates/big-video-player/src/video/ui/video_shell/component.rs:727
+#: crates/big-video-player/src/video/ui/video_shell/component.rs:676
 #: crates/big-video-player/src/video/ui/video_shell/playback.rs:121
 msgid "Screenshot failed"
 msgstr "Falha na captura de tela"
@@ -3526,7 +3370,6 @@ msgstr ""
 #: crates/big-video-player/src/video/ui/preferences/mod.rs:129
 #: crates/big-video-player/src/video/ui/preferences/mod.rs:131
 #: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:461
-#: crates/ui/media/big-media-components/src/converter/header_bar.rs:60
 msgid "Restore Defaults"
 msgstr "Restaurar padrões"
 
@@ -4028,7 +3871,6 @@ msgid "Low resource use"
 msgstr "Baixo consumo de recursos"
 
 #: crates/big-video-player/src/video/ui/preferences/video/render_profile.rs:101
-#: crates/media-runtime/src/ui_labels.rs:44
 msgid "Balanced"
 msgstr "Equilibrado"
 
@@ -4115,7 +3957,6 @@ msgstr "Carregar pasta"
 
 #: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/empty_state.rs:15
 #: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/empty_state.rs:31
-#: crates/ui/media/big-media-components/src/converter/header_bar.rs:53
 msgid "Add Files"
 msgstr "Adicionar Arquivos"
 
@@ -4351,12 +4192,10 @@ msgid "Load Subtitle File"
 msgstr "Carregar arquivo de legenda"
 
 #: crates/big-video-player/src/video/ui/video_controls_bar/tracks.rs:192
-#: crates/media-runtime/src/editor/edit_page/render.rs:559
 msgid "Track"
 msgstr "Faixa"
 
 #: crates/big-video-player/src/video/ui/video_controls_bar/tracks.rs:193
-#: crates/media-runtime/src/editor/edit_page/render.rs:560
 msgid "external"
 msgstr "externo"
 
@@ -4382,103 +4221,78 @@ msgid "Cut Video…"
 msgstr "Cortar Vídeo…"
 
 #: crates/big-video-player/src/video/ui/video_controls_bar/zones.rs:452
-msgid "Extract Audio as MP3"
-msgstr "Extrair áudio como MP3"
+msgid "Extract Audio…"
+msgstr "Extrair áudio…"
 
-#: crates/big-video-player/src/video/ui/video_controls_bar/zones.rs:453
-msgid "Extract Audio as M4A"
-msgstr "Extrair áudio como M4A"
-
-#: crates/big-video-player/src/video/ui/video_controls_bar/zones.rs:454
-msgid "Extract Audio as FLAC"
-msgstr "Extrair áudio como FLAC"
-
-#: crates/big-video-player/src/video/ui/video_controls_bar/zones.rs:455
-msgid "Convert to MP4"
-msgstr "Converter para MP4"
-
-#: crates/big-video-player/src/video/ui/video_controls_bar/zones.rs:456
-msgid "Convert to MKV"
-msgstr "Converter para MKV"
-
-#: crates/big-video-player/src/video/ui/video_controls_bar/zones.rs:457
-msgid "Convert to WebM"
-msgstr "Converter para WebM"
-
-#: crates/big-video-player/src/video/ui/video_shell/actions.rs:131
+#: crates/big-video-player/src/video/ui/video_shell/actions.rs:125
 msgid "Drop a file or open one to start"
 msgstr "Solte um arquivo ou abra um para começar"
 
-#: crates/big-video-player/src/video/ui/video_shell/actions.rs:153
-#: crates/big-video-player/src/video/ui/video_shell/component.rs:792
+#: crates/big-video-player/src/video/ui/video_shell/actions.rs:147
+#: crates/big-video-player/src/video/ui/video_shell/component.rs:738
 msgid "Open Recent"
 msgstr "Abrir recente"
 
-#: crates/big-video-player/src/video/ui/video_shell/component.rs:162
+#: crates/big-video-player/src/video/ui/video_shell/component.rs:158
 msgid "Minimize"
 msgstr "Minimizar"
 
-#: crates/big-video-player/src/video/ui/video_shell/component.rs:162
+#: crates/big-video-player/src/video/ui/video_shell/component.rs:158
 msgid "Maximize"
 msgstr "Maximizar"
 
-#: crates/big-video-player/src/video/ui/video_shell/component.rs:171
-#: crates/big-video-player/src/video/ui/video_shell/trim/run.rs:248
-msgid "Generating cut…"
-msgstr "Gerando corte…"
-
-#: crates/big-video-player/src/video/ui/video_shell/component.rs:270
+#: crates/big-video-player/src/video/ui/video_shell/component.rs:226
 msgid "Keep Above"
 msgstr "Manter acima"
 
-#: crates/big-video-player/src/video/ui/video_shell/component.rs:791
+#: crates/big-video-player/src/video/ui/video_shell/component.rs:737
 #: crates/big-video-player/src/video/ui/video_shell/input_gestures.rs:144
 msgid "Open File…"
 msgstr "Abrir arquivo…"
 
-#: crates/big-video-player/src/video/ui/video_shell/component.rs:793
+#: crates/big-video-player/src/video/ui/video_shell/component.rs:739
 #: crates/big-video-player/src/video/ui/video_shell/input_gestures.rs:145
 msgid "Open URL…"
 msgstr "Abrir URL…"
 
-#: crates/big-video-player/src/video/ui/video_shell/component.rs:794
+#: crates/big-video-player/src/video/ui/video_shell/component.rs:740
 msgid "Open Disc…"
 msgstr "Abrir disco…"
 
-#: crates/big-video-player/src/video/ui/video_shell/component.rs:816
+#: crates/big-video-player/src/video/ui/video_shell/component.rs:762
 msgid "Sleep Timer…"
 msgstr "Temporizador de sono…"
 
-#: crates/big-video-player/src/video/ui/video_shell/component.rs:818
+#: crates/big-video-player/src/video/ui/video_shell/component.rs:764
 #: crates/big-video-player/src/video/ui/video_shell/input_gestures.rs:135
 msgid "Audio & Subtitle Delay"
 msgstr "Atraso de áudio e legenda"
 
-#: crates/big-video-player/src/video/ui/video_shell/component.rs:823
+#: crates/big-video-player/src/video/ui/video_shell/component.rs:769
 #: crates/big-video-player/src/video/ui/video_shell/input_gestures.rs:139
 msgid "Picture Adjustments"
 msgstr "Ajustes de imagem"
 
-#: crates/big-video-player/src/video/ui/video_shell/component.rs:824
+#: crates/big-video-player/src/video/ui/video_shell/component.rs:770
 #: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:61
 msgid "Video Filters"
 msgstr "Filtros de vídeo"
 
-#: crates/big-video-player/src/video/ui/video_shell/component.rs:825
+#: crates/big-video-player/src/video/ui/video_shell/component.rs:771
 msgid "Stream Quality"
 msgstr "Qualidade do stream"
 
-#: crates/big-video-player/src/video/ui/video_shell/component.rs:826
+#: crates/big-video-player/src/video/ui/video_shell/component.rs:772
 #: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:177
 msgid "IPTV"
 msgstr "IPTV"
 
-#: crates/big-video-player/src/video/ui/video_shell/component.rs:829
+#: crates/big-video-player/src/video/ui/video_shell/component.rs:775
 #: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:16
 msgid "Cast to Device"
 msgstr "Transmitir para dispositivo"
 
-#: crates/big-video-player/src/video/ui/video_shell/component.rs:837
+#: crates/big-video-player/src/video/ui/video_shell/component.rs:783
 #: crates/big-video-player/src/video/ui/video_shell/input_gestures.rs:146
 msgid "Media Info"
 msgstr "Informações de mídia"
@@ -4609,15 +4423,11 @@ msgstr ""
 "Os padrões foram aplicados nesta sessão; o salvamento continua em segundo "
 "plano."
 
-#: crates/big-video-player/src/video/ui/video_shell/export.rs:26
-msgid "Extracting audio…"
-msgstr "Extraindo áudio…"
-
-#: crates/big-video-player/src/video/ui/video_shell/export.rs:55
+#: crates/big-video-player/src/video/ui/video_shell/export.rs:19
 msgid "No file is playing"
 msgstr "Nenhum arquivo em reprodução"
 
-#: crates/big-video-player/src/video/ui/video_shell/export.rs:60
+#: crates/big-video-player/src/video/ui/video_shell/export.rs:23
 msgid "Cannot export a network stream"
 msgstr "Não é possível exportar uma transmissão de rede"
 
@@ -4639,19 +4449,11 @@ msgstr ""
 "Não foi possível reproduzir este arquivo — ele pode não ser suportado ou "
 "estar corrompido."
 
-#: crates/big-video-player/src/video/ui/video_shell/playback.rs:316
-msgid "Opening in converter…"
-msgstr "Abrindo no conversor…"
-
-#: crates/big-video-player/src/video/ui/video_shell/playback.rs:318
-msgid "Could not launch the converter"
-msgstr "Não foi possível abrir o conversor"
-
-#: crates/big-video-player/src/video/ui/video_shell/playback.rs:344
+#: crates/big-video-player/src/video/ui/video_shell/playback.rs:331
 msgid "Could not move to trash"
 msgstr "Não foi possível mover para a lixeira"
 
-#: crates/big-video-player/src/video/ui/video_shell/playback.rs:349
+#: crates/big-video-player/src/video/ui/video_shell/playback.rs:336
 #, rust-format
 msgid "{} file moved to trash"
 msgid_plural "{} files moved to trash"
@@ -4682,473 +4484,81 @@ msgstr ""
 "Não foi possível exibir a imagem do vídeo. Tente a saída de vídeo Automático "
 "nas Preferências."
 
-#: crates/big-video-player/src/video/ui/video_shell/trim/bar.rs:140
+#: crates/big-video-player/src/video/ui/video_shell/trim/bar.rs:128
 #, rust-format
 msgid "Cut start: {t} — mark the other end"
 msgstr "Início do corte: {t} — marque a outra ponta"
 
-#: crates/big-video-player/src/video/ui/video_shell/trim/bar.rs:142
+#: crates/big-video-player/src/video/ui/video_shell/trim/bar.rs:130
 #: crates/ui/media/big-player-ui/src/audio_trim_bar.rs:45
 msgid "Mark more cuts or export"
 msgstr "Marque mais cortes ou exporte"
 
-#: crates/big-video-player/src/video/ui/video_shell/trim/bar.rs:143
+#: crates/big-video-player/src/video/ui/video_shell/trim/bar.rs:131
 msgid "Press M (or Mark) at the start and end of a cut"
 msgstr "Pressione M (ou Marcar) no início e no fim de um corte"
 
-#: crates/big-video-player/src/video/ui/video_shell/trim/bar.rs:190
+#: crates/big-video-player/src/video/ui/video_shell/trim/bar.rs:178
 msgid "Mark"
 msgstr "Marcar"
 
-#: crates/big-video-player/src/video/ui/video_shell/trim/bar.rs:191
+#: crates/big-video-player/src/video/ui/video_shell/trim/bar.rs:179
 msgid "Mark a cut point at the current position (M)"
 msgstr "Marca um ponto de corte na posição atual (M)"
 
-#: crates/big-video-player/src/video/ui/video_shell/trim/bar.rs:196
+#: crates/big-video-player/src/video/ui/video_shell/trim/bar.rs:184
 msgid "Clear all cuts"
 msgstr "Limpar todos os cortes"
 
-#: crates/big-video-player/src/video/ui/video_shell/trim/bar.rs:212
+#: crates/big-video-player/src/video/ui/video_shell/trim/bar.rs:200
 msgid "Play only the marked cuts"
 msgstr "Reproduzir só os cortes marcados"
 
-#: crates/big-video-player/src/video/ui/video_shell/trim/bar.rs:242
-msgid "Keep format (fast)"
-msgstr "Manter formato (rápido)"
-
-#: crates/big-video-player/src/video/ui/video_shell/trim/bar.rs:245
-#: crates/media-runtime/src/ui_labels.rs:76
-msgid "Re-encode"
-msgstr "Recodificar"
-
-#: crates/big-video-player/src/video/ui/video_shell/trim/bar.rs:250
-msgid ""
-"Keep format copies the cut without re-encoding (fast); Re-encode applies the "
-"cut settings"
-msgstr ""
-"Manter formato copia o corte sem recodificar (rápido); Recodificar aplica as "
-"configurações de corte"
-
-#: crates/big-video-player/src/video/ui/video_shell/trim/bar.rs:273
-msgid "Cut settings"
-msgstr "Configurações do corte"
-
-#: crates/big-video-player/src/video/ui/video_shell/trim/bar.rs:286
+#: crates/big-video-player/src/video/ui/video_shell/trim/bar.rs:226
 #: crates/ui/media/big-player-ui/src/audio_trim_bar.rs:49
 msgid "Exit trim mode"
 msgstr "Sair do modo de corte"
 
-#: crates/big-video-player/src/video/ui/video_shell/trim/bar.rs:299
+#: crates/big-video-player/src/video/ui/video_shell/trim/bar.rs:238
+msgid "Export"
+msgstr "Exportar"
+
+#: crates/big-video-player/src/video/ui/video_shell/trim/bar.rs:239
+#: crates/ui/media/big-player-ui/src/audio_trim_bar.rs:48
 msgid "Export the marked cuts"
 msgstr "Exporta os cortes marcados"
 
-#: crates/big-video-player/src/video/ui/video_shell/trim/bar.rs:412
-#: crates/big-video-player/src/video/ui/video_shell/trim/bar.rs:414
+#: crates/big-video-player/src/video/ui/video_shell/trim/bar.rs:328
+#: crates/big-video-player/src/video/ui/video_shell/trim/bar.rs:330
 #: crates/ui/media/big-player-ui/src/audio_trim_bar.rs:50
 msgid "Edit cut times"
 msgstr "Editar tempos do corte"
 
-#: crates/big-video-player/src/video/ui/video_shell/trim/bar.rs:424
+#: crates/big-video-player/src/video/ui/video_shell/trim/bar.rs:340
 #: crates/ui/media/big-player-ui/src/audio_trim_bar.rs:52
 msgid "Remove this cut"
 msgstr "Remover este corte"
 
-#: crates/big-video-player/src/video/ui/video_shell/trim/run.rs:42
-#: crates/big-video-player/src/video/ui/video_shell/trim/run.rs:214
+#: crates/big-video-player/src/video/ui/video_shell/trim/run.rs:27
 msgid "Open a local video to cut it"
 msgstr "Abra um vídeo local para cortá-lo"
 
-#: crates/big-video-player/src/video/ui/video_shell/trim/run.rs:317
-#: crates/big-video-player/src/video/ui/video_shell/trim/run.rs:321
-#: crates/media-runtime/src/editor/edit_page/segment_list.rs:166
-#: crates/media-runtime/src/editor/edit_page/segment_list.rs:177
+#: crates/big-video-player/src/video/ui/video_shell/trim/run.rs:198
+#: crates/big-video-player/src/video/ui/video_shell/trim/run.rs:202
 msgid "s"
 msgstr "s"
 
-#: crates/big-video-player/src/video/ui/video_shell/trim/run.rs:337
+#: crates/big-video-player/src/video/ui/video_shell/trim/run.rs:218
 msgid "Cut times"
 msgstr "Tempos do corte"
 
-#: crates/big-video-player/src/video/ui/video_shell/trim/run.rs:342
+#: crates/big-video-player/src/video/ui/video_shell/trim/run.rs:223
 msgid "Hundredth-second precision; either order is fine"
 msgstr "Precisão de centésimos; qualquer ordem serve"
 
-#: crates/big-video-player/src/video/ui/video_shell/trim/run.rs:352
+#: crates/big-video-player/src/video/ui/video_shell/trim/run.rs:233
 msgid "Edit Cut"
 msgstr "Editar Corte"
-
-#: crates/big-video-player/src/video/ui/video_shell/trim/run.rs:402
-msgid "Clip export settings"
-msgstr "Configurações de exportação do clipe"
-
-#: crates/big-video-player/src/video/ui/video_shell/trim/run.rs:410
-msgid "Image adjustments"
-msgstr "Ajustes de imagem"
-
-#: crates/big-video-player/src/video/ui/video_shell/trim/run.rs:411
-msgid "Brightness, contrast, color intensity, and color balance"
-msgstr "Brilho, contraste, intensidade de cor e equilíbrio de cor"
-
-#: crates/big-video-player/src/video/ui/video_shell/trim/run.rs:437
-msgid "Color intensity"
-msgstr "Intensidade de cor"
-
-#: crates/big-video-player/src/video/ui/video_shell/trim/run.rs:446
-msgid "Color balance"
-msgstr "Equilíbrio de cor"
-
-#: crates/big-video-player/src/video/ui/video_shell/trim/run.rs:504
-msgid "Output files"
-msgstr "Arquivos de saída"
-
-#: crates/big-video-player/src/video/ui/video_shell/trim/run.rs:507
-msgid "When there are multiple cuts"
-msgstr "Quando há vários cortes"
-
-#: crates/big-video-player/src/video/ui/video_shell/trim/run.rs:508
-msgid "Join into one file"
-msgstr "Juntar em um arquivo"
-
-#: crates/big-video-player/src/video/ui/video_shell/trim/run.rs:508
-msgid "Save each cut separately"
-msgstr "Salvar cada corte separadamente"
-
-#: crates/big-video-player/src/video/ui/video_shell/trim/run.rs:511
-msgid "One file is easier to share; separate files are easier to edit later"
-msgstr ""
-"Um arquivo é mais fácil de compartilhar; arquivos separados são mais fáceis "
-"de editar depois"
-
-#: crates/big-video-player/src/video/ui/video_shell/trim/run.rs:543
-msgid "Clip exported"
-msgstr "Clipe exportado"
-
-#: crates/media-runtime/src/converter/queue/job.rs:140
-msgid "Input file not found"
-msgstr "Arquivo de entrada não encontrado"
-
-#: crates/media-runtime/src/converter/queue/job.rs:143
-msgid "Permission denied — check file permissions"
-msgstr "Permissão negada — verifique as permissões do arquivo"
-
-#: crates/media-runtime/src/converter/queue/job.rs:146
-msgid "Disk full — free up space and try again"
-msgstr "Disco cheio — libere espaço e tente novamente"
-
-#: crates/media-runtime/src/converter/queue/job.rs:149
-msgid "File is corrupted or has an unsupported format"
-msgstr "O arquivo está corrompido ou tem um formato não suportado"
-
-#: crates/media-runtime/src/converter/queue/job.rs:154
-msgid "Unsupported codec — try a different format"
-msgstr "Codec não suportado — tente um formato diferente"
-
-#: crates/media-runtime/src/converter/queue/job.rs:157
-msgid "Required encoder not available — check FFmpeg installation"
-msgstr ""
-"Codificador necessário não disponível — verifique a instalação do FFmpeg"
-
-#: crates/media-runtime/src/converter/queue/job.rs:160
-msgid "Unknown codec — install required codec support"
-msgstr "Codec desconhecido — instale o suporte ao codec necessário"
-
-#: crates/media-runtime/src/converter/queue/job.rs:163
-msgid "Output file already exists"
-msgstr "O arquivo de saída já existe"
-
-#: crates/media-runtime/src/converter/queue/job.rs:169
-msgid "Could not convert with these settings. Try another format or quality."
-msgstr ""
-"Não foi possível converter com estes ajustes. Tente outro formato ou "
-"qualidade."
-
-#: crates/media-runtime/src/converter/queue/job.rs:172
-msgid "Could not open file — check path and permissions"
-msgstr "Não foi possível abrir o arquivo — verifique o caminho e as permissões"
-
-#: crates/media-runtime/src/converter/queue/job.rs:175
-msgid "FFmpeg exited with code"
-msgstr "FFmpeg encerrou com o código"
-
-#: crates/media-runtime/src/converter/queue/processing.rs:39
-msgid "Insufficient disk space"
-msgstr "Espaço em disco insuficiente"
-
-#: crates/media-runtime/src/converter/queue/processing.rs:40
-msgid "need"
-msgstr "necessário"
-
-#: crates/media-runtime/src/converter/queue/processing.rs:42
-msgid "available"
-msgstr "disponível"
-
-#: crates/media-runtime/src/converter/queue/processing.rs:103
-#: crates/media-runtime/src/settings/messages.rs:130
-msgid ""
-"The source or external subtitles changed. Existing exports were kept; review "
-"the plan again."
-msgstr ""
-"A mídia de origem ou as legendas externas mudaram. As exportações existentes "
-"foram mantidas; revise as configurações novamente."
-
-#: crates/media-runtime/src/converter/queue/processing.rs:129
-msgid "Export requires a regular local source file"
-msgstr "Para exportar, selecione um arquivo local disponível no computador"
-
-#: crates/media-runtime/src/converter/queue/processing.rs:146
-msgid "Choose a playback speed between 0.25 and 4"
-msgstr "Escolha uma velocidade de reprodução entre 0,25 e 4 vezes"
-
-#: crates/media-runtime/src/converter/queue/processing.rs:150
-msgid ""
-"Changing audio speed in a video needs matching video timing; use normal "
-"speed or audio-only export"
-msgstr ""
-"Alterar a velocidade do áudio exige ajustar também o vídeo. Use a velocidade "
-"normal ou exporte apenas o áudio"
-
-#: crates/media-runtime/src/converter/queue/processing.rs:158
-#: crates/media-runtime/src/settings/messages.rs:52
-msgid "Export at most 128 separate outputs per job."
-msgstr "Exporte no máximo 128 arquivos separados por tarefa."
-
-#: crates/media-runtime/src/converter/queue/processing.rs:180
-msgid "Invalid total export duration"
-msgstr "A duração total da exportação é inválida"
-
-#: crates/media-runtime/src/converter/queue/processing.rs:212
-#: crates/media-runtime/src/settings/messages.rs:140
-msgid ""
-"Verified completed export reused: source, plan and output receipts match."
-msgstr ""
-"Exportação concluída reutilizada após verificação: a origem, as "
-"configurações e o arquivo correspondem ao comprovante."
-
-#: crates/media-runtime/src/converter/queue/processing.rs:274
-msgid "No conversion stage completed"
-msgstr "Nenhuma tentativa de conversão foi concluída"
-
-#: crates/media-runtime/src/converter/queue/processing.rs:294
-msgid "Source was replaced during export; no result was published"
-msgstr ""
-"O arquivo de origem foi substituído durante a exportação; nenhum resultado "
-"foi salvo no destino"
-
-#: crates/media-runtime/src/converter/queue/processing.rs:300
-msgid "Source changed during export; no result was published"
-msgstr ""
-"O arquivo de origem mudou durante a exportação; nenhum resultado foi salvo "
-"no destino"
-
-#: crates/media-runtime/src/converter/queue/processing.rs:339
-msgid "Originals are kept. Verify the exported files before deleting anything."
-msgstr ""
-"Os originais serão mantidos. Verifique os arquivos exportados antes de "
-"apagar qualquer arquivo."
-
-#: crates/media-runtime/src/converter/queue/processing.rs:357
-msgid ""
-"Export incomplete. Any files already published were kept; the source is "
-"unchanged"
-msgstr ""
-"Exportação incompleta. Os arquivos já salvos foram mantidos; o arquivo de "
-"origem não foi alterado"
-
-#: crates/media-runtime/src/converter/queue/processing.rs:366
-msgid "This concat list needs UTF-8 paths"
-msgstr ""
-"Para unir estes trechos, os caminhos dos arquivos precisam usar texto UTF-8"
-
-#: crates/media-runtime/src/converter/queue/processing.rs:368
-msgid "Invalid concat path"
-msgstr "O caminho usado para unir os trechos é inválido"
-
-#: crates/media-runtime/src/converter/queue/processing.rs:413
-#: crates/media-runtime/src/converter/queue/processing.rs:418
-msgid "Could not complete concatenation"
-msgstr "Não foi possível concluir a união dos trechos"
-
-#: crates/media-runtime/src/converter/queue/validation.rs:29
-msgid "Invalid export duration or too many cut ranges"
-msgstr "A duração da exportação é inválida ou há trechos demais"
-
-#: crates/media-runtime/src/converter/queue/validation.rs:46
-msgid "Cuts must be inside the verified media duration"
-msgstr "Os cortes devem estar dentro da duração verificada da mídia"
-
-#: crates/media-runtime/src/converter/queue/validation.rs:82
-msgid "Source streams could not be verified"
-msgstr "Não foi possível verificar as faixas do arquivo de origem"
-
-#: crates/media-runtime/src/converter/queue/validation.rs:84
-msgid "Too many source streams"
-msgstr "Há faixas demais no arquivo de origem"
-
-#: crates/media-runtime/src/converter/queue/validation.rs:94
-msgid "The selected video stream is missing"
-msgstr "A faixa de vídeo selecionada não está disponível"
-
-#: crates/media-runtime/src/converter/queue/validation.rs:101
-msgid "A cover image is not the requested video stream"
-msgstr "Uma imagem de capa não é a faixa de vídeo solicitada"
-
-#: crates/media-runtime/src/converter/queue/validation.rs:106
-msgid "Unknown source video codec"
-msgstr "A codificação do vídeo de origem é desconhecida"
-
-#: crates/media-runtime/src/converter/queue/validation.rs:118
-msgid "Unknown source audio codec"
-msgstr "A codificação do áudio de origem é desconhecida"
-
-#: crates/media-runtime/src/converter/queue/validation.rs:128
-msgid "The selected audio stream is missing"
-msgstr "A faixa de áudio selecionada não está disponível"
-
-#: crates/media-runtime/src/converter/queue/validation.rs:133
-msgid "The plan has no audio or video output"
-msgstr "As opções escolhidas não incluem saída de áudio nem de vídeo"
-
-#: crates/media-runtime/src/converter/queue/validation.rs:145
-msgid "Subtitle streams could not be verified"
-msgstr "Não foi possível verificar as faixas de legenda"
-
-#: crates/media-runtime/src/converter/queue/validation.rs:167
-msgid "Export has no readable stream list"
-msgstr "Não foi possível ler as faixas do arquivo exportado"
-
-#: crates/media-runtime/src/converter/queue/validation.rs:169
-msgid "Too many output streams"
-msgstr "Há faixas demais no arquivo de saída"
-
-#: crates/media-runtime/src/converter/queue/validation.rs:184
-msgid "Exported stream count differs from the plan"
-msgstr "A quantidade de faixas exportadas difere da prevista"
-
-#: crates/media-runtime/src/converter/queue/validation.rs:189
-msgid "Exported codec differs from the plan"
-msgstr "A codificação do arquivo exportado difere da escolhida"
-
-#: crates/media-runtime/src/converter/queue/validation.rs:195
-msgid "Exported video dimensions are invalid"
-msgstr "As dimensões do vídeo exportado são inválidas"
-
-#: crates/media-runtime/src/converter/queue/validation.rs:198
-msgid "Exported audio has no channels"
-msgstr "O áudio exportado não contém canais"
-
-#: crates/media-runtime/src/converter/queue/validation.rs:209
-msgid "Exported subtitle count differs from the plan"
-msgstr "A quantidade de legendas exportadas difere da prevista"
-
-#: crates/media-runtime/src/converter/queue/validation.rs:214
-msgid "Exported duration could not be verified"
-msgstr "Não foi possível verificar a duração do arquivo exportado"
-
-#: crates/media-runtime/src/converter/queue/validation.rs:219
-msgid ""
-"Exported duration differs from the plan. Use precise re-encoding for exact "
-"cuts"
-msgstr ""
-"A duração exportada difere da prevista. Use a recodificação precisa para "
-"fazer cortes exatos"
-
-#: crates/media-runtime/src/converter/queue/validation.rs:232
-msgid "Exported file is empty or is not regular"
-msgstr "O resultado exportado está vazio ou não é um arquivo comum"
-
-#: crates/media-runtime/src/editor/audio_edit_page/actions.rs:85
-msgid "Clear All Segments?"
-msgstr "Limpar todos os segmentos?"
-
-#: crates/media-runtime/src/editor/audio_edit_page/actions.rs:86
-msgid "All cut marks will be removed. This cannot be undone."
-msgstr ""
-"Todas as marcas de corte serão removidas. Essa ação não pode ser desfeita."
-
-#: crates/media-runtime/src/editor/audio_edit_page/actions.rs:88
-msgid "Clear All"
-msgstr "Limpar tudo"
-
-#: crates/media-runtime/src/editor/audio_edit_page/actions.rs:170
-#: crates/ui/media/big-media-components/src/audio/editor_panel.rs:122
-msgid "Waveform zoom"
-msgstr "Zoom da forma de onda"
-
-#: crates/media-runtime/src/editor/audio_edit_page/segments.rs:185
-#: crates/media-runtime/src/editor/audio_edit_page/segments.rs:186
-#: crates/media-runtime/src/editor/edit_page/segment_list.rs:55
-#: crates/media-runtime/src/editor/edit_page/segment_list.rs:57
-msgid "Go to segment"
-msgstr "Ir para o segmento"
-
-#: crates/media-runtime/src/editor/audio_edit_page/segments.rs:202
-#: crates/media-runtime/src/editor/audio_edit_page/segments.rs:203
-#: crates/media-runtime/src/editor/edit_page/segment_list.rs:95
-#: crates/media-runtime/src/editor/edit_page/segment_list.rs:97
-msgid "Remove segment"
-msgstr "Remover segmento"
-
-#: crates/media-runtime/src/editor/edit_page/actions.rs:273
-msgid "Clear all segments?"
-msgstr "Limpar todos os segmentos?"
-
-#: crates/media-runtime/src/editor/edit_page/actions.rs:274
-msgid "Mark points and segment ranges will be removed."
-msgstr "Os pontos de marcação e os intervalos de segmento serão removidos."
-
-#: crates/media-runtime/src/editor/edit_page/actions.rs:276
-msgid "Clear"
-msgstr "Limpar"
-
-#: crates/media-runtime/src/editor/edit_page/build.rs:57
-msgid "Back to queue"
-msgstr "Voltar para a fila"
-
-#: crates/media-runtime/src/editor/edit_page/build.rs:61
-#: crates/ui/media/big-media-components/src/audio/editor_panel.rs:112
-msgid "Convert this file"
-msgstr "Converter este arquivo"
-
-#: crates/media-runtime/src/editor/edit_page/render.rs:526
-msgid "Frame"
-msgstr "Quadro"
-
-#: crates/media-runtime/src/editor/edit_page/render.rs:650
-#: crates/ui/media/big-media-components/src/video/editor_panel.rs:71
-msgid "No subtitles"
-msgstr "Sem legendas"
-
-#: crates/media-runtime/src/editor/edit_page/segment_list.rs:78
-#: crates/media-runtime/src/editor/edit_page/segment_list.rs:80
-msgid "Edit segment times"
-msgstr "Editar tempos do segmento"
-
-#: crates/media-runtime/src/editor/edit_page/segment_list.rs:139
-msgid "Edit Segment"
-msgstr "Editar Segmento"
-
-#: crates/media-runtime/src/editor/edit_page/segment_list.rs:155
-msgid "Start:"
-msgstr "Início:"
-
-#: crates/media-runtime/src/editor/edit_page/segment_list.rs:162
-#: crates/media-runtime/src/editor/edit_page/segment_list.rs:173
-msgid "h"
-msgstr "h"
-
-#: crates/media-runtime/src/editor/edit_page/segment_list.rs:164
-#: crates/media-runtime/src/editor/edit_page/segment_list.rs:175
-msgid "m"
-msgstr "m"
-
-#: crates/media-runtime/src/editor/edit_page/segment_list.rs:168
-#: crates/media-runtime/src/editor/edit_page/segment_list.rs:179
-msgid "cs"
-msgstr "cs"
-
-#: crates/media-runtime/src/editor/edit_page/segment_list.rs:170
-msgid "End:"
-msgstr "Fim:"
 
 #: crates/media-runtime/src/media/metadata_cache/detailed_video_metadata.rs:131
 #: crates/media-runtime/src/media/metadata_cache/detailed_video_metadata.rs:177
@@ -5167,19 +4577,14 @@ msgid "Hi-Res"
 msgstr "Alta resolução"
 
 #: crates/media-runtime/src/media/metadata_cache/detailed_video_metadata.rs:163
-#: crates/media-runtime/src/ui_labels.rs:113
-#: crates/media-runtime/src/ui_labels.rs:161
 msgid "Mono"
 msgstr "Mono"
 
 #: crates/media-runtime/src/media/metadata_cache/detailed_video_metadata.rs:164
-#: crates/media-runtime/src/ui_labels.rs:114
-#: crates/media-runtime/src/ui_labels.rs:161
 msgid "Stereo"
 msgstr "Estéreo"
 
 #: crates/media-runtime/src/media/metadata_cache/detailed_video_metadata.rs:165
-#: crates/media-runtime/src/ui_labels.rs:115
 msgid "5.1 Surround"
 msgstr "Surround 5.1"
 
@@ -5286,6 +4691,10 @@ msgid ""
 msgstr ""
 "Edite as credenciais e salve. Fechar sem salvar descarta as alterações."
 
+#: crates/media-runtime/src/settings/messages.rs:52
+msgid "Export at most 128 separate outputs per job."
+msgstr "Exporte no máximo 128 arquivos separados por tarefa."
+
 #: crates/media-runtime/src/settings/messages.rs:63
 msgid "No credentials are saved for this account."
 msgstr "Não há credenciais salvas para esta conta."
@@ -5302,6 +4711,17 @@ msgstr "Lista de reprodução exportada."
 #: crates/media-runtime/src/settings/messages.rs:82
 msgid "Remote items are not checked as local files"
 msgstr "Itens remotos não são verificados como arquivos locais"
+
+#: crates/media-runtime/src/settings/messages.rs:94
+msgid ""
+"Retrying this export reuses only complete files whose source, settings and "
+"contents match their saved receipts. Other existing files are never "
+"replaced. Keep the receipts beside the outputs."
+msgstr ""
+"Ao repetir a exportação, somente arquivos completos cuja origem, "
+"configurações e conteúdo correspondam aos comprovantes salvos serão "
+"reutilizados. Outros arquivos existentes não serão substituídos. Mantenha os "
+"comprovantes junto aos arquivos exportados."
 
 #: crates/media-runtime/src/settings/messages.rs:98
 #: crates/media-runtime/src/settings/saving.rs:18
@@ -5338,6 +4758,14 @@ msgstr ""
 "A lista de reprodução não foi exportada. Verifique o armazenamento ou "
 "escolha outro nome; os arquivos existentes não foram substituídos."
 
+#: crates/media-runtime/src/settings/messages.rs:130
+msgid ""
+"The source or external subtitles changed. Existing exports were kept; review "
+"the plan again."
+msgstr ""
+"A mídia de origem ou as legendas externas mudaram. As exportações existentes "
+"foram mantidas; revise as configurações novamente."
+
 #: crates/media-runtime/src/settings/messages.rs:138
 msgid "This location is not a regular media file"
 msgstr "Este local não é um arquivo de mídia comum"
@@ -5345,6 +4773,13 @@ msgstr "Este local não é um arquivo de mídia comum"
 #: crates/media-runtime/src/settings/messages.rs:139
 msgid "User token"
 msgstr "Token do usuário"
+
+#: crates/media-runtime/src/settings/messages.rs:140
+msgid ""
+"Verified completed export reused: source, plan and output receipts match."
+msgstr ""
+"Exportação concluída reutilizada após verificação: a origem, as "
+"configurações e o arquivo correspondem ao comprovante."
 
 #: crates/media-runtime/src/settings/messages.rs:146
 #: crates/media-runtime/src/settings/saving.rs:19
@@ -5466,7 +4901,6 @@ msgid "Noise reduction model"
 msgstr "Modelo de redução de ruído"
 
 #: crates/media-runtime/src/shared/audio_effects.rs:381
-#: crates/ui/media/big-media-components/src/audio/cleanup_dialog.rs:108
 msgid "Voice Recovery"
 msgstr "Recuperação de voz"
 
@@ -5552,392 +4986,9 @@ msgstr "Escolha o que acontece quando o tempo acabar"
 msgid "Start Timer"
 msgstr "Iniciar temporizador"
 
-#: crates/media-runtime/src/ui_labels.rs:14
-#: crates/media-runtime/src/ui_labels.rs:135
-msgid "Copy (no re-encode)"
-msgstr "Copiar (sem recodificar)"
-
-#: crates/media-runtime/src/ui_labels.rs:15
-msgid "H.264 / AVC"
-msgstr "H.264 / AVC"
-
-#: crates/media-runtime/src/ui_labels.rs:16
-msgid "H.265 / HEVC"
-msgstr "H.265 / HEVC"
-
-#: crates/media-runtime/src/ui_labels.rs:17
-msgid "AV1"
-msgstr "AV1"
-
-#: crates/media-runtime/src/ui_labels.rs:18
-msgid "VP9"
-msgstr "VP9"
-
-#: crates/media-runtime/src/ui_labels.rs:19
-msgid "ProRes"
-msgstr "ProRes"
-
-#: crates/media-runtime/src/ui_labels.rs:27
-msgid "Very High"
-msgstr "Muito alta"
-
-#: crates/media-runtime/src/ui_labels.rs:28
-msgid "High"
-msgstr "Alta"
-
-#: crates/media-runtime/src/ui_labels.rs:29
-msgid "Good"
-msgstr "Boa"
-
-#: crates/media-runtime/src/ui_labels.rs:30
-msgid "Medium"
-msgstr "Média"
-
-#: crates/media-runtime/src/ui_labels.rs:31
-msgid "Low"
-msgstr "Baixa"
-
-#: crates/media-runtime/src/ui_labels.rs:32
-msgid "Very Low"
-msgstr "Muito baixa"
-
-#: crates/media-runtime/src/ui_labels.rs:33
-msgid "Super Low"
-msgstr "Baixíssima"
-
-#: crates/media-runtime/src/ui_labels.rs:41
-msgid "Ultra Fast"
-msgstr "Ultrarrápido"
-
-#: crates/media-runtime/src/ui_labels.rs:42
-msgid "Very Fast"
-msgstr "Muito rápido"
-
-#: crates/media-runtime/src/ui_labels.rs:43
-msgid "Fast"
-msgstr "Rápido"
-
-#: crates/media-runtime/src/ui_labels.rs:45
-msgid "Slow"
-msgstr "Lento"
-
-#: crates/media-runtime/src/ui_labels.rs:46
-msgid "Very Slow"
-msgstr "Muito lento"
-
-#: crates/media-runtime/src/ui_labels.rs:54
-#: crates/media-runtime/src/ui_labels.rs:161
-msgid "Original"
-msgstr "Original"
-
-#: crates/media-runtime/src/ui_labels.rs:55
-msgid "4K (3840×2160)"
-msgstr "4K (3840×2160)"
-
-#: crates/media-runtime/src/ui_labels.rs:56
-msgid "1440p (2560×1440)"
-msgstr "1440p (2560×1440)"
-
-#: crates/media-runtime/src/ui_labels.rs:57
-msgid "1080p (1920×1080)"
-msgstr "1080p (1920×1080)"
-
-#: crates/media-runtime/src/ui_labels.rs:58
-msgid "720p (1280×720)"
-msgstr "720p (1280×720)"
-
-#: crates/media-runtime/src/ui_labels.rs:59
-msgid "480p (854×480)"
-msgstr "480p (854×480)"
-
-#: crates/media-runtime/src/ui_labels.rs:60
-msgid "360p (640×360)"
-msgstr "360p (640×360)"
-
-#: crates/media-runtime/src/ui_labels.rs:61
-#: crates/media-runtime/src/ui_labels.rs:104
-#: crates/media-runtime/src/ui_labels.rs:116
-#: crates/ui/media/big-media-components/src/audio/equalizer_controls/labels.rs:32
-msgid "Custom"
-msgstr "Personalizado"
-
-#: crates/media-runtime/src/ui_labels.rs:68
-msgid "MP4"
-msgstr "MP4"
-
-#: crates/media-runtime/src/ui_labels.rs:68
-msgid "MKV"
-msgstr "MKV"
-
-#: crates/media-runtime/src/ui_labels.rs:68
-msgid "MOV"
-msgstr "MOV"
-
-#: crates/media-runtime/src/ui_labels.rs:68
-msgid "WebM"
-msgstr "WebM"
-
-#: crates/media-runtime/src/ui_labels.rs:75
-msgid "Copy (no change)"
-msgstr "Copiar (sem alteração)"
-
-#: crates/media-runtime/src/ui_labels.rs:77
-msgid "Remove audio"
-msgstr "Remover áudio"
-
-#: crates/media-runtime/src/ui_labels.rs:85
-#: crates/media-runtime/src/ui_labels.rs:140
-msgid "AAC"
-msgstr "AAC"
-
-#: crates/media-runtime/src/ui_labels.rs:86
-#: crates/media-runtime/src/ui_labels.rs:141
-msgid "Opus"
-msgstr "Opus"
-
-#: crates/media-runtime/src/ui_labels.rs:87
-#: crates/media-runtime/src/ui_labels.rs:136
-msgid "MP3"
-msgstr "MP3"
-
-#: crates/media-runtime/src/ui_labels.rs:88
-msgid "AC3 / Dolby"
-msgstr "AC3 / Dolby"
-
-#: crates/media-runtime/src/ui_labels.rs:89
-#: crates/media-runtime/src/ui_labels.rs:138
-msgid "FLAC (lossless)"
-msgstr "FLAC (sem perdas)"
-
-#: crates/media-runtime/src/ui_labels.rs:90
-msgid "PCM (uncompressed)"
-msgstr "PCM (sem compressão)"
-
-#: crates/media-runtime/src/ui_labels.rs:98
-#: crates/media-runtime/src/ui_labels.rs:150
-msgid "64 kbps"
-msgstr "64 kbps"
-
-#: crates/media-runtime/src/ui_labels.rs:99
-msgid "96 kbps"
-msgstr "96 kbps"
-
-#: crates/media-runtime/src/ui_labels.rs:100
-#: crates/media-runtime/src/ui_labels.rs:151
-msgid "128 kbps"
-msgstr "128 kbps"
-
-#: crates/media-runtime/src/ui_labels.rs:101
-#: crates/media-runtime/src/ui_labels.rs:152
-msgid "192 kbps"
-msgstr "192 kbps"
-
-#: crates/media-runtime/src/ui_labels.rs:102
-#: crates/media-runtime/src/ui_labels.rs:153
-msgid "256 kbps"
-msgstr "256 kbps"
-
-#: crates/media-runtime/src/ui_labels.rs:103
-#: crates/media-runtime/src/ui_labels.rs:154
-msgid "320 kbps"
-msgstr "320 kbps"
-
-#: crates/media-runtime/src/ui_labels.rs:112
-msgid "Auto"
-msgstr "Automático"
-
-#: crates/media-runtime/src/ui_labels.rs:124
-msgid "Extract to File"
-msgstr "Extrair para arquivo"
-
-#: crates/media-runtime/src/ui_labels.rs:125
-msgid "Keep Embedded"
-msgstr "Manter incorporado"
-
-#: crates/media-runtime/src/ui_labels.rs:126
-msgid "Burn into Video"
-msgstr "Gravar no vídeo"
-
-#: crates/media-runtime/src/ui_labels.rs:137
-msgid "OGG Vorbis"
-msgstr "OGG Vorbis"
-
-#: crates/media-runtime/src/ui_labels.rs:139
-msgid "WAV (uncompressed)"
-msgstr "WAV (sem compressão)"
-
-#: crates/media-runtime/src/ui_labels.rs:149
-msgid "32 kbps"
-msgstr "32 kbps"
-
 #: crates/ui/generic/big-relm4-components/src/feedback/hover_popover.rs:264
 msgid "Press Alt+Down to adjust. Press Escape to close."
 msgstr "Pressione Alt+Seta para baixo para ajustar. Pressione Esc para fechar."
-
-#: crates/ui/media/big-media-components/src/audio/cleanup_dialog.rs:90
-#: crates/ui/media/big-media-components/src/audio/editor_panel.rs:123
-#: crates/ui/media/big-media-components/src/video/editor_sidebar.rs:67
-msgid "Audio Settings"
-msgstr "Configurações de Áudio"
-
-#: crates/ui/media/big-media-components/src/audio/cleanup_dialog.rs:92
-msgid ""
-"Improve your audio by removing noise, controlling volume and enhancing voice "
-"clarity."
-msgstr ""
-"Melhore seu áudio removendo ruídos, controlando o volume e aprimorando a "
-"clareza da voz."
-
-#: crates/ui/media/big-media-components/src/audio/cleanup_dialog.rs:94
-msgid "AI Noise Cleaning"
-msgstr "Limpeza de Ruído por IA"
-
-#: crates/ui/media/big-media-components/src/audio/cleanup_dialog.rs:95
-msgid "Noise reduction LADSPA plugin not installed"
-msgstr "Plugin LADSPA de redução de ruído não instalado"
-
-#: crates/ui/media/big-media-components/src/audio/cleanup_dialog.rs:96
-msgid "Remove Background Noise"
-msgstr "Remover Ruído de Fundo"
-
-#: crates/ui/media/big-media-components/src/audio/cleanup_dialog.rs:98
-msgid ""
-"Uses a neural network to separate voice from noise. Strength controls how "
-"aggressively noise is removed."
-msgstr ""
-"Usa uma rede neural para separar a voz do ruído. Intensidade controla o "
-"nível de agressividade na remoção do ruído."
-
-#: crates/ui/media/big-media-components/src/audio/cleanup_dialog.rs:101
-msgid "AI Model"
-msgstr "Modelo de IA"
-
-#: crates/ui/media/big-media-components/src/audio/cleanup_dialog.rs:103
-msgid ""
-"DNS3 - General-purpose. Good at removing steady noise like fans, AC, and hum."
-msgstr ""
-"DNS3 - Uso geral. Eficaz na remoção de ruídos constantes como ventiladores, "
-"ar-condicionado e zumbidos."
-
-#: crates/ui/media/big-media-components/src/audio/cleanup_dialog.rs:106
-msgid ""
-"DeepFilterNet3 / DPDFNet HR - Full-band 48 kHz models. Cleaner output when "
-"the optional LADSPA plugins are installed."
-msgstr ""
-"DeepFilterNet3 / DPDFNet HR - Modelos full-band de 48 kHz. Saída mais limpa "
-"quando os plugins LADSPA opcionais estão instalados."
-
-#: crates/ui/media/big-media-components/src/audio/cleanup_dialog.rs:109
-msgid "Noise Gate"
-msgstr "Gate de Ruído"
-
-#: crates/ui/media/big-media-components/src/audio/cleanup_dialog.rs:110
-msgid "Silence Low Sounds"
-msgstr "Silenciar Sons Baixos"
-
-#: crates/ui/media/big-media-components/src/audio/cleanup_dialog.rs:112
-msgid ""
-"Mutes audio below a threshold - great for removing faint hum or room noise "
-"between speech."
-msgstr ""
-"Muda o áudio abaixo de um limiar — ótimo para remover zumbidos leves ou "
-"ruído ambiente entre falas."
-
-#: crates/ui/media/big-media-components/src/audio/cleanup_dialog.rs:115
-msgid "Audio Enhancement"
-msgstr "Aprimoramento de Áudio"
-
-#: crates/ui/media/big-media-components/src/audio/cleanup_dialog.rs:116
-msgid "Remove Low Rumble"
-msgstr "Remover Ronco Baixo"
-
-#: crates/ui/media/big-media-components/src/audio/cleanup_dialog.rs:118
-msgid ""
-"Cuts low-frequency noise like wind, air conditioning or handling vibrations."
-msgstr ""
-"Corta ruídos de baixa frequência como vento, ar-condicionado ou vibrações de "
-"manuseio."
-
-#: crates/ui/media/big-media-components/src/audio/cleanup_dialog.rs:120
-msgid "Frequency (Hz)"
-msgstr "Frequência (Hz)"
-
-#: crates/ui/media/big-media-components/src/audio/cleanup_dialog.rs:121
-msgid "Uniform Volume"
-msgstr "Volume Uniforme"
-
-#: crates/ui/media/big-media-components/src/audio/cleanup_dialog.rs:123
-msgid ""
-"Normalizes loudness to broadcast standard (ITU-R BS.1770, -16 LUFS). Makes "
-"all files similar volume."
-msgstr ""
-"Normaliza o volume para o padrão de transmissão (ITU-R BS.1770, -16 LUFS). "
-"Deixa todos os arquivos com volume semelhante."
-
-#: crates/ui/media/big-media-components/src/audio/cleanup_dialog.rs:125
-msgid "Compressor"
-msgstr "Compressor"
-
-#: crates/ui/media/big-media-components/src/audio/cleanup_dialog.rs:127
-msgid ""
-"Reduces the dynamic range - makes quiet parts louder and loud parts quieter."
-msgstr ""
-"Reduz o intervalo dinâmico - deixa as partes silenciosas mais altas e as "
-"partes altas mais silenciosas."
-
-#: crates/ui/media/big-media-components/src/audio/cleanup_dialog.rs:131
-msgid "Adjust frequency balance. Use presets or drag individual bands."
-msgstr ""
-"Ajuste o balanço de frequências. Use predefinições ou arraste as bandas "
-"individualmente."
-
-#: crates/ui/media/big-media-components/src/audio/cleanup_dialog.rs:133
-msgid "Enable equalizer"
-msgstr "Ativar equalizador"
-
-#: crates/ui/media/big-media-components/src/audio/editor_panel.rs:113
-msgid "Play/Pause"
-msgstr "Reproduzir/Pausar"
-
-#: crates/ui/media/big-media-components/src/audio/editor_panel.rs:114
-msgid "Previous track"
-msgstr "Faixa anterior"
-
-#: crates/ui/media/big-media-components/src/audio/editor_panel.rs:115
-msgid "Next track"
-msgstr "Próxima faixa"
-
-#: crates/ui/media/big-media-components/src/audio/editor_panel.rs:116
-msgid "Play only selected area"
-msgstr "Reproduzir apenas a área selecionada"
-
-#: crates/ui/media/big-media-components/src/audio/editor_panel.rs:117
-msgid "Auto-advance to next track"
-msgstr "Avançar automaticamente para a próxima faixa"
-
-#: crates/ui/media/big-media-components/src/audio/editor_panel.rs:119
-#: crates/ui/media/big-media-components/src/video/editor_sidebar.rs:72
-msgid "Clear all segments"
-msgstr "Limpar todos os segmentos"
-
-#: crates/ui/media/big-media-components/src/audio/editor_panel.rs:121
-#: crates/ui/media/big-media-components/src/player_chrome.rs:309
-#: crates/ui/media/big-media-components/src/video/editor_panel.rs:66
-msgid "Playback speed"
-msgstr "Velocidade de reprodução"
-
-#: crates/ui/media/big-media-components/src/audio/editor_panel.rs:124
-msgid "Audio timeline"
-msgstr "Linha do tempo de áudio"
-
-#: crates/ui/media/big-media-components/src/audio/editor_panel.rs:125
-#: crates/ui/media/big-media-components/src/video/editor_sidebar.rs:69
-msgid "Trim Segments"
-msgstr "Segmentos de corte"
-
-#: crates/ui/media/big-media-components/src/audio/editor_panel.rs:126
-msgid "Press the mark button to create segments"
-msgstr "Pressione o botão de marcação para criar segmentos"
 
 #: crates/ui/media/big-media-components/src/audio/equalizer_controls/labels.rs:23
 msgid "Default voice"
@@ -5971,248 +5022,9 @@ msgstr "Corte de graves"
 msgid "Presence"
 msgstr "Presença"
 
-#: crates/ui/media/big-media-components/src/audio/noise_model_picker.rs:129
-msgid ""
-"DNS3 is a lightweight 16 kHz model that removes steady noise. DeepFilterNet3 "
-"and DPDFNet HR are full-band 48 kHz models. The lighter 16 kHz DPDFNet "
-"variants run inside a dedicated resampled chain — strong noise reduction at "
-"a fraction of the CPU."
-msgstr ""
-"DNS3 é um modelo leve de 16 kHz que remove ruído constante. DeepFilterNet3 e "
-"DPDFNet HR são modelos de banda completa a 48 kHz. As variantes DPDFNet de "
-"16 kHz mais leves rodam em uma cadeia de reamostragem dedicada — redução de "
-"ruído intensa com fração do uso de CPU."
-
-#: crates/ui/media/big-media-components/src/audio/noise_model_picker.rs:139
-msgid ""
-"DNS3 is a lightweight 16 kHz model that removes steady noise — good for "
-"podcasts."
-msgstr ""
-"DNS3 é um modelo leve de 16 kHz que remove ruído constante — ideal para "
-"podcasts."
-
-#: crates/ui/media/big-media-components/src/audio/noise_model_picker.rs:143
-msgid ""
-"DNS3 is a lightweight 16 kHz model that removes steady noise. DeepFilterNet3 "
-"is a full-band 48 kHz model with the cleanest output and the highest CPU "
-"cost."
-msgstr ""
-"DNS3 é um modelo leve de 16 kHz que remove ruído constante. DeepFilterNet3 é "
-"um modelo de banda completa a 48 kHz com a saída mais limpa e o maior custo "
-"de CPU."
-
-#: crates/ui/media/big-media-components/src/audio/noise_model_picker.rs:148
-msgid ""
-"DNS3 is a lightweight 16 kHz model that removes steady noise. DPDFNet HR "
-"variants are full-band 48 kHz models with strong noise reduction at a higher "
-"CPU cost."
-msgstr ""
-"DNS3 é um modelo leve de 16 kHz que remove ruído constante. As variantes "
-"DPDFNet HR são modelos de banda completa a 48 kHz com redução de ruído "
-"intensa e maior custo de CPU."
-
-#: crates/ui/media/big-media-components/src/audio/noise_model_picker.rs:153
-msgid ""
-"DNS3 is a lightweight 16 kHz model that removes steady noise. DeepFilterNet3 "
-"and the DPDFNet HR variants are full-band 48 kHz models — the cleanest "
-"output, with the highest CPU cost."
-msgstr ""
-"DNS3 é um modelo leve de 16 kHz que remove ruído constante. DeepFilterNet3 e "
-"as variantes DPDFNet HR são modelos de banda completa a 48 kHz — a saída "
-"mais limpa, com o maior custo de CPU."
-
-#: crates/ui/media/big-media-components/src/audio/noise_model_picker.rs:169
-msgid "GTCRN – DNS3 (16 kHz, strong)"
-msgstr "GTCRN – DNS3 (16 kHz, forte)"
-
-#: crates/ui/media/big-media-components/src/audio/noise_model_picker.rs:175
-msgid "DeepFilterNet3 (48 kHz)"
-msgstr "DeepFilterNet3 (48 kHz)"
-
-#: crates/ui/media/big-media-components/src/audio/noise_model_picker.rs:181
-msgid "DPDFNet-2 HR (48 kHz, balanced)"
-msgstr "DPDFNet-2 HR (48 kHz, equilibrado)"
-
-#: crates/ui/media/big-media-components/src/audio/noise_model_picker.rs:187
-msgid "DPDFNet-8 HR (48 kHz, premium)"
-msgstr "DPDFNet-8 HR (48 kHz, premium)"
-
-#: crates/ui/media/big-media-components/src/audio/noise_model_picker.rs:214
-msgid "DPDFNet baseline (16 kHz, lightest)"
-msgstr "DPDFNet base (16 kHz, mais leve)"
-
-#: crates/ui/media/big-media-components/src/audio/noise_model_picker.rs:220
-msgid "DPDFNet-2 (16 kHz, balanced)"
-msgstr "DPDFNet-2 (16 kHz, equilibrado)"
-
-#: crates/ui/media/big-media-components/src/audio/noise_model_picker.rs:226
-msgid "DPDFNet-4 (16 kHz, stronger)"
-msgstr "DPDFNet-4 (16 kHz, mais forte)"
-
-#: crates/ui/media/big-media-components/src/audio/noise_model_picker.rs:232
-msgid "DPDFNet-8 (16 kHz, strongest)"
-msgstr "DPDFNet-8 (16 kHz, mais forte ainda)"
-
-#: crates/ui/media/big-media-components/src/converter/header_bar.rs:52
-#: crates/ui/media/big-player-ui/src/radio_panel/widgets.rs:352
-msgid "Add"
-msgstr "Adicionar"
-
-#: crates/ui/media/big-media-components/src/converter/header_bar.rs:55
-msgid "Add Network File"
-msgstr "Adicionar Arquivo de Rede"
-
-#: crates/ui/media/big-media-components/src/converter/header_bar.rs:56
-msgid "Convert"
-msgstr "Converter"
-
-#: crates/ui/media/big-media-components/src/converter/header_bar.rs:58
-msgid "Clear queue"
-msgstr "Limpar fila"
-
-#: crates/ui/media/big-media-components/src/converter/header_bar.rs:59
-msgid "files"
-msgstr "arquivos"
-
-#: crates/ui/media/big-media-components/src/converter/header_bar.rs:64
-msgid "Main menu"
-msgstr "Menu principal"
-
-#: crates/ui/media/big-media-components/src/converter/progress/build.rs:48
-#: crates/ui/media/big-media-components/src/converter/progress/updates.rs:256
-msgid "Ready"
-msgstr "Pronto"
-
-#: crates/ui/media/big-media-components/src/converter/progress/build.rs:72
-#: crates/ui/media/big-media-components/src/converter/progress/build.rs:127
-msgid "Cancel All"
-msgstr "Cancelar tudo"
-
-#: crates/ui/media/big-media-components/src/converter/progress/build.rs:78
-msgid "Back to Queue"
-msgstr "Voltar à fila"
-
-#: crates/ui/media/big-media-components/src/converter/progress/build.rs:121
-msgid "Cancel All Conversions?"
-msgstr "Cancelar todas as conversões?"
-
-#: crates/ui/media/big-media-components/src/converter/progress/build.rs:123
-msgid ""
-"This will stop all active conversions and skip pending items. This cannot be "
-"undone."
-msgstr ""
-"Isso interromperá todas as conversões ativas e ignorará os itens pendentes. "
-"Esta ação não pode ser desfeita."
-
-#: crates/ui/media/big-media-components/src/converter/progress/build.rs:125
-msgid "Continue"
-msgstr "Continuar"
-
-#: crates/ui/media/big-media-components/src/converter/progress/build.rs:243
-msgid "Waiting in queue"
-msgstr "Aguardando na fila"
-
-#: crates/ui/media/big-media-components/src/converter/progress/build.rs:301
-msgid "Show conversion details"
-msgstr "Mostrar detalhes da conversão"
-
-#: crates/ui/media/big-media-components/src/converter/progress/build.rs:312
-msgid "Cancel conversion"
-msgstr "Cancelar conversão"
-
-#: crates/ui/media/big-media-components/src/converter/progress/build.rs:331
-msgid "FFmpeg Command"
-msgstr "Comando FFmpeg"
-
-#: crates/ui/media/big-media-components/src/converter/progress/build.rs:349
-msgid "FFmpeg Output"
-msgstr "Saída do FFmpeg"
-
-#: crates/ui/media/big-media-components/src/converter/progress/updates.rs:33
-#: crates/ui/media/big-media-components/src/converter/progress/updates.rs:227
-#: crates/ui/media/big-media-components/src/converter/progress/updates.rs:242
-msgid "Converting"
-msgstr "Convertendo"
-
-#: crates/ui/media/big-media-components/src/converter/progress/updates.rs:51
-#: crates/ui/media/big-media-components/src/converter/progress/updates.rs:53
-#: crates/ui/media/big-media-components/src/converter/progress/updates.rs:127
-msgid "Converting..."
-msgstr "Convertendo..."
-
-#: crates/ui/media/big-media-components/src/converter/progress/updates.rs:143
-msgid "Completed"
-msgstr "Concluído"
-
-#: crates/ui/media/big-media-components/src/converter/progress/updates.rs:168
-#: crates/ui/media/big-player-ui/src/download_panel.rs:278
-msgid "Cancelled"
-msgstr "Cancelado"
-
-#: crates/ui/media/big-media-components/src/converter/progress/updates.rs:183
-msgid "completed"
-msgstr "concluído"
-
-#: crates/ui/media/big-media-components/src/converter/progress/updates.rs:186
-msgid "failed"
-msgstr "falhou"
-
-#: crates/ui/media/big-media-components/src/converter/progress/updates.rs:189
-msgid "cancelled"
-msgstr "cancelado"
-
-#: crates/ui/media/big-media-components/src/converter/progress/updates.rs:192
-msgid "No files processed"
-msgstr "Nenhum arquivo processado"
-
-#: crates/ui/media/big-media-components/src/converter/progress/updates.rs:198
-#: crates/ui/media/big-player-ui/src/download_panel.rs:291
-msgid "Complete"
-msgstr "Concluído"
-
-#: crates/ui/media/big-media-components/src/converter/progress/updates.rs:204
-msgid "All videos converted successfully!"
-msgstr "Todos os vídeos foram convertidos com sucesso!"
-
-#: crates/ui/media/big-media-components/src/converter/progress/updates.rs:210
-msgid "All conversions failed or were cancelled"
-msgstr "Todas as conversões falharam ou foram canceladas"
-
-#: crates/ui/media/big-media-components/src/converter/progress/updates.rs:246
-msgid "in parallel"
-msgstr "em paralelo"
-
-#: crates/ui/media/big-media-components/src/converter/queue.rs:156
-msgid "No Audio Files"
-msgstr "Nenhum arquivo de áudio"
-
-#: crates/ui/media/big-media-components/src/converter/queue.rs:158
-msgid "No Video Files"
-msgstr "Nenhum arquivo de vídeo"
-
-#: crates/ui/media/big-media-components/src/converter/queue.rs:166
-msgid "Drag files here or use the Add Files button"
-msgstr "Arraste arquivos aqui ou use o botão Adicionar arquivos"
-
-#: crates/ui/media/big-media-components/src/converter/queue.rs:352
-msgid "Open video editor for this file"
-msgstr "Abrir editor de vídeo para este arquivo"
-
-#: crates/ui/media/big-media-components/src/converter/queue.rs:355
-msgid "Edit file"
-msgstr "Editar arquivo"
-
-#: crates/ui/media/big-media-components/src/converter/queue.rs:409
-msgid "Open Containing Folder"
-msgstr "Abrir pasta contendo o arquivo"
-
-#: crates/ui/media/big-media-components/src/converter/queue.rs:412
-msgid "More Information..."
-msgstr "Mais informações..."
-
-#: crates/ui/media/big-media-components/src/converter/queue.rs:413
-msgid "Delete from Disk..."
-msgstr "Excluir do disco..."
+#: crates/ui/media/big-media-components/src/audio/equalizer_controls/labels.rs:32
+msgid "Custom"
+msgstr "Personalizado"
 
 #: crates/ui/media/big-media-components/src/media/file_metadata_dialog.rs:78
 msgid "File Information"
@@ -6238,6 +5050,10 @@ msgstr "Fluxo de legendas"
 msgid "Volume level"
 msgstr "Nível de volume"
 
+#: crates/ui/media/big-media-components/src/player_chrome.rs:309
+msgid "Playback speed"
+msgstr "Velocidade de reprodução"
+
 #: crates/ui/media/big-media-components/src/player_chrome.rs:321
 msgid "Voice"
 msgstr "Voz"
@@ -6245,142 +5061,6 @@ msgstr "Voz"
 #: crates/ui/media/big-media-components/src/player_chrome.rs:325
 msgid "Voice enhancement"
 msgstr "Aprimoramento de voz"
-
-#: crates/ui/media/big-media-components/src/video/editor_panel.rs:54
-msgid "Timeline"
-msgstr "Linha do tempo"
-
-#: crates/ui/media/big-media-components/src/video/editor_panel.rs:55
-msgid "Play/Pause (Space)"
-msgstr "Reproduzir/Pausar (Espaço)"
-
-#: crates/ui/media/big-media-components/src/video/editor_panel.rs:56
-msgid "Mark point (M)"
-msgstr "Marcar ponto (M)"
-
-#: crates/ui/media/big-media-components/src/video/editor_panel.rs:57
-msgid "Seek back 5s"
-msgstr "Retroceder 5s"
-
-#: crates/ui/media/big-media-components/src/video/editor_panel.rs:58
-msgid "Seek forward 5s"
-msgstr "Avançar 5s"
-
-#: crates/ui/media/big-media-components/src/video/editor_panel.rs:59
-msgid "Previous frame (,)"
-msgstr "Quadro anterior (,)"
-
-#: crates/ui/media/big-media-components/src/video/editor_panel.rs:60
-msgid "Next frame (.)"
-msgstr "Próximo quadro (.)"
-
-#: crates/ui/media/big-media-components/src/video/editor_panel.rs:63
-msgid "Fullscreen (F)"
-msgstr "Tela cheia (F)"
-
-#: crates/ui/media/big-media-components/src/video/editor_panel.rs:64
-msgid "Playback position"
-msgstr "Posição de reprodução"
-
-#: crates/ui/media/big-media-components/src/video/editor_panel.rs:65
-msgid "Playback duration"
-msgstr "Duração da reprodução"
-
-#: crates/ui/media/big-media-components/src/video/editor_panel.rs:68
-msgid "Audio track"
-msgstr "Faixa de áudio"
-
-#: crates/ui/media/big-media-components/src/video/editor_panel.rs:69
-msgid "Subtitle track"
-msgstr "Faixa de legenda"
-
-#: crates/ui/media/big-media-components/src/video/editor_panel.rs:70
-msgid "No tracks loaded"
-msgstr "Nenhuma faixa carregada"
-
-#: crates/ui/media/big-media-components/src/video/editor_panel.rs:77
-msgid "Show grid overlay"
-msgstr "Mostrar grade sobreposta"
-
-#: crates/ui/media/big-media-components/src/video/editor_panel.rs:78
-msgid "Resolution:"
-msgstr "Resolução:"
-
-#: crates/ui/media/big-media-components/src/video/editor_panel.rs:79
-msgid "Codec:"
-msgstr "Codec:"
-
-#: crates/ui/media/big-media-components/src/video/editor_panel.rs:80
-msgid "Size:"
-msgstr "Tamanho:"
-
-#: crates/ui/media/big-media-components/src/video/editor_panel.rs:81
-msgid "Duration:"
-msgstr "Duração:"
-
-#: crates/ui/media/big-media-components/src/video/editor_sidebar.rs:52
-msgid "Reset brightness"
-msgstr "Redefinir brilho"
-
-#: crates/ui/media/big-media-components/src/video/editor_sidebar.rs:53
-msgid "Reset contrast"
-msgstr "Redefinir contraste"
-
-#: crates/ui/media/big-media-components/src/video/editor_sidebar.rs:54
-msgid "Reset saturation"
-msgstr "Redefinir saturação"
-
-#: crates/ui/media/big-media-components/src/video/editor_sidebar.rs:55
-msgid "Reset hue"
-msgstr "Redefinir matiz"
-
-#: crates/ui/media/big-media-components/src/video/editor_sidebar.rs:56
-msgid "Video Adjustments"
-msgstr "Ajustes de vídeo"
-
-#: crates/ui/media/big-media-components/src/video/editor_sidebar.rs:62
-msgid "Rotate 90 left"
-msgstr "Girar 90° à esquerda"
-
-#: crates/ui/media/big-media-components/src/video/editor_sidebar.rs:63
-msgid "Rotate 90 right"
-msgstr "Girar 90° à direita"
-
-#: crates/ui/media/big-media-components/src/video/editor_sidebar.rs:64
-msgid "Flip horizontal"
-msgstr "Espelhar horizontalmente"
-
-#: crates/ui/media/big-media-components/src/video/editor_sidebar.rs:65
-msgid "Flip vertical"
-msgstr "Espelhar verticalmente"
-
-#: crates/ui/media/big-media-components/src/video/editor_sidebar.rs:66
-msgid "Reset transform"
-msgstr "Redefinir transformação"
-
-#: crates/ui/media/big-media-components/src/video/editor_sidebar.rs:68
-msgid "Noise reduction, gate, normalize"
-msgstr "Redução de ruído, gate, normalizar"
-
-#: crates/ui/media/big-media-components/src/video/editor_sidebar.rs:70
-msgid "Press M or use the mark button to add segments"
-msgstr "Pressione M ou use o botão de marcação para adicionar segmentos"
-
-#: crates/ui/media/big-media-components/src/video/editor_sidebar.rs:71
-msgid "Add segment manually"
-msgstr "Adicionar segmento manualmente"
-
-#: crates/ui/media/big-media-components/src/video/editor_sidebar.rs:73
-msgid "Output Mode"
-msgstr "Modo de saída"
-
-#: crates/ui/media/big-media-components/src/video/editor_sidebar.rs:74
-msgid "Join segments into one file"
-msgstr "Unir segmentos em um único arquivo"
-
-#: crates/ui/media/big-media-components/src/video/editor_sidebar.rs:75
-msgid "Save each segment as separate file"
-msgstr "Salvar cada segmento como arquivo separado"
 
 #: crates/ui/media/big-player-ui/src/appearance/audio_colors.rs:31
 #: crates/ui/media/big-player-ui/src/appearance/color_palette_controls.rs:114
@@ -6513,6 +5193,10 @@ msgstr ""
 "Torna os controles mais visíveis quando o fundo está transparente ou muito "
 "claro"
 
+#: crates/ui/media/big-player-ui/src/audio_preferences.rs:100
+msgid "Output"
+msgstr "Saída"
+
 #: crates/ui/media/big-player-ui/src/audio_preferences.rs:101
 msgid "Advanced audio output options"
 msgstr "Opções avançadas de saída de áudio"
@@ -6608,10 +5292,6 @@ msgstr "Pressione Marcar no início e no fim de cada corte"
 msgid "Export cuts"
 msgstr "Exportar cortes"
 
-#: crates/ui/media/big-player-ui/src/audio_trim_bar.rs:48
-msgid "Choose how to export the marked cuts"
-msgstr "Escolha como exportar os cortes marcados"
-
 #: crates/ui/media/big-player-ui/src/download_panel.rs:87
 msgid "Downloads"
 msgstr "Downloads"
@@ -6631,6 +5311,14 @@ msgstr "Cancelar download"
 #: crates/ui/media/big-player-ui/src/download_panel.rs:200
 msgid "Starting…"
 msgstr "Iniciando…"
+
+#: crates/ui/media/big-player-ui/src/download_panel.rs:278
+msgid "Cancelled"
+msgstr "Cancelado"
+
+#: crates/ui/media/big-player-ui/src/download_panel.rs:291
+msgid "Complete"
+msgstr "Concluído"
 
 #: crates/ui/media/big-player-ui/src/file_browser.rs:108
 msgid "Filter files"
@@ -6832,6 +5520,10 @@ msgstr "Nome da estação"
 msgid "Station stream URL"
 msgstr "URL do stream da estação"
 
+#: crates/ui/media/big-player-ui/src/radio_panel/widgets.rs:352
+msgid "Add"
+msgstr "Adicionar"
+
 #: crates/ui/media/big-player-ui/src/radio_panel/widgets.rs:412
 msgid "Radio station added"
 msgstr "Estação de rádio adicionada"
@@ -6902,6 +5594,930 @@ msgstr "Escaneie o código com a câmera do celular."
 #: crates/ui/media/big-player-ui/src/smartphone/dialog.rs:149
 msgid "Could not start server"
 msgstr "Não foi possível iniciar o servidor"
+
+#~ msgid "Join creates one file; separate creates one file per cut"
+#~ msgstr "Juntar cria um arquivo; separar cria um arquivo por corte"
+
+#~ msgid "Export marked cuts"
+#~ msgstr "Exportar cortes marcados"
+
+#~ msgid "selected cut ranges"
+#~ msgstr "intervalos de corte selecionados"
+
+#~ msgid "Export Cuts"
+#~ msgstr "Exportar cortes"
+
+#~ msgid "Export cancelled"
+#~ msgstr "Exportação cancelada"
+
+#~ msgid "The export ended without a completed result"
+#~ msgstr "A exportação terminou sem confirmar um resultado concluído"
+
+#~ msgid "Could not verify exported files"
+#~ msgstr "Não foi possível verificar os arquivos exportados"
+
+#~ msgid "The export worker stopped before completion"
+#~ msgstr "O processo de exportação parou antes de concluir o trabalho"
+
+#~ msgid "Saved"
+#~ msgstr "Salvo"
+
+#~ msgid "Export failed"
+#~ msgstr "Falha na exportação"
+
+#~ msgid "Convert to MP3"
+#~ msgstr "Converter para MP3"
+
+#~ msgid "Convert to M4A"
+#~ msgstr "Converter para M4A"
+
+#~ msgid "Convert to FLAC"
+#~ msgstr "Converter para FLAC"
+
+#~ msgid "Quality"
+#~ msgstr "Qualidade"
+
+#~ msgid "Re-encode options"
+#~ msgstr "Opções de recodificação"
+
+#~ msgid ""
+#~ "Choose the file type, video codec, and quality used to create the new "
+#~ "clip."
+#~ msgstr ""
+#~ "Escolha o tipo de arquivo, o codec de vídeo e a qualidade usados para "
+#~ "criar o novo clipe."
+
+#~ msgid "Each cut needs a finite start and a later end"
+#~ msgstr "Cada corte precisa de um início válido e de um fim posterior"
+
+#~ msgid "The exported file is missing or empty"
+#~ msgstr "O arquivo exportado não existe ou está vazio"
+
+#~ msgid "The export could not start"
+#~ msgstr "Não foi possível iniciar a exportação"
+
+#~ msgid "The export ended without confirming completion"
+#~ msgstr "A exportação terminou sem confirmar sua conclusão"
+
+#~ msgid "The export stopped before it finished"
+#~ msgstr "A exportação parou antes de terminar"
+
+#~ msgid "Extract Audio as MP3"
+#~ msgstr "Extrair áudio como MP3"
+
+#~ msgid "Extract Audio as M4A"
+#~ msgstr "Extrair áudio como M4A"
+
+#~ msgid "Extract Audio as FLAC"
+#~ msgstr "Extrair áudio como FLAC"
+
+#~ msgid "Convert to MP4"
+#~ msgstr "Converter para MP4"
+
+#~ msgid "Convert to MKV"
+#~ msgstr "Converter para MKV"
+
+#~ msgid "Convert to WebM"
+#~ msgstr "Converter para WebM"
+
+#~ msgid "Generating cut…"
+#~ msgstr "Gerando corte…"
+
+#~ msgid "Keep format (fast)"
+#~ msgstr "Manter formato (rápido)"
+
+#~ msgid "Re-encode"
+#~ msgstr "Recodificar"
+
+#~ msgid ""
+#~ "Keep format copies the cut without re-encoding (fast); Re-encode applies "
+#~ "the cut settings"
+#~ msgstr ""
+#~ "Manter formato copia o corte sem recodificar (rápido); Recodificar aplica "
+#~ "as configurações de corte"
+
+#~ msgid "Cut settings"
+#~ msgstr "Configurações do corte"
+
+#~ msgid "Clip export settings"
+#~ msgstr "Configurações de exportação do clipe"
+
+#~ msgid "Image adjustments"
+#~ msgstr "Ajustes de imagem"
+
+#~ msgid "Brightness, contrast, color intensity, and color balance"
+#~ msgstr "Brilho, contraste, intensidade de cor e equilíbrio de cor"
+
+#~ msgid "Color intensity"
+#~ msgstr "Intensidade de cor"
+
+#~ msgid "Color balance"
+#~ msgstr "Equilíbrio de cor"
+
+#~ msgid "Output files"
+#~ msgstr "Arquivos de saída"
+
+#~ msgid "When there are multiple cuts"
+#~ msgstr "Quando há vários cortes"
+
+#~ msgid "Join into one file"
+#~ msgstr "Juntar em um arquivo"
+
+#~ msgid "Save each cut separately"
+#~ msgstr "Salvar cada corte separadamente"
+
+#~ msgid "One file is easier to share; separate files are easier to edit later"
+#~ msgstr ""
+#~ "Um arquivo é mais fácil de compartilhar; arquivos separados são mais "
+#~ "fáceis de editar depois"
+
+#~ msgid "Clip exported"
+#~ msgstr "Clipe exportado"
+
+#~ msgid "Input file not found"
+#~ msgstr "Arquivo de entrada não encontrado"
+
+#~ msgid "Permission denied — check file permissions"
+#~ msgstr "Permissão negada — verifique as permissões do arquivo"
+
+#~ msgid "Disk full — free up space and try again"
+#~ msgstr "Disco cheio — libere espaço e tente novamente"
+
+#~ msgid "File is corrupted or has an unsupported format"
+#~ msgstr "O arquivo está corrompido ou tem um formato não suportado"
+
+#~ msgid "Unsupported codec — try a different format"
+#~ msgstr "Codec não suportado — tente um formato diferente"
+
+#~ msgid "Required encoder not available — check FFmpeg installation"
+#~ msgstr ""
+#~ "Codificador necessário não disponível — verifique a instalação do FFmpeg"
+
+#~ msgid "Unknown codec — install required codec support"
+#~ msgstr "Codec desconhecido — instale o suporte ao codec necessário"
+
+#~ msgid "Output file already exists"
+#~ msgstr "O arquivo de saída já existe"
+
+#~ msgid ""
+#~ "Could not convert with these settings. Try another format or quality."
+#~ msgstr ""
+#~ "Não foi possível converter com estes ajustes. Tente outro formato ou "
+#~ "qualidade."
+
+#~ msgid "Could not open file — check path and permissions"
+#~ msgstr ""
+#~ "Não foi possível abrir o arquivo — verifique o caminho e as permissões"
+
+#~ msgid "FFmpeg exited with code"
+#~ msgstr "FFmpeg encerrou com o código"
+
+#~ msgid "Insufficient disk space"
+#~ msgstr "Espaço em disco insuficiente"
+
+#~ msgid "need"
+#~ msgstr "necessário"
+
+#~ msgid "available"
+#~ msgstr "disponível"
+
+#~ msgid "Export requires a regular local source file"
+#~ msgstr "Para exportar, selecione um arquivo local disponível no computador"
+
+#~ msgid "Choose a playback speed between 0.25 and 4"
+#~ msgstr "Escolha uma velocidade de reprodução entre 0,25 e 4 vezes"
+
+#~ msgid ""
+#~ "Changing audio speed in a video needs matching video timing; use normal "
+#~ "speed or audio-only export"
+#~ msgstr ""
+#~ "Alterar a velocidade do áudio exige ajustar também o vídeo. Use a "
+#~ "velocidade normal ou exporte apenas o áudio"
+
+#~ msgid "Invalid total export duration"
+#~ msgstr "A duração total da exportação é inválida"
+
+#~ msgid "No conversion stage completed"
+#~ msgstr "Nenhuma tentativa de conversão foi concluída"
+
+#~ msgid "Source was replaced during export; no result was published"
+#~ msgstr ""
+#~ "O arquivo de origem foi substituído durante a exportação; nenhum "
+#~ "resultado foi salvo no destino"
+
+#~ msgid "Source changed during export; no result was published"
+#~ msgstr ""
+#~ "O arquivo de origem mudou durante a exportação; nenhum resultado foi "
+#~ "salvo no destino"
+
+#~ msgid ""
+#~ "Originals are kept. Verify the exported files before deleting anything."
+#~ msgstr ""
+#~ "Os originais serão mantidos. Verifique os arquivos exportados antes de "
+#~ "apagar qualquer arquivo."
+
+#~ msgid ""
+#~ "Export incomplete. Any files already published were kept; the source is "
+#~ "unchanged"
+#~ msgstr ""
+#~ "Exportação incompleta. Os arquivos já salvos foram mantidos; o arquivo de "
+#~ "origem não foi alterado"
+
+#~ msgid "This concat list needs UTF-8 paths"
+#~ msgstr ""
+#~ "Para unir estes trechos, os caminhos dos arquivos precisam usar texto "
+#~ "UTF-8"
+
+#~ msgid "Invalid concat path"
+#~ msgstr "O caminho usado para unir os trechos é inválido"
+
+#~ msgid "Could not complete concatenation"
+#~ msgstr "Não foi possível concluir a união dos trechos"
+
+#~ msgid "Invalid export duration or too many cut ranges"
+#~ msgstr "A duração da exportação é inválida ou há trechos demais"
+
+#~ msgid "Cuts must be inside the verified media duration"
+#~ msgstr "Os cortes devem estar dentro da duração verificada da mídia"
+
+#~ msgid "Source streams could not be verified"
+#~ msgstr "Não foi possível verificar as faixas do arquivo de origem"
+
+#~ msgid "Too many source streams"
+#~ msgstr "Há faixas demais no arquivo de origem"
+
+#~ msgid "The selected video stream is missing"
+#~ msgstr "A faixa de vídeo selecionada não está disponível"
+
+#~ msgid "A cover image is not the requested video stream"
+#~ msgstr "Uma imagem de capa não é a faixa de vídeo solicitada"
+
+#~ msgid "Unknown source video codec"
+#~ msgstr "A codificação do vídeo de origem é desconhecida"
+
+#~ msgid "Unknown source audio codec"
+#~ msgstr "A codificação do áudio de origem é desconhecida"
+
+#~ msgid "The selected audio stream is missing"
+#~ msgstr "A faixa de áudio selecionada não está disponível"
+
+#~ msgid "The plan has no audio or video output"
+#~ msgstr "As opções escolhidas não incluem saída de áudio nem de vídeo"
+
+#~ msgid "Subtitle streams could not be verified"
+#~ msgstr "Não foi possível verificar as faixas de legenda"
+
+#~ msgid "Export has no readable stream list"
+#~ msgstr "Não foi possível ler as faixas do arquivo exportado"
+
+#~ msgid "Too many output streams"
+#~ msgstr "Há faixas demais no arquivo de saída"
+
+#~ msgid "Exported stream count differs from the plan"
+#~ msgstr "A quantidade de faixas exportadas difere da prevista"
+
+#~ msgid "Exported codec differs from the plan"
+#~ msgstr "A codificação do arquivo exportado difere da escolhida"
+
+#~ msgid "Exported video dimensions are invalid"
+#~ msgstr "As dimensões do vídeo exportado são inválidas"
+
+#~ msgid "Exported audio has no channels"
+#~ msgstr "O áudio exportado não contém canais"
+
+#~ msgid "Exported subtitle count differs from the plan"
+#~ msgstr "A quantidade de legendas exportadas difere da prevista"
+
+#~ msgid "Exported duration could not be verified"
+#~ msgstr "Não foi possível verificar a duração do arquivo exportado"
+
+#~ msgid ""
+#~ "Exported duration differs from the plan. Use precise re-encoding for "
+#~ "exact cuts"
+#~ msgstr ""
+#~ "A duração exportada difere da prevista. Use a recodificação precisa para "
+#~ "fazer cortes exatos"
+
+#~ msgid "Exported file is empty or is not regular"
+#~ msgstr "O resultado exportado está vazio ou não é um arquivo comum"
+
+#~ msgid "Clear All Segments?"
+#~ msgstr "Limpar todos os segmentos?"
+
+#~ msgid "All cut marks will be removed. This cannot be undone."
+#~ msgstr ""
+#~ "Todas as marcas de corte serão removidas. Essa ação não pode ser desfeita."
+
+#~ msgid "Clear All"
+#~ msgstr "Limpar tudo"
+
+#~ msgid "Waveform zoom"
+#~ msgstr "Zoom da forma de onda"
+
+#~ msgid "Go to segment"
+#~ msgstr "Ir para o segmento"
+
+#~ msgid "Remove segment"
+#~ msgstr "Remover segmento"
+
+#~ msgid "Clear all segments?"
+#~ msgstr "Limpar todos os segmentos?"
+
+#~ msgid "Mark points and segment ranges will be removed."
+#~ msgstr "Os pontos de marcação e os intervalos de segmento serão removidos."
+
+#~ msgid "Clear"
+#~ msgstr "Limpar"
+
+#~ msgid "Back to queue"
+#~ msgstr "Voltar para a fila"
+
+#~ msgid "Convert this file"
+#~ msgstr "Converter este arquivo"
+
+#~ msgid "Frame"
+#~ msgstr "Quadro"
+
+#~ msgid "No subtitles"
+#~ msgstr "Sem legendas"
+
+#~ msgid "Edit segment times"
+#~ msgstr "Editar tempos do segmento"
+
+#~ msgid "Edit Segment"
+#~ msgstr "Editar Segmento"
+
+#~ msgid "Start:"
+#~ msgstr "Início:"
+
+#~ msgid "h"
+#~ msgstr "h"
+
+#~ msgid "m"
+#~ msgstr "m"
+
+#~ msgid "cs"
+#~ msgstr "cs"
+
+#~ msgid "End:"
+#~ msgstr "Fim:"
+
+#~ msgid "Copy (no re-encode)"
+#~ msgstr "Copiar (sem recodificar)"
+
+#~ msgid "H.264 / AVC"
+#~ msgstr "H.264 / AVC"
+
+#~ msgid "H.265 / HEVC"
+#~ msgstr "H.265 / HEVC"
+
+#~ msgid "AV1"
+#~ msgstr "AV1"
+
+#~ msgid "VP9"
+#~ msgstr "VP9"
+
+#~ msgid "ProRes"
+#~ msgstr "ProRes"
+
+#~ msgid "Very High"
+#~ msgstr "Muito alta"
+
+#~ msgid "High"
+#~ msgstr "Alta"
+
+#~ msgid "Good"
+#~ msgstr "Boa"
+
+#~ msgid "Medium"
+#~ msgstr "Média"
+
+#~ msgid "Low"
+#~ msgstr "Baixa"
+
+#~ msgid "Very Low"
+#~ msgstr "Muito baixa"
+
+#~ msgid "Super Low"
+#~ msgstr "Baixíssima"
+
+#~ msgid "Ultra Fast"
+#~ msgstr "Ultrarrápido"
+
+#~ msgid "Very Fast"
+#~ msgstr "Muito rápido"
+
+#~ msgid "Fast"
+#~ msgstr "Rápido"
+
+#~ msgid "Slow"
+#~ msgstr "Lento"
+
+#~ msgid "Very Slow"
+#~ msgstr "Muito lento"
+
+#~ msgid "Original"
+#~ msgstr "Original"
+
+#~ msgid "4K (3840×2160)"
+#~ msgstr "4K (3840×2160)"
+
+#~ msgid "1440p (2560×1440)"
+#~ msgstr "1440p (2560×1440)"
+
+#~ msgid "1080p (1920×1080)"
+#~ msgstr "1080p (1920×1080)"
+
+#~ msgid "720p (1280×720)"
+#~ msgstr "720p (1280×720)"
+
+#~ msgid "480p (854×480)"
+#~ msgstr "480p (854×480)"
+
+#~ msgid "360p (640×360)"
+#~ msgstr "360p (640×360)"
+
+#~ msgid "MP4"
+#~ msgstr "MP4"
+
+#~ msgid "MKV"
+#~ msgstr "MKV"
+
+#~ msgid "MOV"
+#~ msgstr "MOV"
+
+#~ msgid "WebM"
+#~ msgstr "WebM"
+
+#~ msgid "Copy (no change)"
+#~ msgstr "Copiar (sem alteração)"
+
+#~ msgid "Remove audio"
+#~ msgstr "Remover áudio"
+
+#~ msgid "AAC"
+#~ msgstr "AAC"
+
+#~ msgid "Opus"
+#~ msgstr "Opus"
+
+#~ msgid "MP3"
+#~ msgstr "MP3"
+
+#~ msgid "AC3 / Dolby"
+#~ msgstr "AC3 / Dolby"
+
+#~ msgid "FLAC (lossless)"
+#~ msgstr "FLAC (sem perdas)"
+
+#~ msgid "PCM (uncompressed)"
+#~ msgstr "PCM (sem compressão)"
+
+#~ msgid "64 kbps"
+#~ msgstr "64 kbps"
+
+#~ msgid "96 kbps"
+#~ msgstr "96 kbps"
+
+#~ msgid "128 kbps"
+#~ msgstr "128 kbps"
+
+#~ msgid "192 kbps"
+#~ msgstr "192 kbps"
+
+#~ msgid "256 kbps"
+#~ msgstr "256 kbps"
+
+#~ msgid "320 kbps"
+#~ msgstr "320 kbps"
+
+#~ msgid "Auto"
+#~ msgstr "Automático"
+
+#~ msgid "Extract to File"
+#~ msgstr "Extrair para arquivo"
+
+#~ msgid "Keep Embedded"
+#~ msgstr "Manter incorporado"
+
+#~ msgid "Burn into Video"
+#~ msgstr "Gravar no vídeo"
+
+#~ msgid "OGG Vorbis"
+#~ msgstr "OGG Vorbis"
+
+#~ msgid "WAV (uncompressed)"
+#~ msgstr "WAV (sem compressão)"
+
+#~ msgid "32 kbps"
+#~ msgstr "32 kbps"
+
+#~ msgid "Audio Settings"
+#~ msgstr "Configurações de Áudio"
+
+#~ msgid ""
+#~ "Improve your audio by removing noise, controlling volume and enhancing "
+#~ "voice clarity."
+#~ msgstr ""
+#~ "Melhore seu áudio removendo ruídos, controlando o volume e aprimorando a "
+#~ "clareza da voz."
+
+#~ msgid "AI Noise Cleaning"
+#~ msgstr "Limpeza de Ruído por IA"
+
+#~ msgid "Noise reduction LADSPA plugin not installed"
+#~ msgstr "Plugin LADSPA de redução de ruído não instalado"
+
+#~ msgid "Remove Background Noise"
+#~ msgstr "Remover Ruído de Fundo"
+
+#~ msgid ""
+#~ "Uses a neural network to separate voice from noise. Strength controls how "
+#~ "aggressively noise is removed."
+#~ msgstr ""
+#~ "Usa uma rede neural para separar a voz do ruído. Intensidade controla o "
+#~ "nível de agressividade na remoção do ruído."
+
+#~ msgid "AI Model"
+#~ msgstr "Modelo de IA"
+
+#~ msgid ""
+#~ "DNS3 - General-purpose. Good at removing steady noise like fans, AC, and "
+#~ "hum."
+#~ msgstr ""
+#~ "DNS3 - Uso geral. Eficaz na remoção de ruídos constantes como "
+#~ "ventiladores, ar-condicionado e zumbidos."
+
+#~ msgid ""
+#~ "DeepFilterNet3 / DPDFNet HR - Full-band 48 kHz models. Cleaner output "
+#~ "when the optional LADSPA plugins are installed."
+#~ msgstr ""
+#~ "DeepFilterNet3 / DPDFNet HR - Modelos full-band de 48 kHz. Saída mais "
+#~ "limpa quando os plugins LADSPA opcionais estão instalados."
+
+#~ msgid "Noise Gate"
+#~ msgstr "Gate de Ruído"
+
+#~ msgid "Silence Low Sounds"
+#~ msgstr "Silenciar Sons Baixos"
+
+#~ msgid ""
+#~ "Mutes audio below a threshold - great for removing faint hum or room "
+#~ "noise between speech."
+#~ msgstr ""
+#~ "Muda o áudio abaixo de um limiar — ótimo para remover zumbidos leves ou "
+#~ "ruído ambiente entre falas."
+
+#~ msgid "Audio Enhancement"
+#~ msgstr "Aprimoramento de Áudio"
+
+#~ msgid "Remove Low Rumble"
+#~ msgstr "Remover Ronco Baixo"
+
+#~ msgid ""
+#~ "Cuts low-frequency noise like wind, air conditioning or handling "
+#~ "vibrations."
+#~ msgstr ""
+#~ "Corta ruídos de baixa frequência como vento, ar-condicionado ou vibrações "
+#~ "de manuseio."
+
+#~ msgid "Frequency (Hz)"
+#~ msgstr "Frequência (Hz)"
+
+#~ msgid "Uniform Volume"
+#~ msgstr "Volume Uniforme"
+
+#~ msgid ""
+#~ "Normalizes loudness to broadcast standard (ITU-R BS.1770, -16 LUFS). "
+#~ "Makes all files similar volume."
+#~ msgstr ""
+#~ "Normaliza o volume para o padrão de transmissão (ITU-R BS.1770, -16 "
+#~ "LUFS). Deixa todos os arquivos com volume semelhante."
+
+#~ msgid "Compressor"
+#~ msgstr "Compressor"
+
+#~ msgid ""
+#~ "Reduces the dynamic range - makes quiet parts louder and loud parts "
+#~ "quieter."
+#~ msgstr ""
+#~ "Reduz o intervalo dinâmico - deixa as partes silenciosas mais altas e as "
+#~ "partes altas mais silenciosas."
+
+#~ msgid "Adjust frequency balance. Use presets or drag individual bands."
+#~ msgstr ""
+#~ "Ajuste o balanço de frequências. Use predefinições ou arraste as bandas "
+#~ "individualmente."
+
+#~ msgid "Enable equalizer"
+#~ msgstr "Ativar equalizador"
+
+#~ msgid "Play/Pause"
+#~ msgstr "Reproduzir/Pausar"
+
+#~ msgid "Previous track"
+#~ msgstr "Faixa anterior"
+
+#~ msgid "Next track"
+#~ msgstr "Próxima faixa"
+
+#~ msgid "Play only selected area"
+#~ msgstr "Reproduzir apenas a área selecionada"
+
+#~ msgid "Auto-advance to next track"
+#~ msgstr "Avançar automaticamente para a próxima faixa"
+
+#~ msgid "Clear all segments"
+#~ msgstr "Limpar todos os segmentos"
+
+#~ msgid "Audio timeline"
+#~ msgstr "Linha do tempo de áudio"
+
+#~ msgid "Trim Segments"
+#~ msgstr "Segmentos de corte"
+
+#~ msgid "Press the mark button to create segments"
+#~ msgstr "Pressione o botão de marcação para criar segmentos"
+
+#~ msgid ""
+#~ "DNS3 is a lightweight 16 kHz model that removes steady noise. "
+#~ "DeepFilterNet3 and DPDFNet HR are full-band 48 kHz models. The lighter 16 "
+#~ "kHz DPDFNet variants run inside a dedicated resampled chain — strong "
+#~ "noise reduction at a fraction of the CPU."
+#~ msgstr ""
+#~ "DNS3 é um modelo leve de 16 kHz que remove ruído constante. "
+#~ "DeepFilterNet3 e DPDFNet HR são modelos de banda completa a 48 kHz. As "
+#~ "variantes DPDFNet de 16 kHz mais leves rodam em uma cadeia de "
+#~ "reamostragem dedicada — redução de ruído intensa com fração do uso de CPU."
+
+#~ msgid ""
+#~ "DNS3 is a lightweight 16 kHz model that removes steady noise — good for "
+#~ "podcasts."
+#~ msgstr ""
+#~ "DNS3 é um modelo leve de 16 kHz que remove ruído constante — ideal para "
+#~ "podcasts."
+
+#~ msgid ""
+#~ "DNS3 is a lightweight 16 kHz model that removes steady noise. "
+#~ "DeepFilterNet3 is a full-band 48 kHz model with the cleanest output and "
+#~ "the highest CPU cost."
+#~ msgstr ""
+#~ "DNS3 é um modelo leve de 16 kHz que remove ruído constante. "
+#~ "DeepFilterNet3 é um modelo de banda completa a 48 kHz com a saída mais "
+#~ "limpa e o maior custo de CPU."
+
+#~ msgid ""
+#~ "DNS3 is a lightweight 16 kHz model that removes steady noise. DPDFNet HR "
+#~ "variants are full-band 48 kHz models with strong noise reduction at a "
+#~ "higher CPU cost."
+#~ msgstr ""
+#~ "DNS3 é um modelo leve de 16 kHz que remove ruído constante. As variantes "
+#~ "DPDFNet HR são modelos de banda completa a 48 kHz com redução de ruído "
+#~ "intensa e maior custo de CPU."
+
+#~ msgid ""
+#~ "DNS3 is a lightweight 16 kHz model that removes steady noise. "
+#~ "DeepFilterNet3 and the DPDFNet HR variants are full-band 48 kHz models — "
+#~ "the cleanest output, with the highest CPU cost."
+#~ msgstr ""
+#~ "DNS3 é um modelo leve de 16 kHz que remove ruído constante. "
+#~ "DeepFilterNet3 e as variantes DPDFNet HR são modelos de banda completa a "
+#~ "48 kHz — a saída mais limpa, com o maior custo de CPU."
+
+#~ msgid "GTCRN – DNS3 (16 kHz, strong)"
+#~ msgstr "GTCRN – DNS3 (16 kHz, forte)"
+
+#~ msgid "DeepFilterNet3 (48 kHz)"
+#~ msgstr "DeepFilterNet3 (48 kHz)"
+
+#~ msgid "DPDFNet-2 HR (48 kHz, balanced)"
+#~ msgstr "DPDFNet-2 HR (48 kHz, equilibrado)"
+
+#~ msgid "DPDFNet-8 HR (48 kHz, premium)"
+#~ msgstr "DPDFNet-8 HR (48 kHz, premium)"
+
+#~ msgid "DPDFNet baseline (16 kHz, lightest)"
+#~ msgstr "DPDFNet base (16 kHz, mais leve)"
+
+#~ msgid "DPDFNet-2 (16 kHz, balanced)"
+#~ msgstr "DPDFNet-2 (16 kHz, equilibrado)"
+
+#~ msgid "DPDFNet-4 (16 kHz, stronger)"
+#~ msgstr "DPDFNet-4 (16 kHz, mais forte)"
+
+#~ msgid "DPDFNet-8 (16 kHz, strongest)"
+#~ msgstr "DPDFNet-8 (16 kHz, mais forte ainda)"
+
+#~ msgid "Add Network File"
+#~ msgstr "Adicionar Arquivo de Rede"
+
+#~ msgid "Convert"
+#~ msgstr "Converter"
+
+#~ msgid "Clear queue"
+#~ msgstr "Limpar fila"
+
+#~ msgid "files"
+#~ msgstr "arquivos"
+
+#~ msgid "Main menu"
+#~ msgstr "Menu principal"
+
+#~ msgid "Ready"
+#~ msgstr "Pronto"
+
+#~ msgid "Cancel All"
+#~ msgstr "Cancelar tudo"
+
+#~ msgid "Back to Queue"
+#~ msgstr "Voltar à fila"
+
+#~ msgid "Cancel All Conversions?"
+#~ msgstr "Cancelar todas as conversões?"
+
+#~ msgid ""
+#~ "This will stop all active conversions and skip pending items. This cannot "
+#~ "be undone."
+#~ msgstr ""
+#~ "Isso interromperá todas as conversões ativas e ignorará os itens "
+#~ "pendentes. Esta ação não pode ser desfeita."
+
+#~ msgid "Continue"
+#~ msgstr "Continuar"
+
+#~ msgid "Waiting in queue"
+#~ msgstr "Aguardando na fila"
+
+#~ msgid "Show conversion details"
+#~ msgstr "Mostrar detalhes da conversão"
+
+#~ msgid "Cancel conversion"
+#~ msgstr "Cancelar conversão"
+
+#~ msgid "FFmpeg Command"
+#~ msgstr "Comando FFmpeg"
+
+#~ msgid "FFmpeg Output"
+#~ msgstr "Saída do FFmpeg"
+
+#~ msgid "Converting"
+#~ msgstr "Convertendo"
+
+#~ msgid "Converting..."
+#~ msgstr "Convertendo..."
+
+#~ msgid "Completed"
+#~ msgstr "Concluído"
+
+#~ msgid "completed"
+#~ msgstr "concluído"
+
+#~ msgid "failed"
+#~ msgstr "falhou"
+
+#~ msgid "cancelled"
+#~ msgstr "cancelado"
+
+#~ msgid "No files processed"
+#~ msgstr "Nenhum arquivo processado"
+
+#~ msgid "All videos converted successfully!"
+#~ msgstr "Todos os vídeos foram convertidos com sucesso!"
+
+#~ msgid "All conversions failed or were cancelled"
+#~ msgstr "Todas as conversões falharam ou foram canceladas"
+
+#~ msgid "in parallel"
+#~ msgstr "em paralelo"
+
+#~ msgid "No Audio Files"
+#~ msgstr "Nenhum arquivo de áudio"
+
+#~ msgid "No Video Files"
+#~ msgstr "Nenhum arquivo de vídeo"
+
+#~ msgid "Drag files here or use the Add Files button"
+#~ msgstr "Arraste arquivos aqui ou use o botão Adicionar arquivos"
+
+#~ msgid "Open video editor for this file"
+#~ msgstr "Abrir editor de vídeo para este arquivo"
+
+#~ msgid "Edit file"
+#~ msgstr "Editar arquivo"
+
+#~ msgid "Open Containing Folder"
+#~ msgstr "Abrir pasta contendo o arquivo"
+
+#~ msgid "More Information..."
+#~ msgstr "Mais informações..."
+
+#~ msgid "Delete from Disk..."
+#~ msgstr "Excluir do disco..."
+
+#~ msgid "Timeline"
+#~ msgstr "Linha do tempo"
+
+#~ msgid "Play/Pause (Space)"
+#~ msgstr "Reproduzir/Pausar (Espaço)"
+
+#~ msgid "Mark point (M)"
+#~ msgstr "Marcar ponto (M)"
+
+#~ msgid "Seek back 5s"
+#~ msgstr "Retroceder 5s"
+
+#~ msgid "Seek forward 5s"
+#~ msgstr "Avançar 5s"
+
+#~ msgid "Previous frame (,)"
+#~ msgstr "Quadro anterior (,)"
+
+#~ msgid "Next frame (.)"
+#~ msgstr "Próximo quadro (.)"
+
+#~ msgid "Fullscreen (F)"
+#~ msgstr "Tela cheia (F)"
+
+#~ msgid "Playback position"
+#~ msgstr "Posição de reprodução"
+
+#~ msgid "Playback duration"
+#~ msgstr "Duração da reprodução"
+
+#~ msgid "Audio track"
+#~ msgstr "Faixa de áudio"
+
+#~ msgid "Subtitle track"
+#~ msgstr "Faixa de legenda"
+
+#~ msgid "No tracks loaded"
+#~ msgstr "Nenhuma faixa carregada"
+
+#~ msgid "Show grid overlay"
+#~ msgstr "Mostrar grade sobreposta"
+
+#~ msgid "Resolution:"
+#~ msgstr "Resolução:"
+
+#~ msgid "Codec:"
+#~ msgstr "Codec:"
+
+#~ msgid "Size:"
+#~ msgstr "Tamanho:"
+
+#~ msgid "Duration:"
+#~ msgstr "Duração:"
+
+#~ msgid "Reset brightness"
+#~ msgstr "Redefinir brilho"
+
+#~ msgid "Reset contrast"
+#~ msgstr "Redefinir contraste"
+
+#~ msgid "Reset saturation"
+#~ msgstr "Redefinir saturação"
+
+#~ msgid "Reset hue"
+#~ msgstr "Redefinir matiz"
+
+#~ msgid "Video Adjustments"
+#~ msgstr "Ajustes de vídeo"
+
+#~ msgid "Rotate 90 left"
+#~ msgstr "Girar 90° à esquerda"
+
+#~ msgid "Rotate 90 right"
+#~ msgstr "Girar 90° à direita"
+
+#~ msgid "Flip horizontal"
+#~ msgstr "Espelhar horizontalmente"
+
+#~ msgid "Flip vertical"
+#~ msgstr "Espelhar verticalmente"
+
+#~ msgid "Reset transform"
+#~ msgstr "Redefinir transformação"
+
+#~ msgid "Noise reduction, gate, normalize"
+#~ msgstr "Redução de ruído, gate, normalizar"
+
+#~ msgid "Press M or use the mark button to add segments"
+#~ msgstr "Pressione M ou use o botão de marcação para adicionar segmentos"
+
+#~ msgid "Add segment manually"
+#~ msgstr "Adicionar segmento manualmente"
+
+#~ msgid "Output Mode"
+#~ msgstr "Modo de saída"
+
+#~ msgid "Join segments into one file"
+#~ msgstr "Unir segmentos em um único arquivo"
+
+#~ msgid "Save each segment as separate file"
+#~ msgstr "Salvar cada segmento como arquivo separado"
+
+#~ msgid "Choose how to export the marked cuts"
+#~ msgstr "Escolha como exportar os cortes marcados"
 
 #~ msgid ""
 #~ "Verified completed outputs can be reused when retrying. Existing files "

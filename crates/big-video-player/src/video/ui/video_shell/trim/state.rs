@@ -1,17 +1,6 @@
-//! Pure trim-mode state: the marked clip segments + the pending first mark + the
-//! chosen cut mode. No GTK — unit-tested in isolation; [`super::bar`] renders it
-//! and [`super::run`] exports it.
-
-/// How a clip export turns the marked segments into a file.
-#[derive(Clone, Copy, Debug, PartialEq, Eq, Default)]
-pub enum CutMode {
-    /// Stream-copy into the source container: near-instant, keyframe-aligned cut,
-    /// no re-encode, no filters. The default — "Manter formato (rápido)".
-    #[default]
-    Fast,
-    /// Re-encode: frame-accurate, honours the chosen codec/quality + filters.
-    Precise,
-}
+//! Pure trim-mode state: the marked clip segments + the pending first mark. No
+//! GTK — unit-tested in isolation; [`super::bar`] renders it and [`super::run`]
+//! hands it to the converter.
 
 /// One marked clip range, in seconds. `id` is stable for the row's lifetime so
 /// the UI can address a chip for editing/deletion without index drift.
@@ -25,7 +14,7 @@ pub struct TrimSegment {
     pub end: f64,
 }
 
-/// Marked segments + the pending first mark + cut mode. Pure logic.
+/// Marked segments + the pending first mark. Pure logic.
 #[derive(Debug, Default)]
 pub struct TrimState {
     /// Total media duration (seconds); marks clamp to `[0, duration]`.
@@ -37,10 +26,6 @@ pub struct TrimState {
     pub pending: Option<f64>,
     /// Committed segments, in mark order.
     pub segments: Vec<TrimSegment>,
-    /// Chosen cut mode.
-    pub mode: CutMode,
-    /// True while an export is running (controls are disabled).
-    pub busy: bool,
     next_id: u64,
 }
 

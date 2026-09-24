@@ -102,35 +102,3 @@ impl BigSwitchControl {
         self.root
     }
 }
-
-/// Keep two switches in sync without notify ping-pong.
-///
-/// Both directions hold the *other* switch WEAK: a two-way strong bind makes the
-/// switches pin each other (mutual reference cycle) so neither finalizes when the
-/// dialog closes. Each handler upgrades-or-skips.
-pub fn sync_switches(dialog_switch: &gtk::Switch, source_switch: &gtk::Switch) {
-    use relm4::gtk::prelude::*;
-    dialog_switch.set_active(source_switch.is_active());
-
-    {
-        let source_weak = source_switch.downgrade();
-        dialog_switch.connect_active_notify(move |switch| {
-            if let Some(source_switch) = source_weak.upgrade()
-                && source_switch.is_active() != switch.is_active()
-            {
-                source_switch.set_active(switch.is_active());
-            }
-        });
-    }
-
-    {
-        let dialog_weak = dialog_switch.downgrade();
-        source_switch.connect_active_notify(move |source| {
-            if let Some(dialog_switch) = dialog_weak.upgrade()
-                && dialog_switch.is_active() != source.is_active()
-            {
-                dialog_switch.set_active(source.is_active());
-            }
-        });
-    }
-}

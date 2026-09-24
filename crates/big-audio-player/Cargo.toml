@@ -28,7 +28,6 @@ big-os-kit = { workspace = true, features = ["jemalloc"] }
 big-relm4-components.workspace = true
 big-media-components.workspace = true
 # In-player quick export (convert / trim & export) reuses the converter engine.
-big-quick-export.workspace = true
 relm4.workspace = true
 async-channel = "2.5"
 dirs = "6"

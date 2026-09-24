@@ -7,12 +7,11 @@ dependencies** — the standalone batch converters now live in a separate projec
 
 | Crate (binary) | Role |
 |----------------|------|
-| `crates/big-video-player` | Video player + in-place **clip & export** (cut for social), simple convert, extract audio |
-| `crates/big-audio-player` | Audio player + in-place **trim & export**, simple convert |
+| `crates/big-video-player` | Video player; marks cuts and hands them, or the whole file, to `big-video-converter-gui` (extract audio goes to `big-audio-converter-gui`) |
+| `crates/big-audio-player` | Audio player; marks cuts and hands them, or the whole track, to `big-audio-converter-gui` |
 
-The players reuse `big_quick_export` (container/codec/quality options + a
-single-file export driver) for the in-place edit/export path, and hand batch
-work off to the external converter binary by name.
+The players convert nothing themselves: `big_media_runtime::shared::converter_handoff`
+opens the converter GUI with `--segments=START-END,...` and the file.
 
 Vendored under `crates/` (were external path deps, now workspace members):
 `media-runtime`, `foundation/*` (os-kit, audio-effects, media-engines,

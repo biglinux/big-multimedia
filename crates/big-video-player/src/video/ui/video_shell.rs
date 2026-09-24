@@ -28,6 +28,7 @@ use crate::player::mpv_backend::fast_render::{
 use crate::player::mpv_backend::offload_renderer::VideoBackend;
 use crate::player::mpv_backend::{MpvBackend, PlayerEvent, skip_mpv_render, video_surface};
 use crate::settings::{Settings, keys};
+use crate::shared::converter_handoff;
 #[cfg(feature = "chromecast")]
 use crate::video::ui::cast::{VideoCastDialog, VideoCastDialogInit, VideoCastDialogOutput};
 use crate::video::ui::filters::{VideoFiltersDialog, VideoFiltersDialogInit};
@@ -46,9 +47,7 @@ use crate::video::ui::video_controls_bar::{
 use big_app_kit::file_dialogs::FilePicker;
 use big_media_components::media::files::VIDEO_EXTENSIONS;
 use big_media_components::time::playback_time;
-use big_media_runtime::converter::queue::ConversionQueue;
 use big_relm4_components::list::navigation_row::{BigNavigationRow, BigNavigationRowSpec};
-use big_relm4_components::list::progress_row::BigProgressRow;
 
 /// OSD auto-hide delay after the last pointer activity (mirrors the old
 /// `HIDE_DELAY_MS`).
@@ -178,33 +177,13 @@ pub struct VideoShell {
     shell_input_token: input::ShellInputToken,
     /// Interactive trim bar (bottom overlay), shown only in trim mode.
     trim: Controller<trim::VideoTrimBar>,
-    /// Slim inline export-progress row (title · bar · percent/speed/ETA · Cancel),
-    /// docked just above the transport so the video stays visible during export.
-    trim_progress_row: BigProgressRow,
-    /// Shared re-encode options (container/codec/quality) — same vocabulary as
-    /// the full converter; shown in the re-encode settings dialog.
-    trim_encode: big_quick_export::encode_options::EncodeOptions,
-    /// Image adjustments applied on a precise export (seeded from the player,
-    /// then editable in the settings dialog).
-    trim_filters: Rc<RefCell<big_media_runtime::converter::profiles::VideoFilters>>,
-    /// Output layout: true = each cut to its own file, false = joined.
-    trim_split: Rc<Cell<bool>>,
     /// "Play only the marked cuts" toggle state.
     trim_play_selection: Rc<Cell<bool>>,
     /// Sorted `(start, end)` cut ranges — drives play-selection looping.
     trim_ranges: Rc<RefCell<Vec<(f64, f64)>>>,
-    /// Reused re-encode settings window (built lazily on the gear).
-    /// bigagents: app-local-window-owner — this field intentionally owns the
-    /// reusable dialog because `trim_encode.group()` stays parented there
-    /// between opens; dialog signal handlers capture the window weakly.
-    trim_encode_dialog: Rc<RefCell<Option<adw::Window>>>,
-    /// Reveals the slim export-progress strip (non-blocking, video stays visible).
-    trim_progress_revealer: gtk::Revealer,
     /// True while interactive trim mode is active. Shared (`Rc`) with the OSD pin
     /// and the trim key controller.
     trim_active: Rc<Cell<bool>>,
-    /// Live clip-export queue (kept so the progress page can cancel it).
-    trim_queue: Rc<RefCell<Option<ConversionQueue>>>,
     /// MPRIS2 service; `None` in background mode or without a session bus.
     mpris: Option<big_app_kit::mpris::Mpris>,
     /// Snapshot the MPRIS service polls, mirrored from mpv events.

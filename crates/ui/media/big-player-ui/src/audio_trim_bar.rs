@@ -1,8 +1,8 @@
 //! Shared Relm4 audio trim controls for the player transport.
 //!
 //! The component owns only trim UI state: mark pairs, selected cut ranges,
-//! busy state, and small edit/delete chips. Playback, seeking, mpv, and export
-//! stay in the host shell.
+//! and small edit/delete chips. Playback, seeking, mpv, and export stay in the
+//! host shell.
 
 use std::cell::RefCell;
 use std::rc::Rc;
@@ -45,7 +45,7 @@ impl BigAudioTrimBarLabels {
             mark_more_cuts_or_export: text("Mark more cuts or export"),
             mark_hint: text("Press Mark at the start and end of each cut"),
             export_cuts: text("Export cuts"),
-            export_cuts_tooltip: text("Choose how to export the marked cuts"),
+            export_cuts_tooltip: text("Export the marked cuts"),
             exit_trim_mode: text("Exit trim mode"),
             edit_cut_times: text("Edit cut times"),
             edit_cut: text("Edit cut"),
@@ -68,7 +68,6 @@ struct AudioTrimState {
     pending_mark: Option<f64>,
     segments: Vec<AudioTrimSegment>,
     next_id: u64,
-    busy: bool,
 }
 
 impl Default for AudioTrimState {
@@ -79,7 +78,6 @@ impl Default for AudioTrimState {
             pending_mark: None,
             segments: Vec::new(),
             next_id: 1,
-            busy: false,
         }
     }
 }
@@ -147,7 +145,7 @@ impl AudioTrimState {
     }
 
     fn is_exportable(&self) -> bool {
-        !self.segments.is_empty() && !self.busy
+        !self.segments.is_empty()
     }
 
     fn clamp_time(&self, time: f64) -> f64 {
@@ -172,8 +170,6 @@ pub enum AudioTrimBarInput {
     SetSegmentTimes(u64, f64, f64),
     /// Export current ranges.
     RequestExport,
-    /// Disable export while conversion is running.
-    SetBusy(bool),
 }
 
 /// User actions emitted by [`AudioTrimBar`].
@@ -215,7 +211,6 @@ pub struct AudioTrimBar {
     hint_label: gtk::Label,
     count_label: gtk::Label,
     export_button: gtk::Button,
-    controls: Vec<gtk::Widget>,
 }
 
 impl AudioTrimBar {
@@ -256,10 +251,6 @@ impl AudioTrimBar {
             None => self.labels.mark_hint.clone(),
         });
         self.export_button.set_sensitive(exportable);
-        let busy = self.state.borrow().busy;
-        for control in &self.controls {
-            control.set_sensitive(!busy);
-        }
 
         let _ = sender.output(AudioTrimBarOutput::SegmentsChanged {
             segments: segments
@@ -393,12 +384,6 @@ impl Component for AudioTrimBar {
         root.append(&export_button);
         root.append(&exit_button);
 
-        let controls = vec![
-            mark_button.upcast::<gtk::Widget>(),
-            clear_button.upcast::<gtk::Widget>(),
-            play_selection_button.upcast::<gtk::Widget>(),
-            export_button.clone().upcast::<gtk::Widget>(),
-        ];
         let model = Self {
             labels,
             state,
@@ -407,7 +392,6 @@ impl Component for AudioTrimBar {
             hint_label,
             count_label,
             export_button,
-            controls,
         };
         model.refresh(&sender);
 
@@ -438,7 +422,6 @@ impl Component for AudioTrimBar {
                     let _ = sender.output(AudioTrimBarOutput::ExportRequested { ranges });
                 }
             }
-            AudioTrimBarInput::SetBusy(busy) => self.state.borrow_mut().busy = busy,
         }
         self.refresh(&sender);
     }

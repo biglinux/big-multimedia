@@ -42,24 +42,8 @@ pub(super) fn install_window_actions(
         ("trim", || VideoShellInput::EnterTrimMode),
         ("trim-mark", || VideoShellInput::TrimMark),
         ("trim-exit", || VideoShellInput::ExitTrimMode),
-        ("extract-audio-mp3", || {
-            VideoShellInput::ExtractAudio("mp3".into())
-        }),
-        ("extract-audio-m4a", || {
-            VideoShellInput::ExtractAudio("aac".into())
-        }),
-        ("extract-audio-flac", || {
-            VideoShellInput::ExtractAudio("flac".into())
-        }),
-        ("convert-mp4", || {
-            VideoShellInput::QuickConvert("mp4".into())
-        }),
-        ("convert-mkv", || {
-            VideoShellInput::QuickConvert("mkv".into())
-        }),
-        ("convert-webm", || {
-            VideoShellInput::QuickConvert("webm".into())
-        }),
+        ("extract-audio", || VideoShellInput::ExtractAudio),
+        ("convert", || VideoShellInput::Convert),
     ];
     for (name, message) in pairs {
         let sender = sender.clone();
@@ -77,6 +61,16 @@ pub(super) fn install_window_actions(
     // media — start disabled; the shell enables it on a remote `FileLoaded` and
     // disables it again for local files (see playback.rs). Grays the menu entry.
     set_action_enabled(&actions, "ytdl-quality", false);
+    // Cutting and converting happen in the converter GUIs; grey out what they
+    // cannot receive because the GUI is not installed.
+    let video_converter = converter_handoff::is_installed(converter_handoff::VIDEO_CONVERTER);
+    set_action_enabled(&actions, "trim", video_converter);
+    set_action_enabled(&actions, "convert", video_converter);
+    set_action_enabled(
+        &actions,
+        "extract-audio",
+        converter_handoff::is_installed(converter_handoff::AUDIO_CONVERTER),
+    );
 
     content.insert_action_group("win", Some(&actions));
     actions

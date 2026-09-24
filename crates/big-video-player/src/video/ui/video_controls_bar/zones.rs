@@ -444,17 +444,13 @@ fn setup_end_menu_popover(button: &gtk::Button, popover: &gtk::Popover) {
 }
 
 /// The Edit & Export menu (cut · extract audio · convert), targeting the
-/// player window's `win.*` actions. Keep it flat so AT-SPI exposes named rows
+/// player window's `win.*` actions; each hands the file to a converter GUI. Keep it flat so AT-SPI exposes named rows
 /// instead of nested "category/item" structures.
 fn export_menu_items() -> Vec<BigMenuActionItem> {
     vec![
         BigMenuActionItem::new(i18n("Cut Video…"), "win.trim"),
-        BigMenuActionItem::new(i18n("Extract Audio as MP3"), "win.extract-audio-mp3"),
-        BigMenuActionItem::new(i18n("Extract Audio as M4A"), "win.extract-audio-m4a"),
-        BigMenuActionItem::new(i18n("Extract Audio as FLAC"), "win.extract-audio-flac"),
-        BigMenuActionItem::new(i18n("Convert to MP4"), "win.convert-mp4"),
-        BigMenuActionItem::new(i18n("Convert to MKV"), "win.convert-mkv"),
-        BigMenuActionItem::new(i18n("Convert to WebM"), "win.convert-webm"),
+        BigMenuActionItem::new(i18n("Extract Audio…"), "win.extract-audio"),
+        BigMenuActionItem::new(i18n("Convert…"), "win.convert"),
     ]
 }
 
@@ -505,12 +501,8 @@ mod tests {
             export_menu_action_names(),
             [
                 "win.trim".to_string(),
-                "win.extract-audio-mp3".to_string(),
-                "win.extract-audio-m4a".to_string(),
-                "win.extract-audio-flac".to_string(),
-                "win.convert-mp4".to_string(),
-                "win.convert-mkv".to_string(),
-                "win.convert-webm".to_string(),
+                "win.extract-audio".to_string(),
+                "win.convert".to_string(),
             ]
         );
     }

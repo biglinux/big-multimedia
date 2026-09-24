@@ -163,7 +163,6 @@ dependencies = [
  "big-media-runtime",
  "big-os-kit",
  "big-player-ui",
- "big-quick-export",
  "big-relm4-components",
  "dirs",
  "gdk4",
@@ -227,7 +226,6 @@ dependencies = [
  "big-audio-effects",
  "big-media-components",
  "big-media-data",
- "big-media-engines",
  "big-mpv-render",
  "big-os-kit",
  "big-relm4-components",
@@ -243,7 +241,6 @@ dependencies = [
  "libmpv2-sys",
  "log",
  "proptest",
- "relm4",
  "rusqlite",
  "rust_cast",
  "serde",
@@ -290,17 +287,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "big-quick-export"
-version = "0.1.0"
-dependencies = [
- "big-media-components",
- "big-media-runtime",
- "big-relm4-components",
- "libadwaita",
- "tempfile",
-]
-
-[[package]]
 name = "big-relm4-components"
 version = "0.1.0"
 dependencies = [
@@ -337,7 +323,6 @@ dependencies = [
  "big-media-runtime",
  "big-os-kit",
  "big-player-ui",
- "big-quick-export",
  "big-relm4-components",
  "dirs",
  "gdk4",

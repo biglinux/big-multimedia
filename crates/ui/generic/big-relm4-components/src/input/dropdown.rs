@@ -86,12 +86,6 @@ impl BigInlineDropdown {
     }
 }
 
-/// Build a `DropDown` from static translated labels.
-#[must_use]
-pub fn dropdown_from_strings(labels: &[&str]) -> gtk::DropDown {
-    gtk::DropDown::from_strings(labels)
-}
-
 /// Keep two `DropDown`s' selected index in sync (e.g. a dialog copy and a source
 /// control). Both directions hold the *other* dropdown WEAK to avoid a mutual
 /// reference cycle that would leak both widgets; each handler upgrades-or-skips
@@ -117,34 +111,6 @@ pub fn sync_dropdowns(dialog_dropdown: &gtk::DropDown, source_dropdown: &gtk::Dr
                 && dialog.selected() != source.selected()
             {
                 dialog.set_selected(source.selected());
-            }
-        });
-    }
-}
-
-/// Keep a dialog `DropDown` and a source `ComboRow` selected index in sync.
-///
-/// Both directions hold the *other* widget WEAK: a two-way strong bind makes the
-/// two widgets pin each other (mutual reference cycle) so neither finalizes when
-/// the dialog closes. Each handler upgrades-or-skips, so syncing works while both
-/// are alive and silently stops once one is dropped.
-pub fn sync_dropdown_with_combo_row(dialog_dropdown: &gtk::DropDown, source_combo: &adw::ComboRow) {
-    dialog_dropdown.set_selected(source_combo.selected());
-
-    {
-        let source_weak = source_combo.downgrade();
-        dialog_dropdown.connect_selected_notify(move |dropdown| {
-            if let Some(source_combo) = source_weak.upgrade() {
-                source_combo.set_selected(dropdown.selected());
-            }
-        });
-    }
-
-    {
-        let dialog_weak = dialog_dropdown.downgrade();
-        source_combo.connect_selected_notify(move |combo| {
-            if let Some(dialog_dropdown) = dialog_weak.upgrade() {
-                dialog_dropdown.set_selected(combo.selected());
             }
         });
     }

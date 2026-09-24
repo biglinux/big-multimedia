@@ -116,10 +116,6 @@ impl Component for VideoShell {
             })
             .forward(sender.input_sender(), VideoShellInput::Cast);
 
-        // Shared re-encode options (container/codec/quality) — same vocabulary as
-        // the full converter, shown in the gear settings dialog (built lazily).
-        let trim_encode = big_quick_export::encode_options::EncodeOptions::new();
-
         // Video surface: a black bg box is the overlay's main child; the GLArea
         // is an overlay child (the offload path hides it and stacks a
         // GraphicsOffload widget). The transport rides as a bottom overlay.
@@ -162,47 +158,7 @@ impl Component for VideoShell {
             chrome.show_end_window_controls(&i18n("Minimize"), &i18n("Maximize"), &i18n("Close"));
         }
 
-        // Slim, non-blocking export-progress strip: a shared `BigProgressRow`
-        // (title · bar · percent/speed/ETA · Cancel) on a flat status bar docked
-        // DIRECTLY ABOVE the transport — so the user keeps watching the video and
-        // follows the cut progress in place (NOT the converter's full-cover page).
-        let trim_progress_row = BigProgressRow::new(
-            &big_relm4_components::list::progress_row::BigProgressRowSpec::indeterminate(
-                i18n("Generating cut…"),
-                String::new(),
-            )
-            .with_action(
-                big_relm4_components::list::progress_row::BigProgressRowActionSpec::new(
-                    "process-stop-symbolic",
-                    i18n("Cancel"),
-                ),
-            ),
-        );
-        if let Some(cancel) = trim_progress_row.action_button() {
-            cancel.connect_clicked(glib::clone!(
-                #[strong]
-                sender,
-                move |_| sender.input(VideoShellInput::TrimCancelExport)
-            ));
-        }
-        let trim_progress_strip = gtk::Box::new(gtk::Orientation::Vertical, 0);
-        trim_progress_strip.add_css_class("trim-progress");
-        trim_progress_strip.append(trim_progress_row.root());
-        let trim_progress_revealer = gtk::Revealer::builder()
-            .transition_type(gtk::RevealerTransitionType::SlideUp)
-            .reveal_child(false)
-            .child(&trim_progress_strip)
-            .build();
-        // One bottom stack: the progress strip sits above the transport so it
-        // reads as an extension of the bottom controls, never covering the video.
-        let bottom_stack = gtk::Box::new(gtk::Orientation::Vertical, 0);
-        bottom_stack.set_valign(gtk::Align::End);
-        bottom_stack.append(&trim_progress_revealer);
-        bottom_stack.append(controls.widget());
-        // Re-encode options (container/codec/quality) live in the gear dialog,
-        // not an over-screen panel; `trim_encode.group()` is parented there on
-        // first open.
-        chrome.set_bottom_child(&bottom_stack);
+        chrome.set_bottom_child(controls.widget());
         if !is_background {
             media_stack.install_chrome(&chrome, BigMediaChromePlacement::Bottom);
         }
@@ -567,18 +523,9 @@ impl Component for VideoShell {
                 aspect_snap,
                 shell_input_token,
                 trim,
-                trim_progress_row,
-                trim_encode,
-                trim_filters: Rc::new(RefCell::new(
-                    big_media_runtime::converter::profiles::VideoFilters::default(),
-                )),
-                trim_split: Rc::new(Cell::new(false)),
                 trim_play_selection: Rc::new(Cell::new(false)),
                 trim_ranges: Rc::new(RefCell::new(Vec::new())),
-                trim_encode_dialog: Rc::new(RefCell::new(None)),
-                trim_progress_revealer,
                 trim_active,
-                trim_queue: Rc::new(RefCell::new(None)),
                 mpris,
                 mpris_state,
                 mpris_track_seq: 0,
@@ -615,12 +562,14 @@ impl Component for VideoShell {
                 VideoShellInput::Playlist(out) => self.on_playlist(out),
                 VideoShellInput::EnterTrimMode => self.enter_trim_mode(),
                 VideoShellInput::ExitTrimMode => self.exit_trim_mode(),
-                VideoShellInput::TrimBar(out) => self.on_trim_bar(out, window_ref, &sender),
-                VideoShellInput::TrimCancelExport => self.cancel_trim_export(),
+                VideoShellInput::TrimBar(out) => self.on_trim_bar(out, window_ref),
                 VideoShellInput::TrimMark => self.trim_mark(),
-                VideoShellInput::TrimExportFinished(outcome) => self.finish_trim_export(outcome),
-                VideoShellInput::ExtractAudio(codec) => self.extract_audio(&codec),
-                VideoShellInput::QuickConvert(container) => self.quick_convert(&container),
+                VideoShellInput::ExtractAudio => {
+                    self.open_in_converter(converter_handoff::AUDIO_CONVERTER, &[]);
+                }
+                VideoShellInput::Convert => {
+                    self.open_in_converter(converter_handoff::VIDEO_CONVERTER, &[]);
+                }
                 VideoShellInput::Iptv(out) => VideoShell::on_iptv(out, &sender),
                 #[cfg(feature = "chromecast")]
                 VideoShellInput::Cast(out) => self.on_cast(out),
@@ -770,11 +719,8 @@ impl Drop for VideoShell {
     /// destroyed.
     fn drop(&mut self) {
         clear_shell_input(self.shell_input_token);
-        // Abort any in-flight clip export so a closing window does not leave an
-        // orphaned ffmpeg worker running.
         self.screenshot_owner
             .store(false, std::sync::atomic::Ordering::Release);
-        self.cancel_trim_export();
         if let Some(source) = self.sleep_timer_source.take() {
             source.remove();
         }

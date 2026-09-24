@@ -1,15 +1,14 @@
 # big-multimedia — self-contained media players workspace (audio + video).
 #
-# The two player binaries + the single-file export helper (big-quick-export) sit
-# on top of the media engine (big-media-runtime) and the shared component crates,
-# all vendored into this repo so it builds with no external `big-*` path deps.
+# The two player binaries sit on top of the media engine (big-media-runtime)
+# and the shared component crates, all vendored into this repo so it builds
+# with no external `big-*` path deps.
 # The vendored component crates keep their upstream MIT license (see
 # [workspace.package]); the aggregate repo LICENSE is GPL-3.0-or-later because
 # the players link the GPL engine.
 [workspace]
 resolver = "3"
 members = [
-    "crates/big-quick-export",
     "crates/big-audio-player",
     "crates/big-video-player",
     # Vendored engine + shared component crates (were external path deps).
@@ -78,7 +77,6 @@ big-media-engines = { path = "crates/foundation/big-media-engines", version = "0
 big-mpv-render = { path = "crates/foundation/big-mpv-render", version = "0.1.0" }
 big-media-runtime = { path = "crates/media-runtime", version = "2.0.0", default-features = false }
 big-player-ui = { path = "crates/ui/media/big-player-ui", version = "0.1.0" }
-big-quick-export = { path = "crates/big-quick-export", version = "0.1.0" }
 
 [profile.release]
 opt-level = 3

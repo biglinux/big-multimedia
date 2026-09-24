@@ -1,11 +1,10 @@
-//! `VideoTrimBar` — the trim toolbar: a single Mark control, the segment chips,
-//! the fast/precise format choice, the re-encode-settings gear and Export.
+//! `VideoTrimBar` — the trim toolbar: a single Mark control, the segment chips
+//! and Export, which hands the cuts to the video converter.
 //!
 //! A Relm4 [`Component`]: it owns the [`TrimState`] and renders the chips; the
 //! cut ranges themselves are drawn on the **existing transport seek bar** (the
 //! shell forwards [`VideoTrimBarOutput::SegmentsChanged`] there), not on a
-//! separate timeline. The shell owns the mpv handle, the export queue and the
-//! encode-settings dialog.
+//! separate timeline. The shell owns the mpv handle and the hand-off.
 //!
 //! Marking: the bar caches the live playhead (fed via [`VideoTrimBarInput::SetPlayhead`])
 //! so its Mark button marks at that position; the keyboard shortcut routes through
@@ -27,7 +26,7 @@ use relm4::{Component, ComponentParts, ComponentSender, gtk};
 
 use crate::i18n::i18n;
 
-use super::state::{CutMode, TrimState};
+use super::state::TrimState;
 
 /// Messages into the trim bar (from the shell / its own widgets).
 #[derive(Debug)]
@@ -46,12 +45,8 @@ pub enum VideoTrimBarInput {
     ClearSegments,
     /// Replace the times of a segment (from the manual edit form).
     SetSegmentTimes(u64, f64, f64),
-    /// Switch fast (keep-format) vs precise (re-encode).
-    SetMode(CutMode),
     /// Build the export request from the current state and emit it.
     RequestExport,
-    /// Disable controls while an export runs (and re-enable after).
-    SetBusy(bool),
 }
 
 /// Typed effects the shell acts on.
@@ -76,14 +71,10 @@ pub enum VideoTrimBarOutput {
     },
     /// Toggle "play only the marked cuts" (loop/skip to play just the segments).
     PlaySelection(bool),
-    /// Open the re-encode settings dialog (gear, precise mode only).
-    OpenEncodeConfig,
-    /// Export the marked ranges with the chosen mode.
+    /// Hand the marked ranges to the converter.
     ExportRequested {
         /// `(start, end)` ranges, sorted + merged.
         ranges: Vec<(f64, f64)>,
-        /// Fast (stream-copy) or precise (re-encode).
-        mode: CutMode,
     },
     /// Leave trim mode.
     Exit,
@@ -97,13 +88,11 @@ pub struct VideoTrimBar {
     hint_label: gtk::Label,
     count_label: gtk::Label,
     export_btn: gtk::Button,
-    /// Controls greyed out while exporting.
-    busy_sensitive: Vec<gtk::Widget>,
 }
 
 impl VideoTrimBar {
     fn refresh(&self, sender: &ComponentSender<Self>) {
-        let (segments, has_segments, count, pending, exportable, busy) = {
+        let (segments, has_segments, count, pending, exportable) = {
             let state = self.state.borrow();
             (
                 state
@@ -115,7 +104,6 @@ impl VideoTrimBar {
                 state.segments.len(),
                 state.pending,
                 state.is_exportable(),
-                state.busy,
             )
         };
 
@@ -142,7 +130,7 @@ impl VideoTrimBar {
             None if has_segments => i18n("Mark more cuts or export"),
             None => i18n("Press M (or Mark) at the start and end of a cut"),
         });
-        self.export_btn.set_sensitive(exportable && !busy);
+        self.export_btn.set_sensitive(exportable);
         // Tell the shell to repaint the cut timeline (segments + pending mark).
         let _ = sender.output(VideoTrimBarOutput::SegmentsChanged { segments, pending });
     }
@@ -233,54 +221,6 @@ impl Component for VideoTrimBar {
             .xalign(0.0)
             .build();
 
-        // Format choice: an Adwaita ToggleGroup (segmented control) — proper
-        // exclusivity + accessible names out of the box (grouped GtkToggleButtons
-        // do not expose their text label as an accessible name).
-        let mode_group = adw::ToggleGroup::new();
-        mode_group.add(
-            adw::Toggle::builder()
-                .label(i18n("Keep format (fast)"))
-                .build(),
-        );
-        mode_group.add(adw::Toggle::builder().label(i18n("Re-encode")).build());
-        mode_group.set_active(0);
-        tooltip::set(
-            &mode_group,
-            i18n(
-                "Keep format copies the cut without re-encoding (fast); Re-encode applies the cut settings",
-            ),
-        );
-        mode_group.connect_active_notify(glib::clone!(
-            #[strong]
-            sender,
-            move |group| {
-                let mode = if group.active() == 1 {
-                    CutMode::Precise
-                } else {
-                    CutMode::Fast
-                };
-                sender.input(VideoTrimBarInput::SetMode(mode));
-            }
-        ));
-
-        // Gear: re-encode settings. Disabled while "Keep format" is selected
-        // (a stream-copy has no encode settings); opens a dialog on precise.
-        // Settings (gear) — always available: even in fast/keep-format mode the
-        // user needs the output-layout choice (join cuts vs separate files). The
-        // dialog shows that always + the encode options for precise.
-        let cut_settings_button = icon_button(
-            "emblem-system-symbolic",
-            &i18n("Cut settings"),
-            &["flat", "circular"],
-        );
-        cut_settings_button.connect_clicked(glib::clone!(
-            #[strong]
-            sender,
-            move |_| {
-                let _ = sender.output(VideoTrimBarOutput::OpenEncodeConfig);
-            }
-        ));
-
         let exit_trim_mode_button = icon_button(
             "window-close-symbolic",
             &i18n("Exit trim mode"),
@@ -306,8 +246,7 @@ impl Component for VideoTrimBar {
             move |_| sender.input(VideoTrimBarInput::RequestExport)
         ));
 
-        // One compact row: Mark · Clear · [hint/chips] · count · format · gear ·
-        // Export · exit — halves the vertical space versus two rows.
+        // One compact row: Mark · Clear · [hint/chips] · count · Export · exit.
         let middle = gtk::Box::new(gtk::Orientation::Horizontal, 0);
         middle.set_hexpand(true);
         middle.append(&hint_label);
@@ -320,18 +259,9 @@ impl Component for VideoTrimBar {
         row.append(&play_selection_button);
         row.append(&middle);
         row.append(&count_label);
-        row.append(&mode_group);
-        row.append(&cut_settings_button);
         row.append(&export_button);
         row.append(&exit_trim_mode_button);
         root.append(&row);
-
-        let busy_sensitive: Vec<gtk::Widget> = vec![
-            mark_button.upcast::<gtk::Widget>(),
-            clear_button.upcast::<gtk::Widget>(),
-            mode_group.upcast::<gtk::Widget>(),
-            cut_settings_button.clone().upcast::<gtk::Widget>(),
-        ];
 
         let model = VideoTrimBar {
             state,
@@ -340,7 +270,6 @@ impl Component for VideoTrimBar {
             hint_label,
             count_label,
             export_btn: export_button,
-            busy_sensitive,
         };
         model.refresh(&sender);
         ComponentParts { model, widgets: () }
@@ -367,24 +296,11 @@ impl Component for VideoTrimBar {
             VideoTrimBarInput::SetSegmentTimes(id, a, b) => {
                 self.state.borrow_mut().set_segment_times(id, a, b);
             }
-            VideoTrimBarInput::SetMode(mode) => self.state.borrow_mut().mode = mode,
             VideoTrimBarInput::RequestExport => {
-                let (ranges, mode) = {
-                    let state = self.state.borrow();
-                    (state.export_ranges(), state.mode)
-                };
+                let ranges = self.state.borrow().export_ranges();
                 if !ranges.is_empty() {
-                    let _ = sender.output(VideoTrimBarOutput::ExportRequested { ranges, mode });
+                    let _ = sender.output(VideoTrimBarOutput::ExportRequested { ranges });
                 }
-                return;
-            }
-            VideoTrimBarInput::SetBusy(busy) => {
-                self.state.borrow_mut().busy = busy;
-                for widget in &self.busy_sensitive {
-                    widget.set_sensitive(!busy);
-                }
-                self.export_btn
-                    .set_sensitive(!busy && self.state.borrow().is_exportable());
                 return;
             }
         }

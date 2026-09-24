@@ -19,20 +19,11 @@ path = "src/lib.rs"
 name = "sql_injection"
 required-features = ["ui"]
 
-[[test]]
-name = "ui_labels_pot_roundtrip"
-required-features = ["ui"]
-
 # Property test over the ui-only filter builder; also `#![cfg(feature = "fuzz")]`.
 # Needs both features or `cargo test --features fuzz` fails to compile it.
 [[test]]
 name = "filter_chain_props"
 required-features = ["ui", "fuzz"]
-
-# Uses adw/gtk directly; skip it unless the ui feature pulls those in.
-[[example]]
-name = "ui_surface_probe"
-required-features = ["ui"]
 
 [dependencies]
 adw = { workspace = true, optional = true }
@@ -41,15 +32,11 @@ glib = { workspace = true, optional = true }
 gio = { workspace = true, optional = true }
 gdk = { version = "0.11", package = "gdk4", optional = true }
 gdk-wayland-sys = { version = "0.11", package = "gdk4-wayland-sys", optional = true }
-# Direct (was already transitive via big-relm4-components): the relocated editor
-# Components (VideoEditor/AudioEditor) use relm4 directly. Same pinned 0.11.
-relm4 = { workspace = true, optional = true }
 mpv-sys = { version = "4", package = "libmpv2-sys", optional = true }
 libc.workspace = true
 big-audio-effects.workspace = true
 big-app-kit = { workspace = true, features = ["http-client", "remote-control"], optional = true }
 big-os-kit.workspace = true
-big-media-engines.workspace = true
 big-relm4-components = { workspace = true, optional = true }
 big-media-components = { workspace = true, optional = true }
 big-mpv-render = { workspace = true, optional = true }
@@ -92,7 +79,6 @@ ui-core = [
     "dep:glib",
     "dep:gio",
     "dep:gdk",
-    "dep:relm4",
     "dep:mpv-sys",
     "dep:big-app-kit",
     "dep:big-relm4-components",
