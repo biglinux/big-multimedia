@@ -206,7 +206,7 @@ impl EditPage {
         let stat_path = path.to_path_buf();
         let file_path = self.file_path.clone();
         let expected = path.to_string_lossy().to_string();
-        crate::shared::ui_helpers::spawn_blocking_result(
+        crate::shared::spawn::spawn_blocking_result(
             move || std::fs::metadata(&stat_path).ok().map(|meta| meta.len()),
             move |len| {
                 if file_path.borrow().as_deref() != Some(expected.as_str()) {

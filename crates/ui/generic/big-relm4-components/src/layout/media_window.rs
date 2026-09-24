@@ -224,16 +224,6 @@ impl BigMediaOverlayStack {
         self.add_layer(layer, layer_role.layer_spec());
     }
 
-    /// Add a clipped, non-measured primary media layer.
-    pub fn add_clipped_media_layer(&self, layer: &impl IsA<gtk::Widget>) {
-        self.add_layer(layer, BigMediaOverlayLayerSpec::clipped_media());
-    }
-
-    /// Add a floating, non-measured overlay layer.
-    pub fn add_floating_overlay(&self, layer: &impl IsA<gtk::Widget>) {
-        self.add_layer(layer, BigMediaOverlayLayerSpec::floating_overlay());
-    }
-
     /// Add the primary media surface for the scene.
     pub fn add_primary_media_surface(&self, surface: &impl IsA<gtk::Widget>) {
         self.add_layer_with_role(surface, BigMediaOverlayLayerRole::PrimaryMediaSurface);
@@ -252,11 +242,6 @@ impl BigMediaOverlayStack {
     /// Add transient status UI such as buffering or loading state.
     pub fn add_status_overlay(&self, overlay: &impl IsA<gtk::Widget>) {
         self.add_layer_with_role(overlay, BigMediaOverlayLayerRole::StatusOverlay);
-    }
-
-    /// Add viewer-specific overlays such as an OSD label or histogram.
-    pub fn add_viewer_adornment_overlay(&self, overlay: &impl IsA<gtk::Widget>) {
-        self.add_layer_with_role(overlay, BigMediaOverlayLayerRole::ViewerAdornmentOverlay);
     }
 
     /// Install media chrome at the current overlay position.
@@ -527,11 +512,6 @@ impl BigMediaChrome {
         self.header.pack_start(widget);
     }
 
-    /// Add an app action to the header END (right, before the primary menu).
-    pub fn add_header_end(&self, widget: &impl IsA<gtk::Widget>) {
-        self.header.pack_end(widget);
-    }
-
     /// The real `AdwHeaderBar` (for direct tweaks; prefer the slot helpers).
     #[must_use]
     pub fn header(&self) -> &adw::HeaderBar {
@@ -615,23 +595,6 @@ impl BigMediaImmersionController {
     /// Hide the cursor on the controller host when media chrome becomes idle.
     pub fn set_hide_cursor_when_idle(&self, should_hide: bool) {
         self.should_hide_cursor_when_idle.set(should_hide);
-    }
-
-    /// Reset the idle timer on pointer or keyboard activity over `root`.
-    pub fn attach_activity_detection(self: &Rc<Self>, root: &impl IsA<gtk::Widget>) {
-        let motion = gtk::EventControllerMotion::new();
-        let controller = self.clone();
-        motion.connect_motion(move |_, _, _| controller.show_and_schedule_hide());
-        root.add_controller(motion);
-
-        let key = gtk::EventControllerKey::new();
-        let controller = self.clone();
-        key.connect_key_pressed(move |_, _, _, _| {
-            controller.show_and_schedule_hide();
-            gtk::glib::Propagation::Proceed
-        });
-        root.add_controller(key);
-        self.show_and_schedule_hide();
     }
 
     /// Fade `widget` out when the media surface becomes idle.

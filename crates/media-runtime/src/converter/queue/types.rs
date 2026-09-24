@@ -83,14 +83,8 @@ pub struct ConversionQueueEntry {
     pub video_overrides: Option<VideoOverrides>,
     // Drives NR mono split/merge.
     pub input_audio_channels: u32,
-    // HEVC 10-bit → H.264 GPU shortcut.
-    pub skip_video_filters: bool,
-    // True once the background probe worker's `Probed` result has been applied
-    // (sets duration_secs / input_audio_channels / skip_video_filters). False
-    // means those three still hold add_file defaults. The converter worker
-    // re-probes any `!probed` item inline before building its ffmpeg command,
-    // so `Queue::start` racing ahead of the probe cannot transcode with stale
-    // metadata. See `support::ensure_entry_probed`.
+    // If background metadata has not arrived, the conversion worker probes
+    // inline before building the command.
     pub probed: bool,
 }
 
@@ -128,10 +122,7 @@ pub enum QueueMessage {
         entry_id: u64,
         line: String,
     },
-    /// Background ffprobe results for a freshly added item (duration,
-    /// audio-channel count, HEVC-10bit filter skip). Probing synchronously
-    /// in `add_file` ran three ffprobes PER FILE on the main thread and
-    /// froze every window of an embedding host on large batches.
+    /// Background duration and audio-channel count for a newly added item.
     Probed {
         /// Item id.
         entry_id: u64,
@@ -139,8 +130,6 @@ pub enum QueueMessage {
         duration_secs: f64,
         /// Channel count of the first audio stream (0 when unknown).
         input_audio_channels: u32,
-        /// Skip software video filters (HEVC 10-bit → H.264 hwpath).
-        skip_video_filters: bool,
     },
 }
 

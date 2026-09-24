@@ -7,12 +7,12 @@
 //! own app domain state; consumers wire callbacks and Relm4 messages.
 
 use adw::prelude::*;
-use gtk::{gdk, gio};
+use gtk::gio;
 use relm4::gtk;
 
 use crate::collections::{BigCollectionMode, BigCollectionSpec};
 use crate::dialogs::BigDialogSpec;
-use crate::files::{BigDropTargetSpec, BigFileEntry, BigFilePickerSpec, BigPickerMode};
+use crate::files::{BigFileEntry, BigFilePickerSpec, BigPickerMode};
 use crate::forms::{BigFieldKind, BigFieldSpec, BigSettingsGroupSpec, BigSettingsPageSpec};
 use crate::gtk_accessibility_policy as accessibility;
 use crate::previews::{BigPreviewKind, BigPreviewSpec};
@@ -131,83 +131,6 @@ impl BigClosableSettingsWindow {
     /// Present the settings window.
     pub fn present(&self) {
         self.window.present();
-    }
-}
-
-/// Big drop target widget widget wrapper used by BigLinux apps.
-#[derive(Debug, Clone)]
-pub struct BigDropTargetWidget {
-    root: gtk::Box,
-    target: gtk::DropTarget,
-    spec: BigDropTargetSpec,
-}
-
-impl BigDropTargetWidget {
-    /// Realise a [`BigDropTargetWidget`] from the supplied spec.
-    ///
-    /// Builds the GTK widget tree eagerly; the returned struct exposes
-    /// the underlying widgets for signal wiring.
-    #[must_use]
-    pub fn new(spec: BigDropTargetSpec, title: &str, description: &str) -> Self {
-        let root = gtk::Box::builder()
-            .orientation(gtk::Orientation::Vertical)
-            .spacing(6)
-            .halign(gtk::Align::Fill)
-            .valign(gtk::Align::Fill)
-            .hexpand(true)
-            .vexpand(true)
-            .css_classes(["big-drop-target"])
-            .build();
-
-        let title_label = gtk::Label::builder()
-            .label(title)
-            .halign(gtk::Align::Center)
-            .css_classes(["title-3"])
-            .build();
-        let description_label = gtk::Label::builder()
-            .label(description)
-            .halign(gtk::Align::Center)
-            .wrap(true)
-            .css_classes(["dim-label"])
-            .build();
-        root.append(&title_label);
-        root.append(&description_label);
-        root.update_property(&[gtk::accessible::Property::Label(title)]);
-
-        let target = gtk::DropTarget::new(String::static_type(), gdk::DragAction::COPY);
-        root.add_controller(target.clone());
-
-        Self { root, target, spec }
-    }
-
-    /// Wire `callback` to fire whenever a `text/uri-list` drop lands on
-    /// the target. Drops outside the spec's allowed kinds or above
-    /// `max_items` are silently rejected.
-    pub fn connect_uri_list<F>(&self, callback: F)
-    where
-        F: Fn(Vec<String>) + 'static,
-    {
-        let spec = self.spec.clone();
-        self.target.connect_drop(move |_, value, _, _| {
-            let Ok(text) = value.get::<String>() else {
-                return false;
-            };
-            let uris = parse_uri_list(&text, spec.max_items);
-            if uris.is_empty() {
-                return false;
-            }
-            callback(uris);
-            true
-        });
-    }
-
-    /// Borrow the root widget owned by this [`BigDropTargetWidget`].
-    ///
-    /// Use the borrow to wire signals or embed the widget into a
-    /// larger surface; the parent retains ownership.
-    #[must_use]
-    pub fn root(&self) -> &gtk::Box {
-        &self.root
     }
 }
 
@@ -699,16 +622,6 @@ impl BigDialogPanel {
     }
 }
 
-/// Build a pre-revealed [`adw::Banner`] surfacing a form-level error.
-///
-/// Place above the form's [`adw::PreferencesGroup`]s (or directly under
-/// the header bar in dialog flows) to surface validation failures without
-/// blocking input. The banner stays visible until callers hide it.
-#[must_use]
-pub fn validation_banner(message: &str) -> adw::Banner {
-    adw::Banner::builder().title(message).revealed(true).build()
-}
-
 fn picker_icon_and_label(spec: &BigFilePickerSpec) -> (&'static str, &'static str) {
     match spec.mode {
         BigPickerMode::OpenFile => ("document-open-symbolic", "Select file"),
@@ -794,17 +707,6 @@ fn dialog_icon_name(severity: &str) -> &'static str {
         "confirm" => "dialog-question-symbolic",
         _ => "dialog-information-symbolic",
     }
-}
-
-/// Build a [`gtk::StringList`] populated with `string_values` in order, ready
-/// for use with `gtk::DropDown` or any model-backed list widget.
-#[must_use]
-pub fn string_list_model(string_values: &[String]) -> gtk::StringList {
-    let model = gtk::StringList::new(&[]);
-    for string_value in string_values {
-        model.append(string_value);
-    }
-    model
 }
 
 /// Build a [`gio::Menu`] from a slice of [`crate::actions::BigActionSpec`]

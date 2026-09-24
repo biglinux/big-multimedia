@@ -4,7 +4,7 @@ use adw::prelude::*;
 use big_app_kit::file_dialogs::FilePicker;
 use big_relm4_components::feedback::tooltip;
 use big_relm4_components::layout::sidebar_header::{BigSidebarHeader, BigSidebarHeaderSpec};
-use gtk::gio;
+use gtk::{gio, glib};
 
 use super::super::{BrowserState, SidebarMode, VideoBrowserSidebarOutput};
 use super::menu_actions::install_menu_actions;
@@ -181,5 +181,26 @@ fn build_options_menu(state: &Rc<BrowserState>, mode: SidebarMode) -> gtk::MenuB
     let options_menu_button =
         tooltip::icon_menu_button("view-more-symbolic", &i18n("Options"), &["flat"]);
     options_menu_button.set_menu_model(Some(&menu));
+    // Repeat and shuffle can also change from Preferences or MPRIS; show the
+    // stored state each time the menu opens instead of the one at build time.
+    let settings = state.settings.clone();
+    options_menu_button.connect_active_notify(move |button| {
+        if !button.is_active() {
+            return;
+        }
+        let set = |name: &str, value: glib::Variant| {
+            if let Some(action) = group
+                .lookup_action(name)
+                .and_downcast::<gio::SimpleAction>()
+            {
+                action.set_state(&value);
+            }
+        };
+        set("loop", settings.get_string(keys::LOOP_MODE).to_variant());
+        set(
+            "shuffle",
+            settings.get_bool(keys::PLAYLIST_SHUFFLE).to_variant(),
+        );
+    });
     options_menu_button
 }

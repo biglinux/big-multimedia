@@ -251,14 +251,4 @@ impl AudioCacheProfile {
             Self::Radio => "4MiB",
         }
     }
-
-    /// Total cap in MiB — useful for diagnostics / preference UI.
-    #[must_use]
-    pub fn total_mib(self) -> u32 {
-        match self {
-            Self::Music => 40,
-            Self::Podcast => 10,
-            Self::Radio => 68,
-        }
-    }
 }

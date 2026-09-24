@@ -7,15 +7,6 @@ use gtk::{gdk, gio, glib};
 
 const COLOR_BUCKET_SIZE: u8 = 64;
 
-/// Decode `image_bytes` (any GdkPixbuf-supported format) into a [`gdk::Texture`].
-///
-/// Returns [`None`] on decode failure; never panics.
-#[must_use]
-pub fn bytes_to_texture(image_bytes: &[u8]) -> Option<gdk::Texture> {
-    let bytes = glib::Bytes::from(image_bytes);
-    gdk::Texture::from_bytes(&bytes).ok()
-}
-
 /// Decode `image_bytes` into a thumbnail texture bounded by `size` on each edge.
 ///
 /// Aspect ratio is preserved. Returns [`None`] on decode failure.
@@ -32,36 +23,6 @@ pub fn bytes_to_thumbnail(image_bytes: &[u8], size: i32) -> Option<gdk::Texture>
     )
     .ok()?;
     big_relm4_components::display::texture::pixbuf_to_texture(&pixbuf)
-}
-
-/// Decode `image_bytes` and return the dominant RGB color by 64-step bucket vote.
-///
-/// Pixels that are too dark or too bright are filtered out before voting,
-/// so a near-black or near-white image returns [`None`].
-#[must_use]
-pub fn dominant_color(image_bytes: &[u8]) -> Option<(u8, u8, u8)> {
-    let bytes = glib::Bytes::from(image_bytes);
-    let stream = gio::MemoryInputStream::from_bytes(&bytes);
-    let pixbuf = gtk::gdk_pixbuf::Pixbuf::from_stream_at_scale(
-        &stream,
-        64,
-        64,
-        true,
-        gio::Cancellable::NONE,
-    )
-    .ok()?;
-
-    let n_channels = pixbuf.n_channels() as usize;
-    let rowstride = pixbuf.rowstride() as usize;
-    let width = pixbuf.width() as usize;
-    let height = pixbuf.height() as usize;
-    // SAFETY: `pixels()` borrows the pixbuf's internal buffer; valid while `pixbuf`
-    // is alive and unmutated. `pixbuf` is owned locally, never mutated, and outlives
-    // this borrow — `dominant_color_from_pixels` reads `pixels` to completion before
-    // `pixbuf` drops at end of scope.
-    let pixels = unsafe { pixbuf.pixels() };
-
-    dominant_color_from_pixels(pixels, width, height, n_channels, rowstride)
 }
 
 /// Compute the dominant color from a raw pixel buffer.

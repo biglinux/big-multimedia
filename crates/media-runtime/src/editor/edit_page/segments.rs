@@ -10,7 +10,6 @@ use std::sync::Arc;
 
 use gtk::gdk;
 
-use crate::converter::ffmpeg::TrimRange;
 use crate::player::mpv_backend::MpvBackend;
 
 use super::build::EditPageBuild;
@@ -343,25 +342,6 @@ impl EditPage {
         self.segments.borrow().clone()
     }
 
-    /// Convenience helper that returns the first segment as a
-    /// FFmpeg [`TrimRange`], or an empty range when no segments
-    /// exist.
-    #[must_use]
-    pub fn trim_range(&self) -> TrimRange {
-        let segments = self.segments.borrow();
-        if let Some(segment) = segments.first() {
-            TrimRange {
-                start: Some(segment.start),
-                end: Some(segment.end),
-            }
-        } else {
-            TrimRange {
-                start: None,
-                end: None,
-            }
-        }
-    }
-
     pub(super) fn seg_list_actions(&self) -> SegListActions {
         SegListActions {
             segments: self.segments.clone(),
@@ -394,26 +374,6 @@ impl EditPage {
             &self.segments_list_row,
             Some(&context),
         );
-        fire(&self.on_segments_changed, self.segments.borrow().clone());
-        self.segment_overlay.queue_draw();
-    }
-
-    /// Remove the trim segment at index `idx`. No-op when out of
-    /// range.
-    pub fn remove_segment(&self, idx: usize) {
-        let mut segments = self.segments.borrow_mut();
-        if idx < segments.len() {
-            segments.remove(idx);
-        }
-        let context = self.seg_list_actions();
-        update_segments_listbox(
-            &self.segments_listbox,
-            &segments,
-            &self.segments_placeholder,
-            &self.segments_list_row,
-            Some(&context),
-        );
-        drop(segments);
         fire(&self.on_segments_changed, self.segments.borrow().clone());
         self.segment_overlay.queue_draw();
     }

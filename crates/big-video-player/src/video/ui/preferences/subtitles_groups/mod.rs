@@ -28,7 +28,7 @@ use super::{
     add_switch_row,
 };
 
-use crate::shared::ui_helpers::illustration_auto as illustration;
+use crate::shared::illustration::illustration_auto as illustration;
 
 pub(super) fn build_font_group(
     settings: &Settings,

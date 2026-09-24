@@ -12,12 +12,12 @@ pub fn get_library_groups(
     parent_filters: &[(&str, &str)],
     age_secs: Option<i64>,
 ) -> crate::Result<Vec<(String, i64)>> {
-    let col = validate_column(column);
+    let col = validate_column(column)?;
     let grp_expr = column_text_expr(col);
     let mut sql = format!("SELECT {grp_expr} AS grp, COUNT(*) AS cnt FROM tracks WHERE 1=1");
     let mut param_values: Vec<String> = Vec::new();
 
-    append_parent_filters(&mut sql, &mut param_values, parent_filters);
+    append_parent_filters(&mut sql, &mut param_values, parent_filters)?;
     append_text_filter(conn, &mut sql, &mut param_values, filter_text);
     append_age_filter(&mut sql, &mut param_values, age_secs);
     sql.push_str(" GROUP BY grp ORDER BY grp COLLATE NOCASE");
@@ -55,17 +55,14 @@ pub fn get_library_tracks(
     let mut sql = format!("SELECT {TRACK_COLUMNS} FROM tracks WHERE 1=1");
     let mut param_values: Vec<String> = Vec::new();
 
-    append_parent_filters(&mut sql, &mut param_values, parent_filters);
+    append_parent_filters(&mut sql, &mut param_values, parent_filters)?;
     append_text_filter(conn, &mut sql, &mut param_values, filter_text);
     append_age_filter(&mut sql, &mut param_values, age_secs);
     sql.push_str(" ORDER BY artist, album, disc_number, track_number, title");
 
     let mut stmt = conn.prepare(&sql)?;
     let params_ref = params_ref(&param_values);
-    let tracks = stmt
-        .query_map(params_ref.as_slice(), row_to_track)?
-        .filter_map(std::result::Result::ok)
-        .collect();
+    let tracks = crate::db::decoded_rows(stmt.query_map(params_ref.as_slice(), row_to_track)?);
     Ok(tracks)
 }
 
@@ -80,7 +77,7 @@ pub fn get_compilation_albums(
         String::from("SELECT COALESCE(album, '') AS alb, COUNT(*) AS cnt FROM tracks WHERE 1=1");
     let mut param_values: Vec<String> = Vec::new();
 
-    append_parent_filters(&mut sql, &mut param_values, parent_filters);
+    append_parent_filters(&mut sql, &mut param_values, parent_filters)?;
     append_text_filter(conn, &mut sql, &mut param_values, filter_text);
     append_age_filter(&mut sql, &mut param_values, age_secs);
     sql.push_str(
@@ -97,12 +94,9 @@ fn query_string_count_pairs(
 ) -> crate::Result<Vec<(String, i64)>> {
     let mut stmt = conn.prepare(sql)?;
     let params_ref = params_ref(param_values);
-    let rows = stmt
-        .query_map(params_ref.as_slice(), |row| {
-            Ok((row.get::<_, String>(0)?, row.get::<_, i64>(1)?))
-        })?
-        .filter_map(std::result::Result::ok)
-        .collect();
+    let rows = crate::db::decoded_rows(stmt.query_map(params_ref.as_slice(), |row| {
+        Ok((row.get::<_, String>(0)?, row.get::<_, i64>(1)?))
+    })?);
     Ok(rows)
 }
 
@@ -110,14 +104,15 @@ fn append_parent_filters(
     sql: &mut String,
     param_values: &mut Vec<String>,
     parent_filters: &[(&str, &str)],
-) {
+) -> crate::Result<()> {
     for (pcol, pval) in parent_filters {
-        let pc = validate_column(pcol);
+        let pc = validate_column(pcol)?;
         let expr = column_text_expr(pc);
         let idx = param_values.len() + 1;
         sql.push_str(&format!(" AND {expr} = ?{idx}"));
         param_values.push(pval.to_string());
     }
+    Ok(())
 }
 
 /// SQL `COALESCE(...,'')` expression that always yields TEXT for a validated
@@ -180,11 +175,15 @@ fn fts_available(conn: &Connection) -> bool {
         .unwrap_or(false)
 }
 
-/// SQL-injection guard: only these columns may be interpolated unquoted.
-pub(super) fn validate_column(col: &str) -> &str {
+/// SQL-injection guard: only these columns may be interpolated unquoted. An
+/// unknown name is a caller bug and fails instead of quietly grouping by artist.
+pub(super) fn validate_column(col: &str) -> crate::Result<&str> {
     match col {
         "artist" | "album_artist" | "album" | "genre" | "year" | "format" | "bitrate"
-        | "sample_rate" => col,
-        _ => "artist",
+        | "sample_rate" => Ok(col),
+        _ => Err(crate::Error::invalid_argument(
+            "library column",
+            format!("{col:?} is not a groupable column"),
+        )),
     }
 }

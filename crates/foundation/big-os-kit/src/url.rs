@@ -207,7 +207,8 @@ pub fn filename_from_url_path(url: &str, fallback_filename: &str) -> String {
         .next()
         .and_then(|segment| {
             let name = segment.split('?').next().unwrap_or(segment);
-            if name.is_empty() || !name.contains('.') {
+            // "." and ".." would escape or alias the download directory.
+            if !name.contains('.') || name.trim_matches('.').is_empty() {
                 None
             } else {
                 Some(name.to_string())

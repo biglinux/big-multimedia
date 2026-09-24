@@ -25,8 +25,7 @@ make -f Makefile.ci ci   # full gate: fmt clippy test deny audit machete doc com
 ```
 
 The individual cargo gate commands (`fmt`/`clippy`/`nextest`/`doc`/`deny`/
-`audit`/`machete`) are listed in [REVIEW.md](REVIEW.md). CI runs each as a
-separate job (`.github/workflows/ci.yml`).
+`audit`/`machete`) are listed in [REVIEW.md](REVIEW.md).
 
 ## Install
 
@@ -54,10 +53,8 @@ installed.
 - `src/`: Rust application entrypoints and app-owned code.
 - `docs/`: structure and maintenance notes (`project-structure.md`, `native-deps-exceptions.md`).
 - `resources/`: installed desktop metadata and icons shared by packages.
-- `application-assets/`: gresource sources, CSS, and desktop-integration assets.
+- `application-assets/`: gresource sources and CSS.
 - `packaging/pacman/`: BigLinux/pacman packaging source.
-- `packaging/nix/`: Nix packaging source.
-- `packaging/flatpak/`: Flatpak/Flathub packaging source.
 
 ## License
 
@@ -75,8 +72,6 @@ ARCHITECTURE.md and INVARIANTS.md.
 ## Packaging
 
 - Pacman/BigLinux: `packaging/pacman/PKGBUILD`
-- Nix: `packaging/nix/flake.nix`
-- Flatpak/Flathub: `packaging/flatpak/br.com.biglinux.AudioPlayer.yml`
 
 Packaging metadata is source. Keep desktop files, AppStream metadata, icons,
 install hooks, and manifests validated before release.

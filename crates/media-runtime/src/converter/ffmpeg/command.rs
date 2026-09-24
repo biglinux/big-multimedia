@@ -18,11 +18,13 @@ impl FfmpegJob {
 
         cmd.args(["-nostdin", "-hide_banner", "-nostats", "-y"]);
 
-        if self.stage == GpuStage::FullGpu {
-            self.add_hw_init_args(&mut cmd);
-            self.add_hw_decode_args(&mut cmd);
-        } else if self.stage == GpuStage::PartialGpu {
-            self.add_hw_init_args(&mut cmd);
+        let stage = self.video_stage(&self.profile.video.codec);
+        if stage == GpuStage::FullGpu {
+            cmd.args(self.gpu.gpu_type.init_hw_args(&self.gpu.device_path));
+            cmd.args(self.gpu.gpu_type.hwaccel_decode_args());
+        } else if stage == GpuStage::PartialGpu {
+            cmd.args(self.gpu.gpu_type.init_hw_args(&self.gpu.device_path));
+            cmd.args(self.gpu.gpu_type.partial_gpu_args());
         }
 
         if let Some(start) = self.trim.start {
@@ -106,59 +108,6 @@ impl FfmpegJob {
 
         info!("FFmpeg command prepared (media paths omitted)");
         cmd
-    }
-
-    fn add_hw_init_args(&self, cmd: &mut Command) {
-        let device = if self.gpu.device_path.is_empty() {
-            "/dev/dri/renderD128"
-        } else {
-            &self.gpu.device_path
-        };
-
-        match self.gpu.gpu_type {
-            GpuType::Nvidia => {
-                if self.gpu.device_path.is_empty() {
-                    cmd.args(["-init_hw_device", "cuda=cu"]);
-                } else {
-                    cmd.args(["-init_hw_device", &format!("cuda=cu:{device}")]);
-                }
-            }
-            GpuType::Intel => {
-                cmd.args([
-                    "-init_hw_device",
-                    "vaapi=va:,driver=iHD,kernel_driver=i915",
-                    "-init_hw_device",
-                    "qsv=qs@va",
-                ]);
-            }
-            GpuType::Amd => {
-                cmd.args(["-init_hw_device", &format!("vaapi=va:{device}")]);
-            }
-            GpuType::Cpu => {}
-        }
-    }
-
-    // FullGpu only — PartialGpu skips hwaccel decode.
-    fn add_hw_decode_args(&self, cmd: &mut Command) {
-        match self.gpu.gpu_type {
-            GpuType::Nvidia => {
-                cmd.args(["-hwaccel", "cuda", "-hwaccel_output_format", "cuda"]);
-            }
-            GpuType::Intel => {
-                cmd.args([
-                    "-filter_hw_device",
-                    "qs",
-                    "-hwaccel",
-                    "qsv",
-                    "-hwaccel_output_format",
-                    "qsv",
-                ]);
-            }
-            GpuType::Amd => {
-                cmd.args(["-hwaccel", "vaapi", "-hwaccel_output_format", "vaapi"]);
-            }
-            GpuType::Cpu => {}
-        }
     }
 
     fn add_audio_args(&self, cmd: &mut Command) {

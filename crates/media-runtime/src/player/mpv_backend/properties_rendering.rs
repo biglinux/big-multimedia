@@ -28,12 +28,31 @@ impl MpvBackend {
 
     pub fn set_hwdec(&self, mode: &str) {
         self.with_mpv(|m| {
-            let _ = m.set_property("hwdec", mode.to_string());
+            let mut filters = self
+                .hwdec_before_filters
+                .lock()
+                .unwrap_or_else(std::sync::PoisonError::into_inner);
+            let effective = if let Some(filters) = filters.as_mut() {
+                *filters = mode.to_string();
+                super::filters::software_hwdec(mode)
+            } else {
+                mode.to_string()
+            };
+            let _ = m.set_property("hwdec", effective);
         });
     }
 
     pub fn get_hwdec(&self) -> String {
-        self.with_mpv(|m| m.get_property::<String>("hwdec").unwrap_or_default())
+        self.with_mpv(|m| {
+            self.hwdec_before_filters
+                .lock()
+                .unwrap_or_else(std::sync::PoisonError::into_inner)
+                .as_ref()
+                .map_or_else(
+                    || m.get_property::<String>("hwdec").unwrap_or_default(),
+                    Clone::clone,
+                )
+        })
     }
 
     pub fn set_ytdl_format(&self, format: &str) {
@@ -87,22 +106,6 @@ impl MpvBackend {
         });
     }
 
-    pub fn set_gpu_api(&self, api: &str) {
-        self.with_mpv(|m| {
-            if !api.is_empty() {
-                let _ = m.set_property("gpu-api", api.to_string());
-            }
-        });
-    }
-
-    pub fn set_gpu_context(&self, gpu_context: &str) {
-        self.with_mpv(|m| {
-            if !gpu_context.is_empty() {
-                let _ = m.set_property("gpu-context", gpu_context.to_string());
-            }
-        });
-    }
-
     pub fn set_icc_profile(&self, path: &str) {
         self.with_mpv(|m| {
             let _ = m.set_property("icc-profile", path.to_string());
@@ -139,19 +142,6 @@ impl MpvBackend {
                 },
             );
         });
-    }
-
-    /// Create a raw GL context retaining the backend through render teardown.
-    /// Prefer `video_surface::create_render_context` for a safe GTK integration.
-    ///
-    /// # Safety
-    /// The correct GL context must remain current for every render API call,
-    /// including destruction, and its native display must outlive this object.
-    pub unsafe fn create_fast_render_context(
-        self: &std::sync::Arc<Self>,
-    ) -> crate::error::Result<super::fast_render::FastRenderContext> {
-        // SAFETY: forwarded caller contract; no borrowed native display pointer.
-        unsafe { self.create_fast_render_context_with_wayland_display(None, false) }
     }
 
     /// Advanced control requires servicing every update callback on the render

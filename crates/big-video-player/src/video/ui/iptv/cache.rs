@@ -41,7 +41,7 @@ pub fn read(provider_id: &str) -> Option<String> {
 /// Write the fetched content to the cache (best-effort).
 pub fn write(provider_id: &str, content: &str) {
     let path = cache_path(provider_id);
-    if let Err(e) = fs::write(&path, content) {
+    if let Err(e) = big_os_kit::storage::atomic_write(&path, content.as_bytes()) {
         // PII: redact user-home path.
         log::warn!("iptv cache write {}: {e}", redact_path(&path));
     }

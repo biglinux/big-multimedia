@@ -16,6 +16,16 @@ use std::sync::{Arc, Mutex};
 
 pub type DbHandle = Arc<Mutex<Connection>>;
 
+/// Collect query rows, skipping (and logging) rows that fail to decode: one
+/// damaged row should not hide the rest of the library, nor vanish silently.
+pub(crate) fn decoded_rows<T>(rows: impl Iterator<Item = rusqlite::Result<T>>) -> Vec<T> {
+    rows.filter_map(|row| {
+        row.map_err(|error| log::warn!("skipping unreadable database row: {error}"))
+            .ok()
+    })
+    .collect()
+}
+
 pub fn open_database() -> crate::Result<DbHandle> {
     let db_path = db_path();
     if let Some(parent) = db_path.parent() {
@@ -36,7 +46,9 @@ pub fn open_database() -> crate::Result<DbHandle> {
 
     schema::run_migrations(&conn)?;
 
-    let _ = queries::migrate_radio_from_json(&conn);
+    if let Err(error) = queries::migrate_radio_from_json(&conn) {
+        log::warn!("radio stations from the old JSON file were not imported: {error}");
+    }
 
     Ok(Arc::new(Mutex::new(conn)))
 }

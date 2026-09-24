@@ -17,15 +17,6 @@ use std::time::Instant;
 
 use big_relm4_components::list::bounded_list_box::BigBoundedListBox;
 
-/// Deprecated alias for [`crate::install_media_components_translator`].
-#[deprecated(note = "use big_media_components::install_media_components_translator")]
-pub fn install_progress_translator<F>(translator: F)
-where
-    F: Fn(&str) -> String + 'static,
-{
-    crate::text::install_media_components_translator(translator);
-}
-
 type ProgressCallback = Rc<RefCell<Option<Box<dyn Fn()>>>>;
 type CancelConversionCallback = Rc<RefCell<Option<Box<dyn Fn(u64)>>>>;
 

@@ -39,7 +39,6 @@ impl Component for AudioShell {
         root: Self::Root,
         sender: ComponentSender<Self>,
     ) -> ComponentParts<Self> {
-        crate::settings::bind_write_drain(&root);
         // Window-scoped actions go in a "win" group inserted on the Root, so they
         // travel with the content into whatever window hosts it (instead of being
         // bound to a specific `ApplicationWindow`).
@@ -90,6 +89,7 @@ impl Component for AudioShell {
         // The queue is always visible (right pane) — the transport's playlist
         // toggle is redundant, so hide it.
         playback_bar.emit(AudioPlaybackBarInput::SetPlaylistButtonVisible(false));
+        playback_bar.emit(AudioPlaybackBarInput::SetPaused(true));
         let files = FileBrowser::builder()
             .launch(FileBrowserConfig {
                 is_media_file: big_media_components::media::files::is_audio_file,
@@ -290,6 +290,15 @@ impl Component for AudioShell {
         let content_box = gtk::Box::new(gtk::Orientation::Vertical, 0);
         content_box.append(&lyrics_paned);
         content_box.append(downloads.widget());
+        let queue_save_banner = adw::Banner::builder()
+            .title(i18n("The playback queue could not be saved or restored. Your previous saved queue was kept."))
+            .button_label(i18n("Retry saving"))
+            .build();
+        content_box.append(&queue_save_banner);
+        let retry_input = sender.input_sender().clone();
+        queue_save_banner.connect_button_clicked(move |_| {
+            let _ = retry_input.send(AudioShellInput::RetryQueueSave);
+        });
         let content_pane = BigToolbarPane::new(BigToolbarPaneSpec::new());
         content_pane.set_content(&content_box);
         content_pane.add_bottom_bar(playback_bar.widget());
@@ -494,6 +503,14 @@ impl Component for AudioShell {
         // PlayerEvents into the shell.
         let db = db::open_database().ok();
         let db_read = db::open_read_connection().ok();
+        let (queue_persistence, queue_updates) =
+            queue_persistence::QueuePersistence::new(db.clone());
+        let close_store = queue_persistence.clone();
+        crate::settings::saving::bind_write_drain_with_unsaved(&root, move || {
+            close_store.unsaved()
+        });
+        queue_persistence.bind_failure_banner(&queue_save_banner, queue_updates);
+        queue_persistence.load(&sender);
         #[cfg(feature = "chromecast")]
         let cast_device_registry = Arc::new(crate::cast::chromecast::CastSessionController::new());
         let mpv = build_mpv_backend(&sender, &settings);
@@ -534,6 +551,10 @@ impl Component for AudioShell {
                 saved_music_queue: None,
                 saved_podcast_queue: None,
                 queue: PlayQueue::new(),
+                queue_persistence,
+                queue_ready: false,
+                pending_opens: std::collections::VecDeque::new(),
+                open_generation: 0,
                 history: QueueHistory::default(),
                 now_playing_gen: 0,
                 voice_active: std::cell::Cell::new(initial_voice_active),

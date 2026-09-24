@@ -10,11 +10,14 @@ pub(super) struct VideoRealizeOptions {
     pub(super) custom_mpv_options: String,
     pub(super) audio_output: String,
     pub(super) initial_volume: f64,
+    pub(super) volume_max: i64,
     pub(super) muted: bool,
     /// Video output mode (settings `render-mode`): `"auto"` (default — best GL
     /// backend + software fallback on failure), `"gl"` (force GL/offload), `"sw"`
     /// (force the software/no-GL render path).
     pub(super) render_mode: String,
+    /// Playback preferences mpv must start with (repeat, resume, end of file).
+    pub(super) settings: Settings,
 }
 
 /// On content realize, pick the best video backend, bring up mpv, and wire the
@@ -66,10 +69,18 @@ pub(super) fn wire_realize(
                 return;
             }
         };
+        mpv_backend.set_volume_max(realize_options.volume_max);
         mpv_backend.set_volume(realize_options.initial_volume);
         if realize_options.muted {
             mpv_backend.set_mute(true);
         }
+        // Preferences only push these on change; without this a restart
+        // silently falls back to mpv's defaults.
+        let settings = &realize_options.settings;
+        mpv_backend.set_loop_mode(&settings.get_string(keys::LOOP_MODE));
+        mpv_backend.set_save_position(settings.get_bool(keys::RESUME_PLAYBACK));
+        mpv_backend.set_keep_open(&settings.get_string(keys::KEEP_OPEN));
+        mpv_backend.set_keep_open_pause(settings.get_bool(keys::KEEP_OPEN_PAUSE));
         mpv.replace(Some(mpv_backend.clone()));
 
         // mpv events → shell input.
@@ -425,7 +436,8 @@ fn render_glarea_frame(fast_render_context_slot: &FastRenderContextSlot, gl_area
     );
 }
 
-/// On close, flush settings and shut mpv's audio output down cleanly.
+/// On close, save the resume position, flush settings and shut mpv's audio
+/// output down cleanly.
 pub(super) fn wire_close(
     window: &adw::ApplicationWindow,
     mpv: &Rc<RefCell<Option<Arc<MpvBackend>>>>,
@@ -435,6 +447,12 @@ pub(super) fn wire_close(
     let settings = settings.clone();
     window.connect_close_request(move |_| {
         if let Some(mpv) = mpv.borrow().as_ref() {
+            // Save while the file is still loaded. mpv's own save-on-quit runs
+            // in teardown after playback stopped and would overwrite it empty.
+            if settings.get_bool(keys::RESUME_PLAYBACK) {
+                mpv.write_watch_later_config();
+            }
+            mpv.set_save_position(false);
             mpv.shutdown_audio();
         }
         settings.flush();

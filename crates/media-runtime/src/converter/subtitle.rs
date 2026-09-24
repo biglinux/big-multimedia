@@ -7,7 +7,6 @@ use std::path::{Path, PathBuf};
 use std::time::Duration;
 
 use big_os_kit::subprocess::{BigSubprocessOutputMode, BigSubprocessSpec};
-use log::warn;
 
 const TEXT_SUBTITLE_EXTENSIONS: &[&str] = &["srt", "ass", "ssa", "sub", "vtt"];
 
@@ -78,45 +77,6 @@ pub fn probe_subtitles(path: &Path) -> Vec<SubtitleStream> {
         .collect()
 }
 
-pub fn extract_subtitle(input: &Path, stream_index: u32) -> Option<PathBuf> {
-    let subtitle_temp_dir = std::env::temp_dir().join("big-video-converter");
-    std::fs::create_dir_all(&subtitle_temp_dir).ok()?;
-
-    let stem = input
-        .file_stem()
-        .and_then(|s| s.to_str())
-        .unwrap_or("subtitle");
-    let out_path = subtitle_temp_dir.join(format!("{stem}_track{stream_index}.srt"));
-
-    let status = BigSubprocessSpec::builder()
-        .program("ffmpeg")
-        .args(["-y", "-i"])
-        .arg(input)
-        .args(["-map", &format!("0:{stream_index}"), "-c:s", "srt"])
-        .arg("--")
-        .arg(&out_path)
-        .stdout(BigSubprocessOutputMode::Null)
-        .stderr(BigSubprocessOutputMode::Null)
-        .timeout(Duration::from_secs(30))
-        .build()
-        .run();
-
-    match status {
-        Ok(o) if o.status.success() => Some(out_path),
-        Ok(o) => {
-            warn!(
-                "Subtitle extraction failed with exit code {}",
-                o.status.code().unwrap_or(-1)
-            );
-            None
-        }
-        Err(e) => {
-            warn!("Subtitle extraction error: {e}");
-            None
-        }
-    }
-}
-
 pub fn find_external_subtitles(video_path: &Path) -> Vec<PathBuf> {
     let Some(dir) = video_path.parent() else {
         return Vec::new();
@@ -152,131 +112,6 @@ pub fn find_external_subtitles(video_path: &Path) -> Vec<PathBuf> {
 
 // Per-language SRT: filter entries to each segment range, rewrite timecodes
 // against cumulative segment offset. Skipped for bitmap codecs.
-pub fn build_joined_subtitle_files(
-    input: &Path,
-    segments: &[crate::converter::ffmpeg::TrimRange],
-    temp_dir: &Path,
-) -> Vec<(PathBuf, String)> {
-    use std::io::Write;
-
-    let streams = probe_subtitles(input);
-    let text_streams: Vec<_> = streams.iter().filter(|s| !s.is_bitmap).collect();
-    if text_streams.is_empty() {
-        return Vec::new();
-    }
-
-    let mut results = Vec::new();
-
-    for stream in &text_streams {
-        let full_srt = temp_dir.join(format!("sub_{}_full.srt", stream.index));
-        let ok = BigSubprocessSpec::builder()
-            .program("ffmpeg")
-            .args(["-y", "-i"])
-            .arg(input)
-            .args(["-map", &format!("0:{}", stream.index), "-c:s", "srt"])
-            .arg("--")
-            .arg(&full_srt)
-            .stdout(BigSubprocessOutputMode::Null)
-            .stderr(BigSubprocessOutputMode::Null)
-            .timeout(Duration::from_secs(30))
-            .build()
-            .run()
-            .is_ok_and(|o| o.status.success());
-        if !ok || !full_srt.exists() {
-            continue;
-        }
-
-        let Ok(content) = std::fs::read_to_string(&full_srt) else {
-            continue;
-        };
-
-        let mut merged = Vec::new();
-        let mut cumulative = 0.0_f64;
-        let mut seq = 1_u32;
-
-        for seg in segments {
-            let seg_start = seg.start.unwrap_or(0.0);
-            let seg_end = seg.end.unwrap_or(f64::MAX);
-
-            for entry in parse_srt_entries(&content) {
-                if entry.start >= seg_start && entry.end <= seg_end {
-                    let new_start = entry.start - seg_start + cumulative;
-                    let new_end = entry.end - seg_start + cumulative;
-                    merged.push(format!(
-                        "{seq}\n{} --> {}\n{}",
-                        secs_to_srt_timecode(new_start),
-                        secs_to_srt_timecode(new_end),
-                        entry.text
-                    ));
-                    seq += 1;
-                }
-            }
-            cumulative += seg_end - seg_start;
-        }
-
-        if merged.is_empty() {
-            continue;
-        }
-
-        let lang = if stream.language.is_empty() {
-            "und"
-        } else {
-            &stream.language
-        };
-        let out_path = temp_dir.join(format!("merged_{lang}.srt"));
-        if let Ok(mut f) = std::fs::File::create(&out_path) {
-            let _ = f.write_all(merged.join("\n\n").as_bytes());
-            results.push((out_path, lang.to_string()));
-        }
-    }
-
-    results
-}
-
-struct SrtEntry {
-    start: f64,
-    end: f64,
-    text: String,
-}
-
-fn parse_srt_entries(content: &str) -> Vec<SrtEntry> {
-    let mut entries = Vec::new();
-    let blocks: Vec<&str> = content.split("\n\n").collect();
-    for block in blocks {
-        let lines: Vec<&str> = block.trim().lines().collect();
-        if lines.len() >= 3
-            && let Some((start_tc, end_tc)) = lines[1].split_once(" --> ")
-        {
-            let start = srt_timecode_to_secs(start_tc.trim());
-            let end = srt_timecode_to_secs(end_tc.trim());
-            let text = lines[2..].join("\n");
-            entries.push(SrtEntry { start, end, text });
-        }
-    }
-    entries
-}
-
-fn srt_timecode_to_secs(tc: &str) -> f64 {
-    // SRT format: HH:MM:SS,mmm
-    let (time_part, ms_str) = tc.split_once(',').unwrap_or((tc, "0"));
-    let parts: Vec<&str> = time_part.split(':').collect();
-    if parts.len() != 3 {
-        return 0.0;
-    }
-    let h: f64 = parts[0].parse().unwrap_or(0.0);
-    let m: f64 = parts[1].parse().unwrap_or(0.0);
-    let s: f64 = parts[2].parse().unwrap_or(0.0);
-    let ms: f64 = ms_str.parse().unwrap_or(0.0);
-    h * 3600.0 + m * 60.0 + s + ms / 1000.0
-}
-
-fn secs_to_srt_timecode(secs: f64) -> String {
-    let h = (secs / 3600.0) as u32;
-    let m = ((secs % 3600.0) / 60.0) as u32;
-    let s = (secs % 60.0) as u32;
-    let ms = ((secs % 1.0) * 1000.0) as u32;
-    format!("{h:02}:{m:02}:{s:02},{ms:03}")
-}
 
 // `--` terminator scopes path as positional — defends against hostile
 // filenames beginning with `-` that ffprobe would parse as a flag.
@@ -445,53 +280,5 @@ mod tests {
         assert!(found.iter().any(|p| p.ends_with("movie.ssa")));
 
         let _ = fs::remove_dir_all(&subtitle_test_dir);
-    }
-
-    #[test]
-    fn srt_timecode_to_secs_sums_all_components() {
-        // 1h + 2m + 3s + 500ms, every component distinct and non-zero so the
-        // whole h*3600 + m*60 + s + ms/1000 chain is pinned.
-        assert!((srt_timecode_to_secs("01:02:03,500") - 3723.5).abs() < 1e-9);
-        assert!((srt_timecode_to_secs("00:00:00,000")).abs() < 1e-9);
-        // A missing milliseconds field defaults to 0 (comma split fallback).
-        assert!((srt_timecode_to_secs("00:00:05") - 5.0).abs() < 1e-9);
-        // Malformed (not three colon parts) → 0 (pins the `!= 3` guard).
-        assert!((srt_timecode_to_secs("01:02")).abs() < 1e-9);
-    }
-
-    #[test]
-    fn secs_to_srt_timecode_formats_hh_mm_ss_ms() {
-        assert_eq!(secs_to_srt_timecode(3723.5), "01:02:03,500");
-        assert_eq!(secs_to_srt_timecode(0.0), "00:00:00,000");
-        // Round-trips with the parser.
-        assert_eq!(
-            secs_to_srt_timecode(srt_timecode_to_secs("00:10:09,250")),
-            "00:10:09,250"
-        );
-    }
-
-    #[test]
-    fn parse_srt_entries_reads_blocks() {
-        let content = "1\n00:00:01,000 --> 00:00:02,500\nHello world\n\n\
-                       2\n00:00:03,000 --> 00:00:04,000\nLine A\nLine B";
-        let entries = parse_srt_entries(content);
-        assert_eq!(entries.len(), 2);
-        assert!((entries[0].start - 1.0).abs() < 1e-9);
-        assert!((entries[0].end - 2.5).abs() < 1e-9);
-        assert_eq!(entries[0].text, "Hello world");
-        // Multi-line cue text is preserved (lines[2..] joined).
-        assert_eq!(entries[1].text, "Line A\nLine B");
-        // A block with fewer than 3 lines is ignored (pins `len >= 3`).
-        assert!(parse_srt_entries("1\n00:00:01,000 --> 00:00:02,000").is_empty());
-    }
-
-    #[test]
-    fn is_bitmap_subtitle_codec_recognises_only_bitmap_formats() {
-        assert!(is_bitmap_subtitle_codec("dvd_subtitle"));
-        assert!(is_bitmap_subtitle_codec("hdmv_pgs_subtitle"));
-        assert!(is_bitmap_subtitle_codec("vobsub"));
-        assert!(!is_bitmap_subtitle_codec("subrip"));
-        assert!(!is_bitmap_subtitle_codec("ass"));
-        assert!(!is_bitmap_subtitle_codec(""));
     }
 }

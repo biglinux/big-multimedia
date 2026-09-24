@@ -429,7 +429,8 @@ impl BigIllustratedSliderRow {
 fn title_label(text: &str, heading: bool) -> gtk::Label {
     let label = gtk::Label::builder()
         .label(text)
-        .halign(gtk::Align::Start)
+        .xalign(0.0)
+        .wrap(true)
         .build();
     if heading {
         label.add_css_class("heading");
@@ -440,9 +441,9 @@ fn title_label(text: &str, heading: bool) -> gtk::Label {
 fn subtitle_label(text: &str) -> gtk::Label {
     let label = gtk::Label::builder()
         .label(text)
-        .halign(gtk::Align::Start)
+        .xalign(0.0)
+        .wrap(true)
         .build();
-    label.add_css_class("dim-label");
     label.add_css_class("caption");
     label
 }

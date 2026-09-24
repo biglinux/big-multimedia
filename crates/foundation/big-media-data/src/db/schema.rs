@@ -2,6 +2,16 @@
 
 use rusqlite::Connection;
 
+/// Ordered upgrades on top of the `CREATE ... IF NOT EXISTS` baseline below;
+/// `PRAGMA user_version` records how many have run. Append only: a released
+/// step never changes, and a column added to a baseline table needs its own
+/// `ALTER TABLE` step here so existing databases get it too.
+const MIGRATIONS: &[&str] = &[
+    // 1: `file_path ... UNIQUE` already carries an index; this one only
+    // doubled the write cost of every scan.
+    "DROP INDEX IF EXISTS idx_tracks_file_path;",
+];
+
 pub fn run_migrations(conn: &Connection) -> crate::Result<()> {
     conn.execute_batch(
         "
@@ -52,7 +62,6 @@ pub fn run_migrations(conn: &Connection) -> crate::Result<()> {
         CREATE INDEX IF NOT EXISTS idx_tracks_artist ON tracks(artist);
         CREATE INDEX IF NOT EXISTS idx_tracks_album ON tracks(album);
         CREATE INDEX IF NOT EXISTS idx_tracks_genre ON tracks(genre);
-        CREATE INDEX IF NOT EXISTS idx_tracks_file_path ON tracks(file_path);
         CREATE INDEX IF NOT EXISTS idx_playlist_tracks_playlist ON playlist_tracks(playlist_id, position);
 
         CREATE TABLE IF NOT EXISTS smart_playlists (
@@ -69,6 +78,22 @@ pub fn run_migrations(conn: &Connection) -> crate::Result<()> {
         CREATE TABLE IF NOT EXISTS queue_tracks (
             position    INTEGER NOT NULL PRIMARY KEY,
             track_id    INTEGER NOT NULL REFERENCES tracks(id) ON DELETE CASCADE
+        );
+
+        CREATE TABLE IF NOT EXISTS playback_queues (
+            name TEXT NOT NULL PRIMARY KEY CHECK (name IN ('music', 'podcasts')),
+            current_position INTEGER CHECK (current_position >= 0)
+        );
+        CREATE TABLE IF NOT EXISTS playback_queue_items (
+            queue_name TEXT NOT NULL REFERENCES playback_queues(name) ON DELETE CASCADE,
+            position INTEGER NOT NULL CHECK (position >= 0),
+            file_path TEXT NOT NULL CHECK (length(file_path) > 0),
+            track_id INTEGER NOT NULL,
+            title TEXT,
+            artist TEXT,
+            album TEXT,
+            duration_secs REAL NOT NULL CHECK (duration_secs >= 0),
+            PRIMARY KEY (queue_name, position)
         );
 
         CREATE TABLE IF NOT EXISTS radio_groups (
@@ -96,7 +121,10 @@ pub fn run_migrations(conn: &Connection) -> crate::Result<()> {
         .unwrap_or(false);
 
     if !has_fts {
-        conn.execute_batch(
+        // One transaction: a failure after CREATE VIRTUAL TABLE must not leave the
+        // table without its triggers, since `has_fts` would then skip repair forever.
+        let transaction = conn.unchecked_transaction()?;
+        transaction.execute_batch(
             "
             CREATE VIRTUAL TABLE tracks_fts USING fts5(
                 title, artist, album, album_artist, genre,
@@ -126,8 +154,27 @@ pub fn run_migrations(conn: &Connection) -> crate::Result<()> {
             SELECT id, title, artist, album, album_artist, genre FROM tracks;
             ",
         )?;
+        transaction.commit()?;
     }
 
+    apply_versioned_migrations(conn)
+}
+
+fn apply_versioned_migrations(conn: &Connection) -> crate::Result<()> {
+    let applied: i64 = conn.pragma_query_value(None, "user_version", |row| row.get(0))?;
+    // A database written by a newer build keeps its version; never downgrade.
+    let Some(pending) = MIGRATIONS.get(usize::try_from(applied).unwrap_or(usize::MAX)..) else {
+        return Ok(());
+    };
+    if pending.is_empty() {
+        return Ok(());
+    }
+    let transaction = conn.unchecked_transaction()?;
+    for step in pending {
+        transaction.execute_batch(step)?;
+    }
+    transaction.pragma_update(None, "user_version", MIGRATIONS.len() as i64)?;
+    transaction.commit()?;
     Ok(())
 }
 
@@ -177,6 +224,42 @@ mod tests {
     fn migration_is_idempotent() {
         let conn = memory_db();
         run_migrations(&conn).unwrap();
+    }
+
+    #[test]
+    fn versioned_steps_upgrade_an_old_database_once() {
+        // What a database created before versioning looked like: the full
+        // baseline, the old redundant index, and no recorded version.
+        let conn = memory_db();
+        conn.execute_batch(
+            "CREATE INDEX idx_tracks_file_path ON tracks(file_path);
+             PRAGMA user_version = 0;",
+        )
+        .unwrap();
+        run_migrations(&conn).unwrap();
+        run_migrations(&conn).unwrap();
+
+        let version: i64 = conn
+            .pragma_query_value(None, "user_version", |row| row.get(0))
+            .unwrap();
+        assert_eq!(version, MIGRATIONS.len() as i64);
+        let redundant: bool = conn
+            .prepare("SELECT 1 FROM sqlite_master WHERE name = 'idx_tracks_file_path'")
+            .unwrap()
+            .exists([])
+            .unwrap();
+        assert!(!redundant);
+    }
+
+    #[test]
+    fn newer_database_version_is_left_alone() {
+        let conn = Connection::open_in_memory().unwrap();
+        conn.pragma_update(None, "user_version", 999).unwrap();
+        run_migrations(&conn).unwrap();
+        let version: i64 = conn
+            .pragma_query_value(None, "user_version", |row| row.get(0))
+            .unwrap();
+        assert_eq!(version, 999);
     }
 
     #[test]

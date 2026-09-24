@@ -141,13 +141,6 @@ impl BigShellSpec {
         Self::new(app_id, title, BigShellKind::Wizard)
     }
 
-    /// Shortcut for `new(.., .., BigShellKind::Traditional)`; selects
-    /// the legacy toolbar look and adds a footer.
-    #[must_use]
-    pub fn traditional(app_id: impl Into<String>, title: impl Into<String>) -> Self {
-        Self::new(app_id, title, BigShellKind::Traditional)
-    }
-
     /// Override the initial window size.
     #[must_use]
     pub fn default_size(mut self, width: i32, height: i32) -> Self {

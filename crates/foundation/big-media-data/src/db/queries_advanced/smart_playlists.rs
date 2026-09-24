@@ -51,10 +51,7 @@ pub fn get_duplicate_tracks(conn: &Connection, limit: u32) -> crate::Result<Vec<
          LIMIT ?1"
     );
     let mut stmt = conn.prepare(&sql)?;
-    let tracks = stmt
-        .query_map(params![limit], row_to_track)?
-        .filter_map(std::result::Result::ok)
-        .collect();
+    let tracks = crate::db::decoded_rows(stmt.query_map(params![limit], row_to_track)?);
     Ok(tracks)
 }
 
@@ -85,20 +82,17 @@ pub fn get_smart_playlists(conn: &Connection) -> crate::Result<Vec<SmartPlaylist
     let mut stmt = conn.prepare(
         "SELECT id, name, rules_json, logic, sort_field, sort_dir, max_tracks FROM smart_playlists ORDER BY name",
     )?;
-    let items = stmt
-        .query_map([], |row| {
-            Ok(SmartPlaylist {
-                id: row.get(0)?,
-                name: row.get(1)?,
-                rules_json: row.get(2)?,
-                logic: row.get(3)?,
-                sort_field: row.get(4)?,
-                sort_dir: row.get(5)?,
-                max_tracks: row.get(6)?,
-            })
-        })?
-        .filter_map(std::result::Result::ok)
-        .collect();
+    let items = crate::db::decoded_rows(stmt.query_map([], |row| {
+        Ok(SmartPlaylist {
+            id: row.get(0)?,
+            name: row.get(1)?,
+            rules_json: row.get(2)?,
+            logic: row.get(3)?,
+            sort_field: row.get(4)?,
+            sort_dir: row.get(5)?,
+            max_tracks: row.get(6)?,
+        })
+    })?);
     Ok(items)
 }
 
@@ -197,10 +191,7 @@ pub fn execute_smart_playlist_rules(
     let mut stmt = conn.prepare(&sql)?;
     let param_refs: Vec<&dyn rusqlite::types::ToSql> =
         params.iter().map(std::convert::AsRef::as_ref).collect();
-    let tracks = stmt
-        .query_map(param_refs.as_slice(), row_to_track)?
-        .filter_map(std::result::Result::ok)
-        .collect();
+    let tracks = crate::db::decoded_rows(stmt.query_map(param_refs.as_slice(), row_to_track)?);
     Ok(tracks)
 }
 

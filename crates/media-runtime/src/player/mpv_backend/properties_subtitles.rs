@@ -149,49 +149,4 @@ impl MpvBackend {
             let _ = m.set_property("secondary-sid", false);
         });
     }
-
-    pub fn set_secondary_sub_visibility(&self, visible: bool) {
-        self.with_mpv(|m| {
-            let _ = m.set_property("secondary-sub-visibility", visible);
-        });
-    }
-
-    pub fn get_secondary_sub_visibility(&self) -> bool {
-        self.with_mpv(|m| Self::get_bool_property(m, "secondary-sub-visibility").unwrap_or(false))
-    }
-
-    pub fn set_secondary_sub_pos(&self, pos: i64) {
-        self.with_mpv(|m| {
-            let _ = m.set_property("secondary-sub-pos", pos);
-        });
-    }
-
-    pub fn sub_seek(&self, dir: i64) {
-        self.with_mpv(|m| {
-            let _ = m.command("sub-seek", &[&dir.to_string()]);
-        });
-    }
-
-    pub fn set_sub_fps(&self, fps: f64) {
-        self.with_mpv(|m| {
-            let _ = m.set_property("sub-fps", fps);
-        });
-    }
-
-    pub fn get_sub_fps(&self) -> f64 {
-        self.with_mpv(|m| m.get_property::<f64>("sub-fps").unwrap_or(0.0))
-    }
-
-    /// `channel`: 0 = off, 1-4 = CC1-CC4.
-    pub fn set_sub_codec_cc(&self, channel: i64) {
-        if channel == 0 {
-            self.with_mpv(|m| {
-                let _ = m.set_property("sub-codec", String::new());
-            });
-        } else {
-            self.with_mpv(|m| {
-                let _ = m.set_property("sub-codec", format!("eia_608:{channel}"));
-            });
-        }
-    }
 }

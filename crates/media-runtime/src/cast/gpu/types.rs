@@ -7,14 +7,14 @@ pub enum GpuType {
     Cpu,
 }
 
-/// A detected GPU device with its render node path.
+/// A detected GPU and the identifier accepted by its FFmpeg backend.
 #[derive(Debug, Clone)]
 pub struct GpuDevice {
     /// GPU vendor type.
     pub gpu_type: GpuType,
     /// Human-readable name (e.g. "NVIDIA GeForce GTX 1660 Ti").
     pub name: String,
-    /// DRI render device path (e.g. "/dev/dri/renderD128"). Empty for CPU.
+    /// CUDA ordinal for NVIDIA; DRM render node for VAAPI/QSV. Empty for CPU.
     pub device_path: String,
 }
 
@@ -26,6 +26,7 @@ impl GpuDevice {
         }
         let model = self.friendly_model();
         let vendor = self.vendor_name();
+        let model = model.strip_prefix(vendor).unwrap_or(&model).trim();
         if model.is_empty() {
             return vendor.to_string();
         }
@@ -73,23 +74,38 @@ impl GpuDevice {
 }
 
 impl GpuType {
-    pub fn h264_encoder(self) -> &'static str {
-        match self {
-            GpuType::Nvidia => "h264_nvenc",
-            GpuType::Amd => "h264_vaapi",
-            GpuType::Intel => "h264_qsv",
-            GpuType::Cpu => "libx264",
+    /// FFmpeg backend for this codec/API pair. Driver and silicon support still
+    /// need a functional probe; an available backend does not guarantee either.
+    pub fn video_encoder(self, codec: &str) -> Option<&'static str> {
+        match (self, codec) {
+            (Self::Nvidia, "h264") => Some("h264_nvenc"),
+            (Self::Nvidia, "h265") => Some("hevc_nvenc"),
+            (Self::Nvidia, "av1") => Some("av1_nvenc"),
+            (Self::Intel, "h264") => Some("h264_qsv"),
+            (Self::Intel, "h265") => Some("hevc_qsv"),
+            (Self::Intel, "av1") => Some("av1_qsv"),
+            (Self::Intel, "vp9") => Some("vp9_qsv"),
+            (Self::Amd, "h264") => Some("h264_vaapi"),
+            (Self::Amd, "h265") => Some("hevc_vaapi"),
+            (Self::Amd, "av1") => Some("av1_vaapi"),
+            (Self::Amd, "vp9") => Some("vp9_vaapi"),
+            _ => None,
         }
+    }
+
+    pub fn h264_encoder(self) -> &'static str {
+        self.video_encoder("h264").unwrap_or("libx264")
     }
 
     pub fn init_hw_args(self, device_path: &str) -> Vec<String> {
         match self {
             GpuType::Nvidia => {
-                if device_path.is_empty() {
-                    vec!["-init_hw_device".into(), "cuda".into()]
+                let device = if device_path.is_empty() {
+                    "0"
                 } else {
-                    vec!["-init_hw_device".into(), format!("cuda=cu:{device_path}")]
-                }
+                    device_path
+                };
+                vec!["-init_hw_device".into(), format!("cuda=cu:{device}")]
             }
             GpuType::Intel => vec![
                 "-init_hw_device".into(),
@@ -103,7 +119,7 @@ impl GpuType {
             ],
             GpuType::Amd => {
                 if device_path.is_empty() {
-                    vec!["-init_hw_device".into(), "vaapi".into()]
+                    vec!["-init_hw_device".into(), "vaapi=va".into()]
                 } else {
                     vec!["-init_hw_device".into(), format!("vaapi=va:{device_path}")]
                 }
@@ -114,13 +130,33 @@ impl GpuType {
 
     pub fn hwaccel_decode_args(self) -> Vec<&'static str> {
         match self {
-            GpuType::Nvidia => vec!["-hwaccel", "cuda", "-hwaccel_output_format", "cuda"],
-            GpuType::Amd => vec!["-hwaccel", "vaapi", "-hwaccel_output_format", "vaapi"],
+            GpuType::Nvidia => vec![
+                "-filter_hw_device",
+                "cu",
+                "-hwaccel",
+                "cuda",
+                "-hwaccel_device",
+                "cu",
+                "-hwaccel_output_format",
+                "cuda",
+            ],
+            GpuType::Amd => vec![
+                "-filter_hw_device",
+                "va",
+                "-hwaccel",
+                "vaapi",
+                "-hwaccel_device",
+                "va",
+                "-hwaccel_output_format",
+                "vaapi",
+            ],
             GpuType::Intel => vec![
                 "-filter_hw_device",
                 "qs",
                 "-hwaccel",
                 "qsv",
+                "-hwaccel_device",
+                "qs",
                 "-hwaccel_output_format",
                 "qsv",
             ],
@@ -140,7 +176,9 @@ impl GpuType {
     pub fn partial_gpu_args(self) -> Vec<&'static str> {
         match self {
             GpuType::Intel => vec!["-filter_hw_device", "qs"],
-            GpuType::Nvidia | GpuType::Amd | GpuType::Cpu => vec![],
+            GpuType::Nvidia => vec!["-filter_hw_device", "cu"],
+            GpuType::Amd => vec!["-filter_hw_device", "va"],
+            GpuType::Cpu => vec![],
         }
     }
 
@@ -225,7 +263,7 @@ impl GpuType {
 
     pub fn partial_upload_filters(self) -> Vec<&'static str> {
         match self {
-            GpuType::Nvidia => vec!["format=nv12", "hwupload_cuda"],
+            GpuType::Nvidia => vec!["format=nv12", "hwupload"],
             GpuType::Amd => vec!["format=nv12", "hwupload=derive_device=vaapi"],
             GpuType::Intel => vec!["format=nv12", "hwupload=extra_hw_frames=64,format=qsv"],
             GpuType::Cpu => vec![],
@@ -343,17 +381,14 @@ mod tests {
 
     #[test]
     fn nvidia_init_hw_with_device() {
-        let args = GpuType::Nvidia.init_hw_args("/dev/dri/renderD128");
-        assert_eq!(args.len(), 2);
-        assert_eq!(args[0], "-init_hw_device");
-        assert!(args[1].contains("cuda"));
-        assert!(args[1].contains("renderD128"));
+        let args = GpuType::Nvidia.init_hw_args("1");
+        assert_eq!(args, vec!["-init_hw_device", "cuda=cu:1"]);
     }
 
     #[test]
     fn nvidia_init_hw_no_device() {
         let args = GpuType::Nvidia.init_hw_args("");
-        assert_eq!(args, vec!["-init_hw_device", "cuda"]);
+        assert_eq!(args, vec!["-init_hw_device", "cuda=cu:0"]);
     }
 
     #[test]

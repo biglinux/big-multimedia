@@ -96,14 +96,6 @@ impl MpvBackend {
         self.load_inner(path, false);
     }
 
-    /// Bypass watch-later for an explicit new queue occurrence.
-    pub fn load_file_from_start(&self, path: &str) {
-        if self.audio_only {
-            self.set_audio_cache_profile(profile_for_uri(path).unwrap_or(AudioCacheProfile::Music));
-        }
-        self.load_inner(path, true);
-    }
-
     fn load_inner(&self, path: &str, from_start: bool) {
         self.loading.store(true, Ordering::Relaxed);
         let result = if from_start {
@@ -205,10 +197,12 @@ impl MpvBackend {
         });
     }
 
+    /// Queued like the loads: set synchronously, it could run before mpv has
+    /// taken the appended entries and land on the wrong one.
     pub fn playlist_play_index(&self, index: i64) {
-        self.with_mpv(|m| {
-            let _ = m.set_property("playlist-pos", index);
-        });
+        if let Err(error) = self.queue_command("playlist-play-index", &[&index.to_string()]) {
+            error!("Failed to play playlist entry {index}: {error}");
+        }
     }
 
     pub fn playlist_clear(&self) {
@@ -221,6 +215,37 @@ impl MpvBackend {
         self.with_mpv(|m| {
             let _ = m.command("playlist-remove", &[&index.to_string()]);
         });
+    }
+
+    /// Shuffle the playlist, or restore the order it was loaded in. The playing
+    /// entry keeps playing and moves to the front: mpv shuffles it too, and
+    /// Next only reaches what sits after it.
+    pub fn playlist_shuffle(&self, shuffle: bool) {
+        self.with_mpv(|m| {
+            if !shuffle {
+                let _ = m.command("playlist-unshuffle", &[]);
+                return;
+            }
+            let _ = m.command("playlist-shuffle", &[]);
+            if let Ok(current) = m.get_property::<i64>("playlist-pos")
+                && current > 0
+            {
+                let _ = m.command("playlist-move", &[&current.to_string(), "0"]);
+            }
+        });
+    }
+
+    /// Playlist entries in mpv's current (possibly shuffled) order.
+    pub fn get_playlist_paths(&self) -> Vec<String> {
+        self.with_mpv(|m| {
+            let count = m.get_property::<i64>("playlist-count").unwrap_or(0);
+            (0..count)
+                .filter_map(|index| {
+                    m.get_property::<String>(&format!("playlist/{index}/filename"))
+                        .ok()
+                })
+                .collect()
+        })
     }
 
     pub fn get_playlist_pos(&self) -> i64 {
@@ -252,23 +277,10 @@ impl MpvBackend {
         });
     }
 
-    pub fn revert_seek(&self) {
-        self.with_mpv(|m| {
-            let _ = m.command("revert-seek", &[]);
-        });
-    }
-
     pub fn set_stream_record(&self, path: &str) {
         self.with_mpv(|m| {
             let _ = m.set_property("stream-record", path.to_string());
         });
-    }
-
-    pub fn get_stream_record(&self) -> String {
-        self.with_mpv(|m| {
-            m.get_property::<String>("stream-record")
-                .unwrap_or_default()
-        })
     }
 
     pub fn chapter_next(&self) {

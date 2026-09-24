@@ -81,7 +81,7 @@ fn install_clear_segments_controller(build: &AudioEditPageBuild) {
         let pending_mark2 = pending_mark.clone();
         let waveform2 = waveform_ref.clone();
         let mpv2 = mpv_ref.clone();
-        let dialog = crate::shared::ui_helpers::new_confirm_dialog(
+        let dialog = crate::shared::dialogs::new_confirm_dialog(
             &crate::i18n::i18n("Clear All Segments?"),
             &crate::i18n::i18n("All cut marks will be removed. This cannot be undone."),
             "clear",

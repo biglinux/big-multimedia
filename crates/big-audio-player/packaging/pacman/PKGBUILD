@@ -17,11 +17,6 @@ license=('GPL-3.0-or-later')
 # (same backend as the video player).
 depends=('gtk4' 'libadwaita' 'mpv' 'ffmpeg' 'libpulse')
 makedepends=('cargo' 'pkgconf' 'gettext')
-# The desktop entry launches through `big-jemalloc-run`, which preloads the
-# patched jemalloc (the C23 free_sized NULL fix GTK4/GLib needs) and keeps it
-# out of child processes. Optional: the runner is a no-op when either piece is
-# missing, and the binary then falls back to glibc malloc.
-optdepends=('big-jemalloc-scope: lower resident memory under GTK4 (measured -26% on the audio player)')
 
 # Absolute path to the big-multimedia workspace root that owns this PKGBUILD.
 _wsroot() {
@@ -32,7 +27,7 @@ build() {
   local root; root="$(_wsroot)"
   export RUSTFLAGS="${RUSTFLAGS} --remap-path-prefix=${root}=/build --remap-path-prefix=${HOME}/.cargo=/cargo"
   cd "${root}" || return 1
-  cargo build --release -p "${pkgname}"
+  cargo build --release --locked -p "${pkgname}"
 }
 
 package() {

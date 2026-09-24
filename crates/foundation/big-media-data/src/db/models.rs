@@ -25,6 +25,32 @@ pub struct Track {
 }
 
 impl Track {
+    /// Merge a file probe without replacing library identity or listening history.
+    /// A late probe for another path must never rename the selected track.
+    pub fn apply_file_metadata(&mut self, metadata: &Self) -> bool {
+        if self.file_path != metadata.file_path {
+            return false;
+        }
+        let updated = Self {
+            id: self.id,
+            date_added: self.date_added,
+            last_played: self.last_played,
+            play_count: self.play_count,
+            rating: self.rating,
+            duration_secs: if metadata.duration_secs.is_finite() && metadata.duration_secs > 0.0 {
+                metadata.duration_secs
+            } else {
+                self.duration_secs
+            },
+            ..metadata.clone()
+        };
+        if *self == updated {
+            return false;
+        }
+        *self = updated;
+        true
+    }
+
     #[must_use]
     pub fn new_external_path(file_path: impl Into<String>) -> Self {
         Self::new_external_path_with_title(file_path, None)
@@ -300,6 +326,29 @@ mod tests {
         assert_eq!(t.file_path, "/tmp/song.mp3");
         assert!(t.title.is_none());
         assert_eq!(t.duration_secs, 0.0);
+    }
+
+    #[test]
+    fn file_metadata_preserves_identity_history_and_known_duration() {
+        let mut track = Track::new_external_path("song.flac");
+        track.id = 42;
+        track.rating = 5;
+        track.play_count = 9;
+        track.date_added = 100;
+        track.last_played = Some(200);
+        track.duration_secs = 120.0;
+        let mut probe = Track::new_external_path("song.flac");
+        probe.title = Some("Tagged title".into());
+        assert!(track.apply_file_metadata(&probe));
+        assert_eq!((track.id, track.rating, track.play_count), (42, 5, 9));
+        assert_eq!((track.date_added, track.last_played), (100, Some(200)));
+        assert_eq!(track.duration_secs, 120.0);
+        assert_eq!(track.title, probe.title);
+        let before = track.clone();
+        probe.file_path = "previous.flac".into();
+        probe.title = Some("Wrong title".into());
+        assert!(!track.apply_file_metadata(&probe));
+        assert_eq!(track, before);
     }
 
     #[test]

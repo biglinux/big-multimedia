@@ -16,7 +16,7 @@ use crate::settings::Settings;
 use super::super::AdvancedWidgets;
 use super::super::{add_combo_row, add_spin_int_row, add_switch_row};
 
-use crate::shared::ui_helpers::illustration_auto as illustration;
+use crate::shared::illustration::illustration_auto as illustration;
 
 pub(in crate::video::ui::preferences) fn build_position_rendering_group(
     settings: &Settings,

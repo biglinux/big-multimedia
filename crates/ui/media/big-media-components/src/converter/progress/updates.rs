@@ -266,14 +266,6 @@ impl ProgressPage {
     }
 
     // (total, finished) for window-title formatting.
-    #[must_use]
-    /// Return `(completed, total)` row counts.
-    pub fn progress_counts(&self) -> (usize, usize) {
-        let finished = *self.done_count.borrow()
-            + *self.failed_count.borrow()
-            + *self.cancelled_count.borrow();
-        (*self.total_items.borrow(), finished)
-    }
 
     fn update_overall(&self) {
         let total = *self.total_items.borrow();

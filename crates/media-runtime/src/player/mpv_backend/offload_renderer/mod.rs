@@ -400,11 +400,6 @@ impl OffloadRenderer {
         };
         self.render_frame(render_context, w, h);
     }
-
-    /// Bypasses `has_new_frame()` once — needed after resize while paused.
-    pub fn set_force_render(&self) {
-        self.pool.force();
-    }
 }
 
 struct GlDiagnostics {

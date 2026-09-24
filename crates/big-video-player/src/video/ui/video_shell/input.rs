@@ -115,6 +115,8 @@ pub enum VideoShellInput {
     TrimMark,
     /// A clip export finished (success / cancellation / failure).
     TrimExportFinished(TrimExportOutcome),
+    /// A command from the MPRIS2 D-Bus service (media keys, desktop widgets).
+    Mpris(big_app_kit::mpris::MprisCommand),
 }
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]

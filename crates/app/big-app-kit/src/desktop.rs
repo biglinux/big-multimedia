@@ -3,10 +3,8 @@
 
 //! Desktop integration contracts.
 
-use std::io;
 use std::path::Path;
 use std::path::PathBuf;
-use std::process::{Child, Command};
 
 use gtk::gio;
 use gtk::glib;
@@ -132,43 +130,6 @@ impl BigMenuSpec {
         self.actions.push(action);
         self
     }
-}
-
-/// Present the existing top-level window if one is open, otherwise call
-/// `create_window` and present the new window. Used by the
-/// `activate` handler to honour the single-instance contract.
-pub fn present_existing_or_new<A, W>(app: &A, create_window: impl FnOnce(&A) -> W)
-where
-    A: IsA<gtk::Application>,
-    W: IsA<gtk::Window>,
-{
-    if let Some(window) = app.active_window() {
-        window.present();
-        return;
-    }
-
-    let window = create_window(app);
-    window.present();
-}
-
-/// Run a standalone libadwaita application whose activate handler presents one
-/// window built by `create_window`.
-///
-/// This keeps application bootstrap policy in the shared framework while apps
-/// provide only their semantic window builder and captured domain state. It is
-/// intended for service-menu dialogs and small single-surface tools whose CLI
-/// arguments were already parsed before GTK starts.
-pub fn run_standalone_adwaita_window<W>(
-    app_id: &str,
-    create_window: impl Fn(&adw::Application) -> W + 'static,
-) -> i32
-where
-    W: IsA<gtk::Window>,
-{
-    run_standalone_adwaita_application(app_id, gio::ApplicationFlags::empty(), move |app| {
-        let window = create_window(app);
-        window.present();
-    })
 }
 
 /// Run a standalone libadwaita application with explicit GApplication flags and
@@ -307,12 +268,18 @@ impl BigSystemPowerAction {
         }
     }
 
-    /// Start the system action and return immediately.
+    /// Start the system action and return immediately; the child is reaped in
+    /// the background, so no zombie `systemctl` is left behind.
     ///
-    /// Call from a worker thread when used by GTK/Relm4 UI code.
-    pub fn spawn_detached(self) -> io::Result<Child> {
-        let mut command = Command::new("systemctl");
-        command.args(self.command_args()).spawn()
+    /// # Errors
+    ///
+    /// Returns the spawn error when `systemctl` cannot be started.
+    pub fn spawn_detached(self) -> Result<(), crate::subprocess::BigSubprocessError> {
+        crate::subprocess::BigSubprocessSpec::builder()
+            .program("systemctl")
+            .args(self.command_args())
+            .build()
+            .spawn_detached()
     }
 }
 

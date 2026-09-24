@@ -15,11 +15,10 @@ impl AudioShell {
                     self.play_current();
                     self.sync_queue_to_panels();
                 } else {
-                    self.is_playing = false;
+                    self.handle_mpris_command(MprisCommand::Stop, sender);
                 }
             }
             PlayerEvent::PauseChanged(paused) => {
-                self.is_playing = !paused;
                 self.mpris_state.paused.store(paused, Ordering::Relaxed);
                 let mut status = self
                     .mpris_state
@@ -34,8 +33,11 @@ impl AudioShell {
                         PlaybackStatus::Playing
                     };
                 }
+                self.is_playing = *status == PlaybackStatus::Playing;
+                drop(status);
                 self.playback_bar
-                    .emit(AudioPlaybackBarInput::SetPaused(paused));
+                    .emit(AudioPlaybackBarInput::SetPaused(!self.is_playing));
+                self.sync_now_playing();
             }
             PlayerEvent::PositionChanged(secs) => {
                 *self
@@ -102,6 +104,8 @@ impl AudioShell {
                 self.mpris_state.selected();
                 let paused = self.mpv.as_ref().is_none_or(|mpv| mpv.is_paused());
                 self.is_playing = !paused;
+                self.playback_bar
+                    .emit(AudioPlaybackBarInput::SetPaused(paused));
                 self.mpris_state.paused.store(paused, Ordering::Relaxed);
                 *self
                     .mpris_state
@@ -123,6 +127,9 @@ impl AudioShell {
                 self.trim_ranges.clear();
                 self.now_playing_gen = self.now_playing_gen.wrapping_add(1);
                 self.sync_now_playing();
+                if !self.is_stream {
+                    self.save_queue_to_db();
+                }
                 self.sync_now_playing_card();
                 self.fetch_lyrics_for_current(sender);
                 self.push_mpris_metadata(sender);
@@ -183,6 +190,7 @@ pub(super) fn build_mpv_backend(
         &replaygain
     });
     mpv.set_replaygain_preamp(settings.get_double(keys::REPLAYGAIN_PREAMP));
+    mpv.set_volume_max(i64::from(settings.get_int_or(keys::VOLUME_MAX, 150)));
     // Zero is a deliberate user choice, not a missing setting.
     mpv.set_volume(f64::from(restored_volume(
         settings.get_int_or(keys::AUDIO_VOLUME, 100),
@@ -191,7 +199,6 @@ pub(super) fn build_mpv_backend(
     mpv.set_audio_pitch_correction(settings.get_bool(keys::AUDIO_PITCH_CORRECTION));
     mpv.set_audio_channels(&settings.get_string(keys::AUDIO_CHANNELS));
     mpv.set_preferred_audio_lang(&settings.get_string(keys::PREFERRED_AUDIO_LANG));
-    mpv.set_volume_max(i64::from(settings.get_int_or(keys::VOLUME_MAX, 150)));
     mpv.set_save_position(settings.get_bool(keys::RESUME_PLAYBACK));
 
     let input = sender.input_sender().clone();

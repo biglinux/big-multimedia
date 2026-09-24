@@ -113,6 +113,14 @@ impl TranscodeSession {
         self.append_video_mapping(&mut args, &subs, audio_idx, stage, gpu);
 
         args.extend(["-c:v".into(), gpu.h264_encoder().into()]);
+        if gpu == GpuType::Nvidia {
+            let device = if device_path.is_empty() {
+                "0"
+            } else {
+                device_path
+            };
+            args.extend(["-gpu".into(), device.into()]);
+        }
         args.extend(gpu.quality_args().iter().map(|s| (*s).into()));
 
         self.append_audio_filters(&mut args, &subs);

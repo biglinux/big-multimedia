@@ -289,12 +289,6 @@ impl BigShortcutDialog {
     pub fn reset_all_row(&self) -> Option<&adw::ActionRow> {
         self.reset_all_row.as_ref()
     }
-
-    /// Consume `self` and yield the underlying window.
-    #[must_use]
-    pub fn into_window(self) -> adw::Window {
-        self.window
-    }
 }
 
 /// Wire every shortcut row to the shared shortcut-capture dialog.

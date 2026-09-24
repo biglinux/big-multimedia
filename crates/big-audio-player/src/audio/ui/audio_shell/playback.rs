@@ -8,9 +8,7 @@ impl AudioShell {
     ) {
         match out {
             AudioPlaybackBarOutput::TogglePlay => {
-                if let Some(mpv) = &self.mpv {
-                    mpv.toggle_pause();
-                }
+                self.handle_mpris_command(MprisCommand::PlayPause, sender);
             }
             AudioPlaybackBarOutput::Next => {
                 if self.queue.advance().is_some() {

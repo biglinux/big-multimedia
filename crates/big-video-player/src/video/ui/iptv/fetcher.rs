@@ -6,7 +6,9 @@
 //! testable. Mirrors the legacy `iptv_view::browser` fetch helpers until the V6
 //! cutover deletes them.
 
-use crate::media::iptv::{IptvChannel, IptvKind, IptvProvider, parse_m3u_content};
+use crate::media::iptv::{
+    IptvChannel, IptvKind, IptvProvider, parse_m3u_content, read_playlist_text,
+};
 use crate::video::ui::iptv::{cache, xtream};
 use big_app_kit::http_client::{RequestHeaders, http_get_with_headers};
 
@@ -37,7 +39,7 @@ pub fn fetch_provider_channels(
     };
     let content = match &provider.source {
         IptvKind::M3uUrl { url } => http_get_with_headers(url, &headers)?,
-        IptvKind::M3uLocal { path } => std::fs::read_to_string(path).ok()?,
+        IptvKind::M3uLocal { path } => read_playlist_text(std::path::Path::new(path))?,
         IptvKind::Xtream {
             server,
             username,

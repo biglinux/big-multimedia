@@ -18,6 +18,7 @@ mod mpris;
 mod panel_intents;
 mod playback;
 mod playlist_library_dialog_actions;
+mod queue_persistence;
 mod queue_state;
 mod sources;
 mod update;
@@ -51,14 +52,14 @@ use crate::db::models::{RadioStation, Track, WatchFolder};
 use crate::db::queries_advanced::{TrackMetadataUpdate, update_track_metadata};
 use crate::db::{self, DbHandle, queries};
 use crate::i18n::i18n;
-use crate::mpris::{
-    CommandCallback, Mpris, MprisCommand, PlaybackStatus, PlayerState, StateCallback,
-};
 use crate::player::mpv_backend::{AudioCacheProfile, MpvBackend, PlayerEvent};
 use crate::player::queue::{PlayQueue, RepeatMode};
 use crate::settings::{Settings, keys};
-use crate::shared::ui_helpers::spawn_db_query;
+use crate::shared::spawn::spawn_db_query;
 use big_app_kit::file_dialogs::FilePicker;
+use big_app_kit::mpris::{
+    CommandCallback, Mpris, MprisCommand, PlaybackStatus, PlayerState, StateCallback,
+};
 use big_media_components::media::file_metadata_dialog::{
     BigMediaFileMetadataDialogLabels, BigMediaFileMetadataDialogSpec,
     show_media_file_metadata_dialog,
@@ -120,6 +121,10 @@ pub struct AudioShell {
     /// Podcast queue stashed on leaving the podcast tab (restored on return).
     saved_podcast_queue: Option<(Vec<Track>, Option<usize>)>,
     queue: PlayQueue,
+    queue_persistence: queue_persistence::QueuePersistence,
+    queue_ready: bool,
+    pending_opens: std::collections::VecDeque<Vec<String>>,
+    open_generation: u64,
     /// Snapshot-based undo/redo history for user queue edits.
     history: QueueHistory,
     /// Bumped on every track load; async art/lyrics results carry the

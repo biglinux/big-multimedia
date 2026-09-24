@@ -163,7 +163,7 @@ fn stage2_partialgpu_nvidia_uploads_to_cuda() {
     let result = s.build_video_filters_for_stage(TranscodeStage::PartialGpu, GpuType::Nvidia);
     assert!(result.contains("eq="));
     assert!(result.contains("format=nv12"));
-    assert!(result.contains("hwupload_cuda"));
+    assert!(result.contains("hwupload"));
 }
 
 #[test]

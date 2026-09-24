@@ -46,13 +46,13 @@ fn require_disk_space(entry: &ConversionQueueEntry) -> Result<()> {
     Ok(())
 }
 
-fn build_stage_list(gpu: &GpuDevice) -> Vec<(GpuStage, GpuDevice)> {
+fn build_stage_list(gpu: &GpuDevice, codec: &str, audio_only: bool) -> Vec<(GpuStage, GpuDevice)> {
     let cpu = || GpuDevice {
         gpu_type: GpuType::Cpu,
         name: "CPU".into(),
         device_path: String::new(),
     };
-    if matches!(gpu.gpu_type, GpuType::Cpu) {
+    if audio_only || gpu.gpu_type.video_encoder(codec).is_none() {
         vec![(GpuStage::Software, cpu())]
     } else {
         vec![
@@ -122,7 +122,7 @@ fn convert_one(
     if cancel.load(Ordering::Acquire) {
         return Err(Error::Cancelled);
     }
-    ensure_entry_probed(entry, &profile.video.codec);
+    ensure_entry_probed(entry);
     let source = std::fs::metadata(&entry.input)?;
     if !source.is_file() {
         return Err(failure(&i18n(
@@ -214,7 +214,7 @@ fn convert_one(
         return Ok(());
     }
     require_disk_space(entry)?;
-    let stages = build_stage_list(gpu);
+    let stages = build_stage_list(gpu, &profile.video.codec, audio_only);
     let mut temporary = Vec::new();
     for (index, segment) in segments.iter().enumerate() {
         if cancel.load(Ordering::Acquire) {
@@ -257,7 +257,6 @@ fn convert_one(
                 video_overrides: entry.video_overrides.clone(),
                 input_audio_channels: entry.input_audio_channels,
                 subtitle_streams: subtitles.clone(),
-                skip_video_filters: entry.skip_video_filters,
                 audio_only,
             };
             match run_job(&job, entry, cancel, sender)
@@ -486,7 +485,7 @@ mod processing_tests {
             name: "CPU".into(),
             device_path: String::new(),
         };
-        let cpu_stages = build_stage_list(&cpu);
+        let cpu_stages = build_stage_list(&cpu, "h264", false);
         assert_eq!(cpu_stages.len(), 1);
         assert_eq!(cpu_stages[0].0, GpuStage::Software);
 
@@ -495,7 +494,7 @@ mod processing_tests {
             name: "RTX".into(),
             device_path: "/dev/dri/renderD128".into(),
         };
-        let gpu_stages = build_stage_list(&gpu);
+        let gpu_stages = build_stage_list(&gpu, "h264", false);
         assert_eq!(gpu_stages.len(), 3);
         assert_eq!(gpu_stages[0].0, GpuStage::FullGpu);
         assert_eq!(gpu_stages[1].0, GpuStage::PartialGpu);
@@ -503,6 +502,119 @@ mod processing_tests {
         // The hardware stages keep the real device; the fallback is CPU.
         assert!(matches!(gpu_stages[0].1.gpu_type, GpuType::Nvidia));
         assert!(matches!(gpu_stages[2].1.gpu_type, GpuType::Cpu));
+        for (codec, audio_only) in [
+            ("vp9", false),
+            ("prores", false),
+            ("copy", false),
+            ("h264", true),
+        ] {
+            let stages = build_stage_list(&gpu, codec, audio_only);
+            assert_eq!(stages.len(), 1, "{codec} audio={audio_only}");
+            assert_eq!(stages[0].0, GpuStage::Software);
+            assert_eq!(stages[0].1.gpu_type, GpuType::Cpu);
+        }
+    }
+
+    #[test]
+    #[cfg(not(miri))]
+    #[ignore = "requires FFmpeg with libx265, libx264, libvpx-vp9 and ProRes"]
+    fn native_hevc10_exports_preserve_filters_and_verified_outputs() {
+        let temp = tempfile::tempdir().unwrap();
+        let input = temp.path().join("hevc10.mkv");
+        let generated = BigSubprocessSpec::builder().program("ffmpeg")
+            .args(["-nostdin", "-hide_banner", "-loglevel", "error", "-f", "lavfi", "-i", "color=red:size=640x360:duration=0.12:rate=25,drawbox=x=320:y=0:w=320:h=360:color=blue:t=fill", "-pix_fmt", "yuv420p10le", "-c:v", "libx265", "-x265-params", "pools=1:frame-threads=1:log-level=error"])
+            .arg(&input).timeout(Duration::from_secs(15)).build().run().unwrap();
+        assert!(generated.status.success(), "{}", generated.stderr_lossy());
+        let cancel = Arc::new(AtomicBool::new(false));
+        let gpu = GpuDevice {
+            gpu_type: GpuType::Nvidia,
+            name: "Unavailable test GPU".into(),
+            device_path: "9999".into(),
+        };
+        let (tx, rx) = async_channel::unbounded();
+        for (codec, container, pixel_format) in [
+            ("h264", "mp4", "auto"),
+            ("h264", "mkv", "yuv444p10le"),
+            ("vp9", "webm", "auto"),
+            ("prores", "mov", "auto"),
+            ("copy", "mkv", "auto"),
+        ] {
+            let mut profile: Profile = toml::from_str("").unwrap();
+            profile.video.codec = codec.into();
+            profile.video.pixel_format = pixel_format.into();
+            profile.video.filters.flip_h = codec != "copy";
+            profile.output.container = container.into();
+            let mut entry = queue_entry("unused");
+            entry.input = input.clone();
+            entry.output = temp
+                .path()
+                .join(format!("export-{codec}-{pixel_format}.{container}"));
+            entry.probed = false;
+            convert_one(&mut entry, &profile, &gpu, &cancel, &tx, false, true)
+                .unwrap_or_else(|e| panic!("{codec}: {e}"));
+            let messages: Vec<_> = std::iter::from_fn(|| rx.try_recv().ok()).collect();
+            let attempts = messages
+                .iter()
+                .filter(|m| matches!(m, QueueMessage::Started { .. }))
+                .count();
+            assert_eq!(attempts, if codec == "h264" { 3 } else { 1 }, "{codec}");
+            if codec == "h264" {
+                let metadata =
+                    progress::probe_media_metadata_cancellable(&entry.output, &cancel).unwrap();
+                let expected_format = if pixel_format == "auto" {
+                    "yuv420p"
+                } else {
+                    pixel_format
+                };
+                assert_eq!(metadata["streams"][0]["pix_fmt"], expected_format);
+            }
+            let decoded = BigSubprocessSpec::builder()
+                .program("ffmpeg")
+                .args(["-nostdin", "-hide_banner", "-loglevel", "error", "-i"])
+                .arg(&entry.output)
+                .args(["-frames:v", "1", "-pix_fmt", "rgb24", "-f", "rawvideo", "-"])
+                .timeout(Duration::from_secs(10))
+                .build()
+                .run()
+                .unwrap();
+            assert!(
+                decoded.status.success(),
+                "{codec}: {}",
+                decoded.stderr_lossy()
+            );
+            assert_eq!(decoded.stdout.len(), 640 * 360 * 3);
+            let left = (180 * 640 + 160) * 3;
+            let right = (180 * 640 + 480) * 3;
+            let (red, blue) = if codec == "copy" {
+                (left, right)
+            } else {
+                (right, left)
+            };
+            assert!(
+                decoded.stdout[red] > 200 && decoded.stdout[red + 2] < 30,
+                "{codec}: red"
+            );
+            assert!(
+                decoded.stdout[blue + 2] > 200 && decoded.stdout[blue] < 30,
+                "{codec}: blue"
+            );
+            let digest = receipts::hash_file(&entry.output, &cancel).unwrap();
+            convert_one(&mut entry, &profile, &gpu, &cancel, &tx, false, true).unwrap();
+            assert!(
+                !std::iter::from_fn(|| rx.try_recv().ok())
+                    .any(|m| matches!(m, QueueMessage::Started { .. })),
+                "resume should reuse the verified {codec} output"
+            );
+            profile.video.filters.flip_h = !profile.video.filters.flip_h;
+            assert!(
+                convert_one(&mut entry, &profile, &gpu, &cancel, &tx, false, true).is_err(),
+                "changed {codec} plan must not reuse output"
+            );
+            assert_eq!(receipts::hash_file(&entry.output, &cancel).unwrap(), digest);
+            eprintln!(
+                "{codec} {pixel_format}: {attempts} attempts; pixels, verified resume and changed-plan refusal passed"
+            );
+        }
     }
 
     fn queue_entry(output: &str) -> ConversionQueueEntry {
@@ -521,7 +633,6 @@ mod processing_tests {
             crop: None,
             video_overrides: None,
             input_audio_channels: 2,
-            skip_video_filters: false,
             probed: true,
         }
     }

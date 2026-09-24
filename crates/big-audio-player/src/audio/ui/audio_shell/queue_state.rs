@@ -37,19 +37,33 @@ impl AudioShell {
         self.sync_now_playing();
     }
 
-    /// Persist the queue track ids to the DB (fire-and-forget).
     pub(super) fn save_queue_to_db(&self) {
-        let Some(db) = self.db.clone() else {
-            return;
+        use crate::db::queries_advanced::{QueueSession, SavedQueue};
+        let active = SavedQueue {
+            tracks: self.queue.tracks().to_vec(),
+            current: self.queue.current_index(),
         };
-        let track_ids: Vec<i64> = self.queue.tracks().iter().map(|t| t.id).collect();
-        spawn_db_query(
-            db,
-            move |conn| {
-                let _ = queries::save_queue(conn, &track_ids);
-            },
-            |()| {},
-        );
+        let stashed = |queue: &Option<(Vec<Track>, Option<usize>)>| {
+            queue
+                .as_ref()
+                .map(|(tracks, current)| SavedQueue {
+                    tracks: tracks.clone(),
+                    current: *current,
+                })
+                .unwrap_or_default()
+        };
+        let session = if self.podcast_mode {
+            QueueSession {
+                music: stashed(&self.saved_music_queue),
+                podcasts: active,
+            }
+        } else {
+            QueueSession {
+                music: active,
+                podcasts: stashed(&self.saved_podcast_queue),
+            }
+        };
+        self.queue_persistence.replace(session);
     }
 
     /// Push the queue to the panels and persist it — call after any track-set
@@ -94,34 +108,77 @@ impl AudioShell {
 
     /// Append files opened from the desktop / CLI as external queue tracks
     /// (playlists are expanded) and play from the first new entry.
-    pub(super) fn open_paths(&mut self, paths: Vec<String>) {
-        let mut resolved: Vec<String> = Vec::new();
-        for path in &paths {
-            if crate::media::playlist::is_playlist_file(path) {
-                resolved.extend(crate::media::playlist::parse_playlist_file(path));
-            } else {
-                resolved.push(path.clone());
-            }
+    pub(super) fn cancel_pending_opens(&mut self) {
+        self.pending_opens.clear();
+        self.open_generation = self.open_generation.wrapping_add(1);
+    }
+
+    pub(super) fn open_paths(&mut self, paths: Vec<String>, sender: &ComponentSender<Self>) {
+        self.pending_opens.push_back(paths);
+        if self.queue_ready && self.pending_opens.len() == 1 {
+            self.resolve_next_open(sender);
         }
+    }
+
+    pub(super) fn resolve_next_open(&mut self, sender: &ComponentSender<Self>) {
+        let Some(paths) = self.pending_opens.front().cloned() else {
+            return;
+        };
+        self.open_generation = self.open_generation.wrapping_add(1);
+        let generation = self.open_generation;
+        let input = sender.input_sender().clone();
+        spawn_blocking_result(
+            move || {
+                let mut resolved = Vec::new();
+                let mut failed = false;
+                for path in paths {
+                    if crate::media::playlist::is_playlist_file(&path) {
+                        match crate::audio::playlist_import::parse_playlist_file_for_import(
+                            Path::new(&path),
+                        ) {
+                            Ok(paths) => resolved.extend(paths),
+                            Err(_) => failed = true,
+                        }
+                    } else {
+                        resolved.push(path);
+                    }
+                }
+                (resolved, failed)
+            },
+            move |(paths, failed)| {
+                let _ = input.send(AudioShellInput::OpenPathsResolved {
+                    generation,
+                    paths,
+                    failed,
+                });
+            },
+        );
+    }
+
+    pub(super) fn append_open_paths(
+        &mut self,
+        resolved: Vec<String>,
+        sender: &ComponentSender<Self>,
+    ) {
         if resolved.is_empty() {
             return;
         }
         self.snapshot_queue();
         let first_new = self.queue.len();
-        for path in resolved {
-            self.queue.add_track(Track::new_external_path(path));
+        for path in &resolved {
+            self.queue.add_track(Track::new_external_path(path.clone()));
         }
         self.queue.jump_to(first_new);
         self.play_current();
         self.commit_queue();
+        Self::load_external_metadata(resolved, sender);
     }
 
     /// Restore the previous queue snapshot (Ctrl+Z).
-    pub(super) fn undo_queue(&mut self) {
+    pub(super) fn undo_queue(&mut self, sender: &ComponentSender<Self>) {
         let current = self.queue.tracks().to_vec();
         if let Some(previous) = self.history.undo(current) {
-            self.queue.set_tracks(previous);
-            self.commit_queue();
+            self.restore_queue_snapshot(previous, sender);
             self.notify(&i18n("Undo"));
         } else {
             self.notify(&i18n("Nothing to undo"));
@@ -129,14 +186,39 @@ impl AudioShell {
     }
 
     /// Re-apply the last undone queue edit (Ctrl+Shift+Z / Ctrl+Y).
-    pub(super) fn redo_queue(&mut self) {
+    pub(super) fn redo_queue(&mut self, sender: &ComponentSender<Self>) {
         let current = self.queue.tracks().to_vec();
         if let Some(next) = self.history.redo(current) {
-            self.queue.set_tracks(next);
-            self.commit_queue();
+            self.restore_queue_snapshot(next, sender);
             self.notify(&i18n("Redo"));
         } else {
             self.notify(&i18n("Nothing to redo"));
         }
+    }
+
+    fn restore_queue_snapshot(&mut self, tracks: Vec<Track>, sender: &ComponentSender<Self>) {
+        self.cancel_pending_opens();
+        let selected = tracks
+            .iter()
+            .position(|track| track.file_path == self.current_file);
+        let status = *self
+            .mpris_state
+            .status
+            .lock()
+            .unwrap_or_else(PoisonError::into_inner);
+        self.queue.set_tracks(tracks);
+        if let Some(index) = selected {
+            self.queue.jump_to(index);
+        } else if !self.is_stream && !self.current_file.is_empty() {
+            if self.queue.is_empty() {
+                self.handle_mpris_command(MprisCommand::Stop, sender);
+                self.current_file.clear();
+                self.now_playing_gen = self.now_playing_gen.wrapping_add(1);
+                self.sync_now_playing_card();
+            } else {
+                self.play_current_as(status);
+            }
+        }
+        self.commit_queue();
     }
 }

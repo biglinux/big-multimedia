@@ -5,7 +5,7 @@
 //! main thread) and the D-Bus thread reads them through an `Arc`. Ported out of
 //! the god-object `window::SharedMprisState` (survives the cutover).
 
-use crate::mpris::{PlaybackStatus, PlayerState};
+use big_app_kit::mpris::{PlaybackStatus, PlayerState};
 use std::sync::Mutex;
 use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
 
@@ -100,13 +100,17 @@ pub(crate) fn save_mpris_art(data: &[u8]) -> Option<String> {
     // This directory contains cache entries only, never original artwork.
     let _lock = big_app_kit::storage::WriteLock::try_acquire(&cache_dir.join("index")).ok()?;
     let mut entries = Vec::new();
-    for (index, entry) in std::fs::read_dir(&cache_dir).ok()?.enumerate() {
-        if index >= 128 {
-            return None;
-        } // do not scan arbitrary unbounded trees
-        let entry = entry.ok()?;
+    // Bound the scan, but well above the 32 entries eviction keeps: the lock
+    // file and leftovers from interrupted writes also live here, and they must
+    // not disable artwork once they pile up. Foreign names are skipped.
+    for entry in std::fs::read_dir(&cache_dir).ok()?.take(1024) {
+        let Ok(entry) = entry else {
+            continue;
+        };
         let name = entry.file_name();
-        let name = name.to_str()?;
+        let Some(name) = name.to_str() else {
+            continue;
+        };
         if name.starts_with("mpris-art-")
             && std::path::Path::new(name)
                 .extension()

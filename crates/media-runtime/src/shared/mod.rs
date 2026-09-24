@@ -28,5 +28,3 @@ pub mod spawn;
 pub mod theming;
 /// Thread-local accessor for the custom tooltip helper — `tooltip::set(w, t)`.
 pub mod tooltip;
-/// Compat facade re-exporting the concern modules under legacy `ui_helpers::*` paths.
-pub mod ui_helpers;

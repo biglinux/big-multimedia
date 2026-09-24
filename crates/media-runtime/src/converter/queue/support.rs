@@ -1,36 +1,20 @@
-//! Queue helpers: output-path dedup ("_converted", "_converted_N"),
-//! per-segment naming for split mode, free-disk probe (statvfs on Unix,
-//! None elsewhere), human-readable byte sizes, and the HEVC-10bit→H.264
-//! shortcut detector that lets the GPU stage skip the SW filter chain.
+//! Output naming, disk-space checks and background metadata completion.
 
 use std::path::Path;
-use std::time::Duration;
 
 pub(crate) use big_media_engines::output_paths::{dedup_output_path, segment_output_path};
-use big_os_kit::subprocess::{BigSubprocessOutputMode, BigSubprocessSpec};
 
 use super::ConversionQueueEntry;
 use crate::converter::ffmpeg::progress;
 
-/// Guarantee an queue_entry's probe-derived fields are real before it is converted.
-///
-/// `add_file` hands probing to a background worker and pushes the queue_entry with
-/// safe defaults (`duration_secs = 0`, `input_audio_channels = 0`,
-/// `skip_video_filters = false`). If the user starts the queue before that
-/// worker's `Probed` message is drained, `Queue::start` snapshots the queue_entry
-/// while it is still `!probed` — converting with stale metadata (wrong audio
-/// downmix, missing HEVC-10bit→H.264 filter skip, no progress %).
-///
-/// This runs on the converter worker thread (never the GTK main loop), so the
-/// inline ffprobe is free to block. No-op once `probed` is set, so a normally
-/// pre-probed queue_entry pays nothing.
-pub(crate) fn ensure_entry_probed(queue_entry: &mut ConversionQueueEntry, target_codec: &str) {
+/// Complete pending metadata on the conversion worker before using it.
+/// An already-probed entry needs no additional subprocesses.
+pub(crate) fn ensure_entry_probed(queue_entry: &mut ConversionQueueEntry) {
     if queue_entry.probed {
         return;
     }
     queue_entry.duration_secs = progress::probe_duration(&queue_entry.input);
     queue_entry.input_audio_channels = progress::probe_audio_channels(&queue_entry.input);
-    queue_entry.skip_video_filters = detect_hevc_10bit_to_h264(&queue_entry.input, target_codec);
     queue_entry.probed = true;
 }
 
@@ -55,50 +39,4 @@ pub(crate) fn available_disk_space(path: &Path) -> Option<u64> {
 #[must_use]
 pub(crate) fn available_disk_space(_path: &Path) -> Option<u64> {
     None
-}
-
-// SW eq/transpose/etc. can't run on hwsurfaces; skip them when input is HEVC 10-bit and target is H.264.
-#[must_use]
-pub(crate) fn detect_hevc_10bit_to_h264(input: &Path, target_codec: &str) -> bool {
-    if target_codec != "h264" {
-        return false;
-    }
-    let output = BigSubprocessSpec::builder()
-        .program("ffprobe")
-        .args([
-            "-v",
-            "quiet",
-            "-select_streams",
-            "v:0",
-            "-show_entries",
-            "stream=pix_fmt,codec_name",
-            "-of",
-            "csv=p=0",
-            // `--` defends against filenames starting with `-`.
-            "--",
-        ])
-        .arg(input)
-        .stderr(BigSubprocessOutputMode::Null)
-        .timeout(Duration::from_secs(10))
-        .build()
-        .run();
-    let Ok(out) = output else { return false };
-    let text = String::from_utf8_lossy(&out.stdout);
-    let parts: Vec<&str> = text.trim().splitn(2, ',').collect();
-    if parts.len() < 2 {
-        return false;
-    }
-    let pix_fmt = parts[0];
-    let codec = parts[1];
-    let is_10bit = pix_fmt.contains("p10") || pix_fmt.contains("10le");
-    let is_hevc = codec == "hevc" || codec == "h265";
-    if is_10bit && is_hevc {
-        log::info!(
-            "HEVC 10-bit detected for {} — skipping video filters for GPU optimization",
-            big_os_kit::url::MediaLogTarget(&input.to_string_lossy())
-        );
-        true
-    } else {
-        false
-    }
 }

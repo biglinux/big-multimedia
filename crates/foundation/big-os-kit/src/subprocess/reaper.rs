@@ -116,3 +116,51 @@ impl Collector {
         }
     }
 }
+
+/// A spawned child this crate still owns. Dropping it kills the process group
+/// (unless `may_signal` was cleared after the leader exited) and hands the
+/// child to the collector, so no error or drop path ever blocks in `wait()`.
+pub(crate) struct OwnedChild {
+    pub(crate) child: Option<Child>,
+    pub(crate) permit: Option<Permit>,
+    pub(crate) may_signal: bool,
+}
+
+impl Drop for OwnedChild {
+    fn drop(&mut self) {
+        if let Some(mut child) = self.child.take() {
+            if self.may_signal {
+                // The leader has not been reaped, so its PGID cannot be reused.
+                // Descendants that deliberately leave the group are outside this
+                // supervisor's containment contract (not a sandbox).
+                #[cfg(unix)]
+                {
+                    let pid = child.id() as libc::pid_t;
+                    if pid > 1 {
+                        // SAFETY: kill(2) with a negative pid only signals the
+                        // group this child leads; no memory is involved.
+                        unsafe {
+                            libc::kill(-pid, libc::SIGKILL);
+                        }
+                    }
+                }
+                let _ = child.kill();
+            }
+            if let Some(permit) = self.permit.take() {
+                permit.defer(child);
+            }
+        }
+    }
+}
+
+/// Put a pipe into non-blocking mode, keeping its other status flags.
+#[cfg(unix)]
+pub(crate) fn set_nonblocking(pipe: &impl std::os::fd::AsRawFd) -> io::Result<()> {
+    let fd = pipe.as_raw_fd();
+    // SAFETY: the pipe keeps owning fd across both calls; only O_NONBLOCK is added.
+    let flags = unsafe { libc::fcntl(fd, libc::F_GETFL) };
+    if flags < 0 || unsafe { libc::fcntl(fd, libc::F_SETFL, flags | libc::O_NONBLOCK) } < 0 {
+        return Err(io::Error::last_os_error());
+    }
+    Ok(())
+}

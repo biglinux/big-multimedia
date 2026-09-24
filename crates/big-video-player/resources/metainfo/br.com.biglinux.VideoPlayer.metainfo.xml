@@ -32,13 +32,13 @@
     <keyword xml:lang="pt_BR">reprodutor</keyword>
     <keyword xml:lang="pt_BR">filme</keyword>
   </keywords>
-  <url type="homepage">https://github.com/biglinux/big-video-player</url>
-  <url type="bugtracker">https://github.com/biglinux/big-video-player/issues</url>
+  <url type="homepage">https://github.com/biglinux/big-multimedia</url>
+  <url type="bugtracker">https://github.com/biglinux/big-multimedia/issues</url>
   <screenshots>
     <screenshot type="default">
       <caption>Main window playing a video</caption>
       <caption xml:lang="pt_BR">Janela principal reproduzindo um vídeo</caption>
-      <image type="source">https://raw.githubusercontent.com/biglinux/big-video-player/main/docs/screenshots/01-main.png</image>
+      <image type="source">https://raw.githubusercontent.com/biglinux/big-multimedia/main/docs/screenshots/video-player-main.png</image>
     </screenshot>
   </screenshots>
   <content_rating type="oars-1.1"/>

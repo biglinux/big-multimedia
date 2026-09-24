@@ -105,6 +105,20 @@ fn friendly_error_failed_to_open() {
 }
 
 #[test]
+fn encoder_failure_does_not_claim_a_file_permission_problem() {
+    for error in [
+        "Could not open encoder before EOF",
+        "Error while opening encoder - maybe incorrect parameters",
+        "Error applying encoder options: Invalid argument",
+    ] {
+        assert_eq!(
+            friendly_ffmpeg_error(&[error.into()], 234),
+            "Could not convert with these settings. Try another format or quality."
+        );
+    }
+}
+
+#[test]
 fn friendly_error_never_echoes_untrusted_stderr() {
     let lines = vec![
         "some info output".into(),
@@ -176,7 +190,6 @@ fn add_file_entry_starts_unprobed_with_defaults() {
     assert!(!queue_entry.probed, "new queue_entry must start unprobed");
     assert_eq!(queue_entry.duration_secs, 0.0);
     assert_eq!(queue_entry.input_audio_channels, 0);
-    assert!(!queue_entry.skip_video_filters);
 }
 
 #[test]
@@ -190,16 +203,14 @@ fn ensure_entry_probed_skips_already_probed_entry() {
     queue_entry.probed = true;
     queue_entry.duration_secs = 42.0;
     queue_entry.input_audio_channels = 6;
-    queue_entry.skip_video_filters = true;
 
-    ensure_entry_probed(queue_entry, "h264");
+    ensure_entry_probed(queue_entry);
 
     assert_eq!(
         queue_entry.duration_secs, 42.0,
         "duration must survive (no re-probe)"
     );
     assert_eq!(queue_entry.input_audio_channels, 6);
-    assert!(queue_entry.skip_video_filters);
     assert!(queue_entry.probed);
 }
 

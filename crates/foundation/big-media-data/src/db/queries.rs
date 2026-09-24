@@ -107,10 +107,7 @@ pub fn get_all_tracks(conn: &Connection) -> crate::Result<Vec<Track>> {
     let sql =
         format!("SELECT {TRACK_COLUMNS} FROM tracks ORDER BY artist, album, track_number, title");
     let mut stmt = conn.prepare(&sql)?;
-    let tracks = stmt
-        .query_map([], row_to_track)?
-        .filter_map(std::result::Result::ok)
-        .collect();
+    let tracks = crate::db::decoded_rows(stmt.query_map([], row_to_track)?);
     Ok(tracks)
 }
 
@@ -123,10 +120,7 @@ pub fn search_tracks(conn: &Connection, query: &str) -> crate::Result<Vec<Track>
          LIMIT 500"
     );
     let mut stmt = conn.prepare(&sql)?;
-    let tracks = stmt
-        .query_map([&pattern], row_to_track)?
-        .filter_map(std::result::Result::ok)
-        .collect();
+    let tracks = crate::db::decoded_rows(stmt.query_map([&pattern], row_to_track)?);
     Ok(tracks)
 }
 
@@ -152,10 +146,7 @@ pub fn get_track_by_path(conn: &Connection, path: &str) -> crate::Result<Option<
 
 pub fn get_all_file_paths(conn: &Connection) -> crate::Result<Vec<String>> {
     let mut stmt = conn.prepare("SELECT file_path FROM tracks")?;
-    let paths: Vec<String> = stmt
-        .query_map([], |row| row.get(0))?
-        .filter_map(std::result::Result::ok)
-        .collect();
+    let paths: Vec<String> = crate::db::decoded_rows(stmt.query_map([], |row| row.get(0))?);
     Ok(paths)
 }
 
@@ -169,16 +160,13 @@ pub fn add_watch_folder(conn: &Connection, path: &str) -> crate::Result<i64> {
 
 pub fn get_watch_folders(conn: &Connection) -> crate::Result<Vec<WatchFolder>> {
     let mut stmt = conn.prepare("SELECT id, path, enabled FROM watch_folders ORDER BY path")?;
-    let folders = stmt
-        .query_map([], |row| {
-            Ok(WatchFolder {
-                id: row.get(0)?,
-                path: row.get(1)?,
-                enabled: row.get::<_, i32>(2)? != 0,
-            })
-        })?
-        .filter_map(std::result::Result::ok)
-        .collect();
+    let folders = crate::db::decoded_rows(stmt.query_map([], |row| {
+        Ok(WatchFolder {
+            id: row.get(0)?,
+            path: row.get(1)?,
+            enabled: row.get::<_, i32>(2)? != 0,
+        })
+    })?);
     Ok(folders)
 }
 

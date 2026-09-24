@@ -104,8 +104,8 @@ pub(super) fn wire_seek_hover(
             let show_thumb = settings.get_bool(keys::SEEKBAR_THUMBNAIL)
                 && file.as_deref().is_some_and(|f| !is_stream_uri(f));
             thumb.set_visible(show_thumb);
-            if show_thumb {
-                thumb_gen.request("", time);
+            if show_thumb && thumb_gen.request(file.as_deref().unwrap_or_default(), time) {
+                thumb.set_paintable(gdk::Paintable::NONE);
             }
 
             popover.set_pointing_to(Some(&gdk::Rectangle::new(x as i32, 0, 1, 1)));
@@ -124,27 +124,27 @@ pub(super) fn wire_seek_hover(
     anchor.add_controller(motion);
 }
 
-/// Drain thumbnail results and paint them into the preview while it is shown.
+/// Keep the latest requested preview ready, including while the pointer is away.
 /// Mirrors the old `setup_thumbnail_generator` consumer.
 pub(super) fn wire_thumb_consumer(
     thumb_rx: async_channel::Receiver<ThumbnailResult>,
-    popover: &gtk::Popover,
     thumb: &gtk::Picture,
+    thumb_gen: &Rc<ThumbnailGenerator>,
 ) {
     // Weak: this main-context future outlives the bar (it ends only when
     // the worker drops the channel) — strong captures pinned the preview
     // popover (and its subtree) after window close.
-    let popover = popover.downgrade();
     let thumb = thumb.downgrade();
+    let thumb_gen = Rc::downgrade(thumb_gen);
     glib::spawn_future_local(async move {
         while let Ok(result) = thumb_rx.recv().await {
-            let (Some(popover), Some(thumb)) = (popover.upgrade(), thumb.upgrade()) else {
+            let (Some(thumb), Some(generator)) = (thumb.upgrade(), thumb_gen.upgrade()) else {
                 break;
             };
-            if !popover.is_visible() {
+            if !generator.is_current(&result) {
                 continue;
             }
-            let bytes = glib::Bytes::from(&result.rgb_data);
+            let bytes = glib::Bytes::from_owned(result.rgb_data);
             let texture = gdk::MemoryTexture::new(
                 THUMB_WIDTH,
                 THUMB_HEIGHT,

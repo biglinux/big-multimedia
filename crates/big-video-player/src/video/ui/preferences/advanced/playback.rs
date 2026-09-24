@@ -63,20 +63,7 @@ pub(super) fn build_adv_playback_group(
             if let Some(val) = loop_values.get(selected) {
                 let _ = s.put_string(keys::LOOP_MODE, val);
                 if let Some(ref mpv) = m {
-                    match *val {
-                        "file" => {
-                            mpv.set_loop_file(true);
-                            mpv.set_loop_playlist(false);
-                        }
-                        "playlist" => {
-                            mpv.set_loop_file(false);
-                            mpv.set_loop_playlist(true);
-                        }
-                        _ => {
-                            mpv.set_loop_file(false);
-                            mpv.set_loop_playlist(false);
-                        }
-                    }
+                    mpv.set_loop_mode(val);
                 }
             }
         });
@@ -158,7 +145,11 @@ pub(super) fn build_adv_eof_group(
         "idle-mode",
         settings,
         move |v| {
-            if let Some(ref mpv) = m {
+            // Applied now only with a file loaded; otherwise at the next load
+            // (an empty playlist plus `idle=no` would make mpv quit).
+            if let Some(ref mpv) = m
+                && mpv.get_current_file().is_some()
+            {
                 mpv.set_idle(v);
             }
         },

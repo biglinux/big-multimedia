@@ -1,5 +1,5 @@
 use crate::media::playlist::VideoMeta;
-use crate::shared::ui_helpers::format_duration_hms;
+use big_media_components::time::duration_hms as format_duration_hms;
 
 #[must_use]
 pub fn meta_summary(meta: &VideoMeta) -> String {

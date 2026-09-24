@@ -35,18 +35,6 @@ pub fn volume_icon_name(volume_percent: f64) -> &'static str {
     }
 }
 
-/// Same as [`volume_icon_name`] but never returns the muted icon.
-#[must_use]
-pub fn unmuted_volume_icon_name(volume_percent: f64) -> &'static str {
-    if volume_percent < VOLUME_THRESHOLD_LOW {
-        "audio-volume-low-symbolic"
-    } else if volume_percent < VOLUME_THRESHOLD_HIGH {
-        "audio-volume-medium-symbolic"
-    } else {
-        "audio-volume-high-symbolic"
-    }
-}
-
 /// Play or pause symbolic icon name to use given the `paused` state.
 #[must_use]
 pub fn playback_icon(paused: bool) -> &'static str {

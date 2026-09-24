@@ -6,6 +6,8 @@ use super::*;
 fn test_ffmpeg_timestamp() {
     assert_eq!(ffmpeg_timestamp(3661.5), "01:01:01.500");
     assert_eq!(ffmpeg_timestamp(0.0), "00:00:00.000");
+    // Rounding carries into the minute instead of printing "60.000" seconds.
+    assert_eq!(ffmpeg_timestamp(59.9996), "00:01:00.000");
 }
 
 #[test]

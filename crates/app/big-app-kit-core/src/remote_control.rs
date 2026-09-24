@@ -76,11 +76,6 @@ impl ServerHandle {
     pub fn is_stopped(&self) -> bool {
         self.closed.load(Ordering::Acquire)
     }
-    /// Token for application-thread callbacks to discard already queued actions
-    /// after the dialog/server has been disabled.
-    pub fn cancellation_flag(&self) -> Arc<AtomicBool> {
-        self.stop.clone()
-    }
 }
 impl Drop for ServerHandle {
     fn drop(&mut self) {

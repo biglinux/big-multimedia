@@ -28,18 +28,18 @@ fn insert_year_track(conn: &Connection, id: i64, artist: &str, year: i32, bitrat
 
 #[test]
 fn validate_column_known() {
-    assert_eq!(validate_column("artist"), "artist");
-    assert_eq!(validate_column("album"), "album");
-    assert_eq!(validate_column("genre"), "genre");
-    assert_eq!(validate_column("year"), "year");
-    assert_eq!(validate_column("sample_rate"), "sample_rate");
+    assert_eq!(validate_column("artist").unwrap(), "artist");
+    assert_eq!(validate_column("album").unwrap(), "album");
+    assert_eq!(validate_column("genre").unwrap(), "genre");
+    assert_eq!(validate_column("year").unwrap(), "year");
+    assert_eq!(validate_column("sample_rate").unwrap(), "sample_rate");
 }
 
 #[test]
 fn validate_column_injection_attempt() {
-    assert_eq!(validate_column("title; DROP TABLE tracks"), "artist");
-    assert_eq!(validate_column("unknown_field"), "artist");
-    assert_eq!(validate_column(""), "artist");
+    assert!(validate_column("title; DROP TABLE tracks").is_err());
+    assert!(validate_column("unknown_field").is_err());
+    assert!(validate_column("").is_err());
 }
 
 #[test]

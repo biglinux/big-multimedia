@@ -12,6 +12,7 @@
 //! `bubblewrap` is a hard package dependency; when it is somehow absent every
 //! entry point returns `None` and the caller refuses to run (secure default).
 
+use std::os::unix::fs::FileTypeExt;
 use std::path::Path;
 use std::sync::OnceLock;
 
@@ -33,7 +34,7 @@ pub fn available() -> bool {
 /// nodes bound for hardware transcode, and `/usr` (+ `/etc`, `/sys`) read-only
 /// so the dynamic linker and GPU drivers resolve.
 fn base_options() -> Vec<String> {
-    [
+    let mut options: Vec<String> = [
         "--die-with-parent",
         "--new-session",
         "--unshare-all",
@@ -53,9 +54,6 @@ fn base_options() -> Vec<String> {
         "--dev-bind-try",
         "/dev/dri",
         "/dev/dri",
-        "--dev-bind-try",
-        "/dev/nvidia0",
-        "/dev/nvidia0",
         "--dev-bind-try",
         "/dev/nvidiactl",
         "/dev/nvidiactl",
@@ -93,7 +91,29 @@ fn base_options() -> Vec<String> {
     ]
     .iter()
     .map(|opt| (*opt).to_string())
-    .collect()
+    .collect();
+    if let Ok(entries) = std::fs::read_dir("/dev") {
+        for entry in entries.flatten() {
+            let name = entry.file_name();
+            let Some(name) = name.to_str() else { continue };
+            if name
+                .strip_prefix("nvidia")
+                .is_some_and(|n| !n.is_empty() && n.bytes().all(|c| c.is_ascii_digit()))
+                && entry.file_type().is_ok_and(|kind| kind.is_char_device())
+            {
+                let path = format!("/dev/{name}");
+                options.extend(["--dev-bind-try".into(), path.clone(), path]);
+            }
+        }
+    }
+    // Keep CUDA ordinals identical to the detecting process, including masks
+    // and explicit PCI ordering. All other inherited variables remain cleared.
+    for key in ["CUDA_VISIBLE_DEVICES", "CUDA_DEVICE_ORDER"] {
+        if let Ok(value) = std::env::var(key) {
+            options.extend(["--setenv".into(), key.into(), value]);
+        }
+    }
+    options
 }
 
 /// bubblewrap option argv (everything between `bwrap` and the program). `ro`

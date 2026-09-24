@@ -51,14 +51,6 @@ impl FilePicker {
     ///
     /// All setters/builder methods can still adjust the result before it is
     /// passed to the GTK layer.
-    pub fn destination_folder(title: impl Into<String>) -> Self {
-        Self::for_spec(BigFilePickerSpec::destination_folder_row(title))
-    }
-
-    /// Construct a [`FilePicker`] populated from the caller-supplied fields.
-    ///
-    /// All setters/builder methods can still adjust the result before it is
-    /// passed to the GTK layer.
     pub fn save_file(title: impl Into<String>) -> Self {
         Self::for_spec(BigFilePickerSpec::save_file_button(title))
     }

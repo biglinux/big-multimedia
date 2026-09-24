@@ -14,6 +14,7 @@ use crate::converter::profiles::{
     AudioConfig, OutputConfig, Profile, ProfileMeta, SubtitleConfig, VideoConfig, VideoFilters,
 };
 use crate::converter::queue::{ConversionQueue, QueueMessage};
+use crate::i18n::i18n;
 
 /// Output format the quick-export panel produces for one file.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -157,31 +158,6 @@ pub fn single_file_export_profile(choice: &QuickExportChoice) -> Profile {
     }
 }
 
-/// Convert a runtime conversion-queue progress snapshot into the shared progress
-/// component's `FfmpegProgressSnapshot`.
-///
-/// `big-media-runtime` (the engine) and `big-media-components` (the UI) each
-/// define a field-identical `FfmpegProgressSnapshot`; this is the single bridge so a player
-/// embedding can drive [`big_media_components::converter::progress::BigConverterProgress`]
-/// straight from `QueueMessage::Progress`, exactly as the full converter does.
-#[must_use]
-pub fn ui_progress_snapshot(
-    runtime_progress_snapshot: &crate::converter::ffmpeg::progress::FfmpegProgressSnapshot,
-) -> big_media_components::ffmpeg::progress::FfmpegProgressSnapshot {
-    big_media_components::ffmpeg::progress::FfmpegProgressSnapshot {
-        time_secs: runtime_progress_snapshot.time_secs,
-        total_secs: runtime_progress_snapshot.total_secs,
-        speed: runtime_progress_snapshot.speed,
-        size_bytes: runtime_progress_snapshot.size_bytes,
-        bitrate_kbps: runtime_progress_snapshot.bitrate_kbps,
-        frame: runtime_progress_snapshot.frame,
-        fps: runtime_progress_snapshot.fps,
-        eta_secs: runtime_progress_snapshot.eta_secs,
-        percent: runtime_progress_snapshot.percent,
-        done: runtime_progress_snapshot.done,
-    }
-}
-
 /// Build (but do **not** start) the one-item [`ConversionQueue`] for a quick
 /// export, returning the queue plus the added item's id and resolved output path.
 ///
@@ -243,7 +219,22 @@ pub fn validate_export_segments(segments: &[(f64, f64)]) -> Result<(), String> {
             .iter()
             .any(|&(a, b)| !a.is_finite() || !b.is_finite() || a < 0.0 || b <= a)
     {
-        return Err("Each cut needs a finite start and a later end".into());
+        return Err(i18n("Each cut needs a finite start and a later end"));
+    }
+    Ok(())
+}
+
+/// Confirm a finished export left a nonempty regular file (not a symlink) at
+/// `output` — the last check before telling the user it exists.
+///
+/// # Errors
+///
+/// Returns a message when the file is missing, not regular, or empty.
+pub fn verify_published_output(output: &Path) -> Result<(), String> {
+    let metadata = std::fs::symlink_metadata(output)
+        .map_err(|_| i18n("The exported file is missing or empty"))?;
+    if !metadata.is_file() || metadata.len() == 0 {
+        return Err(i18n("The exported file is missing or empty"));
     }
     Ok(())
 }
@@ -273,7 +264,7 @@ pub fn run_single_export_blocking(
     validate_export_segments(segments)?;
     let (mut queue, id, output) = build_single_export_queue(input, output_dir, choice, segments);
     if output.as_os_str().is_empty() {
-        return Err("export item vanished before start".to_string());
+        return Err(i18n("The export could not start"));
     }
 
     queue.start();
@@ -282,22 +273,18 @@ pub fn run_single_export_blocking(
         match queue.receiver().recv_blocking() {
             Ok(QueueMessage::Done { entry_id }) if entry_id == id => completed = true,
             Ok(QueueMessage::Cancelled { entry_id }) if entry_id == id => {
-                return Err("Export was cancelled".into());
+                return Err(i18n("Export cancelled"));
             }
             Ok(QueueMessage::AllDone) => {
                 if !completed {
-                    return Err("The queue ended without a completed output".into());
+                    return Err(i18n("The export ended without confirming completion"));
                 }
-                let metadata = std::fs::symlink_metadata(&output)
-                    .map_err(|_| "The published output is unavailable")?;
-                if !metadata.is_file() || metadata.len() == 0 {
-                    return Err("The published output is not a nonempty regular file".into());
-                }
+                verify_published_output(&output)?;
                 return Ok(output);
             }
             Ok(QueueMessage::Failed { entry_id, error }) if entry_id == id => return Err(error),
             Ok(_) => {}
-            Err(_) => return Err("export worker stopped before completion".to_string()),
+            Err(_) => return Err(i18n("The export stopped before it finished")),
         }
     }
 }

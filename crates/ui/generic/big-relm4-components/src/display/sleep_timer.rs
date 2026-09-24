@@ -392,26 +392,6 @@ impl BigSleepTimerActivePage {
     }
 }
 
-/// Wire the setup page's "Start" button so clicking it reads the spin
-/// value, calls `start_timer(window, minutes, action_id)`, and closes
-/// `dialog`.
-pub fn connect_sleep_timer_start<W, D>(
-    setup_page: &BigSleepTimerSetupPage,
-    dialog: &D,
-    window: &W,
-    start_timer: impl Fn(&W, u32, String) + 'static,
-) where
-    W: gtk::glib::object::ObjectType,
-    D: IsA<gtk::Window> + gtk::glib::object::ObjectType,
-{
-    let dialog_ref = dialog.downgrade();
-    connect_sleep_timer_start_with_close(setup_page, window, start_timer, move || {
-        if let Some(dialog) = dialog_ref.upgrade() {
-            dialog.close();
-        }
-    });
-}
-
 /// Wire the setup page's "Start" button with an explicit close action.
 ///
 /// Use this variant for dialog surfaces that are not `gtk::Window`, such as

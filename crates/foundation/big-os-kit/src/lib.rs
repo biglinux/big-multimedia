@@ -20,39 +20,29 @@
 //! `big-app-kit` re-exports these modules unchanged, so existing
 //! `big_app_kit::{subprocess, storage, keyring}` paths keep working.
 
+/// jemalloc as the process allocator (feature `jemalloc`).
+#[cfg(feature = "jemalloc")]
+mod allocator;
+/// Bounded serial executor for application persistence.
+pub mod background;
+/// Observable, coalesced private state writes off the GUI thread.
+pub mod deferred;
+/// Bounded hashing of documents and opened files for durable receipts.
+pub mod digest;
 /// Blocking HTTP client with timeouts, retry policy, and size limits
 /// (feature `http-client`). Single home for outbound HTTP across the
 /// BigLinux stack — re-exported by `big-app-kit`, consumed by data services.
-/// Filesystem-safe filename sanitization.
 #[cfg(feature = "http-client")]
 pub mod http_client;
-/// Human-readable byte/speed/duration formatting.
-/// Secret-store contracts and backends.
-/// Process allocator maintenance (`trim_arenas`).
-pub mod mem;
+/// Worker-only Secret Service access through libsecret's secret-tool.
+pub mod keyring;
 /// Shared microdaemon protocol primitives.
 pub mod microdaemon;
-/// PulseAudio/PipeWire device discovery and control through `pactl`.
-/// POSIX shell single-quoting for shell-command interpolation.
-/// `ssh`/`sftp` argv builders and OpenSSH `ControlMaster` socket helpers.
 /// Atomic JSON persistence helpers.
 pub mod storage;
 /// Safe subprocess argv specs and spawn handles.
 pub mod subprocess;
-/// Text-vs-binary detection and editor-mode classification for files.
 /// RFC 3986 percent-encoding + URL filename helpers (GTK-free, no deps).
 pub mod url;
-/// Local webcam/video-node inventory helpers.
 /// XDG directory resolution for BigLinux desktop apps.
 pub mod xdg_dirs;
-
-/// Bounded serial executor for application persistence.
-pub mod background;
-
-/// Bounded hashing of documents and opened files for durable receipts.
-pub mod digest;
-/// Worker-only Secret Service access through libsecret's secret-tool.
-pub mod keyring;
-
-/// Observable, coalesced private state writes off the GUI thread.
-pub mod deferred;

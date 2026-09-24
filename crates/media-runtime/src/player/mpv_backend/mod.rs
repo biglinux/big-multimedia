@@ -6,7 +6,6 @@
 mod backend;
 mod screenshots;
 pub use screenshots::ScreenshotResult;
-mod pactl_volume;
 mod types;
 
 pub use backend::{MpvBackend, MpvError};

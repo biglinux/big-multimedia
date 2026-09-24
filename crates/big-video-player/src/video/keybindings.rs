@@ -361,11 +361,6 @@ pub const CATEGORIES: &[&str] = &[
     "Other",
 ];
 
-#[must_use]
-pub fn build_key_map(custom: &str) -> std::collections::HashMap<String, String> {
-    build_accel_map(SHORTCUTS, custom, false)
-}
-
 /// Accel→action map for the bare single-key bindings only. Modified bindings are
 /// GTK accelerators; bare keys are dispatched by the window key controller and
 /// must be filtered so text entries keep normal typing (mirrors the audio port).

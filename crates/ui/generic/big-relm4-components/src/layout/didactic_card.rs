@@ -106,13 +106,6 @@ impl BigDidacticCardSpec {
         }
     }
 
-    /// Switch the layout to `FullWidth` (illustration spans card).
-    #[must_use]
-    pub fn full_width(mut self) -> Self {
-        self.layout = BigDidacticCardLayout::FullWidth;
-        self
-    }
-
     /// Switch the layout to `Summary` (no embedded control).
     #[must_use]
     pub fn summary(mut self) -> Self {
@@ -189,92 +182,6 @@ impl BigDidacticCard {
 #[must_use]
 pub fn didactic_card(spec: BigDidacticCardSpec, control: &impl IsA<gtk::Widget>) -> gtk::Box {
     BigDidacticCard::new(spec, Some(control)).into_root()
-}
-
-/// Convenience: build a summary-layout card (no embedded control) and
-/// return its root box.
-#[must_use]
-pub fn didactic_summary(spec: BigDidacticCardSpec) -> gtk::Box {
-    BigDidacticCard::new(spec.summary(), None::<&gtk::Widget>).into_root()
-}
-
-/// Wrap `card` inside a fresh `AdwPreferencesGroup` so it can be added
-/// directly to an `AdwPreferencesPage`.
-#[must_use]
-pub fn didactic_preferences_group(card: &impl IsA<gtk::Widget>) -> adw::PreferencesGroup {
-    let group = adw::PreferencesGroup::new();
-    group.add(card);
-    group
-}
-
-/// Stack `cards` under an optional `heading` and `intro` label,
-/// applying the didactic-section CSS classes.
-#[must_use]
-pub fn didactic_section(heading: &str, intro: &str, cards: &[gtk::Widget]) -> gtk::Box {
-    let section = gtk::Box::builder()
-        .orientation(gtk::Orientation::Vertical)
-        .spacing(0)
-        .hexpand(true)
-        .build();
-
-    if !heading.is_empty() {
-        let heading_label = gtk::Label::builder()
-            .label(heading)
-            .xalign(0.0)
-            .wrap(true)
-            .css_classes(["didactic-section-heading"])
-            .build();
-        section.append(&heading_label);
-    }
-
-    if !intro.is_empty() {
-        let intro_label = gtk::Label::builder()
-            .label(intro)
-            .xalign(0.0)
-            .wrap(true)
-            .max_width_chars(80)
-            .css_classes(["didactic-section-intro"])
-            .build();
-        section.append(&intro_label);
-    }
-
-    let stack = gtk::Box::builder()
-        .orientation(gtk::Orientation::Vertical)
-        .spacing(10)
-        .hexpand(true)
-        .css_classes(["didactic-stack"])
-        .build();
-    for card in cards {
-        stack.append(card);
-    }
-    section.append(&stack);
-
-    section
-}
-
-/// Wrap `sections` in a scrolled vertical box using the standard
-/// didactic-page margins and spacing constants.
-#[must_use]
-pub fn didactic_page(sections: &[gtk::Widget]) -> gtk::ScrolledWindow {
-    let body = gtk::Box::builder()
-        .orientation(gtk::Orientation::Vertical)
-        .spacing(DEFAULT_DIDACTIC_PAGE_SPACING)
-        .margin_top(DEFAULT_DIDACTIC_PAGE_MARGIN_TOP)
-        .margin_bottom(DEFAULT_DIDACTIC_PAGE_MARGIN_BOTTOM)
-        .margin_start(DEFAULT_DIDACTIC_PAGE_MARGIN_SIDES)
-        .margin_end(DEFAULT_DIDACTIC_PAGE_MARGIN_SIDES)
-        .hexpand(true)
-        .build();
-    for section in sections {
-        body.append(section);
-    }
-
-    gtk::ScrolledWindow::builder()
-        .hscrollbar_policy(gtk::PolicyType::Never)
-        .vscrollbar_policy(gtk::PolicyType::Automatic)
-        .vexpand(true)
-        .child(&body)
-        .build()
 }
 
 fn horizontal_card<T: IsA<gtk::Widget>>(

@@ -119,38 +119,6 @@ pub fn anime4k_dir() -> PathBuf {
     Path::new(SHADERS_DIR).join("anime4k")
 }
 
-/// Colon-separated for `glsl-shaders`. `None` when preset/dir absent.
-pub fn anime4k_shader_list(preset: &str) -> Option<String> {
-    if preset.is_empty() {
-        return None;
-    }
-    let dir = anime4k_dir();
-    if !dir.is_dir() {
-        return None;
-    }
-    let shaders = anime4k_preset_shaders(preset);
-    if shaders.is_empty() {
-        return None;
-    }
-    let paths: Vec<String> = shaders
-        .iter()
-        .filter_map(|filename| {
-            let p = dir.join(filename);
-            if p.exists() {
-                Some(p.to_string_lossy().into_owned())
-            } else {
-                error!("Anime4K shader missing: {}", p.display());
-                None
-            }
-        })
-        .collect();
-    if paths.is_empty() {
-        None
-    } else {
-        Some(paths.join(":"))
-    }
-}
-
 // RAVU-Lite (bjin/mpv-prescalers, LGPL-3.0) is the only supported upscaler:
 // fragment shaders compatible with vo=libmpv. ArtCNN (Artoriuz/ArtCNN) excluded
 // — its //!COMPUTE shaders need vo=gpu-next; vo=gpu asserts in copy_image.

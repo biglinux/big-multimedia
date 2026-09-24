@@ -7,6 +7,42 @@ impl AudioShell {
         sender: ComponentSender<Self>,
     ) {
         match message {
+            AudioShellInput::QueueRestored(result) => {
+                let first_load = !self.queue_ready;
+                if let Ok((_, session)) = &result
+                    && self.queue_persistence.status().revision == 0
+                {
+                    self.queue.set_tracks(session.music.tracks.clone());
+                    if let Some(index) = session.music.current {
+                        self.queue.jump_to(index);
+                    }
+                    self.saved_podcast_queue =
+                        Some((session.podcasts.tracks.clone(), session.podcasts.current));
+                    self.sync_queue_to_panels();
+                    let paths = self
+                        .queue
+                        .tracks()
+                        .iter()
+                        .filter(|track| track.id == 0)
+                        .map(|track| track.file_path.clone())
+                        .collect();
+                    Self::load_external_metadata(paths, &sender);
+                }
+                self.queue_ready = true;
+                let recovered_db = result.ok().map(|(db, _)| db);
+                if self.db.is_none() && recovered_db.is_some() {
+                    self.db.clone_from(&recovered_db);
+                    self.rebuild_library_tree(&sender);
+                    self.refresh_playlist_dialog_entries(&sender);
+                }
+                self.queue_persistence.loaded(recovered_db);
+                if first_load {
+                    self.resolve_next_open(&sender);
+                }
+            }
+            AudioShellInput::RetryQueueSave => {
+                self.queue_persistence.load(&sender);
+            }
             AudioShellInput::ShowPreferences => {
                 if let Some(window) = self.toast_overlay.root().and_downcast::<gtk::Window>() {
                     let input = sender.input_sender().clone();
@@ -166,7 +202,27 @@ impl AudioShell {
             AudioShellInput::ImportPaths(paths) => {
                 self.resolve_and_insert(self.queue.len(), paths, &sender);
             }
-            AudioShellInput::OpenPaths(paths) => self.open_paths(paths),
+            AudioShellInput::OpenPaths(paths) => self.open_paths(paths, &sender),
+            AudioShellInput::OpenPathsResolved {
+                generation,
+                paths,
+                failed,
+            } => {
+                if generation != self.open_generation {
+                    return;
+                }
+                self.pending_opens.pop_front();
+                if failed {
+                    self.notify(&i18n(
+                        "The playlist could not be read safely. Check its format and permissions.",
+                    ));
+                }
+                self.append_open_paths(paths, &sender);
+                self.resolve_next_open(&sender);
+            }
+            AudioShellInput::ExternalMetadataResolved(tracks) => {
+                self.resolve_external_metadata(tracks, &sender);
+            }
             AudioShellInput::ShowEqualizer => {
                 if let Some(win) = self.window() {
                     let dialog = crate::shared::audio_effects::create_equalizer_dialog(
@@ -226,6 +282,7 @@ impl AudioShell {
             }
             AudioShellInput::PlaylistTracksForQueue(tracks) => {
                 if should_replace_queue_with(tracks.len()) {
+                    self.cancel_pending_opens();
                     self.snapshot_queue();
                     self.queue.set_tracks(tracks);
                     self.queue.jump_to(0);
@@ -259,15 +316,15 @@ impl AudioShell {
             }
             AudioShellInput::SleepTick => self.sleep_tick(),
             AudioShellInput::Notify(message) => self.notify(&message),
-            AudioShellInput::Undo => self.undo_queue(),
-            AudioShellInput::Redo => self.redo_queue(),
+            AudioShellInput::Undo => self.undo_queue(&sender),
+            AudioShellInput::Redo => self.redo_queue(&sender),
             AudioShellInput::ToggleShuffleShortcut => {
                 self.handle_playback(
                     AudioPlaybackBarOutput::ToggleShuffle(next_shuffle_state(self.queue.shuffle())),
                     &sender,
                 );
             }
-            AudioShellInput::MprisCommand(command) => self.handle_mpris_command(command),
+            AudioShellInput::MprisCommand(command) => self.handle_mpris_command(command, &sender),
             AudioShellInput::ArtResolved { r#gen, data } => {
                 if is_current_generation(r#gen, self.now_playing_gen) {
                     self.apply_resolved_art(data, &sender);

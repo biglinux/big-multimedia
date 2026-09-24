@@ -6,7 +6,7 @@ GenericName=Music Player
 GenericName[pt_BR]=Reprodutor de música
 Comment=Music and audio player for BigLinux
 Comment[pt_BR]=Reprodutor de música e áudio para o BigLinux
-Exec=env MALLOC_CONF=narenas:1,dirty_decay_ms:0,muzzy_decay_ms:0,oversize_threshold:131072,retain:false big-jemalloc-run big-audio-player %F
+Exec=big-audio-player %F
 TryExec=big-audio-player
 Icon=big-audio-player
 Terminal=false

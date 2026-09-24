@@ -10,5 +10,5 @@ mod m3u;
 mod provider;
 
 pub use channel::IptvChannel;
-pub use m3u::{parse_m3u_content, parse_m3u_file};
+pub use m3u::{MAX_PLAYLIST_BYTES, parse_m3u_content, parse_m3u_file, read_playlist_text};
 pub use provider::{IptvKind, IptvProvider, IptvProviderStore};

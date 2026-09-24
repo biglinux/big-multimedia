@@ -3,8 +3,6 @@
 
 //! Shared libadwaita color-scheme, CSS, and custom palette helpers.
 
-use std::sync::Once;
-
 use relm4::gtk;
 
 /// HIGH CONTRAST CSS constant.
@@ -123,11 +121,6 @@ pub fn load_app_css(css: &str) {
             gtk::STYLE_PROVIDER_PRIORITY_APPLICATION,
         );
     }
-}
-
-/// Load process-wide application CSS once, guarded by `loaded`.
-pub fn load_app_css_once(css: &'static str, loaded: &'static Once) {
-    loaded.call_once(|| load_app_css(css));
 }
 
 /// Run `on_dark_changed(is_dark)` whenever the libadwaita dark state flips.

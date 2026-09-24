@@ -1,60 +1,8 @@
 //! Streaming discovery; unavailable files are never an instruction to delete rows.
-use crate::{
-    db::{models::Track, queries},
-    error::Result,
-    library::metadata,
-};
+use crate::error::Result;
 pub use big_media_engines::media_files::AUDIO_EXTENSIONS;
-use rusqlite::Connection;
 use std::path::{Path, PathBuf};
 
-/// Partial commits are possible on later I/O failure; the caller must report that
-/// a failed scan may already have imported earlier batches. No deletion occurs.
-pub fn scan_library(conn: &Connection, folder: &str) -> Result<usize> {
-    let mut added = 0;
-    let mut batch: Vec<Track> = Vec::with_capacity(64);
-    visit_audio_files(folder, |path| {
-        let Some(path) = path.to_str() else {
-            return Err(crate::Error::invalid_argument(
-                "path",
-                "non-UTF-8 library path needs lossless schema support",
-            ));
-        };
-        let exists: bool = conn.query_row(
-            "SELECT EXISTS(SELECT 1 FROM tracks WHERE file_path=?1)",
-            [path],
-            |row| row.get(0),
-        )?;
-        if exists {
-            return Ok(());
-        }
-        match metadata::read_track_metadata(path) {
-            Ok(track) => batch.push(track),
-            Err(_) => {
-                return Err(crate::Error::internal(
-                    "metadata could not be read; earlier import batches were preserved",
-                ));
-            }
-        }
-        if batch.len() == 64 {
-            added += insert_batch(conn, &batch)?;
-            batch.clear();
-        }
-        Ok(())
-    })?;
-    if !batch.is_empty() {
-        added += insert_batch(conn, &batch)?;
-    }
-    Ok(added)
-}
-fn insert_batch(conn: &Connection, tracks: &[Track]) -> Result<usize> {
-    let tx = conn.unchecked_transaction()?;
-    for track in tracks {
-        queries::insert_track(&tx, track)?;
-    }
-    tx.commit()?;
-    Ok(tracks.len())
-}
 /// Visit audio paths without collecting them; traversal errors remain explicit.
 pub fn visit_audio_files(folder: &str, visit: impl FnMut(&Path) -> Result<()>) -> Result<()> {
     visit_audio_files_cancellable(folder, &std::sync::atomic::AtomicBool::new(false), visit)

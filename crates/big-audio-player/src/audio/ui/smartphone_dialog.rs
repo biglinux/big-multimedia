@@ -103,7 +103,7 @@ fn build_handlers(
             .lock()
             .unwrap_or_else(std::sync::PoisonError::into_inner);
         StatusSnapshot {
-            playing: snapshot.status == crate::mpris::PlaybackStatus::Playing,
+            playing: snapshot.status == big_app_kit::mpris::PlaybackStatus::Playing,
             title: snapshot.title.clone(),
             artist: snapshot.artist.clone(),
             position_s: snapshot.position_secs,

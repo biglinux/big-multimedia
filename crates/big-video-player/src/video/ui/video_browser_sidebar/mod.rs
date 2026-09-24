@@ -103,6 +103,10 @@ pub enum VideoBrowserSidebarOutput {
     TrashFiles(Vec<String>),
     /// Show a transient toast (file-op result / error).
     Notify(String),
+    /// The Repeat mode changed (`no` / `file` / `playlist`); already persisted.
+    SetLoopMode(String),
+    /// Shuffle was toggled; already persisted.
+    SetShuffle(bool),
 }
 
 /// Shared browser state — held in an `Rc` so the builder free-functions and

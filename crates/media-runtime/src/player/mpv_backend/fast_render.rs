@@ -112,6 +112,17 @@ impl FastRenderContext {
             internal_format: 0, // 0 = unknown — mpv uses the fbo-format option.
         };
         let mut flip_val: i32 = i32::from(flip_y);
+        // Never let the core block this call waiting for its target display
+        // time. That wait (`vo_libmpv.c`, the `BLOCK_FOR_TARGET_TIME` branch) is
+        // the one `mp_cond_wait` in the whole path with no timeout, and its
+        // wake-up comes from `flip_page`, which gives up after 200 ms: a client
+        // that takes longer to call render — GPU driver warm-up during the first
+        // frames is enough — waits for a `present_count` that is never posted and
+        // hangs the GTK main loop for good. `video-timing-offset=0` (set with the
+        // other init options) keeps A/V sync correct without this wait, as the
+        // render.h docs prescribe. GTK owns presentation here; mpv cannot time it
+        // for us anyway.
+        let mut block_for_target_time: i32 = 0;
 
         let mut params = [
             mpv_sys::mpv_render_param {
@@ -123,6 +134,10 @@ impl FastRenderContext {
                 data: std::ptr::addr_of_mut!(flip_val).cast(),
             },
             mpv_sys::mpv_render_param {
+                type_: mpv_sys::mpv_render_param_type_MPV_RENDER_PARAM_BLOCK_FOR_TARGET_TIME,
+                data: std::ptr::addr_of_mut!(block_for_target_time).cast(),
+            },
+            mpv_sys::mpv_render_param {
                 type_: 0,
                 data: std::ptr::null_mut(),
             },
@@ -132,16 +147,6 @@ impl FastRenderContext {
         self.with_current(|| unsafe {
             mpv_sys::mpv_render_context_render(self.render_context, params.as_mut_ptr())
         })
-    }
-
-    /// Optional confirmed presentation notification. Do not call when merely
-    /// submitting a paintable or queuing a GTK draw; that is not a page flip.
-    #[inline]
-    pub fn report_swap(&self) {
-        // SAFETY: retained render context; GUI installs its creation-context scope.
-        self.with_current(|| unsafe {
-            mpv_sys::mpv_render_context_report_swap(self.render_context);
-        });
     }
 
     /// `true` when `render()` would produce a different image.
@@ -277,6 +282,8 @@ impl SwRenderContext {
         let mut size: [i32; 2] = [width, height];
         let format = b"bgr0\0";
         let mut stride_val: usize = stride;
+        // See the GL path: the core must not block this call. (Same wait.)
+        let mut block_for_target_time: i32 = 0;
         let mut params = [
             mpv_sys::mpv_render_param {
                 type_: mpv_sys::mpv_render_param_type_MPV_RENDER_PARAM_SW_SIZE,
@@ -293,6 +300,10 @@ impl SwRenderContext {
             mpv_sys::mpv_render_param {
                 type_: mpv_sys::mpv_render_param_type_MPV_RENDER_PARAM_SW_POINTER,
                 data: buffer.as_mut_ptr().cast(),
+            },
+            mpv_sys::mpv_render_param {
+                type_: mpv_sys::mpv_render_param_type_MPV_RENDER_PARAM_BLOCK_FOR_TARGET_TIME,
+                data: std::ptr::addr_of_mut!(block_for_target_time).cast(),
             },
             mpv_sys::mpv_render_param {
                 type_: 0,

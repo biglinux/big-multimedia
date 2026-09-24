@@ -116,6 +116,7 @@ pub fn fetch_favicon_bytes(url: &str) -> Option<Vec<u8>> {
     Some(favicon_bytes)
 }
 
+#[cfg(feature = "audio-panels")]
 fn explore_cache_path() -> Option<std::path::PathBuf> {
     Some(
         big_os_kit::xdg_dirs::cache_dir()?
@@ -139,10 +140,9 @@ pub fn save_explore_cache(results: &[RadioExploreEntry]) {
         })
         .collect();
     if let Ok(explore_cache_json) = serde_json::to_string(&json) {
-        if let Some(parent) = path.parent() {
-            let _ = std::fs::create_dir_all(parent);
-        }
-        if let Err(error) = std::fs::write(&path, explore_cache_json) {
+        // atomic_write creates the directory; a torn file would read as empty.
+        if let Err(error) = big_os_kit::storage::atomic_write(&path, explore_cache_json.as_bytes())
+        {
             warn!("[radio] explore cache write fail: {error}");
         }
     } else {

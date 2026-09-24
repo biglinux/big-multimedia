@@ -15,24 +15,24 @@ default = []
 chromecast = ["big-media-runtime/chromecast"]
 
 [dependencies]
-adw = { version = "0.9", features = ["v1_9"], package = "libadwaita" }
-gtk = { version = "0.11", features = ["v4_22"], package = "gtk4" }
-glib = "0.22"
-gio = "0.22"
+adw.workspace = true
+gtk.workspace = true
+glib.workspace = true
+gio.workspace = true
 gdk = { version = "0.11", package = "gdk4" }
 pango = { version = "0.22", package = "pango" }
-big-media-runtime = { path = "../media-runtime", default-features = false, features = ["audio"] }
-big-player-ui = { path = "../ui/media/big-player-ui", features = ["audio-panels"] }
-big-app-kit = { path = "../app/big-app-kit" }
-big-os-kit.workspace = true
-big-relm4-components = { path = "../ui/generic/big-relm4-components" }
-big-media-components = { path = "../ui/media/big-media-components" }
+big-media-runtime = { workspace = true, features = ["audio"] }
+big-player-ui = { workspace = true, features = ["audio-panels"] }
+big-app-kit.workspace = true
+big-os-kit = { workspace = true, features = ["jemalloc"] }
+big-relm4-components.workspace = true
+big-media-components.workspace = true
 # In-player quick export (convert / trim & export) reuses the converter engine.
-big-quick-export = { path = "../big-quick-export" }
-relm4 = { version = "0.11.0", default-features = false, features = ["libadwaita"] }
+big-quick-export.workspace = true
+relm4.workspace = true
 async-channel = "2.5"
 dirs = "6"
-log = "0.4"
+log.workspace = true
 lru = "0.18"
 rusqlite = "0.40.1"
 # Keyring payloads are stored as one JSON object per provider.

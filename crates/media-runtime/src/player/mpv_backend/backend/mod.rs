@@ -4,6 +4,7 @@
 
 mod client;
 mod init_options;
+mod volume;
 
 pub use client::MpvError;
 use client::{MpvClient, MpvEvent, MpvPropertyValue};
@@ -32,6 +33,8 @@ struct PollState {
     last_title: String,
     last_volume: Option<f64>,
     last_mute: Option<bool>,
+    volume_changed: bool,
+    audio_reconfigured: bool,
     last_rate: Option<f64>,
     seek_pending: bool,
     pending: Vec<PlayerEvent>,
@@ -55,11 +58,11 @@ enum MappedEvent {
     Position(f64),
     Duration(f64),
     Paused(bool),
-    Volume(f64),
     CommandReply { id: u64, error: i32 },
 }
 
 pub struct MpvBackend {
+    pub(in crate::player::mpv_backend) hwdec_before_filters: Mutex<Option<String>>,
     /// Locked mpv client. Drop uses mpv_terminate_destroy instead of plain
     /// mpv_destroy so libmpv internal threads are joined before teardown.
     pub(in crate::player::mpv_backend) mpv: Arc<Mutex<MpvClient>>,
@@ -79,7 +82,7 @@ pub struct MpvBackend {
     /// Tracks whether audio filters are currently set, so we can skip
     /// the expensive ao-reload when clearing an already-empty chain.
     pub(in crate::player::mpv_backend) has_af: AtomicBool,
-    pub(in crate::player::mpv_backend) stream_volume: super::pactl_volume::StreamVolume,
+    pub(in crate::player::mpv_backend) stream_volume: volume::VolumeControl,
 }
 
 // SAFETY: raw_mpv_handle points to an mpv_handle that lives as long as the Arc<Mutex<MpvClient>>.
@@ -160,9 +163,24 @@ impl MpvBackend {
         let run_flag = running.clone();
         let load_flag = loading.clone();
         let mpv_clone = mpv.clone();
-        let audio_client_name = init_options::audio_client_name();
-        let stream_volume = super::pactl_volume::StreamVolume::new(audio_client_name);
-        let volume_state = stream_volume.shared();
+        let stream_volume = volume::VolumeControl::new();
+        let volume_state = stream_volume.clone();
+        for property in [
+            "current-ao",
+            "audio-device",
+            "ao-volume",
+            "ao-mute",
+            "volume",
+            "mute",
+        ] {
+            if let Err(error) = mpv
+                .lock()
+                .unwrap_or_else(std::sync::PoisonError::into_inner)
+                .observe_property(property)
+            {
+                log::error!("Cannot observe {property}: {error}");
+            }
+        }
 
         let screenshots = Arc::new(super::screenshots::Screenshots::new());
         let screenshots_for_thread = screenshots.clone();
@@ -192,6 +210,7 @@ impl MpvBackend {
             event_thread: Some(event_thread),
             event_sender,
             has_af: AtomicBool::new(false),
+            hwdec_before_filters: Mutex::new(None),
             stream_volume,
         }
     }
@@ -201,10 +220,13 @@ impl MpvBackend {
         running: Arc<AtomicBool>,
         loading: Arc<AtomicBool>,
         sender: async_channel::Sender<PlayerEvent>,
-        volume_state: super::pactl_volume::Shared,
+        volume_state: volume::VolumeControl,
         screenshots: Arc<super::screenshots::Screenshots>,
     ) {
-        let mut poll = PollState::default();
+        let mut poll = PollState {
+            volume_changed: true,
+            ..PollState::default()
+        };
         let mut outgoing = Vec::with_capacity(80);
         let mut pending = std::collections::VecDeque::with_capacity(96);
         let handle = mpv
@@ -240,6 +262,23 @@ impl MpvBackend {
                     .unwrap_or_else(std::sync::PoisonError::into_inner);
                 Self::drain_event_queue(&mut guard, &loading, &mut poll, &mut outgoing);
                 Self::poll_properties(&guard, &loading, &mut poll, &mut outgoing);
+                if let Some((volume, mute)) = volume_state.sync(
+                    &guard,
+                    std::mem::take(&mut poll.volume_changed),
+                    std::mem::take(&mut poll.audio_reconfigured),
+                ) {
+                    if poll
+                        .last_volume
+                        .is_none_or(|last| (last - volume).abs() > 0.01)
+                    {
+                        poll.last_volume = Some(volume);
+                        outgoing.push(PlayerEvent::VolumeChanged(volume));
+                    }
+                    if poll.last_mute != Some(mute) {
+                        poll.last_mute = Some(mute);
+                        outgoing.push(PlayerEvent::MuteChanged(mute));
+                    }
+                }
             }
             // Never wait for the UI while holding the mpv mutex: a UI handler
             // may need that same mutex before it can drain the bounded channel.
@@ -253,16 +292,8 @@ impl MpvBackend {
                     }
                     other => other,
                 };
-                match &event {
-                    PlayerEvent::FileLoaded(_) => volume_state.set_active(true),
-                    PlayerEvent::EndFile(_) | PlayerEvent::Shutdown => {
-                        volume_state.set_active(false);
-                    }
-                    _ => {}
-                }
                 pending.push_back(event);
             }
-            Self::poll_stream_volume(&volume_state, &sender, &mut poll);
             // Position feedback stays smooth during playback, but a paused
             // player does not need to poll every property twenty times/second.
             let interval = if poll.last_paused == Some(true) {
@@ -273,28 +304,6 @@ impl MpvBackend {
             std::thread::sleep(std::time::Duration::from_millis(interval));
         }
         debug!("MPV event loop exited");
-    }
-
-    /// Mirror the worker snapshot. Sound-server I/O never blocks mpv events.
-    fn poll_stream_volume(
-        volume_state: &super::pactl_volume::Shared,
-        sender: &async_channel::Sender<PlayerEvent>,
-        poll: &mut PollState,
-    ) {
-        // Reading the worker snapshot cannot spawn or wait on a process.
-        if let Some((volume, mute)) = volume_state.snapshot() {
-            if poll
-                .last_volume
-                .is_none_or(|last| (last - volume).abs() > 0.5)
-            {
-                poll.last_volume = Some(volume);
-                let _ = sender.try_send(PlayerEvent::VolumeChanged(volume));
-            }
-            if poll.last_mute != Some(mute) {
-                poll.last_mute = Some(mute);
-                let _ = sender.try_send(PlayerEvent::MuteChanged(mute));
-            }
-        }
     }
 
     /// Collect owned events under the mpv lock, without sending or waiting.
@@ -328,6 +337,11 @@ impl MpvBackend {
         loop {
             // Resolve and own the event data before the next wait_event call.
             let mapped = match mpv_guard.wait_event(0.0)? {
+                Ok(MpvEvent::AudioReconfig) => {
+                    poll.volume_changed = true;
+                    poll.audio_reconfigured = true;
+                    continue;
+                }
                 Ok(MpvEvent::Seek) => {
                     poll.seek_pending = true;
                     continue;
@@ -345,13 +359,27 @@ impl MpvBackend {
                 Ok(MpvEvent::FileLoaded) => MappedEvent::FileLoaded,
                 Ok(MpvEvent::EndFile(reason)) => MappedEvent::EndFile(reason),
                 Ok(MpvEvent::Shutdown) => MappedEvent::Shutdown,
-                Ok(MpvEvent::CommandReply { id: 0, .. }) => continue,
+                Ok(MpvEvent::CommandReply { id: 0, error }) => {
+                    if error < 0 {
+                        log::error!(
+                            "Asynchronous playback command failed: {}",
+                            MpvError::Raw(error)
+                        );
+                    }
+                    continue;
+                }
                 Ok(MpvEvent::CommandReply { id, error }) => MappedEvent::CommandReply { id, error },
                 Ok(MpvEvent::PropertyChange { name, change }) => match (name.as_str(), change) {
                     ("time-pos", MpvPropertyValue::Double(v)) => MappedEvent::Position(v),
                     ("duration", MpvPropertyValue::Double(v)) => MappedEvent::Duration(v),
                     ("pause", MpvPropertyValue::Flag(v)) => MappedEvent::Paused(v),
-                    ("volume", MpvPropertyValue::Double(v)) => MappedEvent::Volume(v),
+                    (
+                        "current-ao" | "audio-device" | "ao-volume" | "ao-mute" | "volume" | "mute",
+                        _,
+                    ) => {
+                        poll.volume_changed = true;
+                        continue;
+                    }
                     _ => continue,
                 },
                 _ => continue,
@@ -391,7 +419,6 @@ impl MpvBackend {
             MappedEvent::Position(v) => PlayerEvent::PositionChanged(v),
             MappedEvent::Duration(v) => PlayerEvent::DurationChanged(v),
             MappedEvent::Paused(v) => PlayerEvent::PauseChanged(v),
-            MappedEvent::Volume(v) => PlayerEvent::VolumeChanged(v),
             MappedEvent::CommandReply { id, error } => PlayerEvent::AsyncCommandReply { id, error },
         }
     }
@@ -563,5 +590,203 @@ impl Drop for MpvBackend {
         self.screenshots.clear_after_termination();
 
         info!("MpvBackend dropped (mpv_terminate_destroy)");
+    }
+}
+
+#[cfg(all(test, not(miri)))]
+mod volume_tests {
+    use super::*;
+    use std::time::{Duration, Instant};
+
+    fn wait_until(label: &str, condition: impl Fn() -> bool) {
+        let deadline = Instant::now() + Duration::from_secs(5);
+        while Instant::now() < deadline {
+            if condition() {
+                return;
+            }
+            std::thread::sleep(Duration::from_millis(10));
+        }
+        panic!("timed out waiting for {label}");
+    }
+
+    #[test]
+    #[ignore = "requires BIG_MEDIA_TEST_AUDIO_ISOLATED=1, private PipeWire/Pulse and FFmpeg"]
+    fn native_sound_server_volume_tracks_external_changes() {
+        use big_os_kit::subprocess::BigSubprocessSpec;
+        assert_eq!(
+            std::env::var("BIG_MEDIA_TEST_AUDIO_ISOLATED").as_deref(),
+            Ok("1")
+        );
+        let temp = tempfile::tempdir().unwrap();
+        let input = temp.path().join("silence.wav");
+        let generated = BigSubprocessSpec::builder()
+            .program("ffmpeg")
+            .args([
+                "-nostdin",
+                "-hide_banner",
+                "-loglevel",
+                "error",
+                "-f",
+                "lavfi",
+                "-i",
+                "anullsrc=r=48000:cl=stereo",
+                "-t",
+                "8",
+                "-c:a",
+                "pcm_s16le",
+            ])
+            .arg(&input)
+            .timeout(Duration::from_secs(5))
+            .build()
+            .run()
+            .unwrap();
+        assert!(generated.status.success(), "{}", generated.stderr_lossy());
+        for driver in ["pulse", "pipewire"] {
+            let name = format!("review-volume-{}-{driver}", std::process::id());
+            let mpv = MpvClient::with_initializer(|init| {
+                apply_audio_only_options(init)?;
+                init.set_option("audio-client-name", name.as_str())?;
+                init.set_option("ao", driver)
+            })
+            .unwrap();
+            let (tx, _rx) = async_channel::unbounded();
+            let backend = MpvBackend::finish_mpv_init(
+                mpv,
+                tx,
+                "test-native-volume",
+                "test native volume",
+                true,
+            );
+            backend.set_volume(37.0);
+            backend.set_mute(true);
+            wait_until("pending software volume", || {
+                backend.get_property_f64("volume") == 37.0 && backend.get_property_bool("mute")
+            });
+            backend.load_file(input.to_str().unwrap());
+            wait_until("native output and transferred controls", || {
+                backend.get_current_ao() == driver
+                    && (backend.get_volume() - 37.0).abs() < 0.1
+                    && backend.get_property_bool("ao-mute")
+                    && backend.get_property_f64("volume") == 100.0
+                    && !backend.get_property_bool("mute")
+            });
+            let listed = BigSubprocessSpec::builder()
+                .program("pactl")
+                .args(["-f", "json", "list", "sink-inputs"])
+                .timeout(Duration::from_secs(2))
+                .build()
+                .run()
+                .unwrap();
+            assert!(listed.status.success(), "{}", listed.stderr_lossy());
+            let streams: Vec<serde_json::Value> = serde_json::from_slice(&listed.stdout).unwrap();
+            let stream = streams
+                .iter()
+                .find(|s| s["properties"]["application.name"] == name)
+                .expect("test stream visible to the sound server");
+            assert_eq!(stream["mute"], true, "{driver}: actual server mute");
+            let percent = stream["volume"]
+                .as_object()
+                .unwrap()
+                .values()
+                .next()
+                .unwrap()["value_percent"]
+                .as_str()
+                .unwrap()
+                .trim_end_matches('%')
+                .parse::<f64>()
+                .unwrap();
+            assert!((percent - 37.0).abs() < 1.0, "{driver}: server={percent}%");
+            let index = stream["index"].as_u64().unwrap().to_string();
+            for (command, value) in [
+                ("set-sink-input-volume", "72%"),
+                ("set-sink-input-mute", "0"),
+            ] {
+                let set = BigSubprocessSpec::builder()
+                    .program("pactl")
+                    .args([command, &index, value])
+                    .timeout(Duration::from_secs(2))
+                    .build()
+                    .run()
+                    .unwrap();
+                assert!(set.status.success(), "{}", set.stderr_lossy());
+            }
+            wait_until("external mixer changes", || {
+                (backend.get_volume() - 72.0).abs() < 0.1 && !backend.get_mute()
+            });
+            assert_eq!(
+                backend.get_property_f64("volume"),
+                100.0,
+                "{driver}: no double gain"
+            );
+            backend.set_volume_max(250);
+            backend.set_volume(170.0);
+            wait_until("amplified volume", || {
+                (backend.get_property_f64("ao-volume") - 100.0).abs() < 0.1
+                    && backend.get_property_f64("volume") == 170.0
+            });
+            backend.set_volume(72.0);
+            backend.pause();
+            std::thread::sleep(Duration::from_secs(1));
+            let set = BigSubprocessSpec::builder()
+                .program("pactl")
+                .args(["set-sink-input-mute", &index, "1"])
+                .timeout(Duration::from_secs(2))
+                .build()
+                .run()
+                .unwrap();
+            assert!(set.status.success(), "{}", set.stderr_lossy());
+            wait_until("external mute while paused", || backend.get_mute());
+            backend.set_mute(false);
+            wait_until("unmute applied", || !backend.get_property_bool("ao-mute"));
+            backend.stop();
+            wait_until("output closed", || backend.get_current_ao().is_empty());
+            backend.load_file(input.to_str().unwrap());
+            wait_until("controls after reopening", || {
+                backend.get_current_ao() == driver
+                    && (backend.get_volume() - 72.0).abs() < 0.1
+                    && !backend.get_mute()
+            });
+            eprintln!(
+                "{driver}: 37% + mute reached the server; external72%/unmute and reopen preserved"
+            );
+        }
+    }
+
+    #[test]
+    fn volume_and_mute_work_without_a_pulse_stream() {
+        let mpv = MpvClient::with_initializer(|init| {
+            apply_audio_only_options(init)?;
+            init.set_option("ao", "null")
+        })
+        .unwrap();
+        let (tx, rx) = async_channel::unbounded();
+        let backend = MpvBackend::finish_mpv_init(mpv, tx, "test-volume", "test volume", true);
+        for value in 0..1000 {
+            backend.set_volume(f64::from(value % 100));
+        }
+        backend.set_volume(37.0);
+        backend.set_mute(true);
+        let deadline = Instant::now() + Duration::from_secs(2);
+        while Instant::now() < deadline {
+            if backend.get_property_f64("volume") == 37.0 && backend.get_property_bool("mute") {
+                break;
+            }
+            std::thread::sleep(Duration::from_millis(10));
+        }
+        assert_eq!(backend.get_property_f64("volume"), 37.0);
+        assert!(backend.get_property_bool("mute"));
+        assert_eq!(backend.get_volume(), 37.0);
+        assert!(backend.get_mute());
+        let mut volume_event = false;
+        let mut mute_event = false;
+        while Instant::now() < deadline && !(volume_event && mute_event) {
+            for event in std::iter::from_fn(|| rx.try_recv().ok()) {
+                volume_event |= matches!(event, PlayerEvent::VolumeChanged(v) if v == 37.0);
+                mute_event |= matches!(event, PlayerEvent::MuteChanged(true));
+            }
+            std::thread::sleep(Duration::from_millis(10));
+        }
+        assert!(volume_event, "applied volume must reach the UI");
+        assert!(mute_event, "applied mute must reach the UI");
     }
 }

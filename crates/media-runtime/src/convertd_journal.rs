@@ -114,22 +114,6 @@ pub(super) fn write_event(stream: &mut UnixStream, event: MicrodaemonEvent) -> i
     stream.write_all(&encoded)
 }
 
-pub(super) fn write_error(
-    stream: &mut UnixStream,
-    job_id: Option<String>,
-    code: &str,
-    message: &str,
-) -> io::Result<()> {
-    write_event(
-        stream,
-        MicrodaemonEvent::Error {
-            job_id,
-            code: code.to_owned(),
-            message: message.to_owned(),
-        },
-    )
-}
-
 pub(super) fn lock_jobs(
     jobs: &Mutex<HashMap<String, RuntimeJob>>,
 ) -> io::Result<std::sync::MutexGuard<'_, HashMap<String, RuntimeJob>>> {
@@ -143,14 +127,6 @@ pub(super) fn lock_queue(
     queue
         .lock()
         .map_err(|_| io::Error::other("conversion queue lock poisoned"))
-}
-
-pub(super) fn reject_empty(field: &str, value: &str) -> Result<(), String> {
-    if value.trim().is_empty() {
-        Err(format!("{field} must be non-empty"))
-    } else {
-        Ok(())
-    }
 }
 
 pub(super) fn current_uid() -> libc::uid_t {

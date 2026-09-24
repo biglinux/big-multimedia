@@ -22,8 +22,6 @@ use std::path::{Path, PathBuf};
 use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, Ordering};
 use support::dedup_output_path;
-#[cfg(not(miri))]
-use support::detect_hevc_10bit_to_h264;
 
 pub(crate) use types::ConversionResumeContext;
 pub use types::{
@@ -36,6 +34,7 @@ pub struct ConversionQueue {
     profile: Profile,
     // len==1: sequential; len>1: parallel round-robin.
     gpus: Vec<GpuDevice>,
+    auto_gpu: bool,
     output_dir: PathBuf,
     cancel: Arc<AtomicBool>,
     running: Arc<AtomicBool>,
@@ -60,12 +59,11 @@ impl ConversionQueue {
     pub fn new() -> Self {
         let (sender, receiver) = async_channel::bounded(256);
         let probe_tx = spawn_probe_worker(sender.clone());
-        let gpus = detect_all_gpus();
-        let default_gpu = gpus.first().cloned().unwrap_or(GpuDevice {
+        let default_gpu = GpuDevice {
             gpu_type: GpuType::Cpu,
             name: "CPU".into(),
             device_path: String::new(),
-        });
+        };
 
         Self {
             items: Vec::new(),
@@ -79,6 +77,7 @@ impl ConversionQueue {
                 output: profiles::OutputConfig::default(),
             },
             gpus: vec![default_gpu],
+            auto_gpu: true,
             output_dir: big_os_kit::xdg_dirs::video_dir().unwrap_or_else(|| PathBuf::from(".")),
             cancel: Arc::new(AtomicBool::new(false)),
             running: Arc::new(AtomicBool::new(false)),
@@ -100,14 +99,6 @@ impl ConversionQueue {
         }
     }
 
-    /// Reuse only outputs whose source, plan, digest and media validation match
-    /// their durable receipt. This is not mid-bitstream continuation.
-    pub fn set_verified_resume(&mut self, enabled: bool) {
-        self.resume_context = enabled.then(|| ConversionResumeContext {
-            job_key: "verified-receipt-v1".into(),
-        });
-    }
-
     #[must_use]
     pub fn receiver(&self) -> &async_channel::Receiver<QueueMessage> {
         &self.receiver
@@ -123,6 +114,7 @@ impl ConversionQueue {
     }
 
     pub fn set_gpus(&mut self, gpus: Vec<GpuDevice>) {
+        self.auto_gpu = false;
         self.gpus = if gpus.is_empty() {
             vec![GpuDevice {
                 gpu_type: GpuType::Cpu,
@@ -134,18 +126,10 @@ impl ConversionQueue {
         };
     }
 
-    pub fn set_gpu(&mut self, gpu: GpuDevice) {
-        self.gpus = vec![gpu];
-    }
-
     #[must_use]
+    /// Configured device; automatic hardware selection happens in the worker.
     pub fn gpu(&self) -> &GpuDevice {
         &self.gpus[0]
-    }
-
-    #[must_use]
-    pub fn gpu_count(&self) -> usize {
-        self.gpus.len()
     }
 
     pub fn set_output_dir(&mut self, dir: PathBuf) {
@@ -186,17 +170,12 @@ impl ConversionQueue {
         } else {
             dedup_output_path(&requested, &input)
         };
-        // Probe OFF the main thread: duration + audio channels + HEVC-10bit
-        // detection are three ffprobe runs PER FILE — synchronous here they
-        // froze every window of an embedding host while adding a batch. The
-        // worker answers with QueueMessage::Probed; until then the queue_entry
-        // carries safe defaults (no % until duration arrives, software
-        // filters kept — the GPU-fallback path already covers that).
+        // Probe duration and audio channels off the GTK thread. Until the
+        // response arrives, the worker probes again if conversion starts.
         #[cfg(not(miri))]
         let probe_request = ProbeRequest {
             entry_id: id,
             input: input.clone(),
-            target_codec: self.profile.video.codec.clone(),
         };
         #[cfg(miri)]
         let probe_request = ProbeRequest;
@@ -217,7 +196,6 @@ impl ConversionQueue {
             crop: None,
             video_overrides: None,
             input_audio_channels: 0,
-            skip_video_filters: false,
             probed: false,
         };
         self.items.push(queue_entry);
@@ -247,18 +225,6 @@ impl ConversionQueue {
     }
 
     // Retry path after cancel: requeue everything that didn't finish.
-    pub fn reset_non_done(&mut self) {
-        for queue_entry in &mut self.items {
-            if matches!(
-                queue_entry.status,
-                ConversionStatus::Converting
-                    | ConversionStatus::Cancelled
-                    | ConversionStatus::Failed(_)
-            ) {
-                queue_entry.status = ConversionStatus::Pending;
-            }
-        }
-    }
 
     #[must_use]
     pub fn items(&self) -> &[ConversionQueueEntry] {
@@ -353,6 +319,7 @@ impl ConversionQueue {
 
         let profile = self.profile.clone();
         let gpus = self.gpus.clone();
+        let auto_gpu = self.auto_gpu;
         let cancel = self.cancel.clone();
         let sender = self.sender.clone();
         let resume_context = self.resume_context.clone();
@@ -365,6 +332,20 @@ impl ConversionQueue {
             .spawn(move || {
                 let _drain = drain;
                 let _run = run;
+                let gpus = if auto_gpu
+                    && !audio_only_mode
+                    && [GpuType::Nvidia, GpuType::Intel, GpuType::Amd]
+                        .iter()
+                        .any(|gpu| gpu.video_encoder(&profile.video.codec).is_some())
+                    && !items.is_empty()
+                {
+                    detect_all_gpus()
+                        .into_iter()
+                        .find(|gpu| gpu.gpu_type.video_encoder(&profile.video.codec).is_some())
+                        .map_or(gpus, |gpu| vec![gpu])
+                } else {
+                    gpus
+                };
                 if gpus.len() > 1 && items.len() > 1 {
                     let mut gpu_batches: Vec<Vec<ConversionQueueEntry>> =
                         vec![Vec::new(); gpus.len()];
@@ -477,7 +458,6 @@ impl ConversionQueue {
                     entry_id,
                     duration_secs,
                     input_audio_channels,
-                    skip_video_filters,
                 } => {
                     if let Some(queue_entry) = self
                         .items
@@ -486,7 +466,6 @@ impl ConversionQueue {
                     {
                         queue_entry.duration_secs = duration_secs;
                         queue_entry.input_audio_channels = input_audio_channels;
-                        queue_entry.skip_video_filters = skip_video_filters;
                         queue_entry.probed = true;
                     }
                 }
@@ -518,7 +497,6 @@ struct ProbeRequest;
 struct ProbeRequest {
     entry_id: u64,
     input: PathBuf,
-    target_codec: String,
 }
 
 /// Single sequential worker for `add_file` probes: one ffprobe at a time
@@ -549,13 +527,10 @@ fn spawn_probe_worker(
                 }
                 let duration_secs = progress::probe_duration(&request.input);
                 let input_audio_channels = progress::probe_audio_channels(&request.input);
-                let skip_video_filters =
-                    detect_hevc_10bit_to_h264(&request.input, &request.target_codec);
                 let _ = sender.send_blocking(QueueMessage::Probed {
                     entry_id: request.entry_id,
                     duration_secs,
                     input_audio_channels,
-                    skip_video_filters,
                 });
             }
         });

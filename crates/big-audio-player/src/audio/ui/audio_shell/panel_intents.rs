@@ -48,6 +48,7 @@ impl AudioShell {
                 self.commit_queue();
             }
             LibraryPanelOutput::PlayAllFrom { tracks, index } => {
+                self.cancel_pending_opens();
                 self.snapshot_queue();
                 self.queue.set_tracks(tracks);
                 self.queue.jump_to(index);
@@ -148,6 +149,7 @@ impl AudioShell {
                 self.commit_queue();
             }
             PlaylistPanelOutput::ClearQueue { .. } => {
+                self.cancel_pending_opens();
                 self.snapshot_queue();
                 self.queue.clear();
                 self.commit_queue();
@@ -197,7 +199,9 @@ impl AudioShell {
         spawn_db_query(
             db,
             move |conn| {
-                let _ = queries::update_track_rating(conn, id, rating);
+                if let Err(e) = queries::update_track_rating(conn, id, rating) {
+                    log::warn!("rating write failed for track {id}: {e}");
+                }
             },
             |()| {},
         );
@@ -244,9 +248,8 @@ impl AudioShell {
                 }
             }
 
-            let year = fields.year.as_deref().and_then(|s| s.parse::<i32>().ok());
             let db_fields = fields.clone();
-            let _ = gio::spawn_blocking(move || {
+            let mirrored = gio::spawn_blocking(move || {
                 let conn = db.lock().unwrap_or_else(std::sync::PoisonError::into_inner);
                 update_track_metadata(
                     &conn,
@@ -256,14 +259,21 @@ impl AudioShell {
                         artist: db_fields.artist.as_deref(),
                         album: db_fields.album.as_deref(),
                         album_artist: db_fields.album_artist.as_deref(),
-                        track_number: db_fields.track_number.map(|n| n as i32),
-                        disc_number: db_fields.disc_number.map(|n| n as i32),
-                        year,
+                        track_number: db_fields.track_number_i32(),
+                        disc_number: db_fields.disc_number_i32(),
+                        year: db_fields.year_number(),
                         genre: db_fields.genre.as_deref(),
                     },
                 )
             })
             .await;
+            // The file already holds the new tags; a failed mirror leaves the DB
+            // stale until the next rescan, so at least say so.
+            match mirrored {
+                Ok(Ok(())) => {}
+                Ok(Err(e)) => log::warn!("tag DB mirror failed for track {track_id}: {e}"),
+                Err(e) => log::warn!("tag DB mirror task failed: {e:?}"),
+            }
 
             let _ = input.send(AudioShellInput::TagsWritten { track_id, fields });
         });
@@ -271,7 +281,6 @@ impl AudioShell {
 
     /// Patch any in-memory queue rows matching `track_id` with the edited fields.
     pub(super) fn apply_written_tags(&mut self, track_id: i64, fields: &TagEditFields) {
-        let year = fields.year.as_deref().and_then(|s| s.parse::<i32>().ok());
         let mut changed = false;
         for track in self.queue.tracks_mut() {
             if track.id != track_id {
@@ -282,9 +291,9 @@ impl AudioShell {
             track.album.clone_from(&fields.album);
             track.album_artist.clone_from(&fields.album_artist);
             track.genre.clone_from(&fields.genre);
-            track.track_number = fields.track_number.map(|n| n as i32);
-            track.disc_number = fields.disc_number.map(|n| n as i32);
-            track.year = year;
+            track.track_number = fields.track_number_i32();
+            track.disc_number = fields.disc_number_i32();
+            track.year = fields.year_number();
             changed = true;
         }
         if changed {
@@ -297,18 +306,35 @@ impl AudioShell {
         let Some(db) = self.db.clone() else {
             return;
         };
-        let track_ids: Vec<i64> = self.queue.tracks().iter().map(|t| t.id).collect();
+        // External files and podcast episodes have no library row (id <= 0) and
+        // cannot be playlist members.
+        let track_ids: Vec<i64> = self
+            .queue
+            .tracks()
+            .iter()
+            .map(|t| t.id)
+            .filter(|id| *id > 0)
+            .collect();
         let input = sender.input_sender().clone();
         spawn_db_query(
             db,
-            move |conn| {
-                if let Ok(playlist_id) = queries::create_playlist(conn, &name) {
-                    for id in &track_ids {
-                        let _ = queries::add_track_to_playlist(conn, playlist_id, *id);
-                    }
+            move |conn| -> big_media_runtime::Result<()> {
+                // All or nothing: a half-filled playlist is worse than none.
+                let transaction = conn.unchecked_transaction()?;
+                let playlist_id = queries::create_playlist(&transaction, &name)?;
+                for id in &track_ids {
+                    queries::add_track_to_playlist(&transaction, playlist_id, *id)?;
                 }
+                transaction.commit()?;
+                Ok(())
             },
-            move |()| {
+            move |saved| {
+                if let Err(e) = saved {
+                    log::warn!("saving the queue as a playlist failed: {e}");
+                    let _ = input.send(AudioShellInput::Notify(i18n(
+                        "The playlist could not be saved.",
+                    )));
+                }
                 // Refresh only after the write commits (avoids a stale list).
                 let _ = input.send(AudioShellInput::RefreshPlaylists);
             },
@@ -368,7 +394,8 @@ impl AudioShell {
             return;
         }
         for id in &ids {
-            if let Some(index) = self.queue.tracks().iter().position(|t| t.id == *id) {
+            // The same track can sit in the queue more than once; drop every copy.
+            while let Some(index) = self.queue.tracks().iter().position(|t| t.id == *id) {
                 self.queue.remove(index);
             }
         }
@@ -383,7 +410,9 @@ impl AudioShell {
                 db,
                 move |conn| {
                     for id in ids {
-                        let _ = queries::delete_track(conn, id);
+                        if let Err(e) = queries::delete_track(conn, id) {
+                            log::warn!("deleting track {id} from the library failed: {e}");
+                        }
                     }
                 },
                 move |()| {

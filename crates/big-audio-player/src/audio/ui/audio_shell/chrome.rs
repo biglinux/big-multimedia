@@ -18,7 +18,7 @@ impl AudioShell {
     /// current track (matched by file path in the library detail view). While a
     /// radio stream plays, nothing in the queue/library is "playing" — clear it.
     pub(super) fn sync_now_playing(&self) {
-        if self.is_stream {
+        if self.is_stream || !self.is_playing {
             self.playlist
                 .emit(PlaylistPanelInput::SetPlaying { idx: None });
             self.library.emit(LibraryPanelInput::SetPlayingPath(None));
@@ -79,7 +79,7 @@ impl AudioShell {
 
     /// Bundled illustration loader (audio-player gresource path).
     pub(super) fn illustration(filename: &str) -> gtk::Image {
-        crate::shared::ui_helpers::illustration(
+        crate::shared::illustration::illustration(
             "/br/com/biglinux/AudioPlayer/illustrations/",
             filename,
         )
@@ -259,8 +259,11 @@ impl AudioShell {
                     self.notify(&i18n("Sleep timer: suspending computer"));
                     glib::timeout_add_local_once(std::time::Duration::from_secs(2), || {
                         crate::settings::saving::after_writes(|| {
-                            let _ = big_app_kit::desktop::BigSystemPowerAction::Suspend
-                                .spawn_detached();
+                            if let Err(error) =
+                                big_app_kit::desktop::BigSystemPowerAction::Suspend.spawn_detached()
+                            {
+                                log::warn!("sleep timer: suspend failed: {error}");
+                            }
                         });
                     });
                 }
@@ -268,8 +271,11 @@ impl AudioShell {
                     self.notify(&i18n("Sleep timer: shutting down"));
                     glib::timeout_add_local_once(std::time::Duration::from_secs(2), || {
                         crate::settings::saving::after_writes(|| {
-                            let _ = big_app_kit::desktop::BigSystemPowerAction::PowerOff
-                                .spawn_detached();
+                            if let Err(error) = big_app_kit::desktop::BigSystemPowerAction::PowerOff
+                                .spawn_detached()
+                            {
+                                log::warn!("sleep timer: poweroff failed: {error}");
+                            }
                         });
                     });
                 }

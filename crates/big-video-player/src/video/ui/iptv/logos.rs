@@ -83,7 +83,10 @@ pub fn fetch_bytes(url: &str, user_agent: &str, referer: &str) -> Option<Vec<u8>
         referer,
     };
     let bytes = http_get_bytes_with_headers(url, &headers)?;
-    let _ = fs::write(&path, &bytes);
+    // Atomic: a cut-off write would otherwise be served from cache forever.
+    if let Err(error) = big_os_kit::storage::atomic_write(&path, &bytes) {
+        log::debug!("iptv logo cache write failed: {error}");
+    }
     Some(bytes)
 }
 

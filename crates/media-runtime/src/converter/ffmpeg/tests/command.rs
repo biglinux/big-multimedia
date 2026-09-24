@@ -116,7 +116,7 @@ fn test_subtitle_embedded_codec_mp4() {
 #[test]
 fn test_nvidia_hw_init_default_device() {
     let mut profile = dummy_profile();
-    profile.video.codec = "copy".into();
+    profile.video.codec = "h264".into();
     let mut job = base_job(profile);
     job.gpu = GpuDevice {
         gpu_type: GpuType::Nvidia,
@@ -125,14 +125,15 @@ fn test_nvidia_hw_init_default_device() {
     };
     job.stage = GpuStage::FullGpu;
     let args = args(&job.build_command());
-    assert!(args.contains(&"cuda=cu".into()), "args: {args:?}");
+    assert!(args.contains(&"cuda=cu:0".into()), "args: {args:?}");
+    assert!(args.windows(2).any(|a| a == ["-hwaccel_device", "cu"]));
     assert!(args.contains(&"-hwaccel".into()), "args: {args:?}");
 }
 
 #[test]
 fn test_vaapi_hw_init_custom_device() {
     let mut profile = dummy_profile();
-    profile.video.codec = "copy".into();
+    profile.video.codec = "h264".into();
     let mut job = base_job(profile);
     job.gpu = GpuDevice {
         gpu_type: GpuType::Intel,
@@ -142,7 +143,7 @@ fn test_vaapi_hw_init_custom_device() {
     job.stage = GpuStage::PartialGpu;
     let args = args(&job.build_command());
     assert!(
-        args.iter().any(|arg| arg.contains("vaapi=va:,driver=iHD")),
+        args.contains(&"vaapi=va:/dev/dri/renderD129".into()),
         "args: {args:?}"
     );
     assert!(
@@ -153,6 +154,207 @@ fn test_vaapi_hw_init_custom_device() {
         !args.contains(&"-hwaccel".into()),
         "partial should not have hwaccel, args: {args:?}"
     );
+    assert!(args.windows(2).any(|a| a == ["-filter_hw_device", "qs"]));
+}
+
+#[test]
+fn software_codecs_and_audio_do_not_initialize_a_video_gpu() {
+    for (codec, audio_only) in [
+        ("vp9", false),
+        ("prores", false),
+        ("copy", false),
+        ("h264", true),
+    ] {
+        let mut profile = dummy_profile();
+        profile.video.codec = codec.into();
+        let mut job = base_job(profile);
+        job.gpu = GpuDevice {
+            gpu_type: GpuType::Nvidia,
+            name: "NVIDIA".into(),
+            device_path: "1".into(),
+        };
+        job.audio_only = audio_only;
+        for stage in [GpuStage::FullGpu, GpuStage::PartialGpu, GpuStage::Software] {
+            job.stage = stage;
+            let a = args(&job.build_command());
+            assert!(
+                !a.iter().any(|a| a == "-init_hw_device" || a == "-cq"),
+                "{codec} audio={audio_only} {stage:?}: {a:?}"
+            );
+            if !audio_only && codec == "vp9" {
+                assert_eq!(value_after(&a, "-c:v").as_deref(), Some("libvpx-vp9"));
+            }
+            if !audio_only && codec == "prores" {
+                assert_eq!(value_after(&a, "-c:v").as_deref(), Some("prores_ks"));
+            }
+        }
+    }
+}
+
+#[test]
+fn nvidia_selected_device_is_shared_by_decode_and_filter_upload() {
+    let mut profile = dummy_profile();
+    profile.video.codec = "h264".into();
+    profile.video.filters.flip_h = true;
+    let mut job = base_job(profile);
+    job.gpu = GpuDevice {
+        gpu_type: GpuType::Nvidia,
+        name: "Second NVIDIA GPU".into(),
+        device_path: "1".into(),
+    };
+    for stage in [GpuStage::FullGpu, GpuStage::PartialGpu] {
+        job.stage = stage;
+        let args = args(&job.build_command());
+        assert!(args.contains(&"cuda=cu:1".into()), "{args:?}");
+        assert!(args.windows(2).any(|a| a == ["-gpu", "1"]), "{args:?}");
+        assert!(
+            args.windows(2).any(|a| a == ["-filter_hw_device", "cu"]),
+            "{args:?}"
+        );
+        assert!(!job.build_video_filters().contains("hwupload_cuda"));
+    }
+}
+
+#[test]
+#[cfg(all(not(miri), feature = "ui-core"))]
+#[ignore = "run with CUDA_VISIBLE_DEVICES= on a CUDA host"]
+fn cuda_visibility_mask_is_preserved_in_cast_sandbox() {
+    use big_os_kit::subprocess::BigSubprocessSpec;
+    use std::time::Duration;
+
+    assert_eq!(std::env::var("CUDA_VISIBLE_DEVICES").as_deref(), Ok(""));
+    let mut args = crate::cast::sandbox::options(&[], &[]).expect("bubblewrap required");
+    args.extend(
+        [
+            "ffmpeg",
+            "-nostdin",
+            "-hide_banner",
+            "-loglevel",
+            "error",
+            "-init_hw_device",
+            "cuda=cu:0",
+            "-f",
+            "lavfi",
+            "-i",
+            "color=size=640x360",
+            "-frames:v",
+            "1",
+            "-f",
+            "null",
+            "-",
+        ]
+        .into_iter()
+        .map(str::to_string),
+    );
+    let result = BigSubprocessSpec::builder()
+        .program("bwrap")
+        .args(args)
+        .timeout(Duration::from_secs(10))
+        .build()
+        .run()
+        .unwrap();
+    assert!(
+        !result.status.success(),
+        "sandbox exposed CUDA despite the empty device mask"
+    );
+    let error = String::from_utf8_lossy(&result.stderr);
+    assert!(
+        error.contains("CUDA_ERROR_NO_DEVICE"),
+        "unexpected failure: {error}"
+    );
+}
+
+#[test]
+#[cfg(all(not(miri), feature = "ui-core"))]
+#[ignore = "requires a usable GPU encoder, FFmpeg and bubblewrap"]
+fn hardware_conversion_preserves_selected_device_and_applies_flip() {
+    use big_os_kit::subprocess::BigSubprocessSpec;
+    use std::time::Duration;
+
+    let gpus: Vec<_> = crate::cast::gpu::detect_all_gpus()
+        .into_iter()
+        .filter(|g| g.gpu_type != GpuType::Cpu)
+        .collect();
+    assert!(
+        !gpus.is_empty(),
+        "this hardware test needs a working H264 GPU encoder"
+    );
+    let temp = tempfile::tempdir().unwrap();
+    let input = temp.path().join("input.mp4");
+    let output_dir = temp.path().join("output");
+    std::fs::create_dir(&output_dir).unwrap();
+    let generated = BigSubprocessSpec::builder().program("ffmpeg")
+        .args(["-nostdin", "-hide_banner", "-loglevel", "error", "-f", "lavfi", "-i", "color=red:size=640x360:duration=0.1:rate=30,drawbox=x=320:y=0:w=320:h=360:color=blue:t=fill", "-c:v", "libx264", "-pix_fmt", "yuv420p"])
+        .arg(&input).timeout(Duration::from_secs(10)).build().run().unwrap();
+    assert!(
+        generated.status.success(),
+        "{}",
+        String::from_utf8_lossy(&generated.stderr)
+    );
+
+    for gpu in gpus {
+        eprintln!("testing {} at {}", gpu.name, gpu.device_path);
+        for stage in [GpuStage::FullGpu, GpuStage::PartialGpu] {
+            for flip in [false, true] {
+                let mut profile = dummy_profile();
+                profile.video.codec = "h264".into();
+                profile.video.filters.flip_h = flip;
+                if flip {
+                    profile.video.filters.brightness = 0.05;
+                }
+                profile.output.container = "mp4".into();
+                let mut job = base_job(profile);
+                job.gpu = gpu.clone();
+                job.stage = stage;
+                job.input = input.clone();
+                job.output = output_dir.join("encoded.mp4");
+                let command = job.build_command();
+                // The partial path also proves that CUDA visibility and GPU
+                // nodes survive the real cast sandbox.
+                let (program, arguments) = if stage == GpuStage::PartialGpu {
+                    let mut arguments = crate::cast::sandbox::options(&[&input], &[&output_dir])
+                        .expect("bubblewrap required");
+                    arguments.push("ffmpeg".into());
+                    arguments.extend(args(&command));
+                    ("bwrap", arguments)
+                } else {
+                    ("ffmpeg", args(&command))
+                };
+                let encoded = BigSubprocessSpec::builder()
+                    .program(program)
+                    .args(arguments)
+                    .timeout(Duration::from_secs(15))
+                    .build()
+                    .run()
+                    .unwrap();
+                assert!(
+                    encoded.status.success(),
+                    "{stage:?} flip={flip}: {}",
+                    String::from_utf8_lossy(&encoded.stderr)
+                );
+                let decoded = BigSubprocessSpec::builder()
+                    .program("ffmpeg")
+                    .args(["-nostdin", "-hide_banner", "-loglevel", "error", "-i"])
+                    .arg(&job.output)
+                    .args(["-frames:v", "1", "-pix_fmt", "rgb24", "-f", "rawvideo", "-"])
+                    .timeout(Duration::from_secs(10))
+                    .build()
+                    .run()
+                    .unwrap();
+                assert!(
+                    decoded.status.success(),
+                    "{}",
+                    String::from_utf8_lossy(&decoded.stderr)
+                );
+                assert_eq!(decoded.stdout.len(), 640 * 360 * 3);
+                let left = (180 * 640 + 160) * 3;
+                let right = (180 * 640 + 480) * 3;
+                let (red, blue) = if flip { (right, left) } else { (left, right) };
+                assert!(decoded.stdout[red] > 200 && decoded.stdout[red + 2] < 30);
+                assert!(decoded.stdout[blue + 2] > 200 && decoded.stdout[blue] < 30);
+            }
+        }
+    }
 }
 
 #[test]

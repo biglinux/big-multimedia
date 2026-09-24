@@ -30,9 +30,6 @@ pub use big_media_data::library;
 /// Media utilities: playlist handling, metadata probing, thumbnails.
 #[cfg(feature = "ui-core")]
 pub mod media;
-/// MPRIS D-Bus media player interface (active for audio and video players).
-#[cfg(feature = "ui-core")]
-pub mod mpris;
 /// mpv backend, playback queue, and thumbnail generation.
 #[cfg(feature = "ui-core")]
 pub mod player;

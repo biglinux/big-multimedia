@@ -2,6 +2,8 @@
 
 #[cfg(feature = "chromecast")]
 pub mod chromecast;
+#[cfg(feature = "ui-core")]
+pub mod daemon;
 pub mod gpu;
 #[cfg(feature = "ui-core")]
 pub mod probe;

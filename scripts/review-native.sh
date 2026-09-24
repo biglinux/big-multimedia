@@ -5,7 +5,7 @@ ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 OUT="${1:-$ROOT/review-native-results}"
 mkdir -p "$OUT"
 OUT="$(cd "$OUT" && pwd)"
-cd "$ROOT"
+cd "$ROOT" || exit 1
 SUMMARY="$OUT/results.tsv"
 printf 'check\tstatus\texit_code\tlog\n' > "$SUMMARY"
 blocked=0

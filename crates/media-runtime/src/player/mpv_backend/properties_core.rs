@@ -1,12 +1,10 @@
 //! Core playback properties: volume, speed, position, tracks, loop, cache,
 //! screenshots, editions, chapters, generic accessors, IPC.
 
-use crate::i18n::i18n;
-
 use super::MpvBackend;
 
 impl MpvBackend {
-    // Preserve per-stream mixer control, with a bounded background worker.
+    // Apply per-stream mixer requests on the existing mpv event thread.
     // Getters read cached/desired state and are safe to use from GTK handlers.
     pub fn set_volume(&self, volume: f64) {
         self.stream_volume.set_volume(volume);
@@ -68,12 +66,6 @@ impl MpvBackend {
         });
     }
 
-    pub fn add_audio_file(&self, path: &str) {
-        self.with_mpv(|m| {
-            let _ = m.command("audio-add", &[path, "auto"]);
-        });
-    }
-
     pub fn set_audio_delay(&self, delay: f64) {
         self.with_mpv(|m| {
             let _ = m.set_property("audio-delay", delay);
@@ -100,16 +92,6 @@ impl MpvBackend {
         }
     }
 
-    pub fn set_audio_spdif(&self, codecs: &str) {
-        self.with_mpv(|m| {
-            let _ = m.set_property("audio-spdif", codecs.to_string());
-        });
-    }
-
-    pub fn get_audio_spdif(&self) -> String {
-        self.with_mpv(|m| m.get_property::<String>("audio-spdif").unwrap_or_default())
-    }
-
     pub fn get_property_f64(&self, name: &str) -> f64 {
         let mpv = self
             .mpv
@@ -126,14 +108,6 @@ impl MpvBackend {
         mpv.get_property::<String>(name).unwrap_or_default()
     }
 
-    pub fn get_property_i64(&self, name: &str) -> i64 {
-        let mpv = self
-            .mpv
-            .lock()
-            .unwrap_or_else(std::sync::PoisonError::into_inner);
-        mpv.get_property(name).unwrap_or(0)
-    }
-
     pub fn get_property_bool(&self, name: &str) -> bool {
         let mpv = self
             .mpv
@@ -143,29 +117,16 @@ impl MpvBackend {
             .is_ok_and(|v| v == "yes" || v == "true" || v == "1")
     }
 
-    pub fn set_loop_file(&self, enable: bool) {
+    /// Apply the `loop-mode` setting: `"file"`, `"playlist"`, anything else is off.
+    pub fn set_loop_mode(&self, mode: &str) {
+        let (file, playlist) = match mode {
+            "file" => ("inf", "no"),
+            "playlist" => ("no", "inf"),
+            _ => ("no", "no"),
+        };
         self.with_mpv(|m| {
-            let _ = m.set_property(
-                "loop-file",
-                if enable {
-                    "inf".to_string()
-                } else {
-                    "no".to_string()
-                },
-            );
-        });
-    }
-
-    pub fn set_loop_playlist(&self, enable: bool) {
-        self.with_mpv(|m| {
-            let _ = m.set_property(
-                "loop-playlist",
-                if enable {
-                    "inf".to_string()
-                } else {
-                    "no".to_string()
-                },
-            );
+            let _ = m.set_property("loop-file", file.to_string());
+            let _ = m.set_property("loop-playlist", playlist.to_string());
         });
     }
 
@@ -300,85 +261,6 @@ impl MpvBackend {
         });
     }
 
-    pub fn get_video_params_string(&self) -> String {
-        self.with_mpv(|m| {
-            let mut video_details = Vec::new();
-            if let Ok(v) = m.get_property::<String>("video-codec") {
-                video_details.push(format!("{}: {v}", i18n("Video Codec")));
-            }
-            if let Ok(w) = m.get_property::<i64>("width")
-                && let Ok(h) = m.get_property::<i64>("height")
-            {
-                video_details.push(format!("{}: {w}x{h}", i18n("Resolution")));
-            }
-            if let Ok(fps) = m.get_property::<f64>("estimated-vf-fps") {
-                video_details.push(format!("{}: {fps:.2}", i18n("FPS")));
-            }
-            if let Ok(br) = m.get_property::<f64>("video-bitrate") {
-                video_details.push(format!(
-                    "{}: {:.0} kbps",
-                    i18n("Video Bitrate"),
-                    br / 1000.0
-                ));
-            }
-            if let Ok(ac) = m.get_property::<String>("audio-codec-name") {
-                video_details.push(format!("{}: {ac}", i18n("Audio Codec")));
-            }
-            if let Ok(abr) = m.get_property::<f64>("audio-bitrate") {
-                video_details.push(format!(
-                    "{}: {:.0} kbps",
-                    i18n("Audio Bitrate"),
-                    abr / 1000.0
-                ));
-            }
-            if let Ok(hwdec) = m.get_property::<String>("hwdec-current") {
-                let value = if hwdec.is_empty() {
-                    i18n("none (sw)")
-                } else {
-                    hwdec
-                };
-                video_details.push(format!("{}: {value}", i18n("HW Decoder")));
-            }
-            if let Ok(drops) = m.get_property::<i64>("frame-drop-count") {
-                video_details.push(format!("{}: {drops}", i18n("Dropped Frames")));
-            }
-            if let Ok(colorspace) = m.get_property::<String>("video-params/colormatrix") {
-                video_details.push(format!("{}: {colorspace}", i18n("Colorspace")));
-            }
-            if let Ok(primaries) = m.get_property::<String>("video-params/primaries") {
-                video_details.push(format!("{}: {primaries}", i18n("Primaries")));
-            }
-            if let Ok(gamma) = m.get_property::<String>("video-params/gamma") {
-                if gamma.contains("pq") || gamma.contains("hlg") {
-                    video_details.push(format!("{}: {gamma} ", i18n("HDR")));
-                } else {
-                    video_details.push(format!("{}: {gamma}", i18n("Transfer")));
-                }
-            }
-            video_details.join("\n")
-        })
-    }
-
-    pub fn get_edition_count(&self) -> i64 {
-        self.with_mpv(|m| m.get_property::<i64>("editions").unwrap_or(0))
-    }
-
-    pub fn get_current_edition(&self) -> i64 {
-        self.with_mpv(|m| m.get_property::<i64>("current-edition").unwrap_or(0))
-    }
-
-    pub fn set_edition(&self, id: i64) {
-        self.with_mpv(|m| {
-            let _ = m.set_property("edition", id);
-        });
-    }
-
-    pub fn set_chapters_file(&self, path: &str) {
-        self.with_mpv(|m| {
-            let _ = m.set_property("chapters-file", path.to_string());
-        });
-    }
-
     pub fn get_chapter_count(&self) -> i64 {
         self.with_mpv(|m| m.get_property::<i64>("chapters").unwrap_or(0))
     }
@@ -412,12 +294,6 @@ impl MpvBackend {
 
     pub fn get_video_codec(&self) -> String {
         self.with_mpv(|m| m.get_property::<String>("video-codec").unwrap_or_default())
-    }
-
-    pub fn set_ipc_server(&self, path: &str) {
-        self.with_mpv(|m| {
-            let _ = m.set_property("input-ipc-server", path.to_string());
-        });
     }
 
     pub fn set_preferred_audio_lang(&self, lang: &str) {

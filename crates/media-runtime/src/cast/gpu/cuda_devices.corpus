@@ -1,0 +1,7 @@
+[h264_nvenc @ 0x1] [ GPU #0 - < NVIDIA GeForce GTX 1660 Ti > has Compute SM 7.5 ]
+[h264_nvenc @ 0x2] [ GPU #2 - < NVIDIA GPU: secondary > has Compute SM 8.6 ]
+[h264_nvenc @ 0x1] [ GPU #0 - < Duplicate > has Compute SM 7.5 ]
+[h264_nvenc @ 0x1] [ GPU #4294967296 - < Overflow > ]
+[h264_nvenc @ 0x1] [ GPU #/dev/dri/renderD128 - < Wrong identity > ]
+[h264_nvenc @ 0x1] [ GPU #1 - < > ]
+[ GPU #3 - < Truncated

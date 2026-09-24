@@ -405,8 +405,11 @@ impl VideoShell {
                 self.notify(&i18n("Sleep timer: suspending computer"));
                 glib::timeout_add_local_once(std::time::Duration::from_secs(2), || {
                     crate::settings::saving::after_writes(|| {
-                        let _ =
-                            big_app_kit::desktop::BigSystemPowerAction::Suspend.spawn_detached();
+                        if let Err(error) =
+                            big_app_kit::desktop::BigSystemPowerAction::Suspend.spawn_detached()
+                        {
+                            log::warn!("sleep timer: suspend failed: {error}");
+                        }
                     });
                 });
             }
@@ -414,8 +417,11 @@ impl VideoShell {
                 self.notify(&i18n("Sleep timer: shutting down"));
                 glib::timeout_add_local_once(std::time::Duration::from_secs(2), || {
                     crate::settings::saving::after_writes(|| {
-                        let _ =
-                            big_app_kit::desktop::BigSystemPowerAction::PowerOff.spawn_detached();
+                        if let Err(error) =
+                            big_app_kit::desktop::BigSystemPowerAction::PowerOff.spawn_detached()
+                        {
+                            log::warn!("sleep timer: poweroff failed: {error}");
+                        }
                     });
                 });
             }

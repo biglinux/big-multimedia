@@ -8,7 +8,7 @@
 
 use big_media_runtime::i18n::gettext_noop;
 pub use big_media_runtime::{
-    cast, config, db, i18n, library, media, mpris, player, recent, settings, shared,
+    cast, config, db, i18n, library, media, player, recent, settings, shared,
 };
 
 pub mod audio;
@@ -81,12 +81,11 @@ pub struct AudioEmbed {
 /// GResource bundles). The standalone [`run`] does these inline.
 fn embed_boot() {
     EMBED_BOOT.call_once(|| {
-        shared::app_base::init_gettext();
-        shared::app_base::init_numeric_locale();
-        big_media_components::install_media_components_translator(big_media_runtime::i18n::i18n);
+        shared::app_base::boot_player(&[
+            big_media_runtime::resources::AUDIO,
+            resources::AUDIO_PLAYER_SHELL,
+        ]);
         big_player_ui::favicon_cache::set_cache_namespace("big-audio-player");
-        shared::app_base::register_resource_bytes(big_media_runtime::resources::AUDIO);
-        shared::app_base::register_resource_bytes(resources::AUDIO_PLAYER_SHELL);
         audio::app::install_audio_accels(&relm4::main_application());
     });
 }
@@ -122,21 +121,16 @@ pub fn open_paths(paths: Vec<String>) {
 /// application. Returns the process exit code.
 #[must_use]
 pub fn run() -> gtk::glib::ExitCode {
-    // Only reached when the app was NOT started through `big-jemalloc-run` (or
-    // when jemalloc is absent): the desktop entries preload it, and a preloaded
-    // allocator ignores these. Keeps the direct-from-a-shell path sane.
-    shared::app_base::tune_allocator();
     shared::app_base::init_logging(
         "big_media_runtime=info,big_audio_player=info,lofty=error,glycin=error",
     );
-    shared::app_base::init_gettext();
-    shared::app_base::init_numeric_locale();
-    big_media_components::install_media_components_translator(big_media_runtime::i18n::i18n);
+    shared::app_base::boot_player(&[
+        big_media_runtime::resources::AUDIO,
+        resources::AUDIO_PLAYER_SHELL,
+    ]);
     // Name the shared radio/favicon disk cache after this app (generic in the
     // framework; the app supplies its own id).
     big_player_ui::favicon_cache::set_cache_namespace("big-audio-player");
-    shared::app_base::register_resource_bytes(big_media_runtime::resources::AUDIO);
-    shared::app_base::register_resource_bytes(resources::AUDIO_PLAYER_SHELL);
 
     // The `AudioShell` Root is now the mountable content (a ToastOverlay), not a
     // window (RESTRUCTURE ADR D14), so we boot manually instead of `RelmApp::run`

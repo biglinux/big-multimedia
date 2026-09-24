@@ -1,20 +1,21 @@
-//! Launch external converter (big-audio-converter, fallback to big-video-converter
-//! with audio-mode env hint) for a list of media paths.
+//! Launch the external converter GUI (big-audio-converter-gui, fallback to
+//! big-video-converter-gui with an audio-mode env hint) for a list of media
+//! paths. The plain `big-video-converter` binary is a headless CLI, not a GUI.
 
 use std::path::Path;
 
 use big_app_kit::subprocess::BigSubprocessSpec;
 
-const AUDIO_CONVERTER_PROGRAM: &str = "big-audio-converter";
-const VIDEO_CONVERTER_PROGRAM: &str = "big-video-converter";
+const AUDIO_CONVERTER_PROGRAM: &str = "big-audio-converter-gui";
+const VIDEO_CONVERTER_PROGRAM: &str = "big-video-converter-gui";
 const AUDIO_MODE_ENV_KEY: &str = "BIG_MEDIA_AUDIO_CONVERTER";
 const AUDIO_MODE_ENV_VALUE: &str = "1";
 const END_OF_OPTIONS_MARKER: &str = "--";
 const CONVERTER_BINARY_CANDIDATES: &[&str] = &[
-    "/usr/bin/big-audio-converter",
-    "/usr/sbin/big-audio-converter",
-    "/usr/bin/big-video-converter",
-    "/usr/sbin/big-video-converter",
+    "/usr/bin/big-audio-converter-gui",
+    "/usr/sbin/big-audio-converter-gui",
+    "/usr/bin/big-video-converter-gui",
+    "/usr/sbin/big-video-converter-gui",
 ];
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -73,7 +74,7 @@ pub(super) fn is_available() -> bool {
     is_converter_binary_available(Path::exists)
 }
 
-/// Falls back to `big-video-converter` with `BIG_MEDIA_AUDIO_CONVERTER=1`.
+/// Falls back to `big-video-converter-gui` with `BIG_MEDIA_AUDIO_CONVERTER=1`.
 ///
 /// SECURITY: every user-supplied path is placed after a `--` end-of-options
 /// marker so file names beginning with `-` cannot be reinterpreted as
@@ -104,10 +105,10 @@ mod tests {
         assert_eq!(
             converter_binary_candidates(),
             &[
-                "/usr/bin/big-audio-converter",
-                "/usr/sbin/big-audio-converter",
-                "/usr/bin/big-video-converter",
-                "/usr/sbin/big-video-converter",
+                "/usr/bin/big-audio-converter-gui",
+                "/usr/sbin/big-audio-converter-gui",
+                "/usr/bin/big-video-converter-gui",
+                "/usr/sbin/big-video-converter-gui",
             ]
         );
     }

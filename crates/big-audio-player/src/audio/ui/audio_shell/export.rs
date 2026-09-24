@@ -366,7 +366,6 @@ impl AudioShell {
             .parent()
             .map_or_else(|| PathBuf::from("."), Path::to_path_buf);
         self.notify(busy_message);
-        self.notify(&i18n("Verified completed outputs can be reused when retrying. Existing files without a matching receipt are kept."));
         let toast_overlay = self.toast_overlay.clone();
         big_media_components::player_chrome::spawn_blocking_result(
             move || run_single_export_blocking(input, output_dir, &choice, &segments),

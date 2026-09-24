@@ -27,30 +27,30 @@ pub fn set_bootstrap_env(name: &str, value: &str) {
     }
 }
 
-/// Cap glibc malloc arenas and route large buffers straight to `mmap`.
+/// Log which GSK renderer the display actually chose, once, when `window` maps.
 ///
-/// The video player stays on glibc malloc: measured against jemalloc on one
-/// machine, same session and same 1080p file, glibc held 390 MB Pss against
-/// jemalloc's 496 MB (451 MB with `retain:false`). Decoded-frame buffers are
-/// large and short-lived, which is exactly what `M_MMAP_THRESHOLD` handles well
-/// — they go straight back to the OS on free instead of sitting in an arena.
-/// A caller-set `MALLOC_ARENA_MAX` wins. Call once from `main()` BEFORE any
-/// threads spawn.
-#[cfg(target_env = "gnu")]
-pub fn tune_allocator() {
-    if std::env::var_os("MALLOC_ARENA_MAX").is_some() {
-        return;
-    }
-    // SAFETY: mallopt is a libc bootstrap call; invoked from main() pre-threads.
-    unsafe {
-        libc::mallopt(libc::M_ARENA_MAX, 2);
-        libc::mallopt(libc::M_MMAP_THRESHOLD, 64 * 1024);
-    }
-}
+/// The players pin `GSK_RENDERER` at boot, but GTK silently falls back when the
+/// pinned renderer cannot be created — and the fallback decides whether frames
+/// reach the compositor as a GPU dmabuf (`ngl`/`gl`) or as a per-frame software
+/// upload (`cairo`), which is the dominant per-frame CPU cost on an old GPU.
+/// This is the only place that says which one is really running.
+pub fn log_active_renderer_once(window: &impl glib::object::IsA<gtk::Window>) {
+    use gtk::prelude::*;
+    use std::sync::atomic::{AtomicBool, Ordering};
 
-/// No-op on non-glibc targets (mallopt/M_ARENA_MAX are glibc-specific).
-#[cfg(not(target_env = "gnu"))]
-pub fn tune_allocator() {}
+    static LOGGED: AtomicBool = AtomicBool::new(false);
+    window.as_ref().connect_map(move |window| {
+        if LOGGED.swap(true, Ordering::Relaxed) {
+            return;
+        }
+        let renderer = window
+            .renderer()
+            .map_or_else(|| "unknown".to_owned(), |r| r.type_().name().to_string());
+        let pinned =
+            std::env::var("GSK_RENDERER").unwrap_or_else(|_| "unset (GTK default)".to_owned());
+        log::info!("GSK renderer in use: {renderer} (GSK_RENDERER={pinned})");
+    });
+}
 
 pub fn init_logging(default_rust_log: &str) {
     set_default_env("RUST_LOG", default_rust_log);
@@ -116,11 +116,28 @@ fn dev_locale_dir() -> Option<String> {
 
 /// libmpv parses numbers via libc and breaks under non-C decimal separators.
 pub fn init_numeric_locale() {
+    // GTK must preserve the per-category locale set by gettext + libmpv boot,
+    // including when LC_ALL overrides LC_NUMERIC in the inherited environment.
+    if !gtk::is_initialized() {
+        gtk::disable_setlocale();
+    }
     set_bootstrap_env("LC_NUMERIC", "C");
     let c_locale = std::ffi::CString::new("C").expect("static string has no null bytes");
     // SAFETY: bootstrap only / called from main() before threads
     unsafe {
         libc::setlocale(libc::LC_NUMERIC, c_locale.as_ptr());
+    }
+}
+
+/// Boot steps every player entry point (standalone and embedded) shares: bind
+/// the shared gettext domain, route the components' strings through it, pin
+/// the numeric locale, and register the player's GResource bundles.
+pub fn boot_player(resource_bundles: &[&'static [u8]]) {
+    init_gettext();
+    big_media_components::install_media_components_translator(crate::i18n::i18n);
+    init_numeric_locale();
+    for bundle in resource_bundles {
+        register_resource_bytes(bundle);
     }
 }
 

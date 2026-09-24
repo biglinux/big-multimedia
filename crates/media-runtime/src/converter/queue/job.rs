@@ -162,6 +162,12 @@ pub(crate) fn friendly_ffmpeg_error(lines: &[String], code: i32) -> String {
     if lower.contains("already exists. overwrite") {
         return i18n("Output file already exists");
     }
+    if lower.contains("opening encoder")
+        || lower.contains("open encoder")
+        || lower.contains("applying encoder options")
+    {
+        return i18n("Could not convert with these settings. Try another format or quality.");
+    }
     if lower.contains("could not open") || lower.contains("failed to open") {
         return i18n("Could not open file — check path and permissions");
     }

@@ -11,6 +11,23 @@ fn main() -> Result<(), Box<dyn Error>> {
         "application-assets/resources",
         "application-assets/resources/resources.gresource.xml",
     )?;
+    // big-os-kit's jemalloc shim replaces the C allocator for the whole process;
+    // export it so libraries opened later with dlopen (GPU drivers, GIO modules)
+    // bind to it instead of glibc's.
+    for symbol in [
+        "malloc",
+        "calloc",
+        "realloc",
+        "free",
+        "posix_memalign",
+        "aligned_alloc",
+        "memalign",
+        "valloc",
+        "pvalloc",
+        "malloc_usable_size",
+    ] {
+        println!("cargo:rustc-link-arg-bins=-Wl,--export-dynamic-symbol={symbol}");
+    }
     Ok(())
 }
 

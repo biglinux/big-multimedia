@@ -1,52 +1,18 @@
 //! A private curl transport with nonblocking pipes, an operation deadline and
 //! pre-reserved reaping. No worker-per-stream, no wait() in error/drop paths.
-use crate::subprocess::reaper::Permit;
+#[cfg(unix)]
+use crate::subprocess::reaper::set_nonblocking;
+use crate::subprocess::reaper::{OwnedChild, Permit};
 use std::io::{self, Read, Write};
-use std::process::{Child, ChildStdout, Command};
+use std::process::{ChildStdout, Command};
 use std::time::{Duration, Instant};
 
-struct Owner {
-    child: Option<Child>,
-    permit: Option<Permit>,
-    may_signal: bool,
-}
-impl Drop for Owner {
-    fn drop(&mut self) {
-        if let Some(mut child) = self.child.take() {
-            if self.may_signal {
-                #[cfg(unix)]
-                {
-                    let pid = child.id() as libc::pid_t;
-                    if pid > 1 {
-                        unsafe {
-                            libc::kill(-pid, libc::SIGKILL);
-                        }
-                    }
-                }
-                let _ = child.kill();
-            }
-            if let Some(permit) = self.permit.take() {
-                permit.defer(child);
-            }
-        }
-    }
-}
 pub(super) struct Transport {
-    owner: Option<Owner>,
+    owner: Option<OwnedChild>,
     stdout: ChildStdout,
     deadline: Instant,
     finished: bool,
     failed: bool,
-}
-#[cfg(unix)]
-fn nonblocking(pipe: &impl std::os::fd::AsRawFd) -> io::Result<()> {
-    let fd = pipe.as_raw_fd();
-    // SAFETY: pipe retains ownership during both calls.
-    let flags = unsafe { libc::fcntl(fd, libc::F_GETFL) };
-    if flags < 0 || unsafe { libc::fcntl(fd, libc::F_SETFL, flags | libc::O_NONBLOCK) } < 0 {
-        return Err(io::Error::last_os_error());
-    }
-    Ok(())
 }
 #[cfg(unix)]
 fn readiness(pipe: &impl std::os::fd::AsRawFd, events: i16, deadline: Instant) -> io::Result<()> {
@@ -93,7 +59,7 @@ impl Transport {
             let permit = Permit::reserve()?;
             command.process_group(0);
             let child = command.spawn()?;
-            let mut owner = Owner {
+            let mut owner = OwnedChild {
                 child: Some(child),
                 permit: Some(permit),
                 may_signal: true,
@@ -109,7 +75,7 @@ impl Transport {
                 .stdin
                 .take()
                 .ok_or_else(|| io::Error::other("curl stdin unavailable"))?;
-            nonblocking(&stdin)?;
+            set_nonblocking(&stdin)?;
             let mut sent = 0;
             while sent < config.len() {
                 if Instant::now() >= deadline {
@@ -141,7 +107,7 @@ impl Transport {
                 .stdout
                 .take()
                 .ok_or_else(|| io::Error::other("curl stdout unavailable"))?;
-            nonblocking(&stdout)?;
+            set_nonblocking(&stdout)?;
             Ok(Self {
                 owner: Some(owner),
                 stdout,

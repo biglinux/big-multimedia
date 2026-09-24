@@ -44,31 +44,6 @@ fn hidden_launcher_entry_update(desktop_id: &str) -> LauncherEntryUpdate {
     }
 }
 
-fn taskbar_progress_launcher_entry_update(
-    desktop_id: &str,
-    is_taskbar_progress_enabled: bool,
-    position_secs: f64,
-    duration_secs: f64,
-) -> Option<LauncherEntryUpdate> {
-    if !is_taskbar_progress_enabled {
-        return None;
-    }
-
-    if duration_secs.is_finite()
-        && duration_secs > 0.0
-        && position_secs.is_finite()
-        && position_secs >= 0.0
-    {
-        Some(LauncherEntryUpdate {
-            desktop_uri: desktop_application_uri(desktop_id),
-            is_visible: true,
-            progress: (position_secs / duration_secs).clamp(0.0, 1.0),
-        })
-    } else {
-        Some(hidden_launcher_entry_update(desktop_id))
-    }
-}
-
 fn first_dbus_interface<'a>(
     node: &'a gio::DBusNodeInfo,
     interface_label: &str,
@@ -291,14 +266,6 @@ impl Mpris {
         }
     }
 
-    /// Return a reference to the `dbus connection` exposed by this [`Mpris`].
-    ///
-    /// Useful when callers need to bind signals, query state, or compose the
-    /// widget into a larger surface without taking ownership.
-    pub fn dbus_connection(&self) -> &gio::DBusConnection {
-        &self.connection
-    }
-
     /// Return a reference to the `taskbar flag` exposed by this [`Mpris`].
     ///
     /// Useful when callers need to bind signals, query state, or compose the
@@ -307,62 +274,17 @@ impl Mpris {
         self.taskbar_progress.clone()
     }
 
-    /// Return a reference to the `desktop entry id` exposed by this [`Mpris`].
-    ///
-    /// Useful when callers need to bind signals, query state, or compose the
-    /// widget into a larger surface without taking ownership.
-    pub fn desktop_entry_id(&self) -> &str {
-        &self.desktop_id
-    }
-
-    /// Clear any active taskbar progress.
-    pub fn clear_taskbar_progress(connection: &gio::DBusConnection, desktop_id: &str) {
-        let update = hidden_launcher_entry_update(desktop_id);
-        emit_launcher_entry(
-            connection,
-            &update.desktop_uri,
-            update.is_visible,
-            update.progress,
-        );
-    }
-
     /// Emit the seeked signal on the active D-Bus connection.
     pub fn emit_seeked(&self, position_us: i64) {
-        let _ = self.connection.emit_signal(
+        if let Err(error) = self.connection.emit_signal(
             None::<&str>,
             MPRIS_PATH,
             MPRIS_PLAYER_IFACE,
             "Seeked",
             Some(&(position_us,).to_variant()),
-        );
-    }
-
-    /// Push a new taskbar progress value through the live state.
-    pub fn update_taskbar_progress(&self, position_secs: f64, duration_secs: f64) {
-        if let Some(update) = taskbar_progress_launcher_entry_update(
-            &self.desktop_id,
-            self.taskbar_progress.load(Ordering::Relaxed),
-            position_secs,
-            duration_secs,
         ) {
-            emit_launcher_entry(
-                &self.connection,
-                &update.desktop_uri,
-                update.is_visible,
-                update.progress,
-            );
+            log::debug!("MPRIS: Seeked not sent: {error}");
         }
-    }
-
-    /// Hide the taskbar progress surface.
-    pub fn hide_taskbar_progress(&self) {
-        let update = hidden_launcher_entry_update(&self.desktop_id);
-        emit_launcher_entry(
-            &self.connection,
-            &update.desktop_uri,
-            update.is_visible,
-            update.progress,
-        );
     }
 }
 

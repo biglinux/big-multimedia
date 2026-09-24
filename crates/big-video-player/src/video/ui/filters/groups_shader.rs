@@ -23,7 +23,7 @@ use crate::i18n::i18n;
 use crate::player::mpv_backend::MpvBackend;
 use crate::player::mpv_backend::shader_gen::{self, ShaderParam};
 use crate::settings::{Settings, keys};
-use crate::shared::ui_helpers::DebouncedAction;
+use big_relm4_components::input::debounce::BigDebouncedAction as DebouncedAction;
 
 /// GPU processing: sharpen (debounced), deband, sigmoid-upscaling,
 /// correct-downscaling — all live mpv render properties.

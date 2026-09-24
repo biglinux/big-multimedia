@@ -234,21 +234,20 @@ pub(super) fn rename_file(state: &Rc<BrowserState>, path: &str) {
             return;
         };
         let dest = parent.join(&new_name);
-        if dest.exists() {
-            state
-                .sender
-                .output(VideoBrowserSidebarOutput::Notify(i18n(
-                    "A file with that name already exists",
-                )))
-                .ok();
-            return;
-        }
-        match std::fs::rename(&old, &dest) {
+        match rename_no_replace(&old, &dest) {
             Ok(()) => {
                 state.refresh_current_folder();
                 if let Some(dialog) = dialog_ref.upgrade() {
                     dialog.close();
                 }
+            }
+            Err(error) if error.kind() == std::io::ErrorKind::AlreadyExists => {
+                state
+                    .sender
+                    .output(VideoBrowserSidebarOutput::Notify(i18n(
+                        "A file with that name already exists",
+                    )))
+                    .ok();
             }
             Err(_) => {
                 state
@@ -288,18 +287,57 @@ fn move_file(src: &str, dest_dir: &Path) -> std::io::Result<()> {
     if dest == src_path {
         return Ok(());
     }
-    if dest.exists() {
-        return Err(std::io::Error::new(
-            std::io::ErrorKind::AlreadyExists,
-            "destination exists",
-        ));
+    match rename_no_replace(src_path, &dest) {
+        Err(error) if error.raw_os_error() == Some(libc::EXDEV) => {}
+        result => return result,
     }
-    if std::fs::rename(src_path, &dest).is_ok() {
+    // Cross-device → copy then remove the source. `create_new` refuses a file
+    // that appeared meanwhile; a failed copy (e.g. disk full) must not leave a
+    // truncated file behind.
+    let mut target = std::fs::OpenOptions::new()
+        .write(true)
+        .create_new(true)
+        .open(&dest)?;
+    let copied = std::fs::File::open(src_path)
+        .and_then(|mut source| std::io::copy(&mut source, &mut target))
+        .and_then(|_| target.sync_all());
+    if let Err(error) = copied {
+        let _ = std::fs::remove_file(&dest);
+        return Err(error);
+    }
+    std::fs::remove_file(src_path)
+}
+
+/// `rename` that fails with `AlreadyExists` instead of replacing `dest`, so a
+/// file created between a check and the rename is never overwritten.
+fn rename_no_replace(src: &Path, dest: &Path) -> std::io::Result<()> {
+    use std::os::unix::ffi::OsStrExt;
+    let src_c = std::ffi::CString::new(src.as_os_str().as_bytes())?;
+    let dest_c = std::ffi::CString::new(dest.as_os_str().as_bytes())?;
+    // SAFETY: both arguments are valid NUL-terminated paths that outlive the
+    // call; renameat2 only reads them.
+    let status = unsafe {
+        libc::renameat2(
+            libc::AT_FDCWD,
+            src_c.as_ptr(),
+            libc::AT_FDCWD,
+            dest_c.as_ptr(),
+            libc::RENAME_NOREPLACE,
+        )
+    };
+    if status == 0 {
         return Ok(());
     }
-    // Cross-device → copy then remove the source.
-    std::fs::copy(src_path, &dest)?;
-    std::fs::remove_file(src_path)
+    let error = std::io::Error::last_os_error();
+    // Some filesystems (NFS, some FUSE) lack RENAME_NOREPLACE: keep the old
+    // check-then-rename there rather than failing every rename.
+    if error.raw_os_error() == Some(libc::EINVAL) {
+        if dest.exists() {
+            return Err(std::io::ErrorKind::AlreadyExists.into());
+        }
+        return std::fs::rename(src, dest);
+    }
+    Err(error)
 }
 
 /// Emit a result toast for a batch file op.
@@ -334,7 +372,28 @@ impl BrowserState {
 
 #[cfg(test)]
 mod tests {
-    use super::accepted_rename_name;
+    use super::{accepted_rename_name, move_file, rename_no_replace};
+
+    #[test]
+    fn rename_and_move_never_replace_an_existing_file() {
+        let dir = std::env::temp_dir().join(format!("bvp-noreplace-{}", std::process::id()));
+        let sub = dir.join("sub");
+        std::fs::create_dir_all(&sub).unwrap();
+        let (a, b) = (dir.join("a.mp4"), dir.join("b.mp4"));
+        std::fs::write(&a, b"a").unwrap();
+        std::fs::write(&b, b"b").unwrap();
+        std::fs::write(sub.join("a.mp4"), b"kept").unwrap();
+
+        let err = rename_no_replace(&a, &b).unwrap_err();
+        assert_eq!(err.kind(), std::io::ErrorKind::AlreadyExists);
+        assert!(move_file(a.to_str().unwrap(), &sub).is_err());
+        assert_eq!(std::fs::read(&b).unwrap(), b"b");
+        assert_eq!(std::fs::read(sub.join("a.mp4")).unwrap(), b"kept");
+
+        rename_no_replace(&a, &dir.join("c.mp4")).unwrap();
+        assert!(!a.exists());
+        std::fs::remove_dir_all(dir).unwrap();
+    }
 
     #[test]
     fn rename_name_accepts_trimmed_file_names() {

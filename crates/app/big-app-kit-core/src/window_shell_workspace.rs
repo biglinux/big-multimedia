@@ -164,18 +164,6 @@ impl BigWorkspaceWindowShellSpec {
         self
     }
 
-    /// Set the composed application-window accessibility metadata.
-    #[must_use]
-    pub fn application_accessibility_spec(
-        mut self,
-        accessibility_spec: BigApplicationWindowAccessibilitySpec,
-    ) -> Self {
-        self.application_shell = self
-            .application_shell
-            .accessibility_spec(accessibility_spec);
-        self
-    }
-
     /// Set only the composed application-window accessible name.
     #[must_use]
     pub fn application_accessible_name(mut self, accessible_name: impl Into<String>) -> Self {

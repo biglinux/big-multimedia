@@ -15,8 +15,8 @@ use big_relm4_components::layout::preferences::BigPreferencesGroupSpec;
 use crate::i18n::i18n;
 use crate::player::mpv_backend::{AudioEffectsSnapshot, MpvBackend};
 use crate::settings::{Settings, keys};
+use crate::shared::illustration::illustration_auto as illustration;
 use crate::shared::preference_rows::{AdvancedWidgets, add_combo_row};
-use crate::shared::ui_helpers::illustration_auto as illustration;
 use big_media_runtime::i18n::gettext_noop;
 
 #[derive(Debug, Clone, Copy, PartialEq)]

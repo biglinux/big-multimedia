@@ -65,11 +65,21 @@ pub fn saving_page(settings: &Settings) -> adw::PreferencesPage {
 /// In a shared host, the status covers live documents across mounted players.
 /// A failed save is not silently converted into closing a now-hidden window.
 pub fn bind_write_drain(root: &impl IsA<gtk::Widget>) {
+    bind_write_drain_with_unsaved(root, || false);
+}
+
+/// Include an independently acknowledged store in normal-close protection.
+pub fn bind_write_drain_with_unsaved(
+    root: &impl IsA<gtk::Widget>,
+    extra_unsaved: impl Fn() -> bool + 'static,
+) {
+    let extra_unsaved = Rc::new(extra_unsaved);
     let bound = Rc::new(Cell::new(false));
     root.connect_map(move |widget| {
         if bound.get(){return;}
         let Some(window)=widget.root().and_downcast::<gtk::Window>()else{return;};bound.set(true);
         let deciding=Rc::new(Cell::new(false));let discard=Rc::new(Cell::new(false));
+        let extra_unsaved = extra_unsaved.clone();
         window.connect_close_request(move |window| {
             if deciding.get(){return glib::Propagation::Stop;}
             if big_os_kit::background::pending()>0 {
@@ -91,7 +101,7 @@ pub fn bind_write_drain(root: &impl IsA<gtk::Widget>) {
                 });
                 return glib::Propagation::Stop;
             }
-            if discard.replace(false) || !unsaved_changes(){return glib::Propagation::Proceed;}
+            if discard.replace(false) || !(unsaved_changes() || extra_unsaved()){return glib::Propagation::Proceed;}
             deciding.set(true);let weak=window.downgrade();let waiting=deciding.clone();let approved=discard.clone();
             let dialog=unsaved_dialog();
             dialog.connect_response(None,move|_,response|{

@@ -269,7 +269,7 @@ fn install_sidebar_actions(build: &EditPageBuild) {
             let context = context.clone();
             let mark_point = mark_point.clone();
             let mark_button = mark_button.clone();
-            let dialog = crate::shared::ui_helpers::new_confirm_dialog(
+            let dialog = crate::shared::dialogs::new_confirm_dialog(
                 &crate::i18n::i18n("Clear all segments?"),
                 &crate::i18n::i18n("Mark points and segment ranges will be removed."),
                 "clear",

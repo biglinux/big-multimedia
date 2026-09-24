@@ -12,7 +12,9 @@ use relm4::{ComponentController, ComponentSender};
 use big_media_components::time::playback_time;
 use big_media_runtime::converter::ffmpeg::progress::FfmpegProgressSnapshot;
 use big_media_runtime::converter::queue::{QueueMessage, SegmentOutputMode};
-use big_quick_export::export::{QuickExportChoice, build_single_export_queue};
+use big_quick_export::export::{
+    QuickExportChoice, build_single_export_queue, validate_export_segments, verify_published_output,
+};
 use big_relm4_components::input::dropdown_row::{BigDropdownRow, BigDropdownRowSpec};
 use big_relm4_components::input::inline_spin_set::{BigInlineSpinFieldSpec, BigInlineSpinSet};
 use big_relm4_components::input::preference_cards::BigSpinRange;
@@ -212,6 +214,10 @@ impl VideoShell {
             self.notify(&i18n("Open a local video to cut it"));
             return;
         };
+        if let Err(error) = validate_export_segments(ranges) {
+            self.notify(&format!("{}: {error}", i18n("Export failed")));
+            return;
+        }
         let output_dir = input
             .parent()
             .map_or_else(|| PathBuf::from("."), Path::to_path_buf);
@@ -239,7 +245,6 @@ impl VideoShell {
 
         // Slim strip: start indeterminate, reveal it above the transport. The
         // video keeps playing behind it.
-        self.notify(&i18n("Verified completed outputs can be reused when retrying. Existing files without a matching receipt are kept."));
         let title = i18n("Generating cut…");
         self.trim_progress_row
             .update(&BigProgressRowSpec::indeterminate(
@@ -257,6 +262,8 @@ impl VideoShell {
         // widgets). No per-file rows / command log — just the live cut progress.
         let row = self.trim_progress_row.clone();
         let shell = sender.input_sender().clone();
+        // Split mode publishes one file per cut; a joined export has one output.
+        let joined_output = (!self.trim_split.get()).then_some(output);
         glib::spawn_future_local(async move {
             let mut outcome =
                 TrimExportOutcome::Failed(i18n("The export ended without confirming completion"));
@@ -273,7 +280,10 @@ impl VideoShell {
                         ));
                     }
                     QueueMessage::Done { entry_id } if entry_id == id => {
-                        outcome = TrimExportOutcome::Ok;
+                        outcome = match joined_output.as_deref().map(verify_published_output) {
+                            Some(Err(error)) => TrimExportOutcome::Failed(error),
+                            _ => TrimExportOutcome::Ok,
+                        };
                     }
                     QueueMessage::Failed { entry_id, error } if entry_id == id => {
                         outcome = TrimExportOutcome::Failed(error);

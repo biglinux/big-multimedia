@@ -150,12 +150,6 @@ impl BigTooltipHandle {
         self.inner.enabled.set(enabled);
     }
 
-    /// Returns `true` if enabled.
-    #[must_use]
-    pub fn is_enabled(&self) -> bool {
-        self.inner.enabled.get()
-    }
-
     /// Register `widget` as a tooltip-bearer for `text`. Empty text
     /// removes any existing binding. Equivalent to
     /// [`Self::add_with_offset`] with offset 0.

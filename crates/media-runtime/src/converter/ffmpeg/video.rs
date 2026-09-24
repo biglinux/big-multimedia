@@ -6,6 +6,14 @@
 use super::*;
 
 impl FfmpegJob {
+    pub(super) fn video_stage(&self, codec: &str) -> GpuStage {
+        if self.audio_only || self.gpu.gpu_type.video_encoder(codec).is_none() {
+            GpuStage::Software
+        } else {
+            self.stage
+        }
+    }
+
     pub(crate) fn add_video_args(&self, cmd: &mut Command) {
         let codec = &self.profile.video.codec;
 
@@ -16,18 +24,41 @@ impl FfmpegJob {
 
         let encoder = self.resolve_encoder(codec);
         cmd.args(["-c:v", encoder]);
+        if encoder.ends_with("_nvenc") {
+            let device = if self.gpu.device_path.is_empty() {
+                "0"
+            } else {
+                &self.gpu.device_path
+            };
+            cmd.args(["-gpu", device]);
+        }
 
         let quality = &self.profile.video.quality;
         let preset = &self.profile.video.preset;
 
-        match self.gpu.gpu_type {
+        let gpu_type = if self.video_stage(codec) == GpuStage::Software {
+            GpuType::Cpu
+        } else {
+            self.gpu.gpu_type
+        };
+        match gpu_type {
             GpuType::Nvidia => Self::add_nvidia_quality_args(cmd, codec, quality, preset),
             GpuType::Intel => Self::add_intel_quality_args(cmd, codec, quality, preset),
             GpuType::Amd => Self::add_vaapi_quality_args(cmd, codec, quality),
             GpuType::Cpu => Self::add_software_quality_args(cmd, codec, quality, preset),
         }
 
-        if self.stage == GpuStage::Software && codec == "av1" {
+        if self.video_stage(codec) == GpuStage::Software
+            && codec == "h264"
+            && self.profile.video.pixel_format == "auto"
+        {
+            // Automatic H264 favors widely supported 8-bit 4:2:0. Explicit
+            // formats are preserved and x264 chooses the matching profile.
+            cmd.args(["-pix_fmt", "yuv420p"]);
+        } else if self.video_stage(codec) == GpuStage::Software
+            && codec == "av1"
+            && self.profile.video.pixel_format == "auto"
+        {
             cmd.args(["-pix_fmt", "yuv420p10le"]);
         } else if self.profile.video.pixel_format != "auto" {
             cmd.args(["-pix_fmt", &self.profile.video.pixel_format]);
@@ -35,50 +66,22 @@ impl FfmpegJob {
     }
 
     pub(crate) fn resolve_encoder(&self, codec: &str) -> &'static str {
-        if self.stage == GpuStage::Software {
-            return match codec {
-                "h265" => "libx265",
-                "av1" => "libsvtav1",
-                "vp9" => "libvpx-vp9",
-                "prores" => "prores_ks",
-                _ => "libx264",
-            };
+        if self.video_stage(codec) != GpuStage::Software
+            && let Some(encoder) = self.gpu.gpu_type.video_encoder(codec)
+        {
+            return encoder;
         }
-
         match codec {
-            "h264" => match self.gpu.gpu_type {
-                GpuType::Nvidia => "h264_nvenc",
-                GpuType::Amd => "h264_vaapi",
-                GpuType::Intel => "h264_qsv",
-                GpuType::Cpu => "libx264",
-            },
-            "h265" => match self.gpu.gpu_type {
-                GpuType::Nvidia => "hevc_nvenc",
-                GpuType::Amd => "hevc_vaapi",
-                GpuType::Intel => "hevc_qsv",
-                GpuType::Cpu => "libx265",
-            },
-            "av1" => match self.gpu.gpu_type {
-                GpuType::Nvidia => "av1_nvenc",
-                GpuType::Amd => "av1_vaapi",
-                GpuType::Intel => "av1_qsv",
-                GpuType::Cpu => "libsvtav1",
-            },
-            "vp9" => match self.gpu.gpu_type {
-                GpuType::Intel => "vp9_qsv",
-                GpuType::Nvidia | GpuType::Amd => "vp9_vaapi",
-                GpuType::Cpu => "libvpx-vp9",
-            },
+            "h265" => "libx265",
+            "av1" => "libsvtav1",
+            "vp9" => "libvpx-vp9",
             "prores" => "prores_ks",
             _ => "libx264",
         }
     }
 
     pub fn build_video_filters(&self) -> String {
-        if self.skip_video_filters {
-            return String::new();
-        }
-
+        let stage = self.video_stage(&self.profile.video.codec);
         let vf = &self.profile.video.filters;
         let mut sw_filters = Vec::new();
 
@@ -128,16 +131,20 @@ impl FfmpegJob {
         let runtime_config = crate::converter::runtime_config::config();
         let contrast_ffmpeg = runtime_config.contrast.map_preview_to_ffmpeg(contrast);
         let sat_ffmpeg = runtime_config.saturation.map_preview_to_ffmpeg(saturation);
-        let has_color = brightness.abs() > runtime_config.float_threshold
+        let has_eq = brightness.abs() > runtime_config.float_threshold
             || (contrast_ffmpeg - runtime_config.contrast.neutral).abs()
                 > runtime_config.float_threshold
             || (sat_ffmpeg - runtime_config.saturation.neutral).abs()
-                > runtime_config.float_threshold
-            || hue.abs() > runtime_config.float_threshold;
-        if has_color {
+                > runtime_config.float_threshold;
+        if has_eq {
             sw_filters.push(format!(
-                "eq=brightness={brightness}:contrast={contrast_ffmpeg}:saturation={sat_ffmpeg}:hue={hue}"
+                "eq=brightness={brightness}:contrast={contrast_ffmpeg}:saturation={sat_ffmpeg}"
             ));
+        }
+        if hue.abs() > runtime_config.float_threshold {
+            // mpv's normalized hue spans ±π and rotates chroma opposite to
+            // FFmpeg's hue filter, whose `h` parameter is in degrees.
+            sw_filters.push(format!("hue=h={}", -180.0 * hue));
         }
 
         if let SubtitleInput::ExternalFile(ref path) = self.subtitle {
@@ -146,35 +153,25 @@ impl FfmpegJob {
         }
 
         let has_scale = vf.resolution != "auto" && !vf.resolution.is_empty();
-        if sw_filters.is_empty() && !has_scale {
+        if sw_filters.is_empty() && !has_scale && stage != GpuStage::PartialGpu {
             return String::new();
         }
 
-        match self.stage {
+        match stage {
             GpuStage::FullGpu => {
                 let mut chain = Vec::new();
 
                 if !sw_filters.is_empty() {
-                    match self.gpu.gpu_type {
-                        GpuType::Intel => {
-                            chain.push("hwdownload".into());
-                            chain.push("format=nv12".into());
-                            chain.extend(sw_filters);
-                            chain.push("hwupload=extra_hw_frames=64,format=qsv".into());
-                        }
-                        GpuType::Nvidia => {
-                            chain.push("hwdownload".into());
-                            chain.push("format=nv12".into());
-                            chain.extend(sw_filters);
-                            chain.push("hwupload_cuda".into());
-                        }
-                        _ => {
-                            chain.push("hwdownload".into());
-                            chain.push("format=nv12".into());
-                            chain.extend(sw_filters);
-                            chain.push("hwupload".into());
-                        }
-                    }
+                    chain.push("hwdownload".into());
+                    chain.push("format=nv12".into());
+                    chain.extend(sw_filters);
+                    chain.extend(
+                        self.gpu
+                            .gpu_type
+                            .partial_upload_filters()
+                            .into_iter()
+                            .map(str::to_string),
+                    );
                 }
 
                 if has_scale && let Some((w, h)) = vf.resolution.split_once('x') {
@@ -191,20 +188,13 @@ impl FfmpegJob {
                 let mut chain = Vec::new();
                 chain.extend(sw_filters);
 
-                match self.gpu.gpu_type {
-                    GpuType::Intel => {
-                        chain.push("format=nv12".into());
-                        chain.push("hwupload=extra_hw_frames=64,format=qsv".into());
-                    }
-                    GpuType::Nvidia => {
-                        chain.push("format=nv12".into());
-                        chain.push("hwupload_cuda".into());
-                    }
-                    _ => {
-                        chain.push("format=nv12".into());
-                        chain.push("hwupload".into());
-                    }
-                }
+                chain.extend(
+                    self.gpu
+                        .gpu_type
+                        .partial_upload_filters()
+                        .into_iter()
+                        .map(str::to_string),
+                );
 
                 if has_scale && let Some((w, h)) = vf.resolution.split_once('x') {
                     match self.gpu.gpu_type {

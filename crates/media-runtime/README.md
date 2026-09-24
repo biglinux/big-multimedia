@@ -32,7 +32,7 @@ because it contains product-specific multimedia application code.
 cargo build --locked
 ```
 
-Quality gate (the same matrix CI runs via `.github/workflows/ci.yml`):
+Quality gate:
 
 ```bash
 cargo fmt --all -- --check

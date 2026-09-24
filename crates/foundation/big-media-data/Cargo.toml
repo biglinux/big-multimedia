@@ -25,7 +25,7 @@ big-os-kit = { workspace = true }
 # Pure parsers (Radio-Browser feed, media file-type knowledge) — GTK-free leaf.
 big-media-engines = { workspace = true, optional = true }
 
-serde_json = "1"
+serde_json.workspace = true
 thiserror = "2"
 log = "0.4"
 # SQLite music library (system libsqlite3 — never bundled).

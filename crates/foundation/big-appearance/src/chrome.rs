@@ -11,8 +11,8 @@
 //! `.main-header-bar`, `.big-tab-button`, `.big-tab-*`); app-specific
 //! selectors enter through the `extra_selectors` parameters.
 
-const TRANSPARENCY_CURVE_EXPONENT: f64 = 1.6;
-const MAX_EFFECTIVE_TRANSPARENCY: f64 = 0.8;
+use super::{MAX_EFFECTIVE_TRANSPARENCY, TRANSPARENCY_CURVE_EXPONENT};
+
 const INTEGRATED_HEADERBAR_RATIO: f64 = 0.9;
 const SIMPLE_TAB_THEME_RULES: [(BigTabStripTheme, &str, &str, &str, &str, u8); 3] = [
     (
@@ -163,7 +163,7 @@ pub fn chrome_opacity_percent(slider: u32) -> u32 {
 /// [`chrome_opacity_percent`], returned as `0.0..=1.0` alpha.
 #[must_use]
 pub fn body_alpha(transparency: f64) -> f64 {
-    let adjusted = transparency.min(100.0);
+    let adjusted = transparency.clamp(0.0, 100.0);
     let curve = (adjusted / 100.0).powf(TRANSPARENCY_CURVE_EXPONENT) * MAX_EFFECTIVE_TRANSPARENCY;
     (1.0 - curve).clamp(0.0, 1.0)
 }
@@ -675,15 +675,7 @@ fn css_byte(channel: f64) -> u8 {
 }
 
 fn hex_to_rgb_f64(hex: &str) -> Option<(f64, f64, f64)> {
-    if hex.len() != 7
-        || !hex.starts_with('#')
-        || !hex[1..].bytes().all(|byte| byte.is_ascii_hexdigit())
-    {
-        return None;
-    }
-    let r = u8::from_str_radix(&hex[1..3], 16).ok()?;
-    let g = u8::from_str_radix(&hex[3..5], 16).ok()?;
-    let b = u8::from_str_radix(&hex[5..7], 16).ok()?;
+    let (r, g, b) = super::rgb_triplet(hex)?;
     Some((
         f64::from(r) / 255.0,
         f64::from(g) / 255.0,

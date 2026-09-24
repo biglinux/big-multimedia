@@ -87,11 +87,7 @@ impl CastSessionController {
             return Err(Error::not_found("file"));
         }
 
-        let (gpu, device_path) = if let Some(override_gpu) = filters.gpu_override {
-            (override_gpu, filters.gpu_device_path.clone())
-        } else {
-            crate::cast::gpu::detect_gpu_device()
-        };
+        let (gpu, device_path) = self.resolve_gpu(&filters);
         self.stop_http.store(false, Ordering::Relaxed);
 
         let mut session = crate::cast::transcode::TranscodeSession::new(

@@ -56,6 +56,8 @@ pub(super) fn get_root_property(prop: &str, desktop: &str) -> Option<Variant> {
         "Identity" => Some(
             (if desktop.contains("AudioPlayer") {
                 "Big Audio Player"
+            } else if desktop.contains("VideoPlayer") {
+                "Big Video Player"
             } else {
                 "Big Media Player"
             })
@@ -65,6 +67,17 @@ pub(super) fn get_root_property(prop: &str, desktop: &str) -> Option<Variant> {
         "CanQuit" | "CanRaise" => Some(true.to_variant()),
         "HasTrackList" | "Fullscreen" | "CanSetFullscreen" => Some(false.to_variant()),
         "SupportedUriSchemes" => Some(vec!["file", "http", "https"].to_variant()),
+        "SupportedMimeTypes" if desktop.contains("VideoPlayer") => Some(
+            vec![
+                "video/mp4",
+                "video/x-matroska",
+                "video/webm",
+                "video/quicktime",
+                "video/x-msvideo",
+                "video/mpeg",
+            ]
+            .to_variant(),
+        ),
         "SupportedMimeTypes" => Some(
             vec![
                 "audio/mpeg",

@@ -466,8 +466,10 @@ impl Component for VideoShell {
                 custom_mpv_options,
                 audio_output,
                 initial_volume,
+                volume_max: i64::from(settings.get_int_or(keys::VOLUME_MAX, 150)),
                 muted,
                 render_mode: settings.get_string(keys::RENDER_MODE).clone(),
+                settings: settings.clone(),
             },
         );
 
@@ -523,6 +525,13 @@ impl Component for VideoShell {
             });
         }
 
+        let mpris_state = Arc::new(std::sync::Mutex::new(
+            big_app_kit::mpris::PlayerState::default(),
+        ));
+        let mpris = (!mode.is_background())
+            .then(|| super::mpris::build_mpris_service(&sender, &mpris_state, &settings))
+            .flatten();
+
         ComponentParts {
             model: Self {
                 mode,
@@ -539,6 +548,7 @@ impl Component for VideoShell {
                 main_overlay,
                 welcome_overlay: RefCell::new(welcome),
                 playlist_paths: Vec::new(),
+                shuffle_on_load: None,
                 mpv,
                 duration_secs: 0.0,
                 settings,
@@ -569,6 +579,9 @@ impl Component for VideoShell {
                 trim_progress_revealer,
                 trim_active,
                 trim_queue: Rc::new(RefCell::new(None)),
+                mpris,
+                mpris_state,
+                mpris_track_seq: 0,
             },
             widgets: (),
         }
@@ -589,7 +602,15 @@ impl Component for VideoShell {
             let gtk_window = root.root().and_downcast::<gtk::Window>();
             let gtk_window_ref = gtk_window.as_ref();
             match shell_input {
-                VideoShellInput::Player(event) => self.on_player_event(event, window_ref),
+                VideoShellInput::Player(event) => {
+                    // After the shell reacts (a load-time shuffle reorders the
+                    // playlist), so MPRIS sees the final position.
+                    self.on_player_event(event.clone(), window_ref);
+                    self.mirror_mpris(&event);
+                }
+                VideoShellInput::Mpris(command) => {
+                    self.handle_mpris_command(command, &sender, gtk_window_ref);
+                }
                 VideoShellInput::Controls(out) => self.on_controls(out, window_ref),
                 VideoShellInput::Playlist(out) => self.on_playlist(out),
                 VideoShellInput::EnterTrimMode => self.enter_trim_mode(),

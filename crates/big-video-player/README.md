@@ -39,8 +39,6 @@ BIGAGENTS_TOOLS=/path/to/bigagents-tools ./dev/update-bigagents.sh
 - `dev/`: repository maintenance commands, not application runtime code.
 - `resources/`: installed desktop metadata and icons shared by packages.
 - `packaging/pacman/`: BigLinux/pacman packaging source.
-- `packaging/nix/`: Nix packaging source.
-- `packaging/flatpak/`: Flatpak/Flathub packaging source.
 - `legacy/`: previous implementation kept as reference only, when present.
 - `.agent/`: optional bigagents-tools project map, generated locally by
   `dev/update-bigagents.sh`; gitignored and not part of a clone.
@@ -48,8 +46,6 @@ BIGAGENTS_TOOLS=/path/to/bigagents-tools ./dev/update-bigagents.sh
 ## Packaging
 
 - Pacman/BigLinux: `packaging/pacman/PKGBUILD`
-- Nix: `packaging/nix/flake.nix`
-- Flatpak/Flathub: `packaging/flatpak/br.com.biglinux.VideoPlayer.yml`
 
 Packaging metadata is source. Keep desktop files, AppStream metadata, icons,
 install hooks, and manifests validated before release.

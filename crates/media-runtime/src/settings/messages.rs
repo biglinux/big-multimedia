@@ -138,9 +138,6 @@ const _: &[&str] = &[
     gettext_noop("This location is not a regular media file"),
     gettext_noop("User token"),
     gettext_noop("Verified completed export reused: source, plan and output receipts match."),
-    gettext_noop(
-        "Verified completed outputs can be reused when retrying. Existing files without a matching receipt are kept.",
-    ),
     gettext_noop("Waiting for your keyring. Unlock it if prompted…"),
     gettext_noop("Watch folders could not be read. Previous settings were kept."),
     gettext_noop(

@@ -8,8 +8,8 @@ pub use super::metadata_cache::{
 };
 pub use super::playlist_scan::{
     IptvChannel, breadcrumb_segments, export_m3u, folder_display_name, format_file_size,
-    is_audio_file, is_media_file, is_playlist_file, is_video_file, list_subfolders, parse_iptv_m3u,
-    parse_m3u, parse_playlist_file, restore_from_trash, scan_folder_flat, scan_folder_recursive,
+    is_audio_file, is_media_file, is_playlist_file, is_video_file, list_subfolders, parse_m3u,
+    parse_playlist_file, restore_from_trash, scan_folder_flat, scan_folder_recursive,
     shuffled_order, sort_paths, trash_file, write_m3u,
 };
 pub use big_media_components::media::files::{AUDIO_EXTENSIONS, VIDEO_EXTENSIONS};
@@ -55,8 +55,6 @@ pub fn display_name(path: &str) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::media::playlist_scan::is_code_project_dir;
-    use std::path::Path;
 
     // ── display_name ──
 
@@ -74,30 +72,6 @@ mod tests {
     fn display_name_handles_trailing_slash() {
         // Path::new strips trailing slash on file_name()
         assert_eq!(display_name("/home/user/folder"), "folder");
-    }
-
-    // ── is_video_file ──
-
-    #[test]
-    fn is_video_file_accepts_supported_video_extensions() {
-        assert!(is_video_file("movie.mp4"));
-        assert!(is_video_file("movie.mkv"));
-        assert!(is_video_file("movie.avi"));
-        assert!(is_video_file("movie.webm"));
-    }
-
-    #[test]
-    fn is_video_file_case_insensitive() {
-        assert!(is_video_file("movie.MP4"));
-        assert!(is_video_file("movie.MKV"));
-    }
-
-    #[test]
-    fn is_video_file_rejects_non_video() {
-        assert!(!is_video_file("document.txt"));
-        assert!(!is_video_file("image.png"));
-        assert!(!is_video_file("script.py"));
-        assert!(!is_video_file("noextension"));
     }
 
     // ── format_file_size ──
@@ -149,14 +123,6 @@ mod tests {
     fn shuffled_order_keeps_single_index() {
         let order = shuffled_order(1, 0);
         assert_eq!(order, vec![0]);
-    }
-
-    // ── is_code_project_dir ──
-
-    #[test]
-    fn is_code_project_dir_at_root() {
-        // Root ("/") is never a code project dir
-        assert!(!is_code_project_dir(Path::new("/")));
     }
 
     // ── sort_paths ──

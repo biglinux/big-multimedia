@@ -170,13 +170,6 @@ pub fn http_get_json(url: &str) -> Option<String> {
     )
 }
 
-/// Form-urlencoded POST. Returns the HTTP status on connection success so
-/// callers can branch on 200 vs 4xx/5xx. **No retry** — scrobbles must not
-/// double-post; signature is the caller's responsibility.
-pub fn http_post_form(url: &str, form_body: &str) -> Result<u16, String> {
-    http_post_form_response(url, form_body).map(|response| response.status)
-}
-
 /// Complete bounded response. Providers may reject an operation in the body of
 /// an HTTP 200 response; callers must inspect that semantic result. No retries.
 pub fn http_post_form_response(url: &str, form_body: &str) -> Result<HttpResponseBytes, String> {
@@ -362,18 +355,6 @@ pub fn http_get_stream_with_extra_headers(
     )
 }
 
-/// POST JSON and return a streaming response. Redirects are disabled because
-/// callers commonly attach API keys in headers; never forward secrets to a
-/// redirected host.
-pub fn http_post_json_stream(
-    url: &str,
-    json_body: &str,
-    headers: &RequestHeaders<'_>,
-    timeout: Duration,
-) -> Result<HttpStreamResponse, String> {
-    http_post_json_stream_with_extra_headers(url, json_body, headers, &[], timeout)
-}
-
 /// POST JSON and return a streaming response with additional per-call headers.
 /// Redirects are disabled because callers commonly attach API keys in headers;
 /// never forward secrets to a redirected host.
@@ -395,11 +376,6 @@ pub fn http_post_json_stream_with_extra_headers(
         timeout,
         false,
     )
-}
-
-/// Read a stream into memory, refusing to exceed `max_bytes`.
-pub fn read_stream_capped(reader: &mut dyn Read, max_bytes: u64) -> Result<Vec<u8>, String> {
-    read_capped(reader, max_bytes)
 }
 
 /// Copy a response stream to a writer with cancellation and progress callbacks.

@@ -146,24 +146,16 @@ impl TranscodeSession {
             let args = self.build_ffmpeg_args(seek_secs, stage, gpu, &device);
             let cmd_line = format!("ffmpeg {}", args.join(" "));
             info!("Cast transcode ({stage:?}): {cmd_line}");
-            if let Some(cmd_log) = self.scratch_path("ffmpeg-cmd.log") {
-                match OpenOptions::new()
+            if let Some(mut f) = self.scratch_path("ffmpeg-cmd.log").and_then(|p| {
+                OpenOptions::new()
                     .write(true)
-                    .create_new(true)
+                    .create(true)
+                    .truncate(true)
                     .mode(0o600)
-                    .open(&cmd_log)
-                {
-                    Ok(mut f) => {
-                        let _ = f.write_all(cmd_line.as_bytes());
-                    }
-                    _ => {
-                        if let Ok(mut f) =
-                            OpenOptions::new().write(true).truncate(true).open(&cmd_log)
-                        {
-                            let _ = f.write_all(cmd_line.as_bytes());
-                        }
-                    }
-                }
+                    .open(p)
+                    .ok()
+            }) {
+                let _ = f.write_all(cmd_line.as_bytes());
             }
 
             // bigagents: app-local-subprocess — streaming transcode: stdout is
@@ -241,12 +233,6 @@ impl TranscodeSession {
     pub fn stop(&mut self) {
         self.kill_child();
         self.cleanup_extracted_sub();
-    }
-
-    /// Whether the FFmpeg process is still running.
-    #[must_use]
-    pub fn is_running(&self) -> bool {
-        self.child.is_some()
     }
 
     fn candidate_stages(&self) -> Vec<TranscodeStage> {

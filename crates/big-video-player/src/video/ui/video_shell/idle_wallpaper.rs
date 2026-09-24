@@ -272,6 +272,12 @@ fn ensure_blurred(source: &Path) -> Option<PathBuf> {
 /// BigShell's default wallpapers are HEIC), rasterizes to PNG first (rsvg for
 /// SVG, ImageMagick otherwise) then blurs the raster.
 fn blur_to(source: &Path, dest: &Path) -> Option<PathBuf> {
+    // The path comes from the desktop config and reaches ffmpeg/ImageMagick as
+    // an argument: only an absolute path can't read as an option (`-…`) or a
+    // protocol/coder prefix (`xyz:…`).
+    if !source.is_absolute() {
+        return None;
+    }
     if run_blur(source, dest) {
         return Some(dest.to_path_buf());
     }
@@ -286,62 +292,64 @@ fn blur_to(source: &Path, dest: &Path) -> Option<PathBuf> {
 /// Rasterize `source` (HEIC/AVIF/anything ImageMagick decodes) to PNG `dest` via
 /// ImageMagick — `magick` (IM7) or `convert` (IM6). `true` on a non-empty result.
 fn rasterize_magick(source: &Path, dest: &Path) -> bool {
-    for binary in ["magick", "convert"] {
-        let ok = BigSubprocessSpec::builder()
-            .program(binary)
-            .arg(source)
-            .args(["-resize", "1920x"])
-            .arg(dest)
-            .stdout(BigSubprocessOutputMode::Null)
-            .stderr(BigSubprocessOutputMode::Null)
-            .build()
-            .run()
-            .is_ok_and(|output| output.status.success())
-            && std::fs::metadata(dest).is_ok_and(|m| m.len() > 0);
-        if ok {
-            return true;
-        }
-    }
-    false
+    ["magick", "convert"].into_iter().any(|binary| {
+        produced(
+            BigSubprocessSpec::builder()
+                .program(binary)
+                .arg(source)
+                .args(["-resize", "1920x"])
+                .arg(dest)
+                .stdout(BigSubprocessOutputMode::Null)
+                .stderr(BigSubprocessOutputMode::Null)
+                .build(),
+            dest,
+        )
+    })
 }
 
 /// Run the ffmpeg blur on `source` → `dest`; `true` on a non-empty result. Argv
 /// array, no shell.
 fn run_blur(source: &Path, dest: &Path) -> bool {
-    BigSubprocessSpec::builder()
-        .program("ffmpeg")
-        .arg("-y")
-        .arg("-i")
-        .arg(source)
-        .args([
-            "-vf",
-            // Downscale (even height), strong gaussian blur, slight darken +
-            // desaturate so the welcome-screen text stays legible over it.
-            "scale=1280:-2:flags=bilinear,gblur=sigma=24,eq=brightness=-0.18:saturation=0.9",
-            "-frames:v",
-            "1",
-        ])
-        .arg(dest)
-        .stdout(BigSubprocessOutputMode::Null)
-        .stderr(BigSubprocessOutputMode::Null)
-        .build()
-        .run()
-        .is_ok_and(|output| output.status.success())
-        && std::fs::metadata(dest).is_ok_and(|m| m.len() > 0)
+    produced(
+        BigSubprocessSpec::builder()
+            .program("ffmpeg")
+            .arg("-y")
+            .arg("-i")
+            .arg(source)
+            .args([
+                "-vf",
+                // Downscale (even height), strong gaussian blur, slight darken +
+                // desaturate so the welcome-screen text stays legible over it.
+                "scale=1280:-2:flags=bilinear,gblur=sigma=24,eq=brightness=-0.18:saturation=0.9",
+                "-frames:v",
+                "1",
+            ])
+            .arg(dest)
+            .stdout(BigSubprocessOutputMode::Null)
+            .stderr(BigSubprocessOutputMode::Null)
+            .build(),
+        dest,
+    )
 }
 
 /// Rasterize an SVG `source` to PNG `dest` via `rsvg-convert`; `true` on success.
 fn rasterize_svg(source: &Path, dest: &Path) -> bool {
-    BigSubprocessSpec::builder()
-        .program("rsvg-convert")
-        .args(["-w", "1920", "-o"])
-        .arg(dest)
-        .arg(source)
-        .stdout(BigSubprocessOutputMode::Null)
-        .stderr(BigSubprocessOutputMode::Null)
-        .build()
-        .run()
-        .is_ok_and(|output| output.status.success())
+    produced(
+        BigSubprocessSpec::builder()
+            .program("rsvg-convert")
+            .args(["-w", "1920", "-o"])
+            .arg(dest)
+            .arg(source)
+            .stdout(BigSubprocessOutputMode::Null)
+            .stderr(BigSubprocessOutputMode::Null)
+            .build(),
+        dest,
+    )
+}
+
+/// Run a converter; `true` when it succeeded and wrote a non-empty `dest`.
+fn produced(converter: BigSubprocessSpec, dest: &Path) -> bool {
+    converter.run().is_ok_and(|output| output.status.success())
         && std::fs::metadata(dest).is_ok_and(|m| m.len() > 0)
 }
 

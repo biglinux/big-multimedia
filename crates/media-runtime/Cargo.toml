@@ -35,40 +35,39 @@ name = "ui_surface_probe"
 required-features = ["ui"]
 
 [dependencies]
-adw = { version = "0.9", features = ["v1_9"], package = "libadwaita", optional = true }
-gtk = { version = "0.11", features = ["v4_22"], package = "gtk4", optional = true }
-glib = { version = "0.22", optional = true }
-gio = { version = "0.22", optional = true }
+adw = { workspace = true, optional = true }
+gtk = { workspace = true, optional = true }
+glib = { workspace = true, optional = true }
+gio = { workspace = true, optional = true }
 gdk = { version = "0.11", package = "gdk4", optional = true }
 gdk-wayland-sys = { version = "0.11", package = "gdk4-wayland-sys", optional = true }
 # Direct (was already transitive via big-relm4-components): the relocated editor
 # Components (VideoEditor/AudioEditor) use relm4 directly. Same pinned 0.11.
-relm4 = { version = "0.11.0", features = ["libadwaita"], optional = true }
+relm4 = { workspace = true, optional = true }
 mpv-sys = { version = "4", package = "libmpv2-sys", optional = true }
-libc = "0.2"
-big-audio-effects = { path = "../foundation/big-audio-effects" }
-big-app-kit = { path = "../app/big-app-kit", features = ["http-client", "remote-control"], optional = true }
-big-os-kit = { path = "../foundation/big-os-kit" }
-big-media-engines = { path = "../foundation/big-media-engines" }
-big-relm4-components = { path = "../ui/generic/big-relm4-components", optional = true }
-big-media-components = { path = "../ui/media/big-media-components", optional = true }
-big-mpv-render = { path = "../foundation/big-mpv-render", optional = true }
+libc.workspace = true
+big-audio-effects.workspace = true
+big-app-kit = { workspace = true, features = ["http-client", "remote-control"], optional = true }
+big-os-kit.workspace = true
+big-media-engines.workspace = true
+big-relm4-components = { workspace = true, optional = true }
+big-media-components = { workspace = true, optional = true }
+big-mpv-render = { workspace = true, optional = true }
 # GTK-free data services (SQLite library, settings store, radio/library clients)
 # extracted from this crate; re-exported under the legacy module paths.
-big-media-data = { path = "../foundation/big-media-data", default-features = false }
+big-media-data.workspace = true
 
-gettext-rs = { version = "0.7", features = ["gettext-system"] }
+gettext-rs.workspace = true
 
 # Retained after the big-media-data extraction (still used runtime-side:
-# rusqlite by remaining queries, md-5 for cache keys).
+# rusqlite by remaining queries).
 rusqlite = { version = "0.40.1", default-features = false, optional = true }
-md-5 = { version = "0.11", optional = true }
 
-log = "0.4"
+log.workspace = true
 env_logger = "0.11"
 async-channel = "2.5"
-serde = { version = "1", features = ["derive"] }
-serde_json = "1"
+serde.workspace = true
+serde_json.workspace = true
 toml = "1"
 
 # Chromecast / Cast support
@@ -98,7 +97,6 @@ ui-core = [
     "dep:big-app-kit",
     "dep:big-relm4-components",
     "dep:big-media-components",
-    "dep:md-5",
 ]
 # Audio player: the SQLite music library, radio directory and podcast data.
 audio = [
@@ -132,7 +130,7 @@ tempfile = "3"
 proptest = "1"
 
 [package.metadata.cargo-machete]
-ignored = ["gettext-rs", "md-5"]  # gettext-rs imported as gettextrs; md-5 imported as md5
+ignored = ["gettext-rs"]  # imported as gettextrs
 
 [lints.clippy]
 pedantic = { level = "warn", priority = -1 }

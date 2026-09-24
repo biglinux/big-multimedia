@@ -172,7 +172,8 @@ pub struct VideoControlsBar {
     current_file: Arc<Mutex<Option<String>>>,
     /// Hover-preview thumbnail generator (ffmpeg-backed, on a worker thread).
     /// Kept alive for the bar's lifetime; dropping it stops the worker.
-    _thumb_gen: Rc<ThumbnailGenerator>,
+    thumb_gen: Rc<ThumbnailGenerator>,
+    preview_popover: gtk::Popover,
 }
 
 impl Component for VideoControlsBar {
@@ -202,8 +203,8 @@ impl Component for VideoControlsBar {
 
         // Hover-preview thumbnail worker (ffmpeg-backed). Results stream back on
         // an async channel and paint the preview image while it is visible.
-        let (thumb_tx, thumb_rx) = async_channel::bounded::<ThumbnailResult>(4);
-        let thumb_gen = Rc::new(ThumbnailGenerator::new(thumb_tx, current_file.clone()));
+        let (thumb_tx, thumb_rx) = async_channel::bounded::<ThumbnailResult>(1);
+        let thumb_gen = Rc::new(ThumbnailGenerator::new(thumb_tx));
 
         // ── seek row: position · scale · duration ───────────────────────────
         let seek_row = gtk::Box::builder()
@@ -318,7 +319,7 @@ impl Component for VideoControlsBar {
                 &init.settings,
             );
         }
-        wire_thumb_consumer(thumb_rx, &preview_popover, &preview_thumb);
+        wire_thumb_consumer(thumb_rx, &preview_thumb, &thumb_gen);
 
         // ── center box ──────────────────────────────────────────────────────
         let center = gtk::CenterBox::new();
@@ -424,7 +425,8 @@ impl Component for VideoControlsBar {
             duration_secs,
             chapters,
             current_file,
-            _thumb_gen: thumb_gen,
+            thumb_gen,
+            preview_popover,
         };
         model.set_sensitive(false);
         model.apply_button_layout(&init.settings);
@@ -479,6 +481,8 @@ impl Component for VideoControlsBar {
                 self.render_chapter_marks();
             }
             VideoControlsBarInput::SetCurrentFile(path) => {
+                self.thumb_gen.invalidate();
+                self.preview_popover.popdown();
                 *self
                     .current_file
                     .lock()

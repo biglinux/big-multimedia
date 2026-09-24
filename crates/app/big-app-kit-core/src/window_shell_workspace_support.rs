@@ -170,13 +170,6 @@ impl BigWorkspaceSidePanelChromePolicy {
         self
     }
 
-    /// Set whether the side-panel color extends through the header.
-    #[must_use]
-    pub const fn extend_into_header(mut self, should_extend_into_header: bool) -> Self {
-        self.should_extend_into_header = should_extend_into_header;
-        self
-    }
-
     pub(super) fn validate(&self) -> Result<(), BigWindowShellSpecError> {
         if self.width_logical_pixels <= 0 {
             return Err(BigWindowShellSpecError::InvalidSidePanelWidth);
@@ -463,13 +456,6 @@ impl BigWorkspaceContextualSurfacePolicy {
     #[must_use]
     pub fn companion_role(mut self, companion_role: BigWorkspacePaneRole) -> Self {
         self.companion_roles.insert(companion_role);
-        self
-    }
-
-    /// Set whether irrelevant commands should be hidden for the current context.
-    #[must_use]
-    pub fn hide_irrelevant_commands(mut self, hides_irrelevant_commands: bool) -> Self {
-        self.hides_irrelevant_commands = hides_irrelevant_commands;
         self
     }
 }

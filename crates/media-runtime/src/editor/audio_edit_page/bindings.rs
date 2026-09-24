@@ -172,13 +172,6 @@ impl AudioEditPage {
         }
     }
 
-    /// Returns `true` once an mpv backend has been allocated for the
-    /// current file.
-    #[must_use]
-    pub fn is_loaded(&self) -> bool {
-        self.mpv.borrow().is_some()
-    }
-
     /// Current trim ranges as understood by FFmpeg, derived from the
     /// in-memory segment list.
     #[must_use]

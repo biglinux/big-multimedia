@@ -16,7 +16,7 @@ use super::filter_specs::{colorize_vf, colortemp_vf, hqdn3d_vf, pixelize_vf};
 use super::vf_row::{VfFilterSpec, build_vf_expander_row, illustration};
 use crate::i18n::i18n;
 use crate::player::mpv_backend::MpvBackend;
-use crate::shared::ui_helpers::DebouncedAction;
+use big_relm4_components::input::debounce::BigDebouncedAction as DebouncedAction;
 
 /// Denoise (hqdn3d) + software CAS sharpen.
 pub(super) fn build_denoise_sharpen_group(
@@ -148,7 +148,6 @@ fn build_colorize_row(mpv: &Arc<MpvBackend>, current_vf: &str) -> adw::ExpanderR
         let saturation = saturation.clone();
         let mix = mix.clone();
         move || {
-            mpv.vf_remove(LABEL);
             mpv.vf_append(
                 LABEL,
                 &colorize_vf(hue.value(), saturation.value(), mix.value()),
@@ -253,7 +252,6 @@ pub(super) fn build_presets_group(
         move || {
             let idx = combo.selected() as usize;
             if let Some(id) = preset_ids.get(idx) {
-                mpv.vf_remove(LABEL);
                 mpv.vf_append(LABEL, &format!("curves=preset={id}"));
             }
         }

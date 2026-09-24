@@ -12,7 +12,9 @@ pub use library::{
 pub use metadata::{
     TrackMetadataUpdate, update_track_metadata, update_track_metadata_from_mb, update_track_rating,
 };
-pub use queue::{load_queue, save_queue};
+pub use queue::{
+    QueueSession, SavedQueue, load_queue, load_queue_session, save_queue, save_queue_session,
+};
 pub use radio::{
     delete_radio_station, get_all_radio_stations, insert_radio_station, migrate_radio_from_json,
     update_radio_station,

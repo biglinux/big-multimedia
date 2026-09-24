@@ -1,4 +1,3 @@
-#!/usr/bin/env python3
 """Whitespace-insensitive source text for the static checkers.
 
 The contracts below match literal fragments of Rust source. The workspace is
@@ -7,15 +6,17 @@ fragment may be re-wrapped across lines at any time without its meaning
 changing. Matching on whitespace-stripped text keeps the contracts about what
 the code says rather than how it is wrapped.
 """
+
 from __future__ import annotations
+
 import re
 
-_SPACE = re.compile(r'\s+')
+_SPACE = re.compile(r"\s+")
 
 
 def compact(text: str) -> str:
     """Drop every whitespace character so wrapping cannot change a match."""
-    return _SPACE.sub('', text)
+    return _SPACE.sub("", text)
 
 
 class Source(str):
@@ -33,7 +34,11 @@ class Source(str):
 
     def find(self, needle, start=0, end=None) -> int:  # type: ignore[override]
         needle = compact(str(needle))
-        return str.find(self, needle, start) if end is None else str.find(self, needle, start, end)
+        return (
+            str.find(self, needle, start)
+            if end is None
+            else str.find(self, needle, start, end)
+        )
 
     def __getitem__(self, key):
         sliced = str.__getitem__(self, key)
@@ -42,7 +47,7 @@ class Source(str):
     def index(self, needle, start=0, end=None) -> int:  # type: ignore[override]
         found = self.find(needle, start, end)
         if found < 0:
-            raise ValueError('substring not found')
+            raise ValueError("substring not found")
         return found
 
     def split(self, sep=None, maxsplit=-1):  # type: ignore[override]

@@ -71,15 +71,6 @@ impl MpvBackend {
             let _ = m.set_property("video-zoom", val);
         });
     }
-    pub fn set_video_aspect(&self, val: f64) {
-        self.with_mpv(|m| {
-            if val < 0.0 {
-                let _ = m.set_property("video-aspect-override", -1.0_f64);
-            } else {
-                let _ = m.set_property("video-aspect-override", val);
-            }
-        });
-    }
 
     pub fn set_video_rotate(&self, degrees: i64) {
         self.with_mpv(|m| {
@@ -96,23 +87,12 @@ impl MpvBackend {
     }
 
     pub fn set_video_flip(&self, hflip: bool, vflip: bool) {
-        let mut filters = Vec::new();
-        if hflip {
-            filters.push("hflip");
+        match (hflip, vflip) {
+            (false, false) => self.vf_remove("big-flip"),
+            (true, false) => self.vf_append("big-flip", "hflip"),
+            (false, true) => self.vf_append("big-flip", "vflip"),
+            (true, true) => self.vf_append("big-flip", "hflip,vflip"),
         }
-        if vflip {
-            filters.push("vflip");
-        }
-        self.with_mpv(|m| {
-            if filters.is_empty() {
-                let _ = m.set_property("vf", String::new());
-                let _ = m.set_property("hwdec", "auto-safe".to_string());
-            } else {
-                // vf must be set first — mpv auto-disables hwdec when sw filters needed.
-                let _ = m.set_property("vf", filters.join(","));
-                let _ = m.set_property("hwdec", "no".to_string());
-            }
-        });
     }
 
     pub fn get_video_zoom(&self) -> f64 {
@@ -121,34 +101,6 @@ impl MpvBackend {
             .lock()
             .unwrap_or_else(std::sync::PoisonError::into_inner);
         mpv.get_property("video-zoom").unwrap_or(0.0)
-    }
-
-    pub fn get_video_pan_x(&self) -> f64 {
-        let mpv = self
-            .mpv
-            .lock()
-            .unwrap_or_else(std::sync::PoisonError::into_inner);
-        mpv.get_property("video-pan-x").unwrap_or(0.0)
-    }
-
-    pub fn get_video_pan_y(&self) -> f64 {
-        let mpv = self
-            .mpv
-            .lock()
-            .unwrap_or_else(std::sync::PoisonError::into_inner);
-        mpv.get_property("video-pan-y").unwrap_or(0.0)
-    }
-
-    pub fn set_video_pan_x(&self, val: f64) {
-        self.with_mpv(|m| {
-            let _ = m.set_property("video-pan-x", val);
-        });
-    }
-
-    pub fn set_video_pan_y(&self, val: f64) {
-        self.with_mpv(|m| {
-            let _ = m.set_property("video-pan-y", val);
-        });
     }
 
     pub fn set_panscan(&self, val: f64) {
@@ -178,13 +130,6 @@ impl MpvBackend {
                 },
             );
         });
-    }
-
-    pub fn get_deinterlace(&self) -> bool {
-        self.with_mpv(|m| {
-            m.get_property::<String>("deinterlace")
-                .is_ok_and(|v| v == "yes")
-        })
     }
 
     pub fn set_video_sync(&self, mode: &str) {
@@ -274,12 +219,6 @@ impl MpvBackend {
         }
     }
 
-    pub fn glsl_shader_remove(&self, path: &str) {
-        let current = self.get_glsl_shaders();
-        let new = shader_list_remove(&current, path);
-        self.set_glsl_shaders(&new);
-    }
-
     pub fn glsl_shader_remove_prefix(&self, prefix: &str) {
         let current = self.get_glsl_shaders();
         let new = shader_list_remove_prefix(&current, prefix);
@@ -296,13 +235,6 @@ pub(crate) fn shader_list_append(list: &str, path: &str) -> String {
     let mut new_paths = paths;
     new_paths.push(path);
     new_paths.join(":")
-}
-
-pub(crate) fn shader_list_remove(list: &str, path: &str) -> String {
-    list.split(':')
-        .filter(|s| !s.is_empty() && *s != path)
-        .collect::<Vec<_>>()
-        .join(":")
 }
 
 pub(crate) fn shader_list_remove_prefix(list: &str, prefix: &str) -> String {
@@ -342,40 +274,6 @@ mod tests {
     }
 
     #[test]
-    fn test_shader_list_remove_existing() {
-        assert_eq!(
-            shader_list_remove("/a.glsl:/b.glsl:/c.glsl", "/b.glsl"),
-            "/a.glsl:/c.glsl"
-        );
-    }
-
-    #[test]
-    fn test_shader_list_remove_not_present() {
-        assert_eq!(
-            shader_list_remove("/a.glsl:/b.glsl", "/z.glsl"),
-            "/a.glsl:/b.glsl"
-        );
-    }
-
-    #[test]
-    fn test_shader_list_remove_single_shader_path() {
-        assert_eq!(shader_list_remove("/a.glsl", "/a.glsl"), "");
-    }
-
-    #[test]
-    fn test_shader_list_remove_empty_list() {
-        assert_eq!(shader_list_remove("", "/a.glsl"), "");
-    }
-
-    #[test]
-    fn test_shader_list_remove_partial_match_not_removed() {
-        assert_eq!(
-            shader_list_remove("/a.glsl:/a.glsl.bak", "/a.glsl"),
-            "/a.glsl.bak"
-        );
-    }
-
-    #[test]
     fn test_shader_list_remove_prefix_matches() {
         let list = "/usr/share/shaders/fsr.glsl:/usr/share/shaders/cas.glsl:/home/user/my.glsl";
         assert_eq!(
@@ -407,5 +305,62 @@ mod tests {
     #[test]
     fn test_shader_list_remove_prefix_empty_prefix_removes_all() {
         assert_eq!(shader_list_remove_prefix("/a.glsl:/b.glsl", ""), "");
+    }
+}
+
+#[cfg(all(test, not(miri)))]
+mod flip_tests {
+    use super::MpvBackend;
+
+    #[test]
+    fn flip_preserves_other_filters_and_hardware_preference() {
+        let (sender, _events) = async_channel::unbounded();
+        let backend = MpvBackend::new_audio_only(sender).unwrap();
+        for preference in ["no", "auto-safe", "nvdec-copy"] {
+            backend.set_hwdec(preference);
+            let expected = backend.get_hwdec();
+            backend.vf_append("review-contrast", "eq=contrast=1.2");
+            for (horizontal, vertical) in
+                [(true, false), (true, true), (false, true), (false, false)]
+            {
+                backend.set_video_flip(horizontal, vertical);
+                let filters = backend.get_vf();
+                assert!(
+                    filters.contains("review-contrast"),
+                    "lost contrast: {filters}"
+                );
+                assert_eq!(filters.contains("hflip"), horizontal, "{filters}");
+                assert_eq!(filters.contains("vflip"), vertical, "{filters}");
+                assert_eq!(backend.get_hwdec(), expected);
+            }
+            backend.vf_remove("review-contrast");
+            assert_eq!(backend.get_hwdec(), expected);
+            assert!(backend.get_vf().is_empty());
+        }
+    }
+    #[test]
+    fn hardware_choice_changed_during_effects_survives_removal_and_full_reset() {
+        let (sender, _events) = async_channel::unbounded();
+        let backend = MpvBackend::new_audio_only(sender).unwrap();
+        backend.set_hwdec("auto-safe");
+        backend.vf_append("effect", "hflip");
+        assert_eq!(
+            backend.with_mpv(|mpv| mpv.get_property::<String>("hwdec").unwrap()),
+            "auto-copy"
+        );
+        backend.set_hwdec("no");
+        backend.vf_remove("effect");
+        assert_eq!(backend.get_hwdec(), "no");
+        backend.set_hwdec("nvdec");
+        backend.set_vf("hflip");
+        assert_eq!(
+            backend.with_mpv(|mpv| mpv.get_property::<String>("hwdec").unwrap()),
+            "nvdec-copy"
+        );
+        backend.set_vf("");
+        assert_eq!(
+            backend.with_mpv(|mpv| mpv.get_property::<String>("hwdec").unwrap()),
+            "nvdec"
+        );
     }
 }

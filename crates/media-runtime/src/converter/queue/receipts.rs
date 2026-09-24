@@ -16,7 +16,8 @@ use serde::{Deserialize, Serialize};
 use std::path::{Path, PathBuf};
 use std::sync::atomic::AtomicBool;
 const RECEIPT_VERSION: u32 = 1;
-const PLAN_VERSION: u32 = 1;
+// Version 2 preserves requested filters and uses corrected color conversion.
+const PLAN_VERSION: u32 = 2;
 const MAX_RECEIPT: usize = 4096;
 #[derive(Serialize, Deserialize)]
 #[serde(deny_unknown_fields)]
@@ -203,7 +204,7 @@ pub(super) fn plan(
         "subtitles":&profile.subtitles,"output":&profile.output,"segments":segments,"mode":entry.segment_mode,
         "subtitle_input":subtitle,"audio_track":entry.audio_track,"video_track":entry.video_track,
         "crop":&entry.crop,"overrides":&entry.video_overrides,"audio_only":audio_only,
-        "input_audio_channels":entry.input_audio_channels,"skip_video_filters":entry.skip_video_filters,
+        "input_audio_channels":entry.input_audio_channels,
     });
     let bytes = serde_json::to_vec(&value)?;
     if bytes.len() > 1024 * 1024 {

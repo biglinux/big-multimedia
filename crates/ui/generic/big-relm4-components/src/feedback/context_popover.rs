@@ -3,14 +3,9 @@
 
 //! Plain context popover with flat action rows.
 
-use std::cell::RefCell;
-use std::rc::Rc;
-
 use relm4::gtk;
 use relm4::gtk::gdk;
 use relm4::gtk::prelude::*;
-
-use crate::feedback::popover_lifecycle::unparent_popover_on_parent_teardown;
 
 use crate::text::escape_markup_text;
 
@@ -240,107 +235,6 @@ impl<T> BigSearchablePickerSpec<T> {
     }
 }
 
-/// Build a flat button that opens a searchable single-choice popover.
-///
-/// The caller owns the option values and selection side effect. The shared
-/// helper owns the button/popover structure, filtering, current-selection
-/// indicator, accessible names, and popover teardown.
-#[must_use]
-pub fn build_searchable_picker_button<T, F>(
-    spec: BigSearchablePickerSpec<T>,
-    on_select: F,
-) -> gtk::Button
-where
-    T: Clone + 'static,
-    F: Fn(T) + 'static,
-{
-    let button = gtk::Button::with_label(spec.current_label());
-    button.add_css_class("flat");
-    button.set_valign(gtk::Align::Center);
-    button.update_property(&[gtk::accessible::Property::Label(spec.title())]);
-
-    let picker = gtk::Popover::builder()
-        .has_arrow(true)
-        .autohide(true)
-        .build();
-    picker.add_css_class("menu");
-    for css_class in &spec.popover_css_classes {
-        picker.add_css_class(css_class);
-    }
-    picker.set_parent(&button);
-    unparent_popover_on_parent_teardown(button.upcast_ref(), &picker);
-
-    let root = gtk::Box::new(gtk::Orientation::Vertical, 8);
-    root.set_margin_top(10);
-    root.set_margin_bottom(10);
-    root.set_margin_start(10);
-    root.set_margin_end(10);
-    root.set_width_request(spec.width_request);
-
-    root.append(&build_popover_section_label(spec.title()));
-
-    let search = gtk::SearchEntry::new();
-    search.set_placeholder_text(Some(spec.filter_placeholder()));
-    search.set_hexpand(true);
-    search.update_property(&[gtk::accessible::Property::Label(spec.filter_placeholder())]);
-    root.append(&search);
-
-    let list = gtk::Box::new(gtk::Orientation::Vertical, 2);
-    let rows: Rc<RefCell<Vec<(String, gtk::Button)>>> = Rc::new(RefCell::new(Vec::new()));
-    let on_select: Rc<dyn Fn(T)> = Rc::new(on_select);
-    let picker_weak = picker.downgrade();
-    for option in spec.options {
-        let row = picker_option_row(option.label(), option.is_selected());
-        let filter_label = option.label().to_lowercase();
-        let value = option.value().clone();
-        let on_select = on_select.clone();
-        let picker_weak = picker_weak.clone();
-        row.connect_clicked(move |_| {
-            on_select(value.clone());
-            if let Some(picker) = picker_weak.upgrade() {
-                picker.popdown();
-            }
-        });
-        rows.borrow_mut().push((filter_label, row.clone()));
-        list.append(&row);
-    }
-
-    let scroller = gtk::ScrolledWindow::builder()
-        .hscrollbar_policy(gtk::PolicyType::Never)
-        .vscrollbar_policy(gtk::PolicyType::Automatic)
-        .max_content_height(spec.max_content_height)
-        .min_content_height(spec.min_content_height)
-        .child(&list)
-        .build();
-    root.append(&scroller);
-    picker.set_child(Some(&root));
-
-    let rows_for_search = rows.clone();
-    search.connect_search_changed(move |entry| {
-        let query = entry.text().to_lowercase();
-        for (label, row) in rows_for_search.borrow().iter() {
-            row.set_visible(query.is_empty() || label.contains(&query));
-        }
-    });
-
-    let search_weak = search.downgrade();
-    picker.connect_show(move |_| {
-        if let Some(search) = search_weak.upgrade() {
-            search.set_text("");
-            search.grab_focus();
-        }
-    });
-
-    let picker_weak = picker.downgrade();
-    button.connect_clicked(move |_| {
-        if let Some(picker) = picker_weak.upgrade() {
-            picker.popup();
-        }
-    });
-
-    button
-}
-
 /// Build a standard section label for compact popover content.
 #[must_use]
 pub fn build_popover_section_label(label: &str) -> gtk::Label {
@@ -351,34 +245,6 @@ pub fn build_popover_section_label(label: &str) -> gtk::Label {
     label.set_margin_start(8);
     label.set_margin_end(8);
     label
-}
-
-fn picker_option_row(label: &str, selected: bool) -> gtk::Button {
-    let row = gtk::Button::new();
-    row.add_css_class("flat");
-    row.set_halign(gtk::Align::Fill);
-    row.set_hexpand(true);
-
-    let content = gtk::Box::new(gtk::Orientation::Horizontal, 10);
-    content.set_margin_top(6);
-    content.set_margin_bottom(6);
-    content.set_margin_start(8);
-    content.set_margin_end(8);
-    content.set_halign(gtk::Align::Fill);
-    content.set_hexpand(true);
-
-    let image = gtk::Image::from_icon_name("object-select-symbolic");
-    image.set_pixel_size(16);
-    image.set_opacity(if selected { 1.0 } else { 0.0 });
-    let label_widget = gtk::Label::new(Some(label));
-    label_widget.set_xalign(0.0);
-    label_widget.set_hexpand(true);
-
-    content.append(&image);
-    content.append(&label_widget);
-    row.set_child(Some(&content));
-    row.update_property(&[gtk::accessible::Property::Label(label)]);
-    row
 }
 
 /// Right-click / long-press popover that hosts a vertical stack of
@@ -469,32 +335,6 @@ impl BigContextPopover {
         self.content.append(&button);
     }
 
-    /// Append an icon + label action button.
-    pub fn append_icon_button<F>(
-        &self,
-        icon_name: impl AsRef<str>,
-        label: impl AsRef<str>,
-        css_classes: &[&str],
-        on_clicked: F,
-    ) where
-        F: Fn() + 'static,
-    {
-        let mut spec =
-            BigContextActionButtonSpec::new(label.as_ref()).icon_name(icon_name.as_ref());
-        for css_class in css_classes {
-            spec = spec.css_class(*css_class);
-        }
-        let button = build_context_action_button(&spec);
-        let popover = self.popover.downgrade();
-        button.connect_clicked(move |_| {
-            if let Some(popover) = popover.upgrade() {
-                popover.popdown();
-            }
-            on_clicked();
-        });
-        self.content.append(&button);
-    }
-
     /// Attach the popover to `parent` and pop it up pointing at the
     /// `(x, y)` coordinate inside the parent.
     pub fn popup_at(self, parent: &impl IsA<gtk::Widget>, x: f64, y: f64) {
@@ -502,14 +342,6 @@ impl BigContextPopover {
         self.popover
             .set_pointing_to(Some(&gdk::Rectangle::new(x as i32, y as i32, 1, 1)));
 
-        self.popup_with_auto_unparent();
-    }
-
-    /// Attach the popover to `parent` and pop it up using
-    /// `position` (Top/Bottom/Left/Right) relative to the widget.
-    pub fn popup_for_widget(self, parent: &impl IsA<gtk::Widget>, position: gtk::PositionType) {
-        self.popover.set_parent(parent.as_ref());
-        self.popover.set_position(position);
         self.popup_with_auto_unparent();
     }
 

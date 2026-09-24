@@ -49,6 +49,10 @@ pub(super) fn apply_video_options(init: &MpvInitializer) -> Result<(), MpvError>
     init.set_option("dscale", "bilinear")?;
     init.set_option("fbo-format", "rgba8")?;
     init.set_option("video-sync", "audio")?;
+    // The render API is called with BLOCK_FOR_TARGET_TIME=0, so mpv must not
+    // render ahead of the target display time: without this the frames it hands
+    // us are early and A/V sync drifts (render.h, MPV_RENDER_PARAM_BLOCK_FOR_TARGET_TIME).
+    init.set_option("video-timing-offset", "0")?;
     init.set_option("interpolation", "no")?;
     init.set_option("vd-lavc-dr", "auto")?;
     init.set_option("hwdec-extra-frames", "2")?;

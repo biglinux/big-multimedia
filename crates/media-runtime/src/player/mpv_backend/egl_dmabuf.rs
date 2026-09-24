@@ -24,15 +24,6 @@ const EGL_NO_IMAGE: EglImageHandle = std::ptr::null_mut();
 const EGL_GL_TEXTURE_2D: u32 = 0x30B1; // EGL_GL_TEXTURE_2D_KHR
 const EGL_NONE: EglInteger = 0x3038;
 
-const DRM_FORMAT_MOD_LINEAR: u64 = 0;
-
-/// Conservative policy of this backend, not a universal driver limitation.
-/// Widen this only after negotiating the display's supported format/modifier
-/// pairs and validating the producer/consumer synchronization contract.
-fn is_modifier_linear(modifier: u64) -> bool {
-    modifier == DRM_FORMAT_MOD_LINEAR
-}
-
 type EglGetCurrentDisplayFn = unsafe extern "C" fn() -> EglDisplayHandle;
 type EglGetCurrentContextFn = unsafe extern "C" fn() -> EglContextHandle;
 type EglGetProcAddressFn = unsafe extern "C" fn(*const std::ffi::c_char) -> *mut c_void;
@@ -218,18 +209,13 @@ pub(crate) fn export_gl_texture(egl: &EglDmaBufFns, gl_texture_id: u32) -> Optio
             return None;
         }
 
+        // Any layout the driver exported is offered as-is, including tiled ones
+        // and DRM_FORMAT_MOD_INVALID (the implicit layout AMD reports here):
+        // GDK negotiates the format/modifier pair against the display when it
+        // builds the texture and fails cleanly, and the caller then locks onto
+        // the GL-texture path. Rejecting everything but linear here meant no
+        // machine ever reached the zero-copy path at all.
         let modifier = modifiers[0];
-
-        // This implementation currently opts into explicitly linear layouts only.
-        if !is_modifier_linear(modifier) {
-            let vendor = (modifier >> 56) as u8;
-            info!(
-                "DMA-BUF export: non-linear modifier 0x{modifier:016X} \
-                 (vendor=0x{vendor:02X}), falling back to GL texture"
-            );
-            (egl.destroy_image)(dpy, image);
-            return None;
-        }
 
         // Exactly one plane was confirmed BEFORE handing these arrays to C.
         let mut fds = [-1_i32; 4];
@@ -312,13 +298,6 @@ mod tests {
         assert_eq!(EGL_TRUE, 1);
         assert_eq!(EGL_GL_TEXTURE_2D, 0x30B1);
         assert_eq!(EGL_NONE, 0x3038);
-    }
-
-    #[test]
-    fn only_linear_modifier_is_safe_by_default() {
-        assert!(is_modifier_linear(DRM_FORMAT_MOD_LINEAR));
-        assert!(!is_modifier_linear((1_u64 << 56) - 1));
-        assert!(!is_modifier_linear(0x0100_0000_0000_0001));
     }
 
     #[test]

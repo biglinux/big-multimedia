@@ -15,27 +15,27 @@ default = []
 chromecast = ["big-media-runtime/chromecast"]
 
 [dependencies]
-big-os-kit.workspace = true
-adw = { version = "0.9", features = ["v1_9"], package = "libadwaita" }
-gtk = { version = "0.11", features = ["v4_22"], package = "gtk4" }
-glib = "0.22"
-gio = "0.22"
+big-os-kit = { workspace = true, features = ["jemalloc"] }
+adw.workspace = true
+gtk.workspace = true
+glib.workspace = true
+gio.workspace = true
 gdk = { version = "0.11", package = "gdk4" }
 pango = { version = "0.22", package = "pango" }
-big-media-runtime = { path = "../media-runtime", default-features = false, features = ["video"] }
-big-player-ui = { path = "../ui/media/big-player-ui" }
-big-app-kit = { path = "../app/big-app-kit" }
-big-relm4-components = { path = "../ui/generic/big-relm4-components" }
-big-media-components = { path = "../ui/media/big-media-components" }
+big-media-runtime = { workspace = true, features = ["video"] }
+big-player-ui.workspace = true
+big-app-kit.workspace = true
+big-relm4-components.workspace = true
+big-media-components.workspace = true
 # In-player quick export (extract audio / convert) reuses the converter engine.
-big-quick-export = { path = "../big-quick-export" }
-relm4 = { version = "0.11.0", default-features = false, features = ["libadwaita"] }
+big-quick-export.workspace = true
+relm4.workspace = true
 async-channel = "2.5"
 dirs = "6"
-libc = "0.2"
-log = "0.4"
-serde = { version = "1", features = ["derive"] }
-serde_json = "1"
+libc.workspace = true
+log.workspace = true
+serde.workspace = true
+serde_json.workspace = true
 
 [dev-dependencies]
 # Real tempdir for resolve_open_files folder-scan branch tests.

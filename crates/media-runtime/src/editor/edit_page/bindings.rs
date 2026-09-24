@@ -9,39 +9,12 @@ use gtk::glib;
 use crate::player::mpv_backend::AudioEffects;
 
 use super::EditPage;
-use super::rotation::effective_rotation;
 
 impl EditPage {
     /// Root [`adw::ToolbarView`]; embed in a parent container.
     #[must_use]
     pub fn widget(&self) -> &adw::ToolbarView {
         &self.toolbar_view
-    }
-
-    /// Set the mpv `vf` filter chain on the live preview.
-    pub fn set_video_filter(&self, filter: &str) {
-        if let Some(ref mpv) = *self.mpv.borrow() {
-            mpv.set_vf(filter);
-        }
-    }
-
-    /// Rotate the preview video by `degrees` (multiples of 90).
-    pub fn set_rotation(&self, degrees: i32) {
-        if let Some(ref mpv) = *self.mpv.borrow() {
-            mpv.set_video_rotate(degrees as i64);
-        }
-    }
-
-    /// Apply horizontal and/or vertical flip to the preview;
-    /// rotation is recomputed because mpv composes the two
-    /// orientations.
-    pub fn set_flip(&self, horizontal: bool, vertical: bool) {
-        self.flip_h.set(horizontal);
-        self.flip_v.set(vertical);
-        if let Some(ref mpv) = *self.mpv.borrow() {
-            mpv.set_video_rotate(effective_rotation(self.rotation.get(), horizontal) as i64);
-        }
-        self.video_area.queue_render();
     }
 
     /// Push audio effects to the preview with a 150 ms debounce so
@@ -99,28 +72,6 @@ impl EditPage {
     pub fn set_contrast(&self, val: i64) {
         if let Some(ref mpv) = *self.mpv.borrow() {
             mpv.set_contrast(val);
-        }
-    }
-
-    /// Apply a `video-crop` rectangle in mpv string form
-    /// (`"WxH+X+Y"`).
-    pub fn set_crop(&self, crop: &str) {
-        if let Some(ref mpv) = *self.mpv.borrow() {
-            mpv.set_video_crop(crop);
-        }
-    }
-
-    /// Remove any active mpv `video-crop`.
-    pub fn clear_crop(&self) {
-        if let Some(ref mpv) = *self.mpv.borrow() {
-            mpv.set_video_crop("");
-        }
-    }
-
-    /// Seek the preview to `pos` seconds (absolute).
-    pub fn seek_to(&self, pos: f64) {
-        if let Some(ref mpv) = *self.mpv.borrow() {
-            mpv.seek_absolute(pos);
         }
     }
 

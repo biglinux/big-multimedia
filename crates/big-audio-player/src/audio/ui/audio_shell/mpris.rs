@@ -1,7 +1,11 @@
 use super::*;
 
 impl AudioShell {
-    pub(super) fn handle_mpris_command(&mut self, command: MprisCommand) {
+    pub(super) fn handle_mpris_command(
+        &mut self,
+        command: MprisCommand,
+        sender: &ComponentSender<Self>,
+    ) {
         // Revalidate track-bound commands here, after the D-Bus -> GTK hop.
         let state = self
             .mpris_state
@@ -78,6 +82,33 @@ impl AudioShell {
                 }
             }
             MprisCommand::Stop => {
+                self.is_playing = false;
+                self.sync_now_playing();
+                self.duration_secs = 0.0;
+                self.mpris_state.invalidate();
+                *self
+                    .mpris_state
+                    .status
+                    .lock()
+                    .unwrap_or_else(PoisonError::into_inner) = PlaybackStatus::Stopped;
+                *self
+                    .mpris_state
+                    .position
+                    .lock()
+                    .unwrap_or_else(PoisonError::into_inner) = 0.0;
+                *self
+                    .mpris_state
+                    .duration
+                    .lock()
+                    .unwrap_or_else(PoisonError::into_inner) = 0.0;
+                self.playback_bar
+                    .emit(AudioPlaybackBarInput::SetPaused(true));
+                self.playback_bar
+                    .emit(AudioPlaybackBarInput::SetPosition("0:00".into()));
+                self.playback_bar
+                    .emit(AudioPlaybackBarInput::SetDuration("0:00".into()));
+                self.playback_bar
+                    .emit(AudioPlaybackBarInput::SetSeekValue(0.0));
                 if let Some(mpv) = &self.mpv {
                     mpv.stop();
                 }
@@ -92,7 +123,7 @@ impl AudioShell {
                 let target = state.position_secs + offset_us as f64 / 1_000_000.0;
                 if state.duration_secs > 0.0 && target > state.duration_secs {
                     if state.can_next {
-                        self.handle_mpris_command(MprisCommand::Next);
+                        self.handle_mpris_command(MprisCommand::Next, sender);
                     }
                 } else if let Some(mpv) = &self.mpv {
                     mpv.seek_absolute_async(target.max(0.0));
@@ -117,6 +148,7 @@ impl AudioShell {
                 }
             }
             MprisCommand::OpenUri(uri) => {
+                self.cancel_pending_opens();
                 let file = gio::File::for_uri(&uri);
                 let path = file
                     .path()
@@ -124,9 +156,11 @@ impl AudioShell {
                     .unwrap_or(uri);
                 self.snapshot_queue();
                 self.podcast_mode = false;
-                self.queue.set_tracks(vec![Track::new_external_path(path)]);
+                self.queue
+                    .set_tracks(vec![Track::new_external_path(path.clone())]);
                 self.play_current();
                 self.commit_queue();
+                Self::load_external_metadata(vec![path], sender);
             }
             MprisCommand::SetVolume(volume) => {
                 if volume.is_finite()

@@ -1,9 +1,9 @@
 use std::io::{BufRead, BufReader, Read, Seek, Write};
 use std::net::{TcpListener, TcpStream};
 use std::sync::atomic::{AtomicBool, Ordering};
-use std::sync::{Arc, Mutex};
+use std::sync::{Arc, Condvar, Mutex, MutexGuard};
 use std::thread;
-use std::time::{Duration, SystemTime, UNIX_EPOCH};
+use std::time::{Duration, Instant};
 
 use log::{info, warn};
 
@@ -57,69 +57,81 @@ enum ByteRangeError {
 struct PipeBuffer {
     data: Vec<u8>,
     read_pos: usize,
+    /// ffmpeg's output ended (EOF or read error).
+    done: bool,
+}
+
+/// ffmpeg output waiting for the Chromecast. `changed` wakes the side that
+/// waits: the HTTP reader for new bytes, the ffmpeg reader for free space.
+struct Pipe {
+    buffer: Mutex<PipeBuffer>,
+    changed: Condvar,
+}
+
+/// Longest a waiter sleeps before rechecking the session's stop flag, which is
+/// set from outside and does not signal `changed`.
+const STOP_RECHECK: Duration = Duration::from_millis(200);
+
+impl Pipe {
+    fn lock(&self) -> MutexGuard<'_, PipeBuffer> {
+        self.buffer
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner)
+    }
+
+    fn wait<'a>(&self, buffer: MutexGuard<'a, PipeBuffer>) -> MutexGuard<'a, PipeBuffer> {
+        self.changed
+            .wait_timeout(buffer, STOP_RECHECK)
+            .map_or_else(|poisoned| poisoned.into_inner().0, |(buffer, _)| buffer)
+    }
 }
 
 struct PipeBufferReader {
-    state: Arc<Mutex<PipeBuffer>>,
-    pipe_done: Arc<AtomicBool>,
+    pipe: Arc<Pipe>,
     stop_flag: Arc<AtomicBool>,
 }
 
 impl Read for PipeBufferReader {
     fn read(&mut self, buf: &mut [u8]) -> std::io::Result<usize> {
+        let mut state = self.pipe.lock();
         loop {
             if self.stop_flag.load(Ordering::Relaxed) {
                 return Ok(0);
             }
-            {
-                let mut state = self
-                    .state
-                    .lock()
-                    .unwrap_or_else(std::sync::PoisonError::into_inner);
-                let available = state.data.len().saturating_sub(state.read_pos);
-                if available > 0 {
-                    let to_read = available.min(buf.len());
-                    buf[..to_read]
-                        .copy_from_slice(&state.data[state.read_pos..state.read_pos + to_read]);
-                    state.read_pos += to_read;
-                    if state.read_pos > TRIM_THRESHOLD {
-                        let pos = state.read_pos;
-                        state.data.drain(..pos);
-                        state.read_pos = 0;
-                    }
-                    return Ok(to_read);
+            let available = state.data.len().saturating_sub(state.read_pos);
+            if available > 0 {
+                let to_read = available.min(buf.len());
+                buf[..to_read]
+                    .copy_from_slice(&state.data[state.read_pos..state.read_pos + to_read]);
+                state.read_pos += to_read;
+                if state.read_pos > TRIM_THRESHOLD {
+                    let pos = state.read_pos;
+                    state.data.drain(..pos);
+                    state.read_pos = 0;
                 }
-                if self.pipe_done.load(Ordering::Relaxed) {
-                    return Ok(0);
-                }
+                drop(state);
+                // Space freed: let the ffmpeg side resume if it was held back.
+                self.pipe.changed.notify_all();
+                return Ok(to_read);
             }
-            thread::sleep(Duration::from_millis(50));
+            if state.done {
+                return Ok(0);
+            }
+            state = self.pipe.wait(state);
         }
     }
 }
 
 /// 128-bit hex token gating HTTP requests. The server binds 0.0.0.0 so the
 /// Chromecast can reach it, but LAN neighbors hitting any other path get 404.
-/// `/dev/urandom` source; degraded clock+pid+tid mix on failure (warned).
-fn make_session_token() -> String {
+/// Without kernel randomness there is no safe token, so the server refuses to
+/// start rather than expose the file behind a guessable one.
+fn make_session_token() -> Result<String> {
     let mut bytes = [0_u8; 16];
-    if let Ok(mut f) = std::fs::File::open("/dev/urandom")
-        && f.read_exact(&mut bytes).is_ok()
-    {
-        return encode_hex(&bytes);
-    }
-    warn!("Chromecast: /dev/urandom unavailable, using degraded token source");
-    let now = SystemTime::now()
-        .duration_since(UNIX_EPOCH)
-        .map_or(0, |d| d.as_nanos());
-    let pid = u128::from(std::process::id());
-    let tid = format!("{:?}", std::thread::current().id());
-    let mut mix = now ^ (pid << 64) ^ (tid.len() as u128);
-    for b in &mut bytes {
-        *b = (mix & 0xff) as u8;
-        mix = mix.rotate_left(7).wrapping_mul(0x9E37_79B9_7F4A_7C15);
-    }
-    encode_hex(&bytes)
+    std::fs::File::open("/dev/urandom")
+        .and_then(|mut f| f.read_exact(&mut bytes))
+        .map_err(|e| Error::chromecast(format!("no randomness for the stream token: {e}")))?;
+    Ok(encode_hex(&bytes))
 }
 
 fn encode_hex(bytes: &[u8]) -> String {
@@ -203,8 +215,15 @@ fn is_authorized_target(target: &str, token: &str) -> bool {
     let path = path
         .split_once('?')
         .map_or(path, |(path_only, _)| path_only);
-    path.strip_prefix('/')
-        .is_some_and(|candidate| candidate == token)
+    // Constant-time: the server is reachable from the whole LAN.
+    path.strip_prefix('/').is_some_and(|candidate| {
+        candidate.len() == token.len()
+            && candidate
+                .bytes()
+                .zip(token.bytes())
+                .fold(0, |diff, (a, b)| diff | (a ^ b))
+                == 0
+    })
 }
 
 fn parse_byte_range(
@@ -417,8 +436,7 @@ fn handle_file_request(mut stream: TcpStream, token: &str, path: &str, mime: &st
 fn handle_pipe_request(
     mut stream: TcpStream,
     token: &str,
-    state: &Arc<Mutex<PipeBuffer>>,
-    pipe_done: &Arc<AtomicBool>,
+    pipe: &Arc<Pipe>,
     stop_flag: &Arc<AtomicBool>,
 ) {
     prepare_http_stream(&mut stream);
@@ -444,17 +462,11 @@ fn handle_pipe_request(
     }
 
     {
-        let mut retries = 0;
-        loop {
-            let buffer = state
-                .lock()
-                .unwrap_or_else(std::sync::PoisonError::into_inner);
-            if !buffer.data.is_empty() || pipe_done.load(Ordering::Relaxed) || retries > 40 {
-                break;
-            }
-            drop(buffer);
-            retries += 1;
-            thread::sleep(Duration::from_millis(100));
+        // Give ffmpeg up to 4 s to produce the first bytes before answering.
+        let deadline = Instant::now() + Duration::from_secs(4);
+        let mut buffer = pipe.lock();
+        while buffer.data.is_empty() && !buffer.done && Instant::now() < deadline {
+            buffer = pipe.wait(buffer);
         }
     }
 
@@ -466,8 +478,7 @@ fn handle_pipe_request(
 
     if request.method.allows_body() {
         let mut pipe_reader = PipeBufferReader {
-            state: Arc::clone(state),
-            pipe_done: Arc::clone(pipe_done),
+            pipe: Arc::clone(pipe),
             stop_flag: Arc::clone(stop_flag),
         };
         if let Err(e) = std::io::copy(&mut pipe_reader, &mut stream) {
@@ -492,7 +503,7 @@ pub(in crate::cast::chromecast) fn start_file_server(
         .map_err(|e| Error::chromecast(format!("local addr: {e}")))?
         .port();
 
-    let token = make_session_token();
+    let token = make_session_token()?;
     let token_for_thread = token.clone();
     let path = file_path.to_string();
     thread::spawn(move || {
@@ -530,40 +541,41 @@ pub(in crate::cast::chromecast) fn start_pipe_server(
         .local_addr()
         .map_err(|e| Error::chromecast(format!("local addr: {e}")))?
         .port();
-    let token = make_session_token();
+    let token = make_session_token()?;
     let token_for_thread = token.clone();
 
-    let state: Arc<Mutex<PipeBuffer>> = Arc::new(Mutex::new(PipeBuffer {
-        data: Vec::with_capacity(1024 * 1024),
-        read_pos: 0,
-    }));
-    let pipe_done = Arc::new(AtomicBool::new(false));
+    let pipe = Arc::new(Pipe {
+        buffer: Mutex::new(PipeBuffer {
+            data: Vec::with_capacity(1024 * 1024),
+            read_pos: 0,
+            done: false,
+        }),
+        changed: Condvar::new(),
+    });
 
     {
-        let st = Arc::clone(&state);
-        let done = Arc::clone(&pipe_done);
+        let pipe = Arc::clone(&pipe);
         let stop = Arc::clone(&stop_flag);
         thread::spawn(move || {
             let mut reader = stdout;
             let mut chunk = vec![0_u8; 64 * 1024];
             loop {
+                // Hold ffmpeg back while the Chromecast is far behind.
+                let mut buffer = pipe.lock();
+                while buffer.data.len() - buffer.read_pos > MAX_BUFFER_AHEAD
+                    && !stop.load(Ordering::Relaxed)
+                {
+                    buffer = pipe.wait(buffer);
+                }
+                drop(buffer);
                 if stop.load(Ordering::Relaxed) {
                     break;
-                }
-                {
-                    let buffer = st.lock().unwrap_or_else(std::sync::PoisonError::into_inner);
-                    if buffer.data.len() - buffer.read_pos > MAX_BUFFER_AHEAD {
-                        drop(buffer);
-                        thread::sleep(Duration::from_millis(100));
-                        continue;
-                    }
                 }
                 match reader.read(&mut chunk) {
                     Ok(0) => break,
                     Ok(n) => {
-                        let mut buffer =
-                            st.lock().unwrap_or_else(std::sync::PoisonError::into_inner);
-                        buffer.data.extend_from_slice(&chunk[..n]);
+                        pipe.lock().data.extend_from_slice(&chunk[..n]);
+                        pipe.changed.notify_all();
                     }
                     Err(e) => {
                         warn!("Pipe reader error: {e}");
@@ -571,14 +583,15 @@ pub(in crate::cast::chromecast) fn start_pipe_server(
                     }
                 }
             }
-            done.store(true, Ordering::Relaxed);
+            pipe.lock().done = true;
+            pipe.changed.notify_all();
             info!("Pipe reader finished");
         });
     }
 
     thread::spawn(move || {
         while let Some(stream) = accept_next_connection(&listener, &stop_flag) {
-            handle_pipe_request(stream, &token_for_thread, &state, &pipe_done, &stop_flag);
+            handle_pipe_request(stream, &token_for_thread, &pipe, &stop_flag);
         }
         info!("HTTP pipe server stopped on port {port}");
     });
@@ -590,8 +603,44 @@ pub(in crate::cast::chromecast) fn start_pipe_server(
 #[cfg(test)]
 mod tests {
     use super::{
-        ByteRange, ByteRangeError, MAX_HEADER_BYTES, is_authorized_target, parse_byte_range,
+        ByteRange, ByteRangeError, MAX_HEADER_BYTES, Pipe, PipeBuffer, PipeBufferReader,
+        is_authorized_target, parse_byte_range,
     };
+    use std::io::Read;
+    use std::sync::atomic::AtomicBool;
+    use std::sync::{Arc, Condvar, Mutex};
+
+    #[test]
+    fn pipe_reader_wakes_on_data_and_ends_on_done() {
+        let pipe = Arc::new(Pipe {
+            buffer: Mutex::new(PipeBuffer {
+                data: Vec::new(),
+                read_pos: 0,
+                done: false,
+            }),
+            changed: Condvar::new(),
+        });
+        let writer = {
+            let pipe = Arc::clone(&pipe);
+            std::thread::spawn(move || {
+                for chunk in [b"abc".as_slice(), b"def"] {
+                    std::thread::sleep(std::time::Duration::from_millis(20));
+                    pipe.lock().data.extend_from_slice(chunk);
+                    pipe.changed.notify_all();
+                }
+                pipe.lock().done = true;
+                pipe.changed.notify_all();
+            })
+        };
+        let mut reader = PipeBufferReader {
+            pipe,
+            stop_flag: Arc::new(AtomicBool::new(false)),
+        };
+        let mut out = Vec::new();
+        reader.read_to_end(&mut out).unwrap();
+        writer.join().unwrap();
+        assert_eq!(out, b"abcdef");
+    }
 
     #[test]
     fn token_guard_accepts_only_exact_path() {

@@ -92,13 +92,6 @@ impl BigMediaSidebarSpec {
         self
     }
 
-    /// Set whether the sidebar starts visible.
-    #[must_use]
-    pub fn visible_initially(mut self, is_visible: bool) -> Self {
-        self.is_visible_initially = is_visible;
-        self
-    }
-
     /// Minimum sidebar width in pixels.
     #[must_use]
     pub fn min_width(self) -> f64 {

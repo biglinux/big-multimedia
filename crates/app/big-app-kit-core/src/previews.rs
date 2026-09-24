@@ -91,13 +91,6 @@ impl BigPreviewSpec {
         Self::new(BigPreviewKind::MiniTextEditor)
     }
 
-    /// Build a preview spec; defaults are applied per-kind via
-    /// `apply_kind_defaults`.
-    #[must_use]
-    pub fn mini_image_editor() -> Self {
-        Self::new(BigPreviewKind::MiniImageEditor)
-    }
-
     /// Flip the spec into editor mode: `read_only = false` and toolbar
     /// visible.
     #[must_use]

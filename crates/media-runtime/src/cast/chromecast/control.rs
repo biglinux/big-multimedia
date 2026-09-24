@@ -38,6 +38,10 @@ impl CastSessionController {
             .cast_file_path
             .lock()
             .unwrap_or_else(std::sync::PoisonError::into_inner) = None;
+        *self
+            .detected_gpu
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner) = None;
 
         if let Some(handle) = self
             .cast_thread

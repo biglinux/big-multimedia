@@ -44,12 +44,6 @@ impl BigToolbarEdge {
         BigToolbarEdge::Hidden,
     ];
 
-    /// Whether this edge is horizontal.
-    #[must_use]
-    pub fn is_horizontal(self) -> bool {
-        matches!(self, BigToolbarEdge::Top | BigToolbarEdge::Bottom)
-    }
-
     fn json_key(self) -> &'static str {
         match self {
             BigToolbarEdge::Top => "top",
@@ -191,16 +185,6 @@ impl BigToolbarLayout {
         layout
     }
 
-    /// Decode a saved JSON string and normalize it against `catalog`.
-    ///
-    /// Invalid JSON falls back to the catalog default.
-    #[must_use]
-    pub fn from_json_str(raw: &str, catalog: BigToolbarCatalog<'_>) -> Self {
-        serde_json::from_str::<Value>(raw)
-            .map(|value| Self::from_value(&value, catalog))
-            .unwrap_or_else(|_| Self::default_for(catalog))
-    }
-
     /// Serialize with the catalog schema version and historic JSON field names.
     #[must_use]
     pub fn to_value(&self, catalog: BigToolbarCatalog<'_>) -> Value {
@@ -212,18 +196,6 @@ impl BigToolbarLayout {
             "right": self.end,
             "hidden": self.hidden,
         })
-    }
-
-    /// Serialize as a compact JSON string for string-only preference stores.
-    ///
-    /// # Errors
-    ///
-    /// Returns a serde error only if the layout cannot be serialized.
-    pub fn to_json_string(
-        &self,
-        catalog: BigToolbarCatalog<'_>,
-    ) -> Result<String, serde_json::Error> {
-        serde_json::to_string(&self.to_value(catalog))
     }
 
     /// Items on `edge`, in display order.

@@ -122,12 +122,6 @@ impl BigFieldSpec {
         Self::new(id, label, BigFieldKind::Slider)
     }
 
-    /// Shortcut: color picker row.
-    #[must_use]
-    pub fn color_row(id: impl Into<String>, label: impl Into<String>) -> Self {
-        Self::new(id, label, BigFieldKind::Color)
-    }
-
     /// Shortcut: font picker row.
     #[must_use]
     pub fn font_row(id: impl Into<String>, label: impl Into<String>) -> Self {

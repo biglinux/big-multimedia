@@ -14,7 +14,8 @@ use crate::settings::keys;
 pub(crate) fn install_menu_actions(state: &Rc<BrowserState>, group: &gio::SimpleActionGroup) {
     use glib::prelude::ToVariant;
 
-    // Shuffle — boolean toggle (persist only; does not reorder the listing).
+    // Shuffle — boolean toggle. mpv plays in random order; the listing keeps
+    // its folder order.
     let shuffle = gio::SimpleAction::new_stateful(
         "shuffle",
         None,
@@ -29,6 +30,10 @@ pub(crate) fn install_menu_actions(state: &Rc<BrowserState>, group: &gio::Simple
                 .unwrap_or(false);
             action.set_state(&on.to_variant());
             state.settings.put_bool(keys::PLAYLIST_SHUFFLE, on);
+            state
+                .sender
+                .output(VideoBrowserSidebarOutput::SetShuffle(on))
+                .ok();
         }
     });
     group.add_action(&shuffle);
@@ -45,6 +50,10 @@ pub(crate) fn install_menu_actions(state: &Rc<BrowserState>, group: &gio::Simple
             if let Some(mode) = target.and_then(glib::Variant::get::<String>) {
                 action.set_state(&mode.to_variant());
                 state.settings.put_string(keys::LOOP_MODE, &mode);
+                state
+                    .sender
+                    .output(VideoBrowserSidebarOutput::SetLoopMode(mode))
+                    .ok();
             }
         }
     });
@@ -138,16 +147,28 @@ pub(crate) fn install_menu_actions(state: &Rc<BrowserState>, group: &gio::Simple
 fn apply_sort(state: &Rc<BrowserState>) {
     let key = state.settings.get_string(keys::PLAYLIST_SORT);
     let desc = state.settings.get_bool(keys::PLAYLIST_SORT_DESC);
-    resort(state, |list| playlist::sort_paths(list, &key, desc));
-}
-
-/// Apply an in-place reordering to the entries, keeping the current item lit.
-fn resort(state: &Rc<BrowserState>, reorder: impl Fn(&mut Vec<String>)) {
-    let mut list = state.entries.borrow().clone();
-    reorder(&mut list);
-    state.entries.replace(list);
-    state.recompute_pos();
-    state.rebuild();
+    // Date and size sorts stat every file: run them off the GTK thread (a big
+    // folder on a network mount would freeze the window).
+    let before = state.entries.borrow().clone();
+    let state = state.clone();
+    big_media_components::player_chrome::spawn_blocking_result(
+        {
+            let mut list = before.clone();
+            move || {
+                playlist::sort_paths(&mut list, &key, desc);
+                list
+            }
+        },
+        move |sorted| {
+            // The listing may have changed while sorting; don't clobber it.
+            if *state.entries.borrow() == before {
+                state.entries.replace(sorted);
+                // Keep the current item lit at its new position.
+                state.recompute_pos();
+                state.rebuild();
+            }
+        },
+    );
 }
 
 /// Clear the play queue + the shell's mpv playlist (overflow menu action).

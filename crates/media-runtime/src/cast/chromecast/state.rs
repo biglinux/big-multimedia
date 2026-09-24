@@ -22,6 +22,10 @@ pub struct CastSessionController {
     pub(super) cast_file_path: Mutex<Option<String>>,
     /// Pre-fills filter dialogs with the active values.
     pub(super) active_filters: Mutex<crate::cast::transcode::TranscodeFilters>,
+    /// Encoder detected for this cast session. Detection runs lspci plus an
+    /// ffmpeg probe per device (5 s deadline each), so seeks and filter
+    /// changes reuse it; `stop_casting` clears it so the next cast re-detects.
+    pub(super) detected_gpu: Mutex<Option<(crate::cast::gpu::GpuType, String)>>,
 }
 
 impl Default for CastSessionController {
@@ -47,6 +51,7 @@ impl CastSessionController {
             local_ip: Mutex::new(None),
             cast_file_path: Mutex::new(None),
             active_filters: Mutex::new(crate::cast::transcode::TranscodeFilters::default()),
+            detected_gpu: Mutex::new(None),
         }
     }
 
@@ -84,6 +89,22 @@ impl CastSessionController {
         self.casting_device_name
             .lock()
             .unwrap_or_else(std::sync::PoisonError::into_inner)
+            .clone()
+    }
+
+    /// Encoder for a transcode: the user's override, else this session's
+    /// detected device. Call from a worker; the first detection can block.
+    pub(super) fn resolve_gpu(
+        &self,
+        filters: &crate::cast::transcode::TranscodeFilters,
+    ) -> (crate::cast::gpu::GpuType, String) {
+        if let Some(gpu) = filters.gpu_override {
+            return (gpu, filters.gpu_device_path.clone());
+        }
+        self.detected_gpu
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner)
+            .get_or_insert_with(crate::cast::gpu::detect_gpu_device)
             .clone()
     }
 

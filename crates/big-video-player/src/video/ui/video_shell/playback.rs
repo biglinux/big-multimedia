@@ -41,6 +41,20 @@ impl VideoShell {
                 }
             }
             PlayerEvent::FileLoaded(_title) => {
+                // Idle mode ("close player" / "close after first file") is only
+                // safe with a file loaded: on an empty playlist `idle=no` would
+                // make mpv quit at startup.
+                if let Some(mpv) = self.mpv.borrow().as_ref() {
+                    mpv.set_idle(&self.settings.get_string(keys::IDLE_MODE));
+                }
+                if let Some((path, count)) = &self.shuffle_on_load
+                    && let Some(mpv) = self.mpv.borrow().as_ref()
+                    && mpv.get_current_file().as_ref() == Some(path)
+                    && usize::try_from(mpv.get_playlist_count()).ok() == Some(*count)
+                {
+                    mpv.playlist_shuffle(true);
+                    self.shuffle_on_load = None;
+                }
                 self.controls
                     .emit(VideoControlsBarInput::SetControlsSensitive(true));
                 // Hand the loaded *path* to the controls bar so the seek-hover
@@ -115,6 +129,13 @@ impl VideoShell {
             // reasons (EOF=0, stop=2, quit=3, redirect=5) are a normal end of
             // playback — surface only the error so the user gets feedback
             // instead of a silent blank screen.
+            // mpv quit on its own (idle mode "close player" at the end of the
+            // playlist): close the window instead of leaving a dead player.
+            PlayerEvent::Shutdown if !self.mode.is_background() => {
+                if let Some(root) = root {
+                    root.close();
+                }
+            }
             PlayerEvent::EndFile(4) => self.toast(&i18n(
                 "Could not play this file — it may be unsupported or corrupt.",
             )),
@@ -186,11 +207,12 @@ impl VideoShell {
         });
     }
 
-    /// Load a resolved playlist into mpv in natural order and start at `start`
-    /// (so prev/next traverse the whole list and sidebar indices align with
-    /// mpv's). No-op until mpv is live. Tracks `playlist_paths` for later
-    /// in-place jumps and removals; does NOT push the sidebar listing — the
-    /// caller does that (either an external open or a sidebar `PlayFromList`).
+    /// Load a resolved playlist into mpv in natural order and start at `start`,
+    /// then shuffle it when that setting is on. No-op until mpv is live.
+    /// `playlist_paths` keeps the natural order to recognize the same list
+    /// again; mpv indices always come from mpv's live order, which shuffle
+    /// changes. Does NOT push the sidebar listing — the caller does that
+    /// (either an external open or a sidebar `PlayFromList`).
     fn load_playlist(&mut self, entries: &[String], start: usize) {
         let mpv_ref = self.mpv.borrow();
         let Some(mpv) = mpv_ref.as_ref() else {
@@ -212,6 +234,13 @@ impl VideoShell {
         mpv.play();
         drop(mpv_ref);
         self.playlist_paths = entries.to_vec();
+        // The loads above are queued, and mpv starts `entries[0]` before the
+        // jump to `start`: shuffle once the chosen file is loaded with the
+        // whole list in place.
+        self.shuffle_on_load = self
+            .settings
+            .get_bool(keys::PLAYLIST_SHUFFLE)
+            .then(|| (entries[start.min(entries.len() - 1)].clone(), entries.len()));
         // The sidebar stays hidden until the header playlist toggle opens it
         // (matches the old design).
     }
@@ -229,8 +258,12 @@ impl VideoShell {
             VideoBrowserSidebarOutput::PlayFromList { paths, start } => {
                 // Same list already loaded → jump in place; else reload mpv.
                 if is_same_playlist(&paths, &self.playlist_paths) {
-                    if let Some(mpv) = self.mpv.borrow().as_ref() {
-                        mpv.playlist_play_index(start as i64);
+                    if let Some(mpv) = self.mpv.borrow().as_ref()
+                        && let Some(index) = paths
+                            .get(start)
+                            .and_then(|path| playlist_index_of(&mpv.get_playlist_paths(), path))
+                    {
+                        mpv.playlist_play_index(index as i64);
                     }
                 } else {
                     self.load_playlist(&paths, start);
@@ -247,6 +280,16 @@ impl VideoShell {
             VideoBrowserSidebarOutput::SendToConverter(paths) => self.send_to_converter(&paths),
             VideoBrowserSidebarOutput::TrashFiles(paths) => self.trash_files(paths),
             VideoBrowserSidebarOutput::Notify(msg) => self.toast(&msg),
+            VideoBrowserSidebarOutput::SetLoopMode(mode) => {
+                if let Some(mpv) = self.mpv.borrow().as_ref() {
+                    mpv.set_loop_mode(&mode);
+                }
+            }
+            VideoBrowserSidebarOutput::SetShuffle(shuffle) => {
+                if let Some(mpv) = self.mpv.borrow().as_ref() {
+                    mpv.playlist_shuffle(shuffle);
+                }
+            }
         }
     }
 
@@ -262,8 +305,12 @@ impl VideoShell {
             return;
         }
         // argv array (no shell); paths are existing local files from the scan.
+        // `--` keeps a name starting with `-` from reading as an option.
         let spawned = big_app_kit::subprocess::BigSubprocessSpec::builder()
-            .program("big-video-converter")
+            // The GUI: plain `big-video-converter` is the headless CLI, which
+            // would start converting the first file with default settings.
+            .program("big-video-converter-gui")
+            .arg("--")
             .args(paths.iter().cloned())
             .build()
             .spawn_detached();
@@ -280,12 +327,7 @@ impl VideoShell {
     fn trash_files(&mut self, paths: Vec<String>) {
         // Queue cleanup is instant (in-memory + a fast mpv ipc) — do it now.
         for path in &paths {
-            if let Some(i) = playlist_index_of(&self.playlist_paths, path) {
-                if let Some(mpv) = self.mpv.borrow().as_ref() {
-                    mpv.playlist_remove(i as i64);
-                }
-                self.playlist_paths.remove(i);
-            }
+            self.remove_playlist_entry(path);
         }
 
         let toast_overlay = self.toast_overlay.clone();
@@ -363,8 +405,10 @@ impl VideoShell {
     /// its own listing). No-op if the listing has since diverged from mpv.
     fn remove_playlist_entry(&mut self, path: &str) {
         if let Some(i) = playlist_index_of(&self.playlist_paths, path) {
-            if let Some(mpv) = self.mpv.borrow().as_ref() {
-                mpv.playlist_remove(i as i64);
+            if let Some(mpv) = self.mpv.borrow().as_ref()
+                && let Some(index) = playlist_index_of(&mpv.get_playlist_paths(), path)
+            {
+                mpv.playlist_remove(index as i64);
             }
             self.playlist_paths.remove(i);
         }

@@ -69,25 +69,6 @@ impl BigSidebarDialogSpec {
         self.content_title = title.into();
         self
     }
-
-    /// Override the sidebar width policy (fraction, min px, max px).
-    #[must_use]
-    pub fn sidebar_widths(mut self, fraction: f64, min: f64, max: f64) -> Self {
-        self.sidebar_width_fraction = Some(fraction);
-        self.min_sidebar_width = min;
-        self.max_sidebar_width = max;
-        self
-    }
-
-    /// Set only the min/max sidebar width, leaving the split view's default
-    /// width fraction untouched.
-    #[must_use]
-    pub fn sidebar_width_range(mut self, min: f64, max: f64) -> Self {
-        self.sidebar_width_fraction = None;
-        self.min_sidebar_width = min;
-        self.max_sidebar_width = max;
-        self
-    }
 }
 
 /// A sidebar split assembled from a [`BigSidebarDialogSpec`]. Holds the pane
@@ -171,16 +152,6 @@ impl BigSidebarDialog {
     #[must_use]
     pub fn root(&self) -> &adw::NavigationSplitView {
         &self.root
-    }
-
-    /// The content header's live title widget, for callers that update it from
-    /// a signal without strong-capturing the whole dialog (a `dialog.clone()`
-    /// inside a widget-owned closure forms a `root ⇄ content child` ref cycle
-    /// that leaks the split view + its content). Downgrade this and upgrade in
-    /// the closure instead.
-    #[must_use]
-    pub fn content_title_widget(&self) -> &adw::WindowTitle {
-        &self.content_title
     }
 
     /// Set the sidebar pane's body widget.

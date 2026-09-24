@@ -432,18 +432,6 @@ pub fn suite_settings_file() -> PathBuf {
         .join(SUITE_SETTINGS_FILE_NAME)
 }
 
-/// Open the suite-wide settings store (no defaults — suite keys default
-/// in the reading app so an absent key keeps app-level fallbacks).
-///
-/// # Errors
-///
-/// Returns [`BigStorageError`] when the file exists but cannot be read or
-/// parsed; callers typically log and fall back to
-/// [`BigSettingsStore::blank`] with the same path.
-pub fn open_suite_settings(app_version: &str) -> Result<BigSettingsStore, BigStorageError> {
-    BigSettingsStore::open(&suite_settings_file(), app_version, &Map::new())
-}
-
 /// One-shot import: copy keys accepted by `key_filter` from a legacy
 /// settings document (suite envelope or bare root) into `store`, skipping
 /// keys the store already has, then save. The legacy file is never

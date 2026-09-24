@@ -22,6 +22,19 @@ pub(crate) struct QueueHistory {
 }
 
 impl QueueHistory {
+    /// Metadata arrival is not a queue edit and must survive undo and redo.
+    pub(crate) fn resolve_metadata(&mut self, tracks: &std::collections::HashMap<String, Track>) {
+        for snapshot in self.undo.iter_mut().chain(&mut self.redo) {
+            for track in snapshot {
+                if track.id == 0
+                    && let Some(metadata) = tracks.get(&track.file_path)
+                {
+                    track.apply_file_metadata(metadata);
+                }
+            }
+        }
+    }
+
     /// Record the pre-edit track list; clears the redo history. Call before any
     /// user-initiated queue mutation.
     pub(crate) fn snapshot(&mut self, current: Vec<Track>) {
@@ -87,6 +100,26 @@ mod tests {
         let _ = h.undo(vec![track(1), track(2)]);
         h.snapshot(vec![track(1)]); // a fresh edit invalidates redo
         assert!(h.redo(vec![track(1)]).is_none());
+    }
+
+    #[test]
+    fn resolved_tags_survive_undo_and_redo() {
+        let blank = Track::new_external_path("song.flac");
+        let mut history = QueueHistory::default();
+        history.snapshot(vec![blank.clone()]);
+        history.snapshot(vec![blank.clone(), track(1)]);
+        history.undo(vec![blank.clone(), track(1), track(2)]);
+        let mut tagged = blank.clone();
+        tagged.title = Some("Title from file".into());
+        tagged.duration_secs = 120.0;
+        history.resolve_metadata(&std::collections::HashMap::from([(
+            tagged.file_path.clone(),
+            tagged.clone(),
+        )]));
+        // The shell enriches its current queue as well as the retained history.
+        let restored = history.undo(vec![tagged.clone()]).unwrap();
+        assert_eq!(restored[0], tagged);
+        assert_eq!(history.redo(restored).unwrap()[0], tagged);
     }
 
     #[test]

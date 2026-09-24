@@ -44,12 +44,11 @@ impl FfmpegJob {
         } else {
             None
         };
-        let nr_enabled = nr_filter.is_some();
         let channels = self.input_audio_channels;
 
-        if nr_enabled && channels > 1 {
-            let ladspa = nr_filter.expect("nr_enabled implies filter");
-
+        if channels > 1
+            && let Some(ladspa) = &nr_filter
+        {
             let layout = match channels {
                 1 => "mono",
                 3 => "3.0",

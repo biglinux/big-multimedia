@@ -24,11 +24,7 @@ big-app-kit.workspace = true
 # re-exported from `input::zone_layout` (the editor + runtime applier consume it
 # without the widget graph living in core).
 big-app-kit-core.workspace = true
-big-appearance.workspace = true
-# `mem::trim_arenas` for dialog teardown (single canonical impl; light default).
 big-os-kit.workspace = true
-# Split-tree layout capture nodes (`pane::split_tree_layout`).
-serde_json.workspace = true
 
 [dev-dependencies]
 # Shared leak/census harness for examples/leak_soak (finalization census).

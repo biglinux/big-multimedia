@@ -196,9 +196,12 @@ fn ensure_frames(path: &str) -> Vec<PathBuf> {
     let mut frames = Vec::with_capacity(SCRUB_FRAME_COUNT);
     for frame_index in 0..SCRUB_FRAME_COUNT {
         let frame = clip_directory.join(format!("{frame_index}.jpg"));
-        if !frame.exists() {
+        // ffmpeg writes to a side name that is renamed into place only when
+        // complete, so a killed run can't leave a broken frame cached forever.
+        if !frame.metadata().is_ok_and(|m| m.len() > 0) {
             let time = sample_time_secs(frame_index, duration);
-            let Some(output_path) = frame.to_str() else {
+            let partial = clip_directory.join(format!("{frame_index}.part.jpg"));
+            let Some(output_path) = partial.to_str() else {
                 continue;
             };
             let _ = BigSubprocessSpec::builder()
@@ -223,6 +226,11 @@ fn ensure_frames(path: &str) -> Vec<PathBuf> {
                 .stderr(BigSubprocessOutputMode::Null)
                 .build()
                 .run();
+            if partial.metadata().is_ok_and(|m| m.len() > 0) {
+                let _ = std::fs::rename(&partial, &frame);
+            } else {
+                let _ = std::fs::remove_file(&partial);
+            }
         }
         if frame.exists() {
             frames.push(frame);

@@ -1,5 +1,4 @@
-# caveman: local equivalent of .github/workflows/ci.yml
-# act unavailable on host — run `make -f Makefile.ci ci` for full gate.
+# Local quality gate: run `make -f Makefile.ci ci`.
 
 PROJECT      := big-audio-player
 BIN_NAME     := big-audio-player

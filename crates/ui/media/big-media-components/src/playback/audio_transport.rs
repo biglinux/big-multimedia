@@ -353,12 +353,6 @@ impl BigAudioTransport {
         &self.cut_timeline
     }
 
-    /// Borrow the stack that swaps the normal seek scale for the cut timeline.
-    #[must_use]
-    pub fn seek_stack(&self) -> &gtk::Stack {
-        &self.bar_stack
-    }
-
     /// Show either the normal seek scale or the trim-mode cut timeline.
     pub fn set_cut_timeline_visible(&self, visible: bool) {
         self.bar_stack

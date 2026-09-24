@@ -128,6 +128,7 @@ struct DelaySliderSpec {
     illustration: &'static str,
     title: &'static str,
     subtitle: &'static str,
+    initial: f64,
     apply: fn(&MpvBackend, f64),
 }
 
@@ -176,12 +177,14 @@ fn build_delay_content(mpv: &Arc<MpvBackend>) -> gtk::Widget {
             illustration: "sub_delay.svg",
             title: gettext_noop("Subtitle Delay"),
             subtitle: gettext_noop("Shift subtitles forward or backward in time"),
+            initial: mpv.get_property_f64("sub-delay"),
             apply: |mpv, value| mpv.set_sub_delay(value),
         },
         DelaySliderSpec {
             illustration: "audio_delay.svg",
             title: gettext_noop("Audio Delay"),
             subtitle: gettext_noop("Shift audio forward or backward in time"),
+            initial: mpv.get_property_f64("audio-delay"),
             apply: |mpv, value| mpv.set_audio_delay(value),
         },
     ];
@@ -194,7 +197,7 @@ fn build_delay_content(mpv: &Arc<MpvBackend>) -> gtk::Widget {
                 -10.0,
                 10.0,
                 0.0,
-                0.0,
+                clamp_initial(spec.initial, -10.0, 10.0),
                 0.1,
                 i18n("Reset to zero"),
             )
@@ -203,7 +206,7 @@ fn build_delay_content(mpv: &Arc<MpvBackend>) -> gtk::Widget {
             .digits(1)
             .value_suffix(" s")
             .value_width_chars(7)
-            .scale_width_request(240)
+            .scale_width_request(80)
             .title_heading(true)
             .mark_label(Some("0")),
         );
@@ -248,7 +251,7 @@ fn add_image_group(
             .illustration_name(spec.illustration)
             .subtitle(i18n(spec.subtitle))
             .digits(spec.digits)
-            .scale_width_request(200);
+            .scale_width_request(80);
             let mpv = Arc::clone(mpv);
             let apply = spec.apply;
             BigAdjustAxis::new(row_spec, move |value| apply(&mpv, value))
@@ -497,8 +500,6 @@ fn build_image_content(
     let content = gtk::Box::builder()
         .orientation(gtk::Orientation::Vertical)
         .spacing(18)
-        .margin_start(16)
-        .margin_end(16)
         .margin_top(12)
         .margin_bottom(16)
         .build();
@@ -545,7 +546,7 @@ fn build_image_content(
         ImageSliderSpec {
             illustration: "saturation.svg",
             title: gettext_noop("Saturation"),
-            subtitle: gettext_noop("Color intensity — 0 = grayscale"),
+            subtitle: gettext_noop("Color intensity — -100 = grayscale, 0 = original colors"),
             lower: -100.0,
             upper: 100.0,
             default: 0.0,
@@ -579,7 +580,7 @@ fn build_image_content(
         ImageSliderSpec {
             illustration: "zoom.svg",
             title: gettext_noop("Zoom"),
-            subtitle: gettext_noop("Magnify the picture — 0 = fit window, 2 = double size"),
+            subtitle: gettext_noop("Magnify the picture — 0 = fit window, 1 = double size"),
             lower: 0.0,
             upper: 2.0,
             default: 0.0,
@@ -613,19 +614,11 @@ fn build_image_content(
     build_transform_group(&content, mpv, transform_state);
     build_crop_group(&content, mpv, transform_state);
 
-    let clamp = adw::Clamp::builder()
-        .maximum_size(520)
-        .child(&content)
-        .build();
-    let scroll = gtk::ScrolledWindow::builder()
-        .vexpand(true)
-        .child(&clamp)
-        .build();
-    scroll.upcast()
+    content.upcast()
 }
 
-/// Wrap dialog `content` in a titled `adw::Dialog` with a header bar, persist
-/// its size, and present it over `root`. Esc-to-close is built into
+/// Wrap dialog `content` in a scrolled, clamped page inside a titled
+/// `adw::Dialog` and present it over `root`. Esc-to-close is built into
 /// `adw::Dialog`.
 fn present_adjust_dialog(
     content: &gtk::Widget,
@@ -648,7 +641,7 @@ fn present_adjust_dialog(
 /// Present the "Audio and Subtitle Delay" dialog bound to `mpv`.
 pub(super) fn present_delay_dialog(mpv: &Arc<MpvBackend>, root: &adw::ApplicationWindow) {
     let content = build_delay_content(mpv);
-    present_adjust_dialog(&content, &i18n("Audio and Subtitle Delay"), 460, 320, root);
+    present_adjust_dialog(&content, &i18n("Audio and Subtitle Delay"), 460, 480, root);
 }
 
 /// Present the "Image and Video" dialog bound to `mpv`.

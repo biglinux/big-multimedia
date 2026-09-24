@@ -2,7 +2,7 @@
 
 use std::path::Path;
 
-use big_app_kit::subprocess::{BigSubprocessOutputMode, BigSubprocessSpec};
+use big_app_kit::subprocess::BigSubprocessSpec;
 use log::warn;
 use serde_json::Value;
 
@@ -22,17 +22,6 @@ pub struct CastProbeResult {
     pub is_10bit: bool,
     pub width: u32,
     pub height: u32,
-}
-
-pub fn ffprobe_available() -> bool {
-    BigSubprocessSpec::builder()
-        .program("ffprobe")
-        .arg("-version")
-        .stdout(BigSubprocessOutputMode::Null)
-        .stderr(BigSubprocessOutputMode::Null)
-        .build()
-        .run()
-        .is_ok_and(|o| o.status.success())
 }
 
 fn run_ffprobe(file_path: &str) -> Result<String> {
@@ -181,69 +170,6 @@ impl MediaTrack {
     pub fn is_bitmap_subtitle(&self) -> bool {
         big_media_components::subtitle::codecs::is_bitmap_subtitle_codec(&self.codec)
     }
-}
-
-pub fn probe_tracks(file_path: &str) -> (Vec<MediaTrack>, Vec<MediaTrack>) {
-    let args = ffprobe_streams_argv(file_path, false);
-    let Some(sandboxed) =
-        crate::cast::sandbox::wrap_args("ffprobe", &args, &[Path::new(file_path)], &[])
-    else {
-        return (Vec::new(), Vec::new());
-    };
-    let output = match BigSubprocessSpec::builder()
-        .program("bwrap")
-        .args(sandboxed)
-        .build()
-        .run()
-    {
-        Ok(o) if o.status.success() => o,
-        _ => return (Vec::new(), Vec::new()),
-    };
-
-    let json_str = String::from_utf8_lossy(&output.stdout);
-    parse_tracks(&json_str)
-}
-
-fn parse_tracks(json: &str) -> (Vec<MediaTrack>, Vec<MediaTrack>) {
-    let mut audio_tracks = Vec::new();
-    let mut subtitle_tracks = Vec::new();
-
-    let Ok(root) = serde_json::from_str::<Value>(json) else {
-        return (audio_tracks, subtitle_tracks);
-    };
-    let Some(streams) = root.get("streams").and_then(Value::as_array) else {
-        return (audio_tracks, subtitle_tracks);
-    };
-
-    for stream in streams {
-        let codec_type = get_str(stream, "codec_type");
-        if codec_type != "audio" && codec_type != "subtitle" {
-            continue;
-        }
-        let track = MediaTrack {
-            stream_index: stream.get("index").and_then(Value::as_u64).unwrap_or(0) as usize,
-            title: stream
-                .get("tags")
-                .and_then(|t| t.get("title"))
-                .and_then(Value::as_str)
-                .map(String::from)
-                .unwrap_or_default(),
-            language: stream
-                .get("tags")
-                .and_then(|t| t.get("language"))
-                .and_then(Value::as_str)
-                .map(String::from)
-                .unwrap_or_default(),
-            codec: get_str(stream, "codec_name"),
-        };
-        if codec_type == "audio" {
-            audio_tracks.push(track);
-        } else {
-            subtitle_tracks.push(track);
-        }
-    }
-
-    (audio_tracks, subtitle_tracks)
 }
 
 #[cfg(test)]
@@ -431,30 +357,6 @@ mod tests {
                 "expected `--` before hostile path; argv={argv:?}",
             );
         }
-    }
-
-    #[test]
-    fn parse_tracks_extracts_audio_and_subtitles() {
-        let json = r#"{
-    "streams": [
-        { "index": 0, "codec_type": "video", "codec_name": "h264" },
-        { "index": 1, "codec_type": "audio", "codec_name": "aac",
-          "tags": { "language": "eng", "title": "English" } },
-        { "index": 2, "codec_type": "audio", "codec_name": "ac3",
-          "tags": { "language": "por" } },
-        { "index": 3, "codec_type": "subtitle", "codec_name": "subrip",
-          "tags": { "language": "eng" } }
-    ]
-}"#;
-        let (audio, subs) = parse_tracks(json);
-        assert_eq!(audio.len(), 2);
-        assert_eq!(audio[0].stream_index, 1);
-        assert_eq!(audio[0].language, "eng");
-        assert_eq!(audio[0].title, "English");
-        assert_eq!(audio[1].language, "por");
-        assert_eq!(audio[1].title, "");
-        assert_eq!(subs.len(), 1);
-        assert_eq!(subs[0].codec, "subrip");
     }
 
     #[test]

@@ -1,25 +1,19 @@
 use std::path::Path;
 
 use crate::error::Result;
-use crate::media::iptv::{IptvChannel, parse_m3u_file};
+use crate::media::iptv::{parse_m3u_file, read_playlist_text};
 use crate::media::playlist::display_name;
 
-/// Filters non-existent local entries; URLs always pass.
+/// Filters non-existent local entries; URLs always pass. Shares the line loop
+/// with the IPTV parser: an entry is every non-comment line, whether or not it
+/// carries `#EXTINF` attributes.
 pub fn parse_m3u(path: &Path) -> Vec<String> {
-    let Ok(content) = std::fs::read_to_string(path) else {
-        return Vec::new();
-    };
     let base_dir = path.parent().unwrap_or_else(|| Path::new("/"));
-    content
-        .lines()
-        .filter(|line| !line.is_empty() && !line.starts_with('#'))
-        .map(|line| resolve_playlist_entry(base_dir, line.trim()))
+    parse_m3u_file(path)
+        .into_iter()
+        .map(|channel| resolve_playlist_entry(base_dir, &channel.url))
         .filter(|entry| is_resolved_playlist_entry_valid(entry))
         .collect()
-}
-
-pub fn parse_iptv_m3u(path: &Path) -> Vec<IptvChannel> {
-    parse_m3u_file(path)
 }
 
 /// Worker-only export. Never overwrite an existing user document and never
@@ -78,7 +72,7 @@ pub fn export_m3u(paths: &[String], output_path: &str) -> Result<()> {
 }
 
 pub(crate) fn parse_pls_file(path: &Path) -> Vec<String> {
-    let Ok(content) = std::fs::read_to_string(path) else {
+    let Some(content) = read_playlist_text(path) else {
         return Vec::new();
     };
     let base_dir = path.parent().unwrap_or_else(|| Path::new("/"));
@@ -93,6 +87,8 @@ pub(crate) fn parse_pls_file(path: &Path) -> Vec<String> {
                 None
             }
         })
+        // Same guard as M3U: a crafted .pls must not reach system paths.
+        .filter(|entry| is_resolved_playlist_entry_valid(entry))
         .collect()
 }
 

@@ -1,4 +1,3 @@
-//! Subtitle handling: codec maps and dialog.
+//! Subtitle codec maps.
 
 pub mod codecs;
-pub mod handling_dialog;

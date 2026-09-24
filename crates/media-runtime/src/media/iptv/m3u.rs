@@ -46,13 +46,35 @@ pub fn parse_m3u_content(content: &str) -> Vec<IptvChannel> {
     channels
 }
 
+/// Largest playlist file read from disk. IPTV provider lists run to tens of
+/// megabytes; anything bigger is refused instead of loaded into memory.
+pub const MAX_PLAYLIST_BYTES: u64 = 64 * 1024 * 1024;
+
+/// Read a playlist file as UTF-8, refusing files over [`MAX_PLAYLIST_BYTES`].
+#[must_use]
+pub fn read_playlist_text(path: &Path) -> Option<String> {
+    use std::io::Read;
+    let mut text = String::new();
+    std::fs::File::open(path)
+        .ok()?
+        .take(MAX_PLAYLIST_BYTES + 1)
+        .read_to_string(&mut text)
+        .ok()?;
+    if text.len() as u64 > MAX_PLAYLIST_BYTES {
+        log::warn!("playlist over {MAX_PLAYLIST_BYTES} bytes ignored");
+        return None;
+    }
+    Some(text)
+}
+
 /// Read and parse an M3U/M3U8 file from disk.
 ///
-/// Returns an empty vector on read error — callers that need to distinguish
-/// "file missing" from "valid but empty" should check existence first.
+/// Returns an empty vector on read error or an oversized file — callers that
+/// need to distinguish "file missing" from "valid but empty" should check
+/// existence first.
 #[must_use]
 pub fn parse_m3u_file(path: &Path) -> Vec<IptvChannel> {
-    std::fs::read_to_string(path)
+    read_playlist_text(path)
         .map(|s| parse_m3u_content(&s))
         .unwrap_or_default()
 }
@@ -74,6 +96,15 @@ fn extract_display_name(line: &str) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    proptest::proptest! {
+        // Playlists come from disk and the network: any text parses without
+        // panicking, into at most one entry per line.
+        #[test]
+        fn parse_never_panics(text in "\\PC{0,4096}") {
+            proptest::prop_assert!(parse_m3u_content(&text).len() <= text.lines().count());
+        }
+    }
 
     #[test]
     fn parses_basic_channels() {

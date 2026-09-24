@@ -7,3 +7,5 @@ mod effects;
 mod music;
 
 pub use chain::build_audio_filter_chain;
+#[cfg(feature = "video")]
+pub(super) use control::software_hwdec;

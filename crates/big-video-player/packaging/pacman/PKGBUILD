@@ -27,11 +27,6 @@ conflicts=('big-player-video' 'bigvideo')
 provides=('bigvideo=0.1.0-7')
 # cmake builds aws-lc-sys (rustls backend pulled in by rust_cast for Chromecast).
 makedepends=('cargo' 'pkgconf' 'gettext' 'cmake')
-# The desktop entry launches through `big-jemalloc-run`, which preloads the
-# patched jemalloc (the C23 free_sized NULL fix GTK4/GLib needs) and keeps it
-# out of child processes. Optional: the runner is a no-op when either piece is
-# missing, and the binary then falls back to glibc malloc.
-optdepends=('big-jemalloc-scope: lower resident memory under GTK4 (measured -26% on the audio player)')
 
 # Absolute path to the big-multimedia workspace root that owns this PKGBUILD.
 _wsroot() {
@@ -43,7 +38,7 @@ build() {
   export RUSTFLAGS="${RUSTFLAGS} --remap-path-prefix=${root}=/build --remap-path-prefix=${HOME}/.cargo=/cargo"
   cd "${root}" || return 1
   # `chromecast`: LAN device discovery (avahi) + CASTV2 streaming/transcode.
-  cargo build --release -p "${pkgname}" --features chromecast
+  cargo build --release --locked -p "${pkgname}" --features chromecast
 }
 
 package() {

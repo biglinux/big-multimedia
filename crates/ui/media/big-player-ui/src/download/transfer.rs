@@ -41,7 +41,14 @@ pub fn download_file(
 
 /// Falls back to `<fallback_title>.mp3` when the URL has no recognizable filename.
 pub fn filename_from_url(url: &str, fallback_title: &str) -> String {
-    big_os_kit::url::filename_from_url_path(url, &format!("{fallback_title}.mp3"))
+    // The title comes from the feed: keep it a single path component.
+    let title = fallback_title.replace(['/', '\0'], "_");
+    let title = if title.trim_matches('.').is_empty() {
+        "episode"
+    } else {
+        &title
+    };
+    big_os_kit::url::filename_from_url_path(url, &format!("{title}.mp3"))
 }
 
 #[cfg(test)]
@@ -83,6 +90,8 @@ mod tests {
     #[test]
     fn test_filename_empty_url() {
         assert_eq!(filename_from_url("", "Title"), "Title.mp3");
+        assert_eq!(filename_from_url("", "../../x"), ".._.._x.mp3");
+        assert_eq!(filename_from_url("", ".."), "episode.mp3");
     }
 
     #[test]

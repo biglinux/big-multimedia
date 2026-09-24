@@ -5,7 +5,6 @@ use std::sync::{Arc, RwLock};
 use log::error;
 
 use super::{Inner, defaults, keys};
-use crate::error::Result;
 
 const LIMIT: usize = 1024 * 1024;
 use big_os_kit::storage::{self, CommitOutcome};
@@ -290,6 +289,9 @@ impl Settings {
 
     pub fn set_string(&self, key: &str, value: &str) -> bool {
         if !super::schema::valid(key, value) {
+            // Callers treat writes as fire-and-forget; this is the one place a
+            // rejected preference is visible.
+            log::warn!("settings: rejected {key}={value:?}");
             return false;
         }
         self.debug_check_key(key);
@@ -624,47 +626,5 @@ impl Settings {
         inner.phase = SavePhase::Pending;
         drop(inner);
         self.flush();
-    }
-
-    pub fn export_to(&self, path: &str) -> Result<()> {
-        let bytes = {
-            let inner = self
-                .inner
-                .read()
-                .unwrap_or_else(std::sync::PoisonError::into_inner);
-            serialize(&inner.settings_values)?
-        };
-        let target = std::path::Path::new(path);
-        let staged = storage::StagedFile::new(target)?;
-        fs::write(staged.path(), &bytes)?;
-        staged.publish(target)?.into_io_result()?;
-        Ok(())
-    }
-
-    /// Worker-only import. Refuse to replace edits made while reading the file.
-    pub fn import_from(&self, path: &str) -> Result<()> {
-        let revision = self.save_status().revision;
-        let bytes = storage::read_regular_limited(std::path::Path::new(path), LIMIT)?
-            .ok_or_else(|| io::Error::new(io::ErrorKind::NotFound, "import file missing"))?;
-        let imported = parse(&bytes)?;
-        {
-            let mut inner = self
-                .inner
-                .write()
-                .unwrap_or_else(std::sync::PoisonError::into_inner);
-            if inner.revision != revision {
-                return Err(io::Error::new(
-                    io::ErrorKind::AlreadyExists,
-                    "settings changed while import was being read",
-                )
-                .into());
-            }
-            inner.settings_values.extend(imported);
-            inner.revision = inner.revision.wrapping_add(1);
-            inner.dirty = true;
-            inner.phase = SavePhase::Pending;
-        }
-        self.try_flush()?.into_io_result()?;
-        Ok(())
     }
 }

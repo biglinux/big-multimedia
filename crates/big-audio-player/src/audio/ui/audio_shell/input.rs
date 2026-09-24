@@ -4,6 +4,8 @@ use super::*;
 /// the Controllers' `forward` maps.
 #[derive(Debug)]
 pub enum AudioShellInput {
+    QueueRestored(Result<(DbHandle, crate::db::queries_advanced::QueueSession), ()>),
+    RetryQueueSave,
     /// Tracks whose files were deleted/trashed off the main loop landed; carries
     /// the DB ids that succeeded so the queue + database are reconciled on the
     /// main thread (by id, robust to any queue change during the deletes).
@@ -105,6 +107,12 @@ pub enum AudioShellInput {
     /// Files opened from the desktop / CLI (app `open` handler): expand
     /// playlists, append as external tracks, and play from the first.
     OpenPaths(Vec<String>),
+    OpenPathsResolved {
+        generation: u64,
+        paths: Vec<String>,
+        failed: bool,
+    },
+    ExternalMetadataResolved(Vec<Track>),
     /// Open the equalizer dialog (main menu).
     ShowEqualizer,
     /// Resolve watched music folders, then open the folder manager.

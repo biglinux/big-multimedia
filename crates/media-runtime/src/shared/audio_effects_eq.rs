@@ -12,7 +12,7 @@ use std::time::Duration;
 use crate::i18n::i18n;
 use crate::player::mpv_backend::MpvBackend;
 use crate::settings::keys;
-use crate::shared::ui_helpers::DebouncedAction;
+use big_relm4_components::input::debounce::BigDebouncedAction as DebouncedAction;
 
 use super::audio_effects::{EQ_LABELS, rebuild_filters};
 

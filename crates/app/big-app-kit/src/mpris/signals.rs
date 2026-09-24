@@ -24,13 +24,15 @@ pub(super) fn emit_properties_changed(
     changed_props: glib::Variant,
 ) {
     let body = properties_changed_signal_body(changed_props);
-    let _ = connection.emit_signal(
+    if let Err(error) = connection.emit_signal(
         None::<&str>,
         MPRIS_PATH,
         "org.freedesktop.DBus.Properties",
         "PropertiesChanged",
         Some(&body),
-    );
+    ) {
+        log::debug!("MPRIS: PropertiesChanged not sent: {error}");
+    }
 }
 
 pub(super) fn emit_launcher_entry(
@@ -40,13 +42,15 @@ pub(super) fn emit_launcher_entry(
     progress: f64,
 ) {
     let body = launcher_entry_signal_body(desktop_uri, visible, progress);
-    let _ = connection.emit_signal(
+    if let Err(error) = connection.emit_signal(
         None::<&str>,
         "/com/canonical/unity/launcherentry/1",
         LAUNCHER_ENTRY_IFACE,
         "Update",
         Some(&body),
-    );
+    ) {
+        log::debug!("MPRIS: taskbar progress not sent: {error}");
+    }
 }
 
 #[cfg(test)]

@@ -64,6 +64,26 @@ pub struct TagEditFields {
     pub disc_number: Option<u32>,
 }
 
+impl TagEditFields {
+    /// Year as the library stores it; text that is not a number means no year.
+    pub(crate) fn year_number(&self) -> Option<i32> {
+        self.year
+            .as_deref()
+            .and_then(|year| year.trim().parse().ok())
+    }
+
+    /// Track number as the library stores it; a value past `i32` means none
+    /// instead of wrapping negative.
+    pub(crate) fn track_number_i32(&self) -> Option<i32> {
+        self.track_number.and_then(|n| i32::try_from(n).ok())
+    }
+
+    /// Disc number as the library stores it (see [`Self::track_number_i32`]).
+    pub(crate) fn disc_number_i32(&self) -> Option<i32> {
+        self.disc_number.and_then(|n| i32::try_from(n).ok())
+    }
+}
+
 /// Weak handle used by the panel to push async MusicBrainz results into the
 /// currently open editor dialog.
 #[derive(Clone)]
@@ -261,6 +281,9 @@ fn build_sidebar_page(track: &Track) -> adw::NavigationPage {
         .build()
 }
 
+/// Edge of the album-art picture in logical points; also the decode bound.
+const ART_EDGE_PX: i32 = 120;
+
 /// Centered album-art picture, filled off-thread from the embedded cover art.
 fn build_art_box(file_path: &str) -> gtk::Box {
     let art_box = gtk::Box::builder()
@@ -268,8 +291,8 @@ fn build_art_box(file_path: &str) -> gtk::Box {
         .margin_bottom(4)
         .build();
     let picture = gtk::Picture::builder()
-        .width_request(120)
-        .height_request(120)
+        .width_request(ART_EDGE_PX)
+        .height_request(ART_EDGE_PX)
         .content_fit(gtk::ContentFit::Cover)
         .build();
     picture.add_css_class("card");
@@ -281,7 +304,12 @@ fn build_art_box(file_path: &str) -> gtk::Box {
         move || crate::library::metadata::extract_album_art(&path),
         move |bytes| {
             let Some(data) = bytes else { return };
-            if let Some(texture) = big_media_components::media::images::bytes_to_texture(&data) {
+            // Bounded by the widget, not by the file: a 3000² embedded cover
+            // decoded whole would sit in memory at ~36 MiB to fill 120 points.
+            let edge = ART_EDGE_PX * pic.scale_factor().max(1);
+            if let Some(texture) =
+                big_media_components::media::images::bytes_to_thumbnail(&data, edge)
+            {
                 pic.set_paintable(Some(&texture));
             }
         },

@@ -107,57 +107,6 @@ pub(super) fn build_custom_grouped_action_menu_model(groups: &[BigMenuActionGrou
     menu
 }
 
-pub(super) fn build_custom_action_menu_model_from_menu(
-    menu: &impl IsA<gio::MenuModel>,
-) -> (gio::Menu, Vec<BigMenuActionItem>) {
-    let mut action_items = Vec::new();
-    let custom_menu = copy_menu_model_with_custom_action_items(menu.as_ref(), &mut action_items);
-    (custom_menu, action_items)
-}
-
-fn copy_menu_model_with_custom_action_items(
-    menu: &gio::MenuModel,
-    action_items: &mut Vec<BigMenuActionItem>,
-) -> gio::Menu {
-    use glib::variant::ToVariant;
-
-    let custom_menu = gio::Menu::new();
-    for index in 0..menu.n_items() {
-        if let Some(section) = menu.item_link(index, "section") {
-            let custom_section = copy_menu_model_with_custom_action_items(&section, action_items);
-            if custom_section.n_items() > 0 {
-                custom_menu.append_section(
-                    menu_model_label_attribute(menu, index).as_deref(),
-                    &custom_section,
-                );
-            }
-            continue;
-        }
-
-        if let Some(submenu) = menu.item_link(index, "submenu") {
-            let custom_submenu = copy_menu_model_with_custom_action_items(&submenu, action_items);
-            if custom_submenu.n_items() > 0 {
-                custom_menu.append_submenu(
-                    menu_model_label_attribute(menu, index).as_deref(),
-                    &custom_submenu,
-                );
-            }
-            continue;
-        }
-
-        if let Some(item) = menu_model_action_item(menu, index) {
-            let menu_item = gio::MenuItem::new(Some(&item.label), None);
-            menu_item.set_attribute_value(
-                "custom",
-                Some(&custom_action_child_id(action_items.len()).to_variant()),
-            );
-            custom_menu.append_item(&menu_item);
-            action_items.push(item);
-        }
-    }
-    custom_menu
-}
-
 pub(super) fn custom_action_child_id(index: usize) -> String {
     format!("big-action-{index}")
 }

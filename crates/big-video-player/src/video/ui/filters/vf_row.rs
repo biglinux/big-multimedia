@@ -12,11 +12,14 @@ use adw::prelude::*;
 
 use crate::config::video::RESOURCE_PREFIX;
 use crate::player::mpv_backend::MpvBackend;
-use crate::shared::ui_helpers::DebouncedAction;
+use big_relm4_components::input::debounce::BigDebouncedAction as DebouncedAction;
 
 /// Load a filters-dialog SVG illustration from the video GResource bundle.
 pub(super) fn illustration(filename: &str) -> gtk::Image {
-    crate::shared::ui_helpers::illustration(&format!("{RESOURCE_PREFIX}/illustrations/"), filename)
+    crate::shared::illustration::illustration(
+        &format!("{RESOURCE_PREFIX}/illustrations/"),
+        filename,
+    )
 }
 
 /// Spec for a single-parameter `vf` filter row.
@@ -72,7 +75,6 @@ pub(super) fn build_vf_expander_row(
         let format_vf = spec.format_vf.clone();
         move || {
             let value = adjustment.value();
-            mpv.vf_remove(label);
             mpv.vf_append(label, &format_vf(value));
         }
     };

@@ -73,12 +73,10 @@ pub fn is_mpeg_ts(path: &str) -> bool {
     if read == 0 {
         return false;
     }
-    for start in 0..read.min(188) {
-        if buf[start] == 0x47 && (start + 188 >= read || buf[start + 188] == 0x47) {
-            return true;
-        }
-    }
-    false
+    // Two sync bytes one packet apart: a single `G` (0x47) in a short
+    // TypeScript file must not pass for a video stream.
+    (0..read.min(188))
+        .any(|start| start + 188 < read && buf[start] == 0x47 && buf[start + 188] == 0x47)
 }
 
 /// Index of the first non-audio entry in `paths`, or [`None`] if there is none.
@@ -143,11 +141,14 @@ mod tests {
         let _ = std::fs::create_dir_all(&dir);
         let good = dir.join("stream.ts");
         let bad = dir.join("script.ts");
+        let short_source = dir.join("tiny.ts");
         std::fs::write(&good, [0x47_u8; 564]).unwrap();
         std::fs::write(&bad, [0_u8; 564]).unwrap();
+        std::fs::write(&short_source, b"export const Greeting = 'hi';\n").unwrap();
 
         assert!(is_video_file(good.to_str().unwrap()));
         assert!(!is_video_file(bad.to_str().unwrap()));
+        assert!(!is_video_file(short_source.to_str().unwrap()));
 
         let _ = std::fs::remove_dir_all(dir);
     }

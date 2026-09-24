@@ -73,7 +73,7 @@ fn parse_iptv_m3u_extracts_metadata() {
         ),
     )
     .unwrap();
-    let channels = parse_iptv_m3u(&m3u);
+    let channels = crate::media::iptv::parse_m3u_file(&m3u);
     assert_eq!(channels.len(), 2);
     assert_eq!(channels[0].name, "Channel One");
     assert_eq!(channels[0].group, "News");
@@ -89,7 +89,7 @@ fn parse_iptv_m3u_url_without_extinf() {
     let dir = tempfile::tempdir().unwrap();
     let m3u = dir.path().join("iptv.m3u");
     std::fs::write(&m3u, "#EXTM3U\nhttp://stream.example.com/direto\n").unwrap();
-    let channels = parse_iptv_m3u(&m3u);
+    let channels = crate::media::iptv::parse_m3u_file(&m3u);
     assert_eq!(channels.len(), 1);
     assert_eq!(channels[0].url, "http://stream.example.com/direto");
     assert!(!channels[0].name.is_empty());
@@ -100,7 +100,7 @@ fn parse_iptv_m3u_empty_file() {
     let dir = tempfile::tempdir().unwrap();
     let m3u = dir.path().join("empty.m3u");
     std::fs::write(&m3u, "").unwrap();
-    assert!(parse_iptv_m3u(&m3u).is_empty());
+    assert!(crate::media::iptv::parse_m3u_file(&m3u).is_empty());
 }
 
 #[test]

@@ -40,7 +40,6 @@ fn base_job(profile: Profile) -> FfmpegJob {
         video_track: None,
         crop: None,
         subtitle_streams: Vec::new(),
-        skip_video_filters: false,
         video_overrides: None,
         input_audio_channels: 2,
         audio_only: false,

@@ -8,7 +8,7 @@ use std::path::{Path, PathBuf};
 
 use big_app_kit::subprocess::BigSubprocessSpec;
 
-use crate::shared::ui_helpers::spawn_blocking_result;
+use crate::shared::spawn::spawn_blocking_result;
 
 use super::segments::{format_time, refresh_segments_list, seek_next_or_restart_segment};
 use super::{AudioEditPage, PlayerEvent, fire};

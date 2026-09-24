@@ -101,12 +101,6 @@ impl BigCollectionSpec {
         Self::new(BigCollectionMode::Queue, empty_title).reorderable(true)
     }
 
-    /// Preset for a master/detail split layout.
-    #[must_use]
-    pub fn list_detail(empty_title: impl Into<String>) -> Self {
-        Self::new(BigCollectionMode::ListDetail, empty_title)
-    }
-
     /// Toggle the search entry.
     #[must_use]
     pub fn searchable(mut self, enabled: bool) -> Self {

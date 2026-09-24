@@ -88,6 +88,7 @@ mod idle_wallpaper;
 mod input;
 mod input_gestures;
 mod keyboard;
+mod mpris;
 mod osd;
 mod playback;
 mod render;
@@ -131,6 +132,9 @@ pub struct VideoShell {
     /// `PlayFromList` reuses the already-loaded list (jump in place) versus a new
     /// folder (reload), and to resolve a `RemoveEntry` path to its mpv index.
     playlist_paths: Vec<String>,
+    /// Pending load-time shuffle: the chosen start path and the list length,
+    /// applied at the `FileLoaded` where mpv holds both.
+    shuffle_on_load: Option<(String, usize)>,
     /// Video playback backend (system libmpv). `None` until the surface
     /// realizes and the backend initializes; `None` also if init failed.
     mpv: Rc<RefCell<Option<Arc<MpvBackend>>>>,
@@ -201,6 +205,12 @@ pub struct VideoShell {
     trim_active: Rc<Cell<bool>>,
     /// Live clip-export queue (kept so the progress page can cancel it).
     trim_queue: Rc<RefCell<Option<ConversionQueue>>>,
+    /// MPRIS2 service; `None` in background mode or without a session bus.
+    mpris: Option<big_app_kit::mpris::Mpris>,
+    /// Snapshot the MPRIS service polls, mirrored from mpv events.
+    mpris_state: Arc<std::sync::Mutex<big_app_kit::mpris::PlayerState>>,
+    /// Counter behind each loaded file's MPRIS track id.
+    mpris_track_seq: u64,
 }
 
 #[cfg(test)]

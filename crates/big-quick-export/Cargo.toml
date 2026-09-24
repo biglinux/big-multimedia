@@ -1,7 +1,7 @@
 [package]
 name = "big-quick-export"
 version = "0.1.0"
-edition = "2024"
+edition.workspace = true
 rust-version.workspace = true
 # Effective license is GPL-3.0-or-later, NOT the workspace MIT: this crate links
 # big-media-runtime (GPL-3.0-or-later), which forces copyleft on the linked result.
@@ -9,18 +9,19 @@ rust-version.workspace = true
 license = "GPL-3.0-or-later"
 description = "Single-file export / re-encode helpers for the BigLinux media players"
 publish = false  # internal workspace crate; not for crates.io
-repository = "https://github.com/biglinux/big-multimedia"
+repository.workspace = true
+homepage.workspace = true
+authors.workspace = true
 
 [dependencies]
-adw = { version = "0.9", features = ["v1_9"], package = "libadwaita" }
-big-media-runtime = { path = "../media-runtime", default-features = false }
-big-relm4-components = { path = "../ui/generic/big-relm4-components" }
-big-media-components = { path = "../ui/media/big-media-components" }
+adw.workspace = true
+big-media-runtime.workspace = true
+big-relm4-components.workspace = true
+big-media-components.workspace = true
 
 [dev-dependencies]
 # Tempdir for the headless export smoke (tests/export_smoke.rs).
 tempfile = "3"
-big-media-runtime = { path = "../media-runtime", default-features = false }
 
 [lints.clippy]
 pedantic = { level = "warn", priority = -1 }

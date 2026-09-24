@@ -1,5 +1,5 @@
-//! Quality / preset → ffmpeg-arg mapping for software encoders. AV1 uses a
-//! numeric speed scale (libsvtav1) instead of named presets; CRF ranges
+//! Quality / preset → ffmpeg-arg mapping for software encoders. AV1 and VP9
+//! use numeric speed scales instead of named presets; CRF ranges
 //! are tuned per-codec because the same number means different things to
 //! libx264 vs libx265 vs libsvtav1 vs libvpx-vp9.
 
@@ -48,6 +48,16 @@ pub fn quality_to_crf(codec: &str, quality: &str) -> u32 {
 
 #[must_use]
 pub fn preset_to_ffmpeg(codec: &str, preset: &str) -> &'static str {
+    if codec == "vp9" {
+        return match preset {
+            "veryfast" => "5",
+            "fast" => "4",
+            "slightlyfast" => "3",
+            "slow" => "1",
+            "veryslow" => "0",
+            _ => "2",
+        };
+    }
     if codec == "av1" {
         return match preset {
             "veryfast" => "8",

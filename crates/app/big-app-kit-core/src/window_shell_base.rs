@@ -258,17 +258,6 @@ impl Default for BigWindowColorPolicy {
 }
 
 impl BigWindowColorPolicy {
-    /// Use an app-owned custom palette id.
-    #[must_use]
-    pub fn custom_palette(palette_id: impl Into<String>) -> Self {
-        Self {
-            color_scheme: BigWindowColorScheme::CustomPalette {
-                palette_id: palette_id.into(),
-            },
-            ..Self::default()
-        }
-    }
-
     /// Add a semantic color role that the adapter must resolve independently.
     #[must_use]
     pub fn with_role(mut self, role: BigWindowColorRole) -> Self {

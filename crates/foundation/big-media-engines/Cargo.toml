@@ -5,18 +5,18 @@ publish = false  # consumed by sibling apps via path dep, not crates.io (see ARC
 edition.workspace = true
 rust-version.workspace = true
 license.workspace = true
-description = "Pure-Rust media parsers (subtitle, playlist, feed, library) for BigLinux apps"
+description = "Display-free media helpers (FFmpeg output, file types, output naming, play queue) for BigLinux apps"
 repository.workspace = true
 homepage.workspace = true
 authors.workspace = true
 readme = "README.md"
-keywords = ["subtitle", "playlist", "m3u", "srt", "parser"]
+keywords = ["ffmpeg", "media", "queue", "biglinux"]
 categories = ["multimedia", "parser-implementations"]
 
 [dependencies]
 # `serde_json` is only the Radio-Browser JSON feed parser's; gated so the crate
 # stays near-zero-dep by default (subtitle/playlist/media_files use only std).
-serde_json = { version = "1", optional = true }
+serde_json = { workspace = true, optional = true }
 # `log` is NOT optional: the core `queue` module (always compiled) emits
 # `log::debug!`/`warn!`. Gating it behind `radio-browser` left `queue` unable to
 # find `log` under any feature subset that omits radio-browser (caught by
@@ -24,10 +24,5 @@ serde_json = { version = "1", optional = true }
 log = { workspace = true }
 
 [features]
-# Gates slow random-byte fuzz tests so default `cargo test` stays fast.
-fuzz = []
 # Radio-Browser API response parser (pulls serde_json).
 radio-browser = ["dep:serde_json"]
-
-[dev-dependencies]
-proptest = "1"

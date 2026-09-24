@@ -35,7 +35,9 @@ impl FfmpegJob {
         preset: &str,
     ) {
         let gq = intel_global_quality(codec, quality);
-        let ffmpeg_preset = profiles::preset_to_ffmpeg(codec, preset);
+        // QSV uses named presets even for codecs whose software encoder uses
+        // a numeric speed scale.
+        let ffmpeg_preset = profiles::preset_to_ffmpeg("h264", preset);
 
         cmd.args(["-preset", ffmpeg_preset]);
         cmd.args(["-look_ahead_depth", "100"]);
@@ -76,7 +78,6 @@ impl FfmpegJob {
         match codec {
             "h264" => {
                 cmd.args(["-preset", ffmpeg_preset]);
-                cmd.args(["-profile:v", "high"]);
                 cmd.args(["-level:v", "4.1"]);
                 cmd.args(["-crf", &crf.to_string()]);
             }

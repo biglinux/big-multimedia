@@ -4,7 +4,7 @@ use std::path::Path;
 use big_app_kit::subprocess::BigSubprocessSpec;
 
 use super::super::playlist::{AUDIO_EXTENSIONS, SCAN_LIMIT, ScanResult, VIDEO_EXTENSIONS};
-use super::detect::is_media_file;
+use super::is_media_file;
 
 const SKIP_DIRS: &[&str] = &[
     "node_modules",

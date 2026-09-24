@@ -2,7 +2,7 @@
 
 //! Atomic JSON persistence primitives for BigLinux apps.
 //!
-//! `BigAtomicJsonStore` writes through a `<path>.tmp.<pid>.<ts>` sibling
+//! `BigAtomicJsonStore` writes through a `.big-state.tmp.<pid>.<seq>` sibling
 //! file and then renames into place. `rename(2)` is atomic on the same
 //! filesystem; partial writes from a crash are bound to the temp file
 //! and visible only after a successful rename.
@@ -117,13 +117,6 @@ impl<T> BigAtomicJsonStore<T> {
             _marker: PhantomData,
             max_bytes: 16 * 1024 * 1024,
         }
-    }
-
-    /// Override the default 16 MiB JSON limit for a documented data type.
-    #[must_use]
-    pub fn with_max_bytes(mut self, max_bytes: usize) -> Self {
-        self.max_bytes = max_bytes;
-        self
     }
 
     /// Return a reference to the `path` exposed by this [`BigAtomicJsonStore`].

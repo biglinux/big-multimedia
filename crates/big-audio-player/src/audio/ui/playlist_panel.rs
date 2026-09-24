@@ -31,7 +31,7 @@ use big_relm4_components::layout::toolbar_pane::{BigToolbarPane, BigToolbarPaneS
 use crate::audio::ui::{playlist_chrome, playlist_columns, playlist_interactions};
 use crate::db::models::Track;
 use crate::i18n::i18n;
-use crate::shared::ui_helpers::format_duration_hm;
+use big_media_components::time::duration_hm as format_duration_hm;
 
 /// Live now-playing indicator widgets for one bound row, kept so `SetPlaying`
 /// can re-light rows by object identity without rebinding the factory.

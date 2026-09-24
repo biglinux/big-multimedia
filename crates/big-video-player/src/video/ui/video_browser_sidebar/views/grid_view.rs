@@ -251,6 +251,7 @@ fn bind_folder_card(w: &CardWidgets, entry: &PlaylistEntry, icon: &str) {
     w.name.remove_css_class("accent");
     w.card.remove_css_class("playlist-card-active");
     w.card.remove_css_class("selected");
+    w.card.reset_state(gtk::AccessibleState::Selected);
     w.card.set_widget_name(&format!("folder:{}", entry.path));
     w.card
         .update_property(&[gtk::accessible::Property::Label(&entry.display_name)]);
@@ -296,9 +297,13 @@ fn bind_video_card(
         } else {
             w.card.remove_css_class("selected");
         }
+        // The check icon and CSS class are visual only; screen readers need the state.
+        w.card
+            .update_state(&[gtk::accessible::State::Selected(Some(selected))]);
     } else {
         w.select_check.set_visible(false);
         w.card.remove_css_class("selected");
+        w.card.reset_state(gtk::AccessibleState::Selected);
     }
 
     let token = format!("video:{}", entry.index);

@@ -1,18 +1,5 @@
 use super::*;
 
-pub(super) fn resume_outputs_by_index(details: &ConversionJobDetails) -> HashMap<usize, PathBuf> {
-    details
-        .items
-        .iter()
-        .filter_map(|conversion_input| {
-            conversion_input
-                .output
-                .as_ref()
-                .map(|output| (conversion_input.entry_index, output.clone()))
-        })
-        .collect()
-}
-
 pub(super) fn conversion_details_value(queue: &ConversionQueue) -> io::Result<serde_json::Value> {
     let details = ConversionJobDetails {
         schema_version: CONVERSION_DETAILS_SCHEMA_VERSION,
@@ -65,30 +52,6 @@ pub(super) fn write_conversion_details(
     Ok(())
 }
 
-pub(super) fn start_conversion_monitor(
-    registry: Arc<ConversionRegistry>,
-    job_id: String,
-    queue: Arc<Mutex<ConversionQueue>>,
-) -> io::Result<()> {
-    let receiver = {
-        let mut queue_guard = lock_queue(&queue)?;
-        let receiver = queue_guard.receiver().clone();
-        queue_guard.start();
-        receiver
-    };
-    set_job_state(
-        &registry,
-        &job_id,
-        DurableJobState::Running,
-        Some("ffmpeg conversion running".to_owned()),
-    )?;
-    std::thread::Builder::new()
-        .name("big-convertd-job".to_owned())
-        .spawn(move || monitor_conversion_queue(registry, job_id, receiver))
-        .map(|_| ())
-        .map_err(io::Error::other)
-}
-
 pub(super) fn monitor_conversion_queue(
     registry: Arc<ConversionRegistry>,
     job_id: String,
@@ -100,61 +63,88 @@ pub(super) fn monitor_conversion_queue(
     while let Ok(message) = receiver.recv_blocking() {
         match message {
             QueueMessage::Started { entry_id, command } => {
-                let _ = update_entry_started(&registry, &job_id, entry_id, command);
+                logged(
+                    "update_entry_started",
+                    update_entry_started(&registry, &job_id, entry_id, command),
+                );
             }
             QueueMessage::Progress {
                 entry_id,
                 progress_snapshot,
             } => {
-                let _ = update_entry_progress(&registry, &job_id, entry_id, progress_snapshot);
+                logged(
+                    "update_entry_progress",
+                    update_entry_progress(&registry, &job_id, entry_id, progress_snapshot),
+                );
             }
             QueueMessage::Done { entry_id } => {
                 completed_entries.insert(entry_id);
-                let _ = update_entry_terminal(
-                    &registry,
-                    &job_id,
-                    entry_id,
-                    ConversionEntryState::Completed,
-                    None,
+                logged(
+                    "update_entry_terminal",
+                    update_entry_terminal(
+                        &registry,
+                        &job_id,
+                        entry_id,
+                        ConversionEntryState::Completed,
+                        None,
+                    ),
                 );
             }
             QueueMessage::Failed { entry_id, error } => {
                 failed_items.insert(entry_id);
-                let _ = update_entry_terminal(
-                    &registry,
-                    &job_id,
-                    entry_id,
-                    ConversionEntryState::Failed,
-                    Some(error.clone()),
+                logged(
+                    "update_entry_terminal",
+                    update_entry_terminal(
+                        &registry,
+                        &job_id,
+                        entry_id,
+                        ConversionEntryState::Failed,
+                        Some(error.clone()),
+                    ),
                 );
-                let _ = set_job_state(
-                    &registry,
-                    &job_id,
-                    DurableJobState::Failed,
-                    Some(format!("conversion_input {entry_id} failed: {error}")),
+                logged(
+                    "set_job_state",
+                    set_job_state(
+                        &registry,
+                        &job_id,
+                        DurableJobState::Failed,
+                        Some(format!("conversion_input {entry_id} failed: {error}")),
+                    ),
                 );
             }
             QueueMessage::Cancelled { entry_id } => {
                 cancelled_items.insert(entry_id);
-                let _ = update_entry_terminal(
-                    &registry,
-                    &job_id,
-                    entry_id,
-                    ConversionEntryState::Cancelled,
-                    Some("conversion cancelled".to_owned()),
+                logged(
+                    "update_entry_terminal",
+                    update_entry_terminal(
+                        &registry,
+                        &job_id,
+                        entry_id,
+                        ConversionEntryState::Cancelled,
+                        Some("conversion cancelled".to_owned()),
+                    ),
                 );
-                let _ = set_job_state(
-                    &registry,
-                    &job_id,
-                    DurableJobState::Cancelled,
-                    Some(format!("conversion_input {entry_id} cancelled")),
+                logged(
+                    "set_job_state",
+                    set_job_state(
+                        &registry,
+                        &job_id,
+                        DurableJobState::Cancelled,
+                        Some(format!("conversion_input {entry_id} cancelled")),
+                    ),
                 );
             }
             QueueMessage::StderrLog { entry_id, lines } => {
-                let _ = replace_entry_stderr_tail(&registry, &job_id, entry_id, lines);
+                logged(
+                    "replace_entry_stderr_tail",
+                    replace_entry_stderr_tail(&registry, &job_id, entry_id, lines),
+                );
             }
             QueueMessage::StderrLine { entry_id, line } => {
-                let _ = append_entry_stderr_line(&registry, &job_id, entry_id, line);
+                logged(
+                    "append_entry_stderr_line",
+                    append_entry_stderr_line(&registry, &job_id, entry_id, line),
+                );
             }
             QueueMessage::AllDone => break,
             QueueMessage::GpuFallback { .. } | QueueMessage::Probed { .. } => {}
@@ -173,7 +163,18 @@ pub(super) fn monitor_conversion_queue(
         DurableJobState::Failed => Some("conversion failed".to_owned()),
         _ => None,
     };
-    let _ = finish_job(&registry, &job_id, final_state, status_text);
+    logged(
+        "finish_job",
+        finish_job(&registry, &job_id, final_state, status_text),
+    );
+}
+
+/// Registry writes are what clients read job state from; a failed one leaves
+/// a job looking stuck, so it must at least reach the log.
+fn logged<T>(what: &str, result: io::Result<T>) {
+    if let Err(error) = result {
+        log::warn!("convertd: {what} failed: {error}");
+    }
 }
 
 pub(super) fn update_entry_started(

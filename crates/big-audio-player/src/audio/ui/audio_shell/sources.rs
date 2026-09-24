@@ -216,7 +216,11 @@ impl AudioShell {
         let music_dir = glib::user_special_dir(glib::UserDirectory::Music)
             .unwrap_or_else(|| glib::home_dir().join("Music"));
         let rec_dir = music_dir.join("Radio Recordings");
-        let _ = std::fs::create_dir_all(&rec_dir);
+        if let Err(e) = std::fs::create_dir_all(&rec_dir) {
+            log::warn!("cannot create {}: {e}", rec_dir.display());
+            self.notify(&i18n("Recording was not saved"));
+            return;
+        }
 
         let safe_name = big_app_kit::files::sanitize_filename_stem_preserve_unicode(
             &self.radio_station_name,
@@ -229,7 +233,12 @@ impl AudioShell {
         let filename = format!("{safe_name}_{ts}.mp3");
         let path = rec_dir.join(&filename);
 
-        mpv.set_stream_record(path.to_str().unwrap_or(""));
+        // mpv takes a UTF-8 path; an empty one would silently disable recording.
+        let Some(record_path) = path.to_str() else {
+            self.notify(&i18n("Recording was not saved"));
+            return;
+        };
+        mpv.set_stream_record(record_path);
         self.recording_path = Some(path);
         self.notify(&format!("{}: {filename}", i18n("Recording to")));
     }
@@ -304,6 +313,7 @@ impl AudioShell {
                 Some((self.queue.tracks().to_vec(), self.queue.current_index()));
         }
         self.podcast_mode = true;
+        self.cancel_pending_opens();
         self.current_playlist_name.clone_from(&title);
 
         let tracks = episodes
@@ -322,12 +332,13 @@ impl AudioShell {
         self.queue.set_tracks(tracks);
         self.queue.jump_to(0);
         self.play_current();
-        self.sync_queue_to_panels();
+        self.commit_queue();
     }
 
     /// Stash/restore the music vs podcast queues on view-stack tab switches,
     /// mirroring the god-object's podcast mode.
     pub(super) fn handle_tab_changed(&mut self, name: &str) {
+        self.cancel_pending_opens();
         if name == "podcast" {
             // Returning to the podcast tab restores a stashed episode queue.
             if !self.podcast_mode

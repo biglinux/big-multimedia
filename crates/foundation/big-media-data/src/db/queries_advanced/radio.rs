@@ -27,18 +27,15 @@ pub fn get_all_radio_stations(conn: &Connection) -> crate::Result<Vec<RadioStati
     let mut stmt = conn.prepare(
         "SELECT id, name, url, favicon, group_name FROM radio_stations ORDER BY position, id",
     )?;
-    let stations = stmt
-        .query_map([], |row| {
-            Ok(RadioStation {
-                id: row.get(0)?,
-                name: row.get(1)?,
-                url: row.get(2)?,
-                favicon: row.get(3)?,
-                group_name: row.get(4)?,
-            })
-        })?
-        .filter_map(std::result::Result::ok)
-        .collect();
+    let stations = crate::db::decoded_rows(stmt.query_map([], |row| {
+        Ok(RadioStation {
+            id: row.get(0)?,
+            name: row.get(1)?,
+            url: row.get(2)?,
+            favicon: row.get(3)?,
+            group_name: row.get(4)?,
+        })
+    })?);
     Ok(stations)
 }
 

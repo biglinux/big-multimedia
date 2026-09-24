@@ -24,28 +24,14 @@ GPL-3.0-or-later because the players link the GPL engine.
 ## Build
 
 ```sh
-# Use only an ALREADY installed toolchain; this review does not install Rust.
-export RUSTUP_AUTO_INSTALL=0
 cargo build --workspace --locked
 cargo run --locked -p big-video-player
 cargo run --locked -p big-audio-player
 ```
 
-Per-crate `po/`, `resources/`, `data/`, `packaging/`, and `build.rs` stay under
-each crate; the workspace `Cargo.toml` (with `[workspace.package]` /
+Per-crate `resources/`, `data/`, `packaging/`, and `build.rs` stay under each
+crate. Translations are one shared catalog for the whole suite in
+`crates/media-runtime/po` (regenerate with `crates/media-runtime/po/regen-pot.sh`).
+The workspace `Cargo.toml` (with `[workspace.package]` /
 `[workspace.dependencies]`), `clippy.toml`, `rust-toolchain.toml`, `deny.toml`,
 and `LICENSE` live at the root.
-
-
-## Correction review — 2026-09-16
-
-This is a **source candidate**, not a native-qualified release. The prior archive named
-`big-multimedia-implementacao-integral-20260916.tar.gz` was recovered as an empty 45-byte
-TAR. This revision starts from the verified 12-patch tree and supplies a new replayable
-correction series; it does not claim to have recovered nonexistent final code.
-
-Run `python3 scripts/audit-final/run.py --output /path/to/logs` for static/auxiliary gates.
-Browser and curl/FFmpeg mechanism tests have explicitly separate scopes. Rust compilation,
-formatter, Clippy, GTK/mpv, D-Bus, drivers, Orca and player benchmarks were not executed.
-The per-player `ARCHITECTURE.md` files describe the current Relm4 layout. The package report
-contains provenance, exact file hashes, new behavior restrictions and native acceptance tests.

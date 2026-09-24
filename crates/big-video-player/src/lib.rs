@@ -6,7 +6,7 @@
 //! API during the in-progress port instead of tripping `dead_code` while built
 //! alongside the legacy god-object path.
 
-pub use big_media_runtime::{cast, config, i18n, media, mpris, player, recent, settings, shared};
+pub use big_media_runtime::{cast, config, i18n, media, player, recent, settings, shared};
 
 mod resources;
 pub mod video;
@@ -34,15 +34,13 @@ fn build_player_window(
 /// App-specific boot done exactly once for the embed/pane paths.
 fn embed_boot() {
     EMBED_BOOT.call_once(|| {
-        shared::app_base::init_gettext();
-        // Route shared big-media-components strings through the same gettext
-        // domain init_gettext just bound (else they render untranslated here).
-        big_media_components::install_media_components_translator(big_media_runtime::i18n::i18n);
-        // Read lazily at backend install (realize) — safe to default here.
+        // Read lazily at backend install (realize) — safe to default here. See
+        // `run` for why the offload path is not the default.
         shared::app_base::set_default_env("BIG_MEDIA_DISABLE_GRAPHICS_OFFLOAD", "1");
-        shared::app_base::init_numeric_locale();
-        shared::app_base::register_resource_bytes(big_media_runtime::resources::VIDEO);
-        shared::app_base::register_resource_bytes(resources::VIDEO_PLAYER_SHELL);
+        shared::app_base::boot_player(&[
+            big_media_runtime::resources::VIDEO,
+            resources::VIDEO_PLAYER_SHELL,
+        ]);
     });
 }
 
@@ -126,56 +124,36 @@ pub fn open_paths(paths: Vec<String>) {
     ));
 }
 
-/// Best-effort detection of the NVIDIA proprietary driver, before GTK init: the
-/// kernel module exposes these paths only when loaded (nouveau does not).
-fn nvidia_proprietary_driver_in_use() -> bool {
-    std::path::Path::new("/proc/driver/nvidia/version").exists()
-        || std::path::Path::new("/dev/nvidia0").exists()
-}
-
 /// Initialize logging, gettext, locale, GSK renderer, and GResources,
 /// then run the GTK application. Returns the process exit code.
 #[must_use]
 pub fn run() -> gtk::glib::ExitCode {
-    // Only reached when the app was NOT started through `big-jemalloc-run` (or
-    // when jemalloc is absent): the desktop entries preload it, and a preloaded
-    // allocator ignores these. Keeps the direct-from-a-shell path sane.
-    shared::app_base::tune_allocator();
     shared::app_base::init_logging(
         "big_media_runtime=info,big_video_player=info,lofty=error,glycin=error",
     );
-    shared::app_base::init_gettext();
-    // Route shared big-media-components strings through the same gettext domain
-    // init_gettext just bound (else they render untranslated in the video app).
-    big_media_components::install_media_components_translator(big_media_runtime::i18n::i18n);
-    // The video player renders libmpv into a GtkGLArea. Force (override, since the
-    // session often exports GSK_RENDERER=cairo) the renderer that is stable for
-    // that: "ngl" everywhere except NVIDIA proprietary, which needs the legacy
-    // "gl" (the modern renderer retains GPU memory on resize there). Both "cairo"
-    // and legacy "gl" leak one dmabuf fd per frame on Mesa software (llvmpipe) on
-    // Wayland and crash playback after ~40 s. Mirrors big-host's
-    // configure_process_environment.
+    // mpv renders through GL, so the GSK renderer has to be the OpenGL one —
+    // override it, since the session often exports GSK_RENDERER=cairo, which
+    // would push every frame through a software upload. "opengl" is the name
+    // GTK accepts without a warning: the old GL renderer was removed in GTK
+    // 4.18 and "ngl" is no longer recognised at all (GTK ignores it and falls
+    // back to its own default, which may be Vulkan).
     // SAFETY: main path, before GTK init and before app threads.
-    let gsk_renderer = if nvidia_proprietary_driver_in_use() {
-        "gl"
-    } else {
-        "ngl"
-    };
     unsafe {
-        std::env::set_var("GSK_RENDERER", gsk_renderer);
+        std::env::set_var("GSK_RENDERER", "opengl");
     }
-    // Default to the GLArea video path. GraphicsOffload zero-copy is only a win
-    // when the GPU exports DMA-BUF-importable (linear) modifiers; GPUs that
-    // export non-linear modifiers (e.g. NVIDIA proprietary) fall back to a
-    // cross-context GL-texture upload per frame that saturates the main thread
-    // (sluggish UI, choppy video), whereas GLArea renders straight into GTK's GL
-    // surface. The shared backend still rejects NVIDIA renderers even when this
-    // variable is unset/false because NVIDIA's GdkGLTexture/GraphicsOffload
-    // path grows GPU memory while resizing.
+    // Keep the GLArea video path as the default. Measured on 2026-09-17 on an
+    // AMD Cezanne and an Intel HD 3000 laptop playing 1080p30: once the render
+    // call stopped blocking (see `FastRenderContext::render`), offload and
+    // GLArea cost the same CPU — 3.6 % against 3.5 % on the AMD, 21.3 % against
+    // 21.9 % on the Intel — and offload holds an extra GL context and texture
+    // pool while idle (+8 MiB on the AMD, +25 MiB on the Intel). It does give
+    // real DMA-BUF zero-copy, so it stays one variable away for anyone whose
+    // compositor benefits from the subsurface; it just buys nothing by default.
     shared::app_base::set_default_env("BIG_MEDIA_DISABLE_GRAPHICS_OFFLOAD", "1");
-    shared::app_base::init_numeric_locale();
-    shared::app_base::register_resource_bytes(big_media_runtime::resources::VIDEO);
-    shared::app_base::register_resource_bytes(resources::VIDEO_PLAYER_SHELL);
+    shared::app_base::boot_player(&[
+        big_media_runtime::resources::VIDEO,
+        resources::VIDEO_PLAYER_SHELL,
+    ]);
 
     // The `VideoShell` Root is now mountable content (a ToastOverlay), not a
     // window (ADR D14), so we boot manually instead of `RelmApp::run` (which
@@ -199,6 +177,7 @@ pub fn run() -> gtk::glib::ExitCode {
             .launch(video::ui::video_shell::VideoShellMode::Player)
             .detach();
         let window = build_player_window(app, controller.widget());
+        shared::app_base::log_active_renderer_once(&window);
         window.present();
         *shell_for_activate.borrow_mut() = Some(controller);
     });

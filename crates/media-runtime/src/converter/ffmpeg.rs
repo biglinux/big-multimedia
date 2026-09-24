@@ -73,8 +73,6 @@ pub struct FfmpegJob {
     pub input_audio_channels: u32,
     // Lets the command builder filter out bitmap subs for MP4/MOV.
     pub subtitle_streams: Vec<SubtitleStream>,
-    // HEVC 10-bit → H.264 GPU shortcut: skip the SW filter chain.
-    pub skip_video_filters: bool,
     pub audio_only: bool,
 }
 
@@ -152,10 +150,16 @@ fn prores_profile_num(quality: &str) -> u32 {
     }
 }
 
-fn ffmpeg_timestamp(s: f64) -> String {
-    let total = s.max(0.0);
-    let h = (total / 3600.0) as u32;
-    let m = ((total % 3600.0) / 60.0) as u32;
-    let secs = total % 60.0;
-    format!("{h:02}:{m:02}:{secs:06.3}")
+/// `HH:MM:SS.mmm`: the form ffmpeg's `-ss`/`-t` take, also shown in the media
+/// details dialog. Rounded once to whole milliseconds, so 59.9996 s becomes
+/// `00:01:00.000` rather than the out-of-range `00:00:60.000`.
+pub(crate) fn ffmpeg_timestamp(s: f64) -> String {
+    let total_ms = (s.max(0.0) * 1000.0).round() as u64;
+    format!(
+        "{:02}:{:02}:{:02}.{:03}",
+        total_ms / 3_600_000,
+        total_ms / 60_000 % 60,
+        total_ms / 1000 % 60,
+        total_ms % 1000
+    )
 }

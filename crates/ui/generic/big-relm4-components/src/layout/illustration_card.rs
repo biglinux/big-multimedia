@@ -3,7 +3,7 @@
 
 //! Card layout with illustration, text and app-supplied controls.
 
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 
 use adw::prelude::*;
 use relm4::gtk;
@@ -283,27 +283,6 @@ impl BigIllustrationCard {
     }
 }
 
-/// Build a labelled control row: `[label | scale | spin button]`.
-#[must_use]
-pub fn slider_spin_row(label: &str, scale: &gtk::Scale, spin: &gtk::SpinButton) -> gtk::Box {
-    let row = row_root();
-    let title = row_label(label);
-    row.append(&title);
-
-    scale.set_hexpand(true);
-    scale.set_valign(gtk::Align::Center);
-    scale.set_draw_value(false);
-    title.set_mnemonic_widget(Some(scale));
-    row.append(scale);
-
-    spin.set_valign(gtk::Align::Center);
-    spin.set_numeric(true);
-    spin.set_width_chars(5);
-    spin.add_css_class("numeric");
-    row.append(spin);
-    row
-}
-
 /// Build a `[label | flexible space | switch]` row.
 #[must_use]
 pub fn switch_row(label: &str, switch: &gtk::Switch) -> gtk::Box {
@@ -335,37 +314,6 @@ pub fn labelled_row(label: &str, control: &impl IsA<gtk::Widget>) -> gtk::Box {
     control.set_hexpand(true);
     row.append(control);
     row
-}
-
-/// Horizontal hairline used between logical groups inside a card.
-#[must_use]
-pub fn group_separator() -> gtk::Separator {
-    let sep = gtk::Separator::new(gtk::Orientation::Horizontal);
-    sep.set_margin_start(DEFAULT_INNER_MARGIN);
-    sep.set_margin_end(DEFAULT_INNER_MARGIN);
-    sep.set_margin_top(8);
-    sep.set_margin_bottom(8);
-    sep
-}
-
-/// Standalone page section header.
-#[must_use]
-pub fn section_header(title: &str, margin_top: i32) -> gtk::Label {
-    gtk::Label::builder()
-        .label(title)
-        .halign(gtk::Align::Start)
-        .margin_top(margin_top)
-        .margin_bottom(8)
-        .css_classes(vec!["title-3"])
-        .build()
-}
-
-/// Build a card-sized illustration from a filesystem path.
-#[must_use]
-pub fn file_illustration(path: &Path) -> gtk::Picture {
-    let picture = gtk::Picture::for_filename(path);
-    apply_picture_size(&picture, 120, 80);
-    picture
 }
 
 fn card_root(outer_margin_bottom: i32) -> gtk::Box {

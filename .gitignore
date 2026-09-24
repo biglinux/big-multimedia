@@ -9,3 +9,4 @@ mutants.out.old/
 **/packaging/pacman/src/
 /locale/
 wayland-screenshot-*.png
+__pycache__/

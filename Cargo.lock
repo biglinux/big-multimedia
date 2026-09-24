@@ -215,7 +215,6 @@ name = "big-media-engines"
 version = "0.1.0"
 dependencies = [
  "log",
- "proptest",
  "serde_json",
 ]
 
@@ -243,7 +242,6 @@ dependencies = [
  "libc",
  "libmpv2-sys",
  "log",
- "md-5",
  "proptest",
  "relm4",
  "rusqlite",
@@ -269,6 +267,7 @@ dependencies = [
  "serde",
  "serde_json",
  "thiserror 2.0.18",
+ "tikv-jemalloc-sys",
 ]
 
 [[package]]
@@ -307,7 +306,6 @@ version = "0.1.0"
 dependencies = [
  "big-app-kit",
  "big-app-kit-core",
- "big-appearance",
  "big-os-kit",
  "big-testkit",
  "gettext-rs",
@@ -315,7 +313,6 @@ dependencies = [
  "libadwaita",
  "log",
  "relm4",
- "serde_json",
 ]
 
 [[package]]
@@ -2355,6 +2352,16 @@ dependencies = [
  "proc-macro2",
  "quote",
  "syn",
+]
+
+[[package]]
+name = "tikv-jemalloc-sys"
+version = "0.7.1+5.3.1-0-g81034ce1f1373e37dc865038e1bc8eeecf559ce8"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "1a2825c78386b4ae0314074867860ba9577875de945f05992c38815cbec327f0"
+dependencies = [
+ "cc",
+ "libc",
 ]
 
 [[package]]

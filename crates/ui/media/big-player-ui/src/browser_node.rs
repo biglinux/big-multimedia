@@ -175,16 +175,6 @@ impl BrowserNode {
         browser_node
     }
 
-    /// Smart-playlist node with a caller-supplied icon; `key` is the name.
-    pub fn smart_playlist(name: &str, icon: &str) -> Self {
-        let browser_node: Self = glib::Object::builder().build();
-        browser_node.set_label(name);
-        browser_node.set_icon_name(icon);
-        browser_node.set_kind(BrowserNodeKind::SmartPlaylist);
-        browser_node.set_key(name);
-        browser_node
-    }
-
     /// Plain file node; `key` is the file path.
     pub fn file_node(name: &str, path: &str) -> Self {
         let browser_node: Self = glib::Object::builder().build();

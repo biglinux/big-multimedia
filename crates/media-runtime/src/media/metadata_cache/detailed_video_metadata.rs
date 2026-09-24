@@ -61,14 +61,10 @@ pub fn probe_detailed_video_metadata(path: &str) -> Option<DetailedVideoMetadata
         .ok()
         .map(|m| format_file_size(m.len()));
     let format = &root["format"];
-    let duration = format["duration"].as_str().and_then(|d| {
-        d.parse::<f64>().ok().map(|secs| {
-            let h = (secs / 3600.0) as u64;
-            let m = ((secs % 3600.0) / 60.0) as u64;
-            let s = secs % 60.0;
-            format!("{h:02}:{m:02}:{s:06.3}")
-        })
-    });
+    let duration = format["duration"]
+        .as_str()
+        .and_then(|d| d.parse::<f64>().ok())
+        .map(crate::converter::ffmpeg::ffmpeg_timestamp);
     let format_name = format["format_long_name"].as_str().map(String::from);
     let bitrate = format["bit_rate"].as_str().and_then(|b| {
         b.parse::<f64>()

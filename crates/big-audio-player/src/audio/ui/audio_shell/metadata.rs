@@ -1,6 +1,84 @@
 use super::*;
 
 impl AudioShell {
+    pub(super) fn load_external_metadata(resolved: Vec<String>, sender: &ComponentSender<Self>) {
+        // Start listening immediately. Resolve the first track first, then batch
+        // the remainder so a large playlist does not rebuild the UI per file.
+        let input = sender.input_sender().clone();
+        spawn_blocking_result(
+            move || {
+                let mut batch = Vec::new();
+                for (index, path) in resolved.into_iter().enumerate() {
+                    if Path::new(&path).is_file()
+                        && let Ok(track) = crate::library::metadata::read_track_metadata(&path)
+                    {
+                        batch.push(track);
+                    }
+                    if (index == 0 || batch.len() >= 32)
+                        && !batch.is_empty()
+                        && input
+                            .send(AudioShellInput::ExternalMetadataResolved(std::mem::take(
+                                &mut batch,
+                            )))
+                            .is_err()
+                    {
+                        return;
+                    }
+                }
+                if !batch.is_empty() {
+                    let _ = input.send(AudioShellInput::ExternalMetadataResolved(batch));
+                }
+            },
+            |()| {},
+        );
+    }
+
+    pub(super) fn resolve_external_metadata(
+        &mut self,
+        tracks: Vec<Track>,
+        sender: &ComponentSender<Self>,
+    ) {
+        let tracks: std::collections::HashMap<_, _> = tracks
+            .into_iter()
+            .map(|track| (track.file_path.clone(), track))
+            .collect();
+        let mut current_changed = false;
+        let mut changed = false;
+        for track in self
+            .queue
+            .tracks_mut()
+            .iter_mut()
+            .chain(
+                self.saved_music_queue
+                    .iter_mut()
+                    .flat_map(|(tracks, _)| tracks.iter_mut()),
+            )
+            .chain(
+                self.saved_podcast_queue
+                    .iter_mut()
+                    .flat_map(|(tracks, _)| tracks.iter_mut()),
+            )
+        {
+            if track.id == 0
+                && let Some(metadata) = tracks.get(&track.file_path)
+                && track.apply_file_metadata(metadata)
+            {
+                changed = true;
+                current_changed |= !self.is_stream && track.file_path == self.current_file;
+            }
+        }
+        self.history.resolve_metadata(&tracks);
+        if changed {
+            self.commit_queue();
+        }
+        if current_changed {
+            self.now_playing_gen = self.now_playing_gen.wrapping_add(1);
+            self.sync_now_playing_card();
+            self.fetch_lyrics_for_current(sender);
+            self.push_mpris_metadata(sender);
+        }
+    }
+
     pub(super) fn push_mpris_metadata(&self, sender: &ComponentSender<Self>) {
         if self.is_stream {
             return;

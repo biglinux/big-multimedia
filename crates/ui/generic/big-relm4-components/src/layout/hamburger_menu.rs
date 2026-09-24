@@ -32,8 +32,8 @@ pub use menu_model::{
     action_groups_from_menu_model, flat_action_items_from_menu_model, menu_action_names,
 };
 use menu_model::{
-    build_custom_action_menu_model_from_menu, build_custom_grouped_action_menu_model,
-    custom_action_child_id, menu_model_action_item, menu_model_label_attribute,
+    build_custom_grouped_action_menu_model, custom_action_child_id, menu_model_action_item,
+    menu_model_label_attribute,
 };
 
 /// One visible menu item bound to one detailed action name.
@@ -208,30 +208,6 @@ pub fn set_flat_action_popover(button: &gtk::MenuButton, items: &[BigMenuActionI
     button.set_popover(Some(&popover));
 }
 
-/// Attach a grouped action popover to `button` with named action rows.
-pub fn set_grouped_action_popover(button: &gtk::MenuButton, groups: &[BigMenuActionGroup]) {
-    let popover = build_grouped_action_popover(button.upcast_ref::<gtk::Widget>(), groups);
-    button.set_popover(Some(&popover));
-}
-
-/// Attach a structured action popover copied from `menu` with named action rows.
-pub fn set_menu_model_action_popover(button: &gtk::MenuButton, menu: &impl IsA<gio::MenuModel>) {
-    let popover = build_menu_model_action_popover(button.upcast_ref::<gtk::Widget>(), menu);
-    button.set_popover(Some(&popover));
-}
-
-/// Build a native menu popover whose visible rows are custom named buttons.
-#[must_use]
-pub fn build_flat_action_popover_menu(
-    action_context: &impl IsA<gtk::Widget>,
-    items: &[BigMenuActionItem],
-) -> gtk::PopoverMenu {
-    build_grouped_action_popover_menu(
-        action_context,
-        &[BigMenuActionGroup::new(None, items.to_vec())],
-    )
-}
-
 /// Build a native menu popover whose visible groups contain custom named buttons.
 #[must_use]
 pub fn build_grouped_action_popover_menu(
@@ -247,26 +223,6 @@ pub fn build_grouped_action_popover_menu(
         .flat_map(|group| group.items.iter())
         .enumerate()
     {
-        let child_id = custom_action_child_id(custom_index);
-        let row = build_action_menu_row(action_context.as_ref(), popover.upcast_ref(), item);
-        let added = popover.add_child(&row, &child_id);
-        debug_assert!(added, "custom popover menu child id must match menu model");
-    }
-
-    popover
-}
-
-/// Build a native menu popover that keeps sections/submenus from a `GMenuModel`.
-#[must_use]
-pub fn build_menu_model_action_popover_menu(
-    action_context: &impl IsA<gtk::Widget>,
-    menu: &impl IsA<gio::MenuModel>,
-) -> gtk::PopoverMenu {
-    let (custom_menu, action_items) = build_custom_action_menu_model_from_menu(menu.as_ref());
-    let popover = gtk::PopoverMenu::from_model(Some(&custom_menu));
-    popover.add_css_class("menu");
-
-    for (custom_index, item) in action_items.iter().enumerate() {
         let child_id = custom_action_child_id(custom_index);
         let row = build_action_menu_row(action_context.as_ref(), popover.upcast_ref(), item);
         let added = popover.add_child(&row, &child_id);
@@ -371,40 +327,6 @@ pub fn build_grouped_action_popover(
 
     popover.set_child(Some(&rows));
     popover
-}
-
-/// Build the reusable overlay panel used when a native popover would expose
-/// unnamed toolkit menu proxies through AT-SPI.
-#[must_use]
-pub fn build_action_overlay_panel(label: &str) -> gtk::Box {
-    let panel = gtk::Box::builder()
-        .orientation(gtk::Orientation::Vertical)
-        .halign(gtk::Align::End)
-        .valign(gtk::Align::Start)
-        .width_request(260)
-        .margin_top(6)
-        .margin_end(6)
-        .css_classes(["card", "big-action-overlay-panel"])
-        .visible(false)
-        .build();
-    panel.set_accessible_role(gtk::AccessibleRole::Group);
-    panel.update_property(&[gtk::accessible::Property::Label(label)]);
-    panel
-}
-
-/// Replace a reusable overlay panel's children with flat named action buttons.
-pub fn populate_flat_action_panel(
-    panel: &gtk::Box,
-    action_context: &impl IsA<gtk::Widget>,
-    items: &[BigMenuActionItem],
-    close_panel: Rc<dyn Fn()>,
-) {
-    populate_grouped_action_panel(
-        panel,
-        action_context,
-        &[BigMenuActionGroup::new(None, items.to_vec())],
-        close_panel,
-    );
 }
 
 /// Replace a reusable overlay panel's children with grouped named buttons.
@@ -842,39 +764,6 @@ mod tests {
                 .item_attribute_value(1, "custom", Some(glib::VariantTy::STRING))
                 .and_then(|value| value.get::<String>()),
             Some("big-action-1".to_owned())
-        );
-    }
-
-    #[test]
-    #[cfg_attr(miri, ignore)]
-    fn custom_action_menu_model_preserves_sections_and_submenus() {
-        let root = gio::Menu::new();
-        let view_section = gio::Menu::new();
-        let view = gio::Menu::new();
-        view.append(Some("Detailed List"), Some("win.view-mode::details"));
-        view.append(Some("Icon Grid"), Some("win.view-mode::icons"));
-        view_section.append_submenu(Some("View"), &view);
-        root.append_section(None, &view_section);
-
-        let (custom_menu, action_items) = build_custom_action_menu_model_from_menu(&root);
-        let custom_section = custom_menu.item_link(0, "section").expect("root section");
-        let custom_submenu = custom_section
-            .item_link(0, "submenu")
-            .expect("view submenu");
-
-        assert_eq!(action_items.len(), 2);
-        assert_eq!(
-            custom_section
-                .item_attribute_value(0, "label", Some(glib::VariantTy::STRING))
-                .and_then(|value| value.get::<String>()),
-            Some("View".to_owned())
-        );
-        assert_eq!(custom_submenu.n_items(), 2);
-        assert_eq!(
-            custom_submenu
-                .item_attribute_value(0, "custom", Some(glib::VariantTy::STRING))
-                .and_then(|value| value.get::<String>()),
-            Some("big-action-0".to_owned())
         );
     }
 

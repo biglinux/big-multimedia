@@ -14,19 +14,6 @@ pub use big_relm4_components::layout::media_window::{
     media_chrome_subtree_has_focus, mount_media_toast_content,
 };
 
-/// Set fullscreen on the toplevel window that owns `widget`.
-///
-/// Returns `false` when the widget is not mounted in a `gtk::Window` yet. Media
-/// components use this instead of app-local `root().and_downcast::<gtk::Window>()`
-/// fragments so fullscreen policy has one public owner.
-pub fn set_surface_fullscreened(widget: &impl IsA<gtk::Widget>, is_fullscreened: bool) -> bool {
-    let Some(window) = widget.root().and_downcast::<gtk::Window>() else {
-        return false;
-    };
-    window.set_fullscreened(is_fullscreened);
-    true
-}
-
 /// Toggle fullscreen on the toplevel window that owns `widget`.
 ///
 /// Returns the new fullscreen state, or `None` when the widget is not mounted in

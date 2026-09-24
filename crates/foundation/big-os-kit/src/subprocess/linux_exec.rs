@@ -2,7 +2,7 @@
 //! The leader remains waitable (WNOWAIT) until captured pipes reach EOF.
 //! The caller must exclusively own child collection; external waitpid(-1) or
 //! SIGCHLD=SIG_IGN violates the ownership contract and is reported as an error.
-use super::reaper::Permit;
+use super::reaper::{OwnedChild, Permit, set_nonblocking};
 use super::{
     BigSubprocessError as Error, BigSubprocessOutput, BigSubprocessSpec, BigSubprocessStatus,
     DEFAULT_MAX_CAPTURE_BYTES, build_command, notify_spawn_observer, redact_in_place,
@@ -10,49 +10,8 @@ use super::{
 use std::io::{self, Read, Write};
 use std::os::fd::AsRawFd;
 use std::os::unix::process::CommandExt;
-use std::process::Child;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::time::Instant;
-
-struct OwnedChild {
-    child: Option<Child>,
-    permit: Option<Permit>,
-    may_signal: bool,
-}
-impl Drop for OwnedChild {
-    fn drop(&mut self) {
-        if let Some(mut child) = self.child.take() {
-            if self.may_signal {
-                // The leader has not been reaped, so PGID cannot be reused.
-                // Descendants that deliberately escape the group are outside
-                // this supervisor's containment contract (not a sandbox).
-                let pid = child.id() as libc::pid_t;
-                if pid > 1 {
-                    unsafe {
-                        libc::kill(-pid, libc::SIGKILL);
-                    }
-                }
-                let _ = child.kill();
-            }
-            if let Some(permit) = self.permit.take() {
-                permit.defer(child);
-            }
-        }
-    }
-}
-
-fn nonblocking(stream: &impl AsRawFd) -> io::Result<()> {
-    let fd = stream.as_raw_fd();
-    // SAFETY: stream owns fd throughout both calls; flags preserve other bits.
-    let flags = unsafe { libc::fcntl(fd, libc::F_GETFL) };
-    if flags < 0 {
-        return Err(io::Error::last_os_error());
-    }
-    if unsafe { libc::fcntl(fd, libc::F_SETFL, flags | libc::O_NONBLOCK) } < 0 {
-        return Err(io::Error::last_os_error());
-    }
-    Ok(())
-}
 
 fn exited_unreaped(pid: u32) -> io::Result<bool> {
     // SAFETY: siginfo_t is an output C POD; initializing also covers no-event.
@@ -147,13 +106,13 @@ pub(super) fn run_observed(
     let mut stdout = child.stdout.take();
     let mut stderr = child.stderr.take();
     if let Some(pipe) = &input {
-        nonblocking(pipe).map_err(Error::Io)?;
+        set_nonblocking(pipe).map_err(Error::Io)?;
     }
     if let Some(pipe) = &stdout {
-        nonblocking(pipe).map_err(Error::Io)?;
+        set_nonblocking(pipe).map_err(Error::Io)?;
     }
     if let Some(pipe) = &stderr {
-        nonblocking(pipe).map_err(Error::Io)?;
+        set_nonblocking(pipe).map_err(Error::Io)?;
     }
     let bytes = spec.stdin.as_deref().unwrap_or_default();
     let mut written = 0;

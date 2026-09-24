@@ -149,12 +149,6 @@ pub fn probe_audio_channels(path: &std::path::Path) -> u32 {
     }
 }
 
-/// Probe on a worker with a bounded deadline. Compatibility wrapper for callers
-/// without a cancellation token; queue verification uses the cancellable API.
-pub fn probe_media_metadata(path: &std::path::Path) -> Option<serde_json::Value> {
-    probe_media_metadata_cancellable(path, &std::sync::atomic::AtomicBool::new(false)).ok()
-}
-
 /// Verify terminal ffprobe success; cancellation is not an empty metadata record.
 pub fn probe_media_metadata_cancellable(
     path: &std::path::Path,
