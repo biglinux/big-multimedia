@@ -32,6 +32,8 @@ pub enum VideoShellInput {
     TvFollow,
     /// The header's settings button: open the panel home, or close it.
     TogglePanel,
+    /// Escape or a click on the video: put the playlist panel away.
+    HidePlaylistPanel,
     /// A shortcut, chip or menu entry: open the panel straight at a section
     /// (Esc then closes the panel).
     ShowPanel(super::panel::PanelPage),
@@ -119,6 +121,9 @@ pub enum VideoShellInput {
     /// Toggle the window's fullscreen state (double-click on the video /
     /// right-click context menu / fullscreen button).
     ToggleFullscreen,
+    /// Escape outside a text field: put an open panel away, else leave
+    /// fullscreen. It never enters fullscreen.
+    Escape,
     /// Open the current file in the audio converter to keep only its audio.
     ExtractAudio,
     /// Open the current file in the video converter.

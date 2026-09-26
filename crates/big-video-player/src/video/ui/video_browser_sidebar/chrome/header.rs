@@ -24,6 +24,10 @@ pub(crate) fn build_header(state: &Rc<BrowserState>) {
         i18n("Playlist")
     };
     let sidebar_header = BigSidebarHeader::new(BigSidebarHeaderSpec::new(title).css_class("flat"));
+    // A card floating over the video: the window's own buttons are not
+    // this header's to show (its close would quit the player).
+    sidebar_header.root().set_show_start_title_buttons(false);
+    sidebar_header.root().set_show_end_title_buttons(false);
 
     if mode == SidebarMode::Files {
         let folder_button =

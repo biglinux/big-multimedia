@@ -65,7 +65,7 @@ impl VideoShell {
     /// Toggle a media sidebar mode from keyboard/GAction without depending on
     /// the auto-hidden OSD header buttons being visible.
     pub(crate) fn toggle_sidebar_mode(&self, mode: SidebarMode) {
-        let is_same_visible = self.split_view.shows_sidebar() && self.sidebar_mode.get() == mode;
+        let is_same_visible = self.playlist_panel.shows() && self.sidebar_mode.get() == mode;
         self.sidebar_toggle_updating.set(true);
         self.files_sidebar_button
             .set_active(!is_same_visible && mode == SidebarMode::Files);
@@ -74,12 +74,13 @@ impl VideoShell {
         self.sidebar_toggle_updating.set(false);
 
         if is_same_visible {
-            self.split_view.set_show_sidebar(false);
+            self.playlist_panel.set_shown(false, 0, 0);
             return;
         }
 
         self.sidebar_mode.set(mode);
         self.playlist.emit(VideoBrowserSidebarInput::SetMode(mode));
-        self.split_view.set_show_sidebar(true);
+        let (top, bottom) = self.panel_edges();
+        self.playlist_panel.set_shown(true, top, bottom);
     }
 }

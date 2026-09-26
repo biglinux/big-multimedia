@@ -87,6 +87,7 @@ pub(super) fn wire_video_input(
                 });
             if n_press == 1 && !on_panel {
                 sender.input(VideoShellInput::ClosePanel);
+                sender.input(VideoShellInput::HidePlaylistPanel);
             }
             if n_press == 2 {
                 gesture.set_state(gtk::EventSequenceState::Claimed);

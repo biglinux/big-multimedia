@@ -225,7 +225,8 @@ impl VideoShell {
     /// Open `paths` with folder-scan / playlist semantics:
     ///   • single playlist file (`.m3u`/`.pls`) → parse it into the playlist;
     ///   • single media file → scan its folder flat, start at that file;
-    ///   • multiple → keep the media ones, sorted.
+    ///   • multiple → keep the media ones, in the order given (the file
+    ///     manager's own, or the order they were picked).
     /// The resulting list replaces the mpv playlist; the first entry plays.
     ///
     /// The folder scan / playlist-file parse are blocking disk I/O, so they run
@@ -590,16 +591,15 @@ fn resolve_open_files(paths: Vec<String>) -> Option<(Vec<String>, usize, Option<
         return Some((vec![paths[0].clone()], 0, None));
     }
 
-    let mut sorted: Vec<String> = paths
+    let media: Vec<String> = paths
         .iter()
         .filter(|p| playlist::is_media_file(p))
         .cloned()
         .collect();
-    sorted.sort_by_key(|a| a.to_lowercase());
-    if sorted.is_empty() {
+    if media.is_empty() {
         return None;
     }
-    Some((sorted, 0, None))
+    Some((media, 0, None))
 }
 
 pub(super) fn is_remote_uri(s: &str) -> bool {
@@ -719,7 +719,7 @@ mod resolve_open_files_tests {
     }
 
     #[test]
-    fn multiple_inputs_keep_only_media_sorted_case_insensitively() {
+    fn multiple_inputs_keep_only_media_in_the_order_given() {
         let out = resolve_open_files(vec![
             "/x/B.mp4".to_string(),
             "/x/a.mkv".to_string(),
@@ -728,7 +728,7 @@ mod resolve_open_files_tests {
         assert_eq!(
             out,
             Some((
-                vec!["/x/a.mkv".to_string(), "/x/B.mp4".to_string()],
+                vec!["/x/B.mp4".to_string(), "/x/a.mkv".to_string()],
                 0,
                 None
             ))

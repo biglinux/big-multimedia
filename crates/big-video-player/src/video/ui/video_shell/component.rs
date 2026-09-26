@@ -1,14 +1,12 @@
-use super::actions::{
-    build_welcome_screen, install_window_actions, toggle_keep_above, wire_sidebar_toggle,
-};
+use super::actions::{build_welcome_screen, install_window_actions, toggle_keep_above};
 use super::dialogs::reapply_theme;
 use super::input::{clear_shell_input, set_shell_input};
 use super::input_gestures::{wire_osd_autohide, wire_osd_focus_out, wire_video_input};
 use super::render::{FastRenderContextSlot, VideoRealizeOptions, wire_close, wire_realize};
 use super::*;
 use big_media_components::surface::{
-    BigMediaChrome, BigMediaChromePlacement, BigMediaOverlayStack, BigMediaSidebarShell,
-    BigMediaSidebarSpec, MediaNotice, create_media_root, toggle_surface_fullscreened,
+    BigMediaChrome, BigMediaChromePlacement, BigMediaOverlayStack, MediaNotice, create_media_root,
+    toggle_surface_fullscreened,
 };
 #[cfg(all(test, not(miri)))]
 use big_relm4_components::layout::hamburger_menu::build_flat_menu_model;
@@ -250,19 +248,8 @@ impl Component for VideoShell {
             });
         }
 
-        // Sidebar reveal: collapsed overlay (playlist) over the video content.
-        // Hidden by default; a header toggle/`OpenFiles` reveals it. The shared
-        // media shell owns the split-view sizing and leak-safe drag handle so
-        // camera/image shells can reuse the same chrome without cloning this
-        // widget plumbing.
-        let sidebar_shell = BigMediaSidebarShell::new(
-            playlist.widget(),
-            &main_overlay,
-            BigMediaSidebarSpec::new()
-                .width_range(260.0, 480.0)
-                .resize_limit(900.0),
-        );
-        let split_view = sidebar_shell.split_view().clone();
+        // The playlist / folder browser floats over the video on the left.
+        let playlist_panel = super::playlist_panel::PlaylistPanel::new(playlist.widget(), &sender);
         let notice = MediaNotice::new();
 
         // Keep-Above toggle. No portable Wayland keep-above exists, so toggle it
@@ -304,37 +291,32 @@ impl Component for VideoShell {
         playlist_sidebar_toggle_button
             .update_property(&[gtk::accessible::Property::Label(&i18n("Playlist"))]);
 
-        // Guard so programmatic `set_active` (deactivating the sibling) doesn't
-        // re-enter the toggled handlers.
+        // Guard so programmatic `set_active` doesn't re-enter the handlers.
         let toggles_updating = Rc::new(Cell::new(false));
         let active_sidebar_mode = Rc::new(Cell::new(SidebarMode::Files));
-        let pl_sender = playlist.sender().clone();
-        wire_sidebar_toggle(
-            &files_sidebar_toggle_button,
-            &playlist_sidebar_toggle_button,
-            SidebarMode::Files,
-            &split_view,
-            &toggles_updating,
-            &active_sidebar_mode,
-            &pl_sender,
-        );
-        wire_sidebar_toggle(
-            &playlist_sidebar_toggle_button,
-            &files_sidebar_toggle_button,
-            SidebarMode::Playlist,
-            &split_view,
-            &toggles_updating,
-            &active_sidebar_mode,
-            &pl_sender,
-        );
-        // Keep the toggles in sync when the overlay is dismissed externally
-        // (click-outside / Esc collapses an AdwOverlaySplitView) → release both.
-        split_view.connect_show_sidebar_notify({
+        // The shell decides what the buttons show: a click only asks.
+        for (button, mode) in [
+            (&files_sidebar_toggle_button, SidebarMode::Files),
+            (&playlist_sidebar_toggle_button, SidebarMode::Playlist),
+        ] {
+            let sender = sender.clone();
+            let updating = toggles_updating.clone();
+            button.connect_toggled(move |_| {
+                if !updating.get() {
+                    sender.input(match mode {
+                        SidebarMode::Files => VideoShellInput::ToggleFilesSidebar,
+                        SidebarMode::Playlist => VideoShellInput::TogglePlaylistSidebar,
+                    });
+                }
+            });
+        }
+        // Put away by Escape or a click on the video: release both buttons.
+        playlist_panel.revealer.connect_reveal_child_notify({
             let files_sidebar_toggle_button = files_sidebar_toggle_button.downgrade();
             let playlist_sidebar_toggle_button = playlist_sidebar_toggle_button.downgrade();
             let updating = toggles_updating.clone();
-            move |sv| {
-                if updating.get() || sv.shows_sidebar() {
+            move |revealer| {
+                if revealer.reveals_child() {
                     return;
                 }
                 updating.set(true);
@@ -417,10 +399,11 @@ impl Component for VideoShell {
         main_overlay.add_overlay(&tv_card.root);
         let panel = super::panel::SettingsPanel::new(&sender);
         main_overlay.add_overlay(&panel.revealer);
-        osd.keep_shown_while({
-            let revealer = panel.revealer.downgrade();
-            move || revealer.upgrade().is_some_and(|r| r.reveals_child())
-        });
+        main_overlay.add_overlay(&playlist_panel.revealer);
+        for revealer in [&panel.revealer, &playlist_panel.revealer] {
+            let revealer = revealer.downgrade();
+            osd.keep_shown_while(move || revealer.upgrade().is_some_and(|r| r.reveals_child()));
+        }
         // Collapse the OSD when the window loses focus (alt-tab to another
         // app), like other video players — not just on the idle timer.
         wire_osd_focus_out(&main_overlay, &osd);
@@ -451,7 +434,7 @@ impl Component for VideoShell {
 
         // Messages take a row above the content instead of covering the video.
         root.append(notice.widget());
-        root.append(&split_view);
+        root.append(&main_overlay);
 
         // Show the idle background now (welcome is up). Hidden on first
         // `FileLoaded` so the video surface becomes visible again. Kick off the
@@ -516,7 +499,6 @@ impl Component for VideoShell {
             settings: settings.clone(),
             mpv: mpv.clone(),
             gl_area: gl_area.clone(),
-            split_view: split_view.clone(),
             aspect: Cell::new(0.0),
             resizing: Cell::new(false),
             resize_gen: Cell::new(0),
@@ -559,7 +541,7 @@ impl Component for VideoShell {
             model: Self {
                 controls,
                 playlist,
-                split_view: split_view.clone(),
+                playlist_panel,
                 sidebar_mode: active_sidebar_mode,
                 files_sidebar_button: files_sidebar_toggle_button,
                 playlist_sidebar_button: playlist_sidebar_toggle_button,
@@ -661,6 +643,7 @@ impl Component for VideoShell {
                 VideoShellInput::PanelBack => self.panel_back(false, &sender),
                 VideoShellInput::PanelEscape => self.panel_back(true, &sender),
                 VideoShellInput::ClosePanel => self.close_panel(&sender),
+                VideoShellInput::HidePlaylistPanel => self.playlist_panel.set_shown(false, 0, 0),
                 VideoShellInput::ShowYtdlQuality => {
                     if let Some(root) = window_ref {
                         self.show_ytdl_quality_dialog(root);
@@ -784,6 +767,17 @@ impl Component for VideoShell {
                 VideoShellInput::ToggleFullscreen => {
                     if let Some(root) = window_ref {
                         let _ = toggle_surface_fullscreened(root);
+                    }
+                }
+                VideoShellInput::Escape => {
+                    if self.playlist_panel.shows() {
+                        self.playlist_panel.set_shown(false, 0, 0);
+                    } else if self.panel.is_open() {
+                        self.panel_back(true, &sender);
+                    } else if let Some(root) = window_ref
+                        && root.is_fullscreen()
+                    {
+                        root.unfullscreen();
                     }
                 }
             }

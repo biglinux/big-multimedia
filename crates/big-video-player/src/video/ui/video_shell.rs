@@ -67,6 +67,7 @@ mod mpris;
 mod osd;
 mod panel;
 mod playback;
+mod playlist_panel;
 mod render;
 mod state_access;
 mod trim;
@@ -81,9 +82,10 @@ pub struct VideoShell {
     controls: Controller<VideoControlsBar>,
     /// Folder-browser playlist sidebar (folder scan = the playlist).
     playlist: Controller<VideoBrowserSidebar>,
-    /// Media sidebar host. Kept in the model so keyboard/GAction routes can
-    /// reveal Files/Playlist even while the OSD header is auto-hidden.
-    split_view: adw::OverlaySplitView,
+    /// The playlist and folder browser, floating over the video. Kept in the
+    /// model so keyboard/GAction routes can reveal Files/Playlist even while
+    /// the OSD header is auto-hidden.
+    playlist_panel: playlist_panel::PlaylistPanel,
     /// Last sidebar mode requested by a button, keyboard shortcut, or GAction.
     sidebar_mode: Rc<Cell<SidebarMode>>,
     /// Header Files toggle, mirrored when keyboard/GAction opens the sidebar.

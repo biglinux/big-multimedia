@@ -104,7 +104,8 @@ fn dispatch_video_shortcut(
     use VideoShellInput as In;
     let message = match action {
         "play-pause" => Some(In::TogglePlayback),
-        "fullscreen" | "fullscreen-f11" | "exit-fullscreen" => Some(In::ToggleFullscreen),
+        "fullscreen" | "fullscreen-f11" => Some(In::ToggleFullscreen),
+        "exit-fullscreen" => Some(In::Escape),
         "screenshot" => Some(In::Screenshot),
         "goto-time" => Some(In::ShowGotoTime),
         "media-info" => Some(In::ShowMediaInfo),

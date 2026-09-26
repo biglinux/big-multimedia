@@ -258,6 +258,38 @@ fn page_box() -> gtk::Box {
 }
 
 impl VideoShell {
+    /// Where the floating panels sit in the window as it is now.
+    fn panel_layout_now(&self) -> PanelLayout {
+        // The header bar itself: in the gradient look its box also holds
+        // 80 px of fade, and so does the top of the controls.
+        let natural = |widget: Option<gtk::Widget>| {
+            widget.map_or(0, |widget| widget.measure(gtk::Orientation::Vertical, -1).1)
+        };
+        let fade = if self.settings.get_string(keys::UI_COLOR_SOURCE) == "gradient" {
+            80
+        } else {
+            0
+        };
+        panel_layout(
+            self.main_overlay.width(),
+            self.main_overlay.height(),
+            natural(
+                self.osd
+                    .header_revealer
+                    .child()
+                    .and_then(|b| b.first_child()),
+            ),
+            natural(self.osd.controls_revealer.child()) - fade,
+        )
+    }
+
+    /// The top and bottom margins of a panel between the header and the
+    /// controls.
+    pub(super) fn panel_edges(&self) -> (i32, i32) {
+        let layout = self.panel_layout_now();
+        (layout.top, layout.bottom)
+    }
+
     fn panel_mpv(&self) -> Option<Arc<MpvBackend>> {
         self.mpv.borrow().clone()
     }
@@ -277,25 +309,7 @@ impl VideoShell {
         if !panel.is_open() {
             // The header bar itself: in the gradient look its box also holds
             // 80 px of fade, and so does the top of the controls.
-            let natural = |widget: Option<gtk::Widget>| {
-                widget.map_or(0, |widget| widget.measure(gtk::Orientation::Vertical, -1).1)
-            };
-            let fade = if self.settings.get_string(keys::UI_COLOR_SOURCE) == "gradient" {
-                80
-            } else {
-                0
-            };
-            let layout = panel_layout(
-                self.main_overlay.width(),
-                self.main_overlay.height(),
-                natural(
-                    self.osd
-                        .header_revealer
-                        .child()
-                        .and_then(|b| b.first_child()),
-                ),
-                natural(self.osd.controls_revealer.child()) - fade,
-            );
+            let layout = self.panel_layout_now();
             panel.columns.set(layout.columns);
             panel.card.set_width_request(layout.width);
             panel.revealer.set_margin_top(layout.top);
