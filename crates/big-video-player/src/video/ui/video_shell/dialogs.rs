@@ -36,6 +36,9 @@ impl VideoShell {
             if let Some(mpv) = &mpv {
                 mpv.pause();
             }
+            // The card over the video says it from here; the panel repeating
+            // it beside the card only doubled it.
+            super::send_to_shell(VideoShellInput::ClosePanel);
         })
     }
 

@@ -844,7 +844,22 @@ pub fn present_tv_dialog(
     media: impl Fn() -> Option<TvMedia> + 'static,
     on_started: impl Fn() + 'static,
 ) {
-    let page = tv_page(link, settings, false, media, on_started);
+    let dialog = adw::Dialog::builder()
+        .title(i18n("Play on a TV"))
+        .content_width(480)
+        // Fixed: the page grows as TVs are found, and a dialog sized to its
+        // first "Looking for TVs…" would scroll its own heading away.
+        .content_height(420)
+        .build();
+    // The strip above the transport says it from here; the dialog repeating
+    // it over the strip only doubled it.
+    let closing = dialog.downgrade();
+    let page = tv_page(link, settings, false, media, move || {
+        on_started();
+        if let Some(dialog) = closing.upgrade() {
+            dialog.close();
+        }
+    });
     page.set_margin_top(6);
     page.set_margin_bottom(18);
     page.set_margin_start(18);
@@ -858,15 +873,8 @@ pub fn present_tv_dialog(
             .child(&page)
             .build(),
     ));
-    adw::Dialog::builder()
-        .title(i18n("Play on a TV"))
-        .content_width(480)
-        // Fixed: the page grows as TVs are found, and a dialog sized to its
-        // first "Looking for TVs…" would scroll its own heading away.
-        .content_height(420)
-        .child(&toolbar)
-        .build()
-        .present(Some(parent));
+    dialog.set_child(Some(&toolbar));
+    dialog.present(Some(parent));
 }
 
 /// The card shown over a player while a TV plays its session: what is
