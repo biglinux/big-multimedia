@@ -96,7 +96,7 @@ pub(super) fn set_action_enabled(actions: &gio::SimpleActionGroup, name: &str, e
     }
 }
 
-/// Build the centered welcome screen (icon + title + subtitle + Open File /
+/// Build the centered welcome screen (title + subtitle + Open File /
 /// Open Recent / Open URL); buttons
 /// fire the `win.*` actions installed by [`install_window_actions`].
 pub(super) fn build_welcome_screen(sender: &ComponentSender<VideoShell>) -> gtk::Box {
@@ -107,19 +107,6 @@ pub(super) fn build_welcome_screen(sender: &ComponentSender<VideoShell>) -> gtk:
         .spacing(4)
         .css_classes(["welcome-container"])
         .build();
-
-    let icon_circle = gtk::Box::builder()
-        .halign(gtk::Align::Center)
-        .css_classes(["welcome-icon-circle"])
-        .build();
-    let icon = gtk::Image::builder()
-        .icon_name("media-playback-start-symbolic")
-        .pixel_size(48)
-        .halign(gtk::Align::Center)
-        .css_classes(["welcome-icon"])
-        .build();
-    icon_circle.append(&icon);
-    container.append(&icon_circle);
 
     let title = gtk::Label::builder()
         .label(i18n("Big Video Player"))
@@ -143,12 +130,12 @@ pub(super) fn build_welcome_screen(sender: &ComponentSender<VideoShell>) -> gtk:
         .spacing(10)
         .margin_top(24)
         .build();
-    welcome_button_row.append(&welcome_button(
-        "folder-open-symbolic",
-        &i18n("Open File"),
-        sender,
-        || VideoShellInput::ShowOpenFile,
-    ));
+    let open_file = welcome_button("folder-open-symbolic", &i18n("Open File"), sender, || {
+        VideoShellInput::ShowOpenFile
+    });
+    // The way most people start: it leads.
+    open_file.add_css_class("welcome-btn-main");
+    welcome_button_row.append(&open_file);
     welcome_button_row.append(&welcome_button(
         "document-open-recent-symbolic",
         &i18n("Open Recent"),

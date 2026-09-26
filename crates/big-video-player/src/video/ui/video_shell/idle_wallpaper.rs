@@ -259,7 +259,20 @@ fn ensure_blurred(source: &Path) -> Option<PathBuf> {
     let mut hasher = std::collections::hash_map::DefaultHasher::new();
     source.hash(&mut hasher);
     mtime.hash(&mut hasher);
-    let cache = cache_dir.join(format!("wallpaper-blur-{:016x}.png", hasher.finish()));
+    // Named apart from the old shape-keeping blur, which it replaces.
+    let name = format!("wallpaper-colours-{:016x}.png", hasher.finish());
+    if let Ok(entries) = std::fs::read_dir(&cache_dir) {
+        for entry in entries.flatten() {
+            let old = entry.file_name();
+            let old = old.to_string_lossy();
+            if old.starts_with("wallpaper-blur-")
+                || (old.starts_with("wallpaper-colours-") && *old != name)
+            {
+                let _ = std::fs::remove_file(entry.path());
+            }
+        }
+    }
+    let cache = cache_dir.join(name);
 
     if std::fs::metadata(&cache).is_ok_and(|m| m.len() > 0) {
         return Some(cache);
@@ -364,9 +377,11 @@ fn run_blur(source: &Path, dest: &Path) -> bool {
             .arg(source)
             .args([
                 "-vf",
-                // Downscale (even height), strong gaussian blur, slight darken +
-                // desaturate so the welcome-screen text stays legible over it.
-                "scale=1280:-2:flags=bilinear,gblur=sigma=24,eq=brightness=-0.18:saturation=0.9",
+                // The wallpaper's colours, not its shapes: averaged down to 4x2
+                // and spread back out, so a logo in its middle (BigLinux's own)
+                // is not left as a blurred square behind the welcome screen.
+                // Then a slight darken + desaturate for the text over it.
+                "scale=4:2:flags=area,scale=1280:720:flags=bicubic,gblur=sigma=90,eq=brightness=-0.18:saturation=0.9",
                 "-frames:v",
                 "1",
             ])

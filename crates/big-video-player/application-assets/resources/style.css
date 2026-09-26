@@ -271,30 +271,16 @@ menubutton.osd-btn {
   padding: 48px 40px;
 }
 
-.welcome-icon-circle {
-  background: rgba(255,255,255,0.03);
-  border: 1px solid rgba(255,255,255,0.06);
-  border-radius: 9999px;
-  padding: 24px;
-  margin-bottom: 20px;
-}
-
-.welcome-icon {
-  color: @accent_bg_color;
-  opacity: 0.8;
-  margin-bottom: 0;
-}
-
 .welcome-title {
   font-size: 22px;
   font-weight: 500;
   letter-spacing: 0.8px;
-  color: rgba(255,255,255,0.75);
+  color: rgba(255,255,255,0.95);
 }
 
 .welcome-subtitle {
   font-size: 13px;
-  color: rgba(255,255,255,0.30);
+  color: rgba(255,255,255,0.75);
   margin-bottom: 4px;
 }
 
@@ -307,14 +293,25 @@ menubutton.osd-btn {
 }
 
 .welcome-btn-primary {
-  background: rgba(255,255,255,0.07);
-  color: rgba(255,255,255,0.70);
-  border: 1px solid rgba(255,255,255,0.10);
+  background: rgba(255,255,255,0.18);
+  color: rgba(255,255,255,0.95);
+  border: 1px solid rgba(255,255,255,0.22);
 }
 .welcome-btn-primary:hover {
-  background: rgba(255,255,255,0.12);
-  color: rgba(255,255,255,0.85);
-  border: 1px solid rgba(255,255,255,0.16);
+  background: rgba(255,255,255,0.26);
+  color: #ffffff;
+  border: 1px solid rgba(255,255,255,0.30);
+}
+
+/* The accent a fifth darker: white text on the plain accent reads at 3.8:1,
+   under WCAG's 4.5:1; here at 5:1 and more. */
+.welcome-btn-primary.welcome-btn-main {
+  background: mix(@accent_bg_color, black, 0.2);
+  color: @accent_fg_color;
+  border: 1px solid transparent;
+}
+.welcome-btn-primary.welcome-btn-main:hover {
+  background: mix(@accent_bg_color, black, 0.1);
 }
 
 /* Now Playing (music mode) */
