@@ -308,10 +308,10 @@ const SOUND_OFF_CSS: &str = "
 
 /// The settings panel: a see-through card (no blur, no shadow, so it adds
 /// nothing per video frame) at 80%. What holds controls — blocks, lists,
-/// sliders — carries 60% more of its own, 92% in all, the least that keeps
-/// a slider's fill and trough at 3:1 over any frame: 55% took the fill to
-/// 2.94:1 over black in the light scheme, and the card alone at 72% to 1.7:1
-/// over white. Text straight on the card is at 90% even when
+/// sliders — carries 55% more of its own, 91% in all. That keeps a slider's
+/// trough at 3:1 over any frame and its fill at 3:1 but for the light
+/// scheme over black, 2.94:1 (60% gave 3.02:1; the card alone at 72% gave
+/// 1.7:1 over white). Text straight on the card is at 90% even when
 /// secondary, which reads at 5.4:1 or more there. Measured over white and
 /// black video in both schemes.
 const PANEL_CSS: &str = "
@@ -327,7 +327,7 @@ const PANEL_CSS: &str = "
 .settings-panel button.colour-choice,
 .settings-panel list.boxed-list,
 .settings-panel .panel-backed {
-  background-color: alpha(@window_bg_color, 0.60);
+  background-color: alpha(@window_bg_color, 0.55);
 }
 .settings-panel list.boxed-list {
   background-image: linear-gradient(@card_bg_color, @card_bg_color);

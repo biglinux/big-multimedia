@@ -114,7 +114,7 @@ pub fn setup_hover_controller_exclusive(
             }
         });
     }
-    popover.add_controller(popover_motion);
+    popover.add_controller(popover_motion.clone());
 
     let click = gtk::GestureClick::new();
     {
@@ -132,11 +132,18 @@ pub fn setup_hover_controller_exclusive(
     hover_box.add_controller(click);
 
     // Pointer departure must not close controls a keyboard user is adjusting.
+    // Focus that came with the pointer on the popover is a click or a drag
+    // on its slider, not the keyboard: counting it kept the popover up after
+    // the pointer left for the video, until another bar control was hovered.
     let focus = gtk::EventControllerFocus::new();
     {
         let state = close_id.clone();
+        let pointer = popover_motion.downgrade();
         focus.connect_enter(move |_| {
-            state.keyboard_focus.set(true);
+            let by_pointer = pointer
+                .upgrade()
+                .is_some_and(|pointer| pointer.contains_pointer());
+            state.keyboard_focus.set(!by_pointer);
             cancel_pending_close(&state);
         });
     }
