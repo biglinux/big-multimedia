@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: big-media-runtime 0.1.0\n"
 "Report-Msgid-Bugs-To: https://github.com/biglinux/big-multimedia/issues\n"
-"POT-Creation-Date: 2026-09-26 09:11-0300\n"
+"POT-Creation-Date: 2026-09-26 13:05-0300\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -323,7 +323,7 @@ msgstr ""
 #: crates/big-audio-player/src/audio/preferences.rs:97
 #: crates/big-video-player/src/video/ui/preferences/general.rs:39
 #: crates/big-video-player/src/video/ui/preferences/video.rs:56
-#: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/header.rs:171
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/header.rs:177
 #: crates/big-video-player/src/video/ui/video_shell/panel.rs:468
 msgid "Off"
 msgstr ""
@@ -598,13 +598,13 @@ msgid "Next"
 msgstr ""
 
 #: crates/big-audio-player/src/audio/ui/audio_shell/playback.rs:162
-#: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/header.rs:169
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/header.rs:175
 msgid "Shuffle"
 msgstr ""
 
 #: crates/big-audio-player/src/audio/ui/audio_shell/playback.rs:163
 #: crates/big-video-player/src/video/ui/preferences/general.rs:36
-#: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/header.rs:174
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/header.rs:180
 msgid "Repeat"
 msgstr ""
 
@@ -952,8 +952,8 @@ msgstr ""
 #: crates/big-audio-player/src/audio/ui/library_dialogs.rs:67
 #: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/context_menu.rs:82
 #: crates/big-video-player/src/video/ui/video_browser_sidebar/fileops.rs:72
-#: crates/big-video-player/src/video/ui/video_browser_sidebar/library.rs:539
-#: crates/big-video-player/src/video/ui/video_browser_sidebar/library.rs:543
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/library.rs:622
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/library.rs:626
 msgid "Add to playlist"
 msgstr ""
 
@@ -1494,8 +1494,8 @@ msgid "Remove selected records"
 msgstr ""
 
 #: crates/big-audio-player/src/audio/ui/unavailable_dialog.rs:173
-#: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/header.rs:47
-#: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/header.rs:48
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/header.rs:51
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/header.rs:52
 msgid "Select"
 msgstr ""
 
@@ -2268,7 +2268,7 @@ msgid "Edit"
 msgstr ""
 
 #: crates/big-video-player/src/video/ui/iptv/providers_dialog.rs:108
-#: crates/big-video-player/src/video/ui/video_browser_sidebar/library.rs:642
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/library.rs:727
 msgid "Remove"
 msgstr ""
 
@@ -2277,7 +2277,7 @@ msgid "IPTV Provider"
 msgstr ""
 
 #: crates/big-video-player/src/video/ui/iptv/providers_dialog.rs:223
-#: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/header.rs:157
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/header.rs:163
 msgid "Name"
 msgstr ""
 
@@ -2833,7 +2833,7 @@ msgid ""
 msgstr ""
 
 #: crates/big-video-player/src/video/ui/preferences/advanced.rs:292
-#: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/header.rs:186
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/header.rs:192
 msgid "Options"
 msgstr ""
 
@@ -2846,7 +2846,7 @@ msgid "Current video"
 msgstr ""
 
 #: crates/big-video-player/src/video/ui/preferences/general.rs:41
-#: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/header.rs:173
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/header.rs:179
 msgid "Whole playlist"
 msgstr ""
 
@@ -2999,7 +2999,7 @@ msgid "Text"
 msgstr ""
 
 #: crates/big-video-player/src/video/ui/preferences/subtitles.rs:58
-#: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/header.rs:159
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/header.rs:165
 msgid "Size"
 msgstr ""
 
@@ -3258,64 +3258,64 @@ msgstr ""
 msgid "Got it"
 msgstr ""
 
-#: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/header.rs:34
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/header.rs:37
 msgid "Load folder…"
 msgstr ""
 
-#: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/header.rs:55
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/header.rs:59
 msgid "Add files…"
 msgstr ""
 
-#: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/header.rs:81
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/header.rs:87
 msgid "Show as list"
 msgstr ""
 
-#: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/header.rs:83
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/header.rs:89
 msgid "Show as grid"
 msgstr ""
 
-#: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/header.rs:108
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/header.rs:114
 msgid "Choose Video Folder"
 msgstr ""
 
-#: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/header.rs:121
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/header.rs:127
 msgid "Add Video Files"
 msgstr ""
 
-#: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/header.rs:122
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/header.rs:128
 #: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:132
 msgid "Video files"
 msgstr ""
 
-#: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/header.rs:154
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/header.rs:160
 msgid "Include subfolders"
 msgstr ""
 
-#: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/header.rs:158
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/header.rs:164
 msgid "Date"
 msgstr ""
 
-#: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/header.rs:162
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/header.rs:168
 msgid "Reverse order"
 msgstr ""
 
-#: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/header.rs:164
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/header.rs:170
 msgid "Sort by"
 msgstr ""
 
-#: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/header.rs:172
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/header.rs:178
 msgid "Current file"
 msgstr ""
 
-#: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/header.rs:178
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/header.rs:184
 msgid "Save playlist…"
 msgstr ""
 
-#: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/header.rs:179
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/header.rs:185
 msgid "Load playlist…"
 msgstr ""
 
-#: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/header.rs:180
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/header.rs:186
 msgid "Clear playlist"
 msgstr ""
 
@@ -3349,8 +3349,8 @@ msgid "Your folders"
 msgstr ""
 
 #: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/metadata.rs:145
-#: crates/big-video-player/src/video/ui/video_browser_sidebar/library.rs:352
-#: crates/big-video-player/src/video/ui/video_browser_sidebar/mod.rs:292
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/library.rs:404
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/mod.rs:294
 #, rust-format
 msgid "{} video"
 msgid_plural "{} videos"
@@ -3422,80 +3422,85 @@ msgstr ""
 msgid "{ok} {verb}, {failed} failed"
 msgstr ""
 
-#: crates/big-video-player/src/video/ui/video_browser_sidebar/library.rs:108
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/library.rs:116
 msgid "Home folder"
 msgstr ""
 
-#: crates/big-video-player/src/video/ui/video_browser_sidebar/library.rs:328
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/library.rs:380
 msgid "Choose folders…"
 msgstr ""
 
-#: crates/big-video-player/src/video/ui/video_browser_sidebar/library.rs:468
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/library.rs:531
 msgid "No video in your folders has that name"
 msgstr ""
 
-#: crates/big-video-player/src/video/ui/video_browser_sidebar/library.rs:479
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/library.rs:543
 #, rust-format
 msgid "{} more in your folders"
 msgid_plural "{} more in your folders"
 msgstr[0] ""
 msgstr[1] ""
 
-#: crates/big-video-player/src/video/ui/video_browser_sidebar/library.rs:484
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/library.rs:548
 #, rust-format
 msgid "{} video found"
 msgid_plural "{} videos found"
 msgstr[0] ""
 msgstr[1] ""
 
-#: crates/big-video-player/src/video/ui/video_browser_sidebar/library.rs:596
-#: crates/big-video-player/src/video/ui/video_browser_sidebar/library.rs:599
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/library.rs:563
+#, rust-format
+msgid "Showing the first {}. Type more to narrow the search."
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/library.rs:679
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/library.rs:682
 #: crates/big-video-player/src/video/ui/video_shell/panel.rs:118
 #: crates/big-video-player/src/video/ui/video_shell/panel.rs:121
 msgid "Back"
 msgstr ""
 
-#: crates/big-video-player/src/video/ui/video_browser_sidebar/library.rs:610
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/library.rs:693
 msgid "Video folders"
 msgstr ""
 
-#: crates/big-video-player/src/video/ui/video_browser_sidebar/library.rs:620
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/library.rs:703
 msgid ""
 "Their videos are listed and searched here. Folders BigSearch does not index "
 "are searched by the player, more slowly."
 msgstr ""
 
-#: crates/big-video-player/src/video/ui/video_browser_sidebar/library.rs:647
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/library.rs:732
 #, rust-format
 msgid "Remove {}"
 msgstr ""
 
-#: crates/big-video-player/src/video/ui/video_browser_sidebar/library.rs:665
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/library.rs:750
 msgid "Add a folder…"
 msgstr ""
 
-#: crates/big-video-player/src/video/ui/video_browser_sidebar/library.rs:676
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/library.rs:761
 msgid "Add a Video Folder"
 msgstr ""
 
-#: crates/big-video-player/src/video/ui/video_browser_sidebar/library.rs:694
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/library.rs:779
 msgid "Use the standard folders"
 msgstr ""
 
-#: crates/big-video-player/src/video/ui/video_browser_sidebar/library.rs:695
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/library.rs:780
 msgid "Videos, Downloads and the home folder"
 msgstr ""
 
-#: crates/big-video-player/src/video/ui/video_browser_sidebar/mod.rs:320
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/mod.rs:322
 #, rust-format
 msgid "ends at {}"
 msgstr ""
 
-#: crates/big-video-player/src/video/ui/video_browser_sidebar/mod.rs:511
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/mod.rs:514
 msgid "Scanning…"
 msgstr ""
 
-#: crates/big-video-player/src/video/ui/video_browser_sidebar/mod.rs:556
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/mod.rs:559
 msgid "Search your videos…"
 msgstr ""
 

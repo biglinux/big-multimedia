@@ -29,6 +29,8 @@ use crate::settings::keys;
 
 /// Search results listed; a search that wants more is better narrowed.
 const SHOWN: usize = 40;
+/// `.ts` files read to tell a transport stream from TypeScript, per folder.
+const TS_READ: usize = 200;
 /// A daemon that does not answer quickly is left out, not waited on.
 const TIMEOUT: Duration = Duration::from_secs(3);
 
@@ -211,11 +213,8 @@ impl Daemon {
             .any(|root| dir == root || is_under(dir, root))
     }
 
-    fn query(&self, q: &str, mode: &str, under: Option<&str>, limit: usize) -> Option<Reply> {
-        let mut filter = serde_json::json!({ "ext": playlist::VIDEO_EXTENSIONS });
-        if let Some(under) = under {
-            filter["under"] = serde_json::Value::from(under);
-        }
+    fn query(&self, q: &str, mode: &str, under: &str, ext: &[&str], limit: usize) -> Option<Reply> {
+        let filter = serde_json::json!({ "ext": ext, "under": under });
         let reply = ask(
             &self.socket,
             &serde_json::json!({
@@ -237,7 +236,53 @@ fn openable(hit: &Hit) -> bool {
     hit.available && Path::new(&hit.path).is_absolute() && playlist::is_video_file(&hit.path)
 }
 
+/// Videos under `dir` whose names hold `q` (every one, in the `list` mode):
+/// the first `limit` the player can open, and how many there are. `.ts` is
+/// TypeScript's too, and a folder of code holds hundreds, so those are asked
+/// apart and each one read to tell: asked together they filled the answer
+/// and left one video of hundreds.
+fn videos(
+    daemon: &Daemon,
+    q: &str,
+    mode: &str,
+    dir: &str,
+    limit: usize,
+) -> Option<(Vec<String>, usize)> {
+    let others: Vec<&str> = playlist::VIDEO_EXTENSIONS
+        .iter()
+        .copied()
+        .filter(|ext| *ext != "ts")
+        .collect();
+    let reply = daemon.query(q, mode, dir, &others, limit)?;
+    let mut total = reply.total;
+    let mut paths: Vec<String> = reply
+        .hits
+        .into_iter()
+        .filter(openable)
+        .map(|hit| hit.path)
+        .collect();
+    if let Some(reply) = daemon.query(q, mode, dir, &["ts"], TS_READ) {
+        let streams: Vec<String> = reply
+            .hits
+            .into_iter()
+            .filter(openable)
+            .map(|hit| hit.path)
+            .collect();
+        total += streams.len();
+        paths.extend(streams);
+    }
+    paths.truncate(limit);
+    Some((paths, total))
+}
+
 // ── searching ──────────────────────────────────────────────────────────────
+
+/// What a search found: the first [`SHOWN`] videos, and how many there are.
+#[derive(Default)]
+struct Found {
+    paths: Vec<String>,
+    total: usize,
+}
 
 /// Videos in `folders` whose name matches `query`: the daemon for what it
 /// indexes, a scan (kept in `scanned`) for the rest.
@@ -246,22 +291,21 @@ fn search(
     folders: &[String],
     query: &str,
     scanned: &mut HashMap<String, Vec<String>>,
-) -> Vec<String> {
-    let (indexed, rest): (Vec<&String>, Vec<&String>) = folders
+) -> Found {
+    // A folder inside another chosen one would only count its videos twice.
+    let outer = folders
         .iter()
-        .partition(|dir| daemon.is_some_and(|daemon| daemon.indexes(dir)));
-    let mut found: Vec<String> = Vec::new();
-    if let Some(daemon) = daemon
-        && !indexed.is_empty()
-        && let Some(reply) = daemon.query(query, "name", None, SHOWN * 4)
-    {
-        found.extend(
-            reply
-                .hits
-                .into_iter()
-                .filter(|hit| openable(hit) && indexed.iter().any(|dir| is_under(&hit.path, dir)))
-                .map(|hit| hit.path),
-        );
+        .filter(|dir| !folders.iter().any(|other| is_under(dir, other)));
+    let (indexed, rest): (Vec<&String>, Vec<&String>) =
+        outer.partition(|dir| daemon.is_some_and(|daemon| daemon.indexes(dir)));
+    let mut found = Found::default();
+    if let Some(daemon) = daemon {
+        for dir in indexed {
+            if let Some((paths, total)) = videos(daemon, query, "name", dir, SHOWN) {
+                found.paths.extend(paths);
+                found.total += total;
+            }
+        }
     }
     let query = query.to_lowercase();
     for dir in rest {
@@ -272,28 +316,26 @@ fn search(
                 .filter(|path| playlist::is_video_file(path))
                 .collect()
         });
-        found.extend(
-            files
-                .iter()
-                .filter(|path| {
-                    let name = playlist::display_name(path).to_lowercase();
-                    name.contains(&query) || playlist::fuzzy_match(&query, &name).is_some()
-                })
-                .cloned(),
-        );
+        let matches: Vec<&String> = files
+            .iter()
+            .filter(|path| {
+                let name = playlist::display_name(path).to_lowercase();
+                name.contains(&query) || playlist::fuzzy_match(&query, &name).is_some()
+            })
+            .collect();
+        found.total += matches.len();
+        found.paths.extend(matches.into_iter().cloned());
     }
-    found.sort();
-    found.dedup();
-    found.truncate(SHOWN);
+    found.paths.truncate(SHOWN);
     found
 }
 
 /// Videos in each folder, when the daemon can count them.
 fn count(daemon: &Daemon, dir: &str) -> Option<usize> {
     (daemon.lists && daemon.indexes(dir))
-        .then(|| daemon.query("", "list", Some(dir), 1))
+        .then(|| videos(daemon, "", "list", dir, 1))
         .flatten()
-        .map(|reply| reply.total)
+        .map(|(_, total)| total)
 }
 
 // ── the places page ────────────────────────────────────────────────────────
@@ -453,10 +495,10 @@ pub(super) fn refresh(state: &Rc<BrowserState>, query_text: String) {
     let state = state.clone();
     glib::spawn_future_local(async move {
         let wanted = query_text.clone();
-        let (hits, scanned) = gio::spawn_blocking(move || {
+        let (mut found, scanned) = gio::spawn_blocking(move || {
             let daemon = socket().and_then(|socket| Daemon::find(&socket));
-            let hits = search(daemon.as_ref(), &folders, &wanted, &mut scanned);
-            (hits, scanned)
+            let found = search(daemon.as_ref(), &folders, &wanted, &mut scanned);
+            (found, scanned)
         })
         .await
         .unwrap_or_default();
@@ -467,15 +509,15 @@ pub(super) fn refresh(state: &Rc<BrowserState>, query_text: String) {
         let local: std::collections::HashSet<String> =
             state.entries.borrow().iter().cloned().collect();
         let in_folder = state.folder.borrow().is_some();
-        let hits: Vec<String> = hits
-            .into_iter()
-            .filter(|path| !local.contains(path))
-            .collect();
-        fill(&state, &section, &hits, in_folder);
+        let listed = found.paths.len();
+        found.paths.retain(|path| !local.contains(path));
+        found.total -= listed - found.paths.len();
+        fill(&state, &section, &found, in_folder);
     });
 }
 
-fn fill(state: &Rc<BrowserState>, section: &gtk::Box, hits: &[String], in_folder: bool) {
+fn fill(state: &Rc<BrowserState>, section: &gtk::Box, found: &Found, in_folder: bool) {
+    let hits = &found.paths;
     while let Some(child) = section.first_child() {
         section.remove(&child);
     }
@@ -495,16 +537,17 @@ fn fill(state: &Rc<BrowserState>, section: &gtk::Box, hits: &[String], in_folder
         return;
     }
     section.set_visible(true);
+    let total = found.total.max(hits.len());
     let heading = if in_folder {
         ni18n(
             "{} more in your folders",
             "{} more in your folders",
-            hits.len() as u64,
+            total as u64,
         )
     } else {
-        ni18n("{} video found", "{} videos found", hits.len() as u64)
+        ni18n("{} video found", "{} videos found", total as u64)
     }
-    .replace("{}", &hits.len().to_string());
+    .replace("{}", &total.to_string());
     section.append(
         &gtk::Label::builder()
             .label(&heading)
@@ -513,6 +556,20 @@ fn fill(state: &Rc<BrowserState>, section: &gtk::Box, hits: &[String], in_folder
             .margin_top(6)
             .build(),
     );
+    if total > hits.len() {
+        section.append(
+            &gtk::Label::builder()
+                .label(
+                    i18n("Showing the first {}. Type more to narrow the search.")
+                        .replace("{}", &hits.len().to_string()),
+                )
+                .xalign(0.0)
+                .wrap(true)
+                .max_width_chars(30)
+                .css_classes(["dim-label", "caption"])
+                .build(),
+        );
+    }
     let list = gtk::ListBox::builder()
         .selection_mode(gtk::SelectionMode::None)
         .css_classes(["boxed-list"])
@@ -746,7 +803,7 @@ mod tests {
 
     /// A fake daemon answering each request in turn with `replies`; returns
     /// the requests it got.
-    fn serve(socket: &Path, replies: Vec<&'static str>) -> std::thread::JoinHandle<Vec<String>> {
+    fn serve(socket: &Path, replies: Vec<String>) -> std::thread::JoinHandle<Vec<String>> {
         let listener = UnixListener::bind(socket).unwrap();
         std::thread::spawn(move || {
             let mut requests = Vec::new();
@@ -772,22 +829,37 @@ mod tests {
     }
 
     #[test]
-    fn a_search_keeps_videos_that_are_there_in_the_chosen_folders() {
+    fn a_search_asks_each_outer_folder_and_reads_its_ts_files() {
         let dir = tempfile::tempdir().unwrap();
         let socket = dir.path().join("indexd.sock");
+        // A transport stream syncs on 0x47 every 188 bytes; TypeScript does not.
+        let stream = dir.path().join("recording.ts");
+        let mut packets = vec![0_u8; 188 * 3];
+        packets
+            .iter_mut()
+            .step_by(188)
+            .for_each(|byte| *byte = 0x47);
+        std::fs::write(&stream, packets).unwrap();
+        let code = dir.path().join("prompt.ts");
+        std::fs::write(&code, "export const x = 1;\n").unwrap();
         let server = serve(
             &socket,
             vec![
-                r#"{"kind":"status","v":2,"capabilities":["sources","list-filtered"]}"#,
-                r#"{"kind":"sources","v":2,"roots":[{"path":"/home/u"}]}"#,
+                r#"{"kind":"status","v":2,"capabilities":["sources","list-filtered"]}"#.into(),
+                r#"{"kind":"sources","v":2,"roots":[{"path":"/home/u"}]}"#.into(),
                 concat!(
                     r#"{"kind":"query","v":2,"total":5,"hits":["#,
                     r#"{"path":"/home/u/Videos/show.mkv","available":true},"#,
                     r#"{"path":"/home/u/Videos/offline.mp4","available":false},"#,
                     r#"{"path":"relative.mp4","available":true},"#,
-                    r#"{"path":"/home/u/Videos/notes.txt","available":true},"#,
-                    r#"{"path":"/home/u/elsewhere/film.mkv","available":true}"#,
+                    r#"{"path":"/home/u/Videos/notes.txt","available":true}"#,
                     r#"]}"#,
+                )
+                .into(),
+                format!(
+                    r#"{{"kind":"query","v":2,"total":2,"hits":[{{"path":{:?},"available":true}},{{"path":{:?},"available":true}}]}}"#,
+                    code.to_str().unwrap(),
+                    stream.to_str().unwrap(),
                 ),
             ],
         );
@@ -795,17 +867,31 @@ mod tests {
         assert!(daemon.lists);
         assert!(daemon.indexes("/home/u/Videos"));
         assert!(!daemon.indexes("/run/media/u/disk"));
-        let hits = search(
+        // Videos is inside the home folder: asked once, as part of it.
+        let found = search(
             Some(&daemon),
-            &["/home/u/Videos".to_string()],
+            &["/home/u/Videos".to_string(), "/home/u".to_string()],
             "show",
             &mut HashMap::new(),
         );
-        let requests = server.join().unwrap();
-        let query: serde_json::Value = serde_json::from_str(&requests[2]).unwrap();
-        assert_eq!(query["q"], "show");
-        assert_eq!(query["mode"], "name");
-        assert_eq!(hits, ["/home/u/Videos/show.mkv"]);
+        let requests: Vec<serde_json::Value> = server
+            .join()
+            .unwrap()
+            .iter()
+            .map(|request| serde_json::from_str(request).unwrap())
+            .collect();
+        assert_eq!(requests.len(), 4);
+        assert_eq!(requests[2]["q"], "show");
+        assert_eq!(requests[2]["mode"], "name");
+        assert_eq!(requests[2]["filter"]["under"], "/home/u");
+        let asked = requests[2]["filter"]["ext"].as_array().unwrap();
+        assert!(asked.contains(&"mkv".into()) && !asked.contains(&"ts".into()));
+        assert_eq!(requests[3]["filter"]["ext"], serde_json::json!(["ts"]));
+        assert_eq!(
+            found.paths,
+            ["/home/u/Videos/show.mkv", stream.to_str().unwrap()]
+        );
+        assert_eq!(found.total, 6);
     }
 
     #[test]
@@ -814,9 +900,10 @@ mod tests {
         std::fs::write(dir.path().join("Holiday Trip.mp4"), b"").unwrap();
         std::fs::write(dir.path().join("notes.txt"), b"").unwrap();
         let folder = dir.path().to_string_lossy().into_owned();
-        let hits = search(None, &[folder], "holiday", &mut HashMap::new());
-        assert_eq!(hits.len(), 1, "{hits:?}");
-        assert!(hits[0].ends_with("Holiday Trip.mp4"));
+        let found = search(None, &[folder], "holiday", &mut HashMap::new());
+        assert_eq!(found.total, 1);
+        assert_eq!(found.paths.len(), 1, "{:?}", found.paths);
+        assert!(found.paths[0].ends_with("Holiday Trip.mp4"));
     }
 
     #[test]
