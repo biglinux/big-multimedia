@@ -391,12 +391,29 @@ impl BigMediaChrome {
                 window.close();
             }
         });
+        // Fullscreen has no window to minimize, maximize or close from the
+        // header: the buttons go while it lasts. An inner box of their own,
+        // so the app's opt-in keeps `window_controls` to itself.
+        let buttons = gtk::Box::new(gtk::Orientation::Horizontal, 0);
+        buttons.append(&minimize_button);
+        buttons.append(&maximize_restore_button);
+        buttons.append(&close_button);
+        buttons.connect_root_notify(|buttons| {
+            let Some(window) = buttons.root().and_downcast::<gtk::Window>() else {
+                return;
+            };
+            buttons.set_visible(!window.is_fullscreen());
+            let buttons = buttons.downgrade();
+            window.connect_fullscreened_notify(move |window| {
+                if let Some(buttons) = buttons.upgrade() {
+                    buttons.set_visible(!window.is_fullscreen());
+                }
+            });
+        });
         let window_controls = gtk::Box::new(gtk::Orientation::Horizontal, 0);
         window_controls.set_valign(gtk::Align::Center);
         window_controls.set_visible(false);
-        window_controls.append(&minimize_button);
-        window_controls.append(&maximize_restore_button);
-        window_controls.append(&close_button);
+        window_controls.append(&buttons);
         header.pack_end(&window_controls);
         header.pack_end(menu_button);
 

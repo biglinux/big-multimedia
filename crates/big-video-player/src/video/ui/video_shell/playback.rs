@@ -324,7 +324,8 @@ impl VideoShell {
         if let Some(display) = gtk::gdk::Display::default() {
             self.idle_bg.show(&display);
         }
-        self.controls.emit(VideoControlsBarInput::SetHasMedia(false));
+        self.controls
+            .emit(VideoControlsBarInput::SetHasMedia(false));
         self.osd.is_welcome_visible.set(true);
         self.osd.show_and_schedule_hide();
     }
