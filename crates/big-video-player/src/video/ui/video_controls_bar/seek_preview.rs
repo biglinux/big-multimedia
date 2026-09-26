@@ -210,13 +210,22 @@ pub(super) fn wire_neighbour_preview(button: &gtk::Button, mpv: &MpvSlot, step: 
     {
         let mpv = mpv.clone();
         let popover = popover.clone();
+        // Weak: the controller lives on the button.
+        let button = button.downgrade();
         motion.connect_enter(move |_, _, _| {
+            let Some(button) = button.upgrade() else {
+                return;
+            };
             let Some(path) = mpv.borrow().as_ref().and_then(|mpv| {
                 let index = usize::try_from(mpv.get_playlist_pos() + step).ok()?;
                 mpv.get_playlist_paths().into_iter().nth(index)
             }) else {
+                // Nowhere to go: the tooltip names the button instead.
+                button.set_has_tooltip(true);
                 return;
             };
+            // The preview says "Next" and where: a tooltip over it would too.
+            button.set_has_tooltip(false);
             name.set_label(&display_name(&path));
             if shown.borrow().as_deref() != Some(path.as_str()) {
                 shown.replace(Some(path.clone()));

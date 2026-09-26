@@ -56,6 +56,7 @@ pub(super) fn valid(key: &str, value: &str) -> bool {
         | "ui-show-subtitle"
         | "ui-show-audio-track"
         | "ui-show-fullscreen"
+        | "ui-show-tv"
         | "ui-show-pin"
         | "ui-show-open"
         | "ui-show-playlist"

@@ -291,12 +291,17 @@ const SOUND_OFF_CSS: &str = "
   border-radius: 999px;
   padding-right: 8px;
 }
-.sound-off .osd-value-label,
+.sound-off label,
 .sound-off button.osd-btn,
 .sound-off button.osd-btn:hover,
 .sound-off button.osd-btn:active {
   color: @warning_fg_color;
   text-shadow: none;
+}
+/* The TV/PC mark beside the level, dimmed elsewhere: dimmed on the
+   warning colour it fell short of contrast. */
+.sound-off label.dim-label {
+  opacity: 1;
 }
 .sound-off .osd-value-label {
   font-weight: bold;

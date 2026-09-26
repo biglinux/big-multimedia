@@ -131,6 +131,7 @@ pub const UI_SHOW_PREV: BoolKey = BoolKey("ui-show-prev");
 pub const UI_SHOW_NEXT: BoolKey = BoolKey("ui-show-next");
 pub const UI_SHOW_SUBTITLE: BoolKey = BoolKey("ui-show-subtitle");
 pub const UI_SHOW_AUDIO_TRACK: BoolKey = BoolKey("ui-show-audio-track");
+pub const UI_SHOW_TV: BoolKey = BoolKey("ui-show-tv");
 pub const UI_SHOW_FULLSCREEN: BoolKey = BoolKey("ui-show-fullscreen");
 pub const UI_SHOW_PIN: BoolKey = BoolKey("ui-show-pin");
 pub const UI_SHOW_OPEN: BoolKey = BoolKey("ui-show-open");

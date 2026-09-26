@@ -1,7 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 //! Button-layout editor page on the shared
 //! `big_relm4_components::input::zone_layout_editor::BigZoneLayoutEditor`.
-//! The video player owns only the SPEC (its 13 controls + the
+//! The video player owns only the SPEC (its 14 controls + the
 //! top/bottom bars) and the SETTINGS mapping; the editor widget is shared.
 //!
 //! The runtime applier ([`super::super::super::video_controls_bar::zones`]) reads
@@ -20,7 +20,7 @@ use big_relm4_components::layout::preferences::BigPreferencesGroupSpec;
 use crate::i18n::i18n;
 use crate::settings::{Settings, keys};
 
-/// The 13 video controls: `(id, label-msgid, icon, default "<bar>:<placement>"
+/// The 14 video controls: `(id, label-msgid, icon, default "<bar>:<placement>"
 /// slot, the `ui-show-*` key)`. Defaults mirror `big_media_data::settings::defaults`.
 const CONTROLS: &[(&str, &str, &str, &str, keys::BoolKey)] = &[
     (
@@ -108,6 +108,13 @@ const CONTROLS: &[(&str, &str, &str, &str, keys::BoolKey)] = &[
         keys::UI_SHOW_AUDIO_TRACK,
     ),
     (
+        "tv",
+        "Play on a TV",
+        "tv-symbolic",
+        "bottom:end",
+        keys::UI_SHOW_TV,
+    ),
+    (
         "fullscreen",
         "Fullscreen",
         "view-fullscreen-symbolic",
@@ -126,7 +133,7 @@ const ZONE_KEYS: &[(&str, ZonePlacement, keys::StringKey)] = &[
     ("bottom", ZonePlacement::End, keys::UI_ZONE_BOTTOM_RIGHT),
 ];
 
-/// Build the editor spec: the 13 controls + a top bar (pin/open · title · menu/
+/// Build the editor spec: the 14 controls + a top bar (pin/open · title · menu/
 /// playlist) and a bottom bar (transport, with a seek slider above it).
 fn build_spec() -> ZoneLayoutSpec {
     let controls = CONTROLS

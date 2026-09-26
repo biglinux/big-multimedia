@@ -31,6 +31,7 @@ pub(crate) struct ButtonLayoutWidgets {
     pub(super) export_menu_popover: gtk::Popover,
     pub(super) subtitle_menu_button: gtk::Button,
     pub(super) audio_track_menu_button: gtk::Button,
+    pub(super) tv_button: gtk::Button,
     pub(super) fullscreen_button: gtk::Button,
     /// A file is open. Without one the controls that act on it are hidden,
     /// whatever the layout says: on the welcome screen they did nothing.
@@ -84,6 +85,7 @@ impl ButtonLayoutWidgets {
             ("edit-export", self.export_menu_button.clone().upcast()),
             ("subtitle", self.subtitle_menu_button.clone().upcast()),
             ("audio-track", self.audio_track_menu_button.clone().upcast()),
+            ("tv", self.tv_button.clone().upcast()),
             ("fullscreen", self.fullscreen_button.clone().upcast()),
         ]
         .into_iter()
@@ -106,6 +108,7 @@ impl ButtonLayoutWidgets {
             ("edit-export", end.as_str()),
             ("subtitle", end.as_str()),
             ("audio-track", end.as_str()),
+            ("tv", end.as_str()),
             ("fullscreen", end.as_str()),
         ];
 
@@ -133,6 +136,7 @@ impl ButtonLayoutWidgets {
                 "audio-track",
                 media && settings.get_bool(keys::UI_SHOW_AUDIO_TRACK),
             ),
+            ("tv", media && settings.get_bool(keys::UI_SHOW_TV)),
             ("fullscreen", settings.get_bool(keys::UI_SHOW_FULLSCREEN)),
         ]
         .into_iter()
@@ -154,6 +158,7 @@ fn control_name(name: &str) -> &'static str {
         "edit-export" | "export" => "edit-export",
         "subtitle" | "subtitles" => "subtitle",
         "audio-track" | "audio" => "audio-track",
+        "tv" => "tv",
         "fullscreen" => "fullscreen",
         _ => "",
     }
@@ -573,7 +578,8 @@ pub(super) fn build_center_box() -> (gtk::Box, gtk::Button, gtk::Button, gtk::Bu
     (center, previous_button, play_button, next_button)
 }
 
-/// END box: edit-export popover · subtitle popover · audio-track popover · fullscreen.
+/// END box: edit-export popover · subtitle popover · audio-track popover · TV ·
+/// fullscreen.
 pub(super) struct EndBoxWidgets {
     pub(super) end_box: gtk::Box,
     pub(super) export_menu_button: gtk::Button,
@@ -582,6 +588,7 @@ pub(super) struct EndBoxWidgets {
     pub(super) subtitle_menu_popover: gtk::Popover,
     pub(super) audio_track_menu_button: gtk::Button,
     pub(super) audio_track_menu_popover: gtk::Popover,
+    pub(super) tv_button: gtk::Button,
     pub(super) fullscreen_button: gtk::Button,
 }
 
@@ -621,11 +628,17 @@ pub(super) fn build_end_box() -> EndBoxWidgets {
     let audio_track_menu_popover = gtk::Popover::new();
     setup_end_menu_popover(&audio_track_menu_button, &audio_track_menu_popover);
 
+    // Here rather than in the menu, where many never look: the corner is
+    // where a person finds it's there.
+    let tv_button = osd_button("tv-symbolic", &i18n("Play on a TV"));
+    tv_button.set_action_name(Some("win.cast"));
+
     let fullscreen_button = osd_button("view-fullscreen-symbolic", &i18n("Fullscreen"));
 
     end_box.append(&export_menu_button);
     end_box.append(&subtitle_menu_button);
     end_box.append(&audio_track_menu_button);
+    end_box.append(&tv_button);
     end_box.append(&fullscreen_button);
     EndBoxWidgets {
         end_box,
@@ -635,6 +648,7 @@ pub(super) fn build_end_box() -> EndBoxWidgets {
         subtitle_menu_popover,
         audio_track_menu_button,
         audio_track_menu_popover,
+        tv_button,
         fullscreen_button,
     }
 }
@@ -675,10 +689,11 @@ fn build_export_menu_model() -> gio::Menu {
     build_flat_menu_model(&export_menu_items())
 }
 
-/// OSD icon button with an accessible label.
+/// OSD icon button, its name in the tooltip and for screen readers.
 fn osd_button(icon_name: &str, label: &str) -> gtk::Button {
     let button = gtk::Button::builder()
         .icon_name(icon_name)
+        .tooltip_text(label)
         .valign(gtk::Align::Center)
         .css_classes(["osd-btn"])
         .build();

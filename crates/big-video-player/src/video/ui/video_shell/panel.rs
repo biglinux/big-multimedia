@@ -48,9 +48,9 @@ impl PanelPage {
     /// Where "Back" leads.
     fn parent(self) -> Option<Self> {
         match self {
-            // Recent opens on its own (the welcome screen, a shortcut): Back
-            // would lead into settings nobody asked for.
-            Self::Home | Self::Recent => None,
+            // Recent and the TV open on their own (the welcome screen, the
+            // TV button): Back would lead into settings nobody asked for.
+            Self::Home | Self::Recent | Self::Tv => None,
             _ => Some(Self::Home),
         }
     }
@@ -306,13 +306,35 @@ impl VideoShell {
             return;
         };
         let panel = self.panel.clone();
-        if !panel.is_open() {
-            // The header bar itself: in the gradient look its box also holds
-            // 80 px of fade, and so does the top of the controls.
+        // Asked again for the page it shows (the TV button, a shortcut): it
+        // closes, as a toggle does.
+        if direct && panel.is_open() && panel.page.get() == page {
+            self.close_panel(sender);
+            return;
+        }
+        // The TV page opens from its button in the controls' corner, so it
+        // rises from there; the rest hang below the settings button.
+        let from_below = page == PanelPage::Tv;
+        if !panel.is_open() || from_below != (panel.revealer.valign() == gtk::Align::End) {
             let layout = self.panel_layout_now();
             panel.columns.set(layout.columns);
-            panel.card.set_width_request(layout.width);
             panel.revealer.set_margin_top(layout.top);
+            if from_below {
+                // One list: the home page's width would only stretch it.
+                panel.card.set_width_request(layout.width.min(440));
+                panel.revealer.set_valign(gtk::Align::End);
+                panel.revealer.set_margin_bottom(layout.bottom);
+                panel
+                    .revealer
+                    .set_transition_type(gtk::RevealerTransitionType::SlideUp);
+            } else {
+                panel.card.set_width_request(layout.width);
+                panel.revealer.set_valign(gtk::Align::Start);
+                panel.revealer.set_margin_bottom(0);
+                panel
+                    .revealer
+                    .set_transition_type(gtk::RevealerTransitionType::SlideLeft);
+            }
             // Room below the card's own title row.
             panel.scroller.set_max_content_height(
                 (self.main_overlay.height() - layout.top - layout.bottom - 52).max(120),
@@ -468,13 +490,6 @@ impl VideoShell {
                 .map_or_else(|| i18n("Off"), Adjustment::label),
             changed: timer.is_some(),
             target: BlockTarget::Page(PanelPage::SleepTimer),
-        });
-        blocks.push(Block {
-            icon: "tv-symbolic",
-            name: i18n("Play on a TV"),
-            state: i18n("Chromecast or DLNA"),
-            changed: false,
-            target: BlockTarget::Page(PanelPage::Tv),
         });
         if self
             .win_actions

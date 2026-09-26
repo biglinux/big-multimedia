@@ -273,6 +273,7 @@ impl Component for VideoShell {
         // shell, no untrusted input.
         let keep_above_toggle_button = gtk::ToggleButton::builder()
             .icon_name("view-pin-symbolic")
+            .tooltip_text(i18n("Keep Above"))
             .css_classes(["osd-btn"])
             .build();
         keep_above_toggle_button
@@ -296,12 +297,14 @@ impl Component for VideoShell {
         // active one hides it. Not a radio pair — both off = sidebar hidden.
         let files_sidebar_toggle_button = gtk::ToggleButton::builder()
             .icon_name("folder-symbolic")
+            .tooltip_text(i18n("Files"))
             .css_classes(["osd-btn"])
             .build();
         files_sidebar_toggle_button
             .update_property(&[gtk::accessible::Property::Label(&i18n("Files"))]);
         let playlist_sidebar_toggle_button = gtk::ToggleButton::builder()
             .icon_name("view-list-symbolic")
+            .tooltip_text(i18n("Playlist"))
             .css_classes(["osd-btn"])
             .build();
         playlist_sidebar_toggle_button

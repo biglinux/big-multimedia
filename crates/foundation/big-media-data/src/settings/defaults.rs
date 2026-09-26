@@ -149,6 +149,7 @@ pub(super) fn defaults() -> HashMap<String, String> {
     values.insert("ui-show-next".into(), "true".into());
     values.insert("ui-show-subtitle".into(), "true".into());
     values.insert("ui-show-audio-track".into(), "true".into());
+    values.insert("ui-show-tv".into(), "true".into());
     values.insert("ui-show-fullscreen".into(), "true".into());
     values.insert("ui-show-pin".into(), "true".into());
     values.insert("ui-show-open".into(), "true".into());
@@ -160,7 +161,7 @@ pub(super) fn defaults() -> HashMap<String, String> {
     values.insert("ui-zone-bottom-center".into(), "prev,play,next".into());
     values.insert(
         "ui-zone-bottom-right".into(),
-        "subtitle,audio-track,fullscreen".into(),
+        "subtitle,audio-track,tv,fullscreen".into(),
     );
 
     values.insert("replaygain".into(), "track".into());

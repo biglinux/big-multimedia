@@ -368,6 +368,7 @@ impl Component for VideoControlsBar {
             export_menu_popover: end_widgets.export_menu_popover,
             subtitle_menu_button: end_widgets.subtitle_menu_button.clone(),
             audio_track_menu_button: end_widgets.audio_track_menu_button.clone(),
+            tv_button: end_widgets.tv_button.clone(),
             fullscreen_button: end_widgets.fullscreen_button.clone(),
             has_media: Rc::new(std::cell::Cell::new(false)),
         };
@@ -454,6 +455,11 @@ impl Component for VideoControlsBar {
                     "media-playback-pause-symbolic"
                 };
                 self.play_button.set_icon_name(icon);
+                // It names what a click does, as the icon shows.
+                let action = if paused { i18n("Play") } else { i18n("Pause") };
+                self.play_button.set_tooltip_text(Some(&action));
+                self.play_button
+                    .update_property(&[gtk::accessible::Property::Label(&action)]);
             }
             VideoControlsBarInput::SetPosition(text) => self.position_label.set_label(&text),
             VideoControlsBarInput::SetDuration(text) => self.duration_label.set_label(&text),
