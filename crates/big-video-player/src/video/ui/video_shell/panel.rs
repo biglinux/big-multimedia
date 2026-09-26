@@ -646,13 +646,15 @@ impl VideoShell {
         let page = page_box();
         page.set_margin_start(0);
         page.set_margin_end(0);
-        page.append(&crate::shared::audio_effects::create_equalizer_content(
+        let equalizer = crate::shared::audio_effects::create_equalizer_content(
             &self.settings,
             Some(Arc::clone(mpv)),
             Some(Rc::new(|| {
                 super::send_to_shell(VideoShellInput::RefreshAdjustments);
             })),
-        ));
+        );
+        equalizer.add_css_class("panel-backed");
+        page.append(&equalizer);
         page.append(&media_adjust::build_delay_row(mpv, false));
         page.upcast()
     }

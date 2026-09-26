@@ -186,15 +186,12 @@ button.adjustment-reset {{
 
         if self.color_source == "gradient" {
             css += &format!(
-                // Full cover behind the controls themselves, the fade only in
-                // the 80 px above them: a fade across the whole bar left the
-                // time over a bright frame at 3.4:1.
                 ".osd-controls {{\n\
-                   background: linear-gradient(to top, rgba(0,0,0,{op:.2}) calc(100% - 80px), transparent);\n\
+                   background: linear-gradient(to top, rgba(0,0,0,{op:.2}), transparent);\n\
                    padding-top: 80px;\n\
                  }}\n\
                  .osd-header {{\n\
-                   background: linear-gradient(to bottom, rgba(0,0,0,{op:.2}) calc(100% - 80px), transparent);\n\
+                   background: linear-gradient(to bottom, rgba(0,0,0,{op:.2}), transparent);\n\
                    padding-bottom: 80px;\n\
                  }}\n",
                 op = self.bg_opacity,
@@ -310,19 +307,36 @@ const SOUND_OFF_CSS: &str = "
 ";
 
 /// The settings panel: a see-through card (no blur, no shadow, so it adds
-/// nothing per video frame). 92% is the least cover that keeps WCAG over any
-/// frame, measured over white and black video in both schemes: text at
-/// 4.5:1 or more, a slider's fill and trough at 3:1 against the card. At
-/// 72% a bright frame took a slider's fill down to 1.7:1.
+/// nothing per video frame) at 72%. What holds controls — blocks, lists,
+/// sliders — carries 72% more of its own, 92% in all, the least that keeps a
+/// slider's fill and trough at 3:1 over any frame (at 72% alone a bright one
+/// took the fill to 1.7:1). Text straight on the card is at 90% even when
+/// secondary, which reads at 5.4:1 or more there. Measured over white and
+/// black video in both schemes.
 const PANEL_CSS: &str = "
 .settings-panel {
-  background: alpha(@window_bg_color, 0.92);
+  background: alpha(@window_bg_color, 0.72);
+  --dim-opacity: 90%;
   color: @window_fg_color;
   border: 1px solid alpha(@window_fg_color, 0.12);
   border-radius: 14px;
 }
+.settings-panel button.settings-block,
+.settings-panel button.settings-link,
+.settings-panel button.colour-choice,
+.settings-panel list.boxed-list,
+.settings-panel .panel-backed {
+  background-color: alpha(@window_bg_color, 0.72);
+}
+.settings-panel list.boxed-list {
+  background-image: linear-gradient(@card_bg_color, @card_bg_color);
+}
+.settings-panel .panel-backed {
+  border-radius: 10px;
+  padding: 8px 10px;
+}
 .settings-panel button.settings-block {
-  background: alpha(@window_fg_color, 0.08);
+  background-image: linear-gradient(alpha(@window_fg_color, 0.08), alpha(@window_fg_color, 0.08));
   border-radius: 10px;
   padding: 8px 12px;
   min-height: 52px;
@@ -331,7 +345,7 @@ const PANEL_CSS: &str = "
   font-weight: normal;
 }
 .settings-panel button.colour-choice {
-  background: alpha(@window_fg_color, 0.08);
+  background-image: linear-gradient(alpha(@window_fg_color, 0.08), alpha(@window_fg_color, 0.08));
   border-radius: 10px;
   padding: 8px 10px;
 }
@@ -340,21 +354,21 @@ const PANEL_CSS: &str = "
   color: @accent_fg_color;
 }
 .settings-panel button.settings-link {
-  background: alpha(@window_fg_color, 0.05);
+  background-image: linear-gradient(alpha(@window_fg_color, 0.05), alpha(@window_fg_color, 0.05));
   border-radius: 8px;
   min-height: 30px;
   padding: 2px 8px;
   font-weight: normal;
 }
 .settings-panel button.settings-link:hover {
-  background: alpha(@window_fg_color, 0.12);
+  background-image: linear-gradient(alpha(@window_fg_color, 0.12), alpha(@window_fg_color, 0.12));
 }
 .settings-panel.compact button.settings-block {
   min-height: 40px;
   padding: 4px 10px;
 }
 .settings-panel button.settings-block:hover {
-  background: alpha(@window_fg_color, 0.14);
+  background-image: linear-gradient(alpha(@window_fg_color, 0.14), alpha(@window_fg_color, 0.14));
 }
 .settings-panel .block-state.block-changed {
   font-weight: bold;

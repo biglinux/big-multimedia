@@ -215,6 +215,7 @@ pub(super) fn build_delay_row(mpv: &Arc<MpvBackend>, subtitles: bool) -> gtk::Wi
     let (outer_box, adj, _, _, _) = row.into_parts();
     let mpv = Arc::clone(mpv);
     connect_debounced_adjustment(&adj, SLIDER_DEBOUNCE, move |value| apply(&mpv, value));
+    outer_box.add_css_class("panel-backed");
     outer_box.upcast()
 }
 
@@ -251,6 +252,7 @@ fn add_image_group(
         connect_debounced_adjustment(row.adjustment(), SLIDER_DEBOUNCE, move |value| {
             apply(&mpv, value);
         });
+        row.root().add_css_class("panel-backed");
         flow.append(row.root());
     }
     unfocusable_children(&flow);
