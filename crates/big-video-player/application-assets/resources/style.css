@@ -296,17 +296,6 @@ menubutton.osd-btn {
   border: 1px solid rgba(255,255,255,0.30);
 }
 
-/* The accent a fifth darker: white text on the plain accent reads at 3.8:1,
-   under WCAG's 4.5:1; here at 5:1 and more. */
-.welcome-btn-primary.welcome-btn-main {
-  background: mix(@accent_bg_color, black, 0.2);
-  color: @accent_fg_color;
-  border: 1px solid transparent;
-}
-.welcome-btn-primary.welcome-btn-main:hover {
-  background: mix(@accent_bg_color, black, 0.1);
-}
-
 /* Now Playing (music mode) */
 .now-playing {
   padding: 32px 24px;

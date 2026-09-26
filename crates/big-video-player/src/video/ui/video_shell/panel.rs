@@ -26,6 +26,7 @@ pub enum PanelPage {
     Chapters,
     SleepTimer,
     Tv,
+    Recent,
 }
 
 impl PanelPage {
@@ -40,13 +41,16 @@ impl PanelPage {
             Self::Chapters => i18n("Chapters"),
             Self::SleepTimer => i18n("Stop after…"),
             Self::Tv => i18n("Play on a TV"),
+            Self::Recent => i18n("Recent Files"),
         }
     }
 
     /// Where "Back" leads.
     fn parent(self) -> Option<Self> {
         match self {
-            Self::Home => None,
+            // Recent opens on its own (the welcome screen, a shortcut): Back
+            // would lead into settings nobody asked for.
+            Self::Home | Self::Recent => None,
             _ => Some(Self::Home),
         }
     }
@@ -317,6 +321,7 @@ impl VideoShell {
             PanelPage::Chapters => chapters_page(&mpv, sender),
             PanelPage::SleepTimer => self.sleep_timer_page(sender),
             PanelPage::Tv => self.tv_page(),
+            PanelPage::Recent => recent_page(panel.columns.get(), sender),
         };
         if page != PanelPage::Effects {
             panel.effects.take();
@@ -325,7 +330,7 @@ impl VideoShell {
         wrapper.append(&content);
         panel.scroller.set_child(Some(&wrapper));
         panel.title.set_label(&page.title());
-        panel.back.set_visible(page != PanelPage::Home);
+        panel.back.set_visible(page.parent().is_some());
         if !panel.is_open() {
             panel.direct.set(direct);
             self.osd.show();
@@ -811,6 +816,133 @@ fn chapters_page(mpv: &MpvBackend, sender: &ComponentSender<VideoShell>) -> gtk:
         chapters.add(&row);
     }
     chapters.upcast()
+}
+
+/// The last videos opened, as cards: picture, name and length. A click
+/// opens one. Pictures and lengths come off the main loop.
+fn recent_page(columns: usize, sender: &ComponentSender<VideoShell>) -> gtk::Widget {
+    /// Enough to find the recent one without a list to scroll through.
+    const SHOWN: usize = 12;
+    let entries = crate::recent::load_recent_for("video");
+    if entries.is_empty() {
+        return gtk::Label::builder()
+            .label(i18n("No Recent Files"))
+            .css_classes(["dim-label"])
+            .margin_top(24)
+            .margin_bottom(24)
+            .build()
+            .upcast();
+    }
+    let grid = gtk::FlowBox::builder()
+        .selection_mode(gtk::SelectionMode::None)
+        .homogeneous(true)
+        .min_children_per_line(u32::try_from(columns.max(2)).unwrap_or(2))
+        .max_children_per_line(u32::try_from(columns.max(2)).unwrap_or(2))
+        .column_spacing(8)
+        .row_spacing(8)
+        .build();
+    for entry in entries.into_iter().take(SHOWN) {
+        let name = crate::recent::display_name(&entry.path);
+        let picture = gtk::Picture::builder()
+            .content_fit(gtk::ContentFit::Cover)
+            .height_request(90)
+            .css_classes(["recent-thumb"])
+            .build();
+        let length = gtk::Label::builder()
+            .halign(gtk::Align::End)
+            .valign(gtk::Align::End)
+            .margin_end(6)
+            .margin_bottom(6)
+            .visible(false)
+            .css_classes(["recent-length"])
+            .build();
+        // Until a picture comes, and for what has none (music opened here,
+        // streams): what kind of file it is.
+        let audio = gtk::gio::content_type_guess(Some(&entry.path), None)
+            .0
+            .starts_with("audio/");
+        let placeholder = gtk::Image::builder()
+            .icon_name(if audio {
+                "audio-x-generic-symbolic"
+            } else {
+                "video-x-generic-symbolic"
+            })
+            .pixel_size(32)
+            .css_classes(["dim-label"])
+            .build();
+        let frame = gtk::Overlay::builder().child(&picture).build();
+        frame.add_overlay(&placeholder);
+        frame.add_overlay(&length);
+        let label = gtk::Label::builder()
+            .label(&name)
+            .xalign(0.0)
+            .ellipsize(gtk::pango::EllipsizeMode::End)
+            .max_width_chars(1)
+            .build();
+        let content = gtk::Box::builder()
+            .orientation(gtk::Orientation::Vertical)
+            .spacing(6)
+            .build();
+        content.append(&frame);
+        content.append(&label);
+        let card = gtk::Button::builder()
+            .child(&content)
+            .tooltip_text(&entry.path)
+            .css_classes(["recent-card"])
+            .build();
+        card.update_property(&[gtk::accessible::Property::Label(&name)]);
+        {
+            let sender = sender.clone();
+            let path = entry.path.clone();
+            card.connect_clicked(move |_| {
+                sender.input(VideoShellInput::OpenFiles(vec![path.clone()]));
+                sender.input(VideoShellInput::ClosePanel);
+            });
+        }
+        grid.append(&card);
+        if playback::is_remote_uri(&entry.path) {
+            continue;
+        }
+        let picture = picture.downgrade();
+        let placeholder = placeholder.downgrade();
+        let length = length.downgrade();
+        let path = entry.path;
+        glib::spawn_future_local(async move {
+            let wanted = path.clone();
+            let texture = gtk::gio::spawn_blocking(move || {
+                let file = crate::media::thumbnail::get_or_generate_thumbnail(&wanted)?;
+                gtk::gdk::Texture::from_filename(file).ok()
+            })
+            .await
+            .ok()
+            .flatten();
+            if let (Some(texture), Some(picture)) = (texture, picture.upgrade()) {
+                picture.set_paintable(Some(&texture));
+                if let Some(placeholder) = placeholder.upgrade() {
+                    placeholder.set_visible(false);
+                }
+            }
+            let seconds = gtk::gio::spawn_blocking(move || {
+                crate::media::playlist::probe_metadata_cached(&path)
+                    .and_then(|meta| meta.duration_secs)
+            })
+            .await
+            .ok()
+            .flatten()
+            .filter(|seconds| *seconds > 0.0);
+            if let (Some(seconds), Some(length)) = (seconds, length.upgrade()) {
+                length.set_label(&big_media_components::time::duration_hms(seconds));
+                length.set_visible(true);
+            }
+        });
+    }
+    // Tab moves between the cards, not the flow box's own cells.
+    let mut cell = grid.first_child();
+    while let Some(child) = cell {
+        child.set_focusable(false);
+        cell = child.next_sibling();
+    }
+    grid.upcast()
 }
 
 #[cfg(test)]

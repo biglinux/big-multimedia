@@ -325,6 +325,7 @@ const PANEL_CSS: &str = "
 .settings-panel button.settings-block,
 .settings-panel button.settings-link,
 .settings-panel button.colour-choice,
+.settings-panel button.recent-card,
 .settings-panel list.boxed-list,
 .settings-panel .panel-backed {
   background-color: alpha(@window_bg_color, 0.55);
@@ -372,6 +373,27 @@ const PANEL_CSS: &str = "
   background-image: linear-gradient(alpha(@window_fg_color, 0.14), alpha(@window_fg_color, 0.14));
 }
 .settings-panel .block-state.block-changed {
+  font-weight: bold;
+}
+.settings-panel button.recent-card {
+  background-image: linear-gradient(alpha(@window_fg_color, 0.08), alpha(@window_fg_color, 0.08));
+  border-radius: 10px;
+  padding: 6px;
+  font-weight: normal;
+}
+.settings-panel button.recent-card:hover {
+  background-image: linear-gradient(alpha(@window_fg_color, 0.14), alpha(@window_fg_color, 0.14));
+}
+.settings-panel .recent-thumb {
+  border-radius: 7px;
+  background-color: alpha(black, 0.35);
+}
+.settings-panel .recent-length {
+  background: alpha(black, 0.75);
+  color: white;
+  border-radius: 6px;
+  padding: 1px 6px;
+  font-size: smaller;
   font-weight: bold;
 }
 .settings-panel scale trough,

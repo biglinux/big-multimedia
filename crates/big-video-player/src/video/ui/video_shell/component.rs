@@ -687,9 +687,7 @@ impl Component for VideoShell {
                     }
                 }
                 VideoShellInput::ShowRecent => {
-                    if let Some(root) = window_ref {
-                        Self::show_recent_dialog(root);
-                    }
+                    self.show_panel(super::panel::PanelPage::Recent, true, &sender);
                 }
                 VideoShellInput::ShowOpenDisc => {
                     if let Some(root) = window_ref {

@@ -215,56 +215,6 @@ impl VideoShell {
         dialog.present(Some(root));
     }
 
-    /// Present the recent-files chooser → `open_files([path])` on activation.
-    pub(super) fn show_recent_dialog(root: &adw::ApplicationWindow) {
-        let Some(sender) = shell_input_sender() else {
-            log::warn!("video recent-files dialog ignored before shell input registration");
-            return;
-        };
-        let entries = crate::recent::load_recent_for("video");
-
-        let dialog = adw::Dialog::builder()
-            .title(i18n("Recent Files"))
-            .content_width(520)
-            .content_height(480)
-            .build();
-        let page = BigDialogPage::scrolled_clamped(500, 420);
-        let content = page.content().clone();
-
-        if entries.is_empty() {
-            let status = adw::StatusPage::builder()
-                .icon_name("document-open-recent-symbolic")
-                .title(i18n("No Recent Files"))
-                .build();
-            status.set_vexpand(true);
-            content.append(&status);
-        } else {
-            let group = BigPreferencesGroupSpec::untitled().build();
-            for entry in &entries {
-                let display = crate::recent::display_name(&entry.path);
-                let row = BigNavigationRow::new(
-                    BigNavigationRowSpec::new(&display)
-                        .subtitle(&entry.path)
-                        .action_label(i18n("Open recent file")),
-                )
-                .into_root();
-                let path = entry.path.clone();
-                let sender = sender.clone();
-                let dlg = dialog.downgrade();
-                row.connect_activated(move |_| {
-                    let _ = sender.send(VideoShellInput::OpenFiles(vec![path.clone()]));
-                    if let Some(d) = dlg.upgrade() {
-                        d.close();
-                    }
-                });
-                group.add(&row);
-            }
-            content.append(&group);
-        }
-        dialog.set_child(Some(&page.into_root()));
-        dialog.present(Some(root));
-    }
-
     /// Present the open-disc entry dialog (DVD / Blu-ray device or ISO/folder).
     /// Validates the device string (rejects empty and the `--` option-injection
     /// sequence) before forming the mpv `dvd://` / `bd://` URI.

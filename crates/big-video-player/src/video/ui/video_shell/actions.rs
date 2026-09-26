@@ -126,8 +126,6 @@ pub(super) fn build_welcome_screen(sender: &ComponentSender<VideoShell>) -> gtk:
     let open_file = welcome_button("folder-open-symbolic", &i18n("Open File"), sender, || {
         VideoShellInput::ShowOpenFile
     });
-    // The way most people start: it leads.
-    open_file.add_css_class("welcome-btn-main");
     welcome_button_row.append(&open_file);
     welcome_button_row.append(&welcome_button(
         "document-open-recent-symbolic",
