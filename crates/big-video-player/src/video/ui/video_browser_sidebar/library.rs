@@ -165,6 +165,9 @@ struct Hit {
     path: String,
     #[serde(default)]
     available: bool,
+    /// Its media type, from a daemon that has `mime-filter`.
+    #[serde(default)]
+    mime: String,
 }
 
 #[derive(serde::Deserialize)]
@@ -186,12 +189,14 @@ fn ask(socket: &Path, request: &serde_json::Value) -> Option<Reply> {
     serde_json::from_str(line.trim()).ok()
 }
 
-/// What the daemon offers this session: where it indexes, and whether its
-/// `list` mode filters inside the index (an older one answers empty).
+/// What the daemon offers this session: where it indexes, whether its
+/// `list` mode filters inside the index (an older one answers empty), and
+/// whether it knows each file's media type.
 struct Daemon {
     socket: PathBuf,
     roots: Vec<String>,
     lists: bool,
+    types: bool,
 }
 
 impl Daemon {
@@ -204,6 +209,7 @@ impl Daemon {
             socket: socket.to_path_buf(),
             roots,
             lists: status.capabilities.iter().any(|c| c == "list-filtered"),
+            types: status.capabilities.iter().any(|c| c == "mime-filter"),
         })
     }
 
@@ -213,8 +219,7 @@ impl Daemon {
             .any(|root| dir == root || is_under(dir, root))
     }
 
-    fn query(&self, q: &str, mode: &str, under: &str, ext: &[&str], limit: usize) -> Option<Reply> {
-        let filter = serde_json::json!({ "ext": ext, "under": under });
+    fn query(&self, q: &str, mode: &str, filter: serde_json::Value, limit: usize) -> Option<Reply> {
         let reply = ask(
             &self.socket,
             &serde_json::json!({
@@ -237,10 +242,13 @@ fn openable(hit: &Hit) -> bool {
 }
 
 /// Videos under `dir` whose names hold `q` (every one, in the `list` mode):
-/// the first `limit` the player can open, and how many there are. `.ts` is
-/// TypeScript's too, and a folder of code holds hundreds, so those are asked
-/// apart and each one read to tell: asked together they filled the answer
-/// and left one video of hundreds.
+/// the first `limit` the player can open, and how many there are.
+///
+/// A daemon that knows media types is asked for `video/*`: it has already
+/// told a transport stream from TypeScript, and finds a video with no
+/// extension. An older one is asked by extension, `.ts` apart and each one
+/// read here: asked together, TypeScript filled the answer and left one video
+/// of hundreds.
 fn videos(
     daemon: &Daemon,
     q: &str,
@@ -248,12 +256,28 @@ fn videos(
     dir: &str,
     limit: usize,
 ) -> Option<(Vec<String>, usize)> {
+    if daemon.types {
+        let filter = serde_json::json!({ "mime": ["video/*"], "under": dir });
+        let reply = daemon.query(q, mode, filter, limit)?;
+        let paths = reply
+            .hits
+            .into_iter()
+            .filter(|hit| {
+                hit.available
+                    && Path::new(&hit.path).is_absolute()
+                    && hit.mime.starts_with("video/")
+            })
+            .map(|hit| hit.path)
+            .collect();
+        return Some((paths, reply.total));
+    }
     let others: Vec<&str> = playlist::VIDEO_EXTENSIONS
         .iter()
         .copied()
         .filter(|ext| *ext != "ts")
         .collect();
-    let reply = daemon.query(q, mode, dir, &others, limit)?;
+    let filter = serde_json::json!({ "ext": others, "under": dir });
+    let reply = daemon.query(q, mode, filter, limit)?;
     let mut total = reply.total;
     let mut paths: Vec<String> = reply
         .hits
@@ -261,7 +285,8 @@ fn videos(
         .filter(openable)
         .map(|hit| hit.path)
         .collect();
-    if let Some(reply) = daemon.query(q, mode, dir, &["ts"], TS_READ) {
+    let filter = serde_json::json!({ "ext": ["ts"], "under": dir });
+    if let Some(reply) = daemon.query(q, mode, filter, TS_READ) {
         let streams: Vec<String> = reply
             .hits
             .into_iter()
@@ -892,6 +917,48 @@ mod tests {
             ["/home/u/Videos/show.mkv", stream.to_str().unwrap()]
         );
         assert_eq!(found.total, 6);
+    }
+
+    #[test]
+    fn a_daemon_that_knows_types_is_asked_for_videos_once() {
+        let dir = tempfile::tempdir().unwrap();
+        let socket = dir.path().join("indexd.sock");
+        let server = serve(
+            &socket,
+            vec![
+                r#"{"kind":"status","v":2,"capabilities":["sources","list-filtered","mime-filter"]}"#.into(),
+                r#"{"kind":"sources","v":2,"roots":[{"path":"/home/u"}]}"#.into(),
+                concat!(
+                    r#"{"kind":"query","v":2,"total":3,"hits":["#,
+                    r#"{"path":"/home/u/recording","available":true,"mime":"video/mp2t"},"#,
+                    r#"{"path":"/home/u/clip.ts","available":true,"mime":"video/mp2t"},"#,
+                    r#"{"path":"/home/u/away.mkv","available":false,"mime":"video/matroska"}"#,
+                    r#"]}"#,
+                )
+                .into(),
+            ],
+        );
+        let daemon = Daemon::find(&socket).unwrap();
+        assert!(daemon.types);
+        let found = search(
+            Some(&daemon),
+            &["/home/u".to_string()],
+            "re",
+            &mut HashMap::new(),
+        );
+        let requests: Vec<serde_json::Value> = server
+            .join()
+            .unwrap()
+            .iter()
+            .map(|request| serde_json::from_str(request).unwrap())
+            .collect();
+        assert_eq!(requests.len(), 3);
+        assert_eq!(
+            requests[2]["filter"],
+            serde_json::json!({ "mime": ["video/*"], "under": "/home/u" })
+        );
+        assert_eq!(found.paths, ["/home/u/recording", "/home/u/clip.ts"]);
+        assert_eq!(found.total, 3);
     }
 
     #[test]
