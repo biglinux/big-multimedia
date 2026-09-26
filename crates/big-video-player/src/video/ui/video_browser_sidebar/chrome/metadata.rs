@@ -52,30 +52,32 @@ pub(crate) fn build_chips(state: &Rc<BrowserState>) {
     }
 }
 
-/// Dolphin-style breadcrumb; hidden for root paths (single segment).
+/// Dolphin-style breadcrumb, led by "Your folders", the way back to the
+/// library's places.
 pub(crate) fn build_breadcrumb(state: &Rc<BrowserState>, folder: &str) {
     let segments = playlist::breadcrumb_segments(folder);
-    if segments.len() <= 1 {
-        return;
-    }
 
     let bar = gtk::Box::builder().spacing(0).build();
     bar.add_css_class("breadcrumb-bar");
 
-    let home = gtk::Image::from_icon_name("user-home-symbolic");
-    home.set_pixel_size(14);
-    home.set_margin_start(6);
-    home.set_margin_end(2);
-    bar.append(&home);
+    let places = gtk::Button::builder()
+        .icon_name("user-bookmarks-symbolic")
+        .tooltip_text(i18n("Your folders"))
+        .css_classes(["flat", "breadcrumb-btn"])
+        .build();
+    places.update_property(&[gtk::accessible::Property::Label(&i18n("Your folders"))]);
+    {
+        let state = state.clone();
+        places.connect_clicked(move |_| state.show_places());
+    }
+    bar.append(&places);
 
     let last = segments.len() - 1;
     for (i, (name, path)) in segments.iter().enumerate() {
-        if i > 0 {
-            let sep = gtk::Label::builder().label("›").build();
-            sep.add_css_class("dim-label");
-            sep.add_css_class("breadcrumb-sep");
-            bar.append(&sep);
-        }
+        let sep = gtk::Label::builder().label("›").build();
+        sep.add_css_class("dim-label");
+        sep.add_css_class("breadcrumb-sep");
+        bar.append(&sep);
         let breadcrumb_button = gtk::Button::builder().label(name).build();
         breadcrumb_button.add_css_class("flat");
         breadcrumb_button.add_css_class("breadcrumb-btn");

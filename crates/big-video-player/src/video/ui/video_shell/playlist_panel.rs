@@ -35,6 +35,32 @@ impl PlaylistPanel {
             }
         });
         card.add_controller(keys);
+        // The search swallows Escape, so the card hears it first while the
+        // search has the focus: the first clears it, the next closes.
+        let search_keys = gtk::EventControllerKey::new();
+        search_keys.set_propagation_phase(gtk::PropagationPhase::Capture);
+        search_keys.connect_key_pressed({
+            let sender = sender.clone();
+            let card = card.downgrade();
+            move |_, key, _, _| {
+                let search = card
+                    .upgrade()
+                    .and_then(|card| card.root())
+                    .and_then(|root| root.focus())
+                    .and_then(|focus| focus.ancestor(gtk::SearchEntry::static_type()))
+                    .and_downcast::<gtk::SearchEntry>();
+                let Some(search) = search.filter(|_| key == gtk::gdk::Key::Escape) else {
+                    return glib::Propagation::Proceed;
+                };
+                if search.text().is_empty() {
+                    sender.input(VideoShellInput::HidePlaylistPanel);
+                } else {
+                    search.set_text("");
+                }
+                glib::Propagation::Stop
+            }
+        });
+        card.add_controller(search_keys);
         let revealer = gtk::Revealer::builder()
             .halign(gtk::Align::Start)
             .valign(gtk::Align::Fill)
@@ -67,9 +93,15 @@ impl PlaylistPanel {
                 let Some(card) = card.upgrade() else {
                     return;
                 };
-                match first_list(card.upcast_ref()) {
-                    Some(list) => {
-                        list.grab_focus();
+                // Without a list (the Files places), into the search: typing
+                // searches instead of reaching the player's shortcuts.
+                let target = first_of(card.upcast_ref(), &|widget| {
+                    widget.is::<gtk::ListView>() || widget.is::<gtk::GridView>()
+                })
+                .or_else(|| first_of(card.upcast_ref(), &|widget| widget.is::<gtk::SearchEntry>()));
+                match target {
+                    Some(widget) => {
+                        widget.grab_focus();
                     }
                     None => {
                         card.child_focus(gtk::DirectionType::TabForward);
@@ -80,11 +112,11 @@ impl PlaylistPanel {
     }
 }
 
-/// The first list or grid view under `widget`.
-fn first_list(widget: &gtk::Widget) -> Option<gtk::Widget> {
-    if widget.is::<gtk::ListView>() || widget.is::<gtk::GridView>() {
+/// The first widget under `widget`, itself included, that `wanted` accepts.
+fn first_of(widget: &gtk::Widget, wanted: &dyn Fn(&gtk::Widget) -> bool) -> Option<gtk::Widget> {
+    if wanted(widget) {
         return Some(widget.clone());
     }
     std::iter::successors(widget.first_child(), gtk::Widget::next_sibling)
-        .find_map(|child| first_list(&child))
+        .find_map(|child| first_of(&child, wanted))
 }

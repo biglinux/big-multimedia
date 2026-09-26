@@ -1,6 +1,8 @@
 //! App-local Relm4 sidebar (push-model) with two modes, switched by a segmented
 //! control:
-//!   * **Files** — a folder browser (breadcrumb + sub-folders, list/grid with
+//!   * **Files** — the video library's places (Videos, Downloads, the home
+//!     folder or the chosen ones, plus plugged-in drives) with a search across
+//!     them, then a folder browser (breadcrumb + sub-folders, list/grid with
 //!     ffmpeg thumbnails, fuzzy search, kind chips). Activating a video plays it
 //!     and queues the folder; the context menu also offers "add to playlist".
 //!   * **Playlist** — the current play queue (mirrors the shell's mpv playlist),
@@ -23,8 +25,8 @@
 //! this workspace).
 
 mod chrome;
-mod disk_search;
 mod fileops;
+mod library;
 mod scrub;
 mod views;
 
@@ -179,8 +181,17 @@ pub(crate) struct BrowserState {
     search_gen: Cell<u64>,
     /// Active view filter, so chips + search can re-run it.
     filter: RefCell<Option<gtk::CustomFilter>>,
-    /// Files mode: the "on this computer" results under the folder's list.
-    disk_section: RefCell<Option<glib::WeakRef<gtk::Box>>>,
+    /// Files mode: the library's search results.
+    results: RefCell<Option<glib::WeakRef<gtk::Box>>>,
+    /// Files mode, no folder open: the places, hidden while searching.
+    places: RefCell<Option<glib::WeakRef<gtk::Box>>>,
+    /// Files mode: choosing the library's folders.
+    customizing: Cell<bool>,
+    /// Videos found by scanning library folders the index daemon does not
+    /// cover, kept for the session so each search does not rescan them.
+    scanned: RefCell<std::collections::HashMap<String, Vec<String>>>,
+    /// How many videos each place holds, once the daemon counted them.
+    counts: RefCell<std::collections::HashMap<String, usize>>,
     /// Playlist mode: the count, total length and end time over the list.
     summary: RefCell<Option<glib::WeakRef<gtk::Label>>>,
     /// Length of each queued video once probed, for the summary.
@@ -356,6 +367,19 @@ impl BrowserState {
         }
     }
 
+    /// Back to the library's places, leaving the open folder.
+    fn show_places(self: &Rc<Self>) {
+        self.scan_generation
+            .set(self.scan_generation.get().wrapping_add(1));
+        self.folder.replace(None);
+        self.entries.replace(Vec::new());
+        self.subfolders.replace(Vec::new());
+        self.selection.borrow_mut().clear();
+        self.select_mode.set(false);
+        self.recompute_pos();
+        self.rebuild();
+    }
+
     /// Scan `folder` (flat or recursive per settings) and rebuild, cancelling
     /// any scan still in flight. Browsing never touches playback — only a video
     /// activation does.
@@ -364,6 +388,7 @@ impl BrowserState {
         let recursive = self.settings.get_bool(keys::PLAYLIST_FOLDER_RECURSIVE);
 
         self.folder.replace(Some(folder_owned.clone()));
+        self.customizing.set(false);
         self.settings
             .put_string(keys::PLAYLIST_LAST_FOLDER, &folder_owned);
 
@@ -524,20 +549,33 @@ impl BrowserState {
         let folder_opt = self.folder.borrow().clone();
         let items = self.entries.borrow().clone();
 
-        if let Some(folder) = folder_opt.as_ref() {
-            chrome::build_breadcrumb(self, folder);
-        }
-        let search_entry = chrome::build_search(self);
-        chrome::build_chips(self);
-
-        // Empty *and* not browsing a folder → the welcome status page.
-        if items.is_empty() && folder_opt.is_none() {
-            chrome::build_files_empty_state(self);
-            if let Some(container) = self.container() {
-                container.append(&disk_search::build_section(self));
-            }
+        if self.customizing.get() {
+            library::build_customize(self);
             return;
         }
+        // No folder open: the library's places, and a search across them.
+        let Some(folder) = folder_opt.as_ref() else {
+            let search_entry = chrome::build_search(self);
+            search_entry.set_placeholder_text(Some(&i18n("Search your videos…")));
+            library::build_places(self);
+            if let Some(container) = self.container() {
+                container.append(&library::build_results(self));
+                // Back from a folder, the focus went with the folder's list:
+                // into the search, where typing searches the library.
+                let lost = container
+                    .root()
+                    .and_then(|root| root.focus())
+                    .is_none_or(|focus| !focus.is_ancestor(&container));
+                if lost && container.is_mapped() {
+                    search_entry.grab_focus();
+                }
+            }
+            chrome::add_key_controller(self, &search_entry);
+            return;
+        };
+        chrome::build_breadcrumb(self, folder);
+        let search_entry = chrome::build_search(self);
+        chrome::build_chips(self);
 
         chrome::build_count_summary(self, items.len());
 
@@ -549,7 +587,7 @@ impl BrowserState {
         self.prev_pos.set(self.pos.get());
         if let Some(container) = self.container() {
             container.append(&scroll);
-            container.append(&disk_search::build_section(self));
+            container.append(&library::build_results(self));
         }
 
         // Triage batch-action bar pinned at the bottom while selecting.
@@ -765,7 +803,11 @@ impl Component for VideoBrowserSidebar {
             filter_kind: Cell::new(FilterKind::All),
             search_text: Rc::new(RefCell::new(String::new())),
             search_gen: Cell::new(0),
-            disk_section: RefCell::new(None),
+            results: RefCell::new(None),
+            places: RefCell::new(None),
+            customizing: Cell::new(false),
+            scanned: RefCell::default(),
+            counts: RefCell::default(),
             summary: RefCell::new(None),
             lengths: Rc::default(),
             position: Cell::new(0.0),
@@ -845,7 +887,7 @@ pub(crate) fn schedule_search(state: &Rc<BrowserState>, query: String) {
         state.search_text.borrow_mut().clone_from(&query);
         state.refilter();
         if state.mode.get() == SidebarMode::Files {
-            disk_search::refresh(&state, query);
+            library::refresh(&state, query);
         }
     });
 }

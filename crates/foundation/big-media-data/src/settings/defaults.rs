@@ -112,6 +112,7 @@ pub(super) fn defaults() -> HashMap<String, String> {
     values.insert("playlist-last-folder".into(), String::new());
     values.insert("playlist-shuffle".into(), "false".into());
     values.insert("playlist-reorder-hint-seen".into(), "false".into());
+    values.insert("video-library-folders".into(), String::new());
 
     values.insert("ui-color-source".into(), "gtk-default".into());
     values.insert("ui-bg-color".into(), "#2A2A30".into());

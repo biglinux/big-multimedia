@@ -29,6 +29,9 @@ pub(crate) fn build_header(state: &Rc<BrowserState>) {
     sidebar_header.root().set_show_start_title_buttons(false);
     sidebar_header.root().set_show_end_title_buttons(false);
 
+    // Selecting, the view and the sort act on an open folder; the places
+    // page has none.
+    let browsing = mode == SidebarMode::Playlist || state.folder.borrow().is_some();
     if mode == SidebarMode::Files {
         let folder_button =
             tooltip::icon_button("folder-open-symbolic", &i18n("Load folder…"), &[]);
@@ -37,7 +40,8 @@ pub(crate) fn build_header(state: &Rc<BrowserState>) {
             move |_| pick_folder(&state)
         });
         sidebar_header.pack_start(&folder_button);
-
+    }
+    if mode == SidebarMode::Files && browsing {
         // Triage multi-select toggle (creator workflow).
         let select_mode_button = gtk::ToggleButton::builder()
             .icon_name("selection-mode-symbolic")
@@ -51,7 +55,7 @@ pub(crate) fn build_header(state: &Rc<BrowserState>) {
             move |button| state.set_select_mode(button.is_active())
         });
         sidebar_header.pack_start(&select_mode_button);
-    } else {
+    } else if mode == SidebarMode::Playlist {
         let add_files_button = tooltip::icon_button("list-add-symbolic", &i18n("Add files…"), &[]);
         add_files_button.connect_clicked({
             let state = state.clone();
@@ -61,10 +65,12 @@ pub(crate) fn build_header(state: &Rc<BrowserState>) {
     }
 
     // pack_end is right-to-left → menu rightmost, view toggle to its left.
-    sidebar_header.pack_end(&build_options_menu(state, mode));
+    if browsing {
+        sidebar_header.pack_end(&build_options_menu(state, mode));
+    }
     // The list/grid toggle only makes sense for the Files browser; the Playlist
     // is always a compact ordered queue.
-    if mode == SidebarMode::Files {
+    if mode == SidebarMode::Files && browsing {
         sidebar_header.pack_end(&build_view_toggle(state));
     }
 

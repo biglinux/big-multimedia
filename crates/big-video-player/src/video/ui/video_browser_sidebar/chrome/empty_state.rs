@@ -3,28 +3,9 @@ use std::rc::Rc;
 use adw::prelude::*;
 
 use super::super::{BrowserState, SidebarMode, VideoBrowserSidebarOutput};
-use super::header::{add_files, pick_folder};
+use super::header::add_files;
 use crate::i18n::i18n;
 use crate::settings::keys;
-
-/// Files mode empty state: nothing browsed yet → load a folder / add files.
-pub(crate) fn build_files_empty_state(state: &Rc<BrowserState>) {
-    let folder = pill_button(&i18n("Load Folder"), &["pill", "suggested-action"], {
-        let state = state.clone();
-        move || pick_folder(&state)
-    });
-    let add = pill_button(&i18n("Add Files"), &["pill"], {
-        let state = state.clone();
-        move || add_files(&state)
-    });
-    build_status_page(
-        state,
-        "folder-open-symbolic",
-        &i18n("Browse your videos"),
-        &i18n("Load a folder to explore, or add files to the playlist"),
-        &[folder, add],
-    );
-}
 
 /// Playlist mode empty state: the queue has nothing in it. Add files, go
 /// to a folder in the other tab, or drop videos on the panel.

@@ -3,6 +3,7 @@ use std::rc::Rc;
 use adw::prelude::*;
 use gtk::glib;
 
+use super::super::library::is_place;
 use super::super::{BrowserState, SidebarMode};
 use super::context_menu::remove_from_queue;
 
@@ -32,13 +33,19 @@ pub(crate) fn add_key_controller(state: &Rc<BrowserState>, search_entry: &gtk::S
                 glib::Propagation::Proceed
             }
             gtk::gdk::Key::BackSpace => {
-                // Navigate to the parent of the browsed folder.
-                let parent = state.folder.borrow().as_ref().and_then(|f| {
-                    std::path::Path::new(f)
-                        .parent()
-                        .filter(|p| p.exists())
-                        .map(|p| p.to_string_lossy().into_owned())
-                });
+                // Up to the parent of the browsed folder; from one of the
+                // library's own folders, back to the places.
+                let Some(folder) = state.folder.borrow().clone() else {
+                    return glib::Propagation::Proceed;
+                };
+                if is_place(&state.settings, &folder) {
+                    state.show_places();
+                    return glib::Propagation::Stop;
+                }
+                let parent = std::path::Path::new(&folder)
+                    .parent()
+                    .filter(|p| p.exists())
+                    .map(|p| p.to_string_lossy().into_owned());
                 if let Some(parent) = parent {
                     state.navigate_to_folder(&parent);
                     glib::Propagation::Stop

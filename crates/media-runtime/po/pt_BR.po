@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: big-media-runtime 2.0.0\n"
 "Report-Msgid-Bugs-To: https://github.com/biglinux/big-multimedia/issues\n"
-"POT-Creation-Date: 2026-09-26 08:17-0300\n"
+"POT-Creation-Date: 2026-09-26 09:11-0300\n"
 "PO-Revision-Date: 2026-05-29 05:37-0300\n"
 "Last-Translator: Automatically generated\n"
 "Language-Team: none\n"
@@ -989,9 +989,9 @@ msgstr "Nova lista de reprodução"
 
 #: crates/big-audio-player/src/audio/ui/library_dialogs.rs:67
 #: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/context_menu.rs:82
-#: crates/big-video-player/src/video/ui/video_browser_sidebar/disk_search.rs:187
-#: crates/big-video-player/src/video/ui/video_browser_sidebar/disk_search.rs:191
 #: crates/big-video-player/src/video/ui/video_browser_sidebar/fileops.rs:72
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/library.rs:539
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/library.rs:543
 msgid "Add to playlist"
 msgstr "Adicionar à lista de reprodução"
 
@@ -1027,7 +1027,7 @@ msgid "Add Music Folder"
 msgstr "Adicionar pasta de músicas"
 
 #: crates/big-audio-player/src/audio/ui/library_grouping_ui.rs:226
-#: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/metadata.rs:117
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/metadata.rs:119
 msgid "Filter…"
 msgstr "Filtrar…"
 
@@ -2347,6 +2347,7 @@ msgid "Edit"
 msgstr "Editar"
 
 #: crates/big-video-player/src/video/ui/iptv/providers_dialog.rs:108
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/library.rs:642
 msgid "Remove"
 msgstr "Remover"
 
@@ -3330,44 +3331,29 @@ msgstr "Remover da lista de reprodução"
 msgid "Open containing folder"
 msgstr "Abrir pasta do arquivo"
 
-#: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/empty_state.rs:12
-msgid "Load Folder"
-msgstr "Carregar pasta"
-
-#: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/empty_state.rs:16
-#: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/empty_state.rs:32
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/empty_state.rs:13
 msgid "Add Files"
 msgstr "Adicionar Arquivos"
 
-#: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/empty_state.rs:23
-msgid "Browse your videos"
-msgstr "Navegue pelos seus vídeos"
-
-#: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/empty_state.rs:24
-msgid "Load a folder to explore, or add files to the playlist"
-msgstr ""
-"Carregue uma pasta para explorar ou adicione arquivos à lista de reprodução"
-
-#: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/empty_state.rs:36
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/empty_state.rs:17
 msgid "Choose from a folder"
 msgstr "Escolher numa pasta"
 
-#: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/empty_state.rs:48
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/empty_state.rs:29
 msgid "Your playlist is empty"
 msgstr "Sua lista de reprodução está vazia"
 
-#: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/empty_state.rs:49
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/empty_state.rs:30
 msgid "Drop videos here, or pick them in a folder"
 msgstr "Solte vídeos aqui ou escolha numa pasta"
 
-#: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/empty_state.rs:67
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/empty_state.rs:48
 msgid ""
 "Drag a video by its handle to change the order, or use Alt+Up and Alt+Down"
-msgstr ""
-"Arraste um vídeo pela alça para mudar a ordem, ou use Alt+↑ e Alt+↓"
+msgstr "Arraste um vídeo pela alça para mudar a ordem, ou use Alt+↑ e Alt+↓"
 
-#: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/empty_state.rs:79
-#: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/empty_state.rs:81
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/empty_state.rs:60
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/empty_state.rs:62
 msgid "Got it"
 msgstr "Entendi"
 
@@ -3456,33 +3442,32 @@ msgstr "Pastas"
 msgid "Videos"
 msgstr "Vídeos"
 
-#: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/metadata.rs:143
-#: crates/big-video-player/src/video/ui/video_browser_sidebar/mod.rs:283
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/metadata.rs:65
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/metadata.rs:68
+msgid "Your folders"
+msgstr "Suas pastas"
+
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/metadata.rs:145
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/library.rs:352
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/mod.rs:292
 #, rust-format
 msgid "{} video"
 msgid_plural "{} videos"
 msgstr[0] "{} vídeo"
 msgstr[1] "{} vídeos"
 
-#: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/metadata.rs:151
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/metadata.rs:153
 #, rust-format
 msgid "(of {total})"
 msgstr "(de {total})"
 
-#: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/metadata.rs:156
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/metadata.rs:158
 #, rust-format
 msgid ""
 "Showing {shown} of {total} files found. Consider filtering by subfolder."
 msgstr ""
 "Exibindo {shown} de {total} arquivos encontrados. Considere filtrar por "
 "subpasta."
-
-#: crates/big-video-player/src/video/ui/video_browser_sidebar/disk_search.rs:155
-#, rust-format
-msgid "{} more on this computer"
-msgid_plural "{} more on this computer"
-msgstr[0] "Mais {} neste computador"
-msgstr[1] "Mais {} neste computador"
 
 #: crates/big-video-player/src/video/ui/video_browser_sidebar/fileops.rs:23
 #, rust-format
@@ -3538,14 +3523,82 @@ msgstr "Falha ao renomear"
 msgid "{ok} {verb}, {failed} failed"
 msgstr "{ok} {verb}, {failed} com falha"
 
-#: crates/big-video-player/src/video/ui/video_browser_sidebar/mod.rs:311
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/library.rs:108
+msgid "Home folder"
+msgstr "Pasta pessoal"
+
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/library.rs:328
+msgid "Choose folders…"
+msgstr "Personalizar pastas…"
+
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/library.rs:468
+msgid "No video in your folders has that name"
+msgstr "Nenhum vídeo nas suas pastas tem esse nome"
+
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/library.rs:479
+#, rust-format
+msgid "{} more in your folders"
+msgid_plural "{} more in your folders"
+msgstr[0] "Mais {} nas suas pastas"
+msgstr[1] "Mais {} nas suas pastas"
+
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/library.rs:484
+#, rust-format
+msgid "{} video found"
+msgid_plural "{} videos found"
+msgstr[0] "{} vídeo encontrado"
+msgstr[1] "{} vídeos encontrados"
+
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/library.rs:596
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/library.rs:599
+#: crates/big-video-player/src/video/ui/video_shell/panel.rs:118
+#: crates/big-video-player/src/video/ui/video_shell/panel.rs:121
+msgid "Back"
+msgstr "Voltar"
+
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/library.rs:610
+msgid "Video folders"
+msgstr "Pastas de vídeos"
+
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/library.rs:620
+msgid ""
+"Their videos are listed and searched here. Folders BigSearch does not index "
+"are searched by the player, more slowly."
+msgstr "Os vídeos delas aparecem e são buscados aqui. Pastas que o BigSearch não indexa são buscadas pelo próprio player, mais devagar."
+
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/library.rs:647
+#, rust-format
+msgid "Remove {}"
+msgstr "Remover {}"
+
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/library.rs:665
+msgid "Add a folder…"
+msgstr "Adicionar pasta…"
+
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/library.rs:676
+msgid "Add a Video Folder"
+msgstr "Adicionar pasta de vídeos"
+
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/library.rs:694
+msgid "Use the standard folders"
+msgstr "Usar as pastas padrão"
+
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/library.rs:695
+msgid "Videos, Downloads and the home folder"
+msgstr "Vídeos, Downloads e a pasta pessoal"
+
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/mod.rs:320
 #, rust-format
 msgid "ends at {}"
 msgstr "termina às {}"
 
-#: crates/big-video-player/src/video/ui/video_browser_sidebar/mod.rs:489
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/mod.rs:511
 msgid "Scanning…"
 msgstr "Varrendo…"
+
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/mod.rs:556
+msgid "Search your videos…"
+msgstr "Buscar nos seus vídeos…"
 
 #: crates/big-video-player/src/video/ui/video_browser_sidebar/views/model.rs:34
 msgid "Previous folder"
@@ -3978,11 +4031,6 @@ msgstr "Parar depois de…"
 #: crates/big-video-player/src/video/ui/video_shell/panel.rs:44
 msgid "Recent Files"
 msgstr "Arquivos recentes"
-
-#: crates/big-video-player/src/video/ui/video_shell/panel.rs:118
-#: crates/big-video-player/src/video/ui/video_shell/panel.rs:121
-msgid "Back"
-msgstr "Voltar"
 
 #: crates/big-video-player/src/video/ui/video_shell/panel.rs:453
 #, rust-format
@@ -5252,6 +5300,23 @@ msgstr "Escaneie o código com a câmera do celular."
 msgid "Could not start server"
 msgstr "Não foi possível iniciar o servidor"
 
+#~ msgid "Load Folder"
+#~ msgstr "Carregar pasta"
+
+#~ msgid "Browse your videos"
+#~ msgstr "Navegue pelos seus vídeos"
+
+#~ msgid "Load a folder to explore, or add files to the playlist"
+#~ msgstr ""
+#~ "Carregue uma pasta para explorar ou adicione arquivos à lista de "
+#~ "reprodução"
+
+#, rust-format
+#~ msgid "{} more on this computer"
+#~ msgid_plural "{} more on this computer"
+#~ msgstr[0] "Mais {} neste computador"
+#~ msgstr[1] "Mais {} neste computador"
+
 #~ msgid "Add files to start watching"
 #~ msgstr "Adicione arquivos para começar a assistir"
 
@@ -5508,9 +5573,6 @@ msgstr "Não foi possível iniciar o servidor"
 #~ msgid "Cast"
 #~ msgstr "Transmitir"
 
-#~ msgid "Searching for devices…"
-#~ msgstr "Procurando dispositivos…"
-
 #~ msgid "Refresh"
 #~ msgstr "Atualizar"
 
@@ -5531,12 +5593,6 @@ msgstr "Não foi possível iniciar o servidor"
 
 #~ msgid "No devices found"
 #~ msgstr "Nenhum dispositivo encontrado"
-
-#, rust-format
-#~ msgid "{} device found"
-#~ msgid_plural "{} devices found"
-#~ msgstr[0] "{} dispositivo encontrado"
-#~ msgstr[1] "{} dispositivos encontrados"
 
 #~ msgid "ffmpeg is not installed — required for transcoding"
 #~ msgstr "O ffmpeg não está instalado — necessário para transcodificação"
