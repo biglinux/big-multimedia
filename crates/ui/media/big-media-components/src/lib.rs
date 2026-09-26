@@ -6,15 +6,14 @@
 //! Reusable media UI components for BigLinux Rust applications.
 //!
 //! `big-media-components` factors out the GTK4/libadwaita widgets, dialogs,
-//! and pure helpers shared by `big-video-player`, `big-audio-player`, and
-//! other BigLinux media tools. It is meant to sit *above* [`big_relm4_components`] and
-//! [`big_audio_effects`] but *below* the per-app crates.
+//! and pure helpers shared by `big-video-player` and `big-audio-player`. It sits
+//! *above* [`big_relm4_components`] and *below* the per-app crates.
 //!
 //! # Module groups
 //!
 //! - Pure formatting and parsing — [`bytes`], [`time`], [`track_labels`],
 //!   [`playlist_order`], [`container_compat`].
-//! - File and metadata helpers — [`media`], [`ffmpeg`], [`subtitle`].
+//! - File and metadata helpers — [`media`], [`ffmpeg`].
 //! - GTK widgets and dialogs — [`audio`], [`playback`], [`surface`],
 //!   [`preference_rows`], [`initials_avatar`].
 //! - Translation hook — [`text`] and [`install_media_components_translator`].
@@ -36,11 +35,11 @@
 //! assert_eq!(duration_hms(3661.0), "1:01:01");
 //! ```
 
-/// Audio labels and equalizer controls.
+/// Audio labels and equalizer settings parsing.
 pub mod audio;
 /// Human-readable byte-size formatting.
 pub mod bytes;
-/// Container-format codec compatibility checks (MP4, Chromecast).
+/// Chromecast container/codec compatibility checks.
 pub mod container_compat;
 /// FFmpeg codec label helpers.
 pub mod ffmpeg;
@@ -57,8 +56,6 @@ pub mod player_chrome;
 pub mod playlist_order;
 /// libadwaita preference-row builders for player/converter settings.
 pub mod preference_rows;
-/// Subtitle codec helpers.
-pub mod subtitle;
 /// Full-window media surface, chrome, OSD layering, and immersion policy.
 pub mod surface;
 /// Process-local translation hook used by widgets in this crate.

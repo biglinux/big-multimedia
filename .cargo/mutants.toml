@@ -11,15 +11,7 @@ test_tool = "nextest"
 # creates false debt that does not represent application behavior.
 exclude_re = [
     "tests::",
-    # This function crosses the live GTK/Relm4 boundary. The display-free
-    # options and runner delegation are covered in big-audio-converter tests;
-    # the real UI launch belongs to the harness UI smoke path, not unit tests.
-    'crates/big-audio-converter/src/lib\.rs:.*replace run_audio_converter_application -> std::process::ExitCode with Default::default\(\)',
-    # The binary entrypoint delegates to the library contract above. Mutating
-    # `main` itself only proves that unit tests do not launch the live GTK app.
-    'crates/big-audio-converter/src/main\.rs:.*replace main -> std::process::ExitCode with Default::default\(\)',
-    # Window construction needs a live GTK application/content widget. The
-    # geometry/title contract is covered by AudioPlayerWindowSpec tests.
+    # Window construction needs a live GTK application/content widget.
     'crates/big-audio-player/src/lib\.rs:.*replace build_player_window -> adw::ApplicationWindow with Default::default\(\)',
     # Embedded boot mutates process-global gettext, locale, resources, and app
     # accelerators. Rendered embed behavior belongs to UI smoke/host proof.
@@ -53,13 +45,6 @@ exclude_re = [
     'crates/big-audio-player/src/audio/column_builders\.rs:.*replace unbind_click_gestures with \(\)',
     'crates/big-audio-player/src/audio/column_builders\.rs:.*replace make_label_factory -> gtk::SignalListItemFactory with Default::default\(\)',
     'crates/big-audio-player/src/audio/column_builders\.rs:.*replace make_duration_factory -> gtk::SignalListItemFactory with Default::default\(\)',
-    # Availability probes the real host filesystem. Candidate paths and the
-    # injected lookup predicate are covered by converter_launcher tests.
-    'crates/big-audio-player/src/audio/converter_launcher\.rs:.*replace is_available -> bool with true',
-    'crates/big-audio-player/src/audio/converter_launcher\.rs:.*replace is_available -> bool with false',
-    # Launch performs the real detached spawn. Program order, env override, and
-    # end-of-options argv contract are tested as BigSubprocessSpec values.
-    'crates/big-audio-player/src/audio/converter_launcher\.rs:.*replace launch with \(\)',
     # Audio preferences page/window construction is live GTK/libadwaita. Page
     # chrome, adjustment ranges, saved geometry keys, and effect mapping are
     # covered by display-free preferences tests.
@@ -141,16 +126,16 @@ exclude_re = [
     # building, row presentation, selection payloads, context targeting, drag
     # path collection, and tree-handle splicing are covered by display-free
     # library_tree tests.
-    'crates/big-audio-player/src/audio/ui/library_tree\.rs:.*replace build_tree_factory -> gtk::SignalListItemFactory with Default::default\(\)',
-    'crates/big-audio-player/src/audio/ui/library_tree\.rs:.*replace bind_tree_row with \(\)',
-    'crates/big-audio-player/src/audio/ui/library_tree\.rs:.*replace build_show_tracks_button -> gtk::Button with Default::default\(\)',
-    'crates/big-audio-player/src/audio/ui/library_tree\.rs:.*replace bind_show_tracks_button with \(\)',
-    'crates/big-audio-player/src/audio/ui/library_tree\.rs:.*replace disconnect_show_tracks_button with \(\)',
-    'crates/big-audio-player/src/audio/ui/library_tree\.rs:.*replace bind_file_leaf with \(\)',
-    'crates/big-audio-player/src/audio/ui/library_tree\.rs:.*replace wire_activation with \(\)',
-    'crates/big-audio-player/src/audio/ui/library_tree\.rs:.*replace wire_context_menu with \(\)',
-    'crates/big-audio-player/src/audio/ui/library_tree\.rs:.*replace add_leaf_menu_items with \(\)',
-    'crates/big-audio-player/src/audio/ui/library_tree\.rs:.*replace build_leaf_drag_source -> gtk::DragSource with Default::default\(\)',
+    'crates/big-audio-player/src/audio/ui/library_tree/view\.rs:.*replace build_tree_factory -> gtk::SignalListItemFactory with Default::default\(\)',
+    'crates/big-audio-player/src/audio/ui/library_tree/view\.rs:.*replace bind_tree_row with \(\)',
+    'crates/big-audio-player/src/audio/ui/library_tree/view\.rs:.*replace build_show_tracks_button -> gtk::Button with Default::default\(\)',
+    'crates/big-audio-player/src/audio/ui/library_tree/view\.rs:.*replace bind_show_tracks_button with \(\)',
+    'crates/big-audio-player/src/audio/ui/library_tree/view\.rs:.*replace disconnect_show_tracks_button with \(\)',
+    'crates/big-audio-player/src/audio/ui/library_tree/view\.rs:.*replace bind_file_leaf with \(\)',
+    'crates/big-audio-player/src/audio/ui/library_tree/view\.rs:.*replace wire_activation with \(\)',
+    'crates/big-audio-player/src/audio/ui/library_tree/view\.rs:.*replace wire_context_menu with \(\)',
+    'crates/big-audio-player/src/audio/ui/library_tree/view\.rs:.*replace add_leaf_menu_items with \(\)',
+    'crates/big-audio-player/src/audio/ui/library_tree/view\.rs:.*replace build_leaf_drag_source -> gtk::DragSource with Default::default\(\)',
     # Playlist chrome builders and action wiring are live GTK/libadwaita
     # surfaces. Menu action names, flat menu shape, playlist-name normalization,
     # open-files emission, and welcome-tip presentation specs are tested without
@@ -243,7 +228,6 @@ exclude_re = [
     'crates/big-audio-player/src/audio/ui/library_io\.rs:.*replace build_folders_card -> gtk::Box with Default::default\(\)',
     'crates/big-audio-player/src/audio/ui/library_io\.rs:.*replace build_folders_list -> gtk::ListBox with Default::default\(\)',
     'crates/big-audio-player/src/audio/ui/library_io\.rs:.*replace build_folder_buttons -> gtk::Box with Default::default\(\)',
-    'crates/big-audio-player/src/audio/ui/library_io\.rs:.*replace remove_row_from_list with \(\)',
     'crates/big-audio-player/src/audio/ui/library_io\.rs:.*replace present_name_entry_dialog with \(\)',
     'crates/big-audio-player/src/audio/ui/library_io\.rs:.*replace build_remove_button -> gtk::Button with Default::default\(\)',
     'crates/big-audio-player/src/audio/ui/library_io\.rs:.*replace build_intro_label -> gtk::Label with Default::default\(\)',
@@ -278,10 +262,6 @@ exclude_re = [
     # mutates widgets. The all-widget boolean contract and fill-plan behavior
     # are display-free tested; stale weak refs are covered separately.
     'crates/big-audio-player/src/audio/ui/library_tag_editor\.rs:.*delete ! in TagEditorHandle::apply_musicbrainz_result',
-    # Thin binary entrypoint delegates to the tested host-module launcher. Unit
-    # mutation of `main` itself would only prove that tests do not exec the
-    # process entrypoint.
-    'crates/big-video-converter/src/main\.rs:.*replace main -> ExitCode with Default::default\(\)',
     # VideoShell component/playback methods are live GTK/Relm4/mpv/session
     # orchestration. Display-free tests cover menu action contracts, open-file
     # resolution, argv handling, and shared launcher behavior; rendered shell
@@ -318,12 +298,6 @@ exclude_re = [
     # settings-backed visibility. Canonical control names, aliases, export menu
     # actions, and volume-icon thresholds are tested as pure contracts here.
     'crates/big-video-player/src/video/ui/video_controls_bar/zones\.rs:.*replace ButtonLayoutWidgets::apply_settings with \(\)',
-    'crates/big-video-player/src/video/ui/video_controls_bar/zones\.rs:.*ButtonLayoutWidgets::apply_zone',
-    'crates/big-video-player/src/video/ui/video_controls_bar/zones\.rs:.*ButtonLayoutWidgets::append_missing_defaults',
-    'crates/big-video-player/src/video/ui/video_controls_bar/zones\.rs:.*ButtonLayoutWidgets::move_control',
-    'crates/big-video-player/src/video/ui/video_controls_bar/zones\.rs:.*ButtonLayoutWidgets::apply_visibility',
-    'crates/big-video-player/src/video/ui/video_controls_bar/zones\.rs:.*ButtonLayoutWidgets::control_widget',
-    'crates/big-video-player/src/video/ui/video_controls_bar/zones\.rs:.*ButtonLayoutWidgets::zone_box',
     'crates/big-video-player/src/video/ui/video_controls_bar/zones\.rs:.*build_start_box',
     'crates/big-video-player/src/video/ui/video_controls_bar/zones\.rs:.*replace build_center_box -> \(gtk::Box, gtk::Button, gtk::Button, gtk::Button\) with \(Default::default\(\), Default::default\(\), Default::default\(\), Default::default\(\)\)',
     'crates/big-video-player/src/video/ui/video_controls_bar/zones\.rs:.*replace osd_button -> gtk::Button with Default::default\(\)',

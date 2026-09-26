@@ -166,9 +166,6 @@ pub struct AudioShell {
     db_read: Option<DbHandle>,
     /// Persisted settings (audio config, column widths).
     settings: Settings,
-    /// Chromecast discovery/casting engine (shared runtime engine).
-    #[cfg(feature = "chromecast")]
-    cast_device_registry: Arc<crate::cast::chromecast::CastSessionController>,
     /// Active sleep-timer countdown source (None = no timer armed).
     sleep_timer_source: Option<glib::SourceId>,
     /// Seconds left on the armed sleep timer.
@@ -198,6 +195,8 @@ pub struct AudioShell {
     /// Whether the current playback is a radio stream (suppresses queue
     /// auto-advance on end-of-file).
     is_stream: bool,
+    /// Queue tracks that failed to open in a row; bounds skipping past them.
+    failed_loads: usize,
     /// Active saved-playlist name (empty = ad-hoc queue); shown in the queue
     /// toolbar header. Set when a saved playlist is loaded (later commit).
     current_playlist_name: String,

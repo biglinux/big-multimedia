@@ -34,8 +34,7 @@ pub fn duration_hm(total_secs: f64) -> String {
 
 /// Format `total_secs` as `H:MM:SS` or `M:SS`; returns an empty string for invalid input.
 ///
-/// Use when the empty string should hide the label entirely. For a placeholder
-/// string, see [`duration_or_placeholder`].
+/// Use when the empty string should hide the label entirely.
 #[must_use]
 pub fn duration_hms(total_secs: f64) -> String {
     if total_secs <= 0.0 || !total_secs.is_finite() {
@@ -51,35 +50,6 @@ pub fn playback_time(secs: f64) -> String {
         return "0:00".to_string();
     }
     hms(secs as u64)
-}
-
-/// Format a duration with the `"--:--"` placeholder for unknown values.
-///
-/// Rounds `secs` to the nearest whole second. Use on queue rows where an empty
-/// string would collapse the column.
-#[must_use]
-pub fn duration_or_placeholder(secs: f64) -> String {
-    if secs <= 0.0 || !secs.is_finite() {
-        return "--:--".to_string();
-    }
-    hms(secs.round() as u64)
-}
-
-/// Format `secs` as `H:MM:SS.mmm` with millisecond precision.
-///
-/// Use in editor controls where the user needs sub-second feedback.
-#[must_use]
-pub fn precise_time_ms(secs: f64) -> String {
-    if secs < 0.0 || !secs.is_finite() {
-        return "0:00:00.000".to_string();
-    }
-    let total_ms = (secs * 1000.0) as u64;
-    let ms = total_ms % 1000;
-    let total_secs = total_ms / 1000;
-    let h = total_secs / 3600;
-    let m = (total_secs % 3600) / 60;
-    let s = total_secs % 60;
-    format!("{h}:{m:02}:{s:02}.{ms:03}")
 }
 
 /// Parse a user-entered time string into seconds.
@@ -117,27 +87,6 @@ pub fn parse_playback_time(input: &str) -> Option<f64> {
 #[must_use]
 pub fn countdown_mm_ss(seconds: u32) -> String {
     format!("{:02}:{:02}", seconds / 60, seconds % 60)
-}
-
-/// Render elapsed wall-clock time for completion summaries.
-#[must_use]
-pub fn elapsed_compact(duration: std::time::Duration) -> String {
-    let secs = duration.as_secs_f64();
-    if secs < 60.0 {
-        if secs < 10.0 {
-            format!("{secs:.1} s")
-        } else {
-            format!("{secs:.0} s")
-        }
-    } else if secs < 3600.0 {
-        let mins = (secs / 60.0) as u64;
-        let rem = (secs - (mins as f64 * 60.0)).round() as u64;
-        format!("{mins} min {rem} s")
-    } else {
-        let hours = (secs / 3600.0) as u64;
-        let rem = ((secs - (hours as f64 * 3600.0)) / 60.0).round() as u64;
-        format!("{hours}h {rem}min")
-    }
 }
 
 fn hms(total: u64) -> String {
@@ -179,21 +128,6 @@ mod tests {
     }
 
     #[test]
-    fn duration_or_placeholder_rounds_and_marks_unknown() {
-        assert_eq!(duration_or_placeholder(0.0), "--:--");
-        assert_eq!(duration_or_placeholder(61.6), "1:02");
-        assert_eq!(duration_or_placeholder(f64::NAN), "--:--");
-    }
-
-    #[test]
-    fn precise_time_ms_preserves_milliseconds() {
-        assert_eq!(precise_time_ms(0.0), "0:00:00.000");
-        assert_eq!(precise_time_ms(61.234), "0:01:01.234");
-        assert_eq!(precise_time_ms(3661.999), "1:01:01.999");
-        assert_eq!(precise_time_ms(-1.0), "0:00:00.000");
-    }
-
-    #[test]
     fn parse_playback_time_accepts_seconds_minutes_and_hours() {
         assert_eq!(parse_playback_time("123.5"), Some(123.5));
         assert_eq!(parse_playback_time("2:30"), Some(150.0));
@@ -208,22 +142,5 @@ mod tests {
         assert_eq!(countdown_mm_ss(0), "00:00");
         assert_eq!(countdown_mm_ss(65), "01:05");
         assert_eq!(countdown_mm_ss(3600), "60:00");
-    }
-
-    #[test]
-    fn elapsed_compact_formats_completion_summaries() {
-        assert_eq!(
-            elapsed_compact(std::time::Duration::from_millis(400)),
-            "0.4 s"
-        );
-        assert_eq!(elapsed_compact(std::time::Duration::from_secs(12)), "12 s");
-        assert_eq!(
-            elapsed_compact(std::time::Duration::from_secs(83)),
-            "1 min 23 s"
-        );
-        assert_eq!(
-            elapsed_compact(std::time::Duration::from_secs(7_500)),
-            "2h 5min"
-        );
     }
 }

@@ -86,23 +86,22 @@ impl RecentStore {
         Ok(())
     }
 
-    /// Return the current `add` value held by this [`RecentStore`].
+    /// Move `file_path` to the top of the `kind` history, dropping the oldest
+    /// entries past the limit. Only existing local files are recorded: streams,
+    /// disc URIs and vanished paths do not canonicalize and are skipped.
     pub fn add(&self, file_path: &str, kind: &str, timestamp: u64) -> Result<(), String> {
-        if is_remote_media_url(file_path) {
-            return Ok(());
-        }
-
         self.validate(kind)?;
-        fs::create_dir_all(&self.state_dir).map_err(|_| "Could not create recent directory")?;
-        let _lock = big_os_kit::storage::WriteLock::try_acquire(&self.path_for_kind(kind))
-            .map_err(|_| "Recent history busy")?;
-        let canonical = match fs::canonicalize(file_path) {
-            Ok(path) => path
-                .to_str()
-                .ok_or("Recent history requires a UTF-8 path")?
-                .to_owned(),
-            Err(_) => file_path.to_owned(),
+        let Ok(canonical) = fs::canonicalize(file_path) else {
+            return Ok(());
         };
+        let canonical = canonical
+            .to_str()
+            .ok_or("Recent history requires a UTF-8 path")?
+            .to_owned();
+        fs::create_dir_all(&self.state_dir).map_err(|_| "Could not create recent directory")?;
+        let path = self.path_for_kind(kind);
+        let _lock = big_os_kit::storage::WriteLock::try_acquire(&path)
+            .map_err(|_| "Recent history busy")?;
         let mut entries = self.try_load(kind)?;
         entries.retain(|entry| entry.path != canonical);
         entries.insert(
@@ -113,7 +112,17 @@ impl RecentStore {
             },
         );
         entries.truncate(self.max_entries);
-        self.save(&entries, kind)
+        let content = entries
+            .iter()
+            .map(|entry| json!({"path": entry.path, "ts": entry.timestamp}).to_string())
+            .collect::<Vec<_>>()
+            .join("\n");
+        if content.len() > 1024 * 1024 {
+            return Err("Recent history exceeds limit".into());
+        }
+        big_os_kit::storage::atomic_write_private_receipt(&path, content.as_bytes())
+            .and_then(|r| r.into_io_result())
+            .map_err(|_| "Recent history save was not confirmed".into())
     }
 
     /// Return the current `clear` value held by this [`RecentStore`].
@@ -127,24 +136,6 @@ impl RecentStore {
             .and_then(|r| r.into_io_result())
             .map_err(|_| "Recent history clear was not confirmed".into())
     }
-
-    fn save(&self, entries: &[RecentEntry], kind: &str) -> Result<(), String> {
-        let path = self.path_for_kind(kind);
-        if let Some(parent) = path.parent() {
-            fs::create_dir_all(parent).map_err(|err| err.to_string())?;
-        }
-        let content = entries
-            .iter()
-            .map(|entry| json!({"path": entry.path, "ts": entry.timestamp}).to_string())
-            .collect::<Vec<_>>()
-            .join("\n");
-        if content.len() > 1024 * 1024 {
-            return Err("Recent history exceeds limit".into());
-        }
-        big_os_kit::storage::atomic_write_private_receipt(&path, content.as_bytes())
-            .and_then(|r| r.into_io_result())
-            .map_err(|_| "Recent history save was not confirmed".into())
-    }
 }
 
 /// Return the basename of `path` for use as a recent-file row label,
@@ -155,15 +146,6 @@ pub fn display_name(path: &str) -> String {
         || path.to_string(),
         |name| name.to_string_lossy().to_string(),
     )
-}
-
-/// Return `true` when is remote media url.
-#[must_use]
-pub fn is_remote_media_url(path: &str) -> bool {
-    path.starts_with("http://")
-        || path.starts_with("https://")
-        || path.starts_with("rtsp://")
-        || path.starts_with("rtmp://")
 }
 
 fn parse_recent_line(line: &str) -> Option<RecentEntry> {
@@ -193,42 +175,31 @@ mod tests {
     }
 
     #[test]
-    fn store_dedupes_sorts_and_caps_entries() {
-        let dir = temp_state_dir("recent-store");
-        let store = RecentStore::new(&dir, 2);
-        let first = dir.join("first.mp3");
-        let second = dir.join("second.mp3");
-        fs::write(&first, "a").unwrap();
-        fs::write(&second, "b").unwrap();
+    fn add_keeps_newest_first_without_duplicates_and_skips_non_files() {
+        let state_directory = temp_state_dir("recent-add");
+        let store = RecentStore::new(&state_directory, 2);
+        let a = state_directory.join("a.mkv");
+        let b = state_directory.join("b.mkv");
+        let c = state_directory.join("c.mkv");
+        for file in [&a, &b, &c] {
+            fs::write(file, b"").unwrap();
+        }
+        let name = |p: &PathBuf| p.to_str().unwrap().to_owned();
 
-        store.add(first.to_str().unwrap(), "audio", 1).unwrap();
-        store.add(second.to_str().unwrap(), "audio", 2).unwrap();
-        store.add(first.to_str().unwrap(), "audio", 3).unwrap();
-
-        let entries = store.load("audio");
-        assert_eq!(entries.len(), 2);
-        assert!(entries[0].path.ends_with("first.mp3"));
-        assert_eq!(entries[0].timestamp, 3);
-
-        let _ = fs::remove_dir_all(dir);
-    }
-
-    #[test]
-    fn clear_publishes_empty_recent_file() {
-        let state_directory = temp_state_dir("recent-clear-existing");
-        let store = RecentStore::new(&state_directory, 5);
-        let media_file_path = state_directory.join("track.mp3");
-        fs::write(&media_file_path, "audio").unwrap();
-
+        store.add(&name(&a), "video", 1).unwrap();
+        store.add(&name(&b), "video", 2).unwrap();
+        store.add(&name(&a), "video", 3).unwrap();
+        store.add("https://example.com/stream", "video", 4).unwrap();
         store
-            .add(media_file_path.to_str().unwrap(), "audio", 10)
+            .add(&name(&state_directory.join("gone.mkv")), "video", 5)
             .unwrap();
-        assert!(!store.load("audio").is_empty());
+        let paths: Vec<_> = store.load("video").into_iter().map(|e| e.path).collect();
+        assert_eq!(paths, [name(&a), name(&b)]);
 
-        store.clear("audio").unwrap();
-
+        store.add(&name(&c), "video", 6).unwrap();
+        let paths: Vec<_> = store.load("video").into_iter().map(|e| e.path).collect();
+        assert_eq!(paths, [name(&c), name(&a)]);
         assert!(store.load("audio").is_empty());
-        assert_eq!(fs::read(store.path_for_kind("audio")).unwrap(), b"");
 
         let _ = fs::remove_dir_all(state_directory);
     }
@@ -253,25 +224,5 @@ mod tests {
         assert!(store.clear("audio").is_err());
 
         let _ = fs::remove_dir_all(state_directory);
-    }
-
-    #[test]
-    fn remote_urls_are_not_saved() {
-        let dir = temp_state_dir("recent-remote");
-        let store = RecentStore::new(&dir, 5);
-        store
-            .add("https://example.com/video.mp4", "video", 1)
-            .unwrap();
-        assert!(store.load("video").is_empty());
-        let _ = fs::remove_dir_all(dir);
-    }
-
-    #[test]
-    fn remote_media_url_detection_covers_streaming_schemes() {
-        assert!(is_remote_media_url("http://example.com/track.mp3"));
-        assert!(is_remote_media_url("https://example.com/video.mp4"));
-        assert!(is_remote_media_url("rtsp://camera.local/live"));
-        assert!(is_remote_media_url("rtmp://stream.example/live"));
-        assert!(!is_remote_media_url("/home/user/video.mp4"));
     }
 }

@@ -21,16 +21,17 @@ impl MpvBackend {
         self.update_video_filters("add", &format!("@{label}:lavfi=[{filter}]"));
     }
 
+    /// Put back one entry exactly as `get_vf` listed it (label and all).
+    pub fn vf_add_entry(&self, entry: &str) {
+        self.update_video_filters("add", entry);
+    }
+
     pub fn vf_remove(&self, label: &str) {
         self.update_video_filters("remove", &format!("@{label}"));
     }
 
     pub fn get_vf(&self) -> String {
         self.with_mpv(|mpv| mpv.get_property::<String>("vf").unwrap_or_default())
-    }
-
-    pub fn set_vf(&self, vf: &str) {
-        self.update_video_filters("set", vf);
     }
 
     fn update_video_filters(&self, operation: &str, value: &str) {
@@ -55,23 +56,16 @@ impl MpvBackend {
             }
             let result = mpv.command("vf", &[operation, value]);
             debug!("[VF] {operation}: {result:?}");
+            // The source-colours format filter needs no CPU frames, so only
+            // a remaining lavfi filter keeps the copying decoder.
             let empty = mpv
                 .get_property::<String>("vf")
-                .is_ok_and(|vf| vf.is_empty());
+                .is_ok_and(|vf| !vf.contains("lavfi"));
             if (empty || (result.is_err() && starting))
                 && let Some(original) = preference.take()
             {
                 let _ = mpv.set_property("hwdec", original);
             }
-        });
-    }
-
-    /// Micro-seek forces pipeline rebuild for live preview during playback.
-    pub fn set_audio_filter_with_seek(&self, af: &str) {
-        self.with_mpv(|mpv| {
-            let _ = mpv.set_property("af", af.to_string());
-            debug!("set_audio_filter_with_seek: af={af:?}");
-            let _ = mpv.command("seek", &["0", "relative"]);
         });
     }
 }

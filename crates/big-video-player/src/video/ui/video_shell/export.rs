@@ -23,22 +23,15 @@ impl VideoShell {
             self.toast(&i18n("Cannot export a network stream"));
             return;
         }
-        self.launch_converter(program, &[input], cuts);
-    }
-
-    /// Spawn `program` with `paths` (and `cuts`) and toast the outcome.
-    pub(in crate::video::ui::video_shell) fn launch_converter(
-        &self,
-        program: &str,
-        paths: &[String],
-        cuts: &[(f64, f64)],
-    ) {
-        match converter_handoff::open(program, paths, cuts) {
-            Ok(()) => self.toast(&i18n("Opening in converter…")),
-            Err(error) => {
-                log::warn!("could not launch {program}: {error}");
-                self.toast(&i18n("Could not launch the converter"));
-            }
-        }
+        // The converter reads the colours as the player was told to.
+        let colours = self.video_transform.source_colours();
+        let source_hdr =
+            (program == converter_handoff::VIDEO_CONVERTER && colours != "auto").then_some(colours);
+        self.toast(&converter_handoff::open(
+            program,
+            &[input],
+            cuts,
+            source_hdr,
+        ));
     }
 }

@@ -6,16 +6,17 @@
 BigLinux distribution, written in Rust with GTK4/Relm4. It ships two graphical
 programs for end users:
 
-- **big-video-player** — plays video files and offers simple in-place editing
-  (trim a clip, export, extract audio).
-- **big-audio-player** — plays audio files with simple trim and export.
+- **big-video-player** — plays video files, IPTV and online video, and can cast
+  to a Chromecast.
+- **big-audio-player** — plays a music library, playlists, radio and podcasts.
 
-Playback uses the `mpv` library; file export uses `ffmpeg`. Licensed
-GPL-3.0-or-later. Full source is in the attached archive.
+Playback uses the `mpv` library. Neither player converts media: marked cuts
+are handed to separate converter GUIs. Licensed GPL-3.0-or-later. Full source
+is in the attached archive.
 
-This is ordinary consumer desktop software — the equivalent of VLC or a simple
-video editor. There is no networking, no authentication, no cryptography, and no
-security tooling of any kind in this codebase.
+This is ordinary consumer desktop software — the equivalent of VLC or
+Rhythmbox. Network use is limited to media streams, metadata lookups (through
+the system `curl`) and a token-gated local HTTP server for casting.
 
 ## What I am asking for
 
@@ -36,7 +37,8 @@ Concrete suggested diffs or before/after snippets are welcome.
 You do **not** need to build or run anything. The review environment has no
 Linux desktop, no Rust toolchain, and no `mpv`/`ffmpeg` installed — that is
 expected. Please reason from the source code, the `Cargo.toml`/`Cargo.lock`
-dependency set, and the per-crate `README.md` / `ARCHITECTURE.md` files. Library
+dependency set, and the per-crate `README.md` files (plus
+`crates/media-runtime/ARCHITECTURE.md`). Library
 documentation you already have access to (GTK4, Relm4, mpv, ffmpeg) is enough to
 evaluate the code.
 

@@ -32,7 +32,12 @@ impl VolumeControl {
             pending_volume: None,
             pending_mute: None,
             volume_set: false,
-            mute_set: false,
+            // Set from the start: the first output gets "not muted" from us.
+            // The sound server restores each application's last mute when its
+            // stream appears (WirePlumber keeps it per application), so a
+            // player closed muted came back muted the next day with nothing
+            // on screen saying so.
+            mute_set: true,
             had_output: false,
             native_volume: false,
             native_mute: false,

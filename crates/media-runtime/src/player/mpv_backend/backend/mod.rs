@@ -15,8 +15,9 @@ use std::sync::{Arc, Mutex};
 
 use super::{PlayerEvent, TrackMetadata};
 use init_options::{
-    apply_audio_only_options, apply_audio_output, apply_custom_options, apply_input_ipc,
-    apply_playback_options, apply_video_options, apply_watch_later, parse_custom_options,
+    AUDIO_WATCH_LATER_OPTIONS, VIDEO_WATCH_LATER_OPTIONS, apply_audio_only_options,
+    apply_audio_output, apply_custom_options, apply_input_ipc, apply_playback_options,
+    apply_video_options, apply_watch_later, parse_custom_options,
 };
 
 /// Accumulated state for the mpv event_loop: last-seen property values +
@@ -105,7 +106,11 @@ impl MpvBackend {
             apply_video_options(init)?;
             apply_audio_output(init, audio_output);
             apply_playback_options(init)?;
-            apply_watch_later(init, crate::config::video::WATCH_LATER_RELATIVE)?;
+            apply_watch_later(
+                init,
+                crate::config::video::WATCH_LATER_RELATIVE,
+                VIDEO_WATCH_LATER_OPTIONS,
+            )?;
             apply_input_ipc(init, crate::config::video::MPV_IPC_SOCKET);
             apply_custom_options(init, &custom_opts);
             Ok(())
@@ -133,7 +138,11 @@ impl MpvBackend {
         let mpv = MpvClient::with_initializer(|init| {
             apply_audio_only_options(init)?;
             apply_audio_output(init, audio_output);
-            apply_watch_later(init, crate::config::audio::WATCH_LATER_RELATIVE)?;
+            apply_watch_later(
+                init,
+                crate::config::audio::WATCH_LATER_RELATIVE,
+                AUDIO_WATCH_LATER_OPTIONS,
+            )?;
             Ok(())
         })?;
 
@@ -573,6 +582,31 @@ impl MpvBackend {
     }
 }
 
+impl MpvBackend {
+    /// When resume is on, save the loaded file's position now and stop mpv
+    /// from saving again on quit. mpv's own save runs only at teardown, after
+    /// a stop has already unloaded the file, and would keep a finished file's
+    /// end position; such a file is forgotten instead, as resuming there
+    /// would reopen on its last frame and end at once.
+    pub fn save_resume_position(&self) {
+        self.with_mpv(|mpv| {
+            if !mpv
+                .get_property::<bool>("save-position-on-quit")
+                .unwrap_or(false)
+            {
+                return;
+            }
+            let command = if mpv.get_property::<bool>("eof-reached").unwrap_or(false) {
+                "delete-watch-later-config"
+            } else {
+                "write-watch-later-config"
+            };
+            let _ = mpv.command(command, &[]);
+            let _ = mpv.set_property("save-position-on-quit", false);
+        });
+    }
+}
+
 impl Drop for MpvBackend {
     fn drop(&mut self) {
         self.running.store(false, Ordering::Relaxed);
@@ -583,6 +617,7 @@ impl Drop for MpvBackend {
             let _ = handle.join();
         }
 
+        self.save_resume_position();
         self.mpv
             .lock()
             .unwrap_or_else(std::sync::PoisonError::into_inner)
@@ -596,6 +631,7 @@ impl Drop for MpvBackend {
 #[cfg(all(test, not(miri)))]
 mod volume_tests {
     use super::*;
+    use crate::player::mpv_backend::types::AudioCacheProfile;
     use std::time::{Duration, Instant};
 
     fn wait_until(label: &str, condition: impl Fn() -> bool) {
@@ -788,5 +824,80 @@ mod volume_tests {
         }
         assert!(volume_event, "applied volume must reach the UI");
         assert!(mute_event, "applied mute must reach the UI");
+    }
+
+    #[test]
+    fn close_saves_only_the_position_and_forgets_finished_files() {
+        let temp = tempfile::tempdir().unwrap();
+        let input = temp.path().join("silence.wav");
+        // Four seconds of 8 kHz mono 16-bit silence.
+        let data_len: u32 = 8000 * 2 * 4;
+        let mut wav = b"RIFF".to_vec();
+        wav.extend((36 + data_len).to_le_bytes());
+        wav.extend(b"WAVEfmt ");
+        for field in [16_u32, 0x0001_0001, 8000, 16000, 0x0010_0002] {
+            wav.extend(field.to_le_bytes());
+        }
+        wav.extend(b"data");
+        wav.extend(data_len.to_le_bytes());
+        wav.resize(wav.len() + data_len as usize, 0);
+        std::fs::write(&input, wav).unwrap();
+        let input = input.to_str().unwrap();
+        let watch_dir = temp.path().join("watch_later");
+        let open = || {
+            let mpv = MpvClient::with_initializer(|init| {
+                apply_audio_only_options(init)?;
+                init.set_option("ao", "null")?;
+                init.set_option("watch-later-directory", watch_dir.to_str().unwrap())?;
+                init.set_option("watch-later-options", AUDIO_WATCH_LATER_OPTIONS)
+            })
+            .unwrap();
+            let (tx, rx) = async_channel::unbounded();
+            let backend = MpvBackend::finish_mpv_init(mpv, tx, "test-resume", "test resume", true);
+            backend.set_save_position(true);
+            (backend, rx)
+        };
+        // Settings lines across the directory; mpv also writes comment-only
+        // redirect entries for the parent directories.
+        let saved = || -> Vec<String> {
+            std::fs::read_dir(&watch_dir)
+                .map(|entries| {
+                    entries
+                        .map(|e| std::fs::read_to_string(e.unwrap().path()).unwrap())
+                        .flat_map(|text| {
+                            text.lines()
+                                .filter(|line| !line.starts_with('#'))
+                                .map(str::to_owned)
+                                .collect::<Vec<_>>()
+                        })
+                        .collect()
+                })
+                .unwrap_or_default()
+        };
+
+        let (backend, _rx) = open();
+        backend.load_audio_paused(input, AudioCacheProfile::Music, true);
+        // Seek once audio output is up; sent earlier, mpv sometimes drops it.
+        wait_until("playback started", || !backend.get_current_ao().is_empty());
+        backend.seek_absolute(1.5);
+        backend.with_mpv(|m| m.set_property("af", "volume=0.5".to_string()).unwrap());
+        wait_until("seek", || {
+            (backend.get_property_f64("time-pos") - 1.5).abs() < 0.01
+        });
+        drop(backend);
+        assert_eq!(saved(), ["start=1.500000"], "filters stay with the app");
+
+        let (backend, _rx) = open();
+        backend.load_audio_paused(input, AudioCacheProfile::Music, true);
+        wait_until("resumed", || {
+            (backend.get_property_f64("time-pos") - 1.5).abs() < 0.01
+        });
+        backend.seek_absolute(4.0);
+        wait_until("end of file", || backend.get_property_bool("eof-reached"));
+        drop(backend);
+        assert!(
+            saved().is_empty(),
+            "a finished file must not resume at its end"
+        );
     }
 }

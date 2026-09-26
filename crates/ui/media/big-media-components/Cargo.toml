@@ -1,7 +1,7 @@
 [package]
 name = "big-media-components"
 version = "0.1.0"
-publish = false  # consumed by sibling apps via path dep, not crates.io (see ARCHITECTURE.md §8)
+publish = false  # consumed by sibling apps via path dep, not crates.io
 edition.workspace = true
 rust-version.workspace = true
 license.workspace = true
@@ -19,7 +19,6 @@ gtk.workspace = true
 relm4.workspace = true
 serde_json.workspace = true
 big-relm4-components.workspace = true
-big-audio-effects.workspace = true
 # Pure parsers (radio-browser, media file-type knowledge) re-exported by this
 # crate live in the GTK-free engines leaf.
 big-media-engines = { workspace = true, features = ["radio-browser"] }

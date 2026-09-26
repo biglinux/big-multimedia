@@ -140,15 +140,6 @@ impl BigInlineSpinSet {
         &self.root
     }
 
-    /// Return a reference to the `spins` exposed by this [`BigInlineSpinSet`].
-    ///
-    /// Useful when callers need to bind signals, query state, or compose the
-    /// widget into a larger surface without taking ownership.
-    #[must_use]
-    pub fn spins(&self) -> &[(String, gtk::SpinButton)] {
-        &self.spins
-    }
-
     /// Return the current `spin` value held by this [`BigInlineSpinSet`].
     #[must_use]
     pub fn spin(&self, id: &str) -> Option<&gtk::SpinButton> {

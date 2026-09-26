@@ -1,10 +1,5 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <gresources>
-  <gresource prefix="/br/com/biglinux/VideoPlayer/icons/scalable/actions">
-    <file alias="sidebar-show-symbolic.svg" preprocess="xml-stripblanks">icons/sidebar-show-symbolic.svg</file>
-    <file alias="sidebar-hide-symbolic.svg" preprocess="xml-stripblanks">icons/sidebar-hide-symbolic.svg</file>
-    <file alias="folder-videos-symbolic.svg" preprocess="xml-stripblanks">icons/folder-videos-symbolic.svg</file>
-  </gresource>
   <gresource prefix="/br/com/biglinux/VideoPlayer">
     <file preprocess="xml-stripblanks">illustrations/hw_decoding.svg</file>
     <file preprocess="xml-stripblanks">illustrations/subtitles.svg</file>
@@ -79,11 +74,9 @@
     <file preprocess="xml-stripblanks">illustrations/audio_delay.svg</file>
     <file preprocess="xml-stripblanks">illustrations/denoise.svg</file>
     <file preprocess="xml-stripblanks">illustrations/sharpen_cas.svg</file>
-    <file preprocess="xml-stripblanks">illustrations/gpu_processing.svg</file>
     <file preprocess="xml-stripblanks">illustrations/upscaler.svg</file>
     <file preprocess="xml-stripblanks">illustrations/neural_upscaler.svg</file>
     <file preprocess="xml-stripblanks">illustrations/anime4k.svg</file>
-    <file preprocess="xml-stripblanks">illustrations/nvsharpen.svg</file>
     <file preprocess="xml-stripblanks">illustrations/gpu_sharpen.svg</file>
     <file preprocess="xml-stripblanks">illustrations/deband.svg</file>
     <file preprocess="xml-stripblanks">illustrations/sigmoid.svg</file>
@@ -93,41 +86,19 @@
     <file preprocess="xml-stripblanks">illustrations/colorize.svg</file>
     <file preprocess="xml-stripblanks">illustrations/monochrome.svg</file>
     <file preprocess="xml-stripblanks">illustrations/curves.svg</file>
-    <file preprocess="xml-stripblanks">illustrations/negate.svg</file>
-    <file preprocess="xml-stripblanks">illustrations/grayscale.svg</file>
     <file preprocess="xml-stripblanks">illustrations/vignette.svg</file>
-    <file preprocess="xml-stripblanks">illustrations/edge_detect.svg</file>
     <file preprocess="xml-stripblanks">illustrations/pixelize.svg</file>
     <file preprocess="xml-stripblanks">illustrations/gblur.svg</file>
     <file preprocess="xml-stripblanks">illustrations/motion_trail.svg</file>
     <file preprocess="xml-stripblanks">illustrations/audio_bitrate.svg</file>
     <file preprocess="xml-stripblanks">illustrations/audio_codec.svg</file>
-    <file preprocess="xml-stripblanks">illustrations/audio_enhance.svg</file>
-    <file preprocess="xml-stripblanks">illustrations/audio_handling.svg</file>
-    <file preprocess="xml-stripblanks">illustrations/codec_av1.svg</file>
-    <file preprocess="xml-stripblanks">illustrations/codec_h264.svg</file>
-    <file preprocess="xml-stripblanks">illustrations/codec_h265.svg</file>
-    <file preprocess="xml-stripblanks">illustrations/codec_prores.svg</file>
-    <file preprocess="xml-stripblanks">illustrations/codec_vp9.svg</file>
     <file preprocess="xml-stripblanks">illustrations/compressor.svg</file>
     <file preprocess="xml-stripblanks">illustrations/equalizer.svg</file>
-    <file preprocess="xml-stripblanks">illustrations/ffmpeg_flags.svg</file>
-    <file preprocess="xml-stripblanks">illustrations/force_copy.svg</file>
-    <file preprocess="xml-stripblanks">illustrations/gpu_accel.svg</file>
-    <file preprocess="xml-stripblanks">illustrations/hpf_rumble.svg</file>
-    <file preprocess="xml-stripblanks">illustrations/image_quality.svg</file>
-    <file preprocess="xml-stripblanks">illustrations/noise_gate.svg</file>
     <file preprocess="xml-stripblanks">illustrations/noise_reduction.svg</file>
     <file preprocess="xml-stripblanks">illustrations/output_format.svg</file>
-    <file preprocess="xml-stripblanks">illustrations/preset_speed.svg</file>
     <file preprocess="xml-stripblanks">illustrations/render_mode.svg</file>
-    <file preprocess="xml-stripblanks">illustrations/reset_settings.svg</file>
     <file preprocess="xml-stripblanks">illustrations/resolution.svg</file>
     <file preprocess="xml-stripblanks">illustrations/subtitle_extract.svg</file>
-    <file preprocess="xml-stripblanks">illustrations/subtitle_keep.svg</file>
-    <file preprocess="xml-stripblanks">illustrations/sw_decode.svg</file>
-    <file preprocess="xml-stripblanks">illustrations/transient_click.svg</file>
     <file preprocess="xml-stripblanks">illustrations/trim.svg</file>
-    <file preprocess="xml-stripblanks">illustrations/uniform_volume.svg</file>
   </gresource>
 </gresources>

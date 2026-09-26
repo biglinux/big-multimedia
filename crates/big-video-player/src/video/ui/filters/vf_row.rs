@@ -1,9 +1,8 @@
 //! Shared widget helpers for the filters dialog: the GResource-bound SVG
 //! illustration loader and `build_vf_expander_row` — an ExpanderRow + SpinRow
 //! that owns the enable/disable + debounced-apply lifecycle of a single
-//! single-parameter `vf` filter, keyed by `label`. App-local port of the
-//! legacy `dialogs/filters/common.rs`, retargeted from the `Window` god-object
-//! to a plain `Arc<MpvBackend>` handle.
+//! single-parameter `vf` filter, keyed by `label`, driving an
+//! `Arc<MpvBackend>` handle.
 
 use std::sync::Arc;
 use std::time::Duration;

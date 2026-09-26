@@ -14,13 +14,11 @@
 //! `AdwToolbarView` would throttle to ~1 fps) while shared shell mechanics are
 //! not re-derived.
 //!
-//! The primary menu is a real `GtkButton` on a real `AdwHeaderBar`, opening
-//! explicit `MenuItem` rows so assistive technologies can name and activate
-//! the trigger plus every action.
+//! The app supplies the header's primary button (a menu, a settings panel):
+//! the chrome only places it before the window controls.
 //! App actions go in the header slots and the bottom bar; auto-hide is driven by
-//! the app via [`set_reveal`](BigMediaChrome::set_reveal).
+//! [`BigMediaImmersionController`].
 
-use crate::layout::hamburger_menu::{BigMenuActionItem, build_flat_action_popover};
 use adw::prelude::*;
 use relm4::gtk;
 use std::cell::{Cell, RefCell};
@@ -31,11 +29,6 @@ mod sidebar;
 
 pub use sidebar::{BigMediaSidebarShell, BigMediaSidebarSpec};
 
-const DEFAULT_MENU_POPOVER_MAX_HEIGHT_PX: i32 = 560;
-const MIN_MENU_POPOVER_MAX_HEIGHT_PX: i32 = 240;
-const MENU_POPOVER_VIEWPORT_MARGIN_PX: i32 = 120;
-const MENU_POPOVER_VERTICAL_PADDING_PX: i32 = 12;
-const MENU_POPOVER_ROW_HEIGHT_PX: i32 = 41;
 const DEFAULT_IMMERSION_IDLE_TIMEOUT_MS: u64 = 2_000;
 const MIN_IMMERSION_IDLE_TIMEOUT_MS: u64 = 250;
 
@@ -77,19 +70,6 @@ impl BigMediaOverlayLayerSpec {
         }
     }
 
-    /// Layer policy for an overlay that intentionally participates in layout
-    /// measurement.
-    ///
-    /// This is rare for full-bleed media scenes, but keeps the explicit GTK
-    /// policy available for bounded panels that must reserve space.
-    #[must_use]
-    pub const fn measured_overlay() -> Self {
-        Self {
-            should_clip_layer: false,
-            should_measure_layer: true,
-        }
-    }
-
     /// Whether GTK should clip this layer to the overlay allocation.
     #[must_use]
     pub const fn should_clip_layer(self) -> bool {
@@ -107,8 +87,8 @@ impl BigMediaOverlayLayerSpec {
 ///
 /// The role names the user's visible layer purpose and carries the shared
 /// clip/measurement policy. Consumers should add role layers in stacking order:
-/// media surfaces first, then empty/welcome panels, then transient status or
-/// viewer adornment overlays, then chrome via [`BigMediaChromePlacement`].
+/// media surfaces first, then empty/welcome panels, then transient status
+/// overlays, then chrome via [`BigMediaChromePlacement`].
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 #[non_exhaustive]
 pub enum BigMediaOverlayLayerRole {
@@ -120,8 +100,6 @@ pub enum BigMediaOverlayLayerRole {
     WelcomeOverlay,
     /// Transient status UI such as buffering, loading, or progress overlays.
     StatusOverlay,
-    /// Viewer-specific adornment such as OSD labels, histograms, or strips.
-    ViewerAdornmentOverlay,
 }
 
 impl BigMediaOverlayLayerRole {
@@ -132,7 +110,7 @@ impl BigMediaOverlayLayerRole {
             Self::PrimaryMediaSurface | Self::FallbackMediaSurface => {
                 BigMediaOverlayLayerSpec::clipped_media()
             }
-            Self::WelcomeOverlay | Self::StatusOverlay | Self::ViewerAdornmentOverlay => {
+            Self::WelcomeOverlay | Self::StatusOverlay => {
                 BigMediaOverlayLayerSpec::floating_overlay()
             }
         }
@@ -144,7 +122,7 @@ impl BigMediaOverlayLayerRole {
         match self {
             Self::PrimaryMediaSurface | Self::FallbackMediaSurface => 10,
             Self::WelcomeOverlay => 30,
-            Self::StatusOverlay | Self::ViewerAdornmentOverlay => 40,
+            Self::StatusOverlay => 40,
         }
     }
 }
@@ -191,11 +169,6 @@ impl BigMediaOverlayStack {
     #[must_use]
     pub fn overlay(&self) -> &gtk::Overlay {
         &self.overlay
-    }
-
-    /// Set the overflow behavior on the underlying overlay.
-    pub fn set_overflow(&self, overflow: gtk::Overflow) {
-        self.overlay.set_overflow(overflow);
     }
 
     /// Add a layer using an explicit clip/measurement policy.
@@ -277,27 +250,6 @@ pub fn mount_media_toast_content(
     toast_overlay.set_child(Some(content));
 }
 
-/// Create a shared media toast host and mount `content` into it.
-#[must_use]
-pub fn create_media_toast_overlay_with_content(
-    content: &impl IsA<gtk::Widget>,
-) -> adw::ToastOverlay {
-    let toast_overlay = create_media_toast_overlay_root();
-    mount_media_toast_content(&toast_overlay, content);
-    toast_overlay
-}
-
-/// Spec for the primary (hamburger) menu.
-#[derive(Debug, Clone)]
-pub struct BigMediaMenuSpec {
-    /// Symbolic icon name, e.g. `"open-menu-symbolic"`.
-    pub icon_name: String,
-    /// Accessible label + tooltip, e.g. `"Main menu"`.
-    pub label: String,
-    /// Flat ordered menu items (`win.*`/`app.*` actions).
-    pub items: Vec<BigMenuActionItem>,
-}
-
 const WINDOW_MAXIMIZE_ICON: &str = "window-maximize-symbolic";
 const WINDOW_RESTORE_ICON: &str = "window-restore-symbolic";
 const WINDOW_CONTROL_CLASS: &str = "big-media-window-control";
@@ -338,8 +290,6 @@ pub struct BigMediaChrome {
     header: adw::HeaderBar,
     header_revealer: gtk::Revealer,
     bottom_revealer: gtk::Revealer,
-    menu_button: gtk::Button,
-    menu_popover: gtk::Popover,
     window_controls: gtk::Box,
     minimize_button: gtk::Button,
     maximize_restore_button: gtk::Button,
@@ -350,42 +300,10 @@ impl BigMediaChrome {
     /// Build the chrome. `reveal_initially` controls whether the bars start
     /// shown (e.g. `false` for a welcome/background state with no media yet).
     #[must_use]
-    pub fn new(menu: BigMediaMenuSpec, reveal_initially: bool) -> Self {
+    pub fn new(menu_button: &impl IsA<gtk::Widget>, reveal_initially: bool) -> Self {
         let header = adw::HeaderBar::new();
         header.set_show_start_title_buttons(false);
         header.set_show_end_title_buttons(false);
-        let menu_button = crate::feedback::tooltip::icon_button(&menu.icon_name, &menu.label, &[]);
-        let menu_popover = build_flat_action_popover(&menu_button, &menu.items);
-        menu_popover.set_position(gtk::PositionType::Bottom);
-        menu_popover.set_parent(&menu_button);
-        menu_button.connect_unrealize({
-            let menu_popover = menu_popover.downgrade();
-            move |_| {
-                if let Some(menu_popover) = menu_popover.upgrade()
-                    && menu_popover.parent().is_some()
-                {
-                    menu_popover.unparent();
-                }
-            }
-        });
-        let menu_scroll = scroll_wrap_menu_popover(&menu_popover);
-        menu_button.connect_clicked({
-            let menu_popover = menu_popover.downgrade();
-            let menu_scroll = menu_scroll.downgrade();
-            move |button| {
-                let Some(menu_popover) = menu_popover.upgrade() else {
-                    return;
-                };
-                if menu_popover.is_visible() {
-                    menu_popover.popdown();
-                    return;
-                }
-                if let Some(menu_scroll) = menu_scroll.upgrade() {
-                    apply_menu_popover_height(&menu_scroll, Some(button));
-                }
-                menu_popover.popup();
-            }
-        });
         // Custom window controls: the OSD header floats over edge-to-edge video,
         // so it can't use the compositor's native title buttons (disabled above).
         // Draw our own min/maximize-restore/close wired to the window, hidden
@@ -432,7 +350,7 @@ impl BigMediaChrome {
         window_controls.append(&maximize_restore_button);
         window_controls.append(&close_button);
         header.pack_end(&window_controls);
-        header.pack_end(&menu_button);
+        header.pack_end(menu_button);
 
         // `.osd-header` (app-themed) wrapper — the built-in `.osd` class forces
         // light-on-dark and breaks header icons in the light theme.
@@ -456,8 +374,6 @@ impl BigMediaChrome {
             header,
             header_revealer,
             bottom_revealer,
-            menu_button,
-            menu_popover,
             window_controls,
             minimize_button,
             maximize_restore_button,
@@ -518,18 +434,6 @@ impl BigMediaChrome {
         &self.header
     }
 
-    /// The primary menu button.
-    #[must_use]
-    pub fn menu_button(&self) -> &gtk::Button {
-        &self.menu_button
-    }
-
-    /// The primary menu popover.
-    #[must_use]
-    pub fn menu_popover(&self) -> &gtk::Popover {
-        &self.menu_popover
-    }
-
     /// The header reveal widget (apps wire auto-hide / OSD onto it).
     #[must_use]
     pub fn header_revealer(&self) -> &gtk::Revealer {
@@ -540,12 +444,6 @@ impl BigMediaChrome {
     #[must_use]
     pub fn bottom_revealer(&self) -> &gtk::Revealer {
         &self.bottom_revealer
-    }
-
-    /// Reveal / hide the floating top + bottom bars together (auto-hide).
-    pub fn set_reveal(&self, reveal: bool) {
-        self.header_revealer.set_reveal_child(reveal);
-        self.bottom_revealer.set_reveal_child(reveal);
     }
 }
 
@@ -597,20 +495,25 @@ impl BigMediaImmersionController {
         self.should_hide_cursor_when_idle.set(should_hide);
     }
 
-    /// Fade `widget` out when the media surface becomes idle.
-    pub fn register_opacity_target(&self, widget: &impl IsA<gtk::Widget>) {
-        self.opacity_targets
-            .borrow_mut()
-            .push(widget.upcast_ref::<gtk::Widget>().downgrade());
-    }
-
     /// Hide `revealer` when the media surface becomes idle. Focus inside the
     /// revealer does NOT pin it open: a media OSD must fade a few seconds after
     /// the pointer stops even though a transport control keeps keyboard focus
-    /// after a click (which is the normal state). Callers that genuinely need
-    /// focus to hold the chrome can add [`Self::register_focus_hide_guard`].
+    /// after a click (which is the normal state). The pointer resting on it
+    /// does: someone reading a control is about to click it, and a click
+    /// landing after the fade would hit the video instead.
     pub fn register_revealer(&self, revealer: &gtk::Revealer) {
         self.reveal_targets.borrow_mut().push(revealer.downgrade());
+        // Moving off the chrome re-arms the fade through the media surface's
+        // own motion/leave handlers, so no leave handler here: one would also
+        // fire when the fade itself unmaps the chrome and reveal it again.
+        let hover = gtk::EventControllerMotion::new();
+        revealer.add_controller(hover.clone());
+        let hover = hover.downgrade();
+        self.register_hide_guard(move || {
+            hover
+                .upgrade()
+                .is_some_and(|hover| hover.contains_pointer())
+        });
     }
 
     /// Keep chrome visible while `should_keep_visible` returns `true`.
@@ -618,16 +521,6 @@ impl BigMediaImmersionController {
         self.hide_guard_predicates
             .borrow_mut()
             .push(Box::new(should_keep_visible));
-    }
-
-    /// Keep chrome visible while `widget` or one of its descendants has focus.
-    pub fn register_focus_hide_guard(&self, widget: &impl IsA<gtk::Widget>) {
-        let widget = widget.upcast_ref::<gtk::Widget>().downgrade();
-        self.register_hide_guard(move || {
-            widget
-                .upgrade()
-                .is_some_and(|widget| media_chrome_subtree_has_focus(&widget))
-        });
     }
 
     /// Keep chrome visible while `popover` is open.
@@ -640,31 +533,10 @@ impl BigMediaImmersionController {
         });
     }
 
-    /// Keep registered chrome visible until a matching [`Self::uninhibit`].
-    pub fn inhibit(&self) {
-        self.inhibit_count.set(self.inhibit_count.get() + 1);
-        self.show_all();
-    }
-
-    /// Release one hide inhibition and restart the idle timer if none remain.
-    pub fn uninhibit(&self) {
-        let new_count = self.inhibit_count.get().saturating_sub(1);
-        self.inhibit_count.set(new_count);
-        if new_count == 0 {
-            self.show_and_schedule_hide();
-        }
-    }
-
     /// Reveal registered chrome without arming an idle hide.
     pub fn show_now(&self) {
         self.cancel_pending();
         self.show_all();
-    }
-
-    /// Hide registered chrome now unless a hide guard says it must remain shown.
-    pub fn hide_now(&self) {
-        self.cancel_pending();
-        self.hide_all();
     }
 
     /// Reveal registered chrome and arm the idle hide timer when guards allow it.
@@ -785,146 +657,13 @@ fn bounded_immersion_idle_timeout_ms(idle_timeout: std::time::Duration) -> u64 {
     timeout_ms.max(MIN_IMMERSION_IDLE_TIMEOUT_MS)
 }
 
-/// Return whether `chrome_widget` or one of its descendants has keyboard focus.
-#[must_use]
-pub fn media_chrome_subtree_has_focus(chrome_widget: &impl IsA<gtk::Widget>) -> bool {
-    let chrome_widget = chrome_widget.upcast_ref::<gtk::Widget>();
-    if chrome_widget.has_focus() {
-        return true;
-    }
-
-    let Some(window) = chrome_widget.root().and_downcast::<gtk::Window>() else {
-        return false;
-    };
-    let Some(focused_widget) = gtk::prelude::GtkWindowExt::focus(&window) else {
-        return false;
-    };
-
-    widget_contains_descendant(chrome_widget, &focused_widget)
-}
-
-fn widget_contains_descendant(widget: &gtk::Widget, descendant: &gtk::Widget) -> bool {
-    if descendant == widget {
-        return true;
-    }
-
-    let mut parent = descendant.parent();
-    while let Some(current_parent) = parent {
-        if &current_parent == widget {
-            return true;
-        }
-        parent = current_parent.parent();
-    }
-
-    false
-}
-
-fn scroll_wrap_menu_popover(popover: &gtk::Popover) -> gtk::ScrolledWindow {
-    let scroller = gtk::ScrolledWindow::builder()
-        .hscrollbar_policy(gtk::PolicyType::Never)
-        .vscrollbar_policy(gtk::PolicyType::Automatic)
-        .propagate_natural_width(true)
-        .propagate_natural_height(true)
-        .max_content_height(menu_popover_max_height(0))
-        .build();
-    if let Some(menu_child) = popover.child() {
-        popover.set_child(None::<&gtk::Widget>);
-        scroller.set_child(Some(&menu_child));
-        popover.set_child(Some(&scroller));
-    }
-    scroller
-}
-
-fn apply_menu_popover_height(scroller: &gtk::ScrolledWindow, button: Option<&gtk::Button>) {
-    let viewport_height = button
-        .and_then(|button| button.root())
-        .and_then(|root| root.downcast::<gtk::Window>().ok())
-        .map_or(0, |window| window.height());
-    scroller.set_max_content_height(menu_popover_max_height(viewport_height));
-}
-
-fn menu_popover_max_height(viewport_height: i32) -> i32 {
-    let candidate_height = if viewport_height <= 0 {
-        DEFAULT_MENU_POPOVER_MAX_HEIGHT_PX
-    } else {
-        viewport_height - MENU_POPOVER_VIEWPORT_MARGIN_PX
-    };
-    let bounded_height = candidate_height.clamp(
-        MIN_MENU_POPOVER_MAX_HEIGHT_PX,
-        DEFAULT_MENU_POPOVER_MAX_HEIGHT_PX,
-    );
-    snap_menu_popover_height_to_rows(bounded_height)
-}
-
-fn snap_menu_popover_height_to_rows(max_height: i32) -> i32 {
-    if max_height <= MIN_MENU_POPOVER_MAX_HEIGHT_PX {
-        return MIN_MENU_POPOVER_MAX_HEIGHT_PX;
-    }
-
-    let row_area_height = max_height - MENU_POPOVER_VERTICAL_PADDING_PX;
-    let full_row_count = (row_area_height / MENU_POPOVER_ROW_HEIGHT_PX).max(1);
-    let snapped_height =
-        MENU_POPOVER_VERTICAL_PADDING_PX + (full_row_count * MENU_POPOVER_ROW_HEIGHT_PX);
-
-    snapped_height.clamp(MIN_MENU_POPOVER_MAX_HEIGHT_PX, max_height)
-}
-
 #[cfg(test)]
 mod tests {
     use super::BigMediaImmersionGuardSnapshot;
     use super::{
-        BigMediaChromePlacement, BigMediaOverlayLayerRole, BigMediaOverlayLayerSpec,
-        DEFAULT_MENU_POPOVER_MAX_HEIGHT_PX, MENU_POPOVER_ROW_HEIGHT_PX,
-        MENU_POPOVER_VERTICAL_PADDING_PX, MIN_IMMERSION_IDLE_TIMEOUT_MS,
-        MIN_MENU_POPOVER_MAX_HEIGHT_PX, bounded_immersion_idle_timeout_ms, menu_popover_max_height,
-        snap_menu_popover_height_to_rows,
+        BigMediaChromePlacement, BigMediaOverlayLayerRole, MIN_IMMERSION_IDLE_TIMEOUT_MS,
+        bounded_immersion_idle_timeout_ms,
     };
-
-    #[test]
-    fn menu_popover_height_fits_720p_viewports() {
-        assert_eq!(menu_popover_max_height(720), 545);
-    }
-
-    #[test]
-    fn menu_popover_height_leaves_margin_on_short_viewports() {
-        assert_eq!(menu_popover_max_height(600), 463);
-    }
-
-    #[test]
-    fn menu_popover_height_keeps_minimum_for_tiny_viewports() {
-        assert_eq!(menu_popover_max_height(300), MIN_MENU_POPOVER_MAX_HEIGHT_PX);
-    }
-
-    #[test]
-    fn menu_popover_height_uses_default_before_realize() {
-        assert_eq!(menu_popover_max_height(0), 545);
-    }
-
-    #[test]
-    fn menu_popover_height_snaps_to_complete_rows() {
-        let snapped_height = snap_menu_popover_height_to_rows(DEFAULT_MENU_POPOVER_MAX_HEIGHT_PX);
-
-        assert_eq!(
-            (snapped_height - MENU_POPOVER_VERTICAL_PADDING_PX) % MENU_POPOVER_ROW_HEIGHT_PX,
-            0,
-            "menu viewport should not clip the final visible row"
-        );
-    }
-
-    #[test]
-    fn media_overlay_layer_specs_encode_clip_and_measure_policy() {
-        let media_layer = BigMediaOverlayLayerSpec::clipped_media();
-        assert!(media_layer.should_clip_layer());
-        assert!(!media_layer.should_measure_layer());
-
-        let floating_layer = BigMediaOverlayLayerSpec::floating_overlay();
-        assert!(!floating_layer.should_clip_layer());
-        assert!(!floating_layer.should_measure_layer());
-
-        let measured_layer = BigMediaOverlayLayerSpec::measured_overlay();
-        assert!(!measured_layer.should_clip_layer());
-        assert!(measured_layer.should_measure_layer());
-    }
 
     #[test]
     fn media_overlay_layer_roles_encode_media_scene_policy() {
@@ -946,7 +685,6 @@ mod tests {
         for role in [
             BigMediaOverlayLayerRole::WelcomeOverlay,
             BigMediaOverlayLayerRole::StatusOverlay,
-            BigMediaOverlayLayerRole::ViewerAdornmentOverlay,
         ] {
             assert!(
                 !role.layer_spec().should_clip_layer(),

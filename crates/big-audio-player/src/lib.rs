@@ -2,11 +2,9 @@
 //!
 //! The audio player UI built on top of the shared `big-media-runtime`
 //! modules. The thin [`main`](../big_audio_player/index.html) binary calls
-//! [`run`]. Exposing the UI as a library lets
-//! the Relm4 components compile as public API during the in-progress port,
-//! instead of tripping `dead_code` while built alongside the legacy path.
+//! [`run`]; multicall hosts (big-host, big-modules) embed the player through
+//! [`open_in_application`] and [`open_paths`].
 
-use big_media_runtime::i18n::gettext_noop;
 pub use big_media_runtime::{
     cast, config, db, i18n, library, media, player, recent, settings, shared,
 };
@@ -16,42 +14,21 @@ mod resources;
 
 static EMBED_BOOT: std::sync::Once = std::sync::Once::new();
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-struct AudioPlayerWindowSpec {
-    title: &'static str,
-    default_width: i32,
-    default_height: i32,
-    minimum_width: i32,
-    minimum_height: i32,
-}
-
-fn audio_player_window_spec() -> AudioPlayerWindowSpec {
-    AudioPlayerWindowSpec {
-        title: gettext_noop("Big Audio Player"),
-        default_width: 1200,
-        default_height: 720,
-        minimum_width: 640,
-        minimum_height: 400,
-    }
-}
-
-/// Wrap the player content (the shell's `ToastOverlay` Root, which is window-
-/// agnostic — RESTRUCTURE ADR D14) in an application window with the standard
-/// player geometry + title. Each mount point supplies its own window.
+/// Wrap the player content (the shell's window-agnostic `ToastOverlay` Root)
+/// in an application window with the standard player geometry + title. Each mount point supplies its own window.
 fn build_player_window(
     app: &impl gtk::prelude::IsA<gtk::Application>,
     content: &adw::ToastOverlay,
 ) -> adw::ApplicationWindow {
     use gtk::prelude::*;
-    let spec = audio_player_window_spec();
     let window = adw::ApplicationWindow::builder()
         .application(app)
-        .default_width(spec.default_width)
-        .default_height(spec.default_height)
-        .title(i18n::i18n(spec.title))
+        .default_width(1200)
+        .default_height(720)
+        .title(i18n::i18n("Big Audio Player"))
         .content(content)
         .build();
-    window.set_size_request(spec.minimum_width, spec.minimum_height);
+    window.set_size_request(640, 400);
     window
 }
 
@@ -132,8 +109,8 @@ pub fn run() -> gtk::glib::ExitCode {
     // framework; the app supplies its own id).
     big_player_ui::favicon_cache::set_cache_namespace("big-audio-player");
 
-    // The `AudioShell` Root is now the mountable content (a ToastOverlay), not a
-    // window (RESTRUCTURE ADR D14), so we boot manually instead of `RelmApp::run`
+    // The `AudioShell` Root is mountable content (a ToastOverlay), not a
+    // window, so we boot manually instead of `RelmApp::run`
     // (which requires a window Root): on activate, launch the shell and wrap its
     // content in the application window. The app subclass still owns the
     // app-level actions, accels, and the file-open broker.
@@ -159,20 +136,4 @@ pub fn run() -> gtk::glib::ExitCode {
         *shell_for_activate.borrow_mut() = Some(controller);
     });
     app.run()
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn audio_player_window_spec_matches_shell_geometry() {
-        let spec = audio_player_window_spec();
-
-        assert_eq!(spec.title, "Big Audio Player");
-        assert_eq!(spec.default_width, 1200);
-        assert_eq!(spec.default_height, 720);
-        assert_eq!(spec.minimum_width, 640);
-        assert_eq!(spec.minimum_height, 400);
-    }
 }

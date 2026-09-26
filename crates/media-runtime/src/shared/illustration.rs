@@ -36,8 +36,7 @@ pub fn illustration(resource_prefix: &str, filename: &str) -> gtk::Image {
     img
 }
 
-/// Probes Video first because the audio_converter binary bundles both
-/// resources and its video/preferences pages need the video illustrations.
+/// Video is probed first because a host binary may bundle both resource sets.
 pub fn illustrations_prefix() -> &'static str {
     static PREFIX: OnceLock<&str> = OnceLock::new();
     PREFIX.get_or_init(|| {

@@ -6,7 +6,7 @@ use gtk::{gdk, glib};
 
 /// Build the hover-preview popover: a thumbnail frame above a time (+ chapter)
 /// label, parented to the seek bar. Non-autohide so it never grabs input; the
-/// hover controller pops it up / down. Mirrors the old `seek_tooltip_box`.
+/// hover controller pops it up / down.
 pub(super) fn build_seek_preview(anchor: &gtk::Widget) -> (gtk::Popover, gtk::Picture, gtk::Label) {
     // bigagents: popover-parent-managed — single reused seek-preview popover,
     // lives exactly as long as the controls bar (app lifetime). Parented to the
@@ -50,7 +50,7 @@ pub(super) fn build_seek_preview(anchor: &gtk::Widget) -> (gtk::Popover, gtk::Pi
 
 /// Wire the seek-bar hover preview: pointer motion over the bar shows the time
 /// (+ chapter name) at that position and requests a thumbnail frame; leave
-/// hides it. Mirrors the old `update_seek_hover_label`.
+/// hides it.
 // Nine unrelated GTK handles + shared state cells; bundling them into a struct
 // would only rename the fan-out, not reduce it.
 #[allow(clippy::too_many_arguments)]
@@ -125,7 +125,6 @@ pub(super) fn wire_seek_hover(
 }
 
 /// Keep the latest requested preview ready, including while the pointer is away.
-/// Mirrors the old `setup_thumbnail_generator` consumer.
 pub(super) fn wire_thumb_consumer(
     thumb_rx: async_channel::Receiver<ThumbnailResult>,
     thumb: &gtk::Picture,

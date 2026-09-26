@@ -175,7 +175,7 @@ fn generate_thumbnail(file: &str, time: f64, cancelled: &AtomicBool) -> Option<V
             "-sn",
             "-vf",
             &format!(
-                "scale={THUMB_WIDTH}:{THUMB_HEIGHT}:force_original_aspect_ratio=decrease:flags=fast_bilinear,\
+                "scale={THUMB_WIDTH}:{THUMB_HEIGHT}:force_original_aspect_ratio=decrease:reset_sar=1:flags=fast_bilinear,\
                  pad={THUMB_WIDTH}:{THUMB_HEIGHT}:(ow-iw)/2:(oh-ih)/2:black"
             ),
             "-f",

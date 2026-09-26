@@ -1,7 +1,7 @@
 //! `ColumnView` sorter + factory helpers for `Track` columns. The generic
 //! `ColumnView` chrome (column-config header menu, width serialize/apply/persist)
-//! moved to the shared `big_relm4_components::layout::{column_persist,
-//! column_chrome}` (RESTRUCTURE P5); only the `Track`-specific sorters and cell
+//! lives in the shared `big_relm4_components::layout::{column_persist,
+//! column_chrome}`; only the `Track`-specific sorters and cell
 //! factories stay here.
 
 use big_relm4_components::list::signal_factory;

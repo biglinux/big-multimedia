@@ -1,7 +1,7 @@
 [package]
 name = "big-app-kit"
 version = "0.1.0"
-publish = false  # consumed by sibling apps via path dep, not crates.io (see ARCHITECTURE.md §8)
+publish = false  # consumed by sibling apps via path dep, not crates.io
 edition.workspace = true
 rust-version.workspace = true
 license.workspace = true
@@ -18,23 +18,15 @@ adw.workspace = true
 gtk.workspace = true
 relm4.workspace = true
 log.workspace = true
-serde.workspace = true
-serde_json.workspace = true
 big-os-kit.workspace = true
 # Display-free contracts (specs, discovery-free helpers). Every module here is
-# re-exported so `big_app_kit::<module>::…` paths stay unchanged; the HTTP and
-# remote-control code lives there too, behind matching forwarded features.
+# re-exported so `big_app_kit::<module>::…` paths stay unchanged; the
+# remote-control code lives there too, behind a forwarded feature.
 big-app-kit-core.workspace = true
 
-# Network + secret-store features are opt-in. Default is empty so a consumer
-# never silently enables outbound HTTP policy, a LAN-bindable control server
-# (tiny_http), or a system libsecret backend it did not ask for. Enable
-# explicitly, e.g. features = ["http-client"] /
-# ["libsecret-system-backend"]. HTTP + remote-control forward to
-# big-app-kit-core; the keyring backend lives in big-os-kit.
+# The LAN-bindable control server is opt-in and forwards to big-app-kit-core.
 [features]
 default = []
-http-client = ["big-app-kit-core/http-client"]
 remote-control = ["big-app-kit-core/remote-control"]
 
 [dev-dependencies]

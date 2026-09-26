@@ -1,7 +1,7 @@
 //! Pure, GTK-free filter/shader value mapping for the video filters dialog.
 //!
-//! Holds the UI↔shader percentage conversions (ported verbatim from the legacy
-//! `dialogs/filters/shaders.rs`, with their round-trip tests) and the single
+//! Holds the UI↔shader percentage conversions (with their round-trip tests)
+//! and the single
 //! source of truth for each single-parameter `vf` filter's mpv string. Keeping
 //! the math here lets the Relm4 dialog stay a thin widget layer and lets the
 //! mappings be unit-tested without a running mpv backend.

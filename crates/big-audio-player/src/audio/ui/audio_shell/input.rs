@@ -66,8 +66,7 @@ pub enum AudioShellInput {
     /// populate the detail view.
     DetailResolved(Vec<Track>),
     /// A browse-tree node resolved to its tracks (async DB result) → append to
-    /// the queue and start playback when idle (mirrors the god-object's
-    /// activate-to-enqueue Music tab).
+    /// the queue and start playback when idle.
     NodeTracksResolved(Vec<Track>),
     /// Rebuild the library tree from the current grouping/filter/age (boot +
     /// after a grouping/search/age change).
@@ -119,15 +118,8 @@ pub enum AudioShellInput {
     ShowManageFolders,
     /// Watched music folders resolved → push into the library dialog.
     ManageFoldersResolved(Vec<WatchFolder>),
-    /// Open the cast device-picker dialog (main menu).
-    #[cfg(feature = "chromecast")]
+    /// Open the "Play on a TV" picker (main menu).
     ShowCast,
-    /// Cast the current track to the discovered device at this index.
-    #[cfg(feature = "chromecast")]
-    CastToDeviceIndex(usize),
-    /// Stop casting to the current device.
-    #[cfg(feature = "chromecast")]
-    CastStop,
     /// Open the smartphone web-remote dialog (main menu).
     ShowSmartphone,
     /// Re-evaluate the album-art background (Appearance toggle changed).

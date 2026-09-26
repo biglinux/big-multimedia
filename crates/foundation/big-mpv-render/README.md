@@ -1,7 +1,8 @@
 # big-mpv-render
 
-Reusable mpv render/offload primitives for BigLinux Rust applications.
+mpv render-path policy and render-profile property tables used by
+`big-media-runtime`. Pure data and pure functions: no GTK or mpv dependency.
 
-This crate currently stores the render-path policy as code. Move the actual
-`FastRenderContext`/`OffloadRenderer` API here only after the player and video
-converter editor have a stable shared interface.
+## License
+
+MIT

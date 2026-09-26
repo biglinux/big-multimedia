@@ -85,34 +85,40 @@ impl AudioShell {
         )
     }
 
-    /// Cast the current track to the discovered device at `idx` (chosen in the
-    /// cast dialog). The shell owns `current_file`, so the cast happens here.
-    #[cfg(feature = "chromecast")]
-    pub(super) fn cast_to_device(&self, idx: usize) {
-        let devices = self.cast_device_registry.get_devices();
-        let Some(device) = devices.get(idx) else {
+    /// "Play on a TV": hand the current track, where it is now, to a
+    /// Chromecast or DLNA TV, pausing it here once the TV plays.
+    pub(super) fn show_tv_dialog(&self) {
+        use crate::cast::daemon::PlaybackStart;
+        use crate::shared::tv_cast::{TvMedia, present_tv_dialog};
+        let Some(win) = self.window() else {
             return;
         };
-        if self.current_file.is_empty() {
-            self.notify(&i18n("No track loaded"));
-            return;
-        }
-        let Some(local_ip) = crate::cast::chromecast::get_local_ip() else {
-            self.notify(&i18n("Cast failed"));
-            return;
+        let mpv = self.mpv.clone();
+        let current = mpv.clone();
+        let file = self.current_file.clone();
+        let media = move || {
+            (!file.is_empty()).then(|| TvMedia {
+                source: file.clone(),
+                title: current
+                    .as_ref()
+                    .and_then(|mpv| mpv.get_media_title())
+                    .unwrap_or_default(),
+                audio: true,
+                start: current
+                    .as_ref()
+                    .map_or_else(PlaybackStart::default, |mpv| PlaybackStart {
+                        seconds: mpv.get_position(),
+                        paused: false,
+                        volume: (mpv.get_volume() / 100.0).clamp(0.0, 1.0),
+                        muted: mpv.get_mute(),
+                    }),
+            })
         };
-        let file_path = self.current_file.clone();
-        let result = if file_path.starts_with("http://") || file_path.starts_with("https://") {
-            self.cast_device_registry
-                .cast_url(device, &file_path, "audio/mpeg")
-        } else {
-            self.cast_device_registry
-                .cast_file(device, &file_path, &local_ip)
-        };
-        match result {
-            Ok(()) => self.notify(&format!("{} {}", i18n("Casting to"), device.name)),
-            Err(e) => self.notify(&format!("{}: {}", i18n("Cast failed"), e)),
-        }
+        present_tv_dialog(&win, media, move || {
+            if let Some(mpv) = &mpv {
+                mpv.pause();
+            }
+        });
     }
 
     /// Present the sleep-timer dialog: the active countdown (with cancel) when a

@@ -1,6 +1,6 @@
 use super::*;
 
-use std::sync::atomic::{AtomicU64, Ordering};
+use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
 
 use super::trim::VideoTrimBarOutput;
 
@@ -14,22 +14,23 @@ pub enum VideoShellInput {
     Playlist(VideoBrowserSidebarOutput),
     /// An intent emitted by the IPTV browser (play a channel URL).
     Iptv(VideoIptvBrowserOutput),
-    /// An intent emitted by the cast device picker (started / stopped).
-    #[cfg(feature = "chromecast")]
-    Cast(VideoCastDialogOutput),
     /// Open the IPTV browser dialog (header button).
     ShowIptvBrowser,
     /// Open the cast device picker dialog (header button).
-    #[cfg(feature = "chromecast")]
     ShowCastDialog,
-    /// Open the video filters/shaders dialog (header button).
-    ShowFiltersDialog,
-    /// Open the audio equalizer dialog (Media menu).
-    ShowEqualizer,
-    /// Open the audio & subtitle delay dialog (Media menu).
-    ShowDelay,
-    /// Open the image & video adjustment dialog (Media menu).
-    ShowImageAdjust,
+    /// The header's settings button: open the panel home, or close it.
+    TogglePanel,
+    /// A shortcut, chip or menu entry: open the panel straight at a section
+    /// (Esc then closes the panel).
+    ShowPanel(super::panel::PanelPage),
+    /// A block or link inside the panel: switch to that page.
+    PanelNavigate(super::panel::PanelPage),
+    /// The panel's Back button.
+    PanelBack,
+    /// Esc inside the panel.
+    PanelEscape,
+    /// Close the settings panel.
+    ClosePanel,
     /// Open yt-dlp stream-quality selector (Media menu).
     ShowYtdlQuality,
     /// Open the live media-information dialog (header button).
@@ -52,6 +53,9 @@ pub enum VideoShellInput {
     ShowPreferences,
     /// Open the appearance (palette + layout) dialog (Settings menu).
     ShowAppearance,
+    /// The preferences dialog closed: re-read settings the shell applies
+    /// itself (the screen-awake inhibitor).
+    PreferencesClosed,
     /// Confirm + reset all settings to defaults (Settings menu).
     ShowRestoreDefaults,
     /// Restore-defaults confirmed in the alert dialog: reset the store.
@@ -73,12 +77,8 @@ pub enum VideoShellInput {
     /// Capture the current frame to the Pictures dir (Playback menu).
     Screenshot,
     ScreenshotQueueFailed,
-    /// Open the chapter list dialog (Playback menu).
-    ShowChapters,
     /// Jump to chapter `idx` (chapter list dialog).
     SetChapter(i64),
-    /// Open the sleep-timer dialog (Playback menu).
-    ShowSleepTimer,
     /// Arm the sleep timer for `minutes`, running `action` on expiry.
     SleepTimerStart {
         minutes: u32,
@@ -86,6 +86,19 @@ pub enum VideoShellInput {
     },
     /// Disarm the sleep timer.
     SleepTimerCancel,
+    /// Re-read which settings are away from normal (controls shown, a
+    /// dialog closed, speed changed).
+    RefreshAdjustments,
+    /// A chip's × or a notice's button: put these back to normal, with a
+    /// toast to undo it.
+    ResetAdjustments(Vec<super::adjustments::Adjustment>),
+    /// "Back to normal": every chip but the sleep timer at once.
+    ResetAllAdjustments,
+    /// A second after `path` loaded: offer HDR when it looks like
+    /// undescribed HDR.
+    SuggestHdr(String),
+    /// The undo toast: put these settings back as they were.
+    RestoreAdjustments(Vec<super::adjustments::Adjustment>),
     /// One sleep-timer countdown tick (1 s).
     SleepTick,
     /// Toggle play/pause on the live mpv backend (right-click context menu /
@@ -94,8 +107,6 @@ pub enum VideoShellInput {
     /// Toggle the window's fullscreen state (double-click on the video /
     /// right-click context menu / fullscreen button).
     ToggleFullscreen,
-    /// Activity transition from a pane host such as the shell desktop.
-    SetPaneActivity(big_relm4_components::pane::PaneActivity),
     /// Open the current file in the audio converter to keep only its audio.
     ExtractAudio,
     /// Open the current file in the video converter.
@@ -118,12 +129,16 @@ pub(super) struct ShellInputToken(u64);
 
 static NEXT_SHELL_INPUT_TOKEN: AtomicU64 = AtomicU64::new(1);
 
+/// Set when the process starts in order to open files, read once by the
+/// shell's init: it then starts on the video area instead of the welcome
+/// screen and wallpaper, which stood for about a second before the first frame.
+static OPENING_FILES: AtomicBool = AtomicBool::new(false);
+
 thread_local! {
     /// Main-thread handle to the running shell's input, set at init so the
     /// application `open` handler can deliver opened files. The inputs carry
     /// GTK objects (not `Send`), so a thread-local `Sender` is used instead of
-    /// a `MessageBroker` static. Public API; dead until the V6 cutover routes
-    /// `app.rs::open` through it (mirrors the audio/converter ports).
+    /// a `MessageBroker` static.
     static SHELL_INPUT: RefCell<Option<(ShellInputToken, relm4::Sender<VideoShellInput>)>> =
         const { RefCell::new(None) };
 }
@@ -136,6 +151,18 @@ pub fn send_to_shell(message: VideoShellInput) {
             let _ = sender.send(message);
         }
     });
+}
+
+/// Tell the shell about to be created that files are on their way. A shell
+/// already running keeps its screen: its files replace the playing ones.
+pub fn mark_opening_files() {
+    if SHELL_INPUT.with(|cell| cell.borrow().is_none()) {
+        OPENING_FILES.store(true, Ordering::Relaxed);
+    }
+}
+
+pub(super) fn take_opening_files() -> bool {
+    OPENING_FILES.swap(false, Ordering::Relaxed)
 }
 
 pub(super) fn set_shell_input(sender: relm4::Sender<VideoShellInput>) -> ShellInputToken {

@@ -2,8 +2,7 @@
 //!
 //! Extracted from `big-media-runtime` so the reusable player UI (`big-player-ui`)
 //! and lean consumers can use the SQLite library, settings store, and network
-//! clients without linking mpv/ffmpeg engines. No GTK in this crate — see
-//! `big-rust-components/ARCHITECTURE.md` §9–10 for the placement rule. SQLite
+//! clients without linking mpv/ffmpeg engines. No GTK in this crate. SQLite
 //! uses the system libsqlite3 and is feature-gated behind `db`.
 //!
 //! HTTP + URL helpers come from `big_os_kit` (GTK-free leaf, single policy home).
@@ -20,7 +19,7 @@ pub mod error;
 /// Internationalization helper (`gettext` wrapper).
 pub mod i18n;
 /// Music library scanning, metadata reading, and web-metadata clients
-/// (MusicBrainz, Last.fm, ListenBrainz, LRCLIB, cover art, podcasts).
+/// (MusicBrainz, LRCLIB, cover art, podcasts).
 #[cfg(feature = "library")]
 pub mod library;
 /// Radio data layer: Radio-Browser API client (GTK-free).

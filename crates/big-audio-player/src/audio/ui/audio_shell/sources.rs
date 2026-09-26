@@ -182,7 +182,6 @@ impl AudioShell {
                     mpv.load_file_with_audio_profile(
                         &url,
                         crate::player::mpv_backend::AudioCacheProfile::Radio,
-                        false,
                     );
                     mpv.play();
                 }
@@ -335,8 +334,7 @@ impl AudioShell {
         self.commit_queue();
     }
 
-    /// Stash/restore the music vs podcast queues on view-stack tab switches,
-    /// mirroring the god-object's podcast mode.
+    /// Stash/restore the music vs podcast queues on view-stack tab switches.
     pub(super) fn handle_tab_changed(&mut self, name: &str) {
         self.cancel_pending_opens();
         if name == "podcast" {

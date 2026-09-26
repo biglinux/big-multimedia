@@ -1,8 +1,7 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
-//! Button-layout editor page (RESTRUCTURE D3-T3): adopts the shared
-//! `big_relm4_components::input::zone_layout_editor::BigZoneLayoutEditor` instead
-//! of the bespoke drag-and-drop miniature that used to live here (+ `miniature.rs`,
-//! both deleted). The video player owns only the SPEC (its 13 controls + the
+//! Button-layout editor page on the shared
+//! `big_relm4_components::input::zone_layout_editor::BigZoneLayoutEditor`.
+//! The video player owns only the SPEC (its 13 controls + the
 //! top/bottom bars) and the SETTINGS mapping; the editor widget is shared.
 //!
 //! The runtime applier ([`super::super::super::video_controls_bar::zones`]) reads

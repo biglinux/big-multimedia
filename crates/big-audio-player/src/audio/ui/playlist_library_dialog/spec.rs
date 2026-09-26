@@ -218,11 +218,6 @@ pub(super) fn delete_playlist_prompt_spec(name: &str) -> DeletePromptSpec {
     }
 }
 
-#[cfg(test)]
-pub(super) fn delete_playlist_description(name: &str) -> String {
-    format!("This will permanently delete \u{201C}{name}\u{201D}?")
-}
-
 pub(super) fn localized_delete_playlist_description(name: &str) -> String {
     format!(
         "{} \u{201C}{name}\u{201D}?",

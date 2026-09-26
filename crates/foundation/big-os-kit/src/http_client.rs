@@ -1,7 +1,7 @@
 //! Shared HTTP client policy backed by the system `curl` command.
 //!
 //! The crate keeps the HTTP policy centralized without linking Rust TLS/crypto
-//! stacks into every consumer. Sensitive URL, header and body data goes through
+//! stacks into every consumer. Sensitive URL and header data goes through
 //! curl configuration on stdin, with explicit deadlines and bounded readers.
 
 use std::io::{BufReader, Read, Write};
@@ -12,10 +12,7 @@ use crate::url::MediaLogTarget;
 mod transport;
 
 const CURL: &str = "curl";
-const USER_AGENT: &str = "BigLinuxRustApp/0.1 (https://github.com/biglinux/big-rust-components)";
-/// Browser-like user agent for favicon/page fetches that reject generic clients.
-pub const BROWSER_USER_AGENT: &str =
-    "Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 Chrome/120.0.0.0";
+const USER_AGENT: &str = "BigLinuxRustApp/0.1 (https://github.com/biglinux/big-multimedia)";
 const TIMEOUT_SECS: u64 = 15;
 const _: () = assert!(TIMEOUT_SECS >= 5);
 const _: () = assert!(TIMEOUT_SECS <= 60);
@@ -56,12 +53,6 @@ pub struct HttpStreamResponse {
     pub reader: Box<dyn Read>,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-enum HttpMethod {
-    Get,
-    Post,
-}
-
 struct CurlHeaders {
     status: u16,
     content_type: Option<String>,
@@ -91,11 +82,9 @@ pub fn http_get_fast(url: &str) -> Option<String> {
 fn http_get_single(url: &str, timeout: Duration) -> Option<String> {
     let url_log = MediaLogTarget(url);
     match curl_bytes(
-        HttpMethod::Get,
         url,
         &RequestHeaders::default(),
         &[],
-        None,
         MAX_TEXT_BODY_BYTES,
         timeout,
         true,
@@ -116,11 +105,9 @@ fn http_get_with_retry_timeout(url: &str, timeout: Duration) -> Option<String> {
     let url_log = MediaLogTarget(url);
     for attempt in 0..2 {
         match curl_bytes(
-            HttpMethod::Get,
             url,
             &RequestHeaders::default(),
             &[],
-            None,
             MAX_TEXT_BODY_BYTES,
             timeout,
             true,
@@ -170,53 +157,12 @@ pub fn http_get_json(url: &str) -> Option<String> {
     )
 }
 
-/// Complete bounded response. Providers may reject an operation in the body of
-/// an HTTP 200 response; callers must inspect that semantic result. No retries.
-pub fn http_post_form_response(url: &str, form_body: &str) -> Result<HttpResponseBytes, String> {
-    curl_bytes(
-        HttpMethod::Post,
-        url,
-        &RequestHeaders::default(),
-        &[("Content-Type", "application/x-www-form-urlencoded")],
-        Some(form_body.as_bytes()),
-        1024 * 1024,
-        Duration::from_secs(TIMEOUT_SECS),
-        false,
-    )
-}
-
-/// JSON POST + optional auth header (e.g. `("Authorization", "Token xyz")`
-/// for ListenBrainz, `"Bearer ..."` for OAuth). No retry.
-pub fn http_post_json(
-    url: &str,
-    json_body: &str,
-    auth: Option<(&str, &str)>,
-) -> Result<u16, String> {
-    let mut extra_headers = vec![("Content-Type", "application/json")];
-    if let Some((name, value)) = auth {
-        extra_headers.push((name, value));
-    }
-    curl_bytes(
-        HttpMethod::Post,
-        url,
-        &RequestHeaders::default(),
-        &extra_headers,
-        Some(json_body.as_bytes()),
-        1024 * 1024,
-        Duration::from_secs(TIMEOUT_SECS),
-        false,
-    )
-    .map(|resp| resp.status)
-}
-
 /// Binary GET (cover images etc.); 1 MB cap.
 pub fn http_get_bytes(url: &str) -> Option<Vec<u8>> {
     let http_response = curl_bytes(
-        HttpMethod::Get,
         url,
         &RequestHeaders::default(),
         &[],
-        None,
         1024 * 1024,
         Duration::from_secs(TIMEOUT_SECS),
         true,
@@ -236,26 +182,6 @@ pub struct RequestHeaders<'a> {
 }
 
 impl<'a> RequestHeaders<'a> {
-    /// Browser-like headers for sites that reject generic HTTP clients.
-    pub fn browser() -> Self {
-        Self {
-            user_agent: BROWSER_USER_AGENT,
-            referer: "",
-        }
-    }
-
-    /// Return a copy with a User-Agent override.
-    pub fn user_agent(mut self, value: &'a str) -> Self {
-        self.user_agent = value;
-        self
-    }
-
-    /// Return a copy with a Referer header.
-    pub fn referer(mut self, value: &'a str) -> Self {
-        self.referer = value;
-        self
-    }
-
     fn is_empty(&self) -> bool {
         self.user_agent.is_empty() && self.referer.is_empty()
     }
@@ -283,11 +209,9 @@ pub fn http_get_with_headers(url: &str, headers: &RequestHeaders<'_>) -> Option<
 /// Binary GET + per-request headers; 1 MB cap.
 pub fn http_get_bytes_with_headers(url: &str, headers: &RequestHeaders<'_>) -> Option<Vec<u8>> {
     let http_response = curl_bytes(
-        HttpMethod::Get,
         url,
         headers,
         &[],
-        None,
         1024 * 1024,
         Duration::from_secs(TIMEOUT_SECS),
         true,
@@ -315,16 +239,7 @@ pub fn http_get_bytes_capped_with_extra_headers(
     max_bytes: u64,
     timeout: Duration,
 ) -> Result<HttpResponseBytes, String> {
-    curl_bytes(
-        HttpMethod::Get,
-        url,
-        headers,
-        extra_headers,
-        None,
-        max_bytes,
-        timeout,
-        true,
-    )
+    curl_bytes(url, headers, extra_headers, max_bytes, timeout, true)
 }
 
 /// GET a streaming response with metadata and caller-owned body policy.
@@ -344,38 +259,7 @@ pub fn http_get_stream_with_extra_headers(
     extra_headers: &[(&str, &str)],
     timeout: Duration,
 ) -> Result<HttpStreamResponse, String> {
-    curl_stream(
-        HttpMethod::Get,
-        url,
-        headers,
-        extra_headers,
-        None,
-        timeout,
-        true,
-    )
-}
-
-/// POST JSON and return a streaming response with additional per-call headers.
-/// Redirects are disabled because callers commonly attach API keys in headers;
-/// never forward secrets to a redirected host.
-pub fn http_post_json_stream_with_extra_headers(
-    url: &str,
-    json_body: &str,
-    headers: &RequestHeaders<'_>,
-    extra_headers: &[(&str, &str)],
-    timeout: Duration,
-) -> Result<HttpStreamResponse, String> {
-    let mut all_headers = vec![("Content-Type", "application/json")];
-    all_headers.extend_from_slice(extra_headers);
-    curl_stream(
-        HttpMethod::Post,
-        url,
-        headers,
-        &all_headers,
-        Some(json_body.as_bytes()),
-        timeout,
-        false,
-    )
+    curl_stream(url, headers, extra_headers, timeout, true)
 }
 
 /// Copy a response stream to a writer with cancellation and progress callbacks.
@@ -414,11 +298,9 @@ fn http_get_text_with_headers(
     let url_log = MediaLogTarget(url);
     for attempt in 0..2 {
         match curl_bytes(
-            HttpMethod::Get,
             url,
             headers,
             extra_headers,
-            None,
             MAX_TEXT_BODY_BYTES,
             timeout,
             follow_redirects,
@@ -457,24 +339,14 @@ fn http_get_text_with_headers(
 }
 
 fn curl_bytes(
-    method: HttpMethod,
     url: &str,
     headers: &RequestHeaders<'_>,
     extra_headers: &[(&str, &str)],
-    body: Option<&[u8]>,
     max_bytes: u64,
     timeout: Duration,
     follow_redirects: bool,
 ) -> Result<HttpResponseBytes, String> {
-    let mut response = curl_stream(
-        method,
-        url,
-        headers,
-        extra_headers,
-        body,
-        timeout,
-        follow_redirects,
-    )?;
+    let mut response = curl_stream(url, headers, extra_headers, timeout, follow_redirects)?;
     let bytes = read_capped(response.reader.as_mut(), max_bytes)?;
     Ok(HttpResponseBytes {
         status: response.status,
@@ -485,11 +357,9 @@ fn curl_bytes(
 }
 
 fn curl_stream(
-    method: HttpMethod,
     url: &str,
     headers: &RequestHeaders<'_>,
     extra_headers: &[(&str, &str)],
-    body: Option<&[u8]>,
     timeout: Duration,
     follow_redirects: bool,
 ) -> Result<HttpStreamResponse, String> {
@@ -507,7 +377,7 @@ fn curl_stream(
             name.eq_ignore_ascii_case("Accept")
                 && matches!(*value, "application/json" | "text/html" | "*/*")
         });
-    let config = request_config(method, url, headers, extra_headers, body)?;
+    let config = request_config(url, headers, extra_headers)?;
     let mut command = base_curl(timeout);
     command.args(["--include", "--suppress-connect-headers"]);
     if follow {
@@ -597,22 +467,13 @@ fn config_value(config: &mut String, name: &str, value: &str) -> Result<(), Stri
     Ok(())
 }
 fn request_config(
-    method: HttpMethod,
     url: &str,
     headers: &RequestHeaders<'_>,
     extra: &[(&str, &str)],
-    body: Option<&[u8]>,
 ) -> Result<String, String> {
     let mut config = String::new();
     config_value(&mut config, "url", url)?;
-    config_value(
-        &mut config,
-        "request",
-        match method {
-            HttpMethod::Get => "GET",
-            HttpMethod::Post => "POST",
-        },
-    )?;
+    config_value(&mut config, "request", "GET")?;
     let user_agent = if headers.user_agent.is_empty() {
         USER_AGENT
     } else {
@@ -627,11 +488,6 @@ fn request_config(
         validate_header_name(name)?;
         validate_header_value(value)?;
         config_value(&mut config, "header", &format!("{name}: {value}"))?;
-    }
-    if let Some(body) = body {
-        // Public POST methods accept JSON/form text, not arbitrary binary files.
-        let text = std::str::from_utf8(body).map_err(|_| "POST text is not UTF-8")?;
-        config_value(&mut config, "data-raw", text)?;
     }
     Ok(config)
 }
@@ -873,14 +729,12 @@ mod transport_contract_tests {
     #[test]
     fn config_keeps_secrets_off_argv_and_treats_at_sign_literally() {
         let config = request_config(
-            HttpMethod::Post,
             "https://example.invalid/?token=secret",
             &RequestHeaders::default(),
             &[("Authorization", "Bearer secret")],
-            Some(b"@file\nquoted\"\\value"),
         )
         .unwrap();
-        assert!(config.contains("data-raw = \"@file\\nquoted\\\"\\\\value\""));
+        assert!(config.contains("header = \"Authorization: Bearer secret\""));
         let args: Vec<_> = base_curl(Duration::from_secs(10))
             .get_args()
             .map(|s| s.to_string_lossy().into_owned())

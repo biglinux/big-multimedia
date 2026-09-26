@@ -1,5 +1,7 @@
-//! Explicit credential migration UI. Storing credentials is not consent to send
-//! listening history; the existing unavailable integration label remains honest.
+//! Keyring migration for Last.fm/ListenBrainz credentials saved by older
+//! releases. The player never sends listening history, so the group and each
+//! row stay hidden until a provider actually has saved credentials: those can
+//! still be moved out of a plaintext file or recovered from an interrupted move.
 use crate::i18n::i18n;
 use adw::prelude::*;
 use big_media_runtime::library::accounts::{
@@ -10,7 +12,7 @@ use std::rc::Rc;
 
 pub(super) fn group() -> adw::PreferencesGroup {
     let group=adw::PreferencesGroup::builder().title(i18n("Saved account security"))
-        .description(i18n("Move existing account credentials to your desktop keyring. This does not enable listening-history sharing.")).build();
+        .description(i18n("Move existing account credentials to your desktop keyring. This does not enable listening-history sharing.")).visible(false).build();
     for (provider, name) in [
         (Provider::LastFm, "Last.fm"),
         (Provider::ListenBrainz, "ListenBrainz"),
@@ -18,6 +20,7 @@ pub(super) fn group() -> adw::PreferencesGroup {
         let row = adw::ActionRow::builder()
             .title(name)
             .subtitle(i18n("Checking saved credentials…"))
+            .visible(false)
             .build();
         let button = gtk::Button::with_label(&i18n("Protect credentials"));
         button.set_valign(gtk::Align::Center);
@@ -74,37 +77,6 @@ pub(super) fn group() -> adw::PreferencesGroup {
                 }
             });
         });
-        let edit_row = adw::ActionRow::builder()
-            .title(format!("{name} · {}", i18n("Credentials")))
-            .build();
-        let edit = gtk::Button::with_label(&i18n("Configure"));
-        edit.set_valign(gtk::Align::Center);
-        edit_row.add_suffix(&edit);
-        group.add(&edit_row);
-        let state = reviewed.clone();
-        let in_flight = busy.clone();
-        let weak_row = row.downgrade();
-        let weak_button = button.downgrade();
-        edit.connect_clicked(move |button| {
-            if in_flight.get() {
-                return;
-            }
-            let Some(review) = state.borrow().clone() else {
-                return;
-            };
-            let Some(parent) = button.root().and_downcast::<gtk::Window>() else {
-                return;
-            };
-            let state = state.clone();
-            let in_flight = in_flight.clone();
-            let row = weak_row.clone();
-            let action = weak_button.clone();
-            super::account_editor::show(&parent, provider, review, move || {
-                if let (Some(row), Some(action)) = (row.upgrade(), action.upgrade()) {
-                    refresh(provider, &row, &action, state.clone(), in_flight.clone());
-                }
-            });
-        });
         refresh(provider, &row, &button, reviewed, busy);
     }
     group
@@ -152,11 +124,21 @@ fn refresh(
                 row.set_subtitle(&i18n(description));
                 button.set_label(&i18n(action));
                 button.set_sensitive(review.kind != StorageKind::NotConfigured);
+                reveal(&row, review.kind != StorageKind::NotConfigured);
                 *state.borrow_mut() = Some(review);
             } else {
                 state.borrow_mut().take();
                 row.set_subtitle(&i18n("Saved account data could not be read safely. Check permissions and reload; no changes were made."));
+                reveal(&row, true);
             }
         },
     );
+}
+
+/// Show a provider row (and its group) once it has saved credentials to manage.
+fn reveal(row: &adw::ActionRow, has_credentials: bool) {
+    row.set_visible(has_credentials);
+    if has_credentials && let Some(group) = row.ancestor(adw::PreferencesGroup::static_type()) {
+        group.set_visible(true);
+    }
 }

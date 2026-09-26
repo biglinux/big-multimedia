@@ -6,7 +6,7 @@ use adw::prelude::*;
 use big_relm4_components::layout::preferences::BigPreferencesGroupSpec;
 use std::rc::Rc;
 
-use crate::i18n::i18n;
+use crate::i18n::{gettext_noop, i18n};
 use crate::settings::{Settings, keys};
 use crate::shared::preference_rows::add_spin_int_row;
 
@@ -40,49 +40,49 @@ fn build_controls_bar_group(
 
     let spin_items: &[(&str, &str, f64, f64, &str)] = &[
         (
-            "Corner Radius",
+            gettext_noop("Corner Radius"),
             "ui-controls-radius",
             0.0,
             48.0,
             "corner_radius.svg",
         ),
         (
-            "Bottom Margin",
+            gettext_noop("Bottom Margin"),
             "ui-controls-margin-bottom",
             0.0,
             100.0,
             "margin.svg",
         ),
         (
-            "Side Margin",
+            gettext_noop("Side Margin"),
             "ui-controls-margin-side",
             0.0,
             100.0,
             "margin.svg",
         ),
         (
-            "Padding Top",
+            gettext_noop("Padding Top"),
             "ui-controls-padding-top",
             0.0,
             48.0,
             "padding.svg",
         ),
         (
-            "Padding Bottom",
+            gettext_noop("Padding Bottom"),
             "ui-controls-padding-bottom",
             0.0,
             48.0,
             "padding.svg",
         ),
         (
-            "Padding Left",
+            gettext_noop("Padding Left"),
             "ui-controls-padding-left",
             0.0,
             48.0,
             "padding.svg",
         ),
         (
-            "Padding Right",
+            gettext_noop("Padding Right"),
             "ui-controls-padding-right",
             0.0,
             48.0,

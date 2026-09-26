@@ -3,12 +3,11 @@
 use super::spec::{
     EmptyPlaylistStateSpec, NamePromptSpec, PlaylistActionKind, PlaylistActionSpec,
     PlaylistLibraryWindowSpec, SavedPlaylistListState, SavedPlaylistRowSpec,
-    accepted_playlist_name, delete_playlist_description, delete_playlist_prompt_spec,
-    empty_playlist_state_spec, generator_action_specs, import_export_action_specs,
-    is_name_prompt_accept_enabled, localized_delete_playlist_description,
-    localized_saved_playlist_subtitle, name_prompt_focus_selection, playlist_library_window_spec,
-    rename_playlist_prompt_spec, save_current_queue_prompt_spec, saved_playlist_list_state,
-    saved_playlist_row_spec,
+    accepted_playlist_name, delete_playlist_prompt_spec, empty_playlist_state_spec,
+    generator_action_specs, import_export_action_specs, is_name_prompt_accept_enabled,
+    localized_delete_playlist_description, localized_saved_playlist_subtitle,
+    name_prompt_focus_selection, playlist_library_window_spec, rename_playlist_prompt_spec,
+    save_current_queue_prompt_spec, saved_playlist_list_state, saved_playlist_row_spec,
 };
 
 #[test]
@@ -167,10 +166,6 @@ fn delete_playlist_prompt_spec_keeps_destructive_copy() {
     assert_eq!(prompt_spec.accept_label, "Delete");
     assert_eq!(prompt_spec.cancel_label, "Cancel");
     assert_eq!(prompt_spec.accept_css_class, "destructive-action");
-    assert_eq!(
-        delete_playlist_description("Road Mix"),
-        "This will permanently delete “Road Mix”?"
-    );
     assert_eq!(
         localized_delete_playlist_description("Road Mix"),
         "This will permanently delete “Road Mix”?"

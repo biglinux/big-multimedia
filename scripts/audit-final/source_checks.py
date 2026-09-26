@@ -219,39 +219,6 @@ def check(root: Path) -> dict:
             ),
         ],
     )
-    process = text("crates/media-runtime/src/converter/queue/processing.rs")
-    job = text("crates/media-runtime/src/converter/queue/job.rs")
-    validate = text("crates/media-runtime/src/converter/queue/validation.rs")
-    receipts = text("crates/media-runtime/src/converter/queue/receipts.rs")
-    contract(
-        "Export validation and ownership",
-        [
-            (
-                "std::fs::remove_file" not in process,
-                "processing unlinks a final/original path",
-            ),
-            (
-                "if delete_source" in process and "Originals are kept" in process,
-                "implicit original deletion",
-            ),
-            (
-                "validate_output_cancellable" in process
-                and "receipts[index].publish" in process
-                and "stage.publish" in receipts,
-                "publication without validation and receipt",
-            ),
-            ("attached_pic" in validate, "cover can satisfy a real-video plan"),
-            (
-                "selected.len() != usize::from" in validate,
-                "expected stream count not enforced",
-            ),
-            (
-                "run_cancellable_with_stderr" in job,
-                "FFmpeg bypasses managed process ownership",
-            ),
-            ('"--"' in process, "concat final path not separated"),
-        ],
-    )
     http = text("crates/foundation/big-os-kit/src/http_client.rs")
     transport = text("crates/foundation/big-os-kit/src/http_client/transport.rs")
     contract(

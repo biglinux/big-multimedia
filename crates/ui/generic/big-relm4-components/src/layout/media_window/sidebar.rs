@@ -78,20 +78,6 @@ impl BigMediaSidebarSpec {
         self
     }
 
-    /// Set the split-view width fraction.
-    #[must_use]
-    pub fn width_fraction(mut self, width_fraction: f64) -> Self {
-        self.width_fraction = width_fraction.clamp(0.0, 1.0);
-        self
-    }
-
-    /// Set the resize handle width in pixels.
-    #[must_use]
-    pub fn resize_handle_width(mut self, width: i32) -> Self {
-        self.resize_handle_width = width.max(1);
-        self
-    }
-
     /// Minimum sidebar width in pixels.
     #[must_use]
     pub fn min_width(self) -> f64 {
@@ -152,8 +138,6 @@ impl Default for BigMediaSidebarSpec {
 #[derive(Debug, Clone)]
 pub struct BigMediaSidebarShell {
     split_view: adw::OverlaySplitView,
-    sidebar_container: gtk::Box,
-    resize_handle: gtk::Button,
 }
 
 impl BigMediaSidebarShell {
@@ -189,29 +173,13 @@ impl BigMediaSidebarShell {
 
         wire_sidebar_resize_handle(&resize_handle, &split_view, spec);
 
-        Self {
-            split_view,
-            sidebar_container,
-            resize_handle,
-        }
+        Self { split_view }
     }
 
     /// The assembled split view.
     #[must_use]
     pub fn split_view(&self) -> &adw::OverlaySplitView {
         &self.split_view
-    }
-
-    /// Container holding the caller's sidebar and the resize handle.
-    #[must_use]
-    pub fn sidebar_container(&self) -> &gtk::Box {
-        &self.sidebar_container
-    }
-
-    /// The resize handle widget.
-    #[must_use]
-    pub fn resize_handle(&self) -> &gtk::Button {
-        &self.resize_handle
     }
 }
 
@@ -310,22 +278,6 @@ mod tests {
         assert_eq!(spec.min_width(), 300.0);
         assert_eq!(spec.max_width(), 640.0);
         assert_eq!(spec.resize_limit_width(), 640.0);
-    }
-
-    #[test]
-    fn sidebar_width_fraction_stays_in_split_view_range() {
-        assert_eq!(
-            BigMediaSidebarSpec::new()
-                .width_fraction(2.0)
-                .sidebar_width_fraction(),
-            1.0
-        );
-        assert_eq!(
-            BigMediaSidebarSpec::new()
-                .width_fraction(-1.0)
-                .sidebar_width_fraction(),
-            0.0
-        );
     }
 
     #[test]

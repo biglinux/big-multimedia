@@ -227,15 +227,6 @@ impl BigSleepTimerSetupPage {
         }
     }
 
-    /// Return a reference to the `page` exposed by this [`BigSleepTimerSetupPage`].
-    ///
-    /// Useful when callers need to bind signals, query state, or compose the
-    /// widget into a larger surface without taking ownership.
-    #[must_use]
-    pub fn page(&self) -> &adw::PreferencesPage {
-        &self.page
-    }
-
     /// Return a reference to the `spin` exposed by this [`BigSleepTimerSetupPage`].
     ///
     /// Useful when callers need to bind signals, query state, or compose the
@@ -243,15 +234,6 @@ impl BigSleepTimerSetupPage {
     #[must_use]
     pub fn spin(&self) -> &adw::SpinRow {
         &self.spin
-    }
-
-    /// Return a reference to the `action combo` exposed by this [`BigSleepTimerSetupPage`].
-    ///
-    /// Useful when callers need to bind signals, query state, or compose the
-    /// widget into a larger surface without taking ownership.
-    #[must_use]
-    pub fn action_combo(&self) -> &adw::ComboRow {
-        &self.action_combo
     }
 
     /// Return a reference to the `start button` exposed by this [`BigSleepTimerSetupPage`].
@@ -365,15 +347,6 @@ impl BigSleepTimerActivePage {
             label.set_label(&format_duration(next));
             gtk::glib::ControlFlow::Continue
         });
-    }
-
-    /// Return a reference to the `page` exposed by this [`BigSleepTimerActivePage`].
-    ///
-    /// Useful when callers need to bind signals, query state, or compose the
-    /// widget into a larger surface without taking ownership.
-    #[must_use]
-    pub fn page(&self) -> &adw::PreferencesPage {
-        &self.page
     }
 
     /// Return a reference to the `cancel button` exposed by this [`BigSleepTimerActivePage`].

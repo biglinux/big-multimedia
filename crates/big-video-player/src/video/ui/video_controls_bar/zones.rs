@@ -148,8 +148,8 @@ fn control_name(name: &str) -> &'static str {
     }
 }
 
-/// START box: volume / speed / voice hover popovers (shared builders), with the
-/// exclusive-hover group wiring from the old `setup_hover_popovers`. Returns the
+/// START box: volume / speed / voice hover popovers (shared builders) in one
+/// exclusive-hover group. Returns the
 /// box plus the three hover popovers so the shell's OSD auto-hide can keep the
 /// OSD shown while one is open.
 /// START box widgets: the reparentable control boxes, the readout value labels
@@ -164,8 +164,94 @@ pub(super) struct StartBoxWidgets {
     /// Volume scale + its button, plus the guard that lets the shell mirror an
     /// external mixer change onto the scale without pushing it back to the server.
     pub(super) volume_scale: gtk::Scale,
-    pub(super) volume_button: gtk::Button,
+    pub(super) sound: SoundIndicator,
     pub(super) suppress_volume: std::rc::Rc<std::cell::Cell<bool>>,
+}
+
+/// The volume control's face: its button, the readout beside it and the
+/// popover's mute button, plus the mute state they show.
+#[derive(Clone)]
+pub(super) struct SoundIndicator {
+    volume_box: gtk::Box,
+    button: gtk::Button,
+    label: gtk::Label,
+    toggle: gtk::Button,
+    muted: Rc<std::cell::Cell<bool>>,
+}
+
+impl SoundIndicator {
+    pub(super) fn muted(&self) -> bool {
+        self.muted.get()
+    }
+
+    /// Show `muted` at `volume`. Muted, the readout says "No sound" instead of
+    /// the level: it used to keep saying "80" while nothing played. Muted and
+    /// level 0 have different icons, and either silent state wears the
+    /// `sound-off` pill, so no sound is visible at a glance and not by colour
+    /// alone. The button names the action it will take, for the tooltip and
+    /// for screen readers, and reports itself pressed while muted.
+    pub(super) fn show(&self, muted: bool, volume: f64) {
+        self.muted.set(muted);
+        self.button.set_icon_name(if muted {
+            "audio-volume-muted-symbolic"
+        } else {
+            volume_icon(volume)
+        });
+        let silent = muted || volume <= 0.0;
+        self.label.set_label(&if silent {
+            i18n("No sound")
+        } else {
+            format!("{volume:.0}")
+        });
+        let action = if muted { i18n("Unmute") } else { i18n("Mute") };
+        self.button.set_tooltip_text(Some(&action));
+        self.button
+            .update_property(&[gtk::accessible::Property::Label(&action)]);
+        self.button
+            .update_state(&[gtk::accessible::State::Pressed(if muted {
+                gtk::AccessibleTristate::True
+            } else {
+                gtk::AccessibleTristate::False
+            })]);
+        self.toggle.set_label(&action);
+        if silent {
+            self.volume_box.add_css_class("sound-off");
+        } else {
+            self.volume_box.remove_css_class("sound-off");
+        }
+    }
+
+    fn downgrade(&self) -> WeakSoundIndicator {
+        WeakSoundIndicator {
+            volume_box: self.volume_box.downgrade(),
+            button: self.button.downgrade(),
+            label: self.label.downgrade(),
+            toggle: self.toggle.downgrade(),
+            muted: self.muted.clone(),
+        }
+    }
+}
+
+/// What the volume handlers hold: the popover they live on can outlive
+/// teardown ordering, and a strong widget capture there is a leak.
+struct WeakSoundIndicator {
+    volume_box: glib::WeakRef<gtk::Box>,
+    button: glib::WeakRef<gtk::Button>,
+    label: glib::WeakRef<gtk::Label>,
+    toggle: glib::WeakRef<gtk::Button>,
+    muted: Rc<std::cell::Cell<bool>>,
+}
+
+impl WeakSoundIndicator {
+    fn upgrade(&self) -> Option<SoundIndicator> {
+        Some(SoundIndicator {
+            volume_box: self.volume_box.upgrade()?,
+            button: self.button.upgrade()?,
+            label: self.label.upgrade()?,
+            toggle: self.toggle.upgrade()?,
+            muted: self.muted.clone(),
+        })
+    }
 }
 
 pub(super) fn build_start_box(settings: &Settings, mpv: &MpvSlot) -> StartBoxWidgets {
@@ -190,7 +276,7 @@ pub(super) fn build_start_box(settings: &Settings, mpv: &MpvSlot) -> StartBoxWid
 
     // Speed.
     let speed_box = gtk::Box::new(gtk::Orientation::Horizontal, 2);
-    let speed_button = osd_button("speedometer-symbolic", &i18n("Speed"));
+    let speed_button = osd_button("power-profile-performance-symbolic", &i18n("Speed"));
     let speed_label = gtk::Label::builder()
         .label("1.00x")
         .width_chars(5)
@@ -221,6 +307,23 @@ pub(super) fn build_start_box(settings: &Settings, mpv: &MpvSlot) -> StartBoxWid
     let initial_volume = settings.get_double(keys::VOLUME) * 100.0;
     let (volume_popover, volume_scale) =
         build_volume_popover(&volume_box, maximum_volume, initial_volume);
+    // Mute said in words, for whoever reaches the volume by hovering and does
+    // not know that the speaker button itself silences.
+    let mute_toggle = gtk::Button::builder()
+        .label(i18n("Mute"))
+        .css_classes(["flat"])
+        .build();
+    if let Some(content) = volume_popover.child().and_downcast::<gtk::Box>() {
+        content.append(&mute_toggle);
+    }
+    let sound = SoundIndicator {
+        volume_box: volume_box.clone(),
+        button: volume_button.clone(),
+        label: volume_label.clone(),
+        toggle: mute_toggle.clone(),
+        muted: Rc::new(std::cell::Cell::new(false)),
+    };
+    sound.show(false, initial_volume);
     // Set true while mirroring an external mixer change onto the scale, so the
     // handler updates only the readout/icon and does not push the value back to
     // the sound server (or clear mute) — which would fight the external change.
@@ -229,20 +332,17 @@ pub(super) fn build_start_box(settings: &Settings, mpv: &MpvSlot) -> StartBoxWid
         // Capture the button weakly: the scale's handler must not keep the
         // button alive (mutual cycle → leak on close).
         let mpv = mpv.clone();
-        let volume_button_weak = volume_button.downgrade();
-        // Weak label too: the popover can outlive teardown ordering — any
-        // strong sibling capture here gets pinned with it.
-        let volume_label_weak = volume_label.downgrade();
+        let sound = sound.downgrade();
         let suppress_volume = suppress_volume.clone();
         volume_scale.connect_value_changed(move |scale| {
             let value = scale.value();
-            if let Some(volume_label) = volume_label_weak.upgrade() {
-                volume_label.set_label(&format!("{value:.0}"));
+            // A mixer change mirrored here keeps its mute; moving the slider
+            // is asking for sound.
+            let external = suppress_volume.get();
+            if let Some(sound) = sound.upgrade() {
+                sound.show(external && sound.muted(), value);
             }
-            if let Some(volume_button) = volume_button_weak.upgrade() {
-                volume_button.set_icon_name(volume_icon(value));
-            }
-            if suppress_volume.get() {
+            if external {
                 return;
             }
             if let Some(mpv) = mpv.borrow().as_ref() {
@@ -251,21 +351,24 @@ pub(super) fn build_start_box(settings: &Settings, mpv: &MpvSlot) -> StartBoxWid
             }
         });
     }
-    // Mute toggle on the volume button. Uses the handler's own button argument
-    // (no self-clone) and a weak scale ref (no mutual cycle).
-    {
+    // Mute toggle on the volume button and on the popover's button. Weak
+    // scale and indicator refs: no cycle through the widgets they live on.
+    for button in [&volume_button, &mute_toggle] {
         let mpv = mpv.clone();
         let scale = volume_scale.downgrade();
-        volume_button.connect_clicked(move |button| {
-            if let Some(mpv) = mpv.borrow().as_ref() {
-                let muted = !mpv.get_mute();
-                mpv.set_mute(muted);
-                let fallback = scale.upgrade().map_or(0.0, |scale| scale.value());
-                button.set_icon_name(if muted {
-                    "audio-volume-muted-symbolic"
-                } else {
-                    volume_icon(fallback)
-                });
+        let sound = sound.downgrade();
+        button.connect_clicked(move |_| {
+            let (Some(mpv), Some(scale)) = (mpv.borrow().clone(), scale.upgrade()) else {
+                return;
+            };
+            let muted = !mpv.get_mute();
+            mpv.set_mute(muted);
+            // Unmuting at level 0 would still be silent.
+            if !muted && scale.value() <= 0.0 {
+                scale.set_value(UNMUTE_MINIMUM_VOLUME);
+            }
+            if let Some(sound) = sound.upgrade() {
+                sound.show(muted, scale.value());
             }
         });
     }
@@ -341,7 +444,7 @@ pub(super) fn build_start_box(settings: &Settings, mpv: &MpvSlot) -> StartBoxWid
         hover_popovers: vec![volume_popover, speed_popover, voice_popover],
         readout_labels: [volume_label, speed_label, voice_label],
         volume_scale,
-        volume_button,
+        sound,
         suppress_volume,
     }
 }
@@ -478,11 +581,14 @@ fn osd_button(icon_name: &str, label: &str) -> gtk::Button {
     button
 }
 
-/// Volume icon for a 0..max level.
+/// Level restored by unmuting a control left at 0.
+const UNMUTE_MINIMUM_VOLUME: f64 = 20.0;
+
+/// Volume icon for a 0..max level. Level 0 shows the lowest speaker, not the
+/// crossed-out one: that one means muted, a different state with a different
+/// way out.
 pub(super) fn volume_icon(value: f64) -> &'static str {
-    if value <= 0.0 {
-        "audio-volume-muted-symbolic"
-    } else if value < 34.0 {
+    if value < 34.0 {
         "audio-volume-low-symbolic"
     } else if value < 67.0 {
         "audio-volume-medium-symbolic"
@@ -527,9 +633,9 @@ mod tests {
     }
 
     #[test]
-    fn volume_icon_uses_muted_low_medium_high_thresholds() {
-        assert_eq!(volume_icon(-1.0), "audio-volume-muted-symbolic");
-        assert_eq!(volume_icon(0.0), "audio-volume-muted-symbolic");
+    fn volume_icon_uses_low_medium_high_thresholds() {
+        assert_eq!(volume_icon(-1.0), "audio-volume-low-symbolic");
+        assert_eq!(volume_icon(0.0), "audio-volume-low-symbolic");
         assert_eq!(volume_icon(0.1), "audio-volume-low-symbolic");
         assert_eq!(volume_icon(33.9), "audio-volume-low-symbolic");
         assert_eq!(volume_icon(34.0), "audio-volume-medium-symbolic");

@@ -224,29 +224,3 @@ where
         }
     });
 }
-
-#[cfg(test)]
-mod tests {
-    use big_mpv_render::{
-        FORBIDDEN_MAIN_VIDEO_SURFACE_PATHS, MainVideoSurfacePath, PREFERRED_MAIN_VIDEO_BACKENDS,
-    };
-
-    #[test]
-    fn video_surface_policy_keeps_main_frames_off_cpu() {
-        assert!(
-            FORBIDDEN_MAIN_VIDEO_SURFACE_PATHS
-                .iter()
-                .all(|surface_path| surface_path.is_cpu_copy_path()
-                    && !surface_path.is_allowed_for_main_video_surface()),
-            "main video must never use CPU-copy surfaces"
-        );
-        assert_eq!(
-            PREFERRED_MAIN_VIDEO_BACKENDS,
-            &[
-                MainVideoSurfacePath::OffloadRenderer,
-                MainVideoSurfacePath::GlAreaFallback
-            ],
-            "runtime must try offload before GLArea fallback"
-        );
-    }
-}

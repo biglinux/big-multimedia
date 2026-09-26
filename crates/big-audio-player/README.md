@@ -1,79 +1,35 @@
 # Big Audio Player
 
-Music and audio player for BigLinux
+Music and audio player for BigLinux: library, playlists, queue, radio,
+podcasts, lyrics and MPRIS, played through libmpv. A member of the
+big-multimedia workspace; see the root [README](../../README.md).
 
-This repository is a BigLinux Rust desktop application. App code should stay
-thin and reuse tested crates from
-[big-multimedia](https://github.com/biglinux/big-multimedia).
-Profile: `media`.
+The player converts nothing itself. Trim & Export and Convert hand the track
+(and any marked cuts) to `big-audio-converter-gui` through
+`big_media_runtime::shared::converter_handoff`.
 
-Native dependency policy: prefer distro/system libraries and dynamic linking.
-Bundling is allowed only when pacman has no suitable package, licensing is
-acceptable, and `docs/native-deps-exceptions.md` records the exception.
+## Layout
 
-## Status
+- `src/main.rs` calls `run()` in `src/lib.rs`; `lib.rs` also exposes
+  `open_in_application` and `open_paths` for multicall hosts
+  (big-host, big-modules).
+- `src/audio/app.rs`: the `adw::Application` subclass (actions, accelerators,
+  file-open broker).
+- `src/audio/ui/audio_shell/`: the root Relm4 component that owns the mpv
+  backend and routes every panel intent.
+- `src/audio/ui/`: library, playlist, queue and dialog components.
+- `src/audio/`: display-free engines (library query/scan, lyrics fetch,
+  playlist import, queue undo, MPRIS state).
+- `application-assets/resources/`: GResource CSS.
+- `resources/`: desktop file, AppStream metadata and icon.
+- `packaging/pacman/PKGBUILD`: builds this member from the workspace root.
 
-This repository is self-contained: the media engine (`big-media-runtime`) and
-the shared component crates are vendored as workspace members under `crates/`,
-so it builds with no external `big-*` path dependencies.
+## Build and run
 
-## Build
-
-```bash
-cargo build
-make -f Makefile.ci ci   # full gate: fmt clippy test deny audit machete doc complexity i18n budgets
+```sh
+cargo run --locked -p big-audio-player
 ```
-
-The individual cargo gate commands (`fmt`/`clippy`/`nextest`/`doc`/`deny`/
-`audit`/`machete`) are listed in [REVIEW.md](REVIEW.md).
-
-## Install
-
-Packaged via PKGBUILD (Arch/Manjaro/BigLinux):
-
-```bash
-cd packaging/pacman && makepkg -si
-```
-
-The PKGBUILD builds from a local checkout when one is detected, otherwise
-fetches release tarballs. See [Packaging](#packaging) for Nix and Flatpak.
-
-## Run
-
-```bash
-big-audio-player
-```
-
-Launches the GTK4 player window. Transcoding is handed off to
-`big-audio-converter` (preferred) or `big-video-converter` (fallback) when
-installed.
-
-## Tree
-
-- `src/`: Rust application entrypoints and app-owned code.
-- `docs/`: structure and maintenance notes (`project-structure.md`, `native-deps-exceptions.md`).
-- `resources/`: installed desktop metadata and icons shared by packages.
-- `application-assets/`: gresource sources and CSS.
-- `packaging/pacman/`: BigLinux/pacman packaging source.
 
 ## License
 
-GPL-3.0-or-later. See [LICENSE](LICENSE).
-
-## Contributing
-
-Read [ARCHITECTURE.md](ARCHITECTURE.md) (module map) and
-[INVARIANTS.md](INVARIANTS.md) (enforced invariants) first, then run
-`make -f Makefile.ci ci` before opening a PR.
-
-AI agents and new contributors: start with [AGENTS.md](AGENTS.md), then
-ARCHITECTURE.md and INVARIANTS.md.
-
-## Packaging
-
-- Pacman/BigLinux: `packaging/pacman/PKGBUILD`
-
-Packaging metadata is source. Keep desktop files, AppStream metadata, icons,
-install hooks, and manifests validated before release.
-Native library dependencies belong in package manifests, not copied into this
-repository.
+GPL-3.0-or-later (see the repository `LICENSE`).

@@ -266,14 +266,6 @@ impl Mpris {
         }
     }
 
-    /// Return a reference to the `taskbar flag` exposed by this [`Mpris`].
-    ///
-    /// Useful when callers need to bind signals, query state, or compose the
-    /// widget into a larger surface without taking ownership.
-    pub fn taskbar_flag(&self) -> Arc<AtomicBool> {
-        self.taskbar_progress.clone()
-    }
-
     /// Emit the seeked signal on the active D-Bus connection.
     pub fn emit_seeked(&self, position_us: i64) {
         if let Err(error) = self.connection.emit_signal(

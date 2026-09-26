@@ -64,10 +64,6 @@ impl Transport {
                 permit: Some(permit),
                 may_signal: true,
             };
-            crate::subprocess::notify_spawn_observer(
-                owner.child.as_ref().expect("owned child").id(),
-                "curl",
-            );
             let mut stdin = owner
                 .child
                 .as_mut()

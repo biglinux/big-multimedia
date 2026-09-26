@@ -3,20 +3,18 @@
 #![deny(missing_docs)]
 #![forbid(unsafe_code)]
 
-//! Shared audio-effect contracts for BigLinux media tooling.
+//! Shared audio-effect contracts for the BigLinux media players.
 //!
 //! This crate centralizes the small, hard-to-change pieces of an audio
-//! processing chain so that media players (`big-audio-player`,
-//! `big-video-player`), converters (`big-audio-converter`,
-//! `big-video-converter`) and PipeWire-side tooling produce identical
-//! results from identical user input.
+//! processing chain so that `big-audio-player` and `big-video-player`
+//! produce identical results from identical user input.
 //!
 //! The contracts captured here include:
 //!
 //! - LADSPA plugin paths, control-port ordering and noise-reduction model
 //!   identifiers ([`noise_reduction`]).
-//! - The canonical 10-band equalizer center frequencies, labels and
-//!   presets ([`equalizer`]).
+//! - The canonical 10-band equalizer center frequencies and labels
+//!   ([`equalizer`]).
 //! - Derived gate and compressor curves plus FFmpeg filter string
 //!   formatters ([`dynamics`]).
 //!
@@ -45,7 +43,7 @@
 
 /// Derived gate and compressor curves and FFmpeg filter formatters.
 pub mod dynamics;
-/// Canonical 10-band equalizer frequencies, labels and presets.
+/// Canonical 10-band equalizer frequencies and labels.
 pub mod equalizer;
 /// Noise-reduction model identifiers and LADSPA control contracts.
 pub mod noise_reduction;

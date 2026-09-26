@@ -60,7 +60,7 @@ impl Default for LibraryTreeNode {
 }
 
 /// Maps a node's identity to its preloaded child `gio::ListStore`. Keyed exactly
-/// like the legacy window (`"{kind as u32}:{key}"`) so the create-func is a pure
+/// as `"{kind as u32}:{key}"` so the create-func is a pure
 /// HashMap lookup with no fallback DB path.
 pub(super) type ChildStores = Rc<RefCell<HashMap<String, gio::ListStore>>>;
 
@@ -108,7 +108,6 @@ impl LibraryTreeHandle {
 }
 
 /// Lowercase-insensitive first letter for a group divider; non-alpha → `#`.
-/// Reimplements `window::library::group_nodes::group_divider_letter`.
 pub(super) fn group_divider_letter(value: &str) -> char {
     let first = value.chars().next().unwrap_or('#');
     if first.is_alphabetic() {

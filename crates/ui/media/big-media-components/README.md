@@ -1,21 +1,21 @@
 # big-media-components
 
-Reusable media UI components for BigLinux Rust applications.
+Media UI components and helpers shared by `big-audio-player` and
+`big-video-player`. Sits above `big-relm4-components` and `big-audio-effects`.
 
-Current modules:
+## Modules
 
-- `bytes`: shared byte-size formatting for converters, browsers, metadata, and
-  download progress.
-- `media_metadata_grid`: compact resolution/codec/size/duration metadata grid.
-- `time`: shared media duration/time formatting for players, editors, queues,
-  and metadata.
-- `video_aux_controls`: playback speed, volume, audio track, and subtitle
-  track popover controls.
-- `video_crop_controls`: crop spinbuttons plus reset/grid controls.
-- `video_transport`: play/pause, seekbar, time labels, skip/step buttons, and
-  fullscreen controls.
-- `surface`: canonical fullscreen/OSD/overlay/idle-chrome surface API for
-  camera, video, and image viewers.
+- `audio` — audio metadata labels and equalizer settings parsing.
+- `bytes`, `time`, `track_labels`, `playlist_order` — pure formatting and
+  ordering helpers.
+- `container_compat` — Chromecast container/codec compatibility checks.
+- `ffmpeg` — codec label maps.
+- `media` — file metadata dialog, media file types, thumbnails.
+- `playback` — audio transport controls and the play queue model.
+- `player_chrome`, `surface` — player chrome and fullscreen/OSD surface API.
+- `preference_rows`, `initials_avatar` — shared widgets.
+- `text` — translation hook installed by each app.
 
-This crate depends on `big-relm4-components` for shared BigLinux UI primitives
-such as the custom tooltip helper.
+## License
+
+MIT

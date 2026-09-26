@@ -153,28 +153,6 @@ impl BrowserNode {
         browser_node
     }
 
-    /// Radio-station node; `key` and `secondary` both carry the stream url.
-    pub fn station(name: &str, url: &str) -> Self {
-        let browser_node: Self = glib::Object::builder().build();
-        browser_node.set_label(name);
-        browser_node.set_icon_name("icon_radio");
-        browser_node.set_kind(BrowserNodeKind::Station);
-        browser_node.set_key(url);
-        browser_node.set_secondary(url);
-        browser_node
-    }
-
-    /// User-playlist node; `key` is the playlist name.
-    pub fn playlist(name: &str, count: i32) -> Self {
-        let browser_node: Self = glib::Object::builder().build();
-        browser_node.set_label(name);
-        browser_node.set_icon_name("playlist-symbolic");
-        browser_node.set_kind(BrowserNodeKind::Playlist);
-        browser_node.set_track_count(count);
-        browser_node.set_key(name);
-        browser_node
-    }
-
     /// Plain file node; `key` is the file path.
     pub fn file_node(name: &str, path: &str) -> Self {
         let browser_node: Self = glib::Object::builder().build();

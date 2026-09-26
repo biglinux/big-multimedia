@@ -1,4 +1,4 @@
-//! On-disk cache for IPTV playlists fetched over HTTP (Relm4 port).
+//! On-disk cache for IPTV playlists fetched over HTTP.
 //!
 //! Fetching an M3U/Xtream list can be slow (5–30s on weak providers), so the
 //! IPTV browser opens by showing the cached copy immediately and triggers a
@@ -8,7 +8,6 @@
 //! Cache location: `$XDG_CACHE_HOME/big-video-player/iptv/<slug>.m3u`.
 //!
 //! Engine-free helper (no GTK widgets) used by [`super::VideoIptvBrowser`].
-//! Mirrors the legacy `iptv_view::cache` until the V6 cutover deletes it.
 
 use std::fs;
 use std::path::PathBuf;

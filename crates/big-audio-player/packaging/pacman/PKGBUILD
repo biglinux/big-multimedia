@@ -18,7 +18,9 @@ license=('GPL-3.0-or-later')
 depends=('gtk4' 'libadwaita' 'mpv' 'ffmpeg' 'libpulse')
 # Trim & Export and Convert hand the track to the BigLinux audio converter
 # GUI; without it those menu entries are greyed out.
-optdepends=('big-audio-converter: trim and convert tracks')
+# "Play on a TV" (Chromecast and DLNA) goes through the BigNetScreen daemon.
+optdepends=('big-audio-converter: trim and convert tracks'
+            'bignetscreen: play on a TV or Chromecast')
 makedepends=('cargo' 'pkgconf' 'gettext')
 
 # Absolute path to the big-multimedia workspace root that owns this PKGBUILD.

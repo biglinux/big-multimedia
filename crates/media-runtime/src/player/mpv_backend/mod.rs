@@ -14,21 +14,6 @@ pub use types::{
     TrackMetadata,
 };
 
-/// Diagnostic env-var toggle: set `SKIP_MPV_RENDER=1` to suppress all mpv
-/// rendering calls. Used to isolate whether a VRAM leak originates in mpv
-/// or GTK4/driver. Reads once and caches.
-pub fn skip_mpv_render() -> bool {
-    use std::sync::OnceLock;
-    static SKIP: OnceLock<bool> = OnceLock::new();
-    *SKIP.get_or_init(|| {
-        let skip = std::env::var("SKIP_MPV_RENDER").is_ok();
-        if skip {
-            log::warn!("SKIP_MPV_RENDER is set — mpv rendering disabled (diagnostic mode)");
-        }
-        skip
-    })
-}
-
 #[cfg(feature = "video")]
 pub(crate) fn is_proprietary_nvidia_session() -> bool {
     use std::sync::OnceLock;

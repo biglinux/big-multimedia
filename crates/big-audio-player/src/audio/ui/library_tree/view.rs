@@ -406,7 +406,7 @@ fn wire_activation(list_view: &gtk::ListView, sender: &ComponentSender<LibraryPa
     });
 }
 
-/// Right-click context menu on the tree (mirrors the god-object browser menu):
+/// Right-click context menu on the tree:
 /// group nodes get Play (enqueue all); file leaves get the full track menu
 /// (play / queue / add-to-playlist / show / edit tags / info).
 fn wire_context_menu(

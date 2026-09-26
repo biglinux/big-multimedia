@@ -112,16 +112,11 @@ impl FastRenderContext {
             internal_format: 0, // 0 = unknown — mpv uses the fbo-format option.
         };
         let mut flip_val: i32 = i32::from(flip_y);
-        // Never let the core block this call waiting for its target display
-        // time. That wait (`vo_libmpv.c`, the `BLOCK_FOR_TARGET_TIME` branch) is
-        // the one `mp_cond_wait` in the whole path with no timeout, and its
-        // wake-up comes from `flip_page`, which gives up after 200 ms: a client
-        // that takes longer to call render — GPU driver warm-up during the first
-        // frames is enough — waits for a `present_count` that is never posted and
-        // hangs the GTK main loop for good. `video-timing-offset=0` (set with the
-        // other init options) keeps A/V sync correct without this wait, as the
-        // render.h docs prescribe. GTK owns presentation here; mpv cannot time it
-        // for us anyway.
+        // Never let the core block this call until the frame's target display
+        // time: that untimed wait (`vo_libmpv.c`) runs on the GTK main thread,
+        // which owns presentation, and stalls the UI until mpv's VO thread
+        // flips the page. `video-timing-offset=0` (set with the other init
+        // options) keeps A/V sync correct without it, as render.h recommends.
         let mut block_for_target_time: i32 = 0;
 
         let mut params = [

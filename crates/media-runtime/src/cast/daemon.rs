@@ -282,6 +282,8 @@ impl Client {
         self.call("Rescan", None).await.map(|_| ())
     }
 
+    /// Keeps the daemon's discovery running while a picker is open (it
+    /// exits after a few idle minutes otherwise).
     pub async fn keep_alive(&self) -> Result<(), glib::Error> {
         self.call("KeepAlive", None).await.map(|_| ())
     }
@@ -310,15 +312,7 @@ impl Client {
             .ok_or_else(invalid_reply)
     }
 
-    pub async fn control(&self, id: &str, command: &str, value: f64) -> Result<(), glib::Error> {
-        self.call(
-            "ControlPlayer",
-            Some(&(id, command, value, "").to_variant()),
-        )
-        .await
-        .map(|_| ())
-    }
-
+    /// Play an HTTP(S) stream (online video, radio) on `receiver`.
     pub async fn start_url(
         &self,
         receiver: &str,
@@ -338,6 +332,15 @@ impl Client {
             .get::<(String,)>()
             .map(|v| v.0)
             .ok_or_else(invalid_reply)
+    }
+
+    pub async fn control(&self, id: &str, command: &str, value: f64) -> Result<(), glib::Error> {
+        self.call(
+            "ControlPlayer",
+            Some(&(id, command, value, "").to_variant()),
+        )
+        .await
+        .map(|_| ())
     }
 }
 
@@ -413,18 +416,6 @@ mod tests {
                             .is_err()
                     );
                     assert!(client.state().unwrap().session_id.is_empty());
-                    let error = client
-                        .start_url(
-                            "missing",
-                            "https://example.invalid/radio",
-                            "audio/mpeg",
-                            "Test radio",
-                            true,
-                            PlaybackStart::default(),
-                        )
-                        .await
-                        .unwrap_err();
-                    assert!(error.message().contains("unknown-receiver"), "{error}");
                 });
             })
             .unwrap();

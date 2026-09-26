@@ -119,12 +119,15 @@ pub fn get_or_generate_thumbnail(video_path: &str) -> Option<PathBuf> {
             &seek_pos,
             "-i",
             video_path,
-            "-vframes",
+            "-frames:v",
             "1",
             "-update",
             "1",
             "-vf",
-            "scale=240:135:force_original_aspect_ratio=decrease,pad=240:135:(ow-iw)/2:(oh-ih)/2",
+            // reset_sar: PNG has no pixel aspect, so anamorphic frames need
+            // square pixels.
+            "scale=240:135:force_original_aspect_ratio=decrease:reset_sar=1,\
+             pad=240:135:(ow-iw)/2:(oh-ih)/2",
             "-y",
             // `--` end-of-options: defend output path even though it is
             // generated from the cache dir + hash (never starts with `-`).

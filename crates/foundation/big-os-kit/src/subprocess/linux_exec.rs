@@ -5,7 +5,7 @@
 use super::reaper::{OwnedChild, Permit, set_nonblocking};
 use super::{
     BigSubprocessError as Error, BigSubprocessOutput, BigSubprocessSpec, BigSubprocessStatus,
-    DEFAULT_MAX_CAPTURE_BYTES, build_command, notify_spawn_observer, redact_in_place,
+    DEFAULT_MAX_CAPTURE_BYTES, build_command, redact_in_place,
 };
 use std::io::{self, Read, Write};
 use std::os::fd::AsRawFd;
@@ -100,8 +100,6 @@ pub(super) fn run_observed(
     };
     let child = owner.child.as_mut().expect("owned child");
     let pid = child.id();
-    // Guard is already installed if an observer unexpectedly panics.
-    notify_spawn_observer(pid, &spec.program);
     let mut input = child.stdin.take();
     let mut stdout = child.stdout.take();
     let mut stderr = child.stderr.take();

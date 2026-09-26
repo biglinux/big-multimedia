@@ -1,8 +1,6 @@
 // SPDX-FileCopyrightText: 2026 BigLinux contributors
 // SPDX-License-Identifier: MIT
 
-use std::rc::Rc;
-
 use relm4::gtk;
 use relm4::gtk::gio;
 use relm4::gtk::glib;
@@ -35,35 +33,6 @@ pub(super) fn build_action_menu_row(
         if let Some(popover) = weak_popover.upgrade() {
             popover.popdown();
         }
-        if let Some(action_context) = weak_action_context.upgrade() {
-            let _ = activate_detailed_action(&action_context, &action);
-        }
-    });
-    row
-}
-
-pub(super) fn build_action_panel_button(
-    action_context: &gtk::Widget,
-    item: &BigMenuActionItem,
-    close_panel: Rc<dyn Fn()>,
-) -> gtk::Button {
-    let row_content = build_action_row_content(item);
-    let label = row_content.label.clone();
-
-    let row = gtk::Button::builder()
-        .child(&row_content.root)
-        .css_classes(["flat"])
-        .halign(gtk::Align::Fill)
-        .hexpand(true)
-        .build();
-    row.update_property(&[gtk::accessible::Property::Label(&item.label)]);
-    row.update_relation(&[gtk::accessible::Relation::LabelledBy(&[label.upcast_ref()])]);
-    row.set_sensitive(item.enabled);
-
-    let action = item.action.clone();
-    let weak_action_context = action_context.downgrade();
-    row.connect_clicked(move |_| {
-        close_panel();
         if let Some(action_context) = weak_action_context.upgrade() {
             let _ = activate_detailed_action(&action_context, &action);
         }

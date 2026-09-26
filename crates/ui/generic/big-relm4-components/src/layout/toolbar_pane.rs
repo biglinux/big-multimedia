@@ -129,22 +129,6 @@ impl BigToolbarHeaderSpec {
         Self::default()
     }
 
-    /// Create a header spec with a simple title label.
-    #[must_use]
-    pub fn titled(title: impl Into<String>) -> Self {
-        Self {
-            title: Some(title.into()),
-            ..Self::default()
-        }
-    }
-
-    /// Set whether libadwaita exposes the title slot.
-    #[must_use]
-    pub fn show_title(mut self, show_title: bool) -> Self {
-        self.show_title = show_title;
-        self
-    }
-
     /// Set whether start-side window title buttons are visible.
     #[must_use]
     pub fn show_start_title_buttons(mut self, show_start_title_buttons: bool) -> Self {
@@ -165,20 +149,12 @@ impl BigToolbarHeaderSpec {
         self.css_classes.push(css_class.into());
         self
     }
-
-    /// Add one CSS class to the simple title label.
-    #[must_use]
-    pub fn title_css_class(mut self, css_class: impl Into<String>) -> Self {
-        self.title_css_classes.push(css_class.into());
-        self
-    }
 }
 
 /// Shared `AdwHeaderBar` wrapper for pane title/action rows.
 #[derive(Debug, Clone)]
 pub struct BigToolbarHeader {
     root: adw::HeaderBar,
-    title_label: Option<gtk::Label>,
 }
 
 impl BigToolbarHeader {
@@ -197,7 +173,7 @@ impl BigToolbarHeader {
             label
         });
         let root = build_header_root(&spec, title_label.as_ref().map(|label| label.upcast_ref()));
-        Self { root, title_label }
+        Self { root }
     }
 
     /// Build a header around an app-owned title widget.
@@ -207,22 +183,13 @@ impl BigToolbarHeader {
         title_widget: &impl IsA<gtk::Widget>,
     ) -> Self {
         let root = build_header_root(&spec, Some(title_widget.upcast_ref()));
-        Self {
-            root,
-            title_label: None,
-        }
+        Self { root }
     }
 
     /// Borrow the root header bar.
     #[must_use]
     pub fn root(&self) -> &adw::HeaderBar {
         &self.root
-    }
-
-    /// Borrow the simple title label when this header created one.
-    #[must_use]
-    pub fn title_label(&self) -> Option<&gtk::Label> {
-        self.title_label.as_ref()
     }
 
     /// Consume the wrapper and return the root header bar.
@@ -283,20 +250,5 @@ mod tests {
         assert!(spec.show_start_title_buttons);
         assert!(spec.show_end_title_buttons);
         assert!(spec.css_classes.is_empty());
-    }
-
-    #[test]
-    fn titled_header_spec_records_title_policy_and_css() {
-        let spec = BigToolbarHeaderSpec::titled("Progress")
-            .show_start_title_buttons(false)
-            .show_end_title_buttons(true)
-            .css_class("flat")
-            .title_css_class("heading");
-
-        assert_eq!(spec.title.as_deref(), Some("Progress"));
-        assert!(!spec.show_start_title_buttons);
-        assert!(spec.show_end_title_buttons);
-        assert_eq!(spec.css_classes, ["flat"]);
-        assert_eq!(spec.title_css_classes, ["heading"]);
     }
 }

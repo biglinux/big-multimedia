@@ -1,9 +1,9 @@
 # big-multimedia
 
 Self-contained workspace for the BigLinux media **players** (audio + video).
-It vendors the media engine (`big-media-runtime`: mpv playback + ffmpeg export)
-and every shared component crate, so it builds with **no external `big-*` path
-dependencies** — the standalone batch converters now live in a separate project.
+It vendors the media engine (`big-media-runtime`: mpv playback, cast, media
+probing) and every shared component crate, so it builds with **no external
+`big-*` path dependencies**. Conversion lives in the separate converter GUIs.
 
 | Crate (binary) | Role |
 |----------------|------|
@@ -15,9 +15,9 @@ opens the converter GUI with `--segments=START-END,...` and the file.
 
 Vendored under `crates/` (were external path deps, now workspace members):
 `media-runtime`, `foundation/*` (os-kit, audio-effects, media-engines,
-appearance, mpv-render, media-data), `app/*` (app-kit, app-kit-core),
-`ui/generic/big-relm4-components`, `ui/media/{big-media-components,big-player-ui}`,
-`dev/big-testkit`. These keep their upstream MIT license; the aggregate repo is
+mpv-render, media-data), `app/*` (app-kit, app-kit-core),
+`ui/generic/big-relm4-components`, `ui/media/{big-media-components,big-player-ui}`.
+These keep their upstream MIT license; the aggregate repo is
 GPL-3.0-or-later because the players link the GPL engine.
 
 ## Build

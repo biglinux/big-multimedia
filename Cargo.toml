@@ -1,9 +1,8 @@
 # big-multimedia — self-contained media players workspace (audio + video).
 #
 # The two player binaries sit on top of the media engine (big-media-runtime)
-# and the shared component crates, all vendored into this repo so it builds
-# with no external `big-*` path deps.
-# The vendored component crates keep their upstream MIT license (see
+# and the shared component crates, all members of this workspace.
+# The component crates keep their upstream MIT license (see
 # [workspace.package]); the aggregate repo LICENSE is GPL-3.0-or-later because
 # the players link the GPL engine.
 [workspace]
@@ -11,12 +10,11 @@ resolver = "3"
 members = [
     "crates/big-audio-player",
     "crates/big-video-player",
-    # Vendored engine + shared component crates (were external path deps).
+    # Media engine + shared component crates.
     "crates/media-runtime",
     "crates/foundation/big-os-kit",
     "crates/foundation/big-audio-effects",
     "crates/foundation/big-media-engines",
-    "crates/foundation/big-appearance",
     "crates/foundation/big-mpv-render",
     "crates/foundation/big-media-data",
     "crates/app/big-app-kit",
@@ -24,12 +22,11 @@ members = [
     "crates/ui/generic/big-relm4-components",
     "crates/ui/media/big-media-components",
     "crates/ui/media/big-player-ui",
-    "crates/dev/big-testkit",
 ]
 
 # Package fields the vendored component crates inherit via `*.workspace = true`.
-# License MIT is the upstream license of those crates; the players/runtime/export
-# crates declare their own GPL-3.0-or-later license explicitly.
+# License MIT is the upstream license of those crates; the players and the
+# runtime declare their own GPL-3.0-or-later license explicitly.
 [workspace.package]
 edition = "2024"
 rust-version = "1.98.1"
@@ -46,20 +43,8 @@ log = "0.4"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
 gettext-rs = { version = "0.7", features = ["gettext-system"] }
-gdk4-wayland = { version = "0.11", features = ["wayland_crate"] }
-gdk4-x11 = "0.11"
-wayland-client = "0.31"
-wayland-protocols = { version = "0.32.13", features = ["client", "staging"] }
-wayland-protocols-plasma = { version = "0.3", features = ["client"] }
-x11rb = "0.13"
 bon = "3"
 thiserror = "2"
-tiny_http = "0.12"
-regex = "1"
-comrak = { version = "0.53", default-features = false }
-syntect = { version = "5", default-features = false, features = ["default-syntaxes", "default-themes", "regex-fancy"] }
-tree_magic_mini = { version = "3.2", default-features = false }
-libsecret = { version = "0.9", features = ["v0_21"] }
 glib = "0.22"
 gio = "0.22"
 libc = "0.2"
@@ -67,10 +52,8 @@ tikv-jemalloc-sys = "0.7"
 big-audio-effects = { path = "crates/foundation/big-audio-effects", version = "0.1.0" }
 big-app-kit = { path = "crates/app/big-app-kit", version = "0.1.0" }
 big-app-kit-core = { path = "crates/app/big-app-kit-core", version = "0.1.0" }
-big-appearance = { path = "crates/foundation/big-appearance", version = "0.1.0" }
 big-os-kit = { path = "crates/foundation/big-os-kit", version = "0.1.0" }
 big-relm4-components = { path = "crates/ui/generic/big-relm4-components", version = "0.1.0" }
-big-testkit = { path = "crates/dev/big-testkit", version = "0.1.0" }
 big-media-components = { path = "crates/ui/media/big-media-components", version = "0.1.0" }
 big-media-data = { path = "crates/foundation/big-media-data", version = "0.1.0", default-features = false }
 big-media-engines = { path = "crates/foundation/big-media-engines", version = "0.1.0" }

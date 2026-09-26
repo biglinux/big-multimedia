@@ -65,6 +65,11 @@ impl OsdState {
         state
     }
 
+    /// Keep the header and controls shown while `pinned` says so.
+    pub(super) fn keep_shown_while(&self, pinned: impl Fn() -> bool + 'static) {
+        self.immersion.register_hide_guard(pinned);
+    }
+
     /// Reveal the header + controls and restore the default cursor.
     pub(super) fn show(&self) {
         self.immersion.show_now();
@@ -238,7 +243,7 @@ fn file_url(path: &Path) -> String {
 }
 
 /// Window aspect-ratio snap state: resizes the window so the video fills it
-/// without letterbox bars. Mirrors the old `controls/aspect.rs` — snaps 200 ms
+/// without letterbox bars. Snaps 200 ms
 /// after a file loads and (debounced 300 ms) on every default-size change,
 /// bailing when disabled, fullscreen, maximized, or the sidebar is open.
 pub(super) struct AspectSnap {

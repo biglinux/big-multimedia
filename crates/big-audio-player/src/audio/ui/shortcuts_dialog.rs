@@ -1,5 +1,4 @@
-//! Keyboard-shortcuts window. Restored app-local from the god-object's
-//! `present_shortcuts_window`; the single-key event controller lives with the
+//! Keyboard-shortcuts window. The single-key event controller lives with the
 //! shell's keybinding wiring, so only the viewer/rebind dialog is needed here.
 
 use adw::prelude::*;

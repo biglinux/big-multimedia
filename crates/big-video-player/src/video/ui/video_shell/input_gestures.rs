@@ -58,50 +58,14 @@ pub(super) fn wire_osd_autohide(main_overlay: &gtk::Overlay, osd: &Rc<OsdState>)
     main_overlay.add_controller(motion);
 }
 
-/// Wire the desktop-background context menu. This intentionally exposes only
-/// wallpaper-level actions; the full player menus stay in [`wire_video_input`].
-pub(super) fn wire_background_video_input(main_overlay: &gtk::Overlay) {
-    let context_menu = gio::Menu::new();
-    context_menu.append(Some(&i18n("Choose Video…")), Some("win.open-file"));
-    context_menu.append(Some(&i18n("Pause / Resume")), Some("win.play-pause"));
-
-    let popover = gtk::PopoverMenu::from_model(Some(&context_menu));
-    popover.set_parent(main_overlay);
-    popover.set_has_arrow(false);
-    {
-        let popover = popover.downgrade();
-        main_overlay.connect_destroy(move |_| {
-            if let Some(popover) = popover.upgrade() {
-                popover.popdown();
-                if popover.parent().is_some() {
-                    popover.unparent();
-                }
-            }
-        });
-    }
-
-    let right_click = gtk::GestureClick::new();
-    right_click.set_button(gtk::gdk::BUTTON_SECONDARY);
-    {
-        let popover = popover.clone();
-        right_click.connect_released(move |gesture, _n_press, x, y| {
-            gesture.set_state(gtk::EventSequenceState::Claimed);
-            popover.set_pointing_to(Some(&gtk::gdk::Rectangle::new(x as i32, y as i32, 1, 1)));
-            popover.popup();
-        });
-    }
-    main_overlay.add_controller(right_click);
-}
-
-/// Wire the pointer gestures over the video surface (mirrors the old
-/// `input/mod.rs`): button-1 double-click toggles fullscreen, right-click pops
+/// Wire the pointer gestures over the video surface: button-1 double-click toggles fullscreen, right-click pops
 /// the context menu, and a button-1 drag past [`DRAG_THRESHOLD`] moves the
 /// window (unless fullscreen). All attach to `main_overlay`, which receives the
 /// bubbled events from both render backends; the overlay's interactive children
 /// (header / controls) handle their own clicks first, so a drag/click on a
 /// button never reaches these.
 pub(super) fn wire_video_input(
-    // The mountable content (ADR D14); the window (for the window-drag gesture)
+    // The mountable content; the window (for the window-drag gesture)
     // is resolved lazily from it.
     content: &adw::ToastOverlay,
     main_overlay: &gtk::Overlay,
@@ -112,7 +76,18 @@ pub(super) fn wire_video_input(
     click.set_button(gtk::gdk::BUTTON_PRIMARY);
     {
         let sender = sender.clone();
-        click.connect_released(move |gesture, n_press, _x, _y| {
+        click.connect_released(move |gesture, n_press, x, y| {
+            // A click on the video, outside the settings panel, puts it away.
+            let on_panel = gesture
+                .widget()
+                .and_then(|overlay| overlay.pick(x, y, gtk::PickFlags::DEFAULT))
+                .is_some_and(|picked| {
+                    std::iter::successors(Some(picked), gtk::Widget::parent)
+                        .any(|widget| widget.has_css_class("settings-panel"))
+                });
+            if n_press == 1 && !on_panel {
+                sender.input(VideoShellInput::ClosePanel);
+            }
             if n_press == 2 {
                 gesture.set_state(gtk::EventSequenceState::Claimed);
                 sender.input(VideoShellInput::ToggleFullscreen);
@@ -130,20 +105,16 @@ pub(super) fn wire_video_input(
     playback.append(Some(&i18n("Screenshot")), Some("win.screenshot"));
     context_menu.append_section(None, &playback);
     let av = gio::Menu::new();
-    av.append(Some(&i18n("Equalizer")), Some("win.show-equalizer"));
-    av.append(
-        Some(&i18n("Audio & Subtitle Delay")),
-        Some("win.show-delay"),
-    );
-    av.append(
-        Some(&i18n("Picture Adjustments")),
-        Some("win.show-image-adjust"),
-    );
+    av.append(Some(&i18n("HDR")), Some("win.show-hdr"));
+    av.append(Some(&i18n("Picture")), Some("win.show-image-adjust"));
+    av.append(Some(&i18n("Zoom and position")), Some("win.show-framing"));
+    av.append(Some(&i18n("Effects and filters")), Some("win.filters"));
+    av.append(Some(&i18n("Equalizer")), Some("win.show-sound"));
     context_menu.append_section(None, &av);
     let nav = gio::Menu::new();
     nav.append(Some(&i18n("Open File…")), Some("win.open-file"));
     nav.append(Some(&i18n("Open URL…")), Some("win.open-url"));
-    nav.append(Some(&i18n("Media Info")), Some("win.media-info"));
+    nav.append(Some(&i18n("About this video")), Some("win.media-info"));
     context_menu.append_section(None, &nav);
 
     let popover = gtk::PopoverMenu::from_model(Some(&context_menu));
@@ -172,9 +143,8 @@ pub(super) fn wire_video_input(
     }
     main_overlay.add_controller(right_click);
 
-    // Drag → move the window (the old whole-window drag; the header is no longer
-    // the only draggable zone). Claims only past the threshold and never while
-    // fullscreen.
+    // Drag → move the window (the header is not the only draggable zone).
+    // Claims only past the threshold and never while fullscreen.
     let drag = gtk::GestureDrag::new();
     drag.set_button(gtk::gdk::BUTTON_PRIMARY);
     let drag_start = Rc::new(Cell::new((0.0_f64, 0.0_f64)));

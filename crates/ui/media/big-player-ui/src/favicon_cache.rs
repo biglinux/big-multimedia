@@ -14,9 +14,6 @@ use log::warn;
 
 const MAX_FAVICON_BYTES: u64 = 256 * 1024;
 
-pub use big_media_components::initials_avatar::initials_texture as radio_initials_texture;
-pub use big_media_components::initials_avatar::initials_widget as radio_initials_widget;
-
 /// Per-app subdir (under the XDG cache dir) holding the radio favicon and
 /// explore caches. Set once by the host app so caches don't collide between
 /// apps; defaults to this crate's name when unset.

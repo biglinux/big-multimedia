@@ -21,11 +21,22 @@ pub fn load_recent_for(kind: &str) -> Vec<RecentEntry> {
     store().load(kind)
 }
 
-/// Acknowledge clearing recent history without blocking the UI.
-pub fn clear_recent_async(kind: String, done: impl FnOnce(std::io::Result<()>) + 'static) {
+/// Record `path` as just opened, on a worker thread (file lock + atomic write).
+pub fn add_recent_async(kind: &'static str, path: String) {
+    let timestamp = std::time::SystemTime::now()
+        .duration_since(std::time::UNIX_EPOCH)
+        .map_or(0, |d| d.as_secs());
     crate::settings::saving::acknowledged_task(
         false,
-        move || store().clear(&kind).map_err(std::io::Error::other),
-        done,
+        move || {
+            store()
+                .add(&path, kind, timestamp)
+                .map_err(std::io::Error::other)
+        },
+        |result| {
+            if let Err(err) = result {
+                log::warn!("recent: could not record opened file: {err}");
+            }
+        },
     );
 }

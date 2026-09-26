@@ -14,48 +14,8 @@ pub(super) fn defaults() -> HashMap<String, String> {
     values.insert("audio-appearance-window-width".into(), "500".into());
     values.insert("audio-appearance-window-height".into(), "400".into());
 
-    values.insert("window-width".into(), "960".into());
-    values.insert("window-height".into(), "540".into());
-    values.insert("window-maximized".into(), "false".into());
     values.insert("volume".into(), "1.0".into());
     values.insert("mute".into(), "false".into());
-    values.insert("open-new-windows".into(), "false".into());
-
-    values.insert("last-profile".into(), String::new());
-    values.insert("output-dir".into(), String::new());
-    values.insert("gpu-device".into(), String::new());
-    values.insert("gpu-auto-migrated".into(), "false".into());
-    values.insert("overwrite-existing".into(), "false".into());
-    values.insert("parallel-jobs".into(), "1".into());
-    values.insert("notify-done".into(), "true".into());
-    values.insert("delete-source".into(), "false".into());
-    values.insert("prevent-sleep".into(), "true".into());
-    values.insert("shutdown-after".into(), "false".into());
-    values.insert("saved-profile".into(), String::new());
-    values.insert("conv-last-dir".into(), String::new());
-    values.insert("conv-segment-mode".into(), "split".into());
-    values.insert("conv-nr-enabled".into(), "false".into());
-    values.insert("conv-nr-lookahead".into(), "0".into());
-    values.insert("conv-nr-strength".into(), "0.0".into());
-    values.insert("conv-nr-model".into(), "0".into());
-    values.insert("conv-nr-voice-recovery".into(), "0.0".into());
-    values.insert("conv-gate-enabled".into(), "false".into());
-    values.insert("conv-gate-intensity".into(), "0.0".into());
-    values.insert("conv-hpf-enabled".into(), "false".into());
-    values.insert("conv-hpf-freq".into(), "0".into());
-    values.insert("conv-normalize".into(), "false".into());
-    values.insert("conv-compressor-enabled".into(), "false".into());
-    values.insert("conv-compressor-intensity".into(), "0.0".into());
-    values.insert("conv-eq-enabled".into(), "false".into());
-    values.insert("conv-eq-preset".into(), String::new());
-    values.insert("conv-eq-bands".into(), String::new());
-    values.insert("audio-conv-format".into(), String::new());
-    values.insert("audio-conv-bitrate".into(), String::new());
-    values.insert("audio-conv-channels".into(), "0".into());
-    values.insert("audio-conv-cut-mode".into(), "0".into());
-    values.insert("audio-conv-cut-output".into(), "0".into());
-    values.insert("audio-conv-volume".into(), "0.0".into());
-    values.insert("audio-conv-speed".into(), "0.0".into());
 
     values.insert("hwdec".into(), "auto-safe".into());
     values.insert("deinterlace".into(), "false".into());
@@ -85,7 +45,6 @@ pub(super) fn defaults() -> HashMap<String, String> {
     values.insert("custom-mpv-options".into(), String::new());
     values.insert("gpu-dumb-mode".into(), "false".into());
     values.insert("noise-strength".into(), "0.0".into());
-    values.insert("noise-gate-threshold".into(), "0".into());
     values.insert("noise-model".into(), "0".into());
     values.insert("noise-voice-recovery".into(), "0.75".into());
     values.insert("noise-model-blend".into(), "false".into());
@@ -119,7 +78,6 @@ pub(super) fn defaults() -> HashMap<String, String> {
 
     values.insert("glsl-shaders".into(), String::new());
     values.insert("builtin-upscaler".into(), String::new());
-    values.insert("builtin-sharpener".into(), String::new());
     values.insert("neural-upscaler".into(), String::new());
     values.insert("anime4k-preset".into(), String::new());
 
@@ -132,9 +90,6 @@ pub(super) fn defaults() -> HashMap<String, String> {
     values.insert("sub-border-style".into(), "outline-and-shadow".into());
     values.insert("sub-scale-with-window".into(), "true".into());
     values.insert("sub-ass-scale-with-window".into(), "false".into());
-
-    values.insert("gpu-api".into(), String::new());
-    values.insert("gpu-context".into(), String::new());
 
     values.insert("icc-profile".into(), String::new());
     values.insert("icc-profile-auto".into(), "false".into());
@@ -209,14 +164,9 @@ pub(super) fn defaults() -> HashMap<String, String> {
     values.insert("replaygain".into(), "track".into());
     values.insert("replaygain-preamp".into(), "0.0".into());
     values.insert("gapless-audio".into(), "false".into());
-    values.insert("crossfade-secs".into(), "0".into());
     values.insert("audio-volume".into(), "100".into());
     values.insert("taskbar-progress".into(), "true".into());
 
-    values.insert("browser-pane-width".into(), "400".into());
-    values.insert("browser-mode".into(), "0".into());
-    values.insert("browser-visible".into(), "true".into());
-    values.insert("audio-bg-blur".into(), "false".into());
     values.insert("audio-high-contrast".into(), "false".into());
 
     values.insert("sleep-timer-action".into(), "pause".into());
@@ -224,8 +174,6 @@ pub(super) fn defaults() -> HashMap<String, String> {
 
     values.insert("radio-api-servers".into(), "de2.api.radio-browser.info,nl1.api.radio-browser.info,at1.api.radio-browser.info,de1.api.radio-browser.info".into());
 
-    values.insert("queue-current-index".into(), "0".into());
-    values.insert("podcast-active-feed".into(), String::new());
     values.insert("files-last-dir".into(), String::new());
 
     values

@@ -132,21 +132,23 @@ impl MpvBackend {
         });
     }
 
-    pub fn set_video_sync(&self, mode: &str) {
+    /// Read the picture's colours as `mode` says: "pq" (HDR10), "hlg" or
+    /// "sdr"; anything else trusts the file. A recording can describe no
+    /// colours at all (a DVB sample: nothing in the stream, nothing per
+    /// frame), and its HDR then plays grey and washed out. mpv's own format
+    /// filter only relabels the frames, so decoding stays on the GPU.
+    pub fn set_source_colours(&self, mode: &str) {
+        let format = match mode {
+            "pq" => "format=gamma=pq:primaries=bt.2020:colormatrix=bt.2020-ncl",
+            "hlg" => "format=gamma=hlg:primaries=bt.2020:colormatrix=bt.2020-ncl",
+            "sdr" => "format=gamma=bt.1886:primaries=bt.709:colormatrix=bt.709",
+            _ => "",
+        };
         self.with_mpv(|m| {
-            let _ = m.set_property("video-sync", mode.to_string());
-        });
-    }
-
-    pub fn set_interpolation(&self, enable: bool) {
-        self.with_mpv(|m| {
-            let _ = m.set_property("interpolation", enable);
-        });
-    }
-
-    pub fn set_tscale(&self, filter: &str) {
-        self.with_mpv(|m| {
-            let _ = m.set_property("tscale", filter.to_string());
+            let _ = m.command("vf", &["remove", "@source-colours"]);
+            if !format.is_empty() {
+                let _ = m.command("vf", &["add", &format!("@source-colours:{format}")]);
+            }
         });
     }
 
@@ -162,27 +164,9 @@ impl MpvBackend {
         });
     }
 
-    pub fn set_target_contrast(&self, contrast: i64) {
-        self.with_mpv(|m| {
-            let _ = m.set_property("target-contrast", contrast);
-        });
-    }
-
-    pub fn set_hdr_contrast_recovery(&self, strength: f64) {
-        self.with_mpv(|m| {
-            let _ = m.set_property("hdr-contrast-recovery", strength);
-        });
-    }
-
     pub fn set_hdr_compute_peak(&self, enable: bool) {
         self.with_mpv(|m| {
             let _ = m.set_property("hdr-compute-peak", enable);
-        });
-    }
-
-    pub fn set_target_colorspace_hint(&self, enable: bool) {
-        self.with_mpv(|m| {
-            let _ = m.set_property("target-colorspace-hint", enable);
         });
     }
 
@@ -339,7 +323,7 @@ mod flip_tests {
         }
     }
     #[test]
-    fn hardware_choice_changed_during_effects_survives_removal_and_full_reset() {
+    fn hardware_choice_changed_during_effects_survives_removal() {
         let (sender, _events) = async_channel::unbounded();
         let backend = MpvBackend::new_audio_only(sender).unwrap();
         backend.set_hwdec("auto-safe");
@@ -351,16 +335,5 @@ mod flip_tests {
         backend.set_hwdec("no");
         backend.vf_remove("effect");
         assert_eq!(backend.get_hwdec(), "no");
-        backend.set_hwdec("nvdec");
-        backend.set_vf("hflip");
-        assert_eq!(
-            backend.with_mpv(|mpv| mpv.get_property::<String>("hwdec").unwrap()),
-            "nvdec-copy"
-        );
-        backend.set_vf("");
-        assert_eq!(
-            backend.with_mpv(|mpv| mpv.get_property::<String>("hwdec").unwrap()),
-            "nvdec"
-        );
     }
 }

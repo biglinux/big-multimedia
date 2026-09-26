@@ -161,8 +161,8 @@ impl AudioShell {
 
     /// Resolve an activated browse-tree node to its tracks off-thread, then
     /// append them to the queue (+ play when idle) via `NodeTracksResolved`.
-    /// Mirrors the god-object Music tab: activating an artist/album/track
-    /// enqueues its tracks rather than opening a separate detail view.
+    /// Activating an artist/album/track enqueues its tracks rather than opening
+    /// a separate detail view.
     pub(super) fn resolve_node_and_enqueue(
         &self,
         kind: u32,

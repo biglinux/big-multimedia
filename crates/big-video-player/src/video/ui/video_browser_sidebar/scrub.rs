@@ -211,13 +211,16 @@ fn ensure_frames(path: &str) -> Vec<PathBuf> {
                     &format!("{time:.2}"),
                     "-i",
                     path,
-                    "-vframes",
+                    "-frames:v",
                     "1",
                     "-update",
                     "1",
                     "-vf",
-                    "scale=240:135:force_original_aspect_ratio=decrease,\
-                     pad=240:135:(ow-iw)/2:(oh-ih)/2",
+                    // Even box: 4:2:0 output rounds an odd pad height down
+                    // below the scaled frame and the filter fails. Square
+                    // pixels for anamorphic sources.
+                    "scale=240:136:force_original_aspect_ratio=decrease:force_divisible_by=2:reset_sar=1,\
+                     pad=240:136:(ow-iw)/2:(oh-ih)/2",
                     "-y",
                     "--",
                     output_path,

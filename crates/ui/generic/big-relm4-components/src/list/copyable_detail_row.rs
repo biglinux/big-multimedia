@@ -77,16 +77,6 @@ impl BigCopyableDetailRowSpec {
         }
     }
 
-    /// Configure the `copy_text` setting and return the updated builder.
-    ///
-    /// The supplied `copy_text` overrides any previously stored value; chain
-    /// further `with_*` / setter calls to compose the full [`BigCopyableDetailRowSpec`].
-    #[must_use]
-    pub fn copy_text(mut self, copy_text: impl Into<String>) -> Self {
-        self.copy_text = Some(copy_text.into());
-        self
-    }
-
     /// Configure the `escape_markup` setting and return the updated builder.
     ///
     /// The supplied `escape_markup` overrides any previously stored value; chain
@@ -142,7 +132,6 @@ pub struct BigCopyableDetailRowResolved {
 #[derive(Debug, Clone)]
 pub struct BigCopyableDetailRow {
     row: adw::ActionRow,
-    copy_button: gtk::Button,
 }
 
 impl BigCopyableDetailRow {
@@ -168,7 +157,7 @@ impl BigCopyableDetailRow {
         });
         row.add_suffix(&copy_button);
 
-        Self { row, copy_button }
+        Self { row }
     }
 
     /// Return a reference to the `row` exposed by this [`BigCopyableDetailRow`].
@@ -178,15 +167,6 @@ impl BigCopyableDetailRow {
     #[must_use]
     pub fn row(&self) -> &adw::ActionRow {
         &self.row
-    }
-
-    /// Return a reference to the `copy button` exposed by this [`BigCopyableDetailRow`].
-    ///
-    /// Useful when callers need to bind signals, query state, or compose the
-    /// widget into a larger surface without taking ownership.
-    #[must_use]
-    pub fn copy_button(&self) -> &gtk::Button {
-        &self.copy_button
     }
 
     /// Consume `self` and yield the underlying row.
@@ -226,16 +206,6 @@ mod tests {
         assert_eq!(resolved.value, "A&amp;B");
         assert_eq!(resolved.line, "<Title>: A&B");
         assert_eq!(resolved.copy_text, "A&B");
-    }
-
-    #[test]
-    fn resolved_can_copy_text_distinct_from_display_value() {
-        let resolved = BigCopyableDetailRowSpec::new("Tunnel", "127.0.0.1:8080 -> host:80", "Copy")
-            .copy_text("127.0.0.1:8080")
-            .resolved();
-
-        assert_eq!(resolved.value, "127.0.0.1:8080 -&gt; host:80");
-        assert_eq!(resolved.copy_text, "127.0.0.1:8080");
     }
 
     #[test]

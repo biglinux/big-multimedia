@@ -12,10 +12,9 @@ exclude = ["packaging"]
 
 [features]
 default = []
-chromecast = ["big-media-runtime/chromecast"]
 
 [dependencies]
-big-os-kit = { workspace = true, features = ["jemalloc"] }
+big-os-kit = { workspace = true, features = ["jemalloc", "http-client"] }
 adw.workspace = true
 gtk.workspace = true
 glib.workspace = true
@@ -27,7 +26,6 @@ big-player-ui.workspace = true
 big-app-kit.workspace = true
 big-relm4-components.workspace = true
 big-media-components.workspace = true
-# In-player quick export (extract audio / convert) reuses the converter engine.
 relm4.workspace = true
 async-channel = "2.5"
 dirs = "6"

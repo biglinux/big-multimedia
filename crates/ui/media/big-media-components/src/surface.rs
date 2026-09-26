@@ -8,10 +8,9 @@
 use gtk::prelude::*;
 
 pub use big_relm4_components::layout::media_window::{
-    BigMediaChrome, BigMediaChromePlacement, BigMediaImmersionController, BigMediaMenuSpec,
-    BigMediaOverlayLayerRole, BigMediaOverlayLayerSpec, BigMediaOverlayStack, BigMediaSidebarShell,
-    BigMediaSidebarSpec, create_media_toast_overlay_root, create_media_toast_overlay_with_content,
-    media_chrome_subtree_has_focus, mount_media_toast_content,
+    BigMediaChrome, BigMediaChromePlacement, BigMediaImmersionController, BigMediaOverlayStack,
+    BigMediaSidebarShell, BigMediaSidebarSpec, create_media_toast_overlay_root,
+    mount_media_toast_content,
 };
 
 /// Toggle fullscreen on the toplevel window that owns `widget`.
@@ -24,28 +23,4 @@ pub fn toggle_surface_fullscreened(widget: &impl IsA<gtk::Widget>) -> Option<boo
     let is_fullscreened = !window.is_fullscreen();
     window.set_fullscreened(is_fullscreened);
     Some(is_fullscreened)
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn surface_reexports_overlay_policy_contract() {
-        let media_layer = BigMediaOverlayLayerRole::PrimaryMediaSurface.layer_spec();
-        assert!(media_layer.should_clip_layer());
-        assert!(!media_layer.should_measure_layer());
-
-        let osd_layer = BigMediaOverlayLayerRole::ViewerAdornmentOverlay.layer_spec();
-        assert!(!osd_layer.should_clip_layer());
-        assert!(!osd_layer.should_measure_layer());
-        assert!(
-            BigMediaOverlayLayerRole::PrimaryMediaSurface.stacking_order()
-                < BigMediaOverlayLayerRole::ViewerAdornmentOverlay.stacking_order()
-        );
-        assert!(matches!(
-            BigMediaChromePlacement::HeaderThenBottom,
-            BigMediaChromePlacement::HeaderThenBottom
-        ));
-    }
 }

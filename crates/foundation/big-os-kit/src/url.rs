@@ -172,18 +172,6 @@ pub fn redact_url(url: &str) -> String {
     out
 }
 
-/// Lazy [`Display`](std::fmt::Display) wrapper that redacts a URL only when it is
-/// actually formatted — so passing `RedactedUrl(url)` to a `log::debug!` costs
-/// nothing when disabled. For untrusted/provider-specific media targets use
-/// [`MediaLogTarget`], because unknown keys and path tokens are not recognized.
-pub struct RedactedUrl<'a>(pub &'a str);
-
-impl std::fmt::Display for RedactedUrl<'_> {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.write_str(&redact_url(self.0))
-    }
-}
-
 /// Percent-encode a query value while preserving the RFC 3986 unreserved set.
 #[must_use]
 pub fn encode_query_value(value: &str) -> String {
@@ -281,12 +269,6 @@ mod tests {
             redact_url("http://host/get.php?password=&type=m3u"),
             "http://host/get.php?password=&type=m3u"
         );
-    }
-
-    #[test]
-    fn redacted_url_display_matches_redact_url() {
-        let url = "http://host/get.php?username=joe&password=secret";
-        assert_eq!(format!("{}", RedactedUrl(url)), redact_url(url));
     }
 
     #[test]

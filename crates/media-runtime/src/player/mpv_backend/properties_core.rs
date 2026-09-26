@@ -130,16 +130,12 @@ impl MpvBackend {
         });
     }
 
+    /// Both halves of the preference: saving on quit alone would keep
+    /// resuming files saved while it was on.
     pub fn set_save_position(&self, enable: bool) {
         self.with_mpv(|m| {
             let _ = m.set_property("save-position-on-quit", enable);
-        });
-    }
-
-    /// Call before close so resume-playback survives the next launch.
-    pub fn write_watch_later_config(&self) {
-        self.with_mpv(|m| {
-            let _ = m.command("write-watch-later-config", &[]);
+            let _ = m.set_property("resume-playback", enable);
         });
     }
 

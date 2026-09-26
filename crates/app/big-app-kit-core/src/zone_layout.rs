@@ -159,12 +159,6 @@ impl ZoneLayoutSpec {
             .flat_map(|bar| bar.zones.iter().map(move |&p| slot_key(&bar.id, p)))
             .collect()
     }
-
-    /// Look up a control by id.
-    #[must_use]
-    pub fn control(&self, id: &str) -> Option<&ZoneControl> {
-        self.controls.iter().find(|c| c.id == id)
-    }
 }
 
 /// The edited value: per-zone ordered control ids plus the hidden set.
@@ -310,17 +304,6 @@ mod tests {
     fn slot_keys_lists_every_bar_zone_in_render_order() {
         let spec = spec();
         assert_eq!(spec.slot_keys(), ["bar:start", "bar:center", "bar:end"]);
-    }
-
-    #[test]
-    fn control_lookup_matches_by_id_or_none() {
-        let spec = spec();
-        assert_eq!(
-            spec.control("volume").map(|c| c.id.as_str()),
-            Some("volume")
-        );
-        assert_eq!(spec.control("play").map(|c| c.id.as_str()), Some("play"));
-        assert!(spec.control("missing").is_none());
     }
 
     #[test]

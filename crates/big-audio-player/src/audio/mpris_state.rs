@@ -2,8 +2,7 @@
 //!
 //! The MPRIS `StateCallback` runs on the D-Bus thread, so the state it reads
 //! must be `Send + Sync`. The shell mutates these fields from mpv events (on the
-//! main thread) and the D-Bus thread reads them through an `Arc`. Ported out of
-//! the god-object `window::SharedMprisState` (survives the cutover).
+//! main thread) and the D-Bus thread reads them through an `Arc`.
 
 use big_app_kit::mpris::{PlaybackStatus, PlayerState};
 use std::sync::Mutex;

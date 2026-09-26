@@ -1,4 +1,4 @@
-//! App-local media-details dialog (video port, V5).
+//! App-local media-details dialog.
 //!
 //! Reads the live mpv backend (general / metadata / video / audio / streaming /
 //! track sections) into copyable rows, with a "Copy All" header button. A free

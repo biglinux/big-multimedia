@@ -65,16 +65,6 @@ impl BigEditableActionRowSpec {
         self
     }
 
-    /// Configure the `allow_markup` setting and return the updated builder.
-    ///
-    /// The supplied `value` overrides any previously stored value; chain
-    /// further `with_*` / setter calls to compose the full [`BigEditableActionRowSpec`].
-    #[must_use]
-    pub fn allow_markup(mut self) -> Self {
-        self.allow_markup = true;
-        self
-    }
-
     /// Resolve the spec into its display-free runtime form.
     #[must_use]
     pub fn resolved(&self) -> BigEditableActionRowResolved {
@@ -156,24 +146,6 @@ impl BigEditableActionRow {
     #[must_use]
     pub fn row(&self) -> &adw::ActionRow {
         &self.row
-    }
-
-    /// Return a reference to the `edit button` exposed by this [`BigEditableActionRow`].
-    ///
-    /// Useful when callers need to bind signals, query state, or compose the
-    /// widget into a larger surface without taking ownership.
-    #[must_use]
-    pub fn edit_button(&self) -> &gtk::Button {
-        &self.edit_button
-    }
-
-    /// Return a reference to the `remove button` exposed by this [`BigEditableActionRow`].
-    ///
-    /// Useful when callers need to bind signals, query state, or compose the
-    /// widget into a larger surface without taking ownership.
-    #[must_use]
-    pub fn remove_button(&self) -> &gtk::Button {
-        &self.remove_button
     }
 
     /// Consume `self` and yield the underlying parts.

@@ -62,7 +62,6 @@ pub struct ServerHandle {
     pub token: String,
     stop: Arc<AtomicBool>,
     wake: Option<thread::Thread>,
-    closed: Arc<AtomicBool>,
 }
 impl ServerHandle {
     /// Revoke new dispatch immediately; drain no network uploads or writes.
@@ -71,10 +70,6 @@ impl ServerHandle {
         if let Some(wake) = &self.wake {
             wake.unpark();
         }
-    }
-    /// True after the listener and every accepted socket have been closed.
-    pub fn is_stopped(&self) -> bool {
-        self.closed.load(Ordering::Acquire)
     }
 }
 impl Drop for ServerHandle {
@@ -91,15 +86,6 @@ const HEADER_DEADLINE: Duration = Duration::from_secs(3);
 const WRITE_DEADLINE: Duration = Duration::from_secs(2);
 const MAX_RATE_PEERS: usize = 64;
 
-/// Bind the trusted-LAN service (IPv4) with bounded sockets and no per-client
-/// threads. HTTP is not encrypted; this remains opt-in and not Internet access.
-pub fn start(handlers: RemoteHandlers) -> Result<ServerHandle, String> {
-    start_on("0.0.0.0:0".parse().expect("static address"), handlers)
-}
-/// Bind a specific interface. A loopback address is useful for native tests.
-pub fn start_on(address: SocketAddr, handlers: RemoteHandlers) -> Result<ServerHandle, String> {
-    start_scoped(address, handlers, Arc::new(AtomicBool::new(false)))
-}
 /// Start with the same revocation token carried by queued UI commands. `stop`
 /// must be fresh and false; a stopped session is never reused for another token.
 pub fn start_scoped(
@@ -119,20 +105,11 @@ pub fn start_scoped(
         .local_addr()
         .map_err(|e| format!("address: {e}"))?
         .port();
-    let closed = Arc::new(AtomicBool::new(false));
     let flag = stop.clone();
-    let ended = closed.clone();
     let secret = token.clone();
     let worker = thread::Builder::new()
         .name("media-remote".into())
         .spawn(move || {
-            struct Closed(Arc<AtomicBool>);
-            impl Drop for Closed {
-                fn drop(&mut self) {
-                    self.0.store(true, Ordering::Release);
-                }
-            }
-            let _closed = Closed(ended);
             serve(listener, &secret, &handlers, &flag);
         })
         .map_err(|_| "Could not start remote control worker".to_owned())?;
@@ -143,7 +120,6 @@ pub fn start_scoped(
         token,
         stop,
         wake,
-        closed,
     })
 }
 
@@ -643,7 +619,6 @@ mod tests {
             token: "token".into(),
             stop: Arc::clone(&stop_flag),
             wake: None,
-            closed: Arc::new(AtomicBool::new(false)),
         };
 
         handle.stop();
@@ -660,11 +635,37 @@ mod tests {
                 token: "token".into(),
                 stop: Arc::clone(&stop_flag),
                 wake: None,
-                closed: Arc::new(AtomicBool::new(false)),
             };
         }
 
         assert!(stop_flag.load(Ordering::Relaxed));
+    }
+
+    fn send_http_request(port: u16, method: &str, request_target: &str) -> String {
+        let mut stream = TcpStream::connect(("127.0.0.1", port)).unwrap();
+        stream
+            .set_read_timeout(Some(Duration::from_secs(2)))
+            .unwrap();
+        stream
+            .set_write_timeout(Some(Duration::from_secs(2)))
+            .unwrap();
+        let request = format!(
+            "{method} {request_target} HTTP/1.1\r\nHost: 127.0.0.1\r\nX-Big-Media-Remote: 1\r\nContent-Length: 0\r\nConnection: close\r\n\r\n"
+        );
+        stream.write_all(request.as_bytes()).unwrap();
+
+        let mut response = String::new();
+        stream.read_to_string(&mut response).unwrap();
+        response
+    }
+
+    fn response_body(response: &str) -> &str {
+        response.split_once("\r\n\r\n").unwrap().1
+    }
+
+    fn assert_ok_response(response: &str) {
+        assert!(response.starts_with("HTTP/1.1 200"));
+        assert_eq!(response_body(response), "ok");
     }
 
     #[test]
@@ -723,7 +724,8 @@ mod tests {
             },
         };
 
-        let server_handle = start(handlers).unwrap();
+        let server_handle =
+            start_scoped("127.0.0.1:0".parse().unwrap(), handlers, Arc::default()).unwrap();
         let token_path = format!("/{}", server_handle.token);
 
         let index_response =
@@ -781,33 +783,6 @@ mod tests {
         assert_eq!(status_count.load(Ordering::Relaxed), 1);
 
         server_handle.stop();
-    }
-
-    fn send_http_request(port: u16, method: &str, request_target: &str) -> String {
-        let mut stream = TcpStream::connect(("127.0.0.1", port)).unwrap();
-        stream
-            .set_read_timeout(Some(Duration::from_secs(2)))
-            .unwrap();
-        stream
-            .set_write_timeout(Some(Duration::from_secs(2)))
-            .unwrap();
-        let request = format!(
-            "{method} {request_target} HTTP/1.1\r\nHost: 127.0.0.1\r\nX-Big-Media-Remote: 1\r\nContent-Length: 0\r\nConnection: close\r\n\r\n"
-        );
-        stream.write_all(request.as_bytes()).unwrap();
-
-        let mut response = String::new();
-        stream.read_to_string(&mut response).unwrap();
-        response
-    }
-
-    fn response_body(response: &str) -> &str {
-        response.split_once("\r\n\r\n").unwrap().1
-    }
-
-    fn assert_ok_response(response: &str) {
-        assert!(response.starts_with("HTTP/1.1 200"));
-        assert_eq!(response_body(response), "ok");
     }
 }
 
@@ -870,10 +845,34 @@ mod slow_peer_tests {
         );
         assert!(reply.starts_with(b"HTTP/1.1 503"));
     }
+
+    #[test]
+    #[cfg_attr(miri, ignore)]
+    fn absolute_header_deadline_is_not_extended_by_activity() {
+        let server = start_scoped(
+            "127.0.0.1:0".parse().unwrap(),
+            handlers(true),
+            Arc::default(),
+        )
+        .unwrap();
+        let mut peer = TcpStream::connect(("127.0.0.1", server.port)).unwrap();
+        peer.write_all(b"GET /").unwrap();
+        thread::sleep(HEADER_DEADLINE + Duration::from_millis(150));
+        peer.set_read_timeout(Some(Duration::from_secs(1))).unwrap();
+        let mut byte = [0];
+        assert!(is_closed(peer.read(&mut byte)));
+        server.stop();
+    }
+
     #[test]
     #[cfg_attr(miri, ignore)]
     fn slow_peers_do_not_block_status_and_stop_releases_sockets() {
-        let server = start_on("127.0.0.1:0".parse().unwrap(), handlers(true)).unwrap();
+        let server = start_scoped(
+            "127.0.0.1:0".parse().unwrap(),
+            handlers(true),
+            Arc::default(),
+        )
+        .unwrap();
         let mut slow: Vec<_> = (0..MAX_PER_IP - 1)
             .map(|_| TcpStream::connect(("127.0.0.1", server.port)).unwrap())
             .collect();
@@ -894,11 +893,6 @@ mod slow_peer_tests {
         fast.read_to_end(&mut response).unwrap();
         assert!(response.starts_with(b"HTTP/1.1 200"));
         server.stop();
-        let end = Instant::now() + Duration::from_secs(1);
-        while !server.is_stopped() && Instant::now() < end {
-            thread::sleep(Duration::from_millis(5));
-        }
-        assert!(server.is_stopped());
         for mut stream in slow {
             stream
                 .set_read_timeout(Some(Duration::from_secs(1)))
@@ -906,17 +900,5 @@ mod slow_peer_tests {
             let mut byte = [0];
             assert!(is_closed(stream.read(&mut byte)));
         }
-    }
-    #[test]
-    #[cfg_attr(miri, ignore)]
-    fn absolute_header_deadline_is_not_extended_by_activity() {
-        let server = start_on("127.0.0.1:0".parse().unwrap(), handlers(true)).unwrap();
-        let mut peer = TcpStream::connect(("127.0.0.1", server.port)).unwrap();
-        peer.write_all(b"GET /").unwrap();
-        thread::sleep(HEADER_DEADLINE + Duration::from_millis(150));
-        peer.set_read_timeout(Some(Duration::from_secs(1))).unwrap();
-        let mut byte = [0];
-        assert!(is_closed(peer.read(&mut byte)));
-        server.stop();
     }
 }

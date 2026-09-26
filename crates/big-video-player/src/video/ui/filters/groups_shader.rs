@@ -1,11 +1,9 @@
 //! GPU-property and shader filter groups for the filters dialog: GPU
 //! processing (mpv render properties), GPU upscaling shaders (FSR/CAS), neural
-//! upscaling (RAVU), and Anime4K presets. App-local port of the legacy
-//! `dialogs/filters/{gpu,shaders,neural,anime4k}.rs`, retargeted from the
-//! `Window` god-object to an `Arc<MpvBackend>` + `Settings`. Shader percentage
+//! upscaling (RAVU), and Anime4K presets, driving an `Arc<MpvBackend>` +
+//! `Settings`. Shader percentage
 //! math lives in [`super::filter_specs`].
 //!
-use std::rc::Rc;
 use std::sync::Arc;
 use std::time::Duration;
 
@@ -27,18 +25,14 @@ use big_relm4_components::input::debounce::BigDebouncedAction as DebouncedAction
 
 /// GPU processing: sharpen (debounced), deband, sigmoid-upscaling,
 /// correct-downscaling — all live mpv render properties.
-pub(super) fn build_gpu_group(
-    mpv: &Arc<MpvBackend>,
-    on_filter_changed: &Rc<dyn Fn()>,
-) -> adw::PreferencesGroup {
+pub(super) fn build_gpu_group(mpv: &Arc<MpvBackend>) -> adw::PreferencesGroup {
     let group = BigPreferencesGroupSpec::new(i18n("GPU Processing"))
         .description(i18n("Hardware-accelerated, no performance impact"))
         .build();
 
-    group.add(&build_gpu_sharpen_row(mpv, on_filter_changed));
+    group.add(&build_gpu_sharpen_row(mpv));
     group.add(&build_gpu_bool_row(
         mpv,
-        on_filter_changed,
         "deband",
         "deband.svg",
         i18n("Deband"),
@@ -47,7 +41,6 @@ pub(super) fn build_gpu_group(
     ));
     group.add(&build_gpu_bool_row(
         mpv,
-        on_filter_changed,
         "sigmoid-upscaling",
         "sigmoid.svg",
         i18n("Sigmoid Upscaling"),
@@ -56,7 +49,6 @@ pub(super) fn build_gpu_group(
     ));
     group.add(&build_gpu_bool_row(
         mpv,
-        on_filter_changed,
         "correct-downscaling",
         "downscale.svg",
         i18n("Correct Downscaling"),
@@ -67,10 +59,7 @@ pub(super) fn build_gpu_group(
 }
 
 /// GPU sharpen expander (0..5, debounced 100 ms).
-fn build_gpu_sharpen_row(
-    mpv: &Arc<MpvBackend>,
-    on_filter_changed: &Rc<dyn Fn()>,
-) -> adw::ExpanderRow {
+fn build_gpu_sharpen_row(mpv: &Arc<MpvBackend>) -> adw::ExpanderRow {
     let current = mpv.get_property_f64("sharpen");
     let is_active = current.abs() > 0.001;
     let expander = adw::ExpanderRow::builder()
@@ -99,14 +88,12 @@ fn build_gpu_sharpen_row(
 
     let mpv_toggle = Arc::clone(mpv);
     let adjustment_toggle = adjustment.clone();
-    let on_toggle_changed = on_filter_changed.clone();
     expander.connect_enable_expansion_notify(move |row| {
         mpv_toggle.set_sharpen(if row.enables_expansion() {
             adjustment_toggle.value()
         } else {
             0.0
         });
-        on_toggle_changed();
     });
 
     let debounce = DebouncedAction::new(Duration::from_millis(100));
@@ -114,7 +101,6 @@ fn build_gpu_sharpen_row(
     // capture here would form a mutual reference cycle (both leak on close).
     let expander_weak = expander.downgrade();
     let mpv = Arc::clone(mpv);
-    let on_spin_changed = on_filter_changed.clone();
     adjustment.connect_value_changed(move |adjustment| {
         let Some(expander_ref) = expander_weak.upgrade() else {
             return;
@@ -124,10 +110,8 @@ fn build_gpu_sharpen_row(
         }
         let value = adjustment.value();
         let mpv = Arc::clone(&mpv);
-        let on_spin_changed = on_spin_changed.clone();
         debounce.run(move || {
             mpv.set_sharpen(value);
-            on_spin_changed();
         });
     });
 
@@ -137,7 +121,6 @@ fn build_gpu_sharpen_row(
 /// A GPU boolean property toggle row seeded from the live mpv property.
 fn build_gpu_bool_row(
     mpv: &Arc<MpvBackend>,
-    on_filter_changed: &Rc<dyn Fn()>,
     property: &str,
     svg: &str,
     title: String,
@@ -151,9 +134,7 @@ fn build_gpu_bool_row(
         .build();
     row.add_prefix(&illustration(svg));
     let mpv = Arc::clone(mpv);
-    let on_filter_changed = on_filter_changed.clone();
     row.connect_active_notify(move |row| setter(&mpv, row.is_active()));
-    row.connect_active_notify(move |_| on_filter_changed());
     row
 }
 
@@ -161,7 +142,6 @@ fn build_gpu_bool_row(
 pub(super) fn build_shaders_group(
     mpv: &Arc<MpvBackend>,
     settings: &Settings,
-    on_filter_changed: &Rc<dyn Fn()>,
 ) -> adw::PreferencesGroup {
     let group = BigPreferencesGroupSpec::new(i18n("GPU Upscaling Shaders"))
         .description(i18n(
@@ -223,29 +203,17 @@ pub(super) fn build_shaders_group(
     intensity_row.set_visible(!current.is_empty());
     group.add(&intensity_row);
 
-    let apply = build_shader_applier(mpv);
-
-    let apply_combo = apply.clone();
+    let mpv_combo = Arc::clone(mpv);
     let settings_combo = settings.clone();
     let intensity_for_combo = intensity.clone();
-    let on_combo_changed = on_filter_changed.clone();
     combo.connect_selected_notify(move |combo| {
         let idx = combo.selected() as usize;
         let key = ids.get(idx).copied().unwrap_or("");
         intensity_row.set_visible(!key.is_empty());
 
-        let pct = match key {
-            "fsr" => {
-                let v = settings_combo.get_double(keys::SHADER_FSR_SHARPNESS);
-                fsr_shader_to_ui_pct(if v == 0.0 { 0.2 } else { v })
-            }
-            "cas" => cas_shader_to_ui_pct(settings_combo.get_double(keys::SHADER_CAS_SHARPENING)),
-            _ => 50.0,
-        };
-        intensity_for_combo.set_value(pct);
-        apply_combo(key, intensity_for_combo.value());
+        intensity_for_combo.set_value(saved_upscaler_percent(&settings_combo, key));
+        apply_builtin_upscaler(&mpv_combo, key, intensity_for_combo.value());
         settings_combo.put_string(keys::BUILTIN_UPSCALER, key);
-        on_combo_changed();
     });
 
     let debounce = DebouncedAction::new(Duration::from_millis(300));
@@ -253,7 +221,7 @@ pub(super) fn build_shaders_group(
     // Weak back-ref: `combo`'s own handler strong-holds this intensity row, so a
     // strong capture here would form a mutual reference cycle (both leak).
     let combo_weak = combo.downgrade();
-    let on_spin_changed = on_filter_changed.clone();
+    let mpv_spin = Arc::clone(mpv);
     intensity.connect_value_changed(move |intensity| {
         let Some(combo_for_spin) = combo_weak.upgrade() else {
             return;
@@ -270,57 +238,116 @@ pub(super) fn build_shaders_group(
             }
             _ => {}
         }
-        let apply = apply.clone();
-        let on_spin_changed = on_spin_changed.clone();
+        let mpv = Arc::clone(&mpv_spin);
         debounce.run(move || {
-            apply(&key, pct);
-            on_spin_changed();
+            apply_builtin_upscaler(&mpv, &key, pct);
         });
     });
 
     group
 }
 
-/// Build the shader-apply closure: clears prior built-in/user shaders by
-/// prefix, then appends the chosen FSR/CAS shader with its parameter.
-fn build_shader_applier(mpv: &Arc<MpvBackend>) -> Arc<dyn Fn(&str, f64)> {
-    let mpv = Arc::clone(mpv);
-    Arc::new(move |key: &str, pct: f64| {
-        mpv.glsl_shader_remove_prefix(config::SHADERS_DIR);
-        if let Some(user_dir) = gtk::glib::user_config_dir()
-            .join(config::video::USER_SHADERS_RELATIVE)
-            .to_str()
-        {
-            mpv.glsl_shader_remove_prefix(user_dir);
+/// The intensity (UI percent) saved for upscaler `key`.
+fn saved_upscaler_percent(settings: &Settings, key: &str) -> f64 {
+    match key {
+        "fsr" => {
+            let v = settings.get_double(keys::SHADER_FSR_SHARPNESS);
+            fsr_shader_to_ui_pct(if v == 0.0 { 0.2 } else { v })
         }
-        let path = match key {
-            "fsr" => shader_gen::shader_path(
-                "FSR.glsl",
-                &[ShaderParam {
-                    define_name: "SHARPNESS",
-                    value: fsr_ui_pct_to_shader(pct),
-                    precision: 2,
-                }],
-            ),
-            "cas" => shader_gen::shader_path(
-                "CAS-scaled.glsl",
-                &[ShaderParam {
-                    define_name: "SHARPENING",
-                    value: cas_ui_pct_to_shader(pct),
-                    precision: 2,
-                }],
-            ),
-            _ => return,
-        };
+        "cas" => cas_shader_to_ui_pct(settings.get_double(keys::SHADER_CAS_SHARPENING)),
+        _ => 50.0,
+    }
+}
+
+/// Swap the FSR/CAS upscaler for `key` at `pct` ("" removes it): clears
+/// prior built-in/user shaders by prefix, then appends the chosen one.
+fn apply_builtin_upscaler(mpv: &MpvBackend, key: &str, pct: f64) {
+    mpv.glsl_shader_remove_prefix(config::SHADERS_DIR);
+    if let Some(user_dir) = gtk::glib::user_config_dir()
+        .join(config::video::USER_SHADERS_RELATIVE)
+        .to_str()
+    {
+        mpv.glsl_shader_remove_prefix(user_dir);
+    }
+    let path = match key {
+        "fsr" => shader_gen::shader_path(
+            "FSR.glsl",
+            &[ShaderParam {
+                define_name: "SHARPNESS",
+                value: fsr_ui_pct_to_shader(pct),
+                precision: 2,
+            }],
+        ),
+        "cas" => shader_gen::shader_path(
+            "CAS-scaled.glsl",
+            &[ShaderParam {
+                define_name: "SHARPENING",
+                value: cas_ui_pct_to_shader(pct),
+                precision: 2,
+            }],
+        ),
+        _ => return,
+    };
+    mpv.glsl_shader_append(&path);
+}
+
+fn apply_neural_upscaler(mpv: &MpvBackend, variant: &str) {
+    if let Some(dir) = shader_gen::ravu_dir().to_str() {
+        mpv.glsl_shader_remove_prefix(dir);
+    }
+    if let Some(path) = shader_gen::neural_upscaler_path(variant) {
         mpv.glsl_shader_append(&path);
+    }
+}
+
+fn apply_anime4k(mpv: &MpvBackend, preset: &str) {
+    let dir = shader_gen::anime4k_dir();
+    if let Some(dir_str) = dir.to_str() {
+        mpv.glsl_shader_remove_prefix(dir_str);
+    }
+    for filename in shader_gen::anime4k_preset_shaders(preset) {
+        let path = dir.join(filename);
+        if let Some(path) = path.exists().then(|| path.to_str()).flatten() {
+            mpv.glsl_shader_append(path);
+        }
+    }
+}
+
+/// The upscaler, neural upscaler and Anime4K preset the dialog saved, each
+/// empty when off or when its shaders are not installed.
+pub(crate) fn saved_enhancements(settings: &Settings) -> [String; 3] {
+    let available = [
+        std::path::Path::new(config::SHADERS_DIR).is_dir(),
+        shader_gen::neural_shaders_available(),
+        shader_gen::anime4k_dir().is_dir(),
+    ];
+    let keys = [
+        keys::BUILTIN_UPSCALER,
+        keys::NEURAL_UPSCALER,
+        keys::ANIME4K_PRESET,
+    ];
+    std::array::from_fn(|i| {
+        if available[i] {
+            settings.get_string(keys[i])
+        } else {
+            String::new()
+        }
     })
+}
+
+/// Put the saved choices on the picture: they outlive the session, so the
+/// shaders must too (the dialog shows them as on).
+pub(crate) fn apply_saved_enhancements(mpv: &MpvBackend, settings: &Settings) {
+    let [upscaler, neural, anime4k] = saved_enhancements(settings);
+    apply_builtin_upscaler(mpv, &upscaler, saved_upscaler_percent(settings, &upscaler));
+    apply_neural_upscaler(mpv, &neural);
+    apply_anime4k(mpv, &anime4k);
 }
 
 /// Neural upscaling: single RAVU-r4 toggle.
 pub(super) fn build_neural_group(
     mpv: &Arc<MpvBackend>,
     settings: &Settings,
-    on_filter_changed: &Rc<dyn Fn()>,
 ) -> adw::PreferencesGroup {
     let group = BigPreferencesGroupSpec::new(i18n("Neural Network Upscaling"))
         .description(i18n(
@@ -347,19 +374,10 @@ pub(super) fn build_neural_group(
 
     let mpv = Arc::clone(mpv);
     let settings = settings.clone();
-    let on_filter_changed = on_filter_changed.clone();
     row.connect_active_notify(move |row| {
         let variant = if row.is_active() { "ravu-r4" } else { "" };
-        if let Some(dir) = shader_gen::ravu_dir().to_str() {
-            mpv.glsl_shader_remove_prefix(dir);
-        }
-        if row.is_active()
-            && let Some(path) = shader_gen::neural_upscaler_path(variant)
-        {
-            mpv.glsl_shader_append(&path);
-        }
+        apply_neural_upscaler(&mpv, variant);
         settings.put_string(keys::NEURAL_UPSCALER, variant);
-        on_filter_changed();
     });
 
     group.add(&row);
@@ -370,7 +388,6 @@ pub(super) fn build_neural_group(
 pub(super) fn build_anime4k_group(
     mpv: &Arc<MpvBackend>,
     settings: &Settings,
-    on_filter_changed: &Rc<dyn Fn()>,
 ) -> adw::PreferencesGroup {
     let group = BigPreferencesGroupSpec::new(i18n("Anime / Cartoon Enhancement"))
         .description(i18n(
@@ -406,24 +423,11 @@ pub(super) fn build_anime4k_group(
 
     let mpv = Arc::clone(mpv);
     let settings = settings.clone();
-    let on_filter_changed = on_filter_changed.clone();
     combo.connect_selected_notify(move |combo| {
         let idx = combo.selected() as usize;
         let preset = ids.get(idx).copied().unwrap_or("");
-        let dir = shader_gen::anime4k_dir();
-        if let Some(dir_str) = dir.to_str() {
-            mpv.glsl_shader_remove_prefix(dir_str);
-        }
-        if !preset.is_empty() {
-            for filename in shader_gen::anime4k_preset_shaders(preset) {
-                let path = dir.join(filename);
-                if let Some(path) = path.exists().then(|| path.to_str()).flatten() {
-                    mpv.glsl_shader_append(path);
-                }
-            }
-        }
+        apply_anime4k(&mpv, preset);
         settings.put_string(keys::ANIME4K_PRESET, preset);
-        on_filter_changed();
     });
 
     group.add(&anime4k_preset_row);

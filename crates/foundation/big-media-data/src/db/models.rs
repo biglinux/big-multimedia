@@ -173,17 +173,6 @@ pub struct WatchFolder {
 }
 
 #[derive(Debug, Clone)]
-pub struct SmartPlaylist {
-    pub id: i64,
-    pub name: String,
-    pub rules_json: String,
-    pub logic: String,
-    pub sort_field: Option<String>,
-    pub sort_dir: String,
-    pub max_tracks: i32,
-}
-
-#[derive(Debug, Clone)]
 pub struct RadioStation {
     pub id: i64,
     pub name: String,

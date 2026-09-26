@@ -3,17 +3,9 @@
 use std::rc::Rc;
 
 use adw::prelude::*;
-use big_media_components::preference_rows::{
-    AdvancedWidgets, combo_row, entry_row, spin_int_row, switch_row,
-};
+use big_media_components::preference_rows::{combo_row, entry_row, spin_int_row, switch_row};
 use big_media_data::i18n::i18n;
 use big_media_data::settings::{Settings, keys};
-use big_relm4_components::input::dropdown_row::BigDropdownRow;
-use big_relm4_components::layout::preferences::{
-    BigPreferencesGroupSpec, track_widget_visibility, tracked_preferences_group,
-};
-
-use crate::illustration::illustration_auto as illustration;
 
 /// Owned audio-effect values emitted by the generic preferences page.
 #[derive(Debug, Clone, PartialEq)]
@@ -87,69 +79,21 @@ impl PlayerAudioPreferenceActions {
 pub fn create_player_audio_page(
     settings: &Settings,
     actions: Option<PlayerAudioPreferenceActions>,
-    is_advanced: bool,
-    adv_widgets: &AdvancedWidgets,
-    _on_taskbar_toggle: Option<Box<dyn Fn(bool) + 'static>>,
 ) -> adw::PreferencesPage {
     let page = adw::PreferencesPage::builder()
         .title(i18n("Audio"))
         .icon_name("audio-speakers-symbolic")
         .build();
 
-    let output_group = tracked_preferences_group(
-        BigPreferencesGroupSpec::new(i18n("Output"))
-            .description(i18n("Advanced audio output options"))
-            .visible(is_advanced),
-        adv_widgets,
-    );
-
-    let output_row = add_combo_row(
-        &output_group,
-        &i18n("Audio Output"),
-        &i18n("Which sound system to use - Auto works for most setups. Requires restart."),
-        &["Auto", "PipeWire", "PulseAudio", "ALSA", "JACK"],
-        &["", "pipewire", "pulse", "alsa", "jack"],
-        "audio-output",
-        settings,
-        |_| {},
-    );
-    output_row
-        .root()
-        .add_prefix(&illustration("audio_output.svg"));
-
-    let channel_actions = actions.clone();
-    let channels_row = add_combo_row(
-        &output_group,
-        &i18n("Channels"),
-        &i18n("Mix surround sound down to stereo or mono if needed"),
-        &["Auto", "Stereo", "Mono"],
-        &["", "stereo", "mono"],
-        "audio-channels",
-        settings,
-        move |value| {
-            if let Some(actions) = &channel_actions {
-                actions.set_audio_channels(value);
-            }
-        },
-    );
-    channels_row
-        .root()
-        .add_prefix(&illustration("audio_channels.svg"));
-
-    page.add(&output_group);
-
-    let processing_group = BigPreferencesGroupSpec::new(i18n("Processing"))
-        .description(i18n("Audio enhancements applied while playing"))
+    let sound_group = adw::PreferencesGroup::builder()
+        .title(i18n("Sound"))
         .build();
 
     let normalize_row = adw::SwitchRow::builder()
-        .title(i18n("Auto-level Volume"))
-        .subtitle(i18n(
-            "Automatically adjusts volume so all media plays at a similar loudness",
-        ))
+        .title(i18n("Even Out Loudness"))
+        .subtitle(i18n("Quiet and loud media play at a similar volume"))
         .active(settings.get_bool(keys::AUDIO_NORMALIZE))
         .build();
-    normalize_row.add_prefix(&illustration("normalize.svg"));
     {
         let settings = settings.clone();
         let actions = actions.clone();
@@ -160,13 +104,13 @@ pub fn create_player_audio_page(
             }
         });
     }
-    processing_group.add(&normalize_row);
+    sound_group.add(&normalize_row);
 
     let pitch_actions = actions.clone();
-    let pitch_row = add_switch_row(
-        &processing_group,
-        &i18n("Pitch Correction"),
-        &i18n("Keep the original voice tone when playing faster or slower"),
+    add_switch_row(
+        &sound_group,
+        &i18n("Keep Voices Natural"),
+        &i18n("Voices keep their tone when playing faster or slower"),
         "audio-pitch-correction",
         settings,
         move |value| {
@@ -175,14 +119,12 @@ pub fn create_player_audio_page(
             }
         },
     );
-    pitch_row.add_prefix(&illustration("pitch.svg"));
-    track_widget_visibility(&pitch_row, is_advanced, adv_widgets);
 
     let volume_actions = actions.clone();
-    let volume_max_row = add_spin_int_row(
-        &processing_group,
+    add_spin_int_row(
+        &sound_group,
         &i18n("Maximum Volume"),
-        &i18n("Allow the volume slider to go above 100% for quiet recordings"),
+        &i18n("Above 100% helps with quiet recordings but may distort"),
         "volume-max",
         100.0,
         200.0,
@@ -194,21 +136,19 @@ pub fn create_player_audio_page(
             }
         },
     );
-    volume_max_row.add_prefix(&illustration("max_volume.svg"));
+    page.add(&sound_group);
 
-    page.add(&processing_group);
-
-    let language_group = BigPreferencesGroupSpec::new(i18n("Language"))
+    let language_group = adw::PreferencesGroup::builder()
+        .title(i18n("Language"))
         .description(i18n(
-            "Language preferences for media with multiple audio tracks",
+            "For media with several audio tracks. Use language codes separated by commas, in order of preference, such as pt,en",
         ))
         .build();
-
     let language_actions = actions.clone();
-    let language_row = add_entry_row(
+    add_entry_row(
         &language_group,
-        &i18n("Preferred Audio Language"),
-        &i18n("Automatically picks your language when available (e.g. pt, en, ja)"),
+        &i18n("Preferred Languages"),
+        "",
         "preferred-audio-lang",
         settings,
         move |value| {
@@ -217,9 +157,39 @@ pub fn create_player_audio_page(
             }
         },
     );
-    language_row.add_prefix(&illustration("language.svg"));
-
     page.add(&language_group);
+
+    let output_group = adw::PreferencesGroup::builder()
+        .title(i18n("Sound System"))
+        .description(i18n("Automatic works for most computers"))
+        .build();
+    add_combo_row(
+        &output_group,
+        &i18n("Audio Output"),
+        &i18n("Takes effect after reopening the player"),
+        &[&i18n("Automatic"), "PipeWire", "PulseAudio", "ALSA", "JACK"],
+        &["", "pipewire", "pulse", "alsa", "jack"],
+        "audio-output",
+        settings,
+        |_| {},
+    );
+    let channel_actions = actions.clone();
+    add_combo_row(
+        &output_group,
+        &i18n("Speakers"),
+        &i18n("Mixes surround sound down for stereo speakers or headphones"),
+        &[&i18n("Automatic"), &i18n("Stereo"), &i18n("Mono")],
+        &["", "stereo", "mono"],
+        "audio-channels",
+        settings,
+        move |value| {
+            if let Some(actions) = &channel_actions {
+                actions.set_audio_channels(value);
+            }
+        },
+    );
+    page.add(&output_group);
+
     page
 }
 
@@ -287,7 +257,7 @@ fn add_combo_row(
     key: &str,
     settings: &Settings,
     on_change: impl Fn(&str) + 'static,
-) -> BigDropdownRow {
+) -> adw::ComboRow {
     let current = settings.string(key);
     let selected = values
         .iter()

@@ -239,23 +239,7 @@ impl AudioShell {
                 self.library
                     .emit(LibraryPanelInput::ShowManageFolders(folders));
             }
-            #[cfg(feature = "chromecast")]
-            AudioShellInput::ShowCast => {
-                if let Some(win) = self.window() {
-                    crate::audio::ui::cast_dialog::present_cast(
-                        &win,
-                        self.cast_device_registry.clone(),
-                        sender.input_sender().clone(),
-                    );
-                }
-            }
-            #[cfg(feature = "chromecast")]
-            AudioShellInput::CastToDeviceIndex(idx) => self.cast_to_device(idx),
-            #[cfg(feature = "chromecast")]
-            AudioShellInput::CastStop => {
-                self.cast_device_registry.stop_casting();
-                self.notify(&i18n("Casting stopped"));
-            }
+            AudioShellInput::ShowCast => self.show_tv_dialog(),
             AudioShellInput::ShowSmartphone => {
                 if let Some(win) = self.window() {
                     crate::audio::ui::smartphone_dialog::present_smartphone(

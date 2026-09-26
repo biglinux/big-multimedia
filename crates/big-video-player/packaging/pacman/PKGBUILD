@@ -12,14 +12,13 @@ pkgrel=$(date +%H%M)
 pkgdesc='Hardware-accelerated video player for BigLinux'
 arch=('x86_64')
 url='https://github.com/biglinux/big-multimedia'
-license=('GPL-3.0-or-later')
+# The shipped GPU shaders: FSR/CAS and Anime4K are MIT, RAVU is LGPL-3.0.
+license=('GPL-3.0-or-later' 'MIT' 'LGPL-3.0-or-later')
 
 # libpulse provides `pactl`, used to drive our PipeWire/PulseAudio stream volume
 # so the in-app volume matches the system mixer (same %, with >100% boost).
-# avahi provides `avahi-browse`, used to discover Chromecast devices on the LAN
-# (the `chromecast` feature); ffmpeg is also its transcode backend; bubblewrap
-# sandboxes every cast ffmpeg/ffprobe (they parse untrusted media).
-depends=('gtk4' 'libadwaita' 'mpv' 'ffmpeg' 'libpulse' 'avahi' 'bubblewrap')
+# ffmpeg renders the seek-bar preview thumbnails.
+depends=('gtk4' 'libadwaita' 'mpv' 'ffmpeg' 'libpulse')
 # Successor of the monorepo `bigvideo` package: replace it and satisfy the
 # `bigvideo=…` dependency that `big-video-module` carries.
 replaces=('big-player-video' 'bigvideo')
@@ -27,10 +26,11 @@ conflicts=('big-player-video' 'bigvideo')
 provides=('bigvideo=0.1.0-7')
 # Cutting, converting and extracting audio hand the file to the BigLinux
 # converter GUIs; without them those menu entries are greyed out.
+# "Play on a TV" (Chromecast and DLNA) goes through the BigNetScreen daemon.
 optdepends=('big-video-converter: cut and convert videos'
-            'big-audio-converter: extract audio from videos')
-# cmake builds aws-lc-sys (rustls backend pulled in by rust_cast for Chromecast).
-makedepends=('cargo' 'pkgconf' 'gettext' 'cmake')
+            'big-audio-converter: extract audio from videos'
+            'bignetscreen: play on a TV or Chromecast')
+makedepends=('cargo' 'pkgconf' 'gettext')
 
 # Absolute path to the big-multimedia workspace root that owns this PKGBUILD.
 _wsroot() {
@@ -41,8 +41,7 @@ build() {
   local root; root="$(_wsroot)"
   export RUSTFLAGS="${RUSTFLAGS} --remap-path-prefix=${root}=/build --remap-path-prefix=${HOME}/.cargo=/cargo"
   cd "${root}" || return 1
-  # `chromecast`: LAN device discovery (avahi) + CASTV2 streaming/transcode.
-  cargo build --release --locked -p "${pkgname}" --features chromecast
+  cargo build --release --locked -p "${pkgname}"
 }
 
 package() {
@@ -57,6 +56,22 @@ package() {
     "$pkgdir/usr/share/metainfo/br.com.biglinux.VideoPlayer.metainfo.xml"
   install -Dm644 "resources/icons/hicolor/scalable/apps/big-video-player.svg" \
     "$pkgdir/usr/share/icons/hicolor/scalable/apps/big-video-player.svg"
+
+  # GPU shaders the filters dialog offers (upscalers, RAVU, Anime4K): its
+  # rows stay "not installed" and saved choices do nothing without them.
+  local shaders="${root}/crates/media-runtime/data/shaders"
+  local shader_dest="$pkgdir/usr/share/big-media-runtime/shaders"
+  install -Dm644 -t "${shader_dest}" "${shaders}/FSR.glsl" "${shaders}/CAS-scaled.glsl"
+  install -Dm644 -t "${shader_dest}/anime4k" "${shaders}"/anime4k/*.glsl
+  install -Dm644 -t "${shader_dest}/ravu" "${shaders}"/ravu/*.hook
+  # MIT asks for its notice alongside: copy each shader's header block.
+  install -d "$pkgdir/usr/share/licenses/${pkgname}"
+  local notice
+  for notice in FSR.glsl CAS-scaled.glsl anime4k/Anime4K_Clamp_Highlights.glsl; do
+    printf '%s:\n' "${notice}"
+    awk '{sub(/\r$/, "")} {print} /SOFTWARE\.$/ {exit}' "${shaders}/${notice}"
+    printf '\n'
+  done > "$pkgdir/usr/share/licenses/${pkgname}/MIT-shaders"
 
   # Shared gettext catalog (single `big-media-runtime` textdomain, bound by
   # shared::app_base::init_gettext). Installed under this package's PRIVATE

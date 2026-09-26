@@ -1,7 +1,7 @@
 [package]
 name = "big-player-ui"
 version = "0.1.0"
-publish = false  # consumed by sibling media-player apps via path dep (see ARCHITECTURE.md §8-10)
+publish = false  # consumed by sibling media-player apps via path dep
 edition.workspace = true
 rust-version.workspace = true
 license.workspace = true

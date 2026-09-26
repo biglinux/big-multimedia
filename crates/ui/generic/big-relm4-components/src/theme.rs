@@ -109,21 +109,6 @@ pub fn inject_palette_css(css: &str, provider_slot: &mut Option<gtk::CssProvider
     provider.load_from_string(css);
 }
 
-/// Run `on_dark_changed(is_dark)` whenever the libadwaita dark state flips.
-///
-/// Listens on the process-wide [`adw::StyleManager`] `dark` property, so it
-/// tracks both explicit color-scheme changes and system light/dark switches.
-/// The listener lives for the process lifetime; call it once from an
-/// idempotent boot path (guard with a `Once`/`OnceLock` if a call site can
-/// fire more than once). Generalized from big-terminal's app-local
-/// `install_style_dark_listener`, which reruns a full theme refresh; this
-/// primitive stays behavior-free and hands the new dark state to the caller.
-pub fn install_style_dark_listener(on_dark_changed: impl Fn(bool) + 'static) {
-    adw::StyleManager::default().connect_dark_notify(move |style_manager| {
-        on_dark_changed(style_manager.is_dark());
-    });
-}
-
 /// Decode a `#RRGGBB` or `RRGGBB` hex string into an `(R, G, B)` tuple.
 ///
 /// The leading `#` is optional. Strings shorter than 6 hex digits, or with

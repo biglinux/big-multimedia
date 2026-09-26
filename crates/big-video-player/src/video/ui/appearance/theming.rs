@@ -1,8 +1,8 @@
 //! Video-player appearance application: reads the `ui-*` palette + OSD layout
 //! settings and pushes the resulting CSS into one app-owned `CssProvider` slot.
-//! Ported from the old god-object's `window/theming.rs` (same palette
-//! foundation, OSD widget styles, gradient/button/window customizations, and
-//! high-contrast override) — kept app-local because the OSD class names
+//! Covers the palette foundation, OSD widget styles, gradient/button/window
+//! customizations, and the high-contrast override — kept app-local because the
+//! OSD class names
 //! (`osd-controls`, `osd-btn`, …) are video-specific.
 //!
 //! The provider slot lives on the `VideoShell`; a re-apply (boot or the
@@ -149,6 +149,25 @@ popover > contents {{
 popover > arrow {{
   background: alpha(@popover_bg_color, {menu_op:.2});
 }}
+button.adjustment-reset {{
+  background: alpha(@window_fg_color, 0.10);
+  border-radius: 999px;
+  min-height: 30px;
+  padding: 0 14px;
+  font-weight: bold;
+}}
+.osd-header headerbar button.header-pill {{
+  background: alpha(@accent_bg_color, 0.85);
+  color: @accent_fg_color;
+  border-radius: 999px;
+  min-height: 24px;
+  padding: 0 10px;
+  margin: 0 4px;
+  font-weight: bold;
+}}
+.osd-header headerbar button.header-pill:hover {{
+  background: @accent_bg_color;
+}}
 ",
             bg_op = self.bg_opacity,
             menu_op = self.menu_opacity,
@@ -263,10 +282,89 @@ popover > arrow {{
     }
 }
 
+/// The volume control while no sound plays (muted or at 0): a pill in the
+/// theme's warning colours, after every palette rule so no customization
+/// dims it. Its text ("No sound") and shape say it too, not colour alone.
+const SOUND_OFF_CSS: &str = "
+.sound-off {
+  background: @warning_bg_color;
+  border-radius: 999px;
+  padding-right: 8px;
+}
+.sound-off .osd-value-label,
+.sound-off button.osd-btn,
+.sound-off button.osd-btn:hover,
+.sound-off button.osd-btn:active {
+  color: @warning_fg_color;
+  text-shadow: none;
+}
+.sound-off .osd-value-label {
+  font-weight: bold;
+}
+.sound-off .osd-btn image {
+  -gtk-icon-shadow: none;
+}
+";
+
+/// The settings panel: a light see-through card (no blur, no shadow, so it
+/// adds nothing per video frame) whose text stays at full strength.
+const PANEL_CSS: &str = "
+.settings-panel {
+  background: alpha(@window_bg_color, 0.72);
+  color: @window_fg_color;
+  border: 1px solid alpha(@window_fg_color, 0.12);
+  border-radius: 14px;
+}
+.settings-panel button.settings-block {
+  background: alpha(@window_fg_color, 0.08);
+  border-radius: 10px;
+  padding: 8px 12px;
+  min-height: 52px;
+}
+.settings-panel .block-state {
+  font-weight: normal;
+}
+.settings-panel button.colour-choice {
+  background: alpha(@window_fg_color, 0.08);
+  border-radius: 10px;
+  padding: 8px 10px;
+}
+.settings-panel button.colour-choice:checked {
+  background: alpha(@accent_bg_color, 0.85);
+  color: @accent_fg_color;
+}
+.settings-panel button.settings-link {
+  background: alpha(@window_fg_color, 0.05);
+  border-radius: 8px;
+  min-height: 30px;
+  padding: 2px 8px;
+  font-weight: normal;
+}
+.settings-panel button.settings-link:hover {
+  background: alpha(@window_fg_color, 0.12);
+}
+.settings-panel.compact button.settings-block {
+  min-height: 40px;
+  padding: 4px 10px;
+}
+.settings-panel button.settings-block:hover {
+  background: alpha(@window_fg_color, 0.14);
+}
+.settings-panel .block-state.block-changed {
+  font-weight: bold;
+}
+.settings-panel row .subtitle,
+.settings-panel .dim-label {
+  opacity: 0.85;
+}
+";
+
 fn build_osd_css(settings: &Settings, osd_css_config: &OsdCssConfig) -> String {
     let mut css = osd_css_config.css_color_foundation(settings);
     css += &osd_css_config.css_widget_styles();
     css += &osd_css_config.css_customizations();
+    css += SOUND_OFF_CSS;
+    css += PANEL_CSS;
 
     if settings.get_bool(keys::AUDIO_HIGH_CONTRAST) {
         css += crate::shared::theming::HIGH_CONTRAST_CSS;

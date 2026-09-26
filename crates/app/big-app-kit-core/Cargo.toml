@@ -1,7 +1,7 @@
 [package]
 name = "big-app-kit-core"
 version = "0.1.0"
-publish = false  # consumed by big-app-kit via path dep, not crates.io (see ARCHITECTURE.md §8)
+publish = false  # consumed by big-app-kit via path dep, not crates.io
 edition.workspace = true
 rust-version.workspace = true
 license.workspace = true
@@ -18,9 +18,7 @@ big-os-kit.workspace = true
 # Remote-control logging is opt-in. The endpoint itself uses bounded std sockets.
 log = { workspace = true, optional = true }
 
-# Network + control-server features are opt-in. `http-client` forwards to the
-# single HTTP-policy home in big-os-kit. Default is empty.
+# The control server is opt-in. Default is empty.
 [features]
 default = []
-http-client = ["big-os-kit/http-client"]
 remote-control = ["dep:log"]

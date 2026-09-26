@@ -19,9 +19,3 @@ const DOMAIN: &str = "big-media-runtime";
 pub fn t(msgid: &str) -> String {
     gettextrs::dgettext(DOMAIN, msgid)
 }
-
-/// Marks a component-owned string for extraction without translating.
-#[must_use]
-pub const fn gettext_noop(msgid: &'static str) -> &'static str {
-    msgid
-}

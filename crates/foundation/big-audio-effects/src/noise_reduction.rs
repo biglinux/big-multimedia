@@ -14,10 +14,9 @@
 //!   slider position is converted to control-port values
 //!   ([`crate::noise_reduction::GtcrnControls`],
 //!   [`crate::noise_reduction::deepfilter_attenuation_db`]).
-//! - How to build the actual `ladspa=...` filter strings for mpv and
-//!   FFmpeg hosts
-//!   ([`crate::noise_reduction::mpv_ladspa_filter_for_model`],
-//!   [`crate::noise_reduction::ffmpeg_ladspa_filter_for_model`] and the
+//! - How to build the actual `ladspa=...` filter strings for mpv and the
+//!   cast transcoder
+//!   ([`crate::noise_reduction::mpv_ladspa_filter_for_model`] and the
 //!   lower-level helpers).
 //!
 //! The integer encoding of [`crate::noise_reduction::NoiseModel`] is
@@ -28,8 +27,6 @@ use std::path::Path;
 
 use serde::{Deserialize, Serialize};
 
-/// Filesystem directory that hosts BigLinux LADSPA plugins.
-pub const LADSPA_DIR_PATH: &str = "/usr/lib/ladspa";
 /// Absolute path of the GTCRN LADSPA plugin shared object.
 pub const GTCRN_LADSPA_PATH: &str = "/usr/lib/ladspa/libgtcrn_ladspa.so";
 /// Absolute path of the DeepFilterNet LADSPA plugin shared object.
@@ -186,26 +183,6 @@ impl NoiseModel {
         REALTIME_LAVFI_MODELS.contains(&self)
     }
 
-    /// LADSPA `model` control-port value to select this variant.
-    ///
-    /// For dual-model GTCRN plugins this picks DNS3 (`0.0`) vs VCTK
-    /// (`1.0`); for single-model plugins the value is irrelevant and is
-    /// returned as `0.0`.
-    #[must_use]
-    pub fn ladspa_control(self) -> f32 {
-        match self {
-            Self::GtcrnVctk => 1.0,
-            Self::GtcrnDns3
-            | Self::DeepFilterNet3
-            | Self::DpdfnetV2Hr
-            | Self::DpdfnetV8Hr
-            | Self::DpdfnetBaseline
-            | Self::DpdfnetV2
-            | Self::DpdfnetV4
-            | Self::DpdfnetV8 => 0.0,
-        }
-    }
-
     /// Whether this is the DeepFilterNet family.
     #[must_use]
     pub fn is_deepfilter(self) -> bool {
@@ -223,15 +200,6 @@ impl NoiseModel {
                 | Self::DpdfnetV2
                 | Self::DpdfnetV4
                 | Self::DpdfnetV8
-        )
-    }
-
-    /// Whether this is one of the 16 kHz DPDFNet variants.
-    #[must_use]
-    pub fn is_dpdfnet_16khz(self) -> bool {
-        matches!(
-            self,
-            Self::DpdfnetBaseline | Self::DpdfnetV2 | Self::DpdfnetV4 | Self::DpdfnetV8
         )
     }
 
@@ -317,22 +285,6 @@ impl GtcrnControls {
         }
     }
 
-    /// Build controls suitable for the offline converter path.
-    ///
-    /// Disables lookahead and model blending and lets the caller pick
-    /// the speech strength independently.
-    #[must_use]
-    pub fn converter(strength: f64, model: i32, speech_strength: f64, voice_recovery: f64) -> Self {
-        Self {
-            strength,
-            model,
-            speech_strength,
-            lookahead_ms: 0.0,
-            model_blend: false,
-            voice_recovery,
-        }
-    }
-
     /// Project the struct to the LADSPA `controls=` `f32` array.
     #[must_use]
     pub fn control_values(self) -> [f32; 6] {
@@ -384,19 +336,6 @@ pub fn gtcrn_mpv_ladspa_filter(controls: &GtcrnControls) -> String {
     format!(
         "ladspa=file={}:plugin={LABEL_GTCRN_MONO}:controls={}",
         GTCRN_LADSPA_PATH,
-        gtcrn_controls_fragment(controls)
-    )
-}
-
-/// Build the GTCRN `ladspa=...` filter string for FFmpeg.
-///
-/// FFmpeg's LADSPA loader resolves plugins by short name from
-/// `LADSPA_PATH`, so this variant uses `libgtcrn_ladspa` instead of the
-/// absolute path used by the mpv variant.
-#[must_use]
-pub fn gtcrn_ffmpeg_ladspa_filter(controls: &GtcrnControls) -> String {
-    format!(
-        "ladspa=file=libgtcrn_ladspa:plugin={LABEL_GTCRN_MONO}:controls={}",
         gtcrn_controls_fragment(controls)
     )
 }
@@ -473,38 +412,6 @@ fn mpv_ladspa_filter_for_available_model(
     }
 }
 
-/// Pick the correct FFmpeg `ladspa=...` filter string for `model`.
-///
-/// Semantically identical to [`mpv_ladspa_filter_for_model`] but emits
-/// the FFmpeg-flavored plugin reference (short library name with no
-/// `.so` suffix or absolute path).
-#[must_use]
-pub fn ffmpeg_ladspa_filter_for_model(
-    model: NoiseModel,
-    controls: &GtcrnControls,
-) -> Option<String> {
-    ffmpeg_ladspa_filter_for_available_model(model, controls, model.plugin_available())
-}
-
-fn ffmpeg_ladspa_filter_for_available_model(
-    model: NoiseModel,
-    controls: &GtcrnControls,
-    is_plugin_available: bool,
-) -> Option<String> {
-    if !model.is_realtime_lavfi_supported() || !is_plugin_available {
-        return None;
-    }
-    if model.is_attenuation_only() {
-        let (plugin, label) = model.plugin_and_label();
-        Some(format!(
-            "ladspa=file={plugin}:plugin={label}:controls={}",
-            attenuation_controls_fragment(controls.strength)
-        ))
-    } else {
-        Some(gtcrn_ffmpeg_ladspa_filter(controls))
-    }
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -540,30 +447,6 @@ mod tests {
     }
 
     #[test]
-    fn noise_model_ladspa_control_values_match_plugin_contract() {
-        assert_eq!(NoiseModel::GtcrnVctk.ladspa_control(), 1.0);
-        for model in [
-            NoiseModel::GtcrnDns3,
-            NoiseModel::DeepFilterNet3,
-            NoiseModel::DpdfnetV2Hr,
-            NoiseModel::DpdfnetV8Hr,
-            NoiseModel::DpdfnetBaseline,
-            NoiseModel::DpdfnetV2,
-            NoiseModel::DpdfnetV4,
-            NoiseModel::DpdfnetV8,
-        ] {
-            assert_eq!(model.ladspa_control(), 0.0);
-        }
-    }
-
-    #[test]
-    fn gtcrn_filters_keep_host_specific_paths() {
-        let controls = GtcrnControls::converter(0.7, 2, 0.5, 0.4);
-        assert!(gtcrn_ffmpeg_ladspa_filter(&controls).starts_with("ladspa=file=libgtcrn_ladspa"));
-        assert!(gtcrn_mpv_ladspa_filter(&controls).starts_with("ladspa=file=/usr/lib/ladspa"));
-    }
-
-    #[test]
     fn gtcrn_filter_fragments_match_plugin_contract() {
         let controls = GtcrnControls::player(0.8, 1, true, 0.3);
 
@@ -575,24 +458,6 @@ mod tests {
             gtcrn_cast_ladspa_filter(0.75),
             "ladspa=file=libgtcrn_ladspa:plugin=gtcrn_mono:controls=c0=1|c1=0.75"
         );
-    }
-
-    #[test]
-    fn noise_models_classify_backend_families() {
-        assert!(!NoiseModel::GtcrnDns3.is_attenuation_only());
-        assert!(NoiseModel::DeepFilterNet3.is_attenuation_only());
-        assert!(!NoiseModel::GtcrnDns3.is_dpdfnet());
-        assert!(!NoiseModel::GtcrnVctk.is_dpdfnet());
-        assert!(!NoiseModel::DeepFilterNet3.is_dpdfnet());
-        assert!(NoiseModel::DpdfnetV2Hr.is_dpdfnet());
-        assert!(NoiseModel::DpdfnetV8Hr.is_dpdfnet());
-        assert!(NoiseModel::DpdfnetBaseline.is_dpdfnet());
-        assert!(NoiseModel::DpdfnetV2.is_dpdfnet());
-        assert!(NoiseModel::DpdfnetV4.is_dpdfnet());
-        assert!(NoiseModel::DpdfnetV8.is_dpdfnet());
-        assert!(NoiseModel::DpdfnetV2.is_dpdfnet_16khz());
-        assert!(!NoiseModel::DpdfnetV2Hr.is_dpdfnet_16khz());
-        assert!(NoiseModel::DpdfnetV2Hr.is_attenuation_only());
     }
 
     #[test]
@@ -631,38 +496,5 @@ mod tests {
         assert!(realtime_lavfi_has_available_model(
             |model| model == NoiseModel::DeepFilterNet3
         ));
-    }
-
-    #[test]
-    fn host_filter_builders_respect_realtime_and_availability_contracts() {
-        let controls = GtcrnControls::player(0.5, 1, false, 0.2);
-
-        assert!(
-            mpv_ladspa_filter_for_available_model(NoiseModel::DeepFilterNet3, &controls, false)
-                .is_none()
-        );
-        assert!(
-            ffmpeg_ladspa_filter_for_available_model(NoiseModel::DpdfnetV2, &controls, true)
-                .is_none()
-        );
-
-        let mpv_gtcrn =
-            mpv_ladspa_filter_for_available_model(NoiseModel::GtcrnDns3, &controls, true)
-                .expect("available GTCRN model should render for mpv");
-        assert!(mpv_gtcrn.starts_with("ladspa=file=/usr/lib/ladspa/libgtcrn_ladspa.so"));
-        assert!(mpv_gtcrn.contains("plugin=gtcrn_mono"));
-        assert!(mpv_gtcrn.contains("controls=c0=1|c1=0.5|c2=1|c3=0.5|c4=50|c5=0|c6=0.2"));
-
-        let ffmpeg_gtcrn =
-            ffmpeg_ladspa_filter_for_available_model(NoiseModel::GtcrnDns3, &controls, true)
-                .expect("available GTCRN model should render for FFmpeg");
-        assert!(ffmpeg_gtcrn.starts_with("ladspa=file=libgtcrn_ladspa"));
-        assert!(ffmpeg_gtcrn.contains("plugin=gtcrn_mono"));
-
-        let ffmpeg_deepfilter =
-            ffmpeg_ladspa_filter_for_available_model(NoiseModel::DeepFilterNet3, &controls, true)
-                .expect("available attenuation model should render for FFmpeg");
-        assert!(ffmpeg_deepfilter.contains("file=/usr/lib/ladspa/libdeep_filter_ladspa.so"));
-        assert!(ffmpeg_deepfilter.contains("controls=c0=25.00"));
     }
 }

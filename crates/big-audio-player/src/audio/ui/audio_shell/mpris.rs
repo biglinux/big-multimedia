@@ -62,7 +62,6 @@ impl AudioShell {
                             mpv.load_file_with_audio_profile(
                                 &self.current_file,
                                 AudioCacheProfile::Radio,
-                                false,
                             );
                         }
                     } else {

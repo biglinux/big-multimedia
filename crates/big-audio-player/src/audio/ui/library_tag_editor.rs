@@ -1,6 +1,6 @@
 //! Multi-field tag-editor dialog for the `LibraryPanel` (push-model).
 //!
-//! Ported from `audio::window::detail_dialogs::{tag_editor,fields}`. A two-pane
+//! A two-pane
 //! `adw::NavigationSplitView`: the sidebar shows the album art + read-only file
 //! info (path/format/bitrate/sample-rate/channels/size); the content pane shows
 //! the editable metadata group (title/artist/album/album_artist/genre/year/

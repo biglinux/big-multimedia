@@ -33,7 +33,7 @@
 //!     .stdout(BigSubprocessOutputMode::Capture)
 //!     .build();
 //!
-//! let resolved = spec.resolved();
+//! let resolved = spec.try_resolved().unwrap();
 //! assert_eq!(resolved.program, "ffprobe");
 //! assert_eq!(resolved.argv, vec![
 //!     "-of".to_string(),
@@ -71,18 +71,6 @@ pub struct BigSubprocessAllowList {
 }
 
 impl BigSubprocessAllowList {
-    /// Build an allow-list from an iterator of items.
-    #[must_use]
-    pub fn new<S, I>(items: I) -> Self
-    where
-        S: Into<String>,
-        I: IntoIterator<Item = S>,
-    {
-        Self {
-            allowed: items.into_iter().map(Into::into).collect(),
-        }
-    }
-
     /// Returns `true` when the program is permitted.
     #[must_use]
     pub fn permits(&self, program: &str) -> bool {
@@ -126,7 +114,7 @@ pub const DEFAULT_MAX_CAPTURE_BYTES: usize = 16 * 1024 * 1024;
 ///     .stdout(BigSubprocessOutputMode::Capture)
 ///     .build();
 ///
-/// let r = spec.resolved();
+/// let r = spec.try_resolved().unwrap();
 /// assert_eq!(r.program, "ffprobe");
 /// assert_eq!(r.timeout_ms, 10_000);
 /// ```
@@ -201,40 +189,9 @@ impl<S: big_subprocess_spec_builder::State> BigSubprocessSpecBuilder<S> {
         }
         self
     }
-
-    /// Set a single environment override `key=value`.
-    pub fn env(mut self, key: impl Into<OsString>, value: impl Into<OsString>) -> Self {
-        self.env_overrides.push((key.into(), value.into()));
-        self
-    }
-
-    /// Add a substring to redact from captured output.
-    pub fn redact(mut self, needle: impl Into<String>) -> Self {
-        self.redact_substrings.push(needle.into());
-        self
-    }
-
-    /// Convenience: install an allow-list constructed from an iterator.
-    pub fn allow_list<I, T>(
-        self,
-        items: I,
-    ) -> BigSubprocessSpecBuilder<big_subprocess_spec_builder::SetAllow<S>>
-    where
-        I: IntoIterator<Item = T>,
-        T: Into<String>,
-        S::Allow: big_subprocess_spec_builder::IsUnset,
-    {
-        self.allow(BigSubprocessAllowList::new(items))
-    }
 }
 
 impl BigSubprocessSpec {
-    /// Largest single stdout/stderr capture the runtime will retain.
-    pub const DEFAULT_MAX_CAPTURE_BYTES: usize = DEFAULT_MAX_CAPTURE_BYTES;
-
-    /// Default timeout when caller does not set one explicitly.
-    pub const DEFAULT_TIMEOUT: Duration = DEFAULT_TIMEOUT;
-
     /// Validate and resolve. Errors when the program is empty or fails
     /// the allow-list.
     ///
@@ -289,18 +246,6 @@ impl BigSubprocessSpec {
         })
     }
 
-    /// Resolve, panicking on invalid spec. Use in tests and contexts where
-    /// the spec is statically known to be valid.
-    ///
-    /// # Panics
-    ///
-    /// Panics if [`Self::try_resolved`] returns an error.
-    #[must_use]
-    pub fn resolved(&self) -> BigSubprocessResolved {
-        self.try_resolved()
-            .expect("BigSubprocessSpec must validate")
-    }
-
     /// Spawn the subprocess synchronously and wait for completion.
     ///
     /// Captures stdout/stderr if their modes are [`BigSubprocessOutputMode::Capture`].
@@ -351,72 +296,17 @@ impl BigSubprocessSpec {
         run_resolved(self, &resolved, cancel)
     }
 
-    /// Run with bounded, incremental stderr observation on the supervising
-    /// thread. The observer MUST NOT block (use try_send for progress); its I/O
-    /// error cancels the process group. Bytes are untrusted and unredacted here:
-    /// parse only protocol fields, never forward them wholesale to logs/UI.
-    /// Capture limits still apply and truncation is never reported as success.
-    pub fn run_cancellable_with_stderr(
-        &self,
-        cancel: &AtomicBool,
-        observer: &mut dyn FnMut(&[u8]) -> std::io::Result<()>,
-    ) -> Result<BigSubprocessOutput, BigSubprocessError> {
-        self.try_resolved()?;
-        #[cfg(target_os = "linux")]
-        {
-            linux_exec::run_observed(self, cancel, observer)
-        }
-        #[cfg(not(target_os = "linux"))]
-        {
-            let _ = (cancel, observer);
-            Err(BigSubprocessError::Io(std::io::Error::new(
-                std::io::ErrorKind::Unsupported,
-                "bounded observation requires Linux",
-            )))
-        }
-    }
-
-    /// Spawn the subprocess without waiting and return a
-    /// [`BigSubprocessChild`] handle for streaming and lifecycle control.
-    ///
-    /// Use this for long-running children (media players, transcoders,
-    /// daemons) that out-live a single `run()` call or whose output must be
-    /// consumed incrementally. argv / allow-list / forbidden-byte
-    /// validation applies exactly as in [`Self::run`], but the spec
-    /// `timeout` is **not** enforced — the caller owns the child's lifetime
-    /// via the returned handle.
-    ///
-    /// stdin/stdout/stderr follow the spec's modes; piped streams are
-    /// exposed via [`BigSubprocessChild::take_stdout`] / `take_stderr` /
-    /// `take_stdin`. Any `stdin` payload set on the spec is **not**
-    /// auto-written here.
-    ///
-    /// # Errors
-    ///
-    /// Returns [`BigSubprocessError::EmptyProgram`],
-    /// [`BigSubprocessError::ProgramNotAllowed`], or
-    /// [`BigSubprocessError::ForbiddenArgvByte`] on validation failure, or
-    /// [`BigSubprocessError::Spawn`] if the process cannot be started.
-    pub fn spawn(&self) -> Result<BigSubprocessChild, BigSubprocessError> {
-        self.try_resolved()?;
-        let child = build_command(self)
-            .spawn()
-            .map_err(BigSubprocessError::Spawn)?;
-        notify_spawn_observer(child.id(), &self.program);
-        Ok(BigSubprocessChild { child })
-    }
-
     /// Spawn fully detached (fire-and-forget) for launching helper programs
     /// (`xdg-open`, an external editor) where the parent neither reads
     /// output nor waits.
     ///
     /// stdin/stdout/stderr are redirected to null regardless of the spec's
     /// capture modes; a bounded shared worker reaps the child. Validation
-    /// applies as in [`Self::spawn`].
+    /// applies as in [`Self::run`].
     ///
     /// # Errors
     ///
-    /// As [`Self::spawn`].
+    /// As [`Self::run`].
     pub fn spawn_detached(&self) -> Result<(), BigSubprocessError> {
         use std::process::Stdio;
         self.try_resolved()?;
@@ -426,107 +316,8 @@ impl BigSubprocessSpec {
         cmd.stdout(Stdio::null());
         cmd.stderr(Stdio::null());
         let detached_child = cmd.spawn().map_err(BigSubprocessError::Spawn)?;
-        let pid = detached_child.id();
         permit.defer(detached_child);
-        notify_spawn_observer(pid, &self.program);
         Ok(())
-    }
-}
-
-/// Process-wide spawn observer: every successful spawn from this crate
-/// (run / spawn / spawn_detached) reports `(pid, program)` here. One
-/// consumer per process, set once (first call wins) — designed for
-/// multi-app hosts (big-host) that route engine children into per-module
-/// cgroup scopes. Spawns can happen on worker threads, so the observer
-/// must be `Send + Sync` and cheap.
-/// Boxed `(pid, program)` callback type for [`set_spawn_observer`].
-pub type BigSpawnObserver = Box<dyn Fn(u32, &str) + Send + Sync>;
-
-static SPAWN_OBSERVER: std::sync::OnceLock<BigSpawnObserver> = std::sync::OnceLock::new();
-
-/// Install the process-wide spawn observer. Later calls are ignored.
-pub fn set_spawn_observer(observer: impl Fn(u32, &str) + Send + Sync + 'static) {
-    let _ = SPAWN_OBSERVER.set(Box::new(observer));
-}
-
-pub(crate) fn notify_spawn_observer(pid: u32, program: &str) {
-    if let Some(observer) = SPAWN_OBSERVER.get() {
-        observer(pid, program);
-    }
-}
-
-/// Handle to a running child spawned via [`BigSubprocessSpec::spawn`].
-///
-/// The caller owns the lifecycle: read the exposed pipes, then
-/// [`Self::wait`] (or poll with [`Self::try_wait`]) or [`Self::kill`].
-/// Dropping the handle without waiting leaves the child running and, on
-/// Unix, unreaped until this process exits — call `wait`/`kill` explicitly.
-#[derive(Debug)]
-
-pub struct BigSubprocessChild {
-    child: std::process::Child,
-}
-
-impl BigSubprocessChild {
-    /// OS process id of the child.
-    #[must_use]
-    pub fn id(&self) -> u32 {
-        self.child.id()
-    }
-
-    /// Take the captured stdout pipe (present only when the spec's stdout
-    /// mode is [`BigSubprocessOutputMode::Capture`]). Returns `None` after
-    /// the first take.
-    #[must_use]
-    pub fn take_stdout(&mut self) -> Option<std::process::ChildStdout> {
-        self.child.stdout.take()
-    }
-
-    /// Take the captured stderr pipe; see [`Self::take_stdout`].
-    #[must_use]
-    pub fn take_stderr(&mut self) -> Option<std::process::ChildStderr> {
-        self.child.stderr.take()
-    }
-
-    /// Take the stdin pipe (present only when the spec set a `stdin`
-    /// payload). Returns `None` after the first take.
-    #[must_use]
-    pub fn take_stdin(&mut self) -> Option<std::process::ChildStdin> {
-        self.child.stdin.take()
-    }
-
-    /// Poll without blocking. Returns `Ok(None)` while the child runs.
-    ///
-    /// # Errors
-    ///
-    /// Returns [`BigSubprocessError::Io`] on a wait syscall failure.
-    pub fn try_wait(&mut self) -> Result<Option<BigSubprocessStatus>, BigSubprocessError> {
-        self.child
-            .try_wait()
-            .map(|opt| opt.map(|status| BigSubprocessStatus::Exited(status.code())))
-            .map_err(BigSubprocessError::Io)
-    }
-
-    /// Block until the child exits.
-    ///
-    /// # Errors
-    ///
-    /// Returns [`BigSubprocessError::Io`] on a wait syscall failure.
-    pub fn wait(&mut self) -> Result<BigSubprocessStatus, BigSubprocessError> {
-        self.child
-            .wait()
-            .map(|status| BigSubprocessStatus::Exited(status.code()))
-            .map_err(BigSubprocessError::Io)
-    }
-
-    /// Kill the child (best-effort; idempotent on an already-exited child).
-    ///
-    /// # Errors
-    ///
-    /// Returns [`BigSubprocessError::Io`] if the kill syscall fails for a
-    /// still-running child.
-    pub fn kill(&mut self) -> Result<(), BigSubprocessError> {
-        self.child.kill().map_err(BigSubprocessError::Io)
     }
 }
 
@@ -781,13 +572,5 @@ mod review_allow_list_tests {
         let policy = BigSubprocessAllowList::default();
         assert!(!policy.permits("sh"));
         assert!(!policy.permits("/usr/bin/true"));
-    }
-
-    #[test]
-    fn permission_matches_the_exact_executable() {
-        let policy = BigSubprocessAllowList::new(["pactl"]);
-        assert!(policy.permits("pactl"));
-        assert!(!policy.permits("/tmp/pactl"));
-        assert!(!policy.permits("sh"));
     }
 }

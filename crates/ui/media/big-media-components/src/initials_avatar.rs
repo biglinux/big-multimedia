@@ -22,72 +22,7 @@ struct AvatarTextExtents {
     y_bearing: f64,
 }
 
-/// Build a circular [`gtk::DrawingArea`] showing the initials extracted from `name`.
-///
-/// Background color is derived from an internal deterministic hash-to-HSL mapping so the same name
-/// always paints the same hue; the foreground is opaque white. Suitable as
-/// a `prefix` widget on `adw::ActionRow`.
-///
-/// # Examples
-///
-/// ```ignore
-/// use big_media_components::initials_avatar::initials_widget;
-///
-/// let widget = initials_widget("Big Radio", 32);
-/// row.add_prefix(&widget);
-/// ```
-#[must_use]
-pub fn initials_widget(name: &str, size: i32) -> gtk::DrawingArea {
-    let initials = extract_initials(name);
-    let (r, g, b) = color_for_name(name);
-
-    let area = gtk::DrawingArea::builder()
-        .content_width(size)
-        .content_height(size)
-        .halign(gtk::Align::Center)
-        .valign(gtk::Align::Center)
-        .build();
-
-    area.set_draw_func(move |_area, cr, width, height| {
-        let circle = avatar_circle(width, height, 0.5);
-
-        cr.arc(
-            circle.center_x,
-            circle.center_y,
-            circle.radius,
-            0.0,
-            full_circle_radians(),
-        );
-        cr.set_source_rgb(r, g, b);
-        let _ = cr.fill();
-
-        cr.set_source_rgb(1.0, 1.0, 1.0);
-        cr.select_font_face(
-            "sans-serif",
-            gtk::cairo::FontSlant::Normal,
-            gtk::cairo::FontWeight::Bold,
-        );
-        cr.set_font_size(avatar_font_size(width));
-        if let Ok(extents) = cr.text_extents(&initials) {
-            let (x, y) = centered_text_origin(
-                circle.center_x,
-                circle.center_y,
-                AvatarTextExtents {
-                    width: extents.width(),
-                    height: extents.height(),
-                    x_bearing: extents.x_bearing(),
-                    y_bearing: extents.y_bearing(),
-                },
-            );
-            cr.move_to(x, y);
-            let _ = cr.show_text(&initials);
-        }
-    });
-
-    area
-}
-
-/// Render the same avatar as [`initials_widget`] into a HiDPI [`gtk::gdk::Texture`].
+/// Render an initials avatar into a HiDPI [`gtk::gdk::Texture`].
 ///
 /// The texture is rasterized at `2× size` pixels using cairo and wrapped in
 /// a [`gtk::gdk::MemoryTexture`]. Returns [`None`] if surface allocation or

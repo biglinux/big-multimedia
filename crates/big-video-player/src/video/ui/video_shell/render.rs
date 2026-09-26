@@ -11,7 +11,6 @@ pub(super) struct VideoRealizeOptions {
     pub(super) audio_output: String,
     pub(super) initial_volume: f64,
     pub(super) volume_max: i64,
-    pub(super) muted: bool,
     /// Video output mode (settings `render-mode`): `"auto"` (default — best GL
     /// backend + software fallback on failure), `"gl"` (force GL/offload), `"sw"`
     /// (force the software/no-GL render path).
@@ -21,9 +20,9 @@ pub(super) struct VideoRealizeOptions {
 }
 
 /// On content realize, pick the best video backend, bring up mpv, and wire the
-/// render path. Mirrors the god-object's `setup_realize_handler` + `init_mpv`.
+/// render path.
 ///
-/// `realize_host` is the mountable content (ADR D14), NOT a window: the GL
+/// `realize_host` is the mountable content, NOT a window: the GL
 /// backend needs only a `gdk::Display` (per-screen, identical for any widget) +
 /// the overlay/gl_area, so mpv comes up whenever the content realizes in
 /// whatever window hosts it.
@@ -71,16 +70,10 @@ pub(super) fn wire_realize(
         };
         mpv_backend.set_volume_max(realize_options.volume_max);
         mpv_backend.set_volume(realize_options.initial_volume);
-        if realize_options.muted {
-            mpv_backend.set_mute(true);
-        }
-        // Preferences only push these on change; without this a restart
-        // silently falls back to mpv's defaults.
-        let settings = &realize_options.settings;
-        mpv_backend.set_loop_mode(&settings.get_string(keys::LOOP_MODE));
-        mpv_backend.set_save_position(settings.get_bool(keys::RESUME_PLAYBACK));
-        mpv_backend.set_keep_open(&settings.get_string(keys::KEEP_OPEN));
-        mpv_backend.set_keep_open_pause(settings.get_bool(keys::KEEP_OPEN_PAUSE));
+        crate::video::ui::preferences::apply_saved_preferences(
+            &mpv_backend,
+            &realize_options.settings,
+        );
         mpv.replace(Some(mpv_backend.clone()));
 
         // mpv events → shell input.
@@ -198,7 +191,6 @@ fn wire_render(
         // to build the mpv render context but does not release it; leaving it
         // current on the main thread collides with GTK's own GSK GL renderer
         // (frozen UI + no video, while audio keeps playing on its own thread).
-        // The god-object cleared it explicitly here — do the same.
         gtk::gdk::GLContext::clear_current();
         return;
     }
@@ -413,9 +405,6 @@ fn render_glarea_frame(fast_render_context_slot: &FastRenderContextSlot, gl_area
     let Some(fast_render_context) = fast_context_borrow.as_ref() else {
         return;
     };
-    if skip_mpv_render() {
-        return;
-    }
     // A GTK resize/expose request must redraw even while mpv is paused.
     // Still service update() with the area's GL context current.
     let _ = fast_render_context.has_new_frame();
@@ -447,12 +436,7 @@ pub(super) fn wire_close(
     let settings = settings.clone();
     window.connect_close_request(move |_| {
         if let Some(mpv) = mpv.borrow().as_ref() {
-            // Save while the file is still loaded. mpv's own save-on-quit runs
-            // in teardown after playback stopped and would overwrite it empty.
-            if settings.get_bool(keys::RESUME_PLAYBACK) {
-                mpv.write_watch_later_config();
-            }
-            mpv.set_save_position(false);
+            mpv.save_resume_position();
             mpv.shutdown_audio();
         }
         settings.flush();

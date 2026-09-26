@@ -163,21 +163,9 @@ pub fn strip_decoration_icon() {
     let Some(layout) = settings.gtk_decoration_layout() else {
         return;
     };
-    let raw = layout.as_str();
-    if !raw.contains("icon") {
-        return;
+    if layout.contains("icon") {
+        settings.set_gtk_decoration_layout(Some(&strip_icon_from_layout(&layout)));
     }
-    let cleaned: String = raw
-        .split(':')
-        .map(|side| {
-            side.split(',')
-                .filter(|tok| *tok != "icon")
-                .collect::<Vec<_>>()
-                .join(",")
-        })
-        .collect::<Vec<_>>()
-        .join(":");
-    settings.set_gtk_decoration_layout(Some(&cleaned));
 }
 
 pub struct AboutDialogConfig {
@@ -204,8 +192,6 @@ pub fn build_about_dialog(about_dialog_config: &AboutDialogConfig) -> adw::About
     builder.build()
 }
 
-// Pure logic extracted for testability — see `strip_decoration_icon`.
-#[cfg(test)]
 fn strip_icon_from_layout(raw: &str) -> String {
     raw.split(':')
         .map(|side| {

@@ -1,8 +1,6 @@
 //! Settings-bound adapters for generic media preference rows.
 //! bigagents: app-local-adapter; generic row widgets live in big-media-components.
 
-pub use big_media_components::preference_rows::AdvancedWidgets;
-
 use crate::settings::Settings;
 
 pub fn add_switch_row(
@@ -37,7 +35,7 @@ pub fn add_combo_row(
     key: &str,
     settings: &Settings,
     on_change: impl Fn(&str) + 'static,
-) -> adw::ActionRow {
+) -> adw::ComboRow {
     let current = settings.string(key);
     let idx = values
         .iter()
@@ -45,7 +43,7 @@ pub fn add_combo_row(
         .unwrap_or(0) as u32;
     let s = settings.clone();
     let k = key.to_string();
-    let row = big_media_components::preference_rows::combo_row(
+    big_media_components::preference_rows::combo_row(
         group,
         title,
         subtitle,
@@ -57,9 +55,7 @@ pub fn add_combo_row(
                 on_change(val);
             }
         },
-    );
-    let (root, _dropdown) = row.into_parts();
-    root
+    )
 }
 
 #[allow(clippy::too_many_arguments)]

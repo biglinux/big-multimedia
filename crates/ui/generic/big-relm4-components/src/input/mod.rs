@@ -2,22 +2,16 @@
 
 pub mod adjust_panel;
 pub mod button_content;
-pub mod combo_row;
 pub mod debounce;
-pub mod dropdown;
 pub mod dropdown_row;
 pub mod illustrated_slider_row;
 pub mod inline_spin_set;
-pub mod labeled_scale_row;
 pub mod preference_cards;
-pub mod revealed_entry_row;
 pub mod scale_popover;
 pub mod scale_trough;
 pub mod shortcut_capture;
 pub mod shortcut_dialog;
-pub mod slider_row;
 pub mod spin_row;
-pub mod switch;
 /// Display-free zone-layout model, re-exported from `big-app-kit-core` so the
 /// spec layer owns it GTK-free while every `big_relm4_components::input::zone_layout::*`
 /// consumer path keeps working. The GTK editor ([`zone_layout_editor`]) and the

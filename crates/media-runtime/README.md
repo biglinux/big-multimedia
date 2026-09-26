@@ -1,50 +1,34 @@
 # big-media-runtime
 
-Shared GPL runtime for BigLinux multimedia apps.
+GPL media engine shared by `big-audio-player` and `big-video-player`: the
+libmpv backend and render paths, cast (BigNetScreen daemon client and the
+optional built-in Chromecast sender), media probing and playlist scanning,
+settings adapters, and the helpers both players share. The GTK-free data
+services (SQLite library, settings store, radio/podcast clients) live in
+`crates/foundation/big-media-data` and are re-exported here under their old
+module paths.
 
-This repository holds code that is shared by:
+Conversion is not part of this crate: `shared::converter_handoff` opens the
+external converter GUIs with the file and the marked cuts.
 
-- `big-video-player`
-- `big-audio-player`
-- `big-video-converter`
-- `big-audio-converter`
+## Features
 
-Generic components stay in
-[big-multimedia](https://github.com/biglinux/big-multimedia). This
-runtime may depend on those crates, but it should not live inside that repo
-because it contains product-specific multimedia application code.
+| Feature | Pulls in |
+|---|---|
+| (default) | GTK- and mpv-free: data re-exports and GPU probing |
+| `ui-core` | GTK/relm4/libmpv stack plus the modules both players need |
+| `audio` | `ui-core` + SQLite music library and radio data |
+| `video` | `ui-core` + mpv GL render pipeline (DMA-BUF offload, shaders) |
+| `ui` | `audio` + `video` |
+| `chromecast` | `ui-core` + built-in CASTV2 sender (`rust_cast`) |
+| `fuzz` | slow property tests (`tests/filter_chain_props.rs`) |
 
-## Boundary
+## Resources and translations
 
-- Keep mpv backend, converter queues/profiles/FFmpeg command generation,
-  Chromecast, music library, settings store, and multimedia-specific backend
-  workflows here.
-- Keep app launch, windows, dialogs, sidebars, and converter UI flows in the
-  owning app repositories.
-- Move reusable UI widgets, file pickers, task runners, rows, dialogs, media
-  formatting helpers, and audio-effect contracts to `big-multimedia` when
-  they are useful outside these four apps.
-- Do not copy shared runtime code into app repositories.
+`build.rs` compiles `data/resources` (video) and `data/audio-resources`
+(audio) into GResource bundles exposed by `resources`. `po/` holds the single
+gettext catalog for the whole workspace; regenerate the template with
+`po/regen-pot.sh`.
 
-## Build
-
-```bash
-cargo build --locked
-```
-
-Quality gate:
-
-```bash
-cargo fmt --all -- --check
-cargo clippy --workspace --all-targets --all-features -- -D warnings
-cargo nextest run --workspace --all-features    # or: cargo test --all-features --workspace
-RUSTDOCFLAGS="-D warnings" cargo doc --workspace --no-deps --all-features
-cargo deny check
-cargo audit -D warnings
-cargo machete --with-metadata
-```
-
-`cargo semver-checks --workspace` and `cargo miri test --lib` also run in CI.
-Run the full block before release or after dependency, security,
-native-library, or public API changes. See `AGENTS.md` for the agent-facing
-map and `REVIEW.md` for the reproduce commands.
+See [ARCHITECTURE.md](ARCHITECTURE.md) for the module map and the
+subprocess rules.

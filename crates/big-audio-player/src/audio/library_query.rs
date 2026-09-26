@@ -1,9 +1,7 @@
 //! Pure (GTK-free) library node → track resolution for the Relm4 `AudioShell`.
 //!
-//! Mirrors the god-object `window::library::query::query_tracks_for_node` but
-//! lives outside `window/` so it survives the cutover. The shell runs these off
-//! the read-only DB connection and pushes the result into the library panel as
-//! `PopulateDetail`.
+//! The shell runs these off the read-only DB connection and pushes the result
+//! into the library panel as `PopulateDetail`.
 
 use crate::audio::browser_node::BrowserNodeKind;
 use crate::audio::library_grouping::{GroupBy, LibraryGrouping};
@@ -104,7 +102,6 @@ pub(crate) fn query_tracks_for_node(
 
 /// Build the full nested library tree (the `SetLibraryTree` payload) from the
 /// group + recursive child queries — the producer side of the atomic preload.
-/// Mirrors `window::library::{rebuild,populate,preload}` but emits pure data.
 pub(crate) fn try_build_library_tree_snapshot(
     conn: &rusqlite::Connection,
     grouping: &LibraryGrouping,

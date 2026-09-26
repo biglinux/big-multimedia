@@ -28,13 +28,6 @@ impl BigSidebarHeaderSpec {
         }
     }
 
-    /// Set whether libadwaita should show title controls.
-    #[must_use]
-    pub fn show_title(mut self, show_title: bool) -> Self {
-        self.show_title = show_title;
-        self
-    }
-
     /// Add one CSS class to the header.
     #[must_use]
     pub fn css_class(mut self, css_class: impl Into<String>) -> Self {
@@ -95,16 +88,5 @@ mod tests {
         assert_eq!(spec.title, "Files");
         assert!(spec.show_title);
         assert!(spec.css_classes.is_empty());
-    }
-
-    #[test]
-    fn spec_records_title_visibility_and_css_class() {
-        let spec = BigSidebarHeaderSpec::new("Playlist")
-            .show_title(false)
-            .css_class("flat");
-
-        assert_eq!(spec.title, "Playlist");
-        assert!(!spec.show_title);
-        assert_eq!(spec.css_classes, ["flat"]);
     }
 }

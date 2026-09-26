@@ -1,7 +1,6 @@
-//! Property tests for `GateDerived`, `CompressorDerived`, EQ preset round-trip.
+//! Property tests for `GateDerived` and `CompressorDerived`.
 
 use big_audio_effects::dynamics::{CompressorDerived, GateDerived};
-use big_audio_effects::equalizer::{EQ_PRESET_IDS, EQ_PRESET_LABELS, eq_preset_index};
 use proptest::prelude::*;
 
 proptest! {
@@ -77,18 +76,4 @@ proptest! {
         let c = CompressorDerived::from_unit_intensity(t);
         prop_assert!(c.ratio >= 2.0 - 1e-9 && c.ratio <= 6.0 + 1e-9);
     }
-}
-
-// EQ preset id ↔ label round-trip — index from id matches label position.
-#[test]
-fn eq_preset_index_round_trip() {
-    assert_eq!(EQ_PRESET_IDS.len(), EQ_PRESET_LABELS.len());
-    for (idx, id) in EQ_PRESET_IDS.iter().enumerate() {
-        assert_eq!(eq_preset_index(id), idx, "round-trip failed for {id}");
-        // every label is non-empty
-        assert!(!EQ_PRESET_LABELS[idx].is_empty(), "label {idx} empty");
-    }
-    // unknown id → 0 (flat)
-    assert_eq!(eq_preset_index(""), 0);
-    assert_eq!(eq_preset_index("nonexistent-preset-xyz"), 0);
 }

@@ -1,9 +1,10 @@
 use big_relm4_components::input::button_content::{BigButtonContentSpec, build_button};
 
+use super::panel::PanelPage;
 use super::*;
 
 pub(super) fn install_window_actions(
-    // The `win.*` actions are inserted on the content Root (ADR D14) so they
+    // The `win.*` actions are inserted on the content Root so they
     // travel with the content into whatever window hosts it.
     content: &adw::ToastOverlay,
     sender: &ComponentSender<VideoShell>,
@@ -25,10 +26,18 @@ pub(super) fn install_window_actions(
         ("preferences", || VideoShellInput::ShowPreferences),
         ("appearance", || VideoShellInput::ShowAppearance),
         ("restore-defaults", || VideoShellInput::ShowRestoreDefaults),
-        ("filters", || VideoShellInput::ShowFiltersDialog),
-        ("show-equalizer", || VideoShellInput::ShowEqualizer),
-        ("show-delay", || VideoShellInput::ShowDelay),
-        ("show-image-adjust", || VideoShellInput::ShowImageAdjust),
+        ("settings", || VideoShellInput::TogglePanel),
+        ("filters", || VideoShellInput::ShowPanel(PanelPage::Effects)),
+        ("show-image-adjust", || {
+            VideoShellInput::ShowPanel(PanelPage::Picture)
+        }),
+        ("show-hdr", || VideoShellInput::ShowPanel(PanelPage::Hdr)),
+        ("show-framing", || {
+            VideoShellInput::ShowPanel(PanelPage::Framing)
+        }),
+        ("show-sound", || {
+            VideoShellInput::ShowPanel(PanelPage::Sound)
+        }),
         ("ytdl-quality", || VideoShellInput::ShowYtdlQuality),
         ("media-info", || VideoShellInput::ShowMediaInfo),
         ("iptv", || VideoShellInput::ShowIptvBrowser),
@@ -37,8 +46,12 @@ pub(super) fn install_window_actions(
         }),
         ("goto-time", || VideoShellInput::ShowGotoTime),
         ("screenshot", || VideoShellInput::Screenshot),
-        ("chapters", || VideoShellInput::ShowChapters),
-        ("sleep-timer", || VideoShellInput::ShowSleepTimer),
+        ("chapters", || {
+            VideoShellInput::ShowPanel(PanelPage::Chapters)
+        }),
+        ("sleep-timer", || {
+            VideoShellInput::ShowPanel(PanelPage::SleepTimer)
+        }),
         ("trim", || VideoShellInput::EnterTrimMode),
         ("trim-mark", || VideoShellInput::TrimMark),
         ("trim-exit", || VideoShellInput::ExitTrimMode),
@@ -50,7 +63,6 @@ pub(super) fn install_window_actions(
         let message = *message;
         big_app_kit::desktop::install_action(&actions, name, move || sender.input(message()));
     }
-    #[cfg(feature = "chromecast")]
     {
         let sender = sender.clone();
         big_app_kit::desktop::install_action(&actions, "cast", move || {
@@ -90,7 +102,7 @@ pub(super) fn set_action_enabled(actions: &gio::SimpleActionGroup, name: &str, e
 }
 
 /// Build the centered welcome screen (icon + title + subtitle + Open File /
-/// Open Recent / Open URL). Mirrors the old `setup_welcome_screen`; buttons
+/// Open Recent / Open URL); buttons
 /// fire the `win.*` actions installed by [`install_window_actions`].
 pub(super) fn build_welcome_screen(sender: &ComponentSender<VideoShell>) -> gtk::Box {
     let container = gtk::Box::builder()
@@ -178,7 +190,7 @@ fn welcome_button(
 
 /// Toggle the active window's keep-above state via the compositor, off the GTK
 /// main thread. Tries the KWin global shortcut first, falls back to wmctrl.
-/// Mirrors the legacy keep-above toggle handler. Argv arrays only (no shell).
+/// Argv arrays only (no shell).
 pub(super) fn toggle_keep_above() {
     use big_app_kit::subprocess::BigSubprocessSpec;
     big_media_components::player_chrome::spawn_blocking_task(move || {

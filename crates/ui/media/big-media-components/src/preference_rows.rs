@@ -6,17 +6,8 @@
 
 use adw::prelude::*;
 use big_relm4_components::feedback::tooltip;
-use big_relm4_components::input::dropdown_row::{BigDropdownRow, BigDropdownRowSpec};
 use big_relm4_components::list::button_strip_row::{BigButtonStripRow, BigButtonStripRowSpec};
 use gtk::gdk;
-use std::cell::RefCell;
-use std::rc::Rc;
-
-/// Shared mutable list of widgets toggled by an app-level Advanced switch.
-///
-/// Apps push widgets that should only be visible in "Advanced" mode into
-/// this list and then flip them through a single toggle handler.
-pub type AdvancedWidgets = Rc<RefCell<Vec<gtk::Widget>>>;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 struct PreferenceSwitchRowSpec {
@@ -92,7 +83,7 @@ pub fn switch_row(
     row
 }
 
-/// Append a shared dropdown preference row with `labels` and selection `selected`.
+/// Append an [`adw::ComboRow`] listing `labels` with `selected` chosen.
 pub fn combo_row(
     group: &adw::PreferencesGroup,
     title: &str,
@@ -100,12 +91,17 @@ pub fn combo_row(
     labels: &[&str],
     selected: u32,
     on_change: impl Fn(u32) + 'static,
-) -> BigDropdownRow {
-    let spec = combo_row_spec(title, subtitle, labels, selected);
-    let row = BigDropdownRow::new(spec);
-    row.dropdown()
-        .connect_selected_notify(move |dropdown| on_change(dropdown.selected()));
-    group.add(row.root());
+) -> adw::ComboRow {
+    let row = adw::ComboRow::builder()
+        .title(title)
+        .model(&gtk::StringList::new(labels))
+        .selected(selected.min(labels.len().saturating_sub(1) as u32))
+        .build();
+    if !subtitle.is_empty() {
+        row.set_subtitle(subtitle);
+    }
+    row.connect_selected_notify(move |row| on_change(row.selected()));
+    group.add(&row);
     row
 }
 
@@ -234,19 +230,6 @@ fn switch_row_spec(title: &str, subtitle: &str, active: bool) -> PreferenceSwitc
     }
 }
 
-fn combo_row_spec(
-    title: &str,
-    subtitle: &str,
-    labels: &[&str],
-    selected: u32,
-) -> BigDropdownRowSpec {
-    let mut spec = BigDropdownRowSpec::new(title, labels.iter().copied()).selected(selected);
-    if let Some(subtitle) = optional_non_empty_text(subtitle) {
-        spec = spec.subtitle(subtitle);
-    }
-    spec
-}
-
 fn spin_int_row_spec(
     title: &str,
     subtitle: &str,
@@ -330,8 +313,8 @@ fn spin_page_increment(step: f64) -> f64 {
 #[cfg(test)]
 mod tests {
     use super::{
-        combo_row_spec, entry_row_spec, mpv_color_row_spec, mpv_to_rgba, optional_non_empty_text,
-        rgba_to_mpv, spin_double_row_spec, spin_int_row_spec, spin_page_increment, switch_row_spec,
+        entry_row_spec, mpv_color_row_spec, mpv_to_rgba, optional_non_empty_text, rgba_to_mpv,
+        spin_double_row_spec, spin_int_row_spec, spin_page_increment, switch_row_spec,
     };
 
     #[test]
@@ -353,7 +336,7 @@ mod tests {
     }
 
     #[test]
-    fn switch_and_combo_specs_preserve_subtitle_and_selection_contracts() {
+    fn switch_spec_preserves_subtitle_contract() {
         let switch_spec = switch_row_spec("Shuffle", "Keep current track first", true);
         assert_eq!(switch_spec.title, "Shuffle");
         assert_eq!(
@@ -361,12 +344,6 @@ mod tests {
             Some("Keep current track first".to_string())
         );
         assert!(switch_spec.active);
-
-        let combo_spec = combo_row_spec("Output", "", &["Join", "Separate"], 1);
-        assert_eq!(combo_spec.title, "Output");
-        assert_eq!(combo_spec.subtitle, None);
-        assert_eq!(combo_spec.labels, ["Join", "Separate"]);
-        assert_eq!(combo_spec.selected, 1);
     }
 
     #[test]

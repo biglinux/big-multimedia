@@ -9,91 +9,32 @@ use big_relm4_components::layout::{
 };
 
 impl VideoShell {
-    /// Present the cast device picker in a dialog (same mount/unparent pattern
-    /// as the IPTV browser: the controller's widget is long-lived).
-    #[cfg(feature = "chromecast")]
+    /// "Play on a TV": hand the loaded video, where it is now, to a
+    /// Chromecast or DLNA TV, pausing it here once the TV plays.
     pub(super) fn show_cast_dialog(&self, root: &adw::ApplicationWindow) {
-        present_controller_dialog(self.cast.widget(), &i18n("Cast to Device"), 400, 420, root);
-        // Restart discovery + the poll timer (the timer stops on close).
-        self.cast
-            .emit(crate::video::ui::cast::VideoCastDialogInput::Reopened);
-    }
-
-    /// Launch a fresh filters dialog bound to the live mpv backend and present
-    /// it. Requires mpv to be up (the dialog reads/writes the filter chain); a
-    /// no-op before the surface realizes. Launched per-open and `.detach()`ed —
-    /// it owns no playback state, so a new instance each time is clean.
-    pub(super) fn show_filters_dialog(&self, root: &adw::ApplicationWindow) {
-        let Some(mpv) = self.mpv.borrow().as_ref().map(Arc::clone) else {
-            return;
-        };
-        #[cfg(feature = "chromecast")]
-        let on_filter_changed = {
-            let cast_sync = self.cast.model().filter_sync();
-            let snapshot_mpv = self.mpv.clone();
-            let snapshot_settings = self.settings.clone();
-            let snapshot_transform = self.video_transform.clone();
-            Rc::new(move || {
-                let filters = super::cast_snapshot::build_cast_filter_snapshot(
-                    &snapshot_mpv,
-                    &snapshot_settings,
-                    &snapshot_transform,
-                );
-                let position_secs = snapshot_mpv
-                    .borrow()
-                    .as_ref()
-                    .map_or(0.0, |mpv| mpv.get_position());
-                cast_sync(filters, position_secs);
+        use crate::cast::daemon::PlaybackStart;
+        use crate::shared::tv_cast::{TvMedia, present_tv_dialog};
+        let mpv = self.mpv.borrow().clone();
+        let current = mpv.clone();
+        let media = move || {
+            let mpv = current.as_ref()?;
+            Some(TvMedia {
+                source: mpv.get_current_file()?,
+                title: mpv.get_media_title().unwrap_or_default(),
+                audio: false,
+                start: PlaybackStart {
+                    seconds: mpv.get_position(),
+                    paused: false,
+                    volume: (mpv.get_volume() / 100.0).clamp(0.0, 1.0),
+                    muted: mpv.get_mute(),
+                },
             })
         };
-        #[cfg(not(feature = "chromecast"))]
-        let on_filter_changed = Rc::new(|| {});
-        let dialog = VideoFiltersDialog::builder()
-            .launch(VideoFiltersDialogInit {
-                mpv,
-                settings: self.settings.clone(),
-                on_filter_changed,
-            })
-            .detach();
-        let page = BigDialogPage::plain();
-        page.root().set_content(Some(dialog.widget()));
-        let adw_dialog = adw::Dialog::builder()
-            .title(i18n("Video Filters"))
-            .content_width(400)
-            .content_height(560)
-            .child(&page.into_root())
-            .build();
-        // Own the controller for the dialog's lifetime: a `Cell` lets the `Fn`
-        // close handler drop it (taking the runtime down) when the dialog goes
-        // away, without requiring an `FnMut`.
-        let held = std::cell::Cell::new(Some(dialog));
-        adw_dialog.connect_closed(move |_| {
-            held.take();
+        present_tv_dialog(root, media, move || {
+            if let Some(mpv) = &mpv {
+                mpv.pause();
+            }
         });
-        adw_dialog.present(Some(root));
-    }
-
-    /// Present the audio equalizer dialog (shared dialog, persists EQ bands via
-    /// `Settings`, applies to the live mpv backend if up).
-    pub(super) fn show_equalizer_dialog(&self, root: &adw::ApplicationWindow) {
-        let mpv = self.mpv.borrow().as_ref().map(Arc::clone);
-        media_adjust::present_equalizer_dialog(&self.settings, mpv, root);
-    }
-
-    /// Present the audio & subtitle delay dialog. No-op before mpv is up (the
-    /// sliders drive the live backend directly).
-    pub(super) fn show_delay_dialog(&self, root: &adw::ApplicationWindow) {
-        if let Some(mpv) = self.mpv.borrow().as_ref() {
-            media_adjust::present_delay_dialog(mpv, root);
-        }
-    }
-
-    /// Present the image & video adjustment dialog. No-op before mpv is up (the
-    /// sliders read current mpv values and drive the live backend directly).
-    pub(super) fn show_image_adjust_dialog(&self, root: &adw::ApplicationWindow) {
-        if let Some(mpv) = self.mpv.borrow().as_ref() {
-            media_adjust::present_image_adjust_dialog(mpv, &self.video_transform, root);
-        }
     }
 
     pub(super) fn show_ytdl_quality_dialog(&self, root: &adw::ApplicationWindow) {
@@ -321,8 +262,7 @@ impl VideoShell {
 
     /// Present the open-disc entry dialog (DVD / Blu-ray device or ISO/folder).
     /// Validates the device string (rejects empty and the `--` option-injection
-    /// sequence) before forming the mpv `dvd://` / `bd://` URI. Mirrors the old
-    /// `show_open_disc_dialog`.
+    /// sequence) before forming the mpv `dvd://` / `bd://` URI.
     pub(super) fn show_open_disc_dialog(root: &adw::ApplicationWindow) {
         let Some(sender) = shell_input_sender() else {
             log::warn!("video open-disc dialog ignored before shell input registration");
@@ -422,13 +362,28 @@ impl VideoShell {
     }
 
     /// Open the categorized preferences window bound to the live settings + mpv
-    /// backend (rows persist + apply mpv properties live). Mirrors the old
-    /// `show_preferences`.
+    /// backend (rows persist + apply mpv properties live).
     pub(super) fn show_preferences(&self, root: &adw::ApplicationWindow) {
         let mpv = self.mpv.borrow().as_ref().map(Arc::clone);
-        crate::video::ui::preferences::show_preferences(root, &self.settings, mpv, |parent| {
-            Self::show_restore_defaults_dialog(parent);
-        });
+        let dialog = crate::video::ui::preferences::show_preferences(
+            root,
+            &self.settings,
+            mpv,
+            |preferences| {
+                // The preferences show the old values after a reset, so close them.
+                let preferences_ref = preferences.downgrade();
+                Self::show_restore_defaults_dialog(preferences, move || {
+                    if let Some(preferences) = preferences_ref.upgrade() {
+                        preferences.close();
+                    }
+                });
+            },
+        );
+        if let Some(sender) = shell_input_sender() {
+            dialog.connect_closed(move |_| {
+                let _ = sender.send(VideoShellInput::PreferencesClosed);
+            });
+        }
     }
 
     /// Open the appearance dialog (palette + OSD layout + button-layout editor).
@@ -450,44 +405,29 @@ impl VideoShell {
         );
     }
 
-    /// Confirm + reset every setting to its default (restart-required toast in
-    /// the body). Mirrors the old `show_restore_defaults_dialog`.
-    pub(super) fn show_restore_defaults_dialog(parent: &impl IsA<gtk::Widget>) {
+    /// Confirm, then reset every setting to its default; `on_confirmed` runs
+    /// after the reset request is sent.
+    pub(super) fn show_restore_defaults_dialog(
+        parent: &impl IsA<gtk::Widget>,
+        on_confirmed: impl Fn() + 'static,
+    ) {
         let Some(sender) = shell_input_sender() else {
             log::warn!("video restore-defaults dialog ignored before shell input registration");
             return;
         };
-        let dialog = adw::Dialog::builder()
-            .title(i18n("Restore Defaults"))
-            .content_width(460)
-            .content_height(220)
+        let dialog = adw::AlertDialog::builder()
+            .heading(i18n("Restore Default Settings?"))
+            .body(i18n(
+                "Every setting, including appearance, goes back to its default value. Some changes take effect after reopening the player.",
+            ))
+            .default_response("cancel")
+            .close_response("cancel")
             .build();
-        let page = BigDialogPage::plain();
-        page.content().set_spacing(12);
-        page.append_description(&i18n(
-            "Reset all settings to their default values? The application will need to be restarted for all changes to take effect.",
-        ));
-
-        let footer = BigDialogFooter::new(
-            &BigDialogFooterSpec::new(i18n("Cancel"), i18n("Restore"))
-                .with_accept_css_classes(&["destructive-action"]),
-        );
-        page.root().add_bottom_bar(footer.root());
-        dialog.set_child(Some(page.root()));
-
-        let dialog_ref = dialog.downgrade();
-        footer.cancel_button().connect_clicked(move |_| {
-            if let Some(dialog) = dialog_ref.upgrade() {
-                dialog.close();
-            }
-        });
-
-        let dialog_ref = dialog.downgrade();
-        footer.accept_button().connect_clicked(move |_| {
+        dialog.add_responses(&[("cancel", &i18n("Cancel")), ("restore", &i18n("Restore"))]);
+        dialog.set_response_appearance("restore", adw::ResponseAppearance::Destructive);
+        dialog.connect_response(Some("restore"), move |_, _| {
             let _ = sender.send(VideoShellInput::RestoreDefaultsConfirmed);
-            if let Some(dialog) = dialog_ref.upgrade() {
-                dialog.close();
-            }
+            on_confirmed();
         });
         dialog.present(Some(parent));
     }

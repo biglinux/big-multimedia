@@ -1,14 +1,6 @@
-.video-bg {
-  background-color: #000000;
-}
-
 /* Ensure main player window background is black for clean rounded corners */
 window.big-video-player {
   background-color: black;
-}
-
-.osd-overlay {
-  background: transparent;
 }
 
 /* Structural: headerbar padding/shadow only — colors come from apply_appearance() */
@@ -63,11 +55,6 @@ menubutton.osd-btn {
   text-decoration: underline;
 }
 
-.title-label {
-  font-weight: bold;
-  font-size: 14px;
-}
-
 /* Seek bar — uses Adwaita named colors for proper theme integration */
 .seek-scale trough {
   background: alpha(@window_fg_color, 0.25);
@@ -96,19 +83,6 @@ menubutton.osd-btn {
   padding: 4px 14px 0 14px;
 }
 
-/* Playlist rows — use named colors for theme integration */
-.playlist-row {
-  padding: 6px 12px;
-  border-radius: 6px;
-}
-.playlist-row:hover {
-  background: alpha(@window_fg_color, 0.06);
-}
-.playlist-row.playing {
-  background: alpha(@accent_bg_color, 0.15);
-  font-weight: bold;
-}
-
 /* Sidebar resizable drag handle */
 .sidebar-drag-handle {
   background: alpha(@borders, 0.3);
@@ -116,10 +90,6 @@ menubutton.osd-btn {
 }
 .sidebar-drag-handle:hover {
   background: alpha(@accent_bg_color, 0.5);
-}
-
-.popover-menu {
-  padding: 8px;
 }
 
 /* Fullscreen header stays transparent */
@@ -146,22 +116,6 @@ menubutton.osd-btn {
   min-width: 2px;
 }
 
-/* Floating seek tooltip */
-.seek-time-label {
-  background: rgba(0,0,0,0.85);
-  color: #ffffff;
-  border-radius: 6px;
-  padding: 4px;
-  font-size: 12px;
-  font-variant-numeric: tabular-nums;
-}
-.seek-time-text {
-  color: #ffffff;
-  font-size: 12px;
-  font-variant-numeric: tabular-nums;
-  padding: 0 2px;
-}
-
 /* Seek-bar hover preview popover (thumbnail frame + time/chapter).
    Background comes from the theming provider's `popover > contents`
    (@popover_bg_color, USER+1 priority) — so the text MUST follow the theme too,
@@ -178,19 +132,6 @@ menubutton.osd-btn {
   color: @popover_fg_color;
   font-size: 12px;
   font-variant-numeric: tabular-nums;
-  padding: 2px 4px;
-}
-
-/* Prev/Next navigation preview tooltip */
-.nav-preview-tooltip > contents {
-  background: rgba(0,0,0,0.85);
-  border-radius: 6px;
-  padding: 4px;
-  box-shadow: none;
-}
-.nav-preview-tooltip label {
-  color: #ffffff;
-  font-size: 12px;
   padding: 2px 4px;
 }
 
@@ -376,49 +317,9 @@ menubutton.osd-btn {
   border: 1px solid rgba(255,255,255,0.16);
 }
 
-.welcome-btn-secondary {
-  background: rgba(255,255,255,0.05);
-  color: rgba(255,255,255,0.60);
-  border: 1px solid rgba(255,255,255,0.08);
-}
-.welcome-btn-secondary:hover {
-  background: rgba(255,255,255,0.10);
-  color: rgba(255,255,255,0.80);
-  border: 1px solid rgba(255,255,255,0.14);
-}
-
-.welcome-shortcut {
-  font-size: 11px;
-  color: rgba(255,255,255,0.15);
-  font-variant-numeric: tabular-nums;
-}
-
 /* Now Playing (music mode) */
 .now-playing {
   padding: 32px 24px;
-}
-
-.now-playing-art {
-  border-radius: 12px;
-  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.4);
-}
-
-.now-playing-title {
-  font-size: 22px;
-  font-weight: bold;
-  color: rgba(255, 255, 255, 0.95);
-  margin-top: 8px;
-}
-
-.now-playing-artist {
-  font-size: 16px;
-  color: rgba(255, 255, 255, 0.7);
-}
-
-.now-playing-album {
-  font-size: 14px;
-  color: rgba(255, 255, 255, 0.5);
-  font-style: italic;
 }
 
 /* Play button pulse animation (toggle class briefly) */
@@ -431,29 +332,6 @@ menubutton.osd-btn {
   animation: play-pulse 200ms ease-in-out;
 }
 
-/* Right-edge playlist sidebar trigger */
-.sidebar-edge-btn {
-  min-width: 32px;
-  min-height: 150px;
-  padding: 0;
-  margin: 0;
-  border-radius: 8px 0 0 8px;
-  background: rgba(0, 0, 0, 0.35);
-  color: rgba(255, 255, 255, 0.7);
-  border: none;
-  box-shadow: none;
-  opacity: 0.6;
-  transition: opacity 200ms ease, background 200ms ease;
-}
-.sidebar-edge-btn:hover {
-  opacity: 1.0;
-  background: rgba(0, 0, 0, 0.55);
-  color: white;
-}
-.sidebar-edge-btn:active {
-  background: rgba(0, 0, 0, 0.7);
-}
-
 /* ── Idle / Music-mode decorative background ── */
 .idle-bg {
   background-color: #0e0e18;
@@ -463,51 +341,6 @@ menubutton.osd-btn {
     linear-gradient(320deg, rgba(38,162,105,0.12) 0%, transparent 30%),
     linear-gradient(170deg, rgba(192,97,203,0.10) 5%, transparent 40%),
     linear-gradient(90deg, rgba(80,80,120,0.18) 0%, transparent 40%);
-}
-
-/* ── Cast overlay bar ─────────────────────────────────── */
-.cast-overlay-bar {
-  background: alpha(black, 0.78);
-  border-radius: 12px;
-  padding: 8px 14px;
-  margin: 0px 48px;
-  border: 1px solid alpha(white, 0.12);
-}
-.cast-overlay-bar .cast-icon {
-  color: #4fc3f7;
-}
-.cast-overlay-bar .cast-status {
-  font-weight: 600;
-  color: #ffffff;
-  font-size: 0.95em;
-}
-.cast-action-btn {
-  border-radius: 8px;
-  padding: 2px 10px;
-  color: #ffffff;
-}
-.cast-action-btn:hover {
-  background: alpha(white, 0.12);
-}
-.cast-action-btn:checked {
-  background: alpha(@accent_color, 0.35);
-  color: @accent_color;
-}
-.cast-disconnect-btn {
-  border-radius: 8px;
-  padding: 2px 10px;
-  color: #ef5350;
-}
-.cast-disconnect-btn:hover {
-  background: alpha(#ef5350, 0.18);
-}
-
-/* Effects active warning button — amber/orange color */
-.effects-warning-btn {
-  color: #f5a623;
-}
-.effects-warning-btn:hover {
-  color: #ffbf47;
 }
 
 /* Keep keyboard location visible over both light and dark video content. */

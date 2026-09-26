@@ -14,8 +14,6 @@
 //! - [`storage`]: atomic JSON persistence (temp + rename) and a versioned
 //!   forward-migration envelope.
 //! - [`keyring`]: a typed worker-only boundary to libsecret Secret Service.
-//! - [`microdaemon`]: GTK-free versioned frame protocol shared by the small
-//!   per-user daemons that own durable work.
 //!
 //! `big-app-kit` re-exports these modules unchanged, so existing
 //! `big_app_kit::{subprocess, storage, keyring}` paths keep working.
@@ -36,8 +34,6 @@ pub mod digest;
 pub mod http_client;
 /// Worker-only Secret Service access through libsecret's secret-tool.
 pub mod keyring;
-/// Shared microdaemon protocol primitives.
-pub mod microdaemon;
 /// Atomic JSON persistence helpers.
 pub mod storage;
 /// Safe subprocess argv specs and spawn handles.

@@ -1,7 +1,6 @@
-//! App-local OSD controls bar — recovers the old god-object `controls_box`
-//! layout (the minimal `BigVideoTransport` regressed the design).
+//! App-local OSD controls bar.
 //!
-//! Layout (mirrors the old application resource `controls_box`):
+//! Layout:
 //!   • seek row: position label · seek scale · duration label
 //!   • center box:
 //!       START  = volume / speed / voice hover popovers (shared builders)
@@ -12,7 +11,7 @@
 //! intents; the shell owns mpv/settings and pushes display state back via
 //! `VideoControlsBarInput`. The volume/speed/voice popovers drive mpv
 //! directly through callbacks captured at build time (the shell hands the bar a
-//! live `mpv` accessor on `FileLoaded`), matching the old `popovers.rs` wiring.
+//! live `mpv` accessor on `FileLoaded`).
 
 use std::cell::{Cell, RefCell};
 use std::rc::Rc;
@@ -30,6 +29,7 @@ use crate::settings::Settings;
 mod seek_preview;
 mod signals;
 mod tracks;
+
 mod zones;
 
 use seek_preview::{build_seek_preview, wire_seek_hover, wire_thumb_consumer};
@@ -120,7 +120,7 @@ pub enum VideoControlsBarOutput {
     GotoTimeClicked,
 }
 
-/// App-local OSD controls bar (recovers the old `controls_box`).
+/// App-local OSD controls bar.
 pub struct VideoControlsBar {
     position_button: gtk::Button,
     position_label: gtk::Label,
@@ -136,7 +136,7 @@ pub struct VideoControlsBar {
     /// Volume slider + button (bottom-left) and the guard that mirrors external
     /// mixer changes onto them without echoing back to the sound server.
     volume_scale: gtk::Scale,
-    volume_button: gtk::Button,
+    sound: zones::SoundIndicator,
     suppress_volume: std::rc::Rc<std::cell::Cell<bool>>,
     /// Guard so programmatic scrub updates do not echo as user seek intents.
     suppress_seek: Rc<std::cell::Cell<bool>>,
@@ -332,7 +332,7 @@ impl Component for VideoControlsBar {
             hover_popovers,
             readout_labels,
             volume_scale,
-            volume_button,
+            sound,
             suppress_volume,
         } = build_start_box(&init.settings, &init.mpv);
         center.set_start_widget(Some(&start_box));
@@ -410,7 +410,7 @@ impl Component for VideoControlsBar {
             audio_track_menu_button: end_widgets.audio_track_menu_button,
             audio_track_menu_popover: end_widgets.audio_track_menu_popover,
             volume_scale,
-            volume_button,
+            sound,
             suppress_volume,
             suppress_seek,
             mpv: init.mpv,
@@ -496,11 +496,7 @@ impl Component for VideoControlsBar {
                 self.suppress_volume.set(false);
             }
             VideoControlsBarInput::SetMuted(muted) => {
-                self.volume_button.set_icon_name(if muted {
-                    "audio-volume-muted-symbolic"
-                } else {
-                    zones::volume_icon(self.volume_scale.value())
-                });
+                self.sound.show(muted, self.volume_scale.value());
             }
         }
     }

@@ -18,6 +18,30 @@ impl AudioShell {
                     self.handle_mpris_command(MprisCommand::Stop, sender);
                 }
             }
+            // Reason 4 = the track could not be opened. Skip it, but stop once
+            // every queued track failed in a row or the queue would come back
+            // to the same one (repeat-one, a single track).
+            PlayerEvent::EndFile(4) if !self.is_stream => {
+                self.failed_loads += 1;
+                let name = std::path::Path::new(&self.current_file)
+                    .file_name()
+                    .map_or_else(String::new, |name| name.to_string_lossy().into_owned());
+                self.notify(&format!(
+                    "{name}: {}",
+                    i18n("Could not play this file — it may be unsupported or corrupt.")
+                ));
+                let failed = self.queue.current_index();
+                if self.failed_loads < self.queue.len()
+                    && self.queue.advance().is_some()
+                    && self.queue.current_index() != failed
+                {
+                    self.play_current();
+                    self.sync_queue_to_panels();
+                } else {
+                    self.failed_loads = 0;
+                    self.handle_mpris_command(MprisCommand::Stop, sender);
+                }
+            }
             PlayerEvent::PauseChanged(paused) => {
                 self.mpris_state.paused.store(paused, Ordering::Relaxed);
                 let mut status = self
@@ -101,6 +125,7 @@ impl AudioShell {
                     });
             }
             PlayerEvent::FileLoaded(_) => {
+                self.failed_loads = 0;
                 self.mpris_state.selected();
                 let paused = self.mpv.as_ref().is_none_or(|mpv| mpv.is_paused());
                 self.is_playing = !paused;
@@ -210,7 +235,18 @@ pub(super) fn build_mpv_backend(
         }
     });
 
-    Some(Arc::new(mpv))
+    let mpv = Arc::new(mpv);
+    // The process exits without dropping the shell, so the backend's own
+    // save on drop never runs.
+    if let Some(app) = gtk::gio::Application::default() {
+        let weak = Arc::downgrade(&mpv);
+        app.connect_shutdown(move |_| {
+            if let Some(mpv) = weak.upgrade() {
+                mpv.save_resume_position();
+            }
+        });
+    }
+    Some(mpv)
 }
 
 fn restored_volume(saved: i32) -> i32 {

@@ -67,16 +67,6 @@ impl BigNavigationRowSpec {
         self
     }
 
-    /// Configure the `prefix_icon_pixel_size` setting and return the updated builder.
-    ///
-    /// The supplied `pixel_size` overrides any previously stored value; chain
-    /// further `with_*` / setter calls to compose the full [`BigNavigationRowSpec`].
-    #[must_use]
-    pub fn prefix_icon_pixel_size(mut self, pixel_size: i32) -> Self {
-        self.prefix_icon_pixel_size = Some(pixel_size.max(1));
-        self
-    }
-
     /// Configure the `trailing_icon_name` setting and return the updated builder.
     ///
     /// The supplied `icon_name` overrides any previously stored value; chain
@@ -199,15 +189,6 @@ impl BigNavigationRow {
         &self.root
     }
 
-    /// Return a reference to the `action button` exposed by this [`BigNavigationRow`].
-    ///
-    /// Useful when callers need to bind signals, query state, or compose the
-    /// widget into a larger surface without taking ownership.
-    #[must_use]
-    pub fn action_button(&self) -> &gtk::Button {
-        &self.action_button
-    }
-
     /// Consume `self` and yield the underlying parts.
     #[must_use]
     pub fn into_parts(self) -> (adw::ActionRow, gtk::Button) {
@@ -236,34 +217,6 @@ mod tests {
         assert_eq!(spec.trailing_icon_name, "go-next-symbolic");
         assert_eq!(spec.action_label, None);
         assert!(!spec.allow_markup);
-    }
-
-    #[test]
-    fn spec_builder_records_optional_parts() {
-        let spec = BigNavigationRowSpec::new("Audio Settings")
-            .subtitle("Noise removal")
-            .prefix_icon_name("audio-volume-high-symbolic")
-            .prefix_icon_pixel_size(24)
-            .trailing_icon_name("document-open-symbolic")
-            .action_label("Open audio settings")
-            .allow_markup();
-
-        assert_eq!(spec.subtitle.as_deref(), Some("Noise removal"));
-        assert_eq!(
-            spec.prefix_icon_name.as_deref(),
-            Some("audio-volume-high-symbolic")
-        );
-        assert_eq!(spec.prefix_icon_pixel_size, Some(24));
-        assert_eq!(spec.trailing_icon_name, "document-open-symbolic");
-        assert_eq!(spec.action_label.as_deref(), Some("Open audio settings"));
-        assert!(spec.allow_markup);
-    }
-
-    #[test]
-    fn spec_clamps_prefix_pixel_size() {
-        let spec = BigNavigationRowSpec::new("Audio Settings").prefix_icon_pixel_size(0);
-
-        assert_eq!(spec.prefix_icon_pixel_size, Some(1));
     }
 
     #[test]

@@ -38,30 +38,6 @@ pub struct BigAudioTransportLabels {
     pub album_art: String,
 }
 
-impl BigAudioTransportLabels {
-    /// Hard-coded English defaults useful for unit tests and previews.
-    #[must_use]
-    pub fn english() -> Self {
-        Self {
-            seek: "Seek position".into(),
-            cut_timeline: "Cut timeline".into(),
-            play_pause: "Play / Pause".into(),
-            previous: "Previous".into(),
-            next: "Next".into(),
-            shuffle: "Shuffle".into(),
-            repeat: "Repeat".into(),
-            volume: "Volume".into(),
-            speed: "Speed".into(),
-            voice: "Voice Enhancement".into(),
-            trim_export: "Trim & Export".into(),
-            lyrics: "Lyrics".into(),
-            playlist: "Playlist".into(),
-            status: "Status".into(),
-            album_art: "Album art".into(),
-        }
-    }
-}
-
 /// Builder spec for [`BigAudioTransport`].
 ///
 /// Use [`BigAudioTransportSpec::new`] for the full player bar; clear
@@ -83,28 +59,6 @@ impl BigAudioTransportSpec {
             include_voice: true,
         }
     }
-
-    /// Compute the control count and capability flags implied by this spec.
-    #[must_use]
-    pub fn resolved(&self) -> BigAudioTransportResolved {
-        // start: volume + speed (+ voice); center: prev/play/next;
-        // end: trim + shuffle/repeat/lyrics/playlist.
-        let start = 2 + usize::from(self.include_voice);
-        let center = 3;
-        let end = 5;
-        BigAudioTransportResolved {
-            control_count: start + center + end,
-            has_voice: self.include_voice,
-        }
-    }
-}
-
-/// Resolved view of a [`BigAudioTransportSpec`] for tests and validators.
-#[allow(missing_docs)]
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub struct BigAudioTransportResolved {
-    pub control_count: usize,
-    pub has_voice: bool,
 }
 
 /// Audio transport widget tree: seek row, hover volume/speed/voice, transport
@@ -569,26 +523,4 @@ fn build_seek_row(
         position_label,
         duration_label,
     )
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn full_spec_includes_voice_and_counts_controls() {
-        let spec = BigAudioTransportSpec::new(BigAudioTransportLabels::english());
-        let resolved = spec.resolved();
-        assert!(resolved.has_voice);
-        assert_eq!(resolved.control_count, 11);
-    }
-
-    #[test]
-    fn dropping_voice_lowers_control_count() {
-        let mut spec = BigAudioTransportSpec::new(BigAudioTransportLabels::english());
-        spec.include_voice = false;
-        let resolved = spec.resolved();
-        assert!(!resolved.has_voice);
-        assert_eq!(resolved.control_count, 10);
-    }
 }

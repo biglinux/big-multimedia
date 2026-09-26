@@ -32,8 +32,10 @@ seeked = "seeked"           # MPRIS spec "Seeked" D-Bus signal.
 [files]
 extend-exclude = [
     "target/**",
-    "po/**/*.po",
-    "po/*.pot",
+    "**/po/*.po",
+    "**/po/*.pot",
+    "crates/media-runtime/data/shaders/**",
+    "REVISAO-QUALIDADE.md",
     "build-locale/**",
     "*.mo",
     "*.svg",

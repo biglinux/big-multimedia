@@ -1,4 +1,4 @@
-//! Minimal Xtream Codes API client (Relm4 port).
+//! Minimal Xtream Codes API client.
 //!
 //! Xtream Codes is a de-facto commercial IPTV panel format used by most paid
 //! providers. Rather than talk the full API (categories, VOD, series, EPG), we
@@ -13,11 +13,10 @@
 //!   later-phase enhancement.
 //!
 //! If a provider rejects `get.php`, the caller gets `None` and should surface a
-//! diagnostic. Most Xtream panels support it. Engine-free helper; mirrors the
-//! legacy `iptv_view::xtream` until the V6 cutover deletes it.
+//! diagnostic. Most Xtream panels support it. Engine-free helper.
 
-use big_app_kit::http_client::{RequestHeaders, http_get_with_headers};
-use big_app_kit::url::encode_query_value as urlencode;
+use big_os_kit::http_client::{RequestHeaders, http_get_with_headers};
+use big_os_kit::url::encode_query_value as urlencode;
 
 /// Build the `get.php` URL for a Xtream account and fetch the full M3U.
 ///

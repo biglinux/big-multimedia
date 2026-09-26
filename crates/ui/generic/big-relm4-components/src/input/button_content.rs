@@ -86,20 +86,6 @@ impl BigButtonContentSpec {
         self
     }
 
-    /// Let the Adwaita button content shrink when space is tight.
-    #[must_use]
-    pub fn can_shrink(mut self) -> Self {
-        self.can_shrink = true;
-        self
-    }
-
-    /// Enable mnemonic underlines in the visible label.
-    #[must_use]
-    pub fn use_underline(mut self) -> Self {
-        self.use_underline = true;
-        self
-    }
-
     /// Resolve defaults into a display-free contract.
     #[must_use]
     pub fn resolved(&self) -> BigButtonContentResolved {
@@ -212,8 +198,6 @@ mod tests {
             .accessible_description("Choose a folder to monitor")
             .tooltip("Add a monitored music folder")
             .css_classes(["suggested-action", "pill"])
-            .can_shrink()
-            .use_underline()
             .resolved();
 
         assert_eq!(resolved.accessible_label, "Add music folder");
@@ -226,7 +210,5 @@ mod tests {
             Some("Add a monitored music folder")
         );
         assert_eq!(resolved.css_classes, ["suggested-action", "pill"]);
-        assert!(resolved.can_shrink);
-        assert!(resolved.use_underline);
     }
 }

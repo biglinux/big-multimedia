@@ -112,10 +112,6 @@ pub struct BigShortcutDialogSpec {
     pub maximum_size: i32,
     /// Margin.
     pub margin: i32,
-    /// Reset all label.
-    pub reset_all_label: Option<String>,
-    /// Reset all icon name.
-    pub reset_all_icon_name: String,
 }
 
 impl BigShortcutDialogSpec {
@@ -128,29 +124,7 @@ impl BigShortcutDialogSpec {
             default_height: DEFAULT_HEIGHT,
             maximum_size: DEFAULT_MAXIMUM_SIZE,
             margin: DEFAULT_MARGIN,
-            reset_all_label: None,
-            reset_all_icon_name: "view-refresh-symbolic".into(),
         }
-    }
-
-    /// Configure the `reset_all_label` setting and return the updated builder.
-    ///
-    /// The supplied `label` overrides any previously stored value; chain
-    /// further `with_*` / setter calls to compose the full [`BigShortcutDialogSpec`].
-    #[must_use]
-    pub fn reset_all_label(mut self, label: impl Into<String>) -> Self {
-        self.reset_all_label = Some(label.into());
-        self
-    }
-
-    /// Configure the `reset_all_icon_name` setting and return the updated builder.
-    ///
-    /// The supplied `icon_name` overrides any previously stored value; chain
-    /// further `with_*` / setter calls to compose the full [`BigShortcutDialogSpec`].
-    #[must_use]
-    pub fn reset_all_icon_name(mut self, icon_name: impl Into<String>) -> Self {
-        self.reset_all_icon_name = icon_name.into();
-        self
     }
 }
 
@@ -197,7 +171,6 @@ pub struct BigShortcutDialog {
     // it, so there is no window ⇄ handler cycle. Consumers capture weakly.
     window: adw::Window,
     rows: Vec<BigShortcutRowHandle>,
-    reset_all_row: Option<adw::ActionRow>,
 }
 
 impl BigShortcutDialog {
@@ -232,12 +205,6 @@ impl BigShortcutDialog {
             .build();
 
         let mut rows = Vec::new();
-        let reset_all_row = reset_all_row(&spec);
-        if let Some(row) = &reset_all_row {
-            let group = adw::PreferencesGroup::new();
-            group.add(row);
-            content.append(&group);
-        }
         for category in categories {
             let group = preference_group(category);
             for entry in entries_for_category(entries, &category.id) {
@@ -259,11 +226,7 @@ impl BigShortcutDialog {
         toolbar_view.set_content(Some(&scroll));
         window.set_content(Some(&toolbar_view));
 
-        Self {
-            window,
-            rows,
-            reset_all_row,
-        }
+        Self { window, rows }
     }
 
     /// Return a reference to the `window` exposed by this [`BigShortcutDialog`].
@@ -282,12 +245,6 @@ impl BigShortcutDialog {
     #[must_use]
     pub fn rows(&self) -> &[BigShortcutRowHandle] {
         &self.rows
-    }
-
-    /// Return the current `reset all row` value held by this [`BigShortcutDialog`].
-    #[must_use]
-    pub fn reset_all_row(&self) -> Option<&adw::ActionRow> {
-        self.reset_all_row.as_ref()
     }
 }
 
@@ -412,18 +369,6 @@ fn shortcut_row(entry: &BigShortcutEntry) -> (adw::ActionRow, gtk::Label) {
     (row, key_label)
 }
 
-fn reset_all_row(spec: &BigShortcutDialogSpec) -> Option<adw::ActionRow> {
-    let label = spec.reset_all_label.as_ref()?;
-    let row = adw::ActionRow::builder()
-        .title(label)
-        .activatable(true)
-        .build();
-    let icon = gtk::Image::from_icon_name(&spec.reset_all_icon_name);
-    icon.add_css_class("dim-label");
-    row.add_suffix(&icon);
-    Some(row)
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -457,12 +402,5 @@ mod tests {
             .subtitle("Close the app");
 
         assert_eq!(entry.subtitle.as_deref(), Some("Close the app"));
-    }
-
-    #[test]
-    fn reset_all_label_builder_sets_optional_text() {
-        let spec = BigShortcutDialogSpec::new("Shortcuts").reset_all_label("Reset all");
-
-        assert_eq!(spec.reset_all_label.as_deref(), Some("Reset all"));
     }
 }

@@ -12,7 +12,6 @@ exclude = ["packaging"]
 
 [features]
 default = []
-chromecast = ["big-media-runtime/chromecast"]
 
 [dependencies]
 adw.workspace = true
@@ -27,7 +26,6 @@ big-app-kit.workspace = true
 big-os-kit = { workspace = true, features = ["jemalloc"] }
 big-relm4-components.workspace = true
 big-media-components.workspace = true
-# In-player quick export (convert / trim & export) reuses the converter engine.
 relm4.workspace = true
 async-channel = "2.5"
 dirs = "6"

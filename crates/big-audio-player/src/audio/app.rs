@@ -12,7 +12,6 @@ use crate::settings::keys;
 
 const AUDIO_ABOUT_COMMENTS: &str = "Lyrics: LRCLIB · lyrics.ovh\n\
                                    Metadata: MusicBrainz\n\
-                                   Scrobbling: Last.fm · ListenBrainz\n\
                                    Radio: Radio Browser\n\
                                    Art: Cover Art Archive";
 const AUDIO_ABOUT_CREDIT_SECTION_HEADING: &str = "Data Sources";

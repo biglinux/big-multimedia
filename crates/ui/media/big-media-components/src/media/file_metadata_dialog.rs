@@ -45,32 +45,6 @@ pub struct BigMediaFileMetadataDialogLabels {
 }
 
 impl BigMediaFileMetadataDialogLabels {
-    /// Hard-coded English defaults useful for unit tests and previews.
-    #[must_use]
-    pub fn english() -> Self {
-        Self {
-            title: "File Information".into(),
-            copy: "Copy".into(),
-            copy_all: "Copy All".into(),
-            open_folder: "Open Folder".into(),
-            file_size: "File Size".into(),
-            duration: "Duration".into(),
-            container: "Container".into(),
-            format: "Format".into(),
-            bitrate: "Bitrate".into(),
-            video_stream: "Video Stream".into(),
-            audio_stream: "Audio Stream".into(),
-            subtitle_stream: "Subtitle Stream".into(),
-            codec: "Codec".into(),
-            language: "Language".into(),
-            resolution: "Resolution".into(),
-            pixel_format: "Pixel Format".into(),
-            frame_rate: "Frame Rate".into(),
-            sample_rate: "Sample Rate".into(),
-            channels: "Channels".into(),
-        }
-    }
-
     /// Translate every label through `text` and return a populated set.
     #[must_use]
     pub fn translated(mut text: impl FnMut(&str) -> String) -> Self {
@@ -125,24 +99,10 @@ impl BigMediaFileMetadataDialogSpec {
         }
     }
 
-    /// Attach a probed `ffprobe` JSON value to populate container and stream sections.
-    #[must_use]
-    pub fn media_metadata(mut self, media_metadata: Option<serde_json::Value>) -> Self {
-        self.media_metadata = media_metadata;
-        self
-    }
-
     /// Add a duration row; non-positive durations are stored as [`None`].
     #[must_use]
     pub fn duration_secs(mut self, duration_secs: f64) -> Self {
         self.duration_secs = (duration_secs > 0.0).then_some(duration_secs);
-        self
-    }
-
-    /// Attach an "Open folder" button callback invoked with the file's path.
-    #[must_use]
-    pub fn open_folder(mut self, open_folder_callback: impl Fn(PathBuf) + 'static) -> Self {
-        self.open_folder = Some(Rc::new(open_folder_callback));
         self
     }
 }

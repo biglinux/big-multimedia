@@ -1,6 +1,4 @@
 //! Playlist drop geometry — pure-ish hit-testing for the queue `ColumnView`.
-//! Relocated from the god-object `playlist_panel::drop_position` so the Relm4
-//! panel keeps working after the window/ tree is deleted at cutover.
 
 use adw::prelude::*;
 use big_relm4_components::list::signal_factory;
@@ -9,8 +7,7 @@ use gtk::pango;
 /// Fallback only — actual pitch is measured at runtime.
 pub const FALLBACK_ROW_HEIGHT: f64 = 44.0;
 
-/// A plain left-aligned label factory for the grouping/age dropdowns (relocated
-/// from the god-object `playlist_panel::drop_position`).
+/// A plain left-aligned label factory for the grouping/age dropdowns.
 pub fn dropdown_list_factory() -> gtk::SignalListItemFactory {
     let factory = gtk::SignalListItemFactory::new();
     factory.connect_setup(|_, factory_callback_value| {

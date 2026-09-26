@@ -1,4 +1,4 @@
-//! Async channel-logo fetcher with on-disk cache (Relm4 port).
+//! Async channel-logo fetcher with on-disk cache.
 //!
 //! Logos (`tvg-logo="..."`) point to arbitrary image URLs on the provider's
 //! infrastructure. We:
@@ -9,8 +9,7 @@
 //!
 //! The helper returns a GIO file; the UI calls `gtk::Image::set_from_file`
 //! which handles decoding and scaling itself. Fetches that fail leave the cache
-//! untouched and the UI falls back to an icon. Mirrors the legacy
-//! `iptv_view::logos` until the V6 cutover deletes it.
+//! untouched and the UI falls back to an icon.
 
 use std::fs;
 use std::path::PathBuf;
@@ -18,7 +17,7 @@ use std::path::PathBuf;
 use gtk::glib;
 
 use crate::config;
-use big_app_kit::http_client::{RequestHeaders, http_get_bytes_with_headers};
+use big_os_kit::http_client::{RequestHeaders, http_get_bytes_with_headers};
 
 /// Logo cache directory, created on demand.
 #[must_use]

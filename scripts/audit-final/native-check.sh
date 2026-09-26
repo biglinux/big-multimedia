@@ -43,7 +43,7 @@ run_gate minimal cargo check --locked --workspace --no-default-features
 # player that no longer compiles in the configuration its package actually ships
 # still passes them. These two mirror the PKGBUILDs instead.
 run_gate audio-package cargo check --locked -p big-audio-player --all-targets
-run_gate video-package cargo check --locked -p big-video-player --all-targets --features chromecast
+run_gate video-package cargo check --locked -p big-video-player --all-targets
 run_gate translations msgfmt --check --check-format -o /dev/null crates/media-runtime/po/pt_BR.po
 # Repeat against pristine baseline with identical tools to separate inherited failures.
 # Integration/UI tests require controlled fixtures, display and D-Bus; see guide.

@@ -25,14 +25,6 @@ pub const DEFAULT_DIDACTIC_CARD_SPACING: i32 = 18;
 pub const DEFAULT_DIDACTIC_TEXT_SPACING: i32 = 4;
 /// DEFAULT DIDACTIC DESCRIPTION MAX CHARS constant.
 pub const DEFAULT_DIDACTIC_DESCRIPTION_MAX_CHARS: i32 = 76;
-/// DEFAULT DIDACTIC PAGE SPACING constant.
-pub const DEFAULT_DIDACTIC_PAGE_SPACING: i32 = 20;
-/// DEFAULT DIDACTIC PAGE MARGIN TOP constant.
-pub const DEFAULT_DIDACTIC_PAGE_MARGIN_TOP: i32 = 16;
-/// DEFAULT DIDACTIC PAGE MARGIN BOTTOM constant.
-pub const DEFAULT_DIDACTIC_PAGE_MARGIN_BOTTOM: i32 = 24;
-/// DEFAULT DIDACTIC PAGE MARGIN SIDES constant.
-pub const DEFAULT_DIDACTIC_PAGE_MARGIN_SIDES: i32 = 24;
 
 /// Visual layout flavour selected when realising a
 /// [`BigDidacticCardSpec`].
@@ -40,10 +32,6 @@ pub const DEFAULT_DIDACTIC_PAGE_MARGIN_SIDES: i32 = 24;
 pub enum BigDidacticCardLayout {
     /// Illustration on the left, text + optional control on the right.
     Horizontal,
-    /// Illustration spans the full width above the text column.
-    FullWidth,
-    /// Like `Horizontal` but with no embedded control widget.
-    Summary,
     /// Plain card with no illustration at all.
     Plain,
 }
@@ -106,30 +94,6 @@ impl BigDidacticCardSpec {
         }
     }
 
-    /// Switch the layout to `Summary` (no embedded control).
-    #[must_use]
-    pub fn summary(mut self) -> Self {
-        self.layout = BigDidacticCardLayout::Summary;
-        self
-    }
-
-    /// Override the inter-element spacing values. Negative inputs are
-    /// clamped to 0.
-    #[must_use]
-    pub fn spacing(mut self, card_spacing: i32, text_spacing: i32) -> Self {
-        self.card_spacing = card_spacing.max(0);
-        self.text_spacing = text_spacing.max(0);
-        self
-    }
-
-    /// Cap the per-line character count of the description label.
-    /// Inputs below 1 are coerced to 1 so the label always wraps.
-    #[must_use]
-    pub fn description_max_chars(mut self, max_chars: i32) -> Self {
-        self.description_max_chars = max_chars.max(1);
-        self
-    }
-
     /// Join `resource_prefix` with `illustration_name` into the full
     /// GResource path. Returns `None` when the spec carries no
     /// illustration.
@@ -153,21 +117,10 @@ impl BigDidacticCard {
     pub fn new(spec: BigDidacticCardSpec, control: Option<&impl IsA<gtk::Widget>>) -> Self {
         let root = match spec.layout {
             BigDidacticCardLayout::Horizontal => horizontal_card(&spec, control),
-            BigDidacticCardLayout::FullWidth => full_width_card(&spec, control),
-            BigDidacticCardLayout::Summary => horizontal_card::<gtk::Widget>(&spec, None),
             BigDidacticCardLayout::Plain => plain_card(&spec, control),
         };
         apply_a11y(&root, &spec.title);
         Self { root }
-    }
-
-    /// Return a reference to the `root` exposed by this [`BigDidacticCard`].
-    ///
-    /// Useful when callers need to bind signals, query state, or compose the
-    /// widget into a larger surface without taking ownership.
-    #[must_use]
-    pub fn root(&self) -> &gtk::Box {
-        &self.root
     }
 
     /// Consume `self` and yield the underlying root.
@@ -207,30 +160,6 @@ fn plain_card<T: IsA<gtk::Widget>>(spec: &BigDidacticCardSpec, control: Option<&
         control.as_ref().set_valign(gtk::Align::Center);
         card.append(control);
     }
-    card
-}
-
-fn full_width_card<T: IsA<gtk::Widget>>(
-    spec: &BigDidacticCardSpec,
-    control: Option<&T>,
-) -> gtk::Box {
-    let card = card_root(gtk::Orientation::Vertical, spec.text_spacing * 2);
-    let header = gtk::Box::builder()
-        .orientation(gtk::Orientation::Horizontal)
-        .spacing(spec.card_spacing)
-        .build();
-    if let Some(picture) = illustration(spec) {
-        header.append(&picture);
-    }
-    header.append(&text_column(spec));
-    card.append(&header);
-
-    if let Some(control) = control {
-        control.as_ref().set_hexpand(true);
-        control.as_ref().set_margin_top(spec.text_spacing * 2);
-        card.append(control);
-    }
-
     card
 }
 
@@ -319,15 +248,5 @@ mod tests {
         let spec = BigDidacticCardSpec::plain("Title", "Body");
         assert_eq!(spec.resource_path(), None);
         assert_eq!(spec.layout, BigDidacticCardLayout::Plain);
-    }
-
-    #[test]
-    fn spacing_sanitizes_negative_values() {
-        let spec = BigDidacticCardSpec::plain("Title", "Body")
-            .spacing(-1, -2)
-            .description_max_chars(0);
-        assert_eq!(spec.card_spacing, 0);
-        assert_eq!(spec.text_spacing, 0);
-        assert_eq!(spec.description_max_chars, 1);
     }
 }

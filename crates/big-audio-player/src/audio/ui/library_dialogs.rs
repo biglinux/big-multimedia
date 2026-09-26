@@ -1,7 +1,7 @@
 //! Shared "Add to Playlist" picker for the library panel (push-model).
 //!
 //! One dialog, reused by both the detail add-button column and the right-click
-//! context menu (the legacy window built this twice). The shell resolves the
+//! context menu. The shell resolves the
 //! existing playlists and pushes them in as `playlists: &[(id, name)]`; the
 //! panel never queries the DB. Picking a row emits `AddTrackToPlaylist`; the
 //! "New Playlist" entry emits `CreatePlaylistWithTrack`.

@@ -26,7 +26,7 @@ impl Component for AudioShell {
     type CommandOutput = ();
     // Root is the mountable CONTENT (a ToastOverlay), NOT a window: the window
     // chrome (size/title/present) is supplied by the mount point — the standalone
-    // boot, a `big-host` module, or a `PaneContent` mount (RESTRUCTURE ADR D14).
+    // boot, a `big-host` module, or a `PaneContent` mount.
     type Root = adw::ToastOverlay;
     type Widgets = ();
 
@@ -114,7 +114,7 @@ impl Component for AudioShell {
             .forward(sender.input_sender(), AudioShellInput::Podcast);
 
         // The Queue tab is a vertical split: lyrics (start, hidden until toggled)
-        // over the playlist (end). Mirrors the god-object's lyrics column.
+        // over the playlist (end).
         let lyrics_paned = gtk::Paned::builder()
             .orientation(gtk::Orientation::Vertical)
             .vexpand(true)
@@ -129,7 +129,7 @@ impl Component for AudioShell {
 
         // LEFT sidebar pane (distinct `.sidebar-pane` colour, always visible):
         // Music | Files | Radio | Podcasts in a view stack switched from its
-        // own header. Mirrors the god-object's split layout.
+        // own header.
         let view_stack = adw::ViewStack::new();
         view_stack.add_titled_with_icon(
             library.widget(),
@@ -164,8 +164,7 @@ impl Component for AudioShell {
             }
         });
 
-        // Custom tab bar (4 toggle buttons, icon + full label) — mirrors the
-        // god-object's `.tab-bar`. An `adw::ViewSwitcher` ellipsizes the labels
+        // Custom tab bar (4 toggle buttons, icon + full label). An `adw::ViewSwitcher` ellipsizes the labels
         // ("Músi…", "Arqui…") at the sidebar's width; the toggle row never does.
         let tab_bar = gtk::Box::builder()
             .orientation(gtk::Orientation::Horizontal)
@@ -224,8 +223,7 @@ impl Component for AudioShell {
         sidebar_pane.set_content(&view_stack);
 
         // Now-playing card at the sidebar bottom (art + title/artist/album),
-        // hidden until something plays — mirrors the god-object's
-        // `sidebar_now_playing`.
+        // hidden until something plays.
         let np_art = gtk::Image::builder()
             .pixel_size(48)
             .halign(gtk::Align::Center)
@@ -280,7 +278,7 @@ impl Component for AudioShell {
         // RIGHT content pane: the queue (always visible) with the lyrics split,
         // and the transport bar pinned at the bottom. No header here — the queue
         // panel's own AdwHeaderBar toolbar carries the title/actions + the right
-        // window controls (one row, like the god-object), avoiding an empty bar.
+        // window controls in one row, avoiding an empty bar.
         // The download revealer lives inside the content (just below the lyrics/
         // queue split, above the transport) rather than as a second bottom bar:
         // a collapsed `Revealer` bottom-bar still reserves ~3px, which left an
@@ -316,12 +314,8 @@ impl Component for AudioShell {
 
         mount_media_toast_content(&root, &main_paned);
 
-        // App stylesheet (lyrics/radio/queue CSS classes) — was loaded by the
-        // god-object window; the shell owns it now. Also register the bundled
-        // icon path so app icons (e.g. the radio tab) resolve in any theme.
+        // App stylesheet (lyrics/radio/queue CSS classes).
         if let Some(display) = gdk::Display::default() {
-            gtk::IconTheme::for_display(&display)
-                .add_resource_path(&format!("{}/icons", crate::config::audio::RESOURCE_PREFIX));
             let provider = gtk::CssProvider::new();
             provider.load_from_resource(&format!(
                 "{}/style.css",
@@ -392,8 +386,7 @@ impl Component for AudioShell {
             let _ = eq_sender.send(AudioShellInput::ShowEqualizer);
         });
 
-        // Appearance: apply the saved palette + high-contrast now (the god-object
-        // did this on boot), and let the dialog re-apply live via the same two
+        // Appearance: apply the saved palette + high-contrast now, and let the dialog re-apply live via the same two
         // provider slots (replaced in place, never stacked).
         let theme_provider: std::rc::Rc<std::cell::RefCell<Option<gtk::CssProvider>>> =
             std::rc::Rc::new(std::cell::RefCell::new(None));
@@ -462,9 +455,7 @@ impl Component for AudioShell {
 
         // Cast / Sleep Timer / Smartphone — actions send shell inputs (the shell
         // owns feature-gated cast state, timer state, and the current file path).
-        #[cfg(feature = "chromecast")]
         let cast_sender = sender.input_sender().clone();
-        #[cfg(feature = "chromecast")]
         big_app_kit::desktop::install_action(&win_actions, "show-cast", move || {
             let _ = cast_sender.send(AudioShellInput::ShowCast);
         });
@@ -510,8 +501,6 @@ impl Component for AudioShell {
         });
         queue_persistence.bind_failure_banner(&queue_save_banner, queue_updates);
         queue_persistence.load(&sender);
-        #[cfg(feature = "chromecast")]
-        let cast_device_registry = Arc::new(crate::cast::chromecast::CastSessionController::new());
         let mpv = build_mpv_backend(&sender, &settings);
         let mpris_state = Arc::new(SharedMprisState::default());
         let mpris = build_mpris_service(&sender, &mpris_state, &settings);
@@ -574,8 +563,6 @@ impl Component for AudioShell {
                 db,
                 db_read,
                 settings,
-                #[cfg(feature = "chromecast")]
-                cast_device_registry,
                 sleep_timer_source: None,
                 sleep_timer_remaining: 0,
                 sleep_timer_action: String::new(),
@@ -590,6 +577,7 @@ impl Component for AudioShell {
                 last_art_bytes: None,
                 is_playing: false,
                 is_stream: false,
+                failed_loads: 0,
                 current_playlist_name: String::new(),
             },
             widgets: (),

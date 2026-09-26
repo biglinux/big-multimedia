@@ -1,11 +1,10 @@
-//! Small, self-contained hamburger-menu dialogs/actions ported from the old
-//! god-object: go-to-time, screenshot, chapter list + navigation, and the sleep
-//! timer. Each `impl VideoShell` method mirrors the old handler and drives the
-//! live mpv backend; the push-model wiring (a `VideoShellInput::Show*` variant →
+//! Small, self-contained hamburger-menu dialogs/actions: go-to-time,
+//! screenshot, chapter list + navigation, and the sleep timer. Each
+//! `impl VideoShell` method drives the live mpv backend; the push-model wiring (a `VideoShellInput::Show*` variant →
 //! handler) matches the existing media-info / filters dialogs.
 //!
-//! The pure helpers (`parse_goto_seconds`, `sleep_minutes_to_secs`,
-//! `screenshot_filename`) carry the testable logic.
+//! The pure helpers (`parse_goto_seconds`, `sleep_minutes_to_secs`) carry the
+//! testable logic.
 
 use std::path::PathBuf;
 
@@ -20,7 +19,6 @@ use big_relm4_components::layout::{
     dialog_page::BigDialogPage,
     preferences::BigPreferencesGroupSpec,
 };
-use big_relm4_components::list::navigation_row::{BigNavigationRow, BigNavigationRowSpec};
 
 // Bound setup tasks as well as accepted native requests. The global admission
 // counter covers concurrent windows in the single-process host.
@@ -46,15 +44,13 @@ impl Drop for ScreenshotPreparation {
 }
 
 impl VideoShell {
-    /// Show a transient toast in the window's toast overlay. Mirrors the old
-    /// `toast_overlay.add_toast` feedback used by every ported handler.
+    /// Show a transient toast in the window's toast overlay.
     pub(super) fn notify(&self, message: &str) {
         self.toast_overlay().add_toast(adw::Toast::new(message));
     }
 
     /// Present the go-to-time entry dialog. Accepts `H:MM:SS`, `M:SS`, or plain
-    /// seconds; on confirm it seeks mpv absolutely. Mirrors the old
-    /// `show_goto_dialog`; drives `mpv.seek_absolute`.
+    /// seconds; on confirm it seeks mpv absolutely (`mpv.seek_absolute`).
     pub(super) fn show_goto_time_dialog(&self, root: &adw::ApplicationWindow) {
         let dialog = adw::Dialog::builder()
             .title(i18n("Go to Time"))
@@ -140,7 +136,14 @@ impl VideoShell {
             self.notify(&i18n("Screenshot failed"));
             return;
         }
-        let Some(directory) = dirs::picture_dir().or_else(dirs::home_dir) else {
+        let settings = self.settings_handle();
+        let chosen = std::path::PathBuf::from(settings.string("screenshot-directory"));
+        let Some(directory) = chosen
+            .is_absolute()
+            .then_some(chosen)
+            .or_else(dirs::picture_dir)
+            .or_else(dirs::home_dir)
+        else {
             self.notify(&i18n("Screenshot failed"));
             return;
         };
@@ -175,157 +178,6 @@ impl VideoShell {
         }
     }
 
-    /// Present the chapter list: one activatable row per chapter (time + title)
-    /// that jumps to it via `SetChapter`. Mirrors the old chapter navigation
-    /// (`chapter_next`/`chapter_prev` + `set_chapter`). Toasts "No chapters"
-    /// when the media has none. Reads titles/times from the public mpv property
-    /// accessors so it stays VideoShell-local.
-    pub(super) fn show_chapters_dialog(
-        &self,
-        root: &adw::ApplicationWindow,
-        sender: &ComponentSender<Self>,
-    ) {
-        let mpv_ref = self.mpv_handle();
-        let mpv_borrow = mpv_ref.borrow();
-        let Some(mpv) = mpv_borrow.as_ref() else {
-            self.notify(&i18n("No chapters"));
-            return;
-        };
-        let count = mpv.get_chapter_count();
-        if count <= 0 {
-            self.notify(&i18n("No chapters"));
-            return;
-        }
-        let current = mpv.get_current_chapter();
-
-        let group = BigPreferencesGroupSpec::untitled().build();
-        for i in 0..count {
-            let time = mpv.get_property_f64(&format!("chapter-list/{i}/time"));
-            let title = chapter_title(
-                mpv.get_property_string(&format!("chapter-list/{i}/title")),
-                i,
-            );
-            let mut spec = BigNavigationRowSpec::new(&title)
-                .subtitle(big_media_components::time::playback_time(time))
-                .action_label(i18n("Jump to chapter"));
-            if i == current {
-                spec = spec.prefix_icon_name("media-playback-start-symbolic");
-            }
-            let row = BigNavigationRow::new(spec).into_root();
-            let sender = sender.clone();
-            row.connect_activated(move |_| {
-                sender.input(VideoShellInput::SetChapter(i));
-            });
-            group.add(&row);
-        }
-        drop(mpv_borrow);
-
-        let page = BigDialogPage::scrolled_clamped(420, 360);
-        page.content().append(&group);
-        let dialog = adw::Dialog::builder()
-            .title(i18n("Chapters"))
-            .content_width(420)
-            .content_height(520)
-            .child(&page.into_root())
-            .build();
-        dialog.present(Some(root));
-    }
-
-    /// Present the sleep-timer dialog: the active countdown (with cancel) when a
-    /// timer is armed, otherwise the setup page (duration + on-expiry action).
-    /// Mirrors the old `show_sleep_timer_dialog` and the audio player's port,
-    /// reusing the shared `BigSleepTimer*` components + `shared::sleep_timer`
-    /// label/persistence helpers.
-    pub(super) fn show_sleep_timer_dialog(
-        &self,
-        root: &adw::ApplicationWindow,
-        sender: &ComponentSender<Self>,
-    ) {
-        use big_relm4_components::display::sleep_timer::{
-            BigSleepTimerActiveLabels, BigSleepTimerActivePage, BigSleepTimerActiveSpec,
-            BigSleepTimerSetupPage, BigSleepTimerSetupSpec, connect_sleep_timer_start_with_close,
-        };
-
-        let active = self.sleep_timer_is_armed();
-
-        let dialog = adw::Dialog::builder()
-            .title(i18n("Sleep Timer"))
-            .content_width(600)
-            .content_height(if active { 420 } else { 560 })
-            .build();
-
-        let icon = || gtk::Image::from_icon_name("preferences-system-time-symbolic");
-
-        let page = if active {
-            let remaining = self.sleep_timer_remaining_secs();
-            let active_page = BigSleepTimerActivePage::new(
-                BigSleepTimerActiveSpec {
-                    labels: BigSleepTimerActiveLabels {
-                        title: i18n("Timer Active"),
-                        cancel_button: i18n("Cancel Timer"),
-                    },
-                    remaining_seconds: remaining,
-                    icon_size: 80,
-                },
-                Some(icon().upcast()),
-            );
-            active_page.start_preview_countdown(remaining);
-
-            let input = sender.input_sender().clone();
-            let dialog_ref = dialog.downgrade();
-            active_page.cancel_button().connect_clicked(move |_| {
-                let _ = input.send(VideoShellInput::SleepTimerCancel);
-                if let Some(d) = dialog_ref.upgrade() {
-                    d.close();
-                }
-            });
-            active_page.into_page()
-        } else {
-            let settings = self.settings_handle();
-            let (saved_mins, saved_action) =
-                crate::shared::sleep_timer::load_sleep_timer_preferences(Some(settings));
-            let setup_page = BigSleepTimerSetupPage::new(
-                BigSleepTimerSetupSpec {
-                    labels: crate::shared::sleep_timer::sleep_timer_setup_labels(),
-                    actions: crate::shared::sleep_timer::sleep_timer_actions(),
-                    saved_minutes: saved_mins,
-                    saved_action_id: saved_action,
-                    icon_size: 72,
-                },
-                Some(icon().upcast()),
-                None,
-                None,
-            );
-
-            let input = sender.input_sender().clone();
-            let settings = settings.clone();
-            let dialog_ref = dialog.downgrade();
-            connect_sleep_timer_start_with_close(
-                &setup_page,
-                root,
-                move |_, minutes, action| {
-                    crate::shared::sleep_timer::save_sleep_timer_preferences(
-                        Some(&settings),
-                        minutes,
-                        &action,
-                    );
-                    let _ = input.send(VideoShellInput::SleepTimerStart { minutes, action });
-                },
-                move || {
-                    if let Some(dialog) = dialog_ref.upgrade() {
-                        dialog.close();
-                    }
-                },
-            );
-            setup_page.into_page()
-        };
-
-        let dialog_page = BigDialogPage::scrolled_clamped(560, 480);
-        dialog_page.content().append(&page);
-        dialog.set_child(Some(&dialog_page.into_root()));
-        dialog.present(Some(root));
-    }
-
     /// Arm the sleep timer: a 1 s `SleepTick` source drives the countdown. Stores
     /// the `SourceId` so it is removed on disarm / re-arm / drop (no leak).
     pub(super) fn start_sleep_timer(
@@ -350,7 +202,6 @@ impl VideoShell {
             glib::ControlFlow::Continue
         });
         self.set_sleep_timer_source(Some(source));
-        self.notify(&i18n("Sleep timer started"));
     }
 
     /// Disarm the sleep timer (no-op if none armed). Removes the stored source.
@@ -452,7 +303,7 @@ pub(super) fn sleep_minutes_to_secs(minutes: u32) -> u32 {
 
 /// Resolve a non-empty chapter title, falling back to `Chapter N` (1-based) when
 /// mpv reports an empty or placeholder title.
-fn chapter_title(raw: String, index: i64) -> String {
+pub(super) fn chapter_title(raw: String, index: i64) -> String {
     chapter_title_with_prefix(raw, index, &i18n("Chapter"))
 }
 
@@ -485,38 +336,10 @@ pub(super) fn show_screenshot_result(overlay: &adw::ToastOverlay, path: PathBuf,
     overlay.add_toast(toast);
 }
 
-/// Derive a safe screenshot filename from the media title and a unix timestamp:
-/// `<sanitized-title>_<ts>.png`. Non-alphanumeric chars (except `-_.`) become
-/// `_`, and any `..` run is collapsed to `_`; an empty/blank title falls back to
-/// `screenshot`. Path-safe — the result never contains separators or `..`.
-#[cfg(test)]
-fn screenshot_filename(title: &str, timestamp: i64) -> String {
-    let sanitized: String = title
-        .chars()
-        .map(|c| {
-            if c.is_alphanumeric() || c == '-' || c == '_' || c == '.' {
-                c
-            } else {
-                '_'
-            }
-        })
-        .collect();
-    // Collapse any `..` (would form a parent-dir token if a separator ever crept
-    // in) — defence in depth even though the result carries no separators.
-    let safe = sanitized.replace("..", "_");
-    let stem = if safe.trim_matches(['_', '.']).is_empty() {
-        "screenshot"
-    } else {
-        safe.as_str()
-    };
-    format!("{stem}_{timestamp}.png")
-}
-
 #[cfg(test)]
 mod tests {
     use super::{
-        accepted_goto_seconds, chapter_title_with_prefix, parse_goto_seconds, screenshot_filename,
-        sleep_minutes_to_secs,
+        accepted_goto_seconds, chapter_title_with_prefix, parse_goto_seconds, sleep_minutes_to_secs,
     };
 
     #[test]
@@ -559,35 +382,6 @@ mod tests {
     #[test]
     fn sleep_minutes_saturate_instead_of_overflow() {
         assert_eq!(sleep_minutes_to_secs(u32::MAX), u32::MAX);
-    }
-
-    #[test]
-    fn screenshot_filename_sanitizes_and_appends_timestamp() {
-        assert_eq!(
-            screenshot_filename("My Movie: Part 1", 1700),
-            "My_Movie__Part_1_1700.png"
-        );
-    }
-
-    #[test]
-    fn screenshot_filename_keeps_safe_chars() {
-        assert_eq!(
-            screenshot_filename("clip-01_final.v2", 42),
-            "clip-01_final.v2_42.png"
-        );
-    }
-
-    #[test]
-    fn screenshot_filename_falls_back_on_blank_title() {
-        assert_eq!(screenshot_filename("", 9), "screenshot_9.png");
-        assert_eq!(screenshot_filename("   ", 9), "screenshot_9.png");
-    }
-
-    #[test]
-    fn screenshot_filename_has_no_path_separators() {
-        let name = screenshot_filename("a/b/../c", 1);
-        assert!(!name.contains('/'));
-        assert!(!name.contains(".."));
     }
 
     #[test]

@@ -1,7 +1,6 @@
 //! Audio-player appearance application. Reads the `audio-ui-*` settings and
 //! pushes the resulting palette + high-contrast CSS into two app-owned
-//! `CssProvider` slots. Mirrors the god-object's `apply_appearance`; kept app-
-//! local because the palette keys are audio-specific (the video player keeps a
+//! `CssProvider` slots. Kept app-local because the palette keys are audio-specific (the video player keeps a
 //! separate set). The provider slots live on the `AudioShell` so a re-apply
 //! (from the Appearance dialog's `on_changed`) replaces, never stacks.
 

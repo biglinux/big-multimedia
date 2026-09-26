@@ -4,12 +4,6 @@
 //! Preferences page group helpers.
 
 use adw::prelude::*;
-use relm4::gtk;
-use std::cell::RefCell;
-use std::rc::Rc;
-
-/// Big Widget Registry alias.
-pub type BigWidgetRegistry = Rc<RefCell<Vec<gtk::Widget>>>;
 
 /// Display-free specification describing big preferences group behaviour.
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -70,33 +64,6 @@ impl BigPreferencesGroupSpec {
         group.set_visible(self.visible);
         group
     }
-}
-
-/// Build a [`adw::PreferencesGroup`] from `spec` and register the
-/// realised widget in `registry` so visibility tracking can find it.
-#[must_use]
-pub fn tracked_preferences_group(
-    spec: BigPreferencesGroupSpec,
-    registry: &BigWidgetRegistry,
-) -> adw::PreferencesGroup {
-    let group = spec.build();
-    registry
-        .borrow_mut()
-        .push(group.clone().upcast::<gtk::Widget>());
-    group
-}
-
-/// Set `widget.visible = visible` and record the widget in `registry`
-/// so a later traversal can re-check which preferences are still
-/// reachable.
-pub fn track_widget_visibility<W>(widget: &W, visible: bool, registry: &BigWidgetRegistry)
-where
-    W: IsA<gtk::Widget> + Clone,
-{
-    widget.set_visible(visible);
-    registry
-        .borrow_mut()
-        .push(widget.clone().upcast::<gtk::Widget>());
 }
 
 #[cfg(test)]

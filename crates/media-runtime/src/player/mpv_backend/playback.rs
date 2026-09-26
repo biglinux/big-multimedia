@@ -66,44 +66,32 @@ impl MpvBackend {
             self.set_audio_cache_profile(profile);
         }
         self.loading.store(true, Ordering::Relaxed);
-        let options = if paused {
-            "resume-playback=no,pause=yes"
-        } else {
-            "resume-playback=no,pause=no"
-        };
+        // Resume stays with the global resume-playback preference: mpv reads
+        // the watch-later file before per-file options, so none can veto it.
+        let options = if paused { "pause=yes" } else { "pause=no" };
         if let Err(error) = self.queue_command("loadfile", &[path, "replace", "-1", options]) {
             self.loading.store(false, Ordering::Relaxed);
             log::warn!("Could not enqueue media load: {error}");
         }
     }
 
-    pub fn load_file_with_audio_profile(
-        &self,
-        path: &str,
-        profile: AudioCacheProfile,
-        from_start: bool,
-    ) {
+    pub fn load_file_with_audio_profile(&self, path: &str, profile: AudioCacheProfile) {
         if self.audio_only {
             self.set_audio_cache_profile(profile);
         }
-        self.load_inner(path, from_start);
+        self.load_inner(path);
     }
 
     pub fn load_file(&self, path: &str) {
         if self.audio_only {
             self.set_audio_cache_profile(profile_for_uri(path).unwrap_or(AudioCacheProfile::Music));
         }
-        self.load_inner(path, false);
+        self.load_inner(path);
     }
 
-    fn load_inner(&self, path: &str, from_start: bool) {
+    fn load_inner(&self, path: &str) {
         self.loading.store(true, Ordering::Relaxed);
-        let result = if from_start {
-            self.queue_command("loadfile", &[path, "replace", "-1", "resume-playback=no"])
-        } else {
-            self.queue_command("loadfile", &[path, "replace"])
-        };
-        if let Err(error) = result {
+        if let Err(error) = self.queue_command("loadfile", &[path, "replace"]) {
             self.loading.store(false, Ordering::Relaxed);
             error!(
                 "Failed to load {}: {error}",

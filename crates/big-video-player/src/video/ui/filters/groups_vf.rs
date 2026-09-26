@@ -1,8 +1,7 @@
 //! `vf`-chain filter groups for the filters dialog: denoise/sharpen, color,
 //! style presets, and effects. Each builds an `adw::PreferencesGroup` whose
-//! controls drive `mpv.vf_append`/`mpv.vf_remove` directly. App-local port of
-//! the legacy `dialogs/filters/{dialog,color,presets,effects}.rs`, retargeted
-//! from the `Window` god-object to an `Arc<MpvBackend>` handle. Filter string
+//! controls drive `mpv.vf_append`/`mpv.vf_remove` on an `Arc<MpvBackend>`
+//! directly. Filter string
 //! math lives in [`super::filter_specs`].
 
 use std::sync::Arc;
@@ -293,36 +292,13 @@ pub(super) fn build_effects_group(
         ))
         .build();
 
-    let toggles: &[(&str, &str, &str, String, String)] = &[
-        (
-            "negate",
-            "negate",
-            "negate.svg",
-            i18n("Negate"),
-            i18n("Invert all colors"),
-        ),
-        (
-            "hue0",
-            "hue=s=0",
-            "grayscale.svg",
-            i18n("Grayscale"),
-            i18n("Black and white image"),
-        ),
-        (
-            "vignette",
-            "vignette",
-            "vignette.svg",
-            i18n("Vignette"),
-            i18n("Darken edges of the image"),
-        ),
-        (
-            "edgedetect",
-            "edgedetect=mode=colormix",
-            "edge_detect.svg",
-            i18n("Edge Detect"),
-            i18n("Detect and colorize edges"),
-        ),
-    ];
+    let toggles: &[(&str, &str, &str, String, String)] = &[(
+        "vignette",
+        "vignette",
+        "vignette.svg",
+        i18n("Vignette"),
+        i18n("Darken edges of the image"),
+    )];
     for (label, filter, svg, title, subtitle) in toggles {
         let row = adw::SwitchRow::builder()
             .title(title)

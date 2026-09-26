@@ -23,11 +23,6 @@ use crate::i18n::i18n;
 
 use super::playlist_panel::{PlaylistPanel, PlaylistPanelOutput};
 
-/// Audio extensions offered by the first-run "Open Files" picker.
-const AUDIO_EXTENSIONS: &[&str] = &[
-    "mp3", "flac", "ogg", "opus", "m4a", "wav", "aac", "wma", "aif", "aiff", "ape", "wv", "mka",
-];
-
 #[derive(Debug, Clone, PartialEq, Eq)]
 struct WelcomeTipSpec {
     icon_name: &'static str,
@@ -78,10 +73,9 @@ pub(super) fn build_toolbar(
     sender: &ComponentSender<PlaylistPanel>,
 ) -> (adw::HeaderBar, gtk::Label) {
     // An AdwHeaderBar so the queue info shares the window's title row with the
-    // controls (matches the god-object's content header). The sidebar header
-    // owns the left window buttons; this one owns the right. Only the hamburger
-    // is exposed — every queue/settings action lives in its menu, like the old
-    // player (whose header buttons were hidden by default).
+    // controls. The sidebar header owns the left window buttons; this one owns
+    // the right. Only the hamburger is exposed — every queue/settings action
+    // lives in its menu.
     // Centred title widget: the queue name when empty, "N tracks · duration"
     // when full (the panel refreshes it on every queue change).
     let header_label = gtk::Label::builder()
@@ -125,8 +119,10 @@ fn main_menu_items() -> Vec<BigMenuActionItem> {
         BigMenuActionItem::new(i18n("Appearance"), "win.show-appearance"),
         BigMenuActionItem::new(i18n("Preferences"), "win.show-preferences"),
     ];
-    #[cfg(feature = "chromecast")]
-    items.push(BigMenuActionItem::new(i18n("Cast"), "win.show-cast"));
+    items.push(BigMenuActionItem::new(
+        i18n("Play on a TV"),
+        "win.show-cast",
+    ));
     items.extend([
         BigMenuActionItem::new(i18n("Keyboard Shortcuts"), "win.show-shortcuts"),
         BigMenuActionItem::new(i18n("About"), "app.about"),
@@ -316,7 +312,10 @@ fn build_welcome(sender: &ComponentSender<PlaylistPanel>) -> gtk::Box {
             let parent = button.root().and_downcast::<gtk::Window>();
             let out = out.clone();
             FilePicker::open_files(i18n("Open Audio Files"))
-                .filter(&i18n("Audio Files"), AUDIO_EXTENSIONS)
+                .filter(
+                    &i18n("Audio Files"),
+                    big_media_components::media::files::AUDIO_EXTENSIONS,
+                )
                 .open_multiple_optional(parent.as_ref(), move |paths| {
                     let strs: Vec<String> = paths
                         .into_iter()
@@ -401,10 +400,9 @@ mod tests {
             );
         }
 
-        #[cfg(feature = "chromecast")]
         assert!(
             actions.iter().any(|actual| actual == "win.show-cast"),
-            "missing chromecast menu action; actions={actions:?}"
+            "missing TV menu action; actions={actions:?}"
         );
     }
 

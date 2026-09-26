@@ -67,9 +67,9 @@ fn normalized_playlist_name(name: &str) -> Option<String> {
 }
 
 /// Export the current detail tracks as an `.m3u8` playlist. The save picker
-/// runs on the main loop; the `#EXTM3U`/`#EXTINF` body is built and written
-/// off-thread via `spawn_blocking_result` (the panel already owns the tracks,
-/// so no DB round-trip is needed). Success/failure surfaces through a `Notify`
+/// runs on the main loop; the file is written off-thread by
+/// `playlist_scan::write_m3u` (the panel already owns the tracks, so no DB
+/// round-trip is needed). Success/failure surfaces through a `Notify`
 /// intent — the shell owns the toast surface.
 pub(super) fn export_detail_m3u8(
     parent: &gtk::Window,
@@ -98,21 +98,6 @@ pub(super) fn export_detail_m3u8(
                 },
             );
         });
-}
-
-/// Render the `#EXTM3U` body for `tracks` (pure; off-thread caller).
-#[cfg(test)]
-pub(crate) fn render_m3u8(tracks: &[Track]) -> String {
-    let mut content = String::from("#EXTM3U\n");
-    for t in tracks {
-        let secs = t.duration_secs as i64;
-        let artist = t.display_artist();
-        let title = t.display_title();
-        content.push_str(&format!("#EXTINF:{secs},{artist} - {title}\n"));
-        content.push_str(&t.file_path);
-        content.push('\n');
-    }
-    content
 }
 
 /// Pick an `.m3u`/`.m3u8`/`.pls` file and hand the path to the shell, which
@@ -516,9 +501,7 @@ fn build_tips_card() -> gtk::Box {
 mod tests {
     #[cfg(not(miri))]
     use super::abbreviate_home;
-    use super::render_m3u8;
     use super::{NameEntryDialogSpec, name_entry_dialog_spec, normalized_playlist_name};
-    use crate::db::models::Track;
 
     #[cfg(not(miri))]
     #[test]
@@ -538,17 +521,6 @@ mod tests {
             abbreviate_home("/mnt/media/lib"),
             "/mnt/media/lib".to_string()
         );
-    }
-
-    #[test]
-    fn render_m3u8_writes_extinf_and_path() {
-        let mut t = Track::new_external_path_with_title("/m/a.flac", Some("A".to_string()));
-        t.artist = Some("Band".to_string());
-        t.duration_secs = 12.7;
-        let out = render_m3u8(&[t]);
-        assert!(out.starts_with("#EXTM3U\n"));
-        assert!(out.contains("#EXTINF:12,Band - A\n"));
-        assert!(out.contains("/m/a.flac\n"));
     }
 
     #[test]

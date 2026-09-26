@@ -53,15 +53,6 @@ impl BigDetailRowSpec {
         self
     }
 
-    /// Allow libadwaita markup in title/subtitle.
-    ///
-    /// Default is plain text; strings are escaped before they reach the row.
-    #[must_use]
-    pub fn allow_markup(mut self) -> Self {
-        self.allow_markup = true;
-        self
-    }
-
     /// Resolve the spec into its display-free runtime form.
     #[must_use]
     pub fn resolved(&self) -> BigDetailRowResolved {
@@ -156,17 +147,6 @@ mod tests {
             resolved.subtitle.as_deref(),
             Some("&lt;i&gt;H.264&lt;/i&gt;")
         );
-    }
-
-    #[test]
-    fn resolved_can_allow_markup_explicitly() {
-        let resolved = BigDetailRowSpec::new("<b>Codec</b>")
-            .subtitle("<i>H.264</i>")
-            .allow_markup()
-            .resolved();
-
-        assert_eq!(resolved.title, "<b>Codec</b>");
-        assert_eq!(resolved.subtitle.as_deref(), Some("<i>H.264</i>"));
     }
 
     #[test]

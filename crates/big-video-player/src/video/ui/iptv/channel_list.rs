@@ -1,4 +1,4 @@
-//! Grouped IPTV channel list — virtualized (Relm4 port).
+//! Grouped IPTV channel list — virtualized.
 //!
 //! An IPTV M3U routinely carries thousands to tens of thousands of channels,
 //! each with a remote `tvg-logo`. The old view built one `AdwActionRow` per

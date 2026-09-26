@@ -80,7 +80,6 @@ pub struct BigSidebarDialog {
     sidebar_toolbar: adw::ToolbarView,
     sidebar_header: adw::HeaderBar,
     content_toolbar: adw::ToolbarView,
-    content_header: adw::HeaderBar,
     content_title: adw::WindowTitle,
 }
 
@@ -134,7 +133,6 @@ impl BigSidebarDialog {
             sidebar_toolbar,
             sidebar_header,
             content_toolbar,
-            content_header,
             content_title,
         }
     }
@@ -166,21 +164,9 @@ impl BigSidebarDialog {
         self.sidebar_header.set_show_title(true);
     }
 
-    /// The sidebar header, for packing extra controls (search toggle, etc.).
-    #[must_use]
-    pub fn sidebar_header(&self) -> &adw::HeaderBar {
-        &self.sidebar_header
-    }
-
     /// Set the content pane's body widget.
     pub fn set_content(&self, child: &impl IsA<gtk::Widget>) {
         self.content_toolbar.set_content(Some(child));
-    }
-
-    /// The content header, for packing extra controls.
-    #[must_use]
-    pub fn content_header(&self) -> &adw::HeaderBar {
-        &self.content_header
     }
 
     /// Update the content header title (e.g. to append a live count).

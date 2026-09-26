@@ -61,16 +61,6 @@ impl BigActionNavRowSpec {
         self
     }
 
-    /// Configure the `action_icon_name` setting and return the updated builder.
-    ///
-    /// The supplied `icon_name` overrides any previously stored value; chain
-    /// further `with_*` / setter calls to compose the full [`BigActionNavRowSpec`].
-    #[must_use]
-    pub fn action_icon_name(mut self, icon_name: impl Into<String>) -> Self {
-        self.action_icon_name = icon_name.into();
-        self
-    }
-
     /// Configure the `action_label` setting and return the updated builder.
     ///
     /// The supplied `label` overrides any previously stored value; chain
@@ -78,15 +68,6 @@ impl BigActionNavRowSpec {
     #[must_use]
     pub fn action_label(mut self, label: impl Into<String>) -> Self {
         self.action_label = Some(label.into());
-        self
-    }
-
-    /// Allow libadwaita markup in title/subtitle.
-    ///
-    /// Default is plain text; strings are escaped before they reach the row.
-    #[must_use]
-    pub fn allow_markup(mut self) -> Self {
-        self.allow_markup = true;
         self
     }
 
@@ -159,15 +140,6 @@ impl BigActionNavRow {
         self.inner.root()
     }
 
-    /// Return a reference to the `action button` exposed by this [`BigActionNavRow`].
-    ///
-    /// Useful when callers need to bind signals, query state, or compose the
-    /// widget into a larger surface without taking ownership.
-    #[must_use]
-    pub fn action_button(&self) -> &gtk::Button {
-        self.inner.action_button()
-    }
-
     /// Consume `self` and yield the underlying parts.
     #[must_use]
     pub fn into_parts(self) -> (adw::ActionRow, gtk::Button) {
@@ -200,22 +172,6 @@ mod tests {
         assert_eq!(spec.action_icon_name, "go-next-symbolic");
         assert_eq!(spec.action_label, None);
         assert!(!spec.allow_markup);
-    }
-
-    #[test]
-    fn spec_builder_records_optional_parts() {
-        let spec = BigActionNavRowSpec::new("Title")
-            .subtitle("Subtitle")
-            .prefix_icon_name("folder-symbolic")
-            .action_icon_name("document-edit-symbolic")
-            .action_label("Edit")
-            .allow_markup();
-
-        assert_eq!(spec.subtitle.as_deref(), Some("Subtitle"));
-        assert_eq!(spec.prefix_icon_name.as_deref(), Some("folder-symbolic"));
-        assert_eq!(spec.action_icon_name, "document-edit-symbolic");
-        assert_eq!(spec.action_label.as_deref(), Some("Edit"));
-        assert!(spec.allow_markup);
     }
 
     #[test]

@@ -1,7 +1,6 @@
 //! Pure (GTK-free) lyrics fetch for the Relm4 `AudioShell`.
 //!
-//! Ported out of the god-object `lyrics_panel` (an `impl Window` method) so the
-//! shell can run it off-thread without a GTK widget. Embedded tag lyrics first
+//! GTK-free so the shell can run it off-thread. Embedded tag lyrics first
 //! (no network); LRCLIB + lyrics.ovh as a fallback. The shell wraps it in
 //! `gio::spawn_blocking` and pushes the plain-text result into the panel.
 

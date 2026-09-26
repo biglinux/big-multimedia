@@ -1,22 +1,18 @@
-//! Audio + Music preferences pages (output, processing, language, ReplayGain,
-//! and volume leveling). Also exposes `show_audio_preferences` for the
-//! standalone audio-player binary.
+//! Audio player preferences: a native `adw::PreferencesDialog` with the Music
+//! page (volume leveling, gapless, resume, taskbar progress) and the Audio page
+//! shared with the video player.
 
 use adw::prelude::*;
-use std::cell::RefCell;
-use std::rc::Rc;
 use std::sync::Arc;
 
 use big_player_ui::audio_preferences::{
     PlayerAudioEffects, PlayerAudioPreferenceActions, create_player_audio_page as create_audio_page,
 };
-use big_relm4_components::layout::preferences::BigPreferencesGroupSpec;
 
 use crate::i18n::i18n;
 use crate::player::mpv_backend::{AudioEffectsSnapshot, MpvBackend};
 use crate::settings::{Settings, keys};
-use crate::shared::illustration::illustration_auto as illustration;
-use crate::shared::preference_rows::{AdvancedWidgets, add_combo_row};
+use crate::shared::preference_rows::add_combo_row;
 use big_media_runtime::i18n::gettext_noop;
 
 #[derive(Debug, Clone, Copy, PartialEq)]
@@ -34,15 +30,6 @@ struct PreferencesPageChromeSpec {
     icon_name: &'static str,
 }
 
-#[derive(Clone, Copy)]
-struct AudioPreferencesWindowSpec {
-    title: &'static str,
-    default_width: i32,
-    default_height: i32,
-    saved_width_key: keys::IntKey,
-    saved_height_key: keys::IntKey,
-}
-
 fn music_page_chrome_spec() -> PreferencesPageChromeSpec {
     PreferencesPageChromeSpec {
         title: gettext_noop("Music"),
@@ -57,16 +44,6 @@ fn replaygain_preamp_adjustment_spec() -> NumericAdjustmentSpec {
         step_increment: 0.5,
         page_increment: 1.0,
         page_size: 0.0,
-    }
-}
-
-fn audio_preferences_window_spec() -> AudioPreferencesWindowSpec {
-    AudioPreferencesWindowSpec {
-        title: gettext_noop("Preferences"),
-        default_width: 550,
-        default_height: 650,
-        saved_width_key: keys::AUDIO_PREFS_WINDOW_WIDTH,
-        saved_height_key: keys::AUDIO_PREFS_WINDOW_HEIGHT,
     }
 }
 
@@ -105,17 +82,18 @@ pub(super) fn create_music_page(
 
     page.add(&super::account_security::group());
 
-    let playback_group = BigPreferencesGroupSpec::new(i18n("Playback"))
-        .description(i18n("Control how your music is played"))
+    let leveling_group = adw::PreferencesGroup::builder()
+        .title(i18n("Volume Leveling"))
+        .description(i18n(
+            "Uses the loudness stored in the files so you do not have to adjust the volume between songs",
+        ))
         .build();
 
     let m = mpv.cloned();
-    let rg_row = add_combo_row(
-        &playback_group,
-        &i18n("Volume Leveling"),
-        &i18n(
-            "Makes all songs play at a similar volume so you don't need to adjust between tracks",
-        ),
+    let leveling_row = add_combo_row(
+        &leveling_group,
+        &i18n("Level By"),
+        "",
         &[&i18n("Off"), &i18n("Per Song"), &i18n("Per Album")],
         &["no", "track", "album"],
         "replaygain",
@@ -126,14 +104,14 @@ pub(super) fn create_music_page(
             }
         },
     );
-    rg_row.add_prefix(&illustration("volume_leveling.svg"));
 
     let replaygain_preamp_adjustment = replaygain_preamp_adjustment_spec();
     let rg_preamp_row = adw::SpinRow::builder()
-        .title(i18n("Volume Leveling Boost"))
+        .title(i18n("Leveling Boost"))
         .subtitle(i18n(
-            "Fine-tune the volume leveling — positive values make it louder, negative softer",
+            "In decibels; positive values play louder, negative softer",
         ))
+        .digits(1)
         .adjustment(&gtk::Adjustment::new(
             settings.get_double(keys::REPLAYGAIN_PREAMP),
             replaygain_preamp_adjustment.lower,
@@ -143,7 +121,6 @@ pub(super) fn create_music_page(
             replaygain_preamp_adjustment.page_size,
         ))
         .build();
-    rg_preamp_row.add_prefix(&illustration("volume_boost.svg"));
     {
         let s = settings.clone();
         let m = mpv.cloned();
@@ -155,16 +132,26 @@ pub(super) fn create_music_page(
             }
         });
     }
-    playback_group.add(&rg_preamp_row);
+    leveling_group.add(&rg_preamp_row);
+    // "Off" (index 0) ignores the stored loudness, so the boost has no effect.
+    leveling_row
+        .bind_property("selected", &rg_preamp_row, "sensitive")
+        .transform_to(|_, selected: u32| Some(selected != 0))
+        .sync_create()
+        .build();
+    page.add(&leveling_group);
+
+    let playback_group = adw::PreferencesGroup::builder()
+        .title(i18n("Playback"))
+        .build();
 
     let gapless_row = adw::SwitchRow::builder()
-        .title(i18n("Gapless Playback"))
+        .title(i18n("No Gaps Between Songs"))
         .subtitle(i18n(
-            "Play consecutive tracks without adding gaps. Silence inside a recording is kept.",
+            "Albums recorded as one continuous piece play without pauses",
         ))
         .active(settings.get_bool(keys::GAPLESS_AUDIO))
         .build();
-    gapless_row.add_prefix(&illustration("gapless.svg"));
     {
         let s = settings.clone();
         let m = mpv.cloned();
@@ -178,13 +165,10 @@ pub(super) fn create_music_page(
     playback_group.add(&gapless_row);
 
     let resume_row = adw::SwitchRow::builder()
-        .title(i18n("Resume Playback"))
-        .subtitle(i18n(
-            "When you play a song again, continue from where you left off instead of starting over",
-        ))
+        .title(i18n("Resume Where You Left Off"))
+        .subtitle(i18n("Playing a song again continues from where it stopped"))
         .active(settings.get_bool(keys::RESUME_PLAYBACK))
         .build();
-    resume_row.add_prefix(&illustration("resume.svg"));
     {
         let s = settings.clone();
         let m = mpv.cloned();
@@ -202,13 +186,10 @@ pub(super) fn create_music_page(
 
     // Taskbar progress (KDE Plasma / Unity → Unity launcher protocol).
     let taskbar_row = adw::SwitchRow::builder()
-        .title(i18n("Taskbar Progress"))
-        .subtitle(i18n(
-            "Show a progress bar on the app icon in the taskbar while music is playing",
-        ))
+        .title(i18n("Progress on the Taskbar"))
+        .subtitle(i18n("Shows how far the song has played on the player icon"))
         .active(settings.get_bool_or(keys::TASKBAR_PROGRESS, true))
         .build();
-    taskbar_row.add_prefix(&illustration("taskbar_progress.svg"));
     {
         let s = settings.clone();
         taskbar_row.connect_active_notify(move |row| {
@@ -222,20 +203,6 @@ pub(super) fn create_music_page(
     playback_group.add(&taskbar_row);
 
     page.add(&playback_group);
-
-    // The data-service API exists, but this shell does not submit listens.
-    // Never accept a secret or present an enable switch for an unwired feature.
-    // Retain any existing on-disk configuration without reading its token here.
-    let integrations = BigPreferencesGroupSpec::new(i18n("Online services")).build();
-    integrations.add(
-        &adw::ActionRow::builder()
-            .title("ListenBrainz")
-            .subtitle(i18n(
-                "Not available in this player yet. No listening history is sent.",
-            ))
-            .build(),
-    );
-    page.add(&integrations);
 
     page
 }
@@ -274,67 +241,26 @@ fn apply_player_audio_effects(mpv: &MpvBackend, effects: PlayerAudioEffects) {
 /// `on_taskbar_toggle` fires when the taskbar-progress switch changes → MPRIS
 /// service updates without a restart.
 pub fn show_audio_preferences(
-    parent: &impl IsA<gtk::Window>,
+    parent: &impl IsA<gtk::Widget>,
     settings: &Settings,
     mpv: Option<&Arc<MpvBackend>>,
     on_taskbar_toggle: Option<Box<dyn Fn(bool) + 'static>>,
 ) {
-    let window_spec = audio_preferences_window_spec();
-    let saved = (
-        settings.get_int(window_spec.saved_width_key),
-        settings.get_int(window_spec.saved_height_key),
-    );
-
-    let is_advanced = settings.get_bool(keys::ADVANCED_MODE);
-    let adv_widgets: AdvancedWidgets = Rc::new(RefCell::new(Vec::new()));
-    let pages = [
-        create_audio_page(
-            settings,
-            audio_preference_actions(mpv),
-            is_advanced,
-            &adv_widgets,
-            None,
-        ),
-        create_music_page(settings, mpv, on_taskbar_toggle),
-        crate::settings::saving_page(settings),
-    ];
-    // This switch must remain visible even when all technical groups are hidden.
-    let visibility_group = BigPreferencesGroupSpec::new(i18n("More options")).build();
-    let advanced = adw::SwitchRow::builder()
-        .title(i18n("Show technical settings"))
-        .subtitle(i18n(
-            "Show audio output and processing options. Hiding them keeps your choices.",
-        ))
-        .active(is_advanced)
+    let dialog = adw::PreferencesDialog::builder()
+        .title(i18n("Preferences"))
+        .search_enabled(true)
+        .content_width(640)
+        .content_height(720)
         .build();
-    {
-        let settings = settings.clone();
-        advanced.connect_active_notify(move |row| {
-            let visible = row.is_active();
-            for widget in adv_widgets.borrow().iter() {
-                widget.set_visible(visible);
-            }
-            let _ = settings.put_bool(keys::ADVANCED_MODE, visible);
-        });
+    let pages = [
+        create_music_page(settings, mpv, on_taskbar_toggle),
+        create_audio_page(settings, audio_preference_actions(mpv)),
+    ];
+    for page in &pages {
+        crate::settings::attach_save_status_banner(page, settings);
+        dialog.add(page);
     }
-    visibility_group.add(&advanced);
-    pages[0].add(&visibility_group);
-
-    let s = settings.clone();
-    big_player_ui::appearance::build_preferences_window(
-        parent,
-        &i18n(window_spec.title),
-        true,
-        saved,
-        (window_spec.default_width, window_spec.default_height),
-        &pages,
-        move |w, h| {
-            let _ = s.put_int(window_spec.saved_width_key, w);
-            let _ = s.put_int(window_spec.saved_height_key, h);
-        },
-        || {},
-    )
-    .present();
+    dialog.present(Some(parent));
 }
 
 #[cfg(test)]
@@ -376,17 +302,6 @@ mod tests {
                 page_size: 0.0,
             }
         );
-    }
-
-    #[test]
-    fn audio_preferences_window_spec_uses_saved_geometry_keys() {
-        let spec = audio_preferences_window_spec();
-
-        assert_eq!(spec.title, "Preferences");
-        assert_eq!(spec.default_width, 550);
-        assert_eq!(spec.default_height, 650);
-        assert_eq!(spec.saved_width_key.0, keys::AUDIO_PREFS_WINDOW_WIDTH.0);
-        assert_eq!(spec.saved_height_key.0, keys::AUDIO_PREFS_WINDOW_HEIGHT.0);
     }
 
     #[test]

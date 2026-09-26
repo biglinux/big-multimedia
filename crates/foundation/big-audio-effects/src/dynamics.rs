@@ -17,20 +17,6 @@
 //! helper [`crate::dynamics::percent_or_unit`] lets legacy callers that
 //! still pass `0..=100` percentages share the same derivation curve.
 
-/// Default voice-gate intensity on a 0.0..=1.0 scale.
-///
-/// Used as the initial slider position when a project has no saved
-/// voice-gate value. Picked to keep typical voice recordings from being
-/// gated while still attenuating quiet room noise.
-pub const GATE_INTENSITY_DEFAULT: f64 = 0.6;
-
-/// Default compressor intensity on a 0.0..=1.0 scale.
-///
-/// A gentle starting point: enough makeup gain and ratio to even out a
-/// voice track but far from the aggressive curves used for broadcast-style
-/// presets.
-pub const COMPRESSOR_INTENSITY_DEFAULT: f64 = 0.25;
-
 /// Resolved noise-gate parameters derived from a single intensity value.
 ///
 /// Construct with [`GateDerived::from_unit_intensity`] (or its

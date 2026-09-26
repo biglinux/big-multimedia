@@ -1,12 +1,11 @@
-//! IPTV channel favorites — simple JSON set of channel URLs (Relm4 port).
+//! IPTV channel favorites — simple JSON set of channel URLs.
 //!
 //! Keyed by URL (not by channel name): the same name can appear in many
 //! providers with different stream endpoints, so URL is the only stable key
 //! across re-fetches. Favorites are intentionally a flat set — no grouping or
 //! ordering logic, just "starred or not".
 //!
-//! Engine-free helper (no GTK widgets). Mirrors the legacy
-//! `iptv_view::favorites` until the V6 cutover deletes it.
+//! Engine-free helper (no GTK widgets).
 
 use std::collections::BTreeSet;
 use std::path::PathBuf;

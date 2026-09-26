@@ -1,18 +1,15 @@
-//! App-local media-adjustment dialog builders ported from the old god-object's
-//! `delay_adjust.rs` / `image_adjust.rs` (V-fidelity pass). Each builds a plain
-//! widget tree of debounced `BigIllustratedSliderRow`s that drive the live
-//! `Arc<MpvBackend>` directly — no callback indirection and no `Window`
-//! god-object (the legacy routed every change through an `OptionCallback`).
+//! App-local picture and equalizer builders for the settings panel: the
+//! "Video colour" choice up front and, under "More options", debounced
+//! `BigIllustratedSliderRow`s plus rotate/flip/crop that drive the live
+//! `Arc<MpvBackend>` directly.
 //!
 //! The equalizer reuses the shared
 //! `big_media_runtime::shared::audio_effects::create_equalizer_dialog`
 //! verbatim (the audio player drives the same dialog); only the
 //! transient/size/present wiring is app-local.
 //!
-//! mpv is the source of truth for these live values: the delay and image
-//! sliders apply straight to mpv properties (the equalizer persists its bands
-//! through `Settings`). Dialog *size* persists via
-//! `bind_dialog_size_persistence`, matching the old behaviour.
+//! mpv is the source of truth for these live values (the equalizer persists
+//! its bands through `Settings`).
 //!
 //! The pure slider-spec → range/default mapping is exercised by the unit tests
 //! at the bottom (range monotonicity + default-in-range invariants).
@@ -23,12 +20,10 @@ use std::sync::Arc;
 use std::time::Duration;
 
 use adw::prelude::*;
-use big_relm4_components::input::adjust_panel::{BigAdjustAxis, BigAdjustPanel};
 use big_relm4_components::input::debounce::connect_debounced_adjustment;
 use big_relm4_components::input::illustrated_slider_row::{
     BigIllustratedSliderRow, BigIllustratedSliderRowSpec,
 };
-use big_relm4_components::layout::dialog_page::BigDialogPage;
 use big_relm4_components::layout::preferences::BigPreferencesGroupSpec;
 
 use crate::config::video::RESOURCE_PREFIX;
@@ -36,22 +31,27 @@ use crate::i18n::i18n;
 use crate::player::mpv_backend::MpvBackend;
 use big_media_runtime::i18n::gettext_noop;
 
-/// Debounce window for live slider→mpv updates (matches the old 200 ms).
+/// Debounce window for live slider→mpv updates.
 const SLIDER_DEBOUNCE: Duration = Duration::from_millis(200);
 
-#[derive(Clone, Copy, Default)]
-pub(crate) struct CropMargins {
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub struct CropMargins {
     left: i64,
     right: i64,
     top: i64,
     bottom: i64,
 }
 
+/// How the picture's colours are read (`MpvBackend::set_source_colours`),
+/// in the order the dialog lists them.
+const SOURCE_COLOURS: [&str; 4] = ["auto", "pq", "hlg", "sdr"];
+
 #[derive(Clone, Default)]
 pub(crate) struct VideoTransformState {
     hflip: Rc<Cell<bool>>,
     vflip: Rc<Cell<bool>>,
     crop_margins: Rc<RefCell<CropMargins>>,
+    source_colours: Rc<Cell<usize>>,
 }
 
 impl VideoTransformState {
@@ -71,13 +71,53 @@ impl VideoTransformState {
         self.vflip.set(value);
     }
 
-    fn crop_margins(&self) -> CropMargins {
+    pub(crate) fn set_flip(&self, mpv: &MpvBackend, horizontal: bool, vertical: bool) {
+        self.set_hflip(horizontal);
+        self.set_vflip(vertical);
+        mpv.set_video_flip(horizontal, vertical);
+    }
+
+    pub(crate) fn crop_margins(&self) -> CropMargins {
         *self.crop_margins.borrow()
     }
 
-    fn set_crop_margins(&self, margins: CropMargins) {
+    pub(crate) fn set_crop_margins(&self, margins: CropMargins) {
         self.crop_margins.replace(margins);
     }
+
+    pub(crate) fn source_colours_index(&self) -> usize {
+        self.source_colours.get()
+    }
+
+    pub(crate) fn select_source_colours(&self, mpv: &MpvBackend, index: usize) {
+        if index < SOURCE_COLOURS.len() {
+            self.source_colours.set(index);
+            mpv.set_source_colours(SOURCE_COLOURS[index]);
+        }
+    }
+
+    /// "auto" unless the user said how to read this file's colours.
+    pub(crate) fn source_colours(&self) -> &'static str {
+        SOURCE_COLOURS[self.source_colours.get()]
+    }
+
+    /// Back to trusting the file: a choice made for one recording would
+    /// spoil the next file, which may describe its colours correctly.
+    pub(crate) fn reset_source_colours(&self, mpv: &MpvBackend) {
+        if self.source_colours.replace(0) != 0 {
+            mpv.set_source_colours("auto");
+        }
+    }
+}
+
+/// Short names of [`SOURCE_COLOURS`], for the choice and its chip.
+pub(crate) fn source_colour_names() -> [String; 4] {
+    [
+        i18n("Automatic"),
+        i18n("HDR"),
+        i18n("HDR (TV)"),
+        i18n("Normal"),
+    ]
 }
 
 /// Resource path prefix for the slider illustration SVGs.
@@ -122,16 +162,6 @@ fn crop_filter_from_margins(width: i64, height: i64, margins: CropMargins) -> Op
     ))
 }
 
-/// One audio/subtitle delay slider: illustration, range, and the mpv property
-/// it drives. `apply` receives the live seconds value.
-struct DelaySliderSpec {
-    illustration: &'static str,
-    title: &'static str,
-    subtitle: &'static str,
-    initial: f64,
-    apply: fn(&MpvBackend, f64),
-}
-
 /// One image slider: illustration, the integer-percent range mpv uses for the
 /// built-in video equalizer (-100..=100), the current value, and the setter.
 struct ImageSliderSpec {
@@ -147,79 +177,51 @@ struct ImageSliderSpec {
     apply: fn(&MpvBackend, f64),
 }
 
-/// Build the "Audio and Subtitle Delay" dialog content: two debounced sliders
-/// (subtitle + audio delay, ±10 s) bound to the live mpv backend. Returns the
-/// scrolling content widget to mount in an `adw::Dialog`.
-fn build_delay_content(mpv: &Arc<MpvBackend>) -> gtk::Widget {
-    let prefix = illustration_prefix();
-    let main_box = gtk::Box::builder()
-        .orientation(gtk::Orientation::Vertical)
-        .spacing(16)
-        .margin_top(16)
-        .margin_bottom(16)
-        .margin_start(20)
-        .margin_end(20)
-        .build();
-
-    let desc = gtk::Label::builder()
-        .label(i18n(
-            "Adjust timing when audio or subtitles are out of sync with the video. \
-             Positive values delay, negative values advance.",
-        ))
-        .wrap(true)
-        .xalign(0.0)
-        .build();
-    desc.add_css_class("dim-label");
-    main_box.append(&desc);
-
-    let rows = [
-        DelaySliderSpec {
-            illustration: "sub_delay.svg",
-            title: gettext_noop("Subtitle Delay"),
-            subtitle: gettext_noop("Shift subtitles forward or backward in time"),
-            initial: mpv.get_property_f64("sub-delay"),
-            apply: |mpv, value| mpv.set_sub_delay(value),
-        },
-        DelaySliderSpec {
-            illustration: "audio_delay.svg",
-            title: gettext_noop("Audio Delay"),
-            subtitle: gettext_noop("Shift audio forward or backward in time"),
-            initial: mpv.get_property_f64("audio-delay"),
-            apply: |mpv, value| mpv.set_audio_delay(value),
-        },
-    ];
-
-    for spec in rows {
-        let row = BigIllustratedSliderRow::new(
-            BigIllustratedSliderRowSpec::new(
-                &prefix,
-                i18n(spec.title),
-                -10.0,
-                10.0,
-                0.0,
-                clamp_initial(spec.initial, -10.0, 10.0),
-                0.1,
-                i18n("Reset to zero"),
+/// A ±10 s timing slider for the sound (`subtitles == false`) or the
+/// subtitles, named for the symptom it fixes.
+pub(super) fn build_delay_row(mpv: &Arc<MpvBackend>, subtitles: bool) -> gtk::Widget {
+    let (illustration, title, subtitle, initial, apply): (_, _, _, _, fn(&MpvBackend, f64)) =
+        if subtitles {
+            (
+                "sub_delay.svg",
+                i18n("Subtitles early or late"),
+                i18n("When the text shows before or after the speech. More = later"),
+                mpv.get_property_f64("sub-delay"),
+                |mpv, value| mpv.set_sub_delay(value),
             )
-            .illustration_name(spec.illustration)
-            .subtitle(i18n(spec.subtitle))
-            .digits(1)
-            .value_suffix(" s")
-            .value_width_chars(7)
-            .scale_width_request(80)
-            .title_heading(true)
-            .mark_label(Some("0")),
-        );
-        let (outer_box, adj, _, _, _) = row.into_parts();
-
-        let mpv = Arc::clone(mpv);
-        let apply = spec.apply;
-        connect_debounced_adjustment(&adj, SLIDER_DEBOUNCE, move |value| apply(&mpv, value));
-
-        main_box.append(&outer_box);
-    }
-
-    main_box.upcast()
+        } else {
+            (
+                "audio_delay.svg",
+                i18n("Sound early or late"),
+                i18n("When voices do not match the lips. More = later"),
+                mpv.get_property_f64("audio-delay"),
+                |mpv, value| mpv.set_audio_delay(value),
+            )
+        };
+    let row = BigIllustratedSliderRow::new(
+        BigIllustratedSliderRowSpec::new(
+            illustration_prefix(),
+            title,
+            -10.0,
+            10.0,
+            0.0,
+            clamp_initial(initial, -10.0, 10.0),
+            0.1,
+            i18n("Reset to zero"),
+        )
+        .illustration_name(illustration)
+        .subtitle(subtitle)
+        .digits(1)
+        .value_suffix(" s")
+        .value_width_chars(7)
+        .scale_width_request(80)
+        .title_heading(true)
+        .mark_label(Some("0")),
+    );
+    let (outer_box, adj, _, _, _) = row.into_parts();
+    let mpv = Arc::clone(mpv);
+    connect_debounced_adjustment(&adj, SLIDER_DEBOUNCE, move |value| apply(&mpv, value));
+    outer_box.upcast()
 }
 
 /// Append a `PreferencesGroup` of image sliders to `content`, each debounced
@@ -230,15 +232,18 @@ fn add_image_group(
     description: &str,
     rows: &[ImageSliderSpec],
     mpv: &Arc<MpvBackend>,
+    wide: bool,
 ) {
     let prefix = illustration_prefix();
     let group = BigPreferencesGroupSpec::new(title)
         .description(description)
         .build();
-    let axes: Vec<BigAdjustAxis> = rows
-        .iter()
-        .map(|spec| {
-            let row_spec = BigIllustratedSliderRowSpec::new(
+    // Side by side when the panel is wide, stacked when it is narrow.
+    let flow = reflowing_box(if wide { 2 } else { 1 });
+    flow.set_min_children_per_line(if wide { 2 } else { 1 });
+    for spec in rows {
+        let row = BigIllustratedSliderRow::new(
+            BigIllustratedSliderRowSpec::new(
                 &prefix,
                 i18n(spec.title),
                 spec.lower,
@@ -251,15 +256,105 @@ fn add_image_group(
             .illustration_name(spec.illustration)
             .subtitle(i18n(spec.subtitle))
             .digits(spec.digits)
-            .scale_width_request(80);
-            let mpv = Arc::clone(mpv);
-            let apply = spec.apply;
-            BigAdjustAxis::new(row_spec, move |value| apply(&mpv, value))
-        })
-        .collect();
+            .scale_width_request(80),
+        );
+        let mpv = Arc::clone(mpv);
+        let apply = spec.apply;
+        connect_debounced_adjustment(row.adjustment(), SLIDER_DEBOUNCE, move |value| {
+            apply(&mpv, value);
+        });
+        flow.append(row.root());
+    }
+    unfocusable_children(&flow);
+    group.add(&flow);
+    content.append(&group);
+}
 
-    let panel = BigAdjustPanel::new(axes, SLIDER_DEBOUNCE);
-    group.add(panel.root());
+/// A box that puts up to `per_line` children side by side as width allows.
+fn reflowing_box(per_line: u32) -> gtk::FlowBox {
+    gtk::FlowBox::builder()
+        .selection_mode(gtk::SelectionMode::None)
+        .homogeneous(true)
+        .max_children_per_line(per_line)
+        .column_spacing(12)
+        .row_spacing(12)
+        .build()
+}
+
+/// Tab moves between the controls, not the flow box's own cells.
+fn unfocusable_children(flow: &gtk::FlowBox) {
+    let mut child = flow.first_child();
+    while let Some(cell) = child {
+        cell.set_focusable(false);
+        child = cell.next_sibling();
+    }
+}
+
+/// "Video colour": how to read the picture's colours, as four plain
+/// choices. A grey, washed-out picture is fixed here and by no slider.
+fn build_source_colours_group(
+    content: &gtk::Box,
+    mpv: &Arc<MpvBackend>,
+    transform_state: &VideoTransformState,
+) {
+    let group = BigPreferencesGroupSpec::new(i18n("Video colour"))
+        .description(i18n(
+            "If the picture looks grey and washed out, choose HDR.",
+        ))
+        .build();
+    let hints = [
+        i18n("Uses what the file says"),
+        i18n("For a picture that looks grey and washed out"),
+        i18n("For some TV broadcasts (HLG)"),
+        i18n("Plain colours (SDR)"),
+    ];
+    // Side-by-side choices: the picked one is highlighted.
+    let flow = reflowing_box(4);
+    flow.set_min_children_per_line(2);
+    let mut first: Option<gtk::ToggleButton> = None;
+    for (index, (name, hint)) in source_colour_names().into_iter().zip(hints).enumerate() {
+        let texts = gtk::Box::builder()
+            .orientation(gtk::Orientation::Vertical)
+            .spacing(2)
+            .build();
+        texts.append(
+            &gtk::Label::builder()
+                .label(&name)
+                .xalign(0.0)
+                .css_classes(["heading"])
+                .build(),
+        );
+        texts.append(
+            &gtk::Label::builder()
+                .label(&hint)
+                .xalign(0.0)
+                .wrap(true)
+                .lines(3)
+                .css_classes(["caption"])
+                .build(),
+        );
+        let choice = gtk::ToggleButton::builder()
+            .child(&texts)
+            .active(transform_state.source_colours_index() == index)
+            .width_request(130)
+            .css_classes(["colour-choice"])
+            .build();
+        choice.update_property(&[gtk::accessible::Property::Label(&format!("{name}: {hint}"))]);
+        choice.set_group(first.as_ref());
+        first.get_or_insert_with(|| choice.clone());
+        choice.connect_toggled({
+            let mpv = Arc::clone(mpv);
+            let transform_state = transform_state.clone();
+            move |choice| {
+                if choice.is_active() {
+                    transform_state.select_source_colours(&mpv, index);
+                }
+            }
+        });
+        flow.append(&choice);
+    }
+    unfocusable_children(&flow);
+    group.add(&flow);
     content.append(&group);
 }
 
@@ -493,15 +588,22 @@ fn crop_spin(label: &str, upper: i64, initial: i64) -> gtk::SpinButton {
 /// saturation/hue (mpv built-in video equalizer, -100..=100) plus zoom & pan.
 /// Each slider is seeded from the current mpv value and applies live. Returns
 /// the scrolling content widget to mount in an `adw::Dialog`.
-fn build_image_content(
+/// The settings panel's "HDR" section: how to read the video's colours.
+pub(super) fn build_hdr_section(
     mpv: &Arc<MpvBackend>,
     transform_state: &VideoTransformState,
 ) -> gtk::Widget {
-    let content = gtk::Box::builder()
+    let section = gtk::Box::new(gtk::Orientation::Vertical, 0);
+    build_source_colours_group(&section, mpv, transform_state);
+    section.upcast()
+}
+
+/// The settings panel's "Picture" section: brightness and colour sliders,
+/// two side by side on a `wide` panel.
+pub(super) fn build_picture_section(mpv: &Arc<MpvBackend>, wide: bool) -> gtk::Widget {
+    let section = gtk::Box::builder()
         .orientation(gtk::Orientation::Vertical)
         .spacing(18)
-        .margin_top(12)
-        .margin_bottom(16)
         .build();
 
     let image_rows = [
@@ -569,13 +671,26 @@ fn build_image_content(
         },
     ];
     add_image_group(
-        &content,
+        &section,
         &i18n("Image"),
         &i18n("Fine-tune colors and brightness of the video picture"),
         &image_rows,
         mpv,
+        wide,
     );
+    section.upcast()
+}
 
+/// The settings panel's "Zoom and position" section: zoom, fill, rotate,
+/// mirror and crop.
+pub(super) fn build_framing_section(
+    mpv: &Arc<MpvBackend>,
+    transform_state: &VideoTransformState,
+) -> gtk::Widget {
+    let content = gtk::Box::builder()
+        .orientation(gtk::Orientation::Vertical)
+        .spacing(18)
+        .build();
     let zoom_rows = [
         ImageSliderSpec {
             illustration: "zoom.svg",
@@ -610,61 +725,12 @@ fn build_image_content(
         &i18n("Enlarge or reframe the video within the window"),
         &zoom_rows,
         mpv,
+        false,
     );
     build_transform_group(&content, mpv, transform_state);
     build_crop_group(&content, mpv, transform_state);
 
     content.upcast()
-}
-
-/// Wrap dialog `content` in a scrolled, clamped page inside a titled
-/// `adw::Dialog` and present it over `root`. Esc-to-close is built into
-/// `adw::Dialog`.
-fn present_adjust_dialog(
-    content: &gtk::Widget,
-    title: &str,
-    width: i32,
-    height: i32,
-    root: &adw::ApplicationWindow,
-) {
-    let page = BigDialogPage::scrolled_clamped(width, width);
-    page.content().append(content);
-    let dialog = adw::Dialog::builder()
-        .title(title)
-        .content_width(width)
-        .content_height(height)
-        .child(&page.into_root())
-        .build();
-    dialog.present(Some(root));
-}
-
-/// Present the "Audio and Subtitle Delay" dialog bound to `mpv`.
-pub(super) fn present_delay_dialog(mpv: &Arc<MpvBackend>, root: &adw::ApplicationWindow) {
-    let content = build_delay_content(mpv);
-    present_adjust_dialog(&content, &i18n("Audio and Subtitle Delay"), 460, 480, root);
-}
-
-/// Present the "Image and Video" dialog bound to `mpv`.
-pub(super) fn present_image_adjust_dialog(
-    mpv: &Arc<MpvBackend>,
-    transform_state: &VideoTransformState,
-    root: &adw::ApplicationWindow,
-) {
-    let content = build_image_content(mpv, transform_state);
-    present_adjust_dialog(&content, &i18n("Image and Video"), 500, 600, root);
-}
-
-/// Present the audio equalizer dialog — the shared dialog the audio player
-/// uses, persisting its bands through `Settings` and applying to mpv.
-pub(super) fn present_equalizer_dialog(
-    settings: &crate::settings::Settings,
-    mpv: Option<Arc<MpvBackend>>,
-    root: &adw::ApplicationWindow,
-) {
-    let dialog = crate::shared::audio_effects::create_equalizer_dialog(settings, mpv, None);
-    dialog.set_transient_for(Some(root));
-    crate::settings::bind_dialog_size_persistence(&dialog, settings, "equalizer", 500, 400);
-    dialog.present();
 }
 
 #[cfg(test)]

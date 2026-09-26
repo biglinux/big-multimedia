@@ -77,6 +77,10 @@ impl VideoControlsBar {
             ));
         }
 
+        rows.append(&gtk::Separator::new(gtk::Orientation::Horizontal));
+        rows.append(&section_label(&i18n("Subtitles early or late")));
+        rows.append(&subtitle_timing_row(&self.mpv));
+
         self.subtitle_menu_popover.add_css_class("menu");
         self.subtitle_menu_popover.set_child(Some(&rows));
 
@@ -157,6 +161,56 @@ fn track_button(label: &str, popover: &gtk::Popover, on_click: impl Fn() + 'stat
         }
     });
     button
+}
+
+/// "Earlier  −0.3 s  Later" for text that shows before or after the speech;
+/// the popover stays open so it can be nudged until it matches.
+fn subtitle_timing_row(mpv: &MpvSlot) -> gtk::Box {
+    let row = gtk::Box::builder()
+        .spacing(4)
+        .margin_start(6)
+        .margin_end(6)
+        .build();
+    let delay = mpv
+        .borrow()
+        .as_ref()
+        .map_or(0.0, |mpv| mpv.get_property_f64("sub-delay"));
+    let value = gtk::Label::builder()
+        .label(format!("{delay:+.1} s"))
+        .hexpand(true)
+        .width_chars(7)
+        .build();
+    // A chip or shortcut may have changed it since the menu was built.
+    value.connect_map({
+        let mpv = mpv.clone();
+        move |label| {
+            if let Some(mpv) = mpv.borrow().as_ref() {
+                label.set_label(&format!("{:+.1} s", mpv.get_property_f64("sub-delay")));
+            }
+        }
+    });
+    for (text, step) in [(i18n("Earlier"), -0.1), (i18n("Later"), 0.1)] {
+        let button = gtk::Button::with_label(&text);
+        button.add_css_class("flat");
+        let mpv = mpv.clone();
+        let label = value.downgrade();
+        button.connect_clicked(move |_| {
+            if let Some(mpv) = mpv.borrow().as_ref() {
+                let delay = ((mpv.get_property_f64("sub-delay") + step) * 10.0).round() / 10.0;
+                mpv.set_sub_delay(delay);
+                if let Some(label) = label.upgrade() {
+                    label.set_label(&format!("{delay:+.1} s"));
+                }
+            }
+        });
+        if step < 0.0 {
+            row.append(&button);
+            row.append(&value);
+        } else {
+            row.append(&button);
+        }
+    }
+    row
 }
 
 /// A dim section heading inside a popover.

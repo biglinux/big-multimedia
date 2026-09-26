@@ -1,9 +1,5 @@
 # Persistence, credentials and recoverable operations
 
-Implementation added on 2026-09-16. This describes candidate source, not a native
-qualification. No Rust installation, compilation, rustfmt or Clippy was performed
-in the review environment. Execute the native gates before release.
-
 ## Owners and thread boundaries
 
 `big-os-kit::background` has a bounded, serial lane for short disk transactions
@@ -32,7 +28,7 @@ asynchronous. User document exports use staged no-replace publication rather tha
 a universal private-mode overwrite policy.
 
 Normal window closing and requested quit/suspend/poweroff drain admitted jobs.
-Scans/exports own a drain guard until terminal completion, not merely until the UI
+Scans own a drain guard until terminal completion, not merely until the UI
 requests cancellation. Forced termination, kernel calls stuck in I/O, panic=abort
 and power loss are not successful-save guarantees. Hosts bypassing these window/
 quit paths must honor the same drain contract. Error states remain errors.
@@ -88,32 +84,6 @@ accepted clients close. A successful HTTP admission is not confirmed playback.
 HTTP remains plaintext, IPv4, opt-in and for a trusted LAN. This is not TLS,
 Internet remote access, pairing or universal denial-of-service protection.
 
-## Durable completion receipts
-
-Each output owns a private sidecar `.NAME.big-media-receipt.json` (version 1,
-maximum 4,096 bytes). The plan fingerprints native source/output paths, the full
-source SHA-256, external subtitle SHA-256, operational profile, streams, cuts,
-filters and other relevant choices. A display title or transient queue ID is not
-a completion proof. Output SHA-256 and byte length supplement ffprobe structural
-validation against the plan; neither proves perceptual equality of every frame.
-
-Before no-replace publication, a Prepared receipt is synced. After publication
-and readback it becomes Published. A restart may promote a Prepared receipt only
-if the exact file, source, plan and structural checks match. Existing files with
-missing/mismatched receipts are preserved and refused, not overwritten or called
-Done. Hashes are checked again after probing, and source/external subtitles are
-rechecked even on an all-reused job. Cooperative locks cover output+sidecar work.
-Receipts do not authenticate against a malicious writer with the same account.
-
-This resumes verified complete outputs of a job (especially split exports), not
-the middle of an encoded bitstream. Keep sidecars with the files; retry with the
-same source and export settings. There are at most 128 separate output slots per
-job. Originals remain intact, and outputs published before a later failure remain
-in place. Cancellation revokes later publication but does not fabricate rollback
-of completed names. Repeated start cannot clear another run's cancellation; a
-queue drop cancels and closes its channel so no consumer waits for a nonexistent
-completion. User feedback explains receipt-based reuse.
-
 ## Unavailable files and scanning
 
 Library menu → Review unavailable files scans a fixed ID snapshot in bounded
@@ -154,9 +124,9 @@ checks, not execution of Rust code. Auxiliary curl/FFmpeg/POSIX tests run real
 installed tools with synthetic data, not the Rust wrappers. Browser tests use
 real web assets and simulated transport, not this Rust listener.
 
-Rust tests added to deferred state, accounts, receipts, the remote server and
-unavailable records must run on the prepared target. No native GTK appearance,
-Orca, keyring, receiver lifetime or Rust type compatibility is certified here.
+The Rust tests for deferred state, accounts, the remote server and unavailable
+records run with `cargo test`; the scripts above certify no GTK appearance,
+Orca, keyring or receiver behavior.
 
 ### Close and system-action confirmation
 

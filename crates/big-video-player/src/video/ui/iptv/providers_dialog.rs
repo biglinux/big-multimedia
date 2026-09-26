@@ -1,4 +1,4 @@
-//! "Manage IPTV providers" dialog (Relm4 port).
+//! "Manage IPTV providers" dialog.
 //!
 //! Lists every provider in `IptvProviderStore`, with Add / Edit / Remove
 //! actions. Editing opens a form dialog that toggles between M3U URL, local M3U
@@ -6,9 +6,8 @@
 //! [`VideoIptvBrowser`] component reloads the store and
 //! refreshes its provider dropdown.
 //!
-//! Video-local helper presented by the browser component. Mirrors the legacy
-//! `iptv_view::providers_dialog` until the V6 cutover deletes it, but signals
-//! "closed" through a relm4 [`ComponentSender`] instead of a stored callback.
+//! Video-local helper presented by the browser component; signals "closed"
+//! through a relm4 [`ComponentSender`].
 
 use std::cell::RefCell;
 use std::rc::Rc;

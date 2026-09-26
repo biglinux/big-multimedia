@@ -1,6 +1,6 @@
-//! App-local Relm4 library panel (push-model) — port in progress.
+//! App-local Relm4 library panel (push-model).
 //!
-//! Single-column layout (`gtk::Stack`, mirroring the god-object): a "browse"
+//! Single-column layout (`gtk::Stack`): a "browse"
 //! page (grouping/search bar + library tree) and a "detail" page (back bar +
 //! track `ColumnView`) swap in place — selecting a node shows the detail, the
 //! back button returns to the tree. The panel NEVER touches the DB — it emits
@@ -422,7 +422,7 @@ impl Component for LibraryPanel {
             .child(&detail_view)
             .build();
 
-        // Single-column layout (mirrors the god-object): the browse tree and the
+        // Single-column layout: the browse tree and the
         // selected-node track list swap in place inside a Stack. Selecting a node
         // shows the detail page; the back button returns to the tree.
         let detail_page = gtk::Box::new(gtk::Orientation::Vertical, 0);

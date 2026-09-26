@@ -1,7 +1,7 @@
 [package]
 name = "big-audio-effects"
 version = "0.1.0"
-publish = false  # consumed by sibling apps via path dep, not crates.io (see ARCHITECTURE.md §8)
+publish = false  # consumed by sibling apps via path dep, not crates.io
 edition.workspace = true
 rust-version.workspace = true
 license.workspace = true

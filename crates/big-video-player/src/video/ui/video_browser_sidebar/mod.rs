@@ -14,7 +14,7 @@
 //!
 //! State lives in an `Rc<BrowserState>` shared with the builder free-functions
 //! (`chrome`, `views`) and signal closures; the UI is cleared and rebuilt
-//! imperatively (mirroring the old `refresh_playlist_sidebar`) rather than via a
+//! imperatively rather than via a
 //! `view!` tree, because the layout swaps wholesale between list/grid and
 //! empty/populated states. The current entry's highlight refreshes in O(1) via
 //! `store.splice()` on the old + new positions only.
@@ -39,7 +39,7 @@ use relm4::{Component, ComponentParts, ComponentSender};
 
 use crate::settings::{Settings, keys};
 
-/// Search-filter debounce (matches the old sidebar's typing latency).
+/// Search-filter debounce.
 const SEARCH_DEBOUNCE: Duration = Duration::from_millis(150);
 
 /// Which entry kinds the chip row keeps visible.
@@ -97,7 +97,7 @@ pub enum VideoBrowserSidebarOutput {
     RemoveEntry(String),
     /// The playlist was cleared.
     Clear,
-    /// Open these files in big-video-converter (creator triage → trim/compress).
+    /// Open these files in the video converter GUI.
     SendToConverter(Vec<String>),
     /// Move these files to the trash; the shell shows an undo toast.
     TrashFiles(Vec<String>),

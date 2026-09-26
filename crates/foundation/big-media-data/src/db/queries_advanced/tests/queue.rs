@@ -1,39 +1,28 @@
+use rusqlite::{Connection, params};
+
 use super::{insert_minimal_track, setup_db};
-use crate::db::queries_advanced::{load_queue, save_queue};
+use crate::db::queries_advanced::load_queue;
+
+/// Seed the legacy single-queue table that `load_queue` still migrates from.
+fn seed_legacy_queue(conn: &Connection, track_ids: &[i64]) {
+    for (position, track_id) in track_ids.iter().enumerate() {
+        conn.execute(
+            "INSERT INTO queue_tracks (position, track_id) VALUES (?1, ?2)",
+            params![position as i64, track_id],
+        )
+        .unwrap();
+    }
+}
 
 #[test]
-fn save_and_load_queue_roundtrip() {
+fn legacy_queue_loads_in_saved_order() {
     let conn = setup_db();
     insert_minimal_track(&conn, 1, "Song", "Art");
 
-    save_queue(&conn, &[1]).unwrap();
+    seed_legacy_queue(&conn, &[1]);
     let tracks = load_queue(&conn).unwrap();
     assert_eq!(tracks.len(), 1);
     assert_eq!(tracks[0].id, 1);
-}
-
-#[test]
-fn save_empty_queue() {
-    let conn = setup_db();
-    save_queue(&conn, &[]).unwrap();
-    let tracks = load_queue(&conn).unwrap();
-    assert!(tracks.is_empty());
-}
-
-#[test]
-fn failed_queue_replacement_preserves_previous_order() {
-    let conn = setup_db();
-    conn.execute_batch("PRAGMA foreign_keys=ON").unwrap();
-    insert_minimal_track(&conn, 1, "First", "Artist");
-    insert_minimal_track(&conn, 2, "Second", "Artist");
-    save_queue(&conn, &[2, 1, 2]).unwrap();
-    assert!(save_queue(&conn, &[1, 999]).is_err());
-    let restored: Vec<_> = load_queue(&conn)
-        .unwrap()
-        .into_iter()
-        .map(|track| track.id)
-        .collect();
-    assert_eq!(restored, [2, 1, 2]);
 }
 
 #[test]
@@ -113,7 +102,7 @@ fn legacy_queue_is_read_once_and_failed_session_save_keeps_both_queues() {
     };
     let conn = setup_db();
     insert_minimal_track(&conn, 1, "Library", "Artist");
-    save_queue(&conn, &[1, 1]).unwrap();
+    seed_legacy_queue(&conn, &[1, 1]);
     let mut session = load_queue_session(&conn).unwrap();
     assert_eq!(session.music.tracks.len(), 2);
     session.podcasts = SavedQueue {

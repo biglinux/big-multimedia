@@ -1,9 +1,0 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 16 16">
-  <!-- Grip dots (indicate draggable/interactive area) -->
-  <circle cx="11" cy="4" r="1.2" fill="currentColor" opacity="0.5"/>
-  <circle cx="11" cy="8" r="1.2" fill="currentColor" opacity="0.5"/>
-  <circle cx="11" cy="12" r="1.2" fill="currentColor" opacity="0.5"/>
-  <!-- Chevron pointing right (push sidebar back) -->
-  <path d="M4 2 L8 8 L4 14" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
-</svg>

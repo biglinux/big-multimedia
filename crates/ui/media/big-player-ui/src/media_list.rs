@@ -20,7 +20,9 @@ use adw::prelude::*;
 use gtk::subclass::prelude::*;
 use gtk::{gdk, glib};
 
-use crate::favicon_cache::{FaviconLruCache, radio_initials_texture};
+use big_media_components::initials_avatar::initials_texture;
+
+use crate::favicon_cache::FaviconLruCache;
 
 /// Blocking, disk-cached byte fetcher for a remote row image. Run off-thread by
 /// the view for visible rows only; `Send + Sync` so it can cross to a worker and
@@ -457,7 +459,7 @@ fn bind_image(
 }
 
 fn set_initials(image: &gtk::Image, text: &str, size: i32) {
-    if let Some(texture) = radio_initials_texture(text, size.max(1)) {
+    if let Some(texture) = initials_texture(text, size.max(1)) {
         image.set_paintable(Some(&texture));
     } else {
         image.set_icon_name(Some("audio-x-generic-symbolic"));

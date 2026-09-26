@@ -9,8 +9,6 @@
 //! pixbuf→`MemoryTexture` boilerplate (and its rowstride / lifetime hazards) at
 //! every call site. GTK-only — no `image`-crate or media-runtime coupling.
 
-use std::path::Path;
-
 use gtk::prelude::*;
 use relm4::gtk;
 
@@ -93,22 +91,10 @@ pub fn pixbuf_to_rgba(pixbuf: &gtk::gdk_pixbuf::Pixbuf) -> Option<RgbaImage> {
 
 /// Convert a `Pixbuf` into a [`gtk::gdk::Texture`]. Main-thread only
 /// (`MemoryTexture::new` asserts it); for large or networked files decode off
-/// the main loop with [`decode_rgba_at_scale`] + [`rgba_to_texture`] instead.
+/// the main loop and hand the pixels to [`rgba_to_texture`] instead.
 #[must_use]
 pub fn pixbuf_to_texture(pixbuf: &gtk::gdk_pixbuf::Pixbuf) -> Option<gtk::gdk::Texture> {
     Some(rgba_to_texture(pixbuf_to_rgba(pixbuf)?))
-}
-
-/// Decode an image file, scaled to fit `max_edge` on the longer side, into
-/// [`RgbaImage`] (aspect preserved; `None` on decode failure). The `!Send`
-/// `Pixbuf` never escapes, so this is the **worker-thread half** of an
-/// off-main-loop decode: run it in [`crate::task::spawn_blocking_result`] and
-/// build the texture in the `on_result` via [`rgba_to_texture`].
-#[must_use]
-pub fn decode_rgba_at_scale(path: &Path, max_edge: i32) -> Option<RgbaImage> {
-    let pixbuf =
-        gtk::gdk_pixbuf::Pixbuf::from_file_at_scale(path, max_edge, max_edge, true).ok()?;
-    pixbuf_to_rgba(&pixbuf)
 }
 
 /// Build a texture from an already-decoded, tightly packed RGBA8 image (e.g. the

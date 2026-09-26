@@ -17,7 +17,6 @@ use std::ffi::CStr;
 use std::rc::Rc;
 use texture_pool::{CurrentContext, TextureLease, TexturePool};
 
-use super::skip_mpv_render;
 use gl_fns::{
     GL_COLOR_ATTACHMENT0, GL_FRAMEBUFFER, GL_FRAMEBUFFER_COMPLETE, GL_LINEAR, GL_RGBA, GL_RGBA8,
     GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_TEXTURE_MIN_FILTER, GL_UNSIGNED_BYTE, GlFns,
@@ -230,9 +229,6 @@ impl OffloadRenderer {
             self.pool.force();
             return;
         };
-        if skip_mpv_render() {
-            return;
-        }
         if !new_frame && !force {
             self.skip_count.set(self.skip_count.get() + 1);
             return;

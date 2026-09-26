@@ -378,33 +378,6 @@ impl BigIllustratedSliderRow {
         &self.adjustment
     }
 
-    /// Return a reference to the `scale` exposed by this [`BigIllustratedSliderRow`].
-    ///
-    /// Useful when callers need to bind signals, query state, or compose the
-    /// widget into a larger surface without taking ownership.
-    #[must_use]
-    pub fn scale(&self) -> &gtk::Scale {
-        &self.scale
-    }
-
-    /// Return a reference to the `value label` exposed by this [`BigIllustratedSliderRow`].
-    ///
-    /// Useful when callers need to bind signals, query state, or compose the
-    /// widget into a larger surface without taking ownership.
-    #[must_use]
-    pub fn value_label(&self) -> &gtk::Label {
-        &self.value_label
-    }
-
-    /// Return a reference to the `reset button` exposed by this [`BigIllustratedSliderRow`].
-    ///
-    /// Useful when callers need to bind signals, query state, or compose the
-    /// widget into a larger surface without taking ownership.
-    #[must_use]
-    pub fn reset_button(&self) -> &gtk::Button {
-        &self.reset_button
-    }
-
     /// Consume `self` and yield the underlying parts.
     #[must_use]
     pub fn into_parts(

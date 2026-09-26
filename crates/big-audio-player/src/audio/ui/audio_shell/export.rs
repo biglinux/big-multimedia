@@ -20,19 +20,12 @@ impl AudioShell {
             self.notify(&i18n("No local track is playing"));
             return;
         };
-        self.launch_converter(&[input.to_string_lossy().into_owned()], cuts);
-    }
-
-    /// Spawn the audio converter with `paths` (and `cuts`); toast a failure.
-    pub(super) fn launch_converter(&self, paths: &[String], cuts: &[(f64, f64)]) {
-        let program = converter_handoff::AUDIO_CONVERTER;
-        match converter_handoff::open(program, paths, cuts) {
-            Ok(()) => self.notify(&i18n("Opening in converter…")),
-            Err(error) => {
-                log::warn!("could not launch {program}: {error}");
-                self.notify(&i18n("Could not launch the converter"));
-            }
-        }
+        self.notify(&converter_handoff::open(
+            converter_handoff::AUDIO_CONVERTER,
+            &[input.to_string_lossy().into_owned()],
+            cuts,
+            None,
+        ));
     }
 
     /// Enter visual trim mode on the current local track.

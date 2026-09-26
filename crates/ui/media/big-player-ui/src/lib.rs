@@ -4,7 +4,6 @@
 //! crates, and `big-os-kit` — never on `big-media-runtime` (mpv/ffmpeg). Each
 //! panel is a push-model `Component` (owns its widgets + emits typed intents;
 //! the host shell owns the queue/mpv/db/settings and pushes display state back).
-//! See `big-rust-components/ARCHITECTURE.md` §9–10.
 
 #![forbid(unsafe_code)]
 #![deny(missing_docs)]

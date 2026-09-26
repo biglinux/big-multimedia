@@ -112,35 +112,10 @@ impl MpvBackend {
         });
     }
 
-    pub fn set_icc_profile_auto(&self, enable: bool) {
-        self.with_mpv(|m| {
-            let _ = m.set_property("icc-profile-auto", enable);
-        });
-    }
-
     pub fn set_icc_intent(&self, intent: i64) {
         self.with_mpv(|m| {
             let _ = m.set_property("icc-3dlut-size", "64x64x64".to_string());
             let _ = m.set_property("icc-intent", intent);
-        });
-    }
-
-    pub fn set_stop_screensaver(&self, mode: &str) {
-        self.with_mpv(|m| {
-            let _ = m.set_property("stop-screensaver", mode.to_string());
-        });
-    }
-
-    pub fn set_auto_window_resize(&self, enable: bool) {
-        self.with_mpv(|m| {
-            let _ = m.set_property(
-                "auto-window-resize",
-                if enable {
-                    "yes".to_string()
-                } else {
-                    "no".to_string()
-                },
-            );
         });
     }
 

@@ -51,7 +51,7 @@ pub(super) fn apply_video_options(init: &MpvInitializer) -> Result<(), MpvError>
     init.set_option("video-sync", "audio")?;
     // The render API is called with BLOCK_FOR_TARGET_TIME=0, so mpv must not
     // render ahead of the target display time: without this the frames it hands
-    // us are early and A/V sync drifts (render.h, MPV_RENDER_PARAM_BLOCK_FOR_TARGET_TIME).
+    // us are early and A/V sync is slightly off (render.h, MPV_RENDER_PARAM_BLOCK_FOR_TARGET_TIME).
     init.set_option("video-timing-offset", "0")?;
     init.set_option("interpolation", "no")?;
     init.set_option("vd-lavc-dr", "auto")?;
@@ -116,17 +116,25 @@ pub(super) fn apply_audio_only_options(init: &MpvInitializer) -> Result<(), MpvE
     Ok(())
 }
 
+/// What mpv restores per file. Filters, speed, volume and picture settings
+/// belong to the apps' own settings: restored behind their back, the UI
+/// would show values mpv no longer uses.
+pub(super) const VIDEO_WATCH_LATER_OPTIONS: &str = "start,aid,sid,sub-delay,audio-delay";
+pub(super) const AUDIO_WATCH_LATER_OPTIONS: &str = "start";
+
 /// Persist mpv's per-file resume state under XDG data. `subdir` is the
 /// path below `$XDG_DATA_HOME` (e.g. `"big-video-player/watch_later"`).
-pub(super) fn apply_watch_later(init: &MpvInitializer, subdir: &str) -> Result<(), MpvError> {
+pub(super) fn apply_watch_later(
+    init: &MpvInitializer,
+    subdir: &str,
+    options: &str,
+) -> Result<(), MpvError> {
     if let Some(data_dir) = gtk::glib::user_data_dir().to_str() {
         let watch_dir = format!("{data_dir}/{subdir}");
         let _ = std::fs::create_dir_all(&watch_dir);
         init.set_option("watch-later-directory", watch_dir)?;
     }
-    let _ = init.set_option("watch-later-options-remove", "volume");
-    let _ = init.set_option("watch-later-options-remove", "mute");
-    Ok(())
+    init.set_option("watch-later-options", options)
 }
 
 /// Best-effort IPC socket under `$XDG_RUNTIME_DIR`. Failures are non-fatal.

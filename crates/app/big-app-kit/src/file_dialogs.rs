@@ -3,7 +3,7 @@
 
 //! GTK file dialog wrapper for BigLinux desktop apps.
 
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 
 use gtk::gio;
 use gtk::prelude::*;
@@ -71,42 +71,12 @@ impl FilePicker {
         }
     }
 
-    /// Return a reference to the `spec` exposed by this [`FilePicker`].
-    ///
-    /// Useful when callers need to bind signals, query state, or compose the
-    /// widget into a larger surface without taking ownership.
-    #[must_use]
-    pub fn spec(&self) -> &BigFilePickerSpec {
-        &self.spec
-    }
-
     /// Configure the `accept_label` setting and return the updated builder.
     ///
     /// The supplied `label` overrides any previously stored value; chain
     /// further `with_*` / setter calls to compose the full [`FilePicker`].
     pub fn accept_label(mut self, label: impl Into<String>) -> Self {
         self.accept_label = Some(label.into());
-        self
-    }
-
-    /// Configure the `initial_folder` setting and return the updated builder.
-    ///
-    /// The supplied `path` overrides any previously stored value; chain
-    /// further `with_*` / setter calls to compose the full [`FilePicker`].
-    pub fn initial_folder(mut self, path: impl AsRef<Path>) -> Self {
-        let path = path.as_ref();
-        if !path.as_os_str().is_empty() {
-            self.initial_folder = Some(path.to_path_buf());
-            self.initial_gio_folder = None;
-        }
-        self
-    }
-
-    /// Configure the initial folder from a `gio::File` so callers can preserve
-    /// URI-backed folders such as `smb://`, `sftp://`, `ftp://`, or `ssh://`.
-    pub fn initial_gio_folder(mut self, folder: gio::File) -> Self {
-        self.initial_gio_folder = Some(folder);
-        self.initial_folder = None;
         self
     }
 
@@ -119,19 +89,6 @@ impl FilePicker {
         self
     }
 
-    /// Sets the initial folder to `$HOME/.ssh` when it exists, falling back
-    /// to `$HOME`. Leaves the initial folder untouched if `$HOME` is not set.
-    ///
-    /// Convenience for SSH-aware dialogs (key pickers, known_hosts browsing,
-    /// ssh-config selection) that should land users in the right place
-    /// without each app re-implementing the same `~/.ssh` probe.
-    pub fn initial_ssh_folder(self) -> Self {
-        match resolve_ssh_initial_folder() {
-            Some(path) => self.initial_folder(path),
-            None => self,
-        }
-    }
-
     /// Configure the `filter` setting and return the updated builder.
     ///
     /// The supplied `name` overrides any previously stored value; chain
@@ -141,20 +98,6 @@ impl FilePicker {
         filter.set_name(Some(name));
         for suffix in suffixes {
             filter.add_suffix(suffix);
-        }
-        self.filters.push(filter);
-        self
-    }
-
-    /// Configure the `mime_filter` setting and return the updated builder.
-    ///
-    /// The supplied `name` overrides any previously stored value; chain
-    /// further `with_*` / setter calls to compose the full [`FilePicker`].
-    pub fn mime_filter(mut self, name: &str, mime_types: &[&str]) -> Self {
-        let filter = gtk::FileFilter::new();
-        filter.set_name(Some(name));
-        for mime in mime_types {
-            filter.add_mime_type(mime);
         }
         self.filters.push(filter);
         self
@@ -228,37 +171,6 @@ impl FilePicker {
                 && let Some(path) = file.path()
             {
                 callback(path);
-            }
-        });
-    }
-
-    /// Open the picker and return the selected `gio::File`.
-    ///
-    /// Use this variant when callers must preserve URI-backed selections such
-    /// as `smb://`, `sftp://`, or `ftp://` instead of reducing the result to a
-    /// local filesystem path.
-    pub fn open_gio<W, F>(self, parent: &W, callback: F)
-    where
-        W: IsA<gtk::Window>,
-        F: FnOnce(gio::File) + 'static,
-    {
-        self.open_gio_optional(Some(parent), callback);
-    }
-
-    /// Parent-optional variant of [`Self::open_gio`].
-    pub fn open_gio_optional<W, F>(self, parent: Option<&W>, callback: F)
-    where
-        W: IsA<gtk::Window>,
-        F: FnOnce(gio::File) + 'static,
-    {
-        let dialog = self.build_dialog();
-        let mut callback = Some(callback);
-        dialog.open(parent, None::<&gio::Cancellable>, move |result| {
-            let Some(callback) = callback.take() else {
-                return;
-            };
-            if let Ok(file) = result {
-                callback(file);
             }
         });
     }
@@ -353,78 +265,6 @@ impl FilePicker {
             }
         });
     }
-
-    /// Save-as variant that forwards the full `Result` (including IO
-    /// errors) so callers can surface diagnostics.
-    pub fn save_result<W, F>(self, parent: &W, callback: F)
-    where
-        W: IsA<gtk::Window>,
-        F: FnOnce(Result<Option<PathBuf>, gtk::glib::Error>) + 'static,
-    {
-        self.save_result_optional(Some(parent), callback);
-    }
-
-    /// Parent-optional variant of [`Self::save_result`].
-    pub fn save_result_optional<W, F>(self, parent: Option<&W>, callback: F)
-    where
-        W: IsA<gtk::Window>,
-        F: FnOnce(Result<Option<PathBuf>, gtk::glib::Error>) + 'static,
-    {
-        let dialog = self.build_dialog();
-        let mut callback = Some(callback);
-        dialog.save(parent, None::<&gio::Cancellable>, move |result| {
-            let Some(callback) = callback.take() else {
-                return;
-            };
-            callback(result.map(|file| file.path()));
-        });
-    }
-
-    /// Save-as variant that preserves URI-backed destinations. Use this when a
-    /// caller can write through GIO and must not discard SMB/SFTP/etc. choices
-    /// just because they do not have a local POSIX path.
-    pub fn save_gio_result<W, F>(self, parent: &W, callback: F)
-    where
-        W: IsA<gtk::Window>,
-        F: FnOnce(Result<Option<gio::File>, gtk::glib::Error>) + 'static,
-    {
-        self.save_gio_result_optional(Some(parent), callback);
-    }
-
-    /// Parent-optional variant of [`Self::save_gio_result`].
-    pub fn save_gio_result_optional<W, F>(self, parent: Option<&W>, callback: F)
-    where
-        W: IsA<gtk::Window>,
-        F: FnOnce(Result<Option<gio::File>, gtk::glib::Error>) + 'static,
-    {
-        let dialog = self.build_dialog();
-        let mut callback = Some(callback);
-        dialog.save(parent, None::<&gio::Cancellable>, move |result| {
-            let Some(callback) = callback.take() else {
-                return;
-            };
-            callback(result.map(Some));
-        });
-    }
-}
-
-/// Resolves the directory `initial_ssh_folder` lands in.
-///
-/// Returns `$HOME/.ssh` when that directory exists, otherwise `$HOME`,
-/// otherwise `None`.
-#[must_use]
-pub fn resolve_ssh_initial_folder() -> Option<PathBuf> {
-    resolve_ssh_initial_folder_from_home(std::env::var_os("HOME").map(PathBuf::from))
-}
-
-fn resolve_ssh_initial_folder_from_home(home: Option<PathBuf>) -> Option<PathBuf> {
-    let home = home?;
-    let ssh_dir = home.join(".ssh");
-    if ssh_dir.is_dir() {
-        Some(ssh_dir)
-    } else {
-        Some(home)
-    }
 }
 
 fn collect_paths(files: &gio::ListModel) -> Vec<PathBuf> {
@@ -440,88 +280,6 @@ mod tests {
     use super::*;
 
     use tempfile::tempdir;
-
-    #[test]
-    fn empty_initial_folder_does_not_update_builder_state() {
-        let file_picker = FilePicker::new("Open").initial_folder("");
-
-        assert!(file_picker.initial_folder.is_none());
-    }
-
-    #[test]
-    fn non_empty_initial_folder_updates_builder_state() {
-        let file_picker = FilePicker::new("Open").initial_folder("/tmp");
-
-        assert_eq!(file_picker.initial_folder, Some(PathBuf::from("/tmp")));
-        assert!(file_picker.initial_gio_folder.is_none());
-    }
-
-    #[test]
-    #[cfg_attr(miri, ignore)]
-    fn initial_gio_folder_replaces_local_initial_folder() {
-        let folder = gio::File::for_uri("smb://server/share/");
-        let file_picker = FilePicker::new("Open")
-            .initial_folder("/tmp")
-            .initial_gio_folder(folder);
-
-        assert!(file_picker.initial_folder.is_none());
-        assert_eq!(
-            file_picker
-                .initial_gio_folder
-                .as_ref()
-                .map(|file| file.uri()),
-            Some("smb://server/share/".into())
-        );
-    }
-
-    #[test]
-    #[cfg_attr(miri, ignore)]
-    fn local_initial_folder_replaces_gio_initial_folder() {
-        let folder = gio::File::for_uri("sftp://server/srv/share/");
-        let file_picker = FilePicker::new("Open")
-            .initial_gio_folder(folder)
-            .initial_folder("/tmp");
-
-        assert_eq!(file_picker.initial_folder, Some(PathBuf::from("/tmp")));
-        assert!(file_picker.initial_gio_folder.is_none());
-    }
-
-    #[test]
-    fn public_ssh_initial_folder_uses_current_home_environment() {
-        let current_home_directory = std::env::var_os("HOME")
-            .map(PathBuf::from)
-            .expect("HOME is available for tests");
-        let expected_folder = resolve_ssh_initial_folder_from_home(Some(current_home_directory));
-
-        assert_eq!(resolve_ssh_initial_folder(), expected_folder);
-    }
-
-    #[test]
-    fn ssh_initial_folder_prefers_existing_dot_ssh_directory() {
-        let home_directory = tempdir().expect("temporary home directory");
-        let ssh_directory = home_directory.path().join(".ssh");
-        std::fs::create_dir(&ssh_directory).expect("temporary ssh directory");
-
-        let resolved_folder =
-            resolve_ssh_initial_folder_from_home(Some(home_directory.path().to_path_buf()));
-
-        assert_eq!(resolved_folder, Some(ssh_directory));
-    }
-
-    #[test]
-    fn ssh_initial_folder_falls_back_to_home_directory() {
-        let home_directory = tempdir().expect("temporary home directory");
-
-        let resolved_folder =
-            resolve_ssh_initial_folder_from_home(Some(home_directory.path().to_path_buf()));
-
-        assert_eq!(resolved_folder, Some(home_directory.path().to_path_buf()));
-    }
-
-    #[test]
-    fn ssh_initial_folder_absent_when_home_is_missing() {
-        assert_eq!(resolve_ssh_initial_folder_from_home(None), None);
-    }
 
     #[test]
     #[cfg_attr(miri, ignore)]

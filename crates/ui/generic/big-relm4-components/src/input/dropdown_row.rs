@@ -60,15 +60,6 @@ impl BigDropdownRowSpec {
         self
     }
 
-    /// Allow libadwaita markup in title/subtitle.
-    ///
-    /// Default is plain text; strings are escaped before they reach the row.
-    #[must_use]
-    pub fn allow_markup(mut self) -> Self {
-        self.allow_markup = true;
-        self
-    }
-
     /// Resolve the spec into its display-free runtime form.
     #[must_use]
     pub fn resolved(&self) -> BigDropdownRowResolved {
@@ -215,16 +206,5 @@ mod tests {
             resolved.subtitle.as_deref(),
             Some("&lt;i&gt;Mode&lt;/i&gt;")
         );
-    }
-
-    #[test]
-    fn resolved_can_allow_markup_explicitly() {
-        let resolved = BigDropdownRowSpec::new("<b>Output</b>", ["Join"])
-            .subtitle("<i>Mode</i>")
-            .allow_markup()
-            .resolved();
-
-        assert_eq!(resolved.title, "<b>Output</b>");
-        assert_eq!(resolved.subtitle.as_deref(), Some("<i>Mode</i>"));
     }
 }

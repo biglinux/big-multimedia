@@ -154,22 +154,6 @@ impl From<String> for Error {
     }
 }
 
-impl Error {
-    /// Deprecated wrapper that flags the transitional `From<String>` path
-    /// at call sites. Prefer [`Error::internal`] or a typed variant.
-    ///
-    /// caveman: rustc forbids `#[deprecated]` on trait-impl methods, so
-    /// we surface the warning through this inherent shim that mirrors
-    /// the impl. Callers writing `Error::from_string(s)` get the lint;
-    /// existing `.into()` callsites remain warning-free until migrated
-    /// manually.
-    #[deprecated(note = "use Error::internal() or a typed variant")]
-    #[must_use]
-    pub fn from_string(s: String) -> Self {
-        Self::Internal(s)
-    }
-}
-
 // NOTE: `impl From<&str>` is intentionally absent. `&str` literals leaking
 // into typed-error sites obscure real failure modes; callers with a `&str`
 // must use `Error::internal(s)` or `.to_string().into()` explicitly.

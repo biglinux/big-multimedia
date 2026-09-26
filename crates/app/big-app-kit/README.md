@@ -1,29 +1,25 @@
 # big-app-kit
 
-Typed app-building contracts for BigLinux Rust desktop applications.
+GTK/libadwaita app helpers shared by `big-audio-player` and `big-video-player`.
+GTK-free pieces live in `big-app-kit-core` and `big-os-kit` and are re-exported
+here.
 
-The crate keeps app code small by exposing typed, display-free specs for common
-desktop workflows. Relm4/GTK widgets can wrap these specs without moving app
-domain logic into shared UI crates, which keeps the specs testable in isolation.
+## Modules
 
-## Module groups
-
-- **Data + persistence:** `storage`, `recent_files`, `profile_registry`,
-  `keyring`, `scheme_loader`.
-- **Desktop integration:** `desktop`, `shell`, `subprocess`, `url`, `services`.
-- **UI contracts:** `dialogs`, `file_dialogs`, `forms`, `previews`, `widgets`,
-  `catalog`, `collections`.
-- **Media + remote:** `mpris`, `remote_control` (feature `remote-control`),
-  `http_client` (feature `http-client`).
-- **AI workflow scaffolding:** `ai_assistant`, `ai_history`, `ai_provider_config`.
-- **Misc:** `files`, `tasks`, `keybindings`.
+- `actions`, `desktop` — GIO action/accelerator installers, file manager and
+  power actions.
+- `containment` — panic containment for Relm4 `update()` bodies and glib
+  callbacks.
+- `dialogs`, `file_dialogs` — dialog size persistence and GTK file dialogs.
+- `keybindings` — shortcut parsing, overrides and accelerator labels.
+- `mpris` — MPRIS2 D-Bus service.
+- `widgets` — file drag-and-drop helpers.
+- Re-exported: `files`, `recent_files`, `zone_layout`, `storage`,
+  `subprocess`, `remote_control` (feature `remote-control`).
 
 ## Features
 
-- `http-client` (default) — blocking HTTP policy wrapper backed by system `curl`.
-- `remote-control` (default) — local HTTP remote-control endpoint (`tiny_http`).
-
-Disable defaults for a smaller dependency graph when those modules are unused.
+- `remote-control` — local HTTP remote-control endpoint.
 
 ## License
 

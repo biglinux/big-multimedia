@@ -1,19 +1,15 @@
 use super::actions::{
     build_welcome_screen, install_window_actions, toggle_keep_above, wire_sidebar_toggle,
 };
-#[cfg(feature = "chromecast")]
-use super::cast_snapshot::build_cast_filter_snapshot;
 use super::dialogs::reapply_theme;
 use super::input::{clear_shell_input, set_shell_input};
-use super::input_gestures::{
-    wire_background_video_input, wire_osd_autohide, wire_osd_focus_out, wire_video_input,
-};
+use super::input_gestures::{wire_osd_autohide, wire_osd_focus_out, wire_video_input};
 use super::render::{FastRenderContextSlot, VideoRealizeOptions, wire_close, wire_realize};
 use super::*;
 use big_media_components::surface::{
-    BigMediaChrome, BigMediaChromePlacement, BigMediaMenuSpec, BigMediaOverlayStack,
-    BigMediaSidebarShell, BigMediaSidebarSpec, create_media_toast_overlay_root,
-    mount_media_toast_content, toggle_surface_fullscreened,
+    BigMediaChrome, BigMediaChromePlacement, BigMediaOverlayStack, BigMediaSidebarShell,
+    BigMediaSidebarSpec, create_media_toast_overlay_root, mount_media_toast_content,
+    toggle_surface_fullscreened,
 };
 #[cfg(all(test, not(miri)))]
 use big_relm4_components::layout::hamburger_menu::build_flat_menu_model;
@@ -22,13 +18,13 @@ use big_relm4_components::layout::hamburger_menu::{
 };
 
 impl Component for VideoShell {
-    type Init = VideoShellMode;
+    type Init = ();
     type Input = VideoShellInput;
     type Output = ();
     type CommandOutput = ();
     // Root is the mountable CONTENT (the toast overlay), not a window: the window
     // chrome + window-scoped setup are supplied / resolved by the mount point
-    // (standalone boot, host module, or pane) — RESTRUCTURE ADR D14.
+    // (standalone boot, host module, or pane).
     type Root = adw::ToastOverlay;
     type Widgets = ();
 
@@ -37,16 +33,14 @@ impl Component for VideoShell {
     }
 
     fn init(
-        mode: Self::Init,
+        (): Self::Init,
         root: Self::Root,
         sender: ComponentSender<Self>,
     ) -> ComponentParts<Self> {
         crate::settings::bind_write_drain(&root);
         let settings = Settings::for_video();
-        let is_background = mode.is_background();
 
-        // App stylesheet + icon path (the god-object loaded these; the shell
-        // owns them now). Scoped CSS class for black bg + rounded corners.
+        // App stylesheet, plus a scoped CSS class for black bg + rounded corners.
         if let Some(display) = gtk::gdk::Display::default() {
             let provider = gtk::CssProvider::new();
             provider.load_from_resource(&format!(
@@ -58,13 +52,8 @@ impl Component for VideoShell {
                 &provider,
                 gtk::STYLE_PROVIDER_PRIORITY_APPLICATION,
             );
-            gtk::IconTheme::for_display(&display)
-                .add_resource_path(&format!("{}/icons", crate::config::video::RESOURCE_PREFIX));
         }
         root.add_css_class("big-video-player");
-        if is_background {
-            root.add_css_class("big-video-background");
-        }
 
         // Shared mpv handle: created here so the controls-bar popovers can read
         // it at call time, and so the realize handler can fill it.
@@ -78,7 +67,7 @@ impl Component for VideoShell {
             .launch(())
             .forward(sender.input_sender(), VideoShellInput::TrimBar);
 
-        // OSD controls bar (app-local; recovers the old `controls_box`). The trim
+        // OSD controls bar (app-local). The trim
         // bar rides inside it (transport ↔ trim stack).
         let controls = VideoControlsBar::builder()
             .launch(VideoControlsBarInit {
@@ -99,22 +88,6 @@ impl Component for VideoShell {
         let iptv = VideoIptvBrowser::builder()
             .launch(())
             .forward(sender.input_sender(), VideoShellInput::Iptv);
-
-        // Cast device picker (video-local UI over the shared CastSessionController
-        // engine). Held detached as a dialog child; start/stop reported back.
-        #[cfg(feature = "chromecast")]
-        let cast = VideoCastDialog::builder()
-            .launch(VideoCastDialogInit {
-                cast_engine: Arc::new(CastSessionController::new()),
-                mpv: mpv.clone(),
-                filter_snapshot: {
-                    let mpv = mpv.clone();
-                    let settings = settings.clone();
-                    let video_transform = video_transform.clone();
-                    Rc::new(move || build_cast_filter_snapshot(&mpv, &settings, &video_transform))
-                },
-            })
-            .forward(sender.input_sender(), VideoShellInput::Cast);
 
         // Video surface: a black bg box is the overlay's main child; the GLArea
         // is an overlay child (the offload path hides it and stacks a
@@ -143,38 +116,80 @@ impl Component for VideoShell {
             .build();
         media_stack.add_fallback_media_surface(&sw_picture);
 
-        let chrome = BigMediaChrome::new(
-            BigMediaMenuSpec {
-                icon_name: "open-menu-symbolic".to_owned(),
-                label: i18n("Main Menu"),
-                items: main_menu_items(),
-            },
-            !is_background,
-        );
+        // The header's main button opens the settings panel, not a menu.
+        let settings_button = gtk::Button::builder()
+            .icon_name("open-menu-symbolic")
+            .action_name("win.settings")
+            .tooltip_text(i18n("Settings"))
+            .css_classes(["osd-btn"])
+            .build();
+        settings_button.update_property(&[gtk::accessible::Property::Label(&i18n("Settings"))]);
+        let chrome = BigMediaChrome::new(&settings_button, true);
         // The OSD header floats over edge-to-edge video with the compositor's
         // native title buttons disabled, so the standalone window has to draw
-        // its own minimize/maximize/close (the idle background pane has no chrome).
-        if !is_background {
-            chrome.show_end_window_controls(&i18n("Minimize"), &i18n("Maximize"), &i18n("Close"));
-        }
+        // its own minimize/maximize/close.
+        chrome.show_end_window_controls(&i18n("Minimize"), &i18n("Maximize"), &i18n("Close"));
 
+        // Beside the settings button, small pills say what is away from
+        // normal and offer HDR for a grey picture, without covering video.
+        let adjustments_pill = gtk::Button::builder()
+            .action_name("win.settings")
+            .css_classes(["header-pill"])
+            .visible(false)
+            .build();
+        let hdr_hint = gtk::Button::builder()
+            .label(i18n("Use HDR?"))
+            .tooltip_text(i18n(
+                "Does the picture look grey and washed out? Click to use HDR colours",
+            ))
+            .css_classes(["header-pill", "hdr-hint"])
+            .visible(false)
+            .build();
+        hdr_hint.connect_clicked({
+            let sender = sender.clone();
+            move |hint| {
+                hint.set_visible(false);
+                sender.input(VideoShellInput::RestoreAdjustments(vec![
+                    super::adjustments::Adjustment::SourceColours(1),
+                ]));
+            }
+        });
+        chrome.header().pack_end(&adjustments_pill);
+        chrome.header().pack_end(&hdr_hint);
         chrome.set_bottom_child(controls.widget());
-        if !is_background {
-            media_stack.install_chrome(&chrome, BigMediaChromePlacement::Bottom);
-        }
+        chrome.bottom_revealer().connect_reveal_child_notify({
+            let sender = sender.clone();
+            move |revealer| {
+                if revealer.reveals_child() {
+                    sender.input(VideoShellInput::RefreshAdjustments);
+                }
+            }
+        });
+        // Dialogs change these settings; closing one brings the chips up to date.
+        root.connect_realize({
+            let sender = sender.clone();
+            move |root| {
+                if let Some(window) = root.root().and_downcast::<adw::ApplicationWindow>() {
+                    let sender = sender.clone();
+                    window.connect_visible_dialog_notify(move |window| {
+                        if window.visible_dialog().is_none() {
+                            sender.input(VideoShellInput::RefreshAdjustments);
+                        }
+                    });
+                }
+            }
+        });
+        media_stack.install_chrome(&chrome, BigMediaChromePlacement::Bottom);
 
         // Welcome screen: shown until the first file loads (hidden on
-        // `FileLoaded`). Mirrors the old `setup_welcome_screen` overlay.
-        let welcome = if is_background {
-            None
-        } else {
-            let welcome = build_welcome_screen(&sender);
-            media_stack.add_welcome_overlay(&welcome);
-            Some(welcome)
-        };
+        // `FileLoaded`). A launch that opens files starts without it, on the
+        // plain video area; it appears only if nothing could be opened.
+        let opening_files = super::input::take_opening_files();
+        let welcome = build_welcome_screen(&sender);
+        welcome.set_visible(!opening_files);
+        media_stack.add_welcome_overlay(&welcome);
 
         // Buffering spinner: centered overlay, hidden until `Buffering(true)`.
-        // Mirrors the old `status_overlay`/`buffering_spinner`.
         let buffering_overlay = gtk::Box::builder()
             .halign(gtk::Align::Center)
             .valign(gtk::Align::Center)
@@ -214,9 +229,8 @@ impl Component for VideoShell {
         );
         let split_view = sidebar_shell.split_view().clone();
 
-        // Keep-Above toggle. No portable Wayland keep-above
-        // exists; mirror the god-object by toggling via the compositor (KWin
-        // global shortcut, falling back to wmctrl). Both via argv arrays — no
+        // Keep-Above toggle. No portable Wayland keep-above exists, so toggle it
+        // via the compositor (KWin global shortcut, falling back to wmctrl). Both via argv arrays — no
         // shell, no untrusted input.
         let keep_above_toggle_button = gtk::ToggleButton::builder()
             .icon_name("view-pin-symbolic")
@@ -309,8 +323,8 @@ impl Component for VideoShell {
 
         let win_actions = install_window_actions(&root, &sender);
 
-        // Header is an OSD overlay over edge-to-edge video (matches the old
-        // design), NOT an AdwToolbarView top bar: wrapping the video surface in a
+        // Header is an OSD overlay over edge-to-edge video, NOT an
+        // AdwToolbarView top bar: wrapping the video surface in a
         // ToolbarView breaks GraphicsOffload subsurface presentation (the video
         // rendered but presented at ~1 fps). With the video filling the split's
         // content directly, the offload subsurface presents at full rate.
@@ -321,46 +335,44 @@ impl Component for VideoShell {
         // (incl. the hamburger menu button) light-on-light / unreadable. The
         // app-owned `apply_appearance` CSS styles `.osd-header headerbar` with
         // theme-aware colors (the `.osd-btn` header buttons get
-        // `@player_icon_color`), so both light and dark themes stay readable —
-        // matching the old god-object's `.osd-header` wrapper box.
-        if !is_background {
-            media_stack.install_chrome(&chrome, BigMediaChromePlacement::Header);
-        }
+        // `@player_icon_color`), so both light and dark themes stay readable.
+        media_stack.install_chrome(&chrome, BigMediaChromePlacement::Header);
 
         // OSD auto-hide: reveal on pointer motion over the video, hide after
-        // `OSD_HIDE_DELAY_MS` of inactivity or on pointer-leave. Mirrors the old
-        // `controls/visibility.rs`. The welcome screen is up at init, so the OSD
+        // `OSD_HIDE_DELAY_MS` of inactivity or on pointer-leave. The welcome screen is up at init, so the OSD
         // never auto-hides until the first file loads.
         let trim_active = Rc::new(Cell::new(false));
         let osd = OsdState::new(
             &main_overlay,
             chrome.header_revealer(),
             chrome.bottom_revealer(),
-            vec![chrome.menu_popover().clone(), open_menu_popover],
+            vec![open_menu_popover],
             controls.model().popovers(),
-            !is_background,
+            !opening_files,
             trim_active.clone(),
         );
-        if is_background {
-            wire_background_video_input(&main_overlay);
-        } else {
-            wire_osd_autohide(&main_overlay, &osd);
-            // Collapse the OSD when the window loses focus (alt-tab to another
-            // app), like other video players — not just on the idle timer.
-            wire_osd_focus_out(&main_overlay, &osd);
-            // Pointer gestures over the video (mirrors the old `input/mod.rs`):
-            // double-click → fullscreen, right-click → context menu, drag → move
-            // the window (when not fullscreen).
-            wire_video_input(&root, &main_overlay, &sender);
-            // Window-level keyboard shortcuts (space/seek/volume/fullscreen/…).
-            // The Relm4 port had lost this dispatch — the shortcut table was
-            // display-only until this controller restored it.
-            super::keyboard::wire_keyboard_shortcuts(&root, &mpv, &settings, &sender);
-            // Trim-mode keys (I / O / M / Esc): a capture-phase controller that
-            // only acts while trim mode is active, so it never shadows the normal
-            // bindings on those keys outside trim mode.
-            super::keyboard::wire_trim_keys(&root, trim_active.clone(), &sender);
-        }
+        wire_osd_autohide(&main_overlay, &osd);
+        // The settings panel sits over the video, clear of header and controls,
+        // which stay shown while it is open.
+        let panel = super::panel::SettingsPanel::new(&sender);
+        main_overlay.add_overlay(&panel.revealer);
+        osd.keep_shown_while({
+            let revealer = panel.revealer.downgrade();
+            move || revealer.upgrade().is_some_and(|r| r.reveals_child())
+        });
+        // Collapse the OSD when the window loses focus (alt-tab to another
+        // app), like other video players — not just on the idle timer.
+        wire_osd_focus_out(&main_overlay, &osd);
+        // Pointer gestures over the video:
+        // double-click → fullscreen, right-click → context menu, drag → move
+        // the window (when not fullscreen).
+        wire_video_input(&root, &main_overlay, &sender);
+        // Window-level keyboard shortcuts (space/seek/volume/fullscreen/…).
+        super::keyboard::wire_keyboard_shortcuts(&root, &mpv, &settings, &sender);
+        // Trim-mode keys (I / O / M / Esc): a capture-phase controller that
+        // only acts while trim mode is active, so it never shadows the normal
+        // bindings on those keys outside trim mode.
+        super::keyboard::wire_trim_keys(&root, trim_active.clone(), &sender);
 
         // Static idle background behind the welcome screen (gl surface hidden so
         // it shows through). Shown below once the display is known; restored on
@@ -385,12 +397,10 @@ impl Component for VideoShell {
         // `FileLoaded` so the video surface becomes visible again. Kick off the
         // wallpaper detection + blur so the static gradient is replaced by the
         // blurred desktop wallpaper once it is cached.
-        if !is_background {
-            if let Some(display) = gtk::gdk::Display::default() {
-                idle_bg.show(&display);
-            }
-            super::idle_wallpaper::spawn_apply(idle_bg.clone());
+        if !opening_files && let Some(display) = gtk::gdk::Display::default() {
+            idle_bg.show(&display);
         }
+        super::idle_wallpaper::spawn_apply(idle_bg.clone());
 
         // mpv option strings, read once.
         let mut custom_mpv_options = settings.get_string(keys::CUSTOM_MPV_OPTIONS).clone();
@@ -402,13 +412,12 @@ impl Component for VideoShell {
         }
         let audio_output = settings.get_string(keys::AUDIO_OUTPUT).clone();
         let initial_volume = settings.get_double(keys::VOLUME) * 100.0;
-        let muted = settings.get_bool(keys::MUTE);
 
         let fast_render_context_slot: FastRenderContextSlot = Rc::new(RefCell::new(None));
         let video_backend: Rc<RefCell<Option<VideoBackend>>> = Rc::new(RefCell::new(None));
 
         // mpv/GL comes up when the CONTENT realizes (it needs only the display +
-        // overlay/gl_area, not a window — ADR D14), so it works in any mount point.
+        // overlay/gl_area, not a window), so it works in any mount point.
         wire_realize(
             &root,
             &main_overlay,
@@ -423,7 +432,6 @@ impl Component for VideoShell {
                 audio_output,
                 initial_volume,
                 volume_max: i64::from(settings.get_int_or(keys::VOLUME_MAX, 150)),
-                muted,
                 render_mode: settings.get_string(keys::RENDER_MODE).clone(),
                 settings: settings.clone(),
             },
@@ -434,14 +442,14 @@ impl Component for VideoShell {
         let shell_input_token = set_shell_input(sender.input_sender().clone());
         root.connect_unrealize(move |_| clear_shell_input(shell_input_token));
 
-        // Apply the saved OSD palette + layout CSS now (the god-object did this
-        // on boot) into the shared display-wide provider slot; the Appearance
+        // Apply the saved OSD palette + layout CSS now into the shared
+        // display-wide provider slot; the Appearance
         // dialog re-applies live through the same slot.
         reapply_theme(&settings);
 
         // Window aspect-ratio snap: resize the window to the video's aspect on
         // load and on manual resize (debounced), so no letterbox bars remain.
-        // Resolves the window lazily from the content (ADR D14).
+        // Resolves the window lazily from the content.
         let aspect_snap = Rc::new(AspectSnap {
             content: root.downgrade(),
             settings: settings.clone(),
@@ -484,13 +492,10 @@ impl Component for VideoShell {
         let mpris_state = Arc::new(std::sync::Mutex::new(
             big_app_kit::mpris::PlayerState::default(),
         ));
-        let mpris = (!mode.is_background())
-            .then(|| super::mpris::build_mpris_service(&sender, &mpris_state, &settings))
-            .flatten();
+        let mpris = super::mpris::build_mpris_service(&sender, &mpris_state, &settings);
 
         ComponentParts {
             model: Self {
-                mode,
                 controls,
                 playlist,
                 split_view: split_view.clone(),
@@ -499,12 +504,15 @@ impl Component for VideoShell {
                 playlist_sidebar_button: playlist_sidebar_toggle_button,
                 sidebar_toggle_updating: toggles_updating,
                 iptv,
-                #[cfg(feature = "chromecast")]
-                cast,
                 main_overlay,
-                welcome_overlay: RefCell::new(welcome),
+                welcome_overlay: RefCell::new(Some(welcome)),
                 playlist_paths: Vec::new(),
                 shuffle_on_load: None,
+                adjustments: Vec::new(),
+                adjustments_pill,
+                hdr_hint,
+                last_reset: None,
+                panel,
                 mpv,
                 duration_secs: 0.0,
                 settings,
@@ -516,7 +524,6 @@ impl Component for VideoShell {
                 screenshot_owner: Arc::new(std::sync::atomic::AtomicBool::new(true)),
                 win_actions,
                 sleep_timer_source: None,
-                activity_paused_playback: Cell::new(false),
                 sleep_timer_remaining: 0,
                 sleep_timer_action: String::new(),
                 sleep_timer_volume: 100.0,
@@ -529,6 +536,8 @@ impl Component for VideoShell {
                 mpris,
                 mpris_state,
                 mpris_track_seq: 0,
+                playing: false,
+                screen_inhibit: None,
             },
             widgets: (),
         }
@@ -571,39 +580,22 @@ impl Component for VideoShell {
                     self.open_in_converter(converter_handoff::VIDEO_CONVERTER, &[]);
                 }
                 VideoShellInput::Iptv(out) => VideoShell::on_iptv(out, &sender),
-                #[cfg(feature = "chromecast")]
-                VideoShellInput::Cast(out) => self.on_cast(out),
                 VideoShellInput::ShowIptvBrowser => {
                     if let Some(root) = window_ref {
                         self.show_iptv_browser(root);
                     }
                 }
-                #[cfg(feature = "chromecast")]
                 VideoShellInput::ShowCastDialog => {
                     if let Some(root) = window_ref {
                         self.show_cast_dialog(root);
                     }
                 }
-                VideoShellInput::ShowFiltersDialog => {
-                    if let Some(root) = window_ref {
-                        self.show_filters_dialog(root);
-                    }
-                }
-                VideoShellInput::ShowEqualizer => {
-                    if let Some(root) = window_ref {
-                        self.show_equalizer_dialog(root);
-                    }
-                }
-                VideoShellInput::ShowDelay => {
-                    if let Some(root) = window_ref {
-                        self.show_delay_dialog(root);
-                    }
-                }
-                VideoShellInput::ShowImageAdjust => {
-                    if let Some(root) = window_ref {
-                        self.show_image_adjust_dialog(root);
-                    }
-                }
+                VideoShellInput::TogglePanel => self.toggle_panel(&sender),
+                VideoShellInput::ShowPanel(page) => self.show_panel(page, true, &sender),
+                VideoShellInput::PanelNavigate(page) => self.show_panel(page, false, &sender),
+                VideoShellInput::PanelBack => self.panel_back(false, &sender),
+                VideoShellInput::PanelEscape => self.panel_back(true, &sender),
+                VideoShellInput::ClosePanel => self.close_panel(&sender),
                 VideoShellInput::ShowYtdlQuality => {
                     if let Some(root) = window_ref {
                         self.show_ytdl_quality_dialog(root);
@@ -650,6 +642,7 @@ impl Component for VideoShell {
                         self.show_preferences(root);
                     }
                 }
+                VideoShellInput::PreferencesClosed => self.sync_screen_inhibit(window_ref),
                 VideoShellInput::ShowAppearance => {
                     if let Some(root) = window_ref {
                         self.show_appearance(root);
@@ -657,7 +650,7 @@ impl Component for VideoShell {
                 }
                 VideoShellInput::ShowRestoreDefaults => {
                     if let Some(root) = window_ref {
-                        Self::show_restore_defaults_dialog(root);
+                        Self::show_restore_defaults_dialog(root, || {});
                     }
                 }
                 VideoShellInput::RestoreDefaultsConfirmed => self.restore_all_defaults(),
@@ -674,23 +667,32 @@ impl Component for VideoShell {
                 }
                 VideoShellInput::Screenshot => self.take_screenshot(&sender),
                 VideoShellInput::ScreenshotQueueFailed => self.notify(&i18n("Screenshot failed")),
-                VideoShellInput::ShowChapters => {
-                    if let Some(root) = window_ref {
-                        self.show_chapters_dialog(root, &sender);
-                    }
-                }
                 VideoShellInput::SetChapter(idx) => self.set_chapter(idx),
-                VideoShellInput::ShowSleepTimer => {
-                    if let Some(root) = window_ref {
-                        self.show_sleep_timer_dialog(root, &sender);
-                    }
-                }
                 VideoShellInput::SleepTimerStart { minutes, action } => {
                     self.start_sleep_timer(sleep_minutes_to_secs(minutes), action, &sender);
+                    self.refresh_adjustments(&sender);
                 }
                 VideoShellInput::SleepTimerCancel => {
                     self.cancel_sleep_timer();
-                    self.notify(&i18n("Sleep timer cancelled"));
+                    self.refresh_adjustments(&sender);
+                    self.refresh_panel_home(&sender);
+                }
+                VideoShellInput::RefreshAdjustments => self.refresh_adjustments(&sender),
+                VideoShellInput::ResetAdjustments(adjustments) => {
+                    self.reset_adjustments(adjustments, &sender);
+                }
+                VideoShellInput::ResetAllAdjustments => {
+                    let all = self
+                        .adjustments
+                        .iter()
+                        .filter(|a| !matches!(a, adjustments::Adjustment::SleepTimer(_)))
+                        .cloned()
+                        .collect();
+                    self.reset_adjustments(all, &sender);
+                }
+                VideoShellInput::SuggestHdr(path) => self.suggest_hdr(&path),
+                VideoShellInput::RestoreAdjustments(adjustments) => {
+                    self.restore_adjustments(&adjustments, &sender);
                 }
                 VideoShellInput::SleepTick => self.sleep_tick(),
                 VideoShellInput::TogglePlayback => {
@@ -703,7 +705,6 @@ impl Component for VideoShell {
                         let _ = toggle_surface_fullscreened(root);
                     }
                 }
-                VideoShellInput::SetPaneActivity(activity) => self.set_pane_activity(activity),
             }
         });
     }
@@ -724,6 +725,11 @@ impl Drop for VideoShell {
         if let Some(source) = self.sleep_timer_source.take() {
             source.remove();
         }
+        if let Some(cookie) = self.screen_inhibit.take()
+            && let Some(app) = gtk::gio::Application::default().and_downcast::<gtk::Application>()
+        {
+            app.uninhibit(cookie);
+        }
     }
 }
 
@@ -738,60 +744,13 @@ fn open_menu_items() -> Vec<BigMenuActionItem> {
         BigMenuActionItem::new(i18n("Open Recent"), "win.open-recent"),
         BigMenuActionItem::new(i18n("Open URL…"), "win.open-url"),
         BigMenuActionItem::new(i18n("Open Disc…"), "win.open-disc"),
+        BigMenuActionItem::new(i18n("TV Channels (IPTV)…"), "win.iptv"),
     ]
 }
 
 #[cfg(test)]
 fn open_menu_action_names() -> Vec<String> {
     open_menu_items()
-        .into_iter()
-        .map(|menu_item| menu_item.action)
-        .collect()
-}
-
-#[cfg(all(test, not(miri)))]
-fn build_main_menu_model() -> gio::Menu {
-    build_flat_menu_model(&main_menu_items())
-}
-
-fn main_menu_items() -> Vec<BigMenuActionItem> {
-    // "Go to Time" moved to the elapsed-time label click; "Screenshot" is on
-    // the video right-click menu — both removed from here.
-    let mut items = vec![
-        BigMenuActionItem::new(i18n("Chapters"), "win.chapters"),
-        BigMenuActionItem::new(i18n("Sleep Timer…"), "win.sleep-timer"),
-        BigMenuActionItem::new(i18n("Equalizer"), "win.show-equalizer"),
-        BigMenuActionItem::new(i18n("Audio & Subtitle Delay"), "win.show-delay"),
-    ];
-    // Renamed for clarity: "Image & Video" was really the colour/picture
-    // adjustments; "Online Video Quality" is the stream-quality picker.
-    items.extend([
-        BigMenuActionItem::new(i18n("Picture Adjustments"), "win.show-image-adjust"),
-        BigMenuActionItem::new(i18n("Video Filters"), "win.filters"),
-        BigMenuActionItem::new(i18n("Stream Quality"), "win.ytdl-quality"),
-        BigMenuActionItem::new(i18n("IPTV"), "win.iptv"),
-    ]);
-    #[cfg(feature = "chromecast")]
-    items.push(BigMenuActionItem::new(i18n("Cast to Device"), "win.cast"));
-
-    // Edit & Export (cut / extract audio / convert) moved to a footer button
-    // next to the subtitle control — see video_controls_bar::zones.
-
-    // "Restore Defaults" moved into the Preferences window (header button), so
-    // it is not loose in the top menu.
-    items.extend([
-        BigMenuActionItem::new(i18n("Media Info"), "win.media-info"),
-        BigMenuActionItem::new(i18n("Preferences"), "win.preferences"),
-        BigMenuActionItem::new(i18n("Appearance"), "win.appearance"),
-        BigMenuActionItem::new(i18n("Keyboard Shortcuts"), "win.keyboard-shortcuts"),
-        BigMenuActionItem::new(i18n("About"), "app.about"),
-    ]);
-    items
-}
-
-#[cfg(test)]
-fn main_menu_action_names() -> Vec<String> {
-    main_menu_items()
         .into_iter()
         .map(|menu_item| menu_item.action)
         .collect()
@@ -810,47 +769,9 @@ mod tests {
                 "win.open-recent",
                 "win.open-url",
                 "win.open-disc",
+                "win.iptv",
             ],
         );
-    }
-
-    #[test]
-    fn main_menu_uses_native_gmenu_actions() {
-        let expected = &[
-            "win.chapters",
-            "win.sleep-timer",
-            "win.show-equalizer",
-            "win.show-delay",
-            "win.show-image-adjust",
-            "win.filters",
-            "win.ytdl-quality",
-            "win.iptv",
-            "win.media-info",
-            "win.preferences",
-            "win.appearance",
-            "win.keyboard-shortcuts",
-            "app.about",
-        ];
-        assert_menu_actions_include(&main_menu_action_names(), expected);
-
-        #[cfg(feature = "chromecast")]
-        assert_menu_actions_include(&main_menu_action_names(), &["win.cast"]);
-    }
-
-    #[cfg(not(miri))]
-    #[test]
-    fn main_menu_is_flat_without_sections_or_submenus() {
-        let menu = build_main_menu_model();
-        for index in 0..menu.n_items() {
-            assert!(
-                menu.item_link(index, "section").is_none(),
-                "hamburger menu must not expose categories"
-            );
-            assert!(
-                menu.item_link(index, "submenu").is_none(),
-                "hamburger menu must not expose category submenus"
-            );
-        }
     }
 
     #[cfg(not(miri))]

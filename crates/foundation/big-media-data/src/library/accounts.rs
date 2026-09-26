@@ -208,46 +208,6 @@ fn resolve(review: &AccountReview, vault: &dyn Vault) -> io::Result<Option<Vec<u
     };
     canonical(review.provider, &payload).map(Some)
 }
-/// Load the exact reviewed revision for an editor, on a service worker. Pending
-/// recovery cannot be mistaken for a fresh editable configuration.
-pub fn read_reviewed(
-    review: &AccountReview,
-    cancelled: &AtomicBool,
-) -> io::Result<Option<Vec<u8>>> {
-    if review.kind == StorageKind::RecoveryRequired {
-        return Err(io::Error::other(
-            "Recover the pending account operation before editing",
-        ));
-    }
-    if storage::read_regular_limited(&review.path, MAX_DOCUMENT)? != review.bytes {
-        return Err(io::Error::other("Account changed since review"));
-    }
-    resolve(review, &SecretService { cancelled })
-}
-
-/// Editor seed for a retryable journal. A candidate may not exist if a helper
-/// failed before storing it. In that case an explicit editor can re-enter the
-/// SAME intended payload (hash-checked by save_reviewed), without abandoning or
-/// overwriting the transaction. Only the non-secret consent flag is prefilled.
-pub fn editor_seed(review: &AccountReview, cancelled: &AtomicBool) -> io::Result<Option<Vec<u8>>> {
-    if review.kind != StorageKind::RecoveryRequired {
-        return read_reviewed(review, cancelled);
-    }
-    if storage::read_regular_limited(&review.path, MAX_DOCUMENT)? != review.bytes {
-        return Err(io::Error::other("Account changed since review"));
-    }
-    let bytes = storage::read_regular_limited(&journal_path(&review.path), 4096)?
-        .ok_or_else(|| invalid("no pending account transaction"))?;
-    let journal = json(&bytes)?;
-    validate_journal(&journal, review.provider)?;
-    let enabled = journal["enabled"]
-        .as_bool()
-        .ok_or_else(|| invalid("recover this older transaction before editing"))?;
-    Ok(Some(
-        serde_json::to_vec(&json!({"enabled":enabled})).map_err(io::Error::other)?,
-    ))
-}
-
 /// Explicit legacy migration. Existing listening-history consent is preserved,
 /// never enabled by storing a token. Failed/uncertain work retains its journal.
 pub fn protect(review: &AccountReview, cancelled: &AtomicBool) -> io::Result<SaveOutcome> {
@@ -256,14 +216,6 @@ pub fn protect(review: &AccountReview, cancelled: &AtomicBool) -> io::Result<Sav
 fn protect_with(review: &AccountReview, vault: &dyn Vault) -> io::Result<SaveOutcome> {
     let payload = resolve(review, vault)?.ok_or_else(|| invalid("account is not configured"))?;
     save_reviewed_with(review, &payload, vault)
-}
-/// Worker-only credential edit: rejects stale reviewed bytes before external work.
-pub fn save_reviewed(
-    review: &AccountReview,
-    payload: &[u8],
-    cancelled: &AtomicBool,
-) -> io::Result<SaveOutcome> {
-    save_reviewed_with(review, payload, &SecretService { cancelled })
 }
 fn save_reviewed_with(
     review: &AccountReview,
@@ -529,10 +481,6 @@ mod tests {
         let reviewed = review_at(Provider::ListenBrainz, path.clone()).unwrap();
         let changed = br#"{"user_token":"another-secret","enabled":false}"#;
         assert!(save_reviewed_with(&reviewed, changed, &failed).is_err());
-        let seed = editor_seed(&reviewed, &AtomicBool::new(false))
-            .unwrap()
-            .unwrap();
-        assert_eq!(json(&seed).unwrap(), json!({"enabled":false}));
         let working = Fake {
             items: failed.items,
             fail_after_store: false,

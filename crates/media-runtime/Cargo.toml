@@ -35,19 +35,17 @@ gdk-wayland-sys = { version = "0.11", package = "gdk4-wayland-sys", optional = t
 mpv-sys = { version = "4", package = "libmpv2-sys", optional = true }
 libc.workspace = true
 big-audio-effects.workspace = true
-big-app-kit = { workspace = true, features = ["http-client", "remote-control"], optional = true }
+big-app-kit = { workspace = true, features = ["remote-control"], optional = true }
 big-os-kit.workspace = true
 big-relm4-components = { workspace = true, optional = true }
 big-media-components = { workspace = true, optional = true }
 big-mpv-render = { workspace = true, optional = true }
-# GTK-free data services (SQLite library, settings store, radio/library clients)
-# extracted from this crate; re-exported under the legacy module paths.
+# GTK-free data services (SQLite library, settings store, radio/library clients),
+# re-exported from `lib.rs` as `db`, `library`, `settings`, `config`, `i18n`.
 big-media-data.workspace = true
 
 gettext-rs.workspace = true
 
-# Retained after the big-media-data extraction (still used runtime-side:
-# rusqlite by remaining queries).
 rusqlite = { version = "0.40.1", default-features = false, optional = true }
 
 log.workspace = true
@@ -57,15 +55,10 @@ serde.workspace = true
 serde_json.workspace = true
 toml = "1"
 
-# Chromecast / Cast support
-rust_cast = { version = "0.21", features = ["thread_safe"], optional = true }
-
-# Owned 0700 scratch dirs for cast transcode (defeats /tmp symlink races).
-tempfile = "3"
 
 [features]
-# Keep the runtime's default footprint GTK/mpv-free. Apps that mount player or
-# editor UI request `audio` or `video`; daemon/data consumers stay lean.
+# Keep the runtime's default footprint GTK/mpv-free. Apps that mount player
+# UI request `audio` or `video`; daemon/data consumers stay lean.
 #
 # Gates are purely additive: no `cfg(not(...))`, and no item defined twice under
 # exclusive gates, so `--all-features` stays buildable.
@@ -98,22 +91,15 @@ video = [
     "dep:big-mpv-render",
     "dep:gdk-wayland-sys",
 ]
-# Union kept so any consumer still asking for `ui` keeps building.
+# Both player feature sets; the integration tests in `tests/` require it.
 ui = ["audio", "video"]
-# Rebased on `ui-core` on purpose: the video PKGBUILD builds with
-# `--features chromecast`, and implying `ui` there would undo the split for the
-# binary that actually ships.
-chromecast = [
-    "ui-core",
-    "dep:rust_cast",
-]
 # Gates slow property tests so default `cargo test` stays fast. CI runs
 # `cargo test --features fuzz` on a dedicated job.
 fuzz = []
 
 [dev-dependencies]
-tempfile = "3"
 proptest = "1"
+tempfile = "3"
 
 [package.metadata.cargo-machete]
 ignored = ["gettext-rs"]  # imported as gettextrs
@@ -167,8 +153,6 @@ float_cmp = "allow"
 # Minor style — Debug formatting in eprintln for paths (intentional)
 use_debug = "allow"
 unnecessary_debug_formatting = "allow"
-# Minor — large stack array in chromecast read buffer (intentional)
-large_stack_arrays = "allow"
 # Minor API suggestions
 implicit_hasher = "allow"
 missing_fields_in_debug = "allow"

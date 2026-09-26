@@ -1,160 +1,159 @@
-//! Video player preferences dialog — categorized `adw::PreferencesPage`s
-//! (Video / Audio / Subtitles / General) of switch/spin/dropdown rows bound to
-//! `crate::settings` keys, some also applying an mpv property live. Ported
-//! faithfully from the old god-object's `src/video/preferences/**` (same
-//! categories, rows, keys, and live mpv application); the only change is the
-//! app-local module path and the standalone `show_preferences` entry point that
-//! the Relm4 `VideoShell` calls instead of the old `Window` method.
+//! Video player preferences: a native `adw::PreferencesDialog` with General,
+//! Video, Audio, Subtitles and Advanced pages. Rows persist to
+//! `crate::settings` and, when a player is running, apply to mpv at once.
+//! Technical options live on the Advanced page instead of behind a mode switch.
 
-use crate::shared::preference_rows::{
-    AdvancedWidgets, add_color_row, add_combo_row, add_entry_row, add_spin_double_row,
-    add_spin_int_row, add_switch_row,
-};
 use adw::prelude::*;
 use big_player_ui::audio_preferences::{
-    PlayerAudioEffects, PlayerAudioPreferenceActions, create_player_audio_page as create_audio_page,
+    PlayerAudioEffects, PlayerAudioPreferenceActions, create_player_audio_page,
 };
-use std::cell::RefCell;
-use std::rc::Rc;
 use std::sync::Arc;
 
 use crate::i18n::i18n;
-use crate::settings::{Settings, keys};
-
 use crate::player::mpv_backend::{AudioEffects, MpvBackend};
+use crate::settings::{Settings, keys};
+use crate::shared::preference_rows::{
+    add_color_row, add_combo_row, add_entry_row, add_spin_double_row, add_spin_int_row,
+    add_switch_row,
+};
 
-fn find_header_bar(widget: &gtk::Widget) -> Option<adw::HeaderBar> {
-    if let Ok(hb) = widget.clone().downcast::<adw::HeaderBar>() {
-        return Some(hb);
-    }
-    let mut child = widget.first_child();
-    while let Some(c) = child {
-        if let Some(hb) = find_header_bar(&c) {
-            return Some(hb);
-        }
-        child = c.next_sibling();
-    }
-    None
-}
+mod advanced;
+mod general;
+mod subtitles;
+mod video;
 
-/// Present the multi-category preferences window over `parent`, bound to
-/// `settings` and (when up) the live mpv backend. `mpv` may be `None` before
-/// playback starts — rows then only persist their settings.
+/// Present the preferences over `parent`. `mpv` is `None` before playback
+/// starts; rows then only store their value. `on_restore_defaults` receives the
+/// dialog so the confirmation can stack on it and close it afterwards.
+/// Returns the presented dialog, for callers that react to it closing.
 pub fn show_preferences(
-    parent: &impl IsA<gtk::Window>,
+    parent: &impl IsA<gtk::Widget>,
     settings: &Settings,
     mpv: Option<Arc<MpvBackend>>,
-    on_restore_defaults: impl Fn(&gtk::Window) + 'static,
-) {
-    let saved = (
-        settings.get_int(keys::PREFS_WINDOW_WIDTH),
-        settings.get_int(keys::PREFS_WINDOW_HEIGHT),
-    );
+    on_restore_defaults: impl Fn(&adw::PreferencesDialog) + 'static,
+) -> adw::PreferencesDialog {
+    let mpv = mpv.as_ref();
+    let dialog = adw::PreferencesDialog::builder()
+        .title(i18n("Preferences"))
+        .search_enabled(true)
+        .content_width(720)
+        .content_height(760)
+        .build();
 
-    let is_advanced = settings.get_bool(keys::ADVANCED_MODE);
-    let adv_widgets: AdvancedWidgets = Rc::new(RefCell::new(Vec::new()));
-    let simple_widgets: AdvancedWidgets = Rc::new(RefCell::new(Vec::new()));
-
-    let pages = [
-        crate::settings::saving_page(settings),
-        create_video_page(
-            settings,
-            mpv.as_ref(),
-            is_advanced,
-            &adv_widgets,
-            &simple_widgets,
-        ),
-        create_audio_page(
-            settings,
-            audio_preference_actions(mpv.as_ref()),
-            is_advanced,
-            &adv_widgets,
-            None,
-        ),
-        create_subtitle_page(settings, mpv.as_ref(), is_advanced, &adv_widgets),
-        create_advanced_page(settings, mpv.as_ref(), is_advanced, &adv_widgets),
-    ];
-
-    let s = settings.clone();
-    let win = big_player_ui::appearance::build_preferences_window(
-        parent,
-        &i18n("Preferences"),
-        true,
-        saved,
-        (600, 700),
-        &pages,
-        move |w, h| {
-            let _ = s.put_int(keys::PREFS_WINDOW_WIDTH, w);
-            let _ = s.put_int(keys::PREFS_WINDOW_HEIGHT, h);
-        },
-        || {},
-    );
-
-    // Advanced switch shared across all pages → goes in header bar, not per-page.
-    if let Some(hb) = find_header_bar(win.upcast_ref::<gtk::Widget>()) {
-        let switch_box = gtk::Box::builder()
-            .orientation(gtk::Orientation::Horizontal)
-            .spacing(8)
-            .build();
-
-        let label = gtk::Label::builder()
-            .label(i18n("Advanced"))
-            .css_classes(["dim-label"])
-            .build();
-
-        let switch = gtk::Switch::builder()
-            .active(is_advanced)
-            .valign(gtk::Align::Center)
-            .build();
-        crate::shared::tooltip::set(
-            &switch,
-            &i18n("Show all technical options across every page"),
-        );
-
-        switch.update_relation(&[gtk::accessible::Relation::LabelledBy(&[label.upcast_ref()])]);
-        switch.update_property(&[gtk::accessible::Property::Description(&i18n(
-            "Show additional technical settings. Your current choices are kept.",
-        ))]);
-        switch_box.append(&label);
-        switch_box.append(&switch);
-        hb.pack_end(&switch_box);
-
-        // "Restore Defaults" lives here now (was a loose top-menu entry). Keep
-        // the confirmation parented to this preferences window so it is always
-        // visible above the modal preferences surface.
-        let restore_defaults_button = gtk::Button::builder()
-            .icon_name("edit-undo-symbolic")
-            .css_classes(["flat"])
-            .build();
-        crate::shared::tooltip::set(&restore_defaults_button, &i18n("Restore Defaults"));
-        restore_defaults_button
-            .update_property(&[gtk::accessible::Property::Label(&i18n("Restore Defaults"))]);
-        {
-            let preferences_window = win.downgrade();
-            restore_defaults_button.connect_clicked(move |_| {
-                if let Some(preferences_window) = preferences_window.upgrade() {
-                    on_restore_defaults(preferences_window.upcast_ref::<gtk::Window>());
-                }
-            });
+    let restore = {
+        let dialog = dialog.downgrade();
+        move || {
+            if let Some(dialog) = dialog.upgrade() {
+                on_restore_defaults(&dialog);
+            }
         }
-        hb.pack_start(&restore_defaults_button);
-
-        let settings = settings.clone();
-        let advanced_widgets = adv_widgets.clone();
-        let simple_widgets = simple_widgets.clone();
-        switch.connect_active_notify(move |toggle| {
-            let active = toggle.is_active();
-            let _ = settings.put_bool(keys::ADVANCED_MODE, active);
-            for widget in advanced_widgets.borrow().iter() {
-                widget.set_visible(active);
-            }
-            for widget in simple_widgets.borrow().iter() {
-                widget.set_visible(!active);
-            }
-        });
+    };
+    let (advanced_page, refresh_preset_rows) = advanced::page(settings, mpv);
+    let audio_page = create_player_audio_page(settings, audio_preference_actions(mpv));
+    let pages = [
+        general::page(settings, mpv, restore),
+        video::page(settings, mpv, refresh_preset_rows),
+        audio_page,
+        subtitles::page(settings, mpv),
+        advanced_page,
+    ];
+    for page in &pages {
+        crate::settings::attach_save_status_banner(page, settings);
+        dialog.add(page);
     }
+    dialog.present(Some(parent));
+    dialog
+}
 
-    win.present();
+/// Hand every stored preference to a freshly started player. The rows only
+/// push values while the dialog is open, so without this a restart silently
+/// fell back to mpv's defaults. Keep this list in step with the pages.
+pub fn apply_saved_preferences(mpv: &MpvBackend, s: &Settings) {
+    // The preset first: the individual rows below may refine what it set.
+    mpv.apply_render_profile(&s.string(keys::RENDER_PROFILE.0));
+
+    // General
+    mpv.set_loop_mode(&s.string(keys::LOOP_MODE.0));
+    mpv.set_save_position(s.boolean("resume-playback"));
+    mpv.set_keep_open(&s.string("keep-open"));
+    mpv.set_keep_open_pause(s.boolean("keep-open-pause"));
+
+    // Video
+    mpv.set_hwdec(&s.string(keys::HWDEC.0));
+    mpv.set_deinterlace(s.boolean("deinterlace"));
+
+    // Audio
+    mpv.set_audio_pitch_correction(s.boolean("audio-pitch-correction"));
+    mpv.set_audio_channels(&s.string("audio-channels"));
+    mpv.set_preferred_audio_lang(&s.string("preferred-audio-lang"));
+    crate::shared::audio_effects::apply_voice_change(s, mpv);
+
+    // Subtitles
+    mpv.set_preferred_sub_lang(&s.string("preferred-sub-lang"));
+    mpv.set_sub_auto(&s.string("sub-auto"));
+    mpv.set_sub_font(&s.string(keys::SUB_FONT.0));
+    mpv.set_sub_font_size(i64::from(s.int("subtitle-font-size")));
+    mpv.set_sub_bold(s.boolean("sub-bold"));
+    mpv.set_sub_color(&s.string("sub-color"));
+    mpv.set_sub_border_style(&s.string("sub-border-style"));
+    mpv.set_sub_border_size(s.double("sub-border-size"));
+    mpv.set_sub_border_color(&s.string("sub-border-color"));
+    mpv.set_sub_shadow_offset(s.double("sub-shadow-offset"));
+    mpv.set_sub_shadow_color(&s.string("sub-shadow-color"));
+    mpv.set_sub_margin_y(i64::from(s.int("sub-margin-y")));
+    mpv.set_sub_scale_with_window(s.boolean("sub-scale-with-window"));
+    mpv.set_sub_ass_scale_with_window(s.boolean("sub-ass-scale-with-window"));
+    mpv.set_sub_filter_sdh(s.boolean("sub-filter-sdh"));
+    mpv.set_sub_filter_sdh_harder(s.boolean("sub-filter-sdh-harder"));
+    mpv.set_sub_gauss(s.double("sub-gauss"));
+    mpv.set_sub_gray(s.boolean("sub-gray"));
+
+    // Advanced
+    mpv.set_tone_mapping(&s.string("tone-mapping"));
+    mpv.set_hdr_compute_peak(s.boolean(keys::HDR_COMPUTE_PEAK.0));
+    mpv.set_target_peak(i64::from(s.int("target-peak")));
+    mpv.set_gamut_mapping_mode(&s.string("gamut-mapping-mode"));
+    let icc_profile = s.string("icc-profile");
+    if !icc_profile.is_empty() {
+        mpv.set_icc_profile(&icc_profile);
+    }
+    mpv.set_icc_intent(i64::from(s.int(keys::ICC_INTENT.0)));
+    mpv.set_cache(s.boolean("cache"));
+    mpv.set_cache_secs(i64::from(s.int("cache-secs")));
+    mpv.set_cache_pause(s.boolean("cache-pause"));
+    mpv.set_cache_on_disk(s.boolean("cache-on-disk"));
+    mpv.set_demuxer_readahead_secs(s.double("demuxer-readahead-secs"));
+    mpv.set_screenshot_png_compression(i64::from(s.int("screenshot-png-compression")));
+    mpv.set_screenshot_tag_colorspace(s.boolean("screenshot-tag-colorspace"));
+    mpv.set_screenshot_high_bit_depth(s.boolean("screenshot-high-bit-depth"));
+    mpv.set_glsl_shaders(&s.string("glsl-shaders"));
+    crate::video::ui::filters::apply_saved_enhancements(mpv, s);
+}
+
+/// Forward a row's new value to the running player, if there is one.
+fn live<T: 'static>(
+    mpv: Option<&Arc<MpvBackend>>,
+    apply: fn(&MpvBackend, T),
+) -> impl Fn(T) + 'static {
+    let mpv = mpv.cloned();
+    move |value| {
+        if let Some(mpv) = &mpv {
+            apply(mpv, value);
+        }
+    }
+}
+
+/// [`live`] for text values, which arrive borrowed.
+fn live_str(
+    mpv: Option<&Arc<MpvBackend>>,
+    apply: fn(&MpvBackend, &str),
+) -> impl Fn(&str) + 'static {
+    let mpv = mpv.cloned();
+    move |value| {
+        if let Some(mpv) = &mpv {
+            apply(mpv, value);
+        }
+    }
 }
 
 fn audio_preference_actions(mpv: Option<&Arc<MpvBackend>>) -> Option<PlayerAudioPreferenceActions> {
@@ -197,12 +196,3 @@ fn apply_player_audio_effects(mpv: &MpvBackend, effects: PlayerAudioEffects) {
         compressor_intensity: 0.0,
     });
 }
-
-mod advanced;
-mod subtitles;
-mod subtitles_groups;
-mod video;
-
-use advanced::create_advanced_page;
-use subtitles::create_subtitle_page;
-use video::create_video_page;

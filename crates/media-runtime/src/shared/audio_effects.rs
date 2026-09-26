@@ -17,7 +17,10 @@ use crate::settings::keys;
 use big_audio_effects::equalizer::EQ_BAND_FREQUENCIES_F64;
 use big_audio_effects::noise_reduction::GtcrnControls;
 
-pub use super::audio_effects_eq::create_equalizer_dialog;
+pub use super::audio_effects_eq::{
+    create_equalizer_content, create_equalizer_dialog, equalizer_preset_matching,
+    equalizer_preset_names,
+};
 
 /// 10 semicolon-separated dB gains, clamped to ±12 dB; missing → 0.
 pub fn parse_eq_bands(eq_str: &str) -> [f64; 10] {

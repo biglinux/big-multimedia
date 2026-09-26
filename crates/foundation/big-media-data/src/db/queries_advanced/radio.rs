@@ -47,21 +47,6 @@ pub fn delete_radio_station(conn: &Connection, station_id: i64) -> crate::Result
     Ok(())
 }
 
-pub fn update_radio_station(
-    conn: &Connection,
-    station_id: i64,
-    name: &str,
-    url: &str,
-    favicon: &str,
-    group_name: &str,
-) -> crate::Result<()> {
-    conn.execute(
-        "UPDATE radio_stations SET name = ?1, url = ?2, favicon = ?3, group_name = ?4 WHERE id = ?5",
-        params![name, url, favicon, group_name, station_id],
-    )?;
-    Ok(())
-}
-
 /// One-shot: imports legacy `radio_stations.json` then renames it to
 /// `.json.migrated` so re-runs no-op.
 pub fn migrate_radio_from_json(conn: &Connection) -> crate::Result<()> {

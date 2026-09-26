@@ -1,36 +1,15 @@
 // SPDX-FileCopyrightText: 2026 BigLinux contributors
 // SPDX-License-Identifier: MIT
 
-//! Component-fault containment for multi-app host processes (big-host).
+//! Panic containment at the Relm4/glib callback boundary.
 //!
-//! big-host runs the shell plus every `process_policy = "shared"` module in a
-//! SINGLE process. An unguarded Rust panic in any of them kills the whole
-//! desktop (shell + every open app), and the BigModule ABI's fault containment
-//! only wraps module ENTRY calls — not the glib callbacks where most UI logic
-//! runs. These helpers close that gap at the callback boundary.
-//!
-//! Empirics (big-host `panic-probe`, 2026-06; re-confirmed big-shell raw-idle
-//! probe, 2026-06-24 on the test VM):
 //! - A panic inside a Relm4 `update()` unwinds into the glib executor task and
-//!   dies there — the PROCESS survives, but the component runtime is dead and
-//!   its window stays orphaned on screen. Wrap with
-//!   [`contain_component_update`](crate::containment::contain_component_update)
-//!   to log it and reap the window cleanly.
-//! - A panic that ESCAPES a raw glib callback (timeout / signal trampoline)
-//!   unwinds across the C boundary → immediate process ABORT.
-//! - BUT a panic CAUGHT inside the callback body — before it reaches the C
-//!   trampoline — is fully contained: the process survives and the main loop
-//!   keeps running. [`guard`](crate::containment::guard) is that catch. (Verified: a deliberate
-//!   `panic!` inside a guarded `idle_add_local` body left big-host's PID
-//!   alive, the offending action skipped + logged.) This supersedes the older
-//!   "no containment is possible on the raw path" note, which only held for
-//!   UNGUARDED closures.
-//!
-//! Contract for host-embeddable components: wrap every fallible callback body —
-//! Relm4 `update()` with
-//! [`contain_component_update`](crate::containment::contain_component_update), and
-//! every raw glib signal / `idle_add` / `timeout_add` closure body with
-//! [`guard`](crate::containment::guard).
+//!   dies there: the process survives, but the component runtime is dead and
+//!   its window stays orphaned on screen. [`contain_component_update`](crate::containment::contain_component_update) logs it
+//!   and destroys the window cleanly instead.
+//! - A panic that escapes a raw glib callback (timeout / signal trampoline)
+//!   unwinds across the C boundary and aborts the process. A panic caught
+//!   inside the callback body is contained; [`guard`](crate::containment::guard) is that catch.
 
 use std::panic::{AssertUnwindSafe, catch_unwind};
 
@@ -39,9 +18,7 @@ use gtk::prelude::{Cast, CastNone, GtkWindowExt, IsA, WidgetExt};
 
 /// Run one `update()` body, converting a panic into a clean component
 /// teardown: the error is logged and the component's window is destroyed on
-/// the next idle (never during the unwind), which lets the embedding host
-/// reap the component (big-host: registry unrealize hook → drop + cleanup).
-/// The process survives; sibling components keep running.
+/// the next idle (never during the unwind).
 pub fn contain_component_update(
     window: &impl IsA<gtk::Window>,
     component_label: &str,
@@ -52,17 +29,16 @@ pub fn contain_component_update(
     }
     log::error!(
         "component '{component_label}' panicked in update(); \
-         destroying its window, host process survives"
+         destroying its window"
     );
     let window = window.clone().upcast::<gtk::Window>();
     glib::idle_add_local_once(move || window.destroy());
 }
 
-/// Like [`contain_component_update`] but for a host-embedded component whose
-/// `Root` is not itself a [`gtk::Window`] (e.g. a `ToastOverlay` or `Box`): it
-/// derives the toplevel window from `root_widget` so the module's window is
-/// reaped on panic. If the widget is not yet rooted, it falls back to logging
-/// only (still containing the panic — the process always survives).
+/// Like [`contain_component_update`] but for a component whose `Root` is not
+/// itself a [`gtk::Window`] (e.g. a `ToastOverlay` or `Box`): it derives the
+/// toplevel window from `root_widget`. If the widget is not yet rooted, it
+/// falls back to logging only (still containing the panic).
 pub fn contain_embedded_update(
     root_widget: &impl IsA<gtk::Widget>,
     component_label: &str,
@@ -73,15 +49,14 @@ pub fn contain_embedded_update(
     } else if catch_unwind(AssertUnwindSafe(update)).is_err() {
         log::error!(
             "component '{component_label}' panicked in update() before it was rooted; \
-             host process survives"
+             panic contained"
         );
     }
 }
 
 /// Run a raw glib callback body (signal / `idle_add` / `timeout_add` closure),
 /// containing any panic: it is logged and `None` is returned instead of
-/// unwinding across the C trampoline (which would abort the whole host
-/// process). `context` names the call site for the log line.
+/// unwinding across the C trampoline (which would abort the process). `context` names the call site for the log line.
 ///
 /// Place this INSIDE the closure, around the fallible body, and map `None` to a
 /// safe default for the signal's return type (e.g. `glib::Propagation::Proceed`,
@@ -97,9 +72,7 @@ pub fn guard<R>(context: &str, body: impl FnOnce() -> R) -> Option<R> {
     match catch_unwind(AssertUnwindSafe(body)) {
         Ok(value) => Some(value),
         Err(_) => {
-            log::error!(
-                "contained a panic in `{context}`; action skipped, host process kept alive"
-            );
+            log::error!("contained a panic in `{context}`; action skipped");
             None
         }
     }

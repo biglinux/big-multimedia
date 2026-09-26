@@ -17,17 +17,10 @@ mod config;
 mod global;
 mod support;
 
-pub use buttons::{
-    custom_menu_button, icon_button, icon_menu_button, icon_toggle_button, labeled_icon_button,
-    labeled_menu_button,
-};
+pub use buttons::{icon_button, icon_menu_button, icon_toggle_button, labeled_icon_button};
 use colors::{adjust_tooltip_background, is_dark_color, theme_colors};
 pub use config::BigTooltipConfig;
-pub use global::{
-    clear, hide_all, set, set_card, set_card_with_icon, set_enabled, set_follow_default,
-    set_markup, set_reparent_safe_native, set_show_when_inactive, set_surface_css, set_with_offset,
-    update, update_markup,
-};
+pub use global::{clear, set, set_enabled, set_with_offset, update};
 use support::{live_widgets, root_window_active};
 
 #[cfg(test)]
@@ -45,27 +38,11 @@ thread_local! {
     static GLOBAL: RefCell<Option<BigTooltipHandle>> = const { RefCell::new(None) };
 }
 
-/// How a tooltip label renders its content.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-enum LabelContentKind {
-    /// Plain text via [`gtk::prelude::LabelExt::set_text`].
-    PlainText,
-    /// Pango markup via [`gtk::prelude::LabelExt::set_markup`].
-    Markup,
-}
-
 struct WidgetTooltipState {
     popover: gtk::Popover,
     label: gtk::Label,
-    /// The card's icon tile, kept so refreshes can update it (the icon tracks
-    /// live state — volume level, network status — like the panel glyph).
-    icon: Option<gtk::Image>,
     text: String,
     y_offset: i32,
-    content_kind: LabelContentKind,
-    /// Anchor the popover at the pointer (Plasma-style hover card) rather than
-    /// at the widget bounds.
-    follow_pointer: bool,
 }
 
 struct BigTooltipInner {
@@ -82,20 +59,8 @@ struct BigTooltipInner {
     // (the window could never finalize). Keep weak and prune on insert.
     windows: RefCell<Vec<glib::WeakRef<gtk::Window>>>,
     css_provider: RefCell<Option<gtk::CssProvider>>,
-    // App-supplied override stylesheet (themeable hover card), installed above
-    // the default so the app's surface tokens win.
-    override_provider: RefCell<Option<gtk::CssProvider>>,
     colors_initialized: Cell<bool>,
     enabled: Cell<bool>,
-    // Last pointer position (widget-relative) on the active widget, updated by
-    // the motion controller. Used to anchor cursor-following tooltips at the
-    // pointer instead of the widget bounds.
-    pointer: Cell<(f64, f64)>,
-    // When set, every tooltip follows the pointer without opting in per call.
-    follow_default: Cell<bool>,
-    // When set, tooltips show even if their root window is not the active one
-    // (shell panels / layer-shell surfaces are never "active").
-    ignore_root_active: Cell<bool>,
 }
 
 /// Shared tooltip controller.
@@ -125,12 +90,8 @@ impl BigTooltipHandle {
                 widgets: RefCell::new(Vec::new()),
                 windows: RefCell::new(Vec::new()),
                 css_provider: RefCell::new(None),
-                override_provider: RefCell::new(None),
                 colors_initialized: Cell::new(false),
                 enabled: Cell::new(true),
-                pointer: Cell::new((0.0, 0.0)),
-                follow_default: Cell::new(false),
-                ignore_root_active: Cell::new(false),
             }),
         };
 
@@ -161,164 +122,29 @@ impl BigTooltipHandle {
     /// by `y_offset` pixels — useful when the widget partially
     /// occludes its own tooltip.
     pub fn add_with_offset(&self, widget: &impl IsA<gtk::Widget>, text: &str, y_offset: i32) {
-        self.add_internal(
-            widget.as_ref(),
-            text,
-            y_offset,
-            LabelContentKind::PlainText,
-            false,
-            None,
-        );
-    }
-
-    /// Register `widget` as a tooltip-bearer rendering Pango `markup`.
-    /// Mirrors [`Self::add`] but routes the content through
-    /// `gtk::Label::set_markup`. Empty markup is ignored.
-    pub fn add_with_markup(&self, widget: &impl IsA<gtk::Widget>, markup: &str) {
-        self.add_with_markup_and_offset(widget, markup, 0);
-    }
-
-    /// Markup-aware counterpart of [`Self::add_with_offset`].
-    pub fn add_with_markup_and_offset(
-        &self,
-        widget: &impl IsA<gtk::Widget>,
-        markup: &str,
-        y_offset: i32,
-    ) {
-        self.add_internal(
-            widget.as_ref(),
-            markup,
-            y_offset,
-            LabelContentKind::Markup,
-            false,
-            None,
-        );
-    }
-
-    /// Register a Plasma-style hover card: a Pango-`markup` tooltip that
-    /// follows the pointer and pops up below it, for richer per-item info
-    /// (title + detail lines). Empty markup is ignored.
-    pub fn add_card(&self, widget: &impl IsA<gtk::Widget>, markup: &str) {
-        self.add_internal(
-            widget.as_ref(),
-            markup,
-            0,
-            LabelContentKind::Markup,
-            true,
-            None,
-        );
-    }
-
-    /// Like [`Self::add_card`] but with a leading themed icon (Plasma-style:
-    /// an icon tile beside the title + detail).
-    pub fn add_card_with_icon(&self, widget: &impl IsA<gtk::Widget>, icon: &str, markup: &str) {
-        self.add_internal(
-            widget.as_ref(),
-            markup,
-            0,
-            LabelContentKind::Markup,
-            true,
-            Some(icon),
-        );
-    }
-
-    /// Make every tooltip registered afterwards follow the pointer by default
-    /// (Plasma-style), without each call opting in. Set once at app startup.
-    pub fn set_follow_default(&self, follow: bool) {
-        self.inner.follow_default.set(follow);
-    }
-
-    /// Show tooltips even when their root window is not the active one. Required
-    /// for shell panels / layer-shell surfaces, which are never "active".
-    pub fn set_show_when_inactive(&self, show: bool) {
-        self.inner.ignore_root_active.set(show);
-    }
-
-    /// Install an app-supplied stylesheet for the hover card, layered above the
-    /// built-in look so the app's theme tokens win. The CSS targets
-    /// `popover.big-tooltip > contents` (the card) and `popover.big-tooltip
-    /// label` (its text). Pass an empty string to drop the override.
-    pub fn set_surface_css(&self, css: &str) {
-        let Some(display) = gdk::Display::default() else {
-            return;
-        };
-        if let Some(old) = self.inner.override_provider.borrow_mut().take() {
-            gtk::style_context_remove_provider_for_display(&display, &old);
-        }
-        if css.is_empty() {
-            return;
-        }
-        let provider = gtk::CssProvider::new();
-        provider.load_from_string(css);
-        gtk::style_context_add_provider_for_display(
-            &display,
-            &provider,
-            gtk::STYLE_PROVIDER_PRIORITY_APPLICATION + 200,
-        );
-        *self.inner.override_provider.borrow_mut() = Some(provider);
-    }
-
-    fn add_internal(
-        &self,
-        widget: &gtk::Widget,
-        content: &str,
-        y_offset: i32,
-        kind: LabelContentKind,
-        follow_pointer: bool,
-        icon: Option<&str>,
-    ) {
-        if content.is_empty() {
-            return;
-        }
-        let follow_pointer = follow_pointer || self.inner.follow_default.get();
-
-        if self.refresh_existing_with(widget, content, y_offset, kind, follow_pointer, icon) {
+        let widget = widget.as_ref();
+        if text.is_empty() || self.refresh_existing_with(widget, text, y_offset) {
             return;
         }
 
         let popover = gtk::Popover::new();
         popover.set_has_arrow(false);
         // Always anchor above (GTK flips it below when there is no room, e.g. a
-        // top bar). Cursor-following only shifts the anchor horizontally — see
-        // `show` — so a bottom-bar card never falls off the screen edge.
+        // top bar).
         popover.set_position(gtk::PositionType::Top);
         popover.set_can_target(false);
         popover.set_focusable(false);
         popover.set_autohide(false);
         popover.add_css_class("big-tooltip");
 
-        let icon = icon.filter(|name| !name.is_empty());
-        // Cards (icon or markup) left-align; plain one-line tooltips center.
-        let start = icon.is_some() || matches!(kind, LabelContentKind::Markup);
         let label = gtk::Label::builder()
-            // Cards have short, structured lines: don't wrap (a wrapping label
-            // squeezes near the screen edge); GTK shifts the popover to keep it
-            // on-screen. Plain tooltips wrap as before.
-            .wrap(!start)
+            .wrap(true)
             .max_width_chars(self.inner.config.max_width_chars)
-            .halign(if start {
-                gtk::Align::Start
-            } else {
-                gtk::Align::Center
-            })
-            .xalign(if start { 0.0 } else { 0.5 })
+            .halign(gtk::Align::Center)
+            .xalign(0.5)
             .build();
-        apply_label_content(&label, content, kind);
-        let icon_image = if let Some(icon_name) = icon {
-            // Icon tile + text column (the styling lives in `apply_css`).
-            let image = gtk::Image::from_icon_name(icon_name);
-            image.set_pixel_size(34);
-            image.set_valign(gtk::Align::Center);
-            image.add_css_class("big-tooltip-icon");
-            let row = gtk::Box::new(gtk::Orientation::Horizontal, 12);
-            row.append(&image);
-            row.append(&label);
-            popover.set_child(Some(&row));
-            Some(image)
-        } else {
-            popover.set_child(Some(&label));
-            None
-        };
+        label.set_text(text);
+        popover.set_child(Some(&label));
         popover.set_parent(widget);
 
         clear_native_tooltip_tree(widget);
@@ -326,10 +152,8 @@ impl BigTooltipHandle {
         // Mirror the tooltip text into the AT-SPI accessible label. The custom
         // popover above replaces the native tooltip, so without this an
         // icon-only control would expose an empty accessible name to screen
-        // readers. Only plain text is mirrored (markup is not a valid name).
-        if matches!(kind, LabelContentKind::PlainText) {
-            widget.update_property(&[gtk::accessible::Property::Label(content)]);
-        }
+        // readers.
+        widget.update_property(&[gtk::accessible::Property::Label(text)]);
 
         let popover_weak = popover.downgrade();
         widget.connect_parent_notify(move |w| {
@@ -360,11 +184,8 @@ impl BigTooltipHandle {
         let state = WidgetTooltipState {
             popover,
             label,
-            icon: icon_image,
-            text: content.to_string(),
+            text: text.to_string(),
             y_offset,
-            content_kind: kind,
-            follow_pointer,
         };
         // SAFETY: `QDATA_STATE` is written and read only as `WidgetTooltipState`
         // (see key definition); type-consistent store.
@@ -388,29 +209,7 @@ impl BigTooltipHandle {
     /// Push a new text value through the live state.
     pub fn update_text(&self, widget: &impl IsA<gtk::Widget>, text: &str) {
         let widget = widget.as_ref();
-        let kind = existing_kind(widget).unwrap_or(LabelContentKind::PlainText);
-        self.refresh_existing_with(
-            widget,
-            text,
-            existing_offset(widget).unwrap_or(0),
-            kind,
-            existing_follow(widget),
-            None,
-        );
-    }
-
-    /// Push a new Pango markup value through the live state, preserving
-    /// the original offset. Companion to [`Self::update_text`].
-    pub fn update_markup(&self, widget: &impl IsA<gtk::Widget>, markup: &str) {
-        let widget = widget.as_ref();
-        self.refresh_existing_with(
-            widget,
-            markup,
-            existing_offset(widget).unwrap_or(0),
-            LabelContentKind::Markup,
-            existing_follow(widget),
-            None,
-        );
+        self.refresh_existing_with(widget, text, existing_offset(widget).unwrap_or(0));
     }
 
     /// Drop the tooltip binding from `widget` and unparent its
@@ -442,33 +241,13 @@ impl BigTooltipHandle {
         }
     }
 
-    /// Hide every active tooltip popover and cancel pending timers.
-    /// Called by window destructors.
-    pub fn cleanup(&self) {
-        self.hide_all();
-    }
-
-    fn refresh_existing_with(
-        &self,
-        widget: &gtk::Widget,
-        content: &str,
-        y_offset: i32,
-        kind: LabelContentKind,
-        follow_pointer: bool,
-        icon: Option<&str>,
-    ) -> bool {
+    fn refresh_existing_with(&self, widget: &gtk::Widget, content: &str, y_offset: i32) -> bool {
         let Some(state) = tooltip_state(widget) else {
             return false;
         };
         let popover = state.popover.clone();
         let label = state.label.clone();
-        let icon_image = state.icon.clone();
-        apply_label_content(&label, content, kind);
-        // Keep the icon tile in sync with live state (volume level, network
-        // status), not frozen at the value it had when first shown.
-        if let (Some(image), Some(name)) = (&icon_image, icon) {
-            image.set_icon_name(Some(name));
-        }
+        label.set_text(content);
         // SAFETY: `QDATA_STATE` is written and read only as `WidgetTooltipState`
         // (see key definition); type-consistent store.
         unsafe {
@@ -477,44 +256,12 @@ impl BigTooltipHandle {
                 WidgetTooltipState {
                     popover,
                     label,
-                    icon: icon_image,
                     text: content.to_string(),
                     y_offset,
-                    content_kind: kind,
-                    follow_pointer,
                 },
             );
         }
         true
-    }
-
-    /// While a follow-pointer card is visible on `widget`, re-anchor it to the
-    /// current cursor X so it tracks the pointer.
-    fn reposition_visible(&self, widget: &gtk::Widget) {
-        let is_active = self
-            .inner
-            .active_widget
-            .borrow()
-            .as_ref()
-            .and_then(glib::WeakRef::upgrade)
-            .is_some_and(|active| active == *widget);
-        if !is_active {
-            return;
-        }
-        let Some(state) = tooltip_state(widget) else {
-            return;
-        };
-        if !state.follow_pointer || !state.popover.is_visible() {
-            return;
-        }
-        let (px, _py) = self.inner.pointer.get();
-        let x = (px as i32).clamp(0, widget.width().max(1) - 1);
-        state.popover.set_pointing_to(Some(&gdk::Rectangle::new(
-            x,
-            state.y_offset,
-            1,
-            widget.height(),
-        )));
     }
 
     fn add_controller_if_missing(&self, widget: &gtk::Widget) {
@@ -528,21 +275,9 @@ impl BigTooltipHandle {
         let motion = gtk::EventControllerMotion::new();
         let handle = self.clone();
         let weak = widget.downgrade();
-        motion.connect_enter(move |_, x, y| {
-            handle.inner.pointer.set((x, y));
+        motion.connect_enter(move |_, _, _| {
             if let Some(widget) = weak.upgrade() {
                 handle.on_enter(&widget);
-            }
-        });
-
-        // Track the pointer for cursor-following hover cards, and re-anchor a
-        // visible card so it actually follows the cursor.
-        let handle = self.clone();
-        let weak_motion = widget.downgrade();
-        motion.connect_motion(move |_, x, y| {
-            handle.inner.pointer.set((x, y));
-            if let Some(widget) = weak_motion.upgrade() {
-                handle.reposition_visible(&widget);
             }
         });
 
@@ -678,10 +413,7 @@ impl BigTooltipHandle {
             return;
         }
 
-        // A shell panel (layer-shell surface) is never the "active" window, so
-        // the active-window guard must be skippable or its tooltips never show.
-        let root_ok = self.inner.ignore_root_active.get() || root_window_active(widget);
-        if !widget.is_mapped() || !root_ok {
+        if !widget.is_mapped() || !root_window_active(widget) {
             return;
         }
         if self
@@ -702,17 +434,8 @@ impl BigTooltipHandle {
             state.popover.set_parent(widget);
         }
 
-        apply_label_content(&state.label, &state.text, state.content_kind);
-        let rect = if state.follow_pointer {
-            // Follow the cursor horizontally, but anchor to the widget's full
-            // vertical span so the card pops above (or flips below) on the
-            // correct side — never off the screen edge under a bottom bar.
-            let (px, _py) = self.inner.pointer.get();
-            let x = (px as i32).clamp(0, widget.width().max(1) - 1);
-            gdk::Rectangle::new(x, state.y_offset, 1, widget.height())
-        } else {
-            gdk::Rectangle::new(0, state.y_offset, widget.width(), widget.height())
-        };
+        state.label.set_text(&state.text);
+        let rect = gdk::Rectangle::new(0, state.y_offset, widget.width(), widget.height());
         state.popover.set_pointing_to(Some(&rect));
         state.popover.popup();
         state.popover.set_visible(true);
@@ -833,17 +556,6 @@ popover.big-tooltip > contents {{
 popover.big-tooltip label {{
     color: {fg};
 }}
-popover.big-tooltip b {{
-    font-weight: 800;
-}}
-popover.big-tooltip small {{
-    color: alpha({fg}, 0.62);
-}}
-popover.big-tooltip .big-tooltip-icon {{
-    background-color: alpha({fg}, 0.08);
-    border-radius: 11px;
-    padding: 8px;
-}}
 "
         );
 
@@ -917,19 +629,4 @@ fn tooltip_state(widget: &gtk::Widget) -> Option<&WidgetTooltipState> {
 
 fn existing_offset(widget: &gtk::Widget) -> Option<i32> {
     tooltip_state(widget).map(|state| state.y_offset)
-}
-
-fn existing_kind(widget: &gtk::Widget) -> Option<LabelContentKind> {
-    tooltip_state(widget).map(|state| state.content_kind)
-}
-
-fn existing_follow(widget: &gtk::Widget) -> bool {
-    tooltip_state(widget).is_some_and(|state| state.follow_pointer)
-}
-
-fn apply_label_content(label: &gtk::Label, content: &str, kind: LabelContentKind) {
-    match kind {
-        LabelContentKind::PlainText => label.set_text(content),
-        LabelContentKind::Markup => label.set_markup(content),
-    }
 }

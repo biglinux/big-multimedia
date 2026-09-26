@@ -1,11 +1,9 @@
-//! Relm4 root component for the video player — the live UI (`lib.rs::run`
-//! launches this; the legacy god-object was deleted in the V6 cutover).
+//! Relm4 root component for the video player (`lib.rs::run` launches it).
 //!
-//! Mirrors `big_audio_player::audio::ui::audio_shell::AudioShell`. Wires the
-//! mpv backend, the GL/DMA-BUF video surface (shared `video_surface` plumbing —
-//! offload with GLArea fallback), and the OSD `VideoPlaybackBar` (the shared
-//! `BigVideoTransport`). Push-model: the transport emits intents → the shell
-//! drives mpv; mpv events flow back into the transport display. The playlist
+//! Wires the mpv backend, the GL/DMA-BUF video surface (shared `video_surface`
+//! plumbing — offload with GLArea fallback), and the OSD controls bar
+//! (`video_controls_bar`). Push-model: the controls emit intents → the shell
+//! drives mpv; mpv events flow back into the controls display. The playlist
 //! sidebar, IPTV browser, cast picker, and filter/info/shortcut dialogs hang
 //! off the same shell.
 
@@ -19,18 +17,14 @@ use gtk::glib;
 use log::error;
 use relm4::{Component, ComponentController, ComponentParts, ComponentSender, Controller};
 
-#[cfg(feature = "chromecast")]
-use crate::cast::chromecast::CastSessionController;
 use crate::i18n::{i18n, ni18n};
 use crate::player::mpv_backend::fast_render::{
     FastRenderContext, SwRenderContext as SoftwareRenderContext,
 };
 use crate::player::mpv_backend::offload_renderer::VideoBackend;
-use crate::player::mpv_backend::{MpvBackend, PlayerEvent, skip_mpv_render, video_surface};
+use crate::player::mpv_backend::{MpvBackend, PlayerEvent, video_surface};
 use crate::settings::{Settings, keys};
 use crate::shared::converter_handoff;
-#[cfg(feature = "chromecast")]
-use crate::video::ui::cast::{VideoCastDialog, VideoCastDialogInit, VideoCastDialogOutput};
 use crate::video::ui::filters::{VideoFiltersDialog, VideoFiltersDialogInit};
 use crate::video::ui::gl_framebuffer::{GL_FRAMEBUFFER_BINDING, get_gl_get_integerv};
 use crate::video::ui::iptv::{VideoIptvBrowser, VideoIptvBrowserOutput};
@@ -49,37 +43,19 @@ use big_media_components::media::files::VIDEO_EXTENSIONS;
 use big_media_components::time::playback_time;
 use big_relm4_components::list::navigation_row::{BigNavigationRow, BigNavigationRowSpec};
 
-/// OSD auto-hide delay after the last pointer activity (mirrors the old
-/// `HIDE_DELAY_MS`).
+/// OSD auto-hide delay after the last pointer activity.
 const OSD_HIDE_DELAY_MS: u64 = 2500;
 
 /// Pointer travel (px) before a button-1 drag over the video begins a window
-/// move (mirrors the old `input/mod.rs` `DRAG_THRESHOLD`).
+/// move.
 const DRAG_THRESHOLD: f64 = 8.0;
-
-/// How the shell is mounted. `Player` exposes the full application chrome;
-/// `Background` keeps the same mpv/GL surface but omits player UI overlays so
-/// the content can behave like a desktop video wallpaper.
-#[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
-pub enum VideoShellMode {
-    #[default]
-    Player,
-    Background,
-}
-
-impl VideoShellMode {
-    pub fn is_background(self) -> bool {
-        matches!(self, Self::Background)
-    }
-}
 
 /// OSD reveal/auto-hide state machine, shared (interior-mutable) between the
 /// motion controllers and `update()`. Reveals the header + controls on pointer
 /// motion over the video, hides them after [`OSD_HIDE_DELAY_MS`] of inactivity
-/// or on pointer-leave. Mirrors the old `controls/visibility.rs`.
+/// or on pointer-leave.
 mod actions;
-#[cfg(feature = "chromecast")]
-mod cast_snapshot;
+mod adjustments;
 mod component;
 mod dialogs;
 mod export;
@@ -89,18 +65,17 @@ mod input_gestures;
 mod keyboard;
 mod mpris;
 mod osd;
+mod panel;
 mod playback;
 mod render;
 mod state_access;
 mod trim;
 
-pub use input::{VideoShellInput, send_to_shell};
+pub use input::{VideoShellInput, mark_opening_files, send_to_shell};
 
 use osd::{AspectSnap, IdleBackground, OsdState};
 
 pub struct VideoShell {
-    /// Mount mode: full player UI or desktop-background video surface.
-    mode: VideoShellMode,
     /// OSD controls bar (seek row + volume/speed/voice + transport + tracks).
     controls: Controller<VideoControlsBar>,
     /// Folder-browser playlist sidebar (folder scan = the playlist).
@@ -119,10 +94,6 @@ pub struct VideoShell {
     /// IPTV browser (providers / channels / favorites). Presented in a dialog
     /// from the header button; emits play intents routed to mpv.
     iptv: Controller<VideoIptvBrowser>,
-    /// Cast (Chromecast) device picker. Presented in a dialog from the header
-    /// button; drives the shared `CastSessionController` and reports start/stop here.
-    #[cfg(feature = "chromecast")]
-    cast: Controller<VideoCastDialog>,
     /// Main video overlay — owns the welcome screen child (added/removed).
     main_overlay: gtk::Overlay,
     /// Centered welcome screen shown when nothing is loaded; `None` once hidden.
@@ -134,6 +105,15 @@ pub struct VideoShell {
     /// Pending load-time shuffle: the chosen start path and the list length,
     /// applied at the `FileLoaded` where mpv holds both.
     shuffle_on_load: Option<(String, usize)>,
+    /// What is away from normal, and the header pill that says so.
+    adjustments: Vec<adjustments::Adjustment>,
+    adjustments_pill: gtk::Button,
+    /// Header pill offering HDR for a picture that plays grey (this file).
+    hdr_hint: gtk::Button,
+    /// What "Back to normal" just undid, for the panel's "Undo".
+    last_reset: Option<Vec<adjustments::Adjustment>>,
+    /// The settings panel (right-hand card over the video).
+    panel: Rc<panel::SettingsPanel>,
     /// Video playback backend (system libmpv). `None` until the surface
     /// realizes and the backend initializes; `None` also if init failed.
     mpv: Rc<RefCell<Option<Arc<MpvBackend>>>>,
@@ -151,7 +131,7 @@ pub struct VideoShell {
     /// Centered buffering spinner overlay; shown on `Buffering(true)`.
     buffering_overlay: gtk::Box,
     /// Transient-toast host wrapping the window content (screenshot / chapter /
-    /// sleep-timer feedback). Mirrors the god-object's `toast_overlay`.
+    /// sleep-timer feedback).
     toast_overlay: adw::ToastOverlay,
     screenshot_owner: Arc<std::sync::atomic::AtomicBool>,
     /// The `win.*` action group, kept so the shell can gate context-dependent
@@ -160,9 +140,6 @@ pub struct VideoShell {
     /// Armed sleep-timer countdown source; `None` when disarmed. Stored so it is
     /// removed on disarm / re-arm / drop (no leaked `glib::timeout`).
     sleep_timer_source: Option<glib::SourceId>,
-    /// True when a pane-host activity transition paused playback. Used to
-    /// resume only playback this host paused, not media the user paused.
-    activity_paused_playback: Cell<bool>,
     /// Seconds left on the armed sleep timer (drives the volume fade + expiry).
     sleep_timer_remaining: u32,
     /// On-expiry action id (`pause` / `quit` / `suspend` / `poweroff`).
@@ -190,11 +167,16 @@ pub struct VideoShell {
     mpris_state: Arc<std::sync::Mutex<big_app_kit::mpris::PlayerState>>,
     /// Counter behind each loaded file's MPRIS track id.
     mpris_track_seq: u64,
+    /// True between an unpause and the next pause or end of file.
+    playing: bool,
+    /// GTK inhibit cookie keeping the screen awake. mpv cannot do it: its
+    /// screensaver control needs a window of its own, which libmpv lacks.
+    screen_inhibit: Option<u32>,
 }
 
 #[cfg(test)]
 mod tests {
-    use super::{DRAG_THRESHOLD, OSD_HIDE_DELAY_MS, VideoShellMode, dialogs};
+    use super::{DRAG_THRESHOLD, OSD_HIDE_DELAY_MS, dialogs};
 
     #[test]
     fn shell_interaction_timing_constants_stay_ordered() {
@@ -203,12 +185,6 @@ mod tests {
 
         assert!(osd_hide_ms > 0);
         assert!(drag_threshold > 0.0);
-    }
-
-    #[test]
-    fn shell_background_mode_is_distinct_from_full_player() {
-        assert!(!VideoShellMode::Player.is_background());
-        assert!(VideoShellMode::Background.is_background());
     }
 
     #[test]

@@ -12,8 +12,8 @@ use gtk::gdk;
 
 #[doc(inline)]
 pub use big_app_kit_core::keybindings::{
-    ShortcutDef, build_accel_map, migrate_legacy_accel, parse_custom, remove_custom_override,
-    resolve_accels, serialize_custom, set_custom_override,
+    ShortcutDef, build_accel_map, parse_custom, remove_custom_override, resolve_accels,
+    serialize_custom, set_custom_override,
 };
 
 /// Format a `(keyval, modifiers)` pair as the GTK accelerator string.

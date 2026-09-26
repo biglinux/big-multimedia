@@ -10,7 +10,7 @@
 //! Row activation emits `LibraryPanelOutput::NodeSelected`; the shell resolves
 //! the node into tracks and pushes them back via `PopulateDetail`. Letter
 //! dividers are inserted when a group level has more than ten real entries
-//! (mirrors `window::library::group_nodes::group_divider_letter`). Per-row
+//! (`model::group_divider_letter`). Per-row
 //! gestures are recycled-safe (signal id stashed on bind, disconnected on
 //! unbind); the tree data changes via `splice`, never a full view rebuild.
 

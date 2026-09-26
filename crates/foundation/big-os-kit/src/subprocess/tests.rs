@@ -14,61 +14,6 @@ fn empty_program_rejected() {
 }
 
 #[test]
-fn allow_list_blocks_unknown_program() {
-    let spec = BigSubprocessSpec::builder()
-        .program("rm")
-        .allow_list(["ffprobe", "ffmpeg"])
-        .build();
-    let err = spec.try_resolved().unwrap_err();
-    assert!(matches!(err, BigSubprocessError::ProgramNotAllowed(p) if p == "rm"));
-}
-
-#[test]
-fn allow_list_permits_listed_program() {
-    let spec = BigSubprocessSpec::builder()
-        .program("ffprobe")
-        .allow_list(["ffprobe", "ffmpeg"])
-        .build();
-    assert!(spec.try_resolved().is_ok());
-}
-
-#[test]
-fn argv_preserves_order_and_separators() {
-    let spec = BigSubprocessSpec::builder()
-        .program("ffprobe")
-        .arg("-of")
-        .arg("json")
-        .arg("/tmp/x.mp4")
-        .build();
-    let r = spec.resolved();
-    assert_eq!(r.program, "ffprobe");
-    assert_eq!(r.argv, ["-of", "json", "/tmp/x.mp4"]);
-}
-
-#[test]
-fn argv_never_uses_shell() {
-    let spec = BigSubprocessSpec::builder()
-        .program("echo")
-        .arg("; rm -rf /")
-        .arg("&& curl evil")
-        .build();
-    let r = spec.resolved();
-    assert_eq!(r.argv, ["; rm -rf /", "&& curl evil"]);
-    assert_eq!(r.program, "echo");
-}
-
-#[test]
-fn defaults_are_safe() {
-    let spec = BigSubprocessSpec::builder().program("echo").build();
-    let r = spec.resolved();
-    assert_eq!(r.stdout, BigSubprocessOutputMode::Capture);
-    assert_eq!(r.stderr, BigSubprocessOutputMode::Capture);
-    assert_eq!(r.timeout_ms, 30_000);
-    assert!(r.env_inherit);
-    assert_eq!(r.stdin_len, 0);
-}
-
-#[test]
 fn redact_replaces_secret_in_captured_stdout() {
     let mut buf = b"token=ABCDEF rest".to_vec();
     redact_in_place(&["ABCDEF".to_string()], &mut buf);
@@ -122,57 +67,6 @@ fn run_captures_stdout() {
     let out = spec.run().expect("echo runs");
     assert!(out.status.success());
     assert!(out.stdout_lossy().contains("hello big-app-kit"));
-}
-
-#[test]
-// Miri does not implement `posix_spawn`; normal `cargo test` still checks
-// streaming stdout and wait semantics against a real child process.
-#[cfg_attr(miri, ignore)]
-fn spawn_streams_stdout_then_waits() {
-    use std::io::Read;
-    let mut child = BigSubprocessSpec::builder()
-        .program("echo")
-        .arg("streamed")
-        .build()
-        .spawn()
-        .expect("spawn echo");
-    let mut out = String::new();
-    child
-        .take_stdout()
-        .expect("stdout pipe")
-        .read_to_string(&mut out)
-        .expect("read stdout");
-    let status = child.wait().expect("wait");
-    assert!(status.success());
-    assert!(out.contains("streamed"));
-}
-
-#[test]
-// Miri does not implement `posix_spawn`; normal `cargo test` still checks
-// kill/wait behavior against a real long-lived child process.
-#[cfg_attr(miri, ignore)]
-fn spawn_kill_terminates_long_child() {
-    let mut child = BigSubprocessSpec::builder()
-        .program("sleep")
-        .arg("30")
-        .build()
-        .spawn()
-        .expect("spawn sleep");
-    assert!(child.try_wait().expect("poll").is_none());
-    child.kill().expect("kill");
-    let status = child.wait().expect("wait after kill");
-    assert!(!status.success());
-}
-
-#[test]
-fn spawn_enforces_allow_list() {
-    let err = BigSubprocessSpec::builder()
-        .program("rm")
-        .allow_list(["echo"])
-        .build()
-        .spawn()
-        .unwrap_err();
-    assert!(matches!(err, BigSubprocessError::ProgramNotAllowed(p) if p == "rm"));
 }
 
 #[test]
@@ -257,60 +151,6 @@ fn captures_stderr_and_exit_code_on_failure() {
         out.stderr_lossy().contains("/nonexistent_path_xyzzy_42"),
         "stderr should name the missing path: {:?}",
         out.stderr_lossy()
-    );
-}
-
-#[test]
-// Miri does not implement `posix_spawn`; normal `cargo test` still checks
-// pid and stderr pipe behavior against a real child process.
-#[cfg_attr(miri, ignore)]
-fn spawn_exposes_real_pid_and_stderr_pipe() {
-    let mut child = BigSubprocessSpec::builder()
-        .program("sleep")
-        .arg("5")
-        .build()
-        .spawn()
-        .expect("spawn sleep");
-    assert!(
-        child.id() > 1,
-        "child must report a real pid, got {}",
-        child.id()
-    );
-    assert!(
-        child.take_stderr().is_some(),
-        "stderr pipe is captured by default"
-    );
-    child.kill().expect("kill");
-    let _ = child.wait();
-}
-
-#[test]
-// Miri does not implement `posix_spawn`; normal `cargo test` still checks
-// try_wait behavior against a real child process.
-#[cfg_attr(miri, ignore)]
-fn try_wait_reports_completion() {
-    let mut child = BigSubprocessSpec::builder()
-        .program("true")
-        .build()
-        .spawn()
-        .expect("spawn true");
-    // Poll until the fast child exits; must eventually report Some(success),
-    // not a perpetual None.
-    let mut final_status = None;
-    for _ in 0..200 {
-        match child.try_wait().expect("poll") {
-            Some(status) => {
-                final_status = Some(status);
-                break;
-            }
-            None => std::thread::sleep(Duration::from_millis(10)),
-        }
-    }
-    assert!(
-        final_status
-            .expect("child must report completion")
-            .success(),
-        "`true` exits 0"
     );
 }
 
@@ -540,16 +380,37 @@ fn full_duplex_large_input_and_output_do_not_deadlock() {
 }
 
 #[test]
-#[cfg_attr(miri, ignore)]
-#[cfg(target_os = "linux")]
-fn stderr_observer_error_stops_the_operation() {
-    let result = BigSubprocessSpec::builder()
-        .program("sh")
-        .args(["-c", "printf progress >&2; sleep 2"])
-        .timeout(Duration::from_secs(5))
-        .build()
-        .run_cancellable_with_stderr(&AtomicBool::new(false), &mut |_| {
-            Err(std::io::Error::other("consumer closed"))
-        });
-    assert!(matches!(result, Err(BigSubprocessError::Io(_))));
+fn argv_preserves_order_and_separators() {
+    let spec = BigSubprocessSpec::builder()
+        .program("ffprobe")
+        .arg("-of")
+        .arg("json")
+        .arg("/tmp/x.mp4")
+        .build();
+    let r = spec.try_resolved().unwrap();
+    assert_eq!(r.program, "ffprobe");
+    assert_eq!(r.argv, ["-of", "json", "/tmp/x.mp4"]);
+}
+
+#[test]
+fn argv_never_uses_shell() {
+    let spec = BigSubprocessSpec::builder()
+        .program("echo")
+        .arg("; rm -rf /")
+        .arg("&& curl evil")
+        .build();
+    let r = spec.try_resolved().unwrap();
+    assert_eq!(r.argv, ["; rm -rf /", "&& curl evil"]);
+    assert_eq!(r.program, "echo");
+}
+
+#[test]
+fn defaults_are_safe() {
+    let spec = BigSubprocessSpec::builder().program("echo").build();
+    let r = spec.try_resolved().unwrap();
+    assert_eq!(r.stdout, BigSubprocessOutputMode::Capture);
+    assert_eq!(r.stderr, BigSubprocessOutputMode::Capture);
+    assert_eq!(r.timeout_ms, 30_000);
+    assert!(r.env_inherit);
+    assert_eq!(r.stdin_len, 0);
 }

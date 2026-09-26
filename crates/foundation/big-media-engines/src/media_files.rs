@@ -9,16 +9,22 @@
 
 use std::path::Path;
 
-/// Container extensions recognised as video.
+/// Container extensions recognised as video: those of the MIME types the
+/// video player's desktop entry claims, so a file it is asked to open is also
+/// one its folder scan lists.
 pub const VIDEO_EXTENSIONS: &[&str] = &[
-    "mp4", "mkv", "webm", "avi", "mov", "flv", "wmv", "mpg", "mpeg", "ts", "m2ts", "vob", "ogv",
-    "3gp", "m4v", "mts", "f4v", "divx", "asf",
+    "mp4", "mkv", "mk3d", "webm", "avi", "mov", "qt", "flv", "wmv", "mpg", "mpeg", "mpe", "m2v",
+    "ts", "m2ts", "vob", "ogv", "ogm", "3gp", "3g2", "m4v", "mts", "f4v", "divx", "asf", "dv",
+    "mxf", "rm", "rmvb", "nsv", "mj2", "mjpeg", "mjpg", "flc", "fli", "bik", "smk", "axv", "3gpp",
+    "3gp2", "3gpp2", "mjp2", "m2t", "rv", "bk2", "lrv", "moov",
 ];
 
-/// Container extensions recognised as audio.
+/// Container extensions recognised as audio, likewise the audio player's.
 pub const AUDIO_EXTENSIONS: &[&str] = &[
-    "mp3", "flac", "ogg", "opus", "wav", "m4a", "aac", "wma", "ape", "wv", "aiff", "aif", "mka",
-    "oga", "ac3", "dts",
+    "mp3", "flac", "ogg", "opus", "wav", "m4a", "m4b", "aac", "wma", "ape", "wv", "aiff", "aif",
+    "aifc", "mka", "oga", "spx", "ac3", "dts", "mpc", "tta", "amr", "awb", "au", "snd", "dff",
+    "dsf", "weba", "mod", "it", "s3m", "xm", "mpga", "adts", "f4a", "f4b", "aiffc", "dtshd", "mpp",
+    "loas",
 ];
 
 /// Playlist file extensions.
@@ -79,44 +85,6 @@ pub fn is_mpeg_ts(path: &str) -> bool {
         .any(|start| start + 188 < read && buf[start] == 0x47 && buf[start + 188] == 0x47)
 }
 
-/// Index of the first non-audio entry in `paths`, or [`None`] if there is none.
-#[must_use]
-pub fn first_video_index(paths: &[String]) -> Option<usize> {
-    paths.iter().position(|path| !is_audio_file(path))
-}
-
-/// Index of the next non-audio entry after `pos`, skipping audio rows.
-#[must_use]
-pub fn next_video_index(paths: &[String], pos: i64) -> Option<usize> {
-    let mut next = pos + 1;
-    while (next as usize) < paths.len() && is_audio_file(&paths[next as usize]) {
-        next += 1;
-    }
-    ((next as usize) < paths.len()).then_some(next as usize)
-}
-
-/// Index of the previous non-audio entry before `pos`, skipping audio rows.
-#[must_use]
-pub fn previous_video_index(paths: &[String], pos: i64) -> Option<usize> {
-    if pos <= 0 {
-        return None;
-    }
-    let mut prev = pos - 1;
-    while prev > 0 && is_audio_file(&paths[prev as usize]) {
-        prev -= 1;
-    }
-    (prev >= 0 && !is_audio_file(&paths[prev as usize])).then_some(prev as usize)
-}
-
-/// `true` when `path` is an HTTP(S)/RTSP/RTMP URL rather than a local file.
-#[must_use]
-pub fn is_stream_path(path: &str) -> bool {
-    path.starts_with("http://")
-        || path.starts_with("https://")
-        || path.starts_with("rtsp://")
-        || path.starts_with("rtmp://")
-}
-
 fn extension(path: &str) -> Option<String> {
     Path::new(path)
         .extension()
@@ -159,29 +127,5 @@ mod tests {
         assert!(is_playlist_file("list.M3U8"));
         assert!(is_playlist_file("radio.pls"));
         assert!(!is_playlist_file("song.mp3"));
-    }
-
-    #[test]
-    fn video_index_helpers_skip_audio_entries() {
-        let paths = vec![
-            "/tmp/a.mp3".to_string(),
-            "/tmp/v1.mp4".to_string(),
-            "/tmp/b.flac".to_string(),
-            "/tmp/v2.mkv".to_string(),
-        ];
-
-        assert_eq!(first_video_index(&paths), Some(1));
-        assert_eq!(next_video_index(&paths, 1), Some(3));
-        assert_eq!(next_video_index(&paths, 3), None);
-        assert_eq!(previous_video_index(&paths, 3), Some(1));
-        assert_eq!(previous_video_index(&paths, 1), None);
-    }
-
-    #[test]
-    fn stream_detection_accepts_common_protocols() {
-        assert!(is_stream_path("https://example.test/live.m3u8"));
-        assert!(is_stream_path("rtsp://camera/live"));
-        assert!(is_stream_path("rtmp://server/live"));
-        assert!(!is_stream_path("/home/user/video.mp4"));
     }
 }

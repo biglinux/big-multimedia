@@ -25,8 +25,6 @@ PATHS = {
     "editor": "crates/big-audio-player/src/audio/account_editor.rs",
     "remote": "crates/app/big-app-kit-core/src/remote_control.rs",
     "scope": "crates/ui/media/big-player-ui/src/smartphone/dialog.rs",
-    "receipts": "crates/media-runtime/src/converter/queue/receipts.rs",
-    "processing": "crates/media-runtime/src/converter/queue/processing.rs",
     "unavailable": "crates/foundation/big-media-data/src/db/unavailable.rs",
     "review_ui": "crates/big-audio-player/src/audio/ui/unavailable_dialog.rs",
     "scanner": "crates/big-audio-player/src/audio/library_scan_engine.rs",
@@ -35,7 +33,6 @@ PATHS = {
     "metadata": "crates/foundation/big-media-data/src/library/metadata.rs",
     "playlist": "crates/big-audio-player/src/audio/ui/audio_shell/playlist_library_dialog_actions.rs",
     "playlist_parser": "crates/big-audio-player/src/audio/playlist_import.rs",
-    "queue": "crates/media-runtime/src/converter/queue/mod.rs",
     "messages": "crates/media-runtime/src/settings/messages.rs",
 }
 
@@ -263,52 +260,6 @@ def check(root: Path, overrides: dict[str, str] | None = None):
 
     gate("Bounded LAN server lifecycle", remote)
 
-    def receipts():
-        text = read("receipts")
-        processing = read("processing")
-        publish = after(text, "fn publish(")
-        require(
-            "MAX_RECEIPT:usize=4096" in text and "deny_unknown_fields" in text,
-            "receipt input bound/schema missing",
-        )
-        require(
-            ordered(
-                after(text, "fn completed("),
-                "receipt.plan!=self.plan",
-                "hash_file(&self.target,cancel)?!=receipt.sha256",
-                "validate_output_cancellable",
-                "hash_file(&self.target,cancel)?!=receipt.sha256",
-            ),
-            "resume proof or post-probe identity missing",
-        )
-        require(
-            ordered(
-                publish,
-                "self.persist(&record)?",
-                "cancel.load",
-                "stage.publish(&self.target)",
-                "hash_file(&self.target,cancel)",
-                "published:true",
-            ),
-            "prepared receipt not durable before publication",
-        )
-        require(
-            "external_path" in text and "hash_file(path,cancel)?" in text,
-            "external subtitle fingerprint missing",
-        )
-        require(
-            processing.count("recheck_plan(") >= 3
-            and "reused.iter().all" in processing,
-            "all-reused/published output path skips input-plan recheck",
-        )
-        require(
-            "std::fs::remove_file" not in processing,
-            "processing deletes source or already public output",
-        )
-        return "Full source/plan/output fingerprints, structure probe, prepared journal, no-replace publication."
-
-    gate("Durable completion receipts", receipts)
-
     def unavailable():
         text = read("unavailable")
         remove = after(text, "pub fn remove_reviewed")
@@ -409,27 +360,11 @@ def check(root: Path, overrides: dict[str, str] | None = None):
     gate("Playlist document and SQL feedback", playlists)
 
     def lifecycle():
-        q = read("queue")
         saving = read("saving")
         bg = read("background")
         require(
-            "running.compare_exchange" in q and "let run = QueueRun" in q,
-            "parallel starts can reset cancellation",
-        )
-        require(
-            "track_operation()" in q
-            and "track_operation()" in read("scanner")
-            and "OperationGuard" in bg,
+            "track_operation()" in read("scanner") and "OperationGuard" in bg,
             "long durable jobs not accounted in close drain",
-        )
-        require(
-            "impl Drop for ConversionQueue" in q and "self.sender.close()" in q,
-            "closed queue strands workers/readers",
-        )
-        require(
-            "std::thread::panicking()" in q
-            and "self.sender.close()" in after(q, "struct QueueRun"),
-            "worker unwind loses terminal state",
         )
         require(
             "after_writes" in saving and "app.hold()" in saving,

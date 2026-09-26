@@ -10,10 +10,10 @@ ROOT = Path(__file__).resolve().parents[2]
 
 
 class ContractCheckerTests(unittest.TestCase):
-    def test_current_tree_satisfies_nine_contracts(self):
+    def test_current_tree_satisfies_eight_contracts(self):
         result = check(ROOT)
         self.assertEqual(result["failed"], 0, result)
-        self.assertEqual(result["passed"], 9)
+        self.assertEqual(result["passed"], 8)
         self.assertFalse(result["native_executed"])
 
     def mutated(self, key, old, new, gate):
@@ -80,20 +80,6 @@ CASES = [
         "Bounded LAN server lifecycle",
     ),
     (
-        "resume_hash",
-        "receipts",
-        "hash_file(&self.target,cancel)?!=receipt.sha256",
-        "false",
-        "Durable completion receipts",
-    ),
-    (
-        "prepared_journal",
-        "receipts",
-        "self.persist(&record)?;",
-        "/* no prepared receipt */",
-        "Durable completion receipts",
-    ),
-    (
         "review_recheck",
         "unavailable",
         "current.as_ref()!=Some(&item.track)",
@@ -120,13 +106,6 @@ CASES = [
         "queries::get_playlist_tracks(conn, id),",
         "queries::get_playlist_tracks(conn, id).unwrap_or_default(),",
         "Playlist document and SQL feedback",
-    ),
-    (
-        "parallel_restart",
-        "queue",
-        "running.compare_exchange",
-        "running.swap",
-        "Owned jobs and shutdown",
     ),
     (
         "silent_unsaved_close",

@@ -9,7 +9,22 @@ use super::cache::{
 
 /// Synchronous — call from a background thread.
 pub fn probe_metadata(path: &str) -> Option<VideoMeta> {
-    let output = build_probe_metadata_command(path).run().ok()?;
+    // `--` keeps a file name starting with `-` from reading as an ffprobe flag.
+    let output = BigSubprocessSpec::builder()
+        .program("ffprobe")
+        .args([
+            "-v",
+            "quiet",
+            "-print_format",
+            "json",
+            "-show_streams",
+            "-show_format",
+            "--",
+            path,
+        ])
+        .build()
+        .run()
+        .ok()?;
 
     if !output.status.success() {
         return None;
@@ -124,38 +139,4 @@ pub(super) fn parse_ffprobe_json(json: &str) -> Option<VideoMeta> {
 
 pub(super) fn codec_display_name(name: &str) -> String {
     big_media_components::ffmpeg::labels::media_codec_display_name(name)
-}
-
-// `--` terminator scopes the path as positional, defending against hostile
-// filenames beginning with `-` that ffprobe would otherwise treat as flags.
-pub(super) fn build_probe_metadata_command(path: &str) -> BigSubprocessSpec {
-    BigSubprocessSpec::builder()
-        .program("ffprobe")
-        .args([
-            "-v",
-            "quiet",
-            "-print_format",
-            "json",
-            "-show_streams",
-            "-show_format",
-            "--",
-            path,
-        ])
-        .build()
-}
-
-#[cfg(test)]
-mod argv_tests {
-    use super::*;
-
-    #[test]
-    fn probe_metadata_command_separates_hostile_path() {
-        let hostile = "-f lavfi -i /dev/zero";
-        let cmd = build_probe_metadata_command(hostile);
-        let argv: Vec<String> = cmd.resolved().argv;
-        let idx = argv.iter().position(|a| a == hostile).expect("path argv");
-        assert!(idx > 0);
-        let prev = &argv[idx - 1];
-        assert!(prev == "--" || prev == "-i", "argv={argv:?}");
-    }
 }

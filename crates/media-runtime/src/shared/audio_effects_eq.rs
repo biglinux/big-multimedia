@@ -9,7 +9,7 @@ use std::rc::Rc;
 use std::sync::Arc;
 use std::time::Duration;
 
-use crate::i18n::i18n;
+use crate::i18n::{gettext_noop, i18n};
 use crate::player::mpv_backend::MpvBackend;
 use crate::settings::keys;
 use big_relm4_components::input::debounce::BigDebouncedAction as DebouncedAction;
@@ -24,42 +24,60 @@ struct EqPreset {
 fn presets() -> Vec<EqPreset> {
     vec![
         EqPreset {
-            name: "Flat",
+            name: gettext_noop("Flat"),
             gains: [0.0; 10],
         },
         EqPreset {
-            name: "Bass Boost",
+            name: gettext_noop("Bass Boost"),
             gains: [6.0, 5.0, 4.0, 2.0, 0.0, 0.0, 0.0, 0.0, 0.0, 0.0],
         },
         EqPreset {
-            name: "Treble Boost",
+            name: gettext_noop("Treble Boost"),
             gains: [0.0, 0.0, 0.0, 0.0, 0.0, 2.0, 4.0, 5.0, 6.0, 6.0],
         },
         EqPreset {
-            name: "Pop",
+            name: gettext_noop("Pop"),
             gains: [1.0, 3.0, 5.0, 4.0, 2.0, -1.0, -2.0, -1.0, 2.0, 4.0],
         },
         EqPreset {
-            name: "Rock",
+            name: gettext_noop("Rock"),
             gains: [5.0, 4.0, 2.0, 0.0, -2.0, -1.0, 0.0, 3.0, 4.0, 5.0],
         },
         EqPreset {
-            name: "Jazz",
+            name: gettext_noop("Jazz"),
             gains: [3.0, 2.0, 1.0, 2.0, -2.0, -2.0, 0.0, 2.0, 3.0, 4.0],
         },
         EqPreset {
-            name: "Classical",
+            name: gettext_noop("Classical"),
             gains: [5.0, 4.0, 3.0, 2.0, -1.0, -1.0, 0.0, 3.0, 4.0, 5.0],
         },
         EqPreset {
-            name: "Vocal",
+            name: gettext_noop("Vocal"),
             gains: [-2.0, -1.0, 0.0, 3.0, 5.0, 5.0, 3.0, 1.0, 0.0, -1.0],
         },
         EqPreset {
-            name: "Electronic",
+            name: gettext_noop("Electronic"),
             gains: [5.0, 4.0, 2.0, 0.0, -2.0, 0.0, 2.0, 4.0, 5.0, 5.0],
         },
     ]
+}
+
+/// The preset names (translation msgids, "Flat" first), in dialog order.
+pub fn equalizer_preset_names() -> Vec<&'static str> {
+    presets().iter().map(|preset| preset.name).collect()
+}
+
+/// The preset these saved bands (`EQ_BANDS` text) match, by index
+/// (`None`: set by hand).
+pub fn equalizer_preset_matching(bands: &str) -> Option<usize> {
+    let gains = super::audio_effects::parse_eq_bands(bands);
+    presets().iter().position(|preset| {
+        preset
+            .gains
+            .iter()
+            .zip(gains)
+            .all(|(want, have)| (want - have).abs() < 0.05)
+    })
 }
 
 pub fn create_equalizer_dialog(
@@ -67,6 +85,30 @@ pub fn create_equalizer_dialog(
     mpv: Option<Arc<MpvBackend>>,
     on_change: Option<Rc<dyn Fn()>>,
 ) -> adw::Window {
+    let main_box = create_equalizer_content(settings, mpv, on_change);
+    let dialog = adw::Window::builder()
+        .title(i18n("Equalizer"))
+        .default_width(520)
+        .modal(false)
+        .build();
+
+    let toolbar_pane = BigToolbarPane::new(BigToolbarPaneSpec::new());
+    let header = BigToolbarHeader::new(BigToolbarHeaderSpec::new());
+    toolbar_pane.add_top_bar(header.root());
+    toolbar_pane.set_content(&main_box);
+    let toolbar_view = toolbar_pane.into_root();
+    dialog.set_content(Some(&toolbar_view));
+
+    dialog
+}
+
+/// The equalizer itself (presets, bands, reset), to show in a dialog or
+/// straight inside another view.
+pub fn create_equalizer_content(
+    settings: &crate::settings::Settings,
+    mpv: Option<Arc<MpvBackend>>,
+    on_change: Option<Rc<dyn Fn()>>,
+) -> gtk::Box {
     let main_box = gtk::Box::builder()
         .orientation(gtk::Orientation::Vertical)
         .spacing(8)
@@ -361,18 +403,5 @@ pub fn create_equalizer_dialog(
         });
     }
 
-    let dialog = adw::Window::builder()
-        .title(i18n("Equalizer"))
-        .default_width(520)
-        .modal(false)
-        .build();
-
-    let toolbar_pane = BigToolbarPane::new(BigToolbarPaneSpec::new());
-    let header = BigToolbarHeader::new(BigToolbarHeaderSpec::new());
-    toolbar_pane.add_top_bar(header.root());
-    toolbar_pane.set_content(&main_box);
-    let toolbar_view = toolbar_pane.into_root();
-    dialog.set_content(Some(&toolbar_view));
-
-    dialog
+    main_box
 }

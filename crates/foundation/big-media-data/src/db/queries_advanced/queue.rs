@@ -3,19 +3,6 @@ use rusqlite::{Connection, params};
 use crate::db::models::Track;
 use crate::db::queries::{TRACK_COLUMNS_PREFIXED, row_to_track};
 
-pub fn save_queue(conn: &Connection, track_ids: &[i64]) -> crate::Result<()> {
-    let transaction = conn.unchecked_transaction()?;
-    transaction.execute("DELETE FROM queue_tracks", [])?;
-    let mut stmt =
-        transaction.prepare("INSERT INTO queue_tracks (position, track_id) VALUES (?1, ?2)")?;
-    for (i, tid) in track_ids.iter().enumerate() {
-        stmt.execute(params![i as i64, tid])?;
-    }
-    drop(stmt);
-    transaction.commit()?;
-    Ok(())
-}
-
 pub fn load_queue(conn: &Connection) -> crate::Result<Vec<Track>> {
     let sql = format!(
         "SELECT {TRACK_COLUMNS_PREFIXED} FROM queue_tracks qt

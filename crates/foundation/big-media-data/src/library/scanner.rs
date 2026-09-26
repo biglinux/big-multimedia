@@ -1,12 +1,8 @@
 //! Streaming discovery; unavailable files are never an instruction to delete rows.
 use crate::error::Result;
 pub use big_media_engines::media_files::AUDIO_EXTENSIONS;
-use std::path::{Path, PathBuf};
+use std::path::Path;
 
-/// Visit audio paths without collecting them; traversal errors remain explicit.
-pub fn visit_audio_files(folder: &str, visit: impl FnMut(&Path) -> Result<()>) -> Result<()> {
-    visit_audio_files_cancellable(folder, &std::sync::atomic::AtomicBool::new(false), visit)
-}
 /// Cancellation is checked between directory entries; a kernel filesystem call
 /// itself is not forcibly interruptible by this cooperative API.
 pub fn visit_audio_files_cancellable(
@@ -56,23 +52,6 @@ pub fn visit_audio_files_cancellable(
     }
     Ok(())
 }
-/// Compatibility collector for callers that explicitly need a list. Unlike the
-/// scanner this API materializes paths and therefore has an explicit safety cap.
-pub fn discover_audio_files(folder: &str) -> Result<Vec<PathBuf>> {
-    let mut files = Vec::new();
-    visit_audio_files(folder, |path| {
-        if files.len() >= 100_000 {
-            return Err(crate::Error::internal(
-                "too many paths for a collected scan",
-            ));
-        }
-        files.push(path.to_owned());
-        Ok(())
-    })?;
-    files.sort_unstable();
-    files.dedup();
-    Ok(files)
-}
 
 #[cfg(test)]
 mod tests {
@@ -96,81 +75,5 @@ mod tests {
                 "video extension should not be in AUDIO_EXTENSIONS: {ext}"
             );
         }
-    }
-
-    #[test]
-    fn discover_empty_folder() {
-        let dir = std::env::temp_dir().join("bmp-test-scanner-empty");
-        let _ = std::fs::create_dir_all(&dir);
-        let result = discover_audio_files(dir.to_str().unwrap()).unwrap();
-        assert!(result.is_empty());
-        let _ = std::fs::remove_dir(&dir);
-    }
-
-    #[test]
-    fn discover_finds_audio_files() {
-        let dir = std::env::temp_dir().join("bmp-test-scanner-find");
-        let _ = std::fs::create_dir_all(&dir);
-
-        std::fs::write(dir.join("song.mp3"), b"fake").unwrap();
-        std::fs::write(dir.join("track.flac"), b"fake").unwrap();
-        std::fs::write(dir.join("video.mp4"), b"fake").unwrap();
-        std::fs::write(dir.join("readme.txt"), b"fake").unwrap();
-
-        let result = discover_audio_files(dir.to_str().unwrap()).unwrap();
-        assert_eq!(
-            result.len(),
-            2,
-            "should find 2 audio files, got: {result:?}"
-        );
-
-        let names: Vec<String> = result
-            .iter()
-            .map(|p| p.file_name().unwrap().to_string_lossy().to_string())
-            .collect();
-        assert!(names.contains(&"song.mp3".to_string()));
-        assert!(names.contains(&"track.flac".to_string()));
-
-        let _ = std::fs::remove_dir_all(&dir);
-    }
-
-    #[test]
-    fn discover_recursive_subdirectories() {
-        let dir = std::env::temp_dir().join("bmp-test-scanner-recursive");
-        let sub = dir.join("subdir");
-        let _ = std::fs::create_dir_all(&sub);
-
-        std::fs::write(dir.join("root.ogg"), b"fake").unwrap();
-        std::fs::write(sub.join("nested.opus"), b"fake").unwrap();
-
-        let result = discover_audio_files(dir.to_str().unwrap()).unwrap();
-        assert_eq!(result.len(), 2, "should find files in subdirectories");
-
-        let _ = std::fs::remove_dir_all(&dir);
-    }
-
-    #[test]
-    fn discover_case_insensitive_extensions() {
-        let dir = std::env::temp_dir().join("bmp-test-scanner-case");
-        let _ = std::fs::create_dir_all(&dir);
-
-        std::fs::write(dir.join("SONG.MP3"), b"fake").unwrap();
-        std::fs::write(dir.join("Track.Flac"), b"fake").unwrap();
-
-        let result = discover_audio_files(dir.to_str().unwrap()).unwrap();
-        assert_eq!(
-            result.len(),
-            2,
-            "should match case-insensitive extensions, got: {result:?}"
-        );
-
-        let _ = std::fs::remove_dir_all(&dir);
-    }
-
-    #[test]
-    fn discover_nonexistent_folder_returns_error() {
-        // `ignore` may return Ok([]) or Err — assert only that it doesn't panic.
-        let result = discover_audio_files("/tmp/bmp-test-nonexistent-xyz-9999");
-        assert!(result.is_err());
     }
 }

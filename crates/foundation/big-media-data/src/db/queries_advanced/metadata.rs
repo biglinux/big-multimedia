@@ -8,25 +8,6 @@ pub fn update_track_rating(conn: &Connection, track_id: i64, rating: i32) -> cra
     Ok(())
 }
 
-/// COALESCE: only fills NULL fields — never overwrites user/scanner values.
-pub fn update_track_metadata_from_mb(
-    conn: &Connection,
-    track_id: i64,
-    genre: Option<&str>,
-    year: Option<i32>,
-    track_number: Option<i32>,
-) -> crate::Result<()> {
-    conn.execute(
-        "UPDATE tracks SET \
-         genre = COALESCE(genre, ?1), \
-         year = COALESCE(year, ?2), \
-         track_number = COALESCE(track_number, ?3) \
-         WHERE id = ?4",
-        params![genre, year, track_number, track_id],
-    )?;
-    Ok(())
-}
-
 pub struct TrackMetadataUpdate<'a> {
     pub title: Option<&'a str>,
     pub artist: Option<&'a str>,

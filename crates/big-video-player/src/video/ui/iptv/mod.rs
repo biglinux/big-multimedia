@@ -1,6 +1,6 @@
-//! App-local Relm4 IPTV browser (video port, V4).
+//! App-local Relm4 IPTV browser.
 //!
-//! Reproduces the legacy `iptv_view` browsing UX in the push-model idiom: a
+//! Push-model component: a
 //! provider dropdown (backed by the persistent `IptvProviderStore`), a
 //! "Manage…" CRUD dialog, a live search filter, a refresh button, and a grouped
 //! channel list with cached logos and per-channel favorites. Playing a channel
@@ -16,8 +16,6 @@
 //! Video-local: IPTV is genuinely player-specific, so the composition lives in
 //! the app, reusing shared rows (`big-relm4-components`) and the runtime IPTV
 //! data model (`big-media-runtime::media::iptv`) rather than rewriting them.
-//! Mirrors / supersedes the legacy `iptv_view` dialog; the legacy stays until
-//! the V6 cutover.
 
 mod cache;
 pub mod channel_list;

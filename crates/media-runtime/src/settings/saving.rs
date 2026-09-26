@@ -6,59 +6,63 @@ use adw::prelude::*;
 use std::cell::{Cell, RefCell};
 use std::rc::Rc;
 
-/// Add a visible, retryable saving status. Timer exists only while mapped and
-/// announcements change only when the generation/result changes.
-pub fn saving_page(settings: &Settings) -> adw::PreferencesPage {
-    let page = adw::PreferencesPage::builder()
-        .title(i18n("Saving preferences"))
-        .icon_name("document-save-symbolic")
+/// Put a save-problem banner on `page`. It stays hidden while saving works and
+/// appears with a retry action only when the store reports a failed or
+/// unconfirmed write. Polls only while the page is mapped.
+pub fn attach_save_status_banner(page: &adw::PreferencesPage, settings: &Settings) {
+    let banner = adw::Banner::builder()
+        .button_label(i18n("Retry Saving"))
+        .revealed(false)
         .build();
-    let group = adw::PreferencesGroup::new();
-    let row = adw::ActionRow::builder()
-        .title(i18n("Save status"))
-        .subtitle(i18n("Your preferences are saved automatically."))
-        .build();
-    let retry = gtk::Button::with_label(&i18n("Retry saving"));
-    retry.set_valign(gtk::Align::Center);
-    retry.set_sensitive(false);
-    row.add_suffix(&retry);
-    group.add(&row);
-    page.add(&group);
+    page.set_banner(Some(&banner));
     let store = settings.clone();
-    retry.connect_clicked(move |_| {
+    banner.connect_button_clicked(move |_| {
         let _ = store.request_flush();
     });
     let timer = Rc::new(RefCell::new(None::<glib::SourceId>));
     let store = settings.clone();
     let timer_map = timer.clone();
-    let weak_row = row.downgrade();
-    let weak_retry = retry.downgrade();
+    let weak_banner = banner.downgrade();
     page.connect_map(move |_| {
-        if timer_map.borrow().is_some() { return; }
-        let store = store.clone(); let row = weak_row.clone(); let retry = weak_retry.clone();
+        if timer_map.borrow().is_some() {
+            return;
+        }
+        let store = store.clone();
+        let banner = weak_banner.clone();
         let mut last = None;
-        *timer_map.borrow_mut() = Some(glib::timeout_add_local(std::time::Duration::from_millis(250), move || {
-            let (Some(row), Some(retry)) = (row.upgrade(), retry.upgrade()) else { return glib::ControlFlow::Break; };
+        let poll = move || {
+            let Some(banner) = banner.upgrade() else {
+                return glib::ControlFlow::Break;
+            };
             let status = store.save_status();
             if last.as_ref() != Some(&status) {
-                row.set_subtitle(&i18n(match status.phase {
-                    SavePhase::Saved => "All preferences are saved.",
-                    SavePhase::Pending | SavePhase::Saving => "Saving your changes…",
-                    SavePhase::DurabilityPending => "Changes were applied, but safe storage is not confirmed. Retry saving.",
-                    SavePhase::Failed => "Changes work for this session but could not be saved. Check storage or close other instances, then retry.",
-                }));
-                retry.set_sensitive(matches!(status.phase, SavePhase::Failed | SavePhase::DurabilityPending));
+                let problem = match status.phase {
+                    SavePhase::DurabilityPending => Some(i18n(
+                        "Your changes are in use, but saving them to disk is not confirmed yet.",
+                    )),
+                    SavePhase::Failed => Some(i18n(
+                        "Your changes work for now but could not be saved. Check free disk space or close other players, then retry.",
+                    )),
+                    SavePhase::Saved | SavePhase::Pending | SavePhase::Saving => None,
+                };
+                if let Some(problem) = &problem {
+                    banner.set_title(problem);
+                }
+                banner.set_revealed(problem.is_some());
                 last = Some(status);
             }
             glib::ControlFlow::Continue
-        }));
+        };
+        *timer_map.borrow_mut() = Some(glib::timeout_add_local(
+            std::time::Duration::from_millis(250),
+            poll,
+        ));
     });
     page.connect_unmap(move |_| {
         if let Some(timer) = timer.borrow_mut().take() {
             timer.remove();
         }
     });
-    page
 }
 
 /// Bind normal close to pending writes and explicit consent for unsaved edits.

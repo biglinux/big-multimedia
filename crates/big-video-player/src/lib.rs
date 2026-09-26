@@ -1,10 +1,9 @@
 //! `big-video-player` library crate.
 //!
 //! The video player UI built on the shared `big-media-runtime` modules. The
-//! thin binary (`src/main.rs`) calls [`run`]. Exposing the UI as a library
-//! (mirroring `big-audio-player`) lets the Relm4 components compile as public
-//! API during the in-progress port instead of tripping `dead_code` while built
-//! alongside the legacy god-object path.
+//! thin binary (`src/main.rs`) calls [`run`]; multicall hosts (big-host,
+//! big-modules) embed the player through [`open_in_application`] and
+//! [`open_paths`].
 
 pub use big_media_runtime::{cast, config, i18n, media, player, recent, settings, shared};
 
@@ -13,8 +12,8 @@ pub mod video;
 
 static EMBED_BOOT: std::sync::Once = std::sync::Once::new();
 
-/// Wrap the player content (the shell's window-agnostic `ToastOverlay` Root —
-/// RESTRUCTURE ADR D14) in an application window with the standard geometry.
+/// Wrap the player content (the shell's window-agnostic `ToastOverlay` Root)
+/// in an application window with the standard geometry.
 fn build_player_window(
     app: &impl gtk::prelude::IsA<gtk::Application>,
     content: &adw::ToastOverlay,
@@ -57,33 +56,6 @@ pub struct VideoEmbed {
     pub controller: relm4::Controller<video::ui::video_shell::VideoShell>,
 }
 
-/// Mount only the mpv-backed video surface as desktop-background content.
-/// This keeps the optimized video render path from the full player but omits
-/// its header, transport controls, welcome screen, sidebar, and window gestures.
-#[must_use]
-pub fn mount_as_background_pane() -> big_relm4_components::pane::ControllerPane {
-    use big_relm4_components::pane::{ControllerPane, KeyboardNeed};
-    use relm4::{Component, ComponentController};
-
-    embed_boot();
-    let controller = video::ui::video_shell::VideoShell::builder()
-        .launch(video::ui::video_shell::VideoShellMode::Background)
-        .detach();
-    let root = controller.widget().clone();
-    let sender = controller.sender().clone();
-    ControllerPane::new(
-        &root,
-        i18n::i18n("Video Background"),
-        KeyboardNeed::OnDemand,
-        controller,
-    )
-    .with_activity(move |activity| {
-        let _ = sender.send(video::ui::video_shell::VideoShellInput::SetPaneActivity(
-            activity,
-        ));
-    })
-}
-
 /// Open the video-player shell as a window of the host's running
 /// application (multicall hosts: big-host). Performs the app-specific boot
 /// exactly once (gettext — shared media domain —, numeric locale, GResource
@@ -100,7 +72,7 @@ pub fn open_in_application() -> VideoEmbed {
 
     embed_boot();
     let controller = video::ui::video_shell::VideoShell::builder()
-        .launch(video::ui::video_shell::VideoShellMode::Player)
+        .launch(())
         .detach();
     // The host's application is the registered default (it boots via RelmApp).
     let window = build_player_window(&relm4::main_application(), controller.widget());
@@ -155,8 +127,8 @@ pub fn run() -> gtk::glib::ExitCode {
         resources::VIDEO_PLAYER_SHELL,
     ]);
 
-    // The `VideoShell` Root is now mountable content (a ToastOverlay), not a
-    // window (ADR D14), so we boot manually instead of `RelmApp::run` (which
+    // The `VideoShell` Root is mountable content (a ToastOverlay), not a
+    // window, so we boot manually instead of `RelmApp::run` (which
     // requires a window Root): on activate, launch the shell and wrap its content
     // in the app window. The app subclass still owns the app-level actions,
     // accels, and the file-open broker.
@@ -174,7 +146,7 @@ pub fn run() -> gtk::glib::ExitCode {
             return;
         }
         let controller = video::ui::video_shell::VideoShell::builder()
-            .launch(video::ui::video_shell::VideoShellMode::Player)
+            .launch(())
             .detach();
         let window = build_player_window(app, controller.widget());
         shared::app_base::log_active_renderer_once(&window);

@@ -95,17 +95,6 @@ pub struct AudioMetadata {
     pub format: String,
 }
 
-impl AudioMetadata {
-    pub fn format_display(&self) -> String {
-        big_media_components::audio::labels::audio_metadata_summary_label(
-            &self.codec,
-            self.sample_rate,
-            self.bitrate,
-            &self.channels,
-        )
-    }
-}
-
 #[derive(Debug, Clone)]
 pub enum PlayerEvent {
     PositionChanged(f64),
@@ -139,78 +128,6 @@ pub enum PlayerEvent {
     },
     RenderUpdate,
     Shutdown,
-}
-
-#[cfg(test)]
-mod tests {
-    use super::AudioMetadata;
-
-    fn make_audio_metadata(
-        codec: &str,
-        sample_rate: i64,
-        bitrate: i64,
-        channels: &str,
-    ) -> AudioMetadata {
-        AudioMetadata {
-            codec: codec.to_string(),
-            sample_rate,
-            channels: channels.to_string(),
-            channel_count: 0,
-            bitrate,
-            format: String::new(),
-        }
-    }
-
-    #[test]
-    fn format_display_complete_metadata() {
-        let audio_metadata = make_audio_metadata("flac", 48_000, 320_000, "stereo");
-        assert_eq!(audio_metadata.format_display(), "FLAC 48kHz 320kbps stereo");
-    }
-
-    #[test]
-    fn format_display_fractional_sample_rate() {
-        let audio_metadata = make_audio_metadata("mp3", 44_100, 128_000, "stereo");
-        assert_eq!(
-            audio_metadata.format_display(),
-            "MP3 44.1kHz 128kbps stereo"
-        );
-    }
-
-    #[test]
-    fn format_display_no_bitrate() {
-        let audio_metadata = make_audio_metadata("opus", 48_000, 0, "stereo");
-        assert_eq!(audio_metadata.format_display(), "OPUS 48kHz stereo");
-    }
-
-    #[test]
-    fn format_display_no_channels() {
-        let audio_metadata = make_audio_metadata("aac", 44_100, 256_000, "");
-        assert_eq!(audio_metadata.format_display(), "AAC 44.1kHz 256kbps");
-    }
-
-    #[test]
-    fn format_display_empty() {
-        let audio_metadata = make_audio_metadata("", 0, 0, "");
-        assert_eq!(audio_metadata.format_display(), "");
-    }
-
-    #[test]
-    fn format_display_codec_only() {
-        let audio_metadata = make_audio_metadata("vorbis", 0, 0, "");
-        assert_eq!(audio_metadata.format_display(), "VORBIS");
-    }
-
-    #[test]
-    fn format_display_96khz() {
-        let audio_metadata = make_audio_metadata("flac", 96_000, 0, "5.1");
-        assert_eq!(audio_metadata.format_display(), "FLAC 96kHz 5.1");
-    }
-
-    #[test]
-    fn format_display_22050_sample_rate() {
-        let audio_metadata = make_audio_metadata("mp3", 22_050, 64_000, "mono");
-        assert_eq!(audio_metadata.format_display(), "MP3 22.1kHz 64kbps mono");
-    }
 }
 
 /// Demuxer-cache sizing policy for the audio-only backend. Each profile is

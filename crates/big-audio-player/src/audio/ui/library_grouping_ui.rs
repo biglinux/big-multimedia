@@ -85,7 +85,7 @@ pub(super) fn build_grouping_bar(
         .build();
     bar.add_css_class("library-grouping-bar");
 
-    // Order mirrors the god-object's `music_toolbar`: grouping preset, the
+    // Order: grouping preset, the
     // (expanding) search entry, the add-folder button, then the age filter.
     let controls = build_grouping_dropdown(sender);
     bar.append(&controls.dropdown);
@@ -138,7 +138,7 @@ fn build_age_dropdown(sender: &ComponentSender<LibraryPanel>) -> gtk::DropDown {
     big_relm4_components::feedback::tooltip::set(&dropdown, i18n("Filter by date added"));
     dropdown.set_list_factory(Some(&dropdown_list_factory()));
 
-    // Compact button display (mirrors the god-object): the default "all" preset
+    // Compact button display: the default "all" preset
     // (index 0) shows only a clock icon; any active filter shows its label.
     let selected_factory = gtk::SignalListItemFactory::new();
     selected_factory.connect_setup(|_, factory_callback_value| {
@@ -196,8 +196,7 @@ fn build_age_dropdown(sender: &ComponentSender<LibraryPanel>) -> gtk::DropDown {
 }
 
 /// Add-music-folder button (`folder-new-symbolic`) → folder picker →
-/// `AddWatchFolder`. Mirrors the god-object's `browser_add_btn` in the Music
-/// tab; the shell adds the folder as a watch root and scans it.
+/// `AddWatchFolder`; the shell adds the folder as a watch root and scans it.
 fn build_add_folder_button(sender: &ComponentSender<LibraryPanel>) -> gtk::Button {
     let add_folder_button = gtk::Button::builder()
         .icon_name("folder-new-symbolic")

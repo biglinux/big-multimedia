@@ -1,4 +1,4 @@
-//! App-local keyboard-shortcuts dialog launcher (video port, V5).
+//! App-local keyboard-shortcuts dialog launcher.
 //!
 //! Thin glue over the shared `big_relm4_components` shortcut dialog +
 //! `big_app_kit::keybindings` rebind plumbing: builds the categorized shortcut

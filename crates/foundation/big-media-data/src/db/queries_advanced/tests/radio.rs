@@ -1,6 +1,6 @@
 use super::setup_db;
 use crate::db::queries_advanced::{
-    delete_radio_station, get_all_radio_stations, insert_radio_station, update_radio_station,
+    delete_radio_station, get_all_radio_stations, insert_radio_station,
 };
 
 #[test]
@@ -30,17 +30,4 @@ fn delete_radio_station_removes_it() {
 
     delete_radio_station(&conn, list[0].id).unwrap();
     assert!(get_all_radio_stations(&conn).unwrap().is_empty());
-}
-
-#[test]
-fn update_radio_station_changes_fields() {
-    let conn = setup_db();
-    insert_radio_station(&conn, "Old", "http://old", "", "").unwrap();
-    let list = get_all_radio_stations(&conn).unwrap();
-    update_radio_station(&conn, list[0].id, "New", "http://new", "img.png", "Jazz").unwrap();
-
-    let updated = get_all_radio_stations(&conn).unwrap();
-    assert_eq!(updated[0].name, "New");
-    assert_eq!(updated[0].url, "http://new");
-    assert_eq!(updated[0].group_name, "Jazz");
 }

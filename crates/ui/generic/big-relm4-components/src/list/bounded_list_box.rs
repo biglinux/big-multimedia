@@ -50,34 +50,10 @@ impl BigBoundedListBoxSpec {
         }
     }
 
-    /// Set the selection mode.
-    #[must_use]
-    pub fn selection_mode(mut self, selection_mode: gtk::SelectionMode) -> Self {
-        self.selection_mode = selection_mode;
-        self
-    }
-
     /// Add one CSS class.
     #[must_use]
     pub fn css_class(mut self, css_class: impl Into<String>) -> Self {
         self.css_classes.push(css_class.into());
-        self
-    }
-
-    /// Set initial visibility.
-    #[must_use]
-    pub fn visible(mut self, visible: bool) -> Self {
-        self.visible = visible;
-        self
-    }
-
-    /// Set logical margins.
-    #[must_use]
-    pub fn margins(mut self, start: i32, end: i32, top: i32, bottom: i32) -> Self {
-        self.margin_start = start.max(0);
-        self.margin_end = end.max(0);
-        self.margin_top = top.max(0);
-        self.margin_bottom = bottom.max(0);
         self
     }
 }
@@ -86,7 +62,6 @@ impl BigBoundedListBoxSpec {
 #[derive(Debug, Clone)]
 pub struct BigBoundedListBox {
     root: gtk::ListBox,
-    expected_max_rows: u32,
 }
 
 impl BigBoundedListBox {
@@ -104,10 +79,7 @@ impl BigBoundedListBox {
             .margin_bottom(spec.margin_bottom)
             .build();
 
-        Self {
-            root,
-            expected_max_rows: spec.expected_max_rows,
-        }
+        Self { root }
     }
 
     /// Borrow the root `GtkListBox`.
@@ -116,30 +88,9 @@ impl BigBoundedListBox {
         &self.root
     }
 
-    /// Expected row count for the bounded-list contract.
-    #[must_use]
-    pub fn expected_max_rows(&self) -> u32 {
-        self.expected_max_rows
-    }
-
-    /// Append a row widget.
-    pub fn append(&self, row: &impl IsA<gtk::Widget>) {
-        self.root.append(row);
-    }
-
-    /// Insert a row widget at `position`.
-    pub fn insert(&self, row: &impl IsA<gtk::Widget>, position: i32) {
-        self.root.insert(row, position);
-    }
-
     /// Remove a row widget.
     pub fn remove(&self, row: &impl IsA<gtk::Widget>) {
         self.root.remove(row);
-    }
-
-    /// Set root visibility.
-    pub fn set_visible(&self, visible: bool) {
-        self.root.set_visible(visible);
     }
 
     /// Remove every row from the list.
@@ -167,15 +118,5 @@ mod tests {
         assert_eq!(spec.selection_mode, gtk::SelectionMode::None);
         assert!(spec.css_classes.is_empty());
         assert!(spec.visible);
-    }
-
-    #[test]
-    fn spec_clamps_negative_margins() {
-        let spec = BigBoundedListBoxSpec::new(8).margins(-1, -2, 3, 4);
-
-        assert_eq!(spec.margin_start, 0);
-        assert_eq!(spec.margin_end, 0);
-        assert_eq!(spec.margin_top, 3);
-        assert_eq!(spec.margin_bottom, 4);
     }
 }

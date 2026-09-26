@@ -130,8 +130,7 @@ pub(super) fn build_columns(
             .build(),
     );
 
-    // Extra columns, hidden by default (toggled via the column-config menu —
-    // a later commit). Mirrors the god-object's column set.
+    // Extra columns, hidden by default (toggled via the column-config menu).
     column_view.append_column(
         &gtk::ColumnViewColumn::builder()
             .title(i18n("Genre"))

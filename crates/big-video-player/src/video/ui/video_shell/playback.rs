@@ -28,16 +28,16 @@ impl VideoShell {
                 self.feed_trim_duration(dur);
             }
             PlayerEvent::PauseChanged(paused) => {
+                self.playing = !paused;
+                self.sync_screen_inhibit(root);
                 self.controls.emit(VideoControlsBarInput::SetPaused(paused));
                 // Old "keep shown while paused": reveal the OSD when paused, and
                 // re-arm the auto-hide when resuming.
                 self.osd.is_paused.set(paused);
-                if !self.mode.is_background() {
-                    if paused {
-                        self.osd.show();
-                    } else {
-                        self.osd.show_and_schedule_hide();
-                    }
+                if paused {
+                    self.osd.show();
+                } else {
+                    self.osd.show_and_schedule_hide();
                 }
             }
             PlayerEvent::FileLoaded(_title) => {
@@ -46,7 +46,14 @@ impl VideoShell {
                 // make mpv quit at startup.
                 if let Some(mpv) = self.mpv.borrow().as_ref() {
                     mpv.set_idle(&self.settings.get_string(keys::IDLE_MODE));
+                    self.video_transform.reset_source_colours(mpv);
+                    // `EndFile` cleared `playing`, but mpv keeps playing into
+                    // the next file without a pause change to report it.
+                    self.playing = !mpv.is_paused();
                 }
+                self.hdr_hint.set_visible(false);
+                super::send_to_shell(VideoShellInput::RefreshAdjustments);
+                self.sync_screen_inhibit(root);
                 if let Some((path, count)) = &self.shuffle_on_load
                     && let Some(mpv) = self.mpv.borrow().as_ref()
                     && mpv.get_current_file().as_ref() == Some(path)
@@ -69,7 +76,16 @@ impl VideoShell {
                 // Stream Quality (yt-dlp) only applies to online/streamed media.
                 let is_online = current_file.as_deref().is_some_and(is_remote_uri);
                 super::actions::set_action_enabled(&self.win_actions, "ytdl-quality", is_online);
+                // The decoder describes the frames only once it has some.
+                if let Some(path) = current_file.clone() {
+                    glib::timeout_add_local_once(Duration::from_millis(1500), move || {
+                        super::send_to_shell(VideoShellInput::SuggestHdr(path));
+                    });
+                }
                 let preview_path = current_file.filter(|p| !is_remote_uri(p));
+                if let Some(path) = &preview_path {
+                    crate::recent::add_recent_async("video", path.clone());
+                }
                 self.controls
                     .emit(VideoControlsBarInput::SetCurrentFile(preview_path));
                 self.hide_welcome_screen();
@@ -80,14 +96,10 @@ impl VideoShell {
                     self.idle_bg.hide(&display);
                 }
                 self.osd.is_welcome_visible.set(false);
-                if !self.mode.is_background() {
-                    self.osd.show_and_schedule_hide();
-                }
+                self.osd.show_and_schedule_hide();
                 self.refresh_now_playing(root);
                 // Resize the window to the video's aspect (no letterbox bars).
-                if !self.mode.is_background() {
-                    self.aspect_snap.snap_on_load();
-                }
+                self.aspect_snap.snap_on_load();
             }
             PlayerEvent::Buffering(buffering) => {
                 self.buffering_overlay.set_visible(buffering);
@@ -98,6 +110,9 @@ impl VideoShell {
             PlayerEvent::ChaptersChanged(chapters) => {
                 self.controls
                     .emit(VideoControlsBarInput::SetChapters(chapters));
+            }
+            PlayerEvent::RateChanged(_) => {
+                super::send_to_shell(VideoShellInput::RefreshAdjustments);
             }
             PlayerEvent::VolumeChanged(volume) => {
                 self.controls.emit(VideoControlsBarInput::SetVolume(volume));
@@ -131,14 +146,53 @@ impl VideoShell {
             // instead of a silent blank screen.
             // mpv quit on its own (idle mode "close player" at the end of the
             // playlist): close the window instead of leaving a dead player.
-            PlayerEvent::Shutdown if !self.mode.is_background() => {
+            PlayerEvent::Shutdown => {
                 if let Some(root) = root {
                     root.close();
                 }
             }
-            PlayerEvent::EndFile(4) => self.toast(&i18n(
-                "Could not play this file — it may be unsupported or corrupt.",
-            )),
+            PlayerEvent::EndFile(reason) => {
+                self.playing = false;
+                self.sync_screen_inhibit(root);
+                if reason == 4 {
+                    self.toast(&i18n(
+                        "Could not play this file — it may be unsupported or corrupt.",
+                    ));
+                    self.reveal_pending_welcome();
+                }
+            }
+            _ => {}
+        }
+    }
+
+    /// Hold or release the screen-awake inhibitor for the "Keep the Screen On"
+    /// preference: during playback, always, or never.
+    pub(super) fn sync_screen_inhibit(&mut self, root: Option<&adw::ApplicationWindow>) {
+        let wanted = match self.settings.string("stop-screensaver").as_str() {
+            "always" => true,
+            "no" => false,
+            _ => self.playing,
+        };
+        let Some(app) = root
+            .and_then(GtkWindowExt::application)
+            .or_else(|| gtk::gio::Application::default().and_downcast::<gtk::Application>())
+        else {
+            return;
+        };
+        match (wanted, self.screen_inhibit) {
+            (true, None) => {
+                let cookie = app.inhibit(
+                    root.map(Cast::upcast_ref::<gtk::Window>),
+                    gtk::ApplicationInhibitFlags::IDLE,
+                    Some(&i18n("Playing video")),
+                );
+                // 0 means the desktop refused; retry on the next event.
+                self.screen_inhibit = (cookie != 0).then_some(cookie);
+            }
+            (false, Some(cookie)) => {
+                app.uninhibit(cookie);
+                self.screen_inhibit = None;
+            }
             _ => {}
         }
     }
@@ -159,7 +213,7 @@ impl VideoShell {
             .emit(VideoBrowserSidebarInput::SetCurrentFile(current));
     }
 
-    /// Open `paths`, matching the old folder-scan / playlist semantics:
+    /// Open `paths` with folder-scan / playlist semantics:
     ///   • single playlist file (`.m3u`/`.pls`) → parse it into the playlist;
     ///   • single media file → scan its folder flat, start at that file;
     ///   • multiple → keep the media ones, sorted.
@@ -179,13 +233,14 @@ impl VideoShell {
                 .await
                 .ok()
                 .flatten();
-            if let Some((entries, start, folder)) = resolved {
-                sender.input(VideoShellInput::PlaylistResolved {
-                    entries,
-                    start,
-                    folder,
-                });
-            }
+            // Nothing playable still answers, so a launch that skipped the
+            // welcome screen can bring it back.
+            let (entries, start, folder) = resolved.unwrap_or_default();
+            sender.input(VideoShellInput::PlaylistResolved {
+                entries,
+                start,
+                folder,
+            });
         });
     }
 
@@ -198,6 +253,7 @@ impl VideoShell {
         folder: Option<String>,
     ) {
         if entries.is_empty() {
+            self.reveal_pending_welcome();
             return;
         }
         self.load_playlist(&entries, start);
@@ -221,9 +277,6 @@ impl VideoShell {
         let Some(first) = entries.first() else {
             return;
         };
-        if self.mode.is_background() {
-            mpv.set_panscan(1.0);
-        }
         mpv.load_file(first);
         for path in &entries[1..] {
             mpv.load_file_append(path);
@@ -241,8 +294,7 @@ impl VideoShell {
             .settings
             .get_bool(keys::PLAYLIST_SHUFFLE)
             .then(|| (entries[start.min(entries.len() - 1)].clone(), entries.len()));
-        // The sidebar stays hidden until the header playlist toggle opens it
-        // (matches the old design).
+        // The sidebar stays hidden until the header playlist toggle opens it.
     }
 
     /// Hide + drop the welcome overlay (called on the first `FileLoaded`).
@@ -250,6 +302,21 @@ impl VideoShell {
         if let Some(overlay) = self.welcome_overlay.borrow_mut().take() {
             self.main_overlay.remove_overlay(&overlay);
         }
+    }
+
+    /// Show the welcome screen a launch with files started without, when no
+    /// file came to play: a black window with nothing to do would be left.
+    fn reveal_pending_welcome(&self) {
+        let pending = self.welcome_overlay.borrow();
+        let Some(welcome) = pending.as_ref().filter(|welcome| !welcome.is_visible()) else {
+            return;
+        };
+        welcome.set_visible(true);
+        if let Some(display) = gtk::gdk::Display::default() {
+            self.idle_bg.show(&display);
+        }
+        self.osd.is_welcome_visible.set(true);
+        self.osd.show_and_schedule_hide();
     }
 
     /// Drive mpv from a folder-browser-sidebar intent.
@@ -302,7 +369,12 @@ impl VideoShell {
     /// instance enqueues them).
     fn send_to_converter(&self, paths: &[String]) {
         if !paths.is_empty() {
-            self.launch_converter(converter_handoff::VIDEO_CONVERTER, paths, &[]);
+            self.toast(&converter_handoff::open(
+                converter_handoff::VIDEO_CONVERTER,
+                paths,
+                &[],
+                None,
+            ));
         }
     }
 
@@ -409,23 +481,6 @@ impl VideoShell {
         }
     }
 
-    /// React to a cast-dialog intent: a cast started → pause local playback so
-    /// audio/video does not double up with the casting device; stopped → no-op
-    /// for now (local playback stays as the user left it).
-    #[cfg(feature = "chromecast")]
-    pub(super) fn on_cast(&self, out: VideoCastDialogOutput) {
-        match out {
-            VideoCastDialogOutput::Started { .. } => {
-                if let Some(mpv) = self.mpv.borrow().as_ref()
-                    && !mpv.is_paused()
-                {
-                    mpv.toggle_pause();
-                }
-            }
-            VideoCastDialogOutput::Stopped => {}
-        }
-    }
-
     /// Drive mpv from a controls-bar intent.
     pub(super) fn on_controls(
         &self,
@@ -467,67 +522,6 @@ impl VideoShell {
             | VideoControlsBarOutput::SegmentEdgeAdjusted { .. } => {}
         }
     }
-
-    /// Pause/resume video playback when a pane host hides or reveals the
-    /// desktop content. Auto-resume only undoes a pause caused by this method.
-    pub(super) fn set_pane_activity(&self, activity: big_relm4_components::pane::PaneActivity) {
-        let Some(mpv) = self.mpv.borrow().as_ref().cloned() else {
-            return;
-        };
-        match pane_activity_action(
-            activity,
-            self.activity_paused_playback.get(),
-            mpv.is_paused(),
-        ) {
-            PaneAction::Resume => {
-                self.activity_paused_playback.set(false);
-                mpv.play();
-            }
-            PaneAction::PauseAndMark => {
-                self.activity_paused_playback.set(true);
-                mpv.pause();
-            }
-            PaneAction::PauseAndClear => {
-                self.activity_paused_playback.set(false);
-                mpv.pause();
-            }
-            PaneAction::Nothing => {}
-        }
-    }
-}
-
-/// Side effect `set_pane_activity` should apply, decided purely from the pane
-/// signal + whether *this* method previously auto-paused + mpv's pause state.
-#[derive(Debug, PartialEq, Eq)]
-enum PaneAction {
-    /// Pane visible again and we auto-paused it earlier → resume + clear the mark.
-    Resume,
-    /// Pane occluded/hidden/on-battery while playing → pause + mark as ours.
-    PauseAndMark,
-    /// User explicitly paused via the pane → pause + drop any auto-pause mark.
-    PauseAndClear,
-    /// Leave playback untouched.
-    Nothing,
-}
-
-/// Pure decision for [`VideoShell::set_pane_activity`]: only auto-resume a pause
-/// this method caused, and only auto-pause content that is currently playing.
-fn pane_activity_action(
-    activity: big_relm4_components::pane::PaneActivity,
-    auto_paused_by_us: bool,
-    mpv_is_paused: bool,
-) -> PaneAction {
-    use big_relm4_components::pane::PaneActivity;
-    match activity {
-        PaneActivity::Visible if auto_paused_by_us => PaneAction::Resume,
-        PaneActivity::Occluded | PaneActivity::Hidden | PaneActivity::OnBattery
-            if !mpv_is_paused =>
-        {
-            PaneAction::PauseAndMark
-        }
-        PaneActivity::UserPaused => PaneAction::PauseAndClear,
-        _ => PaneAction::Nothing,
-    }
 }
 
 /// Resolve an open request to `(entries, start, folder)` off the main thread.
@@ -554,11 +548,11 @@ fn resolve_open_files(paths: Vec<String>) -> Option<(Vec<String>, usize, Option<
         return match std::path::Path::new(&paths[0]).parent() {
             Some(parent) => {
                 let folder = playlist::scan_folder_flat(parent);
-                let pos = folder.iter().position(|p| p == &paths[0]).unwrap_or(0);
-                if folder.is_empty() {
-                    Some((vec![paths[0].clone()], 0, None))
-                } else {
-                    Some((folder, pos, Some(parent.to_string_lossy().into_owned())))
+                // A file the scan does not list (an extension it lacks) plays
+                // alone: starting at 0 played the folder's first video instead.
+                match folder.iter().position(|p| p == &paths[0]) {
+                    Some(pos) => Some((folder, pos, Some(parent.to_string_lossy().into_owned()))),
+                    None => Some((vec![paths[0].clone()], 0, None)),
                 }
             }
             None => Some((vec![paths[0].clone()], 0, None)),
@@ -743,6 +737,18 @@ mod resolve_open_files_tests {
 
     #[cfg(not(miri))]
     #[test]
+    fn single_file_the_scan_does_not_list_plays_alone() {
+        let dir = tempfile::tempdir().unwrap();
+        touch(dir.path(), "a.mp4");
+        // "Open With" offers every type the desktop entry claims; one whose
+        // extension the scan lacks must not start the folder's first video.
+        let opened = touch(dir.path(), "b.unknownvideo");
+        let (entries, pos, context) = resolve_open_files(vec![opened.clone()]).unwrap();
+        assert_eq!((entries, pos, context), (vec![opened], 0, None));
+    }
+
+    #[cfg(not(miri))]
+    #[test]
     fn single_playlist_returns_its_entries_without_context() {
         let dir = tempfile::tempdir().unwrap();
         let a = touch(dir.path(), "a.mp4");
@@ -772,10 +778,8 @@ mod resolve_open_files_tests {
 #[cfg(test)]
 mod dispatch_logic_tests {
     use super::{
-        PaneAction, is_same_playlist, needs_explicit_start_index, pane_activity_action,
-        playlist_index_of, seek_target_secs,
+        is_same_playlist, needs_explicit_start_index, playlist_index_of, seek_target_secs,
     };
-    use big_relm4_components::pane::PaneActivity;
 
     #[test]
     fn seek_target_none_until_duration_known() {
@@ -812,51 +816,5 @@ mod dispatch_logic_tests {
         assert_eq!(playlist_index_of(&paths, "c"), Some(2));
         assert_eq!(playlist_index_of(&paths, "z"), None);
         assert_eq!(playlist_index_of(&[], "a"), None);
-    }
-
-    #[test]
-    fn pane_resume_only_when_we_auto_paused() {
-        assert_eq!(
-            pane_activity_action(PaneActivity::Visible, true, true),
-            PaneAction::Resume
-        );
-        // Visible but not our pause → leave it (kills the guard-flip mutant).
-        assert_eq!(
-            pane_activity_action(PaneActivity::Visible, false, true),
-            PaneAction::Nothing
-        );
-    }
-
-    #[test]
-    fn pane_auto_pauses_only_playing_content_when_backgrounded() {
-        for activity in [
-            PaneActivity::Occluded,
-            PaneActivity::Hidden,
-            PaneActivity::OnBattery,
-        ] {
-            assert_eq!(
-                pane_activity_action(activity, false, false),
-                PaneAction::PauseAndMark,
-                "{activity:?} while playing must auto-pause"
-            );
-            // Already paused → nothing to do (kills the `!is_paused` guard mutants).
-            assert_eq!(
-                pane_activity_action(activity, false, true),
-                PaneAction::Nothing,
-                "{activity:?} already paused must be a no-op"
-            );
-        }
-    }
-
-    #[test]
-    fn pane_user_pause_always_pauses_and_clears() {
-        assert_eq!(
-            pane_activity_action(PaneActivity::UserPaused, false, false),
-            PaneAction::PauseAndClear
-        );
-        assert_eq!(
-            pane_activity_action(PaneActivity::UserPaused, true, true),
-            PaneAction::PauseAndClear
-        );
     }
 }

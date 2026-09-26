@@ -30,35 +30,6 @@ pub fn icon_menu_button(icon_name: &str, label: &str, classes: &[&str]) -> gtk::
     button
 }
 
-/// Build a text menu button with tooltip and accessible label set together.
-#[must_use]
-pub fn labeled_menu_button(label: &str, tooltip: &str, classes: &[&str]) -> gtk::MenuButton {
-    let button = gtk::MenuButton::builder()
-        .label(label)
-        .css_classes(classes)
-        .build();
-    super::set(&button, tooltip);
-    button.update_property(&[gtk::accessible::Property::Label(tooltip)]);
-    button
-}
-
-/// Build a menu button with app-owned child content and a shared tooltip and
-/// accessible label policy.
-#[must_use]
-pub fn custom_menu_button(
-    child: &impl IsA<gtk::Widget>,
-    label: &str,
-    classes: &[&str],
-) -> gtk::MenuButton {
-    let button = gtk::MenuButton::builder()
-        .child(child)
-        .css_classes(classes)
-        .build();
-    super::set(&button, label);
-    button.update_property(&[gtk::accessible::Property::Label(label)]);
-    button
-}
-
 /// Build an icon-only toggle button with tooltip and accessible label set together.
 #[must_use]
 pub fn icon_toggle_button(
