@@ -70,8 +70,7 @@ impl VideoShell {
                     mpv.playlist_shuffle(true);
                     self.shuffle_on_load = None;
                 }
-                self.controls
-                    .emit(VideoControlsBarInput::SetControlsSensitive(true));
+                self.controls.emit(VideoControlsBarInput::SetHasMedia(true));
                 // Hand the loaded *path* to the controls bar so the seek-hover
                 // preview can render thumbnail frames (local files only). The
                 // `FileLoaded` payload is the media TITLE, not the path — read
@@ -325,6 +324,7 @@ impl VideoShell {
         if let Some(display) = gtk::gdk::Display::default() {
             self.idle_bg.show(&display);
         }
+        self.controls.emit(VideoControlsBarInput::SetHasMedia(false));
         self.osd.is_welcome_visible.set(true);
         self.osd.show_and_schedule_hide();
     }

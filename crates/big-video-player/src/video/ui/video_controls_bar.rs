@@ -62,8 +62,9 @@ pub struct VideoControlsBarInit {
 /// Display state pushed into the bar by the shell.
 #[derive(Debug)]
 pub enum VideoControlsBarInput {
-    /// Enable/disable the transport controls (play/prev/next/seek/scrub/tracks).
-    SetControlsSensitive(bool),
+    /// A file is open (shows the seek row, transport and per-file menus) or
+    /// not (the welcome screen).
+    SetHasMedia(bool),
     /// Reflect the paused state on the play button icon.
     SetPaused(bool),
     /// Set the elapsed-position label text.
@@ -131,13 +132,10 @@ pub enum VideoControlsBarOutput {
 
 /// App-local OSD controls bar.
 pub struct VideoControlsBar {
-    position_button: gtk::Button,
     position_label: gtk::Label,
     duration_label: gtk::Label,
     seek_bar: gtk::Scale,
     play_button: gtk::Button,
-    previous_button: gtk::Button,
-    next_button: gtk::Button,
     subtitle_menu_button: gtk::Button,
     subtitle_menu_popover: gtk::Popover,
     audio_track_menu_button: gtk::Button,
@@ -149,6 +147,10 @@ pub struct VideoControlsBar {
     pc_volume: zones::VolumeControl,
     /// Guard so programmatic scrub updates do not echo as user seek intents.
     suppress_seek: Rc<std::cell::Cell<bool>>,
+    /// Position · seek bar · duration: hidden while no file is open.
+    seek_row: gtk::Box,
+    /// For re-applying the button layout when a file opens.
+    settings: Settings,
     /// Live mpv handle shared with the popover callbacks (for track menus).
     mpv: MpvSlot,
     /// The hover popovers (volume / speed / voice) built in the start box.
@@ -367,6 +369,7 @@ impl Component for VideoControlsBar {
             subtitle_menu_button: end_widgets.subtitle_menu_button.clone(),
             audio_track_menu_button: end_widgets.audio_track_menu_button.clone(),
             fullscreen_button: end_widgets.fullscreen_button.clone(),
+            has_media: Rc::new(std::cell::Cell::new(false)),
         };
 
         // Trim controls = an EXTRA row above the transport (revealed in trim mode).
@@ -408,13 +411,12 @@ impl Component for VideoControlsBar {
         );
 
         let model = Self {
-            position_button,
+            seek_row: seek_row.clone(),
+            settings: init.settings.clone(),
             position_label,
             duration_label,
             seek_bar,
             play_button,
-            previous_button,
-            next_button,
             subtitle_menu_button: end_widgets.subtitle_menu_button,
             subtitle_menu_popover: end_widgets.subtitle_menu_popover,
             audio_track_menu_button: end_widgets.audio_track_menu_button,
@@ -437,15 +439,14 @@ impl Component for VideoControlsBar {
             thumb_gen,
             preview_popover,
         };
-        model.set_sensitive(false);
-        model.apply_button_layout(&init.settings);
+        model.set_has_media(false);
 
         ComponentParts { model, widgets: () }
     }
 
     fn update(&mut self, message: Self::Input, _sender: ComponentSender<Self>, _root: &Self::Root) {
         match message {
-            VideoControlsBarInput::SetControlsSensitive(on) => self.set_sensitive(on),
+            VideoControlsBarInput::SetHasMedia(on) => self.set_has_media(on),
             VideoControlsBarInput::SetPaused(paused) => {
                 let icon = if paused {
                     "media-playback-start-symbolic"
@@ -557,17 +558,13 @@ impl VideoControlsBar {
         self.button_layout.apply_settings(settings);
     }
 
-    fn set_sensitive(&self, on: bool) {
-        self.play_button.set_sensitive(on);
-        self.previous_button.set_sensitive(on);
-        self.next_button.set_sensitive(on);
-        self.seek_bar.set_sensitive(on);
-        self.subtitle_menu_button.set_sensitive(on);
-        self.audio_track_menu_button.set_sensitive(on);
-        // Edit & Export (cut/extract/convert) and Go-to-time act on the loaded
-        // media — disabled until a file is open (welcome screen).
-        self.button_layout.export_menu_button.set_sensitive(on);
-        self.position_button.set_sensitive(on);
+    /// Show what acts on the open file only while one is: the seek row, the
+    /// transport and the per-file menus. Volume, speed, voice and fullscreen
+    /// stay, as they hold for the next file too.
+    fn set_has_media(&self, on: bool) {
+        self.seek_row.set_visible(on);
+        self.button_layout.has_media.set(on);
+        self.apply_button_layout(&self.settings);
     }
 
     /// Redraw the seek-bar chapter marks. The scale runs `0.0..=1.0`, so each

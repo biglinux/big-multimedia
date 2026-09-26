@@ -79,7 +79,7 @@ impl Component for VideoShell {
                 trim_content: trim.widget().clone().upcast::<gtk::Widget>(),
             })
             .forward(sender.input_sender(), VideoShellInput::Controls);
-        controls.emit(VideoControlsBarInput::SetControlsSensitive(false));
+        controls.emit(VideoControlsBarInput::SetHasMedia(false));
 
         // Folder-browser playlist sidebar (folder scan = the playlist).
         let playlist = VideoBrowserSidebar::builder()

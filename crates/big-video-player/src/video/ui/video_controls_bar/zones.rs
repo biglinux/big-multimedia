@@ -32,6 +32,9 @@ pub(crate) struct ButtonLayoutWidgets {
     pub(super) subtitle_menu_button: gtk::Button,
     pub(super) audio_track_menu_button: gtk::Button,
     pub(super) fullscreen_button: gtk::Button,
+    /// A file is open. Without one the controls that act on it are hidden,
+    /// whatever the layout says: on the welcome screen they did nothing.
+    pub(super) has_media: Rc<std::cell::Cell<bool>>,
 }
 
 impl ButtonLayoutWidgets {
@@ -106,9 +109,10 @@ impl ButtonLayoutWidgets {
             ("fullscreen", end.as_str()),
         ];
 
-        // Visibility: the `ui-show-*` flags. `edit-export` has no flag (always
-        // shown → absent here so the applier leaves it visible). Voice is also
-        // gated on a real noise-reduction backend.
+        // Visibility: the `ui-show-*` flags, and for what acts on the open
+        // file, one being open. `edit-export` has no flag of its own. Voice is
+        // also gated on a real noise-reduction backend.
+        let media = self.has_media.get();
         let visibility: HashMap<String, bool> = [
             ("volume", settings.get_bool(keys::UI_SHOW_VOLUME)),
             ("speed", settings.get_bool(keys::UI_SHOW_SPEED)),
@@ -117,11 +121,18 @@ impl ButtonLayoutWidgets {
                 settings.get_bool(keys::UI_SHOW_VOICE)
                     && crate::shared::audio_effects::has_noise_reduction_backend(),
             ),
-            ("prev", settings.get_bool(keys::UI_SHOW_PREV)),
-            ("play", settings.get_bool(keys::UI_SHOW_PLAY)),
-            ("next", settings.get_bool(keys::UI_SHOW_NEXT)),
-            ("subtitle", settings.get_bool(keys::UI_SHOW_SUBTITLE)),
-            ("audio-track", settings.get_bool(keys::UI_SHOW_AUDIO_TRACK)),
+            ("prev", media && settings.get_bool(keys::UI_SHOW_PREV)),
+            ("play", media && settings.get_bool(keys::UI_SHOW_PLAY)),
+            ("next", media && settings.get_bool(keys::UI_SHOW_NEXT)),
+            ("edit-export", media),
+            (
+                "subtitle",
+                media && settings.get_bool(keys::UI_SHOW_SUBTITLE),
+            ),
+            (
+                "audio-track",
+                media && settings.get_bool(keys::UI_SHOW_AUDIO_TRACK),
+            ),
             ("fullscreen", settings.get_bool(keys::UI_SHOW_FULLSCREEN)),
         ]
         .into_iter()

@@ -96,8 +96,8 @@ pub(super) fn set_action_enabled(actions: &gio::SimpleActionGroup, name: &str, e
     }
 }
 
-/// Build the centered welcome screen (title + subtitle + Open File /
-/// Open Recent / Open URL); buttons
+/// Build the centered welcome screen (a line + Open File / Open Recent /
+/// Open URL; the name is on the title bar already); buttons
 /// fire the `win.*` actions installed by [`install_window_actions`].
 pub(super) fn build_welcome_screen(sender: &ComponentSender<VideoShell>) -> gtk::Box {
     let container = gtk::Box::builder()
@@ -107,13 +107,6 @@ pub(super) fn build_welcome_screen(sender: &ComponentSender<VideoShell>) -> gtk:
         .spacing(4)
         .css_classes(["welcome-container"])
         .build();
-
-    let title = gtk::Label::builder()
-        .label(i18n("Big Video Player"))
-        .halign(gtk::Align::Center)
-        .css_classes(["welcome-title"])
-        .build();
-    container.append(&title);
 
     let subtitle = gtk::Label::builder()
         .label(i18n("Drop a file or open one to start"))
