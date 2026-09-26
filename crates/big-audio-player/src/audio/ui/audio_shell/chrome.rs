@@ -229,7 +229,6 @@ impl AudioShell {
             glib::ControlFlow::Continue
         });
         self.sleep_timer_source = Some(source);
-        self.notify(&i18n("Sleep timer started"));
     }
 
     /// Disarm the sleep timer (no-op if none armed).

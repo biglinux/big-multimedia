@@ -99,9 +99,9 @@ pub enum VideoBrowserSidebarOutput {
     Clear,
     /// Open these files in the video converter GUI.
     SendToConverter(Vec<String>),
-    /// Move these files to the trash; the shell shows an undo toast.
+    /// Move these files to the trash; the shell offers an Undo.
     TrashFiles(Vec<String>),
-    /// Show a transient toast (file-op result / error).
+    /// Tell the person something (a file-op error).
     Notify(String),
     /// The Repeat mode changed (`no` / `file` / `playlist`); already persisted.
     SetLoopMode(String),

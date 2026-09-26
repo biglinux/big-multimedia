@@ -25,7 +25,6 @@ use relm4::{Component, ComponentParts, ComponentSender};
 use crate::favicon_cache::{load_explore_cache, save_explore_cache};
 use crate::media_list::MediaListView;
 use big_media_data::db::models::RadioStation;
-use big_media_data::i18n::i18n;
 use big_media_data::radio::RadioExploreEntry;
 
 mod methods;
@@ -112,8 +111,6 @@ pub enum RadioPanelOutput {
     DeleteStation(i64),
     /// Ask the shell to (re)load saved stations from the DB.
     RequestStations,
-    /// Transient notification toast.
-    Notify(String),
 }
 
 /// Relm4 radio tab component.
@@ -308,7 +305,6 @@ impl Component for RadioPanel {
                 self.stations.retain(|station| station.url != url);
                 self.sync_saved_urls();
                 self.rebuild_list();
-                let _ = sender.output(RadioPanelOutput::Notify(i18n("Radio station removed")));
             }
             RadioPanelInput::AddStation(station) => {
                 let _ = sender.output(RadioPanelOutput::SaveStation {

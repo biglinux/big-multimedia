@@ -15,7 +15,7 @@ impl VideoShell {
 
     pub(super) fn on_tv_changed(&mut self) {
         if let Some(failure) = self.tv.take_failure() {
-            self.toast_overlay.add_toast(adw::Toast::new(&failure));
+            self.notify(&failure);
         }
         match self.tv.playing() {
             Some(state) => {

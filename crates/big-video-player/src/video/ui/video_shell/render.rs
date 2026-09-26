@@ -1,4 +1,5 @@
 use super::*;
+use big_media_components::surface::MediaNotice;
 
 /// Shared, interior-mutable handle to the live mpv render context.
 pub(super) type FastRenderContextSlot = Rc<RefCell<Option<FastRenderContext>>>;
@@ -17,6 +18,8 @@ pub(super) struct VideoRealizeOptions {
     pub(super) render_mode: String,
     /// Playback preferences mpv must start with (repeat, resume, end of file).
     pub(super) settings: Settings,
+    /// Where a video that cannot be drawn says so.
+    pub(super) notice: MediaNotice,
 }
 
 /// On content realize, pick the best video backend, bring up mpv, and wire the
@@ -103,6 +106,7 @@ pub(super) fn wire_realize(
                 &gl_area,
                 &software_picture,
                 &software_render_context_slot,
+                &realize_options.notice,
             );
             return;
         }
@@ -120,12 +124,15 @@ pub(super) fn wire_realize(
             &software_render_context_slot,
             &video_backend,
             is_offload_backend,
+            &realize_options.notice,
         );
     });
 }
 
 /// Wire the mpv render path: offload (DMA-BUF/GraphicsOffload) when available,
 /// GLArea fallback otherwise. Mirrors `init_render_context*` + `on_gl_render`.
+// The same unrelated wiring as `wire_realize`, plus where to say it failed.
+#[allow(clippy::too_many_arguments)]
 fn wire_render(
     mpv: &Arc<MpvBackend>,
     gl_area: &gtk::GLArea,
@@ -135,6 +142,7 @@ fn wire_render(
     software_render_context_slot: &SoftwareRenderContextSlot,
     video_backend: &Rc<RefCell<Option<VideoBackend>>>,
     is_offload_backend: bool,
+    notice: &MediaNotice,
 ) {
     if is_offload_backend {
         // This callback is stored inside `fast_render_context_slot`, so it must not capture
@@ -184,6 +192,7 @@ fn wire_render(
                     gl_area,
                     software_picture,
                     software_render_context_slot,
+                    notice,
                 );
             }
         }
@@ -214,6 +223,7 @@ fn wire_render(
         let fast_render_context_slot = fast_render_context_slot.clone();
         let software_picture = software_picture.clone();
         let software_render_context_slot = software_render_context_slot.clone();
+        let notice = notice.clone();
         gl_area.connect_realize(move |area| {
             ensure_glarea_context(
                 &mpv,
@@ -221,6 +231,7 @@ fn wire_render(
                 &software_picture,
                 &fast_render_context_slot,
                 &software_render_context_slot,
+                &notice,
             );
         });
     }
@@ -234,6 +245,7 @@ fn wire_render(
             software_picture,
             fast_render_context_slot,
             software_render_context_slot,
+            notice,
         );
     }
 }
@@ -247,6 +259,7 @@ fn ensure_glarea_context(
     software_picture: &gtk::Picture,
     fast_render_context_slot: &FastRenderContextSlot,
     software_render_context_slot: &SoftwareRenderContextSlot,
+    notice: &MediaNotice,
 ) {
     if fast_render_context_slot.borrow().is_some()
         || software_render_context_slot.borrow().is_some()
@@ -259,7 +272,13 @@ fn ensure_glarea_context(
         }
         Err(e) => {
             error!("video: GLArea render context failed: {e}; using software fallback");
-            wire_software_fallback(mpv, gl_area, software_picture, software_render_context_slot);
+            wire_software_fallback(
+                mpv,
+                gl_area,
+                software_picture,
+                software_render_context_slot,
+                notice,
+            );
         }
     }
 }
@@ -271,6 +290,7 @@ fn wire_software_fallback(
     gl_area: &gtk::GLArea,
     software_picture: &gtk::Picture,
     software_render_context_slot: &SoftwareRenderContextSlot,
+    notice: &MediaNotice,
 ) {
     if software_render_context_slot.borrow().is_some() {
         return;
@@ -279,12 +299,9 @@ fn wire_software_fallback(
         Ok(context) => context,
         Err(error) => {
             error!("video: software render context failed: {error}");
-            show_render_error(
-                software_picture,
-                &i18n(
-                    "Video could not start. Try Automatic video output in Preferences, or check that mpv is installed.",
-                ),
-            );
+            notice.show(&i18n(
+                "Video could not start. Try Automatic video output in Preferences, or check that mpv is installed.",
+            ));
             return;
         }
     };
@@ -316,6 +333,7 @@ fn wire_software_fallback(
     let slot = Rc::downgrade(software_render_context_slot);
     let picture = software_picture.downgrade();
     let pool = crate::player::mpv_backend::software_frames::SoftwareFramePool::default();
+    let notice = notice.clone();
     glib::spawn_future_local(async move {
         let mut pending = true;
         let mut last_size = (0, 0, 0);
@@ -345,24 +363,13 @@ fn wire_software_fallback(
                 Err(message) => {
                     pending = false;
                     if !error_shown {
-                        show_render_error(&picture, &message);
+                        notice.show(&message);
                         error_shown = true;
                     }
                 }
             }
         }
     });
-}
-
-fn show_render_error(picture: &gtk::Picture, message: &str) {
-    if let Some(overlay) = picture
-        .ancestor(adw::ToastOverlay::static_type())
-        .and_downcast::<adw::ToastOverlay>()
-    {
-        let toast = adw::Toast::new(message);
-        toast.set_timeout(0); // do not disappear before the user can read it
-        overlay.add_toast(toast);
-    }
 }
 
 fn render_software_frame(

@@ -167,12 +167,13 @@ impl AudioShell {
                 self.settings
                     .put_string(keys::PLAYLIST_COLUMN_WIDTHS, &spec);
             }
-            PlaylistPanelOutput::ConvertTracks(paths) => self.notify(&converter_handoff::open(
-                converter_handoff::AUDIO_CONVERTER,
-                &paths,
-                &[],
-                None,
-            )),
+            PlaylistPanelOutput::ConvertTracks(paths) => {
+                if let Some(failure) =
+                    converter_handoff::open(converter_handoff::AUDIO_CONVERTER, &paths, &[], None)
+                {
+                    self.notify(&failure);
+                }
+            }
             PlaylistPanelOutput::RevealInFileManager(path) => {
                 big_app_kit::desktop::reveal_in_file_manager(Path::new(&path));
             }

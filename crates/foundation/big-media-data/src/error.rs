@@ -6,7 +6,7 @@
 //! low-level error sources (I/O, SQLite, JSON, parsing, UTF-8).
 //!
 //! Display strings of every variant are user-visible: they may end up
-//! in toasts via `to_string()`, so they read as full English sentences
+//! in notices via `to_string()`, so they read as full English sentences
 //! prefixed with the kind so callers can grep logs.
 
 use thiserror::Error;
@@ -57,7 +57,7 @@ pub enum Error {
     ///
     /// `code` formatted as a bare integer or the literal `unknown` when the
     /// process was killed before exiting; avoids exposing Rust's
-    /// `Option`/`Some(_)` debug syntax to user-facing toasts.
+    /// `Option`/`Some(_)` debug syntax to user-facing notices.
     #[error(
         "ffmpeg: {command} exited with code {}: {message}",
         .code.map_or_else(|| "unknown".to_owned(), |c| c.to_string())
@@ -245,7 +245,7 @@ mod tests {
         assert!(s.contains("code 1"));
         assert!(s.contains("x265"));
         // Contract: never expose Rust's Option/Some/None debug syntax to
-        // user-facing toasts.
+        // user-facing notices.
         assert!(
             !s.contains("Some("),
             "Display must not contain Rust debug syntax: {s}"

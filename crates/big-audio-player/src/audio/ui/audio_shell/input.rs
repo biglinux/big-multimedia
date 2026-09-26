@@ -176,7 +176,7 @@ pub enum AudioShellInput {
     SleepTimerCancel,
     /// One-second sleep-timer countdown tick.
     SleepTick,
-    /// Show a transient toast — used by workers that must report a failure
+    /// Tell the person something — used by workers that must report a failure
     /// without leaving the previous result on screen as if it had succeeded.
     Notify(String),
     /// Undo the last queue edit (Ctrl+Z).

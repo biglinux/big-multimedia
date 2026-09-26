@@ -6,7 +6,7 @@ use super::*;
 pub(super) fn install_window_actions(
     // The `win.*` actions are inserted on the content Root so they
     // travel with the content into whatever window hosts it.
-    content: &adw::ToastOverlay,
+    content: &gtk::Box,
     sender: &ComponentSender<VideoShell>,
 ) -> gio::SimpleActionGroup {
     let actions = gio::SimpleActionGroup::new();

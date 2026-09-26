@@ -99,15 +99,15 @@ pub enum VideoShellInput {
     /// Re-read which settings are away from normal (controls shown, a
     /// dialog closed, speed changed).
     RefreshAdjustments,
-    /// A chip's × or a notice's button: put these back to normal, with a
-    /// toast to undo it.
+    /// A chip's × or a notice's button: put these back to normal, with an
+    /// Undo in the settings panel.
     ResetAdjustments(Vec<super::adjustments::Adjustment>),
     /// "Back to normal": every chip but the sleep timer at once.
     ResetAllAdjustments,
     /// A second after `path` loaded: offer HDR when it looks like
     /// undescribed HDR.
     SuggestHdr(String),
-    /// The undo toast: put these settings back as they were.
+    /// The panel's Undo: put these settings back as they were.
     RestoreAdjustments(Vec<super::adjustments::Adjustment>),
     /// One sleep-timer countdown tick (1 s).
     SleepTick,

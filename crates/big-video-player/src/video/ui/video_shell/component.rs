@@ -8,8 +8,7 @@ use super::render::{FastRenderContextSlot, VideoRealizeOptions, wire_close, wire
 use super::*;
 use big_media_components::surface::{
     BigMediaChrome, BigMediaChromePlacement, BigMediaOverlayStack, BigMediaSidebarShell,
-    BigMediaSidebarSpec, create_media_toast_overlay_root, mount_media_toast_content,
-    toggle_surface_fullscreened,
+    BigMediaSidebarSpec, MediaNotice, create_media_root, toggle_surface_fullscreened,
 };
 #[cfg(all(test, not(miri)))]
 use big_relm4_components::layout::hamburger_menu::build_flat_menu_model;
@@ -22,14 +21,14 @@ impl Component for VideoShell {
     type Input = VideoShellInput;
     type Output = ();
     type CommandOutput = ();
-    // Root is the mountable CONTENT (the toast overlay), not a window: the window
+    // Root is the mountable CONTENT (notice + split view), not a window: the window
     // chrome + window-scoped setup are supplied / resolved by the mount point
     // (standalone boot, host module, or pane).
-    type Root = adw::ToastOverlay;
+    type Root = gtk::Box;
     type Widgets = ();
 
     fn init_root() -> Self::Root {
-        create_media_toast_overlay_root()
+        create_media_root()
     }
 
     fn init(
@@ -260,6 +259,7 @@ impl Component for VideoShell {
                 .resize_limit(900.0),
         );
         let split_view = sidebar_shell.split_view().clone();
+        let notice = MediaNotice::new();
 
         // Keep-Above toggle. No portable Wayland keep-above exists, so toggle it
         // via the compositor (KWin global shortcut, falling back to wmctrl). Both via argv arrays — no
@@ -439,12 +439,9 @@ impl Component for VideoShell {
             is_shown: Cell::new(false),
         });
 
-        // Toast host wrapping the content (screenshot / chapter / sleep-timer
-        // feedback). The split view is its child; toasts float above the video.
-        // The Root IS the toast overlay (toast host wrapping the content): the
-        // split view is its child; toasts float above the video.
-        let toast_overlay = root.clone();
-        mount_media_toast_content(&toast_overlay, &split_view);
+        // Messages take a row above the content instead of covering the video.
+        root.append(notice.widget());
+        root.append(&split_view);
 
         // Show the idle background now (welcome is up). Hidden on first
         // `FileLoaded` so the video surface becomes visible again. Kick off the
@@ -487,6 +484,7 @@ impl Component for VideoShell {
                 volume_max: i64::from(settings.get_int_or(keys::VOLUME_MAX, 150)),
                 render_mode: settings.get_string(keys::RENDER_MODE).clone(),
                 settings: settings.clone(),
+                notice: notice.clone(),
             },
         );
 
@@ -581,7 +579,7 @@ impl Component for VideoShell {
                 osd,
                 idle_bg,
                 buffering_overlay,
-                toast_overlay,
+                notice,
                 screenshot_owner: Arc::new(std::sync::atomic::AtomicBool::new(true)),
                 win_actions,
                 sleep_timer_source: None,

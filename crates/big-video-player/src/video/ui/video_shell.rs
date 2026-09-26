@@ -150,9 +150,8 @@ pub struct VideoShell {
     idle_bg: Rc<IdleBackground>,
     /// Centered buffering spinner overlay; shown on `Buffering(true)`.
     buffering_overlay: gtk::Box,
-    /// Transient-toast host wrapping the window content (screenshot / chapter /
-    /// sleep-timer feedback).
-    toast_overlay: adw::ToastOverlay,
+    /// Messages for the person, in a row above the content.
+    notice: big_media_components::surface::MediaNotice,
     screenshot_owner: Arc<std::sync::atomic::AtomicBool>,
     /// The `win.*` action group, kept so the shell can gate context-dependent
     /// entries (e.g. enable Stream Quality only for online media).

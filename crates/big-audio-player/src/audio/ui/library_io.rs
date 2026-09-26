@@ -69,8 +69,8 @@ fn normalized_playlist_name(name: &str) -> Option<String> {
 /// Export the current detail tracks as an `.m3u8` playlist. The save picker
 /// runs on the main loop; the file is written off-thread by
 /// `playlist_scan::write_m3u` (the panel already owns the tracks, so no DB
-/// round-trip is needed). Success/failure surfaces through a `Notify`
-/// intent — the shell owns the toast surface.
+/// round-trip is needed). A failure surfaces through a `Notify` intent — the
+/// shell owns the notice.
 pub(super) fn export_detail_m3u8(
     parent: &gtk::Window,
     tracks: Vec<Track>,
@@ -93,8 +93,9 @@ pub(super) fn export_detail_m3u8(
                         .map_err(|_|std::io::Error::other("Playlist export could not be confirmed"))
                 },
                 move |result| {
-                    let message=if result.is_ok() {i18n("Playlist exported")} else {i18n("Playlist export could not be confirmed. Existing files were kept; choose a new name and retry.")};
-                    let _=out.output(LibraryPanelOutput::Notify(message));
+                    if result.is_err() {
+                        let _=out.output(LibraryPanelOutput::Notify(i18n("Playlist export could not be confirmed. Existing files were kept; choose a new name and retry.")));
+                    }
                 },
             );
         });

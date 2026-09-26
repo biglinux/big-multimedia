@@ -44,11 +44,6 @@ impl Drop for ScreenshotPreparation {
 }
 
 impl VideoShell {
-    /// Show a transient toast in the window's toast overlay.
-    pub(super) fn notify(&self, message: &str) {
-        self.toast_overlay().add_toast(adw::Toast::new(message));
-    }
-
     /// Present the go-to-time entry dialog. Accepts `H:MM:SS`, `M:SS`, or plain
     /// seconds; on confirm it seeks mpv absolutely (`mpv.seek_absolute`).
     pub(super) fn show_goto_time_dialog(&self, root: &adw::ApplicationWindow) {
@@ -241,7 +236,7 @@ impl VideoShell {
     }
 
     /// Run the chosen on-expiry action after the fade-out completes. A 2 s grace
-    /// before quit/suspend/poweroff lets the toast show. Mirrors the audio port.
+    /// before quit/suspend/poweroff lets the notice show. Mirrors the audio port.
     fn run_sleep_action(&self, action: &str) {
         match action {
             "quit" => {
@@ -319,21 +314,19 @@ fn chapter_title_with_prefix(raw: String, index: i64, chapter_prefix: &str) -> S
 }
 
 /// Called only after terminal completion and no-replace publication.
-pub(super) fn show_screenshot_result(overlay: &adw::ToastOverlay, path: PathBuf, durable: bool) {
+pub(super) fn show_screenshot_result(
+    notice: &big_media_components::surface::MediaNotice,
+    path: PathBuf,
+    durable: bool,
+) {
     let message = if durable {
         i18n("Screenshot saved")
     } else {
         i18n("Screenshot saved; disk synchronization could not be confirmed")
     };
-    let toast = adw::Toast::builder()
-        .title(message)
-        .button_label(i18n("Open"))
-        .timeout(5)
-        .build();
-    toast.connect_button_clicked(move |_| {
+    notice.show_action(&message, &i18n("Open"), move || {
         big_app_kit::desktop::open_file(&path);
     });
-    overlay.add_toast(toast);
 }
 
 #[cfg(test)]

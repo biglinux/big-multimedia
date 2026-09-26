@@ -12,11 +12,11 @@ pub mod video;
 
 static EMBED_BOOT: std::sync::Once = std::sync::Once::new();
 
-/// Wrap the player content (the shell's window-agnostic `ToastOverlay` Root)
+/// Wrap the player content (the shell's window-agnostic `gtk::Box` Root)
 /// in an application window with the standard geometry.
 fn build_player_window(
     app: &impl gtk::prelude::IsA<gtk::Application>,
-    content: &adw::ToastOverlay,
+    content: &gtk::Box,
 ) -> adw::ApplicationWindow {
     use gtk::prelude::*;
     let window = adw::ApplicationWindow::builder()
@@ -127,7 +127,7 @@ pub fn run() -> gtk::glib::ExitCode {
         resources::VIDEO_PLAYER_SHELL,
     ]);
 
-    // The `VideoShell` Root is mountable content (a ToastOverlay), not a
+    // The `VideoShell` Root is mountable content (a `gtk::Box`), not a
     // window, so we boot manually instead of `RelmApp::run` (which
     // requires a window Root): on activate, launch the shell and wrap its content
     // in the app window. The app subclass still owns the app-level actions,

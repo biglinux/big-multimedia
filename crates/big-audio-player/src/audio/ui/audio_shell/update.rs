@@ -44,7 +44,7 @@ impl AudioShell {
                 self.queue_persistence.load(&sender);
             }
             AudioShellInput::ShowPreferences => {
-                if let Some(window) = self.toast_overlay.root().and_downcast::<gtk::Window>() {
+                if let Some(window) = self.notice.widget().root().and_downcast::<gtk::Window>() {
                     let input = sender.input_sender().clone();
                     crate::audio::preferences::show_audio_preferences(
                         &window,
@@ -173,7 +173,6 @@ impl AudioShell {
             AudioShellInput::PlaylistMutationFinished(success) => {
                 if success {
                     self.refresh_playlist_dialog_entries(&sender);
-                    self.notify(&i18n("Playlist updated"));
                 } else {
                     self.notify(&i18n(
                         "The playlist could not be changed. Your previous playlist was kept.",
@@ -193,7 +192,6 @@ impl AudioShell {
             AudioShellInput::TagsWritten { track_id, fields } => {
                 self.apply_written_tags(track_id, &fields);
                 self.rebuild_library_tree(&sender);
-                self.notify(&i18n("Tags saved"));
             }
             AudioShellInput::MusicBrainzLookupResolved { track_id, metadata } => {
                 self.library
@@ -300,7 +298,6 @@ impl AudioShell {
             }
             AudioShellInput::SleepTimerCancel => {
                 self.cancel_sleep_timer();
-                self.notify(&i18n("Sleep timer cancelled"));
             }
             AudioShellInput::SleepTick => self.sleep_tick(),
             AudioShellInput::Notify(message) => self.notify(&message),

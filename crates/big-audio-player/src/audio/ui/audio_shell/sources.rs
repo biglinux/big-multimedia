@@ -198,13 +198,12 @@ impl AudioShell {
             }
             RadioPanelOutput::RecordStream => self.record_radio_stream(),
             RadioPanelOutput::StopRecording => self.stop_radio_recording(),
-            RadioPanelOutput::Notify(message) => self.notify(&message),
         }
     }
 
-    /// Show a transient toast in the window overlay.
+    /// Tell the person something, in the row above the transport.
     pub(super) fn notify(&self, message: &str) {
-        self.toast_overlay.add_toast(adw::Toast::new(message));
+        self.notice.show(message);
     }
 
     /// Start recording the current radio stream into `~/Music/Radio Recordings`.
@@ -251,10 +250,10 @@ impl AudioShell {
             return;
         };
         let parent = self.window().map(|window| window.downgrade());
-        let toast_overlay = self.toast_overlay.clone();
+        let notice = self.notice.clone();
         glib::timeout_add_local_once(std::time::Duration::from_millis(750), move || {
             if !recording_file_has_content(&path) {
-                toast_overlay.add_toast(adw::Toast::new(&i18n("Recording was not saved")));
+                notice.show(&i18n("Recording was not saved"));
                 return;
             }
             if let Some(parent) = parent.as_ref().and_then(glib::WeakRef::upgrade) {
@@ -273,7 +272,6 @@ impl AudioShell {
         match out {
             PodcastPanelOutput::LoadFeed(url) => {
                 let input = sender.input_sender().clone();
-                self.notify(&i18n("Loading feed…"));
                 spawn_blocking_result(
                     move || crate::library::podcast::fetch_feed(&url),
                     move |feed| {

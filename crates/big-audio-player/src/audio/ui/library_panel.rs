@@ -214,7 +214,7 @@ pub enum LibraryPanelOutput {
     },
     /// MusicBrainz lookup request (advisory; fills empty fields only).
     MusicBrainzLookup(Track),
-    /// User-facing toast / notification text.
+    /// User-facing notice text.
     Notify(String),
     /// Import an m3u/m3u8/pls file (shell parses + inserts).
     ImportPlaylistFile {

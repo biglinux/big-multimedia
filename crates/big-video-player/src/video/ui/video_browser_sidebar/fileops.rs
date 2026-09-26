@@ -1,6 +1,6 @@
 //! Triage file operations for Files mode: the multi-select batch action bar and
 //! the move / rename helpers. Destructive or launch-style actions (send to
-//! converter, trash) are emitted to the shell (which owns toasts + process
+//! converter, trash) are emitted to the shell (which owns messages + process
 //! spawning); move and rename are filesystem ops done here, followed by a
 //! folder re-scan. All act on the current `selection` (batch) or a single path.
 
@@ -340,18 +340,16 @@ fn rename_no_replace(src: &Path, dest: &Path) -> std::io::Result<()> {
     Err(error)
 }
 
-/// Emit a result toast for a batch file op.
+/// Say when some of a batch file op failed; the folder view already shows
+/// what moved.
 fn notify_op_result(state: &Rc<BrowserState>, ok: usize, failed: usize, verb: &str) {
-    let notification_message = if failed == 0 {
-        ni18n("{} file {verb}", "{} files {verb}", ok as u64)
-            .replace("{}", &ok.to_string())
-            .replace("{verb}", verb)
-    } else {
-        i18n("{ok} {verb}, {failed} failed")
-            .replace("{ok}", &ok.to_string())
-            .replace("{verb}", verb)
-            .replace("{failed}", &failed.to_string())
-    };
+    if failed == 0 {
+        return;
+    }
+    let notification_message = i18n("{ok} {verb}, {failed} failed")
+        .replace("{ok}", &ok.to_string())
+        .replace("{verb}", verb)
+        .replace("{failed}", &failed.to_string());
     state
         .sender
         .output(VideoBrowserSidebarOutput::Notify(notification_message))

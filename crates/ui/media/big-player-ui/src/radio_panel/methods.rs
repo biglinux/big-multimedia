@@ -93,7 +93,7 @@ impl RadioPanel {
         self.skeleton.set_visible(false);
     }
 
-    /// Network failure: keep any cached content, surface a toast, and let the
+    /// Network failure: keep any cached content and let the
     /// empty-state (with its Explore/retry button) show when there is nothing.
     pub(super) fn show_connection_error(&self) {
         self.hide_loading();

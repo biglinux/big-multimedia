@@ -9,8 +9,7 @@ use gtk::prelude::*;
 
 pub use big_relm4_components::layout::media_window::{
     BigMediaChrome, BigMediaChromePlacement, BigMediaImmersionController, BigMediaOverlayStack,
-    BigMediaSidebarShell, BigMediaSidebarSpec, create_media_toast_overlay_root,
-    mount_media_toast_content,
+    BigMediaSidebarShell, BigMediaSidebarSpec, MediaNotice, create_media_root,
 };
 
 /// Toggle fullscreen on the toplevel window that owns `widget`.

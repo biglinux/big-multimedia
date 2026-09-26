@@ -67,7 +67,7 @@ pub(super) fn wire_osd_autohide(main_overlay: &gtk::Overlay, osd: &Rc<OsdState>)
 pub(super) fn wire_video_input(
     // The mountable content; the window (for the window-drag gesture)
     // is resolved lazily from it.
-    content: &adw::ToastOverlay,
+    content: &gtk::Box,
     main_overlay: &gtk::Overlay,
     sender: &ComponentSender<VideoShell>,
 ) {

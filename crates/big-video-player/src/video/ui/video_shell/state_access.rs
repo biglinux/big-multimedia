@@ -1,11 +1,6 @@
 use super::*;
 
 impl VideoShell {
-    /// Toast host (for `menu_dialogs` feedback).
-    pub(crate) fn toast_overlay(&self) -> &adw::ToastOverlay {
-        &self.toast_overlay
-    }
-
     /// Shared mpv handle (for `menu_dialogs` to drive playback).
     pub(crate) fn mpv_handle(&self) -> &Rc<RefCell<Option<Arc<MpvBackend>>>> {
         &self.mpv

@@ -36,7 +36,7 @@ pub fn contain_component_update(
 }
 
 /// Like [`contain_component_update`] but for a component whose `Root` is not
-/// itself a [`gtk::Window`] (e.g. a `ToastOverlay` or `Box`): it derives the
+/// itself a [`gtk::Window`] (e.g. a `Box`): it derives the
 /// toplevel window from `root_widget`. If the widget is not yet rooted, it
 /// falls back to logging only (still containing the panic).
 pub fn contain_embedded_update(

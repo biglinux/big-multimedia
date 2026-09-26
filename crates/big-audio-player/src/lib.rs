@@ -14,11 +14,11 @@ mod resources;
 
 static EMBED_BOOT: std::sync::Once = std::sync::Once::new();
 
-/// Wrap the player content (the shell's window-agnostic `ToastOverlay` Root)
+/// Wrap the player content (the shell's window-agnostic `gtk::Box` Root)
 /// in an application window with the standard player geometry + title. Each mount point supplies its own window.
 fn build_player_window(
     app: &impl gtk::prelude::IsA<gtk::Application>,
-    content: &adw::ToastOverlay,
+    content: &gtk::Box,
 ) -> adw::ApplicationWindow {
     use gtk::prelude::*;
     let window = adw::ApplicationWindow::builder()
@@ -109,7 +109,7 @@ pub fn run() -> gtk::glib::ExitCode {
     // framework; the app supplies its own id).
     big_player_ui::favicon_cache::set_cache_namespace("big-audio-player");
 
-    // The `AudioShell` Root is mountable content (a ToastOverlay), not a
+    // The `AudioShell` Root is mountable content (a `gtk::Box`), not a
     // window, so we boot manually instead of `RelmApp::run`
     // (which requires a window Root): on activate, launch the shell and wrap its
     // content in the application window. The app subclass still owns the

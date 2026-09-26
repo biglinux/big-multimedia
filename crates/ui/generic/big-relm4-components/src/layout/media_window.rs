@@ -1,14 +1,14 @@
 // SPDX-FileCopyrightText: 2026 BigLinux contributors
 // SPDX-License-Identifier: MIT
 
-//! Shared immersive chrome and toast-host policy for media apps (audio player,
+//! Shared immersive chrome and notice policy for media apps (audio player,
 //! video player, webcam, image viewer): a real `AdwHeaderBar` (top) with an
 //! accessible primary menu, a bottom control bar, and an optional resizable
 //! sidebar shell.
 //!
 //! Design: the app owns its media `gtk::Overlay`, mpv/camera/image surface, and
 //! any clipped offload surface. The framework owns the repeatable shell policy:
-//! toast host creation, content mounting, header, primary menu, bottom revealer,
+//! root creation, the notice banner, header, primary menu, bottom revealer,
 //! and sidebar split/resize policy. This keeps each app's media plumbing
 //! untouched (e.g. the video player's `GtkGraphicsOffload` subsurface, which an
 //! `AdwToolbarView` would throttle to ~1 fps) while shared shell mechanics are
@@ -227,27 +227,75 @@ impl BigMediaOverlayStack {
     }
 }
 
-/// Create the shared media toast host used as a mountable Relm4 root.
-///
-/// Media apps keep their renderer widgets and domain state app-local, but the
-/// framework owns the repeatable `AdwToastOverlay` construction policy so every
-/// video/camera/image shell starts with the same fill behavior and toast host.
+/// Create the shared media root: a vertical box the shell mounts its content
+/// (and its [`MediaNotice`]) into.
 #[must_use]
-pub fn create_media_toast_overlay_root() -> adw::ToastOverlay {
-    let toast_overlay = adw::ToastOverlay::new();
-    toast_overlay.set_hexpand(true);
-    toast_overlay.set_vexpand(true);
-    toast_overlay.set_halign(gtk::Align::Fill);
-    toast_overlay.set_valign(gtk::Align::Fill);
-    toast_overlay
+pub fn create_media_root() -> gtk::Box {
+    let root = gtk::Box::new(gtk::Orientation::Vertical, 0);
+    root.set_hexpand(true);
+    root.set_vexpand(true);
+    root
 }
 
-/// Mount the media shell content inside the shared toast host.
-pub fn mount_media_toast_content(
-    toast_overlay: &adw::ToastOverlay,
-    content: &impl IsA<gtk::Widget>,
-) {
-    toast_overlay.set_child(Some(content));
+/// A message for the person in a banner that takes its own row in the layout:
+/// it moves the content aside instead of covering it, as a toast covered the
+/// controls and stacked up by the dozen. One at a time; asking again for the
+/// one already up changes nothing. It stays until closed or replaced: a row
+/// that went away by itself would move the controls under the pointer.
+#[derive(Clone)]
+pub struct MediaNotice {
+    banner: adw::Banner,
+    action: Rc<RefCell<Option<Box<dyn FnOnce()>>>>,
+}
+
+impl Default for MediaNotice {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+impl MediaNotice {
+    /// A hidden notice; nothing shows until [`Self::show`] or [`Self::show_action`].
+    #[must_use]
+    pub fn new() -> Self {
+        let notice = Self {
+            banner: adw::Banner::builder().revealed(false).build(),
+            action: Rc::default(),
+        };
+        let action = notice.action.clone();
+        notice.banner.connect_button_clicked(move |banner| {
+            banner.set_revealed(false);
+            if let Some(action) = action.borrow_mut().take() {
+                action();
+            }
+        });
+        notice
+    }
+
+    /// The banner, to place where the shell wants its messages.
+    #[must_use]
+    pub fn widget(&self) -> &adw::Banner {
+        &self.banner
+    }
+
+    /// Show `message` with a button that closes it.
+    pub fn show(&self, message: &str) {
+        self.present(message, &crate::i18n::t("Close"), None);
+    }
+
+    /// Show `message` with a button that does `action`, closing it.
+    pub fn show_action(&self, message: &str, label: &str, action: impl FnOnce() + 'static) {
+        self.present(message, label, Some(Box::new(action)));
+    }
+
+    fn present(&self, message: &str, label: &str, action: Option<Box<dyn FnOnce()>>) {
+        *self.action.borrow_mut() = action;
+        if !(self.banner.is_revealed() && self.banner.title() == message) {
+            self.banner.set_title(message);
+            self.banner.set_revealed(true);
+        }
+        self.banner.set_button_label(Some(label));
+    }
 }
 
 const WINDOW_MAXIMIZE_ICON: &str = "window-maximize-symbolic";

@@ -60,7 +60,7 @@ pub enum PodcastPanelInput {
     SearchFailed,
     /// Hide the search section (query cleared).
     ClearSearch,
-    /// Subscribe to a feed URL (save off-thread + refresh + toast).
+    /// Subscribe to a feed URL (save off-thread + refresh).
     Subscribe(String),
     /// Unsubscribe from a feed URL (save off-thread + refresh).
     Unsubscribe(String),
@@ -80,7 +80,7 @@ pub enum PodcastPanelInput {
 pub enum PodcastPanelOutput {
     /// Load this feed (shell switches to podcast mode and rebuilds the queue).
     LoadFeed(String),
-    /// Show a transient notification toast.
+    /// Tell the person something (a search or subscription problem).
     Notify(String),
 }
 
@@ -274,7 +274,7 @@ impl Component for PodcastPanel {
                 } else {
                     self.failed_title_fetches.remove(&url);
                     self.subs.push(url);
-                    self.persist_subscriptions(&sender, Some(i18n("Subscribed!")));
+                    self.persist_subscriptions();
                     self.sync_subscribed();
                     self.rebuild_list();
                     self.resolve_missing_titles(&sender);
@@ -284,7 +284,7 @@ impl Component for PodcastPanel {
                 self.subs.retain(|u| u != &url);
                 self.pending_title_fetches.remove(&url);
                 self.failed_title_fetches.remove(&url);
-                self.persist_subscriptions(&sender, None);
+                self.persist_subscriptions();
                 self.sync_subscribed();
                 self.rebuild_list();
             }
@@ -314,17 +314,13 @@ impl PodcastPanel {
         set.extend(self.subs.iter().cloned());
     }
 
-    /// Persist the current subscription list off the GTK thread; optional toast.
-    fn persist_subscriptions(&self, sender: &ComponentSender<Self>, toast: Option<String>) {
+    /// Persist the current subscription list off the GTK thread.
+    fn persist_subscriptions(&self) {
         let subs = self.subs.clone();
-        let s = sender.clone();
         glib::spawn_future_local(async move {
             let saved = gio::spawn_blocking(move || save_subscriptions(&subs)).await;
             if let Ok(Err(error)) = saved {
                 log::warn!("Failed to save podcast subscriptions: {error}");
-            }
-            if let Some(message) = toast {
-                let _ = s.output(PodcastPanelOutput::Notify(message));
             }
         });
     }

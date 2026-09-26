@@ -1,4 +1,4 @@
-//! Screenshot resources belong to the backend, never to a toast timer.
+//! Screenshot resources belong to the backend, never to a notice timer.
 //! Timeout withdraws publication and requests cancellation. Resources stay owned
 //! until COMMAND_REPLY or until mpv_terminate_destroy has joined native writers.
 use big_os_kit::storage::{CommitOutcome, StagedFile};

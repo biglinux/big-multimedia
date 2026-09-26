@@ -23,7 +23,7 @@ const SPEED_MAX: f64 = 4.0;
 /// Install the window-level keyboard-shortcut controller on the player content
 /// root. Bare single-key bindings only, skipped while a text widget has focus.
 pub(super) fn wire_keyboard_shortcuts(
-    root: &adw::ToastOverlay,
+    root: &gtk::Box,
     mpv: &Rc<RefCell<Option<Arc<MpvBackend>>>>,
     tv: &Rc<crate::shared::tv_cast::TvLink>,
     settings: &Settings,
@@ -66,7 +66,7 @@ pub(super) fn wire_keyboard_shortcuts(
 /// trim mode is active, so outside trim mode those keys keep their usual meaning.
 /// A handled key is consumed (`Stop`) so it never reaches the normal map.
 pub(super) fn wire_trim_keys(
-    root: &adw::ToastOverlay,
+    root: &gtk::Box,
     trim_active: Rc<Cell<bool>>,
     sender: &ComponentSender<VideoShell>,
 ) {

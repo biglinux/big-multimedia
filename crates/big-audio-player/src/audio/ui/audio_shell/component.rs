@@ -3,7 +3,7 @@ use super::input::set_shell_input;
 use super::mpris::build_mpris_service;
 use super::playback::transport_labels;
 use super::*;
-use big_media_components::surface::{create_media_toast_overlay_root, mount_media_toast_content};
+use big_media_components::surface::{MediaNotice, create_media_root};
 use big_relm4_components::input::button_content::{BigButtonContentSpec, build_button_content};
 use big_relm4_components::layout::toolbar_pane::{
     BigToolbarHeader, BigToolbarHeaderSpec, BigToolbarPane, BigToolbarPaneSpec,
@@ -24,14 +24,14 @@ impl Component for AudioShell {
     type Input = AudioShellInput;
     type Output = ();
     type CommandOutput = ();
-    // Root is the mountable CONTENT (a ToastOverlay), NOT a window: the window
+    // Root is the mountable CONTENT (a `gtk::Box`), NOT a window: the window
     // chrome (size/title/present) is supplied by the mount point — the standalone
     // boot, a `big-host` module, or a `PaneContent` mount.
-    type Root = adw::ToastOverlay;
+    type Root = gtk::Box;
     type Widgets = ();
 
     fn init_root() -> Self::Root {
-        create_media_toast_overlay_root()
+        create_media_root()
     }
 
     fn init(
@@ -293,6 +293,9 @@ impl Component for AudioShell {
             .button_label(i18n("Retry saving"))
             .build();
         content_box.append(&queue_save_banner);
+        // Messages take a row above the transport instead of covering it.
+        let notice = MediaNotice::new();
+        content_box.append(notice.widget());
         let retry_input = sender.input_sender().clone();
         queue_save_banner.connect_button_clicked(move |_| {
             let _ = retry_input.send(AudioShellInput::RetryQueueSave);
@@ -349,7 +352,7 @@ impl Component for AudioShell {
         main_paned.set_start_child(Some(sidebar_pane.root()));
         main_paned.set_end_child(Some(content_pane.root()));
 
-        mount_media_toast_content(&root, &main_paned);
+        root.append(&main_paned);
 
         // App stylesheet (lyrics/radio/queue CSS classes).
         if let Some(display) = gdk::Display::default() {
@@ -577,7 +580,7 @@ impl Component for AudioShell {
                 lyrics_visible: false,
                 downloads,
                 _podcast: podcast,
-                toast_overlay: root.clone(),
+                notice,
                 podcast_mode: false,
                 saved_music_queue: None,
                 saved_podcast_queue: None,

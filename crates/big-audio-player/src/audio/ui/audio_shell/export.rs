@@ -20,12 +20,14 @@ impl AudioShell {
             self.notify(&i18n("No local track is playing"));
             return;
         };
-        self.notify(&converter_handoff::open(
+        if let Some(failure) = converter_handoff::open(
             converter_handoff::AUDIO_CONVERTER,
             &[input.to_string_lossy().into_owned()],
             cuts,
             None,
-        ));
+        ) {
+            self.notify(&failure);
+        }
     }
 
     /// Enter visual trim mode on the current local track.
@@ -51,7 +53,6 @@ impl AudioShell {
             .emit(AudioPlaybackBarInput::SetEditMode(true));
         self.trim.emit(AudioTrimBarInput::SetDuration(duration));
         self.trim.emit(AudioTrimBarInput::SetPlayhead(playhead));
-        self.notify(&i18n("Trim mode enabled"));
     }
 
     /// Leave visual trim mode and restore the normal seek bar.

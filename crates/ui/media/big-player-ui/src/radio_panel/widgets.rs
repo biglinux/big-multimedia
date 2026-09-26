@@ -22,7 +22,7 @@ use crate::media_list::MediaRow;
 use big_media_data::db::models::RadioStation;
 use big_media_data::i18n::i18n;
 
-use super::{RadioPanel, RadioPanelInput, RadioPanelOutput, TAG_EXPLORE, TAG_SAVED};
+use super::{RadioPanel, RadioPanelInput, TAG_EXPLORE, TAG_SAVED};
 
 /// Build the per-row action-button factory for the virtualized list: saved rows
 /// get delete + record, explore rows get record + add (add reflects the current
@@ -409,7 +409,6 @@ pub(super) fn present_add_dialog(root: &gtk::Box, sender: &ComponentSender<Radio
             favicon: String::new(),
             group_name: String::new(),
         }));
-        let _ = s.output(RadioPanelOutput::Notify(i18n("Radio station added")));
         if let Some(dialog) = dialog_weak.upgrade() {
             dialog.close();
         }

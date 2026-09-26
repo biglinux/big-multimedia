@@ -179,9 +179,6 @@ impl AudioShell {
         let current = self.queue.tracks().to_vec();
         if let Some(previous) = self.history.undo(current) {
             self.restore_queue_snapshot(previous, sender);
-            self.notify(&i18n("Undo"));
-        } else {
-            self.notify(&i18n("Nothing to undo"));
         }
     }
 
@@ -190,9 +187,6 @@ impl AudioShell {
         let current = self.queue.tracks().to_vec();
         if let Some(next) = self.history.redo(current) {
             self.restore_queue_snapshot(next, sender);
-            self.notify(&i18n("Redo"));
-        } else {
-            self.notify(&i18n("Nothing to redo"));
         }
     }
 

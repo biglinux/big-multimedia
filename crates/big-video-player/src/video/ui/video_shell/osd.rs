@@ -249,7 +249,7 @@ fn file_url(path: &Path) -> String {
 pub(super) struct AspectSnap {
     /// The content widget; the window to resize is resolved lazily from it (ADR
     /// D14). Weak → no cycle with its own size-notify signals.
-    pub(super) content: glib::WeakRef<adw::ToastOverlay>,
+    pub(super) content: glib::WeakRef<gtk::Box>,
     /// Read for `AUTO_WINDOW_RESIZE` and the snap toggle.
     pub(super) settings: Settings,
     /// Live mpv handle (read for the loaded video's pixel dimensions).

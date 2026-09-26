@@ -137,18 +137,18 @@ impl VideoShell {
                     durability_confirmed,
                 } => {
                     crate::video::ui::menu_dialogs::show_screenshot_result(
-                        &self.toast_overlay,
+                        &self.notice,
                         path,
                         durability_confirmed,
                     );
                 }
                 crate::player::mpv_backend::ScreenshotResult::Failed => {
-                    self.toast(&i18n("Screenshot failed"));
+                    self.notify(&i18n("Screenshot failed"));
                 }
                 crate::player::mpv_backend::ScreenshotResult::Cancelled => {}
             },
             PlayerEvent::ScreenshotTimedOut { .. } => {
-                self.toast(&i18n("Screenshot timed out; cancellation requested"));
+                self.notify(&i18n("Screenshot timed out; cancellation requested"));
             }
             // Reason 4 = error (unsupported/corrupt/unreadable source). Other
             // reasons (EOF=0, stop=2, quit=3, redirect=5) are a normal end of
@@ -165,7 +165,7 @@ impl VideoShell {
                 self.playing = false;
                 self.sync_screen_inhibit(root);
                 if reason == 4 {
-                    self.toast(&i18n(
+                    self.notify(&i18n(
                         "Could not play this file — it may be unsupported or corrupt.",
                     ));
                     self.reveal_pending_welcome();
@@ -356,7 +356,7 @@ impl VideoShell {
             }
             VideoBrowserSidebarOutput::SendToConverter(paths) => self.send_to_converter(&paths),
             VideoBrowserSidebarOutput::TrashFiles(paths) => self.trash_files(paths),
-            VideoBrowserSidebarOutput::Notify(msg) => self.toast(&msg),
+            VideoBrowserSidebarOutput::Notify(msg) => self.notify(&msg),
             VideoBrowserSidebarOutput::SetLoopMode(mode) => {
                 if let Some(mpv) = self.mpv.borrow().as_ref() {
                     mpv.set_loop_mode(&mode);
@@ -370,26 +370,24 @@ impl VideoShell {
         }
     }
 
-    /// Show a transient toast on the player's toast overlay.
-    pub(super) fn toast(&self, message: &str) {
-        self.toast_overlay.add_toast(adw::Toast::new(message));
+    /// Tell the person something, in the row above the content.
+    pub(crate) fn notify(&self, message: &str) {
+        self.notice.show(message);
     }
 
     /// Queue the chosen files in the video converter (an already-running
     /// instance enqueues them).
     fn send_to_converter(&self, paths: &[String]) {
-        if !paths.is_empty() {
-            self.toast(&converter_handoff::open(
-                converter_handoff::VIDEO_CONVERTER,
-                paths,
-                &[],
-                None,
-            ));
+        if !paths.is_empty()
+            && let Some(failure) =
+                converter_handoff::open(converter_handoff::VIDEO_CONVERTER, paths, &[], None)
+        {
+            self.notify(&failure);
         }
     }
 
     /// Move files to the trash, drop any from the queue, refresh the browser,
-    /// and offer an Undo toast that restores them. The `gio trash` calls run off
+    /// and offer an Undo that restores them. The `gio trash` calls run off
     /// the main thread (they spawn a subprocess per file).
     fn trash_files(&mut self, paths: Vec<String>) {
         // Queue cleanup is instant (in-memory + a fast mpv ipc) — do it now.
@@ -397,7 +395,7 @@ impl VideoShell {
             self.remove_playlist_entry(path);
         }
 
-        let toast_overlay = self.toast_overlay.clone();
+        let notice = self.notice.clone();
         let pl_sender = self.playlist.sender().clone();
         let to_trash = paths.clone();
         big_media_components::player_chrome::spawn_blocking_result(
@@ -410,7 +408,7 @@ impl VideoShell {
             },
             move |trashed: Vec<String>| {
                 if trashed.is_empty() {
-                    toast_overlay.add_toast(adw::Toast::new(&i18n("Could not move to trash")));
+                    notice.show(&i18n("Could not move to trash"));
                     return;
                 }
                 let _ = pl_sender.send(VideoBrowserSidebarInput::RefreshFolder);
@@ -420,14 +418,9 @@ impl VideoShell {
                     trashed.len() as u64,
                 )
                 .replace("{}", &trashed.len().to_string());
-                let toast = adw::Toast::builder()
-                    .title(title)
-                    .button_label(i18n("Undo"))
-                    .build();
                 let restore_sender = pl_sender.clone();
-                toast.connect_button_clicked(move |_| {
-                    let restore_sender = restore_sender.clone();
-                    let to_restore = trashed.clone();
+                notice.show_action(&title, &i18n("Undo"), move || {
+                    let to_restore = trashed;
                     big_media_components::player_chrome::spawn_blocking_result(
                         move || {
                             use big_media_runtime::media::playlist;
@@ -440,7 +433,6 @@ impl VideoShell {
                         },
                     );
                 });
-                toast_overlay.add_toast(toast);
             },
         );
     }

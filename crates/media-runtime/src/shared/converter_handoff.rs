@@ -20,23 +20,25 @@ pub fn is_installed(program: &str) -> bool {
 }
 
 /// Open `paths` in the converter `program`, with the cuts to keep and how
-/// to read their colours, if any. Returns the status line to show the user.
+/// to read their colours, if any. Returns what to tell the person when the
+/// converter could not be started.
 pub fn open(
     program: &str,
     paths: &[String],
     cuts: &[(f64, f64)],
     source_hdr: Option<&str>,
-) -> String {
+) -> Option<String> {
     let spawned = BigSubprocessSpec::builder()
         .program(program)
         .args(converter_args(paths, cuts, source_hdr))
         .build()
         .spawn_detached();
     match spawned {
-        Ok(()) => i18n("Opening in converter…"),
+        // The converter's own window is the answer.
+        Ok(()) => None,
         Err(error) => {
             log::warn!("could not launch {program}: {error}");
-            i18n("Could not launch the converter")
+            Some(i18n("Could not launch the converter"))
         }
     }
 }

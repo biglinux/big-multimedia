@@ -124,8 +124,8 @@ pub struct AudioShell {
     /// Podcast tab (subscriptions + search); self-renders + emits `LoadFeed`,
     /// so the shell holds it only for its lifetime (never sends it inputs).
     _podcast: Controller<PodcastPanel>,
-    /// Toast overlay for panel `Notify` messages.
-    toast_overlay: adw::ToastOverlay,
+    /// Messages for the person, in a row above the transport.
+    notice: big_media_components::surface::MediaNotice,
     /// Whether the queue currently holds podcast episodes (suppresses the music
     /// queue + toggles the stash/restore on tab switches).
     podcast_mode: bool,
