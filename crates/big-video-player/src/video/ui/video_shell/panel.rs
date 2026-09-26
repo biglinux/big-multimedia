@@ -819,7 +819,9 @@ fn chapters_page(mpv: &MpvBackend, sender: &ComponentSender<VideoShell>) -> gtk:
 }
 
 /// The last videos opened, as cards: picture, name and length. A click
-/// opens one. Pictures and lengths come off the main loop.
+/// opens one. Pictures and lengths come off the main loop. The search above
+/// them filters as it is typed, over every file the store keeps (50); with
+/// nothing typed the most recent twelve show.
 fn recent_page(columns: usize, sender: &ComponentSender<VideoShell>) -> gtk::Widget {
     /// Enough to find the recent one without a list to scroll through.
     const SHOWN: usize = 12;
@@ -841,11 +843,16 @@ fn recent_page(columns: usize, sender: &ComponentSender<VideoShell>) -> gtk::Wid
         .column_spacing(8)
         .row_spacing(8)
         .build();
-    for entry in entries.into_iter().take(SHOWN) {
+    let names: Rc<Vec<String>> = Rc::new(
+        entries
+            .iter()
+            .map(|entry| crate::recent::display_name(&entry.path))
+            .collect(),
+    );
+    for entry in entries {
         let name = crate::recent::display_name(&entry.path);
         let picture = gtk::Picture::builder()
             .content_fit(gtk::ContentFit::Cover)
-            .height_request(90)
             .css_classes(["recent-thumb"])
             .build();
         let length = gtk::Label::builder()
@@ -870,7 +877,12 @@ fn recent_page(columns: usize, sender: &ComponentSender<VideoShell>) -> gtk::Wid
             .pixel_size(32)
             .css_classes(["dim-label"])
             .build();
-        let frame = gtk::Overlay::builder().child(&picture).build();
+        // The box sets the height; the picture, not measured, fills it (a
+        // picture's own size would make video cards taller than music ones).
+        let size = gtk::Box::builder().height_request(90).build();
+        let frame = gtk::Overlay::builder().child(&size).build();
+        frame.add_overlay(&picture);
+        frame.set_measure_overlay(&picture, false);
         frame.add_overlay(&placeholder);
         frame.add_overlay(&length);
         let label = gtk::Label::builder()
@@ -942,7 +954,87 @@ fn recent_page(columns: usize, sender: &ComponentSender<VideoShell>) -> gtk::Wid
         child.set_focusable(false);
         cell = child.next_sibling();
     }
-    grid.upcast()
+
+    let search = gtk::SearchEntry::builder()
+        .placeholder_text(i18n("Search recent files"))
+        .search_delay(0)
+        .build();
+    search.update_property(&[gtk::accessible::Property::Label(&i18n(
+        "Search recent files",
+    ))]);
+    // Typing starts the search: focus it once the page is on screen.
+    search.connect_map(|search| {
+        let search = search.downgrade();
+        glib::idle_add_local_once(move || {
+            if let Some(search) = search.upgrade() {
+                search.grab_focus();
+            }
+        });
+    });
+    let empty = gtk::Label::builder()
+        .label(i18n("No recent file matches"))
+        .css_classes(["dim-label"])
+        .margin_top(12)
+        .margin_bottom(12)
+        .visible(false)
+        .build();
+    {
+        let search = search.downgrade();
+        let names = names.clone();
+        grid.set_filter_func(move |child| {
+            let index = usize::try_from(child.index()).unwrap_or(usize::MAX);
+            let query = search.upgrade().map(|s| s.text()).unwrap_or_default();
+            if query.trim().is_empty() {
+                return index < SHOWN;
+            }
+            names
+                .get(index)
+                .is_some_and(|name| recent_matches(query.trim(), name))
+        });
+    }
+    search.connect_search_changed({
+        let grid = grid.downgrade();
+        let empty = empty.downgrade();
+        let names = names.clone();
+        move |search| {
+            let Some(grid) = grid.upgrade() else {
+                return;
+            };
+            grid.invalidate_filter();
+            let query = search.text();
+            let query = query.trim();
+            let any = query.is_empty() || names.iter().any(|name| recent_matches(query, name));
+            if let Some(empty) = empty.upgrade() {
+                empty.set_visible(!any);
+            }
+        }
+    });
+    // A search entry keeps Escape to itself: the first clears what was
+    // typed, the next closes the panel as Escape does elsewhere.
+    search.connect_stop_search({
+        let sender = sender.clone();
+        move |search| {
+            if search.text().is_empty() {
+                sender.input(VideoShellInput::ClosePanel);
+            } else {
+                search.set_text("");
+            }
+        }
+    });
+
+    let page = gtk::Box::builder()
+        .orientation(gtk::Orientation::Vertical)
+        .spacing(10)
+        .build();
+    page.append(&search);
+    page.append(&empty);
+    page.append(&grid);
+    page.upcast()
+}
+
+/// As the file browser's search: the letters typed, in order.
+fn recent_matches(query: &str, name: &str) -> bool {
+    crate::media::playlist::fuzzy_match(query, name).is_some()
 }
 
 #[cfg(test)]
