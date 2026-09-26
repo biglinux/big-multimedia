@@ -43,6 +43,8 @@ pub struct PlaybackStart {
     pub paused: bool,
     pub volume: f64,
     pub muted: bool,
+    /// Height of the 16:9 frame a TV is sent, 0 for the video's own size.
+    pub height: u32,
 }
 
 impl Default for PlaybackStart {
@@ -52,13 +54,20 @@ impl Default for PlaybackStart {
             paused: false,
             volume: 1.0,
             muted: false,
+            height: 0,
         }
     }
 }
 
 impl PlaybackStart {
-    fn wire(self) -> (f64, bool, f64, bool) {
-        (self.seconds, self.paused, self.volume, self.muted)
+    fn wire(self) -> (f64, bool, f64, bool, u32) {
+        (
+            self.seconds,
+            self.paused,
+            self.volume,
+            self.muted,
+            self.height,
+        )
     }
 }
 
@@ -140,7 +149,7 @@ impl Client {
         if proxy
             .cached_property("PlayerApi")
             .and_then(|v| v.get::<u32>())
-            != Some(1)
+            != Some(2)
         {
             return Err(glib::Error::new(
                 gio::IOErrorEnum::NotSupported,

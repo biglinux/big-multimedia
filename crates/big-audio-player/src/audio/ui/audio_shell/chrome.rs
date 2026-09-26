@@ -111,10 +111,11 @@ impl AudioShell {
                         paused: false,
                         volume: (mpv.get_volume() / 100.0).clamp(0.0, 1.0),
                         muted: mpv.get_mute(),
+                        height: 0,
                     }),
             })
         };
-        present_tv_dialog(&win, media, move || {
+        present_tv_dialog(&win, &self.settings, media, move || {
             if let Some(mpv) = &mpv {
                 mpv.pause();
             }

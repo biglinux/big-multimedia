@@ -9,11 +9,12 @@ use big_relm4_components::layout::{
 };
 
 impl VideoShell {
-    /// "Play on a TV": hand the loaded video, where it is now, to a
-    /// Chromecast or DLNA TV, pausing it here once the TV plays.
-    pub(super) fn show_cast_dialog(&self, root: &adw::ApplicationWindow) {
+    /// "Play on a TV", the settings panel's page: hand the loaded video,
+    /// where it is now, to a Chromecast or DLNA TV, pausing it here once the
+    /// TV plays.
+    pub(super) fn tv_page(&self) -> gtk::Widget {
         use crate::cast::daemon::PlaybackStart;
-        use crate::shared::tv_cast::{TvMedia, present_tv_dialog};
+        use crate::shared::tv_cast::{TvMedia, tv_page};
         let mpv = self.mpv.borrow().clone();
         let current = mpv.clone();
         let media = move || {
@@ -27,14 +28,15 @@ impl VideoShell {
                     paused: false,
                     volume: (mpv.get_volume() / 100.0).clamp(0.0, 1.0),
                     muted: mpv.get_mute(),
+                    height: 0,
                 },
             })
         };
-        present_tv_dialog(root, media, move || {
+        tv_page(&self.settings, true, media, move || {
             if let Some(mpv) = &mpv {
                 mpv.pause();
             }
-        });
+        })
     }
 
     pub(super) fn show_ytdl_quality_dialog(&self, root: &adw::ApplicationWindow) {

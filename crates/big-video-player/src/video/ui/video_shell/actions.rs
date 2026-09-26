@@ -32,6 +32,7 @@ pub(super) fn install_window_actions(
             VideoShellInput::ShowPanel(PanelPage::Picture)
         }),
         ("show-hdr", || VideoShellInput::ShowPanel(PanelPage::Hdr)),
+        ("cast", || VideoShellInput::ShowPanel(PanelPage::Tv)),
         ("show-framing", || {
             VideoShellInput::ShowPanel(PanelPage::Framing)
         }),
@@ -62,12 +63,6 @@ pub(super) fn install_window_actions(
         let sender = sender.clone();
         let message = *message;
         big_app_kit::desktop::install_action(&actions, name, move || sender.input(message()));
-    }
-    {
-        let sender = sender.clone();
-        big_app_kit::desktop::install_action(&actions, "cast", move || {
-            sender.input(VideoShellInput::ShowCastDialog);
-        });
     }
     // Stream Quality (yt-dlp format picker) only applies to online/streamed
     // media — start disabled; the shell enables it on a remote `FileLoaded` and

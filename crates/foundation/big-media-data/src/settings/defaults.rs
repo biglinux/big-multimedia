@@ -171,6 +171,7 @@ pub(super) fn defaults() -> HashMap<String, String> {
 
     values.insert("sleep-timer-action".into(), "pause".into());
     values.insert("sleep-timer-minutes".into(), "30".into());
+    values.insert("tv-resolution".into(), "0".into());
 
     values.insert("radio-api-servers".into(), "de2.api.radio-browser.info,nl1.api.radio-browser.info,at1.api.radio-browser.info,de1.api.radio-browser.info".into());
 

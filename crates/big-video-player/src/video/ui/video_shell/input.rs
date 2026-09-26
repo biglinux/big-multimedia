@@ -16,8 +16,6 @@ pub enum VideoShellInput {
     Iptv(VideoIptvBrowserOutput),
     /// Open the IPTV browser dialog (header button).
     ShowIptvBrowser,
-    /// Open the cast device picker dialog (header button).
-    ShowCastDialog,
     /// The header's settings button: open the panel home, or close it.
     TogglePanel,
     /// A shortcut, chip or menu entry: open the panel straight at a section

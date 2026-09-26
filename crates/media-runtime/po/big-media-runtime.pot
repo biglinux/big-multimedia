@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: big-media-runtime 0.1.0\n"
 "Report-Msgid-Bugs-To: https://github.com/biglinux/big-multimedia/issues\n"
-"POT-Creation-Date: 2026-09-25 07:34-0300\n"
+"POT-Creation-Date: 2026-09-25 23:07-0300\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -151,8 +151,8 @@ msgstr ""
 #: crates/big-audio-player/src/audio/keybindings.rs:79
 #: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:114
 #: crates/big-video-player/src/video/ui/video_shell/input_gestures.rs:112
-#: crates/big-video-player/src/video/ui/video_shell/panel.rs:38
-#: crates/big-video-player/src/video/ui/video_shell/panel.rs:429
+#: crates/big-video-player/src/video/ui/video_shell/panel.rs:39
+#: crates/big-video-player/src/video/ui/video_shell/panel.rs:432
 #: crates/media-runtime/src/shared/audio_effects_eq.rs:90
 msgid "Equalizer"
 msgstr ""
@@ -175,7 +175,7 @@ msgstr ""
 
 #: crates/big-audio-player/src/audio/keybindings.rs:101
 #: crates/big-audio-player/src/audio/ui/audio_shell/queue_state.rs:182
-#: crates/big-video-player/src/video/ui/video_shell/panel.rs:515
+#: crates/big-video-player/src/video/ui/video_shell/panel.rs:518
 #: crates/big-video-player/src/video/ui/video_shell/playback.rs:415
 msgid "Undo"
 msgstr ""
@@ -326,7 +326,7 @@ msgstr ""
 #: crates/big-video-player/src/video/ui/preferences/general.rs:39
 #: crates/big-video-player/src/video/ui/preferences/video.rs:56
 #: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/header.rs:167
-#: crates/big-video-player/src/video/ui/video_shell/panel.rs:453
+#: crates/big-video-player/src/video/ui/video_shell/panel.rs:456
 msgid "Off"
 msgstr ""
 
@@ -374,7 +374,7 @@ msgstr ""
 #: crates/big-audio-player/src/audio/preferences.rs:250
 #: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:120
 #: crates/big-video-player/src/video/ui/preferences/mod.rs:37
-#: crates/big-video-player/src/video/ui/video_shell/panel.rs:538
+#: crates/big-video-player/src/video/ui/video_shell/panel.rs:541
 msgid "Preferences"
 msgstr ""
 
@@ -385,41 +385,41 @@ msgstr ""
 msgid "Radio"
 msgstr ""
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/chrome.rs:139
+#: crates/big-audio-player/src/audio/ui/audio_shell/chrome.rs:140
 #: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:115
 msgid "Sleep Timer"
 msgstr ""
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/chrome.rs:149
-#: crates/big-video-player/src/video/ui/video_shell/panel.rs:675
+#: crates/big-audio-player/src/audio/ui/audio_shell/chrome.rs:150
+#: crates/big-video-player/src/video/ui/video_shell/panel.rs:678
 msgid "Timer Active"
 msgstr ""
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/chrome.rs:150
-#: crates/big-video-player/src/video/ui/video_shell/panel.rs:676
+#: crates/big-audio-player/src/audio/ui/audio_shell/chrome.rs:151
+#: crates/big-video-player/src/video/ui/video_shell/panel.rs:679
 msgid "Cancel Timer"
 msgstr ""
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/chrome.rs:231
+#: crates/big-audio-player/src/audio/ui/audio_shell/chrome.rs:232
 msgid "Sleep timer started"
 msgstr ""
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/chrome.rs:257
+#: crates/big-audio-player/src/audio/ui/audio_shell/chrome.rs:258
 #: crates/big-video-player/src/video/ui/menu_dialogs.rs:248
 msgid "Sleep timer: closing player"
 msgstr ""
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/chrome.rs:265
+#: crates/big-audio-player/src/audio/ui/audio_shell/chrome.rs:266
 #: crates/big-video-player/src/video/ui/menu_dialogs.rs:256
 msgid "Sleep timer: suspending computer"
 msgstr ""
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/chrome.rs:277
+#: crates/big-audio-player/src/audio/ui/audio_shell/chrome.rs:278
 #: crates/big-video-player/src/video/ui/menu_dialogs.rs:268
 msgid "Sleep timer: shutting down"
 msgstr ""
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/chrome.rs:288
+#: crates/big-audio-player/src/audio/ui/audio_shell/chrome.rs:289
 #: crates/big-video-player/src/video/ui/menu_dialogs.rs:279
 msgid "Sleep timer: playback paused"
 msgstr ""
@@ -531,9 +531,9 @@ msgstr ""
 #: crates/big-video-player/src/video/ui/iptv/providers_dialog.rs:168
 #: crates/big-video-player/src/video/ui/menu_dialogs.rs:74
 #: crates/big-video-player/src/video/ui/video_browser_sidebar/fileops.rs:200
-#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:168
-#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:298
-#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:426
+#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:170
+#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:300
+#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:428
 #: crates/big-video-player/src/video/ui/video_shell/trim/run.rs:238
 #: crates/ui/media/big-player-ui/src/podcast_panel.rs:575
 #: crates/ui/media/big-player-ui/src/radio_panel/widgets.rs:352
@@ -708,8 +708,8 @@ msgstr ""
 #: crates/big-audio-player/src/audio/ui/unavailable_dialog.rs:75
 #: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/menu_actions.rs:199
 #: crates/big-video-player/src/video/ui/video_shell/component.rs:131
-#: crates/big-video-player/src/video/ui/video_shell/panel.rs:123
-#: crates/big-video-player/src/video/ui/video_shell/panel.rs:126
+#: crates/big-video-player/src/video/ui/video_shell/panel.rs:125
+#: crates/big-video-player/src/video/ui/video_shell/panel.rs:128
 msgid "Close"
 msgstr ""
 
@@ -804,7 +804,7 @@ msgid "Open Folder"
 msgstr ""
 
 #: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:441
-#: crates/big-video-player/src/video/ui/video_shell/actions.rs:153
+#: crates/big-video-player/src/video/ui/video_shell/actions.rs:148
 msgid "Open File"
 msgstr ""
 
@@ -925,7 +925,7 @@ msgstr ""
 #: crates/big-audio-player/src/audio/ui/playlist_interactions.rs:427
 #: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/context_menu.rs:41
 #: crates/big-video-player/src/video/ui/video_controls_bar/zones.rs:461
-#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:168
+#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:170
 msgid "Play"
 msgstr ""
 
@@ -1040,7 +1040,7 @@ msgstr ""
 #: crates/big-audio-player/src/audio/ui/library_io.rs:108
 #: crates/big-video-player/src/video/ui/menu_dialogs.rs:330
 #: crates/big-video-player/src/video/ui/video_shell/component.rs:245
-#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:298
+#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:300
 msgid "Open"
 msgstr ""
 
@@ -1277,14 +1277,15 @@ msgid "Smartphone"
 msgstr ""
 
 #: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:119
-#: crates/big-video-player/src/video/ui/video_shell/panel.rs:543
+#: crates/big-video-player/src/video/ui/video_shell/panel.rs:546
 #: crates/ui/media/big-player-ui/src/appearance/window.rs:76
 msgid "Appearance"
 msgstr ""
 
 #: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:123
-#: crates/big-video-player/src/video/ui/video_shell/panel.rs:459
-#: crates/media-runtime/src/shared/tv_cast.rs:105
+#: crates/big-video-player/src/video/ui/video_shell/panel.rs:42
+#: crates/big-video-player/src/video/ui/video_shell/panel.rs:462
+#: crates/media-runtime/src/shared/tv_cast.rs:652
 msgid "Play on a TV"
 msgstr ""
 
@@ -1295,7 +1296,7 @@ msgid "Keyboard Shortcuts"
 msgstr ""
 
 #: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:128
-#: crates/big-video-player/src/video/ui/video_shell/panel.rs:551
+#: crates/big-video-player/src/video/ui/video_shell/panel.rs:554
 msgid "About"
 msgstr ""
 
@@ -1586,7 +1587,7 @@ msgid ""
 msgstr ""
 
 #: crates/big-video-player/src/lib.rs:26
-#: crates/big-video-player/src/video/ui/video_shell/actions.rs:130
+#: crates/big-video-player/src/video/ui/video_shell/actions.rs:125
 msgid "Big Video Player"
 msgstr ""
 
@@ -1793,8 +1794,8 @@ msgid "Open file"
 msgstr ""
 
 #: crates/big-video-player/src/video/keybindings.rs:302
-#: crates/big-video-player/src/video/ui/video_shell/actions.rs:165
-#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:149
+#: crates/big-video-player/src/video/ui/video_shell/actions.rs:160
+#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:151
 msgid "Open URL"
 msgstr ""
 
@@ -2458,8 +2459,8 @@ msgstr ""
 #: crates/big-video-player/src/video/ui/media_adjust.rs:117
 #: crates/big-video-player/src/video/ui/media_details_dialog.rs:198
 #: crates/big-video-player/src/video/ui/video_shell/input_gestures.rs:108
-#: crates/big-video-player/src/video/ui/video_shell/panel.rs:34
-#: crates/big-video-player/src/video/ui/video_shell/panel.rs:400
+#: crates/big-video-player/src/video/ui/video_shell/panel.rs:35
+#: crates/big-video-player/src/video/ui/video_shell/panel.rs:403
 msgid "HDR"
 msgstr ""
 
@@ -2469,7 +2470,7 @@ msgstr ""
 
 #: crates/big-video-player/src/video/ui/media_adjust.rs:119
 #: crates/big-video-player/src/video/ui/video_shell/adjustments.rs:175
-#: crates/big-video-player/src/video/ui/video_shell/panel.rs:391
+#: crates/big-video-player/src/video/ui/video_shell/panel.rs:394
 msgid "Normal"
 msgstr ""
 
@@ -2674,8 +2675,8 @@ msgid "General"
 msgstr ""
 
 #: crates/big-video-player/src/video/ui/media_details_dialog.rs:109
-#: crates/big-video-player/src/video/ui/video_shell/panel.rs:39
-#: crates/big-video-player/src/video/ui/video_shell/panel.rs:437
+#: crates/big-video-player/src/video/ui/video_shell/panel.rs:40
+#: crates/big-video-player/src/video/ui/video_shell/panel.rs:440
 msgid "Chapters"
 msgstr ""
 
@@ -2690,6 +2691,7 @@ msgstr ""
 
 #: crates/big-video-player/src/video/ui/media_details_dialog.rs:152
 #: crates/media-runtime/src/media/metadata_cache/detailed_video_metadata.rs:113
+#: crates/media-runtime/src/shared/tv_cast.rs:186
 #: crates/ui/media/big-media-components/src/media/file_metadata_dialog.rs:66
 msgid "Resolution"
 msgstr ""
@@ -2769,7 +2771,7 @@ msgstr ""
 #: crates/big-video-player/src/video/ui/menu_dialogs.rs:132
 #: crates/big-video-player/src/video/ui/menu_dialogs.rs:136
 #: crates/big-video-player/src/video/ui/menu_dialogs.rs:147
-#: crates/big-video-player/src/video/ui/video_shell/component.rs:669
+#: crates/big-video-player/src/video/ui/video_shell/component.rs:664
 #: crates/big-video-player/src/video/ui/video_shell/playback.rs:136
 msgid "Screenshot failed"
 msgstr ""
@@ -3278,8 +3280,8 @@ msgstr ""
 
 #: crates/big-video-player/src/video/ui/preferences/video.rs:24
 #: crates/big-video-player/src/video/ui/video_shell/input_gestures.rs:109
-#: crates/big-video-player/src/video/ui/video_shell/panel.rs:35
-#: crates/big-video-player/src/video/ui/video_shell/panel.rs:414
+#: crates/big-video-player/src/video/ui/video_shell/panel.rs:36
+#: crates/big-video-player/src/video/ui/video_shell/panel.rs:417
 msgid "Picture"
 msgstr ""
 
@@ -3421,7 +3423,7 @@ msgid "Add Video Files"
 msgstr ""
 
 #: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/header.rs:118
-#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:127
+#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:129
 msgid "Video files"
 msgstr ""
 
@@ -3651,12 +3653,12 @@ msgstr ""
 msgid "Extract Audio…"
 msgstr ""
 
-#: crates/big-video-player/src/video/ui/video_shell/actions.rs:137
+#: crates/big-video-player/src/video/ui/video_shell/actions.rs:132
 msgid "Drop a file or open one to start"
 msgstr ""
 
-#: crates/big-video-player/src/video/ui/video_shell/actions.rs:159
-#: crates/big-video-player/src/video/ui/video_shell/component.rs:744
+#: crates/big-video-player/src/video/ui/video_shell/actions.rs:154
+#: crates/big-video-player/src/video/ui/video_shell/component.rs:739
 msgid "Open Recent"
 msgstr ""
 
@@ -3751,7 +3753,7 @@ msgid "Stops at {time}"
 msgstr ""
 
 #: crates/big-video-player/src/video/ui/video_shell/adjustments.rs:343
-#: crates/big-video-player/src/video/ui/video_shell/panel.rs:236
+#: crates/big-video-player/src/video/ui/video_shell/panel.rs:238
 #, rust-format
 msgid "{n} change"
 msgid_plural "{n} changes"
@@ -3764,8 +3766,8 @@ msgstr ""
 
 #: crates/big-video-player/src/video/ui/video_shell/component.rs:123
 #: crates/big-video-player/src/video/ui/video_shell/component.rs:126
-#: crates/big-video-player/src/video/ui/video_shell/panel.rs:33
-#: crates/big-video-player/src/video/ui/video_shell/panel.rs:150
+#: crates/big-video-player/src/video/ui/video_shell/panel.rs:34
+#: crates/big-video-player/src/video/ui/video_shell/panel.rs:152
 msgid "Settings"
 msgstr ""
 
@@ -3789,147 +3791,147 @@ msgstr ""
 msgid "Keep Above"
 msgstr ""
 
-#: crates/big-video-player/src/video/ui/video_shell/component.rs:743
+#: crates/big-video-player/src/video/ui/video_shell/component.rs:738
 #: crates/big-video-player/src/video/ui/video_shell/input_gestures.rs:115
 msgid "Open File…"
 msgstr ""
 
-#: crates/big-video-player/src/video/ui/video_shell/component.rs:745
+#: crates/big-video-player/src/video/ui/video_shell/component.rs:740
 #: crates/big-video-player/src/video/ui/video_shell/input_gestures.rs:116
 msgid "Open URL…"
 msgstr ""
 
-#: crates/big-video-player/src/video/ui/video_shell/component.rs:746
+#: crates/big-video-player/src/video/ui/video_shell/component.rs:741
 msgid "Open Disc…"
 msgstr ""
 
-#: crates/big-video-player/src/video/ui/video_shell/component.rs:747
+#: crates/big-video-player/src/video/ui/video_shell/component.rs:742
 msgid "TV Channels (IPTV)…"
 msgstr ""
 
-#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:49
+#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:51
 msgid "Best available"
 msgstr ""
 
-#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:51
+#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:53
 msgid "Highest video and audio quality"
 msgstr ""
 
-#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:54
+#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:56
 msgid "Up to 1080p"
 msgstr ""
 
-#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:56
+#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:58
 msgid "Prefer Full HD or lower"
 msgstr ""
 
-#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:59
+#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:61
 msgid "Up to 720p"
 msgstr ""
 
-#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:61
+#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:63
 msgid "Prefer HD or lower"
 msgstr ""
 
-#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:64
+#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:66
 msgid "Up to 480p"
 msgstr ""
 
-#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:66
+#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:68
 msgid "Prefer SD or lower"
 msgstr ""
 
-#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:69
+#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:71
 msgid "Audio only"
 msgstr ""
 
-#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:71
+#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:73
 msgid "Use the best audio stream"
 msgstr ""
 
-#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:79
+#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:81
 msgid "Online Video Quality"
 msgstr ""
 
-#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:88
+#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:90
 msgid "Use this quality"
 msgstr ""
 
-#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:118
+#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:120
 msgid "IPTV"
 msgstr ""
 
-#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:126
+#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:128
 msgid "Open Video"
 msgstr ""
 
-#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:128
+#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:130
 msgid "Playlist files"
 msgstr ""
 
-#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:129
+#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:131
 msgid "All files"
 msgstr ""
 
-#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:158
+#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:160
 msgid "Supports YouTube, HTTP streams, RTSP, RTMP, DVD, and Blu-ray URLs."
 msgstr ""
 
-#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:162
+#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:164
 msgid "Media URL"
 msgstr ""
 
-#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:222
+#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:224
 msgid "Recent Files"
 msgstr ""
 
-#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:232
+#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:234
 msgid "No Recent Files"
 msgstr ""
 
-#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:243
+#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:245
 msgid "Open recent file"
 msgstr ""
 
-#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:272
+#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:274
 msgid "Open Disc"
 msgstr ""
 
-#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:281
+#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:283
 msgid "Choose a disc type and enter the device, ISO, or folder path."
 msgstr ""
 
-#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:285
+#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:287
 msgid "Disc type"
 msgstr ""
 
-#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:286
+#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:288
 msgid "DVD"
 msgstr ""
 
-#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:286
+#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:288
 msgid "Blu-ray"
 msgstr ""
 
-#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:289
+#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:291
 msgid "Disc device path"
 msgstr ""
 
-#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:419
+#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:421
 msgid "Restore Default Settings?"
 msgstr ""
 
-#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:421
+#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:423
 msgid ""
 "Every setting, including appearance, goes back to its default value. Some "
 "changes take effect after reopening the player."
 msgstr ""
 
-#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:426
+#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:428
 msgid "Restore"
 msgstr ""
 
-#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:440
+#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:442
 msgid ""
 "Defaults are applied for this session; saving continues in the background."
 msgstr ""
@@ -3943,76 +3945,76 @@ msgid "Cannot export a network stream"
 msgstr ""
 
 #: crates/big-video-player/src/video/ui/video_shell/input_gestures.rs:110
-#: crates/big-video-player/src/video/ui/video_shell/panel.rs:36
-#: crates/big-video-player/src/video/ui/video_shell/panel.rs:419
+#: crates/big-video-player/src/video/ui/video_shell/panel.rs:37
+#: crates/big-video-player/src/video/ui/video_shell/panel.rs:422
 msgid "Zoom and position"
 msgstr ""
 
 #: crates/big-video-player/src/video/ui/video_shell/input_gestures.rs:111
-#: crates/big-video-player/src/video/ui/video_shell/panel.rs:37
-#: crates/big-video-player/src/video/ui/video_shell/panel.rs:424
+#: crates/big-video-player/src/video/ui/video_shell/panel.rs:38
+#: crates/big-video-player/src/video/ui/video_shell/panel.rs:427
 msgid "Effects and filters"
 msgstr ""
 
 #: crates/big-video-player/src/video/ui/video_shell/input_gestures.rs:117
-#: crates/big-video-player/src/video/ui/video_shell/panel.rs:483
+#: crates/big-video-player/src/video/ui/video_shell/panel.rs:486
 msgid "About this video"
 msgstr ""
 
-#: crates/big-video-player/src/video/ui/video_shell/panel.rs:40
-#: crates/big-video-player/src/video/ui/video_shell/panel.rs:450
+#: crates/big-video-player/src/video/ui/video_shell/panel.rs:41
+#: crates/big-video-player/src/video/ui/video_shell/panel.rs:453
 msgid "Stop after…"
 msgstr ""
 
-#: crates/big-video-player/src/video/ui/video_shell/panel.rs:112
-#: crates/big-video-player/src/video/ui/video_shell/panel.rs:115
+#: crates/big-video-player/src/video/ui/video_shell/panel.rs:114
+#: crates/big-video-player/src/video/ui/video_shell/panel.rs:117
 msgid "Back"
 msgstr ""
 
-#: crates/big-video-player/src/video/ui/video_shell/panel.rs:438
+#: crates/big-video-player/src/video/ui/video_shell/panel.rs:441
 #, rust-format
 msgid "{current} of {total}"
 msgstr ""
 
-#: crates/big-video-player/src/video/ui/video_shell/panel.rs:460
+#: crates/big-video-player/src/video/ui/video_shell/panel.rs:463
 msgid "Chromecast or DLNA"
 msgstr ""
 
-#: crates/big-video-player/src/video/ui/video_shell/panel.rs:471
+#: crates/big-video-player/src/video/ui/video_shell/panel.rs:474
 msgid "Online quality"
 msgstr ""
 
-#: crates/big-video-player/src/video/ui/video_shell/panel.rs:472
+#: crates/big-video-player/src/video/ui/video_shell/panel.rs:475
 msgid "Choose"
 msgstr ""
 
-#: crates/big-video-player/src/video/ui/video_shell/panel.rs:516
+#: crates/big-video-player/src/video/ui/video_shell/panel.rs:519
 msgid "Put back what was just set to normal"
 msgstr ""
 
-#: crates/big-video-player/src/video/ui/video_shell/panel.rs:548
+#: crates/big-video-player/src/video/ui/video_shell/panel.rs:551
 msgid "Shortcuts"
 msgstr ""
 
-#: crates/big-video-player/src/video/ui/video_shell/panel.rs:589
+#: crates/big-video-player/src/video/ui/video_shell/panel.rs:592
 msgid "Changed"
 msgstr ""
 
-#: crates/big-video-player/src/video/ui/video_shell/panel.rs:601
-#: crates/big-video-player/src/video/ui/video_shell/panel.rs:624
+#: crates/big-video-player/src/video/ui/video_shell/panel.rs:604
+#: crates/big-video-player/src/video/ui/video_shell/panel.rs:627
 msgid "Back to normal"
 msgstr ""
 
-#: crates/big-video-player/src/video/ui/video_shell/panel.rs:606
+#: crates/big-video-player/src/video/ui/video_shell/panel.rs:609
 #, rust-format
 msgid "Undo: {setting}"
 msgstr ""
 
-#: crates/big-video-player/src/video/ui/video_shell/panel.rs:625
+#: crates/big-video-player/src/video/ui/video_shell/panel.rs:628
 msgid "Undo every change to the picture and sound"
 msgstr ""
 
-#: crates/big-video-player/src/video/ui/video_shell/panel.rs:792
+#: crates/big-video-player/src/video/ui/video_shell/panel.rs:795
 msgid "Jump to a chapter"
 msgstr ""
 
@@ -4518,86 +4520,109 @@ msgstr ""
 msgid "Start Timer"
 msgstr ""
 
-#: crates/media-runtime/src/shared/tv_cast.rs:47
+#: crates/media-runtime/src/shared/tv_cast.rs:78
 msgid "Smart TV (DLNA)"
 msgstr ""
 
-#: crates/media-runtime/src/shared/tv_cast.rs:49
+#: crates/media-runtime/src/shared/tv_cast.rs:80
 msgid "Chromecast"
 msgstr ""
 
-#: crates/media-runtime/src/shared/tv_cast.rs:68
+#: crates/media-runtime/src/shared/tv_cast.rs:99
 msgid "This TV cannot play this file."
 msgstr ""
 
-#: crates/media-runtime/src/shared/tv_cast.rs:70
+#: crates/media-runtime/src/shared/tv_cast.rs:101
 msgid "Something is already playing on a TV. Stop it first."
 msgstr ""
 
-#: crates/media-runtime/src/shared/tv_cast.rs:72
-msgid "That TV is no longer on the network."
+#: crates/media-runtime/src/shared/tv_cast.rs:103
+msgid "That TV is no longer on the network. Search again."
 msgstr ""
 
-#: crates/media-runtime/src/shared/tv_cast.rs:74
-#, rust-format
-msgid "Could not start on the TV: {error}"
+#: crates/media-runtime/src/shared/tv_cast.rs:111
+msgid "Same as the video"
 msgstr ""
 
-#: crates/media-runtime/src/shared/tv_cast.rs:115
-#: crates/media-runtime/src/shared/tv_cast.rs:347
-#: crates/media-runtime/src/shared/tv_cast.rs:422
-msgid "Looking for TVs on this network…"
-msgstr ""
-
-#: crates/media-runtime/src/shared/tv_cast.rs:125
+#: crates/media-runtime/src/shared/tv_cast.rs:136
 msgid "Now on the TV"
 msgstr ""
 
-#: crates/media-runtime/src/shared/tv_cast.rs:138
-#: crates/media-runtime/src/shared/tv_cast.rs:378
-msgid "Pause"
-msgstr ""
-
-#: crates/media-runtime/src/shared/tv_cast.rs:142
+#: crates/media-runtime/src/shared/tv_cast.rs:148
+#: crates/media-runtime/src/shared/tv_cast.rs:152
 msgid "Stop on the TV"
 msgstr ""
 
-#: crates/media-runtime/src/shared/tv_cast.rs:167
-msgid "TVs found"
-msgstr ""
-
-#: crates/media-runtime/src/shared/tv_cast.rs:171
+#: crates/media-runtime/src/shared/tv_cast.rs:160
+#: crates/media-runtime/src/shared/tv_cast.rs:164
 msgid "Search again"
 msgstr ""
 
-#: crates/media-runtime/src/shared/tv_cast.rs:199
-msgid "To play on a TV or Chromecast, install BigNetScreen."
+#: crates/media-runtime/src/shared/tv_cast.rs:166
+msgid "TVs on this network"
 msgstr ""
 
-#: crates/media-runtime/src/shared/tv_cast.rs:266
-msgid "Open a video first, then choose the TV."
+#: crates/media-runtime/src/shared/tv_cast.rs:167
+msgid "Starts on the TV where it is now, and pauses here."
 msgstr ""
 
-#: crates/media-runtime/src/shared/tv_cast.rs:274
-#, rust-format
-msgid "Starting on {name}…"
+#: crates/media-runtime/src/shared/tv_cast.rs:173
+#: crates/media-runtime/src/shared/tv_cast.rs:611
+msgid "Looking for TVs…"
 msgstr ""
 
-#: crates/media-runtime/src/shared/tv_cast.rs:366
-#, rust-format
-msgid "{title} on {tv}"
+#: crates/media-runtime/src/shared/tv_cast.rs:187
+msgid "Size of the picture sent to the TV"
 msgstr ""
 
-#: crates/media-runtime/src/shared/tv_cast.rs:376
+#: crates/media-runtime/src/shared/tv_cast.rs:264
+msgid "BigNetScreen is not installed"
+msgstr ""
+
+#: crates/media-runtime/src/shared/tv_cast.rs:265
+msgid "Install it to play on a TV or Chromecast."
+msgstr ""
+
+#: crates/media-runtime/src/shared/tv_cast.rs:280
+msgid "Could not reach BigNetScreen"
+msgstr ""
+
+#: crates/media-runtime/src/shared/tv_cast.rs:435
+msgid "Play something first, then choose the TV."
+msgstr ""
+
+#: crates/media-runtime/src/shared/tv_cast.rs:505
+#: crates/media-runtime/src/shared/tv_cast.rs:571
+#: crates/ui/media/big-player-ui/src/download_panel.rs:200
+msgid "Starting…"
+msgstr ""
+
+#: crates/media-runtime/src/shared/tv_cast.rs:512
 msgid "Continue"
 msgstr ""
 
-#: crates/media-runtime/src/shared/tv_cast.rs:420
-msgid "Choose the TV to play on:"
+#: crates/media-runtime/src/shared/tv_cast.rs:514
+msgid "Pause"
 msgstr ""
 
-#: crates/media-runtime/src/shared/tv_cast.rs:424
-msgid "No TV found. Check that it is on and on the same network."
+#: crates/media-runtime/src/shared/tv_cast.rs:591
+msgid "BigNetScreen stopped"
+msgstr ""
+
+#: crates/media-runtime/src/shared/tv_cast.rs:592
+msgid "Search again to reconnect."
+msgstr ""
+
+#: crates/media-runtime/src/shared/tv_cast.rs:598
+msgid "Could not start on the TV"
+msgstr ""
+
+#: crates/media-runtime/src/shared/tv_cast.rs:616
+msgid "No TV found"
+msgstr ""
+
+#: crates/media-runtime/src/shared/tv_cast.rs:617
+msgid "Check that the TV is on and on the same network as this computer."
 msgstr ""
 
 #: crates/ui/generic/big-relm4-components/src/feedback/hover_popover.rs:264
@@ -4864,10 +4889,6 @@ msgstr ""
 
 #: crates/ui/media/big-player-ui/src/download_panel.rs:190
 msgid "Cancel download"
-msgstr ""
-
-#: crates/ui/media/big-player-ui/src/download_panel.rs:200
-msgid "Starting…"
 msgstr ""
 
 #: crates/ui/media/big-player-ui/src/download_panel.rs:278

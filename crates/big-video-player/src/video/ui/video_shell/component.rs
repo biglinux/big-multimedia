@@ -585,11 +585,6 @@ impl Component for VideoShell {
                         self.show_iptv_browser(root);
                     }
                 }
-                VideoShellInput::ShowCastDialog => {
-                    if let Some(root) = window_ref {
-                        self.show_cast_dialog(root);
-                    }
-                }
                 VideoShellInput::TogglePanel => self.toggle_panel(&sender),
                 VideoShellInput::ShowPanel(page) => self.show_panel(page, true, &sender),
                 VideoShellInput::PanelNavigate(page) => self.show_panel(page, false, &sender),

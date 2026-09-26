@@ -94,6 +94,7 @@ pub(super) fn valid(key: &str, value: &str) -> bool {
         | "ui-window-radius"
         | "audio-volume"
         | "sleep-timer-minutes" => value.parse::<i32>().is_ok(),
+        "tv-resolution" => matches!(value, "0" | "720" | "1080" | "1440" | "2160"),
         "volume"
         | "sub-border-size"
         | "sub-shadow-offset"

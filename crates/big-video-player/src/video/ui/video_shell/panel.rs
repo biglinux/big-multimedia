@@ -25,6 +25,7 @@ pub enum PanelPage {
     Sound,
     Chapters,
     SleepTimer,
+    Tv,
 }
 
 impl PanelPage {
@@ -38,6 +39,7 @@ impl PanelPage {
             Self::Sound => i18n("Equalizer"),
             Self::Chapters => i18n("Chapters"),
             Self::SleepTimer => i18n("Stop after…"),
+            Self::Tv => i18n("Play on a TV"),
         }
     }
 
@@ -321,6 +323,7 @@ impl VideoShell {
             PanelPage::Sound => self.sound_page(&mpv),
             PanelPage::Chapters => chapters_page(&mpv, sender),
             PanelPage::SleepTimer => self.sleep_timer_page(sender),
+            PanelPage::Tv => self.tv_page(),
         };
         if page != PanelPage::Effects {
             panel.effects.take();
@@ -459,7 +462,7 @@ impl VideoShell {
             name: i18n("Play on a TV"),
             state: i18n("Chromecast or DLNA"),
             changed: false,
-            target: BlockTarget::Action("win.cast"),
+            target: BlockTarget::Page(PanelPage::Tv),
         });
         if self
             .win_actions

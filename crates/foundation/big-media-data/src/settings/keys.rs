@@ -157,6 +157,9 @@ pub const AUDIO_HIGH_CONTRAST: BoolKey = BoolKey("audio-high-contrast");
 pub const SLEEP_TIMER_ACTION: StringKey = StringKey("sleep-timer-action");
 pub const SLEEP_TIMER_MINUTES: IntKey = IntKey("sleep-timer-minutes");
 
+// "Play on a TV": the frame height a decoded file is sent at, 0 = its own
+pub const TV_RESOLUTION: IntKey = IntKey("tv-resolution");
+
 // Library
 pub const LIBRARY_GROUPING: StringKey = StringKey("library-grouping");
 pub const LIBRARY_COLUMN_WIDTHS: StringKey = StringKey("library-column-widths");
