@@ -156,18 +156,16 @@ fn control_name(name: &str) -> &'static str {
 /// the responsive breakpoint hides on a narrow bar, and the hover popovers.
 pub(super) struct StartBoxWidgets {
     pub(super) start_box: gtk::Box,
-    pub(super) volume_box: gtk::Box,
+    /// Both volume controls, placed as one.
+    pub(super) volume_zone: gtk::Box,
     pub(super) speed_box: gtk::Box,
     pub(super) voice_box: gtk::Box,
     pub(super) hover_popovers: Vec<gtk::Popover>,
-    pub(super) readout_labels: [gtk::Label; 3],
-    /// Volume scale + its button, plus the guard that lets the shell mirror an
-    /// external mixer change onto the scale without pushing it back to the server.
-    pub(super) volume_scale: gtk::Scale,
-    pub(super) sound: SoundIndicator,
-    pub(super) suppress_volume: std::rc::Rc<std::cell::Cell<bool>>,
-    /// The popover's heading: "Volume", or "TV volume" while a TV has it.
-    pub(super) volume_title: Option<gtk::Label>,
+    pub(super) readout_labels: [gtk::Label; 4],
+    /// The player's volume, the TV's while a TV has the controls.
+    pub(super) volume: VolumeControl,
+    /// The PC's own, while the player plays along with the TV.
+    pub(super) pc_volume: VolumeControl,
 }
 
 /// The volume control's face: its button, the readout beside it and the
@@ -267,18 +265,22 @@ pub(super) fn build_start_box(
         .valign(gtk::Align::Center)
         .build();
 
-    // Volume.
-    let volume_box = gtk::Box::new(gtk::Orientation::Horizontal, 2);
-    let volume_button = osd_button("audio-volume-high-symbolic", &i18n("Mute"));
-    let volume_label = gtk::Label::builder()
-        .label("100")
-        .width_chars(3)
-        .xalign(0.0)
-        .css_classes(["osd-value-label"])
-        .build();
-    volume_box.append(&volume_button);
-    volume_box.append(&volume_label);
-    start_box.append(&volume_box);
+    // Volume: the one the player has, and the PC's own beside it while the
+    // player plays along with a TV that has the first.
+    let initial_volume = settings.get_double(keys::VOLUME) * 100.0;
+    let volume = build_volume_control(settings, mpv, Some(tv), &i18n("TV"), initial_volume);
+    let pc_volume = build_volume_control(settings, mpv, None, &i18n("PC"), initial_volume);
+    pc_volume.volume_box.set_visible(false);
+    if let Some(title) = &pc_volume.title {
+        title.set_label(&i18n("PC volume"));
+    }
+    pc_volume
+        .scale
+        .update_property(&[gtk::accessible::Property::Label(&i18n("PC volume"))]);
+    let volume_zone = gtk::Box::new(gtk::Orientation::Horizontal, 2);
+    volume_zone.append(&volume.volume_box);
+    volume_zone.append(&pc_volume.volume_box);
+    start_box.append(&volume_zone);
 
     // Speed.
     let speed_box = gtk::Box::new(gtk::Orientation::Horizontal, 2);
@@ -308,98 +310,6 @@ pub(super) fn build_start_box(
     voice_box.append(&voice_button);
     voice_box.append(&voice_label);
     start_box.append(&voice_box);
-
-    let maximum_volume = f64::from(settings.get_int(keys::VOLUME_MAX)).max(100.0);
-    let initial_volume = settings.get_double(keys::VOLUME) * 100.0;
-    let (volume_popover, volume_scale) =
-        build_volume_popover(&volume_box, maximum_volume, initial_volume);
-    // Mute said in words, for whoever reaches the volume by hovering and does
-    // not know that the speaker button itself silences.
-    let mute_toggle = gtk::Button::builder()
-        .label(i18n("Mute"))
-        .css_classes(["flat"])
-        .build();
-    let volume_title = volume_popover
-        .child()
-        .and_then(|content| content.first_child())
-        .and_downcast::<gtk::Label>();
-    if let Some(content) = volume_popover.child().and_downcast::<gtk::Box>() {
-        content.append(&mute_toggle);
-    }
-    let sound = SoundIndicator {
-        volume_box: volume_box.clone(),
-        button: volume_button.clone(),
-        label: volume_label.clone(),
-        toggle: mute_toggle.clone(),
-        muted: Rc::new(std::cell::Cell::new(false)),
-    };
-    sound.show(false, initial_volume);
-    // Set true while mirroring an external mixer change onto the scale, so the
-    // handler updates only the readout/icon and does not push the value back to
-    // the sound server (or clear mute) — which would fight the external change.
-    let suppress_volume = std::rc::Rc::new(std::cell::Cell::new(false));
-    {
-        // Capture the button weakly: the scale's handler must not keep the
-        // button alive (mutual cycle → leak on close).
-        let mpv = mpv.clone();
-        let tv = tv.clone();
-        let sound = sound.downgrade();
-        let suppress_volume = suppress_volume.clone();
-        volume_scale.connect_value_changed(move |scale| {
-            let value = scale.value();
-            // A mixer change mirrored here keeps its mute; moving the slider
-            // is asking for sound.
-            let external = suppress_volume.get();
-            if let Some(sound) = sound.upgrade() {
-                sound.show(external && sound.muted(), value);
-            }
-            if external {
-                return;
-            }
-            // The TV's level is 0–1: its own 100 is the ceiling there.
-            if let Some(state) = tv.attached() {
-                tv.control("volume", (value / 100.0).clamp(0.0, 1.0));
-                if state.muted == Some(true) {
-                    tv.control("unmute", 0.0);
-                }
-                return;
-            }
-            if let Some(mpv) = mpv.borrow().as_ref() {
-                mpv.set_volume(value);
-                mpv.set_mute(false);
-            }
-        });
-    }
-    // Mute toggle on the volume button and on the popover's button. Weak
-    // scale and indicator refs: no cycle through the widgets they live on.
-    for button in [&volume_button, &mute_toggle] {
-        let mpv = mpv.clone();
-        let tv = tv.clone();
-        let scale = volume_scale.downgrade();
-        let sound = sound.downgrade();
-        button.connect_clicked(move |_| {
-            if let Some(state) = tv.attached() {
-                let muted = state.muted != Some(true);
-                tv.control(if muted { "mute" } else { "unmute" }, 0.0);
-                if let (Some(sound), Some(scale)) = (sound.upgrade(), scale.upgrade()) {
-                    sound.show(muted, scale.value());
-                }
-                return;
-            }
-            let (Some(mpv), Some(scale)) = (mpv.borrow().clone(), scale.upgrade()) else {
-                return;
-            };
-            let muted = !mpv.get_mute();
-            mpv.set_mute(muted);
-            // Unmuting at level 0 would still be silent.
-            if !muted && scale.value() <= 0.0 {
-                scale.set_value(UNMUTE_MINIMUM_VOLUME);
-            }
-            if let Some(sound) = sound.upgrade() {
-                sound.show(muted, scale.value());
-            }
-        });
-    }
 
     let speed_popover = build_speed_popover(&speed_box, &speed_button, &speed_label, {
         let mpv = mpv.clone();
@@ -457,7 +367,8 @@ pub(super) fn build_start_box(
     }
 
     let _hover_group = setup_exclusive_hover_popover_group([
-        (&volume_box, &volume_popover),
+        (&volume.volume_box, &volume.popover),
+        (&pc_volume.volume_box, &pc_volume.popover),
         (&speed_box, &speed_popover),
         (&voice_box, &voice_popover),
     ]);
@@ -466,15 +377,169 @@ pub(super) fn build_start_box(
 
     StartBoxWidgets {
         start_box,
-        volume_box,
+        volume_zone,
         speed_box,
         voice_box,
-        hover_popovers: vec![volume_popover, speed_popover, voice_popover],
-        readout_labels: [volume_label, speed_label, voice_label],
-        volume_scale,
+        hover_popovers: vec![
+            volume.popover.clone(),
+            pc_volume.popover.clone(),
+            speed_popover,
+            voice_popover,
+        ],
+        readout_labels: [
+            volume.label.clone(),
+            pc_volume.label.clone(),
+            speed_label,
+            voice_label,
+        ],
+        volume,
+        pc_volume,
+    }
+}
+
+/// One volume control: its button and readout on the bar, and the slider in
+/// its hover popover.
+pub(super) struct VolumeControl {
+    pub(super) volume_box: gtk::Box,
+    /// Says whose sound it is, shown while there are two.
+    pub(super) mark: gtk::Label,
+    label: gtk::Label,
+    popover: gtk::Popover,
+    pub(super) scale: gtk::Scale,
+    pub(super) sound: SoundIndicator,
+    /// Set while mirroring a change from elsewhere onto the slider, so it is
+    /// not pushed back.
+    pub(super) suppress: Rc<std::cell::Cell<bool>>,
+    /// The popover's heading: "Volume", "TV volume" or "PC volume".
+    pub(super) title: Option<gtk::Label>,
+}
+
+/// A volume control for mpv, or for the TV while `tv` has the controls.
+/// `mark` is the word that tells it apart from the other one.
+fn build_volume_control(
+    settings: &Settings,
+    mpv: &MpvSlot,
+    tv: Option<&Rc<crate::shared::tv_cast::TvLink>>,
+    mark: &str,
+    initial_volume: f64,
+) -> VolumeControl {
+    let volume_box = gtk::Box::new(gtk::Orientation::Horizontal, 2);
+    let mark = gtk::Label::builder()
+        .label(mark)
+        .css_classes(["caption-heading", "dim-label"])
+        .margin_start(4)
+        .visible(false)
+        .build();
+    let volume_button = osd_button("audio-volume-high-symbolic", &i18n("Mute"));
+    let volume_label = gtk::Label::builder()
+        .label("100")
+        .width_chars(3)
+        .xalign(0.0)
+        .css_classes(["osd-value-label"])
+        .build();
+    volume_box.append(&mark);
+    volume_box.append(&volume_button);
+    volume_box.append(&volume_label);
+
+    let maximum_volume = f64::from(settings.get_int(keys::VOLUME_MAX)).max(100.0);
+    let (volume_popover, volume_scale) =
+        build_volume_popover(&volume_box, maximum_volume, initial_volume);
+    // Mute said in words, for whoever reaches the volume by hovering and does
+    // not know that the speaker button itself silences.
+    let mute_toggle = gtk::Button::builder()
+        .label(i18n("Mute"))
+        .css_classes(["flat"])
+        .build();
+    let volume_title = volume_popover
+        .child()
+        .and_then(|content| content.first_child())
+        .and_downcast::<gtk::Label>();
+    if let Some(content) = volume_popover.child().and_downcast::<gtk::Box>() {
+        content.append(&mute_toggle);
+    }
+    let sound = SoundIndicator {
+        volume_box: volume_box.clone(),
+        button: volume_button.clone(),
+        label: volume_label.clone(),
+        toggle: mute_toggle.clone(),
+        muted: Rc::new(std::cell::Cell::new(false)),
+    };
+    sound.show(false, initial_volume);
+    // Set true while mirroring an external mixer change onto the scale, so the
+    // handler updates only the readout/icon and does not push the value back to
+    // the sound server (or clear mute) — which would fight the external change.
+    let suppress_volume = Rc::new(std::cell::Cell::new(false));
+    {
+        // Capture the button weakly: the scale's handler must not keep the
+        // button alive (mutual cycle → leak on close).
+        let mpv = mpv.clone();
+        let tv = tv.cloned();
+        let sound = sound.downgrade();
+        let suppress_volume = suppress_volume.clone();
+        volume_scale.connect_value_changed(move |scale| {
+            let value = scale.value();
+            // A mixer change mirrored here keeps its mute; moving the slider
+            // is asking for sound.
+            let external = suppress_volume.get();
+            if let Some(sound) = sound.upgrade() {
+                sound.show(external && sound.muted(), value);
+            }
+            if external {
+                return;
+            }
+            // The TV's level is 0–1: its own 100 is the ceiling there.
+            if let Some((tv, state)) = tv.as_ref().and_then(|tv| Some((tv, tv.attached()?))) {
+                tv.control("volume", (value / 100.0).clamp(0.0, 1.0));
+                if state.muted == Some(true) {
+                    tv.control("unmute", 0.0);
+                }
+                return;
+            }
+            if let Some(mpv) = mpv.borrow().as_ref() {
+                mpv.set_volume(value);
+                mpv.set_mute(false);
+            }
+        });
+    }
+    // Mute toggle on the volume button and on the popover's button. Weak
+    // scale and indicator refs: no cycle through the widgets they live on.
+    for button in [&volume_button, &mute_toggle] {
+        let mpv = mpv.clone();
+        let tv = tv.cloned();
+        let scale = volume_scale.downgrade();
+        let sound = sound.downgrade();
+        button.connect_clicked(move |_| {
+            if let Some((tv, state)) = tv.as_ref().and_then(|tv| Some((tv, tv.attached()?))) {
+                let muted = state.muted != Some(true);
+                tv.control(if muted { "mute" } else { "unmute" }, 0.0);
+                if let (Some(sound), Some(scale)) = (sound.upgrade(), scale.upgrade()) {
+                    sound.show(muted, scale.value());
+                }
+                return;
+            }
+            let (Some(mpv), Some(scale)) = (mpv.borrow().clone(), scale.upgrade()) else {
+                return;
+            };
+            let muted = !mpv.get_mute();
+            mpv.set_mute(muted);
+            // Unmuting at level 0 would still be silent.
+            if !muted && scale.value() <= 0.0 {
+                scale.set_value(UNMUTE_MINIMUM_VOLUME);
+            }
+            if let Some(sound) = sound.upgrade() {
+                sound.show(muted, scale.value());
+            }
+        });
+    }
+    VolumeControl {
+        volume_box,
+        mark,
+        label: volume_label,
+        popover: volume_popover,
+        scale: volume_scale,
         sound,
-        suppress_volume,
-        volume_title,
+        suppress: suppress_volume,
+        title: volume_title,
     }
 }
 

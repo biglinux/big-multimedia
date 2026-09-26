@@ -39,8 +39,15 @@ impl VideoShell {
                     self.show_tv_in_controls(&state);
                 } else {
                     // Only the TV shows it: the player's frozen frame gives
-                    // way to the video's own picture, darkened.
-                    self.idle_bg.show_tv(self.tv.source(), state.position);
+                    // way to the video's own picture, darkened. From where
+                    // the player stopped, which is where the TV began: a TV
+                    // just started still says 0:00, often a black frame.
+                    let at = self
+                        .mpv
+                        .borrow()
+                        .as_ref()
+                        .map_or(state.position, |mpv| mpv.get_position());
+                    self.idle_bg.show_tv(self.tv.source(), at);
                     self.tv_card.show(Some(&state));
                     self.show_tv_in_controls(&state);
                 }
@@ -117,6 +124,11 @@ impl VideoShell {
         } else {
             self.tv_here = Some(mpv.get_mute());
             mpv.set_mute(true);
+            self.controls
+                .emit(VideoControlsBarInput::ShowPcVolume(Some((
+                    mpv.get_volume(),
+                    true,
+                ))));
             if !self.holds_the_tvs() {
                 // The TV's file first; it catches up once loaded.
                 self.follow_tv();
@@ -130,6 +142,8 @@ impl VideoShell {
     fn stop_here(&mut self) {
         if let (Some(muted), Some(mpv)) = (self.tv_here.take(), self.mpv.borrow().as_ref()) {
             mpv.set_mute(muted);
+            self.controls
+                .emit(VideoControlsBarInput::ShowPcVolume(None));
         }
     }
 

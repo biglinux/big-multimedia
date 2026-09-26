@@ -1048,7 +1048,7 @@ impl TvCard {
         self.show_here(
             state.is_some(),
             &i18n("Watch here too"),
-            &i18n("The player plays the video too, in step with the TV and without sound."),
+            &i18n("The player plays the video too, in step with the TV, with its own volume starting silent."),
         );
         self.release.set_label(&i18n("Use the player"));
         self.release.set_tooltip_text(Some(&i18n(

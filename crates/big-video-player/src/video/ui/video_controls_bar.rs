@@ -96,6 +96,9 @@ pub enum VideoControlsBarInput {
     SetMuted(bool),
     /// Whose volume the control moves: the TV's while a TV has the controls.
     SetVolumeOfTv(bool),
+    /// The PC's own volume (percent) and mute, beside the TV's, while the
+    /// player plays along with the TV; `None` hides it.
+    ShowPcVolume(Option<(f64, bool)>),
 }
 
 /// User intents emitted by the bar for the shell to act on.
@@ -139,10 +142,9 @@ pub struct VideoControlsBar {
     audio_track_menu_popover: gtk::Popover,
     /// Volume slider + button (bottom-left) and the guard that mirrors external
     /// mixer changes onto them without echoing back to the sound server.
-    volume_scale: gtk::Scale,
-    sound: zones::SoundIndicator,
-    suppress_volume: std::rc::Rc<std::cell::Cell<bool>>,
-    volume_title: Option<gtk::Label>,
+    volume: zones::VolumeControl,
+    /// The PC's own volume, shown beside the TV's while the player plays along.
+    pc_volume: zones::VolumeControl,
     /// Guard so programmatic scrub updates do not echo as user seek intents.
     suppress_seek: Rc<std::cell::Cell<bool>>,
     /// Live mpv handle shared with the popover callbacks (for track menus).
@@ -331,15 +333,13 @@ impl Component for VideoControlsBar {
 
         let StartBoxWidgets {
             start_box,
-            volume_box,
+            volume_zone,
             speed_box,
             voice_box,
             hover_popovers,
             readout_labels,
-            volume_scale,
-            sound,
-            suppress_volume,
-            volume_title,
+            volume,
+            pc_volume,
         } = build_start_box(&init.settings, &init.mpv, &init.tv);
         center.set_start_widget(Some(&start_box));
 
@@ -352,7 +352,7 @@ impl Component for VideoControlsBar {
             start_zone: start_box,
             center_zone: controls_center.clone(),
             end_zone: end_widgets.end_box,
-            volume_box,
+            volume_box: volume_zone,
             speed_box,
             voice_box,
             previous_button: previous_button.clone(),
@@ -415,10 +415,8 @@ impl Component for VideoControlsBar {
             subtitle_menu_popover: end_widgets.subtitle_menu_popover,
             audio_track_menu_button: end_widgets.audio_track_menu_button,
             audio_track_menu_popover: end_widgets.audio_track_menu_popover,
-            volume_scale,
-            sound,
-            suppress_volume,
-            volume_title,
+            volume,
+            pc_volume,
             suppress_seek,
             mpv: init.mpv,
             hover_popovers,
@@ -498,12 +496,23 @@ impl Component for VideoControlsBar {
             VideoControlsBarInput::SetVolume(volume) => {
                 // Mirror the mixer onto the slider; the guard keeps the scale's
                 // handler from pushing the value straight back to the server.
-                self.suppress_volume.set(true);
-                self.volume_scale.set_value(volume);
-                self.suppress_volume.set(false);
+                self.volume.suppress.set(true);
+                self.volume.scale.set_value(volume);
+                self.volume.suppress.set(false);
             }
             VideoControlsBarInput::SetMuted(muted) => {
-                self.sound.show(muted, self.volume_scale.value());
+                self.volume.sound.show(muted, self.volume.scale.value());
+            }
+            VideoControlsBarInput::ShowPcVolume(pc) => {
+                if let Some((volume, muted)) = pc {
+                    self.pc_volume.suppress.set(true);
+                    self.pc_volume.scale.set_value(volume);
+                    self.pc_volume.suppress.set(false);
+                    self.pc_volume.sound.show(muted, volume);
+                }
+                self.pc_volume.volume_box.set_visible(pc.is_some());
+                self.volume.mark.set_visible(pc.is_some());
+                self.pc_volume.mark.set_visible(pc.is_some());
             }
             VideoControlsBarInput::SetVolumeOfTv(tv) => {
                 let label = if tv {
@@ -511,10 +520,11 @@ impl Component for VideoControlsBar {
                 } else {
                     i18n("Volume")
                 };
-                if let Some(title) = &self.volume_title {
+                if let Some(title) = &self.volume.title {
                     title.set_label(&label);
                 }
-                self.volume_scale
+                self.volume
+                    .scale
                     .update_property(&[gtk::accessible::Property::Label(&label)]);
             }
         }

@@ -281,7 +281,7 @@ impl Drop for IdleBackground {
 /// the surface; `dim` darkens it further, for the TV's card to read over it.
 /// `#0e0e18` stays as the letterbox/transparency backdrop.
 fn idle_bg_image_css(path: &Path, dim: bool) -> String {
-    let shade = if dim { 0.45 } else { 0.0 };
+    let shade = if dim { 0.72 } else { 0.0 };
     format!(
         ".idle-bg {{
             background-color: #0e0e18;
