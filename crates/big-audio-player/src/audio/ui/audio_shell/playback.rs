@@ -6,6 +6,11 @@ impl AudioShell {
         out: AudioPlaybackBarOutput,
         sender: &ComponentSender<Self>,
     ) {
+        if let Some(state) = self.tv.attached()
+            && self.tv_playback(&out, state)
+        {
+            return;
+        }
         match out {
             AudioPlaybackBarOutput::TogglePlay => {
                 self.handle_mpris_command(MprisCommand::PlayPause, sender);

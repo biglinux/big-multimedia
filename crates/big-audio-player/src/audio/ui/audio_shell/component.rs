@@ -299,6 +299,31 @@ impl Component for AudioShell {
         });
         let content_pane = BigToolbarPane::new(BigToolbarPaneSpec::new());
         content_pane.set_content(&content_box);
+        // Connected on first use (the TV dialog), never merely by starting.
+        let tv = crate::shared::tv_cast::TvLink::new();
+        tv.subscribe({
+            let input = sender.input_sender().clone();
+            move || {
+                let _ = input.send(AudioShellInput::TvChanged);
+            }
+        });
+        let tv_card = crate::shared::tv_cast::TvCard::new(
+            "tv-strip",
+            true,
+            {
+                let input = sender.input_sender().clone();
+                move || {
+                    let _ = input.send(AudioShellInput::TvStop);
+                }
+            },
+            {
+                let input = sender.input_sender().clone();
+                move || {
+                    let _ = input.send(AudioShellInput::TvToggleRelease);
+                }
+            },
+        );
+        content_pane.add_bottom_bar(&tv_card.root);
         content_pane.add_bottom_bar(playback_bar.widget());
 
         let main_paned = gtk::Paned::builder()
@@ -526,6 +551,11 @@ impl Component for AudioShell {
                 playlist_library_dialog,
                 playlist,
                 playback_bar,
+                tv,
+                tv_card,
+                tv_last: None,
+                tv_was_released: false,
+                tv_follow: None,
                 trim,
                 _files: files,
                 radio,

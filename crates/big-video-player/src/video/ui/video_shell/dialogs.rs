@@ -32,7 +32,7 @@ impl VideoShell {
                 },
             })
         };
-        tv_page(&self.settings, true, media, move || {
+        tv_page(&self.tv, &self.settings, true, media, move || {
             if let Some(mpv) = &mpv {
                 mpv.pause();
             }

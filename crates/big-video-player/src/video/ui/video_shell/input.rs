@@ -16,6 +16,14 @@ pub enum VideoShellInput {
     Iptv(VideoIptvBrowserOutput),
     /// Open the IPTV browser dialog (header button).
     ShowIptvBrowser,
+    /// BigNetScreen reported a change (session, position, receivers).
+    TvChanged,
+    /// The TV card's "Stop sending".
+    TvStop,
+    /// The TV card's "Use the player": the TV plays on without the controls.
+    TvRelease,
+    /// The header's "On the TV": the controls drive the TV again.
+    TvAttach,
     /// The header's settings button: open the panel home, or close it.
     TogglePanel,
     /// A shortcut, chip or menu entry: open the panel straight at a section

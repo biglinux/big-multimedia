@@ -32,6 +32,7 @@ crates/big-audio-player/src/audio/ui/audio_shell/queue_persistence.rs
 crates/big-audio-player/src/audio/ui/audio_shell/queue_state.rs
 crates/big-audio-player/src/audio/ui/audio_shell.rs
 crates/big-audio-player/src/audio/ui/audio_shell/sources.rs
+crates/big-audio-player/src/audio/ui/audio_shell/tv.rs
 crates/big-audio-player/src/audio/ui/audio_shell/update.rs
 crates/big-audio-player/src/audio/ui/library_detail_columns.rs
 crates/big-audio-player/src/audio/ui/library_detail_interactions.rs
@@ -144,6 +145,7 @@ crates/big-video-player/src/video/ui/video_shell/trim/bar.rs
 crates/big-video-player/src/video/ui/video_shell/trim/mod.rs
 crates/big-video-player/src/video/ui/video_shell/trim/run.rs
 crates/big-video-player/src/video/ui/video_shell/trim/state.rs
+crates/big-video-player/src/video/ui/video_shell/tv.rs
 crates/media-runtime/src/cast/daemon.rs
 crates/media-runtime/src/cast/mod.rs
 crates/media-runtime/src/lib.rs

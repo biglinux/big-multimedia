@@ -254,7 +254,11 @@ impl WeakSoundIndicator {
     }
 }
 
-pub(super) fn build_start_box(settings: &Settings, mpv: &MpvSlot) -> StartBoxWidgets {
+pub(super) fn build_start_box(
+    settings: &Settings,
+    mpv: &MpvSlot,
+    tv: &Rc<crate::shared::tv_cast::TvLink>,
+) -> StartBoxWidgets {
     let start_box = gtk::Box::builder()
         .orientation(gtk::Orientation::Horizontal)
         .spacing(2)
@@ -332,6 +336,7 @@ pub(super) fn build_start_box(settings: &Settings, mpv: &MpvSlot) -> StartBoxWid
         // Capture the button weakly: the scale's handler must not keep the
         // button alive (mutual cycle → leak on close).
         let mpv = mpv.clone();
+        let tv = tv.clone();
         let sound = sound.downgrade();
         let suppress_volume = suppress_volume.clone();
         volume_scale.connect_value_changed(move |scale| {
@@ -345,6 +350,14 @@ pub(super) fn build_start_box(settings: &Settings, mpv: &MpvSlot) -> StartBoxWid
             if external {
                 return;
             }
+            // The TV's level is 0–1: its own 100 is the ceiling there.
+            if let Some(state) = tv.attached() {
+                tv.control("volume", (value / 100.0).clamp(0.0, 1.0));
+                if state.muted == Some(true) {
+                    tv.control("unmute", 0.0);
+                }
+                return;
+            }
             if let Some(mpv) = mpv.borrow().as_ref() {
                 mpv.set_volume(value);
                 mpv.set_mute(false);
@@ -355,9 +368,18 @@ pub(super) fn build_start_box(settings: &Settings, mpv: &MpvSlot) -> StartBoxWid
     // scale and indicator refs: no cycle through the widgets they live on.
     for button in [&volume_button, &mute_toggle] {
         let mpv = mpv.clone();
+        let tv = tv.clone();
         let scale = volume_scale.downgrade();
         let sound = sound.downgrade();
         button.connect_clicked(move |_| {
+            if let Some(state) = tv.attached() {
+                let muted = state.muted != Some(true);
+                tv.control(if muted { "mute" } else { "unmute" }, 0.0);
+                if let (Some(sound), Some(scale)) = (sound.upgrade(), scale.upgrade()) {
+                    sound.show(muted, scale.value());
+                }
+                return;
+            }
             let (Some(mpv), Some(scale)) = (mpv.borrow().clone(), scale.upgrade()) else {
                 return;
             };

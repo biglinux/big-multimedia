@@ -70,6 +70,7 @@ mod playback;
 mod render;
 mod state_access;
 mod trim;
+mod tv;
 
 pub use input::{VideoShellInput, mark_opening_files, send_to_shell};
 
@@ -114,6 +115,20 @@ pub struct VideoShell {
     last_reset: Option<Vec<adjustments::Adjustment>>,
     /// The settings panel (right-hand card over the video).
     panel: Rc<panel::SettingsPanel>,
+    /// This player's line to BigNetScreen: TV page, card and controls.
+    tv: Rc<crate::shared::tv_cast::TvLink>,
+    /// Over the video while a TV plays this player's session.
+    tv_card: crate::shared::tv_cast::TvCard,
+    /// Header button while the TV plays but the player was released.
+    tv_pill: gtk::Button,
+    /// The session's last state: where it was when it ended.
+    tv_last: Option<crate::cast::daemon::State>,
+    /// Whether the session was released at the last change: a released
+    /// session ending leaves the player where it is.
+    tv_was_released: bool,
+    /// Next/Previous or the end of a file: the TV that the next file to load
+    /// goes to.
+    tv_follow: Option<String>,
     /// Video playback backend (system libmpv). `None` until the surface
     /// realizes and the backend initializes; `None` also if init failed.
     mpv: Rc<RefCell<Option<Arc<MpvBackend>>>>,

@@ -7,6 +7,8 @@ impl AudioShell {
         event: PlayerEvent,
         sender: &ComponentSender<Self>,
     ) {
+        // While the TV has the transport it shows the TV, not the paused mpv.
+        let tv = self.tv.attached().is_some();
         match event {
             // Reason 0 = natural end-of-file → advance to the next queue track
             // (radio streams never auto-advance the music queue).
@@ -59,8 +61,10 @@ impl AudioShell {
                 }
                 self.is_playing = *status == PlaybackStatus::Playing;
                 drop(status);
-                self.playback_bar
-                    .emit(AudioPlaybackBarInput::SetPaused(!self.is_playing));
+                if !tv {
+                    self.playback_bar
+                        .emit(AudioPlaybackBarInput::SetPaused(!self.is_playing));
+                }
                 self.sync_now_playing();
             }
             PlayerEvent::PositionChanged(secs) => {
@@ -70,11 +74,12 @@ impl AudioShell {
                     .lock()
                     .unwrap_or_else(PoisonError::into_inner) = secs;
 
-                self.playback_bar
-                    .emit(AudioPlaybackBarInput::SetPosition(time::playback_time(
-                        secs,
-                    )));
-                if self.duration_secs > 0.0 {
+                if !tv {
+                    self.playback_bar.emit(AudioPlaybackBarInput::SetPosition(
+                        time::playback_time(secs),
+                    ));
+                }
+                if !tv && self.duration_secs > 0.0 {
                     self.playback_bar.emit(AudioPlaybackBarInput::SetSeekValue(
                         secs / self.duration_secs * 100.0,
                     ));
@@ -88,12 +93,14 @@ impl AudioShell {
                     .duration
                     .lock()
                     .unwrap_or_else(PoisonError::into_inner) = secs;
-                self.playback_bar
-                    .emit(AudioPlaybackBarInput::SetDuration(time::playback_time(
-                        secs,
-                    )));
+                if !tv {
+                    self.playback_bar.emit(AudioPlaybackBarInput::SetDuration(
+                        time::playback_time(secs),
+                    ));
+                }
                 self.feed_trim_duration(secs);
             }
+            PlayerEvent::VolumeChanged(_) | PlayerEvent::MuteChanged(_) if tv => {}
             PlayerEvent::VolumeChanged(vol) => {
                 *self
                     .mpris_state
@@ -129,8 +136,10 @@ impl AudioShell {
                 self.mpris_state.selected();
                 let paused = self.mpv.as_ref().is_none_or(|mpv| mpv.is_paused());
                 self.is_playing = !paused;
-                self.playback_bar
-                    .emit(AudioPlaybackBarInput::SetPaused(paused));
+                if !tv {
+                    self.playback_bar
+                        .emit(AudioPlaybackBarInput::SetPaused(paused));
+                }
                 self.mpris_state.paused.store(paused, Ordering::Relaxed);
                 *self
                     .mpris_state
@@ -158,6 +167,7 @@ impl AudioShell {
                 self.sync_now_playing_card();
                 self.fetch_lyrics_for_current(sender);
                 self.push_mpris_metadata(sender);
+                self.tv_follow_loaded();
             }
             PlayerEvent::Seeked(position) if position.is_finite() && position >= 0.0 => {
                 *self

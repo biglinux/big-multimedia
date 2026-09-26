@@ -558,3 +558,9 @@ columnview > listview > row button.circular:hover {
     outline: 2px solid @accent_color;
     outline-offset: 2px;
 }
+
+/* "Playing on the TV": the strip above the transport while a TV plays. */
+.tv-strip {
+    background: alpha(@accent_bg_color, 0.14);
+    border-top: 1px solid alpha(@window_fg_color, 0.08);
+}

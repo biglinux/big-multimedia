@@ -25,10 +25,12 @@ const SPEED_MAX: f64 = 4.0;
 pub(super) fn wire_keyboard_shortcuts(
     root: &adw::ToastOverlay,
     mpv: &Rc<RefCell<Option<Arc<MpvBackend>>>>,
+    tv: &Rc<crate::shared::tv_cast::TvLink>,
     settings: &Settings,
     sender: &ComponentSender<VideoShell>,
 ) {
     let key_controller = gtk::EventControllerKey::new();
+    let tv = tv.clone();
     let single_key_actions = build_single_key_map(&settings.get_string(keys::CUSTOM_KEYBINDINGS));
     let mpv = mpv.clone();
     let input = sender.input_sender().clone();
@@ -39,7 +41,7 @@ pub(super) fn wire_keyboard_shortcuts(
         let volume_max = f64::from(settings.get_int(keys::VOLUME_MAX)).max(100.0);
         // Hardware media keys fire regardless of focus.
         if let Some(action) = media_key_action(keyval)
-            && dispatch_video_shortcut(action, &mpv, &input, volume_max)
+            && dispatch_video_shortcut(action, &mpv, &tv, &input, volume_max)
         {
             return glib::Propagation::Stop;
         }
@@ -50,7 +52,7 @@ pub(super) fn wire_keyboard_shortcuts(
         let Some(action) = single_key_actions.get(accel.as_str()) else {
             return glib::Propagation::Proceed;
         };
-        if dispatch_video_shortcut(action, &mpv, &input, volume_max) {
+        if dispatch_video_shortcut(action, &mpv, &tv, &input, volume_max) {
             glib::Propagation::Stop
         } else {
             glib::Propagation::Proceed
@@ -95,6 +97,7 @@ pub(super) fn wire_trim_keys(
 fn dispatch_video_shortcut(
     action: &str,
     mpv: &Rc<RefCell<Option<Arc<MpvBackend>>>>,
+    tv: &Rc<crate::shared::tv_cast::TvLink>,
     input: &relm4::Sender<VideoShellInput>,
     volume_max: f64,
 ) -> bool {
@@ -115,6 +118,30 @@ fn dispatch_video_shortcut(
     };
     if let Some(message) = message {
         let _ = input.send(message);
+        return true;
+    }
+
+    // While a TV has the controls, seeking and volume keys drive it.
+    if let Some(state) = tv.attached() {
+        let seek = |offset: f64| {
+            if state.can_seek {
+                let target = (state.position + offset).clamp(0.0, state.duration.max(0.0));
+                tv.control("seek-to", target);
+            }
+        };
+        let volume = state.volume.unwrap_or(1.0);
+        match action {
+            "seek-forward" => seek(SEEK_SHORT_SECS),
+            "seek-backward" => seek(-SEEK_SHORT_SECS),
+            "seek-forward-long" => seek(SEEK_LONG_SECS),
+            "seek-backward-long" => seek(-SEEK_LONG_SECS),
+            "volume-up" => tv.control("volume", (volume + VOLUME_STEP / 100.0).min(1.0)),
+            "volume-down" => tv.control("volume", (volume - VOLUME_STEP / 100.0).max(0.0)),
+            "mute" if state.muted == Some(true) => tv.control("unmute", 0.0),
+            "mute" => tv.control("mute", 0.0),
+            // Speed and frame steps have no meaning on a TV stream.
+            _ => return false,
+        }
         return true;
     }
 
@@ -176,6 +203,11 @@ mod tests {
         Rc::new(RefCell::new(None))
     }
 
+    /// Never connected, so no TV has the keys.
+    fn no_tv() -> Rc<crate::shared::tv_cast::TvLink> {
+        crate::shared::tv_cast::TvLink::new()
+    }
+
     #[test]
     fn menu_and_toggle_actions_dispatch_without_mpv() {
         let (tx, _rx) = relm4::channel::<VideoShellInput>();
@@ -195,7 +227,7 @@ mod tests {
             "playlist-prev",
         ] {
             assert!(
-                dispatch_video_shortcut(action, &mpv, &tx, 150.0),
+                dispatch_video_shortcut(action, &mpv, &no_tv(), &tx, 150.0),
                 "{action} should dispatch a shell message"
             );
         }
@@ -218,7 +250,7 @@ mod tests {
             "frame-step",
         ] {
             assert!(
-                !dispatch_video_shortcut(action, &mpv, &tx, 150.0),
+                !dispatch_video_shortcut(action, &mpv, &no_tv(), &tx, 150.0),
                 "{action} needs a live backend"
             );
         }
@@ -230,6 +262,7 @@ mod tests {
         assert!(!dispatch_video_shortcut(
             "does-not-exist",
             &no_mpv(),
+            &no_tv(),
             &tx,
             150.0
         ));

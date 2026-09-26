@@ -21,6 +21,7 @@ mod playlist_library_dialog_actions;
 mod queue_persistence;
 mod queue_state;
 mod sources;
+mod tv;
 mod update;
 
 pub use input::{AudioShellInput, send_to_shell};
@@ -91,6 +92,16 @@ pub struct AudioShell {
     playlist: Controller<PlaylistPanel>,
     /// Bottom transport bar (play/seek/volume/repeat/shuffle).
     playback_bar: Controller<AudioPlaybackBar>,
+    /// This player's line to BigNetScreen: TV dialog, strip and controls.
+    tv: std::rc::Rc<crate::shared::tv_cast::TvLink>,
+    /// Above the transport while a TV plays this player's session.
+    tv_card: crate::shared::tv_cast::TvCard,
+    /// The session's last state: where it was when it ended.
+    tv_last: Option<crate::cast::daemon::State>,
+    /// Whether the session was released at the last change.
+    tv_was_released: bool,
+    /// Next/Previous or the end of a track: the TV the next track goes to.
+    tv_follow: Option<String>,
     /// Visual trim controls shown above the bottom transport in trim mode.
     trim: Controller<AudioTrimBar>,
     /// Files browser tab — held for its lifetime (Output forwarding); the shell

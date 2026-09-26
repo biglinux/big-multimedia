@@ -1,10 +1,12 @@
 //! "Play on a TV": what both players show to send what they are playing to a
 //! Chromecast or a DLNA TV. Discovery, streaming and conversion belong to the
-//! BigNetScreen daemon ([`crate::cast::daemon`]); this page lists its
-//! receivers, starts a session, and shows that session's pause/stop while it
-//! runs. The video player shows it as a page of its settings panel, the audio
-//! player in a dialog ([`present_tv_dialog`]). Leaving the page leaves the TV
-//! playing; coming back shows the controls again.
+//! BigNetScreen daemon ([`crate::cast::daemon`]).
+//!
+//! [`TvLink`] is a player's one connection to it, shared by everything that
+//! needs to know whether a TV is playing what this player sent: the page that
+//! lists receivers ([`tv_page`], a settings-panel page in the video player and
+//! a dialog in the audio player, [`present_tv_dialog`]), the card over the
+//! video, and the transport controls, which drive the TV while it plays.
 
 use std::cell::{Cell, RefCell};
 use std::rc::Rc;
@@ -23,6 +25,9 @@ const KEEP_ALIVE: Duration = Duration::from_secs(60);
 /// Frame heights offered, 0 first: the video's own size.
 const HEIGHTS: [u32; 5] = [0, 720, 1080, 1440, 2160];
 
+/// How long a switch to the next item waits for the TV to let the old go.
+const SWITCH_TIMEOUT: Duration = Duration::from_secs(10);
+
 /// What to send: a local file or an HTTP(S) stream, and where to start it.
 #[derive(Clone, Debug)]
 pub struct TvMedia {
@@ -30,6 +35,287 @@ pub struct TvMedia {
     pub title: String,
     pub audio: bool,
     pub start: PlaybackStart,
+}
+
+/// Told of every change the daemon reports.
+type Listener = Rc<dyn Fn()>;
+
+/// A player's connection to BigNetScreen. Made at startup and connected on
+/// first use: opening a proxy starts the daemon, which must not happen merely
+/// because a player opened.
+#[derive(Default)]
+pub struct TvLink {
+    client: RefCell<Option<Client>>,
+    connecting: Cell<bool>,
+    /// Why there is no client: not installed, or not reachable.
+    unavailable: RefCell<Option<(String, String)>>,
+    /// The daemon went away after connecting.
+    lost: Cell<bool>,
+    listeners: RefCell<Vec<(u64, Listener)>>,
+    next_listener: Cell<u64>,
+    /// The file or stream the running session was started with.
+    source: RefCell<Option<String>>,
+    /// Moving the TV to another item: the old session ends before the new
+    /// one starts, and that gap is not the TV being stopped.
+    switching: Cell<bool>,
+    /// A failure nobody was waiting for (a switch), until someone shows it.
+    failure: RefCell<Option<String>>,
+    /// "Use the player": the TV plays on and the controls are the player's.
+    /// Holds for one session; a new one has the controls again.
+    released: Cell<bool>,
+    /// The session `released` belongs to.
+    session: RefCell<String>,
+}
+
+impl TvLink {
+    pub fn new() -> Rc<Self> {
+        Rc::new(Self::default())
+    }
+
+    /// Reach the daemon unless already connected or trying; listeners hear
+    /// the outcome.
+    pub fn connect(self: &Rc<Self>) {
+        if self.client.borrow().is_some() || self.connecting.replace(true) {
+            return;
+        }
+        let link = Rc::downgrade(self);
+        glib::spawn_future_local(async move {
+            let installed = Client::available().await.unwrap_or(false);
+            let result = if installed {
+                Some(Client::connect().await)
+            } else {
+                None
+            };
+            let Some(link) = link.upgrade() else {
+                return;
+            };
+            link.connecting.set(false);
+            match result {
+                None => {
+                    link.unavailable.replace(Some((
+                        i18n("BigNetScreen is not installed"),
+                        i18n("Install it to play on a TV or Chromecast."),
+                    )));
+                }
+                Some(Err(error)) => {
+                    link.unavailable.replace(Some((
+                        i18n("Could not reach BigNetScreen"),
+                        error.message().to_string(),
+                    )));
+                }
+                Some(Ok(client)) => {
+                    let weak = Rc::downgrade(&link);
+                    // Held for the player's life: the link is the player's.
+                    let _ = client.connect_changed(move || {
+                        if let Some(link) = weak.upgrade() {
+                            link.notify();
+                        }
+                    });
+                    link.unavailable.take();
+                    link.client.replace(Some(client.clone()));
+                    glib::spawn_future_local(async move {
+                        let _ = client.rescan().await;
+                    });
+                }
+            }
+            link.notify();
+        });
+    }
+
+    /// After the daemon went away: drop the old connection and reach it again.
+    pub fn reconnect(self: &Rc<Self>) {
+        self.lost.set(false);
+        self.client.take();
+        self.notify();
+        self.connect();
+    }
+
+    pub fn client(&self) -> Option<Client> {
+        self.client.borrow().clone()
+    }
+
+    pub fn connected(&self) -> bool {
+        self.client.borrow().is_some()
+    }
+
+    pub fn lost(&self) -> bool {
+        self.lost.get()
+    }
+
+    pub fn unavailable(&self) -> Option<(String, String)> {
+        self.unavailable.borrow().clone()
+    }
+
+    /// Everything the daemon reports; empty before connecting.
+    pub fn state(&self) -> State {
+        let state = self.client.borrow().as_ref().map(Client::state);
+        match state {
+            Some(Ok(state)) => state,
+            Some(Err(_)) => {
+                self.lost.set(true);
+                State::default()
+            }
+            None => State::default(),
+        }
+    }
+
+    /// The session this player started, while a TV plays it.
+    pub fn playing(&self) -> Option<State> {
+        let state = Some(self.state()).filter(|state| state.owned && state.active);
+        let session = state.as_ref().map_or("", |state| state.session_id.as_str());
+        if *self.session.borrow() != session && !self.switching.get() {
+            self.session.replace(session.to_string());
+            self.released.set(false);
+        }
+        state
+    }
+
+    /// The session the player's controls drive: playing, and not released.
+    pub fn attached(&self) -> Option<State> {
+        self.playing().filter(|_| !self.released.get())
+    }
+
+    pub fn released(&self) -> bool {
+        self.released.get()
+    }
+
+    /// Give the controls back to the player; the TV plays on.
+    pub fn release(&self) {
+        self.released.set(true);
+        self.notify();
+    }
+
+    /// Let the controls drive the TV again.
+    pub fn attach(&self) {
+        self.released.set(false);
+        self.notify();
+    }
+
+    /// True while a switch to another item is under way.
+    pub fn switching(&self) -> bool {
+        self.switching.get()
+    }
+
+    /// The file or stream the TV was last started with.
+    pub fn source(&self) -> Option<String> {
+        self.source.borrow().clone()
+    }
+
+    pub fn take_failure(&self) -> Option<String> {
+        self.failure.take()
+    }
+
+    /// Run `changed` on every change the daemon reports; returns what
+    /// [`Self::unsubscribe`] takes.
+    pub fn subscribe(&self, changed: impl Fn() + 'static) -> u64 {
+        let id = self.next_listener.get() + 1;
+        self.next_listener.set(id);
+        self.listeners.borrow_mut().push((id, Rc::new(changed)));
+        id
+    }
+
+    pub fn unsubscribe(&self, id: u64) {
+        self.listeners.borrow_mut().retain(|(each, _)| *each != id);
+    }
+
+    fn notify(&self) {
+        // A listener may subscribe or unsubscribe while being told.
+        let listeners: Vec<_> = self
+            .listeners
+            .borrow()
+            .iter()
+            .map(|(_, listener)| listener.clone())
+            .collect();
+        for listener in listeners {
+            listener();
+        }
+    }
+
+    /// Send a player command to the running session: `play`, `pause`,
+    /// `seek-to` (seconds), `volume` (0–1), `mute`, `unmute` or `stop`.
+    pub fn control(self: &Rc<Self>, command: &'static str, value: f64) {
+        let Some(client) = self.client() else {
+            return;
+        };
+        let Some(state) = self.playing() else {
+            return;
+        };
+        let link = Rc::downgrade(self);
+        glib::spawn_future_local(async move {
+            let result = client.control(&state.session_id, command, value).await;
+            if let (Err(error), Some(link)) = (result, link.upgrade()) {
+                link.failure.replace(Some(error.message().to_string()));
+                link.notify();
+            }
+        });
+    }
+
+    /// Start `media` on `receiver`.
+    pub async fn start(&self, receiver: &str, media: &TvMedia) -> Result<(), glib::Error> {
+        let client = self.client().ok_or_else(|| {
+            glib::Error::new(
+                gtk::gio::IOErrorEnum::NotConnected,
+                "BigNetScreen is unavailable",
+            )
+        })?;
+        let remote = media.source.starts_with("http://") || media.source.starts_with("https://");
+        if remote {
+            let content_type = if media.audio {
+                "audio/mpeg"
+            } else {
+                "video/mp4"
+            };
+            client
+                .start_url(
+                    receiver,
+                    &media.source,
+                    content_type,
+                    &media.title,
+                    media.audio,
+                    media.start,
+                )
+                .await?;
+        } else {
+            client
+                .start(receiver, std::slice::from_ref(&media.source), media.start)
+                .await?;
+        }
+        self.source.replace(Some(media.source.clone()));
+        Ok(())
+    }
+
+    /// Play `media` on `receiver` in place of whatever this player had there:
+    /// the player went to the next or previous item, or the last one ended.
+    pub fn switch_to(self: &Rc<Self>, receiver: String, media: TvMedia) {
+        let Some(client) = self.client() else {
+            return;
+        };
+        if self.switching.replace(true) {
+            return;
+        }
+        let playing = self.playing();
+        self.notify();
+        let link = Rc::downgrade(self);
+        glib::spawn_future_local(async move {
+            if let Some(state) = playing {
+                let _ = client.control(&state.session_id, "stop", 0.0).await;
+            }
+            // The daemon starts only while idle: wait for the old to go.
+            let deadline = std::time::Instant::now() + SWITCH_TIMEOUT;
+            while client.state().is_ok_and(|now| now.active) && std::time::Instant::now() < deadline
+            {
+                glib::timeout_future(Duration::from_millis(100)).await;
+            }
+            let Some(link) = link.upgrade() else {
+                return;
+            };
+            if let Err(error) = link.start(&receiver, &media).await {
+                link.failure.replace(Some(failure_text(&error)));
+            }
+            link.switching.set(false);
+            link.notify();
+        });
+    }
 }
 
 /// What choosing a TV row does.
@@ -44,6 +330,7 @@ struct TvRow {
 }
 
 struct View {
+    link: Rc<TvLink>,
     now: adw::PreferencesGroup,
     now_row: adw::ActionRow,
     pause: gtk::Button,
@@ -57,23 +344,17 @@ struct View {
     rows: RefCell<Vec<TvRow>>,
     /// What choosing a TV row does; rows are rebuilt as TVs come and go.
     activate: std::cell::OnceCell<StartOn>,
-    client: RefCell<Option<Client>>,
-    /// Signal handlers and the keep-alive, while the page is on screen.
-    attached: RefCell<Option<([glib::SignalHandlerId; 2], glib::SourceId)>>,
+    /// The link subscription and the keep-alive, while the page is on screen.
+    attached: RefCell<Option<(u64, glib::SourceId)>>,
     /// Receiver id whose start is in flight: one start at a time.
     starting: RefCell<Option<String>>,
     /// The last start that failed, until the next attempt or search.
     failure: RefCell<Option<String>>,
-    /// The daemon could not be reached; nothing else to show.
-    unavailable: RefCell<Option<(String, String)>>,
-    /// The daemon went away after connecting: "Search again" reconnects.
-    lost: Cell<bool>,
-    mapped: Cell<bool>,
     /// False in a player that only sends sound: no resolution to choose.
     pictures: bool,
 }
 
-fn protocol_name(protocol: &str) -> String {
+pub fn protocol_name(protocol: &str) -> String {
     if protocol == "dlna" {
         i18n("Smart TV (DLNA)")
     } else {
@@ -116,12 +397,34 @@ fn resolution_label(height: u32) -> String {
     }
 }
 
+/// What plays and where, for the card: the player may show something else.
+fn card_line(state: &State) -> String {
+    let receiver = receiver_line(state);
+    if state.title.is_empty() {
+        receiver
+    } else {
+        format!("{}\n{receiver}", state.title)
+    }
+}
+
+/// The TV's name and kind, for whoever shows the running session.
+pub fn receiver_line(state: &State) -> String {
+    state
+        .receivers
+        .iter()
+        .find(|r| r.id == state.receiver_id)
+        .map_or_else(String::new, |r| {
+            format!("{} · {}", r.name, protocol_name(&r.protocol))
+        })
+}
+
 /// The page, ready to be placed in a panel or dialog. `media` reads what the
 /// player shows at the moment a TV is chosen (None when nothing is loaded), so
 /// the TV starts where the viewer is; `on_started` runs once a TV plays it.
 /// `pictures` is false for a player that only ever sends sound: it has no
 /// resolution to choose.
 pub fn tv_page(
+    link: &Rc<TvLink>,
     settings: &Settings,
     pictures: bool,
     media: impl Fn() -> Option<TvMedia> + 'static,
@@ -206,6 +509,7 @@ pub fn tv_page(
     root.append(&options);
 
     let view = Rc::new(View {
+        link: link.clone(),
         now,
         now_row,
         pause,
@@ -217,13 +521,9 @@ pub fn tv_page(
         options,
         rows: RefCell::new(Vec::new()),
         activate: std::cell::OnceCell::new(),
-        client: RefCell::new(None),
         attached: RefCell::new(None),
         starting: RefCell::new(None),
         failure: RefCell::new(None),
-        unavailable: RefCell::new(None),
-        lost: Cell::new(false),
-        mapped: Cell::new(false),
         pictures,
     });
     view.options.set_visible(view.pictures);
@@ -236,103 +536,54 @@ pub fn tv_page(
     };
     wire_actions(&view, media, height, Rc::new(on_started), &stop);
 
-    // Signals and the keep-alive only while the page is on screen: they hold
+    // Updates and the keep-alive only while the page is on screen: they hold
     // the page, and a page nobody sees must not keep itself or the daemon up.
     root.connect_map({
         let view = view.clone();
-        move |_| {
-            view.mapped.set(true);
-            attach(&view);
-        }
+        move |_| attach(&view)
     });
     root.connect_unmap({
         let view = view.clone();
-        move |_| {
-            view.mapped.set(false);
-            detach(&view);
-        }
+        move |_| detach(&view)
     });
-
-    glib::spawn_future_local(connect_daemon(view.clone()));
+    link.connect();
     root.upcast()
 }
 
-/// Reach the daemon (D-Bus starts it on demand) and begin a search.
-async fn connect_daemon(view: Rc<View>) {
-    if !Client::available().await.unwrap_or(false) {
-        view.unavailable.replace(Some((
-            i18n("BigNetScreen is not installed"),
-            i18n("Install it to play on a TV or Chromecast."),
-        )));
-        render(&view, &State::default());
-        return;
-    }
-    match Client::connect().await {
-        Ok(client) => {
-            view.client.replace(Some(client.clone()));
-            if view.mapped.get() {
-                attach(&view);
-            }
-            let _ = client.rescan().await;
-        }
-        Err(error) => {
-            view.unavailable.replace(Some((
-                i18n("Could not reach BigNetScreen"),
-                error.message().to_string(),
-            )));
-            render(&view, &State::default());
-        }
-    }
-}
-
-fn refresh(view: &View) {
-    let state = view.client.borrow().as_ref().map(Client::state);
-    match state {
-        Some(Ok(state)) => render(view, &state),
-        Some(Err(_)) => {
-            view.lost.set(true);
-            render(view, &State::default());
-        }
-        None => {}
-    }
-}
-
 fn attach(view: &Rc<View>) {
-    let Some(client) = view.client.borrow().clone() else {
-        return;
-    };
     if view.attached.borrow().is_some() {
         return;
     }
-    let handlers = client.connect_changed({
+    let listener = view.link.subscribe({
         let view = Rc::downgrade(view);
         move || {
             if let Some(view) = view.upgrade() {
-                refresh(&view);
+                render(&view);
             }
         }
     });
-    let alive = glib::timeout_add_local(KEEP_ALIVE, {
-        let client = client.clone();
+    let keep_alive = {
+        let link = Rc::downgrade(&view.link);
         move || {
-            let client = client.clone();
-            glib::spawn_future_local(async move {
-                let _ = client.keep_alive().await;
-            });
-            glib::ControlFlow::Continue
+            if let Some(client) = link.upgrade().and_then(|link| link.client()) {
+                glib::spawn_future_local(async move {
+                    let _ = client.keep_alive().await;
+                });
+            }
         }
+    };
+    keep_alive();
+    let alive = glib::timeout_add_local(KEEP_ALIVE, move || {
+        keep_alive();
+        glib::ControlFlow::Continue
     });
-    view.attached.replace(Some((handlers, alive)));
-    glib::spawn_future_local(async move {
-        let _ = client.keep_alive().await;
-    });
-    refresh(view);
+    view.attached.replace(Some((listener, alive)));
+    render(view);
 }
 
 fn detach(view: &View) {
-    let attached = view.attached.take();
-    if let (Some((handlers, alive)), Some(client)) = (attached, view.client.borrow().as_ref()) {
-        client.disconnect(handlers);
+    if let Some((listener, alive)) = view.attached.take() {
+        view.link.unsubscribe(listener);
         alive.remove();
     }
 }
@@ -353,37 +604,25 @@ fn wire_actions(
         }
     }));
 
-    let control = |command: &'static str| {
-        let view = Rc::downgrade(view);
-        move |_: &gtk::Button| {
-            let Some(view) = view.upgrade() else {
+    view.pause.connect_clicked({
+        let link = Rc::downgrade(&view.link);
+        move |_| {
+            let Some(link) = link.upgrade() else {
                 return;
             };
-            let Some(client) = view.client.borrow().clone() else {
-                return;
-            };
-            let Ok(state) = client.state() else {
-                return;
-            };
-            let command = match command {
-                "toggle" if state.paused => "play",
-                "toggle" => "pause",
-                other => other,
-            };
-            let view = Rc::downgrade(&view);
-            glib::spawn_future_local(async move {
-                let result = client.control(&state.session_id, command, 0.0).await;
-                if let Some(view) = view.upgrade() {
-                    if let Err(error) = result {
-                        view.failure.replace(Some(error.message().to_string()));
-                    }
-                    refresh(&view);
-                }
-            });
+            if let Some(state) = link.playing() {
+                link.control(if state.paused { "play" } else { "pause" }, 0.0);
+            }
         }
-    };
-    view.pause.connect_clicked(control("toggle"));
-    stop.connect_clicked(control("stop"));
+    });
+    stop.connect_clicked({
+        let link = Rc::downgrade(&view.link);
+        move |_| {
+            if let Some(link) = link.upgrade() {
+                link.control("stop", 0.0);
+            }
+        }
+    });
     view.rescan.connect_clicked({
         let view = Rc::downgrade(view);
         move |_| {
@@ -391,19 +630,15 @@ fn wire_actions(
                 return;
             };
             view.failure.take();
-            if view.lost.replace(false) {
-                detach(&view);
-                view.client.take();
-                render(&view, &State::default());
-                glib::spawn_future_local(connect_daemon(view));
+            if view.link.lost() {
+                view.link.reconnect();
                 return;
             }
-            let Some(client) = view.client.borrow().clone() else {
-                return;
-            };
-            glib::spawn_future_local(async move {
-                let _ = client.rescan().await;
-            });
+            if let Some(client) = view.link.client() {
+                glib::spawn_future_local(async move {
+                    let _ = client.rescan().await;
+                });
+            }
         }
     });
 }
@@ -424,77 +659,48 @@ fn start_on(
     else {
         return;
     };
-    let Some(client) = view.client.borrow().clone() else {
-        return;
-    };
     if view.starting.borrow().is_some() {
         return;
     }
     let Some(mut media) = media() else {
         view.failure
             .replace(Some(i18n("Play something first, then choose the TV.")));
-        refresh(view);
+        render(view);
         return;
     };
     media.start.height = height();
     view.failure.take();
     view.starting.replace(Some(receiver.id.clone()));
-    refresh(view);
+    render(view);
     let view = Rc::downgrade(view);
     let on_started = on_started.clone();
     glib::spawn_future_local(async move {
-        let remote = media.source.starts_with("http://") || media.source.starts_with("https://");
-        let result = if remote {
-            let content_type = if media.audio {
-                "audio/mpeg"
-            } else {
-                "video/mp4"
-            };
-            client
-                .start_url(
-                    &receiver.id,
-                    &media.source,
-                    content_type,
-                    &media.title,
-                    media.audio,
-                    media.start,
-                )
-                .await
-        } else {
-            client
-                .start(
-                    &receiver.id,
-                    std::slice::from_ref(&media.source),
-                    media.start,
-                )
-                .await
+        let Some(link) = view.upgrade().map(|view| view.link.clone()) else {
+            return;
         };
+        let result = link.start(&receiver.id, &media).await;
         let Some(view) = view.upgrade() else {
             return;
         };
         view.starting.take();
         match result {
-            Ok(_) => on_started(),
+            Ok(()) => on_started(),
             Err(error) => {
                 view.failure.replace(Some(failure_text(&error)));
             }
         }
-        refresh(&view);
+        render(&view);
     });
 }
 
-fn render(view: &View, state: &State) {
+fn render(view: &View) {
+    let state = view.link.state();
     let playing_here = state.owned && state.active;
     view.now.set_visible(playing_here);
     // One TV at a time: while ours plays, its controls are the whole page.
     view.tvs.set_visible(!playing_here);
     view.options.set_visible(!playing_here && view.pictures);
     if playing_here {
-        let tv = state
-            .receivers
-            .iter()
-            .find(|r| r.id == state.receiver_id)
-            .map_or_else(String::new, |r| r.name.clone());
         let position = if state.duration > 0.0 {
             format!("{} / {}", clock(state.position), clock(state.duration))
         } else {
@@ -507,7 +713,10 @@ fn render(view: &View, state: &State) {
             glib::markup_escape_text(&state.title).to_string()
         });
         view.now_row
-            .set_subtitle(&glib::markup_escape_text(&format!("{tv} · {position}")));
+            .set_subtitle(&glib::markup_escape_text(&format!(
+                "{} · {position}",
+                receiver_line(&state)
+            )));
         let (icon, label) = if state.paused {
             ("media-playback-start-symbolic", i18n("Continue"))
         } else {
@@ -578,13 +787,13 @@ fn render(view: &View, state: &State) {
     let found = !state.receivers.is_empty();
     let searching = state.status == "searching";
     view.rescan
-        .set_sensitive(!searching && view.client.borrow().is_some());
+        .set_sensitive(!searching && view.link.connected());
     // What the list cannot say by itself, most urgent first.
-    let unavailable = view.unavailable.borrow().clone();
     let failure = view.failure.borrow().clone();
-    let (spinning, icon, title, subtitle) = if let Some((title, subtitle)) = unavailable {
+    let (spinning, icon, title, subtitle) = if let Some((title, subtitle)) = view.link.unavailable()
+    {
         (false, "dialog-warning-symbolic", title, subtitle)
-    } else if view.lost.get() {
+    } else if view.link.lost() {
         (
             false,
             "dialog-warning-symbolic",
@@ -607,7 +816,7 @@ fn render(view: &View, state: &State) {
         )
     } else if found {
         (false, "", String::new(), String::new())
-    } else if searching || view.client.borrow().is_none() {
+    } else if searching || !view.link.connected() {
         (true, "", i18n("Looking for TVs…"), String::new())
     } else {
         (
@@ -630,11 +839,12 @@ fn render(view: &View, state: &State) {
 /// only.
 pub fn present_tv_dialog(
     parent: &impl IsA<gtk::Widget>,
+    link: &Rc<TvLink>,
     settings: &Settings,
     media: impl Fn() -> Option<TvMedia> + 'static,
     on_started: impl Fn() + 'static,
 ) {
-    let page = tv_page(settings, false, media, on_started);
+    let page = tv_page(link, settings, false, media, on_started);
     page.set_margin_top(6);
     page.set_margin_bottom(18);
     page.set_margin_start(18);
@@ -657,6 +867,153 @@ pub fn present_tv_dialog(
         .child(&toolbar)
         .build()
         .present(Some(parent));
+}
+
+/// The card shown over a player while a TV plays its session: what is
+/// happening, where, and the way out. The owner shows and fills it.
+pub struct TvCard {
+    pub root: gtk::Box,
+    detail: gtk::Label,
+    title: gtk::Label,
+    /// "Use the player", or "Control the TV" once the player was released.
+    release: gtk::Button,
+}
+
+impl TvCard {
+    /// `stop` runs on "Stop sending", `release` on "Use the player" (the TV
+    /// keeps playing and the player goes its own way) and on "Control the
+    /// TV", its way back; `css` names the owner's card style. `strip` lays it out as one line, for a player whose
+    /// middle holds a list that must stay usable.
+    pub fn new(
+        css: &str,
+        strip: bool,
+        stop: impl Fn() + 'static,
+        release: impl Fn() + 'static,
+    ) -> Self {
+        let icon = gtk::Image::builder()
+            .icon_name("tv-symbolic")
+            .pixel_size(if strip { 24 } else { 48 })
+            .build();
+        let justify = if strip {
+            gtk::Justification::Left
+        } else {
+            gtk::Justification::Center
+        };
+        let title = gtk::Label::builder()
+            .label(i18n("Playing on the TV"))
+            .css_classes([if strip { "heading" } else { "title-3" }])
+            .wrap(true)
+            .xalign(if strip { 0.0 } else { 0.5 })
+            .justify(justify)
+            .build();
+        let detail = gtk::Label::builder()
+            .css_classes(["dim-label"])
+            .wrap(true)
+            .xalign(if strip { 0.0 } else { 0.5 })
+            .justify(justify)
+            .build();
+        let stop_button = gtk::Button::builder()
+            .label(i18n("Stop sending"))
+            .css_classes(["pill", "destructive-action"])
+            .build();
+        stop_button.connect_clicked(move |_| stop());
+        let release_button = gtk::Button::builder()
+            .label(i18n("Use the player"))
+            .tooltip_text(i18n(
+                "The TV keeps playing, and the player is free for this or another video.",
+            ))
+            .css_classes(["pill"])
+            .build();
+        release_button.connect_clicked(move |_| release());
+        let buttons = gtk::Box::builder()
+            .spacing(8)
+            .halign(gtk::Align::Center)
+            .valign(gtk::Align::Center)
+            .margin_top(if strip { 0 } else { 6 })
+            .build();
+        buttons.append(&release_button);
+        buttons.append(&stop_button);
+        let root = gtk::Box::builder()
+            .visible(false)
+            .css_classes([css])
+            .build();
+        let inner = if strip {
+            let words = gtk::Box::builder()
+                .orientation(gtk::Orientation::Vertical)
+                .valign(gtk::Align::Center)
+                .hexpand(true)
+                .build();
+            words.append(&title);
+            words.append(&detail);
+            let inner = gtk::Box::builder()
+                .spacing(12)
+                .margin_top(8)
+                .margin_bottom(8)
+                .margin_start(12)
+                .margin_end(12)
+                .hexpand(true)
+                .build();
+            inner.append(&icon);
+            inner.append(&words);
+            inner.append(&buttons);
+            inner
+        } else {
+            root.set_halign(gtk::Align::Center);
+            root.set_valign(gtk::Align::Center);
+            let inner = gtk::Box::builder()
+                .orientation(gtk::Orientation::Vertical)
+                .spacing(6)
+                .margin_top(18)
+                .margin_bottom(18)
+                .margin_start(24)
+                .margin_end(24)
+                .build();
+            inner.append(&icon);
+            inner.append(&title);
+            inner.append(&detail);
+            inner.append(&buttons);
+            inner
+        };
+        root.append(&inner);
+        root.update_property(&[gtk::accessible::Property::Label(&i18n("Playing on the TV"))]);
+        Self {
+            root,
+            detail,
+            title,
+            release: release_button,
+        }
+    }
+
+    /// Show the card for `state`, or for a switch to the next item.
+    pub fn show(&self, state: Option<&State>) {
+        self.root.set_visible(true);
+        self.release.set_label(&i18n("Use the player"));
+        self.release.set_tooltip_text(Some(&i18n(
+            "The TV keeps playing, and the player is free for this or another video.",
+        )));
+        match state {
+            Some(state) => {
+                self.title.set_label(&i18n("Playing on the TV"));
+                self.detail.set_label(&card_line(state));
+            }
+            None => self.title.set_label(&i18n("Starting on the TV…")),
+        }
+    }
+
+    /// Show that the TV plays on while the player does something else.
+    pub fn show_released(&self, state: &State) {
+        self.root.set_visible(true);
+        self.title.set_label(&i18n("The TV is still playing"));
+        self.detail.set_label(&card_line(state));
+        self.release.set_label(&i18n("Control the TV"));
+        self.release.set_tooltip_text(Some(&i18n(
+            "The controls drive the TV again, and the player pauses.",
+        )));
+    }
+
+    pub fn hide(&self) {
+        self.root.set_visible(false);
+    }
 }
 
 #[cfg(test)]

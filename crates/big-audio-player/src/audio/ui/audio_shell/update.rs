@@ -240,6 +240,9 @@ impl AudioShell {
                     .emit(LibraryPanelInput::ShowManageFolders(folders));
             }
             AudioShellInput::ShowCast => self.show_tv_dialog(),
+            AudioShellInput::TvChanged => self.on_tv_changed(),
+            AudioShellInput::TvStop => self.tv.control("stop", 0.0),
+            AudioShellInput::TvToggleRelease => self.toggle_tv_release(),
             AudioShellInput::ShowSmartphone => {
                 if let Some(win) = self.window() {
                     crate::audio::ui::smartphone_dialog::present_smartphone(

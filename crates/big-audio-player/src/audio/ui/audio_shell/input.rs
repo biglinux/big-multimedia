@@ -120,6 +120,12 @@ pub enum AudioShellInput {
     ManageFoldersResolved(Vec<WatchFolder>),
     /// Open the "Play on a TV" picker (main menu).
     ShowCast,
+    /// BigNetScreen reported a change (session, position, receivers).
+    TvChanged,
+    /// The TV strip's "Stop sending".
+    TvStop,
+    /// The TV strip's "Use the player" / "Control the TV".
+    TvToggleRelease,
     /// Open the smartphone web-remote dialog (main menu).
     ShowSmartphone,
     /// Re-evaluate the album-art background (Appearance toggle changed).

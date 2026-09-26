@@ -69,10 +69,14 @@ impl Component for VideoShell {
 
         // OSD controls bar (app-local). The trim
         // bar rides inside it (transport ↔ trim stack).
+        // Connected on first use (the TV page), never merely by starting.
+        let tv = crate::shared::tv_cast::TvLink::new();
+        tv.subscribe(|| super::send_to_shell(VideoShellInput::TvChanged));
         let controls = VideoControlsBar::builder()
             .launch(VideoControlsBarInit {
                 settings: settings.clone(),
                 mpv: mpv.clone(),
+                tv: tv.clone(),
                 trim_content: trim.widget().clone().upcast::<gtk::Widget>(),
             })
             .forward(sender.input_sender(), VideoShellInput::Controls);
@@ -154,8 +158,21 @@ impl Component for VideoShell {
                 ]));
             }
         });
+        let tv_pill = gtk::Button::builder()
+            .label(i18n("On the TV"))
+            .tooltip_text(i18n(
+                "The TV is still playing. Click to control it from here",
+            ))
+            .css_classes(["header-pill"])
+            .visible(false)
+            .build();
+        tv_pill.connect_clicked({
+            let sender = sender.clone();
+            move |_| sender.input(VideoShellInput::TvAttach)
+        });
         chrome.header().pack_end(&adjustments_pill);
         chrome.header().pack_end(&hdr_hint);
+        chrome.header().pack_end(&tv_pill);
         chrome.set_bottom_child(controls.widget());
         chrome.bottom_revealer().connect_reveal_child_notify({
             let sender = sender.clone();
@@ -354,6 +371,19 @@ impl Component for VideoShell {
         wire_osd_autohide(&main_overlay, &osd);
         // The settings panel sits over the video, clear of header and controls,
         // which stay shown while it is open.
+        let tv_card = crate::shared::tv_cast::TvCard::new(
+            "settings-panel",
+            false,
+            {
+                let sender = sender.clone();
+                move || sender.input(VideoShellInput::TvStop)
+            },
+            {
+                let sender = sender.clone();
+                move || sender.input(VideoShellInput::TvRelease)
+            },
+        );
+        main_overlay.add_overlay(&tv_card.root);
         let panel = super::panel::SettingsPanel::new(&sender);
         main_overlay.add_overlay(&panel.revealer);
         osd.keep_shown_while({
@@ -368,7 +398,7 @@ impl Component for VideoShell {
         // the window (when not fullscreen).
         wire_video_input(&root, &main_overlay, &sender);
         // Window-level keyboard shortcuts (space/seek/volume/fullscreen/…).
-        super::keyboard::wire_keyboard_shortcuts(&root, &mpv, &settings, &sender);
+        super::keyboard::wire_keyboard_shortcuts(&root, &mpv, &tv, &settings, &sender);
         // Trim-mode keys (I / O / M / Esc): a capture-phase controller that
         // only acts while trim mode is active, so it never shadows the normal
         // bindings on those keys outside trim mode.
@@ -513,6 +543,12 @@ impl Component for VideoShell {
                 hdr_hint,
                 last_reset: None,
                 panel,
+                tv,
+                tv_card,
+                tv_pill,
+                tv_last: None,
+                tv_was_released: false,
+                tv_follow: None,
                 mpv,
                 duration_secs: 0.0,
                 settings,
@@ -691,10 +727,17 @@ impl Component for VideoShell {
                 }
                 VideoShellInput::SleepTick => self.sleep_tick(),
                 VideoShellInput::TogglePlayback => {
-                    if let Some(mpv) = self.mpv.borrow().as_ref() {
+                    if let Some(state) = self.tv_attached() {
+                        self.tv
+                            .control(if state.paused { "play" } else { "pause" }, 0.0);
+                    } else if let Some(mpv) = self.mpv.borrow().as_ref() {
                         mpv.toggle_pause();
                     }
                 }
+                VideoShellInput::TvChanged => self.on_tv_changed(),
+                VideoShellInput::TvStop => self.tv.control("stop", 0.0),
+                VideoShellInput::TvRelease => self.release_tv(),
+                VideoShellInput::TvAttach => self.attach_tv(),
                 VideoShellInput::ToggleFullscreen => {
                     if let Some(root) = window_ref {
                         let _ = toggle_surface_fullscreened(root);

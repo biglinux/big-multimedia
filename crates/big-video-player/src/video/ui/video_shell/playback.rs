@@ -8,21 +8,27 @@ impl VideoShell {
         event: PlayerEvent,
         root: Option<&adw::ApplicationWindow>,
     ) {
+        // While the TV has the controls they show the TV, not the paused mpv.
+        let tv = self.tv_attached().is_some();
         match event {
             PlayerEvent::PositionChanged(pos) => {
-                self.controls
-                    .emit(VideoControlsBarInput::SetPosition(playback_time(pos)));
-                if let Some(frac) = seek_fraction(pos, self.duration_secs) {
+                if !tv {
                     self.controls
-                        .emit(VideoControlsBarInput::SetSeekFraction(frac));
+                        .emit(VideoControlsBarInput::SetPosition(playback_time(pos)));
+                    if let Some(frac) = seek_fraction(pos, self.duration_secs) {
+                        self.controls
+                            .emit(VideoControlsBarInput::SetSeekFraction(frac));
+                    }
                 }
                 self.feed_trim_playhead(pos);
                 self.apply_play_selection(pos);
             }
             PlayerEvent::DurationChanged(dur) => {
                 self.duration_secs = dur;
-                self.controls
-                    .emit(VideoControlsBarInput::SetDuration(playback_time(dur)));
+                if !tv {
+                    self.controls
+                        .emit(VideoControlsBarInput::SetDuration(playback_time(dur)));
+                }
                 self.controls
                     .emit(VideoControlsBarInput::SetDurationSecs(dur));
                 self.feed_trim_duration(dur);
@@ -30,7 +36,9 @@ impl VideoShell {
             PlayerEvent::PauseChanged(paused) => {
                 self.playing = !paused;
                 self.sync_screen_inhibit(root);
-                self.controls.emit(VideoControlsBarInput::SetPaused(paused));
+                if !tv {
+                    self.controls.emit(VideoControlsBarInput::SetPaused(paused));
+                }
                 // Old "keep shown while paused": reveal the OSD when paused, and
                 // re-arm the auto-hide when resuming.
                 self.osd.is_paused.set(paused);
@@ -100,6 +108,7 @@ impl VideoShell {
                 self.refresh_now_playing(root);
                 // Resize the window to the video's aspect (no letterbox bars).
                 self.aspect_snap.snap_on_load();
+                self.tv_follow_loaded();
             }
             PlayerEvent::Buffering(buffering) => {
                 self.buffering_overlay.set_visible(buffering);
@@ -114,10 +123,10 @@ impl VideoShell {
             PlayerEvent::RateChanged(_) => {
                 super::send_to_shell(VideoShellInput::RefreshAdjustments);
             }
-            PlayerEvent::VolumeChanged(volume) => {
+            PlayerEvent::VolumeChanged(volume) if !tv => {
                 self.controls.emit(VideoControlsBarInput::SetVolume(volume));
             }
-            PlayerEvent::MuteChanged(muted) => {
+            PlayerEvent::MuteChanged(muted) if !tv => {
                 self.controls.emit(VideoControlsBarInput::SetMuted(muted));
             }
             PlayerEvent::MetadataChanged(_) => self.refresh_now_playing(root),
@@ -483,7 +492,7 @@ impl VideoShell {
 
     /// Drive mpv from a controls-bar intent.
     pub(super) fn on_controls(
-        &self,
+        &mut self,
         out: VideoControlsBarOutput,
         root: Option<&adw::ApplicationWindow>,
     ) {
@@ -501,6 +510,29 @@ impl VideoShell {
         }
         if let VideoControlsBarOutput::SegmentEdgeAdjusted { id, start, end } = out {
             self.adjust_trim_segment(id, start, end);
+            return;
+        }
+        if let Some(state) = self.tv_attached() {
+            match out {
+                VideoControlsBarOutput::TogglePlay => {
+                    self.tv
+                        .control(if state.paused { "play" } else { "pause" }, 0.0);
+                }
+                VideoControlsBarOutput::SeekChanged(frac) => {
+                    if state.can_seek
+                        && let Some(target) = seek_target_secs(frac, state.duration)
+                    {
+                        self.tv.control("seek-to", target);
+                    }
+                }
+                VideoControlsBarOutput::Next => {
+                    self.tv_skip(true, state.receiver_id);
+                }
+                VideoControlsBarOutput::Previous => {
+                    self.tv_skip(false, state.receiver_id);
+                }
+                _ => {}
+            }
             return;
         }
         let mpv_ref = self.mpv.borrow();
@@ -589,7 +621,7 @@ pub(super) fn is_remote_uri(s: &str) -> bool {
 /// Seek-bar fraction for `pos` within a clip of `duration` seconds, clamped to
 /// `[0, 1]`. `None` when the duration is still unknown (zero or negative), so
 /// the caller leaves the seek bar untouched.
-fn seek_fraction(pos: f64, duration: f64) -> Option<f64> {
+pub(super) fn seek_fraction(pos: f64, duration: f64) -> Option<f64> {
     if duration > 0.0 {
         Some((pos / duration).clamp(0.0, 1.0))
     } else {
@@ -599,7 +631,7 @@ fn seek_fraction(pos: f64, duration: f64) -> Option<f64> {
 
 /// Absolute seek target (seconds) for a `[0,1]` seek-bar `frac`, or `None` while
 /// the duration is unknown (so the caller leaves mpv alone).
-fn seek_target_secs(frac: f64, duration: f64) -> Option<f64> {
+pub(super) fn seek_target_secs(frac: f64, duration: f64) -> Option<f64> {
     (duration > 0.0).then_some(frac * duration)
 }
 

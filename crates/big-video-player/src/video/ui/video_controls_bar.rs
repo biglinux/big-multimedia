@@ -49,6 +49,8 @@ pub struct VideoControlsBarInit {
     pub settings: Settings,
     /// Shared mpv handle the popover callbacks read at call time.
     pub mpv: MpvSlot,
+    /// While a TV plays this player's session, volume and mute drive it.
+    pub tv: Rc<crate::shared::tv_cast::TvLink>,
     /// The trim-bar widget, shown IN PLACE of the transport button row while trim
     /// mode is active (so the cut controls live inside the existing controls, not
     /// a separate bar).
@@ -334,7 +336,7 @@ impl Component for VideoControlsBar {
             volume_scale,
             sound,
             suppress_volume,
-        } = build_start_box(&init.settings, &init.mpv);
+        } = build_start_box(&init.settings, &init.mpv, &init.tv);
         center.set_start_widget(Some(&start_box));
 
         let (controls_center, previous_button, play_button, next_button) = build_center_box();

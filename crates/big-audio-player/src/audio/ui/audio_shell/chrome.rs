@@ -115,7 +115,7 @@ impl AudioShell {
                     }),
             })
         };
-        present_tv_dialog(&win, &self.settings, media, move || {
+        present_tv_dialog(&win, &self.tv, &self.settings, media, move || {
             if let Some(mpv) = &mpv {
                 mpv.pause();
             }
