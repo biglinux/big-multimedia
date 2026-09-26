@@ -56,6 +56,44 @@ pub(crate) fn build_queue_view(state: &Rc<BrowserState>, items: &[String]) -> gt
 
     let list = gtk::ListView::new(Some(selection.clone()), Some(factory));
     list.set_single_click_activate(true);
+    // Alt+Up / Alt+Down move the focused row one place. Capture phase: the
+    // list's own row keeps plain arrow keys, and took these too.
+    let keys = gtk::EventControllerKey::new();
+    keys.set_propagation_phase(gtk::PropagationPhase::Capture);
+    {
+        let state = state.clone();
+        let list = list.downgrade();
+        keys.connect_key_pressed(move |_, key, _, modifiers| {
+            use gtk::gdk::Key;
+            let step: isize = match key {
+                Key::Up if modifiers.contains(gtk::gdk::ModifierType::ALT_MASK) => -1,
+                Key::Down if modifiers.contains(gtk::gdk::ModifierType::ALT_MASK) => 1,
+                _ => return glib::Propagation::Proceed,
+            };
+            let Some(from) = list
+                .upgrade()
+                .and_then(|list| list.focus_child())
+                .and_then(|item| item.first_child())
+                .and_downcast::<gtk::Box>()
+                .and_then(|row| queue_index_of(&row))
+            else {
+                return glib::Propagation::Proceed;
+            };
+            let Some(to) = from.checked_add_signed(step) else {
+                return glib::Propagation::Stop;
+            };
+            state.move_in_queue(from, to);
+            if let Some(list) = list.upgrade() {
+                list.scroll_to(
+                    u32::try_from(to).unwrap_or(0),
+                    gtk::ListScrollFlags::FOCUS,
+                    None,
+                );
+            }
+            glib::Propagation::Stop
+        });
+    }
+    list.add_controller(keys);
     list.add_css_class("navigation-sidebar");
     list.add_css_class("queue-list");
     list.connect_activate({
@@ -92,6 +130,16 @@ fn build_queue_row(state: &Rc<BrowserState>) -> gtk::Box {
         .margin_top(3)
         .margin_bottom(3)
         .build();
+
+    // Drag it by this to another place in the list.
+    let handle = gtk::Image::builder()
+        .icon_name("list-drag-handle-symbolic")
+        .valign(gtk::Align::Center)
+        .css_classes(["dim-label", "queue-handle"])
+        .build();
+    handle.set_cursor_from_name(Some("grab"));
+    tooltip_set(&handle, &crate::i18n::i18n("Drag to change the order"));
+    row.append(&handle);
 
     let pos = gtk::Label::builder()
         .width_request(20)
@@ -150,7 +198,54 @@ fn build_queue_row(state: &Rc<BrowserState>) -> gtk::Box {
         }
     });
     row.append(&remove);
+    wire_reorder(state, &row);
     row
+}
+
+/// The row's queue position, from its `q:{index}` widget name.
+fn queue_index_of(row: &gtk::Box) -> Option<usize> {
+    row.widget_name().strip_prefix("q:")?.parse().ok()
+}
+
+/// Drag the row onto another to put it there: above that row when dropped
+/// on its upper half, below on its lower half.
+fn wire_reorder(state: &Rc<BrowserState>, row: &gtk::Box) {
+    let drag = gtk::DragSource::builder()
+        .actions(gtk::gdk::DragAction::MOVE)
+        .build();
+    {
+        let row = row.downgrade();
+        drag.connect_prepare(move |_, _, _| {
+            let index = queue_index_of(&row.upgrade()?)?;
+            Some(gtk::gdk::ContentProvider::for_value(
+                &(index as u64).to_value(),
+            ))
+        });
+    }
+    row.add_controller(drag);
+
+    let drop = gtk::DropTarget::new(u64::static_type(), gtk::gdk::DragAction::MOVE);
+    {
+        let state = state.clone();
+        let row = row.downgrade();
+        drop.connect_drop(move |_, value, _, y| {
+            let (Some(row), Ok(from)) = (row.upgrade(), value.get::<u64>()) else {
+                return false;
+            };
+            let Some(onto) = queue_index_of(&row) else {
+                return false;
+            };
+            let from = from as usize;
+            let below = y > f64::from(row.height()) / 2.0;
+            let mut to = onto + usize::from(below);
+            if from < to {
+                to -= 1;
+            }
+            state.move_in_queue(from, to);
+            true
+        });
+    }
+    row.add_controller(drop);
 }
 
 /// Resolve a queue row's path from its `q:{index}` widget name.
@@ -171,7 +266,12 @@ fn bind_queue_row(state: &Rc<BrowserState>, queue_cell: &gtk::ListItem, generati
     let Some(row) = queue_cell.child().and_downcast::<gtk::Box>() else {
         return;
     };
-    let Some(pos) = row.first_child().and_downcast::<gtk::Label>() else {
+    // First the drag handle, then the position.
+    let Some(pos) = row
+        .first_child()
+        .and_then(|handle| handle.next_sibling())
+        .and_downcast::<gtk::Label>()
+    else {
         return;
     };
     let Some(frame) = pos.next_sibling().and_downcast::<gtk::Frame>() else {

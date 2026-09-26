@@ -99,6 +99,9 @@ pub enum VideoBrowserSidebarOutput {
     /// Put `path` right after the playing entry (adding it if absent), and
     /// start it when `now`: "Play next", or a video found elsewhere.
     PlayNext { path: String, now: bool },
+    /// The playlist row for `path` was moved to position `to` (dragged, or
+    /// Alt+Up/Down): the queue already shows it there.
+    MoveEntry { path: String, to: usize },
     /// Remove this path from the mpv playlist (if present); the sidebar already
     /// dropped it from its own queue.
     RemoveEntry(String),
@@ -203,6 +206,41 @@ impl BrowserState {
             .and_then(|cur| items.iter().position(|p| p == cur))
             .map_or(-1, |i| i as i64);
         self.pos.set(pos);
+    }
+
+    /// Move the queue entry `from` to `to`, in place: the rows between are
+    /// renumbered without rebuilding, so the list keeps its scroll and focus.
+    fn move_in_queue(&self, from: usize, to: usize) {
+        let path = {
+            let mut queue = self.queue.borrow_mut();
+            if from >= queue.len() || to >= queue.len() || from == to {
+                return;
+            }
+            let path = queue.remove(from);
+            queue.insert(to, path.clone());
+            path
+        };
+        self.recompute_pos();
+        self.prev_pos.set(self.pos.get());
+        if let Some(store) = self.store.borrow().as_ref() {
+            let queue = self.queue.borrow();
+            let (low, high) = (from.min(to), from.max(to));
+            let rows: Vec<glib::BoxedAnyObject> = (low..=high)
+                .map(|index| {
+                    glib::BoxedAnyObject::new(crate::media::playlist::PlaylistEntry {
+                        display_name: crate::media::playlist::display_name(&queue[index]),
+                        path: queue[index].clone(),
+                        kind: crate::media::playlist::EntryKind::Video,
+                        index,
+                    })
+                })
+                .collect();
+            let offset = self.folder_entry_count.get();
+            store.splice(offset + low as u32, (high - low + 1) as u32, &rows);
+        }
+        self.sender
+            .output(VideoBrowserSidebarOutput::MoveEntry { path, to })
+            .ok();
     }
 
     /// Re-run the active view filter (after a chip or search change).

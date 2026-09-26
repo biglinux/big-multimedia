@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: big-media-runtime 2.0.0\n"
 "Report-Msgid-Bugs-To: https://github.com/biglinux/big-multimedia/issues\n"
-"POT-Creation-Date: 2026-09-26 07:39-0300\n"
+"POT-Creation-Date: 2026-09-26 07:52-0300\n"
 "PO-Revision-Date: 2026-05-29 05:37-0300\n"
 "Last-Translator: Automatically generated\n"
 "Language-Team: none\n"
@@ -184,7 +184,7 @@ msgstr "Alternar repetição"
 
 #: crates/big-audio-player/src/audio/keybindings.rs:101
 #: crates/big-video-player/src/video/ui/video_shell/panel.rs:530
-#: crates/big-video-player/src/video/ui/video_shell/playback.rs:424
+#: crates/big-video-player/src/video/ui/video_shell/playback.rs:426
 msgid "Undo"
 msgstr "Desfazer"
 
@@ -988,9 +988,9 @@ msgid "New Playlist"
 msgstr "Nova lista de reprodução"
 
 #: crates/big-audio-player/src/audio/ui/library_dialogs.rs:67
-#: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/context_menu.rs:71
-#: crates/big-video-player/src/video/ui/video_browser_sidebar/disk_search.rs:183
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/context_menu.rs:82
 #: crates/big-video-player/src/video/ui/video_browser_sidebar/disk_search.rs:187
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/disk_search.rs:191
 #: crates/big-video-player/src/video/ui/video_browser_sidebar/fileops.rs:72
 msgid "Add to playlist"
 msgstr "Adicionar à lista de reprodução"
@@ -2704,7 +2704,7 @@ msgstr "A fila de capturas está cheia; aguarde as capturas pendentes"
 #: crates/big-video-player/src/video/ui/menu_dialogs.rs:127
 #: crates/big-video-player/src/video/ui/menu_dialogs.rs:131
 #: crates/big-video-player/src/video/ui/menu_dialogs.rs:142
-#: crates/big-video-player/src/video/ui/video_shell/component.rs:715
+#: crates/big-video-player/src/video/ui/video_shell/component.rs:716
 #: crates/big-video-player/src/video/ui/video_shell/playback.rs:145
 msgid "Screenshot failed"
 msgstr "Falha na captura de tela"
@@ -3308,21 +3308,25 @@ msgstr "Renderização simples"
 msgid "Turns off effects and shaders for very old graphics cards"
 msgstr "Desativa efeitos e shaders para placas de vídeo muito antigas"
 
-#: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/context_menu.rs:78
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/context_menu.rs:69
+msgid "Play next"
+msgstr "Tocar a seguir"
+
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/context_menu.rs:89
 msgid "Rename…"
 msgstr "Renomear…"
 
-#: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/context_menu.rs:83
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/context_menu.rs:94
 #: crates/big-video-player/src/video/ui/video_browser_sidebar/fileops.rs:83
 msgid "Move to trash"
 msgstr "Mover para a lixeira"
 
-#: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/context_menu.rs:90
-#: crates/big-video-player/src/video/ui/video_browser_sidebar/views/queue_view.rs:139
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/context_menu.rs:101
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/views/queue_view.rs:185
 msgid "Remove from playlist"
 msgstr "Remover da lista de reprodução"
 
-#: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/context_menu.rs:105
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/context_menu.rs:116
 msgid "Open containing folder"
 msgstr "Abrir pasta do arquivo"
 
@@ -3457,7 +3461,7 @@ msgstr ""
 "Exibindo {shown} de {total} arquivos encontrados. Considere filtrar por "
 "subpasta."
 
-#: crates/big-video-player/src/video/ui/video_browser_sidebar/disk_search.rs:151
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/disk_search.rs:155
 #, rust-format
 msgid "{} more on this computer"
 msgid_plural "{} more on this computer"
@@ -3518,13 +3522,17 @@ msgstr "Falha ao renomear"
 msgid "{ok} {verb}, {failed} failed"
 msgstr "{ok} {verb}, {failed} com falha"
 
-#: crates/big-video-player/src/video/ui/video_browser_sidebar/mod.rs:339
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/mod.rs:383
 msgid "Scanning…"
 msgstr "Varrendo…"
 
 #: crates/big-video-player/src/video/ui/video_browser_sidebar/views/model.rs:34
 msgid "Previous folder"
 msgstr "Pasta anterior"
+
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/views/queue_view.rs:139
+msgid "Drag to change the order"
+msgstr "Arraste para mudar a ordem"
 
 #: crates/big-video-player/src/video/ui/video_controls_bar.rs:259
 msgid "Seek Position"
@@ -3636,7 +3644,7 @@ msgid "Drop a file or open one to start"
 msgstr "Solte um arquivo ou abra um para começar"
 
 #: crates/big-video-player/src/video/ui/video_shell/actions.rs:132
-#: crates/big-video-player/src/video/ui/video_shell/component.rs:819
+#: crates/big-video-player/src/video/ui/video_shell/component.rs:820
 msgid "Open Recent"
 msgstr "Abrir recente"
 
@@ -3779,21 +3787,21 @@ msgstr "A TV continua tocando"
 msgid "Keep Above"
 msgstr "Manter acima"
 
-#: crates/big-video-player/src/video/ui/video_shell/component.rs:818
+#: crates/big-video-player/src/video/ui/video_shell/component.rs:819
 #: crates/big-video-player/src/video/ui/video_shell/input_gestures.rs:116
 msgid "Open File…"
 msgstr "Abrir arquivo…"
 
-#: crates/big-video-player/src/video/ui/video_shell/component.rs:820
+#: crates/big-video-player/src/video/ui/video_shell/component.rs:821
 #: crates/big-video-player/src/video/ui/video_shell/input_gestures.rs:117
 msgid "Open URL…"
 msgstr "Abrir URL…"
 
-#: crates/big-video-player/src/video/ui/video_shell/component.rs:821
+#: crates/big-video-player/src/video/ui/video_shell/component.rs:822
 msgid "Open Disc…"
 msgstr "Abrir disco…"
 
-#: crates/big-video-player/src/video/ui/video_shell/component.rs:822
+#: crates/big-video-player/src/video/ui/video_shell/component.rs:823
 msgid "TV Channels (IPTV)…"
 msgstr "Canais de TV (IPTV)…"
 
@@ -4018,11 +4026,11 @@ msgstr "A captura excedeu o tempo de espera; o cancelamento foi solicitado"
 msgid "Playing video"
 msgstr "Reproduzindo vídeo"
 
-#: crates/big-video-player/src/video/ui/video_shell/playback.rs:413
+#: crates/big-video-player/src/video/ui/video_shell/playback.rs:415
 msgid "Could not move to trash"
 msgstr "Não foi possível mover para a lixeira"
 
-#: crates/big-video-player/src/video/ui/video_shell/playback.rs:418
+#: crates/big-video-player/src/video/ui/video_shell/playback.rs:420
 #, rust-format
 msgid "{} file moved to trash"
 msgid_plural "{} files moved to trash"

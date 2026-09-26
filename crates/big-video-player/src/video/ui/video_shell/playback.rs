@@ -350,6 +350,7 @@ impl VideoShell {
             }
             VideoBrowserSidebarOutput::Enqueue(paths) => self.enqueue_paths(&paths),
             VideoBrowserSidebarOutput::PlayNext { path, now } => self.play_next(path, now),
+            VideoBrowserSidebarOutput::MoveEntry { path, to } => self.move_entry(&path, to),
             VideoBrowserSidebarOutput::RemoveEntry(path) => self.remove_playlist_entry(&path),
             VideoBrowserSidebarOutput::Clear => {
                 if let Some(mpv) = self.mpv.borrow().as_ref() {
@@ -460,6 +461,30 @@ impl VideoShell {
         self.playlist.emit(VideoBrowserSidebarInput::SetQueue(
             self.playlist_paths.clone(),
         ));
+    }
+
+    /// The listing moved `path` to position `to`: follow in mpv, by the entry
+    /// that now comes after it, so a shuffled mpv order is kept too.
+    fn move_entry(&mut self, path: &str, to: usize) {
+        let Some(from) = playlist_index_of(&self.playlist_paths, path) else {
+            return;
+        };
+        let entry = self.playlist_paths.remove(from);
+        let to = to.min(self.playlist_paths.len());
+        self.playlist_paths.insert(to, entry);
+        let Some(mpv) = self.mpv.borrow().clone() else {
+            return;
+        };
+        let order = mpv.get_playlist_paths();
+        let Some(mpv_from) = playlist_index_of(&order, path) else {
+            return;
+        };
+        let before = self
+            .playlist_paths
+            .get(to + 1)
+            .and_then(|next| playlist_index_of(&order, next))
+            .unwrap_or(order.len());
+        mpv.playlist_move(mpv_from as i64, before as i64);
     }
 
     /// Put `path` right after the playing entry, in mpv and in the listing,

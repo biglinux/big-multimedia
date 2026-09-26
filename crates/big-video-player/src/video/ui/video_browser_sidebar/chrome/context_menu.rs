@@ -65,6 +65,17 @@ pub(crate) fn show_row_context_menu(
         }
     });
 
+    // Right after the playing one, in either tab: the list is kept.
+    let next = add_context_menu_button(&i18n("Play next"), "media-skip-forward-symbolic");
+    next.connect_clicked(emit_paths(state, &popover, path, |s, p| {
+        s.sender
+            .output(VideoBrowserSidebarOutput::PlayNext {
+                path: p,
+                now: false,
+            })
+            .ok();
+    }));
+
     // Files mode → everyday per-item actions (bulk org lives in the batch bar);
     // Playlist mode → just Remove.
     if state.mode.get() == SidebarMode::Files {

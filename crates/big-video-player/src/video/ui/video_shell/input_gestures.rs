@@ -153,9 +153,18 @@ pub(super) fn wire_video_input(
     {
         let drag_start = drag_start.clone();
         let move_started = move_started.clone();
-        drag.connect_drag_begin(move |_, start_x, start_y| {
+        drag.connect_drag_begin(move |gesture, start_x, start_y| {
             drag_start.set((start_x, start_y));
-            move_started.set(false);
+            // A drag that starts on a floating panel is the panel's (a row
+            // being reordered, a slider): it does not move the window.
+            let on_panel = gesture
+                .widget()
+                .and_then(|overlay| overlay.pick(start_x, start_y, gtk::PickFlags::DEFAULT))
+                .is_some_and(|picked| {
+                    std::iter::successors(Some(picked), gtk::Widget::parent)
+                        .any(|widget| widget.has_css_class("settings-panel"))
+                });
+            move_started.set(on_panel);
         });
     }
     {
