@@ -94,6 +94,8 @@ pub enum VideoControlsBarInput {
     SetVolume(f64),
     /// Mirror an external mixer mute change onto the volume button icon.
     SetMuted(bool),
+    /// Whose volume the control moves: the TV's while a TV has the controls.
+    SetVolumeOfTv(bool),
 }
 
 /// User intents emitted by the bar for the shell to act on.
@@ -140,6 +142,7 @@ pub struct VideoControlsBar {
     volume_scale: gtk::Scale,
     sound: zones::SoundIndicator,
     suppress_volume: std::rc::Rc<std::cell::Cell<bool>>,
+    volume_title: Option<gtk::Label>,
     /// Guard so programmatic scrub updates do not echo as user seek intents.
     suppress_seek: Rc<std::cell::Cell<bool>>,
     /// Live mpv handle shared with the popover callbacks (for track menus).
@@ -336,6 +339,7 @@ impl Component for VideoControlsBar {
             volume_scale,
             sound,
             suppress_volume,
+            volume_title,
         } = build_start_box(&init.settings, &init.mpv, &init.tv);
         center.set_start_widget(Some(&start_box));
 
@@ -414,6 +418,7 @@ impl Component for VideoControlsBar {
             volume_scale,
             sound,
             suppress_volume,
+            volume_title,
             suppress_seek,
             mpv: init.mpv,
             hover_popovers,
@@ -499,6 +504,18 @@ impl Component for VideoControlsBar {
             }
             VideoControlsBarInput::SetMuted(muted) => {
                 self.sound.show(muted, self.volume_scale.value());
+            }
+            VideoControlsBarInput::SetVolumeOfTv(tv) => {
+                let label = if tv {
+                    i18n("TV volume")
+                } else {
+                    i18n("Volume")
+                };
+                if let Some(title) = &self.volume_title {
+                    title.set_label(&label);
+                }
+                self.volume_scale
+                    .update_property(&[gtk::accessible::Property::Label(&label)]);
             }
         }
     }

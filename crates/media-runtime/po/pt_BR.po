@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: big-media-runtime 2.0.0\n"
 "Report-Msgid-Bugs-To: https://github.com/biglinux/big-multimedia/issues\n"
-"POT-Creation-Date: 2026-09-26 00:37-0300\n"
+"POT-Creation-Date: 2026-09-26 01:27-0300\n"
 "PO-Revision-Date: 2026-05-29 05:37-0300\n"
 "Last-Translator: Automatically generated\n"
 "Language-Team: none\n"
@@ -610,17 +610,17 @@ msgid "Seek position"
 msgstr "Posição de busca"
 
 #: crates/big-audio-player/src/audio/ui/audio_shell/playback.rs:158
-#: crates/big-video-player/src/video/ui/video_controls_bar.rs:263
+#: crates/big-video-player/src/video/ui/video_controls_bar.rs:266
 msgid "Cut timeline"
 msgstr "Linha do tempo dos cortes"
 
 #: crates/big-audio-player/src/audio/ui/audio_shell/playback.rs:160
-#: crates/big-video-player/src/video/ui/video_controls_bar/zones.rs:482
+#: crates/big-video-player/src/video/ui/video_controls_bar/zones.rs:489
 msgid "Previous"
 msgstr "Anterior"
 
 #: crates/big-audio-player/src/audio/ui/audio_shell/playback.rs:161
-#: crates/big-video-player/src/video/ui/video_controls_bar/zones.rs:485
+#: crates/big-video-player/src/video/ui/video_controls_bar/zones.rs:492
 msgid "Next"
 msgstr "Próximo"
 
@@ -636,21 +636,23 @@ msgid "Repeat"
 msgstr "Repetir"
 
 #: crates/big-audio-player/src/audio/ui/audio_shell/playback.rs:164
+#: crates/big-video-player/src/video/ui/video_controls_bar.rs:512
 #: crates/ui/media/big-media-components/src/player_chrome.rs:298
 #: crates/ui/media/big-media-components/src/text.rs:75
 #: crates/ui/media/big-media-components/src/text.rs:83
 #: crates/ui/media/big-media-components/src/text.rs:92
+#: crates/ui/media/big-player-ui/src/playback_bar.rs:312
 msgid "Volume"
 msgstr "Volume"
 
 #: crates/big-audio-player/src/audio/ui/audio_shell/playback.rs:165
-#: crates/big-video-player/src/video/ui/video_controls_bar/zones.rs:283
+#: crates/big-video-player/src/video/ui/video_controls_bar/zones.rs:285
 #: crates/ui/media/big-media-components/src/player_chrome.rs:309
 msgid "Speed"
 msgstr "Velocidade"
 
 #: crates/big-audio-player/src/audio/ui/audio_shell/playback.rs:166
-#: crates/big-video-player/src/video/ui/video_controls_bar/zones.rs:298
+#: crates/big-video-player/src/video/ui/video_controls_bar/zones.rs:300
 msgid "Voice Enhancement"
 msgstr "Aprimoramento de voz"
 
@@ -966,7 +968,7 @@ msgstr "Adicionar faixa à lista de reprodução"
 #: crates/big-audio-player/src/audio/ui/library_tree/view.rs:475
 #: crates/big-audio-player/src/audio/ui/playlist_interactions.rs:427
 #: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/context_menu.rs:41
-#: crates/big-video-player/src/video/ui/video_controls_bar/zones.rs:483
+#: crates/big-video-player/src/video/ui/video_controls_bar/zones.rs:490
 #: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:173
 msgid "Play"
 msgstr "Reproduzir"
@@ -1322,7 +1324,7 @@ msgid "Clear Queue"
 msgstr "Limpar fila"
 
 #: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:117
-#: crates/big-video-player/src/video/ui/video_controls_bar/zones.rs:578
+#: crates/big-video-player/src/video/ui/video_controls_bar/zones.rs:585
 msgid "Convert…"
 msgstr "Converter…"
 
@@ -1804,7 +1806,7 @@ msgstr "Alternar legendas secundárias"
 #: crates/big-video-player/src/video/keybindings.rs:222
 #: crates/big-video-player/src/video/keybindings.rs:229
 #: crates/big-video-player/src/video/ui/preferences/subtitles.rs:19
-#: crates/big-video-player/src/video/ui/video_controls_bar/zones.rs:527
+#: crates/big-video-player/src/video/ui/video_controls_bar/zones.rs:534
 msgid "Subtitles"
 msgstr "Legendas"
 
@@ -1878,8 +1880,8 @@ msgid "Paste and play"
 msgstr "Colar e reproduzir"
 
 #: crates/big-video-player/src/video/keybindings.rs:316
-#: crates/big-video-player/src/video/ui/video_controls_bar.rs:229
-#: crates/big-video-player/src/video/ui/video_controls_bar.rs:230
+#: crates/big-video-player/src/video/ui/video_controls_bar.rs:232
+#: crates/big-video-player/src/video/ui/video_controls_bar.rs:233
 msgid "Go to time"
 msgstr "Ir para o tempo"
 
@@ -2865,7 +2867,7 @@ msgstr "A fila de capturas está cheia; aguarde as capturas pendentes"
 #: crates/big-video-player/src/video/ui/menu_dialogs.rs:132
 #: crates/big-video-player/src/video/ui/menu_dialogs.rs:136
 #: crates/big-video-player/src/video/ui/menu_dialogs.rs:147
-#: crates/big-video-player/src/video/ui/video_shell/component.rs:720
+#: crates/big-video-player/src/video/ui/video_shell/component.rs:725
 #: crates/big-video-player/src/video/ui/video_shell/playback.rs:146
 msgid "Screenshot failed"
 msgstr "Falha na captura de tela"
@@ -3683,9 +3685,14 @@ msgstr "Varrendo…"
 msgid "Previous folder"
 msgstr "Pasta anterior"
 
-#: crates/big-video-player/src/video/ui/video_controls_bar.rs:250
+#: crates/big-video-player/src/video/ui/video_controls_bar.rs:253
 msgid "Seek Position"
 msgstr "Posição de busca"
+
+#: crates/big-video-player/src/video/ui/video_controls_bar.rs:510
+#: crates/ui/media/big-player-ui/src/playback_bar.rs:310
+msgid "TV volume"
+msgstr "Volume da TV"
 
 #: crates/big-video-player/src/video/ui/video_controls_bar/seek_preview.rs:40
 msgid "Seek preview"
@@ -3735,38 +3742,38 @@ msgstr "Faixa"
 msgid "external"
 msgstr "externo"
 
-#: crates/big-video-player/src/video/ui/video_controls_bar/zones.rs:202
+#: crates/big-video-player/src/video/ui/video_controls_bar/zones.rs:204
 msgid "No sound"
 msgstr "Sem som"
 
-#: crates/big-video-player/src/video/ui/video_controls_bar/zones.rs:206
+#: crates/big-video-player/src/video/ui/video_controls_bar/zones.rs:208
 msgid "Unmute"
 msgstr "Ativar som"
 
-#: crates/big-video-player/src/video/ui/video_controls_bar/zones.rs:206
-#: crates/big-video-player/src/video/ui/video_controls_bar/zones.rs:270
-#: crates/big-video-player/src/video/ui/video_controls_bar/zones.rs:317
+#: crates/big-video-player/src/video/ui/video_controls_bar/zones.rs:208
+#: crates/big-video-player/src/video/ui/video_controls_bar/zones.rs:272
+#: crates/big-video-player/src/video/ui/video_controls_bar/zones.rs:319
 msgid "Mute"
 msgstr "Silenciar"
 
-#: crates/big-video-player/src/video/ui/video_controls_bar/zones.rs:521
+#: crates/big-video-player/src/video/ui/video_controls_bar/zones.rs:528
 msgid "Edit & Export"
 msgstr "Editar e exportar"
 
-#: crates/big-video-player/src/video/ui/video_controls_bar/zones.rs:535
+#: crates/big-video-player/src/video/ui/video_controls_bar/zones.rs:542
 msgid "Audio Track"
 msgstr "Faixa de áudio"
 
-#: crates/big-video-player/src/video/ui/video_controls_bar/zones.rs:541
+#: crates/big-video-player/src/video/ui/video_controls_bar/zones.rs:548
 #: crates/big-video-player/src/video/ui/video_shell/input_gestures.rs:104
 msgid "Fullscreen"
 msgstr "Tela cheia"
 
-#: crates/big-video-player/src/video/ui/video_controls_bar/zones.rs:576
+#: crates/big-video-player/src/video/ui/video_controls_bar/zones.rs:583
 msgid "Cut Video…"
 msgstr "Cortar Vídeo…"
 
-#: crates/big-video-player/src/video/ui/video_controls_bar/zones.rs:577
+#: crates/big-video-player/src/video/ui/video_controls_bar/zones.rs:584
 msgid "Extract Audio…"
 msgstr "Extrair áudio…"
 
@@ -3775,7 +3782,7 @@ msgid "Drop a file or open one to start"
 msgstr "Solte um arquivo ou abra um para começar"
 
 #: crates/big-video-player/src/video/ui/video_shell/actions.rs:154
-#: crates/big-video-player/src/video/ui/video_shell/component.rs:807
+#: crates/big-video-player/src/video/ui/video_shell/component.rs:812
 msgid "Open Recent"
 msgstr "Abrir recente"
 
@@ -3917,21 +3924,21 @@ msgstr "A TV continua tocando"
 msgid "Keep Above"
 msgstr "Manter acima"
 
-#: crates/big-video-player/src/video/ui/video_shell/component.rs:806
+#: crates/big-video-player/src/video/ui/video_shell/component.rs:811
 #: crates/big-video-player/src/video/ui/video_shell/input_gestures.rs:115
 msgid "Open File…"
 msgstr "Abrir arquivo…"
 
-#: crates/big-video-player/src/video/ui/video_shell/component.rs:808
+#: crates/big-video-player/src/video/ui/video_shell/component.rs:813
 #: crates/big-video-player/src/video/ui/video_shell/input_gestures.rs:116
 msgid "Open URL…"
 msgstr "Abrir URL…"
 
-#: crates/big-video-player/src/video/ui/video_shell/component.rs:809
+#: crates/big-video-player/src/video/ui/video_shell/component.rs:814
 msgid "Open Disc…"
 msgstr "Abrir disco…"
 
-#: crates/big-video-player/src/video/ui/video_shell/component.rs:810
+#: crates/big-video-player/src/video/ui/video_shell/component.rs:815
 msgid "TV Channels (IPTV)…"
 msgstr "Canais de TV (IPTV)…"
 

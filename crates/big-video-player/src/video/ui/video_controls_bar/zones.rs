@@ -166,6 +166,8 @@ pub(super) struct StartBoxWidgets {
     pub(super) volume_scale: gtk::Scale,
     pub(super) sound: SoundIndicator,
     pub(super) suppress_volume: std::rc::Rc<std::cell::Cell<bool>>,
+    /// The popover's heading: "Volume", or "TV volume" while a TV has it.
+    pub(super) volume_title: Option<gtk::Label>,
 }
 
 /// The volume control's face: its button, the readout beside it and the
@@ -317,6 +319,10 @@ pub(super) fn build_start_box(
         .label(i18n("Mute"))
         .css_classes(["flat"])
         .build();
+    let volume_title = volume_popover
+        .child()
+        .and_then(|content| content.first_child())
+        .and_downcast::<gtk::Label>();
     if let Some(content) = volume_popover.child().and_downcast::<gtk::Box>() {
         content.append(&mute_toggle);
     }
@@ -468,6 +474,7 @@ pub(super) fn build_start_box(
         volume_scale,
         sound,
         suppress_volume,
+        volume_title,
     }
 }
 

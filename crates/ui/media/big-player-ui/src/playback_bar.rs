@@ -75,6 +75,8 @@ pub enum AudioPlaybackBarInput {
     },
     /// Set the volume slider value (`0..=max_volume`) without emitting.
     SetVolumeValue(f64),
+    /// Whose volume the slider moves: the TV's while a TV has the transport.
+    SetVolumeOfTv(bool),
     /// Toggle the `voice-active` style on the voice button.
     SetVoiceActive(bool),
     /// Reflect the lyrics-panel visibility on the toggle without emitting.
@@ -301,6 +303,26 @@ impl Component for AudioPlaybackBar {
             AudioPlaybackBarInput::SetVolumeValue(value) => {
                 let scale = self.volume_scale.clone();
                 self.with_guard(|| scale.set_value(value));
+            }
+            AudioPlaybackBarInput::SetVolumeOfTv(tv) => {
+                use big_media_components::text::text;
+                let label = if tv {
+                    text("TV volume")
+                } else {
+                    text("Volume")
+                };
+                // The volume popover's heading is its content's first child.
+                if let Some(title) = self
+                    ._popovers
+                    .first()
+                    .and_then(|popover| popover.child())
+                    .and_then(|content| content.first_child())
+                    .and_downcast::<gtk::Label>()
+                {
+                    title.set_label(&label);
+                }
+                self.volume_scale
+                    .update_property(&[gtk::accessible::Property::Label(&label)]);
             }
             AudioPlaybackBarInput::SetVoiceActive(active) => {
                 if active {

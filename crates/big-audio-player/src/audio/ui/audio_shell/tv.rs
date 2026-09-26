@@ -230,6 +230,7 @@ impl AudioShell {
 
     fn show_tv_in_transport(&self, state: &State) {
         let bar = self.playback_bar.sender();
+        let _ = bar.send(AudioPlaybackBarInput::SetVolumeOfTv(true));
         let _ = bar.send(AudioPlaybackBarInput::SetPaused(state.paused));
         let _ = bar.send(AudioPlaybackBarInput::SetPosition(time::playback_time(
             state.position,
@@ -262,6 +263,7 @@ impl AudioShell {
             return;
         };
         let bar = self.playback_bar.sender();
+        let _ = bar.send(AudioPlaybackBarInput::SetVolumeOfTv(false));
         let position = mpv.get_position();
         let volume = mpv.get_volume();
         let _ = bar.send(AudioPlaybackBarInput::SetPaused(mpv.is_paused()));

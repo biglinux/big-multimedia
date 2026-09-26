@@ -209,6 +209,7 @@ impl VideoShell {
 
     fn show_tv_in_controls(&self, state: &State) {
         let controls = self.controls.sender();
+        let _ = controls.send(VideoControlsBarInput::SetVolumeOfTv(true));
         let _ = controls.send(VideoControlsBarInput::SetPaused(state.paused));
         let _ = controls.send(VideoControlsBarInput::SetPosition(playback_time(
             state.position,
@@ -233,6 +234,7 @@ impl VideoShell {
             return;
         };
         let controls = self.controls.sender();
+        let _ = controls.send(VideoControlsBarInput::SetVolumeOfTv(false));
         let position = mpv.get_position();
         let _ = controls.send(VideoControlsBarInput::SetPaused(mpv.is_paused()));
         let _ = controls.send(VideoControlsBarInput::SetPosition(playback_time(position)));
