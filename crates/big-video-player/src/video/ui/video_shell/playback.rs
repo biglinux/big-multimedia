@@ -358,6 +358,7 @@ impl VideoShell {
             VideoBrowserSidebarOutput::Enqueue(paths) => self.enqueue_paths(&paths),
             VideoBrowserSidebarOutput::PlayNext { path, now } => self.play_next(path, now),
             VideoBrowserSidebarOutput::MoveEntry { path, to } => self.move_entry(&path, to),
+            VideoBrowserSidebarOutput::ShowTab(mode) => self.show_sidebar_mode(mode),
             VideoBrowserSidebarOutput::RemoveEntry(path) => self.remove_playlist_entry(&path),
             VideoBrowserSidebarOutput::Clear => {
                 if let Some(mpv) = self.mpv.borrow().as_ref() {
@@ -492,6 +493,16 @@ impl VideoShell {
             .and_then(|next| playlist_index_of(&order, next))
             .unwrap_or(order.len());
         mpv.playlist_move(mpv_from as i64, before as i64);
+    }
+
+    /// Dropped on the playlist: the videos among `paths` join its end.
+    pub(super) fn enqueue_files(&mut self, paths: &[String]) {
+        let media: Vec<String> = paths
+            .iter()
+            .filter(|path| crate::media::playlist::is_media_file(path))
+            .cloned()
+            .collect();
+        self.enqueue_paths(&media);
     }
 
     /// Put `path` right after the playing entry, in mpv and in the listing,

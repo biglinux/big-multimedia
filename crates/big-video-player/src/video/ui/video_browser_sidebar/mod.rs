@@ -102,6 +102,9 @@ pub enum VideoBrowserSidebarOutput {
     /// Put `path` right after the playing entry (adding it if absent), and
     /// start it when `now`: "Play next", or a video found elsewhere.
     PlayNext { path: String, now: bool },
+    /// Show the other tab ("Choose from a folder" on an empty playlist): the
+    /// shell keeps its header buttons in step.
+    ShowTab(SidebarMode),
     /// The playlist row for `path` was moved to position `to` (dragged, or
     /// Alt+Up/Down): the queue already shows it there.
     MoveEntry { path: String, to: usize },
@@ -571,6 +574,9 @@ impl BrowserState {
         }
 
         self.build_summary(&items);
+        if items.len() >= 2 && !self.settings.get_bool(keys::PLAYLIST_REORDER_HINT_SEEN) {
+            chrome::build_reorder_hint(self);
+        }
 
         let scroll = views::build_queue_view(self, &items);
         self.prev_pos.set(self.pos.get());

@@ -62,6 +62,14 @@ impl VideoShell {
         self.sleep_timer_volume = volume;
     }
 
+    /// Show `mode` in the open panel (or open it there), with its header
+    /// button pressed and the other one released.
+    pub(crate) fn show_sidebar_mode(&self, mode: SidebarMode) {
+        if !(self.playlist_panel.shows() && self.sidebar_mode.get() == mode) {
+            self.toggle_sidebar_mode(mode);
+        }
+    }
+
     /// Toggle a media sidebar mode from keyboard/GAction without depending on
     /// the auto-hidden OSD header buttons being visible.
     pub(crate) fn toggle_sidebar_mode(&self, mode: SidebarMode) {

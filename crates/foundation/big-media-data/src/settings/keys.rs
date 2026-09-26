@@ -95,6 +95,8 @@ pub const PLAYLIST_SORT: StringKey = StringKey("playlist-sort");
 pub const PLAYLIST_SORT_DESC: BoolKey = BoolKey("playlist-sort-desc");
 pub const PLAYLIST_LAST_FOLDER: StringKey = StringKey("playlist-last-folder");
 pub const PLAYLIST_SHUFFLE: BoolKey = BoolKey("playlist-shuffle");
+/// The playlist's one-time "drag to reorder" line was closed.
+pub const PLAYLIST_REORDER_HINT_SEEN: BoolKey = BoolKey("playlist-reorder-hint-seen");
 
 // UI appearance (video)
 pub const UI_COLOR_SOURCE: StringKey = StringKey("ui-color-source");

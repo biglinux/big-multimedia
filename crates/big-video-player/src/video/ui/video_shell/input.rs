@@ -32,6 +32,8 @@ pub enum VideoShellInput {
     TvFollow,
     /// The header's settings button: open the panel home, or close it.
     TogglePanel,
+    /// Add these files to the end of the playlist (dropped on the panel).
+    EnqueueFiles(Vec<String>),
     /// Escape or a click on the video: put the playlist panel away.
     HidePlaylistPanel,
     /// A shortcut, chip or menu entry: open the panel straight at a section

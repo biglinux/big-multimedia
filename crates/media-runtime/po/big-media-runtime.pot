@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: big-media-runtime 0.1.0\n"
 "Report-Msgid-Bugs-To: https://github.com/biglinux/big-multimedia/issues\n"
-"POT-Creation-Date: 2026-09-26 08:02-0300\n"
+"POT-Creation-Date: 2026-09-26 08:17-0300\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -175,7 +175,7 @@ msgstr ""
 
 #: crates/big-audio-player/src/audio/keybindings.rs:101
 #: crates/big-video-player/src/video/ui/video_shell/panel.rs:530
-#: crates/big-video-player/src/video/ui/video_shell/playback.rs:433
+#: crates/big-video-player/src/video/ui/video_shell/playback.rs:434
 msgid "Undo"
 msgstr ""
 
@@ -433,7 +433,7 @@ msgstr ""
 #: crates/big-audio-player/src/audio/ui/audio_shell/component.rs:143
 #: crates/big-audio-player/src/audio/ui/audio_shell/component.rs:177
 #: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/header.rs:22
-#: crates/big-video-player/src/video/ui/video_shell/component.rs:286
+#: crates/big-video-player/src/video/ui/video_shell/component.rs:302
 msgid "Files"
 msgstr ""
 
@@ -643,7 +643,7 @@ msgstr ""
 #: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:82
 #: crates/big-audio-player/src/audio/ui/playlist_panel.rs:87
 #: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/header.rs:24
-#: crates/big-video-player/src/video/ui/video_shell/component.rs:292
+#: crates/big-video-player/src/video/ui/video_shell/component.rs:308
 #: crates/big-video-player/src/video/ui/video_shell/playlist_panel.rs:25
 msgid "Playlist"
 msgstr ""
@@ -1010,7 +1010,7 @@ msgstr ""
 
 #: crates/big-audio-player/src/audio/ui/library_io.rs:109
 #: crates/big-video-player/src/video/ui/menu_dialogs.rs:327
-#: crates/big-video-player/src/video/ui/video_shell/component.rs:268
+#: crates/big-video-player/src/video/ui/video_shell/component.rs:284
 #: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:253
 msgid "Open"
 msgstr ""
@@ -2625,7 +2625,7 @@ msgstr ""
 #: crates/big-video-player/src/video/ui/menu_dialogs.rs:127
 #: crates/big-video-player/src/video/ui/menu_dialogs.rs:131
 #: crates/big-video-player/src/video/ui/menu_dialogs.rs:142
-#: crates/big-video-player/src/video/ui/video_shell/component.rs:717
+#: crates/big-video-player/src/video/ui/video_shell/component.rs:734
 #: crates/big-video-player/src/video/ui/video_shell/playback.rs:152
 msgid "Screenshot failed"
 msgstr ""
@@ -3231,29 +3231,43 @@ msgstr ""
 msgid "Open containing folder"
 msgstr ""
 
-#: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/empty_state.rs:11
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/empty_state.rs:12
 msgid "Load Folder"
 msgstr ""
 
-#: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/empty_state.rs:15
-#: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/empty_state.rs:31
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/empty_state.rs:16
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/empty_state.rs:32
 msgid "Add Files"
 msgstr ""
 
-#: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/empty_state.rs:22
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/empty_state.rs:23
 msgid "Browse your videos"
 msgstr ""
 
-#: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/empty_state.rs:23
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/empty_state.rs:24
 msgid "Load a folder to explore, or add files to the playlist"
 msgstr ""
 
-#: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/empty_state.rs:38
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/empty_state.rs:36
+msgid "Choose from a folder"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/empty_state.rs:48
 msgid "Your playlist is empty"
 msgstr ""
 
-#: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/empty_state.rs:39
-msgid "Add files to start watching"
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/empty_state.rs:49
+msgid "Drop videos here, or pick them in a folder"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/empty_state.rs:67
+msgid ""
+"Drag a video by its handle to change the order, or use Alt+Up and Alt+Down"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/empty_state.rs:79
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/empty_state.rs:81
+msgid "Got it"
 msgstr ""
 
 #: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/header.rs:34
@@ -3342,7 +3356,7 @@ msgid "Videos"
 msgstr ""
 
 #: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/metadata.rs:143
-#: crates/big-video-player/src/video/ui/video_browser_sidebar/mod.rs:280
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/mod.rs:283
 #, rust-format
 msgid "{} video"
 msgid_plural "{} videos"
@@ -3421,12 +3435,12 @@ msgstr ""
 msgid "{ok} {verb}, {failed} failed"
 msgstr ""
 
-#: crates/big-video-player/src/video/ui/video_browser_sidebar/mod.rs:308
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/mod.rs:311
 #, rust-format
 msgid "ends at {}"
 msgstr ""
 
-#: crates/big-video-player/src/video/ui/video_browser_sidebar/mod.rs:486
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/mod.rs:489
 msgid "Scanning…"
 msgstr ""
 
@@ -3438,7 +3452,7 @@ msgstr ""
 msgid "Drag to change the order"
 msgstr ""
 
-#: crates/big-video-player/src/video/ui/video_browser_sidebar/views/queue_view.rs:439
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/views/queue_view.rs:438
 #, rust-format
 msgid "Stopped at {}"
 msgstr ""
@@ -3553,7 +3567,7 @@ msgid "Drop a file or open one to start"
 msgstr ""
 
 #: crates/big-video-player/src/video/ui/video_shell/actions.rs:132
-#: crates/big-video-player/src/video/ui/video_shell/component.rs:821
+#: crates/big-video-player/src/video/ui/video_shell/component.rs:838
 msgid "Open Recent"
 msgstr ""
 
@@ -3692,25 +3706,25 @@ msgstr ""
 msgid "The TV is still playing"
 msgstr ""
 
-#: crates/big-video-player/src/video/ui/video_shell/component.rs:263
+#: crates/big-video-player/src/video/ui/video_shell/component.rs:279
 msgid "Keep Above"
 msgstr ""
 
-#: crates/big-video-player/src/video/ui/video_shell/component.rs:820
+#: crates/big-video-player/src/video/ui/video_shell/component.rs:837
 #: crates/big-video-player/src/video/ui/video_shell/input_gestures.rs:116
 msgid "Open File…"
 msgstr ""
 
-#: crates/big-video-player/src/video/ui/video_shell/component.rs:822
+#: crates/big-video-player/src/video/ui/video_shell/component.rs:839
 #: crates/big-video-player/src/video/ui/video_shell/input_gestures.rs:117
 msgid "Open URL…"
 msgstr ""
 
-#: crates/big-video-player/src/video/ui/video_shell/component.rs:823
+#: crates/big-video-player/src/video/ui/video_shell/component.rs:840
 msgid "Open Disc…"
 msgstr ""
 
-#: crates/big-video-player/src/video/ui/video_shell/component.rs:824
+#: crates/big-video-player/src/video/ui/video_shell/component.rs:841
 msgid "TV Channels (IPTV)…"
 msgstr ""
 
@@ -3931,11 +3945,11 @@ msgstr ""
 msgid "Playing video"
 msgstr ""
 
-#: crates/big-video-player/src/video/ui/video_shell/playback.rs:422
+#: crates/big-video-player/src/video/ui/video_shell/playback.rs:423
 msgid "Could not move to trash"
 msgstr ""
 
-#: crates/big-video-player/src/video/ui/video_shell/playback.rs:427
+#: crates/big-video-player/src/video/ui/video_shell/playback.rs:428
 #, rust-format
 msgid "{} file moved to trash"
 msgid_plural "{} files moved to trash"

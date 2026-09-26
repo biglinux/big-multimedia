@@ -158,7 +158,8 @@ menubutton.osd-btn {
 .settings-panel .playlist-current label.accent {
   color: @window_fg_color;
 }
-.playlist-current .playlist-badge {
+.playlist-current .playlist-badge,
+.settings-panel .playlist-current label.playlist-badge {
   color: #ffffff;
   font-weight: normal;
 }

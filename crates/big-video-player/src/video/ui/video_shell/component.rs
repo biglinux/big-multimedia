@@ -250,6 +250,22 @@ impl Component for VideoShell {
 
         // The playlist / folder browser floats over the video on the left.
         let playlist_panel = super::playlist_panel::PlaylistPanel::new(playlist.widget(), &sender);
+        // Videos dropped on the panel join the list; dropped on the video
+        // they replace it (the window's own drop target, below).
+        {
+            let sender = sender.clone();
+            big_app_kit::widgets::add_file_drop_target(&playlist_panel.revealer, move |paths| {
+                let paths: Vec<String> = paths
+                    .iter()
+                    .filter_map(|path| path.to_str().map(str::to_string))
+                    .collect();
+                if paths.is_empty() {
+                    return false;
+                }
+                sender.input(VideoShellInput::EnqueueFiles(paths));
+                true
+            });
+        }
         let notice = MediaNotice::new();
 
         // Keep-Above toggle. No portable Wayland keep-above exists, so toggle it
@@ -646,6 +662,7 @@ impl Component for VideoShell {
                 VideoShellInput::PanelEscape => self.panel_back(true, &sender),
                 VideoShellInput::ClosePanel => self.close_panel(&sender),
                 VideoShellInput::HidePlaylistPanel => self.playlist_panel.set_shown(false, 0, 0),
+                VideoShellInput::EnqueueFiles(paths) => self.enqueue_files(&paths),
                 VideoShellInput::ShowYtdlQuality => {
                     if let Some(root) = window_ref {
                         self.show_ytdl_quality_dialog(root);
