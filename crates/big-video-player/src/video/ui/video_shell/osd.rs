@@ -145,6 +145,11 @@ pub(super) struct IdleBackground {
     pub(super) blurred_path: RefCell<Option<PathBuf>>,
     /// True while the idle background is shown (welcome up).
     pub(super) is_shown: Cell<bool>,
+    /// What the TV plays while only the TV shows it: the surface is covered
+    /// then too, by that video's own picture.
+    pub(super) tv_source: RefCell<Option<String>>,
+    /// `tv_source`'s frame, blurred; `None` until it is made.
+    pub(super) tv_picture: RefCell<Option<PathBuf>>,
 }
 
 impl IdleBackground {
@@ -153,9 +158,7 @@ impl IdleBackground {
     /// base gradient).
     pub(super) fn show(&self, display: &gtk::gdk::Display) {
         self.is_shown.set(true);
-        self.gl_area.set_opacity(0.0);
-        self.video_bg.add_css_class("idle-bg");
-        self.apply_background(display);
+        self.refresh(display);
     }
 
     /// Hide the idle background: restore the gl surface opacity, drop the class,
@@ -163,9 +166,64 @@ impl IdleBackground {
     /// video would stay invisible otherwise.
     pub(super) fn hide(&self, display: &gtk::gdk::Display) {
         self.is_shown.set(false);
-        self.gl_area.set_opacity(1.0);
-        self.video_bg.remove_css_class("idle-bg");
-        self.clear_provider(display);
+        self.refresh(display);
+    }
+
+    /// While only the TV plays `source`: cover the frozen frame with that
+    /// video's picture at `seconds`, blurred and darkened. `None` gives the
+    /// video back.
+    pub(super) fn show_tv(self: &Rc<Self>, source: Option<String>, seconds: f64) {
+        if *self.tv_source.borrow() == source {
+            return;
+        }
+        self.tv_picture.take();
+        self.tv_source.replace(source.clone());
+        if let Some(display) = gtk::gdk::Display::default() {
+            self.refresh(&display);
+        }
+        let Some(source) = source.filter(|source| !super::playback::is_remote_uri(source)) else {
+            return;
+        };
+        // An ffmpeg run: off the main loop.
+        let (sender, receiver) = async_channel::bounded::<PathBuf>(1);
+        let wanted = source.clone();
+        let spawned = std::thread::Builder::new()
+            .name("tv-background".into())
+            .spawn(move || {
+                if let Some(picture) = super::idle_wallpaper::tv_backdrop(&wanted, seconds) {
+                    let _ = sender.send_blocking(picture);
+                }
+            });
+        if spawned.is_err() {
+            return;
+        }
+        let this = Rc::downgrade(self);
+        glib::spawn_future_local(async move {
+            let (Ok(picture), Some(this)) = (receiver.recv().await, this.upgrade()) else {
+                return;
+            };
+            if this.tv_source.borrow().as_deref() == Some(source.as_str()) {
+                this.tv_picture.replace(Some(picture));
+                if let Some(display) = gtk::gdk::Display::default() {
+                    this.refresh(&display);
+                }
+            }
+        });
+    }
+
+    /// Cover the surface while the welcome screen is up or only the TV plays;
+    /// otherwise restore it. Restoring gl opacity is load-bearing — video
+    /// would stay invisible otherwise.
+    fn refresh(&self, display: &gtk::gdk::Display) {
+        let covered = self.is_shown.get() || self.tv_source.borrow().is_some();
+        self.gl_area.set_opacity(if covered { 0.0 } else { 1.0 });
+        if covered {
+            self.video_bg.add_css_class("idle-bg");
+            self.apply_background(display);
+        } else {
+            self.video_bg.remove_css_class("idle-bg");
+            self.clear_provider(display);
+        }
     }
 
     /// Record the detected blurred wallpaper and apply it if idle is shown now.
@@ -173,19 +231,26 @@ impl IdleBackground {
     pub(super) fn set_blurred_wallpaper(&self, path: &Path, display: &gtk::gdk::Display) {
         self.blurred_path.replace(Some(path.to_path_buf()));
         if self.is_shown.get() {
-            self.apply_background(display);
+            self.refresh(display);
         }
     }
 
-    /// (Re)apply the background: the blurred wallpaper when known (static image
-    /// provider), else nothing — the base `.idle-bg` gradient shows through.
+    /// (Re)apply the background: the TV's video picture while only the TV
+    /// plays, else the blurred wallpaper when known (static image provider),
+    /// else nothing — the base `.idle-bg` gradient shows through.
     fn apply_background(&self, display: &gtk::gdk::Display) {
         self.clear_provider(display);
-        let Some(path) = self.blurred_path.borrow().clone() else {
+        let tv = self.tv_source.borrow().is_some();
+        let path = if tv {
+            self.tv_picture.borrow().clone()
+        } else {
+            self.blurred_path.borrow().clone()
+        };
+        let Some(path) = path else {
             return;
         };
         let provider = gtk::CssProvider::new();
-        provider.load_from_string(&idle_bg_image_css(&path));
+        provider.load_from_string(&idle_bg_image_css(&path, tv));
         gtk::style_context_add_provider_for_display(
             display,
             &provider,
@@ -212,13 +277,16 @@ impl Drop for IdleBackground {
     }
 }
 
-/// Static `.idle-bg` CSS that paints the cached blurred wallpaper, scaled to
-/// cover the surface. `#0e0e18` stays as the letterbox/transparency backdrop.
-fn idle_bg_image_css(path: &Path) -> String {
+/// Static `.idle-bg` CSS that paints a cached blurred image, scaled to cover
+/// the surface; `dim` darkens it further, for the TV's card to read over it.
+/// `#0e0e18` stays as the letterbox/transparency backdrop.
+fn idle_bg_image_css(path: &Path, dim: bool) -> String {
+    let shade = if dim { 0.45 } else { 0.0 };
     format!(
         ".idle-bg {{
             background-color: #0e0e18;
-            background-image: url(\"{}\");
+            background-image: linear-gradient(rgba(0, 0, 0, {shade}), rgba(0, 0, 0, {shade})),
+                url(\"{}\");
             background-size: cover;
             background-position: center;
             background-repeat: no-repeat;

@@ -267,6 +267,52 @@ fn ensure_blurred(source: &Path) -> Option<PathBuf> {
     blur_to(source, &cache)
 }
 
+/// The frame of `video` at `seconds`, softly blurred: what stands for the
+/// video while only a TV shows it. The previous one is removed, as there is
+/// one TV session at a time. `None` if ffmpeg is unavailable or fails.
+pub(super) fn tv_backdrop(video: &str, seconds: f64) -> Option<PathBuf> {
+    // Reaches ffmpeg as an argument: only an absolute path cannot read as an
+    // option or a protocol prefix.
+    if !Path::new(video).is_absolute() {
+        return None;
+    }
+    let cache_dir = cache_home().join("big-video-player");
+    std::fs::create_dir_all(&cache_dir).ok()?;
+    let mut hasher = std::collections::hash_map::DefaultHasher::new();
+    video.hash(&mut hasher);
+    let name = format!("tv-backdrop-{:016x}.jpg", hasher.finish());
+    if let Ok(entries) = std::fs::read_dir(&cache_dir) {
+        for entry in entries.flatten() {
+            let old = entry.file_name();
+            if old.to_string_lossy().starts_with("tv-backdrop-") && old != name.as_str() {
+                let _ = std::fs::remove_file(entry.path());
+            }
+        }
+    }
+    let dest = cache_dir.join(name);
+    produced(
+        BigSubprocessSpec::builder()
+            .program("ffmpeg")
+            .arg("-y")
+            .arg("-ss")
+            .arg(format!("{:.1}", seconds.max(0.0)))
+            .arg("-i")
+            .arg(video)
+            .args([
+                "-vf",
+                "scale=960:-2:flags=bilinear,gblur=sigma=8,eq=saturation=0.85",
+                "-frames:v",
+                "1",
+            ])
+            .arg(&dest)
+            .stdout(BigSubprocessOutputMode::Null)
+            .stderr(BigSubprocessOutputMode::Null)
+            .build(),
+        &dest,
+    )
+    .then_some(dest)
+}
+
 /// Blur + darken `source` into `dest`. Tries ffmpeg directly; if that fails
 /// because ffmpeg lacks the decoder (always for SVG; often for HEIC/AVIF — and
 /// BigShell's default wallpapers are HEIC), rasterizes to PNG first (rsvg for

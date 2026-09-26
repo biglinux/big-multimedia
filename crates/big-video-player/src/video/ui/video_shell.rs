@@ -134,6 +134,9 @@ pub struct VideoShell {
     /// Next/Previous or the end of a file: the TV that the next file to load
     /// goes to.
     tv_follow: Option<String>,
+    /// "Watch here too": the player plays in step with the TV, muted; holds
+    /// the mute to give back.
+    tv_here: Option<bool>,
     /// Video playback backend (system libmpv). `None` until the surface
     /// realizes and the backend initializes; `None` also if init failed.
     mpv: Rc<RefCell<Option<Arc<MpvBackend>>>>,

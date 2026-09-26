@@ -166,7 +166,7 @@ impl Component for VideoShell {
             },
             {
                 let sender = sender.clone();
-                move || sender.input(VideoShellInput::TvAttach)
+                move || sender.input(VideoShellInput::TvToggleRelease)
             },
             {
                 let sender = sender.clone();
@@ -176,6 +176,10 @@ impl Component for VideoShell {
                 let sender = sender.clone();
                 move || sender.input(VideoShellInput::TvFollow)
             },
+            Some(Box::new({
+                let sender = sender.clone();
+                move || sender.input(VideoShellInput::TvHere)
+            })),
         );
         let tv_pill = gtk::MenuButton::builder()
             .label(i18n("On the TV"))
@@ -400,11 +404,15 @@ impl Component for VideoShell {
             },
             {
                 let sender = sender.clone();
-                move || sender.input(VideoShellInput::TvRelease)
+                move || sender.input(VideoShellInput::TvToggleRelease)
             },
             // Attached, the TV already plays what the player holds.
             || {},
             || {},
+            Some(Box::new({
+                let sender = sender.clone();
+                move || sender.input(VideoShellInput::TvHere)
+            })),
         );
         main_overlay.add_overlay(&tv_card.root);
         let panel = super::panel::SettingsPanel::new(&sender);
@@ -437,6 +445,8 @@ impl Component for VideoShell {
             provider: RefCell::new(None),
             blurred_path: RefCell::new(None),
             is_shown: Cell::new(false),
+            tv_source: RefCell::new(None),
+            tv_picture: RefCell::new(None),
         });
 
         // Messages take a row above the content instead of covering the video.
@@ -572,6 +582,7 @@ impl Component for VideoShell {
                 tv_last: None,
                 tv_was_released: false,
                 tv_follow: None,
+                tv_here: None,
                 mpv,
                 duration_secs: 0.0,
                 settings,
@@ -762,8 +773,14 @@ impl Component for VideoShell {
                     self.tv_pill.popdown();
                     self.tv.control("stop", 0.0);
                 }
-                VideoShellInput::TvRelease => self.release_tv(),
-                VideoShellInput::TvAttach => self.attach_tv(),
+                VideoShellInput::TvToggleRelease => {
+                    if self.tv.released() {
+                        self.attach_tv();
+                    } else {
+                        self.release_tv();
+                    }
+                }
+                VideoShellInput::TvHere => self.toggle_tv_here(),
                 VideoShellInput::TvReplace => self.replace_tv(),
                 VideoShellInput::TvFollow => self.follow_tv(),
                 VideoShellInput::ToggleFullscreen => {

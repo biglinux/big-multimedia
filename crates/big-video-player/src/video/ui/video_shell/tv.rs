@@ -20,11 +20,27 @@ impl VideoShell {
         match self.tv.playing() {
             Some(state) => {
                 let released = self.tv.released();
-                self.tv_pill.set_visible(released);
+                let here = self.tv_here.is_some();
+                self.tv_pill.set_visible(released || here);
+                self.tv_pill.set_tooltip_text(Some(&if here {
+                    i18n("On the TV and here")
+                } else {
+                    i18n("The TV is still playing")
+                }));
                 if released {
+                    self.idle_bg.show_tv(None, 0.0);
                     self.tv_card.hide();
                     self.tv_menu.show_released(&state, !self.holds_the_tvs());
+                } else if here {
+                    self.idle_bg.show_tv(None, 0.0);
+                    self.tv_card.hide();
+                    self.tv_menu.show_synced(&state);
+                    self.keep_up_with_tv(&state);
+                    self.show_tv_in_controls(&state);
                 } else {
+                    // Only the TV shows it: the player's frozen frame gives
+                    // way to the video's own picture, darkened.
+                    self.idle_bg.show_tv(self.tv.source(), state.position);
                     self.tv_card.show(Some(&state));
                     self.show_tv_in_controls(&state);
                 }
@@ -35,10 +51,13 @@ impl VideoShell {
                 self.tv_pill.set_visible(false);
                 let released = std::mem::take(&mut self.tv_was_released);
                 let Some(last) = self.tv_last.take() else {
+                    self.stop_here();
+                    self.idle_bg.show_tv(None, 0.0);
                     self.tv_card.hide();
                     return;
                 };
                 if released {
+                    self.idle_bg.show_tv(None, 0.0);
                     self.tv_card.hide();
                     return;
                 }
@@ -49,6 +68,8 @@ impl VideoShell {
                     return;
                 }
                 // Stopped while the controls had it: pick up where it was.
+                self.stop_here();
+                self.idle_bg.show_tv(None, 0.0);
                 self.tv_card.hide();
                 self.follow_tv_position(&last);
                 self.show_mpv_in_controls();
@@ -59,10 +80,12 @@ impl VideoShell {
 
     /// "Use the player": the TV plays on; the player picks up where it is.
     pub(super) fn release_tv(&mut self) {
+        self.tv_pill.popdown();
         let Some(state) = self.tv.attached() else {
             return;
         };
         self.follow_tv_position(&state);
+        self.stop_here();
         self.tv.release();
         self.show_mpv_in_controls();
         if let Some(mpv) = self.mpv.borrow().as_ref() {
@@ -78,6 +101,62 @@ impl VideoShell {
             mpv.pause();
         }
         self.tv.attach();
+    }
+
+    /// "Watch here too" and back: the player plays the TV's file in step
+    /// with it, muted (both at once would echo, a TV being a second or more
+    /// behind), or waits paused for the TV again.
+    pub(super) fn toggle_tv_here(&mut self) {
+        self.tv_pill.popdown();
+        let Some(mpv) = self.mpv.borrow().clone() else {
+            return;
+        };
+        if self.tv_here.is_some() {
+            self.stop_here();
+            mpv.pause();
+        } else {
+            self.tv_here = Some(mpv.get_mute());
+            mpv.set_mute(true);
+            if !self.holds_the_tvs() {
+                // The TV's file first; it catches up once loaded.
+                self.follow_tv();
+                return;
+            }
+        }
+        self.on_tv_changed();
+    }
+
+    /// Leave "Watch here too", giving the player its sound back.
+    fn stop_here(&mut self) {
+        if let (Some(muted), Some(mpv)) = (self.tv_here.take(), self.mpv.borrow().as_ref()) {
+            mpv.set_mute(muted);
+        }
+    }
+
+    /// Keep the player where the TV is: paused with it, and back on its
+    /// point when more than a second and a half apart.
+    fn keep_up_with_tv(&self, state: &State) {
+        let Some(mpv) = self.mpv.borrow().clone() else {
+            return;
+        };
+        if !self.holds_the_tvs() {
+            return;
+        }
+        let mut position = mpv.get_position();
+        if (position - state.position).abs() > 1.5 {
+            mpv.seek_absolute(state.position);
+            position = state.position;
+        }
+        // Held short of the end: mpv reaching it first would move the
+        // playlist on before the TV is done.
+        let at_end = state.duration > 0.0 && position >= state.duration - 2.0;
+        if state.paused || at_end {
+            if !mpv.is_paused() {
+                mpv.pause();
+            }
+        } else if mpv.is_paused() {
+            mpv.play();
+        }
     }
 
     /// Whether the player holds the file the TV plays.

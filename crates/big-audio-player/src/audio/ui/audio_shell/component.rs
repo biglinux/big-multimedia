@@ -337,6 +337,7 @@ impl Component for AudioShell {
                     let _ = input.send(AudioShellInput::TvFollow);
                 }
             },
+            None,
         );
         content_pane.add_bottom_bar(&tv_card.root);
         content_pane.add_bottom_bar(playback_bar.widget());

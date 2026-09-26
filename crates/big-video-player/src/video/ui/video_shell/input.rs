@@ -20,10 +20,12 @@ pub enum VideoShellInput {
     TvChanged,
     /// The TV card's "Stop sending".
     TvStop,
-    /// The TV card's "Use the player": the TV plays on without the controls.
-    TvRelease,
-    /// The header's "On the TV": the controls drive the TV again.
-    TvAttach,
+    /// "Use the player" (the TV plays on without the controls), or "Control
+    /// the TV" once released.
+    TvToggleRelease,
+    /// "Watch here too" (the player plays in step with the TV, silent), or
+    /// "Only on the TV".
+    TvHere,
     /// "Show this one on the TV": the TV plays what the player holds.
     TvReplace,
     /// "Play the TV's here": the player opens what the TV plays, in step.

@@ -889,6 +889,8 @@ pub struct TvCard {
     /// released, when the player holds something other than what the TV
     /// plays.
     swap: gtk::Box,
+    /// "Watch here too", or "Only on the TV" while the player follows the TV.
+    here: Option<gtk::Button>,
 }
 
 impl TvCard {
@@ -897,7 +899,8 @@ impl TvCard {
     /// TV", its way back. `replace` runs on "Show this one on the TV", which
     /// puts what the player holds on the TV instead, and `follow` on "Play the
     /// TV's here", which opens in the player what the TV plays, where the TV
-    /// is. `css` names the owner's
+    /// is. `here`, when the player can show the video too, runs on "Watch
+    /// here too" and on "Only on the TV". `css` names the owner's
     /// card style; `strip` lays it out as one line, for a player whose middle
     /// holds a list that must stay usable.
     pub fn new(
@@ -907,6 +910,7 @@ impl TvCard {
         release: impl Fn() + 'static,
         replace: impl Fn() + 'static,
         follow: impl Fn() + 'static,
+        here: Option<Box<dyn Fn()>>,
     ) -> Self {
         let icon = gtk::Image::builder()
             .icon_name("tv-symbolic")
@@ -973,6 +977,12 @@ impl TvCard {
             .valign(gtk::Align::Center)
             .margin_top(if strip { 0 } else { 6 })
             .build();
+        let here = here.map(|here| {
+            let button = gtk::Button::builder().css_classes(["pill"]).build();
+            button.connect_clicked(move |_| here());
+            buttons.append(&button);
+            button
+        });
         buttons.append(&release_button);
         buttons.append(&stop_button);
         let root = gtk::Box::builder()
@@ -1027,6 +1037,7 @@ impl TvCard {
             title,
             release: release_button,
             swap,
+            here,
         }
     }
 
@@ -1034,6 +1045,11 @@ impl TvCard {
     pub fn show(&self, state: Option<&State>) {
         self.root.set_visible(true);
         self.swap.set_visible(false);
+        self.show_here(
+            state.is_some(),
+            &i18n("Watch here too"),
+            &i18n("The player plays the video too, in step with the TV and without sound."),
+        );
         self.release.set_label(&i18n("Use the player"));
         self.release.set_tooltip_text(Some(&i18n(
             "The TV keeps playing, and the player is free for this or another video.",
@@ -1047,11 +1063,31 @@ impl TvCard {
         }
     }
 
+    /// Show that the player plays the video too, following the TV.
+    pub fn show_synced(&self, state: &State) {
+        self.show(Some(state));
+        self.title.set_label(&i18n("On the TV and here"));
+        self.show_here(
+            true,
+            &i18n("Only on the TV"),
+            &i18n("The player stops following the TV and waits."),
+        );
+    }
+
+    fn show_here(&self, visible: bool, label: &str, tooltip: &str) {
+        if let Some(here) = &self.here {
+            here.set_visible(visible);
+            here.set_label(label);
+            here.set_tooltip_text(Some(tooltip));
+        }
+    }
+
     /// Show that the TV plays on while the player does something else;
     /// `other` when the player holds something else, which it can send.
     pub fn show_released(&self, state: &State, other: bool) {
         self.root.set_visible(true);
         self.swap.set_visible(other);
+        self.show_here(false, "", "");
         self.title.set_label(&i18n("The TV is still playing"));
         self.detail.set_label(&card_line(state));
         self.release.set_label(&i18n("Control the TV"));
