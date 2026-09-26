@@ -111,6 +111,7 @@ crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/keyboard.rs
 crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/menu_actions.rs
 crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/metadata.rs
 crates/big-video-player/src/video/ui/video_browser_sidebar/chrome.rs
+crates/big-video-player/src/video/ui/video_browser_sidebar/disk_search.rs
 crates/big-video-player/src/video/ui/video_browser_sidebar/fileops.rs
 crates/big-video-player/src/video/ui/video_browser_sidebar/mod.rs
 crates/big-video-player/src/video/ui/video_browser_sidebar/scrub.rs
@@ -138,6 +139,7 @@ crates/big-video-player/src/video/ui/video_shell/mpris.rs
 crates/big-video-player/src/video/ui/video_shell/osd.rs
 crates/big-video-player/src/video/ui/video_shell/panel.rs
 crates/big-video-player/src/video/ui/video_shell/playback.rs
+crates/big-video-player/src/video/ui/video_shell/playlist_panel.rs
 crates/big-video-player/src/video/ui/video_shell/render.rs
 crates/big-video-player/src/video/ui/video_shell.rs
 crates/big-video-player/src/video/ui/video_shell/state_access.rs

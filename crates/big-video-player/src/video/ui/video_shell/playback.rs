@@ -349,6 +349,7 @@ impl VideoShell {
                 }
             }
             VideoBrowserSidebarOutput::Enqueue(paths) => self.enqueue_paths(&paths),
+            VideoBrowserSidebarOutput::PlayNext { path, now } => self.play_next(path, now),
             VideoBrowserSidebarOutput::RemoveEntry(path) => self.remove_playlist_entry(&path),
             VideoBrowserSidebarOutput::Clear => {
                 if let Some(mpv) = self.mpv.borrow().as_ref() {
@@ -456,10 +457,49 @@ impl VideoShell {
         } else {
             return;
         }
-        self.playlist.emit(VideoBrowserSidebarInput::SetPlaylist {
-            paths: self.playlist_paths.clone(),
-            folder: None,
-        });
+        self.playlist.emit(VideoBrowserSidebarInput::SetQueue(
+            self.playlist_paths.clone(),
+        ));
+    }
+
+    /// Put `path` right after the playing entry, in mpv and in the listing,
+    /// moving it there if it is in the list already, and start it when `now`.
+    /// The rest of the list stays as it was.
+    fn play_next(&mut self, path: String, now: bool) {
+        if self.playlist_paths.is_empty() {
+            self.load_playlist(std::slice::from_ref(&path), 0);
+        } else {
+            let Some(mpv) = self.mpv.borrow().clone() else {
+                return;
+            };
+            let order = mpv.get_playlist_paths();
+            let current = mpv.get_playlist_pos().max(0);
+            let from = if let Some(index) = playlist_index_of(&order, &path) {
+                index as i64
+            } else {
+                mpv.load_file_append(&path);
+                order.len() as i64
+            };
+            // mpv inserts before `to`: that is right after the playing one.
+            if from != current {
+                mpv.playlist_move(from, current + 1);
+            }
+            // Moved up from before the playing one, the playing one slid up.
+            if now && from != current {
+                let target = if from < current { current } else { current + 1 };
+                mpv.playlist_play_index(target);
+            }
+            // The listing: out of where it was, in after the playing one.
+            let playing = order.get(current as usize).cloned();
+            self.playlist_paths.retain(|entry| *entry != path);
+            let at = playing
+                .and_then(|playing| playlist_index_of(&self.playlist_paths, &playing))
+                .map_or(self.playlist_paths.len(), |index| index + 1);
+            self.playlist_paths.insert(at, path);
+        }
+        self.playlist.emit(VideoBrowserSidebarInput::SetQueue(
+            self.playlist_paths.clone(),
+        ));
     }
 
     /// Remove `path` from the mpv playlist (the sidebar already dropped it from

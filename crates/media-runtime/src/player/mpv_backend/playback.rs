@@ -193,6 +193,17 @@ impl MpvBackend {
         }
     }
 
+    /// Move the entry at `from` to just before `to` (mpv's own meaning: `to`
+    /// past the end appends). Queued like the loads, so a move right after an
+    /// append sees the appended entry.
+    pub fn playlist_move(&self, from: i64, to: i64) {
+        if let Err(error) =
+            self.queue_command("playlist-move", &[&from.to_string(), &to.to_string()])
+        {
+            error!("Failed to move playlist entry {from} to {to}: {error}");
+        }
+    }
+
     pub fn playlist_clear(&self) {
         self.with_mpv(|m| {
             let _ = m.command("playlist-clear", &[]);

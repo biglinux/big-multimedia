@@ -324,6 +324,9 @@ pub(super) struct AspectSnap {
     pub(super) mpv: Rc<RefCell<Option<Arc<MpvBackend>>>>,
     /// Video surface, re-rendered after a resize so a paused frame redraws.
     pub(super) gl_area: gtk::GLArea,
+    /// The playlist panel: no snapping while it is open, as the window the
+    /// person arranged around it would jump under the pointer.
+    pub(super) playlist_panel: glib::WeakRef<gtk::Revealer>,
     /// Cached video aspect ratio (`width/height`); `0.0` until a file loads.
     pub(super) aspect: Cell<f64>,
     /// True during a programmatic resize so the size-notify does not re-enter.
@@ -343,7 +346,8 @@ impl AspectSnap {
         }
     }
 
-    /// Whether a snap is currently allowed (setting on, windowed).
+    /// Whether a snap is currently allowed (setting on, windowed, no playlist
+    /// panel open).
     fn should_snap(&self) -> bool {
         let Some(window) = self
             .content
@@ -357,6 +361,10 @@ impl AspectSnap {
             && !self.resizing.get()
             && !window.is_fullscreen()
             && !window.is_maximized()
+            && !self
+                .playlist_panel
+                .upgrade()
+                .is_some_and(|panel| panel.reveals_child())
     }
 
     /// Snap 200 ms after a file loads: read the new dimensions, then resize.

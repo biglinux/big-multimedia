@@ -23,6 +23,7 @@
 //! this workspace).
 
 mod chrome;
+mod disk_search;
 mod fileops;
 mod scrub;
 mod views;
@@ -72,6 +73,9 @@ pub enum VideoBrowserSidebarInput {
     /// dialog / drag-drop / IPTV / m3u). `folder` is the directory to present as
     /// the browse context (breadcrumb + sub-folders), or `None` for an ad-hoc
     /// set (multiple files / remote stream) shown as a plain list.
+    /// The play queue changed under the tab being shown (an add, a "play
+    /// next"): update it without switching tabs.
+    SetQueue(Vec<String>),
     SetPlaylist {
         paths: Vec<String>,
         folder: Option<String>,
@@ -92,6 +96,9 @@ pub enum VideoBrowserSidebarOutput {
     /// Append these paths to the mpv playlist without disrupting playback
     /// (Files "add to playlist" / the header add button).
     Enqueue(Vec<String>),
+    /// Put `path` right after the playing entry (adding it if absent), and
+    /// start it when `now`: "Play next", or a video found elsewhere.
+    PlayNext { path: String, now: bool },
     /// Remove this path from the mpv playlist (if present); the sidebar already
     /// dropped it from its own queue.
     RemoveEntry(String),
@@ -163,6 +170,8 @@ pub(crate) struct BrowserState {
     search_gen: Cell<u64>,
     /// Active view filter, so chips + search can re-run it.
     filter: RefCell<Option<gtk::CustomFilter>>,
+    /// Files mode: the "on this computer" results under the folder's list.
+    disk_section: RefCell<Option<glib::WeakRef<gtk::Box>>>,
 }
 
 impl BrowserState {
@@ -351,6 +360,10 @@ impl BrowserState {
         self.filter.replace(None);
         self.recompute_pos();
         clear_sidebar_container(&container);
+        // The search entry is built anew, empty: so is what it filters by, or
+        // the list would stay filtered under an empty box.
+        self.search_text.borrow_mut().clear();
+        self.search_gen.set(self.search_gen.get().wrapping_add(1));
 
         chrome::build_header(self);
 
@@ -376,6 +389,9 @@ impl BrowserState {
         // Empty *and* not browsing a folder → the welcome status page.
         if items.is_empty() && folder_opt.is_none() {
             chrome::build_files_empty_state(self);
+            if let Some(container) = self.container() {
+                container.append(&disk_search::build_section(self));
+            }
             return;
         }
 
@@ -389,6 +405,7 @@ impl BrowserState {
         self.prev_pos.set(self.pos.get());
         if let Some(container) = self.container() {
             container.append(&scroll);
+            container.append(&disk_search::build_section(self));
         }
 
         // Triage batch-action bar pinned at the bottom while selecting.
@@ -423,8 +440,9 @@ impl BrowserState {
         chrome::add_key_controller(self, &search_entry);
     }
 
-    /// O(1) highlight refresh: splice the old + new positions so the factory
-    /// rebinds just those rows (drop / add the accent).
+    /// O(1) highlight refresh: replace the old + new positions so the factory
+    /// rebinds just those rows (drop / add the accent). With a copy: the same
+    /// object put back is taken for no change, and the row kept its old look.
     fn update_highlight(&self) {
         let store_ref = self.store.borrow();
         let Some(store) = store_ref.as_ref() else {
@@ -440,10 +458,11 @@ impl BrowserState {
         for p in [old_pos, new_pos] {
             if p >= 0 {
                 let idx = folder_count + p as u32;
-                if idx < store.n_items()
-                    && let Some(item) = store.item(idx)
-                {
-                    store.splice(idx, 1, &[item]);
+                if let Some(item) = store.item(idx).and_downcast::<glib::BoxedAnyObject>() {
+                    let entry = item
+                        .borrow::<crate::media::playlist::PlaylistEntry>()
+                        .clone();
+                    store.splice(idx, 1, &[glib::BoxedAnyObject::new(entry)]);
                 }
             }
         }
@@ -599,6 +618,7 @@ impl Component for VideoBrowserSidebar {
             filter_kind: Cell::new(FilterKind::All),
             search_text: Rc::new(RefCell::new(String::new())),
             search_gen: Cell::new(0),
+            disk_section: RefCell::new(None),
             filter: RefCell::new(None),
         });
         state.rebuild();
@@ -633,6 +653,13 @@ impl Component for VideoBrowserSidebar {
                     self.state.rebuild();
                 }
             }
+            VideoBrowserSidebarInput::SetQueue(paths) => {
+                self.state.queue.replace(paths);
+                self.state.recompute_pos();
+                if self.state.mode.get() == SidebarMode::Playlist {
+                    self.state.rebuild();
+                }
+            }
             VideoBrowserSidebarInput::SetCurrentFile(path) => {
                 self.state.current_path.replace(path);
                 self.state.recompute_pos();
@@ -661,7 +688,10 @@ pub(crate) fn schedule_search(state: &Rc<BrowserState>, query: String) {
         if state.search_gen.get() != generation {
             return;
         }
-        *state.search_text.borrow_mut() = query;
+        state.search_text.borrow_mut().clone_from(&query);
         state.refilter();
+        if state.mode.get() == SidebarMode::Files {
+            disk_search::refresh(&state, query);
+        }
     });
 }

@@ -248,6 +248,15 @@ pub(super) fn wire_neighbour_preview(button: &gtk::Button, mpv: &MpvSlot, step: 
             popover.popup();
         });
     }
+    // Clicked, it goes there: what it showed is no longer where it leads.
+    button.connect_clicked({
+        let popover = popover.downgrade();
+        move |_| {
+            if let Some(popover) = popover.upgrade() {
+                popover.popdown();
+            }
+        }
+    });
     motion.connect_leave(move |_| popover.popdown());
     button.add_controller(motion);
 }

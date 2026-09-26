@@ -499,6 +499,7 @@ impl Component for VideoShell {
             settings: settings.clone(),
             mpv: mpv.clone(),
             gl_area: gl_area.clone(),
+            playlist_panel: playlist_panel.revealer.downgrade(),
             aspect: Cell::new(0.0),
             resizing: Cell::new(false),
             resize_gen: Cell::new(0),
