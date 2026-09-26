@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: big-media-runtime 2.0.0\n"
 "Report-Msgid-Bugs-To: https://github.com/biglinux/big-multimedia/issues\n"
-"POT-Creation-Date: 2026-09-26 00:09-0300\n"
+"POT-Creation-Date: 2026-09-26 00:37-0300\n"
 "PO-Revision-Date: 2026-05-29 05:37-0300\n"
 "Last-Translator: Automatically generated\n"
 "Language-Team: none\n"
@@ -185,7 +185,7 @@ msgstr "Alternar repetição"
 #: crates/big-audio-player/src/audio/keybindings.rs:101
 #: crates/big-audio-player/src/audio/ui/audio_shell/queue_state.rs:182
 #: crates/big-video-player/src/video/ui/video_shell/panel.rs:518
-#: crates/big-video-player/src/video/ui/video_shell/playback.rs:424
+#: crates/big-video-player/src/video/ui/video_shell/playback.rs:425
 msgid "Undo"
 msgstr "Desfazer"
 
@@ -450,7 +450,7 @@ msgstr "Filtrar arquivos…"
 #: crates/big-audio-player/src/audio/ui/audio_shell/component.rs:143
 #: crates/big-audio-player/src/audio/ui/audio_shell/component.rs:177
 #: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/header.rs:22
-#: crates/big-video-player/src/video/ui/video_shell/component.rs:280
+#: crates/big-video-player/src/video/ui/video_shell/component.rs:295
 msgid "Files"
 msgstr "Arquivos"
 
@@ -491,7 +491,7 @@ msgid "Retry saving"
 msgstr "Tentar salvar novamente"
 
 #: crates/big-audio-player/src/audio/ui/audio_shell/engine.rs:33
-#: crates/big-video-player/src/video/ui/video_shell/playback.rs:168
+#: crates/big-video-player/src/video/ui/video_shell/playback.rs:169
 msgid "Could not play this file — it may be unsupported or corrupt."
 msgstr ""
 "Não foi possível reproduzir este arquivo — ele pode não ser suportado ou "
@@ -546,9 +546,9 @@ msgstr "Editar corte"
 #: crates/big-video-player/src/video/ui/iptv/providers_dialog.rs:168
 #: crates/big-video-player/src/video/ui/menu_dialogs.rs:74
 #: crates/big-video-player/src/video/ui/video_browser_sidebar/fileops.rs:200
-#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:170
-#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:300
-#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:428
+#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:173
+#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:303
+#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:431
 #: crates/big-video-player/src/video/ui/video_shell/trim/run.rs:238
 #: crates/ui/media/big-player-ui/src/podcast_panel.rs:575
 #: crates/ui/media/big-player-ui/src/radio_panel/widgets.rs:352
@@ -668,7 +668,7 @@ msgstr "Letra"
 #: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:82
 #: crates/big-audio-player/src/audio/ui/playlist_panel.rs:87
 #: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/header.rs:24
-#: crates/big-video-player/src/video/ui/video_shell/component.rs:286
+#: crates/big-video-player/src/video/ui/video_shell/component.rs:301
 msgid "Playlist"
 msgstr "Lista de reprodução"
 
@@ -838,6 +838,10 @@ msgstr "Abrir pasta"
 msgid "Open File"
 msgstr "Abrir arquivo"
 
+#: crates/big-audio-player/src/audio/ui/audio_shell/tv.rs:113
+msgid "The TV's track is no longer in the queue."
+msgstr "A faixa da TV não está mais na fila."
+
 #: crates/big-audio-player/src/audio/ui/audio_shell/update.rs:117
 msgid "Scan cancelled. Earlier confirmed imports were kept."
 msgstr "Verificação cancelada. As importações já confirmadas foram mantidas."
@@ -900,11 +904,11 @@ msgstr "Não foi possível abrir as playlists. Tente novamente."
 msgid "Tags saved"
 msgstr "Tags salvas"
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/update.rs:288
+#: crates/big-audio-player/src/audio/ui/audio_shell/update.rs:290
 msgid "tracks imported"
 msgstr "faixas importadas"
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/update.rs:289
+#: crates/big-audio-player/src/audio/ui/audio_shell/update.rs:291
 msgid ""
 "Playlist import was not fully completed. Previously confirmed imports were "
 "kept."
@@ -912,7 +916,7 @@ msgstr ""
 "A importação das listas de reprodução não foi concluída por completo. As "
 "importações já confirmadas foram mantidas."
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/update.rs:301
+#: crates/big-audio-player/src/audio/ui/audio_shell/update.rs:303
 msgid "Sleep timer cancelled"
 msgstr "Temporizador de sono cancelado"
 
@@ -963,7 +967,7 @@ msgstr "Adicionar faixa à lista de reprodução"
 #: crates/big-audio-player/src/audio/ui/playlist_interactions.rs:427
 #: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/context_menu.rs:41
 #: crates/big-video-player/src/video/ui/video_controls_bar/zones.rs:483
-#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:170
+#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:173
 msgid "Play"
 msgstr "Reproduzir"
 
@@ -1079,8 +1083,8 @@ msgstr ""
 
 #: crates/big-audio-player/src/audio/ui/library_io.rs:108
 #: crates/big-video-player/src/video/ui/menu_dialogs.rs:330
-#: crates/big-video-player/src/video/ui/video_shell/component.rs:262
-#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:300
+#: crates/big-video-player/src/video/ui/video_shell/component.rs:277
+#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:303
 msgid "Open"
 msgstr "Abrir"
 
@@ -1336,7 +1340,7 @@ msgstr "Aparência"
 #: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:123
 #: crates/big-video-player/src/video/ui/video_shell/panel.rs:42
 #: crates/big-video-player/src/video/ui/video_shell/panel.rs:462
-#: crates/media-runtime/src/shared/tv_cast.rs:862
+#: crates/media-runtime/src/shared/tv_cast.rs:848
 msgid "Play on a TV"
 msgstr "Mostrar na TV"
 
@@ -1865,7 +1869,7 @@ msgstr "Abrir arquivo"
 
 #: crates/big-video-player/src/video/keybindings.rs:302
 #: crates/big-video-player/src/video/ui/video_shell/actions.rs:160
-#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:151
+#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:154
 msgid "Open URL"
 msgstr "Abrir URL"
 
@@ -2861,8 +2865,8 @@ msgstr "A fila de capturas está cheia; aguarde as capturas pendentes"
 #: crates/big-video-player/src/video/ui/menu_dialogs.rs:132
 #: crates/big-video-player/src/video/ui/menu_dialogs.rs:136
 #: crates/big-video-player/src/video/ui/menu_dialogs.rs:147
-#: crates/big-video-player/src/video/ui/video_shell/component.rs:700
-#: crates/big-video-player/src/video/ui/video_shell/playback.rs:145
+#: crates/big-video-player/src/video/ui/video_shell/component.rs:720
+#: crates/big-video-player/src/video/ui/video_shell/playback.rs:146
 msgid "Screenshot failed"
 msgstr "Falha na captura de tela"
 
@@ -3534,7 +3538,7 @@ msgid "Add Video Files"
 msgstr "Adicionar arquivos de vídeo"
 
 #: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/header.rs:118
-#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:129
+#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:132
 msgid "Video files"
 msgstr "Arquivos de vídeo"
 
@@ -3771,7 +3775,7 @@ msgid "Drop a file or open one to start"
 msgstr "Solte um arquivo ou abra um para começar"
 
 #: crates/big-video-player/src/video/ui/video_shell/actions.rs:154
-#: crates/big-video-player/src/video/ui/video_shell/component.rs:782
+#: crates/big-video-player/src/video/ui/video_shell/component.rs:807
 msgid "Open Recent"
 msgstr "Abrir recente"
 
@@ -3900,151 +3904,152 @@ msgstr "Usar HDR?"
 msgid "Does the picture look grey and washed out? Click to use HDR colours"
 msgstr "A imagem parece cinza e desbotada? Clique para usar cores HDR"
 
-#: crates/big-video-player/src/video/ui/video_shell/component.rs:162
+#: crates/big-video-player/src/video/ui/video_shell/component.rs:182
 msgid "On the TV"
 msgstr "Na TV"
 
-#: crates/big-video-player/src/video/ui/video_shell/component.rs:164
-msgid "The TV is still playing. Click to control it from here"
-msgstr "A TV continua tocando. Clique para controlá-la daqui"
+#: crates/big-video-player/src/video/ui/video_shell/component.rs:183
+#: crates/media-runtime/src/shared/tv_cast.rs:1055
+msgid "The TV is still playing"
+msgstr "A TV continua tocando"
 
-#: crates/big-video-player/src/video/ui/video_shell/component.rs:257
+#: crates/big-video-player/src/video/ui/video_shell/component.rs:272
 msgid "Keep Above"
 msgstr "Manter acima"
 
-#: crates/big-video-player/src/video/ui/video_shell/component.rs:781
+#: crates/big-video-player/src/video/ui/video_shell/component.rs:806
 #: crates/big-video-player/src/video/ui/video_shell/input_gestures.rs:115
 msgid "Open File…"
 msgstr "Abrir arquivo…"
 
-#: crates/big-video-player/src/video/ui/video_shell/component.rs:783
+#: crates/big-video-player/src/video/ui/video_shell/component.rs:808
 #: crates/big-video-player/src/video/ui/video_shell/input_gestures.rs:116
 msgid "Open URL…"
 msgstr "Abrir URL…"
 
-#: crates/big-video-player/src/video/ui/video_shell/component.rs:784
+#: crates/big-video-player/src/video/ui/video_shell/component.rs:809
 msgid "Open Disc…"
 msgstr "Abrir disco…"
 
-#: crates/big-video-player/src/video/ui/video_shell/component.rs:785
+#: crates/big-video-player/src/video/ui/video_shell/component.rs:810
 msgid "TV Channels (IPTV)…"
 msgstr "Canais de TV (IPTV)…"
 
-#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:51
+#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:54
 msgid "Best available"
 msgstr "Melhor disponível"
 
-#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:53
+#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:56
 msgid "Highest video and audio quality"
 msgstr "Maior qualidade de vídeo e áudio"
 
-#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:56
+#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:59
 msgid "Up to 1080p"
 msgstr "Até 1080p"
 
-#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:58
+#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:61
 msgid "Prefer Full HD or lower"
 msgstr "Preferir Full HD ou inferior"
 
-#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:61
+#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:64
 msgid "Up to 720p"
 msgstr "Até 720p"
 
-#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:63
+#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:66
 msgid "Prefer HD or lower"
 msgstr "Preferir HD ou inferior"
 
-#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:66
+#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:69
 msgid "Up to 480p"
 msgstr "Até 480p"
 
-#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:68
+#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:71
 msgid "Prefer SD or lower"
 msgstr "Preferir SD ou inferior"
 
-#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:71
+#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:74
 msgid "Audio only"
 msgstr "Somente áudio"
 
-#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:73
+#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:76
 msgid "Use the best audio stream"
 msgstr "Usar o melhor fluxo de áudio"
 
-#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:81
+#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:84
 msgid "Online Video Quality"
 msgstr "Qualidade do vídeo online"
 
-#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:90
+#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:93
 msgid "Use this quality"
 msgstr "Usar esta qualidade"
 
-#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:120
+#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:123
 msgid "IPTV"
 msgstr "IPTV"
 
-#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:128
+#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:131
 msgid "Open Video"
 msgstr "Abrir vídeo"
 
-#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:130
+#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:133
 msgid "Playlist files"
 msgstr "Arquivos de lista de reprodução"
 
-#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:131
+#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:134
 msgid "All files"
 msgstr "Todos os arquivos"
 
-#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:160
+#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:163
 msgid "Supports YouTube, HTTP streams, RTSP, RTMP, DVD, and Blu-ray URLs."
 msgstr "Suporta URLs do YouTube, streams HTTP, RTSP, RTMP, DVD e Blu-ray."
 
-#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:164
+#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:167
 msgid "Media URL"
 msgstr "URL de mídia"
 
-#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:224
+#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:227
 msgid "Recent Files"
 msgstr "Arquivos recentes"
 
-#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:234
+#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:237
 msgid "No Recent Files"
 msgstr "Nenhum arquivo recente"
 
-#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:245
+#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:248
 msgid "Open recent file"
 msgstr "Abrir arquivo recente"
 
-#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:274
+#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:277
 msgid "Open Disc"
 msgstr "Abrir disco"
 
-#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:283
+#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:286
 msgid "Choose a disc type and enter the device, ISO, or folder path."
 msgstr ""
 "Escolha um tipo de disco e informe o dispositivo, a ISO ou o caminho da "
 "pasta."
 
-#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:287
+#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:290
 msgid "Disc type"
 msgstr "Tipo de disco"
 
-#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:288
+#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:291
 msgid "DVD"
 msgstr "DVD"
 
-#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:288
+#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:291
 msgid "Blu-ray"
 msgstr "Blu-ray"
 
-#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:291
+#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:294
 msgid "Disc device path"
 msgstr "Caminho do dispositivo de disco"
 
-#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:421
+#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:424
 msgid "Restore Default Settings?"
 msgstr "Restaurar as configurações padrão?"
 
-#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:423
+#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:426
 msgid ""
 "Every setting, including appearance, goes back to its default value. Some "
 "changes take effect after reopening the player."
@@ -4052,11 +4057,11 @@ msgstr ""
 "Todas as configurações, incluindo a aparência, voltam ao valor padrão. "
 "Algumas mudanças só valem depois de reabrir o player."
 
-#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:428
+#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:431
 msgid "Restore"
 msgstr "Restaurar"
 
-#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:442
+#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:445
 msgid ""
 "Defaults are applied for this session; saving continues in the background."
 msgstr ""
@@ -4145,19 +4150,19 @@ msgstr "Desfaz todas as mudanças na imagem e no som"
 msgid "Jump to a chapter"
 msgstr "Ir para um capítulo"
 
-#: crates/big-video-player/src/video/ui/video_shell/playback.rs:150
+#: crates/big-video-player/src/video/ui/video_shell/playback.rs:151
 msgid "Screenshot timed out; cancellation requested"
 msgstr "A captura excedeu o tempo de espera; o cancelamento foi solicitado"
 
-#: crates/big-video-player/src/video/ui/video_shell/playback.rs:196
+#: crates/big-video-player/src/video/ui/video_shell/playback.rs:197
 msgid "Playing video"
 msgstr "Reproduzindo vídeo"
 
-#: crates/big-video-player/src/video/ui/video_shell/playback.rs:412
+#: crates/big-video-player/src/video/ui/video_shell/playback.rs:413
 msgid "Could not move to trash"
 msgstr "Não foi possível mover para a lixeira"
 
-#: crates/big-video-player/src/video/ui/video_shell/playback.rs:417
+#: crates/big-video-player/src/video/ui/video_shell/playback.rs:418
 #, rust-format
 msgid "{} file moved to trash"
 msgid_plural "{} files moved to trash"
@@ -4804,39 +4809,51 @@ msgstr "Nenhuma TV encontrada"
 msgid "Check that the TV is on and on the same network as this computer."
 msgstr "Verifique se a TV está ligada e na mesma rede que este computador."
 
-#: crates/media-runtime/src/shared/tv_cast.rs:903
-#: crates/media-runtime/src/shared/tv_cast.rs:978
-#: crates/media-runtime/src/shared/tv_cast.rs:996
+#: crates/media-runtime/src/shared/tv_cast.rs:921
+#: crates/media-runtime/src/shared/tv_cast.rs:1023
+#: crates/media-runtime/src/shared/tv_cast.rs:1043
 msgid "Playing on the TV"
 msgstr "Reproduzindo na TV"
 
-#: crates/media-runtime/src/shared/tv_cast.rs:916
+#: crates/media-runtime/src/shared/tv_cast.rs:934
 msgid "Stop sending"
 msgstr "Parar de enviar"
 
-#: crates/media-runtime/src/shared/tv_cast.rs:921
-#: crates/media-runtime/src/shared/tv_cast.rs:990
+#: crates/media-runtime/src/shared/tv_cast.rs:939
+#: crates/media-runtime/src/shared/tv_cast.rs:1037
 msgid "Use the player"
 msgstr "Usar o player"
 
-#: crates/media-runtime/src/shared/tv_cast.rs:923
-#: crates/media-runtime/src/shared/tv_cast.rs:992
+#: crates/media-runtime/src/shared/tv_cast.rs:941
+#: crates/media-runtime/src/shared/tv_cast.rs:1039
 msgid "The TV keeps playing, and the player is free for this or another video."
 msgstr "A TV continua tocando, e o player fica livre para este ou outro vídeo."
 
-#: crates/media-runtime/src/shared/tv_cast.rs:999
+#: crates/media-runtime/src/shared/tv_cast.rs:947
+msgid "Show this one on the TV"
+msgstr "Mostrar este na TV"
+
+#: crates/media-runtime/src/shared/tv_cast.rs:949
+msgid "The TV plays what is in the player now, from where it is."
+msgstr "A TV passa a tocar o que está no player agora, do ponto onde ele está."
+
+#: crates/media-runtime/src/shared/tv_cast.rs:955
+msgid "Play the TV's here"
+msgstr "Tocar aqui o da TV"
+
+#: crates/media-runtime/src/shared/tv_cast.rs:957
+msgid "The player opens what the TV plays, at the same point."
+msgstr "O player abre o que a TV está tocando, no mesmo ponto."
+
+#: crates/media-runtime/src/shared/tv_cast.rs:1046
 msgid "Starting on the TV…"
 msgstr "Iniciando na TV…"
 
-#: crates/media-runtime/src/shared/tv_cast.rs:1006
-msgid "The TV is still playing"
-msgstr "A TV continua tocando"
-
-#: crates/media-runtime/src/shared/tv_cast.rs:1008
+#: crates/media-runtime/src/shared/tv_cast.rs:1057
 msgid "Control the TV"
 msgstr "Controlar a TV"
 
-#: crates/media-runtime/src/shared/tv_cast.rs:1010
+#: crates/media-runtime/src/shared/tv_cast.rs:1059
 msgid "The controls drive the TV again, and the player pauses."
 msgstr "Os controles voltam a comandar a TV, e o player pausa."
 
@@ -5398,6 +5415,9 @@ msgstr "Escaneie o código com a câmera do celular."
 #: crates/ui/media/big-player-ui/src/smartphone/dialog.rs:149
 msgid "Could not start server"
 msgstr "Não foi possível iniciar o servidor"
+
+#~ msgid "The TV is still playing. Click to control it from here"
+#~ msgstr "A TV continua tocando. Clique para controlá-la daqui"
 
 #~ msgid "No track loaded"
 #~ msgstr "Nenhuma faixa carregada"

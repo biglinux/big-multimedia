@@ -16,7 +16,8 @@ impl AudioShell {
         match self.tv.playing() {
             Some(state) => {
                 if self.tv.released() {
-                    self.tv_card.show_released(&state);
+                    let other = self.tv.source().as_deref() != Some(self.current_file.as_str());
+                    self.tv_card.show_released(&state, other);
                 } else {
                     self.tv_card.show(Some(&state));
                     self.show_tv_in_transport(&state);
@@ -65,6 +66,70 @@ impl AudioShell {
         if let Some(mpv) = &self.mpv {
             mpv.play();
         }
+    }
+
+    /// "Show this one on the TV": the TV plays the player's track from where
+    /// the player is, and the transport drives the TV again.
+    pub(super) fn replace_tv(&mut self) {
+        let Some(state) = self.tv.playing() else {
+            return;
+        };
+        let (seconds, title) = self.mpv.as_ref().map_or((0.0, String::new()), |mpv| {
+            mpv.pause();
+            (
+                mpv.get_position(),
+                mpv.get_media_title().unwrap_or_default(),
+            )
+        });
+        self.tv.switch_to(
+            state.receiver_id.clone(),
+            TvMedia {
+                source: self.current_file.clone(),
+                title,
+                audio: true,
+                start: PlaybackStart {
+                    seconds,
+                    paused: false,
+                    volume: state.volume.unwrap_or(1.0),
+                    muted: state.muted.unwrap_or(false),
+                    height: 0,
+                },
+            },
+        );
+    }
+
+    /// "Play the TV's here": play in the player the track the TV plays, at
+    /// the TV's point. The TV plays on; the player stays free.
+    pub(super) fn follow_tv(&mut self) {
+        let Some(source) = self.tv.source() else {
+            return;
+        };
+        let Some(index) = self
+            .queue
+            .tracks()
+            .iter()
+            .position(|track| track.file_path == source)
+        else {
+            self.notify(&i18n("The TV's track is no longer in the queue."));
+            return;
+        };
+        self.tv_catch_up = true;
+        self.queue.jump_to(index);
+        self.play_current();
+        self.sync_queue_to_panels();
+    }
+
+    /// The TV's track loaded after "Play the TV's here": catch up with it.
+    pub(super) fn tv_catch_up_loaded(&mut self) {
+        if !std::mem::take(&mut self.tv_catch_up) {
+            return;
+        }
+        if let (Some(mpv), Some(state)) = (&self.mpv, self.tv.playing())
+            && self.tv.source().as_deref() == Some(self.current_file.as_str())
+        {
+            mpv.seek_absolute(state.position);
+        }
+        self.on_tv_changed();
     }
 
     /// Transport intents while the TV has the transport. False for the ones

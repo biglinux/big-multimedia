@@ -24,6 +24,10 @@ pub enum VideoShellInput {
     TvRelease,
     /// The header's "On the TV": the controls drive the TV again.
     TvAttach,
+    /// "Show this one on the TV": the TV plays what the player holds.
+    TvReplace,
+    /// "Play the TV's here": the player opens what the TV plays, in step.
+    TvFollow,
     /// The header's settings button: open the panel home, or close it.
     TogglePanel,
     /// A shortcut, chip or menu entry: open the panel straight at a section

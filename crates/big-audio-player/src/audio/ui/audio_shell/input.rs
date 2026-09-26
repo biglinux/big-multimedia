@@ -126,6 +126,10 @@ pub enum AudioShellInput {
     TvStop,
     /// The TV strip's "Use the player" / "Control the TV".
     TvToggleRelease,
+    /// "Show this one on the TV": the TV plays the player's track.
+    TvReplace,
+    /// "Play the TV's here": the player plays the TV's track, in step.
+    TvFollow,
     /// Open the smartphone web-remote dialog (main menu).
     ShowSmartphone,
     /// Re-evaluate the album-art background (Appearance toggle changed).

@@ -23,6 +23,7 @@ impl VideoShell {
                 self.tv_pill.set_visible(released);
                 if released {
                     self.tv_card.hide();
+                    self.tv_menu.show_released(&state, !self.holds_the_tvs());
                 } else {
                     self.tv_card.show(Some(&state));
                     self.show_tv_in_controls(&state);
@@ -72,10 +73,77 @@ impl VideoShell {
     /// "On the TV": the controls drive the TV again, and the player pauses
     /// so the two do not play over each other.
     pub(super) fn attach_tv(&mut self) {
+        self.tv_pill.popdown();
         if let Some(mpv) = self.mpv.borrow().as_ref() {
             mpv.pause();
         }
         self.tv.attach();
+    }
+
+    /// Whether the player holds the file the TV plays.
+    fn holds_the_tvs(&self) -> bool {
+        let current = self
+            .mpv
+            .borrow()
+            .as_ref()
+            .and_then(|mpv| mpv.get_current_file());
+        current.is_some() && current == self.tv.source()
+    }
+
+    /// "Show this one on the TV": the TV plays what the player holds, from
+    /// where the player is, and the controls drive the TV again.
+    pub(super) fn replace_tv(&mut self) {
+        self.tv_pill.popdown();
+        let (Some(mpv), Some(state)) = (self.mpv.borrow().clone(), self.tv.playing()) else {
+            return;
+        };
+        let Some(source) = mpv.get_current_file() else {
+            return;
+        };
+        mpv.pause();
+        self.tv.switch_to(
+            state.receiver_id.clone(),
+            TvMedia {
+                source,
+                title: mpv.get_media_title().unwrap_or_default(),
+                audio: false,
+                start: PlaybackStart {
+                    seconds: mpv.get_position(),
+                    paused: false,
+                    volume: state.volume.unwrap_or(1.0),
+                    muted: state.muted.unwrap_or(false),
+                    height: u32::try_from(self.settings.get_int(keys::TV_RESOLUTION)).unwrap_or(0),
+                },
+            },
+        );
+    }
+
+    /// "Play the TV's here": open in the player what the TV plays, at the
+    /// TV's point. The TV plays on; the player stays free.
+    pub(super) fn follow_tv(&mut self) {
+        self.tv_pill.popdown();
+        let (Some(mpv), Some(source)) = (self.mpv.borrow().clone(), self.tv.source()) else {
+            return;
+        };
+        self.tv_catch_up = true;
+        // Within the playlist, jump to it and keep the list; otherwise open it.
+        match self.playlist_paths.iter().position(|path| *path == source) {
+            Some(index) => mpv.playlist_play_index(i64::try_from(index).unwrap_or(0)),
+            None => super::send_to_shell(VideoShellInput::OpenFiles(vec![source])),
+        }
+    }
+
+    /// The TV's file loaded after "Play the TV's here": catch up with the TV.
+    pub(super) fn tv_catch_up_loaded(&mut self) {
+        if !std::mem::take(&mut self.tv_catch_up) || !self.holds_the_tvs() {
+            return;
+        }
+        let (Some(mpv), Some(state)) = (self.mpv.borrow().clone(), self.tv.playing()) else {
+            return;
+        };
+        mpv.seek_absolute(state.position);
+        mpv.play();
+        self.on_tv_changed();
     }
 
     /// Move the playlist and send the file that loads to `receiver`. False

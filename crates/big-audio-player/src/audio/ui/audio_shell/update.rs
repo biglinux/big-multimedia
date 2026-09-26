@@ -243,6 +243,8 @@ impl AudioShell {
             AudioShellInput::TvChanged => self.on_tv_changed(),
             AudioShellInput::TvStop => self.tv.control("stop", 0.0),
             AudioShellInput::TvToggleRelease => self.toggle_tv_release(),
+            AudioShellInput::TvReplace => self.replace_tv(),
+            AudioShellInput::TvFollow => self.follow_tv(),
             AudioShellInput::ShowSmartphone => {
                 if let Some(win) = self.window() {
                     crate::audio::ui::smartphone_dialog::present_smartphone(

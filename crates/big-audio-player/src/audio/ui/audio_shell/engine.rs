@@ -168,6 +168,7 @@ impl AudioShell {
                 self.fetch_lyrics_for_current(sender);
                 self.push_mpris_metadata(sender);
                 self.tv_follow_loaded();
+                self.tv_catch_up_loaded();
             }
             PlayerEvent::Seeked(position) if position.is_finite() && position >= 0.0 => {
                 *self

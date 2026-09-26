@@ -109,6 +109,7 @@ impl VideoShell {
                 // Resize the window to the video's aspect (no letterbox bars).
                 self.aspect_snap.snap_on_load();
                 self.tv_follow_loaded();
+                self.tv_catch_up_loaded();
             }
             PlayerEvent::Buffering(buffering) => {
                 self.buffering_overlay.set_visible(buffering);

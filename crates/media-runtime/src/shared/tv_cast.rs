@@ -885,18 +885,28 @@ pub struct TvCard {
     title: gtk::Label,
     /// "Use the player", or "Control the TV" once the player was released.
     release: gtk::Button,
+    /// "Show this one on the TV" and "Play the TV's here": offered while
+    /// released, when the player holds something other than what the TV
+    /// plays.
+    swap: gtk::Box,
 }
 
 impl TvCard {
     /// `stop` runs on "Stop sending", `release` on "Use the player" (the TV
     /// keeps playing and the player goes its own way) and on "Control the
-    /// TV", its way back; `css` names the owner's card style. `strip` lays it out as one line, for a player whose
-    /// middle holds a list that must stay usable.
+    /// TV", its way back. `replace` runs on "Show this one on the TV", which
+    /// puts what the player holds on the TV instead, and `follow` on "Play the
+    /// TV's here", which opens in the player what the TV plays, where the TV
+    /// is. `css` names the owner's
+    /// card style; `strip` lays it out as one line, for a player whose middle
+    /// holds a list that must stay usable.
     pub fn new(
         css: &str,
         strip: bool,
         stop: impl Fn() + 'static,
         release: impl Fn() + 'static,
+        replace: impl Fn() + 'static,
+        follow: impl Fn() + 'static,
     ) -> Self {
         let icon = gtk::Image::builder()
             .icon_name("tv-symbolic")
@@ -933,6 +943,30 @@ impl TvCard {
             .css_classes(["pill"])
             .build();
         release_button.connect_clicked(move |_| release());
+        let replace_button = gtk::Button::builder()
+            .label(i18n("Show this one on the TV"))
+            .tooltip_text(i18n(
+                "The TV plays what is in the player now, from where it is.",
+            ))
+            .css_classes(["pill", "suggested-action"])
+            .build();
+        replace_button.connect_clicked(move |_| replace());
+        let follow_button = gtk::Button::builder()
+            .label(i18n("Play the TV's here"))
+            .tooltip_text(i18n(
+                "The player opens what the TV plays, at the same point.",
+            ))
+            .css_classes(["pill"])
+            .build();
+        follow_button.connect_clicked(move |_| follow());
+        let swap = gtk::Box::builder()
+            .spacing(8)
+            .halign(gtk::Align::Center)
+            .valign(gtk::Align::Center)
+            .visible(false)
+            .build();
+        swap.append(&replace_button);
+        swap.append(&follow_button);
         let buttons = gtk::Box::builder()
             .spacing(8)
             .halign(gtk::Align::Center)
@@ -963,6 +997,7 @@ impl TvCard {
                 .build();
             inner.append(&icon);
             inner.append(&words);
+            inner.append(&swap);
             inner.append(&buttons);
             inner
         } else {
@@ -979,6 +1014,8 @@ impl TvCard {
             inner.append(&icon);
             inner.append(&title);
             inner.append(&detail);
+            swap.set_margin_top(6);
+            inner.append(&swap);
             inner.append(&buttons);
             inner
         };
@@ -989,12 +1026,14 @@ impl TvCard {
             detail,
             title,
             release: release_button,
+            swap,
         }
     }
 
     /// Show the card for `state`, or for a switch to the next item.
     pub fn show(&self, state: Option<&State>) {
         self.root.set_visible(true);
+        self.swap.set_visible(false);
         self.release.set_label(&i18n("Use the player"));
         self.release.set_tooltip_text(Some(&i18n(
             "The TV keeps playing, and the player is free for this or another video.",
@@ -1008,9 +1047,11 @@ impl TvCard {
         }
     }
 
-    /// Show that the TV plays on while the player does something else.
-    pub fn show_released(&self, state: &State) {
+    /// Show that the TV plays on while the player does something else;
+    /// `other` when the player holds something else, which it can send.
+    pub fn show_released(&self, state: &State, other: bool) {
         self.root.set_visible(true);
+        self.swap.set_visible(other);
         self.title.set_label(&i18n("The TV is still playing"));
         self.detail.set_label(&card_line(state));
         self.release.set_label(&i18n("Control the TV"));

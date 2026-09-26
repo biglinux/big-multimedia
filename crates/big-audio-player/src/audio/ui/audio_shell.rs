@@ -102,6 +102,8 @@ pub struct AudioShell {
     tv_was_released: bool,
     /// Next/Previous or the end of a track: the TV the next track goes to.
     tv_follow: Option<String>,
+    /// "Play the TV's here": seek to the TV's point once its track loads.
+    tv_catch_up: bool,
     /// Visual trim controls shown above the bottom transport in trim mode.
     trim: Controller<AudioTrimBar>,
     /// Files browser tab — held for its lifetime (Output forwarding); the shell

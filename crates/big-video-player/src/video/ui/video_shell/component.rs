@@ -158,18 +158,33 @@ impl Component for VideoShell {
                 ]));
             }
         });
-        let tv_pill = gtk::Button::builder()
+        let tv_menu = crate::shared::tv_cast::TvCard::new(
+            "tv-menu",
+            false,
+            {
+                let sender = sender.clone();
+                move || sender.input(VideoShellInput::TvStop)
+            },
+            {
+                let sender = sender.clone();
+                move || sender.input(VideoShellInput::TvAttach)
+            },
+            {
+                let sender = sender.clone();
+                move || sender.input(VideoShellInput::TvReplace)
+            },
+            {
+                let sender = sender.clone();
+                move || sender.input(VideoShellInput::TvFollow)
+            },
+        );
+        let tv_pill = gtk::MenuButton::builder()
             .label(i18n("On the TV"))
-            .tooltip_text(i18n(
-                "The TV is still playing. Click to control it from here",
-            ))
+            .tooltip_text(i18n("The TV is still playing"))
             .css_classes(["header-pill"])
+            .popover(&gtk::Popover::builder().child(&tv_menu.root).build())
             .visible(false)
             .build();
-        tv_pill.connect_clicked({
-            let sender = sender.clone();
-            move |_| sender.input(VideoShellInput::TvAttach)
-        });
         chrome.header().pack_end(&adjustments_pill);
         chrome.header().pack_end(&hdr_hint);
         chrome.header().pack_end(&tv_pill);
@@ -363,7 +378,12 @@ impl Component for VideoShell {
             &main_overlay,
             chrome.header_revealer(),
             chrome.bottom_revealer(),
-            vec![open_menu_popover],
+            // The TV menu too: its popover taking the focus is not the window
+            // losing it, and the header must not fold away from under it.
+            vec![open_menu_popover]
+                .into_iter()
+                .chain(tv_pill.popover())
+                .collect(),
             controls.model().popovers(),
             !opening_files,
             trim_active.clone(),
@@ -382,6 +402,9 @@ impl Component for VideoShell {
                 let sender = sender.clone();
                 move || sender.input(VideoShellInput::TvRelease)
             },
+            // Attached, the TV already plays what the player holds.
+            || {},
+            || {},
         );
         main_overlay.add_overlay(&tv_card.root);
         let panel = super::panel::SettingsPanel::new(&sender);
@@ -546,6 +569,8 @@ impl Component for VideoShell {
                 tv,
                 tv_card,
                 tv_pill,
+                tv_menu,
+                tv_catch_up: false,
                 tv_last: None,
                 tv_was_released: false,
                 tv_follow: None,
@@ -735,9 +760,14 @@ impl Component for VideoShell {
                     }
                 }
                 VideoShellInput::TvChanged => self.on_tv_changed(),
-                VideoShellInput::TvStop => self.tv.control("stop", 0.0),
+                VideoShellInput::TvStop => {
+                    self.tv_pill.popdown();
+                    self.tv.control("stop", 0.0);
+                }
                 VideoShellInput::TvRelease => self.release_tv(),
                 VideoShellInput::TvAttach => self.attach_tv(),
+                VideoShellInput::TvReplace => self.replace_tv(),
+                VideoShellInput::TvFollow => self.follow_tv(),
                 VideoShellInput::ToggleFullscreen => {
                     if let Some(root) = window_ref {
                         let _ = toggle_surface_fullscreened(root);

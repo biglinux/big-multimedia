@@ -119,8 +119,13 @@ pub struct VideoShell {
     tv: Rc<crate::shared::tv_cast::TvLink>,
     /// Over the video while a TV plays this player's session.
     tv_card: crate::shared::tv_cast::TvCard,
-    /// Header button while the TV plays but the player was released.
-    tv_pill: gtk::Button,
+    /// Header button while the TV plays but the player was released; opens
+    /// `tv_menu`.
+    tv_pill: gtk::MenuButton,
+    /// What the TV plays and the ways back, under `tv_pill`.
+    tv_menu: crate::shared::tv_cast::TvCard,
+    /// "Play the TV's here": seek to the TV's point once its file loads.
+    tv_catch_up: bool,
     /// The session's last state: where it was when it ended.
     tv_last: Option<crate::cast::daemon::State>,
     /// Whether the session was released at the last change: a released

@@ -322,6 +322,18 @@ impl Component for AudioShell {
                     let _ = input.send(AudioShellInput::TvToggleRelease);
                 }
             },
+            {
+                let input = sender.input_sender().clone();
+                move || {
+                    let _ = input.send(AudioShellInput::TvReplace);
+                }
+            },
+            {
+                let input = sender.input_sender().clone();
+                move || {
+                    let _ = input.send(AudioShellInput::TvFollow);
+                }
+            },
         );
         content_pane.add_bottom_bar(&tv_card.root);
         content_pane.add_bottom_bar(playback_bar.widget());
@@ -556,6 +568,7 @@ impl Component for AudioShell {
                 tv_last: None,
                 tv_was_released: false,
                 tv_follow: None,
+                tv_catch_up: false,
                 trim,
                 _files: files,
                 radio,
