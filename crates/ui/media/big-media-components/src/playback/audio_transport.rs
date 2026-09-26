@@ -150,8 +150,12 @@ impl BigAudioTransport {
         // start: volume / speed / voice
         let (volume_hover_box, volume_button, volume_label) =
             build_hover_control("audio-volume-high-symbolic", &labels.volume, "100", 3);
-        let (speed_hover_box, speed_button, speed_label) =
-            build_hover_control("speedometer-symbolic", &labels.speed, "1.00x", 5);
+        let (speed_hover_box, speed_button, speed_label) = build_hover_control(
+            "power-profile-performance-symbolic",
+            &labels.speed,
+            "1.00x",
+            5,
+        );
         let (voice_hover_box, voice_button, voice_label) =
             build_hover_control("audio-input-microphone-symbolic", &labels.voice, "0", 3);
         let start_box = gtk::Box::builder()

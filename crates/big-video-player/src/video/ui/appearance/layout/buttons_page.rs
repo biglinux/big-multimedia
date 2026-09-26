@@ -61,7 +61,7 @@ const CONTROLS: &[(&str, &str, &str, &str, keys::BoolKey)] = &[
     (
         "speed",
         "Speed",
-        "speedometer-symbolic",
+        "power-profile-performance-symbolic",
         "bottom:start",
         keys::UI_SHOW_SPEED,
     ),

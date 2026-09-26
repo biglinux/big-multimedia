@@ -33,6 +33,8 @@ const PLAYER_SCALE_HEIGHT_REQUEST: i32 = 200;
 const TROUGH_STYLE_PROVIDER_PRIORITY_OFFSET: u32 = 2;
 const VOLUME_MINIMUM_PERCENT: f64 = 0.0;
 const VOLUME_STEP_PERCENT: f64 = 1.0;
+/// One mouse-wheel notch over the volume control.
+const VOLUME_SCROLL_PERCENT: f64 = 5.0;
 const VOLUME_REFERENCE_MARK_PERCENT: f64 = 100.0;
 const SPEED_MINIMUM_MULTIPLIER: f64 = 0.25;
 const SPEED_MAXIMUM_MULTIPLIER: f64 = 4.0;
@@ -45,6 +47,8 @@ const VOICE_SETTINGS_ICON_NAME: &str = "emblem-system-symbolic";
 const VOICE_MINIMUM_PERCENT: f64 = 0.0;
 const VOICE_MAXIMUM_PERCENT: f64 = 100.0;
 const VOICE_STEP_PERCENT: f64 = 1.0;
+/// One mouse-wheel notch over the voice control.
+const VOICE_SCROLL_PERCENT: f64 = 5.0;
 const VOICE_SCALE_WIDTH_REQUEST: i32 = -1;
 const VOICE_REFERENCE_MARK_PERCENT: f64 = 50.0;
 const VOICE_PRESET_EPSILON: f64 = 0.5;
@@ -133,7 +137,27 @@ pub fn build_volume_popover(
         });
     }
 
+    scroll_moves(parent, &scale, VOLUME_SCROLL_PERCENT);
     (popover, scale)
+}
+
+/// The mouse wheel over a control moves its slider a `step` a notch, up for
+/// more, without opening anything: the slider in the popover already takes
+/// the wheel, the control it hangs from did not.
+fn scroll_moves(parent: &gtk::Box, scale: &gtk::Scale, step: f64) {
+    // Discrete: a touchpad's stream of small deltas adds up to whole notches.
+    let scroll = gtk::EventControllerScroll::new(
+        gtk::EventControllerScrollFlags::VERTICAL | gtk::EventControllerScrollFlags::DISCRETE,
+    );
+    let scale = scale.downgrade();
+    scroll.connect_scroll(move |_, _, dy| {
+        let Some(scale) = scale.upgrade().filter(|_| dy != 0.0) else {
+            return glib::Propagation::Proceed;
+        };
+        scale.set_value(scale.value() - dy.signum() * step);
+        glib::Propagation::Stop
+    });
+    parent.add_controller(scroll);
 }
 
 /// `speed_button` toggles the popover or cycles [`SPEED_PRESETS`] when visible.
@@ -150,6 +174,7 @@ pub fn build_speed_popover(
         popover_scale_mark_position(),
         None,
     );
+    scroll_moves(parent, &scale, SPEED_STEP_MULTIPLIER);
 
     {
         let speed_value_label = speed_label.clone();
@@ -226,6 +251,7 @@ pub fn build_voice_popover(
     );
     scale.set_value(voice_spec.initial_strength_percent);
     column.append(&scale);
+    scroll_moves(parent, &scale, VOICE_SCROLL_PERCENT);
 
     let trough = gtk::CssProvider::new();
     update_scale_trough(
