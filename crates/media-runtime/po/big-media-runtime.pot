@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: big-media-runtime 0.1.0\n"
 "Report-Msgid-Bugs-To: https://github.com/biglinux/big-multimedia/issues\n"
-"POT-Creation-Date: 2026-09-26 07:52-0300\n"
+"POT-Creation-Date: 2026-09-26 08:02-0300\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -175,7 +175,7 @@ msgstr ""
 
 #: crates/big-audio-player/src/audio/keybindings.rs:101
 #: crates/big-video-player/src/video/ui/video_shell/panel.rs:530
-#: crates/big-video-player/src/video/ui/video_shell/playback.rs:426
+#: crates/big-video-player/src/video/ui/video_shell/playback.rs:433
 msgid "Undo"
 msgstr ""
 
@@ -472,7 +472,7 @@ msgid "Retry saving"
 msgstr ""
 
 #: crates/big-audio-player/src/audio/ui/audio_shell/engine.rs:33
-#: crates/big-video-player/src/video/ui/video_shell/playback.rs:168
+#: crates/big-video-player/src/video/ui/video_shell/playback.rs:175
 msgid "Could not play this file — it may be unsupported or corrupt."
 msgstr ""
 
@@ -2625,8 +2625,8 @@ msgstr ""
 #: crates/big-video-player/src/video/ui/menu_dialogs.rs:127
 #: crates/big-video-player/src/video/ui/menu_dialogs.rs:131
 #: crates/big-video-player/src/video/ui/menu_dialogs.rs:142
-#: crates/big-video-player/src/video/ui/video_shell/component.rs:716
-#: crates/big-video-player/src/video/ui/video_shell/playback.rs:145
+#: crates/big-video-player/src/video/ui/video_shell/component.rs:717
+#: crates/big-video-player/src/video/ui/video_shell/playback.rs:152
 msgid "Screenshot failed"
 msgstr ""
 
@@ -3223,7 +3223,7 @@ msgid "Move to trash"
 msgstr ""
 
 #: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/context_menu.rs:101
-#: crates/big-video-player/src/video/ui/video_browser_sidebar/views/queue_view.rs:185
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/views/queue_view.rs:214
 msgid "Remove from playlist"
 msgstr ""
 
@@ -3342,6 +3342,7 @@ msgid "Videos"
 msgstr ""
 
 #: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/metadata.rs:143
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/mod.rs:280
 #, rust-format
 msgid "{} video"
 msgid_plural "{} videos"
@@ -3420,7 +3421,12 @@ msgstr ""
 msgid "{ok} {verb}, {failed} failed"
 msgstr ""
 
-#: crates/big-video-player/src/video/ui/video_browser_sidebar/mod.rs:383
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/mod.rs:308
+#, rust-format
+msgid "ends at {}"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/mod.rs:486
 msgid "Scanning…"
 msgstr ""
 
@@ -3428,8 +3434,13 @@ msgstr ""
 msgid "Previous folder"
 msgstr ""
 
-#: crates/big-video-player/src/video/ui/video_browser_sidebar/views/queue_view.rs:139
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/views/queue_view.rs:141
 msgid "Drag to change the order"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/views/queue_view.rs:439
+#, rust-format
+msgid "Stopped at {}"
 msgstr ""
 
 #: crates/big-video-player/src/video/ui/video_controls_bar.rs:259
@@ -3542,7 +3553,7 @@ msgid "Drop a file or open one to start"
 msgstr ""
 
 #: crates/big-video-player/src/video/ui/video_shell/actions.rs:132
-#: crates/big-video-player/src/video/ui/video_shell/component.rs:820
+#: crates/big-video-player/src/video/ui/video_shell/component.rs:821
 msgid "Open Recent"
 msgstr ""
 
@@ -3685,21 +3696,21 @@ msgstr ""
 msgid "Keep Above"
 msgstr ""
 
-#: crates/big-video-player/src/video/ui/video_shell/component.rs:819
+#: crates/big-video-player/src/video/ui/video_shell/component.rs:820
 #: crates/big-video-player/src/video/ui/video_shell/input_gestures.rs:116
 msgid "Open File…"
 msgstr ""
 
-#: crates/big-video-player/src/video/ui/video_shell/component.rs:821
+#: crates/big-video-player/src/video/ui/video_shell/component.rs:822
 #: crates/big-video-player/src/video/ui/video_shell/input_gestures.rs:117
 msgid "Open URL…"
 msgstr ""
 
-#: crates/big-video-player/src/video/ui/video_shell/component.rs:822
+#: crates/big-video-player/src/video/ui/video_shell/component.rs:823
 msgid "Open Disc…"
 msgstr ""
 
-#: crates/big-video-player/src/video/ui/video_shell/component.rs:823
+#: crates/big-video-player/src/video/ui/video_shell/component.rs:824
 msgid "TV Channels (IPTV)…"
 msgstr ""
 
@@ -3912,19 +3923,19 @@ msgstr ""
 msgid "No recent file matches"
 msgstr ""
 
-#: crates/big-video-player/src/video/ui/video_shell/playback.rs:150
+#: crates/big-video-player/src/video/ui/video_shell/playback.rs:157
 msgid "Screenshot timed out; cancellation requested"
 msgstr ""
 
-#: crates/big-video-player/src/video/ui/video_shell/playback.rs:196
+#: crates/big-video-player/src/video/ui/video_shell/playback.rs:203
 msgid "Playing video"
 msgstr ""
 
-#: crates/big-video-player/src/video/ui/video_shell/playback.rs:415
+#: crates/big-video-player/src/video/ui/video_shell/playback.rs:422
 msgid "Could not move to trash"
 msgstr ""
 
-#: crates/big-video-player/src/video/ui/video_shell/playback.rs:420
+#: crates/big-video-player/src/video/ui/video_shell/playback.rs:427
 #, rust-format
 msgid "{} file moved to trash"
 msgid_plural "{} files moved to trash"

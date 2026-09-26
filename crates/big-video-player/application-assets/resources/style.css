@@ -149,8 +149,18 @@ menubutton.osd-btn {
   border-left: 3px solid @accent_bg_color;
 }
 .playlist-current label {
-  color: @accent_bg_color;
   font-weight: bold;
+}
+/* In the panel the name stays in the text colour: the accent over the
+   accent-tinted row read at 3:1. The bar, the play mark and the tint say
+   which one plays. */
+.settings-panel .playlist-current label,
+.settings-panel .playlist-current label.accent {
+  color: @window_fg_color;
+}
+.playlist-current .playlist-badge {
+  color: #ffffff;
+  font-weight: normal;
 }
 
 /* Duration / resolution badge on grid thumbnails */
@@ -235,6 +245,22 @@ menubutton.osd-btn {
 }
 .queue-remove:hover {
   opacity: 1;
+}
+
+/* How far a queued video was watched: a thin accent bar along the bottom
+   of its picture. */
+progressbar.queue-watched > trough {
+  min-height: 3px;
+  border-radius: 0;
+  background: alpha(black, 0.55);
+}
+progressbar.queue-watched > trough > progress {
+  min-height: 3px;
+  border-radius: 0;
+  background: @accent_bg_color;
+}
+.queue-handle {
+  opacity: 0.75;
 }
 
 /* Triage selection (Files multi-select mode). */

@@ -566,6 +566,7 @@ impl Component for VideoShell {
                 tv_was_released: false,
                 tv_follow: None,
                 tv_here: None,
+                playlist_second: -1,
                 mpv,
                 duration_secs: 0.0,
                 settings,

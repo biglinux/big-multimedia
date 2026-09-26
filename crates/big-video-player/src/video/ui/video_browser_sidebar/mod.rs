@@ -38,6 +38,7 @@ use big_relm4_components::layout::widget_container::clear_box_children;
 use gtk::{gio, glib};
 use relm4::{Component, ComponentParts, ComponentSender};
 
+use crate::i18n::{i18n, ni18n};
 use crate::settings::{Settings, keys};
 
 /// Search-filter debounce.
@@ -73,6 +74,8 @@ pub enum VideoBrowserSidebarInput {
     /// dialog / drag-drop / IPTV / m3u). `folder` is the directory to present as
     /// the browse context (breadcrumb + sub-folders), or `None` for an ad-hoc
     /// set (multiple files / remote stream) shown as a plain list.
+    /// Where the playing video is, in seconds (for the playlist's end time).
+    SetPosition(f64),
     /// The play queue changed under the tab being shown (an add, a "play
     /// next"): update it without switching tabs.
     SetQueue(Vec<String>),
@@ -175,6 +178,12 @@ pub(crate) struct BrowserState {
     filter: RefCell<Option<gtk::CustomFilter>>,
     /// Files mode: the "on this computer" results under the folder's list.
     disk_section: RefCell<Option<glib::WeakRef<gtk::Box>>>,
+    /// Playlist mode: the count, total length and end time over the list.
+    summary: RefCell<Option<glib::WeakRef<gtk::Label>>>,
+    /// Length of each queued video once probed, for the summary.
+    lengths: Rc<RefCell<std::collections::HashMap<String, f64>>>,
+    /// Where the playing video is, in seconds.
+    position: Cell<f64>,
 }
 
 impl BrowserState {
@@ -206,6 +215,100 @@ impl BrowserState {
             .and_then(|cur| items.iter().position(|p| p == cur))
             .map_or(-1, |i| i as i64);
         self.pos.set(pos);
+    }
+
+    /// The line over the playlist: how many, how long, and when the last one
+    /// ends. Lengths not yet known are probed off the main loop (the probe is
+    /// cached, so each file is read once).
+    fn build_summary(self: &Rc<Self>, items: &[String]) {
+        let label = gtk::Label::builder()
+            .xalign(0.0)
+            .margin_start(12)
+            .margin_end(12)
+            .margin_bottom(4)
+            .css_classes(["dim-label", "caption"])
+            .build();
+        self.summary.replace(Some(label.downgrade()));
+        if let Some(container) = self.container() {
+            container.append(&label);
+        }
+        self.refresh_summary();
+        let missing: Vec<String> = {
+            let lengths = self.lengths.borrow();
+            items
+                .iter()
+                .filter(|path| !lengths.contains_key(*path))
+                .cloned()
+                .collect()
+        };
+        if missing.is_empty() {
+            return;
+        }
+        let state = Rc::downgrade(self);
+        glib::spawn_future_local(async move {
+            let found = gio::spawn_blocking(move || {
+                missing
+                    .into_iter()
+                    .map(|path| {
+                        let length = crate::media::playlist::probe_metadata_cached(&path)
+                            .and_then(|meta| meta.duration_secs)
+                            .unwrap_or(0.0);
+                        (path, length)
+                    })
+                    .collect::<Vec<_>>()
+            })
+            .await
+            .unwrap_or_default();
+            if let Some(state) = state.upgrade() {
+                state.lengths.borrow_mut().extend(found);
+                state.refresh_summary();
+            }
+        });
+    }
+
+    /// Redraw the summary from the lengths known and the position.
+    fn refresh_summary(&self) {
+        let Some(label) = self
+            .summary
+            .borrow()
+            .as_ref()
+            .and_then(glib::WeakRef::upgrade)
+        else {
+            return;
+        };
+        let queue = self.queue.borrow();
+        let count = ni18n("{} video", "{} videos", queue.len() as u64)
+            .replace("{}", &queue.len().to_string());
+        let lengths = self.lengths.borrow();
+        let known: Option<Vec<f64>> = queue
+            .iter()
+            .map(|path| lengths.get(path).copied())
+            .collect();
+        // A stream (length 0) has no end to name.
+        let Some(known) = known.filter(|known| known.iter().all(|length| *length > 0.0)) else {
+            label.set_label(&count);
+            return;
+        };
+        let total: f64 = known.iter().sum();
+        let mut text = format!(
+            "{count} · {}",
+            big_media_components::time::duration_hms(total)
+        );
+        if let Ok(current) = usize::try_from(self.pos.get())
+            && current < known.len()
+        {
+            let left = known[current] - self.position.get().min(known[current])
+                + known[current + 1..].iter().sum::<f64>();
+            if let Some(end) = glib::DateTime::now_local()
+                .ok()
+                .and_then(|now| now.add_seconds(left).ok())
+                .and_then(|end| end.format("%H:%M").ok())
+            {
+                text.push_str(" · ");
+                text.push_str(&i18n("ends at {}").replace("{}", &end));
+            }
+        }
+        label.set_label(&text);
     }
 
     /// Move the queue entry `from` to `to`, in place: the rows between are
@@ -467,7 +570,7 @@ impl BrowserState {
             return;
         }
 
-        chrome::build_count_summary(self, items.len());
+        self.build_summary(&items);
 
         let scroll = views::build_queue_view(self, &items);
         self.prev_pos.set(self.pos.get());
@@ -657,6 +760,9 @@ impl Component for VideoBrowserSidebar {
             search_text: Rc::new(RefCell::new(String::new())),
             search_gen: Cell::new(0),
             disk_section: RefCell::new(None),
+            summary: RefCell::new(None),
+            lengths: Rc::default(),
+            position: Cell::new(0.0),
             filter: RefCell::new(None),
         });
         state.rebuild();
@@ -690,6 +796,10 @@ impl Component for VideoBrowserSidebar {
                     self.state.recompute_pos();
                     self.state.rebuild();
                 }
+            }
+            VideoBrowserSidebarInput::SetPosition(seconds) => {
+                self.state.position.set(seconds);
+                self.state.refresh_summary();
             }
             VideoBrowserSidebarInput::SetQueue(paths) => {
                 self.state.queue.replace(paths);

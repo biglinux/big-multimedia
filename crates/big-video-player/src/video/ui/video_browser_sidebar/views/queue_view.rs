@@ -149,34 +149,61 @@ fn build_queue_row(state: &Rc<BrowserState>) -> gtk::Box {
     pos.set_widget_name("pos");
     row.append(&pos);
 
+    // The picture, its length on it, and how far it was watched under it.
+    // The box sets the size; the picture, not measured, fills it.
+    let size = gtk::Box::builder()
+        .width_request(96)
+        .height_request(54)
+        .build();
     let picture = gtk::Picture::builder()
         .content_fit(gtk::ContentFit::Cover)
         .build();
-    let frame = gtk::Frame::new(None);
-    frame.set_child(Some(&picture));
-    frame.add_css_class("playlist-thumb-frame");
-    frame.set_overflow(gtk::Overflow::Hidden);
-    frame.set_size_request(56, 32);
-    frame.set_valign(gtk::Align::Center);
+    let length = gtk::Label::builder()
+        .halign(gtk::Align::End)
+        .valign(gtk::Align::End)
+        .margin_end(3)
+        .margin_bottom(5)
+        .visible(false)
+        .css_classes(["playlist-badge", "caption"])
+        .build();
+    let watched = gtk::ProgressBar::builder()
+        .valign(gtk::Align::End)
+        .visible(false)
+        .css_classes(["queue-watched"])
+        .build();
+    let frame = gtk::Overlay::builder()
+        .child(&size)
+        .valign(gtk::Align::Center)
+        .overflow(gtk::Overflow::Hidden)
+        .css_classes(["playlist-thumb-frame"])
+        .build();
+    frame.add_overlay(&picture);
+    frame.set_measure_overlay(&picture, false);
+    frame.add_overlay(&watched);
+    frame.add_overlay(&length);
     row.append(&frame);
 
     let text = gtk::Box::builder()
         .orientation(gtk::Orientation::Vertical)
+        .spacing(2)
         .hexpand(true)
         .valign(gtk::Align::Center)
         .build();
     let title = gtk::Label::builder()
         .halign(gtk::Align::Start)
+        .xalign(0.0)
+        .wrap(true)
+        .wrap_mode(gtk::pango::WrapMode::WordChar)
+        .lines(2)
         .ellipsize(gtk::pango::EllipsizeMode::End)
         .build();
-    title.set_widget_name("title");
-    let dur = gtk::Label::builder()
+    let detail = gtk::Label::builder()
         .halign(gtk::Align::Start)
+        .visible(false)
         .css_classes(["dim-label", "caption"])
         .build();
-    dur.set_widget_name("dur");
     text.append(&title);
-    text.append(&dur);
+    text.append(&detail);
     row.append(&text);
 
     let remove = gtk::Button::builder()
@@ -266,27 +293,16 @@ fn bind_queue_row(state: &Rc<BrowserState>, queue_cell: &gtk::ListItem, generati
     let Some(row) = queue_cell.child().and_downcast::<gtk::Box>() else {
         return;
     };
-    // First the drag handle, then the position.
-    let Some(pos) = row
-        .first_child()
-        .and_then(|handle| handle.next_sibling())
-        .and_downcast::<gtk::Label>()
+    let parts = QueueRow::of(&row);
+    let Some(QueueRow {
+        pos,
+        picture,
+        watched,
+        length,
+        title,
+        detail,
+    }) = parts
     else {
-        return;
-    };
-    let Some(frame) = pos.next_sibling().and_downcast::<gtk::Frame>() else {
-        return;
-    };
-    let Some(picture) = frame.child().and_downcast::<gtk::Picture>() else {
-        return;
-    };
-    let Some(text) = frame.next_sibling().and_downcast::<gtk::Box>() else {
-        return;
-    };
-    let Some(title) = text.first_child().and_downcast::<gtk::Label>() else {
-        return;
-    };
-    let Some(dur) = title.next_sibling().and_downcast::<gtk::Label>() else {
         return;
     };
 
@@ -299,10 +315,11 @@ fn bind_queue_row(state: &Rc<BrowserState>, queue_cell: &gtk::ListItem, generati
         row.remove_css_class("playlist-current");
     }
     set_accent(&pos, is_current);
-    set_accent(&title, is_current);
     title.set_label(&entry.display_name);
     tooltip_set(&title, &entry.path);
-    dur.set_label("");
+    length.set_visible(false);
+    watched.set_visible(false);
+    detail.set_visible(false);
     picture.set_paintable(gdk::Paintable::NONE);
 
     let token = format!("q:{}", entry.index);
@@ -314,21 +331,76 @@ fn bind_queue_row(state: &Rc<BrowserState>, queue_cell: &gtk::ListItem, generati
         entry.path.clone(),
         token,
         row.downgrade(),
-        picture.downgrade(),
-        dur.downgrade(),
+        QueueRow {
+            pos,
+            picture,
+            watched,
+            length,
+            title,
+            detail,
+        },
     );
 }
 
-/// Load a queue row's thumbnail + duration off-thread, guarded by the bind token.
+/// A queue row's parts, found from its widget tree (built by
+/// [`build_queue_row`]).
+struct QueueRow {
+    pos: gtk::Label,
+    picture: gtk::Picture,
+    watched: gtk::ProgressBar,
+    length: gtk::Label,
+    title: gtk::Label,
+    detail: gtk::Label,
+}
+
+impl QueueRow {
+    fn of(row: &gtk::Box) -> Option<Self> {
+        // handle, position, the picture's overlay, the text.
+        let pos = row.first_child()?.next_sibling()?;
+        let frame = pos.next_sibling()?.downcast::<gtk::Overlay>().ok()?;
+        let text = frame.next_sibling()?;
+        let picture = frame.child()?.next_sibling()?;
+        let watched = picture.next_sibling()?;
+        let length = watched.next_sibling()?;
+        let title = text.first_child()?;
+        let detail = title.next_sibling()?;
+        Some(Self {
+            pos: pos.downcast().ok()?,
+            picture: picture.downcast().ok()?,
+            watched: watched.downcast().ok()?,
+            length: length.downcast().ok()?,
+            title: title.downcast().ok()?,
+            detail: detail.downcast().ok()?,
+        })
+    }
+}
+
+/// Where mpv would resume `path` (seconds), from its watch-later file: the
+/// MD5 of the path, under the player's own directory.
+fn resume_seconds(path: &str) -> Option<f64> {
+    let name =
+        glib::compute_checksum_for_string(glib::ChecksumType::Md5, path)?.to_ascii_uppercase();
+    let file = glib::user_data_dir()
+        .join(crate::config::video::WATCH_LATER_RELATIVE)
+        .join(name);
+    std::fs::read_to_string(file)
+        .ok()?
+        .lines()
+        .find_map(|line| line.strip_prefix("start=")?.trim().parse::<f64>().ok())
+        .filter(|seconds| *seconds > 0.0)
+}
+
+/// Load a queue row's picture, length and resume point off-thread, guarded
+/// by the bind token.
 fn spawn_queue_media(
     path: String,
     token: String,
     row_weak: glib::WeakRef<gtk::Box>,
-    pic_weak: glib::WeakRef<gtk::Picture>,
-    dur_weak: glib::WeakRef<gtk::Label>,
+    parts: QueueRow,
 ) {
     let token: glib::GString = token.into();
     let path_meta = path.clone();
+    let parts = Rc::new(parts);
     glib::spawn_future_local(async move {
         let decoded = gio::spawn_blocking(move || {
             let thumb = thumbnail::get_or_generate_thumbnail(&path)?;
@@ -341,21 +413,38 @@ fn spawn_queue_media(
         if row_weak.upgrade().map(|r| r.widget_name()) != Some(token.clone()) {
             return;
         }
-        if let (Some((thumb, texture)), Some(picture)) = (decoded, pic_weak.upgrade()) {
+        if let Some((thumb, texture)) = decoded {
             let texture = thumbnail::intern_thumbnail_texture(thumb, texture);
-            picture.set_paintable(Some(&texture));
+            parts.picture.set_paintable(Some(&texture));
         }
-        let meta = gio::spawn_blocking(move || playlist::probe_metadata_cached(&path_meta))
-            .await
-            .ok()
-            .flatten();
+        let (meta, resume) = gio::spawn_blocking(move || {
+            (
+                playlist::probe_metadata_cached(&path_meta),
+                resume_seconds(&path_meta),
+            )
+        })
+        .await
+        .unwrap_or((None, None));
         if row_weak.upgrade().map(|r| r.widget_name()) != Some(token) {
             return;
         }
-        if let Some(dur) = meta.and_then(|m| m.duration_secs).filter(|d| *d > 0.0)
-            && let Some(label) = dur_weak.upgrade()
-        {
-            label.set_label(&format_duration_hms(dur));
+        let duration = meta.and_then(|m| m.duration_secs).filter(|d| *d > 0.0);
+        if let Some(duration) = duration {
+            parts.length.set_label(&format_duration_hms(duration));
+            parts.length.set_visible(true);
+        }
+        if let Some(resume) = resume {
+            parts.detail.set_label(
+                &crate::i18n::i18n("Stopped at {}")
+                    .replace("{}", &big_media_components::time::playback_time(resume)),
+            );
+            parts.detail.set_visible(true);
+            if let Some(duration) = duration {
+                parts
+                    .watched
+                    .set_fraction((resume / duration).clamp(0.0, 1.0));
+                parts.watched.set_visible(true);
+            }
         }
     });
 }

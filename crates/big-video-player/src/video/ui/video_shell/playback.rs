@@ -22,6 +22,13 @@ impl VideoShell {
                 }
                 self.feed_trim_playhead(pos);
                 self.apply_play_selection(pos);
+                // The playlist's end time moves with the minutes, not frames.
+                let second = pos as i64;
+                if second != self.playlist_second {
+                    self.playlist_second = second;
+                    self.playlist
+                        .emit(VideoBrowserSidebarInput::SetPosition(pos));
+                }
             }
             PlayerEvent::DurationChanged(dur) => {
                 self.duration_secs = dur;
