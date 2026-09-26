@@ -32,7 +32,9 @@ mod tracks;
 
 mod zones;
 
-use seek_preview::{build_seek_preview, wire_seek_hover, wire_thumb_consumer};
+use seek_preview::{
+    build_seek_preview, wire_neighbour_preview, wire_seek_hover, wire_thumb_consumer,
+};
 use signals::wire_signals;
 use zones::{
     ButtonLayoutWidgets, StartBoxWidgets, build_center_box, build_end_box, build_start_box,
@@ -344,6 +346,8 @@ impl Component for VideoControlsBar {
         center.set_start_widget(Some(&start_box));
 
         let (controls_center, previous_button, play_button, next_button) = build_center_box();
+        wire_neighbour_preview(&previous_button, &init.mpv, -1);
+        wire_neighbour_preview(&next_button, &init.mpv, 1);
         center.set_center_widget(Some(&controls_center));
 
         let end_widgets = build_end_box();

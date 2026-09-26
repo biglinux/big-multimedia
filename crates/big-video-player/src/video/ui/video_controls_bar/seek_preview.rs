@@ -156,6 +156,113 @@ pub(super) fn wire_thumb_consumer(
     });
 }
 
+/// Hovering Previous (`step` -1) or Next (+1) shows where it goes: that
+/// video's picture and name, in the order the playlist plays (shuffled
+/// too). Nothing shows where there is nowhere to go.
+pub(super) fn wire_neighbour_preview(button: &gtk::Button, mpv: &MpvSlot, step: i64) {
+    // bigagents: popover-parent-managed — one reused popover per button, for
+    // the life of the controls bar.
+    let popover = gtk::Popover::builder()
+        .autohide(false)
+        .position(gtk::PositionType::Top)
+        .css_classes(["seek-preview"])
+        .build();
+    popover.set_parent(button);
+    {
+        let popover = popover.downgrade();
+        button.connect_destroy(move |_| {
+            if let Some(popover) = popover.upgrade() {
+                popover.popdown();
+                if popover.parent().is_some() {
+                    popover.unparent();
+                }
+            }
+        });
+    }
+    let thumb = gtk::Picture::builder()
+        .width_request(THUMB_WIDTH)
+        .height_request(THUMB_HEIGHT)
+        .content_fit(gtk::ContentFit::Contain)
+        .css_classes(["seek-preview-thumb"])
+        .build();
+    let heading = gtk::Label::builder()
+        .label(if step < 0 {
+            i18n("Previous")
+        } else {
+            i18n("Next")
+        })
+        .css_classes(["caption", "dim-label"])
+        .build();
+    let name = gtk::Label::builder()
+        .css_classes(["seek-preview-time"])
+        .ellipsize(gtk::pango::EllipsizeMode::Middle)
+        .max_width_chars(30)
+        .build();
+    let content = gtk::Box::new(gtk::Orientation::Vertical, 4);
+    content.append(&thumb);
+    content.append(&heading);
+    content.append(&name);
+    popover.set_child(Some(&content));
+
+    // The video whose picture is up (or on its way).
+    let shown: Rc<RefCell<Option<String>>> = Rc::default();
+    let motion = gtk::EventControllerMotion::new();
+    {
+        let mpv = mpv.clone();
+        let popover = popover.clone();
+        motion.connect_enter(move |_, _, _| {
+            let Some(path) = mpv.borrow().as_ref().and_then(|mpv| {
+                let index = usize::try_from(mpv.get_playlist_pos() + step).ok()?;
+                mpv.get_playlist_paths().into_iter().nth(index)
+            }) else {
+                return;
+            };
+            name.set_label(&display_name(&path));
+            if shown.borrow().as_deref() != Some(path.as_str()) {
+                shown.replace(Some(path.clone()));
+                thumb.set_paintable(gdk::Paintable::NONE);
+                thumb.set_visible(!is_stream_uri(&path));
+                if !is_stream_uri(&path) {
+                    let thumb = thumb.downgrade();
+                    let shown = shown.clone();
+                    glib::spawn_future_local(async move {
+                        let wanted = path.clone();
+                        let picture = gtk::gio::spawn_blocking(move || {
+                            crate::media::thumbnail::get_or_generate_thumbnail(&wanted)
+                        })
+                        .await
+                        .ok()
+                        .flatten();
+                        let (Some(picture), Some(thumb)) = (picture, thumb.upgrade()) else {
+                            return;
+                        };
+                        // Still the one hovered: the pointer may have moved on.
+                        if shown.borrow().as_deref() == Some(path.as_str())
+                            && let Ok(texture) = gdk::Texture::from_filename(&picture)
+                        {
+                            thumb.set_paintable(Some(&texture));
+                        }
+                    });
+                }
+            }
+            popover.popup();
+        });
+    }
+    motion.connect_leave(move |_| popover.popdown());
+    button.add_controller(motion);
+}
+
+/// A playlist entry as a person names it: the file name without its
+/// extension, or a stream's last path segment.
+fn display_name(path: &str) -> String {
+    let trimmed = path.trim_end_matches('/');
+    let last = trimmed.rsplit('/').next().unwrap_or(trimmed);
+    std::path::Path::new(last).file_stem().map_or_else(
+        || last.to_string(),
+        |stem| stem.to_string_lossy().into_owned(),
+    )
+}
+
 /// Title of the last chapter at or before `time` (non-empty), else `None`.
 fn chapter_name_at(chapters: &[(f64, String)], time: f64) -> Option<&str> {
     let mut current: Option<&str> = None;

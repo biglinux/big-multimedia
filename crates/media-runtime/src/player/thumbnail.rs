@@ -31,6 +31,12 @@ struct ThumbnailRequest {
     time_key: i64,
 }
 
+impl ThumbnailRequest {
+    fn same_media(&self, other: &Self) -> bool {
+        self.generation == other.generation && self.file == other.file
+    }
+}
+
 #[derive(Default)]
 struct ThumbnailState {
     generation: u64,
@@ -109,7 +115,9 @@ impl ThumbnailGenerator {
         }
     }
 
-    /// Returns whether the preview must be cleared while a new position loads.
+    /// Returns whether the preview must be cleared while a new position
+    /// loads: only for another video, as a frame of this one stays useful
+    /// until the new one comes.
     pub fn request(&self, file: &str, time: f64) -> bool {
         if file.is_empty() || !time.is_finite() || time < 0.0 {
             return false;
@@ -126,18 +134,26 @@ impl ThumbnailGenerator {
         if state.requested.as_ref() == Some(&request) {
             return false;
         }
+        let other_media = !state
+            .requested
+            .as_ref()
+            .is_some_and(|requested| requested.same_media(&request));
         state.requested = Some(request.clone());
         let _ = self.sender.force_send(Some(request));
-        true
+        other_media
     }
 
+    /// Whether `result` may be shown: a frame of the video being hovered. A
+    /// frame for a point the pointer has since left still is: each takes an
+    /// ffmpeg run, and holding out for the latest one showed nothing at all
+    /// while the pointer moved.
     pub fn is_current(&self, result: &ThumbnailResult) -> bool {
         self.state
             .lock()
             .unwrap_or_else(std::sync::PoisonError::into_inner)
             .requested
             .as_ref()
-            == Some(&result.request)
+            .is_some_and(|requested| requested.same_media(&result.request))
     }
 
     /// Invalidate even when the same path is reopened after editing the file.
@@ -165,6 +181,14 @@ fn generate_thumbnail(file: &str, time: f64, cancelled: &AtomicBool) -> Option<V
     let spec = BigSubprocessSpec::builder()
         .program("ffmpeg")
         .args([
+            // The keyframe at or before `time`, decoded alone on one thread:
+            // a fifth quicker than decoding up to the exact frame, which a
+            // preview does not need.
+            "-noaccurate_seek",
+            "-skip_frame",
+            "nokey",
+            "-threads",
+            "1",
             "-ss",
             &format!("{time:.3}"),
             "-i",
