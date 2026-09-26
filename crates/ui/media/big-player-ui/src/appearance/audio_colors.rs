@@ -10,7 +10,6 @@ use std::rc::Rc;
 use super::color_palette_controls::{
     CustomColorKeys, add_custom_color_group, color_source_group, colors_page,
 };
-use crate::illustration::illustration_auto as illustration;
 
 /// Build the audio-player Appearance → Colors page.
 pub fn create_audio_colors_page(
@@ -36,13 +35,9 @@ pub fn create_audio_colors_page(
                 i18n("Custom Colors"),
             ],
         )
-        .subtitle(i18n(
-            "Follow System uses your desktop theme - Custom Colors lets you pick your own palette",
-        ))
         .selected(idx),
     );
     let (source_row, source_dropdown) = source_dropdown_row.into_parts();
-    source_row.add_prefix(&illustration("colors.svg"));
     source_group.add(&source_row);
     page.add(&source_group);
 
@@ -57,7 +52,6 @@ pub fn create_audio_colors_page(
             dialog: "audio-ui-dialog-color",
         },
         &current_source,
-        None,
     );
 
     {
@@ -72,15 +66,10 @@ pub fn create_audio_colors_page(
         });
     }
 
-    let a11y_group = BigPreferencesGroupSpec::new(i18n("Accessibility"))
-        .description(i18n("Improve readability of secondary text and labels"))
-        .build();
+    let a11y_group = BigPreferencesGroupSpec::new(i18n("Accessibility")).build();
 
     let high_contrast_row = adw::SwitchRow::builder()
         .title(i18n("High Contrast Text"))
-        .subtitle(i18n(
-            "Makes dim labels, subtitles and secondary text easier to read",
-        ))
         .active(settings.get_bool(keys::AUDIO_HIGH_CONTRAST))
         .build();
     {

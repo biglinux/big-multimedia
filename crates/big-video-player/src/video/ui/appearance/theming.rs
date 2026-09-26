@@ -157,7 +157,7 @@ button.adjustment-reset {{
   font-weight: bold;
 }}
 .osd-header headerbar button.header-pill {{
-  background: alpha(@accent_bg_color, 0.85);
+  background: @accent_bg_color;
   color: @accent_fg_color;
   border-radius: 999px;
   min-height: 24px;
@@ -186,12 +186,15 @@ button.adjustment-reset {{
 
         if self.color_source == "gradient" {
             css += &format!(
+                // Full cover behind the controls themselves, the fade only in
+                // the 80 px above them: a fade across the whole bar left the
+                // time over a bright frame at 3.4:1.
                 ".osd-controls {{\n\
-                   background: linear-gradient(to top, rgba(0,0,0,{op:.2}), transparent);\n\
+                   background: linear-gradient(to top, rgba(0,0,0,{op:.2}) calc(100% - 80px), transparent);\n\
                    padding-top: 80px;\n\
                  }}\n\
                  .osd-header {{\n\
-                   background: linear-gradient(to bottom, rgba(0,0,0,{op:.2}), transparent);\n\
+                   background: linear-gradient(to bottom, rgba(0,0,0,{op:.2}) calc(100% - 80px), transparent);\n\
                    padding-bottom: 80px;\n\
                  }}\n",
                 op = self.bg_opacity,
@@ -306,11 +309,14 @@ const SOUND_OFF_CSS: &str = "
 }
 ";
 
-/// The settings panel: a light see-through card (no blur, no shadow, so it
-/// adds nothing per video frame) whose text stays at full strength.
+/// The settings panel: a see-through card (no blur, no shadow, so it adds
+/// nothing per video frame). 92% is the least cover that keeps WCAG over any
+/// frame, measured over white and black video in both schemes: text at
+/// 4.5:1 or more, a slider's fill and trough at 3:1 against the card. At
+/// 72% a bright frame took a slider's fill down to 1.7:1.
 const PANEL_CSS: &str = "
 .settings-panel {
-  background: alpha(@window_bg_color, 0.72);
+  background: alpha(@window_bg_color, 0.92);
   color: @window_fg_color;
   border: 1px solid alpha(@window_fg_color, 0.12);
   border-radius: 14px;
@@ -330,7 +336,7 @@ const PANEL_CSS: &str = "
   padding: 8px 10px;
 }
 .settings-panel button.colour-choice:checked {
-  background: alpha(@accent_bg_color, 0.85);
+  background: @accent_bg_color;
   color: @accent_fg_color;
 }
 .settings-panel button.settings-link {
@@ -353,9 +359,19 @@ const PANEL_CSS: &str = "
 .settings-panel .block-state.block-changed {
   font-weight: bold;
 }
-.settings-panel row .subtitle,
-.settings-panel .dim-label {
-  opacity: 0.85;
+.settings-panel scale trough,
+.osd-controls scale trough {
+  background-color: alpha(currentColor, 0.55);
+}
+";
+
+/// Secondary text (descriptions, subtitles, captions) at 75% instead of
+/// Adwaita's 55%: 55% reads at about 3.2:1 even on the plain window colour,
+/// under WCAG's 4.5:1; 75% gives 5.6:1 there, and over the see-through
+/// panel and bars on the worst frame.
+const DIM_TEXT_CSS: &str = "
+window {
+  --dim-opacity: 75%;
 }
 ";
 
@@ -365,6 +381,7 @@ fn build_osd_css(settings: &Settings, osd_css_config: &OsdCssConfig) -> String {
     css += &osd_css_config.css_customizations();
     css += SOUND_OFF_CSS;
     css += PANEL_CSS;
+    css += DIM_TEXT_CSS;
 
     if settings.get_bool(keys::AUDIO_HIGH_CONTRAST) {
         css += crate::shared::theming::HIGH_CONTRAST_CSS;

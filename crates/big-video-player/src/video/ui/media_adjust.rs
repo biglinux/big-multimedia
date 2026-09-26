@@ -162,12 +162,10 @@ fn crop_filter_from_margins(width: i64, height: i64, margins: CropMargins) -> Op
     ))
 }
 
-/// One image slider: illustration, the integer-percent range mpv uses for the
+/// One image slider: its name, the integer-percent range mpv uses for the
 /// built-in video equalizer (-100..=100), the current value, and the setter.
 struct ImageSliderSpec {
-    illustration: &'static str,
     title: &'static str,
-    subtitle: &'static str,
     lower: f64,
     upper: f64,
     default: f64,
@@ -180,24 +178,21 @@ struct ImageSliderSpec {
 /// A ±10 s timing slider for the sound (`subtitles == false`) or the
 /// subtitles, named for the symptom it fixes.
 pub(super) fn build_delay_row(mpv: &Arc<MpvBackend>, subtitles: bool) -> gtk::Widget {
-    let (illustration, title, subtitle, initial, apply): (_, _, _, _, fn(&MpvBackend, f64)) =
-        if subtitles {
-            (
-                "sub_delay.svg",
-                i18n("Subtitles early or late"),
-                i18n("When the text shows before or after the speech. More = later"),
-                mpv.get_property_f64("sub-delay"),
-                |mpv, value| mpv.set_sub_delay(value),
-            )
-        } else {
-            (
-                "audio_delay.svg",
-                i18n("Sound early or late"),
-                i18n("When voices do not match the lips. More = later"),
-                mpv.get_property_f64("audio-delay"),
-                |mpv, value| mpv.set_audio_delay(value),
-            )
-        };
+    let (title, subtitle, initial, apply): (_, _, _, fn(&MpvBackend, f64)) = if subtitles {
+        (
+            i18n("Subtitles early or late"),
+            i18n("When the text shows before or after the speech. More = later"),
+            mpv.get_property_f64("sub-delay"),
+            |mpv, value| mpv.set_sub_delay(value),
+        )
+    } else {
+        (
+            i18n("Sound early or late"),
+            i18n("When voices do not match the lips. More = later"),
+            mpv.get_property_f64("audio-delay"),
+            |mpv, value| mpv.set_audio_delay(value),
+        )
+    };
     let row = BigIllustratedSliderRow::new(
         BigIllustratedSliderRowSpec::new(
             illustration_prefix(),
@@ -209,7 +204,6 @@ pub(super) fn build_delay_row(mpv: &Arc<MpvBackend>, subtitles: bool) -> gtk::Wi
             0.1,
             i18n("Reset to zero"),
         )
-        .illustration_name(illustration)
         .subtitle(subtitle)
         .digits(1)
         .value_suffix(" s")
@@ -224,20 +218,16 @@ pub(super) fn build_delay_row(mpv: &Arc<MpvBackend>, subtitles: bool) -> gtk::Wi
     outer_box.upcast()
 }
 
-/// Append a `PreferencesGroup` of image sliders to `content`, each debounced
-/// onto its mpv setter.
+/// Append image sliders to `content`, each debounced onto its mpv setter.
+/// Named only: the page's title says what they are about.
 fn add_image_group(
     content: &gtk::Box,
-    title: &str,
-    description: &str,
     rows: &[ImageSliderSpec],
     mpv: &Arc<MpvBackend>,
     wide: bool,
 ) {
     let prefix = illustration_prefix();
-    let group = BigPreferencesGroupSpec::new(title)
-        .description(description)
-        .build();
+    let group = adw::PreferencesGroup::new();
     // Side by side when the panel is wide, stacked when it is narrow.
     let flow = reflowing_box(if wide { 2 } else { 1 });
     flow.set_min_children_per_line(if wide { 2 } else { 1 });
@@ -253,8 +243,6 @@ fn add_image_group(
                 spec.step,
                 i18n("Reset"),
             )
-            .illustration_name(spec.illustration)
-            .subtitle(i18n(spec.subtitle))
             .digits(spec.digits)
             .scale_width_request(80),
         );
@@ -297,11 +285,7 @@ fn build_source_colours_group(
     mpv: &Arc<MpvBackend>,
     transform_state: &VideoTransformState,
 ) {
-    let group = BigPreferencesGroupSpec::new(i18n("Video colour"))
-        .description(i18n(
-            "If the picture looks grey and washed out, choose HDR.",
-        ))
-        .build();
+    let group = adw::PreferencesGroup::new();
     let hints = [
         i18n("Uses what the file says"),
         i18n("For a picture that looks grey and washed out"),
@@ -363,9 +347,7 @@ fn build_transform_group(
     mpv: &Arc<MpvBackend>,
     transform_state: &VideoTransformState,
 ) {
-    let group = BigPreferencesGroupSpec::new(i18n("Transform"))
-        .description(i18n("Rotate or mirror the video picture"))
-        .build();
+    let group = BigPreferencesGroupSpec::new(i18n("Transform")).build();
 
     let rotation = Rc::new(Cell::new(normalize_rotation(mpv.get_video_rotate())));
     let rotation_row = adw::ActionRow::new();
@@ -477,9 +459,7 @@ fn build_crop_group(
     mpv: &Arc<MpvBackend>,
     transform_state: &VideoTransformState,
 ) {
-    let group = BigPreferencesGroupSpec::new(i18n("Crop"))
-        .description(i18n("Crop video edges in pixels"))
-        .build();
+    let group = BigPreferencesGroupSpec::new(i18n("Crop")).build();
     let (width, height) = mpv.get_video_dimensions().unwrap_or((0, 0));
     group.set_sensitive(width > 2 && height > 2);
 
@@ -608,9 +588,7 @@ pub(super) fn build_picture_section(mpv: &Arc<MpvBackend>, wide: bool) -> gtk::W
 
     let image_rows = [
         ImageSliderSpec {
-            illustration: "contrast.svg",
             title: gettext_noop("Contrast"),
-            subtitle: gettext_noop("Difference between dark and light areas"),
             lower: -100.0,
             upper: 100.0,
             default: 0.0,
@@ -620,9 +598,7 @@ pub(super) fn build_picture_section(mpv: &Arc<MpvBackend>, wide: bool) -> gtk::W
             apply: |mpv, value| mpv.set_contrast(value as i64),
         },
         ImageSliderSpec {
-            illustration: "brightness.svg",
             title: gettext_noop("Brightness"),
-            subtitle: gettext_noop("Overall lightness of the image"),
             lower: -100.0,
             upper: 100.0,
             default: 0.0,
@@ -632,11 +608,7 @@ pub(super) fn build_picture_section(mpv: &Arc<MpvBackend>, wide: bool) -> gtk::W
             apply: |mpv, value| mpv.set_brightness(value as i64),
         },
         ImageSliderSpec {
-            illustration: "gamma.svg",
             title: gettext_noop("Gamma"),
-            subtitle: gettext_noop(
-                "Midtone brightness — adjusts without clipping highlights or shadows",
-            ),
             lower: -100.0,
             upper: 100.0,
             default: 0.0,
@@ -646,9 +618,7 @@ pub(super) fn build_picture_section(mpv: &Arc<MpvBackend>, wide: bool) -> gtk::W
             apply: |mpv, value| mpv.set_gamma(value as i64),
         },
         ImageSliderSpec {
-            illustration: "saturation.svg",
             title: gettext_noop("Saturation"),
-            subtitle: gettext_noop("Color intensity — -100 = grayscale, 0 = original colors"),
             lower: -100.0,
             upper: 100.0,
             default: 0.0,
@@ -658,9 +628,7 @@ pub(super) fn build_picture_section(mpv: &Arc<MpvBackend>, wide: bool) -> gtk::W
             apply: |mpv, value| mpv.set_saturation(value as i64),
         },
         ImageSliderSpec {
-            illustration: "hue.svg",
             title: gettext_noop("Hue"),
-            subtitle: gettext_noop("Shift all colors around the color wheel"),
             lower: -100.0,
             upper: 100.0,
             default: 0.0,
@@ -670,14 +638,7 @@ pub(super) fn build_picture_section(mpv: &Arc<MpvBackend>, wide: bool) -> gtk::W
             apply: |mpv, value| mpv.set_hue(value as i64),
         },
     ];
-    add_image_group(
-        &section,
-        &i18n("Image"),
-        &i18n("Fine-tune colors and brightness of the video picture"),
-        &image_rows,
-        mpv,
-        wide,
-    );
+    add_image_group(&section, &image_rows, mpv, wide);
     section.upcast()
 }
 
@@ -693,9 +654,7 @@ pub(super) fn build_framing_section(
         .build();
     let zoom_rows = [
         ImageSliderSpec {
-            illustration: "zoom.svg",
             title: gettext_noop("Zoom"),
-            subtitle: gettext_noop("Magnify the picture — 0 = fit window, 1 = double size"),
             lower: 0.0,
             upper: 2.0,
             default: 0.0,
@@ -705,11 +664,7 @@ pub(super) fn build_framing_section(
             apply: |mpv, value| mpv.set_video_zoom(value),
         },
         ImageSliderSpec {
-            illustration: "panscan.svg",
-            title: gettext_noop("Pan & Scan"),
-            subtitle: gettext_noop(
-                "Crop edges to fill the window — useful for removing black bars",
-            ),
+            title: gettext_noop("Fill the window"),
             lower: 0.0,
             upper: 1.0,
             default: 0.0,
@@ -719,14 +674,7 @@ pub(super) fn build_framing_section(
             apply: |mpv, value| mpv.set_panscan(value),
         },
     ];
-    add_image_group(
-        &content,
-        &i18n("Zoom and Pan"),
-        &i18n("Enlarge or reframe the video within the window"),
-        &zoom_rows,
-        mpv,
-        false,
-    );
+    add_image_group(&content, &zoom_rows, mpv, false);
     build_transform_group(&content, mpv, transform_state);
     build_crop_group(&content, mpv, transform_state);
 

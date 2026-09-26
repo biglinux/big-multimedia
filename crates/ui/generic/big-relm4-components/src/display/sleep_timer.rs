@@ -61,20 +61,14 @@ pub fn standard_sleep_timer_actions(
 /// Text used by the sleep timer setup page.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct BigSleepTimerSetupLabels {
-    /// Description.
-    pub description: String,
     /// Duration group.
     pub duration_group: String,
     /// Minutes title.
     pub minutes_title: String,
-    /// Minutes subtitle.
-    pub minutes_subtitle: String,
     /// Action group.
     pub action_group: String,
     /// Action title.
     pub action_title: String,
-    /// Action subtitle.
-    pub action_subtitle: String,
     /// Start button.
     pub start_button: String,
 }
@@ -159,19 +153,16 @@ impl BigSleepTimerSetupPage {
         let resolved = spec.resolved();
         let page = adw::PreferencesPage::new();
 
-        page.add(&header_group(
-            header_icon,
-            resolved.icon_size,
-            None,
-            Some(&spec.labels.description),
-        ));
+        // The page is named where it opens; the rows' names say the rest.
+        if header_icon.is_some() {
+            page.add(&header_group(header_icon, resolved.icon_size, None, None));
+        }
 
         let timer_group = adw::PreferencesGroup::builder()
             .title(&spec.labels.duration_group)
             .build();
         let spin = adw::SpinRow::builder()
             .title(&spec.labels.minutes_title)
-            .subtitle(&spec.labels.minutes_subtitle)
             .adjustment(&gtk::Adjustment::new(
                 f64::from(resolved.minutes),
                 MIN_MINUTES,
@@ -198,7 +189,6 @@ impl BigSleepTimerSetupPage {
         let action_model = gtk::StringList::new(&action_labels);
         let action_combo = adw::ComboRow::builder()
             .title(&spec.labels.action_title)
-            .subtitle(&spec.labels.action_subtitle)
             .model(&action_model)
             .build();
         if let Some(prefix) = action_prefix {
@@ -447,13 +437,10 @@ mod tests {
 
     fn labels() -> BigSleepTimerSetupLabels {
         BigSleepTimerSetupLabels {
-            description: "Set a timer".into(),
             duration_group: "Duration".into(),
             minutes_title: "Minutes".into(),
-            minutes_subtitle: "How long".into(),
             action_group: "Action".into(),
             action_title: "When timer ends".into(),
-            action_subtitle: "Choose action".into(),
             start_button: "Start".into(),
         }
     }

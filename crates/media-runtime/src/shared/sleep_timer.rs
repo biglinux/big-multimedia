@@ -19,13 +19,10 @@ pub fn sleep_timer_actions() -> Vec<BigSleepTimerAction> {
 
 pub fn sleep_timer_setup_labels() -> BigSleepTimerSetupLabels {
     BigSleepTimerSetupLabels {
-        description: i18n("Set a timer to automatically stop playback or power down your system"),
         duration_group: i18n("Duration"),
         minutes_title: i18n("Minutes"),
-        minutes_subtitle: i18n("How long until the timer activates"),
         action_group: i18n("Action"),
         action_title: i18n("When timer ends"),
-        action_subtitle: i18n("Choose what happens when time runs out"),
         start_button: i18n("Start Timer"),
     }
 }

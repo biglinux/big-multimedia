@@ -1,5 +1,5 @@
-//! Shared widget helpers for the filters dialog: the GResource-bound SVG
-//! illustration loader and `build_vf_expander_row` — an ExpanderRow + SpinRow
+//! Shared widget helper for the filters dialog: `build_vf_expander_row` — an
+//! ExpanderRow + SpinRow
 //! that owns the enable/disable + debounced-apply lifecycle of a single
 //! single-parameter `vf` filter, keyed by `label`, driving an
 //! `Arc<MpvBackend>` handle.
@@ -9,24 +9,13 @@ use std::time::Duration;
 
 use adw::prelude::*;
 
-use crate::config::video::RESOURCE_PREFIX;
 use crate::player::mpv_backend::MpvBackend;
 use big_relm4_components::input::debounce::BigDebouncedAction as DebouncedAction;
-
-/// Load a filters-dialog SVG illustration from the video GResource bundle.
-pub(super) fn illustration(filename: &str) -> gtk::Image {
-    crate::shared::illustration::illustration(
-        &format!("{RESOURCE_PREFIX}/illustrations/"),
-        filename,
-    )
-}
 
 /// Spec for a single-parameter `vf` filter row.
 pub(super) struct VfFilterSpec<F: Fn(f64) -> String + Clone + 'static> {
     /// mpv vf label (identity for append/remove and active detection).
     pub(super) label: &'static str,
-    /// Illustration SVG basename (empty = none).
-    pub(super) svg: &'static str,
     pub(super) title: String,
     pub(super) subtitle: String,
     pub(super) spin_title: String,
@@ -52,9 +41,6 @@ pub(super) fn build_vf_expander_row(
         .show_enable_switch(true)
         .enable_expansion(is_active)
         .build();
-    if !spec.svg.is_empty() {
-        expander.add_prefix(&illustration(spec.svg));
-    }
 
     let (default, min, max, step, page) = spec.adjustment;
     let adjustment = gtk::Adjustment::new(default, min, max, step, page, 0.0);

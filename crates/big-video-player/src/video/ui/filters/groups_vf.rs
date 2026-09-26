@@ -12,7 +12,7 @@ use big_relm4_components::input::dropdown_row::{BigDropdownRow, BigDropdownRowSp
 use big_relm4_components::layout::preferences::BigPreferencesGroupSpec;
 
 use super::filter_specs::{colorize_vf, colortemp_vf, hqdn3d_vf, pixelize_vf};
-use super::vf_row::{VfFilterSpec, build_vf_expander_row, illustration};
+use super::vf_row::{VfFilterSpec, build_vf_expander_row};
 use crate::i18n::i18n;
 use crate::player::mpv_backend::MpvBackend;
 use big_relm4_components::input::debounce::BigDebouncedAction as DebouncedAction;
@@ -22,19 +22,13 @@ pub(super) fn build_denoise_sharpen_group(
     mpv: &Arc<MpvBackend>,
     current_vf: &str,
 ) -> adw::PreferencesGroup {
-    let group = BigPreferencesGroupSpec::new(i18n("Denoise and Sharpen"))
-        .description(i18n(
-            "Software filters that clean up or enhance the image. \
-             Useful for old or low-quality video sources.",
-        ))
-        .build();
+    let group = BigPreferencesGroupSpec::new(i18n("Denoise and Sharpen")).build();
 
     group.add(&build_vf_expander_row(
         mpv,
         current_vf,
         VfFilterSpec {
             label: "hqdn3d",
-            svg: "denoise.svg",
             title: i18n("Denoise (hqdn3d)"),
             subtitle: i18n("Reduces visual noise and grain from old or low-light footage"),
             spin_title: i18n("Strength"),
@@ -50,7 +44,6 @@ pub(super) fn build_denoise_sharpen_group(
         current_vf,
         VfFilterSpec {
             label: "cas",
-            svg: "sharpen_cas.svg",
             title: i18n("Sharpen (CAS)"),
             subtitle: i18n("Software contrast-adaptive sharpening — works at any resolution"),
             spin_title: i18n("Strength"),
@@ -73,7 +66,6 @@ pub(super) fn build_color_group(mpv: &Arc<MpvBackend>, current_vf: &str) -> adw:
         current_vf,
         VfFilterSpec {
             label: "colortemp",
-            svg: "color_temp.svg",
             title: i18n("Color Temperature"),
             subtitle: i18n("Warm or cool tone (Kelvin)"),
             spin_title: i18n("Temperature"),
@@ -89,7 +81,6 @@ pub(super) fn build_color_group(mpv: &Arc<MpvBackend>, current_vf: &str) -> adw:
         current_vf,
         VfFilterSpec {
             label: "vibrance",
-            svg: "vibrance.svg",
             title: i18n("Vibrance"),
             subtitle: i18n("Boost color saturation intelligently"),
             spin_title: i18n("Intensity"),
@@ -114,7 +105,6 @@ fn build_colorize_row(mpv: &Arc<MpvBackend>, current_vf: &str) -> adw::ExpanderR
         .show_enable_switch(true)
         .enable_expansion(current_vf.contains(LABEL))
         .build();
-    expander.add_prefix(&illustration("colorize.svg"));
 
     let hue = gtk::Adjustment::new(30.0, 0.0, 360.0, 5.0, 30.0, 0.0);
     let saturation = gtk::Adjustment::new(0.5, 0.0, 1.0, 0.05, 0.1, 0.0);
@@ -191,7 +181,6 @@ fn build_monochrome_row(mpv: &Arc<MpvBackend>, current_vf: &str) -> adw::SwitchR
         .subtitle(i18n("Cinematic black and white"))
         .active(current_vf.contains(LABEL))
         .build();
-    row.add_prefix(&illustration("monochrome.svg"));
     let mpv = Arc::clone(mpv);
     row.connect_active_notify(move |row| {
         if row.is_active() {
@@ -209,9 +198,7 @@ pub(super) fn build_presets_group(
     current_vf: &str,
 ) -> adw::PreferencesGroup {
     const LABEL: &str = "curves_preset";
-    let group = BigPreferencesGroupSpec::new(i18n("Style Presets"))
-        .description(i18n("One-click color grading effects"))
-        .build();
+    let group = BigPreferencesGroupSpec::new(i18n("Style Presets")).build();
 
     let expander = adw::ExpanderRow::builder()
         .title(i18n("Color Curves"))
@@ -219,7 +206,6 @@ pub(super) fn build_presets_group(
         .show_enable_switch(true)
         .enable_expansion(current_vf.contains(LABEL))
         .build();
-    expander.add_prefix(&illustration("curves.svg"));
 
     let preset_ids = [
         "vintage",
@@ -286,26 +272,20 @@ pub(super) fn build_effects_group(
     mpv: &Arc<MpvBackend>,
     current_vf: &str,
 ) -> adw::PreferencesGroup {
-    let group = BigPreferencesGroupSpec::new(i18n("Effects"))
-        .description(i18n(
-            "Creative visual effects and artistic transformations.",
-        ))
-        .build();
+    let group = BigPreferencesGroupSpec::new(i18n("Effects")).build();
 
-    let toggles: &[(&str, &str, &str, String, String)] = &[(
+    let toggles: &[(&str, &str, String, String)] = &[(
         "vignette",
         "vignette",
-        "vignette.svg",
         i18n("Vignette"),
         i18n("Darken edges of the image"),
     )];
-    for (label, filter, svg, title, subtitle) in toggles {
+    for (label, filter, title, subtitle) in toggles {
         let row = adw::SwitchRow::builder()
             .title(title)
             .subtitle(subtitle)
             .active(current_vf.contains(label))
             .build();
-        row.add_prefix(&illustration(svg));
         let label = (*label).to_string();
         let filter = (*filter).to_string();
         let mpv = Arc::clone(mpv);
@@ -324,7 +304,6 @@ pub(super) fn build_effects_group(
         current_vf,
         VfFilterSpec {
             label: "pixelize",
-            svg: "pixelize.svg",
             title: i18n("Pixelize"),
             subtitle: i18n("Mosaic / pixel art effect"),
             spin_title: i18n("Block Size"),
@@ -339,7 +318,6 @@ pub(super) fn build_effects_group(
         current_vf,
         VfFilterSpec {
             label: "gblur",
-            svg: "gblur.svg",
             title: i18n("Gaussian Blur"),
             subtitle: i18n("Smooth blur effect"),
             spin_title: i18n("Sigma"),
@@ -354,7 +332,6 @@ pub(super) fn build_effects_group(
         current_vf,
         VfFilterSpec {
             label: "lagfun",
-            svg: "motion_trail.svg",
             title: i18n("Motion Trail"),
             subtitle: i18n("Slowly fading visual trail effect"),
             spin_title: i18n("Decay"),

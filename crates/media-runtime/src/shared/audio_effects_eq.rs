@@ -136,17 +136,6 @@ pub fn create_equalizer_content(
         }
     }
 
-    // ── Description ──
-    let desc = gtk::Label::builder()
-        .label(i18n(
-            "Boost or cut frequency bands to shape the sound. Use presets as a starting point.",
-        ))
-        .wrap(true)
-        .xalign(0.5)
-        .build();
-    desc.add_css_class("dim-label");
-    main_box.append(&desc);
-
     // ── Preset selector (top, prominent) ──
     let preset_box = gtk::Box::builder()
         .orientation(gtk::Orientation::Horizontal)
@@ -314,7 +303,11 @@ pub fn create_equalizer_content(
         .halign(gtk::Align::Center)
         .margin_start(28) // offset for dB scale column
         .build();
-    for (label, bands) in &[("Bass", 3), ("Mids", 4), ("Highs", 3)] {
+    for (label, bands) in &[
+        (gettext_noop("Bass"), 3),
+        (gettext_noop("Mids"), 4),
+        (gettext_noop("Highs"), 3),
+    ] {
         let band_range_label = gtk::Label::new(Some(&i18n(label)));
         band_range_label.add_css_class("dim-label");
         band_range_label.add_css_class("caption");

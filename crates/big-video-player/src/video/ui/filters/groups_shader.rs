@@ -15,7 +15,6 @@ use big_relm4_components::list::detail_row::{BigDetailRow, BigDetailRowSpec};
 use super::filter_specs::{
     cas_shader_to_ui_pct, cas_ui_pct_to_shader, fsr_shader_to_ui_pct, fsr_ui_pct_to_shader,
 };
-use super::vf_row::illustration;
 use crate::config;
 use crate::i18n::i18n;
 use crate::player::mpv_backend::MpvBackend;
@@ -26,15 +25,12 @@ use big_relm4_components::input::debounce::BigDebouncedAction as DebouncedAction
 /// GPU processing: sharpen (debounced), deband, sigmoid-upscaling,
 /// correct-downscaling — all live mpv render properties.
 pub(super) fn build_gpu_group(mpv: &Arc<MpvBackend>) -> adw::PreferencesGroup {
-    let group = BigPreferencesGroupSpec::new(i18n("GPU Processing"))
-        .description(i18n("Hardware-accelerated, no performance impact"))
-        .build();
+    let group = BigPreferencesGroupSpec::new(i18n("GPU Processing")).build();
 
     group.add(&build_gpu_sharpen_row(mpv));
     group.add(&build_gpu_bool_row(
         mpv,
         "deband",
-        "deband.svg",
         i18n("Deband"),
         i18n("Remove color banding artifacts"),
         MpvBackend::set_deband,
@@ -42,7 +38,6 @@ pub(super) fn build_gpu_group(mpv: &Arc<MpvBackend>) -> adw::PreferencesGroup {
     group.add(&build_gpu_bool_row(
         mpv,
         "sigmoid-upscaling",
-        "sigmoid.svg",
         i18n("Sigmoid Upscaling"),
         i18n("Reduces ringing when scaling video up"),
         MpvBackend::set_sigmoid_upscaling,
@@ -50,7 +45,6 @@ pub(super) fn build_gpu_group(mpv: &Arc<MpvBackend>) -> adw::PreferencesGroup {
     group.add(&build_gpu_bool_row(
         mpv,
         "correct-downscaling",
-        "downscale.svg",
         i18n("Correct Downscaling"),
         i18n("Higher quality when scaling video down"),
         MpvBackend::set_correct_downscaling,
@@ -68,7 +62,6 @@ fn build_gpu_sharpen_row(mpv: &Arc<MpvBackend>) -> adw::ExpanderRow {
         .show_enable_switch(true)
         .enable_expansion(is_active)
         .build();
-    expander.add_prefix(&illustration("gpu_sharpen.svg"));
 
     let adjustment = gtk::Adjustment::new(
         if is_active { current } else { 0.5 },
@@ -122,7 +115,6 @@ fn build_gpu_sharpen_row(mpv: &Arc<MpvBackend>) -> adw::ExpanderRow {
 fn build_gpu_bool_row(
     mpv: &Arc<MpvBackend>,
     property: &str,
-    svg: &str,
     title: String,
     subtitle: String,
     setter: fn(&MpvBackend, bool),
@@ -132,7 +124,6 @@ fn build_gpu_bool_row(
         .subtitle(subtitle)
         .active(mpv.get_property_bool(property))
         .build();
-    row.add_prefix(&illustration(svg));
     let mpv = Arc::clone(mpv);
     row.connect_active_notify(move |row| setter(&mpv, row.is_active()));
     row
@@ -143,12 +134,7 @@ pub(super) fn build_shaders_group(
     mpv: &Arc<MpvBackend>,
     settings: &Settings,
 ) -> adw::PreferencesGroup {
-    let group = BigPreferencesGroupSpec::new(i18n("GPU Upscaling Shaders"))
-        .description(i18n(
-            "Open-source GPU shaders that enhance image quality when upscaling. \
-             Choose one upscaler and adjust sharpening intensity.",
-        ))
-        .build();
+    let group = BigPreferencesGroupSpec::new(i18n("GPU Upscaling Shaders")).build();
 
     if !std::path::Path::new(config::SHADERS_DIR).is_dir() {
         group.add(&not_installed_row());
@@ -174,7 +160,6 @@ pub(super) fn build_shaders_group(
         )),
     )
     .into_parts();
-    upscaling_shader_row.add_prefix(&illustration("upscaler.svg"));
     combo.set_selected(ids.iter().position(|id| *id == current).unwrap_or(0) as u32);
     group.add(&upscaling_shader_row);
 
@@ -199,7 +184,6 @@ pub(super) fn build_shaders_group(
         .adjustment(&intensity)
         .numeric(true)
         .build();
-    intensity_row.add_prefix(&illustration("sharpen_cas.svg"));
     intensity_row.set_visible(!current.is_empty());
     group.add(&intensity_row);
 
@@ -349,12 +333,7 @@ pub(super) fn build_neural_group(
     mpv: &Arc<MpvBackend>,
     settings: &Settings,
 ) -> adw::PreferencesGroup {
-    let group = BigPreferencesGroupSpec::new(i18n("Neural Network Upscaling"))
-        .description(i18n(
-            "AI-trained shader that reconstructs fine detail when upscaling video. \
-             Best for low-resolution content on high-resolution displays.",
-        ))
-        .build();
+    let group = BigPreferencesGroupSpec::new(i18n("Neural Network Upscaling")).build();
 
     if !shader_gen::neural_shaders_available() {
         group.add(&neural_not_installed_row());
@@ -370,7 +349,6 @@ pub(super) fn build_neural_group(
         ))
         .active(is_active)
         .build();
-    row.add_prefix(&illustration("neural_upscaler.svg"));
 
     let mpv = Arc::clone(mpv);
     let settings = settings.clone();
@@ -389,12 +367,7 @@ pub(super) fn build_anime4k_group(
     mpv: &Arc<MpvBackend>,
     settings: &Settings,
 ) -> adw::PreferencesGroup {
-    let group = BigPreferencesGroupSpec::new(i18n("Anime / Cartoon Enhancement"))
-        .description(i18n(
-            "AI-powered shaders that restore and upscale animated content. \
-             Optimized for anime line art and cel-shaded styles.",
-        ))
-        .build();
+    let group = BigPreferencesGroupSpec::new(i18n("Anime / Cartoon Enhancement")).build();
 
     if !shader_gen::anime4k_dir().is_dir() {
         group.add(&anime4k_not_installed_row());
@@ -418,7 +391,6 @@ pub(super) fn build_anime4k_group(
         )),
     )
     .into_parts();
-    anime4k_preset_row.add_prefix(&illustration("anime4k.svg"));
     combo.set_selected(ids.iter().position(|id| *id == current).unwrap_or(0) as u32);
 
     let mpv = Arc::clone(mpv);

@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: big-media-runtime 0.1.0\n"
 "Report-Msgid-Bugs-To: https://github.com/biglinux/big-multimedia/issues\n"
-"POT-Creation-Date: 2026-09-26 03:55-0300\n"
+"POT-Creation-Date: 2026-09-26 05:00-0300\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -67,7 +67,7 @@ msgid ""
 msgstr ""
 
 #: crates/big-audio-player/src/audio/appearance/dialogs.rs:43
-#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:289
+#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:275
 msgid "Effects"
 msgstr ""
 
@@ -152,7 +152,7 @@ msgstr ""
 #: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:114
 #: crates/big-video-player/src/video/ui/video_shell/input_gestures.rs:112
 #: crates/big-video-player/src/video/ui/video_shell/panel.rs:39
-#: crates/big-video-player/src/video/ui/video_shell/panel.rs:432
+#: crates/big-video-player/src/video/ui/video_shell/panel.rs:425
 #: crates/media-runtime/src/shared/audio_effects_eq.rs:90
 msgid "Equalizer"
 msgstr ""
@@ -174,7 +174,7 @@ msgid "Toggle Repeat"
 msgstr ""
 
 #: crates/big-audio-player/src/audio/keybindings.rs:101
-#: crates/big-video-player/src/video/ui/video_shell/panel.rs:518
+#: crates/big-video-player/src/video/ui/video_shell/panel.rs:511
 #: crates/big-video-player/src/video/ui/video_shell/playback.rs:422
 msgid "Undo"
 msgstr ""
@@ -212,7 +212,7 @@ msgid "This Year"
 msgstr ""
 
 #: crates/big-audio-player/src/audio/library_grouping/group_by.rs:38
-#: crates/big-video-player/src/video/ui/filters/groups_shader.rs:167
+#: crates/big-video-player/src/video/ui/filters/groups_shader.rs:153
 msgid "None"
 msgstr ""
 
@@ -324,7 +324,7 @@ msgstr ""
 #: crates/big-video-player/src/video/ui/preferences/general.rs:39
 #: crates/big-video-player/src/video/ui/preferences/video.rs:56
 #: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/header.rs:167
-#: crates/big-video-player/src/video/ui/video_shell/panel.rs:456
+#: crates/big-video-player/src/video/ui/video_shell/panel.rs:449
 msgid "Off"
 msgstr ""
 
@@ -372,7 +372,7 @@ msgstr ""
 #: crates/big-audio-player/src/audio/preferences.rs:250
 #: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:120
 #: crates/big-video-player/src/video/ui/preferences/mod.rs:37
-#: crates/big-video-player/src/video/ui/video_shell/panel.rs:541
+#: crates/big-video-player/src/video/ui/video_shell/panel.rs:534
 msgid "Preferences"
 msgstr ""
 
@@ -389,12 +389,12 @@ msgid "Sleep Timer"
 msgstr ""
 
 #: crates/big-audio-player/src/audio/ui/audio_shell/chrome.rs:150
-#: crates/big-video-player/src/video/ui/video_shell/panel.rs:678
+#: crates/big-video-player/src/video/ui/video_shell/panel.rs:671
 msgid "Timer Active"
 msgstr ""
 
 #: crates/big-audio-player/src/audio/ui/audio_shell/chrome.rs:151
-#: crates/big-video-player/src/video/ui/video_shell/panel.rs:679
+#: crates/big-video-player/src/video/ui/video_shell/panel.rs:672
 msgid "Cancel Timer"
 msgstr ""
 
@@ -581,16 +581,18 @@ msgid "Seek position"
 msgstr ""
 
 #: crates/big-audio-player/src/audio/ui/audio_shell/playback.rs:158
-#: crates/big-video-player/src/video/ui/video_controls_bar.rs:268
+#: crates/big-video-player/src/video/ui/video_controls_bar.rs:270
 msgid "Cut timeline"
 msgstr ""
 
 #: crates/big-audio-player/src/audio/ui/audio_shell/playback.rs:160
+#: crates/big-video-player/src/video/ui/video_controls_bar/seek_preview.rs:190
 #: crates/big-video-player/src/video/ui/video_controls_bar/zones.rs:554
 msgid "Previous"
 msgstr ""
 
 #: crates/big-audio-player/src/audio/ui/audio_shell/playback.rs:161
+#: crates/big-video-player/src/video/ui/video_controls_bar/seek_preview.rs:192
 #: crates/big-video-player/src/video/ui/video_controls_bar/zones.rs:557
 msgid "Next"
 msgstr ""
@@ -607,8 +609,8 @@ msgid "Repeat"
 msgstr ""
 
 #: crates/big-audio-player/src/audio/ui/audio_shell/playback.rs:164
-#: crates/big-video-player/src/video/ui/video_controls_bar.rs:521
-#: crates/ui/media/big-media-components/src/player_chrome.rs:298
+#: crates/big-video-player/src/video/ui/video_controls_bar.rs:525
+#: crates/ui/media/big-media-components/src/player_chrome.rs:324
 #: crates/ui/media/big-media-components/src/text.rs:75
 #: crates/ui/media/big-media-components/src/text.rs:83
 #: crates/ui/media/big-media-components/src/text.rs:92
@@ -618,7 +620,7 @@ msgstr ""
 
 #: crates/big-audio-player/src/audio/ui/audio_shell/playback.rs:165
 #: crates/big-video-player/src/video/ui/video_controls_bar/zones.rs:287
-#: crates/ui/media/big-media-components/src/player_chrome.rs:309
+#: crates/ui/media/big-media-components/src/player_chrome.rs:335
 msgid "Speed"
 msgstr ""
 
@@ -700,8 +702,6 @@ msgstr ""
 #: crates/big-audio-player/src/audio/ui/unavailable_dialog.rs:75
 #: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/menu_actions.rs:199
 #: crates/big-video-player/src/video/ui/video_shell/component.rs:134
-#: crates/big-video-player/src/video/ui/video_shell/panel.rs:125
-#: crates/big-video-player/src/video/ui/video_shell/panel.rs:128
 #: crates/ui/generic/big-relm4-components/src/layout/media_window.rs:283
 msgid "Close"
 msgstr ""
@@ -855,7 +855,7 @@ msgstr ""
 #: crates/big-audio-player/src/audio/ui/library_tag_editor/spec.rs:83
 #: crates/big-audio-player/src/audio/ui/playlist_columns.rs:125
 #: crates/big-video-player/src/video/ui/media_details_dialog.rs:101
-#: crates/media-runtime/src/shared/sleep_timer.rs:23
+#: crates/media-runtime/src/shared/sleep_timer.rs:22
 #: crates/ui/media/big-media-components/src/media/file_metadata_dialog.rs:57
 msgid "Duration"
 msgstr ""
@@ -1245,14 +1245,14 @@ msgid "Smartphone"
 msgstr ""
 
 #: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:119
-#: crates/big-video-player/src/video/ui/video_shell/panel.rs:546
+#: crates/big-video-player/src/video/ui/video_shell/panel.rs:539
 #: crates/ui/media/big-player-ui/src/appearance/window.rs:76
 msgid "Appearance"
 msgstr ""
 
 #: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:123
 #: crates/big-video-player/src/video/ui/video_shell/panel.rs:42
-#: crates/big-video-player/src/video/ui/video_shell/panel.rs:462
+#: crates/big-video-player/src/video/ui/video_shell/panel.rs:455
 #: crates/media-runtime/src/shared/tv_cast.rs:848
 msgid "Play on a TV"
 msgstr ""
@@ -1264,7 +1264,7 @@ msgid "Keyboard Shortcuts"
 msgstr ""
 
 #: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:128
-#: crates/big-video-player/src/video/ui/video_shell/panel.rs:554
+#: crates/big-video-player/src/video/ui/video_shell/panel.rs:547
 msgid "About"
 msgstr ""
 
@@ -1772,8 +1772,8 @@ msgid "Paste and play"
 msgstr ""
 
 #: crates/big-video-player/src/video/keybindings.rs:316
-#: crates/big-video-player/src/video/ui/video_controls_bar.rs:234
-#: crates/big-video-player/src/video/ui/video_controls_bar.rs:235
+#: crates/big-video-player/src/video/ui/video_controls_bar.rs:236
+#: crates/big-video-player/src/video/ui/video_controls_bar.rs:237
 msgid "Go to time"
 msgstr ""
 
@@ -1798,7 +1798,7 @@ msgid "Video Title"
 msgstr ""
 
 #: crates/big-video-player/src/video/ui/appearance/layout/buttons_page.rs:181
-#: crates/big-video-player/src/video/ui/appearance/layout/layout_page.rs:111
+#: crates/big-video-player/src/video/ui/appearance/layout/layout_page.rs:97
 msgid "Buttons"
 msgstr ""
 
@@ -1810,248 +1810,206 @@ msgstr ""
 msgid "Drag buttons between zones • Click to toggle visibility"
 msgstr ""
 
-#: crates/big-video-player/src/video/ui/appearance/layout/layout_page.rs:20
+#: crates/big-video-player/src/video/ui/appearance/layout/layout_page.rs:18
 msgid "Layout"
 msgstr ""
 
-#: crates/big-video-player/src/video/ui/appearance/layout/layout_page.rs:35
+#: crates/big-video-player/src/video/ui/appearance/layout/layout_page.rs:33
 msgid "Controls Bar"
 msgstr ""
 
 #: crates/big-video-player/src/video/ui/appearance/layout/layout_page.rs:37
-msgid "Adjust the shape and spacing of the player controls at the bottom"
-msgstr ""
-
-#: crates/big-video-player/src/video/ui/appearance/layout/layout_page.rs:43
 msgid "Corner Radius"
 msgstr ""
 
-#: crates/big-video-player/src/video/ui/appearance/layout/layout_page.rs:50
+#: crates/big-video-player/src/video/ui/appearance/layout/layout_page.rs:43
 msgid "Bottom Margin"
 msgstr ""
 
-#: crates/big-video-player/src/video/ui/appearance/layout/layout_page.rs:57
+#: crates/big-video-player/src/video/ui/appearance/layout/layout_page.rs:49
 msgid "Side Margin"
 msgstr ""
 
-#: crates/big-video-player/src/video/ui/appearance/layout/layout_page.rs:64
+#: crates/big-video-player/src/video/ui/appearance/layout/layout_page.rs:55
 msgid "Padding Top"
 msgstr ""
 
-#: crates/big-video-player/src/video/ui/appearance/layout/layout_page.rs:71
+#: crates/big-video-player/src/video/ui/appearance/layout/layout_page.rs:61
 msgid "Padding Bottom"
 msgstr ""
 
-#: crates/big-video-player/src/video/ui/appearance/layout/layout_page.rs:78
+#: crates/big-video-player/src/video/ui/appearance/layout/layout_page.rs:67
 msgid "Padding Left"
 msgstr ""
 
-#: crates/big-video-player/src/video/ui/appearance/layout/layout_page.rs:85
+#: crates/big-video-player/src/video/ui/appearance/layout/layout_page.rs:73
 msgid "Padding Right"
 msgstr ""
 
-#: crates/big-video-player/src/video/ui/appearance/layout/layout_page.rs:112
-msgid "Customize the size and shape of player buttons"
-msgstr ""
-
-#: crates/big-video-player/src/video/ui/appearance/layout/layout_page.rs:116
+#: crates/big-video-player/src/video/ui/appearance/layout/layout_page.rs:100
 msgid "Custom Button Size"
 msgstr ""
 
-#: crates/big-video-player/src/video/ui/appearance/layout/layout_page.rs:118
-msgid "Set your own button size instead of the system default"
-msgstr ""
-
-#: crates/big-video-player/src/video/ui/appearance/layout/layout_page.rs:126
+#: crates/big-video-player/src/video/ui/appearance/layout/layout_page.rs:106
 msgid "Button Size"
 msgstr ""
 
-#: crates/big-video-player/src/video/ui/appearance/layout/layout_page.rs:142
+#: crates/big-video-player/src/video/ui/appearance/layout/layout_page.rs:121
 msgid "Button Border Radius"
 msgstr ""
 
-#: crates/big-video-player/src/video/ui/appearance/layout/layout_page.rs:194
+#: crates/big-video-player/src/video/ui/appearance/layout/layout_page.rs:172
 msgid "Window"
 msgstr ""
 
-#: crates/big-video-player/src/video/ui/appearance/layout/layout_page.rs:195
-msgid "Adjust the player window appearance"
-msgstr ""
-
-#: crates/big-video-player/src/video/ui/appearance/layout/layout_page.rs:199
+#: crates/big-video-player/src/video/ui/appearance/layout/layout_page.rs:175
 msgid "Custom Window Corner Radius"
 msgstr ""
 
-#: crates/big-video-player/src/video/ui/appearance/layout/layout_page.rs:201
-msgid "Set your own corner rounding instead of the system default"
-msgstr ""
-
-#: crates/big-video-player/src/video/ui/appearance/layout/layout_page.rs:209
+#: crates/big-video-player/src/video/ui/appearance/layout/layout_page.rs:181
 msgid "Window Corner Radius"
 msgstr ""
 
-#: crates/big-video-player/src/video/ui/appearance/layout/layout_page.rs:247
+#: crates/big-video-player/src/video/ui/appearance/layout/layout_page.rs:218
 msgid "Window Buttons Follow Custom Size"
 msgstr ""
 
-#: crates/big-video-player/src/video/ui/appearance/layout/layout_page.rs:248
+#: crates/big-video-player/src/video/ui/appearance/layout/layout_page.rs:219
 msgid "Also resize the minimize, maximize and close buttons"
 msgstr ""
 
-#: crates/big-video-player/src/video/ui/filters/groups_shader.rs:29
+#: crates/big-video-player/src/video/ui/filters/groups_shader.rs:28
 msgid "GPU Processing"
 msgstr ""
 
-#: crates/big-video-player/src/video/ui/filters/groups_shader.rs:30
-msgid "Hardware-accelerated, no performance impact"
-msgstr ""
-
-#: crates/big-video-player/src/video/ui/filters/groups_shader.rs:38
+#: crates/big-video-player/src/video/ui/filters/groups_shader.rs:34
 msgid "Deband"
 msgstr ""
 
-#: crates/big-video-player/src/video/ui/filters/groups_shader.rs:39
+#: crates/big-video-player/src/video/ui/filters/groups_shader.rs:35
 msgid "Remove color banding artifacts"
 msgstr ""
 
-#: crates/big-video-player/src/video/ui/filters/groups_shader.rs:46
+#: crates/big-video-player/src/video/ui/filters/groups_shader.rs:41
 msgid "Sigmoid Upscaling"
 msgstr ""
 
-#: crates/big-video-player/src/video/ui/filters/groups_shader.rs:47
+#: crates/big-video-player/src/video/ui/filters/groups_shader.rs:42
 msgid "Reduces ringing when scaling video up"
 msgstr ""
 
-#: crates/big-video-player/src/video/ui/filters/groups_shader.rs:54
+#: crates/big-video-player/src/video/ui/filters/groups_shader.rs:48
 msgid "Correct Downscaling"
 msgstr ""
 
-#: crates/big-video-player/src/video/ui/filters/groups_shader.rs:55
+#: crates/big-video-player/src/video/ui/filters/groups_shader.rs:49
 msgid "Higher quality when scaling video down"
 msgstr ""
 
-#: crates/big-video-player/src/video/ui/filters/groups_shader.rs:66
+#: crates/big-video-player/src/video/ui/filters/groups_shader.rs:60
 msgid "Sharpen"
 msgstr ""
 
-#: crates/big-video-player/src/video/ui/filters/groups_shader.rs:67
+#: crates/big-video-player/src/video/ui/filters/groups_shader.rs:61
 msgid "GPU sharpening (unsharp mask)"
 msgstr ""
 
-#: crates/big-video-player/src/video/ui/filters/groups_shader.rs:83
+#: crates/big-video-player/src/video/ui/filters/groups_shader.rs:76
 msgid "Amount"
 msgstr ""
 
-#: crates/big-video-player/src/video/ui/filters/groups_shader.rs:146
+#: crates/big-video-player/src/video/ui/filters/groups_shader.rs:137
 msgid "GPU Upscaling Shaders"
 msgstr ""
 
-#: crates/big-video-player/src/video/ui/filters/groups_shader.rs:148
-msgid ""
-"Open-source GPU shaders that enhance image quality when upscaling. Choose "
-"one upscaler and adjust sharpening intensity."
-msgstr ""
-
-#: crates/big-video-player/src/video/ui/filters/groups_shader.rs:165
+#: crates/big-video-player/src/video/ui/filters/groups_shader.rs:151
 msgid "Upscaling Shader"
 msgstr ""
 
-#: crates/big-video-player/src/video/ui/filters/groups_shader.rs:168
+#: crates/big-video-player/src/video/ui/filters/groups_shader.rs:154
 msgid "FidelityFX Super Resolution (FSR)"
 msgstr ""
 
-#: crates/big-video-player/src/video/ui/filters/groups_shader.rs:169
+#: crates/big-video-player/src/video/ui/filters/groups_shader.rs:155
 msgid "CAS Upscaling"
 msgstr ""
 
-#: crates/big-video-player/src/video/ui/filters/groups_shader.rs:173
+#: crates/big-video-player/src/video/ui/filters/groups_shader.rs:159
 msgid ""
 "Enhances image quality when the video resolution is lower than your display"
 msgstr ""
 
-#: crates/big-video-player/src/video/ui/filters/groups_shader.rs:195
+#: crates/big-video-player/src/video/ui/filters/groups_shader.rs:180
 msgid "Sharpening Intensity"
 msgstr ""
 
-#: crates/big-video-player/src/video/ui/filters/groups_shader.rs:197
+#: crates/big-video-player/src/video/ui/filters/groups_shader.rs:182
 msgid "Higher values produce a more visible sharpening effect"
 msgstr ""
 
-#: crates/big-video-player/src/video/ui/filters/groups_shader.rs:352
+#: crates/big-video-player/src/video/ui/filters/groups_shader.rs:336
 msgid "Neural Network Upscaling"
 msgstr ""
 
-#: crates/big-video-player/src/video/ui/filters/groups_shader.rs:354
-msgid ""
-"AI-trained shader that reconstructs fine detail when upscaling video. Best "
-"for low-resolution content on high-resolution displays."
-msgstr ""
-
-#: crates/big-video-player/src/video/ui/filters/groups_shader.rs:366
+#: crates/big-video-player/src/video/ui/filters/groups_shader.rs:345
 msgid "RAVU Neural Upscaler"
 msgstr ""
 
-#: crates/big-video-player/src/video/ui/filters/groups_shader.rs:368
+#: crates/big-video-player/src/video/ui/filters/groups_shader.rs:347
 msgid ""
 "Reconstructs detail lost during video compression — uses RAVU r4, the best "
 "fragment-shader neural upscaler available"
 msgstr ""
 
-#: crates/big-video-player/src/video/ui/filters/groups_shader.rs:392
+#: crates/big-video-player/src/video/ui/filters/groups_shader.rs:370
 msgid "Anime / Cartoon Enhancement"
 msgstr ""
 
-#: crates/big-video-player/src/video/ui/filters/groups_shader.rs:394
-msgid ""
-"AI-powered shaders that restore and upscale animated content. Optimized for "
-"anime line art and cel-shaded styles."
-msgstr ""
-
-#: crates/big-video-player/src/video/ui/filters/groups_shader.rs:408
+#: crates/big-video-player/src/video/ui/filters/groups_shader.rs:381
 msgid "Anime4K Preset"
 msgstr ""
 
-#: crates/big-video-player/src/video/ui/filters/groups_shader.rs:410
+#: crates/big-video-player/src/video/ui/filters/groups_shader.rs:383
 msgid "Disabled"
 msgstr ""
 
-#: crates/big-video-player/src/video/ui/filters/groups_shader.rs:411
+#: crates/big-video-player/src/video/ui/filters/groups_shader.rs:384
 msgid "Quality A — Best (1080p sources)"
 msgstr ""
 
-#: crates/big-video-player/src/video/ui/filters/groups_shader.rs:412
+#: crates/big-video-player/src/video/ui/filters/groups_shader.rs:385
 msgid "Quality B — Soft Restore (720p sources)"
 msgstr ""
 
-#: crates/big-video-player/src/video/ui/filters/groups_shader.rs:413
+#: crates/big-video-player/src/video/ui/filters/groups_shader.rs:386
 msgid "Quality C — Fast (low-end GPU)"
 msgstr ""
 
-#: crates/big-video-player/src/video/ui/filters/groups_shader.rs:417
+#: crates/big-video-player/src/video/ui/filters/groups_shader.rs:390
 msgid "Select a quality preset — higher quality uses more GPU power"
 msgstr ""
 
-#: crates/big-video-player/src/video/ui/filters/groups_shader.rs:439
+#: crates/big-video-player/src/video/ui/filters/groups_shader.rs:411
 msgid "Shaders not installed"
 msgstr ""
 
-#: crates/big-video-player/src/video/ui/filters/groups_shader.rs:440
+#: crates/big-video-player/src/video/ui/filters/groups_shader.rs:412
 msgid "Install the big-media-runtime package to get built-in shaders"
 msgstr ""
 
-#: crates/big-video-player/src/video/ui/filters/groups_shader.rs:448
+#: crates/big-video-player/src/video/ui/filters/groups_shader.rs:420
 msgid "Neural upscaler shaders not installed"
 msgstr ""
 
-#: crates/big-video-player/src/video/ui/filters/groups_shader.rs:449
+#: crates/big-video-player/src/video/ui/filters/groups_shader.rs:421
 msgid "Install the big-media-runtime package to get neural upscaling shaders"
 msgstr ""
 
-#: crates/big-video-player/src/video/ui/filters/groups_shader.rs:457
+#: crates/big-video-player/src/video/ui/filters/groups_shader.rs:429
 msgid "Anime4K shaders not installed"
 msgstr ""
 
-#: crates/big-video-player/src/video/ui/filters/groups_shader.rs:458
+#: crates/big-video-player/src/video/ui/filters/groups_shader.rs:430
 msgid "Install the big-media-runtime package to get Anime4K shaders"
 msgstr ""
 
@@ -2059,186 +2017,172 @@ msgstr ""
 msgid "Denoise and Sharpen"
 msgstr ""
 
-#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:27
-msgid ""
-"Software filters that clean up or enhance the image. Useful for old or low-"
-"quality video sources."
-msgstr ""
-
-#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:38
+#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:32
 msgid "Denoise (hqdn3d)"
 msgstr ""
 
-#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:39
+#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:33
 msgid "Reduces visual noise and grain from old or low-light footage"
 msgstr ""
 
-#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:40
-#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:56
+#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:34
+#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:49
 msgid "Strength"
 msgstr ""
 
-#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:54
+#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:47
 msgid "Sharpen (CAS)"
 msgstr ""
 
-#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:55
+#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:48
 msgid "Software contrast-adaptive sharpening — works at any resolution"
 msgstr ""
 
-#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:69
+#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:62
 #: crates/big-video-player/src/video/ui/preferences/subtitles.rs:77
 msgid "Color"
 msgstr ""
 
-#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:77
+#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:69
 msgid "Color Temperature"
 msgstr ""
 
-#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:78
+#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:70
 msgid "Warm or cool tone (Kelvin)"
 msgstr ""
 
-#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:79
+#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:71
 msgid "Temperature"
 msgstr ""
 
-#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:93
+#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:84
 msgid "Vibrance"
 msgstr ""
 
-#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:94
+#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:85
 msgid "Boost color saturation intelligently"
 msgstr ""
 
-#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:95
+#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:86
 msgid "Intensity"
 msgstr ""
 
-#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:112
+#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:103
 msgid "Colorize"
 msgstr ""
 
-#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:113
+#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:104
 msgid "Apply a color tint overlay"
 msgstr ""
 
-#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:124
-#: crates/big-video-player/src/video/ui/media_adjust.rs:662
+#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:114
+#: crates/big-video-player/src/video/ui/media_adjust.rs:631
 msgid "Hue"
 msgstr ""
 
-#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:131
-#: crates/big-video-player/src/video/ui/media_adjust.rs:650
+#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:121
+#: crates/big-video-player/src/video/ui/media_adjust.rs:621
 #: crates/big-video-player/src/video/ui/preferences/advanced.rs:138
 msgid "Saturation"
 msgstr ""
 
-#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:138
+#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:128
 msgid "Mix"
 msgstr ""
 
-#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:190
+#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:180
 msgid "Monochrome"
 msgstr ""
 
-#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:191
+#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:181
 msgid "Cinematic black and white"
 msgstr ""
 
-#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:212
+#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:201
 msgid "Style Presets"
 msgstr ""
 
-#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:213
-msgid "One-click color grading effects"
-msgstr ""
-
-#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:217
+#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:204
 msgid "Color Curves"
 msgstr ""
 
-#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:218
+#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:205
 msgid "Predefined color grading looks"
 msgstr ""
 
-#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:234
+#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:220
 msgid "Preset"
 msgstr ""
 
-#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:236
+#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:222
 msgid "Vintage"
 msgstr ""
 
-#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:237
+#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:223
 msgid "Cross Process"
 msgstr ""
 
-#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:238
+#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:224
 msgid "Darker"
 msgstr ""
 
-#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:239
+#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:225
 msgid "Lighter"
 msgstr ""
 
-#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:240
+#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:226
 msgid "More Contrast"
 msgstr ""
 
-#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:241
+#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:227
 msgid "Strong Contrast"
 msgstr ""
 
-#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:242
+#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:228
 msgid "Color Negative"
 msgstr ""
 
-#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:291
-msgid "Creative visual effects and artistic transformations."
-msgstr ""
-
-#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:299
+#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:280
 msgid "Vignette"
 msgstr ""
 
-#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:300
+#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:281
 msgid "Darken edges of the image"
 msgstr ""
 
-#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:328
+#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:307
 msgid "Pixelize"
 msgstr ""
 
-#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:329
+#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:308
 msgid "Mosaic / pixel art effect"
 msgstr ""
 
-#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:330
+#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:309
 msgid "Block Size"
 msgstr ""
 
-#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:343
+#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:321
 msgid "Gaussian Blur"
 msgstr ""
 
-#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:344
+#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:322
 msgid "Smooth blur effect"
 msgstr ""
 
-#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:345
+#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:323
 msgid "Sigma"
 msgstr ""
 
-#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:358
+#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:335
 msgid "Motion Trail"
 msgstr ""
 
-#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:359
+#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:336
 msgid "Slowly fading visual trail effect"
 msgstr ""
 
-#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:360
+#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:337
 msgid "Decay"
 msgstr ""
 
@@ -2428,7 +2372,7 @@ msgstr ""
 #: crates/big-video-player/src/video/ui/media_details_dialog.rs:198
 #: crates/big-video-player/src/video/ui/video_shell/input_gestures.rs:108
 #: crates/big-video-player/src/video/ui/video_shell/panel.rs:35
-#: crates/big-video-player/src/video/ui/video_shell/panel.rs:403
+#: crates/big-video-player/src/video/ui/video_shell/panel.rs:396
 msgid "HDR"
 msgstr ""
 
@@ -2438,189 +2382,129 @@ msgstr ""
 
 #: crates/big-video-player/src/video/ui/media_adjust.rs:119
 #: crates/big-video-player/src/video/ui/video_shell/adjustments.rs:175
-#: crates/big-video-player/src/video/ui/video_shell/panel.rs:394
+#: crates/big-video-player/src/video/ui/video_shell/panel.rs:387
 msgid "Normal"
 msgstr ""
 
-#: crates/big-video-player/src/video/ui/media_adjust.rs:187
+#: crates/big-video-player/src/video/ui/media_adjust.rs:183
 #: crates/big-video-player/src/video/ui/video_controls_bar/tracks.rs:81
 msgid "Subtitles early or late"
 msgstr ""
 
-#: crates/big-video-player/src/video/ui/media_adjust.rs:188
+#: crates/big-video-player/src/video/ui/media_adjust.rs:184
 msgid "When the text shows before or after the speech. More = later"
 msgstr ""
 
-#: crates/big-video-player/src/video/ui/media_adjust.rs:195
+#: crates/big-video-player/src/video/ui/media_adjust.rs:190
 msgid "Sound early or late"
 msgstr ""
 
-#: crates/big-video-player/src/video/ui/media_adjust.rs:196
+#: crates/big-video-player/src/video/ui/media_adjust.rs:191
 msgid "When voices do not match the lips. More = later"
 msgstr ""
 
-#: crates/big-video-player/src/video/ui/media_adjust.rs:210
+#: crates/big-video-player/src/video/ui/media_adjust.rs:205
 msgid "Reset to zero"
 msgstr ""
 
-#: crates/big-video-player/src/video/ui/media_adjust.rs:254
+#: crates/big-video-player/src/video/ui/media_adjust.rs:244
 msgid "Reset"
 msgstr ""
 
-#: crates/big-video-player/src/video/ui/media_adjust.rs:300
-msgid "Video colour"
-msgstr ""
-
-#: crates/big-video-player/src/video/ui/media_adjust.rs:302
-msgid "If the picture looks grey and washed out, choose HDR."
-msgstr ""
-
-#: crates/big-video-player/src/video/ui/media_adjust.rs:306
+#: crates/big-video-player/src/video/ui/media_adjust.rs:290
 msgid "Uses what the file says"
 msgstr ""
 
-#: crates/big-video-player/src/video/ui/media_adjust.rs:307
+#: crates/big-video-player/src/video/ui/media_adjust.rs:291
 msgid "For a picture that looks grey and washed out"
 msgstr ""
 
-#: crates/big-video-player/src/video/ui/media_adjust.rs:308
+#: crates/big-video-player/src/video/ui/media_adjust.rs:292
 msgid "For some TV broadcasts (HLG)"
 msgstr ""
 
-#: crates/big-video-player/src/video/ui/media_adjust.rs:309
+#: crates/big-video-player/src/video/ui/media_adjust.rs:293
 msgid "Plain colours (SDR)"
 msgstr ""
 
-#: crates/big-video-player/src/video/ui/media_adjust.rs:366
+#: crates/big-video-player/src/video/ui/media_adjust.rs:350
 msgid "Transform"
 msgstr ""
 
-#: crates/big-video-player/src/video/ui/media_adjust.rs:367
-msgid "Rotate or mirror the video picture"
-msgstr ""
-
-#: crates/big-video-player/src/video/ui/media_adjust.rs:372
+#: crates/big-video-player/src/video/ui/media_adjust.rs:354
 msgid "Rotation"
 msgstr ""
 
-#: crates/big-video-player/src/video/ui/media_adjust.rs:387
+#: crates/big-video-player/src/video/ui/media_adjust.rs:369
 msgid "Rotate Left"
 msgstr ""
 
-#: crates/big-video-player/src/video/ui/media_adjust.rs:392
+#: crates/big-video-player/src/video/ui/media_adjust.rs:374
 msgid "Reset Rotation"
 msgstr ""
 
-#: crates/big-video-player/src/video/ui/media_adjust.rs:397
+#: crates/big-video-player/src/video/ui/media_adjust.rs:379
 msgid "Rotate Right"
 msgstr ""
 
-#: crates/big-video-player/src/video/ui/media_adjust.rs:434
+#: crates/big-video-player/src/video/ui/media_adjust.rs:416
 msgid "Flip"
 msgstr ""
 
-#: crates/big-video-player/src/video/ui/media_adjust.rs:441
+#: crates/big-video-player/src/video/ui/media_adjust.rs:423
 msgid "Horizontal"
 msgstr ""
 
-#: crates/big-video-player/src/video/ui/media_adjust.rs:446
+#: crates/big-video-player/src/video/ui/media_adjust.rs:428
 msgid "Vertical"
 msgstr ""
 
-#: crates/big-video-player/src/video/ui/media_adjust.rs:480
+#: crates/big-video-player/src/video/ui/media_adjust.rs:462
 msgid "Crop"
 msgstr ""
 
-#: crates/big-video-player/src/video/ui/media_adjust.rs:481
-msgid "Crop video edges in pixels"
-msgstr ""
-
-#: crates/big-video-player/src/video/ui/media_adjust.rs:487
-#: crates/big-video-player/src/video/ui/media_adjust.rs:493
+#: crates/big-video-player/src/video/ui/media_adjust.rs:467
+#: crates/big-video-player/src/video/ui/media_adjust.rs:473
 msgid "Left"
 msgstr ""
 
-#: crates/big-video-player/src/video/ui/media_adjust.rs:488
-#: crates/big-video-player/src/video/ui/media_adjust.rs:494
+#: crates/big-video-player/src/video/ui/media_adjust.rs:468
+#: crates/big-video-player/src/video/ui/media_adjust.rs:474
 msgid "Right"
 msgstr ""
 
-#: crates/big-video-player/src/video/ui/media_adjust.rs:489
-#: crates/big-video-player/src/video/ui/media_adjust.rs:495
+#: crates/big-video-player/src/video/ui/media_adjust.rs:469
+#: crates/big-video-player/src/video/ui/media_adjust.rs:475
 msgid "Top"
 msgstr ""
 
-#: crates/big-video-player/src/video/ui/media_adjust.rs:490
-#: crates/big-video-player/src/video/ui/media_adjust.rs:496
+#: crates/big-video-player/src/video/ui/media_adjust.rs:470
+#: crates/big-video-player/src/video/ui/media_adjust.rs:476
 msgid "Bottom"
 msgstr ""
 
-#: crates/big-video-player/src/video/ui/media_adjust.rs:506
+#: crates/big-video-player/src/video/ui/media_adjust.rs:486
 msgid "Reset crop"
 msgstr ""
 
-#: crates/big-video-player/src/video/ui/media_adjust.rs:612
+#: crates/big-video-player/src/video/ui/media_adjust.rs:591
 msgid "Contrast"
 msgstr ""
 
-#: crates/big-video-player/src/video/ui/media_adjust.rs:613
-msgid "Difference between dark and light areas"
-msgstr ""
-
-#: crates/big-video-player/src/video/ui/media_adjust.rs:624
+#: crates/big-video-player/src/video/ui/media_adjust.rs:601
 msgid "Brightness"
 msgstr ""
 
-#: crates/big-video-player/src/video/ui/media_adjust.rs:625
-msgid "Overall lightness of the image"
-msgstr ""
-
-#: crates/big-video-player/src/video/ui/media_adjust.rs:636
+#: crates/big-video-player/src/video/ui/media_adjust.rs:611
 msgid "Gamma"
 msgstr ""
 
-#: crates/big-video-player/src/video/ui/media_adjust.rs:638
-msgid "Midtone brightness — adjusts without clipping highlights or shadows"
-msgstr ""
-
-#: crates/big-video-player/src/video/ui/media_adjust.rs:651
-msgid "Color intensity — -100 = grayscale, 0 = original colors"
-msgstr ""
-
-#: crates/big-video-player/src/video/ui/media_adjust.rs:663
-msgid "Shift all colors around the color wheel"
-msgstr ""
-
-#: crates/big-video-player/src/video/ui/media_adjust.rs:675
-msgid "Image"
-msgstr ""
-
-#: crates/big-video-player/src/video/ui/media_adjust.rs:676
-msgid "Fine-tune colors and brightness of the video picture"
-msgstr ""
-
-#: crates/big-video-player/src/video/ui/media_adjust.rs:697
+#: crates/big-video-player/src/video/ui/media_adjust.rs:657
 msgid "Zoom"
 msgstr ""
 
-#: crates/big-video-player/src/video/ui/media_adjust.rs:698
-msgid "Magnify the picture — 0 = fit window, 1 = double size"
-msgstr ""
-
-#: crates/big-video-player/src/video/ui/media_adjust.rs:709
-msgid "Pan & Scan"
-msgstr ""
-
-#: crates/big-video-player/src/video/ui/media_adjust.rs:711
-msgid "Crop edges to fill the window — useful for removing black bars"
-msgstr ""
-
-#: crates/big-video-player/src/video/ui/media_adjust.rs:724
-msgid "Zoom and Pan"
-msgstr ""
-
-#: crates/big-video-player/src/video/ui/media_adjust.rs:725
-msgid "Enlarge or reframe the video within the window"
+#: crates/big-video-player/src/video/ui/media_adjust.rs:667
+msgid "Fill the window"
 msgstr ""
 
 #: crates/big-video-player/src/video/ui/media_details_dialog.rs:33
@@ -2644,7 +2528,7 @@ msgstr ""
 
 #: crates/big-video-player/src/video/ui/media_details_dialog.rs:109
 #: crates/big-video-player/src/video/ui/video_shell/panel.rs:40
-#: crates/big-video-player/src/video/ui/video_shell/panel.rs:440
+#: crates/big-video-player/src/video/ui/video_shell/panel.rs:433
 msgid "Chapters"
 msgstr ""
 
@@ -3249,7 +3133,7 @@ msgstr ""
 #: crates/big-video-player/src/video/ui/preferences/video.rs:24
 #: crates/big-video-player/src/video/ui/video_shell/input_gestures.rs:109
 #: crates/big-video-player/src/video/ui/video_shell/panel.rs:36
-#: crates/big-video-player/src/video/ui/video_shell/panel.rs:417
+#: crates/big-video-player/src/video/ui/video_shell/panel.rs:410
 msgid "Picture"
 msgstr ""
 
@@ -3531,11 +3415,11 @@ msgstr ""
 msgid "Previous folder"
 msgstr ""
 
-#: crates/big-video-player/src/video/ui/video_controls_bar.rs:255
+#: crates/big-video-player/src/video/ui/video_controls_bar.rs:257
 msgid "Seek Position"
 msgstr ""
 
-#: crates/big-video-player/src/video/ui/video_controls_bar.rs:519
+#: crates/big-video-player/src/video/ui/video_controls_bar.rs:523
 #: crates/ui/media/big-player-ui/src/playback_bar.rs:310
 msgid "TV volume"
 msgstr ""
@@ -3736,7 +3620,7 @@ msgid "Stops at {time}"
 msgstr ""
 
 #: crates/big-video-player/src/video/ui/video_shell/adjustments.rs:343
-#: crates/big-video-player/src/video/ui/video_shell/panel.rs:238
+#: crates/big-video-player/src/video/ui/video_shell/panel.rs:231
 #, rust-format
 msgid "{n} change"
 msgid_plural "{n} changes"
@@ -3750,7 +3634,7 @@ msgstr ""
 #: crates/big-video-player/src/video/ui/video_shell/component.rs:126
 #: crates/big-video-player/src/video/ui/video_shell/component.rs:129
 #: crates/big-video-player/src/video/ui/video_shell/panel.rs:34
-#: crates/big-video-player/src/video/ui/video_shell/panel.rs:152
+#: crates/big-video-player/src/video/ui/video_shell/panel.rs:149
 msgid "Settings"
 msgstr ""
 
@@ -3934,23 +3818,23 @@ msgstr ""
 
 #: crates/big-video-player/src/video/ui/video_shell/input_gestures.rs:110
 #: crates/big-video-player/src/video/ui/video_shell/panel.rs:37
-#: crates/big-video-player/src/video/ui/video_shell/panel.rs:422
+#: crates/big-video-player/src/video/ui/video_shell/panel.rs:415
 msgid "Zoom and position"
 msgstr ""
 
 #: crates/big-video-player/src/video/ui/video_shell/input_gestures.rs:111
 #: crates/big-video-player/src/video/ui/video_shell/panel.rs:38
-#: crates/big-video-player/src/video/ui/video_shell/panel.rs:427
+#: crates/big-video-player/src/video/ui/video_shell/panel.rs:420
 msgid "Effects and filters"
 msgstr ""
 
 #: crates/big-video-player/src/video/ui/video_shell/input_gestures.rs:117
-#: crates/big-video-player/src/video/ui/video_shell/panel.rs:486
+#: crates/big-video-player/src/video/ui/video_shell/panel.rs:479
 msgid "About this video"
 msgstr ""
 
 #: crates/big-video-player/src/video/ui/video_shell/panel.rs:41
-#: crates/big-video-player/src/video/ui/video_shell/panel.rs:453
+#: crates/big-video-player/src/video/ui/video_shell/panel.rs:446
 msgid "Stop after…"
 msgstr ""
 
@@ -3959,50 +3843,50 @@ msgstr ""
 msgid "Back"
 msgstr ""
 
-#: crates/big-video-player/src/video/ui/video_shell/panel.rs:441
+#: crates/big-video-player/src/video/ui/video_shell/panel.rs:434
 #, rust-format
 msgid "{current} of {total}"
 msgstr ""
 
-#: crates/big-video-player/src/video/ui/video_shell/panel.rs:463
+#: crates/big-video-player/src/video/ui/video_shell/panel.rs:456
 msgid "Chromecast or DLNA"
 msgstr ""
 
-#: crates/big-video-player/src/video/ui/video_shell/panel.rs:474
+#: crates/big-video-player/src/video/ui/video_shell/panel.rs:467
 msgid "Online quality"
 msgstr ""
 
-#: crates/big-video-player/src/video/ui/video_shell/panel.rs:475
+#: crates/big-video-player/src/video/ui/video_shell/panel.rs:468
 msgid "Choose"
 msgstr ""
 
-#: crates/big-video-player/src/video/ui/video_shell/panel.rs:519
+#: crates/big-video-player/src/video/ui/video_shell/panel.rs:512
 msgid "Put back what was just set to normal"
 msgstr ""
 
-#: crates/big-video-player/src/video/ui/video_shell/panel.rs:551
+#: crates/big-video-player/src/video/ui/video_shell/panel.rs:544
 msgid "Shortcuts"
 msgstr ""
 
-#: crates/big-video-player/src/video/ui/video_shell/panel.rs:592
+#: crates/big-video-player/src/video/ui/video_shell/panel.rs:585
 msgid "Changed"
 msgstr ""
 
-#: crates/big-video-player/src/video/ui/video_shell/panel.rs:604
-#: crates/big-video-player/src/video/ui/video_shell/panel.rs:627
+#: crates/big-video-player/src/video/ui/video_shell/panel.rs:597
+#: crates/big-video-player/src/video/ui/video_shell/panel.rs:620
 msgid "Back to normal"
 msgstr ""
 
-#: crates/big-video-player/src/video/ui/video_shell/panel.rs:609
+#: crates/big-video-player/src/video/ui/video_shell/panel.rs:602
 #, rust-format
 msgid "Undo: {setting}"
 msgstr ""
 
-#: crates/big-video-player/src/video/ui/video_shell/panel.rs:628
+#: crates/big-video-player/src/video/ui/video_shell/panel.rs:621
 msgid "Undo every change to the picture and sound"
 msgstr ""
 
-#: crates/big-video-player/src/video/ui/video_shell/panel.rs:795
+#: crates/big-video-player/src/video/ui/video_shell/panel.rs:788
 msgid "Jump to a chapter"
 msgstr ""
 
@@ -4365,23 +4249,29 @@ msgstr ""
 msgid "Electronic"
 msgstr ""
 
-#: crates/media-runtime/src/shared/audio_effects_eq.rs:142
-msgid ""
-"Boost or cut frequency bands to shape the sound. Use presets as a starting "
-"point."
-msgstr ""
-
-#: crates/media-runtime/src/shared/audio_effects_eq.rs:159
+#: crates/media-runtime/src/shared/audio_effects_eq.rs:148
 msgid "Preset:"
 msgstr ""
 
-#: crates/media-runtime/src/shared/audio_effects_eq.rs:181
+#: crates/media-runtime/src/shared/audio_effects_eq.rs:170
 msgid "Reset to Flat"
 msgstr ""
 
-#: crates/media-runtime/src/shared/audio_effects_eq.rs:249
-#: crates/media-runtime/src/shared/audio_effects_eq.rs:250
+#: crates/media-runtime/src/shared/audio_effects_eq.rs:238
+#: crates/media-runtime/src/shared/audio_effects_eq.rs:239
 msgid "Equalizer band"
+msgstr ""
+
+#: crates/media-runtime/src/shared/audio_effects_eq.rs:307
+msgid "Bass"
+msgstr ""
+
+#: crates/media-runtime/src/shared/audio_effects_eq.rs:308
+msgid "Mids"
+msgstr ""
+
+#: crates/media-runtime/src/shared/audio_effects_eq.rs:309
+msgid "Highs"
 msgstr ""
 
 #: crates/media-runtime/src/shared/audio_effects.rs:44
@@ -4395,7 +4285,7 @@ msgid ""
 msgstr ""
 
 #: crates/media-runtime/src/shared/audio_effects.rs:242
-#: crates/ui/media/big-media-components/src/player_chrome.rs:324
+#: crates/ui/media/big-media-components/src/player_chrome.rs:350
 msgid "Noise reduction settings"
 msgstr ""
 
@@ -4481,31 +4371,19 @@ msgstr ""
 msgid "Shut down computer"
 msgstr ""
 
-#: crates/media-runtime/src/shared/sleep_timer.rs:22
-msgid "Set a timer to automatically stop playback or power down your system"
-msgstr ""
-
-#: crates/media-runtime/src/shared/sleep_timer.rs:24
+#: crates/media-runtime/src/shared/sleep_timer.rs:23
 msgid "Minutes"
 msgstr ""
 
-#: crates/media-runtime/src/shared/sleep_timer.rs:25
-msgid "How long until the timer activates"
-msgstr ""
-
-#: crates/media-runtime/src/shared/sleep_timer.rs:26
+#: crates/media-runtime/src/shared/sleep_timer.rs:24
 msgid "Action"
 msgstr ""
 
-#: crates/media-runtime/src/shared/sleep_timer.rs:27
+#: crates/media-runtime/src/shared/sleep_timer.rs:25
 msgid "When timer ends"
 msgstr ""
 
-#: crates/media-runtime/src/shared/sleep_timer.rs:28
-msgid "Choose what happens when time runs out"
-msgstr ""
-
-#: crates/media-runtime/src/shared/sleep_timer.rs:29
+#: crates/media-runtime/src/shared/sleep_timer.rs:26
 msgid "Start Timer"
 msgstr ""
 
@@ -4704,143 +4582,94 @@ msgstr ""
 msgid "Subtitle Stream"
 msgstr ""
 
-#: crates/ui/media/big-media-components/src/player_chrome.rs:298
+#: crates/ui/media/big-media-components/src/player_chrome.rs:324
 msgid "Volume level"
 msgstr ""
 
-#: crates/ui/media/big-media-components/src/player_chrome.rs:309
+#: crates/ui/media/big-media-components/src/player_chrome.rs:335
 msgid "Playback speed"
 msgstr ""
 
-#: crates/ui/media/big-media-components/src/player_chrome.rs:321
+#: crates/ui/media/big-media-components/src/player_chrome.rs:347
 msgid "Voice"
 msgstr ""
 
-#: crates/ui/media/big-media-components/src/player_chrome.rs:325
+#: crates/ui/media/big-media-components/src/player_chrome.rs:351
 msgid "Voice enhancement"
 msgstr ""
 
-#: crates/ui/media/big-player-ui/src/appearance/audio_colors.rs:31
-#: crates/ui/media/big-player-ui/src/appearance/color_palette_controls.rs:114
-#: crates/ui/media/big-player-ui/src/appearance/video_colors.rs:34
+#: crates/ui/media/big-player-ui/src/appearance/audio_colors.rs:30
+#: crates/ui/media/big-player-ui/src/appearance/video_colors.rs:29
 msgid "Color Source"
 msgstr ""
 
-#: crates/ui/media/big-player-ui/src/appearance/audio_colors.rs:33
-#: crates/ui/media/big-player-ui/src/appearance/video_colors.rs:36
+#: crates/ui/media/big-player-ui/src/appearance/audio_colors.rs:32
+#: crates/ui/media/big-player-ui/src/appearance/video_colors.rs:31
 msgid "Follow System"
 msgstr ""
 
-#: crates/ui/media/big-player-ui/src/appearance/audio_colors.rs:34
-#: crates/ui/media/big-player-ui/src/appearance/video_colors.rs:37
+#: crates/ui/media/big-player-ui/src/appearance/audio_colors.rs:33
+#: crates/ui/media/big-player-ui/src/appearance/video_colors.rs:32
 msgid "Light Theme"
 msgstr ""
 
-#: crates/ui/media/big-player-ui/src/appearance/audio_colors.rs:35
-#: crates/ui/media/big-player-ui/src/appearance/video_colors.rs:38
+#: crates/ui/media/big-player-ui/src/appearance/audio_colors.rs:34
+#: crates/ui/media/big-player-ui/src/appearance/video_colors.rs:33
 msgid "Dark Theme"
 msgstr ""
 
-#: crates/ui/media/big-player-ui/src/appearance/audio_colors.rs:36
-#: crates/ui/media/big-player-ui/src/appearance/color_palette_controls.rs:134
-#: crates/ui/media/big-player-ui/src/appearance/video_colors.rs:40
+#: crates/ui/media/big-player-ui/src/appearance/audio_colors.rs:35
+#: crates/ui/media/big-player-ui/src/appearance/color_palette_controls.rs:130
+#: crates/ui/media/big-player-ui/src/appearance/video_colors.rs:35
 msgid "Custom Colors"
 msgstr ""
 
-#: crates/ui/media/big-player-ui/src/appearance/audio_colors.rs:40
-msgid ""
-"Follow System uses your desktop theme - Custom Colors lets you pick your own "
-"palette"
-msgstr ""
-
-#: crates/ui/media/big-player-ui/src/appearance/audio_colors.rs:75
+#: crates/ui/media/big-player-ui/src/appearance/audio_colors.rs:69
 msgid "Accessibility"
 msgstr ""
 
-#: crates/ui/media/big-player-ui/src/appearance/audio_colors.rs:76
-msgid "Improve readability of secondary text and labels"
-msgstr ""
-
-#: crates/ui/media/big-player-ui/src/appearance/audio_colors.rs:80
+#: crates/ui/media/big-player-ui/src/appearance/audio_colors.rs:72
 msgid "High Contrast Text"
 msgstr ""
 
-#: crates/ui/media/big-player-ui/src/appearance/audio_colors.rs:82
-msgid "Makes dim labels, subtitles and secondary text easier to read"
-msgstr ""
-
-#: crates/ui/media/big-player-ui/src/appearance/color_palette_controls.rs:108
+#: crates/ui/media/big-player-ui/src/appearance/color_palette_controls.rs:106
 msgid "Colors"
 msgstr ""
 
-#: crates/ui/media/big-player-ui/src/appearance/color_palette_controls.rs:115
-msgid "Choose how the player gets its colors"
-msgstr ""
-
-#: crates/ui/media/big-player-ui/src/appearance/color_palette_controls.rs:135
-msgid "Pick your own colors or choose a preset theme"
-msgstr ""
-
-#: crates/ui/media/big-player-ui/src/appearance/color_palette_controls.rs:140
+#: crates/ui/media/big-player-ui/src/appearance/color_palette_controls.rs:134
 msgid "Color Preset"
 msgstr ""
 
-#: crates/ui/media/big-player-ui/src/appearance/color_palette_controls.rs:142
-msgid "Start from a pre-made color scheme and customize from there"
-msgstr ""
-
-#: crates/ui/media/big-player-ui/src/appearance/color_palette_controls.rs:154
+#: crates/ui/media/big-player-ui/src/appearance/color_palette_controls.rs:141
 msgid "Background Color"
 msgstr ""
 
-#: crates/ui/media/big-player-ui/src/appearance/color_palette_controls.rs:161
+#: crates/ui/media/big-player-ui/src/appearance/color_palette_controls.rs:148
 msgid "Font Color"
 msgstr ""
 
-#: crates/ui/media/big-player-ui/src/appearance/color_palette_controls.rs:168
+#: crates/ui/media/big-player-ui/src/appearance/color_palette_controls.rs:155
 msgid "Icon Color"
 msgstr ""
 
-#: crates/ui/media/big-player-ui/src/appearance/color_palette_controls.rs:175
+#: crates/ui/media/big-player-ui/src/appearance/color_palette_controls.rs:162
 msgid "Dialogs and Menus Color"
 msgstr ""
 
-#: crates/ui/media/big-player-ui/src/appearance/video_colors.rs:39
+#: crates/ui/media/big-player-ui/src/appearance/video_colors.rs:34
 msgid "Video Colors"
 msgstr ""
 
 #: crates/ui/media/big-player-ui/src/appearance/video_colors.rs:44
-msgid ""
-"Follow System uses your desktop theme - Video Colors extracts colors from "
-"the current video"
-msgstr ""
-
-#: crates/ui/media/big-player-ui/src/appearance/video_colors.rs:55
 msgid "Background Opacity"
 msgstr ""
 
-#: crates/ui/media/big-player-ui/src/appearance/video_colors.rs:57
-msgid ""
-"How transparent the player background is - lower values let your desktop "
-"show through"
-msgstr ""
-
-#: crates/ui/media/big-player-ui/src/appearance/video_colors.rs:77
+#: crates/ui/media/big-player-ui/src/appearance/video_colors.rs:45
 msgid "Menu Opacity"
 msgstr ""
 
-#: crates/ui/media/big-player-ui/src/appearance/video_colors.rs:78
-msgid "How transparent menus and dialogs appear"
-msgstr ""
-
-#: crates/ui/media/big-player-ui/src/appearance/video_colors.rs:97
+#: crates/ui/media/big-player-ui/src/appearance/video_colors.rs:69
 msgid "Icon and Text Shadow"
-msgstr ""
-
-#: crates/ui/media/big-player-ui/src/appearance/video_colors.rs:98
-msgid ""
-"Makes controls easier to see when the background is transparent or very "
-"bright"
 msgstr ""
 
 #: crates/ui/media/big-player-ui/src/audio_preferences.rs:89

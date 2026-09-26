@@ -120,21 +120,18 @@ impl SettingsPanel {
             .xalign(0.0)
             .css_classes(["heading"])
             .build();
-        let close = gtk::Button::builder()
-            .icon_name("window-close-symbolic")
-            .tooltip_text(i18n("Close"))
-            .css_classes(["flat", "circular"])
-            .build();
-        close.update_property(&[gtk::accessible::Property::Label(&i18n("Close"))]);
         let top = gtk::Box::builder()
             .spacing(6)
+            // As tall as with Back beside the title, on the home page too.
+            .height_request(34)
             .margin_top(8)
             .margin_start(8)
             .margin_end(8)
             .build();
         top.append(&back);
+        // No close button: a click outside the card, the settings button
+        // again or Esc closes it.
         top.append(&title);
-        top.append(&close);
 
         // The card hugs its content and scrolls only when the window is too
         // short for it (`max_content_height` is set per window on open).
@@ -163,10 +160,6 @@ impl SettingsPanel {
         back.connect_clicked({
             let sender = sender.clone();
             move |_| sender.input(VideoShellInput::PanelBack)
-        });
-        close.connect_clicked({
-            let sender = sender.clone();
-            move |_| sender.input(VideoShellInput::ClosePanel)
         });
         let keys = gtk::EventControllerKey::new();
         keys.connect_key_pressed({
@@ -701,7 +694,7 @@ impl VideoShell {
                 saved_action_id: action,
                 icon_size: 64,
             },
-            Some(icon().upcast()),
+            None,
             None,
             None,
         );

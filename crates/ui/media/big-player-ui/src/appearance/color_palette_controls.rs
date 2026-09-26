@@ -10,8 +10,6 @@ use big_relm4_components::theme::parse_hex_to_rgba;
 use gtk::gdk;
 use std::rc::Rc;
 
-use crate::illustration::illustration_auto as illustration;
-
 pub(super) struct ColorPreset {
     pub(super) bg: &'static str,
     pub(super) font: &'static str,
@@ -110,10 +108,9 @@ pub(super) fn colors_page() -> adw::PreferencesPage {
         .build()
 }
 
+/// Untitled: its first row is named "Color Source" already.
 pub(super) fn color_source_group() -> adw::PreferencesGroup {
-    BigPreferencesGroupSpec::new(i18n("Color Source"))
-        .description(i18n("Choose how the player gets its colors"))
-        .build()
+    adw::PreferencesGroup::new()
 }
 
 pub(super) struct CustomColorKeys {
@@ -129,24 +126,14 @@ pub(super) fn add_custom_color_group(
     on_changed: &Rc<dyn Fn()>,
     keys: CustomColorKeys,
     current_source: &str,
-    preset_prefix_icon: Option<&str>,
 ) -> adw::PreferencesGroup {
-    let custom_group = BigPreferencesGroupSpec::new(i18n("Custom Colors"))
-        .description(i18n("Pick your own colors or choose a preset theme"))
-        .build();
+    let custom_group = BigPreferencesGroupSpec::new(i18n("Custom Colors")).build();
 
     let preset_labels: Vec<String> = PRESET_LABELS.iter().map(|label| i18n(label)).collect();
     let preset_dropdown_row = BigDropdownRow::new(
-        BigDropdownRowSpec::new(i18n("Color Preset"), preset_labels)
-            .subtitle(i18n(
-                "Start from a pre-made color scheme and customize from there",
-            ))
-            .selected(0),
+        BigDropdownRowSpec::new(i18n("Color Preset"), preset_labels).selected(0),
     );
     let (preset_row, preset_dropdown) = preset_dropdown_row.into_parts();
-    if let Some(icon) = preset_prefix_icon {
-        preset_row.add_prefix(&illustration(icon));
-    }
     custom_group.add(&preset_row);
 
     let bg_button = add_color_row(
@@ -216,7 +203,6 @@ fn add_color_row(
     button.set_dialog(&gtk::ColorDialog::new());
     button.set_rgba(&parse_hex_to_rgba(&settings.string(key)));
     let row_builder = BigButtonStripRow::new(BigButtonStripRowSpec::new(title));
-    row_builder.root().add_prefix(&illustration("colors.svg"));
     row_builder.append(&button);
     row_builder.root().set_activatable_widget(Some(&button));
     let settings = settings.clone();
