@@ -75,3 +75,8 @@ Display CSS registered for a player or control uses
 `theme::add_provider_for_widget_lifetime`. The display owns a reference independently
 of the local provider variable: remove that registration when its widget dies.
 `scoped_providers_finalize_with_their_widgets` checks 25 provider finalizations.
+
+The reusable playlist window is hidden while its controller lives and destroyed
+in component shutdown, including when it was never presented. GTK owns a window
+reference independently of Relm4; `hidden_playlist_window_finalizes_with_its_controller`
+checks 25 qdata finalizations instead of assuming that dropping the controller suffices.

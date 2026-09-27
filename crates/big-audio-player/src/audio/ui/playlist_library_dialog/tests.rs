@@ -171,3 +171,40 @@ fn delete_playlist_prompt_spec_keeps_destructive_copy() {
         "This will permanently delete “Road Mix”?"
     );
 }
+
+#[test]
+#[ignore = "requires an isolated GTK session"]
+fn hidden_playlist_window_finalizes_with_its_controller() {
+    use gtk::prelude::*;
+    use relm4::{Component, ComponentController};
+    use std::{cell::Cell, rc::Rc};
+    gtk::init().unwrap();
+    adw::init().unwrap();
+    let context = gtk::glib::MainContext::default();
+    let finalized = Rc::new(Cell::new(0));
+    struct Finalized(Rc<Cell<usize>>);
+    impl Drop for Finalized {
+        fn drop(&mut self) {
+            self.0.set(self.0.get() + 1);
+        }
+    }
+    for cycle in 1..=25 {
+        let controller = super::PlaylistLibraryDialog::builder().launch(()).detach();
+        // SAFETY: this test owns the key and never reads its value.
+        unsafe {
+            controller.widget().set_qdata(
+                gtk::glib::Quark::from_str("playlist-window-finalized"),
+                Finalized(finalized.clone()),
+            );
+        }
+        drop(controller);
+        while context.pending() {
+            context.iteration(false);
+        }
+        assert_eq!(
+            finalized.get(),
+            cycle,
+            "never-presented window survived controller teardown"
+        );
+    }
+}

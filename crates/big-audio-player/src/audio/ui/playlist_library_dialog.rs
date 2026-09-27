@@ -87,7 +87,7 @@ impl Component for PlaylistLibraryDialog {
     type Input = PlaylistLibraryDialogInput;
     type Output = PlaylistLibraryDialogOutput;
     type Root = adw::Window;
-    type Widgets = ();
+    type Widgets = adw::Window;
     type CommandOutput = ();
 
     fn init_root() -> Self::Root {
@@ -108,7 +108,7 @@ impl Component for PlaylistLibraryDialog {
         root: Self::Root,
         sender: ComponentSender<Self>,
     ) -> ComponentParts<Self> {
-        // Close the window instead of destroying it (it's a reused controller).
+        // Hide while the controller is reused; shutdown destroys the window.
         // Signal arg, no capture: a strong `root` clone here is a self-cycle
         // that pins the window past controller drop.
         root.connect_close_request(|win| {
@@ -166,8 +166,12 @@ impl Component for PlaylistLibraryDialog {
 
         ComponentParts {
             model: Self { list_slot, layout },
-            widgets: (),
+            widgets: root,
         }
+    }
+
+    fn shutdown(&mut self, window: &mut Self::Widgets, _output: relm4::Sender<Self::Output>) {
+        window.destroy();
     }
 
     fn update(&mut self, message: Self::Input, sender: ComponentSender<Self>, root: &Self::Root) {
