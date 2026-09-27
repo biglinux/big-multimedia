@@ -50,6 +50,14 @@ pub struct DownloadQueuePanel {
     timer: Option<gtk::glib::SourceId>,
 }
 
+impl Drop for DownloadQueuePanel {
+    fn drop(&mut self) {
+        if let Some(timer) = self.timer.take() {
+            timer.remove();
+        }
+    }
+}
+
 impl Component for DownloadQueuePanel {
     type Init = ();
     type Input = DownloadQueueInput;
@@ -333,6 +341,35 @@ impl DownloadQueuePanel {
         });
         if self.tasks.is_empty() {
             self.revealer.set_reveal_child(false);
+        }
+    }
+}
+
+#[cfg(test)]
+mod lifetime_tests {
+    use super::*;
+
+    #[test]
+    #[ignore = "requires an isolated GTK session"]
+    fn dropping_download_panel_removes_progress_source() {
+        gtk::init().unwrap();
+        let context = gtk::glib::MainContext::default();
+        for _ in 0..25 {
+            let timer = gtk::glib::timeout_add_local(std::time::Duration::from_secs(60), || {
+                gtk::glib::ControlFlow::Continue
+            });
+            let source = context.find_source_by_id(&timer).unwrap();
+            let panel = DownloadQueuePanel {
+                revealer: gtk::Revealer::new(),
+                list_box: gtk::Box::new(gtk::Orientation::Vertical, 0),
+                tasks: Vec::new(),
+                timer: Some(timer),
+            };
+            drop(panel);
+            assert!(
+                source.is_destroyed(),
+                "download progress source outlived its panel"
+            );
         }
     }
 }

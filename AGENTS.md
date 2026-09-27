@@ -57,3 +57,7 @@ transition animation after teardown; Clippy bans the leaking type. Isolated
 Audio shell teardown removes its sleep-timer source even when the countdown is
 still armed. Run `closing_audio_releases_the_sleep_timer` with `--ignored` in an
 isolated accessible session/home; process exit alone cannot prove cancellation.
+
+Download queue teardown removes its progress source before the receiver disappears.
+`dropping_download_panel_removes_progress_source` exercises 25 source lifetimes in
+an isolated GTK session; hiding a live panel must not cancel its progress updates.
