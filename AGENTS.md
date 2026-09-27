@@ -29,3 +29,7 @@ The libadwaita breakpoint allowance does not cover retained dialog controls.
 Filter apply closures must hold their adjustment/dropdown weakly: those controls
 also own the apply handlers. `filter_controls_release_the_backend` checks 75
 control finalizations and mpv ownership over 25 cycles in an isolated session.
+
+Transient context menus use `auto_unparent_on_close`: detach from an idle, after
+the activated action has finished using its ancestry. The idle retains the parent
+until detaching, so closing the owner in that action cannot finalize it too soon.

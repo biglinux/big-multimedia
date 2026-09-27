@@ -108,15 +108,61 @@ impl BigContextPopover {
 /// after `set_parent` on any transient popover; popovers owned by a struct
 /// should instead unparent in that owner's `Drop`.
 pub fn auto_unparent_on_close(popover: &impl IsA<gtk::Popover>) {
-    // Use the signal's own `&Popover` arg — capturing a strong clone of the
-    // popover in its OWN `closed` handler is a self-cycle (popover ⇄ handler)
-    // that prevents it from ever finalizing. Unparent SYNCHRONOUSLY: while
-    // `closed` emits, the parent is guaranteed alive; deferring to idle opens
-    // a race where the parent finalizes first and the late unparent reads a
-    // dangling parent pointer (use-after-free → segfault).
+    // Actions finish after `closed`; preserve their ancestry until the idle.
+    // Keep the parent alive too, in case its owner closes during that action.
     popover.as_ref().connect_closed(move |popover| {
-        if popover.parent().is_some() {
-            popover.unparent();
-        }
+        let parent = popover.parent();
+        let popover = popover.clone();
+        gtk::glib::idle_add_local_once(move || {
+            if popover.parent().is_some() {
+                popover.unparent();
+            }
+            drop(parent);
+        });
     });
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::cell::Cell;
+    use std::rc::Rc;
+
+    #[test]
+    #[ignore = "requires an isolated GTK session"]
+    fn close_keeps_the_action_context_until_idle_and_finalizes() {
+        gtk::init().unwrap();
+        let context = gtk::glib::MainContext::default();
+        for _ in 0..25 {
+            let parent = gtk::Button::new();
+            let popover = gtk::Popover::new();
+            popover.set_parent(&parent);
+            let finalized = Rc::new(Cell::new(false));
+            struct Finalized(Rc<Cell<bool>>);
+            impl Drop for Finalized {
+                fn drop(&mut self) {
+                    self.0.set(true);
+                }
+            }
+            // SAFETY: this test owns the key and never reads the stored data.
+            unsafe {
+                popover.set_qdata(
+                    gtk::glib::Quark::from_str("popover-finalized"),
+                    Finalized(finalized.clone()),
+                );
+            }
+            auto_unparent_on_close(&popover);
+            popover.emit_by_name::<()>("closed", &[]);
+            assert!(
+                popover.parent().is_some(),
+                "the activated action still needs its parent"
+            );
+            drop(parent);
+            drop(popover);
+            while context.pending() {
+                context.iteration(false);
+            }
+            assert!(finalized.get(), "popover did not finalize after idle");
+        }
+    }
 }

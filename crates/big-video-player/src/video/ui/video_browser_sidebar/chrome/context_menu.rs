@@ -120,7 +120,7 @@ pub(crate) fn show_row_context_menu(
 
     popover.set_child(Some(&menu));
     // The popover unparents itself once closed, freeing the row anchor.
-    popover.connect_closed(gtk::Popover::unparent);
+    big_relm4_components::feedback::context_popover::auto_unparent_on_close(&popover);
     popover.popup();
 }
 
