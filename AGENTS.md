@@ -110,3 +110,9 @@ the button's submit handler already owns the entry. The video sweep covers both
 paths. On GTK 4.22.4/libadwaita 1.9.3, also apply the isolated diagnostic dialog-focus
 patch to distinguish this project cycle from the native focus-tree retention;
 do not allow retained entry controls in the stock-library gate.
+
+The sleep-timer start handler must not clone `BigSleepTimerSetupPage`: that
+aggregate owns the very button storing the handler. Capture weak controls and
+action values. `wired_sleep_timer_pages_finalize` proves 75/75 page finalizations
+and start values with 0, 5 and 25 choices; the audio dialog sweep must retain no
+controls (native AdwBreakpoint retention is tracked separately).

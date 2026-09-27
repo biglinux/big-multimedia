@@ -367,13 +367,19 @@ pub fn connect_sleep_timer_start_with_close<W>(
 ) where
     W: gtk::glib::object::ObjectType,
 {
-    let spin = setup_page.spin().clone();
-    let setup_ref = setup_page.clone();
+    let spin = setup_page.spin().downgrade();
+    let combo = setup_page.action_combo.downgrade();
+    let actions = setup_page.actions.clone();
     let window_ref = window.downgrade();
     setup_page.start_button().connect_clicked(move |_| {
-        if let Some(window) = window_ref.upgrade() {
+        if let (Some(window), Some(spin), Some(combo)) =
+            (window_ref.upgrade(), spin.upgrade(), combo.upgrade())
+        {
             let minutes = spin.value() as u32;
-            let action = setup_ref.selected_action_id();
+            let action = actions
+                .get(combo.selected() as usize)
+                .or_else(|| actions.first())
+                .map_or_else(String::new, |action| action.id.clone());
             start_timer(&window, minutes, action);
         }
         close_dialog();
@@ -443,6 +449,62 @@ mod tests {
             action_title: "When timer ends".into(),
             start_button: "Start".into(),
         }
+    }
+
+    #[test]
+    #[ignore = "requires an isolated GTK session"]
+    fn wired_sleep_timer_pages_finalize() {
+        gtk::init().unwrap();
+        adw::init().unwrap();
+        struct Finalized(Rc<Cell<usize>>);
+        impl Drop for Finalized {
+            fn drop(&mut self) {
+                self.0.set(self.0.get() + 1);
+            }
+        }
+        let finalized = Rc::new(Cell::new(0));
+        let calls = Rc::new(Cell::new(0));
+        let owner = gtk::Box::new(gtk::Orientation::Vertical, 0);
+        for size in [0, 5, 25] {
+            for _ in 0..25 {
+                let setup = BigSleepTimerSetupPage::new(
+                    BigSleepTimerSetupSpec {
+                        labels: labels(),
+                        actions: (0..size)
+                            .map(|i| BigSleepTimerAction::new(i.to_string(), i.to_string()))
+                            .collect(),
+                        saved_minutes: 30,
+                        saved_action_id: "missing".into(),
+                        icon_size: 64,
+                    },
+                    None,
+                    None,
+                    None,
+                );
+                // SAFETY: this test owns the key and never reads the stored value.
+                unsafe {
+                    setup.page.set_qdata(
+                        gtk::glib::Quark::from_str("sleep-page-finalized"),
+                        Finalized(finalized.clone()),
+                    );
+                }
+                let calls = calls.clone();
+                connect_sleep_timer_start_with_close(
+                    &setup,
+                    &owner,
+                    move |_, minutes, action| {
+                        assert_eq!(minutes, 30);
+                        assert_eq!(action, if size == 0 { "" } else { "0" });
+                        calls.set(calls.get() + 1);
+                    },
+                    || {},
+                );
+                setup.start_button().emit_clicked();
+                drop(setup);
+            }
+        }
+        assert_eq!(calls.get(), 75);
+        assert_eq!(finalized.get(), 75, "start handler retained its own page");
     }
 
     #[test]
