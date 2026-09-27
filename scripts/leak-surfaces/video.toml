@@ -1,0 +1,19 @@
+cycles = 6
+
+[program]
+command = ["target/debug/big-video-player"]
+atspi_name = "big-video-player"
+
+[program.env]
+LANG = "C.UTF-8"
+LC_ALL = "C.UTF-8"
+
+[[allow]]
+type = "AdwBreakpoint"
+per_cycle = 3
+reason = "libadwaita 1.9.3: AdwBreakpointBin does not release its breakpoints; upstream patch in ~/relatos-upstream/libadwaita-1-breakpoint-bin-leak.patch"
+
+[[surface]]
+name = "open-disc"
+open = [{ do = "app-action", name = "win.open-disc" }]
+close = [{ do = "dismiss" }]

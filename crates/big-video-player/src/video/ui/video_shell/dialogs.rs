@@ -255,10 +255,15 @@ impl VideoShell {
         dialog.set_child(Some(page.root()));
 
         let refresh_accept: Rc<dyn Fn()> = Rc::new({
-            let accept_button = footer.accept_button().clone();
-            let dropdown = disc_type_row.dropdown().clone();
-            let entry = entry.clone();
+            let accept_button = footer.accept_button().downgrade();
+            let dropdown = disc_type_row.dropdown().downgrade();
+            let entry = entry.downgrade();
             move || {
+                let (Some(accept_button), Some(dropdown), Some(entry)) =
+                    (accept_button.upgrade(), dropdown.upgrade(), entry.upgrade())
+                else {
+                    return;
+                };
                 accept_button.set_sensitive(
                     build_disc_uri(disc_kind_from_selected(dropdown.selected()), &entry.text())
                         .is_some(),
@@ -276,9 +281,11 @@ impl VideoShell {
             move |_| refresh_accept()
         });
 
-        let accept_button = footer.accept_button().clone();
+        let accept_button = footer.accept_button().downgrade();
         entry.connect_apply(move |_| {
-            if accept_button.is_sensitive() {
+            if let Some(accept_button) = accept_button.upgrade()
+                && accept_button.is_sensitive()
+            {
                 accept_button.emit_clicked();
             }
         });
