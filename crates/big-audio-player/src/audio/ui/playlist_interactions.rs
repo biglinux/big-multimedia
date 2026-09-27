@@ -140,6 +140,7 @@ pub(super) fn wire_path_drop(
         indicator.clone(),
         sender.clone(),
     );
+    // leak-guard: allow(handler-holds-owner) sc_d/cv_d/st_d are WeakRefs above.
     drop.connect_drop(move |_, value, _, y| {
         ind_d.set_visible(false);
         let paths: Vec<String> = big_app_kit::widgets::drop_paths_from_value(value)

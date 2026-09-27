@@ -470,6 +470,7 @@ pub(super) fn present_controller_dialog(
         .build();
     let dialog_root_weak = dialog_root.downgrade();
     let widget = widget.clone();
+    // leak-guard: allow(closed-unparent) This is AdwDialog, not GtkPopover.
     dialog.connect_closed(move |_| {
         if let Some(dialog_root) = dialog_root_weak.upgrade() {
             dialog_root.set_content(None::<&gtk::Widget>);
