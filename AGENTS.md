@@ -33,3 +33,10 @@ control finalizations and mpv ownership over 25 cycles in an isolated session.
 Transient context menus use `auto_unparent_on_close`: detach from an idle, after
 the activated action has finished using its ancestry. The idle retains the parent
 until detaching, so closing the owner in that action cannot finalize it too soon.
+
+Widget accessibility relations use `accessible::relate`; gtk-rs 0.11's
+`update_relation` leaks its temporary target list and is banned by Clippy.
+The `relation_probe` example provides a 5/25-cycle heaptrack workload. Build it
+with `CARGO_PROFILE_RELEASE_DEBUG=true CARGO_PROFILE_RELEASE_STRIP=false` and
+run `heaptrack --record-only` inside the isolated session. Keep the real
+accessible relation: an explicit label alone does not name an empty dropdown.

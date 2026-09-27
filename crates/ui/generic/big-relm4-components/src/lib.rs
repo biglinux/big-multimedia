@@ -16,6 +16,7 @@
 
 #![deny(missing_docs)]
 
+pub mod accessible;
 pub mod display;
 pub mod feedback;
 pub mod i18n;

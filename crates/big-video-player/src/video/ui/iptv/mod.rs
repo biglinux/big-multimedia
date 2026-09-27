@@ -133,9 +133,11 @@ impl Component for VideoIptvBrowser {
         // labelled-by relation so the control keeps a stable accessible name
         // regardless of selection.
         provider_dropdown.update_property(&[gtk::accessible::Property::Label(&i18n("Provider"))]);
-        provider_dropdown.update_relation(&[gtk::accessible::Relation::LabelledBy(&[
-            provider_label.upcast_ref::<gtk::Accessible>(),
-        ])]);
+        big_relm4_components::accessible::relate(
+            &provider_dropdown,
+            gtk::AccessibleRelation::LabelledBy,
+            &[provider_label.upcast_ref()],
+        );
         provider_row_box.append(&provider_dropdown);
 
         let manage_providers_button = gtk::Button::builder().label(i18n("Manage…")).build();

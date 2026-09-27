@@ -23,7 +23,11 @@ pub(super) fn build_action_menu_row(
         .hexpand(true)
         .build();
     row.update_property(&[gtk::accessible::Property::Label(&item.label)]);
-    row.update_relation(&[gtk::accessible::Relation::LabelledBy(&[label.upcast_ref()])]);
+    crate::accessible::relate(
+        &row,
+        gtk::AccessibleRelation::LabelledBy,
+        &[label.upcast_ref()],
+    );
     row.set_sensitive(item.enabled);
 
     let action = item.action.clone();
