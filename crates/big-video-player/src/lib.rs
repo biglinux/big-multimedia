@@ -155,3 +155,64 @@ pub fn run() -> gtk::glib::ExitCode {
     });
     app.run()
 }
+
+#[cfg(test)]
+mod lifetime_tests {
+    use gtk::prelude::*;
+    use relm4::ComponentController;
+    use std::{cell::Cell, rc::Rc};
+
+    #[test]
+    #[ignore = "requires an isolated GTK session and home"]
+    fn embedded_video_finalizes_after_close() {
+        gtk::init().unwrap();
+        adw::init().unwrap();
+        let app = adw::Application::builder()
+            .application_id("org.biglinux.VideoLifetimeTest")
+            .build();
+        app.register(gtk::gio::Cancellable::NONE).unwrap();
+        let _relm = relm4::RelmApp::<()>::from_app(app);
+        let context = gtk::glib::MainContext::default();
+        let finalized = Rc::new(Cell::new(0));
+        struct Finalized(Rc<Cell<usize>>);
+        impl Drop for Finalized {
+            fn drop(&mut self) {
+                self.0.set(self.0.get() + 1);
+            }
+        }
+        for cycle in 1..=25 {
+            let player = super::open_in_application();
+            for widget in [
+                player.window.upcast_ref::<gtk::Widget>(),
+                player.controller.widget().upcast_ref(),
+            ] {
+                // SAFETY: this test owns the key and never reads its value.
+                unsafe {
+                    widget.set_qdata(
+                        gtk::glib::Quark::from_str("video-finalized"),
+                        Finalized(finalized.clone()),
+                    );
+                }
+            }
+            while context.pending() {
+                context.iteration(false);
+            }
+            player.window.destroy();
+            drop(player);
+            for _ in 0..100 {
+                while context.pending() {
+                    context.iteration(false);
+                }
+                if finalized.get() == cycle * 2 {
+                    break;
+                }
+                std::thread::sleep(std::time::Duration::from_millis(5));
+            }
+            assert_eq!(
+                finalized.get(),
+                cycle * 2,
+                "window and content must finalize"
+            );
+        }
+    }
+}

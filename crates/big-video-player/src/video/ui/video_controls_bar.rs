@@ -187,6 +187,15 @@ pub struct VideoControlsBar {
     preview_popover: gtk::Popover,
 }
 
+impl Drop for VideoControlsBar {
+    fn drop(&mut self) {
+        // GtkStack disposes pages before Widget::destroy; the preview is not a page.
+        if self.preview_popover.parent().is_some() {
+            self.preview_popover.unparent();
+        }
+    }
+}
+
 impl Component for VideoControlsBar {
     type Init = VideoControlsBarInit;
     type Input = VideoControlsBarInput;

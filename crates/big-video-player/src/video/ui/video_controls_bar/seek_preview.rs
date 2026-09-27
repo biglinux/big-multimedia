@@ -9,7 +9,7 @@ use gtk::{gdk, glib};
 /// hover controller pops it up / down.
 pub(super) fn build_seek_preview(anchor: &gtk::Widget) -> (gtk::Popover, gtk::Picture, gtk::Label) {
     // bigagents: popover-parent-managed — single reused seek-preview popover,
-    // lives exactly as long as the controls bar (app lifetime). Parented to the
+    // owned and unparented by the controls bar. Parented to the
     // shared bar-stack so it works for both the seek scale and the cut timeline.
     let popover = gtk::Popover::builder()
         .autohide(false)
@@ -17,19 +17,6 @@ pub(super) fn build_seek_preview(anchor: &gtk::Widget) -> (gtk::Popover, gtk::Pi
         .css_classes(["seek-preview"])
         .build();
     popover.set_parent(anchor);
-    {
-        // The anchor does not unparent foreign children at dispose (it
-        // finalized "with children left" and the popover dangled).
-        let popover = popover.downgrade();
-        anchor.connect_destroy(move |_| {
-            if let Some(popover) = popover.upgrade() {
-                popover.popdown();
-                if popover.parent().is_some() {
-                    popover.unparent();
-                }
-            }
-        });
-    }
 
     let preview_box = gtk::Box::new(gtk::Orientation::Vertical, 4);
     let thumb = gtk::Picture::builder()
