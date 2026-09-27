@@ -104,6 +104,10 @@ pub(super) fn wire_video_input(
     playback.append(Some(&i18n("Play / Pause")), Some("win.play-pause"));
     playback.append(Some(&i18n("Fullscreen")), Some("win.fullscreen"));
     playback.append(Some(&i18n("Screenshot")), Some("win.screenshot"));
+    #[expect(
+        clippy::disallowed_methods,
+        reason = "Existing grouped menu; GTK fix tracked in docs/resource-audit.md"
+    )]
     context_menu.append_section(None, &playback);
     let av = gio::Menu::new();
     av.append(Some(&i18n("HDR")), Some("win.show-hdr"));
@@ -111,11 +115,19 @@ pub(super) fn wire_video_input(
     av.append(Some(&i18n("Zoom and position")), Some("win.show-framing"));
     av.append(Some(&i18n("Effects and filters")), Some("win.filters"));
     av.append(Some(&i18n("Equalizer")), Some("win.show-sound"));
+    #[expect(
+        clippy::disallowed_methods,
+        reason = "Existing grouped menu; GTK fix tracked in docs/resource-audit.md"
+    )]
     context_menu.append_section(None, &av);
     let nav = gio::Menu::new();
     nav.append(Some(&i18n("Open File…")), Some("win.open-file"));
     nav.append(Some(&i18n("Open URL…")), Some("win.open-url"));
     nav.append(Some(&i18n("About this video")), Some("win.media-info"));
+    #[expect(
+        clippy::disallowed_methods,
+        reason = "Existing grouped menu; GTK fix tracked in docs/resource-audit.md"
+    )]
     context_menu.append_section(None, &nav);
 
     let popover = gtk::PopoverMenu::from_model(Some(&context_menu));

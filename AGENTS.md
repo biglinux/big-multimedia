@@ -27,7 +27,7 @@ After building the video player, sweep its dialog lifetimes with:
 The libadwaita breakpoint allowance does not cover retained dialog controls.
 
 Filter apply closures must hold their adjustment/dropdown weakly: those controls
-also own the apply handlers. `filter_controls_release_the_backend` checks 75
+also own the apply handlers. `filter_controls_release_the_backend` checks 200
 control finalizations and mpv ownership over 25 cycles in an isolated session.
 
 Transient context menus use `auto_unparent_on_close`: detach from an idle, after
@@ -131,3 +131,10 @@ Radio discovery and its disk cache load start on the first map of the radio tab,
 not when the hidden component is constructed. Remapping must not refetch. The
 isolated `radio_discovery_waits_for_first_map` regression checks hidden, first-map
 and remap states; opening Music must not launch Radio Browser discovery.
+
+See `docs/resource-audit.md` for measured native-library limits and evidence.
+New GMenu sections are banned until GTK's menu-tracker reference fix is packaged;
+existing grouping has explicit exceptions, not a claim of clean stock GTK.
+A heaptrack capture with zero allocation calls is invalid for the players' exported
+jemalloc allocator. Use a separate diagnostic build for attribution and retain the
+production allocator for real memory/CPU measurements.

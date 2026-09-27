@@ -39,4 +39,5 @@ def run_step(step: dict, program: dict, name: str) -> None:
 
 
 sweep.run_step = run_step
-sys.exit(sweep.main())
+if __name__ == "__main__":
+    sys.exit(sweep.main())
