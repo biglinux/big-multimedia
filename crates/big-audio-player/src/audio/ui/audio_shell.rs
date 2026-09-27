@@ -173,6 +173,7 @@ pub struct AudioShell {
     /// Audio playback backend (system libmpv). Built once at init; `None` only
     /// if the engine failed to initialize.
     mpv: Option<Arc<MpvBackend>>,
+    shutdown_handler: Option<(glib::WeakRef<gio::Application>, glib::SignalHandlerId)>,
     /// Writer DB handle (queue persistence, ratings, playlists, deletes).
     db: Option<DbHandle>,
     /// Read-only DB handle (library/detail queries; avoids writer contention).
@@ -218,5 +219,10 @@ pub struct AudioShell {
 impl Drop for AudioShell {
     fn drop(&mut self) {
         self.cancel_sleep_timer();
+        if let Some((app, handler)) = self.shutdown_handler.take()
+            && let Some(app) = app.upgrade()
+        {
+            app.disconnect(handler);
+        }
     }
 }

@@ -61,3 +61,7 @@ isolated accessible session/home; process exit alone cannot prove cancellation.
 Download queue teardown removes its progress source before the receiver disappears.
 `dropping_download_panel_removes_progress_source` exercises 25 source lifetimes in
 an isolated GTK session; hiding a live panel must not cancel its progress updates.
+
+Application shutdown handlers registered by an audio shell must be disconnected
+on teardown. A weak backend capture still retains its Arc allocation until the
+handler is released; the audio lifetime test checks the remaining weak count.

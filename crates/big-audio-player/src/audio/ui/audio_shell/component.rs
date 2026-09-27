@@ -531,6 +531,16 @@ impl Component for AudioShell {
         queue_persistence.bind_failure_banner(&queue_save_banner, queue_updates);
         queue_persistence.load(&sender);
         let mpv = build_mpv_backend(&sender, &settings);
+        // Standalone shutdown can precede model destruction; save while mpv is alive.
+        let shutdown_handler = gio::Application::default().and_then(|app| {
+            let weak = Arc::downgrade(mpv.as_ref()?);
+            let handler = app.connect_shutdown(move |_| {
+                if let Some(mpv) = weak.upgrade() {
+                    mpv.save_resume_position();
+                }
+            });
+            Some((app.downgrade(), handler))
+        });
         let mpris_state = Arc::new(SharedMprisState::default());
         let mpris = build_mpris_service(&sender, &mpris_state, &settings);
 
@@ -595,6 +605,7 @@ impl Component for AudioShell {
                 trim_ranges: Vec::new(),
                 trim_play_selection: false,
                 mpv,
+                shutdown_handler,
                 db,
                 db_read,
                 settings,
@@ -703,6 +714,12 @@ mod lifetime_tests {
                     .expect("timer armed"),
             )
             .unwrap();
+        let backend = player
+            .controller
+            .model()
+            .mpv
+            .clone()
+            .expect("audio backend");
         player.window.destroy();
         drop(player);
         for _ in 0..100 {
@@ -717,6 +734,11 @@ mod lifetime_tests {
         assert!(
             source.is_destroyed(),
             "closed audio component kept its countdown source"
+        );
+        assert_eq!(
+            Arc::weak_count(&backend),
+            0,
+            "application retained backend shutdown handler"
         );
     }
 }

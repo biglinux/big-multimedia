@@ -246,18 +246,7 @@ pub(super) fn build_mpv_backend(
         }
     });
 
-    let mpv = Arc::new(mpv);
-    // The process exits without dropping the shell, so the backend's own
-    // save on drop never runs.
-    if let Some(app) = gtk::gio::Application::default() {
-        let weak = Arc::downgrade(&mpv);
-        app.connect_shutdown(move |_| {
-            if let Some(mpv) = weak.upgrade() {
-                mpv.save_resume_position();
-            }
-        });
-    }
-    Some(mpv)
+    Some(Arc::new(mpv))
 }
 
 fn restored_volume(saved: i32) -> i32 {
