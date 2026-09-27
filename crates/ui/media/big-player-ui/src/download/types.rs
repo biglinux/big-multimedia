@@ -2,7 +2,6 @@
 //! per-task UI references.
 
 use std::cell::Cell;
-use std::path::PathBuf;
 use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, AtomicU64};
 
@@ -37,8 +36,6 @@ pub struct DownloadProgress {
 pub struct DownloadTask {
     /// Human-readable title shown in the row.
     pub title: String,
-    /// Destination path the file is written to.
-    pub dest_path: PathBuf,
     /// Shared progress counters the worker thread updates.
     pub progress: Arc<DownloadProgress>,
     /// Current lifecycle state.

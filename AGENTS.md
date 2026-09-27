@@ -89,3 +89,9 @@ The dialog resource gate records the PID before exec and verifies `/proc/PID/exe
 never locate the player by command-line pattern. Its CSV columns are phase, time,
 Anonymous KiB and Pss KiB. Preferences expose a dialog role; appearance/equalizer
 expose window roles. Close the actual surface before sampling its retained memory.
+
+Downloads stream into `StagedFile` and publish by rename only on success. The
+worker owns partial-file cleanup; the GTK progress tick never deletes files.
+Panel teardown cancels active work even when no further tick can run. The transfer
+regression covers success, cancellation and HTTP failure at 0, 5 and 25 bytes,
+including preservation of a previous destination and removal of staging files.

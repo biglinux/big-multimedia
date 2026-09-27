@@ -52,6 +52,11 @@ pub struct DownloadQueuePanel {
 
 impl Drop for DownloadQueuePanel {
     fn drop(&mut self) {
+        for task in &self.tasks {
+            if task.status.get() == DownloadStatus::Downloading {
+                task.progress.cancelled.store(true, Ordering::Relaxed);
+            }
+        }
         if let Some(timer) = self.timer.take() {
             timer.remove();
         }
@@ -216,13 +221,14 @@ impl DownloadQueuePanel {
 
         let prog_ref = Arc::clone(&progress);
         cancel_button.connect_clicked(move |button| {
-            prog_ref.cancelled.store(true, Ordering::Relaxed);
-            button.set_sensitive(false);
+            if !prog_ref.finished.load(Ordering::Relaxed) {
+                prog_ref.cancelled.store(true, Ordering::Relaxed);
+                button.set_sensitive(false);
+            }
         });
 
         let task = Rc::new(DownloadTask {
             title: title.to_string(),
-            dest_path: dest.to_path_buf(),
             progress: Arc::clone(&progress),
             status: Cell::new(DownloadStatus::Downloading),
             row_box: row_box.clone(),
@@ -242,6 +248,10 @@ impl DownloadQueuePanel {
         big_media_components::player_chrome::spawn_blocking_result(
             move || download_file(&url, &dest, &progress),
             move |result| {
+                if result.is_ok() {
+                    // Publication completed before a late click reached the main loop.
+                    progress_cb.cancelled.store(false, Ordering::Relaxed);
+                }
                 if let Err(e) = result {
                     *progress_cb
                         .error_msg
@@ -286,13 +296,11 @@ impl DownloadQueuePanel {
                     task.status_label.set_label(&i18n("Cancelled"));
                     task.progress_bar.set_fraction(0.0);
                     task.cancel_button.set_visible(false);
-                    let _ = std::fs::remove_file(&task.dest_path);
                 } else if let Some(e) = err {
                     task.status.set(DownloadStatus::Failed);
                     task.status_label.set_label(&format!("⚠ {e}"));
                     task.cancel_button.set_visible(false);
                     log::warn!("Download failed for {}: {e}", task.title);
-                    let _ = std::fs::remove_file(&task.dest_path);
                 } else {
                     task.status.set(DownloadStatus::Complete);
                     task.status_label
@@ -359,13 +367,32 @@ mod lifetime_tests {
                 gtk::glib::ControlFlow::Continue
             });
             let source = context.find_source_by_id(&timer).unwrap();
+            let progress = Arc::new(DownloadProgress {
+                bytes_downloaded: AtomicU64::new(0),
+                total_bytes: AtomicU64::new(0),
+                finished: AtomicBool::new(false),
+                cancelled: AtomicBool::new(false),
+                error_msg: std::sync::Mutex::new(None),
+            });
             let panel = DownloadQueuePanel {
                 revealer: gtk::Revealer::new(),
                 list_box: gtk::Box::new(gtk::Orientation::Vertical, 0),
-                tasks: Vec::new(),
+                tasks: vec![Rc::new(DownloadTask {
+                    title: String::new(),
+                    progress: progress.clone(),
+                    status: Cell::new(DownloadStatus::Downloading),
+                    row_box: gtk::Box::new(gtk::Orientation::Vertical, 0),
+                    progress_bar: gtk::ProgressBar::new(),
+                    status_label: gtk::Label::new(None),
+                    cancel_button: gtk::Button::new(),
+                })],
                 timer: Some(timer),
             };
             drop(panel);
+            assert!(
+                progress.cancelled.load(Ordering::Relaxed),
+                "worker was not cancelled"
+            );
             assert!(
                 source.is_destroyed(),
                 "download progress source outlived its panel"

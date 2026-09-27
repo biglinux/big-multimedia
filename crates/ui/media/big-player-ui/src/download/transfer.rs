@@ -26,7 +26,8 @@ pub fn download_file(
         progress.total_bytes.store(total_bytes, Ordering::Relaxed);
     }
 
-    let mut file = std::fs::File::create(dest).map_err(|e| format!("{e}"))?;
+    let stage = big_os_kit::storage::StagedFile::new(dest).map_err(|e| e.to_string())?;
+    let mut file = std::fs::File::create(stage.path()).map_err(|e| e.to_string())?;
     copy_stream_with_progress(
         &mut download_response.reader,
         &mut file,
@@ -36,7 +37,12 @@ pub fn download_file(
                 .bytes_downloaded
                 .fetch_add(transferred_bytes, Ordering::Relaxed);
         },
-    )
+    )?;
+    drop(file);
+    if progress.cancelled.load(Ordering::Relaxed) {
+        return Err("Download cancelled".into());
+    }
+    std::fs::rename(stage.path(), dest).map_err(|e| e.to_string())
 }
 
 /// Falls back to `<fallback_title>.mp3` when the URL has no recognizable filename.
@@ -54,6 +60,65 @@ pub fn filename_from_url(url: &str, fallback_title: &str) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn downloads_publish_only_complete_results_and_clean_staging() {
+        use std::io::{Read, Write};
+        use std::sync::atomic::{AtomicBool, AtomicU64};
+        let dir = std::env::temp_dir().join(format!("download-transaction-{}", std::process::id()));
+        std::fs::create_dir(&dir).unwrap();
+        let dest = dir.join("episode.mp3");
+        for size in [0, 5, 25] {
+            for mode in ["success", "cancel", "http-error"] {
+                std::fs::write(&dest, b"previous download").unwrap();
+                let listener = std::net::TcpListener::bind("127.0.0.1:0").unwrap();
+                let url = format!("http://{}/episode.mp3", listener.local_addr().unwrap());
+                let body = vec![b'x'; size];
+                let reply = body.clone();
+                let server = std::thread::spawn(move || {
+                    let (mut stream, _) = listener.accept().unwrap();
+                    stream
+                        .set_read_timeout(Some(std::time::Duration::from_secs(5)))
+                        .unwrap();
+                    let mut request = [0; 2048];
+                    assert!(stream.read(&mut request).unwrap() > 0);
+                    let status = if mode == "http-error" {
+                        "503 Unavailable"
+                    } else {
+                        "200 OK"
+                    };
+                    let header = format!(
+                        "HTTP/1.1 {status}\r\nContent-Length: {}\r\nConnection: close\r\n\r\n",
+                        reply.len()
+                    );
+                    stream.write_all(header.as_bytes()).unwrap();
+                    let _ = stream.write_all(&reply);
+                });
+                let progress = DownloadProgress {
+                    bytes_downloaded: AtomicU64::new(0),
+                    total_bytes: AtomicU64::new(0),
+                    finished: AtomicBool::new(false),
+                    cancelled: AtomicBool::new(mode == "cancel"),
+                    error_msg: std::sync::Mutex::new(None),
+                };
+                let result = download_file(&url, &dest, &progress);
+                server.join().unwrap();
+                if mode == "success" {
+                    assert!(result.is_ok(), "{result:?}");
+                    assert_eq!(std::fs::read(&dest).unwrap(), body);
+                } else {
+                    assert!(result.is_err());
+                    assert_eq!(std::fs::read(&dest).unwrap(), b"previous download");
+                }
+                assert_eq!(
+                    std::fs::read_dir(&dir).unwrap().count(),
+                    1,
+                    "staging survived completion"
+                );
+            }
+        }
+        std::fs::remove_dir_all(dir).unwrap();
+    }
 
     #[test]
     fn test_filename_standard_url() {
