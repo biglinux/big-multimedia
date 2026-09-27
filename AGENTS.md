@@ -126,3 +126,8 @@ Radio cache/search completions use the fallible input sender: component shutdown
 is expected while network I/O is pending, not a panic. Radio teardown removes its
 search debounce source. The isolated source-lifetime test and rapid hosted audio
 open/close run cover these late-delivery paths.
+
+Radio discovery and its disk cache load start on the first map of the radio tab,
+not when the hidden component is constructed. Remapping must not refetch. The
+isolated `radio_discovery_waits_for_first_map` regression checks hidden, first-map
+and remap states; opening Music must not launch Radio Browser discovery.

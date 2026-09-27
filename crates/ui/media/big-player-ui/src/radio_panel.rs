@@ -197,17 +197,26 @@ impl Component for RadioPanel {
 
         widgets::wire_toolbar(&search_entry, &genre_dropdown, &add_button, &sender);
 
-        // Ask the shell for the saved stations + show cached explore immediately.
+        // Saved stations belong to the shell; discovery starts when this tab is shown.
         let _ = sender.output(RadioPanelOutput::RequestStations);
         let s = sender.input_sender().clone();
-        glib::spawn_future_local(async move {
-            let cached = gio::spawn_blocking(load_explore_cache)
-                .await
-                .unwrap_or_default();
-            if !cached.is_empty() && s.send(RadioPanelInput::ShowExploreResults(cached)).is_err() {
+        let initialized = std::cell::Cell::new(false);
+        root.connect_map(move |_| {
+            if initialized.replace(true) {
                 return;
             }
-            let _ = s.send(RadioPanelInput::LoadPopular);
+            let s = s.clone();
+            glib::spawn_future_local(async move {
+                let cached = gio::spawn_blocking(load_explore_cache)
+                    .await
+                    .unwrap_or_default();
+                if !cached.is_empty()
+                    && s.send(RadioPanelInput::ShowExploreResults(cached)).is_err()
+                {
+                    return;
+                }
+                let _ = s.send(RadioPanelInput::LoadPopular);
+            });
         });
 
         ComponentParts {
@@ -374,6 +383,55 @@ impl RadioPanel {
 mod lifetime_tests {
     use super::*;
     use relm4::ComponentController;
+
+    #[test]
+    #[ignore = "requires an isolated GTK session and home"]
+    fn radio_discovery_waits_for_first_map() {
+        gtk::init().unwrap();
+        adw::init().unwrap();
+        let app = adw::Application::builder()
+            .application_id("org.biglinux.RadioMapTest")
+            .build();
+        app.register(gio::Cancellable::NONE).unwrap();
+        let _relm = relm4::RelmApp::<()>::from_app(app);
+        let panel = RadioPanel::builder().launch(()).detach();
+        let context = glib::MainContext::default();
+        for _ in 0..100 {
+            while context.pending() {
+                context.iteration(false);
+            }
+            std::thread::sleep(std::time::Duration::from_millis(20));
+        }
+        assert_eq!(
+            panel.model().search_gen,
+            0,
+            "hidden radio started a network query"
+        );
+        let window = gtk::Window::builder().child(panel.widget()).build();
+        window.present();
+        for _ in 0..100 {
+            while context.pending() {
+                context.iteration(false);
+            }
+            if panel.model().search_gen > 0 {
+                break;
+            }
+            std::thread::sleep(std::time::Duration::from_millis(20));
+        }
+        assert!(panel.widget().is_mapped());
+        assert_eq!(
+            panel.model().search_gen,
+            1,
+            "first map did not start discovery"
+        );
+        window.set_visible(false);
+        window.present();
+        while context.pending() {
+            context.iteration(false);
+        }
+        assert_eq!(panel.model().search_gen, 1, "remapping restarted discovery");
+        window.destroy();
+    }
 
     #[test]
     #[ignore = "requires an isolated GTK session and home"]
