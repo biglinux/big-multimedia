@@ -79,13 +79,26 @@ fn build_general_group(mpv: &Arc<MpvBackend>, lines: &BigDetailLines) -> adw::Pr
     let file_path = mpv.get_current_file().unwrap_or_default();
     if !file_path.is_empty() {
         group.add(&media_detail_row(&i18n("File"), &file_path, lines));
-        if let Ok(meta) = std::fs::metadata(&file_path) {
-            group.add(&media_detail_row(
-                &i18n("File Size"),
-                &decimal_detailed(meta.len()),
-                lines,
-            ));
-        }
+        let group = group.downgrade();
+        let lines = lines.clone();
+        gtk::gio::File::for_path(&file_path).query_info_async(
+            "standard::size",
+            gtk::gio::FileQueryInfoFlags::NONE,
+            gtk::glib::Priority::DEFAULT,
+            gtk::gio::Cancellable::NONE,
+            move |result| {
+                if let Ok(info) = result
+                    && let Ok(size) = u64::try_from(info.size())
+                    && let Some(group) = group.upgrade()
+                {
+                    group.add(&media_detail_row(
+                        &i18n("File Size"),
+                        &decimal_detailed(size),
+                        &lines,
+                    ));
+                }
+            },
+        );
     }
     let media_title = mpv.get_media_title().unwrap_or_default();
     if !media_title.is_empty() && media_title != file_path {

@@ -95,3 +95,7 @@ worker owns partial-file cleanup; the GTK progress tick never deletes files.
 Panel teardown cancels active work even when no further tick can run. The transfer
 regression covers success, cancellation and HTTP failure at 0, 5 and 25 bytes,
 including preservation of a previous destination and removal of staging files.
+
+Media-information file size uses GIO's asynchronous metadata query and a weak
+preferences group. Slow or remote filesystems must not block the GTK callback;
+closing the dialog while the query runs must not retain its widget tree.
