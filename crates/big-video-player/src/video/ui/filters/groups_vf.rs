@@ -133,10 +133,15 @@ fn build_colorize_row(mpv: &Arc<MpvBackend>, current_vf: &str) -> adw::ExpanderR
 
     let apply = {
         let mpv = Arc::clone(mpv);
-        let hue = hue.clone();
-        let saturation = saturation.clone();
-        let mix = mix.clone();
+        let hue = hue.downgrade();
+        let saturation = saturation.downgrade();
+        let mix = mix.downgrade();
         move || {
+            let (Some(hue), Some(saturation), Some(mix)) =
+                (hue.upgrade(), saturation.upgrade(), mix.upgrade())
+            else {
+                return;
+            };
             mpv.vf_append(
                 LABEL,
                 &colorize_vf(hue.value(), saturation.value(), mix.value()),

@@ -113,7 +113,9 @@ mod lifetime_tests {
         for _ in 0..25 {
             let presets = groups_vf::build_presets_group(&mpv, "");
             let adjustments = groups_vf::build_denoise_sharpen_group(&mpv, "");
+            let colors = groups_vf::build_color_group(&mpv, "");
             let mut widgets = vec![
+                colors.clone().upcast(),
                 presets.clone().upcast::<gtk::Widget>(),
                 adjustments.clone().upcast(),
             ];
@@ -143,9 +145,10 @@ mod lifetime_tests {
             }
             drop(presets);
             drop(adjustments);
+            drop(colors);
             assert_eq!(Arc::strong_count(&mpv), 1, "filter handlers retained mpv");
         }
-        assert_eq!(created, 75, "two adjustments and one dropdown per cycle");
+        assert_eq!(created, 200, "seven adjustments and one dropdown per cycle");
         assert_eq!(finalized.get(), created, "filter control finalizations");
     }
 }

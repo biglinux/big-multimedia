@@ -116,3 +116,8 @@ aggregate owns the very button storing the handler. Capture weak controls and
 action values. `wired_sleep_timer_pages_finalize` proves 75/75 page finalizations
 and start values with 0, 5 and 25 choices; the audio dialog sweep must retain no
 controls (native AdwBreakpoint retention is tracked separately).
+
+Colorize's shared apply closure also holds its hue/saturation/mix adjustments
+weakly. A weak expander alone does not break adjustment → apply → adjustment.
+The filter lifetime test includes the color group and checks 200 finalizations
+and the backend's strong reference count across 25 cycles.
