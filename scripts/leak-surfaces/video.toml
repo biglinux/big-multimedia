@@ -17,3 +17,13 @@ reason = "libadwaita 1.9.3: AdwBreakpointBin does not release its breakpoints; u
 name = "open-disc"
 open = [{ do = "app-action", name = "win.open-disc" }]
 close = [{ do = "dismiss" }]
+
+[[surface]]
+name = "open-url"
+open = [{ do = "app-action", name = "win.open-url" }]
+close = [{ do = "dismiss" }]
+
+[[surface]]
+name = "goto-time"
+open = [{ do = "app-action", name = "win.goto-time" }]
+close = [{ do = "dismiss" }]

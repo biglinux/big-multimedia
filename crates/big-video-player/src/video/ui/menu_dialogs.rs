@@ -73,14 +73,18 @@ impl VideoShell {
         page.root().add_bottom_bar(footer.root());
         dialog.set_child(Some(page.root()));
 
-        let accept_button = footer.accept_button().clone();
+        let accept_button = footer.accept_button().downgrade();
         entry.connect_changed(move |row| {
-            accept_button.set_sensitive(accepted_goto_seconds(&row.text()).is_some());
+            if let Some(accept_button) = accept_button.upgrade() {
+                accept_button.set_sensitive(accepted_goto_seconds(&row.text()).is_some());
+            }
         });
 
-        let accept_button = footer.accept_button().clone();
+        let accept_button = footer.accept_button().downgrade();
         entry.connect_apply(move |_| {
-            if accept_button.is_sensitive() {
+            if let Some(accept_button) = accept_button.upgrade()
+                && accept_button.is_sensitive()
+            {
                 accept_button.emit_clicked();
             }
         });

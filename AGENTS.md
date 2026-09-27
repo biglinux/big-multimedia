@@ -104,3 +104,9 @@ Radio recording directory creation and final-file validation run in a worker.
 A generation token rejects preparation completed after stop or a newer request;
 the source check rejects preparation for a station that is no longer playing.
 The isolated audio lifetime test delivers a late completion after cancellation.
+
+Open URL and Go to Time validation callbacks keep the accept button weakly:
+the button's submit handler already owns the entry. The video sweep covers both
+paths. On GTK 4.22.4/libadwaita 1.9.3, also apply the isolated diagnostic dialog-focus
+patch to distinguish this project cycle from the native focus-tree retention;
+do not allow retained entry controls in the stock-library gate.
