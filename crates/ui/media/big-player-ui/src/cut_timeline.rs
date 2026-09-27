@@ -110,11 +110,13 @@ pub fn wire_cut_timeline_interaction(
     let click = gtk::GestureClick::new();
     click.set_button(1);
     {
-        let area = area.clone();
         let cut_segments = cut_segments.clone();
         let duration_secs = duration_secs.clone();
         let on_seek_fraction = on_seek_fraction.clone();
-        click.connect_pressed(move |_, _, x, _| {
+        click.connect_pressed(move |gesture, _, x, _| {
+            let Some(area) = gesture.widget() else {
+                return;
+            };
             let width = f64::from(area.width()).max(1.0);
             let duration = duration_secs.get().max(0.001);
             let segments = cut_segments.borrow();
@@ -130,11 +132,13 @@ pub fn wire_cut_timeline_interaction(
 
     let drag = gtk::GestureDrag::new();
     {
-        let area = area.clone();
         let drag_state = drag_state.clone();
         let cut_segments = cut_segments.clone();
         let duration_secs = duration_secs.clone();
         drag.connect_drag_begin(move |gesture, start_x, _| {
+            let Some(area) = gesture.widget() else {
+                return;
+            };
             gesture.set_state(gtk::EventSequenceState::Claimed);
             let width = f64::from(area.width()).max(1.0);
             let duration = duration_secs.get().max(0.001);
@@ -166,12 +170,14 @@ pub fn wire_cut_timeline_interaction(
         });
     }
     {
-        let area = area.clone();
         let drag_state = drag_state.clone();
         let cut_segments = cut_segments.clone();
         let duration_secs = duration_secs.clone();
         let on_seek_fraction = on_seek_fraction.clone();
         drag.connect_drag_update(move |gesture, offset_x, _| {
+            let Some(area) = gesture.widget() else {
+                return;
+            };
             let Some((start_x, _)) = gesture.start_point() else {
                 return;
             };
@@ -231,11 +237,13 @@ pub fn wire_cut_timeline_interaction(
         });
     }
     {
-        let area = area.clone();
         let drag_state = drag_state.clone();
         let cut_segments = cut_segments.clone();
         let on_segment_adjusted = on_segment_adjusted.clone();
-        drag.connect_drag_end(move |_, _, _| {
+        drag.connect_drag_end(move |gesture, _, _| {
+            let Some(area) = gesture.widget() else {
+                return;
+            };
             let id = match drag_state.replace(CutDrag::None) {
                 CutDrag::Start(id) | CutDrag::End(id) | CutDrag::Body { id, .. } => Some(id),
                 CutDrag::None => None,
@@ -259,10 +267,12 @@ pub fn wire_cut_timeline_interaction(
 
     let motion = gtk::EventControllerMotion::new();
     {
-        let area = area.clone();
         let cut_segments = cut_segments.clone();
         let duration_secs = duration_secs.clone();
-        motion.connect_motion(move |_, x, _| {
+        motion.connect_motion(move |controller, x, _| {
+            let Some(area) = controller.widget() else {
+                return;
+            };
             let width = f64::from(area.width()).max(1.0);
             let duration = duration_secs.get().max(0.001);
             let segments = cut_segments.borrow();
