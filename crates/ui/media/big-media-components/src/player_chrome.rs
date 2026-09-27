@@ -8,7 +8,6 @@
 
 use std::time::Duration;
 
-use gtk::gdk;
 use gtk::glib;
 use gtk::prelude::*;
 
@@ -119,13 +118,11 @@ pub fn build_volume_popover(
         "volume-scale",
         &volume_trough_color(initial_volume_percent, maximum_volume_percent),
     );
-    if let Some(display) = gdk::Display::default() {
-        gtk::style_context_add_provider_for_display(
-            &display,
-            &trough,
-            trough_style_provider_priority(),
-        );
-    }
+    big_relm4_components::theme::add_provider_for_widget_lifetime(
+        &scale,
+        &trough,
+        trough_style_provider_priority(),
+    );
     {
         let maximum_volume_for_trough = maximum_volume_percent;
         scale.connect_value_changed(move |s| {
@@ -259,13 +256,11 @@ pub fn build_voice_popover(
         "voice-scale",
         &voice_trough_color(voice_spec.initial_strength_percent),
     );
-    if let Some(display) = gdk::Display::default() {
-        gtk::style_context_add_provider_for_display(
-            &display,
-            &trough,
-            trough_style_provider_priority(),
-        );
-    }
+    big_relm4_components::theme::add_provider_for_widget_lifetime(
+        &scale,
+        &trough,
+        trough_style_provider_priority(),
+    );
 
     let initial_text = voice_strength_label_text(voice_spec.initial_strength_percent);
     let val_label = gtk::Label::new(Some(&initial_text));

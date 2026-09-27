@@ -3,7 +3,25 @@
 
 //! Shared libadwaita color-scheme, CSS, and custom palette helpers.
 
+use gtk::prelude::*;
 use relm4::gtk;
+
+/// Register display-wide CSS until `owner` is destroyed.
+///
+/// This scopes the registration's lifetime, not its selectors. Display registration
+/// holds its own reference, so dropping the Rust provider alone does not release it.
+pub fn add_provider_for_widget_lifetime(
+    owner: &impl IsA<gtk::Widget>,
+    provider: &gtk::CssProvider,
+    priority: u32,
+) {
+    let display = owner.display();
+    gtk::style_context_add_provider_for_display(&display, provider, priority);
+    let provider = provider.clone();
+    owner.connect_destroy(move |_| {
+        gtk::style_context_remove_provider_for_display(&display, &provider);
+    });
+}
 
 /// HIGH CONTRAST CSS constant.
 pub const HIGH_CONTRAST_CSS: &str = "\
@@ -147,6 +165,39 @@ pub fn parse_hex_to_rgba(hex_str: &str) -> gtk::gdk::RGBA {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    #[ignore = "requires an isolated GTK session"]
+    fn scoped_providers_finalize_with_their_widgets() {
+        gtk::init().unwrap();
+        let finalized = std::rc::Rc::new(std::cell::Cell::new(0));
+        struct Finalized(std::rc::Rc<std::cell::Cell<usize>>);
+        impl Drop for Finalized {
+            fn drop(&mut self) {
+                self.0.set(self.0.get() + 1);
+            }
+        }
+        for cycle in 1..=25 {
+            let widget = gtk::Box::new(gtk::Orientation::Vertical, 0);
+            let provider = gtk::CssProvider::new();
+            provider.load_from_string(".audit-provider { color: red; }");
+            // SAFETY: the test owns this key and never reads its value.
+            unsafe {
+                provider.set_qdata(
+                    gtk::glib::Quark::from_str("provider-finalized"),
+                    Finalized(finalized.clone()),
+                );
+            }
+            add_provider_for_widget_lifetime(
+                &widget,
+                &provider,
+                gtk::STYLE_PROVIDER_PRIORITY_APPLICATION,
+            );
+            drop(provider);
+            drop(widget);
+            assert_eq!(finalized.get(), cycle);
+        }
+    }
 
     #[test]
     fn parse_hex_color_accepts_hash_and_plain() {

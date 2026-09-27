@@ -38,18 +38,16 @@ impl Component for VideoShell {
         let settings = Settings::for_video();
 
         // App stylesheet, plus a scoped CSS class for black bg + rounded corners.
-        if let Some(display) = gtk::gdk::Display::default() {
-            let provider = gtk::CssProvider::new();
-            provider.load_from_resource(&format!(
-                "{}/style.css",
-                crate::config::video::RESOURCE_PREFIX
-            ));
-            gtk::style_context_add_provider_for_display(
-                &display,
-                &provider,
-                gtk::STYLE_PROVIDER_PRIORITY_APPLICATION,
-            );
-        }
+        let provider = gtk::CssProvider::new();
+        provider.load_from_resource(&format!(
+            "{}/style.css",
+            crate::config::video::RESOURCE_PREFIX
+        ));
+        big_relm4_components::theme::add_provider_for_widget_lifetime(
+            &root,
+            &provider,
+            gtk::STYLE_PROVIDER_PRIORITY_APPLICATION,
+        );
         root.add_css_class("big-video-player");
 
         // Shared mpv handle: created here so the controls-bar popovers can read

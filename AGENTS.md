@@ -70,3 +70,8 @@ The controls bar unparents its seek preview in `Drop`, before GtkStack disposes
 its pages. A Widget::destroy handler is too late for a custom child attached to
 a GtkStack: GTK 4.22 loops removing a child that is not a stack page. Run the
 isolated `embedded_video_finalizes_after_close` test to prove 25 hosted teardowns.
+
+Display CSS registered for a player or control uses
+`theme::add_provider_for_widget_lifetime`. The display owns a reference independently
+of the local provider variable: remove that registration when its widget dies.
+`scoped_providers_finalize_with_their_widgets` checks 25 provider finalizations.

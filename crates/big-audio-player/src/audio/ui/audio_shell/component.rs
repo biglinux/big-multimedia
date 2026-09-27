@@ -344,18 +344,16 @@ impl Component for AudioShell {
         root.append(&main_paned);
 
         // App stylesheet (lyrics/radio/queue CSS classes).
-        if let Some(display) = gdk::Display::default() {
-            let provider = gtk::CssProvider::new();
-            provider.load_from_resource(&format!(
-                "{}/style.css",
-                crate::config::audio::RESOURCE_PREFIX
-            ));
-            gtk::style_context_add_provider_for_display(
-                &display,
-                &provider,
-                gtk::STYLE_PROVIDER_PRIORITY_APPLICATION,
-            );
-        }
+        let provider = gtk::CssProvider::new();
+        provider.load_from_resource(&format!(
+            "{}/style.css",
+            crate::config::audio::RESOURCE_PREFIX
+        ));
+        big_relm4_components::theme::add_provider_for_widget_lifetime(
+            &root,
+            &provider,
+            gtk::STYLE_PROVIDER_PRIORITY_APPLICATION,
+        );
 
         for action in PLAYBACK_SHORTCUT_ACTIONS {
             let input = sender.input_sender().clone();
