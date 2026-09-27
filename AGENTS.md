@@ -84,3 +84,8 @@ checks 25 qdata finalizations instead of assuming that dropping the controller s
 Audio palette and high-contrast slots also remove their display registrations
 when the content root is destroyed. Updating a cached slot prevents stacking
 within one window, but does not release it when the whole window closes.
+
+The dialog resource gate records the PID before exec and verifies `/proc/PID/exe`;
+never locate the player by command-line pattern. Its CSV columns are phase, time,
+Anonymous KiB and Pss KiB. Preferences expose a dialog role; appearance/equalizer
+expose window roles. Close the actual surface before sampling its retained memory.

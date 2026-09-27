@@ -3,7 +3,7 @@
 #
 # Builds the audio/video player binaries and drives stable menu dialogs through
 # AT-SPI actions in a private KWin session. Each dialog run records Anonymous
-# RSS after every close and emits reusable measurement artifacts for the
+# and Pss after every close and emits reusable measurement artifacts for the
 # workspace migration matrix.
 set -euo pipefail
 
@@ -21,7 +21,7 @@ usage() {
 	cat <<EOF
 Usage: $SCRIPT_NAME [--out DIR] [--profile release|debug]
 
-Builds BigMultimedia audio/video players and measures dialog open/close RSS
+Builds BigMultimedia audio/video players and measures dialog open/close anonymous-memory
 growth through the canonical headless KWin + AT-SPI diagnostic session.
 EOF
 }
@@ -88,13 +88,13 @@ ITERATIONS="${LEAK_ITERS:-16}"
 THRESHOLD_KIB="${LEAK_THRESHOLD_KB:-512}"
 CLOSE_SLEEP="${LEAK_CLOSE_SLEEP:-0.4}"
 
-# key | app name | binary | ready title | AT-SPI action | dialog title.
+# key | app name | binary | ready title | AT-SPI action | title | accessible role.
 dialog_specs=(
-	"audio_preferences|audio|$binary_directory/big-audio-player|Big Audio Player|win.show-preferences|Preferences"
-	"audio_appearance|audio|$binary_directory/big-audio-player|Big Audio Player|win.show-appearance|Appearance"
-	"audio_equalizer|audio|$binary_directory/big-audio-player|Big Audio Player|win.show-equalizer|Equalizer"
-	"video_preferences|video|$binary_directory/big-video-player|Big Video Player|win.preferences|Preferences"
-	"video_appearance|video|$binary_directory/big-video-player|Big Video Player|win.appearance|Appearance"
+	"audio_preferences|audio|$binary_directory/big-audio-player|Big Audio Player|win.show-preferences|Preferences|dialog"
+	"audio_appearance|audio|$binary_directory/big-audio-player|Big Audio Player|win.show-appearance|Appearance|window"
+	"audio_equalizer|audio|$binary_directory/big-audio-player|Big Audio Player|win.show-equalizer|Equalizer|window"
+	"video_preferences|video|$binary_directory/big-video-player|Big Video Player|win.preferences|Preferences|dialog"
+	"video_appearance|video|$binary_directory/big-video-player|Big Video Player|win.appearance|Appearance|window"
 )
 
 write_automation_script() {
@@ -106,24 +106,28 @@ set -euo pipefail
 ATSPI="${ATSPI_TOOL:?}"
 ACTION_NAME="${ACTION_NAME:?}"
 DIALOG_TITLE="${DIALOG_TITLE:?}"
+DIALOG_ROLE="${DIALOG_ROLE:?}"
 READY_TITLE="${READY_TITLE:?}"
 ITERATIONS="${ITERATIONS:?}"
 SAMPLES_CSV="${SAMPLES_CSV:?}"
 CLOSE_SLEEP="${CLOSE_SLEEP:?}"
 BINARY_PATH="${BINARY_PATH:?}"
 
-application_pid="$(pgrep -n -f -- "$BINARY_PATH" || true)"
-[[ -n "$application_pid" ]] || {
-	echo "no application pid for $BINARY_PATH" >&2
+application_pid="$(cat "${APPLICATION_PID_FILE:?}")"
+[[ "$application_pid" =~ ^[0-9]+$ && "$(readlink -f "/proc/$application_pid/exe")" == "$(readlink -f "$BINARY_PATH")" ]] || {
+	echo "recorded application PID does not match $BINARY_PATH" >&2
 	exit 1
 }
 
-anonymous_rss_kib() {
-	awk '$1=="Anonymous:"{print $2; found=1} END{if(!found) print 0}' "/proc/$application_pid/smaps_rollup" 2>/dev/null
-}
-
-sample_rss() {
-	printf '%s,%s,%s\n' "$1" "$(date +%s%3N)" "$(anonymous_rss_kib)" >>"$SAMPLES_CSV"
+sample_memory() {
+	awk -v phase="$1" -v timestamp="$(date +%s%3N)" '
+		$1 == "Anonymous:" { anonymous = $2 }
+		$1 == "Pss:" { pss = $2 }
+		END {
+			if (anonymous == "" || pss == "") exit 1;
+			printf "%s,%s,%s,%s\n", phase, timestamp, anonymous, pss;
+		}
+	' "/proc/$application_pid/smaps_rollup" >>"$SAMPLES_CSV"
 }
 
 activate_atspi_action() {
@@ -185,16 +189,20 @@ PY
 
 : >"$SAMPLES_CSV"
 python3 "$ATSPI" wait-for --query "=$READY_TITLE" --role window --timeout-ms 20000 --pid "$application_pid" >/dev/null
-sample_rss start
+sample_memory start
 
 for ((iteration = 1; iteration <= ITERATIONS; iteration++)); do
 	activate_atspi_action
-	python3 "$ATSPI" wait-for --query "=$DIALOG_TITLE" --role window --timeout-ms 10000 --pid "$application_pid" >/dev/null
-	sample_rss open
-	python3 "$ATSPI" wait-act-first --query "=$DIALOG_TITLE" --role window --index 0 --timeout-ms 10000 >/dev/null
-	python3 "$ATSPI" wait-gone --query "=$DIALOG_TITLE" --role window --timeout-ms 10000 --pid "$application_pid" >/dev/null
+	python3 "$ATSPI" wait-for --query "=$DIALOG_TITLE" --role "$DIALOG_ROLE" --timeout-ms 10000 --pid "$application_pid" >/dev/null
+	sample_memory open
+	if [[ "$DIALOG_ROLE" == dialog ]]; then
+	python3 "$ATSPI" wait-act-scoped --scope-descendant-query "=$DIALOG_TITLE" --scope-descendant-role dialog --include-scope-self --target-query "=Close" --target-role button --timeout-ms 10000 >/dev/null
+	else
+		python3 "$ATSPI" wait-act-containing --descendant-query "=$DIALOG_TITLE" --descendant-role window --ancestor-role window --include-self --action-name window.close --timeout-ms 10000 >/dev/null
+	fi
+	python3 "$ATSPI" wait-gone --query "=$DIALOG_TITLE" --role "$DIALOG_ROLE" --timeout-ms 10000 --pid "$application_pid" >/dev/null
 	sleep "$CLOSE_SLEEP"
-	sample_rss closed
+	sample_memory closed
 done
 EOF
 	chmod 700 "$automation_path"
@@ -231,7 +239,7 @@ write_verdict() {
 			if (half > 1) first_average/=(half-1);
 			for (i=half+1; i<=n; i++) last_average+=y[i]-y[i-1];
 			if (n-half > 0) last_average/=(n-half);
-			printf "anon RSS after close: first=%dKiB last=%dKiB over %d iters\n", first, last, n;
+			printf "Anonymous after close: first=%dKiB last=%dKiB over %d iters\n", first, last, n;
 			printf "per-iteration slope = %.0f KiB/open (early avg %.0f, late avg %.0f KiB/open)\n", slope, first_average, last_average;
 			if (slope <= threshold) {
 				printf "VERDICT: clean (slope %.0f <= %d KiB/open)\n", slope, threshold;
@@ -249,7 +257,7 @@ write_verdict() {
 
 overall_status=0
 for dialog_spec in "${dialog_specs[@]}"; do
-	IFS='|' read -r dialog_key application_name binary_path ready_title atspi_action dialog_title <<<"$dialog_spec"
+	IFS='|' read -r dialog_key application_name binary_path ready_title atspi_action dialog_title dialog_role <<<"$dialog_spec"
 	[[ -x "$binary_path" ]] || fail "built binary missing: $binary_path"
 
 	dialog_artifact_dir="$EVIDENCE_DIR/$dialog_key"
@@ -259,19 +267,27 @@ for dialog_spec in "${dialog_specs[@]}"; do
 	mkdir -p "$dialog_artifact_dir/session" \
 		"$dialog_artifact_dir/xdg-config" \
 		"$dialog_artifact_dir/xdg-cache" \
-		"$dialog_artifact_dir/xdg-data"
+		"$dialog_artifact_dir/xdg-data" "$dialog_artifact_dir/home"
 	write_automation_script "$automation_script"
+	cat >"$dialog_artifact_dir/launch.sh" <<'EOF'
+#!/usr/bin/env bash
+set -euo pipefail
+printf '%s\n' "$$" >"${APPLICATION_PID_FILE:?}"
+exec "$@"
+EOF
 
 	echo ">>> leak target: $dialog_key ($dialog_title via $atspi_action)"
 	set +e
 	ATSPI_TOOL="$ATSPI_TOOL" \
 		ACTION_NAME="$atspi_action" \
 		DIALOG_TITLE="$dialog_title" \
+		DIALOG_ROLE="$dialog_role" \
 		READY_TITLE="$ready_title" \
 		ITERATIONS="$ITERATIONS" \
 		SAMPLES_CSV="$samples_path" \
 		CLOSE_SLEEP="$CLOSE_SLEEP" \
 		BINARY_PATH="$binary_path" \
+		APPLICATION_PID_FILE="$dialog_artifact_dir/application.pid" \
 		timeout 360 "$HEADLESS_RUNNER" \
 		--socket "big-multimedia-leak-$dialog_key-$$" \
 		--log-dir "$dialog_artifact_dir/session" \
@@ -280,7 +296,8 @@ for dialog_spec in "${dialog_specs[@]}"; do
 		--wait-ready-ms 20000 \
 		--automation-file "$automation_script" \
 		--automation-delay 0 \
-		-- env \
+		-- bash "$dialog_artifact_dir/launch.sh" env \
+		HOME="$dialog_artifact_dir/home" \
 		LANG=C.UTF-8 \
 		LC_ALL=C \
 		BIG_MEDIA_DISABLE_GRAPHICS_OFFLOAD=1 \
