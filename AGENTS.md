@@ -80,3 +80,7 @@ The reusable playlist window is hidden while its controller lives and destroyed
 in component shutdown, including when it was never presented. GTK owns a window
 reference independently of Relm4; `hidden_playlist_window_finalizes_with_its_controller`
 checks 25 qdata finalizations instead of assuming that dropping the controller suffices.
+
+Audio palette and high-contrast slots also remove their display registrations
+when the content root is destroyed. Updating a cached slot prevents stacking
+within one window, but does not release it when the whole window closes.

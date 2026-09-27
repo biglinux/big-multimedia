@@ -425,6 +425,17 @@ impl Component for AudioShell {
             &mut hc_provider.borrow_mut(),
         );
         {
+            let theme_provider = theme_provider.clone();
+            let hc_provider = hc_provider.clone();
+            root.connect_destroy(move |root| {
+                for slot in [&theme_provider, &hc_provider] {
+                    if let Some(provider) = slot.borrow_mut().take() {
+                        gtk::style_context_remove_provider_for_display(&root.display(), &provider);
+                    }
+                }
+            });
+        }
+        {
             // Weak: these actions live in the WINDOW's action map — a strong
             // window capture is a window⇄action cycle (3 of them pinned the
             // whole window after close; standalone never noticed because
