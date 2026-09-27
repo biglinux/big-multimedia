@@ -99,3 +99,8 @@ including preservation of a previous destination and removal of staging files.
 Media-information file size uses GIO's asynchronous metadata query and a weak
 preferences group. Slow or remote filesystems must not block the GTK callback;
 closing the dialog while the query runs must not retain its widget tree.
+
+Radio recording directory creation and final-file validation run in a worker.
+A generation token rejects preparation completed after stop or a newer request;
+the source check rejects preparation for a station that is no longer playing.
+The isolated audio lifetime test delivers a late completion after cancellation.

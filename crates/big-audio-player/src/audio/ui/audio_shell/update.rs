@@ -76,6 +76,14 @@ impl AudioShell {
             AudioShellInput::Trim(out) => self.handle_trim(out),
             AudioShellInput::Files(out) => self.handle_files(out, &sender),
             AudioShellInput::Radio(out) => self.handle_radio(out, &sender),
+            AudioShellInput::RadioRecordingPrepared {
+                generation,
+                source,
+                path,
+                result,
+            } => {
+                self.start_prepared_recording(generation, &source, path, result);
+            }
             AudioShellInput::Lyrics(LyricsPanelOutput::ExpandToggled(only_lyrics)) => {
                 let pos = lyrics_paned_position(self.lyrics_paned.height(), only_lyrics);
                 self.lyrics_paned.set_position(pos);

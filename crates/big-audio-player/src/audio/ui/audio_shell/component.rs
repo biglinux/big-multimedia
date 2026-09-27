@@ -607,6 +607,7 @@ impl Component for AudioShell {
                 np_album,
                 radio_station_name: String::new(),
                 recording_path: None,
+                recording_generation: 0,
                 mpris,
                 mpris_state,
                 duration_secs: 0.0,
@@ -713,6 +714,30 @@ mod lifetime_tests {
         while context.pending() {
             context.iteration(false);
         }
+        {
+            let mut state = player.controller.state().get_mut();
+            state.model.is_stream = true;
+            state.model.current_file = "https://example.invalid/radio".into();
+        }
+        let generation = player.controller.model().recording_generation;
+        player
+            .controller
+            .emit(AudioShellInput::Radio(RadioPanelOutput::StopRecording));
+        player
+            .controller
+            .emit(AudioShellInput::RadioRecordingPrepared {
+                generation,
+                source: "https://example.invalid/radio".into(),
+                path: PathBuf::from("cancelled-recording.mp3"),
+                result: Ok(()),
+            });
+        while context.pending() {
+            context.iteration(false);
+        }
+        assert!(
+            player.controller.model().recording_path.is_none(),
+            "directory preparation restarted a cancelled recording"
+        );
         let source = context
             .find_source_by_id(
                 player

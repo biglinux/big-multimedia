@@ -196,8 +196,8 @@ impl AudioShell {
                 });
                 self.sync_now_playing_card();
             }
-            RadioPanelOutput::RecordStream => self.record_radio_stream(),
-            RadioPanelOutput::StopRecording => self.stop_radio_recording(),
+            RadioPanelOutput::RecordStream => self.record_radio_stream(sender),
+            RadioPanelOutput::StopRecording => self.stop_radio_recording(sender),
         }
     }
 
@@ -207,19 +207,13 @@ impl AudioShell {
     }
 
     /// Start recording the current radio stream into `~/Music/Radio Recordings`.
-    pub(super) fn record_radio_stream(&mut self) {
-        let Some(mpv) = &self.mpv else {
+    pub(super) fn record_radio_stream(&mut self, sender: &ComponentSender<Self>) {
+        if self.mpv.is_none() {
             return;
-        };
+        }
         let music_dir = glib::user_special_dir(glib::UserDirectory::Music)
             .unwrap_or_else(|| glib::home_dir().join("Music"));
         let rec_dir = music_dir.join("Radio Recordings");
-        if let Err(e) = std::fs::create_dir_all(&rec_dir) {
-            log::warn!("cannot create {}: {e}", rec_dir.display());
-            self.notify(&i18n("Recording was not saved"));
-            return;
-        }
-
         let safe_name = big_app_kit::files::sanitize_filename_stem_preserve_unicode(
             &self.radio_station_name,
             "radio",
@@ -231,18 +225,56 @@ impl AudioShell {
         let filename = format!("{safe_name}_{ts}.mp3");
         let path = rec_dir.join(&filename);
 
+        self.recording_generation = self.recording_generation.wrapping_add(1);
+        let generation = self.recording_generation;
+        let source = self.current_file.clone();
+        let input = sender.input_sender().clone();
+        spawn_blocking_result(
+            move || std::fs::create_dir_all(&rec_dir).map_err(|error| error.to_string()),
+            move |result| {
+                let _ = input.send(AudioShellInput::RadioRecordingPrepared {
+                    generation,
+                    source,
+                    path,
+                    result,
+                });
+            },
+        );
+    }
+
+    pub(super) fn start_prepared_recording(
+        &mut self,
+        generation: u64,
+        source: &str,
+        path: PathBuf,
+        result: Result<(), String>,
+    ) {
+        if generation != self.recording_generation || !self.is_stream || source != self.current_file
+        {
+            return;
+        }
+        if let Err(error) = result {
+            log::warn!("cannot prepare recording directory: {error}");
+            self.notify(&i18n("Recording was not saved"));
+            return;
+        }
+        let Some(mpv) = &self.mpv else {
+            return;
+        };
         // mpv takes a UTF-8 path; an empty one would silently disable recording.
         let Some(record_path) = path.to_str() else {
             self.notify(&i18n("Recording was not saved"));
             return;
         };
         mpv.set_stream_record(record_path);
-        self.recording_path = Some(path);
+        let filename = path.file_name().unwrap_or_default().to_string_lossy();
         self.notify(&format!("{}: {filename}", i18n("Recording to")));
+        self.recording_path = Some(path);
     }
 
     /// Stop the in-progress recording and show a saved dialog with open actions.
-    pub(super) fn stop_radio_recording(&mut self) {
+    pub(super) fn stop_radio_recording(&mut self, sender: &ComponentSender<Self>) {
+        self.recording_generation = self.recording_generation.wrapping_add(1);
         if let Some(mpv) = &self.mpv {
             mpv.set_stream_record("");
         }
@@ -250,15 +282,22 @@ impl AudioShell {
             return;
         };
         let parent = self.window().map(|window| window.downgrade());
-        let notice = self.notice.clone();
+        let input = sender.input_sender().clone();
         glib::timeout_add_local_once(std::time::Duration::from_millis(750), move || {
-            if !recording_file_has_content(&path) {
-                notice.show(&i18n("Recording was not saved"));
-                return;
-            }
-            if let Some(parent) = parent.as_ref().and_then(glib::WeakRef::upgrade) {
-                present_recording_saved_dialog(&parent, path);
-            }
+            spawn_blocking_result(
+                move || {
+                    let has_content = recording_file_has_content(&path);
+                    (path, has_content)
+                },
+                move |(path, has_content)| {
+                    if !has_content {
+                        let _ =
+                            input.send(AudioShellInput::Notify(i18n("Recording was not saved")));
+                    } else if let Some(parent) = parent.as_ref().and_then(glib::WeakRef::upgrade) {
+                        present_recording_saved_dialog(&parent, path);
+                    }
+                },
+            );
         });
     }
 

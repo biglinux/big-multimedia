@@ -158,6 +158,7 @@ pub struct AudioShell {
     radio_station_name: String,
     /// Destination of the in-progress radio recording (None = not recording).
     recording_path: Option<PathBuf>,
+    recording_generation: u64,
     /// MPRIS2 D-Bus service (None if the session bus is unavailable).
     mpris: Option<Mpris>,
     /// Playback-state snapshot read by the MPRIS `StateCallback` (D-Bus thread).

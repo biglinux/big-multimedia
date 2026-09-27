@@ -24,6 +24,13 @@ pub enum AudioShellInput {
     Files(FileBrowserOutput),
     /// An intent emitted by the radio panel.
     Radio(RadioPanelOutput),
+    /// Recording directory prepared off the GTK thread; stale requests are ignored.
+    RadioRecordingPrepared {
+        generation: u64,
+        source: String,
+        path: PathBuf,
+        result: Result<(), String>,
+    },
     /// An intent emitted by the lyrics panel (expand toggle).
     Lyrics(LyricsPanelOutput),
     /// Lyrics resolved for a track (async fetch); `gen` guards against a stale
