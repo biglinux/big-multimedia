@@ -18,4 +18,5 @@ pub mod spin_row;
 /// runtime applier ([`crate::layout::zone_applier`]) build on it.
 #[doc(inline)]
 pub use big_app_kit_core::zone_layout;
+pub mod password_row;
 pub mod zone_layout_editor;

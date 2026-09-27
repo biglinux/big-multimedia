@@ -20,4 +20,6 @@ allowed-duplicate-crates = []
 
 disallowed-methods = [
     { path = "gtk4::prelude::AccessibleExtManual::update_relation", reason = "gtk-rs 0.11 leaks target GLists; use big_relm4_components::accessible::relate" },
+    { path = "libadwaita::PasswordEntryRow::new", reason = "libadwaita 1.9 retains password buffers; use big_relm4_components::input::password_row::password_row" },
+    { path = "libadwaita::builders::PasswordEntryRowBuilder::build", reason = "libadwaita 1.9 retains password buffers; use big_relm4_components::input::password_row::password_row" },
 ]

@@ -253,9 +253,9 @@ impl ProviderFormInputs {
         let xtream_group = BigPreferencesGroupSpec::untitled().build();
         let server_row = adw::EntryRow::builder().title(i18n("Server URL")).build();
         let username_row = adw::EntryRow::builder().title(i18n("Username")).build();
-        let password_row = adw::PasswordEntryRow::builder()
-            .title(i18n("Password"))
-            .build();
+        let password_row = big_relm4_components::input::password_row::password_row(
+            adw::PasswordEntryRow::builder().title(i18n("Password")),
+        );
         xtream_group.add(&server_row);
         xtream_group.add(&username_row);
         xtream_group.add(&password_row);

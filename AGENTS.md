@@ -40,3 +40,8 @@ The `relation_probe` example provides a 5/25-cycle heaptrack workload. Build it
 with `CARGO_PROFILE_RELEASE_DEBUG=true CARGO_PROFILE_RELEASE_STRIP=false` and
 run `heaptrack --record-only` inside the isolated session. Keep the real
 accessible relation: an explicit label alone does not name an empty dropdown.
+
+Credential forms build password rows through `input::password_row::password_row`.
+The libadwaita 1.9 buffer creation reference otherwise survives the row, including
+its password. The isolated qdata test checks 75 finalizations at lengths 0, 5 and
+25; the direct constructor and builder are banned outside the helper.
