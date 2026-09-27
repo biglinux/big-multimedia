@@ -56,9 +56,12 @@ pub(super) fn build_vf_expander_row(
     let label = spec.label;
     let apply = {
         let mpv = Arc::clone(mpv);
-        let adjustment = adjustment.clone();
+        let adjustment = adjustment.downgrade();
         let format_vf = spec.format_vf.clone();
         move || {
+            let Some(adjustment) = adjustment.upgrade() else {
+                return;
+            };
             let value = adjustment.value();
             mpv.vf_append(label, &format_vf(value));
         }

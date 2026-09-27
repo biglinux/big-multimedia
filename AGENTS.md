@@ -25,3 +25,7 @@ After building the video player, sweep its dialog lifetimes with:
 
 `app-action` checks that the action actually opens a new accessible surface.
 The libadwaita breakpoint allowance does not cover retained dialog controls.
+
+Filter apply closures must hold their adjustment/dropdown weakly: those controls
+also own the apply handlers. `filter_controls_release_the_backend` checks 75
+control finalizations and mpv ownership over 25 cycles in an isolated session.

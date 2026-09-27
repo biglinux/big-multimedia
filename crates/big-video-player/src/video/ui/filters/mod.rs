@@ -87,3 +87,65 @@ impl Component for VideoFiltersDialog {
     ) {
     }
 }
+
+#[cfg(test)]
+mod lifetime_tests {
+    use super::*;
+
+    #[test]
+    #[ignore = "requires an isolated GTK session"]
+    fn filter_controls_release_the_backend() {
+        use std::cell::Cell;
+        use std::rc::Rc;
+
+        struct Finalized(Rc<Cell<usize>>);
+        impl Drop for Finalized {
+            fn drop(&mut self) {
+                self.0.set(self.0.get() + 1);
+            }
+        }
+        gtk::init().unwrap();
+        adw::init().unwrap();
+        let (sender, _receiver) = async_channel::unbounded();
+        let mpv = Arc::new(MpvBackend::new_audio_only(sender).unwrap());
+        let finalized = Rc::new(Cell::new(0));
+        let mut created = 0;
+        for _ in 0..25 {
+            let presets = groups_vf::build_presets_group(&mpv, "");
+            let adjustments = groups_vf::build_denoise_sharpen_group(&mpv, "");
+            let mut widgets = vec![
+                presets.clone().upcast::<gtk::Widget>(),
+                adjustments.clone().upcast(),
+            ];
+            while let Some(widget) = widgets.pop() {
+                let object = if let Some(row) = widget.downcast_ref::<adw::SpinRow>() {
+                    Some(row.adjustment().upcast::<gtk::glib::Object>())
+                } else {
+                    widget
+                        .downcast_ref::<gtk::DropDown>()
+                        .map(|dropdown| dropdown.clone().upcast())
+                };
+                if let Some(object) = object {
+                    // SAFETY: the test owns this key and never accesses its stored data.
+                    unsafe {
+                        object.set_qdata(
+                            gtk::glib::Quark::from_str("filter-finalization"),
+                            Finalized(finalized.clone()),
+                        );
+                    }
+                    created += 1;
+                }
+                let mut child = widget.first_child();
+                while let Some(current) = child {
+                    child = current.next_sibling();
+                    widgets.push(current);
+                }
+            }
+            drop(presets);
+            drop(adjustments);
+            assert_eq!(Arc::strong_count(&mpv), 1, "filter handlers retained mpv");
+        }
+        assert_eq!(created, 75, "two adjustments and one dropdown per cycle");
+        assert_eq!(finalized.get(), created, "filter control finalizations");
+    }
+}

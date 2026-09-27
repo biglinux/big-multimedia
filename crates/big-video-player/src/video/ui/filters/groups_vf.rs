@@ -233,8 +233,11 @@ pub(super) fn build_presets_group(
 
     let apply = {
         let mpv = Arc::clone(mpv);
-        let combo = combo.clone();
+        let combo = combo.downgrade();
         move || {
+            let Some(combo) = combo.upgrade() else {
+                return;
+            };
             let idx = combo.selected() as usize;
             if let Some(id) = preset_ids.get(idx) {
                 mpv.vf_append(LABEL, &format!("curves=preset={id}"));
