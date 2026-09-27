@@ -132,6 +132,14 @@ pub struct RadioPanel {
     is_stream: bool,
 }
 
+impl Drop for RadioPanel {
+    fn drop(&mut self) {
+        if let Some(source) = self.search_debounce.take() {
+            source.remove();
+        }
+    }
+}
+
 impl Component for RadioPanel {
     type Init = ();
     type Input = RadioPanelInput;
@@ -191,15 +199,15 @@ impl Component for RadioPanel {
 
         // Ask the shell for the saved stations + show cached explore immediately.
         let _ = sender.output(RadioPanelOutput::RequestStations);
-        let s = sender.clone();
+        let s = sender.input_sender().clone();
         glib::spawn_future_local(async move {
             let cached = gio::spawn_blocking(load_explore_cache)
                 .await
                 .unwrap_or_default();
-            if !cached.is_empty() {
-                s.input(RadioPanelInput::ShowExploreResults(cached));
+            if !cached.is_empty() && s.send(RadioPanelInput::ShowExploreResults(cached)).is_err() {
+                return;
             }
-            s.input(RadioPanelInput::LoadPopular);
+            let _ = s.send(RadioPanelInput::LoadPopular);
         });
 
         ComponentParts {
@@ -278,10 +286,12 @@ impl Component for RadioPanel {
                     return;
                 }
                 self.rebuild_list();
-                let s = sender.clone();
+                let s = sender.input_sender().clone();
                 let id = glib::timeout_add_local_once(
                     std::time::Duration::from_millis(500),
-                    move || s.input(RadioPanelInput::RunSearch(query)),
+                    move || {
+                        let _ = s.send(RadioPanelInput::RunSearch(query));
+                    },
                 );
                 self.search_debounce = Some(id);
             }
@@ -357,5 +367,46 @@ impl RadioPanel {
                 && !loading,
         );
         self.scroll.set_visible(has_content);
+    }
+}
+
+#[cfg(test)]
+mod lifetime_tests {
+    use super::*;
+    use relm4::ComponentController;
+
+    #[test]
+    #[ignore = "requires an isolated GTK session and home"]
+    fn radio_teardown_cancels_pending_search() {
+        gtk::init().unwrap();
+        adw::init().unwrap();
+        let app = adw::Application::builder()
+            .application_id("org.biglinux.RadioLifetimeTest")
+            .build();
+        app.register(gio::Cancellable::NONE).unwrap();
+        let _relm = relm4::RelmApp::<()>::from_app(app);
+        let panel = RadioPanel::builder().launch(()).detach();
+        panel.emit(RadioPanelInput::SearchQueryChanged("pending search".into()));
+        let context = glib::MainContext::default();
+        while context.pending() {
+            context.iteration(false);
+        }
+        let source = context
+            .find_source_by_id(panel.model().search_debounce.as_ref().unwrap())
+            .unwrap();
+        drop(panel);
+        for _ in 0..100 {
+            while context.pending() {
+                context.iteration(false);
+            }
+            if source.is_destroyed() {
+                break;
+            }
+            std::thread::sleep(std::time::Duration::from_millis(2));
+        }
+        assert!(
+            source.is_destroyed(),
+            "radio debounce survived its component"
+        );
     }
 }

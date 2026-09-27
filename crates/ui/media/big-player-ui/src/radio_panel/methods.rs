@@ -55,7 +55,7 @@ impl RadioPanel {
         let generation = self.search_gen;
 
         let servers_raw = settings_servers_raw(&Settings::for_audio());
-        let s = sender.clone();
+        let s = sender.input_sender().clone();
         glib::spawn_future_local(async move {
             let results = gio::spawn_blocking(move || {
                 let servers = api_servers_from_raw(&servers_raw);
@@ -74,7 +74,7 @@ impl RadioPanel {
             })
             .await
             .unwrap_or(None);
-            s.input(RadioPanelInput::SearchFinished {
+            let _ = s.send(RadioPanelInput::SearchFinished {
                 generation,
                 popular,
                 results,

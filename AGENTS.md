@@ -121,3 +121,8 @@ Colorize's shared apply closure also holds its hue/saturation/mix adjustments
 weakly. A weak expander alone does not break adjustment → apply → adjustment.
 The filter lifetime test includes the color group and checks 200 finalizations
 and the backend's strong reference count across 25 cycles.
+
+Radio cache/search completions use the fallible input sender: component shutdown
+is expected while network I/O is pending, not a panic. Radio teardown removes its
+search debounce source. The isolated source-lifetime test and rapid hosted audio
+open/close run cover these late-delivery paths.
