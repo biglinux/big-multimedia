@@ -71,7 +71,7 @@ def catalog(path):
 def catalogs():
     pot = catalog("crates/media-runtime/po/big-media-runtime.pot")
     pt = catalog("crates/media-runtime/po/pt_BR.po")
-    examples = ["Low resource use", "More detail", "Compatibility (processor)",
+    examples = ["Light", "Detailed", "Compatibility",
         "Press Alt+Down to adjust. Press Escape to close.",
         "The playlist could not be changed. Your previous playlist was kept."]
     for value in examples:
