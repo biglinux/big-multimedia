@@ -45,3 +45,7 @@ Credential forms build password rows through `input::password_row::password_row`
 The libadwaita 1.9 buffer creation reference otherwise survives the row, including
 its password. The isolated qdata test checks 75 finalizations at lengths 0, 5 and
 25; the direct constructor and builder are banned outside the helper.
+
+Keep the Relm4 0.11 patch in `third_party/relm4` until upstream prunes closed
+shutdown channels. `component_probe` provides the isolated 5/25-cycle heaptrack
+comparison; a standalone player exit hides this process-lifetime registry leak.

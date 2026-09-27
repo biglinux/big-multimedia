@@ -7,6 +7,7 @@
 # the players link the GPL engine.
 [workspace]
 resolver = "3"
+exclude = ["third_party/relm4"]
 members = [
     "crates/big-audio-player",
     "crates/big-video-player",
@@ -72,3 +73,6 @@ panic = "abort"
 
 [workspace.metadata.cargo-machete]
 ignored = []
+
+[patch.crates-io]
+relm4 = { path = "third_party/relm4" }
