@@ -53,3 +53,7 @@ comparison; a standalone player exit hides this process-lifetime registry leak.
 Use `gtk::Stack` for audio source pages. libadwaita 1.9 `ViewStack` retains its
 transition animation after teardown; Clippy bans the leaking type. Isolated
 5-cycle comparisons at 0, 5 and 25 children must leave no animations alive.
+
+Audio shell teardown removes its sleep-timer source even when the countdown is
+still armed. Run `closing_audio_releases_the_sleep_timer` with `--ignored` in an
+isolated accessible session/home; process exit alone cannot prove cancellation.

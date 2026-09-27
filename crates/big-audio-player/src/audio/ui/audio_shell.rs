@@ -214,3 +214,9 @@ pub struct AudioShell {
     /// toolbar header. Set when a saved playlist is loaded (later commit).
     current_playlist_name: String,
 }
+
+impl Drop for AudioShell {
+    fn drop(&mut self) {
+        self.cancel_sleep_timer();
+    }
+}

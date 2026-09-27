@@ -669,3 +669,54 @@ fn focus_accepts_text(controller: &gtk::EventControllerKey) -> bool {
         || focus.is::<gtk::TextView>()
         || focus.ancestor(gtk::TextView::static_type()).is_some()
 }
+
+#[cfg(test)]
+mod lifetime_tests {
+    use super::*;
+
+    #[test]
+    #[ignore = "requires an isolated home and GTK session"]
+    fn closing_audio_releases_the_sleep_timer() {
+        gtk::init().unwrap();
+        adw::init().unwrap();
+        let app = adw::Application::builder()
+            .application_id("org.biglinux.AudioLifetimeTest")
+            .build();
+        app.register(gio::Cancellable::NONE).unwrap();
+        let _relm = relm4::RelmApp::<()>::from_app(app);
+        let player = crate::open_in_application();
+        player.controller.emit(AudioShellInput::SleepTimerStart {
+            minutes: 60,
+            action: "pause".into(),
+        });
+        let context = glib::MainContext::default();
+        while context.pending() {
+            context.iteration(false);
+        }
+        let source = context
+            .find_source_by_id(
+                player
+                    .controller
+                    .model()
+                    .sleep_timer_source
+                    .as_ref()
+                    .expect("timer armed"),
+            )
+            .unwrap();
+        player.window.destroy();
+        drop(player);
+        for _ in 0..100 {
+            while context.pending() {
+                context.iteration(false);
+            }
+            if source.is_destroyed() {
+                break;
+            }
+            std::thread::sleep(std::time::Duration::from_millis(5));
+        }
+        assert!(
+            source.is_destroyed(),
+            "closed audio component kept its countdown source"
+        );
+    }
+}
