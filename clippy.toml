@@ -23,3 +23,7 @@ disallowed-methods = [
     { path = "libadwaita::PasswordEntryRow::new", reason = "libadwaita 1.9 retains password buffers; use big_relm4_components::input::password_row::password_row" },
     { path = "libadwaita::builders::PasswordEntryRowBuilder::build", reason = "libadwaita 1.9 retains password buffers; use big_relm4_components::input::password_row::password_row" },
 ]
+
+disallowed-types = [
+    { path = "libadwaita::ViewStack", reason = "libadwaita 1.9 retains its transition animation; use gtk::Stack" },
+]

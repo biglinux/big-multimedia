@@ -130,31 +130,19 @@ impl Component for AudioShell {
         // LEFT sidebar pane (distinct `.sidebar-pane` colour, always visible):
         // Music | Files | Radio | Podcasts in a view stack switched from its
         // own header.
-        let view_stack = adw::ViewStack::new();
-        view_stack.add_titled_with_icon(
-            library.widget(),
-            Some("music"),
-            &i18n("Music"),
-            "folder-music-symbolic",
-        );
-        view_stack.add_titled_with_icon(
-            files.widget(),
-            Some("files"),
-            &i18n("Files"),
-            "folder-symbolic",
-        );
-        view_stack.add_titled_with_icon(
-            radio.widget(),
-            Some("radio"),
-            &i18n("Radio"),
-            "icon_radio",
-        );
-        view_stack.add_titled_with_icon(
-            podcast.widget(),
-            Some("podcast"),
-            &i18n("Podcasts"),
-            "microphone-sensitivity-high-symbolic",
-        );
+        let view_stack = gtk::Stack::new();
+        view_stack
+            .add_titled(library.widget(), Some("music"), &i18n("Music"))
+            .set_icon_name("folder-music-symbolic");
+        view_stack
+            .add_titled(files.widget(), Some("files"), &i18n("Files"))
+            .set_icon_name("folder-symbolic");
+        view_stack
+            .add_titled(radio.widget(), Some("radio"), &i18n("Radio"))
+            .set_icon_name("icon_radio");
+        view_stack
+            .add_titled(podcast.widget(), Some("podcast"), &i18n("Podcasts"))
+            .set_icon_name("microphone-sensitivity-high-symbolic");
 
         // Tab switches drive the podcast-mode stash/restore.
         let tab_sender = sender.input_sender().clone();

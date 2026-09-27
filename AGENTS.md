@@ -49,3 +49,7 @@ its password. The isolated qdata test checks 75 finalizations at lengths 0, 5 an
 Keep the Relm4 0.11 patch in `third_party/relm4` until upstream prunes closed
 shutdown channels. `component_probe` provides the isolated 5/25-cycle heaptrack
 comparison; a standalone player exit hides this process-lifetime registry leak.
+
+Use `gtk::Stack` for audio source pages. libadwaita 1.9 `ViewStack` retains its
+transition animation after teardown; Clippy bans the leaking type. Isolated
+5-cycle comparisons at 0, 5 and 25 children must leave no animations alive.
