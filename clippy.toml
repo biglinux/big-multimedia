@@ -23,6 +23,7 @@ disallowed-methods = [
     { path = "gtk4::prelude::AccessibleExtManual::update_relation", reason = "gtk-rs 0.11 leaks target GLists; use big_relm4_components::accessible::relate" },
     { path = "libadwaita::PasswordEntryRow::new", reason = "libadwaita 1.9 retains password buffers; use big_relm4_components::input::password_row::password_row" },
     { path = "libadwaita::builders::PasswordEntryRowBuilder::build", reason = "libadwaita 1.9 retains password buffers; use big_relm4_components::input::password_row::password_row" },
+    { path = "gtk4::Switch::set_active", reason = "GTK 4.22 cancels a click's slide even when the value is unchanged, so a refresh swallows the click; set it only when is_active() differs, and allow the call at that guard" },
 ]
 
 disallowed-types = [
