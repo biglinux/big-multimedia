@@ -18,6 +18,8 @@ pub struct PlayerAudioEffects {
     pub nr_strength: f64,
     /// Selected noise reduction model.
     pub nr_model: i32,
+    /// Mix to mono before the denoiser.
+    pub nr_mono: bool,
     /// Equalizer band pairs `(frequency_hz, gain_db)`.
     pub eq_bands: Vec<(f64, f64)>,
 }
@@ -198,6 +200,7 @@ fn read_audio_effects(settings: &Settings, normalize: bool) -> PlayerAudioEffect
         nr_enabled: nr_strength.abs() > 0.0,
         nr_strength,
         nr_model: settings.get_int(keys::NOISE_MODEL),
+        nr_mono: settings.get_bool(keys::NOISE_MONO),
         eq_bands,
     }
 }

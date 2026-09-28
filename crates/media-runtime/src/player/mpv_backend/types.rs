@@ -6,6 +6,8 @@ pub struct AudioEffects<'a> {
     pub nr_enabled: bool,
     pub nr_strength: f64,
     pub nr_model: i32,
+    /// Mix to mono before the denoiser.
+    pub nr_mono: bool,
     pub gate_enabled: bool,
     pub gate_intensity: f64,
     pub hpf_enabled: bool,
@@ -29,6 +31,8 @@ pub struct AudioEffectsSnapshot {
     pub nr_strength: f64,
     /// See [`AudioEffects::nr_model`].
     pub nr_model: i32,
+    /// See [`AudioEffects::nr_mono`].
+    pub nr_mono: bool,
     /// See [`AudioEffects::gate_enabled`].
     pub gate_enabled: bool,
     /// See [`AudioEffects::gate_intensity`].
@@ -54,6 +58,7 @@ impl AudioEffectsSnapshot {
             nr_enabled: self.nr_enabled,
             nr_strength: self.nr_strength,
             nr_model: self.nr_model,
+            nr_mono: self.nr_mono,
             gate_enabled: self.gate_enabled,
             gate_intensity: self.gate_intensity,
             hpf_enabled: self.hpf_enabled,

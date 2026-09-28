@@ -27,7 +27,7 @@ pub fn build_audio_filter_chain(fx: &AudioEffects) -> Vec<String> {
         // A missing plugin would fail the whole graph, silencing playback.
         let model = NoiseModel::from_i32_or_default(fx.nr_model);
         if model.plugin_available() {
-            filters.push(lavfi_chain(model, fx.nr_strength));
+            filters.push(lavfi_chain(model, fx.nr_strength, fx.nr_mono));
         }
     }
 
@@ -56,6 +56,7 @@ mod tests {
             nr_enabled: true,
             nr_strength: 0.5,
             nr_model: model.index() as i32,
+            nr_mono: false,
             gate_enabled: false,
             gate_intensity: 0.0,
             hpf_enabled: false,
@@ -66,7 +67,7 @@ mod tests {
         };
         let chain = build_audio_filter_chain(&fx);
         if model.plugin_available() {
-            assert_eq!(chain, [lavfi_chain(model, 0.5)]);
+            assert_eq!(chain, [lavfi_chain(model, 0.5, false)]);
         } else {
             assert!(chain.is_empty(), "{chain:?}");
         }
@@ -79,6 +80,7 @@ mod tests {
             nr_enabled: false,
             nr_strength: 0.5,
             nr_model: 0,
+            nr_mono: false,
             gate_enabled: false,
             gate_intensity: 0.0,
             hpf_enabled: false,
@@ -97,6 +99,7 @@ mod tests {
             nr_enabled: false,
             nr_strength: 0.5,
             nr_model: 0,
+            nr_mono: false,
             gate_enabled: false,
             gate_intensity: 0.0,
             hpf_enabled: false,
@@ -117,6 +120,7 @@ mod tests {
             nr_enabled: false,
             nr_strength: 0.5,
             nr_model: 0,
+            nr_mono: false,
             gate_enabled: false,
             gate_intensity: 0.0,
             hpf_enabled: true,
@@ -137,6 +141,7 @@ mod tests {
             nr_enabled: false,
             nr_strength: 0.5,
             nr_model: 0,
+            nr_mono: false,
             gate_enabled: true,
             gate_intensity: 0.7,
             hpf_enabled: false,
@@ -159,6 +164,7 @@ mod tests {
             nr_enabled: false,
             nr_strength: 0.5,
             nr_model: 0,
+            nr_mono: false,
             gate_enabled: false,
             gate_intensity: 0.0,
             hpf_enabled: false,
@@ -181,6 +187,7 @@ mod tests {
             nr_enabled: false,
             nr_strength: 0.5,
             nr_model: 0,
+            nr_mono: false,
             gate_enabled: false,
             gate_intensity: 0.0,
             hpf_enabled: false,

@@ -143,6 +143,10 @@ pub fn any_model_available() -> bool {
 ///   every seek.
 /// - DeepFilterNet3 mutes its first second by default, meant for a live
 ///   microphone; `c6=0` turns that off.
+/// - With `mono`, all channels are mixed into one first: one plugin instance
+///   instead of one per channel, and every speaker gets the same cleaned
+///   voice. `rematrix_maxval=1` keeps the mix from summing louder than its
+///   input, which a 5.1 track would otherwise do threefold.
 ///
 /// The pad labels start with `bvcnr_`; a graph holds one such chain.
 ///
@@ -151,12 +155,12 @@ pub fn any_model_available() -> bool {
 /// ```
 /// use big_audio_effects::noise_reduction::{NoiseModel, lavfi_chain};
 ///
-/// let chain = lavfi_chain(NoiseModel::DeepFilterNet3, 0.5);
+/// let chain = lavfi_chain(NoiseModel::DeepFilterNet3, 0.5, false);
 /// assert!(chain.contains("controls=c0=12.00|c6=0"));
 /// assert!(chain.ends_with("atrim=start_sample=25919,asetpts=PTS-1919/SR/TB"));
 /// ```
 #[must_use]
-pub fn lavfi_chain(model: NoiseModel, strength: f64) -> String {
+pub fn lavfi_chain(model: NoiseModel, strength: f64, mono: bool) -> String {
     let (plugin, label) = model.plugin_and_label();
     let delay = model.delay_samples();
     let extra = match model {
@@ -164,12 +168,17 @@ pub fn lavfi_chain(model: NoiseModel, strength: f64) -> String {
         NoiseModel::DpdfNet2 => "",
     };
     format!(
-        "aresample=48000,asplit[bvcnr_main][bvcnr_head];\
+        "aresample=48000{},asplit[bvcnr_main][bvcnr_head];\
          [bvcnr_head]atrim=end_sample={LEAD_IN_SAMPLES},apad=whole_len={LEAD_IN_SAMPLES},areverse,\
          asetpts=PTS-STARTPTS-{LEAD_IN_SAMPLES}/SR/TB[bvcnr_pre];\
          [bvcnr_pre][bvcnr_main]concat=n=2:v=0:a=1,apad=pad_len={delay},\
          {LADSPA_FILTER_NAME}=file={plugin}:plugin={label}:controls=c0={}{extra},\
          atrim=start_sample={},asetpts=PTS-{delay}/SR/TB",
+        if mono {
+            ":ochl=mono:rematrix_maxval=1"
+        } else {
+            ""
+        },
         model.attenuation_control(strength),
         LEAD_IN_SAMPLES + delay,
     )
@@ -213,10 +222,17 @@ mod tests {
 
     #[test]
     fn chain_compensates_each_plugins_delay() {
-        let dpdfnet = lavfi_chain(NoiseModel::DpdfNet2, 1.0);
+        let dpdfnet = lavfi_chain(NoiseModel::DpdfNet2, 1.0, false);
         assert!(dpdfnet.contains("plugin=dpdfnet_native_48hr:controls=c0=48.00,"));
         assert!(dpdfnet.contains("apad=pad_len=2880,"));
         assert!(dpdfnet.ends_with("atrim=start_sample=26880,asetpts=PTS-2880/SR/TB"));
         assert!(!dpdfnet.contains("c6"));
+        assert!(dpdfnet.starts_with("aresample=48000,asplit"));
+    }
+
+    #[test]
+    fn mono_mixes_before_the_denoiser_without_gain() {
+        let chain = lavfi_chain(NoiseModel::DeepFilterNet3, 1.0, true);
+        assert!(chain.starts_with("aresample=48000:ochl=mono:rematrix_maxval=1,asplit"));
     }
 }

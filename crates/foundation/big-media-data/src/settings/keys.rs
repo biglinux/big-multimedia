@@ -51,6 +51,7 @@ pub const IDLE_MODE: StringKey = StringKey("idle-mode");
 // Audio effects
 pub const NOISE_STRENGTH: DoubleKey = DoubleKey("noise-strength");
 pub const NOISE_MODEL: IntKey = IntKey("noise-model");
+pub const NOISE_MONO: BoolKey = BoolKey("noise-mono");
 pub const EQ_BANDS: StringKey = StringKey("eq-bands");
 pub const EQ_PRESET: StringKey = StringKey("eq-preset");
 

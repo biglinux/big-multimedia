@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: big-media-runtime 0.1.0\n"
 "Report-Msgid-Bugs-To: https://github.com/biglinux/big-multimedia/issues\n"
-"POT-Creation-Date: 2026-09-28 05:29-0300\n"
+"POT-Creation-Date: 2026-09-28 07:28-0300\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -83,7 +83,7 @@ msgstr ""
 #: crates/big-audio-player/src/audio/keybindings.rs:29
 #: crates/big-audio-player/src/audio/keybindings.rs:36
 #: crates/big-audio-player/src/audio/keybindings.rs:43
-#: crates/big-audio-player/src/audio/preferences.rs:143
+#: crates/big-audio-player/src/audio/preferences.rs:144
 #: crates/big-video-player/src/video/keybindings.rs:16
 #: crates/big-video-player/src/video/keybindings.rs:23
 #: crates/big-video-player/src/video/keybindings.rs:30
@@ -306,21 +306,21 @@ msgstr ""
 msgid "Music"
 msgstr ""
 
-#: crates/big-audio-player/src/audio/preferences.rs:84
+#: crates/big-audio-player/src/audio/preferences.rs:85
 msgid "Volume Leveling"
 msgstr ""
 
-#: crates/big-audio-player/src/audio/preferences.rs:86
+#: crates/big-audio-player/src/audio/preferences.rs:87
 msgid ""
 "Uses the loudness stored in the files so you do not have to adjust the "
 "volume between songs"
 msgstr ""
 
-#: crates/big-audio-player/src/audio/preferences.rs:93
+#: crates/big-audio-player/src/audio/preferences.rs:94
 msgid "Level By"
 msgstr ""
 
-#: crates/big-audio-player/src/audio/preferences.rs:95
+#: crates/big-audio-player/src/audio/preferences.rs:96
 #: crates/big-video-player/src/video/ui/preferences/general.rs:39
 #: crates/big-video-player/src/video/ui/preferences/video.rs:56
 #: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/header.rs:189
@@ -328,48 +328,48 @@ msgstr ""
 msgid "Off"
 msgstr ""
 
-#: crates/big-audio-player/src/audio/preferences.rs:95
+#: crates/big-audio-player/src/audio/preferences.rs:96
 msgid "Per Song"
 msgstr ""
 
-#: crates/big-audio-player/src/audio/preferences.rs:95
+#: crates/big-audio-player/src/audio/preferences.rs:96
 msgid "Per Album"
 msgstr ""
 
-#: crates/big-audio-player/src/audio/preferences.rs:108
+#: crates/big-audio-player/src/audio/preferences.rs:109
 msgid "Leveling Boost"
 msgstr ""
 
-#: crates/big-audio-player/src/audio/preferences.rs:110
+#: crates/big-audio-player/src/audio/preferences.rs:111
 msgid "In decibels; positive values play louder, negative softer"
 msgstr ""
 
-#: crates/big-audio-player/src/audio/preferences.rs:147
+#: crates/big-audio-player/src/audio/preferences.rs:148
 msgid "No Gaps Between Songs"
 msgstr ""
 
-#: crates/big-audio-player/src/audio/preferences.rs:149
+#: crates/big-audio-player/src/audio/preferences.rs:150
 msgid "Albums recorded as one continuous piece play without pauses"
 msgstr ""
 
-#: crates/big-audio-player/src/audio/preferences.rs:166
+#: crates/big-audio-player/src/audio/preferences.rs:167
 #: crates/big-video-player/src/video/ui/preferences/general.rs:28
 msgid "Resume Where You Left Off"
 msgstr ""
 
-#: crates/big-audio-player/src/audio/preferences.rs:167
+#: crates/big-audio-player/src/audio/preferences.rs:168
 msgid "Playing a song again continues from where it stopped"
 msgstr ""
 
-#: crates/big-audio-player/src/audio/preferences.rs:187
+#: crates/big-audio-player/src/audio/preferences.rs:188
 msgid "Progress on the Taskbar"
 msgstr ""
 
-#: crates/big-audio-player/src/audio/preferences.rs:188
+#: crates/big-audio-player/src/audio/preferences.rs:189
 msgid "Shows how far the song has played on the player icon"
 msgstr ""
 
-#: crates/big-audio-player/src/audio/preferences.rs:248
+#: crates/big-audio-player/src/audio/preferences.rs:249
 #: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:120
 #: crates/big-video-player/src/video/ui/preferences/mod.rs:37
 #: crates/big-video-player/src/video/ui/video_shell/panel.rs:568
@@ -588,13 +588,13 @@ msgstr ""
 
 #: crates/big-audio-player/src/audio/ui/audio_shell/playback.rs:164
 #: crates/big-video-player/src/video/ui/video_controls_bar/seek_preview.rs:177
-#: crates/big-video-player/src/video/ui/video_controls_bar/zones.rs:575
+#: crates/big-video-player/src/video/ui/video_controls_bar/zones.rs:576
 msgid "Previous"
 msgstr ""
 
 #: crates/big-audio-player/src/audio/ui/audio_shell/playback.rs:165
 #: crates/big-video-player/src/video/ui/video_controls_bar/seek_preview.rs:179
-#: crates/big-video-player/src/video/ui/video_controls_bar/zones.rs:578
+#: crates/big-video-player/src/video/ui/video_controls_bar/zones.rs:579
 msgid "Next"
 msgstr ""
 
@@ -901,7 +901,7 @@ msgstr ""
 #: crates/big-audio-player/src/audio/ui/playlist_interactions.rs:428
 #: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/context_menu.rs:41
 #: crates/big-video-player/src/video/ui/video_controls_bar.rs:468
-#: crates/big-video-player/src/video/ui/video_controls_bar/zones.rs:576
+#: crates/big-video-player/src/video/ui/video_controls_bar/zones.rs:577
 #: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:173
 msgid "Play"
 msgstr ""
@@ -1241,7 +1241,7 @@ msgid "Clear Queue"
 msgstr ""
 
 #: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:117
-#: crates/big-video-player/src/video/ui/video_controls_bar/zones.rs:680
+#: crates/big-video-player/src/video/ui/video_controls_bar/zones.rs:681
 msgid "Convert…"
 msgstr ""
 
@@ -1257,7 +1257,7 @@ msgid "Appearance"
 msgstr ""
 
 #: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:123
-#: crates/big-video-player/src/video/ui/video_controls_bar/zones.rs:638
+#: crates/big-video-player/src/video/ui/video_controls_bar/zones.rs:639
 #: crates/big-video-player/src/video/ui/video_shell/panel.rs:43
 #: crates/media-runtime/src/shared/tv_cast.rs:848
 msgid "Play on a TV"
@@ -1678,7 +1678,7 @@ msgstr ""
 #: crates/big-video-player/src/video/keybindings.rs:200
 #: crates/big-video-player/src/video/ui/media_details_dialog.rs:228
 #: crates/big-video-player/src/video/ui/media_details_dialog.rs:310
-#: crates/ui/media/big-player-ui/src/audio_preferences.rs:80
+#: crates/ui/media/big-player-ui/src/audio_preferences.rs:82
 msgid "Audio"
 msgstr ""
 
@@ -1703,7 +1703,7 @@ msgstr ""
 #: crates/big-video-player/src/video/keybindings.rs:222
 #: crates/big-video-player/src/video/keybindings.rs:229
 #: crates/big-video-player/src/video/ui/preferences/subtitles.rs:19
-#: crates/big-video-player/src/video/ui/video_controls_bar/zones.rs:622
+#: crates/big-video-player/src/video/ui/video_controls_bar/zones.rs:623
 msgid "Subtitles"
 msgstr ""
 
@@ -2369,8 +2369,8 @@ msgstr ""
 #: crates/big-video-player/src/video/ui/preferences/advanced.rs:101
 #: crates/big-video-player/src/video/ui/preferences/video.rs:50
 #: crates/big-video-player/src/video/ui/preferences/video.rs:83
-#: crates/ui/media/big-player-ui/src/audio_preferences.rs:166
-#: crates/ui/media/big-player-ui/src/audio_preferences.rs:177
+#: crates/ui/media/big-player-ui/src/audio_preferences.rs:168
+#: crates/ui/media/big-player-ui/src/audio_preferences.rs:179
 msgid "Automatic"
 msgstr ""
 
@@ -2973,7 +2973,7 @@ msgid ""
 msgstr ""
 
 #: crates/big-video-player/src/video/ui/preferences/subtitles.rs:31
-#: crates/ui/media/big-player-ui/src/audio_preferences.rs:146
+#: crates/ui/media/big-player-ui/src/audio_preferences.rs:148
 msgid "Preferred Languages"
 msgstr ""
 
@@ -3591,8 +3591,8 @@ msgid "Unmute"
 msgstr ""
 
 #: crates/big-video-player/src/video/ui/video_controls_bar/zones.rs:222
-#: crates/big-video-player/src/video/ui/video_controls_bar/zones.rs:454
-#: crates/big-video-player/src/video/ui/video_controls_bar/zones.rs:471
+#: crates/big-video-player/src/video/ui/video_controls_bar/zones.rs:455
+#: crates/big-video-player/src/video/ui/video_controls_bar/zones.rs:472
 msgid "Mute"
 msgstr ""
 
@@ -3609,24 +3609,24 @@ msgstr ""
 msgid "PC volume"
 msgstr ""
 
-#: crates/big-video-player/src/video/ui/video_controls_bar/zones.rs:616
+#: crates/big-video-player/src/video/ui/video_controls_bar/zones.rs:617
 msgid "Edit & Export"
 msgstr ""
 
-#: crates/big-video-player/src/video/ui/video_controls_bar/zones.rs:630
+#: crates/big-video-player/src/video/ui/video_controls_bar/zones.rs:631
 msgid "Audio Track"
 msgstr ""
 
-#: crates/big-video-player/src/video/ui/video_controls_bar/zones.rs:641
+#: crates/big-video-player/src/video/ui/video_controls_bar/zones.rs:642
 #: crates/big-video-player/src/video/ui/video_shell/input_gestures.rs:105
 msgid "Fullscreen"
 msgstr ""
 
-#: crates/big-video-player/src/video/ui/video_controls_bar/zones.rs:678
+#: crates/big-video-player/src/video/ui/video_controls_bar/zones.rs:679
 msgid "Cut Video…"
 msgstr ""
 
-#: crates/big-video-player/src/video/ui/video_controls_bar/zones.rs:679
+#: crates/big-video-player/src/video/ui/video_controls_bar/zones.rs:680
 msgid "Extract Audio…"
 msgstr ""
 
@@ -4119,7 +4119,7 @@ msgstr ""
 #: crates/media-runtime/src/media/metadata_cache/detailed_video_metadata.rs:177
 #: crates/media-runtime/src/media/metadata_cache/detailed_video_metadata.rs:191
 #: crates/ui/media/big-media-components/src/media/file_metadata_dialog.rs:65
-#: crates/ui/media/big-player-ui/src/audio_preferences.rs:138
+#: crates/ui/media/big-player-ui/src/audio_preferences.rs:140
 msgid "Language"
 msgstr ""
 
@@ -4132,12 +4132,12 @@ msgid "Hi-Res"
 msgstr ""
 
 #: crates/media-runtime/src/media/metadata_cache/detailed_video_metadata.rs:163
-#: crates/ui/media/big-player-ui/src/audio_preferences.rs:177
+#: crates/ui/media/big-player-ui/src/audio_preferences.rs:179
 msgid "Mono"
 msgstr ""
 
 #: crates/media-runtime/src/media/metadata_cache/detailed_video_metadata.rs:164
-#: crates/ui/media/big-player-ui/src/audio_preferences.rs:177
+#: crates/ui/media/big-player-ui/src/audio_preferences.rs:179
 msgid "Stereo"
 msgstr ""
 
@@ -4394,34 +4394,45 @@ msgstr ""
 msgid "Unavailable: install {package}"
 msgstr ""
 
-#: crates/media-runtime/src/shared/audio_effects.rs:113
+#: crates/media-runtime/src/shared/audio_effects.rs:114
 msgid ""
 "A neural network separates voice from background noise while the video or "
 "music plays. The strength slider sets how much noise is removed."
 msgstr ""
 
-#: crates/media-runtime/src/shared/audio_effects.rs:147
+#: crates/media-runtime/src/shared/audio_effects.rs:142
+msgid "Convert to mono before filtering"
+msgstr ""
+
+#: crates/media-runtime/src/shared/audio_effects.rs:144
+msgid ""
+"Mixes all channels into one before removing noise: half the processing, and "
+"every speaker plays the same cleaned voice. The stereo placement of sounds "
+"is lost."
+msgstr ""
+
+#: crates/media-runtime/src/shared/audio_effects.rs:176
 #: crates/ui/media/big-media-components/src/player_chrome.rs:345
 msgid "Noise reduction settings"
 msgstr ""
 
-#: crates/media-runtime/src/shared/audio_effects.rs:189
+#: crates/media-runtime/src/shared/audio_effects.rs:218
 msgid "Noise Reduction Model"
 msgstr ""
 
-#: crates/media-runtime/src/shared/audio_effects.rs:199
+#: crates/media-runtime/src/shared/audio_effects.rs:228
 msgid "Selects which AI model separates your voice from background noise."
 msgstr ""
 
-#: crates/media-runtime/src/shared/audio_effects.rs:213
+#: crates/media-runtime/src/shared/audio_effects.rs:242
 msgid "• DeepFilterNet3 — For speech. Uses less processing."
 msgstr ""
 
-#: crates/media-runtime/src/shared/audio_effects.rs:214
+#: crates/media-runtime/src/shared/audio_effects.rs:243
 msgid "• DPDFNet-2 48 kHz — For speech. Higher quality, more processing."
 msgstr ""
 
-#: crates/media-runtime/src/shared/audio_effects.rs:230
+#: crates/media-runtime/src/shared/audio_effects.rs:259
 msgid "Noise reduction model"
 msgstr ""
 
@@ -4754,61 +4765,61 @@ msgstr ""
 msgid "Icon and Text Shadow"
 msgstr ""
 
-#: crates/ui/media/big-player-ui/src/audio_preferences.rs:85
+#: crates/ui/media/big-player-ui/src/audio_preferences.rs:87
 msgid "Sound"
 msgstr ""
 
-#: crates/ui/media/big-player-ui/src/audio_preferences.rs:89
+#: crates/ui/media/big-player-ui/src/audio_preferences.rs:91
 msgid "Even Out Loudness"
 msgstr ""
 
-#: crates/ui/media/big-player-ui/src/audio_preferences.rs:90
+#: crates/ui/media/big-player-ui/src/audio_preferences.rs:92
 msgid "Quiet and loud media play at a similar volume"
 msgstr ""
 
-#: crates/ui/media/big-player-ui/src/audio_preferences.rs:108
+#: crates/ui/media/big-player-ui/src/audio_preferences.rs:110
 msgid "Keep Voices Natural"
 msgstr ""
 
-#: crates/ui/media/big-player-ui/src/audio_preferences.rs:109
+#: crates/ui/media/big-player-ui/src/audio_preferences.rs:111
 msgid "Voices keep their tone when playing faster or slower"
 msgstr ""
 
-#: crates/ui/media/big-player-ui/src/audio_preferences.rs:122
+#: crates/ui/media/big-player-ui/src/audio_preferences.rs:124
 msgid "Maximum Volume"
 msgstr ""
 
-#: crates/ui/media/big-player-ui/src/audio_preferences.rs:123
+#: crates/ui/media/big-player-ui/src/audio_preferences.rs:125
 msgid "Above 100% helps with quiet recordings but may distort"
 msgstr ""
 
-#: crates/ui/media/big-player-ui/src/audio_preferences.rs:140
+#: crates/ui/media/big-player-ui/src/audio_preferences.rs:142
 msgid ""
 "For media with several audio tracks. Use language codes separated by commas, "
 "in order of preference, such as pt,en"
 msgstr ""
 
-#: crates/ui/media/big-player-ui/src/audio_preferences.rs:159
+#: crates/ui/media/big-player-ui/src/audio_preferences.rs:161
 msgid "Sound System"
 msgstr ""
 
-#: crates/ui/media/big-player-ui/src/audio_preferences.rs:160
+#: crates/ui/media/big-player-ui/src/audio_preferences.rs:162
 msgid "Automatic works for most computers"
 msgstr ""
 
-#: crates/ui/media/big-player-ui/src/audio_preferences.rs:164
+#: crates/ui/media/big-player-ui/src/audio_preferences.rs:166
 msgid "Audio Output"
 msgstr ""
 
-#: crates/ui/media/big-player-ui/src/audio_preferences.rs:165
+#: crates/ui/media/big-player-ui/src/audio_preferences.rs:167
 msgid "Takes effect after reopening the player"
 msgstr ""
 
-#: crates/ui/media/big-player-ui/src/audio_preferences.rs:175
+#: crates/ui/media/big-player-ui/src/audio_preferences.rs:177
 msgid "Speakers"
 msgstr ""
 
-#: crates/ui/media/big-player-ui/src/audio_preferences.rs:176
+#: crates/ui/media/big-player-ui/src/audio_preferences.rs:178
 msgid "Mixes surround sound down for stereo speakers or headphones"
 msgstr ""
 

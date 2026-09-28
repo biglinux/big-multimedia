@@ -18,6 +18,7 @@ pub(super) fn valid(key: &str, value: &str) -> bool {
         | "deinterlace"
         | "auto-window-resize"
         | "audio-normalize"
+        | "noise-mono"
         | "audio-pitch-correction"
         | "sub-bold"
         | "sub-scale-with-window"

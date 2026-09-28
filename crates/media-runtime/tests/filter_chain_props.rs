@@ -28,6 +28,7 @@ fn make_fx(
         nr_enabled: false, // nr requires ladspa plugin lookup; skip
         nr_strength: 0.0,
         nr_model: 0,
+        nr_mono: false,
         gate_enabled,
         gate_intensity,
         hpf_enabled,

@@ -185,6 +185,7 @@ fn apply_player_audio_effects(mpv: &MpvBackend, effects: PlayerAudioEffects) {
         nr_enabled: effects.nr_enabled,
         nr_strength: effects.nr_strength,
         nr_model: effects.nr_model,
+        nr_mono: effects.nr_mono,
         gate_enabled: false,
         gate_intensity: 0.0,
         hpf_enabled: false,

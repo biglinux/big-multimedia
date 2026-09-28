@@ -77,6 +77,7 @@ pub fn rebuild_filters(
         nr_enabled: nr_strength > 0.0,
         nr_strength,
         nr_model,
+        nr_mono: settings.get_bool(keys::NOISE_MONO),
         gate_enabled: false,
         gate_intensity: 0.0,
         hpf_enabled: false,
@@ -129,6 +130,34 @@ pub fn create_nr_settings_dialog(
         let mpv: Weak<MpvBackend> = mpv.map(Arc::downgrade).unwrap_or_default();
         model_dropdown.connect_selected_notify(move |dd| {
             let _ = s.put_int(keys::NOISE_MODEL, dd.selected() as i32);
+            if let Some(mpv) = mpv.upgrade()
+                && s.get_double(keys::NOISE_STRENGTH) > 0.0
+            {
+                apply_voice_change(&s, &mpv);
+            }
+        });
+    }
+
+    let mono_row = adw::SwitchRow::builder()
+        .title(i18n("Convert to mono before filtering"))
+        .subtitle(i18n(
+            "Mixes all channels into one before removing noise: half the \
+             processing, and every speaker plays the same cleaned voice. \
+             The stereo placement of sounds is lost.",
+        ))
+        .active(settings.get_bool(keys::NOISE_MONO))
+        .build();
+    let mono_list = gtk::ListBox::builder()
+        .selection_mode(gtk::SelectionMode::None)
+        .build();
+    mono_list.add_css_class("boxed-list");
+    mono_list.append(&mono_row);
+    content.append(&mono_list);
+    {
+        let s = settings.clone();
+        let mpv: Weak<MpvBackend> = mpv.map(Arc::downgrade).unwrap_or_default();
+        mono_row.connect_active_notify(move |row| {
+            let _ = s.put_bool(keys::NOISE_MONO, row.is_active());
             if let Some(mpv) = mpv.upgrade()
                 && s.get_double(keys::NOISE_STRENGTH) > 0.0
             {
