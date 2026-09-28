@@ -11,6 +11,10 @@ use big_relm4_components::layout::toolbar_pane::{
 
 const PLAYBACK_SHORTCUT_ACTIONS: &[&str] = &[
     "play-pause",
+    "seek-forward",
+    "seek-backward",
+    "seek-forward-long",
+    "seek-backward-long",
     "next-track",
     "prev-track",
     "toggle-repeat",
@@ -374,6 +378,28 @@ impl Component for AudioShell {
         let single_key_actions = crate::audio::keybindings::build_single_key_map(
             &settings.get_string(keys::CUSTOM_KEYBINDINGS),
         );
+        // Lists consume Left/Right for their own navigation before a bubbling
+        // window shortcut sees them, so the seek keys are taken on the way
+        // down. Sliders, text and library tree rows keep their arrows.
+        let seek_actions: std::collections::HashMap<String, String> = single_key_actions
+            .iter()
+            .filter(|(_, action)| action.starts_with("seek-"))
+            .map(|(accel, action)| (accel.clone(), action.clone()))
+            .collect();
+        let seek_controller = gtk::EventControllerKey::new();
+        seek_controller.set_propagation_phase(gtk::PropagationPhase::Capture);
+        let seek_sender = sender.input_sender().clone();
+        seek_controller.connect_key_pressed(move |controller, keyval, _, state| {
+            let accel = crate::audio::keybindings::key_to_accel_string(keyval, state);
+            let Some(action) = seek_actions.get(accel.as_str()) else {
+                return glib::Propagation::Proceed;
+            };
+            if focus_keeps_arrows(controller) || !dispatch_shortcut_action(action, &seek_sender) {
+                return glib::Propagation::Proceed;
+            }
+            glib::Propagation::Stop
+        });
+        root.add_controller(seek_controller);
         key_controller.connect_key_pressed(move |controller, keyval, _, state| {
             if let Some(action) = media_key_action(keyval) {
                 dispatch_shortcut_action(action, &key_sender);
@@ -657,6 +683,10 @@ impl Component for AudioShell {
 fn dispatch_shortcut_action(action: &str, input: &relm4::Sender<AudioShellInput>) -> bool {
     let message = match action {
         "play-pause" => AudioShellInput::Playback(AudioPlaybackBarOutput::TogglePlay),
+        "seek-forward" => AudioShellInput::SeekBy(5.0),
+        "seek-backward" => AudioShellInput::SeekBy(-5.0),
+        "seek-forward-long" => AudioShellInput::SeekBy(30.0),
+        "seek-backward-long" => AudioShellInput::SeekBy(-30.0),
         "next-track" => AudioShellInput::Playback(AudioPlaybackBarOutput::Next),
         "prev-track" => AudioShellInput::Playback(AudioPlaybackBarOutput::Previous),
         "toggle-repeat" => AudioShellInput::Playback(AudioPlaybackBarOutput::CycleRepeat),
@@ -676,6 +706,27 @@ fn media_key_action(keyval: gdk::Key) -> Option<&'static str> {
         gdk::Key::AudioPrev => Some("prev-track"),
         _ => None,
     }
+}
+
+/// Whether the focused widget uses Left/Right itself: text, a slider (the seek
+/// bar and volume move with the arrows) or a library tree row.
+fn focus_keeps_arrows(controller: &gtk::EventControllerKey) -> bool {
+    if focus_accepts_text(controller) {
+        return true;
+    }
+    let focus = controller
+        .widget()
+        .and_then(|widget| widget.root())
+        .and_downcast::<gtk::Window>()
+        .and_then(|window| gtk::prelude::GtkWindowExt::focus(&window));
+    focus.is_some_and(|focus| {
+        focus.is::<gtk::Range>()
+            || focus.ancestor(gtk::Range::static_type()).is_some()
+            || focus.is::<gtk::TreeExpander>()
+            || focus
+                .first_child()
+                .is_some_and(|child| child.is::<gtk::TreeExpander>())
+    })
 }
 
 fn focus_accepts_text(controller: &gtk::EventControllerKey) -> bool {

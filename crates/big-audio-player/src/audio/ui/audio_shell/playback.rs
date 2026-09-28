@@ -1,6 +1,18 @@
 use super::*;
 
 impl AudioShell {
+    /// Keyboard seek, on the TV while it has the transport.
+    pub(super) fn seek_by(&mut self, seconds: f64) {
+        if let Some(state) = self.tv.attached() {
+            if state.can_seek && state.duration > 0.0 {
+                let target = (state.position + seconds).clamp(0.0, state.duration);
+                self.tv.control("seek-to", target);
+            }
+        } else if let Some(mpv) = &self.mpv {
+            mpv.seek(seconds);
+        }
+    }
+
     pub(super) fn handle_playback(
         &mut self,
         out: AudioPlaybackBarOutput,

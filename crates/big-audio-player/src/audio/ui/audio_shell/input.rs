@@ -192,6 +192,8 @@ pub enum AudioShellInput {
     Redo,
     /// Toggle shuffle from a keyboard/action shortcut.
     ToggleShuffleShortcut,
+    /// Keyboard seek by this many seconds from the current position.
+    SeekBy(f64),
     /// Typed MPRIS command, with track identity preserved across thread dispatch.
     MprisCommand(MprisCommand),
     /// Album art resolved for a track (async); `gen` guards against a stale

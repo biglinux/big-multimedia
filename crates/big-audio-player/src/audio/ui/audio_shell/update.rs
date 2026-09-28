@@ -311,6 +311,7 @@ impl AudioShell {
             AudioShellInput::Notify(message) => self.notify(&message),
             AudioShellInput::Undo => self.undo_queue(&sender),
             AudioShellInput::Redo => self.redo_queue(&sender),
+            AudioShellInput::SeekBy(seconds) => self.seek_by(seconds),
             AudioShellInput::ToggleShuffleShortcut => {
                 self.handle_playback(
                     AudioPlaybackBarOutput::ToggleShuffle(next_shuffle_state(self.queue.shuffle())),
