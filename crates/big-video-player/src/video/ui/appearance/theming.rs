@@ -135,6 +135,18 @@ menubutton.osd-btn > button:checked {{
   padding: 4px;
   -gtk-icon-size: 16px;
 }}
+/* The header is drawn over the video in the player's colours. Desktop themes
+ * restyle headerbar through libadwaita's variables (BigStyle maps them to the
+ * KDE title bar, dark text on dark video) and give :backdrop a light plate, so
+ * the header names its own in every focus state. */
+.osd-header headerbar,
+.osd-header headerbar:backdrop {{
+  --headerbar-fg-color: @player_icon_color;
+  --headerbar-bg-color: transparent;
+  --headerbar-backdrop-color: transparent;
+  color: @player_icon_color;
+  background: transparent;
+}}
 .osd-header headerbar windowcontrols,
 .osd-header windowcontrols {{
   background: transparent;
