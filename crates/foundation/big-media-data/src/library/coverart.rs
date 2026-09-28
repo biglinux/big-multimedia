@@ -4,6 +4,8 @@
 
 use big_os_kit::http_client::{RequestHeaders, http_get_bytes_capped, http_get_json};
 use big_os_kit::url::encode_query_value as url_encode;
+use std::sync::{Mutex, PoisonError};
+use std::time::{Duration, Instant};
 
 const MB_SEARCH: &str = "https://musicbrainz.org/ws/2/release";
 
@@ -34,13 +36,50 @@ fn build_caa_url(mbid: &str) -> String {
     format!("https://coverartarchive.org/release/{mbid}/front-250")
 }
 
+/// One album looked up this session: `(artist, album, art, when)`.
+type Lookup = (String, String, Option<Vec<u8>>, Instant);
+
+/// Albums already looked up this session, newest last. Without it every track
+/// of an album lacking embedded art asked MusicBrainz again — two requests and
+/// a 1.1 s pause per track change.
+static LOOKUPS: Mutex<Vec<Lookup>> = Mutex::new(Vec::new());
+const LOOKUPS_KEPT: usize = 64;
+/// A miss may be the network, not the archive: ask again after this long.
+const MISS_RETRY: Duration = Duration::from_secs(600);
+
 /// Blocking — call from a background thread.
 pub fn fetch_cover_art(artist: &str, album: &str) -> Option<Vec<u8>> {
+    {
+        let lookups = LOOKUPS.lock().unwrap_or_else(PoisonError::into_inner);
+        if let Some((_, _, art, when)) = lookups
+            .iter()
+            .find(|(a, b, _, _)| a == artist && b == album)
+            && (art.is_some() || when.elapsed() < MISS_RETRY)
+        {
+            return art.clone();
+        }
+    }
+    let art = fetch_uncached(artist, album);
+    let mut lookups = LOOKUPS.lock().unwrap_or_else(PoisonError::into_inner);
+    lookups.retain(|(a, b, _, _)| a != artist || b != album);
+    if lookups.len() >= LOOKUPS_KEPT {
+        lookups.remove(0);
+    }
+    lookups.push((
+        artist.to_owned(),
+        album.to_owned(),
+        art.clone(),
+        Instant::now(),
+    ));
+    art
+}
+
+fn fetch_uncached(artist: &str, album: &str) -> Option<Vec<u8>> {
     let body = http_get_json(&build_mb_search_url(artist, album))?;
     let mbid = extract_release_mbid(&body)?;
 
     // MusicBrainz: 1 req/sec — pace before the next call.
-    std::thread::sleep(std::time::Duration::from_millis(1100));
+    std::thread::sleep(Duration::from_millis(1100));
 
     let caa_url = build_caa_url(&mbid);
 
@@ -48,7 +87,7 @@ pub fn fetch_cover_art(artist: &str, album: &str) -> Option<Vec<u8>> {
         &caa_url,
         &RequestHeaders::default(),
         5 * 1024 * 1024,
-        std::time::Duration::from_secs(15),
+        Duration::from_secs(15),
     )
     .ok()?;
 

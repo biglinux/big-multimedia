@@ -115,17 +115,24 @@ impl AudioShell {
         let input = sender.input_sender().clone();
         spawn_blocking_result(
             move || {
-                crate::library::metadata::extract_album_art(&path).or_else(|| {
+                let bytes = crate::library::metadata::extract_album_art(&path).or_else(|| {
                     let a = art_artist.as_deref()?;
                     let b = art_album.as_deref()?;
                     if a.is_empty() || b.is_empty() {
                         return None;
                     }
                     crate::library::coverart::fetch_cover_art(a, b)
+                })?;
+                // Decoded and written here so the main loop never sees the
+                // original, which can be a 3000² JPEG.
+                Some(ResolvedArt {
+                    blur: big_media_components::media::images::bytes_to_thumbnail(&bytes, 16),
+                    card: big_media_components::media::images::bytes_to_thumbnail(&bytes, 48),
+                    url: save_mpris_art(&bytes),
                 })
             },
-            move |data| {
-                let _ = input.send(AudioShellInput::ArtResolved { r#gen, data });
+            move |art| {
+                let _ = input.send(AudioShellInput::ArtResolved { r#gen, art });
             },
         );
     }
@@ -136,9 +143,7 @@ impl AudioShell {
     pub(super) fn refresh_blur_art(&self) {
         let enabled = self.settings.get_bool_or(keys::AUDIO_ALBUM_ART_BG, true);
         let blur = if enabled {
-            self.last_art_bytes.as_ref().and_then(|bytes| {
-                big_media_components::media::images::bytes_to_thumbnail(bytes, 16)
-            })
+            self.last_blur_art.clone()
         } else {
             None
         };
@@ -146,19 +151,10 @@ impl AudioShell {
             .emit(AudioPlaybackBarInput::SetBlurArt(blur));
     }
 
-    /// Apply resolved album art: blur background + MPRIS `artUrl` metadata.
-    ///
-    /// The synchronous UI work (blur bg, sidebar thumbnail) runs inline; the
-    /// `artUrl` cache write (`save_mpris_art` — blocking disk I/O) is offloaded
-    /// off the GTK main thread and finished in [`Self::apply_mpris_art_url`]
-    /// via the `MprisArtSaved` input (gen-guarded against stale navigation).
-    pub(super) fn apply_resolved_art(
-        &mut self,
-        data: Option<Vec<u8>>,
-        sender: &ComponentSender<Self>,
-    ) {
-        let Some(bytes) = data else {
-            self.last_art_bytes = None;
+    /// Apply resolved album art: blur background, sidebar card, MPRIS `artUrl`.
+    pub(super) fn apply_resolved_art(&mut self, art: Option<ResolvedArt>) {
+        let Some(art) = art else {
+            self.last_blur_art = None;
             self.mpris_state
                 .art_url
                 .lock()
@@ -169,34 +165,34 @@ impl AudioShell {
             self.np_art.set_icon_name(Some("audio-x-generic-symbolic"));
             return;
         };
-        self.last_art_bytes = Some(bytes.clone());
+        self.last_blur_art = art.blur;
         self.refresh_blur_art();
-        // 48px thumbnail for the sidebar now-playing card.
-        self.np_art.set_paintable(
-            big_media_components::media::images::bytes_to_thumbnail(&bytes, 48).as_ref(),
-        );
-        // Cache the art to disk off the main loop; the resulting `file://` URL
-        // is applied back on the main thread once the write commits.
-        let r#gen = self.now_playing_gen;
-        let input = sender.input_sender().clone();
-        spawn_blocking_result(
-            move || save_mpris_art(&bytes),
-            move |url| {
-                let _ = input.send(AudioShellInput::MprisArtSaved { r#gen, url });
-            },
-        );
+        match &art.card {
+            Some(card) => self.np_art.set_paintable(Some(card)),
+            None => self.np_art.set_icon_name(Some("audio-x-generic-symbolic")),
+        }
+        if let Some(url) = art.url {
+            self.apply_mpris_art_url(url);
+        }
     }
 
-    /// Store the cached `artUrl` and emit MPRIS metadata once the disk write
-    /// commits. Runs on the main thread (via the `MprisArtSaved` input).
-    pub(super) fn apply_mpris_art_url(&self, url: Option<String>) {
-        let Some(url) = url else {
-            return;
-        };
+    /// Store the cached `artUrl`; the next MPRIS snapshot publishes it.
+    fn apply_mpris_art_url(&self, url: String) {
         self.mpris_state
             .art_url
             .lock()
             .unwrap_or_else(PoisonError::into_inner)
             .clone_from(&url);
     }
+}
+
+/// A track's cover, decoded off the main loop at the sizes the shell shows.
+#[derive(Debug)]
+pub struct ResolvedArt {
+    /// 16 px source of the blurred background.
+    blur: Option<gtk::gdk::Texture>,
+    /// 48 px sidebar now-playing card.
+    card: Option<gtk::gdk::Texture>,
+    /// `file://` URL of the copy cached for MPRIS, if the write succeeded.
+    url: Option<String>,
 }

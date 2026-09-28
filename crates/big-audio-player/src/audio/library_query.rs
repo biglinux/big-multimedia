@@ -134,6 +134,13 @@ pub(crate) fn try_build_library_tree_snapshot(
         track: None,
     }];
 
+    // One query for every matching track, grouped here. Asking SQLite once per
+    // group scanned the whole table per group — COALESCE keeps the column
+    // indexes out — which took a core for 15 s on a 30 000-track library.
+    // `get_library_tracks` returns the leaf order, and grouping keeps it.
+    let tracks = queries::get_library_tracks(conn, &[], filter, age_secs)
+        .map_err(|_| "library query failed")?;
+
     // "Various Artists" bucket (compilations) — only under an artist top level.
     let compilations = if matches!(level0, GroupBy::Artist | GroupBy::AlbumArtist) {
         queries::get_compilation_albums(conn, filter, &[], age_secs)
@@ -145,21 +152,20 @@ pub(crate) fn try_build_library_tree_snapshot(
         let va_count: i64 = compilations.iter().map(|(_, count)| count).sum();
         let va_children = compilations
             .iter()
-            .map(|(album, count)| {
-                let filters = [("album", album.as_str())];
-                let tracks = queries::get_library_tracks(conn, &filters, filter, age_secs)
-                    .map_err(|_| "library query failed")?;
-                Ok::<_, &'static str>(LibraryTreeNode {
-                    kind: BrowserNodeKind::Album,
-                    label: album.clone(),
-                    key: album.clone(),
-                    count: *count as i32,
-                    secondary: "Various Artists".to_string(),
-                    children: tracks.iter().map(file_node).collect(),
-                    track: None,
-                })
+            .map(|(album, count)| LibraryTreeNode {
+                kind: BrowserNodeKind::Album,
+                label: album.clone(),
+                key: album.clone(),
+                count: *count as i32,
+                secondary: "Various Artists".to_string(),
+                children: tracks
+                    .iter()
+                    .filter(|track| group_value(track, GroupBy::Album) == *album)
+                    .map(file_node)
+                    .collect(),
+                track: None,
             })
-            .collect::<Result<Vec<_>, _>>()?;
+            .collect();
         level0_nodes.push(LibraryTreeNode {
             kind: BrowserNodeKind::VariousArtists,
             label: i18n("Various Artists"),
@@ -171,90 +177,73 @@ pub(crate) fn try_build_library_tree_snapshot(
         });
     }
 
-    let groups = queries::get_library_groups(conn, level0.column(), filter, &[], age_secs)
-        .map_err(|_| "library query failed")?;
-    let ctx = GroupSubtreeCtx {
-        conn,
-        grouping,
-        filter,
-        age_secs,
-    };
-    for (value, count) in &groups {
-        if value.is_empty() {
-            continue;
-        }
-        level0_nodes.push(build_group_subtree(&ctx, 0, level0, value, *count, &[])?);
-    }
-
+    let all: Vec<&Track> = tracks.iter().collect();
+    level0_nodes.extend(group_nodes(grouping, 0, &all));
     Ok(LibraryTreeSnapshot {
         level0: level0_nodes,
     })
 }
 
-/// Recursion-invariant context for [`build_group_subtree`]: the DB handle, the
-/// grouping spec, the active library filter, and the recency window — all
-/// unchanged as the tree descends.
-struct GroupSubtreeCtx<'a> {
-    conn: &'a rusqlite::Connection,
-    grouping: &'a LibraryGrouping,
-    filter: &'a str,
-    age_secs: Option<i64>,
+/// The text a track groups under for `group_by`, as the SQL grouping spells it:
+/// `COALESCE(column, '')`, with the integer columns cast to text.
+fn group_value(track: &Track, group_by: GroupBy) -> String {
+    let text = |value: &Option<String>| value.clone().unwrap_or_default();
+    let number = |value: Option<i32>| value.map(|n| n.to_string()).unwrap_or_default();
+    match group_by {
+        GroupBy::None => String::new(),
+        GroupBy::Artist => text(&track.artist),
+        GroupBy::AlbumArtist => text(&track.album_artist),
+        GroupBy::Album => text(&track.album),
+        GroupBy::Genre => text(&track.genre),
+        GroupBy::Year => number(track.year),
+        GroupBy::Format => text(&track.format),
+    }
 }
 
-/// Recursively build a group node + its children (sub-groups or, at max depth,
-/// file leaves). `parent_filters` accumulate the column/value path.
-fn build_group_subtree(
-    ctx: &GroupSubtreeCtx,
+/// The group nodes of `tracks` at `level_idx`: distinct values in
+/// `COLLATE NOCASE` order (ASCII case folding, the SQL grouping's order),
+/// empty values left out, each counting all of its tracks. Past the last level
+/// the tracks become file leaves in their incoming order.
+fn group_nodes(
+    grouping: &LibraryGrouping,
     level_idx: usize,
-    group_by: GroupBy,
-    value: &str,
-    count: i64,
-    parent_filters: &[(&str, &str)],
-) -> Result<LibraryTreeNode, &'static str> {
-    let mut filters: Vec<(String, String)> = parent_filters
-        .iter()
-        .map(|(column, val)| ((*column).to_string(), (*val).to_string()))
+    tracks: &[&Track],
+) -> Vec<LibraryTreeNode> {
+    let group_by = grouping.level(level_idx);
+    let mut groups: std::collections::HashMap<String, Vec<&Track>> =
+        std::collections::HashMap::new();
+    for track in tracks {
+        groups
+            .entry(group_value(track, group_by))
+            .or_default()
+            .push(track);
+    }
+    let mut groups: Vec<(String, Vec<&Track>)> = groups
+        .into_iter()
+        .filter(|(value, _)| !value.is_empty())
         .collect();
-    filters.push((group_by.column().to_string(), value.to_string()));
-    let filter_refs: Vec<(&str, &str)> = filters
-        .iter()
-        .map(|(column, val)| (column.as_str(), val.as_str()))
-        .collect();
-
+    groups.sort_by(|(a, _), (b, _)| {
+        a.to_ascii_lowercase()
+            .cmp(&b.to_ascii_lowercase())
+            .then_with(|| a.cmp(b))
+    });
     let next_idx = level_idx + 1;
-    let children = if next_idx >= ctx.grouping.depth() {
-        queries::get_library_tracks(ctx.conn, &filter_refs, ctx.filter, ctx.age_secs)
-            .map_err(|_| "library query failed")?
-            .iter()
-            .map(file_node)
-            .collect()
-    } else {
-        let next = ctx.grouping.level(next_idx);
-        queries::get_library_groups(
-            ctx.conn,
-            next.column(),
-            ctx.filter,
-            &filter_refs,
-            ctx.age_secs,
-        )
-        .map_err(|_| "library query failed")?
-        .iter()
-        .filter(|(sub_value, _)| !sub_value.is_empty())
-        .map(|(sub_value, sub_count)| {
-            build_group_subtree(ctx, next_idx, next, sub_value, *sub_count, &filter_refs)
+    groups
+        .into_iter()
+        .map(|(value, members)| LibraryTreeNode {
+            kind: group_by.node_kind(),
+            count: members.len() as i32,
+            children: if next_idx >= grouping.depth() {
+                members.iter().map(|track| file_node(track)).collect()
+            } else {
+                group_nodes(grouping, next_idx, &members)
+            },
+            label: value.clone(),
+            key: value,
+            secondary: String::new(),
+            track: None,
         })
-        .collect::<Result<Vec<_>, _>>()?
-    };
-
-    Ok(LibraryTreeNode {
-        kind: group_by.node_kind(),
-        label: value.to_string(),
-        key: value.to_string(),
-        count: count as i32,
-        secondary: String::new(),
-        children,
-        track: None,
-    })
+        .collect()
 }
 
 /// A file-leaf node carrying the full track (drag/export) + the tab-joined

@@ -225,6 +225,7 @@ impl Mpris {
         let taskbar_flag = taskbar_flag(taskbar_progress_enabled);
         let flag_for_timer = taskbar_flag.clone();
         let desktop_for_timer = desktop_application_uri(desktop_id);
+        let sent_launcher = std::cell::Cell::new(None);
         let timer_source = glib::timeout_add_local(std::time::Duration::from_secs(1), move || {
             sync_state(
                 &conn_for_timer,
@@ -232,6 +233,7 @@ impl Mpris {
                 &prev_state,
                 &flag_for_timer,
                 &desktop_for_timer,
+                &sent_launcher,
             );
             glib::ControlFlow::Continue
         });

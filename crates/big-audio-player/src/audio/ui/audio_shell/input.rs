@@ -196,21 +196,13 @@ pub enum AudioShellInput {
     SeekBy(f64),
     /// Typed MPRIS command, with track identity preserved across thread dispatch.
     MprisCommand(MprisCommand),
-    /// Album art resolved for a track (async); `gen` guards against a stale
-    /// result → MPRIS metadata + blur bg.
+    /// Album art resolved, decoded and cached for MPRIS off the main thread;
+    /// `gen` guards against a stale result → blur bg, card and `artUrl`.
     ArtResolved {
         /// Track generation this fetch was started for.
         r#gen: u64,
-        /// Raw art bytes, or `None`.
-        data: Option<Vec<u8>>,
-    },
-    /// Album art cached to disk off the main thread (async); `gen` guards
-    /// against a stale result → store `artUrl` + emit MPRIS metadata.
-    MprisArtSaved {
-        /// Track generation the cache write was started for.
-        r#gen: u64,
-        /// `file://` URL of the cached art, or `None` if the write failed.
-        url: Option<String>,
+        /// The track's art, or `None` when it has none.
+        art: Option<super::metadata::ResolvedArt>,
     },
     /// Existing playlists resolved for the add-to-playlist picker (async DB
     /// result) → open the picker in the library panel.

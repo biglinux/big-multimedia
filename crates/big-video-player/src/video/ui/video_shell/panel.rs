@@ -950,14 +950,13 @@ fn recent_page(columns: usize, sender: &ComponentSender<VideoShell>) -> gtk::Wid
         let path = entry.path;
         glib::spawn_future_local(async move {
             let wanted = path.clone();
-            let texture = gtk::gio::spawn_blocking(move || {
-                let file = crate::media::thumbnail::get_or_generate_thumbnail(&wanted)?;
-                gtk::gdk::Texture::from_filename(file).ok()
-            })
-            .await
-            .ok()
-            .flatten();
-            if let (Some(texture), Some(picture)) = (texture, picture.upgrade()) {
+            let decoded =
+                gtk::gio::spawn_blocking(move || crate::media::thumbnail::load_thumbnail(&wanted))
+                    .await
+                    .ok()
+                    .flatten();
+            if let (Some((thumb, image)), Some(picture)) = (decoded, picture.upgrade()) {
+                let texture = crate::media::thumbnail::thumbnail_texture(thumb, image);
                 picture.set_paintable(Some(&texture));
                 if let Some(placeholder) = placeholder.upgrade() {
                     placeholder.set_visible(false);

@@ -8,6 +8,8 @@ use std::sync::atomic::AtomicU32;
 use big_app_kit::subprocess::{BigSubprocessOutputMode, BigSubprocessSpec};
 use gtk::glib;
 
+use big_relm4_components::display::texture::{RgbaImage, pixbuf_to_rgba, rgba_to_texture};
+
 use super::metadata_cache::{acquire_slot, meta_cache, release_slot};
 
 const MAX_THUMBS: u32 = 6;
@@ -52,8 +54,9 @@ fn find_freedesktop_thumbnail(video_path: &str) -> Option<PathBuf> {
         .unwrap_or_else(|| PathBuf::from("/tmp"))
         .join("thumbnails");
 
-    // Larger variants first → better quality.
-    for subdir in ["x-large", "xx-large", "large", "normal"] {
+    // `large` (256 px) covers the 240 px cards; bigger ones are only scaled
+    // down, and `normal` (128 px) is the last resort.
+    for subdir in ["large", "x-large", "xx-large", "normal"] {
         let path = base.join(subdir).join(&filename);
         if path.is_file() {
             return Some(path);
@@ -151,6 +154,26 @@ pub fn get_or_generate_thumbnail(video_path: &str) -> Option<PathBuf> {
 
 const MAX_TEXTURE_CACHE: usize = 96;
 
+/// Longest edge a thumbnail is decoded to: the cards draw it 240 px wide, and a
+/// file-manager `xx-large` thumbnail decoded whole is 1024 px, ~2.4 MiB a card.
+const THUMB_DECODE_EDGE: i32 = 256;
+
+/// Worker side: the thumbnail file for `video_path`, decoded no larger than the
+/// cards show it. Build the texture on the main loop with [`thumbnail_texture`].
+#[must_use]
+pub fn load_thumbnail(video_path: &str) -> Option<(PathBuf, RgbaImage)> {
+    let thumb = get_or_generate_thumbnail(video_path)?;
+    let pixbuf = gtk::gdk_pixbuf::Pixbuf::from_file_at_scale(
+        &thumb,
+        THUMB_DECODE_EDGE,
+        THUMB_DECODE_EDGE,
+        true,
+    )
+    .ok()?;
+    let image = pixbuf_to_rgba(&pixbuf)?;
+    Some((thumb, image))
+}
+
 thread_local! {
     /// Main-thread cache of decoded thumbnail textures, keyed by the thumbnail
     /// FILE path (which already encodes the source path + mtime via `thumb_hash`,
@@ -170,29 +193,27 @@ thread_local! {
     ));
 }
 
-/// Return the canonical cached texture for `thumb_path`, inserting `fresh` (the
-/// off-thread-decoded texture) on a miss. On a hit the `fresh` texture is dropped
-/// and the shared one returned, so every card showing the same thumb feeds the
-/// renderer one identical `GdkTexture` (one GL upload, not one per bind). Bounded
-/// LRU so a long browse session cannot grow the cache without limit.
+/// Main-loop side of [`load_thumbnail`]: the one cached texture for
+/// `thumb_path`, built from `image` only on a miss. Every card showing the same
+/// thumb then feeds the renderer one identical `GdkTexture` (one GL upload, not
+/// one per bind). Bounded LRU so a long browse session cannot grow it without
+/// limit.
 #[must_use]
-pub fn intern_thumbnail_texture(
-    thumb_path: PathBuf,
-    fresh: gtk::gdk::Texture,
-) -> gtk::gdk::Texture {
+pub fn thumbnail_texture(thumb_path: PathBuf, image: RgbaImage) -> gtk::gdk::Texture {
     TEXTURE_CACHE.with(|cell| {
         let (map, order) = &mut *cell.borrow_mut();
         if let Some(existing) = map.get(&thumb_path) {
             return existing.clone();
         }
-        map.insert(thumb_path.clone(), fresh.clone());
+        let texture = rgba_to_texture(image);
+        map.insert(thumb_path.clone(), texture.clone());
         order.push_back(thumb_path);
         while order.len() > MAX_TEXTURE_CACHE {
             if let Some(evicted) = order.pop_front() {
                 map.remove(&evicted);
             }
         }
-        fresh
+        texture
     })
 }
 

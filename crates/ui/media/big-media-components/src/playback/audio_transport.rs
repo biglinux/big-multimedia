@@ -88,7 +88,7 @@ pub struct BigAudioTransport {
     seek_bar: gtk::Scale,
     cut_timeline: gtk::DrawingArea,
     bar_stack: gtk::Stack,
-    position_label: gtk::Label,
+    position_label: gtk::Inscription,
     duration_label: gtk::Label,
     volume_hover_box: gtk::Box,
     volume_button: gtk::Button,
@@ -320,7 +320,7 @@ impl BigAudioTransport {
 
     /// Borrow the elapsed-position label.
     #[must_use]
-    pub fn position_label(&self) -> &gtk::Label {
+    pub fn position_label(&self) -> &gtk::Inscription {
         &self.position_label
     }
 
@@ -480,18 +480,33 @@ fn build_hover_control(
 }
 
 /// Build the seek row scale plus the position/duration labels.
+/// Characters reserved for the elapsed time: "0:00" plus a spare, so digits of
+/// uneven width never clip. [`time_label_chars`] widens it for long media.
+pub const TIME_CHARS: u32 = 5;
+
+/// Characters the elapsed time needs to show a position as long as `duration`.
+#[must_use]
+pub fn time_label_chars(duration: &str) -> u32 {
+    u32::try_from(duration.chars().count()).map_or(TIME_CHARS, |chars| (chars + 1).max(TIME_CHARS))
+}
+
 fn build_seek_row(
     labels: &BigAudioTransportLabels,
 ) -> (
     gtk::Scale,
     gtk::DrawingArea,
     gtk::Stack,
-    gtk::Label,
+    gtk::Inscription,
     gtk::Label,
 ) {
-    let position_label = gtk::Label::builder()
-        .label("0:00")
-        .width_chars(5)
+    // An inscription, not a label: its width does not follow the text, so the
+    // once-a-second change repaints it alone. A GtkLabel relayouts the window,
+    // and GTK's synthetic pointer motion after the relayout keeps a hovered
+    // list's overlay scrollbar fading in and out, ~27 frames a second.
+    let position_label = gtk::Inscription::builder()
+        .text("0:00")
+        .min_chars(TIME_CHARS)
+        .nat_chars(TIME_CHARS)
         .xalign(1.0)
         .css_classes(["caption"])
         .build();

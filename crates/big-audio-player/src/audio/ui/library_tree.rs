@@ -49,7 +49,7 @@ pub(super) use model::LibraryTreeHandle;
 #[cfg(test)]
 use model::{
     BrowserNodeContract, ChildStores, DIVIDER_THRESHOLD, LeafTracks,
-    browser_node_contract_for_tree_node, build_node_recursive, group_divider_letter,
+    browser_node_contract_for_tree_node, build_node, child_store, group_divider_letter,
     to_browser_node,
 };
 pub use model::{LibraryTreeNode, LibraryTreeSnapshot};
@@ -453,7 +453,7 @@ mod tests {
 
     #[cfg(not(miri))]
     #[test]
-    fn build_node_recursive_adds_letter_dividers_only_above_threshold()
+    fn child_store_adds_letter_dividers_only_above_threshold()
     -> std::result::Result<(), Box<dyn std::error::Error>> {
         let threshold_children = (0..DIVIDER_THRESHOLD)
             .map(|index| {
@@ -475,18 +475,22 @@ mod tests {
         };
         let mut threshold_stores = HashMap::new();
         let mut threshold_leaves = HashMap::new();
-        let threshold_browser_node = build_node_recursive(
-            &threshold_parent,
+        let threshold_browser_node = build_node(
+            threshold_parent,
             &mut threshold_stores,
             &mut threshold_leaves,
         );
-        let threshold_store = threshold_stores
-            .get(&format!(
+        let threshold_store = child_store(
+            &format!(
                 "{}:{}",
                 threshold_browser_node.kind() as u32,
                 threshold_browser_node.key()
-            ))
-            .ok_or_else(|| std::io::Error::other("threshold child store should exist"))?;
+            ),
+            &mut threshold_stores,
+            &mut threshold_leaves,
+        )
+        .ok_or_else(|| std::io::Error::other("threshold child store should exist"))?;
+        let threshold_store = &threshold_store;
         assert_eq!(threshold_store.n_items(), DIVIDER_THRESHOLD as u32);
         assert_eq!(
             child_browser_node(threshold_store, 0).map(|browser_node| browser_node.kind()),
@@ -519,14 +523,18 @@ mod tests {
         let mut divider_stores = HashMap::new();
         let mut divider_leaves = HashMap::new();
         let divider_browser_node =
-            build_node_recursive(&divider_parent, &mut divider_stores, &mut divider_leaves);
-        let divider_store = divider_stores
-            .get(&format!(
+            build_node(divider_parent, &mut divider_stores, &mut divider_leaves);
+        let divider_store = child_store(
+            &format!(
                 "{}:{}",
                 divider_browser_node.kind() as u32,
                 divider_browser_node.key()
-            ))
-            .ok_or_else(|| std::io::Error::other("divider child store should exist"))?;
+            ),
+            &mut divider_stores,
+            &mut divider_leaves,
+        )
+        .ok_or_else(|| std::io::Error::other("divider child store should exist"))?;
+        let divider_store = &divider_store;
 
         assert_eq!(divider_store.n_items(), 21);
         assert_eq!(
@@ -550,7 +558,7 @@ mod tests {
 
     #[cfg(not(miri))]
     #[test]
-    fn build_node_recursive_registers_leaf_tracks_by_file_path() {
+    fn build_node_registers_leaf_tracks_by_file_path() {
         let track = Track::new_external_path("/music/leaf.flac");
         let source_node = LibraryTreeNode {
             kind: BrowserNodeKind::File,
@@ -561,7 +569,7 @@ mod tests {
         };
         let mut child_stores = HashMap::new();
         let mut leaf_tracks = HashMap::new();
-        let browser_node = build_node_recursive(&source_node, &mut child_stores, &mut leaf_tracks);
+        let browser_node = build_node(source_node, &mut child_stores, &mut leaf_tracks);
 
         assert_eq!(browser_node.kind(), BrowserNodeKind::File);
         assert!(child_stores.is_empty());
@@ -609,14 +617,18 @@ mod tests {
             .ok_or_else(|| std::io::Error::other("root browser node should exist"))?;
         assert_eq!(root_browser_node.kind(), BrowserNodeKind::Artist);
         assert_eq!(root_browser_node.key(), "artist-key");
+        // Children mount on first expand, registering their tracks then.
+        assert!(tree_handle.leaf_tracks.borrow().is_empty());
         {
-            let child_store_map = tree_handle.child_stores.borrow();
-            let child_store = child_store_map
-                .get("1:artist-key")
-                .ok_or_else(|| std::io::Error::other("artist child store should exist"))?;
-            assert_eq!(child_store.n_items(), 1);
+            let artist_store = child_store(
+                "1:artist-key",
+                &mut tree_handle.child_stores.borrow_mut(),
+                &mut tree_handle.leaf_tracks.borrow_mut(),
+            )
+            .ok_or_else(|| std::io::Error::other("artist child store should exist"))?;
+            assert_eq!(artist_store.n_items(), 1);
             assert_eq!(
-                child_browser_node(child_store, 0).map(|browser_node| browser_node.key()),
+                child_browser_node(&artist_store, 0).map(|browser_node| browser_node.key()),
                 Some("/music/track.flac".to_string())
             );
         }

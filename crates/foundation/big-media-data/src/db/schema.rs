@@ -10,6 +10,20 @@ const MIGRATIONS: &[&str] = &[
     // 1: `file_path ... UNIQUE` already carries an index; this one only
     // doubled the write cost of every scan.
     "DROP INDEX IF EXISTS idx_tracks_file_path;",
+    // 2: the full-text index covers five text columns, yet every play-count,
+    // rating or last-played update deleted and re-added the track's entry.
+    // Deleting a track cascades into these two tables, which had no index on
+    // `track_id`, so each deletion scanned both.
+    "DROP TRIGGER IF EXISTS tracks_fts_au;
+     CREATE TRIGGER tracks_fts_au AFTER UPDATE OF title, artist, album, album_artist, genre
+     ON tracks BEGIN
+         INSERT INTO tracks_fts(tracks_fts, rowid, title, artist, album, album_artist, genre)
+         VALUES ('delete', old.id, old.title, old.artist, old.album, old.album_artist, old.genre);
+         INSERT INTO tracks_fts(rowid, title, artist, album, album_artist, genre)
+         VALUES (new.id, new.title, new.artist, new.album, new.album_artist, new.genre);
+     END;
+     CREATE INDEX IF NOT EXISTS idx_playlist_tracks_track ON playlist_tracks(track_id);
+     CREATE INDEX IF NOT EXISTS idx_queue_tracks_track ON queue_tracks(track_id);",
 ];
 
 pub fn run_migrations(conn: &Connection) -> crate::Result<()> {
@@ -279,6 +293,33 @@ mod tests {
             )
             .unwrap();
         assert_eq!(count, 1);
+    }
+
+    #[test]
+    fn fts_follows_text_edits_and_ignores_play_counts() {
+        let conn = memory_db();
+        conn.execute(
+            "INSERT INTO tracks (file_path, title, artist, duration_secs) VALUES ('/a.mp3', 'Old Name', 'Art', 60.0)",
+            [],
+        )
+        .unwrap();
+        let matches = |query: &str| -> i64 {
+            conn.query_row(
+                "SELECT COUNT(*) FROM tracks_fts WHERE tracks_fts MATCH ?1",
+                [query],
+                |r| r.get(0),
+            )
+            .unwrap()
+        };
+        let changes_before = conn.total_changes();
+        conn.execute("UPDATE tracks SET play_count = play_count + 1", [])
+            .unwrap();
+        // One row changed: the tracks row, and no full-text rewrite.
+        assert_eq!(conn.total_changes() - changes_before, 1);
+        conn.execute("UPDATE tracks SET title = 'New Name'", [])
+            .unwrap();
+        assert_eq!(matches("New"), 1);
+        assert_eq!(matches("Old"), 0);
     }
 
     #[test]

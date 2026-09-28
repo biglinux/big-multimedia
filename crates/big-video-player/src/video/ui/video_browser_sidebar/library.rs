@@ -20,7 +20,7 @@ use std::rc::Rc;
 use std::time::Duration;
 
 use adw::prelude::*;
-use gtk::{gdk, gio, glib};
+use gtk::{gio, glib};
 
 use super::{BrowserState, VideoBrowserSidebarOutput};
 use crate::i18n::{i18n, ni18n};
@@ -672,15 +672,12 @@ fn result_row(state: &Rc<BrowserState>, path: &str) -> adw::ActionRow {
     let picture = picture.downgrade();
     let path = path.to_string();
     glib::spawn_future_local(async move {
-        let texture = gio::spawn_blocking(move || {
-            let file = thumbnail::get_or_generate_thumbnail(&path)?;
-            gdk::Texture::from_filename(file).ok()
-        })
-        .await
-        .ok()
-        .flatten();
-        if let (Some(texture), Some(picture)) = (texture, picture.upgrade()) {
-            picture.set_paintable(Some(&texture));
+        let decoded = gio::spawn_blocking(move || thumbnail::load_thumbnail(&path))
+            .await
+            .ok()
+            .flatten();
+        if let (Some((thumb, image)), Some(picture)) = (decoded, picture.upgrade()) {
+            picture.set_paintable(Some(&thumbnail::thumbnail_texture(thumb, image)));
         }
     });
     row

@@ -658,7 +658,7 @@ impl Component for AudioShell {
                 scan_slot: library_scan_engine::ScanSlot::default(),
                 library_queries: library_generation::LatestMailbox::default(),
                 current_file: String::new(),
-                last_art_bytes: None,
+                last_blur_art: None,
                 is_playing: false,
                 is_stream: false,
                 failed_loads: 0,

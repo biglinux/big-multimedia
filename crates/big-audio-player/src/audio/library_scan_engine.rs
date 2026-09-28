@@ -116,7 +116,7 @@ pub(crate) fn scan_folder_cancellable(
         let conn = lock_db(db, cancelled)?;
         queries::add_watch_folder(&conn, folder).map_err(|_| "Could not save watch folder")?;
     }
-    let mut batch: Vec<Track> = Vec::with_capacity(64);
+    let mut pending: Vec<String> = Vec::with_capacity(64);
     scanner::visit_audio_files_cancellable(folder, cancelled, |path| {
         control.examined.fetch_add(1, Ordering::Relaxed);
         let path = path
@@ -133,7 +133,51 @@ pub(crate) fn scan_folder_cancellable(
         if exists {
             return Ok(());
         }
-        match metadata::read_track_metadata_cancellable(path, cancelled) {
+        pending.push(path.to_owned());
+        if pending.len() == 64 {
+            import_scan_batch(db, &pending, control)?;
+            pending.clear();
+        }
+        Ok(())
+    })
+    .map_err(|_| "Scan incomplete; confirmed batches were kept".to_owned())?;
+    if !pending.is_empty() {
+        import_scan_batch(db, &pending, control)
+            .map_err(|_| "Scan incomplete; confirmed batches were kept")?;
+    }
+    Ok(())
+}
+
+/// Probe `paths` and commit the readable ones as one batch. Each probe waits on
+/// ffprobe (and ffmpeg for embedded art), so up to four run at once: one at a
+/// time imported 13 files a second.
+fn import_scan_batch(
+    db: &DbHandle,
+    paths: &[String],
+    control: &ScanControl,
+) -> big_media_runtime::Result<()> {
+    let cancelled = &control.cancelled;
+    let workers = std::thread::available_parallelism().map_or(1, |n| n.get().min(4));
+    let probes: Vec<_> = std::thread::scope(|scope| {
+        let handles: Vec<_> = paths
+            .chunks(paths.len().div_ceil(workers).max(1))
+            .map(|chunk| {
+                scope.spawn(move || {
+                    chunk
+                        .iter()
+                        .map(|path| metadata::read_track_metadata_cancellable(path, cancelled))
+                        .collect::<Vec<_>>()
+                })
+            })
+            .collect();
+        handles
+            .into_iter()
+            .flat_map(|handle| handle.join().unwrap_or_default())
+            .collect()
+    });
+    let mut batch = Vec::with_capacity(probes.len());
+    for probe in probes {
+        match probe {
             Ok(track) => batch.push(track),
             Err(big_media_runtime::Error::Cancelled) => {
                 return Err(big_media_runtime::Error::Cancelled);
@@ -142,19 +186,9 @@ pub(crate) fn scan_folder_cancellable(
                 control.skipped.fetch_add(1, Ordering::Relaxed);
             }
         }
-        if batch.len() == 64 {
-            let count = insert_scan_batch(db, &batch, cancelled)?;
-            control.imported.fetch_add(count, Ordering::Release);
-            batch.clear();
-        }
-        Ok(())
-    })
-    .map_err(|_| "Scan incomplete; confirmed batches were kept".to_owned())?;
-    if !batch.is_empty() {
-        let count = insert_scan_batch(db, &batch, cancelled)
-            .map_err(|_| "Scan incomplete; confirmed batches were kept")?;
-        control.imported.fetch_add(count, Ordering::Release);
     }
+    let count = insert_scan_batch(db, &batch, cancelled)?;
+    control.imported.fetch_add(count, Ordering::Release);
     Ok(())
 }
 fn insert_scan_batch(

@@ -261,12 +261,27 @@ impl Component for AudioPlaybackBar {
                 t.cut_timeline().set_sensitive(on);
             }
             AudioPlaybackBarInput::SetPaused(paused) => t.set_paused(paused),
-            AudioPlaybackBarInput::SetPosition(text) => t.position_label().set_label(&text),
-            AudioPlaybackBarInput::SetDuration(text) => t.duration_label().set_label(&text),
+            AudioPlaybackBarInput::SetPosition(text) => t.position_label().set_text(Some(&text)),
+            AudioPlaybackBarInput::SetDuration(text) => {
+                let chars =
+                    big_media_components::playback::audio_transport::time_label_chars(&text);
+                t.position_label().set_min_chars(chars);
+                t.position_label().set_nat_chars(chars);
+                t.duration_label().set_label(&text);
+            }
             AudioPlaybackBarInput::SetSeekValue(value) => {
                 let value = value.clamp(0.0, 100.0);
-                self.with_guard(|| t.seek_bar().set_value(value));
                 self.seek_fraction.set(value / 100.0);
+                // Each move repaints the window. Position arrives ten times a
+                // second, while a long track moves the knob a pixel every few
+                // seconds: skip what the eye cannot see.
+                let bar = t.seek_bar();
+                let width = f64::from(bar.width().max(t.cut_timeline().width()));
+                // Unallocated (hidden) bars draw nothing: keep them current.
+                if width > 0.0 && ((value - bar.value()) / 100.0 * width).abs() < 0.5 {
+                    return;
+                }
+                self.with_guard(|| bar.set_value(value));
                 t.cut_timeline().queue_draw();
             }
             AudioPlaybackBarInput::SetDurationSecs(secs) => {

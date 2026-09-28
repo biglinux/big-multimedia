@@ -402,19 +402,15 @@ fn spawn_queue_media(
     let path_meta = path.clone();
     let parts = Rc::new(parts);
     glib::spawn_future_local(async move {
-        let decoded = gio::spawn_blocking(move || {
-            let thumb = thumbnail::get_or_generate_thumbnail(&path)?;
-            let texture = gdk::Texture::from_filename(&thumb).ok()?;
-            Some((thumb, texture))
-        })
-        .await
-        .ok()
-        .flatten();
+        let decoded = gio::spawn_blocking(move || thumbnail::load_thumbnail(&path))
+            .await
+            .ok()
+            .flatten();
         if row_weak.upgrade().map(|r| r.widget_name()) != Some(token.clone()) {
             return;
         }
-        if let Some((thumb, texture)) = decoded {
-            let texture = thumbnail::intern_thumbnail_texture(thumb, texture);
+        if let Some((thumb, image)) = decoded {
+            let texture = thumbnail::thumbnail_texture(thumb, image);
             parts.picture.set_paintable(Some(&texture));
         }
         let (meta, resume) = gio::spawn_blocking(move || {

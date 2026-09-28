@@ -27,6 +27,69 @@ pub fn set_bootstrap_env(name: &str, value: &str) {
     }
 }
 
+/// Render with GTK's GL renderer and keep GDK from opening Vulkan.
+///
+/// GDK creates a Vulkan instance to probe dmabuf formats even when GSK renders
+/// with GL, and on NVIDIA that instance alone held 30-80 MiB of PSS in the
+/// video player (measured 2026-09-28, 1080p playback). GL imports dmabufs
+/// through EGL instead, so nothing is lost. `force` overrides a `GSK_RENDERER`
+/// the session exported; otherwise it is respected, and Vulkan stays available
+/// if that is the renderer it asked for.
+pub fn use_gl_renderer(force: bool) {
+    if force {
+        set_bootstrap_env("GSK_RENDERER", "opengl");
+    } else {
+        set_default_env("GSK_RENDERER", "opengl");
+    }
+    if std::env::var("GSK_RENDERER").is_ok_and(|renderer| renderer == "vulkan") {
+        return;
+    }
+    let disabled = std::env::var("GDK_DISABLE").unwrap_or_default();
+    if !disabled
+        .split(',')
+        .any(|feature| feature.trim() == "vulkan")
+    {
+        let value = if disabled.is_empty() {
+            "vulkan".to_owned()
+        } else {
+            format!("{disabled},vulkan")
+        };
+        set_bootstrap_env("GDK_DISABLE", &value);
+    }
+}
+
+/// Drop pointer motion that repeats the last position in `window`.
+///
+/// After every layout GTK re-delivers the pointer position as a motion event
+/// so hover can follow moved widgets. A moving seek knob relayouts about once
+/// a second, and each repeat reaches the list under a resting pointer, whose
+/// overlay scrollbar then fades in and out: 19-31 frames a second while music
+/// played, against 1-2 with the pointer elsewhere (measured 2026-09-28).
+/// Hover itself is set by crossing events, which GTK computes before this
+/// capture-phase controller sees the motion, so nothing stops following it.
+pub fn ignore_repeated_pointer_motion(window: &impl glib::object::IsA<gtk::Window>) {
+    use gtk::prelude::*;
+
+    let last = std::cell::Cell::new(None::<(f64, f64)>);
+    let filter = gtk::EventControllerLegacy::new();
+    filter.set_propagation_phase(gtk::PropagationPhase::Capture);
+    filter.connect_event(move |_, event| {
+        match event.event_type() {
+            gtk::gdk::EventType::MotionNotify => {
+                let position = event.position();
+                if position.is_some() && position == last.get() {
+                    return glib::Propagation::Stop;
+                }
+                last.set(position);
+            }
+            gtk::gdk::EventType::EnterNotify | gtk::gdk::EventType::LeaveNotify => last.set(None),
+            _ => {}
+        }
+        glib::Propagation::Proceed
+    });
+    window.as_ref().add_controller(filter);
+}
+
 /// Log which GSK renderer the display actually chose, once, when `window` maps.
 ///
 /// The players pin `GSK_RENDERER` at boot, but GTK silently falls back when the

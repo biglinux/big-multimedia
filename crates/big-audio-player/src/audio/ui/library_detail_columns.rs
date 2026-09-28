@@ -181,6 +181,9 @@ fn append_art_column(column_view: &gtk::ColumnView, art_cache: &ArtCache) {
             return;
         };
         picture.set_paintable(gdk::Paintable::NONE);
+        // Records which track the row shows, so a row recycled while its cover
+        // was still decoding drops the late result.
+        picture.set_widget_name(&track.file_path);
 
         let Some(hash) = album_art_hash_key(track.art_hash.as_deref()) else {
             return;
@@ -192,16 +195,19 @@ fn append_art_column(column_view: &gtk::ColumnView, art_cache: &ArtCache) {
         let file_path = track.file_path.clone();
         let picture = picture.clone();
         let cache = cache.clone();
+        // Decoded off the main loop.
+        let wanted = file_path.clone();
         big_media_components::player_chrome::spawn_blocking_result(
-            move || crate::library::metadata::extract_album_art(&file_path),
-            move |data| {
-                let Some(data) = data else { return };
-                if let Some(texture) =
-                    big_media_components::media::images::bytes_to_thumbnail(&data, 36)
-                {
+            move || {
+                let data = crate::library::metadata::extract_album_art(&wanted)?;
+                big_media_components::media::images::bytes_to_thumbnail(&data, 36)
+            },
+            move |texture| {
+                let Some(texture) = texture else { return };
+                if picture.widget_name() == file_path.as_str() {
                     picture.set_paintable(Some(&texture));
-                    cache.borrow_mut().put(hash, texture);
                 }
+                cache.borrow_mut().put(hash, texture);
             },
         );
     });

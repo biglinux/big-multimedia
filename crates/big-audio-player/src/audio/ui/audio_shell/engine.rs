@@ -15,7 +15,7 @@ impl AudioShell {
             PlayerEvent::EndFile(0) if !self.is_stream => {
                 if self.queue.advance().is_some() {
                     self.play_current();
-                    self.sync_queue_to_panels();
+                    self.sync_current_to_panels();
                 } else {
                     self.handle_mpris_command(MprisCommand::Stop, sender);
                 }
@@ -38,7 +38,7 @@ impl AudioShell {
                     && self.queue.current_index() != failed
                 {
                     self.play_current();
-                    self.sync_queue_to_panels();
+                    self.sync_current_to_panels();
                 } else {
                     self.failed_loads = 0;
                     self.handle_mpris_command(MprisCommand::Stop, sender);

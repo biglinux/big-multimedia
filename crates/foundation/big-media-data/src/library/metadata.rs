@@ -46,7 +46,12 @@ pub fn read_track_metadata_cancellable(path: &str, cancelled: &AtomicBool) -> Re
     let disc_number = tag_value(&probe, &["disc", "discnumber"]).and_then(|s| parse_tag_i32(&s));
     let year = tag_value(&probe, &["date", "year"]).and_then(|s| parse_year(&s));
     let genre = tag_value(&probe, &["genre"]);
-    let art_hash = extract_album_art_cancellable(path, cancelled).map(|data| {
+    // Embedded art is a video stream; without one, asking ffmpeg for it only
+    // costs a second process per file.
+    let has_picture_stream = probe["streams"]
+        .as_array()
+        .is_some_and(|streams| streams.iter().any(|stream| stream["codec_type"] == "video"));
+    let art_hash = album_art(path, cancelled, has_picture_stream).map(|data| {
         use std::collections::hash_map::DefaultHasher;
         use std::hash::{Hash, Hasher};
         let mut hasher = DefaultHasher::new();
@@ -156,13 +161,13 @@ pub fn write_track_tags(path: &str, edits: &TagEdits) -> Result<()> {
 /// Embedded picture first; falls back to sibling Cover/folder/front/album/
 /// albumart/thumb × jpg/jpeg/png/webp.
 pub fn extract_album_art(path: &str) -> Option<Vec<u8>> {
-    extract_album_art_cancellable(path, &AtomicBool::new(false))
+    album_art(path, &AtomicBool::new(false), true)
 }
-fn extract_album_art_cancellable(path: &str, cancelled: &AtomicBool) -> Option<Vec<u8>> {
+fn album_art(path: &str, cancelled: &AtomicBool, try_embedded: bool) -> Option<Vec<u8>> {
     if cancelled.load(Ordering::Acquire) {
         return None;
     }
-    if let Some(data) = extract_embedded_album_art(path, cancelled) {
+    if try_embedded && let Some(data) = extract_embedded_album_art(path, cancelled) {
         return Some(data);
     }
 

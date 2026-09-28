@@ -16,6 +16,7 @@ pub(super) fn sync_state(
     previous: &Arc<Mutex<Option<PlayerState>>>,
     taskbar: &AtomicBool,
     desktop_uri: &str,
+    sent_launcher: &std::cell::Cell<Option<Option<f64>>>,
 ) {
     let next = callback();
     let mut old = previous
@@ -35,20 +36,26 @@ pub(super) fn sync_state(
     if changed {
         emit_properties_changed(connection, dict.end());
     }
-    let visible = taskbar.load(Ordering::Relaxed)
-        && next.status == PlaybackStatus::Playing
-        && next.position_secs.is_finite()
-        && next.duration_secs.is_finite()
-        && next.duration_secs > 0.0;
-    emit_launcher_entry(
-        connection,
-        desktop_uri,
-        visible,
-        if visible {
-            (next.position_secs / next.duration_secs).clamp(0.0, 1.0)
-        } else {
-            0.0
-        },
-    );
+    let launcher = launcher_progress(taskbar.load(Ordering::Relaxed), &next);
+    // A signal every second wakes the session bus and every listener (the
+    // desktop's task manager) even while nothing plays: send changes only.
+    if sent_launcher.replace(Some(launcher)) != Some(launcher) {
+        emit_launcher_entry(
+            connection,
+            desktop_uri,
+            launcher.is_some(),
+            launcher.unwrap_or(0.0),
+        );
+    }
     *old = Some(next);
+}
+
+/// The taskbar progress for `state`, or `None` when the bar is hidden.
+fn launcher_progress(show_taskbar: bool, state: &PlayerState) -> Option<f64> {
+    (show_taskbar
+        && state.status == PlaybackStatus::Playing
+        && state.position_secs.is_finite()
+        && state.duration_secs.is_finite()
+        && state.duration_secs > 0.0)
+        .then(|| (state.position_secs / state.duration_secs).clamp(0.0, 1.0))
 }

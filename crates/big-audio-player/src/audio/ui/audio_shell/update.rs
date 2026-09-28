@@ -319,14 +319,9 @@ impl AudioShell {
                 );
             }
             AudioShellInput::MprisCommand(command) => self.handle_mpris_command(command, &sender),
-            AudioShellInput::ArtResolved { r#gen, data } => {
+            AudioShellInput::ArtResolved { r#gen, art } => {
                 if is_current_generation(r#gen, self.now_playing_gen) {
-                    self.apply_resolved_art(data, &sender);
-                }
-            }
-            AudioShellInput::MprisArtSaved { r#gen, url } => {
-                if is_current_generation(r#gen, self.now_playing_gen) {
-                    self.apply_mpris_art_url(url);
+                    self.apply_resolved_art(art);
                 }
             }
         }

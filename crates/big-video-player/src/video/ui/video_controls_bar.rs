@@ -132,7 +132,7 @@ pub enum VideoControlsBarOutput {
 
 /// App-local OSD controls bar.
 pub struct VideoControlsBar {
-    position_label: gtk::Label,
+    position_label: gtk::Inscription,
     duration_label: gtk::Label,
     seek_bar: gtk::Scale,
     play_button: gtk::Button,
@@ -234,9 +234,12 @@ impl Component for VideoControlsBar {
             .margin_end(4)
             .build();
 
-        let position_label = gtk::Label::builder()
-            .label("0:00")
-            .width_chars(7)
+        // An inscription: its text never resizes the window (see the audio
+        // transport's position label for the measured cost of a GtkLabel).
+        let position_label = gtk::Inscription::builder()
+            .text("0:00")
+            .min_chars(7)
+            .nat_chars(7)
             .xalign(1.0)
             .css_classes(["time-label"])
             .build();
@@ -470,14 +473,19 @@ impl Component for VideoControlsBar {
                 self.play_button
                     .update_property(&[gtk::accessible::Property::Label(&action)]);
             }
-            VideoControlsBarInput::SetPosition(text) => self.position_label.set_label(&text),
+            VideoControlsBarInput::SetPosition(text) => self.position_label.set_text(Some(&text)),
             VideoControlsBarInput::SetDuration(text) => self.duration_label.set_label(&text),
             VideoControlsBarInput::SetSeekFraction(value) => {
-                self.suppress_seek.set(true);
-                self.seek_bar.set_value(value);
-                self.suppress_seek.set(false);
                 self.seek_fraction.set(value);
-                self.cut_timeline.queue_draw();
+                // Skip moves under half a pixel: each one re-snapshots the bar.
+                let width = f64::from(self.seek_bar.width().max(self.cut_timeline.width()));
+                // Unallocated (hidden) bars draw nothing: keep them current.
+                if width == 0.0 || ((value - self.seek_bar.value()) * width).abs() >= 0.5 {
+                    self.suppress_seek.set(true);
+                    self.seek_bar.set_value(value);
+                    self.suppress_seek.set(false);
+                    self.cut_timeline.queue_draw();
+                }
             }
             VideoControlsBarInput::SetTracks(tracks) => self.populate_track_menus(&tracks),
             VideoControlsBarInput::SetDurationSecs(secs) => {

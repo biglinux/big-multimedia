@@ -202,9 +202,9 @@ pub struct AudioShell {
     library_queries: library_generation::LatestMailbox<library_store::TreeRequest>,
     /// Path of the loaded track (empty = nothing loaded).
     current_file: String,
-    /// Last resolved cover bytes — kept so the blurred background can be toggled
-    /// on/off (Appearance setting) without re-resolving the art.
-    last_art_bytes: Option<Vec<u8>>,
+    /// The current cover decoded at 16 px, kept so the blurred background can be
+    /// toggled on/off (Appearance setting) without re-resolving the art.
+    last_blur_art: Option<gtk::gdk::Texture>,
     /// Whether playback is active (drives play-if-idle on enqueue).
     is_playing: bool,
     /// Whether the current playback is a radio stream (suppresses queue

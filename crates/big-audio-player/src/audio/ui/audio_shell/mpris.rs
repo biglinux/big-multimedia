@@ -51,7 +51,7 @@ impl AudioShell {
                 };
                 if moved {
                     self.play_current_as(status);
-                    self.sync_queue_to_panels();
+                    self.sync_current_to_panels();
                 }
             }
             MprisCommand::Play | MprisCommand::PlayPause => {

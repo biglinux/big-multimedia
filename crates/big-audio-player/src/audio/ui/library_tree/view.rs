@@ -21,11 +21,15 @@ use super::interaction::{
     LibraryTreeContextTarget, library_panel_node_selected_output, library_tree_context_target,
     library_tree_selection, selected_leaf_drag_paths,
 };
-use super::model::{ChildStores, LeafTracks, LibraryTreeHandle};
+use super::model::{ChildStores, LeafTracks, LibraryTreeHandle, child_store, child_store_key};
 use super::presentation::{file_leaf_presentation, library_tree_row_presentation};
 
 /// Album-art thumbnail edge (px) for file leaves.
 const LEAF_ART_PX: i32 = 48;
+
+/// Covers decoded for leaf rows, keyed by `art_hash`: rows are rebound on every
+/// scroll, and each miss costs an ffmpeg run.
+type LeafArtCache = Rc<RefCell<lru::LruCache<String, gdk::Texture>>>;
 
 /// Build the library tree widget. Returns the `ListView` (the panel mounts it
 /// into its left-pane `gtk::ScrolledWindow` via `set_child`) and a
@@ -37,9 +41,12 @@ pub(in crate::audio::ui) fn build_library_tree(
     let child_stores: ChildStores = Rc::new(RefCell::new(HashMap::new()));
     let leaf_tracks: LeafTracks = Rc::new(RefCell::new(HashMap::new()));
 
-    let tree_model = build_tree_model(&root_store, &child_stores);
+    let tree_model = build_tree_model(&root_store, &child_stores, &leaf_tracks);
     let selection = gtk::MultiSelection::new(Some(tree_model));
-    let factory = build_tree_factory(&leaf_tracks, sender);
+    let art_cache: LeafArtCache = Rc::new(RefCell::new(lru::LruCache::new(
+        std::num::NonZeroUsize::new(256).unwrap_or(std::num::NonZeroUsize::MIN),
+    )));
+    let factory = build_tree_factory(&leaf_tracks, &art_cache, sender);
 
     let list_view = gtk::ListView::builder()
         .model(&selection)
@@ -61,10 +68,16 @@ pub(in crate::audio::ui) fn build_library_tree(
     (list_view, handle)
 }
 
-/// `TreeListModel` whose create-func mounts the preloaded child store for a row
-/// (synchronous HashMap lookup; `None` for leaves/dividers).
-fn build_tree_model(root_store: &gio::ListStore, child_stores: &ChildStores) -> gtk::TreeListModel {
+/// `TreeListModel` whose create-func mounts the preloaded children of a row
+/// (synchronous HashMap lookup, built on first expand; `None` for
+/// leaves/dividers).
+fn build_tree_model(
+    root_store: &gio::ListStore,
+    child_stores: &ChildStores,
+    leaf_tracks: &LeafTracks,
+) -> gtk::TreeListModel {
     let stores = child_stores.clone();
+    let leaves = leaf_tracks.clone();
     gtk::TreeListModel::new(root_store.clone(), false, false, move |model_item| {
         let node = model_item.downcast_ref::<BrowserNode>()?;
         if matches!(
@@ -73,8 +86,11 @@ fn build_tree_model(root_store: &gio::ListStore, child_stores: &ChildStores) -> 
         ) {
             return None;
         }
-        let cache_key = format!("{}:{}", node.kind() as u32, node.key());
-        let store = stores.borrow().get(&cache_key)?.clone();
+        let store = child_store(
+            &child_store_key(node.kind(), &node.key()),
+            &mut stores.borrow_mut(),
+            &mut leaves.borrow_mut(),
+        )?;
         Some(store.upcast::<gio::ListModel>())
     })
 }
@@ -82,6 +98,7 @@ fn build_tree_model(root_store: &gio::ListStore, child_stores: &ChildStores) -> 
 /// Row factory: a `TreeExpander` wrapping icon + avatar + label/artist + count.
 fn build_tree_factory(
     leaf_tracks: &LeafTracks,
+    art_cache: &LeafArtCache,
     sender: &ComponentSender<LibraryPanel>,
 ) -> gtk::SignalListItemFactory {
     let factory = gtk::SignalListItemFactory::new();
@@ -143,13 +160,14 @@ fn build_tree_factory(
     });
 
     let leaves = leaf_tracks.clone();
+    let art = art_cache.clone();
     let out = sender.clone();
     factory.connect_bind(move |_, factory_callback_value| {
         let Some(list_item) = signal_factory::list_item_from_factory_value(factory_callback_value)
         else {
             return;
         };
-        bind_tree_row(list_item, &leaves, &out);
+        bind_tree_row(list_item, &leaves, &art, &out);
     });
     factory.connect_unbind(|_, factory_callback_value| {
         let Some(list_item) = signal_factory::list_item_from_factory_value(factory_callback_value)
@@ -176,6 +194,7 @@ fn build_tree_factory(
 fn bind_tree_row(
     list_item: &gtk::ListItem,
     leaves: &LeafTracks,
+    art_cache: &LeafArtCache,
     sender: &ComponentSender<LibraryPanel>,
 ) {
     let Some(tree_row) = signal_factory::bound_model_as::<gtk::TreeListRow>(list_item) else {
@@ -251,6 +270,7 @@ fn bind_tree_row(
             &artist_label,
             &track_count_label,
             leaves,
+            art_cache,
         );
         return;
     }
@@ -329,11 +349,16 @@ fn bind_file_leaf(
     artist_label: &gtk::Label,
     track_count_label: &gtk::Label,
     leaves: &LeafTracks,
+    art_cache: &LeafArtCache,
 ) {
     let file_path = node.key();
-    let presentation = {
+    let (presentation, art_hash) = {
         let registered_leaf_tracks = leaves.borrow();
-        file_leaf_presentation(node, registered_leaf_tracks.get(&file_path))
+        let track = registered_leaf_tracks.get(&file_path);
+        (
+            file_leaf_presentation(node, track),
+            track.and_then(|track| track.art_hash.clone()),
+        )
     };
     if let Some(fallback_badge_label) = &presentation.fallback_badge_label {
         avatar.set_visible(false);
@@ -367,17 +392,26 @@ fn bind_file_leaf(
     avatar.set_text(presentation.avatar_text.as_deref());
     avatar.set_custom_image(None::<&gdk::Paintable>);
 
-    // Resolve the source path from the leaf-track map (set on splice) and load
-    // the embedded thumbnail off-thread. No DB hit — file IO only.
-    if presentation.has_embedded_art {
+    // Cached by cover, else extracted and decoded off-thread. The avatar's
+    // name records which track it shows: a recycled row drops a late cover.
+    avatar.set_widget_name(&file_path);
+    if let (true, Some(hash)) = (presentation.has_embedded_art, art_hash) {
+        if let Some(texture) = art_cache.borrow_mut().get(&hash) {
+            avatar.set_custom_image(Some(texture));
+            return;
+        }
         let avatar = avatar.clone();
+        let cache = art_cache.clone();
+        let wanted = file_path.clone();
         big_media_components::player_chrome::spawn_blocking_result(
-            move || crate::library::metadata::extract_album_art(&file_path),
-            move |data| {
-                let Some(data) = data else { return };
-                if let Some(texture) =
-                    big_media_components::media::images::bytes_to_thumbnail(&data, LEAF_ART_PX)
-                {
+            move || {
+                let data = crate::library::metadata::extract_album_art(&wanted)?;
+                big_media_components::media::images::bytes_to_thumbnail(&data, LEAF_ART_PX)
+            },
+            move |texture| {
+                let Some(texture) = texture else { return };
+                cache.borrow_mut().put(hash, texture.clone());
+                if avatar.widget_name() == file_path.as_str() {
                     avatar.set_custom_image(Some(&texture));
                 }
             },

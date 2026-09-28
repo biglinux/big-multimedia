@@ -109,10 +109,7 @@ pub fn run() -> gtk::glib::ExitCode {
     // GTK accepts without a warning: the old GL renderer was removed in GTK
     // 4.18 and "ngl" is no longer recognised at all (GTK ignores it and falls
     // back to its own default, which may be Vulkan).
-    // SAFETY: main path, before GTK init and before app threads.
-    unsafe {
-        std::env::set_var("GSK_RENDERER", "opengl");
-    }
+    shared::app_base::use_gl_renderer(true);
     // Keep the GLArea video path as the default. Measured on 2026-09-17 on an
     // AMD Cezanne and an Intel HD 3000 laptop playing 1080p30: once the render
     // call stopped blocking (see `FastRenderContext::render`), offload and
@@ -150,6 +147,7 @@ pub fn run() -> gtk::glib::ExitCode {
             .detach();
         let window = build_player_window(app, controller.widget());
         shared::app_base::log_active_renderer_once(&window);
+        shared::app_base::ignore_repeated_pointer_motion(&window);
         window.present();
         *shell_for_activate.borrow_mut() = Some(controller);
     });

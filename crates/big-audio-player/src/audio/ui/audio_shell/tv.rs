@@ -116,7 +116,7 @@ impl AudioShell {
         self.tv_catch_up = true;
         self.queue.jump_to(index);
         self.play_current();
-        self.sync_queue_to_panels();
+        self.sync_current_to_panels();
     }
 
     /// The TV's track loaded after "Play the TV's here": catch up with it.
@@ -184,7 +184,7 @@ impl AudioShell {
         }
         self.tv_follow = Some(receiver);
         self.play_current_as(PlaybackStatus::Paused);
-        self.sync_queue_to_panels();
+        self.sync_current_to_panels();
         true
     }
 

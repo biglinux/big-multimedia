@@ -38,6 +38,8 @@ struct PollState {
     audio_reconfigured: bool,
     last_rate: Option<f64>,
     seek_pending: bool,
+    /// A file is loaded and reports a playback position.
+    has_position: bool,
     pending: Vec<PlayerEvent>,
 }
 
@@ -303,12 +305,14 @@ impl MpvBackend {
                 };
                 pending.push_back(event);
             }
-            // Position feedback stays smooth during playback, but a paused
-            // player does not need to poll every property twenty times/second.
-            let interval = if poll.last_paused == Some(true) {
-                200
+            // Every position change redraws the window, which cost the audio
+            // player ~2 % of a core at twenty per second (measured 2026-09-28);
+            // ten keep the seek bar moving smoothly. Paused or with nothing
+            // loaded only state changes need catching.
+            let interval = if poll.last_paused == Some(true) || !poll.has_position {
+                250
             } else {
-                50
+                100
             };
             std::thread::sleep(std::time::Duration::from_millis(interval));
         }
@@ -441,7 +445,9 @@ impl MpvBackend {
         outgoing: &mut Vec<PlayerEvent>,
     ) {
         outgoing.append(&mut poll.pending);
-        if let Ok(pos) = mpv_guard.get_property::<f64>("time-pos")
+        let position = mpv_guard.get_property::<f64>("time-pos");
+        poll.has_position = position.is_ok();
+        if let Ok(pos) = position
             && (pos - poll.last_pos).abs() > 0.05
         {
             poll.last_pos = pos;

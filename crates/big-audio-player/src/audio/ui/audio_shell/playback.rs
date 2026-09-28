@@ -30,13 +30,13 @@ impl AudioShell {
             AudioPlaybackBarOutput::Next => {
                 if self.queue.advance().is_some() {
                     self.play_current();
-                    self.sync_queue_to_panels();
+                    self.sync_current_to_panels();
                 }
             }
             AudioPlaybackBarOutput::Previous => {
                 if self.queue.previous().is_some() {
                     self.play_current();
-                    self.sync_queue_to_panels();
+                    self.sync_current_to_panels();
                 }
             }
             AudioPlaybackBarOutput::SeekChanged(pct) => {

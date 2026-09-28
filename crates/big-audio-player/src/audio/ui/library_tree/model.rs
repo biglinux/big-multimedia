@@ -59,10 +59,18 @@ impl Default for LibraryTreeNode {
     }
 }
 
-/// Maps a node's identity to its preloaded child `gio::ListStore`. Keyed exactly
-/// as `"{kind as u32}:{key}"` so the create-func is a pure
-/// HashMap lookup with no fallback DB path.
-pub(super) type ChildStores = Rc<RefCell<HashMap<String, gio::ListStore>>>;
+/// A group's preloaded children: plain data until the row is first expanded,
+/// then the `gio::ListStore` the tree shows. Building every store up front made
+/// one `BrowserNode` per library track on the main loop, expanded or not.
+pub(super) enum ChildEntry {
+    Pending(Vec<LibraryTreeNode>),
+    Built(gio::ListStore),
+}
+
+/// Maps a node's identity to its children. Keyed exactly as
+/// `"{kind as u32}:{key}"` (see [`child_store_key`]) so the create-func is a
+/// pure HashMap lookup with no fallback DB path.
+pub(super) type ChildStores = Rc<RefCell<HashMap<String, ChildEntry>>>;
 
 /// Resolved-track lookup for drag-export, keyed by file path. Kept off the
 /// GObject so the drag-prepare closure stays DB-free (push-model).
@@ -86,9 +94,10 @@ pub(in crate::audio::ui) struct LibraryTreeHandle {
 }
 
 impl LibraryTreeHandle {
-    /// Replace the whole tree from freshly-preloaded data. Rebuilds the child-
-    /// store map, then splices the root store in place (the `ListView`/
-    /// `TreeListModel`/selection are never rebuilt — the RSS-leak invariant).
+    /// Replace the whole tree from freshly-preloaded data. Registers the
+    /// children to mount on expand, then splices the root store in place (the
+    /// `ListView`/`TreeListModel`/selection are never rebuilt — the RSS-leak
+    /// invariant).
     pub(in crate::audio::ui) fn set_tree(&self, tree_snapshot: LibraryTreeSnapshot) {
         let mut stores = self.child_stores.borrow_mut();
         let mut leaves = self.leaf_tracks.borrow_mut();
@@ -97,8 +106,8 @@ impl LibraryTreeHandle {
 
         let roots: Vec<BrowserNode> = tree_snapshot
             .level0
-            .iter()
-            .map(|node| build_node_recursive(node, &mut stores, &mut leaves))
+            .into_iter()
+            .map(|node| build_node(node, &mut stores, &mut leaves))
             .collect();
         drop(stores);
         drop(leaves);
@@ -117,37 +126,64 @@ pub(super) fn group_divider_letter(value: &str) -> char {
     }
 }
 
-/// Convert one `LibraryTreeNode` (and its subtree) into a `BrowserNode`,
-/// registering its child store (with letter dividers) into `stores` so the
-/// create-func can mount it synchronously on expand.
-pub(super) fn build_node_recursive(
-    node: &LibraryTreeNode,
-    stores: &mut HashMap<String, gio::ListStore>,
+/// The `ChildStores` key of a node.
+pub(super) fn child_store_key(kind: BrowserNodeKind, key: &str) -> String {
+    format!("{}:{key}", kind as u32)
+}
+
+/// Convert one `LibraryTreeNode` into a `BrowserNode`, registering its track
+/// for drag/export and leaving its children pending in `stores` until
+/// [`child_store`] mounts them.
+pub(super) fn build_node(
+    mut node: LibraryTreeNode,
+    stores: &mut HashMap<String, ChildEntry>,
     leaves: &mut HashMap<String, Track>,
 ) -> BrowserNode {
-    let gnode = to_browser_node(node);
-    if let Some(track) = &node.track {
-        leaves.insert(node.key.clone(), track.clone());
+    let gnode = to_browser_node(&node);
+    let children = std::mem::take(&mut node.children);
+    if !children.is_empty() {
+        stores.insert(
+            child_store_key(node.kind, &node.key),
+            ChildEntry::Pending(children),
+        );
     }
-
-    if !node.children.is_empty() {
-        let cache_key = format!("{}:{}", node.kind as u32, node.key);
-        let child_store = gio::ListStore::new::<BrowserNode>();
-        let mut last_letter: Option<char> = None;
-        let use_dividers = node.children.len() > DIVIDER_THRESHOLD;
-        for child in &node.children {
-            if use_dividers && child.kind != BrowserNodeKind::Divider && !child.label.is_empty() {
-                let letter = group_divider_letter(&child.label);
-                if last_letter != Some(letter) {
-                    last_letter = Some(letter);
-                    child_store.append(&BrowserNode::divider(&letter.to_string()));
-                }
-            }
-            child_store.append(&build_node_recursive(child, stores, leaves));
-        }
-        stores.insert(cache_key, child_store);
+    if let Some(track) = node.track {
+        leaves.insert(node.key, track);
     }
     gnode
+}
+
+/// The child store for `key`, built with its letter dividers the first time a
+/// row asks for it. `None` for a node without children.
+pub(super) fn child_store(
+    key: &str,
+    stores: &mut HashMap<String, ChildEntry>,
+    leaves: &mut HashMap<String, Track>,
+) -> Option<gio::ListStore> {
+    let children = match stores.remove(key)? {
+        ChildEntry::Built(store) => {
+            stores.insert(key.to_owned(), ChildEntry::Built(store.clone()));
+            return Some(store);
+        }
+        ChildEntry::Pending(children) => children,
+    };
+    let child_store = gio::ListStore::new::<BrowserNode>();
+    let mut last_letter: Option<char> = None;
+    let use_dividers = children.len() > DIVIDER_THRESHOLD;
+    let mut items = Vec::with_capacity(children.len());
+    for child in children {
+        if use_dividers && child.kind != BrowserNodeKind::Divider && !child.label.is_empty() {
+            let letter = group_divider_letter(&child.label);
+            if last_letter != Some(letter) {
+                last_letter = Some(letter);
+                items.push(BrowserNode::divider(&letter.to_string()));
+            }
+        }
+        items.push(build_node(child, stores, leaves));
+    }
+    child_store.splice(0, 0, &items);
+    stores.insert(key.to_owned(), ChildEntry::Built(child_store.clone()));
+    Some(child_store)
 }
 
 /// Build the leaf-level `BrowserNode` for a tree node (no children attached —

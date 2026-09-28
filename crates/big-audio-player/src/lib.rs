@@ -29,6 +29,7 @@ fn build_player_window(
         .content(content)
         .build();
     window.set_size_request(640, 400);
+    shared::app_base::ignore_repeated_pointer_motion(&window);
     window
 }
 
@@ -101,6 +102,10 @@ pub fn run() -> gtk::glib::ExitCode {
     shared::app_base::init_logging(
         "big_media_runtime=info,big_audio_player=info,lofty=error,glycin=error",
     );
+    // GL instead of GTK's default Vulkan: 18 MiB less PSS at startup and the
+    // same CPU while scrolling the library (measured 2026-09-28, NVIDIA). A
+    // renderer the session exports still wins.
+    shared::app_base::use_gl_renderer(false);
     shared::app_base::boot_player(&[
         big_media_runtime::resources::AUDIO,
         resources::AUDIO_PLAYER_SHELL,

@@ -113,11 +113,8 @@ pub fn build_volume_popover(
     );
 
     let trough = gtk::CssProvider::new();
-    update_scale_trough(
-        &trough,
-        "volume-scale",
-        &volume_trough_color(initial_volume_percent, maximum_volume_percent),
-    );
+    let initial_color = volume_trough_color(initial_volume_percent, maximum_volume_percent);
+    update_scale_trough(&trough, "volume-scale", &initial_color);
     big_relm4_components::theme::add_provider_for_widget_lifetime(
         &scale,
         &trough,
@@ -125,12 +122,15 @@ pub fn build_volume_popover(
     );
     {
         let maximum_volume_for_trough = maximum_volume_percent;
+        // The provider is display-wide: reloading it restyles every widget, so
+        // only reload when the colour changes (it is constant up to 100 %).
+        let shown = std::cell::RefCell::new(initial_color);
         scale.connect_value_changed(move |s| {
-            update_scale_trough(
-                &trough,
-                "volume-scale",
-                &volume_trough_color(s.value(), maximum_volume_for_trough),
-            );
+            let color = volume_trough_color(s.value(), maximum_volume_for_trough);
+            if *shown.borrow() != color {
+                update_scale_trough(&trough, "volume-scale", &color);
+                *shown.borrow_mut() = color;
+            }
         });
     }
 
@@ -251,11 +251,9 @@ pub fn build_voice_popover(
     scroll_moves(parent, &scale, VOICE_SCROLL_PERCENT);
 
     let trough = gtk::CssProvider::new();
-    update_scale_trough(
-        &trough,
-        "voice-scale",
-        &voice_trough_color(voice_spec.initial_strength_percent),
-    );
+    let initial_color = voice_trough_color(voice_spec.initial_strength_percent);
+    update_scale_trough(&trough, "voice-scale", &initial_color);
+    let shown_color = std::cell::RefCell::new(initial_color);
     big_relm4_components::theme::add_provider_for_widget_lifetime(
         &scale,
         &trough,
@@ -273,7 +271,11 @@ pub fn build_voice_popover(
         let external_voice_label = voice_label.clone();
         scale.connect_value_changed(move |scale| {
             let voice_strength = scale.value();
-            update_scale_trough(&trough, "voice-scale", &voice_trough_color(voice_strength));
+            let color = voice_trough_color(voice_strength);
+            if *shown_color.borrow() != color {
+                update_scale_trough(&trough, "voice-scale", &color);
+                *shown_color.borrow_mut() = color;
+            }
             let text = voice_strength_label_text(voice_strength);
             val_label.set_label(&text);
             external_voice_label.set_label(&text);

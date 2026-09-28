@@ -15,7 +15,8 @@ use std::rc::Rc;
 
 use adw::prelude::*;
 use big_app_kit::subprocess::{BigSubprocessOutputMode, BigSubprocessSpec};
-use gtk::{gdk, gio, glib};
+use big_relm4_components::display::texture::{pixbuf_to_rgba, rgba_to_texture};
+use gtk::{gdk, gdk_pixbuf, gio, glib};
 
 use super::BrowserState;
 use crate::media::playlist;
@@ -106,17 +107,21 @@ fn ensure_started(
     let scrub_state = scrub_state.clone();
     glib::spawn_future_local(async move {
         let generation_path = path_owned.clone();
-        let frame_files = gio::spawn_blocking(move || ensure_frames(&generation_path))
-            .await
-            .unwrap_or_default();
+        // Decoded on the worker too: eight JPEGs are too many for the main loop.
+        let frames = gio::spawn_blocking(move || {
+            ensure_frames(&generation_path)
+                .iter()
+                .filter_map(|frame_file| gdk_pixbuf::Pixbuf::from_file(frame_file).ok())
+                .filter_map(|pixbuf| pixbuf_to_rgba(&pixbuf))
+                .collect::<Vec<_>>()
+        })
+        .await
+        .unwrap_or_default();
         // Card may have been recycled to another path while generating.
         if scrub_state.borrow().path != path_owned {
             return;
         }
-        let textures: Vec<gdk::Texture> = frame_files
-            .iter()
-            .filter_map(|frame_file| gdk::Texture::from_filename(frame_file).ok())
-            .collect();
+        let textures: Vec<gdk::Texture> = frames.into_iter().map(rgba_to_texture).collect();
         let mut scrub_state_borrow = scrub_state.borrow_mut();
         if scrub_state_borrow.path == path_owned {
             scrub_state_borrow.textures = textures;

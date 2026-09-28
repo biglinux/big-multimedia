@@ -223,19 +223,20 @@ pub(super) fn wire_neighbour_preview(button: &gtk::Button, mpv: &MpvSlot, step: 
                     let shown = shown.clone();
                     glib::spawn_future_local(async move {
                         let wanted = path.clone();
-                        let picture = gtk::gio::spawn_blocking(move || {
-                            crate::media::thumbnail::get_or_generate_thumbnail(&wanted)
+                        let decoded = gtk::gio::spawn_blocking(move || {
+                            crate::media::thumbnail::load_thumbnail(&wanted)
                         })
                         .await
                         .ok()
                         .flatten();
-                        let (Some(picture), Some(thumb)) = (picture, thumb.upgrade()) else {
+                        let (Some((picture, image)), Some(thumb)) = (decoded, thumb.upgrade())
+                        else {
                             return;
                         };
                         // Still the one hovered: the pointer may have moved on.
-                        if shown.borrow().as_deref() == Some(path.as_str())
-                            && let Ok(texture) = gdk::Texture::from_filename(&picture)
-                        {
+                        if shown.borrow().as_deref() == Some(path.as_str()) {
+                            let texture =
+                                crate::media::thumbnail::thumbnail_texture(picture, image);
                             thumb.set_paintable(Some(&texture));
                         }
                     });

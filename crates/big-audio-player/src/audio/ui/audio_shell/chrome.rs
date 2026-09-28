@@ -14,6 +14,17 @@ impl AudioShell {
         self.sync_now_playing();
     }
 
+    /// After a move within the queue (next, previous, jump): scroll the queue
+    /// panel to the new current track and re-light it. The tracks are
+    /// unchanged, so the panel keeps its rows instead of rebuilding all of them.
+    pub(super) fn sync_current_to_panels(&self) {
+        if let Some(idx) = self.queue.current_index() {
+            self.playlist
+                .emit(PlaylistPanelInput::ScrollToCurrent { idx });
+        }
+        self.sync_now_playing();
+    }
+
     /// Re-light the now-playing indicator in both panels from the queue's
     /// current track (matched by file path in the library detail view). While a
     /// radio stream plays, nothing in the queue/library is "playing" — clear it.
