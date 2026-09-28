@@ -79,7 +79,7 @@ impl NoiseModel {
     #[must_use]
     pub fn package(self) -> &'static str {
         match self {
-            Self::DeepFilterNet3 => "deepfilternet-quantized-ladspa",
+            Self::DeepFilterNet3 => "deepfilternet3-native",
             Self::DpdfNet2 => "dpdfnet-native",
         }
     }
