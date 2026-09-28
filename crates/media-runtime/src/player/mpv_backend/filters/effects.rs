@@ -1,6 +1,6 @@
 use std::sync::atomic::Ordering;
 
-use big_audio_effects::noise_reduction::{LADSPA_FILTER_NAME, attenuation_control};
+use big_audio_effects::noise_reduction::{LADSPA_FILTER_NAME, NoiseModel};
 use log::debug;
 
 use crate::player::mpv_backend::{AudioEffects, MpvBackend};
@@ -14,13 +14,15 @@ impl MpvBackend {
     /// Change the running denoiser's strength without rebuilding the chain.
     ///
     /// Replacing `af` discards what the filters hold, ~40 ms of audio for
-    /// these plugins, so a slider drag would stutter. Returns `false` when no
-    /// denoiser is running; the caller then rebuilds the chain.
-    pub fn set_noise_strength(&self, strength: f64) -> bool {
+    /// these plugins, so a slider drag would stutter. mpv rebuilds the chain
+    /// from its text on every seek, loop and file, which forgets this value:
+    /// the caller must also rebuild the chain once the slider settles.
+    /// Returns `false` when no denoiser took the command.
+    pub fn set_noise_strength(&self, model: NoiseModel, strength: f64) -> bool {
         if !self.has_af.load(Ordering::Relaxed) {
             return false;
         }
-        let value = attenuation_control(strength);
+        let value = model.attenuation_control(strength);
         self.with_mpv(|mpv| {
             mpv.command(
                 "af-command",

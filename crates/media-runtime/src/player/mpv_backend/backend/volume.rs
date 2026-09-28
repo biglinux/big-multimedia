@@ -19,6 +19,38 @@ struct State {
     native_volume: bool,
     native_mute: bool,
     last_sync: Instant,
+    /// Until then a 0 volume is not the user's: a stream the server has just
+    /// created reports 0 before it applies ours, and adopting that 0 silenced
+    /// the player on every output rate change (an effect chain that resamples
+    /// makes mpv open a new stream).
+    new_stream_until: Instant,
+}
+
+/// How long a new stream's reported 0 volume is not taken as the user's.
+const NEW_STREAM: Duration = Duration::from_secs(1);
+
+/// The stream's volume on our 0–250 scale, amplification included.
+fn read_volume(mpv: &MpvClient, native_volume: bool, pipewire: bool) -> Option<f64> {
+    let property = if native_volume { "ao-volume" } else { "volume" };
+    let volume = mpv
+        .get_property::<f64>(property)
+        .ok()
+        .filter(|v| v.is_finite())?;
+    if !native_volume {
+        return Some(volume);
+    }
+    let level = if pipewire {
+        100.0 * (volume / 100.0).cbrt()
+    } else {
+        volume
+    };
+    Some(level * mpv.get_property::<f64>("volume").unwrap_or(100.0) / 100.0)
+}
+
+fn read_mute(mpv: &MpvClient, native_mute: bool) -> Option<bool> {
+    let property = if native_mute { "ao-mute" } else { "mute" };
+    let mute = mpv.get_property::<bool>(property).ok()?;
+    Some(mute || (native_mute && mpv.get_property::<bool>("mute").unwrap_or(false)))
 }
 
 #[derive(Clone)]
@@ -42,6 +74,7 @@ impl VolumeControl {
             native_volume: false,
             native_mute: false,
             last_sync: Instant::now(),
+            new_stream_until: Instant::now(),
         })))
     }
 
@@ -99,6 +132,7 @@ impl VolumeControl {
         let per_stream = matches!(driver.as_str(), "pulse" | "pipewire");
         let native_volume = per_stream && mpv.get_property::<f64>("ao-volume").is_ok();
         let native_mute = per_stream && mpv.get_property::<bool>("ao-mute").is_ok();
+        let pipewire = driver == "pipewire";
         let volume_transition = native_volume != state.native_volume || reconfigured;
         let mute_transition = native_mute != state.native_mute || reconfigured;
         let volume = state.pending_volume.take().or_else(|| {
@@ -114,7 +148,7 @@ impl VolumeControl {
         if let Some(volume) = volume {
             // mpv exposes PipeWire's linear amplitude; PulseAudio and desktop
             // mixers use a cubic scale. Keep the same slider loudness on both.
-            let volume = if native_volume && driver == "pipewire" {
+            let volume = if native_volume && pipewire {
                 100.0 * (volume.min(100.0) / 100.0).powi(3)
             } else if native_volume {
                 volume.min(100.0)
@@ -150,20 +184,23 @@ impl VolumeControl {
         {
             log::warn!("Cannot release software mute: {error}");
         }
-        if let Ok(volume) = mpv.get_property::<f64>(volume_property)
-            && volume.is_finite()
-        {
-            state.volume = if native_volume && driver == "pipewire" {
-                100.0 * (volume / 100.0).cbrt()
-            } else {
-                volume
-            };
-            if native_volume {
-                state.volume *= mpv.get_property::<f64>("volume").unwrap_or(100.0) / 100.0;
-            }
+        if native_volume && volume_transition {
+            state.new_stream_until = Instant::now() + NEW_STREAM;
         }
-        if let Ok(mute) = mpv.get_property::<bool>(mute_property) {
-            state.mute = mute || (native_mute && mpv.get_property::<bool>("mute").unwrap_or(false));
+        // What we just wrote is the value; reading it back in the same pass
+        // returns what the server had before applying it.
+        if let Some(requested) = volume.filter(|_| volume_applied) {
+            let limit = mpv.get_property::<f64>("volume-max").unwrap_or(150.0);
+            state.volume = requested.min(limit);
+        } else if let Some(read) = read_volume(mpv, native_volume, pipewire)
+            && (read > 0.0 || Instant::now() >= state.new_stream_until)
+        {
+            state.volume = read;
+        }
+        if let Some(requested) = mute.filter(|_| mute_applied) {
+            state.mute = requested;
+        } else if let Some(read) = read_mute(mpv, native_mute) {
+            state.mute = read;
         }
         let mut shared = self.0.lock().unwrap_or_else(PoisonError::into_inner);
         shared.volume = state.volume;
@@ -172,6 +209,7 @@ impl VolumeControl {
         shared.native_mute = native_mute;
         shared.had_output |= !driver.is_empty();
         shared.last_sync = Instant::now();
+        shared.new_stream_until = state.new_stream_until;
         Some((state.volume, state.mute))
     }
 }

@@ -103,7 +103,7 @@ impl AudioShell {
             AudioPlaybackBarOutput::VoiceChanged(pct) => {
                 let active = crate::shared::popovers::handle_voice_strength_changed(
                     &self.settings,
-                    self.mpv.as_deref(),
+                    self.mpv.as_ref(),
                     pct,
                     &self.voice_active,
                 );

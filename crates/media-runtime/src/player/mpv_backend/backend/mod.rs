@@ -667,7 +667,7 @@ mod volume_tests {
                 "-i",
                 "anullsrc=r=48000:cl=stereo",
                 "-t",
-                "8",
+                "20",
                 "-c:a",
                 "pcm_s16le",
             ])
@@ -782,8 +782,32 @@ mod volume_tests {
                     && (backend.get_volume() - 72.0).abs() < 0.1
                     && !backend.get_mute()
             });
+            // Changing the effect chain reopens the output at the chain's rate
+            // (apply_audio_effects reloads it when the chain is cleared). A new
+            // stream reports 0 volume until the server applies ours; adopting
+            // that read-back silenced the player.
+            backend.play();
+            for rate in [44_100, 48_000, 44_100] {
+                backend.with_mpv(|mpv| {
+                    mpv.set_property("af", format!("lavfi=[aresample={rate}]"))
+                        .unwrap();
+                    mpv.command("ao-reload", &[]).unwrap();
+                });
+                wait_until("output reopened at the chain's rate", || {
+                    backend.with_mpv(|mpv| {
+                        mpv.get_property::<i64>("audio-out-params/samplerate")
+                            .is_ok_and(|value| value == rate)
+                    })
+                });
+                std::thread::sleep(Duration::from_millis(1500));
+                assert!(
+                    (backend.get_volume() - 72.0).abs() < 0.1,
+                    "{driver}: volume after the chain changed to {rate} Hz: {}",
+                    backend.get_volume()
+                );
+            }
             eprintln!(
-                "{driver}: 37% + mute reached the server; external72%/unmute and reopen preserved"
+                "{driver}: 37% + mute reached the server; external72%/unmute, reopen and rate changes preserved"
             );
         }
     }

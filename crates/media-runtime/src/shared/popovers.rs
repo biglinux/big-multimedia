@@ -13,30 +13,73 @@ use gtk::prelude::*;
 use crate::player::mpv_backend::MpvBackend;
 use crate::settings::{self, Settings, keys};
 use crate::shared::audio_effects;
-use std::cell::Cell;
+use std::cell::{Cell, RefCell};
+use std::rc::Rc;
 use std::sync::Arc;
+use std::time::Duration;
 
-/// Persists strength and applies it: live while the denoiser keeps running,
-/// a chain rebuild when it turns on or off. Returns the new `is_active`.
+use big_audio_effects::noise_reduction::NoiseModel;
+
+/// Voice slider state kept by each player between slider events.
+pub struct VoiceStrength {
+    active: Cell<bool>,
+    rebuild: RefCell<Option<gtk::glib::SourceId>>,
+}
+
+impl VoiceStrength {
+    #[must_use]
+    pub fn new(active: bool) -> Self {
+        Self {
+            active: Cell::new(active),
+            rebuild: RefCell::new(None),
+        }
+    }
+}
+
+/// How long the slider rests before the chain is rebuilt with its value.
+const REBUILD_AFTER_SLIDER_REST: Duration = Duration::from_millis(600);
+
+/// Persists strength and applies it. Turning the filter on or off rebuilds
+/// the chain. A change while it runs is heard at once through a live
+/// command, then written into the chain once the slider rests: mpv rebuilds
+/// the chain from its text on every seek, loop and file, and without that
+/// the filter fell back to the strength of the first slider step.
+/// Returns the new `is_active`.
 pub fn handle_voice_strength_changed(
     settings: &Settings,
-    mpv: Option<&MpvBackend>,
+    mpv: Option<&Arc<MpvBackend>>,
     pct: f64,
-    prev_active: &Cell<bool>,
+    state: &Rc<VoiceStrength>,
 ) -> bool {
     let strength = pct / 100.0;
     let _ = settings.put_double(keys::NOISE_STRENGTH, strength);
 
     let is_active = strength > 0.0;
-    let was_active = prev_active.get();
-    if let Some(mpv) = mpv {
-        if was_active != is_active {
-            audio_effects::apply_voice_change(settings, mpv);
-        } else if is_active {
-            mpv.set_noise_strength(strength);
-        }
+    let was_active = state.active.replace(is_active);
+    if let Some(source) = state.rebuild.take() {
+        source.remove();
     }
-    prev_active.set(is_active);
+    let Some(mpv) = mpv else {
+        return is_active;
+    };
+    if was_active != is_active {
+        audio_effects::apply_voice_change(settings, mpv);
+    } else if is_active {
+        let model = NoiseModel::from_i32_or_default(settings.get_int(keys::NOISE_MODEL));
+        mpv.set_noise_strength(model, strength);
+        let settings = settings.clone();
+        let mpv = Arc::downgrade(mpv);
+        let pending = Rc::downgrade(state);
+        let source = gtk::glib::timeout_add_local_once(REBUILD_AFTER_SLIDER_REST, move || {
+            if let Some(state) = pending.upgrade() {
+                state.rebuild.take();
+            }
+            if let Some(mpv) = mpv.upgrade() {
+                audio_effects::apply_voice_change(&settings, &mpv);
+            }
+        });
+        state.rebuild.replace(Some(source));
+    }
     is_active
 }
 

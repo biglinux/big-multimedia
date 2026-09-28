@@ -93,6 +93,32 @@ impl NoiseModel {
         }
     }
 
+    /// Attenuation cap in dB at full strength: where the model stops removing
+    /// more. Measured on speech in pink noise: DeepFilterNet3's residual moves
+    /// under 1 dB past 24 dB and it keeps music whatever the cap, while
+    /// DPDFNet-2 keeps going and at 48 dB has noise at -74 dBFS and music
+    /// 35 dB down. A higher cap would leave half the slider doing nothing.
+    #[must_use]
+    pub fn max_attenuation_db(self) -> f64 {
+        match self {
+            Self::DeepFilterNet3 => 24.0,
+            Self::DpdfNet2 => 48.0,
+        }
+    }
+
+    /// Attenuation cap for a unit-scale strength, linear in dB up to
+    /// [`Self::max_attenuation_db`], so every slider step is audible.
+    #[must_use]
+    pub fn attenuation_db(self, strength: f64) -> f64 {
+        strength.clamp(0.0, 1.0) * self.max_attenuation_db()
+    }
+
+    /// The `c0` value for `strength`, also sent live to [`LADSPA_FILTER_NAME`].
+    #[must_use]
+    pub fn attenuation_control(self, strength: f64) -> String {
+        format!("{:.2}", self.attenuation_db(strength))
+    }
+
     /// Whether the plugin file is installed. Performs a `stat`.
     #[must_use]
     pub fn plugin_available(self) -> bool {
@@ -104,22 +130,6 @@ impl NoiseModel {
 #[must_use]
 pub fn any_model_available() -> bool {
     MODELS.iter().any(|model| model.plugin_available())
-}
-
-/// Attenuation cap in dB for a unit-scale strength: `strength² × 100`.
-///
-/// The squared curve keeps the lower half of the slider gentle, the same
-/// mapping the microphone configurator and the converters use.
-#[must_use]
-pub fn attenuation_db(strength: f64) -> f64 {
-    let s = strength.clamp(0.0, 1.0);
-    s * s * 100.0
-}
-
-/// The `c0` value for a live strength change, sent to [`LADSPA_FILTER_NAME`].
-#[must_use]
-pub fn attenuation_control(strength: f64) -> String {
-    format!("{:.2}", attenuation_db(strength))
 }
 
 /// The lavfi chain that denoises with `model` at `strength`.
@@ -142,7 +152,7 @@ pub fn attenuation_control(strength: f64) -> String {
 /// use big_audio_effects::noise_reduction::{NoiseModel, lavfi_chain};
 ///
 /// let chain = lavfi_chain(NoiseModel::DeepFilterNet3, 0.5);
-/// assert!(chain.contains("controls=c0=25.00|c6=0"));
+/// assert!(chain.contains("controls=c0=12.00|c6=0"));
 /// assert!(chain.ends_with("atrim=start_sample=25919,asetpts=PTS-1919/SR/TB"));
 /// ```
 #[must_use]
@@ -160,7 +170,7 @@ pub fn lavfi_chain(model: NoiseModel, strength: f64) -> String {
          [bvcnr_pre][bvcnr_main]concat=n=2:v=0:a=1,apad=pad_len={delay},\
          {LADSPA_FILTER_NAME}=file={plugin}:plugin={label}:controls=c0={}{extra},\
          atrim=start_sample={},asetpts=PTS-{delay}/SR/TB",
-        attenuation_control(strength),
+        model.attenuation_control(strength),
         LEAD_IN_SAMPLES + delay,
     )
 }
@@ -191,17 +201,20 @@ mod tests {
     }
 
     #[test]
-    fn attenuation_curve_is_squared_and_bounded() {
-        assert!((attenuation_db(0.5) - 25.0).abs() < f64::EPSILON);
-        assert!((attenuation_db(2.0) - 100.0).abs() < f64::EPSILON);
-        assert!(attenuation_db(-1.0).abs() < f64::EPSILON);
-        assert_eq!(attenuation_control(1.0), "100.00");
+    fn attenuation_is_linear_up_to_each_models_useful_cap() {
+        let dfn3 = NoiseModel::DeepFilterNet3;
+        let dpdfnet = NoiseModel::DpdfNet2;
+        assert!((dfn3.attenuation_db(0.5) - 12.0).abs() < f64::EPSILON);
+        assert!((dpdfnet.attenuation_db(0.5) - 24.0).abs() < f64::EPSILON);
+        assert!((dpdfnet.attenuation_db(2.0) - 48.0).abs() < f64::EPSILON);
+        assert!(dfn3.attenuation_db(-1.0).abs() < f64::EPSILON);
+        assert_eq!(dfn3.attenuation_control(1.0), "24.00");
     }
 
     #[test]
     fn chain_compensates_each_plugins_delay() {
         let dpdfnet = lavfi_chain(NoiseModel::DpdfNet2, 1.0);
-        assert!(dpdfnet.contains("plugin=dpdfnet_native_48hr:controls=c0=100.00,"));
+        assert!(dpdfnet.contains("plugin=dpdfnet_native_48hr:controls=c0=48.00,"));
         assert!(dpdfnet.contains("apad=pad_len=2880,"));
         assert!(dpdfnet.ends_with("atrim=start_sample=26880,asetpts=PTS-2880/SR/TB"));
         assert!(!dpdfnet.contains("c6"));

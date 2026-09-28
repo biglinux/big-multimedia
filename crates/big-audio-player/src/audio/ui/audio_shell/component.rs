@@ -599,7 +599,9 @@ impl Component for AudioShell {
                 open_generation: 0,
                 history: QueueHistory::default(),
                 now_playing_gen: 0,
-                voice_active: std::cell::Cell::new(initial_voice_active),
+                voice_active: std::rc::Rc::new(crate::shared::popovers::VoiceStrength::new(
+                    initial_voice_active,
+                )),
                 np_box,
                 np_art,
                 np_title,

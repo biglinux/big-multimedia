@@ -153,7 +153,7 @@ pub struct AudioShell {
     np_album: gtk::Label,
     /// Whether voice-enhancement (noise reduction) is active (NR pipeline toggle
     /// crosses on this).
-    voice_active: std::cell::Cell<bool>,
+    voice_active: std::rc::Rc<crate::shared::popovers::VoiceStrength>,
     /// Name of the currently-playing radio station (for recording filenames).
     radio_station_name: String,
     /// Destination of the in-progress radio recording (None = not recording).

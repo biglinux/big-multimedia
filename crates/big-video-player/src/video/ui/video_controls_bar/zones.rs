@@ -339,8 +339,9 @@ pub(super) fn build_start_box(
     let stored_noise_reduction_strength = settings.get_double(keys::NOISE_STRENGTH).max(0.0);
     let initial_noise_reduction_percent =
         (stored_noise_reduction_strength * 100.0).clamp(0.0, 100.0);
-    let previous_noise_reduction_active =
-        Rc::new(std::cell::Cell::new(stored_noise_reduction_strength > 0.0));
+    let voice_strength = Rc::new(crate::shared::popovers::VoiceStrength::new(
+        stored_noise_reduction_strength > 0.0,
+    ));
     let voice_popover = build_voice_popover(
         &voice_box,
         &voice_button,
@@ -352,9 +353,9 @@ pub(super) fn build_start_box(
             move |pct| {
                 crate::shared::popovers::handle_voice_strength_changed(
                     &settings,
-                    mpv.borrow().as_ref().map(Arc::as_ref),
+                    mpv.borrow().as_ref(),
                     pct,
-                    &previous_noise_reduction_active,
+                    &voice_strength,
                 );
             }
         },
