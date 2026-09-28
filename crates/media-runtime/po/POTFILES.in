@@ -231,6 +231,7 @@ crates/media-runtime/src/shared/spawn.rs
 crates/media-runtime/src/shared/theming.rs
 crates/media-runtime/src/shared/tooltip.rs
 crates/media-runtime/src/shared/tv_cast.rs
+crates/ui/generic/big-relm4-components/src/accessible.rs
 crates/ui/generic/big-relm4-components/src/display/mod.rs
 crates/ui/generic/big-relm4-components/src/display/sleep_timer.rs
 crates/ui/generic/big-relm4-components/src/display/texture.rs
@@ -253,6 +254,7 @@ crates/ui/generic/big-relm4-components/src/input/dropdown_row.rs
 crates/ui/generic/big-relm4-components/src/input/illustrated_slider_row.rs
 crates/ui/generic/big-relm4-components/src/input/inline_spin_set.rs
 crates/ui/generic/big-relm4-components/src/input/mod.rs
+crates/ui/generic/big-relm4-components/src/input/password_row.rs
 crates/ui/generic/big-relm4-components/src/input/preference_cards.rs
 crates/ui/generic/big-relm4-components/src/input/scale_popover.rs
 crates/ui/generic/big-relm4-components/src/input/scale_trough.rs
