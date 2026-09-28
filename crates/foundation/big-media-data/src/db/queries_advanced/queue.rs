@@ -31,13 +31,11 @@ pub struct QueueSession {
 
 /// Publish both queues together. Keep the legacy ID-only table untouched so an
 /// interrupted upgrade never destroys the previous application's queue.
+///
+/// Runs at the connection's `synchronous = NORMAL`: a WAL commit is not synced,
+/// so a power cut may lose the latest queue, never the database.
 pub fn save_queue_session(conn: &Connection, session: &QueueSession) -> crate::Result<()> {
-    // Acknowledged queue saves must sync the WAL before the window may close.
-    // The connection is shared, so every other write goes back to NORMAL.
-    conn.pragma_update(None, "synchronous", "FULL")?;
-    let saved = write_queue_session(conn, session);
-    conn.pragma_update(None, "synchronous", "NORMAL")?;
-    saved
+    write_queue_session(conn, session)
 }
 
 fn write_queue_session(conn: &Connection, session: &QueueSession) -> crate::Result<()> {

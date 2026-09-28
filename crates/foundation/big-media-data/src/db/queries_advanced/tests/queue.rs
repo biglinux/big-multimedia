@@ -121,11 +121,6 @@ fn legacy_queue_is_read_once_and_failed_session_save_keeps_both_queues() {
     session.music.tracks.clear();
     session.music.current = None;
     assert!(save_queue_session(&conn, &session).is_err());
-    // A failed save must not leave the shared connection on FULL (1 = NORMAL).
-    let synchronous: i64 = conn
-        .pragma_query_value(None, "synchronous", |row| row.get(0))
-        .unwrap();
-    assert_eq!(synchronous, 1);
     let restored = load_queue_session(&conn).unwrap();
     assert_eq!(restored.music.tracks.len(), 2);
     assert_eq!(restored.podcasts.tracks[0].title.as_deref(), Some("A"));

@@ -46,14 +46,13 @@ fn invalid_values_do_not_mutate_state() {
 
 #[test]
 fn shared_handles_and_external_conflict_are_not_lost_updates() {
-    use big_os_kit::storage::CommitOutcome;
     let path = std::env::temp_dir().join(format!("settings-review-{}.conf", std::process::id()));
     let _ = std::fs::remove_file(&path);
     let a = Settings::from_path(path.clone());
     let b = Settings::from_path(path.clone());
     a.put_double(keys::VOLUME, 0.0);
     assert_eq!(b.get_double(keys::VOLUME), 0.0);
-    assert!(matches!(b.try_flush().unwrap(), CommitOutcome::Durable));
+    b.try_flush().unwrap();
     std::fs::write(&path, b"volume=21\n").unwrap();
     a.put_double(keys::VOLUME, 30.0);
     assert!(a.try_flush().is_err());

@@ -65,13 +65,13 @@ impl QueuePersistence {
                 Phase::Saved
             },
             revision: state.revision,
-            durable_revision: state.saved,
+            saved_revision: state.saved,
         }
     }
 
     pub(super) fn unsaved(&self) -> bool {
         let status = self.status();
-        status.revision != status.durable_revision
+        status.revision != status.saved_revision
     }
 
     pub(super) fn loaded(&mut self, database: Option<DbHandle>) {

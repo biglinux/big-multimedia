@@ -3,10 +3,17 @@
 //! Atomic file persistence primitives for BigLinux apps.
 //!
 //! [`atomic_write`](crate::storage::atomic_write) and
-//! [`atomic_write_private_receipt`](crate::storage::atomic_write_private_receipt) write through a
+//! [`atomic_write_private`](crate::storage::atomic_write_private) write through a
 //! `.big-state.tmp.<pid>.<seq>` sibling file and then rename into place.
 //! `rename(2)` is atomic on the same filesystem; partial writes from a crash
 //! are bound to the temp file and visible only after a successful rename.
+//!
+//! Neither calls `fsync`: they hold application state and caches, which the
+//! kernel writes back in its own time. A power cut may lose the last seconds
+//! of it; syncing on every save costs the whole system far more. Files the user
+//! owns go through [`StagedFile::publish`], which does sync, as does
+//! [`atomic_write_private_synced`] for the rare state whose recovery depends on
+//! write order (credential journals).
 
 use std::fs;
 use std::io::Write;
@@ -26,8 +33,9 @@ fn atomic_sibling_temp_path(target: &Path) -> PathBuf {
 }
 
 /// Atomically write `bytes` to `path`: write a uniquely-named sibling temp file,
-/// `fsync` it, then rename it over the target. A crash mid-write leaves the
-/// previous contents intact (a plain `fs::write` truncates first). The temp file
+/// then rename it over the target (no `fsync`, see the module docs). A crash
+/// mid-write leaves the previous contents intact (a plain `fs::write` truncates
+/// first). The temp file
 /// is created in the target's parent directory so the rename stays within one
 /// filesystem (a cross-filesystem rename fails). Creates the parent dir if
 /// missing.
@@ -45,12 +53,12 @@ fn atomic_sibling_temp_path(target: &Path) -> PathBuf {
 ///
 /// # Errors
 /// Returns the underlying [`std::io::Error`] from the dir create, temp write,
-/// `fsync`, or rename.
+/// or rename.
 pub fn atomic_write(path: &Path, bytes: &[u8]) -> std::io::Result<()> {
-    atomic_replace(path, false, |file| file.write_all(bytes))
+    atomic_replace(path, false, false, |file| file.write_all(bytes))
 }
 
-// Remove partial files on every error, including serialization and fsync errors.
+// Remove partial files on every error, including serialization errors.
 struct TempFileCleanup(Option<PathBuf>);
 impl Drop for TempFileCleanup {
     fn drop(&mut self) {
@@ -79,11 +87,12 @@ fn create_sibling_file(path: &Path, private: bool) -> std::io::Result<fs::File> 
     options.open(path)
 }
 
-fn atomic_replace_receipt(
+fn atomic_replace(
     path: &Path,
     private: bool,
+    sync: bool,
     write: impl FnOnce(&mut fs::File) -> std::io::Result<()>,
-) -> std::io::Result<CommitOutcome> {
+) -> std::io::Result<()> {
     let parent = path
         .parent()
         .filter(|p| !p.as_os_str().is_empty())
@@ -95,29 +104,27 @@ fn atomic_replace_receipt(
     let mut file = create_sibling_file(&temporary, private)?;
     let mut cleanup = TempFileCleanup(Some(temporary.clone()));
     write(&mut file)?;
-    file.sync_all()?;
+    if sync {
+        file.sync_all()?;
+    }
     drop(file);
     fs::rename(&temporary, path)?;
     cleanup.0 = None; // the old temporary name no longer belongs to us
-    // Persist the directory entry as well as the file content on Unix.
-    Ok(match sync_parent(path) {
-        Ok(()) => CommitOutcome::Durable,
-        Err(error) => CommitOutcome::PublishedNotSynced(error),
-    })
+    if sync {
+        sync_parent(path)?;
+    }
+    Ok(())
 }
 
-fn atomic_replace(
-    path: &Path,
-    private: bool,
-    write: impl FnOnce(&mut fs::File) -> std::io::Result<()>,
-) -> std::io::Result<()> {
-    atomic_replace_receipt(path, private, write)?.into_io_result()
+/// Atomically replace private internal state (mode 0600), without `fsync`.
+pub fn atomic_write_private(path: &Path, bytes: &[u8]) -> std::io::Result<()> {
+    atomic_replace(path, true, false, |file| file.write_all(bytes))
 }
 
-/// Publish private internal state with an explicit publication/durability receipt.
-/// Err means publication did not happen; PublishedNotSynced means it DID happen.
-pub fn atomic_write_private_receipt(path: &Path, bytes: &[u8]) -> std::io::Result<CommitOutcome> {
-    atomic_replace_receipt(path, true, |file| file.write_all(bytes))
+/// [`atomic_write_private`] that also syncs the file and its directory before
+/// returning. Only for state whose crash recovery depends on write order.
+pub fn atomic_write_private_synced(path: &Path, bytes: &[u8]) -> std::io::Result<()> {
+    atomic_replace(path, true, true, |file| file.write_all(bytes))
 }
 
 #[cfg(test)]
@@ -196,7 +203,7 @@ mod review_atomic_tests {
         fs::create_dir(&base).unwrap();
         let path = base.join("state");
         fs::write(&path, b"old").unwrap();
-        let result: std::io::Result<()> = atomic_replace(&path, false, |file| {
+        let result: std::io::Result<()> = atomic_replace(&path, false, false, |file| {
             file.write_all(b"partial")?;
             Err(std::io::Error::other("injected write failure"))
         });

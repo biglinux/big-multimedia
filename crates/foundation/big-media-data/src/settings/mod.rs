@@ -21,7 +21,6 @@ struct Inner {
     dirty: bool,
     disk_bytes: Option<Vec<u8>>,
     load_error: Option<String>,
-    durability_pending: bool,
     revision: u64,
     persisted_revision: u64,
     save_queued: bool,

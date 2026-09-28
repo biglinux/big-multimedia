@@ -1,7 +1,9 @@
 //! Observable, coalesced background saves for small private state documents.
 //! Callers provide the exact bytes they loaded; comparison and publication occur
 //! under one cooperating-writer lock. This is not a user-document overwrite API.
-use crate::storage::{self, CommitOutcome};
+//! Saves are atomic but not fsynced: losing the last seconds of player state to
+//! a power cut is acceptable, a sync per edit is not.
+use crate::storage;
 use std::io;
 use std::path::PathBuf;
 use std::sync::{Arc, Mutex, PoisonError};
@@ -11,14 +13,12 @@ pub const MAX_BYTES: usize = 1024 * 1024;
 /// Acknowledged phase, never inferred from merely submitting a task.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum Phase {
-    /// The latest local generation is durably stored.
+    /// The latest local generation is written (the kernel flushes it later).
     Saved,
     /// An admitted or superseding save is pending.
     Pending,
     /// A transaction is running outside the UI thread.
     Saving,
-    /// Bytes were published, but directory durability is not yet confirmed.
-    DurabilityPending,
     /// Save failed or the loaded document was invalid; edits remain in memory.
     Failed,
 }
@@ -29,17 +29,15 @@ pub struct Status {
     pub phase: Phase,
     /// Latest locally edited generation.
     pub revision: u64,
-    /// Last generation whose content and directory sync were confirmed.
-    pub durable_revision: u64,
+    /// Last generation written to the file.
+    pub saved_revision: u64,
 }
 struct State {
     expected: Option<Vec<u8>>,
     desired: Option<Vec<u8>>,
     revision: u64,
-    published_revision: u64,
-    durable_revision: u64,
+    saved_revision: u64,
     queued: bool,
-    needs_sync: bool,
     blocked: bool,
     invalid_update: bool,
     phase: Phase,
@@ -70,7 +68,7 @@ pub fn any_unsaved() -> bool {
         .filter_map(std::sync::Weak::upgrade)
         .any(|owner| {
             let s = owner.lock().unwrap_or_else(PoisonError::into_inner);
-            s.invalid_update || s.revision != s.durable_revision || s.needs_sync
+            s.invalid_update || s.revision != s.saved_revision
         })
 }
 impl Document {
@@ -84,10 +82,8 @@ impl Document {
                 desired: expected.clone(),
                 expected,
                 revision: 0,
-                published_revision: 0,
-                durable_revision: 0,
+                saved_revision: 0,
                 queued: false,
-                needs_sync: false,
                 blocked,
                 invalid_update: false,
                 phase: if blocked { Phase::Failed } else { Phase::Saved },
@@ -118,7 +114,7 @@ impl Document {
         Status {
             phase: s.phase,
             revision: s.revision,
-            durable_revision: s.durable_revision,
+            saved_revision: s.saved_revision,
         }
     }
     /// Record validated bytes and admit an asynchronous save. Newer edits replace
@@ -152,7 +148,7 @@ impl Document {
         s.phase = Phase::Failed;
     }
 
-    /// Retry a failed save or directory sync. Does not rebase against an external
+    /// Retry a failed save. Does not rebase against an external
     /// writer automatically: a content conflict requires an explicit reload/review.
     pub fn retry(&self) -> io::Result<()> {
         {
@@ -172,7 +168,7 @@ impl Document {
             if s.queued {
                 return Ok(());
             }
-            if s.revision == s.durable_revision && !s.needs_sync {
+            if s.revision == s.saved_revision {
                 s.phase = Phase::Saved;
                 return Ok(());
             }
@@ -187,13 +183,13 @@ impl Document {
             let again = {
                 let mut s = owner.state.lock().unwrap_or_else(PoisonError::into_inner);
                 s.queued = false;
-                if !success && s.phase != Phase::DurabilityPending {
+                if !success {
                     s.phase = Phase::Failed;
                 }
                 if s.invalid_update {
                     s.phase = Phase::Failed;
                 }
-                success && !s.invalid_update && s.revision != s.durable_revision
+                success && !s.invalid_update && s.revision != s.saved_revision
             };
             if again {
                 let _ = owner.retry();
@@ -207,16 +203,10 @@ impl Document {
         admitted
     }
     fn transaction(&self) -> io::Result<()> {
-        let (expected, desired, revision, needs_sync, published_revision) = {
+        let (expected, desired, revision) = {
             let mut s = self.state.lock().unwrap_or_else(PoisonError::into_inner);
             s.phase = Phase::Saving;
-            (
-                s.expected.clone(),
-                s.desired.clone(),
-                s.revision,
-                s.needs_sync,
-                s.published_revision,
-            )
+            (s.expected.clone(), s.desired.clone(), s.revision)
         };
         let parent = self
             .path
@@ -229,56 +219,24 @@ impl Document {
                 "state changed in another instance; reload before saving",
             ));
         }
-        if needs_sync {
-            match storage::sync_parent(&self.path) {
-                Err(error) => {
-                    self.state
-                        .lock()
-                        .unwrap_or_else(PoisonError::into_inner)
-                        .phase = Phase::DurabilityPending;
-                    return Err(error);
-                }
-                Ok(()) => {
-                    let mut s = self.state.lock().unwrap_or_else(PoisonError::into_inner);
-                    s.needs_sync = false;
-                    s.durable_revision = published_revision;
-                }
-            }
+        if desired != expected {
+            let bytes = desired.ok_or_else(|| io::Error::other("no state submitted"))?;
+            storage::atomic_write_private(&self.path, &bytes)?;
+            // Merge only publication state, not desired values that may have
+            // changed during I/O. This short lock is never held around a syscall.
+            self.state
+                .lock()
+                .unwrap_or_else(PoisonError::into_inner)
+                .expected = Some(bytes);
         }
-        if desired == expected {
-            let mut s = self.state.lock().unwrap_or_else(PoisonError::into_inner);
-            s.durable_revision = revision;
-            s.phase = if s.revision == revision {
-                Phase::Saved
-            } else {
-                Phase::Pending
-            };
-            return Ok(());
-        }
-        let bytes = desired.ok_or_else(|| io::Error::other("no state submitted"))?;
-        let receipt = storage::atomic_write_private_receipt(&self.path, &bytes)?;
         let mut s = self.state.lock().unwrap_or_else(PoisonError::into_inner);
-        // Merge only publication state, not desired values that may have changed
-        // during I/O. This short lock is never held around a syscall.
-        s.expected = Some(bytes);
-        s.published_revision = revision;
-        match receipt {
-            CommitOutcome::Durable => {
-                s.durable_revision = revision;
-                s.needs_sync = false;
-                s.phase = if s.revision == revision {
-                    Phase::Saved
-                } else {
-                    Phase::Pending
-                };
-                Ok(())
-            }
-            CommitOutcome::PublishedNotSynced(error) => {
-                s.needs_sync = true;
-                s.phase = Phase::DurabilityPending;
-                Err(error)
-            }
-        }
+        s.saved_revision = revision;
+        s.phase = if s.revision == revision {
+            Phase::Saved
+        } else {
+            Phase::Pending
+        };
+        Ok(())
     }
 }
 

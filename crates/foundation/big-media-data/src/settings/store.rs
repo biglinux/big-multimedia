@@ -7,7 +7,7 @@ use log::error;
 use super::{Inner, defaults, keys};
 
 const LIMIT: usize = 1024 * 1024;
-use big_os_kit::storage::{self, CommitOutcome};
+use big_os_kit::storage;
 use std::collections::HashMap;
 use std::io;
 use std::sync::{Mutex, OnceLock, Weak};
@@ -75,7 +75,6 @@ pub enum SavePhase {
     Saved,
     Pending,
     Saving,
-    DurabilityPending,
     Failed,
 }
 
@@ -127,7 +126,6 @@ impl Settings {
             dirty: false,
             disk_bytes: None,
             load_error: None,
-            durability_pending: false,
             revision: 0,
             persisted_revision: 0,
             save_queued: false,
@@ -180,7 +178,6 @@ impl Settings {
             dirty: false,
             disk_bytes,
             load_error,
-            durability_pending: false,
             revision: 0,
             persisted_revision: 0,
             save_queued: false,
@@ -386,7 +383,7 @@ impl Settings {
             let state = owner
                 .read()
                 .unwrap_or_else(std::sync::PoisonError::into_inner);
-            state.dirty || state.durability_pending
+            state.dirty
         })
     }
 
@@ -412,7 +409,7 @@ impl Settings {
                 .inner
                 .write()
                 .unwrap_or_else(std::sync::PoisonError::into_inner);
-            if inner.save_queued || (!inner.dirty && !inner.durability_pending) {
+            if inner.save_queued || !inner.dirty {
                 return Ok(());
             }
             inner.save_queued = true;
@@ -455,10 +452,11 @@ impl Settings {
         result
     }
 
-    /// Worker-only durable transaction. Snapshot/commit/finalize separates the
-    /// disk lock from the fast memory lock. The generation check preserves edits
-    /// made while an older generation was on disk.
-    pub fn try_flush(&self) -> io::Result<CommitOutcome> {
+    /// Worker-only save transaction (atomic, not fsynced: the kernel writes it
+    /// back in its own time). Snapshot/commit/finalize separates the disk lock
+    /// from the fast memory lock. The generation check preserves edits made while
+    /// an older generation was on disk.
+    pub fn try_flush(&self) -> io::Result<()> {
         let disk_lock = self
             .inner
             .read()
@@ -468,7 +466,7 @@ impl Settings {
         let _transaction = disk_lock
             .lock()
             .unwrap_or_else(std::sync::PoisonError::into_inner);
-        let (path, expected, values, revision, dirty, durability, load_error) = {
+        let (path, expected, values, revision) = {
             let mut inner = self
                 .inner
                 .write()
@@ -480,8 +478,8 @@ impl Settings {
                     "settings are not backed by a safely readable private file",
                 ));
             }
-            if !inner.dirty && !inner.durability_pending {
-                return Ok(CommitOutcome::Durable);
+            if !inner.dirty {
+                return Ok(());
             }
             inner.phase = SavePhase::Saving;
             (
@@ -489,25 +487,9 @@ impl Settings {
                 inner.disk_bytes.clone(),
                 inner.settings_values.clone(),
                 inner.revision,
-                inner.dirty,
-                inner.durability_pending,
-                inner.load_error.clone(),
             )
         };
-        let mut published_bytes = None;
         let result = (|| {
-            if path.as_os_str().is_empty() {
-                return Err(io::Error::new(
-                    io::ErrorKind::NotFound,
-                    "settings are in memory only",
-                ));
-            }
-            if load_error.is_some() {
-                return Err(io::Error::new(
-                    io::ErrorKind::InvalidData,
-                    "settings could not be read safely; not replacing them",
-                ));
-            }
             if let Some(parent) = path.parent() {
                 fs::create_dir_all(parent)?;
             }
@@ -518,49 +500,33 @@ impl Settings {
                     "settings changed in another process; reopen before saving",
                 ));
             }
-            if !dirty && durability {
-                return Ok(match storage::sync_parent(&path) {
-                    Ok(()) => CommitOutcome::Durable,
-                    Err(error) => CommitOutcome::PublishedNotSynced(error),
-                });
-            }
             let bytes = serialize(&values)?;
-            let receipt = storage::atomic_write_private_receipt(&path, &bytes)?;
-            published_bytes = Some(bytes);
-            Ok(receipt)
+            storage::atomic_write_private(&path, &bytes)?;
+            Ok(bytes)
         })();
         let mut inner = self
             .inner
             .write()
             .unwrap_or_else(std::sync::PoisonError::into_inner);
-        match &result {
-            Ok(receipt) => {
-                if let Some(bytes) = published_bytes {
-                    inner.disk_bytes = Some(bytes);
-                    inner.persisted_revision = revision;
-                    inner.dirty = inner.revision != revision;
-                }
-                inner.durability_pending = matches!(receipt, CommitOutcome::PublishedNotSynced(_));
+        match result {
+            Ok(bytes) => {
+                inner.disk_bytes = Some(bytes);
+                inner.persisted_revision = revision;
+                inner.dirty = inner.revision != revision;
                 inner.phase = if inner.dirty {
                     SavePhase::Pending
-                } else if inner.durability_pending {
-                    SavePhase::DurabilityPending
                 } else {
                     SavePhase::Saved
                 };
-                inner.save_error = match receipt {
-                    CommitOutcome::PublishedNotSynced(_) => {
-                        Some("Published, but durable storage is not confirmed".into())
-                    }
-                    CommitOutcome::Durable => None,
-                };
+                inner.save_error = None;
+                Ok(())
             }
             Err(error) => {
                 inner.phase = SavePhase::Failed;
                 inner.save_error = Some(error.to_string());
+                Err(error)
             }
         }
-        result
     }
 
     /// Compatibility entry point: queues work; never claims synchronous success.

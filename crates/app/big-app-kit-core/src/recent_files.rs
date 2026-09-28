@@ -120,9 +120,8 @@ impl RecentStore {
         if content.len() > 1024 * 1024 {
             return Err("Recent history exceeds limit".into());
         }
-        big_os_kit::storage::atomic_write_private_receipt(&path, content.as_bytes())
-            .and_then(|r| r.into_io_result())
-            .map_err(|_| "Recent history save was not confirmed".into())
+        big_os_kit::storage::atomic_write_private(&path, content.as_bytes())
+            .map_err(|_| "Recent history save failed".into())
     }
 
     /// Return the current `clear` value held by this [`RecentStore`].
@@ -132,9 +131,8 @@ impl RecentStore {
         let path = self.path_for_kind(kind);
         let _lock = big_os_kit::storage::WriteLock::try_acquire(&path)
             .map_err(|_| "Recent history busy")?;
-        big_os_kit::storage::atomic_write_private_receipt(&path, b"")
-            .and_then(|r| r.into_io_result())
-            .map_err(|_| "Recent history clear was not confirmed".into())
+        big_os_kit::storage::atomic_write_private(&path, b"")
+            .map_err(|_| "Recent history clear failed".into())
     }
 }
 

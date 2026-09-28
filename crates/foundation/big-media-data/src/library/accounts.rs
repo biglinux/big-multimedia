@@ -269,11 +269,10 @@ fn save_reviewed_with(
             .flatten();
         let journal = json!({"version":1,"provider":review.provider.scope(),"candidate":random_id()?,"previous":previous,
             "before":before_hash(current.as_deref()),"payload_hash":digest::bytes(&payload),"enabled":json(&payload)?["enabled"]});
-        storage::atomic_write_private_receipt(
+        storage::atomic_write_private_synced(
             &path,
             &serde_json::to_vec(&journal).map_err(io::Error::other)?,
-        )?
-        .into_io_result()?;
+        )?;
         journal
     };
     let id = token(&journal["candidate"])?;
@@ -294,11 +293,10 @@ fn save_reviewed_with(
         ));
     }
     let reference = json!({"version":2,"provider":review.provider.scope(),"secret_id":id});
-    storage::atomic_write_private_receipt(
+    storage::atomic_write_private_synced(
         &review.path,
         &serde_json::to_vec(&reference).map_err(io::Error::other)?,
-    )?
-    .into_io_result()?;
+    )?;
     finish(review, &journal, vault)
 }
 fn finish(review: &AccountReview, journal: &Value, vault: &dyn Vault) -> io::Result<SaveOutcome> {

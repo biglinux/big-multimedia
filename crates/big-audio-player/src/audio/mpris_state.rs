@@ -140,11 +140,8 @@ pub(crate) fn save_mpris_art(data: &[u8]) -> Option<String> {
         std::process::id(),
         gtk::glib::real_time()
     ));
-    let stage = big_app_kit::storage::StagedFile::new(&art_path).ok()?;
-    std::fs::write(stage.path(), data).ok()?;
-    // Both receipts mean publication happened; cache durability uncertainty is
-    // not a reason to overwrite the published entry with an older generation.
-    let _receipt = stage.publish(&art_path).ok()?;
+    // A cache: atomic so a reader never sees half a picture, never synced.
+    big_app_kit::storage::atomic_write(&art_path, data).ok()?;
     Some(gtk::gio::File::for_path(&art_path).uri().to_string())
 }
 

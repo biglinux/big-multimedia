@@ -37,9 +37,6 @@ pub fn attach_save_status_banner(page: &adw::PreferencesPage, settings: &Setting
             let status = store.save_status();
             if last.as_ref() != Some(&status) {
                 let problem = match status.phase {
-                    SavePhase::DurabilityPending => Some(i18n(
-                        "Your changes are in use, but saving them to disk is not confirmed yet.",
-                    )),
                     SavePhase::Failed => Some(i18n(
                         "Your changes work for now but could not be saved. Check free disk space or close other players, then retry.",
                     )),
@@ -200,10 +197,9 @@ pub fn document_status(
                 label.set_label(&i18n(match status.as_ref().map(|s|s.phase) {
                     None|Some(Phase::Saved)=>"Changes are saved.",
                     Some(Phase::Pending|Phase::Saving)=>"Saving your changes…",
-                    Some(Phase::DurabilityPending)=>"Changes were applied, but safe storage is not confirmed. Retry saving.",
                     Some(Phase::Failed)=>"Changes work for this session but could not be saved. Check storage or close other instances, then retry.",
                 }));
-                button.set_sensitive(matches!(status.as_ref().map(|s|s.phase),Some(Phase::Failed|Phase::DurabilityPending)));
+                button.set_sensitive(matches!(status.as_ref().map(|s|s.phase),Some(Phase::Failed)));
                 last=status;
             }
             glib::ControlFlow::Continue

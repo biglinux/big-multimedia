@@ -81,10 +81,8 @@ use std::sync::{Arc, Mutex, PoisonError};
 struct LiveState {
     bytes: Vec<u8>,
     revision: u64,
-    published: u64,
-    durable: u64,
+    saved: u64,
     queued: bool,
-    needs_sync: bool,
     phase: Phase,
 }
 struct LiveFile {
@@ -123,10 +121,8 @@ pub fn write_private(path: PathBuf, bytes: Vec<u8>) -> io::Result<()> {
                     state: Mutex::new(LiveState {
                         bytes: Vec::new(),
                         revision: 0,
-                        published: 0,
-                        durable: 0,
+                        saved: 0,
                         queued: false,
-                        needs_sync: false,
                         phase: Phase::Saved,
                     }),
                 })
@@ -156,7 +152,7 @@ pub fn live_status(path: &Path) -> Option<Status> {
     Some(Status {
         phase: s.phase,
         revision: s.revision,
-        durable_revision: s.durable,
+        saved_revision: s.saved,
     })
 }
 
@@ -177,7 +173,7 @@ pub fn retry_live(path: &Path) -> io::Result<()> {
 fn enqueue_live(file: Arc<LiveFile>) -> io::Result<()> {
     {
         let mut s = file.state.lock().unwrap_or_else(PoisonError::into_inner);
-        if s.queued || (s.revision == s.durable && !s.needs_sync) {
+        if s.queued || s.revision == s.saved {
             return Ok(());
         }
         s.queued = true;
@@ -185,61 +181,36 @@ fn enqueue_live(file: Arc<LiveFile>) -> io::Result<()> {
     }
     let owner = file.clone();
     let result = submit(move || {
-        let (bytes, revision, sync_only) = {
+        let (bytes, revision) = {
             let mut s = owner.state.lock().unwrap_or_else(PoisonError::into_inner);
             s.phase = Phase::Saving;
-            (
-                s.bytes.clone(),
-                s.revision,
-                s.needs_sync && s.revision == s.published,
-            )
+            (s.bytes.clone(), s.revision)
         };
-        let outcome = std::panic::catch_unwind(std::panic::AssertUnwindSafe(
-            || -> io::Result<crate::storage::CommitOutcome> {
+        let outcome =
+            std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| -> io::Result<()> {
                 let parent = owner
                     .path
                     .parent()
                     .ok_or_else(|| io::Error::other("invalid control directory"))?;
                 std::fs::create_dir_all(parent)?;
                 let _lock = crate::storage::WriteLock::try_acquire(&owner.path)?;
-                if sync_only {
-                    crate::storage::sync_parent(&owner.path)?;
-                    Ok(crate::storage::CommitOutcome::Durable)
-                } else {
-                    crate::storage::atomic_write_private_receipt(&owner.path, &bytes)
-                }
-            },
-        ))
-        .unwrap_or_else(|_| Err(io::Error::other("live-control task panicked")));
+                crate::storage::atomic_write_private(&owner.path, &bytes)
+            }))
+            .unwrap_or_else(|_| Err(io::Error::other("live-control task panicked")));
         let again = {
             let mut s = owner.state.lock().unwrap_or_else(PoisonError::into_inner);
             s.queued = false;
-            match outcome {
-                Ok(crate::storage::CommitOutcome::Durable) => {
-                    s.published = revision;
-                    s.durable = revision;
-                    s.needs_sync = false;
-                    s.phase = if s.revision == revision {
-                        Phase::Saved
-                    } else {
-                        Phase::Pending
-                    };
-                    s.revision != revision
-                }
-                Ok(crate::storage::CommitOutcome::PublishedNotSynced(_)) => {
-                    s.published = revision;
-                    s.needs_sync = true;
-                    s.phase = Phase::DurabilityPending;
-                    false
-                }
-                Err(_) => {
-                    s.phase = if sync_only {
-                        Phase::DurabilityPending
-                    } else {
-                        Phase::Failed
-                    };
-                    false
-                }
+            if outcome.is_ok() {
+                s.saved = revision;
+                s.phase = if s.revision == revision {
+                    Phase::Saved
+                } else {
+                    Phase::Pending
+                };
+                s.revision != revision
+            } else {
+                s.phase = Phase::Failed;
+                false
             }
         };
         if again {
