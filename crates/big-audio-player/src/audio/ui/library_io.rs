@@ -138,6 +138,18 @@ pub(super) fn save_tracks_as_playlist(
     );
 }
 
+/// A scan opens its own progress dialog. Stacked over this one, Escape closed
+/// the progress (cancelling the scan) and left this identical-looking dialog,
+/// so it read as Escape doing nothing: leave before the scan starts.
+fn close_enclosing_dialog(widget: &impl IsA<gtk::Widget>) {
+    if let Some(dialog) = widget
+        .ancestor(adw::Dialog::static_type())
+        .and_downcast::<adw::Dialog>()
+    {
+        dialog.close();
+    }
+}
+
 /// Present the "Manage Music Folders" dialog: lists the shell-supplied watch
 /// folders, an add-folder picker, a remove button per row, and a scan-now
 /// button. Add/remove/scan emit `Output` intents; the shell owns the DB +
@@ -296,12 +308,16 @@ fn build_folder_buttons(parent: &gtk::Window, sender: &ComponentSender<LibraryPa
     add_folder_button.set_halign(gtk::Align::Start);
     let out_add = sender.clone();
     let parent_weak = parent.downgrade();
-    add_folder_button.connect_clicked(move |_| {
+    add_folder_button.connect_clicked(move |button| {
         let Some(window) = parent_weak.upgrade() else {
             return;
         };
         let out = out_add.clone();
+        let button = button.downgrade();
         FilePicker::open_folder(i18n("Select Music Folder")).select_folder(&window, move |path| {
+            if let Some(button) = button.upgrade() {
+                close_enclosing_dialog(&button);
+            }
             let _ = out.output(LibraryPanelOutput::AddWatchFolder { path });
         });
     });
@@ -313,7 +329,8 @@ fn build_folder_buttons(parent: &gtk::Window, sender: &ComponentSender<LibraryPa
             .css_class("pill"),
     );
     let out_scan = sender.clone();
-    scan_now_button.connect_clicked(move |_| {
+    scan_now_button.connect_clicked(move |button| {
+        close_enclosing_dialog(button);
         let _ = out_scan.output(LibraryPanelOutput::ScanNow);
     });
     buttons.append(&scan_now_button);
