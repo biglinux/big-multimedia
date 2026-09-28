@@ -27,7 +27,9 @@ provides=('bigvideo=0.1.0-7')
 # Cutting, converting and extracting audio hand the file to the BigLinux
 # converter GUIs; without them those menu entries are greyed out.
 # "Play on a TV" (Chromecast and DLNA) goes through the BigNetScreen daemon.
-optdepends=('big-video-converter: cut and convert videos'
+optdepends=('deepfilternet-quantized-ladspa: light voice noise reduction (DeepFilterNet3)'
+            'dpdfnet-native: higher-quality voice noise reduction (DPDFNet-2 48 kHz)'
+            'big-video-converter: cut and convert videos'
             'big-audio-converter: extract audio from videos'
             'bignetscreen: play on a TV or Chromecast')
 makedepends=('cargo' 'pkgconf' 'gettext')
