@@ -46,8 +46,6 @@ pub(super) fn defaults() -> HashMap<String, String> {
     values.insert("gpu-dumb-mode".into(), "false".into());
     values.insert("noise-strength".into(), "0.0".into());
     values.insert("noise-model".into(), "0".into());
-    values.insert("noise-voice-recovery".into(), "0.75".into());
-    values.insert("noise-model-blend".into(), "false".into());
     values.insert("eq-bands".into(), String::new());
     values.insert("eq-preset".into(), "flat".into());
 

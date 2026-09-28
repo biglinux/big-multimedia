@@ -14,7 +14,6 @@ keywords = ["audio", "equalizer", "ladspa", "dsp", "biglinux"]
 categories = ["multimedia::audio"]
 
 [dependencies]
-serde = { version = "1", features = ["derive"] }
 
 [dev-dependencies]
 proptest = "1"

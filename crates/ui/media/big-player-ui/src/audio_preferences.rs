@@ -18,10 +18,6 @@ pub struct PlayerAudioEffects {
     pub nr_strength: f64,
     /// Selected noise reduction model.
     pub nr_model: i32,
-    /// Whether model blend is enabled.
-    pub nr_model_blend: bool,
-    /// Voice recovery amount.
-    pub nr_voice_recovery: f64,
     /// Equalizer band pairs `(frequency_hz, gain_db)`.
     pub eq_bands: Vec<(f64, f64)>,
 }
@@ -202,8 +198,6 @@ fn read_audio_effects(settings: &Settings, normalize: bool) -> PlayerAudioEffect
         nr_enabled: nr_strength.abs() > 0.0,
         nr_strength,
         nr_model: settings.get_int(keys::NOISE_MODEL),
-        nr_model_blend: settings.get_bool(keys::NOISE_MODEL_BLEND),
-        nr_voice_recovery: settings.get_double(keys::NOISE_VOICE_RECOVERY),
         eq_bands,
     }
 }

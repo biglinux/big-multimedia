@@ -6,8 +6,6 @@ pub struct AudioEffects<'a> {
     pub nr_enabled: bool,
     pub nr_strength: f64,
     pub nr_model: i32,
-    pub nr_model_blend: bool,
-    pub nr_voice_recovery: f64,
     pub gate_enabled: bool,
     pub gate_intensity: f64,
     pub hpf_enabled: bool,
@@ -31,10 +29,6 @@ pub struct AudioEffectsSnapshot {
     pub nr_strength: f64,
     /// See [`AudioEffects::nr_model`].
     pub nr_model: i32,
-    /// See [`AudioEffects::nr_model_blend`].
-    pub nr_model_blend: bool,
-    /// See [`AudioEffects::nr_voice_recovery`].
-    pub nr_voice_recovery: f64,
     /// See [`AudioEffects::gate_enabled`].
     pub gate_enabled: bool,
     /// See [`AudioEffects::gate_intensity`].
@@ -60,8 +54,6 @@ impl AudioEffectsSnapshot {
             nr_enabled: self.nr_enabled,
             nr_strength: self.nr_strength,
             nr_model: self.nr_model,
-            nr_model_blend: self.nr_model_blend,
-            nr_voice_recovery: self.nr_voice_recovery,
             gate_enabled: self.gate_enabled,
             gate_intensity: self.gate_intensity,
             hpf_enabled: self.hpf_enabled,

@@ -14,9 +14,10 @@ use crate::player::mpv_backend::MpvBackend;
 use crate::settings::{self, Settings, keys};
 use crate::shared::audio_effects;
 use std::cell::Cell;
+use std::sync::Arc;
 
-/// Persists strength + writes GTCRN controls. Toggles the NR pipeline only
-/// when the active state crosses; returns the new `is_active`.
+/// Persists strength and applies it: live while the denoiser keeps running,
+/// a chain rebuild when it turns on or off. Returns the new `is_active`.
 pub fn handle_voice_strength_changed(
     settings: &Settings,
     mpv: Option<&MpvBackend>,
@@ -25,21 +26,26 @@ pub fn handle_voice_strength_changed(
 ) -> bool {
     let strength = pct / 100.0;
     let _ = settings.put_double(keys::NOISE_STRENGTH, strength);
-    audio_effects::write_gtcrn_controls(settings);
 
     let is_active = strength > 0.0;
     let was_active = prev_active.get();
-    if was_active != is_active
-        && let Some(mpv) = mpv
-    {
-        audio_effects::apply_voice_change(settings, mpv);
+    if let Some(mpv) = mpv {
+        if was_active != is_active {
+            audio_effects::apply_voice_change(settings, mpv);
+        } else if is_active {
+            mpv.set_noise_strength(strength);
+        }
     }
     prev_active.set(is_active);
     is_active
 }
 
-pub fn show_nr_settings_dialog(settings: &Settings, parent: &impl gtk::prelude::IsA<gtk::Window>) {
-    let dialog = audio_effects::create_nr_settings_dialog(settings);
+pub fn show_nr_settings_dialog(
+    settings: &Settings,
+    mpv: Option<&Arc<MpvBackend>>,
+    parent: &impl gtk::prelude::IsA<gtk::Window>,
+) {
+    let dialog = audio_effects::create_nr_settings_dialog(settings, mpv);
     dialog.set_transient_for(Some(parent));
     settings::bind_dialog_size_persistence(&dialog, settings, "nr-settings", 840, 580);
     dialog.present();

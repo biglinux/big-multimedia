@@ -1,415 +1,168 @@
 // SPDX-License-Identifier: MIT
 
-//! Noise-reduction model and LADSPA control contracts.
+//! Noise-reduction models and the FFmpeg/mpv filter chain that runs them.
 //!
-//! This module pins down the public contract between BigLinux media
-//! tooling and the LADSPA noise-reduction plugins distributed by the
-//! distribution:
+//! Two speech denoisers are offered, the same pair the BigLinux converters
+//! and the microphone configurator use: DeepFilterNet3 (light) and DPDFNet-2
+//! 48 kHz (higher quality). Both are mono 48 kHz LADSPA plugins with an
+//! attenuation cap on control `c0`; FFmpeg runs one instance per channel.
 //!
-//! - Where the plugin `.so` files live on disk and what label each
-//!   plugin advertises ([`crate::noise_reduction::GTCRN_LADSPA_PATH`]
-//!   et al., [`crate::noise_reduction::LABEL_GTCRN_MONO`] et al.).
-//! - Which models are exposed to the realtime LAVFI/PipeWire path
-//!   ([`crate::noise_reduction::REALTIME_LAVFI_MODELS`]) and how their
-//!   slider position is converted to control-port values
-//!   ([`crate::noise_reduction::GtcrnControls`],
-//!   [`crate::noise_reduction::deepfilter_attenuation_db`]).
-//! - How to build the actual `ladspa=...` filter strings for mpv and the
-//!   cast transcoder
-//!   ([`crate::noise_reduction::mpv_ladspa_filter_for_model`] and the
-//!   lower-level helpers).
-//!
-//! The integer encoding of [`crate::noise_reduction::NoiseModel`] is
-//! serialized into user settings; renumbering the discriminants is a
-//! breaking change.
+//! [`NoiseModel`] values are stored in user settings as the dropdown index.
 
 use std::path::Path;
 
-use serde::{Deserialize, Serialize};
+/// Filter the live strength command targets inside the lavfi graph.
+pub const LADSPA_FILTER_NAME: &str = "ladspa";
 
-/// Absolute path of the GTCRN LADSPA plugin shared object.
-pub const GTCRN_LADSPA_PATH: &str = "/usr/lib/ladspa/libgtcrn_ladspa.so";
-/// Absolute path of the DeepFilterNet LADSPA plugin shared object.
-pub const DEEPFILTER_LADSPA_PATH: &str = "/usr/lib/ladspa/libdeep_filter_ladspa.so";
-/// Absolute path of the high-resolution 48 kHz DPDFNet v2 plugin.
-pub const DPDFNET_V2_HR_LADSPA_PATH: &str =
-    "/usr/lib/ladspa/libdpdfnet_dpdfnet2_48khz_hr_ladspa.so";
-/// Absolute path of the high-resolution 48 kHz DPDFNet v8 plugin.
-pub const DPDFNET_V8_HR_LADSPA_PATH: &str =
-    "/usr/lib/ladspa/libdpdfnet_dpdfnet8_48khz_hr_ladspa.so";
-/// Absolute path of the DPDFNet baseline (16 kHz) plugin.
-pub const DPDFNET_BASELINE_LADSPA_PATH: &str = "/usr/lib/ladspa/libdpdfnet_baseline_ladspa.so";
-/// Absolute path of the 16 kHz DPDFNet v2 plugin.
-pub const DPDFNET_V2_16K_LADSPA_PATH: &str = "/usr/lib/ladspa/libdpdfnet_dpdfnet2_ladspa.so";
-/// Absolute path of the 16 kHz DPDFNet v4 plugin.
-pub const DPDFNET_V4_16K_LADSPA_PATH: &str = "/usr/lib/ladspa/libdpdfnet_dpdfnet4_ladspa.so";
-/// Absolute path of the 16 kHz DPDFNet v8 plugin.
-pub const DPDFNET_V8_16K_LADSPA_PATH: &str = "/usr/lib/ladspa/libdpdfnet_dpdfnet8_ladspa.so";
+/// Samples of the opening the model warms up on before the audio it keeps.
+const LEAD_IN_SAMPLES: u32 = 24_000;
 
-/// LADSPA plugin label advertised by the GTCRN mono noise reducer.
-pub const LABEL_GTCRN_MONO: &str = "gtcrn_mono";
-/// LADSPA plugin label advertised by the DeepFilterNet mono reducer.
-pub const LABEL_DEEPFILTER_MONO: &str = "deep_filter_mono";
-/// LADSPA plugin label for high-resolution 48 kHz DPDFNet v2 mono.
-pub const LABEL_DPDFNET_V2_HR_MONO: &str = "dpdfnet2_48khz_hr_mono";
-/// LADSPA plugin label for high-resolution 48 kHz DPDFNet v8 mono.
-pub const LABEL_DPDFNET_V8_HR_MONO: &str = "dpdfnet8_48khz_hr_mono";
-/// LADSPA plugin label for the DPDFNet baseline mono reducer.
-pub const LABEL_DPDFNET_BASELINE_MONO: &str = "baseline_mono";
-/// LADSPA plugin label for the 16 kHz DPDFNet v2 mono reducer.
-pub const LABEL_DPDFNET_V2_16K_MONO: &str = "dpdfnet2_mono";
-/// LADSPA plugin label for the 16 kHz DPDFNet v4 mono reducer.
-pub const LABEL_DPDFNET_V4_16K_MONO: &str = "dpdfnet4_mono";
-/// LADSPA plugin label for the 16 kHz DPDFNet v8 mono reducer.
-pub const LABEL_DPDFNET_V8_16K_MONO: &str = "dpdfnet8_mono";
+/// Models shown in the dropdown, in stored-index order.
+pub const MODELS: [NoiseModel; 2] = [NoiseModel::DeepFilterNet3, NoiseModel::DpdfNet2];
 
-/// Models exposed to the realtime LAVFI/PipeWire playback chain.
-///
-/// The order here is the order shown to users in the dropdown and stored
-/// in their settings file; do not reshuffle without a migration plan.
-pub const REALTIME_LAVFI_MODELS: [NoiseModel; 5] = [
-    NoiseModel::GtcrnDns3,
-    NoiseModel::GtcrnVctk,
-    NoiseModel::DeepFilterNet3,
-    NoiseModel::DpdfnetV2Hr,
-    NoiseModel::DpdfnetV8Hr,
-];
-
-/// Human-readable labels matching [`REALTIME_LAVFI_MODELS`].
-pub const REALTIME_LAVFI_MODEL_LABELS: [&str; 5] = [
-    "GTCRN - DNS3",
-    "GTCRN - VCTK",
-    "DeepFilterNet3",
-    "DPDFNet-2 HR",
-    "DPDFNet-8 HR",
-];
-
-/// Stable identifier of a noise-reduction model.
-///
-/// The discriminants are serialized as `u8` via `serde` and stored in
-/// user-facing settings files, so existing values must keep their numeric
-/// meaning forever. Add new variants by appending; never renumber.
+/// A speech denoiser, stored in settings as its [`MODELS`] index.
 ///
 /// # Examples
 ///
 /// ```
 /// use big_audio_effects::noise_reduction::NoiseModel;
 ///
-/// let model = NoiseModel::GtcrnDns3;
-/// assert!(model.is_realtime_lavfi_supported());
-/// assert!(!model.is_attenuation_only());
+/// assert_eq!(NoiseModel::from_i32_or_default(1), NoiseModel::DpdfNet2);
+/// assert_eq!(NoiseModel::from_i32_or_default(42), NoiseModel::DeepFilterNet3);
 /// ```
-#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, Serialize, Deserialize)]
-#[serde(try_from = "u8", into = "u8")]
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
 pub enum NoiseModel {
-    /// GTCRN model trained on the DNS3 corpus. Default selection.
+    /// DeepFilterNet3 W8A16: light, 40 ms delay.
     #[default]
-    GtcrnDns3 = 0,
-    /// GTCRN model trained on the VCTK corpus.
-    GtcrnVctk = 1,
-    /// DeepFilterNet3, attenuation-only realtime path.
-    DeepFilterNet3 = 2,
-    /// High-resolution 48 kHz DPDFNet v2.
-    DpdfnetV2Hr = 3,
-    /// High-resolution 48 kHz DPDFNet v8.
-    DpdfnetV8Hr = 4,
-    /// Baseline 16 kHz DPDFNet model.
-    DpdfnetBaseline = 5,
-    /// 16 kHz DPDFNet v2 model (offline pipelines only).
-    DpdfnetV2 = 6,
-    /// 16 kHz DPDFNet v4 model (offline pipelines only).
-    DpdfnetV4 = 7,
-    /// 16 kHz DPDFNet v8 model (offline pipelines only).
-    DpdfnetV8 = 8,
-}
-
-impl TryFrom<u8> for NoiseModel {
-    type Error = String;
-
-    fn try_from(value: u8) -> Result<Self, Self::Error> {
-        match value {
-            0 => Ok(Self::GtcrnDns3),
-            1 => Ok(Self::GtcrnVctk),
-            2 => Ok(Self::DeepFilterNet3),
-            3 => Ok(Self::DpdfnetV2Hr),
-            4 => Ok(Self::DpdfnetV8Hr),
-            5 => Ok(Self::DpdfnetBaseline),
-            6 => Ok(Self::DpdfnetV2),
-            7 => Ok(Self::DpdfnetV4),
-            8 => Ok(Self::DpdfnetV8),
-            other => Err(format!("unknown NoiseModel value: {other}")),
-        }
-    }
-}
-
-impl From<NoiseModel> for u8 {
-    fn from(model: NoiseModel) -> Self {
-        model as Self
-    }
+    DeepFilterNet3 = 0,
+    /// Native DPDFNet-2 48 kHz HR: higher quality, 60 ms delay.
+    DpdfNet2 = 1,
 }
 
 impl NoiseModel {
-    /// Resolve an arbitrary `i32` (e.g. from a settings file) to a model.
+    /// Resolve a stored setting to a model.
     ///
-    /// Values that do not match any variant fall back to
-    /// [`NoiseModel::default`] so corrupt or out-of-range settings never
-    /// crash the UI.
+    /// Older players stored GTCRN (0 and 1), the legacy DeepFilterNet (2)
+    /// and the OpenVINO DPDFNet builds (3 to 8). The "natural voice" GTCRN
+    /// and the high-resolution DPDFNet builds (1, 3, 4) become DPDFNet-2;
+    /// everything else, including corrupt values, becomes DeepFilterNet3.
     #[must_use]
     pub fn from_i32_or_default(value: i32) -> Self {
-        u8::try_from(value)
-            .ok()
-            .and_then(|v| Self::try_from(v).ok())
-            .unwrap_or_default()
-    }
-
-    /// Index of `self` inside [`REALTIME_LAVFI_MODELS`].
-    ///
-    /// Returns `0` when the model is not in the realtime list, matching
-    /// the fallback used by dropdown widgets.
-    #[must_use]
-    pub fn realtime_lavfi_index(self) -> u32 {
-        REALTIME_LAVFI_MODELS
-            .iter()
-            .position(|model| *model == self)
-            .and_then(|idx| u32::try_from(idx).ok())
-            .unwrap_or(0)
-    }
-
-    /// Indicates the model can be driven from the realtime LAVFI
-    /// playback graph (vs offline-only ffmpeg pipelines); the UI uses
-    /// this to filter the dropdown shown in the live denoise panel.
-    #[must_use]
-    pub fn is_realtime_lavfi_supported(self) -> bool {
-        REALTIME_LAVFI_MODELS.contains(&self)
-    }
-
-    /// Whether this is the DeepFilterNet family.
-    #[must_use]
-    pub fn is_deepfilter(self) -> bool {
-        matches!(self, Self::DeepFilterNet3)
-    }
-
-    /// Whether this is any DPDFNet variant.
-    #[must_use]
-    pub fn is_dpdfnet(self) -> bool {
-        matches!(
-            self,
-            Self::DpdfnetV2Hr
-                | Self::DpdfnetV8Hr
-                | Self::DpdfnetBaseline
-                | Self::DpdfnetV2
-                | Self::DpdfnetV4
-                | Self::DpdfnetV8
-        )
-    }
-
-    /// Whether the plugin uses a single attenuation control port.
-    ///
-    /// DeepFilterNet and DPDFNet plugins expose a single attenuation
-    /// (`c0`) port instead of the GTCRN multi-port contract, so the
-    /// filter-string formatters branch on this predicate.
-    #[must_use]
-    pub fn is_attenuation_only(self) -> bool {
-        self.is_deepfilter() || self.is_dpdfnet()
-    }
-
-    /// Return the on-disk plugin path and its advertised label.
-    #[must_use]
-    pub fn plugin_and_label(self) -> (&'static str, &'static str) {
-        match self {
-            Self::GtcrnDns3 | Self::GtcrnVctk => (GTCRN_LADSPA_PATH, LABEL_GTCRN_MONO),
-            Self::DeepFilterNet3 => (DEEPFILTER_LADSPA_PATH, LABEL_DEEPFILTER_MONO),
-            Self::DpdfnetV2Hr => (DPDFNET_V2_HR_LADSPA_PATH, LABEL_DPDFNET_V2_HR_MONO),
-            Self::DpdfnetV8Hr => (DPDFNET_V8_HR_LADSPA_PATH, LABEL_DPDFNET_V8_HR_MONO),
-            Self::DpdfnetBaseline => (DPDFNET_BASELINE_LADSPA_PATH, LABEL_DPDFNET_BASELINE_MONO),
-            Self::DpdfnetV2 => (DPDFNET_V2_16K_LADSPA_PATH, LABEL_DPDFNET_V2_16K_MONO),
-            Self::DpdfnetV4 => (DPDFNET_V4_16K_LADSPA_PATH, LABEL_DPDFNET_V4_16K_MONO),
-            Self::DpdfnetV8 => (DPDFNET_V8_16K_LADSPA_PATH, LABEL_DPDFNET_V8_16K_MONO),
+        match value {
+            1 | 3 | 4 => Self::DpdfNet2,
+            _ => Self::DeepFilterNet3,
         }
     }
 
-    /// Whether the plugin file is present on disk right now.
-    ///
-    /// Performs a `stat` of the path returned by
-    /// [`NoiseModel::plugin_and_label`]; callers should cache the result
-    /// if they query it on a hot path.
+    /// Index of the model in [`MODELS`], which is also its stored value.
+    #[must_use]
+    pub fn index(self) -> u32 {
+        self as u32
+    }
+
+    /// The plugin's shared object and the label it advertises.
+    #[must_use]
+    pub fn plugin_and_label(self) -> (&'static str, &'static str) {
+        match self {
+            Self::DeepFilterNet3 => (
+                "/usr/lib/ladspa/libdfn3_ladspa.so",
+                "deep_filter_net3_rs_mono",
+            ),
+            Self::DpdfNet2 => (
+                "/usr/lib/ladspa/libdpdfnet_native.so",
+                "dpdfnet_native_48hr",
+            ),
+        }
+    }
+
+    /// Package that installs the plugin.
+    #[must_use]
+    pub fn package(self) -> &'static str {
+        match self {
+            Self::DeepFilterNet3 => "deepfilternet-quantized-ladspa",
+            Self::DpdfNet2 => "dpdfnet-native",
+        }
+    }
+
+    /// Output delay of the plugin in samples at 48 kHz, measured.
+    #[must_use]
+    pub fn delay_samples(self) -> u32 {
+        match self {
+            Self::DeepFilterNet3 => 1919,
+            Self::DpdfNet2 => 2880,
+        }
+    }
+
+    /// Whether the plugin file is installed. Performs a `stat`.
     #[must_use]
     pub fn plugin_available(self) -> bool {
         Path::new(self.plugin_and_label().0).exists()
     }
 }
 
-/// Control-port values for the GTCRN LADSPA plugin.
+/// Whether any model's plugin is installed.
+#[must_use]
+pub fn any_model_available() -> bool {
+    MODELS.iter().any(|model| model.plugin_available())
+}
+
+/// Attenuation cap in dB for a unit-scale strength: `strength² × 100`.
 ///
-/// The struct fields are listed in the same order that the plugin
-/// expects them, so [`GtcrnControls::control_values`] can render them
-/// straight into the LADSPA `controls=` argument.
+/// The squared curve keeps the lower half of the slider gentle, the same
+/// mapping the microphone configurator and the converters use.
+#[must_use]
+pub fn attenuation_db(strength: f64) -> f64 {
+    let s = strength.clamp(0.0, 1.0);
+    s * s * 100.0
+}
+
+/// The `c0` value for a live strength change, sent to [`LADSPA_FILTER_NAME`].
+#[must_use]
+pub fn attenuation_control(strength: f64) -> String {
+    format!("{:.2}", attenuation_db(strength))
+}
+
+/// The lavfi chain that denoises with `model` at `strength`.
+///
+/// - The plugin delays its output: the end is padded and the start trimmed
+///   by that much, keeping sync and the last words.
+/// - A plugin starts from an empty model state and under-restores the first
+///   ~150 ms, so it first runs over the opening half second played
+///   backwards, which is cut away again. That lead-in ends at timestamp 0,
+///   so concat keeps the stream's own timeline; mpv rebuilds the graph on
+///   every seek.
+/// - DeepFilterNet3 mutes its first second by default, meant for a live
+///   microphone; `c6=0` turns that off.
+///
+/// The pad labels start with `bvcnr_`; a graph holds one such chain.
 ///
 /// # Examples
 ///
 /// ```
-/// use big_audio_effects::noise_reduction::GtcrnControls;
+/// use big_audio_effects::noise_reduction::{NoiseModel, lavfi_chain};
 ///
-/// let player = GtcrnControls::player(0.8, 1, true, 0.3);
-/// assert_eq!(player.control_values(), [0.8, 1.0, 0.8, 50.0, 1.0, 0.3]);
+/// let chain = lavfi_chain(NoiseModel::DeepFilterNet3, 0.5);
+/// assert!(chain.contains("controls=c0=25.00|c6=0"));
+/// assert!(chain.ends_with("atrim=start_sample=25919,asetpts=PTS-1919/SR/TB"));
 /// ```
-#[derive(Debug, Clone, Copy, PartialEq)]
-pub struct GtcrnControls {
-    /// Overall noise-reduction strength on a unit scale.
-    pub strength: f64,
-    /// Model selector forwarded to the plugin's `model` port.
-    pub model: i32,
-    /// Speech-preservation strength on a unit scale.
-    pub speech_strength: f64,
-    /// Lookahead buffer in milliseconds.
-    pub lookahead_ms: f64,
-    /// Whether to blend two GTCRN models in parallel.
-    pub model_blend: bool,
-    /// Voice recovery / desibilance amount on a unit scale.
-    pub voice_recovery: f64,
-}
-
-impl GtcrnControls {
-    /// Build controls suitable for the realtime player path.
-    ///
-    /// Uses a 50 ms lookahead and ties `speech_strength` to `strength`.
-    #[must_use]
-    pub fn player(strength: f64, model: i32, model_blend: bool, voice_recovery: f64) -> Self {
-        Self {
-            strength,
-            model,
-            speech_strength: strength,
-            lookahead_ms: 50.0,
-            model_blend,
-            voice_recovery,
-        }
-    }
-
-    /// Project the struct to the LADSPA `controls=` `f32` array.
-    #[must_use]
-    pub fn control_values(self) -> [f32; 6] {
-        [
-            self.strength as f32,
-            self.model as f32,
-            self.speech_strength as f32,
-            self.lookahead_ms as f32,
-            f32::from(self.model_blend),
-            self.voice_recovery as f32,
-        ]
-    }
-}
-
-/// Map a unit-scale strength slider to a DeepFilterNet attenuation in dB.
-///
-/// Uses a squared curve so the lower half of the slider is gentler than
-/// the upper half, matching how DeepFilterNet's attenuation control
-/// behaves audibly.
 #[must_use]
-pub fn deepfilter_attenuation_db(strength: f32) -> f64 {
-    let s = strength.clamp(0.0, 1.0);
-    f64::from(s * s) * 100.0
-}
-
-/// Render the GTCRN `controls=...` argument fragment.
-///
-/// The first port is always `c0=1` (enable). The remaining ports come
-/// from `controls` in plugin-defined order.
-#[must_use]
-pub fn gtcrn_controls_fragment(controls: &GtcrnControls) -> String {
+pub fn lavfi_chain(model: NoiseModel, strength: f64) -> String {
+    let (plugin, label) = model.plugin_and_label();
+    let delay = model.delay_samples();
+    let extra = match model {
+        NoiseModel::DeepFilterNet3 => "|c6=0",
+        NoiseModel::DpdfNet2 => "",
+    };
     format!(
-        "c0=1|c1={}|c2={}|c3={}|c4={}|c5={}|c6={}",
-        controls.strength,
-        controls.model,
-        controls.speech_strength,
-        controls.lookahead_ms,
-        i32::from(controls.model_blend),
-        controls.voice_recovery,
+        "aresample=48000,asplit[bvcnr_main][bvcnr_head];\
+         [bvcnr_head]atrim=end_sample={LEAD_IN_SAMPLES},apad=whole_len={LEAD_IN_SAMPLES},areverse,\
+         asetpts=PTS-STARTPTS-{LEAD_IN_SAMPLES}/SR/TB[bvcnr_pre];\
+         [bvcnr_pre][bvcnr_main]concat=n=2:v=0:a=1,apad=pad_len={delay},\
+         {LADSPA_FILTER_NAME}=file={plugin}:plugin={label}:controls=c0={}{extra},\
+         atrim=start_sample={},asetpts=PTS-{delay}/SR/TB",
+        attenuation_control(strength),
+        LEAD_IN_SAMPLES + delay,
     )
-}
-
-/// Build the GTCRN `ladspa=...` filter string for mpv.
-///
-/// mpv resolves LADSPA plugins by absolute path, so this variant emits
-/// [`GTCRN_LADSPA_PATH`] verbatim.
-#[must_use]
-pub fn gtcrn_mpv_ladspa_filter(controls: &GtcrnControls) -> String {
-    format!(
-        "ladspa=file={}:plugin={LABEL_GTCRN_MONO}:controls={}",
-        GTCRN_LADSPA_PATH,
-        gtcrn_controls_fragment(controls)
-    )
-}
-
-/// Build a minimal GTCRN `ladspa=...` filter for Chromecast streaming.
-///
-/// The cast path only carries the overall strength, so this helper
-/// emits a two-port `c0=1|c1=<strength>` controls fragment.
-#[must_use]
-pub fn gtcrn_cast_ladspa_filter(strength: f64) -> String {
-    format!("ladspa=file=libgtcrn_ladspa:plugin={LABEL_GTCRN_MONO}:controls=c0=1|c1={strength:.2}")
-}
-
-/// Probes the filesystem for the GTCRN LADSPA `.so`; callers gate the
-/// realtime denoise menu entry on this so missing plugins fail fast at
-/// UI build time instead of producing a confusing runtime ffmpeg error.
-#[must_use]
-pub fn gtcrn_available() -> bool {
-    Path::new(GTCRN_LADSPA_PATH).exists()
-}
-
-/// Reports whether any realtime-LAVFI model has its plugin on disk;
-/// drives the top-level toggle that decides if the realtime denoise
-/// pipeline is offered at all in the UI.
-#[must_use]
-pub fn any_realtime_lavfi_model_available() -> bool {
-    realtime_lavfi_has_available_model(|model| model.plugin_available())
-}
-
-fn realtime_lavfi_has_available_model(is_model_available: impl Fn(NoiseModel) -> bool) -> bool {
-    REALTIME_LAVFI_MODELS
-        .iter()
-        .copied()
-        .any(is_model_available)
-}
-
-/// Render the `controls=c0=<db>` fragment for attenuation-only plugins.
-///
-/// Used by DeepFilterNet and DPDFNet, which expose a single port whose
-/// unit is decibels of attenuation. The caller provides a unit-scale
-/// strength which is converted via [`deepfilter_attenuation_db`].
-#[must_use]
-pub fn attenuation_controls_fragment(strength: f64) -> String {
-    format!("c0={:.2}", deepfilter_attenuation_db(strength as f32))
-}
-
-/// Pick the correct mpv `ladspa=...` filter string for `model`.
-///
-/// Returns `None` when the model is not exposed to the realtime LAVFI
-/// path or when the plugin's `.so` file is not currently installed.
-/// Otherwise dispatches between the GTCRN multi-port path and the
-/// attenuation-only path based on [`NoiseModel::is_attenuation_only`].
-#[must_use]
-pub fn mpv_ladspa_filter_for_model(model: NoiseModel, controls: &GtcrnControls) -> Option<String> {
-    mpv_ladspa_filter_for_available_model(model, controls, model.plugin_available())
-}
-
-fn mpv_ladspa_filter_for_available_model(
-    model: NoiseModel,
-    controls: &GtcrnControls,
-    is_plugin_available: bool,
-) -> Option<String> {
-    if !model.is_realtime_lavfi_supported() || !is_plugin_available {
-        return None;
-    }
-    if model.is_attenuation_only() {
-        let (plugin, label) = model.plugin_and_label();
-        Some(format!(
-            "ladspa=file={plugin}:plugin={label}:controls={}",
-            attenuation_controls_fragment(controls.strength)
-        ))
-    } else {
-        Some(gtcrn_mpv_ladspa_filter(controls))
-    }
 }
 
 #[cfg(test)]
@@ -417,84 +170,40 @@ mod tests {
     use super::*;
 
     #[test]
-    fn gtcrn_control_values_keep_contract_order() {
-        let controls = GtcrnControls::player(0.8, 1, true, 0.3);
-        assert_eq!(controls.control_values(), [0.8, 1.0, 0.8, 50.0, 1.0, 0.3]);
-    }
-
-    #[test]
-    fn noise_model_numeric_encoding_roundtrips() {
-        let models = [
-            (0, NoiseModel::GtcrnDns3),
-            (1, NoiseModel::GtcrnVctk),
-            (2, NoiseModel::DeepFilterNet3),
-            (3, NoiseModel::DpdfnetV2Hr),
-            (4, NoiseModel::DpdfnetV8Hr),
-            (5, NoiseModel::DpdfnetBaseline),
-            (6, NoiseModel::DpdfnetV2),
-            (7, NoiseModel::DpdfnetV4),
-            (8, NoiseModel::DpdfnetV8),
-        ];
-
-        for (value, model) in models {
-            assert_eq!(NoiseModel::try_from(value), Ok(model));
-            assert_eq!(u8::from(model), value);
-            assert_eq!(NoiseModel::from_i32_or_default(i32::from(value)), model);
+    fn stored_values_keep_their_dropdown_index() {
+        for (index, model) in MODELS.iter().enumerate() {
+            assert_eq!(model.index() as usize, index);
+            assert_eq!(NoiseModel::from_i32_or_default(index as i32), *model);
         }
-        assert!(NoiseModel::try_from(9).is_err());
-        assert_eq!(NoiseModel::from_i32_or_default(-1), NoiseModel::default());
-        assert_eq!(NoiseModel::from_i32_or_default(99), NoiseModel::default());
     }
 
     #[test]
-    fn gtcrn_filter_fragments_match_plugin_contract() {
-        let controls = GtcrnControls::player(0.8, 1, true, 0.3);
-
-        assert_eq!(
-            gtcrn_controls_fragment(&controls),
-            "c0=1|c1=0.8|c2=1|c3=0.8|c4=50|c5=1|c6=0.3"
-        );
-        assert_eq!(
-            gtcrn_cast_ladspa_filter(0.75),
-            "ladspa=file=libgtcrn_ladspa:plugin=gtcrn_mono:controls=c0=1|c1=0.75"
-        );
-    }
-
-    #[test]
-    fn realtime_lavfi_models_are_contiguous_for_dropdown_storage() {
-        for (idx, model) in REALTIME_LAVFI_MODELS.iter().enumerate() {
-            assert_eq!(*model as usize, idx);
-            assert_eq!(model.realtime_lavfi_index(), idx as u32);
-            assert!(model.is_realtime_lavfi_supported());
+    fn legacy_settings_map_to_the_closest_current_model() {
+        let dpdfnet = [1, 3, 4];
+        for value in -1..10 {
+            let expected = if dpdfnet.contains(&value) {
+                NoiseModel::DpdfNet2
+            } else {
+                NoiseModel::DeepFilterNet3
+            };
+            assert_eq!(NoiseModel::from_i32_or_default(value), expected, "{value}");
         }
-        assert_eq!(
-            REALTIME_LAVFI_MODELS.len(),
-            REALTIME_LAVFI_MODEL_LABELS.len()
-        );
-        assert!(!NoiseModel::DpdfnetV2.is_realtime_lavfi_supported());
     }
 
     #[test]
-    fn attenuation_curve_preserves_slider_travel() {
-        assert!((deepfilter_attenuation_db(0.5) - 25.0).abs() < f64::EPSILON);
-        assert!((deepfilter_attenuation_db(2.0) - 100.0).abs() < f64::EPSILON);
+    fn attenuation_curve_is_squared_and_bounded() {
+        assert!((attenuation_db(0.5) - 25.0).abs() < f64::EPSILON);
+        assert!((attenuation_db(2.0) - 100.0).abs() < f64::EPSILON);
+        assert!(attenuation_db(-1.0).abs() < f64::EPSILON);
+        assert_eq!(attenuation_control(1.0), "100.00");
     }
 
     #[test]
-    fn attenuation_filter_uses_single_control_port() {
-        let controls = GtcrnControls::player(0.5, 0, false, 0.0);
-        let filter =
-            mpv_ladspa_filter_for_available_model(NoiseModel::DeepFilterNet3, &controls, true)
-                .expect("available realtime model should render");
-        assert!(filter.contains("plugin=deep_filter_mono"));
-        assert!(filter.contains("controls=c0=25.00"));
-    }
-
-    #[test]
-    fn realtime_availability_uses_model_predicate() {
-        assert!(!realtime_lavfi_has_available_model(|_| false));
-        assert!(realtime_lavfi_has_available_model(
-            |model| model == NoiseModel::DeepFilterNet3
-        ));
+    fn chain_compensates_each_plugins_delay() {
+        let dpdfnet = lavfi_chain(NoiseModel::DpdfNet2, 1.0);
+        assert!(dpdfnet.contains("plugin=dpdfnet_native_48hr:controls=c0=100.00,"));
+        assert!(dpdfnet.contains("apad=pad_len=2880,"));
+        assert!(dpdfnet.ends_with("atrim=start_sample=26880,asetpts=PTS-2880/SR/TB"));
+        assert!(!dpdfnet.contains("c6"));
     }
 }

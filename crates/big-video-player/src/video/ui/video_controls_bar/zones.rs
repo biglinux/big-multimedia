@@ -360,6 +360,7 @@ pub(super) fn build_start_box(
         },
         {
             let settings = settings.clone();
+            let mpv = mpv.clone();
             // Weak: this closure lives on the popover, which the voice button's
             // handler keeps alive — a strong voice_box capture closes a
             // box→button→popover→box cycle that survives popover unparent.
@@ -370,7 +371,11 @@ pub(super) fn build_start_box(
                     .and_then(|b| b.root())
                     .and_then(|r| r.downcast::<gtk::Window>().ok())
                 {
-                    crate::shared::popovers::show_nr_settings_dialog(&settings, &window);
+                    crate::shared::popovers::show_nr_settings_dialog(
+                        &settings,
+                        mpv.borrow().as_ref(),
+                        &window,
+                    );
                 }
             }
         },

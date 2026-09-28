@@ -57,8 +57,6 @@ fn player_audio_effects_snapshot(effects: &PlayerAudioEffects) -> AudioEffectsSn
         nr_enabled: effects.nr_enabled,
         nr_strength: effects.nr_strength,
         nr_model: effects.nr_model,
-        nr_model_blend: effects.nr_model_blend,
-        nr_voice_recovery: effects.nr_voice_recovery,
         gate_enabled: false,
         gate_intensity: 0.0,
         hpf_enabled: false,
@@ -273,8 +271,6 @@ mod tests {
             nr_enabled: true,
             nr_strength: 0.75,
             nr_model: 3,
-            nr_model_blend: true,
-            nr_voice_recovery: 0.5,
             eq_bands: vec![(60.0, -3.0), (1_000.0, 2.5)],
         }
     }
@@ -319,8 +315,6 @@ mod tests {
         assert_eq!(snapshot.nr_enabled, effects.nr_enabled);
         assert_eq!(snapshot.nr_strength, effects.nr_strength);
         assert_eq!(snapshot.nr_model, effects.nr_model);
-        assert_eq!(snapshot.nr_model_blend, effects.nr_model_blend);
-        assert_eq!(snapshot.nr_voice_recovery, effects.nr_voice_recovery);
         assert_eq!(snapshot.eq_bands, effects.eq_bands);
         assert!(!snapshot.gate_enabled);
         assert_eq!(snapshot.gate_intensity, 0.0);

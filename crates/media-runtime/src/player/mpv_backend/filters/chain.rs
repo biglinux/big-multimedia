@@ -1,14 +1,13 @@
 use big_audio_effects::dynamics::{ffmpeg_acompressor_filter, ffmpeg_agate_filter};
-use big_audio_effects::noise_reduction::{NoiseModel, mpv_ladspa_filter_for_model};
+use big_audio_effects::noise_reduction::{NoiseModel, lavfi_chain};
 
 use crate::player::mpv_backend::AudioEffects;
-use big_audio_effects::noise_reduction::GtcrnControls;
 
 /// EBU R128 streaming target (-16 LUFS, TP=-1.5). Use for live playback effects.
 const LOUDNORM_STREAMING: &str = "loudnorm=I=-16:TP=-1.5:LRA=11";
 
 /// Build the lavfi audio filter chain string from AudioEffects.
-/// Returns individual filter entries (to be joined with `,` inside `lavfi=[...]`).
+/// Returns individual filter entries, joined with `,` into one lavfi graph.
 pub fn build_audio_filter_chain(fx: &AudioEffects) -> Vec<String> {
     let mut filters = Vec::new();
 
@@ -25,18 +24,10 @@ pub fn build_audio_filter_chain(fx: &AudioEffects) -> Vec<String> {
     }
 
     if fx.nr_enabled {
-        filters.push("aresample=48000".to_string());
+        // A missing plugin would fail the whole graph, silencing playback.
         let model = NoiseModel::from_i32_or_default(fx.nr_model);
-        let controls = GtcrnControls::player(
-            fx.nr_strength,
-            model as i32,
-            fx.nr_model_blend,
-            fx.nr_voice_recovery,
-        );
-        if let Some(filter) = mpv_ladspa_filter_for_model(model, &controls) {
-            filters.push(filter);
-        } else {
-            let _ = filters.pop();
+        if model.plugin_available() {
+            filters.push(lavfi_chain(model, fx.nr_strength));
         }
     }
 
@@ -58,14 +49,36 @@ mod tests {
     use super::*;
 
     #[test]
+    fn noise_reduction_runs_the_shared_chain_only_when_installed() {
+        let model = NoiseModel::DpdfNet2;
+        let fx = AudioEffects {
+            normalize: false,
+            nr_enabled: true,
+            nr_strength: 0.5,
+            nr_model: model.index() as i32,
+            gate_enabled: false,
+            gate_intensity: 0.0,
+            hpf_enabled: false,
+            hpf_frequency: 0.0,
+            eq_bands: &[],
+            compressor_enabled: false,
+            compressor_intensity: 0.0,
+        };
+        let chain = build_audio_filter_chain(&fx);
+        if model.plugin_available() {
+            assert_eq!(chain, [lavfi_chain(model, 0.5)]);
+        } else {
+            assert!(chain.is_empty(), "{chain:?}");
+        }
+    }
+
+    #[test]
     fn test_filter_chain_no_effects() {
         let fx = AudioEffects {
             normalize: false,
             nr_enabled: false,
             nr_strength: 0.5,
             nr_model: 0,
-            nr_model_blend: false,
-            nr_voice_recovery: 0.0,
             gate_enabled: false,
             gate_intensity: 0.0,
             hpf_enabled: false,
@@ -84,8 +97,6 @@ mod tests {
             nr_enabled: false,
             nr_strength: 0.5,
             nr_model: 0,
-            nr_model_blend: false,
-            nr_voice_recovery: 0.0,
             gate_enabled: false,
             gate_intensity: 0.0,
             hpf_enabled: false,
@@ -106,8 +117,6 @@ mod tests {
             nr_enabled: false,
             nr_strength: 0.5,
             nr_model: 0,
-            nr_model_blend: false,
-            nr_voice_recovery: 0.0,
             gate_enabled: false,
             gate_intensity: 0.0,
             hpf_enabled: true,
@@ -128,8 +137,6 @@ mod tests {
             nr_enabled: false,
             nr_strength: 0.5,
             nr_model: 0,
-            nr_model_blend: false,
-            nr_voice_recovery: 0.0,
             gate_enabled: true,
             gate_intensity: 0.7,
             hpf_enabled: false,
@@ -152,8 +159,6 @@ mod tests {
             nr_enabled: false,
             nr_strength: 0.5,
             nr_model: 0,
-            nr_model_blend: false,
-            nr_voice_recovery: 0.0,
             gate_enabled: false,
             gate_intensity: 0.0,
             hpf_enabled: false,
@@ -176,8 +181,6 @@ mod tests {
             nr_enabled: false,
             nr_strength: 0.5,
             nr_model: 0,
-            nr_model_blend: false,
-            nr_voice_recovery: 0.0,
             gate_enabled: false,
             gate_intensity: 0.0,
             hpf_enabled: false,

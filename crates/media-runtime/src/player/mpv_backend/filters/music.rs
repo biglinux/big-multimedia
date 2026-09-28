@@ -73,7 +73,7 @@ impl MpvBackend {
         self.with_mpv(|mpv| mpv.get_property::<String>("current-ao").unwrap_or_default())
     }
 
-    /// Avoids LADSPA-plugin segfaults (e.g. gtcrn) by quiescing the audio
+    /// Avoids LADSPA-plugin crashes at teardown by quiescing the audio
     /// pipeline before mpv teardown.
     pub fn shutdown_audio(&self) {
         self.running

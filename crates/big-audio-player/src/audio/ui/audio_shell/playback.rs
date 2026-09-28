@@ -112,7 +112,11 @@ impl AudioShell {
             }
             AudioPlaybackBarOutput::VoiceSettingsRequested => {
                 if let Some(win) = self.window() {
-                    crate::shared::popovers::show_nr_settings_dialog(&self.settings, &win);
+                    crate::shared::popovers::show_nr_settings_dialog(
+                        &self.settings,
+                        self.mpv.as_ref(),
+                        &win,
+                    );
                 }
             }
         }

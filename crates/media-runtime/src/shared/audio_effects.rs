@@ -1,21 +1,17 @@
-//! bigagents: app-local-adapter; binds audio effect components to mpv/settings/GTCRN runtime.
+//! bigagents: app-local-adapter; binds audio effect components to mpv/settings/noise-reduction runtime.
+
+use std::sync::{Arc, Weak};
 
 use adw::prelude::*;
-use big_audio_effects::noise_reduction::{
-    NoiseModel, REALTIME_LAVFI_MODEL_LABELS, REALTIME_LAVFI_MODELS,
-    any_realtime_lavfi_model_available,
-};
+use big_audio_effects::noise_reduction::{MODELS, NoiseModel, any_model_available};
 use big_relm4_components::layout::toolbar_pane::{
     BigToolbarHeader, BigToolbarHeaderSpec, BigToolbarPane, BigToolbarPaneSpec,
 };
-use glib;
-use log::{debug, warn};
 
 use crate::i18n::i18n;
 use crate::player::mpv_backend::MpvBackend;
 use crate::settings::keys;
 use big_audio_effects::equalizer::EQ_BAND_FREQUENCIES_F64;
-use big_audio_effects::noise_reduction::GtcrnControls;
 
 pub use super::audio_effects_eq::{
     create_equalizer_content, create_equalizer_dialog, equalizer_preset_matching,
@@ -31,17 +27,23 @@ pub fn parse_eq_bands(eq_str: &str) -> [f64; 10] {
 
 pub(crate) use big_audio_effects::equalizer::EQ_BAND_LABELS as EQ_LABELS;
 
+/// Dropdown labels, naming the package a missing model needs.
 #[must_use]
 pub fn noise_model_labels() -> Vec<String> {
-    REALTIME_LAVFI_MODELS
+    MODELS
         .iter()
-        .zip(REALTIME_LAVFI_MODEL_LABELS)
-        .map(|(model, label)| {
-            let label = i18n(label);
+        .map(|model| {
+            let label = match model {
+                NoiseModel::DeepFilterNet3 => i18n("Light — DeepFilterNet3"),
+                NoiseModel::DpdfNet2 => i18n("Higher quality — DPDFNet-2 48 kHz"),
+            };
             if model.plugin_available() {
                 label
             } else {
-                format!("{} ({})", label, i18n("not installed"))
+                format!(
+                    "{label} ({})",
+                    i18n("Unavailable: install {package}").replace("{package}", model.package())
+                )
             }
         })
         .collect()
@@ -49,93 +51,12 @@ pub fn noise_model_labels() -> Vec<String> {
 
 #[must_use]
 pub fn noise_model_index(model: i32) -> u32 {
-    NoiseModel::from_i32_or_default(model).realtime_lavfi_index()
+    NoiseModel::from_i32_or_default(model).index()
 }
 
 #[must_use]
 pub fn has_noise_reduction_backend() -> bool {
-    any_realtime_lavfi_model_available()
-}
-
-/// Live update for the running LADSPA plugin; v7 wire format = 24 bytes,
-/// 6 LE f32: [strength, model_type, speech_strength, lookahead_ms, blend, voice_recovery].
-pub fn write_gtcrn_controls_raw(
-    strength: f64,
-    model: i32,
-    speech_strength: f64,
-    model_blend: bool,
-    voice_recovery: f64,
-) {
-    let path = glib::user_runtime_dir().join("gtcrn-ladspa-controls");
-    let controls = GtcrnControls {
-        strength,
-        model,
-        speech_strength,
-        lookahead_ms: 50.0,
-        model_blend,
-        voice_recovery,
-    };
-    let buf = gtcrn_control_bytes(&controls);
-    atomic_write(&path, &buf);
-    debug!(
-        "NR: write_gtcrn_controls_raw: strength={strength}, model={model}, voice_recovery={voice_recovery}"
-    );
-}
-pub fn write_gtcrn_controls(settings: &crate::settings::Settings) {
-    let strength = settings.get_double(keys::NOISE_STRENGTH).max(0.0) as f32;
-    let model_type = settings.get_int(keys::NOISE_MODEL) as f32;
-    let speech_strength = strength; // same as slider — user controls overall NR intensity
-    let lookahead_ms = 50.0_f32;
-    let model_blend = if settings.get_bool(keys::NOISE_MODEL_BLEND) {
-        1.0_f32
-    } else {
-        0.0_f32
-    };
-    let voice_recovery = settings.get_double(keys::NOISE_VOICE_RECOVERY) as f32;
-
-    let path = glib::user_runtime_dir().join("gtcrn-ladspa-controls");
-    let controls = GtcrnControls {
-        strength: f64::from(strength),
-        model: model_type as i32,
-        speech_strength: f64::from(speech_strength),
-        lookahead_ms: f64::from(lookahead_ms),
-        model_blend: model_blend > 0.0,
-        voice_recovery: f64::from(voice_recovery),
-    };
-    let buf = gtcrn_control_bytes(&controls);
-    atomic_write(&path, &buf);
-    debug!(
-        "NR: write_gtcrn_controls: strength={strength}, model={model_type}, blend={model_blend}, voice_recovery={voice_recovery}, path={}",
-        path.display()
-    );
-}
-
-fn gtcrn_control_bytes(controls: &GtcrnControls) -> [u8; 24] {
-    let mut buf = [0_u8; 24];
-    let [
-        strength,
-        model_type,
-        speech_strength,
-        lookahead_ms,
-        model_blend,
-        voice_recovery,
-    ] = controls.control_values();
-    buf[0..4].copy_from_slice(&strength.to_le_bytes());
-    buf[4..8].copy_from_slice(&model_type.to_le_bytes());
-    buf[8..12].copy_from_slice(&speech_strength.to_le_bytes());
-    buf[12..16].copy_from_slice(&lookahead_ms.to_le_bytes());
-    buf[16..20].copy_from_slice(&model_blend.to_le_bytes());
-    buf[20..24].copy_from_slice(&voice_recovery.to_le_bytes());
-    buf
-}
-
-/// Atomic write: temp file + rename avoids truncation races.
-fn atomic_write(path: &std::path::Path, payload_bytes: &[u8]) {
-    if let Err(error) =
-        big_os_kit::background::write_private(path.to_owned(), payload_bytes.to_vec())
-    {
-        warn!("NR controls were not queued: {error}");
-    }
+    any_model_available()
 }
 
 pub fn rebuild_filters(
@@ -145,10 +66,6 @@ pub fn rebuild_filters(
 ) {
     let nr_strength = settings.get_double(keys::NOISE_STRENGTH).max(0.0);
     let nr_model = settings.get_int(keys::NOISE_MODEL);
-    let nr_model_blend = settings.get_bool(keys::NOISE_MODEL_BLEND);
-    let nr_voice_recovery = settings.get_double(keys::NOISE_VOICE_RECOVERY);
-
-    write_gtcrn_controls(settings);
 
     let eq: Vec<(f64, f64)> = EQ_BAND_FREQUENCIES_F64
         .iter()
@@ -160,8 +77,6 @@ pub fn rebuild_filters(
         nr_enabled: nr_strength > 0.0,
         nr_strength,
         nr_model,
-        nr_model_blend,
-        nr_voice_recovery,
         gate_enabled: false,
         gate_intensity: 0.0,
         hpf_enabled: false,
@@ -178,7 +93,12 @@ pub fn apply_voice_change(settings: &crate::settings::Settings, mpv: &MpvBackend
     rebuild_filters(settings, &gains, mpv);
 }
 
-pub fn create_nr_settings_dialog(settings: &crate::settings::Settings) -> adw::Window {
+/// Model choice for the voice noise reduction. A change rebuilds the running
+/// chain; the dialog holds the player weakly, so it never keeps it alive.
+pub fn create_nr_settings_dialog(
+    settings: &crate::settings::Settings,
+    mpv: Option<&Arc<MpvBackend>>,
+) -> adw::Window {
     let content = gtk::Box::builder()
         .orientation(gtk::Orientation::Vertical)
         .spacing(16)
@@ -190,9 +110,9 @@ pub fn create_nr_settings_dialog(settings: &crate::settings::Settings) -> adw::W
 
     let intro = gtk::Label::builder()
         .label(i18n(
-            "Powered by GTCRN — a neural network that separates voice from \
-             background noise in real time. The default settings work well \
-             for most cases.",
+            "A neural network separates voice from background noise while \
+             the video or music plays. The strength slider sets how much \
+             noise is removed.",
         ))
         .wrap(true)
         .xalign(0.0)
@@ -200,35 +120,20 @@ pub fn create_nr_settings_dialog(settings: &crate::settings::Settings) -> adw::W
     intro.add_css_class("dim-label");
     intro.set_margin_bottom(4);
     content.append(&intro);
-    let status_path = glib::user_runtime_dir().join("gtcrn-ladspa-controls");
-    let retry_path = status_path.clone();
-    content.append(&crate::settings::saving::document_status(
-        move || big_os_kit::background::live_status(&status_path),
-        move || {
-            let _ = big_os_kit::background::retry_live(&retry_path);
-        },
-    ));
 
     let (model_card, model_dropdown) = build_model_card(settings);
     content.append(&model_card);
 
-    let (vr_card, vr_scale) = build_voice_recovery_card(settings);
-    content.append(&vr_card);
-
-    // LADSPA plugin re-reads control file each audio frame; no mpv reload needed.
     {
         let s = settings.clone();
+        let mpv: Weak<MpvBackend> = mpv.map(Arc::downgrade).unwrap_or_default();
         model_dropdown.connect_selected_notify(move |dd| {
             let _ = s.put_int(keys::NOISE_MODEL, dd.selected() as i32);
-            let _ = s.put_bool(keys::NOISE_MODEL_BLEND, false);
-            write_gtcrn_controls(&s);
-        });
-    }
-    {
-        let s = settings.clone();
-        vr_scale.connect_value_changed(move |scale| {
-            let _ = s.put_double(keys::NOISE_VOICE_RECOVERY, scale.value());
-            write_gtcrn_controls(&s);
+            if let Some(mpv) = mpv.upgrade()
+                && s.get_double(keys::NOISE_STRENGTH) > 0.0
+            {
+                apply_voice_change(&s, &mpv);
+            }
         });
     }
 
@@ -304,40 +209,18 @@ fn build_model_card(settings: &crate::settings::Settings) -> (gtk::Box, gtk::Dro
         .spacing(4)
         .margin_top(4)
         .build();
-
-    let dns3_desc = gtk::Label::builder()
-        .label(i18n(
-            "• DNS3 — General-purpose. Good at removing steady noises like \
-             fans, air conditioners, and hum.",
-        ))
-        .wrap(true)
-        .xalign(0.0)
-        .build();
-    dns3_desc.add_css_class("dim-label");
-    options_box.append(&dns3_desc);
-
-    let vctk_desc = gtk::Label::builder()
-        .label(i18n(
-            "• VCTK — Trained on clear voices. Preserves more vocal \
-             detail and sounds more natural.",
-        ))
-        .wrap(true)
-        .xalign(0.0)
-        .build();
-    vctk_desc.add_css_class("dim-label");
-    options_box.append(&vctk_desc);
-
-    let deepfilter_desc = gtk::Label::builder()
-        .label(i18n(
-            "• DeepFilterNet3 / DPDFNet HR — Full-band 48 kHz models. \
-             Cleaner output when the optional LADSPA plugins are installed.",
-        ))
-        .wrap(true)
-        .xalign(0.0)
-        .build();
-    deepfilter_desc.add_css_class("dim-label");
-    options_box.append(&deepfilter_desc);
-
+    for text in [
+        i18n("• DeepFilterNet3 — For speech. Uses less processing."),
+        i18n("• DPDFNet-2 48 kHz — For speech. Higher quality, more processing."),
+    ] {
+        let label = gtk::Label::builder()
+            .label(text)
+            .wrap(true)
+            .xalign(0.0)
+            .build();
+        label.add_css_class("dim-label");
+        options_box.append(&label);
+    }
     model_inner.append(&options_box);
 
     let labels = noise_model_labels();
@@ -354,79 +237,6 @@ fn build_model_card(settings: &crate::settings::Settings) -> (gtk::Box, gtk::Dro
     model_card.append(&model_inner);
 
     (model_card, model_dropdown)
-}
-
-fn build_voice_recovery_card(settings: &crate::settings::Settings) -> (gtk::Box, gtk::Scale) {
-    let vr_card = gtk::Box::builder()
-        .orientation(gtk::Orientation::Vertical)
-        .spacing(0)
-        .build();
-    vr_card.add_css_class("card");
-
-    let vr_inner = gtk::Box::builder()
-        .orientation(gtk::Orientation::Vertical)
-        .spacing(8)
-        .margin_top(16)
-        .margin_bottom(16)
-        .margin_start(16)
-        .margin_end(16)
-        .build();
-
-    let vr_header = gtk::Box::builder()
-        .orientation(gtk::Orientation::Horizontal)
-        .spacing(10)
-        .build();
-    let vr_icon = gtk::Image::from_icon_name("audio-speakers-symbolic");
-    vr_icon.set_pixel_size(24);
-    vr_icon.set_valign(gtk::Align::Center);
-    vr_header.append(&vr_icon);
-    let vr_title = gtk::Label::builder()
-        .label(i18n("Voice Recovery"))
-        .hexpand(true)
-        .xalign(0.0)
-        .build();
-    vr_title.add_css_class("heading");
-    vr_header.append(&vr_title);
-    vr_inner.append(&vr_header);
-
-    let vr_desc = gtk::Label::builder()
-        .label(i18n(
-            "Noise reduction can sometimes muffle high-pitched parts of the \
-             voice. This slider restores those frequencies, making the voice \
-             sound more natural.",
-        ))
-        .wrap(true)
-        .xalign(0.0)
-        .build();
-    vr_desc.add_css_class("dim-label");
-    vr_inner.append(&vr_desc);
-
-    let vr_hint = gtk::Label::builder()
-        .label(i18n(
-            "Higher values recover more voice detail but may let a small \
-             amount of noise through. The default (0.75) is a good balance.",
-        ))
-        .wrap(true)
-        .xalign(0.0)
-        .build();
-    vr_hint.add_css_class("dim-label");
-    vr_inner.append(&vr_hint);
-
-    let stored_vr = settings.get_double(keys::NOISE_VOICE_RECOVERY);
-    let vr_scale = gtk::Scale::with_range(gtk::Orientation::Horizontal, 0.0, 1.0, 0.05);
-    vr_scale.set_hexpand(true);
-    vr_scale.set_value(stored_vr);
-    vr_scale.set_draw_value(true);
-    vr_scale.set_value_pos(gtk::PositionType::Right);
-    vr_scale.update_property(&[gtk::accessible::Property::Label(&i18n(
-        "Voice recovery level",
-    ))]);
-    vr_scale.set_margin_top(4);
-    vr_inner.append(&vr_scale);
-
-    vr_card.append(&vr_inner);
-
-    (vr_card, vr_scale)
 }
 
 #[cfg(test)]

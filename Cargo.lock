@@ -112,7 +112,6 @@ name = "big-audio-effects"
 version = "0.1.0"
 dependencies = [
  "proptest",
- "serde",
 ]
 
 [[package]]
