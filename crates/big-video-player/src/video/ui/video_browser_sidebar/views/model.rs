@@ -1,3 +1,4 @@
+use std::cell::{Cell, RefCell};
 use std::path::Path;
 use std::rc::Rc;
 use std::time::Duration;
@@ -111,13 +112,43 @@ pub(super) fn finish_view<V: IsA<gtk::Widget>>(
         .child(view)
         .build();
 
-    let current = state.pos.get();
-    if current >= 0 {
-        let target = folder_count + current as u32;
-        if target < store.n_items() {
+    // The current entry, read when the view is shown: playback may have
+    // moved on while the sidebar was closed.
+    let n_items = store.n_items();
+    let selection = selection.clone();
+    let state_weak = Rc::downgrade(state);
+    let show_current = move || {
+        let Some(state) = state_weak.upgrade() else {
+            return;
+        };
+        let Ok(current) = u32::try_from(state.pos.get()) else {
+            return;
+        };
+        let target = folder_count + current;
+        if target < n_items {
             selection.set_selected(target);
             glib::timeout_add_local_once(Duration::from_millis(100), move || scroll_to(target));
         }
+    };
+    // A list scrolled before it is ever shown keeps that estimated layout:
+    // with the sidebar closed, the rows above the first drawn one stayed
+    // blank until the user scrolled. Wait for the map.
+    if view.is_mapped() {
+        show_current();
+    } else {
+        let handler = Rc::new(Cell::new(None));
+        let pending = RefCell::new(Some(show_current));
+        handler.set(Some(view.connect_map({
+            let handler = handler.clone();
+            move |view| {
+                if let Some(id) = handler.take() {
+                    view.disconnect(id);
+                }
+                if let Some(show_current) = pending.take() {
+                    show_current();
+                }
+            }
+        })));
     }
     scroll
 }

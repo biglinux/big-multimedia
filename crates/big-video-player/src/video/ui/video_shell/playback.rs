@@ -299,9 +299,7 @@ impl VideoShell {
             return;
         };
         mpv.load_file(first);
-        for path in &entries[1..] {
-            mpv.load_file_append(path);
-        }
+        mpv.load_files_append(&entries[1..]);
         if needs_explicit_start_index(start) {
             mpv.playlist_play_index(start as i64);
         }
@@ -473,9 +471,7 @@ impl VideoShell {
         let Some(mpv) = self.mpv.borrow().clone() else {
             return;
         };
-        for path in paths {
-            mpv.load_file_append(path);
-        }
+        mpv.load_files_append(paths);
         self.playlist_paths.extend_from_slice(paths);
         self.playlist.emit(VideoBrowserSidebarInput::SetQueue(
             self.playlist_paths.clone(),

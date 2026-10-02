@@ -109,6 +109,40 @@ impl MpvBackend {
         }
     }
 
+    /// Append `paths` in order with as few commands as mpv's plaintext
+    /// playlist allows. Every async command holds a reply slot in mpv's
+    /// 1000-event client queue until the event thread drains it: one
+    /// `loadfile` per entry lost half of a 2000-video folder to
+    /// MPV_ERROR_EVENT_QUEUE_FULL, and a synchronous one blocked the GTK loop
+    /// for 200 ms while mpv opened the first file. The parser splits lines
+    /// and strips leading blanks and a line-final CR, so such paths still go
+    /// one by one.
+    pub fn load_files_append(&self, paths: &[String]) {
+        let mut list = String::new();
+        for path in paths {
+            if path.contains('\n') || path.ends_with('\r') || path.starts_with(char::is_whitespace)
+            {
+                self.append_list(&mut list);
+                self.load_file_append(path);
+            } else {
+                list.push_str(path);
+                list.push('\n');
+            }
+        }
+        self.append_list(&mut list);
+    }
+
+    fn append_list(&self, list: &mut String) {
+        if list.is_empty() {
+            return;
+        }
+        let url = format!("memory://{list}");
+        list.clear();
+        if let Err(e) = self.queue_command("loadlist", &[&url, "append-play"]) {
+            error!("Failed to append a playlist: {e}");
+        }
+    }
+
     pub fn play(&self) {
         let _ = self.queue_command("set", &["pause", "no"]);
     }
