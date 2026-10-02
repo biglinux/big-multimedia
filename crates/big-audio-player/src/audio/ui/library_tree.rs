@@ -48,8 +48,7 @@ use interaction::{
 pub(super) use model::LibraryTreeHandle;
 #[cfg(test)]
 use model::{
-    BrowserNodeContract, ChildStores, DIVIDER_THRESHOLD, LeafTracks,
-    browser_node_contract_for_tree_node, build_node, child_store, group_divider_letter,
+    ChildStores, DIVIDER_THRESHOLD, LeafTracks, build_node, child_store, group_divider_letter,
     to_browser_node,
 };
 pub use model::{LibraryTreeNode, LibraryTreeSnapshot};
@@ -59,6 +58,29 @@ use presentation::{
     library_tree_row_presentation,
 };
 pub(super) use view::build_library_tree;
+
+/// What a tree node shows, read back from the `BrowserNode` built for it.
+#[cfg(test)]
+#[derive(Debug, Clone, PartialEq)]
+struct BrowserNodeContract {
+    kind: BrowserNodeKind,
+    label: String,
+    key: String,
+    secondary: String,
+    track_count: i32,
+}
+
+#[cfg(test)]
+fn browser_node_contract_for_tree_node(node: &LibraryTreeNode) -> BrowserNodeContract {
+    let built = to_browser_node(node);
+    BrowserNodeContract {
+        kind: built.kind(),
+        label: built.label(),
+        key: built.key(),
+        secondary: built.secondary(),
+        track_count: built.track_count(),
+    }
+}
 
 #[cfg(test)]
 mod tests {
@@ -107,7 +129,7 @@ mod tests {
     }
 
     #[test]
-    fn browser_node_contract_for_tree_node_covers_core_kinds_without_gobject() {
+    fn browser_node_contract_for_tree_node_covers_core_kinds() {
         let mut track = Track::new_external_path("/music/song.flac");
         track.duration_secs = 61.0;
         let various_artists_label = i18n("Various Artists");

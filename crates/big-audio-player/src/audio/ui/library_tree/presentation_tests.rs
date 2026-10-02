@@ -22,7 +22,11 @@ fn row_presentation_makes_dividers_inert_headings() {
 #[cfg(not(miri))]
 #[test]
 fn row_presentation_keeps_file_leaves_for_leaf_binder() {
-    let file_node = BrowserNode::track_node("Song", "/music/song.flac", 65.0);
+    let file_node = BrowserNode::track_node(
+        "Song",
+        "/music/song.flac",
+        big_media_components::time::playback_time(65.0),
+    );
     let presentation = library_tree_row_presentation(&file_node);
 
     assert_eq!(presentation.label, "Song");
