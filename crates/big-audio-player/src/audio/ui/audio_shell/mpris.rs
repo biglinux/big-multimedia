@@ -264,6 +264,9 @@ impl AudioShell {
             can_seek: operational && present && s.seekable.load(Ordering::Relaxed),
         };
         *s.snapshot.lock().unwrap_or_else(PoisonError::into_inner) = snapshot;
+        if let Some(mpris) = &self.mpris {
+            mpris.sync();
+        }
     }
 }
 fn finite(x: f64) -> f64 {

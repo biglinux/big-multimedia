@@ -10,6 +10,7 @@ use std::sync::{
 };
 /// The snapshot owner is authoritative. Every published property is compared
 /// through the same getter used by D-Bus; there are no optimistic signal paths.
+/// Returns whether the player is playing, when the position keeps moving.
 pub(super) fn sync_state(
     connection: &gio::DBusConnection,
     callback: &StateCallback,
@@ -17,7 +18,7 @@ pub(super) fn sync_state(
     taskbar: &AtomicBool,
     desktop_uri: &str,
     sent_launcher: &std::cell::Cell<Option<Option<f64>>>,
-) {
+) -> bool {
     let next = callback();
     let mut old = previous
         .lock()
@@ -47,7 +48,9 @@ pub(super) fn sync_state(
             launcher.unwrap_or(0.0),
         );
     }
+    let playing = next.status == PlaybackStatus::Playing;
     *old = Some(next);
+    playing
 }
 
 /// The taskbar progress for `state`, or `None` when the bar is hidden.

@@ -7,6 +7,13 @@ pub(super) type FastRenderContextSlot = Rc<RefCell<Option<FastRenderContext>>>;
 /// Interior-mutable handle to the software (no-GL) render context.
 type SoftwareRenderContextSlot = Rc<RefCell<Option<SoftwareRenderContext>>>;
 
+/// Builds the GL render path on first use, before the first `loadfile`.
+/// Creating the libmpv render context loads every hwdec interop (for libmpv,
+/// `gpu-hwdec-interop=auto` means all of them): on NVIDIA that starts CUDA,
+/// ~100 MiB and hundreds of wakeups a second that a window with nothing to
+/// play must not pay.
+pub(super) type VideoStart = Rc<RefCell<Option<Box<dyn FnOnce()>>>>;
+
 pub(super) struct VideoRealizeOptions {
     pub(super) custom_mpv_options: String,
     pub(super) audio_output: String,
@@ -40,6 +47,7 @@ pub(super) fn wire_realize(
     mpv: &Rc<RefCell<Option<Arc<MpvBackend>>>>,
     fast_render_context_slot: &FastRenderContextSlot,
     video_backend: &Rc<RefCell<Option<VideoBackend>>>,
+    video_start: &VideoStart,
     sender: &ComponentSender<VideoShell>,
     realize_options: VideoRealizeOptions,
 ) {
@@ -50,6 +58,7 @@ pub(super) fn wire_realize(
     let mpv = mpv.clone();
     let fast_render_context_slot = fast_render_context_slot.clone();
     let video_backend = video_backend.clone();
+    let video_start = video_start.clone();
     let sender = sender.clone();
     let realize_options = Rc::new(realize_options);
 
@@ -115,17 +124,40 @@ pub(super) fn wire_realize(
             video_surface::install_best_backend(&display, &main_overlay, &gl_area, "Player");
         let is_offload_backend = selected_video_backend.is_offload();
         video_backend.replace(Some(selected_video_backend));
-        wire_render(
-            &mpv_backend,
-            &gl_area,
-            &software_picture,
-            &main_overlay,
-            &fast_render_context_slot,
-            &software_render_context_slot,
-            &video_backend,
-            is_offload_backend,
-            &realize_options.notice,
-        );
+        // Held by the shell, which the widgets do not own; weak all the same,
+        // so a window closed before anything played lets mpv go.
+        let start = {
+            let mpv_backend = Arc::downgrade(&mpv_backend);
+            let gl_area = gl_area.downgrade();
+            let software_picture = software_picture.downgrade();
+            let main_overlay = main_overlay.downgrade();
+            let fast_render_context_slot = fast_render_context_slot.clone();
+            let software_render_context_slot = software_render_context_slot.clone();
+            let video_backend = video_backend.clone();
+            let notice = realize_options.notice.clone();
+            move || {
+                let (Some(mpv_backend), Some(gl_area), Some(software_picture), Some(main_overlay)) = (
+                    mpv_backend.upgrade(),
+                    gl_area.upgrade(),
+                    software_picture.upgrade(),
+                    main_overlay.upgrade(),
+                ) else {
+                    return;
+                };
+                wire_render(
+                    &mpv_backend,
+                    &gl_area,
+                    &software_picture,
+                    &main_overlay,
+                    &fast_render_context_slot,
+                    &software_render_context_slot,
+                    &video_backend,
+                    is_offload_backend,
+                    &notice,
+                );
+            }
+        };
+        video_start.replace(Some(Box::new(start)));
     });
 }
 

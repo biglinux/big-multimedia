@@ -2,7 +2,9 @@ use super::actions::{build_welcome_screen, install_window_actions, toggle_keep_a
 use super::dialogs::reapply_theme;
 use super::input::{clear_shell_input, set_shell_input};
 use super::input_gestures::{wire_osd_autohide, wire_osd_focus_out, wire_video_input};
-use super::render::{FastRenderContextSlot, VideoRealizeOptions, wire_close, wire_realize};
+use super::render::{
+    FastRenderContextSlot, VideoRealizeOptions, VideoStart, wire_close, wire_realize,
+};
 use super::*;
 use big_media_components::surface::{
     BigMediaChrome, BigMediaChromePlacement, BigMediaOverlayStack, MediaNotice, create_media_root,
@@ -441,6 +443,7 @@ impl Component for VideoShell {
 
         let fast_render_context_slot: FastRenderContextSlot = Rc::new(RefCell::new(None));
         let video_backend: Rc<RefCell<Option<VideoBackend>>> = Rc::new(RefCell::new(None));
+        let video_start = VideoStart::default();
 
         // mpv/GL comes up when the CONTENT realizes (it needs only the display +
         // overlay/gl_area, not a window), so it works in any mount point.
@@ -452,6 +455,7 @@ impl Component for VideoShell {
             &mpv,
             &fast_render_context_slot,
             &video_backend,
+            &video_start,
             &sender,
             VideoRealizeOptions {
                 custom_mpv_options,
@@ -551,6 +555,7 @@ impl Component for VideoShell {
                 tv_here: None,
                 playlist_second: -1,
                 mpv,
+                video_start,
                 duration_secs: 0.0,
                 settings,
                 video_transform,
@@ -754,6 +759,9 @@ impl Component for VideoShell {
                         root.unfullscreen();
                     }
                 }
+            }
+            if let Some(mpris) = &self.mpris {
+                mpris.sync();
             }
         });
     }

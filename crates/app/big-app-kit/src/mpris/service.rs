@@ -1,15 +1,19 @@
 use glib::variant::ToVariant;
 use gtk::{gio, glib};
 use log::{info, warn};
-use std::sync::Arc;
+use std::cell::{Cell, RefCell};
+use std::rc::Rc;
 use std::sync::atomic::{AtomicBool, Ordering};
+use std::sync::{Arc, Mutex};
 
 use super::properties::{
     get_player_property, get_root_property, handle_player_method, set_player_property,
 };
 use super::signals::emit_launcher_entry;
 use super::sync::sync_state;
-use super::types::{CommandCallback, MprisCommand, StateCallback, previous_state, taskbar_flag};
+use super::types::{
+    CommandCallback, MprisCommand, PlayerState, StateCallback, previous_state, taskbar_flag,
+};
 use super::{MPRIS_PATH, MPRIS_PLAYER_IFACE, PLAYER_XML, ROOT_XML};
 
 #[derive(Debug, Clone, PartialEq)]
@@ -57,6 +61,52 @@ fn first_dbus_interface<'a>(
     }
 }
 
+/// Sends the player's changes as D-Bus signals.
+struct Publisher {
+    connection: gio::DBusConnection,
+    state: Arc<StateCallback>,
+    previous: Arc<Mutex<Option<PlayerState>>>,
+    taskbar: Arc<AtomicBool>,
+    desktop_uri: String,
+    sent_launcher: Cell<Option<Option<f64>>>,
+    /// The once-a-second tick, only while playing: it publishes every change
+    /// then, the taskbar progress included, so a player sending ten position
+    /// updates a second does not compare the whole state ten times.
+    tick: RefCell<Option<glib::SourceId>>,
+}
+
+impl Publisher {
+    /// Publish what changed; returns whether the player plays.
+    fn publish(&self) -> bool {
+        sync_state(
+            &self.connection,
+            &self.state,
+            &self.previous,
+            &self.taskbar,
+            &self.desktop_uri,
+            &self.sent_launcher,
+        )
+    }
+
+    fn sync(self: &Rc<Self>) {
+        if self.tick.borrow().is_some() || !self.publish() {
+            return;
+        }
+        let publisher = Rc::downgrade(self);
+        let tick = glib::timeout_add_local(std::time::Duration::from_secs(1), move || {
+            let Some(publisher) = publisher.upgrade() else {
+                return glib::ControlFlow::Break;
+            };
+            if publisher.publish() {
+                return glib::ControlFlow::Continue;
+            }
+            publisher.tick.take();
+            glib::ControlFlow::Break
+        });
+        self.tick.replace(Some(tick));
+    }
+}
+
 /// Mpris.
 pub struct Mpris {
     /// Owned bus name; released explicitly in Drop BEFORE the connection
@@ -64,7 +114,7 @@ pub struct Mpris {
     /// which aborts inside gio's FFI closure trampoline).
     owner_id: Option<gio::OwnerId>,
     connection: gio::DBusConnection,
-    timer_source: Option<glib::SourceId>,
+    publisher: Rc<Publisher>,
     taskbar_progress: Arc<AtomicBool>,
     desktop_id: String,
 }
@@ -220,38 +270,33 @@ impl Mpris {
             |_, _| {},
         );
 
-        let conn_for_timer = connection.clone();
-        let state_for_timer = state_cb;
         let taskbar_flag = taskbar_flag(taskbar_progress_enabled);
-        let flag_for_timer = taskbar_flag.clone();
-        let desktop_for_timer = desktop_application_uri(desktop_id);
-        let sent_launcher = std::cell::Cell::new(None);
-        let timer_source = glib::timeout_add_local(std::time::Duration::from_secs(1), move || {
-            sync_state(
-                &conn_for_timer,
-                &state_for_timer,
-                &prev_state,
-                &flag_for_timer,
-                &desktop_for_timer,
-                &sent_launcher,
-            );
-            glib::ControlFlow::Continue
+        let publisher = Rc::new(Publisher {
+            connection: connection.clone(),
+            state: state_cb,
+            previous: prev_state,
+            taskbar: taskbar_flag.clone(),
+            desktop_uri: desktop_application_uri(desktop_id),
+            sent_launcher: Cell::new(None),
+            tick: RefCell::new(None),
         });
+        publisher.sync();
 
         info!("MPRIS2 service started on {bus_name}");
         Some(Self {
             owner_id: Some(owner_id),
             connection,
-            timer_source: Some(timer_source),
+            publisher,
             taskbar_progress: taskbar_flag,
             desktop_id: desktop_id.to_string(),
         })
     }
 
-    fn cancel_timer(&mut self) {
-        if let Some(id) = self.timer_source.take() {
-            id.remove();
-        }
+    /// Publish what changed in the state the callback reads; the owner calls
+    /// this after changing it. While playing, the next tick publishes instead,
+    /// within a second.
+    pub fn sync(&self) {
+        self.publisher.sync();
     }
 
     /// Update the taskbar progress field in place.
@@ -284,7 +329,9 @@ impl Mpris {
 
 impl Drop for Mpris {
     fn drop(&mut self) {
-        self.cancel_timer();
+        if let Some(tick) = self.publisher.tick.take() {
+            tick.remove();
+        }
         // Order matters: release the bus name FIRST (with the connection
         // alive), THEN close the private connection. Closing first makes
         // GLib fire the name-lost callback with a NULL connection, which

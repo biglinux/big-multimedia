@@ -287,6 +287,10 @@ impl VideoShell {
     /// changes. Pushes the new queue to the sidebar; an external open also
     /// sends the folder listing.
     fn load_playlist(&mut self, entries: &[String], start: usize) {
+        // mpv starts its video output only with a render context in place.
+        if let Some(start_video) = self.video_start.take() {
+            start_video();
+        }
         let mpv_ref = self.mpv.borrow();
         let Some(mpv) = mpv_ref.as_ref() else {
             return;
