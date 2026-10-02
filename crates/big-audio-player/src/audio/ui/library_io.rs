@@ -281,10 +281,9 @@ fn build_folders_list(
         remove_folder_button.connect_clicked(move |button| {
             let _ = out.output(LibraryPanelOutput::RemoveWatchFolder { id: folder_id });
             button.set_sensitive(false);
-            big_relm4_components::feedback::tooltip::set(
-                button,
-                i18n("Removal requested. Reopen this list after the operation finishes."),
-            );
+            button.set_tooltip_text(Some(&i18n(
+                "Removal requested. Reopen this list after the operation finishes.",
+            )));
         });
         strip.append(&remove_folder_button);
         list.append(&strip.into_root());
@@ -434,10 +433,8 @@ fn build_remove_button(folder_label: &str) -> gtk::Button {
             "error".to_string(),
         ])
         .build();
-    big_relm4_components::feedback::tooltip::set(
-        &remove_folder_button,
-        i18n("Stop monitoring this folder; keep its tracks"),
-    );
+    remove_folder_button
+        .set_tooltip_text(Some(&i18n("Stop monitoring this folder; keep its tracks")));
     remove_folder_button.update_property(&[gtk::accessible::Property::Label(&format!(
         "{}: {folder_label}",
         i18n("Remove folder")

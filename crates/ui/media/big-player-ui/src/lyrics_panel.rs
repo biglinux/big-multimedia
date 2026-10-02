@@ -152,16 +152,16 @@ fn build_header(sender: &ComponentSender<LyricsPanel>) -> gtk::Box {
         .icon_name("view-fullscreen-symbolic")
         .css_classes(["flat", "circular"])
         .build();
-    big_relm4_components::feedback::tooltip::set(&expand_button, i18n("Show only lyrics"));
+    expand_button.set_tooltip_text(Some(&i18n("Show only lyrics")));
     let s = sender.clone();
     expand_button.connect_toggled(move |button| {
         let active = button.is_active();
         if active {
             button.set_icon_name("view-restore-symbolic");
-            big_relm4_components::feedback::tooltip::update(button, i18n("Show playlist"));
+            button.set_tooltip_text(Some(&i18n("Show playlist")));
         } else {
             button.set_icon_name("view-fullscreen-symbolic");
-            big_relm4_components::feedback::tooltip::update(button, i18n("Show only lyrics"));
+            button.set_tooltip_text(Some(&i18n("Show only lyrics")));
         }
         let _ = s.output(LyricsPanelOutput::ExpandToggled(active));
     });

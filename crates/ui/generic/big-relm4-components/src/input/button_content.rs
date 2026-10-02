@@ -6,8 +6,6 @@
 use adw::prelude::*;
 use relm4::gtk;
 
-use crate::feedback::tooltip;
-
 /// Data used to build an icon+label Adwaita button content widget.
 #[non_exhaustive]
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -151,7 +149,7 @@ pub fn build_button(spec: &BigButtonContentSpec) -> gtk::Button {
     }
 
     if let Some(tooltip_text) = resolved.tooltip.as_deref() {
-        tooltip::set(&button, tooltip_text);
+        button.set_tooltip_text(Some(tooltip_text));
     }
 
     content.update_property(&[gtk::accessible::Property::Label(

@@ -438,7 +438,7 @@ impl Component for LibraryPanel {
             .icon_name("go-previous-symbolic")
             .css_classes(["flat"])
             .build();
-        big_relm4_components::feedback::tooltip::set(&back_button, i18n("Back to library"));
+        back_button.set_tooltip_text(Some(&i18n("Back to library")));
         back_button.update_property(&[gtk::accessible::Property::Label(&i18n("Back to library"))]);
         // Weak: back_button lives INSIDE root — a strong capture is a
         // closure⇄widget self-cycle pinning the whole library subtree.

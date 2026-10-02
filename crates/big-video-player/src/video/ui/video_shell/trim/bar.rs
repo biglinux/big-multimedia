@@ -17,7 +17,7 @@ use std::rc::Rc;
 use adw::prelude::*;
 use big_media_components::time::playback_time;
 use big_relm4_components::feedback::tooltip::{
-    self, icon_button, icon_toggle_button, labeled_icon_button,
+    icon_button, icon_toggle_button, labeled_icon_button,
 };
 use big_relm4_components::input::button_content::{BigButtonContentSpec, build_button};
 use big_relm4_components::layout::widget_container::clear_box_children;
@@ -327,7 +327,7 @@ fn build_segment_chip(
     edit_segment_button.update_property(&[gtk::accessible::Property::Description(&i18n(
         "Edit cut times",
     ))]);
-    tooltip::set(&edit_segment_button, i18n("Edit cut times"));
+    edit_segment_button.set_tooltip_text(Some(&i18n("Edit cut times")));
     edit_segment_button.connect_clicked(glib::clone!(
         #[strong]
         sender,

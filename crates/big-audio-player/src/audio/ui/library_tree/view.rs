@@ -279,7 +279,7 @@ fn bind_tree_row(
     }
 
     artist_label.set_visible(false);
-    big_relm4_components::feedback::tooltip::set(&text_box, node.label());
+    text_box.set_tooltip_text(Some(&node.label()));
 
     if let Some(track_count_label_text) = &row_presentation.track_count_label {
         track_count_label.set_visible(true);
@@ -315,7 +315,7 @@ fn bind_show_tracks_button(
     let action_label = format!("{}: {}", i18n("Show tracks"), node.label());
     button.set_visible(true);
     button.update_property(&[gtk::accessible::Property::Label(&action_label)]);
-    big_relm4_components::feedback::tooltip::set(button, &action_label);
+    button.set_tooltip_text(Some(&action_label));
 
     let out = sender.clone();
     let Some(selection) = library_tree_selection(node, depth) else {

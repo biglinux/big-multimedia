@@ -219,7 +219,7 @@ pub fn build_voice_popover(
         .halign(gtk::Align::Center)
         .build();
     gear.add_css_class("flat");
-    big_relm4_components::feedback::tooltip::set(&gear, &voice_spec.settings_accessible_label);
+    gear.set_tooltip_text(Some(&voice_spec.settings_accessible_label));
     gear.update_property(&[gtk::accessible::Property::Label(
         &voice_spec.settings_accessible_label,
     )]);

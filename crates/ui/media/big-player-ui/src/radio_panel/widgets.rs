@@ -87,12 +87,12 @@ pub(super) fn build_record_button(sender: &ComponentSender<RadioPanel>) -> gtk::
         if recording {
             s.input(RadioPanelInput::RecordToggle(false));
             button.set_icon_name("media-record-symbolic");
-            tooltip::update(button, i18n("Record Stream"));
+            button.set_tooltip_text(Some(&i18n("Record Stream")));
             button.update_property(&[gtk::accessible::Property::Label(&i18n("Record Stream"))]);
         } else {
             s.input(RadioPanelInput::RecordToggle(true));
             button.set_icon_name("media-playback-stop-symbolic");
-            tooltip::update(button, i18n("Stop Recording"));
+            button.set_tooltip_text(Some(&i18n("Stop Recording")));
             button.update_property(&[gtk::accessible::Property::Label(&i18n("Stop Recording"))]);
         }
     });
@@ -209,7 +209,7 @@ pub(super) fn build_toolbar() -> (gtk::Box, gtk::SearchEntry, gtk::DropDown, gtk
         .hexpand(true)
         .css_classes(["flat"])
         .build();
-    tooltip::set(&genre_dropdown, i18n("Filter by genre"));
+    genre_dropdown.set_tooltip_text(Some(&i18n("Filter by genre")));
     genre_dropdown.update_property(&[gtk::accessible::Property::Label(&i18n("Filter by genre"))]);
     filter_row.append(&genre_dropdown);
 
@@ -217,7 +217,7 @@ pub(super) fn build_toolbar() -> (gtk::Box, gtk::SearchEntry, gtk::DropDown, gtk
         .icon_name("list-add-symbolic")
         .css_classes(["flat"])
         .build();
-    tooltip::set(&add_button, i18n("Add station manually"));
+    add_button.set_tooltip_text(Some(&i18n("Add station manually")));
     add_button.update_property(&[gtk::accessible::Property::Label(&i18n(
         "Add station manually",
     ))]);

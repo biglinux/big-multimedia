@@ -48,7 +48,7 @@ pub(crate) fn build_header(state: &Rc<BrowserState>) {
             .active(state.select_mode.get())
             .css_classes(["flat"])
             .build();
-        tooltip::set(&select_mode_button, i18n("Select"));
+        select_mode_button.set_tooltip_text(Some(&i18n("Select")));
         select_mode_button.update_property(&[gtk::accessible::Property::Label(&i18n("Select"))]);
         select_mode_button.connect_toggled({
             let state = state.clone();

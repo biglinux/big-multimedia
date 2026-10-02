@@ -517,14 +517,14 @@ fn build_seek_row(
         .hexpand(true)
         .adjustment(&adjustment)
         .build();
-    tooltip::set(&seek_bar, &labels.seek);
+    seek_bar.set_tooltip_text(Some(&labels.seek));
     seek_bar.update_property(&[gtk::accessible::Property::Label(&labels.seek)]);
     let cut_timeline = gtk::DrawingArea::builder()
         .hexpand(true)
         .height_request(20)
         .build();
     cut_timeline.update_property(&[gtk::accessible::Property::Label(&labels.cut_timeline)]);
-    tooltip::set(&cut_timeline, &labels.cut_timeline);
+    cut_timeline.set_tooltip_text(Some(&labels.cut_timeline));
     let bar_stack = gtk::Stack::builder().hexpand(true).build();
     bar_stack.add_named(&seek_bar, Some("seek"));
     bar_stack.add_named(&cut_timeline, Some("cut"));

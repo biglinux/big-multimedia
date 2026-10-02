@@ -1,7 +1,6 @@
 use std::rc::Rc;
 
 use adw::prelude::*;
-use big_relm4_components::feedback::tooltip;
 use gtk::glib;
 
 use super::super::{BrowserState, FilterKind, schedule_search};
@@ -152,12 +151,11 @@ pub(crate) fn build_count_summary(state: &Rc<BrowserState>, count: usize) {
             .label(i18n("(of {total})").replace("{total}", &total.to_string()))
             .css_classes(["warning", "caption"])
             .build();
-        tooltip::set(
-            &warn,
-            i18n("Showing {shown} of {total} files found. Consider filtering by subfolder.")
+        warn.set_tooltip_text(Some(
+            &i18n("Showing {shown} of {total} files found. Consider filtering by subfolder.")
                 .replace("{shown}", &count.to_string())
                 .replace("{total}", &total.to_string()),
-        );
+        ));
         row.append(&warn);
     }
 

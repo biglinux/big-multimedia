@@ -21,7 +21,5 @@ pub mod sleep_timer;
 pub mod spawn;
 /// Color parsing and Adwaita CSS override generation for custom themes.
 pub mod theming;
-/// Thread-local accessor for the custom tooltip helper — `tooltip::set(w, t)`.
-pub mod tooltip;
 /// "Play on a TV": the Chromecast/DLNA picker over the BigNetScreen daemon.
 pub mod tv_cast;

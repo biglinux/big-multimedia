@@ -292,7 +292,7 @@ impl Component for AudioTrimBar {
             .css_classes(["suggested-action"])
             .valign(gtk::Align::Center)
             .build();
-        tooltip::set(&mark_button, &labels.mark_cut_point);
+        mark_button.set_tooltip_text(Some(&labels.mark_cut_point));
         mark_button.update_property(&[gtk::accessible::Property::Label(&labels.mark_cut_point)]);
         mark_button.connect_clicked(gtk::glib::clone!(
             #[strong]
@@ -360,7 +360,7 @@ impl Component for AudioTrimBar {
             .sensitive(false)
             .build();
         export_button.update_property(&[gtk::accessible::Property::Label(&labels.export_cuts)]);
-        tooltip::set(&export_button, &labels.export_cuts_tooltip);
+        export_button.set_tooltip_text(Some(&labels.export_cuts_tooltip));
         export_button.connect_clicked(gtk::glib::clone!(
             #[strong]
             sender,
@@ -441,7 +441,7 @@ fn build_segment_chip(
         time::playback_time(segment.end)
     );
     let edit_button = gtk::Button::builder().label(&label).build();
-    tooltip::set(&edit_button, &labels.edit_cut_times);
+    edit_button.set_tooltip_text(Some(&labels.edit_cut_times));
     edit_button.update_property(&[gtk::accessible::Property::Label(&format!(
         "{}: {label}",
         labels.edit_cut

@@ -27,8 +27,6 @@ use std::rc::Rc;
 use gtk::prelude::*;
 use gtk::{gdk, glib};
 
-use crate::feedback::tooltip;
-
 use super::zone_layout::{ZoneLayout, ZoneLayoutSpec, ZonePlacement, slot_key};
 
 /// Change sink: invoked with the new [`ZoneLayout`] on every edit.
@@ -165,7 +163,7 @@ impl BigZoneLayoutEditor {
             let button = gtk::Button::from_icon_name(&control.icon);
             button.set_widget_name(&control.id);
             button.add_css_class("zle-button");
-            tooltip::set(&button, &control.label);
+            button.set_tooltip_text(Some(&control.label));
             button.update_property(&[gtk::accessible::Property::Label(&control.label)]);
             button.set_cursor_from_name(Some("grab"));
             button.set_opacity(if layout.is_visible(&control.id) {

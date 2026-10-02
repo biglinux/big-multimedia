@@ -1,7 +1,10 @@
 // SPDX-FileCopyrightText: 2026 BigLinux contributors
 // SPDX-License-Identifier: MIT
 
-//! Tooltip-aware icon button builders.
+//! Icon button builders with their tooltip and accessible name set together.
+//!
+//! The tooltip is GTK's own; `big_gtk_kit::tooltip::install` draws every one
+//! as the BigLinux card.
 
 use adw::prelude::*;
 use relm4::gtk;
@@ -13,7 +16,7 @@ pub fn icon_button(icon_name: &str, label: &str, classes: &[&str]) -> gtk::Butto
         .child(&gtk::Image::from_icon_name(icon_name))
         .css_classes(classes)
         .build();
-    super::set(&button, label);
+    button.set_tooltip_text(Some(label));
     button.update_property(&[gtk::accessible::Property::Label(label)]);
     button
 }
@@ -25,7 +28,7 @@ pub fn icon_menu_button(icon_name: &str, label: &str, classes: &[&str]) -> gtk::
         .icon_name(icon_name)
         .css_classes(classes)
         .build();
-    super::set(&button, label);
+    button.set_tooltip_text(Some(label));
     button.update_property(&[gtk::accessible::Property::Label(label)]);
     button
 }
@@ -43,7 +46,7 @@ pub fn icon_toggle_button(
         .css_classes(classes)
         .active(active)
         .build();
-    super::set(&button, label);
+    button.set_tooltip_text(Some(label));
     button.update_property(&[gtk::accessible::Property::Label(label)]);
     button
 }
@@ -64,7 +67,7 @@ pub fn labeled_icon_button(
         .child(&inner)
         .css_classes(classes)
         .build();
-    super::set(&button, tooltip);
+    button.set_tooltip_text(Some(tooltip));
     button.update_property(&[gtk::accessible::Property::Label(label)]);
     button
 }

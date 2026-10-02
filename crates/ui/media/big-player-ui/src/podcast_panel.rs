@@ -143,7 +143,7 @@ impl Component for PodcastPanel {
             .icon_name("list-add-symbolic")
             .css_classes(["flat"])
             .build();
-        big_relm4_components::feedback::tooltip::set(&add_button, i18n("Add RSS feed"));
+        add_button.set_tooltip_text(Some(&i18n("Add RSS feed")));
         add_button.update_property(&[gtk::accessible::Property::Label(&i18n("Add RSS feed"))]);
         let s = sender.clone();
         add_button.connect_clicked(move |_| s.input(PodcastPanelInput::AddFeedDialog));
@@ -488,7 +488,7 @@ fn row_suffix_builder(
                 .valign(gtk::Align::Center)
                 .css_classes(["flat", "error"])
                 .build();
-            big_relm4_components::feedback::tooltip::set(&remove, i18n("Unsubscribe"));
+            remove.set_tooltip_text(Some(&i18n("Unsubscribe")));
             remove.update_property(&[gtk::accessible::Property::Label(&i18n(
                 "Unsubscribe from podcast",
             ))]);
@@ -509,7 +509,7 @@ fn row_suffix_builder(
                 .sensitive(!already)
                 .css_classes(["flat"])
                 .build();
-            big_relm4_components::feedback::tooltip::set(&sub, i18n("Subscribe"));
+            sub.set_tooltip_text(Some(&i18n("Subscribe")));
             sub.update_property(&[gtk::accessible::Property::Label(&i18n(
                 "Subscribe to podcast",
             ))]);

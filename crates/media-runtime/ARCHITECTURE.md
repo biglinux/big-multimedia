@@ -22,7 +22,7 @@ feature (see the README).
   msgid anchors for dynamically chosen status text (`messages.rs`).
 - `shared/` — code both players use: app boot (`app_base`), audio effects and
   equalizer, `converter_handoff`, dialogs, popovers, preference rows,
-  shortcut capture, sleep timer, smartphone remote, theming, tooltips,
+  shortcut capture, sleep timer, smartphone remote, theming,
   illustrations.
 - `recent.rs`, `resources.rs` — recent-file store and the compiled GResource
   bundles.

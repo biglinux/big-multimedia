@@ -167,7 +167,7 @@ pub fn create_equalizer_content(
         .icon_name("edit-clear-symbolic")
         .build();
     reset_button.add_css_class("flat");
-    crate::shared::tooltip::set(&reset_button, &i18n("Reset to Flat"));
+    reset_button.set_tooltip_text(Some(&i18n("Reset to Flat")));
     preset_box.append(&reset_button);
 
     main_box.append(&preset_box);

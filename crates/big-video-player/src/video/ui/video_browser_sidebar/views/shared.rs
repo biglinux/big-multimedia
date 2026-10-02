@@ -47,5 +47,5 @@ pub(super) fn set_accent(widget: &impl IsA<gtk::Widget>, on: bool) {
 }
 
 pub(super) fn tooltip_set(widget: &impl IsA<gtk::Widget>, text: &str) {
-    big_relm4_components::feedback::tooltip::set(widget, text);
+    widget.set_tooltip_text(Some(text));
 }

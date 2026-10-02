@@ -281,7 +281,7 @@ fn playhead_button(mpv: &Option<Arc<MpvBackend>>, spin: &gtk::SpinButton) -> gtk
         .valign(gtk::Align::Center)
         .css_classes(["flat"])
         .build();
-    big_relm4_components::feedback::tooltip::set(&button, i18n("Use current position"));
+    button.set_tooltip_text(Some(&i18n("Use current position")));
     button.update_property(&[gtk::accessible::Property::Label(&i18n(
         "Use current playback position",
     ))]);

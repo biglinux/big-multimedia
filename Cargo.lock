@@ -117,6 +117,7 @@ version = "0.1.0"
 dependencies = [
  "async-channel",
  "big-app-kit",
+ "big-gtk-kit",
  "big-media-components",
  "big-media-runtime",
  "big-os-kit",
@@ -133,6 +134,13 @@ dependencies = [
  "pango",
  "relm4",
  "rusqlite",
+]
+
+[[package]]
+name = "big-gtk-kit"
+version = "0.1.0"
+dependencies = [
+ "gtk4",
 ]
 
 [[package]]
@@ -256,6 +264,7 @@ version = "0.1.0"
 dependencies = [
  "async-channel",
  "big-app-kit",
+ "big-gtk-kit",
  "big-media-components",
  "big-media-runtime",
  "big-os-kit",

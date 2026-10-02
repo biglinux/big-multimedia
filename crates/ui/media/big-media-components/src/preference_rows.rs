@@ -5,7 +5,6 @@
 //! optional UI.
 
 use adw::prelude::*;
-use big_relm4_components::feedback::tooltip;
 use big_relm4_components::list::button_strip_row::{BigButtonStripRow, BigButtonStripRowSpec};
 use gtk::gdk;
 
@@ -187,7 +186,7 @@ pub fn entry_row(
         .text(&spec.text)
         .build();
     if let Some(tooltip_text) = spec.tooltip_text.as_deref() {
-        tooltip::set(&row, tooltip_text);
+        row.set_tooltip_text(Some(tooltip_text));
     }
     row.connect_changed(move |r| on_change(&r.text()));
     group.add(&row);

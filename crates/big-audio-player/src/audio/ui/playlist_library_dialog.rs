@@ -375,7 +375,7 @@ fn suffix_button(icon: &str, tooltip: &str) -> gtk::Button {
         .valign(gtk::Align::Center)
         .css_classes(["flat"])
         .build();
-    big_relm4_components::feedback::tooltip::set(&suffix_button, tooltip);
+    suffix_button.set_tooltip_text(Some(tooltip));
     suffix_button.update_property(&[gtk::accessible::Property::Label(tooltip)]);
     suffix_button
 }

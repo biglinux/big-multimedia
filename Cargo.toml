@@ -61,6 +61,9 @@ big-media-engines = { path = "crates/foundation/big-media-engines", version = "0
 big-mpv-render = { path = "crates/foundation/big-mpv-render", version = "0.1.0" }
 big-media-runtime = { path = "crates/media-runtime", version = "2.0.0", default-features = false }
 big-player-ui = { path = "crates/ui/media/big-player-ui", version = "0.1.0" }
+# Shared GTK building blocks. A path until the first push of
+# github.com/biglinux/big-gtk-kit; then `git = "…"` (deny.toml allows the org).
+big-gtk-kit = { path = "../../code/big-gtk-kit" }
 
 [profile.release]
 opt-level = 3

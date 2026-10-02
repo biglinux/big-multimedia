@@ -108,7 +108,7 @@ fn build_grouping_dropdown(sender: &ComponentSender<LibraryPanel>) -> GroupingCo
     // GtkDropDown does not surface its accessible name reliably, so set it in
     // code for screen readers; a tooltip mirrors it for sighted users.
     dropdown.update_property(&[gtk::accessible::Property::Label(&i18n("Library view mode"))]);
-    big_relm4_components::feedback::tooltip::set(&dropdown, i18n("Library view mode"));
+    dropdown.set_tooltip_text(Some(&i18n("Library view mode")));
     dropdown.set_list_factory(Some(&dropdown_list_factory()));
 
     let out = sender.clone();
@@ -135,7 +135,7 @@ fn build_age_dropdown(sender: &ComponentSender<LibraryPanel>) -> gtk::DropDown {
     dropdown.update_property(&[gtk::accessible::Property::Label(&i18n(
         "Filter by date added",
     ))]);
-    big_relm4_components::feedback::tooltip::set(&dropdown, i18n("Filter by date added"));
+    dropdown.set_tooltip_text(Some(&i18n("Filter by date added")));
     dropdown.set_list_factory(Some(&dropdown_list_factory()));
 
     // Compact button display: the default "all" preset
@@ -205,7 +205,7 @@ fn build_add_folder_button(sender: &ComponentSender<LibraryPanel>) -> gtk::Butto
         .build();
     add_folder_button
         .update_property(&[gtk::accessible::Property::Label(&i18n("Add music folder"))]);
-    big_relm4_components::feedback::tooltip::set(&add_folder_button, i18n("Add music folder"));
+    add_folder_button.set_tooltip_text(Some(&i18n("Add music folder")));
 
     let out = sender.clone();
     add_folder_button.connect_clicked(move |button| {

@@ -343,7 +343,7 @@ fn build_title_column(
         unsafe {
             hbox.set_data("vis-pos", list_item.position());
         }
-        big_relm4_components::feedback::tooltip::set(&hbox, &track.file_path);
+        hbox.set_tooltip_text(Some(&track.file_path));
         let Some(icon) = hbox.first_child().and_downcast::<gtk::Image>() else {
             return;
         };

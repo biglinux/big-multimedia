@@ -14,6 +14,7 @@ exclude = ["packaging"]
 default = []
 
 [dependencies]
+big-gtk-kit = { workspace = true }
 big-os-kit = { workspace = true, features = ["jemalloc", "http-client"] }
 adw.workspace = true
 gtk.workspace = true

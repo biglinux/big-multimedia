@@ -6,8 +6,6 @@
 use adw::prelude::*;
 use relm4::gtk;
 
-use crate::feedback::tooltip;
-
 use super::preference_cards::BigSpinRange;
 
 const DEFAULT_SPACING: i32 = 10;
@@ -182,7 +180,7 @@ fn spin_field_button(spin_field: &BigInlineSpinFieldSpec) -> gtk::SpinButton {
         .width_chars(spin_field.width_chars)
         .build();
     spin.update_property(&[gtk::accessible::Property::Label(&spin_field.label)]);
-    tooltip::set(&spin, &spin_field.label);
+    spin.set_tooltip_text(Some(&spin_field.label));
     spin
 }
 
