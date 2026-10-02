@@ -81,7 +81,7 @@ impl AudioShell {
                 !matches!(result, Ok(Ok(()))) && !control.cancelled.load(Ordering::Acquire);
             control.failed.store(failed, Ordering::Release);
             control.finished.store(true, Ordering::Release);
-            let report = control.report(failed);
+            let report = control.report();
             let _ = input.send(AudioShellInput::LibraryScanFinished { control, report });
         });
     }
@@ -173,7 +173,7 @@ impl AudioShell {
                     );
                 }
             }
-            RadioPanelOutput::PlayStation { url, name, .. } => {
+            RadioPanelOutput::PlayStation { url, name } => {
                 self.mpris_state.invalidate();
                 self.is_playing = true;
                 self.is_stream = true;

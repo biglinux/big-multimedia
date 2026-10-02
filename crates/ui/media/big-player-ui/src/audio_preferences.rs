@@ -12,9 +12,7 @@ use big_media_data::settings::{Settings, keys};
 pub struct PlayerAudioEffects {
     /// Whether loudness normalization is enabled.
     pub normalize: bool,
-    /// Whether noise reduction is enabled.
-    pub nr_enabled: bool,
-    /// Noise reduction strength.
+    /// Noise reduction strength; 0 turns it off.
     pub nr_strength: f64,
     /// Selected noise reduction model.
     pub nr_model: i32,
@@ -192,34 +190,23 @@ pub fn create_player_audio_page(
 }
 
 fn read_audio_effects(settings: &Settings, normalize: bool) -> PlayerAudioEffects {
-    let nr_strength = settings.get_double(keys::NOISE_STRENGTH);
-    let eq_bands = parse_eq_bands(&settings.get_string(keys::EQ_BANDS));
+    let gains = big_media_components::audio::equalizer_controls::parse_clamped_band_gains::<10>(
+        &settings.get_string(keys::EQ_BANDS),
+        -12.0,
+        12.0,
+    );
+    let eq_bands = big_audio_effects::equalizer::EQ_BAND_FREQUENCIES_F64
+        .into_iter()
+        .zip(gains)
+        .collect();
 
     PlayerAudioEffects {
         normalize,
-        nr_enabled: nr_strength.abs() > 0.0,
-        nr_strength,
+        nr_strength: settings.get_double(keys::NOISE_STRENGTH).max(0.0),
         nr_model: settings.get_int(keys::NOISE_MODEL),
         nr_mono: settings.get_bool(keys::NOISE_MONO),
         eq_bands,
     }
-}
-
-fn parse_eq_bands(eq_bands: &str) -> Vec<(f64, f64)> {
-    if eq_bands.is_empty() {
-        return Vec::new();
-    }
-
-    eq_bands
-        .split(';')
-        .filter_map(|entry| entry.parse::<f64>().ok())
-        .enumerate()
-        .filter_map(|(index, gain)| {
-            big_audio_effects::equalizer::EQ_BAND_FREQUENCIES_F64
-                .get(index)
-                .map(|&frequency| (frequency, gain))
-        })
-        .collect()
 }
 
 fn add_switch_row(
@@ -313,21 +300,4 @@ fn add_entry_row(
         let _ = settings.set_string(&key, text);
         on_change(text);
     })
-}
-
-#[cfg(test)]
-mod tests {
-    use super::parse_eq_bands;
-
-    #[test]
-    fn parse_eq_bands_pairs_known_frequencies() {
-        let bands = parse_eq_bands("1.0;0.5;-2.0");
-        assert_eq!(bands, vec![(31.0, 1.0), (63.0, 0.5), (125.0, -2.0)]);
-    }
-
-    #[test]
-    fn parse_eq_bands_skips_invalid_entries() {
-        let bands = parse_eq_bands("1.0;invalid;2.0");
-        assert_eq!(bands, vec![(31.0, 1.0), (63.0, 2.0)]);
-    }
 }

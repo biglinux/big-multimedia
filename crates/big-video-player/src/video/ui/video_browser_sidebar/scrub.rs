@@ -77,7 +77,7 @@ pub(super) fn wire_card_hover(state: &Rc<BrowserState>, card: &gtk::Box, picture
 /// The bound video path for a card, via its `video:{index}` widget name.
 fn video_path_of(state: &Rc<BrowserState>, card: &gtk::Box) -> Option<String> {
     let card_index = parse_card_index(&card.widget_name())?;
-    state.active_items().get(card_index).cloned()
+    state.item_at(card_index)
 }
 
 /// Card index encoded in a grid card's `video:{index}` widget name.

@@ -235,19 +235,6 @@ impl BigSleepTimerSetupPage {
         &self.start_button
     }
 
-    /// Return a reference to the `selected action id` exposed by this [`BigSleepTimerSetupPage`].
-    ///
-    /// Useful when callers need to bind signals, query state, or compose the
-    /// widget into a larger surface without taking ownership.
-    #[must_use]
-    pub fn selected_action_id(&self) -> String {
-        let index = self.action_combo.selected() as usize;
-        self.actions
-            .get(index)
-            .or_else(|| self.actions.first())
-            .map_or_else(String::new, |action| action.id.clone())
-    }
-
     /// Consume `self` and yield the underlying page.
     #[must_use]
     pub fn into_page(self) -> adw::PreferencesPage {

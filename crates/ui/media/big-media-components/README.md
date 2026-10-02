@@ -8,7 +8,6 @@ Media UI components and helpers shared by `big-audio-player` and
 - `audio` — audio metadata labels and equalizer settings parsing.
 - `bytes`, `time`, `track_labels`, `playlist_order` — pure formatting and
   ordering helpers.
-- `container_compat` — Chromecast container/codec compatibility checks.
 - `ffmpeg` — codec label maps.
 - `media` — file metadata dialog, media file types, thumbnails.
 - `playback` — audio transport controls and the play queue model.

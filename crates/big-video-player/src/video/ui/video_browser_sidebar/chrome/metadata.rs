@@ -147,8 +147,7 @@ pub(crate) fn build_count_summary(state: &Rc<BrowserState>, count: usize) {
     count_label.set_halign(gtk::Align::Start);
     row.append(&count_label);
 
-    if state.truncated.get() {
-        let total = state.total_found.get();
+    if let Some(total) = state.truncated_total.get() {
         let warn = gtk::Label::builder()
             .label(i18n("(of {total})").replace("{total}", &total.to_string()))
             .css_classes(["warning", "caption"])

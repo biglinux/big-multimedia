@@ -3,71 +3,12 @@ use std::collections::HashMap;
 /// Parameters for building the audio filter chain.
 pub struct AudioEffects<'a> {
     pub normalize: bool,
-    pub nr_enabled: bool,
+    /// Voice noise reduction strength; 0 turns it off.
     pub nr_strength: f64,
     pub nr_model: i32,
     /// Mix to mono before the denoiser.
     pub nr_mono: bool,
-    pub gate_enabled: bool,
-    pub gate_intensity: f64,
-    pub hpf_enabled: bool,
-    pub hpf_frequency: f64,
     pub eq_bands: &'a [(f64, f64)],
-    pub compressor_enabled: bool,
-    pub compressor_intensity: f64,
-}
-
-/// Owned mirror of [`AudioEffects`] for passing the effect set through
-/// message channels (the borrowed `eq_bands` slice of `AudioEffects` can't
-/// cross a `'static` message boundary). Build it from the same values the UI
-/// reads from its effect controls, then borrow via [`Self::as_effects`].
-#[derive(Debug, Clone, Default, PartialEq)]
-pub struct AudioEffectsSnapshot {
-    /// See [`AudioEffects::normalize`].
-    pub normalize: bool,
-    /// See [`AudioEffects::nr_enabled`].
-    pub nr_enabled: bool,
-    /// See [`AudioEffects::nr_strength`].
-    pub nr_strength: f64,
-    /// See [`AudioEffects::nr_model`].
-    pub nr_model: i32,
-    /// See [`AudioEffects::nr_mono`].
-    pub nr_mono: bool,
-    /// See [`AudioEffects::gate_enabled`].
-    pub gate_enabled: bool,
-    /// See [`AudioEffects::gate_intensity`].
-    pub gate_intensity: f64,
-    /// See [`AudioEffects::hpf_enabled`].
-    pub hpf_enabled: bool,
-    /// See [`AudioEffects::hpf_frequency`].
-    pub hpf_frequency: f64,
-    /// Owned `(frequency_hz, gain_db)` band pairs; empty when EQ is off.
-    pub eq_bands: Vec<(f64, f64)>,
-    /// See [`AudioEffects::compressor_enabled`].
-    pub compressor_enabled: bool,
-    /// See [`AudioEffects::compressor_intensity`].
-    pub compressor_intensity: f64,
-}
-
-impl AudioEffectsSnapshot {
-    /// Borrow this snapshot as an [`AudioEffects`] for the filter-chain builder.
-    #[must_use]
-    pub fn as_effects(&self) -> AudioEffects<'_> {
-        AudioEffects {
-            normalize: self.normalize,
-            nr_enabled: self.nr_enabled,
-            nr_strength: self.nr_strength,
-            nr_model: self.nr_model,
-            nr_mono: self.nr_mono,
-            gate_enabled: self.gate_enabled,
-            gate_intensity: self.gate_intensity,
-            hpf_enabled: self.hpf_enabled,
-            hpf_frequency: self.hpf_frequency,
-            eq_bands: &self.eq_bands,
-            compressor_enabled: self.compressor_enabled,
-            compressor_intensity: self.compressor_intensity,
-        }
-    }
 }
 
 #[derive(Debug, Clone)]
@@ -123,7 +64,6 @@ pub enum PlayerEvent {
     ScreenshotTimedOut {
         id: u64,
     },
-    RenderUpdate,
     Shutdown,
 }
 

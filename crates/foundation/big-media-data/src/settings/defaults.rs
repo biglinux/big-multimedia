@@ -3,14 +3,8 @@ use std::collections::HashMap;
 pub(super) fn defaults() -> HashMap<String, String> {
     let mut values = HashMap::new();
 
-    values.insert("advanced-mode".into(), "false".into());
-
-    values.insert("prefs-window-width".into(), "960".into());
-    values.insert("prefs-window-height".into(), "700".into());
     values.insert("appearance-window-width".into(), "600".into());
     values.insert("appearance-window-height".into(), "700".into());
-    values.insert("audio-prefs-window-width".into(), "600".into());
-    values.insert("audio-prefs-window-height".into(), "500".into());
     values.insert("audio-appearance-window-width".into(), "500".into());
     values.insert("audio-appearance-window-height".into(), "400".into());
 
@@ -62,10 +56,6 @@ pub(super) fn defaults() -> HashMap<String, String> {
     values.insert("keep-open-pause".into(), "false".into());
     values.insert("idle-mode".into(), "yes".into());
     values.insert("render-profile".into(), "default".into());
-
-    values.insert("video-sync".into(), "audio".into());
-    values.insert("interpolation".into(), "false".into());
-    values.insert("tscale".into(), "mitchell".into());
 
     values.insert("tone-mapping".into(), "auto".into());
     values.insert("target-peak".into(), "0".into());

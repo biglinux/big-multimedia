@@ -139,33 +139,9 @@ impl MpvBackend {
         });
     }
 
-    pub fn set_screenshot_format(&self, fmt: &str) {
-        self.with_mpv(|m| {
-            let _ = m.set_property("screenshot-format", fmt.to_string());
-        });
-    }
-
-    pub fn set_screenshot_jpeg_quality(&self, quality: i64) {
-        self.with_mpv(|m| {
-            let _ = m.set_property("screenshot-jpeg-quality", quality);
-        });
-    }
-
     pub fn set_screenshot_png_compression(&self, level: i64) {
         self.with_mpv(|m| {
             let _ = m.set_property("screenshot-png-compression", level);
-        });
-    }
-
-    pub fn set_screenshot_template(&self, tmpl: &str) {
-        self.with_mpv(|m| {
-            let _ = m.set_property("screenshot-template", tmpl.to_string());
-        });
-    }
-
-    pub fn set_screenshot_directory(&self, dir: &str) {
-        self.with_mpv(|m| {
-            let _ = m.set_property("screenshot-directory", dir.to_string());
         });
     }
 

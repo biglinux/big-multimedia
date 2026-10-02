@@ -29,12 +29,12 @@ pub struct ScanReport {
     pub failed: bool,
 }
 impl ScanControl {
-    pub fn report(&self, failed: bool) -> ScanReport {
+    pub fn report(&self) -> ScanReport {
         ScanReport {
             imported: self.imported.load(Ordering::Acquire),
             skipped: self.skipped.load(Ordering::Acquire),
             cancelled: self.cancelled.load(Ordering::Acquire),
-            failed,
+            failed: self.failed.load(Ordering::Acquire),
         }
     }
 }

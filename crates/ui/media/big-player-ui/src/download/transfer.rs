@@ -1,5 +1,5 @@
-//! HTTP download worker: streamed read with cancel polling, progress counters,
-//! filename derivation from URL, human-readable byte formatter.
+//! HTTP download worker: streamed read with cancel polling, progress counters
+//! and the file name derived from the URL.
 
 use super::DownloadProgress;
 use std::sync::atomic::Ordering;
@@ -64,7 +64,7 @@ mod tests {
     #[test]
     fn downloads_publish_only_complete_results_and_clean_staging() {
         use std::io::{Read, Write};
-        use std::sync::atomic::{AtomicBool, AtomicU64};
+        use std::sync::atomic::AtomicBool;
         let dir = std::env::temp_dir().join(format!("download-transaction-{}", std::process::id()));
         std::fs::create_dir(&dir).unwrap();
         let dest = dir.join("episode.mp3");
@@ -95,11 +95,8 @@ mod tests {
                     let _ = stream.write_all(&reply);
                 });
                 let progress = DownloadProgress {
-                    bytes_downloaded: AtomicU64::new(0),
-                    total_bytes: AtomicU64::new(0),
-                    finished: AtomicBool::new(false),
                     cancelled: AtomicBool::new(mode == "cancel"),
-                    error_msg: std::sync::Mutex::new(None),
+                    ..Default::default()
                 };
                 let result = download_file(&url, &dest, &progress);
                 server.join().unwrap();

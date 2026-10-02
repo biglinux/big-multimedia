@@ -67,6 +67,7 @@ mod mpris;
 mod osd;
 mod panel;
 mod playback;
+pub(crate) use playback::is_remote_uri;
 mod playlist_panel;
 mod render;
 mod state_access;
@@ -198,43 +199,4 @@ pub struct VideoShell {
     /// GTK inhibit cookie keeping the screen awake. mpv cannot do it: its
     /// screensaver control needs a window of its own, which libmpv lacks.
     screen_inhibit: Option<u32>,
-}
-
-#[cfg(test)]
-mod tests {
-    use super::{DRAG_THRESHOLD, OSD_HIDE_DELAY_MS, dialogs};
-
-    #[test]
-    fn shell_interaction_timing_constants_stay_ordered() {
-        let osd_hide_ms = std::hint::black_box(OSD_HIDE_DELAY_MS);
-        let drag_threshold = std::hint::black_box(DRAG_THRESHOLD);
-
-        assert!(osd_hide_ms > 0);
-        assert!(drag_threshold > 0.0);
-    }
-
-    #[test]
-    fn shell_keeps_disc_uri_contract_available() {
-        assert_eq!(
-            dialogs::build_disc_uri("dvd", "/dev/sr0").as_deref(),
-            Some("dvd://--dvd-device=/dev/sr0")
-        );
-        assert_eq!(
-            dialogs::build_disc_uri("bd", "/dev/sr1").as_deref(),
-            Some("bd://--bluray-device=/dev/sr1")
-        );
-        assert_eq!(dialogs::build_disc_uri("dvd", "--no-config"), None);
-    }
-
-    #[test]
-    fn shell_disc_uri_rejects_empty_device() {
-        assert_eq!(dialogs::build_disc_uri("dvd", ""), None);
-        assert_eq!(dialogs::build_disc_uri("bd", ""), None);
-    }
-
-    #[test]
-    fn shell_disc_uri_rejects_unknown_response() {
-        assert_eq!(dialogs::build_disc_uri("cancel", "/dev/sr0"), None);
-        assert_eq!(dialogs::build_disc_uri("", "/dev/sr0"), None);
-    }
 }

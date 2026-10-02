@@ -437,7 +437,8 @@ impl MpvBackend {
     }
 
     /// Poll time/duration/pause/eof/title/buffering and dispatch diff-based
-    /// `PlayerEvent`s. Runs at ~20 Hz from the main event_loop.
+    /// `PlayerEvent`s. Runs at 10 Hz from the main event_loop, 4 Hz while
+    /// paused or idle.
     fn poll_properties(
         mpv_guard: &MpvClient,
         loading: &Arc<AtomicBool>,

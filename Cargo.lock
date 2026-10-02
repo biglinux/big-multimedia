@@ -110,9 +110,6 @@ dependencies = [
 [[package]]
 name = "big-audio-effects"
 version = "0.1.0"
-dependencies = [
- "proptest",
-]
 
 [[package]]
 name = "big-audio-player"
@@ -136,7 +133,6 @@ dependencies = [
  "pango",
  "relm4",
  "rusqlite",
- "serde_json",
 ]
 
 [[package]]

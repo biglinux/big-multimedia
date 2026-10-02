@@ -15,7 +15,7 @@
 
 use std::cell::{Cell, RefCell};
 use std::rc::Rc;
-use std::sync::{Arc, Mutex};
+use std::sync::Arc;
 
 use adw::prelude::*;
 use relm4::{Component, ComponentParts, ComponentSender};
@@ -179,8 +179,9 @@ pub struct VideoControlsBar {
     duration_secs: Rc<Cell<f64>>,
     /// Chapter list (`time_secs`, `title`): seek-bar marks + hover chapter name.
     chapters: Rc<RefCell<Vec<(f64, String)>>>,
-    /// Path of the loaded media, shared with the thumbnail worker thread.
-    current_file: Arc<Mutex<Option<String>>>,
+    /// Path of the loaded local file, for the hover preview; `None` for a
+    /// stream, whose ffmpeg seek is too slow to thumbnail.
+    current_file: Rc<RefCell<Option<String>>>,
     /// Hover-preview thumbnail generator (ffmpeg-backed, on a worker thread).
     /// Kept alive for the bar's lifetime; dropping it stops the worker.
     thumb_gen: Rc<ThumbnailGenerator>,
@@ -219,7 +220,7 @@ impl Component for VideoControlsBar {
 
         let duration_secs = Rc::new(Cell::new(0.0_f64));
         let chapters: Rc<RefCell<Vec<(f64, String)>>> = Rc::new(RefCell::new(Vec::new()));
-        let current_file: Arc<Mutex<Option<String>>> = Arc::new(Mutex::new(None));
+        let current_file: Rc<RefCell<Option<String>>> = Rc::default();
 
         // Hover-preview thumbnail worker (ffmpeg-backed). Results stream back on
         // an async channel and paint the preview image while it is visible.
@@ -516,10 +517,7 @@ impl Component for VideoControlsBar {
             VideoControlsBarInput::SetCurrentFile(path) => {
                 self.thumb_gen.invalidate();
                 self.preview_popover.popdown();
-                *self
-                    .current_file
-                    .lock()
-                    .unwrap_or_else(std::sync::PoisonError::into_inner) = path;
+                self.current_file.replace(path);
             }
             VideoControlsBarInput::SetVolume(volume) => {
                 // Mirror the mixer onto the slider; the guard keeps the scale's

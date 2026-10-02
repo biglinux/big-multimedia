@@ -279,7 +279,7 @@ fn wire_reorder(state: &Rc<BrowserState>, row: &gtk::Box) {
 fn queue_path_of(state: &Rc<BrowserState>, row: &gtk::Box) -> Option<String> {
     let name = row.widget_name();
     let idx = name.strip_prefix("q:")?.parse::<usize>().ok()?;
-    state.active_items().get(idx).cloned()
+    state.item_at(idx)
 }
 
 fn bind_queue_row(state: &Rc<BrowserState>, queue_cell: &gtk::ListItem, generation: u64) {

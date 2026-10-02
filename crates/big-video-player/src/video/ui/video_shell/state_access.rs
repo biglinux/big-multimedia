@@ -82,13 +82,13 @@ impl VideoShell {
         self.sidebar_toggle_updating.set(false);
 
         if is_same_visible {
-            self.playlist_panel.set_shown(false, 0, 0);
+            self.playlist_panel.hide();
             return;
         }
 
         self.sidebar_mode.set(mode);
         self.playlist.emit(VideoBrowserSidebarInput::SetMode(mode));
         let (top, bottom) = self.panel_edges();
-        self.playlist_panel.set_shown(true, top, bottom);
+        self.playlist_panel.show(top, bottom);
     }
 }

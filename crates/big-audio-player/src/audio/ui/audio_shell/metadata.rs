@@ -83,31 +83,9 @@ impl AudioShell {
         if self.is_stream {
             return;
         }
-        let Some(track) = self.queue.current().cloned() else {
+        let Some(track) = self.queue.current() else {
             return;
         };
-        let title = track.display_title().to_string();
-        let artist = track.display_artist().to_string();
-        let album = track.album.clone().unwrap_or_default();
-        {
-            let state = &self.mpris_state;
-            state
-                .title
-                .lock()
-                .unwrap_or_else(PoisonError::into_inner)
-                .clone_from(&title);
-            state
-                .artist
-                .lock()
-                .unwrap_or_else(PoisonError::into_inner)
-                .clone_from(&artist);
-            state
-                .album
-                .lock()
-                .unwrap_or_else(PoisonError::into_inner)
-                .clone_from(&album);
-        }
-
         let path = track.file_path.clone();
         let art_artist = track.artist.clone();
         let art_album = track.album.clone();
@@ -178,11 +156,11 @@ impl AudioShell {
 
     /// Store the cached `artUrl`; the next MPRIS snapshot publishes it.
     fn apply_mpris_art_url(&self, url: String) {
-        self.mpris_state
+        *self
+            .mpris_state
             .art_url
             .lock()
-            .unwrap_or_else(PoisonError::into_inner)
-            .clone_from(&url);
+            .unwrap_or_else(PoisonError::into_inner) = url;
     }
 }
 

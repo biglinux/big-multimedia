@@ -282,18 +282,6 @@ impl MpvBackend {
         });
     }
 
-    pub fn chapter_next(&self) {
-        self.with_mpv(|m| {
-            let _ = m.command("add", &["chapter", "1"]);
-        });
-    }
-
-    pub fn chapter_prev(&self) {
-        self.with_mpv(|m| {
-            let _ = m.command("add", &["chapter", "-1"]);
-        });
-    }
-
     pub fn set_chapter(&self, idx: i64) {
         self.with_mpv(|m| {
             let _ = m.set_property("chapter", idx);

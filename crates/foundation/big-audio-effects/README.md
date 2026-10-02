@@ -14,17 +14,6 @@ invalidates user presets and breaks PipeWire graphs.
 - `noise_reduction` — LADSPA plugin paths, control-port ordering and
   noise-reduction model identifiers.
 - `equalizer` — the canonical 10-band equalizer center frequencies and labels.
-- `dynamics` — derived gate and compressor curves plus FFmpeg filter-string
-  formatters.
-
-## Example
-
-```rust
-use big_audio_effects::dynamics::ffmpeg_acompressor_filter;
-
-let filter = ffmpeg_acompressor_filter(0.5);
-assert!(filter.starts_with("acompressor="));
-```
 
 ## License
 

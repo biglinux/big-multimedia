@@ -10,73 +10,18 @@ use big_player_ui::audio_preferences::{
 };
 
 use crate::i18n::i18n;
-use crate::player::mpv_backend::{AudioEffectsSnapshot, MpvBackend};
+use crate::player::mpv_backend::{AudioEffects, MpvBackend};
 use crate::settings::{Settings, keys};
 use crate::shared::preference_rows::add_combo_row;
-use big_media_runtime::i18n::gettext_noop;
-
-#[derive(Debug, Clone, Copy, PartialEq)]
-struct NumericAdjustmentSpec {
-    lower: f64,
-    upper: f64,
-    step_increment: f64,
-    page_increment: f64,
-    page_size: f64,
-}
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-struct PreferencesPageChromeSpec {
-    title: &'static str,
-    icon_name: &'static str,
-}
-
-fn music_page_chrome_spec() -> PreferencesPageChromeSpec {
-    PreferencesPageChromeSpec {
-        title: gettext_noop("Music"),
-        icon_name: "emblem-music-symbolic",
-    }
-}
-
-fn replaygain_preamp_adjustment_spec() -> NumericAdjustmentSpec {
-    NumericAdjustmentSpec {
-        lower: -15.0,
-        upper: 15.0,
-        step_increment: 0.5,
-        page_increment: 1.0,
-        page_size: 0.0,
-    }
-}
-
-fn should_create_audio_preference_actions(has_mpv_backend: bool) -> bool {
-    has_mpv_backend
-}
-
-fn player_audio_effects_snapshot(effects: &PlayerAudioEffects) -> AudioEffectsSnapshot {
-    AudioEffectsSnapshot {
-        normalize: effects.normalize,
-        nr_enabled: effects.nr_enabled,
-        nr_strength: effects.nr_strength,
-        nr_model: effects.nr_model,
-        nr_mono: effects.nr_mono,
-        gate_enabled: false,
-        gate_intensity: 0.0,
-        hpf_enabled: false,
-        hpf_frequency: 0.0,
-        eq_bands: effects.eq_bands.clone(),
-        compressor_enabled: false,
-        compressor_intensity: 0.0,
-    }
-}
 
 pub(super) fn create_music_page(
     settings: &Settings,
     mpv: Option<&Arc<MpvBackend>>,
     on_taskbar_toggle: Option<Box<dyn Fn(bool) + 'static>>,
 ) -> adw::PreferencesPage {
-    let page_spec = music_page_chrome_spec();
     let page = adw::PreferencesPage::builder()
-        .title(i18n(page_spec.title))
-        .icon_name(page_spec.icon_name)
+        .title(i18n("Music"))
+        .icon_name("emblem-music-symbolic")
         .build();
 
     page.add(&super::account_security::group());
@@ -104,7 +49,6 @@ pub(super) fn create_music_page(
         },
     );
 
-    let replaygain_preamp_adjustment = replaygain_preamp_adjustment_spec();
     let rg_preamp_row = adw::SpinRow::builder()
         .title(i18n("Leveling Boost"))
         .subtitle(i18n(
@@ -113,11 +57,11 @@ pub(super) fn create_music_page(
         .digits(1)
         .adjustment(&gtk::Adjustment::new(
             settings.get_double(keys::REPLAYGAIN_PREAMP),
-            replaygain_preamp_adjustment.lower,
-            replaygain_preamp_adjustment.upper,
-            replaygain_preamp_adjustment.step_increment,
-            replaygain_preamp_adjustment.page_increment,
-            replaygain_preamp_adjustment.page_size,
+            -15.0,
+            15.0,
+            0.5,
+            1.0,
+            0.0,
         ))
         .build();
     {
@@ -207,34 +151,36 @@ pub(super) fn create_music_page(
 }
 
 fn audio_preference_actions(mpv: Option<&Arc<MpvBackend>>) -> Option<PlayerAudioPreferenceActions> {
-    if should_create_audio_preference_actions(mpv.is_some()) {
-        let mpv = mpv.cloned()?;
-        return Some(PlayerAudioPreferenceActions::new(
-            {
-                let mpv = Arc::clone(&mpv);
-                move |value| mpv.set_audio_channels(value)
-            },
-            {
-                let mpv = Arc::clone(&mpv);
-                move |value| mpv.set_audio_pitch_correction(value)
-            },
-            {
-                let mpv = Arc::clone(&mpv);
-                move |value| mpv.set_volume_max(value)
-            },
-            {
-                let mpv = Arc::clone(&mpv);
-                move |value| mpv.set_preferred_audio_lang(value)
-            },
-            move |effects| apply_player_audio_effects(&mpv, effects),
-        ));
-    }
-    None
+    let mpv = mpv.cloned()?;
+    Some(PlayerAudioPreferenceActions::new(
+        {
+            let mpv = Arc::clone(&mpv);
+            move |value| mpv.set_audio_channels(value)
+        },
+        {
+            let mpv = Arc::clone(&mpv);
+            move |value| mpv.set_audio_pitch_correction(value)
+        },
+        {
+            let mpv = Arc::clone(&mpv);
+            move |value| mpv.set_volume_max(value)
+        },
+        {
+            let mpv = Arc::clone(&mpv);
+            move |value| mpv.set_preferred_audio_lang(value)
+        },
+        move |effects| apply_player_audio_effects(&mpv, effects),
+    ))
 }
 
 fn apply_player_audio_effects(mpv: &MpvBackend, effects: PlayerAudioEffects) {
-    let snapshot = player_audio_effects_snapshot(&effects);
-    mpv.apply_audio_effects(&snapshot.as_effects());
+    mpv.apply_audio_effects(&AudioEffects {
+        normalize: effects.normalize,
+        nr_strength: effects.nr_strength,
+        nr_model: effects.nr_model,
+        nr_mono: effects.nr_mono,
+        eq_bands: &effects.eq_bands,
+    });
 }
 
 /// `on_taskbar_toggle` fires when the taskbar-progress switch changes → MPRIS
@@ -260,70 +206,4 @@ pub fn show_audio_preferences(
         dialog.add(page);
     }
     dialog.present(Some(parent));
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    fn player_audio_effects_fixture() -> PlayerAudioEffects {
-        PlayerAudioEffects {
-            normalize: true,
-            nr_enabled: true,
-            nr_strength: 0.75,
-            nr_model: 3,
-            nr_mono: true,
-            eq_bands: vec![(60.0, -3.0), (1_000.0, 2.5)],
-        }
-    }
-
-    #[test]
-    fn music_page_chrome_names_music_surface() {
-        assert_eq!(
-            music_page_chrome_spec(),
-            PreferencesPageChromeSpec {
-                title: "Music",
-                icon_name: "emblem-music-symbolic",
-            }
-        );
-    }
-
-    #[test]
-    fn playback_adjustment_specs_keep_expected_ranges() {
-        assert_eq!(
-            replaygain_preamp_adjustment_spec(),
-            NumericAdjustmentSpec {
-                lower: -15.0,
-                upper: 15.0,
-                step_increment: 0.5,
-                page_increment: 1.0,
-                page_size: 0.0,
-            }
-        );
-    }
-
-    #[test]
-    fn audio_preference_actions_exist_only_with_backend() {
-        assert!(should_create_audio_preference_actions(true));
-        assert!(!should_create_audio_preference_actions(false));
-    }
-
-    #[test]
-    fn player_audio_effects_snapshot_preserves_player_fields_and_disables_app_only_filters() {
-        let effects = player_audio_effects_fixture();
-        let snapshot = player_audio_effects_snapshot(&effects);
-
-        assert_eq!(snapshot.normalize, effects.normalize);
-        assert_eq!(snapshot.nr_enabled, effects.nr_enabled);
-        assert_eq!(snapshot.nr_strength, effects.nr_strength);
-        assert_eq!(snapshot.nr_model, effects.nr_model);
-        assert_eq!(snapshot.nr_mono, effects.nr_mono);
-        assert_eq!(snapshot.eq_bands, effects.eq_bands);
-        assert!(!snapshot.gate_enabled);
-        assert_eq!(snapshot.gate_intensity, 0.0);
-        assert!(!snapshot.hpf_enabled);
-        assert_eq!(snapshot.hpf_frequency, 0.0);
-        assert!(!snapshot.compressor_enabled);
-        assert_eq!(snapshot.compressor_intensity, 0.0);
-    }
 }

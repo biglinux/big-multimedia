@@ -11,7 +11,7 @@ use std::cell::Cell;
 use std::path::{Path, PathBuf};
 use std::rc::Rc;
 use std::sync::Arc;
-use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
+use std::sync::atomic::Ordering;
 
 use adw::prelude::*;
 use big_media_components::bytes;
@@ -176,13 +176,7 @@ impl DownloadQueuePanel {
     /// Build a progress row, register the task, reveal the panel, and spawn the
     /// streamed HTTP download on a worker thread.
     fn enqueue(&mut self, url: &str, title: &str, dest: &Path, sender: &ComponentSender<Self>) {
-        let progress = Arc::new(DownloadProgress {
-            bytes_downloaded: AtomicU64::new(0),
-            total_bytes: AtomicU64::new(0),
-            finished: AtomicBool::new(false),
-            cancelled: AtomicBool::new(false),
-            error_msg: std::sync::Mutex::new(None),
-        });
+        let progress = Arc::new(DownloadProgress::default());
 
         let row_box = gtk::Box::new(gtk::Orientation::Vertical, 2);
         row_box.set_margin_top(4);
@@ -367,13 +361,7 @@ mod lifetime_tests {
                 gtk::glib::ControlFlow::Continue
             });
             let source = context.find_source_by_id(&timer).unwrap();
-            let progress = Arc::new(DownloadProgress {
-                bytes_downloaded: AtomicU64::new(0),
-                total_bytes: AtomicU64::new(0),
-                finished: AtomicBool::new(false),
-                cancelled: AtomicBool::new(false),
-                error_msg: std::sync::Mutex::new(None),
-            });
+            let progress = Arc::new(DownloadProgress::default());
             let panel = DownloadQueuePanel {
                 revealer: gtk::Revealer::new(),
                 list_box: gtk::Box::new(gtk::Orientation::Vertical, 0),

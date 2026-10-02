@@ -291,23 +291,9 @@ fn idle_bg_image_css(path: &Path, dim: bool) -> String {
             background-position: center;
             background-repeat: no-repeat;
         }}",
-        file_url(path)
+        // GLib escapes `"` and `\`, so the URI cannot end the CSS string.
+        gtk::gio::File::for_path(path).uri()
     )
-}
-
-/// Build a `file://` URL for a CSS `url()`, percent-encoding every byte that is
-/// not an unreserved / path-safe character (handles spaces, quotes, `#`, `?` and
-/// non-ASCII UTF-8 bytes alike).
-fn file_url(path: &Path) -> String {
-    let mut url = String::from("file://");
-    for &byte in path.as_os_str().to_string_lossy().as_bytes() {
-        if byte.is_ascii_alphanumeric() || matches!(byte, b'-' | b'.' | b'_' | b'~' | b'/' | b':') {
-            url.push(byte as char);
-        } else {
-            url.push_str(&format!("%{byte:02X}"));
-        }
-    }
-    url
 }
 
 /// Window aspect-ratio snap state: resizes the window so the video fills it

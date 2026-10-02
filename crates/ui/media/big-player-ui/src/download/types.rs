@@ -19,6 +19,7 @@ pub enum DownloadStatus {
 }
 
 /// Atomic progress counters shared between the UI thread and the worker thread.
+#[derive(Default)]
 pub struct DownloadProgress {
     /// Bytes transferred so far.
     pub bytes_downloaded: AtomicU64,

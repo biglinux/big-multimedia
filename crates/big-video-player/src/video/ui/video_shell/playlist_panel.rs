@@ -7,7 +7,6 @@ use super::*;
 
 pub(super) struct PlaylistPanel {
     pub(super) revealer: gtk::Revealer,
-    card: gtk::Box,
 }
 
 impl PlaylistPanel {
@@ -69,7 +68,17 @@ impl PlaylistPanel {
             .margin_start(8)
             .child(&card)
             .build();
-        Self { revealer, card }
+        // Into the list, on the playing row when there is one: the arrow
+        // keys and Alt+Up/Down then act at once. Once the slide is done, or
+        // the focus goes to what was on screen before the card.
+        revealer.connect_child_revealed_notify(|revealer| {
+            if revealer.is_child_revealed()
+                && let Some(card) = revealer.child()
+            {
+                focus_into(&card);
+            }
+        });
+        Self { revealer }
     }
 
     pub(super) fn shows(&self) -> bool {
@@ -77,37 +86,31 @@ impl PlaylistPanel {
     }
 
     /// Show between the header and the controls, `top` and `bottom` pixels
-    /// from the edges, or hide.
-    pub(super) fn set_shown(&self, shown: bool, top: i32, bottom: i32) {
-        if shown {
-            self.revealer.set_margin_top(top);
-            self.revealer.set_margin_bottom(bottom);
+    /// from the edges.
+    pub(super) fn show(&self, top: i32, bottom: i32) {
+        self.revealer.set_margin_top(top);
+        self.revealer.set_margin_bottom(bottom);
+        self.revealer.set_reveal_child(true);
+    }
+
+    pub(super) fn hide(&self) {
+        self.revealer.set_reveal_child(false);
+    }
+}
+
+/// Focus the list in `card`; without a list (the Files places), the search:
+/// typing then searches instead of reaching the player's shortcuts.
+fn focus_into(card: &gtk::Widget) {
+    let target = first_of(card, &|widget| {
+        widget.is::<gtk::ListView>() || widget.is::<gtk::GridView>()
+    })
+    .or_else(|| first_of(card, &|widget| widget.is::<gtk::SearchEntry>()));
+    match target {
+        Some(widget) => {
+            widget.grab_focus();
         }
-        self.revealer.set_reveal_child(shown);
-        if shown {
-            // Into the list, on the playing row when there is one: the arrow
-            // keys and Alt+Up/Down then act at once. Once the slide is done,
-            // or the focus goes to what was on screen before the card.
-            let card = self.card.downgrade();
-            glib::timeout_add_local_once(std::time::Duration::from_millis(200), move || {
-                let Some(card) = card.upgrade() else {
-                    return;
-                };
-                // Without a list (the Files places), into the search: typing
-                // searches instead of reaching the player's shortcuts.
-                let target = first_of(card.upcast_ref(), &|widget| {
-                    widget.is::<gtk::ListView>() || widget.is::<gtk::GridView>()
-                })
-                .or_else(|| first_of(card.upcast_ref(), &|widget| widget.is::<gtk::SearchEntry>()));
-                match target {
-                    Some(widget) => {
-                        widget.grab_focus();
-                    }
-                    None => {
-                        card.child_focus(gtk::DirectionType::TabForward);
-                    }
-                }
-            });
+        None => {
+            card.child_focus(gtk::DirectionType::TabForward);
         }
     }
 }

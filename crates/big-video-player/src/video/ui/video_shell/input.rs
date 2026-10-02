@@ -18,18 +18,8 @@ pub enum VideoShellInput {
     ShowIptvBrowser,
     /// BigNetScreen reported a change (session, position, receivers).
     TvChanged,
-    /// The TV card's "Stop sending".
-    TvStop,
-    /// "Use the player" (the TV plays on without the controls), or "Control
-    /// the TV" once released.
-    TvToggleRelease,
-    /// "Watch here too" (the player plays in step with the TV, silent), or
-    /// "Only on the TV".
-    TvHere,
-    /// "Show this one on the TV": the TV plays what the player holds.
-    TvReplace,
-    /// "Play the TV's here": the player opens what the TV plays, in step.
-    TvFollow,
+    /// A button of the TV card over the video or of the TV pill's menu.
+    Tv(crate::shared::tv_cast::TvCardAction),
     /// The header's settings button: open the panel home, or close it.
     TogglePanel,
     /// Add these files to the end of the playlist (dropped on the panel).

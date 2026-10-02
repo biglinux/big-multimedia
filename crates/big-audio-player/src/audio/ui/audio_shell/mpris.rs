@@ -192,7 +192,6 @@ impl AudioShell {
             }
             MprisCommand::SetShuffle(shuffle) => {
                 self.queue.set_shuffle(shuffle);
-                self.mpris_state.shuffle.store(shuffle, Ordering::Relaxed);
                 self.playback_bar
                     .emit(AudioPlaybackBarInput::SetShuffleActive(shuffle));
             }

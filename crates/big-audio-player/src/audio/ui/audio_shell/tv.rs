@@ -6,9 +6,25 @@
 use super::playback::volume_icon;
 use super::*;
 use crate::cast::daemon::{PlaybackStart, State};
-use crate::shared::tv_cast::TvMedia;
+use crate::shared::tv_cast::{TvCardAction, TvMedia};
 
 impl AudioShell {
+    pub(super) fn on_tv_card(&mut self, action: TvCardAction) {
+        match action {
+            TvCardAction::Stop => self.tv.control("stop", 0.0),
+            TvCardAction::ToggleRelease => self.toggle_tv_release(),
+            TvCardAction::Replace => self.replace_tv(),
+            TvCardAction::Follow => self.follow_tv(),
+            // The strip offers no "Watch here too": there is no picture.
+            TvCardAction::Here => {}
+        }
+    }
+
+    /// Whether the player holds the track the TV plays.
+    fn holds_the_tvs(&self) -> bool {
+        self.tv.source().as_deref() == Some(self.current_file.as_str())
+    }
+
     pub(super) fn on_tv_changed(&mut self) {
         if let Some(failure) = self.tv.take_failure() {
             self.notify(&failure);
@@ -16,8 +32,7 @@ impl AudioShell {
         match self.tv.playing() {
             Some(state) => {
                 if self.tv.released() {
-                    let other = self.tv.source().as_deref() != Some(self.current_file.as_str());
-                    self.tv_card.show_released(&state, other);
+                    self.tv_card.show_released(&state, !self.holds_the_tvs());
                 } else {
                     self.tv_card.show(Some(&state));
                     self.show_tv_in_transport(&state);
@@ -49,7 +64,7 @@ impl AudioShell {
 
     /// "Use the player" (the TV plays on, the player picks up where it is) or
     /// "Control the TV" (the transport drives the TV again, the player pauses).
-    pub(super) fn toggle_tv_release(&mut self) {
+    fn toggle_tv_release(&mut self) {
         if self.tv.released() {
             if let Some(mpv) = &self.mpv {
                 mpv.pause();
@@ -70,7 +85,7 @@ impl AudioShell {
 
     /// "Show this one on the TV": the TV plays the player's track from where
     /// the player is, and the transport drives the TV again.
-    pub(super) fn replace_tv(&mut self) {
+    fn replace_tv(&mut self) {
         let Some(state) = self.tv.playing() else {
             return;
         };
@@ -100,7 +115,7 @@ impl AudioShell {
 
     /// "Play the TV's here": play in the player the track the TV plays, at
     /// the TV's point. The TV plays on; the player stays free.
-    pub(super) fn follow_tv(&mut self) {
+    fn follow_tv(&mut self) {
         let Some(source) = self.tv.source() else {
             return;
         };
@@ -125,7 +140,7 @@ impl AudioShell {
             return;
         }
         if let (Some(mpv), Some(state)) = (&self.mpv, self.tv.playing())
-            && self.tv.source().as_deref() == Some(self.current_file.as_str())
+            && self.holds_the_tvs()
         {
             mpv.seek_absolute(state.position);
         }
@@ -172,8 +187,12 @@ impl AudioShell {
     }
 
     /// Move the queue and send the track that loads to `receiver`. False
-    /// when there is nowhere to go.
+    /// when there is nowhere to go, or while the TV still moves to the last
+    /// one: that switch would drop this one's.
     fn tv_skip(&mut self, forward: bool, receiver: String) -> bool {
+        if self.tv.switching() {
+            return false;
+        }
         let moved = if forward {
             self.queue.advance()
         } else {
@@ -222,7 +241,7 @@ impl AudioShell {
     /// Seek the player to where the TV is, if it plays the same track.
     fn follow_tv_position(&self, state: &State) {
         if let Some(mpv) = &self.mpv
-            && self.tv.source().as_deref() == Some(self.current_file.as_str())
+            && self.holds_the_tvs()
         {
             mpv.seek_absolute(state.position);
         }

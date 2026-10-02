@@ -10,16 +10,9 @@ pub struct DoubleKey(pub &'static str);
 #[derive(Clone, Copy)]
 pub struct StringKey(pub &'static str);
 
-// UI mode
-pub const ADVANCED_MODE: BoolKey = BoolKey("advanced-mode");
-
 // Dialog sizes
-pub const PREFS_WINDOW_WIDTH: IntKey = IntKey("prefs-window-width");
-pub const PREFS_WINDOW_HEIGHT: IntKey = IntKey("prefs-window-height");
 pub const APPEARANCE_WINDOW_WIDTH: IntKey = IntKey("appearance-window-width");
 pub const APPEARANCE_WINDOW_HEIGHT: IntKey = IntKey("appearance-window-height");
-pub const AUDIO_PREFS_WINDOW_WIDTH: IntKey = IntKey("audio-prefs-window-width");
-pub const AUDIO_PREFS_WINDOW_HEIGHT: IntKey = IntKey("audio-prefs-window-height");
 pub const AUDIO_APPEARANCE_WINDOW_WIDTH: IntKey = IntKey("audio-appearance-window-width");
 pub const AUDIO_APPEARANCE_WINDOW_HEIGHT: IntKey = IntKey("audio-appearance-window-height");
 
@@ -44,8 +37,6 @@ pub const SUB_FONT: StringKey = StringKey("sub-font");
 // Playback
 pub const RESUME_PLAYBACK: BoolKey = BoolKey("resume-playback");
 pub const LOOP_MODE: StringKey = StringKey("loop-mode");
-pub const KEEP_OPEN: StringKey = StringKey("keep-open");
-pub const KEEP_OPEN_PAUSE: BoolKey = BoolKey("keep-open-pause");
 pub const IDLE_MODE: StringKey = StringKey("idle-mode");
 
 // Audio effects
@@ -57,11 +48,6 @@ pub const EQ_PRESET: StringKey = StringKey("eq-preset");
 
 // Render profile (simple mode preset)
 pub const RENDER_PROFILE: StringKey = StringKey("render-profile");
-
-// Video sync & interpolation
-pub const VIDEO_SYNC: StringKey = StringKey("video-sync");
-pub const INTERPOLATION: BoolKey = BoolKey("interpolation");
-pub const TSCALE: StringKey = StringKey("tscale");
 
 pub const HDR_COMPUTE_PEAK: BoolKey = BoolKey("hdr-compute-peak");
 

@@ -153,30 +153,10 @@ impl Component for VideoShell {
                 ]));
             }
         });
-        let tv_menu = crate::shared::tv_cast::TvCard::new(
-            "tv-menu",
-            false,
-            {
-                let sender = sender.clone();
-                move || sender.input(VideoShellInput::TvStop)
-            },
-            {
-                let sender = sender.clone();
-                move || sender.input(VideoShellInput::TvToggleRelease)
-            },
-            {
-                let sender = sender.clone();
-                move || sender.input(VideoShellInput::TvReplace)
-            },
-            {
-                let sender = sender.clone();
-                move || sender.input(VideoShellInput::TvFollow)
-            },
-            Some(Box::new({
-                let sender = sender.clone();
-                move || sender.input(VideoShellInput::TvHere)
-            })),
-        );
+        let tv_menu = crate::shared::tv_cast::TvCard::new("tv-menu", false, true, true, {
+            let sender = sender.clone();
+            move |action| sender.input(VideoShellInput::Tv(action))
+        });
         let tv_pill = gtk::MenuButton::builder()
             .label(i18n("On the TV"))
             .tooltip_text(i18n("The TV is still playing"))
@@ -394,25 +374,11 @@ impl Component for VideoShell {
         wire_osd_autohide(&main_overlay, &osd);
         // The settings panel sits over the video, clear of header and controls,
         // which stay shown while it is open.
-        let tv_card = crate::shared::tv_cast::TvCard::new(
-            "settings-panel",
-            false,
-            {
-                let sender = sender.clone();
-                move || sender.input(VideoShellInput::TvStop)
-            },
-            {
-                let sender = sender.clone();
-                move || sender.input(VideoShellInput::TvToggleRelease)
-            },
-            // Attached, the TV already plays what the player holds.
-            || {},
-            || {},
-            Some(Box::new({
-                let sender = sender.clone();
-                move || sender.input(VideoShellInput::TvHere)
-            })),
-        );
+        // Attached, the TV already plays what the player holds: no swap.
+        let tv_card = crate::shared::tv_cast::TvCard::new("settings-panel", false, false, true, {
+            let sender = sender.clone();
+            move |action| sender.input(VideoShellInput::Tv(action))
+        });
         main_overlay.add_overlay(&tv_card.root);
         let panel = super::panel::SettingsPanel::new(&sender);
         main_overlay.add_overlay(&panel.revealer);
@@ -639,7 +605,7 @@ impl Component for VideoShell {
                     self.handle_mpris_command(command, &sender, gtk_window_ref);
                 }
                 VideoShellInput::Controls(out) => self.on_controls(out, window_ref),
-                VideoShellInput::Playlist(out) => self.on_playlist(out),
+                VideoShellInput::Playlist(out) => self.on_playlist(out, &sender),
                 VideoShellInput::EnterTrimMode => self.enter_trim_mode(),
                 VideoShellInput::ExitTrimMode => self.exit_trim_mode(),
                 VideoShellInput::TrimBar(out) => self.on_trim_bar(out, window_ref),
@@ -662,7 +628,7 @@ impl Component for VideoShell {
                 VideoShellInput::PanelBack => self.panel_back(false, &sender),
                 VideoShellInput::PanelEscape => self.panel_back(true, &sender),
                 VideoShellInput::ClosePanel => self.close_panel(&sender),
-                VideoShellInput::HidePlaylistPanel => self.playlist_panel.set_shown(false, 0, 0),
+                VideoShellInput::HidePlaylistPanel => self.playlist_panel.hide(),
                 VideoShellInput::EnqueueFiles(paths) => self.enqueue_files(&paths),
                 VideoShellInput::ShowYtdlQuality => {
                     if let Some(root) = window_ref {
@@ -719,7 +685,8 @@ impl Component for VideoShell {
                         Self::show_restore_defaults_dialog(root, || {});
                     }
                 }
-                VideoShellInput::RestoreDefaultsConfirmed => self.restore_all_defaults(),
+                // A restart picks up the new values: mpv is configured at startup.
+                VideoShellInput::RestoreDefaultsConfirmed => self.settings.reset_to_defaults(),
                 VideoShellInput::OpenFiles(paths) => VideoShell::open_files(&paths, &sender),
                 VideoShellInput::PlaylistResolved {
                     entries,
@@ -762,7 +729,7 @@ impl Component for VideoShell {
                 }
                 VideoShellInput::SleepTick => self.sleep_tick(),
                 VideoShellInput::TogglePlayback => {
-                    if let Some(state) = self.tv_attached() {
+                    if let Some(state) = self.tv.attached() {
                         self.tv
                             .control(if state.paused { "play" } else { "pause" }, 0.0);
                     } else if let Some(mpv) = self.mpv.borrow().as_ref() {
@@ -770,20 +737,7 @@ impl Component for VideoShell {
                     }
                 }
                 VideoShellInput::TvChanged => self.on_tv_changed(),
-                VideoShellInput::TvStop => {
-                    self.tv_pill.popdown();
-                    self.tv.control("stop", 0.0);
-                }
-                VideoShellInput::TvToggleRelease => {
-                    if self.tv.released() {
-                        self.attach_tv();
-                    } else {
-                        self.release_tv();
-                    }
-                }
-                VideoShellInput::TvHere => self.toggle_tv_here(),
-                VideoShellInput::TvReplace => self.replace_tv(),
-                VideoShellInput::TvFollow => self.follow_tv(),
+                VideoShellInput::Tv(action) => self.on_tv_card(action),
                 VideoShellInput::ToggleFullscreen => {
                     if let Some(root) = window_ref {
                         let _ = toggle_surface_fullscreened(root);
@@ -791,7 +745,7 @@ impl Component for VideoShell {
                 }
                 VideoShellInput::Escape => {
                     if self.playlist_panel.shows() {
-                        self.playlist_panel.set_shown(false, 0, 0);
+                        self.playlist_panel.hide();
                     } else if self.panel.is_open() {
                         self.panel_back(true, &sender);
                     } else if let Some(root) = window_ref

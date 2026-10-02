@@ -13,29 +13,13 @@ use big_media_runtime::player::mpv_backend::filters::build_audio_filter_chain;
 use proptest::prelude::*;
 
 // helper — build effects from raw flags + finite numbers
-fn make_fx(
-    normalize: bool,
-    gate_enabled: bool,
-    gate_intensity: f64,
-    hpf_enabled: bool,
-    hpf_frequency: f64,
-    compressor_enabled: bool,
-    compressor_intensity: f64,
-    eq_bands: &[(f64, f64)],
-) -> AudioEffects<'_> {
+fn make_fx(normalize: bool, eq_bands: &[(f64, f64)]) -> AudioEffects<'_> {
     AudioEffects {
         normalize,
-        nr_enabled: false, // nr requires ladspa plugin lookup; skip
-        nr_strength: 0.0,
+        nr_strength: 0.0, // nr requires ladspa plugin lookup; skip
         nr_model: 0,
         nr_mono: false,
-        gate_enabled,
-        gate_intensity,
-        hpf_enabled,
-        hpf_frequency,
         eq_bands,
-        compressor_enabled,
-        compressor_intensity,
     }
 }
 
@@ -75,27 +59,12 @@ proptest! {
     #[test]
     fn filter_chain_well_formed(
         normalize in any::<bool>(),
-        gate_enabled in any::<bool>(),
-        gate_intensity in 0.0_f64..=1.0,
-        hpf_enabled in any::<bool>(),
-        hpf_frequency in 20.0_f64..=20_000.0,
-        compressor_enabled in any::<bool>(),
-        compressor_intensity in 0.0_f64..=1.0,
         eq_bands in proptest::collection::vec(
             (50.0_f64..=20_000.0, -20.0_f64..=20.0),
             0..6,
         ),
     ) {
-        let fx = make_fx(
-            normalize,
-            gate_enabled,
-            gate_intensity,
-            hpf_enabled,
-            hpf_frequency,
-            compressor_enabled,
-            compressor_intensity,
-            &eq_bands,
-        );
+        let fx = make_fx(normalize, &eq_bands);
         let chain = build_audio_filter_chain(&fx);
         assert_chain_invariants(&chain);
     }
@@ -108,7 +77,7 @@ proptest! {
             0..6,
         ),
     ) {
-        let fx = make_fx(false, false, 0.0, false, 0.0, false, 0.0, &eq_bands);
+        let fx = make_fx(false, &eq_bands);
         let chain = build_audio_filter_chain(&fx);
         prop_assert!(chain.is_empty(), "expected empty, got: {chain:?}");
     }

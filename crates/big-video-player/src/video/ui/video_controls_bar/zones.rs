@@ -164,10 +164,6 @@ fn control_name(name: &str) -> &'static str {
     }
 }
 
-/// START box: volume / speed / voice hover popovers (shared builders) in one
-/// exclusive-hover group. Returns the
-/// box plus the three hover popovers so the shell's OSD auto-hide can keep the
-/// OSD shown while one is open.
 /// START box widgets: the reparentable control boxes, the readout value labels
 /// the responsive breakpoint hides on a narrow bar, and the hover popovers.
 pub(super) struct StartBoxWidgets {
@@ -270,6 +266,9 @@ impl WeakSoundIndicator {
     }
 }
 
+/// START box: volume / speed / voice hover popovers (shared builders) in one
+/// exclusive-hover group. Returns the box plus the three hover popovers so the
+/// shell's OSD auto-hide can keep the OSD shown while one is open.
 pub(super) fn build_start_box(
     settings: &Settings,
     mpv: &MpvSlot,

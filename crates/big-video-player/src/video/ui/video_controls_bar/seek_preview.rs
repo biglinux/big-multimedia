@@ -48,7 +48,7 @@ pub(super) fn wire_seek_hover(
     label: &gtk::Label,
     duration_secs: &Rc<Cell<f64>>,
     chapters: &Rc<RefCell<Vec<(f64, String)>>>,
-    current_file: &Arc<Mutex<Option<String>>>,
+    current_file: &Rc<RefCell<Option<String>>>,
     thumb_gen: &Rc<ThumbnailGenerator>,
     settings: &Settings,
 ) {
@@ -83,15 +83,15 @@ pub(super) fn wire_seek_hover(
             }
             label.set_label(&text);
 
-            // Streams: ffmpeg seek is slow → skip the thumb to stay responsive.
-            let file = current_file
-                .lock()
-                .unwrap_or_else(std::sync::PoisonError::into_inner)
-                .clone();
-            let show_thumb = settings.get_bool(keys::SEEKBAR_THUMBNAIL)
-                && file.as_deref().is_some_and(|f| !is_stream_uri(f));
-            thumb.set_visible(show_thumb);
-            if show_thumb && thumb_gen.request(file.as_deref().unwrap_or_default(), time) {
+            // No file for streams: their ffmpeg seek is too slow to keep up.
+            let file = current_file.borrow();
+            let file = file
+                .as_deref()
+                .filter(|_| settings.get_bool(keys::SEEKBAR_THUMBNAIL));
+            thumb.set_visible(file.is_some());
+            if let Some(file) = file
+                && thumb_gen.request(file, time)
+            {
                 thumb.set_paintable(gdk::Paintable::NONE);
             }
 
@@ -217,8 +217,9 @@ pub(super) fn wire_neighbour_preview(button: &gtk::Button, mpv: &MpvSlot, step: 
             if shown.borrow().as_deref() != Some(path.as_str()) {
                 shown.replace(Some(path.clone()));
                 thumb.set_paintable(gdk::Paintable::NONE);
-                thumb.set_visible(!is_stream_uri(&path));
-                if !is_stream_uri(&path) {
+                let local = !crate::video::ui::video_shell::is_remote_uri(&path);
+                thumb.set_visible(local);
+                if local {
                     let thumb = thumb.downgrade();
                     let shown = shown.clone();
                     glib::spawn_future_local(async move {
@@ -280,12 +281,4 @@ fn chapter_name_at(chapters: &[(f64, String)], time: f64) -> Option<&str> {
         }
     }
     current.filter(|title| !title.is_empty())
-}
-
-/// True for a remote / stream URI whose ffmpeg seek is too slow to thumbnail.
-fn is_stream_uri(path: &str) -> bool {
-    path.starts_with("http://")
-        || path.starts_with("https://")
-        || path.starts_with("rtsp://")
-        || path.starts_with("rtmp://")
 }

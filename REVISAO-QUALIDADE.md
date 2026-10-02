@@ -19,6 +19,27 @@ Só itens em aberto. O que já foi corrigido está no histórico do git.
   `malloc_conf`) e conferir com `nm -D` se o export no `build.rs` dos players
   ainda é necessário.
 
+## Simplificações levantadas na revisão de 2026-10-02, não feitas
+
+Maiores ou dependentes de conferência na GUI; cada uma foi lida no código.
+
+- **TV:** os dois `tv.rs` repetem a mesma máquina de estados (`tv_last`,
+  `tv_was_released`, fim a 3 s do término). Mover para `TvLink` um
+  `observe()` e o último estado; um `TvMedia::handoff` cobriria as 4 montagens
+  de `PlaybackStart`; `toggle_pause`/`toggle_mute`/`set_volume` em `TvLink`
+  cobririam os 3 lugares que soletram os comandos.
+- **Vídeo:** fiação de diálogo com entrada repetida 3× (Abrir URL, Abrir disco,
+  Ir para tempo; manter o botão fraco do AGENTS.md); moldura de miniatura
+  montada 3× (`library.rs`, `queue_view.rs`, `panel.rs`); três tabelas paralelas
+  por id em `zones.rs`; `IdleBackground::show/hide` recebem um `Display` que
+  todos os chamadores buscam igual.
+- **Vídeo, busca da biblioteca:** `library::refresh` tira o cache `scanned`
+  com `mem::take`; uma segunda busca durante a varredura reescaneia tudo.
+- **Áudio:** `BrowserNodeContract` (só testes leem `label/secondary/count`)
+  custa 3 clones e um `i18n` por nó na thread da GUI; 9 ações `win.*` repetem o
+  mesmo closure em `component.rs`, cujo `ViewStack` local ainda recebe títulos
+  e ícones que ninguém mostra.
+
 ## Não verificado na interface
 
 Cobertos só por leitura e compilação:

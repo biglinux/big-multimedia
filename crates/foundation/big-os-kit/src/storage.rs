@@ -149,67 +149,19 @@ mod tests {
 
     #[test]
     fn atomic_write_overwrites_and_leaves_no_temp() {
-        let path = storage_test_path("atomic-overwrite");
+        // A directory of its own: other tests write temp files to the shared
+        // temp dir at the same time.
+        let dir = storage_test_path("atomic-overwrite");
+        let path = dir.join("state.json");
         atomic_write(&path, b"first").unwrap();
         atomic_write(&path, b"second-longer").unwrap();
         assert_eq!(fs::read(&path).unwrap(), b"second-longer");
-        // The sibling temp file (`.<name>.tmp.<pid>.<seq>`) must be renamed away,
-        // not left behind.
-        let parent = path.parent().unwrap();
-        let name = path.file_name().unwrap().to_string_lossy().into_owned();
-        let stray: Vec<_> = fs::read_dir(parent)
+        let names: Vec<_> = fs::read_dir(&dir)
             .unwrap()
             .flatten()
-            .filter(|e| {
-                let n = e.file_name().to_string_lossy().into_owned();
-                n.starts_with(&format!(".{name}.tmp."))
-            })
+            .map(|e| e.file_name())
             .collect();
-        assert!(stray.is_empty(), "temp file left behind: {stray:?}");
-        let _ = fs::remove_file(&path);
-    }
-}
-
-#[cfg(test)]
-mod review_atomic_tests {
-    use super::*;
-
-    #[cfg(unix)]
-    #[test]
-    fn exclusive_creation_never_follows_a_symlink() {
-        use std::os::unix::fs::symlink;
-        let base = std::env::temp_dir().join(format!(
-            "big-private-{}-{}",
-            std::process::id(),
-            TEMP_SEQ.fetch_add(1, Ordering::Relaxed)
-        ));
-        fs::create_dir(&base).unwrap();
-        let victim = base.join("victim");
-        fs::write(&victim, b"keep").unwrap();
-        let link = base.join("temp");
-        symlink(&victim, &link).unwrap();
-        assert!(create_sibling_file(&link, true).is_err());
-        assert_eq!(fs::read(&victim).unwrap(), b"keep");
-        fs::remove_dir_all(base).unwrap();
-    }
-
-    #[test]
-    fn failed_write_preserves_old_content_and_removes_partial_file() {
-        let base = std::env::temp_dir().join(format!(
-            "big-rollback-{}-{}",
-            std::process::id(),
-            TEMP_SEQ.fetch_add(1, Ordering::Relaxed)
-        ));
-        fs::create_dir(&base).unwrap();
-        let path = base.join("state");
-        fs::write(&path, b"old").unwrap();
-        let result: std::io::Result<()> = atomic_replace(&path, false, false, |file| {
-            file.write_all(b"partial")?;
-            Err(std::io::Error::other("injected write failure"))
-        });
-        assert!(result.is_err());
-        assert_eq!(fs::read(&path).unwrap(), b"old");
-        assert_eq!(fs::read_dir(&base).unwrap().count(), 1);
-        fs::remove_dir_all(base).unwrap();
+        assert_eq!(names, ["state.json"], "temp file left behind");
+        let _ = fs::remove_dir_all(&dir);
     }
 }

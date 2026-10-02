@@ -69,7 +69,6 @@ pub(crate) fn query_tracks_for_node(
         | BrowserNodeKind::Year
         | BrowserNodeKind::Playlist
         | BrowserNodeKind::SmartPlaylist => {
-            let mut filters: Vec<(String, String)> = Vec::new();
             let column = match node_kind {
                 BrowserNodeKind::Artist
                     if grouping.level(0) == GroupBy::AlbumArtist
@@ -82,20 +81,11 @@ pub(crate) fn query_tracks_for_node(
                 BrowserNodeKind::Year => "year",
                 _ => "artist",
             };
-            filters.push((column.to_string(), node_key.to_string()));
-
-            if !node_secondary.is_empty()
-                && let Some((parent_column, parent_value)) = node_secondary.split_once(':')
-            {
-                filters.push((parent_column.to_string(), parent_value.to_string()));
+            let mut filters = vec![(column, node_key)];
+            if let Some(parent) = node_secondary.split_once(':') {
+                filters.push(parent);
             }
-
-            let filter_refs: Vec<(&str, &str)> = filters
-                .iter()
-                .map(|(column, value)| (column.as_str(), value.as_str()))
-                .collect();
-            queries::get_library_tracks(conn, &filter_refs, filter_text, age_secs)
-                .unwrap_or_default()
+            queries::get_library_tracks(conn, &filters, filter_text, age_secs).unwrap_or_default()
         }
     }
 }
@@ -149,6 +139,14 @@ pub(crate) fn try_build_library_tree_snapshot(
         Vec::new()
     };
     if !compilations.is_empty() {
+        let mut by_album: std::collections::HashMap<&str, Vec<&Track>> =
+            std::collections::HashMap::new();
+        for track in &tracks {
+            by_album
+                .entry(track.album.as_deref().unwrap_or_default())
+                .or_default()
+                .push(track);
+        }
         let va_count: i64 = compilations.iter().map(|(_, count)| count).sum();
         let va_children = compilations
             .iter()
@@ -158,11 +156,10 @@ pub(crate) fn try_build_library_tree_snapshot(
                 key: album.clone(),
                 count: *count as i32,
                 secondary: "Various Artists".to_string(),
-                children: tracks
-                    .iter()
-                    .filter(|track| group_value(track, GroupBy::Album) == *album)
-                    .map(file_node)
-                    .collect(),
+                children: by_album
+                    .get(album.as_str())
+                    .map(|tracks| tracks.iter().copied().map(file_node).collect())
+                    .unwrap_or_default(),
                 track: None,
             })
             .collect();
@@ -223,8 +220,10 @@ fn group_nodes(
         .filter(|(value, _)| !value.is_empty())
         .collect();
     groups.sort_by(|(a, _), (b, _)| {
-        a.to_ascii_lowercase()
-            .cmp(&b.to_ascii_lowercase())
+        let (a_folded, b_folded) = (a.bytes(), b.bytes());
+        a_folded
+            .map(|c| c.to_ascii_lowercase())
+            .cmp(b_folded.map(|c| c.to_ascii_lowercase()))
             .then_with(|| a.cmp(b))
     });
     let next_idx = level_idx + 1;
@@ -601,6 +600,11 @@ mod tests {
             .iter()
             .find(|node| node.kind == BrowserNodeKind::VariousArtists);
         assert_eq!(various_artists_node.map(|node| node.count), Some(2));
+        let comp_files: Vec<_> = various_artists_node
+            .and_then(|node| node.children.first())
+            .map(|comp| comp.children.iter().map(|file| file.key.as_str()).collect())
+            .unwrap_or_default();
+        assert_eq!(comp_files, ["/m/c1.mp3", "/m/c2.mp3"]);
 
         // Artist groups: Alice, Bob, Carol, Dave — each a leaf level (depth 1)
         // whose children are file nodes.
@@ -618,6 +622,27 @@ mod tests {
                 .iter()
                 .all(|child| child.kind == BrowserNodeKind::File)
         }));
+        Ok(())
+    }
+
+    #[test]
+    fn tree_groups_sort_case_insensitively_then_by_case() -> MediaResult<()> {
+        let conn = setup_db()?;
+        for (path, artist) in [
+            ("/m/1.mp3", "beta"),
+            ("/m/2.mp3", "alpha"),
+            ("/m/3.mp3", "Alpha"),
+        ] {
+            insert_track(&conn, &track(path, artist, artist, "", "", 2000))?;
+        }
+        let tree_snapshot = build_library_tree_snapshot(&conn, &artist_grouping(), "", None);
+        let artists: Vec<_> = tree_snapshot
+            .level0
+            .iter()
+            .filter(|node| node.kind == BrowserNodeKind::Artist)
+            .map(|node| node.key.as_str())
+            .collect();
+        assert_eq!(artists, ["Alpha", "alpha", "beta"]);
         Ok(())
     }
 

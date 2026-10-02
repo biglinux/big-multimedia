@@ -12,7 +12,7 @@
 //! # Module groups
 //!
 //! - Pure formatting and parsing — [`bytes`], [`time`], [`track_labels`],
-//!   [`playlist_order`], [`container_compat`].
+//!   [`playlist_order`].
 //! - File and metadata helpers — [`media`], [`ffmpeg`].
 //! - GTK widgets and dialogs — [`audio`], [`playback`], [`surface`],
 //!   [`preference_rows`], [`initials_avatar`].
@@ -39,8 +39,6 @@
 pub mod audio;
 /// Human-readable byte-size formatting.
 pub mod bytes;
-/// Chromecast container/codec compatibility checks.
-pub mod container_compat;
 /// FFmpeg codec label helpers.
 pub mod ffmpeg;
 /// Initials-based avatar widgets and color helpers.

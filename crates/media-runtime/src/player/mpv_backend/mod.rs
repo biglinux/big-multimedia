@@ -9,10 +9,7 @@ pub use screenshots::ScreenshotResult;
 mod types;
 
 pub use backend::{MpvBackend, MpvError};
-pub use types::{
-    AudioCacheProfile, AudioEffects, AudioEffectsSnapshot, AudioMetadata, PlayerEvent,
-    TrackMetadata,
-};
+pub use types::{AudioCacheProfile, AudioEffects, AudioMetadata, PlayerEvent, TrackMetadata};
 
 #[cfg(feature = "video")]
 pub(crate) fn is_proprietary_nvidia_session() -> bool {

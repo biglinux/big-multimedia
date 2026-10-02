@@ -13,8 +13,7 @@ pub(super) fn valid(key: &str, value: &str) -> bool {
         return false;
     }
     match key {
-        "advanced-mode"
-        | "mute"
+        "mute"
         | "deinterlace"
         | "auto-window-resize"
         | "audio-normalize"
@@ -29,7 +28,6 @@ pub(super) fn valid(key: &str, value: &str) -> bool {
         | "secondary-subtitles"
         | "resume-playback"
         | "keep-open-pause"
-        | "interpolation"
         | "hdr-compute-peak"
         | "target-colorspace-hint"
         | "cache"
@@ -65,12 +63,8 @@ pub(super) fn valid(key: &str, value: &str) -> bool {
         | "audio-high-contrast"
         | "taskbar-progress"
         | "audio-album-art-bg" => matches!(value, "true" | "false"),
-        "prefs-window-width"
-        | "prefs-window-height"
-        | "appearance-window-width"
+        "appearance-window-width"
         | "appearance-window-height"
-        | "audio-prefs-window-width"
-        | "audio-prefs-window-height"
         | "audio-appearance-window-width"
         | "audio-appearance-window-height"
         | "volume-max"

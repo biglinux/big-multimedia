@@ -245,6 +245,9 @@ fn bind_tree_row(
     icon.set_visible(row_presentation.show_icon);
     avatar.set_visible(row_presentation.avatar.is_some());
     label.set_label(&row_presentation.label);
+    // Rows are recycled: a song's styling must not stay on a group or heading.
+    label.remove_css_class("browser-title");
+    track_count_label.remove_css_class("browser-duration");
     list_item.set_activatable(row_presentation.is_activatable);
     list_item.set_selectable(row_presentation.is_selectable);
     show_tracks_button.set_visible(row_presentation.show_tracks_button);
@@ -276,7 +279,6 @@ fn bind_tree_row(
     }
 
     artist_label.set_visible(false);
-    label.remove_css_class("browser-title");
     big_relm4_components::feedback::tooltip::set(&text_box, node.label());
 
     if let Some(track_count_label_text) = &row_presentation.track_count_label {

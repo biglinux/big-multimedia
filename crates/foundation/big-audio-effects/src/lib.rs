@@ -15,22 +15,11 @@
 //!   identifiers ([`noise_reduction`]).
 //! - The canonical 10-band equalizer center frequencies and labels
 //!   ([`equalizer`]).
-//! - Derived gate and compressor curves plus FFmpeg filter string
-//!   formatters ([`dynamics`]).
 //!
 //! Treat the values exported here as part of a public on-disk format:
 //! changing them invalidates user presets and breaks PipeWire graphs.
 //!
 //! # Examples
-//!
-//! Build an FFmpeg compressor filter string from a user slider:
-//!
-//! ```
-//! use big_audio_effects::dynamics::ffmpeg_acompressor_filter;
-//!
-//! let filter = ffmpeg_acompressor_filter(0.5);
-//! assert!(filter.starts_with("acompressor="));
-//! ```
 //!
 //! Look up the labels shown to users in the equalizer UI:
 //!
@@ -41,8 +30,6 @@
 //! assert_eq!(EQ_BAND_LABELS[0], "31");
 //! ```
 
-/// Derived gate and compressor curves and FFmpeg filter formatters.
-pub mod dynamics;
 /// Canonical 10-band equalizer frequencies and labels.
 pub mod equalizer;
 /// Noise-reduction model identifiers and LADSPA control contracts.

@@ -1,10 +1,7 @@
-//! Illustration image builders backed by GResource icons, with auto-detection
-//! of the active app's resource prefix (audio vs video player).
-//! bigagents: app-local-adapter; resource-prefix probing is app bundle policy.
+//! Illustration image builders backed by GResource icons.
 
 use std::cell::RefCell;
 use std::collections::HashMap;
-use std::sync::OnceLock;
 
 use gtk::prelude::*;
 
@@ -34,25 +31,4 @@ pub fn illustration(resource_prefix: &str, filename: &str) -> gtk::Image {
     img.set_margin_top(6);
     img.set_margin_bottom(6);
     img
-}
-
-/// Video is probed first because a host binary may bundle both resource sets.
-pub fn illustrations_prefix() -> &'static str {
-    static PREFIX: OnceLock<&str> = OnceLock::new();
-    PREFIX.get_or_init(|| {
-        if gtk::gio::resources_lookup_data(
-            "/br/com/biglinux/VideoPlayer/illustrations/normalize.svg",
-            gtk::gio::ResourceLookupFlags::NONE,
-        )
-        .is_ok()
-        {
-            "/br/com/biglinux/VideoPlayer/illustrations/"
-        } else {
-            "/br/com/biglinux/AudioPlayer/illustrations/"
-        }
-    })
-}
-
-pub fn illustration_auto(filename: &str) -> gtk::Image {
-    illustration(illustrations_prefix(), filename)
 }

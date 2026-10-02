@@ -19,19 +19,16 @@ pub mod audio_trim_bar;
 /// `BrowserNode` GObject node type for the file/library browser tree.
 #[cfg(feature = "audio-panels")]
 pub mod browser_node;
+/// Shared cut timeline drawing and pointer interaction.
+pub mod cut_timeline;
 /// Generic HTTP download-manager backend (worker + per-task state/widgets).
 #[cfg(feature = "audio-panels")]
 pub mod download;
-/// Bounded favicon-texture LRU cache (`gdk::Texture`) for the radio panel.
-pub mod favicon_cache;
-/// Illustration/artwork rendering helpers.
-pub mod illustration;
-
-/// Shared cut timeline drawing and pointer interaction.
-pub mod cut_timeline;
 /// Slide-up download-manager panel.
 #[cfg(feature = "audio-panels")]
 pub mod download_panel;
+/// Bounded favicon-texture LRU cache (`gdk::Texture`) for the radio panel.
+pub mod favicon_cache;
 /// Flat directory file browser.
 #[cfg(feature = "audio-panels")]
 pub mod file_browser;

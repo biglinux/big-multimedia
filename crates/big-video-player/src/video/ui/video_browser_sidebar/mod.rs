@@ -72,15 +72,15 @@ pub enum SidebarMode {
 /// Display state the shell pushes into the sidebar.
 #[derive(Debug)]
 pub enum VideoBrowserSidebarInput {
-    /// Replace the listing with a flat set of paths opened externally (open
-    /// dialog / drag-drop / IPTV / m3u). `folder` is the directory to present as
-    /// the browse context (breadcrumb + sub-folders), or `None` for an ad-hoc
-    /// set (multiple files / remote stream) shown as a plain list.
     /// Where the playing video is, in seconds (for the playlist's end time).
     SetPosition(f64),
     /// The play queue changed under the tab being shown (an add, a "play
     /// next"): update it without switching tabs.
     SetQueue(Vec<String>),
+    /// Replace the listing with a flat set of paths opened externally (open
+    /// dialog / drag-drop / IPTV / m3u). `folder` is the directory to present as
+    /// the browse context (breadcrumb + sub-folders), or `None` for an ad-hoc
+    /// set (multiple files / remote stream) shown as a plain list.
     SetPlaylist {
         paths: Vec<String>,
         folder: Option<String>,
@@ -163,10 +163,9 @@ pub(crate) struct BrowserState {
     folder_entry_count: Cell<u32>,
     /// Wrapping counter bumped on each folder navigation to cancel in-flight scans.
     scan_generation: Cell<u64>,
-    /// Whether the last recursive scan hit `SCAN_LIMIT`.
-    truncated: Cell<bool>,
-    /// Total files found by the last scan (shown when truncated).
-    total_found: Cell<usize>,
+    /// How many files the last recursive scan found, when that hit
+    /// `SCAN_LIMIT` and the listing shows fewer.
+    truncated_total: Cell<Option<usize>>,
     /// Files mode: whether multi-select (triage) mode is on.
     select_mode: Cell<bool>,
     /// Files mode: the set of selected video paths (for batch actions).
@@ -195,7 +194,7 @@ pub(crate) struct BrowserState {
     /// Playlist mode: the count, total length and end time over the list.
     summary: RefCell<Option<glib::WeakRef<gtk::Label>>>,
     /// Length of each queued video once probed, for the summary.
-    lengths: Rc<RefCell<std::collections::HashMap<String, f64>>>,
+    lengths: RefCell<std::collections::HashMap<String, f64>>,
     /// Where the playing video is, in seconds.
     position: Cell<f64>,
 }
@@ -212,21 +211,29 @@ impl BrowserState {
     }
 
     /// The list shown by the active mode (Files folder listing vs play queue).
-    fn active_items(&self) -> Vec<String> {
+    fn active_list(&self) -> std::cell::Ref<'_, Vec<String>> {
         match self.mode.get() {
-            SidebarMode::Files => self.entries.borrow().clone(),
-            SidebarMode::Playlist => self.queue.borrow().clone(),
+            SidebarMode::Files => self.entries.borrow(),
+            SidebarMode::Playlist => self.queue.borrow(),
         }
+    }
+
+    fn active_items(&self) -> Vec<String> {
+        self.active_list().clone()
+    }
+
+    /// The active list's entry at `index`.
+    fn item_at(&self, index: usize) -> Option<String> {
+        self.active_list().get(index).cloned()
     }
 
     /// Recompute `pos` from `current_path` against the active list.
     fn recompute_pos(&self) {
-        let items = self.active_items();
         let pos = self
             .current_path
             .borrow()
             .as_ref()
-            .and_then(|cur| items.iter().position(|p| p == cur))
+            .and_then(|cur| self.active_list().iter().position(|p| p == cur))
             .map_or(-1, |i| i as i64);
         self.pos.set(pos);
     }
@@ -410,11 +417,9 @@ impl BrowserState {
                 let scan = if recursive {
                     playlist::scan_folder_recursive(path)
                 } else {
-                    let files = playlist::scan_folder_flat(path);
                     playlist::ScanResult {
-                        total_found: files.len(),
-                        truncated: false,
-                        files,
+                        files: playlist::scan_folder_flat(path),
+                        ..Default::default()
                     }
                 };
                 let subfolders = if recursive {
@@ -425,24 +430,16 @@ impl BrowserState {
                 (scan, subfolders)
             })
             .await
-            .unwrap_or_else(|_| {
-                (
-                    crate::media::playlist::ScanResult {
-                        files: Vec::new(),
-                        truncated: false,
-                        total_found: 0,
-                    },
-                    Vec::new(),
-                )
-            });
+            .unwrap_or_default();
 
             // Folder switched again while scanning → drop this stale result.
             if state.scan_generation.get() != generation {
                 return;
             }
 
-            state.truncated.set(scan.truncated);
-            state.total_found.set(scan.total_found);
+            state
+                .truncated_total
+                .set(scan.truncated.then_some(scan.total_found));
             state.entries.replace(scan.files);
             state.subfolders.replace(subfolders);
             state.recompute_pos();
@@ -795,8 +792,7 @@ impl Component for VideoBrowserSidebar {
             store: RefCell::new(None),
             folder_entry_count: Cell::new(0),
             scan_generation: Cell::new(0),
-            truncated: Cell::new(false),
-            total_found: Cell::new(0),
+            truncated_total: Cell::new(None),
             select_mode: Cell::new(false),
             selection: RefCell::new(HashSet::new()),
             select_count_label: RefCell::new(None),
@@ -809,7 +805,7 @@ impl Component for VideoBrowserSidebar {
             scanned: RefCell::default(),
             counts: RefCell::default(),
             summary: RefCell::new(None),
-            lengths: Rc::default(),
+            lengths: RefCell::default(),
             position: Cell::new(0.0),
             filter: RefCell::new(None),
         });
@@ -831,7 +827,7 @@ impl Component for VideoBrowserSidebar {
                     self.state.folder.replace(Some(folder));
                     self.state.entries.replace(paths);
                     self.state.subfolders.replace(Vec::new());
-                    self.state.truncated.set(false);
+                    self.state.truncated_total.set(None);
                     self.state.mode.set(SidebarMode::Files);
                     self.state.recompute_pos();
                     self.state.rebuild();
@@ -890,4 +886,57 @@ pub(crate) fn schedule_search(state: &Rc<BrowserState>, query: String) {
             library::refresh(&state, query);
         }
     });
+}
+
+#[cfg(test)]
+mod lifetime_tests {
+    use super::*;
+    use relm4::ComponentController;
+
+    /// The state keeps the view's filter, which reads the state: a strong
+    /// capture there kept the state, its settings, sender and lists alive
+    /// after the sidebar closed.
+    #[test]
+    #[ignore = "requires an isolated GTK session"]
+    fn closed_sidebar_releases_its_state() {
+        gtk::init().unwrap();
+        adw::init().unwrap();
+        let context = glib::MainContext::default();
+        let settle = || {
+            while context.pending() {
+                context.iteration(false);
+            }
+        };
+        for cycle in 0..25 {
+            let window = gtk::Window::new();
+            let controller = VideoBrowserSidebar::builder()
+                .launch(Settings::memory_only())
+                .detach();
+            window.set_child(Some(controller.widget()));
+            controller.emit(VideoBrowserSidebarInput::SetPlaylist {
+                paths: vec!["/videos/a.mkv".into(), "/videos/b.mkv".into()],
+                folder: None,
+            });
+            settle();
+            let state = Rc::downgrade(&controller.model().state);
+            assert!(
+                state.upgrade().is_some_and(|s| s.filter.borrow().is_some()),
+                "the playlist view and its filter are built"
+            );
+            window.destroy();
+            drop(window);
+            drop(controller);
+            for _ in 0..100 {
+                settle();
+                if state.upgrade().is_none() {
+                    break;
+                }
+                std::thread::sleep(Duration::from_millis(5));
+            }
+            assert!(
+                state.upgrade().is_none(),
+                "state retained after cycle {cycle}"
+            );
+        }
+    }
 }

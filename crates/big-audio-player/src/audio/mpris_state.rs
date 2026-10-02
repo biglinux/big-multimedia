@@ -16,24 +16,14 @@ pub(crate) struct SharedMprisState {
     sequence: AtomicU64,
     pub(crate) rate: Mutex<f64>,
     pub(crate) seekable: AtomicBool,
-    /// Whether playback is paused.
-    pub(crate) paused: AtomicBool,
     /// Current position (seconds).
     pub(crate) position: Mutex<f64>,
     /// Track duration (seconds).
     pub(crate) duration: Mutex<f64>,
     /// Volume percent.
     pub(crate) volume: Mutex<f64>,
-    /// Current track title.
-    pub(crate) title: Mutex<String>,
-    /// Current track artist.
-    pub(crate) artist: Mutex<String>,
-    /// Current track album.
-    pub(crate) album: Mutex<String>,
     /// `"None"` | `"Track"` | `"Playlist"`.
     pub(crate) loop_status: Mutex<String>,
-    /// Whether shuffle is on.
-    pub(crate) shuffle: AtomicBool,
     /// `file://` URL of cached art (this player uses local cache URIs).
     pub(crate) art_url: Mutex<String>,
 }
@@ -47,15 +37,10 @@ impl Default for SharedMprisState {
             sequence: AtomicU64::new(1),
             rate: Mutex::new(1.0),
             seekable: AtomicBool::new(false),
-            paused: AtomicBool::new(true),
             position: Mutex::new(0.0),
             duration: Mutex::new(0.0),
             volume: Mutex::new(100.0),
-            title: Mutex::new(String::new()),
-            artist: Mutex::new(String::new()),
-            album: Mutex::new(String::new()),
             loop_status: Mutex::new("None".into()),
-            shuffle: AtomicBool::new(false),
             art_url: Mutex::new(String::new()),
         }
     }

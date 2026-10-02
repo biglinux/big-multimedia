@@ -12,7 +12,6 @@ pub fn show_appearance_dialog(
     parent: &impl IsA<gtk::Window>,
     settings: &Settings,
     on_changed: impl Fn() + 'static,
-    on_closed: impl Fn() + 'static,
 ) {
     let on_changed: Rc<dyn Fn()> = Rc::new(on_changed);
 
@@ -37,6 +36,6 @@ pub fn show_appearance_dialog(
             let _ = s.put_int(keys::APPEARANCE_WINDOW_WIDTH, w);
             let _ = s.put_int(keys::APPEARANCE_WINDOW_HEIGHT, h);
         },
-        on_closed,
+        || {},
     );
 }

@@ -4,12 +4,11 @@ This crate ships under MIT (workspace default), not GPL.
 
 ## Why MIT is correct
 
-All source files (`lib.rs`, `dynamics.rs`, `equalizer.rs`, `noise_reduction.rs`)
+All source files (`lib.rs`, `equalizer.rs`, `noise_reduction.rs`)
 are 100% original BigLinux code. The crate exposes:
 
 - Constants (`/usr/lib/ladspa/lib*.so` paths as `&'static str`)
-- Constant tables (EQ band frequencies and labels, gate/compressor curves)
-- Pure math (`db_to_linear`, derived gate values)
+- Constant tables (EQ band frequencies and labels)
 - `format!` strings that FFmpeg/mpv parse later in their own process
 
 There is **no**:

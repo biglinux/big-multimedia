@@ -302,35 +302,12 @@ impl Component for AudioShell {
                 let _ = input.send(AudioShellInput::TvChanged);
             }
         });
-        let tv_card = crate::shared::tv_cast::TvCard::new(
-            "tv-strip",
-            true,
-            {
-                let input = sender.input_sender().clone();
-                move || {
-                    let _ = input.send(AudioShellInput::TvStop);
-                }
-            },
-            {
-                let input = sender.input_sender().clone();
-                move || {
-                    let _ = input.send(AudioShellInput::TvToggleRelease);
-                }
-            },
-            {
-                let input = sender.input_sender().clone();
-                move || {
-                    let _ = input.send(AudioShellInput::TvReplace);
-                }
-            },
-            {
-                let input = sender.input_sender().clone();
-                move || {
-                    let _ = input.send(AudioShellInput::TvFollow);
-                }
-            },
-            None,
-        );
+        let tv_card = crate::shared::tv_cast::TvCard::new("tv-strip", true, true, false, {
+            let input = sender.input_sender().clone();
+            move |action| {
+                let _ = input.send(AudioShellInput::Tv(action));
+            }
+        });
         content_pane.add_bottom_bar(&tv_card.root);
         content_pane.add_bottom_bar(playback_bar.widget());
 

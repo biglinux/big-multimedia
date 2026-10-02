@@ -30,29 +30,43 @@ impl Drop for Ticket {
 }
 
 type Job = Box<dyn FnOnce() + Send + 'static>;
-const CAPACITY: usize = 64;
-static WRITES: OnceLock<io::Result<mpsc::SyncSender<Job>>> = OnceLock::new();
+type Lane = OnceLock<io::Result<mpsc::SyncSender<Job>>>;
+static WRITES: Lane = OnceLock::new();
+// Account providers can wait for an unlock prompt; never let such a prompt
+// occupy the short disk-write lane. Both lanes participate in close draining.
+static SERVICES: Lane = OnceLock::new();
 
 /// Admit a short disk transaction without blocking the caller.
 pub fn submit(job: impl FnOnce() + Send + 'static) -> io::Result<()> {
-    let queue = WRITES
+    admit(&WRITES, "media-persistence", 64, Box::new(job))
+}
+
+/// Admit a bounded account/service operation on a separate serial lane.
+/// This is for infrequent account work, not continuous playback or HTTP polling.
+pub fn submit_service(job: impl FnOnce() + Send + 'static) -> io::Result<()> {
+    admit(&SERVICES, "media-account-service", 8, Box::new(job))
+}
+
+/// Queue `job` on the serial worker `name`, started on first use.
+fn admit(lane: &'static Lane, name: &'static str, capacity: usize, job: Job) -> io::Result<()> {
+    let queue = lane
         .get_or_init(|| {
-            let (tx, rx) = mpsc::sync_channel::<Job>(CAPACITY);
+            let (tx, rx) = mpsc::sync_channel::<Job>(capacity);
             std::thread::Builder::new()
-                .name("media-persistence".into())
+                .name(name.into())
                 .spawn(move || {
                     while let Ok(job) = rx.recv() {
                         // In unwind builds one faulty task must not strand future saves.
                         // Release panic=abort remains process-fatal by product policy.
                         if std::panic::catch_unwind(std::panic::AssertUnwindSafe(job)).is_err() {
-                            log::error!("persistence task panicked");
+                            log::error!("{name} task panicked");
                         }
                     }
                 })?;
             Ok(tx)
         })
         .as_ref()
-        .map_err(|error| io::Error::new(error.kind(), "persistence worker unavailable"))?;
+        .map_err(|error| io::Error::new(error.kind(), format!("{name} worker unavailable")))?;
     ACTIVE.fetch_add(1, Ordering::Release);
     let ticket = Ticket;
     queue
@@ -63,203 +77,10 @@ pub fn submit(job: impl FnOnce() + Send + 'static) -> io::Result<()> {
         .map_err(|error| match error {
             mpsc::TrySendError::Full(_) => io::Error::new(
                 io::ErrorKind::WouldBlock,
-                "persistence queue is full; retry save",
+                format!("{name} queue is full; retry"),
             ),
             mpsc::TrySendError::Disconnected(_) => {
-                io::Error::new(io::ErrorKind::BrokenPipe, "persistence worker stopped")
-            }
-        })
-}
-
-// Ephemeral plugin control files are latest-value registers, not preferences
-// documents. One admitted task and one newest payload per path prevent slider
-// motion from filling the global disk queue. No filesystem work runs in submit.
-use crate::deferred::{Phase, Status};
-use std::collections::BTreeMap;
-use std::path::{Path, PathBuf};
-use std::sync::{Arc, Mutex, PoisonError};
-struct LiveState {
-    bytes: Vec<u8>,
-    revision: u64,
-    saved: u64,
-    queued: bool,
-    phase: Phase,
-}
-struct LiveFile {
-    path: PathBuf,
-    state: Mutex<LiveState>,
-}
-static LIVE: OnceLock<Mutex<BTreeMap<PathBuf, Arc<LiveFile>>>> = OnceLock::new();
-
-/// Replace a small internal live-control value asynchronously, coalescing older
-/// pending values. This deliberately overwrites an existing internal register;
-/// use `deferred::Document` for compare-and-save preferences, or StageFile for
-/// user documents. At most eight paths and 4096 bytes per path are retained.
-pub fn write_private(path: PathBuf, bytes: Vec<u8>) -> io::Result<()> {
-    if !path.is_absolute() || bytes.len() > 4096 {
-        return Err(io::Error::new(
-            io::ErrorKind::InvalidInput,
-            "invalid live-control path or payload",
-        ));
-    }
-    let file = {
-        let mut files = LIVE
-            .get_or_init(|| Mutex::new(BTreeMap::new()))
-            .lock()
-            .unwrap_or_else(PoisonError::into_inner);
-        if !files.contains_key(&path) && files.len() >= 8 {
-            return Err(io::Error::new(
-                io::ErrorKind::WouldBlock,
-                "live-control register limit reached",
-            ));
-        }
-        files
-            .entry(path.clone())
-            .or_insert_with(|| {
-                Arc::new(LiveFile {
-                    path,
-                    state: Mutex::new(LiveState {
-                        bytes: Vec::new(),
-                        revision: 0,
-                        saved: 0,
-                        queued: false,
-                        phase: Phase::Saved,
-                    }),
-                })
-            })
-            .clone()
-    };
-    {
-        let mut state = file.state.lock().unwrap_or_else(PoisonError::into_inner);
-        state.revision = state
-            .revision
-            .checked_add(1)
-            .ok_or_else(|| io::Error::other("live-control generation exhausted"))?;
-        state.bytes = bytes;
-    }
-    enqueue_live(file)
-}
-
-/// Last acknowledged live-control status; no path/content is exposed in Status.
-pub fn live_status(path: &Path) -> Option<Status> {
-    let file = LIVE
-        .get()?
-        .lock()
-        .unwrap_or_else(PoisonError::into_inner)
-        .get(path)
-        .cloned()?;
-    let s = file.state.lock().unwrap_or_else(PoisonError::into_inner);
-    Some(Status {
-        phase: s.phase,
-        revision: s.revision,
-        saved_revision: s.saved,
-    })
-}
-
-/// Retry the latest retained internal control value after admission or I/O fails.
-pub fn retry_live(path: &Path) -> io::Result<()> {
-    let file = LIVE
-        .get()
-        .and_then(|files| {
-            files
-                .lock()
-                .unwrap_or_else(PoisonError::into_inner)
-                .get(path)
-                .cloned()
-        })
-        .ok_or_else(|| io::Error::new(io::ErrorKind::NotFound, "no live-control update pending"))?;
-    enqueue_live(file)
-}
-fn enqueue_live(file: Arc<LiveFile>) -> io::Result<()> {
-    {
-        let mut s = file.state.lock().unwrap_or_else(PoisonError::into_inner);
-        if s.queued || s.revision == s.saved {
-            return Ok(());
-        }
-        s.queued = true;
-        s.phase = Phase::Pending;
-    }
-    let owner = file.clone();
-    let result = submit(move || {
-        let (bytes, revision) = {
-            let mut s = owner.state.lock().unwrap_or_else(PoisonError::into_inner);
-            s.phase = Phase::Saving;
-            (s.bytes.clone(), s.revision)
-        };
-        let outcome =
-            std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| -> io::Result<()> {
-                let parent = owner
-                    .path
-                    .parent()
-                    .ok_or_else(|| io::Error::other("invalid control directory"))?;
-                std::fs::create_dir_all(parent)?;
-                let _lock = crate::storage::WriteLock::try_acquire(&owner.path)?;
-                crate::storage::atomic_write_private(&owner.path, &bytes)
-            }))
-            .unwrap_or_else(|_| Err(io::Error::other("live-control task panicked")));
-        let again = {
-            let mut s = owner.state.lock().unwrap_or_else(PoisonError::into_inner);
-            s.queued = false;
-            if outcome.is_ok() {
-                s.saved = revision;
-                s.phase = if s.revision == revision {
-                    Phase::Saved
-                } else {
-                    Phase::Pending
-                };
-                s.revision != revision
-            } else {
-                s.phase = Phase::Failed;
-                false
-            }
-        };
-        if again {
-            let _ = enqueue_live(owner);
-        }
-    });
-    if result.is_err() {
-        let mut s = file.state.lock().unwrap_or_else(PoisonError::into_inner);
-        s.queued = false;
-        s.phase = Phase::Failed;
-    }
-    result
-}
-
-// Account providers can wait for an unlock prompt; never let such a prompt
-// occupy the short disk-write lane. Both lanes participate in close draining.
-static SERVICES: OnceLock<io::Result<mpsc::SyncSender<Job>>> = OnceLock::new();
-/// Admit a bounded account/service operation on a separate serial lane.
-/// This is for infrequent account work, not continuous playback or HTTP polling.
-pub fn submit_service(job: impl FnOnce() + Send + 'static) -> io::Result<()> {
-    let queue = SERVICES
-        .get_or_init(|| {
-            let (tx, rx) = mpsc::sync_channel::<Job>(8);
-            std::thread::Builder::new()
-                .name("media-account-service".into())
-                .spawn(move || {
-                    while let Ok(job) = rx.recv() {
-                        if std::panic::catch_unwind(std::panic::AssertUnwindSafe(job)).is_err() {
-                            log::error!("account operation panicked; inspect recovery journal");
-                        }
-                    }
-                })?;
-            Ok(tx)
-        })
-        .as_ref()
-        .map_err(|e| io::Error::new(e.kind(), "account worker unavailable"))?;
-    ACTIVE.fetch_add(1, Ordering::Release);
-    let ticket = Ticket;
-    queue
-        .try_send(Box::new(move || {
-            let _ticket = ticket;
-            job();
-        }))
-        .map_err(|error| match error {
-            mpsc::TrySendError::Full(_) => {
-                io::Error::new(io::ErrorKind::WouldBlock, "account queue is full")
-            }
-            mpsc::TrySendError::Disconnected(_) => {
-                io::Error::new(io::ErrorKind::BrokenPipe, "account worker stopped")
+                io::Error::new(io::ErrorKind::BrokenPipe, format!("{name} worker stopped"))
             }
         })
 }

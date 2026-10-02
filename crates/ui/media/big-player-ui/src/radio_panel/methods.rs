@@ -31,15 +31,15 @@ pub(super) enum QueryKind {
 }
 
 impl RadioPanel {
-    /// Resolve a station's (name, favicon) from explore results or saved list.
-    pub(super) fn resolve_station_meta(&self, url: &str) -> (String, String) {
-        if let Some((name, _, _, _, favicon)) = self.explore_data.iter().find(|e| e.1 == url) {
-            return (name.clone(), favicon.clone());
+    /// A station's name from the explore results or the saved list.
+    pub(super) fn station_name(&self, url: &str) -> String {
+        if let Some((name, ..)) = self.explore_data.iter().find(|e| e.1 == url) {
+            return name.clone();
         }
-        if let Some(station) = self.stations.iter().find(|s| s.url == url) {
-            return (station.name.clone(), station.favicon.clone());
-        }
-        (String::new(), String::new())
+        self.stations
+            .iter()
+            .find(|s| s.url == url)
+            .map_or_else(String::new, |station| station.name.clone())
     }
 
     /// Bump the generation counter and spawn the off-thread query.

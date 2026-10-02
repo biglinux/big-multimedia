@@ -268,10 +268,8 @@ impl VideoShell {
                 else {
                     return;
                 };
-                accept_button.set_sensitive(
-                    build_disc_uri(disc_kind_from_selected(dropdown.selected()), &entry.text())
-                        .is_some(),
-                );
+                accept_button
+                    .set_sensitive(build_disc_uri(dropdown.selected(), &entry.text()).is_some());
             }
         });
         refresh_accept();
@@ -305,10 +303,7 @@ impl VideoShell {
         let dropdown = disc_type_row.dropdown().clone();
         let entry_for_accept = entry.clone();
         footer.accept_button().connect_clicked(move |_| {
-            if let Some(uri) = build_disc_uri(
-                disc_kind_from_selected(dropdown.selected()),
-                &entry_for_accept.text(),
-            ) {
+            if let Some(uri) = build_disc_uri(dropdown.selected(), &entry_for_accept.text()) {
                 let _ = sender.send(VideoShellInput::OpenFiles(vec![uri]));
                 if let Some(dialog) = dialog_ref.upgrade() {
                     dialog.close();
@@ -358,17 +353,11 @@ impl VideoShell {
     /// bar.
     pub(super) fn show_appearance(&self, root: &adw::ApplicationWindow) {
         let settings = self.settings.clone();
-        let apply_settings = settings.clone();
         let button_layout = self.controls.model().button_layout();
-        crate::video::ui::appearance::show_appearance_dialog(
-            root,
-            &settings,
-            move || {
-                reapply_theme(&apply_settings);
-                button_layout.apply_settings(&apply_settings);
-            },
-            || {},
-        );
+        crate::video::ui::appearance::show_appearance_dialog(root, &self.settings, move || {
+            reapply_theme(&settings);
+            button_layout.apply_settings(&settings);
+        });
     }
 
     /// Confirm, then reset every setting to its default; `on_confirmed` runs
@@ -397,12 +386,6 @@ impl VideoShell {
         });
         dialog.present(Some(parent));
     }
-
-    /// Apply a confirmed restore-to-defaults: reset the settings store. A
-    /// restart picks up the new values (mpv is configured at startup).
-    pub(super) fn restore_all_defaults(&self) {
-        self.settings.reset_to_defaults();
-    }
 }
 
 thread_local! {
@@ -422,19 +405,17 @@ pub(super) fn reapply_theme(settings: &Settings) {
     });
 }
 
-pub(super) fn build_disc_uri(response: &str, device: &str) -> Option<String> {
+/// The mpv URI for the disc in `device`: Blu-ray for the dropdown's second
+/// entry, else DVD.
+fn build_disc_uri(selected: u32, device: &str) -> Option<String> {
     if device.is_empty() || device.contains("--") {
         return None;
     }
-    match response {
-        "dvd" => Some(format!("dvd://--dvd-device={device}")),
-        "bd" => Some(format!("bd://--bluray-device={device}")),
-        _ => None,
-    }
-}
-
-fn disc_kind_from_selected(selected: u32) -> &'static str {
-    if selected == 1 { "bd" } else { "dvd" }
+    Some(if selected == 1 {
+        format!("bd://--bluray-device={device}")
+    } else {
+        format!("dvd://--dvd-device={device}")
+    })
 }
 
 fn accepted_open_url(input: &str) -> Option<String> {
@@ -486,7 +467,7 @@ pub(super) fn present_controller_dialog(
 
 #[cfg(test)]
 mod tests {
-    use super::{accepted_open_url, build_disc_uri, disc_kind_from_selected};
+    use super::{accepted_open_url, build_disc_uri};
 
     #[test]
     fn open_url_accepts_trimmed_remote_media_urls() {
@@ -518,38 +499,25 @@ mod tests {
     #[test]
     fn disc_uri_builds_dvd_and_bluray() {
         assert_eq!(
-            build_disc_uri("dvd", "/dev/sr0").as_deref(),
+            build_disc_uri(0, "/dev/sr0").as_deref(),
             Some("dvd://--dvd-device=/dev/sr0")
         );
         assert_eq!(
-            build_disc_uri("bd", "/dev/sr1").as_deref(),
+            build_disc_uri(1, "/dev/sr1").as_deref(),
             Some("bd://--bluray-device=/dev/sr1")
         );
     }
 
     #[test]
     fn disc_uri_rejects_empty_device() {
-        assert_eq!(build_disc_uri("dvd", ""), None);
-        assert_eq!(build_disc_uri("bd", ""), None);
+        assert_eq!(build_disc_uri(0, ""), None);
+        assert_eq!(build_disc_uri(1, ""), None);
     }
 
     #[test]
     fn disc_uri_rejects_option_injection() {
         // A `--` in the device must never reach mpv as a smuggled option.
-        assert_eq!(build_disc_uri("dvd", "/dev/sr0 --no-config"), None);
-        assert_eq!(build_disc_uri("bd", "--foo"), None);
-    }
-
-    #[test]
-    fn disc_uri_rejects_unknown_response() {
-        assert_eq!(build_disc_uri("cancel", "/dev/sr0"), None);
-        assert_eq!(build_disc_uri("", "/dev/sr0"), None);
-    }
-
-    #[test]
-    fn disc_dropdown_maps_to_uri_kinds() {
-        assert_eq!(disc_kind_from_selected(0), "dvd");
-        assert_eq!(disc_kind_from_selected(1), "bd");
-        assert_eq!(disc_kind_from_selected(99), "dvd");
+        assert_eq!(build_disc_uri(0, "/dev/sr0 --no-config"), None);
+        assert_eq!(build_disc_uri(1, "--foo"), None);
     }
 }

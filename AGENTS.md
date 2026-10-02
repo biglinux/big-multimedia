@@ -127,6 +127,11 @@ is expected while network I/O is pending, not a panic. Radio teardown removes it
 search debounce source. The isolated source-lifetime test and rapid hosted audio
 open/close run cover these late-delivery paths.
 
+The video sidebar keeps its list filter in the state that filter reads, so the
+filter holds that state weakly. `closed_sidebar_releases_its_state` checks 25
+sidebar closes in an isolated GTK session; drop the test's own window
+reference too, since `destroy()` only releases GTK's toplevel reference.
+
 Radio discovery and its disk cache load start on the first map of the radio tab,
 not when the hidden component is constructed. Remapping must not refetch. The
 isolated `radio_discovery_waits_for_first_map` regression checks hidden, first-map

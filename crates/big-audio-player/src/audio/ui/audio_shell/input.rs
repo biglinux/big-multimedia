@@ -129,14 +129,8 @@ pub enum AudioShellInput {
     ShowCast,
     /// BigNetScreen reported a change (session, position, receivers).
     TvChanged,
-    /// The TV strip's "Stop sending".
-    TvStop,
-    /// The TV strip's "Use the player" / "Control the TV".
-    TvToggleRelease,
-    /// "Show this one on the TV": the TV plays the player's track.
-    TvReplace,
-    /// "Play the TV's here": the player plays the TV's track, in step.
-    TvFollow,
+    /// A button of the TV strip.
+    Tv(crate::shared::tv_cast::TvCardAction),
     /// Open the smartphone web-remote dialog (main menu).
     ShowSmartphone,
     /// Re-evaluate the album-art background (Appearance toggle changed).

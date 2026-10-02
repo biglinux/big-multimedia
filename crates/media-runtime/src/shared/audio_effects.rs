@@ -74,17 +74,10 @@ pub fn rebuild_filters(
         .collect();
     mpv.apply_audio_effects(&crate::player::mpv_backend::AudioEffects {
         normalize: settings.get_bool(keys::AUDIO_NORMALIZE),
-        nr_enabled: nr_strength > 0.0,
         nr_strength,
         nr_model,
         nr_mono: settings.get_bool(keys::NOISE_MONO),
-        gate_enabled: false,
-        gate_intensity: 0.0,
-        hpf_enabled: false,
-        hpf_frequency: 0.0,
         eq_bands: &eq,
-        compressor_enabled: false,
-        compressor_intensity: 0.0,
     });
 }
 

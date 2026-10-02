@@ -15,6 +15,8 @@ use std::time::Duration;
 use adw::prelude::*;
 use gtk::glib;
 
+use big_relm4_components::time::playback_time;
+
 use crate::cast::daemon::{Client, PlaybackStart, Receiver, State};
 use crate::i18n::i18n;
 use crate::settings::{Settings, keys};
@@ -74,7 +76,7 @@ impl TvLink {
 
     /// Reach the daemon unless already connected or trying; listeners hear
     /// the outcome.
-    pub fn connect(self: &Rc<Self>) {
+    fn connect(self: &Rc<Self>) {
         if self.client.borrow().is_some() || self.connecting.replace(true) {
             return;
         }
@@ -123,31 +125,31 @@ impl TvLink {
     }
 
     /// After the daemon went away: drop the old connection and reach it again.
-    pub fn reconnect(self: &Rc<Self>) {
+    fn reconnect(self: &Rc<Self>) {
         self.lost.set(false);
         self.client.take();
         self.notify();
         self.connect();
     }
 
-    pub fn client(&self) -> Option<Client> {
+    fn client(&self) -> Option<Client> {
         self.client.borrow().clone()
     }
 
-    pub fn connected(&self) -> bool {
+    fn connected(&self) -> bool {
         self.client.borrow().is_some()
     }
 
-    pub fn lost(&self) -> bool {
+    fn lost(&self) -> bool {
         self.lost.get()
     }
 
-    pub fn unavailable(&self) -> Option<(String, String)> {
+    fn unavailable(&self) -> Option<(String, String)> {
         self.unavailable.borrow().clone()
     }
 
     /// Everything the daemon reports; empty before connecting.
-    pub fn state(&self) -> State {
+    fn state(&self) -> State {
         let state = self.client.borrow().as_ref().map(Client::state);
         match state {
             Some(Ok(state)) => state,
@@ -214,7 +216,7 @@ impl TvLink {
         id
     }
 
-    pub fn unsubscribe(&self, id: u64) {
+    fn unsubscribe(&self, id: u64) {
         self.listeners.borrow_mut().retain(|(each, _)| *each != id);
     }
 
@@ -251,7 +253,7 @@ impl TvLink {
     }
 
     /// Start `media` on `receiver`.
-    pub async fn start(&self, receiver: &str, media: &TvMedia) -> Result<(), glib::Error> {
+    async fn start(&self, receiver: &str, media: &TvMedia) -> Result<(), glib::Error> {
         let client = self.client().ok_or_else(|| {
             glib::Error::new(
                 gtk::gio::IOErrorEnum::NotConnected,
@@ -319,7 +321,7 @@ impl TvLink {
 }
 
 /// What choosing a TV row does.
-type StartOn = Rc<dyn Fn(&adw::ActionRow)>;
+type StartOn = Rc<dyn Fn(&Receiver)>;
 
 /// One discovered TV's row, kept to show "starting" on the one chosen.
 struct TvRow {
@@ -331,6 +333,7 @@ struct TvRow {
 
 struct View {
     link: Rc<TvLink>,
+    settings: Settings,
     now: adw::PreferencesGroup,
     now_row: adw::ActionRow,
     pause: gtk::Button,
@@ -354,22 +357,11 @@ struct View {
     pictures: bool,
 }
 
-pub fn protocol_name(protocol: &str) -> String {
+fn protocol_name(protocol: &str) -> String {
     if protocol == "dlna" {
         i18n("Smart TV (DLNA)")
     } else {
         i18n("Chromecast")
-    }
-}
-
-/// Same format as the controls bar's time labels.
-fn clock(seconds: f64) -> String {
-    let total = seconds.max(0.0) as u64;
-    let (hours, minutes, secs) = (total / 3600, total / 60 % 60, total % 60);
-    if hours > 0 {
-        format!("{hours}:{minutes:02}:{secs:02}")
-    } else {
-        format!("{minutes}:{secs:02}")
     }
 }
 
@@ -385,6 +377,11 @@ fn failure_text(error: &glib::Error) -> String {
     } else {
         message.to_string()
     }
+}
+
+/// The frame height chosen on the page; 0 keeps the video's own.
+pub fn saved_height(settings: &Settings) -> u32 {
+    u32::try_from(settings.get_int(keys::TV_RESOLUTION)).unwrap_or(0)
 }
 
 fn resolution_label(height: u32) -> String {
@@ -408,7 +405,7 @@ fn card_line(state: &State) -> String {
 }
 
 /// The TV's name and kind, for whoever shows the running session.
-pub fn receiver_line(state: &State) -> String {
+fn receiver_line(state: &State) -> String {
     state
         .receivers
         .iter()
@@ -484,7 +481,7 @@ pub fn tv_page(
     for height in HEIGHTS {
         heights.append(&resolution_label(height));
     }
-    let saved = u32::try_from(settings.get_int(keys::TV_RESOLUTION)).unwrap_or(0);
+    let saved = saved_height(settings);
     let resolution = adw::ComboRow::builder()
         .title(i18n("Resolution"))
         .subtitle(i18n("Size of the picture sent to the TV"))
@@ -510,6 +507,7 @@ pub fn tv_page(
 
     let view = Rc::new(View {
         link: link.clone(),
+        settings: settings.clone(),
         now,
         now_row,
         pause,
@@ -528,13 +526,7 @@ pub fn tv_page(
     });
     view.options.set_visible(view.pictures);
 
-    let height = move || {
-        HEIGHTS
-            .get(resolution.selected() as usize)
-            .copied()
-            .unwrap_or(0)
-    };
-    wire_actions(&view, media, height, Rc::new(on_started), &stop);
+    wire_actions(&view, media, Rc::new(on_started), &stop);
 
     // Updates and the keep-alive only while the page is on screen: they hold
     // the page, and a page nobody sees must not keep itself or the daemon up.
@@ -591,16 +583,13 @@ fn detach(view: &View) {
 fn wire_actions(
     view: &Rc<View>,
     media: impl Fn() -> Option<TvMedia> + 'static,
-    height: impl Fn() -> u32 + 'static,
     on_started: Rc<dyn Fn()>,
     stop: &gtk::Button,
 ) {
-    let media = Rc::new(media);
-    let height = Rc::new(height);
     let weak = Rc::downgrade(view);
-    let _ = view.activate.set(Rc::new(move |row: &adw::ActionRow| {
+    let _ = view.activate.set(Rc::new(move |receiver: &Receiver| {
         if let Some(view) = weak.upgrade() {
-            start_on(&view, row, &media, &height, &on_started);
+            start_on(&view, receiver, &media, &on_started);
         }
     }));
 
@@ -645,20 +634,10 @@ fn wire_actions(
 
 fn start_on(
     view: &Rc<View>,
-    row: &adw::ActionRow,
-    media: &Rc<impl Fn() -> Option<TvMedia> + 'static>,
-    height: &Rc<impl Fn() -> u32 + 'static>,
+    receiver: &Receiver,
+    media: &impl Fn() -> Option<TvMedia>,
     on_started: &Rc<dyn Fn()>,
 ) {
-    let Some(receiver) = view
-        .rows
-        .borrow()
-        .iter()
-        .find(|tv| &tv.row == row)
-        .map(|tv| tv.receiver.clone())
-    else {
-        return;
-    };
     if view.starting.borrow().is_some() {
         return;
     }
@@ -668,26 +647,26 @@ fn start_on(
         render(view);
         return;
     };
-    media.start.height = height();
+    media.start.height = saved_height(&view.settings);
     view.failure.take();
     view.starting.replace(Some(receiver.id.clone()));
     render(view);
+    // The player pauses even when the page closed while the TV started.
+    let link = view.link.clone();
+    let receiver = receiver.id.clone();
     let view = Rc::downgrade(view);
     let on_started = on_started.clone();
     glib::spawn_future_local(async move {
-        let Some(link) = view.upgrade().map(|view| view.link.clone()) else {
-            return;
-        };
-        let result = link.start(&receiver.id, &media).await;
+        let result = link.start(&receiver, &media).await;
+        if result.is_ok() {
+            on_started();
+        }
         let Some(view) = view.upgrade() else {
             return;
         };
         view.starting.take();
-        match result {
-            Ok(()) => on_started(),
-            Err(error) => {
-                view.failure.replace(Some(failure_text(&error)));
-            }
+        if let Err(error) = result {
+            view.failure.replace(Some(failure_text(&error)));
         }
         render(&view);
     });
@@ -702,9 +681,13 @@ fn render(view: &View) {
     view.options.set_visible(!playing_here && view.pictures);
     if playing_here {
         let position = if state.duration > 0.0 {
-            format!("{} / {}", clock(state.position), clock(state.duration))
+            format!(
+                "{} / {}",
+                playback_time(state.position),
+                playback_time(state.duration)
+            )
         } else {
-            clock(state.position)
+            playback_time(state.position)
         };
         // The title arrives a moment after the session starts.
         view.now_row.set_title(&if state.title.is_empty() {
@@ -759,7 +742,8 @@ fn render(view: &View) {
                 suffix.add_named(&adw::Spinner::new(), Some("starting"));
                 row.add_suffix(&suffix);
                 if let Some(activate) = view.activate.get().cloned() {
-                    row.connect_activated(move |row| activate(row));
+                    let receiver = receiver.clone();
+                    row.connect_activated(move |_| activate(&receiver));
                 }
                 view.tvs.add(&row);
                 TvRow {
@@ -877,6 +861,23 @@ pub fn present_tv_dialog(
     dialog.present(Some(parent));
 }
 
+/// What a [`TvCard`] button asks of its owner.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum TvCardAction {
+    /// "Stop sending".
+    Stop,
+    /// "Use the player" (the TV keeps playing and the player goes its own
+    /// way), or "Control the TV", its way back.
+    ToggleRelease,
+    /// "Show this one on the TV": the TV plays what the player holds instead.
+    Replace,
+    /// "Play the TV's here": the player opens what the TV plays, where the TV
+    /// is.
+    Follow,
+    /// "Watch here too", or "Only on the TV".
+    Here,
+}
+
 /// The card shown over a player while a TV plays its session: what is
 /// happening, where, and the way out. The owner shows and fills it.
 pub struct TvCard {
@@ -888,30 +889,29 @@ pub struct TvCard {
     /// "Show this one on the TV" and "Play the TV's here": offered while
     /// released, when the player holds something other than what the TV
     /// plays.
-    swap: gtk::Box,
+    swap: Option<gtk::Box>,
     /// "Watch here too", or "Only on the TV" while the player follows the TV.
     here: Option<gtk::Button>,
 }
 
 impl TvCard {
-    /// `stop` runs on "Stop sending", `release` on "Use the player" (the TV
-    /// keeps playing and the player goes its own way) and on "Control the
-    /// TV", its way back. `replace` runs on "Show this one on the TV", which
-    /// puts what the player holds on the TV instead, and `follow` on "Play the
-    /// TV's here", which opens in the player what the TV plays, where the TV
-    /// is. `here`, when the player can show the video too, runs on "Watch
-    /// here too" and on "Only on the TV". `css` names the owner's
-    /// card style; `strip` lays it out as one line, for a player whose middle
-    /// holds a list that must stay usable.
+    /// `act` runs for every button. `css` names the owner's card style;
+    /// `strip` lays it out as one line, for a player whose middle holds a
+    /// list that must stay usable. `swap` offers Replace and Follow once
+    /// released; `here`, for a player that can show the video too, offers
+    /// Here.
     pub fn new(
         css: &str,
         strip: bool,
-        stop: impl Fn() + 'static,
-        release: impl Fn() + 'static,
-        replace: impl Fn() + 'static,
-        follow: impl Fn() + 'static,
-        here: Option<Box<dyn Fn()>>,
+        swap: bool,
+        here: bool,
+        act: impl Fn(TvCardAction) + 'static,
     ) -> Self {
+        let act = Rc::new(act);
+        let on_click = |button: &gtk::Button, action: TvCardAction| {
+            let act = act.clone();
+            button.connect_clicked(move |_| act(action));
+        };
         let icon = gtk::Image::builder()
             .icon_name("tv-symbolic")
             .pixel_size(if strip { 24 } else { 48 })
@@ -938,7 +938,7 @@ impl TvCard {
             .label(i18n("Stop sending"))
             .css_classes(["pill", "destructive-action"])
             .build();
-        stop_button.connect_clicked(move |_| stop());
+        on_click(&stop_button, TvCardAction::Stop);
         let release_button = gtk::Button::builder()
             .label(i18n("Use the player"))
             .tooltip_text(i18n(
@@ -946,40 +946,44 @@ impl TvCard {
             ))
             .css_classes(["pill"])
             .build();
-        release_button.connect_clicked(move |_| release());
-        let replace_button = gtk::Button::builder()
-            .label(i18n("Show this one on the TV"))
-            .tooltip_text(i18n(
-                "The TV plays what is in the player now, from where it is.",
-            ))
-            .css_classes(["pill", "suggested-action"])
-            .build();
-        replace_button.connect_clicked(move |_| replace());
-        let follow_button = gtk::Button::builder()
-            .label(i18n("Play the TV's here"))
-            .tooltip_text(i18n(
-                "The player opens what the TV plays, at the same point.",
-            ))
-            .css_classes(["pill"])
-            .build();
-        follow_button.connect_clicked(move |_| follow());
-        let swap = gtk::Box::builder()
-            .spacing(8)
-            .halign(gtk::Align::Center)
-            .valign(gtk::Align::Center)
-            .visible(false)
-            .build();
-        swap.append(&replace_button);
-        swap.append(&follow_button);
+        on_click(&release_button, TvCardAction::ToggleRelease);
+        let swap = swap.then(|| {
+            let replace_button = gtk::Button::builder()
+                .label(i18n("Show this one on the TV"))
+                .tooltip_text(i18n(
+                    "The TV plays what is in the player now, from where it is.",
+                ))
+                .css_classes(["pill", "suggested-action"])
+                .build();
+            on_click(&replace_button, TvCardAction::Replace);
+            let follow_button = gtk::Button::builder()
+                .label(i18n("Play the TV's here"))
+                .tooltip_text(i18n(
+                    "The player opens what the TV plays, at the same point.",
+                ))
+                .css_classes(["pill"])
+                .build();
+            on_click(&follow_button, TvCardAction::Follow);
+            let swap = gtk::Box::builder()
+                .spacing(8)
+                .halign(gtk::Align::Center)
+                .valign(gtk::Align::Center)
+                .margin_top(if strip { 0 } else { 6 })
+                .visible(false)
+                .build();
+            swap.append(&replace_button);
+            swap.append(&follow_button);
+            swap
+        });
         let buttons = gtk::Box::builder()
             .spacing(8)
             .halign(gtk::Align::Center)
             .valign(gtk::Align::Center)
             .margin_top(if strip { 0 } else { 6 })
             .build();
-        let here = here.map(|here| {
+        let here = here.then(|| {
             let button = gtk::Button::builder().css_classes(["pill"]).build();
-            button.connect_clicked(move |_| here());
+            on_click(&button, TvCardAction::Here);
             buttons.append(&button);
             button
         });
@@ -1007,7 +1011,9 @@ impl TvCard {
                 .build();
             inner.append(&icon);
             inner.append(&words);
-            inner.append(&swap);
+            if let Some(swap) = &swap {
+                inner.append(swap);
+            }
             inner.append(&buttons);
             inner
         } else {
@@ -1024,8 +1030,9 @@ impl TvCard {
             inner.append(&icon);
             inner.append(&title);
             inner.append(&detail);
-            swap.set_margin_top(6);
-            inner.append(&swap);
+            if let Some(swap) = &swap {
+                inner.append(swap);
+            }
             inner.append(&buttons);
             inner
         };
@@ -1044,7 +1051,7 @@ impl TvCard {
     /// Show the card for `state`, or for a switch to the next item.
     pub fn show(&self, state: Option<&State>) {
         self.root.set_visible(true);
-        self.swap.set_visible(false);
+        self.show_swap(false);
         self.show_here(
             state.is_some(),
             &i18n("Watch here too"),
@@ -1074,6 +1081,12 @@ impl TvCard {
         );
     }
 
+    fn show_swap(&self, visible: bool) {
+        if let Some(swap) = &self.swap {
+            swap.set_visible(visible);
+        }
+    }
+
     fn show_here(&self, visible: bool, label: &str, tooltip: &str) {
         if let Some(here) = &self.here {
             here.set_visible(visible);
@@ -1086,7 +1099,7 @@ impl TvCard {
     /// `other` when the player holds something else, which it can send.
     pub fn show_released(&self, state: &State, other: bool) {
         self.root.set_visible(true);
-        self.swap.set_visible(other);
+        self.show_swap(other);
         self.show_here(false, "", "");
         self.title.set_label(&i18n("The TV is still playing"));
         self.detail.set_label(&card_line(state));
@@ -1098,18 +1111,5 @@ impl TvCard {
 
     pub fn hide(&self) {
         self.root.set_visible(false);
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn clock_matches_the_controls_bar() {
-        assert_eq!(clock(5.2), "0:05");
-        assert_eq!(clock(754.0), "12:34");
-        assert_eq!(clock(3723.0), "1:02:03");
-        assert_eq!(clock(-1.0), "0:00");
     }
 }

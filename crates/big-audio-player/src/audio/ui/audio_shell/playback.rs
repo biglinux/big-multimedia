@@ -86,7 +86,6 @@ impl AudioShell {
             }
             AudioPlaybackBarOutput::ToggleShuffle(active) => {
                 self.queue.set_shuffle(active);
-                self.mpris_state.shuffle.store(active, Ordering::Relaxed);
                 self.playback_bar
                     .emit(AudioPlaybackBarInput::SetShuffleActive(active));
             }

@@ -79,8 +79,8 @@ fn typed_keys_compile_time_safety() {
     let _ = settings.get_bool(keys::MUTE);
     settings.put_bool(keys::MUTE, false);
 
-    let _ = settings.get_int(keys::PREFS_WINDOW_WIDTH);
-    settings.put_int(keys::PREFS_WINDOW_WIDTH, 800);
+    let _ = settings.get_int(keys::APPEARANCE_WINDOW_WIDTH);
+    settings.put_int(keys::APPEARANCE_WINDOW_WIDTH, 800);
 
     let _ = settings.get_double(keys::VOLUME);
     settings.put_double(keys::VOLUME, 0.5);
@@ -94,8 +94,8 @@ fn settings_round_trip() {
     let settings = Settings::memory_only();
     settings.put_bool(keys::MUTE, true);
     assert!(settings.get_bool(keys::MUTE));
-    settings.put_int(keys::PREFS_WINDOW_WIDTH, 1234);
-    assert_eq!(settings.get_int(keys::PREFS_WINDOW_WIDTH), 1234);
+    settings.put_int(keys::APPEARANCE_WINDOW_WIDTH, 1234);
+    assert_eq!(settings.get_int(keys::APPEARANCE_WINDOW_WIDTH), 1234);
     settings.put_double(keys::VOLUME, 0.75);
     assert!((settings.get_double(keys::VOLUME) - 0.75).abs() < f64::EPSILON);
     settings.put_string(keys::HWDEC, "vaapi");

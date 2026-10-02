@@ -9,7 +9,7 @@ impl VideoShell {
         root: Option<&adw::ApplicationWindow>,
     ) {
         // While the TV has the controls they show the TV, not the paused mpv.
-        let tv = self.tv_attached().is_some();
+        let tv = self.tv.attached().is_some();
         match event {
             PlayerEvent::PositionChanged(pos) => {
                 if !tv {
@@ -156,10 +156,6 @@ impl VideoShell {
             PlayerEvent::ScreenshotTimedOut { .. } => {
                 self.notify(&i18n("Screenshot timed out; cancellation requested"));
             }
-            // Reason 4 = error (unsupported/corrupt/unreadable source). Other
-            // reasons (EOF=0, stop=2, quit=3, redirect=5) are a normal end of
-            // playback — surface only the error so the user gets feedback
-            // instead of a silent blank screen.
             // mpv quit on its own (idle mode "close player" at the end of the
             // playlist): close the window instead of leaving a dead player.
             PlayerEvent::Shutdown => {
@@ -167,6 +163,10 @@ impl VideoShell {
                     root.close();
                 }
             }
+            // Reason 4 = error (unsupported/corrupt/unreadable source). Other
+            // reasons (EOF=0, stop=2, quit=3, redirect=5) are a normal end of
+            // playback — surface only the error so the user gets feedback
+            // instead of a silent blank screen.
             PlayerEvent::EndFile(reason) => {
                 self.playing = false;
                 self.sync_screen_inhibit(root);
@@ -284,8 +284,8 @@ impl VideoShell {
     /// then shuffle it when that setting is on. No-op until mpv is live.
     /// `playlist_paths` keeps the natural order to recognize the same list
     /// again; mpv indices always come from mpv's live order, which shuffle
-    /// changes. Does NOT push the sidebar listing — the caller does that
-    /// (either an external open or a sidebar `PlayFromList`).
+    /// changes. Pushes the new queue to the sidebar; an external open also
+    /// sends the folder listing.
     fn load_playlist(&mut self, entries: &[String], start: usize) {
         let mpv_ref = self.mpv.borrow();
         let Some(mpv) = mpv_ref.as_ref() else {
@@ -311,7 +311,9 @@ impl VideoShell {
             .settings
             .get_bool(keys::PLAYLIST_SHUFFLE)
             .then(|| (entries[start.min(entries.len() - 1)].clone(), entries.len()));
-        // The sidebar stays hidden until the header playlist toggle opens it.
+        self.playlist.emit(VideoBrowserSidebarInput::SetQueue(
+            self.playlist_paths.clone(),
+        ));
     }
 
     /// Hide + drop the welcome overlay (called on the first `FileLoaded`).
@@ -339,7 +341,11 @@ impl VideoShell {
     }
 
     /// Drive mpv from a folder-browser-sidebar intent.
-    pub(super) fn on_playlist(&mut self, out: VideoBrowserSidebarOutput) {
+    pub(super) fn on_playlist(
+        &mut self,
+        out: VideoBrowserSidebarOutput,
+        sender: &ComponentSender<VideoShell>,
+    ) {
         match out {
             VideoBrowserSidebarOutput::PlayFromList { paths, start } => {
                 // Same list already loaded → jump in place; else reload mpv.
@@ -367,7 +373,7 @@ impl VideoShell {
                 self.playlist_paths.clear();
             }
             VideoBrowserSidebarOutput::SendToConverter(paths) => self.send_to_converter(&paths),
-            VideoBrowserSidebarOutput::TrashFiles(paths) => self.trash_files(paths),
+            VideoBrowserSidebarOutput::TrashFiles(paths) => self.trash_files(paths, sender),
             VideoBrowserSidebarOutput::Notify(msg) => self.notify(&msg),
             VideoBrowserSidebarOutput::SetLoopMode(mode) => {
                 if let Some(mpv) = self.mpv.borrow().as_ref() {
@@ -398,22 +404,17 @@ impl VideoShell {
         }
     }
 
-    /// Move files to the trash, drop any from the queue, refresh the browser,
-    /// and offer an Undo that restores them. The `gio trash` calls run off
-    /// the main thread (they spawn a subprocess per file).
-    fn trash_files(&mut self, paths: Vec<String>) {
-        // Queue cleanup is instant (in-memory + a fast mpv ipc) — do it now.
-        for path in &paths {
-            self.remove_playlist_entry(path);
-        }
-
+    /// Move files to the trash, drop the trashed ones from the queue, refresh
+    /// the browser, and offer an Undo that restores them. The `gio trash`
+    /// calls run off the main thread (they spawn a subprocess per file).
+    fn trash_files(&mut self, paths: Vec<String>, sender: &ComponentSender<VideoShell>) {
         let notice = self.notice.clone();
         let pl_sender = self.playlist.sender().clone();
-        let to_trash = paths.clone();
+        let shell = sender.input_sender().clone();
         big_media_components::player_chrome::spawn_blocking_result(
             move || {
                 use big_media_runtime::media::playlist;
-                to_trash
+                paths
                     .into_iter()
                     .filter(|p| playlist::trash_file(p).is_ok())
                     .collect::<Vec<String>>()
@@ -422,6 +423,11 @@ impl VideoShell {
                 if trashed.is_empty() {
                     notice.show(&i18n("Could not move to trash"));
                     return;
+                }
+                for path in &trashed {
+                    let _ = shell.send(VideoShellInput::Playlist(
+                        VideoBrowserSidebarOutput::RemoveEntry(path.clone()),
+                    ));
                 }
                 let _ = pl_sender.send(VideoBrowserSidebarInput::RefreshFolder);
                 let title = ni18n(
@@ -458,14 +464,15 @@ impl VideoShell {
         }
         if self.playlist_paths.is_empty() {
             self.load_playlist(paths, 0);
-        } else if let Some(mpv) = self.mpv.borrow().as_ref() {
-            for path in paths {
-                mpv.load_file_append(path);
-            }
-            self.playlist_paths.extend_from_slice(paths);
-        } else {
             return;
         }
+        let Some(mpv) = self.mpv.borrow().clone() else {
+            return;
+        };
+        for path in paths {
+            mpv.load_file_append(path);
+        }
+        self.playlist_paths.extend_from_slice(paths);
         self.playlist.emit(VideoBrowserSidebarInput::SetQueue(
             self.playlist_paths.clone(),
         ));
@@ -590,7 +597,7 @@ impl VideoShell {
             self.adjust_trim_segment(id, start, end);
             return;
         }
-        if let Some(state) = self.tv_attached() {
+        if let Some(state) = self.tv.attached() {
             match out {
                 VideoControlsBarOutput::TogglePlay => {
                     self.tv
@@ -685,7 +692,7 @@ fn resolve_open_files(paths: Vec<String>) -> Option<(Vec<String>, usize, Option<
     Some((media, 0, None))
 }
 
-pub(super) fn is_remote_uri(s: &str) -> bool {
+pub(crate) fn is_remote_uri(s: &str) -> bool {
     let s = s.trim();
     s.starts_with("http://")
         || s.starts_with("https://")

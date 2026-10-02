@@ -42,8 +42,8 @@ pub(super) const TAG_EXPLORE: u32 = 2;
 pub enum RadioPanelInput {
     /// Shell pushed the saved-station list (initial load or after a CRUD persist).
     RefreshStations(Vec<RadioStation>),
-    /// Render fetched/cached explore results (stores + persists explore cache).
-    ShowExploreResults(Vec<RadioExploreEntry>),
+    /// Render the explore results cached by the last session.
+    ShowCachedExplore(Vec<RadioExploreEntry>),
     /// Async query finished, keyed by generation; stale gens are dropped.
     SearchFinished {
         /// Generation this result belongs to.
@@ -89,8 +89,6 @@ pub enum RadioPanelOutput {
         url: String,
         /// Station display name.
         name: String,
-        /// Favicon URL (may be empty).
-        favicon: String,
     },
     /// Start recording the current stream.
     RecordStream,
@@ -128,8 +126,8 @@ pub struct RadioPanel {
     filter: String,
     search_gen: u32,
     search_debounce: Option<glib::SourceId>,
-    current_url: String,
-    is_stream: bool,
+    /// The stream playing now; empty while a file plays.
+    playing_stream: String,
 }
 
 impl Drop for RadioPanel {
@@ -210,8 +208,7 @@ impl Component for RadioPanel {
                 let cached = gio::spawn_blocking(load_explore_cache)
                     .await
                     .unwrap_or_default();
-                if !cached.is_empty()
-                    && s.send(RadioPanelInput::ShowExploreResults(cached)).is_err()
+                if !cached.is_empty() && s.send(RadioPanelInput::ShowCachedExplore(cached)).is_err()
                 {
                     return;
                 }
@@ -232,8 +229,7 @@ impl Component for RadioPanel {
                 filter: String::new(),
                 search_gen: 0,
                 search_debounce: None,
-                current_url: String::new(),
-                is_stream: false,
+                playing_stream: String::new(),
             },
             widgets: (),
         }
@@ -246,10 +242,8 @@ impl Component for RadioPanel {
                 self.sync_saved_urls();
                 self.rebuild_list();
             }
-            RadioPanelInput::ShowExploreResults(results) => {
-                self.explore_data.clone_from(&results);
-                let for_cache = results;
-                gio::spawn_blocking(move || save_explore_cache(&for_cache));
+            RadioPanelInput::ShowCachedExplore(results) => {
+                self.explore_data = results;
                 self.rebuild_list();
             }
             RadioPanelInput::SearchFinished {
@@ -263,7 +257,9 @@ impl Component for RadioPanel {
                 self.hide_loading();
                 match results {
                     Some(r) if !r.is_empty() => {
-                        sender.input(RadioPanelInput::ShowExploreResults(r));
+                        self.explore_data.clone_from(&r);
+                        gio::spawn_blocking(move || save_explore_cache(&r));
+                        self.rebuild_list();
                     }
                     Some(_) if popular => {}
                     Some(_) => {
@@ -274,14 +270,9 @@ impl Component for RadioPanel {
                 }
             }
             RadioPanelInput::NowPlayingChanged { url, is_stream } => {
-                self.current_url = url;
-                self.is_stream = is_stream;
+                self.playing_stream = if is_stream { url } else { String::new() };
                 // Highlight only — no rebuild, no full-tree walk.
-                self.list.set_now_playing(if self.is_stream {
-                    &self.current_url
-                } else {
-                    ""
-                });
+                self.list.set_now_playing(&self.playing_stream);
             }
             RadioPanelInput::SearchQueryChanged(query) => {
                 if let Some(id) = self.search_debounce.take() {
@@ -314,8 +305,8 @@ impl Component for RadioPanel {
             },
             RadioPanelInput::LoadPopular => self.start_query(QueryKind::Popular, &sender),
             RadioPanelInput::PlayClicked(url) => {
-                let (name, favicon) = self.resolve_station_meta(&url);
-                let _ = sender.output(RadioPanelOutput::PlayStation { url, name, favicon });
+                let name = self.station_name(&url);
+                let _ = sender.output(RadioPanelOutput::PlayStation { url, name });
             }
             RadioPanelInput::DeleteStationByUrl(url) => {
                 if let Some(station) = self.stations.iter().find(|s| s.url == url) {
@@ -362,11 +353,7 @@ impl RadioPanel {
         let rows = self.build_rows();
         let has_content = !rows.is_empty();
         self.list.set_items(rows);
-        self.list.set_now_playing(if self.is_stream {
-            &self.current_url
-        } else {
-            ""
-        });
+        self.list.set_now_playing(&self.playing_stream);
 
         let loading = self.spinner.is_visible();
         self.empty_state.set_visible(

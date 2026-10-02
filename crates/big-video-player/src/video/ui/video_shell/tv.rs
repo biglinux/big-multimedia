@@ -5,12 +5,27 @@
 use super::playback::seek_fraction;
 use super::*;
 use crate::cast::daemon::{PlaybackStart, State};
-use crate::shared::tv_cast::TvMedia;
+use crate::shared::tv_cast::{TvCardAction, TvMedia, saved_height};
 
 impl VideoShell {
-    /// The TV session the controls drive: this player's, not released.
-    pub(super) fn tv_attached(&self) -> Option<State> {
-        self.tv.attached()
+    pub(super) fn on_tv_card(&mut self, action: TvCardAction) {
+        match action {
+            TvCardAction::Stop => {
+                self.tv_pill.popdown();
+                self.tv.control("stop", 0.0);
+            }
+            TvCardAction::ToggleRelease if self.tv.released() => self.attach_tv(),
+            TvCardAction::ToggleRelease => self.release_tv(),
+            TvCardAction::Here => self.toggle_tv_here(),
+            TvCardAction::Replace => self.replace_tv(),
+            TvCardAction::Follow => self.follow_tv(),
+        }
+    }
+
+    /// No card over the video, and no TV backdrop behind it.
+    fn hide_tv_card(&self) {
+        self.idle_bg.show_tv(None, 0.0);
+        self.tv_card.hide();
     }
 
     pub(super) fn on_tv_changed(&mut self) {
@@ -28,12 +43,10 @@ impl VideoShell {
                     i18n("The TV is still playing")
                 }));
                 if released {
-                    self.idle_bg.show_tv(None, 0.0);
-                    self.tv_card.hide();
+                    self.hide_tv_card();
                     self.tv_menu.show_released(&state, !self.holds_the_tvs());
                 } else if here {
-                    self.idle_bg.show_tv(None, 0.0);
-                    self.tv_card.hide();
+                    self.hide_tv_card();
                     self.tv_menu.show_synced(&state);
                     self.keep_up_with_tv(&state);
                     self.show_tv_in_controls(&state);
@@ -59,13 +72,11 @@ impl VideoShell {
                 let released = std::mem::take(&mut self.tv_was_released);
                 let Some(last) = self.tv_last.take() else {
                     self.stop_here();
-                    self.idle_bg.show_tv(None, 0.0);
-                    self.tv_card.hide();
+                    self.hide_tv_card();
                     return;
                 };
                 if released {
-                    self.idle_bg.show_tv(None, 0.0);
-                    self.tv_card.hide();
+                    self.hide_tv_card();
                     return;
                 }
                 // The file ended on the TV: the next one goes there too.
@@ -76,8 +87,7 @@ impl VideoShell {
                 }
                 // Stopped while the controls had it: pick up where it was.
                 self.stop_here();
-                self.idle_bg.show_tv(None, 0.0);
-                self.tv_card.hide();
+                self.hide_tv_card();
                 self.follow_tv_position(&last);
                 self.show_mpv_in_controls();
             }
@@ -86,7 +96,7 @@ impl VideoShell {
     }
 
     /// "Use the player": the TV plays on; the player picks up where it is.
-    pub(super) fn release_tv(&mut self) {
+    fn release_tv(&mut self) {
         self.tv_pill.popdown();
         let Some(state) = self.tv.attached() else {
             return;
@@ -102,7 +112,7 @@ impl VideoShell {
 
     /// "On the TV": the controls drive the TV again, and the player pauses
     /// so the two do not play over each other.
-    pub(super) fn attach_tv(&mut self) {
+    fn attach_tv(&mut self) {
         self.tv_pill.popdown();
         if let Some(mpv) = self.mpv.borrow().as_ref() {
             mpv.pause();
@@ -113,7 +123,7 @@ impl VideoShell {
     /// "Watch here too" and back: the player plays the TV's file in step
     /// with it, muted (both at once would echo, a TV being a second or more
     /// behind), or waits paused for the TV again.
-    pub(super) fn toggle_tv_here(&mut self) {
+    fn toggle_tv_here(&mut self) {
         self.tv_pill.popdown();
         let Some(mpv) = self.mpv.borrow().clone() else {
             return;
@@ -185,7 +195,7 @@ impl VideoShell {
 
     /// "Show this one on the TV": the TV plays what the player holds, from
     /// where the player is, and the controls drive the TV again.
-    pub(super) fn replace_tv(&mut self) {
+    fn replace_tv(&mut self) {
         self.tv_pill.popdown();
         let (Some(mpv), Some(state)) = (self.mpv.borrow().clone(), self.tv.playing()) else {
             return;
@@ -205,7 +215,7 @@ impl VideoShell {
                     paused: false,
                     volume: state.volume.unwrap_or(1.0),
                     muted: state.muted.unwrap_or(false),
-                    height: u32::try_from(self.settings.get_int(keys::TV_RESOLUTION)).unwrap_or(0),
+                    height: saved_height(&self.settings),
                 },
             },
         );
@@ -213,7 +223,7 @@ impl VideoShell {
 
     /// "Play the TV's here": open in the player what the TV plays, at the
     /// TV's point. The TV plays on; the player stays free.
-    pub(super) fn follow_tv(&mut self) {
+    fn follow_tv(&mut self) {
         self.tv_pill.popdown();
         let (Some(mpv), Some(source)) = (self.mpv.borrow().clone(), self.tv.source()) else {
             return;
@@ -240,8 +250,12 @@ impl VideoShell {
     }
 
     /// Move the playlist and send the file that loads to `receiver`. False
-    /// when there is nowhere to go.
+    /// when there is nowhere to go, or while the TV still moves to the last
+    /// one: that switch would drop this one's.
     pub(super) fn tv_skip(&mut self, forward: bool, receiver: String) -> bool {
+        if self.tv.switching() {
+            return false;
+        }
         let Some(mpv) = self.mpv.borrow().clone() else {
             return false;
         };
@@ -284,7 +298,7 @@ impl VideoShell {
                     paused: false,
                     volume: last.and_then(|s| s.volume).unwrap_or(1.0),
                     muted: last.and_then(|s| s.muted).unwrap_or(false),
-                    height: u32::try_from(self.settings.get_int(keys::TV_RESOLUTION)).unwrap_or(0),
+                    height: saved_height(&self.settings),
                 },
             },
         );
@@ -292,10 +306,9 @@ impl VideoShell {
 
     /// Seek the player to where the TV is, if it plays the same file.
     fn follow_tv_position(&self, state: &State) {
-        let Some(mpv) = self.mpv.borrow().clone() else {
-            return;
-        };
-        if mpv.get_current_file().is_some() && mpv.get_current_file() == self.tv.source() {
+        if self.holds_the_tvs()
+            && let Some(mpv) = self.mpv.borrow().as_ref()
+        {
             mpv.seek_absolute(state.position);
         }
     }

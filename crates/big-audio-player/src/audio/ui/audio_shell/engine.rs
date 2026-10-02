@@ -45,7 +45,6 @@ impl AudioShell {
                 }
             }
             PlayerEvent::PauseChanged(paused) => {
-                self.mpris_state.paused.store(paused, Ordering::Relaxed);
                 let mut status = self
                     .mpris_state
                     .status
@@ -140,7 +139,6 @@ impl AudioShell {
                     self.playback_bar
                         .emit(AudioPlaybackBarInput::SetPaused(paused));
                 }
-                self.mpris_state.paused.store(paused, Ordering::Relaxed);
                 *self
                     .mpris_state
                     .status

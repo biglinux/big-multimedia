@@ -5,7 +5,7 @@ use big_app_kit::desktop::install_action;
 use big_app_kit::file_dialogs::FilePicker;
 use gtk::{gio, glib};
 
-use super::super::{BrowserState, VideoBrowserSidebarOutput};
+use super::super::{BrowserState, SidebarMode, VideoBrowserSidebarOutput};
 use crate::i18n::i18n;
 use crate::media::playlist;
 use crate::settings::keys;
@@ -202,8 +202,8 @@ fn save_playlist(state: &Rc<BrowserState>) {
         });
 }
 
-/// Load an `.m3u`/`.m3u8` as the play queue and start it (overflow menu action).
-/// The shell loads it into mpv and pushes the queue back (revealing Playlist).
+/// Load an `.m3u`/`.m3u8` as the play queue, show it and start it (overflow
+/// menu action). The shell loads it into mpv and pushes the queue back.
 fn load_playlist_file(state: &Rc<BrowserState>) {
     let Some(window) = state.window() else {
         return;
@@ -216,6 +216,8 @@ fn load_playlist_file(state: &Rc<BrowserState>) {
             if paths.is_empty() {
                 return;
             }
+            state.queue.replace(paths.clone());
+            state.switch_mode(SidebarMode::Playlist);
             state
                 .sender
                 .output(VideoBrowserSidebarOutput::PlayFromList { paths, start: 0 })

@@ -182,16 +182,9 @@ fn audio_preference_actions(mpv: Option<&Arc<MpvBackend>>) -> Option<PlayerAudio
 fn apply_player_audio_effects(mpv: &MpvBackend, effects: PlayerAudioEffects) {
     mpv.apply_audio_effects(&AudioEffects {
         normalize: effects.normalize,
-        nr_enabled: effects.nr_enabled,
         nr_strength: effects.nr_strength,
         nr_model: effects.nr_model,
         nr_mono: effects.nr_mono,
-        gate_enabled: false,
-        gate_intensity: 0.0,
-        hpf_enabled: false,
-        hpf_frequency: 0.0,
         eq_bands: &effects.eq_bands,
-        compressor_enabled: false,
-        compressor_intensity: 0.0,
     });
 }

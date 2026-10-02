@@ -60,11 +60,14 @@ pub(super) fn build_store(
     (store, folder_count)
 }
 
-/// Custom filter combining the kind chip and the fuzzy search query.
+/// Custom filter combining the kind chip and the fuzzy search query. The
+/// state keeps this filter, so the filter holds the state weakly.
 pub(super) fn build_filter(state: &Rc<BrowserState>) -> gtk::CustomFilter {
-    let state = state.clone();
+    let state = Rc::downgrade(state);
     gtk::CustomFilter::new(move |obj| {
-        let Some(entry_object) = obj.downcast_ref::<glib::BoxedAnyObject>() else {
+        let (Some(state), Some(entry_object)) =
+            (state.upgrade(), obj.downcast_ref::<glib::BoxedAnyObject>())
+        else {
             return false;
         };
         let entry: std::cell::Ref<PlaylistEntry> = entry_object.borrow();

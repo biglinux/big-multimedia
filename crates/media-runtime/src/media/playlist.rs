@@ -14,6 +14,7 @@ pub use super::playlist_scan::{
 };
 pub use big_media_components::media::files::{AUDIO_EXTENSIONS, VIDEO_EXTENSIONS};
 
+#[derive(Default)]
 pub struct ScanResult {
     pub files: Vec<String>,
     pub truncated: bool,
