@@ -58,7 +58,7 @@ impl Drop for DownloadQueuePanel {
             }
         }
         if let Some(timer) = self.timer.take() {
-            timer.remove();
+            big_gtk_kit::source::remove(timer);
         }
     }
 }
@@ -163,7 +163,7 @@ impl Component for DownloadQueuePanel {
                 if self.tick_downloads()
                     && let Some(id) = self.timer.take()
                 {
-                    id.remove();
+                    big_gtk_kit::source::remove(id);
                 }
             }
             DownloadQueueInput::ClearFinished => self.clear_finished(),

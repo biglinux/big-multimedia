@@ -330,7 +330,7 @@ impl Mpris {
 impl Drop for Mpris {
     fn drop(&mut self) {
         if let Some(tick) = self.publisher.tick.take() {
-            tick.remove();
+            big_gtk_kit::source::remove(tick);
         }
         // Order matters: release the bus name FIRST (with the connection
         // alive), THEN close the private connection. Closing first makes

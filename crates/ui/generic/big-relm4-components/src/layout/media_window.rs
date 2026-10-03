@@ -625,7 +625,7 @@ impl BigMediaImmersionController {
 
     fn cancel_pending(&self) {
         if let Some(source_id) = self.idle_timer.borrow_mut().take() {
-            source_id.remove();
+            big_gtk_kit::source::remove(source_id);
         }
     }
 
@@ -700,7 +700,7 @@ impl BigMediaImmersionController {
 impl Drop for BigMediaImmersionController {
     fn drop(&mut self) {
         if let Some(source_id) = self.idle_timer.borrow_mut().take() {
-            source_id.remove();
+            big_gtk_kit::source::remove(source_id);
         }
     }
 }

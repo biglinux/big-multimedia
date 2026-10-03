@@ -21,6 +21,7 @@ audio-panels = ["big-media-data/db", "big-media-data/library", "big-media-data/r
 
 [dependencies]
 adw.workspace = true
+big-gtk-kit.workspace = true
 gtk.workspace = true
 relm4.workspace = true
 log.workspace = true

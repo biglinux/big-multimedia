@@ -236,7 +236,7 @@ fn popdown_all_others(current: &gtk::Popover, explicit_others: &[glib::WeakRef<g
 
 fn cancel_pending_close(close_id: &PendingClose) {
     if let Some(id) = close_id.source.borrow_mut().take() {
-        id.remove();
+        big_gtk_kit::source::remove(id);
     }
 }
 

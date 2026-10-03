@@ -206,7 +206,7 @@ impl VideoShell {
     /// Disarm the sleep timer (no-op if none armed). Removes the stored source.
     pub(super) fn cancel_sleep_timer(&mut self) {
         if let Some(source) = self.take_sleep_timer_source() {
-            source.remove();
+            big_gtk_kit::source::remove(source);
         }
         self.set_sleep_timer_remaining(0);
     }

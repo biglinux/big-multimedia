@@ -576,7 +576,7 @@ fn attach(view: &Rc<View>) {
 fn detach(view: &View) {
     if let Some((listener, alive)) = view.attached.take() {
         view.link.unsubscribe(listener);
-        alive.remove();
+        big_gtk_kit::source::remove(alive);
     }
 }
 

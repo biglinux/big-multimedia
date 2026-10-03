@@ -133,7 +133,7 @@ pub struct RadioPanel {
 impl Drop for RadioPanel {
     fn drop(&mut self) {
         if let Some(source) = self.search_debounce.take() {
-            source.remove();
+            big_gtk_kit::source::remove(source);
         }
     }
 }
@@ -276,7 +276,7 @@ impl Component for RadioPanel {
             }
             RadioPanelInput::SearchQueryChanged(query) => {
                 if let Some(id) = self.search_debounce.take() {
-                    id.remove();
+                    big_gtk_kit::source::remove(id);
                 }
                 self.filter = query.clone();
                 if query.is_empty() {

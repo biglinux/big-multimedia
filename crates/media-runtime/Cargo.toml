@@ -37,6 +37,7 @@ libc.workspace = true
 big-audio-effects.workspace = true
 big-app-kit = { workspace = true, features = ["remote-control"], optional = true }
 big-os-kit.workspace = true
+big-gtk-kit = { workspace = true, optional = true }
 big-relm4-components = { workspace = true, optional = true }
 big-media-components = { workspace = true, optional = true }
 big-mpv-render = { workspace = true, optional = true }
@@ -74,6 +75,7 @@ ui-core = [
     "dep:gdk",
     "dep:mpv-sys",
     "dep:big-app-kit",
+    "dep:big-gtk-kit",
     "dep:big-relm4-components",
     "dep:big-media-components",
 ]

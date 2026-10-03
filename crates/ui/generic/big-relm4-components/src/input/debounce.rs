@@ -31,7 +31,7 @@ impl BigDebouncedAction {
     /// Execute the configured operation and return its outcome.
     pub fn run(&self, action: impl FnOnce() + 'static) {
         if let Some(id) = self.pending.borrow_mut().take() {
-            id.remove();
+            big_gtk_kit::source::remove(id);
         }
         let pending = self.pending.clone();
         let id = gtk::glib::timeout_add_local_once(self.delay, move || {

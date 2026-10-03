@@ -90,6 +90,7 @@ name = "big-app-kit"
 version = "0.1.0"
 dependencies = [
  "big-app-kit-core",
+ "big-gtk-kit",
  "big-os-kit",
  "gtk4",
  "libadwaita",
@@ -189,6 +190,7 @@ dependencies = [
  "async-channel",
  "big-app-kit",
  "big-audio-effects",
+ "big-gtk-kit",
  "big-media-components",
  "big-media-data",
  "big-mpv-render",
@@ -235,6 +237,7 @@ version = "0.1.0"
 dependencies = [
  "big-app-kit",
  "big-audio-effects",
+ "big-gtk-kit",
  "big-media-components",
  "big-media-data",
  "big-os-kit",

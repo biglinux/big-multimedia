@@ -57,7 +57,7 @@ pub fn attach_save_status_banner(page: &adw::PreferencesPage, settings: &Setting
     });
     page.connect_unmap(move |_| {
         if let Some(timer) = timer.borrow_mut().take() {
-            timer.remove();
+            big_gtk_kit::source::remove(timer);
         }
     });
 }
@@ -207,7 +207,7 @@ pub fn document_status(
     });
     root.connect_unmap(move |_| {
         if let Some(id) = timer.borrow_mut().take() {
-            id.remove();
+            big_gtk_kit::source::remove(id);
         }
     });
     root

@@ -245,7 +245,7 @@ impl AudioShell {
     /// Disarm the sleep timer (no-op if none armed).
     pub(super) fn cancel_sleep_timer(&mut self) {
         if let Some(source) = self.sleep_timer_source.take() {
-            source.remove();
+            big_gtk_kit::source::remove(source);
         }
         self.sleep_timer_remaining = 0;
     }

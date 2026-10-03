@@ -15,6 +15,7 @@ categories = ["gui"]
 
 [dependencies]
 adw.workspace = true
+big-gtk-kit.workspace = true
 gtk.workspace = true
 relm4.workspace = true
 log.workspace = true

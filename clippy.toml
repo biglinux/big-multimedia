@@ -19,6 +19,7 @@ large-error-threshold = 256
 allowed-duplicate-crates = []
 
 disallowed-methods = [
+    { path = "glib::SourceId::remove", reason = "panics when the source already ran, which aborts inside a GLib callback; use `big_gtk_kit::source::remove`" },
     # From big-gtk-kit/clippy.toml.
     { path = "gtk4::prelude::AccessibleExtManual::update_relation", reason = "leaks the list of targets on every call (gtk-rs 0.11); use `big_gtk_kit::accessible::relate`" },
     { path = "libadwaita::PasswordEntryRow::new", reason = "leaks its buffer and the password in it (libadwaita 1.9); use `big_gtk_kit::password::password_row(adw::PasswordEntryRow::builder())`" },

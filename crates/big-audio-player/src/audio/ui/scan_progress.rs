@@ -77,7 +77,7 @@ pub(super) fn show(parent: &gtk::Window, control: Arc<ScanControl>) {
     });
     content.connect_unmap(move |_| {
         if let Some(timer) = timer.borrow_mut().take() {
-            timer.remove();
+            big_gtk_kit::source::remove(timer);
         }
     });
     dialog.set_child(Some(&content));

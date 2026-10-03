@@ -57,7 +57,7 @@ pub fn handle_voice_strength_changed(
     let is_active = strength > 0.0;
     let was_active = state.active.replace(is_active);
     if let Some(source) = state.rebuild.take() {
-        source.remove();
+        big_gtk_kit::source::remove(source);
     }
     let Some(mpv) = mpv else {
         return is_active;

@@ -780,7 +780,7 @@ impl Drop for VideoShell {
         self.screenshot_owner
             .store(false, std::sync::atomic::Ordering::Release);
         if let Some(source) = self.sleep_timer_source.take() {
-            source.remove();
+            big_gtk_kit::source::remove(source);
         }
         if let Some(cookie) = self.screen_inhibit.take()
             && let Some(app) = gtk::gio::Application::default().and_downcast::<gtk::Application>()
