@@ -25,8 +25,6 @@ mod library_tag_editor;
 pub(crate) mod library_tree;
 /// Queue-panel chrome: toolbar, empty states, column-config dialog.
 mod playlist_chrome;
-/// The dropdown label factory and the library tree's click hit-test.
-mod playlist_geom;
 /// Queue interactions: Delete removal and the track context menu.
 mod playlist_interactions;
 /// Playlist library dialog (save / load / rename / export / import / delete).

@@ -13,7 +13,6 @@ use gtk::glib;
 use relm4::ComponentSender;
 
 use crate::audio::library_grouping::{AgeFilter, LibraryGrouping};
-use crate::audio::ui::playlist_geom::dropdown_list_factory;
 use crate::i18n::i18n;
 
 use super::library_panel::{LibraryPanel, LibraryPanelOutput};
@@ -235,6 +234,41 @@ fn build_search_entry(sender: &ComponentSender<LibraryPanel>) -> gtk::SearchEntr
         ));
     });
     entry
+}
+
+/// A plain left-aligned label factory for the grouping/age dropdowns.
+fn dropdown_list_factory() -> gtk::SignalListItemFactory {
+    let factory = gtk::SignalListItemFactory::new();
+    factory.connect_setup(|_, factory_callback_value| {
+        let Some(list_item) = signal_factory::list_item_from_factory_value(factory_callback_value)
+        else {
+            return;
+        };
+        let label = gtk::Label::new(None);
+        label.set_xalign(0.0);
+        label.set_margin_start(8);
+        label.set_margin_end(8);
+        label.set_margin_top(4);
+        label.set_margin_bottom(4);
+        let attrs = pango::AttrList::new();
+        attrs.insert(pango::AttrInt::new_weight(pango::Weight::Normal));
+        label.set_attributes(Some(&attrs));
+        list_item.set_child(Some(&label));
+    });
+    factory.connect_bind(|_, factory_callback_value| {
+        let Some(list_item) = signal_factory::list_item_from_factory_value(factory_callback_value)
+        else {
+            return;
+        };
+        let Some(label) = signal_factory::child_as::<gtk::Label>(list_item) else {
+            return;
+        };
+        if let Some(string_object) = signal_factory::bound_model_as::<gtk::StringObject>(list_item)
+        {
+            label.set_label(&string_object.string());
+        }
+    });
+    factory
 }
 
 #[cfg(test)]

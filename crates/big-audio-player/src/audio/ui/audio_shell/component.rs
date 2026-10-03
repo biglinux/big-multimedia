@@ -357,7 +357,7 @@ impl Component for AudioShell {
         );
         // Lists consume Left/Right for their own navigation before a bubbling
         // window shortcut sees them, so the seek keys are taken on the way
-        // down. Sliders, text and library tree rows keep their arrows.
+        // down. Sliders, text and the library tree keep their arrows.
         let seek_actions: std::collections::HashMap<String, String> = single_key_actions
             .iter()
             .filter(|(_, action)| action.starts_with("seek-"))
@@ -699,10 +699,12 @@ fn focus_keeps_arrows(controller: &gtk::EventControllerKey) -> bool {
     focus.is_some_and(|focus| {
         focus.is::<gtk::Range>()
             || focus.ancestor(gtk::Range::static_type()).is_some()
-            || focus.is::<gtk::TreeExpander>()
+            // The library tree opens and closes rows with them.
             || focus
-                .first_child()
-                .is_some_and(|child| child.is::<gtk::TreeExpander>())
+                .downcast_ref::<big_item_view::ItemView>()
+                .and_then(big_item_view::ItemView::model)
+                .and_then(|model| model.item(0))
+                .is_some_and(|item| item.is::<gtk::TreeListRow>())
     })
 }
 
