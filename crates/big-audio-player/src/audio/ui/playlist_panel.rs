@@ -77,6 +77,25 @@ fn should_refresh_empty_placeholder(track_count: u32) -> bool {
     track_count == 0
 }
 
+/// How many rows the store and a new snapshot share at the start and at the
+/// end. `same(row, track)` compares one stored row with a snapshot track.
+fn shared_ends(
+    rows: usize,
+    tracks: &[Track],
+    same: impl Fn(usize, &Track) -> bool,
+) -> (usize, usize) {
+    let start = tracks
+        .iter()
+        .take(rows)
+        .enumerate()
+        .take_while(|(row, track)| same(*row, track))
+        .count();
+    let end = (1..=rows.min(tracks.len()) - start)
+        .take_while(|&back| same(rows - back, &tracks[tracks.len() - back]))
+        .count();
+    (start, end)
+}
+
 fn should_remove_queue_row(index: usize, track_count: u32) -> bool {
     (index as u32) < track_count
 }
@@ -466,9 +485,21 @@ impl Component for PlaylistPanel {
                 playlist_name,
             } => {
                 self.playlist_name = playlist_name;
-                let objects = Self::to_objects(&tracks);
-                // Splice in place — never rebuild the ColumnView (RSS regression).
-                self.store.splice(0, self.store.n_items(), &objects);
+                // Replace only the rows that changed: each metadata batch of a
+                // large open sends the whole queue, and new objects for every
+                // row made GTK destroy and rebuild every row widget each time.
+                let rows = self.store.n_items() as usize;
+                let (start, end) = shared_ends(rows, &tracks, |row, track| {
+                    self.store
+                        .item(row as u32)
+                        .and_downcast::<glib::BoxedAnyObject>()
+                        .is_some_and(|object| *object.borrow::<Track>() == *track)
+                });
+                let objects = Self::to_objects(&tracks[start..tracks.len() - end]);
+                let removed = rows - start - end;
+                if removed > 0 || !objects.is_empty() {
+                    self.store.splice(start as u32, removed as u32, &objects);
+                }
                 *self.current_track_identity.borrow_mut() =
                     current_idx.and_then(|i| self.store.item(i as u32));
                 self.refresh_empty_state(&sender);
@@ -531,7 +562,8 @@ impl Component for PlaylistPanel {
 mod tests {
     use super::{
         insert_tracks_position, is_current_indicator_identity_match, playlist_header_label,
-        scroll_target_position, should_refresh_empty_placeholder, should_remove_queue_row,
+        scroll_target_position, shared_ends, should_refresh_empty_placeholder,
+        should_remove_queue_row,
     };
     #[cfg(not(miri))]
     use super::{is_current_indicator_track, playlist_track_objects};
@@ -637,5 +669,34 @@ mod tests {
 
         let two_tracks = playlist_header_label(2, 125.0, "Road Mix");
         assert!(two_tracks.starts_with("2 tracks · "));
+    }
+
+    /// Metadata for rows 1 and 2, a removal, an insertion, duplicates and
+    /// empty queues: only the rows between the shared ends are replaced.
+    #[cfg(not(miri))]
+    #[test]
+    fn shared_ends_leave_out_only_the_changed_rows() {
+        let named = |names: &[&str]| -> Vec<crate::db::models::Track> {
+            names.iter().map(|name| track(name, name, 1.0)).collect()
+        };
+        let ends = |old: &[&str], new: &[&str]| {
+            let (old, new) = (named(old), named(new));
+            shared_ends(old.len(), &new, |row, track| old[row] == *track)
+        };
+        let mut retitled = named(&["a", "b", "c", "d"]);
+        retitled[1].title = Some("B".into());
+        retitled[2].title = Some("C".into());
+        let old = named(&["a", "b", "c", "d"]);
+        assert_eq!(
+            shared_ends(4, &retitled, |row, track| old[row] == *track),
+            (1, 1)
+        );
+        assert_eq!(ends(&["a", "b", "c"], &["a", "b", "c"]), (3, 0));
+        assert_eq!(ends(&["a", "b", "c"], &["a", "c"]), (1, 1));
+        assert_eq!(ends(&["a", "c"], &["a", "b", "c"]), (1, 1));
+        assert_eq!(ends(&["a", "a"], &["a", "a", "a"]), (2, 0));
+        assert_eq!(ends(&["a", "b"], &["c", "d"]), (0, 0));
+        assert_eq!(ends(&[], &["a"]), (0, 0));
+        assert_eq!(ends(&["a"], &[]), (0, 0));
     }
 }
