@@ -15,7 +15,7 @@ url='https://github.com/biglinux/big-multimedia'
 license=('GPL-3.0-or-later')
 # libpulse provides `pactl`, used to drive the PipeWire/PulseAudio stream volume
 # (same backend as the video player).
-depends=('gtk4' 'libadwaita' 'mpv' 'ffmpeg' 'libpulse')
+depends=('gtk4>=4.22' 'libadwaita>=1.9' 'mpv' 'ffmpeg' 'libpulse')
 # Trim & Export and Convert hand the track to the BigLinux audio converter
 # GUI; without it those menu entries are greyed out.
 # "Play on a TV" (Chromecast and DLNA) goes through the BigNetScreen daemon.

@@ -18,7 +18,7 @@ license=('GPL-3.0-or-later' 'MIT' 'LGPL-3.0-or-later')
 # libpulse provides `pactl`, used to drive our PipeWire/PulseAudio stream volume
 # so the in-app volume matches the system mixer (same %, with >100% boost).
 # ffmpeg renders the seek-bar preview thumbnails.
-depends=('gtk4' 'libadwaita' 'mpv' 'ffmpeg' 'libpulse')
+depends=('gtk4>=4.22' 'libadwaita>=1.9' 'mpv' 'ffmpeg' 'libpulse')
 # Successor of the monorepo `bigvideo` package: replace it and satisfy the
 # `bigvideo=…` dependency that `big-video-module` carries.
 replaces=('big-player-video' 'bigvideo')
