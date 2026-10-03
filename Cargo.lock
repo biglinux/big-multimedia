@@ -119,6 +119,7 @@ dependencies = [
  "async-channel",
  "big-app-kit",
  "big-gtk-kit",
+ "big-item-view",
  "big-media-components",
  "big-media-runtime",
  "big-os-kit",
@@ -143,6 +144,14 @@ version = "0.1.0"
 dependencies = [
  "gtk4",
  "libadwaita",
+]
+
+[[package]]
+name = "big-item-view"
+version = "0.1.0"
+dependencies = [
+ "big-gtk-kit",
+ "gtk4",
 ]
 
 [[package]]

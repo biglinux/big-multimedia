@@ -1,19 +1,12 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 
-#[cfg(not(miri))]
-use super::resolve_queue_index_from_track_identities;
 use super::{
     delete_storage_body, delete_storage_heading, download_episode_label,
-    downloadable_episode_items, has_sorted_tracks_to_commit, is_queue_delete_key,
-    remove_from_queue_label, resolve_queue_index_from_identity_keys,
+    downloadable_episode_items, is_queue_delete_key, remove_from_queue_label,
     should_show_single_track_actions, valid_reorder_source_index,
 };
 use crate::db::models::Track;
 use gtk::gdk;
-#[cfg(not(miri))]
-use gtk::glib;
-#[cfg(not(miri))]
-use gtk::prelude::Cast;
 
 fn track(path: &str, title: &str) -> Track {
     Track::new_external_path_with_title(path, Some(title.to_string()))
@@ -49,61 +42,6 @@ fn reorder_source_index_rejects_negative_payloads() {
     assert_eq!(valid_reorder_source_index(-1), None);
     assert_eq!(valid_reorder_source_index(0), Some(0));
     assert_eq!(valid_reorder_source_index(7), Some(7));
-}
-
-#[test]
-fn sorted_order_commit_requires_tracks() {
-    assert!(!has_sorted_tracks_to_commit(&[]));
-    assert!(has_sorted_tracks_to_commit(&[track(
-        "/music/song.flac",
-        "Song"
-    )]));
-}
-
-#[cfg(not(miri))]
-#[test]
-fn queue_index_resolution_matches_visual_track_identity() {
-    let first: glib::Object = glib::BoxedAnyObject::new(track("/music/one.flac", "One")).upcast();
-    let second: glib::Object = glib::BoxedAnyObject::new(track("/music/two.flac", "Two")).upcast();
-
-    assert_eq!(
-        resolve_queue_index_from_track_identities(
-            0,
-            |_| Some(second.clone()),
-            2,
-            |index| match index {
-                0 => Some(first.clone()),
-                1 => Some(second.clone()),
-                _ => None,
-            },
-        ),
-        Some(1)
-    );
-    assert_eq!(
-        resolve_queue_index_from_track_identities(0, |_| None, 2, |_| Some(first.clone())),
-        None
-    );
-}
-
-#[test]
-fn queue_index_resolution_matches_visual_identity_keys() {
-    assert_eq!(
-        resolve_queue_index_from_identity_keys(
-            0,
-            |_| Some("two"),
-            2,
-            |index| match index {
-                0 => Some("one"),
-                1 => Some("two"),
-                _ => None,
-            }
-        ),
-        Some(1)
-    );
-    assert_eq!(
-        resolve_queue_index_from_identity_keys(0, |_| None::<&str>, 2, |_| Some("one")),
-        None
-    );
 }
 
 #[test]

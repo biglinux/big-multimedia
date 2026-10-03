@@ -83,6 +83,49 @@ impl BigContextPopover {
         self.content.append(&button);
     }
 
+    /// Append a row named `label` of icon buttons, one per `(icon, accessible
+    /// name)` choice. Pressing one pops the menu down and calls `on_choice`
+    /// with its index.
+    pub fn append_icon_choices<F>(&self, label: &str, choices: &[(&str, String)], on_choice: F)
+    where
+        F: Fn(usize) + 'static,
+    {
+        let row = gtk::Box::builder()
+            .orientation(gtk::Orientation::Horizontal)
+            .spacing(0)
+            .build();
+        let name = gtk::Label::builder()
+            .label(label)
+            .halign(gtk::Align::Start)
+            .hexpand(true)
+            .xalign(0.0)
+            .margin_start(10)
+            .margin_end(10)
+            .build();
+        name.add_css_class("dim-label");
+        row.append(&name);
+        let on_choice = std::rc::Rc::new(on_choice);
+        for (index, (icon, accessible)) in choices.iter().enumerate() {
+            let button = gtk::Button::builder()
+                .icon_name(*icon)
+                .tooltip_text(accessible.as_str())
+                .build();
+            button.add_css_class("flat");
+            button.update_property(&[gtk::accessible::Property::Label(accessible)]);
+            let popover = self.popover.downgrade();
+            let on_choice = std::rc::Rc::clone(&on_choice);
+            button.connect_clicked(move |_| {
+                if let Some(popover) = popover.upgrade() {
+                    popover.popdown();
+                }
+                on_choice(index);
+            });
+            row.append(&button);
+        }
+        row.update_property(&[gtk::accessible::Property::Label(label)]);
+        self.content.append(&row);
+    }
+
     /// Attach the popover to `parent` and pop it up pointing at the
     /// `(x, y)` coordinate inside the parent.
     pub fn popup_at(self, parent: &impl IsA<gtk::Widget>, x: f64, y: f64) {

@@ -6,30 +6,25 @@
 //! back button returns to the tree. The panel NEVER touches the DB — it emits
 //! intents and the shell pushes query results back.
 //!
-//! `PopulateDetail` splices the detail store (never rebuilds the `ColumnView` —
-//! the RSS-leak invariant); row activation emits `PlayTrack`. The detail column
-//! set (art/title-indicator/rating/add + hidden extras) lives in
-//! `library_detail_columns`; rating/add emit intents, art is panel-owned (LRU +
-//! off-thread fill). The column-config menu, column-width persistence, tree,
-//! grouping, and dialogs are shell-mediated.
+//! `PopulateDetail` splices the detail store; row activation emits `PlayTrack`.
+//! The track list is the drawn `track_list` view shared with the queue: a
+//! heading sorts the list, stars and the add button emit intents, and covers
+//! are panel-owned (LRU + off-thread fill). Tree, grouping and dialogs are
+//! shell-mediated.
 
-use std::cell::{Cell, RefCell};
+use std::cell::RefCell;
+use std::collections::HashSet;
 use std::num::NonZeroUsize;
 use std::path::PathBuf;
 use std::rc::Rc;
 
 use adw::prelude::*;
-use gtk::{gio, glib};
+use gtk::{gdk, gio, glib};
 use relm4::{Component, ComponentParts, ComponentSender};
 
-use big_relm4_components::layout::column_chrome::wire_configure_columns_menu;
-use big_relm4_components::layout::column_persist::{
-    apply_column_widths, wire_column_width_persist,
-};
-
 use crate::audio::library_grouping::LibraryGrouping;
-use crate::audio::ui::library_detail_columns::{self, ArtCache};
 use crate::audio::ui::library_tree::{self, LibraryTreeHandle, LibraryTreeSnapshot};
+use crate::audio::ui::track_list::{self, Behaviour, Columns, ListEvent, TrackList, track_of};
 use crate::audio::ui::{
     library_detail_interactions, library_dialogs, library_grouping_ui, library_io,
     library_tag_editor,
@@ -37,9 +32,9 @@ use crate::audio::ui::{
 use crate::db::models::{Track, WatchFolder};
 use crate::i18n::i18n;
 
-/// A bound detail title row's widgets, kept for `SetPlayingPath` re-light:
-/// `(file_path, speaker_icon, title_label)`.
-pub(super) type DetailIndicator = (String, gtk::Image, gtk::Label);
+/// Covers drawn so far, by art hash; the size they are decoded at.
+type ArtCache = Rc<RefCell<lru::LruCache<String, gdk::Texture>>>;
+const COVER_EDGE: i32 = 36;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 enum DetailContentState {
@@ -261,17 +256,12 @@ pub enum LibraryPanelOutput {
 /// Relm4 library panel component (left tree | right detail).
 pub struct LibraryPanel {
     detail_store: gio::ListStore,
-    detail_view: gtk::ColumnView,
-    /// Right-pane container; swapped between the detail `ColumnView` and an
+    detail: TrackList,
+    /// Right-pane container; swapped between the track list and an
     /// empty-state placeholder (the view is reattached, never rebuilt).
     content_scroll: gtk::ScrolledWindow,
-    /// Currently-playing file path (now-playing indicator target).
+    /// Currently-playing file path (emphasis target).
     current_path: Rc<RefCell<Option<String>>>,
-    /// Bound detail title indicators, pruned on unbind (for re-light).
-    detail_indicators: Rc<RefCell<Vec<DetailIndicator>>>,
-    /// Set while an inbound `ApplyColumnWidths` runs, so the resize watcher
-    /// doesn't echo restored widths back to the shell.
-    applying_widths: Rc<Cell<bool>>,
     /// Handle to push tree data after construction (atomic splice, no rebuild).
     library_tree_handle: LibraryTreeHandle,
     /// Grouping dropdown + signal id, synced to the restored preset on boot.
@@ -282,21 +272,6 @@ pub struct LibraryPanel {
 }
 
 impl LibraryPanel {
-    /// Re-light the detail now-playing indicator on every bound title row by
-    /// file-path match.
-    fn relight_detail(&self) {
-        let current = self.current_path.borrow();
-        for (path, icon, label) in self.detail_indicators.borrow().iter() {
-            let is_current = is_current_detail_indicator(current.as_deref(), path);
-            icon.set_visible(is_current);
-            if is_current {
-                label.add_css_class("now-playing-accent");
-            } else {
-                label.remove_css_class("now-playing-accent");
-            }
-        }
-    }
-
     /// Show the detail `ColumnView` when it has rows, otherwise an empty-state
     /// placeholder. The view is reattached, never rebuilt.
     fn refresh_detail_empty_state(&self) {
@@ -304,8 +279,11 @@ impl LibraryPanel {
             .content_scroll
             .child()
             .as_ref()
-            .is_some_and(|child| child == self.detail_view.upcast_ref::<gtk::Widget>());
+            .is_some_and(|child| child == self.detail.view.upcast_ref::<gtk::Widget>());
 
+        self.detail
+            .header
+            .set_visible(self.detail_store.n_items() > 0);
         match detail_content_state(self.detail_store.n_items(), is_detail_view_attached) {
             DetailContentState::EmptyPlaceholder => {
                 let empty = adw::StatusPage::builder()
@@ -318,7 +296,100 @@ impl LibraryPanel {
             }
             DetailContentState::KeepDetailView => {}
             DetailContentState::ReattachDetailView => {
-                self.content_scroll.set_child(Some(&self.detail_view));
+                self.content_scroll.set_child(Some(&self.detail.view));
+            }
+        }
+    }
+}
+
+/// Library behaviour: the playing file emphasised, covers decoded off the main
+/// loop, and the selection dragged as file paths (for the queue or outside).
+fn library_behaviour(
+    selection: &gtk::MultiSelection,
+    current_path: &Rc<RefCell<Option<String>>>,
+    shown: &Rc<RefCell<glib::WeakRef<big_item_view::ItemView>>>,
+) -> Behaviour {
+    let current = Rc::clone(current_path);
+    let cache: ArtCache = Rc::new(RefCell::new(lru::LruCache::new(
+        NonZeroUsize::new(200).unwrap_or(NonZeroUsize::MIN),
+    )));
+    let pending: Rc<RefCell<HashSet<String>>> = Rc::default();
+    let shown = Rc::clone(shown);
+    let selection = selection.downgrade();
+    Behaviour {
+        is_current: Box::new(move |_, track| {
+            is_current_detail_indicator(current.borrow().as_deref(), &track.file_path)
+        }),
+        cover: Some(Box::new(move |track| {
+            let hash = track.art_hash.clone().filter(|hash| !hash.is_empty())?;
+            if let Some(texture) = cache.borrow_mut().get(&hash) {
+                return Some(texture.clone());
+            }
+            // One decode per cover, however often the row is drawn meanwhile.
+            if pending.borrow_mut().insert(hash.clone()) {
+                let path = track.file_path.clone();
+                let (cache, pending, shown) =
+                    (Rc::clone(&cache), Rc::clone(&pending), Rc::clone(&shown));
+                big_media_components::player_chrome::spawn_blocking_result(
+                    move || {
+                        let data = crate::library::metadata::extract_album_art(&path)?;
+                        big_media_components::media::images::bytes_to_thumbnail(&data, COVER_EDGE)
+                    },
+                    move |texture| {
+                        pending.borrow_mut().remove(&hash);
+                        if let Some(texture) = texture {
+                            cache.borrow_mut().put(hash, texture);
+                            if let Some(view) = shown.borrow().upgrade() {
+                                view.refresh_all();
+                            }
+                        }
+                    },
+                );
+            }
+            None
+        })),
+        drag: Some(Box::new(move |positions| {
+            let selection = selection.upgrade()?;
+            let paths: Vec<String> = positions
+                .iter()
+                .filter_map(|position| selection.item(*position))
+                .filter_map(|item| track_of(&item).map(|track| track.file_path.clone()))
+                .collect();
+            (!paths.is_empty())
+                .then(|| gdk::ContentProvider::for_value(&paths.join("\n").to_value()))
+        })),
+        drop: None,
+    }
+}
+
+/// A heading, a star or a row's button pressed in the library list.
+fn on_list_event(store: &gio::ListStore, event: ListEvent, out: &ComponentSender<LibraryPanel>) {
+    match event {
+        ListEvent::Sorted(column, way) => store.sort(|a, b| {
+            let order = match (track_of(a), track_of(b)) {
+                (Some(a), Some(b)) => column.compare(&a, &b),
+                _ => std::cmp::Ordering::Equal,
+            };
+            if way == gtk::SortType::Descending {
+                order.reverse()
+            } else {
+                order
+            }
+        }),
+        ListEvent::Widths(spec) => {
+            let _ = out.output(LibraryPanelOutput::PersistColumnWidths(spec));
+        }
+        ListEvent::Rate(position, rating) => {
+            if let Some(id) = track_list::rate_in_place(store, position, rating) {
+                let _ = out.output(LibraryPanelOutput::RateTrack { id, rating });
+            }
+        }
+        ListEvent::Action(position) => {
+            if let Some(track) = store
+                .item(position)
+                .and_then(|item| track_of(&item).map(|t| t.clone()))
+            {
+                let _ = out.output(LibraryPanelOutput::ShowAddToPlaylist(track));
             }
         }
     }
@@ -362,64 +433,64 @@ impl Component for LibraryPanel {
 
         // Detail track list (right pane).
         let detail_store = gio::ListStore::new::<glib::BoxedAnyObject>();
-        let sort_model = gtk::SortListModel::new(Some(detail_store.clone()), None::<gtk::Sorter>);
-        let selection = gtk::MultiSelection::new(Some(sort_model.clone()));
-        let detail_view = gtk::ColumnView::builder()
-            .model(&selection)
-            .show_column_separators(false)
-            .show_row_separators(false)
-            .vexpand(true)
-            .build();
-        detail_view.add_css_class("library-detail-columnview");
-
+        let selection = gtk::MultiSelection::new(Some(detail_store.clone()));
         let current_path: Rc<RefCell<Option<String>>> = Rc::new(RefCell::new(None));
-        let detail_indicators: Rc<RefCell<Vec<DetailIndicator>>> =
-            Rc::new(RefCell::new(Vec::new()));
-        let art_cache: ArtCache = Rc::new(RefCell::new(lru::LruCache::new(
-            NonZeroUsize::new(200).unwrap_or(NonZeroUsize::MIN),
-        )));
-        library_detail_columns::build_detail_columns(
-            &detail_view,
-            &sender,
-            &current_path,
-            &detail_indicators,
-            &art_cache,
-        );
-        wire_configure_columns_menu(&detail_view, &i18n("Configure Columns…"), &i18n("Columns"));
-        let applying_widths = Rc::new(Cell::new(false));
-        {
-            let out = sender.clone();
-            wire_column_width_persist(&detail_view, &applying_widths, move |spec| {
-                let _ = out.output(LibraryPanelOutput::PersistColumnWidths(spec));
-            });
-        }
+        let shown: Rc<RefCell<glib::WeakRef<big_item_view::ItemView>>> = Rc::default();
+        let detail = {
+            let behaviour = library_behaviour(&selection, &current_path, &shown);
+            let (store, out) = (detail_store.downgrade(), sender.clone());
+            TrackList::new(
+                Columns::library(),
+                behaviour,
+                &i18n("Tracks"),
+                move |event| {
+                    if let Some(store) = store.upgrade() {
+                        on_list_event(&store, event, &out);
+                    }
+                },
+            )
+        };
+        shown.replace(detail.view.downgrade());
+        detail.view.set_model(Some(&selection));
+        detail.view.add_css_class("library-detail-view");
 
-        // Row activation → PlayTrack (resolve the visual position to a track).
+        // Row activation → PlayTrack.
         {
-            let out = sender.clone();
-            let sm = sort_model.clone();
-            detail_view.connect_activate(move |_, position| {
-                if let Some(track) = sm
-                    .item(position)
-                    .and_downcast::<glib::BoxedAnyObject>()
-                    .map(|obj| obj.borrow::<Track>().clone())
+            let (store, out) = (detail_store.downgrade(), sender.clone());
+            detail.view.connect_activate(move |_, position| {
+                if let Some(track) = store
+                    .upgrade()
+                    .and_then(|store| store.item(position))
+                    .and_then(|item| track_of(&item).map(|track| track.clone()))
                 {
                     let _ = out.output(LibraryPanelOutput::PlayTrack(track));
                 }
             });
         }
-        library_detail_interactions::build_detail_interactions(
-            &detail_view,
-            &selection,
-            &sort_model,
-            &sender,
-        );
+        {
+            let (store, out) = (detail_store.downgrade(), sender.clone());
+            detail
+                .view
+                .connect_context_menu(move |view, position, x, y| {
+                    let Some(store) = store.upgrade() else {
+                        return;
+                    };
+                    let tracks = library_detail_interactions::gather_visual_tracks(&store);
+                    if let Some(index) =
+                        library_detail_interactions::detail_context_index(tracks.len(), position)
+                    {
+                        library_detail_interactions::show_detail_context_menu(
+                            view, x, y, tracks, index, &out,
+                        );
+                    }
+                });
+        }
 
         let content_scroll = gtk::ScrolledWindow::builder()
             .hscrollbar_policy(gtk::PolicyType::Automatic)
             .vexpand(true)
             .hexpand(true)
-            .child(&detail_view)
+            .child(&detail.view)
             .build();
 
         // Single-column layout: the browse tree and the
@@ -450,7 +521,7 @@ impl Component for LibraryPanel {
         });
         back_bar.append(&back_button);
         detail_page.append(&back_bar);
-        detail_page.append(&content_scroll);
+        detail_page.append(&detail.page(&content_scroll));
 
         root.add_named(&left, Some("browse"));
         root.add_named(&detail_page, Some("detail"));
@@ -458,11 +529,9 @@ impl Component for LibraryPanel {
 
         let model = Self {
             detail_store,
-            detail_view,
+            detail,
             content_scroll,
             current_path,
-            detail_indicators,
-            applying_widths,
             library_tree_handle,
             grouping_controls,
             tag_editor,
@@ -477,23 +546,17 @@ impl Component for LibraryPanel {
         match message {
             LibraryPanelInput::PopulateDetail(tracks) => {
                 let boxed_track_objects = detail_track_objects(&tracks);
-                // Splice in place — never rebuild the ColumnView (RSS regression).
                 self.detail_store
                     .splice(0, self.detail_store.n_items(), &boxed_track_objects);
                 self.refresh_detail_empty_state();
-                self.relight_detail();
                 // Selecting a node swaps the single column to the track list.
                 root.set_visible_child_name("detail");
             }
             LibraryPanelInput::SetPlayingPath(path) => {
                 *self.current_path.borrow_mut() = path;
-                self.relight_detail();
+                self.detail.view.refresh_all();
             }
-            LibraryPanelInput::ApplyColumnWidths(spec) => {
-                self.applying_widths.set(true);
-                apply_column_widths(&self.detail_view, &spec);
-                self.applying_widths.set(false);
-            }
+            LibraryPanelInput::ApplyColumnWidths(spec) => self.detail.apply_widths(&spec),
             LibraryPanelInput::SetLibraryTree(data) => self.library_tree_handle.set_tree(data),
             LibraryPanelInput::SetGrouping(grouping) => {
                 library_grouping_ui::select_grouping(&self.grouping_controls, &grouping);

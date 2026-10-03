@@ -1,41 +1,29 @@
 //! App-local Relm4 playlist/queue panel (push-model).
 //!
 //! The queue is shell-owned: this component renders `SetQueue`/`SetPlaying`
-//! snapshots and emits intents (`JumpTo`/`RemoveTracks`/`RateTrack`). It NEVER
-//! rebuilds the `ColumnView` — data changes splice the backing `ListStore` in
-//! place (rebuilding leaks the recycled row pool; the documented RSS regression).
-//! The now-playing indicator matches by OBJECT IDENTITY so duplicate tracks in
-//! the queue light independently.
+//! snapshots and emits intents (`JumpTo`/`RemoveTracks`/`RateTrack`). Data
+//! changes splice the backing `ListStore` in place, only where they differ.
+//! The playing track matches by OBJECT IDENTITY so duplicate tracks in the
+//! queue light independently.
 //!
-//! Implements: render core (splice), full column set, external-path drop,
-//! single-source row reorder, Delete/Backspace multi-remove, column-header sort
-//! commit, right-click context menu, toolbar (save-as/dedupe/clear), and the
-//! empty-state placeholder (drop hint vs. first-run welcome). Saved-playlist
-//! load, smart playlists, and import/export belong to the LIBRARY panel (they
-//! populate the library detail view, not the queue). The column-config menu +
-//! column-width persistence land in follow-up commits; queue mutation + undo
-//! stay 100% shell-side.
+//! The rows are a drawn `track_list` view: a heading sorts the queue itself,
+//! stars rate, the row's button removes, and a drag reorders or adds files.
+//! Saved-playlist load, smart playlists, and import/export belong to the
+//! LIBRARY panel; queue mutation + undo stay shell-side.
 
 use adw::prelude::*;
-use gtk::{gio, glib};
+use gtk::{gdk, gio, glib};
 use relm4::{Component, ComponentParts, ComponentSender};
-use std::cell::{Cell, RefCell};
+use std::cell::RefCell;
 use std::rc::Rc;
 
-use big_relm4_components::layout::column_chrome::wire_configure_columns_menu;
-use big_relm4_components::layout::column_persist::{
-    apply_column_widths, wire_column_width_persist,
-};
 use big_relm4_components::layout::toolbar_pane::{BigToolbarPane, BigToolbarPaneSpec};
 
-use crate::audio::ui::{playlist_chrome, playlist_columns, playlist_interactions};
+use crate::audio::ui::track_list::{Behaviour, Columns, ListEvent, TrackList, track_of};
+use crate::audio::ui::{playlist_chrome, playlist_interactions};
 use crate::db::models::Track;
 use crate::i18n::i18n;
 use big_media_components::time::duration_hm as format_duration_hm;
-
-/// Live now-playing indicator widgets for one bound row, kept so `SetPlaying`
-/// can re-light rows by object identity without rebinding the factory.
-pub(super) type RowIndicator = (glib::Object, gtk::Image, gtk::Label);
 
 fn playlist_track_objects(tracks: &[Track]) -> Vec<glib::Object> {
     tracks
@@ -248,66 +236,37 @@ pub enum PlaylistPanelOutput {
 /// Relm4 playlist/queue panel component.
 pub struct PlaylistPanel {
     store: gio::ListStore,
-    column_view: gtk::ColumnView,
-    /// Scroll area hosting the `ColumnView`; swapped for an empty-state widget
-    /// when the queue is empty (never rebuilt — the view is reattached).
+    selection: gtk::MultiSelection,
+    list: TrackList,
+    /// Scroll area of the list; holds the empty-state widget instead while the
+    /// queue is empty (the view is put back, never rebuilt).
     scroll: gtk::ScrolledWindow,
     /// Toolbar header label: playlist name when empty, "N tracks · duration"
     /// when the queue has items.
     header_label: gtk::Label,
-    /// Bound now-playing indicators, pruned on unbind.
-    indicators: Rc<RefCell<Vec<RowIndicator>>>,
-    /// The currently-playing store object (identity target for the indicator).
+    /// The currently-playing store object (identity target for the emphasis).
     current_track_identity: Rc<RefCell<Option<glib::Object>>>,
     /// Active saved-playlist name (shown in the toolbar header when the queue
     /// is empty).
     playlist_name: String,
     /// Library-has-tracks flag — picks the empty-queue placeholder variant.
     library_has_items: bool,
-    /// Set while an inbound `ApplyColumnWidths` runs, so the resize-persist
-    /// watcher doesn't echo restored widths straight back to the shell.
-    applying_widths: Rc<Cell<bool>>,
 }
 
 impl PlaylistPanel {
-    /// Wrap queue tracks as the `BoxedAnyObject`s the store/factories expect.
+    /// Wrap queue tracks as the `BoxedAnyObject`s the store holds.
     fn to_objects(tracks: &[Track]) -> Vec<glib::Object> {
         playlist_track_objects(tracks)
     }
 
-    /// Re-light the now-playing indicator on every bound row by object identity.
-    fn relight(&self) {
-        let current_track_identity = self.current_track_identity.borrow();
-        for (track_identity, icon, label) in self.indicators.borrow().iter() {
-            let is_current =
-                is_current_indicator_track(current_track_identity.as_ref(), track_identity);
-            icon.set_visible(is_current);
-            if is_current {
-                label.add_css_class("now-playing-accent");
-            } else {
-                label.remove_css_class("now-playing-accent");
-            }
-        }
-    }
-
-    /// Select + scroll the current row into view (+3 look-ahead), deferred until
-    /// the view has realized.
+    /// Select the current row and scroll it into view, three rows ahead.
     fn scroll_to(&self, idx: usize) {
         let count = self.store.n_items() as usize;
         let Some(target) = scroll_target_position(count, idx) else {
             return;
         };
-        if let Some(selection) = self
-            .column_view
-            .model()
-            .and_downcast::<gtk::MultiSelection>()
-        {
-            selection.select_item(idx as u32, true);
-        }
-        let cv = self.column_view.clone();
-        glib::idle_add_local_once(move || {
-            cv.scroll_to(target, None, gtk::ListScrollFlags::FOCUS, None);
-        });
+        self.selection.select_item(idx as u32, true);
+        self.list.view.scroll_to(target, gtk::ListScrollFlags::NONE);
     }
 
     /// Refresh the toolbar header: the playlist name (or "Playlist") when the
@@ -315,8 +274,8 @@ impl PlaylistPanel {
     fn update_header(&self) {
         let count = self.store.n_items();
         let total_secs: f64 = (0..count)
-            .filter_map(|i| self.store.item(i).and_downcast::<glib::BoxedAnyObject>())
-            .map(|boxed_track| boxed_track.borrow::<Track>().duration_secs)
+            .filter_map(|i| self.store.item(i))
+            .filter_map(|item| track_of(&item).map(|track| track.duration_secs))
             .sum();
         self.header_label.set_label(&playlist_header_label(
             count,
@@ -326,17 +285,86 @@ impl PlaylistPanel {
     }
 
     /// Show the empty-state placeholder when the queue is empty, otherwise
-    /// (re)attach the `ColumnView`. The view is reattached, never rebuilt.
+    /// (re)attach the list. The view is reattached, never rebuilt.
     fn refresh_empty_state(&self, sender: &ComponentSender<Self>) {
-        if self.store.n_items() == 0 {
-            let empty = playlist_chrome::build_empty_state(self.library_has_items, sender);
-            self.scroll.set_child(Some(&empty));
+        let empty = self.store.n_items() == 0;
+        self.list.header.set_visible(!empty);
+        if empty {
+            let placeholder = playlist_chrome::build_empty_state(self.library_has_items, sender);
+            self.scroll.set_child(Some(&placeholder));
         } else {
-            let cv: gtk::Widget = self.column_view.clone().upcast();
-            if self.scroll.child().as_ref() != Some(&cv) {
-                self.scroll.set_child(Some(&self.column_view));
+            let view: gtk::Widget = self.list.view.clone().upcast();
+            if self.scroll.child().as_ref() != Some(&view) {
+                self.scroll.set_child(Some(&self.list.view));
             }
         }
+    }
+
+    /// `(queue index, track)` for every selected row.
+    fn selected_tracks(
+        store: &gio::ListStore,
+        selection: &gtk::MultiSelection,
+    ) -> Vec<(usize, Track)> {
+        let bitset = selection.selection();
+        (0..bitset.size())
+            .map(|nth| bitset.nth(nth as u32))
+            .filter_map(|position| {
+                let item = store.item(position)?;
+                Some((position as usize, track_of(&item)?.clone()))
+            })
+            .collect()
+    }
+}
+
+/// Queue behaviour: identity emphasis, single-row reorder drags, and drops of
+/// that row or of files from outside.
+fn queue_behaviour(
+    store: &gio::ListStore,
+    selection: &gtk::MultiSelection,
+    current: &Rc<RefCell<Option<glib::Object>>>,
+    sender: &ComponentSender<PlaylistPanel>,
+) -> Behaviour {
+    let current = Rc::clone(current);
+    let selection_weak = selection.downgrade();
+    let (store_weak, out) = (store.downgrade(), sender.clone());
+    Behaviour {
+        is_current: Box::new(move |item, _| {
+            is_current_indicator_track(current.borrow().as_ref(), item)
+        }),
+        cover: None,
+        // Multi-row reorder is left out: where several rows land is ambiguous.
+        drag: Some(Box::new(move |positions| {
+            let selection = selection_weak.upgrade()?;
+            let [position] = positions else {
+                return None;
+            };
+            (selection.selection().size() == 1)
+                .then(|| gdk::ContentProvider::for_value(&i64::from(*position).to_value()))
+        })),
+        drop: Some(Box::new(move |target, value| {
+            let Some(store) = store_weak.upgrade() else {
+                return false;
+            };
+            let count = store.n_items() as usize;
+            if let Ok(from) = value.get::<i64>() {
+                let Some(from) = playlist_interactions::valid_reorder_source_index(from) else {
+                    return false;
+                };
+                let to = target.map_or(count.saturating_sub(1), |at| at as usize);
+                let _ = out.output(PlaylistPanelOutput::ReorderTrack { from, to });
+                return true;
+            }
+            let paths: Vec<String> = big_app_kit::widgets::drop_paths_from_value(value)
+                .into_iter()
+                .map(|path| path.to_string_lossy().into_owned())
+                .collect();
+            if paths.is_empty() {
+                return false;
+            }
+            let insert_pos = target.map_or(count, |at| at as usize);
+            let _ = out.output(PlaylistPanelOutput::DropPaths { insert_pos, paths });
+            true
+        })),
     }
 }
 
@@ -358,119 +386,90 @@ impl Component for PlaylistPanel {
         sender: ComponentSender<Self>,
     ) -> ComponentParts<Self> {
         let store = gio::ListStore::new::<glib::BoxedAnyObject>();
-        // SortListModel keeps clickable column-header sorting available.
-        let sort_model = gtk::SortListModel::new(Some(store.clone()), None::<gtk::Sorter>);
-        let selection = gtk::MultiSelection::new(Some(sort_model.clone()));
-
-        let column_view = gtk::ColumnView::builder()
-            .model(&selection)
-            // Column-header drag-reorder; row reorder is custom (later commit).
-            .reorderable(true)
-            .show_column_separators(false)
-            .show_row_separators(false)
-            .vexpand(true)
-            .build();
-        column_view.add_css_class("playlist-columnview");
-
-        let indicators: Rc<RefCell<Vec<RowIndicator>>> = Rc::new(RefCell::new(Vec::new()));
+        let selection = gtk::MultiSelection::new(Some(store.clone()));
         let current_track_identity: Rc<RefCell<Option<glib::Object>>> = Rc::new(RefCell::new(None));
 
-        playlist_columns::build_columns(
-            &column_view,
-            &indicators,
-            &current_track_identity,
-            &sender,
+        let list = {
+            let behaviour = queue_behaviour(&store, &selection, &current_track_identity, &sender);
+            let (store, selection, out) =
+                (store.downgrade(), selection.downgrade(), sender.clone());
+            TrackList::new(
+                Columns::queue(),
+                behaviour,
+                &i18n("Playlist"),
+                move |event| {
+                    let (Some(store), Some(selection)) = (store.upgrade(), selection.upgrade())
+                    else {
+                        return;
+                    };
+                    on_list_event(&store, &selection, event, &out);
+                },
+            )
+        };
+        list.view.set_model(Some(&selection));
+        list.view.set_drop_types(
+            &[
+                i64::static_type(),
+                gdk::FileList::static_type(),
+                gio::File::static_type(),
+                String::static_type(),
+            ],
+            gdk::DragAction::COPY | gdk::DragAction::MOVE,
         );
-        wire_configure_columns_menu(&column_view, &i18n("Configure Columns…"), &i18n("Columns"));
-        let applying_widths = Rc::new(Cell::new(false));
-        {
-            let out = sender.clone();
-            wire_column_width_persist(&column_view, &applying_widths, move |spec| {
-                let _ = out.output(PlaylistPanelOutput::PersistColumnWidths(spec));
-            });
-        }
+        list.view.add_css_class("playlist-view");
 
         // Row activation → JumpTo (shell loads + plays).
         {
             let out = sender.clone();
-            column_view.connect_activate(move |_, position| {
+            list.view.connect_activate(move |_, position| {
                 let _ = out.output(PlaylistPanelOutput::JumpTo {
                     index: position as usize,
                 });
+            });
+        }
+        playlist_interactions::wire_delete_key(&list.view, &selection, &sender);
+        {
+            let (store, selection, out) =
+                (store.downgrade(), selection.downgrade(), sender.clone());
+            list.view.connect_context_menu(move |view, position, x, y| {
+                let (Some(store), Some(selection)) = (store.upgrade(), selection.upgrade()) else {
+                    return;
+                };
+                // A press on an unselected row makes it the selection, so the
+                // menu acts on what was pointed at.
+                if position != gtk::INVALID_LIST_POSITION && !selection.is_selected(position) {
+                    selection.select_item(position, true);
+                }
+                let selected = Self::selected_tracks(&store, &selection);
+                if !selected.is_empty() {
+                    playlist_interactions::show_track_context_menu(view, x, y, selected, &out);
+                }
             });
         }
 
         let scroll = gtk::ScrolledWindow::builder()
             .hscrollbar_policy(gtk::PolicyType::Automatic)
             .vexpand(true)
-            .child(&column_view)
+            .child(&list.view)
             .build();
-
-        // Drop-position indicator line, overlaid on the scroll area.
-        let drop_indicator = gtk::Box::builder()
-            .orientation(gtk::Orientation::Horizontal)
-            .height_request(2)
-            .valign(gtk::Align::Start)
-            .visible(false)
-            .build();
-        drop_indicator.add_css_class("drop-indicator");
-
-        let overlay = gtk::Overlay::new();
-        overlay.set_child(Some(&scroll));
-        overlay.add_overlay(&drop_indicator);
+        let page = list.page(&scroll);
 
         let (toolbar, header_label) = playlist_chrome::build_toolbar(&sender);
         root.add_top_bar(&toolbar);
-        root.set_content(Some(&overlay));
-
-        playlist_interactions::wire_path_drop(
-            &scroll,
-            &column_view,
-            &store,
-            &drop_indicator,
-            &sender,
-        );
-
-        // Single-source row reorder: DragSource carries the source index, the
-        // DropTarget resolves the destination and emits ReorderTrack.
-        column_view.add_controller(playlist_interactions::build_reorder_drag_source(&selection));
-        playlist_interactions::wire_reorder_drop(
-            &scroll,
-            &column_view,
-            &store,
-            &drop_indicator,
-            &sender,
-        );
-        playlist_interactions::wire_delete_key(
-            &column_view,
-            &selection,
-            &sort_model,
-            &store,
-            &sender,
-        );
-        playlist_interactions::wire_sort_commit(&column_view, &sort_model, &sender);
-        playlist_interactions::wire_right_click_menu(
-            &column_view,
-            &selection,
-            &sort_model,
-            &store,
-            &scroll,
-            &sender,
-        );
+        root.set_content(Some(&page));
 
         let model = Self {
             store,
-            column_view,
+            selection,
+            list,
             scroll,
             header_label,
-            indicators,
             current_track_identity,
             playlist_name: String::new(),
             library_has_items: false,
-            applying_widths,
         };
         // Empty queue at boot → show the placeholder until the shell pushes a
-        // SetQueue (which reattaches the ColumnView).
+        // SetQueue (which reattaches the list).
         model.refresh_empty_state(&sender);
         model.update_header();
 
@@ -492,8 +491,7 @@ impl Component for PlaylistPanel {
                 let (start, end) = shared_ends(rows, &tracks, |row, track| {
                     self.store
                         .item(row as u32)
-                        .and_downcast::<glib::BoxedAnyObject>()
-                        .is_some_and(|object| *object.borrow::<Track>() == *track)
+                        .is_some_and(|item| track_of(&item).is_some_and(|stored| *stored == *track))
                 });
                 let objects = Self::to_objects(&tracks[start..tracks.len() - end]);
                 let removed = rows - start - end;
@@ -504,7 +502,7 @@ impl Component for PlaylistPanel {
                     current_idx.and_then(|i| self.store.item(i as u32));
                 self.refresh_empty_state(&sender);
                 self.update_header();
-                self.relight();
+                self.list.view.refresh_all();
                 if let Some(idx) = current_idx {
                     self.scroll_to(idx);
                 }
@@ -533,7 +531,7 @@ impl Component for PlaylistPanel {
             PlaylistPanelInput::SetPlaying { idx } => {
                 *self.current_track_identity.borrow_mut() =
                     idx.and_then(|i| self.store.item(i as u32));
-                self.relight();
+                self.list.view.refresh_all();
             }
             PlaylistPanelInput::ScrollToCurrent { idx } => self.scroll_to(idx),
             PlaylistPanelInput::SetPlaylistName(name) => {
@@ -547,13 +545,50 @@ impl Component for PlaylistPanel {
                     self.refresh_empty_state(&sender);
                 }
             }
-            PlaylistPanelInput::ApplyColumnWidths(spec) => {
-                // Suppress the resize watcher so restored widths aren't echoed
-                // straight back to the shell as a persist request.
-                self.applying_widths.set(true);
-                apply_column_widths(&self.column_view, &spec);
-                self.applying_widths.set(false);
+            PlaylistPanelInput::ApplyColumnWidths(spec) => self.list.apply_widths(&spec),
+        }
+    }
+}
+
+/// A heading, a star or a row's button pressed in the queue.
+fn on_list_event(
+    store: &gio::ListStore,
+    selection: &gtk::MultiSelection,
+    event: ListEvent,
+    out: &ComponentSender<PlaylistPanel>,
+) {
+    match event {
+        // The queue takes the order the heading asks for.
+        ListEvent::Sorted(column, way) => {
+            let mut tracks: Vec<Track> = (0..store.n_items())
+                .filter_map(|i| store.item(i))
+                .filter_map(|item| track_of(&item).map(|track| track.clone()))
+                .collect();
+            tracks.sort_by(|a, b| {
+                let order = column.compare(a, b);
+                if way == gtk::SortType::Descending {
+                    order.reverse()
+                } else {
+                    order
+                }
+            });
+            if !tracks.is_empty() {
+                let _ = out.output(PlaylistPanelOutput::CommitSortedOrder { tracks });
             }
+        }
+        ListEvent::Widths(spec) => {
+            let _ = out.output(PlaylistPanelOutput::PersistColumnWidths(spec));
+        }
+        ListEvent::Rate(position, rating) => {
+            if let Some(id) = crate::audio::ui::track_list::rate_in_place(store, position, rating) {
+                let _ = out.output(PlaylistPanelOutput::RateTrack { id, rating });
+            }
+        }
+        ListEvent::Action(position) => {
+            selection.unselect_all();
+            let _ = out.output(PlaylistPanelOutput::RemoveTracks {
+                indices: vec![position as usize],
+            });
         }
     }
 }

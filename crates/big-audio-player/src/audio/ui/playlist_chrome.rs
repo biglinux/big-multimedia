@@ -1,10 +1,7 @@
 //! Queue-panel chrome: toolbar + empty states.
 //!
 //! Pure-ish view builders for the `PlaylistPanel`. Each emits an `Output` intent
-//! (save-as, clear, open-files). Split out of `playlist_panel.rs` to keep that
-//! file scoped to the component proper. The generic `ColumnView` chrome (column-
-//! config header menu, column-width persist) lives in `column_builders` (shared
-//! with the library detail view).
+//! (save-as, clear, open-files). The list's columns live in `track_list`.
 
 use adw::prelude::*;
 use big_app_kit::file_dialogs::FilePicker;

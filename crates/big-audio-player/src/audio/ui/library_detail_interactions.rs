@@ -1,191 +1,21 @@
-//! Detail `ColumnView` interactions for the `LibraryPanel`: drag-source (export
-//! selected file paths), Ctrl/Shift multi-select, and the right-click track
-//! context menu. Each menu item emits an `Output` intent — the shell owns the
-//! queue, mpv, and dialogs. Row activation is wired in `library_panel` (init).
+//! The library track list's right-click menu. Each item emits an `Output`
+//! intent — the shell owns the queue, mpv, and dialogs. Selection, drags and
+//! row activation come from the drawn list (`track_list`, `library_panel`).
 
 use adw::prelude::*;
-use gtk::{gdk, glib};
+use gtk::{gio, glib};
 use relm4::ComponentSender;
 
 use big_relm4_components::feedback::context_popover::BigContextPopover;
 
-use crate::audio::ui::playlist_geom::find_clicked_position;
 use crate::db::models::Track;
 use crate::i18n::i18n;
 
 use super::library_panel::{LibraryPanel, LibraryPanelInput, LibraryPanelOutput};
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-enum DetailSelectionAction {
-    Ignore,
-    ToggleOff(u32),
-    ToggleOn(u32),
-    SelectRange { start: u32, count: u32 },
-}
-
-/// Wire the detail view's drag-source, multi-select gesture, and right-click
-/// context menu onto `column_view`.
-pub(super) fn build_detail_interactions(
-    column_view: &gtk::ColumnView,
-    selection: &gtk::MultiSelection,
-    sort_model: &gtk::SortListModel,
-    sender: &ComponentSender<LibraryPanel>,
-) {
-    column_view.add_controller(build_drag_source(selection));
-    column_view.add_controller(build_multi_select_gesture(selection));
-    column_view.add_controller(build_right_click_gesture(sort_model, sender));
-}
-
-/// DragSource (COPY): carries the selected rows' file paths, newline-joined, so
-/// a drop onto the queue (or an external target) can resolve them.
-fn build_drag_source(selection: &gtk::MultiSelection) -> gtk::DragSource {
-    let drag = gtk::DragSource::new();
-    drag.set_actions(gdk::DragAction::COPY);
-    let sel = selection.clone();
-    drag.connect_prepare(move |_, _, _| {
-        let bitset = sel.selection();
-        if bitset.is_empty() {
-            return None;
-        }
-        let mut paths = Vec::with_capacity(bitset.size() as usize);
-        for n in 0..bitset.size() {
-            if let Some(track) = sel
-                .item(bitset.nth(n as u32))
-                .and_downcast::<glib::BoxedAnyObject>()
-                .map(|obj| obj.borrow::<Track>().file_path.clone())
-            {
-                paths.push(track);
-            }
-        }
-        if paths.is_empty() {
-            return None;
-        }
-        Some(gdk::ContentProvider::for_value(
-            &paths.join("\n").to_value(),
-        ))
-    });
-    drag.connect_drag_begin(|src, _| {
-        let Some(display) = gdk::Display::default() else {
-            return;
-        };
-        let icon = gtk::IconTheme::for_display(&display).lookup_icon(
-            "audio-x-generic",
-            &[],
-            32,
-            1,
-            gtk::TextDirection::Ltr,
-            gtk::IconLookupFlags::empty(),
-        );
-        src.set_icon(Some(&icon), 16, 16);
-    });
-    drag
-}
-
-/// Capture-phase click gesture implementing Ctrl (toggle) / Shift (range) multi-
-/// select; plain clicks fall through to the default `ColumnView` handler.
-fn build_multi_select_gesture(selection: &gtk::MultiSelection) -> gtk::GestureClick {
-    let gesture = gtk::GestureClick::new();
-    gesture.set_button(1);
-    gesture.set_propagation_phase(gtk::PropagationPhase::Capture);
-    let sel = selection.clone();
-    gesture.connect_pressed(move |gesture, n_press, x, y| {
-        let mods = gesture.current_event_state();
-        let ctrl = mods.contains(gdk::ModifierType::CONTROL_MASK);
-        let shift = mods.contains(gdk::ModifierType::SHIFT_MASK);
-        let Some(widget) = gesture.widget() else {
-            return;
-        };
-        let clicked_position = find_clicked_position(&widget, x, y);
-        let selected_positions = sel.selection();
-        let selection_anchor = if selected_positions.is_empty() {
-            None
-        } else {
-            Some(selected_positions.minimum())
-        };
-        let action = detail_selection_action(
-            n_press,
-            ctrl,
-            shift,
-            clicked_position,
-            selection_anchor,
-            clicked_position.is_some_and(|position| sel.is_selected(position)),
-        );
-        match action {
-            DetailSelectionAction::Ignore => (),
-            DetailSelectionAction::ToggleOff(position) => {
-                gesture.set_state(gtk::EventSequenceState::Claimed);
-                sel.unselect_item(position);
-            }
-            DetailSelectionAction::ToggleOn(position) => {
-                gesture.set_state(gtk::EventSequenceState::Claimed);
-                sel.select_item(position, false);
-            }
-            DetailSelectionAction::SelectRange { start, count } => {
-                gesture.set_state(gtk::EventSequenceState::Claimed);
-                sel.unselect_all();
-                sel.select_range(start, count, false);
-            }
-        }
-    });
-    gesture
-}
-
-fn detail_selection_action(
-    click_count: i32,
-    has_control: bool,
-    has_shift: bool,
-    clicked_position: Option<u32>,
-    selection_anchor: Option<u32>,
-    is_clicked_selected: bool,
-) -> DetailSelectionAction {
-    if click_count != 1 || (!has_control && !has_shift) {
-        return DetailSelectionAction::Ignore;
-    }
-    let Some(position) = clicked_position else {
-        return DetailSelectionAction::Ignore;
-    };
-    if has_control {
-        if is_clicked_selected {
-            return DetailSelectionAction::ToggleOff(position);
-        }
-        return DetailSelectionAction::ToggleOn(position);
-    }
-    let anchor = selection_anchor.unwrap_or(0);
-    let (start, count) = if position >= anchor {
-        (anchor, position - anchor + 1)
-    } else {
-        (position, anchor - position + 1)
-    };
-    DetailSelectionAction::SelectRange { start, count }
-}
-
-/// Right-click gesture → resolve the clicked row → per-track context menu.
-fn build_right_click_gesture(
-    sort_model: &gtk::SortListModel,
-    sender: &ComponentSender<LibraryPanel>,
-) -> gtk::GestureClick {
-    let gesture = gtk::GestureClick::builder().button(3).build();
-    let sm = sort_model.clone();
-    let out = sender.clone();
-    gesture.connect_released(move |gesture, _, x, y| {
-        let Some(widget) = gesture.widget() else {
-            return;
-        };
-        let Some(pos) = find_clicked_position(&widget, x, y) else {
-            return;
-        };
-        let tracks = gather_visual_tracks(&sm);
-        let Some(index) = detail_context_index(tracks.len(), pos) else {
-            return;
-        };
-        show_detail_context_menu(&widget, x, y, tracks, index, &out);
-    });
-    gesture
-}
-
-/// Collect every detail track in visual (sorted) order.
-fn gather_visual_tracks(sort_model: &gtk::SortListModel) -> Vec<Track> {
-    collect_visual_tracks(sort_model.n_items(), |index| sort_model.item(index))
+/// Every track of the list, in its order: what "Play" queues.
+pub(super) fn gather_visual_tracks(store: &gio::ListStore) -> Vec<Track> {
+    collect_visual_tracks(store.n_items(), |index| store.item(index))
 }
 
 fn collect_visual_tracks(
@@ -206,7 +36,7 @@ fn collect_visual_tracks_from_tracks(
     (0..item_count).filter_map(track_at).collect()
 }
 
-fn detail_context_index(track_count: usize, clicked_position: u32) -> Option<usize> {
+pub(super) fn detail_context_index(track_count: usize, clicked_position: u32) -> Option<usize> {
     let index = clicked_position as usize;
     if index < track_count {
         Some(index)
@@ -216,8 +46,8 @@ fn detail_context_index(track_count: usize, clicked_position: u32) -> Option<usi
 }
 
 /// Build + pop the per-track context menu; each item emits an `Output` intent.
-fn show_detail_context_menu(
-    widget: &gtk::Widget,
+pub(super) fn show_detail_context_menu(
+    widget: &big_item_view::ItemView,
     x: f64,
     y: f64,
     tracks: Vec<Track>,
@@ -284,6 +114,37 @@ fn show_detail_context_menu(
         });
     }
 
+    {
+        let view = widget.downgrade();
+        let out = sender.clone();
+        let track_id = track.id;
+        let stars: Vec<(&str, String)> = (1..=5)
+            .map(|n| {
+                (
+                    "starred-symbolic",
+                    i18n("{} of 5 stars").replace("{}", &n.to_string()),
+                )
+            })
+            .collect();
+        menu.append_icon_choices(&i18n("Rating"), &stars, move |chosen| {
+            let rating = i32::try_from(chosen + 1).unwrap_or(5);
+            if let Some(view) = view.upgrade()
+                && let Some(store) = view
+                    .model()
+                    .and_downcast::<gtk::MultiSelection>()
+                    .and_then(|selection| selection.model())
+                    .and_downcast::<gio::ListStore>()
+            {
+                super::track_list::rate_in_place(&store, index as u32, rating);
+                view.refresh(index as u32..index as u32 + 1);
+            }
+            let _ = out.output(LibraryPanelOutput::RateTrack {
+                id: track_id,
+                rating,
+            });
+        });
+    }
+
     menu.popup_at(widget, x, y);
 }
 
@@ -294,63 +155,8 @@ mod tests {
     #[cfg(not(miri))]
     use gtk::prelude::Cast;
 
-    use super::{
-        DetailSelectionAction, collect_visual_tracks, collect_visual_tracks_from_tracks,
-        detail_context_index, detail_selection_action,
-    };
+    use super::{collect_visual_tracks, collect_visual_tracks_from_tracks, detail_context_index};
     use crate::db::models::Track;
-
-    #[test]
-    fn detail_selection_ignores_plain_double_and_missing_position_clicks() {
-        assert_eq!(
-            detail_selection_action(1, false, false, Some(3), Some(1), false),
-            DetailSelectionAction::Ignore
-        );
-        assert_eq!(
-            detail_selection_action(2, true, false, Some(3), Some(1), false),
-            DetailSelectionAction::Ignore
-        );
-        assert_eq!(
-            detail_selection_action(1, true, false, None, Some(1), false),
-            DetailSelectionAction::Ignore
-        );
-    }
-
-    #[test]
-    fn detail_selection_control_toggles_clicked_row() {
-        assert_eq!(
-            detail_selection_action(1, true, false, Some(4), Some(2), true),
-            DetailSelectionAction::ToggleOff(4)
-        );
-        assert_eq!(
-            detail_selection_action(1, true, false, Some(4), Some(2), false),
-            DetailSelectionAction::ToggleOn(4)
-        );
-    }
-
-    #[test]
-    fn detail_selection_shift_uses_anchor_or_zero() {
-        assert_eq!(
-            detail_selection_action(1, false, true, Some(5), Some(2), false),
-            DetailSelectionAction::SelectRange { start: 2, count: 4 }
-        );
-        assert_eq!(
-            detail_selection_action(1, false, true, Some(2), Some(5), false),
-            DetailSelectionAction::SelectRange { start: 2, count: 4 }
-        );
-        assert_eq!(
-            detail_selection_action(1, false, true, Some(3), None, false),
-            DetailSelectionAction::SelectRange { start: 0, count: 4 }
-        );
-    }
-
-    #[test]
-    fn detail_selection_control_takes_precedence_over_shift() {
-        assert_eq!(
-            detail_selection_action(1, true, true, Some(4), Some(2), false),
-            DetailSelectionAction::ToggleOn(4)
-        );
-    }
 
     #[test]
     fn detail_context_index_accepts_only_visible_track_positions() {

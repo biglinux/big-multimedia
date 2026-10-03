@@ -15,6 +15,7 @@ default = []
 
 [dependencies]
 big-gtk-kit = { workspace = true }
+big-item-view = { workspace = true }
 adw.workspace = true
 gtk.workspace = true
 glib.workspace = true

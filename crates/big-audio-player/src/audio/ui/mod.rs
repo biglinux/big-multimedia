@@ -8,9 +8,7 @@
 /// Relm4 root component (audio window + child panels + engine state).
 pub mod audio_shell;
 /// Cast (Chromecast) device-picker dialog.
-/// Detail `ColumnView` column builders for the library panel.
-mod library_detail_columns;
-/// Detail `ColumnView` interactions: drag, multi-select, context menu.
+/// The library track list's context menu.
 mod library_detail_interactions;
 /// Shared app-local library dialogs (add-to-playlist picker).
 mod library_dialogs;
@@ -27,11 +25,9 @@ mod library_tag_editor;
 pub(crate) mod library_tree;
 /// Queue-panel chrome: toolbar, empty states, column-config dialog.
 mod playlist_chrome;
-/// Queue `ColumnView` column builders (split out of `playlist_panel`).
-mod playlist_columns;
-/// Playlist drop geometry and the dropdown label factory.
+/// The dropdown label factory and the library tree's click hit-test.
 mod playlist_geom;
-/// Queue `ColumnView` interactions: drop, reorder, sort, context menu.
+/// Queue interactions: Delete removal and the track context menu.
 mod playlist_interactions;
 /// Playlist library dialog (save / load / rename / export / import / delete).
 pub mod playlist_library_dialog;
@@ -43,6 +39,8 @@ pub(crate) mod shortcuts_dialog;
 pub(crate) mod smartphone_dialog;
 /// Audio appearance application (palette + high-contrast CSS providers).
 pub(crate) mod theming;
+/// The drawn track lists of the queue and the library: columns, sorting, stars.
+mod track_list;
 
 /// Paged review and confirmed removal of unavailable library records.
 mod unavailable_dialog;

@@ -2,7 +2,6 @@ crates/big-audio-player/src/audio/account_security.rs
 crates/big-audio-player/src/audio/appearance/dialogs.rs
 crates/big-audio-player/src/audio/appearance/mod.rs
 crates/big-audio-player/src/audio/app.rs
-crates/big-audio-player/src/audio/column_builders.rs
 crates/big-audio-player/src/audio/keybindings.rs
 crates/big-audio-player/src/audio/library_grouping/age_filter.rs
 crates/big-audio-player/src/audio/library_grouping/group_by.rs
@@ -34,7 +33,6 @@ crates/big-audio-player/src/audio/ui/audio_shell.rs
 crates/big-audio-player/src/audio/ui/audio_shell/sources.rs
 crates/big-audio-player/src/audio/ui/audio_shell/tv.rs
 crates/big-audio-player/src/audio/ui/audio_shell/update.rs
-crates/big-audio-player/src/audio/ui/library_detail_columns.rs
 crates/big-audio-player/src/audio/ui/library_detail_interactions.rs
 crates/big-audio-player/src/audio/ui/library_dialogs.rs
 crates/big-audio-player/src/audio/ui/library_grouping_ui.rs
@@ -51,7 +49,6 @@ crates/big-audio-player/src/audio/ui/library_tree.rs
 crates/big-audio-player/src/audio/ui/library_tree/view.rs
 crates/big-audio-player/src/audio/ui/mod.rs
 crates/big-audio-player/src/audio/ui/playlist_chrome.rs
-crates/big-audio-player/src/audio/ui/playlist_columns.rs
 crates/big-audio-player/src/audio/ui/playlist_geom.rs
 crates/big-audio-player/src/audio/ui/playlist_interactions.rs
 crates/big-audio-player/src/audio/ui/playlist_interactions/tests.rs
@@ -63,6 +60,7 @@ crates/big-audio-player/src/audio/ui/scan_progress.rs
 crates/big-audio-player/src/audio/ui/shortcuts_dialog.rs
 crates/big-audio-player/src/audio/ui/smartphone_dialog.rs
 crates/big-audio-player/src/audio/ui/theming.rs
+crates/big-audio-player/src/audio/ui/track_list.rs
 crates/big-audio-player/src/audio/ui/unavailable_dialog.rs
 crates/big-audio-player/src/lib.rs
 crates/big-audio-player/src/main.rs
@@ -229,9 +227,7 @@ crates/media-runtime/src/shared/shortcut_capture.rs
 crates/media-runtime/src/shared/sleep_timer.rs
 crates/media-runtime/src/shared/spawn.rs
 crates/media-runtime/src/shared/theming.rs
-crates/media-runtime/src/shared/tooltip.rs
 crates/media-runtime/src/shared/tv_cast.rs
-crates/ui/generic/big-relm4-components/src/accessible.rs
 crates/ui/generic/big-relm4-components/src/display/mod.rs
 crates/ui/generic/big-relm4-components/src/display/sleep_timer.rs
 crates/ui/generic/big-relm4-components/src/display/texture.rs
@@ -239,13 +235,7 @@ crates/ui/generic/big-relm4-components/src/feedback/context_popover.rs
 crates/ui/generic/big-relm4-components/src/feedback/hover_popover.rs
 crates/ui/generic/big-relm4-components/src/feedback/mod.rs
 crates/ui/generic/big-relm4-components/src/feedback/popover_lifecycle.rs
-crates/ui/generic/big-relm4-components/src/feedback/tooltip/buttons.rs
-crates/ui/generic/big-relm4-components/src/feedback/tooltip/colors.rs
-crates/ui/generic/big-relm4-components/src/feedback/tooltip/config.rs
-crates/ui/generic/big-relm4-components/src/feedback/tooltip/global.rs
 crates/ui/generic/big-relm4-components/src/feedback/tooltip.rs
-crates/ui/generic/big-relm4-components/src/feedback/tooltip/support.rs
-crates/ui/generic/big-relm4-components/src/feedback/tooltip/tests.rs
 crates/ui/generic/big-relm4-components/src/i18n.rs
 crates/ui/generic/big-relm4-components/src/input/adjust_panel.rs
 crates/ui/generic/big-relm4-components/src/input/button_content.rs
@@ -254,7 +244,6 @@ crates/ui/generic/big-relm4-components/src/input/dropdown_row.rs
 crates/ui/generic/big-relm4-components/src/input/illustrated_slider_row.rs
 crates/ui/generic/big-relm4-components/src/input/inline_spin_set.rs
 crates/ui/generic/big-relm4-components/src/input/mod.rs
-crates/ui/generic/big-relm4-components/src/input/password_row.rs
 crates/ui/generic/big-relm4-components/src/input/preference_cards.rs
 crates/ui/generic/big-relm4-components/src/input/scale_popover.rs
 crates/ui/generic/big-relm4-components/src/input/scale_trough.rs
@@ -297,7 +286,6 @@ crates/ui/media/big-media-components/src/audio/equalizer_controls.rs
 crates/ui/media/big-media-components/src/audio/labels.rs
 crates/ui/media/big-media-components/src/audio/mod.rs
 crates/ui/media/big-media-components/src/bytes.rs
-crates/ui/media/big-media-components/src/container_compat.rs
 crates/ui/media/big-media-components/src/ffmpeg/labels.rs
 crates/ui/media/big-media-components/src/ffmpeg/mod.rs
 crates/ui/media/big-media-components/src/initials_avatar.rs
@@ -331,7 +319,6 @@ crates/ui/media/big-player-ui/src/download/transfer.rs
 crates/ui/media/big-player-ui/src/download/types.rs
 crates/ui/media/big-player-ui/src/favicon_cache.rs
 crates/ui/media/big-player-ui/src/file_browser.rs
-crates/ui/media/big-player-ui/src/illustration.rs
 crates/ui/media/big-player-ui/src/lib.rs
 crates/ui/media/big-player-ui/src/lyrics_panel.rs
 crates/ui/media/big-player-ui/src/media_list.rs
