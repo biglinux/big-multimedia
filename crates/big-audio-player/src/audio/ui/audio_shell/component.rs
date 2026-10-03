@@ -330,7 +330,7 @@ impl Component for AudioShell {
             "{}/style.css",
             crate::config::audio::RESOURCE_PREFIX
         ));
-        big_relm4_components::theme::add_provider_for_widget_lifetime(
+        big_gtk_kit::css::add_provider_for_widget_lifetime(
             &root,
             &provider,
             gtk::STYLE_PROVIDER_PRIORITY_APPLICATION,

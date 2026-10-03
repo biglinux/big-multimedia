@@ -156,55 +156,59 @@ fn build_options_menu(state: &Rc<BrowserState>, mode: SidebarMode) -> gtk::MenuB
     let menu = gio::Menu::new();
     match mode {
         SidebarMode::Files => {
-            let folder = gio::Menu::new();
-            folder.append(Some(&i18n("Include subfolders")), Some("pl.recursive"));
-            let sort = gio::Menu::new();
-            let sort_keys = gio::Menu::new();
-            sort_keys.append(Some(&i18n("Name")), Some("pl.sort::name"));
-            sort_keys.append(Some(&i18n("Date")), Some("pl.sort::date"));
-            sort_keys.append(Some(&i18n("Size")), Some("pl.sort::size"));
-            #[expect(
-                clippy::disallowed_methods,
-                reason = "Existing grouped menu; GTK fix tracked in docs/resource-audit.md"
-            )]
-            sort.append_section(None, &sort_keys);
-            let sort_dir = gio::Menu::new();
-            sort_dir.append(Some(&i18n("Reverse order")), Some("pl.reverse"));
-            #[expect(
-                clippy::disallowed_methods,
-                reason = "Existing grouped menu; GTK fix tracked in docs/resource-audit.md"
-            )]
-            sort.append_section(None, &sort_dir);
-            folder.append_submenu(Some(&i18n("Sort by")), &sort);
-            #[expect(
-                clippy::disallowed_methods,
-                reason = "Existing grouped menu; GTK fix tracked in docs/resource-audit.md"
-            )]
-            menu.append_section(None, &folder);
+            big_gtk_kit::menu::append_shared_section(&menu, None, "video-sidebar-folder", || {
+                let sort = gio::Menu::new();
+                big_gtk_kit::menu::append_shared_section(
+                    &sort,
+                    None,
+                    "video-sidebar-sort-keys",
+                    || {
+                        let keys = gio::Menu::new();
+                        keys.append(Some(&i18n("Name")), Some("pl.sort::name"));
+                        keys.append(Some(&i18n("Date")), Some("pl.sort::date"));
+                        keys.append(Some(&i18n("Size")), Some("pl.sort::size"));
+                        keys
+                    },
+                );
+                big_gtk_kit::menu::append_shared_section(
+                    &sort,
+                    None,
+                    "video-sidebar-sort-dir",
+                    || {
+                        let direction = gio::Menu::new();
+                        direction.append(Some(&i18n("Reverse order")), Some("pl.reverse"));
+                        direction
+                    },
+                );
+                let folder = gio::Menu::new();
+                folder.append(Some(&i18n("Include subfolders")), Some("pl.recursive"));
+                folder.append_submenu(Some(&i18n("Sort by")), &sort);
+                folder
+            });
         }
         SidebarMode::Playlist => {
-            let playback = gio::Menu::new();
-            playback.append(Some(&i18n("Shuffle")), Some("pl.shuffle"));
-            let repeat = gio::Menu::new();
-            repeat.append(Some(&i18n("Off")), Some("pl.loop::no"));
-            repeat.append(Some(&i18n("Current file")), Some("pl.loop::file"));
-            repeat.append(Some(&i18n("Whole playlist")), Some("pl.loop::playlist"));
-            playback.append_submenu(Some(&i18n("Repeat")), &repeat);
-            #[expect(
-                clippy::disallowed_methods,
-                reason = "Existing grouped menu; GTK fix tracked in docs/resource-audit.md"
-            )]
-            menu.append_section(None, &playback);
-
-            let file = gio::Menu::new();
-            file.append(Some(&i18n("Save playlist…")), Some("pl.save"));
-            file.append(Some(&i18n("Load playlist…")), Some("pl.load"));
-            file.append(Some(&i18n("Clear playlist")), Some("pl.clear"));
-            #[expect(
-                clippy::disallowed_methods,
-                reason = "Existing grouped menu; GTK fix tracked in docs/resource-audit.md"
-            )]
-            menu.append_section(None, &file);
+            big_gtk_kit::menu::append_shared_section(
+                &menu,
+                None,
+                "video-playlist-playback",
+                || {
+                    let repeat = gio::Menu::new();
+                    repeat.append(Some(&i18n("Off")), Some("pl.loop::no"));
+                    repeat.append(Some(&i18n("Current file")), Some("pl.loop::file"));
+                    repeat.append(Some(&i18n("Whole playlist")), Some("pl.loop::playlist"));
+                    let playback = gio::Menu::new();
+                    playback.append(Some(&i18n("Shuffle")), Some("pl.shuffle"));
+                    playback.append_submenu(Some(&i18n("Repeat")), &repeat);
+                    playback
+                },
+            );
+            big_gtk_kit::menu::append_shared_section(&menu, None, "video-playlist-file", || {
+                let file = gio::Menu::new();
+                file.append(Some(&i18n("Save playlist…")), Some("pl.save"));
+                file.append(Some(&i18n("Load playlist…")), Some("pl.load"));
+                file.append(Some(&i18n("Clear playlist")), Some("pl.clear"));
+                file
+            });
         }
     }
 

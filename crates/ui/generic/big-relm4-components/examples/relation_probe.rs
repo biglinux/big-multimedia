@@ -10,7 +10,7 @@ fn main() {
     for _ in 0..cycles {
         let button = gtk::Button::new();
         let label = gtk::Label::new(Some("Name"));
-        big_relm4_components::accessible::relate(
+        big_gtk_kit::accessible::relate(
             &button,
             gtk::AccessibleRelation::LabelledBy,
             &[label.upcast_ref()],

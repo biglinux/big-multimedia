@@ -30,18 +30,18 @@ Filter apply closures must hold their adjustment/dropdown weakly: those controls
 also own the apply handlers. `filter_controls_release_the_backend` checks 200
 control finalizations and mpv ownership over 25 cycles in an isolated session.
 
-Transient context menus use `auto_unparent_on_close`: detach from an idle, after
+Transient context menus use `big_gtk_kit::popover::auto_unparent_on_close`: detach from an idle, after
 the activated action has finished using its ancestry. The idle retains the parent
 until detaching, so closing the owner in that action cannot finalize it too soon.
 
-Widget accessibility relations use `accessible::relate`; gtk-rs 0.11's
+Widget accessibility relations use `big_gtk_kit::accessible::relate`; gtk-rs 0.11's
 `update_relation` leaks its temporary target list and is banned by Clippy.
 The `relation_probe` example provides a 5/25-cycle heaptrack workload. Build it
 with `CARGO_PROFILE_RELEASE_DEBUG=true CARGO_PROFILE_RELEASE_STRIP=false` and
 run `heaptrack --record-only` inside the isolated session. Keep the real
 accessible relation: an explicit label alone does not name an empty dropdown.
 
-Credential forms build password rows through `input::password_row::password_row`.
+Credential forms build password rows through `big_gtk_kit::password::password_row`.
 The libadwaita 1.9 buffer creation reference otherwise survives the row, including
 its password. The isolated qdata test checks 75 finalizations at lengths 0, 5 and
 25; the direct constructor and builder are banned outside the helper.
@@ -72,7 +72,7 @@ a GtkStack: GTK 4.22 loops removing a child that is not a stack page. Run the
 isolated `embedded_video_finalizes_after_close` test to prove 25 hosted teardowns.
 
 Display CSS registered for a player or control uses
-`theme::add_provider_for_widget_lifetime`. The display owns a reference independently
+`big_gtk_kit::css::add_provider_for_widget_lifetime`. The display owns a reference independently
 of the local provider variable: remove that registration when its widget dies.
 `scoped_providers_finalize_with_their_widgets` checks 25 provider finalizations.
 
@@ -138,8 +138,8 @@ isolated `radio_discovery_waits_for_first_map` regression checks hidden, first-m
 and remap states; opening Music must not launch Radio Browser discovery.
 
 See `docs/resource-audit.md` for measured native-library limits and evidence.
-New GMenu sections are banned until GTK's menu-tracker reference fix is packaged;
-existing grouping has explicit exceptions, not a claim of clean stock GTK.
+GMenu sections go through `big_gtk_kit::menu::append_shared_section`: GTK 4.22's
+menu tracker keeps every section it shows, so a section is built once per process.
 A heaptrack capture with zero allocation calls is invalid for the players' exported
 jemalloc allocator. Use a separate diagnostic build for attribution and retain the
 production allocator for real memory/CPU measurements.

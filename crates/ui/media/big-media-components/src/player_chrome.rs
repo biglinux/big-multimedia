@@ -115,7 +115,7 @@ pub fn build_volume_popover(
     let trough = gtk::CssProvider::new();
     let initial_color = volume_trough_color(initial_volume_percent, maximum_volume_percent);
     update_scale_trough(&trough, "volume-scale", &initial_color);
-    big_relm4_components::theme::add_provider_for_widget_lifetime(
+    big_gtk_kit::css::add_provider_for_widget_lifetime(
         &scale,
         &trough,
         trough_style_provider_priority(),
@@ -254,7 +254,7 @@ pub fn build_voice_popover(
     let initial_color = voice_trough_color(voice_spec.initial_strength_percent);
     update_scale_trough(&trough, "voice-scale", &initial_color);
     let shown_color = std::cell::RefCell::new(initial_color);
-    big_relm4_components::theme::add_provider_for_widget_lifetime(
+    big_gtk_kit::css::add_provider_for_widget_lifetime(
         &scale,
         &trough,
         trough_style_provider_priority(),

@@ -141,12 +141,14 @@ name = "big-gtk-kit"
 version = "0.1.0"
 dependencies = [
  "gtk4",
+ "libadwaita",
 ]
 
 [[package]]
 name = "big-media-components"
 version = "0.1.0"
 dependencies = [
+ "big-gtk-kit",
  "big-media-engines",
  "big-relm4-components",
  "gtk4",
@@ -252,6 +254,7 @@ version = "0.1.0"
 dependencies = [
  "big-app-kit",
  "big-app-kit-core",
+ "big-gtk-kit",
  "gettext-rs",
  "gtk4",
  "libadwaita",

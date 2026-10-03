@@ -14,6 +14,7 @@ keywords = ["gtk4", "media", "libadwaita", "components", "biglinux"]
 categories = ["gui", "multimedia"]
 
 [dependencies]
+big-gtk-kit = { workspace = true }
 adw.workspace = true
 gtk.workspace = true
 relm4.workspace = true

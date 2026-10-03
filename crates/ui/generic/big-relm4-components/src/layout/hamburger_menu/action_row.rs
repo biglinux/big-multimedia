@@ -23,7 +23,7 @@ pub(super) fn build_action_menu_row(
         .hexpand(true)
         .build();
     row.update_property(&[gtk::accessible::Property::Label(&item.label)]);
-    crate::accessible::relate(
+    big_gtk_kit::accessible::relate(
         &row,
         gtk::AccessibleRelation::LabelledBy,
         &[label.upcast_ref()],

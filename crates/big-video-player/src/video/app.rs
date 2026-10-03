@@ -49,7 +49,7 @@ mod imp {
 
         fn startup(&self) {
             self.parent_startup();
-            big_gtk_kit::tooltip::install();
+            big_gtk_kit::install();
             crate::shared::app_base::strip_decoration_icon();
 
             let settings = crate::settings::Settings::for_video();

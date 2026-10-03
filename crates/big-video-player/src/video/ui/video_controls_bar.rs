@@ -411,7 +411,7 @@ impl Component for VideoControlsBar {
         for label in &readout_labels {
             breakpoint.add_setter(label, "visible", Some(&false.to_value()));
         }
-        responsive.add_breakpoint(breakpoint);
+        big_gtk_kit::breakpoint::add(&responsive, breakpoint);
         root.append(&responsive);
 
         wire_signals(
