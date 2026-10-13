@@ -8,7 +8,7 @@
 
 /// Dialog size persistence.
 pub mod dialogs;
-/// File picker specs and display-name helpers.
+/// Filename sanitizing and display-name helpers.
 pub mod files;
 /// Keyboard shortcut definitions and override parsing.
 pub mod keybindings;

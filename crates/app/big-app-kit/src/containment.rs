@@ -5,11 +5,11 @@
 //!
 //! - A panic inside a Relm4 `update()` unwinds into the glib executor task and
 //!   dies there: the process survives, but the component runtime is dead and
-//!   its window stays orphaned on screen. [`contain_component_update`](crate::containment::contain_component_update) logs it
+//!   its window stays orphaned on screen. [`contain_component_update`] logs it
 //!   and destroys the window cleanly instead.
 //! - A panic that escapes a raw glib callback (timeout / signal trampoline)
-//!   unwinds across the C boundary and aborts the process. A panic caught
-//!   inside the callback body is contained; [`guard`](crate::containment::guard) is that catch.
+//!   unwinds across the C boundary and aborts the process. [`guard`] catches
+//!   it inside the callback body.
 
 use std::panic::{AssertUnwindSafe, catch_unwind};
 
@@ -56,9 +56,10 @@ pub fn contain_embedded_update(
 
 /// Run a raw glib callback body (signal / `idle_add` / `timeout_add` closure),
 /// containing any panic: it is logged and `None` is returned instead of
-/// unwinding across the C trampoline (which would abort the process). `context` names the call site for the log line.
+/// unwinding across the C trampoline, which would abort the process.
+/// `context` names the call site for the log line.
 ///
-/// Place this INSIDE the closure, around the fallible body, and map `None` to a
+/// Place this inside the closure, around the fallible body, and map `None` to a
 /// safe default for the signal's return type (e.g. `glib::Propagation::Proceed`,
 /// `glib::ControlFlow::Break`, `true` for a filter). The default panic hook
 /// still runs first, so the message + location reach the journal.
@@ -66,8 +67,7 @@ pub fn contain_embedded_update(
 /// `AssertUnwindSafe`: GTK widgets and `RefCell`s are not `UnwindSafe`, but a
 /// contained panic only skips one callback: every borrow guard releases as the
 /// stack unwinds, so the shared state stays usable afterwards (at worst with a
-/// half-applied update, still strictly better than a dead process).
-#[inline]
+/// half-applied update).
 pub fn guard<R>(context: &str, body: impl FnOnce() -> R) -> Option<R> {
     match catch_unwind(AssertUnwindSafe(body)) {
         Ok(value) => Some(value),
@@ -85,12 +85,12 @@ mod tests {
     use super::guard;
 
     #[test]
-    fn returns_value_when_no_panic() {
+    fn guard_returns_body_value() {
         assert_eq!(guard("ok", || 7), Some(7));
     }
 
     #[test]
-    fn panic_returns_none_and_releases_borrow() {
+    fn panic_releases_borrow() {
         let cell = RefCell::new(0);
         let outcome = guard("boom", || {
             let mut value = cell.borrow_mut();

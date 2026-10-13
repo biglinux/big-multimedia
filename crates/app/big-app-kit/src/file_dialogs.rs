@@ -8,91 +8,55 @@ use std::path::PathBuf;
 use gtk::gio;
 use gtk::prelude::*;
 
-use crate::files::{BigFilePickerSpec, BigPickerMode};
-
-/// File picker value used across BigLinux apps.
+/// GTK file dialog builder. Each constructor names the intent at the call
+/// site; the method called last (`open`, `save`, ...) picks the dialog kind.
 #[must_use = "FilePicker is a builder; call open, save, or select_folder"]
 pub struct FilePicker {
-    spec: BigFilePickerSpec,
+    title: String,
     accept_label: Option<String>,
-    modal: bool,
-    initial_folder: Option<PathBuf>,
-    initial_gio_folder: Option<gio::File>,
     initial_name: Option<String>,
     filters: Vec<gtk::FileFilter>,
 }
 
 impl FilePicker {
-    /// Construct a [`FilePicker`] populated from the caller-supplied fields.
-    ///
-    /// All setters/builder methods can still adjust the result before it is
-    /// passed to the GTK layer.
+    /// Picker for opening one file.
     pub fn new(title: impl Into<String>) -> Self {
-        Self::for_spec(BigFilePickerSpec::new(BigPickerMode::OpenFile, title))
-    }
-
-    /// Construct a [`FilePicker`] populated from the caller-supplied fields.
-    ///
-    /// All setters/builder methods can still adjust the result before it is
-    /// passed to the GTK layer.
-    pub fn open_files(title: impl Into<String>) -> Self {
-        Self::for_spec(BigFilePickerSpec::open_file_button(title).multiple(true))
-    }
-
-    /// Construct a [`FilePicker`] populated from the caller-supplied fields.
-    ///
-    /// All setters/builder methods can still adjust the result before it is
-    /// passed to the GTK layer.
-    pub fn open_folder(title: impl Into<String>) -> Self {
-        Self::for_spec(BigFilePickerSpec::open_folder_button(title))
-    }
-
-    /// Construct a [`FilePicker`] populated from the caller-supplied fields.
-    ///
-    /// All setters/builder methods can still adjust the result before it is
-    /// passed to the GTK layer.
-    pub fn save_file(title: impl Into<String>) -> Self {
-        Self::for_spec(BigFilePickerSpec::save_file_button(title))
-    }
-
-    /// Construct a [`FilePicker`] populated from the caller-supplied fields.
-    ///
-    /// All setters/builder methods can still adjust the result before it is
-    /// passed to the GTK layer.
-    pub fn for_spec(spec: BigFilePickerSpec) -> Self {
         Self {
-            spec,
+            title: title.into(),
             accept_label: None,
-            modal: true,
-            initial_folder: None,
-            initial_gio_folder: None,
             initial_name: None,
             filters: Vec::new(),
         }
     }
 
-    /// Configure the `accept_label` setting and return the updated builder.
-    ///
-    /// The supplied `label` overrides any previously stored value; chain
-    /// further `with_*` / setter calls to compose the full [`FilePicker`].
+    /// Picker for opening several files; pair with [`Self::open_multiple`].
+    pub fn open_files(title: impl Into<String>) -> Self {
+        Self::new(title)
+    }
+
+    /// Picker for choosing a folder; pair with [`Self::select_folder`].
+    pub fn open_folder(title: impl Into<String>) -> Self {
+        Self::new(title)
+    }
+
+    /// Picker for a save destination; pair with [`Self::save`].
+    pub fn save_file(title: impl Into<String>) -> Self {
+        Self::new(title)
+    }
+
+    /// Label of the confirm button.
     pub fn accept_label(mut self, label: impl Into<String>) -> Self {
         self.accept_label = Some(label.into());
         self
     }
 
-    /// Configure the `initial_name` setting and return the updated builder.
-    ///
-    /// The supplied `name` overrides any previously stored value; chain
-    /// further `with_*` / setter calls to compose the full [`FilePicker`].
+    /// File name proposed by a save dialog.
     pub fn initial_name(mut self, name: impl Into<String>) -> Self {
         self.initial_name = Some(name.into());
         self
     }
 
-    /// Configure the `filter` setting and return the updated builder.
-    ///
-    /// The supplied `name` overrides any previously stored value; chain
-    /// further `with_*` / setter calls to compose the full [`FilePicker`].
+    /// Adds a filter named `name` matching file name suffixes such as `"mp3"`.
     pub fn filter(mut self, name: &str, suffixes: &[&str]) -> Self {
         let filter = gtk::FileFilter::new();
         filter.set_name(Some(name));
@@ -103,10 +67,7 @@ impl FilePicker {
         self
     }
 
-    /// Configure the `pattern_filter` setting and return the updated builder.
-    ///
-    /// The supplied `name` overrides any previously stored value; chain
-    /// further `with_*` / setter calls to compose the full [`FilePicker`].
+    /// Adds a filter named `name` matching glob patterns such as `"*.m3u"`.
     pub fn pattern_filter(mut self, name: &str, patterns: &[&str]) -> Self {
         let filter = gtk::FileFilter::new();
         filter.set_name(Some(name));
@@ -118,9 +79,7 @@ impl FilePicker {
     }
 
     fn build_dialog(&self) -> gtk::FileDialog {
-        let mut builder = gtk::FileDialog::builder()
-            .title(&self.spec.title)
-            .modal(self.modal);
+        let mut builder = gtk::FileDialog::builder().title(&self.title).modal(true);
         if let Some(ref label) = self.accept_label {
             builder = builder.accept_label(label);
         }
@@ -128,11 +87,6 @@ impl FilePicker {
             builder = builder.initial_name(name);
         }
         let dialog = builder.build();
-        if let Some(ref folder) = self.initial_gio_folder {
-            dialog.set_initial_folder(Some(folder));
-        } else if let Some(ref dir) = self.initial_folder {
-            dialog.set_initial_folder(Some(&gio::File::for_path(dir)));
-        }
         if !self.filters.is_empty() {
             let store = gio::ListStore::new::<gtk::FileFilter>();
             for filter in &self.filters {
@@ -162,11 +116,7 @@ impl FilePicker {
         F: FnOnce(PathBuf) + 'static,
     {
         let dialog = self.build_dialog();
-        let mut callback = Some(callback);
         dialog.open(parent, None::<&gio::Cancellable>, move |result| {
-            let Some(callback) = callback.take() else {
-                return;
-            };
             if let Ok(file) = result
                 && let Some(path) = file.path()
             {
@@ -192,14 +142,10 @@ impl FilePicker {
         F: FnOnce(Vec<PathBuf>) + 'static,
     {
         let dialog = self.build_dialog();
-        let mut callback = Some(callback);
         dialog.open_multiple(parent, None::<&gio::Cancellable>, move |result| {
             if let Ok(files) = result {
                 let paths = collect_paths(&files);
                 if !paths.is_empty() {
-                    let Some(callback) = callback.take() else {
-                        return;
-                    };
                     callback(paths);
                 }
             }
@@ -223,11 +169,7 @@ impl FilePicker {
         F: FnOnce(PathBuf) + 'static,
     {
         let dialog = self.build_dialog();
-        let mut callback = Some(callback);
         dialog.select_folder(parent, None::<&gio::Cancellable>, move |result| {
-            let Some(callback) = callback.take() else {
-                return;
-            };
             if let Ok(folder) = result
                 && let Some(path) = folder.path()
             {
@@ -253,11 +195,7 @@ impl FilePicker {
         F: FnOnce(PathBuf) + 'static,
     {
         let dialog = self.build_dialog();
-        let mut callback = Some(callback);
         dialog.save(parent, None::<&gio::Cancellable>, move |result| {
-            let Some(callback) = callback.take() else {
-                return;
-            };
             if let Ok(file) = result
                 && let Some(path) = file.path()
             {
@@ -284,8 +222,6 @@ mod tests {
     #[test]
     #[cfg_attr(miri, ignore)]
     fn collect_paths_keeps_local_file_order() {
-        // GIO ListStore<File> calls GLib type registration through FFI, which
-        // Miri cannot execute. Normal tests still cover ordered path projection.
         let temporary_directory = tempdir().expect("temporary path collection directory");
         let first_path = temporary_directory.path().join("first.txt");
         let second_path = temporary_directory.path().join("second.txt");
@@ -301,8 +237,6 @@ mod tests {
     #[test]
     #[cfg_attr(miri, ignore)]
     fn collect_paths_ignores_non_file_objects() {
-        // GIO ListStore<Menu> exercises the non-file branch in normal tests,
-        // but GLib object construction is outside Miri's Rust UB model.
         let menu_store = gio::ListStore::new::<gio::Menu>();
         menu_store.append(&gio::Menu::new());
 

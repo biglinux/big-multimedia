@@ -93,91 +93,66 @@ pub(super) fn get_root_property(prop: &str, desktop: &str) -> Option<Variant> {
         _ => None,
     }
 }
+/// Decodes a player method call. `Ok(None)` is a valid call the state ignores,
+/// such as a seek for a track other than the current one.
 fn method_command(
     method: &str,
     params: &Variant,
     state: &PlayerState,
 ) -> Result<Option<C>, &'static str> {
-    let empty = || {
-        if params.is_type(glib::VariantTy::UNIT) {
-            Ok(())
+    let playing = state.status == PlaybackStatus::Playing;
+    let without_args = match method {
+        "Play" => Some(state.can_play.then_some(C::Play)),
+        "Pause" => Some(state.can_pause.then_some(C::Pause)),
+        "PlayPause" if playing => Some(state.can_pause.then_some(C::Pause)),
+        "PlayPause" => Some(state.can_play.then_some(C::Play)),
+        "Stop" => Some(Some(C::Stop)),
+        "Next" => Some(state.can_next.then_some(C::Next)),
+        "Previous" => Some(state.can_prev.then_some(C::Previous)),
+        _ => None,
+    };
+    if let Some(command) = without_args {
+        return if params.is_type(glib::VariantTy::UNIT) {
+            Ok(command)
         } else {
             Err("InvalidArgs")
-        }
-    };
-    let command = match method {
-        "Play" => {
-            empty()?;
-            state.can_play.then_some(C::Play)
-        }
-        "Pause" => {
-            empty()?;
-            state.can_pause.then_some(C::Pause)
-        }
-        "PlayPause" => {
-            empty()?;
-            if state.status == PlaybackStatus::Playing {
-                state.can_pause.then_some(C::Pause)
-            } else {
-                state.can_play.then_some(C::Play)
-            }
-        }
-        "Stop" => {
-            empty()?;
-            Some(C::Stop)
-        }
-        "Next" => {
-            empty()?;
-            state.can_next.then_some(C::Next)
-        }
-        "Previous" => {
-            empty()?;
-            state.can_prev.then_some(C::Previous)
-        }
+        };
+    }
+    match method {
         "Seek" => {
             let (offset_us,) = params.get::<(i64,)>().ok_or("InvalidArgs")?;
-            if !state.can_seek {
-                None
-            } else {
-                state.track_id.as_ref().map(|id| C::Seek {
-                    track_id: id.clone(),
-                    offset_us,
-                })
-            }
+            let track_id = state.track_id.clone().filter(|_| state.can_seek);
+            Ok(track_id.map(|track_id| C::Seek {
+                track_id,
+                offset_us,
+            }))
         }
         "SetPosition" => {
             let (track, position_us) = params.get::<(ObjectPath, i64)>().ok_or("InvalidArgs")?;
-            let id: &str = &track;
             let duration = micros(state.duration_secs);
-            if state.can_seek
-                && state.track_id.as_deref() == Some(id)
+            let valid = state.can_seek
+                && state.track_id.as_deref() == Some(track.as_str())
                 && position_us >= 0
-                && (duration == 0 || position_us <= duration)
-            {
-                Some(C::SetPosition {
-                    track_id: id.to_owned(),
-                    position_us,
-                })
-            } else {
-                None
-            }
+                && (duration == 0 || position_us <= duration);
+            Ok(valid.then(|| C::SetPosition {
+                track_id: track.as_str().to_owned(),
+                position_us,
+            }))
         }
         "OpenUri" => {
             let (uri,) = params.get::<(String,)>().ok_or("InvalidArgs")?;
-            let Some(scheme) = big_os_kit::url::uri_scheme(&uri) else {
-                return Err("InvalidArgs");
-            };
-            if !["file", "http", "https"]
+            let scheme = big_os_kit::url::uri_scheme(&uri).ok_or("InvalidArgs")?;
+            if ["file", "http", "https"]
                 .iter()
                 .any(|s| scheme.eq_ignore_ascii_case(s))
             {
-                return Err("NotSupported");
+                Ok(Some(C::OpenUri(uri)))
+            } else {
+                Err("NotSupported")
             }
-            Some(C::OpenUri(uri))
         }
-        _ => return Err("UnknownMethod"),
-    };
-    Ok(command)
+        _ => Err("UnknownMethod"),
+    }
 }
 pub(super) fn handle_player_method(
     method: &str,
@@ -237,22 +212,33 @@ pub(super) fn set_player_property(
 mod tests {
     use super::*;
     #[test]
-    fn stale_seek_ignored_unknown_method_errors() {
+    fn stale_set_position_is_ignored() {
         let state = PlayerState {
             track_id: Some("/br/com/biglinux/Track/2".into()),
             can_seek: true,
             duration_secs: 10.0,
             ..Default::default()
         };
-        let args = (
-            ObjectPath::try_from("/br/com/biglinux/Track/1").unwrap(),
-            2_i64,
-        )
-            .to_variant();
-        assert_eq!(method_command("SetPosition", &args, &state), Ok(None));
+        let args = |track: &str| (ObjectPath::try_from(track).unwrap(), 2_i64).to_variant();
+        assert_eq!(
+            method_command("SetPosition", &args("/br/com/biglinux/Track/1"), &state),
+            Ok(None)
+        );
+        assert!(matches!(
+            method_command("SetPosition", &args("/br/com/biglinux/Track/2"), &state),
+            Ok(Some(C::SetPosition { position_us: 2, .. }))
+        ));
+    }
+    #[test]
+    fn unknown_method_is_an_error() {
+        let state = PlayerState::default();
         assert_eq!(
             method_command("Bogus", &().to_variant(), &state),
             Err("UnknownMethod")
+        );
+        assert_eq!(
+            method_command("Play", &(1_i64,).to_variant(), &state),
+            Err("InvalidArgs")
         );
     }
     #[test]

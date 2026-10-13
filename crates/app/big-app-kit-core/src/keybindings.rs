@@ -68,7 +68,7 @@ pub fn build_accel_map(
         .collect()
 }
 
-/// Upgrade a legacy `Ctrl+Shift+f`-style accel to canonical `<Ctrl><Shift>f`.
+/// Convert a `Ctrl+Shift+f`-style accel to canonical `<Ctrl><Shift>f`.
 ///
 /// Returns the input unchanged when it already contains `<` or carries no
 /// `+` separators. Unknown modifier tokens fall back to the original

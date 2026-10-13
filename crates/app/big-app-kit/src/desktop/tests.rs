@@ -1,9 +1,7 @@
 // SPDX-FileCopyrightText: 2026 BigLinux contributors
 // SPDX-License-Identifier: MIT
 
-//! Tests for desktop integration helpers. Split out of `desktop.rs` (recipe:
-//! file-size budget); as a child module the tests reach the parent's items
-//! via `super::*`.
+//! Tests for desktop integration helpers.
 
 use super::*;
 use gtk::prelude::*;

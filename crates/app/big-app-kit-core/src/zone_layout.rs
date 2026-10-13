@@ -1,26 +1,19 @@
 // SPDX-License-Identifier: MIT
 
-//! Display-free zone-layout model (RESTRUCTURE phase **D3** / decision **D8**).
-//!
-//! This is the data behind `big_relm4_components::input::zone_layout_editor::BigZoneLayoutEditor`
-//! (the GTK visual "drag controls between zones" editor) and
-//! `big_relm4_components::layout::zone_applier` (the runtime placement applier)
-//! (the customization the video-player controls bar ships and the big-shell
-//! panel should adopt).
+//! Display-free zone-layout model: the data behind
+//! `big_relm4_components::input::zone_layout_editor::BigZoneLayoutEditor`
+//! (drag controls between zones) and `big_relm4_components::layout::zone_applier`
+//! (runtime placement).
 //!
 //! Two halves:
-//! - [`crate::zone_layout::ZoneLayoutSpec`] (the catalog + topology): which
-//!   controls exist ([`crate::zone_layout::ZoneControl`]) and how the bars/zones
-//!   are arranged ([`crate::zone_layout::BarSpec`]). Built fresh by the app each
-//!   time the editor opens.
-//! - [`crate::zone_layout::ZoneLayout`] (the value): the per-zone ordered
-//!   control ids plus the set of hidden controls.
+//! - [`ZoneLayoutSpec`] (the catalog + topology): which controls exist
+//!   ([`ZoneControl`]) and how the bars/zones are arranged ([`BarSpec`]). Built
+//!   fresh by the app each time the editor opens.
+//! - [`ZoneLayout`] (the value): the per-zone ordered control ids plus the set
+//!   of hidden controls.
 //!
-//! Kept serde-free (string ids are "serde-friendly" but the framework leaves
-//! persistence to the app): the video player maps a
-//! [`crate::zone_layout::ZoneLayout`] to its
-//! `ui-zone-*` / `ui-show-*` gsettings keys, big-shell to its panel config
-//! struct.
+//! Persistence belongs to the app: the video player maps a [`ZoneLayout`] to its
+//! `ui-zone-*` / `ui-show-*` GSettings keys.
 
 use std::collections::{BTreeMap, BTreeSet};
 
@@ -165,7 +158,7 @@ impl ZoneLayoutSpec {
 ///
 /// `slots` maps a [`slot_key`] to the ordered control ids in that zone; `hidden`
 /// is the set of control ids toggled off (a control is visible by default).
-/// Run [`ZoneLayout::normalized`] on load AND after every edit so an old or
+/// Run [`ZoneLayout::normalized`] on load and after every edit so an old or
 /// hand-edited value self-heals (dedup, drop-unknown, append-missing-defaults).
 #[derive(Debug, Clone, Default, PartialEq, Eq)]
 pub struct ZoneLayout {
@@ -232,7 +225,7 @@ impl ZoneLayout {
     }
 
     /// Return a self-healed copy against `spec`: every valid slot is present
-    /// (possibly empty); each control appears in AT MOST ONE zone (first
+    /// (possibly empty); each control appears in at most one zone (first
     /// occurrence in render order wins); ids not in `spec.controls` and slots
     /// not in `spec` are dropped; any spec control left unplaced is appended to
     /// its [`ZoneControl::default_slot`]; `hidden` keeps only valid ids.
@@ -309,9 +302,8 @@ mod tests {
     #[test]
     fn from_csv_drops_empty_segments() {
         let spec = spec();
-        // Non-default slot with an embedded empty segment: the two real ids must
-        // survive (empties dropped) IN ORDER, proving the values flow through
-        // `from_csv` rather than the default-slot append fallback.
+        // A non-default slot keeps both ids in order, so they came from the CSV
+        // and not from the default-slot append fallback.
         let layout = ZoneLayout::from_csv_zones(&spec, |bar, placement| match (bar, placement) {
             ("bar", ZonePlacement::Center) => "volume,,play".to_string(),
             _ => String::new(),

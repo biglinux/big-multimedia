@@ -17,8 +17,8 @@
 
 use log::info;
 use std::collections::HashMap;
-use std::io::{Read, Write};
-use std::net::{IpAddr, Shutdown, SocketAddr, TcpListener, TcpStream};
+use std::io::{ErrorKind, Read, Write};
+use std::net::{IpAddr, Ipv4Addr, Ipv6Addr, Shutdown, SocketAddr, TcpListener, TcpStream};
 use std::sync::Arc;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::thread;
@@ -61,15 +61,14 @@ pub struct ServerHandle {
     /// Fresh random capability for this server lifetime.
     pub token: String,
     stop: Arc<AtomicBool>,
-    wake: Option<thread::Thread>,
+    wake: SocketAddr,
 }
 impl ServerHandle {
     /// Revoke new dispatch immediately; drain no network uploads or writes.
     pub fn stop(&self) {
         self.stop.store(true, Ordering::Release);
-        if let Some(wake) = &self.wake {
-            wake.unpark();
-        }
+        // An idle worker blocks in accept; a loopback connect returns it to the stop check.
+        let _ = TcpStream::connect_timeout(&self.wake, Duration::from_millis(250));
     }
 }
 impl Drop for ServerHandle {
@@ -85,6 +84,7 @@ const MAX_HEADERS: usize = 48;
 const HEADER_DEADLINE: Duration = Duration::from_secs(3);
 const WRITE_DEADLINE: Duration = Duration::from_secs(2);
 const MAX_RATE_PEERS: usize = 64;
+const MUTATIONS: [&str; 4] = ["play-pause", "next", "prev", "volume"];
 
 /// Start with the same revocation token carried by queued UI commands. `stop`
 /// must be fresh and false; a stopped session is never reused for another token.
@@ -98,25 +98,26 @@ pub fn start_scoped(
     }
     let token = make_token().map_err(|_| "Secure randomness unavailable".to_owned())?;
     let listener = TcpListener::bind(address).map_err(|e| format!("bind: {e}"))?;
-    listener
-        .set_nonblocking(true)
-        .map_err(|e| format!("nonblocking: {e}"))?;
-    let port = listener
-        .local_addr()
-        .map_err(|e| format!("address: {e}"))?
-        .port();
+    let local = listener.local_addr().map_err(|e| format!("address: {e}"))?;
+    let wake = match local.ip() {
+        IpAddr::V4(ip) if ip.is_unspecified() => {
+            SocketAddr::new(Ipv4Addr::LOCALHOST.into(), local.port())
+        }
+        IpAddr::V6(ip) if ip.is_unspecified() => {
+            SocketAddr::new(Ipv6Addr::LOCALHOST.into(), local.port())
+        }
+        _ => local,
+    };
     let flag = stop.clone();
     let secret = token.clone();
-    let worker = thread::Builder::new()
+    // Detached: Drop on the GTK thread must not join.
+    thread::Builder::new()
         .name("media-remote".into())
-        .spawn(move || {
-            serve(listener, &secret, &handlers, &flag);
-        })
+        .spawn(move || serve(&listener, &secret, &handlers, &flag))
         .map_err(|_| "Could not start remote control worker".to_owned())?;
-    let wake = Some(worker.thread().clone()); // no blocking Join in GTK Drop
-    info!("web-remote listening on port {port}");
+    info!("web-remote listening on port {}", local.port());
     Ok(ServerHandle {
-        port,
+        port: local.port(),
         token,
         stop,
         wake,
@@ -132,6 +133,51 @@ struct Client {
     sent: usize,
     write_started: Option<Instant>,
 }
+impl Client {
+    /// Reads what the peer sent so far. `Ok(true)` once the head is complete.
+    fn read_head(&mut self, now: Instant) -> Result<bool, ()> {
+        // Absolute deadline from accept, not reset by one byte per second.
+        if now.duration_since(self.accepted) >= HEADER_DEADLINE {
+            return Err(());
+        }
+        let mut chunk = [0u8; 2048];
+        match self.stream.read(&mut chunk) {
+            Ok(0) => Err(()),
+            Ok(n) if self.input.len() + n > MAX_HEADER => Err(()),
+            Ok(n) => {
+                self.input.extend_from_slice(&chunk[..n]);
+                Ok(self.input.windows(4).any(|w| w == b"\r\n\r\n"))
+            }
+            Err(e) if matches!(e.kind(), ErrorKind::WouldBlock | ErrorKind::Interrupted) => {
+                Ok(false)
+            }
+            Err(_) => Err(()),
+        }
+    }
+
+    /// Writes the next slice of the response. False once the peer is done or stuck.
+    fn write_output(&mut self, now: Instant) -> bool {
+        let Some(output) = &self.output else {
+            return true;
+        };
+        if self
+            .write_started
+            .is_some_and(|start| now.duration_since(start) >= WRITE_DEADLINE)
+        {
+            return false;
+        }
+        let end = (self.sent + 8192).min(output.len());
+        match self.stream.write(&output[self.sent..end]) {
+            Ok(0) => false,
+            Ok(n) => {
+                self.sent += n;
+                self.sent < output.len()
+            }
+            Err(e) => matches!(e.kind(), ErrorKind::WouldBlock | ErrorKind::Interrupted),
+        }
+    }
+}
+
 struct Rate {
     start: Instant,
     count: u32,
@@ -149,148 +195,155 @@ impl Rate {
         true
     }
 }
-fn serve(listener: TcpListener, token: &str, handlers: &RemoteHandlers, stop: &AtomicBool) {
+
+/// Mutation budgets: 8 per second per peer, 24 per second overall.
+struct Limits {
+    peers: HashMap<IpAddr, Rate>,
+    global: Rate,
+}
+impl Limits {
+    fn admit(&mut self, ip: IpAddr, now: Instant) -> bool {
+        if !self.peers.contains_key(&ip) && self.peers.len() >= MAX_RATE_PEERS {
+            return false;
+        }
+        let peer = self.peers.entry(ip).or_insert(Rate {
+            start: now,
+            count: 0,
+        });
+        peer.allow(now, 8) && self.global.allow(now, 24)
+    }
+}
+
+enum Accepted {
+    More,
+    Drained,
+    Failed,
+}
+fn admit_client(
+    result: std::io::Result<(TcpStream, SocketAddr)>,
+    clients: &mut Vec<Client>,
+) -> Accepted {
+    let (stream, peer) = match result {
+        Ok(accepted) => accepted,
+        Err(e) if e.kind() == ErrorKind::WouldBlock => return Accepted::Drained,
+        Err(e)
+            if matches!(
+                e.kind(),
+                ErrorKind::Interrupted | ErrorKind::ConnectionAborted
+            ) =>
+        {
+            return Accepted::More;
+        }
+        Err(_) => return Accepted::Failed,
+    };
+    let full = clients.len() >= MAX_CLIENTS
+        || clients.iter().filter(|c| c.ip == peer.ip()).count() >= MAX_PER_IP;
+    if full || stream.set_nonblocking(true).is_err() {
+        let _ = stream.shutdown(Shutdown::Both);
+        return Accepted::More;
+    }
+    clients.push(Client {
+        stream,
+        ip: peer.ip(),
+        accepted: Instant::now(),
+        input: Vec::with_capacity(1024),
+        output: None,
+        sent: 0,
+        write_started: None,
+    });
+    Accepted::More
+}
+
+/// Waits for a connection without waking while nothing happens.
+fn accept_blocking(listener: &TcpListener) -> std::io::Result<(TcpStream, SocketAddr)> {
+    listener.set_nonblocking(false)?;
+    let accepted = listener.accept();
+    listener.set_nonblocking(true)?;
+    accepted
+}
+
+fn serve(listener: &TcpListener, token: &str, handlers: &RemoteHandlers, stop: &AtomicBool) {
     let mut clients: Vec<Client> = Vec::with_capacity(MAX_CLIENTS);
-    let mut rates: HashMap<IpAddr, Rate> = HashMap::new();
-    let mut global = Rate {
-        start: Instant::now(),
-        count: 0,
+    let mut limits = Limits {
+        peers: HashMap::new(),
+        global: Rate {
+            start: Instant::now(),
+            count: 0,
+        },
     };
     while !stop.load(Ordering::Acquire) {
+        let mut next = if clients.is_empty() {
+            accept_blocking(listener)
+        } else {
+            listener.accept()
+        };
         // Finite accept budget per iteration; floods cannot starve existing peers.
         for _ in 0..MAX_CLIENTS {
-            match listener.accept() {
-                Ok((stream, peer)) => {
-                    if clients.len() >= MAX_CLIENTS
-                        || clients.iter().filter(|c| c.ip == peer.ip()).count() >= MAX_PER_IP
-                    {
-                        let _ = stream.shutdown(Shutdown::Both);
-                        continue;
-                    }
-                    if stream.set_nonblocking(true).is_err() {
-                        continue;
-                    }
-                    clients.push(Client {
-                        stream,
-                        ip: peer.ip(),
-                        accepted: Instant::now(),
-                        input: Vec::with_capacity(1024),
-                        output: None,
-                        sent: 0,
-                        write_started: None,
-                    });
-                }
-                Err(e) if e.kind() == std::io::ErrorKind::WouldBlock => break,
-                Err(e) if e.kind() == std::io::ErrorKind::Interrupted => continue,
-                Err(_) => {
+            match admit_client(next, &mut clients) {
+                Accepted::More => next = listener.accept(),
+                Accepted::Drained => break,
+                Accepted::Failed => {
                     stop.store(true, Ordering::Release);
                     break;
                 }
             }
         }
         let now = Instant::now();
-        rates.retain(|_, rate| now.duration_since(rate.start) < Duration::from_secs(10));
+        limits
+            .peers
+            .retain(|_, rate| now.duration_since(rate.start) < Duration::from_secs(10));
         clients.retain_mut(|client| {
             if stop.load(Ordering::Acquire) {
                 return false;
             }
             if client.output.is_none() {
-                // Absolute deadline from accept, not reset by one byte per second.
-                if now.duration_since(client.accepted) >= HEADER_DEADLINE {
-                    return false;
-                }
-                let mut chunk = [0u8; 2048];
-                match client.stream.read(&mut chunk) {
-                    Ok(0) => return false,
-                    Ok(n) => {
-                        if client.input.len() + n > MAX_HEADER {
-                            return false;
-                        }
-                        client.input.extend_from_slice(&chunk[..n]);
-                        if let Some(end) = client.input.windows(4).position(|w| w == b"\r\n\r\n") {
-                            let response = if end + 4 != client.input.len() {
-                                response(
-                                    400,
-                                    "text/plain",
-                                    "Pipelining and request bodies are not supported",
-                                )
-                            } else {
-                                match parse_request(&client.input[..end]) {
-                                    Ok(request) => {
-                                        let mutation = rate_limited_mutation(&request, token);
-                                        let permit = if mutation {
-                                            if !rates.contains_key(&client.ip)
-                                                && rates.len() >= MAX_RATE_PEERS
-                                            {
-                                                false
-                                            } else {
-                                                rates
-                                                    .entry(client.ip)
-                                                    .or_insert(Rate {
-                                                        start: now,
-                                                        count: 0,
-                                                    })
-                                                    .allow(now, 8)
-                                                    && global.allow(now, 24)
-                                            }
-                                        } else {
-                                            true
-                                        };
-                                        dispatch(&request, token, handlers, stop, permit)
-                                    }
-                                    Err(()) => response(400, "text/plain", "Invalid HTTP request"),
-                                }
-                            };
-                            client.output = Some(response);
-                            client.write_started = Some(Instant::now());
-                            client.input.clear();
-                        }
+                match client.read_head(now) {
+                    Err(()) => return false,
+                    Ok(false) => return true,
+                    Ok(true) => {
+                        let ip = client.ip;
+                        let admit = || limits.admit(ip, now);
+                        client.output = Some(respond(&client.input, token, handlers, stop, admit));
+                        client.write_started = Some(now);
+                        client.input.clear();
                     }
-                    Err(e)
-                        if matches!(
-                            e.kind(),
-                            std::io::ErrorKind::WouldBlock | std::io::ErrorKind::Interrupted
-                        ) => {}
-                    Err(_) => return false,
                 }
             }
-            if let Some(output) = &client.output {
-                if client
-                    .write_started
-                    .is_some_and(|start| start.elapsed() >= WRITE_DEADLINE)
-                {
-                    return false;
-                }
-                let end = (client.sent + 8192).min(output.len());
-                match client.stream.write(&output[client.sent..end]) {
-                    Ok(0) => return false,
-                    Ok(n) => {
-                        client.sent += n;
-                        if client.sent == output.len() {
-                            return false;
-                        }
-                    }
-                    Err(e)
-                        if matches!(
-                            e.kind(),
-                            std::io::ErrorKind::WouldBlock | std::io::ErrorKind::Interrupted
-                        ) => {}
-                    Err(_) => return false,
-                }
-            }
-            true
+            client.write_output(now)
         });
-        thread::park_timeout(if clients.is_empty() {
-            Duration::from_millis(50)
-        } else {
-            Duration::from_millis(10)
-        });
+        if !clients.is_empty() {
+            thread::sleep(Duration::from_millis(10));
+        }
     }
     for client in clients {
         let _ = client.stream.shutdown(Shutdown::Both);
     }
-    drop(listener);
     info!("web-remote stopped");
+}
+
+/// Answers one complete request head. `admit` charges the mutation rate budget.
+fn respond(
+    input: &[u8],
+    token: &str,
+    handlers: &RemoteHandlers,
+    stop: &AtomicBool,
+    admit: impl FnOnce() -> bool,
+) -> Vec<u8> {
+    let end = input.windows(4).position(|w| w == b"\r\n\r\n");
+    let Some(head) = end
+        .filter(|end| end + 4 == input.len())
+        .map(|end| &input[..end])
+    else {
+        return response(
+            400,
+            "text/plain",
+            "Pipelining and request bodies are not supported",
+        );
+    };
+    match parse_request(head) {
+        Ok(request) => dispatch(&request, token, handlers, stop, admit),
+        Err(()) => response(400, "text/plain", "Invalid HTTP request"),
+    }
 }
 
 struct Request<'a> {
@@ -354,64 +407,52 @@ fn parse_request(input: &[u8]) -> Result<Request<'_>, ()> {
         headers,
     })
 }
-fn rate_limited_mutation(request: &Request<'_>, token: &str) -> bool {
-    let Some(tail) = route(request.target, token) else {
-        return false;
-    };
-    let path = tail.split_once('?').map_or(tail, |(path, _)| path);
-    request.method == "POST"
-        && matches!(path, "play-pause" | "next" | "prev" | "volume")
-        && request.headers.get("x-big-media-remote") == Some(&"1")
-        && request.headers.get("origin").is_none_or(|origin| {
-            origin.eq_ignore_ascii_case(&format!("http://{}", request.headers["host"]))
-        })
-        && request
-            .headers
-            .get("sec-fetch-site")
-            .is_none_or(|site| matches!(*site, "same-origin" | "none"))
+
+/// Returns what follows `/<token>` in `target`, comparing the token in constant time.
+fn route<'a>(target: &'a str, token: &str) -> Option<&'a str> {
+    let (candidate, rest) = target.strip_prefix('/')?.split_at_checked(token.len())?;
+    let diff = candidate
+        .bytes()
+        .zip(token.bytes())
+        .fold(0, |diff, (a, b)| diff | (a ^ b));
+    (diff == 0).then_some(rest)
 }
-fn route<'a>(url: &'a str, token: &str) -> Option<&'a str> {
-    url.strip_prefix(&format!("/{token}/"))
-}
+
 fn dispatch(
     request: &Request<'_>,
     token: &str,
     handlers: &RemoteHandlers,
     stop: &AtomicBool,
-    permit: bool,
+    admit: impl FnOnce() -> bool,
 ) -> Vec<u8> {
     if stop.load(Ordering::Acquire) {
         return response(503, "text/plain", "Remote disabled");
     }
-    if request.target == format!("/{token}") && request.method == "GET" {
-        let mut bytes = response(308, "text/plain", "");
-        // Insert only a generated random-token path, never user data.
-        let insert = format!("Location: /{token}/\r\n");
-        let pos = bytes.windows(2).position(|w| w == b"\r\n").unwrap_or(0) + 2;
-        bytes.splice(pos..pos, insert.bytes());
-        return bytes;
+    let Some(rest) = route(request.target, token) else {
+        return response(404, "text/plain", "Not Found");
+    };
+    if rest.is_empty() && request.method == "GET" {
+        return format!("HTTP/1.1 308 Permanent Redirect\r\nLocation: /{token}/\r\nContent-Length: 0\r\n{COMMON_HEADERS}\r\n").into_bytes();
     }
-    let Some(tail) = route(request.target, token) else {
+    let Some(tail) = rest.strip_prefix('/') else {
         return response(404, "text/plain", "Not Found");
     };
     let (path, query) = tail.split_once('?').unwrap_or((tail, ""));
-    let mutation = matches!(path, "play-pause" | "next" | "prev" | "volume");
-    if (mutation && request.method != "POST") || (!mutation && request.method != "GET") {
+    let mutation = MUTATIONS.contains(&path);
+    if mutation != (request.method == "POST") {
         return response(405, "text/plain", "Method Not Allowed");
     }
     let headers = &request.headers;
-    let origin_ok = headers
+    let cross_origin = headers
         .get("origin")
-        .is_none_or(|origin| origin.eq_ignore_ascii_case(&format!("http://{}", headers["host"])));
-    if !origin_ok
+        .is_some_and(|origin| !origin.eq_ignore_ascii_case(&format!("http://{}", headers["host"])))
         || headers
             .get("sec-fetch-site")
-            .is_some_and(|site| !matches!(*site, "same-origin" | "none"))
-        || (mutation && headers.get("x-big-media-remote") != Some(&"1"))
-    {
+            .is_some_and(|site| !matches!(*site, "same-origin" | "none"));
+    if cross_origin || (mutation && headers.get("x-big-media-remote") != Some(&"1")) {
         return response(403, "text/plain", "Forbidden");
     }
-    if mutation && !permit {
+    if mutation && !admit() {
         return response(429, "text/plain", "Too Many Requests");
     }
     match path {
@@ -440,10 +481,12 @@ fn command_response(accepted: bool) -> Vec<u8> {
         response(503, "text/plain", "Player busy or remote disabled; retry")
     }
 }
+
+const COMMON_HEADERS: &str = "Connection: close\r\nCache-Control: no-store\r\nReferrer-Policy: no-referrer\r\nX-Content-Type-Options: nosniff\r\nX-Frame-Options: DENY\r\nContent-Security-Policy: default-src 'none'; script-src 'self'; style-src 'self'; connect-src 'self'; base-uri 'none'; frame-ancestors 'none'; form-action 'none'\r\n";
+
 fn response(status: u16, mime: &str, body: &str) -> Vec<u8> {
     let reason = match status {
         200 => "OK",
-        308 => "Permanent Redirect",
         400 => "Bad Request",
         403 => "Forbidden",
         404 => "Not Found",
@@ -451,53 +494,32 @@ fn response(status: u16, mime: &str, body: &str) -> Vec<u8> {
         429 => "Too Many Requests",
         _ => "Service Unavailable",
     };
-    format!("HTTP/1.1 {status} {reason}\r\nContent-Type: {mime}\r\nContent-Length: {}\r\nConnection: close\r\nCache-Control: no-store\r\nReferrer-Policy: no-referrer\r\nX-Content-Type-Options: nosniff\r\nX-Frame-Options: DENY\r\nContent-Security-Policy: default-src 'none'; script-src 'self'; style-src 'self'; connect-src 'self'; base-uri 'none'; frame-ancestors 'none'; form-action 'none'\r\n\r\n{body}", body.len()).into_bytes()
-}
-
-fn status_json(status_snapshot: &StatusSnapshot) -> String {
-    // Hand-rolled to dodge serde codegen on a hot path.
     format!(
-        "{{\"playing\":{},\"title\":\"{}\",\"artist\":\"{}\",\"position\":{:.3},\"duration\":{:.3},\"volume\":{:.1}}}",
-        status_snapshot.playing,
-        escape_json(&status_snapshot.title.chars().take(2048).collect::<String>()),
-        escape_json(
-            &status_snapshot
-                .artist
-                .chars()
-                .take(2048)
-                .collect::<String>()
-        ),
-        finite(status_snapshot.position_s),
-        finite(status_snapshot.duration_s),
-        finite(status_snapshot.volume).min(100.0),
+        "HTTP/1.1 {status} {reason}\r\nContent-Type: {mime}\r\nContent-Length: {}\r\n{COMMON_HEADERS}\r\n{body}",
+        body.len()
     )
+    .into_bytes()
 }
 
-fn escape_json(raw_text: &str) -> String {
-    let mut escaped_text = String::with_capacity(raw_text.len());
-    for character in raw_text.chars() {
-        match character {
-            '"' => escaped_text.push_str("\\\""),
-            '\\' => escaped_text.push_str("\\\\"),
-            '\n' => escaped_text.push_str("\\n"),
-            '\r' => escaped_text.push_str("\\r"),
-            '\t' => escaped_text.push_str("\\t"),
-            character if (character as u32) < 0x20 => {
-                escaped_text.push_str(&format!("\\u{:04x}", character as u32));
-            }
-            character => escaped_text.push(character),
+fn status_json(status: &StatusSnapshot) -> String {
+    let finite = |value: f64| {
+        if value.is_finite() {
+            value.max(0.0)
+        } else {
+            0.0
         }
-    }
-    escaped_text
+    };
+    serde_json::json!({
+        "playing": status.playing,
+        "title": status.title.chars().take(2048).collect::<String>(),
+        "artist": status.artist.chars().take(2048).collect::<String>(),
+        "position": finite(status.position_s),
+        "duration": finite(status.duration_s),
+        "volume": finite(status.volume).min(100.0),
+    })
+    .to_string()
 }
 
-fn finite(value: f64) -> f64 {
-    if value.is_finite() {
-        value.max(0.0)
-    } else {
-        0.0
-    }
-}
 fn parse_volume(query: &str) -> Option<f64> {
     let mut volumes = query.split('&').filter_map(|pair| pair.strip_prefix("v="));
     let value: f64 = volumes.next()?.parse().ok()?;
@@ -532,264 +554,22 @@ const INDEX_JS: &str = include_str!("remote_control.js");
 #[cfg(test)]
 mod tests {
     use super::*;
-    use std::net::TcpStream;
     use std::sync::Mutex;
-    use std::sync::atomic::AtomicUsize;
 
-    /// Shared with `slow_peer_tests`, which asserts the same shutdown contract.
-    pub(super) fn is_closed(result: std::io::Result<usize>) -> bool {
+    fn is_closed(result: std::io::Result<usize>) -> bool {
         match result {
             Ok(0) => true,
             Err(error) => matches!(
                 error.kind(),
-                std::io::ErrorKind::ConnectionReset
-                    | std::io::ErrorKind::BrokenPipe
-                    | std::io::ErrorKind::NotConnected
-                    | std::io::ErrorKind::UnexpectedEof
+                ErrorKind::ConnectionReset
+                    | ErrorKind::BrokenPipe
+                    | ErrorKind::NotConnected
+                    | ErrorKind::UnexpectedEof
             ),
             _ => false,
         }
     }
 
-    #[test]
-    fn volume_parse_clamps() {
-        assert_eq!(parse_volume("v=50"), Some(50.0));
-        assert_eq!(parse_volume("v=150"), Some(100.0));
-        assert_eq!(parse_volume("v=-5"), Some(0.0));
-        assert_eq!(parse_volume("foo=bar&v=42.5"), Some(42.5));
-        assert_eq!(parse_volume("nope"), None);
-    }
-
-    #[test]
-    fn escape_json_specials() {
-        assert_eq!(escape_json("a\"b\\c\nd"), "a\\\"b\\\\c\\nd");
-        assert_eq!(escape_json("a\rb\t\u{1f}"), "a\\rb\\t\\u001f");
-        assert_eq!(escape_json("a b"), "a b");
-    }
-
-    #[test]
-    fn status_json_is_valid_and_escaped() {
-        let status_snapshot = StatusSnapshot {
-            playing: true,
-            title: "A \"quoted\" title\n".into(),
-            artist: "Artist\\Name".into(),
-            position_s: 12.34567,
-            duration_s: 98.76543,
-            volume: 42.26,
-        };
-
-        let value: serde_json::Value =
-            serde_json::from_str(&status_json(&status_snapshot)).unwrap();
-
-        assert_eq!(value["playing"], true);
-        assert_eq!(value["title"], "A \"quoted\" title\n");
-        assert_eq!(value["artist"], "Artist\\Name");
-        assert_eq!(value["position"], 12.346);
-        assert_eq!(value["duration"], 98.765);
-        assert_eq!(value["volume"], 42.3);
-    }
-
-    #[test]
-    fn hex_is_lowercase() {
-        assert_eq!(hex(&[0x00, 0x0f, 0xa2, 0xff]), "000fa2ff");
-    }
-
-    #[test]
-    fn token_is_32_hex_chars() {
-        let t = make_token().unwrap();
-        assert_eq!(t.len(), 32);
-        assert!(t.chars().all(|c| c.is_ascii_hexdigit()));
-        assert!(t.chars().all(|c| !c.is_ascii_uppercase()));
-    }
-
-    #[test]
-    fn token_routes_fail_closed() {
-        assert!(token_from_reader(std::io::Cursor::new([])).is_err());
-        assert!(route("/secret-extra/status", "secret").is_none());
-        assert_eq!(route("/secret/status", "secret"), Some("status"));
-        assert_eq!(parse_volume("v=NaN"), None);
-        assert_eq!(parse_volume("v=2&v=3"), None);
-    }
-
-    #[test]
-    fn server_handle_stop_sets_shutdown_flag() {
-        let stop_flag = Arc::new(AtomicBool::new(false));
-        let handle = ServerHandle {
-            port: 12345,
-            token: "token".into(),
-            stop: Arc::clone(&stop_flag),
-            wake: None,
-        };
-
-        handle.stop();
-
-        assert!(stop_flag.load(Ordering::Relaxed));
-    }
-
-    #[test]
-    fn server_handle_drop_sets_shutdown_flag() {
-        let stop_flag = Arc::new(AtomicBool::new(false));
-        {
-            let _handle = ServerHandle {
-                port: 12345,
-                token: "token".into(),
-                stop: Arc::clone(&stop_flag),
-                wake: None,
-            };
-        }
-
-        assert!(stop_flag.load(Ordering::Relaxed));
-    }
-
-    fn send_http_request(port: u16, method: &str, request_target: &str) -> String {
-        let mut stream = TcpStream::connect(("127.0.0.1", port)).unwrap();
-        stream
-            .set_read_timeout(Some(Duration::from_secs(2)))
-            .unwrap();
-        stream
-            .set_write_timeout(Some(Duration::from_secs(2)))
-            .unwrap();
-        let request = format!(
-            "{method} {request_target} HTTP/1.1\r\nHost: 127.0.0.1\r\nX-Big-Media-Remote: 1\r\nContent-Length: 0\r\nConnection: close\r\n\r\n"
-        );
-        stream.write_all(request.as_bytes()).unwrap();
-
-        let mut response = String::new();
-        stream.read_to_string(&mut response).unwrap();
-        response
-    }
-
-    fn response_body(response: &str) -> &str {
-        response.split_once("\r\n\r\n").unwrap().1
-    }
-
-    fn assert_ok_response(response: &str) {
-        assert!(response.starts_with("HTTP/1.1 200"));
-        assert_eq!(response_body(response), "ok");
-    }
-
-    #[test]
-    #[cfg_attr(miri, ignore)]
-    fn http_routes_dispatch_to_handlers() {
-        // This is a live loopback TCP integration test. Miri can execute the
-        // pure route helpers above, but socket readiness is outside its UB model.
-        let play_pause_count = Arc::new(AtomicUsize::new(0));
-        let next_count = Arc::new(AtomicUsize::new(0));
-        let previous_count = Arc::new(AtomicUsize::new(0));
-        let status_count = Arc::new(AtomicUsize::new(0));
-        let observed_volumes = Arc::new(Mutex::new(Vec::new()));
-
-        let handlers = RemoteHandlers {
-            play_pause: {
-                let play_pause_count = Arc::clone(&play_pause_count);
-                Arc::new(move || {
-                    play_pause_count.fetch_add(1, Ordering::Relaxed);
-                    true
-                })
-            },
-            next: {
-                let next_count = Arc::clone(&next_count);
-                Arc::new(move || {
-                    next_count.fetch_add(1, Ordering::Relaxed);
-                    true
-                })
-            },
-            prev: {
-                let previous_count = Arc::clone(&previous_count);
-                Arc::new(move || {
-                    previous_count.fetch_add(1, Ordering::Relaxed);
-                    true
-                })
-            },
-            set_volume: {
-                let observed_volumes = Arc::clone(&observed_volumes);
-                Arc::new(move |volume| {
-                    observed_volumes.lock().unwrap().push(volume);
-                    true
-                })
-            },
-            status: {
-                let status_count = Arc::clone(&status_count);
-                Arc::new(move || {
-                    status_count.fetch_add(1, Ordering::Relaxed);
-                    StatusSnapshot {
-                        playing: true,
-                        title: "Remote \"Track\"".into(),
-                        artist: "BigLinux".into(),
-                        position_s: 1.25,
-                        duration_s: 5.0,
-                        volume: 75.0,
-                    }
-                })
-            },
-        };
-
-        let server_handle =
-            start_scoped("127.0.0.1:0".parse().unwrap(), handlers, Arc::default()).unwrap();
-        let token_path = format!("/{}", server_handle.token);
-
-        let index_response =
-            send_http_request(server_handle.port, "GET", &format!("{token_path}/"));
-        assert!(index_response.starts_with("HTTP/1.1 200"));
-        assert!(index_response.contains("Content-Type: text/html"));
-
-        let status_response =
-            send_http_request(server_handle.port, "GET", &format!("{token_path}/status"));
-        assert!(status_response.starts_with("HTTP/1.1 200"));
-        assert!(status_response.contains("Content-Type: application/json"));
-        let status_value: serde_json::Value =
-            serde_json::from_str(response_body(&status_response)).unwrap();
-        assert_eq!(status_value["playing"], true);
-        assert_eq!(status_value["title"], "Remote \"Track\"");
-        assert_eq!(status_count.load(Ordering::Relaxed), 1);
-
-        let denied = send_http_request(
-            server_handle.port,
-            "GET",
-            &format!("{token_path}/play-pause"),
-        );
-        assert!(denied.starts_with("HTTP/1.1 405"));
-        assert_eq!(play_pause_count.load(Ordering::Relaxed), 0);
-        assert_ok_response(&send_http_request(
-            server_handle.port,
-            "POST",
-            &format!("{token_path}/play-pause"),
-        ));
-        assert_ok_response(&send_http_request(
-            server_handle.port,
-            "POST",
-            &format!("{token_path}/next"),
-        ));
-        assert_ok_response(&send_http_request(
-            server_handle.port,
-            "POST",
-            &format!("{token_path}/prev"),
-        ));
-        assert_ok_response(&send_http_request(
-            server_handle.port,
-            "POST",
-            &format!("{token_path}/volume?v=150"),
-        ));
-
-        assert_eq!(play_pause_count.load(Ordering::Relaxed), 1);
-        assert_eq!(next_count.load(Ordering::Relaxed), 1);
-        assert_eq!(previous_count.load(Ordering::Relaxed), 1);
-        assert_eq!(*observed_volumes.lock().unwrap(), vec![100.0]);
-
-        let unauthorized_response =
-            send_http_request(server_handle.port, "GET", "/wrong-token/status");
-        assert!(unauthorized_response.starts_with("HTTP/1.1 404"));
-        assert!(unauthorized_response.contains("Not Found"));
-        assert_eq!(status_count.load(Ordering::Relaxed), 1);
-
-        server_handle.stop();
-    }
-}
-
-#[cfg(test)]
-mod slow_peer_tests {
-    use super::tests::is_closed;
-    use super::*;
     fn handlers(accepted: bool) -> RemoteHandlers {
         RemoteHandlers {
             play_pause: Arc::new(move || accepted),
@@ -806,8 +586,80 @@ mod slow_peer_tests {
             }),
         }
     }
+
+    fn start(handlers: RemoteHandlers) -> ServerHandle {
+        start_scoped("127.0.0.1:0".parse().unwrap(), handlers, Arc::default()).unwrap()
+    }
+
     #[test]
-    fn parser_rejects_smuggling_and_duplicate_headers() {
+    fn volume_parse_clamps() {
+        assert_eq!(parse_volume("v=50"), Some(50.0));
+        assert_eq!(parse_volume("v=150"), Some(100.0));
+        assert_eq!(parse_volume("v=-5"), Some(0.0));
+        assert_eq!(parse_volume("foo=bar&v=42.5"), Some(42.5));
+        assert_eq!(parse_volume("nope"), None);
+        assert_eq!(parse_volume("v=NaN"), None);
+        assert_eq!(parse_volume("v=2&v=3"), None);
+    }
+
+    #[test]
+    fn status_json_escapes_text() {
+        let status_snapshot = StatusSnapshot {
+            playing: true,
+            title: "A \"quoted\" title\n\u{1f}".into(),
+            artist: "Artist\\Name".into(),
+            position_s: f64::NAN,
+            duration_s: 98.5,
+            volume: 142.0,
+        };
+
+        let value: serde_json::Value =
+            serde_json::from_str(&status_json(&status_snapshot)).unwrap();
+
+        assert_eq!(value["playing"], true);
+        assert_eq!(value["title"], "A \"quoted\" title\n\u{1f}");
+        assert_eq!(value["artist"], "Artist\\Name");
+        assert_eq!(value["position"], 0.0);
+        assert_eq!(value["duration"], 98.5);
+        assert_eq!(value["volume"], 100.0);
+    }
+
+    #[test]
+    fn token_is_32_lowercase_hex() {
+        assert_eq!(hex(&[0x00, 0x0f, 0xa2, 0xff]), "000fa2ff");
+        let token = make_token().unwrap();
+        assert_eq!(token.len(), 32);
+        assert!(
+            token
+                .bytes()
+                .all(|c| matches!(c, b'0'..=b'9' | b'a'..=b'f'))
+        );
+        assert!(token_from_reader(std::io::Cursor::new([])).is_err());
+    }
+
+    #[test]
+    fn routes_require_exact_token() {
+        assert_eq!(route("/secret/status", "secret"), Some("/status"));
+        assert_eq!(route("/secret", "secret"), Some(""));
+        assert_eq!(route("/secreX/status", "secret"), None);
+        assert_eq!(route("/secr", "secret"), None);
+        let request = |target: &str| {
+            let head = format!("GET {target} HTTP/1.1\r\nHost: localhost");
+            dispatch(
+                &parse_request(head.as_bytes()).unwrap(),
+                "secret",
+                &handlers(true),
+                &AtomicBool::new(false),
+                || true,
+            )
+        };
+        assert!(request("/secret-extra/status").starts_with(b"HTTP/1.1 404"));
+        assert!(request("/secret").starts_with(b"HTTP/1.1 308"));
+        assert!(request("/secret/status").starts_with(b"HTTP/1.1 200"));
+    }
+
+    #[test]
+    fn parser_rejects_smuggling_and_duplicates() {
         for input in [
             "POST /token/next HTTP/1.1\r\nHost: localhost\r\nContent-Length: 1",
             "POST /token/next HTTP/1.1\r\nHost: localhost\r\nContent-Length: 0\r\nContent-Length: 0",
@@ -818,6 +670,7 @@ mod slow_peer_tests {
             assert!(parse_request(input.as_bytes()).is_err(), "{input}");
         }
     }
+
     #[test]
     fn rate_limit_resets_per_window() {
         let now = Instant::now();
@@ -831,6 +684,7 @@ mod slow_peer_tests {
         assert!(!rate.allow(now, 8));
         assert!(rate.allow(now + Duration::from_secs(1), 8));
     }
+
     #[test]
     fn denied_admission_returns_503() {
         let req =
@@ -841,38 +695,114 @@ mod slow_peer_tests {
             "token",
             &handlers(false),
             &AtomicBool::new(false),
-            true,
+            || true,
         );
         assert!(reply.starts_with(b"HTTP/1.1 503"));
+    }
+
+    fn send_http_request(port: u16, method: &str, request_target: &str) -> String {
+        let mut stream = TcpStream::connect(("127.0.0.1", port)).unwrap();
+        stream
+            .set_read_timeout(Some(Duration::from_secs(2)))
+            .unwrap();
+        let request = format!(
+            "{method} {request_target} HTTP/1.1\r\nHost: 127.0.0.1\r\nX-Big-Media-Remote: 1\r\nContent-Length: 0\r\nConnection: close\r\n\r\n"
+        );
+        stream.write_all(request.as_bytes()).unwrap();
+        let mut response = String::new();
+        stream.read_to_string(&mut response).unwrap();
+        response
+    }
+
+    #[test]
+    #[cfg_attr(miri, ignore)] // live loopback sockets
+    fn http_routes_dispatch_to_handlers() {
+        let calls = Arc::new(Mutex::new(Vec::new()));
+        let record = |name: &'static str| {
+            let calls = Arc::clone(&calls);
+            Arc::new(move || {
+                calls.lock().unwrap().push(name.to_owned());
+                true
+            })
+        };
+        let server = start(RemoteHandlers {
+            play_pause: record("play-pause"),
+            next: record("next"),
+            prev: record("prev"),
+            set_volume: {
+                let calls = Arc::clone(&calls);
+                Arc::new(move |volume| {
+                    calls.lock().unwrap().push(format!("volume {volume}"));
+                    true
+                })
+            },
+            status: Arc::new(|| StatusSnapshot {
+                playing: true,
+                title: "Remote \"Track\"".into(),
+                artist: "BigLinux".into(),
+                position_s: 1.25,
+                duration_s: 5.0,
+                volume: 75.0,
+            }),
+        });
+        let send = |method, path: &str| {
+            send_http_request(server.port, method, &format!("/{}/{path}", server.token))
+        };
+
+        let index = send("GET", "");
+        assert!(index.starts_with("HTTP/1.1 200") && index.contains("Content-Type: text/html"));
+        let status = send("GET", "status");
+        let (_, body) = status.split_once("\r\n\r\n").unwrap();
+        let value: serde_json::Value = serde_json::from_str(body).unwrap();
+        assert_eq!(value["title"], "Remote \"Track\"");
+        assert!(send("GET", "play-pause").starts_with("HTTP/1.1 405"));
+        for path in ["play-pause", "next", "prev", "volume?v=150"] {
+            assert!(send("POST", path).ends_with("\r\n\r\nok"), "{path}");
+        }
+        assert_eq!(
+            *calls.lock().unwrap(),
+            ["play-pause", "next", "prev", "volume 100"]
+        );
+        let unauthorized = send_http_request(server.port, "GET", "/wrong-token/status");
+        assert!(unauthorized.starts_with("HTTP/1.1 404"));
+    }
+
+    #[test]
+    #[cfg_attr(miri, ignore)]
+    fn stop_ends_idle_worker() {
+        let worker_alive = Arc::new(());
+        let mut handlers = handlers(true);
+        let held = Arc::clone(&worker_alive);
+        handlers.next = Arc::new(move || {
+            let _ = &held;
+            true
+        });
+        let server = start(handlers);
+        thread::sleep(Duration::from_millis(50)); // let the worker block in accept
+        drop(server);
+        let deadline = Instant::now() + Duration::from_secs(1);
+        while Arc::strong_count(&worker_alive) > 1 {
+            assert!(Instant::now() < deadline, "worker still running");
+            thread::sleep(Duration::from_millis(10));
+        }
     }
 
     #[test]
     #[cfg_attr(miri, ignore)]
     fn header_deadline_ignores_activity() {
-        let server = start_scoped(
-            "127.0.0.1:0".parse().unwrap(),
-            handlers(true),
-            Arc::default(),
-        )
-        .unwrap();
+        let server = start(handlers(true));
         let mut peer = TcpStream::connect(("127.0.0.1", server.port)).unwrap();
         peer.write_all(b"GET /").unwrap();
         thread::sleep(HEADER_DEADLINE + Duration::from_millis(150));
         peer.set_read_timeout(Some(Duration::from_secs(1))).unwrap();
         let mut byte = [0];
         assert!(is_closed(peer.read(&mut byte)));
-        server.stop();
     }
 
     #[test]
     #[cfg_attr(miri, ignore)]
     fn slow_peers_leave_server_responsive() {
-        let server = start_scoped(
-            "127.0.0.1:0".parse().unwrap(),
-            handlers(true),
-            Arc::default(),
-        )
-        .unwrap();
+        let server = start(handlers(true));
         let mut slow: Vec<_> = (0..MAX_PER_IP - 1)
             .map(|_| TcpStream::connect(("127.0.0.1", server.port)).unwrap())
             .collect();

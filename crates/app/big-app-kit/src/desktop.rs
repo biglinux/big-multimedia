@@ -12,20 +12,19 @@ pub use crate::actions::{
     install_action, install_action_enabled, install_quit_action, install_static_accels,
 };
 
-/// Best-effort: errors and missing parents are ignored.
+/// Opens the folder holding `path` in the file manager. Best effort: a
+/// missing parent or a launch failure is ignored.
 pub fn open_containing_folder(path: &Path) {
     if let Some(parent) = path.parent() {
-        let uri = format!("file://{}", parent.display());
-        let _ = gio::AppInfo::launch_default_for_uri(&uri, None::<&gio::AppLaunchContext>);
+        open_file(parent);
     }
 }
 
-/// Hand `path` to the desktop default handler via the
-/// `gio::AppInfo::launch_default_for_uri` portal. Errors are swallowed
-/// because there is no useful recovery on the calling side.
+/// Opens `path` with the desktop's default handler without blocking the main
+/// loop. Best effort: the caller has no recovery for a launch failure.
 pub fn open_file(path: &Path) {
-    let uri = format!("file://{}", path.display());
-    let _ = gio::AppInfo::launch_default_for_uri(&uri, None::<&gio::AppLaunchContext>);
+    let launcher = gtk::FileLauncher::new(Some(&gio::File::for_path(path)));
+    launcher.launch(gtk::Window::NONE, gio::Cancellable::NONE, |_| {});
 }
 
 /// Highlights `path` inside the parent folder via the FileLauncher portal.

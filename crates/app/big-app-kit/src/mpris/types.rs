@@ -1,9 +1,7 @@
 // SPDX-FileCopyrightText: 2026 BigLinux contributors
 // SPDX-License-Identifier: MIT
 
-//! Typed values exchanged between the D-Bus thread and the GTK main loop.
-
-use std::sync::{Arc, Mutex, atomic::AtomicBool};
+//! Typed values exchanged between the D-Bus service and the player.
 
 /// Playback state as MPRIS2 spells it on the bus.
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
@@ -72,7 +70,7 @@ pub enum MprisCommand {
 }
 /// Sink the service calls on the GTK side for each decoded bus command.
 pub type CommandCallback = Box<dyn Fn(MprisCommand) + Send + Sync + 'static>;
-/// Source the service polls for the current player snapshot.
+/// Source the service reads for the current player snapshot.
 pub type StateCallback = Box<dyn Fn() -> PlayerState + Send + Sync + 'static>;
 /// One coherent snapshot, published only after processing a player/queue event.
 #[derive(Debug, Clone, Default, PartialEq)]
@@ -132,10 +130,4 @@ pub(super) fn rate(value: f64) -> f64 {
     } else {
         1.0
     }
-}
-pub(super) fn previous_state() -> Arc<Mutex<Option<PlayerState>>> {
-    Arc::new(Mutex::new(None))
-}
-pub(super) fn taskbar_flag(value: bool) -> Arc<AtomicBool> {
-    Arc::new(AtomicBool::new(value))
 }

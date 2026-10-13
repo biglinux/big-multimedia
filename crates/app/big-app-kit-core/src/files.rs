@@ -1,89 +1,9 @@
 // SPDX-FileCopyrightText: 2026 BigLinux contributors
 // SPDX-License-Identifier: MIT
 
-//! File picker specs and display-name helpers.
+//! Filename sanitizing and display-name helpers.
 
 use std::path::Path;
-
-/// Behaviour selected for a [`BigFilePickerSpec`]; drives which portal
-/// method the adapter calls and which response fields it expects.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum BigPickerMode {
-    /// Pick one or more existing files to open.
-    OpenFile,
-    /// Pick an existing folder to open.
-    OpenFolder,
-    /// Pick a filesystem location for a new file (save dialog).
-    SaveFile,
-    /// Pick an existing folder as the destination for output files.
-    DestinationFolder,
-}
-
-/// Typed file picker spec. Drives portal- or libadwaita-backed file dialogs.
-///
-/// # Capabilities
-///
-/// `file-picker`, `file-picker+portal`
-///
-/// # Archetypes
-///
-/// `media-converter`, `editor`, `file-manager`, `screenshot`, `clipboard`
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub struct BigFilePickerSpec {
-    /// Behaviour selected for this picker.
-    pub mode: BigPickerMode,
-    /// Localized dialog title shown by the portal.
-    pub title: String,
-    /// `true` to allow multi-selection (only honoured in
-    /// `OpenFile`/`OpenFolder` modes).
-    pub multiple: bool,
-    /// Glob patterns (e.g. `"*.mp4"`) the dialog should filter by.
-    pub patterns: Vec<String>,
-    /// `true` to require the desktop portal backend; `false` lets the
-    /// adapter fall back to a libadwaita-only dialog in test environments.
-    pub portal_required: bool,
-}
-
-impl BigFilePickerSpec {
-    /// Build a picker spec. Portal use is required by default; patterns
-    /// and multi-select start empty.
-    #[must_use]
-    pub fn new(mode: BigPickerMode, title: impl Into<String>) -> Self {
-        Self {
-            mode,
-            title: title.into(),
-            multiple: false,
-            patterns: Vec::new(),
-            portal_required: true,
-        }
-    }
-
-    /// Shortcut for an "Open file" toolbar button picker.
-    #[must_use]
-    pub fn open_file_button(title: impl Into<String>) -> Self {
-        Self::new(BigPickerMode::OpenFile, title)
-    }
-
-    /// Shortcut for an "Open folder" picker.
-    #[must_use]
-    pub fn open_folder_button(title: impl Into<String>) -> Self {
-        Self::new(BigPickerMode::OpenFolder, title)
-    }
-
-    /// Shortcut for a "Save as" picker.
-    #[must_use]
-    pub fn save_file_button(title: impl Into<String>) -> Self {
-        Self::new(BigPickerMode::SaveFile, title)
-    }
-
-    /// Enable or disable multi-selection. Only meaningful in
-    /// `OpenFile`/`OpenFolder` modes.
-    #[must_use]
-    pub fn multiple(mut self, enabled: bool) -> Self {
-        self.multiple = enabled;
-        self
-    }
-}
 
 /// Turn arbitrary display text or an URL into a bounded filename stem.
 #[must_use]
