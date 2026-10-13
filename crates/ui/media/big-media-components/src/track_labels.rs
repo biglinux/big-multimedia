@@ -107,12 +107,12 @@ mod tests {
     }
 
     #[test]
-    fn mpv_track_label_falls_back_to_track_id() {
+    fn mpv_label_falls_back_to_id() {
         assert_eq!(mpv_track_label(5, "", "", "", false, labels()), "Track 5");
     }
 
     #[test]
-    fn ffprobe_stream_label_uses_title_language_then_generic() {
+    fn ffprobe_label_prefers_title_then_language() {
         assert_eq!(
             ffprobe_stream_label(1, "English", "eng", "aac", "Track"),
             "1: English (aac)"

@@ -417,7 +417,7 @@ impl BigMediaChrome {
         header.pack_end(&window_controls);
         header.pack_end(menu_button);
 
-        // `.osd-header` (app-themed) wrapper — the built-in `.osd` class forces
+        // `.osd-header` (app-themed) wrapper: the built-in `.osd` class forces
         // light-on-dark and breaks header icons in the light theme.
         let header_box = gtk::Box::new(gtk::Orientation::Vertical, 0);
         header_box.add_css_class("osd-header");
@@ -561,7 +561,7 @@ impl BigMediaImmersionController {
     }
 
     /// Hide `revealer` when the media surface becomes idle. Focus inside the
-    /// revealer does NOT pin it open: a media OSD must fade a few seconds after
+    /// revealer does not pin it open: a media OSD must fade a few seconds after
     /// the pointer stops even though a transport control keeps keyboard focus
     /// after a click (which is the normal state). The pointer resting on it
     /// does: someone reading a control is about to click it, and a click
@@ -731,7 +731,7 @@ mod tests {
     };
 
     #[test]
-    fn media_overlay_layer_roles_encode_media_scene_policy() {
+    fn overlay_layer_roles_follow_policy() {
         for role in [
             BigMediaOverlayLayerRole::PrimaryMediaSurface,
             BigMediaOverlayLayerRole::FallbackMediaSurface,
@@ -772,7 +772,7 @@ mod tests {
     }
 
     #[test]
-    fn media_chrome_placements_name_the_overlay_mount_points() {
+    fn chrome_placements_name_mount_points() {
         let header_placement = BigMediaChromePlacement::Header;
         assert!(matches!(header_placement, BigMediaChromePlacement::Header));
         assert_ne!(
@@ -786,7 +786,7 @@ mod tests {
     }
 
     #[test]
-    fn immersion_guard_snapshot_pins_chrome_for_inhibitors_or_hide_guards() {
+    fn inhibitors_and_guards_pin_chrome() {
         assert!(
             BigMediaImmersionGuardSnapshot {
                 active_inhibitor_count: 1,

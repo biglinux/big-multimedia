@@ -1,10 +1,10 @@
 //! Library-panel file IO + folder-management dialogs (push-model).
 //!
 //! Free functions the panel calls when the user triggers export/import/save-as
-//! or opens the watch-folder manager. The panel NEVER touches the DB or the
+//! or opens the watch-folder manager. The panel never touches the DB or the
 //! scanner: the m3u8 export writes the file off-thread (it already holds the
 //! detail tracks), but every DB-backed action emits an `Output` intent and the
-//! shell runs the query/scan. `parent` is the toplevel window — it satisfies
+//! shell runs the query/scan. `parent` is the toplevel window; it satisfies
 //! both `FilePicker` (`IsA<gtk::Window>`) and `AlertDialog::present`.
 
 use adw::prelude::*;
@@ -69,7 +69,7 @@ fn normalized_playlist_name(name: &str) -> Option<String> {
 /// Export the current detail tracks as an `.m3u8` playlist. The save picker
 /// runs on the main loop; the file is written off-thread by
 /// `playlist_scan::write_m3u` (the panel already owns the tracks, so no DB
-/// round-trip is needed). A failure surfaces through a `Notify` intent — the
+/// round-trip is needed). A failure surfaces through a `Notify` intent; the
 /// shell owns the notice.
 pub(super) fn export_detail_m3u8(
     parent: &gtk::Window,
@@ -539,7 +539,7 @@ mod tests {
     }
 
     #[test]
-    fn name_entry_dialog_spec_keeps_playlist_save_chrome_and_focus_selection() {
+    fn name_entry_dialog_keeps_chrome() {
         assert_eq!(
             name_entry_dialog_spec(),
             NameEntryDialogSpec {
@@ -556,7 +556,7 @@ mod tests {
     }
 
     #[test]
-    fn normalized_playlist_name_requires_non_blank_trimmed_text() {
+    fn normalized_name_needs_non_blank_text() {
         assert_eq!(normalized_playlist_name(""), None);
         assert_eq!(normalized_playlist_name("   "), None);
         assert_eq!(

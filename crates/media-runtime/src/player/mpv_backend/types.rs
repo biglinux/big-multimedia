@@ -51,7 +51,7 @@ pub enum PlayerEvent {
     TracksChanged(Vec<TrackMetadata>),
     ChaptersChanged(Vec<(f64, String)>),
     MetadataChanged(HashMap<String, String>),
-    /// Buffering state change — true when mpv is paused waiting for cache data
+    /// Buffering state change: true when mpv is paused waiting for cache data
     /// (radio streams / slow network). Derived from `paused-for-cache` property.
     Buffering(bool),
     /// Internal native receipt, consumed by the backend before UI delivery.
@@ -71,17 +71,13 @@ pub enum PlayerEvent {
 
 /// Demuxer-cache sizing policy for the audio-only backend. Each profile is
 /// a `(forward, back)` pair in `mpv` `demuxer-max-bytes` / `demuxer-max-back-bytes`
-/// string form ("NMiB"). Switching profile at runtime is cheap — mpv
+/// string form ("NMiB"). Switching profile at runtime is cheap: mpv
 /// truncates the queue in-place to the new limit.
 ///
 /// Memory impact for a typical podcast session (1-hour MP3, ~100 MB):
 /// * `Music`    → 30 + 10 MiB = ~40 MiB cap (gapless album playback)
 /// * `Podcast`  → 8 + 2 MiB = ~10 MiB cap (single long stream, no gapless need)
 /// * `Radio`    → 64 + 4 MiB = ~68 MiB cap (network jitter resilience)
-///
-/// Picking `Podcast` over the previous unconditional 150+150 MiB budget cuts
-/// ~120-160 MB RSS during long-form playback. See R7 in
-/// `biglinux-body-tracker/docs/RESILIENCE.md` for the broader argument.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum AudioCacheProfile {
     Music,

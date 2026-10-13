@@ -19,7 +19,7 @@ pub(super) struct VideoRealizeOptions {
     pub(super) audio_output: String,
     pub(super) initial_volume: f64,
     pub(super) volume_max: i64,
-    /// Video output mode (settings `render-mode`): `"auto"` (default — best GL
+    /// Video output mode (settings `render-mode`): `"auto"` (default: best GL
     /// backend + software fallback on failure), `"gl"` (force GL/offload), `"sw"`
     /// (force the software/no-GL render path).
     pub(super) render_mode: String,
@@ -32,11 +32,11 @@ pub(super) struct VideoRealizeOptions {
 /// On content realize, pick the best video backend, bring up mpv, and wire the
 /// render path.
 ///
-/// `realize_host` is the mountable content, NOT a window: the GL
+/// `realize_host` is the mountable content, not a window: the GL
 /// backend needs only a `gdk::Display` (per-screen, identical for any widget) +
 /// the overlay/gl_area, so mpv comes up whenever the content realizes in
 /// whatever window hosts it.
-// Unrelated GTK widgets, render-context slots, sender, and options — no
+// Unrelated GTK widgets, render-context slots, sender, and options: no
 // cohesive group to fold into a param struct without hiding the wiring.
 #[allow(clippy::too_many_arguments)]
 pub(super) fn wire_realize(
@@ -99,7 +99,7 @@ pub(super) fn wire_realize(
         });
 
         // Render path by mode (settings `render-mode`, default "auto"). "sw"
-        // forces the software/no-GL path directly — never touching GL/offload —
+        // forces the software/no-GL path directly, never touching GL/offload,
         // so video plays where GL is not viable (e.g. a GL-less VM). "gl"/"auto"
         // install the best GL backend; the GL paths fall back to software on a
         // render-context error (see `wire_render`).
@@ -283,7 +283,7 @@ fn wire_render(
 }
 
 /// Create the GLArea-path render context once (GL must be current → realize).
-/// When GL is unavailable the context creation fails — fall back to the
+/// When GL is unavailable the context creation fails; fall back to the
 /// software render path so video still plays on no-GL hosts.
 fn ensure_glarea_context(
     mpv: &Arc<MpvBackend>,

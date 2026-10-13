@@ -106,12 +106,12 @@ pub struct AudioShell {
     tv_catch_up: bool,
     /// Visual trim controls shown above the bottom transport in trim mode.
     trim: Controller<AudioTrimBar>,
-    /// Files browser tab — held for its lifetime (Output forwarding); the shell
+    /// Files browser tab, held for its lifetime (Output forwarding); the shell
     /// sends it no inputs, so it is never read after construction.
     _files: Controller<FileBrowser>,
     /// Radio tab.
     radio: Controller<RadioPanel>,
-    /// Lyrics panel — shares the Queue tab's vertical space with the playlist.
+    /// Lyrics panel; shares the Queue tab's vertical space with the playlist.
     lyrics: Controller<LyricsPanel>,
     /// Vertical split holding the lyrics panel (start) over the queue (end);
     /// the shell drives its position on show/expand.

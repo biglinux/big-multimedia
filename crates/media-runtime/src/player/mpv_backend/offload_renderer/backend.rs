@@ -38,7 +38,7 @@ impl VideoBackend {
     /// `BIG_MEDIA_DISABLE_GRAPHICS_OFFLOAD` as a boolean: truthy (`1`/`true`/
     /// `yes`/`on`) disables the offload backend; falsy (`0`/`false`/`no`/`off`/
     /// empty) or unset leaves it enabled. A real toggle, so an app can default it
-    /// off (the video player does, over an intermittent libmpv deadlock — see
+    /// off (the video player does, over an intermittent libmpv deadlock; see
     /// `big_video_player::run`) while a user can still turn the zero-copy path
     /// back on. NVIDIA is excluded earlier, by [`OffloadRenderer::try_new`].
     fn graphics_offload_disabled() -> bool {

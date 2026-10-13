@@ -91,7 +91,7 @@ pub(crate) fn query_tracks_for_node(
 }
 
 /// Build the full nested library tree (the `SetLibraryTree` payload) from the
-/// group + recursive child queries — the producer side of the atomic preload.
+/// group + recursive child queries: the producer side of the atomic preload.
 pub(crate) fn try_build_library_tree_snapshot(
     conn: &rusqlite::Connection,
     grouping: &LibraryGrouping,
@@ -124,14 +124,14 @@ pub(crate) fn try_build_library_tree_snapshot(
         track: None,
     }];
 
-    // One query for every matching track, grouped here. Asking SQLite once per
-    // group scanned the whole table per group — COALESCE keeps the column
-    // indexes out — which took a core for 15 s on a 30 000-track library.
+    // One query for every matching track, grouped here. A query per group
+    // scans the whole table each time, since COALESCE keeps the column
+    // indexes out.
     // `get_library_tracks` returns the leaf order, and grouping keeps it.
     let tracks = queries::get_library_tracks(conn, &[], filter, age_secs)
         .map_err(|_| "library query failed")?;
 
-    // "Various Artists" bucket (compilations) — only under an artist top level.
+    // "Various Artists" bucket (compilations), only under an artist top level.
     let compilations = if matches!(level0, GroupBy::Artist | GroupBy::AlbumArtist) {
         queries::get_compilation_albums(conn, filter, &[], age_secs)
             .map_err(|_| "library query failed")?
@@ -396,7 +396,7 @@ mod tests {
     }
 
     #[test]
-    fn query_file_node_resolves_single_track_or_empty() -> MediaResult<()> {
+    fn file_node_resolves_one_track() -> MediaResult<()> {
         let conn = setup_db()?;
         seed_library(&conn)?;
         let found = query_tracks_for_node(
@@ -441,7 +441,7 @@ mod tests {
     }
 
     #[test]
-    fn query_album_genre_year_filter_by_their_column() -> MediaResult<()> {
+    fn album_genre_year_filter_by_column() -> MediaResult<()> {
         let conn = setup_db()?;
         seed_library(&conn)?;
         let g = artist_grouping();
@@ -464,7 +464,7 @@ mod tests {
     }
 
     #[test]
-    fn artist_node_uses_artist_column_under_artist_grouping() -> MediaResult<()> {
+    fn artist_grouping_uses_artist_column() -> MediaResult<()> {
         let conn = setup_db()?;
         seed_library(&conn)?;
         // Plain artist grouping → filters on `artist`. "VA" is an album_artist
@@ -493,7 +493,7 @@ mod tests {
     }
 
     #[test]
-    fn artist_node_uses_album_artist_column_under_album_artist_grouping() -> MediaResult<()> {
+    fn album_artist_grouping_uses_its_column() -> MediaResult<()> {
         let conn = setup_db()?;
         seed_library(&conn)?;
         let g = LibraryGrouping {
@@ -585,7 +585,7 @@ mod tests {
     }
 
     #[test]
-    fn tree_artist_grouping_has_all_tracks_then_various_then_groups() -> MediaResult<()> {
+    fn artist_tree_order_all_various_groups() -> MediaResult<()> {
         let conn = setup_db()?;
         seed_library(&conn)?;
         let tree_snapshot = build_library_tree_snapshot(&conn, &artist_grouping(), "", None);
@@ -606,7 +606,7 @@ mod tests {
             .unwrap_or_default();
         assert_eq!(comp_files, ["/m/c1.mp3", "/m/c2.mp3"]);
 
-        // Artist groups: Alice, Bob, Carol, Dave — each a leaf level (depth 1)
+        // Artist groups: Alice, Bob, Carol, Dave, each a leaf level (depth 1)
         // whose children are file nodes.
         let artist_nodes: Vec<_> = tree_snapshot
             .level0
@@ -626,7 +626,7 @@ mod tests {
     }
 
     #[test]
-    fn tree_groups_sort_case_insensitively_then_by_case() -> MediaResult<()> {
+    fn tree_groups_sort_case_insensitively() -> MediaResult<()> {
         let conn = setup_db()?;
         for (path, artist) in [
             ("/m/1.mp3", "beta"),
@@ -647,7 +647,7 @@ mod tests {
     }
 
     #[test]
-    fn tree_two_level_grouping_nests_albums_under_artists() -> MediaResult<()> {
+    fn two_levels_nest_albums_under_artists() -> MediaResult<()> {
         let conn = setup_db()?;
         seed_library(&conn)?;
         let grouping = LibraryGrouping {
@@ -673,7 +673,7 @@ mod tests {
     }
 
     #[test]
-    fn tree_without_artist_top_level_has_no_various_bucket() -> MediaResult<()> {
+    fn various_bucket_needs_artist_top_level() -> MediaResult<()> {
         let conn = setup_db()?;
         seed_library(&conn)?;
         let grouping = LibraryGrouping {

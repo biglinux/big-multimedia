@@ -1,5 +1,5 @@
 //! Radio Browser API fetchers: search by name, by country, by tag, top-click.
-//! Free functions — call OFF the main thread (they block on HTTP). Resolve the
+//! Free functions that block on HTTP; call them off the main thread. Resolve the
 //! server list with [`api_servers_from_raw`](super::api_servers_from_raw) from a
 //! raw settings string read on the main thread via
 //! [`settings_servers_raw`](super::settings_servers_raw).

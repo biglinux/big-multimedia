@@ -21,7 +21,7 @@ fn row_presentation_makes_dividers_inert_headings() {
 
 #[cfg(not(miri))]
 #[test]
-fn row_presentation_keeps_file_leaves_for_leaf_binder() {
+fn file_leaves_use_leaf_binder() {
     let file_node = BrowserNode::track_node(
         "Song",
         "/music/song.flac",
@@ -40,7 +40,7 @@ fn row_presentation_keeps_file_leaves_for_leaf_binder() {
 
 #[cfg(not(miri))]
 #[test]
-fn row_presentation_uses_count_badge_and_icon_for_regular_groups() {
+fn groups_show_count_badge_and_icon() {
     let artist_node = BrowserNode::artist("Alice", 7);
     let presentation = library_tree_row_presentation(&artist_node);
 
@@ -59,7 +59,7 @@ fn row_presentation_uses_count_badge_and_icon_for_regular_groups() {
 
 #[cfg(not(miri))]
 #[test]
-fn row_presentation_uses_avatar_for_album_and_various_artists() {
+fn albums_and_various_show_avatar() {
     let album_node = BrowserNode::album("Debut", "Alice", 3);
     let album_presentation = library_tree_row_presentation(&album_node);
 
@@ -87,7 +87,7 @@ fn row_presentation_uses_avatar_for_album_and_various_artists() {
 
 #[cfg(not(miri))]
 #[test]
-fn file_leaf_presentation_handles_badge_fallback_and_detailed_metadata() {
+fn file_leaf_badge_and_metadata() {
     let fallback_node = BrowserNode::file_node("Loose", "/music/loose.flac");
     fallback_node.set_secondary("3:04");
     assert_eq!(

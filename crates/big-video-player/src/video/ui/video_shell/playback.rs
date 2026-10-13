@@ -80,7 +80,7 @@ impl VideoShell {
                 self.controls.emit(VideoControlsBarInput::SetHasMedia(true));
                 // Hand the loaded *path* to the controls bar so the seek-hover
                 // preview can render thumbnail frames (local files only). The
-                // `FileLoaded` payload is the media TITLE, not the path — read
+                // `FileLoaded` payload is the media title, not the path: read
                 // the real path from mpv (`path` property).
                 let current_file = self
                     .mpv
@@ -104,7 +104,7 @@ impl VideoShell {
                     .emit(VideoControlsBarInput::SetCurrentFile(preview_path));
                 self.hide_welcome_screen();
                 // First frame: drop the idle gradient and restore the gl surface
-                // (load-bearing — video would stay invisible otherwise), then
+                // (video stays invisible otherwise), then
                 // let the OSD auto-hide.
                 if let Some(display) = gtk::gdk::Display::default() {
                     self.idle_bg.hide(&display);
@@ -165,7 +165,7 @@ impl VideoShell {
             }
             // Reason 4 = error (unsupported/corrupt/unreadable source). Other
             // reasons (EOF=0, stop=2, quit=3, redirect=5) are a normal end of
-            // playback — surface only the error so the user gets feedback
+            // playback; surface only the error so the user gets feedback
             // instead of a silent blank screen.
             PlayerEvent::EndFile(reason) => {
                 self.playing = false;
@@ -720,7 +720,7 @@ pub(super) fn seek_target_secs(frac: f64, duration: f64) -> Option<f64> {
 }
 
 /// Whether a resolved playlist needs an explicit `playlist_play_index` after
-/// loading — only when the start is past the first entry (index 0 already plays).
+/// loading: only when the start is past the first entry (index 0 already plays).
 fn needs_explicit_start_index(start: usize) -> bool {
     start > 0
 }
@@ -800,7 +800,7 @@ mod resolve_open_files_tests {
     }
 
     #[test]
-    fn single_remote_uri_passes_through_without_folder_context() {
+    fn remote_uri_passes_through() {
         // Not a playlist, not local → the bare entry, no browse context.
         assert_eq!(
             resolve_open_files(vec!["rtsp://host/stream".to_string()]),
@@ -809,7 +809,7 @@ mod resolve_open_files_tests {
     }
 
     #[test]
-    fn multiple_inputs_keep_only_media_in_the_order_given() {
+    fn multiple_inputs_keep_media_order() {
         let out = resolve_open_files(vec![
             "/x/B.mp4".to_string(),
             "/x/a.mkv".to_string(),
@@ -835,7 +835,7 @@ mod resolve_open_files_tests {
 
     #[cfg(not(miri))]
     #[test]
-    fn single_local_file_scans_its_folder_and_locates_the_opened_file() {
+    fn local_file_queues_its_folder() {
         let dir = tempfile::tempdir().unwrap();
         touch(dir.path(), "a.mp4");
         let opened = touch(dir.path(), "b.mp4");
@@ -853,7 +853,7 @@ mod resolve_open_files_tests {
 
     #[cfg(not(miri))]
     #[test]
-    fn single_file_the_scan_does_not_list_plays_alone() {
+    fn unlisted_file_plays_alone() {
         let dir = tempfile::tempdir().unwrap();
         touch(dir.path(), "a.mp4");
         // "Open With" offers every type the desktop entry claims; one whose
@@ -911,7 +911,7 @@ mod dispatch_logic_tests {
     }
 
     #[test]
-    fn explicit_start_index_only_past_the_first_entry() {
+    fn start_index_only_past_first_entry() {
         assert!(!needs_explicit_start_index(0));
         assert!(needs_explicit_start_index(1));
         assert!(needs_explicit_start_index(9));

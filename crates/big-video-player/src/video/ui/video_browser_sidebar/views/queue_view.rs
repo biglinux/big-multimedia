@@ -11,7 +11,7 @@ use crate::media::thumbnail;
 use big_media_components::time::duration_hms as format_duration_hms;
 
 /// Playlist (queue) view: a compact ordered list distinct from the Files
-/// browser — position number, small thumbnail, title + duration, and an
+/// browser: position number, small thumbnail, title + duration, and an
 /// always-visible remove button; the playing entry is marked with a ▶ and an
 /// accent. No folders, chips, or select mode.
 pub(crate) fn build_queue_view(state: &Rc<BrowserState>, items: &[String]) -> gtk::ScrolledWindow {

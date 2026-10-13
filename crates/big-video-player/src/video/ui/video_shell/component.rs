@@ -57,7 +57,7 @@ impl Component for VideoShell {
         let mpv: Rc<RefCell<Option<Arc<MpvBackend>>>> = Rc::new(RefCell::new(None));
         let video_transform = media_adjust::VideoTransformState::default();
 
-        // Interactive trim bar — built first so its widget can be mounted INSIDE
+        // Interactive trim bar, built first so its widget can be mounted inside
         // the controls bar (shown in place of the transport row in trim mode, not
         // a separate bar). Its typed outputs route back into the shell.
         let trim = trim::VideoTrimBar::builder()
@@ -249,8 +249,8 @@ impl Component for VideoShell {
         let notice = MediaNotice::new();
 
         // Keep-Above toggle. No portable Wayland keep-above exists, so toggle it
-        // via the compositor (KWin global shortcut, falling back to wmctrl). Both via argv arrays — no
-        // shell, no untrusted input.
+        // via the compositor (KWin global shortcut, falling back to wmctrl). Both
+        // run as argv arrays with no shell and no untrusted input.
         let keep_above_toggle_button = gtk::ToggleButton::builder()
             .icon_name("view-pin-symbolic")
             .tooltip_text(i18n("Keep Above"))
@@ -274,7 +274,7 @@ impl Component for VideoShell {
 
         // Two separate sidebar entry points: Files (folder browser) and Playlist
         // (the play queue). Each reveals the sidebar in its mode; clicking the
-        // active one hides it. Not a radio pair — both off = sidebar hidden.
+        // active one hides it. Not a radio pair: both off hides the sidebar.
         let files_sidebar_toggle_button = gtk::ToggleButton::builder()
             .icon_name("folder-symbolic")
             .tooltip_text(i18n("Files"))
@@ -330,7 +330,7 @@ impl Component for VideoShell {
         });
 
         // Shared media-viewer chrome (header + accessible primary menu + the
-        // OSD reveal) — see big_media_components::surface. The video
+        // OSD reveal); see big_media_components::surface. The video
         // player keeps mpv/offload/welcome/buffering state app-local; shared
         // chrome owns the repeatable header, bottom revealer, and sidebar split.
         chrome.add_header_start(&keep_above_toggle_button);
@@ -340,16 +340,16 @@ impl Component for VideoShell {
 
         let win_actions = install_window_actions(&root, &sender);
 
-        // Header is an OSD overlay over edge-to-edge video, NOT an
+        // Header is an OSD overlay over edge-to-edge video, not an
         // AdwToolbarView top bar: wrapping the video surface in a
         // ToolbarView breaks GraphicsOffload subsurface presentation (the video
         // rendered but presented at ~1 fps). With the video filling the split's
         // content directly, the offload subsurface presents at full rate.
         //
         // Wrap the headerbar in a box carrying the custom `.osd-header` class
-        // (NOT the libadwaita built-in `.osd` class). `.osd` forces light-on-dark
-        // regardless of theme — in the light theme that left the header icons
-        // (incl. the hamburger menu button) light-on-light / unreadable. The
+        // (not the libadwaita built-in `.osd` class). `.osd` forces light-on-dark
+        // regardless of theme, which in the light theme leaves the header icons
+        // (incl. the hamburger menu button) light-on-light and unreadable. The
         // app-owned `apply_appearance` CSS styles `.osd-header headerbar` with
         // theme-aware colors (the `.osd-btn` header buttons get
         // `@player_icon_color`), so both light and dark themes stay readable.
@@ -390,7 +390,7 @@ impl Component for VideoShell {
             osd.keep_shown_while(move || revealer.upgrade().is_some_and(|r| r.reveals_child()));
         }
         // Collapse the OSD when the window loses focus (alt-tab to another
-        // app), like other video players — not just on the idle timer.
+        // app), like other video players, as well as on the idle timer.
         wire_osd_focus_out(&main_overlay, &osd);
         // Pointer gestures over the video:
         // double-click → fullscreen, right-click → context menu, drag → move
@@ -494,7 +494,7 @@ impl Component for VideoShell {
 
         // Window-needing wiring (close → mpv teardown, the default-size notify
         // that drives the aspect snap) is deferred to first realize, when the
-        // content is actually in a window (it has none at init — the mount point
+        // content is actually in a window (it has none at init; the mount point
         // supplies it). Runs once.
         {
             let mpv = mpv.clone();
@@ -833,7 +833,7 @@ mod tests {
 
     #[cfg(not(miri))]
     #[test]
-    fn open_menu_is_flat_without_sections_or_submenus() {
+    fn open_menu_is_flat() {
         let menu = build_open_menu_model();
         for index in 0..menu.n_items() {
             assert!(menu.item_link(index, "section").is_none());

@@ -206,7 +206,7 @@ mod tests {
     }
 
     #[test]
-    fn newest_edit_wins_and_failed_save_can_be_retried() {
+    fn newest_edit_wins_and_retries() {
         let conn = rusqlite::Connection::open_in_memory().unwrap();
         db::schema::run_migrations(&conn).unwrap();
         let db = Arc::new(Mutex::new(conn));

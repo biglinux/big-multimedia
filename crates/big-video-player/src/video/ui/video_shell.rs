@@ -1,7 +1,7 @@
 //! Relm4 root component for the video player (`lib.rs::run` launches it).
 //!
 //! Wires the mpv backend, the GL/DMA-BUF video surface (shared `video_surface`
-//! plumbing — offload with GLArea fallback), and the OSD controls bar
+//! plumbing: offload with GLArea fallback), and the OSD controls bar
 //! (`video_controls_bar`). Push-model: the controls emit intents → the shell
 //! drives mpv; mpv events flow back into the controls display. The playlist
 //! sidebar, IPTV browser, cast picker, and filter/info/shortcut dialogs hang
@@ -98,7 +98,7 @@ pub struct VideoShell {
     /// IPTV browser (providers / channels / favorites). Presented in a dialog
     /// from the header button; emits play intents routed to mpv.
     iptv: Controller<VideoIptvBrowser>,
-    /// Main video overlay — owns the welcome screen child (added/removed).
+    /// Main video overlay; owns the welcome screen child (added/removed).
     main_overlay: gtk::Overlay,
     /// Centered welcome screen shown when nothing is loaded; `None` once hidden.
     welcome_overlay: RefCell<Option<gtk::Box>>,
@@ -185,7 +185,7 @@ pub struct VideoShell {
     trim: Controller<trim::VideoTrimBar>,
     /// "Play only the marked cuts" toggle state.
     trim_play_selection: Rc<Cell<bool>>,
-    /// Sorted `(start, end)` cut ranges — drives play-selection looping.
+    /// Sorted `(start, end)` cut ranges; drives play-selection looping.
     trim_ranges: Rc<RefCell<Vec<(f64, f64)>>>,
     /// True while interactive trim mode is active. Shared (`Rc`) with the OSD pin
     /// and the trim key controller.

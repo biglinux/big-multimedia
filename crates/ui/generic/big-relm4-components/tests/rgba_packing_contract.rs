@@ -26,7 +26,7 @@ fn rgb_source_is_widened_with_opaque_alpha() {
 }
 
 #[test]
-fn rgba_source_keeps_its_alpha_and_is_not_opaque() {
+fn rgba_source_keeps_alpha() {
     let image = pixbuf_to_rgba(&filled(true, &[10, 20, 30, 128])).expect("packed image");
 
     assert!(!image.opaque, "an RGBA source may carry transparency");
@@ -36,7 +36,7 @@ fn rgba_source_keeps_its_alpha_and_is_not_opaque() {
 /// The opaque tag is a memory-format declaration, not a colour change: a fully
 /// opaque colour must download identically whether it arrived as RGB or RGBA.
 #[test]
-fn the_opaque_format_tag_does_not_alter_the_downloaded_colour() {
+fn opaque_tag_keeps_downloaded_colour() {
     if relm4::gtk::init().is_err() {
         eprintln!("no display: skipping the texture download comparison");
         return;

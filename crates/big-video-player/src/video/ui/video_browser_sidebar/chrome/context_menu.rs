@@ -42,10 +42,10 @@ pub(crate) fn show_row_context_menu(
     play.connect_clicked({
         let state = state.clone();
         let path = path.to_string();
-        // WEAK: menu items live inside the popover, so a strong clone is a
+        // Weak: menu items live inside the popover, so a strong clone is a
         // popover ⇄ item ⇄ closure cycle that leaks the whole context menu on
         // every right-click (the popover unparents on close but the cycle pins
-        // it). Upgrade transiently — it is alive while an item is clickable.
+        // it). Upgrade transiently: it is alive while an item is clickable.
         let popover = popover.downgrade();
         move |_| {
             if let Some(popover) = popover.upgrade() {
@@ -102,7 +102,7 @@ pub(crate) fn show_row_context_menu(
         remove.connect_clicked({
             let state = state.clone();
             let path = path.to_string();
-            // WEAK: see the `play` handler — avoid the popover ⇄ item cycle.
+            // Weak: see the `play` handler (popover ⇄ item cycle).
             let popover = popover.downgrade();
             move |_| {
                 if let Some(popover) = popover.upgrade() {
@@ -133,8 +133,8 @@ fn emit_paths(
     action: impl Fn(&Rc<BrowserState>, String) + 'static,
 ) -> impl Fn(&gtk::Button) + 'static {
     let state = state.clone();
-    // WEAK: see `build`'s `play` handler — avoid the popover ⇄ item ⇄ closure
-    // cycle that leaks the context menu on every right-click.
+    // Weak: see `build`'s `play` handler. A strong clone is a popover ⇄ item ⇄
+    // closure cycle that leaks the context menu on every right-click.
     let popover = popover.downgrade();
     let path = path.to_string();
     move |_| {

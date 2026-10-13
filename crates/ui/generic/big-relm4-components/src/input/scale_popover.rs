@@ -163,7 +163,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn vertical_scale_spec_clamps_invalid_range_and_initial() {
+    fn vertical_spec_clamps_bad_range() {
         let resolved = resolve_spec(
             BigVerticalScalePopoverSpec::new("Zoom", "Waveform zoom")
                 .range(10.0, 1.0, -1.0)

@@ -36,10 +36,10 @@ class RunnerTests(unittest.TestCase):
             self.assertEqual(r["status"], "BLOCKED")
             self.assertIsNone(r["exit_code"])
 
-    def test_explicit_blocked_exit_is_not_pass(self):
+    def test_exit_77_is_blocked(self):
         self.assertEqual(self.check_child("raise SystemExit(77)")["status"], "BLOCKED")
 
-    def test_deadline_is_not_pass(self):
+    def test_deadline_is_timeout(self):
         self.assertEqual(
             self.check_child("import time;time.sleep(30)", 0.1)["status"], "TIMEOUT"
         )

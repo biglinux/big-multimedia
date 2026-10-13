@@ -45,36 +45,32 @@ pub fn install_best_backend(
         offload_widget.set_hexpand(true);
         offload_widget.set_vexpand(true);
 
-        // caveman: detect overlay shape. two callers:
-        // (a) player → GLArea is an overlay child (add_overlay'd in .ui),
+        // Two overlay shapes:
+        // (a) player: GLArea is an overlay child (add_overlay'd in .ui),
         //     overlay.child() is a different widget (the bg Box).
-        // (b) editor → GLArea is the overlay's MAIN child (set_child).
-        //     keeping a hidden GLArea as main child still triggers
+        // (b) editor: GLArea is the overlay's main child (set_child).
+        //     A hidden GLArea as main child still triggers repeated
         //     `Trying to snapshot GtkGLArea without a current allocation`
-        //     warnings ~3-4/s because GtkOverlay snapshots its main child
-        //     even when set_visible(false) — set_visible only suppresses
-        //     map, not snapshot for the main child slot in GTK4.
+        //     warnings because GtkOverlay snapshots its main child even when
+        //     set_visible(false): GTK4 only skips mapping that slot.
         let gl_area_widget: &gtk::Widget = gl_area.upcast_ref();
         let gl_area_is_main_child = overlay.child().is_some_and(|c| &c == gl_area_widget);
 
         if gl_area_is_main_child {
-            // caveman: editor path. Swap roles: offload becomes the main
-            // child, GLArea gets unparented entirely. No snapshot of a
-            // zero-allocation GLArea is possible because it's no longer in
-            // the widget tree. The GLArea handle stays alive on the
-            // EditPage struct (no leak, no double-free). On a second open
-            // the EditPage is reused and video_backend is already Some, so
-            // install_best_backend is not called again — the swap is a
-            // one-shot operation per EditPage instance.
+            // Editor path: offload becomes the main child and the GLArea is
+            // unparented, so a zero-allocation GLArea is never snapshotted.
+            // The GLArea handle stays alive on the EditPage struct. A second
+            // open reuses the EditPage with video_backend already Some, so
+            // the swap runs once per EditPage instance.
             overlay.set_child(Some(&offload_widget));
             info!(
                 "{surface_name}: using offload backend (DMA-BUF/GraphicsOffload, swapped GLArea out)"
             );
         } else {
-            // caveman: player path. Keep historical behavior — add_overlay
-            // the offload widget right after the GLArea so it stacks above
-            // the bg Box main child, and just hide the GLArea overlay child
-            // (GTK4 honors set_visible(false) for overlay children).
+            // Player path: add_overlay the offload widget right after the
+            // GLArea so it stacks above the bg Box main child, and hide the
+            // GLArea overlay child (GTK4 honors set_visible(false) for overlay
+            // children).
             overlay.add_overlay(&offload_widget);
             offload_widget.insert_after(overlay, Some(gl_area));
             gl_area.set_visible(false);
@@ -119,7 +115,7 @@ where
     // The render and property handlers share GTK's main thread. They cannot
     // promise advanced-control's no-core-wait contract. A dedicated render
     // actor is required before re-enabling direct-render advanced control.
-    // Disabling it does NOT remove libmpv's other no-cyclic-wait obligations.
+    // Disabling it leaves libmpv's other no-cyclic-wait obligations in place.
     let context = gdk::GLContext::current()
         .ok_or_else(|| Error::mpv("No current GL context for the video surface"))?;
     // SAFETY: the owning GTK thread made this GL context current above. It

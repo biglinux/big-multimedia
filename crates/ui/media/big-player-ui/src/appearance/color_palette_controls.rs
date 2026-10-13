@@ -222,7 +222,7 @@ mod tests {
     use super::{PRESET_LABELS, PRESETS, rgba_to_hex};
 
     #[test]
-    fn rgba_to_hex_drops_alpha_and_formats_rgb() {
+    fn hex_drops_alpha() {
         let rgba = gtk::gdk::RGBA::new(0.5, 0.25, 1.0, 0.1);
         assert_eq!(rgba_to_hex(rgba), "#7F3FFF");
     }

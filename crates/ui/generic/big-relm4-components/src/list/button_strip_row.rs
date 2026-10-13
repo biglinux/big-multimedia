@@ -8,7 +8,7 @@ use relm4::gtk;
 
 use super::row_core::row_text;
 
-/// Data used to build a compact button-strip row.
+/// Inputs for building a compact button-strip row.
 #[non_exhaustive]
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct BigButtonStripRowSpec {
@@ -154,7 +154,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn spec_defaults_to_plain_title_and_compact_spacing() {
+    fn spec_defaults_to_compact_title() {
         let spec = BigButtonStripRowSpec::new("Transform");
 
         assert_eq!(spec.title, "Transform");

@@ -70,7 +70,7 @@ pub(super) fn build_toolbar(
 ) -> (adw::HeaderBar, gtk::Label) {
     // An AdwHeaderBar so the queue info shares the window's title row with the
     // controls. The sidebar header owns the left window buttons; this one owns
-    // the right. Only the hamburger is exposed — every queue/settings action
+    // the right. Only the hamburger is exposed; every queue/settings action
     // lives in its menu.
     // Centred title widget: the queue name when empty, "N tracks · duration"
     // when full (the panel refreshes it on every queue change).
@@ -277,7 +277,7 @@ pub(super) fn build_empty_state(
     }
 }
 
-/// Library populated but queue empty — invite a drag-drop or library add.
+/// Library populated but queue empty: invite a drag-drop or library add.
 fn build_drop_hint() -> adw::StatusPage {
     adw::StatusPage::builder()
         .icon_name("list-add-symbolic")
@@ -287,7 +287,7 @@ fn build_drop_hint() -> adw::StatusPage {
         .build()
 }
 
-/// First run (empty library + empty queue) — welcome with an Open Files action
+/// First run (empty library + empty queue): welcome with an Open Files action
 /// (emits `OpenFiles`) and a few orientation tips.
 fn build_welcome(sender: &ComponentSender<PlaylistPanel>) -> gtk::Box {
     let container = gtk::Box::builder()
@@ -402,7 +402,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn main_menu_uses_gmenu_actions_for_every_entry() {
+    fn main_menu_entries_use_actions() {
         let actions = big_relm4_components::layout::hamburger_menu::menu_action_names(&main_menu());
 
         for action in [
@@ -434,7 +434,7 @@ mod tests {
     }
 
     #[test]
-    fn queue_playlist_name_accepts_only_trimmed_non_empty_text() {
+    fn queue_name_needs_non_blank_text() {
         assert!(!can_save_queue_playlist_name(""));
         assert!(!can_save_queue_playlist_name("  "));
         assert!(can_save_queue_playlist_name(" Road Trip "));
@@ -447,7 +447,7 @@ mod tests {
     }
 
     #[test]
-    fn open_audio_paths_emit_only_when_picker_returns_paths() {
+    fn empty_picker_emits_nothing() {
         assert!(!should_emit_open_audio_paths(&[]));
         assert!(should_emit_open_audio_paths(&[
             "/music/song.flac".to_string()
@@ -455,7 +455,7 @@ mod tests {
     }
 
     #[test]
-    fn welcome_tip_specs_keep_expected_icon_order_and_text() {
+    fn welcome_tips_keep_order() {
         let tips = welcome_tip_specs();
 
         assert_eq!(

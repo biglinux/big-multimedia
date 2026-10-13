@@ -101,7 +101,7 @@ mod tests {
     }
 
     #[test]
-    fn hqdn3d_derives_chroma_and_temporal_strength_from_strength() {
+    fn hqdn3d_derives_secondary_strengths() {
         assert_eq!(
             hqdn3d_vf(4.0),
             "hqdn3d=luma_spatial=4:chroma_spatial=3:luma_tmp=2"

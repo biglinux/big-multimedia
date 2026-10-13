@@ -26,7 +26,7 @@ pub fn provider_identifier(provider: &IptvProvider) -> String {
 
 /// Resolve a provider to its channel list over the network (or local file),
 /// caching the raw playlist on success. Returns `None` on any fetch/read
-/// failure. Synchronous and blocking — call from a worker thread.
+/// failure. Synchronous and blocking: call from a worker thread.
 #[must_use]
 pub fn fetch_provider_channels(
     provider: &IptvProvider,

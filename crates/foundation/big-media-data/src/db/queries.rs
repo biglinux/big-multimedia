@@ -1,4 +1,4 @@
-//! Database query functions — CRUD operations for tracks, playlists,
+//! Database query functions: CRUD operations for tracks, playlists,
 //! watch folders, smart playlists, and play history.
 
 use rusqlite::{Connection, OptionalExtension, Row, params};
@@ -54,7 +54,7 @@ pub(super) const TRACK_COLUMNS_PREFIXED: &str =
      t.play_count, t.rating, t.modified_at";
 
 pub fn insert_track(conn: &Connection, t: &Track) -> crate::Result<i64> {
-    // Upsert keeps date_added across re-scans — INSERT OR REPLACE resets it.
+    // Upsert keeps date_added across re-scans; INSERT OR REPLACE would reset it.
     conn.execute(
         "INSERT INTO tracks
             (file_path, title, artist, album, album_artist, track_number, disc_number,
@@ -181,7 +181,6 @@ pub fn create_playlist_with_tracks(
 
 /// Returns (track_count, total_duration_secs) for a playlist.
 pub fn get_playlist_stats(conn: &Connection, playlist_id: i64) -> crate::Result<(i64, f64)> {
-    // caveman: ? lifts rusqlite::Error into crate::Error via #[from]
     let row = conn.query_row(
         "SELECT COUNT(*), COALESCE(SUM(t.duration_secs), 0) \
          FROM playlist_tracks pt JOIN tracks t ON t.id = pt.track_id \
@@ -456,7 +455,7 @@ mod playlist_atomicity_tests {
     }
 
     #[test]
-    fn invalid_track_rolls_back_the_entire_new_playlist() {
+    fn invalid_track_rolls_back_playlist() {
         let conn = database();
         assert!(create_playlist_with_tracks(&conn, "Failed", &[1, 999999]).is_err());
         assert!(get_all_playlists(&conn).unwrap().is_empty());
@@ -467,7 +466,7 @@ mod playlist_atomicity_tests {
     }
 
     #[test]
-    fn batch_keeps_first_occurrence_order_and_one_row_per_track() {
+    fn batch_dedups_keeping_first_order() {
         let conn = database();
         let id = create_playlist_with_tracks(&conn, "Saved", &[2, 1, 2]).unwrap();
         let ids: Vec<_> = get_playlist_tracks(&conn, id)

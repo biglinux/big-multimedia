@@ -1,5 +1,5 @@
 //! The playlist and the folder browser, floating over the video on the left in
-//! the settings panel's see-through card: it no longer squeezes the picture
+//! the settings panel's see-through card, without squeezing the picture
 //! aside. It opens from the header buttons or their shortcuts and closes the
 //! same way, on Escape, or on a click on the video.
 

@@ -12,7 +12,7 @@ use big_media_runtime::player::mpv_backend::AudioEffects;
 use big_media_runtime::player::mpv_backend::filters::build_audio_filter_chain;
 use proptest::prelude::*;
 
-// helper — build effects from raw flags + finite numbers
+// Builds effects from raw flags and finite numbers.
 fn make_fx(normalize: bool, eq_bands: &[(f64, f64)]) -> AudioEffects<'_> {
     AudioEffects {
         normalize,
@@ -30,7 +30,7 @@ fn assert_chain_invariants(chain: &[String]) {
         assert!(!entry.is_empty(), "empty filter entry");
         assert!(!entry.contains(",,"), "double comma inside entry: {entry}");
     }
-    // joined form — emulate mpv lavfi=[...] join with ','
+    // Joined form: emulates mpv's lavfi=[...] join with ','.
     let joined = chain.join(",");
     if !chain.is_empty() {
         assert!(

@@ -3,7 +3,7 @@
 
 //! Standard BigLinux hamburger menu builder.
 //!
-//! The framework contract is intentionally narrow: a hamburger menu is a native
+//! The framework contract is narrow: a hamburger menu is a native
 //! `GtkMenuButton` with explicit action rows. Apps provide labels and action
 //! IDs; the framework owns tooltip labels, popover behavior, and accessible
 //! action rows.

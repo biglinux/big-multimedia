@@ -10,7 +10,7 @@ use big_relm4_components::layout::{
 
 impl VideoShell {
     /// "Play on a TV", the settings panel's page: hand the loaded video,
-    /// where it is now, to a Chromecast or DLNA TV, pausing it here once the
+    /// at its current position, to a Chromecast or DLNA TV, pausing it here once the
     /// TV plays.
     pub(super) fn tv_page(&self) -> gtk::Widget {
         use crate::cast::daemon::PlaybackStart;
@@ -392,7 +392,7 @@ thread_local! {
     /// Display-wide OSD-theme CSS provider slot. Single slot replaced in place
     /// on boot and on every Appearance-dialog change (the provider is attached
     /// to the default `gdk::Display`, which is process-global, so a thread-local
-    /// is the right ownership home — no per-shell duplication, no stacking).
+    /// is the right ownership home: no per-shell duplication, no stacking).
     static LIVE_THEME_PROVIDER: RefCell<Option<gtk::CssProvider>> = const { RefCell::new(None) };
 }
 
@@ -482,7 +482,7 @@ mod tests {
     }
 
     #[test]
-    fn open_url_rejects_local_option_and_empty_targets() {
+    fn open_url_rejects_unsafe_targets() {
         for input in [
             "",
             "/home/user/video.mp4",

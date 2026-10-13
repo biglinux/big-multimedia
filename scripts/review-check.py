@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Display-free review checks. These are NOT Rust compilation or GTK/GPU tests.
+"""Display-free review checks. Rust compilation and GTK/GPU tests are out of scope.
 
 Run from any directory. JSON always identifies native validation as not run.
 SQL checks execute SQL extracted from production Rust against Python's SQLite;

@@ -128,7 +128,7 @@ pub fn run_migrations(conn: &Connection) -> crate::Result<()> {
         ",
     )?;
 
-    // FTS5 created separately — virtual tables reject IF NOT EXISTS on some builds.
+    // FTS5 is created separately: some builds reject `IF NOT EXISTS` on virtual tables.
     let has_fts: bool = conn
         .prepare("SELECT 1 FROM sqlite_master WHERE type='table' AND name='tracks_fts'")
         .and_then(|mut s| s.exists([]))
@@ -296,7 +296,7 @@ mod tests {
     }
 
     #[test]
-    fn fts_follows_text_edits_and_ignores_play_counts() {
+    fn fts_tracks_text_edits_only() {
         let conn = memory_db();
         conn.execute(
             "INSERT INTO tracks (file_path, title, artist, duration_secs) VALUES ('/a.mp3', 'Old Name', 'Art', 60.0)",

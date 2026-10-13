@@ -1,4 +1,4 @@
-//! Media abstraction — playlist parsing, metadata caching, fuzzy search,
+//! Media abstraction: playlist parsing, metadata caching, fuzzy search,
 //! duration helpers, and playlist scan utilities.
 
 pub mod fuzzy_search;

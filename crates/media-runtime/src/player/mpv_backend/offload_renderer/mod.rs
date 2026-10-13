@@ -32,11 +32,11 @@ pub struct OffloadRenderer {
     gl: GlFns,
     picture: gtk::Picture,
     surface: gtk::Overlay,
-    /// `Some` when MESA DMA-BUF export is available — path 1 is then tried first.
+    /// `Some` when MESA DMA-BUF export is available; path 1 is then tried first.
     egl: Option<EglDmaBufFns>,
     /// True after the first successful DMA-BUF export.
     dmabuf_active: Cell<bool>,
-    /// True after an unsupported/non-linear modifier — locks the GL fallback.
+    /// True after an unsupported/non-linear modifier; locks the GL fallback.
     dmabuf_rejected: Cell<bool>,
     pool: TexturePool,
     fbo: u32,
@@ -160,7 +160,7 @@ impl OffloadRenderer {
         self.pool.set_redraw(callback);
     }
 
-    /// `true` when MESA DMA-BUF export is available — drives the
+    /// `true` when MESA DMA-BUF export is available. Drives the
     /// log-line distinction surfaced by `VideoBackend::detect`.
     pub(super) fn has_egl_dmabuf(&self) -> bool {
         self.egl.is_some()
@@ -171,7 +171,7 @@ impl OffloadRenderer {
         self.gl_context.make_current();
     }
 
-    /// Allocates at exact pixel size — rounding produces a black right/bottom
+    /// Allocates at exact pixel size: rounding produces a black right/bottom
     /// margin in the GdkGLTexture path (NVIDIA): coords [0,1] map to the full
     /// backing texture, and GL textures don't support stride-based cropping
     /// the way DMA-BUF does.
@@ -249,8 +249,8 @@ impl OffloadRenderer {
             return;
         }
         let texture = if self.egl.is_some() && !self.dmabuf_rejected.get() {
-            // DMA-BUF explicit-fence negotiation is not implemented here. Keep
-            // the correctness barrier; do NOT remove it on a performance guess.
+            // DMA-BUF explicit-fence negotiation is not implemented, so glFinish
+            // is the only correctness barrier before export.
             unsafe { (self.gl.finish)() };
             match self.try_create_dmabuf_texture(lease, width, height) {
                 Ok(texture) => texture,
@@ -329,8 +329,8 @@ impl OffloadRenderer {
         }
         let payload = Box::into_raw(Box::new((export, lease)));
         let mut error = std::ptr::null_mut();
-        // Direct FFI deliberately reclaims release userdata on build failure.
-        // The gtk-rs convenience wrapper in the reviewed version did not do so.
+        // Direct FFI reclaims the release userdata on build failure; the gtk-rs
+        // convenience wrapper of the locked version leaks it.
         let texture = unsafe {
             gdk::ffi::gdk_dmabuf_texture_builder_build(
                 builder.to_glib_none().0,

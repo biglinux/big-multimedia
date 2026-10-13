@@ -8,8 +8,8 @@
 //! ```
 //!
 //! Tolerates missing attributes, unquoted spaces in names, and blank/comment
-//! lines. Attribute parsing is intentionally permissive — IPTV playlists in
-//! the wild are sloppy and strict parsing just loses channels.
+//! lines. Attribute parsing is permissive: IPTV playlists in the wild are
+//! sloppy and strict parsing loses channels.
 
 use std::path::Path;
 
@@ -69,7 +69,7 @@ pub fn read_playlist_text(path: &Path) -> Option<String> {
 
 /// Read and parse an M3U/M3U8 file from disk.
 ///
-/// Returns an empty vector on read error or an oversized file — callers that
+/// Returns an empty vector on read error or an oversized file; callers that
 /// need to distinguish "file missing" from "valid but empty" should check
 /// existence first.
 #[must_use]

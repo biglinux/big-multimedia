@@ -6,8 +6,8 @@
 /// Parse a `;`-separated list of band gains into a fixed-size array, clamped to `[min, max]`.
 ///
 /// Missing or unparsable entries default to `0.0`. Extra entries beyond
-/// `N` are ignored. Used to restore persisted equalizer state from a
-/// settings string.
+/// `N` are ignored. Restores persisted equalizer state from a settings
+/// string.
 #[must_use]
 pub fn parse_clamped_band_gains<const N: usize>(
     gains_text: &str,

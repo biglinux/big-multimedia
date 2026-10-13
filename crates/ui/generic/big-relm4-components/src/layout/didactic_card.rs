@@ -12,8 +12,8 @@ use relm4::gtk;
 thread_local! {
     // Decoded illustrations are immutable and shareable. Cache one GdkPaintable
     // per resource path so every card (and every dialog re-open, across the
-    // process) reuses it instead of re-decoding the SVG on each build — that
-    // per-build decode was never freed and leaked MBs per dialog open. Bounded:
+    // process) reuses it instead of re-decoding the SVG on each build:
+    // a per-build decode is never freed and leaks MBs per dialog open. Bounded:
     // one entry per distinct illustration in the binary's gresource.
     static ILLUSTRATION_PAINTABLES: RefCell<HashMap<String, gtk::gdk::Paintable>> =
         RefCell::new(HashMap::new());

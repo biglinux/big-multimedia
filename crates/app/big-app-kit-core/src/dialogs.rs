@@ -5,9 +5,8 @@
 
 /// Persist a positive dialog size through a caller-owned storage closure.
 ///
-/// Returns `false` when GTK has not reported a usable size yet. The helper is
-/// deliberately storage-agnostic: callers own settings keys, debounce policy,
-/// and error handling.
+/// Returns `false` when GTK has not reported a usable size yet. Callers own
+/// settings keys, debounce policy, and error handling.
 pub fn persist_dialog_size(width: i32, height: i32, persist: impl FnOnce(i32, i32)) -> bool {
     if width <= 0 || height <= 0 {
         return false;

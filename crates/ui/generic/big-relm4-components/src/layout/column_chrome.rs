@@ -83,7 +83,7 @@ fn show_column_config_dialog(
             .title(&column_title)
             .active(column.is_visible())
             .build();
-        // Weak column: the row lives in the dialog, the column in the view — a
+        // Weak column: the row lives in the dialog, the column in the view; a
         // strong capture would be a row⇄column island outliving both.
         let column = column.downgrade();
         switch_row.connect_active_notify(move |row| {

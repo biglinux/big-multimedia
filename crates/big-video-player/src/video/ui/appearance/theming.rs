@@ -1,7 +1,7 @@
 //! Video-player appearance application: reads the `ui-*` palette + OSD layout
 //! settings and pushes the resulting CSS into one app-owned `CssProvider` slot.
 //! Covers the palette foundation, OSD widget styles, gradient/button/window
-//! customizations, and the high-contrast override — kept app-local because the
+//! customizations, and the high-contrast override. Kept app-local because the
 //! OSD class names
 //! (`osd-controls`, `osd-btn`, …) are video-specific.
 //!
@@ -324,13 +324,11 @@ const SOUND_OFF_CSS: &str = "
 ";
 
 /// The settings panel: a see-through card (no blur, no shadow, so it adds
-/// nothing per video frame) at 80%. What holds controls — blocks, lists,
-/// sliders — carries 55% more of its own, 91% in all. That keeps a slider's
-/// trough at 3:1 over any frame and its fill at 3:1 but for the light
-/// scheme over black, 2.94:1 (60% gave 3.02:1; the card alone at 72% gave
-/// 1.7:1 over white). Text straight on the card is at 90% even when
-/// secondary, which reads at 5.4:1 or more there. Measured over white and
-/// black video in both schemes.
+/// nothing per video frame) at 80%. What holds controls (blocks, lists,
+/// sliders) adds its own 0.55 alpha layer, 0.91 combined, so a slider's
+/// trough and fill keep about 3:1 over any video frame in both schemes; the
+/// card alone is too thin for that. Text straight on the card is at 90% even
+/// when secondary, which keeps it at 4.5:1 or more.
 const PANEL_CSS: &str = "
 .settings-panel {
   background: alpha(@window_bg_color, 0.80);

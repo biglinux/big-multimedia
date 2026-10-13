@@ -1,8 +1,7 @@
 //! Stateless widget builders for [`RadioPanel`](super::RadioPanel): toolbar,
 //! empty-state, loading skeleton, per-row record button + now-playing
-//! indicator, async favicon loader, and the add-station dialog. Split out of
-//! `radio_panel.rs` (recipe: file-size budget); pure move, behavior identical.
-//! All `pub(super)` — called from the `Component` impl and the row builders.
+//! indicator, async favicon loader, and the add-station dialog.
+//! All `pub(super)`, called from the `Component` impl and the row builders.
 
 use std::cell::RefCell;
 use std::collections::HashSet;
@@ -495,7 +494,7 @@ mod tests {
     use super::{RadioStationForm, accepted_radio_station_form};
 
     #[test]
-    fn accepted_radio_station_form_trims_valid_http_inputs() {
+    fn station_form_trims_valid_input() {
         assert_eq!(
             accepted_radio_station_form(
                 "  Codex Radio  ",
@@ -509,7 +508,7 @@ mod tests {
     }
 
     #[test]
-    fn accepted_radio_station_form_rejects_empty_or_non_http_inputs() {
+    fn station_form_rejects_non_http() {
         assert_eq!(
             accepted_radio_station_form("", "https://example.test/live"),
             None

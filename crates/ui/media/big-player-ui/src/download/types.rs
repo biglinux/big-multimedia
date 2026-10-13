@@ -33,7 +33,7 @@ pub struct DownloadProgress {
     pub error_msg: std::sync::Mutex<Option<String>>,
 }
 
-/// Main-thread task; UI widgets here only — worker thread reaches in via `progress`.
+/// Main-thread task holding the UI widgets; the worker thread reaches in via `progress`.
 pub struct DownloadTask {
     /// Human-readable title shown in the row.
     pub title: String,

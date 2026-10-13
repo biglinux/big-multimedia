@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# Maintainer-run gate ONLY. Does not install tools, run rustup, or silently format files.
-# This gate was NOT executed during the source review. Use an isolated dev session.
+# Maintainer-run gate. Installs no tools, never runs rustup or formats files.
+# Run it in an isolated dev session.
 set -euo pipefail
 export RUSTUP_AUTO_INSTALL=0
 root=$(cd -- "$(dirname -- "$0")/../.." && pwd)
@@ -24,7 +24,7 @@ trap 'rm -rf -- "$test_home"' EXIT
 export HOME="$test_home/home" XDG_CONFIG_HOME="$test_home/config" XDG_DATA_HOME="$test_home/data"
 export XDG_CACHE_HOME="$test_home/cache" TMPDIR="$test_home/tmp"
 mkdir -p -- "$HOME" "$XDG_CONFIG_HOME" "$XDG_DATA_HOME" "$XDG_CACHE_HOME" "$TMPDIR"
-# HOME isolation is NOT a filesystem/network/D-Bus/native-code sandbox.
+# HOME isolation is not a filesystem, network, D-Bus or native-code sandbox.
 cd -- "$root"
 { rustc -Vv; cargo -V; pkg-config --modversion gtk4 libadwaita-1 mpv; } > "$logs/environment.txt"
 failed=0
@@ -40,7 +40,7 @@ run_gate clippy cargo clippy --locked --workspace --all-targets --all-features -
 run_gate full-features cargo check --locked --workspace --all-features --all-targets
 run_gate minimal cargo check --locked --workspace --no-default-features
 # The workspace steps above unify Cargo features and build every target, so a
-# player that no longer compiles in the configuration its package actually ships
+# player that fails to compile in the configuration its package ships
 # still passes them. These two mirror the PKGBUILDs instead.
 run_gate audio-package cargo check --locked -p big-audio-player --all-targets
 run_gate video-package cargo check --locked -p big-video-player --all-targets

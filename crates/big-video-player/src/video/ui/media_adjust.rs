@@ -696,7 +696,7 @@ mod tests {
     }
 
     #[test]
-    fn out_of_range_value_is_clamped_to_bounds() {
+    fn out_of_range_value_clamps() {
         // mpv image equalizer props are -100..=100; a stray reading must clamp.
         assert_eq!(clamp_initial(250.0, -100.0, 100.0), 100.0);
         assert_eq!(clamp_initial(-250.0, -100.0, 100.0), -100.0);

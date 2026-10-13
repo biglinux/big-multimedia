@@ -353,7 +353,7 @@ impl AudioShell {
         permanent: bool,
         sender: &ComponentSender<Self>,
     ) {
-        // Delete (or trash) the files off the main loop — trashing many tracks,
+        // Delete (or trash) the files off the main loop: trashing many tracks,
         // or any track on a network mount, would otherwise freeze the UI for the
         // whole batch. Only the (id, path) pairs cross to the worker; the queue +
         // DB reconciliation happens back on the main thread, keyed by track id so

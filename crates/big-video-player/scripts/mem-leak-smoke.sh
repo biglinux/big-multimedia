@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
-# mem-leak-smoke.sh — big-video-player memory-leak gate.
+# mem-leak-smoke.sh: big-video-player memory-leak gate.
 #
 # Drives each leak-prone open/close target through the shared RSS-slope detector
 # (~/.agents/scripts/mem-leak-check.sh): N open/close cycles of a dialog, verdict
 # = per-iteration slope of post-close anonymous RSS. Exit 3 from any target =>
 # leak. VM/disposable-host only (the gate wires it under BIGAGENTS_RUN_UI_SMOKE=1).
 #
-# Targets verified clean 2026-06-19 (slope 0 KiB/open): equalizer, image-adjust.
+# Targets: equalizer, image-adjust.
 set -uo pipefail
 
 DETECT="${MEM_LEAK_CHECK:-$HOME/.agents/scripts/mem-leak-check.sh}"

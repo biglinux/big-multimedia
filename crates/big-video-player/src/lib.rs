@@ -33,7 +33,7 @@ fn build_player_window(
 /// App-specific boot done exactly once for the embed/pane paths.
 fn embed_boot() {
     EMBED_BOOT.call_once(|| {
-        // Read lazily at backend install (realize) — safe to default here. See
+        // Read lazily at backend install (realize), so defaulting here is safe. See
         // `run` for why the offload path is not the default.
         shared::app_base::set_default_env("BIG_MEDIA_DISABLE_GRAPHICS_OFFLOAD", "1");
         shared::app_base::boot_player(&[
@@ -48,17 +48,17 @@ fn embed_boot() {
 /// component tree down.
 pub struct VideoEmbed {
     /// The window mounting the player content (for the host's module handle).
-    // bigagents: app-local-window-owner — a transient transfer handle, not a
+    // bigagents: app-local-window-owner: a transient transfer handle, not a
     // signal-captured field: the host immediately moves this into its
     // `OpenModuleHandle.window` (the real owner) and drops the `VideoEmbed`.
     pub window: gtk::Window,
-    /// The shell controller — drives the component; dropping it tears it down.
+    /// The shell controller: drives the component; dropping it tears it down.
     pub controller: relm4::Controller<video::ui::video_shell::VideoShell>,
 }
 
 /// Open the video-player shell as a window of the host's running
 /// application (multicall hosts: big-host). Performs the app-specific boot
-/// exactly once (gettext — shared media domain —, numeric locale, GResource
+/// exactly once (gettext with the shared media domain, numeric locale, GResource
 /// bundles, the graphics-offload default) and launches a detached
 /// [`video::ui::video_shell::VideoShell`]. The host keeps the returned
 /// controller alive for as long as the module is open; dropping it shuts
@@ -83,7 +83,7 @@ pub fn open_in_application() -> VideoEmbed {
     }
 }
 
-/// Deliver file paths to the running shell — the same thread-local broker
+/// Deliver file paths to the running shell through the thread-local broker
 /// `Application::open` uses in standalone mode. No-op when `paths` is empty.
 /// Multicall hosts call this right after [`open_in_application`] (or on
 /// re-invocation with files while the module is already open).
@@ -103,19 +103,16 @@ pub fn run() -> gtk::glib::ExitCode {
     shared::app_base::init_logging(
         "big_media_runtime=info,big_video_player=info,lofty=error,glycin=error",
     );
-    // mpv renders through GL, so the GSK renderer has to be the OpenGL one —
-    // override it, since the session often exports GSK_RENDERER=cairo, which
+    // mpv renders through GL, so the GSK renderer has to be the OpenGL one.
+    // Override it, since the session often exports GSK_RENDERER=cairo, which
     // would push every frame through a software upload. "opengl" is the name
-    // GTK accepts without a warning: the old GL renderer was removed in GTK
-    // 4.18 and "ngl" is no longer recognised at all (GTK ignores it and falls
-    // back to its own default, which may be Vulkan).
+    // GTK 4.18+ accepts without a warning: it ignores "ngl" and falls back to
+    // its own default, which may be Vulkan.
     shared::app_base::use_gl_renderer(true);
-    // Keep the GLArea video path as the default. Measured on 2026-09-17 on an
-    // AMD Cezanne and an Intel HD 3000 laptop playing 1080p30: once the render
-    // call stopped blocking (see `FastRenderContext::render`), offload and
-    // GLArea cost the same CPU — 3.6 % against 3.5 % on the AMD, 21.3 % against
-    // 21.9 % on the Intel — and offload holds an extra GL context and texture
-    // pool while idle (+8 MiB on the AMD, +25 MiB on the Intel). It does give
+    // Keep the GLArea video path as the default. With a non-blocking render
+    // call (see `FastRenderContext::render`), offload and GLArea cost the same
+    // CPU, and offload holds an extra GL context and texture pool while idle.
+    // It does give
     // real DMA-BUF zero-copy, so it stays one variable away for anyone whose
     // compositor benefits from the subsurface; it just buys nothing by default.
     shared::app_base::set_default_env("BIG_MEDIA_DISABLE_GRAPHICS_OFFLOAD", "1");

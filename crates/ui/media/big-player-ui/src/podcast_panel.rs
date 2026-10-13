@@ -1,7 +1,7 @@
-//! Relm4 podcast tab — subscriptions list, RSS search/discovery, add-feed
+//! Relm4 podcast tab: subscriptions list, RSS search/discovery, add-feed
 //! dialog.
 //!
-//! Rendering: ONE virtualized [`MediaListView`](crate::media_list) carries both
+//! Rendering: one virtualized [`MediaListView`](crate::media_list) carries both
 //! sections (Subscriptions + Search Results) as a single recycling `ListView`,
 //! so only the ~visible rows become widgets and only their artwork is fetched
 //! (in `bind`, off-thread, cached). Disk reads/writes (subscriptions + the
@@ -644,7 +644,7 @@ mod tests {
     };
 
     #[test]
-    fn accepted_podcast_feed_url_trims_valid_http_inputs() {
+    fn feed_url_trims_valid_input() {
         assert_eq!(
             accepted_podcast_feed_url("  https://example.test/feed.xml  "),
             Some("https://example.test/feed.xml".into())
@@ -656,7 +656,7 @@ mod tests {
     }
 
     #[test]
-    fn accepted_podcast_feed_url_rejects_empty_or_non_http_inputs() {
+    fn feed_url_rejects_non_http() {
         assert_eq!(accepted_podcast_feed_url(""), None);
         assert_eq!(accepted_podcast_feed_url("file:///tmp/feed.xml"), None);
         assert_eq!(accepted_podcast_feed_url("feed://example.test/rss"), None);
@@ -664,7 +664,7 @@ mod tests {
     }
 
     #[test]
-    fn title_fetch_candidates_skip_resolved_pending_and_failed_urls() {
+    fn title_fetch_skips_known_urls() {
         let subs = vec![
             "https://example.test/resolved.xml".into(),
             "https://example.test/pending.xml".into(),
@@ -685,7 +685,7 @@ mod tests {
     }
 
     #[test]
-    fn subscription_title_subtitle_stops_loading_after_failed_fetch() {
+    fn failed_fetch_stops_title_loading() {
         assert_eq!(subscription_title_subtitle(true, false), None);
         assert_eq!(
             subscription_title_subtitle(false, false),
@@ -698,7 +698,7 @@ mod tests {
     }
 
     #[test]
-    fn is_subscribed_url_rejects_late_fetch_result_after_unsubscribe() {
+    fn late_fetch_after_unsubscribe_ignored() {
         let subs = vec!["https://example.test/active.xml".into()];
 
         assert!(is_subscribed_url(&subs, "https://example.test/active.xml"));

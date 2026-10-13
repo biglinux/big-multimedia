@@ -131,8 +131,7 @@ pub(crate) fn build_search(state: &Rc<BrowserState>) -> gtk::SearchEntry {
 }
 
 /// Info row: just the video count (+ a truncation warning when a recursive scan
-/// hit its cap). The folder path is *not* repeated here — the breadcrumb above
-/// already shows it.
+/// hit its cap). The breadcrumb above already shows the folder path.
 pub(crate) fn build_count_summary(state: &Rc<BrowserState>, count: usize) {
     let row = gtk::Box::builder()
         .spacing(6)

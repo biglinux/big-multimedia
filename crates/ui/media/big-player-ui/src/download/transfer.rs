@@ -62,7 +62,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn downloads_publish_only_complete_results_and_clean_staging() {
+    fn downloads_publish_only_complete_files() {
         use std::io::{Read, Write};
         use std::sync::atomic::AtomicBool;
         let dir = std::env::temp_dir().join(format!("download-transaction-{}", std::process::id()));

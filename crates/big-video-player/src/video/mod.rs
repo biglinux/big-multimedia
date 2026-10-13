@@ -1,4 +1,4 @@
-//! Video player UI — mpv-backed video playback with DMA-BUF rendering,
+//! Video player UI: mpv-backed video playback with DMA-BUF rendering,
 //! Chromecast support, subtitle management, and appearance customisation.
 //! The UI lives in [`ui`]; `keybindings` and `redaction` are engine-free
 //! helpers reused by the Relm4 components.

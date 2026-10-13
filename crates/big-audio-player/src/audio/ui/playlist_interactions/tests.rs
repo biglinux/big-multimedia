@@ -19,7 +19,7 @@ fn delete_storage_heading_marks_plural_count() {
 }
 
 #[test]
-fn delete_storage_body_names_single_track_or_count() {
+fn delete_body_names_track_or_count() {
     assert_eq!(
         delete_storage_body(1, Some("First Song")),
         "Move this file to the trash?\n\nFirst Song"
@@ -31,7 +31,7 @@ fn delete_storage_body_names_single_track_or_count() {
 }
 
 #[test]
-fn queue_delete_key_accepts_delete_and_backspace_only() {
+fn delete_keys_are_delete_and_backspace() {
     assert!(is_queue_delete_key(gdk::Key::Delete));
     assert!(is_queue_delete_key(gdk::Key::BackSpace));
     assert!(!is_queue_delete_key(gdk::Key::space));

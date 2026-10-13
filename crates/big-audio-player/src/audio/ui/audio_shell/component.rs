@@ -28,9 +28,9 @@ impl Component for AudioShell {
     type Input = AudioShellInput;
     type Output = ();
     type CommandOutput = ();
-    // Root is the mountable CONTENT (a `gtk::Box`), NOT a window: the window
-    // chrome (size/title/present) is supplied by the mount point — the standalone
-    // boot, a `big-host` module, or a `PaneContent` mount.
+    // Root is the mountable content (a `gtk::Box`). The window chrome
+    // (size/title/present) comes from the mount point: the standalone boot, a
+    // `big-host` module, or a `PaneContent` mount.
     type Root = gtk::Box;
     type Widgets = ();
 
@@ -95,7 +95,7 @@ impl Component for AudioShell {
                 .upcast(),
             })
             .forward(sender.input_sender(), AudioShellInput::Playback);
-        // The queue is always visible (right pane) — the transport's playlist
+        // The queue is always visible (right pane), so the transport's playlist
         // toggle is redundant, so hide it.
         playback_bar.emit(AudioPlaybackBarInput::SetPlaylistButtonVisible(false));
         playback_bar.emit(AudioPlaybackBarInput::SetPaused(true));
@@ -193,7 +193,7 @@ impl Component for AudioShell {
                 tab_button.set_active(true);
                 tab_group = Some(tab_button.clone());
             }
-            // Weak: the tab button lives in the same pane as the stack — a
+            // Weak: the tab button lives in the same pane as the stack; a
             // strong capture pinned the whole sidebar stack after close.
             let stack = view_stack.downgrade();
             let target = name.to_string();
@@ -273,7 +273,7 @@ impl Component for AudioShell {
         sidebar_pane.add_bottom_bar(&np_box);
 
         // RIGHT content pane: the queue (always visible) with the lyrics split,
-        // and the transport bar pinned at the bottom. No header here — the queue
+        // and the transport bar pinned at the bottom. No header here: the queue
         // panel's own AdwHeaderBar toolbar carries the title/actions + the right
         // window controls in one row, avoiding an empty bar.
         // The download revealer lives inside the content (just below the lyrics/
@@ -444,10 +444,9 @@ impl Component for AudioShell {
             });
         }
         {
-            // Weak: these actions live in the WINDOW's action map — a strong
-            // window capture is a window⇄action cycle (3 of them pinned the
-            // whole window after close; standalone never noticed because
-            // close was process exit).
+            // Weak: these actions live in the window's action map, so a strong
+            // window capture is a window⇄action cycle that pins the whole
+            // window after close (invisible standalone, where close exits).
             let root_weak = root.downgrade();
             let s = settings.clone();
             let tp = theme_provider.clone();
@@ -499,7 +498,7 @@ impl Component for AudioShell {
             });
         }
 
-        // Cast / Sleep Timer / Smartphone — actions send shell inputs (the shell
+        // Cast / Sleep Timer / Smartphone: actions send shell inputs (the shell
         // owns feature-gated cast state, timer state, and the current file path).
         let cast_sender = sender.input_sender().clone();
         big_app_kit::desktop::install_action(&win_actions, "show-cast", move || {

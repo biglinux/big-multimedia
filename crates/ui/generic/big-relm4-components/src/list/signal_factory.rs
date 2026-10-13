@@ -44,7 +44,7 @@ mod tests {
     // tests cover the GTK boundary while Miri stays on Rust-owned invariants.
     #[test]
     #[cfg_attr(miri, ignore)]
-    fn plain_gobject_is_not_a_list_item() {
+    fn plain_gobject_has_no_list_item() {
         let factory_callback_value = glib::Object::new::<glib::Object>();
 
         assert!(list_item_from_factory_value(&factory_callback_value).is_none());

@@ -47,7 +47,7 @@ pub struct VideoMeta {
     pub subtitle_tracks: u32,
 }
 
-/// Filename stem — strips path and extension.
+/// Filename without its directory and extension.
 #[must_use]
 pub fn display_name(path: &str) -> String {
     big_app_kit::files::file_stem_display_name(path)
@@ -56,8 +56,6 @@ pub fn display_name(path: &str) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
-
-    // ── display_name ──
 
     #[test]
     fn display_name_extracts_stem() {
@@ -74,8 +72,6 @@ mod tests {
         // Path::new strips trailing slash on file_name()
         assert_eq!(display_name("/home/user/folder"), "folder");
     }
-
-    // ── format_file_size ──
 
     #[test]
     fn format_file_size_bytes() {
@@ -97,8 +93,6 @@ mod tests {
     fn format_file_size_gigabytes() {
         assert_eq!(format_file_size(1_073_741_824), "1.00 GB");
     }
-
-    // ── shuffled_order ──
 
     #[test]
     fn shuffled_order_preserves_count() {
@@ -125,8 +119,6 @@ mod tests {
         let order = shuffled_order(1, 0);
         assert_eq!(order, vec![0]);
     }
-
-    // ── sort_paths ──
 
     #[test]
     fn sort_paths_by_name() {
@@ -164,8 +156,6 @@ mod tests {
         );
     }
 
-    // ── is_audio_file ──
-
     #[test]
     fn is_audio_file_accepts_supported_audio_extensions() {
         assert!(is_audio_file("song.mp3"));
@@ -189,8 +179,6 @@ mod tests {
         assert!(!is_audio_file("noextension"));
     }
 
-    // ── is_media_file ──
-
     #[test]
     fn is_media_file_accepts_video_and_audio() {
         assert!(is_media_file("movie.mp4"));
@@ -204,8 +192,6 @@ mod tests {
         assert!(!is_media_file("readme.txt"));
         assert!(!is_media_file("photo.png"));
     }
-
-    // ── M3U round-trip ──
 
     #[test]
     fn m3u_write_and_parse_roundtrip() {
@@ -252,8 +238,6 @@ mod tests {
 
         let _ = std::fs::remove_dir_all(&dir);
     }
-
-    // ── PLS round-trip ──
 
     #[test]
     fn pls_parse_extracts_file_entries() {

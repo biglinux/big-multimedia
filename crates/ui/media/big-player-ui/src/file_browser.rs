@@ -1,9 +1,9 @@
-//! Relm4 file-system browser tab — flat directory listing with a `..` parent,
+//! Relm4 file-system browser tab: flat directory listing with a `..` parent,
 //! instant filter, and a right-click "add to library" menu.
 //!
 //! Generic: the playable-file predicate, settings store, start directory and
 //! menu labels come from a `FileBrowserConfig` at launch, so it serves any
-//! media app (audio, video, …) — not just one media kind.
+//! media app (audio, video, …).
 //!
 //! Push-model: navigation, filtering and last-dir persistence are internal;
 //! activating a file emits `FileBrowserOutput::PlayFile` and the library menu
@@ -45,7 +45,7 @@ pub struct FileBrowserConfig {
 /// Intents emitted by the file browser.
 #[derive(Debug)]
 pub enum FileBrowserOutput {
-    /// Activated a media file — queue and (if idle) play it.
+    /// Activated a media file: queue and (if idle) play it.
     PlayFile {
         /// Absolute file path.
         path: String,
@@ -122,7 +122,7 @@ impl Component for FileBrowser {
         let store = gio::ListStore::new::<BrowserNode>();
 
         let filter = gtk::CustomFilter::new(glib::clone!(
-            #[strong] // strong: Rc filter-text data, not a widget — the filter must keep it alive
+            #[strong] // strong: Rc filter-text data that the filter must keep alive
             filter_text,
             move |obj| {
                 let needle = filter_text.borrow().clone();
@@ -167,7 +167,7 @@ impl Component for FileBrowser {
 
         let filter_ref = filter.clone();
         filter_entry.connect_search_changed(glib::clone!(
-            #[strong] // strong: Rc filter-text data, not a widget — no widget⇄closure cycle
+            #[strong] // strong: Rc filter-text data, so no widget⇄closure cycle
             filter_text,
             move |entry| {
                 filter_text.replace(entry.text().trim().to_lowercase());
@@ -332,10 +332,10 @@ fn install_library_menu(
         Some(add_selected_label),
         Some("files.add-selected-to-library"),
     );
-    // bigagents: popover-parent-managed — single reused context menu
+    // bigagents: popover-parent-managed: single reused context menu
     // (gesture pops it up per right-click) parented on the list view.
-    // GtkListView does NOT unparent foreign children at dispose (it
-    // finalized "with children left" and the popover leaked) — detach at
+    // GtkListView does not unparent foreign children at dispose (it
+    // finalizes "with children left" and the popover leaks), so detach at
     // the list's unrealize, while everything is still alive.
     let popover = gtk::PopoverMenu::from_model(Some(&context_menu));
     popover.set_parent(list_view);
@@ -417,9 +417,9 @@ fn populate_dir(
         store.append(&BrowserNode::folder("..", &parent.to_string_lossy()));
     }
 
-    // Bump the generation and capture it; only THIS scan's result is current.
-    // A path comparison is not enough — navigating A→B→A spawns two scans of
-    // the SAME dir, and both would pass a `current_dir == A` check and double
+    // Bump the generation and capture it; only this scan's result is current.
+    // A path comparison is not enough: navigating A→B→A spawns two scans of
+    // the same dir, and both would pass a `current_dir == A` check and double
     // the store. The generation uniquely identifies each populate_dir call.
     let generation = scan_gen.get().wrapping_add(1);
     scan_gen.set(generation);

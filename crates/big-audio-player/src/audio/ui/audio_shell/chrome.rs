@@ -27,7 +27,7 @@ impl AudioShell {
 
     /// Re-light the now-playing indicator in both panels from the queue's
     /// current track (matched by file path in the library detail view). While a
-    /// radio stream plays, nothing in the queue/library is "playing" — clear it.
+    /// radio stream plays, nothing in the queue/library is "playing", so clear it.
     pub(super) fn sync_now_playing(&self) {
         if self.is_stream || !self.is_playing {
             self.playlist
@@ -96,7 +96,7 @@ impl AudioShell {
         )
     }
 
-    /// "Play on a TV": hand the current track, where it is now, to a
+    /// "Play on a TV": hand the current track, at its current position, to a
     /// Chromecast or DLNA TV, pausing it here once the TV plays.
     pub(super) fn show_tv_dialog(&self) {
         use crate::cast::daemon::PlaybackStart;

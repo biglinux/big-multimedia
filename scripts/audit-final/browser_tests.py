@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Actual remote assets in Chromium, mocked HTTP transport. NOT Rust/GTK/server tests."""
+"""Actual remote assets in Chromium, mocked HTTP transport. Rust, GTK and server code are out of scope."""
 
 import argparse
 import json

@@ -72,7 +72,7 @@ pub fn generate(filename: &str, params: &[ShaderParam<'_>]) -> Option<String> {
     Some(path_str)
 }
 
-/// Always generates — file is tiny and writes are cheap. Falls back to the
+/// Always generates: the file is tiny and writes are cheap. Falls back to the
 /// system template path on error.
 pub fn shader_path(filename: &str, params: &[ShaderParam<'_>]) -> String {
     if let Some(path) = generate(filename, params) {
@@ -120,14 +120,14 @@ pub fn anime4k_dir() -> PathBuf {
 }
 
 // RAVU-Lite (bjin/mpv-prescalers, LGPL-3.0) is the only supported upscaler:
-// fragment shaders compatible with vo=libmpv. ArtCNN (Artoriuz/ArtCNN) excluded
-// — its //!COMPUTE shaders need vo=gpu-next; vo=gpu asserts in copy_image.
+// fragment shaders compatible with vo=libmpv. ArtCNN (Artoriuz/ArtCNN) is
+// excluded: its //!COMPUTE shaders need vo=gpu-next; vo=gpu asserts in copy_image.
 
 pub fn ravu_dir() -> PathBuf {
     Path::new(SHADERS_DIR).join("ravu")
 }
 
-/// Only RAVU-Lite r4 ships — r2/r3 dropped (negligible win over lanczos).
+/// Only RAVU-Lite r4 ships: r2/r3 gain too little over lanczos.
 pub fn neural_upscaler_filename(variant: &str) -> Option<&'static str> {
     match variant {
         "ravu-r4" => Some("ravu-lite-ar-r4.hook"),

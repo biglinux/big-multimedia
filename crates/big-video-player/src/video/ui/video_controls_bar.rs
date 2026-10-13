@@ -89,7 +89,7 @@ pub enum VideoControlsBarInput {
     SetCutSegments(Vec<(u64, f64, f64)>),
     /// Trim mode: the pending first mark (drawn as a green guide), if any.
     SetPendingMark(Option<f64>),
-    /// Trim mode on/off — swaps the seek scale for the cut timeline + reveals the
+    /// Trim mode on/off: swaps the seek scale for the cut timeline + reveals the
     /// trim controls row.
     SetEditMode(bool),
     /// Mirror an external mixer volume change (pavucontrol etc.) onto the volume
@@ -172,7 +172,7 @@ pub struct VideoControlsBar {
     cut_timeline: gtk::DrawingArea,
     /// Swaps the GtkScale ↔ the cut timeline in the seek row.
     bar_stack: gtk::Stack,
-    /// Revealer for the trim controls — an EXTRA row above the transport (the
+    /// Revealer for the trim controls, an extra row above the transport (the
     /// transport play/volume stay; the cut controls are added, not swapped in).
     trim_controls_revealer: gtk::Revealer,
     /// Media duration in seconds (hover-preview time + chapter-mark fractions).
@@ -227,7 +227,7 @@ impl Component for VideoControlsBar {
         let (thumb_tx, thumb_rx) = async_channel::bounded::<ThumbnailResult>(1);
         let thumb_gen = Rc::new(ThumbnailGenerator::new(thumb_tx));
 
-        // ── seek row: position · scale · duration ───────────────────────────
+        // Seek row: position, scale, duration.
         let seek_row = gtk::Box::builder()
             .orientation(gtk::Orientation::Horizontal)
             .spacing(8)
@@ -322,8 +322,8 @@ impl Component for VideoControlsBar {
         seek_row.append(&duration_label);
         root.append(&seek_row);
 
-        // ── hover preview: thumbnail frame + time (+ chapter) at the cursor ──
-        // Parented to the shared bar-stack so it works for BOTH the seek scale and
+        // Hover preview: thumbnail frame, time and chapter at the cursor.
+        // Parented to the shared bar-stack so it works for both the seek scale and
         // the cut timeline (the cut timeline keeps the original hover preview).
         let (preview_popover, preview_thumb, preview_label) =
             build_seek_preview(bar_stack.upcast_ref());
@@ -345,7 +345,7 @@ impl Component for VideoControlsBar {
         }
         wire_thumb_consumer(thumb_rx, &preview_thumb, &thumb_gen);
 
-        // ── center box ──────────────────────────────────────────────────────
+        // Center box.
         let center = gtk::CenterBox::new();
 
         let StartBoxWidgets {
@@ -386,9 +386,8 @@ impl Component for VideoControlsBar {
             has_media: Rc::new(std::cell::Cell::new(false)),
         };
 
-        // Trim controls = an EXTRA row above the transport (revealed in trim mode).
-        // The transport (play / volume / …) stays put — the cut controls are added,
-        // not swapped in.
+        // Trim controls: an extra row above the transport, revealed in trim mode.
+        // The transport (play / volume / …) stays put.
         let trim_controls_revealer = gtk::Revealer::builder()
             .transition_type(gtk::RevealerTransitionType::SlideUp)
             .reveal_child(false)
@@ -396,7 +395,7 @@ impl Component for VideoControlsBar {
             .build();
         root.append(&trim_controls_revealer);
         // Responsive OSD: below a narrow width, hide the value readouts (volume %,
-        // speed, voice level) so the end-zone buttons never spill off the edge —
+        // speed, voice level) so the end-zone buttons never spill off the edge;
         // the icons and controls stay usable in a small window.
         let responsive = adw::BreakpointBin::builder()
             .width_request(320)

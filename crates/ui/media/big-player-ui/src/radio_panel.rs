@@ -1,7 +1,7 @@
-//! Relm4 radio tab — saved "My Stations" list, Radio Browser search/explore,
+//! Relm4 radio tab: saved "My Stations" list, Radio Browser search/explore,
 //! genre filter, add-station dialog.
 //!
-//! Rendering: ONE virtualized [`MediaListView`](crate::media_list) carries both
+//! Rendering: one virtualized [`MediaListView`](crate::media_list) carries both
 //! sections (My Stations + Explore) as a single recycling `ListView`, so only
 //! the ~visible rows become widgets and only their favicons are fetched (in
 //! `bind`, off-thread, cached). Replacing the data is a model swap, not a widget
@@ -271,7 +271,7 @@ impl Component for RadioPanel {
             }
             RadioPanelInput::NowPlayingChanged { url, is_stream } => {
                 self.playing_stream = if is_stream { url } else { String::new() };
-                // Highlight only — no rebuild, no full-tree walk.
+                // Highlight only: no rebuild, no full-tree walk.
                 self.list.set_now_playing(&self.playing_stream);
             }
             RadioPanelInput::SearchQueryChanged(query) => {

@@ -6,8 +6,8 @@
 //! the editable metadata group (title/artist/album/album_artist/genre/year/
 //! track#/disc#/comment) plus an optional MusicBrainz lookup button.
 //!
-//! PUSH-MODEL: the dialog NEVER touches the DB, mpv, or network. Save emits
-//! [`LibraryPanelOutput::WriteTags`] — the shell does the off-thread file write +
+//! Push model: the dialog never touches the DB, mpv, or network. Save emits
+//! [`LibraryPanelOutput::WriteTags`]; the shell does the off-thread file write +
 //! DB row update + queue/view refresh. The MusicBrainz button emits
 //! [`LibraryPanelOutput::MusicBrainzLookup`]; the shell does the blocking lookup
 //! and pushes the result back through [`LibraryPanelInput::MusicBrainzLookupResolved`].
@@ -163,7 +163,7 @@ pub(super) fn show_tag_editor(
     dialog.set_child(Some(&page.into_root()));
 
     {
-        // WEAK: the cancel button lives in the dialog — a strong clone is a
+        // Weak: the cancel button lives in the dialog; a strong clone is a
         // dialog ⇄ button ⇄ closure cycle that leaks the dialog after close.
         let dialog = dialog.downgrade();
         cancel_button.connect_clicked(move |_| {
@@ -432,7 +432,7 @@ fn wire_save(
     rows: &EditRows,
     sender: &ComponentSender<LibraryPanel>,
 ) {
-    // WEAK: the save button lives in the dialog — a strong clone is a
+    // Weak: the save button lives in the dialog; a strong clone is a
     // dialog ⇄ button ⇄ closure cycle that leaks the dialog after close.
     let dialog = dialog.downgrade();
     let rows = rows.clone();

@@ -125,7 +125,7 @@ pub(super) fn create_music_page(
     playback_group.add(&resume_row);
 
     // Do not expose CROSSFADE_SECS until a two-track overlap engine consumes
-    // it. Existing saved values are deliberately retained for future migration.
+    // it. Existing saved values are kept for a future migration.
 
     // Taskbar progress (KDE Plasma / Unity → Unity launcher protocol).
     let taskbar_row = adw::SwitchRow::builder()

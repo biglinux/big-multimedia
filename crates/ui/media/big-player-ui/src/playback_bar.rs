@@ -112,7 +112,7 @@ pub enum AudioPlaybackBarOutput {
     },
     /// Shuffle toggled; carries the new active state.
     ToggleShuffle(bool),
-    /// Repeat button clicked — advance to the next repeat mode.
+    /// Repeat button clicked: advance to the next repeat mode.
     CycleRepeat,
     /// Lyrics toggled; carries the new active state.
     ToggleLyrics(bool),
@@ -464,7 +464,7 @@ fn build_hover_popovers(
     let guard = updating.clone();
     volume_scale.connect_value_changed(move |scale| {
         // Skip when the value was set programmatically to mirror the system mixer
-        // (`SetVolumeValue` under `with_guard`) — otherwise it echoes back out as a
+        // (`SetVolumeValue` under `with_guard`); otherwise it echoes back out as a
         // user intent and fights the external change.
         if guard.get() {
             return;
@@ -512,7 +512,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn repeat_indicator_maps_mode_to_icon_and_active() {
+    fn repeat_mode_maps_to_indicator() {
         assert_eq!(
             repeat_indicator(RepeatMode::None),
             (false, "media-playlist-repeat-symbolic")

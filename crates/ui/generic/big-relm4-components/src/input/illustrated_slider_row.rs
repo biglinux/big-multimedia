@@ -446,7 +446,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn resolved_builds_video_resource_path_and_value_label() {
+    fn resolved_builds_resource_and_label() {
         let resolved = BigIllustratedSliderRowSpec::new(
             "/app/illustrations/",
             "Subtitle Delay",

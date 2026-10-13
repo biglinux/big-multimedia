@@ -4,8 +4,8 @@
 //! Playlist ordering helpers.
 //!
 //! Pure functions that build and apply playlist permutations. The shuffle
-//! uses an internal xorshift PRNG seeded from the system clock — fine for
-//! UI shuffle, not for cryptographic uses.
+//! uses an internal xorshift PRNG seeded from the system clock, which is
+//! fine for UI shuffle and unfit for cryptographic uses.
 
 use std::path::Path;
 
@@ -194,7 +194,7 @@ mod tests {
     }
 
     #[test]
-    fn shuffled_order_keeps_current_first_and_preserves_count() {
+    fn shuffle_keeps_current_first_and_count() {
         let order = shuffled_order(10, 5);
         assert_eq!(order.len(), 10);
         assert_eq!(order[0], 5);
@@ -223,7 +223,7 @@ mod tests {
     }
 
     #[test]
-    fn seeded_shuffle_is_deterministic_and_keeps_current_first() {
+    fn seeded_shuffle_is_deterministic() {
         assert_eq!(
             shuffled_order_with_seed(6, 2, 0x1234_5678_9abc_def0),
             vec![2, 4, 0, 3, 5, 1]
@@ -290,7 +290,7 @@ mod tests {
     // Normal tests still cover the real metadata path; Miri covers ordering logic above.
     #[test]
     #[cfg_attr(miri, ignore)]
-    fn sort_paths_by_date_uses_filesystem_modified_time() {
+    fn date_sort_uses_modified_time() {
         let directory = TestDirectory::create("date");
         let older = directory.file_with_modified_time("older.mp4", b"older", 10);
         let newer = directory.file_with_modified_time("newer.mp4", b"newer", 30);

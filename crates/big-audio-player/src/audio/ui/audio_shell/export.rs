@@ -301,7 +301,7 @@ mod tests {
     use std::path::PathBuf;
 
     #[test]
-    fn local_input_path_accepts_plain_paths_and_file_uris() {
+    fn input_path_accepts_paths_and_uris() {
         assert_eq!(
             local_input_path("/tmp/song.flac"),
             Some(PathBuf::from("/tmp/song.flac"))
@@ -321,7 +321,7 @@ mod tests {
     }
 
     #[test]
-    fn local_input_path_rejects_empty_values_and_streams() {
+    fn input_path_rejects_empty_and_streams() {
         assert_eq!(local_input_path(""), None);
         assert_eq!(local_input_path("   "), None);
         assert_eq!(local_input_path("file://remote-host/tmp/song.flac"), None);

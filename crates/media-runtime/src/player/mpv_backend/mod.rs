@@ -1,4 +1,4 @@
-//! mpv backend — wraps the system libmpv C API for audio/video playback with render API integration.
+//! mpv backend: wraps the system libmpv C API for audio/video playback with render API integration.
 //!
 //! Provides `MpvBackend` which manages an mpv instance behind a mutex,
 //! supporting property observation, audio filter chains, and OpenGL rendering.

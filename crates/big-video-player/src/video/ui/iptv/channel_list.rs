@@ -1,10 +1,8 @@
-//! Grouped IPTV channel list — virtualized.
+//! Grouped, virtualized IPTV channel list.
 //!
 //! An IPTV M3U routinely carries thousands to tens of thousands of channels,
-//! each with a remote `tvg-logo`. The old view built one `AdwActionRow` per
-//! channel into a `ListBox` up front (and rebuilt the whole tree on every
-//! keystroke of the filter), firing a logo fetch for every row whether or not
-//! it was on screen — a widget-churn + fetch-storm that froze on large lists.
+//! each with a remote `tvg-logo`, so one widget and one logo fetch per channel
+//! freezes on large lists.
 //!
 //! This reuses the shared recycling [`MediaListView`]: a `GListModel` of
 //! lightweight rows feeds a `ListView`, so only the ~visible rows ever become
@@ -126,7 +124,7 @@ impl ChannelListView {
     }
 
     /// Re-render the list filtered by `query` (matches name or group). A model
-    /// splice — only the visible rows rebind, no widget rebuild.
+    /// splice: only the visible rows rebind, no widget rebuild.
     pub fn apply_filter(&self, query: &str) {
         self.last_query.replace(query.to_string());
         self.resplice(query);

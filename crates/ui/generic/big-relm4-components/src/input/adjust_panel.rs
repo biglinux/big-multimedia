@@ -7,7 +7,7 @@
 //! One panel, any backend: each axis carries a [`BigIllustratedSliderRowSpec`]
 //! plus an `apply` sink invoked (debounced) with the new value as the user
 //! drags. The image viewer drives an image pipeline, the video player drives
-//! the mpv video equalizer, the camera drives v4l2 controls — all through the
+//! the mpv video equalizer, the camera drives v4l2 controls, all through the
 //! same panel. Labels/subtitles stay caller-supplied so each app keeps its own
 //! gettext domain; this module only owns the build loop and the canonical color
 //! axis range so those stay consistent across apps.
@@ -48,7 +48,7 @@ impl BigAdjustAxis {
 ///
 /// Backend-agnostic: the caller supplies the axes (spec + sink). Each slider's
 /// adjustment is wired through [`connect_debounced_adjustment`], so the apply
-/// sink only fires after the user pauses — cheap to drive a live pipeline.
+/// sink only fires after the user pauses, which keeps a live pipeline cheap.
 pub struct BigAdjustPanel {
     root: gtk::Box,
 }

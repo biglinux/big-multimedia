@@ -92,7 +92,7 @@ mod tests {
 
     #[test]
     #[cfg_attr(miri, ignore)]
-    fn launcher_entry_signal_body_wraps_desktop_uri_and_progress() {
+    fn launcher_entry_wraps_uri_and_progress() {
         let body = launcher_entry_signal_body(
             "application://br.com.biglinux.VideoPlayer.desktop",
             true,
@@ -119,7 +119,7 @@ mod tests {
 
     #[test]
     #[cfg_attr(miri, ignore)]
-    fn launcher_entry_signal_body_preserves_hidden_zero_progress() {
+    fn launcher_entry_keeps_hidden_zero_progress() {
         let body = launcher_entry_signal_body(
             "application://br.com.biglinux.AudioPlayer.desktop",
             false,

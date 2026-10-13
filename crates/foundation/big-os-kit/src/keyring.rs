@@ -78,7 +78,7 @@ impl SecretService<'_> {
         } else {
             builder.build().run_cancellable(self.cancelled)
         };
-        // Deliberately do not expose stdout/stderr or the formatted subprocess
+        // Never expose stdout/stderr or the formatted subprocess
         // error: provider diagnostics are not guaranteed to redact secrets.
         let result = result.map_err(|_| {
             io::Error::other("Secret Service operation unavailable, cancelled or not confirmed")

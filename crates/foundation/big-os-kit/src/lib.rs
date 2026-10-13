@@ -29,7 +29,7 @@ pub mod deferred;
 pub mod digest;
 /// Blocking HTTP client with timeouts, retry policy, and size limits
 /// (feature `http-client`). Single home for outbound HTTP across the
-/// BigLinux stack — re-exported by `big-app-kit`, consumed by data services.
+/// BigLinux stack, re-exported by `big-app-kit` and consumed by data services.
 #[cfg(feature = "http-client")]
 pub mod http_client;
 /// Worker-only Secret Service access through libsecret's secret-tool.

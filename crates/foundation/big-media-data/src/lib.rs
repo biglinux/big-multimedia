@@ -28,7 +28,6 @@ pub mod radio;
 /// Persistent key/value settings store + typed key catalog.
 pub mod settings;
 
-// Re-export at the crate root so consumers can write `big_media_data::Error` /
-// `big_media_data::Result<T>` — matches the convention `big-media-runtime` uses
-// (and which the moved `db` queries rely on via `crate::Result`).
+// Root re-export, as in `big-media-runtime`; the `db` queries use
+// `crate::Result`.
 pub use error::{Error, Result};

@@ -129,8 +129,7 @@ mod tests {
 
     #[cfg(not(miri))]
     #[test]
-    fn fetch_lyrics_prefers_sidecar_lrc_and_returns_plain_text()
-    -> std::result::Result<(), Box<dyn std::error::Error>> {
+    fn sidecar_lrc_wins_as_plain_text() -> std::result::Result<(), Box<dyn std::error::Error>> {
         let library_database = in_memory_library_database()?;
         let lyrics_fixture_folder = LyricsFixtureFolder::create()?;
         let audio_path = lyrics_fixture_folder.path.join("song.mp3");

@@ -60,8 +60,8 @@ fn integer_year_column_groups_decode_as_text() {
     insert_year_track(&conn, 2, "Alice", 2000, 320);
     insert_year_track(&conn, 3, "Bob", 2010, 256);
 
-    // Regression: integer `year` must come back as decodable TEXT group keys
-    // with correct counts (previously the integer rows were dropped).
+    // Integer `year` comes back as decodable TEXT group keys with correct
+    // counts.
     let groups = get_library_groups(&conn, "year", "", &[], None).unwrap();
     assert_eq!(
         groups,
@@ -100,7 +100,7 @@ fn integer_bitrate_column_groups_and_filters() {
 }
 
 #[test]
-fn text_artist_column_still_groups_after_cast_change() {
+fn artist_groups_keep_text_keys() {
     let conn = setup_db();
     insert_year_track(&conn, 1, "Alice", 2000, 320);
     insert_year_track(&conn, 2, "Bob", 2010, 256);

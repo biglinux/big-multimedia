@@ -1,11 +1,11 @@
 //! App-local Relm4 sidebar (push-model) with two modes, switched by a segmented
 //! control:
-//!   * **Files** — the video library's places (Videos, Downloads, the home
+//!   * **Files**: the video library's places (Videos, Downloads, the home
 //!     folder or the chosen ones, plus plugged-in drives) with a search across
 //!     them, then a folder browser (breadcrumb + sub-folders, list/grid with
 //!     ffmpeg thumbnails, fuzzy search, kind chips). Activating a video plays it
 //!     and queues the folder; the context menu also offers "add to playlist".
-//!   * **Playlist** — the current play queue (mirrors the shell's mpv playlist),
+//!   * **Playlist**: the current play queue (mirrors the shell's mpv playlist),
 //!     a flat list/grid with the playing entry highlighted; remove / clear /
 //!     save / load act here.
 //!
@@ -62,7 +62,7 @@ pub enum FilterKind {
 /// the disk (Files) vs. the current play queue (Playlist).
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 pub enum SidebarMode {
-    /// Folder browser — navigate the disk and start playback.
+    /// Folder browser: navigate the disk and start playback.
     #[default]
     Files,
     /// The current play queue (what the shell loaded into mpv).
@@ -127,15 +127,15 @@ pub enum VideoBrowserSidebarOutput {
     SetShuffle(bool),
 }
 
-/// Shared browser state — held in an `Rc` so the builder free-functions and
+/// Shared browser state, held in an `Rc` so the builder free-functions and
 /// signal closures can read settings, mutate the listing, and trigger rebuilds.
 pub(crate) struct BrowserState {
     /// Sidebar container (cleared + rebuilt on every `rebuild`). Weak: this
-    /// `Rc` is captured by closures on widgets INSIDE the container — a strong
+    /// `Rc` is captured by closures on widgets inside the container, so a strong
     /// field closes a container→widget→closure→Rc→container island that pins
     /// the whole panel after window close.
     container: glib::WeakRef<gtk::Box>,
-    /// Player settings (view mode, sort, toggles — read and written here).
+    /// Player settings (view mode, sort, toggles), read and written here.
     settings: Settings,
     /// Channel back to the shell (play / clear intents).
     sender: ComponentSender<VideoBrowserSidebar>,
@@ -388,7 +388,7 @@ impl BrowserState {
     }
 
     /// Scan `folder` (flat or recursive per settings) and rebuild, cancelling
-    /// any scan still in flight. Browsing never touches playback — only a video
+    /// any scan still in flight. Browsing never touches playback; only a video
     /// activation does.
     fn navigate_to_folder(self: &Rc<Self>, folder: &str) {
         let folder_owned = folder.to_string();
@@ -596,8 +596,8 @@ impl BrowserState {
     }
 
     /// Playlist mode: search + the compact ordered play queue (numbered rows,
-    /// thumbnail, duration, remove button; playing entry marked). A distinct
-    /// queue view — not the Files grid/list.
+    /// thumbnail, duration, remove button; playing entry marked), distinct from
+    /// the Files grid/list.
     fn rebuild_playlist(self: &Rc<Self>) {
         let items = self.queue.borrow().clone();
 

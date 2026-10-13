@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: big-media-runtime 2.0.0\n"
 "Report-Msgid-Bugs-To: https://github.com/biglinux/big-multimedia/issues\n"
-"POT-Creation-Date: 2026-10-13 02:59-0300\n"
+"POT-Creation-Date: 2026-10-13 03:06-0300\n"
 "PO-Revision-Date: 2026-05-29 05:37-0300\n"
 "Last-Translator: Automatically generated\n"
 "Language-Team: none\n"
@@ -560,7 +560,7 @@ msgstr "Editar corte"
 #: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:381
 #: crates/big-video-player/src/video/ui/video_shell/trim/run.rs:238
 #: crates/ui/media/big-player-ui/src/podcast_panel.rs:571
-#: crates/ui/media/big-player-ui/src/radio_panel/widgets.rs:352
+#: crates/ui/media/big-player-ui/src/radio_panel/widgets.rs:351
 msgid "Cancel"
 msgstr "Cancelar"
 
@@ -647,8 +647,8 @@ msgid "Repeat"
 msgstr "Repetir"
 
 #: crates/big-audio-player/src/audio/ui/audio_shell/playback.rs:170
-#: crates/big-video-player/src/video/ui/video_controls_bar.rs:547
-#: crates/ui/media/big-media-components/src/player_chrome.rs:309
+#: crates/big-video-player/src/video/ui/video_controls_bar.rs:546
+#: crates/ui/media/big-media-components/src/player_chrome.rs:301
 #: crates/ui/media/big-media-components/src/text.rs:75
 #: crates/ui/media/big-media-components/src/text.rs:83
 #: crates/ui/media/big-media-components/src/text.rs:92
@@ -658,7 +658,7 @@ msgstr "Volume"
 
 #: crates/big-audio-player/src/audio/ui/audio_shell/playback.rs:171
 #: crates/big-video-player/src/video/ui/video_controls_bar/zones.rs:302
-#: crates/ui/media/big-media-components/src/player_chrome.rs:320
+#: crates/ui/media/big-media-components/src/player_chrome.rs:312
 msgid "Speed"
 msgstr "Velocidade"
 
@@ -916,7 +916,7 @@ msgstr ""
 #: crates/big-audio-player/src/audio/ui/library_tree/view.rs:376
 #: crates/big-audio-player/src/audio/ui/playlist_interactions.rs:110
 #: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/context_menu.rs:41
-#: crates/big-video-player/src/video/ui/video_controls_bar.rs:472
+#: crates/big-video-player/src/video/ui/video_controls_bar.rs:471
 #: crates/big-video-player/src/video/ui/video_controls_bar/zones.rs:566
 #: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:173
 msgid "Play"
@@ -2262,23 +2262,23 @@ msgstr "Efeito de rastro visual com desvanecimento lento"
 msgid "Decay"
 msgstr "Decaimento"
 
-#: crates/big-video-player/src/video/ui/iptv/channel_list.rs:80
+#: crates/big-video-player/src/video/ui/iptv/channel_list.rs:78
 msgid "Toggle favorite"
 msgstr "Alternar favorito"
 
-#: crates/big-video-player/src/video/ui/iptv/channel_list.rs:159
+#: crates/big-video-player/src/video/ui/iptv/channel_list.rs:157
 msgid "No channels"
 msgstr "Nenhum canal"
 
-#: crates/big-video-player/src/video/ui/iptv/channel_list.rs:167
+#: crates/big-video-player/src/video/ui/iptv/channel_list.rs:165
 #, rust-format
 msgid "{} channel"
 msgid_plural "{} channels"
 msgstr[0] "{} canal"
 msgstr[1] "{} canais"
 
-#: crates/big-video-player/src/video/ui/iptv/channel_list.rs:214
-#: crates/ui/media/big-player-ui/src/radio_panel/methods.rs:127
+#: crates/big-video-player/src/video/ui/iptv/channel_list.rs:212
+#: crates/ui/media/big-player-ui/src/radio_panel/methods.rs:126
 msgid "Ungrouped"
 msgstr "Sem grupo"
 
@@ -2467,7 +2467,7 @@ msgid "Normal"
 msgstr "Normal"
 
 #: crates/big-video-player/src/video/ui/media_adjust.rs:183
-#: crates/big-video-player/src/video/ui/video_controls_bar/tracks.rs:81
+#: crates/big-video-player/src/video/ui/video_controls_bar/tracks.rs:80
 msgid "Subtitles early or late"
 msgstr "Legenda adiantada ou atrasada"
 
@@ -3445,7 +3445,7 @@ msgstr "Vídeos"
 msgid "Your folders"
 msgstr "Suas pastas"
 
-#: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/metadata.rs:144
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/metadata.rs:143
 #: crates/big-video-player/src/video/ui/video_browser_sidebar/library.rs:429
 #: crates/big-video-player/src/video/ui/video_browser_sidebar/mod.rs:301
 #, rust-format
@@ -3454,12 +3454,12 @@ msgid_plural "{} videos"
 msgstr[0] "{} vídeo"
 msgstr[1] "{} vídeos"
 
-#: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/metadata.rs:151
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/metadata.rs:150
 #, rust-format
 msgid "(of {total})"
 msgstr "(de {total})"
 
-#: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/metadata.rs:155
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/metadata.rs:154
 #, rust-format
 msgid ""
 "Showing {shown} of {total} files found. Consider filtering by subfolder."
@@ -3618,12 +3618,12 @@ msgstr "Parou em {}"
 msgid "Seek Position"
 msgstr "Posição de busca"
 
-#: crates/big-video-player/src/video/ui/video_controls_bar.rs:472
+#: crates/big-video-player/src/video/ui/video_controls_bar.rs:471
 #: crates/media-runtime/src/shared/tv_cast.rs:715
 msgid "Pause"
 msgstr "Pausar"
 
-#: crates/big-video-player/src/video/ui/video_controls_bar.rs:545
+#: crates/big-video-player/src/video/ui/video_controls_bar.rs:544
 #: crates/ui/media/big-player-ui/src/playback_bar.rs:329
 msgid "TV volume"
 msgstr "Volume da TV"
@@ -3632,47 +3632,47 @@ msgstr "Volume da TV"
 msgid "Seek preview"
 msgstr "Prévia da busca"
 
-#: crates/big-video-player/src/video/ui/video_controls_bar/tracks.rs:27
+#: crates/big-video-player/src/video/ui/video_controls_bar/tracks.rs:26
 msgid "Load Subtitle File…"
 msgstr "Carregar arquivo de legenda…"
 
-#: crates/big-video-player/src/video/ui/video_controls_bar/tracks.rs:37
+#: crates/big-video-player/src/video/ui/video_controls_bar/tracks.rs:36
 msgid "Primary Subtitles"
 msgstr "Legendas primárias"
 
-#: crates/big-video-player/src/video/ui/video_controls_bar/tracks.rs:39
+#: crates/big-video-player/src/video/ui/video_controls_bar/tracks.rs:38
 msgid "Disable Subtitles"
 msgstr "Desativar legendas"
 
-#: crates/big-video-player/src/video/ui/video_controls_bar/tracks.rs:59
+#: crates/big-video-player/src/video/ui/video_controls_bar/tracks.rs:58
 msgid "Secondary Subtitles"
 msgstr "Legendas secundárias"
 
-#: crates/big-video-player/src/video/ui/video_controls_bar/tracks.rs:61
+#: crates/big-video-player/src/video/ui/video_controls_bar/tracks.rs:60
 msgid "Disable Secondary Subtitles"
 msgstr "Desativar legendas secundárias"
 
-#: crates/big-video-player/src/video/ui/video_controls_bar/tracks.rs:110
+#: crates/big-video-player/src/video/ui/video_controls_bar/tracks.rs:109
 msgid "Subtitle files"
 msgstr "Arquivos de legenda"
 
-#: crates/big-video-player/src/video/ui/video_controls_bar/tracks.rs:118
+#: crates/big-video-player/src/video/ui/video_controls_bar/tracks.rs:117
 msgid "Load Subtitle File"
 msgstr "Carregar arquivo de legenda"
 
-#: crates/big-video-player/src/video/ui/video_controls_bar/tracks.rs:192
+#: crates/big-video-player/src/video/ui/video_controls_bar/tracks.rs:191
 msgid "Earlier"
 msgstr "Antes"
 
-#: crates/big-video-player/src/video/ui/video_controls_bar/tracks.rs:192
+#: crates/big-video-player/src/video/ui/video_controls_bar/tracks.rs:191
 msgid "Later"
 msgstr "Depois"
 
-#: crates/big-video-player/src/video/ui/video_controls_bar/tracks.rs:246
+#: crates/big-video-player/src/video/ui/video_controls_bar/tracks.rs:245
 msgid "Track"
 msgstr "Faixa"
 
-#: crates/big-video-player/src/video/ui/video_controls_bar/tracks.rs:247
+#: crates/big-video-player/src/video/ui/video_controls_bar/tracks.rs:246
 msgid "external"
 msgstr "externo"
 
@@ -4797,19 +4797,19 @@ msgstr "Fluxo de áudio"
 msgid "Subtitle Stream"
 msgstr "Fluxo de legendas"
 
-#: crates/ui/media/big-media-components/src/player_chrome.rs:309
+#: crates/ui/media/big-media-components/src/player_chrome.rs:301
 msgid "Volume level"
 msgstr "Nível de volume"
 
-#: crates/ui/media/big-media-components/src/player_chrome.rs:320
+#: crates/ui/media/big-media-components/src/player_chrome.rs:312
 msgid "Playback speed"
 msgstr "Velocidade de reprodução"
 
-#: crates/ui/media/big-media-components/src/player_chrome.rs:332
+#: crates/ui/media/big-media-components/src/player_chrome.rs:324
 msgid "Voice"
 msgstr "Voz"
 
-#: crates/ui/media/big-media-components/src/player_chrome.rs:334
+#: crates/ui/media/big-media-components/src/player_chrome.rs:326
 msgid "Voice enhancement"
 msgstr "Aprimoramento de voz"
 
@@ -5108,91 +5108,91 @@ msgstr "Feed"
 msgid "RSS feed URL"
 msgstr "URL do feed RSS"
 
-#: crates/ui/media/big-player-ui/src/radio_panel/methods.rs:122
+#: crates/ui/media/big-player-ui/src/radio_panel/methods.rs:121
 msgid "My Stations"
 msgstr "Minhas estações"
 
-#: crates/ui/media/big-player-ui/src/radio_panel/methods.rs:145
-#: crates/ui/media/big-player-ui/src/radio_panel/widgets.rs:300
+#: crates/ui/media/big-player-ui/src/radio_panel/methods.rs:144
+#: crates/ui/media/big-player-ui/src/radio_panel/widgets.rs:299
 msgid "Explore Stations"
 msgstr "Explorar estações"
 
-#: crates/ui/media/big-player-ui/src/radio_panel/widgets.rs:39
+#: crates/ui/media/big-player-ui/src/radio_panel/widgets.rs:38
 msgid "Remove station"
 msgstr "Remover estação"
 
-#: crates/ui/media/big-player-ui/src/radio_panel/widgets.rs:51
+#: crates/ui/media/big-player-ui/src/radio_panel/widgets.rs:50
 msgid "Add to my stations"
 msgstr "Adicionar às minhas estações"
 
-#: crates/ui/media/big-player-ui/src/radio_panel/widgets.rs:80
+#: crates/ui/media/big-player-ui/src/radio_panel/widgets.rs:79
+#: crates/ui/media/big-player-ui/src/radio_panel/widgets.rs:89
 #: crates/ui/media/big-player-ui/src/radio_panel/widgets.rs:90
-#: crates/ui/media/big-player-ui/src/radio_panel/widgets.rs:91
 msgid "Record Stream"
 msgstr "Gravar transmissão"
 
+#: crates/ui/media/big-player-ui/src/radio_panel/widgets.rs:94
 #: crates/ui/media/big-player-ui/src/radio_panel/widgets.rs:95
-#: crates/ui/media/big-player-ui/src/radio_panel/widgets.rs:96
 msgid "Stop Recording"
 msgstr "Parar gravação"
 
-#: crates/ui/media/big-player-ui/src/radio_panel/widgets.rs:167
+#: crates/ui/media/big-player-ui/src/radio_panel/widgets.rs:166
 msgid "Search radios..."
 msgstr "Pesquisar rádios..."
 
-#: crates/ui/media/big-player-ui/src/radio_panel/widgets.rs:169
+#: crates/ui/media/big-player-ui/src/radio_panel/widgets.rs:168
 msgid "Search radios"
 msgstr "Pesquisar rádios"
 
-#: crates/ui/media/big-player-ui/src/radio_panel/widgets.rs:174
+#: crates/ui/media/big-player-ui/src/radio_panel/widgets.rs:173
 msgid "All Genres"
 msgstr "Todos os gêneros"
 
+#: crates/ui/media/big-player-ui/src/radio_panel/widgets.rs:211
 #: crates/ui/media/big-player-ui/src/radio_panel/widgets.rs:212
-#: crates/ui/media/big-player-ui/src/radio_panel/widgets.rs:213
 msgid "Filter by genre"
 msgstr "Filtrar por gênero"
 
-#: crates/ui/media/big-player-ui/src/radio_panel/widgets.rs:220
-#: crates/ui/media/big-player-ui/src/radio_panel/widgets.rs:222
+#: crates/ui/media/big-player-ui/src/radio_panel/widgets.rs:219
+#: crates/ui/media/big-player-ui/src/radio_panel/widgets.rs:221
 msgid "Add station manually"
 msgstr "Adicionar estação manualmente"
 
-#: crates/ui/media/big-player-ui/src/radio_panel/widgets.rs:286
+#: crates/ui/media/big-player-ui/src/radio_panel/widgets.rs:285
 msgid "No radio stations"
 msgstr "Nenhuma estação de rádio"
 
-#: crates/ui/media/big-player-ui/src/radio_panel/widgets.rs:293
+#: crates/ui/media/big-player-ui/src/radio_panel/widgets.rs:292
 msgid "Explore popular stations from your country or search by name"
 msgstr "Explore estações populares do seu país ou pesquise por nome"
 
-#: crates/ui/media/big-player-ui/src/radio_panel/widgets.rs:308
+#: crates/ui/media/big-player-ui/src/radio_panel/widgets.rs:307
 msgid "Add Manually"
 msgstr "Adicionar manualmente"
 
-#: crates/ui/media/big-player-ui/src/radio_panel/widgets.rs:325
+#: crates/ui/media/big-player-ui/src/radio_panel/widgets.rs:324
 msgid "Add Radio Station"
 msgstr "Adicionar estação de rádio"
 
-#: crates/ui/media/big-player-ui/src/radio_panel/widgets.rs:332
+#: crates/ui/media/big-player-ui/src/radio_panel/widgets.rs:331
 msgid "Enter a station name and an http:// or https:// stream URL."
 msgstr "Digite o nome da estação e uma URL de stream http:// ou https://."
 
-#: crates/ui/media/big-player-ui/src/radio_panel/widgets.rs:335
+#: crates/ui/media/big-player-ui/src/radio_panel/widgets.rs:334
 msgid "Station"
 msgstr "Estação"
 
-#: crates/ui/media/big-player-ui/src/radio_panel/widgets.rs:337
-#: crates/ui/media/big-player-ui/src/radio_panel/widgets.rs:340
+#: crates/ui/media/big-player-ui/src/radio_panel/widgets.rs:336
+#: crates/ui/media/big-player-ui/src/radio_panel/widgets.rs:339
 msgid "Station Name"
 msgstr "Nome da estação"
 
-#: crates/ui/media/big-player-ui/src/radio_panel/widgets.rs:342
-#: crates/ui/media/big-player-ui/src/radio_panel/widgets.rs:346
+#: crates/ui/media/big-player-ui/src/radio_panel/widgets.rs:341
+#: crates/ui/media/big-player-ui/src/radio_panel/widgets.rs:345
 msgid "Station stream URL"
 msgstr "URL do stream da estação"
 
-#: crates/ui/media/big-player-ui/src/radio_panel/widgets.rs:352
+#: crates/ui/media/big-player-ui/src/radio_panel/widgets.rs:351
 msgid "Add"
 msgstr "Adicionar"
 

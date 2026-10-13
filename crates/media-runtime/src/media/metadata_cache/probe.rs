@@ -7,7 +7,7 @@ use super::cache::{
     evict_oldest, file_mtime, meta_cache, release_slot, save_meta_cache_to_disk,
 };
 
-/// Synchronous — call from a background thread.
+/// Synchronous; call from a background thread.
 pub fn probe_metadata(path: &str) -> Option<VideoMeta> {
     // `--` keeps a file name starting with `-` from reading as an ffprobe flag.
     let output = BigSubprocessSpec::builder()

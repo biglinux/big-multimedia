@@ -1,23 +1,19 @@
 // SPDX-License-Identifier: MIT
 
-//! `BigZoneLayoutEditor` — the visual "drag controls between zones" editor
-//! (RESTRUCTURE phase **D3** / decision **D8**).
+//! `BigZoneLayoutEditor`: the visual "drag controls between zones" editor.
 //!
 //! A miniature of the target chrome (one `CenterBox` row per
 //! [`BarSpec`](super::zone_layout::BarSpec), with
 //! start/center/end drop zones) where the user **drags** controls between zones
 //! and **clicks** to toggle a control's visibility. It is persistence-agnostic:
 //! it edits an in-memory [`ZoneLayout`] and emits it through
-//! [`connect_changed`](BigZoneLayoutEditor::connect_changed) on every change —
+//! [`connect_changed`](BigZoneLayoutEditor::connect_changed) on every change;
 //! the app maps that to its own store (video-player → `ui-zone-*`/`ui-show-*`
 //! gsettings, big-shell → its panel config).
 //!
-//! Generalizes the bespoke editor that previously lived only in
-//! `big-video-player` (`appearance/layout/{buttons_page,miniature}.rs`).
-//!
-//! Leak contract (H9): the editor's widgets are owned solely by its `root`
+//! Leak contract: the editor's widgets are owned solely by its `root`
 //! frame; the drag/drop/click closures capture an `Rc<EditorState>` that holds
-//! only WEAK widget refs (no widget⇄closure strong cycle), so dropping the
+//! only weak widget refs (no widget⇄closure strong cycle), so dropping the
 //! editor finalizes the whole subtree.
 
 use std::cell::RefCell;
@@ -33,7 +29,7 @@ use super::zone_layout::{ZoneLayout, ZoneLayoutSpec, ZonePlacement, slot_key};
 type ChangeCallback = Box<dyn Fn(&ZoneLayout)>;
 
 /// Self-contained CSS for the miniature (one provider per display, replaced on
-/// re-injection). Dark, theme-independent — the miniature is a realistic preview
+/// re-injection). Dark and theme-independent: the miniature is a realistic preview
 /// of chrome that is itself usually dark, regardless of the app's GTK theme.
 const EDITOR_CSS: &str = "
 .zle-frame { border-radius: 10px; border: 1px solid alpha(@borders, 0.5); }
@@ -219,7 +215,7 @@ impl BigZoneLayoutEditor {
 
         // Per-zone: drop target (reorder by pointer-x + reparent).
         for (key, zone) in &slot_boxes_strong {
-            // bigagents: app-local-dnd — moves internal control ids between zones.
+            // bigagents: app-local-dnd: moves internal control ids between zones.
             let drop = gtk::DropTarget::new(String::static_type(), gdk::DragAction::MOVE);
             {
                 let zone = zone.downgrade();
@@ -322,7 +318,7 @@ impl BigZoneLayoutEditor {
         Self { root, state }
     }
 
-    /// The editor widget — embed this in a preferences page.
+    /// The editor widget; embed this in a preferences page.
     #[must_use]
     pub fn root(&self) -> &gtk::Frame {
         &self.root

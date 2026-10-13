@@ -329,7 +329,7 @@ mod tests {
     }
 
     #[test]
-    fn optional_text_contract_omits_empty_subtitles_and_tooltips() {
+    fn empty_optional_text_is_omitted() {
         assert_eq!(optional_non_empty_text(""), None);
         assert_eq!(optional_non_empty_text("Shown"), Some("Shown".to_string()));
     }
@@ -346,7 +346,7 @@ mod tests {
     }
 
     #[test]
-    fn spin_row_specs_use_page_increment_and_decimal_contracts() {
+    fn spin_specs_keep_increment_and_digits() {
         let integer_spec = spin_int_row_spec("Volume", "Percent", 50, 0.0, 150.0, 5.0);
         assert_eq!(integer_spec.title, "Volume");
         assert_eq!(integer_spec.subtitle, Some("Percent".to_string()));
@@ -366,7 +366,7 @@ mod tests {
     }
 
     #[test]
-    fn entry_and_color_specs_keep_optional_text_contracts() {
+    fn entry_and_color_keep_optional_text() {
         let entry_spec = entry_row_spec("Command", "Shell-free argv", "mpv");
         assert_eq!(entry_spec.title, "Command");
         assert_eq!(entry_spec.tooltip_text, Some("Shell-free argv".to_string()));

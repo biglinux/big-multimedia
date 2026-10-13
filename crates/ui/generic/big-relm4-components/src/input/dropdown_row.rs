@@ -8,7 +8,7 @@ use relm4::gtk;
 
 use crate::text::escape_markup_text;
 
-/// Data used to build a dropdown row.
+/// Inputs for building a dropdown row.
 #[non_exhaustive]
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct BigDropdownRowSpec {

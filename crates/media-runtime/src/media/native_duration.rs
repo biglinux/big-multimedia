@@ -5,7 +5,7 @@ use std::fs::File;
 use std::io::{Read, Seek, SeekFrom};
 use std::path::Path;
 
-/// `None` for unsupported formats or parse failures — caller falls back to ffprobe.
+/// `None` for unsupported formats or parse failures; the caller falls back to ffprobe.
 pub(crate) fn fast_read_duration(path: &str) -> Option<f64> {
     let ext = Path::new(path)
         .extension()
@@ -18,7 +18,7 @@ pub(crate) fn fast_read_duration(path: &str) -> Option<f64> {
     }
 }
 
-// ── ISO BMFF (MP4/MOV/M4V/3GP) ──
+// ISO BMFF: MP4, MOV, M4V, 3GP.
 
 struct AtomHeader {
     atom_type: [u8; 4],
@@ -45,7 +45,7 @@ fn read_atom_header(f: &mut File, pos: u64, container_end: u64) -> Option<AtomHe
     } else {
         (u64::from(size32), 8_u64)
     };
-    // Reject pathological size: < header or overflows past container — fuzz
+    // Reject pathological size: < header or overflows past container. Fuzz
     // input `0:0:0:1, FF×12` triggers next_pos overflow without these guards.
     if real_size < header_bytes {
         return None;
@@ -117,7 +117,7 @@ pub(crate) fn mp4_read_duration(path: &str) -> Option<f64> {
     parse_mvhd_duration(&mut f, mvhd.data_offset)
 }
 
-// ── EBML (Matroska / WebM) ──
+// EBML: Matroska, WebM.
 
 const EBML_HEADER_ID: u32 = 0x1A45_DFA3;
 const SEGMENT_ID: u32 = 0x1853_8067;

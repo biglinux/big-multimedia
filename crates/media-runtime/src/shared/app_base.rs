@@ -1,4 +1,4 @@
-//! Bootstrap helpers shared by all binaries — env, gettext, locale,
+//! Bootstrap helpers shared by all binaries: env, gettext, locale,
 //! GResource registration, decoration-icon strip, About dialog builder.
 //! bigagents: app-local-adapter; binds app config, gettext, resources, settings.
 
@@ -93,7 +93,7 @@ pub fn ignore_repeated_pointer_motion(window: &impl glib::object::IsA<gtk::Windo
 /// Log which GSK renderer the display actually chose, once, when `window` maps.
 ///
 /// The players pin `GSK_RENDERER` at boot, but GTK silently falls back when the
-/// pinned renderer cannot be created — and the fallback decides whether frames
+/// pinned renderer cannot be created, and the fallback decides whether frames
 /// reach the compositor as a GPU dmabuf (`ngl`/`gl`) or as a per-frame software
 /// upload (`cairo`), which is the dominant per-frame CPU cost on an old GPU.
 /// This is the only place that says which one is really running.
@@ -129,7 +129,7 @@ pub fn init_gettext() {
     gettextrs::textdomain(config::GETTEXT_PACKAGE).expect("Failed to set textdomain");
 }
 
-/// Probe pt_BR (maintainer locale) — `/usr/share/locale` exists on Linux even
+/// Probe pt_BR (maintainer locale): `/usr/share/locale` exists on Linux even
 /// when our `.mo` files are not installed there.
 fn resolve_locale_dir() -> String {
     // Each player packages its own copy of the shared catalog under a private
@@ -218,7 +218,7 @@ pub fn apply_startup_color_scheme(
 }
 
 /// KDE Plasma's `icon:minimize,maximize,close` makes AdwHeaderBar render
-/// the app icon — modern libadwaita apps never show it. Strip the token.
+/// the app icon, which libadwaita apps never show. Strip the token.
 pub fn strip_decoration_icon() {
     let Some(settings) = gtk::Settings::default() else {
         return;

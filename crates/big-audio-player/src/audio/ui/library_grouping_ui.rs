@@ -2,7 +2,7 @@
 //!
 //! Three controls, left to right: a grouping-preset `DropDown`
 //! ([`LibraryGrouping::presets`]), an age-filter `DropDown` ([`AgeFilter::all`]),
-//! and a debounced `SearchEntry`. Each emits an `Output` intent — the shell owns
+//! and a debounced `SearchEntry`. Each emits an `Output` intent; the shell owns
 //! the query + tree rebuild; this bar never touches the DB. The grouping model
 //! ([`crate::audio::library_grouping`]) is reused; search uses GTK’s single debounce
 //! (no hand-rolled `glib::timeout`).
@@ -219,7 +219,7 @@ fn build_add_folder_button(sender: &ComponentSender<LibraryPanel>) -> gtk::Butto
 }
 
 /// GTK owns one debounce source, including cancellation when the field is cleared.
-/// A second timeout here used to republish a stale non-empty query after clear.
+/// A second timeout here would republish a stale non-empty query after clear.
 fn build_search_entry(sender: &ComponentSender<LibraryPanel>) -> gtk::SearchEntry {
     let entry = gtk::SearchEntry::builder()
         .placeholder_text(i18n("Filter…"))
@@ -283,7 +283,7 @@ mod tests {
     }
 
     #[test]
-    fn grouping_preset_index_falls_back_to_first_preset_for_custom_grouping() {
+    fn custom_grouping_selects_first_preset() {
         assert_eq!(
             grouping_preset_index(&LibraryGrouping::deserialize("format/year/genre")),
             0
@@ -291,7 +291,7 @@ mod tests {
     }
 
     #[test]
-    fn age_filter_button_child_uses_icon_only_for_all_time() {
+    fn all_time_filter_is_icon_only() {
         assert_eq!(age_filter_button_child(0), AgeFilterButtonChild::Icon);
         assert_eq!(age_filter_button_child(1), AgeFilterButtonChild::Label);
         assert_eq!(age_filter_button_child(5), AgeFilterButtonChild::Label);

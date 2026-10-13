@@ -1,4 +1,4 @@
-//! Audio player UI — full music player interface with library, playlist,
+//! Audio player UI: full music player interface with library, playlist,
 //! radio, podcast, lyrics, downloads, and queue views, built on Relm4.
 
 pub mod app;

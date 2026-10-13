@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# mem-leak-smoke.sh — big-audio-player memory-leak gate.
+# Memory-leak gate for big-audio-player.
 #
 # Drives each leak-prone open/close target through the shared RSS-slope detector
 # (~/.agents/scripts/mem-leak-check.sh): N open/close cycles of a dialog, verdict
@@ -8,11 +8,11 @@
 #
 # VM/disposable-host only contract (same as ui-action-smoke): the harness runs
 # a nested software-render weston (GSK_RENDERER=cairo, LIBGL_ALWAYS_SOFTWARE=1),
-# but launching the app + compositor still lingers procs — the quality gate only
+# but launching the app + compositor still leaves processes behind, so the gate only
 # wires this in under BIGAGENTS_RUN_UI_SMOKE=1.
 #
-# Targets verified clean 2026-06-19 (slope 0 KiB/open): preferences, appearance,
-# equalizer. Re-run on any GObject/closure change to the dialogs.
+# Targets: preferences, appearance, equalizer. Re-run on any GObject/closure
+# change to the dialogs.
 set -uo pipefail
 
 DETECT="${MEM_LEAK_CHECK:-$HOME/.agents/scripts/mem-leak-check.sh}"

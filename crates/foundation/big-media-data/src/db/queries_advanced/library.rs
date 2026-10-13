@@ -39,12 +39,11 @@ pub fn get_library_track_count(
 
     let mut stmt = conn.prepare(&sql)?;
     let params_ref = params_ref(&param_values);
-    // caveman: explicit ? converts rusqlite -> crate Error via #[from]
     let n: i64 = stmt.query_row(params_ref.as_slice(), |row| row.get(0))?;
     Ok(n)
 }
 
-/// Backs leaf nodes and the detail panel — same filter shape as
+/// Backs leaf nodes and the detail panel, with the same filter shape as
 /// `get_library_groups`.
 pub fn get_library_tracks(
     conn: &Connection,

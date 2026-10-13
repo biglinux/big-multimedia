@@ -136,7 +136,8 @@ impl Screenshots {
             }
         }
     }
-    /// ONLY after mpv_terminate_destroy: no writer can recreate these staging files.
+    /// Call only after mpv_terminate_destroy, when no writer can recreate these
+    /// staging files.
     pub(super) fn clear_after_termination(&self) {
         self.0
             .lock()

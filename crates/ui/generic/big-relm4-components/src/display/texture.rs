@@ -5,15 +5,15 @@
 //!
 //! Every BigLinux media surface (camera roll, file-manager preview, image
 //! viewer, video poster) ends at a `gtk::Picture` fed a `gdk::Texture`. This is
-//! the ONE canonical decode→texture conversion so apps don't re-roll the
+//! the canonical decode→texture conversion so apps don't re-roll the
 //! pixbuf→`MemoryTexture` boilerplate (and its rowstride / lifetime hazards) at
-//! every call site. GTK-only — no `image`-crate or media-runtime coupling.
+//! every call site. Depends on GTK only.
 
 use gtk::prelude::*;
 use relm4::gtk;
 
 /// Decoded image as tightly packed RGBA8 plus its dimensions. `Send`, so it can
-/// cross from a worker thread — where the `!Send` `Pixbuf` decode runs — back to
+/// cross from a worker thread, where the `!Send` `Pixbuf` decode runs, back to
 /// the GTK main thread, where [`rgba_to_texture`] wraps it in a `MemoryTexture`
 /// (the one step that must run on the main thread). This is how a file manager
 /// or gallery decodes thumbnails off the main loop without ever moving a
@@ -34,7 +34,7 @@ pub struct RgbaImage {
 }
 
 /// Pack a `Pixbuf` into tightly packed RGBA8 in [`gtk::gdk::MemoryTexture`] layout. No GTK
-/// texture is created, so — unlike [`pixbuf_to_texture`] — this is safe to call
+/// texture is created, so unlike [`pixbuf_to_texture`] this is safe to call
 /// on a worker thread (it touches only the `Pixbuf` and a plain buffer).
 ///
 /// Feeding GTK the pixbuf's padded rowstride (or borrowing its pixel bytes) is a

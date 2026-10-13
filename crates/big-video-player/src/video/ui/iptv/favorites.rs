@@ -1,8 +1,8 @@
-//! IPTV channel favorites — simple JSON set of channel URLs.
+//! IPTV channel favorites: a JSON set of channel URLs.
 //!
 //! Keyed by URL (not by channel name): the same name can appear in many
 //! providers with different stream endpoints, so URL is the only stable key
-//! across re-fetches. Favorites are intentionally a flat set — no grouping or
+//! across re-fetches. Favorites are a flat set with no grouping or
 //! ordering logic, just "starred or not".
 //!
 //! Engine-free helper (no GTK widgets).

@@ -176,14 +176,12 @@ pub fn load_thumbnail(video_path: &str) -> Option<(PathBuf, RgbaImage)> {
 
 thread_local! {
     /// Main-thread cache of decoded thumbnail textures, keyed by the thumbnail
-    /// FILE path (which already encodes the source path + mtime via `thumb_hash`,
+    /// file path (which already encodes the source path + mtime via `thumb_hash`,
     /// so it self-invalidates on edit/rename). The playlist grid and queue views
-    /// rebuild on every file-open and re-bind the same handful of videos; without
-    /// interning, each bind wrapped a FRESH `GdkTexture`, and every distinct
-    /// texture forced a new GSK GL-texture upload the renderer never reclaimed —
-    /// anonymous RSS grew ~1 MiB per file-open with no plateau. Returning one
-    /// canonical `GdkTexture` per thumb lets the renderer reuse its cached GL
-    /// texture instead.
+    /// rebuild on every file-open and re-bind the same handful of videos. Every
+    /// distinct `GdkTexture` costs a GSK GL-texture upload the renderer never
+    /// reclaims, so one canonical texture per thumb lets the renderer reuse its
+    /// cached GL texture and keeps memory flat across file-opens.
     static TEXTURE_CACHE: std::cell::RefCell<(
         std::collections::HashMap<PathBuf, gtk::gdk::Texture>,
         std::collections::VecDeque<PathBuf>,

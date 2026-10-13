@@ -99,7 +99,7 @@ pub fn uri_path(value: &str) -> &str {
     }
 }
 
-/// Privacy-first diagnostic wrapper. It intentionally logs only the scheme (or
+/// Privacy-first diagnostic wrapper. It logs only the scheme (or
 /// 'local media'), never the path, authority, query or fragment, which may all
 /// carry provider-specific credentials. The playback target itself is untouched.
 pub struct MediaLogTarget<'a>(pub &'a str);
@@ -134,7 +134,7 @@ fn redact_userinfo(base: &str) -> String {
 
 /// Best-effort known-parameter redaction (not a universal log sanitizer): the authority `userinfo`
 /// (`user:pass@`) and the values of sensitive query parameters (see
-/// `SENSITIVE_QUERY_KEYS` — e.g. Xtream `username`/`password`) become `***`.
+/// `SENSITIVE_QUERY_KEYS`, e.g. Xtream `username`/`password`) become `***`.
 /// Best-effort string rewrite that never fails; a non-URL string is returned
 /// unchanged apart from any `key=value` query pairs it recognizes.
 #[must_use]
@@ -226,7 +226,7 @@ mod tests {
     }
 
     #[test]
-    fn filename_from_url_path_keeps_last_segment_without_query() {
+    fn filename_is_last_path_segment() {
         assert_eq!(
             filename_from_url_path("https://example.test/a/b/song.flac?token=1", "fallback.mp3"),
             "song.flac"
@@ -250,7 +250,7 @@ mod tests {
     }
 
     #[test]
-    fn redact_masks_token_secret_and_key_case_insensitively() {
+    fn redact_masks_keys_case_insensitively() {
         assert_eq!(
             redact_url("https://api.test/v1?API_KEY=abc&Token=xyz&page=2"),
             "https://api.test/v1?API_KEY=***&Token=***&page=2"
@@ -297,7 +297,7 @@ mod tests {
         );
     }
     #[test]
-    fn authority_is_not_a_filename() {
+    fn authority_yields_no_filename() {
         assert_eq!(uri_path("https://radio.mp3"), "");
         assert_eq!(
             uri_path("HTTPS://radio/episode.MP3?sig=x#part"),

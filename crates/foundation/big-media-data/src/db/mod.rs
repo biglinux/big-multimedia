@@ -1,4 +1,4 @@
-//! SQLite database layer — schema migrations, track/playlist/podcast CRUD,
+//! SQLite database layer: schema migrations, track/playlist/podcast CRUD,
 //! and advanced search/filter queries.
 
 pub mod fts;
@@ -53,7 +53,7 @@ pub fn open_database() -> crate::Result<DbHandle> {
     Ok(Arc::new(Mutex::new(conn)))
 }
 
-/// Read-only WAL connection — concurrent reads don't block the writer.
+/// Read-only WAL connection; concurrent reads don't block the writer.
 pub fn open_read_connection() -> crate::Result<DbHandle> {
     let db_path = db_path();
     let conn = Connection::open_with_flags(
@@ -73,8 +73,8 @@ pub fn open_read_connection() -> crate::Result<DbHandle> {
 
 /// Default app-id used when the `BIG_MEDIA_DB_APP_ID` env var is unset.
 ///
-/// caveman: keep big-audio-player as default for backwards-compat. New
-/// apps (big-video-player, etc) must `export BIG_MEDIA_DB_APP_ID=...`
+/// big-audio-player stays the default so its existing database keeps
+/// opening. Other apps (big-video-player, etc) must `export BIG_MEDIA_DB_APP_ID=...`
 /// before calling `open_database`, or use [`db_path_for`] directly.
 const DEFAULT_APP_ID: &str = "big-audio-player";
 

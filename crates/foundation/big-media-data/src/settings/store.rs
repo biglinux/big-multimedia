@@ -376,7 +376,7 @@ impl Settings {
     }
 
     /// Whether any live settings owner has edits not confirmed as durable.
-    /// In a single-process host this intentionally covers all mounted players.
+    /// In a single-process host this covers all mounted players.
     pub fn any_unsaved() -> bool {
         let refs = OBSERVED
             .get()

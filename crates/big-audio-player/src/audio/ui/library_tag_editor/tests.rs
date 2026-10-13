@@ -39,7 +39,7 @@ fn optional_entry_text_trims_real_values() {
 }
 
 #[test]
-fn collect_tag_edit_fields_trims_text_and_parses_numbers() {
+fn tag_fields_trim_and_parse_numbers() {
     assert_eq!(
         collect_tag_edit_fields(TagEditFieldTextRefs {
             title: "  Song  ",
@@ -67,7 +67,7 @@ fn collect_tag_edit_fields_trims_text_and_parses_numbers() {
 }
 
 #[test]
-fn collect_tag_edit_fields_discards_blank_and_invalid_numbers() {
+fn tag_fields_drop_blank_and_invalid() {
     assert_eq!(
         collect_tag_edit_fields(TagEditFieldTextRefs {
             title: " ",
@@ -85,7 +85,7 @@ fn collect_tag_edit_fields_discards_blank_and_invalid_numbers() {
 }
 
 #[test]
-fn musicbrainz_lookup_requires_artist_and_missing_fillable_field() {
+fn lookup_needs_artist_and_empty_field() {
     assert!(should_offer_musicbrainz_lookup(true, false, true, true));
     assert!(should_offer_musicbrainz_lookup(true, true, false, true));
     assert!(should_offer_musicbrainz_lookup(true, true, true, false));
@@ -100,7 +100,7 @@ fn dirty_detection_compares_exact_text_values() {
 }
 
 #[test]
-fn read_only_metadata_rows_preserve_labels_values_and_file_path_flag() {
+fn read_only_rows_keep_values() {
     let rows = read_only_metadata_rows(&track_with_read_only_metadata());
 
     assert_eq!(
@@ -140,7 +140,7 @@ fn musicbrainz_fill_plan_fills_only_empty_fields() {
 }
 
 #[test]
-fn musicbrainz_fill_plan_reports_not_found_or_no_new_fields() {
+fn fill_plan_reports_empty_outcomes() {
     let metadata = MbMetadata {
         genre: Some("Rock".to_string()),
         year: Some(2026),
@@ -179,7 +179,7 @@ fn musicbrainz_result_requires_all_live_editor_widgets() {
 
 #[cfg(not(miri))]
 #[test]
-fn stale_tag_editor_handle_preserves_track_id_and_rejects_result() {
+fn stale_editor_rejects_result() {
     let handle = TagEditorHandle {
         track_id: 42,
         lookup_button: glib::WeakRef::new(),

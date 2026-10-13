@@ -329,7 +329,7 @@ fn rename_no_replace(src: &Path, dest: &Path) -> std::io::Result<()> {
         return Ok(());
     }
     let error = std::io::Error::last_os_error();
-    // Some filesystems (NFS, some FUSE) lack RENAME_NOREPLACE: keep the old
+    // Some filesystems (NFS, some FUSE) lack RENAME_NOREPLACE: fall back to
     // check-then-rename there rather than failing every rename.
     if error.raw_os_error() == Some(libc::EINVAL) {
         if dest.exists() {
@@ -373,7 +373,7 @@ mod tests {
     use super::{accepted_rename_name, move_file, rename_no_replace};
 
     #[test]
-    fn rename_and_move_never_replace_an_existing_file() {
+    fn rename_and_move_keep_existing_files() {
         let dir = std::env::temp_dir().join(format!("bvp-noreplace-{}", std::process::id()));
         let sub = dir.join("sub");
         std::fs::create_dir_all(&sub).unwrap();
@@ -402,7 +402,7 @@ mod tests {
     }
 
     #[test]
-    fn rename_name_rejects_empty_paths_and_traversal_names() {
+    fn rename_rejects_empty_and_traversal() {
         for input in ["", "   ", ".", "..", "nested/name.mp4", "bad\0name.mp4"] {
             assert_eq!(accepted_rename_name(input), None);
         }

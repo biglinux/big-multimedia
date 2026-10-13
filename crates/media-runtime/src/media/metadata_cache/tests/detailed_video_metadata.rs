@@ -103,7 +103,7 @@ fn parse_video_stream_formats_known_fields() {
 }
 
 #[test]
-fn parse_video_stream_ignores_zero_denominator_frame_rate() {
+fn zero_denominator_frame_rate_ignored() {
     let stream = json!({
         "codec_name": "h264",
         "r_frame_rate": "30000/0"
@@ -117,7 +117,7 @@ fn parse_video_stream_ignores_zero_denominator_frame_rate() {
 }
 
 #[test]
-fn parse_audio_stream_formats_channels_quality_and_title() {
+fn audio_stream_fields_are_formatted() {
     let stream = json!({
         "codec_name": "aac",
         "profile": "LC",
@@ -166,7 +166,7 @@ fn parse_subtitle_stream_formats_basic_fields() {
 }
 
 #[test]
-fn probe_detailed_video_metadata_reads_file_fields_and_groups_streams() {
+fn probe_groups_streams_by_kind() {
     let _environment_guard = PROBE_ENV_LOCK
         .lock()
         .expect("probe env lock should not be poisoned");

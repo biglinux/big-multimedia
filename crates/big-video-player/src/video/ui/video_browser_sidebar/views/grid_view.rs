@@ -116,7 +116,7 @@ fn build_card(state: &Rc<BrowserState>) -> gtk::Box {
 
     let overlay = gtk::Overlay::new();
     overlay.set_child(Some(&frame));
-    // ~16:9 so previews fill the card without the old short letterbox crop;
+    // ~16:9 so previews fill the card without a letterbox crop;
     // grows with the (resizable) sidebar width.
     overlay.set_height_request(132);
 

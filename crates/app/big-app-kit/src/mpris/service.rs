@@ -335,7 +335,7 @@ impl Drop for Mpris {
         // Order matters: release the bus name FIRST (with the connection
         // alive), THEN close the private connection. Closing first makes
         // GLib fire the name-lost callback with a NULL connection, which
-        // panics in gio's closure trampoline — a non-unwinding abort.
+        // panics in gio's closure trampoline: a non-unwinding abort.
         if let Some(owner_id) = self.owner_id.take() {
             gio::bus_unown_name(owner_id);
         }
@@ -347,7 +347,7 @@ impl Drop for Mpris {
 mod tests {
     use super::*;
     #[test]
-    fn known_roots_are_typed_unknowns_do_not_dispatch() {
+    fn only_known_roots_dispatch() {
         assert_eq!(root_method_command("Raise"), Some(MprisCommand::Raise));
         assert_eq!(root_method_command("Bogus"), None);
     }

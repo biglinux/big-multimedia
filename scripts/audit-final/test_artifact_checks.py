@@ -30,7 +30,7 @@ class ArchiveTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "Empty TAR"):
             inspect_source(self.path)
 
-    def test_readme_only_is_not_source(self):
+    def test_readme_alone_is_rejected(self):
         self.archive({"source/README.md": b"all done"})
         with self.assertRaises(ValueError):
             inspect_source(self.path, min_files=1)
@@ -62,7 +62,7 @@ class ArchiveTests(unittest.TestCase):
         with self.assertRaisesRegex(ValueError, "Manifest mismatch"):
             inspect_source(self.path, min_files=3, manifest=manifest)
 
-    def test_fonts_are_not_included(self):
+    def test_fonts_are_excluded(self):
         self.archive({"source/private.ttf": b"not a distributable font"})
         with self.assertRaisesRegex(ValueError, "Font"):
             inspect_source(self.path, min_files=1)

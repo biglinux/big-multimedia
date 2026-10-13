@@ -318,7 +318,7 @@ mod tests {
     }
 
     #[test]
-    fn file_metadata_preserves_identity_history_and_known_duration() {
+    fn file_metadata_keeps_identity_and_duration() {
         let mut track = Track::new_external_path("song.flac");
         track.id = 42;
         track.rating = 5;

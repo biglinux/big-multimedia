@@ -2,8 +2,6 @@
 
 use big_app_kit::subprocess::{BigSubprocessError, BigSubprocessSpec};
 
-// ── subprocess argv ────────────────────────────────────────────────
-
 fn assert_rejects(byte: u8) {
     let argument_with_forbidden_byte = format!("safe-prefix{}suffix", byte as char);
     let subprocess_spec = BigSubprocessSpec::builder()
@@ -63,7 +61,7 @@ fn argv_accepts_normal_strings() {
 
 #[test]
 fn argv_accepts_tab() {
-    // Tab is allowed — only NUL/LF/CR/DEL rejected.
+    // Tab is allowed; only NUL, LF, CR and DEL are rejected.
     let subprocess_spec = BigSubprocessSpec::builder()
         .program("printf")
         .arg("a\tb")

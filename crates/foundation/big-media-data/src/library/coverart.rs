@@ -1,4 +1,4 @@
-//! Cover Art Archive fallback — fetch album art from MusicBrainz + CAA.
+//! Cover Art Archive fallback: fetch album art from MusicBrainz + CAA.
 //! Free API, no key needed. Rate limit: 1 req/sec (enforced via User-Agent).
 //! Data is CC0 licensed.
 
@@ -40,14 +40,14 @@ fn build_caa_url(mbid: &str) -> String {
 type Lookup = (String, String, Option<Vec<u8>>, Instant);
 
 /// Albums already looked up this session, newest last. Without it every track
-/// of an album lacking embedded art asked MusicBrainz again — two requests and
-/// a 1.1 s pause per track change.
+/// of an album lacking embedded art would ask MusicBrainz again: two requests
+/// and a 1.1 s pause per track change.
 static LOOKUPS: Mutex<Vec<Lookup>> = Mutex::new(Vec::new());
 const LOOKUPS_KEPT: usize = 64;
 /// A miss may be the network, not the archive: ask again after this long.
 const MISS_RETRY: Duration = Duration::from_secs(600);
 
-/// Blocking — call from a background thread.
+/// Blocking; call from a background thread.
 pub fn fetch_cover_art(artist: &str, album: &str) -> Option<Vec<u8>> {
     {
         let lookups = LOOKUPS.lock().unwrap_or_else(PoisonError::into_inner);
@@ -78,7 +78,7 @@ fn fetch_uncached(artist: &str, album: &str) -> Option<Vec<u8>> {
     let body = http_get_json(&build_mb_search_url(artist, album))?;
     let mbid = extract_release_mbid(&body)?;
 
-    // MusicBrainz: 1 req/sec — pace before the next call.
+    // MusicBrainz allows 1 req/sec: pace before the next call.
     std::thread::sleep(Duration::from_millis(1100));
 
     let caa_url = build_caa_url(&mbid);

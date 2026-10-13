@@ -7,7 +7,7 @@ use super::MpvBackend;
 use big_mpv_render::{MpvPropertyValue, render_profile_properties};
 
 impl MpvBackend {
-    /// Profiles: `"default"` (lean/fast — bilinear, audio sync),
+    /// Profiles: `"default"` (lean/fast: bilinear, audio sync),
     /// `"balanced"` (lanczos, correct-downscaling),
     /// `"high-quality"` (ewa_lanczossharp, display-resample, interpolation).
     pub fn apply_render_profile(&self, profile: &str) {

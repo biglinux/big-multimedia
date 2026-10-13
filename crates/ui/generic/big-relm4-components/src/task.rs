@@ -18,7 +18,7 @@ use relm4::gtk;
 /// back ON the main thread.
 ///
 /// `task` must be `Send` (it crosses to a worker thread); `on_result` need not
-/// be — it runs on the GLib main loop, so it can touch `!Send` GTK objects and
+/// be: it runs on the GLib main loop, so it can touch `!Send` GTK objects and
 /// `Rc` UI state. Use a trailing-edge debouncer
 /// ([`crate::input::debounce::BigDebouncedAction`]) before this for slider /
 /// spin-button storms, and a generation/stale guard in `on_result` when rapid
@@ -36,7 +36,7 @@ where
     });
 }
 
-/// Fire-and-forget variant of [`spawn_blocking_result`] — runs `task` off the
+/// Fire-and-forget variant of [`spawn_blocking_result`]: runs `task` off the
 /// main thread and discards the result.
 pub fn spawn_blocking_task<B>(task: B)
 where

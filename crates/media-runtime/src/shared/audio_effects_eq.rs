@@ -136,7 +136,7 @@ pub fn create_equalizer_content(
         }
     }
 
-    // ── Preset selector (top, prominent) ──
+    // Preset selector, at the top.
     let preset_box = gtk::Box::builder()
         .orientation(gtk::Orientation::Horizontal)
         .spacing(8)
@@ -172,7 +172,7 @@ pub fn create_equalizer_content(
 
     main_box.append(&preset_box);
 
-    // ── EQ sliders area: dB scale on left + 10 band sliders ──
+    // EQ sliders: dB scale on the left, then the 10 band sliders.
     let eq_area = gtk::Box::builder()
         .orientation(gtk::Orientation::Horizontal)
         .spacing(4)
@@ -297,7 +297,7 @@ pub fn create_equalizer_content(
     eq_area.append(&sliders_box);
     main_box.append(&eq_area);
 
-    // ── Frequency range labels: Bass / Mids / Highs ──
+    // Frequency range labels: Bass, Mids, Highs.
     let range_box = gtk::Box::builder()
         .orientation(gtk::Orientation::Horizontal)
         .halign(gtk::Align::Center)
@@ -318,7 +318,7 @@ pub fn create_equalizer_content(
     }
     main_box.append(&range_box);
 
-    // ── Preset combo handler ──
+    // Preset combo handler.
     {
         let adjs = eq_adjs.clone();
         let gains = eq_gains.clone();
@@ -363,7 +363,7 @@ pub fn create_equalizer_content(
         });
     }
 
-    // ── Reset button handler ──
+    // Reset button handler.
     {
         let adjs = eq_adjs;
         let gains = eq_gains;

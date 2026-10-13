@@ -64,7 +64,7 @@ fn count_tracks(conn: &Connection) -> i64 {
 }
 
 #[test]
-fn hostile_filter_text_does_not_drop_table() {
+fn hostile_filter_text_keeps_tables() {
     let conn = setup();
     let initial = count_tracks(&conn);
     assert_eq!(initial as usize, HOSTILE_FILENAMES.len());

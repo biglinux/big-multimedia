@@ -64,7 +64,7 @@ impl SharedMprisState {
     }
 }
 
-/// This player caches `artUrl` as a local `file://` URI — write the art bytes to
+/// This player caches `artUrl` as a local `file://` URI: write the art bytes to
 /// the app cache and return the URL. Refuses to write when `dirs::cache_dir()`
 /// is unavailable rather than falling back to world-writable `/tmp`.
 ///
@@ -134,7 +134,7 @@ pub(crate) fn save_mpris_art(data: &[u8]) -> Option<String> {
 mod identity_tests {
     use super::*;
     #[test]
-    fn load_occurrences_do_not_share_track_id() {
+    fn each_load_gets_own_track_id() {
         let state = SharedMprisState::default();
         state.selected();
         let first = state.track_id.lock().unwrap().clone();

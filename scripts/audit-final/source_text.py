@@ -23,7 +23,7 @@ class Source(str):
     """Source text whose substring operations ignore whitespace.
 
     The instance *is* the compacted text, so positions returned by `find` are
-    comparable with each other — which is all the ordering contracts need.
+    comparable with each other, which is all the ordering contracts need.
     """
 
     def __new__(cls, text: str):

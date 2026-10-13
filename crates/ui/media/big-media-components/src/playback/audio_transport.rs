@@ -6,7 +6,7 @@
 //! Unlike a video transport, the audio one
 //! carries hover-driven volume/speed/voice controls, shuffle/repeat toggles,
 //! a lyrics toggle and a playlist button, plus a status label and a blurred
-//! album-art background — and it has no fullscreen or frame-step controls.
+//! album-art background, and it has no fullscreen or frame-step controls.
 //!
 //! This builder owns the widget tree only. mpv/MPRIS/settings side effects and
 //! the hover popovers are wired by the consuming app against the exposed
@@ -124,7 +124,7 @@ impl BigAudioTransport {
             .css_classes(["toolbar", "playback-bar"])
             .build();
 
-        // ── Seek row: position · scale · duration ──
+        // Seek row: position, scale, duration.
         let (seek_bar, cut_timeline, bar_stack, position_label, duration_label) =
             build_seek_row(labels);
         let seek_row = gtk::Box::builder()
@@ -139,7 +139,6 @@ impl BigAudioTransport {
         seek_row.append(&duration_label);
         playback_bar.append(&seek_row);
 
-        // ── Controls row (CenterBox) ──
         let controls_row = gtk::CenterBox::builder()
             .margin_start(12)
             .margin_end(12)
@@ -237,7 +236,7 @@ impl BigAudioTransport {
 
         playback_bar.append(&controls_row);
 
-        // ── Overlay: blurred album-art background behind the bar ──
+        // Blurred album-art background behind the bar.
         // Expand + FILL on both axes so the cover always covers the full bar
         // regardless of its intrinsic aspect ratio.
         let blur_bg = gtk::Picture::builder()

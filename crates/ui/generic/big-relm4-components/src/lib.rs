@@ -5,14 +5,14 @@
 //!
 //! # Module map
 //!
-//! - [`display`] — sleep timer dialog and texture conversion.
-//! - [`feedback`] — popovers and the custom tooltip.
-//! - [`input`] — sliders, dropdown rows, shortcut capture and the zone-layout editor.
-//! - [`layout`] — media window chrome, dialogs, menus and toolbar panes.
-//! - [`list`] — `AdwActionRow` derivatives.
-//! - [`task`] — off-main-thread work with main-thread delivery.
-//! - [`text`], [`time`] — markup escaping and duration formatting.
-//! - [`theme`] — theme helpers shared by both players.
+//! - [`display`]: sleep timer dialog and texture conversion.
+//! - [`feedback`]: popovers and the custom tooltip.
+//! - [`input`]: sliders, dropdown rows, shortcut capture and the zone-layout editor.
+//! - [`layout`]: media window chrome, dialogs, menus and toolbar panes.
+//! - [`list`]: `AdwActionRow` derivatives.
+//! - [`task`]: off-main-thread work with main-thread delivery.
+//! - [`text`], [`time`]: markup escaping and duration formatting.
+//! - [`theme`]: theme helpers shared by both players.
 
 #![deny(missing_docs)]
 

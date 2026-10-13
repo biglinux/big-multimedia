@@ -1,7 +1,7 @@
 //! App-local Relm4 glue for the audio player.
 //!
 //! Reusable player panels live in the `big-player-ui` crate (lyrics, playback
-//! bar, podcast, downloads, file browser, radio) — engine-free, so other media
+//! bar, podcast, downloads, file browser, radio). They are engine-free, so other media
 //! apps can reuse them. Only app-specific wiring stays here: the `AudioShell`
 //! root and the library/playlist composition.
 

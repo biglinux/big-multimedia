@@ -10,12 +10,12 @@
 //!
 //! Two hooks, both needed (signal-level equivalent of the dispose-vfunc
 //! pattern for code that does not subclass):
-//! - `unrealize` — fires early (widget leaves the tree / toplevel closes),
-//!   but ONLY for widgets that were realized; a control on a never-shown
-//!   stack page never realizes, so unrealize alone misses it (measured:
-//!   the converter's zoom button on the hidden audio-edit page).
-//! - `destroy` — emitted at the start of the widget's dispose, in time to
-//!   unparent before the finalize check. Sufficient alone ONLY when the
+//! - `unrealize`: fires early (widget leaves the tree / toplevel closes),
+//!   but only for widgets that were realized; a control on a never-shown
+//!   stack page never realizes, so unrealize alone misses it (the
+//!   converter's zoom button on the hidden audio-edit page).
+//! - `destroy`: emitted at the start of the widget's dispose, in time to
+//!   unparent before the finalize check. Sufficient alone only when the
 //!   parent actually disposes; an external strong ref (module registries,
 //!   controllers) delays dispose indefinitely, which is why unrealize is
 //!   kept as the early path.

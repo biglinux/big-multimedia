@@ -1,8 +1,6 @@
 //! Static idle background sourced from the desktop wallpaper.
 //!
-//! Replaces the old CPU-hungry animated gradient (a 33 ms CSS tick that redrew
-//! five layered gradients every frame — costly under software rendering). The
-//! desktop's active wallpaper is detected, blurred + darkened with ffmpeg, and
+//! The desktop's active wallpaper is detected, blurred + darkened with ffmpeg, and
 //! cached under `~/.cache/big-video-player/`; the cached image is then shown as
 //! a STATIC background behind the welcome screen when no video plays. The base
 //! `.idle-bg` gradient in `style.css` is the fallback when no wallpaper resolves
@@ -22,7 +20,7 @@ use gtk::glib;
 use super::osd::IdleBackground;
 
 /// Image extensions accepted as wallpapers (lower-case match). Mirrors
-/// big-shell's `WALLPAPER_EXTENSIONS` (incl. `heic`/`jxl` — BigShell's default
+/// big-shell's `WALLPAPER_EXTENSIONS` (incl. `heic`/`jxl`, since BigShell's default
 /// wallpapers are HEIC) plus the extra raster types ffmpeg can also blur.
 const IMAGE_EXTS: &[&str] = &[
     "jpg", "jpeg", "png", "webp", "bmp", "tiff", "avif", "heic", "jxl", "svg",
@@ -35,7 +33,7 @@ const WALLPAPER_SCAN_DEPTH: usize = 4;
 
 /// Kick off desktop-wallpaper detection + blur on a worker thread, then apply
 /// the cached blurred image as the idle background once it is ready. No-op on
-/// any failure — the static gradient fallback stays in place.
+/// any failure: the static gradient fallback stays in place.
 pub(super) fn spawn_apply(idle_bg: Rc<IdleBackground>) {
     let (sender, receiver) = async_channel::bounded::<PathBuf>(1);
     // Worker: detection + ffmpeg blur are blocking (disk read + a subprocess),
@@ -77,7 +75,7 @@ fn resolve_blurred_wallpaper() -> Option<PathBuf> {
 
 /// Best-effort active-wallpaper detection across the desktops BigLinux ships /
 /// runs on: **BigShell first** (its `shell.json` is authoritative when the
-/// player runs inside a BigShell session — directly or as a big-host module),
+/// player runs inside a BigShell session, directly or as a big-host module),
 /// then KDE Plasma, then GNOME. `None` on anything else.
 fn detect_wallpaper() -> Option<PathBuf> {
     detect_bigshell_wallpaper()
@@ -92,9 +90,8 @@ fn detect_wallpaper() -> Option<PathBuf> {
 ///
 /// Resolution, in order: the explicit `wallpaper.image_path` from
 /// `~/.config/big-shell/shell.json` when set + present, otherwise BigShell's
-/// system-wallpaper default (the previous code stopped at a null `image_path`
-/// and fell through to Plasma — which is why a default config, where
-/// `image_path` is null, showed the wrong wallpaper). Returns `None` only when
+/// system-wallpaper default, since a default config leaves `image_path` null.
+/// Returns `None` only when
 /// `shell.json` is absent (not a BigShell session) so the Plasma/GNOME
 /// detectors still run there.
 fn detect_bigshell_wallpaper() -> Option<PathBuf> {
@@ -259,7 +256,7 @@ fn ensure_blurred(source: &Path) -> Option<PathBuf> {
     let mut hasher = std::collections::hash_map::DefaultHasher::new();
     source.hash(&mut hasher);
     mtime.hash(&mut hasher);
-    // Named apart from the old shape-keeping blur, which it replaces.
+    // A prefix apart from the `wallpaper-blur-` files, which are swept below.
     let name = format!("wallpaper-colours-{:016x}.png", hasher.finish());
     if let Ok(entries) = std::fs::read_dir(&cache_dir) {
         for entry in entries.flatten() {
@@ -327,7 +324,7 @@ pub(super) fn tv_backdrop(video: &str, seconds: f64) -> Option<PathBuf> {
 }
 
 /// Blur + darken `source` into `dest`. Tries ffmpeg directly; if that fails
-/// because ffmpeg lacks the decoder (always for SVG; often for HEIC/AVIF — and
+/// because ffmpeg lacks the decoder (always for SVG; often for HEIC/AVIF, and
 /// BigShell's default wallpapers are HEIC), rasterizes to PNG first (rsvg for
 /// SVG, ImageMagick otherwise) then blurs the raster.
 fn blur_to(source: &Path, dest: &Path) -> Option<PathBuf> {
@@ -349,7 +346,7 @@ fn blur_to(source: &Path, dest: &Path) -> Option<PathBuf> {
 }
 
 /// Rasterize `source` (HEIC/AVIF/anything ImageMagick decodes) to PNG `dest` via
-/// ImageMagick — `magick` (IM7) or `convert` (IM6). `true` on a non-empty result.
+/// ImageMagick: `magick` (IM7) or `convert` (IM6). `true` on a non-empty result.
 fn rasterize_magick(source: &Path, dest: &Path) -> bool {
     ["magick", "convert"].into_iter().any(|binary| {
         produced(
@@ -483,7 +480,7 @@ mod tests {
     }
 
     #[test]
-    fn is_image_path_matches_known_extensions_case_insensitive() {
+    fn image_extensions_ignore_case() {
         assert!(is_image_path(Path::new("/x/a.JPG")));
         assert!(is_image_path(Path::new("/x/b.png")));
         assert!(!is_image_path(Path::new("/x/c.txt")));
@@ -493,8 +490,8 @@ mod tests {
     #[test]
     fn xdg_dir_prefers_env_then_home_default() {
         // Empty env value is ignored in favour of the HOME-based default.
-        // (We only assert the default branch shape — env mutation in tests is
-        // racy, so just verify the fallback joins the default segment.)
+        // Env mutation in tests is racy, so only check that the fallback joins
+        // the default segment.
         let dir = xdg_dir("BIG_VIDEO_PLAYER_NONEXISTENT_ENV", ".cache");
         assert!(dir.ends_with(".cache"));
     }

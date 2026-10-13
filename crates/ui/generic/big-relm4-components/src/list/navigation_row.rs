@@ -12,7 +12,7 @@ use super::row_core::{action_label_or_title, row_text};
 
 const DEFAULT_TRAILING_ICON: &str = "go-next-symbolic";
 
-/// Data used to build a navigation row.
+/// Inputs for building a navigation row.
 #[non_exhaustive]
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct BigNavigationRowSpec {

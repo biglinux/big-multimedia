@@ -65,13 +65,7 @@ struct VoicePopoverSpec {
     initial_strength_percent: f64,
 }
 
-// ── off-thread task helpers ────────────────────────────────────────────────
-
-// Promoted to `big_relm4_components::task` so non-media GTK apps reuse them;
-// re-exported here for the existing media callers.
 pub use big_relm4_components::task::{spawn_blocking_result, spawn_blocking_task};
-
-// ── play button ────────────────────────────────────────────────────────────
 
 /// Briefly pulse the play/pause button (CSS class for ~250ms).
 pub fn pulse_play_button(button: &gtk::Button) {
@@ -81,8 +75,6 @@ pub fn pulse_play_button(button: &gtk::Button) {
         pulsed_button.remove_css_class(play_button_pulse_css_class());
     });
 }
-
-// ── popovers ───────────────────────────────────────────────────────────────
 
 /// Cycled by clicking the speed button while popover is open.
 pub const SPEED_PRESETS: &[f64] = &[1.0, 1.25, 1.50, 1.75, 2.0];
@@ -379,7 +371,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn play_button_pulse_contract_names_class_and_duration() {
+    fn play_pulse_names_class_and_duration() {
         assert_eq!(play_button_pulse_css_class(), "play-pulse");
         assert_eq!(play_button_pulse_duration(), Duration::from_millis(250));
     }
@@ -401,7 +393,7 @@ mod tests {
     }
 
     #[test]
-    fn trough_style_provider_priority_stays_above_user_css() {
+    fn trough_provider_outranks_user_css() {
         assert_eq!(
             trough_style_provider_priority(),
             gtk::STYLE_PROVIDER_PRIORITY_USER + 2
@@ -410,7 +402,7 @@ mod tests {
     }
 
     #[test]
-    fn speed_popover_spec_and_preset_cycle_match_player_controls() {
+    fn speed_popover_matches_player_controls() {
         let spec = speed_scale_popover_spec();
 
         assert_eq!(spec.title, "Speed");
@@ -429,7 +421,7 @@ mod tests {
     }
 
     #[test]
-    fn voice_popover_spec_and_preset_cycle_match_noise_controls() {
+    fn voice_popover_matches_noise_controls() {
         let spec = voice_popover_spec(70.0);
 
         assert_eq!(spec.title, "Voice");

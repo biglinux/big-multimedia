@@ -7,7 +7,7 @@
 //! shader/upscaler choices persist through `Settings`. Filter-string and
 //! shader-percentage math is the testable `filter_specs` module.
 //!
-//! Self-contained: the dialog owns no playback state and emits no intents — it
+//! Self-contained: the dialog owns no playback state and emits no intents; it
 //! mutates the mpv filter chain in place. The shell
 //! launches it `.detach()`ed and presents its widget in an `adw::Dialog`.
 
@@ -34,7 +34,7 @@ pub struct VideoFiltersDialogInit {
     pub settings: Settings,
 }
 
-/// The filters dialog has no inbound messages — every control wires itself to
+/// The filters dialog has no inbound messages: every control wires itself to
 /// mpv on construction.
 #[derive(Debug)]
 pub enum VideoFiltersDialogInput {}

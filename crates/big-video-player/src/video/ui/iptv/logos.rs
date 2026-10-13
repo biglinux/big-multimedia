@@ -65,7 +65,7 @@ fn extension_from_url(url: &str) -> Option<&'static str> {
 ///
 /// Returns the logo bytes: the on-disk cache first (no network), else a headered
 /// HTTP GET whose result is written back to the cache. Meant to run **off the
-/// main thread** — `MediaListView` calls it on a worker for visible rows only,
+/// main thread**: `MediaListView` calls it on a worker for visible rows only,
 /// then decodes + memory-caches the texture and cancels on recycle. No-op
 /// (`None`) for an empty URL or on fetch failure.
 #[must_use]

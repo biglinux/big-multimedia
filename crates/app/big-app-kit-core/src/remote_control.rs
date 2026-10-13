@@ -11,7 +11,7 @@
 //! POST /<token>/volume?v=75 -> 0..100
 //! ```
 //!
-//! Requests outside `/<token>/...` are answered with 404 — the token is
+//! Requests outside `/<token>/...` are answered with 404. The token is
 //! per-session and shared with the phone only through the QR code, so LAN
 //! neighbors cannot guess the URL.
 
@@ -603,7 +603,7 @@ mod tests {
     }
 
     #[test]
-    fn token_failure_is_closed_and_routes_have_an_exact_boundary() {
+    fn token_routes_fail_closed() {
         assert!(token_from_reader(std::io::Cursor::new([])).is_err());
         assert!(route("/secret-extra/status", "secret").is_none());
         assert_eq!(route("/secret/status", "secret"), Some("status"));
@@ -670,7 +670,7 @@ mod tests {
 
     #[test]
     #[cfg_attr(miri, ignore)]
-    fn local_http_routes_dispatch_handlers_and_render_responses() {
+    fn http_routes_dispatch_to_handlers() {
         // This is a live loopback TCP integration test. Miri can execute the
         // pure route helpers above, but socket readiness is outside its UB model.
         let play_pause_count = Arc::new(AtomicUsize::new(0));
@@ -819,7 +819,7 @@ mod slow_peer_tests {
         }
     }
     #[test]
-    fn rate_limit_is_bounded_and_resets_by_window_not_each_byte() {
+    fn rate_limit_resets_per_window() {
         let now = Instant::now();
         let mut rate = Rate {
             start: now,
@@ -832,7 +832,7 @@ mod slow_peer_tests {
         assert!(rate.allow(now + Duration::from_secs(1), 8));
     }
     #[test]
-    fn denied_gui_admission_is_not_a_success_response() {
+    fn denied_admission_returns_503() {
         let req =
             parse_request(b"POST /token/next HTTP/1.1\r\nHost: localhost\r\nX-Big-Media-Remote: 1")
                 .unwrap();
@@ -848,7 +848,7 @@ mod slow_peer_tests {
 
     #[test]
     #[cfg_attr(miri, ignore)]
-    fn absolute_header_deadline_is_not_extended_by_activity() {
+    fn header_deadline_ignores_activity() {
         let server = start_scoped(
             "127.0.0.1:0".parse().unwrap(),
             handlers(true),
@@ -866,7 +866,7 @@ mod slow_peer_tests {
 
     #[test]
     #[cfg_attr(miri, ignore)]
-    fn slow_peers_do_not_block_status_and_stop_releases_sockets() {
+    fn slow_peers_leave_server_responsive() {
         let server = start_scoped(
             "127.0.0.1:0".parse().unwrap(),
             handlers(true),

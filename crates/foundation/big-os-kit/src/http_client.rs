@@ -59,7 +59,7 @@ struct CurlHeaders {
     content_length: Option<u64>,
 }
 
-/// DNS/lookup failures are permanent per invocation — never retry.
+/// DNS/lookup failures are permanent per invocation; never retry.
 fn is_dns_error(err: &str) -> bool {
     err.contains("code 6")
         || err.contains("Could not resolve host")
@@ -145,7 +145,7 @@ fn http_get_with_retry_timeout(url: &str, timeout: Duration) -> Option<String> {
     None
 }
 
-/// `Accept: application/json` — MusicBrainz/CoverArtArchive return XML
+/// `Accept: application/json`, since MusicBrainz/CoverArtArchive return XML
 /// otherwise. Body parsing left to callers; same retry as `http_get_with_retry`.
 pub fn http_get_json(url: &str) -> Option<String> {
     http_get_text_with_headers(
@@ -414,7 +414,7 @@ fn curl_stream(
 }
 fn base_curl(timeout: Duration) -> Command {
     let mut command = Command::new(CURL);
-    // --disable MUST be the first parameter. All untrusted values go through
+    // curl honors --disable only as the first parameter. All untrusted values go through
     // stdin configuration; none are command-line arguments or environment values.
     command
         .args([
@@ -656,7 +656,7 @@ mod tests {
     }
 
     #[test]
-    fn timeout_error_not_dns() {
+    fn timeout_is_distinct_from_dns() {
         assert!(!is_dns_error("curl exited with code 28"));
     }
 
@@ -669,7 +669,7 @@ mod tests {
     }
 
     #[test]
-    // Empty headers intentionally delegate into the system curl retry path.
+    // Empty headers delegate to the system curl retry path.
     #[cfg_attr(miri, ignore)]
     fn empty_headers_delegate_to_retry() {
         let headers = RequestHeaders::default();
@@ -727,7 +727,7 @@ mod tests {
 mod transport_contract_tests {
     use super::*;
     #[test]
-    fn config_keeps_secrets_off_argv_and_treats_at_sign_literally() {
+    fn curl_config_keeps_secrets_off_argv() {
         let config = request_config(
             "https://example.invalid/?token=secret",
             &RequestHeaders::default(),

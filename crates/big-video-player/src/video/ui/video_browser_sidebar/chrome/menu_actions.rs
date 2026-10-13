@@ -14,7 +14,7 @@ use crate::settings::keys;
 pub(crate) fn install_menu_actions(state: &Rc<BrowserState>, group: &gio::SimpleActionGroup) {
     use glib::prelude::ToVariant;
 
-    // Shuffle — boolean toggle. mpv plays in random order; the listing keeps
+    // Shuffle: boolean toggle. mpv plays in random order; the listing keeps
     // its folder order.
     let shuffle = gio::SimpleAction::new_stateful(
         "shuffle",
@@ -38,7 +38,7 @@ pub(crate) fn install_menu_actions(state: &Rc<BrowserState>, group: &gio::Simple
     });
     group.add_action(&shuffle);
 
-    // Repeat — radio (no / file / playlist).
+    // Repeat: radio (no / file / playlist).
     let repeat = gio::SimpleAction::new_stateful(
         "loop",
         Some(glib::VariantTy::STRING),
@@ -59,7 +59,7 @@ pub(crate) fn install_menu_actions(state: &Rc<BrowserState>, group: &gio::Simple
     });
     group.add_action(&repeat);
 
-    // Include subfolders — boolean toggle; re-scans the current folder.
+    // Include subfolders: boolean toggle; re-scans the current folder.
     let recursive = gio::SimpleAction::new_stateful(
         "recursive",
         None,
@@ -87,7 +87,7 @@ pub(crate) fn install_menu_actions(state: &Rc<BrowserState>, group: &gio::Simple
     });
     group.add_action(&recursive);
 
-    // Sort key — radio (name / date / size).
+    // Sort key: radio (name / date / size).
     let sort = gio::SimpleAction::new_stateful(
         "sort",
         Some(glib::VariantTy::STRING),
@@ -105,7 +105,7 @@ pub(crate) fn install_menu_actions(state: &Rc<BrowserState>, group: &gio::Simple
     });
     group.add_action(&sort);
 
-    // Reverse order — boolean toggle; re-applies the sort descending.
+    // Reverse order: boolean toggle; re-applies the sort descending.
     let reverse = gio::SimpleAction::new_stateful(
         "reverse",
         None,

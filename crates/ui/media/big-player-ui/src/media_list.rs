@@ -1,11 +1,8 @@
 //! Virtualized media list shared by the radio and podcast panels.
 //!
-//! The old panels built one `AdwActionRow` per station/feed into a `ListBox`
-//! up front (hundreds of widget trees), and fired a favicon/artwork/feed-title
-//! fetch for EVERY row at render time — an off-thread fetch storm that
-//! saturated the blocking pool and the network whether or not the row was on
-//! screen. This replaces that with the GTK4 recycling view (the same idiom as
-//! the big-shell menu's `AppView`): a `GListModel` of lightweight
+//! Uses the GTK4 recycling view (the same idiom as the big-shell menu's
+//! `AppView`) so the panels never build hundreds of row widgets up front or
+//! fetch artwork for rows that are off screen: a `GListModel` of lightweight
 //! `MediaListRowModel` row models feeds a `ListView` through a
 //! `SignalListItemFactory`, so only the ~visible rows ever become widgets and
 //! only their images are fetched (lazily, in `bind`, cancelled on recycle).
@@ -173,7 +170,7 @@ const NOW_PLAYING_CLASS: &str = "radio-now-playing";
 /// A recycling media list. Replace its contents with [`set_items`](Self::set_items);
 /// update the highlight with [`set_now_playing`](Self::set_now_playing).
 pub struct MediaListView {
-    /// The `ListView` — the caller parks it in a `ScrolledWindow`.
+    /// The `ListView`; the caller parks it in a `ScrolledWindow`.
     pub widget: gtk::Widget,
     store: gtk::gio::ListStore,
     now_playing: Rc<RefCell<String>>,

@@ -69,13 +69,13 @@ pub fn api_servers() -> Vec<String> {
 }
 
 /// The user's raw comma-separated server override (empty = DNS discovery). Cheap
-/// settings read — safe on the main thread before spawning the blocking resolve.
+/// settings read, safe on the main thread before spawning the blocking resolve.
 pub fn settings_servers_raw(settings: &crate::settings::Settings) -> String {
     settings.string(SETTINGS_KEY_SERVERS)
 }
 
 /// Resolve the API server list from the raw override. Falls back to blocking DNS
-/// discovery when no override is set — call this OFF the main thread.
+/// discovery when no override is set; call this off the main thread.
 pub fn api_servers_from_raw(raw: &str) -> Vec<String> {
     let configured: Vec<String> = raw
         .split(',')
@@ -120,7 +120,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn default_servers_not_empty() {
+    fn default_servers_exist() {
         assert!(!DEFAULT_SERVERS.is_empty());
     }
 

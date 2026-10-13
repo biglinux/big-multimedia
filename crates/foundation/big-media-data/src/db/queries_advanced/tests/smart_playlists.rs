@@ -54,7 +54,7 @@ fn never_played_empty() {
     assert!(get_never_played(&conn, 10).unwrap().is_empty());
 }
 
-// ── curated-query results (not just the empty-DB case) ──────────────────────
+// Curated-query results on a populated database.
 
 #[test]
 fn most_played_orders_desc_and_excludes_unplayed() {

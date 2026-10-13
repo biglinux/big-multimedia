@@ -21,7 +21,7 @@ pub struct PodcastEpisode {
     pub pub_date: Option<String>,
 }
 
-/// Blocking — call from a background thread.
+/// Blocking; call from a background thread.
 pub fn fetch_feed(feed_url: &str) -> Option<PodcastFeed> {
     let body = http_get_with_retry(feed_url)?;
     parse_feed(&body)
@@ -96,7 +96,7 @@ fn child_text(parent: &Node, tag_name: &str) -> Option<String> {
         .filter(|s| !s.is_empty())
 }
 
-/// Local-name match — ignores `itunes:` and other namespace prefixes.
+/// Local-name match: ignores `itunes:` and other namespace prefixes.
 fn child_text_ns(parent: &Node, local_name: &str) -> Option<String> {
     parent
         .children()
@@ -175,8 +175,8 @@ pub struct PodcastSearchResult {
     pub episode_count: u32,
 }
 
-/// PodcastIndex Apple-replacement endpoint — no API key required.
-/// Blocking — call from a background thread.
+/// PodcastIndex Apple-replacement endpoint; no API key required.
+/// Blocking; call from a background thread.
 pub fn search_podcasts(query: &str) -> Option<Vec<PodcastSearchResult>> {
     use big_os_kit::http_client::http_get_with_retry;
 
@@ -421,7 +421,7 @@ mod tests {
     }
 
     #[test]
-    fn parse_feed_falls_back_to_itunes_summary_when_description_missing() {
+    fn feed_falls_back_to_itunes_summary() {
         let xml = r#"<rss xmlns:itunes="http://www.itunes.com/dtds/podcast-1.0.dtd"><channel>
 <title>T</title>
 <description>D</description>
@@ -461,7 +461,7 @@ mod tests {
     }
 
     #[test]
-    fn parse_search_results_drops_items_missing_title_or_feed() {
+    fn search_drops_untitled_or_feedless_items() {
         let body = r#"{
   "results": [
     { "collectionName": "Valid", "feedUrl": "https://x/y" },
@@ -484,7 +484,7 @@ mod tests {
     }
 
     #[test]
-    fn parse_search_results_defaults_optional_fields_when_absent() {
+    fn search_defaults_absent_optional_fields() {
         let body = r#"{
   "results": [
     { "collectionName": "Minimal", "feedUrl": "https://m/f" }

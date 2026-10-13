@@ -1,7 +1,7 @@
 //! GTK avatar placeholders rendered from deterministic initials and colors.
 //!
-//! Used to give radio stations and other media library entries a stable
-//! visual identity when the artwork is missing. an internal deterministic hash-to-HSL mapping is
+//! Gives radio stations and other media library entries a stable visual
+//! identity when the artwork is missing. The hash-to-HSL mapping is
 //! deterministic: the same input always produces the same hue.
 
 use gtk::glib;
@@ -145,8 +145,7 @@ pub fn extract_initials(name: &str) -> String {
 /// Convert an HSL color to an RGB tuple in `[0.0, 1.0]^3`.
 ///
 /// `hue` is expected in `[0.0, 360.0)`, `saturation` and `lightness` in
-/// `[0.0, 1.0]`. Used to derive deterministic avatar colors via
-/// an internal deterministic hash-to-HSL mapping.
+/// `[0.0, 1.0]`. Derives the avatar colors from the hash-to-HSL mapping.
 #[must_use]
 pub fn hsl_to_rgb(hue: f64, saturation: f64, lightness: f64) -> (f64, f64, f64) {
     let c = (1.0 - (2.0 * lightness - 1.0).abs()) * saturation;

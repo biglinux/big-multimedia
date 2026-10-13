@@ -270,7 +270,7 @@ mod tests {
     }
 
     #[test]
-    fn sidebar_spec_keeps_resize_limit_at_least_max_width() {
+    fn resize_limit_covers_max_width() {
         let spec = BigMediaSidebarSpec::new()
             .width_range(300.0, 640.0)
             .resize_limit(400.0);
@@ -281,7 +281,7 @@ mod tests {
     }
 
     #[test]
-    fn sidebar_resize_keyboard_commands_map_from_navigation_keys() {
+    fn navigation_keys_map_to_resize() {
         use gtk::gdk::Key;
 
         assert_eq!(

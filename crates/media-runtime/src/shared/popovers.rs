@@ -1,5 +1,5 @@
 //! Player popover builders re-exported from `big-media-components::player_chrome`
-//! (pure-gtk, reusable). The mpv/settings-bound helpers below stay here — they
+//! (pure-gtk, reusable). The mpv/settings-bound helpers below stay here: they
 //! are engine-coupled (`MpvBackend`, audio-effects, settings).
 //! bigagents: app-local-adapter; remaining helpers are mpv/settings-bound.
 

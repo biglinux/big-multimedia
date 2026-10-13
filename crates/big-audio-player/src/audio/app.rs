@@ -1,4 +1,4 @@
-//! `BigAudioPlayerApplication`: AdwApplication entry point — single-instance
+//! `BigAudioPlayerApplication`: AdwApplication entry point for single-instance
 //! activation, file-open, app-level actions (quit/about), accel registration.
 
 use adw::prelude::*;
@@ -183,7 +183,7 @@ mod tests {
     }
 
     #[test]
-    fn open_paths_message_preserves_local_paths_in_order() {
+    fn open_paths_keeps_local_order() {
         match open_paths_message(vec![
             "/tmp/first.ogg".to_string(),
             "/tmp/second.flac".to_string(),
@@ -197,7 +197,7 @@ mod tests {
 
     #[test]
     #[cfg(not(miri))]
-    fn open_files_message_ignores_empty_and_non_local_inputs() {
+    fn open_files_skips_empty_and_remote() {
         assert!(open_files_message(&[]).is_none());
         let remote_file = gio::File::for_uri("https://example.invalid/audio.ogg");
         assert!(open_files_message(&[remote_file]).is_none());
@@ -205,7 +205,7 @@ mod tests {
 
     #[test]
     #[cfg(not(miri))]
-    fn open_files_message_preserves_local_paths_in_order() {
+    fn open_files_keeps_local_order() {
         let first_file = gio::File::for_path("/tmp/first.ogg");
         let second_file = gio::File::for_path("/tmp/second.flac");
 
@@ -218,7 +218,7 @@ mod tests {
     }
 
     #[test]
-    fn about_dialog_contract_names_app_and_credit_sources() {
+    fn about_dialog_names_app_and_credits() {
         let config = audio_about_dialog_config();
 
         assert_eq!(config.app_name, crate::config::audio::APP_NAME);
@@ -233,7 +233,7 @@ mod tests {
     }
 
     #[test]
-    fn audio_application_accels_skip_single_key_and_prefix_window_actions() {
+    fn app_accels_skip_single_keys() {
         let actions: std::collections::HashSet<String> = resolved_audio_application_accels("")
             .into_iter()
             .map(|(action, _)| action)

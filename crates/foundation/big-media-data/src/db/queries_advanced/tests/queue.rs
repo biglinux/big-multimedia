@@ -26,7 +26,7 @@ fn legacy_queue_loads_in_saved_order() {
 }
 
 #[test]
-fn session_roundtrips_generated_orders_duplicates_and_external_paths() {
+fn session_roundtrips_orders_and_paths() {
     use crate::db::models::Track;
     use crate::db::queries_advanced::{
         QueueSession, SavedQueue, load_queue_session, save_queue_session,
@@ -95,7 +95,7 @@ fn session_roundtrips_generated_orders_duplicates_and_external_paths() {
 }
 
 #[test]
-fn legacy_queue_is_read_once_and_failed_session_save_keeps_both_queues() {
+fn failed_save_keeps_both_queues() {
     use crate::db::models::Track;
     use crate::db::queries_advanced::{
         QueueSession, SavedQueue, load_queue_session, save_queue_session,

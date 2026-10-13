@@ -131,7 +131,7 @@ impl Drop for OwnedChild {
         if let Some(mut child) = self.child.take() {
             if self.may_signal {
                 // The leader has not been reaped, so its PGID cannot be reused.
-                // Descendants that deliberately leave the group are outside this
+                // Descendants that move to another process group are outside this
                 // supervisor's containment contract (not a sandbox).
                 #[cfg(unix)]
                 {

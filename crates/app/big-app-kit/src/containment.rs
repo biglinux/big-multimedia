@@ -64,7 +64,7 @@ pub fn contain_embedded_update(
 /// still runs first, so the message + location reach the journal.
 ///
 /// `AssertUnwindSafe`: GTK widgets and `RefCell`s are not `UnwindSafe`, but a
-/// contained panic only skips one callback — every borrow guard releases as the
+/// contained panic only skips one callback: every borrow guard releases as the
 /// stack unwinds, so the shared state stays usable afterwards (at worst with a
 /// half-applied update, still strictly better than a dead process).
 #[inline]
@@ -90,7 +90,7 @@ mod tests {
     }
 
     #[test]
-    fn returns_none_and_releases_borrow_when_body_panics() {
+    fn panic_returns_none_and_releases_borrow() {
         let cell = RefCell::new(0);
         let outcome = guard("boom", || {
             let mut value = cell.borrow_mut();
@@ -100,7 +100,7 @@ mod tests {
             *value
         });
         assert_eq!(outcome, None);
-        // The borrow released as the stack unwound — the cell is usable again.
+        // The borrow released as the stack unwound, so the cell is usable again.
         assert_eq!(*cell.borrow(), 1);
     }
 }

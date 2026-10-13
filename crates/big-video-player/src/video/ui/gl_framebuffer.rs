@@ -2,7 +2,7 @@
 //!
 //! GTK4 GL contexts don't expose `glGetIntegerv`, so the currently bound
 //! framebuffer (needed to blit mpv's frame into the GLArea) is read via a
-//! scoped `dlopen("libGL.so.1", RTLD_LAZY|RTLD_LOCAL)` + `dlsym` (NOT
+//! scoped `dlopen("libGL.so.1", RTLD_LAZY|RTLD_LOCAL)` + `dlsym` (not
 //! `RTLD_DEFAULT`, which would search every loaded object and is
 //! `LD_PRELOAD`-hijackable) and cached thread-local.
 
@@ -24,7 +24,7 @@ pub fn get_gl_get_integerv() -> Option<GlGetIntegervFn> {
             let libname = c"libGL.so.1";
             // SAFETY: dlopen with `RTLD_LAZY | RTLD_LOCAL` returns a
             // refcounted handle scoped to libGL.so.1 only. The handle is
-            // intentionally never `dlclose`d — its symbol resolution must
+            // never `dlclose`d: its symbol resolution must
             // remain valid for the process lifetime (cached thread-local).
             // Scoping to libGL.so.1 (instead of `RTLD_DEFAULT`) prevents
             // LD_PRELOAD hijacks that could shadow glGetIntegerv from an

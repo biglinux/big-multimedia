@@ -45,7 +45,7 @@ fn drop_paths_from_text(text: &str, max_items: Option<usize>) -> Vec<PathBuf> {
 ///
 /// Recognises [`gio::File`], [`gdk::FileList`], and plain `String`
 /// (treated as a uri-list). Returns an empty vector when the value carries
-/// no recognised type — typical receiver code aborts the drop on empty.
+/// no recognised type; receivers usually abort the drop on empty.
 #[must_use]
 pub fn drop_paths_from_value(value: &glib::Value) -> Vec<PathBuf> {
     if let Ok(file) = value.get::<gio::File>() {
@@ -127,7 +127,7 @@ mod tests {
 
     #[test]
     #[cfg_attr(miri, ignore)]
-    fn drop_paths_from_text_accepts_uris_and_paths() {
+    fn text_drop_accepts_uris_and_paths() {
         assert_eq!(
             drop_paths_from_text("file:///tmp/a.mp3\n/home/me/b.mp3", None),
             vec![
@@ -153,7 +153,7 @@ mod tests {
 
     #[test]
     #[cfg_attr(miri, ignore)]
-    fn drop_paths_from_value_accepts_gio_file_payload() {
+    fn value_drop_accepts_gio_file() {
         let file = gio::File::for_path("/tmp/a.mp3");
         let dropped_value = file.to_value();
 

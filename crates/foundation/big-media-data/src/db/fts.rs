@@ -44,7 +44,7 @@ pub fn fts_phrase(token: &str) -> String {
 /// - Wraps each token as a quoted phrase via [`fts_phrase`].
 /// - Appends `*` to each phrase for prefix search.
 /// - Joins tokens with spaces (implicit AND in FTS5).
-/// - Returns an empty string when the input is whitespace-only — the
+/// - Returns an empty string when the input is whitespace-only; the
 ///   caller must skip the filter in that case to avoid an FTS5 syntax
 ///   error.
 ///

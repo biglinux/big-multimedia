@@ -173,7 +173,7 @@ mod tests {
     }
 
     #[test]
-    fn add_keeps_newest_first_without_duplicates_and_skips_non_files() {
+    fn add_keeps_unique_files_newest_first() {
         let state_directory = temp_state_dir("recent-add");
         let store = RecentStore::new(&state_directory, 2);
         let a = state_directory.join("a.mkv");

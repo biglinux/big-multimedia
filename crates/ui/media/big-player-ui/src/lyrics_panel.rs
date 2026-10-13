@@ -1,4 +1,4 @@
-//! Relm4 lyrics panel — header with an expand toggle plus a three-state
+//! Relm4 lyrics panel: header with an expand toggle plus a three-state
 //! content stack (lyrics / loading / empty).
 //!
 //! Push-model: the on-demand fetch (db + LRCLIB, threaded) and the paned

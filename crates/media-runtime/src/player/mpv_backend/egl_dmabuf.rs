@@ -122,8 +122,8 @@ impl EglDmaBufFns {
             Some(unsafe { std::mem::transmute_copy::<*mut c_void, F>(&ptr) })
         }
 
-        // Intentionally not dlclose(lib) — functions must stay valid for the
-        // process lifetime; GTK also keeps EGL loaded.
+        // lib is never dlclosed: the functions must stay valid for the
+        // process lifetime, and GTK keeps EGL loaded anyway.
         // SAFETY: get_proc_address is valid; names are null-terminated.
         unsafe {
             Some(Self {
@@ -138,7 +138,7 @@ impl EglDmaBufFns {
     }
 }
 
-/// Owns the fd — `Drop` closes it.
+/// Owns the fd; `Drop` closes it.
 pub(crate) struct DmaBufExport {
     pub fd: RawFd,
     pub fourcc: u32,
@@ -243,7 +243,7 @@ pub(crate) fn export_gl_texture(egl: &EglDmaBufFns, gl_texture_id: u32) -> Optio
             return None;
         }
 
-        // Single-plane RGBA — close any extra fds.
+        // Single-plane RGBA: close any extra fds.
         for &fd in &fds[1..] {
             if fd >= 0 {
                 libc::close(fd);
@@ -309,7 +309,7 @@ mod tests {
 
     #[test]
     fn probe_returns_none_without_egl() {
-        // Without a real EGL display load() must return None — no panic.
+        // Without a real EGL display load() returns None instead of panicking.
         let _ = EglDmaBufFns::load();
     }
 }

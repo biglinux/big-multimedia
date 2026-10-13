@@ -1,7 +1,7 @@
 use big_relm4_components::list::navigation_row::BigNavigationRowSpec;
 
 #[test]
-fn navigation_row_contract_escapes_plain_text_without_gtk() {
+fn navigation_row_escapes_text() {
     let resolved = BigNavigationRowSpec::new("<b>Audio</b>")
         .subtitle("A&B")
         .prefix_icon_name("audio-volume-high-symbolic")
@@ -18,7 +18,7 @@ fn navigation_row_contract_escapes_plain_text_without_gtk() {
 }
 
 #[test]
-fn navigation_row_contract_exposes_named_action_without_gtk() {
+fn navigation_row_exposes_action() {
     let resolved = BigNavigationRowSpec::new("Audio Settings")
         .trailing_icon_name("document-edit-symbolic")
         .action_label("Open audio settings")

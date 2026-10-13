@@ -156,7 +156,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn safe_filename_stem_is_lowercase_bounded_and_nonempty() {
+    fn safe_stem_is_lowercase_and_bounded() {
         assert_eq!(safe_filename_stem("My IPTV", 80, "unnamed"), "my_iptv");
         assert_eq!(
             safe_filename_stem("http://a.example/x.m3u", 80, "unnamed"),
@@ -170,7 +170,7 @@ mod tests {
     }
 
     #[test]
-    fn unicode_filename_stem_preserves_letters_and_replaces_punctuation() {
+    fn unicode_stem_keeps_letters() {
         assert_eq!(
             sanitize_filename_stem_preserve_unicode("Rádio Brasil", "radio"),
             "Rádio_Brasil"
@@ -190,14 +190,14 @@ mod tests {
     }
 
     #[test]
-    fn file_stem_display_name_strips_path_and_extension() {
+    fn stem_name_strips_path_and_extension() {
         assert_eq!(file_stem_display_name("/home/user/video.mp4"), "video");
         assert_eq!(file_stem_display_name("video.mp4"), "video");
         assert_eq!(file_stem_display_name("/home/user/folder"), "folder");
     }
 
     #[test]
-    fn folder_display_name_uses_basename_or_original_path() {
+    fn folder_name_falls_back_to_path() {
         assert_eq!(folder_display_name("/home/user/Videos"), "Videos");
         assert_eq!(folder_display_name("/"), "/");
         assert_eq!(folder_display_name("myfolder"), "myfolder");

@@ -52,7 +52,7 @@ mod tests {
     }
 
     #[test]
-    fn noise_reduction_runs_the_shared_chain_only_when_installed() {
+    fn noise_reduction_requires_installed_chain() {
         let model = NoiseModel::DpdfNet2;
         let chain = build_audio_filter_chain(&effects(false, 0.5, &[]));
         if model.plugin_available() {

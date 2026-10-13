@@ -1,5 +1,5 @@
 //! `BigMediaBrowserNode`: generic GObject node type for a media library /
-//! file-browser tree — covers folder/file/divider plus the music-library
+//! file-browser tree. Covers folder/file/divider plus the music-library
 //! flavours (artist/album/genre/year/station/playlist). Reusable by any media
 //! app; the constructors are convenience factories, not a fixed taxonomy.
 
@@ -10,7 +10,7 @@ use std::cell::{Cell, RefCell};
 
 use big_media_data::i18n::i18n;
 
-/// Category of a [`BrowserNode`] — what the row represents in the library/file tree.
+/// Category of a [`BrowserNode`]: what the row represents in the library/file tree.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default, glib::Enum)]
 #[enum_type(name = "BigMediaBrowserNodeKind")]
 pub enum BrowserNodeKind {

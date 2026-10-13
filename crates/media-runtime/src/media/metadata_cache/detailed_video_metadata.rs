@@ -21,7 +21,7 @@ pub struct DetailedVideoMetadata {
     pub subtitle_streams: Vec<Vec<(String, String)>>,
 }
 
-/// Synchronous ffprobe invocation — call from a background thread.
+/// Synchronous ffprobe invocation; call from a background thread.
 pub fn probe_detailed_video_metadata(path: &str) -> Option<DetailedVideoMetadata> {
     let output = BigSubprocessSpec::builder()
         .program("ffprobe")

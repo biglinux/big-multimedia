@@ -186,7 +186,7 @@ impl AudioShell {
                     mpv.play();
                 }
                 self.current_file.clone_from(&url);
-                // A stream is not a queue/library track — clear those indicators.
+                // A stream is not a queue/library track; clear those indicators.
                 self.library.emit(LibraryPanelInput::SetPlayingPath(None));
                 self.playlist
                     .emit(PlaylistPanelInput::SetPlaying { idx: None });
@@ -538,7 +538,7 @@ mod tests {
     use std::{fs, io::Write};
 
     #[test]
-    fn recording_saved_paths_split_file_and_parent_folder() {
+    fn saved_paths_split_file_and_folder() {
         assert_eq!(
             recording_saved_paths(Path::new("Music/Radio Recordings/show.mp3")),
             RecordingSavedPaths {
@@ -549,7 +549,7 @@ mod tests {
     }
 
     #[test]
-    fn recording_metadata_has_content_requires_file_with_bytes() {
+    fn metadata_content_needs_file_bytes() {
         assert!(!recording_metadata_has_content(false, 4));
         assert!(!recording_metadata_has_content(true, 0));
         assert!(recording_metadata_has_content(true, 4));
@@ -557,7 +557,7 @@ mod tests {
 
     #[test]
     #[cfg(not(miri))]
-    fn recording_file_has_content_requires_existing_non_empty_file() {
+    fn file_content_needs_non_empty_file() {
         let mut path = std::env::temp_dir();
         path.push(format!(
             "big-audio-recording-test-{}.mp3",

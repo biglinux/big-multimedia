@@ -4,12 +4,12 @@
 //! jemalloc as the allocator of the whole process, linked in at build time.
 //!
 //! Defining the C allocation functions here makes every allocation in the
-//! executable — Rust, GTK, GLib, libmpv, and libraries opened later with
-//! `dlopen` — go through the statically linked jemalloc (prefixed `_rjem_`, so
+//! executable (Rust, GTK, GLib, libmpv, and libraries opened later with
+//! `dlopen`) go through the statically linked jemalloc (prefixed `_rjem_`, so
 //! its own symbols never collide with libc). Unlike `LD_PRELOAD`, nothing
 //! reaches child processes such as ffmpeg: they start on glibc malloc.
 //!
-//! `free_sized` and `free_aligned_sized` are left out on purpose. jemalloc
+//! `free_sized` and `free_aligned_sized` are not defined here: jemalloc
 //! 5.3.1 (bundled by `tikv-jemalloc-sys`) crashes on `free_sized(NULL, n)`,
 //! which GLib ≥ 2.86 issues through `g_free_sized`; glibc's versions of both
 //! simply jump to `free`, which lands here and handles NULL.
@@ -21,7 +21,7 @@ use std::ffi::{c_int, c_void};
 
 use tikv_jemalloc_sys as jemalloc;
 
-/// Tuning that `big-jemalloc-run` used to pass through `MALLOC_CONF`: one
+/// Built-in jemalloc tuning: one
 /// arena, freed pages returned to the OS at once, large buffers kept out of
 /// the arena. jemalloc reads it before `main`; `_RJEM_MALLOC_CONF` still
 /// overrides it at run time.

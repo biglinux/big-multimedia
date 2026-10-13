@@ -2,7 +2,7 @@
 //! `big_player_ui::smartphone`; this module only builds the `RemoteHandlers`
 //! that bridge the HTTP worker thread back to the shell.
 //!
-//! Control closures send `AudioShellInput` over a (Send+Sync) Relm4 sender —
+//! Control closures send `AudioShellInput` over a (Send+Sync) Relm4 sender;
 //! the shell reuses its normal transport handlers. The status snapshot reads
 //! the thread-safe `SharedMprisState`, so it needs no main-loop bounce.
 

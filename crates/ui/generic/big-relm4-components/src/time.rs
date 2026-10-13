@@ -128,7 +128,7 @@ mod tests {
     }
 
     #[test]
-    fn parse_playback_time_accepts_seconds_minutes_and_hours() {
+    fn parses_seconds_minutes_and_hours() {
         assert_eq!(parse_playback_time("123.5"), Some(123.5));
         assert_eq!(parse_playback_time("2:30"), Some(150.0));
         assert_eq!(parse_playback_time("1:02:03"), Some(3723.0));
@@ -138,7 +138,7 @@ mod tests {
     }
 
     #[test]
-    fn countdown_mm_ss_zero_pads_minutes_and_seconds() {
+    fn countdown_zero_pads_both_fields() {
         assert_eq!(countdown_mm_ss(0), "00:00");
         assert_eq!(countdown_mm_ss(65), "01:05");
         assert_eq!(countdown_mm_ss(3600), "60:00");

@@ -256,7 +256,7 @@ mod review_tests {
     use super::restored_volume;
 
     #[test]
-    fn saved_zero_does_not_restart_at_full_volume() {
+    fn restored_volume_keeps_zero_and_clamps() {
         assert_eq!(restored_volume(0), 0);
         assert_eq!(restored_volume(-1), 0);
         assert_eq!(restored_volume(65), 65);

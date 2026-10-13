@@ -212,8 +212,8 @@ fn generate_thumbnail(file: &str, time: f64, cancelled: &AtomicBool) -> Option<V
         .stderr(BigSubprocessOutputMode::Null)
         .timeout(Duration::from_secs(5))
         .build();
-    // run() drains stdout while waiting — no pipe deadlock on the ~97 KB
-    // rawvideo (> 64 KB pipe buffer); capture is capped at 16 MB.
+    // run() drains stdout while waiting, so the ~97 KB rawvideo cannot deadlock
+    // on the 64 KB pipe buffer; capture is capped at 16 MB.
     let output = spec.run_cancellable(cancelled).ok()?;
     let expected_size = THUMB_STRIDE * THUMB_HEIGHT as usize;
 
@@ -249,7 +249,7 @@ mod tests {
     }
 
     #[test]
-    fn changing_media_does_not_reuse_previous_thumbnail() {
+    fn media_change_discards_stale_thumbnail() {
         let dir = tempfile::tempdir().expect("thumbnail fixtures");
         let red = dir.path().join("red.ppm");
         let blue = dir.path().join("blue.ppm");

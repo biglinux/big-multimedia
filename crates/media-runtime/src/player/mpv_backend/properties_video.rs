@@ -287,7 +287,7 @@ mod tests {
     }
 
     #[test]
-    fn test_shader_list_remove_prefix_empty_prefix_removes_all() {
+    fn empty_prefix_removes_all_shaders() {
         assert_eq!(shader_list_remove_prefix("/a.glsl:/b.glsl", ""), "");
     }
 }

@@ -1,10 +1,10 @@
-//! Relm4 download-queue panel — a slide-up revealer with a per-download
+//! Relm4 download-queue panel: a slide-up revealer with a per-download
 //! progress row, driven by a 500 ms tick.
 //!
 //! Self-contained Component: it owns the task list, the HTTP worker spawns
 //! (shared `transfer` worker), and the tick timer. The shell only sends
 //! `DownloadQueueInput::Enqueue` (after picking a destination); everything
-//! else — progress, cancel, clear, hide — is internal. Manual `impl Component`
+//! else (progress, cancel, clear, hide) is internal. Manual `impl Component`
 //! idiom.
 
 use std::cell::Cell;

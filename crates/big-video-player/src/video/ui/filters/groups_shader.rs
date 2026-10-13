@@ -23,7 +23,7 @@ use crate::settings::{Settings, keys};
 use big_relm4_components::input::debounce::BigDebouncedAction as DebouncedAction;
 
 /// GPU processing: sharpen (debounced), deband, sigmoid-upscaling,
-/// correct-downscaling — all live mpv render properties.
+/// correct-downscaling: all live mpv render properties.
 pub(super) fn build_gpu_group(mpv: &Arc<MpvBackend>) -> adw::PreferencesGroup {
     let group = BigPreferencesGroupSpec::new(i18n("GPU Processing")).build();
 

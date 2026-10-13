@@ -1,7 +1,7 @@
 //! Reusable Relm4 player-UI panels for BigLinux media players.
 //!
 //! Engine-free: depends only on `big-media-data` (data services), the component
-//! crates, and `big-os-kit` — never on `big-media-runtime` (mpv/ffmpeg). Each
+//! crates, and `big-os-kit`, never on `big-media-runtime` (mpv/ffmpeg). Each
 //! panel is a push-model `Component` (owns its widgets + emits typed intents;
 //! the host shell owns the queue/mpv/db/settings and pushes display state back).
 

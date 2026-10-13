@@ -1,5 +1,5 @@
 //! Pure trim-mode state: the marked clip segments + the pending first mark. No
-//! GTK — unit-tested in isolation; [`super::bar`] renders it and [`super::run`]
+//! GTK; unit-tested in isolation; [`super::bar`] renders it and [`super::run`]
 //! hands it to the converter.
 
 /// One marked clip range, in seconds. `id` is stable for the row's lifetime so
@@ -40,7 +40,7 @@ impl TrimState {
     }
 
     /// Mark a point. The first mark is held pending; the second commits a segment
-    /// spanning the two marks — **in either order** (mark the end first then the
+    /// spanning the two marks, **in either order** (mark the end first then the
     /// start and the segment is still `[min, max]`). Returns true when a segment
     /// was committed. A zero-length pair (two marks at the same time) is ignored
     /// and keeps the pending mark.
@@ -106,8 +106,8 @@ impl TrimState {
         !self.segments.is_empty()
     }
 
-    /// Raw per-segment `(start, end)` ranges in mark order — for display on the
-    /// seek bar (NOT merged; each marked cut shows as itself).
+    /// Raw per-segment `(start, end)` ranges in mark order, for display on the
+    /// seek bar (unmerged; each marked cut shows as itself).
     #[must_use]
     pub fn segment_ranges(&self) -> Vec<(f64, f64)> {
         self.segments.iter().map(|s| (s.start, s.end)).collect()
@@ -220,7 +220,7 @@ mod tests {
     }
 
     #[test]
-    fn not_exportable_until_a_segment_exists() {
+    fn exportable_once_a_segment_exists() {
         let mut s = state(100.0);
         assert!(!s.is_exportable());
         s.mark(1.0);

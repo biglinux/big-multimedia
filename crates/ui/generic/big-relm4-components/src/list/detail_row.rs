@@ -8,7 +8,7 @@ use relm4::gtk;
 
 use super::row_core::row_text;
 
-/// Data used to build a non-action detail row.
+/// Inputs for building a non-action detail row.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct BigDetailRowSpec {
     /// Title.

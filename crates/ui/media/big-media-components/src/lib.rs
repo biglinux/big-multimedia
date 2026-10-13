@@ -11,12 +11,12 @@
 //!
 //! # Module groups
 //!
-//! - Pure formatting and parsing — [`bytes`], [`time`], [`track_labels`],
+//! - Pure formatting and parsing: [`bytes`], [`time`], [`track_labels`],
 //!   [`playlist_order`].
-//! - File and metadata helpers — [`media`], [`ffmpeg`].
-//! - GTK widgets and dialogs — [`audio`], [`playback`], [`surface`],
+//! - File and metadata helpers: [`media`], [`ffmpeg`].
+//! - GTK widgets and dialogs: [`audio`], [`playback`], [`surface`],
 //!   [`preference_rows`], [`initials_avatar`].
-//! - Translation hook — [`text`] and [`install_media_components_translator`].
+//! - Translation hook: [`text`] and [`install_media_components_translator`].
 //!
 //! # Translation
 //!
@@ -45,7 +45,7 @@ pub mod ffmpeg;
 pub mod initials_avatar;
 /// Generic media browsing helpers: file types, thumbnails, info grid.
 pub mod media;
-/// Playback controls — volume icons and the generic [`playback::queue::PlayQueue`].
+/// Playback controls: volume icons and the generic [`playback::queue::PlayQueue`].
 pub mod playback;
 /// Player-UI chrome shared across player front-ends: off-thread spawn, play
 /// pulse, volume/speed/voice popovers (extracted from `big-media-runtime`).

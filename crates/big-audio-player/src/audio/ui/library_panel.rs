@@ -2,8 +2,8 @@
 //!
 //! Single-column layout (`gtk::Stack`): a "browse"
 //! page (grouping/search bar + library tree) and a "detail" page (back bar +
-//! track `ColumnView`) swap in place — selecting a node shows the detail, the
-//! back button returns to the tree. The panel NEVER touches the DB — it emits
+//! track `ColumnView`) swap in place: selecting a node shows the detail, the
+//! back button returns to the tree. The panel never touches the DB; it emits
 //! intents and the shell pushes query results back.
 //!
 //! `PopulateDetail` splices the detail store; row activation emits `PlayTrack`.
@@ -110,7 +110,7 @@ pub enum LibraryPanelInput {
     /// Replace the detail track list after the shell resolves a selected node.
     /// Splices the store; never rebuilds the view.
     PopulateDetail(Vec<Track>),
-    /// The currently-playing file path (or `None`) — re-lights the detail
+    /// The currently-playing file path (or `None`); re-lights the detail
     /// now-playing indicator by file-path match.
     SetPlayingPath(Option<String>),
     /// Restore saved detail column widths (`title=width,…`), pushed by the shell
@@ -178,10 +178,10 @@ pub enum LibraryPanelOutput {
     RevealInFileManager(String),
     /// Show the track-info dialog (shell owns the dialog + metadata).
     ShowTrackInfo(Track),
-    /// Persist the detail column widths (`title=width,…`) — the shell writes the
+    /// Persist the detail column widths (`title=width,…`); the shell writes the
     /// settings key. Debounced to one emission per resize gesture.
     PersistColumnWidths(String),
-    /// A library tree node was activated — shell resolves it → `PopulateDetail`.
+    /// A library tree node was activated; shell resolves it → `PopulateDetail`.
     NodeSelected {
         /// `BrowserNodeKind as u32`.
         kind: u32,
@@ -192,7 +192,7 @@ pub enum LibraryPanelOutput {
         /// `TreeListRow::depth()`.
         depth: u32,
     },
-    /// Grouping preset changed — shell re-runs the tree query.
+    /// Grouping preset changed; shell re-runs the tree query.
     GroupingChanged(LibraryGrouping),
     /// Age-filter dropdown index changed.
     AgeFilterChanged(u32),
@@ -511,7 +511,7 @@ impl Component for LibraryPanel {
             .build();
         back_button.set_tooltip_text(Some(&i18n("Back to library")));
         back_button.update_property(&[gtk::accessible::Property::Label(&i18n("Back to library"))]);
-        // Weak: back_button lives INSIDE root — a strong capture is a
+        // Weak: back_button lives inside root, so a strong capture is a
         // closure⇄widget self-cycle pinning the whole library subtree.
         let stack_for_back = root.downgrade();
         back_button.connect_clicked(move |_| {
@@ -654,7 +654,7 @@ mod tests {
 
     #[cfg(not(miri))]
     #[test]
-    fn collect_tracks_from_boxed_store_preserves_existing_items_only() {
+    fn boxed_store_tracks_skip_missing_items() {
         let boxed_track_objects = [
             Some(boxed_track(track_with_id(7, "one"))),
             None,
@@ -675,7 +675,7 @@ mod tests {
     }
 
     #[test]
-    fn collect_tracks_from_tracks_preserves_existing_items_only() {
+    fn track_list_tracks_skip_missing_items() {
         let tracks = [
             Some(track_with_id(7, "one")),
             None,
@@ -694,7 +694,7 @@ mod tests {
 
     #[cfg(not(miri))]
     #[test]
-    fn collect_track_ids_from_boxed_store_returns_database_ids() {
+    fn boxed_store_yields_database_ids() {
         let boxed_track_objects = [
             Some(boxed_track(track_with_id(7, "one"))),
             Some(boxed_track(track_with_id(9, "two"))),
@@ -711,7 +711,7 @@ mod tests {
     }
 
     #[test]
-    fn collect_track_ids_from_tracks_returns_database_ids() {
+    fn track_list_yields_database_ids() {
         let tracks = vec![track_with_id(7, "one"), track_with_id(9, "two")];
 
         assert_eq!(collect_track_ids_from_tracks(tracks), [7, 9]);
@@ -731,7 +731,7 @@ mod tests {
     }
 
     #[test]
-    fn detail_content_state_distinguishes_empty_attached_and_missing_view() {
+    fn detail_content_state_variants() {
         assert_eq!(
             detail_content_state(0, false),
             DetailContentState::EmptyPlaceholder
@@ -747,7 +747,7 @@ mod tests {
     }
 
     #[test]
-    fn musicbrainz_editor_handle_is_cleared_only_for_matching_stale_editor() {
+    fn stale_editor_handle_clears_on_match() {
         assert!(should_clear_tag_editor_handle(42, 42, false));
         assert!(!should_clear_tag_editor_handle(42, 7, false));
         assert!(!should_clear_tag_editor_handle(42, 42, true));

@@ -226,7 +226,7 @@ mod tests {
     }
 
     #[test]
-    fn legacy_settings_map_to_the_closest_current_model() {
+    fn legacy_settings_map_to_closest_model() {
         let dpdfnet = [1, 3, 4];
         for value in -1..10 {
             let expected = if dpdfnet.contains(&value) {
@@ -239,7 +239,7 @@ mod tests {
     }
 
     #[test]
-    fn attenuation_is_linear_up_to_each_models_useful_cap() {
+    fn attenuation_linear_up_to_cap() {
         let dfn3 = NoiseModel::DeepFilterNet3;
         let dpdfnet = NoiseModel::DpdfNet2;
         assert!((dfn3.attenuation_db(0.5) - 12.0).abs() < f64::EPSILON);

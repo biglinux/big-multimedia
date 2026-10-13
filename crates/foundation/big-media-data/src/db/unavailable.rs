@@ -1,5 +1,5 @@
 //! Explicit, paged review of unavailable local library entries. Filesystem
-//! absence never deletes a row by itself. This API NEVER removes a media file.
+//! absence never deletes a row by itself. This API never removes a media file.
 use super::{DbHandle, models::Track, queries};
 use crate::{Error, Result};
 use rusqlite::{Connection, OptionalExtension, params};
@@ -172,7 +172,7 @@ pub fn page(
 /// Remove only reviewed Missing rows, never inaccessible/remote files. All rows
 /// and their playlist/queue relationships are rechecked before the first DELETE.
 /// Changed metadata, a restored file, a cancellation or SQL error rolls back the
-/// whole selection. The in-memory playback queue is intentionally not stopped.
+/// whole selection. The in-memory playback queue is left running.
 pub fn remove_reviewed(
     db: &DbHandle,
     selected: &[ReviewItem],
@@ -265,7 +265,7 @@ mod tests {
         );
     }
     #[test]
-    fn changed_rating_blocks_removal_and_missing_selected_is_removable() {
+    fn changed_rating_blocks_removal() {
         let dir = tempfile::tempdir().unwrap();
         let p = dir.path().join("missing.wav");
         let db = database();

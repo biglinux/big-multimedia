@@ -82,7 +82,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn spec_defaults_to_visible_title_without_extra_classes() {
+    fn spec_defaults_to_plain_title() {
         let spec = BigSidebarHeaderSpec::new("Files");
 
         assert_eq!(spec.title, "Files");

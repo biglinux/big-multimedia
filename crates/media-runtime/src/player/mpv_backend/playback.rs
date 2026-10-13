@@ -289,7 +289,7 @@ impl MpvBackend {
         self.with_mpv(|m| m.get_property::<i64>("playlist-count").unwrap_or(0))
     }
 
-    /// `(dwidth, dheight)` — accounts for SAR/DAR. `None` when no video.
+    /// `(dwidth, dheight)`, which accounts for SAR/DAR. `None` when no video.
     pub fn get_video_dimensions(&self) -> Option<(i64, i64)> {
         self.with_mpv(|m| {
             let w = m.get_property::<i64>("dwidth").ok()?;

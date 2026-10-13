@@ -99,7 +99,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn key_to_accel_string_orders_control_shift_alt_modifiers() {
+    fn accel_string_orders_modifiers() {
         let state = gdk::ModifierType::CONTROL_MASK
             | gdk::ModifierType::SHIFT_MASK
             | gdk::ModifierType::ALT_MASK;
@@ -111,7 +111,7 @@ mod tests {
     }
 
     #[test]
-    fn key_name_fallback_covers_ascii_without_gtk_lookup_under_miri() {
+    fn key_name_fallback_covers_ascii() {
         use gtk::glib::translate::IntoGlib;
 
         let space_keyval = gdk::Key::space.into_glib();

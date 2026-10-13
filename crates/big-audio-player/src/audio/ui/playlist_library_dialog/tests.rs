@@ -11,7 +11,7 @@ use super::spec::{
 };
 
 #[test]
-fn playlist_library_window_spec_keeps_resizable_dialog_chrome() {
+fn library_window_is_resizable() {
     assert_eq!(
         playlist_library_window_spec(),
         PlaylistLibraryWindowSpec {
@@ -24,7 +24,7 @@ fn playlist_library_window_spec_keeps_resizable_dialog_chrome() {
 }
 
 #[test]
-fn saved_playlist_list_state_names_empty_and_counted_content() {
+fn saved_list_state_empty_and_counted() {
     assert_eq!(
         saved_playlist_list_state(0),
         SavedPlaylistListState {
@@ -94,7 +94,7 @@ fn playlist_library_action_specs_preserve_sidebar_order() {
 }
 
 #[test]
-fn saved_playlist_row_spec_formats_counts_minutes_and_tooltips() {
+fn saved_row_formats_counts_and_minutes() {
     assert_eq!(
         saved_playlist_row_spec("Road Mix", 1, 125.0),
         SavedPlaylistRowSpec {
@@ -121,7 +121,7 @@ fn saved_playlist_row_spec_formats_counts_minutes_and_tooltips() {
 }
 
 #[test]
-fn name_prompt_spec_and_acceptance_trim_blank_values() {
+fn name_prompt_trims_blank_values() {
     assert_eq!(
         save_current_queue_prompt_spec(),
         NamePromptSpec {

@@ -10,15 +10,12 @@ pub use big_media_data::config;
 pub use big_media_data::db;
 /// Unified `Error` enum + crate-wide `Result<T>` alias (in `big-media-data`).
 pub use big_media_data::error;
-// Re-export at crate root so consumers can write
-// `big_media_runtime::Error` / `big_media_runtime::Result<T>` instead of
-// the longer `error::` path — matches industry convention for library
-// crates and keeps consumer use-paths short.
 /// Internationalization helper (`gettext` wrapper, in `big-media-data`).
 pub use big_media_data::i18n;
 /// Music library scanning, metadata, web clients (in `big-media-data`).
 #[cfg(feature = "audio")]
 pub use big_media_data::library;
+// Root paths for consumers: `big_media_runtime::Error` / `Result<T>`.
 pub use big_media_data::{Error, Result};
 /// Media utilities: playlist handling, metadata probing, thumbnails.
 #[cfg(feature = "ui-core")]

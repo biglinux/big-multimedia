@@ -1,4 +1,4 @@
-//! Library services — cover art retrieval, MusicBrainz
+//! Library services: cover art retrieval, MusicBrainz
 //! metadata, LRC lyrics, podcast RSS parsing, and filesystem scanning.
 
 pub mod accounts;

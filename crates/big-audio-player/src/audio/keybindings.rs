@@ -8,7 +8,7 @@ pub use big_app_kit::keybindings::{
 use big_media_runtime::i18n::gettext_noop;
 
 pub const SHORTCUTS: &[ShortcutDef] = &[
-    // ── Playback ──
+    // Playback
     ShortcutDef {
         action: "play-pause",
         display_name: gettext_noop("Play / Pause"),
@@ -72,7 +72,7 @@ pub const SHORTCUTS: &[ShortcutDef] = &[
         default_accel: "p",
         single_key: true,
     },
-    // ── Navigation ──
+    // Navigation
     ShortcutDef {
         action: "search",
         display_name: gettext_noop("Search"),
@@ -94,7 +94,7 @@ pub const SHORTCUTS: &[ShortcutDef] = &[
         default_accel: "<Ctrl>a",
         single_key: false,
     },
-    // ── Library ──
+    // Library
     ShortcutDef {
         action: "add-folder",
         display_name: gettext_noop("Manage Music Folders"),
@@ -109,7 +109,7 @@ pub const SHORTCUTS: &[ShortcutDef] = &[
         default_accel: "<Ctrl>e",
         single_key: false,
     },
-    // ── Queue ──
+    // Queue
     ShortcutDef {
         action: "toggle-shuffle",
         display_name: gettext_noop("Toggle Shuffle"),

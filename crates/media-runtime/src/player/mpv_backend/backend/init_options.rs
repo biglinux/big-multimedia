@@ -115,10 +115,9 @@ pub(super) fn apply_playback_options(init: &MpvInitializer) -> Result<(), MpvErr
 
 /// Audio-only variant: no video output. Defaults to [`AudioCacheProfile::Music`]
 /// (gapless transitions covered with a 30 MiB lookahead). Callers can switch
-/// profile post-init via [`super::MpvBackend::set_audio_cache_profile`] —
-/// podcast/audiobook playback drops the demuxer cache to ~10 MiB total,
-/// saving ~120-160 MB RSS over the previous unconditional 150 MiB+150 MiB
-/// budget. Network radio bumps the forward window for jitter resilience.
+/// profile post-init via [`super::MpvBackend::set_audio_cache_profile`]:
+/// podcast/audiobook playback drops the demuxer cache to ~10 MiB total, and
+/// network radio bumps the forward window for jitter resilience.
 pub(super) fn apply_audio_only_options(init: &MpvInitializer) -> Result<(), MpvError> {
     disable_unused_builtin_scripts(init);
     init.set_option("vo", "null")?;
@@ -142,7 +141,7 @@ pub(super) fn apply_audio_only_options(init: &MpvInitializer) -> Result<(), MpvE
 
 /// What mpv restores per file. Filters, speed, volume and picture settings
 /// belong to the apps' own settings: restored behind their back, the UI
-/// would show values mpv no longer uses.
+/// would disagree with what mpv plays.
 pub(super) const VIDEO_WATCH_LATER_OPTIONS: &str = "start,aid,sid,sub-delay,audio-delay";
 pub(super) const AUDIO_WATCH_LATER_OPTIONS: &str = "start";
 

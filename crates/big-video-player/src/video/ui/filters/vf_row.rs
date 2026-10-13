@@ -1,4 +1,4 @@
-//! Shared widget helper for the filters dialog: `build_vf_expander_row` — an
+//! Shared widget helper for the filters dialog: `build_vf_expander_row`, an
 //! ExpanderRow + SpinRow
 //! that owns the enable/disable + debounced-apply lifecycle of a single
 //! single-parameter `vf` filter, keyed by `label`, driving an

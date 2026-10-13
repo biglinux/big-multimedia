@@ -38,16 +38,16 @@ fn build_player_window(
 /// the module's lifetime; dropping the controller shuts the component tree down.
 pub struct AudioEmbed {
     /// The window mounting the player content (for the host's module handle).
-    // bigagents: app-local-window-owner — this handle IS the owner the host
+    // bigagents: app-local-window-owner: this handle is the owner the host
     // keeps alive for the module's lifetime; a weak ref would drop the window.
     pub window: gtk::Window,
-    /// The shell controller — drives the component; dropping it tears it down.
+    /// The shell controller. Drives the component; dropping it tears it down.
     pub controller: relm4::Controller<audio::ui::audio_shell::AudioShell>,
 }
 
 /// Open the audio-player shell as a window of the host's running
 /// application (multicall hosts: big-host). Performs the app-specific boot
-/// exactly once (gettext — shared media domain —, numeric locale, component
+/// exactly once (gettext with the shared media domain, numeric locale, component
 /// translator, favicon cache namespace, GResource bundles) and launches a
 /// detached [`audio::ui::audio_shell::AudioShell`]. The host keeps the
 /// returned controller alive for as long as the module is open; dropping it
@@ -85,7 +85,7 @@ pub fn open_in_application() -> AudioEmbed {
     }
 }
 
-/// Deliver file paths to the running shell — the same thread-local broker
+/// Deliver file paths to the running shell through the same thread-local broker
 /// `Application::open` uses in standalone mode. No-op when `paths` is empty.
 /// Multicall hosts call this right after [`open_in_application`] (or on
 /// re-invocation with files while the module is already open).

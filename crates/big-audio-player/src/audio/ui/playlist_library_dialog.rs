@@ -1,10 +1,10 @@
-//! Playlist library dialog — a single premium dialog for everything playlist-related.
+//! Playlist library dialog: one dialog for everything playlist-related.
 //!
 //! Sidebar + content split. The sidebar holds the actions:
 //! 1. **Save** the current queue as a new playlist.
 //! 2. **Generate** from listening stats (most played / recently added / never
-//!    played) — loads the set into the queue (save it with "Save Current Queue").
-//! 3. **Import / Export** — single-file import, batch folder import, export-all.
+//!    played): loads the set into the queue (save it with "Save Current Queue").
+//! 3. **Import / Export**: single-file import, batch folder import, export-all.
 //!
 //! The content pane lists the saved playlists (load / rename / export / delete).
 //!
@@ -125,8 +125,8 @@ impl Component for PlaylistLibraryDialog {
                 .content_title(i18n(window_spec.content_title)),
         );
 
-        // ── Sidebar: save action sits in the (flat, title-less) header; the
-        // generate + import/export groups fill the body. ──
+        // Sidebar: save action sits in the (flat, title-less) header; the
+        // generate + import/export groups fill the body.
         layout.set_sidebar_header(&build_save_button(&sender, &root));
 
         let sidebar_box = gtk::Box::builder()
@@ -147,7 +147,7 @@ impl Component for PlaylistLibraryDialog {
                 .build(),
         );
 
-        // ── Content: the saved playlists (rebuilt on SetPlaylists) ──
+        // Content: the saved playlists (rebuilt on SetPlaylists).
         let list_slot = gtk::Box::builder()
             .orientation(gtk::Orientation::Vertical)
             .vexpand(true)

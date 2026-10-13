@@ -24,7 +24,7 @@ pub struct FastRenderContext {
     context_scope: Option<ContextScope>,
 }
 
-// Intentionally !Send / !Sync: rendering and destruction belong to the thread
+// !Send / !Sync: rendering and destruction belong to the thread
 // owning the current GL context. The raw C handle must not bypass GTK affinity.
 
 impl FastRenderContext {
@@ -109,7 +109,7 @@ impl FastRenderContext {
             fbo,
             w: width,
             h: height,
-            internal_format: 0, // 0 = unknown — mpv uses the fbo-format option.
+            internal_format: 0, // 0 = unknown: mpv uses the fbo-format option.
         };
         let mut flip_val: i32 = i32::from(flip_y);
         // Never let the core block this call until the frame's target display
@@ -148,13 +148,13 @@ impl FastRenderContext {
     #[inline]
     pub fn has_new_frame(&self) -> bool {
         // SAFETY: caller is on the owning render thread with its GL context
-        // current. This is NOT callable from the mpv update callback.
+        // current, never inside the mpv update callback.
         let flags = self
             .with_current(|| unsafe { mpv_sys::mpv_render_context_update(self.render_context) });
         (flags & u64::from(mpv_sys::mpv_render_update_flag_MPV_RENDER_UPDATE_FRAME)) != 0
     }
 
-    /// Callback fires from an mpv internal thread — do NOT call mpv API from it.
+    /// Callback fires from an mpv internal thread and must not call the mpv API.
     /// Schedule work on the main thread instead (e.g. `glib::idle_add_once`).
     pub fn set_update_callback<F: Fn() + Send + Sync + 'static>(&mut self, callback: F) {
         self.with_current(|| unsafe {
@@ -219,7 +219,7 @@ impl Drop for FastRenderContext {
     }
 }
 
-/// Software (CPU) render context — the no-GL fallback. mpv renders each frame
+/// Software (CPU) render context, the no-GL fallback. mpv renders each frame
 /// into a caller-supplied `bgr0` (B,G,R,unused) byte buffer instead of an FBO,
 /// so the player can show video on hosts/compositors without an OpenGL context
 /// (e.g. headless software compositors, GL-less VMs). Pairs with
@@ -317,7 +317,7 @@ impl SwRenderContext {
         (flags & u64::from(mpv_sys::mpv_render_update_flag_MPV_RENDER_UPDATE_FRAME)) != 0
     }
 
-    /// Callback fires from an mpv internal thread — schedule work on the main
+    /// Callback fires from an mpv internal thread: schedule work on the main
     /// thread (e.g. `glib::idle_add_once`), never call mpv API from it.
     pub fn set_update_callback<F: Fn() + Send + Sync + 'static>(&mut self, callback: F) {
         // Detach first: replacing the Rust allocation while mpv still has its

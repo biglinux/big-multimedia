@@ -40,7 +40,7 @@ fn atomic_sibling_temp_path(target: &Path) -> PathBuf {
 /// filesystem (a cross-filesystem rename fails). Creates the parent dir if
 /// missing.
 ///
-/// GTK-free and blocking — offload it (e.g. via
+/// GTK-free and blocking: offload it (e.g. via
 /// `big_relm4_components::file_io::write_bytes_async`) so a slow/network
 /// filesystem can't stall the UI thread.
 ///
@@ -109,7 +109,7 @@ fn atomic_replace(
     }
     drop(file);
     fs::rename(&temporary, path)?;
-    cleanup.0 = None; // the old temporary name no longer belongs to us
+    cleanup.0 = None; // the rename consumed the temporary path
     if sync {
         sync_parent(path)?;
     }

@@ -66,7 +66,7 @@ impl AudioShell {
         self.queue_persistence.replace(session);
     }
 
-    /// Push the queue to the panels and persist it — call after any track-set
+    /// Push the queue to the panels and persist it. Call after any track-set
     /// mutation (add / remove / reorder / clear / dedupe / set).
     pub(super) fn commit_queue(&self) {
         self.sync_queue_to_panels();

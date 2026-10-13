@@ -11,11 +11,11 @@ pub(super) struct OsdState {
     /// Shared media chrome immersion controller: owns timer, cursor hiding,
     /// revealer updates, and popover guards for media shells.
     immersion: Rc<BigMediaImmersionController>,
-    /// True while playback is paused — keep the OSD shown (old "bail if paused").
+    /// True while playback is paused: keep the OSD shown.
     pub(super) is_paused: Cell<bool>,
-    /// True while the welcome screen is up (nothing loaded) — never auto-hide.
+    /// True while the welcome screen is up (nothing loaded): never auto-hide.
     pub(super) is_welcome_visible: Cell<bool>,
-    /// True while interactive trim mode is active — pin the OSD so the transport
+    /// True while interactive trim mode is active: pin the OSD so the transport
     /// (scrub / play-pause) stays reachable while marking cuts. Shared (`Rc`)
     /// with the shell model and the trim key controller (one source of truth).
     pub(super) trim_active: Rc<Cell<bool>>,
@@ -76,11 +76,11 @@ impl OsdState {
     }
 
     /// Collapse the OSD when the window loses focus (alt-tab away). Bypasses the
-    /// paused guard — a paused video should still lose its overlay on focus-out,
-    /// like other players — but keeps the welcome screen and trim controls up.
+    /// paused guard (a paused video still loses its overlay on focus-out, like
+    /// other players) but keeps the welcome screen and trim controls up.
     pub(super) fn hide_on_focus_out(&self) {
         // Opening a header menu (hamburger / open) grabs input, which the window
-        // reports as a focus-out. Don't tear down the OSD then — that would also
+        // reports as a focus-out. Don't tear down the OSD then: that would also
         // hide the menu itself (a child of the header revealer). A real alt-tab
         // happens with every menu closed, so this only skips the false positive.
         let any_menu_open = self
@@ -113,7 +113,7 @@ impl OsdState {
     }
 }
 
-/// Pure: on a window focus-out, collapse the OSD only when nothing pins it — no
+/// Pure: on a window focus-out, collapse the OSD only when nothing pins it: no
 /// welcome screen, not in trim mode, and no header menu open (a menu grab reads
 /// as a focus-out, and tearing down then would hide the just-opened menu too).
 fn focus_out_should_hide(welcome: bool, trim: bool, any_menu_open: bool) -> bool {
@@ -131,7 +131,7 @@ fn should_keep_osd_visible(welcome: bool, paused: bool, trim: bool) -> bool {
 /// `.idle-bg` gradient (style.css) is the immediate look; once the desktop
 /// wallpaper has been detected + blurred ([`super::idle_wallpaper`]) a
 /// user-priority provider overrides it with the cached blurred image. No
-/// animation — the old 33 ms gradient tick burned CPU under software rendering.
+/// animation, which costs CPU every frame under software rendering.
 pub(super) struct IdleBackground {
     /// The black bg box carrying the `.idle-bg` class (background target).
     pub(super) video_bg: gtk::Box,
@@ -162,8 +162,8 @@ impl IdleBackground {
     }
 
     /// Hide the idle background: restore the gl surface opacity, drop the class,
-    /// and remove the wallpaper provider. Restoring gl opacity is load-bearing —
-    /// video would stay invisible otherwise.
+    /// and remove the wallpaper provider. Without the gl opacity restore, video
+    /// stays invisible.
     pub(super) fn hide(&self, display: &gtk::gdk::Display) {
         self.is_shown.set(false);
         self.refresh(display);
@@ -212,8 +212,8 @@ impl IdleBackground {
     }
 
     /// Cover the surface while the welcome screen is up or only the TV plays;
-    /// otherwise restore it. Restoring gl opacity is load-bearing — video
-    /// would stay invisible otherwise.
+    /// otherwise restore it. Without the gl opacity restore, video stays
+    /// invisible.
     fn refresh(&self, display: &gtk::gdk::Display) {
         let covered = self.is_shown.get() || self.tv_source.borrow().is_some();
         self.gl_area.set_opacity(if covered { 0.0 } else { 1.0 });
@@ -237,7 +237,7 @@ impl IdleBackground {
 
     /// (Re)apply the background: the TV's video picture while only the TV
     /// plays, else the blurred wallpaper when known (static image provider),
-    /// else nothing — the base `.idle-bg` gradient shows through.
+    /// else nothing, so the base `.idle-bg` gradient shows through.
     fn apply_background(&self, display: &gtk::gdk::Display) {
         self.clear_provider(display);
         let tv = self.tv_source.borrow().is_some();
@@ -440,7 +440,7 @@ mod tests {
     }
 
     #[test]
-    fn osd_kept_visible_only_when_welcome_paused_or_trim() {
+    fn osd_pinned_by_welcome_pause_trim() {
         assert!(!should_keep_osd_visible(false, false, false));
         assert!(should_keep_osd_visible(true, false, false));
         assert!(should_keep_osd_visible(false, true, false));

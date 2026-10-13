@@ -88,7 +88,7 @@ mod tests {
         );
     }
     #[test]
-    fn remote_uri_is_not_made_into_a_local_path() {
+    fn remote_uri_stays_remote() {
         assert_eq!(
             parse_content(Path::new("/music/l.m3u"), "https://host/song.mp3?x=1\n").unwrap(),
             ["https://host/song.mp3?x=1"]
@@ -143,7 +143,7 @@ mod tests {
     #[test]
     #[cfg_attr(miri, ignore)]
     #[cfg(not(miri))]
-    fn oversize_file_is_an_error_without_reading_its_entire_body() {
+    fn oversize_file_fails_before_reading() {
         let dir = TestDirectory::new();
         let path = dir.0.join("large.m3u");
         std::fs::File::create(&path)
@@ -155,20 +155,20 @@ mod tests {
     #[test]
     #[cfg_attr(miri, ignore)]
     #[cfg(not(miri))]
-    fn exact_byte_limit_is_valid_only_with_valid_content() {
+    fn byte_limit_needs_valid_content() {
         let dir = TestDirectory::new();
         let path = dir.0.join("boundary.m3u");
         // A comment-only playlist is valid and empty even at the byte ceiling.
         std::fs::write(&path, vec![b'#'; MAX_PLAYLIST_BYTES]).unwrap();
         assert!(parse_playlist_file_for_import(&path).unwrap().is_empty());
-        // The previous test accepted a sparse NUL file at this same size.
+        // A sparse NUL file of the same size is not a playlist.
         std::fs::write(&path, vec![0_u8; MAX_PLAYLIST_BYTES]).unwrap();
         assert!(parse_playlist_file_for_import(&path).is_err());
     }
     #[test]
     #[cfg_attr(miri, ignore)]
     #[cfg(not(miri))]
-    fn missing_and_invalid_utf8_are_errors_not_empty_playlists() {
+    fn missing_or_invalid_utf8_is_error() {
         let dir = TestDirectory::new();
         let path = dir.0.join("missing.m3u");
         assert_eq!(

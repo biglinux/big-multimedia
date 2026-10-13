@@ -23,7 +23,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn media_codec_display_names_cover_recognized_video_encoder_names() {
+    fn codec_names_cover_video_encoders() {
         assert_eq!(media_codec_display_name("h264"), "H.264");
         assert_eq!(media_codec_display_name("libx265"), "H.265");
         assert_eq!(media_codec_display_name("libsvtav1"), "AV1");

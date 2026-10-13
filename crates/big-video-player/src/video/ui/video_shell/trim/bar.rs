@@ -1,4 +1,4 @@
-//! `VideoTrimBar` — the trim toolbar: a single Mark control, the segment chips
+//! `VideoTrimBar`, the trim toolbar: a single Mark control, the segment chips
 //! and Export, which hands the cuts to the video converter.
 //!
 //! A Relm4 [`Component`]: it owns the [`TrimState`] and renders the chips; the
@@ -9,7 +9,7 @@
 //! Marking: the bar caches the live playhead (fed via [`VideoTrimBarInput::SetPlayhead`])
 //! so its Mark button marks at that position; the keyboard shortcut routes through
 //! the shell with a frame-exact mpv time. Two marks make a segment in either
-//! order (mark the end first, then the start — still `[min, max]`).
+//! order (mark the end first, then the start: still `[min, max]`).
 
 use std::cell::RefCell;
 use std::rc::Rc;
@@ -33,7 +33,7 @@ use super::state::TrimState;
 pub enum VideoTrimBarInput {
     /// Media duration changed (seconds).
     SetDuration(f64),
-    /// Live playhead position (seconds) — cached for the Mark button.
+    /// Live playhead position (seconds), cached for the Mark button.
     SetPlayhead(f64),
     /// Mark at this exact (mpv-read) position (keyboard `M`).
     Mark(f64),
@@ -52,7 +52,7 @@ pub enum VideoTrimBarInput {
 /// Typed effects the shell acts on.
 #[derive(Debug)]
 pub enum VideoTrimBarOutput {
-    /// The cut state changed — repaint the cut timeline. Carries each segment's
+    /// The cut state changed: repaint the cut timeline. Carries each segment's
     /// `(id, start, end)` (for edge-drag addressing) plus the pending first mark.
     SegmentsChanged {
         /// Per-segment `(id, start, end)`.
@@ -145,7 +145,7 @@ impl Component for VideoTrimBar {
     type Widgets = ();
 
     fn init_root() -> Self::Root {
-        // Flat, full-width bar docked above the transport (NOT a floating card):
+        // Flat, full-width bar docked above the transport (not a floating card):
         // styling lives in `.video-trim-bar` (no `.osd` rounded/translucent card,
         // no margins) so it reads as embedded in the player's bottom controls.
         let root = gtk::Box::new(gtk::Orientation::Vertical, 6);
@@ -160,7 +160,7 @@ impl Component for VideoTrimBar {
     ) -> ComponentParts<Self> {
         let state = Rc::new(RefCell::new(TrimState::default()));
 
-        // ── segment chips ───────────────────────────────────────────────────
+        // Segment chips.
         let segments_strip = gtk::Box::new(gtk::Orientation::Horizontal, 6);
         let segments_scroll = gtk::ScrolledWindow::builder()
             .hscrollbar_policy(gtk::PolicyType::Automatic)
@@ -171,8 +171,8 @@ impl Component for VideoTrimBar {
             .child(&segments_strip)
             .build();
 
-        // ── mark controls (every control carries a tooltip + accessible label
-        // via the shared tooltip helpers) ───────────────────────────────────
+        // Mark controls; each carries a tooltip and accessible label through the
+        // shared tooltip helpers.
         let mark_button = labeled_icon_button(
             "bookmark-new-symbolic",
             &i18n("Mark"),

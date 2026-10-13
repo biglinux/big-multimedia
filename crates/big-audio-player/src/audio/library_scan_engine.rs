@@ -341,8 +341,7 @@ mod tests {
     }
 
     #[test]
-    fn scan_folder_imports_bounded_batches_and_preserves_unavailable_rows()
-    -> std::result::Result<(), Box<dyn std::error::Error>> {
+    fn scan_imports_in_bounded_batches() -> std::result::Result<(), Box<dyn std::error::Error>> {
         let db = memory_library_db()?;
         let scan_folder = unique_audio_scan_folder("mixed")?;
         let valid_track_path = scan_folder.join("valid.wav");
@@ -392,8 +391,7 @@ mod tests {
     }
 
     #[test]
-    fn watch_folder_paths_returns_every_registered_path_sorted_by_query()
-    -> std::result::Result<(), Box<dyn std::error::Error>> {
+    fn watch_folder_paths_are_sorted() -> std::result::Result<(), Box<dyn std::error::Error>> {
         let db = memory_library_db()?;
         let scan_folder = unique_audio_scan_folder("watch-paths")?;
         let album_folder = scan_folder.join("albums");
@@ -419,8 +417,7 @@ mod tests {
     }
 
     #[test]
-    fn remove_watch_folder_preserves_tracks_and_nested_watch_folder()
-    -> std::result::Result<(), Box<dyn std::error::Error>> {
+    fn removing_watch_folder_keeps_tracks() -> std::result::Result<(), Box<dyn std::error::Error>> {
         let db = memory_library_db()?;
         let scan_folder = unique_audio_scan_folder("remove")?;
         let nested_folder = scan_folder.join("nested");

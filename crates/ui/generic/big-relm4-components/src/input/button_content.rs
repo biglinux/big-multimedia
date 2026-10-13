@@ -6,7 +6,7 @@
 use adw::prelude::*;
 use relm4::gtk;
 
-/// Data used to build an icon+label Adwaita button content widget.
+/// Inputs for building an icon+label Adwaita button content widget.
 #[non_exhaustive]
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct BigButtonContentSpec {

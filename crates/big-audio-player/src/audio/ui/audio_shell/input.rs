@@ -1,6 +1,6 @@
 use super::*;
 
-/// Messages into the shell — almost all are child-panel `Output`s forwarded by
+/// Messages into the shell. Almost all are child-panel `Output`s forwarded by
 /// the Controllers' `forward` maps.
 #[derive(Debug)]
 pub enum AudioShellInput {
@@ -137,7 +137,7 @@ pub enum AudioShellInput {
     ShowSmartphone,
     /// Re-evaluate the album-art background (Appearance toggle changed).
     RefreshBlurArt,
-    /// Open the playlist library dialog (main menu) — resolves + presents.
+    /// Open the playlist library dialog (main menu): resolves + presents.
     ShowManagePlaylists,
     /// Custom playlists resolved → push into the playlist library dialog.
     ManagePlaylistsResolved(Vec<(i64, String, i64, f64)>),
@@ -156,7 +156,7 @@ pub enum AudioShellInput {
     ImportPlaylistFolder(PathBuf),
     /// Import finished → `usize` tracks were matched and added.
     PlaylistImported(Result<usize, String>),
-    /// A transport command from the smartphone remote (worker thread) — reuses
+    /// A transport command from the smartphone remote (worker thread); reuses
     /// the normal playback handler.
     PlaybackRemote {
         command: AudioPlaybackBarOutput,
@@ -179,7 +179,7 @@ pub enum AudioShellInput {
     SleepTimerCancel,
     /// One-second sleep-timer countdown tick.
     SleepTick,
-    /// Tell the person something — used by workers that must report a failure
+    /// Tell the person something. Used by workers that must report a failure
     /// without leaving the previous result on screen as if it had succeeded.
     Notify(String),
     /// Undo the last queue edit (Ctrl+Z).

@@ -1,4 +1,4 @@
-//! Player subsystem — mpv backend integration, playback queue management,
+//! Player subsystem: mpv backend integration, playback queue management,
 //! and video thumbnail extraction.
 
 pub mod mpv_backend;

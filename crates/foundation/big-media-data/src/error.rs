@@ -1,7 +1,7 @@
 //! Unified error type for `big-media-runtime`.
 //!
-//! Single `Error` enum with `thiserror`-generated `Display` impls keeps
-//! every fallible API in the crate honest about kind + context. The
+//! Single `Error` enum with `thiserror`-generated `Display` impls gives
+//! every fallible API in the crate an explicit kind and context. The
 //! `#[from]` conversions let propagation with `?` work for the common
 //! low-level error sources (I/O, SQLite, JSON, parsing, UTF-8).
 //!
@@ -15,7 +15,7 @@ use thiserror::Error;
 /// reaches: filesystem, SQLite, JSON, mpv, ffmpeg, Chromecast.
 ///
 /// `#[non_exhaustive]` keeps adding new variants from being a semver
-/// break — consumers must use a wildcard arm.
+/// break; consumers must use a wildcard arm.
 #[derive(Debug, Error)]
 #[non_exhaustive]
 pub enum Error {
@@ -48,8 +48,8 @@ pub enum Error {
     #[error("parse float: {0}")]
     ParseFloat(#[from] std::num::ParseFloatError),
 
-    /// mpv backend textual error. mpv's C API returns short strings —
-    /// preserve them verbatim.
+    /// mpv backend textual error. mpv's C API returns short strings,
+    /// kept verbatim.
     #[error("mpv: {0}")]
     Mpv(String),
 
@@ -63,7 +63,7 @@ pub enum Error {
         .code.map_or_else(|| "unknown".to_owned(), |c| c.to_string())
     )]
     Ffmpeg {
-        /// Binary name (`"ffmpeg"` / `"ffprobe"`) — `&'static str`.
+        /// Binary name: `"ffmpeg"` or `"ffprobe"`.
         command: &'static str,
         /// Exit code, when the process actually exited.
         code: Option<i32>,
@@ -154,7 +154,7 @@ impl From<String> for Error {
     }
 }
 
-// NOTE: `impl From<&str>` is intentionally absent. `&str` literals leaking
+// No `impl From<&str>`: `&str` literals leaking
 // into typed-error sites obscure real failure modes; callers with a `&str`
 // must use `Error::internal(s)` or `.to_string().into()` explicitly.
 
@@ -193,7 +193,7 @@ mod tests {
         let bad: Vec<u8> = vec![0xff, 0xfe, 0xfd];
         let inner = std::str::from_utf8(&bad).unwrap_err();
         let e: Error = inner.into();
-        // caveman: borrowed vs owned utf-8 must be greppable
+        // Borrowed and owned UTF-8 errors stay distinguishable in logs.
         assert!(e.to_string().starts_with("utf-8 (borrowed): "));
         assert!(matches!(e, Error::Utf8(_)));
     }

@@ -1,7 +1,7 @@
 //! Radio Browser API JSON -> station parser; spam-vote filter
 //! (>= 50k votes drops bot-rigged stations); locale-based country detection.
 //!
-//! This module never opens network sockets — callers fetch the JSON
+//! This module never opens network sockets: callers fetch the JSON
 //! payload themselves and pass it to `parse_stations_json` or
 //! `parse_stations_json_filtered`.
 
@@ -33,8 +33,8 @@ pub fn parse_stations_json(body: &str) -> Vec<RadioBrowserEntry> {
 ///
 /// Radio Browser hosts community-voted stations; voting can be gamed, so a
 /// large vote count is a stronger signal of bot-rigged spam than of
-/// quality. This filter is used for the "discover" view to keep results
-/// honest while [`parse_stations_json`] keeps everything for the user's
+/// quality. This filter is used for the "discover" view to drop rigged
+/// stations while [`parse_stations_json`] keeps everything for the user's
 /// own searches.
 #[must_use]
 pub fn parse_stations_json_filtered(body: &str) -> Vec<RadioBrowserEntry> {

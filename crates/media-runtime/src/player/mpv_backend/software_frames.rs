@@ -134,7 +134,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn frames_are_aligned_bounded_and_recycled_only_after_release() {
+    fn frames_recycle_only_after_release() {
         assert_eq!(std::mem::size_of::<Block>(), 64);
         let pool = SoftwareFramePool::default();
         let (wake, receiver) = async_channel::bounded(1);

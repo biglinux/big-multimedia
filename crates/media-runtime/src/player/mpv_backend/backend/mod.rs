@@ -1,4 +1,4 @@
-//! `MpvBackend` — mpv ownership, background event loop, lifecycle.
+//! `MpvBackend`: mpv ownership, background event loop, lifecycle.
 //! Per-mode initialization options live in `init_options`. Split from
 //! the original monolithic `backend.rs`; public API is unchanged.
 
@@ -305,9 +305,8 @@ impl MpvBackend {
                 };
                 pending.push_back(event);
             }
-            // Every position change redraws the window, which cost the audio
-            // player ~2 % of a core at twenty per second (measured 2026-09-28);
-            // ten keep the seek bar moving smoothly. Paused or with nothing
+            // Every position change redraws the window: ten a second keep the
+            // seek bar moving smoothly at half the cost of twenty. Paused or with nothing
             // loaded only state changes need catching.
             let interval = if poll.last_paused == Some(true) || !poll.has_position {
                 250
@@ -820,7 +819,7 @@ mod volume_tests {
     }
 
     #[test]
-    fn volume_and_mute_work_without_a_pulse_stream() {
+    fn volume_mute_work_without_pulse() {
         let mpv = MpvClient::with_initializer(|init| {
             apply_audio_only_options(init)?;
             init.set_option("ao", "null")
@@ -858,7 +857,7 @@ mod volume_tests {
     }
 
     #[test]
-    fn close_saves_only_the_position_and_forgets_finished_files() {
+    fn close_keeps_position_forgets_finished() {
         let temp = tempfile::tempdir().unwrap();
         let input = temp.path().join("silence.wav");
         // Four seconds of 8 kHz mono 16-bit silence.

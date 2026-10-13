@@ -121,7 +121,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn audio_appearance_window_spec_uses_expected_geometry_and_keys() {
+    fn appearance_window_geometry_and_keys() {
         let spec = audio_appearance_window_spec();
 
         assert_eq!(spec.default_width, 500);
@@ -137,7 +137,7 @@ mod tests {
     }
 
     #[test]
-    fn audio_effects_page_spec_names_album_art_background_toggle() {
+    fn effects_page_names_art_background_toggle() {
         let spec = audio_effects_page_spec();
 
         assert_eq!(spec.title, "Effects");

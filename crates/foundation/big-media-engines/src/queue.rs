@@ -531,7 +531,7 @@ mod tests {
     }
 
     #[test]
-    fn jump_to_out_of_range_returns_none_and_keeps_current() {
+    fn out_of_range_jump_keeps_current() {
         let mut queue = PlayQueue::new();
         queue.set_tracks(tracks(3));
         queue.jump_to(1);
@@ -562,7 +562,7 @@ mod tests {
     }
 
     #[test]
-    fn remove_current_at_end_clamps_to_new_last() {
+    fn removing_last_current_clamps_index() {
         let mut queue = PlayQueue::new();
         queue.set_tracks(tracks(3));
         queue.jump_to(2);
@@ -592,7 +592,7 @@ mod tests {
     }
 
     #[test]
-    fn move_track_from_before_to_after_current_decrements_index() {
+    fn moving_earlier_track_later_decrements() {
         let mut queue = PlayQueue::new();
         queue.set_tracks(tracks(4));
         queue.jump_to(2);
@@ -602,7 +602,7 @@ mod tests {
     }
 
     #[test]
-    fn move_track_from_after_to_before_current_increments_index() {
+    fn moving_later_track_earlier_increments() {
         let mut queue = PlayQueue::new();
         queue.set_tracks(tracks(4));
         queue.jump_to(1);

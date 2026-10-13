@@ -171,7 +171,7 @@ impl Client {
         })
     }
 
-    /// Cache notifications run on the main context used to create the client.
+    /// Cache notifications run on the main context that created the client.
     /// Disconnect the returned handlers when the consuming view closes.
     pub fn connect_changed(&self, changed: impl Fn() + 'static) -> [glib::SignalHandlerId; 2] {
         let changed = std::rc::Rc::new(changed);

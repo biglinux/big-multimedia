@@ -65,7 +65,7 @@ pub(super) fn install_window_actions(
         big_app_kit::desktop::install_action(&actions, name, move || sender.input(message()));
     }
     // Stream Quality (yt-dlp format picker) only applies to online/streamed
-    // media — start disabled; the shell enables it on a remote `FileLoaded` and
+    // media: start disabled; the shell enables it on a remote `FileLoaded` and
     // disables it again for local files (see playback.rs). Grays the menu entry.
     set_action_enabled(&actions, "ytdl-quality", false);
     // Cutting and converting happen in the converter GUIs; grey out what they
@@ -84,7 +84,7 @@ pub(super) fn install_window_actions(
 }
 
 /// Enable/disable a `win.*` action by name (no-op if absent or not a
-/// `SimpleAction`). Used to gate context-dependent entries (e.g. Stream Quality
+/// `SimpleAction`). Gates context-dependent entries (e.g. Stream Quality
 /// for online media only).
 pub(super) fn set_action_enabled(actions: &gio::SimpleActionGroup, name: &str, enabled: bool) {
     use gtk::prelude::ActionMapExt;

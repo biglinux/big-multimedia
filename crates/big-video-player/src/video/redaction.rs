@@ -1,6 +1,6 @@
 //! PII redaction for log / tracing output.
 //!
-//! Use `redact_path()` for filesystem paths — keeps the leaf filename (and its
+//! Use `redact_path()` for filesystem paths: it keeps the leaf filename (and its
 //! ext) but hides the parent directory tree.
 
 use std::path::Path;

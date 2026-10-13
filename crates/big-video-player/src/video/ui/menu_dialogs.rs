@@ -147,7 +147,7 @@ impl VideoShell {
             return;
         };
         // Metadata titles can contain secrets or exceed NAME_MAX. The public
-        // filename is deliberately independent of the media title/URL.
+        // filename is independent of the media title/URL.
         static SEQ: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(1);
         let target = directory.join(format!(
             "screenshot-{}-{}.png",
@@ -377,12 +377,12 @@ mod tests {
     }
 
     #[test]
-    fn sleep_minutes_saturate_instead_of_overflow() {
+    fn sleep_minutes_saturate() {
         assert_eq!(sleep_minutes_to_secs(u32::MAX), u32::MAX);
     }
 
     #[test]
-    fn chapter_title_falls_back_on_empty_or_placeholder() {
+    fn blank_chapter_title_falls_back() {
         assert_eq!(
             chapter_title_with_prefix(String::new(), 0, "Chapter"),
             "Chapter 1"

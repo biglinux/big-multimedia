@@ -1,4 +1,4 @@
-//! MusicBrainz metadata lookup — fetch genre, year, and track number for recordings.
+//! MusicBrainz metadata lookup: fetch genre, year, and track number for recordings.
 //! Free API, no key needed. Rate limit: 1 req/sec (enforced via User-Agent + sleep).
 
 use big_os_kit::http_client::http_get_json;
@@ -19,7 +19,7 @@ pub struct MbMetadata {
     pub release_group_mbid: Option<String>,
 }
 
-/// Blocking — call from a background thread.
+/// Blocking; call from a background thread.
 pub fn lookup_metadata(artist: &str, title: &str) -> Option<MbMetadata> {
     let query = format!(
         "artist:\"{}\" AND recording:\"{}\"",
@@ -40,7 +40,7 @@ fn parse_recording_json(body: &str) -> Option<MbMetadata> {
     let json: serde_json::Value = serde_json::from_str(body).ok()?;
     let recording = json.get("recordings")?.as_array()?.first()?;
 
-    // Reject low-confidence matches — MB returns the best of a bad bunch otherwise.
+    // Reject low-confidence matches: MB otherwise returns the best of a bad bunch.
     let score = recording
         .get("score")
         .and_then(serde_json::Value::as_i64)
@@ -66,7 +66,7 @@ fn parse_recording_json(body: &str) -> Option<MbMetadata> {
     Some(meta)
 }
 
-/// Highest-vote tag wins — MB tags are crowd-sourced, count reflects consensus.
+/// Highest-vote tag wins: MB tags are crowd-sourced, count reflects consensus.
 fn extract_best_tag(recording: &serde_json::Value) -> Option<String> {
     let tags = recording.get("tags")?.as_array()?;
     let best = tags.iter().max_by_key(|t| {
@@ -116,7 +116,7 @@ fn extract_first_track_number(release: &serde_json::Value) -> Option<i32> {
     })
 }
 
-/// Concatenates `name+joinphrase` across all credits — preserves "John & Paul"
+/// Concatenates `name+joinphrase` across all credits, keeping "John & Paul"
 /// rather than picking only the lead artist.
 fn populate_artist_credit(credits: &[serde_json::Value], meta: &mut MbMetadata) {
     if let Some(id) = credits

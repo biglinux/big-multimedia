@@ -21,7 +21,7 @@ static CACHE_NAMESPACE: std::sync::OnceLock<String> = std::sync::OnceLock::new()
 
 /// Set the on-disk cache namespace (the per-app cache subdir). Call once at
 /// startup, before the radio panel runs. No-op if already set. Keeping this
-/// caller-supplied is what keeps the cache generic — any media app provides its
+/// caller-supplied is what keeps the cache generic: any media app provides its
 /// own id instead of a hardcoded application name.
 pub fn set_cache_namespace(name: impl Into<String>) {
     let _ = CACHE_NAMESPACE.set(name.into());

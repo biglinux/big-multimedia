@@ -126,8 +126,7 @@ fn is_resolved_playlist_entry_valid(entry: &str) -> bool {
         return true;
     }
     // canonicalize collapses `..` and follows symlinks; on failure
-    // (broken symlink, missing file) the entry is dropped — same
-    // user-visible behavior as before.
+    // (broken symlink, missing file) the entry is dropped.
     let Ok(canon) = std::fs::canonicalize(entry) else {
         return false;
     };

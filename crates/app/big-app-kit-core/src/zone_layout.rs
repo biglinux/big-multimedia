@@ -5,8 +5,8 @@
 //! This is the data behind `big_relm4_components::input::zone_layout_editor::BigZoneLayoutEditor`
 //! (the GTK visual "drag controls between zones" editor) and
 //! `big_relm4_components::layout::zone_applier` (the runtime placement applier)
-//! — the customization the video-player controls bar already ships and the
-//! big-shell panel should adopt.
+//! (the customization the video-player controls bar ships and the big-shell
+//! panel should adopt).
 //!
 //! Two halves:
 //! - [`crate::zone_layout::ZoneLayoutSpec`] (the catalog + topology): which
@@ -37,7 +37,7 @@ pub enum ZonePlacement {
 }
 
 impl ZonePlacement {
-    /// Every placement in render order — useful for a full single-row bar.
+    /// Every placement in render order, as a full single-row bar uses them.
     pub const ALL: [ZonePlacement; 3] = [Self::Start, Self::Center, Self::End];
 
     /// The stable lowercase token used in [`slot_key`].
@@ -59,8 +59,8 @@ pub fn slot_key(bar_id: &str, placement: ZonePlacement) -> String {
     format!("{bar_id}:{}", placement.as_key_str())
 }
 
-/// One selectable control in the editor. `label` is ALREADY translated by the
-/// caller — the catalog never embeds msgids. `icon` is a symbolic icon name.
+/// One selectable control in the editor. The caller translates `label`; the
+/// catalog never embeds msgids. `icon` is a symbolic icon name.
 /// `default_slot` is the [`slot_key`] a control falls back to when a saved or
 /// hand-edited layout omits it (see [`ZoneLayout::normalized`]).
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -207,7 +207,7 @@ impl ZoneLayout {
         }
     }
 
-    /// Build a layout from per-zone CSV strings (placement only — visibility is
+    /// Build a layout from per-zone CSV strings (placement only; visibility is
     /// set separately via [`ZoneLayout::set_visible`], mirroring the video
     /// player's split `ui-zone-*` + `ui-show-*` keys). `get_csv` is called once
     /// per `(bar, placement)` slot. The result is [`normalized`](Self::normalized).
@@ -260,7 +260,7 @@ impl ZoneLayout {
 
         // Append any control the saved layout omitted to its default slot. A
         // control whose default_slot isn't a valid slot in this spec is
-        // unreachable — left unplaced (the spec author's bug, not a panic).
+        // unreachable and stays unplaced: a spec bug, which must not panic.
         for control in &spec.controls {
             if !placed.contains(&control.id)
                 && let Some(slot) = result.slots.get_mut(&control.default_slot)
@@ -301,13 +301,13 @@ mod tests {
     }
 
     #[test]
-    fn slot_keys_lists_every_bar_zone_in_render_order() {
+    fn slot_keys_follow_render_order() {
         let spec = spec();
         assert_eq!(spec.slot_keys(), ["bar:start", "bar:center", "bar:end"]);
     }
 
     #[test]
-    fn from_csv_drops_empty_segments_and_keeps_order() {
+    fn from_csv_drops_empty_segments() {
         let spec = spec();
         // Non-default slot with an embedded empty segment: the two real ids must
         // survive (empties dropped) IN ORDER, proving the values flow through
@@ -341,7 +341,7 @@ mod tests {
     fn normalized_dedups_a_control_to_first_zone() {
         let spec = spec();
         let mut layout = ZoneLayout::default();
-        // "play" appears in two zones — only the first (render order) survives.
+        // "play" appears in two zones; only the first in render order survives.
         layout
             .slots
             .insert("bar:start".into(), vec!["play".into(), "volume".into()]);

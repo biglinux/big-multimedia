@@ -86,8 +86,8 @@ pub(in crate::audio::ui) struct LibraryTreeHandle {
 impl LibraryTreeHandle {
     /// Replace the whole tree from freshly-preloaded data. Registers the
     /// children to mount on expand, then splices the root store in place (the
-    /// `ListView`/`TreeListModel`/selection are never rebuilt — the RSS-leak
-    /// invariant).
+    /// `ListView`/`TreeListModel`/selection are never rebuilt, which keeps RSS
+    /// from leaking).
     pub(in crate::audio::ui) fn set_tree(&self, tree_snapshot: LibraryTreeSnapshot) {
         let mut stores = self.child_stores.borrow_mut();
         let mut leaves = self.leaf_tracks.borrow_mut();
@@ -176,7 +176,7 @@ pub(super) fn child_store(
     Some(child_store)
 }
 
-/// Build the leaf-level `BrowserNode` for a tree node (no children attached —
+/// Build the leaf-level `BrowserNode` for a tree node (no children attached;
 /// expansion is resolved through the child-store map).
 pub(super) fn to_browser_node(node: &LibraryTreeNode) -> BrowserNode {
     let gnode = match node.kind {

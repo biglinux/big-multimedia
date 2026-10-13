@@ -3,7 +3,7 @@
 /// Metadata for one IPTV channel parsed from an M3U `#EXTINF` line.
 ///
 /// All fields default to empty strings when the corresponding EXTINF
-/// attribute is missing — IPTV playlists in the wild routinely omit
+/// attribute is missing. IPTV playlists in the wild routinely omit
 /// attributes, so callers should tolerate empty values rather than
 /// treat them as errors.
 #[derive(Debug, Clone, Default, PartialEq, Eq)]

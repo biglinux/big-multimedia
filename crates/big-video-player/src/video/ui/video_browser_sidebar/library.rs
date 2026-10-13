@@ -34,7 +34,7 @@ const TS_READ: usize = 200;
 /// A daemon that does not answer quickly is left out, not waited on.
 const TIMEOUT: Duration = Duration::from_secs(3);
 
-// ── folders ────────────────────────────────────────────────────────────────
+// Folders
 
 /// The folders the library shows and searches: the chosen ones, else Videos,
 /// Downloads and the home folder (those that exist).
@@ -136,7 +136,7 @@ fn place_icon(dir: &str) -> &'static str {
     }
 }
 
-// ── the daemon ─────────────────────────────────────────────────────────────
+// The daemon
 
 /// The socket, as `big_indexd_client::default_socket`: never a shared
 /// directory, where another account could answer in the daemon's place.
@@ -300,7 +300,7 @@ fn videos(
     Some((paths, total))
 }
 
-// ── searching ──────────────────────────────────────────────────────────────
+// Searching
 
 /// What a search found: the first [`SHOWN`] videos, and how many there are.
 #[derive(Default)]
@@ -363,7 +363,7 @@ fn count(daemon: &Daemon, dir: &str) -> Option<usize> {
         .map(|(_, total)| total)
 }
 
-// ── the places page ────────────────────────────────────────────────────────
+// The places page
 
 /// With no folder open: the library's folders and the drives plugged in,
 /// then "Choose folders…". Each opens in the browser.
@@ -472,7 +472,7 @@ fn fill_counts(state: &Rc<BrowserState>, rows: Vec<(String, adw::ActionRow)>) {
     });
 }
 
-// ── the search results ─────────────────────────────────────────────────────
+// The search results
 
 /// The section of search results across the library: hidden until a search.
 pub(super) fn build_results(state: &Rc<BrowserState>) -> gtk::Box {
@@ -682,7 +682,7 @@ fn result_row(state: &Rc<BrowserState>, path: &str) -> adw::ActionRow {
     row
 }
 
-// ── choosing the folders ───────────────────────────────────────────────────
+// Choosing the folders
 
 /// The folders the library shows and searches: remove one, add one, or go
 /// back to Videos, Downloads and the home folder.
@@ -850,7 +850,7 @@ mod tests {
     }
 
     #[test]
-    fn a_search_asks_each_outer_folder_and_reads_its_ts_files() {
+    fn search_asks_outer_folders_sniffs_ts() {
         let dir = tempfile::tempdir().unwrap();
         let socket = dir.path().join("indexd.sock");
         // A transport stream syncs on 0x47 every 188 bytes; TypeScript does not.
@@ -916,7 +916,7 @@ mod tests {
     }
 
     #[test]
-    fn a_daemon_that_knows_types_is_asked_for_videos_once() {
+    fn typed_daemon_gets_one_query() {
         let dir = tempfile::tempdir().unwrap();
         let socket = dir.path().join("indexd.sock");
         let server = serve(
@@ -958,7 +958,7 @@ mod tests {
     }
 
     #[test]
-    fn a_folder_the_daemon_does_not_index_is_scanned() {
+    fn unindexed_folder_is_scanned() {
         let dir = tempfile::tempdir().unwrap();
         std::fs::write(dir.path().join("Holiday Trip.mp4"), b"").unwrap();
         std::fs::write(dir.path().join("notes.txt"), b"").unwrap();

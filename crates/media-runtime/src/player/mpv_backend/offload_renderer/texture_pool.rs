@@ -1,5 +1,5 @@
 //! Bounded, release-driven texture ownership. GDK may retain several frames;
-//! alternating texture IDs is NOT evidence that a buffer is safe to overwrite.
+//! alternating texture IDs do not prove that a buffer is safe to overwrite.
 
 use super::gl_fns::GlFns;
 use gtk::{gdk, glib, prelude::*};

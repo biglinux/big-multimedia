@@ -1,8 +1,7 @@
 //! [`RadioPanel`](super::RadioPanel) behavior: the generation-guarded async
 //! query, loading state, and the combined [`MediaRow`] list construction (My
 //! Stations + Explore sections). Rendering is a model swap into the virtualized
-//! [`MediaListView`](crate::media_list) — no per-row widget build, no favicon
-//! fetch storm.
+//! [`MediaListView`](crate::media_list), with no per-row widget build.
 
 use adw::prelude::*;
 use gtk::{gio, glib};

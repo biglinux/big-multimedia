@@ -64,7 +64,7 @@ pub fn setup_hover_controller_exclusive(
     register_popover(popover);
 
     let close_id: PendingClose = Rc::new(CloseState::default());
-    // Weak: the group members' controllers cross-reference every popover —
+    // Weak: the group members' controllers cross-reference every popover;
     // strong `others` lists form a ring that pins all of them (plus the
     // widgets their scale handlers capture) after window close.
     let others: Vec<glib::WeakRef<gtk::Popover>> = all_popovers
@@ -104,7 +104,7 @@ pub fn setup_hover_controller_exclusive(
     }
     {
         let close_id = close_id.clone();
-        // Weak: this controller lives ON the popover — a strong clone here
+        // Weak: this controller lives on the popover, so a strong clone here
         // is a popover⇄controller self-cycle that leaks the popover (and
         // everything its child closures capture) on window close.
         let popover = popover.downgrade();

@@ -258,7 +258,7 @@ fn page_box() -> gtk::Box {
 }
 
 impl VideoShell {
-    /// Where the floating panels sit in the window as it is now.
+    /// Where the floating panels sit in the window at its current size.
     fn panel_layout_now(&self) -> PanelLayout {
         // The header bar itself: in the gradient look its box also holds
         // 80 px of fade, and so does the top of the controls.
@@ -1070,7 +1070,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn wide_window_gets_three_columns_right_under_the_header() {
+    fn wide_window_gets_three_columns() {
         let layout = panel_layout(1920, 1080, 46, 110);
         assert_eq!((layout.columns, layout.width, layout.top), (3, 620, 50));
         assert_eq!(layout.bottom, 116);
@@ -1078,14 +1078,14 @@ mod tests {
     }
 
     #[test]
-    fn short_window_covers_the_controls_instead_of_shrinking() {
+    fn short_window_covers_the_controls() {
         let layout = panel_layout(1174, 420, 46, 110);
         assert_eq!(layout.bottom, 420 - 50 - PANEL_MIN_HEIGHT);
         assert!(layout.compact);
     }
 
     #[test]
-    fn narrow_windows_fit_the_card_and_drop_columns() {
+    fn narrow_windows_drop_columns() {
         assert_eq!(panel_layout(800, 600, 46, 110).columns, 2);
         assert_eq!(panel_layout(520, 600, 46, 110).width, 504);
         assert_eq!(panel_layout(360, 600, 46, 110).columns, 1);

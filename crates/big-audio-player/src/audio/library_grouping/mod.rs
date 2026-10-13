@@ -1,9 +1,9 @@
 //! Clementine-style 3-level hierarchical grouping for the library browser.
 //!
 //! Split by axis:
-//! - `group_by`   — `GroupBy` enum (single column).
-//! - `grouping`   — `LibraryGrouping` triple of levels + serde + presets.
-//! - `age_filter` — `AgeFilter` "since" window.
+//! - `group_by`: `GroupBy` enum (single column).
+//! - `grouping`: `LibraryGrouping` triple of levels + serde + presets.
+//! - `age_filter`: `AgeFilter` "since" window.
 //!
 //! All three types are re-exported here so callers keep `use crate::audio::library_grouping::*`.
 
@@ -42,7 +42,7 @@ mod tests {
     }
 
     #[test]
-    fn grouping_preset_definitions_match_expected_order_and_levels() {
+    fn preset_definitions_keep_order_and_levels() {
         let preset_definitions = LibraryGrouping::preset_definitions();
         let expected_presets = [
             ("Songs", [GroupBy::None, GroupBy::None, GroupBy::None]),

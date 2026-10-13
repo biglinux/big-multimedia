@@ -144,7 +144,7 @@ pub(crate) fn add_files(state: &Rc<BrowserState>) {
 /// Single overflow menu (hamburger) consolidating every secondary option, each
 /// a *labeled* item with a checkbox/radio that reflects its persisted state.
 /// Mode-specific: Files shows folder options (subfolders, sort); Playlist shows
-/// playback (shuffle, repeat) + the m3u file actions — each interface only what
+/// playback (shuffle, repeat) + the m3u file actions: each mode shows only what
 /// belongs to it.
 fn build_options_menu(state: &Rc<BrowserState>, mode: SidebarMode) -> gtk::MenuButton {
     let group = gio::SimpleActionGroup::new();

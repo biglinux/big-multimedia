@@ -73,7 +73,7 @@ mod tests {
     }
 
     #[test]
-    fn get_php_url_trims_trailing_slash_and_encodes() {
+    fn get_php_url_trims_and_encodes() {
         let url = xtream_get_php_url("http://srv.example/", "u@x", "p&w");
         assert_eq!(
             url,

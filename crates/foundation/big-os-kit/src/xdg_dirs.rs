@@ -2,7 +2,7 @@
 
 //! XDG directory resolution for Linux desktop apps.
 //!
-//! This module intentionally avoids the cross-platform `dirs` crate. BigLinux
+//! This module avoids the cross-platform `dirs` crate. BigLinux
 //! packages target Linux/XDG, so resolving the relevant environment variables
 //! directly keeps the dependency graph smaller and avoids unrelated platform
 //! transitive crates.

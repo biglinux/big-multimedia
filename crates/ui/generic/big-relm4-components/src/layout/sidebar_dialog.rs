@@ -1,23 +1,23 @@
 // SPDX-FileCopyrightText: 2026 BigLinux contributors
 // SPDX-License-Identifier: MIT
 
-//! Reusable `adw::NavigationSplitView` scaffold — the framework base for every
+//! Reusable `adw::NavigationSplitView` scaffold: the framework base for every
 //! sidebar layout (the same shape as GNOME Settings / Files).
 //!
 //! It owns the otherwise-repetitive, GTK-direct assembly (split + a
 //! `NavigationPage` / `ToolbarView` / `HeaderBar` per pane) so callers never
 //! hand-build it. Both panes take an arbitrary body widget (the caller wraps it
-//! in a `ScrolledWindow` if it needs to scroll — the scaffold never force-wraps,
+//! in a `ScrolledWindow` if it needs to scroll; the scaffold never force-wraps,
 //! so an already-scrolling body like an `adw::ViewStack` of scrollers is not
 //! double-wrapped).
 //!
 //! The sidebar pane's header is always *flat and seamless*: the split auto-tints
 //! the sidebar background, and a flat header is transparent so it shows that
-//! same tint, blending into the body below (no bottom border, no colour step —
-//! this is what removes the "1px line under the sidebar header" and keeps the
+//! same tint, blending into the body below (no bottom border, no colour step;
+//! this removes the "1px line under the sidebar header" and keeps the
 //! header from showing the lighter `headerbar` background). It carries no title
-//! by default; drop a title widget — plain title text, a primary action button,
-//! or a title/search stack — via [`BigSidebarDialog::set_sidebar_header`], and
+//! by default; drop a title widget (plain title text, a primary action button,
+//! or a title/search stack) via [`BigSidebarDialog::set_sidebar_header`], and
 //! pack extra controls (e.g. a search toggle) into
 //! [`BigSidebarDialog::sidebar_header`].
 //!
@@ -108,7 +108,7 @@ impl BigSidebarDialog {
         content_toolbar.add_top_bar(&content_header);
         // AdwNavigationPage requires a non-empty title (the collapsed-mode
         // back-button label); fall back to the window title when the caller
-        // leaves `content_title` empty — the live header title is the separate
+        // leaves `content_title` empty. The live header title is the separate
         // `content_title` WindowTitle, updated via `set_content_title`. Without
         // this fallback Adwaita logs "AdwNavigationPage … is missing a title".
         let content_page_title = if spec.content_title.is_empty() {

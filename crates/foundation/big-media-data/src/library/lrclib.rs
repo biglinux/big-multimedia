@@ -1,4 +1,4 @@
-//! LRCLIB API client — free, no API key, open-source lyrics database.
+//! LRCLIB API client: free, no API key, open-source lyrics database.
 //! <https://lrclib.net/docs>
 
 use big_os_kit::http_client::http_get_with_retry;
@@ -18,7 +18,7 @@ fn parse_lyrics_json(body: &str) -> Option<String> {
         .map(String::from)
 }
 
-/// Blocking — call from a worker thread. Synced LRC preferred, plain fallback.
+/// Blocking; call from a worker thread. Synced LRC preferred, plain fallback.
 pub fn fetch_lyrics(artist: &str, title: &str, album: Option<&str>) -> Option<String> {
     let mut url = format!(
         "https://lrclib.net/api/get?artist_name={}&track_name={}",

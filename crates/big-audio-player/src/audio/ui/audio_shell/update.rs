@@ -379,7 +379,7 @@ fn should_replace_queue_with(track_count: usize) -> bool {
     track_count > 0
 }
 
-/// Shuffle state after the toggle shortcut fires — the negation of the current
+/// Shuffle state after the toggle shortcut fires: the negation of the current
 /// one.
 fn next_shuffle_state(current_shuffle: bool) -> bool {
     !current_shuffle
@@ -400,7 +400,7 @@ mod tests {
     }
 
     #[test]
-    fn lyrics_position_is_40_percent_with_150_floor() {
+    fn lyrics_split_is_40_percent_floored() {
         assert_eq!(lyrics_paned_position(800, false), 320); // 800 * 0.4
         assert_eq!(lyrics_paned_position(1000, false), 400);
         // Below the floor the 150px minimum wins (300 * 0.4 = 120 < 150).
@@ -409,7 +409,7 @@ mod tests {
     }
 
     #[test]
-    fn lyrics_text_meaningful_only_when_present_and_non_blank() {
+    fn lyrics_text_needs_non_blank_content() {
         assert!(lyrics_text_is_meaningful(Some("la la")));
         assert!(!lyrics_text_is_meaningful(Some("")));
         assert!(!lyrics_text_is_meaningful(Some("   \n\t ")));
@@ -456,7 +456,7 @@ mod tests {
     }
 
     #[test]
-    fn replace_queue_only_with_a_non_empty_resolution() {
+    fn empty_resolution_keeps_queue() {
         assert!(!should_replace_queue_with(0));
         assert!(should_replace_queue_with(1));
         assert!(should_replace_queue_with(42));

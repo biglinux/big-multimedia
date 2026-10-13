@@ -5,7 +5,7 @@
 //! top/bottom bars) and the SETTINGS mapping; the editor widget is shared.
 //!
 //! The runtime applier ([`super::super::super::video_controls_bar::zones`]) reads
-//! the same `ui-zone-*` / `ui-show-*` keys — unchanged.
+//! the same `ui-zone-*` / `ui-show-*` keys.
 
 use std::rc::Rc;
 
@@ -123,7 +123,7 @@ const CONTROLS: &[(&str, &str, &str, &str, keys::BoolKey)] = &[
     ),
 ];
 
-/// `(bar, placement, the `ui-zone-*` key)` — maps the editor's slots to the
+/// `(bar, placement, the `ui-zone-*` key)`: maps the editor's slots to the
 /// settings keys the runtime controls bar reads.
 const ZONE_KEYS: &[(&str, ZonePlacement, keys::StringKey)] = &[
     ("top", ZonePlacement::Start, keys::UI_ZONE_TOP_LEFT),

@@ -5,7 +5,7 @@
 //! (passed as `pages` + closures), so the helper is free of any concrete
 //! `Settings` type.
 //!
-//! `adw::PreferencesWindow` (libadwaita 1.6) is kept deliberately over
+//! `adw::PreferencesWindow` (libadwaita 1.6) is used over
 //! `PreferencesDialog`: the dialog variant is not user-resizable, and the size
 //! memory below is the whole point.
 

@@ -48,7 +48,7 @@ impl ButtonLayoutWidgets {
     /// token mapped through `control_name`, dropping unknown/legacy-aliased
     /// entries); the applier reparents each control into its zone and appends any
     /// control the CSVs omit to its default fallback slot. Visibility comes from
-    /// the `ui-show-*` flags — the voice control additionally gated on a
+    /// the `ui-show-*` flags, the voice control additionally gated on a
     /// noise-reduction backend being installed.
     pub(crate) fn apply_settings(&self, settings: &Settings) {
         let start = slot_key("bottom", ZonePlacement::Start);
@@ -197,7 +197,7 @@ impl SoundIndicator {
     }
 
     /// Show `muted` at `volume`. Muted, the readout says "No sound" instead of
-    /// the level: it used to keep saying "80" while nothing played. Muted and
+    /// the level, which would read as sound while nothing plays. Muted and
     /// level 0 have different icons, and either silent state wears the
     /// `sound-off` pill, so no sound is visible at a glance and not by colour
     /// alone. The button names the action it will take, for the tooltip and
@@ -478,7 +478,7 @@ fn build_volume_control(
     sound.show(false, initial_volume);
     // Set true while mirroring an external mixer change onto the scale, so the
     // handler updates only the readout/icon and does not push the value back to
-    // the sound server (or clear mute) — which would fight the external change.
+    // the sound server (or clear mute), which would fight the external change.
     let suppress_volume = Rc::new(std::cell::Cell::new(false));
     {
         // Capture the button weakly: the scale's handler must not keep the
@@ -594,14 +594,14 @@ pub(super) fn build_end_box() -> EndBoxWidgets {
         .valign(gtk::Align::Center)
         .build();
 
-    // Edit & Export: cut / extract audio / convert — moved out of the hamburger
-    // menu to a footer button next to the subtitle control. Items target the same
+    // Edit & Export: cut / extract audio / convert, a footer button next to the
+    // subtitle control. Items target the
     // `win.*` window actions, resolved against the player window's action group.
-    // Plain button + popover parented to the button, NOT
+    // Plain button + popover parented to the button, not
     // `build_flat_action_popover_button`: that helper wraps the button in a box
     // and installs a destroy handler on the wrapper that unparents the popover
-    // when the wrapper drops — which orphaned this popover so it opened at the
-    // window origin (top-left) then crashed.
+    // when the wrapper drops, which orphans this popover so it opens at the
+    // window origin (top-left) and then crashes.
     let export_menu_button =
         tooltip::icon_button("edit-cut-symbolic", &i18n("Edit & Export"), &["osd-btn"]);
     let export_menu_popover = build_flat_action_popover(&export_menu_button, &export_menu_items());
@@ -717,7 +717,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn edit_export_menu_actions_are_flat_window_actions() {
+    fn edit_export_items_are_window_actions() {
         assert_eq!(
             export_menu_action_names(),
             [

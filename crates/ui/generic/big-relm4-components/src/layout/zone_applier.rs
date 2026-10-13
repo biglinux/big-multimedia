@@ -70,7 +70,7 @@ pub fn apply_zone_layout(
     }
 }
 
-/// Resolve the final control ordering per slot (pure — no GTK).
+/// Resolve the final control ordering per slot (pure, no GTK).
 ///
 /// Walks `slot_order`, taking each slot's ids from `layout`; a control is placed
 /// in the FIRST slot (in `slot_order`) that names it (`is_registered` and not
@@ -154,7 +154,7 @@ mod tests {
         let mut layout = ZoneLayout::default();
         layout.slots.insert(start.clone(), vec!["volume".into()]);
         layout.slots.insert(center.clone(), vec!["play".into()]);
-        // `end` left empty — its defaults come from the fallback list.
+        // `end` left empty: its defaults come from the fallback list.
         let order = [start.as_str(), center.as_str(), end.as_str()];
         let fallback = [
             ("volume", start.as_str()),

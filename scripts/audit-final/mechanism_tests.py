@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Real OS/curl/ffmpeg mechanisms with synthetic data. NOT Rust implementation tests."""
+"""Real OS/curl/ffmpeg mechanisms with synthetic data. Rust implementations are out of scope."""
 
 import fcntl
 import json
@@ -107,7 +107,7 @@ class CurlMechanisms(unittest.TestCase):
         )
         self.assertEqual(r["token"], "Bearer synthetic-private-value")
 
-    def test_literal_body_not_local_file_or_new_directive(self):
+    def test_data_raw_body_stays_literal(self):
         body = '@private-file\n"quoted" \\ slash\ttext\nurl = "http://invalid.example/"'
         r = self.invoke(config("url", self.url) + config("data-raw", body))
         self.assertEqual(r["body"], body)
@@ -118,7 +118,7 @@ class CurlMechanisms(unittest.TestCase):
             r = self.invoke(config("url", self.url), dict(os.environ, CURL_HOME=d))
             self.assertTrue(r["path"].startswith("/data?"))
 
-    def test_glob_is_not_multiple_requests(self):
+    def test_glob_sends_one_request(self):
         before = len(self.handler.calls)
         self.invoke(config("url", self.url + "&a=[1-3]"))
         self.assertEqual(len(self.handler.calls), before + 1)
@@ -296,7 +296,7 @@ class FFmpegMechanisms(unittest.TestCase):
         )
         self.assertAlmostEqual(float(value["format"]["duration"]), 3.2, delta=0.3)
 
-    def test_audio_only_is_distinguishable_from_a_video_export(self):
+    def test_audio_only_differs_from_video(self):
         out = self.root / "audio.wav"
         r = subprocess.run(
             [

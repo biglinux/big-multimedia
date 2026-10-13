@@ -268,7 +268,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn add_to_playlist_dialog_spec_keeps_picker_chrome_and_row_actions() {
+    fn add_to_playlist_dialog_keeps_chrome() {
         assert_eq!(
             add_to_playlist_dialog_spec(),
             AddToPlaylistDialogSpec {
@@ -289,7 +289,7 @@ mod tests {
     }
 
     #[test]
-    fn new_playlist_dialog_spec_keeps_entry_chrome_and_focus_selection() {
+    fn new_playlist_dialog_keeps_chrome() {
         assert_eq!(
             new_playlist_dialog_spec(),
             NewPlaylistDialogSpec {
@@ -307,7 +307,7 @@ mod tests {
     }
 
     #[test]
-    fn can_create_playlist_name_requires_non_blank_trimmed_text() {
+    fn playlist_name_needs_non_blank_text() {
         assert!(!can_create_playlist_name(""));
         assert!(!can_create_playlist_name("   "));
         assert!(can_create_playlist_name("Road Trip"));

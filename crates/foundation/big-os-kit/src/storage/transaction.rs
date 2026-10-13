@@ -60,7 +60,7 @@ pub fn read_regular_limited(path: &Path, limit: usize) -> io::Result<Option<Vec<
     Ok(Some(bytes))
 }
 
-/// Nonblocking cooperating-writer lock. The lock inode is deliberately never
+/// Nonblocking cooperating-writer lock. The lock inode is never
 /// unlinked, otherwise another writer could lock a different inode at that name.
 pub struct WriteLock {
     _file: File,

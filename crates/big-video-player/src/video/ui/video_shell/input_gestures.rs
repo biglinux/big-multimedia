@@ -47,7 +47,7 @@ pub(super) fn wire_osd_autohide(main_overlay: &gtk::Overlay, osd: &Rc<OsdState>)
         let osd = Rc::downgrade(osd);
         // Arm the idle timer instead of hiding at once: leaving the video (or the
         // pointer moving onto a just-opened popover, which reads as a leave) must
-        // fade the OSD after the same delay, not instantly — and the delayed hide
+        // fade the OSD after the same delay, and the delayed hide
         // re-checks the guards, so an open header menu keeps the OSD (and itself).
         motion.connect_leave(move |_| {
             if let Some(osd) = osd.upgrade() {
@@ -174,8 +174,8 @@ pub(super) fn wire_video_input(
         });
     }
     {
-        // Weak: this gesture lives on the window's own drag zone — a strong
-        // window capture is a window⇄gesture cycle that pinned the whole
+        // Weak: this gesture lives on the window's own drag zone; a strong
+        // window capture is a window⇄gesture cycle that pins the whole
         // window after close.
         let content = content.downgrade();
         let drag_start = drag_start.clone();

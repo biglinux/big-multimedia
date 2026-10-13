@@ -35,7 +35,7 @@ fn video_and_audio_color_source_are_independent() {
 }
 
 #[test]
-fn invalid_values_do_not_mutate_state() {
+fn invalid_values_leave_state_unchanged() {
     let settings = Settings::memory_only();
     assert!(!settings.set_double("volume", f64::NAN));
     assert!(!settings.set_string("title", "one\ntwo"));
@@ -45,8 +45,8 @@ fn invalid_values_do_not_mutate_state() {
 }
 
 #[test]
-fn shared_handles_and_external_conflict_are_not_lost_updates() {
-    let path = std::env::temp_dir().join(format!("settings-review-{}.conf", std::process::id()));
+fn shared_handles_keep_external_edits() {
+    let path = std::env::temp_dir().join(format!("settings-shared-{}.conf", std::process::id()));
     let _ = std::fs::remove_file(&path);
     let a = Settings::from_path(path.clone());
     let b = Settings::from_path(path.clone());
@@ -60,18 +60,18 @@ fn shared_handles_and_external_conflict_are_not_lost_updates() {
     assert_eq!(a.get_double(keys::VOLUME), 30.0);
     let _ = std::fs::remove_file(&path);
     let _ = std::fs::remove_file(
-        path.with_file_name(format!("settings-review-{}.conf.lock", std::process::id())),
+        path.with_file_name(format!("settings-shared-{}.conf.lock", std::process::id())),
     );
 }
 
 #[test]
-fn memory_only_cannot_confirm_even_an_unedited_save() {
+fn memory_only_never_confirms_saves() {
     let settings = Settings::memory_only();
     assert!(settings.try_flush().is_err());
     assert_eq!(settings.save_status().phase, SavePhase::Failed);
 }
 
-/// Compile-only check — wrong key type would fail to build.
+/// Compile-only check: a wrong key type would fail to build.
 #[test]
 fn typed_keys_compile_time_safety() {
     let settings = Settings::memory_only();

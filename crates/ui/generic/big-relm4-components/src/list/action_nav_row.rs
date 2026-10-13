@@ -10,7 +10,7 @@ use super::row_core::{action_label_or_title, row_text};
 
 const DEFAULT_ACTION_ICON: &str = "go-next-symbolic";
 
-/// Data used to build a navigation/action row.
+/// Inputs for building a navigation/action row.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct BigActionNavRowSpec {
     /// Title.

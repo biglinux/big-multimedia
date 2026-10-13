@@ -6,10 +6,10 @@ pub use big_app_kit::keybindings::{
 
 use big_media_runtime::i18n::gettext_noop;
 
-/// `single_key: true` everywhere — dispatch via `EventControllerKey` in `window_input.rs`,
+/// `single_key: true` everywhere: dispatch via `EventControllerKey` in `window_input.rs`,
 /// not GTK's `set_accels_for_action`. Same-accel duplicates collapse in `build_accel_map`.
 pub const SHORTCUTS: &[ShortcutDef] = &[
-    // ── Playback ──
+    // Playback
     ShortcutDef {
         action: "play-pause",
         display_name: gettext_noop("Play / Pause"),
@@ -115,7 +115,7 @@ pub const SHORTCUTS: &[ShortcutDef] = &[
         default_accel: "<Shift>BackSpace",
         single_key: true,
     },
-    // ── Video ──
+    // Video
     ShortcutDef {
         action: "fullscreen",
         display_name: gettext_noop("Toggle fullscreen"),
@@ -172,7 +172,7 @@ pub const SHORTCUTS: &[ShortcutDef] = &[
         default_accel: "<Ctrl>c",
         single_key: true,
     },
-    // ── Audio ──
+    // Audio
     ShortcutDef {
         action: "volume-up",
         display_name: gettext_noop("Volume up"),
@@ -201,7 +201,7 @@ pub const SHORTCUTS: &[ShortcutDef] = &[
         default_accel: "<Ctrl>p",
         single_key: true,
     },
-    // ── Subtitles ──
+    // Subtitles
     ShortcutDef {
         action: "secondary-sub",
         display_name: gettext_noop("Toggle secondary subtitles"),
@@ -230,7 +230,7 @@ pub const SHORTCUTS: &[ShortcutDef] = &[
         default_accel: "c",
         single_key: true,
     },
-    // ── Screenshots ──
+    // Screenshots
     ShortcutDef {
         action: "screenshot",
         display_name: gettext_noop("Screenshot"),
@@ -238,7 +238,7 @@ pub const SHORTCUTS: &[ShortcutDef] = &[
         default_accel: "s",
         single_key: true,
     },
-    // ── Music ──
+    // Music
     ShortcutDef {
         action: "music-shuffle",
         display_name: gettext_noop("Toggle shuffle"),
@@ -267,7 +267,7 @@ pub const SHORTCUTS: &[ShortcutDef] = &[
         default_accel: "g",
         single_key: true,
     },
-    // ── Navigation ──
+    // Navigation
     ShortcutDef {
         action: "chapter-next",
         display_name: gettext_noop("Next chapter"),
@@ -282,7 +282,7 @@ pub const SHORTCUTS: &[ShortcutDef] = &[
         default_accel: "at",
         single_key: true,
     },
-    // ── Other ──
+    // Other
     ShortcutDef {
         action: "info-overlay",
         display_name: gettext_noop("Toggle file info overlay"),

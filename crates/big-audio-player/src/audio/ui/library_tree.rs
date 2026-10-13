@@ -4,8 +4,8 @@
 //! `gio::ListStore` of [`BrowserNode`]. The shell runs the full group+preload
 //! query once and pushes the ENTIRE tree as pure (non-GTK) [`LibraryTreeSnapshot`]
 //! via `SetLibraryTree`; the `TreeListModel` create-func then builds each child
-//! `gio::ListStore` SYNCHRONOUSLY from the preloaded [`LibraryTreeNode`]
-//! children (never a DB hit on expand — atomic preload is the generation guard).
+//! `gio::ListStore` synchronously from the preloaded [`LibraryTreeNode`]
+//! children (never a DB hit on expand; atomic preload is the generation guard).
 //!
 //! Row activation emits `LibraryPanelOutput::NodeSelected`; the shell resolves
 //! the node into tracks and pushes them back via `PopulateDetail`. Letter
@@ -129,7 +129,7 @@ mod tests {
     }
 
     #[test]
-    fn browser_node_contract_for_tree_node_covers_core_kinds() {
+    fn browser_node_covers_core_kinds() {
         let mut track = Track::new_external_path("/music/song.flac");
         track.duration_secs = 61.0;
         let various_artists_label = i18n("Various Artists");
@@ -207,7 +207,7 @@ mod tests {
     }
 
     #[test]
-    fn browser_node_contract_preserves_invalid_year_key_and_file_secondary_override() {
+    fn browser_node_keeps_raw_year_key() {
         let invalid_year_node =
             library_tree_node(BrowserNodeKind::Year, "ignored", "unknown", 2, "");
         assert_eq!(
@@ -242,7 +242,7 @@ mod tests {
 
     #[cfg(not(miri))]
     #[test]
-    fn browser_node_contract_covers_every_library_tree_kind() {
+    fn browser_node_covers_every_kind() {
         let various_artists_label = i18n("Various Artists");
         let cases = [
             (
@@ -329,7 +329,7 @@ mod tests {
 
     #[cfg(not(miri))]
     #[test]
-    fn year_node_with_invalid_key_preserves_raw_key_and_uses_unknown_label() {
+    fn invalid_year_key_shows_unknown() {
         let source_node = library_tree_node(BrowserNodeKind::Year, "ignored", "unknown", 2, "");
         let browser_node = to_browser_node(&source_node);
 
@@ -341,7 +341,7 @@ mod tests {
 
     #[cfg(not(miri))]
     #[test]
-    fn file_node_uses_track_duration_and_secondary_override() {
+    fn file_node_shows_duration_and_override() {
         let mut track = Track::new_external_path("/music/song.flac");
         track.duration_secs = 61.0;
         let source_node = LibraryTreeNode {
@@ -374,7 +374,7 @@ mod tests {
 
     #[cfg(not(miri))]
     #[test]
-    fn selected_leaf_drag_paths_exports_only_registered_file_leaves() {
+    fn drag_exports_registered_file_leaves() {
         let registered_leaf_node = BrowserNode::file_node("Ready", "/music/ready.flac");
         let missing_leaf_node = BrowserNode::file_node("Missing", "/music/missing.flac");
         let artist_node = BrowserNode::artist("Alice", 1);
@@ -393,7 +393,7 @@ mod tests {
 
     #[cfg(not(miri))]
     #[test]
-    fn library_tree_selection_ignores_dividers_and_preserves_node_identity() {
+    fn selection_skips_dividers() {
         let divider_node = BrowserNode::divider("C");
         assert_eq!(library_tree_selection(&divider_node, 2), None);
 
@@ -475,8 +475,7 @@ mod tests {
 
     #[cfg(not(miri))]
     #[test]
-    fn child_store_adds_letter_dividers_only_above_threshold()
-    -> std::result::Result<(), Box<dyn std::error::Error>> {
+    fn letter_dividers_need_threshold() -> std::result::Result<(), Box<dyn std::error::Error>> {
         let threshold_children = (0..DIVIDER_THRESHOLD)
             .map(|index| {
                 library_tree_node(
@@ -580,7 +579,7 @@ mod tests {
 
     #[cfg(not(miri))]
     #[test]
-    fn build_node_registers_leaf_tracks_by_file_path() {
+    fn leaf_tracks_register_by_path() {
         let track = Track::new_external_path("/music/leaf.flac");
         let source_node = LibraryTreeNode {
             kind: BrowserNodeKind::File,
@@ -605,8 +604,7 @@ mod tests {
 
     #[cfg(not(miri))]
     #[test]
-    fn tree_handle_set_tree_splices_roots_and_replaces_child_state()
-    -> std::result::Result<(), Box<dyn std::error::Error>> {
+    fn set_tree_splices_roots_in_place() -> std::result::Result<(), Box<dyn std::error::Error>> {
         let root_store = gio::ListStore::new::<BrowserNode>();
         let child_stores: ChildStores = Rc::new(RefCell::new(HashMap::new()));
         let leaf_tracks: LeafTracks = Rc::new(RefCell::new(HashMap::new()));

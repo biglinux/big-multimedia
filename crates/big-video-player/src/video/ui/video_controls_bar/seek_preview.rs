@@ -8,7 +8,7 @@ use gtk::{gdk, glib};
 /// label, parented to the seek bar. Non-autohide so it never grabs input; the
 /// hover controller pops it up / down.
 pub(super) fn build_seek_preview(anchor: &gtk::Widget) -> (gtk::Popover, gtk::Picture, gtk::Label) {
-    // bigagents: popover-parent-managed — single reused seek-preview popover,
+    // bigagents: popover-parent-managed: single reused seek-preview popover,
     // owned and unparented by the controls bar. Parented to the
     // shared bar-stack so it works for both the seek scale and the cut timeline.
     let popover = gtk::Popover::builder()
@@ -54,7 +54,7 @@ pub(super) fn wire_seek_hover(
 ) {
     let motion = gtk::EventControllerMotion::new();
     let update = {
-        // Weak: this closure is held by controllers ON the anchor — a strong
+        // Weak: this closure is held by controllers on the anchor; a strong
         // self capture pinned the controls bar subtree after close.
         let anchor = anchor.downgrade();
         let popover = popover.clone();
@@ -118,7 +118,7 @@ pub(super) fn wire_thumb_consumer(
     thumb_gen: &Rc<ThumbnailGenerator>,
 ) {
     // Weak: this main-context future outlives the bar (it ends only when
-    // the worker drops the channel) — strong captures pinned the preview
+    // the worker drops the channel); strong captures pin the preview
     // popover (and its subtree) after window close.
     let thumb = thumb.downgrade();
     let thumb_gen = Rc::downgrade(thumb_gen);
@@ -147,7 +147,7 @@ pub(super) fn wire_thumb_consumer(
 /// video's picture and name, in the order the playlist plays (shuffled
 /// too). Nothing shows where there is nowhere to go.
 pub(super) fn wire_neighbour_preview(button: &gtk::Button, mpv: &MpvSlot, step: i64) {
-    // bigagents: popover-parent-managed — one reused popover per button, for
+    // bigagents: popover-parent-managed: one reused popover per button, for
     // the life of the controls bar.
     let popover = gtk::Popover::builder()
         .autohide(false)
@@ -246,7 +246,7 @@ pub(super) fn wire_neighbour_preview(button: &gtk::Button, mpv: &MpvSlot, step: 
             popover.popup();
         });
     }
-    // Clicked, it goes there: what it showed is no longer where it leads.
+    // Clicked, it goes there, so the preview matches where the click leads.
     button.connect_clicked({
         let popover = popover.downgrade();
         move |_| {

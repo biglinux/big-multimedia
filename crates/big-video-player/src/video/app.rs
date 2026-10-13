@@ -1,4 +1,4 @@
-//! Video player `adw::Application` subclass — single-instance activation,
+//! Video player `adw::Application` subclass: single-instance activation,
 //! file-open (delivered to the Relm4 `VideoShell` via its thread-local
 //! broker), startup (decoration-icon strip, color-scheme, actions, accels).
 //! `--new-window` env opt-in flips `NON_UNIQUE` for multi-instance debugging.
@@ -35,7 +35,7 @@ mod imp {
         fn open(&self, files: &[gio::File], _hint: &str) {
             // Show the relm4-managed window, then deliver opened files through
             // the shell's thread-local broker. `activate` is synchronous, so the
-            // broker is set (in VideoShell::init) before the send — no race.
+            // broker is set (in VideoShell::init) before the send.
             let paths: Vec<String> = files
                 .iter()
                 .filter_map(|f| f.path().map(|p| p.to_string_lossy().into_owned()))

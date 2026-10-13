@@ -185,7 +185,7 @@ fn clip_key(path: &str) -> u64 {
 }
 
 /// Generate (or reuse cached) scrub frames for `path`, returning the existing
-/// frame files in order. Blocking — call off the main thread.
+/// frame files in order. Blocking: call off the main thread.
 fn ensure_frames(path: &str) -> Vec<PathBuf> {
     let Some(root) = cache_root() else {
         return Vec::new();
@@ -306,7 +306,7 @@ mod tests {
     }
 
     #[test]
-    fn sample_time_falls_back_to_index_seconds_without_duration() {
+    fn sample_time_without_duration_uses_index() {
         assert!((sample_time_secs(0, 0.0) - 0.0).abs() < 1e-9);
         assert!((sample_time_secs(3, 0.0) - 3.0).abs() < 1e-9);
         // Negative/garbage duration uses the same fallback.

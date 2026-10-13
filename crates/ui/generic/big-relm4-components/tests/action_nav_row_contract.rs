@@ -1,7 +1,7 @@
 use big_relm4_components::list::action_nav_row::BigActionNavRowSpec;
 
 #[test]
-fn action_nav_row_contract_escapes_plain_text_without_gtk() {
+fn action_nav_row_escapes_text() {
     let resolved = BigActionNavRowSpec::new("<b>Audio</b>")
         .subtitle("A&B")
         .prefix_icon_name("audio-volume-high-symbolic")

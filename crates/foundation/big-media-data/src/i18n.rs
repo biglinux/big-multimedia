@@ -14,7 +14,7 @@ pub fn i18n(s: &str) -> String {
 }
 
 /// Marks a msgid literal for `xgettext` extraction (keyword `gettext_noop`)
-/// without translating it — for strings defined as `&'static str` in a const
+/// without translating it, for strings defined as `&'static str` in a const
 /// or struct field and translated later via `i18n(var)`. Without this the
 /// literal never reaches the catalog and renders untranslated.
 #[must_use]

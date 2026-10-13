@@ -6,8 +6,7 @@
 //! action id and dispatches it: menu/toggle actions go through
 //! [`VideoShellInput`], playback primitives (seek / volume / speed / frame-step)
 //! drive the live mpv backend directly. Mirrors the audio player's controller
-//! (`big_audio_player::audio::ui::audio_shell` key handler) — the video port had
-//! lost this dispatch entirely (the table was display-only).
+//! (`big_audio_player::audio::ui::audio_shell` key handler).
 
 use super::*;
 
@@ -179,7 +178,7 @@ fn media_key_action(keyval: gtk::gdk::Key) -> Option<&'static str> {
     }
 }
 
-/// True when the focused widget is a text editor — bare-key shortcuts must yield
+/// True when the focused widget is a text editor: bare-key shortcuts must yield
 /// so typing works (mirrors the audio player's `focus_accepts_text`).
 fn focus_accepts_text(controller: &gtk::EventControllerKey) -> bool {
     let Some(widget) = controller.widget() else {

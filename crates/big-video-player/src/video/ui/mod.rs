@@ -37,7 +37,7 @@ pub mod menu_dialogs;
 /// image & video sliders.
 pub mod media_adjust;
 
-/// Categorized preferences window (Video / Audio / Subtitles / General) —
+/// Categorized preferences window (Video / Audio / Subtitles / General):
 /// switch/spin/dropdown rows bound to settings keys with live mpv application.
 pub mod preferences;
 

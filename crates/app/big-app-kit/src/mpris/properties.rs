@@ -237,7 +237,7 @@ pub(super) fn set_player_property(
 mod tests {
     use super::*;
     #[test]
-    fn obsolete_seek_is_ignored_and_unknown_method_is_error() {
+    fn stale_seek_ignored_unknown_method_errors() {
         let state = PlayerState {
             track_id: Some("/br/com/biglinux/Track/2".into()),
             can_seek: true,
@@ -256,7 +256,7 @@ mod tests {
         );
     }
     #[test]
-    fn position_with_unknown_duration_and_intrinsic_control_are_correct() {
+    fn position_reported_without_duration() {
         let state = PlayerState {
             position_secs: 12.5,
             ..Default::default()

@@ -1,4 +1,4 @@
-//! Typed setting-key wrappers — `Settings::get_bool(VOLUME)` fails to compile
+//! Typed setting-key wrappers: `Settings::get_bool(VOLUME)` fails to compile
 //! because `VOLUME` is a `DoubleKey`, catching access mismatches at build time.
 
 #[derive(Clone, Copy)]
@@ -65,7 +65,7 @@ pub const NEURAL_UPSCALER: StringKey = StringKey("neural-upscaler");
 pub const CUSTOM_MPV_OPTIONS: StringKey = StringKey("custom-mpv-options");
 pub const GPU_DUMB_MODE: BoolKey = BoolKey("gpu-dumb-mode");
 /// Video output mode: `"auto"` (try GL/offload, fall back to software when GL is
-/// not viable — the default), `"gl"` (force OpenGL/offload), `"sw"` (force the
+/// not viable; the default), `"gl"` (force OpenGL/offload), `"sw"` (force the
 /// software/no-GL render path). Read at render setup; default `"auto"`.
 pub const RENDER_MODE: StringKey = StringKey("render-mode");
 

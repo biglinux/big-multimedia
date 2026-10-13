@@ -628,7 +628,7 @@ mod tests {
     }
 
     #[test]
-    fn a_heading_sorts_up_then_down_and_skips_columns_without_order() {
+    fn heading_click_cycles_sort_order() {
         let mut columns = Columns::queue();
         assert_eq!(columns.sort_by(Column::Position), None);
         assert_eq!(
@@ -646,7 +646,7 @@ mod tests {
     }
 
     #[test]
-    fn titles_compare_without_case_and_ratings_by_number() {
+    fn titles_ignore_case_ratings_numeric() {
         assert_eq!(
             Column::Title.compare(&track("abc", 0), &track("ABD", 0)),
             Ordering::Less
@@ -658,7 +658,7 @@ mod tests {
     }
 
     #[test]
-    fn widths_round_trip_and_the_title_column_cannot_be_hidden() {
+    fn widths_round_trip_title_stays_visible() {
         let mut columns = Columns::library();
         columns.resize(Column::Artist, 210);
         let spec = columns.widths_spec().expect("titled columns");
@@ -677,7 +677,7 @@ mod tests {
     }
 
     #[test]
-    fn a_moved_heading_keeps_hidden_columns_in_place() {
+    fn moved_heading_keeps_hidden_columns() {
         let mut columns = Columns::queue();
         // Shown: #, Title, Artist, Duration, (button). Artist to the front.
         columns.reorder(Column::Artist, 0);
@@ -695,7 +695,7 @@ mod tests {
     }
 
     #[test]
-    fn geometry_puts_stars_and_the_button_in_their_columns() {
+    fn geometry_places_stars_and_button() {
         let mut columns = Columns::queue();
         columns.toggle(Column::Rating);
         let geometry = columns.geometry();

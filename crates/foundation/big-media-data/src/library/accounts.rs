@@ -43,7 +43,7 @@ pub enum StorageKind {
     SecretService,
     RecoveryRequired,
 }
-/// Carries the exact reviewed revision; Debug deliberately contains no credentials.
+/// Carries the exact reviewed revision; its Debug output omits credentials.
 #[derive(Clone)]
 pub struct AccountReview {
     provider: Provider,

@@ -81,7 +81,7 @@ mod tests {
     }
 
     #[test]
-    fn render_stats_reports_at_the_exact_log_interval() {
+    fn stats_report_at_log_interval() {
         let report = render_stats_report_for_interval(
             150,
             0,
@@ -97,7 +97,7 @@ mod tests {
     }
 
     #[test]
-    fn render_stats_report_preserves_frame_counts_and_surface_size() {
+    fn stats_report_keeps_counts_and_size() {
         let report = render_stats_report_for_interval(
             300,
             12,

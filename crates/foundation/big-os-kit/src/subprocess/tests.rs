@@ -97,7 +97,7 @@ fn forbidden_control_byte_in_program_rejected() {
 }
 
 #[test]
-fn forbidden_control_byte_in_argv_reports_one_based_index() {
+fn control_byte_error_uses_one_based_index() {
     let spec = BigSubprocessSpec::builder()
         .program("echo")
         .arg("clean")
@@ -174,9 +174,9 @@ fn env_inherited_by_default() {
     );
 }
 
-/// Reader that yields `chunk`-sized reads (deliberately not a divisor of the
-/// capture cap) so the `n.min(remaining)` truncation in `drain_capped` is
-/// actually exercised — a chunk-aligned source never hits the partial branch.
+/// Reader that yields `chunk`-sized reads (not a divisor of the
+/// capture cap) so the `n.min(remaining)` truncation in `drain_capped` runs:
+/// a chunk-aligned source never hits the partial branch.
 struct ChunkedReader {
     remaining: usize,
     chunk: usize,
@@ -207,7 +207,7 @@ impl std::io::Read for ErrorOnceReader {
 }
 
 #[test]
-fn drain_capped_truncates_unaligned_source_exactly_at_cap() {
+fn drain_truncates_unaligned_source_at_cap() {
     let mut reader = ChunkedReader {
         remaining: DEFAULT_MAX_CAPTURE_BYTES + 8192,
         chunk: 1000,
@@ -329,7 +329,7 @@ fn redaction_survives_non_utf8() {
 #[cfg(target_os = "linux")]
 #[test]
 #[cfg_attr(miri, ignore)]
-fn delayed_descendant_output_is_not_discarded() {
+fn delayed_descendant_output_is_captured() {
     let result = BigSubprocessSpec::builder()
         .program("sh")
         .args(["-c", "(sleep 0.1; printf FINAL) &"])
@@ -366,7 +366,7 @@ fn inherited_pipe_and_unread_stdin_obey_deadline() {
 #[cfg(target_os = "linux")]
 #[test]
 #[cfg_attr(miri, ignore)]
-fn full_duplex_large_input_and_output_do_not_deadlock() {
+fn large_stdin_and_stdout_complete() {
     let result = BigSubprocessSpec::builder()
         .program("sh")
         .args(["-c", "head -c 131072 /dev/zero; cat >/dev/null"])

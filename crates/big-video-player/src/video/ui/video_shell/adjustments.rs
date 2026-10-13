@@ -418,7 +418,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn vf_entries_keep_quoted_commas_inside_one_entry() {
+    fn vf_entries_keep_quoted_commas() {
         let vf = "@denoise:lavfi=graph=%13%hqdn3d=4,eq=1,@big-flip:lavfi=graph=hflip,\
                   @source-colours:format=gamma=pq:primaries=%7%bt.2020";
         assert_eq!(

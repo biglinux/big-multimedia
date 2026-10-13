@@ -199,7 +199,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn resolved_escapes_markup_but_keeps_raw_copy_line() {
+    fn escapes_markup_keeps_raw_copy_line() {
         let resolved = BigCopyableDetailRowSpec::new("<Title>", "A&B", "Copy").resolved();
 
         assert_eq!(resolved.title, "&lt;Title&gt;");

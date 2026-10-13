@@ -1,5 +1,5 @@
 //! The library track list's right-click menu. Each item emits an `Output`
-//! intent — the shell owns the queue, mpv, and dialogs. Selection, drags and
+//! intent; the shell owns the queue, mpv, and dialogs. Selection, drags and
 //! row activation come from the drawn list (`track_list`, `library_panel`).
 
 use adw::prelude::*;
@@ -159,7 +159,7 @@ mod tests {
     use crate::db::models::Track;
 
     #[test]
-    fn detail_context_index_accepts_only_visible_track_positions() {
+    fn context_index_needs_visible_track() {
         assert_eq!(detail_context_index(3, 0), Some(0));
         assert_eq!(detail_context_index(3, 2), Some(2));
         assert_eq!(detail_context_index(3, 3), None);

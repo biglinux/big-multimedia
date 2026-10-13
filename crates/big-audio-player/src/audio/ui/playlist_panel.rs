@@ -144,7 +144,7 @@ pub enum PlaylistPanelInput {
     },
     /// Active saved-playlist name changed.
     SetPlaylistName(String),
-    /// Whether the library has any tracks — picks the empty-queue placeholder
+    /// Whether the library has any tracks; picks the empty-queue placeholder
     /// (drop hint vs. first-run welcome).
     SetLibraryHasItems(bool),
     /// Restore saved column widths (`title=width,…`), pushed by the shell at
@@ -172,7 +172,7 @@ pub enum PlaylistPanelOutput {
         /// Destination queue index.
         to: usize,
     },
-    /// User sorted by a column header — commit the visible order as the new
+    /// User sorted by a column header: commit the visible order as the new
     /// queue (the shell replaces the queue with `tracks` + records undo).
     CommitSortedOrder {
         /// Tracks in the new (sorted) visible order.
@@ -191,9 +191,9 @@ pub enum PlaylistPanelOutput {
     ShowAddToPlaylistDialog(Track),
     /// Reveal a file in the desktop file manager.
     RevealInFileManager(String),
-    /// Download podcast episodes — `(url, title)` pairs (HTTP entries only).
+    /// Download podcast episodes as `(url, title)` pairs (HTTP entries only).
     DownloadEpisodes(Vec<(String, String)>),
-    /// Delete tracks from disk (trash or permanent) — shell does the fs delete,
+    /// Delete tracks from disk (trash or permanent); shell does the fs delete,
     /// queue removal, DB delete, undo, save, and library rebuild.
     DeleteTracksFromStorage {
         /// `(queue_index, track)` pairs to delete.
@@ -226,9 +226,9 @@ pub enum PlaylistPanelOutput {
         /// Dropped filesystem paths.
         paths: Vec<String>,
     },
-    /// First-run "Open Files" picker chose audio files — shell imports + plays.
+    /// First-run "Open Files" picker chose audio files; shell imports + plays.
     OpenFiles(Vec<String>),
-    /// Persist the queue column widths (`title=width,…`) — the shell writes the
+    /// Persist the queue column widths (`title=width,…`); the shell writes the
     /// settings key. Debounced to one emission per resize gesture.
     PersistColumnWidths(String),
 }
@@ -249,7 +249,7 @@ pub struct PlaylistPanel {
     /// Active saved-playlist name (shown in the toolbar header when the queue
     /// is empty).
     playlist_name: String,
-    /// Library-has-tracks flag — picks the empty-queue placeholder variant.
+    /// Library-has-tracks flag; picks the empty-queue placeholder variant.
     library_has_items: bool,
 }
 
@@ -641,7 +641,7 @@ mod tests {
     }
 
     #[test]
-    fn current_indicator_identity_match_requires_current_same_identity() {
+    fn indicator_needs_current_identity() {
         assert!(is_current_indicator_identity_match(true, true));
         assert!(!is_current_indicator_identity_match(true, false));
         assert!(!is_current_indicator_identity_match(false, true));
@@ -668,14 +668,14 @@ mod tests {
     }
 
     #[test]
-    fn scroll_target_position_uses_three_row_lookahead_and_bounds() {
+    fn scroll_target_looks_three_rows_ahead() {
         assert_eq!(scroll_target_position(0, 2), None);
         assert_eq!(scroll_target_position(10, 2), Some(5));
         assert_eq!(scroll_target_position(4, 2), Some(3));
     }
 
     #[test]
-    fn insert_tracks_position_clamps_to_existing_queue_len() {
+    fn insert_position_clamps_to_queue() {
         assert_eq!(insert_tracks_position(0, 3), 0);
         assert_eq!(insert_tracks_position(2, 3), 2);
         assert_eq!(insert_tracks_position(9, 3), 3);
@@ -695,7 +695,7 @@ mod tests {
     }
 
     #[test]
-    fn playlist_header_label_uses_name_or_track_summary() {
+    fn header_label_uses_name_or_summary() {
         assert_eq!(playlist_header_label(0, 0.0, ""), "Playlist");
         assert_eq!(playlist_header_label(0, 0.0, "Road Mix"), "Road Mix");
 
@@ -710,7 +710,7 @@ mod tests {
     /// empty queues: only the rows between the shared ends are replaced.
     #[cfg(not(miri))]
     #[test]
-    fn shared_ends_leave_out_only_the_changed_rows() {
+    fn shared_ends_isolate_changed_rows() {
         let named = |names: &[&str]| -> Vec<crate::db::models::Track> {
             names.iter().map(|name| track(name, name, 1.0)).collect()
         };

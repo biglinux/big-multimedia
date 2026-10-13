@@ -103,7 +103,7 @@ impl Drop for LibraryGeneration {
 mod mailbox_tests {
     use super::*;
     #[test]
-    fn never_accumulates_intermediate_searches_and_recovers_after_completion() {
+    fn intermediate_searches_never_accumulate() {
         let mailbox = LatestMailbox::default();
         assert_eq!(mailbox.submit(0), Some(0));
         for i in 1..1000 {

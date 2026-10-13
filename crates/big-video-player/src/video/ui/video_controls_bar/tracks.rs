@@ -7,9 +7,8 @@ use gtk::gio;
 impl VideoControlsBar {
     /// Build the subtitle + audio-track popover menus from the mpv track list.
     ///
-    /// The subtitle popover carries two sections — **Primary** and **Secondary**
-    /// subtitles — so the user can pick each track from the bar (secondary subs
-    /// were previously reachable only through a keyboard toggle / Preferences).
+    /// The subtitle popover carries two sections, **Primary** and **Secondary**
+    /// subtitles, so the user can pick each track from the bar.
     /// Each entry drives the live mpv backend read from the shared slot.
     pub(super) fn populate_track_menus(&self, tracks: &[TrackMetadata]) {
         let subtitle_tracks: Vec<&TrackMetadata> =
@@ -21,7 +20,7 @@ impl VideoControlsBar {
         rows.set_margin_start(6);
         rows.set_margin_end(6);
 
-        // Always available — load an external subtitle file, even for a video
+        // Always available: load an external subtitle file, even for a video
         // that ships no subtitle tracks of its own.
         rows.append(&track_button(
             &i18n("Load Subtitle File…"),
