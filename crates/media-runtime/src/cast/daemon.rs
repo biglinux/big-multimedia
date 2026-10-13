@@ -364,7 +364,7 @@ mod tests {
 
     #[test]
     #[ignore = "requires BIG_MEDIA_TEST_BNS_DAEMON and an isolated activation bus"]
-    fn installed_daemon_activates_and_exposes_player_contract() {
+    fn daemon_exposes_player_contract() {
         let executable = std::env::var("BIG_MEDIA_TEST_BNS_DAEMON").unwrap();
         let context = glib::MainContext::new();
         context

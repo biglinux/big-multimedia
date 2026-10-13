@@ -1,7 +1,5 @@
 //! Per-mode mpv `MpvInitializer` option helpers (video, audio-only,
-//! playback, watch-later, IPC, custom). Split out of `backend.rs`;
-//! behavior is identical. Kept as free functions for testability and
-//! to keep `MpvBackend::new` short.
+//! playback, watch-later, IPC, custom).
 
 use log::error;
 
@@ -39,9 +37,8 @@ pub(super) fn parse_custom_options(custom: &str) -> Vec<(String, String)> {
 /// mpv starts a Lua VM and thread for each of its built-in scripts. The players
 /// drive mpv through their own UI (no OSD, no default bindings), so the stats
 /// overlay, console, select menu, commands, positioning, context menu and
-/// auto-profiles are never reachable. Measured: 6 MiB less anonymous memory in
-/// the video player. `ytdl` stays on: it plays web video URLs. A mpv without one
-/// of these options just keeps it.
+/// auto-profiles are never reachable, and each costs memory. `ytdl` stays on:
+/// it plays web video URLs. A mpv without one of these options just keeps it.
 pub(super) fn disable_unused_builtin_scripts(init: &MpvInitializer) {
     for option in [
         "load-stats-overlay",
@@ -113,11 +110,9 @@ pub(super) fn apply_playback_options(init: &MpvInitializer) -> Result<(), MpvErr
     Ok(())
 }
 
-/// Audio-only variant: no video output. Defaults to [`AudioCacheProfile::Music`]
-/// (gapless transitions covered with a 30 MiB lookahead). Callers can switch
-/// profile post-init via [`super::MpvBackend::set_audio_cache_profile`]:
-/// podcast/audiobook playback drops the demuxer cache to ~10 MiB total, and
-/// network radio bumps the forward window for jitter resilience.
+/// Audio-only variant: no video output, with the demuxer cache of
+/// [`AudioCacheProfile::Music`]. Loads switch the profile through
+/// [`super::MpvBackend::set_audio_cache_profile`].
 pub(super) fn apply_audio_only_options(init: &MpvInitializer) -> Result<(), MpvError> {
     disable_unused_builtin_scripts(init);
     init.set_option("vo", "null")?;
@@ -133,9 +128,9 @@ pub(super) fn apply_audio_only_options(init: &MpvInitializer) -> Result<(), MpvE
     init.set_option("volume-max", "150")?;
     init.set_option("audio-client-name", audio_client_name())?;
     init.set_option("gapless-audio", "yes")?;
-    let p = crate::player::mpv_backend::types::AudioCacheProfile::Music;
-    init.set_option("demuxer-max-bytes", p.forward_bytes())?;
-    init.set_option("demuxer-max-back-bytes", p.back_bytes())?;
+    let profile = crate::player::mpv_backend::types::AudioCacheProfile::Music;
+    init.set_option("demuxer-max-bytes", profile.forward_bytes())?;
+    init.set_option("demuxer-max-back-bytes", profile.back_bytes())?;
     Ok(())
 }
 

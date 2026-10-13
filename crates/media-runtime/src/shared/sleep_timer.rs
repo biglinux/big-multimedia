@@ -1,5 +1,4 @@
 //! Shared sleep timer labels, actions, and settings persistence.
-//! bigagents: app-local-adapter; binds component labels to app i18n/settings.
 
 use big_relm4_components::display::sleep_timer::{
     BigSleepTimerAction, BigSleepTimerSetupLabels, standard_sleep_timer_actions,

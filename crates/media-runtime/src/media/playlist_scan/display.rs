@@ -8,7 +8,8 @@ use big_app_kit::subprocess::BigSubprocessSpec;
 pub fn trash_file(path: &str) -> Result<()> {
     let output = BigSubprocessSpec::builder()
         .program("gio")
-        .args(["trash", path])
+        // A file name starting with `-` must not read as a flag.
+        .args(["trash", "--", path])
         .build()
         .run()
         .map_err(|e| Error::internal(e.to_string()))?;
@@ -26,36 +27,40 @@ pub fn trash_file(path: &str) -> Result<()> {
 pub fn restore_from_trash(original_path: &str) -> Result<()> {
     let list_output = BigSubprocessSpec::builder()
         .program("gio")
-        .args(["list", "-a", "trash::orig-path", "trash:///"])
+        .args(["trash", "--list"])
         .build()
         .run()
         .map_err(|e| Error::internal(e.to_string()))?;
 
     if !list_output.status.success() {
-        return Err(Error::internal("gio list trash failed"));
+        return Err(Error::internal("gio trash --list failed"));
     }
 
-    let stdout = String::from_utf8_lossy(&list_output.stdout);
-    for line in stdout.lines() {
-        if line.contains(original_path)
-            && let Some(uri) = line.split_whitespace().next()
-        {
-            let restore = BigSubprocessSpec::builder()
-                .program("gio")
-                .args(["trash", "--restore", uri])
-                .build()
-                .run()
-                .map_err(|e| Error::internal(e.to_string()))?;
-            if restore.status.success() {
-                return Ok(());
-            }
-            return Err(Error::internal(
-                String::from_utf8_lossy(&restore.stderr).to_string(),
-            ));
-        }
+    let listing = String::from_utf8_lossy(&list_output.stdout);
+    let uri =
+        trashed_uri(&listing, original_path).ok_or_else(|| Error::not_found("trashed file"))?;
+    let restore = BigSubprocessSpec::builder()
+        .program("gio")
+        .args(["trash", "--restore", uri])
+        .build()
+        .run()
+        .map_err(|e| Error::internal(e.to_string()))?;
+    if restore.status.success() {
+        Ok(())
+    } else {
+        Err(Error::internal(
+            String::from_utf8_lossy(&restore.stderr).to_string(),
+        ))
     }
+}
 
-    Err(Error::not_found("trashed file"))
+/// The `trash://` URI whose original location is exactly `original_path`, from
+/// `gio trash --list` output: one `URI<TAB>original path` line per item.
+pub(super) fn trashed_uri<'a>(listing: &'a str, original_path: &str) -> Option<&'a str> {
+    listing.lines().find_map(|line| {
+        let (uri, path) = line.split_once('\t')?;
+        (path == original_path && uri.starts_with("trash:///")).then_some(uri)
+    })
 }
 
 pub fn folder_display_name(path: &str) -> String {

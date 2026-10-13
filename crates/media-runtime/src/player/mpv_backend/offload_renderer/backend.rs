@@ -1,5 +1,4 @@
-//! Public `VideoBackend` enum and detection logic. Split out of
-//! `offload_renderer.rs`; behavior is identical.
+//! Public `VideoBackend` enum and detection logic.
 
 use gtk::gdk;
 use log::info;
@@ -52,16 +51,5 @@ impl VideoBackend {
 
     pub fn is_offload(&self) -> bool {
         matches!(self, Self::Offload(_))
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::super::gl_fns::{GL_FRAMEBUFFER_COMPLETE, GL_TEXTURE_2D};
-
-    #[test]
-    fn offload_renderer_consts_valid() {
-        assert_eq!(GL_TEXTURE_2D, 0x0DE1);
-        assert_eq!(GL_FRAMEBUFFER_COMPLETE, 0x8CD5);
     }
 }

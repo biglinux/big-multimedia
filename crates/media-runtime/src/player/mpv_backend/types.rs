@@ -74,10 +74,9 @@ pub enum PlayerEvent {
 /// string form ("NMiB"). Switching profile at runtime is cheap: mpv
 /// truncates the queue in-place to the new limit.
 ///
-/// Memory impact for a typical podcast session (1-hour MP3, ~100 MB):
-/// * `Music`    → 30 + 10 MiB = ~40 MiB cap (gapless album playback)
-/// * `Podcast`  → 8 + 2 MiB = ~10 MiB cap (single long stream, no gapless need)
-/// * `Radio`    → 64 + 4 MiB = ~68 MiB cap (network jitter resilience)
+/// * `Music`: enough lookahead for gapless album playback.
+/// * `Podcast`: one long stream with no gapless need, the smallest cache.
+/// * `Radio`: the largest forward window, against network jitter.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum AudioCacheProfile {
     Music,

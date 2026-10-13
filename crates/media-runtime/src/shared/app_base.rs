@@ -1,6 +1,5 @@
 //! Bootstrap helpers shared by all binaries: env, gettext, locale,
 //! GResource registration, decoration-icon strip, About dialog builder.
-//! bigagents: app-local-adapter; binds app config, gettext, resources, settings.
 
 use gtk::gio;
 use gtk::glib;
@@ -12,7 +11,7 @@ use crate::shared::theming;
 /// Set an environment variable only when it is currently unset.
 pub fn set_default_env(name: &str, value: &str) {
     if std::env::var_os(name).is_none() {
-        // SAFETY: bootstrap only / callers use from main() before threads
+        // SAFETY: callers run this from main() before any other thread starts.
         unsafe {
             std::env::set_var(name, value);
         }
@@ -21,7 +20,7 @@ pub fn set_default_env(name: &str, value: &str) {
 
 /// Set an environment variable during bootstrap regardless of previous value.
 pub fn set_bootstrap_env(name: &str, value: &str) {
-    // SAFETY: bootstrap only / callers use from main() before threads
+    // SAFETY: callers run this from main() before any other thread starts.
     unsafe {
         std::env::set_var(name, value);
     }
@@ -30,9 +29,8 @@ pub fn set_bootstrap_env(name: &str, value: &str) {
 /// Render with GTK's GL renderer and keep GDK from opening Vulkan.
 ///
 /// GDK creates a Vulkan instance to probe dmabuf formats even when GSK renders
-/// with GL, and on NVIDIA that instance alone held 30-80 MiB of PSS in the
-/// video player (measured 2026-09-28, 1080p playback). GL imports dmabufs
-/// through EGL instead, so nothing is lost. `force` overrides a `GSK_RENDERER`
+/// with GL, and on NVIDIA that instance alone holds tens of MiB. GL imports
+/// dmabufs through EGL instead, so nothing is lost. `force` overrides a `GSK_RENDERER`
 /// the session exported; otherwise it is respected, and Vulkan stays available
 /// if that is the renderer it asked for.
 pub fn use_gl_renderer(force: bool) {
@@ -63,9 +61,8 @@ pub fn use_gl_renderer(force: bool) {
 /// After every layout GTK re-delivers the pointer position as a motion event
 /// so hover can follow moved widgets. A moving seek knob relayouts about once
 /// a second, and each repeat reaches the list under a resting pointer, whose
-/// overlay scrollbar then fades in and out: 19-31 frames a second while music
-/// played, against 1-2 with the pointer elsewhere (measured 2026-09-28).
-/// Hover itself is set by crossing events, which GTK computes before this
+/// overlay scrollbar then fades in and out: the window redraws continuously
+/// while music plays. Hover itself is set by crossing events, which GTK computes before this
 /// capture-phase controller sees the motion, so nothing stops following it.
 pub fn ignore_repeated_pointer_motion(window: &impl glib::object::IsA<gtk::Window>) {
     use gtk::prelude::*;
@@ -122,7 +119,11 @@ pub fn init_logging(default_rust_log: &str) {
 
 /// Falls back to `<repo>/locale` so `cargo run` works without an install step.
 pub fn init_gettext() {
-    gettextrs::setlocale(gettextrs::LocaleCategory::LcAll, "");
+    // SAFETY: called from main() before any other thread starts, as
+    // init_numeric_locale is.
+    unsafe {
+        gettextrs::setlocale(gettextrs::LocaleCategory::LcAll, "");
+    }
     let locale_dir = resolve_locale_dir();
     gettextrs::bindtextdomain(config::GETTEXT_PACKAGE, locale_dir)
         .expect("Failed to bind textdomain");
@@ -186,7 +187,7 @@ pub fn init_numeric_locale() {
     }
     set_bootstrap_env("LC_NUMERIC", "C");
     let c_locale = std::ffi::CString::new("C").expect("static string has no null bytes");
-    // SAFETY: bootstrap only / called from main() before threads
+    // SAFETY: called from main() before any other thread starts.
     unsafe {
         libc::setlocale(libc::LC_NUMERIC, c_locale.as_ptr());
     }

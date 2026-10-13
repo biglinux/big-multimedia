@@ -59,8 +59,7 @@ mod tests {
     }
 }
 
-/// Aspect-preserving allocation ceiling for offload textures, not total process
-/// or GPU memory. Each of the three retained slots is individually bounded.
+/// Aspect-preserving size ceiling for each of the three offload texture slots.
 pub fn bounded_surface(width: i32, height: i32) -> Option<(i32, i32)> {
     const MAX_EDGE: i32 = 4096;
     const MAX_PIXELS: f64 = 3840.0 * 2160.0;

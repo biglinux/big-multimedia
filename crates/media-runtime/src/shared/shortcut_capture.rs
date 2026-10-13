@@ -1,4 +1,4 @@
-//! bigagents: app-local-adapter; binds shortcut capture labels to app i18n.
+//! Binds shortcut capture labels to app i18n.
 
 use gtk::gdk;
 

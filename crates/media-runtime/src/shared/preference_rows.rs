@@ -1,5 +1,4 @@
 //! Settings-bound adapters for generic media preference rows.
-//! bigagents: app-local-adapter; generic row widgets live in big-media-components.
 
 use crate::settings::Settings;
 
@@ -25,7 +24,6 @@ pub fn add_switch_row(
     )
 }
 
-#[allow(clippy::too_many_arguments)]
 pub fn add_combo_row(
     group: &adw::PreferencesGroup,
     title: &str,
@@ -58,7 +56,10 @@ pub fn add_combo_row(
     )
 }
 
-#[allow(clippy::too_many_arguments)]
+#[expect(
+    clippy::too_many_arguments,
+    reason = "mirrors the component row it binds"
+)]
 pub fn add_spin_int_row(
     group: &adw::PreferencesGroup,
     title: &str,
@@ -87,7 +88,10 @@ pub fn add_spin_int_row(
     )
 }
 
-#[allow(clippy::too_many_arguments)]
+#[expect(
+    clippy::too_many_arguments,
+    reason = "mirrors the component row it binds"
+)]
 pub fn add_spin_double_row(
     group: &adw::PreferencesGroup,
     title: &str,

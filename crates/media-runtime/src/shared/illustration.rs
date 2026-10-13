@@ -10,7 +10,7 @@ thread_local! {
     ///
     /// `gtk::Image::from_resource` re-decodes the SVG (librsvg, on the main
     /// thread) on every call and GTK keeps no cache; the preferences dialog
-    /// builds ~60 of these at once, stalling the GLArea video render for a
+    /// builds dozens of these at once, stalling the GLArea video render for a
     /// moment. Caching the decoded `GdkTexture` parses each SVG at most once
     /// per process, so repeat opens are free and the first is cheaper.
     static TEXTURE_CACHE: RefCell<HashMap<String, gtk::gdk::Texture>> =

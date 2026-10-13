@@ -62,10 +62,9 @@ pub(super) fn file_mtime(path: &str) -> u64 {
 }
 
 pub(super) fn save_meta_cache_to_disk(cache: &HashMap<String, CacheEntry>) {
-    let path = meta_cache_path();
-    if let Some(parent) = path.parent() {
-        let _ = std::fs::create_dir_all(parent);
-    }
+    let Some(path) = meta_cache_path() else {
+        return;
+    };
     let mut cache_json_root = serde_json::Map::with_capacity(cache.len());
     for (file_path, entry) in cache {
         let mut val = serde_json::Map::new();
@@ -96,8 +95,10 @@ pub(super) fn save_meta_cache_to_disk(cache: &HashMap<String, CacheEntry>) {
         }
         cache_json_root.insert(file_path.clone(), serde_json::Value::Object(val));
     }
-    let json = serde_json::Value::Object(cache_json_root);
-    let _ = std::fs::write(&path, json.to_string());
+    let json = serde_json::Value::Object(cache_json_root).to_string();
+    if let Err(error) = big_os_kit::storage::atomic_write(&path, json.as_bytes()) {
+        log::debug!("metadata cache not saved: {error}");
+    }
 }
 
 /// Evicts the `count` oldest entries by mtime.
@@ -115,21 +116,29 @@ pub(super) fn evict_oldest(cache: &mut HashMap<String, CacheEntry>, count: usize
     }
 }
 
-fn meta_cache_path() -> PathBuf {
-    big_os_kit::xdg_dirs::cache_dir()
-        .unwrap_or_else(|| PathBuf::from("/tmp"))
-        .join(crate::config::video::CONFIG_DIR)
-        .join("metadata_cache.json")
+/// `None` without a private cache directory: the cache then lives in memory only.
+fn meta_cache_path() -> Option<PathBuf> {
+    Some(
+        big_os_kit::xdg_dirs::cache_dir()?
+            .join(crate::config::video::CONFIG_DIR)
+            .join("metadata_cache.json"),
+    )
 }
 
+/// Far above what `MAX_CACHE_ENTRIES` entries take.
+const MAX_CACHE_FILE_BYTES: usize = 16 * 1024 * 1024;
+
 fn load_meta_cache_from_disk() -> HashMap<String, CacheEntry> {
-    let path = meta_cache_path();
-    let Ok(cache_json_text) = std::fs::read_to_string(&path) else {
+    let Some(bytes) = meta_cache_path()
+        .and_then(|path| {
+            big_os_kit::storage::read_regular_limited(&path, MAX_CACHE_FILE_BYTES).ok()
+        })
+        .flatten()
+    else {
         return HashMap::new();
     };
-    let root: serde_json::Value = match serde_json::from_str(&cache_json_text) {
-        Ok(v) => v,
-        Err(_) => return HashMap::new(),
+    let Ok(root) = serde_json::from_slice::<serde_json::Value>(&bytes) else {
+        return HashMap::new();
     };
     let Some(cache_json_root) = root.as_object() else {
         return HashMap::new();

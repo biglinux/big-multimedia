@@ -38,12 +38,13 @@ impl Storage {
         Ok(())
     }
     fn bytes(&self) -> &[u8] {
-        // repr(C, align(64)) Block has exactly 64 initialized bytes, no padding.
-        // Vec owns contiguous blocks; len <= blocks.len()*64, and no mutation is
-        // possible while a shared slice/GBytes lease exists.
+        // SAFETY: repr(C, align(64)) Block has exactly 64 initialized bytes, no
+        // padding. Vec owns contiguous blocks; len <= blocks.len()*64, and no
+        // mutation is possible while a shared slice/GBytes lease exists.
         unsafe { std::slice::from_raw_parts(self.blocks.as_ptr().cast::<u8>(), self.len) }
     }
     fn bytes_mut(&mut self) -> &mut [u8] {
+        // SAFETY: as in `bytes`; `&mut self` makes the slice exclusive.
         unsafe { std::slice::from_raw_parts_mut(self.blocks.as_mut_ptr().cast::<u8>(), self.len) }
     }
 }

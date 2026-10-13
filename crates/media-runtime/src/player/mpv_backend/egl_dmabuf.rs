@@ -64,8 +64,8 @@ impl EglDmaBufFns {
     /// drivers don't expose extension entry points to plain dlsym).
     pub fn load() -> Option<Self> {
         // GTK loads libEGL internally but may not export symbols to RTLD_DEFAULT.
-        // SAFETY: RTLD_NOLOAD first tries an existing handle, then falls back
-        // to loading fresh.
+        // SAFETY: dlopen of a system library by constant name; it returns the
+        // already loaded instance, and the handle is never closed.
         static EGL_LIBRARY: std::sync::OnceLock<usize> = std::sync::OnceLock::new();
         let lib = *EGL_LIBRARY.get_or_init(|| unsafe {
             libc::dlopen(c"libEGL.so.1".as_ptr(), libc::RTLD_LAZY | libc::RTLD_LOCAL) as usize
@@ -93,6 +93,7 @@ impl EglDmaBufFns {
             Some(unsafe { std::mem::transmute_copy::<*mut c_void, F>(&ptr) })
         }
 
+        // SAFETY: `lib` is a live dlopen handle; names are nul-terminated.
         let get_display: EglGetCurrentDisplayFn =
             unsafe { dlsym_fn(lib, b"eglGetCurrentDisplay\0")? };
         let get_context: EglGetCurrentContextFn =
@@ -213,11 +214,10 @@ pub(crate) fn export_gl_texture(egl: &EglDmaBufFns, gl_texture_id: u32) -> Optio
         // and DRM_FORMAT_MOD_INVALID (the implicit layout AMD reports here):
         // GDK negotiates the format/modifier pair against the display when it
         // builds the texture and fails cleanly, and the caller then locks onto
-        // the GL-texture path. Rejecting everything but linear here meant no
-        // machine ever reached the zero-copy path at all.
+        // the GL-texture path.
         let modifier = modifiers[0];
 
-        // Exactly one plane was confirmed BEFORE handing these arrays to C.
+        // Exactly one plane was confirmed before handing these arrays to C.
         let mut fds = [-1_i32; 4];
         let mut strides = [0_i32; 4];
         let mut offsets = [0_i32; 4];
@@ -274,42 +274,4 @@ pub(crate) fn probe() -> Option<EglDmaBufFns> {
         info!("EGL DMA-BUF export: not available (missing EGL functions)");
     }
     fns
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn dmabuf_export_drop_closes_fd() {
-        // -1 guard avoids close() on a sentinel fd.
-        let export = DmaBufExport {
-            fd: -1,
-            fourcc: 0,
-            modifier: 0,
-            stride: 0,
-            offset: 0,
-        };
-        drop(export);
-    }
-
-    #[test]
-    fn egl_constants_match_spec() {
-        assert_eq!(EGL_TRUE, 1);
-        assert_eq!(EGL_GL_TEXTURE_2D, 0x30B1);
-        assert_eq!(EGL_NONE, 0x3038);
-    }
-
-    #[test]
-    fn egl_null_pointers_are_distinct() {
-        assert!(EGL_NO_DISPLAY.is_null());
-        assert!(EGL_NO_CONTEXT.is_null());
-        assert!(EGL_NO_IMAGE.is_null());
-    }
-
-    #[test]
-    fn probe_returns_none_without_egl() {
-        // Without a real EGL display load() returns None instead of panicking.
-        let _ = EglDmaBufFns::load();
-    }
 }

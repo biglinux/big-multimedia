@@ -1,5 +1,4 @@
 //! GL function pointers and constants used by the offload renderer.
-//! Split out of `offload_renderer.rs`; behavior is identical.
 
 pub(super) const GL_TEXTURE_2D: u32 = 0x0DE1;
 pub(super) const GL_RGBA: u32 = 0x1908;

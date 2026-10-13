@@ -1,13 +1,14 @@
 //! Core playback properties: volume, speed, position, tracks, loop, cache,
-//! screenshots, editions, chapters, generic accessors, IPC.
+//! screenshots, chapters and generic accessors.
 
 use super::MpvBackend;
 
 impl MpvBackend {
-    // Apply per-stream mixer requests on the existing mpv event thread.
-    // Getters read cached/desired state and are safe to use from GTK handlers.
+    // The event thread applies mixer requests. Getters read the cached or
+    // requested state and are safe to use from GTK handlers.
     pub fn set_volume(&self, volume: f64) {
         self.stream_volume.set_volume(volume);
+        self.wake_event_loop();
     }
 
     pub fn get_volume(&self) -> f64 {
@@ -16,6 +17,7 @@ impl MpvBackend {
 
     pub fn set_mute(&self, mute: bool) {
         self.stream_volume.set_mute(mute);
+        self.wake_event_loop();
     }
 
     pub fn get_mute(&self) -> bool {
@@ -23,7 +25,7 @@ impl MpvBackend {
     }
 
     pub fn toggle_mute(&self) {
-        self.stream_volume.set_mute(!self.get_mute());
+        self.set_mute(!self.get_mute());
     }
 
     pub fn get_position(&self) -> f64 {
@@ -43,7 +45,7 @@ impl MpvBackend {
     }
 
     pub fn is_paused(&self) -> bool {
-        self.with_mpv(|m| Self::get_bool_property(m, "pause").unwrap_or(true))
+        self.with_mpv(|m| m.get_property::<bool>("pause").unwrap_or(true))
     }
 
     pub fn set_speed(&self, speed: f64) {
@@ -53,7 +55,7 @@ impl MpvBackend {
     }
 
     pub fn is_seekable(&self) -> bool {
-        self.with_mpv(|m| Self::get_bool_property(m, "seekable").unwrap_or(false))
+        self.with_mpv(|m| m.get_property::<bool>("seekable").unwrap_or(false))
     }
 
     pub fn get_speed(&self) -> f64 {
@@ -93,28 +95,18 @@ impl MpvBackend {
     }
 
     pub fn get_property_f64(&self, name: &str) -> f64 {
-        let mpv = self
-            .mpv
-            .lock()
-            .unwrap_or_else(std::sync::PoisonError::into_inner);
-        mpv.get_property(name).unwrap_or(0.0)
+        self.with_mpv(|m| m.get_property(name).unwrap_or(0.0))
     }
 
     pub fn get_property_string(&self, name: &str) -> String {
-        let mpv = self
-            .mpv
-            .lock()
-            .unwrap_or_else(std::sync::PoisonError::into_inner);
-        mpv.get_property::<String>(name).unwrap_or_default()
+        self.with_mpv(|m| m.get_property::<String>(name).unwrap_or_default())
     }
 
     pub fn get_property_bool(&self, name: &str) -> bool {
-        let mpv = self
-            .mpv
-            .lock()
-            .unwrap_or_else(std::sync::PoisonError::into_inner);
-        mpv.get_property::<String>(name)
-            .is_ok_and(|v| v == "yes" || v == "true" || v == "1")
+        self.with_mpv(|m| {
+            m.get_property::<String>(name)
+                .is_ok_and(|v| v == "yes" || v == "true" || v == "1")
+        })
     }
 
     /// Apply the `loop-mode` setting: `"file"`, `"playlist"`, anything else is off.
@@ -165,14 +157,7 @@ impl MpvBackend {
 
     pub fn set_keep_open_pause(&self, enable: bool) {
         self.with_mpv(|m| {
-            let _ = m.set_property(
-                "keep-open-pause",
-                if enable {
-                    "yes".to_string()
-                } else {
-                    "no".to_string()
-                },
-            );
+            let _ = m.set_property("keep-open-pause", if enable { "yes" } else { "no" });
         });
     }
 
@@ -184,14 +169,7 @@ impl MpvBackend {
 
     pub fn set_cache(&self, enable: bool) {
         self.with_mpv(|m| {
-            let _ = m.set_property(
-                "cache",
-                if enable {
-                    "yes".to_string()
-                } else {
-                    "no".to_string()
-                },
-            );
+            let _ = m.set_property("cache", if enable { "yes" } else { "no" });
         });
     }
 
@@ -201,8 +179,6 @@ impl MpvBackend {
         });
     }
 
-    /// Queue a cache policy, not a measured memory-saving guarantee. Confirm
-    /// behavior and total process/GPU memory on the actual decoder and media.
     pub fn set_audio_cache_profile(&self, profile: super::types::AudioCacheProfile) {
         let _ = self.queue_command("set", &["demuxer-max-bytes", profile.forward_bytes()]);
         let _ = self.queue_command("set", &["demuxer-max-back-bytes", profile.back_bytes()]);
@@ -216,14 +192,7 @@ impl MpvBackend {
 
     pub fn set_cache_on_disk(&self, enable: bool) {
         self.with_mpv(|m| {
-            let _ = m.set_property(
-                "cache-on-disk",
-                if enable {
-                    "yes".to_string()
-                } else {
-                    "no".to_string()
-                },
-            );
+            let _ = m.set_property("cache-on-disk", if enable { "yes" } else { "no" });
         });
     }
 

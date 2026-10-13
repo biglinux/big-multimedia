@@ -7,9 +7,9 @@ use super::cache::{
     evict_oldest, file_mtime, meta_cache, release_slot, save_meta_cache_to_disk,
 };
 
-/// Synchronous; call from a background thread.
-pub fn probe_metadata(path: &str) -> Option<VideoMeta> {
-    // `--` keeps a file name starting with `-` from reading as an ffprobe flag.
+/// ffprobe's format and stream report for `path`. Synchronous; call from a
+/// background thread.
+pub(super) fn ffprobe_json(path: &str) -> Option<serde_json::Value> {
     let output = BigSubprocessSpec::builder()
         .program("ffprobe")
         .args([
@@ -19,19 +19,22 @@ pub fn probe_metadata(path: &str) -> Option<VideoMeta> {
             "json",
             "-show_streams",
             "-show_format",
+            // A file name starting with `-` must not read as a flag.
             "--",
             path,
         ])
         .build()
         .run()
         .ok()?;
-
     if !output.status.success() {
         return None;
     }
+    serde_json::from_str(&String::from_utf8_lossy(&output.stdout)).ok()
+}
 
-    let json_str = String::from_utf8_lossy(&output.stdout);
-    parse_ffprobe_json(&json_str)
+/// Synchronous; call from a background thread.
+pub fn probe_metadata(path: &str) -> Option<VideoMeta> {
+    ffprobe_json(path).map(|root| parse_ffprobe(&root))
 }
 
 /// Cache lookup → native container parser. No ffprobe.
@@ -101,8 +104,7 @@ pub fn probe_metadata_cached(path: &str) -> Option<VideoMeta> {
     Some(meta)
 }
 
-pub(super) fn parse_ffprobe_json(json: &str) -> Option<VideoMeta> {
-    let root: serde_json::Value = serde_json::from_str(json).ok()?;
+pub(super) fn parse_ffprobe(root: &serde_json::Value) -> VideoMeta {
     let mut meta = VideoMeta::default();
 
     if let Some(dur) = root["format"]["duration"].as_str() {
@@ -134,7 +136,7 @@ pub(super) fn parse_ffprobe_json(json: &str) -> Option<VideoMeta> {
         }
     }
 
-    Some(meta)
+    meta
 }
 
 pub(super) fn codec_display_name(name: &str) -> String {

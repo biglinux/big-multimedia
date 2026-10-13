@@ -31,39 +31,19 @@ impl MpvBackend {
         });
     }
     pub fn get_contrast(&self) -> i64 {
-        let mpv = self
-            .mpv
-            .lock()
-            .unwrap_or_else(std::sync::PoisonError::into_inner);
-        mpv.get_property("contrast").unwrap_or(0)
+        self.with_mpv(|m| m.get_property("contrast").unwrap_or(0))
     }
     pub fn get_brightness(&self) -> i64 {
-        let mpv = self
-            .mpv
-            .lock()
-            .unwrap_or_else(std::sync::PoisonError::into_inner);
-        mpv.get_property("brightness").unwrap_or(0)
+        self.with_mpv(|m| m.get_property("brightness").unwrap_or(0))
     }
     pub fn get_gamma(&self) -> i64 {
-        let mpv = self
-            .mpv
-            .lock()
-            .unwrap_or_else(std::sync::PoisonError::into_inner);
-        mpv.get_property("gamma").unwrap_or(0)
+        self.with_mpv(|m| m.get_property("gamma").unwrap_or(0))
     }
     pub fn get_saturation(&self) -> i64 {
-        let mpv = self
-            .mpv
-            .lock()
-            .unwrap_or_else(std::sync::PoisonError::into_inner);
-        mpv.get_property("saturation").unwrap_or(0)
+        self.with_mpv(|m| m.get_property("saturation").unwrap_or(0))
     }
     pub fn get_hue(&self) -> i64 {
-        let mpv = self
-            .mpv
-            .lock()
-            .unwrap_or_else(std::sync::PoisonError::into_inner);
-        mpv.get_property("hue").unwrap_or(0)
+        self.with_mpv(|m| m.get_property("hue").unwrap_or(0))
     }
 
     pub fn set_video_zoom(&self, val: f64) {
@@ -79,11 +59,7 @@ impl MpvBackend {
     }
 
     pub fn get_video_rotate(&self) -> i64 {
-        let mpv = self
-            .mpv
-            .lock()
-            .unwrap_or_else(std::sync::PoisonError::into_inner);
-        mpv.get_property("video-rotate").unwrap_or(0)
+        self.with_mpv(|m| m.get_property("video-rotate").unwrap_or(0))
     }
 
     pub fn set_video_flip(&self, hflip: bool, vflip: bool) {
@@ -96,11 +72,7 @@ impl MpvBackend {
     }
 
     pub fn get_video_zoom(&self) -> f64 {
-        let mpv = self
-            .mpv
-            .lock()
-            .unwrap_or_else(std::sync::PoisonError::into_inner);
-        mpv.get_property("video-zoom").unwrap_or(0.0)
+        self.with_mpv(|m| m.get_property("video-zoom").unwrap_or(0.0))
     }
 
     pub fn set_panscan(&self, val: f64) {
@@ -121,14 +93,7 @@ impl MpvBackend {
 
     pub fn set_deinterlace(&self, enable: bool) {
         self.with_mpv(|m| {
-            let _ = m.set_property(
-                "deinterlace",
-                if enable {
-                    "yes".to_string()
-                } else {
-                    "no".to_string()
-                },
-            );
+            let _ = m.set_property("deinterlace", if enable { "yes" } else { "no" });
         });
     }
 
@@ -233,23 +198,23 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_shader_list_append_to_empty() {
+    fn append_to_empty_list() {
         assert_eq!(shader_list_append("", "/a.glsl"), "/a.glsl");
     }
 
     #[test]
-    fn test_shader_list_append_to_existing() {
+    fn append_to_existing_list() {
         assert_eq!(shader_list_append("/a.glsl", "/b.glsl"), "/a.glsl:/b.glsl");
     }
 
     #[test]
-    fn test_shader_list_append_duplicate_noop() {
+    fn append_skips_duplicate_path() {
         let list = "/a.glsl:/b.glsl";
         assert_eq!(shader_list_append(list, "/a.glsl"), list);
     }
 
     #[test]
-    fn test_shader_list_append_multiple() {
+    fn append_keeps_existing_order() {
         let list = "/a.glsl:/b.glsl";
         assert_eq!(
             shader_list_append(list, "/c.glsl"),
@@ -258,7 +223,7 @@ mod tests {
     }
 
     #[test]
-    fn test_shader_list_remove_prefix_matches() {
+    fn remove_prefix_drops_matching_paths() {
         let list = "/usr/share/shaders/fsr.glsl:/usr/share/shaders/cas.glsl:/home/user/my.glsl";
         assert_eq!(
             shader_list_remove_prefix(list, "/usr/share/shaders/"),
@@ -267,7 +232,7 @@ mod tests {
     }
 
     #[test]
-    fn test_shader_list_remove_prefix_no_match() {
+    fn remove_prefix_keeps_other_paths() {
         let list = "/a.glsl:/b.glsl";
         assert_eq!(
             shader_list_remove_prefix(list, "/nothing/"),
@@ -276,13 +241,13 @@ mod tests {
     }
 
     #[test]
-    fn test_shader_list_remove_prefix_all_removed() {
+    fn remove_prefix_can_empty_list() {
         let list = "/usr/a.glsl:/usr/b.glsl";
         assert_eq!(shader_list_remove_prefix(list, "/usr/"), "");
     }
 
     #[test]
-    fn test_shader_list_remove_prefix_empty_list() {
+    fn remove_prefix_on_empty_list() {
         assert_eq!(shader_list_remove_prefix("", "/prefix/"), "");
     }
 
@@ -303,21 +268,18 @@ mod flip_tests {
         for preference in ["no", "auto-safe", "nvdec-copy"] {
             backend.set_hwdec(preference);
             let expected = backend.get_hwdec();
-            backend.vf_append("review-contrast", "eq=contrast=1.2");
+            backend.vf_append("picture", "eq=contrast=1.2");
             for (horizontal, vertical) in
                 [(true, false), (true, true), (false, true), (false, false)]
             {
                 backend.set_video_flip(horizontal, vertical);
                 let filters = backend.get_vf();
-                assert!(
-                    filters.contains("review-contrast"),
-                    "lost contrast: {filters}"
-                );
+                assert!(filters.contains("picture"), "lost contrast: {filters}");
                 assert_eq!(filters.contains("hflip"), horizontal, "{filters}");
                 assert_eq!(filters.contains("vflip"), vertical, "{filters}");
                 assert_eq!(backend.get_hwdec(), expected);
             }
-            backend.vf_remove("review-contrast");
+            backend.vf_remove("picture");
             assert_eq!(backend.get_hwdec(), expected);
             assert!(backend.get_vf().is_empty());
         }

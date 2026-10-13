@@ -48,64 +48,9 @@ impl ThumbnailGenerator {
         let (req_tx, req_rx) = async_channel::bounded::<Option<ThumbnailRequest>>(1);
         let cancelled = Arc::new(AtomicBool::new(false));
         let worker_cancelled = cancelled.clone();
-        const MAX_CACHE: usize = 8 * 1024 * 1024 / (THUMB_STRIDE * THUMB_HEIGHT as usize);
-
         std::thread::Builder::new()
             .name("thumbnail-gen".into())
-            .spawn(move || {
-                let mut cache: HashMap<i64, Arc<[u8]>> = HashMap::new();
-                let mut lru_order: VecDeque<i64> = VecDeque::new();
-                let mut cached_media = None;
-
-                while let Ok(request) = req_rx.recv_blocking() {
-                    if worker_cancelled.load(Ordering::Relaxed) {
-                        break;
-                    }
-                    let Some(request) = request else {
-                        cache.clear();
-                        lru_order.clear();
-                        cached_media = None;
-                        continue;
-                    };
-                    let media = (request.generation, request.file.clone());
-                    if cached_media.as_ref() != Some(&media) {
-                        cache.clear();
-                        lru_order.clear();
-                        cached_media = Some(media);
-                    }
-
-                    let pixels = if let Some(pixels) = cache.get(&request.time_key) {
-                        pixels.clone()
-                    } else {
-                        let Some(pixels) = generate_thumbnail(
-                            &request.file,
-                            request.time_key as f64,
-                            &worker_cancelled,
-                        ) else {
-                            continue;
-                        };
-                        let pixels: Arc<[u8]> = pixels.into();
-                        if cache.len() >= MAX_CACHE
-                            && let Some(oldest) = lru_order.pop_front()
-                        {
-                            cache.remove(&oldest);
-                        }
-                        cache.insert(request.time_key, pixels.clone());
-                        pixels
-                    };
-                    lru_order.retain(|key| *key != request.time_key);
-                    lru_order.push_back(request.time_key);
-                    if result_sender
-                        .force_send(ThumbnailResult {
-                            request,
-                            rgb_data: pixels,
-                        })
-                        .is_err()
-                    {
-                        break;
-                    }
-                }
-            })
+            .spawn(move || run_worker(&req_rx, &result_sender, &worker_cancelled))
             .expect("Failed to spawn thumbnail thread");
 
         Self {
@@ -175,6 +120,63 @@ impl Drop for ThumbnailGenerator {
     }
 }
 
+/// Serve requests until the generator is dropped. `None` drops the cache.
+fn run_worker(
+    requests: &async_channel::Receiver<Option<ThumbnailRequest>>,
+    results: &async_channel::Sender<ThumbnailResult>,
+    cancelled: &AtomicBool,
+) {
+    const MAX_CACHE: usize = 8 * 1024 * 1024 / (THUMB_STRIDE * THUMB_HEIGHT as usize);
+    let mut cache: HashMap<i64, Arc<[u8]>> = HashMap::new();
+    let mut lru_order: VecDeque<i64> = VecDeque::new();
+    let mut cached_media = None;
+
+    while let Ok(request) = requests.recv_blocking() {
+        if cancelled.load(Ordering::Relaxed) {
+            break;
+        }
+        let Some(request) = request else {
+            cache.clear();
+            lru_order.clear();
+            cached_media = None;
+            continue;
+        };
+        let media = (request.generation, request.file.clone());
+        if cached_media.as_ref() != Some(&media) {
+            cache.clear();
+            lru_order.clear();
+            cached_media = Some(media);
+        }
+
+        let pixels = if let Some(pixels) = cache.get(&request.time_key) {
+            pixels.clone()
+        } else {
+            let Some(pixels) =
+                generate_thumbnail(&request.file, request.time_key as f64, cancelled)
+            else {
+                continue;
+            };
+            let pixels: Arc<[u8]> = pixels.into();
+            if cache.len() >= MAX_CACHE
+                && let Some(oldest) = lru_order.pop_front()
+            {
+                cache.remove(&oldest);
+            }
+            cache.insert(request.time_key, pixels.clone());
+            pixels
+        };
+        lru_order.retain(|key| *key != request.time_key);
+        lru_order.push_back(request.time_key);
+        let result = ThumbnailResult {
+            request,
+            rgb_data: pixels,
+        };
+        if results.force_send(result).is_err() {
+            break;
+        }
+    }
+}
+
 fn generate_thumbnail(file: &str, time: f64, cancelled: &AtomicBool) -> Option<Vec<u8>> {
     debug!("Generating thumbnail at {time:.3}s");
 
@@ -182,8 +184,8 @@ fn generate_thumbnail(file: &str, time: f64, cancelled: &AtomicBool) -> Option<V
         .program("ffmpeg")
         .args([
             // The keyframe at or before `time`, decoded alone on one thread:
-            // a fifth quicker than decoding up to the exact frame, which a
-            // preview does not need.
+            // quicker than decoding up to the exact frame, which a preview
+            // does not need.
             "-noaccurate_seek",
             "-skip_frame",
             "nokey",
@@ -212,8 +214,8 @@ fn generate_thumbnail(file: &str, time: f64, cancelled: &AtomicBool) -> Option<V
         .stderr(BigSubprocessOutputMode::Null)
         .timeout(Duration::from_secs(5))
         .build();
-    // run() drains stdout while waiting, so the ~97 KB rawvideo cannot deadlock
-    // on the 64 KB pipe buffer; capture is capped at 16 MB.
+    // run() drains stdout while waiting, so a frame larger than the pipe
+    // buffer cannot deadlock it.
     let output = spec.run_cancellable(cancelled).ok()?;
     let expected_size = THUMB_STRIDE * THUMB_HEIGHT as usize;
 

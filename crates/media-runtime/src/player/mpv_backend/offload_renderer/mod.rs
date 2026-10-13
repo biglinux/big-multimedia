@@ -15,7 +15,8 @@ use log::{debug, error, info, warn};
 use std::cell::Cell;
 use std::ffi::CStr;
 use std::rc::Rc;
-use texture_pool::{CurrentContext, TextureLease, TexturePool};
+pub(super) use texture_pool::CurrentContext;
+use texture_pool::{TextureLease, TexturePool};
 
 use gl_fns::{
     GL_COLOR_ATTACHMENT0, GL_FRAMEBUFFER, GL_FRAMEBUFFER_COMPLETE, GL_LINEAR, GL_RGBA, GL_RGBA8,
@@ -103,6 +104,7 @@ impl OffloadRenderer {
 
         let pool = TexturePool::new(&gl_context, gl);
         let mut fbo = 0_u32;
+        // SAFETY: `gl_context` is current and `fbo` is a valid out pointer.
         unsafe { (gl.gen_framebuffers)(1, &raw mut fbo) };
 
         // Allocation notifications, not a permanent frame-clock/timer. The
@@ -119,16 +121,6 @@ impl OffloadRenderer {
         resize_probe.set_vexpand(true);
         surface.add_overlay(&resize_probe);
         pool.watch_resize(&resize_probe);
-
-        // Compute shader compat diagnostic (GLES 3.1+ / GL 4.3+).
-        if gl_context.is_legacy() {
-            warn!("GL context is legacy (no compute shader support)");
-        }
-        if gl_context.api() == gdk::GLAPI::GLES {
-            info!("GL context API: GLES (compute requires GLES 3.1+)");
-        } else {
-            info!("GL context API: OpenGL (compute requires GL 4.3+)");
-        }
 
         info!(
             "GL version: {}, renderer: {}",
@@ -241,8 +233,10 @@ impl OffloadRenderer {
         if !self.prepare_slot(index, tex, width, height) {
             return;
         }
+        // SAFETY: the context is current (`_current`) for these GL calls.
         unsafe { (self.gl.viewport)(0, 0, width, height) };
         let result = render_context.render(self.fbo as i32, width, height, false);
+        // SAFETY: as above.
         unsafe { (self.gl.bind_framebuffer)(GL_FRAMEBUFFER, 0) };
         if result < 0 {
             error!("Offload render failed: {result}");
@@ -251,6 +245,7 @@ impl OffloadRenderer {
         let texture = if self.egl.is_some() && !self.dmabuf_rejected.get() {
             // DMA-BUF explicit-fence negotiation is not implemented, so glFinish
             // is the only correctness barrier before export.
+            // SAFETY: the context is current.
             unsafe { (self.gl.finish)() };
             match self.try_create_dmabuf_texture(lease, width, height) {
                 Ok(texture) => texture,
@@ -324,13 +319,16 @@ impl OffloadRenderer {
         };
         type Payload = (egl_dmabuf::DmaBufExport, TextureLease);
         unsafe extern "C" fn release(data: *mut std::ffi::c_void) {
-            // Called only for a successfully-created texture, exactly once.
+            // SAFETY: GDK calls this once, only for a texture it created, with
+            // the payload pointer handed to the builder below.
             drop(unsafe { Box::from_raw(data.cast::<Payload>()) });
         }
         let payload = Box::into_raw(Box::new((export, lease)));
         let mut error = std::ptr::null_mut();
         // Direct FFI reclaims the release userdata on build failure; the gtk-rs
         // convenience wrapper of the locked version leaks it.
+        // SAFETY: the builder is alive for the call and `payload` is a leaked
+        // Box that either `release` or the failure path below reclaims.
         let texture = unsafe {
             gdk::ffi::gdk_dmabuf_texture_builder_build(
                 builder.to_glib_none().0,
@@ -343,25 +341,30 @@ impl OffloadRenderer {
             self.dmabuf_rejected.set(true); // do not retry/import/glFinish every frame
             self.dmabuf_active.set(false);
             if !error.is_null() {
+                // SAFETY: on failure GDK transfers a GError to the caller.
                 let error: gtk::glib::Error = unsafe { from_glib_full(error) };
                 warn!("DMA-BUF import rejected; using GL textures: {error}");
             }
+            // SAFETY: GDK never calls `release` when the build fails.
             let (export, lease) = *unsafe { Box::from_raw(payload) };
             drop(export); // close the fd; the lease is reused by GL fallback
             return Err(lease);
         }
         self.dmabuf_active.set(true);
+        // SAFETY: a non-null texture is a new reference owned by the caller.
         Ok(unsafe { from_glib_full(texture) })
     }
 
     fn create_gl_texture(&self, lease: TextureLease, width: i32, height: i32) -> gdk::Texture {
         const GL_SYNC_GPU_COMMANDS_COMPLETE: u32 = 0x9117;
         let fence = if let (Some(create), Some(_)) = (self.gl.fence_sync, self.gl.delete_sync) {
+            // SAFETY: the context is current.
             unsafe { create(GL_SYNC_GPU_COMMANDS_COMPLETE, 0) }
         } else {
             std::ptr::null_mut()
         };
         // A shared GL context is not, by itself, a producer/consumer fence.
+        // SAFETY: the context is current.
         unsafe {
             if fence.is_null() {
                 (self.gl.finish)();
@@ -377,6 +380,8 @@ impl OffloadRenderer {
             .set_height(height)
             .set_format(gdk::MemoryFormat::R8g8b8a8)
             .set_sync((!fence.is_null()).then_some(fence.cast_const()));
+        // SAFETY: the lease keeps the texture id and its fence alive until GDK
+        // releases the texture.
         unsafe { builder.build_with_release_func(move || drop(lease)) }
     }
 
@@ -460,6 +465,7 @@ impl Drop for OffloadRenderer {
         self.picture.set_paintable(None::<&gdk::Texture>);
         // Slot textures and fences retire only after the final GDK lease. The
         // framebuffer has no consumer and can be deleted on this thread now.
+        // SAFETY: the context is current and `fbo` was generated in it.
         unsafe { (self.gl.delete_framebuffers)(1, &raw const self.fbo) };
         info!("Offload renderer destroyed");
     }

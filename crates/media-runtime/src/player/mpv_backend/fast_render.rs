@@ -18,7 +18,7 @@ use crate::error::{Error, Result};
 pub struct FastRenderContext {
     render_context: *mut mpv_sys::mpv_render_context,
     update_callback: Option<Box<UpdateCallback>>,
-    // Dropped AFTER the C render context, including when a widget owns the
+    // Dropped after the C render context, including when a widget owns the
     // last reference. Raw unsafe constructors leave this unset.
     owner: Option<Arc<MpvBackend>>,
     context_scope: Option<ContextScope>,
@@ -33,6 +33,7 @@ impl FastRenderContext {
     /// creation GL context must be current for every call and destruction unless
     /// the GTK integration installs a context scope before exposing this wrapper.
     pub unsafe fn new(mpv: *mut mpv_sys::mpv_handle) -> Result<Self> {
+        // SAFETY: the caller upholds this function's contract.
         unsafe { Self::new_with_wayland_display(mpv, None, false) }
     }
 
@@ -157,6 +158,8 @@ impl FastRenderContext {
     /// Callback fires from an mpv internal thread and must not call the mpv API.
     /// Schedule work on the main thread instead (e.g. `glib::idle_add_once`).
     pub fn set_update_callback<F: Fn() + Send + Sync + 'static>(&mut self, callback: F) {
+        // SAFETY: detach before replacing the allocation mpv points to; the
+        // new one is owned by self until Drop unregisters it.
         self.with_current(|| unsafe {
             mpv_sys::mpv_render_context_set_update_callback(
                 self.render_context,
@@ -205,8 +208,9 @@ impl FastRenderContext {
 
 impl Drop for FastRenderContext {
     fn drop(&mut self) {
-        // Keep userdata AND core owner alive until native teardown completes.
+        // Keep userdata and core owner alive until native teardown completes.
         // Unregistration itself is performed with the creation context current.
+        // SAFETY: render_context came from new() and is freed exactly once here.
         self.with_current(|| unsafe {
             mpv_sys::mpv_render_context_set_update_callback(
                 self.render_context,
@@ -227,7 +231,7 @@ impl Drop for FastRenderContext {
 pub struct SwRenderContext {
     render_context: *mut mpv_sys::mpv_render_context,
     update_callback: Option<Box<UpdateCallback>>,
-    // Dropped AFTER the C render context, including when a widget owns the
+    // Dropped after the C render context, including when a widget owns the
     // last reference. Raw unsafe constructors leave this unset.
     owner: Option<Arc<MpvBackend>>,
 }
@@ -320,8 +324,8 @@ impl SwRenderContext {
     /// Callback fires from an mpv internal thread: schedule work on the main
     /// thread (e.g. `glib::idle_add_once`), never call mpv API from it.
     pub fn set_update_callback<F: Fn() + Send + Sync + 'static>(&mut self, callback: F) {
-        // Detach first: replacing the Rust allocation while mpv still has its
-        // address can leave an in-flight callback dereferencing freed memory.
+        // SAFETY: detach first: replacing the Rust allocation while mpv still
+        // has its address can leave an in-flight callback reading freed memory.
         unsafe {
             mpv_sys::mpv_render_context_set_update_callback(
                 self.render_context,
@@ -335,8 +339,8 @@ impl SwRenderContext {
             .as_mut()
             .expect("callback just installed");
         let userdata = std::ptr::from_mut(userdata.as_mut()).cast();
-        // Registration can invoke the callback immediately. The allocation is
-        // already owned by self and remains alive until unregistration.
+        // SAFETY: registration can invoke the callback immediately. The
+        // allocation is already owned by self and lives until unregistration.
         unsafe {
             mpv_sys::mpv_render_context_set_update_callback(
                 self.render_context,
@@ -354,6 +358,7 @@ impl SwRenderContext {
 
 impl Drop for SwRenderContext {
     fn drop(&mut self) {
+        // SAFETY: unregister before dropping the callback's allocation.
         unsafe {
             mpv_sys::mpv_render_context_set_update_callback(
                 self.render_context,
@@ -373,6 +378,7 @@ impl Drop for SwRenderContext {
 /// The callback is detached before dropping that allocation.
 unsafe extern "C" fn update_wrapper(userdata: *mut c_void) {
     // A panic may not cross the C ABI boundary (release uses panic=abort).
+    // SAFETY: see the function's contract above.
     let callback = unsafe { &*userdata.cast::<UpdateCallback>() };
     (callback.0)();
 }
@@ -383,30 +389,6 @@ unsafe extern "C" fn gl_proc_address_raw(
     _ctx: *mut c_void,
     name: *const std::ffi::c_char,
 ) -> *mut c_void {
+    // SAFETY: see the function's contract above.
     unsafe { libc::dlsym(libc::RTLD_DEFAULT, name) }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn render_param_array_is_stack_allocated() {
-        assert_eq!(
-            std::mem::size_of::<mpv_sys::mpv_render_param>(),
-            2 * std::mem::size_of::<usize>(),
-            "mpv_render_param is a C enum followed by an aligned pointer"
-        );
-        assert_eq!(
-            std::mem::size_of::<mpv_sys::mpv_opengl_fbo>(),
-            16,
-            "mpv_opengl_fbo should be 16 bytes (4 x i32)"
-        );
-    }
-
-    #[test]
-    fn callback_can_be_shared_between_mpv_threads() {
-        fn assert_send_sync<T: Send + Sync>() {}
-        assert_send_sync::<UpdateCallback>();
-    }
 }

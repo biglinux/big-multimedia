@@ -105,6 +105,15 @@ impl Screenshots {
         }
         ids
     }
+    /// Requests the event loop must still watch for a deadline.
+    pub(super) fn has_requests(&self) -> bool {
+        !self
+            .0
+            .lock()
+            .unwrap_or_else(std::sync::PoisonError::into_inner)
+            .requests
+            .is_empty()
+    }
     /// COMMAND_REPLY is the terminal receipt. Remove ownership only here, after
     /// native completion; a prior timeout never deletes a live writer's output.
     pub(super) fn complete(&self, id: u64, error: i32) -> Option<ScreenshotResult> {

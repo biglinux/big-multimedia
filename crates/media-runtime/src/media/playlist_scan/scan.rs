@@ -87,8 +87,10 @@ pub fn scan_folder_recursive(folder: &Path) -> ScanResult {
     builder = builder
         .arg("--color=never")
         .arg("--absolute-path")
+        // Pattern and folder after `--`: a folder starting with `-` stays a path.
+        .arg("--")
         .arg(".")
-        .arg(folder.to_string_lossy().as_ref());
+        .arg(folder.as_os_str());
 
     if let Ok(output) = builder.build().run()
         && output.status.success()

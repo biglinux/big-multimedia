@@ -69,40 +69,19 @@ impl MpvBackend {
 
     pub fn set_deband(&self, enable: bool) {
         self.with_mpv(|m| {
-            let _ = m.set_property(
-                "deband",
-                if enable {
-                    "yes".to_string()
-                } else {
-                    "no".to_string()
-                },
-            );
+            let _ = m.set_property("deband", if enable { "yes" } else { "no" });
         });
     }
 
     pub fn set_sigmoid_upscaling(&self, enable: bool) {
         self.with_mpv(|m| {
-            let _ = m.set_property(
-                "sigmoid-upscaling",
-                if enable {
-                    "yes".to_string()
-                } else {
-                    "no".to_string()
-                },
-            );
+            let _ = m.set_property("sigmoid-upscaling", if enable { "yes" } else { "no" });
         });
     }
 
     pub fn set_correct_downscaling(&self, enable: bool) {
         self.with_mpv(|m| {
-            let _ = m.set_property(
-                "correct-downscaling",
-                if enable {
-                    "yes".to_string()
-                } else {
-                    "no".to_string()
-                },
-            );
+            let _ = m.set_property("correct-downscaling", if enable { "yes" } else { "no" });
         });
     }
 
@@ -132,7 +111,7 @@ impl MpvBackend {
         wl_display: Option<*mut std::ffi::c_void>,
         advanced_control: bool,
     ) -> crate::error::Result<super::fast_render::FastRenderContext> {
-        // SAFETY: with_owner retains this backend until AFTER the C render
+        // SAFETY: with_owner retains this backend until after the C render
         // context is freed. The caller provides the current GL/display context.
         unsafe {
             super::fast_render::FastRenderContext::new_with_wayland_display(

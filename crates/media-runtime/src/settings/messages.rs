@@ -1,6 +1,5 @@
 //! Extraction anchors for save/recovery states selected dynamically by the UI.
-//! Keep these msgids aligned with settings/account/library dialogs. This module
-//! performs no I/O and does not turn errors from external tools into UI text.
+//! Keep these msgids aligned with the settings, account and library dialogs.
 use crate::i18n::gettext_noop;
 
 const _: &[&str] = &[

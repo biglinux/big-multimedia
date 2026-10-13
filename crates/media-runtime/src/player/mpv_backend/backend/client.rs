@@ -322,12 +322,13 @@ impl MpvGetValue for String {
         }
 
         // SAFETY: on success mpv returns a valid nul-terminated string.
-        let value = unsafe { CStr::from_ptr(raw) }.to_str()?.to_owned();
-        // SAFETY: `raw` was allocated by mpv for this property read.
+        let value = unsafe { CStr::from_ptr(raw) }.to_str().map(str::to_owned);
+        // SAFETY: `raw` was allocated by mpv for this property read; freed
+        // before the UTF-8 check can return, since a file name is any bytes.
         unsafe {
             mpv_sys::mpv_free(raw.cast::<c_void>());
         }
-        Ok(value)
+        Ok(value?)
     }
 }
 
@@ -379,23 +380,14 @@ impl MpvGetValue for f64 {
     }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq)]
-pub enum MpvPropertyValue {
-    Invalidated,
-    Flag(bool),
-    Double(f64),
-}
-
 #[derive(Debug, Clone, PartialEq)]
 pub enum MpvEvent {
     AudioReconfig,
     FileLoaded,
     EndFile(u32),
     Shutdown,
-    PropertyChange {
-        name: String,
-        change: MpvPropertyValue,
-    },
+    /// Observed with `MPV_FORMAT_NONE`: the event names no value.
+    PropertyChange,
     CommandReply {
         id: u64,
         error: c_int,
@@ -446,7 +438,7 @@ fn map_event(event: &mpv_sys::mpv_event) -> Option<Result<MpvEvent>> {
         mpv_sys::mpv_event_id_MPV_EVENT_PLAYBACK_RESTART => Ok(MpvEvent::PlaybackRestart),
         mpv_sys::mpv_event_id_MPV_EVENT_END_FILE => Ok(map_end_file_event(event.data)),
         mpv_sys::mpv_event_id_MPV_EVENT_SHUTDOWN => Ok(MpvEvent::Shutdown),
-        mpv_sys::mpv_event_id_MPV_EVENT_PROPERTY_CHANGE => map_property_event(event.data),
+        mpv_sys::mpv_event_id_MPV_EVENT_PROPERTY_CHANGE => Ok(MpvEvent::PropertyChange),
         _ => Ok(MpvEvent::Other),
     })
 }
@@ -458,42 +450,4 @@ fn map_end_file_event(event_payload: *mut c_void) -> MpvEvent {
     // SAFETY: MPV_EVENT_END_FILE carries `mpv_event_end_file`.
     let event = unsafe { &*event_payload.cast::<mpv_sys::mpv_event_end_file>() };
     MpvEvent::EndFile(if event.error < 0 { 4 } else { event.reason })
-}
-
-fn map_property_event(event_payload: *mut c_void) -> Result<MpvEvent> {
-    if event_payload.is_null() {
-        return Ok(MpvEvent::Other);
-    }
-    // SAFETY: MPV_EVENT_PROPERTY_CHANGE carries `mpv_event_property`.
-    let property = unsafe { &*event_payload.cast::<mpv_sys::mpv_event_property>() };
-    if property.name.is_null() {
-        return Ok(MpvEvent::Other);
-    }
-
-    // SAFETY: mpv provides a valid property name for property-change events.
-    let name = unsafe { CStr::from_ptr(property.name) }
-        .to_str()?
-        .to_owned();
-    if property.format == mpv_sys::mpv_format_MPV_FORMAT_NONE {
-        return Ok(MpvEvent::PropertyChange {
-            name,
-            change: MpvPropertyValue::Invalidated,
-        });
-    }
-    if property.data.is_null() {
-        return Ok(MpvEvent::Other);
-    }
-    let change = match property.format {
-        mpv_sys::mpv_format_MPV_FORMAT_FLAG => {
-            // SAFETY: MPV_FORMAT_FLAG uses C `int` storage.
-            MpvPropertyValue::Flag(unsafe { *property.data.cast::<c_int>() } != 0)
-        }
-        mpv_sys::mpv_format_MPV_FORMAT_DOUBLE => {
-            // SAFETY: MPV_FORMAT_DOUBLE uses f64 storage.
-            MpvPropertyValue::Double(unsafe { *property.data.cast::<f64>() })
-        }
-        _ => return Ok(MpvEvent::Other),
-    };
-
-    Ok(MpvEvent::PropertyChange { name, change })
 }

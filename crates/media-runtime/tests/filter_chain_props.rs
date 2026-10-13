@@ -6,7 +6,7 @@
 //! - Joined string never has trailing/duplicate commas.
 //! - No nested empty filter groups (`,,`, leading/trailing `,`).
 //! - Every filter entry is non-empty.
-//! - Entry count equals number of enabled-effect contributions.
+//! - Flat EQ bands alone build an empty chain.
 
 use big_media_runtime::player::mpv_backend::AudioEffects;
 use big_media_runtime::player::mpv_backend::filters::build_audio_filter_chain;

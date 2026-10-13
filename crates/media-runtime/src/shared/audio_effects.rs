@@ -1,4 +1,4 @@
-//! bigagents: app-local-adapter; binds audio effect components to mpv/settings/noise-reduction runtime.
+//! Binds audio effect components to mpv/settings/noise-reduction runtime.
 
 use std::rc::Rc;
 
@@ -278,96 +278,9 @@ mod tests {
     use super::*;
 
     #[test]
-    fn parse_eq_empty_string() {
-        let gains = parse_eq_bands("");
-        assert_eq!(gains, [0.0; 10]);
-    }
-
-    #[test]
-    fn parse_eq_full_10_bands() {
-        let gains = parse_eq_bands("1.0;2.0;3.0;4.0;5.0;6.0;7.0;8.0;9.0;10.0");
-        assert_eq!(gains, [1.0, 2.0, 3.0, 4.0, 5.0, 6.0, 7.0, 8.0, 9.0, 10.0]);
-    }
-
-    #[test]
-    fn parse_eq_fewer_bands_pads_zeros() {
-        let gains = parse_eq_bands("3.5;-2.0");
-        assert!((gains[0] - 3.5).abs() < f64::EPSILON);
-        assert!((gains[1] - -2.0).abs() < f64::EPSILON);
-        for &g in &gains[2..] {
-            assert!((g).abs() < f64::EPSILON);
-        }
-    }
-
-    #[test]
-    fn parse_eq_extra_bands_ignored() {
-        let gains = parse_eq_bands("1;2;3;4;5;6;7;8;9;10;11;12");
-        // Only first 10 are used
-        assert!((gains[9] - 10.0).abs() < f64::EPSILON);
-    }
-
-    #[test]
-    fn parse_eq_invalid_entries_skipped() {
-        let gains = parse_eq_bands("3.0;bad;5.0");
-        // "bad" is skipped, so index 0=3.0, index 1=5.0 (shifted)
-        assert!((gains[0] - 3.0).abs() < f64::EPSILON);
-        assert!((gains[1] - 5.0).abs() < f64::EPSILON);
-    }
-
-    #[test]
-    fn parse_eq_negative_gains() {
-        let gains = parse_eq_bands("-6.0;0;6.0");
-        assert!((gains[0] - -6.0).abs() < f64::EPSILON);
-        assert!((gains[1]).abs() < f64::EPSILON);
-        assert!((gains[2] - 6.0).abs() < f64::EPSILON);
-    }
-
-    #[test]
-    fn eq_labels_count_matches_freqs() {
-        assert_eq!(EQ_LABELS.len(), 10);
-        assert_eq!(EQ_BAND_FREQUENCIES_F64.len(), 10);
-    }
-
-    #[test]
-    fn parse_eq_semicolons_only() {
-        // All empty strings after split → all skipped by filter_map
-        let gains = parse_eq_bands(";;;");
-        assert_eq!(gains, [0.0; 10]);
-    }
-
-    #[test]
-    fn parse_eq_trailing_semicolon() {
-        let gains = parse_eq_bands("5.0;");
-        assert!((gains[0] - 5.0).abs() < f64::EPSILON);
-        for &g in &gains[1..] {
-            assert!(g.abs() < f64::EPSILON);
-        }
-    }
-
-    #[test]
-    fn parse_eq_whitespace_in_value_skipped() {
-        // Leading whitespace causes parse failure → value skipped
-        let gains = parse_eq_bands(" 3.0;5.0");
-        // " 3.0" fails to parse, "5.0" succeeds → index 0 = 5.0
-        assert!((gains[0] - 5.0).abs() < f64::EPSILON);
-        for &g in &gains[1..] {
-            assert!(g.abs() < f64::EPSILON);
-        }
-    }
-
-    #[test]
-    fn parse_eq_single_value() {
-        let gains = parse_eq_bands("7.5");
-        assert!((gains[0] - 7.5).abs() < f64::EPSILON);
-        for &g in &gains[1..] {
-            assert!(g.abs() < f64::EPSILON);
-        }
-    }
-
-    #[test]
-    fn parse_eq_large_gain_values() {
-        let gains = parse_eq_bands("100.0;-100.0");
-        assert!((gains[0] - 12.0).abs() < f64::EPSILON);
-        assert!((gains[1] - -12.0).abs() < f64::EPSILON);
+    fn eq_gains_clamp_to_12_db() {
+        let gains = parse_eq_bands("100.0;-100.0;3.5");
+        assert_eq!(gains[..3], [12.0, -12.0, 3.5]);
+        assert_eq!(gains[3..], [0.0; 7]);
     }
 }

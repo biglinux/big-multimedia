@@ -52,6 +52,8 @@ impl MpvBackend {
         let mut args: Vec<*const std::os::raw::c_char> =
             strings.iter().map(|s| s.as_ptr()).collect();
         args.push(std::ptr::null());
+        // SAFETY: `args` is null-terminated and its strings outlive the call,
+        // which copies them; the handle is live while `self` exists.
         let status =
             unsafe { mpv_sys::mpv_command_async(self.raw_mpv_handle, 0, args.as_mut_ptr()) };
         if status < 0 {
@@ -111,12 +113,11 @@ impl MpvBackend {
 
     /// Append `paths` in order with as few commands as mpv's plaintext
     /// playlist allows. Every async command holds a reply slot in mpv's
-    /// 1000-event client queue until the event thread drains it: one
-    /// `loadfile` per entry lost half of a 2000-video folder to
-    /// MPV_ERROR_EVENT_QUEUE_FULL, and a synchronous one blocked the GTK loop
-    /// for 200 ms while mpv opened the first file. The parser splits lines
-    /// and strips leading blanks and a line-final CR, so such paths still go
-    /// one by one.
+    /// bounded client event queue until the event thread drains it, so one
+    /// `loadfile` per entry overflows it on a large folder, and a synchronous
+    /// one blocks the GTK loop while mpv opens the first file. The parser
+    /// splits lines and strips leading blanks and a line-final CR, so such
+    /// paths still go one by one.
     pub fn load_files_append(&self, paths: &[String]) {
         let mut list = String::new();
         for path in paths {
@@ -195,6 +196,8 @@ impl MpvBackend {
         let id = self
             .screenshots
             .register(stage, target.to_path_buf(), alive)?;
+        // SAFETY: as in `queue_command`; the registry owns the staging file
+        // until mpv's reply for `id`.
         let status =
             unsafe { mpv_sys::mpv_command_async(self.raw_mpv_handle, id, args.as_mut_ptr()) };
         if status < 0 {

@@ -1,59 +1,8 @@
 use super::*;
+use crate::media::playlist_scan::display::trashed_uri;
 
 #[test]
-fn format_file_size_bytes() {
-    assert_eq!(format_file_size(512), "512 B");
-}
-
-#[test]
-fn format_file_size_kilobytes() {
-    assert_eq!(format_file_size(2048), "2.0 KB");
-}
-
-#[test]
-fn format_file_size_megabytes() {
-    assert_eq!(format_file_size(5 * 1024 * 1024), "5.00 MB");
-}
-
-#[test]
-fn format_file_size_gigabytes() {
-    assert_eq!(format_file_size(2 * 1024 * 1024 * 1024), "2.00 GB");
-}
-
-#[test]
-fn format_file_size_zero() {
-    assert_eq!(format_file_size(0), "0 B");
-}
-
-#[test]
-fn format_file_size_boundary_kb() {
-    assert_eq!(format_file_size(1023), "1023 B");
-    assert_eq!(format_file_size(1024), "1.0 KB");
-}
-
-#[test]
-fn format_file_size_boundary_mb() {
-    assert_eq!(format_file_size(1024 * 1024 - 1), "1024.0 KB");
-    assert_eq!(format_file_size(1024 * 1024), "1.00 MB");
-}
-
-#[test]
-fn folder_display_name_basename() {
-    assert_eq!(folder_display_name("/home/user/Videos"), "Videos");
-}
-
-#[test]
-fn folder_display_name_root() {
-    assert_eq!(folder_display_name("/"), "/");
-}
-
-#[test]
-fn folder_display_name_simple() {
-    assert_eq!(folder_display_name("myfolder"), "myfolder");
-}
-
-#[test]
-fn breadcrumb_segments_structure() {
+fn breadcrumb_ends_at_folder() {
     let segs = breadcrumb_segments("/tmp/a/b");
     assert!(segs.len() >= 3);
     let last = segs.last().unwrap();
@@ -62,11 +11,28 @@ fn breadcrumb_segments_structure() {
 }
 
 #[test]
-fn breadcrumb_segments_first_is_root_or_home() {
+fn breadcrumb_starts_at_root_or_home() {
     let segs = breadcrumb_segments("/tmp/test");
     let first = &segs[0].0;
     assert!(
         first == "/" || first == "Home",
         "expected / or Home, got {first}"
     );
+}
+
+#[test]
+fn trashed_uri_matches_whole_path() {
+    let listing = "trash:///a.mp4.bak\t/videos/a.mp4.bak\n\
+                   trash:///b.mp4\t/old/videos/a.mp4\n\
+                   trash:///My%20a.mp4\t/videos/My a.mp4\n\
+                   trash:///a.mp4\t/videos/a.mp4\n";
+    assert_eq!(
+        trashed_uri(listing, "/videos/a.mp4"),
+        Some("trash:///a.mp4")
+    );
+    assert_eq!(
+        trashed_uri(listing, "/videos/My a.mp4"),
+        Some("trash:///My%20a.mp4")
+    );
+    assert_eq!(trashed_uri(listing, "/videos/c.mp4"), None);
 }

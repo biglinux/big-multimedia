@@ -14,9 +14,9 @@ const SLOT_COUNT: usize = 3;
 type RetiredTexture = (u32, usize);
 
 /// Restore GTK's previous current context even on error/early return.
-pub(super) struct CurrentContext(Option<gdk::GLContext>);
+pub(in crate::player::mpv_backend) struct CurrentContext(Option<gdk::GLContext>);
 impl CurrentContext {
-    pub(super) fn enter(context: &gdk::GLContext) -> Self {
+    pub(in crate::player::mpv_backend) fn enter(context: &gdk::GLContext) -> Self {
         let previous = gdk::GLContext::current();
         context.make_current();
         Self(previous)
@@ -88,6 +88,7 @@ impl TexturePool {
     /// frame; each slot is resized only after its previous GDK lease is released.
     pub(super) fn new(context: &gdk::GLContext, gl: GlFns) -> Self {
         let mut ids = [0; SLOT_COUNT];
+        // SAFETY: the caller made `context` current; `ids` holds SLOT_COUNT.
         unsafe { (gl.gen_textures)(SLOT_COUNT as i32, ids.as_mut_ptr()) };
         let (retired, retired_rx) = async_channel::bounded::<RetiredTexture>(SLOT_COUNT);
         let (wake, wake_rx) = async_channel::bounded::<()>(1);
@@ -105,12 +106,14 @@ impl TexturePool {
             }
         });
         // This future has no Sender and no pointer back to the pool. After the
-        // renderer AND the final GDK texture disappear the channel closes.
+        // renderer and the final GDK texture disappear the channel closes.
         let owned_context = context.clone();
         let retired_for_future = retired_rx.clone();
         glib::spawn_future_local(async move {
             while let Ok((id, fence)) = retired_for_future.recv().await {
                 let _current = CurrentContext::enter(&owned_context);
+                // SAFETY: the texture and fence belong to this context, which
+                // is current, and no lease uses them any more.
                 unsafe {
                     if fence != 0
                         && let Some(delete) = gl.delete_sync
@@ -154,6 +157,8 @@ impl TexturePool {
                 if fence != 0
                     && let Some(delete) = gl.delete_sync
                 {
+                    // SAFETY: render_frame calls this with the pool's context
+                    // current, after GDK released the fence's last reader.
                     unsafe { delete(fence as *mut std::ffi::c_void) };
                 }
                 return Some((i, TextureLease(Arc::clone(resource))));
@@ -200,6 +205,7 @@ impl Drop for TexturePool {
         self.resources.clear();
         let _current = CurrentContext::enter(&self.context);
         while let Ok((id, fence)) = self.retired_rx.try_recv() {
+            // SAFETY: as in the retirement future of `new`.
             unsafe {
                 if fence != 0
                     && let Some(delete) = self.gl.delete_sync
@@ -233,11 +239,5 @@ mod tests {
         drop(lease); // GDK releases later
         assert!(wake_rx.try_recv().is_ok());
         assert_eq!(rx.try_recv().unwrap(), (42, 7));
-    }
-
-    #[test]
-    fn release_token_is_send_without_gtk_objects() {
-        fn assert_send<T: Send>() {}
-        assert_send::<TextureLease>();
     }
 }

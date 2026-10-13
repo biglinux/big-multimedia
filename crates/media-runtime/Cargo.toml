@@ -108,56 +108,47 @@ ignored = ["gettext-rs"]  # imported as gettextrs
 
 [lints.clippy]
 pedantic = { level = "warn", priority = -1 }
-# Suppress noisy pedantic lints for GTK projects
 module_name_repetitions = "allow"
 must_use_candidate = "allow"
 missing_errors_doc = "allow"
 missing_panics_doc = "allow"
+# Sample, pixel and time arithmetic converts between widths on purpose.
 cast_possible_truncation = "allow"
 cast_sign_loss = "allow"
 cast_precision_loss = "allow"
 cast_possible_wrap = "allow"
-# Documentation lints — too noisy for internal project
 doc_markdown = "allow"
-# GTK projects use wildcard imports extensively
 wildcard_imports = "allow"
-# Common in crypto/hash implementations and GTK signal handlers
 similar_names = "allow"
 many_single_char_names = "allow"
-# Items after statements common in GTK setup code
+# GTK setup code declares helpers next to the widgets they serve.
 items_after_statements = "allow"
-# Style lints
 option_if_let_else = "allow"
 needless_pass_by_value = "allow"
-# Manual refactoring needed — tracked but not blocking
 format_push_string = "allow"
 too_many_lines = "allow"
 struct_excessive_bools = "allow"
 fn_params_excessive_bools = "allow"
 clone_on_ref_ptr = "allow"
 ref_option = "allow"
+# Float equality compares stored preset values exactly.
+float_cmp = "allow"
+use_debug = "allow"
+unnecessary_debug_formatting = "allow"
+implicit_hasher = "allow"
+missing_fields_in_debug = "allow"
 
-# ── Important for FFI/unsafe-heavy code ───────────────────────────
+# FFI and unsafe code.
 not_unsafe_ptr_arg_deref = "deny"
 ptr_as_ptr = "warn"
 
-# ── Restriction lints (opt-in, high value) ────────────────────────
+# Restriction lints.
 dbg_macro = "warn"
 todo = "warn"
-rc_buffer = "warn"                  # Rc<Vec<T>> / Rc<String> — usually wrong
-rc_mutex = "warn"                   # Rc<Mutex<T>> — usually want Arc
-verbose_file_reads = "warn"         # prefer fs::read_to_string
-unseparated_literal_suffix = "warn" # 1i64 → 1_i64
-
-# ── Allowed after review ──────────────────────────────────────────
-# Float comparisons — all are intentional exact checks on preset values
-float_cmp = "allow"
-# Minor style — Debug formatting in eprintln for paths (intentional)
-use_debug = "allow"
-unnecessary_debug_formatting = "allow"
-# Minor API suggestions
-implicit_hasher = "allow"
-missing_fields_in_debug = "allow"
+rc_buffer = "warn"
+rc_mutex = "warn"
+verbose_file_reads = "warn"
+unseparated_literal_suffix = "warn"
 
 [lints.rust]
 unsafe_op_in_unsafe_fn = "warn"

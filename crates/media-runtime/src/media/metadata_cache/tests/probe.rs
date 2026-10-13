@@ -1,4 +1,9 @@
-use super::super::probe::{codec_display_name, parse_ffprobe_json};
+use super::super::probe::{codec_display_name, parse_ffprobe};
+use crate::media::playlist::VideoMeta;
+
+fn parse(json: &str) -> VideoMeta {
+    parse_ffprobe(&serde_json::from_str(json).unwrap())
+}
 
 #[test]
 fn parse_ffprobe_basic_video() {
@@ -9,7 +14,7 @@ fn parse_ffprobe_basic_video() {
             { "codec_type": "audio" }
         ]
     }"#;
-    let meta = parse_ffprobe_json(json).unwrap();
+    let meta = parse(json);
     assert!((meta.duration_secs.unwrap() - 123.456).abs() < 0.001);
     assert_eq!(meta.resolution.as_deref(), Some("1920×1080"));
     assert_eq!(meta.codec.as_deref(), Some("H.264"));
@@ -30,7 +35,7 @@ fn parse_ffprobe_multiple_streams() {
             { "codec_type": "subtitle" }
         ]
     }"#;
-    let meta = parse_ffprobe_json(json).unwrap();
+    let meta = parse(json);
     assert_eq!(meta.codec.as_deref(), Some("H.265"));
     assert_eq!(meta.resolution.as_deref(), Some("3840×2160"));
     assert_eq!(meta.audio_tracks, 2);
@@ -40,7 +45,7 @@ fn parse_ffprobe_multiple_streams() {
 #[test]
 fn parse_ffprobe_no_streams() {
     let json = r#"{ "format": { "duration": "10.0" } }"#;
-    let meta = parse_ffprobe_json(json).unwrap();
+    let meta = parse(json);
     assert!(meta.duration_secs.is_some());
     assert!(meta.resolution.is_none());
     assert!(meta.codec.is_none());
@@ -52,14 +57,9 @@ fn parse_ffprobe_no_duration() {
         "format": {},
         "streams": [{ "codec_type": "video", "codec_name": "av1", "width": 1280, "height": 720 }]
     }"#;
-    let meta = parse_ffprobe_json(json).unwrap();
+    let meta = parse(json);
     assert!(meta.duration_secs.is_none());
     assert_eq!(meta.codec.as_deref(), Some("AV1"));
-}
-
-#[test]
-fn parse_ffprobe_invalid_json() {
-    assert!(parse_ffprobe_json("not json").is_none());
 }
 
 #[test]
@@ -68,7 +68,7 @@ fn parse_ffprobe_zero_dimensions_skipped() {
         "format": {},
         "streams": [{ "codec_type": "video", "codec_name": "h264", "width": 0, "height": 0 }]
     }"#;
-    let meta = parse_ffprobe_json(json).unwrap();
+    let meta = parse(json);
     assert!(meta.resolution.is_none());
 }
 
@@ -81,7 +81,7 @@ fn parse_ffprobe_first_video_stream_wins() {
             { "codec_type": "video", "codec_name": "vp9", "width": 1280, "height": 720 }
         ]
     }"#;
-    let meta = parse_ffprobe_json(json).unwrap();
+    let meta = parse(json);
     assert_eq!(meta.resolution.as_deref(), Some("1920×1080"));
     assert_eq!(meta.codec.as_deref(), Some("H.264"));
 }

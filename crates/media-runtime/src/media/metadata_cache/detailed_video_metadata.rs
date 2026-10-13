@@ -1,12 +1,11 @@
 use std::path::Path;
 
-use big_app_kit::subprocess::BigSubprocessSpec;
 use serde_json::Value;
 
 use crate::i18n::i18n;
 use crate::media::playlist::format_file_size;
 
-use super::probe::codec_display_name;
+use super::probe::{codec_display_name, ffprobe_json};
 
 /// Streams grouped by type; each is a `(label, value)` list ready for display.
 pub struct DetailedVideoMetadata {
@@ -23,30 +22,11 @@ pub struct DetailedVideoMetadata {
 
 /// Synchronous ffprobe invocation; call from a background thread.
 pub fn probe_detailed_video_metadata(path: &str) -> Option<DetailedVideoMetadata> {
-    let output = BigSubprocessSpec::builder()
-        .program("ffprobe")
-        .args([
-            "-v",
-            "quiet",
-            "-print_format",
-            "json",
-            "-show_streams",
-            "-show_format",
-            // `--` defends against filenames starting with `-`.
-            "--",
-            path,
-        ])
-        .build()
-        .run()
-        .ok()?;
+    ffprobe_json(path).map(|root| detailed_video_metadata(path, &root))
+}
 
-    if !output.status.success() {
-        return None;
-    }
-
-    let json = String::from_utf8_lossy(&output.stdout);
-    let root: Value = serde_json::from_str(&json).ok()?;
-
+/// `root` is ffprobe's JSON report for the file at `path`.
+pub(super) fn detailed_video_metadata(path: &str, root: &Value) -> DetailedVideoMetadata {
     let p = Path::new(path);
     let file_name = p
         .file_name()
@@ -87,7 +67,7 @@ pub fn probe_detailed_video_metadata(path: &str) -> Option<DetailedVideoMetadata
         }
     }
 
-    Some(DetailedVideoMetadata {
+    DetailedVideoMetadata {
         file_name,
         file_dir,
         file_size,
@@ -97,7 +77,7 @@ pub fn probe_detailed_video_metadata(path: &str) -> Option<DetailedVideoMetadata
         video_streams,
         audio_streams,
         subtitle_streams,
-    })
+    }
 }
 
 pub(super) fn parse_video_stream(stream: &Value) -> Vec<(String, String)> {

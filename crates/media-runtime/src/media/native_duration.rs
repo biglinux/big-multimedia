@@ -279,25 +279,52 @@ pub(crate) fn mkv_read_duration(path: &str) -> Option<f64> {
 mod tests {
     use super::*;
 
+    fn write_temp(name: &str, bytes: &[u8]) -> (tempfile::TempDir, String) {
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir.path().join(name);
+        std::fs::write(&path, bytes).unwrap();
+        (dir, path.to_str().unwrap().to_owned())
+    }
+
     #[test]
-    fn nonexistent_file_returns_none() {
-        assert!(fast_read_duration("/tmp/nonexistent_file.mp4").is_none());
-        assert!(fast_read_duration("/tmp/nonexistent_file.mkv").is_none());
+    fn mp4_duration_from_mvhd() {
+        // moov { mvhd v0: timescale 1000, duration 5000 }
+        let mut mvhd = vec![0_u8; 12];
+        mvhd.extend_from_slice(&1000_u32.to_be_bytes());
+        mvhd.extend_from_slice(&5000_u32.to_be_bytes());
+        let mut file = Vec::new();
+        file.extend_from_slice(&(16 + mvhd.len() as u32).to_be_bytes());
+        file.extend_from_slice(b"moov");
+        file.extend_from_slice(&(8 + mvhd.len() as u32).to_be_bytes());
+        file.extend_from_slice(b"mvhd");
+        file.extend_from_slice(&mvhd);
+        let (_dir, path) = write_temp("clip.mp4", &file);
+        assert_eq!(fast_read_duration(&path), Some(5.0));
+    }
+
+    #[test]
+    fn mkv_duration_from_info() {
+        let file = [
+            &[0x1A, 0x45, 0xDF, 0xA3, 0x80][..],         // EBML header, empty
+            &[0x18, 0x53, 0x80, 0x67, 0x91],             // Segment, 17 bytes
+            &[0x15, 0x49, 0xA9, 0x66, 0x8C],             // Info, 12 bytes
+            &[0x2A, 0xD7, 0xB1, 0x81, 0x01],             // TimestampScale 1 ns
+            &[0x44, 0x89, 0x84, 0x4E, 0x6E, 0x6B, 0x28], // Duration 1e9 ticks
+        ]
+        .concat();
+        let (_dir, path) = write_temp("clip.mkv", &file);
+        assert_eq!(fast_read_duration(&path), Some(1.0));
+    }
+
+    #[test]
+    fn truncated_mp4_has_no_duration() {
+        let (_dir, path) = write_temp("clip.mp4", b"\0\0\0\x10moov");
+        assert!(fast_read_duration(&path).is_none());
     }
 
     #[test]
     fn unsupported_extension_returns_none() {
         assert!(fast_read_duration("test.txt").is_none());
-        assert!(fast_read_duration("test.png").is_none());
         assert!(fast_read_duration("noext").is_none());
-    }
-
-    #[test]
-    fn supported_extensions_recognized() {
-        // File missing, but the extension check should not short-circuit.
-        for ext in ["mp4", "m4v", "mov", "3gp", "mkv", "webm"] {
-            let path = format!("/tmp/nonexistent.{ext}");
-            assert!(fast_read_duration(&path).is_none());
-        }
     }
 }

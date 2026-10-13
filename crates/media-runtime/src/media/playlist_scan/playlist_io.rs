@@ -92,13 +92,14 @@ pub(crate) fn parse_pls_file(path: &Path) -> Vec<String> {
         .collect()
 }
 
+fn is_stream_url(entry: &str) -> bool {
+    ["http://", "https://", "rtsp://", "rtmp://", "mms://"]
+        .iter()
+        .any(|scheme| entry.starts_with(scheme))
+}
+
 fn resolve_playlist_entry(base_dir: &Path, entry: &str) -> String {
-    if entry.starts_with("http://")
-        || entry.starts_with("https://")
-        || entry.starts_with("rtsp://")
-        || entry.starts_with("rtmp://")
-        || entry.starts_with("mms://")
-    {
+    if is_stream_url(entry) {
         entry.to_string()
     } else {
         let entry_path = Path::new(entry);
@@ -117,12 +118,7 @@ fn resolve_playlist_entry(base_dir: &Path, entry: &str) -> String {
 const SYSTEM_PATH_DENY: &[&str] = &["/etc/", "/proc/", "/sys/", "/dev/", "/root/", "/boot/"];
 
 fn is_resolved_playlist_entry_valid(entry: &str) -> bool {
-    if entry.starts_with("http://")
-        || entry.starts_with("https://")
-        || entry.starts_with("rtsp://")
-        || entry.starts_with("rtmp://")
-        || entry.starts_with("mms://")
-    {
+    if is_stream_url(entry) {
         return true;
     }
     // canonicalize collapses `..` and follows symlinks; on failure

@@ -3,7 +3,7 @@
 use std::collections::hash_map::DefaultHasher;
 use std::hash::{Hash, Hasher};
 use std::path::{Path, PathBuf};
-use std::sync::atomic::AtomicU32;
+use std::sync::atomic::{AtomicU32, AtomicU64, Ordering};
 
 use big_app_kit::subprocess::{BigSubprocessOutputMode, BigSubprocessSpec};
 use gtk::glib;
@@ -15,11 +15,10 @@ use super::metadata_cache::{acquire_slot, meta_cache, release_slot};
 const MAX_THUMBS: u32 = 6;
 
 static ACTIVE_THUMBS: AtomicU32 = AtomicU32::new(0);
+static PARTIAL_SEQ: AtomicU64 = AtomicU64::new(0);
 
-fn thumbnail_cache_dir() -> Option<PathBuf> {
-    let dir = big_os_kit::xdg_dirs::cache_dir()
-        .unwrap_or_else(|| PathBuf::from("/tmp"))
-        .join("big-video-player/thumbnails");
+fn thumbnail_cache_dir(cache_root: &Path) -> Option<PathBuf> {
+    let dir = cache_root.join("big-video-player/thumbnails");
     std::fs::create_dir_all(&dir).ok()?;
     Some(dir)
 }
@@ -40,19 +39,13 @@ fn thumb_hash(path: &str) -> String {
 }
 
 /// Reuses thumbs from Dolphin / Nautilus / Nemo / Thunar.
-/// Spec: `~/.cache/thumbnails/{size}/{md5(file://uri)}.png`.
-fn find_freedesktop_thumbnail(video_path: &str) -> Option<PathBuf> {
-    let p = Path::new(video_path);
-    if !p.is_absolute() {
-        return None;
-    }
-    let uri = format!("file://{video_path}");
+/// Spec: `$XDG_CACHE_HOME/thumbnails/{size}/{md5(file URI)}.png`, the URI
+/// percent-encoded.
+fn find_freedesktop_thumbnail(cache_root: &Path, video_path: &str) -> Option<PathBuf> {
+    let uri = glib::filename_to_uri(video_path, None).ok()?;
     let checksum = glib::compute_checksum_for_string(glib::ChecksumType::Md5, &uri)?;
     let filename = format!("{checksum}.png");
-
-    let base = big_os_kit::xdg_dirs::cache_dir()
-        .unwrap_or_else(|| PathBuf::from("/tmp"))
-        .join("thumbnails");
+    let base = cache_root.join("thumbnails");
 
     // `large` (256 px) covers the 240 px cards; bigger ones are only scaled
     // down, and `normal` (128 px) is the last resort.
@@ -65,9 +58,42 @@ fn find_freedesktop_thumbnail(video_path: &str) -> Option<PathBuf> {
     None
 }
 
-/// Synchronous; semaphore-gated to cap concurrent ffmpeg children.
-pub fn get_or_generate_thumbnail(video_path: &str) -> Option<PathBuf> {
-    let cache = thumbnail_cache_dir()?;
+/// 30 % into the video, as `-ss` text; the cached duration saves an ffprobe.
+fn seek_position(video_path: &str) -> String {
+    let cached = meta_cache()
+        .lock()
+        .ok()
+        .and_then(|c| c.get(video_path).and_then(|e| e.meta.duration_secs));
+    let duration = cached.or_else(|| {
+        let output = BigSubprocessSpec::builder()
+            .program("ffprobe")
+            .args([
+                "-v",
+                "quiet",
+                "-show_entries",
+                "format=duration",
+                "-of",
+                "csv=p=0",
+                // A file name starting with `-` must not read as a flag.
+                "--",
+                video_path,
+            ])
+            .build()
+            .run()
+            .ok()?;
+        String::from_utf8_lossy(&output.stdout)
+            .trim()
+            .parse::<f64>()
+            .ok()
+    });
+    duration.map_or_else(|| "10".into(), |dur| format!("{:.1}", dur * 0.3))
+}
+
+/// Synchronous; semaphore-gated to cap concurrent ffmpeg children. `None`
+/// without a private cache directory.
+fn get_or_generate_thumbnail(video_path: &str) -> Option<PathBuf> {
+    let cache_root = big_os_kit::xdg_dirs::cache_dir()?;
+    let cache = thumbnail_cache_dir(&cache_root)?;
     let hash = thumb_hash(video_path);
     let thumb_path = cache.join(format!("{hash}.png"));
 
@@ -75,51 +101,27 @@ pub fn get_or_generate_thumbnail(video_path: &str) -> Option<PathBuf> {
         return Some(thumb_path);
     }
 
-    if let Some(fd_thumb) = find_freedesktop_thumbnail(video_path) {
+    if let Some(fd_thumb) = find_freedesktop_thumbnail(&cache_root, video_path) {
         return Some(fd_thumb);
     }
 
     acquire_slot(&ACTIVE_THUMBS, MAX_THUMBS);
 
-    // Cached duration → no extra ffprobe.
-    let seek_pos = meta_cache()
-        .lock()
-        .ok()
-        .and_then(|c| c.get(video_path).and_then(|e| e.meta.duration_secs))
-        .map_or_else(
-            || {
-                BigSubprocessSpec::builder()
-                    .program("ffprobe")
-                    .args([
-                        "-v",
-                        "quiet",
-                        "-show_entries",
-                        "format=duration",
-                        "-of",
-                        "csv=p=0",
-                        // `--` defends against filenames starting with `-`.
-                        "--",
-                        video_path,
-                    ])
-                    .build()
-                    .run()
-                    .ok()
-                    .and_then(|o| {
-                        String::from_utf8_lossy(&o.stdout)
-                            .trim()
-                            .parse::<f64>()
-                            .ok()
-                    })
-                    .map_or_else(|| "10".into(), |dur| format!("{:.1}", dur * 0.3))
-            },
-            |dur| format!("{:.1}", dur * 0.3),
-        );
+    let seek_pos = seek_position(video_path);
 
+    // ffmpeg writes beside the final name and the rename publishes it whole:
+    // a killed or concurrent run never leaves a truncated PNG that `exists()`
+    // would serve from then on.
+    let partial = cache.join(format!(
+        ".{hash}.{}.{}.png",
+        std::process::id(),
+        PARTIAL_SEQ.fetch_add(1, Ordering::Relaxed)
+    ));
     let status = BigSubprocessSpec::builder()
         .program("ffmpeg")
         .args([
             "-ss",
-            &seek_pos,
+            seek_pos.as_str(),
             "-i",
             video_path,
             "-frames:v",
@@ -132,11 +134,9 @@ pub fn get_or_generate_thumbnail(video_path: &str) -> Option<PathBuf> {
             "scale=240:135:force_original_aspect_ratio=decrease:reset_sar=1,\
              pad=240:135:(ow-iw)/2:(oh-ih)/2",
             "-y",
-            // `--` end-of-options: defend output path even though it is
-            // generated from the cache dir + hash (never starts with `-`).
             "--",
-            thumb_path.to_str().unwrap_or("/dev/null"),
         ])
+        .arg(&partial)
         .stdout(BigSubprocessOutputMode::Null)
         .stderr(BigSubprocessOutputMode::Null)
         .build()
@@ -145,9 +145,12 @@ pub fn get_or_generate_thumbnail(video_path: &str) -> Option<PathBuf> {
 
     release_slot(&ACTIVE_THUMBS);
 
-    if status.is_some_and(|s| s.status.success()) && thumb_path.exists() {
+    let published = status.is_some_and(|s| s.status.success())
+        && std::fs::rename(&partial, &thumb_path).is_ok();
+    if published {
         Some(thumb_path)
     } else {
+        let _ = std::fs::remove_file(&partial);
         None
     }
 }
@@ -220,71 +223,49 @@ mod tests {
     use super::*;
 
     #[test]
-    fn thumb_hash_deterministic() {
-        // Same path + same mtime → same hash
-        let dir = std::env::temp_dir().join("bmp-test-thumb-hash");
-        let _ = std::fs::create_dir_all(&dir);
-        let file = dir.join("test-video.mp4");
-        std::fs::write(&file, b"fake video data").unwrap();
-
-        let h1 = thumb_hash(file.to_str().unwrap());
-        let h2 = thumb_hash(file.to_str().unwrap());
-        assert_eq!(h1, h2, "hash should be deterministic for same file");
-        assert_eq!(h1.len(), 16, "hash should be 16 hex chars");
-
-        let _ = std::fs::remove_dir_all(&dir);
+    fn thumb_hash_is_stable() {
+        let dir = tempfile::tempdir().unwrap();
+        let file = dir.path().join("video.mp4");
+        std::fs::write(&file, b"data").unwrap();
+        let file = file.to_str().unwrap();
+        assert_eq!(thumb_hash(file), thumb_hash(file));
+        assert_eq!(thumb_hash(file).len(), 16);
     }
 
     #[test]
-    fn thumb_hash_different_paths() {
-        let dir = std::env::temp_dir().join("bmp-test-thumb-hash-diff");
-        let _ = std::fs::create_dir_all(&dir);
-        let f1 = dir.join("a.mp4");
-        let f2 = dir.join("b.mp4");
-        std::fs::write(&f1, b"data").unwrap();
-        std::fs::write(&f2, b"data").unwrap();
-
-        let h1 = thumb_hash(f1.to_str().unwrap());
-        let h2 = thumb_hash(f2.to_str().unwrap());
-        assert_ne!(h1, h2, "different paths should produce different hashes");
-
-        let _ = std::fs::remove_dir_all(&dir);
-    }
-
-    #[test]
-    fn thumb_hash_nonexistent_file_uses_zero_mtime() {
-        // Should not panic, uses mtime=0 fallback
-        let h = thumb_hash("/tmp/bmp-nonexistent-file-xyz.mp4");
-        assert_eq!(h.len(), 16);
-    }
-
-    #[test]
-    fn find_freedesktop_relative_path_returns_none() {
-        assert!(find_freedesktop_thumbnail("relative/path.mp4").is_none());
-    }
-
-    #[test]
-    fn find_freedesktop_nonexistent_returns_none() {
-        assert!(find_freedesktop_thumbnail("/tmp/bmp-nonexistent-video-xyz.mp4").is_none());
-    }
-
-    #[test]
-    fn thumbnail_cache_dir_creates_directory() {
-        let dir = thumbnail_cache_dir();
-        assert!(dir.is_some(), "cache dir should be creatable");
-        let path = dir.unwrap();
-        assert!(path.exists());
-        assert!(
-            path.to_str()
-                .unwrap()
-                .contains("big-video-player/thumbnails")
+    fn thumb_hash_differs_by_path() {
+        let dir = tempfile::tempdir().unwrap();
+        let first = dir.path().join("a.mp4");
+        let second = dir.path().join("b.mp4");
+        std::fs::write(&first, b"data").unwrap();
+        std::fs::write(&second, b"data").unwrap();
+        assert_ne!(
+            thumb_hash(first.to_str().unwrap()),
+            thumb_hash(second.to_str().unwrap())
         );
     }
 
     #[test]
-    fn get_or_generate_nonexistent_returns_none() {
-        // Non-existent video file → no thumbnail generated
-        let result = get_or_generate_thumbnail("/tmp/bmp-nonexistent-video-xyz-9999.mp4");
-        assert!(result.is_none());
+    fn freedesktop_thumbnail_uses_encoded_uri() {
+        let cache = tempfile::tempdir().unwrap();
+        let video = "/videos/My Film ç.mkv";
+        let checksum = glib::compute_checksum_for_string(
+            glib::ChecksumType::Md5,
+            "file:///videos/My%20Film%20%C3%A7.mkv",
+        )
+        .unwrap();
+        let large = cache.path().join("thumbnails/large");
+        std::fs::create_dir_all(&large).unwrap();
+        std::fs::write(large.join(format!("{checksum}.png")), b"png").unwrap();
+        assert_eq!(
+            find_freedesktop_thumbnail(cache.path(), video),
+            Some(large.join(format!("{checksum}.png")))
+        );
+    }
+
+    #[test]
+    fn freedesktop_thumbnail_needs_absolute_path() {
+        let cache = tempfile::tempdir().unwrap();
+        assert!(find_freedesktop_thumbnail(cache.path(), "relative/path.mp4").is_none());
     }
 }

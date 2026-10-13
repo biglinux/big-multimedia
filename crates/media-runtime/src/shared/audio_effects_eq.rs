@@ -1,4 +1,4 @@
-//! bigagents: app-local-adapter; binds equalizer dialog to app settings/mpv callbacks.
+//! Binds equalizer dialog to app settings/mpv callbacks.
 
 use adw::prelude::*;
 use big_relm4_components::layout::toolbar_pane::{
@@ -14,7 +14,7 @@ use crate::player::mpv_backend::MpvBackend;
 use crate::settings::keys;
 use big_relm4_components::input::debounce::BigDebouncedAction as DebouncedAction;
 
-use super::audio_effects::{EQ_LABELS, rebuild_filters};
+use super::audio_effects::{EQ_LABELS, parse_eq_bands, rebuild_filters};
 
 struct EqPreset {
     name: &'static str,
@@ -70,7 +70,7 @@ pub fn equalizer_preset_names() -> Vec<&'static str> {
 /// The preset these saved bands (`EQ_BANDS` text) match, by index
 /// (`None`: set by hand).
 pub fn equalizer_preset_matching(bands: &str) -> Option<usize> {
-    let gains = super::audio_effects::parse_eq_bands(bands);
+    let gains = parse_eq_bands(bands);
     presets().iter().position(|preset| {
         preset
             .gains
@@ -118,23 +118,12 @@ pub fn create_equalizer_content(
         .margin_end(16)
         .build();
 
-    let eq_gains: Rc<RefCell<[f64; 10]>> = Rc::new(RefCell::new([0.0; 10]));
+    // The stored text is clamped like every other reader of it: a hand-edited
+    // value outside the sliders' range would otherwise reach mpv.
+    let eq_gains = Rc::new(RefCell::new(parse_eq_bands(
+        &settings.get_string(keys::EQ_BANDS),
+    )));
     let updating_from_preset: Rc<Cell<bool>> = Rc::new(Cell::new(false));
-
-    // Load stored EQ bands
-    let stored_eq = settings.get_string(keys::EQ_BANDS);
-    if !stored_eq.is_empty() {
-        let parts: Vec<f64> = stored_eq
-            .split(';')
-            .filter_map(|s| s.parse().ok())
-            .collect();
-        let mut gains = eq_gains.borrow_mut();
-        for (i, &g) in parts.iter().enumerate() {
-            if i < 10 {
-                gains[i] = g;
-            }
-        }
-    }
 
     // Preset selector, at the top.
     let preset_box = gtk::Box::builder()
@@ -271,19 +260,8 @@ pub fn create_equalizer_content(
                     let m = m.clone();
                     let on_chg2 = on_chg.clone();
                     debounce.run(move || {
-                        let eq_str: String = gains
-                            .borrow()
-                            .iter()
-                            .map(|g| format!("{g:.1}"))
-                            .collect::<Vec<_>>()
-                            .join(";");
-                        let _ = s.put_string(keys::EQ_BANDS, &eq_str);
-                        if let Some(ref mpv) = m {
-                            rebuild_filters(&s, &gains.borrow(), mpv);
-                        }
-                        if let Some(ref cb) = on_chg2 {
-                            cb();
-                        }
+                        let current = *gains.borrow();
+                        commit_gains(&s, &current, m.as_deref(), on_chg2.as_ref());
                     });
                 });
             }
@@ -331,34 +309,8 @@ pub fn create_equalizer_content(
             let all_presets = presets();
             if let Some(preset) = all_presets.get(idx) {
                 let _ = s.put_string(keys::EQ_PRESET, &preset.name.to_lowercase());
-
-                updating.set(true);
-
-                {
-                    let mut g = gains.borrow_mut();
-                    for j in 0..10 {
-                        g[j] = preset.gains[j];
-                    }
-                }
-                for (j, adj) in adjs.iter().enumerate() {
-                    adj.set_value(preset.gains[j]);
-                }
-
-                updating.set(false);
-
-                let eq_str: String = gains
-                    .borrow()
-                    .iter()
-                    .map(|g| format!("{g:.1}"))
-                    .collect::<Vec<_>>()
-                    .join(";");
-                let _ = s.put_string(keys::EQ_BANDS, &eq_str);
-                if let Some(ref mpv) = m {
-                    rebuild_filters(&s, &gains.borrow(), mpv);
-                }
-                if let Some(ref cb) = on_chg {
-                    cb();
-                }
+                show_gains(&adjs, &gains, &updating, preset.gains);
+                commit_gains(&s, &preset.gains, m.as_deref(), on_chg.as_ref());
             }
         });
     }
@@ -374,27 +326,47 @@ pub fn create_equalizer_content(
         let pc = preset_combo;
         reset_button.connect_clicked(move |_| {
             pc.set_selected(0); // "Flat"
-            updating.set(true);
-            {
-                let mut g = gains.borrow_mut();
-                for j in 0..10 {
-                    g[j] = 0.0;
-                }
-            }
-            for adj in adjs.iter() {
-                adj.set_value(0.0);
-            }
-            updating.set(false);
-            let _ = s.put_string(keys::EQ_BANDS, "0.0;0.0;0.0;0.0;0.0;0.0;0.0;0.0;0.0;0.0");
             let _ = s.put_string(keys::EQ_PRESET, "flat");
-            if let Some(ref mpv) = m {
-                rebuild_filters(&s, &[0.0; 10], mpv);
-            }
-            if let Some(ref cb) = on_chg {
-                cb();
-            }
+            show_gains(&adjs, &gains, &updating, [0.0; 10]);
+            commit_gains(&s, &[0.0; 10], m.as_deref(), on_chg.as_ref());
         });
     }
 
     main_box
+}
+
+/// Move the sliders to `values` without each one saving on its own.
+fn show_gains(
+    adjustments: &[gtk::Adjustment],
+    gains: &RefCell<[f64; 10]>,
+    updating: &Cell<bool>,
+    values: [f64; 10],
+) {
+    updating.set(true);
+    *gains.borrow_mut() = values;
+    for (adjustment, value) in adjustments.iter().zip(values) {
+        adjustment.set_value(value);
+    }
+    updating.set(false);
+}
+
+/// Save `gains`, play them, and tell the owner.
+fn commit_gains(
+    settings: &crate::settings::Settings,
+    gains: &[f64; 10],
+    mpv: Option<&MpvBackend>,
+    on_change: Option<&Rc<dyn Fn()>>,
+) {
+    let text = gains
+        .iter()
+        .map(|gain| format!("{gain:.1}"))
+        .collect::<Vec<_>>()
+        .join(";");
+    let _ = settings.put_string(keys::EQ_BANDS, &text);
+    if let Some(mpv) = mpv {
+        rebuild_filters(settings, gains, mpv);
+    }
+    if let Some(on_change) = on_change {
+        on_change();
+    }
 }

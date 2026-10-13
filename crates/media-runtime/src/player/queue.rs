@@ -1,4 +1,4 @@
-//! Compatibility adapter for the shared playback queue.
+//! The shared playback queue, holding library tracks.
 
 use crate::db::models::Track;
 

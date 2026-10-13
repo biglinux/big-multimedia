@@ -1,5 +1,4 @@
 //! App settings adapter for shared libadwaita theme helpers.
-//! bigagents: app-local-adapter; binds shared theme helpers to app settings keys.
 
 pub use big_relm4_components::theme::{
     ColorPalette, HIGH_CONTRAST_CSS, apply_color_scheme, build_adwaita_color_overrides,

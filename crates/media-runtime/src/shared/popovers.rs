@@ -1,7 +1,6 @@
 //! Player popover builders re-exported from `big-media-components::player_chrome`
 //! (pure-gtk, reusable). The mpv/settings-bound helpers below stay here: they
 //! are engine-coupled (`MpvBackend`, audio-effects, settings).
-//! bigagents: app-local-adapter; remaining helpers are mpv/settings-bound.
 
 pub use big_media_components::player_chrome::{
     SPEED_PRESETS, VOICE_PRESETS, build_speed_popover, build_voice_popover, build_volume_popover,
@@ -40,8 +39,8 @@ const REBUILD_AFTER_SLIDER_REST: Duration = Duration::from_millis(600);
 /// Persists strength and applies it. Turning the filter on or off rebuilds
 /// the chain. A change while it runs is heard at once through a live
 /// command, then written into the chain once the slider rests: mpv rebuilds
-/// the chain from its text on every seek, loop and file, and without that
-/// the filter fell back to the strength of the first slider step.
+/// the chain from its text on every seek, loop and file, which would
+/// otherwise restore the strength the text last held.
 /// Returns the new `is_active`.
 pub fn handle_voice_strength_changed(
     settings: &Settings,

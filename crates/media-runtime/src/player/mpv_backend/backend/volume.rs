@@ -1,6 +1,6 @@
 //! Per-application sound-server control, with software gain for other outputs.
-//! All mpv calls run on its existing event thread. GTK only updates pending
-//! values or reads the snapshot; there is no subprocess or separate worker.
+//! All mpv calls run on the backend's event thread; GTK only updates pending
+//! values or reads the snapshot.
 
 use std::sync::{Arc, Mutex, PoisonError};
 use std::time::{Duration, Instant};
@@ -20,9 +20,8 @@ struct State {
     native_mute: bool,
     last_sync: Instant,
     /// Until then a 0 volume is not the user's: a stream the server has just
-    /// created reports 0 before it applies ours, and adopting that 0 silenced
-    /// the player on every output rate change (an effect chain that resamples
-    /// makes mpv open a new stream).
+    /// created reports 0 before it applies ours, and mpv opens a new stream on
+    /// every output rate change (an effect chain that resamples).
     new_stream_until: Instant,
 }
 
@@ -53,6 +52,64 @@ fn read_mute(mpv: &MpvClient, native_mute: bool) -> Option<bool> {
     Some(mute || (native_mute && mpv.get_property::<bool>("mute").unwrap_or(false)))
 }
 
+/// Write the slider's `volume` to the stream's control. `transition` re-applies
+/// the software gain after the control changed. `false` when mpv refused it.
+fn write_volume(
+    mpv: &MpvClient,
+    volume: Option<f64>,
+    native_volume: bool,
+    pipewire: bool,
+    transition: bool,
+) -> bool {
+    if let Some(volume) = volume {
+        // mpv exposes PipeWire's linear amplitude; PulseAudio and desktop
+        // mixers use a cubic scale. Keep the same slider loudness on both.
+        let level = if native_volume && pipewire {
+            100.0 * (volume.min(100.0) / 100.0).powi(3)
+        } else if native_volume {
+            volume.min(100.0)
+        } else {
+            volume.min(mpv.get_property::<f64>("volume-max").unwrap_or(150.0))
+        };
+        let property = if native_volume { "ao-volume" } else { "volume" };
+        if let Err(error) = mpv.set_property(property, level) {
+            log::warn!("Cannot change playback volume: {error}");
+            return false;
+        }
+    }
+    if native_volume && (transition || volume.is_some()) {
+        // ao-volume is capped at 100 by mpv. Apply only amplification in
+        // software; ordinary levels must not be multiplied a second time.
+        let gain = volume
+            .unwrap_or(100.0)
+            .max(100.0)
+            .min(mpv.get_property::<f64>("volume-max").unwrap_or(150.0));
+        if let Err(error) = mpv.set_property("volume", gain) {
+            log::warn!("Cannot change playback amplification: {error}");
+        }
+    }
+    true
+}
+
+/// Write `mute` to the stream's control, releasing mpv's software mute when
+/// the server's control takes over. `false` when mpv refused it.
+fn write_mute(mpv: &MpvClient, mute: Option<bool>, native_mute: bool, transition: bool) -> bool {
+    if let Some(mute) = mute {
+        let property = if native_mute { "ao-mute" } else { "mute" };
+        if let Err(error) = mpv.set_property(property, mute) {
+            log::warn!("Cannot change playback mute: {error}");
+            return false;
+        }
+    }
+    if native_mute
+        && (transition || mute.is_some())
+        && let Err(error) = mpv.set_property("mute", false)
+    {
+        log::warn!("Cannot release software mute: {error}");
+    }
+    true
+}
+
 #[derive(Clone)]
 pub(in crate::player::mpv_backend) struct VolumeControl(Arc<Mutex<State>>);
 
@@ -66,9 +123,9 @@ impl VolumeControl {
             volume_set: false,
             // Set from the start: the first output gets "not muted" from us.
             // The sound server restores each application's last mute when its
-            // stream appears (WirePlumber keeps it per application), so a
-            // player closed muted came back muted the next day with nothing
-            // on screen saying so.
+            // stream appears (WirePlumber keeps it per application), and a
+            // player closed muted would open muted with nothing on screen
+            // saying so.
             mute_set: true,
             had_output: false,
             native_volume: false,
@@ -100,32 +157,38 @@ impl VolumeControl {
         state.mute_set = true;
     }
 
+    /// Whether `sync` reads the sound server's mixer on a timer: mpv does not
+    /// reliably notify native mixer changes.
+    pub(super) fn polls_mixer(&self) -> bool {
+        let state = self.0.lock().unwrap_or_else(PoisonError::into_inner);
+        state.native_volume || state.native_mute
+    }
+
+    /// The state to sync from, with its requests taken, or `None` when there
+    /// is nothing to do.
+    fn take_requests(&self, changed: bool) -> Option<State> {
+        let mut shared = self.0.lock().unwrap_or_else(PoisonError::into_inner);
+        let refresh = (shared.native_volume || shared.native_mute)
+            && shared.last_sync.elapsed() >= Duration::from_millis(500);
+        if !changed && !refresh && shared.pending_volume.is_none() && shared.pending_mute.is_none()
+        {
+            return None;
+        }
+        let snapshot = *shared;
+        shared.pending_volume = None;
+        shared.pending_mute = None;
+        Some(snapshot)
+    }
+
     pub(super) fn sync(
         &self,
         mpv: &MpvClient,
         changed: bool,
         reconfigured: bool,
     ) -> Option<(f64, bool)> {
-        let mut state = {
-            let mut shared = self.0.lock().unwrap_or_else(PoisonError::into_inner);
-            // Native mixer changes are not reliably notified by mpv. Refresh
-            // active streams on the existing thread, including while paused.
-            let refresh = (shared.native_volume || shared.native_mute)
-                && shared.last_sync.elapsed() >= Duration::from_millis(500);
-            if !changed
-                && !refresh
-                && shared.pending_volume.is_none()
-                && shared.pending_mute.is_none()
-            {
-                return None;
-            }
-            let snapshot = *shared;
-            shared.pending_volume = None;
-            shared.pending_mute = None;
-            snapshot
-        };
         // Never keep the snapshot mutex locked across sound-server I/O: GTK
         // reads it for controls and can enqueue the next request concurrently.
+        let mut state = self.take_requests(changed)?;
         let driver = mpv.get_property::<String>("current-ao").unwrap_or_default();
         // ALSA's ao-volume can control the system-wide mixer. Only these two
         // APIs promise a per-stream control belonging to this mpv instance.
@@ -141,49 +204,8 @@ impl VolumeControl {
         let mute = state.pending_mute.take().or_else(|| {
             (mute_transition && (state.mute_set || state.had_output)).then_some(state.mute)
         });
-        let volume_property = if native_volume { "ao-volume" } else { "volume" };
-        let mute_property = if native_mute { "ao-mute" } else { "mute" };
-        let mut volume_applied = true;
-        let mut mute_applied = true;
-        if let Some(volume) = volume {
-            // mpv exposes PipeWire's linear amplitude; PulseAudio and desktop
-            // mixers use a cubic scale. Keep the same slider loudness on both.
-            let volume = if native_volume && pipewire {
-                100.0 * (volume.min(100.0) / 100.0).powi(3)
-            } else if native_volume {
-                volume.min(100.0)
-            } else {
-                volume.min(mpv.get_property::<f64>("volume-max").unwrap_or(150.0))
-            };
-            if let Err(error) = mpv.set_property(volume_property, volume) {
-                volume_applied = false;
-                log::warn!("Cannot change playback volume: {error}");
-            }
-        }
-        if let Some(mute) = mute
-            && let Err(error) = mpv.set_property(mute_property, mute)
-        {
-            mute_applied = false;
-            log::warn!("Cannot change playback mute: {error}");
-        }
-        if native_volume && (volume_transition || volume.is_some()) && volume_applied {
-            // ao-volume is capped at 100 by mpv. Apply only amplification in
-            // software; ordinary levels must not be multiplied a second time.
-            let gain = volume
-                .unwrap_or(100.0)
-                .max(100.0)
-                .min(mpv.get_property::<f64>("volume-max").unwrap_or(150.0));
-            if let Err(error) = mpv.set_property("volume", gain) {
-                log::warn!("Cannot change playback amplification: {error}");
-            }
-        }
-        if native_mute
-            && (mute_transition || mute.is_some())
-            && mute_applied
-            && let Err(error) = mpv.set_property("mute", false)
-        {
-            log::warn!("Cannot release software mute: {error}");
-        }
+        let volume_applied = write_volume(mpv, volume, native_volume, pipewire, volume_transition);
+        let mute_applied = write_mute(mpv, mute, native_mute, mute_transition);
         if native_volume && volume_transition {
             state.new_stream_until = Instant::now() + NEW_STREAM;
         }

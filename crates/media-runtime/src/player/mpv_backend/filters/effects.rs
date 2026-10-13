@@ -13,8 +13,8 @@ const AUDIO_FILTER_LABEL: &str = "bigfx";
 impl MpvBackend {
     /// Change the running denoiser's strength without rebuilding the chain.
     ///
-    /// Replacing `af` discards what the filters hold, ~40 ms of audio for
-    /// these plugins, so a slider drag would stutter. mpv rebuilds the chain
+    /// Replacing `af` discards the audio the filters hold, so a slider drag
+    /// would stutter. mpv rebuilds the chain
     /// from its text on every seek, loop and file, which forgets this value:
     /// the caller must also rebuild the chain once the slider settles.
     /// Returns `false` when no denoiser took the command.

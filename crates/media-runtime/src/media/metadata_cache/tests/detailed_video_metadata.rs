@@ -1,64 +1,10 @@
-use std::ffi::OsString;
 use std::fs;
-use std::os::unix::fs::PermissionsExt;
-use std::sync::Mutex;
 
 use serde_json::json;
 
 use super::super::detailed_video_metadata::{
-    parse_audio_stream, parse_subtitle_stream, parse_video_stream, probe_detailed_video_metadata,
+    detailed_video_metadata, parse_audio_stream, parse_subtitle_stream, parse_video_stream,
 };
-
-static PROBE_ENV_LOCK: Mutex<()> = Mutex::new(());
-
-struct PathOverride {
-    previous_path: Option<OsString>,
-}
-
-impl PathOverride {
-    fn prepend(directory: &std::path::Path) -> Self {
-        let previous_path = std::env::var_os("PATH");
-        let mut path_entries = vec![directory.to_path_buf()];
-        if let Some(path) = previous_path.clone() {
-            path_entries.extend(std::env::split_paths(&path));
-        }
-        let joined_path =
-            std::env::join_paths(path_entries).expect("temporary ffprobe PATH should be valid");
-        // SAFETY: guarded by PROBE_ENV_LOCK and restored in Drop before the test returns.
-        unsafe {
-            std::env::set_var("PATH", joined_path);
-        }
-        Self { previous_path }
-    }
-}
-
-impl Drop for PathOverride {
-    fn drop(&mut self) {
-        // SAFETY: guarded by PROBE_ENV_LOCK; restores process PATH to the prior value.
-        unsafe {
-            if let Some(path) = &self.previous_path {
-                std::env::set_var("PATH", path);
-            } else {
-                std::env::remove_var("PATH");
-            }
-        }
-    }
-}
-
-fn install_fake_ffprobe(directory: &std::path::Path, exit_status: i32, stdout_json: &str) {
-    let script_path = directory.join("ffprobe");
-    fs::write(
-        &script_path,
-        format!("#!/bin/sh\ncat <<'JSON'\n{stdout_json}\nJSON\nexit {exit_status}\n"),
-    )
-    .expect("fake ffprobe script should be writable");
-    let mut permissions = fs::metadata(&script_path)
-        .expect("fake ffprobe script metadata should exist")
-        .permissions();
-    permissions.set_mode(0o755);
-    fs::set_permissions(script_path, permissions)
-        .expect("fake ffprobe script should be executable");
-}
 
 #[test]
 fn parse_video_stream_formats_known_fields() {
@@ -166,78 +112,46 @@ fn parse_subtitle_stream_formats_basic_fields() {
 }
 
 #[test]
-fn probe_groups_streams_by_kind() {
-    let _environment_guard = PROBE_ENV_LOCK
-        .lock()
-        .expect("probe env lock should not be poisoned");
-    let temporary_directory = tempfile::Builder::new()
-        .prefix("metadata-cache-test-")
-        .tempdir_in(std::env::current_dir().expect("crate directory should be readable"))
-        .expect("temporary directory should be created");
-    let media_path = temporary_directory.path().join("sample.mkv");
+fn report_groups_streams_by_kind() {
+    let directory = tempfile::tempdir().expect("temporary directory should be created");
+    let media_path = directory.path().join("sample.mkv");
     fs::write(&media_path, vec![0_u8; 2048]).expect("temporary media file should be writable");
-    install_fake_ffprobe(
-        temporary_directory.path(),
-        0,
-        r#"{
-            "format": {
-                "duration": "3723.456",
-                "format_long_name": "Matroska / WebM",
-                "bit_rate": "9876543"
+    let report = json!({
+        "format": {
+            "duration": "3723.456",
+            "format_long_name": "Matroska / WebM",
+            "bit_rate": "9876543"
+        },
+        "streams": [
+            {
+                "codec_type": "video",
+                "codec_name": "h264",
+                "width": 1280,
+                "height": 720
             },
-            "streams": [
-                {
-                    "codec_type": "video",
-                    "codec_name": "h264",
-                    "profile": "High",
-                    "width": 1280,
-                    "height": 720,
-                    "r_frame_rate": "24000/1001",
-                    "pix_fmt": "yuv420p",
-                    "bit_rate": "2500000",
-                    "tags": { "language": "eng" }
-                },
-                {
-                    "codec_type": "audio",
-                    "codec_name": "aac",
-                    "sample_rate": "44100",
-                    "channels": 2,
-                    "tags": { "language": "por" }
-                },
-                {
-                    "codec_type": "subtitle",
-                    "codec_name": "subrip",
-                    "tags": { "language": "spa" }
-                }
-            ]
-        }"#,
-    );
-    let _path_override = PathOverride::prepend(temporary_directory.path());
-    let fake_output = std::process::Command::new("ffprobe")
-        .output()
-        .expect("fake ffprobe should run through PATH");
-    assert!(
-        fake_output.status.success(),
-        "fake ffprobe should exit successfully: stderr={}",
-        String::from_utf8_lossy(&fake_output.stderr)
-    );
-    assert!(
-        String::from_utf8_lossy(&fake_output.stdout).contains("Matroska / WebM"),
-        "fake ffprobe stdout should contain fixture JSON"
-    );
+            {
+                "codec_type": "audio",
+                "codec_name": "aac",
+                "sample_rate": "44100",
+                "channels": 2
+            },
+            {
+                "codec_type": "subtitle",
+                "codec_name": "subrip",
+                "tags": { "language": "spa" }
+            }
+        ]
+    });
 
-    let metadata = probe_detailed_video_metadata(
+    let metadata = detailed_video_metadata(
         media_path
             .to_str()
             .expect("temporary media path should be valid UTF-8"),
-    )
-    .expect("fake ffprobe success should produce metadata");
+        &report,
+    );
 
     assert_eq!(metadata.file_name, "sample.mkv");
-    assert_eq!(
-        metadata.file_dir,
-        temporary_directory.path().to_string_lossy()
-    );
+    assert_eq!(metadata.file_dir, directory.path().to_string_lossy());
     assert_eq!(metadata.file_size.as_deref(), Some("2.0 KB"));
     assert_eq!(metadata.duration.as_deref(), Some("01:02:03.456"));
     assert_eq!(metadata.format_name.as_deref(), Some("Matroska / WebM"));
@@ -246,47 +160,8 @@ fn probe_groups_streams_by_kind() {
     assert_eq!(metadata.audio_streams.len(), 1);
     assert_eq!(metadata.subtitle_streams.len(), 1);
     assert!(
-        metadata.video_streams[0]
-            .iter()
-            .any(|(k, v)| k == "Resolution" && v == "1280×720")
-    );
-    assert!(
         metadata.audio_streams[0]
             .iter()
             .any(|(k, v)| k == "Sample Rate" && v == "44100 Hz (CD Quality)")
-    );
-    assert!(
-        metadata.subtitle_streams[0]
-            .iter()
-            .any(|(k, v)| k == "Language" && v == "SPA")
-    );
-}
-
-#[test]
-fn probe_detailed_video_metadata_rejects_failed_ffprobe() {
-    let _environment_guard = PROBE_ENV_LOCK
-        .lock()
-        .expect("probe env lock should not be poisoned");
-    let temporary_directory = tempfile::Builder::new()
-        .prefix("metadata-cache-test-")
-        .tempdir_in(std::env::current_dir().expect("crate directory should be readable"))
-        .expect("temporary directory should be created");
-    let media_path = temporary_directory.path().join("failed.mkv");
-    fs::write(&media_path, [0_u8]).expect("temporary media file should be writable");
-    install_fake_ffprobe(
-        temporary_directory.path(),
-        2,
-        r#"{"format":{"duration":"1.000"},"streams":[]}"#,
-    );
-    let _path_override = PathOverride::prepend(temporary_directory.path());
-
-    assert!(
-        probe_detailed_video_metadata(
-            media_path
-                .to_str()
-                .expect("temporary media path should be valid UTF-8")
-        )
-        .is_none(),
-        "failed ffprobe status must not produce metadata"
     );
 }

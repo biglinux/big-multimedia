@@ -63,19 +63,19 @@ mod tests {
     }
 
     #[test]
-    fn test_filter_chain_no_effects() {
+    fn no_effects_build_empty_chain() {
         assert!(build_audio_filter_chain(&effects(false, 0.0, &[])).is_empty());
     }
 
     #[test]
-    fn test_filter_chain_normalize_only() {
+    fn normalize_adds_loudnorm() {
         let chain = build_audio_filter_chain(&effects(true, 0.0, &[]));
         assert_eq!(chain.len(), 1);
         assert!(chain[0].contains("loudnorm"));
     }
 
     #[test]
-    fn test_filter_chain_eq_only() {
+    fn eq_skips_flat_bands() {
         let bands = [(100.0, 3.0), (1000.0, -2.0), (5000.0, 0.05)];
         let chain = build_audio_filter_chain(&effects(false, 0.0, &bands));
         assert_eq!(chain.len(), 2);
@@ -84,7 +84,7 @@ mod tests {
     }
 
     #[test]
-    fn test_filter_chain_eq_all_below_threshold() {
+    fn flat_eq_builds_empty_chain() {
         let bands = [(100.0, 0.05), (200.0, -0.09)];
         assert!(build_audio_filter_chain(&effects(false, 0.0, &bands)).is_empty());
     }

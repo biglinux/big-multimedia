@@ -77,48 +77,96 @@ pub fn bind_write_drain_with_unsaved(
     let extra_unsaved = Rc::new(extra_unsaved);
     let bound = Rc::new(Cell::new(false));
     root.connect_map(move |widget| {
-        if bound.get(){return;}
-        let Some(window)=widget.root().and_downcast::<gtk::Window>()else{return;};bound.set(true);
-        let deciding=Rc::new(Cell::new(false));let discard=Rc::new(Cell::new(false));
+        if bound.get() {
+            return;
+        }
+        let Some(window) = widget.root().and_downcast::<gtk::Window>() else {
+            return;
+        };
+        bound.set(true);
+        let deciding = Rc::new(Cell::new(false));
+        let discard = Rc::new(Cell::new(false));
         let extra_unsaved = extra_unsaved.clone();
         window.connect_close_request(move |window| {
-            if deciding.get(){return glib::Propagation::Stop;}
-            if big_os_kit::background::pending()>0 {
-                deciding.set(true);
-                let dialog=adw::AlertDialog::builder().heading(i18n("Finishing pending work"))
-                    .body(i18n("Saves and exports are still finishing. The window will close afterwards. Keeping it open does not cancel those operations.")).build();
-                dialog.add_response("keep",&i18n("Keep open"));dialog.set_close_response("keep");
-                let keep=deciding.clone();dialog.connect_response(None,move|_,_|{keep.set(false);});
-                dialog.present(Some(window));
-                let weak=window.downgrade();let waiting=deciding.clone();
-                let mut hold=window.application().map(|app|app.hold());
-                glib::timeout_add_local(std::time::Duration::from_millis(50),move||{
-                    if !waiting.get(){hold.take();return glib::ControlFlow::Break;}
-                    if big_os_kit::background::pending()==0 {
-                        waiting.set(false);dialog.close();
-                        if let Some(window)=weak.upgrade(){window.close();}
-                        hold.take();glib::ControlFlow::Break
-                    }else{glib::ControlFlow::Continue}
-                });
+            if deciding.get() {
                 return glib::Propagation::Stop;
             }
-            if discard.replace(false) || !(unsaved_changes() || extra_unsaved()){return glib::Propagation::Proceed;}
-            deciding.set(true);let weak=window.downgrade();let waiting=deciding.clone();let approved=discard.clone();
-            let dialog=unsaved_dialog();
-            dialog.connect_response(None,move|_,response|{
+            if big_os_kit::background::pending() > 0 {
+                deciding.set(true);
+                wait_for_pending_work(window, &deciding);
+                return glib::Propagation::Stop;
+            }
+            if discard.replace(false) || !(unsaved_changes() || extra_unsaved()) {
+                return glib::Propagation::Proceed;
+            }
+            deciding.set(true);
+            let weak = window.downgrade();
+            let waiting = deciding.clone();
+            let approved = discard.clone();
+            let dialog = unsaved_dialog();
+            dialog.connect_response(None, move |_, response| {
                 waiting.set(false);
-                if response=="discard" {approved.set(true);if let Some(window)=weak.upgrade(){window.close();}}
+                if response == "discard" {
+                    approved.set(true);
+                    if let Some(window) = weak.upgrade() {
+                        window.close();
+                    }
+                }
             });
-            dialog.present(Some(window));glib::Propagation::Stop
+            dialog.present(Some(window));
+            glib::Propagation::Stop
         });
     });
 }
+
+/// Tell the person saves are finishing and close `window` once they are,
+/// unless they choose to keep it open.
+fn wait_for_pending_work(window: &gtk::Window, deciding: &Rc<Cell<bool>>) {
+    let body = i18n(
+        "Saves and exports are still finishing. The window will close afterwards. Keeping it open does not cancel those operations.",
+    );
+    let dialog = adw::AlertDialog::builder()
+        .heading(i18n("Finishing pending work"))
+        .body(body)
+        .build();
+    dialog.add_response("keep", &i18n("Keep open"));
+    dialog.set_close_response("keep");
+    let keep = deciding.clone();
+    dialog.connect_response(None, move |_, _| keep.set(false));
+    dialog.present(Some(window));
+    let weak = window.downgrade();
+    let waiting = deciding.clone();
+    let mut hold = window.application().map(|app| app.hold());
+    glib::timeout_add_local(std::time::Duration::from_millis(50), move || {
+        if !waiting.get() {
+            hold.take();
+            return glib::ControlFlow::Break;
+        }
+        if big_os_kit::background::pending() == 0 {
+            waiting.set(false);
+            dialog.close();
+            if let Some(window) = weak.upgrade() {
+                window.close();
+            }
+            hold.take();
+            glib::ControlFlow::Break
+        } else {
+            glib::ControlFlow::Continue
+        }
+    });
+}
+
 fn unsaved_changes() -> bool {
     Settings::any_unsaved() || big_os_kit::deferred::any_unsaved()
 }
 fn unsaved_dialog() -> adw::AlertDialog {
-    let dialog=adw::AlertDialog::builder().heading(i18n("Some changes are not confirmed as saved"))
-        .body(i18n("Keep the player open to review saving errors and retry. Continuing may discard unsaved session changes; it does not mark them as saved.")).build();
+    let body = i18n(
+        "Keep the player open to review saving errors and retry. Continuing may discard unsaved session changes; it does not mark them as saved.",
+    );
+    let dialog = adw::AlertDialog::builder()
+        .heading(i18n("Some changes are not confirmed as saved"))
+        .body(body)
+        .build();
     dialog.add_responses(&[
         ("keep", &i18n("Keep open")),
         ("discard", &i18n("Continue without saved changes")),
@@ -187,23 +235,37 @@ pub fn document_status(
     let weak_label = label.downgrade();
     let weak_button = button.downgrade();
     root.connect_map(move |_| {
-        if mapped.borrow().is_some() { return; }
-        let get=snapshot.clone(); let weak_label=weak_label.clone(); let weak_button=weak_button.clone(); let mut last=None;
-        *mapped.borrow_mut()=Some(glib::timeout_add_local(std::time::Duration::from_millis(250),move || {
-            let (Some(label),Some(button))=(weak_label.upgrade(),weak_button.upgrade()) else { return glib::ControlFlow::Break; };
-            let status=get();
-            if status!=last {
+        if mapped.borrow().is_some() {
+            return;
+        }
+        let get = snapshot.clone();
+        let weak_label = weak_label.clone();
+        let weak_button = weak_button.clone();
+        let mut last = None;
+        let poll = move || {
+            let (Some(label), Some(button)) = (weak_label.upgrade(), weak_button.upgrade()) else {
+                return glib::ControlFlow::Break;
+            };
+            let status = get();
+            if status != last {
                 use big_os_kit::deferred::Phase;
-                label.set_label(&i18n(match status.as_ref().map(|s|s.phase) {
-                    None|Some(Phase::Saved)=>"Changes are saved.",
-                    Some(Phase::Pending|Phase::Saving)=>"Saving your changes…",
-                    Some(Phase::Failed)=>"Changes work for this session but could not be saved. Check storage or close other instances, then retry.",
+                let phase = status.as_ref().map(|s| s.phase);
+                label.set_label(&i18n(match phase {
+                    None | Some(Phase::Saved) => "Changes are saved.",
+                    Some(Phase::Pending | Phase::Saving) => "Saving your changes…",
+                    Some(Phase::Failed) => {
+                        "Changes work for this session but could not be saved. Check storage or close other instances, then retry."
+                    }
                 }));
-                button.set_sensitive(matches!(status.as_ref().map(|s|s.phase),Some(Phase::Failed)));
-                last=status;
+                button.set_sensitive(matches!(phase, Some(Phase::Failed)));
+                last = status;
             }
             glib::ControlFlow::Continue
-        }));
+        };
+        *mapped.borrow_mut() = Some(glib::timeout_add_local(
+            std::time::Duration::from_millis(250),
+            poll,
+        ));
     });
     root.connect_unmap(move |_| {
         if let Some(id) = timer.borrow_mut().take() {

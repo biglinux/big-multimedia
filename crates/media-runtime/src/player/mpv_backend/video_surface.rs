@@ -14,7 +14,7 @@ use std::ffi::c_void;
 
 use super::MpvBackend;
 use super::fast_render::FastRenderContext;
-use super::offload_renderer::VideoBackend;
+use super::offload_renderer::{CurrentContext, VideoBackend};
 use crate::error::{Error, Result};
 
 pub fn wayland_display_ptr(display: &gdk::Display) -> Option<*mut c_void> {
@@ -22,8 +22,8 @@ pub fn wayland_display_ptr(display: &gdk::Display) -> Option<*mut c_void> {
         return None;
     }
 
-    // SAFETY: type name check above ensures the GdkDisplay is a Wayland display.
     let display_ptr: *mut gdk::ffi::GdkDisplay = display.to_glib_none().0;
+    // SAFETY: the backend check above makes this a GdkWaylandDisplay.
     let ptr = unsafe { gdk_wayland_sys::gdk_wayland_display_get_wl_display(display_ptr.cast()) };
     if ptr.is_null() {
         None
@@ -122,23 +122,10 @@ where
     // retains its display and is captured for exact-context teardown below.
     let mut render_context =
         unsafe { mpv.create_fast_render_context_with_wayland_display(wl_display, false)? };
-    {
-        render_context.set_context_scope(move |action| {
-            struct Restore(Option<gdk::GLContext>);
-            impl Drop for Restore {
-                fn drop(&mut self) {
-                    if let Some(previous) = &self.0 {
-                        previous.make_current();
-                    } else {
-                        gdk::GLContext::clear_current();
-                    }
-                }
-            }
-            let _restore = Restore(gdk::GLContext::current());
-            context.make_current();
-            action();
-        });
-    }
+    render_context.set_context_scope(move |action| {
+        let _current = CurrentContext::enter(&context);
+        action();
+    });
     if let Some(VideoBackend::Offload(renderer)) = backend {
         let callback: std::rc::Rc<dyn Fn()> = std::rc::Rc::new(on_offload_frame);
         renderer.set_retry_callback(callback.clone());

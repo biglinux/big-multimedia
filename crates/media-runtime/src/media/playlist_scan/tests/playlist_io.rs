@@ -165,3 +165,26 @@ fn parse_pls_nonexistent_returns_empty() {
     ));
     assert!(result.is_empty());
 }
+
+#[test]
+fn write_m3u_round_trips() {
+    let dir = tempfile::tempdir().unwrap();
+    let files: Vec<String> = (0..3)
+        .map(|i| {
+            let path = dir.path().join(format!("track {i}.mp3"));
+            std::fs::write(&path, b"fake").unwrap();
+            path.to_string_lossy().into_owned()
+        })
+        .collect();
+    let m3u = dir.path().join("list.m3u8");
+    write_m3u(&m3u, &files).unwrap();
+    assert_eq!(parse_m3u(&m3u), files);
+}
+
+#[test]
+fn write_m3u_refuses_line_breaks() {
+    let dir = tempfile::tempdir().unwrap();
+    let m3u = dir.path().join("list.m3u8");
+    assert!(write_m3u(&m3u, &["/a\n/etc/passwd".to_string()]).is_err());
+    assert!(!m3u.exists());
+}

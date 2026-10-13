@@ -34,9 +34,9 @@ for dir in "${SOURCES[@]}"; do
   fi
 done
 
-# POTFILES.in is the canonical file list (checked by tests); regenerate it and
-# feed the same list to xgettext.
-find "${SOURCES[@]}" -name '*.rs' -not -path '*/target/*' | sort > "$HERE/POTFILES.in"
+# POTFILES.in is the file list xgettext reads; regenerate it first. The C
+# collation keeps its order the same on every machine.
+find "${SOURCES[@]}" -name '*.rs' -not -path '*/target/*' | LC_ALL=C sort > "$HERE/POTFILES.in"
 
 xgettext \
   --language=Rust \

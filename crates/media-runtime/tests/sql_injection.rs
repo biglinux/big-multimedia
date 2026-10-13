@@ -69,18 +69,17 @@ fn hostile_filter_text_keeps_tables() {
     let initial = count_tracks(&conn);
     assert_eq!(initial as usize, HOSTILE_FILENAMES.len());
 
+    let mut stmt = conn
+        .prepare("SELECT rowid FROM tracks_fts WHERE tracks_fts MATCH ?1")
+        .expect("prepare");
     for filter in HOSTILE_FILTERS {
         let query = fts_match_query(filter);
-        // FTS5 MATCH returns rows or nothing; never executes injected DDL/DML.
-        let _ = conn
-            .prepare("SELECT rowid FROM tracks_fts WHERE tracks_fts MATCH ?1")
-            .and_then(|mut s| {
-                let _rows: Vec<i64> = s
-                    .query_map(params![&query], |r| r.get(0))?
-                    .filter_map(Result::ok)
-                    .collect();
-                Ok(())
-            });
+        // The quoted query must parse: an FTS5 syntax error would leave the
+        // filter field unable to search for this text.
+        let rows: rusqlite::Result<Vec<i64>> = stmt
+            .query_map(params![&query], |r| r.get(0))
+            .and_then(Iterator::collect);
+        assert!(rows.is_ok(), "{filter:?} -> {query:?}: {rows:?}");
     }
     assert_eq!(
         count_tracks(&conn),
