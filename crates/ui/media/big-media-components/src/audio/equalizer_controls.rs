@@ -18,6 +18,7 @@ pub fn parse_clamped_band_gains<const N: usize>(
     for (index, gain) in gains_text
         .split(';')
         .filter_map(|item| item.parse::<f64>().ok())
+        .filter(|gain| gain.is_finite())
         .enumerate()
     {
         if index >= N {
@@ -34,7 +35,7 @@ mod tests {
 
     #[test]
     fn parse_clamped_band_gains_pads_and_clamps() {
-        let gains = parse_clamped_band_gains::<4>("100;-100;3;bad;5", -12.0, 12.0);
+        let gains = parse_clamped_band_gains::<4>("100;-100;nan;3;bad;inf;5", -12.0, 12.0);
         assert_eq!(gains, [12.0, -12.0, 3.0, 5.0]);
     }
 

@@ -83,9 +83,6 @@ pub enum AudioPlaybackBarInput {
     SetVoiceActive(bool),
     /// Reflect the lyrics-panel visibility on the toggle without emitting.
     SetLyricsActive(bool),
-    /// Show/hide the playlist-management button (apps with an always-visible
-    /// queue hide it).
-    SetPlaylistButtonVisible(bool),
     /// Set (or clear) the blurred album-art background.
     SetBlurArt(Option<gtk::gdk::Texture>),
 }
@@ -116,8 +113,6 @@ pub enum AudioPlaybackBarOutput {
     CycleRepeat,
     /// Lyrics toggled; carries the new active state.
     ToggleLyrics(bool),
-    /// Playlist-management button clicked.
-    ShowPlaylist,
     /// Open the visual trim/export mode for the current track.
     ShowTrimExport,
     /// Volume slider moved; carries the new percent.
@@ -277,8 +272,7 @@ impl Component for AudioPlaybackBar {
                 // Each move repaints the window. Position arrives ten times a
                 // second, while a long track moves the knob a pixel every few
                 // seconds, and GTK places the knob on whole pixels: a smaller
-                // step repaints an identical frame (a quarter of all frames
-                // playing music, measured on an Intel HD 3000, 2026-10-02).
+                // step repaints an identical frame.
                 let bar = t.seek_bar();
                 let width = f64::from(bar.width().max(t.cut_timeline().width()));
                 // Unallocated (hidden) bars draw nothing: keep them current.
@@ -352,9 +346,6 @@ impl Component for AudioPlaybackBar {
             }
             AudioPlaybackBarInput::SetLyricsActive(active) => {
                 self.with_guard(|| t.lyrics_button().set_active(active));
-            }
-            AudioPlaybackBarInput::SetPlaylistButtonVisible(visible) => {
-                t.playlist_button().set_visible(visible);
             }
             AudioPlaybackBarInput::SetBlurArt(texture) => {
                 t.blur_bg().set_paintable(texture.as_ref());
@@ -433,11 +424,6 @@ fn wire_transport_signals(
             return;
         }
         let _ = s.output(AudioPlaybackBarOutput::ToggleLyrics(button.is_active()));
-    });
-
-    let s = sender.clone();
-    transport.playlist_button().connect_clicked(move |_| {
-        let _ = s.output(AudioPlaybackBarOutput::ShowPlaylist);
     });
 
     let s = sender.clone();

@@ -8,7 +8,7 @@ use gtk::{gdk, glib};
 /// label, parented to the seek bar. Non-autohide so it never grabs input; the
 /// hover controller pops it up / down.
 pub(super) fn build_seek_preview(anchor: &gtk::Widget) -> (gtk::Popover, gtk::Picture, gtk::Label) {
-    // bigagents: popover-parent-managed: single reused seek-preview popover,
+    // single reused seek-preview popover,
     // owned and unparented by the controls bar. Parented to the
     // shared bar-stack so it works for both the seek scale and the cut timeline.
     let popover = gtk::Popover::builder()
@@ -147,7 +147,7 @@ pub(super) fn wire_thumb_consumer(
 /// video's picture and name, in the order the playlist plays (shuffled
 /// too). Nothing shows where there is nowhere to go.
 pub(super) fn wire_neighbour_preview(button: &gtk::Button, mpv: &MpvSlot, step: i64) {
-    // bigagents: popover-parent-managed: one reused popover per button, for
+    // one reused popover per button, for
     // the life of the controls bar.
     let popover = gtk::Popover::builder()
         .autohide(false)

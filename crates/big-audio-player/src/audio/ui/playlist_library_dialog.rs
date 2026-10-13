@@ -308,7 +308,7 @@ fn build_playlist_row(
     sender: &ComponentSender<PlaylistLibraryDialog>,
     root: &adw::Window,
 ) -> adw::ActionRow {
-    let row_spec = saved_playlist_row_spec(name, count, secs);
+    let row_spec = saved_playlist_row_spec(name);
     let row = BigNavigationRow::new(
         BigNavigationRowSpec::new(&row_spec.title)
             .subtitle(localized_saved_playlist_subtitle(count, secs))
@@ -322,7 +322,7 @@ fn build_playlist_row(
         });
     }
 
-    let rename_button = suffix_button("document-edit-symbolic", &i18n(&row_spec.rename_tooltip));
+    let rename_button = suffix_button("document-edit-symbolic", &row_spec.rename_tooltip);
     {
         let out = sender.clone();
         let root_weak = root.downgrade();
@@ -339,7 +339,7 @@ fn build_playlist_row(
     }
     row.add_suffix(&rename_button);
 
-    let export_button = suffix_button("document-save-symbolic", &i18n(&row_spec.export_tooltip));
+    let export_button = suffix_button("document-save-symbolic", &row_spec.export_tooltip);
     {
         let out = sender.clone();
         export_button.connect_clicked(move |_| {
@@ -348,7 +348,7 @@ fn build_playlist_row(
     }
     row.add_suffix(&export_button);
 
-    let delete_button = suffix_button("user-trash-symbolic", &i18n(&row_spec.delete_tooltip));
+    let delete_button = suffix_button("user-trash-symbolic", &row_spec.delete_tooltip);
     delete_button.add_css_class("destructive-action");
     {
         let out = sender.clone();

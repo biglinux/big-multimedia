@@ -125,7 +125,6 @@ fn musicbrainz_fill_plan_fills_only_empty_fields() {
         genre: Some("Rock".to_string()),
         year: Some(2026),
         track_number: Some(7),
-        ..MbMetadata::default()
     };
 
     assert_eq!(
@@ -145,7 +144,6 @@ fn fill_plan_reports_empty_outcomes() {
         genre: Some("Rock".to_string()),
         year: Some(2026),
         track_number: Some(7),
-        ..MbMetadata::default()
     };
 
     assert_eq!(

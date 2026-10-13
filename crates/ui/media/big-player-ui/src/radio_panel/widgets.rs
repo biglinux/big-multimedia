@@ -497,11 +497,11 @@ mod tests {
     fn station_form_trims_valid_input() {
         assert_eq!(
             accepted_radio_station_form(
-                "  Codex Radio  ",
+                "  Night Radio  ",
                 "  https://stream.example.test/live.mp3  "
             ),
             Some(RadioStationForm {
-                name: "Codex Radio".into(),
+                name: "Night Radio".into(),
                 url: "https://stream.example.test/live.mp3".into(),
             })
         );

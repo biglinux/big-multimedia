@@ -84,17 +84,20 @@ pub(super) fn export_detail_m3u8(
     FilePicker::save_file(i18n("Export Playlist"))
         .accept_label(i18n("Save"))
         .initial_name("playlist.m3u8")
-        .pattern_filter("M3U8 Playlist", &["*.m3u8", "*.m3u"])
+        .pattern_filter(&i18n("M3U8 Playlist"), &["*.m3u8", "*.m3u"])
         .save(parent, move |path| {
-            crate::settings::saving::acknowledged_task(false,
+            crate::settings::saving::acknowledged_task(
+                false,
                 move || {
-                    let items:Vec<_>=tracks.into_iter().map(|t|t.file_path).collect();
-                    crate::media::playlist_scan::write_m3u(&path,&items)
-                        .map_err(|_|std::io::Error::other("Playlist export could not be confirmed"))
+                    let items: Vec<_> = tracks.into_iter().map(|t| t.file_path).collect();
+                    crate::media::playlist_scan::write_m3u(&path, &items)
+                        .map_err(|_| std::io::Error::other("Playlist export could not be confirmed"))
                 },
                 move |result| {
                     if result.is_err() {
-                        let _=out.output(LibraryPanelOutput::Notify(i18n("Playlist export could not be confirmed. Existing files were kept; choose a new name and retry.")));
+                        let _ = out.output(LibraryPanelOutput::Notify(i18n(
+                            "Playlist export could not be confirmed. Existing files were kept; choose a new name and retry.",
+                        )));
                     }
                 },
             );
@@ -107,7 +110,7 @@ pub(super) fn import_playlist(parent: &gtk::Window, sender: &ComponentSender<Lib
     let out = sender.clone();
     FilePicker::new(i18n("Import Playlist"))
         .accept_label(i18n("Open"))
-        .pattern_filter("Playlists (m3u, m3u8, pls)", &["*.m3u", "*.m3u8", "*.pls"])
+        .pattern_filter(&i18n("Playlists"), &["*.m3u", "*.m3u8", "*.pls"])
         .open(parent, move |path| {
             let _ = out.output(LibraryPanelOutput::ImportPlaylistFile { path });
         });

@@ -3,7 +3,7 @@ window.big-video-player {
   background-color: black;
 }
 
-/* Structural: headerbar padding/shadow only — colors come from apply_appearance() */
+/* Structural: headerbar padding/shadow only: colors come from apply_appearance() */
 .osd-header {
   padding: 0;
 }
@@ -15,12 +15,12 @@ window.big-video-player {
   padding-bottom: 0;
 }
 
-/* Structural: padding only — background/radius/margin come from apply_appearance() */
+/* Structural: padding only: background/radius/margin come from apply_appearance() */
 .osd-controls {
   padding: 8px 16px 12px 16px;
 }
 
-/* Structural: base reset for OSD buttons — sizing comes from apply_appearance() */
+/* Structural: base reset for OSD buttons: sizing comes from apply_appearance() */
 .osd-btn,
 .osd-btn > button {
   border: none;
@@ -44,7 +44,7 @@ menubutton.osd-btn {
   transition: background 150ms ease-in-out, color 150ms ease-in-out;
 }
 
-/* Structural: font settings — color comes from apply_appearance() */
+/* Structural: font settings: color comes from apply_appearance() */
 .time-label {
   font-size: 13px;
   font-variant-numeric: tabular-nums;
@@ -55,7 +55,7 @@ menubutton.osd-btn {
   text-decoration: underline;
 }
 
-/* Seek bar — uses Adwaita named colors for proper theme integration */
+/* Seek bar: uses Adwaita named colors for proper theme integration */
 .seek-scale trough {
   background: alpha(@window_fg_color, 0.25);
   border-radius: 3px;
@@ -77,7 +77,7 @@ menubutton.osd-btn {
 }
 /* Trim toolbar: a flat, transparent row docked directly above the transport so
    it sits IN the existing bottom controls (same surface as the seek bar +
-   buttons), NOT a separate dark card. No own background — it inherits the
+   buttons), NOT a separate dark card. No own background: it inherits the
    controls surface. */
 .video-trim-bar {
   padding: 4px 14px 0 14px;
@@ -118,7 +118,7 @@ menubutton.osd-btn {
 
 /* Seek-bar hover preview popover (thumbnail frame + time/chapter).
    Background comes from the theming provider's `popover > contents`
-   (@popover_bg_color, USER+1 priority) — so the text MUST follow the theme too,
+   (@popover_bg_color, USER+1 priority): so the text MUST follow the theme too,
    else light theme = white text on a light popover (invisible). */
 .seek-preview > contents {
   border-radius: 8px;
@@ -135,13 +135,13 @@ menubutton.osd-btn {
   padding: 2px 4px;
 }
 
-/* Value labels next to volume/speed buttons — color comes from apply_appearance() */
+/* Value labels next to volume/speed buttons: color comes from apply_appearance() */
 .osd-value-label {
   font-size: 13px;
   font-variant-numeric: tabular-nums;
 }
 
-/* Playlist current item highlight (list view) — clearly the playing track:
+/* Playlist current item highlight (list view): clearly the playing track:
    accent tint, a left accent bar, and bold accent text. */
 .playlist-current {
   background: alpha(@accent_bg_color, 0.18);
@@ -221,7 +221,7 @@ menubutton.osd-btn {
   color: @accent_bg_color;
   font-weight: bold;
 }
-/* The centered play badge on the playing card — a filled accent circle. */
+/* The centered play badge on the playing card: a filled accent circle. */
 .card-play-icon {
   color: #ffffff;
   background: alpha(@accent_bg_color, 0.9);
@@ -230,7 +230,7 @@ menubutton.osd-btn {
   box-shadow: 0 1px 4px rgba(0, 0, 0, 0.4);
 }
 
-/* Playlist (queue) rows — compact, position number, hover-revealed remove. */
+/* Playlist (queue) rows: compact, position number, hover-revealed remove. */
 .queue-pos {
   font-variant-numeric: tabular-nums;
 }
@@ -293,7 +293,7 @@ progressbar.queue-watched > trough > progress {
   border-radius: 6px;
 }
 
-/* ── Welcome screen — minimal design ── */
+/* ── Welcome screen: minimal design ── */
 .welcome-container {
   padding: 48px 40px;
 }

@@ -53,27 +53,64 @@ pub(super) fn show(parent: &gtk::Window, control: Arc<ScanControl>) {
     let weak_cancel = cancel.downgrade();
     let timer = std::rc::Rc::new(std::cell::RefCell::new(None::<glib::SourceId>));
     let mapped = timer.clone();
+    // Polls the worker's counters while the dialog is mapped and stops once the
+    // scan has finished, so a finished dialog left open costs no wakeups.
     content.connect_map(move |_| {
-        if mapped.borrow().is_some() { return; }
-        let control = control.clone(); let status = weak_status.clone(); let counts = weak_counts.clone(); let cancel = weak_cancel.clone();
+        if mapped.borrow().is_some() {
+            return;
+        }
+        let control = control.clone();
+        let status = weak_status.clone();
+        let counts = weak_counts.clone();
+        let cancel = weak_cancel.clone();
         let mut last = None;
-        *mapped.borrow_mut() = Some(glib::timeout_add_local(std::time::Duration::from_millis(250), move || {
-            let (Some(status), Some(counts), Some(cancel)) = (status.upgrade(), counts.upgrade(), cancel.upgrade()) else { return glib::ControlFlow::Break; };
-            let values = (control.examined.load(Ordering::Acquire), control.imported.load(Ordering::Acquire), control.skipped.load(Ordering::Acquire), control.cancelled.load(Ordering::Acquire), control.finished.load(Ordering::Acquire), control.failed.load(Ordering::Acquire));
-            if last != Some(values) {
-                let (examined, imported, skipped, cancelled, finished, failed) = values;
-                counts.set_text(&format!("{}: {examined} · {}: {imported} · {}: {skipped}", i18n("Examined"), i18n("Imported"), i18n("Skipped")));
-                let message = if finished && cancelled { "Scan cancelled. Earlier confirmed imports were kept." }
-                    else if finished && failed { "Scan incomplete. Earlier confirmed imports were kept; check storage and retry." }
-                    else if finished { "Library scan finished." }
-                    else if cancelled { "Cancellation requested. Finishing the current safe step…" }
-                    else { "Reading media information…" };
-                status.set_text(&i18n(message));
-                cancel.set_label(&i18n(if finished {"Close"}else{"Cancel scan"}));
-                cancel.set_sensitive(finished||!cancelled); last = Some(values);
+        let tick = move || {
+            let (Some(status), Some(counts), Some(cancel)) =
+                (status.upgrade(), counts.upgrade(), cancel.upgrade())
+            else {
+                return glib::ControlFlow::Break;
+            };
+            let values = (
+                control.examined.load(Ordering::Acquire),
+                control.imported.load(Ordering::Acquire),
+                control.skipped.load(Ordering::Acquire),
+                control.cancelled.load(Ordering::Acquire),
+                control.finished.load(Ordering::Acquire),
+                control.failed.load(Ordering::Acquire),
+            );
+            if last == Some(values) {
+                return glib::ControlFlow::Continue;
             }
-            glib::ControlFlow::Continue
-        }));
+            last = Some(values);
+            let (examined, imported, skipped, cancelled, finished, failed) = values;
+            counts.set_text(&format!(
+                "{}: {examined} · {}: {imported} · {}: {skipped}",
+                i18n("Examined"),
+                i18n("Imported"),
+                i18n("Skipped")
+            ));
+            let message = if finished && cancelled {
+                "Scan cancelled. Earlier confirmed imports were kept."
+            } else if finished && failed {
+                "Scan incomplete. Earlier confirmed imports were kept; check storage and retry."
+            } else if finished {
+                "Library scan finished."
+            } else if cancelled {
+                "Cancellation requested. Finishing the current safe step…"
+            } else {
+                "Reading media information…"
+            };
+            status.set_text(&i18n(message));
+            cancel.set_label(&i18n(if finished { "Close" } else { "Cancel scan" }));
+            cancel.set_sensitive(finished || !cancelled);
+            if finished {
+                glib::ControlFlow::Break
+            } else {
+                glib::ControlFlow::Continue
+            }
+        };
+        let source = glib::timeout_add_local(std::time::Duration::from_millis(250), tick);
+        *mapped.borrow_mut() = Some(source);
     });
     content.connect_unmap(move |_| {
         if let Some(timer) = timer.borrow_mut().take() {

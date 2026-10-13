@@ -11,8 +11,8 @@
   <summary>Music and audio player for BigLinux</summary>
   <summary xml:lang="pt_BR">Reprodutor de música e áudio para o BigLinux</summary>
   <description>
-    <p>Big Audio Player is a libadwaita music and audio player built in Rust on top of the shared BigLinux components. It plays MP3, FLAC, OGG Vorbis, Opus, AAC, and WAV files, exposes MPRIS controls to the desktop, and integrates with media keys, the BigLinux notifications stack, and the system tray.</p>
-    <p xml:lang="pt_BR">O Big Audio Player é um reprodutor de música em libadwaita escrito em Rust sobre os componentes compartilhados do BigLinux. Reproduz arquivos MP3, FLAC, OGG Vorbis, Opus, AAC e WAV, expõe controles MPRIS para o desktop e se integra com teclas de mídia, notificações e área de status.</p>
+    <p>Big Audio Player is a libadwaita music and audio player built in Rust on top of the shared BigLinux components. It plays MP3, FLAC, OGG Vorbis, Opus, AAC and WAV files, keeps a music library with playlists and a play queue, plays internet radio and podcasts, shows lyrics, and exposes MPRIS controls for media keys and the desktop.</p>
+    <p xml:lang="pt_BR">O Big Audio Player é um reprodutor de música em libadwaita escrito em Rust sobre os componentes compartilhados do BigLinux. Reproduz arquivos MP3, FLAC, OGG Vorbis, Opus, AAC e WAV, mantém uma biblioteca de músicas com playlists e fila de reprodução, toca rádios on-line e podcasts, mostra letras e expõe controles MPRIS para as teclas de mídia e o desktop.</p>
   </description>
   <launchable type="desktop-id">br.com.biglinux.AudioPlayer.desktop</launchable>
   <categories>

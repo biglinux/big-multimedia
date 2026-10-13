@@ -1,6 +1,5 @@
 //! Shared layout widgets.
 
-pub mod column_chrome;
 pub mod column_persist;
 pub mod dialog_footer;
 pub mod dialog_page;

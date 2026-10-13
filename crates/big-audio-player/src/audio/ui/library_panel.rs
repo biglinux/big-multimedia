@@ -2,7 +2,7 @@
 //!
 //! Single-column layout (`gtk::Stack`): a "browse"
 //! page (grouping/search bar + library tree) and a "detail" page (back bar +
-//! track `ColumnView`) swap in place: selecting a node shows the detail, the
+//! track list) swap in place: selecting a node shows the detail, the
 //! back button returns to the tree. The panel never touches the DB; it emits
 //! intents and the shell pushes query results back.
 //!
@@ -272,7 +272,7 @@ pub struct LibraryPanel {
 }
 
 impl LibraryPanel {
-    /// Show the detail `ColumnView` when it has rows, otherwise an empty-state
+    /// Show the detail track list when it has rows, otherwise an empty-state
     /// placeholder. The view is reattached, never rebuilt.
     fn refresh_detail_empty_state(&self) {
         let is_detail_view_attached = self

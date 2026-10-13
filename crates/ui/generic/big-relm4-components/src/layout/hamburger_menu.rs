@@ -155,12 +155,6 @@ pub fn menu_action_names(menu: &impl IsA<gio::MenuModel>) -> Vec<String> {
     actions
 }
 
-/// Attach a flat action popover to `button` with named action rows.
-pub fn set_flat_action_popover(button: &gtk::MenuButton, items: &[BigMenuActionItem]) {
-    let popover = build_flat_action_popover(button.upcast_ref::<gtk::Widget>(), items);
-    button.set_popover(Some(&popover));
-}
-
 /// Replace a popover's child with flat named action rows.
 pub fn populate_flat_action_popover(
     popover: &gtk::Popover,
@@ -196,20 +190,6 @@ pub fn build_flat_action_popover(
     let popover = gtk::Popover::new();
     populate_flat_action_popover(&popover, action_context, items);
     popover
-}
-
-/// Build a tooltip-aware native hamburger button from a flat menu spec.
-#[must_use]
-pub fn build_hamburger_menu_button(spec: &BigHamburgerMenuSpec) -> gtk::MenuButton {
-    let class_refs = spec
-        .css_classes
-        .iter()
-        .map(String::as_str)
-        .collect::<Vec<_>>();
-    let button =
-        crate::feedback::tooltip::icon_menu_button(&spec.icon_name, &spec.label, &class_refs);
-    set_flat_action_popover(&button, &spec.items);
-    button
 }
 
 /// Build an AT-SPI-actionable button that opens a flat action popover.

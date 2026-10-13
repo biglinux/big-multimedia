@@ -2,15 +2,15 @@
 # mem-leak-smoke.sh: big-video-player memory-leak gate.
 #
 # Drives each leak-prone open/close target through the shared RSS-slope detector
-# (~/.agents/scripts/mem-leak-check.sh): N open/close cycles of a dialog, verdict
+# named by MEM_LEAK_CHECK: N open/close cycles of a dialog, verdict
 # = per-iteration slope of post-close anonymous RSS. Exit 3 from any target =>
-# leak. VM/disposable-host only (the gate wires it under BIGAGENTS_RUN_UI_SMOKE=1).
+# leak. Run it on a VM or a disposable host.
 #
 # Targets: equalizer, image-adjust.
 set -uo pipefail
 
-DETECT="${MEM_LEAK_CHECK:-$HOME/.agents/scripts/mem-leak-check.sh}"
-[[ -x "$DETECT" ]] || { echo "mem-leak-smoke: detector missing at $DETECT" >&2; exit 2; }
+DETECT="${MEM_LEAK_CHECK:-}"
+[[ -x "$DETECT" ]] || { echo "mem-leak-smoke: set MEM_LEAK_CHECK to the RSS-slope detector" >&2; exit 2; }
 
 BIN="${LEAK_BIN:-target/release/big-video-player}"
 [[ -x "$BIN" ]] || BIN="target/debug/big-video-player"
@@ -27,6 +27,9 @@ targets=(
   "show-image-adjust|Image & Video"
 )
 
+out_root="$(mktemp -d "${TMPDIR:-/tmp}/leak-big-video-player.XXXXXX")"
+echo "leak reports: $out_root"
+
 rc=0
 for t in "${targets[@]}"; do
   action="${t%%|*}"; title="${t#*|}"
@@ -34,7 +37,7 @@ for t in "${targets[@]}"; do
   "$DETECT" --gui --dest "$DEST" --object-path "$WPATH" \
     --action "$action" --window-title "$title" --iters "$ITERS" \
     --threshold-kb "$THRESH" --env LANG=C.UTF-8 --env LC_ALL=C \
-    --out "/tmp/leak-big-video-player-$action" \
+    --out "$out_root/$action" \
     -- "$BIN" || rc=$?
 done
 exit "$rc"

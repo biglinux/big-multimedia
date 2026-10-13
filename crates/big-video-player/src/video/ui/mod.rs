@@ -1,14 +1,14 @@
-//! App-local Relm4 glue for the video player (in-progress ground-up port).
+//! App-local Relm4 glue for the video player.
 //!
 //! Reusable media widgets live in `big-media-components` / `big-relm4-components`
-//! and engine-free player panels in `big-player-ui`; only genuinely
-//! video-specific wiring (the `VideoShell` root, IPTV browser, cast overlays,
-//! the GL video surface, filter/shader dialogs) lands here. Populated in V1+.
+//! and engine-free player panels in `big-player-ui`; only video-specific wiring
+//! (the `VideoShell` root, IPTV browser, cast overlays, the GL video surface,
+//! filter/shader dialogs) lives here.
 
 /// `glGetIntegerv` access for the GLArea fallback render path.
 pub mod gl_framebuffer;
 
-/// Relm4 root component for the video player (port in progress).
+/// Relm4 root component for the video player.
 pub mod video_shell;
 
 /// OSD controls bar (Relm4, app-local).

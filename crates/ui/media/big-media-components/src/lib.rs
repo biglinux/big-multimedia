@@ -48,7 +48,7 @@ pub mod media;
 /// Playback controls: volume icons and the generic [`playback::queue::PlayQueue`].
 pub mod playback;
 /// Player-UI chrome shared across player front-ends: off-thread spawn, play
-/// pulse, volume/speed/voice popovers (extracted from `big-media-runtime`).
+/// pulse, volume/speed/voice popovers.
 pub mod player_chrome;
 /// Playlist ordering: shuffle and stable path sort.
 pub mod playlist_order;

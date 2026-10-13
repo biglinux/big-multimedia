@@ -118,8 +118,7 @@ mod tests {
                 .is_empty()
         );
     }
-    // Preserve boundary coverage from the old parser while correcting its
-    // contract: malformed data and unreadable files are errors, not empty lists.
+    // Malformed data and unreadable files are errors, not empty lists.
     #[cfg(not(miri))]
     struct TestDirectory(std::path::PathBuf);
     #[cfg(not(miri))]

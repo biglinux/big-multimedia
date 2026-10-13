@@ -178,7 +178,7 @@ impl VideoShell {
     }
 
     /// Arm the sleep timer: a 1 s `SleepTick` source drives the countdown. Stores
-    /// the `SourceId` so it is removed on disarm / re-arm / drop (no leak).
+    /// the `SourceId` so it is removed on disarm / re-arm / drop.
     pub(super) fn start_sleep_timer(
         &mut self,
         total_secs: u32,
@@ -213,7 +213,6 @@ impl VideoShell {
 
     /// One countdown tick: fade the last 10 s, then on expiry pause + run the
     /// chosen action (close / suspend / power off), restoring the volume.
-    /// Mirrors the audio player's `sleep_tick`.
     pub(super) fn sleep_tick(&mut self) {
         if !self.sleep_timer_is_armed() {
             return;
@@ -240,7 +239,7 @@ impl VideoShell {
     }
 
     /// Run the chosen on-expiry action after the fade-out completes. A 2 s grace
-    /// before quit/suspend/poweroff lets the notice show. Mirrors the audio port.
+    /// before quit/suspend/poweroff lets the notice show.
     fn run_sleep_action(&self, action: &str) {
         match action {
             "quit" => {

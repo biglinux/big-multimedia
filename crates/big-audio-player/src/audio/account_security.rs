@@ -11,8 +11,14 @@ use std::cell::{Cell, RefCell};
 use std::rc::Rc;
 
 pub(super) fn group() -> adw::PreferencesGroup {
-    let group=adw::PreferencesGroup::builder().title(i18n("Saved account security"))
-        .description(i18n("Move existing account credentials to your desktop keyring. This does not enable listening-history sharing.")).visible(false).build();
+    let description = i18n(
+        "Move existing account credentials to your desktop keyring. This does not enable listening-history sharing.",
+    );
+    let group = adw::PreferencesGroup::builder()
+        .title(i18n("Saved account security"))
+        .description(description)
+        .visible(false)
+        .build();
     for (provider, name) in [
         (Provider::LastFm, "Last.fm"),
         (Provider::ListenBrainz, "ListenBrainz"),
@@ -45,42 +51,74 @@ pub(super) fn group() -> adw::PreferencesGroup {
         let in_flight = busy.clone();
         let weak_row = row.downgrade();
         button.connect_clicked(move |button| {
-            if in_flight.replace(true) { return; }
-            let Some(review)=state.borrow().clone() else { in_flight.set(false);return; };
-            button.set_sensitive(false);let weak_button=button.downgrade();let weak_row=weak_row.clone();let state=state.clone();let in_flight=in_flight.clone();
-            if let Some(row)=weak_row.upgrade() { row.set_subtitle(&i18n("Waiting for your keyring. Unlock it if prompted…")); }
-            crate::settings::acknowledged_task(true,move || {
-                let cancel=std::sync::atomic::AtomicBool::new(false);
-                match review.kind {
-                    StorageKind::LegacyFile=>accounts::protect(&review,&cancel),
-                    StorageKind::RecoveryRequired=>accounts::recover(&review,&cancel),
-                    StorageKind::SecretService=>accounts::load(provider).and_then(|value|value.map(|_|SaveOutcome::Protected)
-                        .ok_or_else(||std::io::Error::other("account disappeared"))),
-                    StorageKind::NotConfigured=>Err(std::io::Error::other("account not configured")),
-                }
-            },move |result| {
+            if in_flight.replace(true) {
+                return;
+            }
+            let Some(review) = state.borrow().clone() else {
                 in_flight.set(false);
-                let (Some(row),Some(button))=(weak_row.upgrade(),weak_button.upgrade()) else {return;};
-                match result {
-                    Ok(SaveOutcome::Protected)=>refresh(provider,&row,&button,state,in_flight),
-                    Ok(SaveOutcome::ProtectedCleanupPending)=>{
-                        row.set_subtitle(&i18n("Credentials are protected. Cleanup of an older keyring item needs attention; retry recovery."));
-                        button.set_label(&i18n("Recover account"));button.set_sensitive(true);
-                        // Reload the exact disk revision before the next attempt.
-                        state.borrow_mut().take();
-                        refresh(provider,&row,&button,state,in_flight);
+                return;
+            };
+            button.set_sensitive(false);
+            if let Some(row) = weak_row.upgrade() {
+                row.set_subtitle(&i18n("Waiting for your keyring. Unlock it if prompted…"));
+            }
+            let weak_button = button.downgrade();
+            let weak_row = weak_row.clone();
+            let state = state.clone();
+            let in_flight = in_flight.clone();
+            crate::settings::acknowledged_task(
+                true,
+                move || {
+                    let cancel = std::sync::atomic::AtomicBool::new(false);
+                    match review.kind {
+                        StorageKind::LegacyFile => accounts::protect(&review, &cancel),
+                        StorageKind::RecoveryRequired => accounts::recover(&review, &cancel),
+                        StorageKind::SecretService => accounts::load(provider).and_then(|value| {
+                            value
+                                .map(|_| SaveOutcome::Protected)
+                                .ok_or_else(|| std::io::Error::other("account disappeared"))
+                        }),
+                        StorageKind::NotConfigured => {
+                            Err(std::io::Error::other("account not configured"))
+                        }
                     }
-                    Err(_)=>{
-                        row.set_subtitle(&i18n("The operation was not fully confirmed. Unlock the keyring, reload and retry recovery. No plaintext fallback was used."));
-                        button.set_sensitive(false);state.borrow_mut().take();
+                },
+                move |result| {
+                    in_flight.set(false);
+                    let (Some(row), Some(button)) = (weak_row.upgrade(), weak_button.upgrade())
+                    else {
+                        return;
+                    };
+                    match result {
+                        Ok(SaveOutcome::Protected) => {
+                            refresh(provider, &row, &button, state, in_flight);
+                        }
+                        Ok(SaveOutcome::ProtectedCleanupPending) => {
+                            row.set_subtitle(&i18n(
+                                "Credentials are protected. Cleanup of an older keyring item needs attention; retry recovery.",
+                            ));
+                            button.set_label(&i18n("Recover account"));
+                            button.set_sensitive(true);
+                            // Reload the exact disk revision before the next attempt.
+                            state.borrow_mut().take();
+                            refresh(provider, &row, &button, state, in_flight);
+                        }
+                        Err(_) => {
+                            row.set_subtitle(&i18n(
+                                "The operation was not fully confirmed. Unlock the keyring, reload and retry recovery. No plaintext fallback was used.",
+                            ));
+                            button.set_sensitive(false);
+                            state.borrow_mut().take();
+                        }
                     }
-                }
-            });
+                },
+            );
         });
         refresh(provider, &row, &button, reviewed, busy);
     }
     group
 }
+
 fn refresh(
     provider: Provider,
     row: &adw::ActionRow,

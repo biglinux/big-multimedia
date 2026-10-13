@@ -130,7 +130,7 @@ where
         if active {
             let revoked = Arc::new(AtomicBool::new(false));
             match remote_control::start_scoped(
-                "0.0.0.0:0".parse().expect("static socket address"),
+                std::net::SocketAddr::from(([0, 0, 0, 0], 0)),
                 (build_for_toggle)(revoked.clone()),
                 revoked,
             ) {

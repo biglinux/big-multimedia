@@ -215,7 +215,7 @@ impl BigZoneLayoutEditor {
 
         // Per-zone: drop target (reorder by pointer-x + reparent).
         for (key, zone) in &slot_boxes_strong {
-            // bigagents: app-local-dnd: moves internal control ids between zones.
+            // moves internal control ids between zones.
             let drop = gtk::DropTarget::new(String::static_type(), gdk::DragAction::MOVE);
             {
                 let zone = zone.downgrade();

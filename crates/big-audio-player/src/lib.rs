@@ -38,7 +38,7 @@ fn build_player_window(
 /// the module's lifetime; dropping the controller shuts the component tree down.
 pub struct AudioEmbed {
     /// The window mounting the player content (for the host's module handle).
-    // bigagents: app-local-window-owner: this handle is the owner the host
+    // this handle is the owner the host
     // keeps alive for the module's lifetime; a weak ref would drop the window.
     pub window: gtk::Window,
     /// The shell controller. Drives the component; dropping it tears it down.
@@ -102,9 +102,8 @@ pub fn run() -> gtk::glib::ExitCode {
     shared::app_base::init_logging(
         "big_media_runtime=info,big_audio_player=info,lofty=error,glycin=error",
     );
-    // GL instead of GTK's default Vulkan: 18 MiB less PSS at startup and the
-    // same CPU while scrolling the library (measured 2026-09-28, NVIDIA). A
-    // renderer the session exports still wins.
+    // GL instead of GTK's default Vulkan: less memory at startup for the same
+    // CPU while scrolling the library. A renderer the session exports still wins.
     shared::app_base::use_gl_renderer(false);
     shared::app_base::boot_player(&[
         big_media_runtime::resources::AUDIO,

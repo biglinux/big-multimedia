@@ -56,7 +56,6 @@ impl PlaylistActionKind {
 #[derive(Debug, PartialEq, Eq)]
 pub(super) struct SavedPlaylistRowSpec {
     pub(super) title: String,
-    pub(super) subtitle: String,
     pub(super) load_label: &'static str,
     pub(super) rename_tooltip: String,
     pub(super) export_tooltip: String,
@@ -157,20 +156,14 @@ pub(super) fn generator_action_specs() -> Vec<PlaylistActionSpec> {
         .collect()
 }
 
-pub(super) fn saved_playlist_row_spec(name: &str, count: i64, secs: f64) -> SavedPlaylistRowSpec {
+pub(super) fn saved_playlist_row_spec(name: &str) -> SavedPlaylistRowSpec {
     SavedPlaylistRowSpec {
         title: name.to_string(),
-        subtitle: saved_playlist_subtitle(count, secs),
         load_label: gettext_noop("Load"),
-        rename_tooltip: format!("Rename playlist: {name}"),
-        export_tooltip: format!("Export playlist: {name}"),
-        delete_tooltip: format!("Delete playlist: {name}"),
+        rename_tooltip: format!("{}: {name}", i18n("Rename playlist")),
+        export_tooltip: format!("{}: {name}", i18n("Export playlist")),
+        delete_tooltip: format!("{}: {name}", i18n("Delete playlist")),
     }
-}
-
-fn saved_playlist_subtitle(count: i64, secs: f64) -> String {
-    let track_label = if count == 1 { "track" } else { "tracks" };
-    format!("{count} {track_label} · {} min", (secs as i64) / 60)
 }
 
 pub(super) fn localized_saved_playlist_subtitle(count: i64, secs: f64) -> String {

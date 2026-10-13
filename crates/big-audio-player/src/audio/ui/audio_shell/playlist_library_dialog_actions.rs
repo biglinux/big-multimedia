@@ -184,44 +184,27 @@ impl AudioShell {
         };
         let parent = self.playlist_library_parent();
         let weak_parent = parent.as_ref().map(glib::object::ObjectExt::downgrade);
-        FilePicker::open_folder(i18n("Export All Playlists")).select_folder_optional(parent.as_ref(), move |folder| {
-            crate::settings::acknowledged_task(false, move || {
-                let playlists = {
-                    let conn = db.lock().map_err(|_| std::io::Error::other("Library unavailable"))?;
-                    let mut statement = conn.prepare("SELECT id,name FROM playlists ORDER BY id LIMIT 1001").map_err(std::io::Error::other)?;
-                    let rows = statement.query_map([], |row| Ok((row.get::<_, i64>(0)?, row.get::<_, String>(1)?))).map_err(std::io::Error::other)?;
-                    rows.collect::<rusqlite::Result<Vec<_>>>().map_err(std::io::Error::other)?
-                };
-                if playlists.len() > 1000 { return Err(std::io::Error::other(i18n("Too many playlists for one export"))); }
-                let mut published = 0;
-                for (id, name) in playlists {
-                    let result = (|| -> std::io::Result<()> {
-                        let items = {
-                            let conn = db.lock().map_err(|_| std::io::Error::other("Library unavailable"))?;
-                            let tracks = queries::get_playlist_tracks(&conn, id).map_err(std::io::Error::other)?;
-                            tracks.into_iter().map(|track| track.file_path).collect::<Vec<_>>()
+        FilePicker::open_folder(i18n("Export All Playlists")).select_folder_optional(
+            parent.as_ref(),
+            move |folder| {
+                crate::settings::acknowledged_task(
+                    false,
+                    move || export_playlists(&db, &folder),
+                    move |result| {
+                        let body = match result {
+                            Ok(count) => format!("{}: {count}", i18n("Playlists exported")),
+                            Err(error) => format!(
+                                "{} {error}",
+                                i18n(
+                                    "Export was not fully completed. Published files were kept; choose an empty destination and try again.",
+                                )
+                            ),
                         };
-                        let name = big_app_kit::files::sanitize_filename_stem_preserve_unicode(&name, "playlist");
-                        // ID disambiguates equal/sanitized names without overwriting.
-                        let target = folder.join(format!("{name}-{id}.m3u8"));
-                        crate::media::playlist_scan::write_m3u(&target, &items).map_err(std::io::Error::other)
-                    })();
-                    if result.is_err() {
-                        return Err(std::io::Error::other(format!("{}: {published}",i18n("Export stopped. Confirmed outputs were kept"))));
-                    }
-                    published += 1;
-                }
-                Ok(published)
-            }, move |result| {
-                let Some(parent) = weak_parent.as_ref().and_then(glib::WeakRef::upgrade) else { return; };
-                let body = match result {
-                    Ok(count) => format!("{}: {count}", i18n("Playlists exported")),
-                    Err(error) => format!("{} {error}", i18n("Export was not fully completed. Published files were kept; choose an empty destination and try again.")),
-                };
-                let dialog = adw::AlertDialog::builder().heading(i18n("Playlist export")).body(body).build();
-                dialog.add_response("close", &i18n("Close")); dialog.present(Some(&parent));
-            });
-        });
+                        show_export_result(weak_parent.as_ref(), &body);
+                    },
+                );
+            },
+        );
     }
 
     /// Persist a playlist rename, then refresh the playlist dialog.
@@ -246,21 +229,26 @@ impl AudioShell {
         };
         let parent = self.playlist_library_parent();
         let weak_parent = parent.as_ref().map(glib::object::ObjectExt::downgrade);
-        FilePicker::save_file(i18n("Export Playlist")).initial_name("playlist.m3u8")
-            .filter(&i18n("M3U8 Playlist"), &["m3u8", "m3u"]).save_optional(parent.as_ref(), move |path| {
-                crate::settings::acknowledged_task(false, move || {
-                    let items = {
-                        let conn = db.lock().map_err(|_| std::io::Error::other("Library unavailable"))?;
-                        queries::get_playlist_tracks(&conn, id).map_err(std::io::Error::other)?
-                            .into_iter().map(|track| track.file_path).collect::<Vec<_>>()
-                    };
-                    crate::media::playlist_scan::write_m3u(&path, &items).map_err(std::io::Error::other)
-                }, move |result| {
-                    let Some(parent) = weak_parent.as_ref().and_then(glib::WeakRef::upgrade) else { return; };
-                    let text = i18n(if result.is_ok() { "Playlist exported." } else { "The playlist was not exported. Check storage or choose a new filename; existing files were not replaced." });
-                    let dialog = adw::AlertDialog::builder().heading(i18n("Playlist export")).body(text).build();
-                    dialog.add_response("close", &i18n("Close")); dialog.present(Some(&parent));
-                });
+        FilePicker::save_file(i18n("Export Playlist"))
+            .initial_name("playlist.m3u8")
+            .filter(&i18n("M3U8 Playlist"), &["m3u8", "m3u"])
+            .save_optional(parent.as_ref(), move |path| {
+                crate::settings::acknowledged_task(
+                    false,
+                    move || {
+                        let items = playlist_paths(&db, id)?;
+                        crate::media::playlist_scan::write_m3u(&path, &items)
+                            .map_err(std::io::Error::other)
+                    },
+                    move |result| {
+                        let text = i18n(if result.is_ok() {
+                            "Playlist exported."
+                        } else {
+                            "The playlist was not exported. Check storage or choose a new filename; existing files were not replaced."
+                        });
+                        show_export_result(weak_parent.as_ref(), &text);
+                    },
+                );
             });
     }
 
@@ -349,4 +337,69 @@ fn import_one_playlist(
     }
     queries::create_playlist_with_tracks(&conn, name, &ids).map_err(std::io::Error::other)?;
     Ok(ids.len())
+}
+
+/// Most playlists one "Export All" run writes.
+const MAX_EXPORTED_PLAYLISTS: usize = 1000;
+
+/// Write every playlist into `folder` as `<name>-<id>.m3u8` and return how many
+/// were published. Stops at the first failure; files already written stay.
+fn export_playlists(db: &DbHandle, folder: &Path) -> std::io::Result<usize> {
+    let playlists = {
+        let conn = db
+            .lock()
+            .map_err(|_| std::io::Error::other("Library unavailable"))?;
+        let mut statement = conn
+            .prepare("SELECT id,name FROM playlists ORDER BY id LIMIT ?1")
+            .map_err(std::io::Error::other)?;
+        let rows = statement
+            .query_map([MAX_EXPORTED_PLAYLISTS as i64 + 1], |row| {
+                Ok((row.get::<_, i64>(0)?, row.get::<_, String>(1)?))
+            })
+            .map_err(std::io::Error::other)?;
+        rows.collect::<rusqlite::Result<Vec<_>>>()
+            .map_err(std::io::Error::other)?
+    };
+    if playlists.len() > MAX_EXPORTED_PLAYLISTS {
+        return Err(std::io::Error::other(i18n(
+            "Too many playlists for one export",
+        )));
+    }
+    let mut published = 0;
+    for (id, name) in playlists {
+        let name = big_app_kit::files::sanitize_filename_stem_preserve_unicode(&name, "playlist");
+        // The id keeps equal or equally sanitized names from colliding.
+        let target = folder.join(format!("{name}-{id}.m3u8"));
+        let written = playlist_paths(db, id).and_then(|items| {
+            crate::media::playlist_scan::write_m3u(&target, &items).map_err(std::io::Error::other)
+        });
+        if written.is_err() {
+            return Err(std::io::Error::other(format!(
+                "{}: {published}",
+                i18n("Export stopped. Confirmed outputs were kept")
+            )));
+        }
+        published += 1;
+    }
+    Ok(published)
+}
+
+fn playlist_paths(db: &DbHandle, id: i64) -> std::io::Result<Vec<String>> {
+    let conn = db
+        .lock()
+        .map_err(|_| std::io::Error::other("Library unavailable"))?;
+    let tracks = queries::get_playlist_tracks(&conn, id).map_err(std::io::Error::other)?;
+    Ok(tracks.into_iter().map(|track| track.file_path).collect())
+}
+
+fn show_export_result(parent: Option<&glib::WeakRef<gtk::Window>>, body: &str) {
+    let Some(parent) = parent.and_then(glib::WeakRef::upgrade) else {
+        return;
+    };
+    let dialog = adw::AlertDialog::builder()
+        .heading(i18n("Playlist export"))
+        .body(body)
+        .build();
+    dialog.add_response("close", &i18n("Close"));
+    dialog.present(Some(&parent));
 }

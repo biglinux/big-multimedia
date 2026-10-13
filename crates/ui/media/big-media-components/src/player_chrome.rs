@@ -1,10 +1,10 @@
 //! Player-UI chrome helpers shared across media-player front-ends: off-thread
 //! task spawn, play-button pulse, and the volume/speed/voice hover popovers.
 //!
-//! Extracted from `big-media-runtime` so reusable player panels (`big-player-ui`)
-//! can use them without depending on the engine runtime. i18n routes through the
-//! crate translator hook ([`crate::text::text`]); runtime re-exports these under
-//! the legacy `shared::{spawn,play_button,popovers}` paths.
+//! They live here so reusable player panels (`big-player-ui`) can use them
+//! without depending on the engine runtime. i18n routes through the crate
+//! translator hook ([`crate::text::text`]); the runtime re-exports these under
+//! `shared::{spawn,play_button,popovers}`.
 
 use std::time::Duration;
 

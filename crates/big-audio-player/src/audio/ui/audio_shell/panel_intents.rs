@@ -74,8 +74,10 @@ impl AudioShell {
             }
             LibraryPanelOutput::AddWatchFolder { path } => {
                 match path.to_str() {
-                    Some(path)=>self.scan_folder(path.to_owned(),sender),
-                    None=>self.notify(&i18n("This folder name cannot yet be stored in the library. No path was changed or imported.")),
+                    Some(path) => self.scan_folder(path.to_owned(), sender),
+                    None => self.notify(&i18n(
+                        "This folder name cannot yet be stored in the library. No path was changed or imported.",
+                    )),
                 }
             }
             LibraryPanelOutput::ReviewUnavailable => {
@@ -104,11 +106,13 @@ impl AudioShell {
                 spawn_blocking_result(
                     move || playlist_import::parse_playlist_file_for_import(&path),
                     move |result| {
-                        let message=match result {
-                            Ok(paths)=>AudioShellInput::ImportPaths(paths),
-                            Err(_)=>AudioShellInput::Notify(i18n("The playlist could not be read safely. Check its format and permissions.")),
+                        let message = match result {
+                            Ok(paths) => AudioShellInput::ImportPaths(paths),
+                            Err(_) => AudioShellInput::Notify(i18n(
+                                "The playlist could not be read safely. Check its format and permissions.",
+                            )),
                         };
-                        let _=input.send(message);
+                        let _ = input.send(message);
                     },
                 );
             }

@@ -177,7 +177,9 @@ impl AudioShell {
             AudioShellInput::RebuildLibraryTree => self.rebuild_library_tree(&sender),
             AudioShellInput::LibraryTreeFailed { generation } => {
                 if self.library_generation.is_current(generation) {
-                    self.playback_bar.emit(AudioPlaybackBarInput::SetStatus(i18n("The library could not be read. Previous results were kept; try searching again.")));
+                    self.playback_bar.emit(AudioPlaybackBarInput::SetStatus(i18n(
+                        "The library could not be read. Previous results were kept; try searching again.",
+                    )));
                 }
             }
             AudioShellInput::LibraryTreeResolved { generation, data } => {
@@ -297,8 +299,13 @@ impl AudioShell {
             }
             AudioShellInput::PlaylistImported(result) => {
                 match result {
-                    Ok(added)=>self.notify(&format!("{added} {}",i18n("tracks imported"))),
-                    Err(error)=>self.notify(&format!("{} {error}",i18n("Playlist import was not fully completed. Previously confirmed imports were kept."))),
+                    Ok(added) => self.notify(&format!("{added} {}", i18n("tracks imported"))),
+                    Err(error) => self.notify(&format!(
+                        "{} {error}",
+                        i18n(
+                            "Playlist import was not fully completed. Previously confirmed imports were kept.",
+                        )
+                    )),
                 }
                 sender.input(AudioShellInput::RefreshPlaylists);
             }

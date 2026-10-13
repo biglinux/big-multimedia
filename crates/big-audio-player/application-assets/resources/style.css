@@ -1,4 +1,4 @@
-/* Big Audio Player — Premium Design */
+/* Big Audio Player */
 
 /* ─── Global ─── */
 window.background {
@@ -10,12 +10,12 @@ headerbar {
     min-height: 40px;
 }
 
-/* Content headerbar — clean, no bottom shadow */
+/* Content headerbar without a bottom shadow */
 #content_header {
     border-bottom: 1px solid alpha(@window_fg_color, 0.06);
 }
 
-/* ViewSwitcher tabs — clean, pill-shaped, elastic sizing */
+/* ViewSwitcher tabs: pill-shaped, elastic sizing */
 viewswitcher > button {
     border-radius: 8px;
     padding: 4px 4px;
@@ -36,7 +36,7 @@ viewswitcher > button label {
     min-width: 0;
 }
 
-/* Custom tab bar — compact icon+label toggle buttons */
+/* Custom tab bar: compact icon+label toggle buttons */
 .tab-bar {
     margin: 0 2px;
 }
@@ -86,14 +86,14 @@ viewswitcher > button:hover:not(:checked) {
     background-color: @sidebar_bg_color;
 }
 
-/* Sidebar headerbar — blend with sidebar background */
+/* Sidebar headerbar: blend with sidebar background */
 .sidebar-pane headerbar {
     background: transparent;
     box-shadow: none;
     border-bottom: 1px solid alpha(@window_fg_color, 0.06);
 }
 
-/* Sort dropdown — minimal */
+/* Sort dropdown: minimal */
 .sidebar-pane dropdown > button {
     background: none;
     box-shadow: none;
@@ -142,7 +142,7 @@ viewswitcher > button:hover:not(:checked) {
     font-size: 0.85em;
 }
 
-/* Now Playing sidebar bottom — hover effect */
+/* Now Playing sidebar bottom: hover effect */
 #sidebar_now_playing {
     border-radius: 8px;
     transition: background-color 200ms ease;
@@ -153,12 +153,12 @@ viewswitcher > button:hover:not(:checked) {
     background: alpha(@accent_bg_color, 0.06);
 }
 
-/* ─── ColumnView (track list) — clean and modern ─── */
+/* ─── ColumnView (track list) ─── */
 columnview {
     background: transparent;
 }
 
-/* Column headers — subtle and light */
+/* Column headers: subtle and light */
 columnview > header > row {
     background: transparent;
     border-bottom: 1px solid alpha(@window_fg_color, 0.06);
@@ -222,7 +222,7 @@ columnview > listview > row.now-playing {
     font-weight: 600;
 }
 
-/* Numeric cells — dim style */
+/* Numeric cells: dim style */
 .numeric {
     color: alpha(@window_fg_color, 0.55);
     font-variant-numeric: tabular-nums;
@@ -244,7 +244,7 @@ columnview > listview > row.now-playing {
     border-radius: 8px;
     min-width: 48px;
     min-height: 48px;
-    /* GTK4 CSS has no max-width/max-height — constrain via min only */
+    /* GTK4 CSS has no max-width/max-height: constrain via min only */
     box-shadow: 0 2px 8px alpha(black, 0.10);
     transition: box-shadow 250ms ease;
 }
@@ -313,7 +313,7 @@ columnview > listview > row.now-playing {
     font-size: 0.9em;
 }
 
-/* ─── Seek bar — polished with hover effect ─── */
+/* ─── Seek bar with hover effect ─── */
 .playback-bar scale trough {
     min-height: 4px;
     border-radius: 2px;
@@ -366,7 +366,7 @@ popover scale.vertical slider {
     border-radius: 50%;
 }
 
-/* Speed scale — no custom trough color, use accent */
+/* Speed scale: no custom trough color, use accent */
 popover scale.vertical:not(.volume-scale):not(.voice-scale) highlight {
     background: @accent_bg_color;
 }
@@ -387,7 +387,7 @@ popover scale.vertical:not(.volume-scale):not(.voice-scale) highlight {
     color: @accent_bg_color;
 }
 
-/* Playback buttons — subtle */
+/* Playback buttons: subtle */
 .playback-bar button.flat,
 .playback-bar button:not(.suggested-action) {
     min-width: 32px;
@@ -402,7 +402,7 @@ popover scale.vertical:not(.volume-scale):not(.voice-scale) highlight {
     background: alpha(@window_fg_color, 0.08);
 }
 
-/* Play button — accent circle with subtle glow */
+/* Play button: accent circle with subtle glow */
 .playback-bar button.circular.suggested-action {
     min-width: 44px;
     min-height: 44px;
@@ -425,9 +425,9 @@ statuspage .icon {
 }
 
 /* ─── Focus ─── */
-/* Use libadwaita defaults — no global override needed */
+/* Use libadwaita defaults: no global override needed */
 
-/* ─── GtkPaned separator — minimal ─── */
+/* ─── GtkPaned separator: minimal ─── */
 paned > separator {
     min-width: 1px;
     background-color: alpha(@window_fg_color, 0.06);

@@ -76,8 +76,8 @@ package() {
   done > "$pkgdir/usr/share/licenses/${pkgname}/MIT-shaders"
 
   # Shared gettext catalog (single `big-media-runtime` textdomain, bound by
-  # shared::app_base::init_gettext). Installed under this package's PRIVATE
-  # locale dir — resolve_locale_dir() prefers it — so a video-only install is
+  # shared::app_base::init_gettext). Installed under this package's private
+  # locale dir, which resolve_locale_dir() prefers, so a video-only install is
   # translated and the two co-installable players never collide on one file in
   # /usr/share/locale. Vendored at crates/media-runtime/po.
   local po="${root}/crates/media-runtime/po"

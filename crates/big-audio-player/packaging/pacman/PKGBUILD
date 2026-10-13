@@ -51,8 +51,8 @@ package() {
     "$pkgdir/usr/share/icons/hicolor/scalable/apps/big-audio-player.svg"
 
   # Shared gettext catalog (single `big-media-runtime` textdomain, bound by
-  # shared::app_base::init_gettext). Installed under this package's PRIVATE
-  # locale dir — resolve_locale_dir() prefers it — so both co-installable
+  # shared::app_base::init_gettext). Installed under this package's private
+  # locale dir, which resolve_locale_dir() prefers, so both co-installable
   # players can ship the catalog without colliding on one file in
   # /usr/share/locale. Vendored at crates/media-runtime/po.
   local po="${root}/crates/media-runtime/po"

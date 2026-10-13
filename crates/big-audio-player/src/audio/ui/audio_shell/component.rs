@@ -95,9 +95,6 @@ impl Component for AudioShell {
                 .upcast(),
             })
             .forward(sender.input_sender(), AudioShellInput::Playback);
-        // The queue is always visible (right pane), so the transport's playlist
-        // toggle is redundant, so hide it.
-        playback_bar.emit(AudioPlaybackBarInput::SetPlaylistButtonVisible(false));
         playback_bar.emit(AudioPlaybackBarInput::SetPaused(true));
         let files = FileBrowser::builder()
             .launch(FileBrowserConfig {

@@ -48,7 +48,7 @@ fn embed_boot() {
 /// component tree down.
 pub struct VideoEmbed {
     /// The window mounting the player content (for the host's module handle).
-    // bigagents: app-local-window-owner: a transient transfer handle, not a
+    // a transient transfer handle, not a
     // signal-captured field: the host immediately moves this into its
     // `OpenModuleHandle.window` (the real owner) and drops the `VideoEmbed`.
     pub window: gtk::Window,

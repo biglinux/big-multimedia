@@ -96,19 +96,14 @@ fn playlist_library_action_specs_preserve_sidebar_order() {
 #[test]
 fn saved_row_formats_counts_and_minutes() {
     assert_eq!(
-        saved_playlist_row_spec("Road Mix", 1, 125.0),
+        saved_playlist_row_spec("Road Mix"),
         SavedPlaylistRowSpec {
             title: "Road Mix".to_string(),
-            subtitle: "1 track · 2 min".to_string(),
             load_label: "Load",
             rename_tooltip: "Rename playlist: Road Mix".to_string(),
             export_tooltip: "Export playlist: Road Mix".to_string(),
             delete_tooltip: "Delete playlist: Road Mix".to_string(),
         }
-    );
-    assert_eq!(
-        saved_playlist_row_spec("Night Mix", 4, 360.0).subtitle,
-        "4 tracks · 6 min"
     );
     assert_eq!(
         localized_saved_playlist_subtitle(1, 125.0),

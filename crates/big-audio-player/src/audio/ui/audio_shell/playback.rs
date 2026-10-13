@@ -89,9 +89,6 @@ impl AudioShell {
                 self.playback_bar
                     .emit(AudioPlaybackBarInput::SetShuffleActive(active));
             }
-            // The queue lives in the always-visible right content pane now, so
-            // the playlist button is a no-op (kept for transport-bar API parity).
-            AudioPlaybackBarOutput::ShowPlaylist => {}
             AudioPlaybackBarOutput::ShowTrimExport => {
                 sender.input(AudioShellInput::ShowTrimExport);
             }
@@ -172,7 +169,6 @@ pub(super) fn transport_labels() -> BigAudioTransportLabels {
         voice: i18n("Voice Enhancement"),
         trim_export: i18n("Trim & Export"),
         lyrics: i18n("Lyrics"),
-        playlist: i18n("Playlist"),
         status: i18n("Status"),
         album_art: i18n("Album art"),
     }

@@ -88,10 +88,3 @@ unused_mut = "warn"
 unreachable_code = "warn"
 unreachable_patterns = "warn"
 trivial_numeric_casts = "warn"
-
-# caveman: cargo-machete ignore list (allow-list false positives)
-[package.metadata.cargo-machete]
-ignored = []
-
-# Workspace-level config (members, [profile.release], machete) lives in the
-# big-multimedia root Cargo.toml.

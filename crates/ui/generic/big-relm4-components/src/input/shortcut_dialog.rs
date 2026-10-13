@@ -166,7 +166,7 @@ impl BigShortcutRowHandle {
 /// by category, with per-row reset and capture affordances.
 #[derive(Debug, Clone)]
 pub struct BigShortcutDialog {
-    // bigagents: app-local-window-owner: this handle is the window's owner
+    // this handle is the window's owner
     // (builds, presents, exposes it via `window()`); no signal handler captures
     // it, so there is no window ⇄ handler cycle. Consumers capture weakly.
     window: adw::Window,

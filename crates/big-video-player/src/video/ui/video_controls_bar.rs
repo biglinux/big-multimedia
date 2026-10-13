@@ -251,9 +251,8 @@ impl Component for VideoControlsBar {
         position_button.update_property(&[gtk::accessible::Property::Label(&i18n("Go to time"))]);
         position_button.set_tooltip_text(Some(&i18n("Go to time")));
         position_button.set_cursor_from_name(Some("pointer"));
-        // The elapsed-time counter opens the "Go to time" dialog (the menu entry
-        // was moved here). Keep it a real button so AT-SPI and keyboard users
-        // have the same path as pointer users.
+        // The elapsed-time counter opens the "Go to time" dialog. Keep it a real
+        // button so AT-SPI and keyboard users have the same path as pointer users.
         {
             let sender = sender.clone();
             position_button.connect_clicked(move |_| {

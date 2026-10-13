@@ -47,7 +47,7 @@ impl Default for FaviconLruCache {
 
 /// Returns `None` when the XDG cache dir is unavailable. Refusing to
 /// fall back to `/tmp` closes the symlink-attack vector on a world-writable
-/// directory (Stage 5 M2).
+/// directory.
 fn favicon_cache_dir() -> Option<std::path::PathBuf> {
     Some(
         big_os_kit::xdg_dirs::cache_dir()?

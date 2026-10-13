@@ -332,7 +332,7 @@ fn install_library_menu(
         Some(add_selected_label),
         Some("files.add-selected-to-library"),
     );
-    // bigagents: popover-parent-managed: single reused context menu
+    // single reused context menu
     // (gesture pops it up per right-click) parented on the list view.
     // GtkListView does not unparent foreign children at dispose (it
     // finalizes "with children left" and the popover leaks), so detach at

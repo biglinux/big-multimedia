@@ -5,7 +5,7 @@
 //!
 //! Unlike a video transport, the audio one
 //! carries hover-driven volume/speed/voice controls, shuffle/repeat toggles,
-//! a lyrics toggle and a playlist button, plus a status label and a blurred
+//! a lyrics toggle, plus a status label and a blurred
 //! album-art background, and it has no fullscreen or frame-step controls.
 //!
 //! This builder owns the widget tree only. mpv/MPRIS/settings side effects and
@@ -33,7 +33,6 @@ pub struct BigAudioTransportLabels {
     pub voice: String,
     pub trim_export: String,
     pub lyrics: String,
-    pub playlist: String,
     pub status: String,
     pub album_art: String,
 }
@@ -62,7 +61,7 @@ impl BigAudioTransportSpec {
 }
 
 /// Audio transport widget tree: seek row, hover volume/speed/voice, transport
-/// buttons, shuffle/repeat/lyrics/playlist, status label, blurred art overlay.
+/// buttons, shuffle/repeat/lyrics, status label, blurred art overlay.
 ///
 /// Built once per player via [`BigAudioTransport::new`]; the accessors expose
 /// each interactive widget so the app can wire mpv/MPRIS side effects and the
@@ -76,7 +75,7 @@ impl BigAudioTransportSpec {
 /// };
 ///
 /// let bar = BigAudioTransport::new(
-///     BigAudioTransportSpec::new(BigAudioTransportLabels::english()),
+///     BigAudioTransportSpec::new(labels),
 /// );
 /// toolbar_view.add_bottom_bar(bar.root());
 /// bar.play_button().connect_clicked(|_| toggle_playback());
@@ -107,7 +106,6 @@ pub struct BigAudioTransport {
     shuffle_button: gtk::ToggleButton,
     repeat_button: gtk::ToggleButton,
     lyrics_button: gtk::ToggleButton,
-    playlist_button: gtk::Button,
     blur_bg: gtk::Picture,
 }
 
@@ -191,7 +189,7 @@ impl BigAudioTransport {
         center_box.append(&next_button);
         controls_row.set_center_widget(Some(&center_box));
 
-        // end: status / trim-export / shuffle / repeat / lyrics / playlist
+        // end: status / trim-export / shuffle / repeat / lyrics
         let status_label = gtk::Label::builder()
             .label("")
             .xalign(1.0)
@@ -220,8 +218,6 @@ impl BigAudioTransport {
         let lyrics_button =
             tooltip::icon_toggle_button("format-text-italic-symbolic", &labels.lyrics, false, &[]);
         lyrics_button.set_has_frame(false);
-        let playlist_button = tooltip::icon_button("view-list-symbolic", &labels.playlist, &[]);
-        playlist_button.set_has_frame(false);
         let end_box = gtk::Box::builder()
             .spacing(4)
             .valign(gtk::Align::Center)
@@ -231,7 +227,6 @@ impl BigAudioTransport {
         end_box.append(&shuffle_button);
         end_box.append(&repeat_button);
         end_box.append(&lyrics_button);
-        end_box.append(&playlist_button);
         controls_row.set_end_widget(Some(&end_box));
 
         playback_bar.append(&controls_row);
@@ -281,7 +276,6 @@ impl BigAudioTransport {
             shuffle_button,
             repeat_button,
             lyrics_button,
-            playlist_button,
             blur_bg,
         }
     }
@@ -429,12 +423,6 @@ impl BigAudioTransport {
     #[must_use]
     pub fn lyrics_button(&self) -> &gtk::ToggleButton {
         &self.lyrics_button
-    }
-
-    /// Borrow the playlist button.
-    #[must_use]
-    pub fn playlist_button(&self) -> &gtk::Button {
-        &self.playlist_button
     }
 
     /// Borrow the blurred album-art background picture.
