@@ -8,10 +8,8 @@ pub use big_media_components::player_chrome::{
     setup_exclusive_hover_popover_group, setup_hover_controller_exclusive,
 };
 
-use gtk::prelude::*;
-
 use crate::player::mpv_backend::MpvBackend;
-use crate::settings::{self, Settings, keys};
+use crate::settings::{Settings, keys};
 use crate::shared::audio_effects;
 use std::cell::{Cell, RefCell};
 use std::rc::Rc;
@@ -81,15 +79,4 @@ pub fn handle_voice_strength_changed(
         state.rebuild.replace(Some(source));
     }
     is_active
-}
-
-pub fn show_nr_settings_dialog(
-    settings: &Settings,
-    mpv: Option<&Arc<MpvBackend>>,
-    parent: &impl gtk::prelude::IsA<gtk::Window>,
-) {
-    let dialog = audio_effects::create_nr_settings_dialog(settings, mpv);
-    dialog.set_transient_for(Some(parent));
-    settings::bind_dialog_size_persistence(&dialog, settings, "nr-settings", 840, 580);
-    dialog.present();
 }

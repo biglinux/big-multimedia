@@ -41,6 +41,8 @@ pub(super) fn defaults() -> HashMap<String, String> {
     values.insert("noise-strength".into(), "0.0".into());
     values.insert("noise-model".into(), "0".into());
     values.insert("noise-mono".into(), "false".into());
+    values.insert("noise-voice-only".into(), "false".into());
+    values.insert("noise-voice-sensitivity".into(), "3".into());
     values.insert("eq-bands".into(), String::new());
     values.insert("eq-preset".into(), "flat".into());
 

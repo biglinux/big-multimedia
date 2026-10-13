@@ -18,6 +18,7 @@ pub(super) fn valid(key: &str, value: &str) -> bool {
         | "auto-window-resize"
         | "audio-normalize"
         | "noise-mono"
+        | "noise-voice-only"
         | "audio-pitch-correction"
         | "sub-bold"
         | "sub-scale-with-window"
@@ -90,6 +91,7 @@ pub(super) fn valid(key: &str, value: &str) -> bool {
         | "audio-volume"
         | "sleep-timer-minutes" => value.parse::<i32>().is_ok(),
         "tv-resolution" => matches!(value, "0" | "720" | "1080" | "1440" | "2160"),
+        "noise-voice-sensitivity" => matches!(value, "1" | "2" | "3" | "4" | "5"),
         "volume"
         | "sub-border-size"
         | "sub-shadow-offset"

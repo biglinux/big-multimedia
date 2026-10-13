@@ -19,6 +19,7 @@ fn make_fx(normalize: bool, eq_bands: &[(f64, f64)]) -> AudioEffects<'_> {
         nr_strength: 0.0, // nr requires ladspa plugin lookup; skip
         nr_model: 0,
         nr_mono: false,
+        nr_voice_only: None,
         eq_bands,
     }
 }

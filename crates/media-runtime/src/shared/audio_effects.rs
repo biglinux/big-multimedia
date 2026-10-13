@@ -1,12 +1,9 @@
 //! bigagents: app-local-adapter; binds audio effect components to mpv/settings/noise-reduction runtime.
 
-use std::sync::{Arc, Weak};
+use std::rc::Rc;
 
 use adw::prelude::*;
 use big_audio_effects::noise_reduction::{MODELS, NoiseModel, any_model_available};
-use big_relm4_components::layout::toolbar_pane::{
-    BigToolbarHeader, BigToolbarHeaderSpec, BigToolbarPane, BigToolbarPaneSpec,
-};
 
 use crate::i18n::i18n;
 use crate::player::mpv_backend::MpvBackend;
@@ -26,33 +23,6 @@ pub fn parse_eq_bands(eq_str: &str) -> [f64; 10] {
 }
 
 pub(crate) use big_audio_effects::equalizer::EQ_BAND_LABELS as EQ_LABELS;
-
-/// Dropdown labels, naming the package a missing model needs.
-#[must_use]
-pub fn noise_model_labels() -> Vec<String> {
-    MODELS
-        .iter()
-        .map(|model| {
-            let label = match model {
-                NoiseModel::DeepFilterNet3 => i18n("Light — DeepFilterNet3"),
-                NoiseModel::DpdfNet2 => i18n("Higher quality — DPDFNet-2 48 kHz"),
-            };
-            if model.plugin_available() {
-                label
-            } else {
-                format!(
-                    "{label} ({})",
-                    i18n("Unavailable: install {package}").replace("{package}", model.package())
-                )
-            }
-        })
-        .collect()
-}
-
-#[must_use]
-pub fn noise_model_index(model: i32) -> u32 {
-    NoiseModel::from_i32_or_default(model).index()
-}
 
 #[must_use]
 pub fn has_noise_reduction_backend() -> bool {
@@ -77,6 +47,7 @@ pub fn rebuild_filters(
         nr_strength,
         nr_model,
         nr_mono: settings.get_bool(keys::NOISE_MONO),
+        nr_voice_only: settings.noise_voice_only(),
         eq_bands: &eq,
     });
 }
@@ -87,178 +58,219 @@ pub fn apply_voice_change(settings: &crate::settings::Settings, mpv: &MpvBackend
     rebuild_filters(settings, &gains, mpv);
 }
 
-/// Model choice for the voice noise reduction. A change rebuilds the running
-/// chain; the dialog holds the player weakly, so it never keeps it alive.
-pub fn create_nr_settings_dialog(
+/// The noise reduction's settings, shown beside the voice slider as in the
+/// BigLinux converters: the model, mono, and keeping only speech. Each
+/// change is saved, then `on_change` runs to rebuild the playing chain.
+pub fn nr_settings_panel(
     settings: &crate::settings::Settings,
-    mpv: Option<&Arc<MpvBackend>>,
-) -> adw::Window {
-    let content = gtk::Box::builder()
+    on_change: impl Fn() + 'static,
+) -> gtk::Box {
+    let on_change: Rc<dyn Fn()> = Rc::new(on_change);
+    let panel = gtk::Box::builder()
         .orientation(gtk::Orientation::Vertical)
-        .spacing(16)
-        .margin_top(16)
-        .margin_bottom(24)
-        .margin_start(24)
-        .margin_end(24)
+        .spacing(10)
+        .width_request(300)
+        .valign(gtk::Align::Center)
         .build();
+    append_model_choice(&panel, settings, &on_change);
+    panel.append(&gtk::Separator::new(gtk::Orientation::Horizontal));
 
-    let intro = gtk::Label::builder()
-        .label(i18n(
-            "A neural network separates voice from background noise while \
-             the video or music plays. The strength slider sets how much \
-             noise is removed.",
-        ))
-        .wrap(true)
-        .xalign(0.0)
-        .build();
-    intro.add_css_class("dim-label");
-    intro.set_margin_bottom(4);
-    content.append(&intro);
-
-    let (model_card, model_dropdown) = build_model_card(settings);
-    content.append(&model_card);
-
+    let mono = switch_line(
+        &i18n("Convert to mono before filtering"),
+        settings.get_bool(keys::NOISE_MONO),
+    );
     {
         let s = settings.clone();
-        let mpv: Weak<MpvBackend> = mpv.map(Arc::downgrade).unwrap_or_default();
-        model_dropdown.connect_selected_notify(move |dd| {
-            let _ = s.put_int(keys::NOISE_MODEL, dd.selected() as i32);
-            if let Some(mpv) = mpv.upgrade()
-                && s.get_double(keys::NOISE_STRENGTH) > 0.0
-            {
-                apply_voice_change(&s, &mpv);
-            }
+        let on_change = on_change.clone();
+        mono.1.connect_active_notify(move |switch| {
+            let _ = s.put_bool(keys::NOISE_MONO, switch.is_active());
+            on_change();
         });
     }
-
-    let mono_row = adw::SwitchRow::builder()
-        .title(i18n("Convert to mono before filtering"))
-        .subtitle(i18n(
-            "Mixes all channels into one before removing noise: half the \
-             processing, and every speaker plays the same cleaned voice. \
-             The stereo placement of sounds is lost.",
-        ))
-        .active(settings.get_bool(keys::NOISE_MONO))
-        .build();
-    let mono_list = gtk::ListBox::builder()
-        .selection_mode(gtk::SelectionMode::None)
-        .build();
-    mono_list.add_css_class("boxed-list");
-    mono_list.append(&mono_row);
-    content.append(&mono_list);
-    {
-        let s = settings.clone();
-        let mpv: Weak<MpvBackend> = mpv.map(Arc::downgrade).unwrap_or_default();
-        mono_row.connect_active_notify(move |row| {
-            let _ = s.put_bool(keys::NOISE_MONO, row.is_active());
-            if let Some(mpv) = mpv.upgrade()
-                && s.get_double(keys::NOISE_STRENGTH) > 0.0
-            {
-                apply_voice_change(&s, &mpv);
-            }
-        });
-    }
-
-    let scroll = gtk::ScrolledWindow::builder()
-        .hscrollbar_policy(gtk::PolicyType::Never)
-        .vscrollbar_policy(gtk::PolicyType::Automatic)
-        .build();
-    scroll.set_child(Some(&content));
-
-    let dialog = adw::Window::builder()
-        .title(i18n("Noise reduction settings"))
-        .default_width(840)
-        .default_height(580)
-        .modal(false)
-        .build();
-
-    let toolbar_pane = BigToolbarPane::new(BigToolbarPaneSpec::new());
-    let header = BigToolbarHeader::new(BigToolbarHeaderSpec::new());
-    toolbar_pane.add_top_bar(header.root());
-    toolbar_pane.set_content(&scroll);
-    let toolbar_view = toolbar_pane.into_root();
-    dialog.set_content(Some(&toolbar_view));
-
-    crate::settings::saving::bind_write_drain(&dialog);
-    dialog
+    panel.append(&mono.0);
+    append_voice_only(&panel, settings, &on_change);
+    panel
 }
 
-fn build_model_card(settings: &crate::settings::Settings) -> (gtk::Box, gtk::DropDown) {
-    let model_card = gtk::Box::builder()
-        .orientation(gtk::Orientation::Vertical)
-        .spacing(0)
-        .build();
-    model_card.add_css_class("card");
-
-    let model_inner = gtk::Box::builder()
-        .orientation(gtk::Orientation::Vertical)
-        .spacing(8)
-        .margin_top(16)
-        .margin_bottom(16)
-        .margin_start(16)
-        .margin_end(16)
-        .build();
-
-    let model_header = gtk::Box::builder()
-        .orientation(gtk::Orientation::Horizontal)
-        .spacing(10)
-        .build();
-    let model_icon = gtk::Image::from_icon_name("audio-input-microphone-symbolic");
-    model_icon.set_pixel_size(24);
-    model_icon.set_valign(gtk::Align::Center);
-    model_header.append(&model_icon);
-    let model_title = gtk::Label::builder()
-        .label(i18n("Noise Reduction Model"))
-        .hexpand(true)
+/// DeepFilterNet3 and DPDFNet-2 as two choices, and the package a missing
+/// one needs.
+fn append_model_choice(
+    panel: &gtk::Box,
+    settings: &crate::settings::Settings,
+    on_change: &Rc<dyn Fn()>,
+) {
+    let quality = gtk::Label::builder()
+        .label(i18n("Cleaning quality"))
         .xalign(0.0)
+        .css_classes(["heading"])
         .build();
-    model_title.add_css_class("heading");
-    model_header.append(&model_title);
-    model_inner.append(&model_header);
-
-    let model_desc = gtk::Label::builder()
-        .label(i18n(
-            "Selects which AI model separates your voice from background noise.",
-        ))
-        .wrap(true)
-        .xalign(0.0)
-        .build();
-    model_desc.add_css_class("dim-label");
-    model_inner.append(&model_desc);
-
-    let options_box = gtk::Box::builder()
-        .orientation(gtk::Orientation::Vertical)
-        .spacing(4)
-        .margin_top(4)
-        .build();
-    for text in [
-        i18n("• DeepFilterNet3 — For speech. Uses less processing."),
-        i18n("• DPDFNet-2 48 kHz — For speech. Higher quality, more processing."),
-    ] {
-        let label = gtk::Label::builder()
-            .label(text)
-            .wrap(true)
-            .xalign(0.0)
-            .build();
-        label.add_css_class("dim-label");
-        options_box.append(&label);
+    panel.append(&quality);
+    let (models, missing) = model_toggles();
+    let stored = NoiseModel::from_i32_or_default(settings.get_int(keys::NOISE_MODEL));
+    models.set_active_name(Some(&stored.index().to_string()));
+    {
+        let s = settings.clone();
+        let on_change = on_change.clone();
+        models.connect_active_name_notify(move |group| {
+            let Some(index) = group
+                .active_name()
+                .and_then(|name| name.parse::<i32>().ok())
+            else {
+                return;
+            };
+            if s.get_int(keys::NOISE_MODEL) != index {
+                let _ = s.put_int(keys::NOISE_MODEL, index);
+                on_change();
+            }
+        });
     }
-    model_inner.append(&options_box);
+    panel.append(&models);
+    for package in missing {
+        panel.append(
+            &gtk::Label::builder()
+                .label(i18n("Unavailable: install {package}").replace("{package}", package))
+                .xalign(0.0)
+                .wrap(true)
+                .css_classes(["caption", "warning"])
+                .build(),
+        );
+    }
+}
 
-    let labels = noise_model_labels();
-    let label_refs: Vec<&str> = labels.iter().map(String::as_str).collect();
-    let model_dropdown = gtk::DropDown::from_strings(&label_refs);
-    model_dropdown.update_property(&[gtk::accessible::Property::Label(&i18n(
-        "Noise reduction model",
-    ))]);
-    let stored_model = settings.get_int(keys::NOISE_MODEL);
-    model_dropdown.set_selected(noise_model_index(stored_model));
-    model_dropdown.set_margin_top(4);
-    model_inner.append(&model_dropdown);
+/// One toggle per model, a missing one disabled, and the packages missing.
+fn model_toggles() -> (adw::ToggleGroup, Vec<&'static str>) {
+    let models = adw::ToggleGroup::builder()
+        .homogeneous(true)
+        .hexpand(true)
+        .build();
+    models.update_property(&[gtk::accessible::Property::Label(&i18n("Cleaning quality"))]);
+    let mut missing = Vec::new();
+    for model in MODELS {
+        // Named by what the choice changes.
+        let label = match model {
+            NoiseModel::DeepFilterNet3 => i18n("Faster"),
+            NoiseModel::DpdfNet2 => i18n("Better, slower"),
+        };
+        if !model.plugin_available() {
+            missing.push(model.package());
+        }
+        models.add(
+            adw::Toggle::builder()
+                .label(label)
+                .name(model.index().to_string())
+                .enabled(model.plugin_available())
+                .build(),
+        );
+    }
+    (models, missing)
+}
 
-    model_card.append(&model_inner);
+/// The voice-only switch and its detection sensitivity, named from 1, very
+/// sensitive, to 5, very strict.
+fn append_voice_only(
+    panel: &gtk::Box,
+    settings: &crate::settings::Settings,
+    on_change: &Rc<dyn Fn()>,
+) {
+    // The denoiser mutes what its voice detector does not take for a voice:
+    // music, noise and the silence between words.
+    let voice_only = switch_line(
+        &i18n("Audio only when a voice is detected"),
+        settings.get_bool(keys::NOISE_VOICE_ONLY),
+    );
+    panel.append(&voice_only.0);
 
-    (model_card, model_dropdown)
+    let names = [
+        i18n("Very sensitive"),
+        i18n("Sensitive"),
+        i18n("Normal"),
+        i18n("Strict"),
+        i18n("Very strict"),
+    ];
+    let level = settings.get_int(keys::NOISE_VOICE_SENSITIVITY).clamp(1, 5);
+    let (heading, level_name, scale) = detection_controls(level, &names);
+    let detection = gtk::Box::builder()
+        .orientation(gtk::Orientation::Vertical)
+        .sensitive(voice_only.1.is_active())
+        .build();
+    detection.append(&heading);
+    detection.append(&scale);
+    panel.append(&detection);
+    {
+        let s = settings.clone();
+        let on_change = on_change.clone();
+        let detection = detection.downgrade();
+        voice_only.1.connect_active_notify(move |switch| {
+            let _ = s.put_bool(keys::NOISE_VOICE_ONLY, switch.is_active());
+            if let Some(detection) = detection.upgrade() {
+                detection.set_sensitive(switch.is_active());
+            }
+            on_change();
+        });
+    }
+    {
+        let s = settings.clone();
+        let on_change = on_change.clone();
+        let level_name = level_name.downgrade();
+        scale.connect_value_changed(move |scale| {
+            let level = scale.value().round().clamp(1.0, 5.0) as i32;
+            if s.get_int(keys::NOISE_VOICE_SENSITIVITY) == level {
+                return;
+            }
+            let _ = s.put_int(keys::NOISE_VOICE_SENSITIVITY, level);
+            if let Some(level_name) = level_name.upgrade() {
+                level_name.set_label(&names[(level - 1) as usize]);
+            }
+            on_change();
+        });
+    }
+}
+
+/// The detection heading, which names `level`, and its five-step scale.
+fn detection_controls(level: i32, names: &[String; 5]) -> (gtk::Box, gtk::Label, gtk::Scale) {
+    let level_name = gtk::Label::builder()
+        .label(names[(level - 1) as usize].as_str())
+        .css_classes(["dim-label"])
+        .build();
+    let heading = gtk::Box::builder().spacing(12).build();
+    heading.append(
+        &gtk::Label::builder()
+            .label(i18n("Voice detection"))
+            .xalign(0.0)
+            .hexpand(true)
+            .build(),
+    );
+    heading.append(&level_name);
+    let scale = gtk::Scale::with_range(gtk::Orientation::Horizontal, 1.0, 5.0, 1.0);
+    scale.set_round_digits(0);
+    scale.set_draw_value(false);
+    scale.set_value(f64::from(level));
+    for mark in 1..=5 {
+        scale.add_mark(f64::from(mark), gtk::PositionType::Bottom, None);
+    }
+    scale.update_property(&[gtk::accessible::Property::Label(&i18n("Voice detection"))]);
+    (heading, level_name, scale)
+}
+
+/// A wrapping label and its switch, the label naming the switch.
+fn switch_line(label: &str, active: bool) -> (gtk::Box, gtk::Switch) {
+    let line = gtk::Box::builder().spacing(12).build();
+    line.append(
+        &gtk::Label::builder()
+            .label(label)
+            .xalign(0.0)
+            .wrap(true)
+            .max_width_chars(26)
+            .hexpand(true)
+            .build(),
+    );
+    let switch = gtk::Switch::builder()
+        .active(active)
+        .valign(gtk::Align::Center)
+        .build();
+    switch.update_property(&[gtk::accessible::Property::Label(label)]);
+    line.append(&switch);
+    (line, switch)
 }
 
 #[cfg(test)]

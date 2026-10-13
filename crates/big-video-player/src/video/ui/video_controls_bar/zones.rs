@@ -358,27 +358,17 @@ pub(super) fn build_start_box(
                 );
             }
         },
-        {
+        &crate::shared::audio_effects::nr_settings_panel(settings, {
             let settings = settings.clone();
             let mpv = mpv.clone();
-            // Weak: this closure lives on the popover, which the voice button's
-            // handler keeps alive — a strong voice_box capture closes a
-            // box→button→popover→box cycle that survives popover unparent.
-            let voice_box = voice_box.downgrade();
             move || {
-                if let Some(window) = voice_box
-                    .upgrade()
-                    .and_then(|b| b.root())
-                    .and_then(|r| r.downcast::<gtk::Window>().ok())
+                if let Some(mpv) = mpv.borrow().as_ref()
+                    && settings.get_double(keys::NOISE_STRENGTH) > 0.0
                 {
-                    crate::shared::popovers::show_nr_settings_dialog(
-                        &settings,
-                        mpv.borrow().as_ref(),
-                        &window,
-                    );
+                    crate::shared::audio_effects::apply_voice_change(&settings, mpv);
                 }
             }
-        },
+        }),
     );
 
     // Hide the voice control if no noise-reduction backend is installed (old

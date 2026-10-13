@@ -49,7 +49,6 @@ crates/big-audio-player/src/audio/ui/library_tree.rs
 crates/big-audio-player/src/audio/ui/library_tree/view.rs
 crates/big-audio-player/src/audio/ui/mod.rs
 crates/big-audio-player/src/audio/ui/playlist_chrome.rs
-crates/big-audio-player/src/audio/ui/playlist_geom.rs
 crates/big-audio-player/src/audio/ui/playlist_interactions.rs
 crates/big-audio-player/src/audio/ui/playlist_interactions/tests.rs
 crates/big-audio-player/src/audio/ui/playlist_library_dialog.rs

@@ -17,6 +17,9 @@ pub const LADSPA_FILTER_NAME: &str = "ladspa";
 /// Samples of the opening the model warms up on before the audio it keeps.
 const LEAD_IN_SAMPLES: u32 = 24_000;
 
+/// Either plugin's output delay, in samples at 48 kHz, while its voice gate runs.
+pub const VOICE_GATE_DELAY_SAMPLES: u32 = 3168;
+
 /// Models shown in the dropdown, in stored-index order.
 pub const MODELS: [NoiseModel; 2] = [NoiseModel::DeepFilterNet3, NoiseModel::DpdfNet2];
 
@@ -119,6 +122,15 @@ impl NoiseModel {
         format!("{:.2}", self.attenuation_db(strength))
     }
 
+    /// The voice gate's depth, detector and sensitivity controls (`cN` indexes).
+    #[must_use]
+    pub fn voice_gate_controls(self) -> (u8, u8, u8) {
+        match self {
+            Self::DeepFilterNet3 => (17, 18, 19),
+            Self::DpdfNet2 => (1, 2, 3),
+        }
+    }
+
     /// Whether the plugin file is installed. Performs a `stat`.
     #[must_use]
     pub fn plugin_available(self) -> bool {
@@ -132,7 +144,8 @@ pub fn any_model_available() -> bool {
     MODELS.iter().any(|model| model.plugin_available())
 }
 
-/// The lavfi chain that denoises with `model` at `strength`.
+/// The lavfi chain that denoises with `model` at `strength`; with `voice_only`,
+/// a sensitivity from 1 to 5, only what FireRedVAD hears as a voice is kept.
 ///
 /// - The plugin delays its output: the end is padded and the start trimmed
 ///   by that much, keeping sync and the last words.
@@ -141,8 +154,10 @@ pub fn any_model_available() -> bool {
 ///   backwards, which is cut away again. That lead-in ends at timestamp 0,
 ///   so concat keeps the stream's own timeline; mpv rebuilds the graph on
 ///   every seek.
-/// - DeepFilterNet3 mutes its first second by default, meant for a live
-///   microphone; `c6=0` turns that off.
+/// - DeepFilterNet3 mutes its first second and gates what it takes for no
+///   voice by default, both meant for a live microphone; `c6=0` and `c17=0`
+///   turn them off unless `voice_only` asks for the gate. The gate holds
+///   either plugin's output to [`VOICE_GATE_DELAY_SAMPLES`].
 /// - With `mono`, all channels are mixed into one first: one plugin instance
 ///   instead of one per channel, and every speaker gets the same cleaned
 ///   voice. `rematrix_maxval=1` keeps the mix from summing louder than its
@@ -155,18 +170,32 @@ pub fn any_model_available() -> bool {
 /// ```
 /// use big_audio_effects::noise_reduction::{NoiseModel, lavfi_chain};
 ///
-/// let chain = lavfi_chain(NoiseModel::DeepFilterNet3, 0.5, false);
-/// assert!(chain.contains("controls=c0=12.00|c6=0"));
+/// let chain = lavfi_chain(NoiseModel::DeepFilterNet3, 0.5, false, None);
+/// assert!(chain.contains("controls=c0=12.00|c6=0|c17=0"));
 /// assert!(chain.ends_with("atrim=start_sample=25919,asetpts=PTS-1919/SR/TB"));
+/// let gated = lavfi_chain(NoiseModel::DpdfNet2, 1.0, false, Some(4));
+/// assert!(gated.contains("controls=c0=48.00|c1=60|c2=1|c3=4"));
+/// assert!(gated.ends_with("asetpts=PTS-3168/SR/TB"));
 /// ```
 #[must_use]
-pub fn lavfi_chain(model: NoiseModel, strength: f64, mono: bool) -> String {
+pub fn lavfi_chain(model: NoiseModel, strength: f64, mono: bool, voice_only: Option<u8>) -> String {
     let (plugin, label) = model.plugin_and_label();
-    let delay = model.delay_samples();
-    let extra = match model {
+    let mut delay = model.delay_samples();
+    let mut extra = String::from(match model {
         NoiseModel::DeepFilterNet3 => "|c6=0",
         NoiseModel::DpdfNet2 => "",
-    };
+    });
+    let (depth, detector, sensitivity) = model.voice_gate_controls();
+    if let Some(level) = voice_only {
+        // Muted outright, heard by FireRedVAD as the converters do.
+        let level = level.clamp(1, 5);
+        extra.push_str(&format!(
+            "|c{depth}=60|c{detector}=1|c{sensitivity}={level}"
+        ));
+        delay = VOICE_GATE_DELAY_SAMPLES;
+    } else if model == NoiseModel::DeepFilterNet3 {
+        extra.push_str(&format!("|c{depth}=0"));
+    }
     format!(
         "aresample=48000{},asplit[bvcnr_main][bvcnr_head];\
          [bvcnr_head]atrim=end_sample={LEAD_IN_SAMPLES},apad=whole_len={LEAD_IN_SAMPLES},areverse,\
@@ -222,7 +251,7 @@ mod tests {
 
     #[test]
     fn chain_compensates_each_plugins_delay() {
-        let dpdfnet = lavfi_chain(NoiseModel::DpdfNet2, 1.0, false);
+        let dpdfnet = lavfi_chain(NoiseModel::DpdfNet2, 1.0, false, None);
         assert!(dpdfnet.contains("plugin=dpdfnet_native_48hr:controls=c0=48.00,"));
         assert!(dpdfnet.contains("apad=pad_len=2880,"));
         assert!(dpdfnet.ends_with("atrim=start_sample=26880,asetpts=PTS-2880/SR/TB"));
@@ -231,8 +260,18 @@ mod tests {
     }
 
     #[test]
+    fn voice_only_gates_either_plugin() {
+        let dfn3 = lavfi_chain(NoiseModel::DeepFilterNet3, 1.0, false, Some(2));
+        assert!(dfn3.contains("controls=c0=24.00|c6=0|c17=60|c18=1|c19=2,"));
+        assert!(dfn3.contains("apad=pad_len=3168,"));
+        assert!(dfn3.ends_with("atrim=start_sample=27168,asetpts=PTS-3168/SR/TB"));
+        let dpdfnet = lavfi_chain(NoiseModel::DpdfNet2, 1.0, false, Some(9));
+        assert!(dpdfnet.contains("controls=c0=48.00|c1=60|c2=1|c3=5,"));
+    }
+
+    #[test]
     fn mono_mixes_before_the_denoiser_without_gain() {
-        let chain = lavfi_chain(NoiseModel::DeepFilterNet3, 1.0, true);
+        let chain = lavfi_chain(NoiseModel::DeepFilterNet3, 1.0, true, None);
         assert!(chain.starts_with("aresample=48000:ochl=mono:rematrix_maxval=1,asplit"));
     }
 }

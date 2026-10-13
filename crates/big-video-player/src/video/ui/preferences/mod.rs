@@ -185,6 +185,7 @@ fn apply_player_audio_effects(mpv: &MpvBackend, effects: PlayerAudioEffects) {
         nr_strength: effects.nr_strength,
         nr_model: effects.nr_model,
         nr_mono: effects.nr_mono,
+        nr_voice_only: effects.nr_voice_only,
         eq_bands: &effects.eq_bands,
     });
 }

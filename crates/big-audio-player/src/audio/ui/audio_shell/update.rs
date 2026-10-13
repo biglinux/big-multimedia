@@ -67,6 +67,13 @@ impl AudioShell {
             AudioShellInput::Library(out) => self.handle_library(out, &sender),
             AudioShellInput::Playlist(out) => self.handle_playlist(out, &sender),
             AudioShellInput::Playback(out) => self.handle_playback(out, &sender),
+            AudioShellInput::NoiseSettingsChanged => {
+                if let Some(mpv) = &self.mpv
+                    && self.settings.get_double(keys::NOISE_STRENGTH) > 0.0
+                {
+                    crate::shared::audio_effects::apply_voice_change(&self.settings, mpv);
+                }
+            }
             AudioShellInput::PlaybackRemote { command, permit } => {
                 if permit.is_live() {
                     self.handle_playback(command, &sender);

@@ -8,6 +8,8 @@ pub struct AudioEffects<'a> {
     pub nr_model: i32,
     /// Mix to mono before the denoiser.
     pub nr_mono: bool,
+    /// Keep only speech, at this voice sensitivity (1 to 5).
+    pub nr_voice_only: Option<u8>,
     pub eq_bands: &'a [(f64, f64)],
 }
 

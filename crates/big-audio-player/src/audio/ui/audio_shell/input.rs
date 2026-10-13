@@ -18,6 +18,8 @@ pub enum AudioShellInput {
     Player(PlayerEvent),
     /// An intent emitted by the playback bar (transport controls).
     Playback(AudioPlaybackBarOutput),
+    /// The noise reduction's model, mono or voice-only setting changed.
+    NoiseSettingsChanged,
     /// An intent emitted by the visual trim bar.
     Trim(AudioTrimBarOutput),
     /// An intent emitted by the files browser.

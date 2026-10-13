@@ -18,6 +18,8 @@ pub struct PlayerAudioEffects {
     pub nr_model: i32,
     /// Mix to mono before the denoiser.
     pub nr_mono: bool,
+    /// Keep only speech, at this voice sensitivity (1 to 5).
+    pub nr_voice_only: Option<u8>,
     /// Equalizer band pairs `(frequency_hz, gain_db)`.
     pub eq_bands: Vec<(f64, f64)>,
 }
@@ -205,6 +207,7 @@ fn read_audio_effects(settings: &Settings, normalize: bool) -> PlayerAudioEffect
         nr_strength: settings.get_double(keys::NOISE_STRENGTH).max(0.0),
         nr_model: settings.get_int(keys::NOISE_MODEL),
         nr_mono: settings.get_bool(keys::NOISE_MONO),
+        nr_voice_only: settings.noise_voice_only(),
         eq_bands,
     }
 }

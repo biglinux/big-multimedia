@@ -88,6 +88,11 @@ impl Component for AudioShell {
                 initial_volume,
                 initial_voice_pct: (initial_noise * 100.0).clamp(0.0, 100.0),
                 trim_content: Some(trim.widget().clone().upcast()),
+                voice_settings: crate::shared::audio_effects::nr_settings_panel(&settings, {
+                    let input = sender.input_sender().clone();
+                    move || input.emit(AudioShellInput::NoiseSettingsChanged)
+                })
+                .upcast(),
             })
             .forward(sender.input_sender(), AudioShellInput::Playback);
         // The queue is always visible (right pane) — the transport's playlist

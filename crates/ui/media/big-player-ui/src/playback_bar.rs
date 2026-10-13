@@ -36,6 +36,8 @@ pub struct AudioPlaybackBarInit {
     pub initial_voice_pct: f64,
     /// Optional trim controls shown above the transport while trim mode is active.
     pub trim_content: Option<gtk::Widget>,
+    /// The noise reduction's settings, shown under the voice slider.
+    pub voice_settings: gtk::Widget,
 }
 
 /// Display state pushed into the bar by the shell.
@@ -126,8 +128,6 @@ pub enum AudioPlaybackBarOutput {
     SpeedChanged(f64),
     /// Voice strength slider moved; carries the new percent.
     VoiceChanged(f64),
-    /// Voice settings gear clicked.
-    VoiceSettingsRequested,
 }
 
 /// Relm4 wrapper around the audio [`BigAudioTransport`].
@@ -178,6 +178,7 @@ impl Component for AudioPlaybackBar {
             initial_volume,
             initial_voice_pct,
             trim_content,
+            voice_settings,
         } = init;
 
         let transport = BigAudioTransport::new(spec);
@@ -227,6 +228,7 @@ impl Component for AudioPlaybackBar {
             max_volume,
             initial_volume,
             initial_voice_pct,
+            &voice_settings,
             &sender,
             &updating,
         );
@@ -452,6 +454,7 @@ fn build_hover_popovers(
     max_volume: f64,
     initial_volume: f64,
     initial_voice_pct: f64,
+    voice_settings: &gtk::Widget,
     sender: &ComponentSender<AudioPlaybackBar>,
     updating: &Rc<Cell<bool>>,
 ) -> (gtk::Scale, Vec<gtk::Popover>) {
@@ -484,7 +487,6 @@ fn build_hover_popovers(
     );
 
     let s_value = sender.clone();
-    let s_settings = sender.clone();
     let voice_popover = build_voice_popover(
         transport.voice_hover_box(),
         transport.voice_button(),
@@ -493,9 +495,7 @@ fn build_hover_popovers(
         move |pct| {
             let _ = s_value.output(AudioPlaybackBarOutput::VoiceChanged(pct));
         },
-        move || {
-            let _ = s_settings.output(AudioPlaybackBarOutput::VoiceSettingsRequested);
-        },
+        voice_settings,
     );
 
     let popovers = setup_exclusive_hover_popover_group([

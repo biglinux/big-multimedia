@@ -42,7 +42,6 @@ const SPEED_INITIAL_MULTIPLIER: f64 = 1.0;
 const SPEED_REFERENCE_MARK_MULTIPLIER: f64 = 1.0;
 const SPEED_PRESET_EPSILON: f64 = 0.01;
 const VOICE_SHELL_SPACING: i32 = 2;
-const VOICE_SETTINGS_ICON_NAME: &str = "emblem-system-symbolic";
 const VOICE_MINIMUM_PERCENT: f64 = 0.0;
 const VOICE_MAXIMUM_PERCENT: f64 = 100.0;
 const VOICE_STEP_PERCENT: f64 = 1.0;
@@ -56,8 +55,6 @@ const VOICE_PRESET_EPSILON: f64 = 0.5;
 struct VoicePopoverSpec {
     title: String,
     shell_spacing: i32,
-    settings_icon_name: &'static str,
-    settings_accessible_label: String,
     scale_accessible_label: String,
     scale_minimum_percent: f64,
     scale_maximum_percent: f64,
@@ -198,32 +195,20 @@ pub fn build_speed_popover(
     popover
 }
 
-/// Layout: title → gear ⚙ → vertical slider → value label. Trough + both
+/// Layout: title → vertical slider → value label → `settings`. Trough + both
 /// labels (in-popover + `voice_label`) auto-update. `on_value_changed` gets
-/// the 0–100 pct; `on_settings_clicked` fires on gear press.
+/// the 0–100 pct.
 pub fn build_voice_popover(
     parent: &gtk::Box,
     voice_button: &gtk::Button,
     voice_label: &gtk::Label,
     initial_strength_percent: f64,
     on_value_changed: impl Fn(f64) + 'static,
-    on_settings_clicked: impl Fn() + 'static,
+    settings: &impl IsA<gtk::Widget>,
 ) -> gtk::Popover {
     let voice_spec = voice_popover_spec(initial_strength_percent);
     let (popover, column) =
         build_vertical_popover_shell(parent, &voice_spec.title, voice_spec.shell_spacing);
-
-    let gear = gtk::Button::builder()
-        .icon_name(voice_spec.settings_icon_name)
-        .has_frame(false)
-        .halign(gtk::Align::Center)
-        .build();
-    gear.add_css_class("flat");
-    gear.set_tooltip_text(Some(&voice_spec.settings_accessible_label));
-    gear.update_property(&[gtk::accessible::Property::Label(
-        &voice_spec.settings_accessible_label,
-    )]);
-    column.append(&gear);
 
     let scale = gtk::Scale::with_range(
         gtk::Orientation::Vertical,
@@ -283,9 +268,12 @@ pub fn build_voice_popover(
         });
     }
 
-    gear.connect_clicked(move |_| {
-        on_settings_clicked();
-    });
+    // The settings sit beside the slider, which keeps its own column.
+    let row = gtk::Box::builder().spacing(16).margin_end(12).build();
+    popover.set_child(Some(&row));
+    row.append(&column);
+    row.append(&gtk::Separator::new(gtk::Orientation::Vertical));
+    row.append(settings);
 
     // Click: cycle presets if visible, else show popover.
     {
@@ -343,8 +331,6 @@ fn voice_popover_spec(initial_strength_percent: f64) -> VoicePopoverSpec {
     VoicePopoverSpec {
         title: i18n("Voice"),
         shell_spacing: VOICE_SHELL_SPACING,
-        settings_icon_name: VOICE_SETTINGS_ICON_NAME,
-        settings_accessible_label: i18n("Noise reduction settings"),
         scale_accessible_label: i18n("Voice enhancement"),
         scale_minimum_percent: VOICE_MINIMUM_PERCENT,
         scale_maximum_percent: VOICE_MAXIMUM_PERCENT,
@@ -448,8 +434,6 @@ mod tests {
 
         assert_eq!(spec.title, "Voice");
         assert_eq!(spec.shell_spacing, 2);
-        assert_eq!(spec.settings_icon_name, "emblem-system-symbolic");
-        assert_eq!(spec.settings_accessible_label, "Noise reduction settings");
         assert_eq!(spec.scale_accessible_label, "Voice enhancement");
         assert_eq!(spec.scale_minimum_percent, 0.0);
         assert_eq!(spec.scale_maximum_percent, 100.0);

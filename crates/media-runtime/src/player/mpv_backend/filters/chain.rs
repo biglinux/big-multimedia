@@ -18,7 +18,12 @@ pub fn build_audio_filter_chain(fx: &AudioEffects) -> Vec<String> {
         // A missing plugin would fail the whole graph, silencing playback.
         let model = NoiseModel::from_i32_or_default(fx.nr_model);
         if model.plugin_available() {
-            filters.push(lavfi_chain(model, fx.nr_strength, fx.nr_mono));
+            filters.push(lavfi_chain(
+                model,
+                fx.nr_strength,
+                fx.nr_mono,
+                fx.nr_voice_only,
+            ));
         }
     }
 
@@ -41,6 +46,7 @@ mod tests {
             nr_strength,
             nr_model: NoiseModel::DpdfNet2.index() as i32,
             nr_mono: false,
+            nr_voice_only: None,
             eq_bands,
         }
     }
@@ -50,7 +56,7 @@ mod tests {
         let model = NoiseModel::DpdfNet2;
         let chain = build_audio_filter_chain(&effects(false, 0.5, &[]));
         if model.plugin_available() {
-            assert_eq!(chain, [lavfi_chain(model, 0.5, false)]);
+            assert_eq!(chain, [lavfi_chain(model, 0.5, false, None)]);
         } else {
             assert!(chain.is_empty(), "{chain:?}");
         }

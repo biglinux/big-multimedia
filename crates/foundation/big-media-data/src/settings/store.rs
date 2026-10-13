@@ -331,6 +331,14 @@ impl Settings {
         self.boolean_or(key.0, default)
     }
 
+    /// The voice sensitivity when the noise reduction keeps only speech.
+    #[must_use]
+    pub fn noise_voice_only(&self) -> Option<u8> {
+        self.get_bool(keys::NOISE_VOICE_ONLY).then(|| {
+            u8::try_from(self.get_int(keys::NOISE_VOICE_SENSITIVITY).clamp(1, 5)).unwrap_or(3)
+        })
+    }
+
     #[must_use]
     pub fn get_int(&self, key: keys::IntKey) -> i32 {
         self.int(key.0)

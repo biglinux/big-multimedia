@@ -43,6 +43,10 @@ pub const IDLE_MODE: StringKey = StringKey("idle-mode");
 pub const NOISE_STRENGTH: DoubleKey = DoubleKey("noise-strength");
 pub const NOISE_MODEL: IntKey = IntKey("noise-model");
 pub const NOISE_MONO: BoolKey = BoolKey("noise-mono");
+/// Keep only what the denoiser's voice detector hears, at
+/// [`NOISE_VOICE_SENSITIVITY`] 1 (sensitive) to 5 (strict).
+pub const NOISE_VOICE_ONLY: BoolKey = BoolKey("noise-voice-only");
+pub const NOISE_VOICE_SENSITIVITY: IntKey = IntKey("noise-voice-sensitivity");
 pub const EQ_BANDS: StringKey = StringKey("eq-bands");
 pub const EQ_PRESET: StringKey = StringKey("eq-preset");
 
