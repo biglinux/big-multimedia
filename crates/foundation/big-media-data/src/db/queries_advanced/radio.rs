@@ -50,14 +50,14 @@ pub fn delete_radio_station(conn: &Connection, station_id: i64) -> crate::Result
 /// One-shot: imports legacy `radio_stations.json` then renames it to
 /// `.json.migrated` so re-runs no-op.
 pub fn migrate_radio_from_json(conn: &Connection) -> crate::Result<()> {
-    let path = big_os_kit::xdg_dirs::config_dir()
-        .unwrap_or_default()
-        .join("big-audio-player")
-        .join("radio_stations.json");
-    let Ok(data) = std::fs::read_to_string(&path) else {
+    let Some(config) = big_os_kit::xdg_dirs::config_dir() else {
         return Ok(());
     };
-    if let Ok(val) = serde_json::from_str::<serde_json::Value>(&data)
+    let path = config.join("big-audio-player").join("radio_stations.json");
+    let Ok(Some(data)) = big_os_kit::storage::read_regular_limited(&path, 4 * 1024 * 1024) else {
+        return Ok(());
+    };
+    if let Ok(val) = serde_json::from_slice::<serde_json::Value>(&data)
         && let Some(arr) = val.as_array()
     {
         for item in arr {

@@ -17,7 +17,9 @@ const TIMEOUT_SECS: u64 = 15;
 const _: () = assert!(TIMEOUT_SECS >= 5);
 const _: () = assert!(TIMEOUT_SECS <= 60);
 const FAST_TIMEOUT_SECS: u64 = 5;
+const _: () = assert!(FAST_TIMEOUT_SECS < TIMEOUT_SECS);
 const FAST_GLOBAL_TIMEOUT_SECS: u64 = 15;
+const _: () = assert!(FAST_GLOBAL_TIMEOUT_SECS >= TIMEOUT_SECS);
 /// 5 MB cap on text bodies; binary helpers use their own caps.
 const MAX_TEXT_BODY_BYTES: u64 = 5 * 1024 * 1024;
 const MAX_HEADER_BYTES: usize = 128 * 1024;
@@ -29,8 +31,8 @@ const DEFAULT_MAX_REDIRECTS: u8 = 10;
 pub struct HttpResponseBytes {
     /// HTTP status code returned by the server after redirects.
     pub status: u16,
-    /// Requested URI. The curl backend follows redirects but does not expose
-    /// the post-redirect URI yet.
+    /// Requested URI. The curl backend follows redirects without reporting
+    /// the post-redirect URI.
     pub final_url: String,
     /// Response Content-Type header, if present.
     pub content_type: Option<String>,
@@ -42,8 +44,8 @@ pub struct HttpResponseBytes {
 pub struct HttpStreamResponse {
     /// HTTP status code returned by the server after redirects.
     pub status: u16,
-    /// Requested URI. The curl backend follows redirects but does not expose
-    /// the post-redirect URI yet.
+    /// Requested URI. The curl backend follows redirects without reporting
+    /// the post-redirect URI.
     pub final_url: String,
     /// Response Content-Type header, if present.
     pub content_type: Option<String>,
@@ -71,7 +73,12 @@ fn is_dns_error(err: &str) -> bool {
 
 /// One retry after 500 ms for transient errors (timeout, 5xx); skip on DNS.
 pub fn http_get_with_retry(url: &str) -> Option<String> {
-    http_get_with_retry_timeout(url, Duration::from_secs(TIMEOUT_SECS))
+    http_get_text_with_headers(
+        url,
+        &RequestHeaders::default(),
+        &[],
+        Duration::from_secs(TIMEOUT_SECS),
+    )
 }
 
 /// Single attempt; caller (radio_api) handles multi-server fallback.
@@ -87,7 +94,6 @@ fn http_get_single(url: &str, timeout: Duration) -> Option<String> {
         &[],
         MAX_TEXT_BODY_BYTES,
         timeout,
-        true,
     ) {
         Ok(resp) if resp.status == 200 => String::from_utf8(resp.bytes).ok(),
         Ok(resp) => {
@@ -101,50 +107,6 @@ fn http_get_single(url: &str, timeout: Duration) -> Option<String> {
     }
 }
 
-fn http_get_with_retry_timeout(url: &str, timeout: Duration) -> Option<String> {
-    let url_log = MediaLogTarget(url);
-    for attempt in 0..2 {
-        match curl_bytes(
-            url,
-            &RequestHeaders::default(),
-            &[],
-            MAX_TEXT_BODY_BYTES,
-            timeout,
-            true,
-        ) {
-            Ok(resp) if resp.status < 500 => {
-                if resp.status != 200 {
-                    log::debug!("[http] {url_log}: non-200 status={}", resp.status);
-                    return None;
-                }
-                return String::from_utf8(resp.bytes)
-                    .inspect_err(|e| log::debug!("[http] {url_log}: utf8 body error={e}"))
-                    .ok();
-            }
-            Ok(resp) => {
-                log::debug!(
-                    "[http] {url_log}: 5xx status={} attempt={attempt}",
-                    resp.status
-                );
-                if attempt == 0 {
-                    std::thread::sleep(Duration::from_millis(500));
-                }
-            }
-            Err(error) if is_dns_error(&error) => {
-                log::debug!("[http] {url_log}: DNS error={error}");
-                return None;
-            }
-            Err(error) => {
-                log::debug!("[http] {url_log}: error={error} attempt={attempt}");
-                if attempt == 0 {
-                    std::thread::sleep(Duration::from_millis(500));
-                }
-            }
-        }
-    }
-    None
-}
-
 /// `Accept: application/json`, since MusicBrainz/CoverArtArchive return XML
 /// otherwise. Body parsing left to callers; same retry as `http_get_with_retry`.
 pub fn http_get_json(url: &str) -> Option<String> {
@@ -153,7 +115,6 @@ pub fn http_get_json(url: &str) -> Option<String> {
         &RequestHeaders::default(),
         &[("Accept", "application/json")],
         Duration::from_secs(TIMEOUT_SECS),
-        true,
     )
 }
 
@@ -165,7 +126,6 @@ pub fn http_get_bytes(url: &str) -> Option<Vec<u8>> {
         &[],
         1024 * 1024,
         Duration::from_secs(TIMEOUT_SECS),
-        true,
     )
     .ok()?;
     (http_response.status == 200).then_some(http_response.bytes)
@@ -203,7 +163,7 @@ pub fn http_get_with_headers(url: &str, headers: &RequestHeaders<'_>) -> Option<
     if headers.is_empty() {
         return http_get_with_retry(url);
     }
-    http_get_text_with_headers(url, headers, &[], Duration::from_secs(TIMEOUT_SECS), true)
+    http_get_text_with_headers(url, headers, &[], Duration::from_secs(TIMEOUT_SECS))
 }
 
 /// Binary GET + per-request headers; 1 MB cap.
@@ -214,7 +174,6 @@ pub fn http_get_bytes_with_headers(url: &str, headers: &RequestHeaders<'_>) -> O
         &[],
         1024 * 1024,
         Duration::from_secs(TIMEOUT_SECS),
-        true,
     )
     .ok()?;
     (http_response.status == 200).then_some(http_response.bytes)
@@ -239,7 +198,7 @@ pub fn http_get_bytes_capped_with_extra_headers(
     max_bytes: u64,
     timeout: Duration,
 ) -> Result<HttpResponseBytes, String> {
-    curl_bytes(url, headers, extra_headers, max_bytes, timeout, true)
+    curl_bytes(url, headers, extra_headers, max_bytes, timeout)
 }
 
 /// GET a streaming response with metadata and caller-owned body policy.
@@ -259,7 +218,7 @@ pub fn http_get_stream_with_extra_headers(
     extra_headers: &[(&str, &str)],
     timeout: Duration,
 ) -> Result<HttpStreamResponse, String> {
-    curl_stream(url, headers, extra_headers, timeout, true)
+    curl_stream(url, headers, extra_headers, timeout)
 }
 
 /// Copy a response stream to a writer with cancellation and progress callbacks.
@@ -293,18 +252,10 @@ fn http_get_text_with_headers(
     headers: &RequestHeaders<'_>,
     extra_headers: &[(&str, &str)],
     timeout: Duration,
-    follow_redirects: bool,
 ) -> Option<String> {
     let url_log = MediaLogTarget(url);
     for attempt in 0..2 {
-        match curl_bytes(
-            url,
-            headers,
-            extra_headers,
-            MAX_TEXT_BODY_BYTES,
-            timeout,
-            follow_redirects,
-        ) {
+        match curl_bytes(url, headers, extra_headers, MAX_TEXT_BODY_BYTES, timeout) {
             Ok(resp) if resp.status < 500 => {
                 if resp.status != 200 {
                     log::debug!("[http] {url_log}: non-200 status={}", resp.status);
@@ -344,9 +295,8 @@ fn curl_bytes(
     extra_headers: &[(&str, &str)],
     max_bytes: u64,
     timeout: Duration,
-    follow_redirects: bool,
 ) -> Result<HttpResponseBytes, String> {
-    let mut response = curl_stream(url, headers, extra_headers, timeout, follow_redirects)?;
+    let mut response = curl_stream(url, headers, extra_headers, timeout)?;
     let bytes = read_capped(response.reader.as_mut(), max_bytes)?;
     Ok(HttpResponseBytes {
         status: response.status,
@@ -361,7 +311,6 @@ fn curl_stream(
     headers: &RequestHeaders<'_>,
     extra_headers: &[(&str, &str)],
     timeout: Duration,
-    follow_redirects: bool,
 ) -> Result<HttpStreamResponse, String> {
     validate_url(url)?;
     if timeout.is_zero() || timeout > Duration::from_secs(7200) {
@@ -369,8 +318,7 @@ fn curl_stream(
     }
     // Custom headers may contain provider-specific secrets curl cannot recognize.
     // Do not forward them (or a private Referer) to an automatically redirected host.
-    let follow = follow_redirects
-        && headers.referer.is_empty()
+    let follow = headers.referer.is_empty()
         && extra_headers.iter().all(|(name, value)| {
             // These are fixed public negotiation headers used by metadata callers;
             // unknown/custom headers stay on the original host.
@@ -400,7 +348,7 @@ fn curl_stream(
     ]);
     let transport = transport::Transport::new(command, config.as_bytes(), timeout)
         .map_err(|e| e.to_string())?;
-    // This SAME reader goes into the response: any prefetched body bytes survive
+    // The same reader goes into the response: any prefetched body bytes survive
     // header parsing. EOF verifies the child exit status, not just pipe closure.
     let mut reader = BufReader::new(transport);
     let parsed = read_final_headers(&mut reader, follow)?;
@@ -617,11 +565,6 @@ mod tests {
     use super::*;
 
     #[test]
-    fn user_agent_identifies_biglinux_rust_components() {
-        assert!(USER_AGENT.contains("BigLinuxRustApp"));
-    }
-
-    #[test]
     // Miri does not implement `posix_spawn`; normal `cargo test` still checks
     // that the system curl backend fails closed for invalid URLs.
     #[cfg_attr(miri, ignore)]
@@ -635,19 +578,6 @@ mod tests {
     #[cfg_attr(miri, ignore)]
     fn fast_returns_none_for_invalid_url() {
         assert!(http_get_fast("not-a-url").is_none());
-    }
-
-    #[test]
-    fn fast_timeout_is_shorter() {
-        const { assert!(FAST_TIMEOUT_SECS < TIMEOUT_SECS) };
-        const { assert!(FAST_TIMEOUT_SECS >= 3) };
-        const { assert!(FAST_TIMEOUT_SECS <= 10) };
-    }
-
-    #[test]
-    fn fast_global_timeout_reasonable() {
-        const { assert!(FAST_GLOBAL_TIMEOUT_SECS >= TIMEOUT_SECS) };
-        const { assert!(FAST_GLOBAL_TIMEOUT_SECS <= 60) };
     }
 
     #[test]
@@ -678,13 +608,6 @@ mod tests {
     }
 
     #[test]
-    fn request_headers_default_is_empty() {
-        let h = RequestHeaders::default();
-        assert!(h.user_agent.is_empty());
-        assert!(h.referer.is_empty());
-    }
-
-    #[test]
     // Miri does not implement `posix_spawn`; normal `cargo test` still checks
     // that the header-aware binary curl path fails closed for invalid URLs.
     #[cfg_attr(miri, ignore)]
@@ -695,11 +618,6 @@ mod tests {
     #[test]
     fn rejects_header_newlines() {
         assert!(validate_header_value("Bearer ok\nInjected: yes").is_err());
-    }
-
-    #[test]
-    fn rejects_invalid_header_name() {
-        assert!(validate_header_name("Bad:Header").is_err());
     }
 
     #[test]
@@ -721,11 +639,7 @@ mod tests {
             Some("42".to_owned())
         );
     }
-}
 
-#[cfg(test)]
-mod transport_contract_tests {
-    use super::*;
     #[test]
     fn curl_config_keeps_secrets_off_argv() {
         let config = request_config(

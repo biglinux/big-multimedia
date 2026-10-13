@@ -36,7 +36,6 @@ tempfile = { version = "3", optional = true }
 ignore = { version = "0.4", optional = true }
 # Lightweight XML parsing (podcast/RSS, MusicBrainz, IPTV).
 roxmltree = { version = "0.21", optional = true }
-# MD5 hashing (Last.fm API signature) — GTK-free, replaces glib checksum.
 # Radio-Browser server discovery.
 dns-lookup = { version = "3", optional = true }
 # gettext translation (GTK-free string lookup).

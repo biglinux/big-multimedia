@@ -71,22 +71,11 @@ fn memory_only_never_confirms_saves() {
     assert_eq!(settings.save_status().phase, SavePhase::Failed);
 }
 
-/// Compile-only check: a wrong key type would fail to build.
 #[test]
-fn typed_keys_compile_time_safety() {
-    let settings = Settings::memory_only();
-
-    let _ = settings.get_bool(keys::MUTE);
-    settings.put_bool(keys::MUTE, false);
-
-    let _ = settings.get_int(keys::APPEARANCE_WINDOW_WIDTH);
-    settings.put_int(keys::APPEARANCE_WINDOW_WIDTH, 800);
-
-    let _ = settings.get_double(keys::VOLUME);
-    settings.put_double(keys::VOLUME, 0.5);
-
-    let _ = settings.get_string(keys::HWDEC);
-    settings.put_string(keys::HWDEC, "auto");
+fn defaults_pass_the_schema() {
+    for (key, value) in Settings::defaults() {
+        assert!(schema::valid(&key, &value), "{key}={value}");
+    }
 }
 
 #[test]

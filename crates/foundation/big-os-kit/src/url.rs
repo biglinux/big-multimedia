@@ -84,7 +84,7 @@ pub fn uri_scheme(value: &str) -> Option<&str> {
 }
 
 /// URI path without authority, query or fragment. Does not decode path bytes.
-/// A bare authority such as https://radio.mp3 has an EMPTY path, not an MP3 file.
+/// A bare authority such as https://radio.mp3 has an empty path, not an MP3 file.
 #[must_use]
 pub fn uri_path(value: &str) -> &str {
     let clean = &value[..value.find(['?', '#']).unwrap_or(value.len())];

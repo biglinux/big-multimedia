@@ -10,12 +10,12 @@ use std::path::{Path, PathBuf};
 pub enum CommitOutcome {
     /// Contents and the containing directory were synchronized.
     Durable,
-    /// The destination ALREADY contains the new bytes, but directory fsync failed.
+    /// The destination holds the new bytes, but the directory fsync failed.
     PublishedNotSynced(io::Error),
 }
 impl CommitOutcome {
-    /// Compatibility conversion. The error explicitly says publication occurred.
-    /// Transactional callers should match the outcome instead of blindly retrying.
+    /// Collapse into `io::Result`; the error says publication occurred.
+    /// Transactional callers match the outcome instead of retrying.
     pub fn into_io_result(self) -> io::Result<()> {
         match self {
             Self::Durable => Ok(()),
@@ -130,7 +130,7 @@ fn parent(path: &Path) -> &Path {
 
 /// Private staging file in the destination filesystem. Dropping it removes only
 /// its private directory, never the final output. Keep it owned until the writer
-/// has FINISHED, not merely after cancellation has been requested.
+/// has exited, not merely until cancellation was requested.
 #[derive(Debug)]
 pub struct StagedFile {
     directory: PathBuf,
@@ -183,7 +183,7 @@ impl StagedFile {
     }
     /// Publish without replacing an existing destination. Hard-link creation is
     /// atomic on a single filesystem and fails on EEXIST; there is no overwrite
-    /// fallback. Validate media BEFORE this call. Result distinguishes durability.
+    /// fallback. Validate the media first. The outcome says whether it is durable.
     pub fn publish(&self, target: &Path) -> io::Result<CommitOutcome> {
         let mut options = OpenOptions::new();
         options.read(true);
@@ -222,7 +222,7 @@ mod tests {
     static SEQ: std::sync::atomic::AtomicU64 = std::sync::atomic::AtomicU64::new(0);
     fn directory() -> PathBuf {
         let path = std::env::temp_dir().join(format!(
-            "big-storage-review-{}-{}",
+            "big-storage-test-{}-{}",
             std::process::id(),
             SEQ.fetch_add(1, std::sync::atomic::Ordering::Relaxed)
         ));

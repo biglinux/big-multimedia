@@ -1,8 +1,8 @@
 //! GTK-free data services shared by BigLinux media apps.
 //!
-//! Extracted from `big-media-runtime` so the reusable player UI (`big-player-ui`)
-//! and lean consumers can use the SQLite library, settings store, and network
-//! clients without linking mpv/ffmpeg engines. No GTK in this crate. SQLite
+//! The reusable player UI (`big-player-ui`) and lean consumers use the SQLite
+//! library, settings store, and network clients without linking mpv/ffmpeg
+//! engines. No GTK in this crate. SQLite
 //! uses the system libsqlite3 and is feature-gated behind `db`.
 //!
 //! HTTP + URL helpers come from `big_os_kit` (GTK-free leaf, single policy home).

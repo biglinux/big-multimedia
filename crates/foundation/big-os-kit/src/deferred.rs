@@ -136,6 +136,9 @@ impl Document {
                     .checked_add(1)
                     .ok_or_else(|| io::Error::other("state generation exhausted"))?;
                 s.desired = Some(bytes);
+                // A running save may already have published `Saved` for the
+                // previous generation; its worker requeues this one.
+                s.phase = Phase::Pending;
             }
         }
         self.retry()
@@ -148,8 +151,8 @@ impl Document {
         s.phase = Phase::Failed;
     }
 
-    /// Retry a failed save. Does not rebase against an external
-    /// writer automatically: a content conflict requires an explicit reload/review.
+    /// Retry a failed save. Never rebases onto an external writer's content:
+    /// a conflict needs an explicit reload.
     pub fn retry(&self) -> io::Result<()> {
         {
             let mut s = self.state.lock().unwrap_or_else(PoisonError::into_inner);
@@ -271,6 +274,7 @@ mod tests {
         let doc = Document::reviewed(p.clone(), None);
         for n in 0..100 {
             doc.replace(n.to_string().into_bytes()).unwrap();
+            assert_ne!(doc.status().phase, Phase::Saved);
         }
         drain(&doc);
         assert_eq!(doc.status().phase, Phase::Saved);

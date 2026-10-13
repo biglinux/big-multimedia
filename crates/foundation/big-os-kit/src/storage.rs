@@ -44,7 +44,7 @@ fn atomic_sibling_temp_path(target: &Path) -> PathBuf {
 /// `big_relm4_components::file_io::write_bytes_async`) so a slow/network
 /// filesystem can't stall the UI thread.
 ///
-/// NOTE: the rename installs a *new* inode, so the result carries the temp
+/// The rename installs a *new* inode, so the result carries the temp
 /// file's permissions/owner (default umask), not the previous file's, and any
 /// hard links to the old inode are left pointing at the old contents. Right for
 /// config/state and fresh files; for editing a user document whose mode must be
@@ -135,7 +135,7 @@ mod tests {
         let mut p = std::env::temp_dir();
         let pid = std::process::id();
         let seq = TEMP_SEQ.fetch_add(1, Ordering::Relaxed);
-        p.push(format!("big-app-kit-storage-test-{pid}-{seq}-{name}.json"));
+        p.push(format!("big-os-kit-storage-test-{pid}-{seq}-{name}.json"));
         p
     }
 

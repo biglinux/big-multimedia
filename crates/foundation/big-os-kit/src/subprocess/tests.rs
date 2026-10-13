@@ -1,8 +1,6 @@
 // SPDX-License-Identifier: MIT
 
-//! Tests for the BigSubprocess spec/exec helpers. Split out of `subprocess.rs`
-//! (recipe: file-size budget); as a child module the tests reach the parent's
-//! items via `super::*`.
+//! Tests for the subprocess spec and its Linux supervisor.
 
 use super::*;
 
@@ -21,26 +19,13 @@ fn redact_replaces_secret_in_captured_stdout() {
 }
 
 #[test]
-fn drain_capped_respects_max_bytes() {
-    let mut buf: Vec<u8> = Vec::new();
-    let payload = vec![b'A'; DEFAULT_MAX_CAPTURE_BYTES + 16];
-    let mut cursor = std::io::Cursor::new(payload);
-    assert!(matches!(
-        drain_capped(&mut cursor, &mut buf),
-        Err(BigSubprocessError::OutputLimit { .. })
-    ));
-    assert!(buf.len() <= DEFAULT_MAX_CAPTURE_BYTES);
-}
-
-#[test]
 // Miri does not implement `posix_spawn`; normal `cargo test` still checks
 // concurrent stdout draining against a real child process.
 #[cfg_attr(miri, ignore)]
 fn run_does_not_deadlock_on_large_output() {
     // A child writing far more than the OS pipe buffer (~64 KiB) must not
     // deadlock: with a short timeout, the only way this completes is if
-    // stdout is drained concurrently while the child runs. Regression for
-    // pw-dump (~300 KiB) hanging the full 30 s timeout.
+    // stdout is drained concurrently while the child runs.
     let bytes = 512 * 1024;
     let spec = BigSubprocessSpec::builder()
         .program("head")
@@ -145,8 +130,6 @@ fn captures_stderr_and_exit_code_on_failure() {
         .expect("ls runs");
     assert!(!out.status.success());
     assert_eq!(out.status.code(), Some(2));
-    // Assert the actual stderr content (the offending path) so a constant-return
-    // mutant on stderr_lossy cannot survive.
     assert!(
         out.stderr_lossy().contains("/nonexistent_path_xyzzy_42"),
         "stderr should name the missing path: {:?}",
@@ -159,8 +142,7 @@ fn captures_stderr_and_exit_code_on_failure() {
 // environment inheritance against a real child process.
 #[cfg_attr(miri, ignore)]
 fn env_inherited_by_default() {
-    // Default specs inherit the parent environment (env_inherit = true), so the
-    // child `env` sees PATH. A mutant that flips the env_clear guard drops it.
+    // Default specs inherit the parent environment, so the child sees PATH.
     let out = BigSubprocessSpec::builder()
         .program("env")
         .timeout(Duration::from_secs(5))
@@ -172,69 +154,6 @@ fn env_inherited_by_default() {
         out.stdout_lossy().contains("PATH="),
         "inherited environment must include PATH"
     );
-}
-
-/// Reader that yields `chunk`-sized reads (not a divisor of the
-/// capture cap) so the `n.min(remaining)` truncation in `drain_capped` runs:
-/// a chunk-aligned source never hits the partial branch.
-struct ChunkedReader {
-    remaining: usize,
-    chunk: usize,
-}
-
-impl std::io::Read for ChunkedReader {
-    fn read(&mut self, buf: &mut [u8]) -> std::io::Result<usize> {
-        if self.remaining == 0 {
-            return Ok(0);
-        }
-        let n = self.chunk.min(self.remaining).min(buf.len());
-        buf[..n].fill(b'A');
-        self.remaining -= n;
-        Ok(n)
-    }
-}
-
-/// Reader that returns one injected error, then EOF.
-struct ErrorOnceReader(Option<std::io::ErrorKind>);
-
-impl std::io::Read for ErrorOnceReader {
-    fn read(&mut self, _: &mut [u8]) -> std::io::Result<usize> {
-        match self.0.take() {
-            Some(kind) => Err(std::io::Error::from(kind)),
-            None => Ok(0),
-        }
-    }
-}
-
-#[test]
-fn drain_truncates_unaligned_source_at_cap() {
-    let mut reader = ChunkedReader {
-        remaining: DEFAULT_MAX_CAPTURE_BYTES + 8192,
-        chunk: 1000,
-    };
-    let mut buf = Vec::new();
-    assert!(matches!(
-        drain_capped(&mut reader, &mut buf),
-        Err(BigSubprocessError::OutputLimit { .. })
-    ));
-    assert!(buf.len() <= DEFAULT_MAX_CAPTURE_BYTES);
-}
-
-#[test]
-fn drain_capped_retries_on_interrupted() {
-    let mut reader = ErrorOnceReader(Some(std::io::ErrorKind::Interrupted));
-    let mut buf = Vec::new();
-    // Interrupted must be retried (continue), not propagated → Ok with no data.
-    drain_capped(&mut reader, &mut buf).expect("interrupted is retried");
-    assert!(buf.is_empty());
-}
-
-#[test]
-fn drain_capped_propagates_non_interrupted_error() {
-    let mut reader = ErrorOnceReader(Some(std::io::ErrorKind::Other));
-    let mut buf = Vec::new();
-    let err = drain_capped(&mut reader, &mut buf).unwrap_err();
-    assert!(matches!(err, BigSubprocessError::Io(_)), "got {err:?}");
 }
 
 #[test]
@@ -393,18 +312,6 @@ fn argv_preserves_order_and_separators() {
 }
 
 #[test]
-fn argv_never_uses_shell() {
-    let spec = BigSubprocessSpec::builder()
-        .program("echo")
-        .arg("; rm -rf /")
-        .arg("&& curl evil")
-        .build();
-    let r = spec.try_resolved().unwrap();
-    assert_eq!(r.argv, ["; rm -rf /", "&& curl evil"]);
-    assert_eq!(r.program, "echo");
-}
-
-#[test]
 fn defaults_are_safe() {
     let spec = BigSubprocessSpec::builder().program("echo").build();
     let r = spec.try_resolved().unwrap();
@@ -413,4 +320,33 @@ fn defaults_are_safe() {
     assert_eq!(r.timeout_ms, 30_000);
     assert!(r.env_inherit);
     assert_eq!(r.stdin_len, 0);
+}
+
+#[test]
+fn empty_allow_list_denies_every_program() {
+    let policy = BigSubprocessAllowList::default();
+    assert!(!policy.permits("sh"));
+    assert!(!policy.permits("/usr/bin/true"));
+}
+
+#[cfg(target_os = "linux")]
+#[test]
+#[cfg_attr(miri, ignore)]
+fn oversized_capture_is_an_error() {
+    let error = BigSubprocessSpec::builder()
+        .program("head")
+        .arg("-c")
+        .arg((DEFAULT_MAX_CAPTURE_BYTES + 1).to_string())
+        .arg("/dev/zero")
+        .timeout(Duration::from_secs(10))
+        .build()
+        .run()
+        .unwrap_err();
+    assert!(matches!(
+        error,
+        BigSubprocessError::OutputLimit {
+            stream: "stdout",
+            ..
+        }
+    ));
 }

@@ -3,11 +3,9 @@
 
 #![deny(missing_docs)]
 
-//! GTK-free OS-level contracts for BigLinux Rust apps.
-//!
-//! Split out of `big-app-kit` so CLI tools and non-GUI library crates
-//! (camera/audio pipelines, PTY, launchers, integrations) can reuse the
-//! same typed primitives without pulling in gtk4/libadwaita/relm4.
+//! GTK-free OS-level contracts for BigLinux Rust apps, so CLI tools and
+//! non-GUI library crates share the same typed primitives without pulling in
+//! gtk4/libadwaita/relm4.
 //!
 //! - [`subprocess`]: argv-form subprocess specs with timeout, capture,
 //!   redaction, allow-list, and a spawn-handle for long-running children.
@@ -15,8 +13,7 @@
 //!   forward-migration envelope.
 //! - [`keyring`]: a typed worker-only boundary to libsecret Secret Service.
 //!
-//! `big-app-kit` re-exports these modules unchanged, so existing
-//! `big_app_kit::{subprocess, storage, keyring}` paths keep working.
+//! `big-app-kit` re-exports `subprocess` and `storage` unchanged.
 
 /// jemalloc as the process allocator (feature `jemalloc`).
 #[cfg(feature = "jemalloc")]

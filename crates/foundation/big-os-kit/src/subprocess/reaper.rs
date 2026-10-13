@@ -1,4 +1,4 @@
-//! Bounded process-wide child collector. Start/reserve BEFORE spawning.
+//! Bounded process-wide child collector. Reserve a permit before spawning.
 //! Never creates one thread per child, never calls blocking Child::wait().
 use std::io;
 use std::process::Child;

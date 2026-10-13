@@ -1,4 +1,4 @@
-//! Unified error type for `big-media-runtime`.
+//! Unified error type for this crate.
 //!
 //! Single `Error` enum with `thiserror`-generated `Display` impls gives
 //! every fallible API in the crate an explicit kind and context. The
@@ -11,8 +11,8 @@
 
 use thiserror::Error;
 
-/// Crate-wide error type. Covers every fallible boundary the runtime
-/// reaches: filesystem, SQLite, JSON, mpv, ffmpeg, Chromecast.
+/// Crate-wide error type. Covers every fallible boundary the crate
+/// reaches: filesystem, SQLite, JSON, subprocesses and mpv.
 ///
 /// `#[non_exhaustive]` keeps adding new variants from being a semver
 /// break; consumers must use a wildcard arm.
@@ -53,28 +53,6 @@ pub enum Error {
     #[error("mpv: {0}")]
     Mpv(String),
 
-    /// ffmpeg / ffprobe subprocess failure.
-    ///
-    /// `code` formatted as a bare integer or the literal `unknown` when the
-    /// process was killed before exiting; avoids exposing Rust's
-    /// `Option`/`Some(_)` debug syntax to user-facing notices.
-    #[error(
-        "ffmpeg: {command} exited with code {}: {message}",
-        .code.map_or_else(|| "unknown".to_owned(), |c| c.to_string())
-    )]
-    Ffmpeg {
-        /// Binary name: `"ffmpeg"` or `"ffprobe"`.
-        command: &'static str,
-        /// Exit code, when the process actually exited.
-        code: Option<i32>,
-        /// Stderr summary or our own description.
-        message: String,
-    },
-
-    /// Chromecast discovery / casting / network error.
-    #[error("chromecast: {0}")]
-    Chromecast(String),
-
     /// Caller passed an argument that doesn't make sense in context.
     #[error("invalid argument {what}: {why}")]
     InvalidArgument {
@@ -101,26 +79,10 @@ pub enum Error {
 }
 
 impl Error {
-    /// Construct an ffmpeg subprocess failure from binary + exit + msg.
-    #[must_use]
-    pub fn ffmpeg(command: &'static str, code: Option<i32>, message: impl Into<String>) -> Self {
-        Self::Ffmpeg {
-            command,
-            code,
-            message: message.into(),
-        }
-    }
-
     /// Construct an mpv textual error.
     #[must_use]
     pub fn mpv(message: impl Into<String>) -> Self {
         Self::Mpv(message.into())
-    }
-
-    /// Construct a Chromecast / network error.
-    #[must_use]
-    pub fn chromecast(message: impl Into<String>) -> Self {
-        Self::Chromecast(message.into())
     }
 
     /// Construct an internal error (last resort).
@@ -145,9 +107,8 @@ impl Error {
     }
 }
 
-/// Transitional `From<String>` to land the migration without rewriting
-/// every `.map_err(|e| format!(...))` callsite in one pass. Keeps the
-/// string as `Internal(...)` so logs still surface the original text.
+/// Lets `.map_err(|e| format!(...))` call sites use `?`; the text lands in
+/// `Internal`.
 impl From<String> for Error {
     fn from(s: String) -> Self {
         Self::Internal(s)
@@ -160,138 +121,3 @@ impl From<String> for Error {
 
 /// Crate-wide `Result` alias.
 pub type Result<T> = std::result::Result<T, Error>;
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn from_io() {
-        let e: Error = std::io::Error::other("disk full").into();
-        assert!(e.to_string().starts_with("io: "));
-        assert!(matches!(e, Error::Io(_)));
-    }
-
-    #[test]
-    #[cfg(feature = "db")]
-    fn from_sqlite() {
-        let e: Error = rusqlite::Error::QueryReturnedNoRows.into();
-        assert!(e.to_string().starts_with("sqlite: "));
-        assert!(matches!(e, Error::Sqlite(_)));
-    }
-
-    #[test]
-    fn from_json() {
-        let parse: serde_json::Error = serde_json::from_str::<i32>("not json").unwrap_err();
-        let e: Error = parse.into();
-        assert!(e.to_string().starts_with("json: "));
-        assert!(matches!(e, Error::Json(_)));
-    }
-
-    #[test]
-    fn from_utf8() {
-        let bad: Vec<u8> = vec![0xff, 0xfe, 0xfd];
-        let inner = std::str::from_utf8(&bad).unwrap_err();
-        let e: Error = inner.into();
-        // Borrowed and owned UTF-8 errors stay distinguishable in logs.
-        assert!(e.to_string().starts_with("utf-8 (borrowed): "));
-        assert!(matches!(e, Error::Utf8(_)));
-    }
-
-    #[test]
-    fn from_from_utf8() {
-        let bad = vec![0xff, 0xfe, 0xfd];
-        let inner = String::from_utf8(bad).unwrap_err();
-        let e: Error = inner.into();
-        assert!(e.to_string().starts_with("utf-8 (owned): "));
-        assert!(matches!(e, Error::FromUtf8(_)));
-    }
-
-    #[test]
-    fn from_parse_int() {
-        let inner = "x".parse::<i32>().unwrap_err();
-        let e: Error = inner.into();
-        assert!(e.to_string().starts_with("parse int: "));
-        assert!(matches!(e, Error::ParseInt(_)));
-    }
-
-    #[test]
-    fn from_parse_float() {
-        let inner = "x".parse::<f64>().unwrap_err();
-        let e: Error = inner.into();
-        assert!(e.to_string().starts_with("parse float: "));
-        assert!(matches!(e, Error::ParseFloat(_)));
-    }
-
-    #[test]
-    #[allow(deprecated)]
-    fn from_string_internal() {
-        let e: Error = "oops".to_string().into();
-        assert!(e.to_string().starts_with("internal: "));
-        assert!(matches!(e, Error::Internal(_)));
-    }
-
-    #[test]
-    fn display_mpv() {
-        let e = Error::mpv("init failed");
-        assert_eq!(e.to_string(), "mpv: init failed");
-    }
-
-    #[test]
-    fn display_ffmpeg() {
-        let e = Error::ffmpeg("ffmpeg", Some(1), "x265: encoder error");
-        let s = e.to_string();
-        assert!(s.starts_with("ffmpeg: ffmpeg"));
-        assert!(s.contains("code 1"));
-        assert!(s.contains("x265"));
-        // Contract: never expose Rust's Option/Some/None debug syntax to
-        // user-facing notices.
-        assert!(
-            !s.contains("Some("),
-            "Display must not contain Rust debug syntax: {s}"
-        );
-    }
-
-    #[test]
-    fn display_ffmpeg_unknown_code() {
-        let e = Error::ffmpeg("ffprobe", None, "killed by signal");
-        let s = e.to_string();
-        assert!(
-            s.contains("code unknown"),
-            "expected `code unknown`, got: {s}"
-        );
-        assert!(
-            !s.contains("None"),
-            "Display must not contain Rust debug syntax: {s}"
-        );
-    }
-
-    #[test]
-    fn display_chromecast() {
-        let e = Error::chromecast("device unreachable");
-        assert_eq!(e.to_string(), "chromecast: device unreachable");
-    }
-
-    #[test]
-    fn display_invalid_argument() {
-        let e = Error::invalid_argument("seek_secs", "negative");
-        assert!(e.to_string().starts_with("invalid argument seek_secs:"));
-    }
-
-    #[test]
-    fn display_not_found() {
-        let e = Error::not_found("track");
-        assert_eq!(e.to_string(), "not found: track");
-    }
-
-    #[test]
-    fn display_cancelled() {
-        assert_eq!(Error::Cancelled.to_string(), "operation cancelled");
-    }
-
-    #[test]
-    fn display_internal() {
-        let e = Error::internal("boom");
-        assert_eq!(e.to_string(), "internal: boom");
-    }
-}

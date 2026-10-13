@@ -1,5 +1,6 @@
 //! MusicBrainz metadata lookup: fetch genre, year, and track number for recordings.
-//! Free API, no key needed. Rate limit: 1 req/sec (enforced via User-Agent + sleep).
+//! Free API, no key needed; it allows one request per second per client, and
+//! lookups here run only on an explicit user action.
 
 use big_os_kit::http_client::http_get_json;
 use big_os_kit::url::encode_query_value as url_encode;
@@ -12,11 +13,6 @@ pub struct MbMetadata {
     pub genre: Option<String>,
     pub year: Option<i32>,
     pub track_number: Option<i32>,
-    pub album: Option<String>,
-    pub artist: Option<String>,
-    pub artist_mbid: Option<String>,
-    pub release_mbid: Option<String>,
-    pub release_group_mbid: Option<String>,
 }
 
 /// Blocking; call from a background thread.
@@ -60,9 +56,6 @@ fn parse_recording_json(body: &str) -> Option<MbMetadata> {
     {
         populate_release_fields(release, &mut meta);
     }
-    if let Some(credits) = recording.get("artist-credit").and_then(|a| a.as_array()) {
-        populate_artist_credit(credits, &mut meta);
-    }
     Some(meta)
 }
 
@@ -79,16 +72,6 @@ fn extract_best_tag(recording: &serde_json::Value) -> Option<String> {
 }
 
 fn populate_release_fields(release: &serde_json::Value, meta: &mut MbMetadata) {
-    if let Some(id) = release.get("id").and_then(|i| i.as_str()) {
-        meta.release_mbid = Some(id.to_string());
-    }
-    if let Some(id) = release
-        .get("release-group")
-        .and_then(|rg| rg.get("id"))
-        .and_then(|i| i.as_str())
-    {
-        meta.release_group_mbid = Some(id.to_string());
-    }
     if let Some(year) = release
         .get("date")
         .and_then(|d| d.as_str())
@@ -96,9 +79,6 @@ fn populate_release_fields(release: &serde_json::Value, meta: &mut MbMetadata) {
         .and_then(|year_str| year_str.parse::<i32>().ok())
     {
         meta.year = Some(year);
-    }
-    if let Some(album) = release.get("title").and_then(|t| t.as_str()) {
-        meta.album = Some(album.to_string());
     }
     meta.track_number = extract_first_track_number(release);
 }
@@ -114,30 +94,6 @@ fn extract_first_track_number(release: &serde_json::Value) -> Option<i32> {
             .parse::<i32>()
             .ok()
     })
-}
-
-/// Concatenates `name+joinphrase` across all credits, keeping "John & Paul"
-/// rather than picking only the lead artist.
-fn populate_artist_credit(credits: &[serde_json::Value], meta: &mut MbMetadata) {
-    if let Some(id) = credits
-        .first()
-        .and_then(|c| c.get("artist"))
-        .and_then(|a| a.get("id"))
-        .and_then(|i| i.as_str())
-    {
-        meta.artist_mbid = Some(id.to_string());
-    }
-    let name: String = credits
-        .iter()
-        .filter_map(|c| {
-            let artist_name = c.get("name")?.as_str()?;
-            let join = c.get("joinphrase").and_then(|j| j.as_str()).unwrap_or("");
-            Some(format!("{artist_name}{join}"))
-        })
-        .collect();
-    if !name.is_empty() {
-        meta.artist = Some(name);
-    }
 }
 
 fn capitalize(s: &str) -> String {
@@ -177,16 +133,6 @@ mod tests {
         assert_eq!(capitalize("ñoño"), "Ñoño");
     }
 
-    #[test]
-    fn mb_metadata_default() {
-        let meta = MbMetadata::default();
-        assert!(meta.genre.is_none());
-        assert!(meta.year.is_none());
-        assert!(meta.track_number.is_none());
-        assert!(meta.album.is_none());
-        assert!(meta.artist.is_none());
-    }
-
     fn make_recording_json(score: i64, extras: &str) -> String {
         format!(r#"{{"recordings":[{{"score":{score},"title":"Test"{extras}}}]}}"#)
     }
@@ -221,19 +167,6 @@ mod tests {
         );
         let meta = parse_recording_json(&json).unwrap();
         assert_eq!(meta.year, Some(1975));
-        assert_eq!(meta.album, Some("Test Album".to_string()));
-        assert_eq!(meta.release_mbid, Some("rel-1".to_string()));
-    }
-
-    #[test]
-    fn parse_recording_extracts_artist_credit() {
-        let json = make_recording_json(
-            90,
-            r#","artist-credit":[{"name":"John","artist":{"id":"art-1"},"joinphrase":" & "},{"name":"Paul","artist":{"id":"art-2"},"joinphrase":""}]"#,
-        );
-        let meta = parse_recording_json(&json).unwrap();
-        assert_eq!(meta.artist, Some("John & Paul".to_string()));
-        assert_eq!(meta.artist_mbid, Some("art-1".to_string()));
     }
 
     #[test]
@@ -261,16 +194,6 @@ mod tests {
     fn parse_recording_no_recordings_key() {
         let json = r#"{"other":"data"}"#;
         assert!(parse_recording_json(json).is_none());
-    }
-
-    #[test]
-    fn parse_recording_release_group_mbid() {
-        let json = make_recording_json(
-            90,
-            r#","releases":[{"id":"r1","title":"A","release-group":{"id":"rg-1"}}]"#,
-        );
-        let meta = parse_recording_json(&json).unwrap();
-        assert_eq!(meta.release_group_mbid, Some("rg-1".to_string()));
     }
 
     #[test]

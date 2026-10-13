@@ -2,7 +2,7 @@
 
 use rusqlite::Connection;
 
-/// Ordered upgrades on top of the `CREATE ... IF NOT EXISTS` baseline below;
+/// Ordered upgrades on top of the idempotent baseline below;
 /// `PRAGMA user_version` records how many have run. Append only: a released
 /// step never changes, and a column added to a baseline table needs its own
 /// `ALTER TABLE` step here so existing databases get it too.
@@ -128,7 +128,8 @@ pub fn run_migrations(conn: &Connection) -> crate::Result<()> {
         ",
     )?;
 
-    // FTS5 is created separately: some builds reject `IF NOT EXISTS` on virtual tables.
+    // FTS5 is created separately: some SQLite builds reject `if not exists` on
+    // virtual tables.
     let has_fts: bool = conn
         .prepare("SELECT 1 FROM sqlite_master WHERE type='table' AND name='tracks_fts'")
         .and_then(|mut s| s.exists([]))

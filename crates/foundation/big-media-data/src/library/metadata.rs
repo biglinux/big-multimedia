@@ -1,8 +1,6 @@
-use big_os_kit::subprocess::{BigSubprocessError, BigSubprocessSpec};
+use big_os_kit::subprocess::{BigSubprocessError, BigSubprocessOutputMode, BigSubprocessSpec};
 use std::fs;
-use std::io::Write;
 use std::path::Path;
-use std::process::{Command, Stdio};
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::time::{Duration, SystemTime};
 
@@ -114,47 +112,56 @@ pub struct TagEdits {
     pub genre: Option<String>,
 }
 
+/// Stream copy of a large file on slow storage; still bounded.
+const TAG_REWRITE_TIMEOUT: Duration = Duration::from_secs(600);
+
+/// Blocking; rewrites the file through ffmpeg and renames it into place.
 pub fn write_track_tags(path: &str, edits: &TagEdits) -> Result<()> {
     let source = Path::new(path);
-    let parent = source.parent().unwrap_or_else(|| Path::new("."));
+    let parent = source
+        .parent()
+        .filter(|p| !p.as_os_str().is_empty())
+        .unwrap_or_else(|| Path::new("."));
     let suffix = source
         .extension()
         .and_then(|ext| ext.to_str())
         .map_or_else(String::new, |ext| format!(".{ext}"));
+    // ffmpeg overwrites this exclusively created file (`-y`); it stays ours
+    // until the rename, so nothing can be planted at its name meanwhile.
     let temp = tempfile::Builder::new()
         .prefix(".big-media-tags-")
         .suffix(&suffix)
         .tempfile_in(parent)
         .map_err(|e| Error::internal(format!("cannot create tag temp file: {e}")))?;
-    let temp_path = temp.path().to_path_buf();
-    drop(temp);
-
-    let mut command = Command::new("ffmpeg");
-    command.args(["-hide_banner", "-loglevel", "error", "-y", "-i"]);
-    command.arg(source);
-    command.args(["-map", "0", "-c", "copy", "-map_metadata", "0"]);
-    add_metadata_args(&mut command, edits);
-    command.arg(&temp_path);
-    command.stdin(Stdio::null());
-    command.stdout(Stdio::null());
-    command.stderr(Stdio::piped());
-
-    let output = command
-        .output()
-        .map_err(|e| Error::internal(format!("failed to spawn ffmpeg: {e}")))?;
+    let output = BigSubprocessSpec::builder()
+        .program("ffmpeg")
+        .args(["-hide_banner", "-loglevel", "error", "-y", "-i"])
+        .arg(source)
+        .args(["-map", "0", "-c", "copy", "-map_metadata", "0"])
+        .args(metadata_args(edits))
+        .arg(temp.path())
+        .stdout(BigSubprocessOutputMode::Null)
+        .timeout(TAG_REWRITE_TIMEOUT)
+        .build()
+        .run()
+        .map_err(|e| Error::internal(format!("ffmpeg tag rewrite failed: {e}")))?;
     if !output.status.success() {
-        let _ = fs::remove_file(&temp_path);
-        let stderr = String::from_utf8_lossy(&output.stderr);
         return Err(Error::internal(format!(
-            "ffmpeg tag rewrite failed: {stderr}"
+            "ffmpeg tag rewrite failed: {}",
+            output.stderr_lossy()
         )));
     }
     if let Ok(meta) = fs::metadata(source) {
-        let _ = fs::set_permissions(&temp_path, meta.permissions());
+        let _ = temp.as_file().set_permissions(meta.permissions());
     }
-    fs::rename(&temp_path, source)
-        .map_err(|e| Error::internal(format!("failed to promote rewritten tags: {e}")))?;
-    sync_parent_dir(parent);
+    // The rewrite replaces the user's only copy of the file: its data must be
+    // on disk before the rename can expose it.
+    temp.as_file().sync_all()?;
+    temp.persist(source)
+        .map_err(|e| Error::internal(format!("failed to promote rewritten tags: {}", e.error)))?;
+    if let Err(error) = big_os_kit::storage::sync_parent(source) {
+        log::warn!("tag rewrite renamed but not synced: {error}");
+    }
     Ok(())
 }
 
@@ -196,9 +203,9 @@ fn album_art(path: &str, cancelled: &AtomicBool, try_embedded: bool) -> Option<V
 
 /// External `.lrc` sidecar wins over embedded lyrics when both exist.
 pub fn extract_lyrics(path: &str) -> Option<String> {
-    let lrc_path = std::path::Path::new(path).with_extension("lrc");
-    if lrc_path.exists()
-        && let Ok(content) = std::fs::read_to_string(&lrc_path)
+    let lrc_path = Path::new(path).with_extension("lrc");
+    if let Ok(Some(bytes)) = big_os_kit::storage::read_regular_limited(&lrc_path, 1024 * 1024)
+        && let Ok(content) = String::from_utf8(bytes)
         && !content.trim().is_empty()
     {
         return Some(content);
@@ -296,31 +303,25 @@ fn parse_year(value: &str) -> Option<i32> {
     value.get(0..4).unwrap_or(value).parse::<i32>().ok()
 }
 
-fn add_metadata_args(command: &mut Command, edits: &TagEdits) {
-    if let Some(ref value) = edits.title {
-        command.args(["-metadata", &format!("title={value}")]);
+fn metadata_args(edits: &TagEdits) -> Vec<String> {
+    let fields = [
+        ("title", edits.title.clone()),
+        ("artist", edits.artist.clone()),
+        ("album", edits.album.clone()),
+        ("album_artist", edits.album_artist.clone()),
+        ("track", edits.track_number.map(|n| n.to_string())),
+        ("disc", edits.disc_number.map(|n| n.to_string())),
+        ("date", edits.year.clone()),
+        ("genre", edits.genre.clone()),
+    ];
+    let mut args = Vec::new();
+    for (key, value) in fields {
+        if let Some(value) = value {
+            args.push("-metadata".to_owned());
+            args.push(format!("{key}={value}"));
+        }
     }
-    if let Some(ref value) = edits.artist {
-        command.args(["-metadata", &format!("artist={value}")]);
-    }
-    if let Some(ref value) = edits.album {
-        command.args(["-metadata", &format!("album={value}")]);
-    }
-    if let Some(ref value) = edits.album_artist {
-        command.args(["-metadata", &format!("album_artist={value}")]);
-    }
-    if let Some(value) = edits.track_number {
-        command.args(["-metadata", &format!("track={value}")]);
-    }
-    if let Some(value) = edits.disc_number {
-        command.args(["-metadata", &format!("disc={value}")]);
-    }
-    if let Some(ref value) = edits.year {
-        command.args(["-metadata", &format!("date={value}")]);
-    }
-    if let Some(ref value) = edits.genre {
-        command.args(["-metadata", &format!("genre={value}")]);
-    }
+    args
 }
 
 fn extract_embedded_album_art(path: &str, cancelled: &AtomicBool) -> Option<Vec<u8>> {
@@ -352,9 +353,56 @@ fn extract_embedded_album_art(path: &str, cancelled: &AtomicBool) -> Option<Vec<
     }
 }
 
-fn sync_parent_dir(parent: &Path) {
-    if let Ok(mut dir) = fs::File::open(parent) {
-        let _ = dir.flush();
-        let _ = dir.sync_all();
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::process::Command;
+
+    #[test]
+    #[cfg_attr(miri, ignore)]
+    fn tag_rewrite_replaces_title() {
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir.path().join("tone.flac");
+        let made = Command::new("ffmpeg")
+            .args([
+                "-loglevel",
+                "error",
+                "-f",
+                "lavfi",
+                "-i",
+                "sine=duration=0.2",
+                "-y",
+            ])
+            .arg(&path)
+            .status()
+            .unwrap();
+        assert!(made.success());
+        let path = path.to_str().unwrap();
+        let edits = TagEdits {
+            title: Some("Renamed".into()),
+            ..TagEdits::default()
+        };
+        write_track_tags(path, &edits).unwrap();
+        assert_eq!(
+            read_track_metadata(path).unwrap().title.as_deref(),
+            Some("Renamed")
+        );
+        assert_eq!(fs::read_dir(dir.path()).unwrap().count(), 1);
+    }
+
+    #[test]
+    #[cfg_attr(miri, ignore)]
+    fn fifo_sidecar_never_blocks() {
+        let dir = tempfile::tempdir().unwrap();
+        let fifo = dir.path().join("song.lrc");
+        assert!(
+            Command::new("mkfifo")
+                .arg(&fifo)
+                .status()
+                .unwrap()
+                .success()
+        );
+        let song = dir.path().join("song.mp3");
+        assert!(extract_lyrics(song.to_str().unwrap()).is_none());
     }
 }

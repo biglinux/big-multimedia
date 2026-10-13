@@ -35,10 +35,6 @@ pub struct QueueSession {
 /// Runs at the connection's `synchronous = NORMAL`: a WAL commit is not synced,
 /// so a power cut may lose the latest queue, never the database.
 pub fn save_queue_session(conn: &Connection, session: &QueueSession) -> crate::Result<()> {
-    write_queue_session(conn, session)
-}
-
-fn write_queue_session(conn: &Connection, session: &QueueSession) -> crate::Result<()> {
     let transaction = conn.unchecked_transaction()?;
     for (name, queue) in [("music", &session.music), ("podcasts", &session.podcasts)] {
         if queue
@@ -109,32 +105,7 @@ pub fn load_queue_session(conn: &Connection) -> crate::Result<QueueSession> {
             }
             continue;
         };
-        let sql = format!(
-            "SELECT {TRACK_COLUMNS_PREFIXED}, q.file_path, q.track_id, q.title, q.artist,
-                    q.album, q.duration_secs
-             FROM playback_queue_items q LEFT JOIN tracks t ON t.file_path=q.file_path
-             WHERE q.queue_name=?1 ORDER BY q.position"
-        );
-        queue.tracks = transaction
-            .prepare(&sql)?
-            .query_map([name], |row| {
-                if row.get::<_, Option<i64>>(0)?.is_some() {
-                    return row_to_track(row);
-                }
-                // The q.* columns follow the track columns; derive the offset from
-                // the list itself so a new track column can't shift these reads.
-                let q = TRACK_COLUMNS_PREFIXED.split(',').count();
-                let mut track = Track::new_external_path(row.get::<_, String>(q)?);
-                // A library entry removed since the save remains a playable external
-                // path. Negative IDs identify podcast episodes, not library records.
-                track.id = row.get::<_, i64>(q + 1)?.min(0);
-                track.title = row.get(q + 2)?;
-                track.artist = row.get(q + 3)?;
-                track.album = row.get(q + 4)?;
-                track.duration_secs = row.get(q + 5)?;
-                Ok(track)
-            })?
-            .collect::<rusqlite::Result<_>>()?;
+        queue.tracks = load_queue_items(&transaction, name)?;
         queue.current = selection.and_then(|index| usize::try_from(index).ok());
         if queue
             .current
@@ -148,4 +119,35 @@ pub fn load_queue_session(conn: &Connection) -> crate::Result<QueueSession> {
     }
     transaction.commit()?;
     Ok(session)
+}
+
+/// Saved items of one queue, preferring the live library row for each path.
+fn load_queue_items(transaction: &Connection, name: &str) -> crate::Result<Vec<Track>> {
+    let sql = format!(
+        "SELECT {TRACK_COLUMNS_PREFIXED}, q.file_path, q.track_id, q.title, q.artist,
+                q.album, q.duration_secs
+         FROM playback_queue_items q LEFT JOIN tracks t ON t.file_path=q.file_path
+         WHERE q.queue_name=?1 ORDER BY q.position"
+    );
+    transaction
+        .prepare(&sql)?
+        .query_map([name], |row| {
+            if row.get::<_, Option<i64>>(0)?.is_some() {
+                return row_to_track(row);
+            }
+            // The q.* columns follow the track columns; derive the offset from
+            // the list itself so a new track column can't shift these reads.
+            let q = TRACK_COLUMNS_PREFIXED.split(',').count();
+            let mut track = Track::new_external_path(row.get::<_, String>(q)?);
+            // A library entry removed since the save remains a playable external
+            // path. Negative IDs identify podcast episodes, not library records.
+            track.id = row.get::<_, i64>(q + 1)?.min(0);
+            track.title = row.get(q + 2)?;
+            track.artist = row.get(q + 3)?;
+            track.album = row.get(q + 4)?;
+            track.duration_secs = row.get(q + 5)?;
+            Ok(track)
+        })?
+        .collect::<rusqlite::Result<_>>()
+        .map_err(Into::into)
 }

@@ -1,6 +1,6 @@
-//! Value types derived from the typed key catalog. Unknown legacy keys are
-//! retained if they obey the line-oriented format; known numeric values must
-//! parse and be finite. Regenerate/check alongside keys.rs in the review gate.
+//! Value types of the typed key catalog in `keys.rs`. Unknown keys are kept
+//! when they obey the line-oriented format; known numeric values must parse
+//! and be finite. `defaults_pass_the_schema` checks `defaults.rs` against it.
 pub(super) fn valid(key: &str, value: &str) -> bool {
     if key.is_empty()
         || key.len() > 128

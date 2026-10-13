@@ -105,63 +105,64 @@ fn child_text_ns(parent: &Node, local_name: &str) -> Option<String> {
         .filter(|s| !s.is_empty())
 }
 
+/// Subscription list and title cache are small program state.
+const MAX_STATE_BYTES: usize = 1024 * 1024;
+
+fn state_path(name: &str) -> Option<std::path::PathBuf> {
+    big_os_kit::xdg_dirs::config_dir()
+        .map(|dir| dir.join(crate::config::audio::CONFIG_DIR).join(name))
+}
+
+fn read_state(name: &str) -> Option<String> {
+    let bytes =
+        big_os_kit::storage::read_regular_limited(&state_path(name)?, MAX_STATE_BYTES).ok()??;
+    String::from_utf8(bytes).ok()
+}
+
 pub fn load_subscriptions() -> Vec<String> {
-    let path = subscriptions_path();
-    match std::fs::read_to_string(&path) {
-        Ok(content) => content
+    read_state("podcast-subscriptions.txt").map_or_else(Vec::new, |content| {
+        content
             .lines()
             .filter(|l| !l.is_empty())
             .map(String::from)
-            .collect(),
-        Err(_) => Vec::new(),
-    }
+            .collect()
+    })
 }
 
 pub fn save_subscriptions(urls: &[String]) -> Result<()> {
-    let path = subscriptions_path();
-    if let Some(parent) = path.parent() {
-        std::fs::create_dir_all(parent)?;
-    }
-    let content = urls.join("\n");
-    std::fs::write(path, content)?;
+    let path = state_path("podcast-subscriptions.txt").ok_or_else(|| {
+        std::io::Error::new(
+            std::io::ErrorKind::NotFound,
+            "configuration directory unavailable",
+        )
+    })?;
+    big_os_kit::storage::atomic_write(&path, urls.join("\n").as_bytes())?;
     Ok(())
-}
-
-fn subscriptions_path() -> std::path::PathBuf {
-    let base = std::env::var("XDG_CONFIG_HOME")
-        .unwrap_or_else(|_| format!("{}/.config", std::env::var("HOME").unwrap_or_default()));
-    std::path::PathBuf::from(base)
-        .join("big-audio-player")
-        .join("podcast-subscriptions.txt")
-}
-
-fn title_cache_path() -> std::path::PathBuf {
-    let base = std::env::var("XDG_CONFIG_HOME")
-        .unwrap_or_else(|_| format!("{}/.config", std::env::var("HOME").unwrap_or_default()));
-    std::path::PathBuf::from(base)
-        .join("big-audio-player")
-        .join("podcast-title-cache.json")
 }
 
 /// `{feed_url: title}` map cached so the sidebar shows the name before the
 /// feed has been re-fetched.
 pub fn load_title_cache() -> std::collections::HashMap<String, String> {
-    let path = title_cache_path();
-    let Ok(title_cache_text) = std::fs::read_to_string(&path) else {
-        return std::collections::HashMap::new();
-    };
-    serde_json::from_str(&title_cache_text).unwrap_or_default()
+    read_state("podcast-title-cache.json")
+        .and_then(|text| serde_json::from_str(&text).ok())
+        .unwrap_or_default()
 }
 
+/// Feeds resolve on parallel workers; the lock keeps one read-modify-write
+/// from dropping another's title.
 pub fn cache_feed_title(feed_url: &str, title: &str) {
+    static UPDATE: std::sync::Mutex<()> = std::sync::Mutex::new(());
+    let _update = UPDATE
+        .lock()
+        .unwrap_or_else(std::sync::PoisonError::into_inner);
     let mut cache = load_title_cache();
     cache.insert(feed_url.to_string(), title.to_string());
-    let path = title_cache_path();
-    if let Some(parent) = path.parent() {
-        let _ = std::fs::create_dir_all(parent);
-    }
-    if let Ok(json) = serde_json::to_string(&cache) {
-        let _ = std::fs::write(path, json);
+    if let (Some(path), Ok(json)) = (
+        state_path("podcast-title-cache.json"),
+        serde_json::to_vec(&cache),
+    ) && let Err(error) = big_os_kit::storage::atomic_write(&path, &json)
+    {
+        log::warn!("podcast title cache not saved: {error}");
     }
 }
 
@@ -178,8 +179,6 @@ pub struct PodcastSearchResult {
 /// PodcastIndex Apple-replacement endpoint; no API key required.
 /// Blocking; call from a background thread.
 pub fn search_podcasts(query: &str) -> Option<Vec<PodcastSearchResult>> {
-    use big_os_kit::http_client::http_get_with_retry;
-
     if query.trim().is_empty() {
         return Some(Vec::new());
     }

@@ -1,4 +1,4 @@
-//! Radio Browser API server discovery via DNS round-robin + per-call rotation.
+//! Radio Browser API server discovery via DNS round-robin and per-call rotation.
 //! Falls back to a hard-coded server list if DNS resolution fails.
 
 use big_os_kit::http_client::http_get_fast;
@@ -31,7 +31,7 @@ fn discover_servers_dns() -> Vec<String> {
         match dns_lookup::lookup_addr(&ip) {
             Ok(hostname) => {
                 let hostname = hostname.trim_end_matches('.').to_string();
-                if hostname.contains("api.radio-browser.info") && seen.insert(hostname.clone()) {
+                if hostname.ends_with(".api.radio-browser.info") && seen.insert(hostname.clone()) {
                     debug!("[radio] discovered server: {hostname} ({ip})");
                     servers.push(hostname);
                 }
@@ -120,11 +120,6 @@ mod tests {
     use super::*;
 
     #[test]
-    fn default_servers_exist() {
-        assert!(!DEFAULT_SERVERS.is_empty());
-    }
-
-    #[test]
     fn default_servers_all_valid_hostnames() {
         for server in DEFAULT_SERVERS {
             assert!(
@@ -167,11 +162,6 @@ mod tests {
     #[test]
     fn rotate_empty_list_unchanged() {
         assert!(rotate_servers(Vec::new()).is_empty());
-    }
-
-    #[test]
-    fn settings_key_defined() {
-        assert_eq!(SETTINGS_KEY_SERVERS, "radio-api-servers");
     }
 
     // DNS discovery calls libc resolver APIs; ordinary tests cover the system

@@ -17,10 +17,7 @@ categories = ["multimedia", "parser-implementations"]
 # `serde_json` is only the Radio-Browser JSON feed parser's; gated so the crate
 # stays near-zero-dep by default (subtitle/playlist/media_files use only std).
 serde_json = { workspace = true, optional = true }
-# `log` is NOT optional: the core `queue` module (always compiled) emits
-# `log::debug!`/`warn!`. Gating it behind `radio-browser` left `queue` unable to
-# find `log` under any feature subset that omits radio-browser (caught by
-# `cargo hack --feature-powerset`). Workspace logging facade, single version.
+# Not optional: the always-compiled `queue` module logs too.
 log = { workspace = true }
 
 [features]

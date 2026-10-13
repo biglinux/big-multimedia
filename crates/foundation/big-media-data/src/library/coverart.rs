@@ -1,5 +1,5 @@
 //! Cover Art Archive fallback: fetch album art from MusicBrainz + CAA.
-//! Free API, no key needed. Rate limit: 1 req/sec (enforced via User-Agent).
+//! Free API, no key needed; MusicBrainz allows one request per second.
 //! Data is CC0 licensed.
 
 use big_os_kit::http_client::{RequestHeaders, http_get_bytes_capped, http_get_json};
@@ -22,6 +22,7 @@ fn build_mb_search_url(artist: &str, album: &str) -> String {
     )
 }
 
+/// The id is spliced into a Cover Art Archive path, so only a UUID passes.
 fn extract_release_mbid(body: &str) -> Option<String> {
     let json: serde_json::Value = serde_json::from_str(body).ok()?;
     json.get("releases")?
@@ -29,6 +30,7 @@ fn extract_release_mbid(body: &str) -> Option<String> {
         .first()?
         .get("id")?
         .as_str()
+        .filter(|id| id.len() == 36 && id.bytes().all(|b| b.is_ascii_hexdigit() || b == b'-'))
         .map(String::from)
 }
 
@@ -128,8 +130,15 @@ mod tests {
 
     #[test]
     fn extract_mbid_valid_json() {
-        let json = r#"{"releases":[{"id":"abc-123","title":"Test"}]}"#;
-        assert_eq!(extract_release_mbid(json), Some("abc-123".to_string()));
+        let id = "b84ee12a-09ef-421b-82de-0441a926375b";
+        let json = format!(r#"{{"releases":[{{"id":"{id}","title":"Test"}}]}}"#);
+        assert_eq!(extract_release_mbid(&json).as_deref(), Some(id));
+    }
+
+    #[test]
+    fn extract_mbid_rejects_path_text() {
+        let json = r#"{"releases":[{"id":"../../release/x?y=1","title":"Test"}]}"#;
+        assert_eq!(extract_release_mbid(json), None);
     }
 
     #[test]

@@ -11,7 +11,7 @@ use log::warn;
 ///
 /// Returned by `parse_stations_json` and `parse_stations_json_filtered`;
 /// trimmed of surrounding whitespace and validated to reject empty
-/// names/URLs and non-HTTP favicons.
+/// names, non-HTTP stream URLs and non-HTTP favicons.
 pub type RadioBrowserEntry = (String, String, String, String, String);
 
 const SPAM_VOTE_THRESHOLD: u64 = 50_000;
@@ -70,7 +70,9 @@ fn parse_stations_inner(body: &str, filter_spam: bool) -> Vec<RadioBrowserEntry>
                 .as_str()?
                 .trim()
                 .to_string();
-            if name.is_empty() || url.is_empty() {
+            // The URL goes to the player; a feed entry must not pick a local
+            // file or one of mpv's special protocols.
+            if name.is_empty() || !is_http_url(&url) {
                 return None;
             }
 
@@ -88,13 +90,19 @@ fn parse_stations_inner(body: &str, filter_spam: bool) -> Vec<RadioBrowserEntry>
                 .get("favicon")
                 .and_then(|value| value.as_str())
                 .map(str::trim)
-                .filter(|value| !value.is_empty() && *value != "null" && value.starts_with("http"))
+                .filter(|value| is_http_url(value))
                 .unwrap_or("")
                 .to_string();
 
             Some((name, url, country, tags, favicon))
         })
         .collect()
+}
+
+fn is_http_url(url: &str) -> bool {
+    url.split_once("://").is_some_and(|(scheme, _)| {
+        scheme.eq_ignore_ascii_case("http") || scheme.eq_ignore_ascii_case("https")
+    })
 }
 
 /// Best-effort detection of the user's ISO 3166-1 alpha-2 country code from locale env vars.
@@ -262,5 +270,9 @@ mod tests {
     }
 
     #[test]
-    fn spam_vote_threshold_is_compile_time_checked() {}
+    fn parse_rejects_non_http_stream() {
+        let json = r#"[{"name": "Local", "url": "file:///etc/passwd"},
+                       {"name": "Filter", "url": "lavfi://sine"}]"#;
+        assert!(parse_stations_json(json).is_empty());
+    }
 }
