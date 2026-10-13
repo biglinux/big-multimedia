@@ -324,6 +324,10 @@ impl Columns {
     pub(super) fn geometry(&self) -> Geometry {
         let mut geometry = Geometry::rows(self.art);
         geometry.gap = if self.art > 0 { 8 } else { 0 };
+        // 48 px from one row to the next, with or without a cover: a long
+        // list of short rows is hard to follow across its columns.
+        geometry.margin = (2, 6);
+        geometry.padding = if self.art > 0 { 8 } else { 12 };
         geometry.columns = self
             .order
             .iter()
@@ -491,6 +495,7 @@ impl TrackList {
             columns: Rc::clone(&columns),
         });
         let view = ItemView::new(presenter, columns.borrow().geometry());
+        view.set_stripes(true);
         view.set_vexpand(true);
         view.set_enable_rubberband(false);
         view.set_single_click_activate(false);
