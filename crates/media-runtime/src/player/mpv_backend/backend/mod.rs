@@ -18,8 +18,8 @@ use std::time::Duration;
 use super::{PlayerEvent, TrackMetadata};
 use init_options::{
     AUDIO_WATCH_LATER_OPTIONS, VIDEO_WATCH_LATER_OPTIONS, apply_audio_only_options,
-    apply_audio_output, apply_custom_options, apply_input_ipc, apply_playback_options,
-    apply_video_options, apply_watch_later, parse_custom_options,
+    apply_audio_output, apply_custom_options, apply_playback_options, apply_video_options,
+    apply_watch_later, parse_custom_options,
 };
 
 /// Last-seen property values of the event loop, plus events produced while
@@ -115,7 +115,6 @@ impl MpvBackend {
                 crate::config::video::WATCH_LATER_RELATIVE,
                 VIDEO_WATCH_LATER_OPTIONS,
             )?;
-            apply_input_ipc(init, crate::config::video::MPV_IPC_SOCKET);
             apply_custom_options(init, &custom_opts);
             Ok(())
         })?;

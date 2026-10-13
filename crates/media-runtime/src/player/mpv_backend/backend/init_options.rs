@@ -155,14 +155,6 @@ pub(super) fn apply_watch_later(
     init.set_option("watch-later-options", options)
 }
 
-/// Best-effort IPC socket under `$XDG_RUNTIME_DIR`. Failures are non-fatal.
-pub(super) fn apply_input_ipc(init: &MpvInitializer, sock_name: &str) {
-    if let Some(runtime_dir) = gtk::glib::user_runtime_dir().to_str() {
-        let sock = format!("{runtime_dir}/{sock_name}");
-        let _ = init.set_option("input-ipc-server", sock);
-    }
-}
-
 /// Apply user-supplied `key=value` pairs; individual failures are logged
 /// but don't abort initialisation.
 pub(super) fn apply_custom_options(init: &MpvInitializer, opts: &[(String, String)]) {

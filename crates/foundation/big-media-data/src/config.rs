@@ -15,7 +15,6 @@ pub mod video {
     pub const CONFIG_DIR: &str = "big-video-player";
     pub const RESOURCE_PREFIX: &str = "/br/com/biglinux/VideoPlayer";
     pub const WATCH_LATER_RELATIVE: &str = "big-video-player/watch_later";
-    pub const MPV_IPC_SOCKET: &str = "big-video-player.sock";
     pub const USER_SHADERS_RELATIVE: &str = "big-video-player/shaders";
 }
 
