@@ -12,6 +12,9 @@ arch=('x86_64')
 url="https://github.com/biglinux/${pkgbase}"
 license=('GPL-3.0-or-later')
 makedepends=('git' 'cargo' 'pkgconf' 'gettext' 'gtk4>=4.22' 'libadwaita>=1.9' 'mpv')
+# makepkg's lto adds -flto to CFLAGS, so the C in ring and jemalloc builds as
+# GCC bytecode that lld cannot link. The release profile already does fat LTO.
+options=('!lto')
 # Inside a checkout this recipe builds its working tree, uncommitted changes
 # included. GitLab's chroot receives only this directory and fetches from
 # GitHub instead; keep that line literal, the builder appends #branch= to it.
