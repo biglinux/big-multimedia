@@ -90,9 +90,19 @@ impl WriteLock {
             if !file.metadata()?.is_file() {
                 return Err(io::Error::other("lock is not a regular file"));
             }
-            // SAFETY: owned fd; LOCK_NB forbids waiting for another writer.
-            if unsafe { libc::flock(file.as_raw_fd(), libc::LOCK_EX | libc::LOCK_NB) } < 0 {
-                return Err(io::Error::last_os_error());
+            // A child forked by another thread shares the lock until it execs,
+            // a window of microseconds; a few short tries outlast it, while a
+            // real writer still holds the lock after them.
+            for attempt in 0.. {
+                // SAFETY: owned fd; LOCK_NB forbids waiting for another writer.
+                if unsafe { libc::flock(file.as_raw_fd(), libc::LOCK_EX | libc::LOCK_NB) } == 0 {
+                    break;
+                }
+                let error = io::Error::last_os_error();
+                if attempt == 4 || error.kind() != io::ErrorKind::WouldBlock {
+                    return Err(error);
+                }
+                std::thread::sleep(std::time::Duration::from_millis(2));
             }
             Ok(Self { _file: file })
         }
