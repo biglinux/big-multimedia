@@ -58,9 +58,9 @@ impl OsdCssConfig {
         }
     }
 
-    // Theme mode aliases `player_icon_color` to `window_fg_color`.
+    // Following the system, `player_icon_color` is `window_fg_color`.
     fn css_color_foundation(&self, settings: &Settings) -> String {
-        crate::shared::theming::build_custom_palette_css(
+        crate::shared::theming::build_palette_css(
             settings,
             &self.color_source,
             keys::UI_BG_COLOR,
