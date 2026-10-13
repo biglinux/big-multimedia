@@ -3,8 +3,10 @@
 #
 # Builds the audio/video player binaries and drives stable menu dialogs through
 # AT-SPI actions in a private KWin session. Each dialog run records Anonymous
-# and Pss after every close and emits reusable measurement artifacts for the
-# workspace migration matrix.
+# and Pss after every close; a steady Anonymous slope above the threshold fails.
+#
+# ATSPI_TOOLS_DIR names the directory holding run_headless_wayland_atspi.sh
+# (private KWin + AT-SPI session runner) and atspi_tool.py.
 set -euo pipefail
 
 SCRIPT_NAME="${0##*/}"
@@ -13,16 +15,16 @@ ROOT_DIR="$(cd -- "$SCRIPT_DIR/.." && pwd)"
 EVIDENCE_DIR="${OUT_DIR:-${BIGLINUX_UI_EVIDENCE_DIR:-$ROOT_DIR/target/leak-perf/dialogs}}"
 BUILD_PROFILE="${LEAK_BUILD_PROFILE:-release}"
 
-SKILL_SCRIPT_DIR="${ATSPI_SKILL_DIR:-$HOME/.agents/skills/linux-ui-a11y/scripts}"
-HEADLESS_RUNNER="$SKILL_SCRIPT_DIR/run_headless_wayland_atspi.sh"
-ATSPI_TOOL="$SKILL_SCRIPT_DIR/atspi_tool.py"
+TOOLS_DIR="${ATSPI_TOOLS_DIR:-}"
+HEADLESS_RUNNER="$TOOLS_DIR/run_headless_wayland_atspi.sh"
+ATSPI_TOOL="$TOOLS_DIR/atspi_tool.py"
 
 usage() {
 	cat <<EOF
 Usage: $SCRIPT_NAME [--out DIR] [--profile release|debug]
 
 Builds BigMultimedia audio/video players and measures dialog open/close anonymous-memory
-growth through the canonical headless KWin + AT-SPI diagnostic session.
+growth in a private KWin + AT-SPI session. Needs ATSPI_TOOLS_DIR.
 EOF
 }
 
@@ -51,8 +53,8 @@ while [ "$#" -gt 0 ]; do
 	esac
 done
 
-[[ -x "$HEADLESS_RUNNER" && -f "$ATSPI_TOOL" ]] || {
-	echo "$SCRIPT_NAME: KWin/AT-SPI runner missing under $SKILL_SCRIPT_DIR" >&2
+[[ -n "$TOOLS_DIR" && -x "$HEADLESS_RUNNER" && -f "$ATSPI_TOOL" ]] || {
+	echo "$SCRIPT_NAME: set ATSPI_TOOLS_DIR to the directory with run_headless_wayland_atspi.sh and atspi_tool.py" >&2
 	exit 2
 }
 
@@ -398,7 +400,7 @@ report = {
     "iterations": iterations,
     "threshold_kib_per_open": threshold_kib,
     "activation": "AT-SPI action",
-    "canonical_stack": "KWin + AT-SPI diagnostic session",
+    "session": "KWin + AT-SPI",
     "diagnostic_no_screenshot": True,
     "would_fail": any(run["exit_code"] != 0 for run in runs),
     "runs": runs,

@@ -11,7 +11,7 @@ LC_ALL = "C.UTF-8"
 [[allow]]
 type = "AdwBreakpoint"
 per_cycle = 3
-reason = "libadwaita 1.9.3: AdwBreakpointBin does not release its breakpoints; upstream patch in ~/relatos-upstream/libadwaita-1-breakpoint-bin-leak.patch"
+reason = "libadwaita 1.9.3: AdwBreakpointBin does not release its breakpoints"
 
 [[surface]]
 name = "open-disc"

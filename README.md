@@ -1,9 +1,10 @@
 # big-multimedia
 
-Self-contained workspace for the BigLinux media **players** (audio + video).
-It vendors the media engine (`big-media-runtime`: mpv playback, cast, media
-probing) and every shared component crate, so it builds with **no external
-`big-*` path dependencies**. Conversion lives in the separate converter GUIs.
+Workspace for the BigLinux media **players** (audio + video). It holds the
+media engine (`big-media-runtime`: mpv playback, cast, media probing) and the
+component crates the players share; the only external BigLinux dependency is
+[big-gtk-kit](https://github.com/biglinux/big-gtk-kit), the shared GTK building
+blocks. Conversion lives in the separate converter GUIs.
 
 | Crate (binary) | Role |
 |----------------|------|
@@ -13,12 +14,13 @@ probing) and every shared component crate, so it builds with **no external
 The players convert nothing themselves: `big_media_runtime::shared::converter_handoff`
 opens the converter GUI with `--segments=START-END,...` and the file.
 
-Vendored under `crates/` (were external path deps, now workspace members):
-`media-runtime`, `foundation/*` (os-kit, audio-effects, media-engines,
-mpv-render, media-data), `app/*` (app-kit, app-kit-core),
-`ui/generic/big-relm4-components`, `ui/media/{big-media-components,big-player-ui}`.
-These keep their upstream MIT license; the aggregate repo is
-GPL-3.0-or-later because the players link the GPL engine.
+Library crates under `crates/`: `media-runtime`, `foundation/*` (os-kit,
+audio-effects, media-engines, mpv-render, media-data), `app/*` (app-kit,
+app-kit-core), `ui/generic/big-relm4-components` and
+`ui/media/{big-media-components,big-player-ui}`. The component crates are MIT;
+the repository as a whole is GPL-3.0-or-later because the players link the GPL
+engine. `third_party/relm4` is Relm4 with a lifetime patch (see
+`CONTRIBUTING.md`).
 
 ## Build
 
@@ -34,3 +36,5 @@ crate. Translations are one shared catalog for the whole suite in
 The workspace `Cargo.toml` (with `[workspace.package]` /
 `[workspace.dependencies]`), `clippy.toml`, `rust-toolchain.toml`, `deny.toml`,
 and `LICENSE` live at the root.
+
+Build, test and resource-lifetime rules: `CONTRIBUTING.md`.

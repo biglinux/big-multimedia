@@ -1,9 +1,5 @@
-/target
-**/target
-Cargo.lock.bak
-tmp/
-mutants.out/
-mutants.out.old/
+/target/
+mutants.out*/
 # makepkg build artifacts
 **/packaging/pacman/pkg/
 **/packaging/pacman/src/

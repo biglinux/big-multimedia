@@ -1,16 +1,23 @@
 #!/usr/bin/env python3
-"""Run gtk4-leak-guard with actions attached to the players' content widgets.
+"""Run gtk4-leak-guard's sweep with actions attached to the players' content widgets.
 
-Run inside an isolated accessible session, from the workspace root. Arguments
-are those of /note/gtk4-leak-guard/sweep/leak_sweep.py.
+Run inside an isolated accessible session, from the workspace root, with
+GTK4_LEAK_GUARD set to a gtk4-leak-guard checkout. The arguments are those of
+its sweep/leak_sweep.py.
 """
 
 import importlib.util
+import os
 import sys
+from pathlib import Path
 
-spec = importlib.util.spec_from_file_location(
-    "leak_sweep", "/note/gtk4-leak-guard/sweep/leak_sweep.py"
-)
+guard = os.environ.get("GTK4_LEAK_GUARD")
+if not guard:
+    sys.exit("leak-sweep.py: set GTK4_LEAK_GUARD to a gtk4-leak-guard checkout")
+sweep_path = Path(guard, "sweep", "leak_sweep.py")
+spec = importlib.util.spec_from_file_location("leak_sweep", sweep_path)
+if spec is None or spec.loader is None or not sweep_path.is_file():
+    sys.exit(f"leak-sweep.py: {sweep_path} not found")
 sweep = importlib.util.module_from_spec(spec)
 spec.loader.exec_module(sweep)
 original_step = sweep.run_step
