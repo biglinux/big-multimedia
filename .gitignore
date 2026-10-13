@@ -1,8 +1,9 @@
 /target/
 mutants.out*/
 # makepkg build artifacts
-**/packaging/pacman/pkg/
-**/packaging/pacman/src/
+/pkgbuild/pkg/
+/pkgbuild/src/
+/pkgbuild/*.pkg.tar*
 /locale/
 wayland-screenshot-*.png
 __pycache__/

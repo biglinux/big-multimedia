@@ -23,8 +23,6 @@ the file (and any marked cuts) to `big-video-converter-gui` or
   filters, IPTV and cast components.
 - `application-assets/resources/`: GResource CSS.
 - `resources/`: desktop file, AppStream metadata and icon.
-- `packaging/pacman/PKGBUILD`: builds this member (with `chromecast`) from the
-  workspace root.
 
 ## Build and run
 

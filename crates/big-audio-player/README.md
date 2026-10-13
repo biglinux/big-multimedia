@@ -22,7 +22,6 @@ The player converts nothing itself. Trim & Export and Convert hand the track
   playlist import, queue undo, MPRIS state).
 - `application-assets/resources/`: GResource CSS.
 - `resources/`: desktop file, AppStream metadata and icon.
-- `packaging/pacman/PKGBUILD`: builds this member from the workspace root.
 
 ## Build and run
 

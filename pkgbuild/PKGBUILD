@@ -1,0 +1,119 @@
+# Maintainer: Bruno Goncalves <bigbruno@gmail.com>
+# shellcheck shell=bash disable=SC2034,SC2128,SC2154
+
+pkgbase=big-multimedia
+pkgname=(big-audio-player big-video-player)
+# Read once: makepkg sources this file again in its fakeroot pass, and both
+# passes must name the same packages.
+export BIG_PKGSTAMP="${BIG_PKGSTAMP:-$(date +%y.%m.%d-%H%M)}"
+pkgver=${BIG_PKGSTAMP%-*}
+pkgrel=${BIG_PKGSTAMP#*-}
+arch=('x86_64')
+url="https://github.com/biglinux/${pkgbase}"
+license=('GPL-3.0-or-later')
+makedepends=('git' 'cargo' 'pkgconf' 'gettext' 'gtk4>=4.22' 'libadwaita>=1.9' 'mpv')
+# Inside a checkout this recipe builds its working tree, uncommitted changes
+# included. GitLab's chroot receives only this directory and fetches from
+# GitHub instead; keep that line literal, the builder appends #branch= to it.
+_recipe_dir=$(cd "$(dirname "${BASH_SOURCE[0]}")" 2>/dev/null && pwd -P)
+_checkout=${_recipe_dir%/*}
+if [ -e "${_checkout}/.git" ] && [ -f "${_checkout}/Cargo.toml" ]; then
+    source=()
+    sha256sums=()
+else
+    _checkout=
+    source=("git+${url}.git")
+    sha256sums=('SKIP')
+fi
+
+prepare() {
+    if [ -n "${_checkout}" ]; then
+        # The files git sees: tracked and new ones, without ignored output or
+        # this recipe's own src/ and pkg/.
+        rm -rf "${srcdir:?}/${pkgbase}"
+        mkdir "${srcdir}/${pkgbase}"
+        git -C "${_checkout}" ls-files -z --cached --others --exclude-standard \
+            -- ":!:${_recipe_dir#"${_checkout}"/}" |
+            tar -C "${_checkout}" --null --files-from=- --ignore-failed-read -cf - |
+            tar -C "${srcdir}/${pkgbase}" -xf -
+    fi
+    cd "${srcdir}/${pkgbase}" || return
+    cargo fetch --locked --target "$(rustc -vV | sed -n 's/^host: //p')"
+}
+
+build() {
+    cd "${srcdir}/${pkgbase}" || return
+    export RUSTFLAGS="${RUSTFLAGS} --remap-path-prefix=${srcdir}/${pkgbase}=/build"
+    cargo build --frozen --release -p big-audio-player -p big-video-player
+}
+
+# The shared gettext catalog goes under each package's private locale dir,
+# which resolve_locale_dir() prefers, so the two co-installable players never
+# own the same file in /usr/share/locale.
+_install_catalog() {
+    local po="${srcdir}/${pkgbase}/crates/media-runtime/po" lang
+    while read -r lang; do
+        [[ -z "${lang}" || "${lang}" == \#* ]] && continue
+        install -d "${pkgdir}/usr/share/${pkgname}/locale/${lang}/LC_MESSAGES"
+        msgfmt "${po}/${lang}.po" \
+            -o "${pkgdir}/usr/share/${pkgname}/locale/${lang}/LC_MESSAGES/big-media-runtime.mo"
+    done <"${po}/LINGUAS"
+}
+
+# The binary, desktop file, AppStream metadata and icon of one player.
+_install_player() {
+    local id=$1 crate="${srcdir}/${pkgbase}/crates/${pkgname}/resources"
+    install -Dm755 "${srcdir}/${pkgbase}/target/release/${pkgname}" "${pkgdir}/usr/bin/${pkgname}"
+    install -Dm644 "${crate}/applications/br.com.biglinux.${id}.desktop" \
+        "${pkgdir}/usr/share/applications/br.com.biglinux.${id}.desktop"
+    install -Dm644 "${crate}/metainfo/br.com.biglinux.${id}.metainfo.xml" \
+        "${pkgdir}/usr/share/metainfo/br.com.biglinux.${id}.metainfo.xml"
+    install -Dm644 "${crate}/icons/hicolor/scalable/apps/${pkgname}.svg" \
+        "${pkgdir}/usr/share/icons/hicolor/scalable/apps/${pkgname}.svg"
+    _install_catalog
+}
+
+package_big-audio-player() {
+    pkgdesc='Music and audio player for BigLinux'
+    # libpulse provides pactl, which drives the stream volume.
+    depends=('gtk4>=4.22' 'libadwaita>=1.9' 'mpv' 'ffmpeg' 'libpulse')
+    optdepends=('deepfilternet3-native: light voice noise reduction (DeepFilterNet3)'
+                'dpdfnet-native: higher-quality voice noise reduction (DPDFNet-2 48 kHz)'
+                'big-audio-converter: trim and convert tracks'
+                'bignetscreen: play on a TV or Chromecast')
+    _install_player AudioPlayer
+}
+
+package_big-video-player() {
+    pkgdesc='Hardware-accelerated video player for BigLinux'
+    # The shipped GPU shaders: FSR/CAS and Anime4K are MIT, RAVU is LGPL-3.0.
+    license=('GPL-3.0-or-later' 'MIT' 'LGPL-3.0-or-later')
+    # ffmpeg renders the seek-bar preview thumbnails.
+    depends=('gtk4>=4.22' 'libadwaita>=1.9' 'mpv' 'ffmpeg' 'libpulse')
+    # Successor of the monorepo bigvideo package; big-video-module depends on
+    # bigvideo.
+    replaces=('big-player-video' 'bigvideo')
+    conflicts=('big-player-video' 'bigvideo')
+    provides=('bigvideo=0.1.0-7')
+    optdepends=('deepfilternet3-native: light voice noise reduction (DeepFilterNet3)'
+                'dpdfnet-native: higher-quality voice noise reduction (DPDFNet-2 48 kHz)'
+                'big-video-converter: cut and convert videos'
+                'big-audio-converter: extract audio from videos'
+                'bignetscreen: play on a TV or Chromecast')
+    _install_player VideoPlayer
+
+    # GPU shaders the filters dialog offers: without them its rows stay
+    # "not installed" and saved choices do nothing.
+    local shaders="${srcdir}/${pkgbase}/crates/media-runtime/data/shaders"
+    local dest="${pkgdir}/usr/share/big-media-runtime/shaders" notice
+    install -Dm644 -t "${dest}" "${shaders}/FSR.glsl" "${shaders}/CAS-scaled.glsl"
+    install -Dm644 -t "${dest}/anime4k" "${shaders}"/anime4k/*.glsl
+    install -Dm644 -t "${dest}/ravu" "${shaders}"/ravu/*.hook
+    # MIT asks for its notice alongside: each shader's header block.
+    install -d "${pkgdir}/usr/share/licenses/${pkgname}"
+    for notice in FSR.glsl CAS-scaled.glsl anime4k/Anime4K_Clamp_Highlights.glsl; do
+        printf '%s:\n' "${notice}"
+        awk '{sub(/\r$/, "")} {print} /SOFTWARE\.$/ {exit}' "${shaders}/${notice}"
+        printf '\n'
+    done >"${pkgdir}/usr/share/licenses/${pkgname}/MIT-shaders"
+}
