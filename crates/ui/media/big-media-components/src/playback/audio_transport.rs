@@ -466,7 +466,9 @@ fn build_hover_control(
         .orientation(gtk::Orientation::Horizontal)
         .spacing(2)
         .build();
-    let button = tooltip::icon_button(icon_name, label, &[]);
+    // The popover that opens on hover names the control.
+    let button = gtk::Button::from_icon_name(icon_name);
+    button.update_property(&[gtk::accessible::Property::Label(label)]);
     button.set_has_frame(false);
     let value_label = gtk::Label::builder()
         .label(initial_text)

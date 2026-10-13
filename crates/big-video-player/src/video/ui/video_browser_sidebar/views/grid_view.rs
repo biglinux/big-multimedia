@@ -5,7 +5,7 @@ use gtk::{gdk, gio, glib};
 
 use super::super::BrowserState;
 use super::model::{build_filter, build_store, finish_view};
-use super::shared::{attach_context_menu, centered_icon, set_accent, tooltip_set};
+use super::shared::{attach_context_menu, centered_icon, set_accent};
 use crate::media::playlist::{self, EntryKind, PlaylistEntry};
 use crate::media::thumbnail;
 use big_media_components::time::duration_hms as format_duration_hms;
@@ -247,7 +247,6 @@ fn bind_folder_card(w: &CardWidgets, entry: &PlaylistEntry, icon: &str) {
     w.badge.set_visible(false);
     w.select_check.set_visible(false);
     w.name.set_label(&entry.display_name);
-    tooltip_set(&w.name, &entry.path);
     w.name.remove_css_class("accent");
     w.card.remove_css_class("playlist-card-active");
     w.card.remove_css_class("selected");
@@ -281,7 +280,6 @@ fn bind_video_card(
     w.badge.set_visible(false);
     w.badge.set_label("");
     w.name.set_label(&entry.display_name);
-    tooltip_set(&w.name, &entry.path);
 
     // Triage select indicator (Files select mode only).
     if state.select_mode.get() {

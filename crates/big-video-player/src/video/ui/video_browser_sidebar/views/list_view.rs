@@ -5,7 +5,7 @@ use gtk::{gio, glib};
 
 use super::super::BrowserState;
 use super::model::{build_filter, build_store, finish_view};
-use super::shared::{attach_context_menu, set_accent, tooltip_set};
+use super::shared::{attach_context_menu, set_accent};
 use crate::media::playlist::{self, EntryKind, PlaylistEntry};
 
 /// ListView factory: icon + name + a metadata caption line per row.
@@ -107,7 +107,6 @@ pub(crate) fn build_list_view(
                     icon.remove_css_class("accent");
                     label.set_label(&entry.display_name);
                     label.remove_css_class("accent");
-                    tooltip_set(&label, &entry.path);
                     meta.set_visible(false);
                     row.remove_css_class("playlist-current");
                     row.set_widget_name(&format!("folder:{}", entry.path));
@@ -142,7 +141,6 @@ pub(crate) fn build_list_view(
                         row.remove_css_class("selected");
                     }
                     label.set_label(&entry.display_name);
-                    tooltip_set(&label, &entry.path);
                     row.update_property(&[gtk::accessible::Property::Label(&entry.display_name)]);
                     meta.set_visible(true);
                     meta.set_label("");

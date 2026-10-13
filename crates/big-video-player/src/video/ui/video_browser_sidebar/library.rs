@@ -624,7 +624,6 @@ fn result_row(state: &Rc<BrowserState>, path: &str) -> adw::ActionRow {
         .subtitle_lines(1)
         .activatable(true)
         .build();
-    row.set_tooltip_text(Some(path));
     let picture = gtk::Picture::builder()
         .content_fit(gtk::ContentFit::Cover)
         .build();

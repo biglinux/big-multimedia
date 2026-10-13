@@ -5,7 +5,7 @@ use gtk::{gdk, gio, glib};
 
 use super::super::{BrowserState, chrome};
 use super::model::{build_filter, build_store, finish_view};
-use super::shared::{set_accent, tooltip_set};
+use super::shared::set_accent;
 use crate::media::playlist::{self, EntryKind, PlaylistEntry};
 use crate::media::thumbnail;
 use big_media_components::time::duration_hms as format_duration_hms;
@@ -138,7 +138,6 @@ fn build_queue_row(state: &Rc<BrowserState>) -> gtk::Box {
         .css_classes(["dim-label", "queue-handle"])
         .build();
     handle.set_cursor_from_name(Some("grab"));
-    tooltip_set(&handle, &crate::i18n::i18n("Drag to change the order"));
     row.append(&handle);
 
     let pos = gtk::Label::builder()
@@ -211,7 +210,9 @@ fn build_queue_row(state: &Rc<BrowserState>) -> gtk::Box {
         .valign(gtk::Align::Center)
         .css_classes(["flat", "circular", "queue-remove"])
         .build();
-    tooltip_set(&remove, &crate::i18n::i18n("Remove from playlist"));
+    remove.update_property(&[gtk::accessible::Property::Label(&crate::i18n::i18n(
+        "Remove from playlist",
+    ))]);
     remove.connect_clicked({
         let state = state.clone();
         let row_weak = row.downgrade();
@@ -316,7 +317,6 @@ fn bind_queue_row(state: &Rc<BrowserState>, queue_cell: &gtk::ListItem, generati
     }
     set_accent(&pos, is_current);
     title.set_label(&entry.display_name);
-    tooltip_set(&title, &entry.path);
     length.set_visible(false);
     watched.set_visible(false);
     detail.set_visible(false);

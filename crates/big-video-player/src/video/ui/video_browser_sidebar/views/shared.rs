@@ -45,7 +45,3 @@ pub(super) fn set_accent(widget: &impl IsA<gtk::Widget>, on: bool) {
         widget.remove_css_class("accent");
     }
 }
-
-pub(super) fn tooltip_set(widget: &impl IsA<gtk::Widget>, text: &str) {
-    widget.set_tooltip_text(Some(text));
-}
