@@ -9,7 +9,6 @@ use big_relm4_components::input::button_content::{BigButtonContentSpec, build_bu
 use big_relm4_components::layout::{
     dialog_footer::{BigDialogFooter, BigDialogFooterSpec},
     dialog_page::BigDialogPage,
-    hamburger_menu::{BigHamburgerMenuSpec, BigMenuActionItem, build_hamburger_menu_button},
     preferences::BigPreferencesGroupSpec,
     toolbar_pane::{BigToolbarHeader, BigToolbarHeaderSpec},
 };
@@ -87,44 +86,77 @@ pub(super) fn build_toolbar(
         &header_label,
     );
 
-    let main_menu_label = i18n("Main Menu");
-    // Standard Adwaita header hamburger: a flat GtkMenuButton owning its popover
-    // for its whole life, like the converter header bar.
-    let menu_button = build_hamburger_menu_button(
-        &BigHamburgerMenuSpec::new(main_menu_label)
-            .css_classes(["flat"])
-            .items(main_menu_items()),
+    // A native menu: grouped, with each action's shortcut beside it.
+    let menu_button = big_relm4_components::feedback::tooltip::icon_menu_button(
+        "open-menu-symbolic",
+        &i18n("Main Menu"),
+        &["flat"],
     );
+    menu_button.set_menu_model(Some(&main_menu()));
+    menu_button.set_primary(true);
     install_queue_menu_actions(&menu_button, sender);
     bar.pack_end(&menu_button);
 
     (bar.into_root(), header_label)
 }
 
-fn main_menu_items() -> Vec<BigMenuActionItem> {
-    let mut items = vec![
-        BigMenuActionItem::new(i18n("Manage Playlists"), "win.show-manage-playlists"),
-        BigMenuActionItem::new(i18n("Save Queue as Playlist"), "queue.save-as-playlist"),
-        BigMenuActionItem::new(i18n("Music Folders"), "win.add-folder"),
-        BigMenuActionItem::new(i18n("Remove Duplicates"), "queue.remove-duplicates"),
-        BigMenuActionItem::new(i18n("Clear Queue"), "queue.clear"),
-        BigMenuActionItem::new(i18n("Equalizer"), "win.show-equalizer"),
-        BigMenuActionItem::new(i18n("Sleep Timer"), "win.sleep-timer"),
-        BigMenuActionItem::new(i18n("Trim & Export"), "win.trim-export"),
-        BigMenuActionItem::new(i18n("Convert…"), "win.convert"),
-        BigMenuActionItem::new(i18n("Smartphone"), "win.show-smartphone"),
-        BigMenuActionItem::new(i18n("Appearance"), "win.show-appearance"),
-        BigMenuActionItem::new(i18n("Preferences"), "win.show-preferences"),
+/// The queue first, then the library, sound and tools, other screens and
+/// the application. Each group is a shared section: GTK keeps every section
+/// a menu shows.
+fn main_menu() -> gio::Menu {
+    let menu = gio::Menu::new();
+    let groups: [(&'static str, Vec<(String, &str)>); 5] = [
+        (
+            "audio-menu-queue",
+            vec![
+                (i18n("Save Queue as Playlist"), "queue.save-as-playlist"),
+                (i18n("Remove Duplicates"), "queue.remove-duplicates"),
+                (i18n("Clear Queue"), "queue.clear"),
+            ],
+        ),
+        (
+            "audio-menu-library",
+            vec![
+                (i18n("Manage Playlists"), "win.show-manage-playlists"),
+                (i18n("Music Folders"), "win.add-folder"),
+            ],
+        ),
+        (
+            "audio-menu-tools",
+            vec![
+                (i18n("Equalizer"), "win.show-equalizer"),
+                (i18n("Sleep Timer"), "win.sleep-timer"),
+                (i18n("Trim & Export"), "win.trim-export"),
+                (i18n("Convert…"), "win.convert"),
+            ],
+        ),
+        (
+            "audio-menu-devices",
+            vec![
+                (i18n("Play on a TV"), "win.show-cast"),
+                (i18n("Smartphone"), "win.show-smartphone"),
+            ],
+        ),
+        (
+            "audio-menu-app",
+            vec![
+                (i18n("Appearance"), "win.show-appearance"),
+                (i18n("Preferences"), "win.show-preferences"),
+                (i18n("Keyboard Shortcuts"), "win.show-shortcuts"),
+                (i18n("About"), "app.about"),
+            ],
+        ),
     ];
-    items.push(BigMenuActionItem::new(
-        i18n("Play on a TV"),
-        "win.show-cast",
-    ));
-    items.extend([
-        BigMenuActionItem::new(i18n("Keyboard Shortcuts"), "win.show-shortcuts"),
-        BigMenuActionItem::new(i18n("About"), "app.about"),
-    ]);
-    items
+    for (key, items) in groups {
+        big_gtk_kit::menu::append_shared_section(&menu, None, key, || {
+            let section = gio::Menu::new();
+            for (label, action) in items {
+                section.append(Some(&label), Some(action));
+            }
+            section
+        });
+    }
+    menu
 }
 
 fn install_queue_menu_actions(
@@ -368,12 +400,10 @@ fn build_welcome(sender: &ComponentSender<PlaylistPanel>) -> gtk::Box {
 #[cfg(all(test, not(miri)))]
 mod tests {
     use super::*;
-    use big_relm4_components::layout::hamburger_menu::build_flat_menu_model;
 
     #[test]
     fn main_menu_uses_gmenu_actions_for_every_entry() {
-        let menu = build_flat_menu_model(&main_menu_items());
-        let actions = big_relm4_components::layout::hamburger_menu::menu_action_names(&menu);
+        let actions = big_relm4_components::layout::hamburger_menu::menu_action_names(&main_menu());
 
         for action in [
             "win.show-manage-playlists",
@@ -401,21 +431,6 @@ mod tests {
             actions.iter().any(|actual| actual == "win.show-cast"),
             "missing TV menu action; actions={actions:?}"
         );
-    }
-
-    #[test]
-    fn main_menu_is_flat_without_sections_or_submenus() {
-        let menu = build_flat_menu_model(&main_menu_items());
-        for index in 0..menu.n_items() {
-            assert!(
-                menu.item_link(index, "section").is_none(),
-                "hamburger menu must not expose categories"
-            );
-            assert!(
-                menu.item_link(index, "submenu").is_none(),
-                "hamburger menu must not expose category submenus"
-            );
-        }
     }
 
     #[test]
