@@ -75,8 +75,17 @@ impl TvLink {
     }
 
     /// Reach the daemon unless already connected or trying; listeners hear
-    /// the outcome.
+    /// the outcome. A daemon that exited while idle is started again.
     fn connect(self: &Rc<Self>) {
+        if self
+            .client
+            .borrow()
+            .as_ref()
+            .is_some_and(|client| !client.alive())
+        {
+            self.lost.set(false);
+            self.client.take();
+        }
         if self.client.borrow().is_some() || self.connecting.replace(true) {
             return;
         }

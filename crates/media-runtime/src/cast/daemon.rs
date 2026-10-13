@@ -193,8 +193,13 @@ impl Client {
         }
     }
 
+    /// Whether the daemon this client reached still runs; it exits when idle.
+    pub fn alive(&self) -> bool {
+        self.proxy.name_owner().as_deref() == Some(&self.daemon_owner)
+    }
+
     pub fn state(&self) -> Result<State, glib::Error> {
-        if self.proxy.name_owner().as_deref() != Some(&self.daemon_owner) {
+        if !self.alive() {
             return Err(glib::Error::new(
                 gio::IOErrorEnum::NotConnected,
                 "BigNetScreen disconnected",
