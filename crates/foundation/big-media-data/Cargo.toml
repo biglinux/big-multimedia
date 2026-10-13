@@ -39,7 +39,7 @@ roxmltree = { version = "0.21", optional = true }
 # Radio-Browser server discovery.
 dns-lookup = { version = "3", optional = true }
 # gettext translation (GTK-free string lookup).
-gettext-rs = { version = "0.7", features = ["gettext-system"] }
+gettext-rs = { version = "0.8", features = ["gettext-system"] }
 
 [features]
 default = ["db", "library", "radio"]

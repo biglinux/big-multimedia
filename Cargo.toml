@@ -1,4 +1,4 @@
-# big-multimedia — self-contained media players workspace (audio + video).
+# big-multimedia: media players workspace (audio + video).
 #
 # The two player binaries sit on top of the media engine (big-media-runtime)
 # and the shared component crates, all members of this workspace.
@@ -43,7 +43,7 @@ relm4 = { version = "0.11.0", features = ["libadwaita"] }
 log = "0.4"
 serde = { version = "1", features = ["derive"] }
 serde_json = "1"
-gettext-rs = { version = "0.7", features = ["gettext-system"] }
+gettext-rs = { version = "0.8", features = ["gettext-system"] }
 bon = "3"
 thiserror = "2"
 glib = "0.22"
@@ -61,15 +61,12 @@ big-media-engines = { path = "crates/foundation/big-media-engines", version = "0
 big-mpv-render = { path = "crates/foundation/big-mpv-render", version = "0.1.0" }
 big-media-runtime = { path = "crates/media-runtime", version = "2.0.0", default-features = false }
 big-player-ui = { path = "crates/ui/media/big-player-ui", version = "0.1.0" }
-# Shared GTK building blocks. A path until the first push of
-# github.com/biglinux/big-gtk-kit; then `git = "…"` (deny.toml allows the org).
-big-gtk-kit = { path = "../../code/big-gtk-kit" }
-big-item-view = { path = "../../code/big-gtk-kit/big-item-view" }
+# Shared GTK building blocks; Cargo.lock pins the commit.
+big-gtk-kit = { git = "https://github.com/biglinux/big-gtk-kit" }
+big-item-view = { git = "https://github.com/biglinux/big-gtk-kit" }
 
 [profile.release]
 opt-level = 3
-# Fat LTO is the project's release choice, not a measured improvement here.
-# Compare size, build cost and runtime with thin LTO on the target before claiming gains.
 lto = "fat"
 codegen-units = 1
 strip = "symbols"
