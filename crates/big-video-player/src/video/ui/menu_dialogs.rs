@@ -20,6 +20,9 @@ use big_relm4_components::layout::{
     preferences::BigPreferencesGroupSpec,
 };
 
+/// The sleep timer fades the volume out over its last seconds.
+const SLEEP_FADE_SECS: u32 = 10;
+
 // Bound setup tasks as well as accepted native requests. The global admission
 // counter covers concurrent windows in the single-process host.
 static SCREENSHOT_PREPARATIONS: std::sync::atomic::AtomicUsize =
@@ -203,10 +206,16 @@ impl VideoShell {
         self.set_sleep_timer_source(Some(source));
     }
 
-    /// Disarm the sleep timer (no-op if none armed). Removes the stored source.
+    /// Disarm the sleep timer (no-op if none armed). Removes the stored source
+    /// and, when the fade-out has begun, puts the volume back.
     pub(super) fn cancel_sleep_timer(&mut self) {
         if let Some(source) = self.take_sleep_timer_source() {
             big_gtk_kit::source::remove(source);
+            if self.sleep_timer_remaining_secs() <= SLEEP_FADE_SECS
+                && let Some(mpv) = self.mpv_handle().borrow().as_ref()
+            {
+                mpv.set_volume(self.sleep_timer_volume_value());
+            }
         }
         self.set_sleep_timer_remaining(0);
     }
@@ -231,10 +240,10 @@ impl VideoShell {
         }
         let next = remaining - 1;
         self.set_sleep_timer_remaining(next);
-        if next <= 10
+        if next <= SLEEP_FADE_SECS
             && let Some(mpv) = self.mpv_handle().borrow().as_ref()
         {
-            mpv.set_volume(pre_fade * (f64::from(next) / 10.0));
+            mpv.set_volume(pre_fade * (f64::from(next) / f64::from(SLEEP_FADE_SECS)));
         }
     }
 

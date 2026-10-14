@@ -39,16 +39,26 @@ impl VideoShell {
             .emit(VideoTrimBarInput::SetDuration(self.trim_duration()));
         // Inset the video so the full frame shows above/below the pinned bars
         // (deferred so the trim row's reveal animation has settled → real heights).
+        // Weak, and only while still cutting: leaving trim mode within the
+        // delay must keep the edge-to-edge video it restored.
         {
-            let main_overlay = self.main_overlay.clone();
-            let controls = self.osd.controls_revealer.clone();
-            let header = self.osd.header_revealer.clone();
+            let main_overlay = self.main_overlay.downgrade();
+            let controls = self.osd.controls_revealer.downgrade();
+            let header = self.osd.header_revealer.downgrade();
+            let trim_active = self.trim_active.clone();
             glib::timeout_add_local_once(std::time::Duration::from_millis(350), move || {
-                apply_video_inset(
-                    &main_overlay,
-                    header.height().max(0),
-                    controls.height().max(0),
-                );
+                if !trim_active.get() {
+                    return;
+                }
+                if let (Some(main_overlay), Some(header), Some(controls)) =
+                    (main_overlay.upgrade(), header.upgrade(), controls.upgrade())
+                {
+                    apply_video_inset(
+                        &main_overlay,
+                        header.height().max(0),
+                        controls.height().max(0),
+                    );
+                }
             });
         }
         if let Some(mpv) = self.mpv.borrow().as_ref() {

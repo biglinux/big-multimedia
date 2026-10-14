@@ -155,9 +155,8 @@ fn copyable_metadata_row(
     copyable_metadata_lines: &CopyableMetadataLines,
 ) -> adw::ActionRow {
     BigCopyableDetailRow::new(
-        BigCopyableDetailRowSpec::new(title, value, &labels.copy)
-            .escape_markup(false)
-            .selectable_subtitle(false),
+        // Values come from the file and its tags: "Tom & Jerry" is text.
+        BigCopyableDetailRowSpec::new(title, value, &labels.copy).selectable_subtitle(false),
         Some(copyable_metadata_lines),
     )
     .into_row()

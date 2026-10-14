@@ -426,11 +426,7 @@ impl VideoShell {
                     notice.show(&i18n("Could not move to trash"));
                     return;
                 }
-                for path in &trashed {
-                    let _ = shell.send(VideoShellInput::Playlist(
-                        VideoBrowserSidebarOutput::RemoveEntry(path.clone()),
-                    ));
-                }
+                let _ = shell.send(VideoShellInput::Trashed(trashed.clone()));
                 let _ = pl_sender.send(VideoBrowserSidebarInput::RefreshFolder);
                 let title = ni18n(
                     "{} file moved to trash",
@@ -554,6 +550,17 @@ impl VideoShell {
 
     /// Remove `path` from the mpv playlist (the sidebar already dropped it from
     /// its own listing). No-op if the listing has since diverged from mpv.
+    /// Files moved to the trash: out of mpv's playlist and the sidebar's
+    /// queue, which, unlike a removal from the sidebar, still lists them.
+    pub(super) fn remove_trashed(&mut self, paths: &[String]) {
+        for path in paths {
+            self.remove_playlist_entry(path);
+        }
+        self.playlist.emit(VideoBrowserSidebarInput::SetQueue(
+            self.playlist_paths.clone(),
+        ));
+    }
+
     fn remove_playlist_entry(&mut self, path: &str) {
         if let Some(i) = playlist_index_of(&self.playlist_paths, path) {
             if let Some(mpv) = self.mpv.borrow().as_ref()

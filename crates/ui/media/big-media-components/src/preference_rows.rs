@@ -45,7 +45,10 @@ fn rgba_to_mpv(rgba: gdk::RGBA) -> String {
 
 fn mpv_to_rgba(color: &str) -> gdk::RGBA {
     let hex = color.trim_start_matches('#');
-    if hex.len() == 8 {
+    // ASCII only: byte slicing inside a multi-byte character would panic.
+    if !hex.is_ascii() {
+        gdk::RGBA::new(1.0, 1.0, 1.0, 1.0)
+    } else if hex.len() == 8 {
         let a = f32::from(u8::from_str_radix(&hex[0..2], 16).unwrap_or(255)) / 255.0;
         let r = f32::from(u8::from_str_radix(&hex[2..4], 16).unwrap_or(255)) / 255.0;
         let g = f32::from(u8::from_str_radix(&hex[4..6], 16).unwrap_or(255)) / 255.0;
