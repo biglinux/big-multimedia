@@ -56,6 +56,7 @@ impl VideoShell {
                 }
             }
             PlayerEvent::FileLoaded(_title) => {
+                self.drop_trim_for_new_file();
                 // Idle mode ("close player" / "close after first file") is only
                 // safe with a file loaded: on an empty playlist `idle=no` would
                 // make mpv quit at startup.

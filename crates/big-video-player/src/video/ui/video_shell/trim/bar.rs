@@ -47,6 +47,8 @@ pub enum VideoTrimBarInput {
     SetSegmentTimes(u64, f64, f64),
     /// Build the export request from the current state and emit it.
     RequestExport,
+    /// Release "Play only the marked cuts" (trim mode left).
+    StopPlaySelection,
 }
 
 /// Typed effects the shell acts on.
@@ -88,6 +90,7 @@ pub struct VideoTrimBar {
     hint_label: gtk::Label,
     count_label: gtk::Label,
     export_btn: gtk::Button,
+    play_selection_btn: gtk::ToggleButton,
 }
 
 impl VideoTrimBar {
@@ -257,6 +260,7 @@ impl Component for VideoTrimBar {
         row.append(&mark_button);
         row.append(&clear_button);
         row.append(&play_selection_button);
+        let play_selection_btn = play_selection_button.clone();
         row.append(&middle);
         row.append(&count_label);
         row.append(&export_button);
@@ -270,6 +274,7 @@ impl Component for VideoTrimBar {
             hint_label,
             count_label,
             export_btn: export_button,
+            play_selection_btn,
         };
         model.refresh(&sender);
         ComponentParts { model, widgets: () }
@@ -295,6 +300,10 @@ impl Component for VideoTrimBar {
             VideoTrimBarInput::ClearSegments => self.state.borrow_mut().clear(),
             VideoTrimBarInput::SetSegmentTimes(id, a, b) => {
                 self.state.borrow_mut().set_segment_times(id, a, b);
+            }
+            VideoTrimBarInput::StopPlaySelection => {
+                self.play_selection_btn.set_active(false);
+                return;
             }
             VideoTrimBarInput::RequestExport => {
                 let ranges = self.state.borrow().export_ranges();

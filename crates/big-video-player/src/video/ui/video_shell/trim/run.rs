@@ -72,6 +72,7 @@ impl VideoShell {
     pub(in crate::video::ui::video_shell) fn exit_trim_mode(&mut self) {
         self.trim_active.set(false);
         self.trim_play_selection.set(false);
+        self.trim.emit(VideoTrimBarInput::StopPlaySelection);
         self.controls
             .emit(VideoControlsBarInput::SetEditMode(false));
         // Restore edge-to-edge video.
@@ -128,6 +129,15 @@ impl VideoShell {
             mpv.seek_absolute(next);
         } else {
             mpv.seek_absolute(first_start);
+        }
+    }
+
+    /// Another file loaded: its cuts were marked on the previous one, so drop
+    /// them and leave trim mode rather than export them against this file.
+    pub(in crate::video::ui::video_shell) fn drop_trim_for_new_file(&mut self) {
+        if self.trim_active.get() {
+            self.trim.emit(VideoTrimBarInput::ClearSegments);
+            self.exit_trim_mode();
         }
     }
 
