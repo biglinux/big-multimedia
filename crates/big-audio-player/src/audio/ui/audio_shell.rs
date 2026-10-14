@@ -10,6 +10,7 @@ mod component;
 mod engine;
 mod export;
 mod input;
+mod keyboard;
 mod library_generation;
 mod library_store;
 use library_generation::LibraryGeneration;

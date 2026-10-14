@@ -10,7 +10,8 @@
 
 use super::*;
 
-use crate::video::keybindings::{build_single_key_map, key_to_accel_string};
+use crate::video::keybindings::build_single_key_map;
+use big_app_kit::keybindings::focus_accepts_text;
 
 const SEEK_SHORT_SECS: f64 = 5.0;
 /// Shift+arrow seek; the shortcuts dialog calls it 30 s.
@@ -122,7 +123,7 @@ pub(super) fn wire_keyboard_shortcuts(
             Some(_) => glib::Propagation::Proceed,
         }
     });
-    attach_to_window(root, window_controller);
+    big_app_kit::keybindings::attach_to_window(root, window_controller);
 }
 
 /// A button on the header or the control bar, outside any of their menus.
@@ -133,31 +134,6 @@ fn is_osd_button(focus: &gtk::Widget, osd_areas: &[glib::WeakRef<gtk::Widget>]) 
             .iter()
             .filter_map(glib::WeakRef::upgrade)
             .any(|area| focus.is_ancestor(&area))
-}
-
-/// Keep `controller` on the window that hosts `root` while `root` is realized,
-/// and take it off again on unrealize, so a window that outlives the player
-/// (a host remounting it) keeps no handler that owns the player's state.
-fn attach_to_window(root: &gtk::Box, controller: gtk::EventControllerKey) {
-    let attached: Rc<RefCell<Option<glib::WeakRef<gtk::Window>>>> = Rc::default();
-    root.connect_realize({
-        let attached = attached.clone();
-        let controller = controller.clone();
-        move |root| {
-            let Some(window) = root.root().and_downcast::<gtk::Window>() else {
-                return;
-            };
-            if controller.widget().is_none() {
-                window.add_controller(controller.clone());
-                attached.replace(Some(window.downgrade()));
-            }
-        }
-    });
-    root.connect_unrealize(move |_| {
-        if let Some(window) = attached.take().and_then(|window| window.upgrade()) {
-            window.remove_controller(&controller);
-        }
-    });
 }
 
 /// What the shortcut keys act on.
@@ -228,31 +204,12 @@ fn close_open_popovers(popovers: &[glib::WeakRef<gtk::Popover>]) -> bool {
     closed
 }
 
-/// Find the action bound to a key press. The press is tried as typed, then
-/// lower-cased (Caps Lock gives `F` for `f`, Shift+E gives `<Shift>E` for
-/// `<Shift>e`), then without a Shift the symbol already carries (`>` arrives
-/// as Shift+`greater` but is bound as `greater`).
 fn lookup_action(
     map: &std::collections::HashMap<String, String>,
     keyval: gtk::gdk::Key,
     state: gtk::gdk::ModifierType,
 ) -> Option<&str> {
-    use gtk::gdk::ModifierType;
-    let state =
-        state & (ModifierType::CONTROL_MASK | ModifierType::SHIFT_MASK | ModifierType::ALT_MASK);
-    let lower = keyval.to_lower();
-    let mut candidates = vec![
-        key_to_accel_string(keyval, state),
-        key_to_accel_string(lower, state),
-    ];
-    if state.contains(ModifierType::SHIFT_MASK) {
-        let unshifted = state - ModifierType::SHIFT_MASK;
-        candidates.push(key_to_accel_string(keyval, unshifted));
-    }
-    candidates
-        .iter()
-        .find_map(|accel| map.get(accel.as_str()))
-        .map(String::as_str)
+    big_app_kit::keybindings::lookup_shortcut(map, keyval, state)
 }
 
 /// Play what the clipboard holds: a stream URL, a `file://` URI or a path to
@@ -394,20 +351,6 @@ fn media_key_action(keyval: gtk::gdk::Key) -> Option<&'static str> {
         Key::AudioPrev => Some("playlist-prev"),
         _ => None,
     }
-}
-
-/// True when the focused widget is a text editor: bare-key shortcuts must yield
-/// so typing works (mirrors the audio player's `focus_accepts_text`).
-fn focus_accepts_text(widget: &gtk::Widget) -> bool {
-    let Some(window) = widget.root().and_downcast::<gtk::Window>() else {
-        return false;
-    };
-    let Some(focus) = gtk::prelude::GtkWindowExt::focus(&window) else {
-        return false;
-    };
-    focus.dynamic_cast_ref::<gtk::Editable>().is_some()
-        || focus.is::<gtk::TextView>()
-        || focus.ancestor(gtk::TextView::static_type()).is_some()
 }
 
 #[cfg(test)]

@@ -9,6 +9,7 @@
 //! helpers and the GTK-backed `display_accel` label formatter stay here.
 
 use gtk::gdk;
+use gtk::prelude::IsA;
 
 #[doc(inline)]
 pub use big_app_kit_core::keybindings::{
@@ -35,6 +36,86 @@ pub fn key_to_accel_string(keyval: gdk::Key, state: gdk::ModifierType) -> String
     }
     parts.push_str(&key_name_for_accel_string(keyval));
     parts
+}
+
+/// Find the action bound to a key press in an accel → action `map`.
+///
+/// The press is tried as typed, then lower-cased (Caps Lock gives `F` for
+/// `f`, Shift+E gives `<Shift>E` for `<Shift>e`), then without a Shift the
+/// symbol already carries (`>` arrives as Shift+`greater` but is bound as
+/// `greater`). Modifiers other than Ctrl, Shift and Alt are ignored.
+#[must_use]
+pub fn lookup_shortcut<S: std::hash::BuildHasher>(
+    map: &std::collections::HashMap<String, String, S>,
+    keyval: gdk::Key,
+    state: gdk::ModifierType,
+) -> Option<&str> {
+    use gdk::ModifierType;
+    let state =
+        state & (ModifierType::CONTROL_MASK | ModifierType::SHIFT_MASK | ModifierType::ALT_MASK);
+    let mut candidates = vec![
+        key_to_accel_string(keyval, state),
+        key_to_accel_string(keyval.to_lower(), state),
+    ];
+    if state.contains(ModifierType::SHIFT_MASK) {
+        candidates.push(key_to_accel_string(
+            keyval,
+            state - ModifierType::SHIFT_MASK,
+        ));
+    }
+    candidates
+        .iter()
+        .find_map(|accel| map.get(accel.as_str()))
+        .map(String::as_str)
+}
+
+/// Whether the focus of the window holding `widget` is a text editor, where
+/// bare-key shortcuts must yield so typing works.
+#[must_use]
+pub fn focus_accepts_text(widget: &gtk::Widget) -> bool {
+    use gtk::prelude::*;
+    let Some(focus) = widget
+        .root()
+        .and_downcast::<gtk::Window>()
+        .and_then(|window| gtk::prelude::GtkWindowExt::focus(&window))
+    else {
+        return false;
+    };
+    focus.dynamic_cast_ref::<gtk::Editable>().is_some()
+        || focus.is::<gtk::TextView>()
+        || focus.ancestor(gtk::TextView::static_type()).is_some()
+}
+
+/// Keep `controller` on the window that hosts `content` while `content` is
+/// realized, and take it off on unrealize, so a window that outlives the
+/// content (a host remounting it) keeps no handler that owns its state.
+///
+/// Controllers on the content see a key only when the focus is inside it.
+/// With no focus widget (a click on a surface that takes no focus, or the
+/// focused button hidden away) the key reaches the window alone, so a
+/// capture-phase controller attached here is what still hears it.
+pub fn attach_to_window(content: &impl IsA<gtk::Widget>, controller: gtk::EventControllerKey) {
+    use gtk::prelude::*;
+    let attached: std::rc::Rc<std::cell::RefCell<Option<gtk::glib::WeakRef<gtk::Window>>>> =
+        std::rc::Rc::default();
+    content.as_ref().connect_realize({
+        let attached = attached.clone();
+        let controller = controller.clone();
+        move |content| {
+            let Some(window) = content.root().and_downcast::<gtk::Window>() else {
+                return;
+            };
+            if controller.widget().is_none() {
+                window.add_controller(controller.clone());
+                attached.replace(Some(window.downgrade()));
+            }
+        }
+    });
+    content.as_ref().connect_unrealize(move |_| {
+        if let Some(window) = attached.take().and_then(|window| window.upgrade()) {
+            window.remove_controller(&controller);
+        }
+    });
 }
 
 fn key_name_for_accel_string(keyval: gdk::Key) -> String {
