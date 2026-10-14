@@ -418,7 +418,7 @@ fn build_disc_uri(selected: u32, device: &str) -> Option<String> {
     })
 }
 
-fn accepted_open_url(input: &str) -> Option<String> {
+pub(super) fn accepted_open_url(input: &str) -> Option<String> {
     let url = input.trim();
     if url.starts_with('-') || !is_remote_uri(url) {
         return None;

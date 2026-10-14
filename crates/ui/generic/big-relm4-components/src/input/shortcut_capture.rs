@@ -177,19 +177,36 @@ pub fn show_shortcut_capture_dialog_with_validator<FK, FF, FR, FA>(
         let key_to_binding = key_to_binding.clone();
         let format_binding = format_binding.clone();
         let validate_binding = validate_binding.clone();
+        let dialog_weak = capture_dialog.downgrade();
         key_ctrl.connect_key_pressed(move |_, keyval, _keycode, state| {
             if is_modifier_key(keyval) {
                 return glib::Propagation::Proceed;
             }
+            // Bare Escape cancels, keeping the shortcut as it was.
+            if keyval == gdk::Key::Escape
+                && !state.intersects(
+                    gdk::ModifierType::CONTROL_MASK
+                        | gdk::ModifierType::SHIFT_MASK
+                        | gdk::ModifierType::ALT_MASK,
+                )
+            {
+                captured_binding.borrow_mut().take();
+                if let Some(dialog) = dialog_weak.upgrade() {
+                    dialog.close();
+                }
+                return glib::Propagation::Stop;
+            }
             let binding = key_to_binding(keyval, state);
             current_display.set_label(&(format_binding)(&binding));
+            // A refused key is shown with the reason but never applied.
             if let Some(message) = validate_binding(&binding) {
                 validation_label.set_label(&message);
                 validation_label.set_visible(true);
+                captured_binding.borrow_mut().take();
             } else {
                 validation_label.set_visible(false);
+                *captured_binding.borrow_mut() = Some(binding);
             }
-            *captured_binding.borrow_mut() = Some(binding);
             glib::Propagation::Stop
         });
     }
@@ -197,7 +214,10 @@ pub fn show_shortcut_capture_dialog_with_validator<FK, FF, FR, FA>(
 
     {
         let dialog_weak = capture_dialog.downgrade();
+        let captured_binding = captured_binding.clone();
         reset_button.connect_clicked(move |_| {
+            // Closing applies a captured key: drop it, or it undoes the reset.
+            captured_binding.borrow_mut().take();
             on_reset();
             if let Some(dialog) = dialog_weak.upgrade() {
                 dialog.close();

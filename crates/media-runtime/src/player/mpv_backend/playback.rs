@@ -324,6 +324,21 @@ impl MpvBackend {
             let _ = m.set_property("chapter", idx);
         });
     }
+
+    /// Go back to where the last seek started.
+    pub fn revert_seek(&self) {
+        let _ = self.queue_command("revert-seek", &[]);
+    }
+
+    /// Seek to the start of the next (`1`) or previous (`-1`) subtitle line.
+    pub fn sub_seek(&self, lines: i64) {
+        let _ = self.queue_command("sub-seek", &[&lines.to_string()]);
+    }
+
+    /// Step `property` to its next value, wrapping (`sub`, `edition`, …).
+    pub fn cycle(&self, property: &str) {
+        let _ = self.queue_command("cycle", &[property]);
+    }
 }
 
 #[cfg(test)]

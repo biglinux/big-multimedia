@@ -63,6 +63,7 @@ mod idle_wallpaper;
 mod input;
 mod input_gestures;
 mod keyboard;
+mod menus;
 mod mpris;
 mod osd;
 mod panel;

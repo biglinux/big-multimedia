@@ -13,69 +13,52 @@ use super::*;
 use crate::video::keybindings::{build_single_key_map, key_to_accel_string};
 
 const SEEK_SHORT_SECS: f64 = 5.0;
-const SEEK_LONG_SECS: f64 = 60.0;
+/// Shift+arrow seek; the shortcuts dialog calls it 30 s.
+const SEEK_LONG_SECS: f64 = 30.0;
 const VOLUME_STEP: f64 = 5.0;
 const SPEED_STEP: f64 = 0.1;
 const SPEED_MIN: f64 = 0.25;
 const SPEED_MAX: f64 = 4.0;
+const PANSCAN_STEP: f64 = 0.1;
 
-/// Install the window-level keyboard-shortcut controller on the player content
-/// root. Bare single-key bindings only, skipped while a text widget has focus.
+/// Install the keyboard shortcuts and the trim-mode keys (M = mark, Esc =
+/// exit).
+///
+/// Controllers on the content root see a key only when the focus is inside
+/// it. Clicking the video focuses nothing, and the focus also goes away when
+/// the auto-hidden OSD takes the focused button with it: the key then goes to
+/// the window alone, and the window's own bindings eat Space and the arrows.
+/// A capture-phase controller on the window handles exactly that case, the
+/// window with no focus widget, so a dialog or a sidebar list holding the
+/// focus keeps its keys. It also takes Space from a button of the OSD
+/// (`osd_areas`), where it would press the button again instead of pausing;
+/// Enter still presses it.
 pub(super) fn wire_keyboard_shortcuts(
     root: &gtk::Box,
     mpv: &Rc<RefCell<Option<Arc<MpvBackend>>>>,
     tv: &Rc<crate::shared::tv_cast::TvLink>,
     settings: &Settings,
     sender: &ComponentSender<VideoShell>,
-) {
-    let key_controller = gtk::EventControllerKey::new();
-    let tv = tv.clone();
-    let single_key_actions = build_single_key_map(&settings.get_string(keys::CUSTOM_KEYBINDINGS));
-    let mpv = mpv.clone();
-    let input = sender.input_sender().clone();
-    let settings = settings.clone();
-    key_controller.connect_key_pressed(move |controller, keyval, _code, state| {
-        // Read the same volume ceiling the slider uses, so the keyboard step
-        // reaches the >100% boost region instead of a hardcoded 100 cap.
-        let volume_max = f64::from(settings.get_int(keys::VOLUME_MAX)).max(100.0);
-        // Hardware media keys fire regardless of focus.
-        if let Some(action) = media_key_action(keyval)
-            && dispatch_video_shortcut(action, &mpv, &tv, &input, volume_max)
-        {
-            return glib::Propagation::Stop;
-        }
-        if focus_accepts_text(controller) {
-            return glib::Propagation::Proceed;
-        }
-        let accel = key_to_accel_string(keyval, state);
-        let Some(action) = single_key_actions.get(accel.as_str()) else {
-            return glib::Propagation::Proceed;
-        };
-        if dispatch_video_shortcut(action, &mpv, &tv, &input, volume_max) {
-            glib::Propagation::Stop
-        } else {
-            glib::Propagation::Proceed
-        }
-    });
-    root.add_controller(key_controller);
-}
-
-/// Install the capture-phase trim-mode key controller (M = mark, Esc = exit). It
-/// runs before the normal bubble-phase shortcut controller and acts only while
-/// trim mode is active, so outside trim mode those keys keep their usual meaning.
-/// A handled key is consumed (`Stop`) so it never reaches the normal map.
-pub(super) fn wire_trim_keys(
-    root: &gtk::Box,
     trim_active: Rc<Cell<bool>>,
-    sender: &ComponentSender<VideoShell>,
+    popovers: &[gtk::Popover],
+    osd_areas: &[gtk::Widget],
 ) {
-    let controller = gtk::EventControllerKey::new();
-    controller.set_propagation_phase(gtk::PropagationPhase::Capture);
     let input = sender.input_sender().clone();
-    controller.connect_key_pressed(move |controller, keyval, _code, _state| {
+    let shortcuts = Rc::new(Shortcuts {
+        single_key_actions: RefCell::default(),
+        mpv: mpv.clone(),
+        tv: tv.clone(),
+        input: input.clone(),
+        settings: settings.clone(),
+        popovers: popovers.iter().map(ObjectExt::downgrade).collect(),
+    });
+
+    // Trim keys run before the normal map, and only in trim mode, so outside
+    // it M and Esc keep their usual meaning.
+    let trim = Rc::new(move |keyval: gtk::gdk::Key| {
         use VideoShellInput as In;
         use gtk::gdk::Key;
-        if !trim_active.get() || focus_accepts_text(controller) {
+        if !trim_active.get() {
             return glib::Propagation::Proceed;
         }
         let message = match keyval {
@@ -86,7 +69,210 @@ pub(super) fn wire_trim_keys(
         let _ = input.send(message);
         glib::Propagation::Stop
     });
-    root.add_controller(controller);
+
+    let trim_controller = gtk::EventControllerKey::new();
+    trim_controller.set_propagation_phase(gtk::PropagationPhase::Capture);
+    trim_controller.connect_key_pressed({
+        let trim = trim.clone();
+        move |controller, keyval, _code, _state| {
+            if controller
+                .widget()
+                .is_some_and(|widget| focus_accepts_text(&widget))
+            {
+                return glib::Propagation::Proceed;
+            }
+            trim(keyval)
+        }
+    });
+    root.add_controller(trim_controller);
+
+    let key_controller = gtk::EventControllerKey::new();
+    key_controller.connect_key_pressed({
+        let shortcuts = shortcuts.clone();
+        move |controller, keyval, _code, state| {
+            let in_text = controller
+                .widget()
+                .is_some_and(|widget| focus_accepts_text(&widget));
+            shortcuts.handle(keyval, state, in_text)
+        }
+    });
+    root.add_controller(key_controller);
+
+    let window_controller = gtk::EventControllerKey::new();
+    window_controller.set_propagation_phase(gtk::PropagationPhase::Capture);
+    let osd_areas: Vec<glib::WeakRef<gtk::Widget>> =
+        osd_areas.iter().map(ObjectExt::downgrade).collect();
+    window_controller.connect_key_pressed(move |controller, keyval, _code, state| {
+        let Some(window) = controller.widget().and_downcast::<gtk::Window>() else {
+            return glib::Propagation::Proceed;
+        };
+        match gtk::prelude::GtkWindowExt::focus(&window) {
+            None => {
+                if trim(keyval) == glib::Propagation::Stop {
+                    return glib::Propagation::Stop;
+                }
+                shortcuts.handle(keyval, state, false)
+            }
+            Some(focus)
+                if is_osd_button(&focus, &osd_areas)
+                    && shortcuts.action_for(keyval, state).as_deref() == Some("play-pause") =>
+            {
+                shortcuts.handle(keyval, state, false)
+            }
+            Some(_) => glib::Propagation::Proceed,
+        }
+    });
+    attach_to_window(root, window_controller);
+}
+
+/// A button on the header or the control bar, outside any of their menus.
+fn is_osd_button(focus: &gtk::Widget, osd_areas: &[glib::WeakRef<gtk::Widget>]) -> bool {
+    focus.is::<gtk::Button>()
+        && focus.ancestor(gtk::Popover::static_type()).is_none()
+        && osd_areas
+            .iter()
+            .filter_map(glib::WeakRef::upgrade)
+            .any(|area| focus.is_ancestor(&area))
+}
+
+/// Keep `controller` on the window that hosts `root` while `root` is realized,
+/// and take it off again on unrealize, so a window that outlives the player
+/// (a host remounting it) keeps no handler that owns the player's state.
+fn attach_to_window(root: &gtk::Box, controller: gtk::EventControllerKey) {
+    let attached: Rc<RefCell<Option<glib::WeakRef<gtk::Window>>>> = Rc::default();
+    root.connect_realize({
+        let attached = attached.clone();
+        let controller = controller.clone();
+        move |root| {
+            let Some(window) = root.root().and_downcast::<gtk::Window>() else {
+                return;
+            };
+            if controller.widget().is_none() {
+                window.add_controller(controller.clone());
+                attached.replace(Some(window.downgrade()));
+            }
+        }
+    });
+    root.connect_unrealize(move |_| {
+        if let Some(window) = attached.take().and_then(|window| window.upgrade()) {
+            window.remove_controller(&controller);
+        }
+    });
+}
+
+/// What the shortcut keys act on.
+struct Shortcuts {
+    /// The saved custom bindings and the key map built from them, rebuilt
+    /// when the shortcuts dialog saves a change.
+    single_key_actions: RefCell<(Option<String>, std::collections::HashMap<String, String>)>,
+    mpv: Rc<RefCell<Option<Arc<MpvBackend>>>>,
+    tv: Rc<crate::shared::tv_cast::TvLink>,
+    input: relm4::Sender<VideoShellInput>,
+    settings: Settings,
+    /// The control-bar and header menus: Escape closes them first.
+    popovers: Vec<glib::WeakRef<gtk::Popover>>,
+}
+
+impl Shortcuts {
+    /// The action bound to a key press under the current bindings.
+    fn action_for(&self, keyval: gtk::gdk::Key, state: gtk::gdk::ModifierType) -> Option<String> {
+        let custom = self.settings.get_string(keys::CUSTOM_KEYBINDINGS);
+        let mut cache = self.single_key_actions.borrow_mut();
+        if cache.0.as_deref() != Some(custom.as_str()) {
+            *cache = (Some(custom.clone()), build_single_key_map(&custom));
+        }
+        lookup_action(&cache.1, keyval, state).map(str::to_string)
+    }
+
+    fn handle(
+        &self,
+        keyval: gtk::gdk::Key,
+        state: gtk::gdk::ModifierType,
+        in_text: bool,
+    ) -> glib::Propagation {
+        // Read the same volume ceiling the slider uses, so the keyboard step
+        // reaches the >100% boost region instead of a hardcoded 100 cap.
+        let volume_max = f64::from(self.settings.get_int(keys::VOLUME_MAX)).max(100.0);
+        // Hardware media keys fire regardless of focus.
+        if let Some(action) = media_key_action(keyval)
+            && dispatch_video_shortcut(action, &self.mpv, &self.tv, &self.input, volume_max)
+        {
+            return glib::Propagation::Stop;
+        }
+        if in_text {
+            return glib::Propagation::Proceed;
+        }
+        if keyval == gtk::gdk::Key::Escape && close_open_popovers(&self.popovers) {
+            return glib::Propagation::Stop;
+        }
+        let Some(action) = self.action_for(keyval, state) else {
+            return glib::Propagation::Proceed;
+        };
+        if dispatch_video_shortcut(&action, &self.mpv, &self.tv, &self.input, volume_max) {
+            glib::Propagation::Stop
+        } else {
+            glib::Propagation::Proceed
+        }
+    }
+}
+
+/// Pop down every open menu in `popovers`; `true` when one was open.
+fn close_open_popovers(popovers: &[glib::WeakRef<gtk::Popover>]) -> bool {
+    let mut closed = false;
+    for popover in popovers.iter().filter_map(glib::WeakRef::upgrade) {
+        if popover.is_visible() {
+            popover.popdown();
+            closed = true;
+        }
+    }
+    closed
+}
+
+/// Find the action bound to a key press. The press is tried as typed, then
+/// lower-cased (Caps Lock gives `F` for `f`, Shift+E gives `<Shift>E` for
+/// `<Shift>e`), then without a Shift the symbol already carries (`>` arrives
+/// as Shift+`greater` but is bound as `greater`).
+fn lookup_action(
+    map: &std::collections::HashMap<String, String>,
+    keyval: gtk::gdk::Key,
+    state: gtk::gdk::ModifierType,
+) -> Option<&str> {
+    use gtk::gdk::ModifierType;
+    let state =
+        state & (ModifierType::CONTROL_MASK | ModifierType::SHIFT_MASK | ModifierType::ALT_MASK);
+    let lower = keyval.to_lower();
+    let mut candidates = vec![
+        key_to_accel_string(keyval, state),
+        key_to_accel_string(lower, state),
+    ];
+    if state.contains(ModifierType::SHIFT_MASK) {
+        let unshifted = state - ModifierType::SHIFT_MASK;
+        candidates.push(key_to_accel_string(keyval, unshifted));
+    }
+    candidates
+        .iter()
+        .find_map(|accel| map.get(accel.as_str()))
+        .map(String::as_str)
+}
+
+/// Play what the clipboard holds: a stream URL, a `file://` URI or a path to
+/// a file that exists.
+pub(super) fn paste_and_play(root: &gtk::Box, sender: &ComponentSender<VideoShell>) {
+    let clipboard = root.clipboard();
+    let sender = sender.clone();
+    glib::spawn_future_local(async move {
+        let Ok(Some(text)) = clipboard.read_text_future().await else {
+            return;
+        };
+        let text = text.trim();
+        let target = super::dialogs::accepted_open_url(text).or_else(|| {
+            let path = gtk::gio::File::for_commandline_arg(text).path()?;
+            path.is_file().then(|| path.to_string_lossy().into_owned())
+        });
+        if let Some(target) = target {
+            sender.input(VideoShellInput::OpenFiles(vec![target]));
+        }
+    });
 }
 
 /// Map a shortcut action id to its effect. Menu/toggle actions are sent as shell
@@ -114,6 +300,10 @@ fn dispatch_video_shortcut(
         "toggle-playlist-sidebar" => Some(In::TogglePlaylistSidebar),
         "playlist-next" => Some(In::Controls(VideoControlsBarOutput::Next)),
         "playlist-prev" => Some(In::Controls(VideoControlsBarOutput::Previous)),
+        "crop" => Some(In::ShowPanel(super::panel::PanelPage::Framing)),
+        "music-shuffle" => Some(In::ToggleShuffle),
+        "music-repeat" => Some(In::CycleRepeat),
+        "paste-play" => Some(In::PastePlay),
         _ => None,
     };
     if let Some(message) = message {
@@ -162,7 +352,35 @@ fn dispatch_video_shortcut(
         "speed-reset" => mpv.set_speed(1.0),
         "frame-step" => mpv.frame_step(),
         "frame-back-step" => mpv.frame_back_step(),
+        "revert-seek" => mpv.revert_seek(),
+        "chapter-next" | "chapter-prev" => {
+            let count = mpv.get_chapter_count();
+            if count <= 0 {
+                return false;
+            }
+            let step = if action == "chapter-next" { 1 } else { -1 };
+            mpv.set_chapter((mpv.get_current_chapter() + step).clamp(0, count - 1));
+        }
+        "deinterlace" => mpv.set_deinterlace(!mpv.get_property_bool("deinterlace")),
+        "hwdec" => mpv.set_hwdec(if mpv.get_hwdec() == "no" {
+            "auto-safe"
+        } else {
+            "no"
+        }),
+        "panscan-up" => mpv.set_panscan((mpv.get_panscan() + PANSCAN_STEP).min(1.0)),
+        "panscan-down" => mpv.set_panscan((mpv.get_panscan() - PANSCAN_STEP).max(0.0)),
+        "audio-passthrough" => mpv.toggle_audio_passthrough(),
+        "secondary-sub" if mpv.has_secondary_sub() => mpv.disable_secondary_sub(),
+        "secondary-sub" => mpv.cycle("secondary-sid"),
+        "sub-seek-forward" => mpv.sub_seek(1),
+        "sub-seek-backward" => mpv.sub_seek(-1),
+        "cycle-cc" => mpv.cycle("sub"),
+        "cycle-edition" => mpv.cycle("edition"),
         _ => return false,
+    }
+    // Speed and zoom show as "away from normal" in the settings panel.
+    if action.starts_with("speed-") || action.starts_with("panscan-") {
+        let _ = input.send(VideoShellInput::RefreshAdjustments);
     }
     true
 }
@@ -180,10 +398,7 @@ fn media_key_action(keyval: gtk::gdk::Key) -> Option<&'static str> {
 
 /// True when the focused widget is a text editor: bare-key shortcuts must yield
 /// so typing works (mirrors the audio player's `focus_accepts_text`).
-fn focus_accepts_text(controller: &gtk::EventControllerKey) -> bool {
-    let Some(widget) = controller.widget() else {
-        return false;
-    };
+fn focus_accepts_text(widget: &gtk::Widget) -> bool {
     let Some(window) = widget.root().and_downcast::<gtk::Window>() else {
         return false;
     };
@@ -252,6 +467,84 @@ mod tests {
             assert!(
                 !dispatch_video_shortcut(action, &mpv, &no_tv(), &tx, 150.0),
                 "{action} needs a live backend"
+            );
+        }
+    }
+
+    #[test]
+    fn key_lookup_survives_caps_lock_and_shifted_symbols() {
+        use gtk::gdk::{Key, ModifierType};
+        let map = build_single_key_map("");
+        let lookup = |key, state| lookup_action(&map, key, state);
+        assert_eq!(
+            lookup(Key::space, ModifierType::empty()),
+            Some("play-pause")
+        );
+        // Caps Lock turns `f` into `F`.
+        assert_eq!(lookup(Key::F, ModifierType::LOCK_MASK), Some("fullscreen"));
+        // `>` and `!` need Shift on the keyboard but are bound without it.
+        assert_eq!(
+            lookup(Key::greater, ModifierType::SHIFT_MASK),
+            Some("playlist-next")
+        );
+        assert_eq!(
+            lookup(Key::exclam, ModifierType::SHIFT_MASK),
+            Some("chapter-next")
+        );
+        // Shift+E arrives as `E` with Shift; bound as `<Shift>e`.
+        assert_eq!(
+            lookup(Key::E, ModifierType::SHIFT_MASK),
+            Some("cycle-edition")
+        );
+        assert_eq!(
+            lookup(Key::Right, ModifierType::SHIFT_MASK),
+            Some("seek-forward-long")
+        );
+        assert_eq!(
+            lookup(Key::o, ModifierType::CONTROL_MASK),
+            Some("open-file")
+        );
+    }
+
+    #[test]
+    fn every_listed_shortcut_has_a_target() {
+        // Without a backend the mpv actions report unhandled, so tell them
+        // apart from ids nothing dispatches by the list below.
+        let (tx, _rx) = relm4::channel::<VideoShellInput>();
+        let needs_backend = [
+            "seek-forward",
+            "seek-backward",
+            "seek-forward-long",
+            "seek-backward-long",
+            "speed-up",
+            "speed-down",
+            "speed-reset",
+            "chapter-next",
+            "chapter-prev",
+            "frame-step",
+            "frame-back-step",
+            "revert-seek",
+            "deinterlace",
+            "hwdec",
+            "panscan-up",
+            "panscan-down",
+            "volume-up",
+            "volume-down",
+            "mute",
+            "audio-passthrough",
+            "secondary-sub",
+            "sub-seek-forward",
+            "sub-seek-backward",
+            "cycle-cc",
+            "cycle-edition",
+        ];
+        for shortcut in crate::video::keybindings::SHORTCUTS {
+            let dispatched =
+                dispatch_video_shortcut(shortcut.action, &no_mpv(), &no_tv(), &tx, 150.0);
+            assert!(
+                dispatched || needs_backend.contains(&shortcut.action),
+                "{} does nothing",
+                shortcut.action
             );
         }
     }

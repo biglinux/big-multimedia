@@ -253,20 +253,6 @@ pub const SHORTCUTS: &[ShortcutDef] = &[
         default_accel: "r",
         single_key: true,
     },
-    ShortcutDef {
-        action: "music-replaygain",
-        display_name: gettext_noop("Cycle ReplayGain"),
-        category: gettext_noop("Music"),
-        default_accel: "<Ctrl>r",
-        single_key: true,
-    },
-    ShortcutDef {
-        action: "music-gapless",
-        display_name: gettext_noop("Toggle gapless"),
-        category: gettext_noop("Music"),
-        default_accel: "g",
-        single_key: true,
-    },
     // Navigation
     ShortcutDef {
         action: "chapter-next",
@@ -283,13 +269,6 @@ pub const SHORTCUTS: &[ShortcutDef] = &[
         single_key: true,
     },
     // Other
-    ShortcutDef {
-        action: "info-overlay",
-        display_name: gettext_noop("Toggle file info overlay"),
-        category: gettext_noop("Other"),
-        default_accel: "i",
-        single_key: true,
-    },
     ShortcutDef {
         action: "open-file",
         display_name: gettext_noop("Open file"),
