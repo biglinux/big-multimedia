@@ -221,7 +221,7 @@ impl VideoShell {
 
     /// Present the open-disc entry dialog (DVD / Blu-ray device or ISO/folder).
     /// Validates the device string (rejects empty and the `--` option-injection
-    /// sequence) before forming the mpv `dvd://` / `bd://` URI.
+    /// sequence) before handing mpv the device and the `dvd://` / `bd://` URI.
     pub(super) fn show_open_disc_dialog(root: &adw::ApplicationWindow) {
         let Some(sender) = shell_input_sender() else {
             log::warn!("video open-disc dialog ignored before shell input registration");
@@ -269,7 +269,7 @@ impl VideoShell {
                     return;
                 };
                 accept_button
-                    .set_sensitive(build_disc_uri(dropdown.selected(), &entry.text()).is_some());
+                    .set_sensitive(build_disc_input(dropdown.selected(), &entry.text()).is_some());
             }
         });
         refresh_accept();
@@ -303,8 +303,8 @@ impl VideoShell {
         let dropdown = disc_type_row.dropdown().clone();
         let entry_for_accept = entry.clone();
         footer.accept_button().connect_clicked(move |_| {
-            if let Some(uri) = build_disc_uri(dropdown.selected(), &entry_for_accept.text()) {
-                let _ = sender.send(VideoShellInput::OpenFiles(vec![uri]));
+            if let Some(input) = build_disc_input(dropdown.selected(), &entry_for_accept.text()) {
+                let _ = sender.send(input);
                 if let Some(dialog) = dialog_ref.upgrade() {
                     dialog.close();
                 }
@@ -405,16 +405,17 @@ pub(super) fn reapply_theme(settings: &Settings) {
     });
 }
 
-/// The mpv URI for the disc in `device`: Blu-ray for the dropdown's second
-/// entry, else DVD.
-fn build_disc_uri(selected: u32, device: &str) -> Option<String> {
-    if device.is_empty() || device.contains("--") {
+/// The disc in `device`: Blu-ray for the dropdown's second entry, else DVD.
+/// mpv takes the device as a property, not inside the `dvd://` URI, where
+/// `--dvd-device=…` was read as a title.
+fn build_disc_input(selected: u32, device: &str) -> Option<VideoShellInput> {
+    let device = device.trim();
+    if device.is_empty() || device.starts_with('-') {
         return None;
     }
-    Some(if selected == 1 {
-        format!("bd://--bluray-device={device}")
-    } else {
-        format!("dvd://--dvd-device={device}")
+    Some(VideoShellInput::OpenDisc {
+        bluray: selected == 1,
+        device: device.to_string(),
     })
 }
 
@@ -467,7 +468,7 @@ pub(super) fn present_controller_dialog(
 
 #[cfg(test)]
 mod tests {
-    use super::{accepted_open_url, build_disc_uri};
+    use super::{VideoShellInput, accepted_open_url, build_disc_input};
 
     #[test]
     fn open_url_accepts_trimmed_remote_media_urls() {
@@ -496,28 +497,28 @@ mod tests {
         }
     }
 
+    fn disc(selected: u32, device: &str) -> Option<(bool, String)> {
+        match build_disc_input(selected, device)? {
+            VideoShellInput::OpenDisc { bluray, device } => Some((bluray, device)),
+            other => panic!("expected OpenDisc, got {other:?}"),
+        }
+    }
+
     #[test]
-    fn disc_uri_builds_dvd_and_bluray() {
+    fn disc_input_picks_dvd_or_bluray_with_the_device() {
+        assert_eq!(disc(0, "/dev/sr0"), Some((false, "/dev/sr0".to_string())));
+        assert_eq!(disc(1, " /dev/sr1 "), Some((true, "/dev/sr1".to_string())));
+        // A folder or ISO path may contain dashes.
         assert_eq!(
-            build_disc_uri(0, "/dev/sr0").as_deref(),
-            Some("dvd://--dvd-device=/dev/sr0")
-        );
-        assert_eq!(
-            build_disc_uri(1, "/dev/sr1").as_deref(),
-            Some("bd://--bluray-device=/dev/sr1")
+            disc(0, "/media/a--b.iso"),
+            Some((false, "/media/a--b.iso".to_string()))
         );
     }
 
     #[test]
-    fn disc_uri_rejects_empty_device() {
-        assert_eq!(build_disc_uri(0, ""), None);
-        assert_eq!(build_disc_uri(1, ""), None);
-    }
-
-    #[test]
-    fn disc_uri_rejects_option_injection() {
-        // A `--` in the device must never reach mpv as a smuggled option.
-        assert_eq!(build_disc_uri(0, "/dev/sr0 --no-config"), None);
-        assert_eq!(build_disc_uri(1, "--foo"), None);
+    fn disc_input_rejects_empty_or_option_like_device() {
+        assert_eq!(disc(0, ""), None);
+        assert_eq!(disc(1, "  "), None);
+        assert_eq!(disc(1, "--foo"), None);
     }
 }

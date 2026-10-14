@@ -798,6 +798,13 @@ impl Component for VideoShell {
                         mpv.set_loop_mode(mode);
                     }
                 }
+                VideoShellInput::OpenDisc { bluray, device } => {
+                    if let Some(mpv) = self.mpv.borrow().as_ref() {
+                        mpv.set_disc_device(bluray, &device);
+                    }
+                    let uri = if bluray { "bd://" } else { "dvd://" };
+                    VideoShell::open_files(&[uri.to_string()], &sender);
+                }
                 VideoShellInput::Trashed(paths) => self.remove_trashed(&paths),
                 VideoShellInput::PastePlay => super::keyboard::paste_and_play(root, &sender),
             }
