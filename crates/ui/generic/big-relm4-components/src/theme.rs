@@ -118,7 +118,8 @@ pub fn inject_palette_css(css: &str, provider_slot: &mut Option<gtk::CssProvider
 #[must_use]
 pub fn parse_hex_color(hex_str: &str) -> (u8, u8, u8) {
     let hex = hex_str.trim_start_matches('#');
-    if hex.len() >= 6 {
+    // ASCII only: byte slicing inside a multi-byte character would panic.
+    if hex.len() >= 6 && hex.is_ascii() {
         (
             u8::from_str_radix(&hex[0..2], 16).unwrap_or(42),
             u8::from_str_radix(&hex[2..4], 16).unwrap_or(42),

@@ -378,7 +378,14 @@ impl EventLoop {
             } else {
                 100
             };
-            std::thread::sleep(Duration::from_millis(interval));
+            // Wait on mpv's wakeup rather than sleeping: an event (a volume
+            // change) is handled at once, and Drop's wakeup ends the wait
+            // instead of the join sitting out the rest of the interval.
+            if let Err(std::sync::mpsc::RecvTimeoutError::Disconnected) =
+                self.wake.recv_timeout(Duration::from_millis(interval))
+            {
+                break;
+            }
         }
         debug!("MPV event loop exited");
     }

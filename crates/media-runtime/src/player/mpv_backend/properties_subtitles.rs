@@ -138,6 +138,14 @@ impl MpvBackend {
         });
     }
 
+    /// Whether a secondary subtitle track is showing.
+    pub fn has_secondary_sub(&self) -> bool {
+        self.with_mpv(|m| {
+            m.get_property::<i64>("secondary-sid")
+                .is_ok_and(|id| id > 0)
+        })
+    }
+
     pub fn disable_secondary_sub(&self) {
         self.with_mpv(|m| {
             let _ = m.set_property("secondary-sid", false);

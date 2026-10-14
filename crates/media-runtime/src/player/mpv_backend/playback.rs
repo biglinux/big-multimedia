@@ -324,6 +324,34 @@ impl MpvBackend {
             let _ = m.set_property("chapter", idx);
         });
     }
+
+    /// Where `dvd://` (or `bd://` when `bluray`) reads from: a drive, an
+    /// ISO or a folder.
+    pub fn set_disc_device(&self, bluray: bool, device: &str) {
+        let property = if bluray {
+            "bluray-device"
+        } else {
+            "dvd-device"
+        };
+        self.with_mpv(|m| {
+            let _ = m.set_property(property, device.to_string());
+        });
+    }
+
+    /// Go back to where the last seek started.
+    pub fn revert_seek(&self) {
+        let _ = self.queue_command("revert-seek", &[]);
+    }
+
+    /// Seek to the start of the next (`1`) or previous (`-1`) subtitle line.
+    pub fn sub_seek(&self, lines: i64) {
+        let _ = self.queue_command("sub-seek", &[&lines.to_string()]);
+    }
+
+    /// Step `property` to its next value, wrapping (`sub`, `edition`, …).
+    pub fn cycle(&self, property: &str) {
+        let _ = self.queue_command("cycle", &[property]);
+    }
 }
 
 #[cfg(test)]

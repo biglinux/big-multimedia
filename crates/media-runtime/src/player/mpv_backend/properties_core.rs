@@ -94,6 +94,20 @@ impl MpvBackend {
         }
     }
 
+    /// Send compressed surround formats to the receiver untouched, or decode
+    /// them here again.
+    pub fn toggle_audio_passthrough(&self) {
+        const PASSTHROUGH_CODECS: &str = "ac3,eac3,dts,dts-hd,truehd";
+        self.with_mpv(|m| {
+            let on = m
+                .get_property::<String>("audio-spdif")
+                .unwrap_or_default()
+                .is_empty();
+            let codecs = if on { PASSTHROUGH_CODECS } else { "" };
+            let _ = m.set_property("audio-spdif", codecs.to_string());
+        });
+    }
+
     pub fn get_property_f64(&self, name: &str) -> f64 {
         self.with_mpv(|m| m.get_property(name).unwrap_or(0.0))
     }

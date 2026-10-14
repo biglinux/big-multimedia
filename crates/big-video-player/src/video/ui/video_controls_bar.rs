@@ -130,6 +130,9 @@ pub enum VideoControlsBarOutput {
     GotoTimeClicked,
 }
 
+/// How long after the user moves the seek bar position ticks leave it.
+const USER_SEEK_HOLD: std::time::Duration = std::time::Duration::from_millis(400);
+
 /// App-local OSD controls bar.
 pub struct VideoControlsBar {
     position_label: gtk::Inscription,
@@ -147,6 +150,9 @@ pub struct VideoControlsBar {
     pc_volume: zones::VolumeControl,
     /// Guard so programmatic scrub updates do not echo as user seek intents.
     suppress_seek: Rc<std::cell::Cell<bool>>,
+    /// When the user last moved the seek bar: position ticks leave it alone
+    /// for a moment, or a drag would jump back under the pointer.
+    user_seek_at: Rc<Cell<Option<std::time::Instant>>>,
     /// Position · seek bar · duration: hidden while no file is open.
     seek_row: gtk::Box,
     /// For re-applying the button layout when a file opens.
@@ -217,6 +223,7 @@ impl Component for VideoControlsBar {
         sender: ComponentSender<Self>,
     ) -> ComponentParts<Self> {
         let suppress_seek = Rc::new(std::cell::Cell::new(false));
+        let user_seek_at: Rc<Cell<Option<std::time::Instant>>> = Rc::default();
 
         let duration_secs = Rc::new(Cell::new(0.0_f64));
         let chapters: Rc<RefCell<Vec<(f64, String)>>> = Rc::new(RefCell::new(Vec::new()));
@@ -420,6 +427,7 @@ impl Component for VideoControlsBar {
             &next_button,
             &end_widgets.fullscreen_button,
             &suppress_seek,
+            &user_seek_at,
         );
 
         let model = Self {
@@ -436,6 +444,7 @@ impl Component for VideoControlsBar {
             volume,
             pc_volume,
             suppress_seek,
+            user_seek_at,
             mpv: init.mpv,
             hover_popovers,
             button_layout,
@@ -478,8 +487,14 @@ impl Component for VideoControlsBar {
                 self.seek_fraction.set(value);
                 // Skip moves under half a pixel: each one re-snapshots the bar.
                 let width = f64::from(self.seek_bar.width().max(self.cut_timeline.width()));
+                let user_seeking = self
+                    .user_seek_at
+                    .get()
+                    .is_some_and(|at| at.elapsed() < USER_SEEK_HOLD);
                 // Unallocated (hidden) bars draw nothing: keep them current.
-                if width == 0.0 || ((value - self.seek_bar.value()) * width).abs() >= 0.5 {
+                if user_seeking {
+                    self.cut_timeline.queue_draw();
+                } else if width == 0.0 || ((value - self.seek_bar.value()) * width).abs() >= 0.5 {
                     self.suppress_seek.set(true);
                     self.seek_bar.set_value(value);
                     self.suppress_seek.set(false);

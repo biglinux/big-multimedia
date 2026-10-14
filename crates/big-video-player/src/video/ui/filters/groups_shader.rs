@@ -243,10 +243,23 @@ fn saved_upscaler_percent(settings: &Settings, key: &str) -> f64 {
     }
 }
 
+/// The FSR and CAS templates, used as they are when no tuned copy can be
+/// written.
+const BUILTIN_UPSCALER_TEMPLATES: [&str; 2] = ["FSR.glsl", "CAS-scaled.glsl"];
+
 /// Swap the FSR/CAS upscaler for `key` at `pct` ("" removes it): clears
 /// prior built-in/user shaders by prefix, then appends the chosen one.
 fn apply_builtin_upscaler(mpv: &MpvBackend, key: &str, pct: f64) {
-    mpv.glsl_shader_remove_prefix(config::SHADERS_DIR);
+    // Only the system templates themselves: a prefix of the whole shaders
+    // directory would also take RAVU and Anime4K out of its subfolders.
+    for template in BUILTIN_UPSCALER_TEMPLATES {
+        if let Some(path) = std::path::Path::new(config::SHADERS_DIR)
+            .join(template)
+            .to_str()
+        {
+            mpv.glsl_shader_remove_prefix(path);
+        }
+    }
     if let Some(user_dir) = gtk::glib::user_config_dir()
         .join(config::video::USER_SHADERS_RELATIVE)
         .to_str()
@@ -255,7 +268,7 @@ fn apply_builtin_upscaler(mpv: &MpvBackend, key: &str, pct: f64) {
     }
     let path = match key {
         "fsr" => shader_gen::shader_path(
-            "FSR.glsl",
+            BUILTIN_UPSCALER_TEMPLATES[0],
             &[ShaderParam {
                 define_name: "SHARPNESS",
                 value: fsr_ui_pct_to_shader(pct),
@@ -263,7 +276,7 @@ fn apply_builtin_upscaler(mpv: &MpvBackend, key: &str, pct: f64) {
             }],
         ),
         "cas" => shader_gen::shader_path(
-            "CAS-scaled.glsl",
+            BUILTIN_UPSCALER_TEMPLATES[1],
             &[ShaderParam {
                 define_name: "SHARPENING",
                 value: cas_ui_pct_to_shader(pct),

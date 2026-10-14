@@ -9,6 +9,7 @@ pub(super) fn wire_signals(
     next_button: &gtk::Button,
     fullscreen_button: &gtk::Button,
     suppress_seek: &Rc<std::cell::Cell<bool>>,
+    user_seek_at: &Rc<Cell<Option<std::time::Instant>>>,
 ) {
     let play_sender = sender.clone();
     play_button.connect_clicked(move |_| {
@@ -28,8 +29,10 @@ pub(super) fn wire_signals(
     });
     let seek_sender = sender.clone();
     let suppress_seek_guard = suppress_seek.clone();
+    let user_seek_at = user_seek_at.clone();
     seek_bar.connect_change_value(move |_scale, _scroll, value| {
         if !suppress_seek_guard.get() {
+            user_seek_at.set(Some(std::time::Instant::now()));
             let _ = seek_sender.output(VideoControlsBarOutput::SeekChanged(value.clamp(0.0, 1.0)));
         }
         gtk::glib::Propagation::Proceed

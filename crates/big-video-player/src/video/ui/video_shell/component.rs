@@ -1,5 +1,5 @@
 use super::actions::{build_welcome_screen, install_window_actions, toggle_keep_above};
-use super::dialogs::reapply_theme;
+use super::dialogs::hold_theme;
 use super::input::{clear_shell_input, set_shell_input};
 use super::input_gestures::{wire_osd_autohide, wire_osd_focus_out, wire_video_input};
 use super::render::{
@@ -359,20 +359,34 @@ impl Component for VideoShell {
         // `OSD_HIDE_DELAY_MS` of inactivity or on pointer-leave. The welcome screen is up at init, so the OSD
         // never auto-hides until the first file loads.
         let trim_active = Rc::new(Cell::new(false));
+        // The TV menu too: its popover taking the focus is not the window
+        // losing it, and the header must not fold away from under it.
+        let header_popovers: Vec<gtk::Popover> = vec![open_menu_popover]
+            .into_iter()
+            .chain(tv_pill.popover())
+            .collect();
+        let menu_popovers: Vec<gtk::Popover> = header_popovers
+            .iter()
+            .cloned()
+            .chain(controls.model().popovers())
+            .collect();
         let osd = OsdState::new(
             &main_overlay,
             chrome.header_revealer(),
             chrome.bottom_revealer(),
-            // The TV menu too: its popover taking the focus is not the window
-            // losing it, and the header must not fold away from under it.
-            vec![open_menu_popover]
-                .into_iter()
-                .chain(tv_pill.popover())
-                .collect(),
+            header_popovers,
             controls.model().popovers(),
             !opening_files,
             trim_active.clone(),
         );
+        super::menus::wire_menu_dismissal(&root, &menu_popovers);
+        let osd_areas: [gtk::Widget; 2] = [
+            chrome.header_revealer().clone().upcast(),
+            controls.widget().clone().upcast(),
+        ];
+        for area in &osd_areas {
+            super::menus::keep_focus_off_clicks(area);
+        }
         wire_osd_autohide(&main_overlay, &osd);
         // The settings panel sits over the video, clear of header and controls,
         // which stay shown while it is open.
@@ -397,11 +411,18 @@ impl Component for VideoShell {
         // the window (when not fullscreen).
         wire_video_input(&root, &main_overlay, &sender);
         // Window-level keyboard shortcuts (space/seek/volume/fullscreen/…).
-        super::keyboard::wire_keyboard_shortcuts(&root, &mpv, &tv, &settings, &sender);
-        // Trim-mode keys (I / O / M / Esc): a capture-phase controller that
-        // only acts while trim mode is active, so it never shadows the normal
-        // bindings on those keys outside trim mode.
-        super::keyboard::wire_trim_keys(&root, trim_active.clone(), &sender);
+        // Trim-mode keys (M / Esc) ride along: they act only while trim mode
+        // is active, so they never shadow the normal bindings outside it.
+        super::keyboard::wire_keyboard_shortcuts(
+            &root,
+            &mpv,
+            &tv,
+            &settings,
+            &sender,
+            trim_active.clone(),
+            &menu_popovers,
+            &osd_areas,
+        );
 
         // Static idle background behind the welcome screen (gl surface hidden so
         // it shows through). Shown below once the display is known; restored on
@@ -474,9 +495,9 @@ impl Component for VideoShell {
         root.connect_unrealize(move |_| clear_shell_input(shell_input_token));
 
         // Apply the saved OSD palette + layout CSS now into the shared
-        // display-wide provider slot; the Appearance
-        // dialog re-applies live through the same slot.
-        reapply_theme(&settings);
+        // display-wide provider slot, released when the last player closes;
+        // the Appearance dialog re-applies live through the same slot.
+        hold_theme(&root, &settings);
 
         // Window aspect-ratio snap: resize the window to the video's aspect on
         // load and on manual resize (debounced), so no letterbox bars remain.
@@ -759,6 +780,33 @@ impl Component for VideoShell {
                         root.unfullscreen();
                     }
                 }
+                VideoShellInput::ToggleShuffle => {
+                    let shuffle = !self.settings.get_bool(keys::PLAYLIST_SHUFFLE);
+                    let _ = self.settings.put_bool(keys::PLAYLIST_SHUFFLE, shuffle);
+                    if let Some(mpv) = self.mpv.borrow().as_ref() {
+                        mpv.playlist_shuffle(shuffle);
+                    }
+                }
+                VideoShellInput::CycleRepeat => {
+                    let mode = match self.settings.get_string(keys::LOOP_MODE).as_str() {
+                        "no" | "" => "playlist",
+                        "playlist" => "file",
+                        _ => "no",
+                    };
+                    let _ = self.settings.put_string(keys::LOOP_MODE, mode);
+                    if let Some(mpv) = self.mpv.borrow().as_ref() {
+                        mpv.set_loop_mode(mode);
+                    }
+                }
+                VideoShellInput::OpenDisc { bluray, device } => {
+                    if let Some(mpv) = self.mpv.borrow().as_ref() {
+                        mpv.set_disc_device(bluray, &device);
+                    }
+                    let uri = if bluray { "bd://" } else { "dvd://" };
+                    VideoShell::open_files(&[uri.to_string()], &sender);
+                }
+                VideoShellInput::Trashed(paths) => self.remove_trashed(&paths),
+                VideoShellInput::PastePlay => super::keyboard::paste_and_play(root, &sender),
             }
             if let Some(mpris) = &self.mpris {
                 mpris.sync();

@@ -116,6 +116,19 @@ pub enum VideoShellInput {
     /// Escape outside a text field: put an open panel away, else leave
     /// fullscreen. It never enters fullscreen.
     Escape,
+    /// Play the DVD (or Blu-ray) in `device`: a drive, an ISO or a folder.
+    OpenDisc {
+        bluray: bool,
+        device: String,
+    },
+    /// These files went to the trash.
+    Trashed(Vec<String>),
+    /// Keyboard: shuffle the playlist, or put it back in order.
+    ToggleShuffle,
+    /// Keyboard: repeat nothing → the playlist → the file → nothing.
+    CycleRepeat,
+    /// Keyboard: play the URL or file path on the clipboard.
+    PastePlay,
     /// Open the current file in the audio converter to keep only its audio.
     ExtractAudio,
     /// Open the current file in the video converter.
