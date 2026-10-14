@@ -50,30 +50,36 @@ build() {
     cargo build --frozen --release -p big-audio-player -p big-video-player
 }
 
+# The functions below take the package name as an argument instead of reading
+# $pkgname: makepkg sets it to the package being built, but BigLinux's
+# packager leaves the array, whose first element is the audio player, so the
+# video package looked for its files in the audio crate.
+
 # The shared gettext catalog goes under each package's private locale dir,
 # which resolve_locale_dir() prefers, so the two co-installable players never
 # own the same file in /usr/share/locale.
 _install_catalog() {
-    local po="${srcdir}/${pkgbase}/crates/media-runtime/po" lang
+    local name=$1 po="${srcdir}/${pkgbase}/crates/media-runtime/po" lang
     while read -r lang; do
         [[ -z "${lang}" || "${lang}" == \#* ]] && continue
-        install -d "${pkgdir}/usr/share/${pkgname}/locale/${lang}/LC_MESSAGES"
+        install -d "${pkgdir}/usr/share/${name}/locale/${lang}/LC_MESSAGES"
         msgfmt "${po}/${lang}.po" \
-            -o "${pkgdir}/usr/share/${pkgname}/locale/${lang}/LC_MESSAGES/big-media-runtime.mo"
+            -o "${pkgdir}/usr/share/${name}/locale/${lang}/LC_MESSAGES/big-media-runtime.mo"
     done <"${po}/LINGUAS"
 }
 
 # The binary, desktop file, AppStream metadata and icon of one player.
 _install_player() {
-    local id=$1 crate="${srcdir}/${pkgbase}/crates/${pkgname}/resources"
-    install -Dm755 "${srcdir}/${pkgbase}/target/release/${pkgname}" "${pkgdir}/usr/bin/${pkgname}"
+    local name=$1 id=$2
+    local crate="${srcdir}/${pkgbase}/crates/${name}/resources"
+    install -Dm755 "${srcdir}/${pkgbase}/target/release/${name}" "${pkgdir}/usr/bin/${name}"
     install -Dm644 "${crate}/applications/br.com.biglinux.${id}.desktop" \
         "${pkgdir}/usr/share/applications/br.com.biglinux.${id}.desktop"
     install -Dm644 "${crate}/metainfo/br.com.biglinux.${id}.metainfo.xml" \
         "${pkgdir}/usr/share/metainfo/br.com.biglinux.${id}.metainfo.xml"
-    install -Dm644 "${crate}/icons/hicolor/scalable/apps/${pkgname}.svg" \
-        "${pkgdir}/usr/share/icons/hicolor/scalable/apps/${pkgname}.svg"
-    _install_catalog
+    install -Dm644 "${crate}/icons/hicolor/scalable/apps/${name}.svg" \
+        "${pkgdir}/usr/share/icons/hicolor/scalable/apps/${name}.svg"
+    _install_catalog "${name}"
 }
 
 package_big-audio-player() {
@@ -84,7 +90,7 @@ package_big-audio-player() {
                 'dpdfnet-native: higher-quality voice noise reduction (DPDFNet-2 48 kHz)'
                 'big-audio-converter: trim and convert tracks'
                 'bignetscreen: play on a TV or Chromecast')
-    _install_player AudioPlayer
+    _install_player big-audio-player AudioPlayer
 }
 
 package_big-video-player() {
@@ -103,7 +109,7 @@ package_big-video-player() {
                 'big-video-converter: cut and convert videos'
                 'big-audio-converter: extract audio from videos'
                 'bignetscreen: play on a TV or Chromecast')
-    _install_player VideoPlayer
+    _install_player big-video-player VideoPlayer
 
     # GPU shaders the filters dialog offers: without them its rows stay
     # "not installed" and saved choices do nothing.
@@ -113,10 +119,10 @@ package_big-video-player() {
     install -Dm644 -t "${dest}/anime4k" "${shaders}"/anime4k/*.glsl
     install -Dm644 -t "${dest}/ravu" "${shaders}"/ravu/*.hook
     # MIT asks for its notice alongside: each shader's header block.
-    install -d "${pkgdir}/usr/share/licenses/${pkgname}"
+    install -d "${pkgdir}/usr/share/licenses/big-video-player"
     for notice in FSR.glsl CAS-scaled.glsl anime4k/Anime4K_Clamp_Highlights.glsl; do
         printf '%s:\n' "${notice}"
         awk '{sub(/\r$/, "")} {print} /SOFTWARE\.$/ {exit}' "${shaders}/${notice}"
         printf '\n'
-    done >"${pkgdir}/usr/share/licenses/${pkgname}/MIT-shaders"
+    done >"${pkgdir}/usr/share/licenses/big-video-player/MIT-shaders"
 }
