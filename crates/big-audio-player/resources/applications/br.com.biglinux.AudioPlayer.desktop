@@ -17,3 +17,22 @@ MimeType=audio/mpeg;audio/flac;audio/x-flac;audio/ogg;audio/x-vorbis+ogg;audio/x
 StartupNotify=true
 StartupWMClass=br.com.biglinux.AudioPlayer
 X-GNOME-UsesNotifications=true
+Actions=PlayPause;Next;Previous;
+
+[Desktop Action PlayPause]
+Name=Play / Pause
+Name[pt_BR]=Tocar / Pausar
+Icon=media-playback-start-symbolic
+Exec=big-audio-player --play-pause
+
+[Desktop Action Next]
+Name=Next Track
+Name[pt_BR]=Próxima faixa
+Icon=media-skip-forward-symbolic
+Exec=big-audio-player --next
+
+[Desktop Action Previous]
+Name=Previous Track
+Name[pt_BR]=Faixa anterior
+Icon=media-skip-backward-symbolic
+Exec=big-audio-player --previous
