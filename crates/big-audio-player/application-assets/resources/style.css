@@ -564,3 +564,13 @@ columnview > listview > row button.circular:hover {
     background: alpha(@accent_bg_color, 0.14);
     border-top: 1px solid alpha(@window_fg_color, 0.08);
 }
+
+/* Library scan dialog: a status, three counts and one button. */
+.scan-progress .scan-stat {
+    padding: 14px 8px 12px;
+}
+.scan-progress .scan-stat-value {
+    font-size: 1.9em;
+    font-weight: 800;
+    font-feature-settings: "tnum";
+}

@@ -160,18 +160,34 @@ impl AudioShell {
         resolved: Vec<String>,
         sender: &ComponentSender<Self>,
     ) {
-        if resolved.is_empty() {
+        let queued: Vec<&str> = self
+            .queue
+            .tracks()
+            .iter()
+            .map(|track| track.file_path.as_str())
+            .collect();
+        let (added, target) = plan_open(&queued, &resolved);
+        let Some(target) = target else {
             return;
+        };
+        if !added.is_empty() {
+            self.snapshot_queue();
+            for path in &added {
+                self.queue.add_track(Track::new_external_path(path.clone()));
+            }
         }
-        self.snapshot_queue();
-        let first_new = self.queue.len();
-        for path in &resolved {
-            self.queue.add_track(Track::new_external_path(path.clone()));
+        // Opening the file that is already playing leaves it playing.
+        let already_playing = self.queue.current_index() == Some(target)
+            && self.current_file == resolved[0]
+            && self.is_playing;
+        if !already_playing {
+            self.queue.jump_to(target);
+            self.play_current();
         }
-        self.queue.jump_to(first_new);
-        self.play_current();
-        self.commit_queue();
-        Self::load_external_metadata(resolved, sender);
+        if !added.is_empty() {
+            self.commit_queue();
+            Self::load_external_metadata(added, sender);
+        }
     }
 
     /// Restore the previous queue snapshot (Ctrl+Z).
@@ -214,5 +230,58 @@ impl AudioShell {
             }
         }
         self.commit_queue();
+    }
+}
+
+/// What opening `resolved` does to a queue holding `queued`: the paths to
+/// append, each once and only if the queue lacks it, and the index to play,
+/// the first opened path wherever it now sits. Opening a file twice used to
+/// queue it twice.
+fn plan_open(queued: &[&str], resolved: &[String]) -> (Vec<String>, Option<usize>) {
+    let mut added: Vec<String> = Vec::new();
+    for path in resolved {
+        if !queued.contains(&path.as_str()) && !added.contains(path) {
+            added.push(path.clone());
+        }
+    }
+    let target = resolved.first().map(|first| {
+        queued
+            .iter()
+            .position(|queued| *queued == first)
+            .unwrap_or_else(|| {
+                queued.len() + added.iter().position(|path| path == first).unwrap_or(0)
+            })
+    });
+    (added, target)
+}
+
+#[cfg(test)]
+mod open_tests {
+    use super::plan_open;
+
+    fn paths(items: &[&str]) -> Vec<String> {
+        items.iter().map(|item| (*item).to_string()).collect()
+    }
+
+    #[test]
+    fn a_file_already_queued_plays_where_it_is() {
+        let (added, target) = plan_open(&["/a.mp3", "/b.mp3"], &paths(&["/b.mp3"]));
+        assert_eq!(added, Vec::<String>::new());
+        assert_eq!(target, Some(1));
+    }
+
+    #[test]
+    fn new_files_append_once_and_play_from_the_first() {
+        let (added, target) = plan_open(
+            &["/a.mp3"],
+            &paths(&["/c.mp3", "/a.mp3", "/c.mp3", "/d.mp3"]),
+        );
+        assert_eq!(added, paths(&["/c.mp3", "/d.mp3"]));
+        assert_eq!(target, Some(1));
+    }
+
+    #[test]
+    fn opening_nothing_does_nothing() {
+        assert_eq!(plan_open(&["/a.mp3"], &[]), (Vec::new(), None));
     }
 }

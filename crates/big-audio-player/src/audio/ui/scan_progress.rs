@@ -2,34 +2,70 @@
 use crate::audio::library_scan_engine::ScanControl;
 use crate::i18n::i18n;
 use adw::prelude::*;
+use big_relm4_components::layout::dialog_page::BigDialogPage;
 use std::sync::{Arc, atomic::Ordering};
 
 pub(super) fn show(parent: &gtk::Window, control: Arc<ScanControl>) {
     let dialog = adw::Dialog::builder()
         .title(i18n("Scanning the library"))
-        .content_width(480)
+        .content_width(440)
         .build();
-    let content = gtk::Box::new(gtk::Orientation::Vertical, 12);
-    content.set_margin_top(20);
-    content.set_margin_bottom(20);
-    content.set_margin_start(20);
-    content.set_margin_end(20);
-    let status = gtk::Label::new(Some(&i18n("Reading media information…")));
-    status.set_wrap(true);
-    status.set_xalign(0.0);
+    let page = BigDialogPage::plain();
+    let content = page.content().clone();
+    content.set_spacing(18);
+    content.add_css_class("scan-progress");
+
+    // A spinner while it reads, then an icon that says how it ended.
+    let spinner = adw::Spinner::builder()
+        .width_request(48)
+        .height_request(48)
+        .halign(gtk::Align::Center)
+        .build();
+    let outcome = gtk::Image::builder()
+        .pixel_size(48)
+        .halign(gtk::Align::Center)
+        .visible(false)
+        .css_classes(["scan-outcome"])
+        .build();
+    content.append(&spinner);
+    content.append(&outcome);
+
+    let status = gtk::Label::builder()
+        .label(i18n("Reading media information…"))
+        .wrap(true)
+        .justify(gtk::Justification::Center)
+        .css_classes(["title-3"])
+        .build();
     content.append(&status);
-    let counts = gtk::Label::new(None);
-    counts.set_xalign(0.0);
-    counts.set_wrap(true);
-    content.append(&counts);
-    let explanation = gtk::Label::new(Some(&i18n(
-        "You can keep using the player. Cancelling keeps earlier confirmed imports and never deletes media files.",
-    )));
-    explanation.set_wrap(true);
-    explanation.set_xalign(0.0);
+
+    let stats = gtk::Box::builder()
+        .orientation(gtk::Orientation::Horizontal)
+        .spacing(12)
+        .homogeneous(true)
+        .build();
+    let examined = stat_card(&stats, &i18n("Examined"));
+    let imported = stat_card(&stats, &i18n("Imported"));
+    let skipped = stat_card(&stats, &i18n("Skipped"));
+    content.append(&stats);
+
+    let explanation = gtk::Label::builder()
+        .label(i18n(
+            "You can keep using the player. Cancelling keeps earlier confirmed imports and never deletes media files.",
+        ))
+        .wrap(true)
+        .justify(gtk::Justification::Center)
+        .css_classes(["caption", "dim-label"])
+        .build();
     content.append(&explanation);
-    let cancel = gtk::Button::with_label(&i18n("Cancel scan"));
+
+    let cancel = gtk::Button::builder()
+        .label(i18n("Cancel scan"))
+        .halign(gtk::Align::Center)
+        .css_classes(["pill"])
+        .build();
     content.append(&cancel);
+    dialog.set_child(Some(page.root()));
+
     let revoke = control.clone();
     let close_dialog = dialog.downgrade();
     cancel.connect_clicked(move |button| {
@@ -49,8 +85,14 @@ pub(super) fn show(parent: &gtk::Window, control: Arc<ScanControl>) {
         }
     });
     let weak_status = status.downgrade();
-    let weak_counts = counts.downgrade();
+    let weak_counts = StatLabels {
+        examined: examined.downgrade(),
+        imported: imported.downgrade(),
+        skipped: skipped.downgrade(),
+    };
     let weak_cancel = cancel.downgrade();
+    let weak_spinner = spinner.downgrade();
+    let weak_outcome = outcome.downgrade();
     let timer = std::rc::Rc::new(std::cell::RefCell::new(None::<glib::SourceId>));
     let mapped = timer.clone();
     // Polls the worker's counters while the dialog is mapped and stops once the
@@ -63,11 +105,17 @@ pub(super) fn show(parent: &gtk::Window, control: Arc<ScanControl>) {
         let status = weak_status.clone();
         let counts = weak_counts.clone();
         let cancel = weak_cancel.clone();
+        let spinner = weak_spinner.clone();
+        let outcome = weak_outcome.clone();
         let mut last = None;
         let tick = move || {
-            let (Some(status), Some(counts), Some(cancel)) =
-                (status.upgrade(), counts.upgrade(), cancel.upgrade())
-            else {
+            let (Some(status), Some(counts), Some(cancel), Some(spinner), Some(outcome)) = (
+                status.upgrade(),
+                counts.upgrade(),
+                cancel.upgrade(),
+                spinner.upgrade(),
+                outcome.upgrade(),
+            ) else {
                 return glib::ControlFlow::Break;
             };
             let values = (
@@ -83,12 +131,9 @@ pub(super) fn show(parent: &gtk::Window, control: Arc<ScanControl>) {
             }
             last = Some(values);
             let (examined, imported, skipped, cancelled, finished, failed) = values;
-            counts.set_text(&format!(
-                "{}: {examined} · {}: {imported} · {}: {skipped}",
-                i18n("Examined"),
-                i18n("Imported"),
-                i18n("Skipped")
-            ));
+            counts.examined.set_text(&examined.to_string());
+            counts.imported.set_text(&imported.to_string());
+            counts.skipped.set_text(&skipped.to_string());
             let message = if finished && cancelled {
                 "Scan cancelled. Earlier confirmed imports were kept."
             } else if finished && failed {
@@ -104,6 +149,20 @@ pub(super) fn show(parent: &gtk::Window, control: Arc<ScanControl>) {
             cancel.set_label(&i18n(if finished { "Close" } else { "Cancel scan" }));
             cancel.set_sensitive(finished || !cancelled);
             if finished {
+                cancel.add_css_class("suggested-action");
+                let (icon, class) = if cancelled {
+                    ("process-stop-symbolic", "dim-label")
+                } else if failed {
+                    ("dialog-warning-symbolic", "warning")
+                } else {
+                    ("object-select-symbolic", "success")
+                };
+                outcome.set_icon_name(Some(icon));
+                outcome.add_css_class(class);
+                outcome.set_visible(true);
+                spinner.set_visible(false);
+            }
+            if finished {
                 glib::ControlFlow::Break
             } else {
                 glib::ControlFlow::Continue
@@ -117,6 +176,52 @@ pub(super) fn show(parent: &gtk::Window, control: Arc<ScanControl>) {
             big_gtk_kit::source::remove(timer);
         }
     });
-    dialog.set_child(Some(&content));
     dialog.present(Some(parent));
+}
+
+/// One count under the status: a large number over its name.
+fn stat_card(row: &gtk::Box, name: &str) -> gtk::Label {
+    let card = gtk::Box::builder()
+        .orientation(gtk::Orientation::Vertical)
+        .spacing(2)
+        .css_classes(["card", "scan-stat"])
+        .build();
+    let value = gtk::Label::builder()
+        .label("0")
+        .css_classes(["scan-stat-value", "numeric"])
+        .build();
+    let caption = gtk::Label::builder()
+        .label(name)
+        .ellipsize(gtk::pango::EllipsizeMode::End)
+        .css_classes(["caption", "dim-label"])
+        .build();
+    card.append(&value);
+    card.append(&caption);
+    row.append(&card);
+    value
+}
+
+/// The count labels, held weakly by the polling timer.
+#[derive(Clone)]
+struct StatLabels {
+    examined: glib::WeakRef<gtk::Label>,
+    imported: glib::WeakRef<gtk::Label>,
+    skipped: glib::WeakRef<gtk::Label>,
+}
+
+/// The live labels for one tick.
+struct StatValues {
+    examined: gtk::Label,
+    imported: gtk::Label,
+    skipped: gtk::Label,
+}
+
+impl StatLabels {
+    fn upgrade(&self) -> Option<StatValues> {
+        Some(StatValues {
+            examined: self.examined.upgrade()?,
+            imported: self.imported.upgrade()?,
+            skipped: self.skipped.upgrade()?,
+        })
+    }
 }
