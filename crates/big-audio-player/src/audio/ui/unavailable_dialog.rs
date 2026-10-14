@@ -6,6 +6,7 @@ use crate::db::{
 };
 use crate::i18n::i18n;
 use adw::prelude::*;
+use big_relm4_components::layout::dialog_page::BigDialogPage;
 use std::cell::{Cell, RefCell};
 use std::rc::Rc;
 use std::sync::{
@@ -41,48 +42,60 @@ pub(super) fn show(parent: &gtk::Window, db: DbHandle, on_changed: impl Fn() + '
         .content_width(640)
         .content_height(560)
         .build();
-    let root = gtk::Box::new(gtk::Orientation::Vertical, 12);
-    root.set_margin_top(16);
-    root.set_margin_bottom(16);
-    root.set_margin_start(16);
-    root.set_margin_end(16);
-    let description = gtk::Label::new(Some(&i18n(
-        "Reconnect external drives before reviewing. Removing records forgets their ratings and saved playlist links, but never deletes media files or interrupts current playback.",
-    )));
-    description.set_wrap(true);
-    description.set_xalign(0.0);
+    // The header carries the title and the close button; the review actions
+    // sit in a bar at the bottom, removal apart on the right.
+    let page = BigDialogPage::plain();
+    let root = page.content().clone();
+    root.set_spacing(12);
+    let description = gtk::Label::builder()
+        .label(i18n(
+            "Reconnect external drives before reviewing. Removing records forgets their ratings and saved playlist links, but never deletes media files or interrupts current playback.",
+        ))
+        .wrap(true)
+        .xalign(0.0)
+        .css_classes(["dim-label"])
+        .build();
     root.append(&description);
-    let status = gtk::Label::new(Some(&i18n("Checking the library…")));
-    status.set_wrap(true);
-    status.set_xalign(0.0);
+    let status = gtk::Label::builder()
+        .label(i18n("Checking the library…"))
+        .wrap(true)
+        .xalign(0.0)
+        .css_classes(["heading"])
+        .build();
     root.append(&status);
     let list = gtk::ListBox::new();
     list.set_selection_mode(gtk::SelectionMode::None);
     list.add_css_class("boxed-list");
-    let scroll = gtk::ScrolledWindow::new();
-    scroll.set_vexpand(true);
-    scroll.set_child(Some(&list));
+    let scroll = gtk::ScrolledWindow::builder()
+        .vexpand(true)
+        .hscrollbar_policy(gtk::PolicyType::Never)
+        .child(&list)
+        .build();
     root.append(&scroll);
-    let actions = gtk::Box::new(gtk::Orientation::Horizontal, 8);
+
+    let actions = gtk::Box::builder()
+        .orientation(gtk::Orientation::Horizontal)
+        .spacing(8)
+        .margin_top(12)
+        .margin_bottom(12)
+        .margin_start(12)
+        .margin_end(12)
+        .build();
     let restart = gtk::Button::with_label(&i18n("Restart review"));
     let refresh = gtk::Button::with_label(&i18n("Check again"));
     let next = gtk::Button::with_label(&i18n("Continue checking"));
-    let remove = gtk::Button::with_label(&i18n("Remove selected records"));
-    remove.add_css_class("destructive-action");
+    let remove = gtk::Button::builder()
+        .label(i18n("Remove selected records"))
+        .hexpand(true)
+        .halign(gtk::Align::End)
+        .css_classes(["destructive-action"])
+        .build();
     actions.append(&restart);
     actions.append(&refresh);
     actions.append(&next);
-    root.append(&actions);
-    root.append(&remove);
-    let close = gtk::Button::with_label(&i18n("Close"));
-    root.append(&close);
-    let weak = dialog.downgrade();
-    close.connect_clicked(move |_| {
-        if let Some(dialog) = weak.upgrade() {
-            dialog.close();
-        }
-    });
-    dialog.set_child(Some(&root));
+    actions.append(&remove);
+    page.root().add_bottom_bar(&actions);
+    dialog.set_child(Some(page.root()));
     let view = View {
         state: Rc::new(RefCell::new(PageState::default())),
         busy: Rc::new(Cell::new(false)),
@@ -182,6 +195,10 @@ impl View {
             list.remove(&child);
         }
         let count = page.entries.len();
+        // An empty list would stand as a blank card: the status says it all.
+        if let Some(scroll) = list.ancestor(gtk::ScrolledWindow::static_type()) {
+            scroll.set_visible(count > 0);
+        }
         let mut state = self.state.borrow_mut();
         state.entries.clear();
         state.cursor = cursor;
