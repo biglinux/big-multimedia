@@ -1,0 +1,88 @@
+# Maintainer: Bruno Goncalves <bigbruno@gmail.com>
+# shellcheck shell=bash disable=SC2034,SC2154
+
+# One package per directory, like big-kernel: gitrepo lists each directory
+# and builds the ones chosen. Do not reference the pkgname or url variables
+# in this file: a testing build in the CI expands them textually.
+
+pkgname=big-audio-player
+_repo=big-multimedia
+# Read once: makepkg sources this file again in its fakeroot pass, and both
+# passes must agree on the version.
+export BIG_PKGSTAMP="${BIG_PKGSTAMP:-$(date +%y.%m.%d-%H%M)}"
+pkgver=${BIG_PKGSTAMP%-*}
+pkgrel=${BIG_PKGSTAMP#*-}
+pkgdesc='Music and audio player for BigLinux'
+arch=('x86_64')
+url="https://github.com/biglinux/big-multimedia"
+license=('GPL-3.0-or-later')
+# libpulse provides pactl, which drives the stream volume.
+depends=('gtk4>=4.22' 'libadwaita>=1.9' 'mpv' 'ffmpeg' 'libpulse')
+makedepends=('git' 'cargo' 'pkgconf' 'gettext')
+optdepends=('deepfilternet3-native: light voice noise reduction (DeepFilterNet3)'
+            'dpdfnet-native: higher-quality voice noise reduction (DPDFNet-2 48 kHz)'
+            'big-audio-converter: trim and convert tracks'
+            'bignetscreen: play on a TV or Chromecast')
+# makepkg's lto adds -flto to CFLAGS, so the C in ring and jemalloc builds as
+# GCC bytecode that lld cannot link. The release profile already does fat LTO.
+options=('!lto')
+
+# Inside a checkout this recipe builds its working tree, uncommitted changes
+# included. The CI receives only this directory and fetches from GitHub
+# instead; keep that line literal, the builder appends #branch= to it.
+_recipe_dir=$(cd "$(dirname "${BASH_SOURCE[0]}")" 2>/dev/null && pwd -P)
+_checkout=${_recipe_dir%/*}
+if [ -e "${_checkout}/.git" ] && [ -f "${_checkout}/Cargo.toml" ]; then
+    source=()
+    sha256sums=()
+else
+    _checkout=
+    source=("git+https://github.com/biglinux/big-multimedia.git")
+    sha256sums=('SKIP')
+fi
+
+prepare() {
+    if [ -n "${_checkout}" ]; then
+        # The files git sees: tracked and new ones, without ignored output or
+        # this recipe's own src/ and pkg/.
+        rm -rf "${srcdir:?}/${_repo}"
+        mkdir "${srcdir}/${_repo}"
+        git -C "${_checkout}" ls-files -z --cached --others --exclude-standard \
+            -- ":!:${_recipe_dir#"${_checkout}"/}" |
+            tar -C "${_checkout}" --null --files-from=- --ignore-failed-read -cf - |
+            tar -C "${srcdir}/${_repo}" -xf -
+    fi
+    cd "${srcdir}/${_repo}" || return
+    cargo fetch --locked --target "$(rustc -vV | sed -n 's/^host: //p')"
+}
+
+build() {
+    cd "${srcdir}/${_repo}" || return
+    export RUSTFLAGS="${RUSTFLAGS} --remap-path-prefix=${srcdir}/${_repo}=/build"
+    cargo build --frozen --release -p big-audio-player
+}
+
+package() {
+    local tree="${srcdir}/${_repo}"
+    local resources="${tree}/crates/big-audio-player/resources"
+    local id=br.com.biglinux.AudioPlayer
+
+    install -Dm755 "${tree}/target/release/big-audio-player" "${pkgdir}/usr/bin/big-audio-player"
+    install -Dm644 "${resources}/applications/${id}.desktop" \
+        "${pkgdir}/usr/share/applications/${id}.desktop"
+    install -Dm644 "${resources}/metainfo/${id}.metainfo.xml" \
+        "${pkgdir}/usr/share/metainfo/${id}.metainfo.xml"
+    install -Dm644 "${resources}/icons/hicolor/scalable/apps/big-audio-player.svg" \
+        "${pkgdir}/usr/share/icons/hicolor/scalable/apps/big-audio-player.svg"
+
+    # The shared gettext catalog goes under the package's private locale dir,
+    # which resolve_locale_dir() prefers, so the two co-installable players
+    # never own the same file in /usr/share/locale.
+    local po="${tree}/crates/media-runtime/po" lang
+    while read -r lang; do
+        [[ -z "${lang}" || "${lang}" == \#* ]] && continue
+        install -d "${pkgdir}/usr/share/big-audio-player/locale/${lang}/LC_MESSAGES"
+        msgfmt "${po}/${lang}.po" \
+            -o "${pkgdir}/usr/share/big-audio-player/locale/${lang}/LC_MESSAGES/big-media-runtime.mo"
+    done <"${po}/LINGUAS"
+}

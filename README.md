@@ -99,9 +99,15 @@ On BigLinux the players come from the official repositories:
 sudo pacman -S big-video-player big-audio-player
 ```
 
-Packages are built from [`pkgbuild/PKGBUILD`](pkgbuild/PKGBUILD), a single
-split recipe that produces both players. A push to a `testing-*` or `stable-*`
-branch sends the build request to the BigLinux package builder.
+Each player has its own recipe:
+[`big-audio-player/PKGBUILD`](big-audio-player/PKGBUILD) and
+[`big-video-player/PKGBUILD`](big-video-player/PKGBUILD). Build tools that
+understand one package per directory, such as `gitrepo`, list both and build
+the ones you choose. Inside a checkout, either recipe builds the working tree:
+
+```sh
+cd big-video-player && makepkg -si
+```
 
 ## Building from source
 
@@ -145,6 +151,8 @@ headless compositor so that no window reaches your desktop; see
 ## Architecture
 
 ```text
+big-audio-player/            Package recipe (PKGBUILD) of the audio player
+big-video-player/            Package recipe (PKGBUILD) of the video player
 crates/
 ├── big-video-player/        Video player (binary)
 ├── big-audio-player/        Audio player (binary)
