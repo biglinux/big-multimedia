@@ -394,6 +394,31 @@ thread_local! {
     /// to the default `gdk::Display`, which is process-global, so a thread-local
     /// is the right ownership home: no per-shell duplication, no stacking).
     static LIVE_THEME_PROVIDER: RefCell<Option<gtk::CssProvider>> = const { RefCell::new(None) };
+    /// Open players sharing that provider.
+    static LIVE_THEME_USERS: std::cell::Cell<usize> = const { std::cell::Cell::new(0) };
+}
+
+/// Apply the OSD theme for a new player and keep it on the display while
+/// any player is open. Its rules are display-wide (`popover > contents`,
+/// `windowcontrols button`): in a host that embeds the player, they must
+/// leave with the last one instead of restyling the host's other modules.
+pub(super) fn hold_theme(root: &gtk::Box, settings: &Settings) {
+    LIVE_THEME_USERS.with(|users| users.set(users.get() + 1));
+    reapply_theme(settings);
+    root.connect_destroy(|_| {
+        let last = LIVE_THEME_USERS.with(|users| {
+            users.set(users.get().saturating_sub(1));
+            users.get() == 0
+        });
+        if !last {
+            return;
+        }
+        if let Some(provider) = LIVE_THEME_PROVIDER.with(|cell| cell.borrow_mut().take())
+            && let Some(display) = gtk::gdk::Display::default()
+        {
+            gtk::style_context_remove_provider_for_display(&display, &provider);
+        }
+    });
 }
 
 /// (Re)apply the OSD palette + layout CSS into the shared provider slot. Called

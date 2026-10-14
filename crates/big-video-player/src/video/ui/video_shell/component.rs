@@ -1,5 +1,5 @@
 use super::actions::{build_welcome_screen, install_window_actions, toggle_keep_above};
-use super::dialogs::reapply_theme;
+use super::dialogs::hold_theme;
 use super::input::{clear_shell_input, set_shell_input};
 use super::input_gestures::{wire_osd_autohide, wire_osd_focus_out, wire_video_input};
 use super::render::{
@@ -495,9 +495,9 @@ impl Component for VideoShell {
         root.connect_unrealize(move |_| clear_shell_input(shell_input_token));
 
         // Apply the saved OSD palette + layout CSS now into the shared
-        // display-wide provider slot; the Appearance
-        // dialog re-applies live through the same slot.
-        reapply_theme(&settings);
+        // display-wide provider slot, released when the last player closes;
+        // the Appearance dialog re-applies live through the same slot.
+        hold_theme(&root, &settings);
 
         // Window aspect-ratio snap: resize the window to the video's aspect on
         // load and on manual resize (debounced), so no letterbox bars remain.
