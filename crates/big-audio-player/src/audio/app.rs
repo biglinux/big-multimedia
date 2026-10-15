@@ -76,7 +76,7 @@ fn dock_control_message(action: &str) -> Option<AudioShellInput> {
 fn audio_about_dialog_config() -> crate::shared::app_base::AboutDialogConfig {
     crate::shared::app_base::AboutDialogConfig {
         app_name: config::audio::APP_NAME,
-        app_icon: config::audio::APP_ID,
+        app_icon: config::audio::ICON_NAME,
         comments: AUDIO_ABOUT_COMMENTS,
     }
 }
@@ -257,6 +257,17 @@ mod tests {
     use super::*;
 
     #[test]
+    fn about_icon_is_the_icon_the_package_installs() {
+        let icon = crate::config::audio::ICON_NAME;
+        let desktop =
+            include_str!("../../resources/applications/br.com.biglinux.AudioPlayer.desktop");
+        assert!(desktop.lines().any(|line| line == format!("Icon={icon}")));
+        let svg = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+            .join(format!("resources/icons/hicolor/scalable/apps/{icon}.svg"));
+        assert!(svg.is_file(), "{} is missing", svg.display());
+    }
+
+    #[test]
     fn every_dock_menu_action_runs_a_known_option() {
         let desktop =
             include_str!("../../resources/applications/br.com.biglinux.AudioPlayer.desktop");
@@ -322,7 +333,7 @@ mod tests {
         let config = audio_about_dialog_config();
 
         assert_eq!(config.app_name, crate::config::audio::APP_NAME);
-        assert_eq!(config.app_icon, crate::config::audio::APP_ID);
+        assert_eq!(config.app_icon, crate::config::audio::ICON_NAME);
         assert!(config.comments.contains("MusicBrainz"));
         assert_eq!(AUDIO_ABOUT_CREDIT_SECTION_HEADING, "Data Sources");
         assert!(

@@ -72,7 +72,7 @@ mod imp {
                     let dialog = crate::shared::app_base::build_about_dialog(
                         &crate::shared::app_base::AboutDialogConfig {
                             app_name: config::video::APP_NAME,
-                            app_icon: config::video::APP_ID,
+                            app_icon: config::video::ICON_NAME,
                             comments: "",
                         },
                     );
@@ -112,5 +112,19 @@ impl Application {
 
     pub fn run(&self) -> glib::ExitCode {
         ApplicationExtManual::run(self)
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    #[test]
+    fn about_icon_is_the_icon_the_package_installs() {
+        let icon = crate::config::video::ICON_NAME;
+        let desktop =
+            include_str!("../../resources/applications/br.com.biglinux.VideoPlayer.desktop");
+        assert!(desktop.lines().any(|line| line == format!("Icon={icon}")));
+        let svg = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+            .join(format!("resources/icons/hicolor/scalable/apps/{icon}.svg"));
+        assert!(svg.is_file(), "{} is missing", svg.display());
     }
 }
