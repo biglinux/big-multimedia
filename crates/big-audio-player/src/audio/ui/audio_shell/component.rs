@@ -341,7 +341,9 @@ impl Component for AudioShell {
         for action in PLAYBACK_SHORTCUT_ACTIONS {
             let input = sender.input_sender().clone();
             big_app_kit::desktop::install_action(&win_actions, action, move || {
-                dispatch_shortcut_action(action, &input);
+                if let Some(message) = super::keyboard::shortcut_message(action) {
+                    let _ = input.send(message);
+                }
             });
         }
         let manage_folders_sender = sender.input_sender().clone();
@@ -349,68 +351,8 @@ impl Component for AudioShell {
             let _ = manage_folders_sender.send(AudioShellInput::ShowManageFolders);
         });
 
-        // Window-level shortcuts. Modified bindings are GTK accelerators over
-        // the actions above; bare single-key bindings stay here so text widgets
-        // can keep normal typing behaviour.
-        let key_controller = gtk::EventControllerKey::new();
-        let key_sender = sender.input_sender().clone();
-        let single_key_actions = crate::audio::keybindings::build_single_key_map(
-            &settings.get_string(keys::CUSTOM_KEYBINDINGS),
-        );
-        // Lists consume Left/Right for their own navigation before a bubbling
-        // window shortcut sees them, so the seek keys are taken on the way
-        // down. Sliders, text and the library tree keep their arrows.
-        let seek_actions: std::collections::HashMap<String, String> = single_key_actions
-            .iter()
-            .filter(|(_, action)| action.starts_with("seek-"))
-            .map(|(accel, action)| (accel.clone(), action.clone()))
-            .collect();
-        let seek_controller = gtk::EventControllerKey::new();
-        seek_controller.set_propagation_phase(gtk::PropagationPhase::Capture);
-        let seek_sender = sender.input_sender().clone();
-        seek_controller.connect_key_pressed(move |controller, keyval, _, state| {
-            let accel = crate::audio::keybindings::key_to_accel_string(keyval, state);
-            let Some(action) = seek_actions.get(accel.as_str()) else {
-                return glib::Propagation::Proceed;
-            };
-            if focus_keeps_arrows(controller) || !dispatch_shortcut_action(action, &seek_sender) {
-                return glib::Propagation::Proceed;
-            }
-            glib::Propagation::Stop
-        });
-        root.add_controller(seek_controller);
-        key_controller.connect_key_pressed(move |controller, keyval, _, state| {
-            if let Some(action) = media_key_action(keyval) {
-                dispatch_shortcut_action(action, &key_sender);
-                return glib::Propagation::Stop;
-            }
-
-            if state.contains(gdk::ModifierType::CONTROL_MASK) {
-                let shift = state.contains(gdk::ModifierType::SHIFT_MASK);
-                let message = match keyval {
-                    gdk::Key::z | gdk::Key::Z if shift => AudioShellInput::Redo,
-                    gdk::Key::z | gdk::Key::Z => AudioShellInput::Undo,
-                    gdk::Key::y | gdk::Key::Y => AudioShellInput::Redo,
-                    _ => return glib::Propagation::Proceed,
-                };
-                let _ = key_sender.send(message);
-                return glib::Propagation::Stop;
-            }
-
-            if focus_accepts_text(controller) {
-                return glib::Propagation::Proceed;
-            }
-
-            let accel = crate::audio::keybindings::key_to_accel_string(keyval, state);
-            let Some(action) = single_key_actions.get(accel.as_str()) else {
-                return glib::Propagation::Proceed;
-            };
-            if dispatch_shortcut_action(action, &key_sender) {
-                return glib::Propagation::Stop;
-            }
-            glib::Propagation::Proceed
-        });
-        root.add_controller(key_controller);
+        // Every shortcut of the catalog, bare or modified (see keyboard.rs).
+        super::keyboard::wire_keyboard_shortcuts(&root, &settings, &sender);
 
         // Main-menu window actions (the hamburger menu's GMenu references these).
         let eq_sender = sender.input_sender().clone();
@@ -656,72 +598,6 @@ impl Component for AudioShell {
             self.publish_mpris_snapshot();
         });
     }
-}
-
-fn dispatch_shortcut_action(action: &str, input: &relm4::Sender<AudioShellInput>) -> bool {
-    let message = match action {
-        "play-pause" => AudioShellInput::Playback(AudioPlaybackBarOutput::TogglePlay),
-        "seek-forward" => AudioShellInput::SeekBy(5.0),
-        "seek-backward" => AudioShellInput::SeekBy(-5.0),
-        "seek-forward-long" => AudioShellInput::SeekBy(30.0),
-        "seek-backward-long" => AudioShellInput::SeekBy(-30.0),
-        "next-track" => AudioShellInput::Playback(AudioPlaybackBarOutput::Next),
-        "prev-track" => AudioShellInput::Playback(AudioPlaybackBarOutput::Previous),
-        "toggle-repeat" => AudioShellInput::Playback(AudioPlaybackBarOutput::CycleRepeat),
-        "toggle-shuffle" => AudioShellInput::ToggleShuffleShortcut,
-        "undo" => AudioShellInput::Undo,
-        "redo" => AudioShellInput::Redo,
-        _ => return false,
-    };
-    let _ = input.send(message);
-    true
-}
-
-fn media_key_action(keyval: gdk::Key) -> Option<&'static str> {
-    match keyval {
-        gdk::Key::AudioPlay | gdk::Key::AudioPause | gdk::Key::AudioMedia => Some("play-pause"),
-        gdk::Key::AudioNext => Some("next-track"),
-        gdk::Key::AudioPrev => Some("prev-track"),
-        _ => None,
-    }
-}
-
-/// Whether the focused widget uses Left/Right itself: text, a slider (the seek
-/// bar and volume move with the arrows) or a library tree row.
-fn focus_keeps_arrows(controller: &gtk::EventControllerKey) -> bool {
-    if focus_accepts_text(controller) {
-        return true;
-    }
-    let focus = controller
-        .widget()
-        .and_then(|widget| widget.root())
-        .and_downcast::<gtk::Window>()
-        .and_then(|window| gtk::prelude::GtkWindowExt::focus(&window));
-    focus.is_some_and(|focus| {
-        focus.is::<gtk::Range>()
-            || focus.ancestor(gtk::Range::static_type()).is_some()
-            // The library tree opens and closes rows with them.
-            || focus
-                .downcast_ref::<big_item_view::ItemView>()
-                .and_then(big_item_view::ItemView::model)
-                .and_then(|model| model.item(0))
-                .is_some_and(|item| item.is::<gtk::TreeListRow>())
-    })
-}
-
-fn focus_accepts_text(controller: &gtk::EventControllerKey) -> bool {
-    let Some(widget) = controller.widget() else {
-        return false;
-    };
-    let Some(window) = widget.root().and_downcast::<gtk::Window>() else {
-        return false;
-    };
-    let Some(focus) = gtk::prelude::GtkWindowExt::focus(&window) else {
-        return false;
-    };
-    focus.dynamic_cast_ref::<gtk::Editable>().is_some()
-        || focus.is::<gtk::TextView>()
-        || focus.ancestor(gtk::TextView::static_type()).is_some()
 }
 
 #[cfg(test)]

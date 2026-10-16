@@ -9,6 +9,7 @@ use gtk::{gio, glib};
 use crate::audio::ui::audio_shell::AudioShellInput;
 use crate::config;
 use crate::settings::keys;
+use big_player_ui::playback_bar::AudioPlaybackBarOutput;
 
 const AUDIO_ABOUT_COMMENTS: &str = "Lyrics: LRCLIB · lyrics.ovh\n\
                                    Metadata: MusicBrainz\n\
@@ -40,10 +41,42 @@ fn open_files_message(files: &[gio::File]) -> Option<AudioShellInput> {
     open_paths_message(paths)
 }
 
+/// Playback controls offered on the dock icon's menu: each `.desktop` action
+/// runs `big-audio-player --<option>`, which hands the matching application
+/// action to the running player and exits. `(option, action, help)`.
+const DOCK_CONTROLS: &[(&str, &str, &str)] = &[
+    (
+        "play-pause",
+        "play-pause",
+        "Play or pause the running player",
+    ),
+    (
+        "next",
+        "next-track",
+        "Skip to the next track in the running player",
+    ),
+    (
+        "previous",
+        "prev-track",
+        "Go back to the previous track in the running player",
+    ),
+];
+
+/// The shell message behind one dock control action.
+fn dock_control_message(action: &str) -> Option<AudioShellInput> {
+    let command = match action {
+        "play-pause" => AudioPlaybackBarOutput::TogglePlay,
+        "next-track" => AudioPlaybackBarOutput::Next,
+        "prev-track" => AudioPlaybackBarOutput::Previous,
+        _ => return None,
+    };
+    Some(AudioShellInput::Playback(command))
+}
+
 fn audio_about_dialog_config() -> crate::shared::app_base::AboutDialogConfig {
     crate::shared::app_base::AboutDialogConfig {
         app_name: config::audio::APP_NAME,
-        app_icon: config::audio::APP_ID,
+        app_icon: config::audio::ICON_NAME,
         comments: AUDIO_ABOUT_COMMENTS,
     }
 }
@@ -96,6 +129,32 @@ mod imp {
             }
         }
 
+        /// `--play-pause`, `--next` and `--previous` from the dock menu: with
+        /// a player already open, hand it the action over D-Bus and exit
+        /// without a window of our own; otherwise start the player as usual.
+        fn handle_local_options(
+            &self,
+            options: &glib::VariantDict,
+        ) -> std::ops::ControlFlow<glib::ExitCode> {
+            let Some(action) = DOCK_CONTROLS
+                .iter()
+                .find(|(option, _, _)| options.contains(option))
+                .map(|(_, action, _)| *action)
+            else {
+                return self.parent_handle_local_options(options);
+            };
+            let app = self.obj();
+            if app.register(gio::Cancellable::NONE).is_ok() && app.is_remote() {
+                app.activate_action(action, None);
+                // The call is queued on the bus: send it before exiting.
+                if let Some(connection) = app.dbus_connection() {
+                    let _ = connection.flush_sync(gio::Cancellable::NONE);
+                }
+                return std::ops::ControlFlow::Break(glib::ExitCode::SUCCESS);
+            }
+            std::ops::ControlFlow::Continue(())
+        }
+
         fn startup(&self) {
             self.parent_startup();
             big_gtk_kit::install();
@@ -133,6 +192,15 @@ mod imp {
                 .build();
             install_quit_action(app);
             app.add_action_entries([about]);
+            for (_, action, _) in DOCK_CONTROLS {
+                let control = gio::SimpleAction::new(action, None);
+                control.connect_activate(|action, _| {
+                    if let Some(message) = dock_control_message(&action.name()) {
+                        crate::audio::ui::audio_shell::send_to_shell(message);
+                    }
+                });
+                app.add_action(&control);
+            }
         }
     }
 }
@@ -146,10 +214,21 @@ glib::wrapper! {
 impl Application {
     #[allow(clippy::new_without_default)]
     pub fn new() -> Self {
-        glib::Object::builder()
+        let app: Self = glib::Object::builder()
             .property("application-id", config::audio::APP_ID)
             .property("flags", gio::ApplicationFlags::HANDLES_OPEN)
-            .build()
+            .build();
+        for (option, _, description) in DOCK_CONTROLS {
+            app.add_main_option(
+                option,
+                glib::Char::from(0),
+                glib::OptionFlags::NONE,
+                glib::OptionArg::None,
+                description,
+                None,
+            );
+        }
+        app
     }
 
     pub fn run(&self) -> glib::ExitCode {
@@ -176,6 +255,38 @@ pub(crate) fn install_audio_accels(app: &gtk::Application) {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn about_icon_is_the_icon_the_package_installs() {
+        let icon = crate::config::audio::ICON_NAME;
+        let desktop =
+            include_str!("../../resources/applications/br.com.biglinux.AudioPlayer.desktop");
+        assert!(desktop.lines().any(|line| line == format!("Icon={icon}")));
+        let svg = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+            .join(format!("resources/icons/hicolor/scalable/apps/{icon}.svg"));
+        assert!(svg.is_file(), "{} is missing", svg.display());
+    }
+
+    #[test]
+    fn every_dock_menu_action_runs_a_known_option() {
+        let desktop =
+            include_str!("../../resources/applications/br.com.biglinux.AudioPlayer.desktop");
+        let execs: Vec<&str> = desktop
+            .lines()
+            .filter_map(|line| line.strip_prefix("Exec=big-audio-player --"))
+            .collect();
+        assert_eq!(execs.len(), DOCK_CONTROLS.len());
+        for option in execs {
+            let (_, action, _) = DOCK_CONTROLS
+                .iter()
+                .find(|(known, _, _)| *known == option)
+                .unwrap_or_else(|| panic!("--{option} is not an option of the player"));
+            assert!(
+                dock_control_message(action).is_some(),
+                "{action} does nothing"
+            );
+        }
+    }
 
     #[test]
     fn open_paths_message_ignores_empty_inputs() {
@@ -222,7 +333,7 @@ mod tests {
         let config = audio_about_dialog_config();
 
         assert_eq!(config.app_name, crate::config::audio::APP_NAME);
-        assert_eq!(config.app_icon, crate::config::audio::APP_ID);
+        assert_eq!(config.app_icon, crate::config::audio::ICON_NAME);
         assert!(config.comments.contains("MusicBrainz"));
         assert_eq!(AUDIO_ABOUT_CREDIT_SECTION_HEADING, "Data Sources");
         assert!(

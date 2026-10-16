@@ -142,6 +142,8 @@ pub enum PlaylistPanelInput {
         /// Current index to scroll to.
         idx: usize,
     },
+    /// Select every row (Ctrl+A).
+    SelectAll,
     /// Active saved-playlist name changed.
     SetPlaylistName(String),
     /// Whether the library has any tracks; picks the empty-queue placeholder
@@ -534,6 +536,9 @@ impl Component for PlaylistPanel {
                 self.list.view.refresh_all();
             }
             PlaylistPanelInput::ScrollToCurrent { idx } => self.scroll_to(idx),
+            PlaylistPanelInput::SelectAll => {
+                self.selection.select_all();
+            }
             PlaylistPanelInput::SetPlaylistName(name) => {
                 self.playlist_name = name;
                 self.update_header();

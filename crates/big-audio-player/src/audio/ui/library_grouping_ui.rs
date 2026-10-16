@@ -218,10 +218,15 @@ fn build_add_folder_button(sender: &ComponentSender<LibraryPanel>) -> gtk::Butto
     add_folder_button
 }
 
+/// Widget name of the library filter, which Ctrl+F focuses.
+pub(crate) const LIBRARY_FILTER_NAME: &str = "library-filter";
+
 /// GTK owns one debounce source, including cancellation when the field is cleared.
 /// A second timeout here would republish a stale non-empty query after clear.
 fn build_search_entry(sender: &ComponentSender<LibraryPanel>) -> gtk::SearchEntry {
     let entry = gtk::SearchEntry::builder()
+        // Found by name by the Ctrl+F shortcut.
+        .name(LIBRARY_FILTER_NAME)
         .placeholder_text(i18n("Filter…"))
         .hexpand(true)
         .search_delay(150)

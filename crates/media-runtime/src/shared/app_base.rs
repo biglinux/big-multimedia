@@ -245,7 +245,7 @@ pub fn build_about_dialog(about_dialog_config: &AboutDialogConfig) -> adw::About
         .application_name(about_dialog_config.app_name)
         .application_icon(about_dialog_config.app_icon)
         .developer_name("BigLinux")
-        .version(env!("CARGO_PKG_VERSION"))
+        .version(crate::config::APP_VERSION)
         .website("https://biglinux.com.br")
         .license_type(gtk::License::Gpl30);
 

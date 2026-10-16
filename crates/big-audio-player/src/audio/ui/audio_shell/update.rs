@@ -323,6 +323,8 @@ impl AudioShell {
             AudioShellInput::Undo => self.undo_queue(&sender),
             AudioShellInput::Redo => self.redo_queue(&sender),
             AudioShellInput::SeekBy(seconds) => self.seek_by(seconds),
+            AudioShellInput::ScrollToPlaying => self.sync_current_to_panels(),
+            AudioShellInput::SelectAllInQueue => self.playlist.emit(PlaylistPanelInput::SelectAll),
             AudioShellInput::ToggleShuffleShortcut => {
                 self.handle_playback(
                     AudioPlaybackBarOutput::ToggleShuffle(next_shuffle_state(self.queue.shuffle())),

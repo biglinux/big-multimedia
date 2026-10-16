@@ -188,6 +188,10 @@ pub enum AudioShellInput {
     Redo,
     /// Toggle shuffle from a keyboard/action shortcut.
     ToggleShuffleShortcut,
+    /// Keyboard: scroll the queue to the playing track.
+    ScrollToPlaying,
+    /// Keyboard: select every track of the queue.
+    SelectAllInQueue,
     /// Keyboard seek by this many seconds from the current position.
     SeekBy(f64),
     /// Typed MPRIS command, with track identity preserved across thread dispatch.
