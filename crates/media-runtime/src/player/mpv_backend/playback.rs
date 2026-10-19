@@ -38,6 +38,70 @@ pub fn profile_for_uri(target: &str) -> Option<AudioCacheProfile> {
     )
 }
 
+/// Where [`playlist_commands`] puts its entries in mpv's playlist.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum Placement {
+    /// At the end, leaving the playing entry alone.
+    Append,
+    /// At the end, starting the first one when nothing plays.
+    AppendPlay,
+    /// From this index on, ahead of the entry that was there.
+    InsertAt(usize),
+}
+
+/// The entry to play and the entries before and after it, or `None` for an
+/// empty list. A `start` past the end picks the last entry.
+fn split_at_start(entries: &[String], start: usize) -> Option<(&String, &[String], &[String])> {
+    let start = start.min(entries.len().checked_sub(1)?);
+    Some((&entries[start], &entries[..start], &entries[start + 1..]))
+}
+
+/// mpv commands, as `[name, arguments...]`, that put `paths` in order at
+/// `placement`, in as few commands as mpv's plaintext playlist allows: every
+/// async command holds a reply slot in mpv's bounded client event queue until
+/// the event thread drains it, so one `loadfile` per entry overflows it on a
+/// large folder, and a synchronous one blocks the GTK loop while mpv opens the
+/// first file. The parser splits lines and strips leading blanks and a
+/// line-final CR, so such paths go one by one, each at its own index when
+/// inserting. mpv parses a list on a worker thread, so one of those can still
+/// land ahead of a list queued before it.
+fn playlist_commands(paths: &[String], placement: Placement) -> Vec<Vec<String>> {
+    let command = |name: &str, entry: String, offset: usize| {
+        let mut command = vec![name.to_owned(), entry];
+        match placement {
+            Placement::Append => command.push("append".to_owned()),
+            Placement::AppendPlay => command.push("append-play".to_owned()),
+            Placement::InsertAt(index) => {
+                command.push("insert-at".to_owned());
+                command.push((index + offset).to_string());
+            }
+        }
+        command
+    };
+    let mut commands = Vec::new();
+    let mut list = String::new();
+    let mut list_offset = 0;
+    for (offset, path) in paths.iter().enumerate() {
+        if !path.contains('\n') && !path.ends_with('\r') && !path.starts_with(char::is_whitespace) {
+            if list.is_empty() {
+                list_offset = offset;
+            }
+            list.push_str(path);
+            list.push('\n');
+            continue;
+        }
+        if !list.is_empty() {
+            let url = format!("memory://{}", std::mem::take(&mut list));
+            commands.push(command("loadlist", url, list_offset));
+        }
+        commands.push(command("loadfile", path.clone(), offset));
+    }
+    if !list.is_empty() {
+        commands.push(command("loadlist", format!("memory://{list}"), list_offset));
+    }
+    commands
+}
+
 impl MpvBackend {
     pub(super) fn queue_command(
         &self,
@@ -111,36 +175,35 @@ impl MpvBackend {
         }
     }
 
-    /// Append `paths` in order with as few commands as mpv's plaintext
-    /// playlist allows. Every async command holds a reply slot in mpv's
-    /// bounded client event queue until the event thread drains it, so one
-    /// `loadfile` per entry overflows it on a large folder, and a synchronous
-    /// one blocks the GTK loop while mpv opens the first file. The parser
-    /// splits lines and strips leading blanks and a line-final CR, so such
-    /// paths still go one by one.
-    pub fn load_files_append(&self, paths: &[String]) {
-        let mut list = String::new();
-        for path in paths {
-            if path.contains('\n') || path.ends_with('\r') || path.starts_with(char::is_whitespace)
-            {
-                self.append_list(&mut list);
-                self.load_file_append(path);
-            } else {
-                list.push_str(path);
-                list.push('\n');
-            }
-        }
-        self.append_list(&mut list);
+    /// Replace the playlist with `entries` and play `entries[start]`.
+    ///
+    /// mpv parses a `loadlist` on a worker thread, so a `playlist-play-index`
+    /// sent after it runs first, on a list still lacking the entry: mpv then
+    /// played the first entry with a resume position, else the second. The
+    /// chosen entry is loaded on its own instead, and the entries around it
+    /// are added without the play flag: whichever list lands first, the order
+    /// is the same and the chosen entry keeps playing.
+    pub fn load_playlist(&self, entries: &[String], start: usize) {
+        let Some((chosen, before, after)) = split_at_start(entries, start) else {
+            return;
+        };
+        self.load_file(chosen);
+        self.load_files(after, Placement::Append);
+        self.load_files(before, Placement::InsertAt(0));
     }
 
-    fn append_list(&self, list: &mut String) {
-        if list.is_empty() {
-            return;
-        }
-        let url = format!("memory://{list}");
-        list.clear();
-        if let Err(e) = self.queue_command("loadlist", &[&url, "append-play"]) {
-            error!("Failed to append a playlist: {e}");
+    /// Append `paths` in order, starting the first one when nothing plays.
+    pub fn load_files_append(&self, paths: &[String]) {
+        self.load_files(paths, Placement::AppendPlay);
+    }
+
+    /// Queue the commands of [`playlist_commands`], logging the rejected ones.
+    fn load_files(&self, paths: &[String], placement: Placement) {
+        for command in playlist_commands(paths, placement) {
+            let arguments: Vec<&str> = command[1..].iter().map(String::as_str).collect();
+            if let Err(e) = self.queue_command(&command[0], &arguments) {
+                error!("Failed to queue playlist entries: {e}");
+            }
         }
     }
 
@@ -393,6 +456,73 @@ mod tests {
         assert_eq!(
             profile_for_uri("HTTPS://Feed.example.COM/EP042.MP3"),
             Some(AudioCacheProfile::Podcast)
+        );
+    }
+
+    fn strings(items: &[&str]) -> Vec<String> {
+        items.iter().map(|&item| item.to_owned()).collect()
+    }
+
+    #[test]
+    fn split_puts_the_chosen_entry_between_its_neighbours() {
+        let entries = strings(&["a", "b", "c", "d"]);
+        let (chosen, before, after) = split_at_start(&entries, 2).unwrap();
+        assert_eq!(chosen, "c");
+        assert_eq!(before, strings(&["a", "b"]));
+        assert_eq!(after, strings(&["d"]));
+        let (chosen, before, after) = split_at_start(&entries, 0).unwrap();
+        assert_eq!((chosen.as_str(), before.len(), after.len()), ("a", 0, 3));
+        let (chosen, before, after) = split_at_start(&entries, 3).unwrap();
+        assert_eq!((chosen.as_str(), before.len(), after.len()), ("d", 3, 0));
+    }
+
+    #[test]
+    fn split_clamps_the_start_and_rejects_an_empty_list() {
+        let entries = strings(&["a", "b"]);
+        assert_eq!(split_at_start(&entries, 9).unwrap().0, "b");
+        assert!(split_at_start(&[], 0).is_none());
+    }
+
+    #[test]
+    fn plain_paths_go_in_one_list() {
+        let paths = strings(&["/v/a", "/v/b"]);
+        let list = "memory:///v/a\n/v/b\n";
+        let commands = |placement| playlist_commands(&paths, placement);
+        assert_eq!(
+            commands(Placement::Append),
+            [strings(&["loadlist", list, "append"])]
+        );
+        assert_eq!(
+            commands(Placement::AppendPlay),
+            [strings(&["loadlist", list, "append-play"])]
+        );
+        assert_eq!(
+            commands(Placement::InsertAt(0)),
+            [strings(&["loadlist", list, "insert-at", "0"])]
+        );
+        assert!(playlist_commands(&[], Placement::Append).is_empty());
+    }
+
+    #[test]
+    fn unlistable_paths_go_alone_at_their_own_index() {
+        let paths = strings(&["/v/a", "/v/line\nbreak", "/v/b", "/v/c", "/v/cr\r", " /v/d"]);
+        assert_eq!(
+            playlist_commands(&paths, Placement::InsertAt(2)),
+            [
+                strings(&["loadlist", "memory:///v/a\n", "insert-at", "2"]),
+                strings(&["loadfile", "/v/line\nbreak", "insert-at", "3"]),
+                strings(&["loadlist", "memory:///v/b\n/v/c\n", "insert-at", "4"]),
+                strings(&["loadfile", "/v/cr\r", "insert-at", "6"]),
+                strings(&["loadfile", " /v/d", "insert-at", "7"]),
+            ]
+        );
+        assert_eq!(
+            playlist_commands(&paths[..3], Placement::AppendPlay),
+            [
+                strings(&["loadlist", "memory:///v/a\n", "append-play"]),
+                strings(&["loadfile", "/v/line\nbreak", "append-play"]),
+                strings(&["loadlist", "memory:///v/b\n", "append-play"]),
+            ]
         );
     }
 }
