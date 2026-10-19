@@ -78,8 +78,9 @@ _install_player() {
 
 package_big-audio-player() {
     pkgdesc='Music and audio player for BigLinux'
-    # libpulse provides pactl, which drives the stream volume.
-    depends=('gtk4>=4.22' 'libadwaita>=1.9' 'mpv' 'ffmpeg' 'libpulse')
+    # libpulse provides pactl, which drives the stream volume. mpv 0.38 is
+    # the first whose loadfile takes an index before its per-file options.
+    depends=('gtk4>=4.22' 'libadwaita>=1.9' 'mpv>=0.38' 'ffmpeg' 'libpulse')
     optdepends=('deepfilternet3-native: light voice noise reduction (DeepFilterNet3)'
                 'dpdfnet-native: higher-quality voice noise reduction (DPDFNet-2 48 kHz)'
                 'big-audio-converter: trim and convert tracks'
@@ -91,8 +92,9 @@ package_big-video-player() {
     pkgdesc='Hardware-accelerated video player for BigLinux'
     # The shipped GPU shaders: FSR/CAS and Anime4K are MIT, RAVU is LGPL-3.0.
     license=('GPL-3.0-or-later' 'MIT' 'LGPL-3.0-or-later')
-    # ffmpeg renders the seek-bar preview thumbnails.
-    depends=('gtk4>=4.22' 'libadwaita>=1.9' 'mpv' 'ffmpeg' 'libpulse')
+    # ffmpeg renders the seek-bar preview thumbnails. Opening a file inserts
+    # the folder entries before it with loadlist insert-at, new in mpv 0.38.
+    depends=('gtk4>=4.22' 'libadwaita>=1.9' 'mpv>=0.38' 'ffmpeg' 'libpulse')
     # Successor of the monorepo bigvideo package; big-video-module depends on
     # bigvideo.
     replaces=('big-player-video' 'bigvideo')

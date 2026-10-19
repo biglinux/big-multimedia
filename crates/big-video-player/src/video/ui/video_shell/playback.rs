@@ -22,6 +22,7 @@ impl VideoShell {
                 }
                 self.feed_trim_playhead(pos);
                 self.apply_play_selection(pos);
+                self.shuffle_when_loaded();
                 // The playlist's end time moves with the minutes, not frames.
                 let second = pos as i64;
                 if second != self.playlist_second {
@@ -70,14 +71,7 @@ impl VideoShell {
                 self.hdr_hint.set_visible(false);
                 super::send_to_shell(VideoShellInput::RefreshAdjustments);
                 self.sync_screen_inhibit(root);
-                if let Some((path, count)) = &self.shuffle_on_load
-                    && let Some(mpv) = self.mpv.borrow().as_ref()
-                    && mpv.get_current_file().as_ref() == Some(path)
-                    && usize::try_from(mpv.get_playlist_count()).ok() == Some(*count)
-                {
-                    mpv.playlist_shuffle(true);
-                    self.shuffle_on_load = None;
-                }
+                self.shuffle_when_loaded();
                 self.controls.emit(VideoControlsBarInput::SetHasMedia(true));
                 // Hand the loaded *path* to the controls bar so the seek-hover
                 // preview can render thumbnail frames (local files only). The
@@ -296,20 +290,15 @@ impl VideoShell {
         let Some(mpv) = mpv_ref.as_ref() else {
             return;
         };
-        let Some(first) = entries.first() else {
+        if entries.is_empty() {
             return;
-        };
-        mpv.load_file(first);
-        mpv.load_files_append(&entries[1..]);
-        if needs_explicit_start_index(start) {
-            mpv.playlist_play_index(start as i64);
         }
+        mpv.load_playlist(entries, start);
         mpv.play();
         drop(mpv_ref);
         self.playlist_paths = entries.to_vec();
-        // The loads above are queued, and mpv starts `entries[0]` before the
-        // jump to `start`: shuffle once the chosen file is loaded with the
-        // whole list in place.
+        // mpv takes the entries around the chosen one after it, maybe after
+        // the chosen file has loaded: shuffle once both are in place.
         self.shuffle_on_load = self
             .settings
             .get_bool(keys::PLAYLIST_SHUFFLE)
@@ -317,6 +306,20 @@ impl VideoShell {
         self.playlist.emit(VideoBrowserSidebarInput::SetQueue(
             self.playlist_paths.clone(),
         ));
+    }
+
+    /// Shuffle the list just opened once mpv plays its chosen file with every
+    /// entry in place. Checked on load and then as playback advances, since
+    /// the entries can land after the file has loaded.
+    fn shuffle_when_loaded(&mut self) {
+        if let Some((path, count)) = &self.shuffle_on_load
+            && let Some(mpv) = self.mpv.borrow().as_ref()
+            && mpv.get_current_file().as_ref() == Some(path)
+            && usize::try_from(mpv.get_playlist_count()).ok() == Some(*count)
+        {
+            mpv.playlist_shuffle(true);
+            self.shuffle_on_load = None;
+        }
     }
 
     /// Hide + drop the welcome overlay (called on the first `FileLoaded`).
@@ -727,12 +730,6 @@ pub(super) fn seek_target_secs(frac: f64, duration: f64) -> Option<f64> {
     (duration > 0.0).then_some(frac * duration)
 }
 
-/// Whether a resolved playlist needs an explicit `playlist_play_index` after
-/// loading: only when the start is past the first entry (index 0 already plays).
-fn needs_explicit_start_index(start: usize) -> bool {
-    start > 0
-}
-
 /// Whether the incoming list is the one already loaded into mpv (jump in place
 /// instead of reloading).
 fn is_same_playlist(incoming: &[String], loaded: &[String]) -> bool {
@@ -901,9 +898,7 @@ mod resolve_open_files_tests {
 
 #[cfg(test)]
 mod dispatch_logic_tests {
-    use super::{
-        is_same_playlist, needs_explicit_start_index, playlist_index_of, seek_target_secs,
-    };
+    use super::{is_same_playlist, playlist_index_of, seek_target_secs};
 
     #[test]
     fn seek_target_none_until_duration_known() {
@@ -916,13 +911,6 @@ mod dispatch_logic_tests {
         assert_eq!(seek_target_secs(0.0, 200.0), Some(0.0));
         assert_eq!(seek_target_secs(0.25, 200.0), Some(50.0));
         assert_eq!(seek_target_secs(1.0, 200.0), Some(200.0));
-    }
-
-    #[test]
-    fn start_index_only_past_first_entry() {
-        assert!(!needs_explicit_start_index(0));
-        assert!(needs_explicit_start_index(1));
-        assert!(needs_explicit_start_index(9));
     }
 
     #[test]

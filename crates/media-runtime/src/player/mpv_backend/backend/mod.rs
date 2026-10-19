@@ -891,12 +891,9 @@ mod volume_tests {
         assert!(mute_event, "applied mute must reach the UI");
     }
 
-    #[test]
-    fn close_keeps_position_forgets_finished() {
-        let temp = tempfile::tempdir().unwrap();
-        let input = temp.path().join("silence.wav");
-        // Four seconds of 8 kHz mono 16-bit silence.
-        let data_len: u32 = 8000 * 2 * 4;
+    /// Write `seconds` of 8 kHz mono 16-bit silence as a WAV file.
+    fn write_silence(path: &std::path::Path, seconds: u32) {
+        let data_len: u32 = 8000 * 2 * seconds;
         let mut wav = b"RIFF".to_vec();
         wav.extend((36 + data_len).to_le_bytes());
         wav.extend(b"WAVEfmt ");
@@ -906,7 +903,14 @@ mod volume_tests {
         wav.extend(b"data");
         wav.extend(data_len.to_le_bytes());
         wav.resize(wav.len() + data_len as usize, 0);
-        std::fs::write(&input, wav).unwrap();
+        std::fs::write(path, wav).unwrap();
+    }
+
+    #[test]
+    fn close_keeps_position_forgets_finished() {
+        let temp = tempfile::tempdir().unwrap();
+        let input = temp.path().join("silence.wav");
+        write_silence(&input, 4);
         let input = input.to_str().unwrap();
         let watch_dir = temp.path().join("watch_later");
         let open = || {
@@ -964,5 +968,75 @@ mod volume_tests {
             saved().is_empty(),
             "a finished file must not resume at its end"
         );
+    }
+
+    /// Opening a file from a folder queues the whole folder and must play
+    /// that file, in the folder's order, even when another entry has a resume
+    /// position: mpv starts such an entry when a list arrives with nothing
+    /// selected to play.
+    #[test]
+    fn folder_open_plays_the_chosen_entry() {
+        let temp = tempfile::tempdir().unwrap();
+        let entries: Vec<String> = (0..5)
+            .map(|n| {
+                let path = temp.path().join(format!("clip{n}.wav"));
+                write_silence(&path, 30);
+                path.to_str().unwrap().to_owned()
+            })
+            .collect();
+        let watch_dir = temp.path().join("watch_later");
+        let open = || {
+            let mpv = MpvClient::with_initializer(|init| {
+                apply_audio_only_options(init)?;
+                init.set_option("ao", "null")?;
+                // mpv takes commands while it loads its scripts, then prepares
+                // what they queued like a command-line playlist, resume entry
+                // first. Within the millisecond the player needs, no open
+                // request can arrive; here one would.
+                init.set_option("ytdl", "no")?;
+                init.set_option("watch-later-directory", watch_dir.to_str().unwrap())?;
+                init.set_option("watch-later-options", VIDEO_WATCH_LATER_OPTIONS)
+            })
+            .unwrap();
+            let (tx, rx) = async_channel::unbounded();
+            let backend = MpvBackend::finish_mpv_init(mpv, tx, "test-folder", "test folder", true);
+            backend.set_save_position(true);
+            (backend, rx)
+        };
+
+        // Leave a resume position on the second entry.
+        let (backend, _rx) = open();
+        backend.load_audio_paused(&entries[1], AudioCacheProfile::Music, true);
+        wait_until("playback started", || !backend.get_current_ao().is_empty());
+        backend.seek_absolute(2.0);
+        wait_until("seek", || {
+            (backend.get_property_f64("time-pos") - 2.0).abs() < 0.01
+        });
+        drop(backend);
+        assert!(
+            std::fs::read_dir(&watch_dir).unwrap().next().is_some(),
+            "the resume position was saved"
+        );
+
+        for start in [3, 0, entries.len() - 1] {
+            let (backend, _rx) = open();
+            backend.load_playlist(&entries, start);
+            backend.play();
+            wait_until("the whole folder queued and a file loaded", || {
+                backend.get_playlist_count() == entries.len() as i64
+                    && backend.get_current_file().is_some()
+            });
+            // Give a late switch to another entry the time to show.
+            std::thread::sleep(Duration::from_millis(300));
+            assert_eq!(
+                backend.get_current_file().as_ref(),
+                Some(&entries[start]),
+                "opening entry {start} plays it"
+            );
+            assert_eq!(backend.get_playlist_pos(), start as i64);
+            assert_eq!(backend.get_playlist_paths(), entries, "folder order kept");
+            // Closing would save a resume position for this entry too.
+            backend.set_save_position(false);
+        }
     }
 }
