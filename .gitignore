@@ -1,9 +1,9 @@
 /target/
 mutants.out*/
-# makepkg build artifacts
-/pkgbuild/pkg/
-/pkgbuild/src/
-/pkgbuild/*.pkg.tar*
+# makepkg build artifacts, one package per directory
+/big-*-player/pkg/
+/big-*-player/src/
+/big-*-player/*.pkg.tar*
 /locale/
 wayland-screenshot-*.png
 __pycache__/
