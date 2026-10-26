@@ -2,6 +2,7 @@ use std::collections::HashSet;
 use std::path::Path;
 
 use big_app_kit::subprocess::BigSubprocessSpec;
+use big_media_components::playlist_order::natural_path_cmp;
 
 use super::super::playlist::{AUDIO_EXTENSIONS, SCAN_LIMIT, ScanResult, VIDEO_EXTENSIONS};
 use super::is_media_file;
@@ -34,7 +35,7 @@ pub fn scan_folder_flat(folder: &Path) -> Vec<String> {
             }
         }
     }
-    files.sort_by_key(|item| item.to_lowercase());
+    files.sort_by(|a, b| natural_path_cmp(a, b));
     files
 }
 
@@ -51,7 +52,7 @@ pub fn list_subfolders(folder: &Path) -> Vec<String> {
             }
         }
     }
-    dirs.sort_by_key(|item| item.to_lowercase());
+    dirs.sort_by(|a, b| natural_path_cmp(a, b));
     dirs
 }
 
@@ -102,7 +103,7 @@ pub fn scan_folder_recursive(folder: &Path) -> ScanResult {
             .filter(|line| is_media_file(line))
             .map(std::string::ToString::to_string)
             .collect();
-        files.sort_by_key(|item| item.to_lowercase());
+        files.sort_by(|a, b| natural_path_cmp(a, b));
         let total_found = files.len();
         let truncated = total_found > SCAN_LIMIT;
         if truncated {
@@ -118,7 +119,7 @@ pub fn scan_folder_recursive(folder: &Path) -> ScanResult {
     let mut files = Vec::new();
     let mut visited = HashSet::new();
     walk_dir(folder, &mut files, &mut visited, 0);
-    files.sort_by_key(|item| item.to_lowercase());
+    files.sort_by(|a, b| natural_path_cmp(a, b));
     let total_found = files.len();
     let truncated = total_found > SCAN_LIMIT;
     if truncated {

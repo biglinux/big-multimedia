@@ -7,7 +7,68 @@
 //! uses an internal xorshift PRNG seeded from the system clock, which is
 //! fine for UI shuffle and unfit for cryptographic uses.
 
+use std::cmp::Ordering;
 use std::path::Path;
+
+/// Compare names the way people read them: ignoring case, and with runs of
+/// digits compared as numbers, so "Episode 2" comes before "Episode 10".
+/// Names equal that way fall back to a plain comparison, so the order is
+/// total.
+#[must_use]
+pub fn natural_cmp(a: &str, b: &str) -> Ordering {
+    let (mut left, mut right) = (a.chars().peekable(), b.chars().peekable());
+    loop {
+        match (left.peek().copied(), right.peek().copied()) {
+            (None, None) => return a.cmp(b),
+            (None, Some(_)) => return Ordering::Less,
+            (Some(_), None) => return Ordering::Greater,
+            (Some(x), Some(y)) if x.is_ascii_digit() && y.is_ascii_digit() => {
+                let take = |chars: &mut std::iter::Peekable<std::str::Chars>| {
+                    let mut digits = String::new();
+                    while let Some(digit) = chars.next_if(char::is_ascii_digit) {
+                        digits.push(digit);
+                    }
+                    digits
+                };
+                let (x, y) = (take(&mut left), take(&mut right));
+                let (x, y) = (x.trim_start_matches('0'), y.trim_start_matches('0'));
+                let order = x.len().cmp(&y.len()).then_with(|| x.cmp(y));
+                if order != Ordering::Equal {
+                    return order;
+                }
+            }
+            (Some(x), Some(y)) => {
+                let order = x.to_lowercase().cmp(y.to_lowercase());
+                if order != Ordering::Equal {
+                    return order;
+                }
+                left.next();
+                right.next();
+            }
+        }
+    }
+}
+
+/// [`natural_cmp`] folder by folder, so the files of a folder stay together
+/// ahead of a sibling folder whose name merely sorts between them.
+#[must_use]
+pub fn natural_path_cmp(a: &str, b: &str) -> Ordering {
+    let mut left = a.split('/');
+    let mut right = b.split('/');
+    loop {
+        match (left.next(), right.next()) {
+            (None, None) => return a.cmp(b),
+            (None, Some(_)) => return Ordering::Less,
+            (Some(_), None) => return Ordering::Greater,
+            (Some(x), Some(y)) => {
+                let order = natural_cmp(x, y);
+                if order != Ordering::Equal {
+                    return order;
+                }
+            }
+        }
+    }
+}
 
 /// Build a Fisher–Yates shuffle of `0..count` with `current_index` pinned at index 0.
 ///
@@ -75,7 +136,7 @@ pub fn sort_paths(paths: &mut [String], sort_key: &str, descending: bool) {
             std::fs::metadata(path).map_or(0, |metadata| metadata.len())
         }),
         _ => {
-            paths.sort_by_key(|path| display_stem(path).to_lowercase());
+            paths.sort_by(|a, b| natural_cmp(&display_stem(a), &display_stem(b)));
             if descending {
                 paths.reverse();
             }
@@ -135,6 +196,49 @@ fn display_stem(path: &str) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn natural_order_reads_numbers_as_numbers() {
+        let mut names = vec![
+            "Episode 10.mkv",
+            "episode 2.mkv",
+            "Episode 1.mkv",
+            "10.mp3",
+            "2.mp3",
+            "02.mp3",
+            "1.mp3",
+        ];
+        names.sort_by(|a, b| natural_cmp(a, b));
+        assert_eq!(
+            names,
+            [
+                "1.mp3",
+                "02.mp3",
+                "2.mp3",
+                "10.mp3",
+                "Episode 1.mkv",
+                "episode 2.mkv",
+                "Episode 10.mkv"
+            ]
+        );
+    }
+
+    #[test]
+    fn natural_path_order_keeps_a_folder_together() {
+        let mut paths = vec!["/m/a b/x.mkv", "/m/a/y.mkv", "/m/a/x.mkv", "/m/a2/x.mkv"];
+        paths.sort_by(|a, b| natural_path_cmp(a, b));
+        assert_eq!(
+            paths,
+            ["/m/a/x.mkv", "/m/a/y.mkv", "/m/a b/x.mkv", "/m/a2/x.mkv"]
+        );
+    }
+
+    #[test]
+    fn name_sort_is_natural() {
+        let mut paths = vec!["/v/Ep 10.mkv".to_string(), "/v/Ep 9.mkv".to_string()];
+        sort_paths(&mut paths, "name", false);
+        assert_eq!(paths, ["/v/Ep 9.mkv", "/v/Ep 10.mkv"]);
+    }
     use std::path::{Path, PathBuf};
     use std::sync::atomic::{AtomicUsize, Ordering};
     use std::time::{Duration, SystemTime};
