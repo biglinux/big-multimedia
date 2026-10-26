@@ -10,6 +10,25 @@ fn color_source_default_is_gtk_default() {
 }
 
 #[test]
+fn video_colors_are_the_video_players_default() {
+    let defaults = Settings::defaults();
+    assert_eq!(
+        defaults.get("ui-color-source").map(String::as_str),
+        Some("gradient"),
+    );
+}
+
+#[test]
+fn audio_migration_leaves_video_colors_behind() {
+    let settings = Settings::memory_only();
+    settings.migrate_audio_appearance();
+    assert_eq!(
+        settings.get_string(keys::AUDIO_UI_COLOR_SOURCE),
+        "gtk-default"
+    );
+}
+
+#[test]
 fn color_source_round_trip_all_values() {
     let settings = Settings::memory_only();
     for value in ["gtk-default", "gtk-light", "gtk-dark", "gradient", "custom"] {
