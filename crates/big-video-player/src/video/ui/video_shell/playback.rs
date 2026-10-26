@@ -516,6 +516,16 @@ impl VideoShell {
     /// is loaded yet, start them. Pushes the updated queue back to the sidebar
     /// (which reveals Playlist mode).
     fn enqueue_paths(&mut self, paths: &[String]) {
+        // The queue holds each file once, as "Play next" keeps it: a second
+        // copy would make remove and play act on the first one.
+        let mut seen: std::collections::HashSet<&str> =
+            self.playlist_paths.iter().map(String::as_str).collect();
+        let paths: Vec<String> = paths
+            .iter()
+            .filter(|path| seen.insert(path.as_str()))
+            .cloned()
+            .collect();
+        let paths = paths.as_slice();
         if paths.is_empty() {
             return;
         }

@@ -322,7 +322,14 @@ fn bind_queue_row(state: &Rc<BrowserState>, queue_cell: &gtk::ListItem, generati
     detail.set_visible(false);
     picture.set_paintable(gdk::Paintable::NONE);
 
-    let token = format!("q:{}", entry.index);
+    // The path too: a drag rebinds rows to other files at the same index, and
+    // a thumbnail still loading for the old one must not land on the new.
+    let token = {
+        use std::hash::{Hash, Hasher};
+        let mut hasher = std::collections::hash_map::DefaultHasher::new();
+        entry.path.hash(&mut hasher);
+        format!("q:{}:{:x}", entry.index, hasher.finish())
+    };
     row.set_widget_name(&token);
     if state.scan_generation.get() != generation {
         return;
