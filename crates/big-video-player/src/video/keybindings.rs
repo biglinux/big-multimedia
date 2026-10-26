@@ -253,16 +253,17 @@ pub const SHORTCUTS: &[ShortcutDef] = &[
         default_accel: "r",
         single_key: true,
     },
-    // Navigation
+    // Navigation. Ids of their own: a custom key for one row would otherwise
+    // move the other row's key too.
     ShortcutDef {
-        action: "chapter-next",
+        action: "chapter-next-alt",
         display_name: gettext_noop("Next chapter"),
         category: gettext_noop("Navigation"),
         default_accel: "exclam",
         single_key: true,
     },
     ShortcutDef {
-        action: "chapter-prev",
+        action: "chapter-prev-alt",
         display_name: gettext_noop("Previous chapter"),
         category: gettext_noop("Navigation"),
         default_accel: "at",

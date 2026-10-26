@@ -310,12 +310,16 @@ fn dispatch_video_shortcut(
         "frame-step" => mpv.frame_step(),
         "frame-back-step" => mpv.frame_back_step(),
         "revert-seek" => mpv.revert_seek(),
-        "chapter-next" | "chapter-prev" => {
+        "chapter-next" | "chapter-prev" | "chapter-next-alt" | "chapter-prev-alt" => {
             let count = mpv.get_chapter_count();
             if count <= 0 {
                 return false;
             }
-            let step = if action == "chapter-next" { 1 } else { -1 };
+            let step = if action.starts_with("chapter-next") {
+                1
+            } else {
+                -1
+            };
             mpv.set_chapter((mpv.get_current_chapter() + step).clamp(0, count - 1));
         }
         "deinterlace" => mpv.set_deinterlace(!mpv.get_property_bool("deinterlace")),
@@ -432,7 +436,7 @@ mod tests {
         );
         assert_eq!(
             lookup(Key::exclam, ModifierType::SHIFT_MASK),
-            Some("chapter-next")
+            Some("chapter-next-alt")
         );
         // Shift+E arrives as `E` with Shift; bound as `<Shift>e`.
         assert_eq!(
@@ -464,6 +468,8 @@ mod tests {
             "speed-reset",
             "chapter-next",
             "chapter-prev",
+            "chapter-next-alt",
+            "chapter-prev-alt",
             "frame-step",
             "frame-back-step",
             "revert-seek",

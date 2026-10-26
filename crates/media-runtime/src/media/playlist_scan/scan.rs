@@ -39,12 +39,13 @@ pub fn scan_folder_flat(folder: &Path) -> Vec<String> {
     files
 }
 
-/// Skips hidden entries (leading `.`).
+/// Skips hidden entries (leading `.`). A link to a folder is a folder here,
+/// as the file listing follows links to files.
 pub fn list_subfolders(folder: &Path) -> Vec<String> {
     let mut dirs = Vec::new();
     if let Ok(entries) = std::fs::read_dir(folder) {
         for entry in entries.flatten() {
-            if entry.file_type().is_ok_and(|ft| ft.is_dir()) {
+            if entry.path().is_dir() {
                 let name = entry.file_name().to_string_lossy().to_string();
                 if !name.starts_with('.') {
                     dirs.push(entry.path().to_string_lossy().to_string());
@@ -68,20 +69,18 @@ pub fn scan_folder_recursive(folder: &Path) -> ScanResult {
         .flat_map(|ext| vec!["-e".to_string(), (*ext).to_string()])
         .collect();
 
+    // Like the walker below: links followed, ignore files ignored, the same
+    // folders skipped. Every match comes back and is sorted before the cut:
+    // `--max-results` keeps whichever matches fd finds first, in parallel.
     let mut builder = BigSubprocessSpec::builder()
         .program("fd")
         .arg("-t")
         .arg("f")
-        .arg("--max-results")
-        .arg(format!("{}", SCAN_LIMIT + 1))
-        .arg("--exclude")
-        .arg("node_modules")
-        .arg("--exclude")
-        .arg(".git")
-        .arg("--exclude")
-        .arg("__pycache__")
-        .arg("--exclude")
-        .arg(".cache");
+        .arg("--follow")
+        .arg("--no-ignore");
+    for dir in SKIP_DIRS {
+        builder = builder.arg("--exclude").arg(*dir);
+    }
     for arg in &ext_args {
         builder = builder.arg(arg);
     }

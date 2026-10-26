@@ -302,6 +302,15 @@ impl MpvBackend {
         })
     }
 
+    /// The file of one playlist entry, in mpv's current order: one property
+    /// read where [`Self::get_playlist_paths`] reads them all.
+    pub fn get_playlist_entry(&self, index: usize) -> Option<String> {
+        self.with_mpv(|m| {
+            m.get_property::<String>(&format!("playlist/{index}/filename"))
+                .ok()
+        })
+    }
+
     pub fn get_playlist_pos(&self) -> i64 {
         self.with_mpv(|m| m.get_property::<i64>("playlist-pos").unwrap_or(-1))
     }
