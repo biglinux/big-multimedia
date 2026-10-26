@@ -230,7 +230,12 @@ impl VideoShell {
         };
         self.tv_catch_up = true;
         // Within the playlist, jump to it and keep the list; otherwise open it.
-        match self.playlist_paths.iter().position(|path| *path == source) {
+        // By mpv's own order, which shuffle changes.
+        match mpv
+            .get_playlist_paths()
+            .iter()
+            .position(|path| *path == source)
+        {
             Some(index) => mpv.playlist_play_index(i64::try_from(index).unwrap_or(0)),
             None => super::send_to_shell(VideoShellInput::OpenFiles(vec![source])),
         }

@@ -116,11 +116,12 @@ impl ChannelListView {
         self.referer.replace(referer.to_string());
     }
 
-    /// Replace the channel set and re-splice the (unfiltered) list.
+    /// Replace the channel set and re-splice the list, still filtered by the
+    /// search the person typed: the entry keeps its text across a reload.
     pub fn set_channels(&self, channels: Vec<IptvChannel>) {
         self.all_channels.replace(channels);
-        self.last_query.replace(String::new());
-        self.resplice("");
+        let query = self.last_query.borrow().clone();
+        self.resplice(&query);
     }
 
     /// Re-render the list filtered by `query` (matches name or group). A model

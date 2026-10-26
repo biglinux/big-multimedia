@@ -124,7 +124,17 @@ fn batch_button(
     action_button.connect_clicked({
         let state = state.clone();
         move |_| {
-            let selected_paths: Vec<String> = state.selection.borrow().iter().cloned().collect();
+            // In listing order: the selection set has none.
+            let selected_paths: Vec<String> = {
+                let selection = state.selection.borrow();
+                state
+                    .entries
+                    .borrow()
+                    .iter()
+                    .filter(|path| selection.contains(*path))
+                    .cloned()
+                    .collect()
+            };
             if selected_paths.is_empty() {
                 return;
             }

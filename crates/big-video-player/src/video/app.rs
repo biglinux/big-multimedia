@@ -36,9 +36,13 @@ mod imp {
             // Show the relm4-managed window, then deliver opened files through
             // the shell's thread-local broker. `activate` is synchronous, so the
             // broker is set (in VideoShell::init) before the send.
+            // A stream has no local path: keep its URL.
             let paths: Vec<String> = files
                 .iter()
-                .filter_map(|f| f.path().map(|p| p.to_string_lossy().into_owned()))
+                .map(|f| {
+                    f.path()
+                        .map_or_else(|| f.uri().to_string(), |p| p.to_string_lossy().into_owned())
+                })
                 .collect();
             if !paths.is_empty() {
                 crate::video::ui::video_shell::mark_opening_files();

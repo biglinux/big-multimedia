@@ -67,6 +67,22 @@ impl VideoShell {
                     // `EndFile` cleared `playing`, but mpv keeps playing into
                     // the next file without a pause change to report it.
                     self.playing = !mpv.is_paused();
+                    // A live stream never reports a duration: without this the
+                    // previous file's length stayed, and seeks used it.
+                    let duration = mpv.get_duration();
+                    let duration = if duration.is_finite() {
+                        duration.max(0.0)
+                    } else {
+                        0.0
+                    };
+                    self.duration_secs = duration;
+                    if !tv {
+                        self.controls
+                            .emit(VideoControlsBarInput::SetDuration(playback_time(duration)));
+                    }
+                    self.controls
+                        .emit(VideoControlsBarInput::SetDurationSecs(duration));
+                    self.feed_trim_duration(duration);
                 }
                 self.hdr_hint.set_visible(false);
                 super::send_to_shell(VideoShellInput::RefreshAdjustments);
@@ -123,7 +139,7 @@ impl VideoShell {
                     .emit(VideoControlsBarInput::SetChapters(chapters));
             }
             PlayerEvent::RateChanged(_) => {
-                super::send_to_shell(VideoShellInput::RefreshAdjustments);
+                super::send_to_shell(VideoShellInput::SpeedChanged);
             }
             PlayerEvent::VolumeChanged(volume) if !tv => {
                 self.controls.emit(VideoControlsBarInput::SetVolume(volume));
@@ -234,10 +250,13 @@ impl VideoShell {
     /// The folder scan / playlist-file parse are blocking disk I/O, so they run
     /// off the GTK main loop; the resolved list is dispatched back as
     /// [`VideoShellInput::PlaylistResolved`] and applied in [`Self::apply_open`].
-    pub(super) fn open_files(paths: &[String], sender: &ComponentSender<VideoShell>) {
+    pub(super) fn open_files(&mut self, paths: &[String], sender: &ComponentSender<VideoShell>) {
         if paths.is_empty() {
             return;
         }
+        // A scan of a slow folder must not replace a file opened after it.
+        self.open_generation += 1;
+        let generation = self.open_generation;
         let paths = paths.to_vec();
         let sender = sender.clone();
         gtk::glib::spawn_future_local(async move {
@@ -252,6 +271,7 @@ impl VideoShell {
                 entries,
                 start,
                 folder,
+                generation,
             });
         });
     }
@@ -314,6 +334,18 @@ impl VideoShell {
         self.playlist.emit(VideoBrowserSidebarInput::SetQueue(
             self.playlist_paths.clone(),
         ));
+    }
+
+    /// Seek to `secs`: on the TV while it has the controls, else locally.
+    pub(super) fn seek_to(&self, secs: f64) {
+        if let Some(state) = self.tv.attached() {
+            if state.can_seek {
+                self.tv
+                    .control("seek-to", secs.clamp(0.0, state.duration.max(0.0)));
+            }
+        } else if let Some(mpv) = self.mpv.borrow().as_ref() {
+            mpv.seek_absolute(secs);
+        }
     }
 
     /// Shuffle a freshly opened list once mpv plays its chosen file with every
@@ -556,13 +588,16 @@ impl VideoShell {
                 let target = if from < current { current } else { current + 1 };
                 mpv.playlist_play_index(target);
             }
-            // The listing: out of where it was, in after the playing one.
-            let playing = order.get(current as usize).cloned();
-            self.playlist_paths.retain(|entry| *entry != path);
-            let at = playing
-                .and_then(|playing| playlist_index_of(&self.playlist_paths, &playing))
-                .map_or(self.playlist_paths.len(), |index| index + 1);
-            self.playlist_paths.insert(at, path);
+            // The listing: out of where it was, in after the playing one. The
+            // playing one itself stays put, as in mpv.
+            if from != current {
+                let playing = order.get(current as usize).cloned();
+                self.playlist_paths.retain(|entry| *entry != path);
+                let at = playing
+                    .and_then(|playing| playlist_index_of(&self.playlist_paths, &playing))
+                    .map_or(self.playlist_paths.len(), |index| index + 1);
+                self.playlist_paths.insert(at, path);
+            }
         }
         self.playlist.emit(VideoBrowserSidebarInput::SetQueue(
             self.playlist_paths.clone(),
@@ -598,7 +633,7 @@ impl VideoShell {
     pub(super) fn on_iptv(out: VideoIptvBrowserOutput, sender: &ComponentSender<VideoShell>) {
         match out {
             VideoIptvBrowserOutput::PlayChannel { url, .. } => {
-                Self::open_files(std::slice::from_ref(&url), sender);
+                sender.input(VideoShellInput::OpenFiles(vec![url]));
             }
         }
     }
@@ -617,7 +652,7 @@ impl VideoShell {
         }
         if let VideoControlsBarOutput::GotoTimeClicked = out {
             if let Some(root) = root {
-                self.show_goto_time_dialog(root);
+                Self::show_goto_time_dialog(root);
             }
             return;
         }

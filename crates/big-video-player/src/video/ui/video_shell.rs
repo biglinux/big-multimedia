@@ -110,6 +110,9 @@ pub struct VideoShell {
     /// Pending load-time shuffle: the chosen start path and the list length,
     /// applied at the `FileLoaded` where mpv holds both.
     shuffle_on_load: Option<(String, usize)>,
+    /// Counts open requests: a folder scan that finishes after a newer
+    /// request was made is dropped.
+    open_generation: u64,
     /// What is away from normal, and the header pill that says so.
     adjustments: Vec<adjustments::Adjustment>,
     adjustments_pill: gtk::Button,

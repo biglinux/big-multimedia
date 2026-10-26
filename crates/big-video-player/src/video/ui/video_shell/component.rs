@@ -220,10 +220,14 @@ impl Component for VideoShell {
         {
             let sender = sender.clone();
             big_app_kit::widgets::add_file_drop_target(&main_overlay, move |paths| {
-                let Some(path) = paths.first().and_then(|p| p.to_str()) else {
+                let paths: Vec<String> = paths
+                    .iter()
+                    .filter_map(|path| path.to_str().map(str::to_owned))
+                    .collect();
+                if paths.is_empty() {
                     return false;
-                };
-                sender.input(VideoShellInput::OpenFiles(vec![path.to_string()]));
+                }
+                sender.input(VideoShellInput::OpenFiles(paths));
                 true
             });
         }
@@ -560,6 +564,7 @@ impl Component for VideoShell {
                 welcome_overlay: RefCell::new(Some(welcome)),
                 playlist_paths: Vec::new(),
                 shuffle_on_load: None,
+                open_generation: 0,
                 adjustments: Vec::new(),
                 adjustments_pill,
                 hdr_hint,
@@ -713,15 +718,20 @@ impl Component for VideoShell {
                 }
                 // A restart picks up the new values: mpv is configured at startup.
                 VideoShellInput::RestoreDefaultsConfirmed => self.settings.reset_to_defaults(),
-                VideoShellInput::OpenFiles(paths) => VideoShell::open_files(&paths, &sender),
+                VideoShellInput::OpenFiles(paths) => self.open_files(&paths, &sender),
                 VideoShellInput::PlaylistResolved {
                     entries,
                     start,
                     folder,
-                } => self.apply_open(entries, start, folder),
+                    generation,
+                } => {
+                    if generation == self.open_generation {
+                        self.apply_open(entries, start, folder);
+                    }
+                }
                 VideoShellInput::ShowGotoTime => {
                     if let Some(root) = window_ref {
-                        self.show_goto_time_dialog(root);
+                        Self::show_goto_time_dialog(root);
                     }
                 }
                 VideoShellInput::Screenshot => self.take_screenshot(&sender),
@@ -737,6 +747,11 @@ impl Component for VideoShell {
                     self.refresh_panel_home(&sender);
                 }
                 VideoShellInput::RefreshAdjustments => self.refresh_adjustments(&sender),
+                VideoShellInput::SpeedChanged => {
+                    self.refresh_adjustments(&sender);
+                    self.refresh_panel_home(&sender);
+                }
+                VideoShellInput::SeekTo(secs) => self.seek_to(secs),
                 VideoShellInput::ResetAdjustments(adjustments) => {
                     self.reset_adjustments(adjustments, &sender);
                 }
@@ -803,7 +818,7 @@ impl Component for VideoShell {
                         mpv.set_disc_device(bluray, &device);
                     }
                     let uri = if bluray { "bd://" } else { "dvd://" };
-                    VideoShell::open_files(&[uri.to_string()], &sender);
+                    self.open_files(&[uri.to_string()], &sender);
                 }
                 VideoShellInput::Trashed(paths) => self.remove_trashed(&paths),
                 VideoShellInput::PastePlay => super::keyboard::paste_and_play(root, &sender),

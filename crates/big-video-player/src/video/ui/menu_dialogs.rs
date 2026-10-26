@@ -48,8 +48,8 @@ impl Drop for ScreenshotPreparation {
 
 impl VideoShell {
     /// Present the go-to-time entry dialog. Accepts `H:MM:SS`, `M:SS`, or plain
-    /// seconds; on confirm it seeks mpv absolutely (`mpv.seek_absolute`).
-    pub(super) fn show_goto_time_dialog(&self, root: &adw::ApplicationWindow) {
+    /// seconds; on confirm the shell seeks there, on the TV when one plays.
+    pub(super) fn show_goto_time_dialog(root: &adw::ApplicationWindow) {
         let dialog = adw::Dialog::builder()
             .title(i18n("Go to Time"))
             .content_width(420)
@@ -99,14 +99,14 @@ impl VideoShell {
             }
         });
 
-        let mpv = self.mpv_handle().clone();
         let dialog_ref = dialog.downgrade();
         let entry_for_accept = entry.clone();
         footer.accept_button().connect_clicked(move |_| {
             if let Some(secs) = accepted_goto_seconds(&entry_for_accept.text()) {
-                if let Some(mpv) = mpv.borrow().as_ref() {
-                    mpv.seek_absolute(secs);
-                }
+                // Through the shell, which sends it to the TV when one plays.
+                crate::video::ui::video_shell::send_to_shell(
+                    crate::video::ui::video_shell::VideoShellInput::SeekTo(secs),
+                );
                 if let Some(dialog) = dialog_ref.upgrade() {
                     dialog.close();
                 }
@@ -240,9 +240,19 @@ impl VideoShell {
         }
         let next = remaining - 1;
         self.set_sleep_timer_remaining(next);
-        if next <= SLEEP_FADE_SECS
-            && let Some(mpv) = self.mpv_handle().borrow().as_ref()
-        {
+        let Some(mpv) = self.mpv_handle().borrow().clone() else {
+            return;
+        };
+        if next <= SLEEP_FADE_SECS {
+            // The fade starts from the volume of that moment, which the
+            // person may have changed since arming the timer.
+            let pre_fade = if remaining > SLEEP_FADE_SECS {
+                let volume = mpv.get_volume();
+                self.set_sleep_timer_volume(volume);
+                volume
+            } else {
+                pre_fade
+            };
             mpv.set_volume(pre_fade * (f64::from(next) / f64::from(SLEEP_FADE_SECS)));
         }
     }

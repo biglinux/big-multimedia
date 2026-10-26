@@ -275,6 +275,15 @@ impl MpvBackend {
         self.with_mpv(|mpv| Self::get_track_list_locked(mpv).unwrap_or_default())
     }
 
+    /// Report the track list again after a command changed it outside a file
+    /// load, which is the only time the event loop reads it.
+    pub(in crate::player::mpv_backend) fn republish_tracks(&self) {
+        let tracks = self.get_track_list();
+        let _ = self
+            .event_sender
+            .try_send(PlayerEvent::TracksChanged(tracks));
+    }
+
     fn get_chapters_locked(mpv: &MpvClient) -> Result<Vec<(f64, String)>, MpvError> {
         let count = mpv.get_property::<i64>("chapter-list/count")?;
         let mut chapters = Vec::new();
