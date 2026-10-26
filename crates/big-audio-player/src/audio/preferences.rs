@@ -1,5 +1,5 @@
 //! Audio player preferences: a native `adw::PreferencesDialog` with the Music
-//! page (volume leveling, gapless, resume, taskbar progress) and the Audio page
+//! page (volume leveling, gapless, resume, taskbar progress, tray icon) and the Audio page
 //! shared with the video player.
 
 use adw::prelude::*;
@@ -14,10 +14,19 @@ use crate::player::mpv_backend::{AudioEffects, MpvBackend};
 use crate::settings::{Settings, keys};
 use crate::shared::preference_rows::add_combo_row;
 
+/// What the shell does when a desktop-integration switch changes, so the
+/// choice applies without a restart.
+pub struct DesktopToggles {
+    /// Taskbar progress: the MPRIS service shows or clears it.
+    pub taskbar_progress: Box<dyn Fn(bool) + 'static>,
+    /// Tray icon: the shell adds or removes it.
+    pub tray_icon: Box<dyn Fn(bool) + 'static>,
+}
+
 pub(super) fn create_music_page(
     settings: &Settings,
     mpv: Option<&Arc<MpvBackend>>,
-    on_taskbar_toggle: Option<Box<dyn Fn(bool) + 'static>>,
+    toggles: DesktopToggles,
 ) -> adw::PreferencesPage {
     let page = adw::PreferencesPage::builder()
         .title(i18n("Music"))
@@ -135,15 +144,32 @@ pub(super) fn create_music_page(
         .build();
     {
         let s = settings.clone();
+        let on_toggle = toggles.taskbar_progress;
         taskbar_row.connect_active_notify(move |row| {
             let enabled = row.is_active();
             let _ = s.put_bool(keys::TASKBAR_PROGRESS, enabled);
-            if let Some(ref cb) = on_taskbar_toggle {
-                cb(enabled);
-            }
+            on_toggle(enabled);
         });
     }
     playback_group.add(&taskbar_row);
+
+    let tray_row = adw::SwitchRow::builder()
+        .title(i18n("Icon in the System Tray"))
+        .subtitle(i18n(
+            "A one-color icon that follows the panel theme, with playback controls",
+        ))
+        .active(settings.get_bool_or(keys::TRAY_ICON, false))
+        .build();
+    {
+        let s = settings.clone();
+        let on_toggle = toggles.tray_icon;
+        tray_row.connect_active_notify(move |row| {
+            let enabled = row.is_active();
+            let _ = s.put_bool(keys::TRAY_ICON, enabled);
+            on_toggle(enabled);
+        });
+    }
+    playback_group.add(&tray_row);
 
     page.add(&playback_group);
 
@@ -184,13 +210,13 @@ fn apply_player_audio_effects(mpv: &MpvBackend, effects: PlayerAudioEffects) {
     });
 }
 
-/// `on_taskbar_toggle` fires when the taskbar-progress switch changes → MPRIS
-/// service updates without a restart.
+/// `toggles` fire when a desktop-integration switch changes, so the shell
+/// applies it without a restart.
 pub fn show_audio_preferences(
     parent: &impl IsA<gtk::Widget>,
     settings: &Settings,
     mpv: Option<&Arc<MpvBackend>>,
-    on_taskbar_toggle: Option<Box<dyn Fn(bool) + 'static>>,
+    toggles: DesktopToggles,
 ) {
     let dialog = adw::PreferencesDialog::builder()
         .title(i18n("Preferences"))
@@ -199,7 +225,7 @@ pub fn show_audio_preferences(
         .content_height(720)
         .build();
     let pages = [
-        create_music_page(settings, mpv, on_taskbar_toggle),
+        create_music_page(settings, mpv, toggles),
         create_audio_page(settings, audio_preference_actions(mpv)),
     ];
     for page in &pages {

@@ -21,6 +21,7 @@ crates/big-audio-player/src/audio/ui/audio_shell/component.rs
 crates/big-audio-player/src/audio/ui/audio_shell/engine.rs
 crates/big-audio-player/src/audio/ui/audio_shell/export.rs
 crates/big-audio-player/src/audio/ui/audio_shell/input.rs
+crates/big-audio-player/src/audio/ui/audio_shell/keyboard.rs
 crates/big-audio-player/src/audio/ui/audio_shell/library_generation.rs
 crates/big-audio-player/src/audio/ui/audio_shell/library_store.rs
 crates/big-audio-player/src/audio/ui/audio_shell/metadata.rs
@@ -31,6 +32,7 @@ crates/big-audio-player/src/audio/ui/audio_shell/playlist_library_dialog_actions
 crates/big-audio-player/src/audio/ui/audio_shell/queue_persistence.rs
 crates/big-audio-player/src/audio/ui/audio_shell/queue_state.rs
 crates/big-audio-player/src/audio/ui/audio_shell/sources.rs
+crates/big-audio-player/src/audio/ui/audio_shell/tray.rs
 crates/big-audio-player/src/audio/ui/audio_shell/tv.rs
 crates/big-audio-player/src/audio/ui/audio_shell/update.rs
 crates/big-audio-player/src/audio/ui/library_detail_interactions.rs
@@ -133,6 +135,7 @@ crates/big-video-player/src/video/ui/video_shell/idle_wallpaper.rs
 crates/big-video-player/src/video/ui/video_shell/input.rs
 crates/big-video-player/src/video/ui/video_shell/input_gestures.rs
 crates/big-video-player/src/video/ui/video_shell/keyboard.rs
+crates/big-video-player/src/video/ui/video_shell/menus.rs
 crates/big-video-player/src/video/ui/video_shell/mpris.rs
 crates/big-video-player/src/video/ui/video_shell/osd.rs
 crates/big-video-player/src/video/ui/video_shell/panel.rs

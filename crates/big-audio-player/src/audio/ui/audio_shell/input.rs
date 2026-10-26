@@ -168,6 +168,10 @@ pub enum AudioShellInput {
     ShowPreferences,
     /// Apply the persisted taskbar-progress choice without a restart.
     TaskbarProgressChanged(bool),
+    /// Show or remove the tray icon, as Preferences now says.
+    TrayIconChanged(bool),
+    /// A click on the tray icon or its menu.
+    Tray(big_app_kit::tray::TrayCommand),
     /// Arm the sleep timer for `minutes`, then perform `action` on expiry.
     SleepTimerStart {
         /// Countdown length in minutes.

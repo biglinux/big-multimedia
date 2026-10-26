@@ -33,6 +33,8 @@ pub mod audio {
     pub const APP_NAME: &str = "Big Audio Player";
     /// Themed icon installed by the package and named by the desktop file.
     pub const ICON_NAME: &str = "big-audio-player";
+    /// One-color icon of the system tray, recolored by the panel's theme.
+    pub const TRAY_ICON_NAME: &str = "big-audio-player-symbolic";
     pub const CONFIG_DIR: &str = "big-audio-player";
     pub const RESOURCE_PREFIX: &str = "/br/com/biglinux/AudioPlayer";
     pub const WATCH_LATER_RELATIVE: &str = "big-audio-player/watch_later";

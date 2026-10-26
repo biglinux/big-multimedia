@@ -15,6 +15,8 @@ mod types;
 
 /// MPRIS service wrapper.
 pub use service::Mpris;
+/// Private session-bus connection, shared with the tray icon.
+pub(crate) use service::private_session_bus;
 /// MPRIS callback and state contracts.
 pub use types::{CommandCallback, MprisCommand, PlaybackStatus, PlayerState, StateCallback};
 

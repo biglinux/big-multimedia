@@ -17,6 +17,12 @@ session, a headless compositor such as `kwin_wayland --virtual` with its own
 D-Bus session bus, so no window reaches your desktop. Lifetime regressions are
 `#[ignore]`d and run one at a time with `-- --ignored`.
 
+The tray icon test plays the tray host on a session bus of its own:
+
+```sh
+dbus-run-session -- cargo test --locked -p big-app-kit tray -- --ignored
+```
+
 Translations are one catalog for the whole suite in `crates/media-runtime/po`;
 regenerate the template with `crates/media-runtime/po/regen-pot.sh`.
 

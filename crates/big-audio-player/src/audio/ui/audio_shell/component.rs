@@ -498,6 +498,7 @@ impl Component for AudioShell {
         });
         let mpris_state = Arc::new(SharedMprisState::default());
         let mpris = build_mpris_service(&sender, &mpris_state, &settings);
+        let tray = super::tray::build_tray(&sender, settings.get_bool_or(keys::TRAY_ICON, false));
 
         // Publish the shell input so the application `open` handler can deliver
         // files opened from the desktop / CLI.
@@ -558,6 +559,7 @@ impl Component for AudioShell {
                 recording_generation: 0,
                 mpris,
                 mpris_state,
+                tray,
                 duration_secs: 0.0,
                 trim_active: false,
                 trim_ranges: Vec::new(),

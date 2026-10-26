@@ -23,6 +23,8 @@ pub mod file_dialogs;
 pub mod keybindings;
 /// MPRIS D-Bus service for media players.
 pub mod mpris;
+/// System tray icon (StatusNotifierItem) with a menu.
+pub mod tray;
 /// File drag-and-drop helpers.
 pub mod widgets;
 

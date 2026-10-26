@@ -22,6 +22,7 @@ mod playlist_library_dialog_actions;
 mod queue_persistence;
 mod queue_state;
 mod sources;
+mod tray;
 mod tv;
 mod update;
 
@@ -164,6 +165,8 @@ pub struct AudioShell {
     mpris: Option<Mpris>,
     /// Playback-state snapshot read by the MPRIS `StateCallback` (D-Bus thread).
     mpris_state: Arc<SharedMprisState>,
+    /// System tray icon (None while the setting is off).
+    tray: Option<big_app_kit::tray::Tray>,
     /// Duration of the loaded track (seek-percent → seconds conversion).
     duration_secs: f64,
     /// Whether visual trim mode is active.

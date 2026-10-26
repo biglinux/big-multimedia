@@ -14,7 +14,7 @@ use super::{MPRIS_PATH, MPRIS_PLAYER_IFACE, PLAYER_XML, ROOT_XML};
 /// Opens a session-bus connection owned by one service. Two players in one
 /// process would collide on `MPRIS_PATH` on the shared connection, and closing
 /// it in Drop releases the name and the exported objects together.
-fn private_session_bus() -> Result<gio::DBusConnection, glib::Error> {
+pub(crate) fn private_session_bus() -> Result<gio::DBusConnection, glib::Error> {
     let address =
         gio::dbus_address_get_for_bus_sync(gio::BusType::Session, gio::Cancellable::NONE)?;
     gio::DBusConnection::for_address_sync(

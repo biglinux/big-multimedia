@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: big-media-runtime 0.1.0\n"
 "Report-Msgid-Bugs-To: https://github.com/biglinux/big-multimedia/issues\n"
-"POT-Creation-Date: 2026-10-13 03:51-0300\n"
+"POT-Creation-Date: 2026-10-23 00:15-0300\n"
 "PO-Revision-Date: YEAR-MO-DA HO:MI+ZONE\n"
 "Last-Translator: FULL NAME <EMAIL@ADDRESS>\n"
 "Language-Team: LANGUAGE <LL@li.org>\n"
@@ -73,6 +73,7 @@ msgstr ""
 
 #: crates/big-audio-player/src/audio/keybindings.rs:14
 #: crates/big-audio-player/src/audio/ui/audio_shell/playback.rs:162
+#: crates/big-audio-player/src/audio/ui/audio_shell/tray.rs:20
 #: crates/big-video-player/src/video/keybindings.rs:15
 #: crates/big-video-player/src/video/ui/video_shell/input_gestures.rs:105
 msgid "Play / Pause"
@@ -87,7 +88,7 @@ msgstr ""
 #: crates/big-audio-player/src/audio/keybindings.rs:57
 #: crates/big-audio-player/src/audio/keybindings.rs:64
 #: crates/big-audio-player/src/audio/keybindings.rs:71
-#: crates/big-audio-player/src/audio/preferences.rs:88
+#: crates/big-audio-player/src/audio/preferences.rs:97
 #: crates/big-video-player/src/video/keybindings.rs:16
 #: crates/big-video-player/src/video/keybindings.rs:23
 #: crates/big-video-player/src/video/keybindings.rs:30
@@ -128,10 +129,12 @@ msgid "Seek backward 30 s"
 msgstr ""
 
 #: crates/big-audio-player/src/audio/keybindings.rs:49
+#: crates/big-audio-player/src/audio/ui/audio_shell/tray.rs:22
 msgid "Next Track"
 msgstr ""
 
 #: crates/big-audio-player/src/audio/keybindings.rs:56
+#: crates/big-audio-player/src/audio/ui/audio_shell/tray.rs:23
 msgid "Previous Track"
 msgstr ""
 
@@ -150,8 +153,8 @@ msgstr ""
 #: crates/big-audio-player/src/audio/keybindings.rs:79
 #: crates/big-audio-player/src/audio/keybindings.rs:86
 #: crates/big-audio-player/src/audio/keybindings.rs:93
-#: crates/big-video-player/src/video/keybindings.rs:274
-#: crates/big-video-player/src/video/keybindings.rs:281
+#: crates/big-video-player/src/video/keybindings.rs:260
+#: crates/big-video-player/src/video/keybindings.rs:267
 msgid "Navigation"
 msgstr ""
 
@@ -199,7 +202,7 @@ msgstr ""
 
 #: crates/big-audio-player/src/audio/keybindings.rs:129
 #: crates/big-video-player/src/video/ui/video_shell/panel.rs:548
-#: crates/big-video-player/src/video/ui/video_shell/playback.rs:442
+#: crates/big-video-player/src/video/ui/video_shell/playback.rs:439
 msgid "Undo"
 msgstr ""
 
@@ -208,6 +211,7 @@ msgid "Redo"
 msgstr ""
 
 #: crates/big-audio-player/src/audio/keybindings.rs:143
+#: crates/big-audio-player/src/audio/ui/audio_shell/tray.rs:26
 msgid "Quit"
 msgstr ""
 
@@ -314,31 +318,29 @@ msgstr ""
 msgid "Various Artists"
 msgstr ""
 
-#: crates/big-audio-player/src/audio/preferences.rs:23
+#: crates/big-audio-player/src/audio/preferences.rs:32
 #: crates/big-audio-player/src/audio/ui/audio_shell/component.rs:141
 #: crates/big-audio-player/src/audio/ui/audio_shell/component.rs:170
 #: crates/big-video-player/src/video/keybindings.rs:245
 #: crates/big-video-player/src/video/keybindings.rs:252
-#: crates/big-video-player/src/video/keybindings.rs:259
-#: crates/big-video-player/src/video/keybindings.rs:266
 msgid "Music"
 msgstr ""
 
-#: crates/big-audio-player/src/audio/preferences.rs:30
+#: crates/big-audio-player/src/audio/preferences.rs:39
 msgid "Volume Leveling"
 msgstr ""
 
-#: crates/big-audio-player/src/audio/preferences.rs:32
+#: crates/big-audio-player/src/audio/preferences.rs:41
 msgid ""
 "Uses the loudness stored in the files so you do not have to adjust the "
 "volume between songs"
 msgstr ""
 
-#: crates/big-audio-player/src/audio/preferences.rs:39
+#: crates/big-audio-player/src/audio/preferences.rs:48
 msgid "Level By"
 msgstr ""
 
-#: crates/big-audio-player/src/audio/preferences.rs:41
+#: crates/big-audio-player/src/audio/preferences.rs:50
 #: crates/big-video-player/src/video/ui/preferences/general.rs:39
 #: crates/big-video-player/src/video/ui/preferences/video.rs:56
 #: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/header.rs:196
@@ -346,48 +348,56 @@ msgstr ""
 msgid "Off"
 msgstr ""
 
-#: crates/big-audio-player/src/audio/preferences.rs:41
+#: crates/big-audio-player/src/audio/preferences.rs:50
 msgid "Per Song"
 msgstr ""
 
-#: crates/big-audio-player/src/audio/preferences.rs:41
+#: crates/big-audio-player/src/audio/preferences.rs:50
 msgid "Per Album"
 msgstr ""
 
-#: crates/big-audio-player/src/audio/preferences.rs:53
+#: crates/big-audio-player/src/audio/preferences.rs:62
 msgid "Leveling Boost"
 msgstr ""
 
-#: crates/big-audio-player/src/audio/preferences.rs:55
+#: crates/big-audio-player/src/audio/preferences.rs:64
 msgid "In decibels; positive values play louder, negative softer"
 msgstr ""
 
-#: crates/big-audio-player/src/audio/preferences.rs:92
+#: crates/big-audio-player/src/audio/preferences.rs:101
 msgid "No Gaps Between Songs"
 msgstr ""
 
-#: crates/big-audio-player/src/audio/preferences.rs:94
+#: crates/big-audio-player/src/audio/preferences.rs:103
 msgid "Albums recorded as one continuous piece play without pauses"
 msgstr ""
 
-#: crates/big-audio-player/src/audio/preferences.rs:111
+#: crates/big-audio-player/src/audio/preferences.rs:120
 #: crates/big-video-player/src/video/ui/preferences/general.rs:28
 msgid "Resume Where You Left Off"
 msgstr ""
 
-#: crates/big-audio-player/src/audio/preferences.rs:112
+#: crates/big-audio-player/src/audio/preferences.rs:121
 msgid "Playing a song again continues from where it stopped"
 msgstr ""
 
-#: crates/big-audio-player/src/audio/preferences.rs:132
+#: crates/big-audio-player/src/audio/preferences.rs:141
 msgid "Progress on the Taskbar"
 msgstr ""
 
-#: crates/big-audio-player/src/audio/preferences.rs:133
+#: crates/big-audio-player/src/audio/preferences.rs:142
 msgid "Shows how far the song has played on the player icon"
 msgstr ""
 
-#: crates/big-audio-player/src/audio/preferences.rs:196
+#: crates/big-audio-player/src/audio/preferences.rs:157
+msgid "Icon in the System Tray"
+msgstr ""
+
+#: crates/big-audio-player/src/audio/preferences.rs:159
+msgid "A one-color icon that follows the panel theme, with playback controls"
+msgstr ""
+
+#: crates/big-audio-player/src/audio/preferences.rs:222
 #: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:144
 #: crates/big-video-player/src/video/ui/preferences/mod.rs:37
 #: crates/big-video-player/src/video/ui/video_shell/panel.rs:571
@@ -417,22 +427,22 @@ msgid "Cancel Timer"
 msgstr ""
 
 #: crates/big-audio-player/src/audio/ui/audio_shell/chrome.rs:268
-#: crates/big-video-player/src/video/ui/menu_dialogs.rs:246
+#: crates/big-video-player/src/video/ui/menu_dialogs.rs:255
 msgid "Sleep timer: closing player"
 msgstr ""
 
 #: crates/big-audio-player/src/audio/ui/audio_shell/chrome.rs:276
-#: crates/big-video-player/src/video/ui/menu_dialogs.rs:254
+#: crates/big-video-player/src/video/ui/menu_dialogs.rs:263
 msgid "Sleep timer: suspending computer"
 msgstr ""
 
 #: crates/big-audio-player/src/audio/ui/audio_shell/chrome.rs:288
-#: crates/big-video-player/src/video/ui/menu_dialogs.rs:266
+#: crates/big-video-player/src/video/ui/menu_dialogs.rs:275
 msgid "Sleep timer: shutting down"
 msgstr ""
 
 #: crates/big-audio-player/src/audio/ui/audio_shell/chrome.rs:299
-#: crates/big-video-player/src/video/ui/menu_dialogs.rs:277
+#: crates/big-video-player/src/video/ui/menu_dialogs.rs:286
 msgid "Sleep timer: playback paused"
 msgstr ""
 
@@ -491,7 +501,7 @@ msgid "Retry saving"
 msgstr ""
 
 #: crates/big-audio-player/src/audio/ui/audio_shell/engine.rs:33
-#: crates/big-video-player/src/video/ui/video_shell/playback.rs:175
+#: crates/big-video-player/src/video/ui/video_shell/playback.rs:176
 msgid "Could not play this file — it may be unsupported or corrupt."
 msgstr ""
 
@@ -501,12 +511,12 @@ msgid "No local track is playing"
 msgstr ""
 
 #: crates/big-audio-player/src/audio/ui/audio_shell/export.rs:128
-#: crates/big-video-player/src/video/ui/video_shell/trim/run.rs:195
+#: crates/big-video-player/src/video/ui/video_shell/trim/run.rs:215
 msgid "Start (seconds)"
 msgstr ""
 
 #: crates/big-audio-player/src/audio/ui/audio_shell/export.rs:133
-#: crates/big-video-player/src/video/ui/video_shell/trim/run.rs:199
+#: crates/big-video-player/src/video/ui/video_shell/trim/run.rs:219
 msgid "End (seconds)"
 msgstr ""
 
@@ -536,21 +546,21 @@ msgstr ""
 #: crates/big-audio-player/src/audio/ui/playlist_library_dialog/spec.rs:189
 #: crates/big-audio-player/src/audio/ui/playlist_library_dialog/spec.rs:200
 #: crates/big-audio-player/src/audio/ui/playlist_library_dialog/spec.rs:209
-#: crates/big-audio-player/src/audio/ui/unavailable_dialog.rs:241
+#: crates/big-audio-player/src/audio/ui/unavailable_dialog.rs:258
 #: crates/big-video-player/src/video/ui/iptv/providers_dialog.rs:168
-#: crates/big-video-player/src/video/ui/menu_dialogs.rs:69
+#: crates/big-video-player/src/video/ui/menu_dialogs.rs:72
 #: crates/big-video-player/src/video/ui/video_browser_sidebar/fileops.rs:200
 #: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:173
 #: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:257
 #: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:381
-#: crates/big-video-player/src/video/ui/video_shell/trim/run.rs:238
+#: crates/big-video-player/src/video/ui/video_shell/trim/run.rs:258
 #: crates/ui/media/big-player-ui/src/podcast_panel.rs:571
 #: crates/ui/media/big-player-ui/src/radio_panel/widgets.rs:351
 msgid "Cancel"
 msgstr ""
 
 #: crates/big-audio-player/src/audio/ui/audio_shell/export.rs:161
-#: crates/big-video-player/src/video/ui/video_shell/trim/run.rs:238
+#: crates/big-video-player/src/video/ui/video_shell/trim/run.rs:258
 msgid "Apply"
 msgstr ""
 
@@ -569,7 +579,7 @@ msgid ""
 msgstr ""
 
 #: crates/big-audio-player/src/audio/ui/audio_shell/panel_intents.rs:112
-#: crates/big-audio-player/src/audio/ui/audio_shell/update.rs:232
+#: crates/big-audio-player/src/audio/ui/audio_shell/update.rs:241
 msgid ""
 "The playlist could not be read safely. Check its format and permissions."
 msgstr ""
@@ -600,7 +610,7 @@ msgid "Seek position"
 msgstr ""
 
 #: crates/big-audio-player/src/audio/ui/audio_shell/playback.rs:161
-#: crates/big-video-player/src/video/ui/video_controls_bar.rs:284
+#: crates/big-video-player/src/video/ui/video_controls_bar.rs:291
 msgid "Cut timeline"
 msgstr ""
 
@@ -628,7 +638,7 @@ msgid "Repeat"
 msgstr ""
 
 #: crates/big-audio-player/src/audio/ui/audio_shell/playback.rs:167
-#: crates/big-video-player/src/video/ui/video_controls_bar.rs:545
+#: crates/big-video-player/src/video/ui/video_controls_bar.rs:560
 #: crates/ui/media/big-media-components/src/player_chrome.rs:301
 #: crates/ui/media/big-media-components/src/text.rs:75
 #: crates/ui/media/big-media-components/src/text.rs:83
@@ -735,7 +745,6 @@ msgstr ""
 #: crates/big-audio-player/src/audio/ui/audio_shell/playlist_library_dialog_actions.rs:403
 #: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:478
 #: crates/big-audio-player/src/audio/ui/library_dialogs.rs:64
-#: crates/big-audio-player/src/audio/ui/unavailable_dialog.rs:77
 #: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/menu_actions.rs:215
 #: crates/big-video-player/src/video/ui/video_shell/component.rs:132
 #: crates/ui/generic/big-relm4-components/src/layout/media_window.rs:283
@@ -800,63 +809,67 @@ msgstr ""
 msgid "Open File"
 msgstr ""
 
+#: crates/big-audio-player/src/audio/ui/audio_shell/tray.rs:18
+msgid "Show Big Audio Player"
+msgstr ""
+
 #: crates/big-audio-player/src/audio/ui/audio_shell/tv.rs:128
 msgid "The TV's track is no longer in the queue."
 msgstr ""
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/update.rs:132
+#: crates/big-audio-player/src/audio/ui/audio_shell/update.rs:141
 msgid "Scan cancelled. Earlier confirmed imports were kept."
 msgstr ""
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/update.rs:135
+#: crates/big-audio-player/src/audio/ui/audio_shell/update.rs:144
 msgid ""
 "Scan incomplete. Earlier confirmed imports were kept; check storage and "
 "retry."
 msgstr ""
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/update.rs:138
+#: crates/big-audio-player/src/audio/ui/audio_shell/update.rs:147
 msgid "Library scan finished."
 msgstr ""
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/update.rs:143
-#: crates/big-audio-player/src/audio/ui/scan_progress.rs:89
+#: crates/big-audio-player/src/audio/ui/audio_shell/update.rs:152
+#: crates/big-audio-player/src/audio/ui/scan_progress.rs:47
 msgid "Imported"
 msgstr ""
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/update.rs:145
-#: crates/big-audio-player/src/audio/ui/scan_progress.rs:90
+#: crates/big-audio-player/src/audio/ui/audio_shell/update.rs:154
+#: crates/big-audio-player/src/audio/ui/scan_progress.rs:48
 msgid "Skipped"
 msgstr ""
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/update.rs:151
+#: crates/big-audio-player/src/audio/ui/audio_shell/update.rs:160
 msgid "Library updated"
 msgstr ""
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/update.rs:153
+#: crates/big-audio-player/src/audio/ui/audio_shell/update.rs:162
 msgid ""
 "The operation was incomplete. Imported tracks were kept; check the folder "
 "and try again."
 msgstr ""
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/update.rs:181
+#: crates/big-audio-player/src/audio/ui/audio_shell/update.rs:190
 msgid ""
 "The library could not be read. Previous results were kept; try searching "
 "again."
 msgstr ""
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/update.rs:195
+#: crates/big-audio-player/src/audio/ui/audio_shell/update.rs:204
 msgid "The playlist could not be changed. Your previous playlist was kept."
 msgstr ""
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/update.rs:200
+#: crates/big-audio-player/src/audio/ui/audio_shell/update.rs:209
 msgid "Playlists could not be opened. Please try again."
 msgstr ""
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/update.rs:302
+#: crates/big-audio-player/src/audio/ui/audio_shell/update.rs:311
 msgid "tracks imported"
 msgstr ""
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/update.rs:306
+#: crates/big-audio-player/src/audio/ui/audio_shell/update.rs:315
 msgid ""
 "Playlist import was not fully completed. Previously confirmed imports were "
 "kept."
@@ -867,7 +880,7 @@ msgstr ""
 #: crates/big-audio-player/src/audio/ui/library_tree/view.rs:376
 #: crates/big-audio-player/src/audio/ui/playlist_interactions.rs:110
 #: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/context_menu.rs:41
-#: crates/big-video-player/src/video/ui/video_controls_bar.rs:470
+#: crates/big-video-player/src/video/ui/video_controls_bar.rs:479
 #: crates/big-video-player/src/video/ui/video_controls_bar/zones.rs:566
 #: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:173
 msgid "Play"
@@ -916,7 +929,7 @@ msgstr ""
 #: crates/big-audio-player/src/audio/ui/library_detail_interactions.rs:129
 #: crates/big-audio-player/src/audio/ui/playlist_interactions.rs:139
 #: crates/big-audio-player/src/audio/ui/track_list.rs:82
-#: crates/big-audio-player/src/audio/ui/unavailable_dialog.rs:334
+#: crates/big-audio-player/src/audio/ui/unavailable_dialog.rs:351
 msgid "Rating"
 msgstr ""
 
@@ -972,12 +985,12 @@ msgstr ""
 msgid "Add Music Folder"
 msgstr ""
 
-#: crates/big-audio-player/src/audio/ui/library_grouping_ui.rs:225
+#: crates/big-audio-player/src/audio/ui/library_grouping_ui.rs:230
 #: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/metadata.rs:118
 msgid "Filter…"
 msgstr ""
 
-#: crates/big-audio-player/src/audio/ui/library_grouping_ui.rs:229
+#: crates/big-audio-player/src/audio/ui/library_grouping_ui.rs:234
 msgid "Search library"
 msgstr ""
 
@@ -993,7 +1006,7 @@ msgid ""
 msgstr ""
 
 #: crates/big-audio-player/src/audio/ui/library_io.rs:112
-#: crates/big-video-player/src/video/ui/menu_dialogs.rs:330
+#: crates/big-video-player/src/video/ui/menu_dialogs.rs:339
 #: crates/big-video-player/src/video/ui/video_shell/component.rs:265
 #: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:257
 msgid "Open"
@@ -1018,7 +1031,7 @@ msgid "Music Folders"
 msgstr ""
 
 #: crates/big-audio-player/src/audio/ui/library_io.rs:177
-#: crates/big-audio-player/src/audio/ui/unavailable_dialog.rs:40
+#: crates/big-audio-player/src/audio/ui/unavailable_dialog.rs:41
 msgid "Review unavailable files"
 msgstr ""
 
@@ -1230,7 +1243,7 @@ msgstr ""
 
 #: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:78
 #: crates/big-audio-player/src/audio/ui/playlist_panel.rs:94
-#: crates/big-audio-player/src/audio/ui/playlist_panel.rs:399
+#: crates/big-audio-player/src/audio/ui/playlist_panel.rs:401
 #: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/header.rs:24
 #: crates/big-video-player/src/video/ui/video_shell/component.rs:287
 #: crates/big-video-player/src/video/ui/video_shell/component.rs:291
@@ -1380,7 +1393,7 @@ msgid "Move these files to the trash?"
 msgstr ""
 
 #: crates/big-audio-player/src/audio/ui/playlist_library_dialog.rs:223
-#: crates/big-audio-player/src/audio/ui/unavailable_dialog.rs:336
+#: crates/big-audio-player/src/audio/ui/unavailable_dialog.rs:353
 msgid "Saved playlists"
 msgstr ""
 
@@ -1463,121 +1476,121 @@ msgstr ""
 msgid "This will permanently delete"
 msgstr ""
 
-#: crates/big-audio-player/src/audio/ui/scan_progress.rs:9
+#: crates/big-audio-player/src/audio/ui/scan_progress.rs:10
 msgid "Scanning the library"
 msgstr ""
 
-#: crates/big-audio-player/src/audio/ui/scan_progress.rs:17
+#: crates/big-audio-player/src/audio/ui/scan_progress.rs:34
 msgid "Reading media information…"
 msgstr ""
 
-#: crates/big-audio-player/src/audio/ui/scan_progress.rs:26
+#: crates/big-audio-player/src/audio/ui/scan_progress.rs:46
+msgid "Examined"
+msgstr ""
+
+#: crates/big-audio-player/src/audio/ui/scan_progress.rs:53
 msgid ""
 "You can keep using the player. Cancelling keeps earlier confirmed imports "
 "and never deletes media files."
 msgstr ""
 
-#: crates/big-audio-player/src/audio/ui/scan_progress.rs:31
+#: crates/big-audio-player/src/audio/ui/scan_progress.rs:62
 msgid "Cancel scan"
-msgstr ""
-
-#: crates/big-audio-player/src/audio/ui/scan_progress.rs:88
-msgid "Examined"
 msgstr ""
 
 #: crates/big-audio-player/src/audio/ui/track_list.rs:433
 msgid "Playing"
 msgstr ""
 
-#: crates/big-audio-player/src/audio/ui/unavailable_dialog.rs:50
+#: crates/big-audio-player/src/audio/ui/unavailable_dialog.rs:52
 msgid ""
 "Reconnect external drives before reviewing. Removing records forgets their "
 "ratings and saved playlist links, but never deletes media files or "
 "interrupts current playback."
 msgstr ""
 
-#: crates/big-audio-player/src/audio/ui/unavailable_dialog.rs:55
-#: crates/big-audio-player/src/audio/ui/unavailable_dialog.rs:155
+#: crates/big-audio-player/src/audio/ui/unavailable_dialog.rs:60
+#: crates/big-audio-player/src/audio/ui/unavailable_dialog.rs:168
 msgid "Checking the library…"
 msgstr ""
 
-#: crates/big-audio-player/src/audio/ui/unavailable_dialog.rs:67
+#: crates/big-audio-player/src/audio/ui/unavailable_dialog.rs:84
 msgid "Restart review"
 msgstr ""
 
-#: crates/big-audio-player/src/audio/ui/unavailable_dialog.rs:68
+#: crates/big-audio-player/src/audio/ui/unavailable_dialog.rs:85
 msgid "Check again"
 msgstr ""
 
-#: crates/big-audio-player/src/audio/ui/unavailable_dialog.rs:69
+#: crates/big-audio-player/src/audio/ui/unavailable_dialog.rs:86
 msgid "Continue checking"
 msgstr ""
 
-#: crates/big-audio-player/src/audio/ui/unavailable_dialog.rs:70
+#: crates/big-audio-player/src/audio/ui/unavailable_dialog.rs:88
 msgid "Remove selected records"
 msgstr ""
 
-#: crates/big-audio-player/src/audio/ui/unavailable_dialog.rs:170
+#: crates/big-audio-player/src/audio/ui/unavailable_dialog.rs:183
 msgid ""
 "The library could not be checked completely. Previous results are kept. "
 "Check the drive or database and retry."
 msgstr ""
 
-#: crates/big-audio-player/src/audio/ui/unavailable_dialog.rs:196
+#: crates/big-audio-player/src/audio/ui/unavailable_dialog.rs:213
 msgid "End of this review snapshot. Restart to include new imports."
 msgstr ""
 
-#: crates/big-audio-player/src/audio/ui/unavailable_dialog.rs:198
+#: crates/big-audio-player/src/audio/ui/unavailable_dialog.rs:215
 msgid "Continue to check the next part of your library."
 msgstr ""
 
-#: crates/big-audio-player/src/audio/ui/unavailable_dialog.rs:203
+#: crates/big-audio-player/src/audio/ui/unavailable_dialog.rs:220
 msgid "records checked"
 msgstr ""
 
-#: crates/big-audio-player/src/audio/ui/unavailable_dialog.rs:205
+#: crates/big-audio-player/src/audio/ui/unavailable_dialog.rs:222
 msgid "records need review"
 msgstr ""
 
-#: crates/big-audio-player/src/audio/ui/unavailable_dialog.rs:222
+#: crates/big-audio-player/src/audio/ui/unavailable_dialog.rs:239
 msgid "Select the missing records you want to remove."
 msgstr ""
 
-#: crates/big-audio-player/src/audio/ui/unavailable_dialog.rs:230
+#: crates/big-audio-player/src/audio/ui/unavailable_dialog.rs:247
 msgid "Selected records"
 msgstr ""
 
-#: crates/big-audio-player/src/audio/ui/unavailable_dialog.rs:233
+#: crates/big-audio-player/src/audio/ui/unavailable_dialog.rs:250
 msgid ""
 "Their ratings and saved playlist links will be removed. Media files will not "
 "be deleted. A restored file or changed record cancels the whole selection."
 msgstr ""
 
-#: crates/big-audio-player/src/audio/ui/unavailable_dialog.rs:237
+#: crates/big-audio-player/src/audio/ui/unavailable_dialog.rs:254
 msgid "Remove selected library records?"
 msgstr ""
 
-#: crates/big-audio-player/src/audio/ui/unavailable_dialog.rs:242
+#: crates/big-audio-player/src/audio/ui/unavailable_dialog.rs:259
 msgid "Remove records"
 msgstr ""
 
-#: crates/big-audio-player/src/audio/ui/unavailable_dialog.rs:254
+#: crates/big-audio-player/src/audio/ui/unavailable_dialog.rs:271
 msgid "Rechecking the selection and updating the library…"
 msgstr ""
 
-#: crates/big-audio-player/src/audio/ui/unavailable_dialog.rs:279
+#: crates/big-audio-player/src/audio/ui/unavailable_dialog.rs:296
 msgid ""
 "Removal was not confirmed. A file may be available again or a record "
 "changed. Check again before selecting records."
 msgstr ""
 
-#: crates/big-audio-player/src/audio/ui/unavailable_dialog.rs:301
+#: crates/big-audio-player/src/audio/ui/unavailable_dialog.rs:318
 #: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/header.rs:51
 #: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/header.rs:52
 msgid "Select"
 msgstr ""
 
-#: crates/big-audio-player/src/audio/ui/unavailable_dialog.rs:312
+#: crates/big-audio-player/src/audio/ui/unavailable_dialog.rs:329
 msgid "Remote or unsupported location — not eligible for removal here"
 msgstr ""
 
@@ -1598,12 +1611,12 @@ msgid "Reset speed to 1×"
 msgstr ""
 
 #: crates/big-video-player/src/video/keybindings.rs:71
-#: crates/big-video-player/src/video/keybindings.rs:273
+#: crates/big-video-player/src/video/keybindings.rs:259
 msgid "Next chapter"
 msgstr ""
 
 #: crates/big-video-player/src/video/keybindings.rs:78
-#: crates/big-video-player/src/video/keybindings.rs:280
+#: crates/big-video-player/src/video/keybindings.rs:266
 msgid "Previous chapter"
 msgstr ""
 
@@ -1742,64 +1755,51 @@ msgstr ""
 msgid "Cycle repeat mode"
 msgstr ""
 
-#: crates/big-video-player/src/video/keybindings.rs:258
-msgid "Cycle ReplayGain"
+#: crates/big-video-player/src/video/keybindings.rs:274
+msgid "Open file"
 msgstr ""
 
-#: crates/big-video-player/src/video/keybindings.rs:265
-msgid "Toggle gapless"
-msgstr ""
-
-#: crates/big-video-player/src/video/keybindings.rs:288
-msgid "Toggle file info overlay"
-msgstr ""
-
+#: crates/big-video-player/src/video/keybindings.rs:275
+#: crates/big-video-player/src/video/keybindings.rs:282
 #: crates/big-video-player/src/video/keybindings.rs:289
 #: crates/big-video-player/src/video/keybindings.rs:296
 #: crates/big-video-player/src/video/keybindings.rs:303
-#: crates/big-video-player/src/video/keybindings.rs:310
-#: crates/big-video-player/src/video/keybindings.rs:317
-#: crates/big-video-player/src/video/keybindings.rs:324
-#: crates/big-video-player/src/video/keybindings.rs:332
-#: crates/big-video-player/src/video/keybindings.rs:339
-#: crates/big-video-player/src/video/keybindings.rs:346
+#: crates/big-video-player/src/video/keybindings.rs:311
+#: crates/big-video-player/src/video/keybindings.rs:318
+#: crates/big-video-player/src/video/keybindings.rs:325
 #: crates/big-video-player/src/video/ui/preferences/advanced.rs:222
 msgid "Other"
 msgstr ""
 
-#: crates/big-video-player/src/video/keybindings.rs:295
-msgid "Open file"
-msgstr ""
-
-#: crates/big-video-player/src/video/keybindings.rs:302
+#: crates/big-video-player/src/video/keybindings.rs:281
 #: crates/big-video-player/src/video/ui/video_shell/actions.rs:138
 #: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:154
 msgid "Open URL"
 msgstr ""
 
-#: crates/big-video-player/src/video/keybindings.rs:309
+#: crates/big-video-player/src/video/keybindings.rs:288
 msgid "Paste and play"
 msgstr ""
 
-#: crates/big-video-player/src/video/keybindings.rs:316
-#: crates/big-video-player/src/video/ui/video_controls_bar.rs:251
-#: crates/big-video-player/src/video/ui/video_controls_bar.rs:252
+#: crates/big-video-player/src/video/keybindings.rs:295
+#: crates/big-video-player/src/video/ui/video_controls_bar.rs:258
+#: crates/big-video-player/src/video/ui/video_controls_bar.rs:259
 msgid "Go to time"
 msgstr ""
 
-#: crates/big-video-player/src/video/keybindings.rs:323
+#: crates/big-video-player/src/video/keybindings.rs:302
 msgid "Cycle edition"
 msgstr ""
 
-#: crates/big-video-player/src/video/keybindings.rs:331
+#: crates/big-video-player/src/video/keybindings.rs:310
 msgid "Toggle files sidebar"
 msgstr ""
 
-#: crates/big-video-player/src/video/keybindings.rs:338
+#: crates/big-video-player/src/video/keybindings.rs:317
 msgid "Toggle playlist sidebar"
 msgstr ""
 
-#: crates/big-video-player/src/video/keybindings.rs:345
+#: crates/big-video-player/src/video/keybindings.rs:324
 msgid "Media information"
 msgstr ""
 
@@ -1957,69 +1957,69 @@ msgstr ""
 msgid "Higher values produce a more visible sharpening effect"
 msgstr ""
 
-#: crates/big-video-player/src/video/ui/filters/groups_shader.rs:336
+#: crates/big-video-player/src/video/ui/filters/groups_shader.rs:349
 msgid "Neural Network Upscaling"
 msgstr ""
 
-#: crates/big-video-player/src/video/ui/filters/groups_shader.rs:345
+#: crates/big-video-player/src/video/ui/filters/groups_shader.rs:358
 msgid "RAVU Neural Upscaler"
 msgstr ""
 
-#: crates/big-video-player/src/video/ui/filters/groups_shader.rs:347
+#: crates/big-video-player/src/video/ui/filters/groups_shader.rs:360
 msgid ""
 "Reconstructs detail lost during video compression — uses RAVU r4, the best "
 "fragment-shader neural upscaler available"
 msgstr ""
 
-#: crates/big-video-player/src/video/ui/filters/groups_shader.rs:370
+#: crates/big-video-player/src/video/ui/filters/groups_shader.rs:383
 msgid "Anime / Cartoon Enhancement"
 msgstr ""
 
-#: crates/big-video-player/src/video/ui/filters/groups_shader.rs:381
+#: crates/big-video-player/src/video/ui/filters/groups_shader.rs:394
 msgid "Anime4K Preset"
 msgstr ""
 
-#: crates/big-video-player/src/video/ui/filters/groups_shader.rs:383
+#: crates/big-video-player/src/video/ui/filters/groups_shader.rs:396
 msgid "Disabled"
 msgstr ""
 
-#: crates/big-video-player/src/video/ui/filters/groups_shader.rs:384
+#: crates/big-video-player/src/video/ui/filters/groups_shader.rs:397
 msgid "Quality A — Best (1080p sources)"
 msgstr ""
 
-#: crates/big-video-player/src/video/ui/filters/groups_shader.rs:385
+#: crates/big-video-player/src/video/ui/filters/groups_shader.rs:398
 msgid "Quality B — Soft Restore (720p sources)"
 msgstr ""
 
-#: crates/big-video-player/src/video/ui/filters/groups_shader.rs:386
+#: crates/big-video-player/src/video/ui/filters/groups_shader.rs:399
 msgid "Quality C — Fast (low-end GPU)"
 msgstr ""
 
-#: crates/big-video-player/src/video/ui/filters/groups_shader.rs:390
+#: crates/big-video-player/src/video/ui/filters/groups_shader.rs:403
 msgid "Select a quality preset — higher quality uses more GPU power"
 msgstr ""
 
-#: crates/big-video-player/src/video/ui/filters/groups_shader.rs:411
+#: crates/big-video-player/src/video/ui/filters/groups_shader.rs:424
 msgid "Shaders not installed"
 msgstr ""
 
-#: crates/big-video-player/src/video/ui/filters/groups_shader.rs:412
+#: crates/big-video-player/src/video/ui/filters/groups_shader.rs:425
 msgid "Install the big-media-runtime package to get built-in shaders"
 msgstr ""
 
-#: crates/big-video-player/src/video/ui/filters/groups_shader.rs:420
+#: crates/big-video-player/src/video/ui/filters/groups_shader.rs:433
 msgid "Neural upscaler shaders not installed"
 msgstr ""
 
-#: crates/big-video-player/src/video/ui/filters/groups_shader.rs:421
+#: crates/big-video-player/src/video/ui/filters/groups_shader.rs:434
 msgid "Install the big-media-runtime package to get neural upscaling shaders"
 msgstr ""
 
-#: crates/big-video-player/src/video/ui/filters/groups_shader.rs:429
+#: crates/big-video-player/src/video/ui/filters/groups_shader.rs:442
 msgid "Anime4K shaders not installed"
 msgstr ""
 
-#: crates/big-video-player/src/video/ui/filters/groups_shader.rs:430
+#: crates/big-video-player/src/video/ui/filters/groups_shader.rs:443
 msgid "Install the big-media-runtime package to get Anime4K shaders"
 msgstr ""
 
@@ -2612,43 +2612,43 @@ msgstr ""
 msgid "Subtitle"
 msgstr ""
 
-#: crates/big-video-player/src/video/ui/menu_dialogs.rs:51
+#: crates/big-video-player/src/video/ui/menu_dialogs.rs:54
 msgid "Go to Time"
 msgstr ""
 
-#: crates/big-video-player/src/video/ui/menu_dialogs.rs:59
+#: crates/big-video-player/src/video/ui/menu_dialogs.rs:62
 msgid "Use H:MM:SS, M:SS, or seconds."
 msgstr ""
 
-#: crates/big-video-player/src/video/ui/menu_dialogs.rs:62
+#: crates/big-video-player/src/video/ui/menu_dialogs.rs:65
 msgid "Playback time"
 msgstr ""
 
-#: crates/big-video-player/src/video/ui/menu_dialogs.rs:69
+#: crates/big-video-player/src/video/ui/menu_dialogs.rs:72
 msgid "Go"
 msgstr ""
 
-#: crates/big-video-player/src/video/ui/menu_dialogs.rs:127
+#: crates/big-video-player/src/video/ui/menu_dialogs.rs:130
 msgid "Screenshot queue is full; wait for pending captures"
 msgstr ""
 
-#: crates/big-video-player/src/video/ui/menu_dialogs.rs:131
-#: crates/big-video-player/src/video/ui/menu_dialogs.rs:135
-#: crates/big-video-player/src/video/ui/menu_dialogs.rs:146
-#: crates/big-video-player/src/video/ui/video_shell/component.rs:707
-#: crates/big-video-player/src/video/ui/video_shell/playback.rs:152
+#: crates/big-video-player/src/video/ui/menu_dialogs.rs:134
+#: crates/big-video-player/src/video/ui/menu_dialogs.rs:138
+#: crates/big-video-player/src/video/ui/menu_dialogs.rs:149
+#: crates/big-video-player/src/video/ui/video_shell/component.rs:728
+#: crates/big-video-player/src/video/ui/video_shell/playback.rs:153
 msgid "Screenshot failed"
 msgstr ""
 
-#: crates/big-video-player/src/video/ui/menu_dialogs.rs:305
+#: crates/big-video-player/src/video/ui/menu_dialogs.rs:314
 msgid "Chapter"
 msgstr ""
 
-#: crates/big-video-player/src/video/ui/menu_dialogs.rs:326
+#: crates/big-video-player/src/video/ui/menu_dialogs.rs:335
 msgid "Screenshot saved"
 msgstr ""
 
-#: crates/big-video-player/src/video/ui/menu_dialogs.rs:328
+#: crates/big-video-player/src/video/ui/menu_dialogs.rs:337
 msgid "Screenshot saved; disk synchronization could not be confirmed"
 msgstr ""
 
@@ -3522,16 +3522,16 @@ msgstr ""
 msgid "Stopped at {}"
 msgstr ""
 
-#: crates/big-video-player/src/video/ui/video_controls_bar.rs:271
+#: crates/big-video-player/src/video/ui/video_controls_bar.rs:278
 msgid "Seek Position"
 msgstr ""
 
-#: crates/big-video-player/src/video/ui/video_controls_bar.rs:470
+#: crates/big-video-player/src/video/ui/video_controls_bar.rs:479
 #: crates/media-runtime/src/shared/tv_cast.rs:716
 msgid "Pause"
 msgstr ""
 
-#: crates/big-video-player/src/video/ui/video_controls_bar.rs:543
+#: crates/big-video-player/src/video/ui/video_controls_bar.rs:558
 #: crates/ui/media/big-player-ui/src/playback_bar.rs:323
 msgid "TV volume"
 msgstr ""
@@ -3637,7 +3637,7 @@ msgid "Drop a file or open one to start"
 msgstr ""
 
 #: crates/big-video-player/src/video/ui/video_shell/actions.rs:132
-#: crates/big-video-player/src/video/ui/video_shell/component.rs:801
+#: crates/big-video-player/src/video/ui/video_shell/component.rs:849
 msgid "Open Recent"
 msgstr ""
 
@@ -3781,21 +3781,21 @@ msgstr ""
 msgid "Keep Above"
 msgstr ""
 
-#: crates/big-video-player/src/video/ui/video_shell/component.rs:800
+#: crates/big-video-player/src/video/ui/video_shell/component.rs:848
 #: crates/big-video-player/src/video/ui/video_shell/input_gestures.rs:121
 msgid "Open File…"
 msgstr ""
 
-#: crates/big-video-player/src/video/ui/video_shell/component.rs:802
+#: crates/big-video-player/src/video/ui/video_shell/component.rs:850
 #: crates/big-video-player/src/video/ui/video_shell/input_gestures.rs:122
 msgid "Open URL…"
 msgstr ""
 
-#: crates/big-video-player/src/video/ui/video_shell/component.rs:803
+#: crates/big-video-player/src/video/ui/video_shell/component.rs:851
 msgid "Open Disc…"
 msgstr ""
 
-#: crates/big-video-player/src/video/ui/video_shell/component.rs:804
+#: crates/big-video-player/src/video/ui/video_shell/component.rs:852
 msgid "TV Channels (IPTV)…"
 msgstr ""
 
@@ -3999,19 +3999,19 @@ msgstr ""
 msgid "No recent file matches"
 msgstr ""
 
-#: crates/big-video-player/src/video/ui/video_shell/playback.rs:157
+#: crates/big-video-player/src/video/ui/video_shell/playback.rs:158
 msgid "Screenshot timed out; cancellation requested"
 msgstr ""
 
-#: crates/big-video-player/src/video/ui/video_shell/playback.rs:203
+#: crates/big-video-player/src/video/ui/video_shell/playback.rs:204
 msgid "Playing video"
 msgstr ""
 
-#: crates/big-video-player/src/video/ui/video_shell/playback.rs:426
+#: crates/big-video-player/src/video/ui/video_shell/playback.rs:427
 msgid "Could not move to trash"
 msgstr ""
 
-#: crates/big-video-player/src/video/ui/video_shell/playback.rs:436
+#: crates/big-video-player/src/video/ui/video_shell/playback.rs:433
 #, rust-format
 msgid "{} file moved to trash"
 msgid_plural "{} files moved to trash"
@@ -4036,57 +4036,57 @@ msgid ""
 "Preferences."
 msgstr ""
 
-#: crates/big-video-player/src/video/ui/video_shell/trim/bar.rs:128
+#: crates/big-video-player/src/video/ui/video_shell/trim/bar.rs:131
 #, rust-format
 msgid "Cut start: {t} — mark the other end"
 msgstr ""
 
-#: crates/big-video-player/src/video/ui/video_shell/trim/bar.rs:130
+#: crates/big-video-player/src/video/ui/video_shell/trim/bar.rs:133
 #: crates/ui/media/big-player-ui/src/audio_trim_bar.rs:45
 msgid "Mark more cuts or export"
 msgstr ""
 
-#: crates/big-video-player/src/video/ui/video_shell/trim/bar.rs:131
+#: crates/big-video-player/src/video/ui/video_shell/trim/bar.rs:134
 msgid "Press M (or Mark) at the start and end of a cut"
 msgstr ""
 
-#: crates/big-video-player/src/video/ui/video_shell/trim/bar.rs:178
+#: crates/big-video-player/src/video/ui/video_shell/trim/bar.rs:181
 msgid "Mark"
 msgstr ""
 
-#: crates/big-video-player/src/video/ui/video_shell/trim/bar.rs:179
+#: crates/big-video-player/src/video/ui/video_shell/trim/bar.rs:182
 msgid "Mark a cut point at the current position (M)"
 msgstr ""
 
-#: crates/big-video-player/src/video/ui/video_shell/trim/bar.rs:184
+#: crates/big-video-player/src/video/ui/video_shell/trim/bar.rs:187
 msgid "Clear all cuts"
 msgstr ""
 
-#: crates/big-video-player/src/video/ui/video_shell/trim/bar.rs:200
+#: crates/big-video-player/src/video/ui/video_shell/trim/bar.rs:203
 msgid "Play only the marked cuts"
 msgstr ""
 
-#: crates/big-video-player/src/video/ui/video_shell/trim/bar.rs:226
+#: crates/big-video-player/src/video/ui/video_shell/trim/bar.rs:229
 #: crates/ui/media/big-player-ui/src/audio_trim_bar.rs:49
 msgid "Exit trim mode"
 msgstr ""
 
-#: crates/big-video-player/src/video/ui/video_shell/trim/bar.rs:238
+#: crates/big-video-player/src/video/ui/video_shell/trim/bar.rs:241
 msgid "Export"
 msgstr ""
 
-#: crates/big-video-player/src/video/ui/video_shell/trim/bar.rs:239
+#: crates/big-video-player/src/video/ui/video_shell/trim/bar.rs:242
 #: crates/ui/media/big-player-ui/src/audio_trim_bar.rs:48
 msgid "Export the marked cuts"
 msgstr ""
 
-#: crates/big-video-player/src/video/ui/video_shell/trim/bar.rs:328
-#: crates/big-video-player/src/video/ui/video_shell/trim/bar.rs:330
+#: crates/big-video-player/src/video/ui/video_shell/trim/bar.rs:337
+#: crates/big-video-player/src/video/ui/video_shell/trim/bar.rs:339
 #: crates/ui/media/big-player-ui/src/audio_trim_bar.rs:50
 msgid "Edit cut times"
 msgstr ""
 
-#: crates/big-video-player/src/video/ui/video_shell/trim/bar.rs:340
+#: crates/big-video-player/src/video/ui/video_shell/trim/bar.rs:349
 #: crates/ui/media/big-player-ui/src/audio_trim_bar.rs:52
 msgid "Remove this cut"
 msgstr ""
@@ -4095,20 +4095,20 @@ msgstr ""
 msgid "Open a local video to cut it"
 msgstr ""
 
-#: crates/big-video-player/src/video/ui/video_shell/trim/run.rs:198
-#: crates/big-video-player/src/video/ui/video_shell/trim/run.rs:202
+#: crates/big-video-player/src/video/ui/video_shell/trim/run.rs:218
+#: crates/big-video-player/src/video/ui/video_shell/trim/run.rs:222
 msgid "s"
 msgstr ""
 
-#: crates/big-video-player/src/video/ui/video_shell/trim/run.rs:218
+#: crates/big-video-player/src/video/ui/video_shell/trim/run.rs:238
 msgid "Cut times"
 msgstr ""
 
-#: crates/big-video-player/src/video/ui/video_shell/trim/run.rs:223
+#: crates/big-video-player/src/video/ui/video_shell/trim/run.rs:243
 msgid "Hundredth-second precision; either order is fine"
 msgstr ""
 
-#: crates/big-video-player/src/video/ui/video_shell/trim/run.rs:233
+#: crates/big-video-player/src/video/ui/video_shell/trim/run.rs:253
 msgid "Edit Cut"
 msgstr ""
 

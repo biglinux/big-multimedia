@@ -162,6 +162,8 @@ pub const PLAYLIST_COLUMN_WIDTHS: StringKey = StringKey("playlist-column-widths"
 
 // Desktop integration
 pub const TASKBAR_PROGRESS: BoolKey = BoolKey("taskbar-progress");
+/// Show an icon with playback controls in the system tray; off unless chosen.
+pub const TRAY_ICON: BoolKey = BoolKey("tray-icon");
 
 /// Use the current cover as a blurred background behind the audio controls.
 pub const AUDIO_ALBUM_ART_BG: BoolKey = BoolKey("audio-album-art-bg");
