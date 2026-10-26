@@ -156,19 +156,23 @@ pub(super) fn move_to_folder(state: &Rc<BrowserState>, paths: Vec<String>) {
         let state = state.clone();
         big_media_components::player_chrome::spawn_blocking_result(
             move || {
-                let mut moved = 0_usize;
+                let mut moved = Vec::new();
                 let mut failed = 0_usize;
                 for src in &paths {
-                    if move_file(src, &dest).is_ok() {
-                        moved += 1;
-                    } else {
-                        failed += 1;
+                    match move_file(src, &dest) {
+                        Ok(to) => moved.push((src.clone(), to.to_string_lossy().into_owned())),
+                        Err(_) => failed += 1,
                     }
                 }
                 (moved, failed)
             },
-            move |(moved, failed)| {
-                notify_op_result(&state, moved, failed, &i18n("moved"));
+            move |(moved, failed): (Vec<(String, String)>, usize)| {
+                notify_op_result(&state, moved.len(), failed, &i18n("moved"));
+                if !moved.is_empty() {
+                    let _ = state
+                        .sender
+                        .output(VideoBrowserSidebarOutput::Renamed(moved));
+                }
                 state.refresh_current_folder();
             },
         );
@@ -246,6 +250,12 @@ pub(super) fn rename_file(state: &Rc<BrowserState>, path: &str) {
         let dest = parent.join(&new_name);
         match rename_no_replace(&old, &dest) {
             Ok(()) => {
+                let _ = state
+                    .sender
+                    .output(VideoBrowserSidebarOutput::Renamed(vec![(
+                        old.to_string_lossy().into_owned(),
+                        dest.to_string_lossy().into_owned(),
+                    )]));
                 state.refresh_current_folder();
                 if let Some(dialog) = dialog_ref.upgrade() {
                     dialog.close();
@@ -288,18 +298,19 @@ fn accepted_rename_name(input: &str) -> Option<String> {
 
 /// Move one file into `dest_dir`, keeping its basename. Refuses to overwrite an
 /// existing destination; falls back to copy+remove across filesystems.
-fn move_file(src: &str, dest_dir: &Path) -> std::io::Result<()> {
+/// Move `src` into `dest_dir`; the path it has now.
+fn move_file(src: &str, dest_dir: &Path) -> std::io::Result<PathBuf> {
     let src_path = Path::new(src);
     let name = src_path
         .file_name()
         .ok_or_else(|| std::io::Error::other("no file name"))?;
     let dest = dest_dir.join(name);
     if dest == src_path {
-        return Ok(());
+        return Ok(dest);
     }
     match rename_no_replace(src_path, &dest) {
         Err(error) if error.raw_os_error() == Some(libc::EXDEV) => {}
-        result => return result,
+        result => return result.map(|()| dest),
     }
     // Cross-device → copy then remove the source. `create_new` refuses a file
     // that appeared meanwhile; a failed copy (e.g. disk full) must not leave a
@@ -315,7 +326,8 @@ fn move_file(src: &str, dest_dir: &Path) -> std::io::Result<()> {
         let _ = std::fs::remove_file(&dest);
         return Err(error);
     }
-    std::fs::remove_file(src_path)
+    std::fs::remove_file(src_path)?;
+    Ok(dest)
 }
 
 /// `rename` that fails with `AlreadyExists` instead of replacing `dest`, so a

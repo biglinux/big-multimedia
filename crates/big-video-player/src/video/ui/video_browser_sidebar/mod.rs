@@ -119,6 +119,9 @@ pub enum VideoBrowserSidebarOutput {
     SendToConverter(Vec<String>),
     /// Move these files to the trash; the shell offers an Undo.
     TrashFiles(Vec<String>),
+    /// Files renamed or moved on disk, `(old path, new path)`: the queue
+    /// follows them.
+    Renamed(Vec<(String, String)>),
     /// Tell the person something (a file-op error).
     Notify(String),
     /// The Repeat mode changed (`no` / `file` / `playlist`); already persisted.
@@ -405,6 +408,9 @@ impl BrowserState {
         // Spinner while the blocking scan runs.
         self.show_scanning_spinner();
 
+        // The saved sort applies to every listing, not only after a pick.
+        let sort_key = self.settings.get_string(keys::PLAYLIST_SORT);
+        let sort_desc = self.settings.get_bool(keys::PLAYLIST_SORT_DESC);
         let state = self.clone();
         glib::spawn_future_local(async move {
             let folder_clone = folder_owned.clone();
@@ -414,7 +420,7 @@ impl BrowserState {
             let (scan, subfolders) = gio::spawn_blocking(move || {
                 use crate::media::playlist;
                 let path = std::path::Path::new(&folder_clone);
-                let scan = if recursive {
+                let mut scan = if recursive {
                     playlist::scan_folder_recursive(path)
                 } else {
                     playlist::ScanResult {
@@ -422,6 +428,7 @@ impl BrowserState {
                         ..Default::default()
                     }
                 };
+                playlist::sort_paths(&mut scan.files, &sort_key, sort_desc);
                 let subfolders = if recursive {
                     Vec::new()
                 } else {

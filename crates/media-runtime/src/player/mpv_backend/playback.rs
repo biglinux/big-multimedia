@@ -265,6 +265,14 @@ impl MpvBackend {
         });
     }
 
+    /// Put `path` at playlist `index`, without opening it. Synchronous, so
+    /// the entry is in place on return.
+    pub fn playlist_insert_at(&self, path: &str, index: i64) {
+        self.with_mpv(|m| {
+            let _ = m.command("loadfile", &[path, "insert-at", &index.to_string()]);
+        });
+    }
+
     pub fn playlist_remove(&self, index: i64) {
         self.with_mpv(|m| {
             let _ = m.command("playlist-remove", &[&index.to_string()]);

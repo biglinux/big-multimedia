@@ -179,10 +179,15 @@ impl Component for VideoShell {
             }
         });
         // Dialogs change these settings; closing one brings the chips up to date.
+        // Once per window: a remount realizes the content again.
+        let dialog_window = RefCell::new(glib::WeakRef::<adw::ApplicationWindow>::new());
         root.connect_realize({
             let sender = sender.clone();
             move |root| {
-                if let Some(window) = root.root().and_downcast::<adw::ApplicationWindow>() {
+                if let Some(window) = root.root().and_downcast::<adw::ApplicationWindow>()
+                    && dialog_window.borrow().upgrade().as_ref() != Some(&window)
+                {
+                    dialog_window.borrow().set(Some(&window));
                     let sender = sender.clone();
                     window.connect_visible_dialog_notify(move |window| {
                         if window.visible_dialog().is_none() {
@@ -495,8 +500,28 @@ impl Component for VideoShell {
 
         // Publish the shell input so the application `open` handler can deliver
         // files opened from the desktop / CLI.
-        let shell_input_token = set_shell_input(sender.input_sender().clone());
-        root.connect_unrealize(move |_| clear_shell_input(shell_input_token));
+        // Unrealize clears it so a closed player gets nothing; a remount
+        // realizes the content again and must register it again.
+        let shell_input_token = Rc::new(Cell::new(Some(set_shell_input(
+            sender.input_sender().clone(),
+        ))));
+        root.connect_realize({
+            let token = shell_input_token.clone();
+            let input = sender.input_sender().clone();
+            move |_| {
+                if token.get().is_none() {
+                    token.set(Some(set_shell_input(input.clone())));
+                }
+            }
+        });
+        root.connect_unrealize({
+            let token = shell_input_token.clone();
+            move |_| {
+                if let Some(token) = token.take() {
+                    clear_shell_input(token);
+                }
+            }
+        });
 
         // Apply the saved OSD palette + layout CSS now into the shared
         // display-wide provider slot, released when the last player closes;
@@ -839,7 +864,9 @@ impl Drop for VideoShell {
     /// must release their mpv render context before the shared mpv handle is
     /// destroyed.
     fn drop(&mut self) {
-        clear_shell_input(self.shell_input_token);
+        if let Some(token) = self.shell_input_token.take() {
+            clear_shell_input(token);
+        }
         self.screenshot_owner
             .store(false, std::sync::atomic::Ordering::Release);
         if let Some(source) = self.sleep_timer_source.take() {

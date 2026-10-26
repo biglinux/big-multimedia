@@ -184,7 +184,7 @@ pub struct VideoShell {
     aspect_snap: Rc<AspectSnap>,
     /// Token for the thread-local shell input broker. Cleared on drop so a
     /// closed host module does not keep the Relm4 component alive.
-    shell_input_token: input::ShellInputToken,
+    shell_input_token: Rc<Cell<Option<input::ShellInputToken>>>,
     /// Interactive trim bar (bottom overlay), shown only in trim mode.
     trim: Controller<trim::VideoTrimBar>,
     /// "Play only the marked cuts" toggle state.

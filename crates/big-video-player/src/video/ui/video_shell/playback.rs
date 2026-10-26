@@ -259,8 +259,13 @@ impl VideoShell {
         let generation = self.open_generation;
         let paths = paths.to_vec();
         let sender = sender.clone();
+        // The folder plays in the order the sidebar lists it.
+        let sort = (
+            self.settings.get_string(keys::PLAYLIST_SORT),
+            self.settings.get_bool(keys::PLAYLIST_SORT_DESC),
+        );
         gtk::glib::spawn_future_local(async move {
-            let resolved = gtk::gio::spawn_blocking(move || resolve_open_files(paths))
+            let resolved = gtk::gio::spawn_blocking(move || resolve_open_files(paths, &sort))
                 .await
                 .ok()
                 .flatten();
@@ -429,6 +434,7 @@ impl VideoShell {
             }
             VideoBrowserSidebarOutput::SendToConverter(paths) => self.send_to_converter(&paths),
             VideoBrowserSidebarOutput::TrashFiles(paths) => self.trash_files(paths, sender),
+            VideoBrowserSidebarOutput::Renamed(renames) => self.rename_entries(&renames),
             VideoBrowserSidebarOutput::Notify(msg) => self.notify(&msg),
             VideoBrowserSidebarOutput::SetLoopMode(mode) => {
                 if let Some(mpv) = self.mpv.borrow().as_ref() {
@@ -617,6 +623,33 @@ impl VideoShell {
         ));
     }
 
+    /// Files renamed or moved on disk: the queue follows them. mpv keeps the
+    /// entry it has open playing, the file stays readable under its old
+    /// name until closed; the others are swapped in place.
+    fn rename_entries(&mut self, renames: &[(String, String)]) {
+        let mpv = self.mpv.borrow().clone();
+        let playing = mpv.as_ref().map_or(-1, |mpv| mpv.get_playlist_pos());
+        let mut changed = false;
+        for (from, to) in renames {
+            if let Some(i) = playlist_index_of(&self.playlist_paths, from) {
+                self.playlist_paths[i].clone_from(to);
+                changed = true;
+            }
+            if let Some(mpv) = &mpv
+                && let Some(index) = playlist_index_of(&mpv.get_playlist_paths(), from)
+                && index as i64 != playing
+            {
+                mpv.playlist_insert_at(to, index as i64);
+                mpv.playlist_remove(index as i64 + 1);
+            }
+        }
+        if changed {
+            self.playlist.emit(VideoBrowserSidebarInput::SetQueue(
+                self.playlist_paths.clone(),
+            ));
+        }
+    }
+
     fn remove_playlist_entry(&mut self, path: &str) {
         if let Some(i) = playlist_index_of(&self.playlist_paths, path) {
             if let Some(mpv) = self.mpv.borrow().as_ref()
@@ -707,7 +740,10 @@ impl VideoShell {
 /// Resolve an open request to `(entries, start, folder)` off the main thread.
 /// Pure + `Send` (captures only `String`s); the blocking folder scan / playlist
 /// parse run here. Returns `None` when nothing playable was found.
-fn resolve_open_files(paths: Vec<String>) -> Option<(Vec<String>, usize, Option<String>)> {
+fn resolve_open_files(
+    paths: Vec<String>,
+    (sort_key, sort_desc): &(String, bool),
+) -> Option<(Vec<String>, usize, Option<String>)> {
     use big_media_runtime::media::playlist;
 
     if paths.is_empty() {
@@ -727,7 +763,8 @@ fn resolve_open_files(paths: Vec<String>) -> Option<(Vec<String>, usize, Option<
         // folder as the sidebar's browse context.
         return match std::path::Path::new(&paths[0]).parent() {
             Some(parent) => {
-                let folder = playlist::scan_folder_flat(parent);
+                let mut folder = playlist::scan_folder_flat(parent);
+                playlist::sort_paths(&mut folder, sort_key, *sort_desc);
                 // A file the scan does not list (an extension it lacks) plays
                 // alone: starting at 0 played the folder's first video instead.
                 match folder.iter().position(|p| p == &paths[0]) {
@@ -851,23 +888,27 @@ mod resolve_open_files_tests {
         path.to_string_lossy().into_owned()
     }
 
+    fn resolve_by_name(paths: Vec<String>) -> Option<(Vec<String>, usize, Option<String>)> {
+        resolve_open_files(paths, &("name".to_string(), false))
+    }
+
     #[test]
     fn empty_input_resolves_to_nothing() {
-        assert_eq!(resolve_open_files(vec![]), None);
+        assert_eq!(resolve_by_name(vec![]), None);
     }
 
     #[test]
     fn remote_uri_passes_through() {
         // Not a playlist, not local → the bare entry, no browse context.
         assert_eq!(
-            resolve_open_files(vec!["rtsp://host/stream".to_string()]),
+            resolve_by_name(vec!["rtsp://host/stream".to_string()]),
             Some((vec!["rtsp://host/stream".to_string()], 0, None))
         );
     }
 
     #[test]
     fn multiple_inputs_keep_media_order() {
-        let out = resolve_open_files(vec![
+        let out = resolve_by_name(vec![
             "/x/B.mp4".to_string(),
             "/x/a.mkv".to_string(),
             "/x/notes.txt".to_string(),
@@ -885,7 +926,7 @@ mod resolve_open_files_tests {
     #[test]
     fn multiple_non_media_inputs_resolve_to_nothing() {
         assert_eq!(
-            resolve_open_files(vec!["/x/a.txt".to_string(), "/x/b.doc".to_string()]),
+            resolve_by_name(vec!["/x/a.txt".to_string(), "/x/b.doc".to_string()]),
             None
         );
     }
@@ -897,7 +938,7 @@ mod resolve_open_files_tests {
         touch(dir.path(), "a.mp4");
         let opened = touch(dir.path(), "b.mp4");
         touch(dir.path(), "c.mp4");
-        let (folder, pos, context) = resolve_open_files(vec![opened.clone()]).unwrap();
+        let (folder, pos, context) = resolve_by_name(vec![opened.clone()]).unwrap();
         assert_eq!(folder.len(), 3, "all siblings scanned: {folder:?}");
         // Position must index the opened file specifically (sorted a,b,c → 1).
         assert_eq!(pos, 1);
@@ -916,7 +957,7 @@ mod resolve_open_files_tests {
         // "Open With" offers every type the desktop entry claims; one whose
         // extension the scan lacks must not start the folder's first video.
         let opened = touch(dir.path(), "b.unknownvideo");
-        let (entries, pos, context) = resolve_open_files(vec![opened.clone()]).unwrap();
+        let (entries, pos, context) = resolve_by_name(vec![opened.clone()]).unwrap();
         assert_eq!((entries, pos, context), (vec![opened], 0, None));
     }
 
@@ -929,7 +970,7 @@ mod resolve_open_files_tests {
         let playlist = dir.path().join("list.m3u8");
         fs::write(&playlist, format!("#EXTM3U\n{a}\n{b}\n")).unwrap();
         let (entries, pos, context) =
-            resolve_open_files(vec![playlist.to_string_lossy().into_owned()]).unwrap();
+            resolve_by_name(vec![playlist.to_string_lossy().into_owned()]).unwrap();
         assert_eq!(entries.len(), 2, "both playlist entries kept: {entries:?}");
         assert_eq!(pos, 0);
         assert_eq!(context, None);
@@ -942,7 +983,7 @@ mod resolve_open_files_tests {
         let playlist = dir.path().join("empty.m3u8");
         fs::write(&playlist, "#EXTM3U\n").unwrap();
         assert_eq!(
-            resolve_open_files(vec![playlist.to_string_lossy().into_owned()]),
+            resolve_by_name(vec![playlist.to_string_lossy().into_owned()]),
             None
         );
     }
