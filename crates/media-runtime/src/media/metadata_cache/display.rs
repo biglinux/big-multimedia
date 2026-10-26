@@ -16,18 +16,18 @@ pub fn meta_summary(meta: &VideoMeta) -> String {
         parts.push(codec.clone());
     }
     if meta.audio_tracks > 0 {
-        parts.push(format!(
-            "{} audio{}",
-            meta.audio_tracks,
-            if meta.audio_tracks > 1 { "s" } else { "" }
-        ));
+        let count = u64::from(meta.audio_tracks);
+        parts.push(
+            crate::i18n::ni18n("{} audio track", "{} audio tracks", count)
+                .replace("{}", &count.to_string()),
+        );
     }
     if meta.subtitle_tracks > 0 {
-        parts.push(format!(
-            "{} sub{}",
-            meta.subtitle_tracks,
-            if meta.subtitle_tracks > 1 { "s" } else { "" }
-        ));
+        let count = u64::from(meta.subtitle_tracks);
+        parts.push(
+            crate::i18n::ni18n("{} subtitle", "{} subtitles", count)
+                .replace("{}", &count.to_string()),
+        );
     }
     parts.join(" · ")
 }

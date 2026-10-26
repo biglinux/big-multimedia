@@ -48,6 +48,13 @@ fn clear_media_components_translator_for_tests() {
     replace_media_components_translator(None);
 }
 
+/// Marks a literal for `xgettext` without translating it, for text kept in a
+/// const and shown later through [`text`].
+#[must_use]
+pub const fn gettext_noop(message: &'static str) -> &'static str {
+    message
+}
+
 /// Translate `message` through the currently installed translator.
 ///
 /// Returns `message.to_string()` when no translator has been installed,

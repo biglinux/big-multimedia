@@ -1,7 +1,7 @@
 //! Shared color-page helpers for audio and video appearance dialogs.
 
 use adw::prelude::*;
-use big_media_data::i18n::i18n;
+use big_media_data::i18n::{gettext_noop, i18n};
 use big_media_data::settings::Settings;
 use big_relm4_components::input::dropdown_row::{BigDropdownRow, BigDropdownRowSpec};
 use big_relm4_components::layout::preferences::BigPreferencesGroupSpec;
@@ -18,9 +18,9 @@ pub(super) struct ColorPreset {
 }
 
 pub(super) const PRESET_LABELS: [&str; 12] = [
-    "Custom",
-    "Light",
-    "Dark",
+    gettext_noop("Custom"),
+    gettext_noop("Light"),
+    gettext_noop("Dark"),
     "Solarized Light",
     "Solarized Dark",
     "Monokai",
@@ -29,7 +29,7 @@ pub(super) const PRESET_LABELS: [&str; 12] = [
     "Tokyo Night",
     "Catppuccin Mocha",
     "Rose Pine",
-    "Pink Light",
+    gettext_noop("Pink Light"),
 ];
 
 pub(super) const PRESETS: [ColorPreset; 11] = [

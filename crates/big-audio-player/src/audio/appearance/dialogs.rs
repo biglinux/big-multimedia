@@ -42,9 +42,11 @@ fn audio_effects_page_spec() -> AudioEffectsPageSpec {
     AudioEffectsPageSpec {
         title: gettext_noop("Effects"),
         icon_name: "applications-graphics-symbolic",
-        group_title: "Playback Bar",
-        album_art_background_title: "Album Art Background",
-        album_art_background_subtitle: "Show the current cover as a blurred background behind the audio controls",
+        group_title: gettext_noop("Playback Bar"),
+        album_art_background_title: gettext_noop("Album Art Background"),
+        album_art_background_subtitle: gettext_noop(
+            "Show the current cover as a blurred background behind the audio controls",
+        ),
         album_art_background_key: keys::AUDIO_ALBUM_ART_BG,
         album_art_background_default: true,
     }

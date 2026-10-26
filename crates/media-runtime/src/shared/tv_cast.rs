@@ -269,7 +269,7 @@ impl TvLink {
         let client = self.client().ok_or_else(|| {
             glib::Error::new(
                 gtk::gio::IOErrorEnum::NotConnected,
-                "BigNetScreen is unavailable",
+                &i18n("BigNetScreen is unavailable"),
             )
         })?;
         let remote = media.source.starts_with("http://") || media.source.starts_with("https://");

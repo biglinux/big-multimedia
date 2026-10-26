@@ -245,12 +245,14 @@ fn wire_sidebar_resize_handle(
 fn configure_sidebar_resize_handle_accessibility(resize_handle: &gtk::Button) {
     resize_handle.set_focusable(true);
     resize_handle.set_can_focus(true);
-    resize_handle.set_tooltip_text(Some("Resize sidebar"));
+    let label = crate::i18n::t("Resize sidebar");
+    let description = crate::i18n::t(
+        "Use Left and Right arrow keys to resize the media sidebar. Use Home and End for minimum and maximum width.",
+    );
+    resize_handle.set_tooltip_text(Some(&label));
     resize_handle.update_property(&[
-        gtk::accessible::Property::Label("Resize sidebar"),
-        gtk::accessible::Property::Description(
-            "Use Left and Right arrow keys to resize the media sidebar. Use Home and End for minimum and maximum width.",
-        ),
+        gtk::accessible::Property::Label(&label),
+        gtk::accessible::Property::Description(&description),
     ]);
 }
 

@@ -4,7 +4,7 @@
 use adw::prelude::*;
 use std::sync::Arc;
 
-use crate::i18n::i18n;
+use crate::i18n::{i18n, pi18n};
 use crate::player::mpv_backend::MpvBackend;
 use crate::settings::{Settings, keys};
 
@@ -29,7 +29,11 @@ pub(super) fn page(
         &picture,
         &i18n("Picture Quality"),
         &i18n("Light suits older computers; Detailed needs a stronger graphics card"),
-        &[&i18n("Light"), &i18n("Balanced"), &i18n("Detailed")],
+        &[
+            &pi18n("picture quality", "Light"),
+            &i18n("Balanced"),
+            &i18n("Detailed"),
+        ],
         &["default", "balanced", "high-quality"],
         keys::RENDER_PROFILE.0,
         settings,

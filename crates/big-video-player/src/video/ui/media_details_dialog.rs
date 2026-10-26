@@ -184,9 +184,14 @@ fn build_video_group(
         ));
     }
     let hwdec = mpv.get_property_string("hwdec-current");
+    let decoder = if hwdec.is_empty() {
+        i18n("Software")
+    } else {
+        hwdec
+    };
     group.add(&media_detail_row(
         &i18n("Hardware Decoder"),
-        if hwdec.is_empty() { "Software" } else { &hwdec },
+        &decoder,
         lines,
     ));
     let pixel_format = mpv.get_property_string("video-params/pixelformat");
@@ -317,11 +322,16 @@ fn build_track_groups(
 
     if !subtitle.is_empty() {
         let group = BigPreferencesGroupSpec::new(i18n("Subtitle Tracks")).build();
+        let external = format!(" ({})", i18n("external"));
         for track in &subtitle {
             let detail = format!(
                 "{}{}{}",
                 track.codec,
-                if track.external { " (ext)" } else { "" },
+                if track.external {
+                    external.as_str()
+                } else {
+                    ""
+                },
                 selected_mark(track.selected),
             );
             group.add(&media_detail_row(

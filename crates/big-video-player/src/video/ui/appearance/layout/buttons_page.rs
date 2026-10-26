@@ -17,7 +17,7 @@ use big_relm4_components::input::zone_layout::{
 use big_relm4_components::input::zone_layout_editor::BigZoneLayoutEditor;
 use big_relm4_components::layout::preferences::BigPreferencesGroupSpec;
 
-use crate::i18n::i18n;
+use crate::i18n::{gettext_noop, i18n};
 use crate::settings::{Settings, keys};
 
 /// The 14 video controls: `(id, label-msgid, icon, default "<bar>:<placement>"
@@ -25,98 +25,98 @@ use crate::settings::{Settings, keys};
 const CONTROLS: &[(&str, &str, &str, &str, keys::BoolKey)] = &[
     (
         "pin",
-        "Keep Above",
+        gettext_noop("Keep Above"),
         "view-pin-symbolic",
         "top:start",
         keys::UI_SHOW_PIN,
     ),
     (
         "open",
-        "Open File",
+        gettext_noop("Open File"),
         "folder-open-symbolic",
         "top:start",
         keys::UI_SHOW_OPEN,
     ),
     (
         "playlist",
-        "Playlist",
+        gettext_noop("Playlist"),
         "view-list-symbolic",
         "top:end",
         keys::UI_SHOW_PLAYLIST,
     ),
     (
         "menu",
-        "Menu",
+        gettext_noop("Menu"),
         "open-menu-symbolic",
         "top:end",
         keys::UI_SHOW_MENU,
     ),
     (
         "volume",
-        "Volume",
+        gettext_noop("Volume"),
         "audio-volume-high-symbolic",
         "bottom:start",
         keys::UI_SHOW_VOLUME,
     ),
     (
         "speed",
-        "Speed",
+        gettext_noop("Speed"),
         "power-profile-performance-symbolic",
         "bottom:start",
         keys::UI_SHOW_SPEED,
     ),
     (
         "voice",
-        "Voice Enhancement",
+        gettext_noop("Voice Enhancement"),
         "audio-input-microphone-symbolic",
         "bottom:start",
         keys::UI_SHOW_VOICE,
     ),
     (
         "prev",
-        "Previous",
+        gettext_noop("Previous"),
         "media-skip-backward-symbolic",
         "bottom:center",
         keys::UI_SHOW_PREV,
     ),
     (
         "play",
-        "Play/Pause",
+        gettext_noop("Play/Pause"),
         "media-playback-start-symbolic",
         "bottom:center",
         keys::UI_SHOW_PLAY,
     ),
     (
         "next",
-        "Next",
+        gettext_noop("Next"),
         "media-skip-forward-symbolic",
         "bottom:center",
         keys::UI_SHOW_NEXT,
     ),
     (
         "subtitle",
-        "Subtitles",
+        gettext_noop("Subtitles"),
         "media-view-subtitles-symbolic",
         "bottom:end",
         keys::UI_SHOW_SUBTITLE,
     ),
     (
         "audio-track",
-        "Audio Track",
+        gettext_noop("Audio Track"),
         "audio-x-generic-symbolic",
         "bottom:end",
         keys::UI_SHOW_AUDIO_TRACK,
     ),
     (
         "tv",
-        "Play on a TV",
+        gettext_noop("Play on a TV"),
         "tv-symbolic",
         "bottom:end",
         keys::UI_SHOW_TV,
     ),
     (
         "fullscreen",
-        "Fullscreen",
+        gettext_noop("Fullscreen"),
         "view-fullscreen-symbolic",
         "bottom:end",
         keys::UI_SHOW_FULLSCREEN,

@@ -289,7 +289,7 @@ impl MpvBackend {
                 || raw_title.eq_ignore_ascii_case("(unnamed)")
                 || raw_title.eq_ignore_ascii_case("unnamed")
             {
-                format!("Chapter {}", i + 1)
+                format!("{} {}", crate::i18n::i18n("Chapter"), i + 1)
             } else {
                 raw_title
             };

@@ -83,13 +83,21 @@ pub(super) struct DeletePromptSpec {
 
 /// Smart-generator presets, keyed to the shell's `generate_smart_to_queue` kinds.
 const GENERATORS: [(&str, &str, &str); 3] = [
-    ("most-played", "Most Played", "starred-symbolic"),
+    (
+        "most-played",
+        gettext_noop("Most Played"),
+        "starred-symbolic",
+    ),
     (
         "recently-added",
-        "Recently Added",
+        gettext_noop("Recently Added"),
         "document-open-recent-symbolic",
     ),
-    ("never-played", "Never Played", "audio-x-generic-symbolic"),
+    (
+        "never-played",
+        gettext_noop("Never Played"),
+        "audio-x-generic-symbolic",
+    ),
 ];
 
 pub(super) fn playlist_library_window_spec() -> PlaylistLibraryWindowSpec {

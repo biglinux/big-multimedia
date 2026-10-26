@@ -107,7 +107,7 @@ pub struct Client {
 fn invalid_reply() -> glib::Error {
     glib::Error::new(
         gio::IOErrorEnum::InvalidData,
-        "BigNetScreen returned an incompatible reply",
+        &crate::i18n::i18n("BigNetScreen returned an incompatible reply"),
     )
 }
 
@@ -153,7 +153,7 @@ impl Client {
         {
             return Err(glib::Error::new(
                 gio::IOErrorEnum::NotSupported,
-                "Update BigNetScreen to use player controls",
+                &crate::i18n::i18n("Update BigNetScreen to use player controls"),
             ));
         }
         let daemon_owner = proxy
@@ -161,7 +161,7 @@ impl Client {
             .ok_or_else(|| {
                 glib::Error::new(
                     gio::IOErrorEnum::NotConnected,
-                    "BigNetScreen is unavailable",
+                    &crate::i18n::i18n("BigNetScreen is unavailable"),
                 )
             })?
             .to_string();
@@ -202,7 +202,7 @@ impl Client {
         if !self.alive() {
             return Err(glib::Error::new(
                 gio::IOErrorEnum::NotConnected,
-                "BigNetScreen disconnected",
+                &crate::i18n::i18n("BigNetScreen disconnected"),
             ));
         }
         let property = |name| self.proxy.cached_property(name).ok_or_else(invalid_reply);
@@ -311,7 +311,7 @@ impl Client {
         if paths.is_empty() || paths.len() > 1000 {
             return Err(glib::Error::new(
                 gio::IOErrorEnum::InvalidArgument,
-                "Select between 1 and 1000 files",
+                &crate::i18n::i18n("Select between 1 and 1000 files"),
             ));
         }
         let reply = self

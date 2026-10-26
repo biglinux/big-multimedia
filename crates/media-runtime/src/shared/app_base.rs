@@ -235,7 +235,8 @@ pub fn strip_decoration_icon() {
 pub struct AboutDialogConfig {
     pub app_name: &'static str,
     pub app_icon: &'static str,
-    /// Empty `""` to omit the comments line.
+    /// Empty `""` to omit the comments line; mark it with `gettext_noop`, the
+    /// dialog translates it.
     pub comments: &'static str,
 }
 
@@ -250,7 +251,7 @@ pub fn build_about_dialog(about_dialog_config: &AboutDialogConfig) -> adw::About
         .license_type(gtk::License::Gpl30);
 
     if !about_dialog_config.comments.is_empty() {
-        builder = builder.comments(about_dialog_config.comments);
+        builder = builder.comments(crate::i18n::i18n(about_dialog_config.comments));
     }
 
     builder.build()

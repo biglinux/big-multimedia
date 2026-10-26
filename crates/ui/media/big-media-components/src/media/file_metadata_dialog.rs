@@ -376,7 +376,10 @@ fn append_audio_stream_rows(
         let rate = sample_rate.parse().unwrap_or(0);
         group.add(&copyable_metadata_row(
             &labels.sample_rate,
-            &format!("{sample_rate} Hz ({})", sample_rate_label(rate)),
+            &format!(
+                "{sample_rate} Hz ({})",
+                crate::text::text(sample_rate_label(rate))
+            ),
             labels,
             copyable_metadata_lines,
         ));
@@ -408,13 +411,14 @@ pub fn resolution_label(height: u64) -> &'static str {
     }
 }
 
-/// Classify a sample rate as `Low`/`CD`/`Studio`/`Hi-Res`.
+/// Classify a sample rate as `Low`/`CD`/`Studio`/`Hi-Res`; pass it through
+/// `text` to show it.
 #[must_use]
 pub fn sample_rate_label(rate: u64) -> &'static str {
     match rate {
-        0..=22050 => "Low",
+        0..=22050 => crate::text::gettext_noop("Low"),
         22051..=44100 => "CD",
-        44101..=48000 => "Studio",
+        44101..=48000 => crate::text::gettext_noop("Studio"),
         _ => "Hi-Res",
     }
 }

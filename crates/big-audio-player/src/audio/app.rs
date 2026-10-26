@@ -8,14 +8,17 @@ use gtk::{gio, glib};
 
 use crate::audio::ui::audio_shell::AudioShellInput;
 use crate::config;
+use crate::i18n::{gettext_noop, i18n};
 use crate::settings::keys;
 use big_player_ui::playback_bar::AudioPlaybackBarOutput;
 
-const AUDIO_ABOUT_COMMENTS: &str = "Lyrics: LRCLIB · lyrics.ovh\n\
-                                   Metadata: MusicBrainz\n\
-                                   Radio: Radio Browser\n\
-                                   Art: Cover Art Archive";
-const AUDIO_ABOUT_CREDIT_SECTION_HEADING: &str = "Data Sources";
+const AUDIO_ABOUT_COMMENTS: &str = gettext_noop(
+    "Lyrics: LRCLIB · lyrics.ovh\n\
+     Metadata: MusicBrainz\n\
+     Radio: Radio Browser\n\
+     Art: Cover Art Archive",
+);
+const AUDIO_ABOUT_CREDIT_SECTION_HEADING: &str = gettext_noop("Data Sources");
 const AUDIO_ABOUT_CREDIT_LINES: &[&str] = &[
     "LRCLIB https://lrclib.net",
     "lyrics.ovh https://lyrics.ovh",
@@ -182,7 +185,7 @@ mod imp {
                     let dialog =
                         crate::shared::app_base::build_about_dialog(&audio_about_dialog_config());
                     dialog.add_credit_section(
-                        Some(AUDIO_ABOUT_CREDIT_SECTION_HEADING),
+                        Some(&i18n(AUDIO_ABOUT_CREDIT_SECTION_HEADING)),
                         AUDIO_ABOUT_CREDIT_LINES,
                     );
                     if let Some(w) = win.as_ref() {

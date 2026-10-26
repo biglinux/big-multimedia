@@ -42,6 +42,7 @@ xgettext \
   --language=Rust \
   --keyword=i18n \
   --keyword=ni18n:1,2 \
+  --keyword=pi18n:1c,2 \
   --keyword=text \
   --keyword=t \
   --keyword=gettext_noop \

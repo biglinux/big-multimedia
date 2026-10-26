@@ -152,10 +152,11 @@ impl AudioShell {
                 paths.sort();
                 let mut total = 0_usize;
                 for path in paths {
+                    let fallback = i18n("Imported");
                     let name = path
                         .file_stem()
                         .and_then(|s| s.to_str())
-                        .unwrap_or("Imported");
+                        .unwrap_or(&fallback);
                     match import_one_playlist(&db, &path, name, 100_000 - total) {
                         Ok(added) => total += added,
                         Err(_) => {
@@ -311,7 +312,7 @@ fn import_one_playlist(
         match db.try_lock() {
             Ok(conn) => break conn,
             Err(std::sync::TryLockError::Poisoned(_)) => {
-                return Err(std::io::Error::other("Library unavailable"));
+                return Err(std::io::Error::other(i18n("Library unavailable")));
             }
             Err(std::sync::TryLockError::WouldBlock) => {
                 if std::time::Instant::now() >= until {
@@ -348,7 +349,7 @@ fn export_playlists(db: &DbHandle, folder: &Path) -> std::io::Result<usize> {
     let playlists = {
         let conn = db
             .lock()
-            .map_err(|_| std::io::Error::other("Library unavailable"))?;
+            .map_err(|_| std::io::Error::other(i18n("Library unavailable")))?;
         let mut statement = conn
             .prepare("SELECT id,name FROM playlists ORDER BY id LIMIT ?1")
             .map_err(std::io::Error::other)?;
@@ -387,7 +388,7 @@ fn export_playlists(db: &DbHandle, folder: &Path) -> std::io::Result<usize> {
 fn playlist_paths(db: &DbHandle, id: i64) -> std::io::Result<Vec<String>> {
     let conn = db
         .lock()
-        .map_err(|_| std::io::Error::other("Library unavailable"))?;
+        .map_err(|_| std::io::Error::other(i18n("Library unavailable")))?;
     let tracks = queries::get_playlist_tracks(&conn, id).map_err(std::io::Error::other)?;
     Ok(tracks.into_iter().map(|track| track.file_path).collect())
 }

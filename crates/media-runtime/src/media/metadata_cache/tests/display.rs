@@ -14,8 +14,8 @@ fn meta_summary_full() {
     assert!(s.contains("1:01:01"));
     assert!(s.contains("1920×1080"));
     assert!(s.contains("h264"));
-    assert!(s.contains("2 audios"));
-    assert!(s.contains("1 sub"));
+    assert!(s.contains("2 audio tracks"));
+    assert!(s.contains("1 subtitle"));
 }
 
 #[test]
@@ -31,8 +31,8 @@ fn meta_summary_single_audio_singular() {
         ..Default::default()
     };
     let s = meta_summary(&meta);
-    assert!(s.contains("1 audio"));
-    assert!(!s.contains("audios"));
+    assert!(s.contains("1 audio track"));
+    assert!(!s.contains("audio tracks"));
 }
 
 #[test]
@@ -50,7 +50,7 @@ fn meta_summary_multi_subs() {
         subtitle_tracks: 3,
         ..Default::default()
     };
-    assert!(meta_summary(&meta).contains("3 subs"));
+    assert!(meta_summary(&meta).contains("3 subtitles"));
 }
 
 #[test]
