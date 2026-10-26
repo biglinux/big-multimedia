@@ -1,0 +1,5421 @@
+# Turkish translations for big-media-runtime package.
+# Copyright (C) 2026 BigLinux
+# This file is distributed under the same license as the big-media-runtime package.
+# Automatically generated, 2026.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: big-media-runtime 0.1.0\n"
+"Report-Msgid-Bugs-To: https://github.com/biglinux/big-multimedia/issues\n"
+"POT-Creation-Date: 2026-10-26 14:38-0300\n"
+"PO-Revision-Date: 2026-10-23 00:15-0300\n"
+"Last-Translator: Automatically generated\n"
+"Language-Team: none\n"
+"Language: tr\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+#: crates/big-audio-player/src/audio/account_security.rs:15
+msgid ""
+"Move existing account credentials to your desktop keyring. This does not "
+"enable listening-history sharing."
+msgstr ""
+"Mevcut hesap kimlik bilgilerini masaüstü anahtar zincirinize taşıyın. Bu, "
+"dinleme geçmişi paylaşımını etkinleştirmez."
+
+#: crates/big-audio-player/src/audio/account_security.rs:18
+msgid "Saved account security"
+msgstr "Kayıtlı hesap güvenliği"
+
+#: crates/big-audio-player/src/audio/account_security.rs:28
+msgid "Checking saved credentials…"
+msgstr "Kayıtlı kimlik bilgileri denetleniyor…"
+
+#: crates/big-audio-player/src/audio/account_security.rs:31
+msgid "Protect credentials"
+msgstr "Kimlik bilgilerini koru"
+
+#: crates/big-audio-player/src/audio/account_security.rs:34
+msgid "Reload"
+msgstr "Yeniden yükle"
+
+#: crates/big-audio-player/src/audio/account_security.rs:63
+msgid "Waiting for your keyring. Unlock it if prompted…"
+msgstr "Anahtar zincirinizin hazır olması bekleniyor. İstenirse kilidini açın…"
+
+#: crates/big-audio-player/src/audio/account_security.rs:98
+msgid ""
+"Credentials are protected. Cleanup of an older keyring item needs attention; "
+"retry recovery."
+msgstr ""
+"Kimlik bilgileri korunuyor. Eski bir anahtar zinciri öğesinin temizliği ilgi "
+"gerektiriyor; kurtarmayı yeniden deneyin."
+
+#: crates/big-audio-player/src/audio/account_security.rs:100
+msgid "Recover account"
+msgstr "Hesabı kurtar"
+
+#: crates/big-audio-player/src/audio/account_security.rs:108
+msgid ""
+"The operation was not fully confirmed. Unlock the keyring, reload and retry "
+"recovery. No plaintext fallback was used."
+msgstr ""
+"İşlem tam olarak doğrulanamadı. Anahtar zincirinin kilidini açın, yeniden "
+"yükleyin ve kurtarmayı yeniden deneyin. Düz metin yedeği kullanılmadı."
+
+#: crates/big-audio-player/src/audio/account_security.rs:169
+msgid ""
+"Saved account data could not be read safely. Check permissions and reload; "
+"no changes were made."
+msgstr ""
+"Kayıtlı hesap verileri güvenli biçimde okunamadı. İzinleri denetleyip "
+"yeniden yükleyin; hiçbir değişiklik yapılmadı."
+
+#: crates/big-audio-player/src/audio/app.rs:16
+msgid ""
+"Lyrics: LRCLIB · lyrics.ovh\n"
+"Metadata: MusicBrainz\n"
+"Radio: Radio Browser\n"
+"Art: Cover Art Archive"
+msgstr ""
+"Şarkı sözleri: LRCLIB · lyrics.ovh\n"
+"Üst veri: MusicBrainz\n"
+"Radyo: Radio Browser\n"
+"Kapak: Cover Art Archive"
+
+#: crates/big-audio-player/src/audio/app.rs:21
+msgid "Data Sources"
+msgstr "Veri Kaynakları"
+
+#: crates/big-audio-player/src/audio/appearance/dialogs.rs:43
+#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:283
+msgid "Effects"
+msgstr "Efektler"
+
+#: crates/big-audio-player/src/audio/appearance/dialogs.rs:45
+msgid "Playback Bar"
+msgstr "Oynatma Çubuğu"
+
+#: crates/big-audio-player/src/audio/appearance/dialogs.rs:46
+msgid "Album Art Background"
+msgstr "Albüm Kapağı Arka Planı"
+
+#: crates/big-audio-player/src/audio/appearance/dialogs.rs:48
+msgid ""
+"Show the current cover as a blurred background behind the audio controls"
+msgstr ""
+"Geçerli kapağı ses denetimlerinin arkasında bulanık bir arka plan olarak "
+"gösterir"
+
+#: crates/big-audio-player/src/audio/keybindings.rs:14
+#: crates/big-audio-player/src/audio/ui/audio_shell/playback.rs:162
+#: crates/big-audio-player/src/audio/ui/audio_shell/tray.rs:20
+#: crates/big-video-player/src/video/keybindings.rs:15
+#: crates/big-video-player/src/video/ui/video_shell/input_gestures.rs:105
+msgid "Play / Pause"
+msgstr "Oynat / Duraklat"
+
+#: crates/big-audio-player/src/audio/keybindings.rs:15
+#: crates/big-audio-player/src/audio/keybindings.rs:22
+#: crates/big-audio-player/src/audio/keybindings.rs:29
+#: crates/big-audio-player/src/audio/keybindings.rs:36
+#: crates/big-audio-player/src/audio/keybindings.rs:43
+#: crates/big-audio-player/src/audio/keybindings.rs:50
+#: crates/big-audio-player/src/audio/keybindings.rs:57
+#: crates/big-audio-player/src/audio/keybindings.rs:64
+#: crates/big-audio-player/src/audio/keybindings.rs:71
+#: crates/big-audio-player/src/audio/preferences.rs:97
+#: crates/big-video-player/src/video/keybindings.rs:16
+#: crates/big-video-player/src/video/keybindings.rs:23
+#: crates/big-video-player/src/video/keybindings.rs:30
+#: crates/big-video-player/src/video/keybindings.rs:37
+#: crates/big-video-player/src/video/keybindings.rs:44
+#: crates/big-video-player/src/video/keybindings.rs:51
+#: crates/big-video-player/src/video/keybindings.rs:58
+#: crates/big-video-player/src/video/keybindings.rs:65
+#: crates/big-video-player/src/video/keybindings.rs:72
+#: crates/big-video-player/src/video/keybindings.rs:79
+#: crates/big-video-player/src/video/keybindings.rs:86
+#: crates/big-video-player/src/video/keybindings.rs:93
+#: crates/big-video-player/src/video/keybindings.rs:100
+#: crates/big-video-player/src/video/keybindings.rs:107
+#: crates/big-video-player/src/video/keybindings.rs:114
+#: crates/big-video-player/src/video/ui/preferences/general.rs:24
+msgid "Playback"
+msgstr "Oynatma"
+
+#: crates/big-audio-player/src/audio/keybindings.rs:21
+#: crates/big-video-player/src/video/keybindings.rs:22
+msgid "Seek forward 5 s"
+msgstr "5 sn ileri sar"
+
+#: crates/big-audio-player/src/audio/keybindings.rs:28
+#: crates/big-video-player/src/video/keybindings.rs:29
+msgid "Seek backward 5 s"
+msgstr "5 sn geri sar"
+
+#: crates/big-audio-player/src/audio/keybindings.rs:35
+#: crates/big-video-player/src/video/keybindings.rs:36
+msgid "Seek forward 30 s"
+msgstr "30 sn ileri sar"
+
+#: crates/big-audio-player/src/audio/keybindings.rs:42
+#: crates/big-video-player/src/video/keybindings.rs:43
+msgid "Seek backward 30 s"
+msgstr "30 sn geri sar"
+
+#: crates/big-audio-player/src/audio/keybindings.rs:49
+#: crates/big-audio-player/src/audio/ui/audio_shell/tray.rs:22
+msgid "Next Track"
+msgstr "Sonraki parça"
+
+#: crates/big-audio-player/src/audio/keybindings.rs:56
+#: crates/big-audio-player/src/audio/ui/audio_shell/tray.rs:23
+msgid "Previous Track"
+msgstr "Önceki parça"
+
+#: crates/big-audio-player/src/audio/keybindings.rs:63
+msgid "Next Track (single key)"
+msgstr "Sonraki parça (tek tuş)"
+
+#: crates/big-audio-player/src/audio/keybindings.rs:70
+msgid "Previous Track (single key)"
+msgstr "Önceki parça (tek tuş)"
+
+#: crates/big-audio-player/src/audio/keybindings.rs:78
+msgid "Search"
+msgstr "Ara"
+
+#: crates/big-audio-player/src/audio/keybindings.rs:79
+#: crates/big-audio-player/src/audio/keybindings.rs:86
+#: crates/big-audio-player/src/audio/keybindings.rs:93
+#: crates/big-video-player/src/video/keybindings.rs:260
+#: crates/big-video-player/src/video/keybindings.rs:267
+msgid "Navigation"
+msgstr "Gezinti"
+
+#: crates/big-audio-player/src/audio/keybindings.rs:85
+msgid "Scroll to Playing"
+msgstr "Çalana kaydır"
+
+#: crates/big-audio-player/src/audio/keybindings.rs:92
+msgid "Select All"
+msgstr "Tümünü seç"
+
+#: crates/big-audio-player/src/audio/keybindings.rs:100
+msgid "Manage Music Folders"
+msgstr "Müzik klasörlerini yönet"
+
+#: crates/big-audio-player/src/audio/keybindings.rs:101
+#: crates/big-audio-player/src/audio/keybindings.rs:108
+msgid "Library"
+msgstr "Kütüphane"
+
+#: crates/big-audio-player/src/audio/keybindings.rs:107
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:127
+#: crates/big-video-player/src/video/ui/video_shell/input_gestures.rs:116
+#: crates/big-video-player/src/video/ui/video_shell/panel.rs:43
+#: crates/big-video-player/src/video/ui/video_shell/panel.rs:469
+#: crates/media-runtime/src/shared/audio_effects_eq.rs:90
+msgid "Equalizer"
+msgstr "Ekolayzır"
+
+#: crates/big-audio-player/src/audio/keybindings.rs:115
+msgid "Toggle Shuffle"
+msgstr "Karıştırmayı aç/kapat"
+
+#: crates/big-audio-player/src/audio/keybindings.rs:116
+#: crates/big-audio-player/src/audio/keybindings.rs:123
+#: crates/big-audio-player/src/audio/keybindings.rs:130
+#: crates/big-audio-player/src/audio/keybindings.rs:137
+#: crates/big-audio-player/src/audio/keybindings.rs:144
+msgid "Queue"
+msgstr "Kuyruk"
+
+#: crates/big-audio-player/src/audio/keybindings.rs:122
+msgid "Toggle Repeat"
+msgstr "Tekrarlamayı aç/kapat"
+
+#: crates/big-audio-player/src/audio/keybindings.rs:129
+#: crates/big-video-player/src/video/ui/video_shell/panel.rs:548
+#: crates/big-video-player/src/video/ui/video_shell/playback.rs:439
+msgid "Undo"
+msgstr "Geri al"
+
+#: crates/big-audio-player/src/audio/keybindings.rs:136
+msgid "Redo"
+msgstr "Yinele"
+
+#: crates/big-audio-player/src/audio/keybindings.rs:143
+#: crates/big-audio-player/src/audio/ui/audio_shell/tray.rs:26
+msgid "Quit"
+msgstr "Çık"
+
+#: crates/big-audio-player/src/audio/library_grouping/age_filter.rs:27
+msgid "All Time"
+msgstr "Tüm zamanlar"
+
+#: crates/big-audio-player/src/audio/library_grouping/age_filter.rs:28
+msgid "Today"
+msgstr "Bugün"
+
+#: crates/big-audio-player/src/audio/library_grouping/age_filter.rs:29
+msgid "This Week"
+msgstr "Bu hafta"
+
+#: crates/big-audio-player/src/audio/library_grouping/age_filter.rs:30
+msgid "This Month"
+msgstr "Bu ay"
+
+#: crates/big-audio-player/src/audio/library_grouping/age_filter.rs:31
+msgid "3 Months"
+msgstr "3 ay"
+
+#: crates/big-audio-player/src/audio/library_grouping/age_filter.rs:32
+msgid "This Year"
+msgstr "Bu yıl"
+
+#: crates/big-audio-player/src/audio/library_grouping/group_by.rs:38
+#: crates/big-video-player/src/video/ui/filters/groups_shader.rs:153
+msgid "None"
+msgstr "Yok"
+
+#: crates/big-audio-player/src/audio/library_grouping/group_by.rs:39
+#: crates/big-audio-player/src/audio/ui/library_tag_editor.rs:203
+#: crates/big-audio-player/src/audio/ui/track_list.rs:75
+msgid "Artist"
+msgstr "Sanatçı"
+
+#: crates/big-audio-player/src/audio/library_grouping/group_by.rs:40
+#: crates/big-audio-player/src/audio/ui/library_tag_editor.rs:206
+msgid "Album Artist"
+msgstr "Albüm sanatçısı"
+
+#: crates/big-audio-player/src/audio/library_grouping/group_by.rs:41
+#: crates/big-audio-player/src/audio/library_grouping/grouping.rs:82
+#: crates/big-audio-player/src/audio/ui/library_tag_editor.rs:204
+#: crates/big-audio-player/src/audio/ui/track_list.rs:76
+msgid "Album"
+msgstr "Albüm"
+
+#: crates/big-audio-player/src/audio/library_grouping/group_by.rs:42
+#: crates/big-audio-player/src/audio/library_grouping/grouping.rs:89
+#: crates/big-audio-player/src/audio/ui/library_tag_editor.rs:209
+#: crates/big-audio-player/src/audio/ui/track_list.rs:78
+msgid "Genre"
+msgstr "Tür"
+
+#: crates/big-audio-player/src/audio/library_grouping/group_by.rs:43
+#: crates/big-audio-player/src/audio/library_grouping/grouping.rs:90
+#: crates/big-audio-player/src/audio/ui/library_tag_editor.rs:210
+#: crates/big-audio-player/src/audio/ui/track_list.rs:79
+msgid "Year"
+msgstr "Yıl"
+
+#: crates/big-audio-player/src/audio/library_grouping/group_by.rs:44
+#: crates/big-audio-player/src/audio/ui/library_tag_editor/spec.rs:112
+#: crates/big-audio-player/src/audio/ui/track_list.rs:81
+#: crates/big-video-player/src/video/ui/media_details_dialog.rs:109
+#: crates/big-video-player/src/video/ui/media_details_dialog.rs:260
+#: crates/ui/media/big-media-components/src/media/file_metadata_dialog.rs:59
+msgid "Format"
+msgstr "Biçim"
+
+#: crates/big-audio-player/src/audio/library_grouping/grouping.rs:80
+msgid "Songs"
+msgstr "Şarkılar"
+
+#: crates/big-audio-player/src/audio/library_grouping/grouping.rs:81
+msgid "Artist → Album"
+msgstr "Sanatçı → Albüm"
+
+#: crates/big-audio-player/src/audio/library_grouping/grouping.rs:84
+msgid "Genre → Artist → Album"
+msgstr "Tür → Sanatçı → Albüm"
+
+#: crates/big-audio-player/src/audio/library_grouping/grouping.rs:87
+msgid "Genre → Artist"
+msgstr "Tür → Sanatçı"
+
+#: crates/big-audio-player/src/audio/library_grouping/grouping.rs:88
+msgid "Year → Album"
+msgstr "Yıl → Albüm"
+
+#: crates/big-audio-player/src/audio/library_query.rs:119
+msgid "All Tracks"
+msgstr "Tüm parçalar"
+
+#: crates/big-audio-player/src/audio/library_query.rs:168
+#: crates/big-audio-player/src/audio/ui/library_tree.rs:135
+#: crates/big-audio-player/src/audio/ui/library_tree.rs:246
+#: crates/big-audio-player/src/audio/ui/library_tree/presentation.rs:77
+#: crates/big-audio-player/src/audio/ui/library_tree/presentation_tests.rs:81
+#: crates/ui/media/big-player-ui/src/browser_node.rs:219
+msgid "Various Artists"
+msgstr "Çeşitli sanatçılar"
+
+#: crates/big-audio-player/src/audio/preferences.rs:32
+#: crates/big-audio-player/src/audio/ui/audio_shell/component.rs:141
+#: crates/big-audio-player/src/audio/ui/audio_shell/component.rs:170
+#: crates/big-video-player/src/video/keybindings.rs:245
+#: crates/big-video-player/src/video/keybindings.rs:252
+msgid "Music"
+msgstr "Müzik"
+
+#: crates/big-audio-player/src/audio/preferences.rs:39
+msgid "Volume Leveling"
+msgstr "Ses düzeyi dengeleme"
+
+#: crates/big-audio-player/src/audio/preferences.rs:41
+msgid ""
+"Uses the loudness stored in the files so you do not have to adjust the "
+"volume between songs"
+msgstr ""
+"Şarkılar arasında ses düzeyini ayarlamanız gerekmesin diye dosyalarda "
+"saklanan ses yüksekliğini kullanır"
+
+#: crates/big-audio-player/src/audio/preferences.rs:48
+msgid "Level By"
+msgstr "Dengeleme ölçütü"
+
+#: crates/big-audio-player/src/audio/preferences.rs:50
+#: crates/big-video-player/src/video/ui/preferences/general.rs:39
+#: crates/big-video-player/src/video/ui/preferences/video.rs:60
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/header.rs:196
+#: crates/big-video-player/src/video/ui/video_shell/panel.rs:493
+msgid "Off"
+msgstr "Kapalı"
+
+#: crates/big-audio-player/src/audio/preferences.rs:50
+msgid "Per Song"
+msgstr "Şarkı başına"
+
+#: crates/big-audio-player/src/audio/preferences.rs:50
+msgid "Per Album"
+msgstr "Albüm başına"
+
+#: crates/big-audio-player/src/audio/preferences.rs:62
+msgid "Leveling Boost"
+msgstr "Dengeleme artışı"
+
+#: crates/big-audio-player/src/audio/preferences.rs:64
+msgid "In decibels; positive values play louder, negative softer"
+msgstr ""
+"Desibel cinsinden; pozitif değerler daha yüksek, negatif değerler daha kısık "
+"çalar"
+
+#: crates/big-audio-player/src/audio/preferences.rs:101
+msgid "No Gaps Between Songs"
+msgstr "Şarkılar arasında boşluk yok"
+
+#: crates/big-audio-player/src/audio/preferences.rs:103
+msgid "Albums recorded as one continuous piece play without pauses"
+msgstr "Tek parça olarak kaydedilmiş albümler duraksamadan çalınır"
+
+#: crates/big-audio-player/src/audio/preferences.rs:120
+#: crates/big-video-player/src/video/ui/preferences/general.rs:28
+msgid "Resume Where You Left Off"
+msgstr "Kaldığınız yerden devam et"
+
+#: crates/big-audio-player/src/audio/preferences.rs:121
+msgid "Playing a song again continues from where it stopped"
+msgstr "Bir şarkıyı yeniden çalmak durduğu yerden devam eder"
+
+#: crates/big-audio-player/src/audio/preferences.rs:141
+msgid "Progress on the Taskbar"
+msgstr "Görev çubuğunda ilerleme"
+
+#: crates/big-audio-player/src/audio/preferences.rs:142
+msgid "Shows how far the song has played on the player icon"
+msgstr "Şarkının ne kadarının çalındığını oynatıcı simgesinde gösterir"
+
+#: crates/big-audio-player/src/audio/preferences.rs:157
+msgid "Icon in the System Tray"
+msgstr "Sistem tepsisinde simge"
+
+#: crates/big-audio-player/src/audio/preferences.rs:159
+msgid "A one-color icon that follows the panel theme, with playback controls"
+msgstr "Panel temasını izleyen, oynatma denetimleri olan tek renkli bir simge"
+
+#: crates/big-audio-player/src/audio/preferences.rs:222
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:144
+#: crates/big-video-player/src/video/ui/preferences/mod.rs:37
+#: crates/big-video-player/src/video/ui/video_shell/panel.rs:571
+msgid "Preferences"
+msgstr "Tercihler"
+
+#: crates/big-audio-player/src/audio/ui/audio_shell/chrome.rs:55
+#: crates/big-audio-player/src/audio/ui/audio_shell/component.rs:147
+#: crates/big-audio-player/src/audio/ui/audio_shell/component.rs:172
+#: crates/big-audio-player/src/audio/ui/audio_shell/mpris.rs:224
+msgid "Radio"
+msgstr "Radyo"
+
+#: crates/big-audio-player/src/audio/ui/audio_shell/chrome.rs:151
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:128
+msgid "Sleep Timer"
+msgstr "Uyku zamanlayıcısı"
+
+#: crates/big-audio-player/src/audio/ui/audio_shell/chrome.rs:161
+#: crates/big-video-player/src/video/ui/video_shell/panel.rs:710
+msgid "Timer Active"
+msgstr "Zamanlayıcı etkin"
+
+#: crates/big-audio-player/src/audio/ui/audio_shell/chrome.rs:162
+#: crates/big-video-player/src/video/ui/video_shell/panel.rs:711
+msgid "Cancel Timer"
+msgstr "Zamanlayıcıyı iptal et"
+
+#: crates/big-audio-player/src/audio/ui/audio_shell/chrome.rs:268
+#: crates/big-video-player/src/video/ui/menu_dialogs.rs:255
+msgid "Sleep timer: closing player"
+msgstr "Uyku zamanlayıcısı: oynatıcı kapatılıyor"
+
+#: crates/big-audio-player/src/audio/ui/audio_shell/chrome.rs:276
+#: crates/big-video-player/src/video/ui/menu_dialogs.rs:263
+msgid "Sleep timer: suspending computer"
+msgstr "Uyku zamanlayıcısı: bilgisayar askıya alınıyor"
+
+#: crates/big-audio-player/src/audio/ui/audio_shell/chrome.rs:288
+#: crates/big-video-player/src/video/ui/menu_dialogs.rs:275
+msgid "Sleep timer: shutting down"
+msgstr "Uyku zamanlayıcısı: kapatılıyor"
+
+#: crates/big-audio-player/src/audio/ui/audio_shell/chrome.rs:299
+#: crates/big-video-player/src/video/ui/menu_dialogs.rs:286
+msgid "Sleep timer: playback paused"
+msgstr "Uyku zamanlayıcısı: oynatma duraklatıldı"
+
+#: crates/big-audio-player/src/audio/ui/audio_shell/component.rs:105
+msgid "Add current folder to Music Library"
+msgstr "Geçerli klasörü Müzik Kütüphanesi'ne ekle"
+
+#: crates/big-audio-player/src/audio/ui/audio_shell/component.rs:106
+msgid "Add this folder to Music Library"
+msgstr "Bu klasörü Müzik Kütüphanesi'ne ekle"
+
+#: crates/big-audio-player/src/audio/ui/audio_shell/component.rs:107
+msgid "Filter files…"
+msgstr "Dosyaları süz…"
+
+#: crates/big-audio-player/src/audio/ui/audio_shell/component.rs:144
+#: crates/big-audio-player/src/audio/ui/audio_shell/component.rs:171
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/header.rs:22
+#: crates/big-video-player/src/video/ui/video_shell/component.rs:280
+#: crates/big-video-player/src/video/ui/video_shell/component.rs:284
+msgid "Files"
+msgstr "Dosyalar"
+
+#: crates/big-audio-player/src/audio/ui/audio_shell/component.rs:150
+msgid "Podcasts"
+msgstr "Podcast'ler"
+
+#: crates/big-audio-player/src/audio/ui/audio_shell/component.rs:175
+msgid "Podcast"
+msgstr "Podcast"
+
+#: crates/big-audio-player/src/audio/ui/audio_shell/component.rs:227
+#: crates/big-audio-player/src/audio/ui/audio_shell/playback.rs:173
+#: crates/big-audio-player/src/audio/ui/library_tag_editor.rs:299
+msgid "Album art"
+msgstr "Albüm kapağı"
+
+#: crates/big-audio-player/src/audio/ui/audio_shell/component.rs:229
+#: crates/big-audio-player/src/lib.rs:28
+msgid "Big Audio Player"
+msgstr "Big Audio Player"
+
+#: crates/big-audio-player/src/audio/ui/audio_shell/component.rs:236
+msgid "Select a song to start"
+msgstr "Başlamak için bir şarkı seçin"
+
+#: crates/big-audio-player/src/audio/ui/audio_shell/component.rs:286
+msgid ""
+"The playback queue could not be saved or restored. Your previous saved queue "
+"was kept."
+msgstr ""
+"Oynatma kuyruğu kaydedilemedi veya geri yüklenemedi. Önceki kayıtlı "
+"kuyruğunuz korundu."
+
+#: crates/big-audio-player/src/audio/ui/audio_shell/component.rs:287
+#: crates/media-runtime/src/settings/saving.rs:227
+msgid "Retry saving"
+msgstr "Kaydetmeyi yeniden dene"
+
+#: crates/big-audio-player/src/audio/ui/audio_shell/engine.rs:33
+#: crates/big-video-player/src/video/ui/video_shell/playback.rs:176
+msgid "Could not play this file — it may be unsupported or corrupt."
+msgstr "Bu dosya çalınamadı — desteklenmiyor veya bozuk olabilir."
+
+#: crates/big-audio-player/src/audio/ui/audio_shell/export.rs:20
+#: crates/big-audio-player/src/audio/ui/audio_shell/export.rs:36
+msgid "No local track is playing"
+msgstr "Çalan yerel parça yok"
+
+#: crates/big-audio-player/src/audio/ui/audio_shell/export.rs:128
+#: crates/big-video-player/src/video/ui/video_shell/trim/run.rs:215
+msgid "Start (seconds)"
+msgstr "Başlangıç (saniye)"
+
+#: crates/big-audio-player/src/audio/ui/audio_shell/export.rs:133
+#: crates/big-video-player/src/video/ui/video_shell/trim/run.rs:219
+msgid "End (seconds)"
+msgstr "Bitiş (saniye)"
+
+#: crates/big-audio-player/src/audio/ui/audio_shell/export.rs:146
+msgid "Cut range"
+msgstr "Kesim aralığı"
+
+#: crates/big-audio-player/src/audio/ui/audio_shell/export.rs:148
+msgid "Use the clock buttons to copy the current playback position"
+msgstr "Geçerli oynatma konumunu kopyalamak için saat düğmelerini kullanın"
+
+#: crates/big-audio-player/src/audio/ui/audio_shell/export.rs:154
+msgid "End must be after start"
+msgstr "Bitiş, başlangıçtan sonra olmalı"
+
+#: crates/big-audio-player/src/audio/ui/audio_shell/export.rs:156
+#: crates/ui/media/big-player-ui/src/audio_trim_bar.rs:51
+msgid "Edit cut"
+msgstr "Kesimi düzenle"
+
+#: crates/big-audio-player/src/audio/ui/audio_shell/export.rs:161
+#: crates/big-audio-player/src/audio/ui/library_dialogs.rs:78
+#: crates/big-audio-player/src/audio/ui/library_io.rs:53
+#: crates/big-audio-player/src/audio/ui/library_tag_editor.rs:146
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:219
+#: crates/big-audio-player/src/audio/ui/playlist_interactions.rs:245
+#: crates/big-audio-player/src/audio/ui/playlist_library_dialog/spec.rs:197
+#: crates/big-audio-player/src/audio/ui/playlist_library_dialog/spec.rs:208
+#: crates/big-audio-player/src/audio/ui/playlist_library_dialog/spec.rs:217
+#: crates/big-audio-player/src/audio/ui/unavailable_dialog.rs:258
+#: crates/big-video-player/src/video/ui/iptv/providers_dialog.rs:168
+#: crates/big-video-player/src/video/ui/menu_dialogs.rs:72
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/fileops.rs:200
+#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:173
+#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:257
+#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:381
+#: crates/big-video-player/src/video/ui/video_shell/trim/run.rs:258
+#: crates/ui/media/big-player-ui/src/podcast_panel.rs:571
+#: crates/ui/media/big-player-ui/src/radio_panel/widgets.rs:351
+msgid "Cancel"
+msgstr "İptal"
+
+#: crates/big-audio-player/src/audio/ui/audio_shell/export.rs:161
+#: crates/big-video-player/src/video/ui/video_shell/trim/run.rs:258
+msgid "Apply"
+msgstr "Uygula"
+
+#: crates/big-audio-player/src/audio/ui/audio_shell/export.rs:284
+msgid "Use current position"
+msgstr "Geçerli konumu kullan"
+
+#: crates/big-audio-player/src/audio/ui/audio_shell/export.rs:286
+msgid "Use current playback position"
+msgstr "Geçerli oynatma konumunu kullan"
+
+#: crates/big-audio-player/src/audio/ui/audio_shell/panel_intents.rs:79
+msgid ""
+"This folder name cannot yet be stored in the library. No path was changed or "
+"imported."
+msgstr ""
+"Bu klasör adı henüz kütüphanede saklanamıyor. Hiçbir yol değiştirilmedi veya "
+"içe aktarılmadı."
+
+#: crates/big-audio-player/src/audio/ui/audio_shell/panel_intents.rs:112
+#: crates/big-audio-player/src/audio/ui/audio_shell/update.rs:241
+msgid ""
+"The playlist could not be read safely. Check its format and permissions."
+msgstr ""
+"Çalma listesi güvenli biçimde okunamadı. Biçimini ve izinlerini denetleyin."
+
+#: crates/big-audio-player/src/audio/ui/audio_shell/panel_intents.rs:345
+msgid "The playlist could not be saved."
+msgstr "Çalma listesi kaydedilemedi."
+
+#: crates/big-audio-player/src/audio/ui/audio_shell/panel_intents.rs:447
+msgid "Save Episode"
+msgstr "Bölümü kaydet"
+
+#: crates/big-audio-player/src/audio/ui/audio_shell/panel_intents.rs:448
+#: crates/big-audio-player/src/audio/ui/library_io.rs:54
+#: crates/big-audio-player/src/audio/ui/library_io.rs:85
+#: crates/big-audio-player/src/audio/ui/library_tag_editor.rs:146
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:219
+#: crates/big-video-player/src/video/ui/iptv/providers_dialog.rs:168
+msgid "Save"
+msgstr "Kaydet"
+
+#: crates/big-audio-player/src/audio/ui/audio_shell/panel_intents.rs:455
+msgid "Save Episodes"
+msgstr "Bölümleri kaydet"
+
+#: crates/big-audio-player/src/audio/ui/audio_shell/playback.rs:160
+msgid "Seek position"
+msgstr "Arama konumu"
+
+#: crates/big-audio-player/src/audio/ui/audio_shell/playback.rs:161
+#: crates/big-video-player/src/video/ui/video_controls_bar.rs:291
+msgid "Cut timeline"
+msgstr "Kesim zaman çizelgesi"
+
+#: crates/big-audio-player/src/audio/ui/audio_shell/playback.rs:163
+#: crates/big-video-player/src/video/ui/appearance/layout/buttons_page.rs:77
+#: crates/big-video-player/src/video/ui/video_controls_bar/seek_preview.rs:177
+#: crates/big-video-player/src/video/ui/video_controls_bar/zones.rs:565
+msgid "Previous"
+msgstr "Önceki"
+
+#: crates/big-audio-player/src/audio/ui/audio_shell/playback.rs:164
+#: crates/big-video-player/src/video/ui/appearance/layout/buttons_page.rs:91
+#: crates/big-video-player/src/video/ui/video_controls_bar/seek_preview.rs:179
+#: crates/big-video-player/src/video/ui/video_controls_bar/zones.rs:568
+msgid "Next"
+msgstr "Sonraki"
+
+#: crates/big-audio-player/src/audio/ui/audio_shell/playback.rs:165
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/header.rs:200
+msgid "Shuffle"
+msgstr "Karıştır"
+
+#: crates/big-audio-player/src/audio/ui/audio_shell/playback.rs:166
+#: crates/big-video-player/src/video/ui/preferences/general.rs:36
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/header.rs:201
+msgid "Repeat"
+msgstr "Tekrarla"
+
+#: crates/big-audio-player/src/audio/ui/audio_shell/playback.rs:167
+#: crates/big-video-player/src/video/ui/appearance/layout/buttons_page.rs:56
+#: crates/big-video-player/src/video/ui/video_controls_bar.rs:560
+#: crates/ui/media/big-media-components/src/player_chrome.rs:301
+#: crates/ui/media/big-media-components/src/text.rs:82
+#: crates/ui/media/big-media-components/src/text.rs:90
+#: crates/ui/media/big-media-components/src/text.rs:99
+#: crates/ui/media/big-player-ui/src/playback_bar.rs:325
+msgid "Volume"
+msgstr "Ses"
+
+#: crates/big-audio-player/src/audio/ui/audio_shell/playback.rs:168
+#: crates/big-video-player/src/video/ui/appearance/layout/buttons_page.rs:63
+#: crates/big-video-player/src/video/ui/video_controls_bar/zones.rs:302
+#: crates/ui/media/big-media-components/src/player_chrome.rs:312
+msgid "Speed"
+msgstr "Hız"
+
+#: crates/big-audio-player/src/audio/ui/audio_shell/playback.rs:169
+#: crates/big-video-player/src/video/ui/appearance/layout/buttons_page.rs:70
+#: crates/big-video-player/src/video/ui/video_controls_bar/zones.rs:317
+msgid "Voice Enhancement"
+msgstr "Ses iyileştirme"
+
+#: crates/big-audio-player/src/audio/ui/audio_shell/playback.rs:170
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:129
+msgid "Trim & Export"
+msgstr "Kırp ve dışa aktar"
+
+#: crates/big-audio-player/src/audio/ui/audio_shell/playback.rs:171
+#: crates/ui/media/big-player-ui/src/lyrics_panel.rs:144
+msgid "Lyrics"
+msgstr "Şarkı sözleri"
+
+#: crates/big-audio-player/src/audio/ui/audio_shell/playback.rs:172
+msgid "Status"
+msgstr "Durum"
+
+#: crates/big-audio-player/src/audio/ui/audio_shell/playlist_library_dialog_actions.rs:111
+msgid "Import Playlists Folder"
+msgstr "Çalma listeleri klasörünü içe aktar"
+
+#: crates/big-audio-player/src/audio/ui/audio_shell/playlist_library_dialog_actions.rs:137
+msgid "Too many entries in the chosen folder"
+msgstr "Seçilen klasörde çok fazla öğe var"
+
+#: crates/big-audio-player/src/audio/ui/audio_shell/playlist_library_dialog_actions.rs:147
+msgid "Choose at most 100 playlist files per import"
+msgstr "Her içe aktarmada en fazla 100 çalma listesi dosyası seçin"
+
+#: crates/big-audio-player/src/audio/ui/audio_shell/playlist_library_dialog_actions.rs:155
+#: crates/big-audio-player/src/audio/ui/audio_shell/update.rs:152
+#: crates/big-audio-player/src/audio/ui/scan_progress.rs:47
+msgid "Imported"
+msgstr "İçe aktarılan"
+
+#: crates/big-audio-player/src/audio/ui/audio_shell/playlist_library_dialog_actions.rs:165
+msgid "Import stopped. Confirmed tracks were kept"
+msgstr "İçe aktarma durduruldu. Doğrulanan parçalar korundu"
+
+#: crates/big-audio-player/src/audio/ui/audio_shell/playlist_library_dialog_actions.rs:188
+msgid "Export All Playlists"
+msgstr "Tüm çalma listelerini dışa aktar"
+
+#: crates/big-audio-player/src/audio/ui/audio_shell/playlist_library_dialog_actions.rs:196
+msgid "Playlists exported"
+msgstr "Çalma listeleri dışa aktarıldı"
+
+#: crates/big-audio-player/src/audio/ui/audio_shell/playlist_library_dialog_actions.rs:200
+msgid ""
+"Export was not fully completed. Published files were kept; choose an empty "
+"destination and try again."
+msgstr ""
+"Dışa aktarma tam olarak tamamlanamadı. Yayımlanan dosyalar korundu; boş bir "
+"hedef seçip yeniden deneyin."
+
+#: crates/big-audio-player/src/audio/ui/audio_shell/playlist_library_dialog_actions.rs:233
+#: crates/big-audio-player/src/audio/ui/library_io.rs:84
+msgid "Export Playlist"
+msgstr "Çalma listesini dışa aktar"
+
+#: crates/big-audio-player/src/audio/ui/audio_shell/playlist_library_dialog_actions.rs:235
+#: crates/big-audio-player/src/audio/ui/library_io.rs:87
+msgid "M3U8 Playlist"
+msgstr "M3U8 çalma listesi"
+
+#: crates/big-audio-player/src/audio/ui/audio_shell/playlist_library_dialog_actions.rs:259
+#: crates/big-audio-player/src/audio/ui/library_io.rs:111
+msgid "Import Playlist"
+msgstr "Çalma listesini içe aktar"
+
+#: crates/big-audio-player/src/audio/ui/audio_shell/playlist_library_dialog_actions.rs:260
+#: crates/big-audio-player/src/audio/ui/library_dialogs.rs:62
+#: crates/big-audio-player/src/audio/ui/library_io.rs:113
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/menu_actions.rs:230
+msgid "Playlists"
+msgstr "Çalma listeleri"
+
+#: crates/big-audio-player/src/audio/ui/audio_shell/playlist_library_dialog_actions.rs:305
+msgid ""
+"The batch import limit was reached. Split the playlists into smaller imports."
+msgstr ""
+"Toplu içe aktarma sınırına ulaşıldı. Çalma listelerini daha küçük içe "
+"aktarmalara bölün."
+
+#: crates/big-audio-player/src/audio/ui/audio_shell/playlist_library_dialog_actions.rs:315
+#: crates/big-audio-player/src/audio/ui/audio_shell/playlist_library_dialog_actions.rs:352
+#: crates/big-audio-player/src/audio/ui/audio_shell/playlist_library_dialog_actions.rs:391
+msgid "Library unavailable"
+msgstr "Kütüphane kullanılamıyor"
+
+#: crates/big-audio-player/src/audio/ui/audio_shell/playlist_library_dialog_actions.rs:366
+msgid "Too many playlists for one export"
+msgstr "Tek dışa aktarma için çok fazla çalma listesi"
+
+#: crates/big-audio-player/src/audio/ui/audio_shell/playlist_library_dialog_actions.rs:380
+msgid "Export stopped. Confirmed outputs were kept"
+msgstr "Dışa aktarma durduruldu. Doğrulanan çıktılar korundu"
+
+#: crates/big-audio-player/src/audio/ui/audio_shell/playlist_library_dialog_actions.rs:401
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/menu_actions.rs:212
+msgid "Playlist export"
+msgstr "Çalma listesi dışa aktarma"
+
+#: crates/big-audio-player/src/audio/ui/audio_shell/playlist_library_dialog_actions.rs:404
+#: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:478
+#: crates/big-audio-player/src/audio/ui/library_dialogs.rs:64
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/menu_actions.rs:215
+#: crates/big-video-player/src/video/ui/video_shell/component.rs:132
+#: crates/ui/generic/big-relm4-components/src/layout/media_window.rs:283
+msgid "Close"
+msgstr "Kapat"
+
+#: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:42
+msgid "A library scan is already running. Cancel it or wait for its result."
+msgstr ""
+"Bir kütüphane taraması zaten çalışıyor. İptal edin veya sonucunu bekleyin."
+
+#: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:51
+msgid "Library scanning is busy. Try again after another scan finishes."
+msgstr ""
+"Kütüphane tarama meşgul. Başka bir tarama bittikten sonra yeniden deneyin."
+
+#: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:61
+msgid "Scanning library…"
+msgstr "Kütüphane taranıyor…"
+
+#: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:122
+msgid "Watch folders could not be read. Previous settings were kept."
+msgstr "İzlenen klasörler okunamadı. Önceki ayarlar korundu."
+
+#: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:258
+#: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:266
+#: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:295
+msgid "Recording was not saved"
+msgstr "Kayıt kaydedilmedi"
+
+#: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:271
+msgid "Recording to"
+msgstr "Kayıt hedefi"
+
+#: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:344
+msgid "No episodes found"
+msgstr "Bölüm bulunamadı"
+
+#: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:453
+msgid "Recording saved"
+msgstr "Kayıt kaydedildi"
+
+#: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:459
+msgid "The recording was saved and is ready to open."
+msgstr "Kayıt kaydedildi ve açılmaya hazır."
+
+#: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:463
+#: crates/big-audio-player/src/audio/ui/library_tag_editor/spec.rs:125
+#: crates/big-video-player/src/video/ui/media_details_dialog.rs:81
+msgid "File"
+msgstr "Dosya"
+
+#: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:467
+msgid "Folder"
+msgstr "Klasör"
+
+#: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:473
+#: crates/ui/media/big-media-components/src/media/file_metadata_dialog.rs:55
+msgid "Open Folder"
+msgstr "Klasörü aç"
+
+#: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:478
+#: crates/big-video-player/src/video/ui/appearance/layout/buttons_page.rs:35
+#: crates/big-video-player/src/video/ui/video_shell/actions.rs:126
+msgid "Open File"
+msgstr "Dosyayı aç"
+
+#: crates/big-audio-player/src/audio/ui/audio_shell/tray.rs:18
+msgid "Show Big Audio Player"
+msgstr "Big Audio Player'ı göster"
+
+#: crates/big-audio-player/src/audio/ui/audio_shell/tv.rs:128
+msgid "The TV's track is no longer in the queue."
+msgstr "TV'deki parça artık kuyrukta değil."
+
+#: crates/big-audio-player/src/audio/ui/audio_shell/update.rs:141
+msgid "Scan cancelled. Earlier confirmed imports were kept."
+msgstr "Tarama iptal edildi. Daha önce doğrulanan içe aktarmalar korundu."
+
+#: crates/big-audio-player/src/audio/ui/audio_shell/update.rs:144
+msgid ""
+"Scan incomplete. Earlier confirmed imports were kept; check storage and "
+"retry."
+msgstr ""
+"Tarama tamamlanamadı. Daha önce doğrulanan içe aktarmalar korundu; "
+"depolamayı denetleyip yeniden deneyin."
+
+#: crates/big-audio-player/src/audio/ui/audio_shell/update.rs:147
+msgid "Library scan finished."
+msgstr "Kütüphane taraması tamamlandı."
+
+#: crates/big-audio-player/src/audio/ui/audio_shell/update.rs:154
+#: crates/big-audio-player/src/audio/ui/scan_progress.rs:48
+msgid "Skipped"
+msgstr "Atlanan"
+
+#: crates/big-audio-player/src/audio/ui/audio_shell/update.rs:160
+msgid "Library updated"
+msgstr "Kütüphane güncellendi"
+
+#: crates/big-audio-player/src/audio/ui/audio_shell/update.rs:162
+msgid ""
+"The operation was incomplete. Imported tracks were kept; check the folder "
+"and try again."
+msgstr ""
+"İşlem tamamlanamadı. İçe aktarılan parçalar korundu; klasörü denetleyip "
+"yeniden deneyin."
+
+#: crates/big-audio-player/src/audio/ui/audio_shell/update.rs:190
+msgid ""
+"The library could not be read. Previous results were kept; try searching "
+"again."
+msgstr "Kütüphane okunamadı. Önceki sonuçlar korundu; yeniden aramayı deneyin."
+
+#: crates/big-audio-player/src/audio/ui/audio_shell/update.rs:204
+msgid "The playlist could not be changed. Your previous playlist was kept."
+msgstr "Çalma listesi değiştirilemedi. Önceki çalma listeniz korundu."
+
+#: crates/big-audio-player/src/audio/ui/audio_shell/update.rs:209
+msgid "Playlists could not be opened. Please try again."
+msgstr "Çalma listeleri açılamadı. Lütfen yeniden deneyin."
+
+#: crates/big-audio-player/src/audio/ui/audio_shell/update.rs:311
+msgid "tracks imported"
+msgstr "parça içe aktarıldı"
+
+#: crates/big-audio-player/src/audio/ui/audio_shell/update.rs:315
+msgid ""
+"Playlist import was not fully completed. Previously confirmed imports were "
+"kept."
+msgstr ""
+"Çalma listesi içe aktarma tam olarak tamamlanamadı. Daha önce doğrulanan içe "
+"aktarmalar korundu."
+
+#: crates/big-audio-player/src/audio/ui/library_detail_interactions.rs:63
+#: crates/big-audio-player/src/audio/ui/library_tree/view.rs:359
+#: crates/big-audio-player/src/audio/ui/library_tree/view.rs:376
+#: crates/big-audio-player/src/audio/ui/playlist_interactions.rs:110
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/context_menu.rs:41
+#: crates/big-video-player/src/video/ui/video_controls_bar.rs:479
+#: crates/big-video-player/src/video/ui/video_controls_bar/zones.rs:566
+#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:173
+msgid "Play"
+msgstr "Oynat"
+
+#: crates/big-audio-player/src/audio/ui/library_detail_interactions.rs:73
+msgid "Play Next"
+msgstr "Sıradaki olarak oynat"
+
+#: crates/big-audio-player/src/audio/ui/library_detail_interactions.rs:80
+#: crates/big-audio-player/src/audio/ui/library_tree/view.rs:382
+msgid "Add to Queue"
+msgstr "Kuyruğa ekle"
+
+#: crates/big-audio-player/src/audio/ui/library_detail_interactions.rs:89
+#: crates/big-audio-player/src/audio/ui/library_tree/view.rs:389
+#: crates/big-audio-player/src/audio/ui/playlist_interactions.rs:170
+msgid "Add to Playlist…"
+msgstr "Çalma listesine ekle…"
+
+#: crates/big-audio-player/src/audio/ui/library_detail_interactions.rs:96
+#: crates/big-audio-player/src/audio/ui/library_tree/view.rs:395
+#: crates/big-audio-player/src/audio/ui/playlist_interactions.rs:177
+msgid "Show in File Manager"
+msgstr "Dosya yöneticisinde göster"
+
+#: crates/big-audio-player/src/audio/ui/library_detail_interactions.rs:105
+msgid "Edit Tags…"
+msgstr "Etiketleri düzenle…"
+
+#: crates/big-audio-player/src/audio/ui/library_detail_interactions.rs:112
+#: crates/big-audio-player/src/audio/ui/library_tag_editor.rs:140
+#: crates/big-audio-player/src/audio/ui/library_tag_editor.rs:388
+#: crates/big-audio-player/src/audio/ui/library_tree/view.rs:403
+#: crates/big-audio-player/src/audio/ui/playlist_interactions.rs:163
+msgid "Track Info"
+msgstr "Parça bilgisi"
+
+#: crates/big-audio-player/src/audio/ui/library_detail_interactions.rs:125
+#: crates/big-audio-player/src/audio/ui/playlist_interactions.rs:135
+#: crates/big-audio-player/src/audio/ui/track_list.rs:430
+#, rust-format
+msgid "{} of 5 stars"
+msgstr "5 yıldızın {} tanesi"
+
+#: crates/big-audio-player/src/audio/ui/library_detail_interactions.rs:129
+#: crates/big-audio-player/src/audio/ui/playlist_interactions.rs:139
+#: crates/big-audio-player/src/audio/ui/track_list.rs:82
+#: crates/big-audio-player/src/audio/ui/unavailable_dialog.rs:351
+msgid "Rating"
+msgstr "Derecelendirme"
+
+#: crates/big-audio-player/src/audio/ui/library_dialogs.rs:56
+msgid "Add to Playlist"
+msgstr "Çalma listesine ekle"
+
+#: crates/big-audio-player/src/audio/ui/library_dialogs.rs:63
+msgid "No playlists yet"
+msgstr "Henüz çalma listesi yok"
+
+#: crates/big-audio-player/src/audio/ui/library_dialogs.rs:65
+#: crates/big-audio-player/src/audio/ui/library_dialogs.rs:73
+msgid "New Playlist"
+msgstr "Yeni çalma listesi"
+
+#: crates/big-audio-player/src/audio/ui/library_dialogs.rs:67
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/context_menu.rs:82
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/fileops.rs:72
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/library.rs:646
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/library.rs:650
+msgid "Add to playlist"
+msgstr "Çalma listesine ekle"
+
+#: crates/big-audio-player/src/audio/ui/library_dialogs.rs:77
+#: crates/big-audio-player/src/audio/ui/library_io.rs:52
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:213
+msgid "Playlist name"
+msgstr "Çalma listesi adı"
+
+#: crates/big-audio-player/src/audio/ui/library_dialogs.rs:79
+msgid "Create"
+msgstr "Oluştur"
+
+#: crates/big-audio-player/src/audio/ui/library_grouping_ui.rs:109
+#: crates/big-audio-player/src/audio/ui/library_grouping_ui.rs:110
+msgid "Library view mode"
+msgstr "Kütüphane görünüm kipi"
+
+#: crates/big-audio-player/src/audio/ui/library_grouping_ui.rs:135
+#: crates/big-audio-player/src/audio/ui/library_grouping_ui.rs:137
+#: crates/big-audio-player/src/audio/ui/library_grouping_ui.rs:151
+msgid "Filter by date added"
+msgstr "Eklenme tarihine göre süz"
+
+#: crates/big-audio-player/src/audio/ui/library_grouping_ui.rs:206
+#: crates/big-audio-player/src/audio/ui/library_grouping_ui.rs:207
+#: crates/big-audio-player/src/audio/ui/library_io.rs:307
+msgid "Add music folder"
+msgstr "Müzik klasörü ekle"
+
+#: crates/big-audio-player/src/audio/ui/library_grouping_ui.rs:213
+msgid "Add Music Folder"
+msgstr "Müzik klasörü ekle"
+
+#: crates/big-audio-player/src/audio/ui/library_grouping_ui.rs:230
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/metadata.rs:118
+msgid "Filter…"
+msgstr "Süz…"
+
+#: crates/big-audio-player/src/audio/ui/library_grouping_ui.rs:234
+msgid "Search library"
+msgstr "Kütüphanede ara"
+
+#: crates/big-audio-player/src/audio/ui/library_io.rs:80
+msgid "No tracks to export"
+msgstr "Dışa aktarılacak parça yok"
+
+#: crates/big-audio-player/src/audio/ui/library_io.rs:99
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/menu_actions.rs:208
+msgid ""
+"Playlist export could not be confirmed. Existing files were kept; choose a "
+"new name and retry."
+msgstr ""
+"Çalma listesi dışa aktarma doğrulanamadı. Var olan dosyalar korundu; yeni "
+"bir ad seçip yeniden deneyin."
+
+#: crates/big-audio-player/src/audio/ui/library_io.rs:112
+#: crates/big-video-player/src/video/ui/menu_dialogs.rs:339
+#: crates/big-video-player/src/video/ui/video_shell/component.rs:265
+#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:257
+msgid "Open"
+msgstr "Aç"
+
+#: crates/big-audio-player/src/audio/ui/library_io.rs:127
+msgid "No tracks to save"
+msgstr "Kaydedilecek parça yok"
+
+#: crates/big-audio-player/src/audio/ui/library_io.rs:133
+msgid "Save as Playlist"
+msgstr "Çalma listesi olarak kaydet"
+
+#: crates/big-audio-player/src/audio/ui/library_io.rs:134
+msgid "Enter a name for the new playlist"
+msgstr "Yeni çalma listesi için bir ad girin"
+
+#: crates/big-audio-player/src/audio/ui/library_io.rs:170
+#: crates/big-audio-player/src/audio/ui/library_io.rs:185
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:121
+msgid "Music Folders"
+msgstr "Müzik klasörleri"
+
+#: crates/big-audio-player/src/audio/ui/library_io.rs:177
+#: crates/big-audio-player/src/audio/ui/unavailable_dialog.rs:41
+msgid "Review unavailable files"
+msgstr "Kullanılamayan dosyaları gözden geçir"
+
+#: crates/big-audio-player/src/audio/ui/library_io.rs:224
+msgid "Monitored Folders"
+msgstr "İzlenen klasörler"
+
+#: crates/big-audio-player/src/audio/ui/library_io.rs:234
+msgid ""
+"These folders are scanned for audio files. Removing a folder stops "
+"monitoring it. Tracks and ratings are kept until you explicitly review "
+"unavailable files."
+msgstr ""
+"Bu klasörler ses dosyaları için taranır. Bir klasörü kaldırmak, onu izlemeyi "
+"durdurur. Kullanılamayan dosyaları açıkça gözden geçirene kadar parçalar ve "
+"derecelendirmeler korunur."
+
+#: crates/big-audio-player/src/audio/ui/library_io.rs:260
+msgid "Music folders"
+msgstr "Müzik klasörleri"
+
+#: crates/big-audio-player/src/audio/ui/library_io.rs:264
+msgid "No folders added yet"
+msgstr "Henüz klasör eklenmedi"
+
+#: crates/big-audio-player/src/audio/ui/library_io.rs:266
+msgid "Click the button below to add your first music folder"
+msgstr "İlk müzik klasörünüzü eklemek için aşağıdaki düğmeye tıklayın"
+
+#: crates/big-audio-player/src/audio/ui/library_io.rs:288
+msgid "Removal requested. Reopen this list after the operation finishes."
+msgstr "Kaldırma istendi. İşlem bittikten sonra bu listeyi yeniden açın."
+
+#: crates/big-audio-player/src/audio/ui/library_io.rs:306
+msgid "Add Folder"
+msgstr "Klasör ekle"
+
+#: crates/big-audio-player/src/audio/ui/library_io.rs:319
+msgid "Select Music Folder"
+msgstr "Müzik klasörü seç"
+
+#: crates/big-audio-player/src/audio/ui/library_io.rs:329
+msgid "Scan Now"
+msgstr "Şimdi tara"
+
+#: crates/big-audio-player/src/audio/ui/library_io.rs:330
+msgid "Scan all monitored folders now"
+msgstr "İzlenen tüm klasörleri şimdi tara"
+
+#: crates/big-audio-player/src/audio/ui/library_io.rs:440
+msgid "Stop monitoring this folder; keep its tracks"
+msgstr "Bu klasörü izlemeyi durdur; parçalarını koru"
+
+#: crates/big-audio-player/src/audio/ui/library_io.rs:443
+msgid "Remove folder"
+msgstr "Klasörü kaldır"
+
+#: crates/big-audio-player/src/audio/ui/library_io.rs:452
+msgid ""
+"Add folders where your music files are stored. The player scans these "
+"folders to build your library, organizing tracks by artist, album, and genre "
+"automatically."
+msgstr ""
+"Müzik dosyalarınızın bulunduğu klasörleri ekleyin. Oynatıcı, kütüphanenizi "
+"oluşturmak için bu klasörleri tarar ve parçaları sanatçıya, albüme ve türe "
+"göre otomatik olarak düzenler."
+
+#: crates/big-audio-player/src/audio/ui/library_io.rs:490
+msgid "Tips"
+msgstr "İpuçları"
+
+#: crates/big-audio-player/src/audio/ui/library_io.rs:499
+msgid ""
+"• Supported formats: MP3, FLAC, OGG, Opus, M4A, WAV, WMA, AAC, APE, WavPack"
+msgstr ""
+"• Desteklenen biçimler: MP3, FLAC, OGG, Opus, M4A, WAV, WMA, AAC, APE, "
+"WavPack"
+
+#: crates/big-audio-player/src/audio/ui/library_io.rs:500
+msgid "• Subfolders are included automatically — no need to add each one"
+msgstr ""
+"• Alt klasörler otomatik olarak dahil edilir — her birini eklemenize gerek "
+"yok"
+
+#: crates/big-audio-player/src/audio/ui/library_io.rs:502
+msgid ""
+"• Use the Files tab to play files from any folder without adding them to the "
+"library"
+msgstr ""
+"• Herhangi bir klasördeki dosyaları kütüphaneye eklemeden çalmak için "
+"Dosyalar sekmesini kullanın"
+
+#: crates/big-audio-player/src/audio/ui/library_panel.rs:291
+msgid "No Tracks"
+msgstr "Parça yok"
+
+#: crates/big-audio-player/src/audio/ui/library_panel.rs:292
+msgid "Select an item on the left to view its tracks"
+msgstr "Parçalarını görmek için soldan bir öğe seçin"
+
+#: crates/big-audio-player/src/audio/ui/library_panel.rs:445
+msgid "Tracks"
+msgstr "Parçalar"
+
+#: crates/big-audio-player/src/audio/ui/library_panel.rs:512
+#: crates/big-audio-player/src/audio/ui/library_panel.rs:513
+msgid "Back to library"
+msgstr "Kütüphaneye dön"
+
+#: crates/big-audio-player/src/audio/ui/library_tag_editor.rs:202
+#: crates/big-audio-player/src/audio/ui/track_list.rs:74
+#: crates/big-video-player/src/video/ui/media_details_dialog.rs:105
+#: crates/media-runtime/src/media/metadata_cache/detailed_video_metadata.rs:160
+#: crates/media-runtime/src/media/metadata_cache/detailed_video_metadata.rs:174
+msgid "Title"
+msgstr "Başlık"
+
+#: crates/big-audio-player/src/audio/ui/library_tag_editor.rs:211
+msgid "Track #"
+msgstr "Parça no"
+
+#: crates/big-audio-player/src/audio/ui/library_tag_editor.rs:212
+msgid "Disc #"
+msgstr "Disk no"
+
+#: crates/big-audio-player/src/audio/ui/library_tag_editor.rs:213
+msgid "Comment"
+msgstr "Yorum"
+
+#: crates/big-audio-player/src/audio/ui/library_tag_editor.rs:279
+msgid "File Info"
+msgstr "Dosya bilgisi"
+
+#: crates/big-audio-player/src/audio/ui/library_tag_editor.rs:365
+#: crates/big-video-player/src/video/ui/media_details_dialog.rs:138
+msgid "Metadata"
+msgstr "Üst veri"
+
+#: crates/big-audio-player/src/audio/ui/library_tag_editor.rs:472
+msgid "Lookup from MusicBrainz"
+msgstr "MusicBrainz'den ara"
+
+#: crates/big-audio-player/src/audio/ui/library_tag_editor.rs:486
+msgid "Searching…"
+msgstr "Aranıyor…"
+
+#: crates/big-audio-player/src/audio/ui/library_tag_editor/spec.rs:83
+#: crates/big-audio-player/src/audio/ui/track_list.rs:77
+#: crates/big-video-player/src/video/ui/media_details_dialog.rs:114
+#: crates/media-runtime/src/shared/sleep_timer.rs:21
+#: crates/ui/media/big-media-components/src/media/file_metadata_dialog.rs:57
+msgid "Duration"
+msgstr "Süre"
+
+#: crates/big-audio-player/src/audio/ui/library_tag_editor/spec.rs:88
+#: crates/big-audio-player/src/audio/ui/track_list.rs:80
+#: crates/big-video-player/src/video/ui/media_details_dialog.rs:181
+#: crates/big-video-player/src/video/ui/media_details_dialog.rs:238
+#: crates/media-runtime/src/media/metadata_cache/detailed_video_metadata.rs:108
+#: crates/media-runtime/src/media/metadata_cache/detailed_video_metadata.rs:154
+#: crates/ui/media/big-media-components/src/media/file_metadata_dialog.rs:60
+msgid "Bitrate"
+msgstr "Bit hızı"
+
+#: crates/big-audio-player/src/audio/ui/library_tag_editor/spec.rs:98
+#: crates/big-video-player/src/video/ui/media_details_dialog.rs:246
+#: crates/media-runtime/src/media/metadata_cache/detailed_video_metadata.rs:139
+#: crates/ui/media/big-media-components/src/media/file_metadata_dialog.rs:69
+msgid "Sample Rate"
+msgstr "Örnekleme hızı"
+
+#: crates/big-audio-player/src/audio/ui/library_tag_editor/spec.rs:105
+#: crates/big-video-player/src/video/ui/media_details_dialog.rs:253
+#: crates/media-runtime/src/media/metadata_cache/detailed_video_metadata.rs:149
+#: crates/ui/media/big-media-components/src/media/file_metadata_dialog.rs:70
+msgid "Channels"
+msgstr "Kanallar"
+
+#: crates/big-audio-player/src/audio/ui/library_tag_editor/spec.rs:117
+#: crates/big-video-player/src/video/ui/media_details_dialog.rs:95
+#: crates/ui/media/big-media-components/src/media/file_metadata_dialog.rs:56
+msgid "File Size"
+msgstr "Dosya boyutu"
+
+#: crates/big-audio-player/src/audio/ui/library_tag_editor/spec.rs:143
+msgid "Not found"
+msgstr "Bulunamadı"
+
+#: crates/big-audio-player/src/audio/ui/library_tag_editor/spec.rs:175
+msgid "No new data found"
+msgstr "Yeni veri bulunamadı"
+
+#: crates/big-audio-player/src/audio/ui/library_tree/view.rs:162
+#: crates/big-audio-player/src/audio/ui/playlist_library_dialog/spec.rs:179
+#: crates/big-audio-player/src/audio/ui/playlist_panel.rs:103
+msgid "track"
+msgstr "parça"
+
+#: crates/big-audio-player/src/audio/ui/library_tree/view.rs:164
+#: crates/big-audio-player/src/audio/ui/playlist_interactions.rs:292
+#: crates/big-audio-player/src/audio/ui/playlist_library_dialog/spec.rs:181
+#: crates/big-audio-player/src/audio/ui/playlist_panel.rs:105
+msgid "tracks"
+msgstr "parça"
+
+#: crates/big-audio-player/src/audio/ui/library_tree/view.rs:221
+msgid "Music library"
+msgstr "Müzik kütüphanesi"
+
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:49
+msgid "Drag and drop files to create a playlist"
+msgstr "Çalma listesi oluşturmak için dosyaları sürükleyip bırakın"
+
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:53
+msgid "Use the Music tab on the left to browse your library"
+msgstr "Kütüphanenize göz atmak için soldaki Müzik sekmesini kullanın"
+
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:57
+msgid "Explore Radio and Podcasts in the sidebar tabs"
+msgstr "Kenar çubuğu sekmelerinde Radyo ve Podcast'leri keşfedin"
+
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:78
+#: crates/big-audio-player/src/audio/ui/playlist_panel.rs:94
+#: crates/big-audio-player/src/audio/ui/playlist_panel.rs:401
+#: crates/big-video-player/src/video/ui/appearance/layout/buttons_page.rs:42
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/header.rs:24
+#: crates/big-video-player/src/video/ui/video_shell/component.rs:287
+#: crates/big-video-player/src/video/ui/video_shell/component.rs:291
+#: crates/big-video-player/src/video/ui/video_shell/playlist_panel.rs:24
+msgid "Playlist"
+msgstr "Çalma listesi"
+
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:92
+msgid "Main Menu"
+msgstr "Ana menü"
+
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:112
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:203
+msgid "Save Queue as Playlist"
+msgstr "Kuyruğu çalma listesi olarak kaydet"
+
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:113
+msgid "Remove Duplicates"
+msgstr "Yinelenenleri kaldır"
+
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:114
+msgid "Clear Queue"
+msgstr "Kuyruğu temizle"
+
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:120
+#: crates/big-audio-player/src/audio/ui/playlist_library_dialog/spec.rs:105
+msgid "Manage Playlists"
+msgstr "Çalma listelerini yönet"
+
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:130
+#: crates/big-video-player/src/video/ui/video_controls_bar/zones.rs:670
+msgid "Convert…"
+msgstr "Dönüştür…"
+
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:136
+#: crates/big-video-player/src/video/ui/appearance/layout/buttons_page.rs:112
+#: crates/big-video-player/src/video/ui/video_controls_bar/zones.rs:628
+#: crates/big-video-player/src/video/ui/video_shell/panel.rs:46
+#: crates/media-runtime/src/shared/tv_cast.rs:846
+msgid "Play on a TV"
+msgstr "TV'de oynat"
+
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:137
+#: crates/ui/media/big-player-ui/src/smartphone/dialog.rs:29
+msgid "Smartphone"
+msgstr "Akıllı telefon"
+
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:143
+#: crates/big-video-player/src/video/ui/video_shell/panel.rs:576
+#: crates/ui/media/big-player-ui/src/appearance/window.rs:76
+msgid "Appearance"
+msgstr "Görünüm"
+
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:145
+#: crates/big-audio-player/src/audio/ui/shortcuts_dialog.rs:27
+#: crates/big-video-player/src/video/ui/keyboard_shortcuts_dialog.rs:30
+msgid "Keyboard Shortcuts"
+msgstr "Klavye kısayolları"
+
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:146
+#: crates/big-video-player/src/video/ui/video_shell/panel.rs:584
+msgid "About"
+msgstr "Hakkında"
+
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:209
+#: crates/big-audio-player/src/audio/ui/playlist_library_dialog/spec.rs:194
+msgid "Name for the new playlist"
+msgstr "Yeni çalma listesinin adı"
+
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:284
+msgid "Drop tracks here"
+msgstr "Parçaları buraya bırakın"
+
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:285
+msgid "or use ＋ to add from the library"
+msgstr "veya kütüphaneden eklemek için ＋ kullanın"
+
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:311
+msgid "Welcome to Big Audio Player"
+msgstr "Big Audio Player'a hoş geldiniz"
+
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:319
+msgid ""
+"Add a folder with your music files to get started.\n"
+"Supported formats: MP3, FLAC, OGG, M4A, OPUS, WAV and more."
+msgstr ""
+"Başlamak için müzik dosyalarınızın bulunduğu bir klasör ekleyin.\n"
+"Desteklenen biçimler: MP3, FLAC, OGG, M4A, OPUS, WAV ve daha fazlası."
+
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:332
+msgid "Open Files"
+msgstr "Dosyaları aç"
+
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:333
+msgid "Open files"
+msgstr "Dosyaları aç"
+
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:343
+msgid "Open Audio Files"
+msgstr "Ses dosyalarını aç"
+
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:345
+msgid "Audio Files"
+msgstr "Ses dosyaları"
+
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:369
+msgid "Quick tips"
+msgstr "Hızlı ipuçları"
+
+#: crates/big-audio-player/src/audio/ui/playlist_interactions.rs:36
+#: crates/big-audio-player/src/audio/ui/playlist_interactions.rs:38
+msgid "Remove from Queue"
+msgstr "Kuyruktan kaldır"
+
+#: crates/big-audio-player/src/audio/ui/playlist_interactions.rs:59
+msgid "Download Episode…"
+msgstr "Bölümü indir…"
+
+#: crates/big-audio-player/src/audio/ui/playlist_interactions.rs:60
+msgid "Download Episodes…"
+msgstr "Bölümleri indir…"
+
+#: crates/big-audio-player/src/audio/ui/playlist_interactions.rs:205
+msgid "Edit / Convert…"
+msgstr "Düzenle / Dönüştür…"
+
+#: crates/big-audio-player/src/audio/ui/playlist_interactions.rs:237
+msgid "Delete permanently"
+msgstr "Kalıcı olarak sil"
+
+#: crates/big-audio-player/src/audio/ui/playlist_interactions.rs:238
+msgid "Skip trash — cannot be undone"
+msgstr "Çöp kutusunu atla — geri alınamaz"
+
+#: crates/big-audio-player/src/audio/ui/playlist_interactions.rs:245
+msgid "Delete"
+msgstr "Sil"
+
+#: crates/big-audio-player/src/audio/ui/playlist_interactions.rs:274
+#: crates/big-audio-player/src/audio/ui/playlist_interactions.rs:276
+msgid "Delete from Storage"
+msgstr "Depolamadan sil"
+
+#: crates/big-audio-player/src/audio/ui/playlist_interactions.rs:284
+msgid "Move this file to the trash?"
+msgstr "Bu dosya çöp kutusuna taşınsın mı?"
+
+#: crates/big-audio-player/src/audio/ui/playlist_interactions.rs:290
+msgid "Move these files to the trash?"
+msgstr "Bu dosyalar çöp kutusuna taşınsın mı?"
+
+#: crates/big-audio-player/src/audio/ui/playlist_library_dialog.rs:223
+#: crates/big-audio-player/src/audio/ui/unavailable_dialog.rs:353
+msgid "Saved playlists"
+msgstr "Kayıtlı çalma listeleri"
+
+#: crates/big-audio-player/src/audio/ui/playlist_library_dialog.rs:234
+msgid "Import / Export"
+msgstr "İçe / dışa aktar"
+
+#: crates/big-audio-player/src/audio/ui/playlist_library_dialog.rs:259
+#: crates/big-audio-player/src/audio/ui/playlist_library_dialog/spec.rs:192
+msgid "Save Current Queue"
+msgstr "Geçerli kuyruğu kaydet"
+
+#: crates/big-audio-player/src/audio/ui/playlist_library_dialog.rs:280
+msgid "Generate"
+msgstr "Oluştur"
+
+#: crates/big-audio-player/src/audio/ui/playlist_library_dialog.rs:281
+msgid "Build a playlist from your listening stats"
+msgstr "Dinleme istatistiklerinizden bir çalma listesi oluşturun"
+
+#: crates/big-audio-player/src/audio/ui/playlist_library_dialog/spec.rs:88
+msgid "Most Played"
+msgstr "En Çok Çalınanlar"
+
+#: crates/big-audio-player/src/audio/ui/playlist_library_dialog/spec.rs:93
+msgid "Recently Added"
+msgstr "Son Eklenenler"
+
+#: crates/big-audio-player/src/audio/ui/playlist_library_dialog/spec.rs:98
+msgid "Never Played"
+msgstr "Hiç Çalınmayanlar"
+
+#: crates/big-audio-player/src/audio/ui/playlist_library_dialog/spec.rs:106
+#: crates/big-audio-player/src/audio/ui/playlist_library_dialog/spec.rs:115
+msgid "Your Playlists"
+msgstr "Çalma listeleriniz"
+
+#: crates/big-audio-player/src/audio/ui/playlist_library_dialog/spec.rs:129
+msgid "No Saved Playlists"
+msgstr "Kayıtlı çalma listesi yok"
+
+#: crates/big-audio-player/src/audio/ui/playlist_library_dialog/spec.rs:131
+msgid "Save the current queue, generate one from your stats, or import a file"
+msgstr ""
+"Geçerli kuyruğu kaydedin, istatistiklerinizden bir tane oluşturun veya bir "
+"dosya içe aktarın"
+
+#: crates/big-audio-player/src/audio/ui/playlist_library_dialog/spec.rs:140
+msgid "Import File…"
+msgstr "Dosya içe aktar…"
+
+#: crates/big-audio-player/src/audio/ui/playlist_library_dialog/spec.rs:145
+msgid "Import Folder…"
+msgstr "Klasör içe aktar…"
+
+#: crates/big-audio-player/src/audio/ui/playlist_library_dialog/spec.rs:150
+msgid "Export All…"
+msgstr "Tümünü dışa aktar…"
+
+#: crates/big-audio-player/src/audio/ui/playlist_library_dialog/spec.rs:170
+msgid "Load"
+msgstr "Yükle"
+
+#: crates/big-audio-player/src/audio/ui/playlist_library_dialog/spec.rs:171
+msgid "Rename playlist"
+msgstr "Çalma listesini yeniden adlandır"
+
+#: crates/big-audio-player/src/audio/ui/playlist_library_dialog/spec.rs:172
+msgid "Export playlist"
+msgstr "Çalma listesini dışa aktar"
+
+#: crates/big-audio-player/src/audio/ui/playlist_library_dialog/spec.rs:173
+msgid "Delete playlist"
+msgstr "Çalma listesini sil"
+
+#: crates/big-audio-player/src/audio/ui/playlist_library_dialog/spec.rs:186
+msgid "min"
+msgstr "dk"
+
+#: crates/big-audio-player/src/audio/ui/playlist_library_dialog/spec.rs:203
+msgid "Rename Playlist"
+msgstr "Çalma listesini yeniden adlandır"
+
+#: crates/big-audio-player/src/audio/ui/playlist_library_dialog/spec.rs:205
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/fileops.rs:193
+msgid "New name"
+msgstr "Yeni ad"
+
+#: crates/big-audio-player/src/audio/ui/playlist_library_dialog/spec.rs:214
+msgid "Delete Playlist?"
+msgstr "Çalma listesi silinsin mi?"
+
+#: crates/big-audio-player/src/audio/ui/playlist_library_dialog/spec.rs:225
+msgid "This will permanently delete"
+msgstr "Bu işlem kalıcı olarak silecek:"
+
+#: crates/big-audio-player/src/audio/ui/scan_progress.rs:10
+msgid "Scanning the library"
+msgstr "Kütüphane taranıyor"
+
+#: crates/big-audio-player/src/audio/ui/scan_progress.rs:34
+msgid "Reading media information…"
+msgstr "Ortam bilgileri okunuyor…"
+
+#: crates/big-audio-player/src/audio/ui/scan_progress.rs:46
+msgid "Examined"
+msgstr "İncelenen"
+
+#: crates/big-audio-player/src/audio/ui/scan_progress.rs:53
+msgid ""
+"You can keep using the player. Cancelling keeps earlier confirmed imports "
+"and never deletes media files."
+msgstr ""
+"Oynatıcıyı kullanmaya devam edebilirsiniz. İptal etmek daha önce doğrulanan "
+"içe aktarmaları korur ve ortam dosyalarını asla silmez."
+
+#: crates/big-audio-player/src/audio/ui/scan_progress.rs:62
+msgid "Cancel scan"
+msgstr "Taramayı iptal et"
+
+#: crates/big-audio-player/src/audio/ui/track_list.rs:433
+msgid "Playing"
+msgstr "Çalıyor"
+
+#: crates/big-audio-player/src/audio/ui/unavailable_dialog.rs:52
+msgid ""
+"Reconnect external drives before reviewing. Removing records forgets their "
+"ratings and saved playlist links, but never deletes media files or "
+"interrupts current playback."
+msgstr ""
+"Gözden geçirmeden önce harici sürücüleri yeniden bağlayın. Kayıtları "
+"kaldırmak, derecelendirmelerini ve kayıtlı çalma listesi bağlantılarını "
+"unutturur; ancak ortam dosyalarını asla silmez ve geçerli oynatmayı kesmez."
+
+#: crates/big-audio-player/src/audio/ui/unavailable_dialog.rs:60
+#: crates/big-audio-player/src/audio/ui/unavailable_dialog.rs:168
+msgid "Checking the library…"
+msgstr "Kütüphane denetleniyor…"
+
+#: crates/big-audio-player/src/audio/ui/unavailable_dialog.rs:84
+msgid "Restart review"
+msgstr "Gözden geçirmeyi yeniden başlat"
+
+#: crates/big-audio-player/src/audio/ui/unavailable_dialog.rs:85
+msgid "Check again"
+msgstr "Yeniden denetle"
+
+#: crates/big-audio-player/src/audio/ui/unavailable_dialog.rs:86
+msgid "Continue checking"
+msgstr "Denetlemeye devam et"
+
+#: crates/big-audio-player/src/audio/ui/unavailable_dialog.rs:88
+msgid "Remove selected records"
+msgstr "Seçili kayıtları kaldır"
+
+#: crates/big-audio-player/src/audio/ui/unavailable_dialog.rs:183
+msgid ""
+"The library could not be checked completely. Previous results are kept. "
+"Check the drive or database and retry."
+msgstr ""
+"Kütüphane tam olarak denetlenemedi. Önceki sonuçlar korundu. Sürücüyü veya "
+"veri tabanını denetleyip yeniden deneyin."
+
+#: crates/big-audio-player/src/audio/ui/unavailable_dialog.rs:213
+msgid "End of this review snapshot. Restart to include new imports."
+msgstr ""
+"Bu gözden geçirme anlık görüntüsünün sonu. Yeni içe aktarmaları dahil etmek "
+"için yeniden başlatın."
+
+#: crates/big-audio-player/src/audio/ui/unavailable_dialog.rs:215
+msgid "Continue to check the next part of your library."
+msgstr "Kütüphanenizin sonraki bölümünü denetlemeye devam edin."
+
+#: crates/big-audio-player/src/audio/ui/unavailable_dialog.rs:220
+msgid "records checked"
+msgstr "kayıt denetlendi"
+
+#: crates/big-audio-player/src/audio/ui/unavailable_dialog.rs:222
+msgid "records need review"
+msgstr "kayıt gözden geçirme gerektiriyor"
+
+#: crates/big-audio-player/src/audio/ui/unavailable_dialog.rs:239
+msgid "Select the missing records you want to remove."
+msgstr "Kaldırmak istediğiniz eksik kayıtları seçin."
+
+#: crates/big-audio-player/src/audio/ui/unavailable_dialog.rs:247
+msgid "Selected records"
+msgstr "Seçili kayıtlar"
+
+#: crates/big-audio-player/src/audio/ui/unavailable_dialog.rs:250
+msgid ""
+"Their ratings and saved playlist links will be removed. Media files will not "
+"be deleted. A restored file or changed record cancels the whole selection."
+msgstr ""
+"Derecelendirmeleri ve kayıtlı çalma listesi bağlantıları kaldırılacak. Ortam "
+"dosyaları silinmeyecek. Geri yüklenen bir dosya veya değişen bir kayıt, "
+"seçimin tamamını iptal eder."
+
+#: crates/big-audio-player/src/audio/ui/unavailable_dialog.rs:254
+msgid "Remove selected library records?"
+msgstr "Seçili kütüphane kayıtları kaldırılsın mı?"
+
+#: crates/big-audio-player/src/audio/ui/unavailable_dialog.rs:259
+msgid "Remove records"
+msgstr "Kayıtları kaldır"
+
+#: crates/big-audio-player/src/audio/ui/unavailable_dialog.rs:271
+msgid "Rechecking the selection and updating the library…"
+msgstr "Seçim yeniden denetleniyor ve kütüphane güncelleniyor…"
+
+#: crates/big-audio-player/src/audio/ui/unavailable_dialog.rs:296
+msgid ""
+"Removal was not confirmed. A file may be available again or a record "
+"changed. Check again before selecting records."
+msgstr ""
+"Kaldırma doğrulanamadı. Bir dosya yeniden erişilebilir olmuş veya bir kayıt "
+"değişmiş olabilir. Kayıtları seçmeden önce yeniden denetleyin."
+
+#: crates/big-audio-player/src/audio/ui/unavailable_dialog.rs:318
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/header.rs:51
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/header.rs:52
+msgid "Select"
+msgstr "Seç"
+
+#: crates/big-audio-player/src/audio/ui/unavailable_dialog.rs:329
+msgid "Remote or unsupported location — not eligible for removal here"
+msgstr "Uzak veya desteklenmeyen konum — burada kaldırmaya uygun değil"
+
+#: crates/big-video-player/src/lib.rs:26
+msgid "Big Video Player"
+msgstr "Big Video Player"
+
+#: crates/big-video-player/src/video/keybindings.rs:50
+msgid "Increase speed"
+msgstr "Hızı artır"
+
+#: crates/big-video-player/src/video/keybindings.rs:57
+msgid "Decrease speed"
+msgstr "Hızı azalt"
+
+#: crates/big-video-player/src/video/keybindings.rs:64
+msgid "Reset speed to 1×"
+msgstr "Hızı 1×'e sıfırla"
+
+#: crates/big-video-player/src/video/keybindings.rs:71
+#: crates/big-video-player/src/video/keybindings.rs:259
+msgid "Next chapter"
+msgstr "Sonraki bölüm"
+
+#: crates/big-video-player/src/video/keybindings.rs:78
+#: crates/big-video-player/src/video/keybindings.rs:266
+msgid "Previous chapter"
+msgstr "Önceki bölüm"
+
+#: crates/big-video-player/src/video/keybindings.rs:85
+msgid "Next in playlist"
+msgstr "Listede sonraki"
+
+#: crates/big-video-player/src/video/keybindings.rs:92
+msgid "Previous in playlist"
+msgstr "Listede önceki"
+
+#: crates/big-video-player/src/video/keybindings.rs:99
+msgid "Next frame"
+msgstr "Sonraki kare"
+
+#: crates/big-video-player/src/video/keybindings.rs:106
+msgid "Previous frame"
+msgstr "Önceki kare"
+
+#: crates/big-video-player/src/video/keybindings.rs:113
+msgid "Undo last seek"
+msgstr "Son atlamayı geri al"
+
+#: crates/big-video-player/src/video/keybindings.rs:121
+msgid "Toggle fullscreen"
+msgstr "Tam ekranı aç/kapat"
+
+#: crates/big-video-player/src/video/keybindings.rs:122
+#: crates/big-video-player/src/video/keybindings.rs:129
+#: crates/big-video-player/src/video/keybindings.rs:136
+#: crates/big-video-player/src/video/keybindings.rs:143
+#: crates/big-video-player/src/video/keybindings.rs:150
+#: crates/big-video-player/src/video/keybindings.rs:157
+#: crates/big-video-player/src/video/keybindings.rs:164
+#: crates/big-video-player/src/video/keybindings.rs:171
+#: crates/big-video-player/src/video/ui/media_details_dialog.rs:161
+#: crates/big-video-player/src/video/ui/media_details_dialog.rs:300
+#: crates/big-video-player/src/video/ui/preferences/video.rs:19
+msgid "Video"
+msgstr "Video"
+
+#: crates/big-video-player/src/video/keybindings.rs:128
+msgid "Toggle fullscreen (F11)"
+msgstr "Tam ekranı aç/kapat (F11)"
+
+#: crates/big-video-player/src/video/keybindings.rs:135
+msgid "Exit fullscreen"
+msgstr "Tam ekrandan çık"
+
+#: crates/big-video-player/src/video/keybindings.rs:142
+msgid "Toggle deinterlace"
+msgstr "Çapraz taramayı kaldırmayı aç/kapat"
+
+#: crates/big-video-player/src/video/keybindings.rs:149
+msgid "Toggle hardware decoding"
+msgstr "Donanım çözmeyi aç/kapat"
+
+#: crates/big-video-player/src/video/keybindings.rs:156
+msgid "Increase panscan"
+msgstr "Panscan'i artır"
+
+#: crates/big-video-player/src/video/keybindings.rs:163
+msgid "Decrease panscan"
+msgstr "Panscan'i azalt"
+
+#: crates/big-video-player/src/video/keybindings.rs:170
+msgid "Crop video"
+msgstr "Videoyu kırp"
+
+#: crates/big-video-player/src/video/keybindings.rs:178
+msgid "Volume up"
+msgstr "Sesi artır"
+
+#: crates/big-video-player/src/video/keybindings.rs:179
+#: crates/big-video-player/src/video/keybindings.rs:186
+#: crates/big-video-player/src/video/keybindings.rs:193
+#: crates/big-video-player/src/video/keybindings.rs:200
+#: crates/big-video-player/src/video/ui/media_details_dialog.rs:233
+#: crates/big-video-player/src/video/ui/media_details_dialog.rs:315
+#: crates/ui/media/big-player-ui/src/audio_preferences.rs:82
+msgid "Audio"
+msgstr "Ses"
+
+#: crates/big-video-player/src/video/keybindings.rs:185
+msgid "Volume down"
+msgstr "Sesi azalt"
+
+#: crates/big-video-player/src/video/keybindings.rs:192
+msgid "Toggle mute"
+msgstr "Sessize almayı aç/kapat"
+
+#: crates/big-video-player/src/video/keybindings.rs:199
+msgid "Toggle audio passthrough"
+msgstr "Ses geçişini aç/kapat"
+
+#: crates/big-video-player/src/video/keybindings.rs:207
+msgid "Toggle secondary subtitles"
+msgstr "İkincil altyazıları aç/kapat"
+
+#: crates/big-video-player/src/video/keybindings.rs:208
+#: crates/big-video-player/src/video/keybindings.rs:215
+#: crates/big-video-player/src/video/keybindings.rs:222
+#: crates/big-video-player/src/video/keybindings.rs:229
+#: crates/big-video-player/src/video/ui/appearance/layout/buttons_page.rs:98
+#: crates/big-video-player/src/video/ui/preferences/subtitles.rs:19
+#: crates/big-video-player/src/video/ui/video_controls_bar/zones.rs:612
+msgid "Subtitles"
+msgstr "Altyazılar"
+
+#: crates/big-video-player/src/video/keybindings.rs:214
+msgid "Next subtitle"
+msgstr "Sonraki altyazı"
+
+#: crates/big-video-player/src/video/keybindings.rs:221
+msgid "Previous subtitle"
+msgstr "Önceki altyazı"
+
+#: crates/big-video-player/src/video/keybindings.rs:228
+msgid "Cycle Closed Captions"
+msgstr "Gizli altyazılar arasında geçiş yap"
+
+#: crates/big-video-player/src/video/keybindings.rs:236
+#: crates/big-video-player/src/video/ui/video_shell/input_gestures.rs:107
+msgid "Screenshot"
+msgstr "Ekran görüntüsü"
+
+#: crates/big-video-player/src/video/keybindings.rs:237
+#: crates/big-video-player/src/video/ui/preferences/general.rs:154
+msgid "Screenshots"
+msgstr "Ekran görüntüleri"
+
+#: crates/big-video-player/src/video/keybindings.rs:244
+msgid "Toggle shuffle"
+msgstr "Karıştırmayı aç/kapat"
+
+#: crates/big-video-player/src/video/keybindings.rs:251
+msgid "Cycle repeat mode"
+msgstr "Tekrar kipleri arasında geçiş yap"
+
+#: crates/big-video-player/src/video/keybindings.rs:274
+msgid "Open file"
+msgstr "Dosya aç"
+
+#: crates/big-video-player/src/video/keybindings.rs:275
+#: crates/big-video-player/src/video/keybindings.rs:282
+#: crates/big-video-player/src/video/keybindings.rs:289
+#: crates/big-video-player/src/video/keybindings.rs:296
+#: crates/big-video-player/src/video/keybindings.rs:303
+#: crates/big-video-player/src/video/keybindings.rs:311
+#: crates/big-video-player/src/video/keybindings.rs:318
+#: crates/big-video-player/src/video/keybindings.rs:325
+#: crates/big-video-player/src/video/ui/preferences/advanced.rs:222
+msgid "Other"
+msgstr "Diğer"
+
+#: crates/big-video-player/src/video/keybindings.rs:281
+#: crates/big-video-player/src/video/ui/video_shell/actions.rs:138
+#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:154
+msgid "Open URL"
+msgstr "URL aç"
+
+#: crates/big-video-player/src/video/keybindings.rs:288
+msgid "Paste and play"
+msgstr "Yapıştır ve oynat"
+
+#: crates/big-video-player/src/video/keybindings.rs:295
+#: crates/big-video-player/src/video/ui/video_controls_bar.rs:258
+#: crates/big-video-player/src/video/ui/video_controls_bar.rs:259
+msgid "Go to time"
+msgstr "Zamana git"
+
+#: crates/big-video-player/src/video/keybindings.rs:302
+msgid "Cycle edition"
+msgstr "Sürümler arasında geçiş yap"
+
+#: crates/big-video-player/src/video/keybindings.rs:310
+msgid "Toggle files sidebar"
+msgstr "Dosyalar kenar çubuğunu aç/kapat"
+
+#: crates/big-video-player/src/video/keybindings.rs:317
+msgid "Toggle playlist sidebar"
+msgstr "Çalma listesi kenar çubuğunu aç/kapat"
+
+#: crates/big-video-player/src/video/keybindings.rs:324
+msgid "Media information"
+msgstr "Ortam bilgileri"
+
+#: crates/big-video-player/src/video/ui/appearance/layout/buttons_page.rs:28
+#: crates/big-video-player/src/video/ui/video_shell/component.rs:256
+#: crates/big-video-player/src/video/ui/video_shell/component.rs:260
+msgid "Keep Above"
+msgstr "Üstte tut"
+
+#: crates/big-video-player/src/video/ui/appearance/layout/buttons_page.rs:49
+msgid "Menu"
+msgstr "Menü"
+
+#: crates/big-video-player/src/video/ui/appearance/layout/buttons_page.rs:84
+msgid "Play/Pause"
+msgstr "Oynat/Duraklat"
+
+#: crates/big-video-player/src/video/ui/appearance/layout/buttons_page.rs:105
+#: crates/big-video-player/src/video/ui/video_controls_bar/zones.rs:620
+msgid "Audio Track"
+msgstr "Ses izi"
+
+#: crates/big-video-player/src/video/ui/appearance/layout/buttons_page.rs:119
+#: crates/big-video-player/src/video/ui/video_controls_bar/zones.rs:631
+#: crates/big-video-player/src/video/ui/video_shell/input_gestures.rs:106
+msgid "Fullscreen"
+msgstr "Tam ekran"
+
+#: crates/big-video-player/src/video/ui/appearance/layout/buttons_page.rs:146
+msgid "Video Title"
+msgstr "Video başlığı"
+
+#: crates/big-video-player/src/video/ui/appearance/layout/buttons_page.rs:188
+#: crates/big-video-player/src/video/ui/appearance/layout/layout_page.rs:97
+msgid "Buttons"
+msgstr "Düğmeler"
+
+#: crates/big-video-player/src/video/ui/appearance/layout/buttons_page.rs:192
+msgid "Button Layout"
+msgstr "Düğme düzeni"
+
+#: crates/big-video-player/src/video/ui/appearance/layout/buttons_page.rs:194
+msgid "Drag buttons between zones • Click to toggle visibility"
+msgstr ""
+"Düğmeleri bölgeler arasında sürükleyin • Görünürlüğü değiştirmek için "
+"tıklayın"
+
+#: crates/big-video-player/src/video/ui/appearance/layout/layout_page.rs:18
+msgid "Layout"
+msgstr "Düzen"
+
+#: crates/big-video-player/src/video/ui/appearance/layout/layout_page.rs:33
+msgid "Controls Bar"
+msgstr "Denetim çubuğu"
+
+#: crates/big-video-player/src/video/ui/appearance/layout/layout_page.rs:37
+msgid "Corner Radius"
+msgstr "Köşe yarıçapı"
+
+#: crates/big-video-player/src/video/ui/appearance/layout/layout_page.rs:43
+msgid "Bottom Margin"
+msgstr "Alt boşluk"
+
+#: crates/big-video-player/src/video/ui/appearance/layout/layout_page.rs:49
+msgid "Side Margin"
+msgstr "Yan boşluk"
+
+#: crates/big-video-player/src/video/ui/appearance/layout/layout_page.rs:55
+msgid "Padding Top"
+msgstr "Üst iç boşluk"
+
+#: crates/big-video-player/src/video/ui/appearance/layout/layout_page.rs:61
+msgid "Padding Bottom"
+msgstr "Alt iç boşluk"
+
+#: crates/big-video-player/src/video/ui/appearance/layout/layout_page.rs:67
+msgid "Padding Left"
+msgstr "Sol iç boşluk"
+
+#: crates/big-video-player/src/video/ui/appearance/layout/layout_page.rs:73
+msgid "Padding Right"
+msgstr "Sağ iç boşluk"
+
+#: crates/big-video-player/src/video/ui/appearance/layout/layout_page.rs:100
+msgid "Custom Button Size"
+msgstr "Özel düğme boyutu"
+
+#: crates/big-video-player/src/video/ui/appearance/layout/layout_page.rs:106
+msgid "Button Size"
+msgstr "Düğme boyutu"
+
+#: crates/big-video-player/src/video/ui/appearance/layout/layout_page.rs:121
+msgid "Button Border Radius"
+msgstr "Düğme kenarlık yarıçapı"
+
+#: crates/big-video-player/src/video/ui/appearance/layout/layout_page.rs:172
+msgid "Window"
+msgstr "Pencere"
+
+#: crates/big-video-player/src/video/ui/appearance/layout/layout_page.rs:175
+msgid "Custom Window Corner Radius"
+msgstr "Özel pencere köşe yarıçapı"
+
+#: crates/big-video-player/src/video/ui/appearance/layout/layout_page.rs:181
+msgid "Window Corner Radius"
+msgstr "Pencere köşe yarıçapı"
+
+#: crates/big-video-player/src/video/ui/appearance/layout/layout_page.rs:218
+msgid "Window Buttons Follow Custom Size"
+msgstr "Pencere düğmeleri özel boyutu izlesin"
+
+#: crates/big-video-player/src/video/ui/appearance/layout/layout_page.rs:219
+msgid "Also resize the minimize, maximize and close buttons"
+msgstr "Küçült, büyüt ve kapat düğmelerini de yeniden boyutlandırır"
+
+#: crates/big-video-player/src/video/ui/filters/groups_shader.rs:28
+msgid "GPU Processing"
+msgstr "GPU işleme"
+
+#: crates/big-video-player/src/video/ui/filters/groups_shader.rs:34
+msgid "Deband"
+msgstr "Bant giderme"
+
+#: crates/big-video-player/src/video/ui/filters/groups_shader.rs:35
+msgid "Remove color banding artifacts"
+msgstr "Renk bantlanması kusurlarını kaldırır"
+
+#: crates/big-video-player/src/video/ui/filters/groups_shader.rs:41
+msgid "Sigmoid Upscaling"
+msgstr "Sigmoid ölçekleme"
+
+#: crates/big-video-player/src/video/ui/filters/groups_shader.rs:42
+msgid "Reduces ringing when scaling video up"
+msgstr "Video büyütülürken halka etkisini azaltır"
+
+#: crates/big-video-player/src/video/ui/filters/groups_shader.rs:48
+msgid "Correct Downscaling"
+msgstr "Doğru küçültme"
+
+#: crates/big-video-player/src/video/ui/filters/groups_shader.rs:49
+msgid "Higher quality when scaling video down"
+msgstr "Video küçültülürken daha yüksek kalite"
+
+#: crates/big-video-player/src/video/ui/filters/groups_shader.rs:60
+msgid "Sharpen"
+msgstr "Keskinleştir"
+
+#: crates/big-video-player/src/video/ui/filters/groups_shader.rs:61
+msgid "GPU sharpening (unsharp mask)"
+msgstr "GPU keskinleştirme (unsharp mask)"
+
+#: crates/big-video-player/src/video/ui/filters/groups_shader.rs:76
+msgid "Amount"
+msgstr "Miktar"
+
+#: crates/big-video-player/src/video/ui/filters/groups_shader.rs:137
+msgid "GPU Upscaling Shaders"
+msgstr "GPU büyütme gölgelendiricileri"
+
+#: crates/big-video-player/src/video/ui/filters/groups_shader.rs:151
+msgid "Upscaling Shader"
+msgstr "Büyütme gölgelendiricisi"
+
+#: crates/big-video-player/src/video/ui/filters/groups_shader.rs:154
+msgid "FidelityFX Super Resolution (FSR)"
+msgstr "FidelityFX Super Resolution (FSR)"
+
+#: crates/big-video-player/src/video/ui/filters/groups_shader.rs:155
+msgid "CAS Upscaling"
+msgstr "CAS ile büyütme"
+
+#: crates/big-video-player/src/video/ui/filters/groups_shader.rs:159
+msgid ""
+"Enhances image quality when the video resolution is lower than your display"
+msgstr ""
+"Video çözünürlüğü ekranınızdan düşük olduğunda görüntü kalitesini artırır"
+
+#: crates/big-video-player/src/video/ui/filters/groups_shader.rs:180
+msgid "Sharpening Intensity"
+msgstr "Keskinleştirme yoğunluğu"
+
+#: crates/big-video-player/src/video/ui/filters/groups_shader.rs:182
+msgid "Higher values produce a more visible sharpening effect"
+msgstr "Yüksek değerler daha belirgin bir keskinleştirme etkisi üretir"
+
+#: crates/big-video-player/src/video/ui/filters/groups_shader.rs:349
+msgid "Neural Network Upscaling"
+msgstr "Sinir ağıyla büyütme"
+
+#: crates/big-video-player/src/video/ui/filters/groups_shader.rs:358
+msgid "RAVU Neural Upscaler"
+msgstr "RAVU sinirsel büyütücü"
+
+#: crates/big-video-player/src/video/ui/filters/groups_shader.rs:360
+msgid ""
+"Reconstructs detail lost during video compression — uses RAVU r4, the best "
+"fragment-shader neural upscaler available"
+msgstr ""
+"Video sıkıştırması sırasında kaybolan ayrıntıları yeniden oluşturur — mevcut "
+"en iyi parça gölgelendirici tabanlı sinirsel büyütücü olan RAVU r4'ü kullanır"
+
+#: crates/big-video-player/src/video/ui/filters/groups_shader.rs:383
+msgid "Anime / Cartoon Enhancement"
+msgstr "Anime / çizgi film iyileştirme"
+
+#: crates/big-video-player/src/video/ui/filters/groups_shader.rs:394
+msgid "Anime4K Preset"
+msgstr "Anime4K ön ayarı"
+
+#: crates/big-video-player/src/video/ui/filters/groups_shader.rs:396
+msgid "Disabled"
+msgstr "Devre dışı"
+
+#: crates/big-video-player/src/video/ui/filters/groups_shader.rs:397
+msgid "Quality A — Best (1080p sources)"
+msgstr "Kalite A — En iyi (1080p kaynaklar)"
+
+#: crates/big-video-player/src/video/ui/filters/groups_shader.rs:398
+msgid "Quality B — Soft Restore (720p sources)"
+msgstr "Kalite B — Yumuşak onarım (720p kaynaklar)"
+
+#: crates/big-video-player/src/video/ui/filters/groups_shader.rs:399
+msgid "Quality C — Fast (low-end GPU)"
+msgstr "Kalite C — Hızlı (düşük seviye GPU)"
+
+#: crates/big-video-player/src/video/ui/filters/groups_shader.rs:403
+msgid "Select a quality preset — higher quality uses more GPU power"
+msgstr ""
+"Bir kalite ön ayarı seçin — daha yüksek kalite daha fazla GPU gücü kullanır"
+
+#: crates/big-video-player/src/video/ui/filters/groups_shader.rs:424
+msgid "Shaders not installed"
+msgstr "Gölgelendiriciler kurulu değil"
+
+#: crates/big-video-player/src/video/ui/filters/groups_shader.rs:425
+msgid "Install the big-media-runtime package to get built-in shaders"
+msgstr ""
+"Yerleşik gölgelendiricileri almak için big-media-runtime paketini kurun"
+
+#: crates/big-video-player/src/video/ui/filters/groups_shader.rs:433
+msgid "Neural upscaler shaders not installed"
+msgstr "Sinirsel büyütücü gölgelendiricileri kurulu değil"
+
+#: crates/big-video-player/src/video/ui/filters/groups_shader.rs:434
+msgid "Install the big-media-runtime package to get neural upscaling shaders"
+msgstr ""
+"Sinirsel büyütme gölgelendiricilerini almak için big-media-runtime paketini "
+"kurun"
+
+#: crates/big-video-player/src/video/ui/filters/groups_shader.rs:442
+msgid "Anime4K shaders not installed"
+msgstr "Anime4K gölgelendiricileri kurulu değil"
+
+#: crates/big-video-player/src/video/ui/filters/groups_shader.rs:443
+msgid "Install the big-media-runtime package to get Anime4K shaders"
+msgstr ""
+"Anime4K gölgelendiricilerini almak için big-media-runtime paketini kurun"
+
+#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:25
+msgid "Denoise and Sharpen"
+msgstr "Gürültü azaltma ve keskinleştirme"
+
+#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:32
+msgid "Denoise (hqdn3d)"
+msgstr "Gürültü azaltma (hqdn3d)"
+
+#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:33
+msgid "Reduces visual noise and grain from old or low-light footage"
+msgstr ""
+"Eski veya düşük ışıklı görüntülerdeki görsel gürültüyü ve tanecikleri azaltır"
+
+#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:34
+#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:49
+msgid "Strength"
+msgstr "Güç"
+
+#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:47
+msgid "Sharpen (CAS)"
+msgstr "Keskinleştirme (CAS)"
+
+#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:48
+msgid "Software contrast-adaptive sharpening — works at any resolution"
+msgstr ""
+"Yazılımsal karşıtlığa uyarlanır keskinleştirme — her çözünürlükte çalışır"
+
+#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:62
+#: crates/big-video-player/src/video/ui/preferences/subtitles.rs:77
+msgid "Color"
+msgstr "Renk"
+
+#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:69
+msgid "Color Temperature"
+msgstr "Renk sıcaklığı"
+
+#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:70
+msgid "Warm or cool tone (Kelvin)"
+msgstr "Sıcak veya soğuk ton (Kelvin)"
+
+#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:71
+msgid "Temperature"
+msgstr "Sıcaklık"
+
+#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:84
+msgid "Vibrance"
+msgstr "Canlılık"
+
+#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:85
+msgid "Boost color saturation intelligently"
+msgstr "Renk doygunluğunu akıllıca artırır"
+
+#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:86
+msgid "Intensity"
+msgstr "Yoğunluk"
+
+#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:103
+msgid "Colorize"
+msgstr "Renklendir"
+
+#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:104
+msgid "Apply a color tint overlay"
+msgstr "Renk tonu bindirmesi uygular"
+
+#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:114
+#: crates/big-video-player/src/video/ui/media_adjust.rs:633
+msgid "Hue"
+msgstr "Ton"
+
+#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:121
+#: crates/big-video-player/src/video/ui/media_adjust.rs:623
+#: crates/big-video-player/src/video/ui/preferences/advanced.rs:138
+msgid "Saturation"
+msgstr "Doygunluk"
+
+#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:128
+msgid "Mix"
+msgstr "Karışım"
+
+#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:185
+msgid "Monochrome"
+msgstr "Tek renkli"
+
+#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:186
+msgid "Cinematic black and white"
+msgstr "Sinematik siyah beyaz"
+
+#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:206
+msgid "Style Presets"
+msgstr "Stil ön ayarları"
+
+#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:209
+msgid "Color Curves"
+msgstr "Renk eğrileri"
+
+#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:210
+msgid "Predefined color grading looks"
+msgstr "Önceden tanımlı renk derecelendirme görünümleri"
+
+#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:225
+msgid "Preset"
+msgstr "Ön ayar"
+
+#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:227
+msgid "Vintage"
+msgstr "Vintage"
+
+#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:228
+msgid "Cross Process"
+msgstr "Cross Process"
+
+#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:229
+msgid "Darker"
+msgstr "Daha koyu"
+
+#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:230
+msgid "Lighter"
+msgstr "Daha açık"
+
+#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:231
+msgid "More Contrast"
+msgstr "Daha fazla karşıtlık"
+
+#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:232
+msgid "Strong Contrast"
+msgstr "Güçlü karşıtlık"
+
+#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:233
+msgid "Color Negative"
+msgstr "Renk negatifi"
+
+#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:288
+msgid "Vignette"
+msgstr "Vinyet"
+
+#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:289
+msgid "Darken edges of the image"
+msgstr "Görüntünün kenarlarını karartır"
+
+#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:315
+msgid "Pixelize"
+msgstr "Pikselleştir"
+
+#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:316
+msgid "Mosaic / pixel art effect"
+msgstr "Mozaik / piksel sanat efekti"
+
+#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:317
+msgid "Block Size"
+msgstr "Blok boyutu"
+
+#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:329
+msgid "Gaussian Blur"
+msgstr "Gauss bulanıklığı"
+
+#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:330
+msgid "Smooth blur effect"
+msgstr "Yumuşak bulanıklık efekti"
+
+#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:331
+msgid "Sigma"
+msgstr "Sigma"
+
+#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:343
+msgid "Motion Trail"
+msgstr "Hareket izi"
+
+#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:344
+msgid "Slowly fading visual trail effect"
+msgstr "Yavaşça solan görsel iz efekti"
+
+#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:345
+msgid "Decay"
+msgstr "Sönümleme"
+
+#: crates/big-video-player/src/video/ui/iptv/channel_list.rs:78
+msgid "Toggle favorite"
+msgstr "Sık kullanılan olarak işaretle/kaldır"
+
+#: crates/big-video-player/src/video/ui/iptv/channel_list.rs:157
+msgid "No channels"
+msgstr "Kanal yok"
+
+#: crates/big-video-player/src/video/ui/iptv/channel_list.rs:165
+#, rust-format
+msgid "{} channel"
+msgid_plural "{} channels"
+msgstr[0] "{} kanal"
+msgstr[1] "{} kanal"
+
+#: crates/big-video-player/src/video/ui/iptv/channel_list.rs:212
+#: crates/ui/media/big-player-ui/src/radio_panel/methods.rs:126
+msgid "Ungrouped"
+msgstr "Gruplanmamış"
+
+#: crates/big-video-player/src/video/ui/iptv/mod.rs:119
+#: crates/big-video-player/src/video/ui/iptv/mod.rs:135
+msgid "Provider"
+msgstr "Sağlayıcı"
+
+#: crates/big-video-player/src/video/ui/iptv/mod.rs:143
+msgid "Manage…"
+msgstr "Yönet…"
+
+#: crates/big-video-player/src/video/ui/iptv/mod.rs:150
+msgid "Reload from provider"
+msgstr "Sağlayıcıdan yeniden yükle"
+
+#: crates/big-video-player/src/video/ui/iptv/mod.rs:156
+#: crates/big-video-player/src/video/ui/iptv/mod.rs:161
+msgid "Search channels"
+msgstr "Kanallarda ara"
+
+#: crates/big-video-player/src/video/ui/iptv/mod.rs:206
+#: crates/big-video-player/src/video/ui/iptv/mod.rs:282
+msgid "No providers configured. Click “Manage…” to add one."
+msgstr ""
+"Yapılandırılmış sağlayıcı yok. Eklemek için “Yönet…” düğmesine tıklayın."
+
+#: crates/big-video-player/src/video/ui/iptv/mod.rs:236
+msgid "Showing cached channels — updating…"
+msgstr "Önbellekteki kanallar gösteriliyor — güncelleniyor…"
+
+#: crates/big-video-player/src/video/ui/iptv/mod.rs:304
+msgid "Reloading channels…"
+msgstr "Kanallar yeniden yükleniyor…"
+
+#: crates/big-video-player/src/video/ui/iptv/mod.rs:306
+msgid "Loading channels…"
+msgstr "Kanallar yükleniyor…"
+
+#: crates/big-video-player/src/video/ui/iptv/mod.rs:324
+msgid "Could not reach provider — showing cached copy if available."
+msgstr "Sağlayıcıya ulaşılamadı — varsa önbellekteki kopya gösteriliyor."
+
+#: crates/big-video-player/src/video/ui/iptv/providers_dialog.rs:44
+msgid "Add provider"
+msgstr "Sağlayıcı ekle"
+
+#: crates/big-video-player/src/video/ui/iptv/providers_dialog.rs:60
+msgid "IPTV Providers"
+msgstr "IPTV sağlayıcıları"
+
+#: crates/big-video-player/src/video/ui/iptv/providers_dialog.rs:98
+msgid "No providers yet"
+msgstr "Henüz sağlayıcı yok"
+
+#: crates/big-video-player/src/video/ui/iptv/providers_dialog.rs:99
+msgid "Add an IPTV provider to get started"
+msgstr "Başlamak için bir IPTV sağlayıcısı ekleyin"
+
+#: crates/big-video-player/src/video/ui/iptv/providers_dialog.rs:108
+msgid "Edit"
+msgstr "Düzenle"
+
+#: crates/big-video-player/src/video/ui/iptv/providers_dialog.rs:108
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/library.rs:748
+msgid "Remove"
+msgstr "Kaldır"
+
+#: crates/big-video-player/src/video/ui/iptv/providers_dialog.rs:162
+msgid "IPTV Provider"
+msgstr "IPTV sağlayıcısı"
+
+#: crates/big-video-player/src/video/ui/iptv/providers_dialog.rs:223
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/header.rs:167
+msgid "Name"
+msgstr "Ad"
+
+#: crates/big-video-player/src/video/ui/iptv/providers_dialog.rs:232
+msgid "Type"
+msgstr "Tür"
+
+#: crates/big-video-player/src/video/ui/iptv/providers_dialog.rs:234
+msgid "M3U URL"
+msgstr "M3U URL'si"
+
+#: crates/big-video-player/src/video/ui/iptv/providers_dialog.rs:235
+msgid "Local M3U file"
+msgstr "Yerel M3U dosyası"
+
+#: crates/big-video-player/src/video/ui/iptv/providers_dialog.rs:236
+msgid "Xtream Codes"
+msgstr "Xtream Codes"
+
+#: crates/big-video-player/src/video/ui/iptv/providers_dialog.rs:246
+msgid "URL"
+msgstr "URL"
+
+#: crates/big-video-player/src/video/ui/iptv/providers_dialog.rs:250
+msgid "File path"
+msgstr "Dosya yolu"
+
+#: crates/big-video-player/src/video/ui/iptv/providers_dialog.rs:254
+msgid "Server URL"
+msgstr "Sunucu URL'si"
+
+#: crates/big-video-player/src/video/ui/iptv/providers_dialog.rs:255
+msgid "Username"
+msgstr "Kullanıcı adı"
+
+#: crates/big-video-player/src/video/ui/iptv/providers_dialog.rs:257
+msgid "Password"
+msgstr "Parola"
+
+#: crates/big-video-player/src/video/ui/iptv/providers_dialog.rs:281
+msgid "HTTP headers (optional)"
+msgstr "HTTP üstbilgileri (isteğe bağlı)"
+
+#: crates/big-video-player/src/video/ui/iptv/providers_dialog.rs:282
+msgid "User-Agent"
+msgstr "User-Agent"
+
+#: crates/big-video-player/src/video/ui/iptv/providers_dialog.rs:284
+msgid "Referer"
+msgstr "Referer"
+
+#: crates/big-video-player/src/video/ui/keyboard_shortcuts_dialog.rs:64
+msgid "Play, pause, seek and navigate"
+msgstr "Oynat, duraklat, atla ve gezin"
+
+#: crates/big-video-player/src/video/ui/keyboard_shortcuts_dialog.rs:65
+msgid "Chapter, edition and recent files"
+msgstr "Bölüm, sürüm ve son dosyalar"
+
+#: crates/big-video-player/src/video/ui/keyboard_shortcuts_dialog.rs:66
+msgid "Fullscreen, crop, aspect ratio"
+msgstr "Tam ekran, kırpma, en/boy oranı"
+
+#: crates/big-video-player/src/video/ui/keyboard_shortcuts_dialog.rs:67
+msgid "Volume and audio track switching"
+msgstr "Ses düzeyi ve ses izi değiştirme"
+
+#: crates/big-video-player/src/video/ui/keyboard_shortcuts_dialog.rs:68
+msgid "Subtitle track selection and timing"
+msgstr "Altyazı izi seçimi ve zamanlaması"
+
+#: crates/big-video-player/src/video/ui/keyboard_shortcuts_dialog.rs:69
+msgid "Capture still frames"
+msgstr "Sabit kareleri yakala"
+
+#: crates/big-video-player/src/video/ui/keyboard_shortcuts_dialog.rs:70
+msgid "Music-mode specific controls"
+msgstr "Müzik kipine özgü denetimler"
+
+#: crates/big-video-player/src/video/ui/keyboard_shortcuts_dialog.rs:71
+msgid "Miscellaneous shortcuts"
+msgstr "Çeşitli kısayollar"
+
+#: crates/big-video-player/src/video/ui/media_adjust.rs:116
+#: crates/big-video-player/src/video/ui/preferences/advanced.rs:65
+#: crates/big-video-player/src/video/ui/preferences/advanced.rs:101
+#: crates/big-video-player/src/video/ui/preferences/video.rs:54
+#: crates/big-video-player/src/video/ui/preferences/video.rs:87
+#: crates/ui/media/big-player-ui/src/audio_preferences.rs:168
+#: crates/ui/media/big-player-ui/src/audio_preferences.rs:179
+msgid "Automatic"
+msgstr "Otomatik"
+
+#: crates/big-video-player/src/video/ui/media_adjust.rs:117
+#: crates/big-video-player/src/video/ui/media_details_dialog.rs:216
+#: crates/big-video-player/src/video/ui/video_shell/input_gestures.rs:112
+#: crates/big-video-player/src/video/ui/video_shell/panel.rs:39
+#: crates/big-video-player/src/video/ui/video_shell/panel.rs:440
+msgid "HDR"
+msgstr "HDR"
+
+#: crates/big-video-player/src/video/ui/media_adjust.rs:118
+msgid "HDR (TV)"
+msgstr "HDR (TV)"
+
+#: crates/big-video-player/src/video/ui/media_adjust.rs:119
+#: crates/big-video-player/src/video/ui/video_shell/adjustments.rs:175
+#: crates/big-video-player/src/video/ui/video_shell/panel.rs:431
+#: crates/media-runtime/src/shared/audio_effects.rs:186
+msgid "Normal"
+msgstr "Normal"
+
+#: crates/big-video-player/src/video/ui/media_adjust.rs:183
+#: crates/big-video-player/src/video/ui/video_controls_bar/tracks.rs:80
+msgid "Subtitles early or late"
+msgstr "Altyazı erken veya geç"
+
+#: crates/big-video-player/src/video/ui/media_adjust.rs:184
+msgid "When the text shows before or after the speech. More = later"
+msgstr "Metnin konuşmadan önce ya da sonra görünmesi. Daha fazla = daha geç"
+
+#: crates/big-video-player/src/video/ui/media_adjust.rs:190
+msgid "Sound early or late"
+msgstr "Ses erken veya geç"
+
+#: crates/big-video-player/src/video/ui/media_adjust.rs:191
+msgid "When voices do not match the lips. More = later"
+msgstr "Sesler dudaklarla uyuşmadığında. Daha fazla = daha geç"
+
+#: crates/big-video-player/src/video/ui/media_adjust.rs:205
+msgid "Reset to zero"
+msgstr "Sıfıra sıfırla"
+
+#: crates/big-video-player/src/video/ui/media_adjust.rs:245
+msgid "Reset"
+msgstr "Sıfırla"
+
+#: crates/big-video-player/src/video/ui/media_adjust.rs:292
+msgid "Uses what the file says"
+msgstr "Dosyanın bildirdiğini kullanır"
+
+#: crates/big-video-player/src/video/ui/media_adjust.rs:293
+msgid "For a picture that looks grey and washed out"
+msgstr "Gri ve solgun görünen bir görüntü için"
+
+#: crates/big-video-player/src/video/ui/media_adjust.rs:294
+msgid "For some TV broadcasts (HLG)"
+msgstr "Bazı TV yayınları için (HLG)"
+
+#: crates/big-video-player/src/video/ui/media_adjust.rs:295
+msgid "Plain colours (SDR)"
+msgstr "Düz renkler (SDR)"
+
+#: crates/big-video-player/src/video/ui/media_adjust.rs:352
+msgid "Transform"
+msgstr "Dönüştür"
+
+#: crates/big-video-player/src/video/ui/media_adjust.rs:356
+msgid "Rotation"
+msgstr "Döndürme"
+
+#: crates/big-video-player/src/video/ui/media_adjust.rs:371
+msgid "Rotate Left"
+msgstr "Sola döndür"
+
+#: crates/big-video-player/src/video/ui/media_adjust.rs:376
+msgid "Reset Rotation"
+msgstr "Döndürmeyi sıfırla"
+
+#: crates/big-video-player/src/video/ui/media_adjust.rs:381
+msgid "Rotate Right"
+msgstr "Sağa döndür"
+
+#: crates/big-video-player/src/video/ui/media_adjust.rs:418
+msgid "Flip"
+msgstr "Çevir"
+
+#: crates/big-video-player/src/video/ui/media_adjust.rs:425
+msgid "Horizontal"
+msgstr "Yatay"
+
+#: crates/big-video-player/src/video/ui/media_adjust.rs:430
+msgid "Vertical"
+msgstr "Dikey"
+
+#: crates/big-video-player/src/video/ui/media_adjust.rs:464
+msgid "Crop"
+msgstr "Kırp"
+
+#: crates/big-video-player/src/video/ui/media_adjust.rs:469
+#: crates/big-video-player/src/video/ui/media_adjust.rs:475
+msgid "Left"
+msgstr "Sol"
+
+#: crates/big-video-player/src/video/ui/media_adjust.rs:470
+#: crates/big-video-player/src/video/ui/media_adjust.rs:476
+msgid "Right"
+msgstr "Sağ"
+
+#: crates/big-video-player/src/video/ui/media_adjust.rs:471
+#: crates/big-video-player/src/video/ui/media_adjust.rs:477
+msgid "Top"
+msgstr "Üst"
+
+#: crates/big-video-player/src/video/ui/media_adjust.rs:472
+#: crates/big-video-player/src/video/ui/media_adjust.rs:478
+msgid "Bottom"
+msgstr "Alt"
+
+#: crates/big-video-player/src/video/ui/media_adjust.rs:488
+msgid "Reset crop"
+msgstr "Kırpmayı sıfırla"
+
+#: crates/big-video-player/src/video/ui/media_adjust.rs:593
+msgid "Contrast"
+msgstr "Karşıtlık"
+
+#: crates/big-video-player/src/video/ui/media_adjust.rs:603
+msgid "Brightness"
+msgstr "Parlaklık"
+
+#: crates/big-video-player/src/video/ui/media_adjust.rs:613
+msgid "Gamma"
+msgstr "Gama"
+
+#: crates/big-video-player/src/video/ui/media_adjust.rs:659
+msgid "Zoom"
+msgstr "Yakınlaştırma"
+
+#: crates/big-video-player/src/video/ui/media_adjust.rs:669
+msgid "Fill the window"
+msgstr "Pencereyi doldur"
+
+#: crates/big-video-player/src/video/ui/media_details_dialog.rs:33
+#: crates/ui/media/big-media-components/src/media/file_metadata_dialog.rs:53
+msgid "Copy"
+msgstr "Kopyala"
+
+#: crates/big-video-player/src/video/ui/media_details_dialog.rs:42
+msgid "Media Information"
+msgstr "Ortam bilgileri"
+
+#: crates/big-video-player/src/video/ui/media_details_dialog.rs:50
+#: crates/ui/media/big-media-components/src/media/file_metadata_dialog.rs:54
+msgid "Copy All"
+msgstr "Tümünü kopyala"
+
+#: crates/big-video-player/src/video/ui/media_details_dialog.rs:77
+#: crates/big-video-player/src/video/ui/preferences/general.rs:19
+msgid "General"
+msgstr "Genel"
+
+#: crates/big-video-player/src/video/ui/media_details_dialog.rs:122
+#: crates/big-video-player/src/video/ui/video_shell/panel.rs:44
+#: crates/big-video-player/src/video/ui/video_shell/panel.rs:477
+msgid "Chapters"
+msgstr "Bölümler"
+
+#: crates/big-video-player/src/video/ui/media_details_dialog.rs:162
+#: crates/big-video-player/src/video/ui/media_details_dialog.rs:234
+#: crates/media-runtime/src/media/metadata_cache/detailed_video_metadata.rs:90
+#: crates/media-runtime/src/media/metadata_cache/detailed_video_metadata.rs:123
+#: crates/media-runtime/src/media/metadata_cache/detailed_video_metadata.rs:168
+#: crates/ui/media/big-media-components/src/media/file_metadata_dialog.rs:64
+msgid "Codec"
+msgstr "Kodek"
+
+#: crates/big-video-player/src/video/ui/media_details_dialog.rs:165
+#: crates/media-runtime/src/media/metadata_cache/detailed_video_metadata.rs:93
+#: crates/media-runtime/src/shared/tv_cast.rs:488
+#: crates/ui/media/big-media-components/src/media/file_metadata_dialog.rs:66
+msgid "Resolution"
+msgstr "Çözünürlük"
+
+#: crates/big-video-player/src/video/ui/media_details_dialog.rs:173
+#: crates/media-runtime/src/media/metadata_cache/detailed_video_metadata.rs:100
+#: crates/ui/media/big-media-components/src/media/file_metadata_dialog.rs:68
+msgid "Frame Rate"
+msgstr "Kare hızı"
+
+#: crates/big-video-player/src/video/ui/media_details_dialog.rs:188
+msgid "Software"
+msgstr "Yazılım"
+
+#: crates/big-video-player/src/video/ui/media_details_dialog.rs:193
+msgid "Hardware Decoder"
+msgstr "Donanım çözücü"
+
+#: crates/big-video-player/src/video/ui/media_details_dialog.rs:200
+#: crates/media-runtime/src/media/metadata_cache/detailed_video_metadata.rs:103
+#: crates/ui/media/big-media-components/src/media/file_metadata_dialog.rs:67
+msgid "Pixel Format"
+msgstr "Piksel biçimi"
+
+#: crates/big-video-player/src/video/ui/media_details_dialog.rs:207
+msgid "Colorspace"
+msgstr "Renk uzayı"
+
+#: crates/big-video-player/src/video/ui/media_details_dialog.rs:211
+msgid "Primaries"
+msgstr "Ana renkler"
+
+#: crates/big-video-player/src/video/ui/media_details_dialog.rs:218
+msgid "Transfer"
+msgstr "Aktarım"
+
+#: crates/big-video-player/src/video/ui/media_details_dialog.rs:276
+msgid "Streaming"
+msgstr "Akış"
+
+#: crates/big-video-player/src/video/ui/media_details_dialog.rs:278
+msgid "Cache"
+msgstr "Önbellek"
+
+#: crates/big-video-player/src/video/ui/media_details_dialog.rs:297
+msgid "Video Tracks"
+msgstr "Video izleri"
+
+#: crates/big-video-player/src/video/ui/media_details_dialog.rs:311
+msgid "Audio Tracks"
+msgstr "Ses izleri"
+
+#: crates/big-video-player/src/video/ui/media_details_dialog.rs:324
+msgid "Subtitle Tracks"
+msgstr "Altyazı izleri"
+
+#: crates/big-video-player/src/video/ui/media_details_dialog.rs:325
+#: crates/big-video-player/src/video/ui/video_controls_bar/tracks.rs:246
+msgid "external"
+msgstr "harici"
+
+#: crates/big-video-player/src/video/ui/media_details_dialog.rs:338
+msgid "Subtitle"
+msgstr "Altyazı"
+
+#: crates/big-video-player/src/video/ui/menu_dialogs.rs:54
+msgid "Go to Time"
+msgstr "Zamana git"
+
+#: crates/big-video-player/src/video/ui/menu_dialogs.rs:62
+msgid "Use H:MM:SS, M:SS, or seconds."
+msgstr "H:MM:SS, M:SS veya saniye kullanın."
+
+#: crates/big-video-player/src/video/ui/menu_dialogs.rs:65
+msgid "Playback time"
+msgstr "Oynatma süresi"
+
+#: crates/big-video-player/src/video/ui/menu_dialogs.rs:72
+msgid "Go"
+msgstr "Git"
+
+#: crates/big-video-player/src/video/ui/menu_dialogs.rs:130
+msgid "Screenshot queue is full; wait for pending captures"
+msgstr "Ekran görüntüsü kuyruğu dolu; bekleyen yakalamaları bekleyin"
+
+#: crates/big-video-player/src/video/ui/menu_dialogs.rs:134
+#: crates/big-video-player/src/video/ui/menu_dialogs.rs:138
+#: crates/big-video-player/src/video/ui/menu_dialogs.rs:149
+#: crates/big-video-player/src/video/ui/video_shell/component.rs:728
+#: crates/big-video-player/src/video/ui/video_shell/playback.rs:153
+msgid "Screenshot failed"
+msgstr "Ekran görüntüsü alınamadı"
+
+#: crates/big-video-player/src/video/ui/menu_dialogs.rs:314
+#: crates/media-runtime/src/player/mpv_backend/backend/mod.rs:292
+msgid "Chapter"
+msgstr "Bölüm"
+
+#: crates/big-video-player/src/video/ui/menu_dialogs.rs:335
+msgid "Screenshot saved"
+msgstr "Ekran görüntüsü kaydedildi"
+
+#: crates/big-video-player/src/video/ui/menu_dialogs.rs:337
+msgid "Screenshot saved; disk synchronization could not be confirmed"
+msgstr "Ekran görüntüsü kaydedildi; disk eşzamanlaması doğrulanamadı"
+
+#: crates/big-video-player/src/video/ui/preferences/advanced.rs:23
+msgid "Advanced"
+msgstr "Gelişmiş"
+
+#: crates/big-video-player/src/video/ui/preferences/advanced.rs:26
+msgid ""
+"Technical options for experienced users. The defaults work well for most "
+"videos and computers."
+msgstr ""
+"Deneyimli kullanıcılar için teknik seçenekler. Varsayılanlar çoğu video ve "
+"bilgisayar için iyi çalışır."
+
+#: crates/big-video-player/src/video/ui/preferences/advanced.rs:57
+msgid "HDR Video"
+msgstr "HDR video"
+
+#: crates/big-video-player/src/video/ui/preferences/advanced.rs:58
+msgid "How bright HDR video is fitted to your screen"
+msgstr "HDR videonun parlaklığının ekranınıza nasıl uyarlanacağı"
+
+#: crates/big-video-player/src/video/ui/preferences/advanced.rs:62
+msgid "Tone Mapping"
+msgstr "Ton eşleme"
+
+#: crates/big-video-player/src/video/ui/preferences/advanced.rs:70
+#: crates/big-video-player/src/video/ui/preferences/advanced.rs:102
+msgid "Clip"
+msgstr "Kırpma"
+
+#: crates/big-video-player/src/video/ui/preferences/advanced.rs:79
+msgid "Adapt to Each Scene"
+msgstr "Her sahneye uyarla"
+
+#: crates/big-video-player/src/video/ui/preferences/advanced.rs:80
+msgid "Measures the brightness of every scene; uses more graphics power"
+msgstr "Her sahnenin parlaklığını ölçer; daha fazla grafik gücü kullanır"
+
+#: crates/big-video-player/src/video/ui/preferences/advanced.rs:87
+msgid "Screen Peak Brightness"
+msgstr "Ekran tepe parlaklığı"
+
+#: crates/big-video-player/src/video/ui/preferences/advanced.rs:88
+msgid "In nits; 0 detects it automatically"
+msgstr "Nit cinsinden; 0 otomatik algılar"
+
+#: crates/big-video-player/src/video/ui/preferences/advanced.rs:98
+msgid "Out-of-Range Colors"
+msgstr "Aralık dışı renkler"
+
+#: crates/big-video-player/src/video/ui/preferences/advanced.rs:99
+msgid "How colors your screen cannot show are handled"
+msgstr "Ekranınızın gösteremediği renklerin nasıl işleneceği"
+
+#: crates/big-video-player/src/video/ui/preferences/advanced.rs:103
+msgid "Desaturate"
+msgstr "Doygunluğu azalt"
+
+#: crates/big-video-player/src/video/ui/preferences/advanced.rs:104
+msgid "Highlight"
+msgstr "Vurgula"
+
+#: crates/big-video-player/src/video/ui/preferences/advanced.rs:117
+msgid "Color Management"
+msgstr "Renk yönetimi"
+
+#: crates/big-video-player/src/video/ui/preferences/advanced.rs:119
+msgid ""
+"Uses a monitor color profile (ICC) for accurate colors. Enter the path to "
+"an .icc or .icm file and press Enter; leave it empty to turn this off."
+msgstr ""
+"Doğru renkler için bir monitör renk profili (ICC) kullanır. Bir .icc "
+"veya .icm dosyasının yolunu girip Enter'a basın; kapatmak için boş bırakın."
+
+#: crates/big-video-player/src/video/ui/preferences/advanced.rs:124
+msgid "Profile File"
+msgstr "Profil dosyası"
+
+#: crates/big-video-player/src/video/ui/preferences/advanced.rs:133
+msgid "Rendering Intent"
+msgstr "Oluşturma amacı"
+
+#: crates/big-video-player/src/video/ui/preferences/advanced.rs:136
+msgid "Perceptual"
+msgstr "Algısal"
+
+#: crates/big-video-player/src/video/ui/preferences/advanced.rs:137
+msgid "Relative"
+msgstr "Göreli"
+
+#: crates/big-video-player/src/video/ui/preferences/advanced.rs:139
+msgid "Absolute"
+msgstr "Mutlak"
+
+#: crates/big-video-player/src/video/ui/preferences/advanced.rs:155
+msgid "Streaming and Cache"
+msgstr "Akış ve önbellek"
+
+#: crates/big-video-player/src/video/ui/preferences/advanced.rs:157
+msgid "Loads media ahead of time to avoid pauses on slow networks"
+msgstr "Yavaş ağlarda duraklamaları önlemek için ortamı önceden yükler"
+
+#: crates/big-video-player/src/video/ui/preferences/advanced.rs:162
+msgid "Load Ahead"
+msgstr "Önceden yükle"
+
+#: crates/big-video-player/src/video/ui/preferences/advanced.rs:170
+msgid "How Far Ahead"
+msgstr "Ne kadar önceden"
+
+#: crates/big-video-player/src/video/ui/preferences/advanced.rs:171
+msgid "In seconds"
+msgstr "Saniye cinsinden"
+
+#: crates/big-video-player/src/video/ui/preferences/advanced.rs:181
+msgid "Wait Instead of Stuttering"
+msgstr "Takılmak yerine bekle"
+
+#: crates/big-video-player/src/video/ui/preferences/advanced.rs:182
+msgid "Pauses until enough is loaded to keep playing smoothly"
+msgstr "Sorunsuz oynatmayı sürdürmek için yeterince yüklenene kadar duraklar"
+
+#: crates/big-video-player/src/video/ui/preferences/advanced.rs:189
+msgid "Keep on Disk"
+msgstr "Diskte tut"
+
+#: crates/big-video-player/src/video/ui/preferences/advanced.rs:190
+msgid "Uses disk space instead of memory; useful for very long streams"
+msgstr "Bellek yerine disk alanı kullanır; çok uzun akışlar için yararlıdır"
+
+#: crates/big-video-player/src/video/ui/preferences/advanced.rs:207
+msgid "Read Ahead in the File"
+msgstr "Dosyada ileri oku"
+
+#: crates/big-video-player/src/video/ui/preferences/advanced.rs:208
+msgid "Seconds of the file read in advance, also for local files"
+msgstr "Dosyanın önceden okunan saniyeleri; yerel dosyalar için de geçerlidir"
+
+#: crates/big-video-player/src/video/ui/preferences/advanced.rs:226
+msgid "Pause on the Final Frame"
+msgstr "Son karede duraklat"
+
+#: crates/big-video-player/src/video/ui/preferences/advanced.rs:227
+msgid ""
+"When the player stops at the end of a video; off lets seeking back resume "
+"playback"
+msgstr ""
+"Oynatıcının bir videonun sonunda durması; kapalıyken geri sarmak oynatmayı "
+"sürdürür"
+
+#: crates/big-video-player/src/video/ui/preferences/advanced.rs:234
+msgid "Screenshot Compression"
+msgstr "Ekran görüntüsü sıkıştırması"
+
+#: crates/big-video-player/src/video/ui/preferences/advanced.rs:235
+msgid "Higher values make smaller PNG files but take longer to save"
+msgstr ""
+"Yüksek değerler daha küçük PNG dosyaları üretir ama kaydetmek daha uzun sürer"
+
+#: crates/big-video-player/src/video/ui/preferences/advanced.rs:245
+msgid "Screenshot Color Profile"
+msgstr "Ekran görüntüsü renk profili"
+
+#: crates/big-video-player/src/video/ui/preferences/advanced.rs:246
+msgid "Stores the video color space in each screenshot"
+msgstr "Videonun renk uzayını her ekran görüntüsünde saklar"
+
+#: crates/big-video-player/src/video/ui/preferences/advanced.rs:253
+msgid "High Bit Depth Screenshots"
+msgstr "Yüksek bit derinlikli ekran görüntüleri"
+
+#: crates/big-video-player/src/video/ui/preferences/advanced.rs:254
+msgid "Keeps more color precision; files get larger"
+msgstr "Daha fazla renk hassasiyeti korur; dosyalar büyür"
+
+#: crates/big-video-player/src/video/ui/preferences/advanced.rs:264
+msgid "Custom Shaders"
+msgstr "Özel gölgelendiriciler"
+
+#: crates/big-video-player/src/video/ui/preferences/advanced.rs:266
+msgid "Paths to .glsl files, separated by commas. Press Enter to apply."
+msgstr ""
+"Virgüllerle ayrılmış .glsl dosyalarının yolları. Uygulamak için Enter'a "
+"basın."
+
+#: crates/big-video-player/src/video/ui/preferences/advanced.rs:269
+msgid "Shader Files"
+msgstr "Gölgelendirici dosyaları"
+
+#: crates/big-video-player/src/video/ui/preferences/advanced.rs:285
+msgid "mpv Options"
+msgstr "mpv seçenekleri"
+
+#: crates/big-video-player/src/video/ui/preferences/advanced.rs:287
+msgid ""
+"Extra key=value options, separated by commas. They take effect after "
+"reopening the player."
+msgstr ""
+"Virgüllerle ayrılmış ek anahtar=değer seçenekleri. Oynatıcı yeniden "
+"açıldıktan sonra etkili olur."
+
+#: crates/big-video-player/src/video/ui/preferences/advanced.rs:292
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/header.rs:216
+msgid "Options"
+msgstr "Seçenekler"
+
+#: crates/big-video-player/src/video/ui/preferences/general.rs:29
+msgid "Reopen files at the point where you stopped watching"
+msgstr "Dosyaları izlemeyi bıraktığınız yerden yeniden açar"
+
+#: crates/big-video-player/src/video/ui/preferences/general.rs:40
+msgid "Current video"
+msgstr "Geçerli video"
+
+#: crates/big-video-player/src/video/ui/preferences/general.rs:41
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/header.rs:198
+msgid "Whole playlist"
+msgstr "Tüm çalma listesi"
+
+#: crates/big-video-player/src/video/ui/preferences/general.rs:51
+msgid "When Playback Ends"
+msgstr "Oynatma bittiğinde"
+
+#: crates/big-video-player/src/video/ui/preferences/general.rs:53
+msgid "Playlist videos play one after another unless they stop after each"
+msgstr ""
+"Çalma listesindeki videolar, her birinden sonra durmadıkça art arda oynatılır"
+
+#: crates/big-video-player/src/video/ui/preferences/general.rs:58
+msgid "When a Video Ends"
+msgstr "Bir video bittiğinde"
+
+#: crates/big-video-player/src/video/ui/preferences/general.rs:61
+msgid "Keep the last frame"
+msgstr "Son kareyi koru"
+
+#: crates/big-video-player/src/video/ui/preferences/general.rs:62
+msgid "Stop after each"
+msgstr "Her birinden sonra dur"
+
+#: crates/big-video-player/src/video/ui/preferences/general.rs:63
+msgid "Close the video"
+msgstr "Videoyu kapat"
+
+#: crates/big-video-player/src/video/ui/preferences/general.rs:73
+msgid "When the Playlist Finishes"
+msgstr "Çalma listesi bittiğinde"
+
+#: crates/big-video-player/src/video/ui/preferences/general.rs:74
+msgid "Used only when the video closes"
+msgstr "Yalnızca video kapandığında kullanılır"
+
+#: crates/big-video-player/src/video/ui/preferences/general.rs:76
+msgid "Stay open"
+msgstr "Açık kalsın"
+
+#: crates/big-video-player/src/video/ui/preferences/general.rs:77
+#: crates/media-runtime/src/shared/sleep_timer.rs:13
+msgid "Close the player"
+msgstr "Oynatıcıyı kapat"
+
+#: crates/big-video-player/src/video/ui/preferences/general.rs:78
+msgid "Close after one playlist"
+msgstr "Bir çalma listesinden sonra kapat"
+
+#: crates/big-video-player/src/video/ui/preferences/general.rs:102
+msgid "Window and Screen"
+msgstr "Pencere ve ekran"
+
+#: crates/big-video-player/src/video/ui/preferences/general.rs:106
+msgid "Keep the Screen On"
+msgstr "Ekranı açık tut"
+
+#: crates/big-video-player/src/video/ui/preferences/general.rs:107
+msgid "Stops the screen from dimming or locking"
+msgstr "Ekranın kararmasını veya kilitlenmesini engeller"
+
+#: crates/big-video-player/src/video/ui/preferences/general.rs:108
+msgid "During playback"
+msgstr "Oynatma sırasında"
+
+#: crates/big-video-player/src/video/ui/preferences/general.rs:108
+msgid "Always"
+msgstr "Her zaman"
+
+#: crates/big-video-player/src/video/ui/preferences/general.rs:108
+#: crates/big-video-player/src/video/ui/preferences/subtitles.rs:45
+msgid "Never"
+msgstr "Asla"
+
+#: crates/big-video-player/src/video/ui/preferences/general.rs:118
+msgid "Fit Window to Video"
+msgstr "Pencereyi videoya sığdır"
+
+#: crates/big-video-player/src/video/ui/preferences/general.rs:119
+msgid "Keeps the window in the video's proportions, without black bars"
+msgstr "Pencereyi siyah çubuklar olmadan videonun oranlarında tutar"
+
+#: crates/big-video-player/src/video/ui/preferences/general.rs:127
+msgid "Preview While Seeking"
+msgstr "Atlarken önizleme"
+
+#: crates/big-video-player/src/video/ui/preferences/general.rs:128
+msgid "Show a thumbnail of the video when pointing at the progress bar"
+msgstr ""
+"İlerleme çubuğunun üzerine gelindiğinde videonun küçük bir resmini gösterir"
+
+#: crates/big-video-player/src/video/ui/preferences/general.rs:139
+msgid "Restore Default Settings…"
+msgstr "Varsayılan ayarları geri yükle…"
+
+#: crates/big-video-player/src/video/ui/preferences/general.rs:165
+msgid "Save To"
+msgstr "Kaydedilecek yer"
+
+#: crates/big-video-player/src/video/ui/preferences/general.rs:170
+msgid "Choose Folder"
+msgstr "Klasör seç"
+
+#: crates/big-video-player/src/video/ui/preferences/general.rs:175
+msgid "Use the Pictures Folder"
+msgstr "Resimler klasörünü kullan"
+
+#: crates/big-video-player/src/video/ui/preferences/general.rs:190
+msgid "Pictures folder"
+msgstr "Resimler klasörü"
+
+#: crates/big-video-player/src/video/ui/preferences/general.rs:217
+msgid "Screenshot Folder"
+msgstr "Ekran görüntüsü klasörü"
+
+#: crates/big-video-player/src/video/ui/preferences/subtitles.rs:24
+msgid "Language and Files"
+msgstr "Dil ve dosyalar"
+
+#: crates/big-video-player/src/video/ui/preferences/subtitles.rs:26
+msgid ""
+"Use language codes separated by commas, in order of preference, such as pt,en"
+msgstr ""
+"Tercih sırasına göre, virgülle ayrılmış dil kodları kullanın; örneğin tr,en"
+
+#: crates/big-video-player/src/video/ui/preferences/subtitles.rs:31
+#: crates/ui/media/big-player-ui/src/audio_preferences.rs:148
+msgid "Preferred Languages"
+msgstr "Tercih edilen diller"
+
+#: crates/big-video-player/src/video/ui/preferences/subtitles.rs:39
+msgid "Load Subtitle Files"
+msgstr "Altyazı dosyalarını yükle"
+
+#: crates/big-video-player/src/video/ui/preferences/subtitles.rs:40
+msgid "Subtitle files found in the same folder as the video"
+msgstr "Videoyla aynı klasörde bulunan altyazı dosyaları"
+
+#: crates/big-video-player/src/video/ui/preferences/subtitles.rs:42
+msgid "Similar name"
+msgstr "Benzer ad"
+
+#: crates/big-video-player/src/video/ui/preferences/subtitles.rs:43
+msgid "Exact name"
+msgstr "Tam ad"
+
+#: crates/big-video-player/src/video/ui/preferences/subtitles.rs:44
+msgid "All in the folder"
+msgstr "Klasördeki tümü"
+
+#: crates/big-video-player/src/video/ui/preferences/subtitles.rs:54
+msgid "Text"
+msgstr "Metin"
+
+#: crates/big-video-player/src/video/ui/preferences/subtitles.rs:58
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/header.rs:169
+msgid "Size"
+msgstr "Boyut"
+
+#: crates/big-video-player/src/video/ui/preferences/subtitles.rs:69
+msgid "Bold"
+msgstr "Kalın"
+
+#: crates/big-video-player/src/video/ui/preferences/subtitles.rs:70
+msgid "Thicker letters are easier to read"
+msgstr "Kalın harfler daha kolay okunur"
+
+#: crates/big-video-player/src/video/ui/preferences/subtitles.rs:86
+msgid "Outline and Shadow"
+msgstr "Dış çizgi ve gölge"
+
+#: crates/big-video-player/src/video/ui/preferences/subtitles.rs:87
+msgid "An outline keeps text readable over bright scenes"
+msgstr "Dış çizgi, metnin parlak sahnelerde okunabilir kalmasını sağlar"
+
+#: crates/big-video-player/src/video/ui/preferences/subtitles.rs:91
+msgid "Style"
+msgstr "Stil"
+
+#: crates/big-video-player/src/video/ui/preferences/subtitles.rs:94
+msgid "Outline and shadow"
+msgstr "Dış çizgi ve gölge"
+
+#: crates/big-video-player/src/video/ui/preferences/subtitles.rs:95
+msgid "Solid box"
+msgstr "Düz kutu"
+
+#: crates/big-video-player/src/video/ui/preferences/subtitles.rs:96
+msgid "Box behind the text"
+msgstr "Metnin arkasında kutu"
+
+#: crates/big-video-player/src/video/ui/preferences/subtitles.rs:105
+msgid "Outline Thickness"
+msgstr "Dış çizgi kalınlığı"
+
+#: crates/big-video-player/src/video/ui/preferences/subtitles.rs:117
+msgid "Outline Color"
+msgstr "Dış çizgi rengi"
+
+#: crates/big-video-player/src/video/ui/preferences/subtitles.rs:125
+msgid "Shadow Distance"
+msgstr "Gölge uzaklığı"
+
+#: crates/big-video-player/src/video/ui/preferences/subtitles.rs:137
+msgid "Shadow Color"
+msgstr "Gölge rengi"
+
+#: crates/big-video-player/src/video/ui/preferences/subtitles.rs:138
+msgid "Lower the opacity for a softer shadow"
+msgstr "Daha yumuşak bir gölge için opaklığı azaltın"
+
+#: crates/big-video-player/src/video/ui/preferences/subtitles.rs:146
+msgid "Position and Size"
+msgstr "Konum ve boyut"
+
+#: crates/big-video-player/src/video/ui/preferences/subtitles.rs:150
+msgid "Distance From the Bottom"
+msgstr "Alttan uzaklık"
+
+#: crates/big-video-player/src/video/ui/preferences/subtitles.rs:151
+msgid "In pixels"
+msgstr "Piksel cinsinden"
+
+#: crates/big-video-player/src/video/ui/preferences/subtitles.rs:161
+msgid "Grow With the Window"
+msgstr "Pencereyle birlikte büyüt"
+
+#: crates/big-video-player/src/video/ui/preferences/subtitles.rs:162
+msgid "Larger windows show larger subtitles"
+msgstr "Daha büyük pencereler daha büyük altyazılar gösterir"
+
+#: crates/big-video-player/src/video/ui/preferences/subtitles.rs:169
+msgid "Grow Styled Subtitles Too"
+msgstr "Biçimlendirilmiş altyazılar da büyüsün"
+
+#: crates/big-video-player/src/video/ui/preferences/subtitles.rs:170
+msgid "Also resize styled ASS/SSA subtitles, common in anime"
+msgstr ""
+"Animede yaygın olan biçimlendirilmiş ASS/SSA altyazılarını da yeniden "
+"boyutlandırır"
+
+#: crates/big-video-player/src/video/ui/preferences/subtitles.rs:178
+msgid "Sound Descriptions"
+msgstr "Ses açıklamaları"
+
+#: crates/big-video-player/src/video/ui/preferences/subtitles.rs:180
+msgid ""
+"Subtitles for the hearing impaired describe sounds, like [music] or "
+"(applause)"
+msgstr ""
+"İşitme engelliler için altyazılar, [müzik] veya (alkış) gibi sesleri betimler"
+
+#: crates/big-video-player/src/video/ui/preferences/subtitles.rs:185
+msgid "Hide Sound Descriptions"
+msgstr "Ses açıklamalarını gizle"
+
+#: crates/big-video-player/src/video/ui/preferences/subtitles.rs:193
+msgid "Stricter Filtering"
+msgstr "Daha sıkı süzme"
+
+#: crates/big-video-player/src/video/ui/preferences/subtitles.rs:194
+msgid "Removes more descriptions, but may also remove some dialogue"
+msgstr "Daha fazla açıklamayı kaldırır ama bazı diyalogları da kaldırabilir"
+
+#: crates/big-video-player/src/video/ui/preferences/subtitles.rs:206
+msgid "Picture Subtitles"
+msgstr "Resim altyazılar"
+
+#: crates/big-video-player/src/video/ui/preferences/subtitles.rs:207
+msgid "DVD and Blu-ray subtitles are images instead of text"
+msgstr "DVD ve Blu-ray altyazıları metin yerine resimdir"
+
+#: crates/big-video-player/src/video/ui/preferences/subtitles.rs:211
+msgid "Smooth Edges"
+msgstr "Kenarları yumuşat"
+
+#: crates/big-video-player/src/video/ui/preferences/subtitles.rs:212
+msgid "Blurs pixelated letters slightly; 0 turns it off"
+msgstr "Pikselli harfleri hafifçe bulanıklaştırır; 0 kapatır"
+
+#: crates/big-video-player/src/video/ui/preferences/subtitles.rs:223
+msgid "Show in Gray"
+msgstr "Gri göster"
+
+#: crates/big-video-player/src/video/ui/preferences/subtitles.rs:224
+msgid "Replaces colored subtitles with gray ones"
+msgstr "Renkli altyazıları gri olanlarla değiştirir"
+
+#: crates/big-video-player/src/video/ui/preferences/subtitles.rs:256
+msgid "Font"
+msgstr "Yazı tipi"
+
+#: crates/big-video-player/src/video/ui/preferences/video.rs:24
+#: crates/big-video-player/src/video/ui/video_shell/input_gestures.rs:113
+#: crates/big-video-player/src/video/ui/video_shell/panel.rs:40
+#: crates/big-video-player/src/video/ui/video_shell/panel.rs:454
+msgid "Picture"
+msgstr "Görüntü"
+
+#: crates/big-video-player/src/video/ui/preferences/video.rs:30
+msgid "Picture Quality"
+msgstr "Görüntü kalitesi"
+
+#: crates/big-video-player/src/video/ui/preferences/video.rs:31
+msgid "Light suits older computers; Detailed needs a stronger graphics card"
+msgstr ""
+"Hafif, eski bilgisayarlara uygundur; Ayrıntılı, daha güçlü bir ekran kartı "
+"gerektirir"
+
+#: crates/big-video-player/src/video/ui/preferences/video.rs:33
+msgctxt "picture quality"
+msgid "Light"
+msgstr "Hafif"
+
+#: crates/big-video-player/src/video/ui/preferences/video.rs:34
+msgid "Balanced"
+msgstr "Dengeli"
+
+#: crates/big-video-player/src/video/ui/preferences/video.rs:35
+msgid "Detailed"
+msgstr "Ayrıntılı"
+
+#: crates/big-video-player/src/video/ui/preferences/video.rs:51
+msgid "Hardware Decoding"
+msgstr "Donanımla çözme"
+
+#: crates/big-video-player/src/video/ui/preferences/video.rs:52
+msgid "Lets the graphics card decode video, so the processor stays free"
+msgstr "Ekran kartının videoyu çözmesini sağlar, böylece işlemci serbest kalır"
+
+#: crates/big-video-player/src/video/ui/preferences/video.rs:55
+msgid "Any method"
+msgstr "Herhangi bir yöntem"
+
+#: crates/big-video-player/src/video/ui/preferences/video.rs:69
+msgid "Remove Interlacing Lines"
+msgstr "Örgü çizgilerini kaldır"
+
+#: crates/big-video-player/src/video/ui/preferences/video.rs:70
+msgid "Fixes comb-like stripes in old TV recordings and DVDs"
+msgstr "Eski TV kayıtlarındaki ve DVD'lerdeki tarak benzeri şeritleri giderir"
+
+#: crates/big-video-player/src/video/ui/preferences/video.rs:78
+msgid "If the Picture Has Problems"
+msgstr "Görüntüde sorun varsa"
+
+#: crates/big-video-player/src/video/ui/preferences/video.rs:80
+msgid ""
+"Change these only if the video is black, corrupted or very slow. They take "
+"effect after reopening the player."
+msgstr ""
+"Bunları yalnızca video siyah, bozuk veya çok yavaşsa değiştirin. Oynatıcı "
+"yeniden açıldıktan sonra etkili olurlar."
+
+#: crates/big-video-player/src/video/ui/preferences/video.rs:85
+msgid "Video Output"
+msgstr "Video çıkışı"
+
+#: crates/big-video-player/src/video/ui/preferences/video.rs:86
+msgid "Compatibility mode works without a graphics card but uses more energy"
+msgstr ""
+"Uyumluluk kipi ekran kartı olmadan çalışır ama daha fazla enerji kullanır"
+
+#: crates/big-video-player/src/video/ui/preferences/video.rs:87
+msgid "Compatibility"
+msgstr "Uyumluluk"
+
+#: crates/big-video-player/src/video/ui/preferences/video.rs:95
+msgid "Simple Rendering"
+msgstr "Basit oluşturma"
+
+#: crates/big-video-player/src/video/ui/preferences/video.rs:96
+msgid "Turns off effects and shaders for very old graphics cards"
+msgstr "Çok eski ekran kartları için efektleri ve gölgelendiricileri kapatır"
+
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/context_menu.rs:69
+msgid "Play next"
+msgstr "Sıradaki olarak oynat"
+
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/context_menu.rs:89
+msgid "Rename…"
+msgstr "Yeniden adlandır…"
+
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/context_menu.rs:94
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/fileops.rs:83
+msgid "Move to trash"
+msgstr "Çöp kutusuna taşı"
+
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/context_menu.rs:101
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/views/queue_view.rs:214
+msgid "Remove from playlist"
+msgstr "Çalma listesinden kaldır"
+
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/context_menu.rs:116
+msgid "Open containing folder"
+msgstr "İçeren klasörü aç"
+
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/empty_state.rs:13
+msgid "Add Files"
+msgstr "Dosya ekle"
+
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/empty_state.rs:17
+msgid "Choose from a folder"
+msgstr "Bir klasörden seç"
+
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/empty_state.rs:29
+msgid "Your playlist is empty"
+msgstr "Çalma listeniz boş"
+
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/empty_state.rs:30
+msgid "Drop videos here, or pick them in a folder"
+msgstr "Videoları buraya bırakın veya bir klasörden seçin"
+
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/empty_state.rs:48
+msgid ""
+"Drag a video by its handle to change the order, or use Alt+Up and Alt+Down"
+msgstr ""
+"Sırayı değiştirmek için bir videoyu tutamacından sürükleyin veya Alt+Yukarı "
+"ve Alt+Aşağı kullanın"
+
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/empty_state.rs:60
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/empty_state.rs:62
+msgid "Got it"
+msgstr "Anladım"
+
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/header.rs:37
+msgid "Load folder…"
+msgstr "Klasör yükle…"
+
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/header.rs:59
+msgid "Add files…"
+msgstr "Dosya ekle…"
+
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/header.rs:87
+msgid "Show as list"
+msgstr "Liste olarak göster"
+
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/header.rs:89
+msgid "Show as grid"
+msgstr "Izgara olarak göster"
+
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/header.rs:114
+msgid "Choose Video Folder"
+msgstr "Video klasörü seç"
+
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/header.rs:127
+msgid "Add Video Files"
+msgstr "Video dosyaları ekle"
+
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/header.rs:128
+#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:132
+msgid "Video files"
+msgstr "Video dosyaları"
+
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/header.rs:168
+msgid "Date"
+msgstr "Tarih"
+
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/header.rs:179
+msgid "Reverse order"
+msgstr "Ters sıra"
+
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/header.rs:184
+msgid "Include subfolders"
+msgstr "Alt klasörleri dahil et"
+
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/header.rs:185
+msgid "Sort by"
+msgstr "Sıralama ölçütü"
+
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/header.rs:197
+msgid "Current file"
+msgstr "Geçerli dosya"
+
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/header.rs:207
+msgid "Save playlist…"
+msgstr "Çalma listesini kaydet…"
+
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/header.rs:208
+msgid "Load playlist…"
+msgstr "Çalma listesi yükle…"
+
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/header.rs:209
+msgid "Clear playlist"
+msgstr "Çalma listesini temizle"
+
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/menu_actions.rs:188
+msgid "Save Playlist"
+msgstr "Çalma listesini kaydet"
+
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/menu_actions.rs:205
+msgid "Playlist exported"
+msgstr "Çalma listesi dışa aktarıldı"
+
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/menu_actions.rs:229
+msgid "Load Playlist"
+msgstr "Çalma listesi yükle"
+
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/metadata.rs:24
+msgid "All"
+msgstr "Tümü"
+
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/metadata.rs:25
+msgid "Folders"
+msgstr "Klasörler"
+
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/metadata.rs:26
+msgid "Videos"
+msgstr "Videolar"
+
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/metadata.rs:64
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/metadata.rs:67
+msgid "Your folders"
+msgstr "Klasörleriniz"
+
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/metadata.rs:143
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/library.rs:429
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/mod.rs:301
+#, rust-format
+msgid "{} video"
+msgid_plural "{} videos"
+msgstr[0] "{} video"
+msgstr[1] "{} video"
+
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/metadata.rs:150
+#, rust-format
+msgid "(of {total})"
+msgstr "({total} içinden)"
+
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/metadata.rs:154
+#, rust-format
+msgid ""
+"Showing {shown} of {total} files found. Consider filtering by subfolder."
+msgstr ""
+"Bulunan {total} dosyadan {shown} tanesi gösteriliyor. Alt klasöre göre "
+"süzmeyi düşünün."
+
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/fileops.rs:23
+#, rust-format
+msgid "{} selected"
+msgid_plural "{} selected"
+msgstr[0] "{} seçili"
+msgstr[1] "{} seçili"
+
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/fileops.rs:55
+msgid "Send to converter"
+msgstr "Dönüştürücüye gönder"
+
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/fileops.rs:66
+msgid "Move to folder…"
+msgstr "Klasöre taşı…"
+
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/fileops.rs:96
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/fileops.rs:97
+msgid "Done"
+msgstr "Bitti"
+
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/fileops.rs:144
+msgid "Move to Folder"
+msgstr "Klasöre taşı"
+
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/fileops.rs:161
+msgid "moved"
+msgstr "taşındı"
+
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/fileops.rs:183
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/fileops.rs:200
+msgid "Rename"
+msgstr "Yeniden adlandır"
+
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/fileops.rs:189
+msgid "Choose a new file name."
+msgstr "Yeni bir dosya adı seçin."
+
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/fileops.rs:232
+msgid "Invalid name"
+msgstr "Geçersiz ad"
+
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/fileops.rs:248
+msgid "A file with that name already exists"
+msgstr "Bu ada sahip bir dosya zaten var"
+
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/fileops.rs:255
+msgid "Rename failed"
+msgstr "Yeniden adlandırma başarısız"
+
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/fileops.rs:349
+#, rust-format
+msgid "{ok} {verb}, {failed} failed"
+msgstr "{ok} {verb}, {failed} başarısız"
+
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/library.rs:116
+msgid "Home folder"
+msgstr "Ev klasörü"
+
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/library.rs:405
+msgid "Choose folders…"
+msgstr "Klasörleri seç…"
+
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/library.rs:556
+msgid "No video in your folders has that name"
+msgstr "Klasörlerinizdeki hiçbir videonun adı bu değil"
+
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/library.rs:568
+#, rust-format
+msgid "{} more in your folders"
+msgid_plural "{} more in your folders"
+msgstr[0] "Klasörlerinizde {} tane daha"
+msgstr[1] "Klasörlerinizde {} tane daha"
+
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/library.rs:573
+#, rust-format
+msgid "{} video found"
+msgid_plural "{} videos found"
+msgstr[0] "{} video bulundu"
+msgstr[1] "{} video bulundu"
+
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/library.rs:588
+#, rust-format
+msgid "Showing the first {}. Type more to narrow the search."
+msgstr "İlk {} gösteriliyor. Aramayı daraltmak için daha fazla yazın."
+
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/library.rs:700
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/library.rs:703
+#: crates/big-video-player/src/video/ui/video_shell/panel.rs:121
+#: crates/big-video-player/src/video/ui/video_shell/panel.rs:124
+msgid "Back"
+msgstr "Geri"
+
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/library.rs:714
+msgid "Video folders"
+msgstr "Video klasörleri"
+
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/library.rs:724
+msgid ""
+"Their videos are listed and searched here. Folders BigSearch does not index "
+"are searched by the player, more slowly."
+msgstr ""
+"Bu klasörlerdeki videolar burada listelenir ve aranır. BigSearch'ün "
+"dizinlemediği klasörler oynatıcı tarafından, daha yavaş aranır."
+
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/library.rs:753
+#, rust-format
+msgid "Remove {}"
+msgstr "{} öğesini kaldır"
+
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/library.rs:771
+msgid "Add a folder…"
+msgstr "Klasör ekle…"
+
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/library.rs:782
+msgid "Add a Video Folder"
+msgstr "Video klasörü ekle"
+
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/library.rs:800
+msgid "Use the standard folders"
+msgstr "Standart klasörleri kullan"
+
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/library.rs:801
+msgid "Videos, Downloads and the home folder"
+msgstr "Videolar, İndirilenler ve ev klasörü"
+
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/mod.rs:329
+#, rust-format
+msgid "ends at {}"
+msgstr "{} saatinde biter"
+
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/mod.rs:511
+msgid "Scanning…"
+msgstr "Taranıyor…"
+
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/mod.rs:556
+msgid "Search your videos…"
+msgstr "Videolarınızda arayın…"
+
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/views/model.rs:35
+msgid "Previous folder"
+msgstr "Önceki klasör"
+
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/views/queue_view.rs:434
+#, rust-format
+msgid "Stopped at {}"
+msgstr "{} konumunda durdu"
+
+#: crates/big-video-player/src/video/ui/video_controls_bar.rs:278
+msgid "Seek Position"
+msgstr "Arama konumu"
+
+#: crates/big-video-player/src/video/ui/video_controls_bar.rs:479
+#: crates/media-runtime/src/shared/tv_cast.rs:716
+msgid "Pause"
+msgstr "Duraklat"
+
+#: crates/big-video-player/src/video/ui/video_controls_bar.rs:558
+#: crates/ui/media/big-player-ui/src/playback_bar.rs:323
+msgid "TV volume"
+msgstr "TV ses düzeyi"
+
+#: crates/big-video-player/src/video/ui/video_controls_bar/seek_preview.rs:27
+msgid "Seek preview"
+msgstr "Atlama önizlemesi"
+
+#: crates/big-video-player/src/video/ui/video_controls_bar/tracks.rs:26
+msgid "Load Subtitle File…"
+msgstr "Altyazı dosyası yükle…"
+
+#: crates/big-video-player/src/video/ui/video_controls_bar/tracks.rs:36
+msgid "Primary Subtitles"
+msgstr "Birincil altyazılar"
+
+#: crates/big-video-player/src/video/ui/video_controls_bar/tracks.rs:38
+msgid "Disable Subtitles"
+msgstr "Altyazıları devre dışı bırak"
+
+#: crates/big-video-player/src/video/ui/video_controls_bar/tracks.rs:58
+msgid "Secondary Subtitles"
+msgstr "İkincil altyazılar"
+
+#: crates/big-video-player/src/video/ui/video_controls_bar/tracks.rs:60
+msgid "Disable Secondary Subtitles"
+msgstr "İkincil altyazıları devre dışı bırak"
+
+#: crates/big-video-player/src/video/ui/video_controls_bar/tracks.rs:109
+msgid "Subtitle files"
+msgstr "Altyazı dosyaları"
+
+#: crates/big-video-player/src/video/ui/video_controls_bar/tracks.rs:117
+msgid "Load Subtitle File"
+msgstr "Altyazı dosyası yükle"
+
+#: crates/big-video-player/src/video/ui/video_controls_bar/tracks.rs:191
+msgid "Earlier"
+msgstr "Daha erken"
+
+#: crates/big-video-player/src/video/ui/video_controls_bar/tracks.rs:191
+msgid "Later"
+msgstr "Daha geç"
+
+#: crates/big-video-player/src/video/ui/video_controls_bar/tracks.rs:245
+msgid "Track"
+msgstr "İz"
+
+#: crates/big-video-player/src/video/ui/video_controls_bar/zones.rs:214
+msgid "No sound"
+msgstr "Ses yok"
+
+#: crates/big-video-player/src/video/ui/video_controls_bar/zones.rs:218
+msgid "Unmute"
+msgstr "Sesi aç"
+
+#: crates/big-video-player/src/video/ui/video_controls_bar/zones.rs:218
+#: crates/big-video-player/src/video/ui/video_controls_bar/zones.rs:444
+#: crates/big-video-player/src/video/ui/video_controls_bar/zones.rs:461
+msgid "Mute"
+msgstr "Sessize al"
+
+#: crates/big-video-player/src/video/ui/video_controls_bar/zones.rs:286
+msgid "TV"
+msgstr "TV"
+
+#: crates/big-video-player/src/video/ui/video_controls_bar/zones.rs:287
+msgid "PC"
+msgstr "PC"
+
+#: crates/big-video-player/src/video/ui/video_controls_bar/zones.rs:290
+#: crates/big-video-player/src/video/ui/video_controls_bar/zones.rs:294
+msgid "PC volume"
+msgstr "PC ses düzeyi"
+
+#: crates/big-video-player/src/video/ui/video_controls_bar/zones.rs:606
+msgid "Edit & Export"
+msgstr "Düzenle ve dışa aktar"
+
+#: crates/big-video-player/src/video/ui/video_controls_bar/zones.rs:668
+msgid "Cut Video…"
+msgstr "Videoyu kes…"
+
+#: crates/big-video-player/src/video/ui/video_controls_bar/zones.rs:669
+msgid "Extract Audio…"
+msgstr "Sesi ayıkla…"
+
+#: crates/big-video-player/src/video/ui/video_shell/actions.rs:112
+msgid "Drop a file or open one to start"
+msgstr "Başlamak için bir dosya bırakın veya açın"
+
+#: crates/big-video-player/src/video/ui/video_shell/actions.rs:132
+#: crates/big-video-player/src/video/ui/video_shell/component.rs:849
+msgid "Open Recent"
+msgstr "Son kullanılanları aç"
+
+#: crates/big-video-player/src/video/ui/video_shell/adjustments.rs:176
+msgid "More bass"
+msgstr "Daha fazla bas"
+
+#: crates/big-video-player/src/video/ui/video_shell/adjustments.rs:177
+msgid "More treble"
+msgstr "Daha fazla tiz"
+
+#: crates/big-video-player/src/video/ui/video_shell/adjustments.rs:178
+msgid "Voices"
+msgstr "Sesler"
+
+#: crates/big-video-player/src/video/ui/video_shell/adjustments.rs:191
+#, rust-format
+msgid "Video colour: {name}"
+msgstr "Video rengi: {name}"
+
+#: crates/big-video-player/src/video/ui/video_shell/adjustments.rs:195
+msgid "Picture adjusted"
+msgstr "Görüntü ayarlandı"
+
+#: crates/big-video-player/src/video/ui/video_shell/adjustments.rs:196
+#, rust-format
+msgid "Zoom {percent}%"
+msgstr "Yakınlaştırma {percent}%"
+
+#: crates/big-video-player/src/video/ui/video_shell/adjustments.rs:198
+msgid "Picture enlarged to fill"
+msgstr "Görüntü doldurmak için büyütüldü"
+
+#: crates/big-video-player/src/video/ui/video_shell/adjustments.rs:200
+#, rust-format
+msgid "Rotated {degrees}°"
+msgstr "{degrees}° döndürüldü"
+
+#: crates/big-video-player/src/video/ui/video_shell/adjustments.rs:202
+msgid "Mirrored"
+msgstr "Aynalandı"
+
+#: crates/big-video-player/src/video/ui/video_shell/adjustments.rs:203
+msgid "Edges cut off"
+msgstr "Kenarlar kesildi"
+
+#: crates/big-video-player/src/video/ui/video_shell/adjustments.rs:204
+#, rust-format
+msgid "Speed {speed}×"
+msgstr "Hız {speed}×"
+
+#: crates/big-video-player/src/video/ui/video_shell/adjustments.rs:206
+#, rust-format
+msgid "Sound {seconds} s late"
+msgstr "Ses {seconds} sn geç"
+
+#: crates/big-video-player/src/video/ui/video_shell/adjustments.rs:209
+#, rust-format
+msgid "Sound {seconds} s early"
+msgstr "Ses {seconds} sn erken"
+
+#: crates/big-video-player/src/video/ui/video_shell/adjustments.rs:212
+#, rust-format
+msgid "Subtitles {seconds} s late"
+msgstr "Altyazılar {seconds} sn geç"
+
+#: crates/big-video-player/src/video/ui/video_shell/adjustments.rs:215
+#, rust-format
+msgid "Subtitles {seconds} s early"
+msgstr "Altyazılar {seconds} sn erken"
+
+#: crates/big-video-player/src/video/ui/video_shell/adjustments.rs:217
+#, rust-format
+msgid "Type of sound: {name}"
+msgstr "Ses türü: {name}"
+
+#: crates/big-video-player/src/video/ui/video_shell/adjustments.rs:225
+msgid "by hand"
+msgstr "elle"
+
+#: crates/big-video-player/src/video/ui/video_shell/adjustments.rs:227
+msgid "Video effects on"
+msgstr "Video efektleri açık"
+
+#: crates/big-video-player/src/video/ui/video_shell/adjustments.rs:228
+msgid "Picture enhanced"
+msgstr "Görüntü iyileştirildi"
+
+#: crates/big-video-player/src/video/ui/video_shell/adjustments.rs:235
+#, rust-format
+msgid "Stops at {time}"
+msgstr "{time} saatinde durur"
+
+#: crates/big-video-player/src/video/ui/video_shell/adjustments.rs:343
+#: crates/big-video-player/src/video/ui/video_shell/panel.rs:238
+#, rust-format
+msgid "{n} change"
+msgid_plural "{n} changes"
+msgstr[0] "{n} değişiklik"
+msgstr[1] "{n} değişiklik"
+
+#: crates/big-video-player/src/video/ui/video_shell/adjustments.rs:346
+msgid "Click to see or undo"
+msgstr "Görmek veya geri almak için tıklayın"
+
+#: crates/big-video-player/src/video/ui/video_shell/component.rs:124
+#: crates/big-video-player/src/video/ui/video_shell/component.rs:127
+#: crates/big-video-player/src/video/ui/video_shell/panel.rs:38
+#: crates/big-video-player/src/video/ui/video_shell/panel.rs:156
+msgid "Settings"
+msgstr "Ayarlar"
+
+#: crates/big-video-player/src/video/ui/video_shell/component.rs:132
+msgid "Minimize"
+msgstr "Simge durumuna küçült"
+
+#: crates/big-video-player/src/video/ui/video_shell/component.rs:132
+msgid "Maximize"
+msgstr "Ekranı kapla"
+
+#: crates/big-video-player/src/video/ui/video_shell/component.rs:142
+msgid "Use HDR?"
+msgstr "HDR kullanılsın mı?"
+
+#: crates/big-video-player/src/video/ui/video_shell/component.rs:144
+msgid "Does the picture look grey and washed out? Click to use HDR colours"
+msgstr ""
+"Görüntü gri ve solgun mu görünüyor? HDR renklerini kullanmak için tıklayın"
+
+#: crates/big-video-player/src/video/ui/video_shell/component.rs:163
+msgid "On the TV"
+msgstr "TV'de"
+
+#: crates/big-video-player/src/video/ui/video_shell/component.rs:164
+#: crates/big-video-player/src/video/ui/video_shell/tv.rs:43
+#: crates/media-runtime/src/shared/tv_cast/card.rs:261
+msgid "The TV is still playing"
+msgstr "TV hâlâ oynatıyor"
+
+#: crates/big-video-player/src/video/ui/video_shell/component.rs:848
+#: crates/big-video-player/src/video/ui/video_shell/input_gestures.rs:121
+msgid "Open File…"
+msgstr "Dosya aç…"
+
+#: crates/big-video-player/src/video/ui/video_shell/component.rs:850
+#: crates/big-video-player/src/video/ui/video_shell/input_gestures.rs:122
+msgid "Open URL…"
+msgstr "URL aç…"
+
+#: crates/big-video-player/src/video/ui/video_shell/component.rs:851
+msgid "Open Disc…"
+msgstr "Disk aç…"
+
+#: crates/big-video-player/src/video/ui/video_shell/component.rs:852
+msgid "TV Channels (IPTV)…"
+msgstr "TV kanalları (IPTV)…"
+
+#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:54
+msgid "Best available"
+msgstr "Mevcut en iyi"
+
+#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:56
+msgid "Highest video and audio quality"
+msgstr "En yüksek video ve ses kalitesi"
+
+#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:59
+msgid "Up to 1080p"
+msgstr "1080p'ye kadar"
+
+#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:61
+msgid "Prefer Full HD or lower"
+msgstr "Full HD veya daha düşüğü tercih et"
+
+#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:64
+msgid "Up to 720p"
+msgstr "720p'ye kadar"
+
+#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:66
+msgid "Prefer HD or lower"
+msgstr "HD veya daha düşüğü tercih et"
+
+#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:69
+msgid "Up to 480p"
+msgstr "480p'ye kadar"
+
+#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:71
+msgid "Prefer SD or lower"
+msgstr "SD veya daha düşüğü tercih et"
+
+#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:74
+msgid "Audio only"
+msgstr "Yalnızca ses"
+
+#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:76
+msgid "Use the best audio stream"
+msgstr "En iyi ses akışını kullan"
+
+#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:84
+msgid "Online Video Quality"
+msgstr "Çevrimiçi video kalitesi"
+
+#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:93
+msgid "Use this quality"
+msgstr "Bu kaliteyi kullan"
+
+#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:123
+msgid "IPTV"
+msgstr "IPTV"
+
+#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:131
+msgid "Open Video"
+msgstr "Video aç"
+
+#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:133
+msgid "Playlist files"
+msgstr "Çalma listesi dosyaları"
+
+#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:134
+msgid "All files"
+msgstr "Tüm dosyalar"
+
+#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:163
+msgid "Supports YouTube, HTTP streams, RTSP, RTMP, DVD, and Blu-ray URLs."
+msgstr ""
+"YouTube, HTTP akışları, RTSP, RTMP, DVD ve Blu-ray URL'lerini destekler."
+
+#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:167
+msgid "Media URL"
+msgstr "Ortam URL'si"
+
+#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:231
+msgid "Open Disc"
+msgstr "Disk aç"
+
+#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:240
+msgid "Choose a disc type and enter the device, ISO, or folder path."
+msgstr "Bir disk türü seçin ve aygıtın, ISO'nun veya klasörün yolunu girin."
+
+#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:244
+msgid "Disc type"
+msgstr "Disk türü"
+
+#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:245
+msgid "DVD"
+msgstr "DVD"
+
+#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:245
+msgid "Blu-ray"
+msgstr "Blu-ray"
+
+#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:248
+msgid "Disc device path"
+msgstr "Disk aygıtı yolu"
+
+#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:374
+msgid "Restore Default Settings?"
+msgstr "Varsayılan ayarlar geri yüklensin mi?"
+
+#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:376
+msgid ""
+"Every setting, including appearance, goes back to its default value. Some "
+"changes take effect after reopening the player."
+msgstr ""
+"Görünüm dahil her ayar varsayılan değerine döner. Bazı değişiklikler "
+"oynatıcı yeniden açıldıktan sonra etkili olur."
+
+#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:381
+msgid "Restore"
+msgstr "Geri yükle"
+
+#: crates/big-video-player/src/video/ui/video_shell/export.rs:19
+msgid "No file is playing"
+msgstr "Hiçbir dosya oynatılmıyor"
+
+#: crates/big-video-player/src/video/ui/video_shell/export.rs:23
+msgid "Cannot export a network stream"
+msgstr "Ağ akışı dışa aktarılamaz"
+
+#: crates/big-video-player/src/video/ui/video_shell/input_gestures.rs:114
+#: crates/big-video-player/src/video/ui/video_shell/panel.rs:41
+#: crates/big-video-player/src/video/ui/video_shell/panel.rs:459
+msgid "Zoom and position"
+msgstr "Yakınlaştırma ve konum"
+
+#: crates/big-video-player/src/video/ui/video_shell/input_gestures.rs:115
+#: crates/big-video-player/src/video/ui/video_shell/panel.rs:42
+#: crates/big-video-player/src/video/ui/video_shell/panel.rs:464
+msgid "Effects and filters"
+msgstr "Efektler ve süzgeçler"
+
+#: crates/big-video-player/src/video/ui/video_shell/input_gestures.rs:123
+#: crates/big-video-player/src/video/ui/video_shell/panel.rs:516
+msgid "About this video"
+msgstr "Bu video hakkında"
+
+#: crates/big-video-player/src/video/ui/video_shell/panel.rs:45
+#: crates/big-video-player/src/video/ui/video_shell/panel.rs:490
+msgid "Stop after…"
+msgstr "Şu süre sonra dur…"
+
+#: crates/big-video-player/src/video/ui/video_shell/panel.rs:47
+msgid "Recent Files"
+msgstr "Son dosyalar"
+
+#: crates/big-video-player/src/video/ui/video_shell/panel.rs:478
+#, rust-format
+msgid "{current} of {total}"
+msgstr "{current} / {total}"
+
+#: crates/big-video-player/src/video/ui/video_shell/panel.rs:504
+msgid "Online quality"
+msgstr "Çevrimiçi kalite"
+
+#: crates/big-video-player/src/video/ui/video_shell/panel.rs:505
+msgid "Choose"
+msgstr "Seç"
+
+#: crates/big-video-player/src/video/ui/video_shell/panel.rs:549
+msgid "Put back what was just set to normal"
+msgstr "Az önce normale ayarlananı geri koy"
+
+#: crates/big-video-player/src/video/ui/video_shell/panel.rs:581
+msgid "Shortcuts"
+msgstr "Kısayollar"
+
+#: crates/big-video-player/src/video/ui/video_shell/panel.rs:622
+msgid "Changed"
+msgstr "Değiştirildi"
+
+#: crates/big-video-player/src/video/ui/video_shell/panel.rs:634
+#: crates/big-video-player/src/video/ui/video_shell/panel.rs:657
+msgid "Back to normal"
+msgstr "Normale dön"
+
+#: crates/big-video-player/src/video/ui/video_shell/panel.rs:639
+#, rust-format
+msgid "Undo: {setting}"
+msgstr "Geri al: {setting}"
+
+#: crates/big-video-player/src/video/ui/video_shell/panel.rs:658
+msgid "Undo every change to the picture and sound"
+msgstr "Görüntü ve sesteki tüm değişiklikleri geri al"
+
+#: crates/big-video-player/src/video/ui/video_shell/panel.rs:827
+msgid "Jump to a chapter"
+msgstr "Bir bölüme atla"
+
+#: crates/big-video-player/src/video/ui/video_shell/panel/recent.rs:15
+msgid "No Recent Files"
+msgstr "Son dosya yok"
+
+#: crates/big-video-player/src/video/ui/video_shell/panel/recent.rs:142
+#: crates/big-video-player/src/video/ui/video_shell/panel/recent.rs:146
+msgid "Search recent files"
+msgstr "Son dosyalarda ara"
+
+#: crates/big-video-player/src/video/ui/video_shell/panel/recent.rs:158
+msgid "No recent file matches"
+msgstr "Eşleşen son dosya yok"
+
+#: crates/big-video-player/src/video/ui/video_shell/playback.rs:158
+msgid "Screenshot timed out; cancellation requested"
+msgstr "Ekran görüntüsü zaman aşımına uğradı; iptal istendi"
+
+#: crates/big-video-player/src/video/ui/video_shell/playback.rs:204
+msgid "Playing video"
+msgstr "Video oynatılıyor"
+
+#: crates/big-video-player/src/video/ui/video_shell/playback.rs:427
+msgid "Could not move to trash"
+msgstr "Çöp kutusuna taşınamadı"
+
+#: crates/big-video-player/src/video/ui/video_shell/playback.rs:433
+#, rust-format
+msgid "{} file moved to trash"
+msgid_plural "{} files moved to trash"
+msgstr[0] "{} dosya çöp kutusuna taşındı"
+msgstr[1] "{} dosya çöp kutusuna taşındı"
+
+#: crates/big-video-player/src/video/ui/video_shell/render.rs:335
+msgid ""
+"Video could not start. Try Automatic video output in Preferences, or check "
+"that mpv is installed."
+msgstr ""
+"Video başlatılamadı. Tercihler'de Otomatik video çıkışını deneyin veya "
+"mpv'nin kurulu olduğunu denetleyin."
+
+#: crates/big-video-player/src/video/ui/video_shell/render.rs:422
+msgid ""
+"The video area is too large for compatibility mode. Reduce the window size "
+"or select Automatic video output in Preferences."
+msgstr ""
+"Video alanı uyumluluk kipi için çok büyük. Pencere boyutunu küçültün veya "
+"Tercihler'de Otomatik video çıkışını seçin."
+
+#: crates/big-video-player/src/video/ui/video_shell/render.rs:431
+msgid ""
+"The video frame could not be displayed. Try Automatic video output in "
+"Preferences."
+msgstr ""
+"Video karesi görüntülenemedi. Tercihler'de Otomatik video çıkışını deneyin."
+
+#: crates/big-video-player/src/video/ui/video_shell/trim/bar.rs:131
+#, rust-format
+msgid "Cut start: {t} — mark the other end"
+msgstr "Kesim başlangıcı: {t} — diğer ucu işaretleyin"
+
+#: crates/big-video-player/src/video/ui/video_shell/trim/bar.rs:133
+#: crates/ui/media/big-player-ui/src/audio_trim_bar.rs:45
+msgid "Mark more cuts or export"
+msgstr "Daha fazla kesim işaretleyin veya dışa aktarın"
+
+#: crates/big-video-player/src/video/ui/video_shell/trim/bar.rs:134
+msgid "Press M (or Mark) at the start and end of a cut"
+msgstr "Bir kesimin başında ve sonunda M'ye (veya İşaretle'ye) basın"
+
+#: crates/big-video-player/src/video/ui/video_shell/trim/bar.rs:181
+msgid "Mark"
+msgstr "İşaretle"
+
+#: crates/big-video-player/src/video/ui/video_shell/trim/bar.rs:182
+msgid "Mark a cut point at the current position (M)"
+msgstr "Geçerli konumda bir kesim noktası işaretle (M)"
+
+#: crates/big-video-player/src/video/ui/video_shell/trim/bar.rs:187
+msgid "Clear all cuts"
+msgstr "Tüm kesimleri temizle"
+
+#: crates/big-video-player/src/video/ui/video_shell/trim/bar.rs:203
+msgid "Play only the marked cuts"
+msgstr "Yalnızca işaretli kesimleri oynat"
+
+#: crates/big-video-player/src/video/ui/video_shell/trim/bar.rs:229
+#: crates/ui/media/big-player-ui/src/audio_trim_bar.rs:49
+msgid "Exit trim mode"
+msgstr "Kesme kipinden çık"
+
+#: crates/big-video-player/src/video/ui/video_shell/trim/bar.rs:241
+msgid "Export"
+msgstr "Dışa aktar"
+
+#: crates/big-video-player/src/video/ui/video_shell/trim/bar.rs:242
+#: crates/ui/media/big-player-ui/src/audio_trim_bar.rs:48
+msgid "Export the marked cuts"
+msgstr "İşaretli kesimleri dışa aktarır"
+
+#: crates/big-video-player/src/video/ui/video_shell/trim/bar.rs:337
+#: crates/big-video-player/src/video/ui/video_shell/trim/bar.rs:339
+#: crates/ui/media/big-player-ui/src/audio_trim_bar.rs:50
+msgid "Edit cut times"
+msgstr "Kesim zamanlarını düzenle"
+
+#: crates/big-video-player/src/video/ui/video_shell/trim/bar.rs:349
+#: crates/ui/media/big-player-ui/src/audio_trim_bar.rs:52
+msgid "Remove this cut"
+msgstr "Bu kesimi kaldır"
+
+#: crates/big-video-player/src/video/ui/video_shell/trim/run.rs:27
+msgid "Open a local video to cut it"
+msgstr "Kesmek için yerel bir video açın"
+
+#: crates/big-video-player/src/video/ui/video_shell/trim/run.rs:218
+#: crates/big-video-player/src/video/ui/video_shell/trim/run.rs:222
+msgid "s"
+msgstr "sn"
+
+#: crates/big-video-player/src/video/ui/video_shell/trim/run.rs:238
+msgid "Cut times"
+msgstr "Kesim zamanları"
+
+#: crates/big-video-player/src/video/ui/video_shell/trim/run.rs:243
+msgid "Hundredth-second precision; either order is fine"
+msgstr "Saniyenin yüzde biri hassasiyetinde; sıra fark etmez"
+
+#: crates/big-video-player/src/video/ui/video_shell/trim/run.rs:253
+msgid "Edit Cut"
+msgstr "Kesimi düzenle"
+
+#: crates/big-video-player/src/video/ui/video_shell/tv.rs:41
+#: crates/media-runtime/src/shared/tv_cast/card.rs:233
+msgid "On the TV and here"
+msgstr "TV'de ve burada"
+
+#: crates/media-runtime/src/cast/daemon.rs:110
+msgid "BigNetScreen returned an incompatible reply"
+msgstr "BigNetScreen uyumsuz bir yanıt döndürdü"
+
+#: crates/media-runtime/src/cast/daemon.rs:156
+msgid "Update BigNetScreen to use player controls"
+msgstr "Oynatıcı denetimlerini kullanmak için BigNetScreen'i güncelleyin"
+
+#: crates/media-runtime/src/cast/daemon.rs:164
+#: crates/media-runtime/src/shared/tv_cast.rs:272
+msgid "BigNetScreen is unavailable"
+msgstr "BigNetScreen kullanılamıyor"
+
+#: crates/media-runtime/src/cast/daemon.rs:205
+msgid "BigNetScreen disconnected"
+msgstr "BigNetScreen bağlantısı kesildi"
+
+#: crates/media-runtime/src/cast/daemon.rs:314
+msgid "Select between 1 and 1000 files"
+msgstr "1 ile 1000 arasında dosya seçin"
+
+#: crates/media-runtime/src/media/metadata_cache/detailed_video_metadata.rs:111
+#: crates/media-runtime/src/media/metadata_cache/detailed_video_metadata.rs:157
+#: crates/media-runtime/src/media/metadata_cache/detailed_video_metadata.rs:171
+#: crates/ui/media/big-media-components/src/media/file_metadata_dialog.rs:65
+#: crates/ui/media/big-player-ui/src/audio_preferences.rs:140
+msgid "Language"
+msgstr "Dil"
+
+#: crates/media-runtime/src/media/metadata_cache/detailed_video_metadata.rs:129
+msgid "CD Quality"
+msgstr "CD kalitesi"
+
+#: crates/media-runtime/src/media/metadata_cache/detailed_video_metadata.rs:131
+msgid "Hi-Res"
+msgstr "Yüksek çözünürlük"
+
+#: crates/media-runtime/src/media/metadata_cache/detailed_video_metadata.rs:143
+#: crates/ui/media/big-player-ui/src/audio_preferences.rs:179
+msgid "Mono"
+msgstr "Mono"
+
+#: crates/media-runtime/src/media/metadata_cache/detailed_video_metadata.rs:144
+#: crates/ui/media/big-player-ui/src/audio_preferences.rs:179
+msgid "Stereo"
+msgstr "Stereo"
+
+#: crates/media-runtime/src/media/metadata_cache/detailed_video_metadata.rs:145
+msgid "5.1 Surround"
+msgstr "5.1 Surround"
+
+#: crates/media-runtime/src/media/metadata_cache/detailed_video_metadata.rs:146
+msgid "7.1 Surround"
+msgstr "7.1 Surround"
+
+#: crates/media-runtime/src/media/metadata_cache/display.rs:21
+#, rust-format
+msgid "{} audio track"
+msgid_plural "{} audio tracks"
+msgstr[0] "{} ses izi"
+msgstr[1] "{} ses izi"
+
+#: crates/media-runtime/src/media/metadata_cache/display.rs:28
+#, rust-format
+msgid "{} subtitle"
+msgid_plural "{} subtitles"
+msgstr[0] "{} altyazı"
+msgstr[1] "{} altyazı"
+
+#: crates/media-runtime/src/media/playlist_scan/display.rs:79
+msgid "Home"
+msgstr "Ana sayfa"
+
+#: crates/media-runtime/src/settings/messages.rs:7
+msgid ""
+"A save is pending. Re-enter exactly the intended credentials to retry that "
+"same transaction, or close and use Recover account. A different payload will "
+"be refused."
+msgstr ""
+"Bir kayıt bekliyor. Aynı işlemi yeniden denemek için amaçlanan kimlik "
+"bilgilerini tam olarak yeniden girin veya kapatıp Hesabı kurtar'ı kullanın. "
+"Farklı bir veri reddedilecek."
+
+#: crates/media-runtime/src/settings/messages.rs:9
+msgid "API key"
+msgstr "API anahtarı"
+
+#: crates/media-runtime/src/settings/messages.rs:10
+msgid "API secret"
+msgstr "API gizli anahtarı"
+
+#: crates/media-runtime/src/settings/messages.rs:11
+msgid "Access could not be verified — check permissions before reviewing"
+msgstr "Erişim doğrulanamadı — gözden geçirmeden önce izinleri denetleyin"
+
+#: crates/media-runtime/src/settings/messages.rs:12
+msgid "All preferences are saved."
+msgstr "Tüm tercihler kaydedildi."
+
+#: crates/media-runtime/src/settings/messages.rs:13
+msgid ""
+"An account operation was interrupted. Recover it before making another "
+"change."
+msgstr ""
+"Bir hesap işlemi yarıda kesildi. Başka bir değişiklik yapmadan önce kurtarın."
+
+#: crates/media-runtime/src/settings/messages.rs:14
+msgid "Available again"
+msgstr "Yeniden kullanılabilir"
+
+#: crates/media-runtime/src/settings/messages.rs:15
+msgid "Cancellation requested. Finishing the current safe step…"
+msgstr "İptal istendi. Geçerli güvenli adım tamamlanıyor…"
+
+#: crates/media-runtime/src/settings/messages.rs:16
+msgid "Changes are saved."
+msgstr "Değişiklikler kaydedildi."
+
+#: crates/media-runtime/src/settings/messages.rs:17
+msgid "Changes were applied, but safe storage is not confirmed. Retry saving."
+msgstr ""
+"Değişiklikler uygulandı, ancak güvenli depolama doğrulanamadı. Kaydetmeyi "
+"yeniden deneyin."
+
+#: crates/media-runtime/src/settings/messages.rs:19
+msgid ""
+"Changes work for this session but could not be saved. Check storage or close "
+"other instances, then retry."
+msgstr ""
+"Değişiklikler bu oturum için çalışıyor ama kaydedilemedi. Depolamayı "
+"denetleyin veya diğer örnekleri kapatın, sonra yeniden deneyin."
+
+#: crates/media-runtime/src/settings/messages.rs:21
+msgid "Check keyring access"
+msgstr "Anahtar zinciri erişimini denetle"
+
+#: crates/media-runtime/src/settings/messages.rs:22
+msgid "Credentials are protected in your keyring."
+msgstr "Kimlik bilgileri anahtar zincirinizde korunuyor."
+
+#: crates/media-runtime/src/settings/messages.rs:24
+msgid ""
+"Credentials are protected, but cleanup needs recovery. Close this editor and "
+"use Recover account."
+msgstr ""
+"Kimlik bilgileri korunuyor, ancak temizlik kurtarma gerektiriyor. Bu "
+"düzenleyiciyi kapatın ve Hesabı kurtar'ı kullanın."
+
+#: crates/media-runtime/src/settings/messages.rs:26
+msgid ""
+"Credentials are still in a private file. Protect them in your desktop "
+"keyring."
+msgstr ""
+"Kimlik bilgileri hâlâ özel bir dosyada. Bunları masaüstü anahtar "
+"zincirinizde koruyun."
+
+#: crates/media-runtime/src/settings/messages.rs:27
+msgid "Credentials are stored in the desktop keyring."
+msgstr "Kimlik bilgileri masaüstü anahtar zincirinde saklanıyor."
+
+#: crates/media-runtime/src/settings/messages.rs:28
+msgid ""
+"Edit the credentials, then save. Closing without saving discards your edits."
+msgstr ""
+"Kimlik bilgilerini düzenleyin, sonra kaydedin. Kaydetmeden kapatmak "
+"düzenlemelerinizi atar."
+
+#: crates/media-runtime/src/settings/messages.rs:29
+msgid "No credentials are saved for this account."
+msgstr "Bu hesap için kayıtlı kimlik bilgisi yok."
+
+#: crates/media-runtime/src/settings/messages.rs:30
+msgid "Not found — select only if you want to forget this library record"
+msgstr "Bulunamadı — yalnızca bu kütüphane kaydını unutmak istiyorsanız seçin"
+
+#: crates/media-runtime/src/settings/messages.rs:31
+msgid "Playlist exported."
+msgstr "Çalma listesi dışa aktarıldı."
+
+#: crates/media-runtime/src/settings/messages.rs:32
+msgid "Remote items are not checked as local files"
+msgstr "Uzak öğeler yerel dosya olarak denetlenmez"
+
+#: crates/media-runtime/src/settings/messages.rs:34
+msgid ""
+"Saving was not fully confirmed. Close this editor, reload and recover the "
+"pending operation. No plaintext fallback was used."
+msgstr ""
+"Kaydetme tam olarak doğrulanamadı. Bu düzenleyiciyi kapatın, yeniden "
+"yükleyin ve bekleyen işlemi kurtarın. Düz metin yedeği kullanılmadı."
+
+#: crates/media-runtime/src/settings/messages.rs:36
+msgid "Saving your changes…"
+msgstr "Değişiklikleriniz kaydediliyor…"
+
+#: crates/media-runtime/src/settings/messages.rs:37
+msgid "Session key"
+msgstr "Oturum anahtarı"
+
+#: crates/media-runtime/src/settings/messages.rs:39
+msgid ""
+"The playlist was not exported. Check storage or choose a new filename; "
+"existing files were not replaced."
+msgstr ""
+"Çalma listesi dışa aktarılmadı. Depolamayı denetleyin veya yeni bir dosya "
+"adı seçin; var olan dosyaların yerine yazılmadı."
+
+#: crates/media-runtime/src/settings/messages.rs:41
+msgid "This location is not a regular media file"
+msgstr "Bu konum normal bir ortam dosyası değil"
+
+#: crates/media-runtime/src/settings/messages.rs:42
+msgid "User token"
+msgstr "Kullanıcı belirteci"
+
+#: crates/media-runtime/src/settings/saving.rs:14
+msgid "Retry Saving"
+msgstr "Kaydetmeyi yeniden dene"
+
+#: crates/media-runtime/src/settings/saving.rs:41
+msgid ""
+"Your changes work for now but could not be saved. Check free disk space or "
+"close other players, then retry."
+msgstr ""
+"Değişiklikleriniz şimdilik çalışıyor ama kaydedilemedi. Boş disk alanını "
+"denetleyin veya diğer oynatıcıları kapatın, sonra yeniden deneyin."
+
+#: crates/media-runtime/src/settings/saving.rs:126
+msgid ""
+"Saves and exports are still finishing. The window will close afterwards. "
+"Keeping it open does not cancel those operations."
+msgstr ""
+"Kaydetme ve dışa aktarma işlemleri hâlâ tamamlanıyor. Pencere sonrasında "
+"kapanacak. Açık tutmak bu işlemleri iptal etmez."
+
+#: crates/media-runtime/src/settings/saving.rs:129
+msgid "Finishing pending work"
+msgstr "Bekleyen işler tamamlanıyor"
+
+#: crates/media-runtime/src/settings/saving.rs:132
+#: crates/media-runtime/src/settings/saving.rs:171
+msgid "Keep open"
+msgstr "Açık tut"
+
+#: crates/media-runtime/src/settings/saving.rs:164
+msgid ""
+"Keep the player open to review saving errors and retry. Continuing may "
+"discard unsaved session changes; it does not mark them as saved."
+msgstr ""
+"Kaydetme hatalarını gözden geçirmek ve yeniden denemek için oynatıcıyı açık "
+"tutun. Devam etmek kaydedilmemiş oturum değişikliklerini atabilir; onları "
+"kaydedilmiş olarak işaretlemez."
+
+#: crates/media-runtime/src/settings/saving.rs:167
+msgid "Some changes are not confirmed as saved"
+msgstr "Bazı değişikliklerin kaydedildiği doğrulanmadı"
+
+#: crates/media-runtime/src/settings/saving.rs:172
+msgid "Continue without saved changes"
+msgstr "Kaydedilmiş değişiklikler olmadan devam et"
+
+#: crates/media-runtime/src/shared/audio_effects.rs:79
+msgid "Convert to mono before filtering"
+msgstr "Süzmeden önce monoya dönüştür"
+
+#: crates/media-runtime/src/shared/audio_effects.rs:103
+#: crates/media-runtime/src/shared/audio_effects.rs:146
+msgid "Cleaning quality"
+msgstr "Temizleme kalitesi"
+
+#: crates/media-runtime/src/shared/audio_effects.rs:131
+#, rust-format
+msgid "Unavailable: install {package}"
+msgstr "Kullanılamıyor: {package} paketini kurun"
+
+#: crates/media-runtime/src/shared/audio_effects.rs:151
+msgid "Faster"
+msgstr "Daha hızlı"
+
+#: crates/media-runtime/src/shared/audio_effects.rs:152
+msgid "Better, slower"
+msgstr "Daha iyi, daha yavaş"
+
+#: crates/media-runtime/src/shared/audio_effects.rs:178
+msgid "Audio only when a voice is detected"
+msgstr "Yalnızca ses algılandığında sesi ver"
+
+#: crates/media-runtime/src/shared/audio_effects.rs:184
+msgid "Very sensitive"
+msgstr "Çok duyarlı"
+
+#: crates/media-runtime/src/shared/audio_effects.rs:185
+msgid "Sensitive"
+msgstr "Duyarlı"
+
+#: crates/media-runtime/src/shared/audio_effects.rs:187
+msgid "Strict"
+msgstr "Sıkı"
+
+#: crates/media-runtime/src/shared/audio_effects.rs:188
+msgid "Very strict"
+msgstr "Çok sıkı"
+
+#: crates/media-runtime/src/shared/audio_effects.rs:238
+#: crates/media-runtime/src/shared/audio_effects.rs:251
+msgid "Voice detection"
+msgstr "Ses algılama"
+
+#: crates/media-runtime/src/shared/audio_effects_eq.rs:27
+msgid "Flat"
+msgstr "Düz"
+
+#: crates/media-runtime/src/shared/audio_effects_eq.rs:31
+msgid "Bass Boost"
+msgstr "Bas artırma"
+
+#: crates/media-runtime/src/shared/audio_effects_eq.rs:35
+msgid "Treble Boost"
+msgstr "Tiz artırma"
+
+#: crates/media-runtime/src/shared/audio_effects_eq.rs:39
+msgid "Pop"
+msgstr "Pop"
+
+#: crates/media-runtime/src/shared/audio_effects_eq.rs:43
+msgid "Rock"
+msgstr "Rock"
+
+#: crates/media-runtime/src/shared/audio_effects_eq.rs:47
+msgid "Jazz"
+msgstr "Caz"
+
+#: crates/media-runtime/src/shared/audio_effects_eq.rs:51
+msgid "Classical"
+msgstr "Klasik"
+
+#: crates/media-runtime/src/shared/audio_effects_eq.rs:55
+msgid "Vocal"
+msgstr "Vokal"
+
+#: crates/media-runtime/src/shared/audio_effects_eq.rs:59
+msgid "Electronic"
+msgstr "Elektronik"
+
+#: crates/media-runtime/src/shared/audio_effects_eq.rs:137
+msgid "Preset:"
+msgstr "Ön ayar:"
+
+#: crates/media-runtime/src/shared/audio_effects_eq.rs:159
+msgid "Reset to Flat"
+msgstr "Düze sıfırla"
+
+#: crates/media-runtime/src/shared/audio_effects_eq.rs:227
+#: crates/media-runtime/src/shared/audio_effects_eq.rs:228
+msgid "Equalizer band"
+msgstr "Ekolayzır bandı"
+
+#: crates/media-runtime/src/shared/audio_effects_eq.rs:285
+msgid "Bass"
+msgstr "Bas"
+
+#: crates/media-runtime/src/shared/audio_effects_eq.rs:286
+msgid "Mids"
+msgstr "Orta"
+
+#: crates/media-runtime/src/shared/audio_effects_eq.rs:287
+msgid "Highs"
+msgstr "Tiz"
+
+#: crates/media-runtime/src/shared/converter_handoff.rs:41
+msgid "Could not launch the converter"
+msgstr "Dönüştürücü başlatılamadı"
+
+#: crates/media-runtime/src/shared/shortcut_capture.rs:10
+msgid "Set Shortcut"
+msgstr "Kısayol ayarla"
+
+#: crates/media-runtime/src/shared/shortcut_capture.rs:11
+msgid "Press the desired key combination…"
+msgstr "İstediğiniz tuş birleşimine basın…"
+
+#: crates/media-runtime/src/shared/shortcut_capture.rs:12
+msgid "Waiting…"
+msgstr "Bekleniyor…"
+
+#: crates/media-runtime/src/shared/shortcut_capture.rs:13
+msgid "Reset to Default"
+msgstr "Varsayılana sıfırla"
+
+#: crates/media-runtime/src/shared/sleep_timer.rs:12
+msgid "Stop playback"
+msgstr "Oynatmayı durdur"
+
+#: crates/media-runtime/src/shared/sleep_timer.rs:14
+msgid "Suspend computer"
+msgstr "Bilgisayarı askıya al"
+
+#: crates/media-runtime/src/shared/sleep_timer.rs:15
+msgid "Shut down computer"
+msgstr "Bilgisayarı kapat"
+
+#: crates/media-runtime/src/shared/sleep_timer.rs:22
+msgid "Minutes"
+msgstr "Dakika"
+
+#: crates/media-runtime/src/shared/sleep_timer.rs:23
+msgid "Action"
+msgstr "Eylem"
+
+#: crates/media-runtime/src/shared/sleep_timer.rs:24
+msgid "When timer ends"
+msgstr "Zamanlayıcı bittiğinde"
+
+#: crates/media-runtime/src/shared/sleep_timer.rs:25
+msgid "Start Timer"
+msgstr "Zamanlayıcıyı başlat"
+
+#: crates/media-runtime/src/shared/tv_cast.rs:110
+msgid "BigNetScreen is not installed"
+msgstr "BigNetScreen kurulu değil"
+
+#: crates/media-runtime/src/shared/tv_cast.rs:111
+msgid "Install it to play on a TV or Chromecast."
+msgstr "TV veya Chromecast'te oynatmak için kurun."
+
+#: crates/media-runtime/src/shared/tv_cast.rs:116
+msgid "Could not reach BigNetScreen"
+msgstr "BigNetScreen'e ulaşılamadı"
+
+#: crates/media-runtime/src/shared/tv_cast.rs:374
+msgid "Smart TV (DLNA)"
+msgstr "Akıllı TV (DLNA)"
+
+#: crates/media-runtime/src/shared/tv_cast.rs:376
+msgid "Chromecast"
+msgstr "Chromecast"
+
+#: crates/media-runtime/src/shared/tv_cast.rs:384
+msgid "This TV cannot play this file."
+msgstr "Bu TV bu dosyayı oynatamıyor."
+
+#: crates/media-runtime/src/shared/tv_cast.rs:386
+msgid "Something is already playing on a TV. Stop it first."
+msgstr "Bir TV'de zaten bir şey oynatılıyor. Önce onu durdurun."
+
+#: crates/media-runtime/src/shared/tv_cast.rs:388
+msgid "That TV is no longer on the network. Search again."
+msgstr "Bu TV artık ağda değil. Yeniden arayın."
+
+#: crates/media-runtime/src/shared/tv_cast.rs:401
+msgid "Same as the video"
+msgstr "Videoyla aynı"
+
+#: crates/media-runtime/src/shared/tv_cast.rs:438
+msgid "Now on the TV"
+msgstr "Şimdi TV'de"
+
+#: crates/media-runtime/src/shared/tv_cast.rs:450
+#: crates/media-runtime/src/shared/tv_cast.rs:454
+msgid "Stop on the TV"
+msgstr "TV'de durdur"
+
+#: crates/media-runtime/src/shared/tv_cast.rs:462
+#: crates/media-runtime/src/shared/tv_cast.rs:466
+msgid "Search again"
+msgstr "Yeniden ara"
+
+#: crates/media-runtime/src/shared/tv_cast.rs:468
+msgid "TVs on this network"
+msgstr "Bu ağdaki TV'ler"
+
+#: crates/media-runtime/src/shared/tv_cast.rs:469
+msgid "Starts on the TV where it is now, and pauses here."
+msgstr "TV'de şu an olduğu yerden başlar ve burada duraklar."
+
+#: crates/media-runtime/src/shared/tv_cast.rs:475
+#: crates/media-runtime/src/shared/tv_cast.rs:818
+msgid "Looking for TVs…"
+msgstr "TV'ler aranıyor…"
+
+#: crates/media-runtime/src/shared/tv_cast.rs:489
+msgid "Size of the picture sent to the TV"
+msgstr "TV'ye gönderilen görüntünün boyutu"
+
+#: crates/media-runtime/src/shared/tv_cast.rs:648
+msgid "Play something first, then choose the TV."
+msgstr "Önce bir şey oynatın, sonra TV'yi seçin."
+
+#: crates/media-runtime/src/shared/tv_cast.rs:704
+#: crates/media-runtime/src/shared/tv_cast.rs:776
+#: crates/ui/media/big-player-ui/src/download_panel.rs:207
+msgid "Starting…"
+msgstr "Başlatılıyor…"
+
+#: crates/media-runtime/src/shared/tv_cast.rs:714
+msgid "Continue"
+msgstr "Devam"
+
+#: crates/media-runtime/src/shared/tv_cast.rs:798
+msgid "BigNetScreen stopped"
+msgstr "BigNetScreen durdu"
+
+#: crates/media-runtime/src/shared/tv_cast.rs:799
+msgid "Search again to reconnect."
+msgstr "Yeniden bağlanmak için yeniden arayın."
+
+#: crates/media-runtime/src/shared/tv_cast.rs:805
+msgid "Could not start on the TV"
+msgstr "TV'de başlatılamadı"
+
+#: crates/media-runtime/src/shared/tv_cast.rs:823
+msgid "No TV found"
+msgstr "TV bulunamadı"
+
+#: crates/media-runtime/src/shared/tv_cast.rs:824
+msgid "Check that the TV is on and on the same network as this computer."
+msgstr ""
+"TV'nin açık olduğunu ve bu bilgisayarla aynı ağda bulunduğunu denetleyin."
+
+#: crates/media-runtime/src/shared/tv_cast/card.rs:82
+#: crates/media-runtime/src/shared/tv_cast/card.rs:197
+#: crates/media-runtime/src/shared/tv_cast/card.rs:223
+msgid "Playing on the TV"
+msgstr "TV'de oynatılıyor"
+
+#: crates/media-runtime/src/shared/tv_cast/card.rs:95
+msgid "Stop sending"
+msgstr "Göndermeyi durdur"
+
+#: crates/media-runtime/src/shared/tv_cast/card.rs:100
+#: crates/media-runtime/src/shared/tv_cast/card.rs:217
+msgid "Use the player"
+msgstr "Oynatıcıyı kullan"
+
+#: crates/media-runtime/src/shared/tv_cast/card.rs:102
+#: crates/media-runtime/src/shared/tv_cast/card.rs:219
+msgid "The TV keeps playing, and the player is free for this or another video."
+msgstr ""
+"TV oynatmaya devam eder, oynatıcı bu veya başka bir video için boşta kalır."
+
+#: crates/media-runtime/src/shared/tv_cast/card.rs:109
+msgid "Show this one on the TV"
+msgstr "Bunu TV'de göster"
+
+#: crates/media-runtime/src/shared/tv_cast/card.rs:111
+msgid "The TV plays what is in the player now, from where it is."
+msgstr "TV, oynatıcıdaki şeyi şu an olduğu yerden oynatır."
+
+#: crates/media-runtime/src/shared/tv_cast/card.rs:117
+msgid "Play the TV's here"
+msgstr "TV'dekini burada oynat"
+
+#: crates/media-runtime/src/shared/tv_cast/card.rs:119
+msgid "The player opens what the TV plays, at the same point."
+msgstr "Oynatıcı, TV'nin oynattığını aynı noktada açar."
+
+#: crates/media-runtime/src/shared/tv_cast/card.rs:214
+msgid "Watch here too"
+msgstr "Burada da izle"
+
+#: crates/media-runtime/src/shared/tv_cast/card.rs:215
+msgid ""
+"The player plays the video too, in step with the TV, with its own volume "
+"starting silent."
+msgstr ""
+"Oynatıcı videoyu TV ile eş zamanlı olarak oynatır; kendi ses düzeyi sessiz "
+"başlar."
+
+#: crates/media-runtime/src/shared/tv_cast/card.rs:226
+msgid "Starting on the TV…"
+msgstr "TV'de başlatılıyor…"
+
+#: crates/media-runtime/src/shared/tv_cast/card.rs:236
+msgid "Only on the TV"
+msgstr "Yalnızca TV'de"
+
+#: crates/media-runtime/src/shared/tv_cast/card.rs:237
+msgid "The player stops following the TV and waits."
+msgstr "Oynatıcı TV'yi izlemeyi bırakır ve bekler."
+
+#: crates/media-runtime/src/shared/tv_cast/card.rs:263
+msgid "Control the TV"
+msgstr "TV'yi denetle"
+
+#: crates/media-runtime/src/shared/tv_cast/card.rs:265
+msgid "The controls drive the TV again, and the player pauses."
+msgstr "Denetimler yeniden TV'yi yönetir ve oynatıcı duraklar."
+
+#: crates/ui/generic/big-relm4-components/src/feedback/hover_popover.rs:271
+msgid "Press Alt+Down to adjust. Press Escape to close."
+msgstr "Ayarlamak için Alt+Aşağı'ya basın. Kapatmak için Escape'e basın."
+
+#: crates/ui/generic/big-relm4-components/src/layout/media_window/sidebar.rs:248
+msgid "Resize sidebar"
+msgstr "Kenar çubuğunu yeniden boyutlandır"
+
+#: crates/ui/generic/big-relm4-components/src/layout/media_window/sidebar.rs:250
+msgid ""
+"Use Left and Right arrow keys to resize the media sidebar. Use Home and End "
+"for minimum and maximum width."
+msgstr ""
+"Medya kenar çubuğunu yeniden boyutlandırmak için Sol ve Sağ ok tuşlarını "
+"kullanın. En az ve en çok genişlik için Home ve End tuşlarını kullanın."
+
+#: crates/ui/media/big-media-components/src/media/file_metadata_dialog.rs:52
+msgid "File Information"
+msgstr "Dosya bilgisi"
+
+#: crates/ui/media/big-media-components/src/media/file_metadata_dialog.rs:58
+msgid "Container"
+msgstr "Kapsayıcı"
+
+#: crates/ui/media/big-media-components/src/media/file_metadata_dialog.rs:61
+msgid "Video Stream"
+msgstr "Video akışı"
+
+#: crates/ui/media/big-media-components/src/media/file_metadata_dialog.rs:62
+msgid "Audio Stream"
+msgstr "Ses akışı"
+
+#: crates/ui/media/big-media-components/src/media/file_metadata_dialog.rs:63
+msgid "Subtitle Stream"
+msgstr "Altyazı akışı"
+
+#: crates/ui/media/big-media-components/src/media/file_metadata_dialog.rs:419
+msgid "Low"
+msgstr "Düşük"
+
+#: crates/ui/media/big-media-components/src/media/file_metadata_dialog.rs:421
+msgid "Studio"
+msgstr "Stüdyo"
+
+#: crates/ui/media/big-media-components/src/player_chrome.rs:301
+msgid "Volume level"
+msgstr "Ses düzeyi"
+
+#: crates/ui/media/big-media-components/src/player_chrome.rs:312
+msgid "Playback speed"
+msgstr "Oynatma hızı"
+
+#: crates/ui/media/big-media-components/src/player_chrome.rs:324
+msgid "Voice"
+msgstr "Ses"
+
+#: crates/ui/media/big-media-components/src/player_chrome.rs:326
+msgid "Voice enhancement"
+msgstr "Ses iyileştirme"
+
+#: crates/ui/media/big-player-ui/src/appearance/audio_colors.rs:30
+#: crates/ui/media/big-player-ui/src/appearance/video_colors.rs:29
+msgid "Color Source"
+msgstr "Renk kaynağı"
+
+#: crates/ui/media/big-player-ui/src/appearance/audio_colors.rs:32
+#: crates/ui/media/big-player-ui/src/appearance/video_colors.rs:31
+msgid "Follow System"
+msgstr "Sistemi izle"
+
+#: crates/ui/media/big-player-ui/src/appearance/audio_colors.rs:33
+#: crates/ui/media/big-player-ui/src/appearance/video_colors.rs:32
+msgid "Light Theme"
+msgstr "Açık tema"
+
+#: crates/ui/media/big-player-ui/src/appearance/audio_colors.rs:34
+#: crates/ui/media/big-player-ui/src/appearance/video_colors.rs:33
+msgid "Dark Theme"
+msgstr "Koyu tema"
+
+#: crates/ui/media/big-player-ui/src/appearance/audio_colors.rs:35
+#: crates/ui/media/big-player-ui/src/appearance/color_palette_controls.rs:130
+#: crates/ui/media/big-player-ui/src/appearance/video_colors.rs:35
+msgid "Custom Colors"
+msgstr "Özel renkler"
+
+#: crates/ui/media/big-player-ui/src/appearance/audio_colors.rs:69
+msgid "Accessibility"
+msgstr "Erişilebilirlik"
+
+#: crates/ui/media/big-player-ui/src/appearance/audio_colors.rs:72
+msgid "High Contrast Text"
+msgstr "Yüksek karşıtlıklı metin"
+
+#: crates/ui/media/big-player-ui/src/appearance/color_palette_controls.rs:21
+msgid "Custom"
+msgstr "Özel"
+
+#: crates/ui/media/big-player-ui/src/appearance/color_palette_controls.rs:22
+msgid "Light"
+msgstr "Açık"
+
+#: crates/ui/media/big-player-ui/src/appearance/color_palette_controls.rs:23
+msgid "Dark"
+msgstr "Koyu"
+
+#: crates/ui/media/big-player-ui/src/appearance/color_palette_controls.rs:32
+msgid "Pink Light"
+msgstr "Açık Pembe"
+
+#: crates/ui/media/big-player-ui/src/appearance/color_palette_controls.rs:106
+msgid "Colors"
+msgstr "Renkler"
+
+#: crates/ui/media/big-player-ui/src/appearance/color_palette_controls.rs:134
+msgid "Color Preset"
+msgstr "Renk ön ayarı"
+
+#: crates/ui/media/big-player-ui/src/appearance/color_palette_controls.rs:141
+msgid "Background Color"
+msgstr "Arka plan rengi"
+
+#: crates/ui/media/big-player-ui/src/appearance/color_palette_controls.rs:148
+msgid "Font Color"
+msgstr "Yazı rengi"
+
+#: crates/ui/media/big-player-ui/src/appearance/color_palette_controls.rs:155
+msgid "Icon Color"
+msgstr "Simge rengi"
+
+#: crates/ui/media/big-player-ui/src/appearance/color_palette_controls.rs:162
+msgid "Dialogs and Menus Color"
+msgstr "İletişim kutuları ve menü rengi"
+
+#: crates/ui/media/big-player-ui/src/appearance/video_colors.rs:34
+msgid "Video Colors"
+msgstr "Video renkleri"
+
+#: crates/ui/media/big-player-ui/src/appearance/video_colors.rs:44
+msgid "Background Opacity"
+msgstr "Arka plan opaklığı"
+
+#: crates/ui/media/big-player-ui/src/appearance/video_colors.rs:45
+msgid "Menu Opacity"
+msgstr "Menü opaklığı"
+
+#: crates/ui/media/big-player-ui/src/appearance/video_colors.rs:69
+msgid "Icon and Text Shadow"
+msgstr "Simge ve metin gölgesi"
+
+#: crates/ui/media/big-player-ui/src/audio_preferences.rs:87
+msgid "Sound"
+msgstr "Ses"
+
+#: crates/ui/media/big-player-ui/src/audio_preferences.rs:91
+msgid "Even Out Loudness"
+msgstr "Ses yüksekliğini dengele"
+
+#: crates/ui/media/big-player-ui/src/audio_preferences.rs:92
+msgid "Quiet and loud media play at a similar volume"
+msgstr "Sessiz ve gürültülü ortamlar benzer ses düzeyinde oynatılır"
+
+#: crates/ui/media/big-player-ui/src/audio_preferences.rs:110
+msgid "Keep Voices Natural"
+msgstr "Sesleri doğal tut"
+
+#: crates/ui/media/big-player-ui/src/audio_preferences.rs:111
+msgid "Voices keep their tone when playing faster or slower"
+msgstr "Sesler daha hızlı veya yavaş oynatılırken tonunu korur"
+
+#: crates/ui/media/big-player-ui/src/audio_preferences.rs:124
+msgid "Maximum Volume"
+msgstr "En yüksek ses düzeyi"
+
+#: crates/ui/media/big-player-ui/src/audio_preferences.rs:125
+msgid "Above 100% helps with quiet recordings but may distort"
+msgstr ""
+"%100'ün üzeri sessiz kayıtlara yardımcı olur ama bozulmaya yol açabilir"
+
+#: crates/ui/media/big-player-ui/src/audio_preferences.rs:142
+msgid ""
+"For media with several audio tracks. Use language codes separated by commas, "
+"in order of preference, such as pt,en"
+msgstr ""
+"Birden çok ses izi olan ortamlar için. Tercih sırasına göre, virgülle "
+"ayrılmış dil kodları kullanın; örneğin tr,en"
+
+#: crates/ui/media/big-player-ui/src/audio_preferences.rs:161
+msgid "Sound System"
+msgstr "Ses sistemi"
+
+#: crates/ui/media/big-player-ui/src/audio_preferences.rs:162
+msgid "Automatic works for most computers"
+msgstr "Otomatik çoğu bilgisayarda çalışır"
+
+#: crates/ui/media/big-player-ui/src/audio_preferences.rs:166
+msgid "Audio Output"
+msgstr "Ses çıkışı"
+
+#: crates/ui/media/big-player-ui/src/audio_preferences.rs:167
+msgid "Takes effect after reopening the player"
+msgstr "Oynatıcı yeniden açıldıktan sonra etkili olur"
+
+#: crates/ui/media/big-player-ui/src/audio_preferences.rs:177
+msgid "Speakers"
+msgstr "Hoparlörler"
+
+#: crates/ui/media/big-player-ui/src/audio_preferences.rs:178
+msgid "Mixes surround sound down for stereo speakers or headphones"
+msgstr "Surround sesi stereo hoparlörler veya kulaklıklar için indirger"
+
+#: crates/ui/media/big-player-ui/src/audio_trim_bar.rs:40
+msgid "Mark cut point"
+msgstr "Kesim noktasını işaretle"
+
+#: crates/ui/media/big-player-ui/src/audio_trim_bar.rs:41
+msgid "Clear cuts"
+msgstr "Kesimleri temizle"
+
+#: crates/ui/media/big-player-ui/src/audio_trim_bar.rs:42
+msgid "Play only marked cuts"
+msgstr "Yalnızca işaretli kesimleri oynat"
+
+#: crates/ui/media/big-player-ui/src/audio_trim_bar.rs:43
+msgid "cuts"
+msgstr "kesim"
+
+#: crates/ui/media/big-player-ui/src/audio_trim_bar.rs:44
+#, rust-format
+msgid "Cut start: {t} - mark the other end"
+msgstr "Kesim başlangıcı: {t} - diğer ucu işaretleyin"
+
+#: crates/ui/media/big-player-ui/src/audio_trim_bar.rs:46
+msgid "Press Mark at the start and end of each cut"
+msgstr "Her kesimin başında ve sonunda İşaretle'ye basın"
+
+#: crates/ui/media/big-player-ui/src/audio_trim_bar.rs:47
+msgid "Export cuts"
+msgstr "Kesimleri dışa aktar"
+
+#: crates/ui/media/big-player-ui/src/download_panel.rs:100
+msgid "Downloads"
+msgstr "İndirmeler"
+
+#: crates/ui/media/big-player-ui/src/download_panel.rs:109
+msgid "Clear completed downloads"
+msgstr "Tamamlanan indirmeleri temizle"
+
+#: crates/ui/media/big-player-ui/src/download_panel.rs:119
+msgid "Hide downloads panel"
+msgstr "İndirmeler panelini gizle"
+
+#: crates/ui/media/big-player-ui/src/download_panel.rs:197
+msgid "Cancel download"
+msgstr "İndirmeyi iptal et"
+
+#: crates/ui/media/big-player-ui/src/download_panel.rs:290
+msgid "Cancelled"
+msgstr "İptal edildi"
+
+#: crates/ui/media/big-player-ui/src/download_panel.rs:301
+msgid "Complete"
+msgstr "Tamamlandı"
+
+#: crates/ui/media/big-player-ui/src/file_browser.rs:108
+msgid "Filter files"
+msgstr "Dosyaları süz"
+
+#: crates/ui/media/big-player-ui/src/file_browser.rs:261
+msgid "File browser"
+msgstr "Dosya tarayıcısı"
+
+#: crates/ui/media/big-player-ui/src/lyrics_panel.rs:155
+#: crates/ui/media/big-player-ui/src/lyrics_panel.rs:164
+msgid "Show only lyrics"
+msgstr "Yalnızca şarkı sözlerini göster"
+
+#: crates/ui/media/big-player-ui/src/lyrics_panel.rs:161
+msgid "Show playlist"
+msgstr "Çalma listesini göster"
+
+#: crates/ui/media/big-player-ui/src/lyrics_panel.rs:216
+msgid "Searching for lyrics…"
+msgstr "Şarkı sözleri aranıyor…"
+
+#: crates/ui/media/big-player-ui/src/lyrics_panel.rs:242
+msgid "No lyrics found"
+msgstr "Şarkı sözü bulunamadı"
+
+#: crates/ui/media/big-player-ui/src/podcast_panel.rs:123
+msgid "Search podcasts…"
+msgstr "Podcast ara…"
+
+#: crates/ui/media/big-player-ui/src/podcast_panel.rs:125
+msgid "Search podcasts"
+msgstr "Podcast ara"
+
+#: crates/ui/media/big-player-ui/src/podcast_panel.rs:146
+#: crates/ui/media/big-player-ui/src/podcast_panel.rs:147
+msgid "Add RSS feed"
+msgstr "RSS akışı ekle"
+
+#: crates/ui/media/big-player-ui/src/podcast_panel.rs:176
+msgid "No Podcasts"
+msgstr "Podcast yok"
+
+#: crates/ui/media/big-player-ui/src/podcast_panel.rs:177
+msgid "Search for podcasts or add an RSS feed"
+msgstr "Podcast arayın veya bir RSS akışı ekleyin"
+
+#: crates/ui/media/big-player-ui/src/podcast_panel.rs:262
+msgid "Connection error — try again"
+msgstr "Bağlantı hatası — yeniden deneyin"
+
+#: crates/ui/media/big-player-ui/src/podcast_panel.rs:273
+msgid "Already subscribed"
+msgstr "Zaten abone olunmuş"
+
+#: crates/ui/media/big-player-ui/src/podcast_panel.rs:353
+msgid "Subscriptions"
+msgstr "Abonelikler"
+
+#: crates/ui/media/big-player-ui/src/podcast_panel.rs:377
+msgid "Search Results"
+msgstr "Arama sonuçları"
+
+#: crates/ui/media/big-player-ui/src/podcast_panel.rs:425
+msgid "Title unavailable"
+msgstr "Başlık kullanılamıyor"
+
+#: crates/ui/media/big-player-ui/src/podcast_panel.rs:427
+msgid "Loading…"
+msgstr "Yükleniyor…"
+
+#: crates/ui/media/big-player-ui/src/podcast_panel.rs:491
+msgid "Unsubscribe"
+msgstr "Abonelikten çık"
+
+#: crates/ui/media/big-player-ui/src/podcast_panel.rs:493
+msgid "Unsubscribe from podcast"
+msgstr "Podcast aboneliğinden çık"
+
+#: crates/ui/media/big-player-ui/src/podcast_panel.rs:512
+#: crates/ui/media/big-player-ui/src/podcast_panel.rs:571
+msgid "Subscribe"
+msgstr "Abone ol"
+
+#: crates/ui/media/big-player-ui/src/podcast_panel.rs:514
+msgid "Subscribe to podcast"
+msgstr "Podcast'e abone ol"
+
+#: crates/ui/media/big-player-ui/src/podcast_panel.rs:533
+msgid "episodes"
+msgstr "bölüm"
+
+#: crates/ui/media/big-player-ui/src/podcast_panel.rs:554
+msgid "Add RSS Feed"
+msgstr "RSS akışı ekle"
+
+#: crates/ui/media/big-player-ui/src/podcast_panel.rs:560
+msgid "Paste the podcast RSS feed URL below."
+msgstr "Podcast RSS akışı URL'sini aşağıya yapıştırın."
+
+#: crates/ui/media/big-player-ui/src/podcast_panel.rs:562
+msgid "Feed"
+msgstr "Akış"
+
+#: crates/ui/media/big-player-ui/src/podcast_panel.rs:564
+#: crates/ui/media/big-player-ui/src/podcast_panel.rs:567
+msgid "RSS feed URL"
+msgstr "RSS akışı URL'si"
+
+#: crates/ui/media/big-player-ui/src/radio_panel/methods.rs:121
+msgid "My Stations"
+msgstr "İstasyonlarım"
+
+#: crates/ui/media/big-player-ui/src/radio_panel/methods.rs:144
+#: crates/ui/media/big-player-ui/src/radio_panel/widgets.rs:299
+msgid "Explore Stations"
+msgstr "İstasyonları keşfet"
+
+#: crates/ui/media/big-player-ui/src/radio_panel/widgets.rs:38
+msgid "Remove station"
+msgstr "İstasyonu kaldır"
+
+#: crates/ui/media/big-player-ui/src/radio_panel/widgets.rs:50
+msgid "Add to my stations"
+msgstr "İstasyonlarıma ekle"
+
+#: crates/ui/media/big-player-ui/src/radio_panel/widgets.rs:79
+#: crates/ui/media/big-player-ui/src/radio_panel/widgets.rs:89
+#: crates/ui/media/big-player-ui/src/radio_panel/widgets.rs:90
+msgid "Record Stream"
+msgstr "Yayını kaydet"
+
+#: crates/ui/media/big-player-ui/src/radio_panel/widgets.rs:94
+#: crates/ui/media/big-player-ui/src/radio_panel/widgets.rs:95
+msgid "Stop Recording"
+msgstr "Kaydı durdur"
+
+#: crates/ui/media/big-player-ui/src/radio_panel/widgets.rs:166
+msgid "Search radios..."
+msgstr "Radyo ara..."
+
+#: crates/ui/media/big-player-ui/src/radio_panel/widgets.rs:168
+msgid "Search radios"
+msgstr "Radyo ara"
+
+#: crates/ui/media/big-player-ui/src/radio_panel/widgets.rs:173
+msgid "All Genres"
+msgstr "Tüm türler"
+
+#: crates/ui/media/big-player-ui/src/radio_panel/widgets.rs:211
+#: crates/ui/media/big-player-ui/src/radio_panel/widgets.rs:212
+msgid "Filter by genre"
+msgstr "Türe göre süz"
+
+#: crates/ui/media/big-player-ui/src/radio_panel/widgets.rs:219
+#: crates/ui/media/big-player-ui/src/radio_panel/widgets.rs:221
+msgid "Add station manually"
+msgstr "İstasyonu elle ekle"
+
+#: crates/ui/media/big-player-ui/src/radio_panel/widgets.rs:285
+msgid "No radio stations"
+msgstr "Radyo istasyonu yok"
+
+#: crates/ui/media/big-player-ui/src/radio_panel/widgets.rs:292
+msgid "Explore popular stations from your country or search by name"
+msgstr "Ülkenizdeki popüler istasyonları keşfedin veya ada göre arayın"
+
+#: crates/ui/media/big-player-ui/src/radio_panel/widgets.rs:307
+msgid "Add Manually"
+msgstr "Elle ekle"
+
+#: crates/ui/media/big-player-ui/src/radio_panel/widgets.rs:324
+msgid "Add Radio Station"
+msgstr "Radyo istasyonu ekle"
+
+#: crates/ui/media/big-player-ui/src/radio_panel/widgets.rs:331
+msgid "Enter a station name and an http:// or https:// stream URL."
+msgstr ""
+"Bir istasyon adı ve http:// ya da https:// ile başlayan bir akış URL'si "
+"girin."
+
+#: crates/ui/media/big-player-ui/src/radio_panel/widgets.rs:334
+msgid "Station"
+msgstr "İstasyon"
+
+#: crates/ui/media/big-player-ui/src/radio_panel/widgets.rs:336
+#: crates/ui/media/big-player-ui/src/radio_panel/widgets.rs:339
+msgid "Station Name"
+msgstr "İstasyon adı"
+
+#: crates/ui/media/big-player-ui/src/radio_panel/widgets.rs:341
+#: crates/ui/media/big-player-ui/src/radio_panel/widgets.rs:345
+msgid "Station stream URL"
+msgstr "İstasyon akış URL'si"
+
+#: crates/ui/media/big-player-ui/src/radio_panel/widgets.rs:351
+msgid "Add"
+msgstr "Ekle"
+
+#: crates/ui/media/big-player-ui/src/smartphone/dialog.rs:38
+msgid "Web Remote"
+msgstr "Web uzaktan kumandası"
+
+#: crates/ui/media/big-player-ui/src/smartphone/dialog.rs:40
+msgid ""
+"Turn on to control this player from a phone or tablet on the same network. "
+"HTTP is not encrypted: use only a trusted private network. Scan the QR code "
+"with the phone's camera to open the remote."
+msgstr ""
+"Bu oynatıcıyı aynı ağdaki bir telefon veya tabletten denetlemek için açın. "
+"HTTP şifrelenmez: yalnızca güvendiğiniz özel bir ağda kullanın. Uzaktan "
+"kumandayı açmak için telefonun kamerasıyla QR kodunu tarayın."
+
+#: crates/ui/media/big-player-ui/src/smartphone/dialog.rs:47
+msgid "Enable web remote"
+msgstr "Web uzaktan kumandasını etkinleştir"
+
+#: crates/ui/media/big-player-ui/src/smartphone/dialog.rs:52
+msgid "QR code"
+msgstr "QR kodu"
+
+#: crates/ui/media/big-player-ui/src/smartphone/dialog.rs:65
+#: crates/ui/media/big-player-ui/src/smartphone/dialog.rs:157
+msgid "Web remote is off."
+msgstr "Web uzaktan kumandası kapalı."
+
+#: crates/ui/media/big-player-ui/src/smartphone/dialog.rs:83
+msgid "KDE Connect / GSConnect"
+msgstr "KDE Connect / GSConnect"
+
+#: crates/ui/media/big-player-ui/src/smartphone/dialog.rs:85
+msgid ""
+"If you have KDE Connect (Plasma, Android) or GSConnect (GNOME) installed, "
+"your paired phone already shows media controls, track information and volume "
+"for this player - no extra setup is required on our side."
+msgstr ""
+"KDE Connect (Plasma, Android) veya GSConnect (GNOME) kuruluysa, "
+"eşleştirilmiş telefonunuz bu oynatıcı için ortam denetimlerini, parça "
+"bilgilerini ve ses düzeyini zaten gösterir — bizim tarafımızda ek kurulum "
+"gerekmez."
+
+#: crates/ui/media/big-player-ui/src/smartphone/dialog.rs:92
+msgid "Install KDE Connect on your phone"
+msgstr "Telefonunuza KDE Connect kurun"
+
+#: crates/ui/media/big-player-ui/src/smartphone/dialog.rs:94
+msgid ""
+"Open the link on the phone's app store. Pair once - then media keys, "
+"notifications and file sharing work both ways."
+msgstr ""
+"Bağlantıyı telefonun uygulama mağazasında açın. Bir kez eşleştirin — sonra "
+"ortam tuşları, bildirimler ve dosya paylaşımı iki yönlü çalışır."
+
+#: crates/ui/media/big-player-ui/src/smartphone/dialog.rs:98
+msgid "Open KDE Connect download page"
+msgstr "KDE Connect indirme sayfasını aç"
+
+#: crates/ui/media/big-player-ui/src/smartphone/dialog.rs:143
+msgid "Scan the code with the phone's camera."
+msgstr "Kodu telefonun kamerasıyla tarayın."
+
+#: crates/ui/media/big-player-ui/src/smartphone/dialog.rs:149
+msgid "Could not start server"
+msgstr "Sunucu başlatılamadı"

@@ -1,0 +1,5422 @@
+# Finnish translations for big-media-runtime package.
+# Copyright (C) 2026 BigLinux
+# This file is distributed under the same license as the big-media-runtime package.
+# Automatically generated, 2026.
+#
+msgid ""
+msgstr ""
+"Project-Id-Version: big-media-runtime 0.1.0\n"
+"Report-Msgid-Bugs-To: https://github.com/biglinux/big-multimedia/issues\n"
+"POT-Creation-Date: 2026-10-26 14:38-0300\n"
+"PO-Revision-Date: 2026-10-23 00:15-0300\n"
+"Last-Translator: Automatically generated\n"
+"Language-Team: none\n"
+"Language: fi\n"
+"MIME-Version: 1.0\n"
+"Content-Type: text/plain; charset=UTF-8\n"
+"Content-Transfer-Encoding: 8bit\n"
+"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+
+#: crates/big-audio-player/src/audio/account_security.rs:15
+msgid ""
+"Move existing account credentials to your desktop keyring. This does not "
+"enable listening-history sharing."
+msgstr ""
+"Siirrä olemassa olevat tilitunnukset työpöydän avainnippuun. Tämä ei ota "
+"kuunteluhistorian jakamista käyttöön."
+
+#: crates/big-audio-player/src/audio/account_security.rs:18
+msgid "Saved account security"
+msgstr "Tallennettujen tilien suojaus"
+
+#: crates/big-audio-player/src/audio/account_security.rs:28
+msgid "Checking saved credentials…"
+msgstr "Tarkistetaan tallennettuja tunnuksia…"
+
+#: crates/big-audio-player/src/audio/account_security.rs:31
+msgid "Protect credentials"
+msgstr "Suojaa tunnukset"
+
+#: crates/big-audio-player/src/audio/account_security.rs:34
+msgid "Reload"
+msgstr "Lataa uudelleen"
+
+#: crates/big-audio-player/src/audio/account_security.rs:63
+msgid "Waiting for your keyring. Unlock it if prompted…"
+msgstr "Odotetaan avainnippua. Avaa sen lukitus, jos sitä pyydetään…"
+
+#: crates/big-audio-player/src/audio/account_security.rs:98
+msgid ""
+"Credentials are protected. Cleanup of an older keyring item needs attention; "
+"retry recovery."
+msgstr ""
+"Tunnukset on suojattu. Vanhan avainnipun kohteen siivous vaatii huomiota; "
+"yritä palautusta uudelleen."
+
+#: crates/big-audio-player/src/audio/account_security.rs:100
+msgid "Recover account"
+msgstr "Palauta tili"
+
+#: crates/big-audio-player/src/audio/account_security.rs:108
+msgid ""
+"The operation was not fully confirmed. Unlock the keyring, reload and retry "
+"recovery. No plaintext fallback was used."
+msgstr ""
+"Toimintoa ei vahvistettu kokonaan. Avaa avainnipun lukitus, lataa uudelleen "
+"ja yritä palautusta uudelleen. Selkotekstivarajärjestelyä ei käytetty."
+
+#: crates/big-audio-player/src/audio/account_security.rs:169
+msgid ""
+"Saved account data could not be read safely. Check permissions and reload; "
+"no changes were made."
+msgstr ""
+"Tallennettuja tilitietoja ei voitu lukea turvallisesti. Tarkista oikeudet ja "
+"lataa uudelleen; mitään ei muutettu."
+
+#: crates/big-audio-player/src/audio/app.rs:16
+msgid ""
+"Lyrics: LRCLIB · lyrics.ovh\n"
+"Metadata: MusicBrainz\n"
+"Radio: Radio Browser\n"
+"Art: Cover Art Archive"
+msgstr ""
+"Sanoitukset: LRCLIB · lyrics.ovh\n"
+"Metatiedot: MusicBrainz\n"
+"Radio: Radio Browser\n"
+"Kansikuvat: Cover Art Archive"
+
+#: crates/big-audio-player/src/audio/app.rs:21
+msgid "Data Sources"
+msgstr "Tietolähteet"
+
+#: crates/big-audio-player/src/audio/appearance/dialogs.rs:43
+#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:283
+msgid "Effects"
+msgstr "Tehosteet"
+
+#: crates/big-audio-player/src/audio/appearance/dialogs.rs:45
+msgid "Playback Bar"
+msgstr "Toistopalkki"
+
+#: crates/big-audio-player/src/audio/appearance/dialogs.rs:46
+msgid "Album Art Background"
+msgstr "Albumin kansikuva taustana"
+
+#: crates/big-audio-player/src/audio/appearance/dialogs.rs:48
+msgid ""
+"Show the current cover as a blurred background behind the audio controls"
+msgstr "Näyttää nykyisen kansikuvan sumeana taustana äänisäätimien takana"
+
+#: crates/big-audio-player/src/audio/keybindings.rs:14
+#: crates/big-audio-player/src/audio/ui/audio_shell/playback.rs:162
+#: crates/big-audio-player/src/audio/ui/audio_shell/tray.rs:20
+#: crates/big-video-player/src/video/keybindings.rs:15
+#: crates/big-video-player/src/video/ui/video_shell/input_gestures.rs:105
+msgid "Play / Pause"
+msgstr "Toista / tauko"
+
+#: crates/big-audio-player/src/audio/keybindings.rs:15
+#: crates/big-audio-player/src/audio/keybindings.rs:22
+#: crates/big-audio-player/src/audio/keybindings.rs:29
+#: crates/big-audio-player/src/audio/keybindings.rs:36
+#: crates/big-audio-player/src/audio/keybindings.rs:43
+#: crates/big-audio-player/src/audio/keybindings.rs:50
+#: crates/big-audio-player/src/audio/keybindings.rs:57
+#: crates/big-audio-player/src/audio/keybindings.rs:64
+#: crates/big-audio-player/src/audio/keybindings.rs:71
+#: crates/big-audio-player/src/audio/preferences.rs:97
+#: crates/big-video-player/src/video/keybindings.rs:16
+#: crates/big-video-player/src/video/keybindings.rs:23
+#: crates/big-video-player/src/video/keybindings.rs:30
+#: crates/big-video-player/src/video/keybindings.rs:37
+#: crates/big-video-player/src/video/keybindings.rs:44
+#: crates/big-video-player/src/video/keybindings.rs:51
+#: crates/big-video-player/src/video/keybindings.rs:58
+#: crates/big-video-player/src/video/keybindings.rs:65
+#: crates/big-video-player/src/video/keybindings.rs:72
+#: crates/big-video-player/src/video/keybindings.rs:79
+#: crates/big-video-player/src/video/keybindings.rs:86
+#: crates/big-video-player/src/video/keybindings.rs:93
+#: crates/big-video-player/src/video/keybindings.rs:100
+#: crates/big-video-player/src/video/keybindings.rs:107
+#: crates/big-video-player/src/video/keybindings.rs:114
+#: crates/big-video-player/src/video/ui/preferences/general.rs:24
+msgid "Playback"
+msgstr "Toisto"
+
+#: crates/big-audio-player/src/audio/keybindings.rs:21
+#: crates/big-video-player/src/video/keybindings.rs:22
+msgid "Seek forward 5 s"
+msgstr "Siirry eteenpäin 5 s"
+
+#: crates/big-audio-player/src/audio/keybindings.rs:28
+#: crates/big-video-player/src/video/keybindings.rs:29
+msgid "Seek backward 5 s"
+msgstr "Siirry taaksepäin 5 s"
+
+#: crates/big-audio-player/src/audio/keybindings.rs:35
+#: crates/big-video-player/src/video/keybindings.rs:36
+msgid "Seek forward 30 s"
+msgstr "Siirry eteenpäin 30 s"
+
+#: crates/big-audio-player/src/audio/keybindings.rs:42
+#: crates/big-video-player/src/video/keybindings.rs:43
+msgid "Seek backward 30 s"
+msgstr "Siirry taaksepäin 30 s"
+
+#: crates/big-audio-player/src/audio/keybindings.rs:49
+#: crates/big-audio-player/src/audio/ui/audio_shell/tray.rs:22
+msgid "Next Track"
+msgstr "Seuraava kappale"
+
+#: crates/big-audio-player/src/audio/keybindings.rs:56
+#: crates/big-audio-player/src/audio/ui/audio_shell/tray.rs:23
+msgid "Previous Track"
+msgstr "Edellinen kappale"
+
+#: crates/big-audio-player/src/audio/keybindings.rs:63
+msgid "Next Track (single key)"
+msgstr "Seuraava kappale (yksi näppäin)"
+
+#: crates/big-audio-player/src/audio/keybindings.rs:70
+msgid "Previous Track (single key)"
+msgstr "Edellinen kappale (yksi näppäin)"
+
+#: crates/big-audio-player/src/audio/keybindings.rs:78
+msgid "Search"
+msgstr "Haku"
+
+#: crates/big-audio-player/src/audio/keybindings.rs:79
+#: crates/big-audio-player/src/audio/keybindings.rs:86
+#: crates/big-audio-player/src/audio/keybindings.rs:93
+#: crates/big-video-player/src/video/keybindings.rs:260
+#: crates/big-video-player/src/video/keybindings.rs:267
+msgid "Navigation"
+msgstr "Siirtyminen"
+
+#: crates/big-audio-player/src/audio/keybindings.rs:85
+msgid "Scroll to Playing"
+msgstr "Vieritä toistettavaan"
+
+#: crates/big-audio-player/src/audio/keybindings.rs:92
+msgid "Select All"
+msgstr "Valitse kaikki"
+
+#: crates/big-audio-player/src/audio/keybindings.rs:100
+msgid "Manage Music Folders"
+msgstr "Hallitse musiikkikansioita"
+
+#: crates/big-audio-player/src/audio/keybindings.rs:101
+#: crates/big-audio-player/src/audio/keybindings.rs:108
+msgid "Library"
+msgstr "Kirjasto"
+
+#: crates/big-audio-player/src/audio/keybindings.rs:107
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:127
+#: crates/big-video-player/src/video/ui/video_shell/input_gestures.rs:116
+#: crates/big-video-player/src/video/ui/video_shell/panel.rs:43
+#: crates/big-video-player/src/video/ui/video_shell/panel.rs:469
+#: crates/media-runtime/src/shared/audio_effects_eq.rs:90
+msgid "Equalizer"
+msgstr "Taajuuskorjain"
+
+#: crates/big-audio-player/src/audio/keybindings.rs:115
+msgid "Toggle Shuffle"
+msgstr "Sekoitus päälle/pois"
+
+#: crates/big-audio-player/src/audio/keybindings.rs:116
+#: crates/big-audio-player/src/audio/keybindings.rs:123
+#: crates/big-audio-player/src/audio/keybindings.rs:130
+#: crates/big-audio-player/src/audio/keybindings.rs:137
+#: crates/big-audio-player/src/audio/keybindings.rs:144
+msgid "Queue"
+msgstr "Jono"
+
+#: crates/big-audio-player/src/audio/keybindings.rs:122
+msgid "Toggle Repeat"
+msgstr "Toisto uudelleen päälle/pois"
+
+#: crates/big-audio-player/src/audio/keybindings.rs:129
+#: crates/big-video-player/src/video/ui/video_shell/panel.rs:548
+#: crates/big-video-player/src/video/ui/video_shell/playback.rs:439
+msgid "Undo"
+msgstr "Kumoa"
+
+#: crates/big-audio-player/src/audio/keybindings.rs:136
+msgid "Redo"
+msgstr "Tee uudelleen"
+
+#: crates/big-audio-player/src/audio/keybindings.rs:143
+#: crates/big-audio-player/src/audio/ui/audio_shell/tray.rs:26
+msgid "Quit"
+msgstr "Lopeta"
+
+#: crates/big-audio-player/src/audio/library_grouping/age_filter.rs:27
+msgid "All Time"
+msgstr "Kaikki ajat"
+
+#: crates/big-audio-player/src/audio/library_grouping/age_filter.rs:28
+msgid "Today"
+msgstr "Tänään"
+
+#: crates/big-audio-player/src/audio/library_grouping/age_filter.rs:29
+msgid "This Week"
+msgstr "Tämä viikko"
+
+#: crates/big-audio-player/src/audio/library_grouping/age_filter.rs:30
+msgid "This Month"
+msgstr "Tämä kuukausi"
+
+#: crates/big-audio-player/src/audio/library_grouping/age_filter.rs:31
+msgid "3 Months"
+msgstr "3 kuukautta"
+
+#: crates/big-audio-player/src/audio/library_grouping/age_filter.rs:32
+msgid "This Year"
+msgstr "Tämä vuosi"
+
+#: crates/big-audio-player/src/audio/library_grouping/group_by.rs:38
+#: crates/big-video-player/src/video/ui/filters/groups_shader.rs:153
+msgid "None"
+msgstr "Ei mitään"
+
+#: crates/big-audio-player/src/audio/library_grouping/group_by.rs:39
+#: crates/big-audio-player/src/audio/ui/library_tag_editor.rs:203
+#: crates/big-audio-player/src/audio/ui/track_list.rs:75
+msgid "Artist"
+msgstr "Esittäjä"
+
+#: crates/big-audio-player/src/audio/library_grouping/group_by.rs:40
+#: crates/big-audio-player/src/audio/ui/library_tag_editor.rs:206
+msgid "Album Artist"
+msgstr "Albumin esittäjä"
+
+#: crates/big-audio-player/src/audio/library_grouping/group_by.rs:41
+#: crates/big-audio-player/src/audio/library_grouping/grouping.rs:82
+#: crates/big-audio-player/src/audio/ui/library_tag_editor.rs:204
+#: crates/big-audio-player/src/audio/ui/track_list.rs:76
+msgid "Album"
+msgstr "Albumi"
+
+#: crates/big-audio-player/src/audio/library_grouping/group_by.rs:42
+#: crates/big-audio-player/src/audio/library_grouping/grouping.rs:89
+#: crates/big-audio-player/src/audio/ui/library_tag_editor.rs:209
+#: crates/big-audio-player/src/audio/ui/track_list.rs:78
+msgid "Genre"
+msgstr "Tyylilaji"
+
+#: crates/big-audio-player/src/audio/library_grouping/group_by.rs:43
+#: crates/big-audio-player/src/audio/library_grouping/grouping.rs:90
+#: crates/big-audio-player/src/audio/ui/library_tag_editor.rs:210
+#: crates/big-audio-player/src/audio/ui/track_list.rs:79
+msgid "Year"
+msgstr "Vuosi"
+
+#: crates/big-audio-player/src/audio/library_grouping/group_by.rs:44
+#: crates/big-audio-player/src/audio/ui/library_tag_editor/spec.rs:112
+#: crates/big-audio-player/src/audio/ui/track_list.rs:81
+#: crates/big-video-player/src/video/ui/media_details_dialog.rs:109
+#: crates/big-video-player/src/video/ui/media_details_dialog.rs:260
+#: crates/ui/media/big-media-components/src/media/file_metadata_dialog.rs:59
+msgid "Format"
+msgstr "Muoto"
+
+#: crates/big-audio-player/src/audio/library_grouping/grouping.rs:80
+msgid "Songs"
+msgstr "Kappaleet"
+
+#: crates/big-audio-player/src/audio/library_grouping/grouping.rs:81
+msgid "Artist → Album"
+msgstr "Esittäjä → albumi"
+
+#: crates/big-audio-player/src/audio/library_grouping/grouping.rs:84
+msgid "Genre → Artist → Album"
+msgstr "Tyylilaji → esittäjä → albumi"
+
+#: crates/big-audio-player/src/audio/library_grouping/grouping.rs:87
+msgid "Genre → Artist"
+msgstr "Tyylilaji → esittäjä"
+
+#: crates/big-audio-player/src/audio/library_grouping/grouping.rs:88
+msgid "Year → Album"
+msgstr "Vuosi → albumi"
+
+#: crates/big-audio-player/src/audio/library_query.rs:119
+msgid "All Tracks"
+msgstr "Kaikki kappaleet"
+
+#: crates/big-audio-player/src/audio/library_query.rs:168
+#: crates/big-audio-player/src/audio/ui/library_tree.rs:135
+#: crates/big-audio-player/src/audio/ui/library_tree.rs:246
+#: crates/big-audio-player/src/audio/ui/library_tree/presentation.rs:77
+#: crates/big-audio-player/src/audio/ui/library_tree/presentation_tests.rs:81
+#: crates/ui/media/big-player-ui/src/browser_node.rs:219
+msgid "Various Artists"
+msgstr "Useita esittäjiä"
+
+#: crates/big-audio-player/src/audio/preferences.rs:32
+#: crates/big-audio-player/src/audio/ui/audio_shell/component.rs:141
+#: crates/big-audio-player/src/audio/ui/audio_shell/component.rs:170
+#: crates/big-video-player/src/video/keybindings.rs:245
+#: crates/big-video-player/src/video/keybindings.rs:252
+msgid "Music"
+msgstr "Musiikki"
+
+#: crates/big-audio-player/src/audio/preferences.rs:39
+msgid "Volume Leveling"
+msgstr "Äänenvoimakkuuden tasaus"
+
+#: crates/big-audio-player/src/audio/preferences.rs:41
+msgid ""
+"Uses the loudness stored in the files so you do not have to adjust the "
+"volume between songs"
+msgstr ""
+"Käyttää tiedostoihin tallennettua äänekkyyttä, jotta äänenvoimakkuutta ei "
+"tarvitse säätää kappaleiden välillä"
+
+#: crates/big-audio-player/src/audio/preferences.rs:48
+msgid "Level By"
+msgstr "Tasaa kohteen mukaan"
+
+#: crates/big-audio-player/src/audio/preferences.rs:50
+#: crates/big-video-player/src/video/ui/preferences/general.rs:39
+#: crates/big-video-player/src/video/ui/preferences/video.rs:60
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/header.rs:196
+#: crates/big-video-player/src/video/ui/video_shell/panel.rs:493
+msgid "Off"
+msgstr "Pois"
+
+#: crates/big-audio-player/src/audio/preferences.rs:50
+msgid "Per Song"
+msgstr "Kappale kerrallaan"
+
+#: crates/big-audio-player/src/audio/preferences.rs:50
+msgid "Per Album"
+msgstr "Albumi kerrallaan"
+
+#: crates/big-audio-player/src/audio/preferences.rs:62
+msgid "Leveling Boost"
+msgstr "Tasauksen vahvistus"
+
+#: crates/big-audio-player/src/audio/preferences.rs:64
+msgid "In decibels; positive values play louder, negative softer"
+msgstr ""
+"Desibeleinä; positiiviset arvot toistavat kovempaa, negatiiviset hiljaisempaa"
+
+#: crates/big-audio-player/src/audio/preferences.rs:101
+msgid "No Gaps Between Songs"
+msgstr "Ei taukoja kappaleiden välillä"
+
+#: crates/big-audio-player/src/audio/preferences.rs:103
+msgid "Albums recorded as one continuous piece play without pauses"
+msgstr ""
+"Yhtenä jatkuvana kokonaisuutena äänitetyt albumit toistetaan ilman taukoja"
+
+#: crates/big-audio-player/src/audio/preferences.rs:120
+#: crates/big-video-player/src/video/ui/preferences/general.rs:28
+msgid "Resume Where You Left Off"
+msgstr "Jatka siitä, mihin jäit"
+
+#: crates/big-audio-player/src/audio/preferences.rs:121
+msgid "Playing a song again continues from where it stopped"
+msgstr "Kappaleen toistaminen uudelleen jatkuu kohdasta, johon se pysähtyi"
+
+#: crates/big-audio-player/src/audio/preferences.rs:141
+msgid "Progress on the Taskbar"
+msgstr "Edistyminen tehtäväpalkissa"
+
+#: crates/big-audio-player/src/audio/preferences.rs:142
+msgid "Shows how far the song has played on the player icon"
+msgstr "Näyttää, kuinka pitkälle kappale on toistunut, soittimen kuvakkeessa"
+
+#: crates/big-audio-player/src/audio/preferences.rs:157
+msgid "Icon in the System Tray"
+msgstr "Kuvake ilmoitusalueella"
+
+#: crates/big-audio-player/src/audio/preferences.rs:159
+msgid "A one-color icon that follows the panel theme, with playback controls"
+msgstr ""
+"Yksivärinen kuvake, joka noudattaa paneelin teemaa ja sisältää toistoohjaimet"
+
+#: crates/big-audio-player/src/audio/preferences.rs:222
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:144
+#: crates/big-video-player/src/video/ui/preferences/mod.rs:37
+#: crates/big-video-player/src/video/ui/video_shell/panel.rs:571
+msgid "Preferences"
+msgstr "Asetukset"
+
+#: crates/big-audio-player/src/audio/ui/audio_shell/chrome.rs:55
+#: crates/big-audio-player/src/audio/ui/audio_shell/component.rs:147
+#: crates/big-audio-player/src/audio/ui/audio_shell/component.rs:172
+#: crates/big-audio-player/src/audio/ui/audio_shell/mpris.rs:224
+msgid "Radio"
+msgstr "Radio"
+
+#: crates/big-audio-player/src/audio/ui/audio_shell/chrome.rs:151
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:128
+msgid "Sleep Timer"
+msgstr "Uniajastin"
+
+#: crates/big-audio-player/src/audio/ui/audio_shell/chrome.rs:161
+#: crates/big-video-player/src/video/ui/video_shell/panel.rs:710
+msgid "Timer Active"
+msgstr "Ajastin käynnissä"
+
+#: crates/big-audio-player/src/audio/ui/audio_shell/chrome.rs:162
+#: crates/big-video-player/src/video/ui/video_shell/panel.rs:711
+msgid "Cancel Timer"
+msgstr "Peru ajastin"
+
+#: crates/big-audio-player/src/audio/ui/audio_shell/chrome.rs:268
+#: crates/big-video-player/src/video/ui/menu_dialogs.rs:255
+msgid "Sleep timer: closing player"
+msgstr "Uniajastin: suljetaan soitin"
+
+#: crates/big-audio-player/src/audio/ui/audio_shell/chrome.rs:276
+#: crates/big-video-player/src/video/ui/menu_dialogs.rs:263
+msgid "Sleep timer: suspending computer"
+msgstr "Uniajastin: asetetaan tietokone lepotilaan"
+
+#: crates/big-audio-player/src/audio/ui/audio_shell/chrome.rs:288
+#: crates/big-video-player/src/video/ui/menu_dialogs.rs:275
+msgid "Sleep timer: shutting down"
+msgstr "Uniajastin: sammutetaan"
+
+#: crates/big-audio-player/src/audio/ui/audio_shell/chrome.rs:299
+#: crates/big-video-player/src/video/ui/menu_dialogs.rs:286
+msgid "Sleep timer: playback paused"
+msgstr "Uniajastin: toisto keskeytetty"
+
+#: crates/big-audio-player/src/audio/ui/audio_shell/component.rs:105
+msgid "Add current folder to Music Library"
+msgstr "Lisää nykyinen kansio musiikkikirjastoon"
+
+#: crates/big-audio-player/src/audio/ui/audio_shell/component.rs:106
+msgid "Add this folder to Music Library"
+msgstr "Lisää tämä kansio musiikkikirjastoon"
+
+#: crates/big-audio-player/src/audio/ui/audio_shell/component.rs:107
+msgid "Filter files…"
+msgstr "Suodata tiedostoja…"
+
+#: crates/big-audio-player/src/audio/ui/audio_shell/component.rs:144
+#: crates/big-audio-player/src/audio/ui/audio_shell/component.rs:171
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/header.rs:22
+#: crates/big-video-player/src/video/ui/video_shell/component.rs:280
+#: crates/big-video-player/src/video/ui/video_shell/component.rs:284
+msgid "Files"
+msgstr "Tiedostot"
+
+#: crates/big-audio-player/src/audio/ui/audio_shell/component.rs:150
+msgid "Podcasts"
+msgstr "Podcastit"
+
+#: crates/big-audio-player/src/audio/ui/audio_shell/component.rs:175
+msgid "Podcast"
+msgstr "Podcast"
+
+#: crates/big-audio-player/src/audio/ui/audio_shell/component.rs:227
+#: crates/big-audio-player/src/audio/ui/audio_shell/playback.rs:173
+#: crates/big-audio-player/src/audio/ui/library_tag_editor.rs:299
+msgid "Album art"
+msgstr "Albumin kansikuva"
+
+#: crates/big-audio-player/src/audio/ui/audio_shell/component.rs:229
+#: crates/big-audio-player/src/lib.rs:28
+msgid "Big Audio Player"
+msgstr "Big Audio Player"
+
+#: crates/big-audio-player/src/audio/ui/audio_shell/component.rs:236
+msgid "Select a song to start"
+msgstr "Aloita valitsemalla kappale"
+
+#: crates/big-audio-player/src/audio/ui/audio_shell/component.rs:286
+msgid ""
+"The playback queue could not be saved or restored. Your previous saved queue "
+"was kept."
+msgstr ""
+"Toistojonoa ei voitu tallentaa tai palauttaa. Aiemmin tallennettu jono "
+"säilytettiin."
+
+#: crates/big-audio-player/src/audio/ui/audio_shell/component.rs:287
+#: crates/media-runtime/src/settings/saving.rs:227
+msgid "Retry saving"
+msgstr "Yritä tallennusta uudelleen"
+
+#: crates/big-audio-player/src/audio/ui/audio_shell/engine.rs:33
+#: crates/big-video-player/src/video/ui/video_shell/playback.rs:176
+msgid "Could not play this file — it may be unsupported or corrupt."
+msgstr "Tiedostoa ei voitu toistaa – sitä ei ehkä tueta tai se on vioittunut."
+
+#: crates/big-audio-player/src/audio/ui/audio_shell/export.rs:20
+#: crates/big-audio-player/src/audio/ui/audio_shell/export.rs:36
+msgid "No local track is playing"
+msgstr "Paikallista kappaletta ei toisteta"
+
+#: crates/big-audio-player/src/audio/ui/audio_shell/export.rs:128
+#: crates/big-video-player/src/video/ui/video_shell/trim/run.rs:215
+msgid "Start (seconds)"
+msgstr "Alku (sekunteina)"
+
+#: crates/big-audio-player/src/audio/ui/audio_shell/export.rs:133
+#: crates/big-video-player/src/video/ui/video_shell/trim/run.rs:219
+msgid "End (seconds)"
+msgstr "Loppu (sekunteina)"
+
+#: crates/big-audio-player/src/audio/ui/audio_shell/export.rs:146
+msgid "Cut range"
+msgstr "Leikkausalue"
+
+#: crates/big-audio-player/src/audio/ui/audio_shell/export.rs:148
+msgid "Use the clock buttons to copy the current playback position"
+msgstr "Kopioi nykyinen toistokohta kellopainikkeilla"
+
+#: crates/big-audio-player/src/audio/ui/audio_shell/export.rs:154
+msgid "End must be after start"
+msgstr "Lopun on oltava alun jälkeen"
+
+#: crates/big-audio-player/src/audio/ui/audio_shell/export.rs:156
+#: crates/ui/media/big-player-ui/src/audio_trim_bar.rs:51
+msgid "Edit cut"
+msgstr "Muokkaa leikkausta"
+
+#: crates/big-audio-player/src/audio/ui/audio_shell/export.rs:161
+#: crates/big-audio-player/src/audio/ui/library_dialogs.rs:78
+#: crates/big-audio-player/src/audio/ui/library_io.rs:53
+#: crates/big-audio-player/src/audio/ui/library_tag_editor.rs:146
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:219
+#: crates/big-audio-player/src/audio/ui/playlist_interactions.rs:245
+#: crates/big-audio-player/src/audio/ui/playlist_library_dialog/spec.rs:197
+#: crates/big-audio-player/src/audio/ui/playlist_library_dialog/spec.rs:208
+#: crates/big-audio-player/src/audio/ui/playlist_library_dialog/spec.rs:217
+#: crates/big-audio-player/src/audio/ui/unavailable_dialog.rs:258
+#: crates/big-video-player/src/video/ui/iptv/providers_dialog.rs:168
+#: crates/big-video-player/src/video/ui/menu_dialogs.rs:72
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/fileops.rs:200
+#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:173
+#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:257
+#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:381
+#: crates/big-video-player/src/video/ui/video_shell/trim/run.rs:258
+#: crates/ui/media/big-player-ui/src/podcast_panel.rs:571
+#: crates/ui/media/big-player-ui/src/radio_panel/widgets.rs:351
+msgid "Cancel"
+msgstr "Peru"
+
+#: crates/big-audio-player/src/audio/ui/audio_shell/export.rs:161
+#: crates/big-video-player/src/video/ui/video_shell/trim/run.rs:258
+msgid "Apply"
+msgstr "Käytä"
+
+#: crates/big-audio-player/src/audio/ui/audio_shell/export.rs:284
+msgid "Use current position"
+msgstr "Käytä nykyistä kohtaa"
+
+#: crates/big-audio-player/src/audio/ui/audio_shell/export.rs:286
+msgid "Use current playback position"
+msgstr "Käytä nykyistä toistokohtaa"
+
+#: crates/big-audio-player/src/audio/ui/audio_shell/panel_intents.rs:79
+msgid ""
+"This folder name cannot yet be stored in the library. No path was changed or "
+"imported."
+msgstr ""
+"Tämän kansion nimeä ei voi vielä tallentaa kirjastoon. Polkua ei muutettu "
+"eikä tuotu."
+
+#: crates/big-audio-player/src/audio/ui/audio_shell/panel_intents.rs:112
+#: crates/big-audio-player/src/audio/ui/audio_shell/update.rs:241
+msgid ""
+"The playlist could not be read safely. Check its format and permissions."
+msgstr ""
+"Soittolistaa ei voitu lukea turvallisesti. Tarkista sen muoto ja oikeudet."
+
+#: crates/big-audio-player/src/audio/ui/audio_shell/panel_intents.rs:345
+msgid "The playlist could not be saved."
+msgstr "Soittolistaa ei voitu tallentaa."
+
+#: crates/big-audio-player/src/audio/ui/audio_shell/panel_intents.rs:447
+msgid "Save Episode"
+msgstr "Tallenna jakso"
+
+#: crates/big-audio-player/src/audio/ui/audio_shell/panel_intents.rs:448
+#: crates/big-audio-player/src/audio/ui/library_io.rs:54
+#: crates/big-audio-player/src/audio/ui/library_io.rs:85
+#: crates/big-audio-player/src/audio/ui/library_tag_editor.rs:146
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:219
+#: crates/big-video-player/src/video/ui/iptv/providers_dialog.rs:168
+msgid "Save"
+msgstr "Tallenna"
+
+#: crates/big-audio-player/src/audio/ui/audio_shell/panel_intents.rs:455
+msgid "Save Episodes"
+msgstr "Tallenna jaksot"
+
+#: crates/big-audio-player/src/audio/ui/audio_shell/playback.rs:160
+msgid "Seek position"
+msgstr "Hakukohta"
+
+#: crates/big-audio-player/src/audio/ui/audio_shell/playback.rs:161
+#: crates/big-video-player/src/video/ui/video_controls_bar.rs:291
+msgid "Cut timeline"
+msgstr "Leikkausten aikajana"
+
+#: crates/big-audio-player/src/audio/ui/audio_shell/playback.rs:163
+#: crates/big-video-player/src/video/ui/appearance/layout/buttons_page.rs:77
+#: crates/big-video-player/src/video/ui/video_controls_bar/seek_preview.rs:177
+#: crates/big-video-player/src/video/ui/video_controls_bar/zones.rs:565
+msgid "Previous"
+msgstr "Edellinen"
+
+#: crates/big-audio-player/src/audio/ui/audio_shell/playback.rs:164
+#: crates/big-video-player/src/video/ui/appearance/layout/buttons_page.rs:91
+#: crates/big-video-player/src/video/ui/video_controls_bar/seek_preview.rs:179
+#: crates/big-video-player/src/video/ui/video_controls_bar/zones.rs:568
+msgid "Next"
+msgstr "Seuraava"
+
+#: crates/big-audio-player/src/audio/ui/audio_shell/playback.rs:165
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/header.rs:200
+msgid "Shuffle"
+msgstr "Sekoitus"
+
+#: crates/big-audio-player/src/audio/ui/audio_shell/playback.rs:166
+#: crates/big-video-player/src/video/ui/preferences/general.rs:36
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/header.rs:201
+msgid "Repeat"
+msgstr "Toisto uudelleen"
+
+#: crates/big-audio-player/src/audio/ui/audio_shell/playback.rs:167
+#: crates/big-video-player/src/video/ui/appearance/layout/buttons_page.rs:56
+#: crates/big-video-player/src/video/ui/video_controls_bar.rs:560
+#: crates/ui/media/big-media-components/src/player_chrome.rs:301
+#: crates/ui/media/big-media-components/src/text.rs:82
+#: crates/ui/media/big-media-components/src/text.rs:90
+#: crates/ui/media/big-media-components/src/text.rs:99
+#: crates/ui/media/big-player-ui/src/playback_bar.rs:325
+msgid "Volume"
+msgstr "Äänenvoimakkuus"
+
+#: crates/big-audio-player/src/audio/ui/audio_shell/playback.rs:168
+#: crates/big-video-player/src/video/ui/appearance/layout/buttons_page.rs:63
+#: crates/big-video-player/src/video/ui/video_controls_bar/zones.rs:302
+#: crates/ui/media/big-media-components/src/player_chrome.rs:312
+msgid "Speed"
+msgstr "Nopeus"
+
+#: crates/big-audio-player/src/audio/ui/audio_shell/playback.rs:169
+#: crates/big-video-player/src/video/ui/appearance/layout/buttons_page.rs:70
+#: crates/big-video-player/src/video/ui/video_controls_bar/zones.rs:317
+msgid "Voice Enhancement"
+msgstr "Puheen parannus"
+
+#: crates/big-audio-player/src/audio/ui/audio_shell/playback.rs:170
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:129
+msgid "Trim & Export"
+msgstr "Leikkaa ja vie"
+
+#: crates/big-audio-player/src/audio/ui/audio_shell/playback.rs:171
+#: crates/ui/media/big-player-ui/src/lyrics_panel.rs:144
+msgid "Lyrics"
+msgstr "Sanoitukset"
+
+#: crates/big-audio-player/src/audio/ui/audio_shell/playback.rs:172
+msgid "Status"
+msgstr "Tila"
+
+#: crates/big-audio-player/src/audio/ui/audio_shell/playlist_library_dialog_actions.rs:111
+msgid "Import Playlists Folder"
+msgstr "Tuo soittolistakansio"
+
+#: crates/big-audio-player/src/audio/ui/audio_shell/playlist_library_dialog_actions.rs:137
+msgid "Too many entries in the chosen folder"
+msgstr "Valitussa kansiossa on liian monta kohdetta"
+
+#: crates/big-audio-player/src/audio/ui/audio_shell/playlist_library_dialog_actions.rs:147
+msgid "Choose at most 100 playlist files per import"
+msgstr "Valitse enintään 100 soittolistatiedostoa tuontia kohti"
+
+#: crates/big-audio-player/src/audio/ui/audio_shell/playlist_library_dialog_actions.rs:155
+#: crates/big-audio-player/src/audio/ui/audio_shell/update.rs:152
+#: crates/big-audio-player/src/audio/ui/scan_progress.rs:47
+msgid "Imported"
+msgstr "Tuotu"
+
+#: crates/big-audio-player/src/audio/ui/audio_shell/playlist_library_dialog_actions.rs:165
+msgid "Import stopped. Confirmed tracks were kept"
+msgstr "Tuonti pysäytettiin. Vahvistetut kappaleet säilytettiin"
+
+#: crates/big-audio-player/src/audio/ui/audio_shell/playlist_library_dialog_actions.rs:188
+msgid "Export All Playlists"
+msgstr "Vie kaikki soittolistat"
+
+#: crates/big-audio-player/src/audio/ui/audio_shell/playlist_library_dialog_actions.rs:196
+msgid "Playlists exported"
+msgstr "Soittolistat viety"
+
+#: crates/big-audio-player/src/audio/ui/audio_shell/playlist_library_dialog_actions.rs:200
+msgid ""
+"Export was not fully completed. Published files were kept; choose an empty "
+"destination and try again."
+msgstr ""
+"Vientiä ei suoritettu kokonaan loppuun. Julkaistut tiedostot säilytettiin; "
+"valitse tyhjä kohde ja yritä uudelleen."
+
+#: crates/big-audio-player/src/audio/ui/audio_shell/playlist_library_dialog_actions.rs:233
+#: crates/big-audio-player/src/audio/ui/library_io.rs:84
+msgid "Export Playlist"
+msgstr "Vie soittolista"
+
+#: crates/big-audio-player/src/audio/ui/audio_shell/playlist_library_dialog_actions.rs:235
+#: crates/big-audio-player/src/audio/ui/library_io.rs:87
+msgid "M3U8 Playlist"
+msgstr "M3U8-soittolista"
+
+#: crates/big-audio-player/src/audio/ui/audio_shell/playlist_library_dialog_actions.rs:259
+#: crates/big-audio-player/src/audio/ui/library_io.rs:111
+msgid "Import Playlist"
+msgstr "Tuo soittolista"
+
+#: crates/big-audio-player/src/audio/ui/audio_shell/playlist_library_dialog_actions.rs:260
+#: crates/big-audio-player/src/audio/ui/library_dialogs.rs:62
+#: crates/big-audio-player/src/audio/ui/library_io.rs:113
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/menu_actions.rs:230
+msgid "Playlists"
+msgstr "Soittolistat"
+
+#: crates/big-audio-player/src/audio/ui/audio_shell/playlist_library_dialog_actions.rs:305
+msgid ""
+"The batch import limit was reached. Split the playlists into smaller imports."
+msgstr "Erätuonnin raja saavutettiin. Jaa soittolistat pienempiin tuonteihin."
+
+#: crates/big-audio-player/src/audio/ui/audio_shell/playlist_library_dialog_actions.rs:315
+#: crates/big-audio-player/src/audio/ui/audio_shell/playlist_library_dialog_actions.rs:352
+#: crates/big-audio-player/src/audio/ui/audio_shell/playlist_library_dialog_actions.rs:391
+msgid "Library unavailable"
+msgstr "Kirjasto ei ole käytettävissä"
+
+#: crates/big-audio-player/src/audio/ui/audio_shell/playlist_library_dialog_actions.rs:366
+msgid "Too many playlists for one export"
+msgstr "Liian monta soittolistaa yhteen vientiin"
+
+#: crates/big-audio-player/src/audio/ui/audio_shell/playlist_library_dialog_actions.rs:380
+msgid "Export stopped. Confirmed outputs were kept"
+msgstr "Vienti pysäytettiin. Vahvistetut tulosteet säilytettiin"
+
+#: crates/big-audio-player/src/audio/ui/audio_shell/playlist_library_dialog_actions.rs:401
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/menu_actions.rs:212
+msgid "Playlist export"
+msgstr "Soittolistan vienti"
+
+#: crates/big-audio-player/src/audio/ui/audio_shell/playlist_library_dialog_actions.rs:404
+#: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:478
+#: crates/big-audio-player/src/audio/ui/library_dialogs.rs:64
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/menu_actions.rs:215
+#: crates/big-video-player/src/video/ui/video_shell/component.rs:132
+#: crates/ui/generic/big-relm4-components/src/layout/media_window.rs:283
+msgid "Close"
+msgstr "Sulje"
+
+#: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:42
+msgid "A library scan is already running. Cancel it or wait for its result."
+msgstr "Kirjaston tarkistus on jo käynnissä. Peru se tai odota sen tulosta."
+
+#: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:51
+msgid "Library scanning is busy. Try again after another scan finishes."
+msgstr ""
+"Kirjaston tarkistus on varattu. Yritä uudelleen, kun toinen tarkistus on "
+"päättynyt."
+
+#: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:61
+msgid "Scanning library…"
+msgstr "Tarkistetaan kirjastoa…"
+
+#: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:122
+msgid "Watch folders could not be read. Previous settings were kept."
+msgstr "Seurattavia kansioita ei voitu lukea. Aiemmat asetukset säilytettiin."
+
+#: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:258
+#: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:266
+#: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:295
+msgid "Recording was not saved"
+msgstr "Tallennusta ei tallennettu"
+
+#: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:271
+msgid "Recording to"
+msgstr "Tallennetaan kohteeseen"
+
+#: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:344
+msgid "No episodes found"
+msgstr "Jaksoja ei löytynyt"
+
+#: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:453
+msgid "Recording saved"
+msgstr "Tallenne tallennettu"
+
+#: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:459
+msgid "The recording was saved and is ready to open."
+msgstr "Tallenne tallennettiin ja se on valmis avattavaksi."
+
+#: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:463
+#: crates/big-audio-player/src/audio/ui/library_tag_editor/spec.rs:125
+#: crates/big-video-player/src/video/ui/media_details_dialog.rs:81
+msgid "File"
+msgstr "Tiedosto"
+
+#: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:467
+msgid "Folder"
+msgstr "Kansio"
+
+#: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:473
+#: crates/ui/media/big-media-components/src/media/file_metadata_dialog.rs:55
+msgid "Open Folder"
+msgstr "Avaa kansio"
+
+#: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:478
+#: crates/big-video-player/src/video/ui/appearance/layout/buttons_page.rs:35
+#: crates/big-video-player/src/video/ui/video_shell/actions.rs:126
+msgid "Open File"
+msgstr "Avaa tiedosto"
+
+#: crates/big-audio-player/src/audio/ui/audio_shell/tray.rs:18
+msgid "Show Big Audio Player"
+msgstr "Näytä Big Audio Player"
+
+#: crates/big-audio-player/src/audio/ui/audio_shell/tv.rs:128
+msgid "The TV's track is no longer in the queue."
+msgstr "Television kappale ei ole enää jonossa."
+
+#: crates/big-audio-player/src/audio/ui/audio_shell/update.rs:141
+msgid "Scan cancelled. Earlier confirmed imports were kept."
+msgstr "Tarkistus peruttiin. Aiemmat vahvistetut tuonnit säilytettiin."
+
+#: crates/big-audio-player/src/audio/ui/audio_shell/update.rs:144
+msgid ""
+"Scan incomplete. Earlier confirmed imports were kept; check storage and "
+"retry."
+msgstr ""
+"Tarkistus jäi kesken. Aiemmat vahvistetut tuonnit säilytettiin; tarkista "
+"tallennustila ja yritä uudelleen."
+
+#: crates/big-audio-player/src/audio/ui/audio_shell/update.rs:147
+msgid "Library scan finished."
+msgstr "Kirjaston tarkistus valmis."
+
+#: crates/big-audio-player/src/audio/ui/audio_shell/update.rs:154
+#: crates/big-audio-player/src/audio/ui/scan_progress.rs:48
+msgid "Skipped"
+msgstr "Ohitettu"
+
+#: crates/big-audio-player/src/audio/ui/audio_shell/update.rs:160
+msgid "Library updated"
+msgstr "Kirjasto päivitetty"
+
+#: crates/big-audio-player/src/audio/ui/audio_shell/update.rs:162
+msgid ""
+"The operation was incomplete. Imported tracks were kept; check the folder "
+"and try again."
+msgstr ""
+"Toiminto jäi kesken. Tuodut kappaleet säilytettiin; tarkista kansio ja yritä "
+"uudelleen."
+
+#: crates/big-audio-player/src/audio/ui/audio_shell/update.rs:190
+msgid ""
+"The library could not be read. Previous results were kept; try searching "
+"again."
+msgstr ""
+"Kirjastoa ei voitu lukea. Aiemmat tulokset säilytettiin; yritä hakea "
+"uudelleen."
+
+#: crates/big-audio-player/src/audio/ui/audio_shell/update.rs:204
+msgid "The playlist could not be changed. Your previous playlist was kept."
+msgstr "Soittolistaa ei voitu muuttaa. Aiempi soittolista säilytettiin."
+
+#: crates/big-audio-player/src/audio/ui/audio_shell/update.rs:209
+msgid "Playlists could not be opened. Please try again."
+msgstr "Soittolistoja ei voitu avata. Yritä uudelleen."
+
+#: crates/big-audio-player/src/audio/ui/audio_shell/update.rs:311
+msgid "tracks imported"
+msgstr "kappaletta tuotu"
+
+#: crates/big-audio-player/src/audio/ui/audio_shell/update.rs:315
+msgid ""
+"Playlist import was not fully completed. Previously confirmed imports were "
+"kept."
+msgstr ""
+"Soittolistan tuontia ei suoritettu kokonaan loppuun. Aiemmin vahvistetut "
+"tuonnit säilytettiin."
+
+#: crates/big-audio-player/src/audio/ui/library_detail_interactions.rs:63
+#: crates/big-audio-player/src/audio/ui/library_tree/view.rs:359
+#: crates/big-audio-player/src/audio/ui/library_tree/view.rs:376
+#: crates/big-audio-player/src/audio/ui/playlist_interactions.rs:110
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/context_menu.rs:41
+#: crates/big-video-player/src/video/ui/video_controls_bar.rs:479
+#: crates/big-video-player/src/video/ui/video_controls_bar/zones.rs:566
+#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:173
+msgid "Play"
+msgstr "Toista"
+
+#: crates/big-audio-player/src/audio/ui/library_detail_interactions.rs:73
+msgid "Play Next"
+msgstr "Toista seuraavaksi"
+
+#: crates/big-audio-player/src/audio/ui/library_detail_interactions.rs:80
+#: crates/big-audio-player/src/audio/ui/library_tree/view.rs:382
+msgid "Add to Queue"
+msgstr "Lisää jonoon"
+
+#: crates/big-audio-player/src/audio/ui/library_detail_interactions.rs:89
+#: crates/big-audio-player/src/audio/ui/library_tree/view.rs:389
+#: crates/big-audio-player/src/audio/ui/playlist_interactions.rs:170
+msgid "Add to Playlist…"
+msgstr "Lisää soittolistaan…"
+
+#: crates/big-audio-player/src/audio/ui/library_detail_interactions.rs:96
+#: crates/big-audio-player/src/audio/ui/library_tree/view.rs:395
+#: crates/big-audio-player/src/audio/ui/playlist_interactions.rs:177
+msgid "Show in File Manager"
+msgstr "Näytä tiedostonhallinnassa"
+
+#: crates/big-audio-player/src/audio/ui/library_detail_interactions.rs:105
+msgid "Edit Tags…"
+msgstr "Muokkaa tunnisteita…"
+
+#: crates/big-audio-player/src/audio/ui/library_detail_interactions.rs:112
+#: crates/big-audio-player/src/audio/ui/library_tag_editor.rs:140
+#: crates/big-audio-player/src/audio/ui/library_tag_editor.rs:388
+#: crates/big-audio-player/src/audio/ui/library_tree/view.rs:403
+#: crates/big-audio-player/src/audio/ui/playlist_interactions.rs:163
+msgid "Track Info"
+msgstr "Kappaleen tiedot"
+
+#: crates/big-audio-player/src/audio/ui/library_detail_interactions.rs:125
+#: crates/big-audio-player/src/audio/ui/playlist_interactions.rs:135
+#: crates/big-audio-player/src/audio/ui/track_list.rs:430
+#, rust-format
+msgid "{} of 5 stars"
+msgstr "{} / 5 tähteä"
+
+#: crates/big-audio-player/src/audio/ui/library_detail_interactions.rs:129
+#: crates/big-audio-player/src/audio/ui/playlist_interactions.rs:139
+#: crates/big-audio-player/src/audio/ui/track_list.rs:82
+#: crates/big-audio-player/src/audio/ui/unavailable_dialog.rs:351
+msgid "Rating"
+msgstr "Arvostelu"
+
+#: crates/big-audio-player/src/audio/ui/library_dialogs.rs:56
+msgid "Add to Playlist"
+msgstr "Lisää soittolistaan"
+
+#: crates/big-audio-player/src/audio/ui/library_dialogs.rs:63
+msgid "No playlists yet"
+msgstr "Ei vielä soittolistoja"
+
+#: crates/big-audio-player/src/audio/ui/library_dialogs.rs:65
+#: crates/big-audio-player/src/audio/ui/library_dialogs.rs:73
+msgid "New Playlist"
+msgstr "Uusi soittolista"
+
+#: crates/big-audio-player/src/audio/ui/library_dialogs.rs:67
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/context_menu.rs:82
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/fileops.rs:72
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/library.rs:646
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/library.rs:650
+msgid "Add to playlist"
+msgstr "Lisää soittolistaan"
+
+#: crates/big-audio-player/src/audio/ui/library_dialogs.rs:77
+#: crates/big-audio-player/src/audio/ui/library_io.rs:52
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:213
+msgid "Playlist name"
+msgstr "Soittolistan nimi"
+
+#: crates/big-audio-player/src/audio/ui/library_dialogs.rs:79
+msgid "Create"
+msgstr "Luo"
+
+#: crates/big-audio-player/src/audio/ui/library_grouping_ui.rs:109
+#: crates/big-audio-player/src/audio/ui/library_grouping_ui.rs:110
+msgid "Library view mode"
+msgstr "Kirjaston näkymätila"
+
+#: crates/big-audio-player/src/audio/ui/library_grouping_ui.rs:135
+#: crates/big-audio-player/src/audio/ui/library_grouping_ui.rs:137
+#: crates/big-audio-player/src/audio/ui/library_grouping_ui.rs:151
+msgid "Filter by date added"
+msgstr "Suodata lisäyspäivän mukaan"
+
+#: crates/big-audio-player/src/audio/ui/library_grouping_ui.rs:206
+#: crates/big-audio-player/src/audio/ui/library_grouping_ui.rs:207
+#: crates/big-audio-player/src/audio/ui/library_io.rs:307
+msgid "Add music folder"
+msgstr "Lisää musiikkikansio"
+
+#: crates/big-audio-player/src/audio/ui/library_grouping_ui.rs:213
+msgid "Add Music Folder"
+msgstr "Lisää musiikkikansio"
+
+#: crates/big-audio-player/src/audio/ui/library_grouping_ui.rs:230
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/metadata.rs:118
+msgid "Filter…"
+msgstr "Suodata…"
+
+#: crates/big-audio-player/src/audio/ui/library_grouping_ui.rs:234
+msgid "Search library"
+msgstr "Hae kirjastosta"
+
+#: crates/big-audio-player/src/audio/ui/library_io.rs:80
+msgid "No tracks to export"
+msgstr "Ei vietäviä kappaleita"
+
+#: crates/big-audio-player/src/audio/ui/library_io.rs:99
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/menu_actions.rs:208
+msgid ""
+"Playlist export could not be confirmed. Existing files were kept; choose a "
+"new name and retry."
+msgstr ""
+"Soittolistan vientiä ei voitu vahvistaa. Olemassa olevat tiedostot "
+"säilytettiin; valitse uusi nimi ja yritä uudelleen."
+
+#: crates/big-audio-player/src/audio/ui/library_io.rs:112
+#: crates/big-video-player/src/video/ui/menu_dialogs.rs:339
+#: crates/big-video-player/src/video/ui/video_shell/component.rs:265
+#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:257
+msgid "Open"
+msgstr "Avaa"
+
+#: crates/big-audio-player/src/audio/ui/library_io.rs:127
+msgid "No tracks to save"
+msgstr "Ei tallennettavia kappaleita"
+
+#: crates/big-audio-player/src/audio/ui/library_io.rs:133
+msgid "Save as Playlist"
+msgstr "Tallenna soittolistaksi"
+
+#: crates/big-audio-player/src/audio/ui/library_io.rs:134
+msgid "Enter a name for the new playlist"
+msgstr "Anna uuden soittolistan nimi"
+
+#: crates/big-audio-player/src/audio/ui/library_io.rs:170
+#: crates/big-audio-player/src/audio/ui/library_io.rs:185
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:121
+msgid "Music Folders"
+msgstr "Musiikkikansiot"
+
+#: crates/big-audio-player/src/audio/ui/library_io.rs:177
+#: crates/big-audio-player/src/audio/ui/unavailable_dialog.rs:41
+msgid "Review unavailable files"
+msgstr "Tarkista ei-saatavilla olevat tiedostot"
+
+#: crates/big-audio-player/src/audio/ui/library_io.rs:224
+msgid "Monitored Folders"
+msgstr "Seurattavat kansiot"
+
+#: crates/big-audio-player/src/audio/ui/library_io.rs:234
+msgid ""
+"These folders are scanned for audio files. Removing a folder stops "
+"monitoring it. Tracks and ratings are kept until you explicitly review "
+"unavailable files."
+msgstr ""
+"Näistä kansioista etsitään äänitiedostoja. Kansion poistaminen lopettaa sen "
+"seurannan. Kappaleet ja arvostelut säilyvät, kunnes erikseen tarkistat ei-"
+"saatavilla olevat tiedostot."
+
+#: crates/big-audio-player/src/audio/ui/library_io.rs:260
+msgid "Music folders"
+msgstr "Musiikkikansiot"
+
+#: crates/big-audio-player/src/audio/ui/library_io.rs:264
+msgid "No folders added yet"
+msgstr "Kansioita ei ole vielä lisätty"
+
+#: crates/big-audio-player/src/audio/ui/library_io.rs:266
+msgid "Click the button below to add your first music folder"
+msgstr ""
+"Lisää ensimmäinen musiikkikansiosi napsauttamalla alla olevaa painiketta"
+
+#: crates/big-audio-player/src/audio/ui/library_io.rs:288
+msgid "Removal requested. Reopen this list after the operation finishes."
+msgstr ""
+"Poisto pyydetty. Avaa tämä luettelo uudelleen, kun toiminto on päättynyt."
+
+#: crates/big-audio-player/src/audio/ui/library_io.rs:306
+msgid "Add Folder"
+msgstr "Lisää kansio"
+
+#: crates/big-audio-player/src/audio/ui/library_io.rs:319
+msgid "Select Music Folder"
+msgstr "Valitse musiikkikansio"
+
+#: crates/big-audio-player/src/audio/ui/library_io.rs:329
+msgid "Scan Now"
+msgstr "Tarkista nyt"
+
+#: crates/big-audio-player/src/audio/ui/library_io.rs:330
+msgid "Scan all monitored folders now"
+msgstr "Tarkista kaikki seurattavat kansiot nyt"
+
+#: crates/big-audio-player/src/audio/ui/library_io.rs:440
+msgid "Stop monitoring this folder; keep its tracks"
+msgstr "Lopeta tämän kansion seuranta; säilytä sen kappaleet"
+
+#: crates/big-audio-player/src/audio/ui/library_io.rs:443
+msgid "Remove folder"
+msgstr "Poista kansio"
+
+#: crates/big-audio-player/src/audio/ui/library_io.rs:452
+msgid ""
+"Add folders where your music files are stored. The player scans these "
+"folders to build your library, organizing tracks by artist, album, and genre "
+"automatically."
+msgstr ""
+"Lisää kansiot, joihin musiikkitiedostosi on tallennettu. Soitin tarkistaa "
+"nämä kansiot ja muodostaa kirjastosi järjestäen kappaleet automaattisesti "
+"esittäjän, albumin ja tyylilajin mukaan."
+
+#: crates/big-audio-player/src/audio/ui/library_io.rs:490
+msgid "Tips"
+msgstr "Vinkit"
+
+#: crates/big-audio-player/src/audio/ui/library_io.rs:499
+msgid ""
+"• Supported formats: MP3, FLAC, OGG, Opus, M4A, WAV, WMA, AAC, APE, WavPack"
+msgstr ""
+"• Tuetut muodot: MP3, FLAC, OGG, Opus, M4A, WAV, WMA, AAC, APE, WavPack"
+
+#: crates/big-audio-player/src/audio/ui/library_io.rs:500
+msgid "• Subfolders are included automatically — no need to add each one"
+msgstr ""
+"• Alikansiot sisällytetään automaattisesti – jokaista ei tarvitse lisätä "
+"erikseen"
+
+#: crates/big-audio-player/src/audio/ui/library_io.rs:502
+msgid ""
+"• Use the Files tab to play files from any folder without adding them to the "
+"library"
+msgstr ""
+"• Käytä Tiedostot-välilehteä toistaaksesi tiedostoja mistä tahansa kansiosta "
+"lisäämättä niitä kirjastoon"
+
+#: crates/big-audio-player/src/audio/ui/library_panel.rs:291
+msgid "No Tracks"
+msgstr "Ei kappaleita"
+
+#: crates/big-audio-player/src/audio/ui/library_panel.rs:292
+msgid "Select an item on the left to view its tracks"
+msgstr "Näytä kappaleet valitsemalla kohde vasemmalta"
+
+#: crates/big-audio-player/src/audio/ui/library_panel.rs:445
+msgid "Tracks"
+msgstr "Kappaleet"
+
+#: crates/big-audio-player/src/audio/ui/library_panel.rs:512
+#: crates/big-audio-player/src/audio/ui/library_panel.rs:513
+msgid "Back to library"
+msgstr "Takaisin kirjastoon"
+
+#: crates/big-audio-player/src/audio/ui/library_tag_editor.rs:202
+#: crates/big-audio-player/src/audio/ui/track_list.rs:74
+#: crates/big-video-player/src/video/ui/media_details_dialog.rs:105
+#: crates/media-runtime/src/media/metadata_cache/detailed_video_metadata.rs:160
+#: crates/media-runtime/src/media/metadata_cache/detailed_video_metadata.rs:174
+msgid "Title"
+msgstr "Nimi"
+
+#: crates/big-audio-player/src/audio/ui/library_tag_editor.rs:211
+msgid "Track #"
+msgstr "Kappaleen nro"
+
+#: crates/big-audio-player/src/audio/ui/library_tag_editor.rs:212
+msgid "Disc #"
+msgstr "Levyn nro"
+
+#: crates/big-audio-player/src/audio/ui/library_tag_editor.rs:213
+msgid "Comment"
+msgstr "Kommentti"
+
+#: crates/big-audio-player/src/audio/ui/library_tag_editor.rs:279
+msgid "File Info"
+msgstr "Tiedoston tiedot"
+
+#: crates/big-audio-player/src/audio/ui/library_tag_editor.rs:365
+#: crates/big-video-player/src/video/ui/media_details_dialog.rs:138
+msgid "Metadata"
+msgstr "Metatiedot"
+
+#: crates/big-audio-player/src/audio/ui/library_tag_editor.rs:472
+msgid "Lookup from MusicBrainz"
+msgstr "Hae MusicBrainzista"
+
+#: crates/big-audio-player/src/audio/ui/library_tag_editor.rs:486
+msgid "Searching…"
+msgstr "Haetaan…"
+
+#: crates/big-audio-player/src/audio/ui/library_tag_editor/spec.rs:83
+#: crates/big-audio-player/src/audio/ui/track_list.rs:77
+#: crates/big-video-player/src/video/ui/media_details_dialog.rs:114
+#: crates/media-runtime/src/shared/sleep_timer.rs:21
+#: crates/ui/media/big-media-components/src/media/file_metadata_dialog.rs:57
+msgid "Duration"
+msgstr "Kesto"
+
+#: crates/big-audio-player/src/audio/ui/library_tag_editor/spec.rs:88
+#: crates/big-audio-player/src/audio/ui/track_list.rs:80
+#: crates/big-video-player/src/video/ui/media_details_dialog.rs:181
+#: crates/big-video-player/src/video/ui/media_details_dialog.rs:238
+#: crates/media-runtime/src/media/metadata_cache/detailed_video_metadata.rs:108
+#: crates/media-runtime/src/media/metadata_cache/detailed_video_metadata.rs:154
+#: crates/ui/media/big-media-components/src/media/file_metadata_dialog.rs:60
+msgid "Bitrate"
+msgstr "Bittinopeus"
+
+#: crates/big-audio-player/src/audio/ui/library_tag_editor/spec.rs:98
+#: crates/big-video-player/src/video/ui/media_details_dialog.rs:246
+#: crates/media-runtime/src/media/metadata_cache/detailed_video_metadata.rs:139
+#: crates/ui/media/big-media-components/src/media/file_metadata_dialog.rs:69
+msgid "Sample Rate"
+msgstr "Näytteenottotaajuus"
+
+#: crates/big-audio-player/src/audio/ui/library_tag_editor/spec.rs:105
+#: crates/big-video-player/src/video/ui/media_details_dialog.rs:253
+#: crates/media-runtime/src/media/metadata_cache/detailed_video_metadata.rs:149
+#: crates/ui/media/big-media-components/src/media/file_metadata_dialog.rs:70
+msgid "Channels"
+msgstr "Kanavat"
+
+#: crates/big-audio-player/src/audio/ui/library_tag_editor/spec.rs:117
+#: crates/big-video-player/src/video/ui/media_details_dialog.rs:95
+#: crates/ui/media/big-media-components/src/media/file_metadata_dialog.rs:56
+msgid "File Size"
+msgstr "Tiedoston koko"
+
+#: crates/big-audio-player/src/audio/ui/library_tag_editor/spec.rs:143
+msgid "Not found"
+msgstr "Ei löytynyt"
+
+#: crates/big-audio-player/src/audio/ui/library_tag_editor/spec.rs:175
+msgid "No new data found"
+msgstr "Uusia tietoja ei löytynyt"
+
+#: crates/big-audio-player/src/audio/ui/library_tree/view.rs:162
+#: crates/big-audio-player/src/audio/ui/playlist_library_dialog/spec.rs:179
+#: crates/big-audio-player/src/audio/ui/playlist_panel.rs:103
+msgid "track"
+msgstr "kappale"
+
+#: crates/big-audio-player/src/audio/ui/library_tree/view.rs:164
+#: crates/big-audio-player/src/audio/ui/playlist_interactions.rs:292
+#: crates/big-audio-player/src/audio/ui/playlist_library_dialog/spec.rs:181
+#: crates/big-audio-player/src/audio/ui/playlist_panel.rs:105
+msgid "tracks"
+msgstr "kappaletta"
+
+#: crates/big-audio-player/src/audio/ui/library_tree/view.rs:221
+msgid "Music library"
+msgstr "Musiikkikirjasto"
+
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:49
+msgid "Drag and drop files to create a playlist"
+msgstr "Luo soittolista vetämällä ja pudottamalla tiedostoja"
+
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:53
+msgid "Use the Music tab on the left to browse your library"
+msgstr "Selaa kirjastoasi vasemman reunan Musiikki-välilehdellä"
+
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:57
+msgid "Explore Radio and Podcasts in the sidebar tabs"
+msgstr "Tutustu radioon ja podcasteihin sivupalkin välilehdillä"
+
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:78
+#: crates/big-audio-player/src/audio/ui/playlist_panel.rs:94
+#: crates/big-audio-player/src/audio/ui/playlist_panel.rs:401
+#: crates/big-video-player/src/video/ui/appearance/layout/buttons_page.rs:42
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/header.rs:24
+#: crates/big-video-player/src/video/ui/video_shell/component.rs:287
+#: crates/big-video-player/src/video/ui/video_shell/component.rs:291
+#: crates/big-video-player/src/video/ui/video_shell/playlist_panel.rs:24
+msgid "Playlist"
+msgstr "Soittolista"
+
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:92
+msgid "Main Menu"
+msgstr "Päävalikko"
+
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:112
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:203
+msgid "Save Queue as Playlist"
+msgstr "Tallenna jono soittolistaksi"
+
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:113
+msgid "Remove Duplicates"
+msgstr "Poista kaksoiskappaleet"
+
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:114
+msgid "Clear Queue"
+msgstr "Tyhjennä jono"
+
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:120
+#: crates/big-audio-player/src/audio/ui/playlist_library_dialog/spec.rs:105
+msgid "Manage Playlists"
+msgstr "Hallitse soittolistoja"
+
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:130
+#: crates/big-video-player/src/video/ui/video_controls_bar/zones.rs:670
+msgid "Convert…"
+msgstr "Muunna…"
+
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:136
+#: crates/big-video-player/src/video/ui/appearance/layout/buttons_page.rs:112
+#: crates/big-video-player/src/video/ui/video_controls_bar/zones.rs:628
+#: crates/big-video-player/src/video/ui/video_shell/panel.rs:46
+#: crates/media-runtime/src/shared/tv_cast.rs:846
+msgid "Play on a TV"
+msgstr "Toista televisiossa"
+
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:137
+#: crates/ui/media/big-player-ui/src/smartphone/dialog.rs:29
+msgid "Smartphone"
+msgstr "Älypuhelin"
+
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:143
+#: crates/big-video-player/src/video/ui/video_shell/panel.rs:576
+#: crates/ui/media/big-player-ui/src/appearance/window.rs:76
+msgid "Appearance"
+msgstr "Ulkoasu"
+
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:145
+#: crates/big-audio-player/src/audio/ui/shortcuts_dialog.rs:27
+#: crates/big-video-player/src/video/ui/keyboard_shortcuts_dialog.rs:30
+msgid "Keyboard Shortcuts"
+msgstr "Pikanäppäimet"
+
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:146
+#: crates/big-video-player/src/video/ui/video_shell/panel.rs:584
+msgid "About"
+msgstr "Tietoja"
+
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:209
+#: crates/big-audio-player/src/audio/ui/playlist_library_dialog/spec.rs:194
+msgid "Name for the new playlist"
+msgstr "Uuden soittolistan nimi"
+
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:284
+msgid "Drop tracks here"
+msgstr "Pudota kappaleet tähän"
+
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:285
+msgid "or use ＋ to add from the library"
+msgstr "tai lisää kirjastosta painikkeella ＋"
+
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:311
+msgid "Welcome to Big Audio Player"
+msgstr "Tervetuloa Big Audio Playeriin"
+
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:319
+msgid ""
+"Add a folder with your music files to get started.\n"
+"Supported formats: MP3, FLAC, OGG, M4A, OPUS, WAV and more."
+msgstr ""
+"Aloita lisäämällä kansio, jossa on musiikkitiedostosi.\n"
+"Tuetut muodot: MP3, FLAC, OGG, M4A, OPUS, WAV ja muita."
+
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:332
+msgid "Open Files"
+msgstr "Avaa tiedostoja"
+
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:333
+msgid "Open files"
+msgstr "Avaa tiedostoja"
+
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:343
+msgid "Open Audio Files"
+msgstr "Avaa äänitiedostoja"
+
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:345
+msgid "Audio Files"
+msgstr "Äänitiedostot"
+
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:369
+msgid "Quick tips"
+msgstr "Pikavinkit"
+
+#: crates/big-audio-player/src/audio/ui/playlist_interactions.rs:36
+#: crates/big-audio-player/src/audio/ui/playlist_interactions.rs:38
+msgid "Remove from Queue"
+msgstr "Poista jonosta"
+
+#: crates/big-audio-player/src/audio/ui/playlist_interactions.rs:59
+msgid "Download Episode…"
+msgstr "Lataa jakso…"
+
+#: crates/big-audio-player/src/audio/ui/playlist_interactions.rs:60
+msgid "Download Episodes…"
+msgstr "Lataa jaksot…"
+
+#: crates/big-audio-player/src/audio/ui/playlist_interactions.rs:205
+msgid "Edit / Convert…"
+msgstr "Muokkaa / muunna…"
+
+#: crates/big-audio-player/src/audio/ui/playlist_interactions.rs:237
+msgid "Delete permanently"
+msgstr "Poista pysyvästi"
+
+#: crates/big-audio-player/src/audio/ui/playlist_interactions.rs:238
+msgid "Skip trash — cannot be undone"
+msgstr "Ohita roskakori – ei voi perua"
+
+#: crates/big-audio-player/src/audio/ui/playlist_interactions.rs:245
+msgid "Delete"
+msgstr "Poista"
+
+#: crates/big-audio-player/src/audio/ui/playlist_interactions.rs:274
+#: crates/big-audio-player/src/audio/ui/playlist_interactions.rs:276
+msgid "Delete from Storage"
+msgstr "Poista tallennustilasta"
+
+#: crates/big-audio-player/src/audio/ui/playlist_interactions.rs:284
+msgid "Move this file to the trash?"
+msgstr "Siirretäänkö tämä tiedosto roskakoriin?"
+
+#: crates/big-audio-player/src/audio/ui/playlist_interactions.rs:290
+msgid "Move these files to the trash?"
+msgstr "Siirretäänkö nämä tiedostot roskakoriin?"
+
+#: crates/big-audio-player/src/audio/ui/playlist_library_dialog.rs:223
+#: crates/big-audio-player/src/audio/ui/unavailable_dialog.rs:353
+msgid "Saved playlists"
+msgstr "Tallennetut soittolistat"
+
+#: crates/big-audio-player/src/audio/ui/playlist_library_dialog.rs:234
+msgid "Import / Export"
+msgstr "Tuo / vie"
+
+#: crates/big-audio-player/src/audio/ui/playlist_library_dialog.rs:259
+#: crates/big-audio-player/src/audio/ui/playlist_library_dialog/spec.rs:192
+msgid "Save Current Queue"
+msgstr "Tallenna nykyinen jono"
+
+#: crates/big-audio-player/src/audio/ui/playlist_library_dialog.rs:280
+msgid "Generate"
+msgstr "Luo"
+
+#: crates/big-audio-player/src/audio/ui/playlist_library_dialog.rs:281
+msgid "Build a playlist from your listening stats"
+msgstr "Muodosta soittolista kuuntelutilastoistasi"
+
+#: crates/big-audio-player/src/audio/ui/playlist_library_dialog/spec.rs:88
+msgid "Most Played"
+msgstr "Eniten toistetut"
+
+#: crates/big-audio-player/src/audio/ui/playlist_library_dialog/spec.rs:93
+msgid "Recently Added"
+msgstr "Äskettäin lisätyt"
+
+#: crates/big-audio-player/src/audio/ui/playlist_library_dialog/spec.rs:98
+msgid "Never Played"
+msgstr "Ei koskaan toistetut"
+
+#: crates/big-audio-player/src/audio/ui/playlist_library_dialog/spec.rs:106
+#: crates/big-audio-player/src/audio/ui/playlist_library_dialog/spec.rs:115
+msgid "Your Playlists"
+msgstr "Soittolistasi"
+
+#: crates/big-audio-player/src/audio/ui/playlist_library_dialog/spec.rs:129
+msgid "No Saved Playlists"
+msgstr "Ei tallennettuja soittolistoja"
+
+#: crates/big-audio-player/src/audio/ui/playlist_library_dialog/spec.rs:131
+msgid "Save the current queue, generate one from your stats, or import a file"
+msgstr "Tallenna nykyinen jono, luo soittolista tilastoistasi tai tuo tiedosto"
+
+#: crates/big-audio-player/src/audio/ui/playlist_library_dialog/spec.rs:140
+msgid "Import File…"
+msgstr "Tuo tiedosto…"
+
+#: crates/big-audio-player/src/audio/ui/playlist_library_dialog/spec.rs:145
+msgid "Import Folder…"
+msgstr "Tuo kansio…"
+
+#: crates/big-audio-player/src/audio/ui/playlist_library_dialog/spec.rs:150
+msgid "Export All…"
+msgstr "Vie kaikki…"
+
+#: crates/big-audio-player/src/audio/ui/playlist_library_dialog/spec.rs:170
+msgid "Load"
+msgstr "Lataa"
+
+#: crates/big-audio-player/src/audio/ui/playlist_library_dialog/spec.rs:171
+msgid "Rename playlist"
+msgstr "Nimeä soittolista uudelleen"
+
+#: crates/big-audio-player/src/audio/ui/playlist_library_dialog/spec.rs:172
+msgid "Export playlist"
+msgstr "Vie soittolista"
+
+#: crates/big-audio-player/src/audio/ui/playlist_library_dialog/spec.rs:173
+msgid "Delete playlist"
+msgstr "Poista soittolista"
+
+#: crates/big-audio-player/src/audio/ui/playlist_library_dialog/spec.rs:186
+msgid "min"
+msgstr "min"
+
+#: crates/big-audio-player/src/audio/ui/playlist_library_dialog/spec.rs:203
+msgid "Rename Playlist"
+msgstr "Nimeä soittolista uudelleen"
+
+#: crates/big-audio-player/src/audio/ui/playlist_library_dialog/spec.rs:205
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/fileops.rs:193
+msgid "New name"
+msgstr "Uusi nimi"
+
+#: crates/big-audio-player/src/audio/ui/playlist_library_dialog/spec.rs:214
+msgid "Delete Playlist?"
+msgstr "Poistetaanko soittolista?"
+
+#: crates/big-audio-player/src/audio/ui/playlist_library_dialog/spec.rs:225
+msgid "This will permanently delete"
+msgstr "Tämä poistaa pysyvästi kohteen"
+
+#: crates/big-audio-player/src/audio/ui/scan_progress.rs:10
+msgid "Scanning the library"
+msgstr "Tarkistetaan kirjastoa"
+
+#: crates/big-audio-player/src/audio/ui/scan_progress.rs:34
+msgid "Reading media information…"
+msgstr "Luetaan median tietoja…"
+
+#: crates/big-audio-player/src/audio/ui/scan_progress.rs:46
+msgid "Examined"
+msgstr "Tutkittu"
+
+#: crates/big-audio-player/src/audio/ui/scan_progress.rs:53
+msgid ""
+"You can keep using the player. Cancelling keeps earlier confirmed imports "
+"and never deletes media files."
+msgstr ""
+"Voit jatkaa soittimen käyttöä. Peruminen säilyttää aiemmat vahvistetut "
+"tuonnit eikä koskaan poista mediatiedostoja."
+
+#: crates/big-audio-player/src/audio/ui/scan_progress.rs:62
+msgid "Cancel scan"
+msgstr "Peru tarkistus"
+
+#: crates/big-audio-player/src/audio/ui/track_list.rs:433
+msgid "Playing"
+msgstr "Toistetaan"
+
+#: crates/big-audio-player/src/audio/ui/unavailable_dialog.rs:52
+msgid ""
+"Reconnect external drives before reviewing. Removing records forgets their "
+"ratings and saved playlist links, but never deletes media files or "
+"interrupts current playback."
+msgstr ""
+"Yhdistä ulkoiset asemat uudelleen ennen tarkistusta. Tietueiden poistaminen "
+"unohtaa niiden arvostelut ja tallennettujen soittolistojen linkit, mutta ei "
+"koskaan poista mediatiedostoja eikä keskeytä nykyistä toistoa."
+
+#: crates/big-audio-player/src/audio/ui/unavailable_dialog.rs:60
+#: crates/big-audio-player/src/audio/ui/unavailable_dialog.rs:168
+msgid "Checking the library…"
+msgstr "Tarkistetaan kirjastoa…"
+
+#: crates/big-audio-player/src/audio/ui/unavailable_dialog.rs:84
+msgid "Restart review"
+msgstr "Aloita tarkistus alusta"
+
+#: crates/big-audio-player/src/audio/ui/unavailable_dialog.rs:85
+msgid "Check again"
+msgstr "Tarkista uudelleen"
+
+#: crates/big-audio-player/src/audio/ui/unavailable_dialog.rs:86
+msgid "Continue checking"
+msgstr "Jatka tarkistusta"
+
+#: crates/big-audio-player/src/audio/ui/unavailable_dialog.rs:88
+msgid "Remove selected records"
+msgstr "Poista valitut tietueet"
+
+#: crates/big-audio-player/src/audio/ui/unavailable_dialog.rs:183
+msgid ""
+"The library could not be checked completely. Previous results are kept. "
+"Check the drive or database and retry."
+msgstr ""
+"Kirjastoa ei voitu tarkistaa kokonaan. Aiemmat tulokset säilytettiin. "
+"Tarkista asema tai tietokanta ja yritä uudelleen."
+
+#: crates/big-audio-player/src/audio/ui/unavailable_dialog.rs:213
+msgid "End of this review snapshot. Restart to include new imports."
+msgstr ""
+"Tämän tarkistustilannekuvan loppu. Aloita alusta sisällyttääksesi uudet "
+"tuonnit."
+
+#: crates/big-audio-player/src/audio/ui/unavailable_dialog.rs:215
+msgid "Continue to check the next part of your library."
+msgstr "Jatka kirjastosi seuraavan osan tarkistamista."
+
+#: crates/big-audio-player/src/audio/ui/unavailable_dialog.rs:220
+msgid "records checked"
+msgstr "tietuetta tarkistettu"
+
+#: crates/big-audio-player/src/audio/ui/unavailable_dialog.rs:222
+msgid "records need review"
+msgstr "tietuetta vaatii tarkistusta"
+
+#: crates/big-audio-player/src/audio/ui/unavailable_dialog.rs:239
+msgid "Select the missing records you want to remove."
+msgstr "Valitse puuttuvat tietueet, jotka haluat poistaa."
+
+#: crates/big-audio-player/src/audio/ui/unavailable_dialog.rs:247
+msgid "Selected records"
+msgstr "Valitut tietueet"
+
+#: crates/big-audio-player/src/audio/ui/unavailable_dialog.rs:250
+msgid ""
+"Their ratings and saved playlist links will be removed. Media files will not "
+"be deleted. A restored file or changed record cancels the whole selection."
+msgstr ""
+"Niiden arvostelut ja tallennettujen soittolistojen linkit poistetaan. "
+"Mediatiedostoja ei poisteta. Palautettu tiedosto tai muuttunut tietue peruu "
+"koko valinnan."
+
+#: crates/big-audio-player/src/audio/ui/unavailable_dialog.rs:254
+msgid "Remove selected library records?"
+msgstr "Poistetaanko valitut kirjastotietueet?"
+
+#: crates/big-audio-player/src/audio/ui/unavailable_dialog.rs:259
+msgid "Remove records"
+msgstr "Poista tietueet"
+
+#: crates/big-audio-player/src/audio/ui/unavailable_dialog.rs:271
+msgid "Rechecking the selection and updating the library…"
+msgstr "Tarkistetaan valinta uudelleen ja päivitetään kirjastoa…"
+
+#: crates/big-audio-player/src/audio/ui/unavailable_dialog.rs:296
+msgid ""
+"Removal was not confirmed. A file may be available again or a record "
+"changed. Check again before selecting records."
+msgstr ""
+"Poistoa ei vahvistettu. Tiedosto voi olla taas saatavilla tai tietue on "
+"muuttunut. Tarkista uudelleen ennen tietueiden valitsemista."
+
+#: crates/big-audio-player/src/audio/ui/unavailable_dialog.rs:318
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/header.rs:51
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/header.rs:52
+msgid "Select"
+msgstr "Valitse"
+
+#: crates/big-audio-player/src/audio/ui/unavailable_dialog.rs:329
+msgid "Remote or unsupported location — not eligible for removal here"
+msgstr "Etä- tai tukematon sijainti – ei voi poistaa tässä"
+
+#: crates/big-video-player/src/lib.rs:26
+msgid "Big Video Player"
+msgstr "Big Video Player"
+
+#: crates/big-video-player/src/video/keybindings.rs:50
+msgid "Increase speed"
+msgstr "Lisää nopeutta"
+
+#: crates/big-video-player/src/video/keybindings.rs:57
+msgid "Decrease speed"
+msgstr "Vähennä nopeutta"
+
+#: crates/big-video-player/src/video/keybindings.rs:64
+msgid "Reset speed to 1×"
+msgstr "Palauta nopeus arvoon 1×"
+
+#: crates/big-video-player/src/video/keybindings.rs:71
+#: crates/big-video-player/src/video/keybindings.rs:259
+msgid "Next chapter"
+msgstr "Seuraava luku"
+
+#: crates/big-video-player/src/video/keybindings.rs:78
+#: crates/big-video-player/src/video/keybindings.rs:266
+msgid "Previous chapter"
+msgstr "Edellinen luku"
+
+#: crates/big-video-player/src/video/keybindings.rs:85
+msgid "Next in playlist"
+msgstr "Seuraava soittolistalla"
+
+#: crates/big-video-player/src/video/keybindings.rs:92
+msgid "Previous in playlist"
+msgstr "Edellinen soittolistalla"
+
+#: crates/big-video-player/src/video/keybindings.rs:99
+msgid "Next frame"
+msgstr "Seuraava ruutu"
+
+#: crates/big-video-player/src/video/keybindings.rs:106
+msgid "Previous frame"
+msgstr "Edellinen ruutu"
+
+#: crates/big-video-player/src/video/keybindings.rs:113
+msgid "Undo last seek"
+msgstr "Kumoa viimeisin siirtyminen"
+
+#: crates/big-video-player/src/video/keybindings.rs:121
+msgid "Toggle fullscreen"
+msgstr "Koko näytön tila päälle/pois"
+
+#: crates/big-video-player/src/video/keybindings.rs:122
+#: crates/big-video-player/src/video/keybindings.rs:129
+#: crates/big-video-player/src/video/keybindings.rs:136
+#: crates/big-video-player/src/video/keybindings.rs:143
+#: crates/big-video-player/src/video/keybindings.rs:150
+#: crates/big-video-player/src/video/keybindings.rs:157
+#: crates/big-video-player/src/video/keybindings.rs:164
+#: crates/big-video-player/src/video/keybindings.rs:171
+#: crates/big-video-player/src/video/ui/media_details_dialog.rs:161
+#: crates/big-video-player/src/video/ui/media_details_dialog.rs:300
+#: crates/big-video-player/src/video/ui/preferences/video.rs:19
+msgid "Video"
+msgstr "Video"
+
+#: crates/big-video-player/src/video/keybindings.rs:128
+msgid "Toggle fullscreen (F11)"
+msgstr "Koko näytön tila päälle/pois (F11)"
+
+#: crates/big-video-player/src/video/keybindings.rs:135
+msgid "Exit fullscreen"
+msgstr "Poistu koko näytön tilasta"
+
+#: crates/big-video-player/src/video/keybindings.rs:142
+msgid "Toggle deinterlace"
+msgstr "Lomituksen poisto päälle/pois"
+
+#: crates/big-video-player/src/video/keybindings.rs:149
+msgid "Toggle hardware decoding"
+msgstr "Laitteistodekoodaus päälle/pois"
+
+#: crates/big-video-player/src/video/keybindings.rs:156
+msgid "Increase panscan"
+msgstr "Lisää panscania"
+
+#: crates/big-video-player/src/video/keybindings.rs:163
+msgid "Decrease panscan"
+msgstr "Vähennä panscania"
+
+#: crates/big-video-player/src/video/keybindings.rs:170
+msgid "Crop video"
+msgstr "Rajaa video"
+
+#: crates/big-video-player/src/video/keybindings.rs:178
+msgid "Volume up"
+msgstr "Äänenvoimakkuus ylös"
+
+#: crates/big-video-player/src/video/keybindings.rs:179
+#: crates/big-video-player/src/video/keybindings.rs:186
+#: crates/big-video-player/src/video/keybindings.rs:193
+#: crates/big-video-player/src/video/keybindings.rs:200
+#: crates/big-video-player/src/video/ui/media_details_dialog.rs:233
+#: crates/big-video-player/src/video/ui/media_details_dialog.rs:315
+#: crates/ui/media/big-player-ui/src/audio_preferences.rs:82
+msgid "Audio"
+msgstr "Ääni"
+
+#: crates/big-video-player/src/video/keybindings.rs:185
+msgid "Volume down"
+msgstr "Äänenvoimakkuus alas"
+
+#: crates/big-video-player/src/video/keybindings.rs:192
+msgid "Toggle mute"
+msgstr "Mykistys päälle/pois"
+
+#: crates/big-video-player/src/video/keybindings.rs:199
+msgid "Toggle audio passthrough"
+msgstr "Äänen läpivienti päälle/pois"
+
+#: crates/big-video-player/src/video/keybindings.rs:207
+msgid "Toggle secondary subtitles"
+msgstr "Toissijaiset tekstitykset päälle/pois"
+
+#: crates/big-video-player/src/video/keybindings.rs:208
+#: crates/big-video-player/src/video/keybindings.rs:215
+#: crates/big-video-player/src/video/keybindings.rs:222
+#: crates/big-video-player/src/video/keybindings.rs:229
+#: crates/big-video-player/src/video/ui/appearance/layout/buttons_page.rs:98
+#: crates/big-video-player/src/video/ui/preferences/subtitles.rs:19
+#: crates/big-video-player/src/video/ui/video_controls_bar/zones.rs:612
+msgid "Subtitles"
+msgstr "Tekstitykset"
+
+#: crates/big-video-player/src/video/keybindings.rs:214
+msgid "Next subtitle"
+msgstr "Seuraava tekstitys"
+
+#: crates/big-video-player/src/video/keybindings.rs:221
+msgid "Previous subtitle"
+msgstr "Edellinen tekstitys"
+
+#: crates/big-video-player/src/video/keybindings.rs:228
+msgid "Cycle Closed Captions"
+msgstr "Vaihda suljettuja tekstityksiä"
+
+#: crates/big-video-player/src/video/keybindings.rs:236
+#: crates/big-video-player/src/video/ui/video_shell/input_gestures.rs:107
+msgid "Screenshot"
+msgstr "Kuvakaappaus"
+
+#: crates/big-video-player/src/video/keybindings.rs:237
+#: crates/big-video-player/src/video/ui/preferences/general.rs:154
+msgid "Screenshots"
+msgstr "Kuvakaappaukset"
+
+#: crates/big-video-player/src/video/keybindings.rs:244
+msgid "Toggle shuffle"
+msgstr "Sekoitus päälle/pois"
+
+#: crates/big-video-player/src/video/keybindings.rs:251
+msgid "Cycle repeat mode"
+msgstr "Vaihda toistotilaa"
+
+#: crates/big-video-player/src/video/keybindings.rs:274
+msgid "Open file"
+msgstr "Avaa tiedosto"
+
+#: crates/big-video-player/src/video/keybindings.rs:275
+#: crates/big-video-player/src/video/keybindings.rs:282
+#: crates/big-video-player/src/video/keybindings.rs:289
+#: crates/big-video-player/src/video/keybindings.rs:296
+#: crates/big-video-player/src/video/keybindings.rs:303
+#: crates/big-video-player/src/video/keybindings.rs:311
+#: crates/big-video-player/src/video/keybindings.rs:318
+#: crates/big-video-player/src/video/keybindings.rs:325
+#: crates/big-video-player/src/video/ui/preferences/advanced.rs:222
+msgid "Other"
+msgstr "Muut"
+
+#: crates/big-video-player/src/video/keybindings.rs:281
+#: crates/big-video-player/src/video/ui/video_shell/actions.rs:138
+#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:154
+msgid "Open URL"
+msgstr "Avaa URL"
+
+#: crates/big-video-player/src/video/keybindings.rs:288
+msgid "Paste and play"
+msgstr "Liitä ja toista"
+
+#: crates/big-video-player/src/video/keybindings.rs:295
+#: crates/big-video-player/src/video/ui/video_controls_bar.rs:258
+#: crates/big-video-player/src/video/ui/video_controls_bar.rs:259
+msgid "Go to time"
+msgstr "Siirry ajankohtaan"
+
+#: crates/big-video-player/src/video/keybindings.rs:302
+msgid "Cycle edition"
+msgstr "Vaihda painosta"
+
+#: crates/big-video-player/src/video/keybindings.rs:310
+msgid "Toggle files sidebar"
+msgstr "Tiedostojen sivupalkki päälle/pois"
+
+#: crates/big-video-player/src/video/keybindings.rs:317
+msgid "Toggle playlist sidebar"
+msgstr "Soittolistan sivupalkki päälle/pois"
+
+#: crates/big-video-player/src/video/keybindings.rs:324
+msgid "Media information"
+msgstr "Median tiedot"
+
+#: crates/big-video-player/src/video/ui/appearance/layout/buttons_page.rs:28
+#: crates/big-video-player/src/video/ui/video_shell/component.rs:256
+#: crates/big-video-player/src/video/ui/video_shell/component.rs:260
+msgid "Keep Above"
+msgstr "Pidä päällimmäisenä"
+
+#: crates/big-video-player/src/video/ui/appearance/layout/buttons_page.rs:49
+msgid "Menu"
+msgstr "Valikko"
+
+#: crates/big-video-player/src/video/ui/appearance/layout/buttons_page.rs:84
+msgid "Play/Pause"
+msgstr "Toista/Tauko"
+
+#: crates/big-video-player/src/video/ui/appearance/layout/buttons_page.rs:105
+#: crates/big-video-player/src/video/ui/video_controls_bar/zones.rs:620
+msgid "Audio Track"
+msgstr "Ääniraita"
+
+#: crates/big-video-player/src/video/ui/appearance/layout/buttons_page.rs:119
+#: crates/big-video-player/src/video/ui/video_controls_bar/zones.rs:631
+#: crates/big-video-player/src/video/ui/video_shell/input_gestures.rs:106
+msgid "Fullscreen"
+msgstr "Koko näyttö"
+
+#: crates/big-video-player/src/video/ui/appearance/layout/buttons_page.rs:146
+msgid "Video Title"
+msgstr "Videon nimi"
+
+#: crates/big-video-player/src/video/ui/appearance/layout/buttons_page.rs:188
+#: crates/big-video-player/src/video/ui/appearance/layout/layout_page.rs:97
+msgid "Buttons"
+msgstr "Painikkeet"
+
+#: crates/big-video-player/src/video/ui/appearance/layout/buttons_page.rs:192
+msgid "Button Layout"
+msgstr "Painikkeiden asettelu"
+
+#: crates/big-video-player/src/video/ui/appearance/layout/buttons_page.rs:194
+msgid "Drag buttons between zones • Click to toggle visibility"
+msgstr "Vedä painikkeita alueiden välillä • Napsauta vaihtaaksesi näkyvyyttä"
+
+#: crates/big-video-player/src/video/ui/appearance/layout/layout_page.rs:18
+msgid "Layout"
+msgstr "Asettelu"
+
+#: crates/big-video-player/src/video/ui/appearance/layout/layout_page.rs:33
+msgid "Controls Bar"
+msgstr "Ohjauspalkki"
+
+#: crates/big-video-player/src/video/ui/appearance/layout/layout_page.rs:37
+msgid "Corner Radius"
+msgstr "Kulmien pyöristys"
+
+#: crates/big-video-player/src/video/ui/appearance/layout/layout_page.rs:43
+msgid "Bottom Margin"
+msgstr "Alamarginaali"
+
+#: crates/big-video-player/src/video/ui/appearance/layout/layout_page.rs:49
+msgid "Side Margin"
+msgstr "Sivumarginaali"
+
+#: crates/big-video-player/src/video/ui/appearance/layout/layout_page.rs:55
+msgid "Padding Top"
+msgstr "Ylätäyte"
+
+#: crates/big-video-player/src/video/ui/appearance/layout/layout_page.rs:61
+msgid "Padding Bottom"
+msgstr "Alatäyte"
+
+#: crates/big-video-player/src/video/ui/appearance/layout/layout_page.rs:67
+msgid "Padding Left"
+msgstr "Vasen täyte"
+
+#: crates/big-video-player/src/video/ui/appearance/layout/layout_page.rs:73
+msgid "Padding Right"
+msgstr "Oikea täyte"
+
+#: crates/big-video-player/src/video/ui/appearance/layout/layout_page.rs:100
+msgid "Custom Button Size"
+msgstr "Mukautettu painikkeiden koko"
+
+#: crates/big-video-player/src/video/ui/appearance/layout/layout_page.rs:106
+msgid "Button Size"
+msgstr "Painikkeiden koko"
+
+#: crates/big-video-player/src/video/ui/appearance/layout/layout_page.rs:121
+msgid "Button Border Radius"
+msgstr "Painikkeiden reunan pyöristys"
+
+#: crates/big-video-player/src/video/ui/appearance/layout/layout_page.rs:172
+msgid "Window"
+msgstr "Ikkuna"
+
+#: crates/big-video-player/src/video/ui/appearance/layout/layout_page.rs:175
+msgid "Custom Window Corner Radius"
+msgstr "Mukautettu ikkunan kulmien pyöristys"
+
+#: crates/big-video-player/src/video/ui/appearance/layout/layout_page.rs:181
+msgid "Window Corner Radius"
+msgstr "Ikkunan kulmien pyöristys"
+
+#: crates/big-video-player/src/video/ui/appearance/layout/layout_page.rs:218
+msgid "Window Buttons Follow Custom Size"
+msgstr "Ikkunapainikkeet noudattavat mukautettua kokoa"
+
+#: crates/big-video-player/src/video/ui/appearance/layout/layout_page.rs:219
+msgid "Also resize the minimize, maximize and close buttons"
+msgstr "Muuta myös pienennys-, suurennus- ja sulkemispainikkeiden kokoa"
+
+#: crates/big-video-player/src/video/ui/filters/groups_shader.rs:28
+msgid "GPU Processing"
+msgstr "GPU-käsittely"
+
+#: crates/big-video-player/src/video/ui/filters/groups_shader.rs:34
+msgid "Deband"
+msgstr "Banding-poisto"
+
+#: crates/big-video-player/src/video/ui/filters/groups_shader.rs:35
+msgid "Remove color banding artifacts"
+msgstr "Poista värikaistoittumisen häiriöt"
+
+#: crates/big-video-player/src/video/ui/filters/groups_shader.rs:41
+msgid "Sigmoid Upscaling"
+msgstr "Sigmoidinen skaalaus ylöspäin"
+
+#: crates/big-video-player/src/video/ui/filters/groups_shader.rs:42
+msgid "Reduces ringing when scaling video up"
+msgstr "Vähentää kellotusta videon suurennuksessa"
+
+#: crates/big-video-player/src/video/ui/filters/groups_shader.rs:48
+msgid "Correct Downscaling"
+msgstr "Oikea skaalaus alaspäin"
+
+#: crates/big-video-player/src/video/ui/filters/groups_shader.rs:49
+msgid "Higher quality when scaling video down"
+msgstr "Parempi laatu videota pienennettäessä"
+
+#: crates/big-video-player/src/video/ui/filters/groups_shader.rs:60
+msgid "Sharpen"
+msgstr "Terävöitys"
+
+#: crates/big-video-player/src/video/ui/filters/groups_shader.rs:61
+msgid "GPU sharpening (unsharp mask)"
+msgstr "GPU-terävöitys (unsharp mask)"
+
+#: crates/big-video-player/src/video/ui/filters/groups_shader.rs:76
+msgid "Amount"
+msgstr "Määrä"
+
+#: crates/big-video-player/src/video/ui/filters/groups_shader.rs:137
+msgid "GPU Upscaling Shaders"
+msgstr "GPU-skaalausvarjostimet"
+
+#: crates/big-video-player/src/video/ui/filters/groups_shader.rs:151
+msgid "Upscaling Shader"
+msgstr "Skaalausvarjostin"
+
+#: crates/big-video-player/src/video/ui/filters/groups_shader.rs:154
+msgid "FidelityFX Super Resolution (FSR)"
+msgstr "FidelityFX Super Resolution (FSR)"
+
+#: crates/big-video-player/src/video/ui/filters/groups_shader.rs:155
+msgid "CAS Upscaling"
+msgstr "CAS-skaalaus"
+
+#: crates/big-video-player/src/video/ui/filters/groups_shader.rs:159
+msgid ""
+"Enhances image quality when the video resolution is lower than your display"
+msgstr "Parantaa kuvanlaatua, kun videon resoluutio on pienempi kuin näytön"
+
+#: crates/big-video-player/src/video/ui/filters/groups_shader.rs:180
+msgid "Sharpening Intensity"
+msgstr "Terävöitysvoimakkuus"
+
+#: crates/big-video-player/src/video/ui/filters/groups_shader.rs:182
+msgid "Higher values produce a more visible sharpening effect"
+msgstr "Suuremmat arvot tuottavat selvemmin näkyvän terävöitysvaikutuksen"
+
+#: crates/big-video-player/src/video/ui/filters/groups_shader.rs:349
+msgid "Neural Network Upscaling"
+msgstr "Neuroverkkoskaalaus"
+
+#: crates/big-video-player/src/video/ui/filters/groups_shader.rs:358
+msgid "RAVU Neural Upscaler"
+msgstr "RAVU-neuroskaalain"
+
+#: crates/big-video-player/src/video/ui/filters/groups_shader.rs:360
+msgid ""
+"Reconstructs detail lost during video compression — uses RAVU r4, the best "
+"fragment-shader neural upscaler available"
+msgstr ""
+"Rekonstruoi videon pakkauksessa kadonneita yksityiskohtia – käyttää RAVU "
+"r4:ää, parasta saatavilla olevaa fragmenttivarjostimen neuroskaalainta"
+
+#: crates/big-video-player/src/video/ui/filters/groups_shader.rs:383
+msgid "Anime / Cartoon Enhancement"
+msgstr "Animen / piirrossarjojen parannus"
+
+#: crates/big-video-player/src/video/ui/filters/groups_shader.rs:394
+msgid "Anime4K Preset"
+msgstr "Anime4K-esiasetus"
+
+#: crates/big-video-player/src/video/ui/filters/groups_shader.rs:396
+msgid "Disabled"
+msgstr "Ei käytössä"
+
+#: crates/big-video-player/src/video/ui/filters/groups_shader.rs:397
+msgid "Quality A — Best (1080p sources)"
+msgstr "Laatu A – paras (1080p-lähteet)"
+
+#: crates/big-video-player/src/video/ui/filters/groups_shader.rs:398
+msgid "Quality B — Soft Restore (720p sources)"
+msgstr "Laatu B – pehmeä palautus (720p-lähteet)"
+
+#: crates/big-video-player/src/video/ui/filters/groups_shader.rs:399
+msgid "Quality C — Fast (low-end GPU)"
+msgstr "Laatu C – nopea (heikko GPU)"
+
+#: crates/big-video-player/src/video/ui/filters/groups_shader.rs:403
+msgid "Select a quality preset — higher quality uses more GPU power"
+msgstr "Valitse laatuesiasetus – parempi laatu käyttää enemmän GPU:n tehoa"
+
+#: crates/big-video-player/src/video/ui/filters/groups_shader.rs:424
+msgid "Shaders not installed"
+msgstr "Varjostimia ei ole asennettu"
+
+#: crates/big-video-player/src/video/ui/filters/groups_shader.rs:425
+msgid "Install the big-media-runtime package to get built-in shaders"
+msgstr ""
+"Asenna big-media-runtime-paketti saadaksesi sisäänrakennetut varjostimet"
+
+#: crates/big-video-player/src/video/ui/filters/groups_shader.rs:433
+msgid "Neural upscaler shaders not installed"
+msgstr "Neuroskaalausvarjostimia ei ole asennettu"
+
+#: crates/big-video-player/src/video/ui/filters/groups_shader.rs:434
+msgid "Install the big-media-runtime package to get neural upscaling shaders"
+msgstr "Asenna big-media-runtime-paketti saadaksesi neuroskaalausvarjostimet"
+
+#: crates/big-video-player/src/video/ui/filters/groups_shader.rs:442
+msgid "Anime4K shaders not installed"
+msgstr "Anime4K-varjostimia ei ole asennettu"
+
+#: crates/big-video-player/src/video/ui/filters/groups_shader.rs:443
+msgid "Install the big-media-runtime package to get Anime4K shaders"
+msgstr "Asenna big-media-runtime-paketti saadaksesi Anime4K-varjostimet"
+
+#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:25
+msgid "Denoise and Sharpen"
+msgstr "Kohinanpoisto ja terävöitys"
+
+#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:32
+msgid "Denoise (hqdn3d)"
+msgstr "Kohinanpoisto (hqdn3d)"
+
+#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:33
+msgid "Reduces visual noise and grain from old or low-light footage"
+msgstr ""
+"Vähentää visuaalista kohinaa ja rakeisuutta vanhasta tai hämärässä kuvatusta "
+"materiaalista"
+
+#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:34
+#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:49
+msgid "Strength"
+msgstr "Voimakkuus"
+
+#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:47
+msgid "Sharpen (CAS)"
+msgstr "Terävöitys (CAS)"
+
+#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:48
+msgid "Software contrast-adaptive sharpening — works at any resolution"
+msgstr ""
+"Ohjelmallinen kontrastiadaptiivinen terävöitys – toimii kaikilla "
+"resoluutioilla"
+
+#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:62
+#: crates/big-video-player/src/video/ui/preferences/subtitles.rs:77
+msgid "Color"
+msgstr "Väri"
+
+#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:69
+msgid "Color Temperature"
+msgstr "Värilämpötila"
+
+#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:70
+msgid "Warm or cool tone (Kelvin)"
+msgstr "Lämmin tai kylmä sävy (kelvin)"
+
+#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:71
+msgid "Temperature"
+msgstr "Lämpötila"
+
+#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:84
+msgid "Vibrance"
+msgstr "Eloisuus"
+
+#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:85
+msgid "Boost color saturation intelligently"
+msgstr "Tehostaa värikylläisyyttä älykkäästi"
+
+#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:86
+msgid "Intensity"
+msgstr "Voimakkuus"
+
+#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:103
+msgid "Colorize"
+msgstr "Väritä"
+
+#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:104
+msgid "Apply a color tint overlay"
+msgstr "Lisää värisävyn peitto"
+
+#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:114
+#: crates/big-video-player/src/video/ui/media_adjust.rs:633
+msgid "Hue"
+msgstr "Sävy"
+
+#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:121
+#: crates/big-video-player/src/video/ui/media_adjust.rs:623
+#: crates/big-video-player/src/video/ui/preferences/advanced.rs:138
+msgid "Saturation"
+msgstr "Kylläisyys"
+
+#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:128
+msgid "Mix"
+msgstr "Sekoitus"
+
+#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:185
+msgid "Monochrome"
+msgstr "Yksivärinen"
+
+#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:186
+msgid "Cinematic black and white"
+msgstr "Elokuvamainen mustavalko"
+
+#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:206
+msgid "Style Presets"
+msgstr "Tyyliesiasetukset"
+
+#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:209
+msgid "Color Curves"
+msgstr "Värikäyrät"
+
+#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:210
+msgid "Predefined color grading looks"
+msgstr "Valmiiksi määritellyt värimaailmat"
+
+#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:225
+msgid "Preset"
+msgstr "Esiasetus"
+
+#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:227
+msgid "Vintage"
+msgstr "Vintage"
+
+#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:228
+msgid "Cross Process"
+msgstr "Cross Process"
+
+#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:229
+msgid "Darker"
+msgstr "Tummempi"
+
+#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:230
+msgid "Lighter"
+msgstr "Vaaleampi"
+
+#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:231
+msgid "More Contrast"
+msgstr "Enemmän kontrastia"
+
+#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:232
+msgid "Strong Contrast"
+msgstr "Voimakas kontrasti"
+
+#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:233
+msgid "Color Negative"
+msgstr "Värinegatiivi"
+
+#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:288
+msgid "Vignette"
+msgstr "Vinjetti"
+
+#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:289
+msgid "Darken edges of the image"
+msgstr "Tummentaa kuvan reunoja"
+
+#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:315
+msgid "Pixelize"
+msgstr "Pikselöi"
+
+#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:316
+msgid "Mosaic / pixel art effect"
+msgstr "Mosaiikki- / pikselitaideefekti"
+
+#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:317
+msgid "Block Size"
+msgstr "Lohkon koko"
+
+#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:329
+msgid "Gaussian Blur"
+msgstr "Gaussin sumennus"
+
+#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:330
+msgid "Smooth blur effect"
+msgstr "Pehmeä sumennusefekti"
+
+#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:331
+msgid "Sigma"
+msgstr "Sigma"
+
+#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:343
+msgid "Motion Trail"
+msgstr "Liikejälki"
+
+#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:344
+msgid "Slowly fading visual trail effect"
+msgstr "Hitaasti häipyvä visuaalinen jälki"
+
+#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:345
+msgid "Decay"
+msgstr "Häipyminen"
+
+#: crates/big-video-player/src/video/ui/iptv/channel_list.rs:78
+msgid "Toggle favorite"
+msgstr "Suosikki päälle/pois"
+
+#: crates/big-video-player/src/video/ui/iptv/channel_list.rs:157
+msgid "No channels"
+msgstr "Ei kanavia"
+
+#: crates/big-video-player/src/video/ui/iptv/channel_list.rs:165
+#, rust-format
+msgid "{} channel"
+msgid_plural "{} channels"
+msgstr[0] "{} kanava"
+msgstr[1] "{} kanavaa"
+
+#: crates/big-video-player/src/video/ui/iptv/channel_list.rs:212
+#: crates/ui/media/big-player-ui/src/radio_panel/methods.rs:126
+msgid "Ungrouped"
+msgstr "Ryhmittelemättömät"
+
+#: crates/big-video-player/src/video/ui/iptv/mod.rs:119
+#: crates/big-video-player/src/video/ui/iptv/mod.rs:135
+msgid "Provider"
+msgstr "Palveluntarjoaja"
+
+#: crates/big-video-player/src/video/ui/iptv/mod.rs:143
+msgid "Manage…"
+msgstr "Hallitse…"
+
+#: crates/big-video-player/src/video/ui/iptv/mod.rs:150
+msgid "Reload from provider"
+msgstr "Lataa uudelleen palveluntarjoajalta"
+
+#: crates/big-video-player/src/video/ui/iptv/mod.rs:156
+#: crates/big-video-player/src/video/ui/iptv/mod.rs:161
+msgid "Search channels"
+msgstr "Hae kanavia"
+
+#: crates/big-video-player/src/video/ui/iptv/mod.rs:206
+#: crates/big-video-player/src/video/ui/iptv/mod.rs:282
+msgid "No providers configured. Click “Manage…” to add one."
+msgstr ""
+"Palveluntarjoajia ei ole määritetty. Lisää uusi napsauttamalla ”Hallitse…”."
+
+#: crates/big-video-player/src/video/ui/iptv/mod.rs:236
+msgid "Showing cached channels — updating…"
+msgstr "Näytetään välimuistissa olevat kanavat – päivitetään…"
+
+#: crates/big-video-player/src/video/ui/iptv/mod.rs:304
+msgid "Reloading channels…"
+msgstr "Ladataan kanavia uudelleen…"
+
+#: crates/big-video-player/src/video/ui/iptv/mod.rs:306
+msgid "Loading channels…"
+msgstr "Ladataan kanavia…"
+
+#: crates/big-video-player/src/video/ui/iptv/mod.rs:324
+msgid "Could not reach provider — showing cached copy if available."
+msgstr ""
+"Palveluntarjoajaan ei saatu yhteyttä – näytetään välimuistissa oleva kopio, "
+"jos saatavilla."
+
+#: crates/big-video-player/src/video/ui/iptv/providers_dialog.rs:44
+msgid "Add provider"
+msgstr "Lisää palveluntarjoaja"
+
+#: crates/big-video-player/src/video/ui/iptv/providers_dialog.rs:60
+msgid "IPTV Providers"
+msgstr "IPTV-palveluntarjoajat"
+
+#: crates/big-video-player/src/video/ui/iptv/providers_dialog.rs:98
+msgid "No providers yet"
+msgstr "Ei vielä palveluntarjoajia"
+
+#: crates/big-video-player/src/video/ui/iptv/providers_dialog.rs:99
+msgid "Add an IPTV provider to get started"
+msgstr "Aloita lisäämällä IPTV-palveluntarjoaja"
+
+#: crates/big-video-player/src/video/ui/iptv/providers_dialog.rs:108
+msgid "Edit"
+msgstr "Muokkaa"
+
+#: crates/big-video-player/src/video/ui/iptv/providers_dialog.rs:108
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/library.rs:748
+msgid "Remove"
+msgstr "Poista"
+
+#: crates/big-video-player/src/video/ui/iptv/providers_dialog.rs:162
+msgid "IPTV Provider"
+msgstr "IPTV-palveluntarjoaja"
+
+#: crates/big-video-player/src/video/ui/iptv/providers_dialog.rs:223
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/header.rs:167
+msgid "Name"
+msgstr "Nimi"
+
+#: crates/big-video-player/src/video/ui/iptv/providers_dialog.rs:232
+msgid "Type"
+msgstr "Tyyppi"
+
+#: crates/big-video-player/src/video/ui/iptv/providers_dialog.rs:234
+msgid "M3U URL"
+msgstr "M3U-URL"
+
+#: crates/big-video-player/src/video/ui/iptv/providers_dialog.rs:235
+msgid "Local M3U file"
+msgstr "Paikallinen M3U-tiedosto"
+
+#: crates/big-video-player/src/video/ui/iptv/providers_dialog.rs:236
+msgid "Xtream Codes"
+msgstr "Xtream Codes"
+
+#: crates/big-video-player/src/video/ui/iptv/providers_dialog.rs:246
+msgid "URL"
+msgstr "URL"
+
+#: crates/big-video-player/src/video/ui/iptv/providers_dialog.rs:250
+msgid "File path"
+msgstr "Tiedostopolku"
+
+#: crates/big-video-player/src/video/ui/iptv/providers_dialog.rs:254
+msgid "Server URL"
+msgstr "Palvelimen URL"
+
+#: crates/big-video-player/src/video/ui/iptv/providers_dialog.rs:255
+msgid "Username"
+msgstr "Käyttäjätunnus"
+
+#: crates/big-video-player/src/video/ui/iptv/providers_dialog.rs:257
+msgid "Password"
+msgstr "Salasana"
+
+#: crates/big-video-player/src/video/ui/iptv/providers_dialog.rs:281
+msgid "HTTP headers (optional)"
+msgstr "HTTP-otsakkeet (valinnainen)"
+
+#: crates/big-video-player/src/video/ui/iptv/providers_dialog.rs:282
+msgid "User-Agent"
+msgstr "User-Agent"
+
+#: crates/big-video-player/src/video/ui/iptv/providers_dialog.rs:284
+msgid "Referer"
+msgstr "Referer"
+
+#: crates/big-video-player/src/video/ui/keyboard_shortcuts_dialog.rs:64
+msgid "Play, pause, seek and navigate"
+msgstr "Toisto, tauko, haku ja siirtyminen"
+
+#: crates/big-video-player/src/video/ui/keyboard_shortcuts_dialog.rs:65
+msgid "Chapter, edition and recent files"
+msgstr "Luku, painos ja viimeisimmät tiedostot"
+
+#: crates/big-video-player/src/video/ui/keyboard_shortcuts_dialog.rs:66
+msgid "Fullscreen, crop, aspect ratio"
+msgstr "Koko näyttö, rajaus, kuvasuhde"
+
+#: crates/big-video-player/src/video/ui/keyboard_shortcuts_dialog.rs:67
+msgid "Volume and audio track switching"
+msgstr "Äänenvoimakkuus ja ääniraidan vaihto"
+
+#: crates/big-video-player/src/video/ui/keyboard_shortcuts_dialog.rs:68
+msgid "Subtitle track selection and timing"
+msgstr "Tekstitysraidan valinta ja ajoitus"
+
+#: crates/big-video-player/src/video/ui/keyboard_shortcuts_dialog.rs:69
+msgid "Capture still frames"
+msgstr "Tallenna pysäytyskuvia"
+
+#: crates/big-video-player/src/video/ui/keyboard_shortcuts_dialog.rs:70
+msgid "Music-mode specific controls"
+msgstr "Musiikkitilan erityiset ohjaimet"
+
+#: crates/big-video-player/src/video/ui/keyboard_shortcuts_dialog.rs:71
+msgid "Miscellaneous shortcuts"
+msgstr "Muut pikanäppäimet"
+
+#: crates/big-video-player/src/video/ui/media_adjust.rs:116
+#: crates/big-video-player/src/video/ui/preferences/advanced.rs:65
+#: crates/big-video-player/src/video/ui/preferences/advanced.rs:101
+#: crates/big-video-player/src/video/ui/preferences/video.rs:54
+#: crates/big-video-player/src/video/ui/preferences/video.rs:87
+#: crates/ui/media/big-player-ui/src/audio_preferences.rs:168
+#: crates/ui/media/big-player-ui/src/audio_preferences.rs:179
+msgid "Automatic"
+msgstr "Automaattinen"
+
+#: crates/big-video-player/src/video/ui/media_adjust.rs:117
+#: crates/big-video-player/src/video/ui/media_details_dialog.rs:216
+#: crates/big-video-player/src/video/ui/video_shell/input_gestures.rs:112
+#: crates/big-video-player/src/video/ui/video_shell/panel.rs:39
+#: crates/big-video-player/src/video/ui/video_shell/panel.rs:440
+msgid "HDR"
+msgstr "HDR"
+
+#: crates/big-video-player/src/video/ui/media_adjust.rs:118
+msgid "HDR (TV)"
+msgstr "HDR (TV)"
+
+#: crates/big-video-player/src/video/ui/media_adjust.rs:119
+#: crates/big-video-player/src/video/ui/video_shell/adjustments.rs:175
+#: crates/big-video-player/src/video/ui/video_shell/panel.rs:431
+#: crates/media-runtime/src/shared/audio_effects.rs:186
+msgid "Normal"
+msgstr "Normaali"
+
+#: crates/big-video-player/src/video/ui/media_adjust.rs:183
+#: crates/big-video-player/src/video/ui/video_controls_bar/tracks.rs:80
+msgid "Subtitles early or late"
+msgstr "Tekstitys etuajassa tai myöhässä"
+
+#: crates/big-video-player/src/video/ui/media_adjust.rs:184
+msgid "When the text shows before or after the speech. More = later"
+msgstr ""
+"Kun teksti näkyy ennen puhetta tai sen jälkeen. Suurempi arvo = myöhemmin"
+
+#: crates/big-video-player/src/video/ui/media_adjust.rs:190
+msgid "Sound early or late"
+msgstr "Ääni etuajassa tai myöhässä"
+
+#: crates/big-video-player/src/video/ui/media_adjust.rs:191
+msgid "When voices do not match the lips. More = later"
+msgstr "Kun äänet eivät täsmää huulten kanssa. Suurempi arvo = myöhemmin"
+
+#: crates/big-video-player/src/video/ui/media_adjust.rs:205
+msgid "Reset to zero"
+msgstr "Nollaa"
+
+#: crates/big-video-player/src/video/ui/media_adjust.rs:245
+msgid "Reset"
+msgstr "Palauta"
+
+#: crates/big-video-player/src/video/ui/media_adjust.rs:292
+msgid "Uses what the file says"
+msgstr "Käyttää tiedoston ilmoittamaa"
+
+#: crates/big-video-player/src/video/ui/media_adjust.rs:293
+msgid "For a picture that looks grey and washed out"
+msgstr "Kuvalle, joka näyttää harmaalta ja haalistuneelta"
+
+#: crates/big-video-player/src/video/ui/media_adjust.rs:294
+msgid "For some TV broadcasts (HLG)"
+msgstr "Joillekin TV-lähetyksille (HLG)"
+
+#: crates/big-video-player/src/video/ui/media_adjust.rs:295
+msgid "Plain colours (SDR)"
+msgstr "Tavalliset värit (SDR)"
+
+#: crates/big-video-player/src/video/ui/media_adjust.rs:352
+msgid "Transform"
+msgstr "Muunna"
+
+#: crates/big-video-player/src/video/ui/media_adjust.rs:356
+msgid "Rotation"
+msgstr "Kierto"
+
+#: crates/big-video-player/src/video/ui/media_adjust.rs:371
+msgid "Rotate Left"
+msgstr "Kierrä vasemmalle"
+
+#: crates/big-video-player/src/video/ui/media_adjust.rs:376
+msgid "Reset Rotation"
+msgstr "Palauta kierto"
+
+#: crates/big-video-player/src/video/ui/media_adjust.rs:381
+msgid "Rotate Right"
+msgstr "Kierrä oikealle"
+
+#: crates/big-video-player/src/video/ui/media_adjust.rs:418
+msgid "Flip"
+msgstr "Peilaa"
+
+#: crates/big-video-player/src/video/ui/media_adjust.rs:425
+msgid "Horizontal"
+msgstr "Vaaka"
+
+#: crates/big-video-player/src/video/ui/media_adjust.rs:430
+msgid "Vertical"
+msgstr "Pysty"
+
+#: crates/big-video-player/src/video/ui/media_adjust.rs:464
+msgid "Crop"
+msgstr "Rajaus"
+
+#: crates/big-video-player/src/video/ui/media_adjust.rs:469
+#: crates/big-video-player/src/video/ui/media_adjust.rs:475
+msgid "Left"
+msgstr "Vasen"
+
+#: crates/big-video-player/src/video/ui/media_adjust.rs:470
+#: crates/big-video-player/src/video/ui/media_adjust.rs:476
+msgid "Right"
+msgstr "Oikea"
+
+#: crates/big-video-player/src/video/ui/media_adjust.rs:471
+#: crates/big-video-player/src/video/ui/media_adjust.rs:477
+msgid "Top"
+msgstr "Ylä"
+
+#: crates/big-video-player/src/video/ui/media_adjust.rs:472
+#: crates/big-video-player/src/video/ui/media_adjust.rs:478
+msgid "Bottom"
+msgstr "Ala"
+
+#: crates/big-video-player/src/video/ui/media_adjust.rs:488
+msgid "Reset crop"
+msgstr "Palauta rajaus"
+
+#: crates/big-video-player/src/video/ui/media_adjust.rs:593
+msgid "Contrast"
+msgstr "Kontrasti"
+
+#: crates/big-video-player/src/video/ui/media_adjust.rs:603
+msgid "Brightness"
+msgstr "Kirkkaus"
+
+#: crates/big-video-player/src/video/ui/media_adjust.rs:613
+msgid "Gamma"
+msgstr "Gamma"
+
+#: crates/big-video-player/src/video/ui/media_adjust.rs:659
+msgid "Zoom"
+msgstr "Zoomaus"
+
+#: crates/big-video-player/src/video/ui/media_adjust.rs:669
+msgid "Fill the window"
+msgstr "Täytä ikkuna"
+
+#: crates/big-video-player/src/video/ui/media_details_dialog.rs:33
+#: crates/ui/media/big-media-components/src/media/file_metadata_dialog.rs:53
+msgid "Copy"
+msgstr "Kopioi"
+
+#: crates/big-video-player/src/video/ui/media_details_dialog.rs:42
+msgid "Media Information"
+msgstr "Median tiedot"
+
+#: crates/big-video-player/src/video/ui/media_details_dialog.rs:50
+#: crates/ui/media/big-media-components/src/media/file_metadata_dialog.rs:54
+msgid "Copy All"
+msgstr "Kopioi kaikki"
+
+#: crates/big-video-player/src/video/ui/media_details_dialog.rs:77
+#: crates/big-video-player/src/video/ui/preferences/general.rs:19
+msgid "General"
+msgstr "Yleiset"
+
+#: crates/big-video-player/src/video/ui/media_details_dialog.rs:122
+#: crates/big-video-player/src/video/ui/video_shell/panel.rs:44
+#: crates/big-video-player/src/video/ui/video_shell/panel.rs:477
+msgid "Chapters"
+msgstr "Luvut"
+
+#: crates/big-video-player/src/video/ui/media_details_dialog.rs:162
+#: crates/big-video-player/src/video/ui/media_details_dialog.rs:234
+#: crates/media-runtime/src/media/metadata_cache/detailed_video_metadata.rs:90
+#: crates/media-runtime/src/media/metadata_cache/detailed_video_metadata.rs:123
+#: crates/media-runtime/src/media/metadata_cache/detailed_video_metadata.rs:168
+#: crates/ui/media/big-media-components/src/media/file_metadata_dialog.rs:64
+msgid "Codec"
+msgstr "Koodekki"
+
+#: crates/big-video-player/src/video/ui/media_details_dialog.rs:165
+#: crates/media-runtime/src/media/metadata_cache/detailed_video_metadata.rs:93
+#: crates/media-runtime/src/shared/tv_cast.rs:488
+#: crates/ui/media/big-media-components/src/media/file_metadata_dialog.rs:66
+msgid "Resolution"
+msgstr "Resoluutio"
+
+#: crates/big-video-player/src/video/ui/media_details_dialog.rs:173
+#: crates/media-runtime/src/media/metadata_cache/detailed_video_metadata.rs:100
+#: crates/ui/media/big-media-components/src/media/file_metadata_dialog.rs:68
+msgid "Frame Rate"
+msgstr "Kuvataajuus"
+
+#: crates/big-video-player/src/video/ui/media_details_dialog.rs:188
+msgid "Software"
+msgstr "Ohjelmisto"
+
+#: crates/big-video-player/src/video/ui/media_details_dialog.rs:193
+msgid "Hardware Decoder"
+msgstr "Laitteistodekooderi"
+
+#: crates/big-video-player/src/video/ui/media_details_dialog.rs:200
+#: crates/media-runtime/src/media/metadata_cache/detailed_video_metadata.rs:103
+#: crates/ui/media/big-media-components/src/media/file_metadata_dialog.rs:67
+msgid "Pixel Format"
+msgstr "Pikselimuoto"
+
+#: crates/big-video-player/src/video/ui/media_details_dialog.rs:207
+msgid "Colorspace"
+msgstr "Väriavaruus"
+
+#: crates/big-video-player/src/video/ui/media_details_dialog.rs:211
+msgid "Primaries"
+msgstr "Primäärit"
+
+#: crates/big-video-player/src/video/ui/media_details_dialog.rs:218
+msgid "Transfer"
+msgstr "Siirto"
+
+#: crates/big-video-player/src/video/ui/media_details_dialog.rs:276
+msgid "Streaming"
+msgstr "Suoratoisto"
+
+#: crates/big-video-player/src/video/ui/media_details_dialog.rs:278
+msgid "Cache"
+msgstr "Välimuisti"
+
+#: crates/big-video-player/src/video/ui/media_details_dialog.rs:297
+msgid "Video Tracks"
+msgstr "Videoraidat"
+
+#: crates/big-video-player/src/video/ui/media_details_dialog.rs:311
+msgid "Audio Tracks"
+msgstr "Ääniraidat"
+
+#: crates/big-video-player/src/video/ui/media_details_dialog.rs:324
+msgid "Subtitle Tracks"
+msgstr "Tekstitysraidat"
+
+#: crates/big-video-player/src/video/ui/media_details_dialog.rs:325
+#: crates/big-video-player/src/video/ui/video_controls_bar/tracks.rs:246
+msgid "external"
+msgstr "ulkoinen"
+
+#: crates/big-video-player/src/video/ui/media_details_dialog.rs:338
+msgid "Subtitle"
+msgstr "Tekstitys"
+
+#: crates/big-video-player/src/video/ui/menu_dialogs.rs:54
+msgid "Go to Time"
+msgstr "Siirry ajankohtaan"
+
+#: crates/big-video-player/src/video/ui/menu_dialogs.rs:62
+msgid "Use H:MM:SS, M:SS, or seconds."
+msgstr "Käytä muotoa H:MM:SS, M:SS tai sekunteja."
+
+#: crates/big-video-player/src/video/ui/menu_dialogs.rs:65
+msgid "Playback time"
+msgstr "Toistoaika"
+
+#: crates/big-video-player/src/video/ui/menu_dialogs.rs:72
+msgid "Go"
+msgstr "Siirry"
+
+#: crates/big-video-player/src/video/ui/menu_dialogs.rs:130
+msgid "Screenshot queue is full; wait for pending captures"
+msgstr "Kuvakaappausjono on täynnä; odota keskeneräisiä kaappauksia"
+
+#: crates/big-video-player/src/video/ui/menu_dialogs.rs:134
+#: crates/big-video-player/src/video/ui/menu_dialogs.rs:138
+#: crates/big-video-player/src/video/ui/menu_dialogs.rs:149
+#: crates/big-video-player/src/video/ui/video_shell/component.rs:728
+#: crates/big-video-player/src/video/ui/video_shell/playback.rs:153
+msgid "Screenshot failed"
+msgstr "Kuvakaappaus epäonnistui"
+
+#: crates/big-video-player/src/video/ui/menu_dialogs.rs:314
+#: crates/media-runtime/src/player/mpv_backend/backend/mod.rs:292
+msgid "Chapter"
+msgstr "Luku"
+
+#: crates/big-video-player/src/video/ui/menu_dialogs.rs:335
+msgid "Screenshot saved"
+msgstr "Kuvakaappaus tallennettu"
+
+#: crates/big-video-player/src/video/ui/menu_dialogs.rs:337
+msgid "Screenshot saved; disk synchronization could not be confirmed"
+msgstr "Kuvakaappaus tallennettu; levyn synkronointia ei voitu vahvistaa"
+
+#: crates/big-video-player/src/video/ui/preferences/advanced.rs:23
+msgid "Advanced"
+msgstr "Lisäasetukset"
+
+#: crates/big-video-player/src/video/ui/preferences/advanced.rs:26
+msgid ""
+"Technical options for experienced users. The defaults work well for most "
+"videos and computers."
+msgstr ""
+"Tekniset asetukset kokeneille käyttäjille. Oletukset toimivat hyvin "
+"useimmilla videoilla ja tietokoneilla."
+
+#: crates/big-video-player/src/video/ui/preferences/advanced.rs:57
+msgid "HDR Video"
+msgstr "HDR-video"
+
+#: crates/big-video-player/src/video/ui/preferences/advanced.rs:58
+msgid "How bright HDR video is fitted to your screen"
+msgstr "Miten kirkas HDR-video sovitetaan näyttöösi"
+
+#: crates/big-video-player/src/video/ui/preferences/advanced.rs:62
+msgid "Tone Mapping"
+msgstr "Sävykartoitus"
+
+#: crates/big-video-player/src/video/ui/preferences/advanced.rs:70
+#: crates/big-video-player/src/video/ui/preferences/advanced.rs:102
+msgid "Clip"
+msgstr "Leikkaus"
+
+#: crates/big-video-player/src/video/ui/preferences/advanced.rs:79
+msgid "Adapt to Each Scene"
+msgstr "Mukaudu jokaiseen kohtaukseen"
+
+#: crates/big-video-player/src/video/ui/preferences/advanced.rs:80
+msgid "Measures the brightness of every scene; uses more graphics power"
+msgstr "Mittaa jokaisen kohtauksen kirkkauden; käyttää enemmän grafiikkatehoa"
+
+#: crates/big-video-player/src/video/ui/preferences/advanced.rs:87
+msgid "Screen Peak Brightness"
+msgstr "Näytön huippukirkkaus"
+
+#: crates/big-video-player/src/video/ui/preferences/advanced.rs:88
+msgid "In nits; 0 detects it automatically"
+msgstr "Nitseinä; 0 tunnistaa sen automaattisesti"
+
+#: crates/big-video-player/src/video/ui/preferences/advanced.rs:98
+msgid "Out-of-Range Colors"
+msgstr "Aluetta ylittävät värit"
+
+#: crates/big-video-player/src/video/ui/preferences/advanced.rs:99
+msgid "How colors your screen cannot show are handled"
+msgstr "Miten näyttösi näyttämään kykenemättömät värit käsitellään"
+
+#: crates/big-video-player/src/video/ui/preferences/advanced.rs:103
+msgid "Desaturate"
+msgstr "Vähennä kylläisyyttä"
+
+#: crates/big-video-player/src/video/ui/preferences/advanced.rs:104
+msgid "Highlight"
+msgstr "Korosta"
+
+#: crates/big-video-player/src/video/ui/preferences/advanced.rs:117
+msgid "Color Management"
+msgstr "Värienhallinta"
+
+#: crates/big-video-player/src/video/ui/preferences/advanced.rs:119
+msgid ""
+"Uses a monitor color profile (ICC) for accurate colors. Enter the path to "
+"an .icc or .icm file and press Enter; leave it empty to turn this off."
+msgstr ""
+"Käyttää näytön ICC-väriprofiilia tarkkoja värejä varten. Anna .icc- tai .icm-"
+"tiedoston polku ja paina Enter; jätä tyhjäksi poistaaksesi tämän käytöstä."
+
+#: crates/big-video-player/src/video/ui/preferences/advanced.rs:124
+msgid "Profile File"
+msgstr "Profiilitiedosto"
+
+#: crates/big-video-player/src/video/ui/preferences/advanced.rs:133
+msgid "Rendering Intent"
+msgstr "Renderöintitarkoitus"
+
+#: crates/big-video-player/src/video/ui/preferences/advanced.rs:136
+msgid "Perceptual"
+msgstr "Havaintoon perustuva"
+
+#: crates/big-video-player/src/video/ui/preferences/advanced.rs:137
+msgid "Relative"
+msgstr "Suhteellinen"
+
+#: crates/big-video-player/src/video/ui/preferences/advanced.rs:139
+msgid "Absolute"
+msgstr "Absoluuttinen"
+
+#: crates/big-video-player/src/video/ui/preferences/advanced.rs:155
+msgid "Streaming and Cache"
+msgstr "Suoratoisto ja välimuisti"
+
+#: crates/big-video-player/src/video/ui/preferences/advanced.rs:157
+msgid "Loads media ahead of time to avoid pauses on slow networks"
+msgstr "Lataa mediaa etukäteen taukojen välttämiseksi hitaissa verkoissa"
+
+#: crates/big-video-player/src/video/ui/preferences/advanced.rs:162
+msgid "Load Ahead"
+msgstr "Lataa etukäteen"
+
+#: crates/big-video-player/src/video/ui/preferences/advanced.rs:170
+msgid "How Far Ahead"
+msgstr "Kuinka pitkälle etukäteen"
+
+#: crates/big-video-player/src/video/ui/preferences/advanced.rs:171
+msgid "In seconds"
+msgstr "Sekunteina"
+
+#: crates/big-video-player/src/video/ui/preferences/advanced.rs:181
+msgid "Wait Instead of Stuttering"
+msgstr "Odota nykimisen sijaan"
+
+#: crates/big-video-player/src/video/ui/preferences/advanced.rs:182
+msgid "Pauses until enough is loaded to keep playing smoothly"
+msgstr "Keskeyttää, kunnes tarpeeksi on ladattu sujuvan toiston jatkamiseksi"
+
+#: crates/big-video-player/src/video/ui/preferences/advanced.rs:189
+msgid "Keep on Disk"
+msgstr "Säilytä levyllä"
+
+#: crates/big-video-player/src/video/ui/preferences/advanced.rs:190
+msgid "Uses disk space instead of memory; useful for very long streams"
+msgstr ""
+"Käyttää levytilaa muistin sijaan; hyödyllinen hyvin pitkille suoratoistoille"
+
+#: crates/big-video-player/src/video/ui/preferences/advanced.rs:207
+msgid "Read Ahead in the File"
+msgstr "Lue tiedostoa etukäteen"
+
+#: crates/big-video-player/src/video/ui/preferences/advanced.rs:208
+msgid "Seconds of the file read in advance, also for local files"
+msgstr ""
+"Etukäteen luettavat tiedoston sekunnit, myös paikallisille tiedostoille"
+
+#: crates/big-video-player/src/video/ui/preferences/advanced.rs:226
+msgid "Pause on the Final Frame"
+msgstr "Pysäytä viimeiseen kuvaruutuun"
+
+#: crates/big-video-player/src/video/ui/preferences/advanced.rs:227
+msgid ""
+"When the player stops at the end of a video; off lets seeking back resume "
+"playback"
+msgstr ""
+"Kun soitin pysähtyy videon lopussa; pois päältä taaksepäin haku jatkaa "
+"toistoa"
+
+#: crates/big-video-player/src/video/ui/preferences/advanced.rs:234
+msgid "Screenshot Compression"
+msgstr "Kuvakaappausten pakkaus"
+
+#: crates/big-video-player/src/video/ui/preferences/advanced.rs:235
+msgid "Higher values make smaller PNG files but take longer to save"
+msgstr ""
+"Suuremmat arvot tuottavat pienempiä PNG-tiedostoja, mutta tallennus kestää "
+"kauemmin"
+
+#: crates/big-video-player/src/video/ui/preferences/advanced.rs:245
+msgid "Screenshot Color Profile"
+msgstr "Kuvakaappausten väriprofiili"
+
+#: crates/big-video-player/src/video/ui/preferences/advanced.rs:246
+msgid "Stores the video color space in each screenshot"
+msgstr "Tallentaa videon väriavaruuden jokaiseen kuvakaappaukseen"
+
+#: crates/big-video-player/src/video/ui/preferences/advanced.rs:253
+msgid "High Bit Depth Screenshots"
+msgstr "Suuren bittisyvyyden kuvakaappaukset"
+
+#: crates/big-video-player/src/video/ui/preferences/advanced.rs:254
+msgid "Keeps more color precision; files get larger"
+msgstr "Säilyttää enemmän väritarkkuutta; tiedostot kasvavat"
+
+#: crates/big-video-player/src/video/ui/preferences/advanced.rs:264
+msgid "Custom Shaders"
+msgstr "Mukautetut varjostimet"
+
+#: crates/big-video-player/src/video/ui/preferences/advanced.rs:266
+msgid "Paths to .glsl files, separated by commas. Press Enter to apply."
+msgstr ""
+"Polut .glsl-tiedostoihin pilkuilla erotettuina. Ota käyttöön painamalla "
+"Enter."
+
+#: crates/big-video-player/src/video/ui/preferences/advanced.rs:269
+msgid "Shader Files"
+msgstr "Varjostintiedostot"
+
+#: crates/big-video-player/src/video/ui/preferences/advanced.rs:285
+msgid "mpv Options"
+msgstr "mpv-asetukset"
+
+#: crates/big-video-player/src/video/ui/preferences/advanced.rs:287
+msgid ""
+"Extra key=value options, separated by commas. They take effect after "
+"reopening the player."
+msgstr ""
+"Lisäasetukset muodossa avain=arvo, pilkuilla erotettuina. Ne tulevat voimaan "
+"soittimen uudelleenavauksen jälkeen."
+
+#: crates/big-video-player/src/video/ui/preferences/advanced.rs:292
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/header.rs:216
+msgid "Options"
+msgstr "Asetukset"
+
+#: crates/big-video-player/src/video/ui/preferences/general.rs:29
+msgid "Reopen files at the point where you stopped watching"
+msgstr "Avaa tiedostot uudelleen kohdasta, johon lopetit katsomisen"
+
+#: crates/big-video-player/src/video/ui/preferences/general.rs:40
+msgid "Current video"
+msgstr "Nykyinen video"
+
+#: crates/big-video-player/src/video/ui/preferences/general.rs:41
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/header.rs:198
+msgid "Whole playlist"
+msgstr "Koko soittolista"
+
+#: crates/big-video-player/src/video/ui/preferences/general.rs:51
+msgid "When Playback Ends"
+msgstr "Kun toisto päättyy"
+
+#: crates/big-video-player/src/video/ui/preferences/general.rs:53
+msgid "Playlist videos play one after another unless they stop after each"
+msgstr ""
+"Soittolistan videot toistetaan peräkkäin, ellei toisto pysähdy jokaisen "
+"jälkeen"
+
+#: crates/big-video-player/src/video/ui/preferences/general.rs:58
+msgid "When a Video Ends"
+msgstr "Kun video päättyy"
+
+#: crates/big-video-player/src/video/ui/preferences/general.rs:61
+msgid "Keep the last frame"
+msgstr "Säilytä viimeinen ruutu"
+
+#: crates/big-video-player/src/video/ui/preferences/general.rs:62
+msgid "Stop after each"
+msgstr "Pysähdy jokaisen jälkeen"
+
+#: crates/big-video-player/src/video/ui/preferences/general.rs:63
+msgid "Close the video"
+msgstr "Sulje video"
+
+#: crates/big-video-player/src/video/ui/preferences/general.rs:73
+msgid "When the Playlist Finishes"
+msgstr "Kun soittolista päättyy"
+
+#: crates/big-video-player/src/video/ui/preferences/general.rs:74
+msgid "Used only when the video closes"
+msgstr "Käytössä vain, kun video suljetaan"
+
+#: crates/big-video-player/src/video/ui/preferences/general.rs:76
+msgid "Stay open"
+msgstr "Pysy auki"
+
+#: crates/big-video-player/src/video/ui/preferences/general.rs:77
+#: crates/media-runtime/src/shared/sleep_timer.rs:13
+msgid "Close the player"
+msgstr "Sulje soitin"
+
+#: crates/big-video-player/src/video/ui/preferences/general.rs:78
+msgid "Close after one playlist"
+msgstr "Sulje yhden soittolistan jälkeen"
+
+#: crates/big-video-player/src/video/ui/preferences/general.rs:102
+msgid "Window and Screen"
+msgstr "Ikkuna ja näyttö"
+
+#: crates/big-video-player/src/video/ui/preferences/general.rs:106
+msgid "Keep the Screen On"
+msgstr "Pidä näyttö päällä"
+
+#: crates/big-video-player/src/video/ui/preferences/general.rs:107
+msgid "Stops the screen from dimming or locking"
+msgstr "Estää näytön himmenemisen tai lukittumisen"
+
+#: crates/big-video-player/src/video/ui/preferences/general.rs:108
+msgid "During playback"
+msgstr "Toiston aikana"
+
+#: crates/big-video-player/src/video/ui/preferences/general.rs:108
+msgid "Always"
+msgstr "Aina"
+
+#: crates/big-video-player/src/video/ui/preferences/general.rs:108
+#: crates/big-video-player/src/video/ui/preferences/subtitles.rs:45
+msgid "Never"
+msgstr "Ei koskaan"
+
+#: crates/big-video-player/src/video/ui/preferences/general.rs:118
+msgid "Fit Window to Video"
+msgstr "Sovita ikkuna videoon"
+
+#: crates/big-video-player/src/video/ui/preferences/general.rs:119
+msgid "Keeps the window in the video's proportions, without black bars"
+msgstr "Pitää ikkunan videon mittasuhteissa ilman mustia palkkeja"
+
+#: crates/big-video-player/src/video/ui/preferences/general.rs:127
+msgid "Preview While Seeking"
+msgstr "Esikatselu haun aikana"
+
+#: crates/big-video-player/src/video/ui/preferences/general.rs:128
+msgid "Show a thumbnail of the video when pointing at the progress bar"
+msgstr "Näytä videon pikkukuva osoitettaessa edistymispalkkia"
+
+#: crates/big-video-player/src/video/ui/preferences/general.rs:139
+msgid "Restore Default Settings…"
+msgstr "Palauta oletusasetukset…"
+
+#: crates/big-video-player/src/video/ui/preferences/general.rs:165
+msgid "Save To"
+msgstr "Tallennuskohde"
+
+#: crates/big-video-player/src/video/ui/preferences/general.rs:170
+msgid "Choose Folder"
+msgstr "Valitse kansio"
+
+#: crates/big-video-player/src/video/ui/preferences/general.rs:175
+msgid "Use the Pictures Folder"
+msgstr "Käytä Kuvat-kansiota"
+
+#: crates/big-video-player/src/video/ui/preferences/general.rs:190
+msgid "Pictures folder"
+msgstr "Kuvat-kansio"
+
+#: crates/big-video-player/src/video/ui/preferences/general.rs:217
+msgid "Screenshot Folder"
+msgstr "Kuvakaappauskansio"
+
+#: crates/big-video-player/src/video/ui/preferences/subtitles.rs:24
+msgid "Language and Files"
+msgstr "Kieli ja tiedostot"
+
+#: crates/big-video-player/src/video/ui/preferences/subtitles.rs:26
+msgid ""
+"Use language codes separated by commas, in order of preference, such as pt,en"
+msgstr ""
+"Käytä pilkuilla erotettuja kielikoodeja suosituimmuusjärjestyksessä, "
+"esimerkiksi fi,en"
+
+#: crates/big-video-player/src/video/ui/preferences/subtitles.rs:31
+#: crates/ui/media/big-player-ui/src/audio_preferences.rs:148
+msgid "Preferred Languages"
+msgstr "Suosituimmat kielet"
+
+#: crates/big-video-player/src/video/ui/preferences/subtitles.rs:39
+msgid "Load Subtitle Files"
+msgstr "Lataa tekstitystiedostot"
+
+#: crates/big-video-player/src/video/ui/preferences/subtitles.rs:40
+msgid "Subtitle files found in the same folder as the video"
+msgstr "Tekstitystiedostot, jotka löytyvät samasta kansiosta kuin video"
+
+#: crates/big-video-player/src/video/ui/preferences/subtitles.rs:42
+msgid "Similar name"
+msgstr "Samankaltainen nimi"
+
+#: crates/big-video-player/src/video/ui/preferences/subtitles.rs:43
+msgid "Exact name"
+msgstr "Täsmälleen sama nimi"
+
+#: crates/big-video-player/src/video/ui/preferences/subtitles.rs:44
+msgid "All in the folder"
+msgstr "Kaikki kansiosta"
+
+#: crates/big-video-player/src/video/ui/preferences/subtitles.rs:54
+msgid "Text"
+msgstr "Teksti"
+
+#: crates/big-video-player/src/video/ui/preferences/subtitles.rs:58
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/header.rs:169
+msgid "Size"
+msgstr "Koko"
+
+#: crates/big-video-player/src/video/ui/preferences/subtitles.rs:69
+msgid "Bold"
+msgstr "Lihavointi"
+
+#: crates/big-video-player/src/video/ui/preferences/subtitles.rs:70
+msgid "Thicker letters are easier to read"
+msgstr "Paksummat kirjaimet ovat helpompia lukea"
+
+#: crates/big-video-player/src/video/ui/preferences/subtitles.rs:86
+msgid "Outline and Shadow"
+msgstr "Ääriviiva ja varjo"
+
+#: crates/big-video-player/src/video/ui/preferences/subtitles.rs:87
+msgid "An outline keeps text readable over bright scenes"
+msgstr "Ääriviiva pitää tekstin luettavana kirkkailla kohtauksilla"
+
+#: crates/big-video-player/src/video/ui/preferences/subtitles.rs:91
+msgid "Style"
+msgstr "Tyyli"
+
+#: crates/big-video-player/src/video/ui/preferences/subtitles.rs:94
+msgid "Outline and shadow"
+msgstr "Ääriviiva ja varjo"
+
+#: crates/big-video-player/src/video/ui/preferences/subtitles.rs:95
+msgid "Solid box"
+msgstr "Yhtenäinen laatikko"
+
+#: crates/big-video-player/src/video/ui/preferences/subtitles.rs:96
+msgid "Box behind the text"
+msgstr "Laatikko tekstin takana"
+
+#: crates/big-video-player/src/video/ui/preferences/subtitles.rs:105
+msgid "Outline Thickness"
+msgstr "Ääriviivan paksuus"
+
+#: crates/big-video-player/src/video/ui/preferences/subtitles.rs:117
+msgid "Outline Color"
+msgstr "Ääriviivan väri"
+
+#: crates/big-video-player/src/video/ui/preferences/subtitles.rs:125
+msgid "Shadow Distance"
+msgstr "Varjon etäisyys"
+
+#: crates/big-video-player/src/video/ui/preferences/subtitles.rs:137
+msgid "Shadow Color"
+msgstr "Varjon väri"
+
+#: crates/big-video-player/src/video/ui/preferences/subtitles.rs:138
+msgid "Lower the opacity for a softer shadow"
+msgstr "Pienennä peittävyyttä pehmeämpää varjoa varten"
+
+#: crates/big-video-player/src/video/ui/preferences/subtitles.rs:146
+msgid "Position and Size"
+msgstr "Sijainti ja koko"
+
+#: crates/big-video-player/src/video/ui/preferences/subtitles.rs:150
+msgid "Distance From the Bottom"
+msgstr "Etäisyys alareunasta"
+
+#: crates/big-video-player/src/video/ui/preferences/subtitles.rs:151
+msgid "In pixels"
+msgstr "Kuvapisteinä"
+
+#: crates/big-video-player/src/video/ui/preferences/subtitles.rs:161
+msgid "Grow With the Window"
+msgstr "Kasva ikkunan mukana"
+
+#: crates/big-video-player/src/video/ui/preferences/subtitles.rs:162
+msgid "Larger windows show larger subtitles"
+msgstr "Suuremmissa ikkunoissa tekstitykset näytetään suurempina"
+
+#: crates/big-video-player/src/video/ui/preferences/subtitles.rs:169
+msgid "Grow Styled Subtitles Too"
+msgstr "Kasvata myös tyyliteltyjä tekstityksiä"
+
+#: crates/big-video-player/src/video/ui/preferences/subtitles.rs:170
+msgid "Also resize styled ASS/SSA subtitles, common in anime"
+msgstr ""
+"Muuttaa myös tyyliteltyjen ASS/SSA-tekstitysten kokoa, yleisiä animessa"
+
+#: crates/big-video-player/src/video/ui/preferences/subtitles.rs:178
+msgid "Sound Descriptions"
+msgstr "Äänikuvaukset"
+
+#: crates/big-video-player/src/video/ui/preferences/subtitles.rs:180
+msgid ""
+"Subtitles for the hearing impaired describe sounds, like [music] or "
+"(applause)"
+msgstr ""
+"Kuulovammaisille tarkoitetut tekstitykset kuvaavat ääniä, kuten [musiikkia] "
+"tai (aplodit)"
+
+#: crates/big-video-player/src/video/ui/preferences/subtitles.rs:185
+msgid "Hide Sound Descriptions"
+msgstr "Piilota äänikuvaukset"
+
+#: crates/big-video-player/src/video/ui/preferences/subtitles.rs:193
+msgid "Stricter Filtering"
+msgstr "Tiukempi suodatus"
+
+#: crates/big-video-player/src/video/ui/preferences/subtitles.rs:194
+msgid "Removes more descriptions, but may also remove some dialogue"
+msgstr "Poistaa enemmän kuvauksia, mutta voi poistaa myös osan dialogista"
+
+#: crates/big-video-player/src/video/ui/preferences/subtitles.rs:206
+msgid "Picture Subtitles"
+msgstr "Kuvatekstitykset"
+
+#: crates/big-video-player/src/video/ui/preferences/subtitles.rs:207
+msgid "DVD and Blu-ray subtitles are images instead of text"
+msgstr "DVD- ja Blu-ray-tekstitykset ovat kuvia tekstin sijaan"
+
+#: crates/big-video-player/src/video/ui/preferences/subtitles.rs:211
+msgid "Smooth Edges"
+msgstr "Pehmeät reunat"
+
+#: crates/big-video-player/src/video/ui/preferences/subtitles.rs:212
+msgid "Blurs pixelated letters slightly; 0 turns it off"
+msgstr "Sumentaa hieman pikselöityjä kirjaimia; 0 poistaa käytöstä"
+
+#: crates/big-video-player/src/video/ui/preferences/subtitles.rs:223
+msgid "Show in Gray"
+msgstr "Näytä harmaana"
+
+#: crates/big-video-player/src/video/ui/preferences/subtitles.rs:224
+msgid "Replaces colored subtitles with gray ones"
+msgstr "Korvaa värilliset tekstitykset harmailla"
+
+#: crates/big-video-player/src/video/ui/preferences/subtitles.rs:256
+msgid "Font"
+msgstr "Fontti"
+
+#: crates/big-video-player/src/video/ui/preferences/video.rs:24
+#: crates/big-video-player/src/video/ui/video_shell/input_gestures.rs:113
+#: crates/big-video-player/src/video/ui/video_shell/panel.rs:40
+#: crates/big-video-player/src/video/ui/video_shell/panel.rs:454
+msgid "Picture"
+msgstr "Kuva"
+
+#: crates/big-video-player/src/video/ui/preferences/video.rs:30
+msgid "Picture Quality"
+msgstr "Kuvanlaatu"
+
+#: crates/big-video-player/src/video/ui/preferences/video.rs:31
+msgid "Light suits older computers; Detailed needs a stronger graphics card"
+msgstr ""
+"Kevyt sopii vanhemmille tietokoneille; Yksityiskohtainen vaatii tehokkaamman "
+"näytönohjaimen"
+
+#: crates/big-video-player/src/video/ui/preferences/video.rs:33
+msgctxt "picture quality"
+msgid "Light"
+msgstr "Kevyt"
+
+#: crates/big-video-player/src/video/ui/preferences/video.rs:34
+msgid "Balanced"
+msgstr "Tasapainoinen"
+
+#: crates/big-video-player/src/video/ui/preferences/video.rs:35
+msgid "Detailed"
+msgstr "Yksityiskohtainen"
+
+#: crates/big-video-player/src/video/ui/preferences/video.rs:51
+msgid "Hardware Decoding"
+msgstr "Laitteistodekoodaus"
+
+#: crates/big-video-player/src/video/ui/preferences/video.rs:52
+msgid "Lets the graphics card decode video, so the processor stays free"
+msgstr "Antaa näytönohjaimen dekoodata videon, jolloin suoritin pysyy vapaana"
+
+#: crates/big-video-player/src/video/ui/preferences/video.rs:55
+msgid "Any method"
+msgstr "Mikä tahansa tapa"
+
+#: crates/big-video-player/src/video/ui/preferences/video.rs:69
+msgid "Remove Interlacing Lines"
+msgstr "Poista lomitusviivat"
+
+#: crates/big-video-player/src/video/ui/preferences/video.rs:70
+msgid "Fixes comb-like stripes in old TV recordings and DVDs"
+msgstr "Korjaa kampamaiset raidat vanhoissa TV-tallenteissa ja DVD-levyissä"
+
+#: crates/big-video-player/src/video/ui/preferences/video.rs:78
+msgid "If the Picture Has Problems"
+msgstr "Jos kuvassa on ongelmia"
+
+#: crates/big-video-player/src/video/ui/preferences/video.rs:80
+msgid ""
+"Change these only if the video is black, corrupted or very slow. They take "
+"effect after reopening the player."
+msgstr ""
+"Muuta näitä vain, jos video on musta, vioittunut tai erittäin hidas. "
+"Muutokset tulevat voimaan soittimen uudelleenavauksen jälkeen."
+
+#: crates/big-video-player/src/video/ui/preferences/video.rs:85
+msgid "Video Output"
+msgstr "Videotulostus"
+
+#: crates/big-video-player/src/video/ui/preferences/video.rs:86
+msgid "Compatibility mode works without a graphics card but uses more energy"
+msgstr ""
+"Yhteensopivuustila toimii ilman näytönohjainta, mutta käyttää enemmän "
+"energiaa"
+
+#: crates/big-video-player/src/video/ui/preferences/video.rs:87
+msgid "Compatibility"
+msgstr "Yhteensopivuus"
+
+#: crates/big-video-player/src/video/ui/preferences/video.rs:95
+msgid "Simple Rendering"
+msgstr "Yksinkertainen renderöinti"
+
+#: crates/big-video-player/src/video/ui/preferences/video.rs:96
+msgid "Turns off effects and shaders for very old graphics cards"
+msgstr ""
+"Poistaa tehosteet ja varjostimet käytöstä erittäin vanhoilla näytönohjaimilla"
+
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/context_menu.rs:69
+msgid "Play next"
+msgstr "Toista seuraavaksi"
+
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/context_menu.rs:89
+msgid "Rename…"
+msgstr "Nimeä uudelleen…"
+
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/context_menu.rs:94
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/fileops.rs:83
+msgid "Move to trash"
+msgstr "Siirrä roskakoriin"
+
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/context_menu.rs:101
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/views/queue_view.rs:214
+msgid "Remove from playlist"
+msgstr "Poista soittolistalta"
+
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/context_menu.rs:116
+msgid "Open containing folder"
+msgstr "Avaa sisältävä kansio"
+
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/empty_state.rs:13
+msgid "Add Files"
+msgstr "Lisää tiedostoja"
+
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/empty_state.rs:17
+msgid "Choose from a folder"
+msgstr "Valitse kansiosta"
+
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/empty_state.rs:29
+msgid "Your playlist is empty"
+msgstr "Soittolistasi on tyhjä"
+
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/empty_state.rs:30
+msgid "Drop videos here, or pick them in a folder"
+msgstr "Pudota videot tähän tai valitse ne kansiosta"
+
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/empty_state.rs:48
+msgid ""
+"Drag a video by its handle to change the order, or use Alt+Up and Alt+Down"
+msgstr ""
+"Vedä videota kahvasta vaihtaaksesi järjestystä tai käytä Alt+ylös ja Alt+alas"
+
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/empty_state.rs:60
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/empty_state.rs:62
+msgid "Got it"
+msgstr "Selvä"
+
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/header.rs:37
+msgid "Load folder…"
+msgstr "Lataa kansio…"
+
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/header.rs:59
+msgid "Add files…"
+msgstr "Lisää tiedostoja…"
+
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/header.rs:87
+msgid "Show as list"
+msgstr "Näytä luettelona"
+
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/header.rs:89
+msgid "Show as grid"
+msgstr "Näytä ruudukkona"
+
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/header.rs:114
+msgid "Choose Video Folder"
+msgstr "Valitse videokansio"
+
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/header.rs:127
+msgid "Add Video Files"
+msgstr "Lisää videotiedostoja"
+
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/header.rs:128
+#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:132
+msgid "Video files"
+msgstr "Videotiedostot"
+
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/header.rs:168
+msgid "Date"
+msgstr "Päivämäärä"
+
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/header.rs:179
+msgid "Reverse order"
+msgstr "Käänteinen järjestys"
+
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/header.rs:184
+msgid "Include subfolders"
+msgstr "Sisällytä alikansiot"
+
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/header.rs:185
+msgid "Sort by"
+msgstr "Järjestä"
+
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/header.rs:197
+msgid "Current file"
+msgstr "Nykyinen tiedosto"
+
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/header.rs:207
+msgid "Save playlist…"
+msgstr "Tallenna soittolista…"
+
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/header.rs:208
+msgid "Load playlist…"
+msgstr "Lataa soittolista…"
+
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/header.rs:209
+msgid "Clear playlist"
+msgstr "Tyhjennä soittolista"
+
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/menu_actions.rs:188
+msgid "Save Playlist"
+msgstr "Tallenna soittolista"
+
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/menu_actions.rs:205
+msgid "Playlist exported"
+msgstr "Soittolista viety"
+
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/menu_actions.rs:229
+msgid "Load Playlist"
+msgstr "Lataa soittolista"
+
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/metadata.rs:24
+msgid "All"
+msgstr "Kaikki"
+
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/metadata.rs:25
+msgid "Folders"
+msgstr "Kansiot"
+
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/metadata.rs:26
+msgid "Videos"
+msgstr "Videot"
+
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/metadata.rs:64
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/metadata.rs:67
+msgid "Your folders"
+msgstr "Kansiosi"
+
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/metadata.rs:143
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/library.rs:429
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/mod.rs:301
+#, rust-format
+msgid "{} video"
+msgid_plural "{} videos"
+msgstr[0] "{} video"
+msgstr[1] "{} videota"
+
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/metadata.rs:150
+#, rust-format
+msgid "(of {total})"
+msgstr "({total} yhteensä)"
+
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/metadata.rs:154
+#, rust-format
+msgid ""
+"Showing {shown} of {total} files found. Consider filtering by subfolder."
+msgstr ""
+"Näytetään {shown} / {total} löydetystä tiedostosta. Harkitse suodatusta "
+"alikansion mukaan."
+
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/fileops.rs:23
+#, rust-format
+msgid "{} selected"
+msgid_plural "{} selected"
+msgstr[0] "{} valittu"
+msgstr[1] "{} valittu"
+
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/fileops.rs:55
+msgid "Send to converter"
+msgstr "Lähetä muuntimeen"
+
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/fileops.rs:66
+msgid "Move to folder…"
+msgstr "Siirrä kansioon…"
+
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/fileops.rs:96
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/fileops.rs:97
+msgid "Done"
+msgstr "Valmis"
+
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/fileops.rs:144
+msgid "Move to Folder"
+msgstr "Siirrä kansioon"
+
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/fileops.rs:161
+msgid "moved"
+msgstr "siirretty"
+
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/fileops.rs:183
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/fileops.rs:200
+msgid "Rename"
+msgstr "Nimeä uudelleen"
+
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/fileops.rs:189
+msgid "Choose a new file name."
+msgstr "Valitse uusi tiedostonimi."
+
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/fileops.rs:232
+msgid "Invalid name"
+msgstr "Virheellinen nimi"
+
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/fileops.rs:248
+msgid "A file with that name already exists"
+msgstr "Tämänniminen tiedosto on jo olemassa"
+
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/fileops.rs:255
+msgid "Rename failed"
+msgstr "Uudelleennimeäminen epäonnistui"
+
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/fileops.rs:349
+#, rust-format
+msgid "{ok} {verb}, {failed} failed"
+msgstr "{ok} {verb}, {failed} epäonnistui"
+
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/library.rs:116
+msgid "Home folder"
+msgstr "Kotikansio"
+
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/library.rs:405
+msgid "Choose folders…"
+msgstr "Valitse kansiot…"
+
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/library.rs:556
+msgid "No video in your folders has that name"
+msgstr "Yhdessäkään kansiossasi ei ole tämännimistä videota"
+
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/library.rs:568
+#, rust-format
+msgid "{} more in your folders"
+msgid_plural "{} more in your folders"
+msgstr[0] "{} lisää kansioissasi"
+msgstr[1] "{} lisää kansioissasi"
+
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/library.rs:573
+#, rust-format
+msgid "{} video found"
+msgid_plural "{} videos found"
+msgstr[0] "{} video löytyi"
+msgstr[1] "{} videota löytyi"
+
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/library.rs:588
+#, rust-format
+msgid "Showing the first {}. Type more to narrow the search."
+msgstr "Näytetään {} ensimmäistä. Kirjoita lisää rajataksesi hakua."
+
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/library.rs:700
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/library.rs:703
+#: crates/big-video-player/src/video/ui/video_shell/panel.rs:121
+#: crates/big-video-player/src/video/ui/video_shell/panel.rs:124
+msgid "Back"
+msgstr "Takaisin"
+
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/library.rs:714
+msgid "Video folders"
+msgstr "Videokansiot"
+
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/library.rs:724
+msgid ""
+"Their videos are listed and searched here. Folders BigSearch does not index "
+"are searched by the player, more slowly."
+msgstr ""
+"Niiden videot luetellaan ja haetaan täällä. Kansiot, joita BigSearch ei "
+"indeksoi, haetaan soittimella hitaammin."
+
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/library.rs:753
+#, rust-format
+msgid "Remove {}"
+msgstr "Poista {}"
+
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/library.rs:771
+msgid "Add a folder…"
+msgstr "Lisää kansio…"
+
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/library.rs:782
+msgid "Add a Video Folder"
+msgstr "Lisää videokansio"
+
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/library.rs:800
+msgid "Use the standard folders"
+msgstr "Käytä vakiokansioita"
+
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/library.rs:801
+msgid "Videos, Downloads and the home folder"
+msgstr "Videot, Lataukset ja kotikansio"
+
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/mod.rs:329
+#, rust-format
+msgid "ends at {}"
+msgstr "päättyy {}"
+
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/mod.rs:511
+msgid "Scanning…"
+msgstr "Tarkistetaan…"
+
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/mod.rs:556
+msgid "Search your videos…"
+msgstr "Hae videoistasi…"
+
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/views/model.rs:35
+msgid "Previous folder"
+msgstr "Edellinen kansio"
+
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/views/queue_view.rs:434
+#, rust-format
+msgid "Stopped at {}"
+msgstr "Pysähtyi kohtaan {}"
+
+#: crates/big-video-player/src/video/ui/video_controls_bar.rs:278
+msgid "Seek Position"
+msgstr "Hakukohta"
+
+#: crates/big-video-player/src/video/ui/video_controls_bar.rs:479
+#: crates/media-runtime/src/shared/tv_cast.rs:716
+msgid "Pause"
+msgstr "Tauko"
+
+#: crates/big-video-player/src/video/ui/video_controls_bar.rs:558
+#: crates/ui/media/big-player-ui/src/playback_bar.rs:323
+msgid "TV volume"
+msgstr "TV:n äänenvoimakkuus"
+
+#: crates/big-video-player/src/video/ui/video_controls_bar/seek_preview.rs:27
+msgid "Seek preview"
+msgstr "Haun esikatselu"
+
+#: crates/big-video-player/src/video/ui/video_controls_bar/tracks.rs:26
+msgid "Load Subtitle File…"
+msgstr "Lataa tekstitystiedosto…"
+
+#: crates/big-video-player/src/video/ui/video_controls_bar/tracks.rs:36
+msgid "Primary Subtitles"
+msgstr "Ensisijaiset tekstitykset"
+
+#: crates/big-video-player/src/video/ui/video_controls_bar/tracks.rs:38
+msgid "Disable Subtitles"
+msgstr "Poista tekstitykset käytöstä"
+
+#: crates/big-video-player/src/video/ui/video_controls_bar/tracks.rs:58
+msgid "Secondary Subtitles"
+msgstr "Toissijaiset tekstitykset"
+
+#: crates/big-video-player/src/video/ui/video_controls_bar/tracks.rs:60
+msgid "Disable Secondary Subtitles"
+msgstr "Poista toissijaiset tekstitykset käytöstä"
+
+#: crates/big-video-player/src/video/ui/video_controls_bar/tracks.rs:109
+msgid "Subtitle files"
+msgstr "Tekstitystiedostot"
+
+#: crates/big-video-player/src/video/ui/video_controls_bar/tracks.rs:117
+msgid "Load Subtitle File"
+msgstr "Lataa tekstitystiedosto"
+
+#: crates/big-video-player/src/video/ui/video_controls_bar/tracks.rs:191
+msgid "Earlier"
+msgstr "Aikaisemmin"
+
+#: crates/big-video-player/src/video/ui/video_controls_bar/tracks.rs:191
+msgid "Later"
+msgstr "Myöhemmin"
+
+#: crates/big-video-player/src/video/ui/video_controls_bar/tracks.rs:245
+msgid "Track"
+msgstr "Raita"
+
+#: crates/big-video-player/src/video/ui/video_controls_bar/zones.rs:214
+msgid "No sound"
+msgstr "Ei ääntä"
+
+#: crates/big-video-player/src/video/ui/video_controls_bar/zones.rs:218
+msgid "Unmute"
+msgstr "Poista mykistys"
+
+#: crates/big-video-player/src/video/ui/video_controls_bar/zones.rs:218
+#: crates/big-video-player/src/video/ui/video_controls_bar/zones.rs:444
+#: crates/big-video-player/src/video/ui/video_controls_bar/zones.rs:461
+msgid "Mute"
+msgstr "Mykistä"
+
+#: crates/big-video-player/src/video/ui/video_controls_bar/zones.rs:286
+msgid "TV"
+msgstr "TV"
+
+#: crates/big-video-player/src/video/ui/video_controls_bar/zones.rs:287
+msgid "PC"
+msgstr "Tietokone"
+
+#: crates/big-video-player/src/video/ui/video_controls_bar/zones.rs:290
+#: crates/big-video-player/src/video/ui/video_controls_bar/zones.rs:294
+msgid "PC volume"
+msgstr "Tietokoneen äänenvoimakkuus"
+
+#: crates/big-video-player/src/video/ui/video_controls_bar/zones.rs:606
+msgid "Edit & Export"
+msgstr "Muokkaa ja vie"
+
+#: crates/big-video-player/src/video/ui/video_controls_bar/zones.rs:668
+msgid "Cut Video…"
+msgstr "Leikkaa video…"
+
+#: crates/big-video-player/src/video/ui/video_controls_bar/zones.rs:669
+msgid "Extract Audio…"
+msgstr "Pura ääni…"
+
+#: crates/big-video-player/src/video/ui/video_shell/actions.rs:112
+msgid "Drop a file or open one to start"
+msgstr "Pudota tiedosto tai avaa tiedosto aloittaaksesi"
+
+#: crates/big-video-player/src/video/ui/video_shell/actions.rs:132
+#: crates/big-video-player/src/video/ui/video_shell/component.rs:849
+msgid "Open Recent"
+msgstr "Avaa viimeisin"
+
+#: crates/big-video-player/src/video/ui/video_shell/adjustments.rs:176
+msgid "More bass"
+msgstr "Enemmän bassoa"
+
+#: crates/big-video-player/src/video/ui/video_shell/adjustments.rs:177
+msgid "More treble"
+msgstr "Enemmän diskanttia"
+
+#: crates/big-video-player/src/video/ui/video_shell/adjustments.rs:178
+msgid "Voices"
+msgstr "Äänet"
+
+#: crates/big-video-player/src/video/ui/video_shell/adjustments.rs:191
+#, rust-format
+msgid "Video colour: {name}"
+msgstr "Videon väri: {name}"
+
+#: crates/big-video-player/src/video/ui/video_shell/adjustments.rs:195
+msgid "Picture adjusted"
+msgstr "Kuvaa säädetty"
+
+#: crates/big-video-player/src/video/ui/video_shell/adjustments.rs:196
+#, rust-format
+msgid "Zoom {percent}%"
+msgstr "Zoomaus {percent} %"
+
+#: crates/big-video-player/src/video/ui/video_shell/adjustments.rs:198
+msgid "Picture enlarged to fill"
+msgstr "Kuva suurennettu täyttämään"
+
+#: crates/big-video-player/src/video/ui/video_shell/adjustments.rs:200
+#, rust-format
+msgid "Rotated {degrees}°"
+msgstr "Kierretty {degrees}°"
+
+#: crates/big-video-player/src/video/ui/video_shell/adjustments.rs:202
+msgid "Mirrored"
+msgstr "Peilattu"
+
+#: crates/big-video-player/src/video/ui/video_shell/adjustments.rs:203
+msgid "Edges cut off"
+msgstr "Reunat leikattu"
+
+#: crates/big-video-player/src/video/ui/video_shell/adjustments.rs:204
+#, rust-format
+msgid "Speed {speed}×"
+msgstr "Nopeus {speed}×"
+
+#: crates/big-video-player/src/video/ui/video_shell/adjustments.rs:206
+#, rust-format
+msgid "Sound {seconds} s late"
+msgstr "Ääni {seconds} s myöhässä"
+
+#: crates/big-video-player/src/video/ui/video_shell/adjustments.rs:209
+#, rust-format
+msgid "Sound {seconds} s early"
+msgstr "Ääni {seconds} s etuajassa"
+
+#: crates/big-video-player/src/video/ui/video_shell/adjustments.rs:212
+#, rust-format
+msgid "Subtitles {seconds} s late"
+msgstr "Tekstitys {seconds} s myöhässä"
+
+#: crates/big-video-player/src/video/ui/video_shell/adjustments.rs:215
+#, rust-format
+msgid "Subtitles {seconds} s early"
+msgstr "Tekstitys {seconds} s etuajassa"
+
+#: crates/big-video-player/src/video/ui/video_shell/adjustments.rs:217
+#, rust-format
+msgid "Type of sound: {name}"
+msgstr "Äänen tyyppi: {name}"
+
+#: crates/big-video-player/src/video/ui/video_shell/adjustments.rs:225
+msgid "by hand"
+msgstr "käsin"
+
+#: crates/big-video-player/src/video/ui/video_shell/adjustments.rs:227
+msgid "Video effects on"
+msgstr "Videotehosteet käytössä"
+
+#: crates/big-video-player/src/video/ui/video_shell/adjustments.rs:228
+msgid "Picture enhanced"
+msgstr "Kuvaa parannettu"
+
+#: crates/big-video-player/src/video/ui/video_shell/adjustments.rs:235
+#, rust-format
+msgid "Stops at {time}"
+msgstr "Pysähtyy kohdassa {time}"
+
+#: crates/big-video-player/src/video/ui/video_shell/adjustments.rs:343
+#: crates/big-video-player/src/video/ui/video_shell/panel.rs:238
+#, rust-format
+msgid "{n} change"
+msgid_plural "{n} changes"
+msgstr[0] "{n} muutos"
+msgstr[1] "{n} muutosta"
+
+#: crates/big-video-player/src/video/ui/video_shell/adjustments.rs:346
+msgid "Click to see or undo"
+msgstr "Napsauta nähdäksesi tai kumotaksesi"
+
+#: crates/big-video-player/src/video/ui/video_shell/component.rs:124
+#: crates/big-video-player/src/video/ui/video_shell/component.rs:127
+#: crates/big-video-player/src/video/ui/video_shell/panel.rs:38
+#: crates/big-video-player/src/video/ui/video_shell/panel.rs:156
+msgid "Settings"
+msgstr "Asetukset"
+
+#: crates/big-video-player/src/video/ui/video_shell/component.rs:132
+msgid "Minimize"
+msgstr "Pienennä"
+
+#: crates/big-video-player/src/video/ui/video_shell/component.rs:132
+msgid "Maximize"
+msgstr "Suurenna"
+
+#: crates/big-video-player/src/video/ui/video_shell/component.rs:142
+msgid "Use HDR?"
+msgstr "Käytetäänkö HDR:ää?"
+
+#: crates/big-video-player/src/video/ui/video_shell/component.rs:144
+msgid "Does the picture look grey and washed out? Click to use HDR colours"
+msgstr ""
+"Näyttääkö kuva harmaalta ja haalistuneelta? Napsauta käyttääksesi HDR-värejä"
+
+#: crates/big-video-player/src/video/ui/video_shell/component.rs:163
+msgid "On the TV"
+msgstr "Televisiossa"
+
+#: crates/big-video-player/src/video/ui/video_shell/component.rs:164
+#: crates/big-video-player/src/video/ui/video_shell/tv.rs:43
+#: crates/media-runtime/src/shared/tv_cast/card.rs:261
+msgid "The TV is still playing"
+msgstr "Televisio toistaa yhä"
+
+#: crates/big-video-player/src/video/ui/video_shell/component.rs:848
+#: crates/big-video-player/src/video/ui/video_shell/input_gestures.rs:121
+msgid "Open File…"
+msgstr "Avaa tiedosto…"
+
+#: crates/big-video-player/src/video/ui/video_shell/component.rs:850
+#: crates/big-video-player/src/video/ui/video_shell/input_gestures.rs:122
+msgid "Open URL…"
+msgstr "Avaa URL…"
+
+#: crates/big-video-player/src/video/ui/video_shell/component.rs:851
+msgid "Open Disc…"
+msgstr "Avaa levy…"
+
+#: crates/big-video-player/src/video/ui/video_shell/component.rs:852
+msgid "TV Channels (IPTV)…"
+msgstr "TV-kanavat (IPTV)…"
+
+#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:54
+msgid "Best available"
+msgstr "Paras saatavilla oleva"
+
+#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:56
+msgid "Highest video and audio quality"
+msgstr "Paras video- ja äänenlaatu"
+
+#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:59
+msgid "Up to 1080p"
+msgstr "Enintään 1080p"
+
+#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:61
+msgid "Prefer Full HD or lower"
+msgstr "Suosi Full HD:tä tai alempaa"
+
+#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:64
+msgid "Up to 720p"
+msgstr "Enintään 720p"
+
+#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:66
+msgid "Prefer HD or lower"
+msgstr "Suosi HD:tä tai alempaa"
+
+#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:69
+msgid "Up to 480p"
+msgstr "Enintään 480p"
+
+#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:71
+msgid "Prefer SD or lower"
+msgstr "Suosi SD:tä tai alempaa"
+
+#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:74
+msgid "Audio only"
+msgstr "Vain ääni"
+
+#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:76
+msgid "Use the best audio stream"
+msgstr "Käytä parasta äänivirtaa"
+
+#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:84
+msgid "Online Video Quality"
+msgstr "Verkkovideon laatu"
+
+#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:93
+msgid "Use this quality"
+msgstr "Käytä tätä laatua"
+
+#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:123
+msgid "IPTV"
+msgstr "IPTV"
+
+#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:131
+msgid "Open Video"
+msgstr "Avaa video"
+
+#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:133
+msgid "Playlist files"
+msgstr "Soittolistatiedostot"
+
+#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:134
+msgid "All files"
+msgstr "Kaikki tiedostot"
+
+#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:163
+msgid "Supports YouTube, HTTP streams, RTSP, RTMP, DVD, and Blu-ray URLs."
+msgstr ""
+"Tukee YouTube-, HTTP-suoratoisto-, RTSP-, RTMP-, DVD- ja Blu-ray-URL-"
+"osoitteita."
+
+#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:167
+msgid "Media URL"
+msgstr "Median URL"
+
+#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:231
+msgid "Open Disc"
+msgstr "Avaa levy"
+
+#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:240
+msgid "Choose a disc type and enter the device, ISO, or folder path."
+msgstr "Valitse levyn tyyppi ja anna laite-, ISO- tai kansiopolku."
+
+#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:244
+msgid "Disc type"
+msgstr "Levyn tyyppi"
+
+#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:245
+msgid "DVD"
+msgstr "DVD"
+
+#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:245
+msgid "Blu-ray"
+msgstr "Blu-ray"
+
+#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:248
+msgid "Disc device path"
+msgstr "Levylaitteen polku"
+
+#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:374
+msgid "Restore Default Settings?"
+msgstr "Palautetaanko oletusasetukset?"
+
+#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:376
+msgid ""
+"Every setting, including appearance, goes back to its default value. Some "
+"changes take effect after reopening the player."
+msgstr ""
+"Jokainen asetus, ulkoasu mukaan lukien, palautuu oletusarvoonsa. Jotkin "
+"muutokset tulevat voimaan soittimen uudelleenavauksen jälkeen."
+
+#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:381
+msgid "Restore"
+msgstr "Palauta"
+
+#: crates/big-video-player/src/video/ui/video_shell/export.rs:19
+msgid "No file is playing"
+msgstr "Mitään tiedostoa ei toisteta"
+
+#: crates/big-video-player/src/video/ui/video_shell/export.rs:23
+msgid "Cannot export a network stream"
+msgstr "Verkkosuoratoistoa ei voi viedä"
+
+#: crates/big-video-player/src/video/ui/video_shell/input_gestures.rs:114
+#: crates/big-video-player/src/video/ui/video_shell/panel.rs:41
+#: crates/big-video-player/src/video/ui/video_shell/panel.rs:459
+msgid "Zoom and position"
+msgstr "Zoomaus ja sijainti"
+
+#: crates/big-video-player/src/video/ui/video_shell/input_gestures.rs:115
+#: crates/big-video-player/src/video/ui/video_shell/panel.rs:42
+#: crates/big-video-player/src/video/ui/video_shell/panel.rs:464
+msgid "Effects and filters"
+msgstr "Tehosteet ja suodattimet"
+
+#: crates/big-video-player/src/video/ui/video_shell/input_gestures.rs:123
+#: crates/big-video-player/src/video/ui/video_shell/panel.rs:516
+msgid "About this video"
+msgstr "Tietoja tästä videosta"
+
+#: crates/big-video-player/src/video/ui/video_shell/panel.rs:45
+#: crates/big-video-player/src/video/ui/video_shell/panel.rs:490
+msgid "Stop after…"
+msgstr "Pysäytä kohdassa…"
+
+#: crates/big-video-player/src/video/ui/video_shell/panel.rs:47
+msgid "Recent Files"
+msgstr "Viimeisimmät tiedostot"
+
+#: crates/big-video-player/src/video/ui/video_shell/panel.rs:478
+#, rust-format
+msgid "{current} of {total}"
+msgstr "{current} / {total}"
+
+#: crates/big-video-player/src/video/ui/video_shell/panel.rs:504
+msgid "Online quality"
+msgstr "Verkkolaatu"
+
+#: crates/big-video-player/src/video/ui/video_shell/panel.rs:505
+msgid "Choose"
+msgstr "Valitse"
+
+#: crates/big-video-player/src/video/ui/video_shell/panel.rs:549
+msgid "Put back what was just set to normal"
+msgstr "Palauta juuri normaaliksi asetettu"
+
+#: crates/big-video-player/src/video/ui/video_shell/panel.rs:581
+msgid "Shortcuts"
+msgstr "Pikanäppäimet"
+
+#: crates/big-video-player/src/video/ui/video_shell/panel.rs:622
+msgid "Changed"
+msgstr "Muutettu"
+
+#: crates/big-video-player/src/video/ui/video_shell/panel.rs:634
+#: crates/big-video-player/src/video/ui/video_shell/panel.rs:657
+msgid "Back to normal"
+msgstr "Takaisin normaaliin"
+
+#: crates/big-video-player/src/video/ui/video_shell/panel.rs:639
+#, rust-format
+msgid "Undo: {setting}"
+msgstr "Kumoa: {setting}"
+
+#: crates/big-video-player/src/video/ui/video_shell/panel.rs:658
+msgid "Undo every change to the picture and sound"
+msgstr "Kumoa kaikki kuvaan ja ääneen tehdyt muutokset"
+
+#: crates/big-video-player/src/video/ui/video_shell/panel.rs:827
+msgid "Jump to a chapter"
+msgstr "Siirry lukuun"
+
+#: crates/big-video-player/src/video/ui/video_shell/panel/recent.rs:15
+msgid "No Recent Files"
+msgstr "Ei viimeisimpiä tiedostoja"
+
+#: crates/big-video-player/src/video/ui/video_shell/panel/recent.rs:142
+#: crates/big-video-player/src/video/ui/video_shell/panel/recent.rs:146
+msgid "Search recent files"
+msgstr "Hae viimeisimmistä tiedostoista"
+
+#: crates/big-video-player/src/video/ui/video_shell/panel/recent.rs:158
+msgid "No recent file matches"
+msgstr "Mikään viimeisin tiedosto ei täsmää"
+
+#: crates/big-video-player/src/video/ui/video_shell/playback.rs:158
+msgid "Screenshot timed out; cancellation requested"
+msgstr "Kuvakaappaus aikakatkaistiin; peruutusta pyydetty"
+
+#: crates/big-video-player/src/video/ui/video_shell/playback.rs:204
+msgid "Playing video"
+msgstr "Toistetaan videota"
+
+#: crates/big-video-player/src/video/ui/video_shell/playback.rs:427
+msgid "Could not move to trash"
+msgstr "Roskakoriin siirtäminen epäonnistui"
+
+#: crates/big-video-player/src/video/ui/video_shell/playback.rs:433
+#, rust-format
+msgid "{} file moved to trash"
+msgid_plural "{} files moved to trash"
+msgstr[0] "{} tiedosto siirretty roskakoriin"
+msgstr[1] "{} tiedostoa siirretty roskakoriin"
+
+#: crates/big-video-player/src/video/ui/video_shell/render.rs:335
+msgid ""
+"Video could not start. Try Automatic video output in Preferences, or check "
+"that mpv is installed."
+msgstr ""
+"Videota ei voitu käynnistää. Kokeile Asetuksissa Automaattista "
+"videotulostusta tai tarkista, että mpv on asennettu."
+
+#: crates/big-video-player/src/video/ui/video_shell/render.rs:422
+msgid ""
+"The video area is too large for compatibility mode. Reduce the window size "
+"or select Automatic video output in Preferences."
+msgstr ""
+"Videoalue on liian suuri yhteensopivuustilalle. Pienennä ikkunan kokoa tai "
+"valitse Asetuksissa Automaattinen videotulostus."
+
+#: crates/big-video-player/src/video/ui/video_shell/render.rs:431
+msgid ""
+"The video frame could not be displayed. Try Automatic video output in "
+"Preferences."
+msgstr ""
+"Videoruutua ei voitu näyttää. Kokeile Asetuksissa Automaattista "
+"videotulostusta."
+
+#: crates/big-video-player/src/video/ui/video_shell/trim/bar.rs:131
+#, rust-format
+msgid "Cut start: {t} — mark the other end"
+msgstr "Leikkauksen alku: {t} – merkitse toinen pää"
+
+#: crates/big-video-player/src/video/ui/video_shell/trim/bar.rs:133
+#: crates/ui/media/big-player-ui/src/audio_trim_bar.rs:45
+msgid "Mark more cuts or export"
+msgstr "Merkitse lisää leikkauksia tai vie"
+
+#: crates/big-video-player/src/video/ui/video_shell/trim/bar.rs:134
+msgid "Press M (or Mark) at the start and end of a cut"
+msgstr "Paina M:ää (tai Merkitse) leikkauksen alussa ja lopussa"
+
+#: crates/big-video-player/src/video/ui/video_shell/trim/bar.rs:181
+msgid "Mark"
+msgstr "Merkitse"
+
+#: crates/big-video-player/src/video/ui/video_shell/trim/bar.rs:182
+msgid "Mark a cut point at the current position (M)"
+msgstr "Merkitse leikkauskohta nykyiseen kohtaan (M)"
+
+#: crates/big-video-player/src/video/ui/video_shell/trim/bar.rs:187
+msgid "Clear all cuts"
+msgstr "Tyhjennä kaikki leikkaukset"
+
+#: crates/big-video-player/src/video/ui/video_shell/trim/bar.rs:203
+msgid "Play only the marked cuts"
+msgstr "Toista vain merkityt leikkaukset"
+
+#: crates/big-video-player/src/video/ui/video_shell/trim/bar.rs:229
+#: crates/ui/media/big-player-ui/src/audio_trim_bar.rs:49
+msgid "Exit trim mode"
+msgstr "Poistu leikkaustilasta"
+
+#: crates/big-video-player/src/video/ui/video_shell/trim/bar.rs:241
+msgid "Export"
+msgstr "Vie"
+
+#: crates/big-video-player/src/video/ui/video_shell/trim/bar.rs:242
+#: crates/ui/media/big-player-ui/src/audio_trim_bar.rs:48
+msgid "Export the marked cuts"
+msgstr "Vie merkityt leikkaukset"
+
+#: crates/big-video-player/src/video/ui/video_shell/trim/bar.rs:337
+#: crates/big-video-player/src/video/ui/video_shell/trim/bar.rs:339
+#: crates/ui/media/big-player-ui/src/audio_trim_bar.rs:50
+msgid "Edit cut times"
+msgstr "Muokkaa leikkausaikoja"
+
+#: crates/big-video-player/src/video/ui/video_shell/trim/bar.rs:349
+#: crates/ui/media/big-player-ui/src/audio_trim_bar.rs:52
+msgid "Remove this cut"
+msgstr "Poista tämä leikkaus"
+
+#: crates/big-video-player/src/video/ui/video_shell/trim/run.rs:27
+msgid "Open a local video to cut it"
+msgstr "Avaa paikallinen video leikataksesi sitä"
+
+#: crates/big-video-player/src/video/ui/video_shell/trim/run.rs:218
+#: crates/big-video-player/src/video/ui/video_shell/trim/run.rs:222
+msgid "s"
+msgstr "s"
+
+#: crates/big-video-player/src/video/ui/video_shell/trim/run.rs:238
+msgid "Cut times"
+msgstr "Leikkausajat"
+
+#: crates/big-video-player/src/video/ui/video_shell/trim/run.rs:243
+msgid "Hundredth-second precision; either order is fine"
+msgstr "Sadasosasekunnin tarkkuus; kumpi tahansa järjestys käy"
+
+#: crates/big-video-player/src/video/ui/video_shell/trim/run.rs:253
+msgid "Edit Cut"
+msgstr "Muokkaa leikkausta"
+
+#: crates/big-video-player/src/video/ui/video_shell/tv.rs:41
+#: crates/media-runtime/src/shared/tv_cast/card.rs:233
+msgid "On the TV and here"
+msgstr "Televisiossa ja täällä"
+
+#: crates/media-runtime/src/cast/daemon.rs:110
+msgid "BigNetScreen returned an incompatible reply"
+msgstr "BigNetScreen palautti yhteensopimattoman vastauksen"
+
+#: crates/media-runtime/src/cast/daemon.rs:156
+msgid "Update BigNetScreen to use player controls"
+msgstr "Päivitä BigNetScreen käyttääksesi soittimen ohjaimia"
+
+#: crates/media-runtime/src/cast/daemon.rs:164
+#: crates/media-runtime/src/shared/tv_cast.rs:272
+msgid "BigNetScreen is unavailable"
+msgstr "BigNetScreen ei ole käytettävissä"
+
+#: crates/media-runtime/src/cast/daemon.rs:205
+msgid "BigNetScreen disconnected"
+msgstr "BigNetScreen katkaisi yhteyden"
+
+#: crates/media-runtime/src/cast/daemon.rs:314
+msgid "Select between 1 and 1000 files"
+msgstr "Valitse 1–1000 tiedostoa"
+
+#: crates/media-runtime/src/media/metadata_cache/detailed_video_metadata.rs:111
+#: crates/media-runtime/src/media/metadata_cache/detailed_video_metadata.rs:157
+#: crates/media-runtime/src/media/metadata_cache/detailed_video_metadata.rs:171
+#: crates/ui/media/big-media-components/src/media/file_metadata_dialog.rs:65
+#: crates/ui/media/big-player-ui/src/audio_preferences.rs:140
+msgid "Language"
+msgstr "Kieli"
+
+#: crates/media-runtime/src/media/metadata_cache/detailed_video_metadata.rs:129
+msgid "CD Quality"
+msgstr "CD-laatu"
+
+#: crates/media-runtime/src/media/metadata_cache/detailed_video_metadata.rs:131
+msgid "Hi-Res"
+msgstr "Hi-Res"
+
+#: crates/media-runtime/src/media/metadata_cache/detailed_video_metadata.rs:143
+#: crates/ui/media/big-player-ui/src/audio_preferences.rs:179
+msgid "Mono"
+msgstr "Mono"
+
+#: crates/media-runtime/src/media/metadata_cache/detailed_video_metadata.rs:144
+#: crates/ui/media/big-player-ui/src/audio_preferences.rs:179
+msgid "Stereo"
+msgstr "Stereo"
+
+#: crates/media-runtime/src/media/metadata_cache/detailed_video_metadata.rs:145
+msgid "5.1 Surround"
+msgstr "5.1-surround"
+
+#: crates/media-runtime/src/media/metadata_cache/detailed_video_metadata.rs:146
+msgid "7.1 Surround"
+msgstr "7.1-surround"
+
+#: crates/media-runtime/src/media/metadata_cache/display.rs:21
+#, rust-format
+msgid "{} audio track"
+msgid_plural "{} audio tracks"
+msgstr[0] "{} ääniraita"
+msgstr[1] "{} ääniraitaa"
+
+#: crates/media-runtime/src/media/metadata_cache/display.rs:28
+#, rust-format
+msgid "{} subtitle"
+msgid_plural "{} subtitles"
+msgstr[0] "{} tekstitys"
+msgstr[1] "{} tekstitystä"
+
+#: crates/media-runtime/src/media/playlist_scan/display.rs:79
+msgid "Home"
+msgstr "Koti"
+
+#: crates/media-runtime/src/settings/messages.rs:7
+msgid ""
+"A save is pending. Re-enter exactly the intended credentials to retry that "
+"same transaction, or close and use Recover account. A different payload will "
+"be refused."
+msgstr ""
+"Tallennus on odottamassa. Anna täsmälleen tarkoitetut tunnukset uudelleen "
+"yrittääksesi samaa tapahtumaa, tai sulje ja käytä toimintoa Palauta tili. "
+"Erilainen sisältö hylätään."
+
+#: crates/media-runtime/src/settings/messages.rs:9
+msgid "API key"
+msgstr "API-avain"
+
+#: crates/media-runtime/src/settings/messages.rs:10
+msgid "API secret"
+msgstr "API-salaisuus"
+
+#: crates/media-runtime/src/settings/messages.rs:11
+msgid "Access could not be verified — check permissions before reviewing"
+msgstr "Käyttöä ei voitu varmistaa – tarkista oikeudet ennen tarkistamista"
+
+#: crates/media-runtime/src/settings/messages.rs:12
+msgid "All preferences are saved."
+msgstr "Kaikki asetukset on tallennettu."
+
+#: crates/media-runtime/src/settings/messages.rs:13
+msgid ""
+"An account operation was interrupted. Recover it before making another "
+"change."
+msgstr "Tilitoiminto keskeytyi. Palauta se ennen kuin teet uuden muutoksen."
+
+#: crates/media-runtime/src/settings/messages.rs:14
+msgid "Available again"
+msgstr "Taas saatavilla"
+
+#: crates/media-runtime/src/settings/messages.rs:15
+msgid "Cancellation requested. Finishing the current safe step…"
+msgstr "Peruutusta pyydetty. Viimeistellään nykyinen turvallinen vaihe…"
+
+#: crates/media-runtime/src/settings/messages.rs:16
+msgid "Changes are saved."
+msgstr "Muutokset on tallennettu."
+
+#: crates/media-runtime/src/settings/messages.rs:17
+msgid "Changes were applied, but safe storage is not confirmed. Retry saving."
+msgstr ""
+"Muutokset otettiin käyttöön, mutta turvallista tallennusta ei ole "
+"vahvistettu. Yritä tallennusta uudelleen."
+
+#: crates/media-runtime/src/settings/messages.rs:19
+msgid ""
+"Changes work for this session but could not be saved. Check storage or close "
+"other instances, then retry."
+msgstr ""
+"Muutokset toimivat tässä istunnossa, mutta niitä ei voitu tallentaa. "
+"Tarkista tallennustila tai sulje muut instanssit ja yritä uudelleen."
+
+#: crates/media-runtime/src/settings/messages.rs:21
+msgid "Check keyring access"
+msgstr "Tarkista avainnipun käyttö"
+
+#: crates/media-runtime/src/settings/messages.rs:22
+msgid "Credentials are protected in your keyring."
+msgstr "Tunnukset on suojattu avainnipussasi."
+
+#: crates/media-runtime/src/settings/messages.rs:24
+msgid ""
+"Credentials are protected, but cleanup needs recovery. Close this editor and "
+"use Recover account."
+msgstr ""
+"Tunnukset on suojattu, mutta siivous vaatii palautuksen. Sulje tämä muokkain "
+"ja käytä toimintoa Palauta tili."
+
+#: crates/media-runtime/src/settings/messages.rs:26
+msgid ""
+"Credentials are still in a private file. Protect them in your desktop "
+"keyring."
+msgstr ""
+"Tunnukset ovat yhä yksityisessä tiedostossa. Suojaa ne työpöydän "
+"avainnipussa."
+
+#: crates/media-runtime/src/settings/messages.rs:27
+msgid "Credentials are stored in the desktop keyring."
+msgstr "Tunnukset on tallennettu työpöydän avainnippuun."
+
+#: crates/media-runtime/src/settings/messages.rs:28
+msgid ""
+"Edit the credentials, then save. Closing without saving discards your edits."
+msgstr ""
+"Muokkaa tunnuksia ja tallenna. Sulkeminen tallentamatta hylkää muokkauksesi."
+
+#: crates/media-runtime/src/settings/messages.rs:29
+msgid "No credentials are saved for this account."
+msgstr "Tälle tilille ei ole tallennettu tunnuksia."
+
+#: crates/media-runtime/src/settings/messages.rs:30
+msgid "Not found — select only if you want to forget this library record"
+msgstr "Ei löytynyt – valitse vain, jos haluat unohtaa tämän kirjastotietueen"
+
+#: crates/media-runtime/src/settings/messages.rs:31
+msgid "Playlist exported."
+msgstr "Soittolista viety."
+
+#: crates/media-runtime/src/settings/messages.rs:32
+msgid "Remote items are not checked as local files"
+msgstr "Etäkohteita ei tarkisteta paikallisina tiedostoina"
+
+#: crates/media-runtime/src/settings/messages.rs:34
+msgid ""
+"Saving was not fully confirmed. Close this editor, reload and recover the "
+"pending operation. No plaintext fallback was used."
+msgstr ""
+"Tallennusta ei vahvistettu kokonaan. Sulje tämä muokkain, lataa uudelleen ja "
+"palauta keskeneräinen toiminto. Selkotekstivarajärjestelyä ei käytetty."
+
+#: crates/media-runtime/src/settings/messages.rs:36
+msgid "Saving your changes…"
+msgstr "Tallennetaan muutoksia…"
+
+#: crates/media-runtime/src/settings/messages.rs:37
+msgid "Session key"
+msgstr "Istuntoavain"
+
+#: crates/media-runtime/src/settings/messages.rs:39
+msgid ""
+"The playlist was not exported. Check storage or choose a new filename; "
+"existing files were not replaced."
+msgstr ""
+"Soittolistaa ei viety. Tarkista tallennustila tai valitse uusi tiedostonimi; "
+"olemassa olevia tiedostoja ei korvattu."
+
+#: crates/media-runtime/src/settings/messages.rs:41
+msgid "This location is not a regular media file"
+msgstr "Tämä sijainti ei ole tavallinen mediatiedosto"
+
+#: crates/media-runtime/src/settings/messages.rs:42
+msgid "User token"
+msgstr "Käyttäjätunniste"
+
+#: crates/media-runtime/src/settings/saving.rs:14
+msgid "Retry Saving"
+msgstr "Yritä tallennusta uudelleen"
+
+#: crates/media-runtime/src/settings/saving.rs:41
+msgid ""
+"Your changes work for now but could not be saved. Check free disk space or "
+"close other players, then retry."
+msgstr ""
+"Muutoksesi toimivat toistaiseksi, mutta niitä ei voitu tallentaa. Tarkista "
+"vapaa levytila tai sulje muut soittimet ja yritä uudelleen."
+
+#: crates/media-runtime/src/settings/saving.rs:126
+msgid ""
+"Saves and exports are still finishing. The window will close afterwards. "
+"Keeping it open does not cancel those operations."
+msgstr ""
+"Tallennukset ja viennit ovat vielä kesken. Ikkuna sulkeutuu sen jälkeen. Sen "
+"pitäminen auki ei peru näitä toimintoja."
+
+#: crates/media-runtime/src/settings/saving.rs:129
+msgid "Finishing pending work"
+msgstr "Viimeistellään keskeneräisiä töitä"
+
+#: crates/media-runtime/src/settings/saving.rs:132
+#: crates/media-runtime/src/settings/saving.rs:171
+msgid "Keep open"
+msgstr "Pidä auki"
+
+#: crates/media-runtime/src/settings/saving.rs:164
+msgid ""
+"Keep the player open to review saving errors and retry. Continuing may "
+"discard unsaved session changes; it does not mark them as saved."
+msgstr ""
+"Pidä soitin auki tarkistaaksesi tallennusvirheet ja yrittääksesi uudelleen. "
+"Jatkaminen voi hylätä tallentamattomat istuntomuutokset; niitä ei merkitä "
+"tallennetuiksi."
+
+#: crates/media-runtime/src/settings/saving.rs:167
+msgid "Some changes are not confirmed as saved"
+msgstr "Joitakin muutoksia ei ole vahvistettu tallennetuiksi"
+
+#: crates/media-runtime/src/settings/saving.rs:172
+msgid "Continue without saved changes"
+msgstr "Jatka ilman tallennettuja muutoksia"
+
+#: crates/media-runtime/src/shared/audio_effects.rs:79
+msgid "Convert to mono before filtering"
+msgstr "Muunna monoksi ennen suodatusta"
+
+#: crates/media-runtime/src/shared/audio_effects.rs:103
+#: crates/media-runtime/src/shared/audio_effects.rs:146
+msgid "Cleaning quality"
+msgstr "Puhdistuksen laatu"
+
+#: crates/media-runtime/src/shared/audio_effects.rs:131
+#, rust-format
+msgid "Unavailable: install {package}"
+msgstr "Ei saatavilla: asenna {package}"
+
+#: crates/media-runtime/src/shared/audio_effects.rs:151
+msgid "Faster"
+msgstr "Nopeampi"
+
+#: crates/media-runtime/src/shared/audio_effects.rs:152
+msgid "Better, slower"
+msgstr "Parempi, hitaampi"
+
+#: crates/media-runtime/src/shared/audio_effects.rs:178
+msgid "Audio only when a voice is detected"
+msgstr "Ääni vain, kun puhetta havaitaan"
+
+#: crates/media-runtime/src/shared/audio_effects.rs:184
+msgid "Very sensitive"
+msgstr "Erittäin herkkä"
+
+#: crates/media-runtime/src/shared/audio_effects.rs:185
+msgid "Sensitive"
+msgstr "Herkkä"
+
+#: crates/media-runtime/src/shared/audio_effects.rs:187
+msgid "Strict"
+msgstr "Tiukka"
+
+#: crates/media-runtime/src/shared/audio_effects.rs:188
+msgid "Very strict"
+msgstr "Erittäin tiukka"
+
+#: crates/media-runtime/src/shared/audio_effects.rs:238
+#: crates/media-runtime/src/shared/audio_effects.rs:251
+msgid "Voice detection"
+msgstr "Puheen tunnistus"
+
+#: crates/media-runtime/src/shared/audio_effects_eq.rs:27
+msgid "Flat"
+msgstr "Tasainen"
+
+#: crates/media-runtime/src/shared/audio_effects_eq.rs:31
+msgid "Bass Boost"
+msgstr "Bassonkorostus"
+
+#: crates/media-runtime/src/shared/audio_effects_eq.rs:35
+msgid "Treble Boost"
+msgstr "Diskantin korostus"
+
+#: crates/media-runtime/src/shared/audio_effects_eq.rs:39
+msgid "Pop"
+msgstr "Pop"
+
+#: crates/media-runtime/src/shared/audio_effects_eq.rs:43
+msgid "Rock"
+msgstr "Rock"
+
+#: crates/media-runtime/src/shared/audio_effects_eq.rs:47
+msgid "Jazz"
+msgstr "Jazz"
+
+#: crates/media-runtime/src/shared/audio_effects_eq.rs:51
+msgid "Classical"
+msgstr "Klassinen"
+
+#: crates/media-runtime/src/shared/audio_effects_eq.rs:55
+msgid "Vocal"
+msgstr "Laulu"
+
+#: crates/media-runtime/src/shared/audio_effects_eq.rs:59
+msgid "Electronic"
+msgstr "Elektroninen"
+
+#: crates/media-runtime/src/shared/audio_effects_eq.rs:137
+msgid "Preset:"
+msgstr "Esiasetus:"
+
+#: crates/media-runtime/src/shared/audio_effects_eq.rs:159
+msgid "Reset to Flat"
+msgstr "Palauta tasaiseksi"
+
+#: crates/media-runtime/src/shared/audio_effects_eq.rs:227
+#: crates/media-runtime/src/shared/audio_effects_eq.rs:228
+msgid "Equalizer band"
+msgstr "Taajuuskorjaimen kaista"
+
+#: crates/media-runtime/src/shared/audio_effects_eq.rs:285
+msgid "Bass"
+msgstr "Basso"
+
+#: crates/media-runtime/src/shared/audio_effects_eq.rs:286
+msgid "Mids"
+msgstr "Keskitaajuudet"
+
+#: crates/media-runtime/src/shared/audio_effects_eq.rs:287
+msgid "Highs"
+msgstr "Diskantti"
+
+#: crates/media-runtime/src/shared/converter_handoff.rs:41
+msgid "Could not launch the converter"
+msgstr "Muunninta ei voitu käynnistää"
+
+#: crates/media-runtime/src/shared/shortcut_capture.rs:10
+msgid "Set Shortcut"
+msgstr "Aseta pikanäppäin"
+
+#: crates/media-runtime/src/shared/shortcut_capture.rs:11
+msgid "Press the desired key combination…"
+msgstr "Paina haluamaasi näppäinyhdistelmää…"
+
+#: crates/media-runtime/src/shared/shortcut_capture.rs:12
+msgid "Waiting…"
+msgstr "Odotetaan…"
+
+#: crates/media-runtime/src/shared/shortcut_capture.rs:13
+msgid "Reset to Default"
+msgstr "Palauta oletus"
+
+#: crates/media-runtime/src/shared/sleep_timer.rs:12
+msgid "Stop playback"
+msgstr "Pysäytä toisto"
+
+#: crates/media-runtime/src/shared/sleep_timer.rs:14
+msgid "Suspend computer"
+msgstr "Aseta tietokone lepotilaan"
+
+#: crates/media-runtime/src/shared/sleep_timer.rs:15
+msgid "Shut down computer"
+msgstr "Sammuta tietokone"
+
+#: crates/media-runtime/src/shared/sleep_timer.rs:22
+msgid "Minutes"
+msgstr "Minuuttia"
+
+#: crates/media-runtime/src/shared/sleep_timer.rs:23
+msgid "Action"
+msgstr "Toiminto"
+
+#: crates/media-runtime/src/shared/sleep_timer.rs:24
+msgid "When timer ends"
+msgstr "Kun ajastin päättyy"
+
+#: crates/media-runtime/src/shared/sleep_timer.rs:25
+msgid "Start Timer"
+msgstr "Käynnistä ajastin"
+
+#: crates/media-runtime/src/shared/tv_cast.rs:110
+msgid "BigNetScreen is not installed"
+msgstr "BigNetScreeniä ei ole asennettu"
+
+#: crates/media-runtime/src/shared/tv_cast.rs:111
+msgid "Install it to play on a TV or Chromecast."
+msgstr "Asenna se toistaaksesi televisiossa tai Chromecastilla."
+
+#: crates/media-runtime/src/shared/tv_cast.rs:116
+msgid "Could not reach BigNetScreen"
+msgstr "BigNetScreeniin ei saatu yhteyttä"
+
+#: crates/media-runtime/src/shared/tv_cast.rs:374
+msgid "Smart TV (DLNA)"
+msgstr "Älytelevisio (DLNA)"
+
+#: crates/media-runtime/src/shared/tv_cast.rs:376
+msgid "Chromecast"
+msgstr "Chromecast"
+
+#: crates/media-runtime/src/shared/tv_cast.rs:384
+msgid "This TV cannot play this file."
+msgstr "Tämä televisio ei voi toistaa tätä tiedostoa."
+
+#: crates/media-runtime/src/shared/tv_cast.rs:386
+msgid "Something is already playing on a TV. Stop it first."
+msgstr "Televisiossa toistetaan jo jotain. Pysäytä se ensin."
+
+#: crates/media-runtime/src/shared/tv_cast.rs:388
+msgid "That TV is no longer on the network. Search again."
+msgstr "Tuo televisio ei ole enää verkossa. Hae uudelleen."
+
+#: crates/media-runtime/src/shared/tv_cast.rs:401
+msgid "Same as the video"
+msgstr "Sama kuin video"
+
+#: crates/media-runtime/src/shared/tv_cast.rs:438
+msgid "Now on the TV"
+msgstr "Nyt televisiossa"
+
+#: crates/media-runtime/src/shared/tv_cast.rs:450
+#: crates/media-runtime/src/shared/tv_cast.rs:454
+msgid "Stop on the TV"
+msgstr "Pysäytä televisiossa"
+
+#: crates/media-runtime/src/shared/tv_cast.rs:462
+#: crates/media-runtime/src/shared/tv_cast.rs:466
+msgid "Search again"
+msgstr "Hae uudelleen"
+
+#: crates/media-runtime/src/shared/tv_cast.rs:468
+msgid "TVs on this network"
+msgstr "Verkon televisiot"
+
+#: crates/media-runtime/src/shared/tv_cast.rs:469
+msgid "Starts on the TV where it is now, and pauses here."
+msgstr ""
+"Käynnistyy televisiossa kohdasta, jossa se nyt on, ja keskeytyy täällä."
+
+#: crates/media-runtime/src/shared/tv_cast.rs:475
+#: crates/media-runtime/src/shared/tv_cast.rs:818
+msgid "Looking for TVs…"
+msgstr "Etsitään televisioita…"
+
+#: crates/media-runtime/src/shared/tv_cast.rs:489
+msgid "Size of the picture sent to the TV"
+msgstr "Televisioon lähetettävän kuvan koko"
+
+#: crates/media-runtime/src/shared/tv_cast.rs:648
+msgid "Play something first, then choose the TV."
+msgstr "Toista ensin jotain ja valitse sitten televisio."
+
+#: crates/media-runtime/src/shared/tv_cast.rs:704
+#: crates/media-runtime/src/shared/tv_cast.rs:776
+#: crates/ui/media/big-player-ui/src/download_panel.rs:207
+msgid "Starting…"
+msgstr "Käynnistetään…"
+
+#: crates/media-runtime/src/shared/tv_cast.rs:714
+msgid "Continue"
+msgstr "Jatka"
+
+#: crates/media-runtime/src/shared/tv_cast.rs:798
+msgid "BigNetScreen stopped"
+msgstr "BigNetScreen pysähtyi"
+
+#: crates/media-runtime/src/shared/tv_cast.rs:799
+msgid "Search again to reconnect."
+msgstr "Hae uudelleen muodostaaksesi yhteyden uudelleen."
+
+#: crates/media-runtime/src/shared/tv_cast.rs:805
+msgid "Could not start on the TV"
+msgstr "Käynnistys televisiossa epäonnistui"
+
+#: crates/media-runtime/src/shared/tv_cast.rs:823
+msgid "No TV found"
+msgstr "Televisiota ei löytynyt"
+
+#: crates/media-runtime/src/shared/tv_cast.rs:824
+msgid "Check that the TV is on and on the same network as this computer."
+msgstr ""
+"Tarkista, että televisio on päällä ja samassa verkossa kuin tämä tietokone."
+
+#: crates/media-runtime/src/shared/tv_cast/card.rs:82
+#: crates/media-runtime/src/shared/tv_cast/card.rs:197
+#: crates/media-runtime/src/shared/tv_cast/card.rs:223
+msgid "Playing on the TV"
+msgstr "Toistetaan televisiossa"
+
+#: crates/media-runtime/src/shared/tv_cast/card.rs:95
+msgid "Stop sending"
+msgstr "Lopeta lähetys"
+
+#: crates/media-runtime/src/shared/tv_cast/card.rs:100
+#: crates/media-runtime/src/shared/tv_cast/card.rs:217
+msgid "Use the player"
+msgstr "Käytä soitinta"
+
+#: crates/media-runtime/src/shared/tv_cast/card.rs:102
+#: crates/media-runtime/src/shared/tv_cast/card.rs:219
+msgid "The TV keeps playing, and the player is free for this or another video."
+msgstr ""
+"Televisio jatkaa toistoa, ja soitin on vapaa tätä tai toista videota varten."
+
+#: crates/media-runtime/src/shared/tv_cast/card.rs:109
+msgid "Show this one on the TV"
+msgstr "Näytä tämä televisiossa"
+
+#: crates/media-runtime/src/shared/tv_cast/card.rs:111
+msgid "The TV plays what is in the player now, from where it is."
+msgstr "Televisio toistaa soittimessa olevaa nyt, siitä kohdasta, jossa se on."
+
+#: crates/media-runtime/src/shared/tv_cast/card.rs:117
+msgid "Play the TV's here"
+msgstr "Toista television sisältö täällä"
+
+#: crates/media-runtime/src/shared/tv_cast/card.rs:119
+msgid "The player opens what the TV plays, at the same point."
+msgstr "Soitin avaa television toistaman sisällön samasta kohdasta."
+
+#: crates/media-runtime/src/shared/tv_cast/card.rs:214
+msgid "Watch here too"
+msgstr "Katso täälläkin"
+
+#: crates/media-runtime/src/shared/tv_cast/card.rs:215
+msgid ""
+"The player plays the video too, in step with the TV, with its own volume "
+"starting silent."
+msgstr ""
+"Soitin toistaa videota myös, televisiota myötäillen, omalla "
+"äänenvoimakkuudellaan, joka alkaa mykistettynä."
+
+#: crates/media-runtime/src/shared/tv_cast/card.rs:226
+msgid "Starting on the TV…"
+msgstr "Käynnistetään televisiossa…"
+
+#: crates/media-runtime/src/shared/tv_cast/card.rs:236
+msgid "Only on the TV"
+msgstr "Vain televisiossa"
+
+#: crates/media-runtime/src/shared/tv_cast/card.rs:237
+msgid "The player stops following the TV and waits."
+msgstr "Soitin lopettaa television seuraamisen ja odottaa."
+
+#: crates/media-runtime/src/shared/tv_cast/card.rs:263
+msgid "Control the TV"
+msgstr "Ohjaa televisiota"
+
+#: crates/media-runtime/src/shared/tv_cast/card.rs:265
+msgid "The controls drive the TV again, and the player pauses."
+msgstr "Ohjaimet ohjaavat taas televisiota, ja soitin keskeytyy."
+
+#: crates/ui/generic/big-relm4-components/src/feedback/hover_popover.rs:271
+msgid "Press Alt+Down to adjust. Press Escape to close."
+msgstr "Säädä painamalla Alt+alas. Sulje painamalla Esc."
+
+#: crates/ui/generic/big-relm4-components/src/layout/media_window/sidebar.rs:248
+msgid "Resize sidebar"
+msgstr "Muuta sivupalkin kokoa"
+
+#: crates/ui/generic/big-relm4-components/src/layout/media_window/sidebar.rs:250
+msgid ""
+"Use Left and Right arrow keys to resize the media sidebar. Use Home and End "
+"for minimum and maximum width."
+msgstr ""
+"Muuta median sivupalkin kokoa vasemmalla ja oikealla nuolinäppäimellä. Home "
+"ja End asettavat vähimmäis- ja enimmäisleveyden."
+
+#: crates/ui/media/big-media-components/src/media/file_metadata_dialog.rs:52
+msgid "File Information"
+msgstr "Tiedoston tiedot"
+
+#: crates/ui/media/big-media-components/src/media/file_metadata_dialog.rs:58
+msgid "Container"
+msgstr "Säiliö"
+
+#: crates/ui/media/big-media-components/src/media/file_metadata_dialog.rs:61
+msgid "Video Stream"
+msgstr "Videovirta"
+
+#: crates/ui/media/big-media-components/src/media/file_metadata_dialog.rs:62
+msgid "Audio Stream"
+msgstr "Äänivirta"
+
+#: crates/ui/media/big-media-components/src/media/file_metadata_dialog.rs:63
+msgid "Subtitle Stream"
+msgstr "Tekstitysvirta"
+
+#: crates/ui/media/big-media-components/src/media/file_metadata_dialog.rs:419
+msgid "Low"
+msgstr "Matala"
+
+#: crates/ui/media/big-media-components/src/media/file_metadata_dialog.rs:421
+msgid "Studio"
+msgstr "Studio"
+
+#: crates/ui/media/big-media-components/src/player_chrome.rs:301
+msgid "Volume level"
+msgstr "Äänenvoimakkuuden taso"
+
+#: crates/ui/media/big-media-components/src/player_chrome.rs:312
+msgid "Playback speed"
+msgstr "Toistonopeus"
+
+#: crates/ui/media/big-media-components/src/player_chrome.rs:324
+msgid "Voice"
+msgstr "Ääni"
+
+#: crates/ui/media/big-media-components/src/player_chrome.rs:326
+msgid "Voice enhancement"
+msgstr "Puheen parannus"
+
+#: crates/ui/media/big-player-ui/src/appearance/audio_colors.rs:30
+#: crates/ui/media/big-player-ui/src/appearance/video_colors.rs:29
+msgid "Color Source"
+msgstr "Värilähde"
+
+#: crates/ui/media/big-player-ui/src/appearance/audio_colors.rs:32
+#: crates/ui/media/big-player-ui/src/appearance/video_colors.rs:31
+msgid "Follow System"
+msgstr "Seuraa järjestelmää"
+
+#: crates/ui/media/big-player-ui/src/appearance/audio_colors.rs:33
+#: crates/ui/media/big-player-ui/src/appearance/video_colors.rs:32
+msgid "Light Theme"
+msgstr "Vaalea teema"
+
+#: crates/ui/media/big-player-ui/src/appearance/audio_colors.rs:34
+#: crates/ui/media/big-player-ui/src/appearance/video_colors.rs:33
+msgid "Dark Theme"
+msgstr "Tumma teema"
+
+#: crates/ui/media/big-player-ui/src/appearance/audio_colors.rs:35
+#: crates/ui/media/big-player-ui/src/appearance/color_palette_controls.rs:130
+#: crates/ui/media/big-player-ui/src/appearance/video_colors.rs:35
+msgid "Custom Colors"
+msgstr "Mukautetut värit"
+
+#: crates/ui/media/big-player-ui/src/appearance/audio_colors.rs:69
+msgid "Accessibility"
+msgstr "Esteettömyys"
+
+#: crates/ui/media/big-player-ui/src/appearance/audio_colors.rs:72
+msgid "High Contrast Text"
+msgstr "Korkean kontrastin teksti"
+
+#: crates/ui/media/big-player-ui/src/appearance/color_palette_controls.rs:21
+msgid "Custom"
+msgstr "Mukautettu"
+
+#: crates/ui/media/big-player-ui/src/appearance/color_palette_controls.rs:22
+msgid "Light"
+msgstr "Vaalea"
+
+#: crates/ui/media/big-player-ui/src/appearance/color_palette_controls.rs:23
+msgid "Dark"
+msgstr "Tumma"
+
+#: crates/ui/media/big-player-ui/src/appearance/color_palette_controls.rs:32
+msgid "Pink Light"
+msgstr "Vaalea pinkki"
+
+#: crates/ui/media/big-player-ui/src/appearance/color_palette_controls.rs:106
+msgid "Colors"
+msgstr "Värit"
+
+#: crates/ui/media/big-player-ui/src/appearance/color_palette_controls.rs:134
+msgid "Color Preset"
+msgstr "Väriesiasetus"
+
+#: crates/ui/media/big-player-ui/src/appearance/color_palette_controls.rs:141
+msgid "Background Color"
+msgstr "Taustaväri"
+
+#: crates/ui/media/big-player-ui/src/appearance/color_palette_controls.rs:148
+msgid "Font Color"
+msgstr "Fontin väri"
+
+#: crates/ui/media/big-player-ui/src/appearance/color_palette_controls.rs:155
+msgid "Icon Color"
+msgstr "Kuvakkeiden väri"
+
+#: crates/ui/media/big-player-ui/src/appearance/color_palette_controls.rs:162
+msgid "Dialogs and Menus Color"
+msgstr "Valintaikkunoiden ja valikkojen väri"
+
+#: crates/ui/media/big-player-ui/src/appearance/video_colors.rs:34
+msgid "Video Colors"
+msgstr "Videon värit"
+
+#: crates/ui/media/big-player-ui/src/appearance/video_colors.rs:44
+msgid "Background Opacity"
+msgstr "Taustan peittävyys"
+
+#: crates/ui/media/big-player-ui/src/appearance/video_colors.rs:45
+msgid "Menu Opacity"
+msgstr "Valikon peittävyys"
+
+#: crates/ui/media/big-player-ui/src/appearance/video_colors.rs:69
+msgid "Icon and Text Shadow"
+msgstr "Kuvakkeiden ja tekstin varjo"
+
+#: crates/ui/media/big-player-ui/src/audio_preferences.rs:87
+msgid "Sound"
+msgstr "Ääni"
+
+#: crates/ui/media/big-player-ui/src/audio_preferences.rs:91
+msgid "Even Out Loudness"
+msgstr "Tasaa äänekkyys"
+
+#: crates/ui/media/big-player-ui/src/audio_preferences.rs:92
+msgid "Quiet and loud media play at a similar volume"
+msgstr ""
+"Hiljainen ja kova media toistetaan samankaltaisella äänenvoimakkuudella"
+
+#: crates/ui/media/big-player-ui/src/audio_preferences.rs:110
+msgid "Keep Voices Natural"
+msgstr "Pidä äänet luonnollisina"
+
+#: crates/ui/media/big-player-ui/src/audio_preferences.rs:111
+msgid "Voices keep their tone when playing faster or slower"
+msgstr "Äänet säilyttävät sävynsä toistettaessa nopeammin tai hitaammin"
+
+#: crates/ui/media/big-player-ui/src/audio_preferences.rs:124
+msgid "Maximum Volume"
+msgstr "Enimmäisäänenvoimakkuus"
+
+#: crates/ui/media/big-player-ui/src/audio_preferences.rs:125
+msgid "Above 100% helps with quiet recordings but may distort"
+msgstr "Yli 100 % auttaa hiljaisissa tallenteissa, mutta voi vääristää"
+
+#: crates/ui/media/big-player-ui/src/audio_preferences.rs:142
+msgid ""
+"For media with several audio tracks. Use language codes separated by commas, "
+"in order of preference, such as pt,en"
+msgstr ""
+"Mediaa varten, jossa on useita ääniraitoja. Käytä pilkuilla erotettuja "
+"kielikoodeja suosituimmuusjärjestyksessä, esimerkiksi fi,en"
+
+#: crates/ui/media/big-player-ui/src/audio_preferences.rs:161
+msgid "Sound System"
+msgstr "Äänijärjestelmä"
+
+#: crates/ui/media/big-player-ui/src/audio_preferences.rs:162
+msgid "Automatic works for most computers"
+msgstr "Automaattinen toimii useimmilla tietokoneilla"
+
+#: crates/ui/media/big-player-ui/src/audio_preferences.rs:166
+msgid "Audio Output"
+msgstr "Äänitulostus"
+
+#: crates/ui/media/big-player-ui/src/audio_preferences.rs:167
+msgid "Takes effect after reopening the player"
+msgstr "Tulee voimaan soittimen uudelleenavauksen jälkeen"
+
+#: crates/ui/media/big-player-ui/src/audio_preferences.rs:177
+msgid "Speakers"
+msgstr "Kaiuttimet"
+
+#: crates/ui/media/big-player-ui/src/audio_preferences.rs:178
+msgid "Mixes surround sound down for stereo speakers or headphones"
+msgstr "Sekoittaa surround-äänen stereokaiuttimille tai kuulokkeille"
+
+#: crates/ui/media/big-player-ui/src/audio_trim_bar.rs:40
+msgid "Mark cut point"
+msgstr "Merkitse leikkauskohta"
+
+#: crates/ui/media/big-player-ui/src/audio_trim_bar.rs:41
+msgid "Clear cuts"
+msgstr "Tyhjennä leikkaukset"
+
+#: crates/ui/media/big-player-ui/src/audio_trim_bar.rs:42
+msgid "Play only marked cuts"
+msgstr "Toista vain merkityt leikkaukset"
+
+#: crates/ui/media/big-player-ui/src/audio_trim_bar.rs:43
+msgid "cuts"
+msgstr "leikkausta"
+
+#: crates/ui/media/big-player-ui/src/audio_trim_bar.rs:44
+#, rust-format
+msgid "Cut start: {t} - mark the other end"
+msgstr "Leikkauksen alku: {t} - merkitse toinen pää"
+
+#: crates/ui/media/big-player-ui/src/audio_trim_bar.rs:46
+msgid "Press Mark at the start and end of each cut"
+msgstr "Paina Merkitse jokaisen leikkauksen alussa ja lopussa"
+
+#: crates/ui/media/big-player-ui/src/audio_trim_bar.rs:47
+msgid "Export cuts"
+msgstr "Vie leikkaukset"
+
+#: crates/ui/media/big-player-ui/src/download_panel.rs:100
+msgid "Downloads"
+msgstr "Lataukset"
+
+#: crates/ui/media/big-player-ui/src/download_panel.rs:109
+msgid "Clear completed downloads"
+msgstr "Tyhjennä valmistuneet lataukset"
+
+#: crates/ui/media/big-player-ui/src/download_panel.rs:119
+msgid "Hide downloads panel"
+msgstr "Piilota latauspaneeli"
+
+#: crates/ui/media/big-player-ui/src/download_panel.rs:197
+msgid "Cancel download"
+msgstr "Peru lataus"
+
+#: crates/ui/media/big-player-ui/src/download_panel.rs:290
+msgid "Cancelled"
+msgstr "Peruttu"
+
+#: crates/ui/media/big-player-ui/src/download_panel.rs:301
+msgid "Complete"
+msgstr "Valmis"
+
+#: crates/ui/media/big-player-ui/src/file_browser.rs:108
+msgid "Filter files"
+msgstr "Suodata tiedostoja"
+
+#: crates/ui/media/big-player-ui/src/file_browser.rs:261
+msgid "File browser"
+msgstr "Tiedostoselain"
+
+#: crates/ui/media/big-player-ui/src/lyrics_panel.rs:155
+#: crates/ui/media/big-player-ui/src/lyrics_panel.rs:164
+msgid "Show only lyrics"
+msgstr "Näytä vain sanoitukset"
+
+#: crates/ui/media/big-player-ui/src/lyrics_panel.rs:161
+msgid "Show playlist"
+msgstr "Näytä soittolista"
+
+#: crates/ui/media/big-player-ui/src/lyrics_panel.rs:216
+msgid "Searching for lyrics…"
+msgstr "Etsitään sanoituksia…"
+
+#: crates/ui/media/big-player-ui/src/lyrics_panel.rs:242
+msgid "No lyrics found"
+msgstr "Sanoituksia ei löytynyt"
+
+#: crates/ui/media/big-player-ui/src/podcast_panel.rs:123
+msgid "Search podcasts…"
+msgstr "Hae podcasteja…"
+
+#: crates/ui/media/big-player-ui/src/podcast_panel.rs:125
+msgid "Search podcasts"
+msgstr "Hae podcasteja"
+
+#: crates/ui/media/big-player-ui/src/podcast_panel.rs:146
+#: crates/ui/media/big-player-ui/src/podcast_panel.rs:147
+msgid "Add RSS feed"
+msgstr "Lisää RSS-syöte"
+
+#: crates/ui/media/big-player-ui/src/podcast_panel.rs:176
+msgid "No Podcasts"
+msgstr "Ei podcasteja"
+
+#: crates/ui/media/big-player-ui/src/podcast_panel.rs:177
+msgid "Search for podcasts or add an RSS feed"
+msgstr "Hae podcasteja tai lisää RSS-syöte"
+
+#: crates/ui/media/big-player-ui/src/podcast_panel.rs:262
+msgid "Connection error — try again"
+msgstr "Yhteysvirhe – yritä uudelleen"
+
+#: crates/ui/media/big-player-ui/src/podcast_panel.rs:273
+msgid "Already subscribed"
+msgstr "Jo tilattu"
+
+#: crates/ui/media/big-player-ui/src/podcast_panel.rs:353
+msgid "Subscriptions"
+msgstr "Tilaukset"
+
+#: crates/ui/media/big-player-ui/src/podcast_panel.rs:377
+msgid "Search Results"
+msgstr "Hakutulokset"
+
+#: crates/ui/media/big-player-ui/src/podcast_panel.rs:425
+msgid "Title unavailable"
+msgstr "Nimi ei saatavilla"
+
+#: crates/ui/media/big-player-ui/src/podcast_panel.rs:427
+msgid "Loading…"
+msgstr "Ladataan…"
+
+#: crates/ui/media/big-player-ui/src/podcast_panel.rs:491
+msgid "Unsubscribe"
+msgstr "Lopeta tilaus"
+
+#: crates/ui/media/big-player-ui/src/podcast_panel.rs:493
+msgid "Unsubscribe from podcast"
+msgstr "Lopeta podcastin tilaus"
+
+#: crates/ui/media/big-player-ui/src/podcast_panel.rs:512
+#: crates/ui/media/big-player-ui/src/podcast_panel.rs:571
+msgid "Subscribe"
+msgstr "Tilaa"
+
+#: crates/ui/media/big-player-ui/src/podcast_panel.rs:514
+msgid "Subscribe to podcast"
+msgstr "Tilaa podcast"
+
+#: crates/ui/media/big-player-ui/src/podcast_panel.rs:533
+msgid "episodes"
+msgstr "jaksoa"
+
+#: crates/ui/media/big-player-ui/src/podcast_panel.rs:554
+msgid "Add RSS Feed"
+msgstr "Lisää RSS-syöte"
+
+#: crates/ui/media/big-player-ui/src/podcast_panel.rs:560
+msgid "Paste the podcast RSS feed URL below."
+msgstr "Liitä podcastin RSS-syötteen URL alle."
+
+#: crates/ui/media/big-player-ui/src/podcast_panel.rs:562
+msgid "Feed"
+msgstr "Syöte"
+
+#: crates/ui/media/big-player-ui/src/podcast_panel.rs:564
+#: crates/ui/media/big-player-ui/src/podcast_panel.rs:567
+msgid "RSS feed URL"
+msgstr "RSS-syötteen URL"
+
+#: crates/ui/media/big-player-ui/src/radio_panel/methods.rs:121
+msgid "My Stations"
+msgstr "Omat asemat"
+
+#: crates/ui/media/big-player-ui/src/radio_panel/methods.rs:144
+#: crates/ui/media/big-player-ui/src/radio_panel/widgets.rs:299
+msgid "Explore Stations"
+msgstr "Selaa asemia"
+
+#: crates/ui/media/big-player-ui/src/radio_panel/widgets.rs:38
+msgid "Remove station"
+msgstr "Poista asema"
+
+#: crates/ui/media/big-player-ui/src/radio_panel/widgets.rs:50
+msgid "Add to my stations"
+msgstr "Lisää omiin asemiin"
+
+#: crates/ui/media/big-player-ui/src/radio_panel/widgets.rs:79
+#: crates/ui/media/big-player-ui/src/radio_panel/widgets.rs:89
+#: crates/ui/media/big-player-ui/src/radio_panel/widgets.rs:90
+msgid "Record Stream"
+msgstr "Tallenna lähetys"
+
+#: crates/ui/media/big-player-ui/src/radio_panel/widgets.rs:94
+#: crates/ui/media/big-player-ui/src/radio_panel/widgets.rs:95
+msgid "Stop Recording"
+msgstr "Lopeta tallennus"
+
+#: crates/ui/media/big-player-ui/src/radio_panel/widgets.rs:166
+msgid "Search radios..."
+msgstr "Hae radioita..."
+
+#: crates/ui/media/big-player-ui/src/radio_panel/widgets.rs:168
+msgid "Search radios"
+msgstr "Hae radioita"
+
+#: crates/ui/media/big-player-ui/src/radio_panel/widgets.rs:173
+msgid "All Genres"
+msgstr "Kaikki tyylilajit"
+
+#: crates/ui/media/big-player-ui/src/radio_panel/widgets.rs:211
+#: crates/ui/media/big-player-ui/src/radio_panel/widgets.rs:212
+msgid "Filter by genre"
+msgstr "Suodata tyylilajin mukaan"
+
+#: crates/ui/media/big-player-ui/src/radio_panel/widgets.rs:219
+#: crates/ui/media/big-player-ui/src/radio_panel/widgets.rs:221
+msgid "Add station manually"
+msgstr "Lisää asema käsin"
+
+#: crates/ui/media/big-player-ui/src/radio_panel/widgets.rs:285
+msgid "No radio stations"
+msgstr "Ei radioasemia"
+
+#: crates/ui/media/big-player-ui/src/radio_panel/widgets.rs:292
+msgid "Explore popular stations from your country or search by name"
+msgstr "Selaa maasi suosittuja asemia tai hae nimellä"
+
+#: crates/ui/media/big-player-ui/src/radio_panel/widgets.rs:307
+msgid "Add Manually"
+msgstr "Lisää käsin"
+
+#: crates/ui/media/big-player-ui/src/radio_panel/widgets.rs:324
+msgid "Add Radio Station"
+msgstr "Lisää radioasema"
+
+#: crates/ui/media/big-player-ui/src/radio_panel/widgets.rs:331
+msgid "Enter a station name and an http:// or https:// stream URL."
+msgstr "Anna aseman nimi ja http://- tai https://-suoratoisto-URL."
+
+#: crates/ui/media/big-player-ui/src/radio_panel/widgets.rs:334
+msgid "Station"
+msgstr "Asema"
+
+#: crates/ui/media/big-player-ui/src/radio_panel/widgets.rs:336
+#: crates/ui/media/big-player-ui/src/radio_panel/widgets.rs:339
+msgid "Station Name"
+msgstr "Aseman nimi"
+
+#: crates/ui/media/big-player-ui/src/radio_panel/widgets.rs:341
+#: crates/ui/media/big-player-ui/src/radio_panel/widgets.rs:345
+msgid "Station stream URL"
+msgstr "Aseman suoratoisto-URL"
+
+#: crates/ui/media/big-player-ui/src/radio_panel/widgets.rs:351
+msgid "Add"
+msgstr "Lisää"
+
+#: crates/ui/media/big-player-ui/src/smartphone/dialog.rs:38
+msgid "Web Remote"
+msgstr "Verkkokauko-ohjain"
+
+#: crates/ui/media/big-player-ui/src/smartphone/dialog.rs:40
+msgid ""
+"Turn on to control this player from a phone or tablet on the same network. "
+"HTTP is not encrypted: use only a trusted private network. Scan the QR code "
+"with the phone's camera to open the remote."
+msgstr ""
+"Ota käyttöön ohjataksesi tätä soitinta puhelimesta tai tabletista samassa "
+"verkossa. HTTP ei ole salattu: käytä vain luotettua yksityistä verkkoa. Avaa "
+"kauko-ohjain skannaamalla QR-koodi puhelimen kameralla."
+
+#: crates/ui/media/big-player-ui/src/smartphone/dialog.rs:47
+msgid "Enable web remote"
+msgstr "Ota verkkokauko-ohjain käyttöön"
+
+#: crates/ui/media/big-player-ui/src/smartphone/dialog.rs:52
+msgid "QR code"
+msgstr "QR-koodi"
+
+#: crates/ui/media/big-player-ui/src/smartphone/dialog.rs:65
+#: crates/ui/media/big-player-ui/src/smartphone/dialog.rs:157
+msgid "Web remote is off."
+msgstr "Verkkokauko-ohjain on pois käytöstä."
+
+#: crates/ui/media/big-player-ui/src/smartphone/dialog.rs:83
+msgid "KDE Connect / GSConnect"
+msgstr "KDE Connect / GSConnect"
+
+#: crates/ui/media/big-player-ui/src/smartphone/dialog.rs:85
+msgid ""
+"If you have KDE Connect (Plasma, Android) or GSConnect (GNOME) installed, "
+"your paired phone already shows media controls, track information and volume "
+"for this player - no extra setup is required on our side."
+msgstr ""
+"Jos KDE Connect (Plasma, Android) tai GSConnect (GNOME) on asennettu, "
+"pariliitetty puhelimesi näyttää jo median ohjaimet, kappaletiedot ja "
+"äänenvoimakkuuden tälle soittimelle – meidän puolellamme ei tarvita "
+"lisäasetuksia."
+
+#: crates/ui/media/big-player-ui/src/smartphone/dialog.rs:92
+msgid "Install KDE Connect on your phone"
+msgstr "Asenna KDE Connect puhelimeesi"
+
+#: crates/ui/media/big-player-ui/src/smartphone/dialog.rs:94
+msgid ""
+"Open the link on the phone's app store. Pair once - then media keys, "
+"notifications and file sharing work both ways."
+msgstr ""
+"Avaa linkki puhelimen sovelluskaupassa. Muodosta pariliitos kerran – sen "
+"jälkeen mediapainikkeet, ilmoitukset ja tiedostojen jako toimivat molempiin "
+"suuntiin."
+
+#: crates/ui/media/big-player-ui/src/smartphone/dialog.rs:98
+msgid "Open KDE Connect download page"
+msgstr "Avaa KDE Connectin lataussivu"
+
+#: crates/ui/media/big-player-ui/src/smartphone/dialog.rs:143
+msgid "Scan the code with the phone's camera."
+msgstr "Skannaa koodi puhelimen kameralla."
+
+#: crates/ui/media/big-player-ui/src/smartphone/dialog.rs:149
+msgid "Could not start server"
+msgstr "Palvelinta ei voitu käynnistää"
