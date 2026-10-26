@@ -22,6 +22,8 @@ use super::channel::IptvChannel;
 pub fn parse_m3u_content(content: &str) -> Vec<IptvChannel> {
     let mut channels = Vec::new();
     let mut pending = IptvChannel::default();
+    // A byte-order mark would turn `#EXTM3U` into a channel URL.
+    let content = content.strip_prefix('\u{feff}').unwrap_or(content);
 
     for line in content.lines() {
         let line = line.trim();
@@ -50,21 +52,29 @@ pub fn parse_m3u_content(content: &str) -> Vec<IptvChannel> {
 /// megabytes; anything bigger is refused instead of loaded into memory.
 pub const MAX_PLAYLIST_BYTES: u64 = 64 * 1024 * 1024;
 
-/// Read a playlist file as UTF-8, refusing files over [`MAX_PLAYLIST_BYTES`].
+/// Playlist text from its bytes: UTF-8, or else Latin-1, the encoding of
+/// older `.m3u` lists, where every byte is a character.
+#[must_use]
+pub fn decode_playlist(bytes: Vec<u8>) -> String {
+    String::from_utf8(bytes)
+        .unwrap_or_else(|error| error.into_bytes().into_iter().map(char::from).collect())
+}
+
+/// Read a playlist file, refusing files over [`MAX_PLAYLIST_BYTES`].
 #[must_use]
 pub fn read_playlist_text(path: &Path) -> Option<String> {
     use std::io::Read;
-    let mut text = String::new();
+    let mut bytes = Vec::new();
     std::fs::File::open(path)
         .ok()?
         .take(MAX_PLAYLIST_BYTES + 1)
-        .read_to_string(&mut text)
+        .read_to_end(&mut bytes)
         .ok()?;
-    if text.len() as u64 > MAX_PLAYLIST_BYTES {
+    if bytes.len() as u64 > MAX_PLAYLIST_BYTES {
         log::warn!("playlist over {MAX_PLAYLIST_BYTES} bytes ignored");
         return None;
     }
-    Some(text)
+    Some(decode_playlist(bytes))
 }
 
 /// Read and parse an M3U/M3U8 file from disk.
@@ -87,10 +97,18 @@ fn extract_attr(line: &str, attr: &str) -> Option<String> {
     Some(rest[..end].to_string())
 }
 
+/// The name after the first comma outside the quoted attributes: a name may
+/// hold commas of its own ("Globo, SP"), and an attribute value too.
 fn extract_display_name(line: &str) -> String {
-    line.rfind(',')
-        .map(|pos| line[pos + 1..].trim().to_string())
-        .unwrap_or_default()
+    let mut quoted = false;
+    for (pos, character) in line.char_indices() {
+        match character {
+            '"' => quoted = !quoted,
+            ',' if !quoted => return line[pos + 1..].trim().to_string(),
+            _ => {}
+        }
+    }
+    String::new()
 }
 
 #[cfg(test)]
@@ -104,6 +122,33 @@ mod tests {
         fn parse_never_panics(text in "\\PC{0,4096}") {
             proptest::prop_assert!(parse_m3u_content(&text).len() <= text.lines().count());
         }
+    }
+
+    #[test]
+    fn names_keep_their_commas() {
+        let input = "#EXTINF:-1 group-title=\"News, Brazil\",Globo, SP\nhttp://a/1\n";
+        let channels = parse_m3u_content(input);
+        assert_eq!(channels[0].name, "Globo, SP");
+        assert_eq!(channels[0].group, "News, Brazil");
+    }
+
+    #[test]
+    fn byte_order_mark_is_not_a_channel() {
+        let input = "\u{feff}#EXTM3U\n#EXTINF:-1,One\nhttp://a/1\n";
+        let channels = parse_m3u_content(input);
+        assert_eq!(channels.len(), 1);
+        assert_eq!(channels[0].name, "One");
+    }
+
+    #[test]
+    fn latin1_file_still_lists_its_channels() {
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir.path().join("list.m3u");
+        std::fs::write(&path, b"#EXTINF:-1,Canal Not\xedcias\nhttp://a/1\n").unwrap();
+        let channels = parse_m3u_file(&path);
+        assert_eq!(channels.len(), 1);
+        assert_eq!(channels[0].name, "Canal Notícias");
+        assert_eq!(channels[0].url, "http://a/1");
     }
 
     #[test]
@@ -201,7 +246,7 @@ http://nogroup.example.com
     }
 
     #[test]
-    fn display_name_is_after_last_comma() {
+    fn display_name_skips_commas_inside_attributes() {
         let input = "#EXTINF:-1 tvg-id=\"x,y\",Real Name\nhttp://u.example.com\n";
         let channels = parse_m3u_content(input);
         assert_eq!(channels[0].name, "Real Name");
