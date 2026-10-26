@@ -127,7 +127,14 @@ mod tests {
         );
         let svg = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
             .join(format!("resources/icons/hicolor/symbolic/apps/{icon}.svg"));
-        assert!(svg.is_file(), "{} is missing", svg.display());
+        let head = std::fs::read(&svg).unwrap();
+        // gdk-pixbuf tells an SVG by `<svg` near the top: anything long
+        // before it (a comment) makes the panel fail to load the icon.
+        assert!(
+            head.windows(4).take(256).any(|w| w == b"<svg"),
+            "{} must open its <svg> element within the first 256 bytes",
+            svg.display()
+        );
         let recipe = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
             .join("../../big-audio-player/PKGBUILD");
         let recipe = std::fs::read_to_string(&recipe).unwrap();
