@@ -102,6 +102,23 @@ impl MpvBackend {
         }
     }
 
+    /// Load `path` in place of the playlist, shown as `title` (an IPTV
+    /// channel's name, where the URL ends in `560.m3u8`). Per-file option:
+    /// the next file has its own title again.
+    pub fn load_file_titled(&self, path: &str, title: &str) {
+        self.loading.store(true, Ordering::Relaxed);
+        // `%N%` takes the next N bytes as they are: a comma or `=` in the
+        // name stays in it.
+        let options = format!("force-media-title=%{}%{title}", title.len());
+        if let Err(error) = self.queue_command("loadfile", &[path, "replace", "-1", &options]) {
+            self.loading.store(false, Ordering::Relaxed);
+            error!(
+                "Failed to load {}: {error}",
+                big_os_kit::url::MediaLogTarget(path)
+            );
+        }
+    }
+
     pub fn load_file_append(&self, path: &str) {
         if let Err(e) = self.queue_command("loadfile", &[path, "append-play"]) {
             error!(

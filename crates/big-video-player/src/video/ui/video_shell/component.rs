@@ -672,7 +672,7 @@ impl Component for VideoShell {
                 VideoShellInput::Convert => {
                     self.open_in_converter(converter_handoff::VIDEO_CONVERTER, &[]);
                 }
-                VideoShellInput::Iptv(out) => VideoShell::on_iptv(out, &sender),
+                VideoShellInput::Iptv(out) => self.on_iptv(out),
                 VideoShellInput::ShowIptvBrowser => {
                     if let Some(root) = window_ref {
                         self.show_iptv_browser(root);

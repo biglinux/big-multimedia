@@ -179,6 +179,9 @@ impl Component for VideoIptvBrowser {
             .margin_bottom(12)
             .build();
         let list_view = ChannelListView::new(sender.clone());
+        list_view.status.set_margin_start(12);
+        list_view.status.set_margin_end(12);
+        root.append(&list_view.status);
         scrolled.set_child(Some(&list_view.root));
         root.append(&scrolled);
 

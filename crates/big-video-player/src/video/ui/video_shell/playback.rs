@@ -673,12 +673,38 @@ impl VideoShell {
 
     /// Route an IPTV browser intent: play the selected channel URL through the
     /// existing playback path (replaces the playlist with the single stream).
-    pub(super) fn on_iptv(out: VideoIptvBrowserOutput, sender: &ComponentSender<VideoShell>) {
+    pub(super) fn on_iptv(&mut self, out: VideoIptvBrowserOutput) {
         match out {
-            VideoIptvBrowserOutput::PlayChannel { url, .. } => {
-                sender.input(VideoShellInput::OpenFiles(vec![url]));
-            }
+            VideoIptvBrowserOutput::PlayChannel { url, title } => self.play_stream(url, &title),
         }
+    }
+
+    /// Play one stream under its own name: an IPTV channel. It replaces the
+    /// playlist, like opening a URL, and nothing on disk is resolved for it.
+    fn play_stream(&mut self, url: String, title: &str) {
+        // A folder scan still running must not replace the channel.
+        self.open_generation += 1;
+        if let Some(start_video) = self.video_start.take() {
+            start_video();
+        }
+        let Some(mpv) = self.mpv.borrow().clone() else {
+            return;
+        };
+        if title.is_empty() {
+            mpv.load_file(&url);
+        } else {
+            mpv.load_file_titled(&url, title);
+        }
+        mpv.play();
+        self.shuffle_on_load = None;
+        self.playlist_paths = vec![url.clone()];
+        self.playlist.emit(VideoBrowserSidebarInput::SetQueue(
+            self.playlist_paths.clone(),
+        ));
+        self.playlist.emit(VideoBrowserSidebarInput::SetPlaylist {
+            paths: vec![url],
+            folder: None,
+        });
     }
 
     /// Drive mpv from a controls-bar intent.
@@ -760,7 +786,9 @@ fn resolve_open_files(
         return None;
     }
 
-    if paths.len() == 1 && playlist::is_playlist_file(&paths[0]) {
+    // A playlist file on disk; an HLS stream ends in .m3u8 too, and it is
+    // played, not read as a file: every IPTV channel was one.
+    if paths.len() == 1 && !is_remote_uri(&paths[0]) && playlist::is_playlist_file(&paths[0]) {
         let parsed = playlist::parse_playlist_file(&paths[0]);
         if parsed.is_empty() {
             return None;
@@ -802,14 +830,17 @@ fn resolve_open_files(
     Some((media, 0, None))
 }
 
+/// Streams and discs: what mpv opens by URL, never a path on disk. Schemes
+/// are case-insensitive; IPTV lists use the UDP, RTP, SRT and MMS ones too.
 pub(crate) fn is_remote_uri(s: &str) -> bool {
-    let s = s.trim();
-    s.starts_with("http://")
-        || s.starts_with("https://")
-        || s.starts_with("rtsp://")
-        || s.starts_with("rtmp://")
-        || s.starts_with("dvd://")
-        || s.starts_with("bd://")
+    const SCHEMES: [&str; 12] = [
+        "http", "https", "rtsp", "rtsps", "rtmp", "rtmps", "udp", "rtp", "srt", "mms", "dvd", "bd",
+    ];
+    s.trim().split_once("://").is_some_and(|(scheme, _)| {
+        SCHEMES
+            .iter()
+            .any(|known| scheme.eq_ignore_ascii_case(known))
+    })
 }
 
 /// Seek-bar fraction for `pos` within a clip of `duration` seconds, clamped to
@@ -914,6 +945,21 @@ mod resolve_open_files_tests {
             resolve_by_name(vec!["rtsp://host/stream".to_string()]),
             Some((vec!["rtsp://host/stream".to_string()], 0, None))
         );
+    }
+
+    #[test]
+    fn an_hls_stream_plays_instead_of_being_read_as_a_playlist() {
+        for url in [
+            "http://host/live/u/p/560.m3u8",
+            "HTTPS://host/list.m3u",
+            "udp://@239.0.0.1:1234",
+        ] {
+            assert_eq!(
+                resolve_by_name(vec![url.to_string()]),
+                Some((vec![url.to_string()], 0, None)),
+                "{url}"
+            );
+        }
     }
 
     #[test]

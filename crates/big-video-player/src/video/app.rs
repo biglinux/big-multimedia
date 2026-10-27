@@ -108,10 +108,21 @@ impl Application {
         if std::env::args().any(|a| a == "--new-window") {
             flags |= gio::ApplicationFlags::NON_UNIQUE;
         }
-        glib::Object::builder()
+        let app: Self = glib::Object::builder()
             .property("application-id", config::video::APP_ID)
             .property("flags", flags)
-            .build()
+            .build();
+        // Read above, before the flags are set; registered so the option
+        // parser accepts it instead of refusing to start.
+        app.add_main_option(
+            "new-window",
+            glib::Char::from(0),
+            glib::OptionFlags::NONE,
+            glib::OptionArg::None,
+            "Open a separate player window instead of using the running one",
+            None,
+        );
+        app
     }
 
     pub fn run(&self) -> glib::ExitCode {
