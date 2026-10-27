@@ -47,7 +47,7 @@ mod imp {
             if !paths.is_empty() {
                 crate::video::ui::video_shell::mark_opening_files();
             }
-            self.obj().activate();
+            crate::shared::app_base::present_for_open(self.obj().upcast_ref());
             crate::open_paths(paths);
         }
 

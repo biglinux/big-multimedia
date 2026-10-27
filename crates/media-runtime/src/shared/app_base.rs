@@ -218,6 +218,21 @@ pub fn apply_startup_color_scheme(
     theming::apply_color_scheme(&settings.get_string(color_source_key));
 }
 
+/// Bring the player forward for files opened from outside: present its
+/// window while the open request is being handled, when GTK still holds the
+/// activation token that came with it (from the file manager, say), so the
+/// desktop gives it focus. `activate()` would emit this process's own platform
+/// data first, swapping in the token the player was started with, long
+/// spent: the window then stayed behind. Without a window yet, `activate()`
+/// builds and shows it.
+pub fn present_for_open(app: &gtk::Application) {
+    use gtk::prelude::*;
+    match app.active_window() {
+        Some(window) => window.present(),
+        None => app.activate(),
+    }
+}
+
 /// KDE Plasma's `icon:minimize,maximize,close` makes AdwHeaderBar render
 /// the app icon, which libadwaita apps never show. Strip the token.
 pub fn strip_decoration_icon() {
