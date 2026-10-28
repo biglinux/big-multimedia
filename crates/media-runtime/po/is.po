@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: big-media-runtime 0.1.0\n"
 "Report-Msgid-Bugs-To: https://github.com/biglinux/big-multimedia/issues\n"
-"POT-Creation-Date: 2026-10-26 14:38-0300\n"
+"POT-Creation-Date: 2026-10-26 19:32-0300\n"
 "PO-Revision-Date: 2026-10-23 00:15-0300\n"
 "Last-Translator: Automatically generated\n"
 "Language-Team: none\n"
@@ -239,7 +239,7 @@ msgstr "Víxla endurtekningu af/á"
 
 #: crates/big-audio-player/src/audio/keybindings.rs:129
 #: crates/big-video-player/src/video/ui/video_shell/panel.rs:548
-#: crates/big-video-player/src/video/ui/video_shell/playback.rs:439
+#: crates/big-video-player/src/video/ui/video_shell/playback.rs:491
 msgid "Undo"
 msgstr "Afturkalla"
 
@@ -466,22 +466,22 @@ msgid "Cancel Timer"
 msgstr "Hætta við tímamæli"
 
 #: crates/big-audio-player/src/audio/ui/audio_shell/chrome.rs:268
-#: crates/big-video-player/src/video/ui/menu_dialogs.rs:255
+#: crates/big-video-player/src/video/ui/menu_dialogs.rs:265
 msgid "Sleep timer: closing player"
 msgstr "Svefntímamælir: loka spilaranum"
 
 #: crates/big-audio-player/src/audio/ui/audio_shell/chrome.rs:276
-#: crates/big-video-player/src/video/ui/menu_dialogs.rs:263
+#: crates/big-video-player/src/video/ui/menu_dialogs.rs:273
 msgid "Sleep timer: suspending computer"
 msgstr "Svefntímamælir: set tölvuna í biðstöðu"
 
 #: crates/big-audio-player/src/audio/ui/audio_shell/chrome.rs:288
-#: crates/big-video-player/src/video/ui/menu_dialogs.rs:275
+#: crates/big-video-player/src/video/ui/menu_dialogs.rs:285
 msgid "Sleep timer: shutting down"
 msgstr "Svefntímamælir: slekk á tölvunni"
 
 #: crates/big-audio-player/src/audio/ui/audio_shell/chrome.rs:299
-#: crates/big-video-player/src/video/ui/menu_dialogs.rs:286
+#: crates/big-video-player/src/video/ui/menu_dialogs.rs:296
 msgid "Sleep timer: playback paused"
 msgstr "Svefntímamælir: afspilun sett í bið"
 
@@ -500,8 +500,8 @@ msgstr "Sía skrár…"
 #: crates/big-audio-player/src/audio/ui/audio_shell/component.rs:144
 #: crates/big-audio-player/src/audio/ui/audio_shell/component.rs:171
 #: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/header.rs:22
-#: crates/big-video-player/src/video/ui/video_shell/component.rs:280
 #: crates/big-video-player/src/video/ui/video_shell/component.rs:284
+#: crates/big-video-player/src/video/ui/video_shell/component.rs:288
 msgid "Files"
 msgstr "Skrár"
 
@@ -542,7 +542,7 @@ msgid "Retry saving"
 msgstr "Reyna að vista aftur"
 
 #: crates/big-audio-player/src/audio/ui/audio_shell/engine.rs:33
-#: crates/big-video-player/src/video/ui/video_shell/playback.rs:176
+#: crates/big-video-player/src/video/ui/video_shell/playback.rs:186
 msgid "Could not play this file — it may be unsupported or corrupt."
 msgstr "Ekki var hægt að spila þessa skrá — hún gæti verið óstudd eða skemmd."
 
@@ -552,12 +552,12 @@ msgid "No local track is playing"
 msgstr "Ekkert staðbundið lag er í spilun"
 
 #: crates/big-audio-player/src/audio/ui/audio_shell/export.rs:128
-#: crates/big-video-player/src/video/ui/video_shell/trim/run.rs:215
+#: crates/big-video-player/src/video/ui/video_shell/trim/run.rs:216
 msgid "Start (seconds)"
 msgstr "Byrjun (sekúndur)"
 
 #: crates/big-audio-player/src/audio/ui/audio_shell/export.rs:133
-#: crates/big-video-player/src/video/ui/video_shell/trim/run.rs:219
+#: crates/big-video-player/src/video/ui/video_shell/trim/run.rs:220
 msgid "End (seconds)"
 msgstr "Endir (sekúndur)"
 
@@ -590,18 +590,18 @@ msgstr "Breyta klippingu"
 #: crates/big-audio-player/src/audio/ui/unavailable_dialog.rs:258
 #: crates/big-video-player/src/video/ui/iptv/providers_dialog.rs:168
 #: crates/big-video-player/src/video/ui/menu_dialogs.rs:72
-#: crates/big-video-player/src/video/ui/video_browser_sidebar/fileops.rs:200
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/fileops.rs:210
 #: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:173
 #: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:257
 #: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:381
-#: crates/big-video-player/src/video/ui/video_shell/trim/run.rs:258
+#: crates/big-video-player/src/video/ui/video_shell/trim/run.rs:259
 #: crates/ui/media/big-player-ui/src/podcast_panel.rs:571
 #: crates/ui/media/big-player-ui/src/radio_panel/widgets.rs:351
 msgid "Cancel"
 msgstr "Hætta við"
 
 #: crates/big-audio-player/src/audio/ui/audio_shell/export.rs:161
-#: crates/big-video-player/src/video/ui/video_shell/trim/run.rs:258
+#: crates/big-video-player/src/video/ui/video_shell/trim/run.rs:259
 msgid "Apply"
 msgstr "Virkja"
 
@@ -1084,8 +1084,8 @@ msgstr ""
 "voru látnar halda sér; veldu nýtt heiti og reyndu aftur."
 
 #: crates/big-audio-player/src/audio/ui/library_io.rs:112
-#: crates/big-video-player/src/video/ui/menu_dialogs.rs:339
-#: crates/big-video-player/src/video/ui/video_shell/component.rs:265
+#: crates/big-video-player/src/video/ui/menu_dialogs.rs:349
+#: crates/big-video-player/src/video/ui/video_shell/component.rs:269
 #: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:257
 msgid "Open"
 msgstr "Opna"
@@ -1337,8 +1337,8 @@ msgstr "Skoðaðu útvarp og hlaðvörp í flipunum á hliðarstikunni"
 #: crates/big-audio-player/src/audio/ui/playlist_panel.rs:401
 #: crates/big-video-player/src/video/ui/appearance/layout/buttons_page.rs:42
 #: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/header.rs:24
-#: crates/big-video-player/src/video/ui/video_shell/component.rs:287
 #: crates/big-video-player/src/video/ui/video_shell/component.rs:291
+#: crates/big-video-player/src/video/ui/video_shell/component.rs:295
 #: crates/big-video-player/src/video/ui/video_shell/playlist_panel.rs:24
 msgid "Playlist"
 msgstr "Spilunarlisti"
@@ -1573,7 +1573,7 @@ msgid "Rename Playlist"
 msgstr "Endurnefna spilunarlista"
 
 #: crates/big-audio-player/src/audio/ui/playlist_library_dialog/spec.rs:205
-#: crates/big-video-player/src/video/ui/video_browser_sidebar/fileops.rs:193
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/fileops.rs:203
 msgid "New name"
 msgstr "Nýtt heiti"
 
@@ -1927,8 +1927,8 @@ msgid "Media information"
 msgstr "Miðlaupplýsingar"
 
 #: crates/big-video-player/src/video/ui/appearance/layout/buttons_page.rs:28
-#: crates/big-video-player/src/video/ui/video_shell/component.rs:256
 #: crates/big-video-player/src/video/ui/video_shell/component.rs:260
+#: crates/big-video-player/src/video/ui/video_shell/component.rs:264
 msgid "Keep Above"
 msgstr "Halda efst"
 
@@ -2354,18 +2354,18 @@ msgstr "Dofnun"
 msgid "Toggle favorite"
 msgstr "Víxla eftirlæti af/á"
 
-#: crates/big-video-player/src/video/ui/iptv/channel_list.rs:157
+#: crates/big-video-player/src/video/ui/iptv/channel_list.rs:158
 msgid "No channels"
 msgstr "Engar rásir"
 
-#: crates/big-video-player/src/video/ui/iptv/channel_list.rs:165
+#: crates/big-video-player/src/video/ui/iptv/channel_list.rs:166
 #, rust-format
 msgid "{} channel"
 msgid_plural "{} channels"
 msgstr[0] "{} rás"
 msgstr[1] "{} rásir"
 
-#: crates/big-video-player/src/video/ui/iptv/channel_list.rs:212
+#: crates/big-video-player/src/video/ui/iptv/channel_list.rs:213
 #: crates/ui/media/big-player-ui/src/radio_panel/methods.rs:126
 msgid "Ungrouped"
 msgstr "Án hóps"
@@ -2405,10 +2405,53 @@ msgstr "Endurhleð rásir…"
 msgid "Loading channels…"
 msgstr "Hleð rásum…"
 
-#: crates/big-video-player/src/video/ui/iptv/mod.rs:324
-msgid "Could not reach provider — showing cached copy if available."
+#: crates/big-video-player/src/video/ui/iptv/mod.rs:337
+msgid ""
+"Could not reach the provider. Check the address and your connection; a saved "
+"list stays on screen."
 msgstr ""
-"Næ ekki sambandi við veituna — sýni afrit úr skyndiminni ef það er til."
+"Ekki náðist samband við veituna. Athugaðu vistfangið og tenginguna; vistaður "
+"listi helst á skjánum."
+
+#: crates/big-video-player/src/video/ui/iptv/mod.rs:340
+msgid ""
+"The provider refused access. Check the user name and password, or the User-"
+"Agent the provider asks for."
+msgstr ""
+"Veitan neitaði aðgangi. Athugaðu notandanafn og lykilorð, eða User-Agent sem "
+"veitan biður um."
+
+#: crates/big-video-player/src/video/ui/iptv/mod.rs:343
+#, rust-format
+msgid "The provider's server failed (error {}). Try again later."
+msgstr "Netþjónn veitunnar bilaði (villa {}). Reyndu aftur síðar."
+
+#: crates/big-video-player/src/video/ui/iptv/mod.rs:347
+#, rust-format
+msgid "The provider answered with error {}."
+msgstr "Veitan svaraði með villu {}."
+
+#: crates/big-video-player/src/video/ui/iptv/mod.rs:349
+#, rust-format
+msgid "The channel list is larger than {} MB."
+msgstr "Rásalistinn er stærri en {} MB."
+
+#: crates/big-video-player/src/video/ui/iptv/mod.rs:353
+msgid "The provider sent no channels."
+msgstr "Veitan sendi engar rásir."
+
+#: crates/big-video-player/src/video/ui/iptv/mod.rs:354
+msgid "The provider rejected the user name or password."
+msgstr "Veitan hafnaði notandanafninu eða lykilorðinu."
+
+#: crates/big-video-player/src/video/ui/iptv/mod.rs:356
+#, rust-format
+msgid "This account is not active (the provider says: {})."
+msgstr "Þessi reikningur er ekki virkur (veitan segir: {})."
+
+#: crates/big-video-player/src/video/ui/iptv/mod.rs:358
+msgid "Could not read the playlist file."
+msgstr "Ekki tókst að lesa spilunarlistaskrána."
 
 #: crates/big-video-player/src/video/ui/iptv/providers_dialog.rs:44
 msgid "Add provider"
@@ -2799,21 +2842,21 @@ msgstr "Biðröð skjámynda er full; bíddu eftir biðandi myndatökum"
 #: crates/big-video-player/src/video/ui/menu_dialogs.rs:134
 #: crates/big-video-player/src/video/ui/menu_dialogs.rs:138
 #: crates/big-video-player/src/video/ui/menu_dialogs.rs:149
-#: crates/big-video-player/src/video/ui/video_shell/component.rs:728
-#: crates/big-video-player/src/video/ui/video_shell/playback.rs:153
+#: crates/big-video-player/src/video/ui/video_shell/component.rs:738
+#: crates/big-video-player/src/video/ui/video_shell/playback.rs:163
 msgid "Screenshot failed"
 msgstr "Skjámynd mistókst"
 
-#: crates/big-video-player/src/video/ui/menu_dialogs.rs:314
-#: crates/media-runtime/src/player/mpv_backend/backend/mod.rs:292
+#: crates/big-video-player/src/video/ui/menu_dialogs.rs:324
+#: crates/media-runtime/src/player/mpv_backend/backend/mod.rs:301
 msgid "Chapter"
 msgstr "Kafli"
 
-#: crates/big-video-player/src/video/ui/menu_dialogs.rs:335
+#: crates/big-video-player/src/video/ui/menu_dialogs.rs:345
 msgid "Screenshot saved"
 msgstr "Skjámynd vistuð"
 
-#: crates/big-video-player/src/video/ui/menu_dialogs.rs:337
+#: crates/big-video-player/src/video/ui/menu_dialogs.rs:347
 msgid "Screenshot saved; disk synchronization could not be confirmed"
 msgstr "Skjámynd vistuð; ekki var hægt að staðfesta samstillingu við disk"
 
@@ -3583,36 +3626,36 @@ msgstr "Færa í möppu…"
 msgid "Done"
 msgstr "Lokið"
 
-#: crates/big-video-player/src/video/ui/video_browser_sidebar/fileops.rs:144
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/fileops.rs:154
 msgid "Move to Folder"
 msgstr "Færa í möppu"
 
-#: crates/big-video-player/src/video/ui/video_browser_sidebar/fileops.rs:161
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/fileops.rs:171
 msgid "moved"
 msgstr "fært"
 
-#: crates/big-video-player/src/video/ui/video_browser_sidebar/fileops.rs:183
-#: crates/big-video-player/src/video/ui/video_browser_sidebar/fileops.rs:200
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/fileops.rs:193
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/fileops.rs:210
 msgid "Rename"
 msgstr "Endurnefna"
 
-#: crates/big-video-player/src/video/ui/video_browser_sidebar/fileops.rs:189
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/fileops.rs:199
 msgid "Choose a new file name."
 msgstr "Veldu nýtt skráarheiti."
 
-#: crates/big-video-player/src/video/ui/video_browser_sidebar/fileops.rs:232
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/fileops.rs:242
 msgid "Invalid name"
 msgstr "Ógilt heiti"
 
-#: crates/big-video-player/src/video/ui/video_browser_sidebar/fileops.rs:248
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/fileops.rs:258
 msgid "A file with that name already exists"
 msgstr "Skrá með þessu heiti er þegar til"
 
-#: crates/big-video-player/src/video/ui/video_browser_sidebar/fileops.rs:255
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/fileops.rs:265
 msgid "Rename failed"
 msgstr "Endurnefning mistókst"
 
-#: crates/big-video-player/src/video/ui/video_browser_sidebar/fileops.rs:349
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/fileops.rs:359
 #, rust-format
 msgid "{ok} {verb}, {failed} failed"
 msgstr "{ok} {verb}, {failed} mistókust"
@@ -3812,7 +3855,7 @@ msgid "Drop a file or open one to start"
 msgstr "Slepptu skrá eða opnaðu eina til að byrja"
 
 #: crates/big-video-player/src/video/ui/video_shell/actions.rs:132
-#: crates/big-video-player/src/video/ui/video_shell/component.rs:849
+#: crates/big-video-player/src/video/ui/video_shell/component.rs:864
 msgid "Open Recent"
 msgstr "Opna nýlegt"
 
@@ -3952,21 +3995,21 @@ msgstr "Í sjónvarpinu"
 msgid "The TV is still playing"
 msgstr "Sjónvarpið er enn að spila"
 
-#: crates/big-video-player/src/video/ui/video_shell/component.rs:848
+#: crates/big-video-player/src/video/ui/video_shell/component.rs:863
 #: crates/big-video-player/src/video/ui/video_shell/input_gestures.rs:121
 msgid "Open File…"
 msgstr "Opna skrá…"
 
-#: crates/big-video-player/src/video/ui/video_shell/component.rs:850
+#: crates/big-video-player/src/video/ui/video_shell/component.rs:865
 #: crates/big-video-player/src/video/ui/video_shell/input_gestures.rs:122
 msgid "Open URL…"
 msgstr "Opna slóð…"
 
-#: crates/big-video-player/src/video/ui/video_shell/component.rs:851
+#: crates/big-video-player/src/video/ui/video_shell/component.rs:866
 msgid "Open Disc…"
 msgstr "Opna disk…"
 
-#: crates/big-video-player/src/video/ui/video_shell/component.rs:852
+#: crates/big-video-player/src/video/ui/video_shell/component.rs:867
 msgid "TV Channels (IPTV)…"
 msgstr "Sjónvarpsrásir (IPTV)…"
 
@@ -4172,19 +4215,19 @@ msgstr "Leita í nýlegum skrám"
 msgid "No recent file matches"
 msgstr "Engin nýleg skrá passar"
 
-#: crates/big-video-player/src/video/ui/video_shell/playback.rs:158
+#: crates/big-video-player/src/video/ui/video_shell/playback.rs:168
 msgid "Screenshot timed out; cancellation requested"
 msgstr "Skjámynd rann út á tíma; beðið var um afturköllun"
 
-#: crates/big-video-player/src/video/ui/video_shell/playback.rs:204
+#: crates/big-video-player/src/video/ui/video_shell/playback.rs:214
 msgid "Playing video"
 msgstr "Spila myndskeið"
 
-#: crates/big-video-player/src/video/ui/video_shell/playback.rs:427
+#: crates/big-video-player/src/video/ui/video_shell/playback.rs:479
 msgid "Could not move to trash"
 msgstr "Ekki var hægt að færa í ruslið"
 
-#: crates/big-video-player/src/video/ui/video_shell/playback.rs:433
+#: crates/big-video-player/src/video/ui/video_shell/playback.rs:485
 #, rust-format
 msgid "{} file moved to trash"
 msgid_plural "{} files moved to trash"
@@ -4274,20 +4317,20 @@ msgstr "Fjarlægja þessa klippingu"
 msgid "Open a local video to cut it"
 msgstr "Opnaðu staðbundið myndskeið til að klippa það"
 
-#: crates/big-video-player/src/video/ui/video_shell/trim/run.rs:218
-#: crates/big-video-player/src/video/ui/video_shell/trim/run.rs:222
+#: crates/big-video-player/src/video/ui/video_shell/trim/run.rs:219
+#: crates/big-video-player/src/video/ui/video_shell/trim/run.rs:223
 msgid "s"
 msgstr "s"
 
-#: crates/big-video-player/src/video/ui/video_shell/trim/run.rs:238
+#: crates/big-video-player/src/video/ui/video_shell/trim/run.rs:239
 msgid "Cut times"
 msgstr "Klippitímar"
 
-#: crates/big-video-player/src/video/ui/video_shell/trim/run.rs:243
+#: crates/big-video-player/src/video/ui/video_shell/trim/run.rs:244
 msgid "Hundredth-second precision; either order is fine"
 msgstr "Nákvæmni upp á hundraðshluta úr sekúndu; röðin skiptir ekki máli"
 
-#: crates/big-video-player/src/video/ui/video_shell/trim/run.rs:253
+#: crates/big-video-player/src/video/ui/video_shell/trim/run.rs:254
 msgid "Edit Cut"
 msgstr "Breyta klippingu"
 
@@ -5411,3 +5454,7 @@ msgstr "Skannaðu kóðann með myndavél símans."
 #: crates/ui/media/big-player-ui/src/smartphone/dialog.rs:149
 msgid "Could not start server"
 msgstr "Ekki var hægt að ræsa netþjón"
+
+#~ msgid "Could not reach provider — showing cached copy if available."
+#~ msgstr ""
+#~ "Næ ekki sambandi við veituna — sýni afrit úr skyndiminni ef það er til."

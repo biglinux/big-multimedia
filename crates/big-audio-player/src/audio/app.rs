@@ -126,7 +126,7 @@ mod imp {
         fn open(&self, files: &[gio::File], _hint: &str) {
             // Show the relm4-managed window, then deliver opened files through
             // the shell's thread-local broker.
-            self.obj().activate();
+            crate::shared::app_base::present_for_open(self.obj().upcast_ref());
             if let Some(message) = open_files_message(files) {
                 crate::audio::ui::audio_shell::send_to_shell(message);
             }

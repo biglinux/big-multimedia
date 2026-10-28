@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: big-media-runtime 0.1.0\n"
 "Report-Msgid-Bugs-To: https://github.com/biglinux/big-multimedia/issues\n"
-"POT-Creation-Date: 2026-10-26 14:38-0300\n"
+"POT-Creation-Date: 2026-10-26 19:32-0300\n"
 "PO-Revision-Date: 2026-10-23 00:15-0300\n"
 "Last-Translator: Automatically generated\n"
 "Language-Team: none\n"
@@ -238,7 +238,7 @@ msgstr "החלפת מצב חזרה"
 
 #: crates/big-audio-player/src/audio/keybindings.rs:129
 #: crates/big-video-player/src/video/ui/video_shell/panel.rs:548
-#: crates/big-video-player/src/video/ui/video_shell/playback.rs:439
+#: crates/big-video-player/src/video/ui/video_shell/playback.rs:491
 msgid "Undo"
 msgstr "ביטול"
 
@@ -465,22 +465,22 @@ msgid "Cancel Timer"
 msgstr "ביטול המתזמן"
 
 #: crates/big-audio-player/src/audio/ui/audio_shell/chrome.rs:268
-#: crates/big-video-player/src/video/ui/menu_dialogs.rs:255
+#: crates/big-video-player/src/video/ui/menu_dialogs.rs:265
 msgid "Sleep timer: closing player"
 msgstr "מתזמן שינה: הנגן נסגר"
 
 #: crates/big-audio-player/src/audio/ui/audio_shell/chrome.rs:276
-#: crates/big-video-player/src/video/ui/menu_dialogs.rs:263
+#: crates/big-video-player/src/video/ui/menu_dialogs.rs:273
 msgid "Sleep timer: suspending computer"
 msgstr "מתזמן שינה: המחשב עובר להשהיה"
 
 #: crates/big-audio-player/src/audio/ui/audio_shell/chrome.rs:288
-#: crates/big-video-player/src/video/ui/menu_dialogs.rs:275
+#: crates/big-video-player/src/video/ui/menu_dialogs.rs:285
 msgid "Sleep timer: shutting down"
 msgstr "מתזמן שינה: מכבה את המחשב"
 
 #: crates/big-audio-player/src/audio/ui/audio_shell/chrome.rs:299
-#: crates/big-video-player/src/video/ui/menu_dialogs.rs:286
+#: crates/big-video-player/src/video/ui/menu_dialogs.rs:296
 msgid "Sleep timer: playback paused"
 msgstr "מתזמן שינה: הניגון הושהה"
 
@@ -499,8 +499,8 @@ msgstr "סינון קבצים…"
 #: crates/big-audio-player/src/audio/ui/audio_shell/component.rs:144
 #: crates/big-audio-player/src/audio/ui/audio_shell/component.rs:171
 #: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/header.rs:22
-#: crates/big-video-player/src/video/ui/video_shell/component.rs:280
 #: crates/big-video-player/src/video/ui/video_shell/component.rs:284
+#: crates/big-video-player/src/video/ui/video_shell/component.rs:288
 msgid "Files"
 msgstr "קבצים"
 
@@ -539,7 +539,7 @@ msgid "Retry saving"
 msgstr "ניסיון נוסף לשמירה"
 
 #: crates/big-audio-player/src/audio/ui/audio_shell/engine.rs:33
-#: crates/big-video-player/src/video/ui/video_shell/playback.rs:176
+#: crates/big-video-player/src/video/ui/video_shell/playback.rs:186
 msgid "Could not play this file — it may be unsupported or corrupt."
 msgstr "לא ניתן לנגן קובץ זה — ייתכן שהוא אינו נתמך או שהוא פגום."
 
@@ -549,12 +549,12 @@ msgid "No local track is playing"
 msgstr "אין רצועה מקומית מתנגנת"
 
 #: crates/big-audio-player/src/audio/ui/audio_shell/export.rs:128
-#: crates/big-video-player/src/video/ui/video_shell/trim/run.rs:215
+#: crates/big-video-player/src/video/ui/video_shell/trim/run.rs:216
 msgid "Start (seconds)"
 msgstr "התחלה (שניות)"
 
 #: crates/big-audio-player/src/audio/ui/audio_shell/export.rs:133
-#: crates/big-video-player/src/video/ui/video_shell/trim/run.rs:219
+#: crates/big-video-player/src/video/ui/video_shell/trim/run.rs:220
 msgid "End (seconds)"
 msgstr "סיום (שניות)"
 
@@ -587,18 +587,18 @@ msgstr "עריכת החיתוך"
 #: crates/big-audio-player/src/audio/ui/unavailable_dialog.rs:258
 #: crates/big-video-player/src/video/ui/iptv/providers_dialog.rs:168
 #: crates/big-video-player/src/video/ui/menu_dialogs.rs:72
-#: crates/big-video-player/src/video/ui/video_browser_sidebar/fileops.rs:200
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/fileops.rs:210
 #: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:173
 #: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:257
 #: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:381
-#: crates/big-video-player/src/video/ui/video_shell/trim/run.rs:258
+#: crates/big-video-player/src/video/ui/video_shell/trim/run.rs:259
 #: crates/ui/media/big-player-ui/src/podcast_panel.rs:571
 #: crates/ui/media/big-player-ui/src/radio_panel/widgets.rs:351
 msgid "Cancel"
 msgstr "ביטול"
 
 #: crates/big-audio-player/src/audio/ui/audio_shell/export.rs:161
-#: crates/big-video-player/src/video/ui/video_shell/trim/run.rs:258
+#: crates/big-video-player/src/video/ui/video_shell/trim/run.rs:259
 msgid "Apply"
 msgstr "החלה"
 
@@ -1062,8 +1062,8 @@ msgstr ""
 "ונסו שוב."
 
 #: crates/big-audio-player/src/audio/ui/library_io.rs:112
-#: crates/big-video-player/src/video/ui/menu_dialogs.rs:339
-#: crates/big-video-player/src/video/ui/video_shell/component.rs:265
+#: crates/big-video-player/src/video/ui/menu_dialogs.rs:349
+#: crates/big-video-player/src/video/ui/video_shell/component.rs:269
 #: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:257
 msgid "Open"
 msgstr "פתיחה"
@@ -1308,8 +1308,8 @@ msgstr "גלו רדיו ופודקאסטים בלשוניות סרגל הצד"
 #: crates/big-audio-player/src/audio/ui/playlist_panel.rs:401
 #: crates/big-video-player/src/video/ui/appearance/layout/buttons_page.rs:42
 #: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/header.rs:24
-#: crates/big-video-player/src/video/ui/video_shell/component.rs:287
 #: crates/big-video-player/src/video/ui/video_shell/component.rs:291
+#: crates/big-video-player/src/video/ui/video_shell/component.rs:295
 #: crates/big-video-player/src/video/ui/video_shell/playlist_panel.rs:24
 msgid "Playlist"
 msgstr "רשימת השמעה"
@@ -1542,7 +1542,7 @@ msgid "Rename Playlist"
 msgstr "שינוי שם רשימת השמעה"
 
 #: crates/big-audio-player/src/audio/ui/playlist_library_dialog/spec.rs:205
-#: crates/big-video-player/src/video/ui/video_browser_sidebar/fileops.rs:193
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/fileops.rs:203
 msgid "New name"
 msgstr "שם חדש"
 
@@ -1894,8 +1894,8 @@ msgid "Media information"
 msgstr "מידע על המדיה"
 
 #: crates/big-video-player/src/video/ui/appearance/layout/buttons_page.rs:28
-#: crates/big-video-player/src/video/ui/video_shell/component.rs:256
 #: crates/big-video-player/src/video/ui/video_shell/component.rs:260
+#: crates/big-video-player/src/video/ui/video_shell/component.rs:264
 msgid "Keep Above"
 msgstr "שמירה מעל האחרים"
 
@@ -2317,18 +2317,18 @@ msgstr "דעיכה"
 msgid "Toggle favorite"
 msgstr "החלפת מצב מועדף"
 
-#: crates/big-video-player/src/video/ui/iptv/channel_list.rs:157
+#: crates/big-video-player/src/video/ui/iptv/channel_list.rs:158
 msgid "No channels"
 msgstr "אין ערוצים"
 
-#: crates/big-video-player/src/video/ui/iptv/channel_list.rs:165
+#: crates/big-video-player/src/video/ui/iptv/channel_list.rs:166
 #, rust-format
 msgid "{} channel"
 msgid_plural "{} channels"
 msgstr[0] "ערוץ {}"
 msgstr[1] "{} ערוצים"
 
-#: crates/big-video-player/src/video/ui/iptv/channel_list.rs:212
+#: crates/big-video-player/src/video/ui/iptv/channel_list.rs:213
 #: crates/ui/media/big-player-ui/src/radio_panel/methods.rs:126
 msgid "Ungrouped"
 msgstr "ללא קבוצה"
@@ -2368,9 +2368,52 @@ msgstr "טוען מחדש את הערוצים…"
 msgid "Loading channels…"
 msgstr "טוען ערוצים…"
 
-#: crates/big-video-player/src/video/ui/iptv/mod.rs:324
-msgid "Could not reach provider — showing cached copy if available."
-msgstr "לא ניתן להגיע לספק — מוצג עותק מהמטמון אם קיים."
+#: crates/big-video-player/src/video/ui/iptv/mod.rs:337
+msgid ""
+"Could not reach the provider. Check the address and your connection; a saved "
+"list stays on screen."
+msgstr ""
+"לא ניתן להגיע אל הספק. בדקו את הכתובת ואת החיבור שלכם; רשימה שמורה תישאר על "
+"המסך."
+
+#: crates/big-video-player/src/video/ui/iptv/mod.rs:340
+msgid ""
+"The provider refused access. Check the user name and password, or the User-"
+"Agent the provider asks for."
+msgstr ""
+"הספק סירב לגישה. בדקו את שם המשתמש והסיסמה, או את ה-User-Agent שהספק דורש."
+
+#: crates/big-video-player/src/video/ui/iptv/mod.rs:343
+#, rust-format
+msgid "The provider's server failed (error {}). Try again later."
+msgstr "השרת של הספק נכשל (שגיאה {}). נסו שוב מאוחר יותר."
+
+#: crates/big-video-player/src/video/ui/iptv/mod.rs:347
+#, rust-format
+msgid "The provider answered with error {}."
+msgstr "הספק השיב בשגיאה {}."
+
+#: crates/big-video-player/src/video/ui/iptv/mod.rs:349
+#, rust-format
+msgid "The channel list is larger than {} MB."
+msgstr "רשימת הערוצים גדולה מ-{} מ״ב."
+
+#: crates/big-video-player/src/video/ui/iptv/mod.rs:353
+msgid "The provider sent no channels."
+msgstr "הספק לא שלח ערוצים."
+
+#: crates/big-video-player/src/video/ui/iptv/mod.rs:354
+msgid "The provider rejected the user name or password."
+msgstr "הספק דחה את שם המשתמש או את הסיסמה."
+
+#: crates/big-video-player/src/video/ui/iptv/mod.rs:356
+#, rust-format
+msgid "This account is not active (the provider says: {})."
+msgstr "החשבון הזה אינו פעיל (הספק מדווח: {})."
+
+#: crates/big-video-player/src/video/ui/iptv/mod.rs:358
+msgid "Could not read the playlist file."
+msgstr "לא ניתן לקרוא את קובץ רשימת ההשמעה."
 
 #: crates/big-video-player/src/video/ui/iptv/providers_dialog.rs:44
 msgid "Add provider"
@@ -2761,21 +2804,21 @@ msgstr "תור צילומי המסך מלא; המתינו לצילומים המ�
 #: crates/big-video-player/src/video/ui/menu_dialogs.rs:134
 #: crates/big-video-player/src/video/ui/menu_dialogs.rs:138
 #: crates/big-video-player/src/video/ui/menu_dialogs.rs:149
-#: crates/big-video-player/src/video/ui/video_shell/component.rs:728
-#: crates/big-video-player/src/video/ui/video_shell/playback.rs:153
+#: crates/big-video-player/src/video/ui/video_shell/component.rs:738
+#: crates/big-video-player/src/video/ui/video_shell/playback.rs:163
 msgid "Screenshot failed"
 msgstr "צילום המסך נכשל"
 
-#: crates/big-video-player/src/video/ui/menu_dialogs.rs:314
-#: crates/media-runtime/src/player/mpv_backend/backend/mod.rs:292
+#: crates/big-video-player/src/video/ui/menu_dialogs.rs:324
+#: crates/media-runtime/src/player/mpv_backend/backend/mod.rs:301
 msgid "Chapter"
 msgstr "פרק"
 
-#: crates/big-video-player/src/video/ui/menu_dialogs.rs:335
+#: crates/big-video-player/src/video/ui/menu_dialogs.rs:345
 msgid "Screenshot saved"
 msgstr "צילום המסך נשמר"
 
-#: crates/big-video-player/src/video/ui/menu_dialogs.rs:337
+#: crates/big-video-player/src/video/ui/menu_dialogs.rs:347
 msgid "Screenshot saved; disk synchronization could not be confirmed"
 msgstr "צילום המסך נשמר; לא ניתן היה לאמת את סנכרון הדיסק"
 
@@ -3536,36 +3579,36 @@ msgstr "העברה לתיקייה…"
 msgid "Done"
 msgstr "בוצע"
 
-#: crates/big-video-player/src/video/ui/video_browser_sidebar/fileops.rs:144
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/fileops.rs:154
 msgid "Move to Folder"
 msgstr "העברה לתיקייה"
 
-#: crates/big-video-player/src/video/ui/video_browser_sidebar/fileops.rs:161
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/fileops.rs:171
 msgid "moved"
 msgstr "הועברו"
 
-#: crates/big-video-player/src/video/ui/video_browser_sidebar/fileops.rs:183
-#: crates/big-video-player/src/video/ui/video_browser_sidebar/fileops.rs:200
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/fileops.rs:193
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/fileops.rs:210
 msgid "Rename"
 msgstr "שינוי שם"
 
-#: crates/big-video-player/src/video/ui/video_browser_sidebar/fileops.rs:189
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/fileops.rs:199
 msgid "Choose a new file name."
 msgstr "בחרו שם קובץ חדש."
 
-#: crates/big-video-player/src/video/ui/video_browser_sidebar/fileops.rs:232
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/fileops.rs:242
 msgid "Invalid name"
 msgstr "שם לא חוקי"
 
-#: crates/big-video-player/src/video/ui/video_browser_sidebar/fileops.rs:248
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/fileops.rs:258
 msgid "A file with that name already exists"
 msgstr "כבר קיים קובץ בשם זה"
 
-#: crates/big-video-player/src/video/ui/video_browser_sidebar/fileops.rs:255
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/fileops.rs:265
 msgid "Rename failed"
 msgstr "שינוי השם נכשל"
 
-#: crates/big-video-player/src/video/ui/video_browser_sidebar/fileops.rs:349
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/fileops.rs:359
 #, rust-format
 msgid "{ok} {verb}, {failed} failed"
 msgstr "{ok} {verb}, {failed} נכשלו"
@@ -3765,7 +3808,7 @@ msgid "Drop a file or open one to start"
 msgstr "שחררו קובץ או פתחו אחד כדי להתחיל"
 
 #: crates/big-video-player/src/video/ui/video_shell/actions.rs:132
-#: crates/big-video-player/src/video/ui/video_shell/component.rs:849
+#: crates/big-video-player/src/video/ui/video_shell/component.rs:864
 msgid "Open Recent"
 msgstr "פתיחת אחרונים"
 
@@ -3904,21 +3947,21 @@ msgstr "בטלוויזיה"
 msgid "The TV is still playing"
 msgstr "הטלוויזיה עדיין מנגנת"
 
-#: crates/big-video-player/src/video/ui/video_shell/component.rs:848
+#: crates/big-video-player/src/video/ui/video_shell/component.rs:863
 #: crates/big-video-player/src/video/ui/video_shell/input_gestures.rs:121
 msgid "Open File…"
 msgstr "פתיחת קובץ…"
 
-#: crates/big-video-player/src/video/ui/video_shell/component.rs:850
+#: crates/big-video-player/src/video/ui/video_shell/component.rs:865
 #: crates/big-video-player/src/video/ui/video_shell/input_gestures.rs:122
 msgid "Open URL…"
 msgstr "פתיחת כתובת URL…"
 
-#: crates/big-video-player/src/video/ui/video_shell/component.rs:851
+#: crates/big-video-player/src/video/ui/video_shell/component.rs:866
 msgid "Open Disc…"
 msgstr "פתיחת דיסק…"
 
-#: crates/big-video-player/src/video/ui/video_shell/component.rs:852
+#: crates/big-video-player/src/video/ui/video_shell/component.rs:867
 msgid "TV Channels (IPTV)…"
 msgstr "ערוצי טלוויזיה (IPTV)…"
 
@@ -4124,19 +4167,19 @@ msgstr "חיפוש בקבצים אחרונים"
 msgid "No recent file matches"
 msgstr "אין קובץ אחרון תואם"
 
-#: crates/big-video-player/src/video/ui/video_shell/playback.rs:158
+#: crates/big-video-player/src/video/ui/video_shell/playback.rs:168
 msgid "Screenshot timed out; cancellation requested"
 msgstr "צילום המסך חרג מהזמן; התבקש ביטול"
 
-#: crates/big-video-player/src/video/ui/video_shell/playback.rs:204
+#: crates/big-video-player/src/video/ui/video_shell/playback.rs:214
 msgid "Playing video"
 msgstr "מנגן וידאו"
 
-#: crates/big-video-player/src/video/ui/video_shell/playback.rs:427
+#: crates/big-video-player/src/video/ui/video_shell/playback.rs:479
 msgid "Could not move to trash"
 msgstr "לא ניתן היה להעביר לאשפה"
 
-#: crates/big-video-player/src/video/ui/video_shell/playback.rs:433
+#: crates/big-video-player/src/video/ui/video_shell/playback.rs:485
 #, rust-format
 msgid "{} file moved to trash"
 msgid_plural "{} files moved to trash"
@@ -4225,20 +4268,20 @@ msgstr "הסרת חיתוך זה"
 msgid "Open a local video to cut it"
 msgstr "פתחו סרטון מקומי כדי לחתוך אותו"
 
-#: crates/big-video-player/src/video/ui/video_shell/trim/run.rs:218
-#: crates/big-video-player/src/video/ui/video_shell/trim/run.rs:222
+#: crates/big-video-player/src/video/ui/video_shell/trim/run.rs:219
+#: crates/big-video-player/src/video/ui/video_shell/trim/run.rs:223
 msgid "s"
 msgstr "שנ׳"
 
-#: crates/big-video-player/src/video/ui/video_shell/trim/run.rs:238
+#: crates/big-video-player/src/video/ui/video_shell/trim/run.rs:239
 msgid "Cut times"
 msgstr "זמני החיתוך"
 
-#: crates/big-video-player/src/video/ui/video_shell/trim/run.rs:243
+#: crates/big-video-player/src/video/ui/video_shell/trim/run.rs:244
 msgid "Hundredth-second precision; either order is fine"
 msgstr "דיוק של מאית שנייה; הסדר אינו חשוב"
 
-#: crates/big-video-player/src/video/ui/video_shell/trim/run.rs:253
+#: crates/big-video-player/src/video/ui/video_shell/trim/run.rs:254
 msgid "Edit Cut"
 msgstr "עריכת חיתוך"
 
@@ -5349,3 +5392,6 @@ msgstr "סרקו את הקוד במצלמת הטלפון."
 #: crates/ui/media/big-player-ui/src/smartphone/dialog.rs:149
 msgid "Could not start server"
 msgstr "לא ניתן היה להפעיל את השרת"
+
+#~ msgid "Could not reach provider — showing cached copy if available."
+#~ msgstr "לא ניתן להגיע לספק — מוצג עותק מהמטמון אם קיים."

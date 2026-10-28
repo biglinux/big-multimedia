@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: big-media-runtime 0.1.0\n"
 "Report-Msgid-Bugs-To: https://github.com/biglinux/big-multimedia/issues\n"
-"POT-Creation-Date: 2026-10-26 14:38-0300\n"
+"POT-Creation-Date: 2026-10-26 19:32-0300\n"
 "PO-Revision-Date: 2026-10-23 00:15-0300\n"
 "Last-Translator: Automatically generated\n"
 "Language-Team: none\n"
@@ -240,7 +240,7 @@ msgstr "Tekrarlamayı aç/kapat"
 
 #: crates/big-audio-player/src/audio/keybindings.rs:129
 #: crates/big-video-player/src/video/ui/video_shell/panel.rs:548
-#: crates/big-video-player/src/video/ui/video_shell/playback.rs:439
+#: crates/big-video-player/src/video/ui/video_shell/playback.rs:491
 msgid "Undo"
 msgstr "Geri al"
 
@@ -469,22 +469,22 @@ msgid "Cancel Timer"
 msgstr "Zamanlayıcıyı iptal et"
 
 #: crates/big-audio-player/src/audio/ui/audio_shell/chrome.rs:268
-#: crates/big-video-player/src/video/ui/menu_dialogs.rs:255
+#: crates/big-video-player/src/video/ui/menu_dialogs.rs:265
 msgid "Sleep timer: closing player"
 msgstr "Uyku zamanlayıcısı: oynatıcı kapatılıyor"
 
 #: crates/big-audio-player/src/audio/ui/audio_shell/chrome.rs:276
-#: crates/big-video-player/src/video/ui/menu_dialogs.rs:263
+#: crates/big-video-player/src/video/ui/menu_dialogs.rs:273
 msgid "Sleep timer: suspending computer"
 msgstr "Uyku zamanlayıcısı: bilgisayar askıya alınıyor"
 
 #: crates/big-audio-player/src/audio/ui/audio_shell/chrome.rs:288
-#: crates/big-video-player/src/video/ui/menu_dialogs.rs:275
+#: crates/big-video-player/src/video/ui/menu_dialogs.rs:285
 msgid "Sleep timer: shutting down"
 msgstr "Uyku zamanlayıcısı: kapatılıyor"
 
 #: crates/big-audio-player/src/audio/ui/audio_shell/chrome.rs:299
-#: crates/big-video-player/src/video/ui/menu_dialogs.rs:286
+#: crates/big-video-player/src/video/ui/menu_dialogs.rs:296
 msgid "Sleep timer: playback paused"
 msgstr "Uyku zamanlayıcısı: oynatma duraklatıldı"
 
@@ -503,8 +503,8 @@ msgstr "Dosyaları süz…"
 #: crates/big-audio-player/src/audio/ui/audio_shell/component.rs:144
 #: crates/big-audio-player/src/audio/ui/audio_shell/component.rs:171
 #: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/header.rs:22
-#: crates/big-video-player/src/video/ui/video_shell/component.rs:280
 #: crates/big-video-player/src/video/ui/video_shell/component.rs:284
+#: crates/big-video-player/src/video/ui/video_shell/component.rs:288
 msgid "Files"
 msgstr "Dosyalar"
 
@@ -545,7 +545,7 @@ msgid "Retry saving"
 msgstr "Kaydetmeyi yeniden dene"
 
 #: crates/big-audio-player/src/audio/ui/audio_shell/engine.rs:33
-#: crates/big-video-player/src/video/ui/video_shell/playback.rs:176
+#: crates/big-video-player/src/video/ui/video_shell/playback.rs:186
 msgid "Could not play this file — it may be unsupported or corrupt."
 msgstr "Bu dosya çalınamadı — desteklenmiyor veya bozuk olabilir."
 
@@ -555,12 +555,12 @@ msgid "No local track is playing"
 msgstr "Çalan yerel parça yok"
 
 #: crates/big-audio-player/src/audio/ui/audio_shell/export.rs:128
-#: crates/big-video-player/src/video/ui/video_shell/trim/run.rs:215
+#: crates/big-video-player/src/video/ui/video_shell/trim/run.rs:216
 msgid "Start (seconds)"
 msgstr "Başlangıç (saniye)"
 
 #: crates/big-audio-player/src/audio/ui/audio_shell/export.rs:133
-#: crates/big-video-player/src/video/ui/video_shell/trim/run.rs:219
+#: crates/big-video-player/src/video/ui/video_shell/trim/run.rs:220
 msgid "End (seconds)"
 msgstr "Bitiş (saniye)"
 
@@ -593,18 +593,18 @@ msgstr "Kesimi düzenle"
 #: crates/big-audio-player/src/audio/ui/unavailable_dialog.rs:258
 #: crates/big-video-player/src/video/ui/iptv/providers_dialog.rs:168
 #: crates/big-video-player/src/video/ui/menu_dialogs.rs:72
-#: crates/big-video-player/src/video/ui/video_browser_sidebar/fileops.rs:200
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/fileops.rs:210
 #: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:173
 #: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:257
 #: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:381
-#: crates/big-video-player/src/video/ui/video_shell/trim/run.rs:258
+#: crates/big-video-player/src/video/ui/video_shell/trim/run.rs:259
 #: crates/ui/media/big-player-ui/src/podcast_panel.rs:571
 #: crates/ui/media/big-player-ui/src/radio_panel/widgets.rs:351
 msgid "Cancel"
 msgstr "İptal"
 
 #: crates/big-audio-player/src/audio/ui/audio_shell/export.rs:161
-#: crates/big-video-player/src/video/ui/video_shell/trim/run.rs:258
+#: crates/big-video-player/src/video/ui/video_shell/trim/run.rs:259
 msgid "Apply"
 msgstr "Uygula"
 
@@ -1080,8 +1080,8 @@ msgstr ""
 "bir ad seçip yeniden deneyin."
 
 #: crates/big-audio-player/src/audio/ui/library_io.rs:112
-#: crates/big-video-player/src/video/ui/menu_dialogs.rs:339
-#: crates/big-video-player/src/video/ui/video_shell/component.rs:265
+#: crates/big-video-player/src/video/ui/menu_dialogs.rs:349
+#: crates/big-video-player/src/video/ui/video_shell/component.rs:269
 #: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:257
 msgid "Open"
 msgstr "Aç"
@@ -1332,8 +1332,8 @@ msgstr "Kenar çubuğu sekmelerinde Radyo ve Podcast'leri keşfedin"
 #: crates/big-audio-player/src/audio/ui/playlist_panel.rs:401
 #: crates/big-video-player/src/video/ui/appearance/layout/buttons_page.rs:42
 #: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/header.rs:24
-#: crates/big-video-player/src/video/ui/video_shell/component.rs:287
 #: crates/big-video-player/src/video/ui/video_shell/component.rs:291
+#: crates/big-video-player/src/video/ui/video_shell/component.rs:295
 #: crates/big-video-player/src/video/ui/video_shell/playlist_panel.rs:24
 msgid "Playlist"
 msgstr "Çalma listesi"
@@ -1568,7 +1568,7 @@ msgid "Rename Playlist"
 msgstr "Çalma listesini yeniden adlandır"
 
 #: crates/big-audio-player/src/audio/ui/playlist_library_dialog/spec.rs:205
-#: crates/big-video-player/src/video/ui/video_browser_sidebar/fileops.rs:193
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/fileops.rs:203
 msgid "New name"
 msgstr "Yeni ad"
 
@@ -1923,8 +1923,8 @@ msgid "Media information"
 msgstr "Ortam bilgileri"
 
 #: crates/big-video-player/src/video/ui/appearance/layout/buttons_page.rs:28
-#: crates/big-video-player/src/video/ui/video_shell/component.rs:256
 #: crates/big-video-player/src/video/ui/video_shell/component.rs:260
+#: crates/big-video-player/src/video/ui/video_shell/component.rs:264
 msgid "Keep Above"
 msgstr "Üstte tut"
 
@@ -2356,18 +2356,18 @@ msgstr "Sönümleme"
 msgid "Toggle favorite"
 msgstr "Sık kullanılan olarak işaretle/kaldır"
 
-#: crates/big-video-player/src/video/ui/iptv/channel_list.rs:157
+#: crates/big-video-player/src/video/ui/iptv/channel_list.rs:158
 msgid "No channels"
 msgstr "Kanal yok"
 
-#: crates/big-video-player/src/video/ui/iptv/channel_list.rs:165
+#: crates/big-video-player/src/video/ui/iptv/channel_list.rs:166
 #, rust-format
 msgid "{} channel"
 msgid_plural "{} channels"
 msgstr[0] "{} kanal"
 msgstr[1] "{} kanal"
 
-#: crates/big-video-player/src/video/ui/iptv/channel_list.rs:212
+#: crates/big-video-player/src/video/ui/iptv/channel_list.rs:213
 #: crates/ui/media/big-player-ui/src/radio_panel/methods.rs:126
 msgid "Ungrouped"
 msgstr "Gruplanmamış"
@@ -2408,9 +2408,54 @@ msgstr "Kanallar yeniden yükleniyor…"
 msgid "Loading channels…"
 msgstr "Kanallar yükleniyor…"
 
-#: crates/big-video-player/src/video/ui/iptv/mod.rs:324
-msgid "Could not reach provider — showing cached copy if available."
-msgstr "Sağlayıcıya ulaşılamadı — varsa önbellekteki kopya gösteriliyor."
+#: crates/big-video-player/src/video/ui/iptv/mod.rs:337
+msgid ""
+"Could not reach the provider. Check the address and your connection; a saved "
+"list stays on screen."
+msgstr ""
+"Sağlayıcıya ulaşılamadı. Adresi ve bağlantınızı kontrol edin; kayıtlı liste "
+"ekranda kalır."
+
+#: crates/big-video-player/src/video/ui/iptv/mod.rs:340
+msgid ""
+"The provider refused access. Check the user name and password, or the User-"
+"Agent the provider asks for."
+msgstr ""
+"Sağlayıcı erişimi reddetti. Kullanıcı adını ve parolayı veya sağlayıcının "
+"istediği User-Agent değerini kontrol edin."
+
+#: crates/big-video-player/src/video/ui/iptv/mod.rs:343
+#, rust-format
+msgid "The provider's server failed (error {}). Try again later."
+msgstr ""
+"Sağlayıcının sunucusu başarısız oldu (hata {}). Daha sonra tekrar deneyin."
+
+#: crates/big-video-player/src/video/ui/iptv/mod.rs:347
+#, rust-format
+msgid "The provider answered with error {}."
+msgstr "Sağlayıcı {} hatasıyla yanıt verdi."
+
+#: crates/big-video-player/src/video/ui/iptv/mod.rs:349
+#, rust-format
+msgid "The channel list is larger than {} MB."
+msgstr "Kanal listesi {} MB'tan büyük."
+
+#: crates/big-video-player/src/video/ui/iptv/mod.rs:353
+msgid "The provider sent no channels."
+msgstr "Sağlayıcı hiç kanal göndermedi."
+
+#: crates/big-video-player/src/video/ui/iptv/mod.rs:354
+msgid "The provider rejected the user name or password."
+msgstr "Sağlayıcı kullanıcı adını veya parolayı reddetti."
+
+#: crates/big-video-player/src/video/ui/iptv/mod.rs:356
+#, rust-format
+msgid "This account is not active (the provider says: {})."
+msgstr "Bu hesap etkin değil (sağlayıcı şunu söylüyor: {})."
+
+#: crates/big-video-player/src/video/ui/iptv/mod.rs:358
+msgid "Could not read the playlist file."
+msgstr "Oynatma listesi dosyası okunamadı."
 
 #: crates/big-video-player/src/video/ui/iptv/providers_dialog.rs:44
 msgid "Add provider"
@@ -2801,21 +2846,21 @@ msgstr "Ekran görüntüsü kuyruğu dolu; bekleyen yakalamaları bekleyin"
 #: crates/big-video-player/src/video/ui/menu_dialogs.rs:134
 #: crates/big-video-player/src/video/ui/menu_dialogs.rs:138
 #: crates/big-video-player/src/video/ui/menu_dialogs.rs:149
-#: crates/big-video-player/src/video/ui/video_shell/component.rs:728
-#: crates/big-video-player/src/video/ui/video_shell/playback.rs:153
+#: crates/big-video-player/src/video/ui/video_shell/component.rs:738
+#: crates/big-video-player/src/video/ui/video_shell/playback.rs:163
 msgid "Screenshot failed"
 msgstr "Ekran görüntüsü alınamadı"
 
-#: crates/big-video-player/src/video/ui/menu_dialogs.rs:314
-#: crates/media-runtime/src/player/mpv_backend/backend/mod.rs:292
+#: crates/big-video-player/src/video/ui/menu_dialogs.rs:324
+#: crates/media-runtime/src/player/mpv_backend/backend/mod.rs:301
 msgid "Chapter"
 msgstr "Bölüm"
 
-#: crates/big-video-player/src/video/ui/menu_dialogs.rs:335
+#: crates/big-video-player/src/video/ui/menu_dialogs.rs:345
 msgid "Screenshot saved"
 msgstr "Ekran görüntüsü kaydedildi"
 
-#: crates/big-video-player/src/video/ui/menu_dialogs.rs:337
+#: crates/big-video-player/src/video/ui/menu_dialogs.rs:347
 msgid "Screenshot saved; disk synchronization could not be confirmed"
 msgstr "Ekran görüntüsü kaydedildi; disk eşzamanlaması doğrulanamadı"
 
@@ -3591,36 +3636,36 @@ msgstr "Klasöre taşı…"
 msgid "Done"
 msgstr "Bitti"
 
-#: crates/big-video-player/src/video/ui/video_browser_sidebar/fileops.rs:144
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/fileops.rs:154
 msgid "Move to Folder"
 msgstr "Klasöre taşı"
 
-#: crates/big-video-player/src/video/ui/video_browser_sidebar/fileops.rs:161
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/fileops.rs:171
 msgid "moved"
 msgstr "taşındı"
 
-#: crates/big-video-player/src/video/ui/video_browser_sidebar/fileops.rs:183
-#: crates/big-video-player/src/video/ui/video_browser_sidebar/fileops.rs:200
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/fileops.rs:193
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/fileops.rs:210
 msgid "Rename"
 msgstr "Yeniden adlandır"
 
-#: crates/big-video-player/src/video/ui/video_browser_sidebar/fileops.rs:189
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/fileops.rs:199
 msgid "Choose a new file name."
 msgstr "Yeni bir dosya adı seçin."
 
-#: crates/big-video-player/src/video/ui/video_browser_sidebar/fileops.rs:232
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/fileops.rs:242
 msgid "Invalid name"
 msgstr "Geçersiz ad"
 
-#: crates/big-video-player/src/video/ui/video_browser_sidebar/fileops.rs:248
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/fileops.rs:258
 msgid "A file with that name already exists"
 msgstr "Bu ada sahip bir dosya zaten var"
 
-#: crates/big-video-player/src/video/ui/video_browser_sidebar/fileops.rs:255
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/fileops.rs:265
 msgid "Rename failed"
 msgstr "Yeniden adlandırma başarısız"
 
-#: crates/big-video-player/src/video/ui/video_browser_sidebar/fileops.rs:349
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/fileops.rs:359
 #, rust-format
 msgid "{ok} {verb}, {failed} failed"
 msgstr "{ok} {verb}, {failed} başarısız"
@@ -3820,7 +3865,7 @@ msgid "Drop a file or open one to start"
 msgstr "Başlamak için bir dosya bırakın veya açın"
 
 #: crates/big-video-player/src/video/ui/video_shell/actions.rs:132
-#: crates/big-video-player/src/video/ui/video_shell/component.rs:849
+#: crates/big-video-player/src/video/ui/video_shell/component.rs:864
 msgid "Open Recent"
 msgstr "Son kullanılanları aç"
 
@@ -3960,21 +4005,21 @@ msgstr "TV'de"
 msgid "The TV is still playing"
 msgstr "TV hâlâ oynatıyor"
 
-#: crates/big-video-player/src/video/ui/video_shell/component.rs:848
+#: crates/big-video-player/src/video/ui/video_shell/component.rs:863
 #: crates/big-video-player/src/video/ui/video_shell/input_gestures.rs:121
 msgid "Open File…"
 msgstr "Dosya aç…"
 
-#: crates/big-video-player/src/video/ui/video_shell/component.rs:850
+#: crates/big-video-player/src/video/ui/video_shell/component.rs:865
 #: crates/big-video-player/src/video/ui/video_shell/input_gestures.rs:122
 msgid "Open URL…"
 msgstr "URL aç…"
 
-#: crates/big-video-player/src/video/ui/video_shell/component.rs:851
+#: crates/big-video-player/src/video/ui/video_shell/component.rs:866
 msgid "Open Disc…"
 msgstr "Disk aç…"
 
-#: crates/big-video-player/src/video/ui/video_shell/component.rs:852
+#: crates/big-video-player/src/video/ui/video_shell/component.rs:867
 msgid "TV Channels (IPTV)…"
 msgstr "TV kanalları (IPTV)…"
 
@@ -4181,19 +4226,19 @@ msgstr "Son dosyalarda ara"
 msgid "No recent file matches"
 msgstr "Eşleşen son dosya yok"
 
-#: crates/big-video-player/src/video/ui/video_shell/playback.rs:158
+#: crates/big-video-player/src/video/ui/video_shell/playback.rs:168
 msgid "Screenshot timed out; cancellation requested"
 msgstr "Ekran görüntüsü zaman aşımına uğradı; iptal istendi"
 
-#: crates/big-video-player/src/video/ui/video_shell/playback.rs:204
+#: crates/big-video-player/src/video/ui/video_shell/playback.rs:214
 msgid "Playing video"
 msgstr "Video oynatılıyor"
 
-#: crates/big-video-player/src/video/ui/video_shell/playback.rs:427
+#: crates/big-video-player/src/video/ui/video_shell/playback.rs:479
 msgid "Could not move to trash"
 msgstr "Çöp kutusuna taşınamadı"
 
-#: crates/big-video-player/src/video/ui/video_shell/playback.rs:433
+#: crates/big-video-player/src/video/ui/video_shell/playback.rs:485
 #, rust-format
 msgid "{} file moved to trash"
 msgid_plural "{} files moved to trash"
@@ -4282,20 +4327,20 @@ msgstr "Bu kesimi kaldır"
 msgid "Open a local video to cut it"
 msgstr "Kesmek için yerel bir video açın"
 
-#: crates/big-video-player/src/video/ui/video_shell/trim/run.rs:218
-#: crates/big-video-player/src/video/ui/video_shell/trim/run.rs:222
+#: crates/big-video-player/src/video/ui/video_shell/trim/run.rs:219
+#: crates/big-video-player/src/video/ui/video_shell/trim/run.rs:223
 msgid "s"
 msgstr "sn"
 
-#: crates/big-video-player/src/video/ui/video_shell/trim/run.rs:238
+#: crates/big-video-player/src/video/ui/video_shell/trim/run.rs:239
 msgid "Cut times"
 msgstr "Kesim zamanları"
 
-#: crates/big-video-player/src/video/ui/video_shell/trim/run.rs:243
+#: crates/big-video-player/src/video/ui/video_shell/trim/run.rs:244
 msgid "Hundredth-second precision; either order is fine"
 msgstr "Saniyenin yüzde biri hassasiyetinde; sıra fark etmez"
 
-#: crates/big-video-player/src/video/ui/video_shell/trim/run.rs:253
+#: crates/big-video-player/src/video/ui/video_shell/trim/run.rs:254
 msgid "Edit Cut"
 msgstr "Kesimi düzenle"
 
@@ -5419,3 +5464,6 @@ msgstr "Kodu telefonun kamerasıyla tarayın."
 #: crates/ui/media/big-player-ui/src/smartphone/dialog.rs:149
 msgid "Could not start server"
 msgstr "Sunucu başlatılamadı"
+
+#~ msgid "Could not reach provider — showing cached copy if available."
+#~ msgstr "Sağlayıcıya ulaşılamadı — varsa önbellekteki kopya gösteriliyor."

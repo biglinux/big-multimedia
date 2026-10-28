@@ -564,9 +564,11 @@ impl Settings {
             ("audio-ui-icon-color", "ui-icon-color"),
             ("audio-ui-dialog-color", "ui-dialog-color"),
         ] {
-            // Never overwrite an already personalized audio value.
+            // Never overwrite an already personalized audio value. The audio
+            // player has no video to take colors from.
             if inner.settings_values.get(audio) == defaults.get(audio)
                 && let Some(value) = inner.settings_values.get(video).cloned()
+                && value != "gradient"
             {
                 inner.settings_values.insert(audio.into(), value);
             }

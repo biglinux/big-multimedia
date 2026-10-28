@@ -40,9 +40,16 @@ pub(in crate::media) fn acquire_slot(counter: &AtomicU32, max: u32) {
     }
 }
 
+/// Under the lock a waiter checks with, so the wake-up cannot fall between
+/// its check and its wait; every waiter wakes, as probes and thumbnails
+/// share the condvar and one of the other kind would take the only wake-up.
 pub(in crate::media) fn release_slot(counter: &AtomicU32) {
+    let (lock, cvar) = &*PROBE_CONDVAR;
+    let _guard = lock
+        .lock()
+        .unwrap_or_else(std::sync::PoisonError::into_inner);
     counter.fetch_sub(1, Ordering::Release);
-    PROBE_CONDVAR.1.notify_one();
+    cvar.notify_all();
 }
 
 /// Persisted to disk so metadata survives restarts.

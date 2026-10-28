@@ -304,18 +304,22 @@ fn dispatch_video_shortcut(
         "volume-up" => mpv.set_volume((mpv.get_volume() + VOLUME_STEP).min(volume_max)),
         "volume-down" => mpv.set_volume((mpv.get_volume() - VOLUME_STEP).max(0.0)),
         "mute" => mpv.toggle_mute(),
-        "speed-up" => mpv.set_speed((mpv.get_speed() + SPEED_STEP).min(SPEED_MAX)),
-        "speed-down" => mpv.set_speed((mpv.get_speed() - SPEED_STEP).max(SPEED_MIN)),
+        "speed-up" => mpv.step_speed(SPEED_STEP, SPEED_MIN, SPEED_MAX),
+        "speed-down" => mpv.step_speed(-SPEED_STEP, SPEED_MIN, SPEED_MAX),
         "speed-reset" => mpv.set_speed(1.0),
         "frame-step" => mpv.frame_step(),
         "frame-back-step" => mpv.frame_back_step(),
         "revert-seek" => mpv.revert_seek(),
-        "chapter-next" | "chapter-prev" => {
+        "chapter-next" | "chapter-prev" | "chapter-next-alt" | "chapter-prev-alt" => {
             let count = mpv.get_chapter_count();
             if count <= 0 {
                 return false;
             }
-            let step = if action == "chapter-next" { 1 } else { -1 };
+            let step = if action.starts_with("chapter-next") {
+                1
+            } else {
+                -1
+            };
             mpv.set_chapter((mpv.get_current_chapter() + step).clamp(0, count - 1));
         }
         "deinterlace" => mpv.set_deinterlace(!mpv.get_property_bool("deinterlace")),
@@ -432,7 +436,7 @@ mod tests {
         );
         assert_eq!(
             lookup(Key::exclam, ModifierType::SHIFT_MASK),
-            Some("chapter-next")
+            Some("chapter-next-alt")
         );
         // Shift+E arrives as `E` with Shift; bound as `<Shift>e`.
         assert_eq!(
@@ -464,6 +468,8 @@ mod tests {
             "speed-reset",
             "chapter-next",
             "chapter-prev",
+            "chapter-next-alt",
+            "chapter-prev-alt",
             "frame-step",
             "frame-back-step",
             "revert-seek",

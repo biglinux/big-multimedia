@@ -102,7 +102,9 @@ fn read_mvhd_payload(f: &mut File, timescale_offset: u64, duration_bytes: u64) -
         }
         _ => return None,
     };
-    if timescale > 0.0 {
+    // A fragmented MP4 leaves the movie duration 0 and puts the length in
+    // its fragments: unknown here, not zero, so the slower probe finds it.
+    if timescale > 0.0 && duration > 0.0 {
         Some(duration / timescale)
     } else {
         None

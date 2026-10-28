@@ -11,7 +11,10 @@ use adw::prelude::*;
 use big_relm4_components::input::dropdown_row::{BigDropdownRow, BigDropdownRowSpec};
 use big_relm4_components::layout::preferences::BigPreferencesGroupSpec;
 
-use super::filter_specs::{colorize_vf, colortemp_vf, hqdn3d_vf, pixelize_vf};
+use super::filter_specs::{
+    active_vf_graph, colorize_vf, colortemp_vf, hqdn3d_vf, pixelize_vf, vf_graph_number,
+    vf_graph_param,
+};
 use super::vf_row::{VfFilterSpec, build_vf_expander_row};
 use crate::i18n::i18n;
 use crate::player::mpv_backend::MpvBackend;
@@ -29,6 +32,7 @@ pub(super) fn build_denoise_sharpen_group(
         current_vf,
         VfFilterSpec {
             label: "hqdn3d",
+            param: "luma_spatial",
             title: i18n("Denoise (hqdn3d)"),
             subtitle: i18n("Reduces visual noise and grain from old or low-light footage"),
             spin_title: i18n("Strength"),
@@ -44,6 +48,7 @@ pub(super) fn build_denoise_sharpen_group(
         current_vf,
         VfFilterSpec {
             label: "cas",
+            param: "strength",
             title: i18n("Sharpen (CAS)"),
             subtitle: i18n("Software contrast-adaptive sharpening — works at any resolution"),
             spin_title: i18n("Strength"),
@@ -66,6 +71,7 @@ pub(super) fn build_color_group(mpv: &Arc<MpvBackend>, current_vf: &str) -> adw:
         current_vf,
         VfFilterSpec {
             label: "colortemp",
+            param: "temperature",
             title: i18n("Color Temperature"),
             subtitle: i18n("Warm or cool tone (Kelvin)"),
             spin_title: i18n("Temperature"),
@@ -81,6 +87,7 @@ pub(super) fn build_color_group(mpv: &Arc<MpvBackend>, current_vf: &str) -> adw:
         current_vf,
         VfFilterSpec {
             label: "vibrance",
+            param: "intensity",
             title: i18n("Vibrance"),
             subtitle: i18n("Boost color saturation intelligently"),
             spin_title: i18n("Intensity"),
@@ -99,16 +106,24 @@ pub(super) fn build_color_group(mpv: &Arc<MpvBackend>, current_vf: &str) -> adw:
 /// Colorize: a 3-spin (hue/sat/mix) expander applied with a shared debounce.
 fn build_colorize_row(mpv: &Arc<MpvBackend>, current_vf: &str) -> adw::ExpanderRow {
     const LABEL: &str = "colorize";
+    let active = active_vf_graph(current_vf, LABEL);
     let expander = adw::ExpanderRow::builder()
         .title(i18n("Colorize"))
         .subtitle(i18n("Apply a color tint overlay"))
         .show_enable_switch(true)
-        .enable_expansion(current_vf.contains(LABEL))
+        .enable_expansion(active.is_some())
         .build();
 
-    let hue = gtk::Adjustment::new(30.0, 0.0, 360.0, 5.0, 30.0, 0.0);
-    let saturation = gtk::Adjustment::new(0.5, 0.0, 1.0, 0.05, 0.1, 0.0);
-    let mix = gtk::Adjustment::new(0.5, 0.0, 1.0, 0.05, 0.1, 0.0);
+    // The values the filter runs with, when it is on.
+    let value = |key: &str, default: f64, max: f64| {
+        active
+            .as_deref()
+            .and_then(|graph| vf_graph_number(graph, key))
+            .map_or(default, |value| value.clamp(0.0, max))
+    };
+    let hue = gtk::Adjustment::new(value("hue", 30.0, 360.0), 0.0, 360.0, 5.0, 30.0, 0.0);
+    let saturation = gtk::Adjustment::new(value("saturation", 0.5, 1.0), 0.0, 1.0, 0.05, 0.1, 0.0);
+    let mix = gtk::Adjustment::new(value("mix", 0.5, 1.0), 0.0, 1.0, 0.05, 0.1, 0.0);
     expander.add_row(
         &adw::SpinRow::builder()
             .title(i18n("Hue"))
@@ -184,7 +199,7 @@ fn build_monochrome_row(mpv: &Arc<MpvBackend>, current_vf: &str) -> adw::SwitchR
     let row = adw::SwitchRow::builder()
         .title(i18n("Monochrome"))
         .subtitle(i18n("Cinematic black and white"))
-        .active(current_vf.contains(LABEL))
+        .active(active_vf_graph(current_vf, LABEL).is_some())
         .build();
     let mpv = Arc::clone(mpv);
     row.connect_active_notify(move |row| {
@@ -205,11 +220,12 @@ pub(super) fn build_presets_group(
     const LABEL: &str = "curves_preset";
     let group = BigPreferencesGroupSpec::new(i18n("Style Presets")).build();
 
+    let active = active_vf_graph(current_vf, LABEL);
     let expander = adw::ExpanderRow::builder()
         .title(i18n("Color Curves"))
         .subtitle(i18n("Predefined color grading looks"))
         .show_enable_switch(true)
-        .enable_expansion(current_vf.contains(LABEL))
+        .enable_expansion(active.is_some())
         .build();
 
     let preset_ids = [
@@ -221,18 +237,27 @@ pub(super) fn build_presets_group(
         "strong_contrast",
         "color_negative",
     ];
-    let (preset_row, combo) = BigDropdownRow::new(BigDropdownRowSpec::new(
-        i18n("Preset"),
-        [
-            i18n("Vintage"),
-            i18n("Cross Process"),
-            i18n("Darker"),
-            i18n("Lighter"),
-            i18n("More Contrast"),
-            i18n("Strong Contrast"),
-            i18n("Color Negative"),
-        ],
-    ))
+    let (preset_row, combo) = BigDropdownRow::new(
+        BigDropdownRowSpec::new(
+            i18n("Preset"),
+            [
+                i18n("Vintage"),
+                i18n("Cross Process"),
+                i18n("Darker"),
+                i18n("Lighter"),
+                i18n("More Contrast"),
+                i18n("Strong Contrast"),
+                i18n("Color Negative"),
+            ],
+        )
+        // The preset the filter runs with, when it is on.
+        .selected(
+            active
+                .and_then(|graph| vf_graph_param(&graph, "preset"))
+                .and_then(|id| preset_ids.iter().position(|known| *known == id))
+                .unwrap_or(0) as u32,
+        ),
+    )
     .into_parts();
     expander.add_row(&preset_row);
 
@@ -292,7 +317,7 @@ pub(super) fn build_effects_group(
         let row = adw::SwitchRow::builder()
             .title(title)
             .subtitle(subtitle)
-            .active(current_vf.contains(label))
+            .active(active_vf_graph(current_vf, label).is_some())
             .build();
         let label = (*label).to_string();
         let filter = (*filter).to_string();
@@ -312,6 +337,7 @@ pub(super) fn build_effects_group(
         current_vf,
         VfFilterSpec {
             label: "pixelize",
+            param: "width",
             title: i18n("Pixelize"),
             subtitle: i18n("Mosaic / pixel art effect"),
             spin_title: i18n("Block Size"),
@@ -326,6 +352,7 @@ pub(super) fn build_effects_group(
         current_vf,
         VfFilterSpec {
             label: "gblur",
+            param: "sigma",
             title: i18n("Gaussian Blur"),
             subtitle: i18n("Smooth blur effect"),
             spin_title: i18n("Sigma"),
@@ -340,6 +367,7 @@ pub(super) fn build_effects_group(
         current_vf,
         VfFilterSpec {
             label: "lagfun",
+            param: "decay",
             title: i18n("Motion Trail"),
             subtitle: i18n("Slowly fading visual trail effect"),
             spin_title: i18n("Decay"),

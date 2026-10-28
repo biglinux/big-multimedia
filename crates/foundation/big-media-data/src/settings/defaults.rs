@@ -105,7 +105,8 @@ pub(super) fn defaults() -> HashMap<String, String> {
     values.insert("playlist-reorder-hint-seen".into(), "false".into());
     values.insert("video-library-folders".into(), String::new());
 
-    values.insert("ui-color-source".into(), "gtk-default".into());
+    // The video player's chrome takes its colors from the video.
+    values.insert("ui-color-source".into(), "gradient".into());
     values.insert("ui-bg-color".into(), "#2A2A30".into());
     values.insert("ui-bg-opacity".into(), "0.90".into());
     values.insert("ui-menu-opacity".into(), "0.95".into());

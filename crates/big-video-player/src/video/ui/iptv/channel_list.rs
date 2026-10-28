@@ -31,8 +31,12 @@ const LOGO_PX: i32 = 40;
 /// Grouped channel list widget plus the state needed to re-splice it on filter
 /// or channel-set changes. Owned by the component; not a relm4 component itself.
 pub struct ChannelListView {
-    /// Root `ListView` mounted (in a `ScrolledWindow`) by the browser component.
+    /// Root `ListView`, the browser component's `ScrolledWindow` child. It has
+    /// to be the direct child: a box around it puts a viewport between, and
+    /// the list then draws only its first rows however far it scrolls.
     pub root: gtk::Widget,
+    /// Save state of the favorites, shown above the list, outside its scroll.
+    pub status: gtk::Widget,
     view: MediaListView,
     all_channels: Rc<RefCell<Vec<IptvChannel>>>,
     user_agent: Rc<RefCell<String>>,
@@ -92,16 +96,15 @@ impl ChannelListView {
         };
 
         let view = MediaListView::new(on_activate, build_suffix);
-        let wrapper = gtk::Box::new(gtk::Orientation::Vertical, 6);
         let status_store = favorites.clone();
         let retry_store = favorites.clone();
-        wrapper.append(&crate::settings::saving::document_status(
+        let status = crate::settings::saving::document_status(
             move || status_store.borrow().save_status(),
             move || retry_store.borrow().retry_save(),
-        ));
-        wrapper.append(&view.widget);
+        );
         Self {
-            root: wrapper.upcast(),
+            root: view.widget.clone(),
+            status: status.upcast(),
             view,
             all_channels,
             user_agent: Rc::new(RefCell::new(String::new())),
@@ -116,11 +119,12 @@ impl ChannelListView {
         self.referer.replace(referer.to_string());
     }
 
-    /// Replace the channel set and re-splice the (unfiltered) list.
+    /// Replace the channel set and re-splice the list, still filtered by the
+    /// search the person typed: the entry keeps its text across a reload.
     pub fn set_channels(&self, channels: Vec<IptvChannel>) {
         self.all_channels.replace(channels);
-        self.last_query.replace(String::new());
-        self.resplice("");
+        let query = self.last_query.borrow().clone();
+        self.resplice(&query);
     }
 
     /// Re-render the list filtered by `query` (matches name or group). A model

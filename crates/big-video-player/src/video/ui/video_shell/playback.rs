@@ -22,6 +22,7 @@ impl VideoShell {
                 }
                 self.feed_trim_playhead(pos);
                 self.apply_play_selection(pos);
+                self.shuffle_when_listed();
                 // The playlist's end time moves with the minutes, not frames.
                 let second = pos as i64;
                 if second != self.playlist_second {
@@ -66,18 +67,27 @@ impl VideoShell {
                     // `EndFile` cleared `playing`, but mpv keeps playing into
                     // the next file without a pause change to report it.
                     self.playing = !mpv.is_paused();
+                    // A live stream never reports a duration: without this the
+                    // previous file's length stayed, and seeks used it.
+                    let duration = mpv.get_duration();
+                    let duration = if duration.is_finite() {
+                        duration.max(0.0)
+                    } else {
+                        0.0
+                    };
+                    self.duration_secs = duration;
+                    if !tv {
+                        self.controls
+                            .emit(VideoControlsBarInput::SetDuration(playback_time(duration)));
+                    }
+                    self.controls
+                        .emit(VideoControlsBarInput::SetDurationSecs(duration));
+                    self.feed_trim_duration(duration);
                 }
                 self.hdr_hint.set_visible(false);
                 super::send_to_shell(VideoShellInput::RefreshAdjustments);
                 self.sync_screen_inhibit(root);
-                if let Some((path, count)) = &self.shuffle_on_load
-                    && let Some(mpv) = self.mpv.borrow().as_ref()
-                    && mpv.get_current_file().as_ref() == Some(path)
-                    && usize::try_from(mpv.get_playlist_count()).ok() == Some(*count)
-                {
-                    mpv.playlist_shuffle(true);
-                    self.shuffle_on_load = None;
-                }
+                self.shuffle_when_listed();
                 self.controls.emit(VideoControlsBarInput::SetHasMedia(true));
                 // Hand the loaded *path* to the controls bar so the seek-hover
                 // preview can render thumbnail frames (local files only). The
@@ -129,7 +139,7 @@ impl VideoShell {
                     .emit(VideoControlsBarInput::SetChapters(chapters));
             }
             PlayerEvent::RateChanged(_) => {
-                super::send_to_shell(VideoShellInput::RefreshAdjustments);
+                super::send_to_shell(VideoShellInput::SpeedChanged);
             }
             PlayerEvent::VolumeChanged(volume) if !tv => {
                 self.controls.emit(VideoControlsBarInput::SetVolume(volume));
@@ -240,14 +250,22 @@ impl VideoShell {
     /// The folder scan / playlist-file parse are blocking disk I/O, so they run
     /// off the GTK main loop; the resolved list is dispatched back as
     /// [`VideoShellInput::PlaylistResolved`] and applied in [`Self::apply_open`].
-    pub(super) fn open_files(paths: &[String], sender: &ComponentSender<VideoShell>) {
+    pub(super) fn open_files(&mut self, paths: &[String], sender: &ComponentSender<VideoShell>) {
         if paths.is_empty() {
             return;
         }
+        // A scan of a slow folder must not replace a file opened after it.
+        self.open_generation += 1;
+        let generation = self.open_generation;
         let paths = paths.to_vec();
         let sender = sender.clone();
+        // The folder plays in the order the sidebar lists it.
+        let sort = (
+            self.settings.get_string(keys::PLAYLIST_SORT),
+            self.settings.get_bool(keys::PLAYLIST_SORT_DESC),
+        );
         gtk::glib::spawn_future_local(async move {
-            let resolved = gtk::gio::spawn_blocking(move || resolve_open_files(paths))
+            let resolved = gtk::gio::spawn_blocking(move || resolve_open_files(paths, &sort))
                 .await
                 .ok()
                 .flatten();
@@ -258,6 +276,7 @@ impl VideoShell {
                 entries,
                 start,
                 folder,
+                generation,
             });
         });
     }
@@ -296,20 +315,23 @@ impl VideoShell {
         let Some(mpv) = mpv_ref.as_ref() else {
             return;
         };
-        let Some(first) = entries.first() else {
+        let Some(chosen) = entries.get(start).or(entries.first()) else {
             return;
         };
-        mpv.load_file(first);
-        mpv.load_files_append(&entries[1..]);
-        if needs_explicit_start_index(start) {
-            mpv.playlist_play_index(start as i64);
-        }
+        let start = start.min(entries.len() - 1);
+        // The chosen file plays first and the rest of the folder goes around
+        // it. mpv reads the lists on a thread of its own, so a jump by index
+        // queued after them could run before they are in and leave the first
+        // file playing; an insert at 0 and an append land right whenever
+        // they run.
+        mpv.load_file(chosen);
+        mpv.load_files_at(&entries[..start], Some(0));
+        mpv.load_files_append(&entries[start + 1..]);
         mpv.play();
         drop(mpv_ref);
         self.playlist_paths = entries.to_vec();
-        // The loads above are queued, and mpv starts `entries[0]` before the
-        // jump to `start`: shuffle once the chosen file is loaded with the
-        // whole list in place.
+        // Shuffle once the chosen file plays with the whole list in place,
+        // which may come after the file has loaded.
         self.shuffle_on_load = self
             .settings
             .get_bool(keys::PLAYLIST_SHUFFLE)
@@ -317,6 +339,41 @@ impl VideoShell {
         self.playlist.emit(VideoBrowserSidebarInput::SetQueue(
             self.playlist_paths.clone(),
         ));
+    }
+
+    /// Seek to `secs`: on the TV while it has the controls, else locally.
+    pub(super) fn seek_to(&self, secs: f64) {
+        if let Some(state) = self.tv.attached() {
+            if state.can_seek {
+                self.tv
+                    .control("seek-to", secs.clamp(0.0, state.duration.max(0.0)));
+            }
+        } else if let Some(mpv) = self.mpv.borrow().as_ref() {
+            mpv.seek_absolute(secs);
+        }
+    }
+
+    /// Shuffle a freshly opened list once mpv plays its chosen file with every
+    /// entry in: the entries around it arrive later than the file loads.
+    fn shuffle_when_listed(&mut self) {
+        let Some((path, count)) = &self.shuffle_on_load else {
+            return;
+        };
+        let mpv_ref = self.mpv.borrow();
+        let Some(mpv) = mpv_ref.as_ref() else {
+            return;
+        };
+        if mpv.get_current_file().as_ref() != Some(path) {
+            // Another file plays: the open this shuffle was for is over.
+            drop(mpv_ref);
+            self.shuffle_on_load = None;
+            return;
+        }
+        if usize::try_from(mpv.get_playlist_count()).ok() == Some(*count) {
+            mpv.playlist_shuffle(true);
+            drop(mpv_ref);
+            self.shuffle_on_load = None;
+        }
     }
 
     /// Hide + drop the welcome overlay (called on the first `FileLoaded`).
@@ -377,6 +434,7 @@ impl VideoShell {
             }
             VideoBrowserSidebarOutput::SendToConverter(paths) => self.send_to_converter(&paths),
             VideoBrowserSidebarOutput::TrashFiles(paths) => self.trash_files(paths, sender),
+            VideoBrowserSidebarOutput::Renamed(renames) => self.rename_entries(&renames),
             VideoBrowserSidebarOutput::Notify(msg) => self.notify(&msg),
             VideoBrowserSidebarOutput::SetLoopMode(mode) => {
                 if let Some(mpv) = self.mpv.borrow().as_ref() {
@@ -458,6 +516,16 @@ impl VideoShell {
     /// is loaded yet, start them. Pushes the updated queue back to the sidebar
     /// (which reveals Playlist mode).
     fn enqueue_paths(&mut self, paths: &[String]) {
+        // The queue holds each file once, as "Play next" keeps it: a second
+        // copy would make remove and play act on the first one.
+        let mut seen: std::collections::HashSet<&str> =
+            self.playlist_paths.iter().map(String::as_str).collect();
+        let paths: Vec<String> = paths
+            .iter()
+            .filter(|path| seen.insert(path.as_str()))
+            .cloned()
+            .collect();
+        let paths = paths.as_slice();
         if paths.is_empty() {
             return;
         }
@@ -536,13 +604,16 @@ impl VideoShell {
                 let target = if from < current { current } else { current + 1 };
                 mpv.playlist_play_index(target);
             }
-            // The listing: out of where it was, in after the playing one.
-            let playing = order.get(current as usize).cloned();
-            self.playlist_paths.retain(|entry| *entry != path);
-            let at = playing
-                .and_then(|playing| playlist_index_of(&self.playlist_paths, &playing))
-                .map_or(self.playlist_paths.len(), |index| index + 1);
-            self.playlist_paths.insert(at, path);
+            // The listing: out of where it was, in after the playing one. The
+            // playing one itself stays put, as in mpv.
+            if from != current {
+                let playing = order.get(current as usize).cloned();
+                self.playlist_paths.retain(|entry| *entry != path);
+                let at = playing
+                    .and_then(|playing| playlist_index_of(&self.playlist_paths, &playing))
+                    .map_or(self.playlist_paths.len(), |index| index + 1);
+                self.playlist_paths.insert(at, path);
+            }
         }
         self.playlist.emit(VideoBrowserSidebarInput::SetQueue(
             self.playlist_paths.clone(),
@@ -562,6 +633,33 @@ impl VideoShell {
         ));
     }
 
+    /// Files renamed or moved on disk: the queue follows them. mpv keeps the
+    /// entry it has open playing, the file stays readable under its old
+    /// name until closed; the others are swapped in place.
+    fn rename_entries(&mut self, renames: &[(String, String)]) {
+        let mpv = self.mpv.borrow().clone();
+        let playing = mpv.as_ref().map_or(-1, |mpv| mpv.get_playlist_pos());
+        let mut changed = false;
+        for (from, to) in renames {
+            if let Some(i) = playlist_index_of(&self.playlist_paths, from) {
+                self.playlist_paths[i].clone_from(to);
+                changed = true;
+            }
+            if let Some(mpv) = &mpv
+                && let Some(index) = playlist_index_of(&mpv.get_playlist_paths(), from)
+                && index as i64 != playing
+            {
+                mpv.playlist_insert_at(to, index as i64);
+                mpv.playlist_remove(index as i64 + 1);
+            }
+        }
+        if changed {
+            self.playlist.emit(VideoBrowserSidebarInput::SetQueue(
+                self.playlist_paths.clone(),
+            ));
+        }
+    }
+
     fn remove_playlist_entry(&mut self, path: &str) {
         if let Some(i) = playlist_index_of(&self.playlist_paths, path) {
             if let Some(mpv) = self.mpv.borrow().as_ref()
@@ -575,12 +673,38 @@ impl VideoShell {
 
     /// Route an IPTV browser intent: play the selected channel URL through the
     /// existing playback path (replaces the playlist with the single stream).
-    pub(super) fn on_iptv(out: VideoIptvBrowserOutput, sender: &ComponentSender<VideoShell>) {
+    pub(super) fn on_iptv(&mut self, out: VideoIptvBrowserOutput) {
         match out {
-            VideoIptvBrowserOutput::PlayChannel { url, .. } => {
-                Self::open_files(std::slice::from_ref(&url), sender);
-            }
+            VideoIptvBrowserOutput::PlayChannel { url, title } => self.play_stream(url, &title),
         }
+    }
+
+    /// Play one stream under its own name: an IPTV channel. It replaces the
+    /// playlist, like opening a URL, and nothing on disk is resolved for it.
+    fn play_stream(&mut self, url: String, title: &str) {
+        // A folder scan still running must not replace the channel.
+        self.open_generation += 1;
+        if let Some(start_video) = self.video_start.take() {
+            start_video();
+        }
+        let Some(mpv) = self.mpv.borrow().clone() else {
+            return;
+        };
+        if title.is_empty() {
+            mpv.load_file(&url);
+        } else {
+            mpv.load_file_titled(&url, title);
+        }
+        mpv.play();
+        self.shuffle_on_load = None;
+        self.playlist_paths = vec![url.clone()];
+        self.playlist.emit(VideoBrowserSidebarInput::SetQueue(
+            self.playlist_paths.clone(),
+        ));
+        self.playlist.emit(VideoBrowserSidebarInput::SetPlaylist {
+            paths: vec![url],
+            folder: None,
+        });
     }
 
     /// Drive mpv from a controls-bar intent.
@@ -597,7 +721,7 @@ impl VideoShell {
         }
         if let VideoControlsBarOutput::GotoTimeClicked = out {
             if let Some(root) = root {
-                self.show_goto_time_dialog(root);
+                Self::show_goto_time_dialog(root);
             }
             return;
         }
@@ -652,14 +776,19 @@ impl VideoShell {
 /// Resolve an open request to `(entries, start, folder)` off the main thread.
 /// Pure + `Send` (captures only `String`s); the blocking folder scan / playlist
 /// parse run here. Returns `None` when nothing playable was found.
-fn resolve_open_files(paths: Vec<String>) -> Option<(Vec<String>, usize, Option<String>)> {
+fn resolve_open_files(
+    paths: Vec<String>,
+    (sort_key, sort_desc): &(String, bool),
+) -> Option<(Vec<String>, usize, Option<String>)> {
     use big_media_runtime::media::playlist;
 
     if paths.is_empty() {
         return None;
     }
 
-    if paths.len() == 1 && playlist::is_playlist_file(&paths[0]) {
+    // A playlist file on disk; an HLS stream ends in .m3u8 too, and it is
+    // played, not read as a file: every IPTV channel was one.
+    if paths.len() == 1 && !is_remote_uri(&paths[0]) && playlist::is_playlist_file(&paths[0]) {
         let parsed = playlist::parse_playlist_file(&paths[0]);
         if parsed.is_empty() {
             return None;
@@ -672,7 +801,8 @@ fn resolve_open_files(paths: Vec<String>) -> Option<(Vec<String>, usize, Option<
         // folder as the sidebar's browse context.
         return match std::path::Path::new(&paths[0]).parent() {
             Some(parent) => {
-                let folder = playlist::scan_folder_flat(parent);
+                let mut folder = playlist::scan_folder_flat(parent);
+                playlist::sort_paths(&mut folder, sort_key, *sort_desc);
                 // A file the scan does not list (an extension it lacks) plays
                 // alone: starting at 0 played the folder's first video instead.
                 match folder.iter().position(|p| p == &paths[0]) {
@@ -700,14 +830,17 @@ fn resolve_open_files(paths: Vec<String>) -> Option<(Vec<String>, usize, Option<
     Some((media, 0, None))
 }
 
+/// Streams and discs: what mpv opens by URL, never a path on disk. Schemes
+/// are case-insensitive; IPTV lists use the UDP, RTP, SRT and MMS ones too.
 pub(crate) fn is_remote_uri(s: &str) -> bool {
-    let s = s.trim();
-    s.starts_with("http://")
-        || s.starts_with("https://")
-        || s.starts_with("rtsp://")
-        || s.starts_with("rtmp://")
-        || s.starts_with("dvd://")
-        || s.starts_with("bd://")
+    const SCHEMES: [&str; 12] = [
+        "http", "https", "rtsp", "rtsps", "rtmp", "rtmps", "udp", "rtp", "srt", "mms", "dvd", "bd",
+    ];
+    s.trim().split_once("://").is_some_and(|(scheme, _)| {
+        SCHEMES
+            .iter()
+            .any(|known| scheme.eq_ignore_ascii_case(known))
+    })
 }
 
 /// Seek-bar fraction for `pos` within a clip of `duration` seconds, clamped to
@@ -725,12 +858,6 @@ pub(super) fn seek_fraction(pos: f64, duration: f64) -> Option<f64> {
 /// the duration is unknown (so the caller leaves mpv alone).
 pub(super) fn seek_target_secs(frac: f64, duration: f64) -> Option<f64> {
     (duration > 0.0).then_some(frac * duration)
-}
-
-/// Whether a resolved playlist needs an explicit `playlist_play_index` after
-/// loading: only when the start is past the first entry (index 0 already plays).
-fn needs_explicit_start_index(start: usize) -> bool {
-    start > 0
 }
 
 /// Whether the incoming list is the one already loaded into mpv (jump in place
@@ -802,23 +929,42 @@ mod resolve_open_files_tests {
         path.to_string_lossy().into_owned()
     }
 
+    fn resolve_by_name(paths: Vec<String>) -> Option<(Vec<String>, usize, Option<String>)> {
+        resolve_open_files(paths, &("name".to_string(), false))
+    }
+
     #[test]
     fn empty_input_resolves_to_nothing() {
-        assert_eq!(resolve_open_files(vec![]), None);
+        assert_eq!(resolve_by_name(vec![]), None);
     }
 
     #[test]
     fn remote_uri_passes_through() {
         // Not a playlist, not local → the bare entry, no browse context.
         assert_eq!(
-            resolve_open_files(vec!["rtsp://host/stream".to_string()]),
+            resolve_by_name(vec!["rtsp://host/stream".to_string()]),
             Some((vec!["rtsp://host/stream".to_string()], 0, None))
         );
     }
 
     #[test]
+    fn an_hls_stream_plays_instead_of_being_read_as_a_playlist() {
+        for url in [
+            "http://host/live/u/p/560.m3u8",
+            "HTTPS://host/list.m3u",
+            "udp://@239.0.0.1:1234",
+        ] {
+            assert_eq!(
+                resolve_by_name(vec![url.to_string()]),
+                Some((vec![url.to_string()], 0, None)),
+                "{url}"
+            );
+        }
+    }
+
+    #[test]
     fn multiple_inputs_keep_media_order() {
-        let out = resolve_open_files(vec![
+        let out = resolve_by_name(vec![
             "/x/B.mp4".to_string(),
             "/x/a.mkv".to_string(),
             "/x/notes.txt".to_string(),
@@ -836,7 +982,7 @@ mod resolve_open_files_tests {
     #[test]
     fn multiple_non_media_inputs_resolve_to_nothing() {
         assert_eq!(
-            resolve_open_files(vec!["/x/a.txt".to_string(), "/x/b.doc".to_string()]),
+            resolve_by_name(vec!["/x/a.txt".to_string(), "/x/b.doc".to_string()]),
             None
         );
     }
@@ -848,7 +994,7 @@ mod resolve_open_files_tests {
         touch(dir.path(), "a.mp4");
         let opened = touch(dir.path(), "b.mp4");
         touch(dir.path(), "c.mp4");
-        let (folder, pos, context) = resolve_open_files(vec![opened.clone()]).unwrap();
+        let (folder, pos, context) = resolve_by_name(vec![opened.clone()]).unwrap();
         assert_eq!(folder.len(), 3, "all siblings scanned: {folder:?}");
         // Position must index the opened file specifically (sorted a,b,c → 1).
         assert_eq!(pos, 1);
@@ -867,7 +1013,7 @@ mod resolve_open_files_tests {
         // "Open With" offers every type the desktop entry claims; one whose
         // extension the scan lacks must not start the folder's first video.
         let opened = touch(dir.path(), "b.unknownvideo");
-        let (entries, pos, context) = resolve_open_files(vec![opened.clone()]).unwrap();
+        let (entries, pos, context) = resolve_by_name(vec![opened.clone()]).unwrap();
         assert_eq!((entries, pos, context), (vec![opened], 0, None));
     }
 
@@ -880,7 +1026,7 @@ mod resolve_open_files_tests {
         let playlist = dir.path().join("list.m3u8");
         fs::write(&playlist, format!("#EXTM3U\n{a}\n{b}\n")).unwrap();
         let (entries, pos, context) =
-            resolve_open_files(vec![playlist.to_string_lossy().into_owned()]).unwrap();
+            resolve_by_name(vec![playlist.to_string_lossy().into_owned()]).unwrap();
         assert_eq!(entries.len(), 2, "both playlist entries kept: {entries:?}");
         assert_eq!(pos, 0);
         assert_eq!(context, None);
@@ -893,7 +1039,7 @@ mod resolve_open_files_tests {
         let playlist = dir.path().join("empty.m3u8");
         fs::write(&playlist, "#EXTM3U\n").unwrap();
         assert_eq!(
-            resolve_open_files(vec![playlist.to_string_lossy().into_owned()]),
+            resolve_by_name(vec![playlist.to_string_lossy().into_owned()]),
             None
         );
     }
@@ -901,9 +1047,7 @@ mod resolve_open_files_tests {
 
 #[cfg(test)]
 mod dispatch_logic_tests {
-    use super::{
-        is_same_playlist, needs_explicit_start_index, playlist_index_of, seek_target_secs,
-    };
+    use super::{is_same_playlist, playlist_index_of, seek_target_secs};
 
     #[test]
     fn seek_target_none_until_duration_known() {
@@ -916,13 +1060,6 @@ mod dispatch_logic_tests {
         assert_eq!(seek_target_secs(0.0, 200.0), Some(0.0));
         assert_eq!(seek_target_secs(0.25, 200.0), Some(50.0));
         assert_eq!(seek_target_secs(1.0, 200.0), Some(200.0));
-    }
-
-    #[test]
-    fn start_index_only_past_first_entry() {
-        assert!(!needs_explicit_start_index(0));
-        assert!(needs_explicit_start_index(1));
-        assert!(needs_explicit_start_index(9));
     }
 
     #[test]

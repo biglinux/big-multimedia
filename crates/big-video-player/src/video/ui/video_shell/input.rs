@@ -77,6 +77,8 @@ pub enum VideoShellInput {
         entries: Vec<String>,
         start: usize,
         folder: Option<String>,
+        /// The request's `open_generation`; an older one is stale.
+        generation: u64,
     },
     /// Open the go-to-time entry dialog (Playback menu).
     ShowGotoTime,
@@ -95,6 +97,11 @@ pub enum VideoShellInput {
     /// Re-read which settings are away from normal (controls shown, a
     /// dialog closed, speed changed).
     RefreshAdjustments,
+    /// mpv applied a new speed: the header pill and the panel's home page
+    /// list it.
+    SpeedChanged,
+    /// Seek to an absolute time, on the TV while it has the controls.
+    SeekTo(f64),
     /// A chip's × or a notice's button: put these back to normal, with an
     /// Undo in the settings panel.
     ResetAdjustments(Vec<super::adjustments::Adjustment>),

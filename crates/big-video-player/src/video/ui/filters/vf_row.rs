@@ -16,6 +16,9 @@ use big_relm4_components::input::debounce::BigDebouncedAction as DebouncedAction
 pub(super) struct VfFilterSpec<F: Fn(f64) -> String + Clone + 'static> {
     /// mpv vf label (identity for append/remove and active detection).
     pub(super) label: &'static str,
+    /// The graph option holding the spin's value, read back from mpv so an
+    /// active filter shows the value it runs with.
+    pub(super) param: &'static str,
     pub(super) title: String,
     pub(super) subtitle: String,
     pub(super) spin_title: String,
@@ -34,7 +37,8 @@ pub(super) fn build_vf_expander_row(
     current_vf: &str,
     spec: VfFilterSpec<impl Fn(f64) -> String + Clone + 'static>,
 ) -> adw::ExpanderRow {
-    let is_active = current_vf.contains(spec.label);
+    let active = super::filter_specs::active_vf_graph(current_vf, spec.label);
+    let is_active = active.is_some();
     let expander = adw::ExpanderRow::builder()
         .title(&spec.title)
         .subtitle(&spec.subtitle)
@@ -43,7 +47,10 @@ pub(super) fn build_vf_expander_row(
         .build();
 
     let (default, min, max, step, page) = spec.adjustment;
-    let adjustment = gtk::Adjustment::new(default, min, max, step, page, 0.0);
+    let value = active
+        .and_then(|graph| super::filter_specs::vf_graph_number(&graph, spec.param))
+        .map_or(default, |value| value.clamp(min, max));
+    let adjustment = gtk::Adjustment::new(value, min, max, step, page, 0.0);
     let mut spin_builder = adw::SpinRow::builder()
         .title(&spec.spin_title)
         .adjustment(&adjustment);

@@ -1,8 +1,11 @@
 /* Big Audio Player */
 
 /* ─── Global ─── */
+/* Backgrounds read libadwaita's variables, not the fixed named colors:
+   Big Gnome Center's frosted glass turns the variables translucent, and a
+   named color would paint over the blur. */
 window.background {
-    background-color: @window_bg_color;
+    background-color: var(--window-bg-color);
 }
 
 /* ─── Header Bar ─── */
@@ -83,7 +86,7 @@ viewswitcher > button:hover:not(:checked) {
 
 /* ─── Sidebar ─── */
 .sidebar-pane {
-    background-color: @sidebar_bg_color;
+    background-color: var(--sidebar-bg-color);
 }
 
 /* Sidebar headerbar: blend with sidebar background */
@@ -271,7 +274,7 @@ columnview > listview > row.now-playing {
 
 /* ─── Lyrics panel ─── */
 .lyrics-panel {
-    background: alpha(@sidebar_bg_color, 0.3);
+    background: color-mix(in srgb, var(--sidebar-bg-color) 30%, transparent);
 }
 
 .lyrics-header-icon {

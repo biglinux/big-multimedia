@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: big-media-runtime 0.1.0\n"
 "Report-Msgid-Bugs-To: https://github.com/biglinux/big-multimedia/issues\n"
-"POT-Creation-Date: 2026-10-26 14:38-0300\n"
+"POT-Creation-Date: 2026-10-26 19:32-0300\n"
 "PO-Revision-Date: 2026-10-23 00:15-0300\n"
 "Last-Translator: Automatically generated\n"
 "Language-Team: none\n"
@@ -238,7 +238,7 @@ msgstr "반복 전환"
 
 #: crates/big-audio-player/src/audio/keybindings.rs:129
 #: crates/big-video-player/src/video/ui/video_shell/panel.rs:548
-#: crates/big-video-player/src/video/ui/video_shell/playback.rs:439
+#: crates/big-video-player/src/video/ui/video_shell/playback.rs:491
 msgid "Undo"
 msgstr "실행 취소"
 
@@ -464,22 +464,22 @@ msgid "Cancel Timer"
 msgstr "타이머 취소"
 
 #: crates/big-audio-player/src/audio/ui/audio_shell/chrome.rs:268
-#: crates/big-video-player/src/video/ui/menu_dialogs.rs:255
+#: crates/big-video-player/src/video/ui/menu_dialogs.rs:265
 msgid "Sleep timer: closing player"
 msgstr "취침 타이머: 플레이어를 닫는 중"
 
 #: crates/big-audio-player/src/audio/ui/audio_shell/chrome.rs:276
-#: crates/big-video-player/src/video/ui/menu_dialogs.rs:263
+#: crates/big-video-player/src/video/ui/menu_dialogs.rs:273
 msgid "Sleep timer: suspending computer"
 msgstr "취침 타이머: 컴퓨터를 절전 모드로 전환하는 중"
 
 #: crates/big-audio-player/src/audio/ui/audio_shell/chrome.rs:288
-#: crates/big-video-player/src/video/ui/menu_dialogs.rs:275
+#: crates/big-video-player/src/video/ui/menu_dialogs.rs:285
 msgid "Sleep timer: shutting down"
 msgstr "취침 타이머: 시스템을 종료하는 중"
 
 #: crates/big-audio-player/src/audio/ui/audio_shell/chrome.rs:299
-#: crates/big-video-player/src/video/ui/menu_dialogs.rs:286
+#: crates/big-video-player/src/video/ui/menu_dialogs.rs:296
 msgid "Sleep timer: playback paused"
 msgstr "취침 타이머: 재생을 일시 정지했습니다"
 
@@ -498,8 +498,8 @@ msgstr "파일 필터링…"
 #: crates/big-audio-player/src/audio/ui/audio_shell/component.rs:144
 #: crates/big-audio-player/src/audio/ui/audio_shell/component.rs:171
 #: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/header.rs:22
-#: crates/big-video-player/src/video/ui/video_shell/component.rs:280
 #: crates/big-video-player/src/video/ui/video_shell/component.rs:284
+#: crates/big-video-player/src/video/ui/video_shell/component.rs:288
 msgid "Files"
 msgstr "파일"
 
@@ -540,7 +540,7 @@ msgid "Retry saving"
 msgstr "다시 저장"
 
 #: crates/big-audio-player/src/audio/ui/audio_shell/engine.rs:33
-#: crates/big-video-player/src/video/ui/video_shell/playback.rs:176
+#: crates/big-video-player/src/video/ui/video_shell/playback.rs:186
 msgid "Could not play this file — it may be unsupported or corrupt."
 msgstr ""
 "이 파일을 재생할 수 없습니다. 지원되지 않거나 손상된 파일일 수 있습니다."
@@ -551,12 +551,12 @@ msgid "No local track is playing"
 msgstr "재생 중인 로컬 트랙이 없습니다"
 
 #: crates/big-audio-player/src/audio/ui/audio_shell/export.rs:128
-#: crates/big-video-player/src/video/ui/video_shell/trim/run.rs:215
+#: crates/big-video-player/src/video/ui/video_shell/trim/run.rs:216
 msgid "Start (seconds)"
 msgstr "시작 (초)"
 
 #: crates/big-audio-player/src/audio/ui/audio_shell/export.rs:133
-#: crates/big-video-player/src/video/ui/video_shell/trim/run.rs:219
+#: crates/big-video-player/src/video/ui/video_shell/trim/run.rs:220
 msgid "End (seconds)"
 msgstr "끝 (초)"
 
@@ -589,18 +589,18 @@ msgstr "자르기 편집"
 #: crates/big-audio-player/src/audio/ui/unavailable_dialog.rs:258
 #: crates/big-video-player/src/video/ui/iptv/providers_dialog.rs:168
 #: crates/big-video-player/src/video/ui/menu_dialogs.rs:72
-#: crates/big-video-player/src/video/ui/video_browser_sidebar/fileops.rs:200
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/fileops.rs:210
 #: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:173
 #: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:257
 #: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:381
-#: crates/big-video-player/src/video/ui/video_shell/trim/run.rs:258
+#: crates/big-video-player/src/video/ui/video_shell/trim/run.rs:259
 #: crates/ui/media/big-player-ui/src/podcast_panel.rs:571
 #: crates/ui/media/big-player-ui/src/radio_panel/widgets.rs:351
 msgid "Cancel"
 msgstr "취소"
 
 #: crates/big-audio-player/src/audio/ui/audio_shell/export.rs:161
-#: crates/big-video-player/src/video/ui/video_shell/trim/run.rs:258
+#: crates/big-video-player/src/video/ui/video_shell/trim/run.rs:259
 msgid "Apply"
 msgstr "적용"
 
@@ -1074,8 +1074,8 @@ msgstr ""
 "새 이름을 선택하여 다시 시도하세요."
 
 #: crates/big-audio-player/src/audio/ui/library_io.rs:112
-#: crates/big-video-player/src/video/ui/menu_dialogs.rs:339
-#: crates/big-video-player/src/video/ui/video_shell/component.rs:265
+#: crates/big-video-player/src/video/ui/menu_dialogs.rs:349
+#: crates/big-video-player/src/video/ui/video_shell/component.rs:269
 #: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:257
 msgid "Open"
 msgstr "열기"
@@ -1320,8 +1320,8 @@ msgstr "사이드바 탭에서 라디오와 팟캐스트를 살펴보세요"
 #: crates/big-audio-player/src/audio/ui/playlist_panel.rs:401
 #: crates/big-video-player/src/video/ui/appearance/layout/buttons_page.rs:42
 #: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/header.rs:24
-#: crates/big-video-player/src/video/ui/video_shell/component.rs:287
 #: crates/big-video-player/src/video/ui/video_shell/component.rs:291
+#: crates/big-video-player/src/video/ui/video_shell/component.rs:295
 #: crates/big-video-player/src/video/ui/video_shell/playlist_panel.rs:24
 msgid "Playlist"
 msgstr "재생 목록"
@@ -1554,7 +1554,7 @@ msgid "Rename Playlist"
 msgstr "재생 목록 이름 바꾸기"
 
 #: crates/big-audio-player/src/audio/ui/playlist_library_dialog/spec.rs:205
-#: crates/big-video-player/src/video/ui/video_browser_sidebar/fileops.rs:193
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/fileops.rs:203
 msgid "New name"
 msgstr "새 이름"
 
@@ -1907,8 +1907,8 @@ msgid "Media information"
 msgstr "미디어 정보"
 
 #: crates/big-video-player/src/video/ui/appearance/layout/buttons_page.rs:28
-#: crates/big-video-player/src/video/ui/video_shell/component.rs:256
 #: crates/big-video-player/src/video/ui/video_shell/component.rs:260
+#: crates/big-video-player/src/video/ui/video_shell/component.rs:264
 msgid "Keep Above"
 msgstr "항상 위에 표시"
 
@@ -2331,17 +2331,17 @@ msgstr "감쇠"
 msgid "Toggle favorite"
 msgstr "즐겨찾기 전환"
 
-#: crates/big-video-player/src/video/ui/iptv/channel_list.rs:157
+#: crates/big-video-player/src/video/ui/iptv/channel_list.rs:158
 msgid "No channels"
 msgstr "채널 없음"
 
-#: crates/big-video-player/src/video/ui/iptv/channel_list.rs:165
+#: crates/big-video-player/src/video/ui/iptv/channel_list.rs:166
 #, rust-format
 msgid "{} channel"
 msgid_plural "{} channels"
 msgstr[0] "채널 {}개"
 
-#: crates/big-video-player/src/video/ui/iptv/channel_list.rs:212
+#: crates/big-video-player/src/video/ui/iptv/channel_list.rs:213
 #: crates/ui/media/big-player-ui/src/radio_panel/methods.rs:126
 msgid "Ungrouped"
 msgstr "그룹 없음"
@@ -2381,9 +2381,53 @@ msgstr "채널을 다시 불러오는 중…"
 msgid "Loading channels…"
 msgstr "채널을 불러오는 중…"
 
-#: crates/big-video-player/src/video/ui/iptv/mod.rs:324
-msgid "Could not reach provider — showing cached copy if available."
-msgstr "제공업체에 연결할 수 없습니다. 캐시된 사본이 있으면 표시합니다."
+#: crates/big-video-player/src/video/ui/iptv/mod.rs:337
+msgid ""
+"Could not reach the provider. Check the address and your connection; a saved "
+"list stays on screen."
+msgstr ""
+"제공업체에 연결할 수 없습니다. 주소와 인터넷 연결을 확인하세요. 저장된 목록"
+"은 화면에 그대로 남습니다."
+
+#: crates/big-video-player/src/video/ui/iptv/mod.rs:340
+msgid ""
+"The provider refused access. Check the user name and password, or the User-"
+"Agent the provider asks for."
+msgstr ""
+"제공업체가 접근을 거부했습니다. 사용자 이름과 비밀번호 또는 제공업체가 요구하"
+"는 User-Agent를 확인하세요."
+
+#: crates/big-video-player/src/video/ui/iptv/mod.rs:343
+#, rust-format
+msgid "The provider's server failed (error {}). Try again later."
+msgstr "제공업체 서버에 오류가 발생했습니다(오류 {}). 나중에 다시 시도하세요."
+
+#: crates/big-video-player/src/video/ui/iptv/mod.rs:347
+#, rust-format
+msgid "The provider answered with error {}."
+msgstr "제공업체가 오류 {}(으)로 응답했습니다."
+
+#: crates/big-video-player/src/video/ui/iptv/mod.rs:349
+#, rust-format
+msgid "The channel list is larger than {} MB."
+msgstr "채널 목록이 {} MB보다 큽니다."
+
+#: crates/big-video-player/src/video/ui/iptv/mod.rs:353
+msgid "The provider sent no channels."
+msgstr "제공업체에서 채널을 보내지 않았습니다."
+
+#: crates/big-video-player/src/video/ui/iptv/mod.rs:354
+msgid "The provider rejected the user name or password."
+msgstr "제공업체가 사용자 이름 또는 비밀번호를 거부했습니다."
+
+#: crates/big-video-player/src/video/ui/iptv/mod.rs:356
+#, rust-format
+msgid "This account is not active (the provider says: {})."
+msgstr "이 계정은 활성 상태가 아닙니다(제공업체 응답: {})."
+
+#: crates/big-video-player/src/video/ui/iptv/mod.rs:358
+msgid "Could not read the playlist file."
+msgstr "재생 목록 파일을 읽을 수 없습니다."
 
 #: crates/big-video-player/src/video/ui/iptv/providers_dialog.rs:44
 msgid "Add provider"
@@ -2776,21 +2820,21 @@ msgstr ""
 #: crates/big-video-player/src/video/ui/menu_dialogs.rs:134
 #: crates/big-video-player/src/video/ui/menu_dialogs.rs:138
 #: crates/big-video-player/src/video/ui/menu_dialogs.rs:149
-#: crates/big-video-player/src/video/ui/video_shell/component.rs:728
-#: crates/big-video-player/src/video/ui/video_shell/playback.rs:153
+#: crates/big-video-player/src/video/ui/video_shell/component.rs:738
+#: crates/big-video-player/src/video/ui/video_shell/playback.rs:163
 msgid "Screenshot failed"
 msgstr "스크린샷 실패"
 
-#: crates/big-video-player/src/video/ui/menu_dialogs.rs:314
-#: crates/media-runtime/src/player/mpv_backend/backend/mod.rs:292
+#: crates/big-video-player/src/video/ui/menu_dialogs.rs:324
+#: crates/media-runtime/src/player/mpv_backend/backend/mod.rs:301
 msgid "Chapter"
 msgstr "챕터"
 
-#: crates/big-video-player/src/video/ui/menu_dialogs.rs:335
+#: crates/big-video-player/src/video/ui/menu_dialogs.rs:345
 msgid "Screenshot saved"
 msgstr "스크린샷을 저장했습니다"
 
-#: crates/big-video-player/src/video/ui/menu_dialogs.rs:337
+#: crates/big-video-player/src/video/ui/menu_dialogs.rs:347
 msgid "Screenshot saved; disk synchronization could not be confirmed"
 msgstr "스크린샷을 저장했지만 디스크 동기화를 확인할 수 없습니다"
 
@@ -3556,36 +3600,36 @@ msgstr "폴더로 이동…"
 msgid "Done"
 msgstr "완료"
 
-#: crates/big-video-player/src/video/ui/video_browser_sidebar/fileops.rs:144
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/fileops.rs:154
 msgid "Move to Folder"
 msgstr "폴더로 이동"
 
-#: crates/big-video-player/src/video/ui/video_browser_sidebar/fileops.rs:161
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/fileops.rs:171
 msgid "moved"
 msgstr "이동됨"
 
-#: crates/big-video-player/src/video/ui/video_browser_sidebar/fileops.rs:183
-#: crates/big-video-player/src/video/ui/video_browser_sidebar/fileops.rs:200
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/fileops.rs:193
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/fileops.rs:210
 msgid "Rename"
 msgstr "이름 바꾸기"
 
-#: crates/big-video-player/src/video/ui/video_browser_sidebar/fileops.rs:189
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/fileops.rs:199
 msgid "Choose a new file name."
 msgstr "새 파일 이름을 입력하세요."
 
-#: crates/big-video-player/src/video/ui/video_browser_sidebar/fileops.rs:232
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/fileops.rs:242
 msgid "Invalid name"
 msgstr "잘못된 이름"
 
-#: crates/big-video-player/src/video/ui/video_browser_sidebar/fileops.rs:248
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/fileops.rs:258
 msgid "A file with that name already exists"
 msgstr "같은 이름의 파일이 이미 있습니다"
 
-#: crates/big-video-player/src/video/ui/video_browser_sidebar/fileops.rs:255
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/fileops.rs:265
 msgid "Rename failed"
 msgstr "이름 바꾸기 실패"
 
-#: crates/big-video-player/src/video/ui/video_browser_sidebar/fileops.rs:349
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/fileops.rs:359
 #, rust-format
 msgid "{ok} {verb}, {failed} failed"
 msgstr "{ok}개 {verb}, {failed}개 실패"
@@ -3783,7 +3827,7 @@ msgid "Drop a file or open one to start"
 msgstr "파일을 놓거나 열어서 시작하세요"
 
 #: crates/big-video-player/src/video/ui/video_shell/actions.rs:132
-#: crates/big-video-player/src/video/ui/video_shell/component.rs:849
+#: crates/big-video-player/src/video/ui/video_shell/component.rs:864
 msgid "Open Recent"
 msgstr "최근 파일 열기"
 
@@ -3921,21 +3965,21 @@ msgstr "TV에서"
 msgid "The TV is still playing"
 msgstr "TV에서 아직 재생 중입니다"
 
-#: crates/big-video-player/src/video/ui/video_shell/component.rs:848
+#: crates/big-video-player/src/video/ui/video_shell/component.rs:863
 #: crates/big-video-player/src/video/ui/video_shell/input_gestures.rs:121
 msgid "Open File…"
 msgstr "파일 열기…"
 
-#: crates/big-video-player/src/video/ui/video_shell/component.rs:850
+#: crates/big-video-player/src/video/ui/video_shell/component.rs:865
 #: crates/big-video-player/src/video/ui/video_shell/input_gestures.rs:122
 msgid "Open URL…"
 msgstr "URL 열기…"
 
-#: crates/big-video-player/src/video/ui/video_shell/component.rs:851
+#: crates/big-video-player/src/video/ui/video_shell/component.rs:866
 msgid "Open Disc…"
 msgstr "디스크 열기…"
 
-#: crates/big-video-player/src/video/ui/video_shell/component.rs:852
+#: crates/big-video-player/src/video/ui/video_shell/component.rs:867
 msgid "TV Channels (IPTV)…"
 msgstr "TV 채널 (IPTV)…"
 
@@ -4141,19 +4185,19 @@ msgstr "최근 파일 검색"
 msgid "No recent file matches"
 msgstr "일치하는 최근 파일이 없습니다"
 
-#: crates/big-video-player/src/video/ui/video_shell/playback.rs:158
+#: crates/big-video-player/src/video/ui/video_shell/playback.rs:168
 msgid "Screenshot timed out; cancellation requested"
 msgstr "스크린샷 시간이 초과되었습니다. 취소를 요청했습니다"
 
-#: crates/big-video-player/src/video/ui/video_shell/playback.rs:204
+#: crates/big-video-player/src/video/ui/video_shell/playback.rs:214
 msgid "Playing video"
 msgstr "비디오 재생 중"
 
-#: crates/big-video-player/src/video/ui/video_shell/playback.rs:427
+#: crates/big-video-player/src/video/ui/video_shell/playback.rs:479
 msgid "Could not move to trash"
 msgstr "휴지통으로 이동할 수 없습니다"
 
-#: crates/big-video-player/src/video/ui/video_shell/playback.rs:433
+#: crates/big-video-player/src/video/ui/video_shell/playback.rs:485
 #, rust-format
 msgid "{} file moved to trash"
 msgid_plural "{} files moved to trash"
@@ -4242,20 +4286,20 @@ msgstr "이 구간 제거"
 msgid "Open a local video to cut it"
 msgstr "로컬 비디오를 열면 자를 수 있습니다"
 
-#: crates/big-video-player/src/video/ui/video_shell/trim/run.rs:218
-#: crates/big-video-player/src/video/ui/video_shell/trim/run.rs:222
+#: crates/big-video-player/src/video/ui/video_shell/trim/run.rs:219
+#: crates/big-video-player/src/video/ui/video_shell/trim/run.rs:223
 msgid "s"
 msgstr "초"
 
-#: crates/big-video-player/src/video/ui/video_shell/trim/run.rs:238
+#: crates/big-video-player/src/video/ui/video_shell/trim/run.rs:239
 msgid "Cut times"
 msgstr "자르기 시간"
 
-#: crates/big-video-player/src/video/ui/video_shell/trim/run.rs:243
+#: crates/big-video-player/src/video/ui/video_shell/trim/run.rs:244
 msgid "Hundredth-second precision; either order is fine"
 msgstr "100분의 1초 단위로 지정합니다. 순서는 상관없습니다"
 
-#: crates/big-video-player/src/video/ui/video_shell/trim/run.rs:253
+#: crates/big-video-player/src/video/ui/video_shell/trim/run.rs:254
 msgid "Edit Cut"
 msgstr "자르기 편집"
 
@@ -5369,3 +5413,6 @@ msgstr "휴대폰 카메라로 코드를 스캔하세요."
 #: crates/ui/media/big-player-ui/src/smartphone/dialog.rs:149
 msgid "Could not start server"
 msgstr "서버를 시작할 수 없습니다"
+
+#~ msgid "Could not reach provider — showing cached copy if available."
+#~ msgstr "제공업체에 연결할 수 없습니다. 캐시된 사본이 있으면 표시합니다."

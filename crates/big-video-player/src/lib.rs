@@ -27,6 +27,10 @@ fn build_player_window(
         .content(content)
         .build();
     window.set_size_request(640, 400);
+    // Big Gnome Center frosts the windows that carry their app's class
+    // (GNOME 51, "Windows" under Frosted glass). Nothing here paints the
+    // window: the area behind the video is the theme's window background.
+    window.add_css_class("big-video-player");
     window
 }
 

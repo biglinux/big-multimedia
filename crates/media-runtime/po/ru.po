@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: big-media-runtime 0.1.0\n"
 "Report-Msgid-Bugs-To: https://github.com/biglinux/big-multimedia/issues\n"
-"POT-Creation-Date: 2026-10-26 14:38-0300\n"
+"POT-Creation-Date: 2026-10-26 19:32-0300\n"
 "PO-Revision-Date: 2026-10-23 00:15-0300\n"
 "Last-Translator: Automatically generated\n"
 "Language-Team: none\n"
@@ -241,7 +241,7 @@ msgstr "Включить или выключить повтор"
 
 #: crates/big-audio-player/src/audio/keybindings.rs:129
 #: crates/big-video-player/src/video/ui/video_shell/panel.rs:548
-#: crates/big-video-player/src/video/ui/video_shell/playback.rs:439
+#: crates/big-video-player/src/video/ui/video_shell/playback.rs:491
 msgid "Undo"
 msgstr "Отменить"
 
@@ -473,22 +473,22 @@ msgid "Cancel Timer"
 msgstr "Отменить таймер"
 
 #: crates/big-audio-player/src/audio/ui/audio_shell/chrome.rs:268
-#: crates/big-video-player/src/video/ui/menu_dialogs.rs:255
+#: crates/big-video-player/src/video/ui/menu_dialogs.rs:265
 msgid "Sleep timer: closing player"
 msgstr "Таймер сна: закрытие плеера"
 
 #: crates/big-audio-player/src/audio/ui/audio_shell/chrome.rs:276
-#: crates/big-video-player/src/video/ui/menu_dialogs.rs:263
+#: crates/big-video-player/src/video/ui/menu_dialogs.rs:273
 msgid "Sleep timer: suspending computer"
 msgstr "Таймер сна: переход компьютера в режим ожидания"
 
 #: crates/big-audio-player/src/audio/ui/audio_shell/chrome.rs:288
-#: crates/big-video-player/src/video/ui/menu_dialogs.rs:275
+#: crates/big-video-player/src/video/ui/menu_dialogs.rs:285
 msgid "Sleep timer: shutting down"
 msgstr "Таймер сна: выключение"
 
 #: crates/big-audio-player/src/audio/ui/audio_shell/chrome.rs:299
-#: crates/big-video-player/src/video/ui/menu_dialogs.rs:286
+#: crates/big-video-player/src/video/ui/menu_dialogs.rs:296
 msgid "Sleep timer: playback paused"
 msgstr "Таймер сна: воспроизведение приостановлено"
 
@@ -507,8 +507,8 @@ msgstr "Фильтр файлов…"
 #: crates/big-audio-player/src/audio/ui/audio_shell/component.rs:144
 #: crates/big-audio-player/src/audio/ui/audio_shell/component.rs:171
 #: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/header.rs:22
-#: crates/big-video-player/src/video/ui/video_shell/component.rs:280
 #: crates/big-video-player/src/video/ui/video_shell/component.rs:284
+#: crates/big-video-player/src/video/ui/video_shell/component.rs:288
 msgid "Files"
 msgstr "Файлы"
 
@@ -549,7 +549,7 @@ msgid "Retry saving"
 msgstr "Повторить сохранение"
 
 #: crates/big-audio-player/src/audio/ui/audio_shell/engine.rs:33
-#: crates/big-video-player/src/video/ui/video_shell/playback.rs:176
+#: crates/big-video-player/src/video/ui/video_shell/playback.rs:186
 msgid "Could not play this file — it may be unsupported or corrupt."
 msgstr ""
 "Не удалось воспроизвести этот файл — возможно, он не поддерживается или "
@@ -561,12 +561,12 @@ msgid "No local track is playing"
 msgstr "Локальная композиция не воспроизводится"
 
 #: crates/big-audio-player/src/audio/ui/audio_shell/export.rs:128
-#: crates/big-video-player/src/video/ui/video_shell/trim/run.rs:215
+#: crates/big-video-player/src/video/ui/video_shell/trim/run.rs:216
 msgid "Start (seconds)"
 msgstr "Начало (секунды)"
 
 #: crates/big-audio-player/src/audio/ui/audio_shell/export.rs:133
-#: crates/big-video-player/src/video/ui/video_shell/trim/run.rs:219
+#: crates/big-video-player/src/video/ui/video_shell/trim/run.rs:220
 msgid "End (seconds)"
 msgstr "Конец (секунды)"
 
@@ -601,18 +601,18 @@ msgstr "Изменить обрезку"
 #: crates/big-audio-player/src/audio/ui/unavailable_dialog.rs:258
 #: crates/big-video-player/src/video/ui/iptv/providers_dialog.rs:168
 #: crates/big-video-player/src/video/ui/menu_dialogs.rs:72
-#: crates/big-video-player/src/video/ui/video_browser_sidebar/fileops.rs:200
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/fileops.rs:210
 #: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:173
 #: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:257
 #: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:381
-#: crates/big-video-player/src/video/ui/video_shell/trim/run.rs:258
+#: crates/big-video-player/src/video/ui/video_shell/trim/run.rs:259
 #: crates/ui/media/big-player-ui/src/podcast_panel.rs:571
 #: crates/ui/media/big-player-ui/src/radio_panel/widgets.rs:351
 msgid "Cancel"
 msgstr "Отмена"
 
 #: crates/big-audio-player/src/audio/ui/audio_shell/export.rs:161
-#: crates/big-video-player/src/video/ui/video_shell/trim/run.rs:258
+#: crates/big-video-player/src/video/ui/video_shell/trim/run.rs:259
 msgid "Apply"
 msgstr "Применить"
 
@@ -1093,8 +1093,8 @@ msgstr ""
 "выберите новое имя и повторите попытку."
 
 #: crates/big-audio-player/src/audio/ui/library_io.rs:112
-#: crates/big-video-player/src/video/ui/menu_dialogs.rs:339
-#: crates/big-video-player/src/video/ui/video_shell/component.rs:265
+#: crates/big-video-player/src/video/ui/menu_dialogs.rs:349
+#: crates/big-video-player/src/video/ui/video_shell/component.rs:269
 #: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:257
 msgid "Open"
 msgstr "Открыть"
@@ -1344,8 +1344,8 @@ msgstr "Откройте для себя радио и подкасты на в�
 #: crates/big-audio-player/src/audio/ui/playlist_panel.rs:401
 #: crates/big-video-player/src/video/ui/appearance/layout/buttons_page.rs:42
 #: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/header.rs:24
-#: crates/big-video-player/src/video/ui/video_shell/component.rs:287
 #: crates/big-video-player/src/video/ui/video_shell/component.rs:291
+#: crates/big-video-player/src/video/ui/video_shell/component.rs:295
 #: crates/big-video-player/src/video/ui/video_shell/playlist_panel.rs:24
 msgid "Playlist"
 msgstr "Плейлист"
@@ -1580,7 +1580,7 @@ msgid "Rename Playlist"
 msgstr "Переименование плейлиста"
 
 #: crates/big-audio-player/src/audio/ui/playlist_library_dialog/spec.rs:205
-#: crates/big-video-player/src/video/ui/video_browser_sidebar/fileops.rs:193
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/fileops.rs:203
 msgid "New name"
 msgstr "Новое название"
 
@@ -1936,8 +1936,8 @@ msgid "Media information"
 msgstr "Информация о медиа"
 
 #: crates/big-video-player/src/video/ui/appearance/layout/buttons_page.rs:28
-#: crates/big-video-player/src/video/ui/video_shell/component.rs:256
 #: crates/big-video-player/src/video/ui/video_shell/component.rs:260
+#: crates/big-video-player/src/video/ui/video_shell/component.rs:264
 msgid "Keep Above"
 msgstr "Поверх других окон"
 
@@ -2367,11 +2367,11 @@ msgstr "Затухание"
 msgid "Toggle favorite"
 msgstr "Добавить в избранное или убрать"
 
-#: crates/big-video-player/src/video/ui/iptv/channel_list.rs:157
+#: crates/big-video-player/src/video/ui/iptv/channel_list.rs:158
 msgid "No channels"
 msgstr "Нет каналов"
 
-#: crates/big-video-player/src/video/ui/iptv/channel_list.rs:165
+#: crates/big-video-player/src/video/ui/iptv/channel_list.rs:166
 #, rust-format
 msgid "{} channel"
 msgid_plural "{} channels"
@@ -2379,7 +2379,7 @@ msgstr[0] "{} канал"
 msgstr[1] "{} канала"
 msgstr[2] "{} каналов"
 
-#: crates/big-video-player/src/video/ui/iptv/channel_list.rs:212
+#: crates/big-video-player/src/video/ui/iptv/channel_list.rs:213
 #: crates/ui/media/big-player-ui/src/radio_panel/methods.rs:126
 msgid "Ungrouped"
 msgstr "Без группы"
@@ -2419,11 +2419,53 @@ msgstr "Перезагрузка каналов…"
 msgid "Loading channels…"
 msgstr "Загрузка каналов…"
 
-#: crates/big-video-player/src/video/ui/iptv/mod.rs:324
-msgid "Could not reach provider — showing cached copy if available."
+#: crates/big-video-player/src/video/ui/iptv/mod.rs:337
+msgid ""
+"Could not reach the provider. Check the address and your connection; a saved "
+"list stays on screen."
 msgstr ""
-"Не удалось связаться с провайдером — показана кэшированная копия, если она "
-"есть."
+"Не удалось связаться с провайдером. Проверьте адрес и подключение; "
+"сохранённый список останется на экране."
+
+#: crates/big-video-player/src/video/ui/iptv/mod.rs:340
+msgid ""
+"The provider refused access. Check the user name and password, or the User-"
+"Agent the provider asks for."
+msgstr ""
+"Провайдер отказал в доступе. Проверьте имя пользователя и пароль или User-"
+"Agent, который требует провайдер."
+
+#: crates/big-video-player/src/video/ui/iptv/mod.rs:343
+#, rust-format
+msgid "The provider's server failed (error {}). Try again later."
+msgstr "Сбой на сервере провайдера (ошибка {}). Повторите попытку позже."
+
+#: crates/big-video-player/src/video/ui/iptv/mod.rs:347
+#, rust-format
+msgid "The provider answered with error {}."
+msgstr "Провайдер ответил ошибкой {}."
+
+#: crates/big-video-player/src/video/ui/iptv/mod.rs:349
+#, rust-format
+msgid "The channel list is larger than {} MB."
+msgstr "Список каналов больше {} МБ."
+
+#: crates/big-video-player/src/video/ui/iptv/mod.rs:353
+msgid "The provider sent no channels."
+msgstr "Провайдер не прислал ни одного канала."
+
+#: crates/big-video-player/src/video/ui/iptv/mod.rs:354
+msgid "The provider rejected the user name or password."
+msgstr "Провайдер отклонил имя пользователя или пароль."
+
+#: crates/big-video-player/src/video/ui/iptv/mod.rs:356
+#, rust-format
+msgid "This account is not active (the provider says: {})."
+msgstr "Эта учётная запись не активна (провайдер сообщает: {})."
+
+#: crates/big-video-player/src/video/ui/iptv/mod.rs:358
+msgid "Could not read the playlist file."
+msgstr "Не удалось прочитать файл плейлиста."
 
 #: crates/big-video-player/src/video/ui/iptv/providers_dialog.rs:44
 msgid "Add provider"
@@ -2814,21 +2856,21 @@ msgstr "Очередь снимков экрана заполнена; дожд�
 #: crates/big-video-player/src/video/ui/menu_dialogs.rs:134
 #: crates/big-video-player/src/video/ui/menu_dialogs.rs:138
 #: crates/big-video-player/src/video/ui/menu_dialogs.rs:149
-#: crates/big-video-player/src/video/ui/video_shell/component.rs:728
-#: crates/big-video-player/src/video/ui/video_shell/playback.rs:153
+#: crates/big-video-player/src/video/ui/video_shell/component.rs:738
+#: crates/big-video-player/src/video/ui/video_shell/playback.rs:163
 msgid "Screenshot failed"
 msgstr "Не удалось сделать снимок экрана"
 
-#: crates/big-video-player/src/video/ui/menu_dialogs.rs:314
-#: crates/media-runtime/src/player/mpv_backend/backend/mod.rs:292
+#: crates/big-video-player/src/video/ui/menu_dialogs.rs:324
+#: crates/media-runtime/src/player/mpv_backend/backend/mod.rs:301
 msgid "Chapter"
 msgstr "Глава"
 
-#: crates/big-video-player/src/video/ui/menu_dialogs.rs:335
+#: crates/big-video-player/src/video/ui/menu_dialogs.rs:345
 msgid "Screenshot saved"
 msgstr "Снимок экрана сохранён"
 
-#: crates/big-video-player/src/video/ui/menu_dialogs.rs:337
+#: crates/big-video-player/src/video/ui/menu_dialogs.rs:347
 msgid "Screenshot saved; disk synchronization could not be confirmed"
 msgstr "Снимок экрана сохранён; синхронизацию с диском подтвердить не удалось"
 
@@ -3610,36 +3652,36 @@ msgstr "Переместить в папку…"
 msgid "Done"
 msgstr "Готово"
 
-#: crates/big-video-player/src/video/ui/video_browser_sidebar/fileops.rs:144
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/fileops.rs:154
 msgid "Move to Folder"
 msgstr "Перемещение в папку"
 
-#: crates/big-video-player/src/video/ui/video_browser_sidebar/fileops.rs:161
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/fileops.rs:171
 msgid "moved"
 msgstr "перемещено"
 
-#: crates/big-video-player/src/video/ui/video_browser_sidebar/fileops.rs:183
-#: crates/big-video-player/src/video/ui/video_browser_sidebar/fileops.rs:200
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/fileops.rs:193
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/fileops.rs:210
 msgid "Rename"
 msgstr "Переименовать"
 
-#: crates/big-video-player/src/video/ui/video_browser_sidebar/fileops.rs:189
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/fileops.rs:199
 msgid "Choose a new file name."
 msgstr "Выберите новое имя файла."
 
-#: crates/big-video-player/src/video/ui/video_browser_sidebar/fileops.rs:232
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/fileops.rs:242
 msgid "Invalid name"
 msgstr "Недопустимое имя"
 
-#: crates/big-video-player/src/video/ui/video_browser_sidebar/fileops.rs:248
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/fileops.rs:258
 msgid "A file with that name already exists"
 msgstr "Файл с таким именем уже существует"
 
-#: crates/big-video-player/src/video/ui/video_browser_sidebar/fileops.rs:255
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/fileops.rs:265
 msgid "Rename failed"
 msgstr "Не удалось переименовать"
 
-#: crates/big-video-player/src/video/ui/video_browser_sidebar/fileops.rs:349
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/fileops.rs:359
 #, rust-format
 msgid "{ok} {verb}, {failed} failed"
 msgstr "{ok} {verb}, ошибок: {failed}"
@@ -3841,7 +3883,7 @@ msgid "Drop a file or open one to start"
 msgstr "Перетащите файл или откройте его, чтобы начать"
 
 #: crates/big-video-player/src/video/ui/video_shell/actions.rs:132
-#: crates/big-video-player/src/video/ui/video_shell/component.rs:849
+#: crates/big-video-player/src/video/ui/video_shell/component.rs:864
 msgid "Open Recent"
 msgstr "Недавние"
 
@@ -3982,21 +4024,21 @@ msgstr "На телевизоре"
 msgid "The TV is still playing"
 msgstr "Телевизор всё ещё воспроизводит"
 
-#: crates/big-video-player/src/video/ui/video_shell/component.rs:848
+#: crates/big-video-player/src/video/ui/video_shell/component.rs:863
 #: crates/big-video-player/src/video/ui/video_shell/input_gestures.rs:121
 msgid "Open File…"
 msgstr "Открыть файл…"
 
-#: crates/big-video-player/src/video/ui/video_shell/component.rs:850
+#: crates/big-video-player/src/video/ui/video_shell/component.rs:865
 #: crates/big-video-player/src/video/ui/video_shell/input_gestures.rs:122
 msgid "Open URL…"
 msgstr "Открыть URL…"
 
-#: crates/big-video-player/src/video/ui/video_shell/component.rs:851
+#: crates/big-video-player/src/video/ui/video_shell/component.rs:866
 msgid "Open Disc…"
 msgstr "Открыть диск…"
 
-#: crates/big-video-player/src/video/ui/video_shell/component.rs:852
+#: crates/big-video-player/src/video/ui/video_shell/component.rs:867
 msgid "TV Channels (IPTV)…"
 msgstr "Телеканалы (IPTV)…"
 
@@ -4202,19 +4244,19 @@ msgstr "Поиск среди недавних файлов"
 msgid "No recent file matches"
 msgstr "Нет подходящих недавних файлов"
 
-#: crates/big-video-player/src/video/ui/video_shell/playback.rs:158
+#: crates/big-video-player/src/video/ui/video_shell/playback.rs:168
 msgid "Screenshot timed out; cancellation requested"
 msgstr "Время ожидания снимка экрана истекло; запрошена отмена"
 
-#: crates/big-video-player/src/video/ui/video_shell/playback.rs:204
+#: crates/big-video-player/src/video/ui/video_shell/playback.rs:214
 msgid "Playing video"
 msgstr "Воспроизводится видео"
 
-#: crates/big-video-player/src/video/ui/video_shell/playback.rs:427
+#: crates/big-video-player/src/video/ui/video_shell/playback.rs:479
 msgid "Could not move to trash"
 msgstr "Не удалось переместить в корзину"
 
-#: crates/big-video-player/src/video/ui/video_shell/playback.rs:433
+#: crates/big-video-player/src/video/ui/video_shell/playback.rs:485
 #, rust-format
 msgid "{} file moved to trash"
 msgid_plural "{} files moved to trash"
@@ -4305,20 +4347,20 @@ msgstr "Удалить этот фрагмент"
 msgid "Open a local video to cut it"
 msgstr "Откройте локальное видео, чтобы вырезать из него фрагмент"
 
-#: crates/big-video-player/src/video/ui/video_shell/trim/run.rs:218
-#: crates/big-video-player/src/video/ui/video_shell/trim/run.rs:222
+#: crates/big-video-player/src/video/ui/video_shell/trim/run.rs:219
+#: crates/big-video-player/src/video/ui/video_shell/trim/run.rs:223
 msgid "s"
 msgstr "с"
 
-#: crates/big-video-player/src/video/ui/video_shell/trim/run.rs:238
+#: crates/big-video-player/src/video/ui/video_shell/trim/run.rs:239
 msgid "Cut times"
 msgstr "Время фрагмента"
 
-#: crates/big-video-player/src/video/ui/video_shell/trim/run.rs:243
+#: crates/big-video-player/src/video/ui/video_shell/trim/run.rs:244
 msgid "Hundredth-second precision; either order is fine"
 msgstr "Точность до сотых долей секунды; порядок не важен"
 
-#: crates/big-video-player/src/video/ui/video_shell/trim/run.rs:253
+#: crates/big-video-player/src/video/ui/video_shell/trim/run.rs:254
 msgid "Edit Cut"
 msgstr "Изменение фрагмента"
 
@@ -5449,3 +5491,8 @@ msgstr "Отсканируйте код камерой телефона."
 #: crates/ui/media/big-player-ui/src/smartphone/dialog.rs:149
 msgid "Could not start server"
 msgstr "Не удалось запустить сервер"
+
+#~ msgid "Could not reach provider — showing cached copy if available."
+#~ msgstr ""
+#~ "Не удалось связаться с провайдером — показана кэшированная копия, если "
+#~ "она есть."

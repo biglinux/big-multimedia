@@ -102,6 +102,23 @@ impl MpvBackend {
         }
     }
 
+    /// Load `path` in place of the playlist, shown as `title` (an IPTV
+    /// channel's name, where the URL ends in `560.m3u8`). Per-file option:
+    /// the next file has its own title again.
+    pub fn load_file_titled(&self, path: &str, title: &str) {
+        self.loading.store(true, Ordering::Relaxed);
+        // `%N%` takes the next N bytes as they are: a comma or `=` in the
+        // name stays in it.
+        let options = format!("force-media-title=%{}%{title}", title.len());
+        if let Err(error) = self.queue_command("loadfile", &[path, "replace", "-1", &options]) {
+            self.loading.store(false, Ordering::Relaxed);
+            error!(
+                "Failed to load {}: {error}",
+                big_os_kit::url::MediaLogTarget(path)
+            );
+        }
+    }
+
     pub fn load_file_append(&self, path: &str) {
         if let Err(e) = self.queue_command("loadfile", &[path, "append-play"]) {
             error!(
@@ -111,36 +128,54 @@ impl MpvBackend {
         }
     }
 
-    /// Append `paths` in order with as few commands as mpv's plaintext
-    /// playlist allows. Every async command holds a reply slot in mpv's
-    /// bounded client event queue until the event thread drains it, so one
-    /// `loadfile` per entry overflows it on a large folder, and a synchronous
-    /// one blocks the GTK loop while mpv opens the first file. The parser
-    /// splits lines and strips leading blanks and a line-final CR, so such
-    /// paths still go one by one.
+    /// Append `paths` in order, after whatever the playlist holds when mpv
+    /// gets to them.
     pub fn load_files_append(&self, paths: &[String]) {
-        let mut list = String::new();
-        for path in paths {
-            if path.contains('\n') || path.ends_with('\r') || path.starts_with(char::is_whitespace)
-            {
-                self.append_list(&mut list);
-                self.load_file_append(path);
-            } else {
-                list.push_str(path);
-                list.push('\n');
-            }
-        }
-        self.append_list(&mut list);
+        self.load_files_at(paths, None);
     }
 
-    fn append_list(&self, list: &mut String) {
-        if list.is_empty() {
+    /// Insert `paths` in order at playlist `index`, or append them with
+    /// `None`, with as few commands as mpv's plaintext playlist allows. Every
+    /// async command holds a reply slot in mpv's bounded client event queue
+    /// until the event thread drains it, so one `loadfile` per entry
+    /// overflows it on a large folder, and a synchronous one blocks the GTK
+    /// loop while mpv opens the first file.
+    ///
+    /// mpv runs `loadlist` on a thread of its own, so commands queued after
+    /// it may run before the entries are in: callers must not address the
+    /// new entries by index right away. Where they land does not depend on
+    /// that timing. The parser splits lines and strips leading blanks and a
+    /// line-final CR, so a list holding such a path goes one `loadfile` at a
+    /// time, which mpv runs in order.
+    pub fn load_files_at(&self, paths: &[String], index: Option<usize>) {
+        if paths.is_empty() {
             return;
         }
-        let url = format!("memory://{list}");
-        list.clear();
-        if let Err(e) = self.queue_command("loadlist", &[&url, "append-play"]) {
-            error!("Failed to append a playlist: {e}");
+        let at = index.map(|index| index.to_string());
+        let flags: &[&str] = match &at {
+            Some(at) => &["insert-at", at],
+            None => &["append-play"],
+        };
+        if paths.iter().any(|path| !fits_plaintext_playlist(path)) {
+            for (offset, path) in paths.iter().enumerate() {
+                let at = index.map(|index| (index + offset).to_string());
+                let flags: &[&str] = match &at {
+                    Some(at) => &["insert-at", at],
+                    None => &["append-play"],
+                };
+                if let Err(e) = self.queue_command("loadfile", &[&[path.as_str()], flags].concat())
+                {
+                    error!(
+                        "Failed to queue {}: {e}",
+                        big_os_kit::url::MediaLogTarget(path)
+                    );
+                }
+            }
+            return;
+        }
+        let url = format!("memory://{}\n", paths.join("\n"));
+        if let Err(e) = self.queue_command("loadlist", &[&[url.as_str()], flags].concat()) {
+            error!("Failed to queue a playlist: {e}");
         }
     }
 
@@ -247,6 +282,14 @@ impl MpvBackend {
         });
     }
 
+    /// Put `path` at playlist `index`, without opening it. Synchronous, so
+    /// the entry is in place on return.
+    pub fn playlist_insert_at(&self, path: &str, index: i64) {
+        self.with_mpv(|m| {
+            let _ = m.command("loadfile", &[path, "insert-at", &index.to_string()]);
+        });
+    }
+
     pub fn playlist_remove(&self, index: i64) {
         self.with_mpv(|m| {
             let _ = m.command("playlist-remove", &[&index.to_string()]);
@@ -281,6 +324,15 @@ impl MpvBackend {
                         .ok()
                 })
                 .collect()
+        })
+    }
+
+    /// The file of one playlist entry, in mpv's current order: one property
+    /// read where [`Self::get_playlist_paths`] reads them all.
+    pub fn get_playlist_entry(&self, index: usize) -> Option<String> {
+        self.with_mpv(|m| {
+            m.get_property::<String>(&format!("playlist/{index}/filename"))
+                .ok()
         })
     }
 
@@ -354,9 +406,22 @@ impl MpvBackend {
     }
 }
 
+/// Whether mpv's plaintext playlist parser reads `path` back unchanged.
+fn fits_plaintext_playlist(path: &str) -> bool {
+    !(path.contains('\n') || path.ends_with('\r') || path.starts_with(char::is_whitespace))
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn plaintext_playlist_keeps_ordinary_paths_only() {
+        assert!(fits_plaintext_playlist("/videos/a b.mkv"));
+        assert!(!fits_plaintext_playlist("/videos/a\nb.mkv"));
+        assert!(!fits_plaintext_playlist("/videos/a.mkv\r"));
+        assert!(!fits_plaintext_playlist(" leading.mkv"));
+    }
 
     #[test]
     fn local_path_no_profile_override() {

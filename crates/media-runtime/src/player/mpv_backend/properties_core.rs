@@ -58,6 +58,16 @@ impl MpvBackend {
         self.with_mpv(|m| m.get_property::<bool>("seekable").unwrap_or(false))
     }
 
+    /// Change the speed by `delta` within `min..=max`, reading and setting it
+    /// in one go: a held key adds up, where reading back a queued set would
+    /// repeat the same step.
+    pub fn step_speed(&self, delta: f64, min: f64, max: f64) {
+        self.with_mpv(|m| {
+            let current = m.get_property::<f64>("speed").unwrap_or(1.0);
+            let _ = m.set_property("speed", (current + delta).clamp(min, max));
+        });
+    }
+
     pub fn get_speed(&self) -> f64 {
         self.with_mpv(|m| m.get_property::<f64>("speed").unwrap_or(1.0))
     }

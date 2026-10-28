@@ -134,9 +134,10 @@ impl VideoShell {
 
     /// Another file loaded: its cuts were marked on the previous one, so drop
     /// them and leave trim mode rather than export them against this file.
+    /// Leaving trim mode keeps the cuts, so they go even when it is off.
     pub(in crate::video::ui::video_shell) fn drop_trim_for_new_file(&mut self) {
+        self.trim.emit(VideoTrimBarInput::ClearSegments);
         if self.trim_active.get() {
-            self.trim.emit(VideoTrimBarInput::ClearSegments);
             self.exit_trim_mode();
         }
     }

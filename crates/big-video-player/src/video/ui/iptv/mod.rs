@@ -36,7 +36,7 @@ use crate::i18n::i18n;
 use crate::media::iptv::{IptvChannel, IptvProvider, IptvProviderStore, parse_m3u_content};
 
 use channel_list::ChannelListView;
-use fetcher::{fetch_provider_channels, provider_identifier};
+use fetcher::{FetchError, fetch_provider_channels, provider_identifier};
 
 /// Messages into the IPTV browser.
 #[derive(Debug)]
@@ -63,7 +63,7 @@ pub enum VideoIptvBrowserInput {
     /// Network channels resolved off-thread for load generation `gen`.
     NetworkResolved {
         generation: u64,
-        channels: Option<Vec<IptvChannel>>,
+        channels: Result<Vec<IptvChannel>, FetchError>,
     },
 }
 
@@ -179,6 +179,9 @@ impl Component for VideoIptvBrowser {
             .margin_bottom(12)
             .build();
         let list_view = ChannelListView::new(sender.clone());
+        list_view.status.set_margin_start(12);
+        list_view.status.set_margin_end(12);
+        root.append(&list_view.status);
         scrolled.set_child(Some(&list_view.root));
         root.append(&scrolled);
 
@@ -311,19 +314,51 @@ impl VideoIptvBrowser {
 
     /// Apply a finished network fetch (only for the current generation): replace
     /// the list on success, or surface a fallback message on failure.
-    fn on_network_resolved(&mut self, generation: u64, channels: Option<Vec<IptvChannel>>) {
+    fn on_network_resolved(
+        &mut self,
+        generation: u64,
+        channels: Result<Vec<IptvChannel>, FetchError>,
+    ) {
         if generation != self.load_generation {
             return;
         }
         match channels {
-            Some(channels) => {
+            Ok(channels) => {
                 self.list_view.set_channels(channels);
                 self.status.set_label("");
             }
-            None => self.status.set_label(&i18n(
-                "Could not reach provider — showing cached copy if available.",
-            )),
+            Err(error) => self.status.set_label(&fetch_error_text(&error)),
         }
+    }
+}
+
+/// What went wrong, in words the person can act on. A list saved before
+/// stays on screen.
+fn fetch_error_text(error: &FetchError) -> String {
+    match error {
+        FetchError::Unreachable => i18n(
+            "Could not reach the provider. Check the address and your connection; a saved list stays on screen.",
+        ),
+        FetchError::Status(401 | 403) => i18n(
+            "The provider refused access. Check the user name and password, or the User-Agent the provider asks for.",
+        ),
+        FetchError::Status(status) if *status >= 500 => {
+            i18n("The provider's server failed (error {}). Try again later.")
+                .replace("{}", &status.to_string())
+        }
+        FetchError::Status(status) => {
+            i18n("The provider answered with error {}.").replace("{}", &status.to_string())
+        }
+        FetchError::TooLarge => i18n("The channel list is larger than {} MB.").replace(
+            "{}",
+            &(crate::media::iptv::MAX_PLAYLIST_BYTES / (1024 * 1024)).to_string(),
+        ),
+        FetchError::Empty => i18n("The provider sent no channels."),
+        FetchError::LoginRejected => i18n("The provider rejected the user name or password."),
+        FetchError::AccountInactive(status) => {
+            i18n("This account is not active (the provider says: {}).").replace("{}", status)
+        }
+        FetchError::FileUnreadable => i18n("Could not read the playlist file."),
     }
 }
 
@@ -358,14 +393,14 @@ fn spawn_network_load(
     generation: u64,
     sender: &ComponentSender<VideoIptvBrowser>,
 ) {
-    let (tx, rx) = async_channel::bounded::<Option<Vec<IptvChannel>>>(1);
+    let (tx, rx) = async_channel::bounded::<Result<Vec<IptvChannel>, FetchError>>(1);
     std::thread::spawn(move || {
         let result = fetch_provider_channels(&provider, &provider_id);
         let _ = tx.send_blocking(result);
     });
     let sender = sender.clone();
     glib::spawn_future_local(async move {
-        let channels = rx.recv().await.ok().flatten();
+        let channels = rx.recv().await.unwrap_or(Err(FetchError::Unreachable));
         sender.input(VideoIptvBrowserInput::NetworkResolved {
             generation,
             channels,

@@ -2,6 +2,7 @@ use std::collections::HashSet;
 use std::path::Path;
 
 use big_app_kit::subprocess::BigSubprocessSpec;
+use big_media_components::playlist_order::natural_path_cmp;
 
 use super::super::playlist::{AUDIO_EXTENSIONS, SCAN_LIMIT, ScanResult, VIDEO_EXTENSIONS};
 use super::is_media_file;
@@ -34,16 +35,17 @@ pub fn scan_folder_flat(folder: &Path) -> Vec<String> {
             }
         }
     }
-    files.sort_by_key(|item| item.to_lowercase());
+    files.sort_by(|a, b| natural_path_cmp(a, b));
     files
 }
 
-/// Skips hidden entries (leading `.`).
+/// Skips hidden entries (leading `.`). A link to a folder is a folder here,
+/// as the file listing follows links to files.
 pub fn list_subfolders(folder: &Path) -> Vec<String> {
     let mut dirs = Vec::new();
     if let Ok(entries) = std::fs::read_dir(folder) {
         for entry in entries.flatten() {
-            if entry.file_type().is_ok_and(|ft| ft.is_dir()) {
+            if entry.path().is_dir() {
                 let name = entry.file_name().to_string_lossy().to_string();
                 if !name.starts_with('.') {
                     dirs.push(entry.path().to_string_lossy().to_string());
@@ -51,7 +53,7 @@ pub fn list_subfolders(folder: &Path) -> Vec<String> {
             }
         }
     }
-    dirs.sort_by_key(|item| item.to_lowercase());
+    dirs.sort_by(|a, b| natural_path_cmp(a, b));
     dirs
 }
 
@@ -67,20 +69,18 @@ pub fn scan_folder_recursive(folder: &Path) -> ScanResult {
         .flat_map(|ext| vec!["-e".to_string(), (*ext).to_string()])
         .collect();
 
+    // Like the walker below: links followed, ignore files ignored, the same
+    // folders skipped. Every match comes back and is sorted before the cut:
+    // `--max-results` keeps whichever matches fd finds first, in parallel.
     let mut builder = BigSubprocessSpec::builder()
         .program("fd")
         .arg("-t")
         .arg("f")
-        .arg("--max-results")
-        .arg(format!("{}", SCAN_LIMIT + 1))
-        .arg("--exclude")
-        .arg("node_modules")
-        .arg("--exclude")
-        .arg(".git")
-        .arg("--exclude")
-        .arg("__pycache__")
-        .arg("--exclude")
-        .arg(".cache");
+        .arg("--follow")
+        .arg("--no-ignore");
+    for dir in SKIP_DIRS {
+        builder = builder.arg("--exclude").arg(*dir);
+    }
     for arg in &ext_args {
         builder = builder.arg(arg);
     }
@@ -102,7 +102,7 @@ pub fn scan_folder_recursive(folder: &Path) -> ScanResult {
             .filter(|line| is_media_file(line))
             .map(std::string::ToString::to_string)
             .collect();
-        files.sort_by_key(|item| item.to_lowercase());
+        files.sort_by(|a, b| natural_path_cmp(a, b));
         let total_found = files.len();
         let truncated = total_found > SCAN_LIMIT;
         if truncated {
@@ -118,7 +118,7 @@ pub fn scan_folder_recursive(folder: &Path) -> ScanResult {
     let mut files = Vec::new();
     let mut visited = HashSet::new();
     walk_dir(folder, &mut files, &mut visited, 0);
-    files.sort_by_key(|item| item.to_lowercase());
+    files.sort_by(|a, b| natural_path_cmp(a, b));
     let total_found = files.len();
     let truncated = total_found > SCAN_LIMIT;
     if truncated {

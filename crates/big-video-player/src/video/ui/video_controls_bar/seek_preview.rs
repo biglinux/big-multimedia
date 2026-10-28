@@ -205,7 +205,7 @@ pub(super) fn wire_neighbour_preview(button: &gtk::Button, mpv: &MpvSlot, step: 
             };
             let Some(path) = mpv.borrow().as_ref().and_then(|mpv| {
                 let index = usize::try_from(mpv.get_playlist_pos() + step).ok()?;
-                mpv.get_playlist_paths().into_iter().nth(index)
+                mpv.get_playlist_entry(index)
             }) else {
                 // Nowhere to go: the tooltip names the button instead.
                 button.set_has_tooltip(true);

@@ -11,9 +11,11 @@ impl MpvBackend {
     }
 
     pub fn add_subtitle_file(&self, path: &str) {
-        self.with_mpv(|m| {
-            let _ = m.command("sub-add", &[path, "auto"]);
-        });
+        let added = self.with_mpv(|m| m.command("sub-add", &[path, "auto"]).is_ok());
+        // The subtitle menu lists the new track only when told.
+        if added {
+            self.republish_tracks();
+        }
     }
 
     pub fn set_sub_delay(&self, delay: f64) {

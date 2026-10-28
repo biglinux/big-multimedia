@@ -179,10 +179,15 @@ impl Component for VideoShell {
             }
         });
         // Dialogs change these settings; closing one brings the chips up to date.
+        // Once per window: a remount realizes the content again.
+        let dialog_window = RefCell::new(glib::WeakRef::<adw::ApplicationWindow>::new());
         root.connect_realize({
             let sender = sender.clone();
             move |root| {
-                if let Some(window) = root.root().and_downcast::<adw::ApplicationWindow>() {
+                if let Some(window) = root.root().and_downcast::<adw::ApplicationWindow>()
+                    && dialog_window.borrow().upgrade().as_ref() != Some(&window)
+                {
+                    dialog_window.borrow().set(Some(&window));
                     let sender = sender.clone();
                     window.connect_visible_dialog_notify(move |window| {
                         if window.visible_dialog().is_none() {
@@ -220,10 +225,14 @@ impl Component for VideoShell {
         {
             let sender = sender.clone();
             big_app_kit::widgets::add_file_drop_target(&main_overlay, move |paths| {
-                let Some(path) = paths.first().and_then(|p| p.to_str()) else {
+                let paths: Vec<String> = paths
+                    .iter()
+                    .filter_map(|path| path.to_str().map(str::to_owned))
+                    .collect();
+                if paths.is_empty() {
                     return false;
-                };
-                sender.input(VideoShellInput::OpenFiles(vec![path.to_string()]));
+                }
+                sender.input(VideoShellInput::OpenFiles(paths));
                 true
             });
         }
@@ -491,8 +500,28 @@ impl Component for VideoShell {
 
         // Publish the shell input so the application `open` handler can deliver
         // files opened from the desktop / CLI.
-        let shell_input_token = set_shell_input(sender.input_sender().clone());
-        root.connect_unrealize(move |_| clear_shell_input(shell_input_token));
+        // Unrealize clears it so a closed player gets nothing; a remount
+        // realizes the content again and must register it again.
+        let shell_input_token = Rc::new(Cell::new(Some(set_shell_input(
+            sender.input_sender().clone(),
+        ))));
+        root.connect_realize({
+            let token = shell_input_token.clone();
+            let input = sender.input_sender().clone();
+            move |_| {
+                if token.get().is_none() {
+                    token.set(Some(set_shell_input(input.clone())));
+                }
+            }
+        });
+        root.connect_unrealize({
+            let token = shell_input_token.clone();
+            move |_| {
+                if let Some(token) = token.take() {
+                    clear_shell_input(token);
+                }
+            }
+        });
 
         // Apply the saved OSD palette + layout CSS now into the shared
         // display-wide provider slot, released when the last player closes;
@@ -560,6 +589,7 @@ impl Component for VideoShell {
                 welcome_overlay: RefCell::new(Some(welcome)),
                 playlist_paths: Vec::new(),
                 shuffle_on_load: None,
+                open_generation: 0,
                 adjustments: Vec::new(),
                 adjustments_pill,
                 hdr_hint,
@@ -642,7 +672,7 @@ impl Component for VideoShell {
                 VideoShellInput::Convert => {
                     self.open_in_converter(converter_handoff::VIDEO_CONVERTER, &[]);
                 }
-                VideoShellInput::Iptv(out) => VideoShell::on_iptv(out, &sender),
+                VideoShellInput::Iptv(out) => self.on_iptv(out),
                 VideoShellInput::ShowIptvBrowser => {
                     if let Some(root) = window_ref {
                         self.show_iptv_browser(root);
@@ -713,15 +743,20 @@ impl Component for VideoShell {
                 }
                 // A restart picks up the new values: mpv is configured at startup.
                 VideoShellInput::RestoreDefaultsConfirmed => self.settings.reset_to_defaults(),
-                VideoShellInput::OpenFiles(paths) => VideoShell::open_files(&paths, &sender),
+                VideoShellInput::OpenFiles(paths) => self.open_files(&paths, &sender),
                 VideoShellInput::PlaylistResolved {
                     entries,
                     start,
                     folder,
-                } => self.apply_open(entries, start, folder),
+                    generation,
+                } => {
+                    if generation == self.open_generation {
+                        self.apply_open(entries, start, folder);
+                    }
+                }
                 VideoShellInput::ShowGotoTime => {
                     if let Some(root) = window_ref {
-                        self.show_goto_time_dialog(root);
+                        Self::show_goto_time_dialog(root);
                     }
                 }
                 VideoShellInput::Screenshot => self.take_screenshot(&sender),
@@ -737,6 +772,11 @@ impl Component for VideoShell {
                     self.refresh_panel_home(&sender);
                 }
                 VideoShellInput::RefreshAdjustments => self.refresh_adjustments(&sender),
+                VideoShellInput::SpeedChanged => {
+                    self.refresh_adjustments(&sender);
+                    self.refresh_panel_home(&sender);
+                }
+                VideoShellInput::SeekTo(secs) => self.seek_to(secs),
                 VideoShellInput::ResetAdjustments(adjustments) => {
                     self.reset_adjustments(adjustments, &sender);
                 }
@@ -803,7 +843,7 @@ impl Component for VideoShell {
                         mpv.set_disc_device(bluray, &device);
                     }
                     let uri = if bluray { "bd://" } else { "dvd://" };
-                    VideoShell::open_files(&[uri.to_string()], &sender);
+                    self.open_files(&[uri.to_string()], &sender);
                 }
                 VideoShellInput::Trashed(paths) => self.remove_trashed(&paths),
                 VideoShellInput::PastePlay => super::keyboard::paste_and_play(root, &sender),
@@ -824,7 +864,9 @@ impl Drop for VideoShell {
     /// must release their mpv render context before the shared mpv handle is
     /// destroyed.
     fn drop(&mut self) {
-        clear_shell_input(self.shell_input_token);
+        if let Some(token) = self.shell_input_token.take() {
+            clear_shell_input(token);
+        }
         self.screenshot_owner
             .store(false, std::sync::atomic::Ordering::Release);
         if let Some(source) = self.sleep_timer_source.take() {

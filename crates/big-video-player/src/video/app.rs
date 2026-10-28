@@ -36,14 +36,18 @@ mod imp {
             // Show the relm4-managed window, then deliver opened files through
             // the shell's thread-local broker. `activate` is synchronous, so the
             // broker is set (in VideoShell::init) before the send.
+            // A stream has no local path: keep its URL.
             let paths: Vec<String> = files
                 .iter()
-                .filter_map(|f| f.path().map(|p| p.to_string_lossy().into_owned()))
+                .map(|f| {
+                    f.path()
+                        .map_or_else(|| f.uri().to_string(), |p| p.to_string_lossy().into_owned())
+                })
                 .collect();
             if !paths.is_empty() {
                 crate::video::ui::video_shell::mark_opening_files();
             }
-            self.obj().activate();
+            crate::shared::app_base::present_for_open(self.obj().upcast_ref());
             crate::open_paths(paths);
         }
 
@@ -104,10 +108,21 @@ impl Application {
         if std::env::args().any(|a| a == "--new-window") {
             flags |= gio::ApplicationFlags::NON_UNIQUE;
         }
-        glib::Object::builder()
+        let app: Self = glib::Object::builder()
             .property("application-id", config::video::APP_ID)
             .property("flags", flags)
-            .build()
+            .build();
+        // Read above, before the flags are set; registered so the option
+        // parser accepts it instead of refusing to start.
+        app.add_main_option(
+            "new-window",
+            glib::Char::from(0),
+            glib::OptionFlags::NONE,
+            glib::OptionArg::None,
+            "Open a separate player window instead of using the running one",
+            None,
+        );
+        app
     }
 
     pub fn run(&self) -> glib::ExitCode {

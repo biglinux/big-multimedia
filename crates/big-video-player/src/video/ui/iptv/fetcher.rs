@@ -6,10 +6,35 @@
 //! testable.
 
 use crate::media::iptv::{
-    IptvChannel, IptvKind, IptvProvider, parse_m3u_content, read_playlist_text,
+    IptvChannel, IptvKind, IptvProvider, MAX_PLAYLIST_BYTES, decode_playlist, parse_m3u_content,
+    read_playlist_text,
 };
 use crate::video::ui::iptv::{cache, xtream};
-use big_os_kit::http_client::{RequestHeaders, http_get_with_headers};
+use big_os_kit::http_client::{RequestHeaders, http_get_bytes_capped};
+use std::time::Duration;
+
+/// A whole provider list comes in one answer, tens of megabytes on a slow
+/// panel: far longer than the default request time.
+const PLAYLIST_TIMEOUT: Duration = Duration::from_secs(120);
+
+/// Why a provider's channels could not be loaded, so the person can act on it.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum FetchError {
+    /// No answer: offline, name not found, timed out, refused.
+    Unreachable,
+    /// The server answered with this HTTP status.
+    Status(u16),
+    /// The list is larger than [`MAX_PLAYLIST_BYTES`].
+    TooLarge,
+    /// The answer holds no channels.
+    Empty,
+    /// The Xtream panel rejected the user name or password.
+    LoginRejected,
+    /// The Xtream account is not active; the panel's word for it.
+    AccountInactive(String),
+    /// The local playlist file could not be read.
+    FileUnreadable,
+}
 
 /// Stable per-provider cache identifier. Fed through `cache::write`'s slugifier
 /// downstream, so any unsafe characters get sanitized there.
@@ -24,29 +49,50 @@ pub fn provider_identifier(provider: &IptvProvider) -> String {
     }
 }
 
+/// GET a playlist or API answer as text, in UTF-8 or else Latin-1.
+pub(super) fn fetch_text(url: &str, headers: &RequestHeaders<'_>) -> Result<String, FetchError> {
+    let response = http_get_bytes_capped(url, headers, MAX_PLAYLIST_BYTES, PLAYLIST_TIMEOUT)
+        .map_err(|error| {
+            if error.contains("exceeded") {
+                FetchError::TooLarge
+            } else {
+                FetchError::Unreachable
+            }
+        })?;
+    if response.status != 200 {
+        return Err(FetchError::Status(response.status));
+    }
+    Ok(decode_playlist(response.bytes))
+}
+
 /// Resolve a provider to its channel list over the network (or local file),
-/// caching the raw playlist on success. Returns `None` on any fetch/read
-/// failure. Synchronous and blocking: call from a worker thread.
-#[must_use]
+/// caching the raw playlist on success. Synchronous and blocking: call from a
+/// worker thread.
 pub fn fetch_provider_channels(
     provider: &IptvProvider,
     provider_id: &str,
-) -> Option<Vec<IptvChannel>> {
+) -> Result<Vec<IptvChannel>, FetchError> {
     let headers = RequestHeaders {
         user_agent: &provider.user_agent,
         referer: &provider.referer,
     };
     let content = match &provider.source {
-        IptvKind::M3uUrl { url } => http_get_with_headers(url, &headers)?,
-        IptvKind::M3uLocal { path } => read_playlist_text(std::path::Path::new(path))?,
+        IptvKind::M3uUrl { url } => fetch_text(url, &headers)?,
+        IptvKind::M3uLocal { path } => {
+            read_playlist_text(std::path::Path::new(path)).ok_or(FetchError::FileUnreadable)?
+        }
         IptvKind::Xtream {
             server,
             username,
             password,
         } => xtream::fetch_xtream_m3u(server, username, password, &headers)?,
     };
+    let channels = parse_m3u_content(&content);
+    if channels.is_empty() {
+        return Err(FetchError::Empty);
+    }
     cache::write(provider_id, &content);
-    Some(parse_m3u_content(&content))
+    Ok(channels)
 }
 
 #[cfg(test)]
