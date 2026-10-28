@@ -33,6 +33,16 @@ fn build_player_window(
     // (GNOME 51, "Windows" under Frosted glass). It shows through the
     // theme's window colors; custom colors and the album art paint over it.
     window.add_css_class("big-audio-player");
+    // With the tray icon on, closing hides the window and playback goes on;
+    // the icon brings it back, and its Quit (or Ctrl+Q) ends the player.
+    // Connected here, before any other close handler, so it decides first.
+    window.connect_close_request(|window| {
+        if audio::ui::audio_shell::close_hides_window() {
+            window.set_visible(false);
+            return gtk::glib::Propagation::Stop;
+        }
+        gtk::glib::Propagation::Proceed
+    });
     shared::app_base::ignore_repeated_pointer_motion(&window);
     window
 }

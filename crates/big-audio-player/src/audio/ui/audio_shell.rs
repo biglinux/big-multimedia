@@ -27,6 +27,7 @@ mod tv;
 mod update;
 
 pub use input::{AudioShellInput, send_to_shell};
+pub(crate) use tray::close_hides_window;
 
 use std::path::{Path, PathBuf};
 use std::sync::atomic::Ordering;

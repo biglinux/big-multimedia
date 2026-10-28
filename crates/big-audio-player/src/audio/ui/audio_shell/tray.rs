@@ -28,16 +28,39 @@ fn tray_spec() -> TraySpec {
     }
 }
 
+thread_local! {
+    /// While the icon is on: whether a tray host shows it.
+    static TRAY_SHOWN: std::cell::RefCell<Option<std::rc::Rc<std::cell::Cell<bool>>>> =
+        const { std::cell::RefCell::new(None) };
+    /// The person asked to quit: the close that follows ends the player.
+    static QUITTING: std::cell::Cell<bool> = const { std::cell::Cell::new(false) };
+}
+
+/// Whether closing the window should hide it to the tray instead: the icon
+/// is on, a tray host shows it (without one the window could not come back),
+/// and no quit was asked for.
+pub(crate) fn close_hides_window() -> bool {
+    !QUITTING.get()
+        && TRAY_SHOWN.with_borrow(|shown| shown.as_ref().is_some_and(|shown| shown.get()))
+}
+
+/// The next close ends the player even with the tray icon on.
+pub(super) fn mark_quitting() {
+    QUITTING.set(true);
+}
+
 /// The tray icon, when the setting is on; `None` also without a session bus.
 pub(super) fn build_tray(sender: &ComponentSender<AudioShell>, enabled: bool) -> Option<Tray> {
-    if !enabled {
-        return None;
-    }
-    let input = sender.input_sender().clone();
-    let command: TrayCallback = std::rc::Rc::new(move |command| {
-        let _ = input.send(AudioShellInput::Tray(command));
+    let tray = enabled.then(|| {
+        let input = sender.input_sender().clone();
+        let command: TrayCallback = std::rc::Rc::new(move |command| {
+            let _ = input.send(AudioShellInput::Tray(command));
+        });
+        Tray::new(tray_spec(), command)
     });
-    Tray::new(tray_spec(), command)
+    let tray = tray.flatten();
+    TRAY_SHOWN.set(tray.as_ref().map(Tray::shown_flag));
+    tray
 }
 
 /// The transport control behind a menu entry, the same the dock menu sends.
@@ -105,6 +128,21 @@ impl AudioShell {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn close_hides_only_with_a_shown_icon_and_no_quit() {
+        assert!(!close_hides_window(), "no icon: close ends the player");
+        let shown = std::rc::Rc::new(std::cell::Cell::new(false));
+        TRAY_SHOWN.set(Some(shown.clone()));
+        assert!(
+            !close_hides_window(),
+            "no tray host: the window could not come back"
+        );
+        shown.set(true);
+        assert!(close_hides_window());
+        mark_quitting();
+        assert!(!close_hides_window(), "Quit ends the player");
+    }
 
     #[test]
     fn every_menu_entry_does_something() {

@@ -258,7 +258,7 @@ fn export_menu(
 
 /// Announce the item to the tray host. The object path alone is enough: the
 /// watcher pairs it with this connection's unique name.
-fn register_with_watcher(connection: &gio::DBusConnection) {
+fn register_with_watcher(connection: &gio::DBusConnection, shown: Rc<std::cell::Cell<bool>>) {
     connection.call(
         Some(WATCHER_NAME),
         WATCHER_PATH,
@@ -269,8 +269,11 @@ fn register_with_watcher(connection: &gio::DBusConnection) {
         gio::DBusCallFlags::NONE,
         -1,
         gio::Cancellable::NONE,
-        |result| match result {
-            Ok(_) => debug!("tray: registered with {WATCHER_NAME}"),
+        move |result| match result {
+            Ok(_) => {
+                debug!("tray: registered with {WATCHER_NAME}");
+                shown.set(true);
+            }
             Err(e) => warn!("tray: {WATCHER_NAME} refused the icon: {e}"),
         },
     );
@@ -282,6 +285,8 @@ pub struct Tray {
     /// Stops watching for the tray host; run in Drop before the connection
     /// closes. gio does not export the watcher id's type, so it stays captured.
     unwatch: Option<Box<dyn FnOnce()>>,
+    /// Whether a tray host took the icon and still runs.
+    shown: Rc<std::cell::Cell<bool>>,
 }
 
 impl Tray {
@@ -305,18 +310,43 @@ impl Tray {
         }
         // The host may start, restart or never run (GNOME without the
         // AppIndicator extension): register each time the watcher appears.
+        let shown = Rc::new(std::cell::Cell::new(false));
         let watcher = gio::bus_watch_name_on_connection(
             &connection,
             WATCHER_NAME,
             gio::BusNameWatcherFlags::NONE,
-            |connection, _, _| register_with_watcher(&connection),
-            |_, _| debug!("tray: no {WATCHER_NAME} on the session bus"),
+            {
+                let shown = shown.clone();
+                move |connection, _, _| register_with_watcher(&connection, shown.clone())
+            },
+            {
+                let shown = shown.clone();
+                move |_, _| {
+                    debug!("tray: no {WATCHER_NAME} on the session bus");
+                    shown.set(false);
+                }
+            },
         );
         info!("tray: icon {} exported", spec.icon_name);
         Some(Self {
             connection,
             unwatch: Some(Box::new(move || gio::bus_unwatch_name(watcher))),
+            shown,
         })
+    }
+
+    /// Whether a tray host shows the icon now: with none (GNOME without the
+    /// AppIndicator extension), a window hidden to the tray could not come
+    /// back.
+    #[must_use]
+    pub fn is_shown(&self) -> bool {
+        self.shown.get()
+    }
+
+    /// [`Self::is_shown`], readable where the tray itself is not at hand.
+    #[must_use]
+    pub fn shown_flag(&self) -> Rc<std::cell::Cell<bool>> {
+        self.shown.clone()
     }
 }
 
@@ -526,6 +556,7 @@ mod tests {
         iterate_until(|| registered.borrow().is_some());
         let (item, path) = registered.borrow().clone().unwrap();
         assert_eq!(path, ITEM_PATH);
+        iterate_until(|| tray.is_shown());
 
         let all = call(
             &host,

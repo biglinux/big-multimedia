@@ -26,6 +26,9 @@ impl AudioShell {
                 }
             }
             MprisCommand::Quit => {
+                // A quit asked for ends the player; a plain close only hides
+                // it to the tray.
+                super::tray::mark_quitting();
                 if let Some(window) = self.window() {
                     window.close();
                 }
