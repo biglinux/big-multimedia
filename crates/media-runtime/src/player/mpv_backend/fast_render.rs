@@ -383,6 +383,39 @@ unsafe extern "C" fn update_wrapper(userdata: *mut c_void) {
     (callback.0)();
 }
 
+/// The current GL context's `GL_VENDOR` and `GL_RENDERER`, empty where the
+/// driver gives none.
+///
+/// # Safety
+/// A GL context must be current on the calling thread.
+pub(super) unsafe fn current_gl_driver() -> (String, String) {
+    const GL_VENDOR: u32 = 0x1F00;
+    const GL_RENDERER: u32 = 0x1F01;
+    type GetString = unsafe extern "C" fn(u32) -> *const std::ffi::c_char;
+    // SAFETY: resolved as mpv resolves every GL function; a null result means
+    // no GL is loaded.
+    let address = unsafe { gl_proc_address_raw(std::ptr::null_mut(), c"glGetString".as_ptr()) };
+    if address.is_null() {
+        return (String::new(), String::new());
+    }
+    // SAFETY: `glGetString` has this C signature.
+    let get_string: GetString = unsafe { std::mem::transmute(address) };
+    let read = |name| {
+        // SAFETY: the caller has a GL context current; GL returns a static
+        // NUL-terminated string or null.
+        let text = unsafe { get_string(name) };
+        if text.is_null() {
+            String::new()
+        } else {
+            // SAFETY: non-null, NUL-terminated, owned by the driver.
+            unsafe { std::ffi::CStr::from_ptr(text) }
+                .to_string_lossy()
+                .into_owned()
+        }
+    };
+    (read(GL_VENDOR), read(GL_RENDERER))
+}
+
 /// SAFETY: `name` is a valid null-terminated string from mpv. `dlsym` with
 /// `RTLD_DEFAULT` is safe for resolving GL function pointers.
 unsafe extern "C" fn gl_proc_address_raw(
