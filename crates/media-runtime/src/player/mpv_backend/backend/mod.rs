@@ -57,6 +57,8 @@ impl PollState {
 
 pub struct MpvBackend {
     pub(in crate::player::mpv_backend) hwdec_before_filters: Mutex<Option<String>>,
+    /// The render context draws with a software GL, so the CPU decodes.
+    pub(in crate::player::mpv_backend) software_gl: AtomicBool,
     /// Locked mpv client. Drop uses mpv_terminate_destroy instead of plain
     /// mpv_destroy so libmpv internal threads are joined before teardown.
     pub(in crate::player::mpv_backend) mpv: Arc<Mutex<MpvClient>>,
@@ -222,6 +224,7 @@ impl MpvBackend {
             _wakeup: wakeup,
             has_af: AtomicBool::new(false),
             hwdec_before_filters: Mutex::new(None),
+            software_gl: AtomicBool::new(false),
             stream_volume,
         }
     }
