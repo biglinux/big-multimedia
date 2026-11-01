@@ -370,7 +370,7 @@ mod tests {
         TraySpec {
             id: "big-audio-player".into(),
             title: "Big Audio Player".into(),
-            icon_name: "big-audio-player-symbolic".into(),
+            icon_name: "big-audio-player-tray-symbolic".into(),
             items: vec![
                 TrayMenuItem::action("show", "Show"),
                 TrayMenuItem::Separator,
@@ -568,7 +568,7 @@ mod tests {
         );
         let properties = glib::VariantDict::new(Some(&all.child_value(0)));
         let icon = properties.lookup::<String>("IconName").unwrap();
-        assert_eq!(icon.as_deref(), Some("big-audio-player-symbolic"));
+        assert_eq!(icon.as_deref(), Some("big-audio-player-tray-symbolic"));
 
         let layout = call(
             &host,
