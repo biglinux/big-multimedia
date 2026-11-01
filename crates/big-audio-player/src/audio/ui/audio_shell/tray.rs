@@ -163,6 +163,13 @@ mod tests {
             icon.ends_with("-symbolic"),
             "the panel recolors only symbolic icons"
         );
+        // The app icon's own symbolic variant would replace the app icon in
+        // panels that prefer symbolic icons (XFCE's dock).
+        assert_ne!(
+            icon,
+            format!("{}-symbolic", crate::config::audio::ICON_NAME),
+            "the tray icon must not be the app icon's symbolic variant"
+        );
         let svg = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
             .join(format!("resources/icons/hicolor/symbolic/apps/{icon}.svg"));
         let head = std::fs::read(&svg).unwrap();
