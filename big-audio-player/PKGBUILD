@@ -74,9 +74,15 @@ package() {
         "${pkgdir}/usr/share/metainfo/${id}.metainfo.xml"
     install -Dm644 "${resources}/icons/hicolor/scalable/apps/big-audio-player.svg" \
         "${pkgdir}/usr/share/icons/hicolor/scalable/apps/big-audio-player.svg"
-    # One-color icon of the system tray, recolored by the panel's theme.
+    # One-color icon of the system tray, recolored by the panel's theme. Panels
+    # ask for 22 or 24 px, where the 16 px drawing would blur, so those sizes
+    # have their own pixel-aligned drawings.
     install -Dm644 "${resources}/icons/hicolor/symbolic/apps/big-audio-player-tray-symbolic.svg" \
         "${pkgdir}/usr/share/icons/hicolor/symbolic/apps/big-audio-player-tray-symbolic.svg"
+    install -Dm644 "${resources}/icons/hicolor/22x22/apps/big-audio-player-tray-symbolic.svg" \
+        "${pkgdir}/usr/share/icons/hicolor/22x22/apps/big-audio-player-tray-symbolic.svg"
+    install -Dm644 "${resources}/icons/hicolor/24x24/apps/big-audio-player-tray-symbolic.svg" \
+        "${pkgdir}/usr/share/icons/hicolor/24x24/apps/big-audio-player-tray-symbolic.svg"
 
     # The shared gettext catalog goes under the package's private locale dir,
     # which resolve_locale_dir() prefers, so the two co-installable players
