@@ -7,5 +7,3 @@ rule:
   pattern: $MUTEX.try_lock()
 ignores:
   - crates/foundation/big-media-data/src/db/mod.rs
-  # legacy: migrate to big_media_data::db::lock_within
-  - crates/big-audio-player/src/audio/ui/audio_shell/playlist_library_dialog_actions.rs
