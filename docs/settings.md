@@ -54,9 +54,7 @@ value does on screen; the Notes column repeats only what the code states. Each
 player reads the keys it uses from its own file and keeps the rest.
 
 A key with no default reads as empty, `false` or `0` unless its Notes say
-otherwise. The audio player also writes `audio-appearance-migrated=true` once,
-after copying each `ui-*` color in its file into the matching `audio-ui-*` key
-that still holds its default; a `gradient` color source is not copied.
+otherwise.
 
 ### Volume and audio output
 

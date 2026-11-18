@@ -9,7 +9,7 @@ use super::models::{Playlist, Track, WatchFolder};
 pub use super::queries_advanced::{
     delete_radio_station, get_all_radio_stations, get_compilation_albums, get_library_track_count,
     get_library_tracks, get_most_played, get_never_played, get_recently_added,
-    insert_radio_station, load_queue, migrate_radio_from_json, update_track_rating,
+    insert_radio_station, load_queue, update_track_rating,
 };
 
 pub(super) fn row_to_track(row: &Row<'_>) -> rusqlite::Result<Track> {

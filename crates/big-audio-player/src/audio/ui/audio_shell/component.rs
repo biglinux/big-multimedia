@@ -50,7 +50,6 @@ impl Component for AudioShell {
         let win_actions = gio::SimpleActionGroup::new();
 
         let settings = Settings::for_audio();
-        settings.migrate_audio_appearance();
         // Restore the saved library grouping (default: Songs = presets[0], the
         // flat track list) so the tree matches the dropdown at boot.
         let initial_grouping = {

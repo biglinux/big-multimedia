@@ -554,45 +554,6 @@ impl Settings {
         }
     }
 
-    pub fn migrate_audio_appearance(&self) {
-        let mut inner = self
-            .inner
-            .write()
-            .unwrap_or_else(std::sync::PoisonError::into_inner);
-        if inner
-            .settings_values
-            .get("audio-appearance-migrated")
-            .is_some_and(|s| s == "true")
-        {
-            return;
-        }
-        let defaults = defaults::defaults();
-        for (audio, video) in [
-            ("audio-ui-color-source", "ui-color-source"),
-            ("audio-ui-bg-color", "ui-bg-color"),
-            ("audio-ui-font-color", "ui-font-color"),
-            ("audio-ui-icon-color", "ui-icon-color"),
-            ("audio-ui-dialog-color", "ui-dialog-color"),
-        ] {
-            // Never overwrite an already personalized audio value. The audio
-            // player has no video to take colors from.
-            if inner.settings_values.get(audio) == defaults.get(audio)
-                && let Some(value) = inner.settings_values.get(video).cloned()
-                && value != "gradient"
-            {
-                inner.settings_values.insert(audio.into(), value);
-            }
-        }
-        inner
-            .settings_values
-            .insert("audio-appearance-migrated".into(), "true".into());
-        inner.dirty = true;
-        inner.revision = inner.revision.wrapping_add(1);
-        inner.phase = SavePhase::Pending;
-        drop(inner);
-        self.flush();
-    }
-
     pub fn reset_to_defaults(&self) {
         let mut inner = self
             .inner
