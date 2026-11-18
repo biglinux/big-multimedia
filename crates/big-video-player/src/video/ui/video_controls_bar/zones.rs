@@ -452,7 +452,7 @@ fn build_volume_control(
     volume_box.append(&volume_button);
     volume_box.append(&volume_label);
 
-    let maximum_volume = f64::from(settings.get_int(keys::VOLUME_MAX)).max(100.0);
+    let maximum_volume = f64::from(settings.volume_max_percent());
     let (volume_popover, volume_scale) =
         build_volume_popover(&volume_box, maximum_volume, initial_volume);
     // Mute said in words, for whoever reaches the volume by hovering and does

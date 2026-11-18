@@ -264,7 +264,7 @@ mod flip_tests {
     #[test]
     fn flip_preserves_other_filters_and_hardware_preference() {
         let (sender, _events) = async_channel::unbounded();
-        let backend = MpvBackend::new_audio_only(sender).unwrap();
+        let backend = MpvBackend::new_audio_only_with_output(sender, "").unwrap();
         for preference in ["no", "auto-safe", "nvdec-copy"] {
             backend.set_hwdec(preference);
             let expected = backend.get_hwdec();
@@ -287,7 +287,7 @@ mod flip_tests {
     #[test]
     fn hardware_choice_changed_during_effects_survives_removal() {
         let (sender, _events) = async_channel::unbounded();
-        let backend = MpvBackend::new_audio_only(sender).unwrap();
+        let backend = MpvBackend::new_audio_only_with_output(sender, "").unwrap();
         backend.set_hwdec("auto-safe");
         backend.vf_append("effect", "hflip");
         assert_eq!(

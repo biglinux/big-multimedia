@@ -11,9 +11,6 @@ fn row_presentation_makes_dividers_inert_headings() {
     assert_eq!(presentation.label, "B");
     assert!(presentation.is_heading);
     assert!(!presentation.is_file_leaf);
-    assert!(!presentation.is_activatable);
-    assert!(!presentation.is_selectable);
-    assert!(!presentation.show_icon);
     assert!(!presentation.show_tracks_button);
     assert_eq!(presentation.track_count_label, None);
     assert_eq!(presentation.avatar, None);
@@ -32,9 +29,6 @@ fn file_leaves_use_leaf_binder() {
     assert_eq!(presentation.label, "Song");
     assert_eq!(presentation.icon_name, "audio-x-generic-symbolic");
     assert!(presentation.is_file_leaf);
-    assert!(presentation.is_activatable);
-    assert!(presentation.is_selectable);
-    assert!(presentation.show_icon);
     assert!(!presentation.show_tracks_button);
 }
 
@@ -48,13 +42,12 @@ fn groups_show_count_badge_and_icon() {
     assert_eq!(presentation.icon_name, "avatar-default-symbolic");
     assert_eq!(presentation.track_count_label, Some("7".to_string()));
     assert_eq!(presentation.avatar, None);
-    assert!(presentation.show_icon);
     assert!(presentation.show_tracks_button);
 
     let empty_genre_node = BrowserNode::genre("Ambient", 0);
     let empty_genre_presentation = library_tree_row_presentation(&empty_genre_node);
     assert_eq!(empty_genre_presentation.track_count_label, None);
-    assert!(empty_genre_presentation.show_icon);
+    assert_eq!(empty_genre_presentation.avatar, None);
 }
 
 #[cfg(not(miri))]
@@ -70,7 +63,6 @@ fn albums_and_various_show_avatar() {
             icon_name: None,
         })
     );
-    assert!(!album_presentation.show_icon);
     assert_eq!(album_presentation.track_count_label, Some("3".to_string()));
 
     let various_artists_node = BrowserNode::various_artists(4);
@@ -82,7 +74,6 @@ fn albums_and_various_show_avatar() {
             icon_name: Some("system-users-symbolic"),
         })
     );
-    assert!(!various_artists_presentation.show_icon);
 }
 
 #[cfg(not(miri))]

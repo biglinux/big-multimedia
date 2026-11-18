@@ -55,7 +55,7 @@ use crate::db::models::{RadioStation, Track, WatchFolder};
 use crate::db::queries_advanced::{TrackMetadataUpdate, update_track_metadata};
 use crate::db::{self, DbHandle, queries};
 use crate::i18n::i18n;
-use crate::player::mpv_backend::{AudioCacheProfile, MpvBackend, PlayerEvent};
+use crate::player::mpv_backend::{AudioCacheProfile, EndReason, MpvBackend, PlayerEvent};
 use crate::player::queue::{PlayQueue, RepeatMode};
 use crate::settings::{Settings, keys};
 use crate::shared::converter_handoff;
@@ -192,14 +192,7 @@ pub struct AudioShell {
     db_read: Option<DbHandle>,
     /// Persisted settings (audio config, column widths).
     settings: Settings,
-    /// Active sleep-timer countdown source (None = no timer armed).
-    sleep_timer_source: Option<glib::SourceId>,
-    /// Seconds left on the armed sleep timer.
-    sleep_timer_remaining: u32,
-    /// Action to perform when the sleep timer expires.
-    sleep_timer_action: String,
-    /// Pre-timer volume, restored after the fade-to-pause on expiry.
-    sleep_timer_volume: f64,
+    sleep_timer: crate::shared::sleep_timer::SleepTimer,
     /// Current library grouping preset (drives tree + node resolution).
     library_grouping: LibraryGrouping,
     /// Current library search filter text.
@@ -230,7 +223,6 @@ pub struct AudioShell {
 
 impl Drop for AudioShell {
     fn drop(&mut self) {
-        self.cancel_sleep_timer();
         if let Some((app, handler)) = self.shutdown_handler.take()
             && let Some(app) = app.upgrade()
         {

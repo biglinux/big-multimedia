@@ -1,7 +1,7 @@
 use super::setup_db;
 use crate::db::queries_advanced::library::validate_column;
 use crate::db::queries_advanced::{
-    get_compilation_albums, get_library_groups, get_library_track_count, get_library_tracks,
+    get_compilation_albums, get_library_track_count, get_library_tracks,
 };
 use rusqlite::Connection;
 
@@ -46,27 +46,6 @@ fn validate_column_injection_attempt() {
 fn library_counts_empty() {
     let conn = setup_db();
     assert_eq!(get_library_track_count(&conn, "", None).unwrap(), 0);
-    assert!(
-        get_library_groups(&conn, "artist", "", &[], None)
-            .unwrap()
-            .is_empty()
-    );
-}
-
-#[test]
-fn integer_year_column_groups_decode_as_text() {
-    let conn = setup_db();
-    insert_year_track(&conn, 1, "Alice", 2000, 320);
-    insert_year_track(&conn, 2, "Alice", 2000, 320);
-    insert_year_track(&conn, 3, "Bob", 2010, 256);
-
-    // Integer `year` comes back as decodable TEXT group keys with correct
-    // counts.
-    let groups = get_library_groups(&conn, "year", "", &[], None).unwrap();
-    assert_eq!(
-        groups,
-        vec![("2000".to_string(), 2), ("2010".to_string(), 1)]
-    );
 }
 
 #[test]
@@ -87,29 +66,14 @@ fn integer_year_column_filters_by_string_param() {
 }
 
 #[test]
-fn integer_bitrate_column_groups_and_filters() {
+fn integer_bitrate_column_filters() {
     let conn = setup_db();
     insert_year_track(&conn, 1, "Alice", 2000, 320);
     insert_year_track(&conn, 2, "Bob", 2010, 256);
 
-    let groups = get_library_groups(&conn, "bitrate", "", &[], None).unwrap();
-    assert_eq!(groups, vec![("256".to_string(), 1), ("320".to_string(), 1)]);
     let hi = get_library_tracks(&conn, &[("bitrate", "320")], "", None).unwrap();
     assert_eq!(hi.len(), 1);
     assert_eq!(hi[0].artist.as_deref(), Some("Alice"));
-}
-
-#[test]
-fn artist_groups_keep_text_keys() {
-    let conn = setup_db();
-    insert_year_track(&conn, 1, "Alice", 2000, 320);
-    insert_year_track(&conn, 2, "Bob", 2010, 256);
-
-    let groups = get_library_groups(&conn, "artist", "", &[], None).unwrap();
-    assert_eq!(
-        groups,
-        vec![("Alice".to_string(), 1), ("Bob".to_string(), 1)]
-    );
 }
 
 /// Insert with explicit album + `date_added` for compilation / age tests.

@@ -374,6 +374,7 @@ mod tests {
     #[cfg_attr(miri, ignore)]
     fn tag_rewrite_replaces_title() {
         if let Some(missing) = ["ffmpeg", "ffprobe"].into_iter().find(|p| !on_path(p)) {
+            // allow-noisy-log: a skipped run must say why it proved nothing.
             eprintln!("skipped: {missing} is not on PATH");
             return;
         }

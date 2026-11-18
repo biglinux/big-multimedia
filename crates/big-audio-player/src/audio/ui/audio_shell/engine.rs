@@ -10,9 +10,8 @@ impl AudioShell {
         // While the TV has the transport it shows the TV, not the paused mpv.
         let tv = self.tv.attached().is_some();
         match event {
-            // Reason 0 = natural end-of-file → advance to the next queue track
-            // (radio streams never auto-advance the music queue).
-            PlayerEvent::EndFile(0) if !self.is_stream => {
+            // Radio streams never auto-advance the music queue.
+            PlayerEvent::EndFile(EndReason::Eof) if !self.is_stream => {
                 if self.queue.advance().is_some() {
                     self.play_current();
                     self.sync_current_to_panels();
@@ -20,10 +19,10 @@ impl AudioShell {
                     self.handle_mpris_command(MprisCommand::Stop, sender);
                 }
             }
-            // Reason 4 = the track could not be opened. Skip it, but stop once
-            // every queued track failed in a row or the queue would come back
-            // to the same one (repeat-one, a single track).
-            PlayerEvent::EndFile(4) if !self.is_stream => {
+            // Skip a track that could not be opened, but stop once every
+            // queued track failed in a row or the queue would come back to the
+            // same one (repeat-one, a single track).
+            PlayerEvent::EndFile(EndReason::Error) if !self.is_stream => {
                 self.failed_loads += 1;
                 let name = std::path::Path::new(&self.current_file)
                     .file_name()
@@ -228,10 +227,12 @@ pub(super) fn build_mpv_backend(
         &replaygain
     });
     mpv.set_replaygain_preamp(settings.get_double(keys::REPLAYGAIN_PREAMP));
-    mpv.set_volume_max(i64::from(settings.get_int_or(keys::VOLUME_MAX, 150)));
+    let volume_max = settings.volume_max_percent();
+    mpv.set_volume_max(i64::from(volume_max));
     // Zero is a deliberate user choice, not a missing setting.
     mpv.set_volume(f64::from(restored_volume(
         settings.get_int_or(keys::AUDIO_VOLUME, 100),
+        volume_max,
     )));
     mpv.set_gapless(settings.get_bool(keys::GAPLESS_AUDIO));
     mpv.set_audio_pitch_correction(settings.get_bool(keys::AUDIO_PITCH_CORRECTION));
@@ -252,8 +253,8 @@ pub(super) fn build_mpv_backend(
     Ok(Arc::new(mpv))
 }
 
-fn restored_volume(saved: i32) -> i32 {
-    saved.clamp(0, 250)
+fn restored_volume(saved: i32, volume_max: i32) -> i32 {
+    saved.clamp(0, volume_max)
 }
 
 #[cfg(test)]
@@ -262,9 +263,10 @@ mod review_tests {
 
     #[test]
     fn restored_volume_keeps_zero_and_clamps() {
-        assert_eq!(restored_volume(0), 0);
-        assert_eq!(restored_volume(-1), 0);
-        assert_eq!(restored_volume(65), 65);
-        assert_eq!(restored_volume(i32::MAX), 250);
+        assert_eq!(restored_volume(0, 150), 0);
+        assert_eq!(restored_volume(-1, 150), 0);
+        assert_eq!(restored_volume(65, 150), 65);
+        assert_eq!(restored_volume(180, 150), 150);
+        assert_eq!(restored_volume(i32::MAX, 200), 200);
     }
 }

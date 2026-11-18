@@ -1,6 +1,7 @@
 //! Smartphone integration dialog.
 
 use std::cell::RefCell;
+use std::net::{IpAddr, SocketAddr};
 use std::rc::Rc;
 use std::sync::{Arc, atomic::AtomicBool};
 
@@ -14,10 +15,10 @@ use big_relm4_components::{
 
 use super::qr::build_qr_widget;
 
-fn detect_lan_ip() -> Option<String> {
+fn detect_lan_ip() -> Option<IpAddr> {
     let socket = std::net::UdpSocket::bind("0.0.0.0:0").ok()?;
     socket.connect("8.8.8.8:80").ok()?;
-    Some(socket.local_addr().ok()?.ip().to_string())
+    Some(socket.local_addr().ok()?.ip())
 }
 
 /// Present the smartphone web-remote dialog.
@@ -128,20 +129,55 @@ where
     enable_row.connect_active_notify(move |switch| {
         let active = switch.is_active();
         if active {
+            let Some(ip) = detect_lan_ip() else {
+                switch.set_active(false);
+                status_for_toggle.set_text(&i18n(
+                    "No local network found. Connect to a network and try again.",
+                ));
+                return;
+            };
             let revoked = Arc::new(AtomicBool::new(false));
+            let (failure_sender, failure_receiver) = relm4::channel::<String>();
             match remote_control::start_scoped(
-                std::net::SocketAddr::from(([0, 0, 0, 0], 0)),
+                SocketAddr::new(ip, 0),
                 (build_for_toggle)(revoked.clone()),
                 revoked,
+                move |error| {
+                    let _ = failure_sender.send(error);
+                },
             ) {
                 Ok(handle) => {
-                    let ip = detect_lan_ip().unwrap_or_else(|| "127.0.0.1".to_string());
-                    let url = format!("http://{}:{}/{}/", ip, handle.port, handle.token);
+                    let url = format!(
+                        "http://{}/{}/",
+                        SocketAddr::new(ip, handle.port),
+                        handle.token
+                    );
                     replace_qr(&qr_box_for_toggle, &url);
                     url_for_toggle.set_text(&url);
                     url_for_toggle.set_visible(true);
                     status_for_toggle.set_text(&i18n("Scan the code with the phone's camera."));
+                    let token = handle.token.clone();
                     *server_for_toggle.borrow_mut() = Some(handle);
+
+                    let switch = switch.clone();
+                    let status = status_for_toggle.clone();
+                    let server = Rc::clone(&server_for_toggle);
+                    gtk::glib::spawn_future_local(async move {
+                        // None once the worker ends through stop.
+                        let Some(error) = failure_receiver.recv().await else {
+                            return;
+                        };
+                        let same_session = server
+                            .borrow()
+                            .as_ref()
+                            .is_some_and(|handle| handle.token == token);
+                        if same_session {
+                            switch.set_active(false);
+                            status.set_text(
+                                &i18n("Web remote stopped: {error}").replace("{error}", &error),
+                            );
+                        }
+                    });
                 }
                 Err(error) => {
                     switch.set_active(false);

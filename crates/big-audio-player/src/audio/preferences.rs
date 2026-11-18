@@ -133,9 +133,6 @@ pub(super) fn create_music_page(
     }
     playback_group.add(&resume_row);
 
-    // Do not expose CROSSFADE_SECS until a two-track overlap engine consumes
-    // it. Existing saved values are kept for a future migration.
-
     // Taskbar progress (KDE Plasma / Unity → Unity launcher protocol).
     let taskbar_row = adw::SwitchRow::builder()
         .title(i18n("Progress on the Taskbar"))
@@ -176,7 +173,10 @@ pub(super) fn create_music_page(
     page
 }
 
-fn audio_preference_actions(mpv: Option<&Arc<MpvBackend>>) -> Option<PlayerAudioPreferenceActions> {
+fn audio_preference_actions(
+    mpv: Option<&Arc<MpvBackend>>,
+    volume_max_changed: impl Fn() + 'static,
+) -> Option<PlayerAudioPreferenceActions> {
     let mpv = mpv.cloned()?;
     Some(PlayerAudioPreferenceActions::new(
         {
@@ -189,7 +189,10 @@ fn audio_preference_actions(mpv: Option<&Arc<MpvBackend>>) -> Option<PlayerAudio
         },
         {
             let mpv = Arc::clone(&mpv);
-            move |value| mpv.set_volume_max(value)
+            move |value| {
+                mpv.set_volume_max(value);
+                volume_max_changed();
+            }
         },
         {
             let mpv = Arc::clone(&mpv);
@@ -210,13 +213,14 @@ fn apply_player_audio_effects(mpv: &MpvBackend, effects: PlayerAudioEffects) {
     });
 }
 
-/// `toggles` fire when a desktop-integration switch changes, so the shell
-/// applies it without a restart.
+/// `toggles` and `volume_max_changed` fire when their preference changes, so
+/// the shell applies it without a restart.
 pub fn show_audio_preferences(
     parent: &impl IsA<gtk::Widget>,
     settings: &Settings,
     mpv: Option<&Arc<MpvBackend>>,
     toggles: DesktopToggles,
+    volume_max_changed: impl Fn() + 'static,
 ) {
     let dialog = adw::PreferencesDialog::builder()
         .title(i18n("Preferences"))
@@ -226,7 +230,7 @@ pub fn show_audio_preferences(
         .build();
     let pages = [
         create_music_page(settings, mpv, toggles),
-        create_audio_page(settings, audio_preference_actions(mpv)),
+        create_audio_page(settings, audio_preference_actions(mpv, volume_max_changed)),
     ];
     for page in &pages {
         crate::settings::attach_save_status_banner(page, settings);

@@ -95,8 +95,8 @@ video = [
 ]
 # Both player feature sets; the integration tests in `tests/` require it.
 ui = ["audio", "video"]
-# Gates slow property tests so default `cargo test` stays fast. CI runs
-# `cargo test --features fuzz` on a dedicated job.
+# Gates slow property tests so default `cargo test` stays fast; run them with
+# `cargo test --features ui,fuzz`.
 fuzz = []
 
 [dev-dependencies]

@@ -1,10 +1,9 @@
 //! Small, self-contained hamburger-menu dialogs/actions: go-to-time,
-//! screenshot, chapter list + navigation, and the sleep timer. Each
+//! screenshot, chapter list + navigation. Each
 //! `impl VideoShell` method drives the live mpv backend; the push-model wiring (a `VideoShellInput::Show*` variant →
 //! handler) matches the existing media-info / filters dialogs.
 //!
-//! The pure helpers (`parse_goto_seconds`, `sleep_minutes_to_secs`) carry the
-//! testable logic.
+//! The pure helper `parse_goto_seconds` carries the testable logic.
 
 use std::path::PathBuf;
 
@@ -25,9 +24,6 @@ use big_relm4_components::layout::{
 pub(crate) fn screenshot_not_saved_message(error: &str) -> String {
     i18n("The screenshot was not saved: {error}").replace("{error}", error)
 }
-
-/// The sleep timer fades the volume out over its last seconds.
-const SLEEP_FADE_SECS: u32 = 10;
 
 // Bound setup tasks as well as accepted native requests. The global admission
 // counter covers concurrent windows in the single-process host.
@@ -196,123 +192,6 @@ impl VideoShell {
             mpv.set_chapter(idx);
         }
     }
-
-    /// Arm the sleep timer: a 1 s `SleepTick` source drives the countdown. Stores
-    /// the `SourceId` so it is removed on disarm / re-arm / drop.
-    pub(super) fn start_sleep_timer(
-        &mut self,
-        total_secs: u32,
-        action: String,
-        sender: &ComponentSender<Self>,
-    ) {
-        self.cancel_sleep_timer();
-        self.set_sleep_timer_remaining(total_secs);
-        self.set_sleep_timer_action(action);
-        let pre_fade = self
-            .mpv_handle()
-            .borrow()
-            .as_ref()
-            .map_or(100.0, |m| m.get_volume());
-        self.set_sleep_timer_volume(pre_fade);
-
-        let input = sender.input_sender().clone();
-        let source = glib::timeout_add_seconds_local(1, move || {
-            let _ = input.send(VideoShellInput::SleepTick);
-            glib::ControlFlow::Continue
-        });
-        self.set_sleep_timer_source(Some(source));
-    }
-
-    /// Disarm the sleep timer (no-op if none armed). Removes the stored source
-    /// and, when the fade-out has begun, puts the volume back.
-    pub(super) fn cancel_sleep_timer(&mut self) {
-        if let Some(source) = self.take_sleep_timer_source() {
-            big_gtk_kit::source::remove(source);
-            if self.sleep_timer_remaining_secs() <= SLEEP_FADE_SECS
-                && let Some(mpv) = self.mpv_handle().borrow().as_ref()
-            {
-                mpv.set_volume(self.sleep_timer_volume_value());
-            }
-        }
-        self.set_sleep_timer_remaining(0);
-    }
-
-    /// One countdown tick: fade the last 10 s, then on expiry pause + run the
-    /// chosen action (close / suspend / power off), restoring the volume.
-    pub(super) fn sleep_tick(&mut self) {
-        if !self.sleep_timer_is_armed() {
-            return;
-        }
-        let remaining = self.sleep_timer_remaining_secs();
-        let pre_fade = self.sleep_timer_volume_value();
-        if remaining <= 1 {
-            if let Some(mpv) = self.mpv_handle().borrow().as_ref() {
-                mpv.pause();
-                mpv.set_volume(pre_fade);
-            }
-            let action = self.take_sleep_timer_action();
-            self.cancel_sleep_timer();
-            self.run_sleep_action(&action);
-            return;
-        }
-        let next = remaining - 1;
-        self.set_sleep_timer_remaining(next);
-        let Some(mpv) = self.mpv_handle().borrow().clone() else {
-            return;
-        };
-        if next <= SLEEP_FADE_SECS {
-            // The fade starts from the volume of that moment, which the
-            // person may have changed since arming the timer.
-            let pre_fade = if remaining > SLEEP_FADE_SECS {
-                let volume = mpv.get_volume();
-                self.set_sleep_timer_volume(volume);
-                volume
-            } else {
-                pre_fade
-            };
-            mpv.set_volume(pre_fade * (f64::from(next) / f64::from(SLEEP_FADE_SECS)));
-        }
-    }
-
-    /// Run the chosen on-expiry action after the fade-out completes. A 2 s grace
-    /// before quit/suspend/poweroff lets the notice show.
-    fn run_sleep_action(&self, action: &str) {
-        match action {
-            "quit" => {
-                self.notify(&i18n("Sleep timer: closing player"));
-                glib::timeout_add_local_once(std::time::Duration::from_secs(2), || {
-                    if let Some(app) = gtk::gio::Application::default() {
-                        crate::settings::saving::quit_after_writes(&app);
-                    }
-                });
-            }
-            "suspend" => {
-                self.notify(&i18n("Sleep timer: suspending computer"));
-                glib::timeout_add_local_once(std::time::Duration::from_secs(2), || {
-                    crate::settings::saving::after_writes(|| {
-                        if let Err(error) =
-                            big_app_kit::desktop::BigSystemPowerAction::Suspend.spawn_detached()
-                        {
-                            log::warn!("sleep timer: suspend failed: {error}");
-                        }
-                    });
-                });
-            }
-            "poweroff" => {
-                self.notify(&i18n("Sleep timer: shutting down"));
-                glib::timeout_add_local_once(std::time::Duration::from_secs(2), || {
-                    crate::settings::saving::after_writes(|| {
-                        if let Err(error) =
-                            big_app_kit::desktop::BigSystemPowerAction::PowerOff.spawn_detached()
-                        {
-                            log::warn!("sleep timer: poweroff failed: {error}");
-                        }
-                    });
-                });
-            }
-            _ => self.notify(&i18n("Sleep timer: playback paused")),
-        }
-    }
 }
 
 /// Parse a go-to-time string (`H:MM:SS`, `M:SS`, or seconds) into seconds.
@@ -328,11 +207,6 @@ fn accepted_goto_seconds(input: &str) -> Option<f64> {
     } else {
         parse_goto_seconds(text)
     }
-}
-
-/// Sleep-timer minutes → total seconds (`u32`, saturating). Pure conversion.
-pub(super) fn sleep_minutes_to_secs(minutes: u32) -> u32 {
-    minutes.saturating_mul(60)
 }
 
 /// Resolve a non-empty chapter title, falling back to `Chapter N` (1-based) when
@@ -370,9 +244,7 @@ pub(super) fn show_screenshot_result(
 
 #[cfg(test)]
 mod tests {
-    use super::{
-        accepted_goto_seconds, chapter_title_with_prefix, parse_goto_seconds, sleep_minutes_to_secs,
-    };
+    use super::{accepted_goto_seconds, chapter_title_with_prefix, parse_goto_seconds};
 
     #[test]
     fn goto_parses_plain_seconds() {
@@ -402,18 +274,6 @@ mod tests {
     #[test]
     fn goto_rejects_blank_dialog_input() {
         assert_eq!(accepted_goto_seconds("   "), None);
-    }
-
-    #[test]
-    fn sleep_minutes_convert_to_seconds() {
-        assert_eq!(sleep_minutes_to_secs(0), 0);
-        assert_eq!(sleep_minutes_to_secs(1), 60);
-        assert_eq!(sleep_minutes_to_secs(30), 1800);
-    }
-
-    #[test]
-    fn sleep_minutes_saturate() {
-        assert_eq!(sleep_minutes_to_secs(u32::MAX), u32::MAX);
     }
 
     #[test]

@@ -19,8 +19,6 @@ path = "src/lib.rs"
 
 [dependencies]
 # Single policy home (GTK-free leaf).
-# The base dependency gives settings XDG dirs; `http-client` is feature-gated
-# below so lean settings-only consumers do not pull network helpers.
 big-os-kit = { workspace = true }
 # Pure parsers (Radio-Browser feed, media file-type knowledge) — GTK-free leaf.
 big-media-engines = { workspace = true, optional = true }
@@ -45,14 +43,12 @@ gettext-rs = { version = "0.8", features = ["gettext-system"] }
 default = ["db", "library", "radio"]
 db = ["dep:rusqlite", "dep:big-media-engines"]
 library = [
-    "big-os-kit/http-client",
     "dep:big-media-engines",
     "dep:tempfile",
     "dep:ignore",
     "dep:roxmltree",
 ]
 radio = [
-    "big-os-kit/http-client",
     "dep:big-media-engines",
     "big-media-engines/radio-browser",
     "dep:dns-lookup",

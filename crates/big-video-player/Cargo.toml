@@ -15,7 +15,7 @@ default = []
 
 [dependencies]
 big-gtk-kit = { workspace = true }
-big-os-kit = { workspace = true, features = ["jemalloc", "http-client"] }
+big-os-kit = { workspace = true, features = ["jemalloc"] }
 adw.workspace = true
 gtk.workspace = true
 glib.workspace = true

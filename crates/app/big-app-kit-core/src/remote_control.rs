@@ -15,7 +15,7 @@
 //! per-session and shared with the phone only through the QR code, so LAN
 //! neighbors cannot guess the URL.
 
-use log::info;
+use log::{info, warn};
 use std::collections::HashMap;
 use std::io::{ErrorKind, Read, Write};
 use std::net::{IpAddr, Ipv4Addr, Ipv6Addr, Shutdown, SocketAddr, TcpListener, TcpStream};
@@ -85,13 +85,21 @@ const HEADER_DEADLINE: Duration = Duration::from_secs(3);
 const WRITE_DEADLINE: Duration = Duration::from_secs(2);
 const MAX_RATE_PEERS: usize = 64;
 const MUTATIONS: [&str; 4] = ["play-pause", "next", "prev", "volume"];
+const ACCEPT_RETRY_DELAY: Duration = Duration::from_millis(100);
+// Linux errno values; std classifies none of them on stable.
+const ENFILE: i32 = 23;
+const EMFILE: i32 = 24;
+const ENOBUFS: i32 = 105;
 
 /// Start with the same revocation token carried by queued UI commands. `stop`
 /// must be fresh and false; a stopped session is never reused for another token.
+/// `on_failure` runs on the worker thread when the listener fails for good; it
+/// is dropped without a call when the session ends through `stop`.
 pub fn start_scoped(
     address: SocketAddr,
     handlers: RemoteHandlers,
     stop: Arc<AtomicBool>,
+    on_failure: impl FnOnce(String) + Send + 'static,
 ) -> Result<ServerHandle, String> {
     if stop.load(Ordering::Acquire) {
         return Err("Remote session already revoked".into());
@@ -113,7 +121,12 @@ pub fn start_scoped(
     // Detached: Drop on the GTK thread must not join.
     thread::Builder::new()
         .name("media-remote".into())
-        .spawn(move || serve(&listener, &secret, &handlers, &flag))
+        .spawn(move || {
+            if let Err(error) = serve(&listener, &secret, &handlers, &flag) {
+                warn!("web-remote accept failed: {error}");
+                on_failure(error.to_string());
+            }
+        })
         .map_err(|_| "Could not start remote control worker".to_owned())?;
     info!("web-remote listening on port {}", local.port());
     Ok(ServerHandle {
@@ -217,7 +230,8 @@ impl Limits {
 enum Accepted {
     More,
     Drained,
-    Failed,
+    Retry,
+    Failed(std::io::Error),
 }
 fn admit_client(
     result: std::io::Result<(TcpStream, SocketAddr)>,
@@ -234,7 +248,10 @@ fn admit_client(
         {
             return Accepted::More;
         }
-        Err(_) => return Accepted::Failed,
+        Err(e) if matches!(e.raw_os_error(), Some(EMFILE | ENFILE | ENOBUFS)) => {
+            return Accepted::Retry;
+        }
+        Err(e) => return Accepted::Failed(e),
     };
     let full = clients.len() >= MAX_CLIENTS
         || clients.iter().filter(|c| c.ip == peer.ip()).count() >= MAX_PER_IP;
@@ -262,7 +279,36 @@ fn accept_blocking(listener: &TcpListener) -> std::io::Result<(TcpStream, Socket
     accepted
 }
 
-fn serve(listener: &TcpListener, token: &str, handlers: &RemoteHandlers, stop: &AtomicBool) {
+/// Admits pending connections; `Err` once the listener fails for good.
+fn accept_burst(listener: &TcpListener, clients: &mut Vec<Client>) -> std::io::Result<()> {
+    let mut next = if clients.is_empty() {
+        accept_blocking(listener)
+    } else {
+        listener.accept()
+    };
+    // Finite accept budget per iteration; floods cannot starve existing peers.
+    for _ in 0..MAX_CLIENTS {
+        match admit_client(next, clients) {
+            Accepted::More => next = listener.accept(),
+            Accepted::Drained => break,
+            // Exhausted descriptors or buffers free up as peers close.
+            Accepted::Retry => {
+                thread::sleep(ACCEPT_RETRY_DELAY);
+                break;
+            }
+            Accepted::Failed(error) => return Err(error),
+        }
+    }
+    Ok(())
+}
+
+fn serve(
+    listener: &TcpListener,
+    token: &str,
+    handlers: &RemoteHandlers,
+    stop: &AtomicBool,
+) -> std::io::Result<()> {
+    let mut failure = None;
     let mut clients: Vec<Client> = Vec::with_capacity(MAX_CLIENTS);
     let mut limits = Limits {
         peers: HashMap::new(),
@@ -272,21 +318,9 @@ fn serve(listener: &TcpListener, token: &str, handlers: &RemoteHandlers, stop: &
         },
     };
     while !stop.load(Ordering::Acquire) {
-        let mut next = if clients.is_empty() {
-            accept_blocking(listener)
-        } else {
-            listener.accept()
-        };
-        // Finite accept budget per iteration; floods cannot starve existing peers.
-        for _ in 0..MAX_CLIENTS {
-            match admit_client(next, &mut clients) {
-                Accepted::More => next = listener.accept(),
-                Accepted::Drained => break,
-                Accepted::Failed => {
-                    stop.store(true, Ordering::Release);
-                    break;
-                }
-            }
+        if let Err(error) = accept_burst(listener, &mut clients) {
+            stop.store(true, Ordering::Release);
+            failure = Some(error);
         }
         let now = Instant::now();
         limits
@@ -319,6 +353,7 @@ fn serve(listener: &TcpListener, token: &str, handlers: &RemoteHandlers, stop: &
         let _ = client.stream.shutdown(Shutdown::Both);
     }
     info!("web-remote stopped");
+    failure.map_or(Ok(()), Err)
 }
 
 /// Answers one complete request head. `admit` charges the mutation rate budget.
@@ -555,6 +590,7 @@ const INDEX_JS: &str = include_str!("remote_control.js");
 mod tests {
     use super::*;
     use std::sync::Mutex;
+    use std::sync::atomic::AtomicUsize;
 
     fn is_closed(result: std::io::Result<usize>) -> bool {
         match result {
@@ -588,7 +624,13 @@ mod tests {
     }
 
     fn start(handlers: RemoteHandlers) -> ServerHandle {
-        start_scoped("127.0.0.1:0".parse().unwrap(), handlers, Arc::default()).unwrap()
+        start_scoped(
+            "127.0.0.1:0".parse().unwrap(),
+            handlers,
+            Arc::default(),
+            |_| {},
+        )
+        .unwrap()
     }
 
     #[test]
@@ -686,7 +728,147 @@ mod tests {
     }
 
     #[test]
-    fn denied_admission_returns_503() {
+    fn exhausted_accept_retries() {
+        // errno values from Linux include/uapi/asm-generic/errno-base.h and errno.h.
+        let mut clients = Vec::new();
+        for errno in [24, 23, 105] {
+            let result = Err(std::io::Error::from_raw_os_error(errno));
+            assert!(
+                matches!(admit_client(result, &mut clients), Accepted::Retry),
+                "errno {errno}"
+            );
+        }
+        let invalid = Err(std::io::Error::from_raw_os_error(22));
+        assert!(matches!(
+            admit_client(invalid, &mut clients),
+            Accepted::Failed(_)
+        ));
+    }
+
+    #[test]
+    #[cfg_attr(miri, ignore)] // a live socket
+    fn failed_listener_stops_and_reports() {
+        // accept on a UDP socket fails with EOPNOTSUPP, which no retry can fix.
+        let udp = std::net::UdpSocket::bind("127.0.0.1:0").unwrap();
+        let listener = TcpListener::from(std::os::fd::OwnedFd::from(udp));
+        let stop = AtomicBool::new(false);
+        let result = serve(&listener, "token", &handlers(true), &stop);
+        assert_eq!(result.unwrap_err().kind(), ErrorKind::Unsupported);
+        assert!(stop.load(Ordering::Acquire));
+    }
+
+    fn counting_handlers(calls: &Arc<AtomicUsize>) -> RemoteHandlers {
+        let command = || {
+            let calls = Arc::clone(calls);
+            Arc::new(move || {
+                calls.fetch_add(1, Ordering::SeqCst);
+                true
+            })
+        };
+        let volume_calls = Arc::clone(calls);
+        let status_calls = Arc::clone(calls);
+        let mut counting = handlers(true);
+        counting.play_pause = command();
+        counting.next = command();
+        counting.prev = command();
+        counting.set_volume = Arc::new(move |_| {
+            volume_calls.fetch_add(1, Ordering::SeqCst);
+            true
+        });
+        let status = counting.status;
+        counting.status = Arc::new(move || {
+            status_calls.fetch_add(1, Ordering::SeqCst);
+            status()
+        });
+        counting
+    }
+
+    fn status_code(reply: &[u8]) -> &str {
+        std::str::from_utf8(&reply[9..12]).unwrap()
+    }
+
+    /// Status, handler calls and whether the rate budget was charged.
+    fn exchange(head: &str, admitted: bool) -> (String, usize, bool) {
+        let calls = Arc::new(AtomicUsize::new(0));
+        let charged = std::cell::Cell::new(false);
+        let request = format!("{head}\r\nHost: localhost\r\n\r\n");
+        let reply = respond(
+            request.as_bytes(),
+            "t",
+            &counting_handlers(&calls),
+            &AtomicBool::new(false),
+            || {
+                charged.set(true);
+                admitted
+            },
+        );
+        let handled = calls.load(Ordering::SeqCst);
+        (status_code(&reply).to_owned(), handled, charged.get())
+    }
+
+    #[test]
+    fn refusals_skip_handlers() {
+        for head in [
+            "GET /t/status HTTP/1.1\r\nOrigin: http://evil",
+            "POST /t/next HTTP/1.1\r\nOrigin: http://evil\r\nX-Big-Media-Remote: 1",
+            "GET /t/status HTTP/1.1\r\nSec-Fetch-Site: cross-site",
+            "POST /t/next HTTP/1.1\r\nSec-Fetch-Site: same-site\r\nX-Big-Media-Remote: 1",
+            "POST /t/next HTTP/1.1",
+            "POST /t/volume?v=5 HTTP/1.1\r\nX-Big-Media-Remote: 0",
+        ] {
+            assert_eq!(exchange(head, true), ("403".into(), 0, false), "{head}");
+        }
+        let marked = "POST /t/play-pause HTTP/1.1\r\nX-Big-Media-Remote: 1";
+        assert_eq!(exchange(marked, false), ("429".into(), 0, true));
+        let same_origin = "POST /t/next HTTP/1.1\r\nOrigin: http://localhost\r\n\
+                           Sec-Fetch-Site: same-origin\r\nX-Big-Media-Remote: 1";
+        assert_eq!(exchange(same_origin, true), ("200".into(), 1, true));
+    }
+
+    #[test]
+    fn rate_limits_return_429() {
+        let calls = Arc::new(AtomicUsize::new(0));
+        let handlers = counting_handlers(&calls);
+        let start = Instant::now();
+        let mut limits = Limits {
+            peers: HashMap::new(),
+            global: Rate { start, count: 0 },
+        };
+        let mut send = |peer: u8, now: Instant| {
+            let reply = respond(
+                b"POST /token/next HTTP/1.1\r\nHost: localhost\r\nX-Big-Media-Remote: 1\r\n\r\n",
+                "token",
+                &handlers,
+                &AtomicBool::new(false),
+                || limits.admit(IpAddr::from([192, 168, 1, peer]), now),
+            );
+            status_code(&reply).to_owned()
+        };
+
+        // 8 mutations per peer per second.
+        for _ in 0..8 {
+            assert_eq!(send(1, start), "200");
+        }
+        assert_eq!(send(1, start), "429");
+        // 24 mutations per second overall.
+        for peer in [2, 3] {
+            for _ in 0..8 {
+                assert_eq!(send(peer, start), "200");
+            }
+        }
+        assert_eq!(send(4, start), "429");
+        assert_eq!(calls.load(Ordering::SeqCst), 24);
+        // At most 64 peers are tracked; one more is refused.
+        for peer in 5..=64 {
+            let later = start + Duration::from_secs(u64::from(peer));
+            assert_eq!(send(peer, later), "200");
+        }
+        assert_eq!(send(65, start + Duration::from_secs(65)), "429");
+        assert_eq!(calls.load(Ordering::SeqCst), 84);
+    }
+
+    #[test]
+    fn busy_handler_returns_503() {
         let req =
             parse_request(b"POST /token/next HTTP/1.1\r\nHost: localhost\r\nX-Big-Media-Remote: 1")
                 .unwrap();

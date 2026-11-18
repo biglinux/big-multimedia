@@ -32,7 +32,6 @@ pub fn parse_m3u_content(content: &str) -> Vec<IptvChannel> {
                 name: extract_display_name(line),
                 group: extract_attr(line, "group-title").unwrap_or_default(),
                 logo: extract_attr(line, "tvg-logo").unwrap_or_default(),
-                tvg_id: extract_attr(line, "tvg-id").unwrap_or_default(),
                 url: String::new(),
             };
         } else if !line.is_empty() && !line.starts_with('#') {
@@ -181,11 +180,10 @@ http://cnn.example.com
     }
 
     #[test]
-    fn captures_tvg_logo_and_id() {
+    fn captures_tvg_logo_and_group() {
         let input = "#EXTINF:-1 tvg-id=\"espn.us\" tvg-logo=\"http://logo.png\" group-title=\"HD\",ESPN\n\
              http://espn.example.com\n";
         let channels = parse_m3u_content(input);
-        assert_eq!(channels[0].tvg_id, "espn.us");
         assert_eq!(channels[0].logo, "http://logo.png");
         assert_eq!(channels[0].group, "HD");
     }

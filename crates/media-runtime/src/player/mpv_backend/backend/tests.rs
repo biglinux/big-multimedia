@@ -358,7 +358,7 @@ fn ended_event_thread_waits_for_mpv() {
     });
     backend.seek_absolute(3.5);
     wait_for_event(&rx, &mut seen, "end of file", |e| {
-        matches!(e, PlayerEvent::EndFile(0))
+        matches!(e, PlayerEvent::EndFile(EndReason::Eof))
     });
     let wakeups = wakeups_in_one_second("test-ended");
     assert!(wakeups <= 1, "{wakeups} wakeups at the end of the file");

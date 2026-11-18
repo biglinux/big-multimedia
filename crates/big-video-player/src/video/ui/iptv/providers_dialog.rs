@@ -45,7 +45,7 @@ pub fn present_providers_dialog(
     page.header().pack_end(&add_provider_button);
 
     let provider_list =
-        BigBoundedListBox::new(BigBoundedListBoxSpec::new(24).css_class("boxed-list"));
+        BigBoundedListBox::new(BigBoundedListBoxSpec::default().css_class("boxed-list"));
     let list = provider_list.root().clone();
     page.content().append(&list);
     let status_store = store.clone();

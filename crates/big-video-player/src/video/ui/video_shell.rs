@@ -22,7 +22,7 @@ use crate::player::mpv_backend::fast_render::{
     FastRenderContext, SwRenderContext as SoftwareRenderContext,
 };
 use crate::player::mpv_backend::offload_renderer::VideoBackend;
-use crate::player::mpv_backend::{MpvBackend, PlayerEvent, video_surface};
+use crate::player::mpv_backend::{EndReason, MpvBackend, PlayerEvent, video_surface};
 use crate::settings::{Settings, keys};
 use crate::shared::converter_handoff;
 use crate::video::ui::filters::{VideoFiltersDialog, VideoFiltersDialogInit};
@@ -31,7 +31,6 @@ use crate::video::ui::iptv::{VideoIptvBrowser, VideoIptvBrowserOutput};
 use crate::video::ui::keyboard_shortcuts_dialog::show_video_keyboard_shortcuts_dialog;
 use crate::video::ui::media_adjust;
 use crate::video::ui::media_details_dialog::show_video_media_details_dialog;
-use crate::video::ui::menu_dialogs::sleep_minutes_to_secs;
 use crate::video::ui::video_browser_sidebar::{
     SidebarMode, VideoBrowserSidebar, VideoBrowserSidebarInput, VideoBrowserSidebarOutput,
 };
@@ -172,16 +171,7 @@ pub struct VideoShell {
     /// The `win.*` action group, kept so the shell can gate context-dependent
     /// entries (e.g. enable Stream Quality only for online media).
     win_actions: gio::SimpleActionGroup,
-    /// Armed sleep-timer countdown source; `None` when disarmed. Stored so it is
-    /// removed on disarm / re-arm / drop (no leaked `glib::timeout`).
-    sleep_timer_source: Option<glib::SourceId>,
-    /// Seconds left on the armed sleep timer (drives the volume fade + expiry).
-    sleep_timer_remaining: u32,
-    /// On-expiry action id (`pause` / `quit` / `suspend` / `poweroff`).
-    sleep_timer_action: String,
-    /// Pre-fade volume, restored when the timer fires (so the next play is not
-    /// stuck at the faded-down level).
-    sleep_timer_volume: f64,
+    sleep_timer: crate::shared::sleep_timer::SleepTimer,
     /// Window aspect-ratio snap (resize to fit the video, no letterbox bars).
     aspect_snap: Rc<AspectSnap>,
     /// Leaves the shell input slot on drop, so a closed host module does not

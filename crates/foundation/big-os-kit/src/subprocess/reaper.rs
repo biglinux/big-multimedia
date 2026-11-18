@@ -35,29 +35,14 @@ impl Permit {
         let collector = {
             let mut slot = COLLECTOR.lock().unwrap_or_else(PoisonError::into_inner);
             if slot.is_none() {
-                // SAFETY: eventfd takes no pointers and returns a new fd or -1.
-                let wake = unsafe { libc::eventfd(0, libc::EFD_CLOEXEC | libc::EFD_NONBLOCK) };
-                if wake < 0 {
-                    return Err(io::Error::last_os_error());
-                }
-                let collector = Arc::new(Collector {
-                    state: Mutex::new(State {
-                        reserved: 0,
-                        children: Vec::with_capacity(MAX_CHILDREN),
-                    }),
-                    // SAFETY: `wake` was just created and has no other owner.
-                    wake: unsafe { OwnedFd::from_raw_fd(wake) },
-                });
-                let worker = Arc::clone(&collector);
-                // Failure propagates before a child exists. No fallible spawn
-                // or allocation is needed on an error-cleanup path later.
-                std::thread::Builder::new()
-                    .name("big-child-reaper".into())
-                    .spawn(move || worker.run())?;
-                *slot = Some(collector);
+                *slot = Some(Collector::spawn("big-child-reaper")?);
             }
             Arc::clone(slot.as_ref().expect("collector initialized above"))
         };
+        Self::reserve_on(collector)
+    }
+
+    fn reserve_on(collector: Arc<Collector>) -> io::Result<Self> {
         {
             let mut state = collector
                 .state
@@ -114,6 +99,30 @@ impl Drop for Permit {
     }
 }
 impl Collector {
+    /// A collector reaping on a new thread named `thread_name`.
+    fn spawn(thread_name: &str) -> io::Result<Arc<Self>> {
+        // SAFETY: eventfd takes no pointers and returns a new fd or -1.
+        let wake = unsafe { libc::eventfd(0, libc::EFD_CLOEXEC | libc::EFD_NONBLOCK) };
+        if wake < 0 {
+            return Err(io::Error::last_os_error());
+        }
+        let collector = Arc::new(Collector {
+            state: Mutex::new(State {
+                reserved: 0,
+                children: Vec::with_capacity(MAX_CHILDREN),
+            }),
+            // SAFETY: `wake` was just created and has no other owner.
+            wake: unsafe { OwnedFd::from_raw_fd(wake) },
+        });
+        let worker = Arc::clone(&collector);
+        // Failure propagates before a child exists. No fallible spawn
+        // or allocation is needed on an error-cleanup path later.
+        std::thread::Builder::new()
+            .name(thread_name.into())
+            .spawn(move || worker.run())?;
+        Ok(collector)
+    }
+
     fn run(&self) {
         let mut watched = Vec::with_capacity(MAX_CHILDREN + 1);
         loop {
@@ -238,7 +247,7 @@ pub(crate) fn set_nonblocking(pipe: &impl std::os::fd::AsRawFd) -> io::Result<()
 
 #[cfg(all(test, not(miri)))]
 mod tests {
-    use super::Permit;
+    use super::{Collector, Permit};
     use std::time::{Duration, Instant};
 
     /// Voluntary context switches of this process's thread named `name`.
@@ -264,7 +273,9 @@ mod tests {
 
     #[test]
     fn collector_sleeps_until_a_child_exits() {
-        let permit = Permit::reserve().unwrap();
+        // A collector of its own: children other tests defer wake the shared one.
+        let collector = Collector::spawn("test-reaper").unwrap();
+        let permit = Permit::reserve_on(collector).unwrap();
         let child = std::process::Command::new("sleep")
             .arg("2")
             .spawn()
@@ -273,11 +284,10 @@ mod tests {
         let started = Instant::now();
         permit.defer(child);
         std::thread::sleep(Duration::from_millis(200));
-        let before = thread_wakeups("big-child-reaper");
+        let before = thread_wakeups("test-reaper");
         std::thread::sleep(Duration::from_secs(1));
-        let wakeups = thread_wakeups("big-child-reaper") - before;
-        // Other tests may defer a child of their own meanwhile.
-        assert!(wakeups <= 2, "{wakeups} wakeups while a child lives");
+        let wakeups = thread_wakeups("test-reaper") - before;
+        assert!(wakeups <= 1, "{wakeups} wakeups while a child lives");
         while std::path::Path::new(&proc_entry).exists() {
             assert!(
                 started.elapsed() < Duration::from_secs(5),

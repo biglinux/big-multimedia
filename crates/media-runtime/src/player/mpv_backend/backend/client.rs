@@ -3,6 +3,7 @@
 //! The runtime uses the system `libmpv` C API directly here so consumers do
 //! not pull the higher-level Rust `libmpv2` wrapper into every binary.
 
+use crate::player::mpv_backend::EndReason;
 use std::ffi::{CStr, CString, NulError};
 use std::fmt;
 use std::os::raw::{c_char, c_int, c_ulong, c_void};
@@ -385,7 +386,7 @@ impl MpvGetValue for f64 {
 pub enum MpvEvent {
     AudioReconfig,
     FileLoaded,
-    EndFile(u32),
+    EndFile(EndReason),
     Shutdown,
     /// Observed with `MPV_FORMAT_NONE`: the event names no value, only the
     /// group given to [`MpvClient::observe_property`].
@@ -449,9 +450,13 @@ fn map_event(event: &mpv_sys::mpv_event) -> Option<Result<MpvEvent>> {
 
 fn map_end_file_event(event_payload: *mut c_void) -> MpvEvent {
     if event_payload.is_null() {
-        return MpvEvent::EndFile(0);
+        return MpvEvent::EndFile(EndReason::Eof);
     }
     // SAFETY: MPV_EVENT_END_FILE carries `mpv_event_end_file`.
     let event = unsafe { &*event_payload.cast::<mpv_sys::mpv_event_end_file>() };
-    MpvEvent::EndFile(if event.error < 0 { 4 } else { event.reason })
+    MpvEvent::EndFile(if event.error < 0 {
+        EndReason::Error
+    } else {
+        EndReason::from_mpv(event.reason)
+    })
 }

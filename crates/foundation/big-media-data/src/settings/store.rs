@@ -91,12 +91,6 @@ pub struct Settings {
     inner: Arc<RwLock<Inner>>,
 }
 
-impl Default for Settings {
-    fn default() -> Self {
-        Self::new(crate::config::runtime::CONFIG_DIR)
-    }
-}
-
 impl Settings {
     #[must_use]
     pub fn for_audio() -> Self {
@@ -200,9 +194,6 @@ impl Settings {
     fn debug_check_key(&self, key: &str) {
         #[cfg(debug_assertions)]
         {
-            if key.starts_with("dlg-") {
-                return;
-            }
             let inner = self
                 .inner
                 .read()
@@ -337,6 +328,18 @@ impl Settings {
         self.get_bool(keys::NOISE_VOICE_ONLY).then(|| {
             u8::try_from(self.get_int(keys::NOISE_VOICE_SENSITIVITY).clamp(1, 5)).unwrap_or(3)
         })
+    }
+
+    /// Range of the Maximum Volume preference, in percent.
+    pub const VOLUME_MAX_PERCENT_RANGE: std::ops::RangeInclusive<i32> = 100..=200;
+
+    /// The volume ceiling in percent: the Maximum Volume preference kept within
+    /// [`Self::VOLUME_MAX_PERCENT_RANGE`], 150 when never stored.
+    #[must_use]
+    pub fn volume_max_percent(&self) -> i32 {
+        let range = Self::VOLUME_MAX_PERCENT_RANGE;
+        self.get_int_or(keys::VOLUME_MAX, 150)
+            .clamp(*range.start(), *range.end())
     }
 
     #[must_use]

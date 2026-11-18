@@ -168,7 +168,7 @@ impl Shortcuts {
     ) -> glib::Propagation {
         // Read the same volume ceiling the slider uses, so the keyboard step
         // reaches the >100% boost region instead of a hardcoded 100 cap.
-        let volume_max = f64::from(self.settings.get_int(keys::VOLUME_MAX)).max(100.0);
+        let volume_max = f64::from(self.settings.volume_max_percent());
         // Hardware media keys fire regardless of focus.
         if let Some(action) = media_key_action(keyval)
             && dispatch_video_shortcut(action, &self.mpv, &self.tv, &self.input, volume_max)

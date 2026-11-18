@@ -20,17 +20,6 @@ where
     app.add_action_entries([quit]);
 }
 
-/// Bind each `(action, [accelerators])` pair on `app` so the listed
-/// keystrokes trigger the matching action.
-pub fn install_static_accels<A>(app: &A, accels: &[(&str, &[&str])])
-where
-    A: IsA<gtk::Application>,
-{
-    for (action, bindings) in accels {
-        app.set_accels_for_action(action, bindings);
-    }
-}
-
 /// Register a parameterless [`gio::SimpleAction`] (enabled by default)
 /// on `action_map`. Convenience wrapper over
 /// [`install_action_enabled`].

@@ -5,7 +5,6 @@
 
 use super::*;
 use gtk::prelude::*;
-use relm4::gtk::Application;
 
 #[test]
 fn system_power_actions_resolve_to_systemctl_args() {
@@ -56,22 +55,4 @@ fn install_quit_action_registers_application_action() {
     install_quit_action(&app);
 
     assert!(app.lookup_action("quit").is_some());
-}
-
-#[test]
-#[cfg_attr(miri, ignore)]
-fn install_static_accels_records_action_bindings() {
-    let app = Application::builder()
-        .application_id("br.com.biglinux.big-app-kit.accel-test")
-        .build();
-
-    install_static_accels(&app, &[("app.open", &["<Primary>O", "F10"])]);
-
-    assert_eq!(
-        app.accels_for_action("app.open")
-            .iter()
-            .map(ToString::to_string)
-            .collect::<Vec<_>>(),
-        vec!["<Control>o", "F10"]
-    );
 }
