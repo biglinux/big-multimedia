@@ -26,11 +26,7 @@ use big_media_data::library::podcast::{
     PodcastSearchResult, Subscriptions, cache_feed_title, fetch_feed, load_subscriptions,
     load_title_cache, search_podcasts,
 };
-use big_relm4_components::layout::{
-    dialog_footer::{BigDialogFooter, BigDialogFooterSpec},
-    dialog_page::{BigDialogPage, focus_when_shown},
-    preferences::BigPreferencesGroupSpec,
-};
+use big_relm4_components::layout::name_prompt::{BigNamePromptSpec, prompt_name};
 
 /// Artwork pixel size for a podcast row.
 const ICON_PX: i32 = 40;
@@ -598,69 +594,25 @@ fn present_add_feed_dialog(root: &gtk::Box, sender: &ComponentSender<PodcastPane
         return;
     };
 
-    let dialog = big_gtk_kit::dialog::Dialog::builder()
-        .title(i18n("Add RSS Feed"))
-        .content_width(440)
-        .content_height(260)
-        .build();
-    let page = BigDialogPage::plain();
-    page.content().set_spacing(12);
-    page.append_description(&i18n("Paste the podcast RSS feed URL below."));
-
-    let group = BigPreferencesGroupSpec::new(i18n("Feed")).build();
-    let feed_url_row = big_relm4_components::input::entry_row::build(
-        adw::EntryRow::builder()
-            .title(i18n("RSS feed URL"))
-            .show_apply_button(true),
-    );
-    group.add(&feed_url_row);
-    page.content().append(&group);
-
-    let footer = BigDialogFooter::new(&BigDialogFooterSpec::new(i18n("Cancel"), i18n("Subscribe")));
-    footer.accept_button().set_sensitive(false);
-    page.root().add_bottom_bar(footer.root());
-    dialog.set_child(Some(page.root()));
-
-    let accept_button_weak = footer.accept_button().downgrade();
-    feed_url_row.connect_changed(move |row| {
-        let Some(accept_button) = accept_button_weak.upgrade() else {
-            return;
-        };
-        accept_button.set_sensitive(accepted_podcast_feed_url(&row.text()).is_some());
-    });
-
-    let accept_button_weak = footer.accept_button().downgrade();
-    feed_url_row.connect_apply(move |row| {
-        let Some(accept_button) = accept_button_weak.upgrade() else {
-            return;
-        };
-        if accepted_podcast_feed_url(&row.text()).is_some() {
-            accept_button.emit_clicked();
-        }
-    });
-
-    let dialog_weak = dialog.downgrade();
-    footer.cancel_button().connect_clicked(move |_| {
-        if let Some(dialog) = dialog_weak.upgrade() {
-            dialog.close();
-        }
-    });
-
+    let spec = BigNamePromptSpec {
+        title: i18n("Add RSS Feed"),
+        description: Some(i18n("Paste the podcast RSS feed URL below.")),
+        entry_title: i18n("RSS feed URL"),
+        prefill: String::new(),
+        accept_label: i18n("Subscribe"),
+        content_width: 440,
+        content_height: 260,
+    };
     let s = sender.clone();
-    let dialog_weak = dialog.downgrade();
-    let feed_url_row_for_accept = feed_url_row.clone();
-    footer.accept_button().connect_clicked(move |_| {
-        let Some(url) = accepted_podcast_feed_url(&feed_url_row_for_accept.text()) else {
-            return;
-        };
-        s.input(PodcastPanelInput::Subscribe(url));
-        if let Some(dialog) = dialog_weak.upgrade() {
-            dialog.close();
-        }
-    });
-
-    focus_when_shown(&feed_url_row, 0, -1);
-    dialog.present(Some(&window));
+    prompt_name(
+        Some(window.upcast_ref()),
+        &spec,
+        accepted_podcast_feed_url,
+        move |url| {
+            s.input(PodcastPanelInput::Subscribe(url));
+            true
+        },
+    );
 }
 
 fn accepted_podcast_feed_url(url: &str) -> Option<String> {
