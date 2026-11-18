@@ -17,8 +17,9 @@ serde_json.workspace = true
 big-os-kit.workspace = true
 # Remote-control logging is opt-in. The endpoint itself uses bounded std sockets.
 log = { workspace = true, optional = true }
+libc = { workspace = true, optional = true }
 
 # The control server is opt-in. Default is empty.
 [features]
 default = []
-remote-control = ["dep:log"]
+remote-control = ["dep:log", "dep:libc"]

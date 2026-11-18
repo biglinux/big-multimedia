@@ -87,10 +87,6 @@ const WRITE_DEADLINE: Duration = Duration::from_secs(2);
 const MAX_RATE_PEERS: usize = 64;
 const MUTATIONS: [&str; 4] = ["play-pause", "next", "prev", "volume"];
 const ACCEPT_RETRY_DELAY: Duration = Duration::from_millis(100);
-// Linux errno values; std classifies none of them on stable.
-const ENFILE: i32 = 23;
-const EMFILE: i32 = 24;
-const ENOBUFS: i32 = 105;
 
 /// Start with the same revocation token carried by queued UI commands. `stop`
 /// must be fresh and false; a stopped session is never reused for another token.
@@ -249,7 +245,12 @@ fn admit_client(
         {
             return Accepted::More;
         }
-        Err(e) if matches!(e.raw_os_error(), Some(EMFILE | ENFILE | ENOBUFS)) => {
+        Err(e)
+            if matches!(
+                e.raw_os_error(),
+                Some(libc::EMFILE | libc::ENFILE | libc::ENOBUFS)
+            ) =>
+        {
             return Accepted::Retry;
         }
         Err(e) => return Accepted::Failed(e),

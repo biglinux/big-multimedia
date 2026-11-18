@@ -26,6 +26,8 @@ big-player-ui
 big-relm4-components
 big-video-player
 bitflags
+bit-set
+bit-vec
 block
 bon
 bon-macros
@@ -68,6 +70,7 @@ fastrand
 field-offset
 find-msvc-tools
 flume
+fnv
 foldhash
 fragile
 fs_extra
@@ -130,6 +133,7 @@ lru
 malloc_buf
 memchr
 memoffset
+num-traits
 objc
 objc-foundation
 objc_id
@@ -144,17 +148,24 @@ pin-project-lite
 pkg-config
 portable-atomic
 portable-atomic-util
+ppv-lite86
 prettyplease
 proc-macro2
 proc-macro-crate
 proc-macro-error2
 proc-macro-error-attr2
+proptest
 protobuf
 protobuf-codegen
 protobuf-parse
 protobuf-support
 qrcode
+quick-error
 quote
+rand
+rand_chacha
+rand_core
+rand_xorshift
 redox_users
 r-efi
 regex
@@ -175,6 +186,7 @@ rustls-native-certs
 rustls-pki-types
 rustls-webpki
 rustversion
+rusty-fork
 same-file
 schannel
 scopeguard
@@ -201,6 +213,7 @@ temp-dir
 tempfile
 thiserror
 thiserror-impl
+tikv-jemalloc-sys
 tokio
 toml
 toml_datetime
@@ -210,11 +223,13 @@ toml_writer
 tracing
 tracing-attributes
 tracing-core
+unarray
 unicode-ident
 untrusted
 utf8parse
 vcpkg
 version-compare
+wait-timeout
 walkdir
 wasi
 wasip2
@@ -240,5 +255,7 @@ windows_x86_64_gnullvm
 windows_x86_64_msvc
 winnow
 wit-bindgen
+zerocopy
+zerocopy-derive
 zeroize
 zmij
