@@ -621,8 +621,8 @@ pub(super) fn build_end_box() -> EndBoxWidgets {
         &i18n("Subtitles"),
         &["osd-btn"],
     );
-    // A group, as the audio-track menu beside it: the role cannot change once
-    // an assistive technology has read it.
+    // Both track menus are groups, set here: the role cannot change once an
+    // assistive technology has read it.
     let subtitle_menu_popover = gtk::Popover::builder()
         .accessible_role(gtk::AccessibleRole::Group)
         .build();
@@ -633,7 +633,9 @@ pub(super) fn build_end_box() -> EndBoxWidgets {
         &i18n("Audio Track"),
         &["osd-btn"],
     );
-    let audio_track_menu_popover = gtk::Popover::new();
+    let audio_track_menu_popover = gtk::Popover::builder()
+        .accessible_role(gtk::AccessibleRole::Group)
+        .build();
     setup_end_menu_popover(&audio_track_menu_button, &audio_track_menu_popover);
 
     // Here rather than in the menu, where many never look: the corner is
