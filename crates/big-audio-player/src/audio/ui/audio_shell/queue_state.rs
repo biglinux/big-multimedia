@@ -304,8 +304,8 @@ fn plan_open(queued: &[&str], resolved: &[String]) -> (Vec<String>, Option<usize
 /// A queue set aside while the other one plays, with its playing index.
 type StashedQueue = (Vec<Track>, Option<usize>);
 
-fn stash(queue: &PlayQueue) -> Option<StashedQueue> {
-    Some((queue.tracks().to_vec(), queue.current_index()))
+fn stash(queue: &PlayQueue) -> StashedQueue {
+    (queue.tracks().to_vec(), queue.current_index())
 }
 
 /// The feed's episodes as tracks numbered from 1, with ids counting down from
@@ -338,7 +338,7 @@ pub(super) fn start_podcast_queue(
     episodes: Vec<Track>,
 ) {
     if !*podcast_mode {
-        *saved_music = stash(queue);
+        *saved_music = Some(stash(queue));
     }
     *podcast_mode = true;
     queue.set_tracks(episodes);
@@ -361,14 +361,14 @@ pub(super) fn swap_queue_for_tab(
         let Some(podcasts) = saved_podcast.take() else {
             return false;
         };
-        *saved_music = stash(queue);
+        *saved_music = Some(stash(queue));
         *podcast_mode = true;
         podcasts
     } else {
         if !*podcast_mode {
             return false;
         }
-        *saved_podcast = stash(queue);
+        *saved_podcast = Some(stash(queue));
         *podcast_mode = false;
         let Some(music) = saved_music.take() else {
             return false;
