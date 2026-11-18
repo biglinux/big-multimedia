@@ -62,11 +62,8 @@ pub fn generate(filename: &str, params: &[ShaderParam<'_>]) -> Option<String> {
         error!("Cannot write shader {filename}: no XDG config directory");
         return None;
     };
-    fs::create_dir_all(&out_dir)
-        .map_err(|e| error!("Cannot create shader dir {}: {e}", out_dir.display()))
-        .ok()?;
     let out_path = out_dir.join(filename);
-    fs::write(&out_path, &result)
+    big_os_kit::storage::atomic_write(&out_path, result.as_bytes())
         .map_err(|e| error!("Cannot write shader {}: {e}", out_path.display()))
         .ok()?;
 
