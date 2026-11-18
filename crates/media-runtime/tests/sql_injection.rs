@@ -4,7 +4,7 @@
 //! library query the audio sidebar uses, on a database built by the production
 //! migrations.
 
-use big_media_runtime::db::queries::get_library_tracks;
+use big_media_runtime::db::queries::{get_library_track_count, get_library_tracks};
 use big_media_runtime::db::schema::run_migrations;
 use rusqlite::{Connection, params};
 
@@ -89,4 +89,25 @@ fn hostile_parent_values_are_bound() {
         [PRIVATE_TRACK]
     );
     assert!(get_library_tracks(&conn, &[("artist = artist OR 1=1 --", "")], "", None).is_err());
+}
+
+#[test]
+fn blank_search_lists_whole_library() {
+    let conn = library();
+    let all = sorted_paths(&conn, &[], "");
+    assert_eq!(all.len(), HOSTILE_FILENAMES.len() + 1);
+    for filter in ["   ", "\t\n"] {
+        assert_eq!(sorted_paths(&conn, &[], filter), all, "{filter:?}");
+        let count = get_library_track_count(&conn, filter, None)
+            .unwrap_or_else(|e| panic!("{filter:?}: {e}"));
+        assert_eq!(usize::try_from(count).unwrap(), all.len(), "{filter:?}");
+    }
+}
+
+#[test]
+fn damaged_search_index_fails_query() {
+    let conn = library();
+    conn.execute_batch("DELETE FROM tracks_fts_data")
+        .expect("damage index");
+    assert!(get_library_tracks(&conn, &[], "Test", None).is_err());
 }

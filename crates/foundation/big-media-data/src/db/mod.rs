@@ -18,12 +18,24 @@ pub type DbHandle = Arc<Mutex<Connection>>;
 
 /// Collect query rows, skipping (and logging) rows that fail to decode: one
 /// damaged row should not hide the rest of the library, nor vanish silently.
-pub(crate) fn decoded_rows<T>(rows: impl Iterator<Item = rusqlite::Result<T>>) -> Vec<T> {
-    rows.filter_map(|row| {
-        row.map_err(|error| log::warn!("skipping unreadable database row: {error}"))
-            .ok()
-    })
-    .collect()
+/// A failure of the statement itself is returned, never taken for an empty result.
+pub(crate) fn decoded_rows<T>(
+    rows: impl Iterator<Item = rusqlite::Result<T>>,
+) -> crate::Result<Vec<T>> {
+    let mut decoded = Vec::new();
+    for row in rows {
+        match row {
+            Ok(value) => decoded.push(value),
+            Err(
+                error @ (rusqlite::Error::FromSqlConversionFailure(..)
+                | rusqlite::Error::IntegralValueOutOfRange(..)
+                | rusqlite::Error::InvalidColumnType(..)
+                | rusqlite::Error::Utf8Error(..)),
+            ) => log::warn!("skipping unreadable database row: {error}"),
+            Err(error) => return Err(error.into()),
+        }
+    }
+    Ok(decoded)
 }
 
 pub fn open_database() -> crate::Result<DbHandle> {
