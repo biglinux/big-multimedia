@@ -22,7 +22,7 @@ use crate::player::mpv_backend::fast_render::{
     FastRenderContext, SwRenderContext as SoftwareRenderContext,
 };
 use crate::player::mpv_backend::offload_renderer::VideoBackend;
-use crate::player::mpv_backend::{MpvBackend, PlayerEvent, video_surface};
+use crate::player::mpv_backend::{EndReason, MpvBackend, PlayerEvent, video_surface};
 use crate::settings::{Settings, keys};
 use crate::shared::converter_handoff;
 use crate::video::ui::filters::{VideoFiltersDialog, VideoFiltersDialogInit};

@@ -10,9 +10,8 @@ impl AudioShell {
         // While the TV has the transport it shows the TV, not the paused mpv.
         let tv = self.tv.attached().is_some();
         match event {
-            // Reason 0 = natural end-of-file → advance to the next queue track
-            // (radio streams never auto-advance the music queue).
-            PlayerEvent::EndFile(0) if !self.is_stream => {
+            // Radio streams never auto-advance the music queue.
+            PlayerEvent::EndFile(EndReason::Eof) if !self.is_stream => {
                 if self.queue.advance().is_some() {
                     self.play_current();
                     self.sync_current_to_panels();
@@ -20,10 +19,10 @@ impl AudioShell {
                     self.handle_mpris_command(MprisCommand::Stop, sender);
                 }
             }
-            // Reason 4 = the track could not be opened. Skip it, but stop once
-            // every queued track failed in a row or the queue would come back
-            // to the same one (repeat-one, a single track).
-            PlayerEvent::EndFile(4) if !self.is_stream => {
+            // Skip a track that could not be opened, but stop once every
+            // queued track failed in a row or the queue would come back to the
+            // same one (repeat-one, a single track).
+            PlayerEvent::EndFile(EndReason::Error) if !self.is_stream => {
                 self.failed_loads += 1;
                 let name = std::path::Path::new(&self.current_file)
                     .file_name()

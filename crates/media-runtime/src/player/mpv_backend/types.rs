@@ -46,8 +46,7 @@ pub enum PlayerEvent {
     VolumeChanged(f64),
     MuteChanged(bool),
     FileLoaded(String),
-    /// End file with reason code (Eof=0, Stop=2, Quit=3, Error=4, Redirect=5)
-    EndFile(u32),
+    EndFile(EndReason),
     TracksChanged(Vec<TrackMetadata>),
     ChaptersChanged(Vec<(f64, String)>),
     MetadataChanged(HashMap<String, String>),
@@ -67,6 +66,36 @@ pub enum PlayerEvent {
         id: u64,
     },
     Shutdown,
+}
+
+/// Why mpv stopped playing a file, from libmpv's `mpv_end_file_reason`.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub enum EndReason {
+    /// The end of the file was reached.
+    Eof,
+    /// Stopped from outside, such as by loading another file.
+    Stop,
+    /// Stopped by the quit command or player shutdown.
+    Quit,
+    /// The file could not be played.
+    Error,
+    /// The file was a playlist and its entries took its place.
+    Redirect,
+    /// A reason newer than this libmpv binding.
+    Unknown(u32),
+}
+
+impl EndReason {
+    pub(super) fn from_mpv(reason: mpv_sys::mpv_end_file_reason) -> Self {
+        match reason {
+            mpv_sys::mpv_end_file_reason_MPV_END_FILE_REASON_EOF => Self::Eof,
+            mpv_sys::mpv_end_file_reason_MPV_END_FILE_REASON_STOP => Self::Stop,
+            mpv_sys::mpv_end_file_reason_MPV_END_FILE_REASON_QUIT => Self::Quit,
+            mpv_sys::mpv_end_file_reason_MPV_END_FILE_REASON_ERROR => Self::Error,
+            mpv_sys::mpv_end_file_reason_MPV_END_FILE_REASON_REDIRECT => Self::Redirect,
+            other => Self::Unknown(other),
+        }
+    }
 }
 
 /// Demuxer-cache sizing policy for the audio-only backend. Each profile is
@@ -100,6 +129,27 @@ impl AudioCacheProfile {
             Self::Music => "10MiB",
             Self::Podcast => "2MiB",
             Self::Radio => "4MiB",
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::EndReason;
+
+    /// Values from `enum mpv_end_file_reason` in libmpv's client.h.
+    #[test]
+    fn end_reasons_follow_client_header() {
+        for (raw, reason) in [
+            (0, EndReason::Eof),
+            (1, EndReason::Unknown(1)),
+            (2, EndReason::Stop),
+            (3, EndReason::Quit),
+            (4, EndReason::Error),
+            (5, EndReason::Redirect),
+            (6, EndReason::Unknown(6)),
+        ] {
+            assert_eq!(EndReason::from_mpv(raw), reason, "reason {raw}");
         }
     }
 }

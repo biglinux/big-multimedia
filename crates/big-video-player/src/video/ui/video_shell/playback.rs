@@ -176,14 +176,12 @@ impl VideoShell {
                     root.close();
                 }
             }
-            // Reason 4 = error (unsupported/corrupt/unreadable source). Other
-            // reasons (EOF=0, stop=2, quit=3, redirect=5) are a normal end of
-            // playback; surface only the error so the user gets feedback
-            // instead of a silent blank screen.
+            // Only an error gets a notice, so the user gets feedback instead
+            // of a silent blank screen; every other reason is a normal end.
             PlayerEvent::EndFile(reason) => {
                 self.playing = false;
                 self.sync_screen_inhibit(root);
-                if reason == 4 {
+                if reason == EndReason::Error {
                     self.notify(&i18n(
                         "Could not play this file — it may be unsupported or corrupt.",
                     ));
