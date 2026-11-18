@@ -396,8 +396,7 @@ impl EventLoop {
                 return;
             }
             let playing = poll.playing();
-            if drained && !playing && !self.volume.polls_mixer() && !self.screenshots.has_requests()
-            {
+            if drained && !playing && !self.screenshots.has_requests() {
                 // Paused, ended or with nothing loaded, nothing changes until
                 // mpv queues an event or the UI asks for a volume change.
                 if self.wake.recv().is_err() {
@@ -406,8 +405,8 @@ impl EventLoop {
                 continue;
             }
             // Every position change redraws the window: ten a second keep the
-            // seek bar moving smoothly. Otherwise only the mixer and
-            // screenshot deadlines need a timer.
+            // seek bar moving smoothly. Otherwise only screenshot deadlines
+            // need a timer.
             let interval = if playing { 100 } else { 250 };
             // Wait on mpv's wakeup rather than sleeping: an event (a volume
             // change) is handled at once, and Drop's wakeup ends the wait
@@ -426,6 +425,7 @@ impl EventLoop {
             mpv,
             std::mem::take(&mut poll.volume_changed),
             std::mem::take(&mut poll.audio_reconfigured),
+            poll.playing(),
         ) else {
             return;
         };
@@ -807,7 +807,8 @@ mod volume_tests {
             backend.pause();
             std::thread::sleep(Duration::from_secs(1));
             run("pactl", &["set-sink-input-mute", &index, "1"]);
-            wait_until("external mute while paused", || backend.get_mute());
+            backend.play();
+            wait_until("external mute made while paused", || backend.get_mute());
             backend.set_mute(false);
             wait_until("unmute applied", || !backend.get_property_bool("ao-mute"));
             backend.stop();

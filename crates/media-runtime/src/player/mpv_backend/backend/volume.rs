@@ -157,18 +157,13 @@ impl VolumeControl {
         state.mute_set = true;
     }
 
-    /// Whether `sync` reads the sound server's mixer on a timer: mpv does not
-    /// reliably notify native mixer changes.
-    pub(super) fn polls_mixer(&self) -> bool {
-        let state = self.0.lock().unwrap_or_else(PoisonError::into_inner);
-        state.native_volume || state.native_mute
-    }
-
     /// The state to sync from, with its requests taken, or `None` when there
-    /// is nothing to do.
-    fn take_requests(&self, changed: bool) -> Option<State> {
+    /// is nothing to do. mpv does not notify changes made in the sound
+    /// server's mixer, so `refresh_mixer` re-reads it at most twice a second.
+    fn take_requests(&self, changed: bool, refresh_mixer: bool) -> Option<State> {
         let mut shared = self.0.lock().unwrap_or_else(PoisonError::into_inner);
-        let refresh = (shared.native_volume || shared.native_mute)
+        let refresh = refresh_mixer
+            && (shared.native_volume || shared.native_mute)
             && shared.last_sync.elapsed() >= Duration::from_millis(500);
         if !changed && !refresh && shared.pending_volume.is_none() && shared.pending_mute.is_none()
         {
@@ -185,10 +180,11 @@ impl VolumeControl {
         mpv: &MpvClient,
         changed: bool,
         reconfigured: bool,
+        refresh_mixer: bool,
     ) -> Option<(f64, bool)> {
         // Never keep the snapshot mutex locked across sound-server I/O: GTK
         // reads it for controls and can enqueue the next request concurrently.
-        let mut state = self.take_requests(changed)?;
+        let mut state = self.take_requests(changed, refresh_mixer)?;
         let driver = mpv.get_property::<String>("current-ao").unwrap_or_default();
         // ALSA's ao-volume can control the system-wide mixer. Only these two
         // APIs promise a per-stream control belonging to this mpv instance.
