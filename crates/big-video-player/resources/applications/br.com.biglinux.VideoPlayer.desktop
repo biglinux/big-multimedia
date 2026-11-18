@@ -99,7 +99,6 @@ Keywords[zh_CN]=视频;播放器;电影;
 Keywords[zh_TW]=影片;播放器;電影;
 MimeType=video/3gpp;video/3gpp2;video/annodex;video/dv;video/matroska;video/matroska-3d;video/mj2;video/mp2t;video/mp4;video/mpeg;video/ogg;video/quicktime;video/vnd.avi;video/vnd.radgamettools.bink;video/vnd.radgamettools.smacker;video/vnd.rn-realvideo;video/webm;video/x-anim;video/x-flic;video/x-flv;video/x-mjpeg;video/x-ms-wmv;video/x-nsv;video/x-ogm+ogg;video/x-theora+ogg;video/x-matroska;video/x-msvideo;video/avi;video/x-m4v;video/x-ms-asf;video/divx;video/x-mpeg;application/mxf;application/vnd.rn-realmedia;application/vnd.ms-asf;application/x-matroska;application/vnd.apple.mpegurl;audio/x-mpegurl;audio/x-scpls;
 StartupNotify=true
-StartupWMClass=br.com.biglinux.VideoPlayer
 Actions=NewWindow;
 
 [Desktop Action NewWindow]

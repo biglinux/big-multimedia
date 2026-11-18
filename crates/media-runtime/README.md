@@ -1,11 +1,12 @@
 # big-media-runtime
 
-GPL media engine shared by `big-audio-player` and `big-video-player`: the
-libmpv backend and render paths, the client of the BigNetScreen cast daemon,
-media probing and playlist scanning, settings adapters, and the helpers both
-players share. The GTK-free data services (SQLite library, settings store,
-radio/podcast clients) live in `crates/foundation/big-media-data` and are
-re-exported here as `config`, `db`, `error`, `i18n`, `library` and `settings`.
+GPL media engine shared by `big-audio-player` and `big-video-player`: libmpv
+playback and rendering, casting, media probing and the helpers both players use.
+
+It holds the libmpv backend and render paths, the client of the BigNetScreen
+cast daemon, media probing and playlist scanning, and the settings adapters.
+The GTK-free data services (SQLite library, settings store, radio/podcast
+clients) live in `crates/foundation/big-media-data` and are re-exported here as `config`, `db`, `error`, `i18n`, `library` and `settings`.
 
 Conversion is not part of this crate: `shared::converter_handoff` opens the
 external converter GUIs with the file and the marked cuts.
