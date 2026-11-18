@@ -1,7 +1,7 @@
 // SPDX-FileCopyrightText: 2026 BigLinux contributors
 // SPDX-License-Identifier: MIT
 
-//! GTK accelerator parsing, migration, and shortcut override helpers.
+//! GTK accelerator parsing and shortcut override helpers.
 //!
 //! The display-free shortcut specs and override parsing (`ShortcutDef`,
 //! `resolve_accels`, `parse_custom`, …) live in

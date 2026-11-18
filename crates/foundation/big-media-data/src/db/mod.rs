@@ -58,10 +58,6 @@ pub fn open_database() -> crate::Result<DbHandle> {
 
     schema::run_migrations(&conn)?;
 
-    if let Err(error) = queries::migrate_radio_from_json(&conn) {
-        log::warn!("radio stations from the old JSON file were not imported: {error}");
-    }
-
     Ok(Arc::new(Mutex::new(conn)))
 }
 

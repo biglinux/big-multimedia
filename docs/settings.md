@@ -54,18 +54,24 @@ value does on screen; the Notes column repeats only what the code states. Each
 player reads the keys it uses from its own file and keeps the rest.
 
 A key with no default reads as empty, `false` or `0` unless its Notes say
-otherwise. The audio player also writes `audio-appearance-migrated=true` once,
-after copying each `ui-*` color in its file into the matching `audio-ui-*` key
-that still holds its default; a `gradient` color source is not copied.
+otherwise.
+
+Restore Default Settings in the video player writes every default except the
+keys in `Settings::KEPT_ON_RESTORE`
+([`store.rs`](../crates/foundation/big-media-data/src/settings/store.rs)): the
+library folders, keyboard shortcuts, volume, shuffle, voice and equalizer
+levels, the folders the browsers left off in, the one-time playlist hint and
+dialog sizes. Keys without a default stay as they are. The running player takes
+the new values at once, except `render-mode`, `gpu-dumb-mode`,
+`custom-mpv-options` and `audio-output`, which apply when the player reopens.
 
 ### Volume and audio output
 
 | Key | Type | Default | Notes |
 |---|---|---|---|
-| `volume` | number | `1.0` |  |
-| `mute` | bool | `false` |  |
+| `volume` | number | `1` | The video player's volume as a fraction of 100%, saved half a second after it stops changing and at close. It starts at this value, kept within 0 and `volume-max`. |
 | `volume-max` | integer | `150` | Percent; the players keep it within 100 to 200. |
-| `audio-volume` | integer | `100` |  |
+| `audio-volume` | integer | `100` | The audio player's volume in percent, saved and restored like `volume`. |
 | `audio-output` | string | empty |  |
 | `audio-channels` | string | empty |  |
 | `preferred-audio-lang` | string | empty |  |
@@ -114,25 +120,21 @@ that still holds its default; a `gradient` color source is not copied.
 | `hwdec` | string | `auto-safe` |  |
 | `deinterlace` | bool | `false` |  |
 | `auto-window-resize` | bool | `true` |  |
-| `render-mode` | string | not set | `auto`, `gl` or `sw`; absent reads as `auto`. |
+| `render-mode` | string | `auto` | `auto`, `gl` or `sw`. |
 | `render-profile` | string | `default` |  |
 | `gpu-dumb-mode` | bool | `false` |  |
 | `custom-mpv-options` | string | empty |  |
 | `glsl-shaders` | string | empty |  |
 | `builtin-upscaler` | string | empty |  |
-| `shader-fsr-sharpness` | number | not set |  |
-| `shader-cas-sharpening` | number | not set |  |
+| `shader-fsr-sharpness` | number | `0` | `0` reads as `0.2`. |
+| `shader-cas-sharpening` | number | `0` |  |
 | `anime4k-preset` | string | empty |  |
 | `neural-upscaler` | string | empty |  |
 | `tone-mapping` | string | `auto` |  |
 | `target-peak` | integer | `0` |  |
-| `target-contrast` | integer | `0` | No code reads it. |
 | `hdr-compute-peak` | bool | `false` |  |
-| `hdr-contrast-recovery` | number | `0.0` | No code reads it. |
-| `target-colorspace-hint` | bool | `false` | No code reads it. |
 | `gamut-mapping-mode` | string | `auto` |  |
 | `icc-profile` | string | empty |  |
-| `icc-profile-auto` | bool | `false` | No code reads it. |
 | `icc-intent` | integer | `0` |  |
 
 ### Subtitles
@@ -141,7 +143,6 @@ that still holds its default; a `gradient` color source is not copied.
 |---|---|---|---|
 | `preferred-sub-lang` | string | empty |  |
 | `sub-auto` | string | `fuzzy` |  |
-| `secondary-subtitles` | bool | `false` | No code reads it. |
 | `sub-font` | string | empty |  |
 | `subtitle-font-size` | integer | `36` |  |
 | `sub-bold` | bool | `false` |  |
@@ -163,10 +164,7 @@ that still holds its default; a `gradient` color source is not copied.
 
 | Key | Type | Default | Notes |
 |---|---|---|---|
-| `screenshot-format` | string | `png` |  |
-| `screenshot-jpeg-quality` | integer | `90` | No code reads it. |
 | `screenshot-png-compression` | integer | `7` |  |
-| `screenshot-template` | string | `%F-%p` |  |
 | `screenshot-directory` | string | empty |  |
 | `screenshot-tag-colorspace` | bool | `true` |  |
 | `screenshot-high-bit-depth` | bool | `true` |  |
@@ -180,7 +178,7 @@ that still holds its default; a `gradient` color source is not copied.
 | `playlist-sort-desc` | bool | `false` |  |
 | `playlist-shuffle` | bool | `false` |  |
 | `playlist-folder-recursive` | bool | `false` |  |
-| `playlist-last-folder` | string | empty |  |
+| `playlist-last-folder` | string | empty | The folder the video Files tab reopens at start. Empty, or a folder that no longer exists, opens the places. |
 | `playlist-reorder-hint-seen` | bool | `false` | The one-time "drag to reorder" line was closed. |
 | `playlist-column-widths` | string | not set |  |
 | `video-library-folders` | string | empty | A JSON list; empty means Videos, Downloads and the home folder. |
@@ -244,7 +242,7 @@ that still holds its default; a `gradient` color source is not copied.
 | `audio-ui-icon-color` | string | `#FFFFFF` |  |
 | `audio-ui-dialog-color` | string | `#2A2A30` |  |
 | `audio-high-contrast` | bool | `false` |  |
-| `audio-album-art-bg` | bool | not set | Read as `true` when absent. |
+| `audio-album-art-bg` | bool | `true` |  |
 
 ### Dialog sizes
 
@@ -261,7 +259,7 @@ that still holds its default; a `gradient` color source is not copied.
 |---|---|---|---|
 | `custom-keybindings` | string | empty |  |
 | `taskbar-progress` | bool | `true` |  |
-| `tray-icon` | bool | not set | Read as `false` when absent. |
+| `tray-icon` | bool | `false` |  |
 
 ## Environment variables
 

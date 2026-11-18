@@ -469,8 +469,13 @@ fn render_glarea_frame(fast_render_context_slot: &FastRenderContextSlot, gl_area
     );
 }
 
-/// On close, save the resume position, flush settings and shut mpv's audio
-/// output down cleanly.
+/// How long the volume stays put before it is saved.
+pub(super) const VOLUME_SAVE_DELAY: std::time::Duration = std::time::Duration::from_millis(500);
+
+/// On close, save the resume position and a volume still inside
+/// [`VOLUME_SAVE_DELAY`], flush settings and shut mpv's audio output down
+/// cleanly. Connected on first realize, before the map that binds the close
+/// check for unsaved settings.
 pub(super) fn wire_close(
     window: &adw::ApplicationWindow,
     mpv: &Rc<RefCell<Option<Arc<MpvBackend>>>>,
@@ -481,6 +486,7 @@ pub(super) fn wire_close(
     window.connect_close_request(move |_| {
         if let Some(mpv) = mpv.borrow().as_ref() {
             mpv.save_resume_position();
+            settings.put_video_volume_percent(mpv.get_volume());
             mpv.shutdown_audio();
         }
         settings.flush();

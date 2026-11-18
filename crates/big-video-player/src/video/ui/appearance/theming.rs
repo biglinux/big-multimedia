@@ -1,9 +1,8 @@
 //! Video-player appearance application: reads the `ui-*` palette + OSD layout
 //! settings and pushes the resulting CSS into one app-owned `CssProvider` slot.
-//! Covers the palette foundation, OSD widget styles, gradient/button/window
-//! customizations, and the high-contrast override. Kept app-local because the
-//! OSD class names
-//! (`osd-controls`, `osd-btn`, …) are video-specific.
+//! Covers the palette foundation, OSD widget styles and gradient/button/window
+//! customizations. Kept app-local because the OSD class names (`osd-controls`,
+//! `osd-btn`, …) are video-specific.
 //!
 //! The provider slot lives on the `VideoShell`; a re-apply (boot or the
 //! Appearance dialog's `on_changed`) replaces the slot, never stacks.
@@ -436,18 +435,26 @@ fn build_osd_css(settings: &Settings, osd_css_config: &OsdCssConfig) -> String {
     css += SOUND_OFF_CSS;
     css += PANEL_CSS;
     css += DIM_TEXT_CSS;
-
-    if settings.get_bool(keys::AUDIO_HIGH_CONTRAST) {
-        css += crate::shared::theming::HIGH_CONTRAST_CSS;
-    }
-
     css
 }
 
-/// Apply the saved colour source and the OSD palette, layout and high-contrast
-/// CSS into `slot`. Call at boot and from the Appearance dialog's `on_changed`.
+/// Apply the saved colour source and the OSD palette and layout CSS into
+/// `slot`. Call at boot and from the Appearance dialog's `on_changed`.
 pub(in crate::video) fn apply_appearance(settings: &Settings, slot: &CssSlot) {
     let osd_css_config = OsdCssConfig::from_settings(settings);
     crate::shared::theming::apply_color_scheme(&osd_css_config.color_source);
     slot.set(&build_osd_css(settings, &osd_css_config));
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn audio_high_contrast_leaves_video_css() {
+        let settings = Settings::memory_only();
+        settings.put_bool(keys::AUDIO_HIGH_CONTRAST, true);
+        let css = build_osd_css(&settings, &OsdCssConfig::from_settings(&settings));
+        assert!(!css.contains(crate::shared::theming::HIGH_CONTRAST_CSS));
+    }
 }

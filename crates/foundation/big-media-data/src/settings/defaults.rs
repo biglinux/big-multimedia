@@ -8,8 +8,7 @@ pub(super) fn defaults() -> HashMap<String, String> {
     values.insert("audio-appearance-window-width".into(), "500".into());
     values.insert("audio-appearance-window-height".into(), "400".into());
 
-    values.insert("volume".into(), "1.0".into());
-    values.insert("mute".into(), "false".into());
+    values.insert("volume".into(), "1".into());
 
     values.insert("hwdec".into(), "auto-safe".into());
     values.insert("deinterlace".into(), "false".into());
@@ -46,10 +45,7 @@ pub(super) fn defaults() -> HashMap<String, String> {
     values.insert("eq-bands".into(), String::new());
     values.insert("eq-preset".into(), "flat".into());
 
-    values.insert("screenshot-format".into(), "png".into());
-    values.insert("screenshot-jpeg-quality".into(), "90".into());
     values.insert("screenshot-png-compression".into(), "7".into());
-    values.insert("screenshot-template".into(), "%F-%p".into());
     values.insert("screenshot-directory".into(), String::new());
     values.insert("screenshot-tag-colorspace".into(), "true".into());
     values.insert("screenshot-high-bit-depth".into(), "true".into());
@@ -58,19 +54,20 @@ pub(super) fn defaults() -> HashMap<String, String> {
     values.insert("keep-open-pause".into(), "false".into());
     values.insert("idle-mode".into(), "yes".into());
     values.insert("render-profile".into(), "default".into());
+    values.insert("render-mode".into(), "auto".into());
 
     values.insert("tone-mapping".into(), "auto".into());
     values.insert("target-peak".into(), "0".into());
-    values.insert("target-contrast".into(), "0".into());
-    values.insert("hdr-contrast-recovery".into(), "0.0".into());
     values.insert("hdr-compute-peak".into(), "false".into());
-    values.insert("target-colorspace-hint".into(), "false".into());
     values.insert("gamut-mapping-mode".into(), "auto".into());
 
     values.insert("glsl-shaders".into(), String::new());
     values.insert("builtin-upscaler".into(), String::new());
     values.insert("neural-upscaler".into(), String::new());
     values.insert("anime4k-preset".into(), String::new());
+    // FSR reads 0 as its 0.2 sharpness.
+    values.insert("shader-fsr-sharpness".into(), "0".into());
+    values.insert("shader-cas-sharpening".into(), "0".into());
 
     values.insert("cache".into(), "false".into());
     values.insert("cache-secs".into(), "30".into());
@@ -83,7 +80,6 @@ pub(super) fn defaults() -> HashMap<String, String> {
     values.insert("sub-ass-scale-with-window".into(), "false".into());
 
     values.insert("icc-profile".into(), String::new());
-    values.insert("icc-profile-auto".into(), "false".into());
     values.insert("icc-intent".into(), "0".into());
 
     values.insert("sub-filter-sdh".into(), "false".into());
@@ -91,7 +87,6 @@ pub(super) fn defaults() -> HashMap<String, String> {
     values.insert("stop-screensaver".into(), "yes".into());
     values.insert("sub-gauss".into(), "0.0".into());
     values.insert("sub-gray".into(), "false".into());
-    values.insert("secondary-subtitles".into(), "false".into());
     values.insert("auto-window-resize".into(), "true".into());
     values.insert("seekbar-thumbnail".into(), "true".into());
     values.insert("custom-keybindings".into(), String::new());
@@ -161,6 +156,8 @@ pub(super) fn defaults() -> HashMap<String, String> {
     values.insert("gapless-audio".into(), "false".into());
     values.insert("audio-volume".into(), "100".into());
     values.insert("taskbar-progress".into(), "true".into());
+    values.insert("tray-icon".into(), "false".into());
+    values.insert("audio-album-art-bg".into(), "true".into());
 
     values.insert("audio-high-contrast".into(), "false".into());
 

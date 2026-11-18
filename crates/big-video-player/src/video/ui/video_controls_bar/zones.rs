@@ -45,9 +45,9 @@ impl ButtonLayoutWidgets {
     ///
     /// The three `ui-zone-bottom-*` CSVs become a
     /// [`ZoneLayout`](big_relm4_components::input::zone_layout::ZoneLayout) (each
-    /// token mapped through `control_name`, dropping unknown/legacy-aliased
-    /// entries); the applier reparents each control into its zone and appends any
-    /// control the CSVs omit to its default fallback slot. Visibility comes from
+    /// token mapped through `control_name`, dropping unknown entries); the
+    /// applier reparents each control into its zone and appends any control the
+    /// CSVs omit to its default fallback slot. Visibility comes from
     /// the `ui-show-*` flags, the voice control additionally gated on a
     /// noise-reduction backend being installed.
     pub(crate) fn apply_settings(&self, settings: &Settings) {
@@ -55,9 +55,8 @@ impl ButtonLayoutWidgets {
         let center = slot_key("bottom", ZonePlacement::Center);
         let end = slot_key("bottom", ZonePlacement::End);
 
-        // The three saved CSVs → an ordered ZoneLayout (aliases normalised,
-        // unknown ids dropped). Cross-zone dedup + missing-default fallback are
-        // the applier's job.
+        // The three saved CSVs → an ordered ZoneLayout (unknown ids dropped).
+        // Cross-zone dedup + missing-default fallback are the applier's job.
         let mut layout = ZoneLayout::default();
         for (csv_key, slot) in [
             (keys::UI_ZONE_BOTTOM_LEFT, &start),
@@ -152,12 +151,12 @@ fn control_name(name: &str) -> &'static str {
         "volume" => "volume",
         "speed" => "speed",
         "voice" => "voice",
-        "prev" | "previous" => "prev",
+        "prev" => "prev",
         "play" => "play",
         "next" => "next",
-        "edit-export" | "export" => "edit-export",
-        "subtitle" | "subtitles" => "subtitle",
-        "audio-track" | "audio" => "audio-track",
+        "edit-export" => "edit-export",
+        "subtitle" => "subtitle",
+        "audio-track" => "audio-track",
         "tv" => "tv",
         "fullscreen" => "fullscreen",
         _ => "",
@@ -282,7 +281,7 @@ pub(super) fn build_start_box(
 
     // Volume: the one the player has, and the PC's own beside it while the
     // player plays along with a TV that has the first.
-    let initial_volume = settings.get_double(keys::VOLUME) * 100.0;
+    let initial_volume = settings.video_volume_percent();
     let volume = build_volume_control(settings, mpv, Some(tv), &i18n("TV"), initial_volume);
     let pc_volume = build_volume_control(settings, mpv, None, &i18n("PC"), initial_volume);
     pc_volume.volume_box.set_visible(false);
@@ -742,20 +741,20 @@ mod tests {
     }
 
     #[test]
-    fn control_names_accept_canonical_and_legacy_aliases() {
+    fn control_names_drop_unknown_ids() {
         assert_eq!(control_name("volume"), "volume");
         assert_eq!(control_name("speed"), "speed");
         assert_eq!(control_name("voice"), "voice");
         assert_eq!(control_name("prev"), "prev");
-        assert_eq!(control_name("previous"), "prev");
+        assert_eq!(control_name("previous"), "");
         assert_eq!(control_name("play"), "play");
         assert_eq!(control_name("next"), "next");
         assert_eq!(control_name("edit-export"), "edit-export");
-        assert_eq!(control_name("export"), "edit-export");
+        assert_eq!(control_name("export"), "");
         assert_eq!(control_name("subtitle"), "subtitle");
-        assert_eq!(control_name("subtitles"), "subtitle");
+        assert_eq!(control_name("subtitles"), "");
         assert_eq!(control_name("audio-track"), "audio-track");
-        assert_eq!(control_name("audio"), "audio-track");
+        assert_eq!(control_name("audio"), "");
         assert_eq!(control_name("fullscreen"), "fullscreen");
         assert_eq!(control_name("unknown"), "");
     }

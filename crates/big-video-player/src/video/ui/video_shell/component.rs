@@ -477,7 +477,7 @@ impl Component for VideoShell {
             custom_mpv_options.push_str("gpu-dumb-mode=yes");
         }
         let audio_output = settings.get_string(keys::AUDIO_OUTPUT).clone();
-        let initial_volume = settings.get_double(keys::VOLUME) * 100.0;
+        let initial_volume = settings.video_volume_percent();
 
         let fast_render_context_slot: FastRenderContextSlot = Rc::new(RefCell::new(None));
         let video_backend: Rc<RefCell<Option<VideoBackend>>> = Rc::new(RefCell::new(None));
@@ -601,6 +601,9 @@ impl Component for VideoShell {
                 video_start,
                 duration_secs: 0.0,
                 settings,
+                volume_save: big_relm4_components::input::debounce::BigDebouncedAction::new(
+                    render::VOLUME_SAVE_DELAY,
+                ),
                 theme,
                 video_transform,
                 osd,
@@ -742,8 +745,7 @@ impl Component for VideoShell {
                         Self::show_restore_defaults_dialog(root, || {});
                     }
                 }
-                // A restart picks up the new values: mpv is configured at startup.
-                VideoShellInput::RestoreDefaultsConfirmed => self.settings.reset_to_defaults(),
+                VideoShellInput::RestoreDefaultsConfirmed => self.restore_defaults(window_ref),
                 VideoShellInput::OpenFiles(paths) => self.open_files(&paths, &sender),
                 VideoShellInput::PlaylistResolved { list, generation } => {
                     if generation == self.open_generation {

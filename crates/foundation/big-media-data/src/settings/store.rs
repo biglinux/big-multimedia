@@ -346,6 +346,34 @@ impl Settings {
             .clamp(*range.start(), *range.end())
     }
 
+    /// The audio player's saved volume in percent, within 0 and
+    /// [`Self::volume_max_percent`]; 0 stays 0.
+    #[must_use]
+    pub fn audio_volume_percent(&self) -> f64 {
+        f64::from(
+            self.get_int_or(keys::AUDIO_VOLUME, 100)
+                .clamp(0, self.volume_max_percent()),
+        )
+    }
+
+    /// Store the audio player's volume, rounded to a whole percent.
+    pub fn put_audio_volume_percent(&self, percent: f64) -> bool {
+        percent.is_finite() && self.put_int(keys::AUDIO_VOLUME, percent.round() as i32)
+    }
+
+    /// The video player's saved volume in percent, within 0 and
+    /// [`Self::volume_max_percent`]; 0 stays 0.
+    #[must_use]
+    pub fn video_volume_percent(&self) -> f64 {
+        (self.get_double(keys::VOLUME) * 100.0).clamp(0.0, f64::from(self.volume_max_percent()))
+    }
+
+    /// Store the video player's volume, rounded to a whole percent and kept as
+    /// a fraction of 100%.
+    pub fn put_video_volume_percent(&self, percent: f64) -> bool {
+        self.put_double(keys::VOLUME, percent.round() / 100.0)
+    }
+
     #[must_use]
     pub fn get_int(&self, key: keys::IntKey) -> i32 {
         self.int(key.0)
@@ -554,58 +582,41 @@ impl Settings {
         }
     }
 
-    pub fn migrate_audio_appearance(&self) {
-        let mut inner = self
-            .inner
-            .write()
-            .unwrap_or_else(std::sync::PoisonError::into_inner);
-        if inner
-            .settings_values
-            .get("audio-appearance-migrated")
-            .is_some_and(|s| s == "true")
-        {
-            return;
-        }
-        let defaults = defaults::defaults();
-        for (audio, video) in [
-            ("audio-ui-color-source", "ui-color-source"),
-            ("audio-ui-bg-color", "ui-bg-color"),
-            ("audio-ui-font-color", "ui-font-color"),
-            ("audio-ui-icon-color", "ui-icon-color"),
-            ("audio-ui-dialog-color", "ui-dialog-color"),
-        ] {
-            // Never overwrite an already personalized audio value. The audio
-            // player has no video to take colors from.
-            if inner.settings_values.get(audio) == defaults.get(audio)
-                && let Some(value) = inner.settings_values.get(video).cloned()
-                && value != "gradient"
-            {
-                inner.settings_values.insert(audio.into(), value);
-            }
-        }
-        inner
-            .settings_values
-            .insert("audio-appearance-migrated".into(), "true".into());
-        inner.dirty = true;
-        inner.revision = inner.revision.wrapping_add(1);
-        inner.phase = SavePhase::Pending;
-        drop(inner);
-        self.flush();
-    }
+    /// Keys [`Self::reset_to_defaults`] leaves as they are: what the person
+    /// collected, where they left off, and the live levels of the player's own
+    /// controls, none of them a preference.
+    pub const KEPT_ON_RESTORE: [&'static str; 19] = [
+        "video-library-folders",
+        "custom-keybindings",
+        "volume",
+        "audio-volume",
+        "playlist-shuffle",
+        "playlist-last-folder",
+        "playlist-reorder-hint-seen",
+        "files-last-dir",
+        "noise-strength",
+        "noise-model",
+        "noise-mono",
+        "noise-voice-only",
+        "noise-voice-sensitivity",
+        "eq-bands",
+        "eq-preset",
+        "appearance-window-width",
+        "appearance-window-height",
+        "audio-appearance-window-width",
+        "audio-appearance-window-height",
+    ];
 
+    /// Put every preference back to its default, keeping [`Self::KEPT_ON_RESTORE`].
     pub fn reset_to_defaults(&self) {
         let mut inner = self
             .inner
             .write()
             .unwrap_or_else(std::sync::PoisonError::into_inner);
         for (key, value) in defaults::defaults() {
-            if matches!(
-                key.as_str(),
-                "window-width" | "window-height" | "window-maximized"
-            ) {
-                continue;
+            if !Self::KEPT_ON_RESTORE.contains(&key.as_str()) {
+                inner.settings_values.insert(key, value);
             }
-            inner.settings_values.insert(key, value);
         }
         inner.dirty = true;
         inner.revision = inner.revision.wrapping_add(1);

@@ -195,6 +195,8 @@ pub struct AudioShell {
     db_read: Option<DbHandle>,
     /// Persisted settings (audio config, column widths).
     settings: Settings,
+    /// Saves the volume once it stays put, not on every slider step.
+    volume_save: big_relm4_components::input::debounce::BigDebouncedAction,
     sleep_timer: crate::shared::sleep_timer::SleepTimer,
     /// Current library grouping preset (drives tree + node resolution).
     library_grouping: LibraryGrouping,
