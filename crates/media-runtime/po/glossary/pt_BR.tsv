@@ -1,0 +1,15 @@
+player	reprodutor	GNOME pt_BR (celluloid); brand names such as Big Audio Player stay in English
+playlist	lista de reprodução	GNOME pt_BR (celluloid), catalog majority (47 of 54)
+queue	fila	catalog
+track	faixa	catalog
+library	biblioteca	catalog
+station	estação	catalog
+episode	episódio	catalog
+keyring	chaveiro	gnome-keyring
+provider	provedor	catalog
+screenshot	captura de tela	catalog
+scan	verificação	catalog
+sidebar	barra lateral	gtk40, catalog
+Preferences	Preferências	catalog, gtk40
+save	salvar	catalog
+Retry	Tentar novamente	catalog
