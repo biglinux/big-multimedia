@@ -1,0 +1,15 @@
+player	reprodutor	catalog
+playlist	lista de reprodução	catalog
+queue	fila	catalog
+track	faixa	catalog
+library	biblioteca	catalog
+station	estação	catalog
+episode	episódio	catalog
+keyring	chaveiro	gnome-keyring
+provider	fornecedor	catalog
+screenshot	captura de ecrã	catalog
+scan	análise	catalog
+sidebar	barra lateral	gtk40, catalog
+Preferences	Preferências	catalog
+save	guardar	catalog
+Retry	Tentar novamente	catalog
