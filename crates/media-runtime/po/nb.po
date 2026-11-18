@@ -811,7 +811,7 @@ msgstr "Skanning avbrutt"
 
 #: crates/big-audio-player/src/audio/ui/audio_shell/update.rs:139
 msgid "Scan incomplete"
-msgstr "Skanning ufullstendig"
+msgstr "Skanning ikke fullført"
 
 #: crates/big-audio-player/src/audio/ui/audio_shell/update.rs:142
 #, rust-format
