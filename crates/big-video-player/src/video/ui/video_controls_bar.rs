@@ -20,6 +20,7 @@ use std::sync::Arc;
 use adw::prelude::*;
 use relm4::{Component, ComponentParts, ComponentSender};
 
+use big_media_components::playback::audio_transport::time_label_chars;
 use big_media_components::playback::cut_timeline::CutTimeline;
 use big_player_ui::cut_timeline::{install_cut_timeline_draw, wire_cut_timeline_interaction};
 
@@ -41,6 +42,9 @@ pub(crate) use zones::read_zones;
 use zones::{
     ButtonLayoutWidgets, StartBoxWidgets, build_center_box, build_end_box, build_start_box,
 };
+
+/// Characters each time label keeps at least, the width of "0:00:00".
+const TIME_CHARS: u32 = 7;
 
 /// Shared, interior-mutable handle to the live mpv backend (set by the shell
 /// once the surface realizes; `None` before that). The popover callbacks read
@@ -250,8 +254,8 @@ impl Component for VideoControlsBar {
         // transport's position label for the measured cost of a GtkLabel).
         let position_label = gtk::Inscription::builder()
             .text("0:00")
-            .min_chars(7)
-            .nat_chars(7)
+            .min_chars(TIME_CHARS)
+            .nat_chars(TIME_CHARS)
             .xalign(1.0)
             .css_classes(["time-label"])
             .build();
@@ -321,7 +325,7 @@ impl Component for VideoControlsBar {
 
         let duration_label = gtk::Label::builder()
             .label("0:00")
-            .width_chars(7)
+            .width_chars(TIME_CHARS.cast_signed())
             .xalign(0.0)
             .css_classes(["time-label"])
             .build();
@@ -482,7 +486,13 @@ impl Component for VideoControlsBar {
                     .update_property(&[gtk::accessible::Property::Label(&action)]);
             }
             VideoControlsBarInput::SetPosition(text) => self.position_label.set_text(Some(&text)),
-            VideoControlsBarInput::SetDuration(text) => self.duration_label.set_label(&text),
+            VideoControlsBarInput::SetDuration(text) => {
+                let chars = time_label_chars(&text).max(TIME_CHARS);
+                self.position_label.set_min_chars(chars);
+                self.position_label.set_nat_chars(chars);
+                self.duration_label.set_width_chars(chars.cast_signed());
+                self.duration_label.set_label(&text);
+            }
             VideoControlsBarInput::SetSeekFraction(value) => {
                 self.seek_fraction.set(value);
                 // Skip moves under half a pixel: each one re-snapshots the bar.
