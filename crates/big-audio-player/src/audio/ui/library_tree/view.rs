@@ -306,7 +306,7 @@ fn node_at(view: &ItemView, position: u32) -> Option<(gtk::TreeListRow, BrowserN
 }
 
 /// Activation (double click, Enter) and a group's button → `NodeSelected`:
-/// the shell queries its tracks → `PopulateDetail`. Dividers are inert.
+/// the shell queues its tracks. Dividers are inert.
 fn wire_activation(view: &ItemView, sender: &ComponentSender<LibraryPanel>) {
     let select = {
         let out = sender.clone();

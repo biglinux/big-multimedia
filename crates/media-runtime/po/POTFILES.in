@@ -33,7 +33,6 @@ crates/big-audio-player/src/audio/ui/audio_shell/sources.rs
 crates/big-audio-player/src/audio/ui/audio_shell/tray.rs
 crates/big-audio-player/src/audio/ui/audio_shell/tv.rs
 crates/big-audio-player/src/audio/ui/audio_shell/update.rs
-crates/big-audio-player/src/audio/ui/library_detail_interactions.rs
 crates/big-audio-player/src/audio/ui/library_dialogs.rs
 crates/big-audio-player/src/audio/ui/library_grouping_ui.rs
 crates/big-audio-player/src/audio/ui/library_io.rs

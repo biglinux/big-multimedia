@@ -360,7 +360,6 @@ fn queue_behaviour(
                 PlaybackStatus::Stopped
             }
         }),
-        cover: None,
         // Multi-row reorder is left out: where several rows land is ambiguous.
         drag: Some(Box::new(move |positions| {
             let selection = selection_weak.upgrade()?;

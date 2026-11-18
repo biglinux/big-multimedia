@@ -1,7 +1,8 @@
 //! Video player `adw::Application` subclass: single-instance activation,
 //! file-open (delivered to the Relm4 `VideoShell` via its thread-local
 //! broker), startup (decoration-icon strip, color-scheme, actions, accels).
-//! `--new-window` env opt-in flips `NON_UNIQUE` for multi-instance debugging.
+//! `--new-window` (the desktop file's New Window action) sets `NON_UNIQUE`,
+//! so the player opens its own window instead of activating the running one.
 
 use adw::prelude::*;
 use adw::subclass::prelude::*;

@@ -6,23 +6,12 @@ use std::process::Command;
 fn main() -> Result<(), Box<dyn Error>> {
     let out_dir = PathBuf::from(env::var("OUT_DIR")?);
 
-    // Compile video GResource
-    compile_gresource(
-        &out_dir,
-        "video.gresource",
-        "data/resources",
-        "data/resources/resources.gresource.xml",
-    )?;
-
-    // Compile audio GResource
     compile_gresource(
         &out_dir,
         "audio.gresource",
         "data/audio-resources",
         "data/audio-resources/resources.gresource.xml",
-    )?;
-
-    Ok(())
+    )
 }
 
 fn compile_gresource(

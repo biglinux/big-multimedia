@@ -1,28 +1,23 @@
 //! Library-panel file IO + folder-management dialogs (push-model).
 //!
-//! Free functions the panel calls when the user triggers export/import/save-as
-//! or opens the watch-folder manager. The panel never touches the DB or the
-//! scanner: the m3u8 export writes the file off-thread (it already holds the
-//! detail tracks), but every DB-backed action emits an `Output` intent and the
-//! shell runs the query/scan. `parent` is the toplevel window; it satisfies
-//! both `FilePicker` (`IsA<gtk::Window>`) and `AlertDialog::present`.
+//! Free functions the panel calls when the user opens the watch-folder
+//! manager. The panel never touches the DB or the scanner:
+//! every action emits an `Output` intent and the shell runs the query/scan.
+//! `parent` is the toplevel window; it satisfies both `FilePicker`
+//! (`IsA<gtk::Window>`) and `AlertDialog::present`.
 
 use std::path::Path;
 
 use adw::prelude::*;
 
 use big_app_kit::file_dialogs::FilePicker;
-use big_media_components::media::files::PLAYLIST_EXTENSIONS;
 use big_relm4_components::input::button_content::{BigButtonContentSpec, build_button};
-use big_relm4_components::layout::{
-    dialog_page::BigDialogPage,
-    name_prompt::{BigNamePromptSpec, prompt_name, trimmed_name},
-};
+use big_relm4_components::layout::dialog_page::BigDialogPage;
 use big_relm4_components::list::button_strip_row::{BigButtonStripRow, BigButtonStripRowSpec};
 use big_relm4_components::list::detail_row::{BigDetailRow, BigDetailRowSpec};
 use relm4::ComponentSender;
 
-use crate::db::models::{Track, WatchFolder};
+use crate::db::models::WatchFolder;
 use crate::i18n::i18n;
 
 use super::library_panel::{LibraryPanel, LibraryPanelOutput};
@@ -31,91 +26,6 @@ const MUSIC_FOLDERS_DIALOG_WIDTH: i32 = 600;
 const MUSIC_FOLDERS_DIALOG_HEIGHT: i32 = 560;
 const MUSIC_FOLDERS_CONTENT_WIDTH: i32 = 560;
 const MUSIC_FOLDERS_TIGHTENING_WIDTH: i32 = 420;
-
-/// Export the current detail tracks as an `.m3u8` playlist. The save picker
-/// runs on the main loop; the file is written off-thread by
-/// `playlist_scan::write_m3u` (the panel already owns the tracks, so no DB
-/// round-trip is needed). A failure surfaces through a `Notify` intent; the
-/// shell owns the notice.
-pub(super) fn export_detail_m3u8(
-    parent: &gtk::Window,
-    tracks: Vec<Track>,
-    sender: &ComponentSender<LibraryPanel>,
-) {
-    if tracks.is_empty() {
-        let _ = sender.output(LibraryPanelOutput::Notify(i18n("No tracks to export")));
-        return;
-    }
-    let out = sender.clone();
-    FilePicker::save_file(i18n("Export Playlist"))
-        .accept_label(i18n("Save"))
-        .initial_name("playlist.m3u8")
-        .filter(&i18n("M3U8 Playlist"), crate::media::playlist_scan::M3U_EXTENSIONS)
-        .save(parent, move |path| {
-            crate::settings::saving::acknowledged_task(
-                false,
-                move || {
-                    let items: Vec<_> = tracks.into_iter().map(|t| t.file_path).collect();
-                    crate::media::playlist_scan::write_m3u(&path, &items)
-                        .map_err(|_| std::io::Error::other("Playlist export could not be confirmed"))
-                },
-                move |result| {
-                    if result.is_err() {
-                        let _ = out.output(LibraryPanelOutput::Notify(i18n(
-                            "Playlist export could not be confirmed. Existing files were kept; choose a new name and retry.",
-                        )));
-                    }
-                },
-            );
-        });
-}
-
-/// Pick an `.m3u`/`.m3u8`/`.pls` file and hand the path to the shell, which
-/// parses it (`big_media_runtime::media::playlist_scan`) + inserts the tracks.
-pub(super) fn import_playlist(parent: &gtk::Window, sender: &ComponentSender<LibraryPanel>) {
-    let out = sender.clone();
-    FilePicker::new(i18n("Import Playlist"))
-        .accept_label(i18n("Open"))
-        .filter(&i18n("Playlists"), PLAYLIST_EXTENSIONS)
-        .open(parent, move |path| {
-            let _ = out.output(LibraryPanelOutput::ImportPlaylistFile { path });
-        });
-}
-
-/// Prompt for a name, then ask the shell to persist `track_ids` as a new
-/// playlist (the shell owns `create_playlist` + `add_track_to_playlist`).
-pub(super) fn save_tracks_as_playlist(
-    parent: &gtk::Window,
-    track_ids: Vec<i64>,
-    sender: &ComponentSender<LibraryPanel>,
-) {
-    if track_ids.is_empty() {
-        let _ = sender.output(LibraryPanelOutput::Notify(i18n("No tracks to save")));
-        return;
-    }
-    let spec = BigNamePromptSpec {
-        title: i18n("Save as Playlist"),
-        description: Some(i18n("Enter a name for the new playlist")),
-        entry_title: i18n("Playlist name"),
-        prefill: String::new(),
-        accept_label: i18n("Save"),
-        content_width: 420,
-        content_height: 240,
-    };
-    let out = sender.clone();
-    prompt_name(
-        Some(parent.upcast_ref()),
-        &spec,
-        trimmed_name,
-        move |name| {
-            let _ = out.output(LibraryPanelOutput::SaveTracksAsPlaylist {
-                name,
-                track_ids: track_ids.clone(),
-            });
-            true
-        },
-    );
-}
 
 /// A scan opens its own progress dialog. Stacked over this one, Escape closed
 /// the progress (cancelling the scan) and left this identical-looking dialog,
