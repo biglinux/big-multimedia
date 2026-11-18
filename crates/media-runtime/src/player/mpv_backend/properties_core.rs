@@ -137,6 +137,7 @@ impl MpvBackend {
         self.with_mpv(|m| m.get_property(name).unwrap_or(0.0))
     }
 
+    #[cfg(feature = "video")]
     pub(crate) fn get_property_string(&self, name: &str) -> String {
         self.with_mpv(|m| m.get_property::<String>(name).unwrap_or_default())
     }
