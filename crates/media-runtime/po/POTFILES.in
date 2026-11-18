@@ -240,7 +240,6 @@ crates/ui/generic/big-relm4-components/src/i18n.rs
 crates/ui/generic/big-relm4-components/src/input/button_content.rs
 crates/ui/generic/big-relm4-components/src/input/debounce.rs
 crates/ui/generic/big-relm4-components/src/input/dropdown_row.rs
-crates/ui/generic/big-relm4-components/src/input/illustrated_slider_row.rs
 crates/ui/generic/big-relm4-components/src/input/inline_spin_set.rs
 crates/ui/generic/big-relm4-components/src/input/mod.rs
 crates/ui/generic/big-relm4-components/src/input/preference_cards.rs
@@ -248,6 +247,7 @@ crates/ui/generic/big-relm4-components/src/input/scale_popover.rs
 crates/ui/generic/big-relm4-components/src/input/scale_trough.rs
 crates/ui/generic/big-relm4-components/src/input/shortcut_capture.rs
 crates/ui/generic/big-relm4-components/src/input/shortcut_dialog.rs
+crates/ui/generic/big-relm4-components/src/input/slider_row.rs
 crates/ui/generic/big-relm4-components/src/input/spin_row.rs
 crates/ui/generic/big-relm4-components/src/input/zone_layout_editor.rs
 crates/ui/generic/big-relm4-components/src/layout/column_persist.rs
