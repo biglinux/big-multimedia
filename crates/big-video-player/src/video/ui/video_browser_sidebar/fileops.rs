@@ -241,10 +241,6 @@ pub(super) fn rename_file(state: &Rc<BrowserState>, path: &str) {
     let entry_for_accept = entry.clone();
     footer.accept_button().connect_clicked(move |_| {
         let Some(new_name) = accepted_rename_name(&entry_for_accept.text()) else {
-            state
-                .sender
-                .output(VideoBrowserSidebarOutput::Notify(i18n("Invalid name")))
-                .ok();
             return;
         };
         let dest = parent.join(&new_name);
