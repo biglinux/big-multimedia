@@ -103,6 +103,9 @@ pub struct BarDecoration {
 pub struct BarSpec {
     /// Stable bar id (used in [`slot_key`]).
     pub id: String,
+    /// Already-translated name a screen reader says for the bar; the id until
+    /// [`with_label`](Self::with_label) sets one.
+    pub label: String,
     /// Which placements this bar exposes, in render order.
     pub zones: Vec<ZonePlacement>,
     /// Miniature-only decoration.
@@ -113,11 +116,20 @@ impl BarSpec {
     /// Build a bar exposing `zones`, with no decoration.
     #[must_use]
     pub fn new(id: impl Into<String>, zones: Vec<ZonePlacement>) -> Self {
+        let id = id.into();
         Self {
-            id: id.into(),
+            label: id.clone(),
+            id,
             zones,
             decoration: BarDecoration::default(),
         }
+    }
+
+    /// Set the spoken name of the bar.
+    #[must_use]
+    pub fn with_label(mut self, label: impl Into<String>) -> Self {
+        self.label = label.into();
+        self
     }
 
     /// Set the miniature decoration (title placeholder / seek slider).

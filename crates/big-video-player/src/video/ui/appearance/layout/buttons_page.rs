@@ -141,16 +141,18 @@ fn build_spec() -> ZoneLayoutSpec {
         .map(|(id, label, icon, slot, _)| ZoneControl::new(*id, i18n(label), *icon, *slot))
         .collect();
     let bars = vec![
-        BarSpec::new("top", vec![ZonePlacement::Start, ZonePlacement::End]).with_decoration(
-            BarDecoration {
+        BarSpec::new("top", vec![ZonePlacement::Start, ZonePlacement::End])
+            .with_label(i18n("Top bar"))
+            .with_decoration(BarDecoration {
                 title: Some(i18n("Video Title")),
                 seek_slider: false,
-            },
-        ),
-        BarSpec::new("bottom", ZonePlacement::ALL.to_vec()).with_decoration(BarDecoration {
-            title: None,
-            seek_slider: true,
-        }),
+            }),
+        BarSpec::new("bottom", ZonePlacement::ALL.to_vec())
+            .with_label(i18n("Bottom bar"))
+            .with_decoration(BarDecoration {
+                title: None,
+                seek_slider: true,
+            }),
     ];
     ZoneLayoutSpec::new(controls, bars)
 }
@@ -191,7 +193,7 @@ pub(in crate::video) fn create_buttons_page(
 
     let group = BigPreferencesGroupSpec::new(i18n("Button Layout"))
         .description(i18n(
-            "Drag buttons between zones • Click to toggle visibility",
+            "Drag buttons between zones or move them with Alt+Left and Alt+Right • Click to toggle visibility",
         ))
         .build();
 

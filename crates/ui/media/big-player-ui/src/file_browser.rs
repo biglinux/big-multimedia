@@ -17,7 +17,7 @@ use std::rc::Rc;
 use adw::prelude::*;
 use big_app_kit::actions::install_action;
 use big_relm4_components::feedback::context_popover::open_context_menu_on_keys;
-use big_relm4_components::feedback::popover_menu::name_menu_items;
+use big_relm4_components::feedback::popover_menu;
 use gtk::{gio, glib};
 use relm4::{Component, ComponentParts, ComponentSender};
 
@@ -341,8 +341,7 @@ fn install_library_menu(
     // GtkListView does not unparent foreign children at dispose (it
     // finalizes "with children left" and the popover leaks), so detach at
     // the list's unrealize, while everything is still alive.
-    let popover = gtk::PopoverMenu::from_model(Some(&context_menu));
-    name_menu_items(&popover);
+    let popover = popover_menu::from_model(&context_menu);
     popover.set_parent(list_view);
     popover.set_has_arrow(false);
     {

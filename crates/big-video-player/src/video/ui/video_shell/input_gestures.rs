@@ -124,8 +124,7 @@ pub(super) fn wire_video_input(
         nav
     });
 
-    let popover = gtk::PopoverMenu::from_model(Some(&context_menu));
-    big_relm4_components::feedback::popover_menu::name_menu_items(&popover);
+    let popover = big_relm4_components::feedback::popover_menu::from_model(&context_menu);
     popover.set_parent(main_overlay);
     popover.set_has_arrow(false);
     {

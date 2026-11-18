@@ -2,7 +2,7 @@ use std::rc::Rc;
 
 use adw::prelude::*;
 use big_app_kit::file_dialogs::FilePicker;
-use big_relm4_components::feedback::tooltip;
+use big_relm4_components::feedback::{popover_menu, tooltip};
 use big_relm4_components::layout::sidebar_header::{BigSidebarHeader, BigSidebarHeaderSpec};
 use gtk::{gio, glib};
 
@@ -214,7 +214,7 @@ fn build_options_menu(state: &Rc<BrowserState>, mode: SidebarMode) -> gtk::MenuB
 
     let options_menu_button =
         tooltip::icon_menu_button("view-more-symbolic", &i18n("Options"), &["flat"]);
-    options_menu_button.set_menu_model(Some(&menu));
+    popover_menu::set_menu_model(&options_menu_button, &menu);
     // Repeat and shuffle can also change from Preferences or MPRIS; show the
     // stored state each time the menu opens instead of the one at build time.
     let settings = state.settings.clone();

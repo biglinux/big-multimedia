@@ -626,7 +626,7 @@ fn show_column_menu(
         actions.add_action(&action);
         menu.append(Some(&column.title()), Some(&format!("columns.{name}")));
     }
-    let popover = gtk::PopoverMenu::from_model(Some(&menu));
+    let popover = big_relm4_components::feedback::popover_menu::from_model(&menu);
     popover.insert_action_group("columns", Some(&actions));
     popover.set_has_arrow(false);
     popover.set_parent(header);
