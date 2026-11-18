@@ -117,9 +117,10 @@ pub(super) fn detect(
             preset: settings.get_string(keys::EQ_PRESET),
         });
     }
-    let effects: Vec<String> = vf_entries(&mpv.get_vf())
+    let effects: Vec<String> = crate::video::ui::filters::vf_entries(&mpv.get_vf())
         .into_iter()
         .filter(|entry| vf_label(entry).is_some_and(|label| !OWNED_VF_LABELS.contains(&label)))
+        .map(str::to_owned)
         .collect();
     if !effects.is_empty() {
         found.push(Adjustment::VideoEffects(effects));
@@ -129,40 +130,6 @@ pub(super) fn detect(
         found.push(Adjustment::ImageEnhancement(enhancements));
     }
     found
-}
-
-/// Split mpv's `vf` list at its top-level commas. mpv quotes a value holding
-/// commas as `%LEN%text`, so those bytes are skipped whole.
-fn vf_entries(vf: &str) -> Vec<String> {
-    let bytes = vf.as_bytes();
-    let mut entries = Vec::new();
-    let (mut start, mut i) = (0, 0);
-    while i < bytes.len() {
-        match bytes[i] {
-            b'%' => {
-                let digits = bytes[i + 1..]
-                    .iter()
-                    .take_while(|b| b.is_ascii_digit())
-                    .count();
-                let close = i + 1 + digits;
-                if digits > 0 && bytes.get(close) == Some(&b'%') {
-                    let len: usize = vf[i + 1..close].parse().unwrap_or(0);
-                    i = (close + 1 + len).min(bytes.len());
-                    continue;
-                }
-            }
-            b',' => {
-                entries.push(vf[start..i].to_owned());
-                start = i + 1;
-            }
-            _ => {}
-        }
-        i += 1;
-    }
-    if start < bytes.len() {
-        entries.push(vf[start..].to_owned());
-    }
-    entries
 }
 
 fn vf_label(entry: &str) -> Option<&str> {
@@ -410,31 +377,5 @@ impl VideoShell {
             && mpv.get_property_string("video-dec-params/primaries") == "auto"
             && mpv.get_property_f64("video-dec-params/w") >= 3840.0;
         self.hdr_hint.set_visible(undescribed_hdr);
-    }
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn vf_entries_keep_quoted_commas() {
-        let vf = "@denoise:lavfi=graph=%13%hqdn3d=4,eq=1,@big-flip:lavfi=graph=hflip,\
-                  @source-colours:format=gamma=pq:primaries=%7%bt.2020";
-        assert_eq!(
-            vf_entries(vf),
-            [
-                "@denoise:lavfi=graph=%13%hqdn3d=4,eq=1",
-                "@big-flip:lavfi=graph=hflip",
-                "@source-colours:format=gamma=pq:primaries=%7%bt.2020",
-            ]
-        );
-        assert_eq!(vf_label("@big-flip:lavfi=graph=hflip"), Some("big-flip"));
-        assert_eq!(vf_label("format=gamma=pq"), None);
-    }
-
-    #[test]
-    fn vf_entries_of_empty_list_is_empty() {
-        assert!(vf_entries("").is_empty());
     }
 }

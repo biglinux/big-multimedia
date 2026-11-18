@@ -11,11 +11,14 @@ pub(crate) fn fast_read_duration(path: &str) -> Option<f64> {
         .extension()
         .and_then(|e| e.to_str())?
         .to_ascii_lowercase();
-    match ext.as_str() {
-        "mp4" | "m4v" | "mov" | "3gp" => mp4_read_duration(path),
-        "mkv" | "webm" => mkv_read_duration(path),
-        _ => None,
-    }
+    let read_duration: fn(&mut File, u64) -> Option<f64> = match ext.as_str() {
+        "mp4" | "m4v" | "mov" | "3gp" => mp4_duration,
+        "mkv" | "webm" => mkv_duration,
+        _ => return None,
+    };
+    let mut file = File::open(path).ok()?;
+    let file_size = file.metadata().ok()?.len();
+    read_duration(&mut file, file_size)
 }
 
 // ISO BMFF: MP4, MOV, M4V, 3GP.
@@ -26,7 +29,11 @@ struct AtomHeader {
     next_pos: u64,
 }
 
-fn read_atom_header(f: &mut File, pos: u64, container_end: u64) -> Option<AtomHeader> {
+fn read_atom_header(
+    f: &mut (impl Read + Seek),
+    pos: u64,
+    container_end: u64,
+) -> Option<AtomHeader> {
     if pos.checked_add(8)? > container_end {
         return None;
     }
@@ -61,7 +68,12 @@ fn read_atom_header(f: &mut File, pos: u64, container_end: u64) -> Option<AtomHe
     })
 }
 
-fn find_atom(f: &mut File, start: u64, end: u64, target: [u8; 4]) -> Option<AtomHeader> {
+fn find_atom(
+    f: &mut (impl Read + Seek),
+    start: u64,
+    end: u64,
+    target: [u8; 4],
+) -> Option<AtomHeader> {
     let mut pos = start;
     while let Some(atom) = read_atom_header(f, pos, end) {
         if atom.atom_type == target {
@@ -73,7 +85,7 @@ fn find_atom(f: &mut File, start: u64, end: u64, target: [u8; 4]) -> Option<Atom
 }
 
 /// v0: 32-bit fields → timescale at +12. v1: 64-bit duration → timescale at +20.
-fn parse_mvhd_duration(f: &mut File, mvhd_payload_offset: u64) -> Option<f64> {
+fn parse_mvhd_duration(f: &mut (impl Read + Seek), mvhd_payload_offset: u64) -> Option<f64> {
     f.seek(SeekFrom::Start(mvhd_payload_offset)).ok()?;
     let mut version_buf = [0_u8; 1];
     f.read_exact(&mut version_buf).ok()?;
@@ -84,21 +96,32 @@ fn parse_mvhd_duration(f: &mut File, mvhd_payload_offset: u64) -> Option<f64> {
     }
 }
 
-fn read_mvhd_payload(f: &mut File, timescale_offset: u64, duration_bytes: u64) -> Option<f64> {
+fn read_mvhd_payload(
+    f: &mut (impl Read + Seek),
+    timescale_offset: u64,
+    duration_bytes: u64,
+) -> Option<f64> {
     f.seek(SeekFrom::Start(timescale_offset)).ok()?;
     let mut ts_buf = [0_u8; 4];
     f.read_exact(&mut ts_buf).ok()?;
     let timescale = f64::from(u32::from_be_bytes(ts_buf));
+    // An all-ones duration is the format's "unknown".
     let duration = match duration_bytes {
         4 => {
             let mut buf = [0_u8; 4];
             f.read_exact(&mut buf).ok()?;
-            f64::from(u32::from_be_bytes(buf))
+            match u32::from_be_bytes(buf) {
+                u32::MAX => return None,
+                ticks => f64::from(ticks),
+            }
         }
         8 => {
             let mut buf = [0_u8; 8];
             f.read_exact(&mut buf).ok()?;
-            u64::from_be_bytes(buf) as f64
+            match u64::from_be_bytes(buf) {
+                u64::MAX => return None,
+                ticks => ticks as f64,
+            }
         }
         _ => return None,
     };
@@ -111,12 +134,10 @@ fn read_mvhd_payload(f: &mut File, timescale_offset: u64, duration_bytes: u64) -
     }
 }
 
-pub(crate) fn mp4_read_duration(path: &str) -> Option<f64> {
-    let mut f = File::open(path).ok()?;
-    let file_size = f.metadata().ok()?.len();
-    let moov = find_atom(&mut f, 0, file_size, *b"moov")?;
-    let mvhd = find_atom(&mut f, moov.data_offset, moov.next_pos, *b"mvhd")?;
-    parse_mvhd_duration(&mut f, mvhd.data_offset)
+fn mp4_duration(f: &mut (impl Read + Seek), file_size: u64) -> Option<f64> {
+    let moov = find_atom(f, 0, file_size, *b"moov")?;
+    let mvhd = find_atom(f, moov.data_offset, moov.next_pos, *b"mvhd")?;
+    parse_mvhd_duration(f, mvhd.data_offset)
 }
 
 // EBML: Matroska, WebM.
@@ -131,7 +152,7 @@ const DEFAULT_TIMESTAMP_SCALE: u64 = 1_000_000;
 /// Real files store Info near the start; cap to 1 MiB against pathological inputs.
 const MATROSKA_METADATA_SEARCH_LIMIT_BYTES: u64 = 1_048_576;
 
-fn ebml_read_vint(f: &mut File) -> Option<(u64, u8)> {
+fn ebml_read_vint(f: &mut impl Read) -> Option<(u64, u8)> {
     let mut first = [0_u8; 1];
     f.read_exact(&mut first).ok()?;
     let b = first[0];
@@ -152,7 +173,7 @@ fn ebml_read_vint(f: &mut File) -> Option<(u64, u8)> {
     Some((val, len))
 }
 
-fn ebml_read_id(f: &mut File) -> Option<(u32, u8)> {
+fn ebml_read_id(f: &mut impl Read) -> Option<(u32, u8)> {
     let mut first = [0_u8; 1];
     f.read_exact(&mut first).ok()?;
     let b = first[0];
@@ -173,7 +194,7 @@ fn ebml_read_id(f: &mut File) -> Option<(u32, u8)> {
 }
 
 /// On success the cursor sits on the first byte of Segment contents.
-fn seek_to_matroska_segment_payload(f: &mut File) -> Option<()> {
+fn seek_to_matroska_segment_payload(f: &mut (impl Read + Seek)) -> Option<()> {
     let (header_id, _) = ebml_read_id(f)?;
     if header_id != EBML_HEADER_ID {
         return None;
@@ -190,7 +211,7 @@ fn seek_to_matroska_segment_payload(f: &mut File) -> Option<()> {
 }
 
 /// Other sizes → `None`.
-fn read_ebml_float(f: &mut File, size: u64) -> Option<f64> {
+fn read_ebml_float(f: &mut impl Read, size: u64) -> Option<f64> {
     match size {
         4 => {
             let mut buf = [0_u8; 4];
@@ -207,7 +228,7 @@ fn read_ebml_float(f: &mut File, size: u64) -> Option<f64> {
 }
 
 /// Right-aligned in the destination buffer; size must be 1..=8.
-fn read_ebml_uint(f: &mut File, size: u64) -> Option<u64> {
+fn read_ebml_uint(f: &mut impl Read, size: u64) -> Option<u64> {
     if size == 0 || size > 8 {
         return None;
     }
@@ -218,7 +239,7 @@ fn read_ebml_uint(f: &mut File, size: u64) -> Option<u64> {
 
 /// Returns `(duration_ticks, scale_ns)`.
 fn parse_matroska_metadata_children(
-    f: &mut File,
+    f: &mut (impl Read + Seek),
     matroska_metadata_end: u64,
 ) -> Option<(f64, u64)> {
     let mut duration: Option<f64> = None;
@@ -244,7 +265,7 @@ fn parse_matroska_metadata_children(
     duration.map(|d| (d, timestamp_scale))
 }
 
-fn find_matroska_metadata_and_parse(f: &mut File, limit: u64) -> Option<(f64, u64)> {
+fn find_matroska_metadata_and_parse(f: &mut (impl Read + Seek), limit: u64) -> Option<(f64, u64)> {
     while f.stream_position().ok()? < limit {
         let pos_before = f.stream_position().ok()?;
         let (eid, _) = ebml_read_id(f)?;
@@ -262,19 +283,18 @@ fn find_matroska_metadata_and_parse(f: &mut File, limit: u64) -> Option<(f64, u6
     None
 }
 
-pub(crate) fn mkv_read_duration(path: &str) -> Option<f64> {
-    let mut f = File::open(path).ok()?;
-    let file_size = f.metadata().ok()?.len();
-
-    seek_to_matroska_segment_payload(&mut f)?;
+fn mkv_duration(f: &mut (impl Read + Seek), file_size: u64) -> Option<f64> {
+    seek_to_matroska_segment_payload(f)?;
     let segment_payload_start = f.stream_position().ok()?;
     let search_limit = std::cmp::min(
         segment_payload_start + MATROSKA_METADATA_SEARCH_LIMIT_BYTES,
         file_size,
     );
 
-    let (duration, scale) = find_matroska_metadata_and_parse(&mut f, search_limit)?;
-    Some(duration * scale as f64 / 1_000_000_000.0)
+    let (duration, scale) = find_matroska_metadata_and_parse(f, search_limit)?;
+    let seconds = duration * scale as f64 / 1_000_000_000.0;
+    // Duration is a float above zero; NaN, infinity or a zero scale is a broken file.
+    (seconds.is_finite() && seconds > 0.0).then_some(seconds)
 }
 
 #[cfg(test)]
@@ -328,5 +348,145 @@ mod tests {
     fn unsupported_extension_returns_none() {
         assert!(fast_read_duration("test.txt").is_none());
         assert!(fast_read_duration("noext").is_none());
+    }
+
+    fn read_mp4(bytes: &[u8]) -> Option<f64> {
+        mp4_duration(&mut std::io::Cursor::new(bytes), bytes.len() as u64)
+    }
+
+    fn read_mkv(bytes: &[u8]) -> Option<f64> {
+        mkv_duration(&mut std::io::Cursor::new(bytes), bytes.len() as u64)
+    }
+
+    /// A box with a 32-bit size (ISO/IEC 14496-12, 4.2).
+    fn atom(kind: [u8; 4], payload: &[u8]) -> Vec<u8> {
+        let size = u32::try_from(8 + payload.len()).unwrap();
+        [&size.to_be_bytes()[..], &kind, payload].concat()
+    }
+
+    /// A box whose size32 is 1 and whose real size follows as a `largesize`.
+    fn large_atom(kind: [u8; 4], payload: &[u8]) -> Vec<u8> {
+        let size = 16 + payload.len() as u64;
+        [
+            &1_u32.to_be_bytes()[..],
+            &kind,
+            &size.to_be_bytes(),
+            payload,
+        ]
+        .concat()
+    }
+
+    /// A whole `mvhd` (8.2.2): version and flags, two times, timescale and
+    /// duration, then 80 bytes of rate, volume, matrix and next track id.
+    fn mvhd(timescale: u32, duration: u64, version: u8) -> Vec<u8> {
+        let mut payload = vec![version, 0, 0, 0];
+        if version == 1 {
+            payload.extend_from_slice(&[0; 16]);
+            payload.extend_from_slice(&timescale.to_be_bytes());
+            payload.extend_from_slice(&duration.to_be_bytes());
+        } else {
+            payload.extend_from_slice(&[0; 8]);
+            payload.extend_from_slice(&timescale.to_be_bytes());
+            payload.extend_from_slice(&u32::try_from(duration).unwrap().to_be_bytes());
+        }
+        payload.extend_from_slice(&[0; 80]);
+        atom(*b"mvhd", &payload)
+    }
+
+    #[test]
+    fn mvhd_versions_give_seconds() {
+        let ftyp = atom(*b"ftyp", b"isom\0\0\x02\0isomiso2");
+        let v0 = [ftyp.clone(), atom(*b"moov", &mvhd(600, 1500, 0))].concat();
+        assert_eq!(read_mp4(&v0), Some(2.5));
+        // 2^33 ticks only fit the 64-bit field: 8_589_934_592 / 90_000 s.
+        let v1 = [ftyp, atom(*b"moov", &mvhd(90_000, 1 << 33, 1))].concat();
+        assert_eq!(read_mp4(&v1), Some(8_589_934_592.0 / 90_000.0));
+    }
+
+    #[test]
+    fn mvhd_box_sizes_found() {
+        let moov = mvhd(1000, 7000, 0);
+        let large = [large_atom(*b"free", &[0; 5]), large_atom(*b"moov", &moov)].concat();
+        assert_eq!(read_mp4(&large), Some(7.0));
+        // size32 == 0: the box runs to the end of the file.
+        let to_end = [
+            atom(*b"free", &[]),
+            0_u32.to_be_bytes().to_vec(),
+            b"moov".to_vec(),
+            moov,
+        ]
+        .concat();
+        assert_eq!(read_mp4(&to_end), Some(7.0));
+    }
+
+    #[test]
+    fn mvhd_unknown_duration_refused() {
+        // 8.2.2.3: a duration that cannot be determined is all ones.
+        let v0 = atom(*b"moov", &mvhd(1000, u64::from(u32::MAX), 0));
+        let v1 = atom(*b"moov", &mvhd(1000, u64::MAX, 1));
+        assert_eq!(read_mp4(&v0), None);
+        assert_eq!(read_mp4(&v1), None);
+    }
+
+    /// An EBML element with a one-byte size (payload under 127 bytes).
+    fn element(id: &[u8], payload: &[u8]) -> Vec<u8> {
+        let size = 0x80 | u8::try_from(payload.len()).unwrap();
+        [id, &[size], payload].concat()
+    }
+
+    /// EBML header with its DocType, a Segment holding a SeekHead to skip,
+    /// then Info with the given children.
+    fn matroska(info_children: &[u8]) -> Vec<u8> {
+        let header = element(
+            &[0x1A, 0x45, 0xDF, 0xA3],
+            &element(&[0x42, 0x82], b"matroska"),
+        );
+        let seek_head = element(&[0x11, 0x4D, 0x9B, 0x74], &[0xEC, 0x81, 0x00]);
+        let info_element = element(&[0x15, 0x49, 0xA9, 0x66], info_children);
+        let segment = element(
+            &[0x18, 0x53, 0x80, 0x67],
+            &[seek_head, info_element].concat(),
+        );
+        [header, segment].concat()
+    }
+
+    fn float32_duration(ticks: f32) -> Vec<u8> {
+        element(&[0x44, 0x89], &ticks.to_be_bytes())
+    }
+
+    fn float64_duration(ticks: f64) -> Vec<u8> {
+        element(&[0x44, 0x89], &ticks.to_be_bytes())
+    }
+
+    #[test]
+    fn matroska_durations_give_seconds() {
+        // No TimestampScale: the default 1_000_000 ns per tick.
+        assert_eq!(read_mkv(&matroska(&float32_duration(2500.0))), Some(2.5));
+        // TimestampScale 100_000 ns (0x0186A0) after the Duration.
+        let info_children = [
+            float64_duration(54_321.0),
+            element(&[0x2A, 0xD7, 0xB1], &[0x01, 0x86, 0xA0]),
+        ]
+        .concat();
+        assert_eq!(read_mkv(&matroska(&info_children)), Some(5.4321));
+    }
+
+    #[test]
+    fn matroska_invalid_durations_refused() {
+        // Matroska's Duration is a float greater than zero.
+        for ticks in [f64::NAN, f64::INFINITY, f64::NEG_INFINITY, -1000.0, 0.0] {
+            assert_eq!(
+                read_mkv(&matroska(&float64_duration(ticks))),
+                None,
+                "{ticks}"
+            );
+        }
+        for ticks in [f32::NAN, f32::INFINITY, -1000.0] {
+            assert_eq!(
+                read_mkv(&matroska(&float32_duration(ticks))),
+                None,
+                "{ticks}"
+            );
+        }
     }
 }
