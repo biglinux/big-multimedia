@@ -11,6 +11,7 @@ use adw::prelude::*;
 use relm4::ComponentSender;
 
 use big_relm4_components::feedback::tooltip;
+use big_relm4_components::input::entry_row;
 use big_relm4_components::layout::{
     dialog_footer::{BigDialogFooter, BigDialogFooterSpec},
     dialog_page::{BigDialogPage, focus_when_shown},
@@ -361,18 +362,16 @@ pub(super) fn present_add_dialog(root: &gtk::Box, sender: &ComponentSender<Radio
     ));
 
     let group = BigPreferencesGroupSpec::new(i18n("Station")).build();
-    let name_entry = adw::EntryRow::builder()
-        .title(i18n("Station Name"))
-        .show_apply_button(true)
-        .build();
-    name_entry.update_property(&[gtk::accessible::Property::Label(&i18n("Station Name"))]);
-    let url_entry = adw::EntryRow::builder()
-        .title(i18n("Station stream URL"))
-        .show_apply_button(true)
-        .build();
-    url_entry.update_property(&[gtk::accessible::Property::Label(&i18n(
-        "Station stream URL",
-    ))]);
+    let name_entry = entry_row::build(
+        adw::EntryRow::builder()
+            .title(i18n("Station Name"))
+            .show_apply_button(true),
+    );
+    let url_entry = entry_row::build(
+        adw::EntryRow::builder()
+            .title(i18n("Station stream URL"))
+            .show_apply_button(true),
+    );
     group.add(&name_entry);
     group.add(&url_entry);
     page.content().append(&group);

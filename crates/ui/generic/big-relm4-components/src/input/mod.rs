@@ -3,6 +3,7 @@
 pub mod button_content;
 pub mod debounce;
 pub mod dropdown_row;
+pub mod entry_row;
 pub mod inline_spin_set;
 pub mod preference_cards;
 pub mod scale_popover;

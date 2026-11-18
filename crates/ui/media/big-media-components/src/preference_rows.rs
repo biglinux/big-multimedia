@@ -185,10 +185,9 @@ pub fn entry_row(
     on_change: impl Fn(&str) + 'static,
 ) -> adw::EntryRow {
     let spec = entry_row_spec(title, tooltip_text, text);
-    let row = adw::EntryRow::builder()
-        .title(&spec.title)
-        .text(&spec.text)
-        .build();
+    let row = big_relm4_components::input::entry_row::build(
+        adw::EntryRow::builder().title(&spec.title).text(&spec.text),
+    );
     if let Some(tooltip_text) = spec.tooltip_text.as_deref() {
         row.set_tooltip_text(Some(tooltip_text));
     }

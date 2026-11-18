@@ -72,11 +72,12 @@ pub fn prompt_name_with_reply(
     }
 
     let group = BigPreferencesGroupSpec::untitled().build();
-    let entry = adw::EntryRow::builder()
-        .title(spec.entry_title.as_str())
-        .text(spec.prefill.as_str())
-        .show_apply_button(true)
-        .build();
+    let entry = crate::input::entry_row::build(
+        adw::EntryRow::builder()
+            .title(spec.entry_title.as_str())
+            .text(spec.prefill.as_str())
+            .show_apply_button(true),
+    );
     group.add(&entry);
     page.content().append(&group);
 

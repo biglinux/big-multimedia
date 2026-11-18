@@ -17,6 +17,7 @@ use adw::prelude::*;
 use big_os_kit::keyring::{SecretService, Vault};
 use big_relm4_components::feedback::tooltip;
 use big_relm4_components::input::dropdown_row::{BigDropdownRow, BigDropdownRowSpec};
+use big_relm4_components::input::entry_row;
 use big_relm4_components::layout::{
     dialog_footer::{BigDialogFooter, BigDialogFooterSpec},
     dialog_page::BigDialogPage,
@@ -357,7 +358,7 @@ impl ProviderFormInputs {
             .build();
 
         let name_group = BigPreferencesGroupSpec::untitled().build();
-        let name_row = adw::EntryRow::builder().title(i18n("Name")).build();
+        let name_row = entry_row::build(adw::EntryRow::builder().title(i18n("Name")));
         name_row.set_text(&initial.name);
         name_group.add(&name_row);
         content.append(&name_group);
@@ -380,19 +381,20 @@ impl ProviderFormInputs {
         content.append(&type_group);
 
         let url_group = BigPreferencesGroupSpec::untitled().build();
-        let url_row = adw::EntryRow::builder().title(i18n("URL")).build();
+        let url_row = entry_row::build(adw::EntryRow::builder().title(i18n("URL")));
         url_group.add(&url_row);
 
         let path_group = BigPreferencesGroupSpec::untitled().build();
-        let path_row = adw::EntryRow::builder().title(i18n("File path")).build();
+        let path_row = entry_row::build(adw::EntryRow::builder().title(i18n("File path")));
         path_group.add(&path_row);
 
         let xtream_group = BigPreferencesGroupSpec::untitled().build();
-        let server_row = adw::EntryRow::builder().title(i18n("Server URL")).build();
-        let username_row = adw::EntryRow::builder().title(i18n("Username")).build();
+        let server_row = entry_row::build(adw::EntryRow::builder().title(i18n("Server URL")));
+        let username_row = entry_row::build(adw::EntryRow::builder().title(i18n("Username")));
         let password_row = big_gtk_kit::password::password_row(
             adw::PasswordEntryRow::builder().title(i18n("Password")),
         );
+        entry_row::name_by_title(&password_row);
         xtream_group.add(&server_row);
         xtream_group.add(&username_row);
         xtream_group.add(&password_row);
@@ -424,9 +426,9 @@ impl ProviderFormInputs {
         content.append(&xtream_group);
 
         let headers_group = BigPreferencesGroupSpec::new(i18n("HTTP headers (optional)")).build();
-        let ua_row = adw::EntryRow::builder().title(i18n("User-Agent")).build();
+        let ua_row = entry_row::build(adw::EntryRow::builder().title(i18n("User-Agent")));
         ua_row.set_text(&initial.user_agent);
-        let referer_row = adw::EntryRow::builder().title(i18n("Referer")).build();
+        let referer_row = entry_row::build(adw::EntryRow::builder().title(i18n("Referer")));
         referer_row.set_text(&initial.referer);
         headers_group.add(&ua_row);
         headers_group.add(&referer_row);

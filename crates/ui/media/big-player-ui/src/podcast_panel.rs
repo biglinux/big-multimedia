@@ -614,11 +614,11 @@ fn present_add_feed_dialog(root: &gtk::Box, sender: &ComponentSender<PodcastPane
     page.append_description(&i18n("Paste the podcast RSS feed URL below."));
 
     let group = BigPreferencesGroupSpec::new(i18n("Feed")).build();
-    let feed_url_row = adw::EntryRow::builder()
-        .title(i18n("RSS feed URL"))
-        .show_apply_button(true)
-        .build();
-    feed_url_row.update_property(&[gtk::accessible::Property::Label(&i18n("RSS feed URL"))]);
+    let feed_url_row = big_relm4_components::input::entry_row::build(
+        adw::EntryRow::builder()
+            .title(i18n("RSS feed URL"))
+            .show_apply_button(true),
+    );
     group.add(&feed_url_row);
     page.content().append(&group);
 

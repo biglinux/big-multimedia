@@ -288,6 +288,9 @@ owns a window reference independently of Relm4;
   relation: an explicit label alone does not name an empty dropdown.
 - Password rows go through `big_gtk_kit::password::password_row`; libadwaita
   1.9 otherwise keeps the buffer, and the password in it, alive after the row.
+- Entry rows go through `big_relm4_components::input::entry_row::build`, and
+  password rows through its `name_by_title`: libadwaita 1.9 labels an entry
+  row by both of its title labels, so a screen reader reads the title twice.
 - Dialogs and alerts come from `big_gtk_kit::dialog::Dialog` and
   `big_gtk_kit::alert::Alert`, which present a closed one again: libadwaita
   1.9 keeps three breakpoints for every dialog it presents. A handler

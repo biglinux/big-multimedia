@@ -195,8 +195,11 @@ struct EditRows {
 
 impl EditRows {
     fn new(track: &Track) -> Self {
-        let entry =
-            |title: String, text: String| adw::EntryRow::builder().title(title).text(text).build();
+        let entry = |title: String, text: String| {
+            big_relm4_components::input::entry_row::build(
+                adw::EntryRow::builder().title(title).text(text),
+            )
+        };
         let num = |n: Option<i32>| n.map_or_else(String::new, |n| n.to_string());
         Self {
             title: entry(i18n("Title"), track.title.clone().unwrap_or_default()),
