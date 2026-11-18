@@ -175,7 +175,7 @@ impl Component for AudioShell {
             ("icon_radio", i18n("Radio"), "radio"),
             (
                 "microphone-sensitivity-high-symbolic",
-                i18n("Podcast"),
+                i18n("Podcasts"),
                 "podcast",
             ),
         ];
