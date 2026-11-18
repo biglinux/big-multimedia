@@ -1,5 +1,10 @@
 //! Bootstrap helpers shared by all binaries: env, gettext, locale,
-//! GResource registration, decoration-icon strip, About dialog builder.
+//! GResource registration, decoration-icon strip, About dialog builder,
+//! and the slot that delivers opened files to the open shell.
+
+use std::cell::{Cell, RefCell};
+use std::rc::Rc;
+use std::thread::LocalKey;
 
 use gtk::gio;
 use gtk::glib;
@@ -233,6 +238,104 @@ pub fn present_for_open(app: &gtk::Application) {
     }
 }
 
+/// The open shell that files from the desktop or a host are delivered to.
+///
+/// A shell registers through [`ShellInputSlot::bind`] and leaves when its
+/// content unrealizes or its registration drops, so a closed shell receives
+/// nothing; an older shell leaving never removes a newer one.
+pub struct ShellInputSlot<S> {
+    current: RefCell<Option<(u64, S)>>,
+    next_token: Cell<u64>,
+}
+
+impl<S> Default for ShellInputSlot<S> {
+    fn default() -> Self {
+        Self::new()
+    }
+}
+
+impl<S> ShellInputSlot<S> {
+    #[must_use]
+    pub const fn new() -> Self {
+        Self {
+            current: RefCell::new(None),
+            next_token: Cell::new(0),
+        }
+    }
+
+    fn register(&self, sender: S) -> u64 {
+        let token = self.next_token.get();
+        self.next_token.set(token.wrapping_add(1));
+        *self.current.borrow_mut() = Some((token, sender));
+        token
+    }
+
+    fn clear(&self, token: u64) {
+        let mut current = self.current.borrow_mut();
+        if current
+            .as_ref()
+            .is_some_and(|(registered, _)| *registered == token)
+        {
+            current.take();
+        }
+    }
+}
+
+impl<S: Clone + 'static> ShellInputSlot<S> {
+    /// The open shell's input, or `None` when no shell is open.
+    pub fn sender(&self) -> Option<S> {
+        self.current
+            .borrow()
+            .as_ref()
+            .map(|(_, sender)| sender.clone())
+    }
+
+    /// Register `sender` now and again each time `root` is realized after an
+    /// unrealize, as when the content moves to another window.
+    pub fn bind(
+        slot: &'static LocalKey<Self>,
+        root: &impl glib::object::IsA<gtk::Widget>,
+        sender: S,
+    ) -> ShellInputRegistration<S> {
+        use gtk::prelude::*;
+        let token = Rc::new(Cell::new(Some(
+            slot.with(|slot| slot.register(sender.clone())),
+        )));
+        root.connect_realize({
+            let token = token.clone();
+            move |_| {
+                if token.get().is_none() {
+                    token.set(Some(slot.with(|slot| slot.register(sender.clone()))));
+                }
+            }
+        });
+        root.connect_unrealize({
+            let token = token.clone();
+            move |_| {
+                if let Some(token) = token.take() {
+                    slot.with(|slot| slot.clear(token));
+                }
+            }
+        });
+        ShellInputRegistration { slot, token }
+    }
+}
+
+/// Removes its shell from a [`ShellInputSlot`] when dropped.
+pub struct ShellInputRegistration<S: 'static> {
+    slot: &'static LocalKey<ShellInputSlot<S>>,
+    token: Rc<Cell<Option<u64>>>,
+}
+
+impl<S: 'static> Drop for ShellInputRegistration<S> {
+    fn drop(&mut self) {
+        if let Some(token) = self.token.take() {
+            // At thread exit the slot may already be destroyed, leaving nothing to clear.
+            let _ = self.slot.try_with(|slot| slot.clear(token));
+        }
+    }
+}
+
 /// KDE Plasma's `icon:minimize,maximize,close` makes AdwHeaderBar render
 /// the app icon, which libadwaita apps never show. Strip the token.
 pub fn strip_decoration_icon() {
@@ -287,6 +390,17 @@ fn strip_icon_from_layout(raw: &str) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn older_shell_keeps_newer_registration() {
+        let slot = ShellInputSlot::new();
+        let older = slot.register("older");
+        let newer = slot.register("newer");
+        slot.clear(older);
+        assert_eq!(slot.sender(), Some("newer"));
+        slot.clear(newer);
+        assert_eq!(slot.sender(), None);
+    }
 
     #[test]
     fn strip_icon_kde_layout() {

@@ -1,5 +1,5 @@
 use super::engine::build_mpv_backend;
-use super::input::set_shell_input;
+use super::input::SHELL_INPUT;
 use super::mpris::build_mpris_service;
 use super::playback::transport_labels;
 use super::*;
@@ -473,12 +473,9 @@ impl Component for AudioShell {
         })
         .set_enabled(converter);
 
-        // Engine: DB + mpv (built once at init). The event loop forwards
-        // PlayerEvents into the shell.
-        let db = db::open_database().ok();
-        let db_read = db::open_read_connection().ok();
-        let (queue_persistence, queue_updates) =
-            queue_persistence::QueuePersistence::new(db.clone());
+        // The database opens off the GTK thread with the queue restore; mpv is
+        // built once here and its event loop forwards PlayerEvents.
+        let (queue_persistence, queue_updates) = queue_persistence::QueuePersistence::new();
         let close_store = queue_persistence.clone();
         crate::settings::saving::bind_write_drain_with_unsaved(&root, move || {
             close_store.unsaved()
@@ -500,15 +497,23 @@ impl Component for AudioShell {
         let mpris = build_mpris_service(&sender, &mpris_state, &settings);
         let tray = super::tray::build_tray(&sender, settings.get_bool_or(keys::TRAY_ICON, false));
 
-        // Publish the shell input so the application `open` handler can deliver
-        // files opened from the desktop / CLI.
-        set_shell_input(sender.input_sender().clone());
+        // Files opened from the desktop, the command line or a host reach this
+        // shell while its content is realized.
+        let shell_input = crate::shared::app_base::ShellInputSlot::bind(
+            &SHELL_INPUT,
+            &root,
+            sender.input_sender().clone(),
+        );
 
-        // Sync the grouping dropdown to the restored preset (no re-emit), then
-        // build the tree with that grouping + load the playlists sidebar.
+        // Sync the grouping dropdown to the restored preset (no re-emit); the
+        // tree is built once the database opens.
         library.emit(LibraryPanelInput::SetGrouping(initial_grouping.clone()));
-        sender.input(AudioShellInput::RebuildLibraryTree);
-        sender.input(AudioShellInput::RefreshPlaylists);
+        library.emit(LibraryPanelInput::ApplyColumnWidths(
+            settings.get_string(keys::LIBRARY_COLUMN_WIDTHS),
+        ));
+        playlist.emit(PlaylistPanelInput::ApplyColumnWidths(
+            settings.get_string(keys::PLAYLIST_COLUMN_WIDTHS),
+        ));
 
         // Publish the "win" action group on the content Root so `win.*` actions
         // (the hamburger menu + accels) resolve through the widget hierarchy in
@@ -566,8 +571,9 @@ impl Component for AudioShell {
                 trim_play_selection: false,
                 mpv,
                 shutdown_handler,
-                db,
-                db_read,
+                _shell_input: shell_input,
+                db: None,
+                db_read: None,
                 settings,
                 sleep_timer_source: None,
                 sleep_timer_remaining: 0,
@@ -679,6 +685,10 @@ mod lifetime_tests {
         assert!(
             source.is_destroyed(),
             "closed audio component kept its countdown source"
+        );
+        assert!(
+            SHELL_INPUT.with(|slot| slot.sender().is_none()),
+            "closed audio component still receives opened files"
         );
         assert_eq!(
             Arc::weak_count(&backend),

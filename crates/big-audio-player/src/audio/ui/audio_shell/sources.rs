@@ -43,7 +43,7 @@ impl AudioShell {
             ));
             return;
         }
-        let Some(db) = self.db.clone() else {
+        let Some(db) = self.writer() else {
             return;
         };
         let Some(admission) = library_scan_engine::ScanAdmission::reserve() else {
@@ -88,7 +88,7 @@ impl AudioShell {
 
     /// Stop monitoring a watch folder, preserving its tracks, then refresh.
     pub(super) fn remove_watch_folder(&self, id: i64, sender: &ComponentSender<Self>) {
-        let Some(db) = self.db.clone() else {
+        let Some(db) = self.writer() else {
             return;
         };
         let input = sender.input_sender().clone();
@@ -111,7 +111,7 @@ impl AudioShell {
 
     /// Resolve watched folders off-thread, then open the folder manager dialog.
     pub(super) fn resolve_watch_folders(&self, sender: &ComponentSender<Self>) {
-        let Some(db) = self.db_read.clone().or_else(|| self.db.clone()) else {
+        let Some(db) = self.reader() else {
             return;
         };
         let input = sender.input_sender().clone();
@@ -138,7 +138,7 @@ impl AudioShell {
                 favicon,
                 group_name,
             } => {
-                if let Some(db) = self.db.clone() {
+                if let Some(db) = self.writer() {
                     let input = sender.input_sender().clone();
                     spawn_db_query(
                         db,
@@ -159,7 +159,7 @@ impl AudioShell {
                 }
             }
             RadioPanelOutput::DeleteStation(id) => {
-                if let Some(db) = self.db.clone() {
+                if let Some(db) = self.writer() {
                     let input = sender.input_sender().clone();
                     spawn_db_query(
                         db,
@@ -405,7 +405,7 @@ impl AudioShell {
 
     /// Load the saved radio stations off-thread → `RadioStationsResolved`.
     pub(super) fn load_radio_stations(&self, sender: &ComponentSender<Self>) {
-        let Some(db) = self.db_read.clone().or_else(|| self.db.clone()) else {
+        let Some(db) = self.deferred_reader() else {
             return;
         };
         let input = sender.input_sender().clone();

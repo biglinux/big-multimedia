@@ -1,6 +1,44 @@
 use super::*;
 
 impl AudioShell {
+    /// Show the saved queue unless the person already edited this one, and on
+    /// the first open run the library reads that waited for the database.
+    pub(super) fn restore_queue(
+        &mut self,
+        restored: queue_persistence::RestoredQueue,
+        sender: &ComponentSender<Self>,
+    ) {
+        if let Some(session) = &restored.session
+            && self.queue_persistence.status().revision == 0
+        {
+            self.queue.set_tracks(session.music.tracks.clone());
+            if let Some(index) = session.music.current {
+                self.queue.jump_to(index);
+            }
+            self.saved_podcast_queue =
+                Some((session.podcasts.tracks.clone(), session.podcasts.current));
+            self.sync_queue_to_panels();
+            let paths = self
+                .queue
+                .tracks()
+                .iter()
+                .filter(|track| track.id == 0)
+                .map(|track| track.file_path.clone())
+                .collect();
+            Self::load_external_metadata(paths, sender);
+        }
+        if self.db.is_none() {
+            self.db = Some(restored.writer.clone());
+            self.db_read = restored.reader;
+            self.rebuild_library_tree(sender);
+            self.refresh_playlist_dialog_entries(sender);
+            self.load_radio_stations(sender);
+            self.fetch_lyrics_for_current(sender);
+        }
+        self.queue_persistence
+            .loaded(Some(restored.writer), restored.session.is_some());
+    }
+
     pub(super) fn play_current(&mut self) {
         self.play_current_as(PlaybackStatus::Playing);
     }

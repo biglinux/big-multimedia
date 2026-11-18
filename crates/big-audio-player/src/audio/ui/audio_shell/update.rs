@@ -9,33 +9,18 @@ impl AudioShell {
         match message {
             AudioShellInput::QueueRestored(result) => {
                 let first_load = !self.queue_ready;
-                if let Ok((_, session)) = &result
-                    && self.queue_persistence.status().revision == 0
-                {
-                    self.queue.set_tracks(session.music.tracks.clone());
-                    if let Some(index) = session.music.current {
-                        self.queue.jump_to(index);
-                    }
-                    self.saved_podcast_queue =
-                        Some((session.podcasts.tracks.clone(), session.podcasts.current));
-                    self.sync_queue_to_panels();
-                    let paths = self
-                        .queue
-                        .tracks()
-                        .iter()
-                        .filter(|track| track.id == 0)
-                        .map(|track| track.file_path.clone())
-                        .collect();
-                    Self::load_external_metadata(paths, &sender);
-                }
                 self.queue_ready = true;
-                let recovered_db = result.ok().map(|(db, _)| db);
-                if self.db.is_none() && recovered_db.is_some() {
-                    self.db.clone_from(&recovered_db);
-                    self.rebuild_library_tree(&sender);
-                    self.refresh_playlist_dialog_entries(&sender);
+                match result {
+                    Ok(restored) => self.restore_queue(restored, &sender),
+                    Err(detail) => {
+                        self.notify(
+                            &i18n("The music library could not be opened: {}")
+                                .replace("{}", &detail),
+                        );
+                        self.queue_persistence.loaded(None, false);
+                    }
                 }
-                self.queue_persistence.loaded(recovered_db);
+                self.playlist.emit(PlaylistPanelInput::QueueRestored);
                 if first_load {
                     self.resolve_next_open(&sender);
                 }

@@ -182,9 +182,9 @@ pub struct VideoShell {
     sleep_timer_volume: f64,
     /// Window aspect-ratio snap (resize to fit the video, no letterbox bars).
     aspect_snap: Rc<AspectSnap>,
-    /// Token for the thread-local shell input broker. Cleared on drop so a
-    /// closed host module does not keep the Relm4 component alive.
-    shell_input_token: Rc<Cell<Option<input::ShellInputToken>>>,
+    /// Leaves the shell input slot on drop, so a closed host module does not
+    /// keep the Relm4 component alive.
+    _shell_input: crate::shared::app_base::ShellInputRegistration<relm4::Sender<VideoShellInput>>,
     /// Interactive trim bar (bottom overlay), shown only in trim mode.
     trim: Controller<trim::VideoTrimBar>,
     /// "Play only the marked cuts" toggle state.

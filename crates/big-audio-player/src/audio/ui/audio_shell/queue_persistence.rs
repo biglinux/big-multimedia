@@ -23,11 +23,11 @@ pub(super) struct QueuePersistence {
 }
 
 impl QueuePersistence {
-    pub(super) fn new(db: Option<DbHandle>) -> (Self, async_channel::Receiver<()>) {
+    pub(super) fn new() -> (Self, async_channel::Receiver<()>) {
         let (changes, receiver) = async_channel::bounded(1);
         (
             Self {
-                db,
+                db: None,
                 state: Arc::new(Mutex::new(State::default())),
                 changes,
             },
@@ -74,17 +74,18 @@ impl QueuePersistence {
         status.revision != status.saved_revision
     }
 
-    pub(super) fn loaded(&mut self, database: Option<DbHandle>) {
-        let success = database.is_some();
-        if let Some(database) = database {
-            self.db = Some(database);
+    /// `restored` says whether the saved queue was read; until it is, saves are
+    /// refused so they cannot replace a queue the person has not seen.
+    pub(super) fn loaded(&mut self, writer: Option<DbHandle>, restored: bool) {
+        if let Some(writer) = writer {
+            self.db = Some(writer);
         }
         let mut state = self.state.lock().unwrap_or_else(PoisonError::into_inner);
-        state.loaded = success;
-        state.failed = !success;
+        state.loaded = restored;
+        state.failed = !restored;
         drop(state);
         let _ = self.changes.try_send(());
-        if success {
+        if restored {
             self.retry();
         }
     }
@@ -158,25 +159,47 @@ impl QueuePersistence {
             self.retry();
             return;
         }
-        let db = self.db.clone();
+        let writer = self.db.clone();
         let input = sender.input_sender().clone();
         spawn_blocking_result(
             move || {
-                let db = match db {
-                    Some(db) => db,
-                    None => db::open_database().map_err(|_| ())?,
+                let (writer, reader) = if let Some(writer) = writer {
+                    (writer, None)
+                } else {
+                    let writer = db::open_database().map_err(|error| error.to_string())?;
+                    let reader = db::open_read_connection()
+                        .map_err(|error| {
+                            log::warn!("library reads share the writer connection: {error}");
+                        })
+                        .ok();
+                    (writer, reader)
                 };
-                let session = {
-                    let conn = db.lock().map_err(|_| ())?;
-                    load_queue_session(&conn).map_err(|_| ())?
-                };
-                Ok((db, session))
+                let session =
+                    load_queue_session(&writer.lock().unwrap_or_else(PoisonError::into_inner))
+                        .map_err(|error| log::warn!("the saved queue could not be read: {error}"))
+                        .ok();
+                Ok(RestoredQueue {
+                    writer,
+                    reader,
+                    session,
+                })
             },
             move |result| {
                 let _ = input.send(AudioShellInput::QueueRestored(result));
             },
         );
     }
+}
+
+/// The database connections and saved queue that [`QueuePersistence::load`]
+/// opened and read off the GTK thread.
+#[derive(Debug)]
+pub struct RestoredQueue {
+    pub(super) writer: DbHandle,
+    /// Opened only with the writer; `None` when reads must share the writer.
+    pub(super) reader: Option<DbHandle>,
+    /// `None` when the saved queue could not be read.
+    pub(super) session: Option<QueueSession>,
 }
 
 #[cfg(test)]
@@ -210,8 +233,8 @@ mod tests {
         let conn = rusqlite::Connection::open_in_memory().unwrap();
         db::schema::run_migrations(&conn).unwrap();
         let db = Arc::new(Mutex::new(conn));
-        let (mut owner, _updates) = QueuePersistence::new(Some(db.clone()));
-        owner.loaded(Some(db.clone()));
+        let (mut owner, _updates) = QueuePersistence::new();
+        owner.loaded(Some(db.clone()), true);
         let lock = db.lock().unwrap();
         lock.execute_batch(
             "CREATE TEMP TABLE write_count (value INTEGER);

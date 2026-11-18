@@ -2,7 +2,7 @@ use super::*;
 
 impl AudioShell {
     pub(super) fn refresh_playlist_dialog_entries(&self, sender: &ComponentSender<Self>) {
-        let Some(db) = self.db_read.clone().or_else(|| self.db.clone()) else {
+        let Some(db) = self.deferred_reader() else {
             return;
         };
         let input = sender.input_sender().clone();
@@ -31,7 +31,7 @@ impl AudioShell {
     /// Resolve a playlist's tracks → replace the queue and play
     /// (`PlaylistTracksForQueue`). This is the dialog's "Load" action.
     pub(super) fn load_playlist_to_queue(&self, id: i64, sender: &ComponentSender<Self>) {
-        let Some(db) = self.db_read.clone().or_else(|| self.db.clone()) else {
+        let Some(db) = self.reader() else {
             return;
         };
         let input = sender.input_sender().clone();
@@ -78,7 +78,7 @@ impl AudioShell {
 
     /// Load a smart-generator preset's tracks into the queue and play.
     pub(super) fn generate_smart_to_queue(&self, kind: &str, sender: &ComponentSender<Self>) {
-        let Some(db) = self.db_read.clone().or_else(|| self.db.clone()) else {
+        let Some(db) = self.reader() else {
             return;
         };
         let kind = kind.to_string();
@@ -123,7 +123,7 @@ impl AudioShell {
         folder: PathBuf,
         sender: &ComponentSender<Self>,
     ) {
-        let Some(db) = self.db.clone() else {
+        let Some(db) = self.writer() else {
             return;
         };
         let input = sender.input_sender().clone();
@@ -180,7 +180,7 @@ impl AudioShell {
     /// Export private snapshots on the persistence worker. Publication never
     /// replaces an existing document; a partial set is reported and retained.
     pub(super) fn export_all_playlists(&self) {
-        let Some(db) = self.db_read.clone().or_else(|| self.db.clone()) else {
+        let Some(db) = self.reader() else {
             return;
         };
         let parent = self.playlist_library_parent();
@@ -210,7 +210,7 @@ impl AudioShell {
 
     /// Persist a playlist rename, then refresh the playlist dialog.
     pub(super) fn rename_playlist_db(&self, id: i64, name: String, sender: &ComponentSender<Self>) {
-        if let Some(db) = self.db.clone() {
+        if let Some(db) = self.writer() {
             let input = sender.input_sender().clone();
             spawn_db_query(
                 db,
@@ -225,7 +225,7 @@ impl AudioShell {
     /// Export with an acknowledged disk task; read failures never become an
     /// empty successful playlist, and a chosen existing document stays intact.
     pub(super) fn export_playlist(&self, id: i64) {
-        let Some(db) = self.db_read.clone().or_else(|| self.db.clone()) else {
+        let Some(db) = self.reader() else {
             return;
         };
         let parent = self.playlist_library_parent();
@@ -274,7 +274,7 @@ impl AudioShell {
         name: String,
         sender: &ComponentSender<Self>,
     ) {
-        let Some(db) = self.db.clone() else {
+        let Some(db) = self.writer() else {
             return;
         };
         let input = sender.input_sender().clone();

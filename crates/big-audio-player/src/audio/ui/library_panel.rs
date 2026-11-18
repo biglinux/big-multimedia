@@ -113,7 +113,7 @@ pub enum LibraryPanelInput {
     /// The currently-playing file path (or `None`); re-lights the detail
     /// now-playing indicator by file-path match.
     SetPlayingPath(Option<String>),
-    /// Restore saved detail column widths (`title=width,…`), pushed by the shell
+    /// Restore saved detail column widths (`key=width,…`), pushed by the shell
     /// at construction. Suppresses the persist echo while applying.
     ApplyColumnWidths(String),
     /// Replace the whole left-pane tree (shell ran the group + atomic preload).
@@ -178,7 +178,7 @@ pub enum LibraryPanelOutput {
     RevealInFileManager(String),
     /// Show the track-info dialog (shell owns the dialog + metadata).
     ShowTrackInfo(Track),
-    /// Persist the detail column widths (`title=width,…`); the shell writes the
+    /// Persist the detail column widths (`key=width,…`); the shell writes the
     /// settings key. Debounced to one emission per resize gesture.
     PersistColumnWidths(String),
     /// A library tree node was activated; shell resolves it → `PopulateDetail`.

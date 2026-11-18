@@ -67,7 +67,24 @@ impl Column {
         Self::ALL.get(id as usize).copied()
     }
 
-    /// The heading; also the column's name in the saved widths.
+    /// The column's name in the saved widths, the same in every language.
+    fn key(self) -> &'static str {
+        match self {
+            Self::Position => "position",
+            Self::TrackNumber => "track-number",
+            Self::Title => "title",
+            Self::Artist => "artist",
+            Self::Album => "album",
+            Self::Duration => "duration",
+            Self::Genre => "genre",
+            Self::Year => "year",
+            Self::Bitrate => "bitrate",
+            Self::Format => "format",
+            Self::Rating => "rating",
+            Self::Action => "action",
+        }
+    }
+
     pub(super) fn title(self) -> String {
         match self {
             Self::Position | Self::TrackNumber => "#".to_owned(),
@@ -291,17 +308,12 @@ impl Columns {
         self.sort
     }
 
-    /// Saved widths, `title=width,…` as the settings keep them.
+    /// Saved widths, `key=width,…` as the settings keep them.
     pub(super) fn widths_spec(&self) -> Option<String> {
-        let entries: Vec<(String, i32)> = self
-            .order
-            .iter()
-            .map(|column| (column.title(), self.widths[column.id() as usize]))
-            .collect();
         big_relm4_components::layout::column_persist::encode_column_width_entries(
-            entries
+            self.order
                 .iter()
-                .map(|(title, width)| (title.as_str(), *width)),
+                .map(|column| (column.key(), self.widths[column.id() as usize])),
         )
     }
 
@@ -314,7 +326,13 @@ impl Columns {
             let Ok(width) = width.parse::<i32>() else {
                 continue;
             };
-            if let Some(column) = self.order.iter().copied().find(|c| c.title() == name) {
+            // Widths saved before the stable keys are named by the heading.
+            if let Some(column) = self
+                .order
+                .iter()
+                .copied()
+                .find(|c| c.key() == name || c.title() == name)
+            {
                 self.resize(column, width);
             }
         }
@@ -667,6 +685,14 @@ mod tests {
         assert_eq!(restored.widths, columns.widths);
         restored.apply_widths("Artist=abc,Nothing=99,=5");
         assert_eq!(restored.widths, columns.widths);
+        assert_eq!(
+            spec,
+            "track-number=44,title=200,artist=210,album=150,duration=84,genre=100,\
+             year=60,bitrate=90,format=72,rating=90,action=36"
+        );
+        restored.apply_widths("Album=180,#=50");
+        assert_eq!(restored.widths[Column::Album.id() as usize], 180);
+        assert_eq!(restored.widths[Column::TrackNumber.id() as usize], 50);
 
         columns.toggle(Column::Title);
         assert!(columns.shown(Column::Title));

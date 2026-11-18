@@ -1,6 +1,8 @@
 use super::*;
 
-use std::sync::atomic::{AtomicBool, AtomicU64, Ordering};
+use std::sync::atomic::{AtomicBool, Ordering};
+
+use crate::shared::app_base::ShellInputSlot;
 
 use super::trim::VideoTrimBarOutput;
 
@@ -153,39 +155,30 @@ pub enum VideoShellInput {
     Mpris(big_app_kit::mpris::MprisCommand),
 }
 
-#[derive(Clone, Copy, Debug, Eq, PartialEq)]
-pub(super) struct ShellInputToken(u64);
-
-static NEXT_SHELL_INPUT_TOKEN: AtomicU64 = AtomicU64::new(1);
-
 /// Set when the process starts in order to open files, read once by the
 /// shell's init: it then starts on the video area instead of the welcome
 /// screen and wallpaper, which stood for about a second before the first frame.
 static OPENING_FILES: AtomicBool = AtomicBool::new(false);
 
 thread_local! {
-    /// Main-thread handle to the running shell's input, set at init so the
-    /// application `open` handler can deliver opened files. The inputs carry
-    /// GTK objects (not `Send`), so a thread-local `Sender` is used instead of
-    /// a `MessageBroker` static.
-    static SHELL_INPUT: RefCell<Option<(ShellInputToken, relm4::Sender<VideoShellInput>)>> =
-        const { RefCell::new(None) };
+    /// The inputs carry GTK objects (not `Send`), so the slot is thread-local
+    /// instead of a `MessageBroker` static.
+    pub(super) static SHELL_INPUT: ShellInputSlot<relm4::Sender<VideoShellInput>> =
+        const { ShellInputSlot::new() };
 }
 
-/// Deliver a message to the running shell from the main thread (used by the
-/// application `open` handler). No-op if the shell is not running yet.
+/// Deliver a message to the open shell from the main thread (used by the
+/// application `open` handler). No-op when no shell is open.
 pub fn send_to_shell(message: VideoShellInput) {
-    SHELL_INPUT.with(|cell| {
-        if let Some((_, sender)) = cell.borrow().as_ref() {
-            let _ = sender.send(message);
-        }
-    });
+    if let Some(sender) = shell_input_sender() {
+        let _ = sender.send(message);
+    }
 }
 
 /// Tell the shell about to be created that files are on their way. A shell
 /// already running keeps its screen: its files replace the playing ones.
 pub fn mark_opening_files() {
-    if SHELL_INPUT.with(|cell| cell.borrow().is_none()) {
+    if shell_input_sender().is_none() {
         OPENING_FILES.store(true, Ordering::Relaxed);
     }
 }
@@ -194,23 +187,6 @@ pub(super) fn take_opening_files() -> bool {
     OPENING_FILES.swap(false, Ordering::Relaxed)
 }
 
-pub(super) fn set_shell_input(sender: relm4::Sender<VideoShellInput>) -> ShellInputToken {
-    let token = ShellInputToken(NEXT_SHELL_INPUT_TOKEN.fetch_add(1, Ordering::Relaxed));
-    SHELL_INPUT.with(|cell| {
-        *cell.borrow_mut() = Some((token, sender));
-    });
-    token
-}
-
-pub(super) fn clear_shell_input(token: ShellInputToken) {
-    SHELL_INPUT.with(|cell| {
-        let mut slot = cell.borrow_mut();
-        if slot.as_ref().is_some_and(|(current, _)| *current == token) {
-            slot.take();
-        }
-    });
-}
-
 pub(super) fn shell_input_sender() -> Option<relm4::Sender<VideoShellInput>> {
-    SHELL_INPUT.with(|cell| cell.borrow().as_ref().map(|(_, sender)| sender.clone()))
+    SHELL_INPUT.with(ShellInputSlot::sender)
 }

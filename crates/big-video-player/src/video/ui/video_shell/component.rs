@@ -1,6 +1,6 @@
 use super::actions::{build_welcome_screen, install_window_actions, toggle_keep_above};
 use super::dialogs::hold_theme;
-use super::input::{clear_shell_input, set_shell_input};
+use super::input::SHELL_INPUT;
 use super::input_gestures::{wire_osd_autohide, wire_osd_focus_out, wire_video_input};
 use super::render::{
     FastRenderContextSlot, VideoRealizeOptions, VideoStart, wire_close, wire_realize,
@@ -498,30 +498,13 @@ impl Component for VideoShell {
             },
         );
 
-        // Publish the shell input so the application `open` handler can deliver
-        // files opened from the desktop / CLI.
-        // Unrealize clears it so a closed player gets nothing; a remount
-        // realizes the content again and must register it again.
-        let shell_input_token = Rc::new(Cell::new(Some(set_shell_input(
+        // Files opened from the desktop, the command line or a host reach this
+        // shell while its content is realized.
+        let shell_input = crate::shared::app_base::ShellInputSlot::bind(
+            &SHELL_INPUT,
+            &root,
             sender.input_sender().clone(),
-        ))));
-        root.connect_realize({
-            let token = shell_input_token.clone();
-            let input = sender.input_sender().clone();
-            move |_| {
-                if token.get().is_none() {
-                    token.set(Some(set_shell_input(input.clone())));
-                }
-            }
-        });
-        root.connect_unrealize({
-            let token = shell_input_token.clone();
-            move |_| {
-                if let Some(token) = token.take() {
-                    clear_shell_input(token);
-                }
-            }
-        });
+        );
 
         // Apply the saved OSD palette + layout CSS now into the shared
         // display-wide provider slot, released when the last player closes;
@@ -621,7 +604,7 @@ impl Component for VideoShell {
                 sleep_timer_action: String::new(),
                 sleep_timer_volume: 100.0,
                 aspect_snap,
-                shell_input_token,
+                _shell_input: shell_input,
                 trim,
                 trim_play_selection: Rc::new(Cell::new(false)),
                 trim_ranges: Rc::new(RefCell::new(Vec::new())),
@@ -857,16 +840,13 @@ impl Component for VideoShell {
 
 impl Drop for VideoShell {
     /// Remove the armed sleep-timer countdown source so it does not outlive the
-    /// shell (no leaked `glib::timeout`) and clear the global input broker.
+    /// shell (no leaked `glib::timeout`).
     ///
     /// Do not force-drop the live mpv backend here: GTK widgets still own
     /// render-context callbacks during unrealize/finalize, and those callbacks
     /// must release their mpv render context before the shared mpv handle is
     /// destroyed.
     fn drop(&mut self) {
-        if let Some(token) = self.shell_input_token.take() {
-            clear_shell_input(token);
-        }
         self.screenshot_owner
             .store(false, std::sync::atomic::Ordering::Release);
         if let Some(source) = self.sleep_timer_source.take() {

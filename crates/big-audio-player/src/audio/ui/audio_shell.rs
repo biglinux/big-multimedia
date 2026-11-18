@@ -138,6 +138,7 @@ pub struct AudioShell {
     saved_podcast_queue: Option<(Vec<Track>, Option<usize>)>,
     queue: PlayQueue,
     queue_persistence: queue_persistence::QueuePersistence,
+    /// Set by the first `QueueRestored`, which also brings the database handles.
     queue_ready: bool,
     pending_opens: std::collections::VecDeque<Vec<String>>,
     open_generation: u64,
@@ -180,7 +181,9 @@ pub struct AudioShell {
     /// if the engine failed to initialize.
     mpv: Option<Arc<MpvBackend>>,
     shutdown_handler: Option<(glib::WeakRef<gio::Application>, glib::SignalHandlerId)>,
-    /// Writer DB handle (queue persistence, ratings, playlists, deletes).
+    _shell_input: crate::shared::app_base::ShellInputRegistration<relm4::Sender<AudioShellInput>>,
+    /// Writer DB handle (queue persistence, ratings, playlists, deletes); read
+    /// through [`Self::writer`], which explains its absence.
     db: Option<DbHandle>,
     /// Read-only DB handle (library/detail queries; avoids writer contention).
     db_read: Option<DbHandle>,
