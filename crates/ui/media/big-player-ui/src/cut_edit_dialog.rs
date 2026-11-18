@@ -24,38 +24,10 @@ pub fn present_cut_edit_dialog(
     playhead: impl Fn() -> f64 + 'static,
     apply: impl Fn(u64, f64, f64) + 'static,
 ) {
-    let playhead: Rc<dyn Fn() -> f64> = Rc::new(playhead);
-    let range = BigSpinRange::new(0.0, duration, 0.1, 5.0);
-    let start_row = BigSpinRow::new(
-        BigSpinRowSpec::new(i18n("Start (seconds)"), cut.start, range)
-            .digits(2)
-            .width_chars(7),
-    );
-    let end_row = BigSpinRow::new(
-        BigSpinRowSpec::new(i18n("End (seconds)"), cut.end, range)
-            .digits(2)
-            .width_chars(7),
-    );
-    start_row
-        .row()
-        .add_suffix(&playhead_button(&playhead, start_row.spin()));
-    end_row
-        .row()
-        .add_suffix(&playhead_button(&playhead, end_row.spin()));
-    let start_spin = start_row.spin().clone();
-    let end_spin = end_row.spin().clone();
+    let (group, start_spin, end_spin) = cut_range_group(cut, duration, Rc::new(playhead));
 
-    let group = BigPreferencesGroupSpec::new(i18n("Cut range"))
-        .description(i18n(
-            "Use the clock buttons to copy the current playback position",
-        ))
-        .build();
-    group.add(start_row.row());
-    group.add(end_row.row());
-
-    let too_short = i18n("Start and end must be at least 0.1 seconds apart");
     let error_label = gtk::Label::builder()
-        .label(&too_short)
+        .label(i18n("Start and end must be at least 0.1 seconds apart"))
         .halign(gtk::Align::Start)
         .margin_start(12)
         .margin_end(12)
@@ -64,7 +36,6 @@ pub fn present_cut_edit_dialog(
         .visible(false)
         .css_classes(["error"])
         .build();
-    error_label.update_property(&[gtk::accessible::Property::Label(&too_short)]);
 
     let dialog = big_gtk_kit::dialog::Dialog::builder()
         .title(i18n("Edit Cut"))
@@ -108,6 +79,34 @@ pub fn present_cut_edit_dialog(
     ));
 
     dialog.present(Some(parent));
+}
+
+/// The start and end rows, with their spin buttons for Apply to read.
+fn cut_range_group(
+    cut: Cut,
+    duration: f64,
+    playhead: Rc<dyn Fn() -> f64>,
+) -> (adw::PreferencesGroup, gtk::SpinButton, gtk::SpinButton) {
+    let group = BigPreferencesGroupSpec::new(i18n("Cut range"))
+        .description(i18n(
+            "Use the clock buttons to copy the current playback position",
+        ))
+        .build();
+    let range = BigSpinRange::new(0.0, duration, 0.1, 5.0);
+    let time_row = |title: String, value: f64| {
+        let row = BigSpinRow::new(
+            BigSpinRowSpec::new(title, value, range)
+                .digits(2)
+                .width_chars(7),
+        );
+        row.row()
+            .add_suffix(&playhead_button(&playhead, row.spin()));
+        group.add(row.row());
+        row.spin().clone()
+    };
+    let start_spin = time_row(i18n("Start (seconds)"), cut.start);
+    let end_spin = time_row(i18n("End (seconds)"), cut.end);
+    (group, start_spin, end_spin)
 }
 
 fn playhead_button(playhead: &Rc<dyn Fn() -> f64>, spin: &gtk::SpinButton) -> gtk::Button {
