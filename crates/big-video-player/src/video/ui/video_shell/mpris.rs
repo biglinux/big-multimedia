@@ -202,8 +202,7 @@ impl VideoShell {
                         }
                     }
                     MprisCommand::SetVolume(volume) if volume.is_finite() => {
-                        let volume_max =
-                            f64::from(self.settings.get_int(keys::VOLUME_MAX)).max(100.0);
+                        let volume_max = f64::from(self.settings.volume_max_percent());
                         mpv.set_volume((volume * 100.0).clamp(0.0, volume_max));
                     }
                     MprisCommand::SetRate(rate)

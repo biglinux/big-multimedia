@@ -15,7 +15,7 @@ use std::sync::mpsc::{Receiver, SyncSender};
 use std::sync::{Arc, Mutex};
 use std::time::Duration;
 
-use super::{PlayerEvent, TrackMetadata};
+use super::{EndReason, PlayerEvent, TrackMetadata};
 use init_options::{
     AUDIO_WATCH_LATER_OPTIONS, VIDEO_WATCH_LATER_OPTIONS, apply_audio_only_options,
     apply_audio_output, apply_custom_options, apply_playback_options, apply_video_options,
@@ -538,7 +538,7 @@ fn next_event(
             MpvEvent::EndFile(reason) => {
                 poll.seek_pending = false;
                 poll.last_eof = true;
-                debug!("[MPV-EVENT] EndFile reason={reason} (from mpv event queue)");
+                debug!("[MPV-EVENT] EndFile reason={reason:?} (from mpv event queue)");
                 return Some(PlayerEvent::EndFile(reason));
             }
             MpvEvent::Shutdown => return Some(PlayerEvent::Shutdown),
@@ -595,8 +595,8 @@ fn poll_properties(
         debug!("[MPV-POLL] skipping eof-reached check (loading=true)");
     } else if let Ok(eof) = mpv.get_property::<bool>("eof-reached") {
         if eof && !poll.last_eof {
-            debug!("[MPV-POLL] eof-reached=true, sending synthetic EndFile(0)");
-            events.push(PlayerEvent::EndFile(0));
+            debug!("[MPV-POLL] eof-reached=true, sending synthetic EndFile(Eof)");
+            events.push(PlayerEvent::EndFile(EndReason::Eof));
         }
         poll.last_eof = eof;
     }

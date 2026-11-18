@@ -301,8 +301,8 @@ impl VideoShell {
             return;
         };
         let mut found = detect(&mpv, &self.settings, &self.video_transform);
-        if self.sleep_timer_is_armed() {
-            found.push(Adjustment::SleepTimer(self.sleep_timer_remaining_secs()));
+        if self.sleep_timer.is_armed() {
+            found.push(Adjustment::SleepTimer(self.sleep_timer.remaining_secs()));
         }
         let names: Vec<String> = found.iter().map(Adjustment::label).collect();
         let text = match names.as_slice() {
