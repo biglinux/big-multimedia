@@ -47,13 +47,14 @@ impl Drop for ScreenshotPreparation {
 }
 
 impl VideoShell {
-    /// Present the go-to-time entry dialog. Accepts `H:MM:SS`, `M:SS`, or plain
-    /// seconds; on confirm the shell seeks there, on the TV when one plays.
-    pub(super) fn show_goto_time_dialog(root: &adw::ApplicationWindow) {
+    /// Present the go-to-time entry dialog, filled with the current position.
+    /// Accepts `H:MM:SS`, `M:SS`, or plain seconds; on confirm the shell seeks
+    /// there, on the TV when one plays.
+    pub(super) fn show_goto_time_dialog(&self, root: &adw::ApplicationWindow) {
+        let position = self.playback_position();
         let dialog = big_gtk_kit::dialog::Dialog::builder()
             .title(i18n("Go to Time"))
             .content_width(420)
-            .content_height(260)
             .build();
         let page = BigDialogPage::plain();
         page.content().set_spacing(12);
@@ -63,7 +64,7 @@ impl VideoShell {
             .build();
         let entry = adw::EntryRow::builder()
             .title(i18n("Playback time"))
-            .text("0:00:00")
+            .text(big_media_components::time::playback_time(position))
             .show_apply_button(true)
             .build();
         group.add(&entry);

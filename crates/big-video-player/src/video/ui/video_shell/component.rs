@@ -752,7 +752,7 @@ impl Component for VideoShell {
                 }
                 VideoShellInput::ShowGotoTime => {
                     if let Some(root) = window_ref {
-                        Self::show_goto_time_dialog(root);
+                        self.show_goto_time_dialog(root);
                     }
                 }
                 VideoShellInput::Screenshot => self.take_screenshot(&sender),

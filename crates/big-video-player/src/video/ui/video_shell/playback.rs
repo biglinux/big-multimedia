@@ -758,7 +758,7 @@ impl VideoShell {
         }
         if let VideoControlsBarOutput::GotoTimeClicked = out {
             if let Some(root) = root {
-                Self::show_goto_time_dialog(root);
+                self.show_goto_time_dialog(root);
             }
             return;
         }

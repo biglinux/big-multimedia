@@ -153,7 +153,6 @@ impl VideoShell {
         let dialog = big_gtk_kit::dialog::Dialog::builder()
             .title(i18n("Open URL"))
             .content_width(460)
-            .content_height(260)
             .build();
         let page = BigDialogPage::plain();
         page.content().set_spacing(12);
