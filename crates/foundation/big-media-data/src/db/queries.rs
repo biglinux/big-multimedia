@@ -40,18 +40,26 @@ pub(super) fn row_to_track(row: &Row<'_>) -> rusqlite::Result<Track> {
     })
 }
 
-pub(super) const TRACK_COLUMNS: &str =
-    "id, file_path, title, artist, album, album_artist, track_number,
-     disc_number, year, genre, duration_secs, file_size, bitrate,
-     sample_rate, channels, format, art_hash, date_added, last_played,
-     play_count, rating, modified_at";
-
-/// Same columns prefixed with `t.` for JOINed queries.
-pub(super) const TRACK_COLUMNS_PREFIXED: &str =
-    "t.id, t.file_path, t.title, t.artist, t.album, t.album_artist, t.track_number,
-     t.disc_number, t.year, t.genre, t.duration_secs, t.file_size, t.bitrate,
-     t.sample_rate, t.channels, t.format, t.art_hash, t.date_added, t.last_played,
-     t.play_count, t.rating, t.modified_at";
+/// The `tracks` columns in [`row_to_track`] order as one string literal;
+/// `track_columns!(t)` qualifies each column with the alias `t`.
+macro_rules! track_columns {
+    () => {
+        $crate::db::queries::track_columns!(@list "")
+    };
+    ($alias:ident) => {
+        $crate::db::queries::track_columns!(@list concat!(stringify!($alias), "."))
+    };
+    (@list $prefix:expr) => {
+        $crate::db::queries::track_columns!(@join $prefix;
+            id, file_path, title, artist, album, album_artist, track_number, disc_number,
+            year, genre, duration_secs, file_size, bitrate, sample_rate, channels, format,
+            art_hash, date_added, last_played, play_count, rating, modified_at)
+    };
+    (@join $prefix:expr; $first:ident $(, $rest:ident)*) => {
+        concat!($prefix, stringify!($first) $(, ", ", $prefix, stringify!($rest))*)
+    };
+}
+pub(super) use track_columns;
 
 pub fn insert_track(conn: &Connection, t: &Track) -> crate::Result<i64> {
     // Upsert keeps date_added across re-scans; INSERT OR REPLACE would reset it.
@@ -107,8 +115,11 @@ pub fn delete_track(conn: &Connection, track_id: i64) -> crate::Result<()> {
 }
 
 pub fn get_track_by_path(conn: &Connection, path: &str) -> crate::Result<Option<Track>> {
-    let sql = format!("SELECT {TRACK_COLUMNS} FROM tracks WHERE file_path = ?1");
-    let mut stmt = conn.prepare(&sql)?;
+    let mut stmt = conn.prepare(concat!(
+        "SELECT ",
+        track_columns!(),
+        " FROM tracks WHERE file_path = ?1"
+    ))?;
     let track = stmt.query_row([path], row_to_track).optional()?;
     Ok(track)
 }
@@ -220,13 +231,14 @@ pub fn add_track_to_playlist(
 }
 
 pub fn get_playlist_tracks(conn: &Connection, playlist_id: i64) -> crate::Result<Vec<Track>> {
-    let sql = format!(
-        "SELECT {TRACK_COLUMNS_PREFIXED} FROM playlist_tracks pt
+    let mut stmt = conn.prepare(concat!(
+        "SELECT ",
+        track_columns!(t),
+        " FROM playlist_tracks pt
          JOIN tracks t ON t.id = pt.track_id
          WHERE pt.playlist_id = ?1
          ORDER BY pt.position"
-    );
-    let mut stmt = conn.prepare(&sql)?;
+    ))?;
     let tracks = stmt
         .query_map(params![playlist_id], row_to_track)?
         .collect::<rusqlite::Result<Vec<_>>>()?;

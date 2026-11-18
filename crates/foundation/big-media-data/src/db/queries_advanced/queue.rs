@@ -1,15 +1,16 @@
 use rusqlite::{Connection, params};
 
 use crate::db::models::Track;
-use crate::db::queries::{TRACK_COLUMNS_PREFIXED, row_to_track};
+use crate::db::queries::{row_to_track, track_columns};
 
 pub fn load_queue(conn: &Connection) -> crate::Result<Vec<Track>> {
-    let sql = format!(
-        "SELECT {TRACK_COLUMNS_PREFIXED} FROM queue_tracks qt
+    let mut stmt = conn.prepare(concat!(
+        "SELECT ",
+        track_columns!(t),
+        " FROM queue_tracks qt
          JOIN tracks t ON t.id = qt.track_id
          ORDER BY qt.position"
-    );
-    let mut stmt = conn.prepare(&sql)?;
+    ))?;
     let tracks = stmt
         .query_map([], row_to_track)?
         .collect::<rusqlite::Result<_>>()?;
@@ -123,21 +124,22 @@ pub fn load_queue_session(conn: &Connection) -> crate::Result<QueueSession> {
 
 /// Saved items of one queue, preferring the live library row for each path.
 fn load_queue_items(transaction: &Connection, name: &str) -> crate::Result<Vec<Track>> {
-    let sql = format!(
-        "SELECT {TRACK_COLUMNS_PREFIXED}, q.file_path, q.track_id, q.title, q.artist,
+    transaction
+        .prepare(concat!(
+            "SELECT ",
+            track_columns!(t),
+            ", q.file_path, q.track_id, q.title, q.artist,
                 q.album, q.duration_secs
          FROM playback_queue_items q LEFT JOIN tracks t ON t.file_path=q.file_path
          WHERE q.queue_name=?1 ORDER BY q.position"
-    );
-    transaction
-        .prepare(&sql)?
+        ))?
         .query_map([name], |row| {
             if row.get::<_, Option<i64>>(0)?.is_some() {
                 return row_to_track(row);
             }
             // The q.* columns follow the track columns; derive the offset from
             // the list itself so a new track column can't shift these reads.
-            let q = TRACK_COLUMNS_PREFIXED.split(',').count();
+            let q = track_columns!(t).split(',').count();
             let mut track = Track::new_external_path(row.get::<_, String>(q)?);
             // A library entry removed since the save remains a playable external
             // path. Negative IDs identify podcast episodes, not library records.
