@@ -747,7 +747,8 @@ msgstr "Станцията не можа да бъде премахната."
 #: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:230
 msgid "There is no Music or home folder to save recordings in."
 msgstr ""
-"Няма папка „Музика“ или домашна папка, в която да се запазват записите."
+"Няма нито папка „Музика“, нито домашна папка, в която да се запазват "
+"записите."
 
 #: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:276
 #: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:284
@@ -1897,7 +1898,7 @@ msgid ""
 "Drag buttons between zones, or move the focused one with Alt+Left and "
 "Alt+Right. Click a button to show or hide it."
 msgstr ""
-"Плъзгайте бутоните между зоните или местете бутона на фокус с Alt+Ляво и "
+"Плъзгайте бутоните между зоните или местете бутона във фокус с Alt+Ляво и "
 "Alt+Дясно. Щракнете върху бутон, за да го покажете или скриете."
 
 #: crates/big-video-player/src/video/ui/appearance/layout/layout_page.rs:19
@@ -2864,8 +2865,8 @@ msgid ""
 "There is no Pictures or home folder to save screenshots in. Choose a folder "
 "in Preferences."
 msgstr ""
-"Няма папка „Снимки“ или домашна папка, в която да се запазват снимките на "
-"екрана. Изберете папка в настройките."
+"Няма нито папка „Снимки“, нито домашна папка, в която да се запазват "
+"снимките на екрана. Изберете папка в настройките."
 
 #: crates/big-video-player/src/video/ui/menu_dialogs.rs:127
 #, rust-format
@@ -4232,7 +4233,8 @@ msgstr "Няма съвпадащи скорошни файлове"
 
 #: crates/big-video-player/src/video/ui/video_shell/playback.rs:196
 msgid "The screenshot took too long and was not saved"
-msgstr "Снимката на екрана отне твърде дълго и не беше запазена"
+msgstr ""
+"Създаването на снимката на екрана отне твърде дълго и тя не беше запазена"
 
 #: crates/big-video-player/src/video/ui/video_shell/playback.rs:223
 msgid "Could not play this file — it may be unsupported or corrupt."
@@ -4884,18 +4886,18 @@ msgstr "{zone}, {position} от {count}"
 #: crates/ui/generic/big-relm4-components/src/input/zone_layout_editor.rs:201
 #, rust-format
 msgid "{bar}, center"
-msgstr "{bar}, център"
+msgstr "{bar}, в центъра"
 
 #: crates/ui/generic/big-relm4-components/src/input/zone_layout_editor.rs:202
 #: crates/ui/generic/big-relm4-components/src/input/zone_layout_editor.rs:203
 #, rust-format
 msgid "{bar}, left"
-msgstr "{bar}, ляво"
+msgstr "{bar}, отляво"
 
 #: crates/ui/generic/big-relm4-components/src/input/zone_layout_editor.rs:204
 #, rust-format
 msgid "{bar}, right"
-msgstr "{bar}, дясно"
+msgstr "{bar}, отдясно"
 
 #: crates/ui/generic/big-relm4-components/src/layout/media_window/sidebar.rs:232
 msgid "Resize sidebar"
@@ -5151,7 +5153,8 @@ msgstr "Редактиране на изрязването"
 
 #: crates/ui/media/big-player-ui/src/cut_edit_dialog.rs:31
 msgid "Start and end must be at least 0.1 seconds apart"
-msgstr "Началото и краят трябва да са на поне 0,1 секунди един от друг"
+msgstr ""
+"Началото и краят трябва да са на разстояние поне 0,1 секунди един от друг"
 
 #: crates/ui/media/big-player-ui/src/cut_edit_dialog.rs:42
 msgid "Edit Cut"
