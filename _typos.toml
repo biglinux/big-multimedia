@@ -44,6 +44,8 @@ ABD = "ABD"                 # Sort-order test input.
 [files]
 extend-exclude = [
     "target/**",
+    # Vendored upstream source, spelled as upstream keeps it.
+    "third_party/**",
     "**/po/*.po",
     "**/po/*.pot",
     "crates/media-runtime/data/shaders/**",
