@@ -346,6 +346,34 @@ impl Settings {
             .clamp(*range.start(), *range.end())
     }
 
+    /// The audio player's saved volume in percent, within 0 and
+    /// [`Self::volume_max_percent`]; 0 stays 0.
+    #[must_use]
+    pub fn audio_volume_percent(&self) -> f64 {
+        f64::from(
+            self.get_int_or(keys::AUDIO_VOLUME, 100)
+                .clamp(0, self.volume_max_percent()),
+        )
+    }
+
+    /// Store the audio player's volume, rounded to a whole percent.
+    pub fn put_audio_volume_percent(&self, percent: f64) -> bool {
+        percent.is_finite() && self.put_int(keys::AUDIO_VOLUME, percent.round() as i32)
+    }
+
+    /// The video player's saved volume in percent, within 0 and
+    /// [`Self::volume_max_percent`]; 0 stays 0.
+    #[must_use]
+    pub fn video_volume_percent(&self) -> f64 {
+        (self.get_double(keys::VOLUME) * 100.0).clamp(0.0, f64::from(self.volume_max_percent()))
+    }
+
+    /// Store the video player's volume, rounded to a whole percent and kept as
+    /// a fraction of 100%.
+    pub fn put_video_volume_percent(&self, percent: f64) -> bool {
+        self.put_double(keys::VOLUME, percent.round() / 100.0)
+    }
+
     #[must_use]
     pub fn get_int(&self, key: keys::IntKey) -> i32 {
         self.int(key.0)

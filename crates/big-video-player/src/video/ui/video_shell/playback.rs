@@ -159,6 +159,10 @@ impl VideoShell {
             }
             PlayerEvent::VolumeChanged(volume) if !tv => {
                 self.controls.emit(VideoControlsBarInput::SetVolume(volume));
+                let settings = self.settings.clone();
+                self.volume_save.run(move || {
+                    settings.put_video_volume_percent(volume);
+                });
             }
             PlayerEvent::MuteChanged(muted) if !tv => {
                 self.controls.emit(VideoControlsBarInput::SetMuted(muted));

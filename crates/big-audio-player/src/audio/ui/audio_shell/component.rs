@@ -62,10 +62,7 @@ impl Component for AudioShell {
         };
         let initial_noise = settings.get_double(keys::NOISE_STRENGTH).max(0.0);
         let initial_voice_active = initial_noise > 0.0;
-        let initial_volume = {
-            let v = f64::from(settings.get_int(keys::AUDIO_VOLUME));
-            if v > 0.0 { v } else { 100.0 }
-        };
+        let initial_volume = settings.audio_volume_percent();
 
         // Child Controllers: each panel's Output → an AudioShellInput variant.
         let library = LibraryPanel::builder()
@@ -483,6 +480,7 @@ impl Component for AudioShell {
             });
             Some((app.downgrade(), handler))
         });
+        save_volume_on_close(&root, mpv.as_ref(), &settings);
         let mpris_state = Arc::new(SharedMprisState::default());
         let mpris = build_mpris_service(&sender, &mpris_state, &settings);
         let tray = super::tray::build_tray(&sender, settings.get_bool_or(keys::TRAY_ICON, false));
@@ -566,6 +564,9 @@ impl Component for AudioShell {
                 db: None,
                 db_read: None,
                 settings,
+                volume_save: big_relm4_components::input::debounce::BigDebouncedAction::new(
+                    VOLUME_SAVE_DELAY,
+                ),
                 sleep_timer: crate::shared::sleep_timer::SleepTimer::default(),
                 library_grouping: initial_grouping,
                 library_filter: String::new(),
@@ -594,6 +595,36 @@ impl Component for AudioShell {
             self.publish_mpris_snapshot();
         });
     }
+}
+
+/// How long the volume stays put before it is saved.
+const VOLUME_SAVE_DELAY: std::time::Duration = std::time::Duration::from_millis(500);
+
+/// Save the volume when the window closes, before the close checks for unsaved
+/// settings, so a change still inside [`VOLUME_SAVE_DELAY`] is kept. Connected
+/// on the content's first realize, which precedes the map that binds that check.
+fn save_volume_on_close(root: &gtk::Box, mpv: Option<&Arc<MpvBackend>>, settings: &Settings) {
+    let Some(mpv) = mpv.map(Arc::downgrade) else {
+        return;
+    };
+    let settings = settings.clone();
+    let done = std::cell::Cell::new(false);
+    root.connect_realize(move |root| {
+        if done.replace(true) {
+            return;
+        }
+        let Some(window) = root.root().and_downcast::<gtk::Window>() else {
+            return;
+        };
+        let mpv = mpv.clone();
+        let settings = settings.clone();
+        window.connect_close_request(move |_| {
+            if let Some(mpv) = mpv.upgrade() {
+                settings.put_audio_volume_percent(mpv.get_volume());
+            }
+            glib::Propagation::Proceed
+        });
+    });
 }
 
 #[cfg(test)]

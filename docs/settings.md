@@ -60,9 +60,9 @@ otherwise.
 
 | Key | Type | Default | Notes |
 |---|---|---|---|
-| `volume` | number | `1.0` |  |
+| `volume` | number | `1` | The video player's volume as a fraction of 100%, saved half a second after it stops changing and at close. It starts at this value, kept within 0 and `volume-max`. |
 | `volume-max` | integer | `150` | Percent; the players keep it within 100 to 200. |
-| `audio-volume` | integer | `100` |  |
+| `audio-volume` | integer | `100` | The audio player's volume in percent, saved and restored like `volume`. |
 | `audio-output` | string | empty |  |
 | `audio-channels` | string | empty |  |
 | `preferred-audio-lang` | string | empty |  |

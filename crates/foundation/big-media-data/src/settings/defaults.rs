@@ -8,7 +8,7 @@ pub(super) fn defaults() -> HashMap<String, String> {
     values.insert("audio-appearance-window-width".into(), "500".into());
     values.insert("audio-appearance-window-height".into(), "400".into());
 
-    values.insert("volume".into(), "1.0".into());
+    values.insert("volume".into(), "1".into());
 
     values.insert("hwdec".into(), "auto-safe".into());
     values.insert("deinterlace".into(), "false".into());

@@ -281,7 +281,7 @@ pub(super) fn build_start_box(
 
     // Volume: the one the player has, and the PC's own beside it while the
     // player plays along with a TV that has the first.
-    let initial_volume = settings.get_double(keys::VOLUME) * 100.0;
+    let initial_volume = settings.video_volume_percent();
     let volume = build_volume_control(settings, mpv, Some(tv), &i18n("TV"), initial_volume);
     let pc_volume = build_volume_control(settings, mpv, None, &i18n("PC"), initial_volume);
     pc_volume.volume_box.set_visible(false);

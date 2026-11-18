@@ -111,6 +111,10 @@ impl AudioShell {
                     .volume
                     .lock()
                     .unwrap_or_else(PoisonError::into_inner) = vol;
+                let settings = self.settings.clone();
+                self.volume_save.run(move || {
+                    settings.put_audio_volume_percent(vol);
+                });
                 self.playback_bar
                     .emit(AudioPlaybackBarInput::SetVolumeIndicator {
                         label: format!("{vol:.0}"),
@@ -232,13 +236,8 @@ pub(super) fn build_mpv_backend(
         &replaygain
     });
     mpv.set_replaygain_preamp(settings.get_double(keys::REPLAYGAIN_PREAMP));
-    let volume_max = settings.volume_max_percent();
-    mpv.set_volume_max(i64::from(volume_max));
-    // Zero is a deliberate user choice, not a missing setting.
-    mpv.set_volume(f64::from(restored_volume(
-        settings.get_int_or(keys::AUDIO_VOLUME, 100),
-        volume_max,
-    )));
+    mpv.set_volume_max(i64::from(settings.volume_max_percent()));
+    mpv.set_volume(settings.audio_volume_percent());
     mpv.set_gapless(settings.get_bool(keys::GAPLESS_AUDIO));
     mpv.set_audio_pitch_correction(settings.get_bool(keys::AUDIO_PITCH_CORRECTION));
     mpv.set_audio_channels(&settings.get_string(keys::AUDIO_CHANNELS));
@@ -256,22 +255,4 @@ pub(super) fn build_mpv_backend(
     });
 
     Ok(Arc::new(mpv))
-}
-
-fn restored_volume(saved: i32, volume_max: i32) -> i32 {
-    saved.clamp(0, volume_max)
-}
-
-#[cfg(test)]
-mod review_tests {
-    use super::restored_volume;
-
-    #[test]
-    fn restored_volume_keeps_zero_and_clamps() {
-        assert_eq!(restored_volume(0, 150), 0);
-        assert_eq!(restored_volume(-1, 150), 0);
-        assert_eq!(restored_volume(65, 150), 65);
-        assert_eq!(restored_volume(180, 150), 150);
-        assert_eq!(restored_volume(i32::MAX, 200), 200);
-    }
 }

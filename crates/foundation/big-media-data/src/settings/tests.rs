@@ -118,6 +118,25 @@ fn volume_max_stays_in_preference_range() {
 }
 
 #[test]
+fn saved_volume_keeps_zero_within_maximum() {
+    let settings = Settings::memory_only();
+    assert_eq!(settings.audio_volume_percent(), 100.0);
+    assert_eq!(settings.video_volume_percent(), 100.0);
+    for (saved, expected) in [(0.0, 0.0), (37.0, 37.0), (150.0, 150.0), (180.0, 150.0)] {
+        settings.put_audio_volume_percent(saved);
+        settings.put_video_volume_percent(saved);
+        assert_eq!(settings.audio_volume_percent(), expected, "audio {saved}");
+        assert_eq!(settings.video_volume_percent(), expected, "video {saved}");
+    }
+    settings.put_int(keys::VOLUME_MAX, 200);
+    assert_eq!(settings.audio_volume_percent(), 180.0);
+    assert_eq!(settings.get_int(keys::AUDIO_VOLUME), 180);
+    assert_eq!(settings.get_double(keys::VOLUME), 1.8);
+    settings.put_int(keys::AUDIO_VOLUME, -5);
+    assert_eq!(settings.audio_volume_percent(), 0.0);
+}
+
+#[test]
 fn serialized_settings_read_back_unchanged() {
     const KEYS: [&str; 8] = [
         "deinterlace",
