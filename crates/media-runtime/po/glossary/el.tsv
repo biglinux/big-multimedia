@@ -18,7 +18,7 @@ mpv Options	Επιλογές mpv	catalog
 sidebar	πλευρική στήλη	catalog, nautilus
 top bar, bottom bar	πάνω γραμμή, κάτω γραμμή	catalog Γραμμή ελέγχου (libadwaita has Πάνω Μπάρα)
 Paused	Σε παύση	gtk40
-retry	Δοκιμή ξανά	catalog δοκιμάστε ξανά
+retry	Επανάληψη	nautilus (catalog δοκιμάστε ξανά in sentences)
 scan (library)	σάρωση	catalog
 playback engine	μηχανή αναπαραγωγής	new term
 entry (playlist)	εγγραφή	catalog

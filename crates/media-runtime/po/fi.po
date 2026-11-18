@@ -5330,7 +5330,7 @@ msgstr "Lopeta aseman {station} tallennus"
 #: crates/ui/media/big-player-ui/src/radio_panel/widgets.rs:121
 #, rust-format
 msgid "Record {station}"
-msgstr "Tallenna {station}"
+msgstr "Aloita aseman {station} tallennus"
 
 #: crates/ui/media/big-player-ui/src/radio_panel/widgets.rs:196
 msgid "Search radios..."

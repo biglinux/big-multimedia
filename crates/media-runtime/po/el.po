@@ -703,7 +703,7 @@ msgstr "Δεν ήταν δυνατό το άνοιγμα της βιβλιοθή
 
 #: crates/big-audio-player/src/audio/ui/audio_shell/queue_persistence.rs:57
 msgid "Retry"
-msgstr "Δοκιμή ξανά"
+msgstr "Επανάληψη"
 
 #: crates/big-audio-player/src/audio/ui/audio_shell/queue_persistence.rs:60
 msgid ""
@@ -751,8 +751,8 @@ msgstr "Δεν ήταν δυνατή η αφαίρεση του σταθμού."
 #: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:230
 msgid "There is no Music or home folder to save recordings in."
 msgstr ""
-"Δεν υπάρχει φάκελος Μουσική ή προσωπικός φάκελος για την αποθήκευση των "
-"εγγραφών."
+"Δεν υπάρχει ούτε φάκελος Μουσική ούτε προσωπικός φάκελος για την αποθήκευση "
+"των εγγραφών."
 
 #: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:276
 #: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:284
@@ -2897,8 +2897,8 @@ msgid ""
 "There is no Pictures or home folder to save screenshots in. Choose a folder "
 "in Preferences."
 msgstr ""
-"Δεν υπάρχει φάκελος Εικόνες ή προσωπικός φάκελος για την αποθήκευση των "
-"στιγμιότυπων οθόνης. Επιλέξτε φάκελο στις Προτιμήσεις."
+"Δεν υπάρχει ούτε φάκελος Εικόνες ούτε προσωπικός φάκελος για την αποθήκευση "
+"των στιγμιότυπων οθόνης. Επιλέξτε φάκελο στις Προτιμήσεις."
 
 #: crates/big-video-player/src/video/ui/menu_dialogs.rs:127
 #, rust-format
@@ -4277,7 +4277,8 @@ msgstr "Κανένα πρόσφατο αρχείο δεν ταιριάζει"
 
 #: crates/big-video-player/src/video/ui/video_shell/playback.rs:196
 msgid "The screenshot took too long and was not saved"
-msgstr "Η λήψη του στιγμιότυπου οθόνης διήρκεσε πολύ και δεν αποθηκεύτηκε"
+msgstr ""
+"Η λήψη του στιγμιότυπου οθόνης διήρκεσε υπερβολικά πολύ και δεν αποθηκεύτηκε"
 
 #: crates/big-video-player/src/video/ui/video_shell/playback.rs:223
 msgid "Could not play this file — it may be unsupported or corrupt."

@@ -748,7 +748,8 @@ msgstr "Nie można usunąć stacji."
 #: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:230
 msgid "There is no Music or home folder to save recordings in."
 msgstr ""
-"Brak folderu Muzyka lub folderu domowego, w którym można zapisywać nagrania."
+"Nie ma folderu Muzyka ani folderu domowego, w którym można zapisywać "
+"nagrania."
 
 #: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:276
 #: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:284
@@ -2864,7 +2865,7 @@ msgid ""
 "There is no Pictures or home folder to save screenshots in. Choose a folder "
 "in Preferences."
 msgstr ""
-"Brak folderu Obrazy lub folderu domowego, w którym można zapisywać zrzuty "
+"Nie ma folderu Obrazy ani folderu domowego, w którym można zapisywać zrzuty "
 "ekranu. Wybierz folder w Preferencjach."
 
 #: crates/big-video-player/src/video/ui/menu_dialogs.rs:127

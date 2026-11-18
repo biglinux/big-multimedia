@@ -1833,7 +1833,7 @@ msgstr "Alternar barra de arquivos"
 
 #: crates/big-video-player/src/video/keybindings.rs:318
 msgid "Toggle playlist sidebar"
-msgstr "Alternar barra de lista de reprodução"
+msgstr "Alternar barra lateral da lista de reprodução"
 
 #: crates/big-video-player/src/video/keybindings.rs:325
 msgid "Media information"
@@ -4609,8 +4609,8 @@ msgid ""
 "The player plays the video too, in step with the TV, with its own volume "
 "starting silent."
 msgstr ""
-"O reprodutor também reproduz o vídeo, sincronizado com a TV, com volume "
-"próprio começando sem som."
+"O reprodutor também toca o vídeo, sincronizado com a TV, com volume próprio "
+"que começa sem som."
 
 #: crates/media-runtime/src/cast/tv/card.rs:226
 msgid "Starting on the TV…"

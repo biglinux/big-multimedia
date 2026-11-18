@@ -1,6 +1,6 @@
 use glib::variant::ToVariant;
 use gtk::{gio, glib};
-use log::{info, warn};
+use log::warn;
 use std::cell::{Cell, OnceCell};
 use std::rc::Rc;
 use std::sync::Arc;
@@ -192,7 +192,6 @@ impl Mpris {
                 publisher_taskbar,
             ) {
                 Ok(player) => {
-                    info!("MPRIS2 service started on {bus_name}");
                     let _ = slot.set(player);
                 }
                 Err(e) => warn!("MPRIS: failed to export {e}"),
@@ -234,7 +233,7 @@ impl Mpris {
             "Seeked",
             Some(&(position_us,).to_variant()),
         ) {
-            log::debug!("MPRIS: Seeked not sent: {error}");
+            log::warn!("MPRIS: Seeked not sent: {error}");
         }
     }
 }

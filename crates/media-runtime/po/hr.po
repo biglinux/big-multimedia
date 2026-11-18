@@ -5139,7 +5139,7 @@ msgstr "Uredi rez"
 
 #: crates/ui/media/big-player-ui/src/cut_edit_dialog.rs:31
 msgid "Start and end must be at least 0.1 seconds apart"
-msgstr "Početak i kraj moraju biti udaljeni najmanje 0,1 sekundu"
+msgstr "Početak i kraj moraju biti udaljeni najmanje 0,1 sekunde"
 
 #: crates/ui/media/big-player-ui/src/cut_edit_dialog.rs:42
 msgid "Edit Cut"

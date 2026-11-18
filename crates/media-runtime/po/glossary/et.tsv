@@ -27,3 +27,4 @@ register	formal plural imperative in messages, singular imperative on buttons	ca
 Return (key)	Enter	gtk40 keyboard label
 Left / Right (keys)	Alt+vasakule / Alt+paremale	catalog Alt+üles style
 quotation marks	„ “	catalog: „Halda…“
+Paused	Pausil	catalog: Pause = Paus; Peata is Stop playback

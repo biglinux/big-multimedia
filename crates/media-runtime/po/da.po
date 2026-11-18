@@ -814,7 +814,7 @@ msgstr "Scanning annulleret"
 
 #: crates/big-audio-player/src/audio/ui/audio_shell/update.rs:139
 msgid "Scan incomplete"
-msgstr "Scanning ufuldstændig"
+msgstr "Scanning ikke fuldført"
 
 #: crates/big-audio-player/src/audio/ui/audio_shell/update.rs:142
 #, rust-format
@@ -2410,8 +2410,8 @@ msgid ""
 "This playlist has IPTV channels from a provider that is not set up. Add the "
 "provider under IPTV, then open the playlist again."
 msgstr ""
-"Denne afspilningsliste har IPTV-kanaler fra en udbyder, der ikke er sat op. "
-"Tilføj udbyderen under IPTV, og åbn derefter afspilningslisten igen."
+"Denne afspilningsliste indeholder IPTV-kanaler fra en udbyder, der ikke er "
+"sat op. Tilføj udbyderen under IPTV, og åbn derefter afspilningslisten igen."
 
 #: crates/big-video-player/src/video/ui/iptv/providers_dialog.rs:48
 msgid "Add provider"
@@ -2523,7 +2523,7 @@ msgstr ""
 #: crates/big-video-player/src/video/ui/iptv/providers_dialog.rs:425
 msgid "The password is saved in your keyring. Leave Password empty to keep it."
 msgstr ""
-"Adgangskoden er gemt i din nøglering. Lad Adgangskode stå tomt for at "
+"Adgangskoden er gemt i din nøglering. Lad feltet Adgangskode stå tomt for at "
 "beholde den."
 
 #: crates/big-video-player/src/video/ui/iptv/providers_dialog.rs:433
