@@ -161,10 +161,7 @@ fn subtitle_timing_row(mpv: &MpvSlot) -> gtk::Box {
         .margin_start(6)
         .margin_end(6)
         .build();
-    let delay = mpv
-        .borrow()
-        .as_ref()
-        .map_or(0.0, |mpv| mpv.get_property_f64("sub-delay"));
+    let delay = mpv.borrow().as_ref().map_or(0.0, |mpv| mpv.sub_delay());
     let value = gtk::Label::builder()
         .label(format!("{delay:+.1} s"))
         .hexpand(true)
@@ -175,7 +172,7 @@ fn subtitle_timing_row(mpv: &MpvSlot) -> gtk::Box {
         let mpv = mpv.clone();
         move |label| {
             if let Some(mpv) = mpv.borrow().as_ref() {
-                label.set_label(&format!("{:+.1} s", mpv.get_property_f64("sub-delay")));
+                label.set_label(&format!("{:+.1} s", mpv.sub_delay()));
             }
         }
     });
@@ -186,10 +183,9 @@ fn subtitle_timing_row(mpv: &MpvSlot) -> gtk::Box {
         let label = value.downgrade();
         button.connect_clicked(move |_| {
             if let Some(mpv) = mpv.borrow().as_ref() {
-                let delay = ((mpv.get_property_f64("sub-delay") + step) * 10.0).round() / 10.0;
-                mpv.set_sub_delay(delay);
+                mpv.set_sub_delay(((mpv.sub_delay() + step) * 10.0).round() / 10.0);
                 if let Some(label) = label.upgrade() {
-                    label.set_label(&format!("{delay:+.1} s"));
+                    label.set_label(&format!("{:+.1} s", mpv.sub_delay()));
                 }
             }
         });

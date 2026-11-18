@@ -67,7 +67,8 @@ impl FilePicker {
         self
     }
 
-    /// Adds a filter named `name` matching glob patterns such as `"*.m3u"`.
+    /// Adds a filter named `name` matching glob patterns such as `"*"`. A
+    /// pattern is case-sensitive: match extensions with [`Self::filter`].
     pub fn pattern_filter(mut self, name: &str, patterns: &[&str]) -> Self {
         let filter = gtk::FileFilter::new();
         filter.set_name(Some(name));

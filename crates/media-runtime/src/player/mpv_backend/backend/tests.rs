@@ -474,3 +474,17 @@ fn list_targets_never_reach_loadfile() {
         .collect();
     assert_eq!(written, ["person"]);
 }
+
+#[cfg(feature = "video")]
+#[test]
+fn subtitle_delay_stays_within_limit() {
+    let (backend, _rx) = null_output_backend("test-sub-delay");
+    for (asked, applied) in [(25.0, 10.0), (-25.0, -10.0), (-2.5, -2.5)] {
+        backend.set_sub_delay(asked);
+        assert_eq!(
+            backend.get_property_f64("sub-delay"),
+            applied,
+            "asked {asked}"
+        );
+    }
+}

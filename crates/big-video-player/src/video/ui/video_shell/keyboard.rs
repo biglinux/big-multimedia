@@ -270,22 +270,15 @@ fn dispatch_video_shortcut(
 
     // While a TV has the controls, seeking and volume keys drive it.
     if let Some(state) = tv.attached() {
-        let seek = |offset: f64| {
-            if state.can_seek {
-                let target = (state.position + offset).clamp(0.0, state.duration.max(0.0));
-                tv.control("seek-to", target);
-            }
-        };
         let volume = state.volume.unwrap_or(1.0);
         match action {
-            "seek-forward" => seek(SEEK_SHORT_SECS),
-            "seek-backward" => seek(-SEEK_SHORT_SECS),
-            "seek-forward-long" => seek(SEEK_LONG_SECS),
-            "seek-backward-long" => seek(-SEEK_LONG_SECS),
-            "volume-up" => tv.control("volume", (volume + VOLUME_STEP / 100.0).min(1.0)),
-            "volume-down" => tv.control("volume", (volume - VOLUME_STEP / 100.0).max(0.0)),
-            "mute" if state.muted == Some(true) => tv.control("unmute", 0.0),
-            "mute" => tv.control("mute", 0.0),
+            "seek-forward" => tv.seek_by(SEEK_SHORT_SECS),
+            "seek-backward" => tv.seek_by(-SEEK_SHORT_SECS),
+            "seek-forward-long" => tv.seek_by(SEEK_LONG_SECS),
+            "seek-backward-long" => tv.seek_by(-SEEK_LONG_SECS),
+            "volume-up" => tv.set_volume(volume + VOLUME_STEP / 100.0),
+            "volume-down" => tv.set_volume(volume - VOLUME_STEP / 100.0),
+            "mute" => tv.set_muted(state.muted != Some(true)),
             // Speed and frame steps have no meaning on a TV stream.
             _ => return false,
         }

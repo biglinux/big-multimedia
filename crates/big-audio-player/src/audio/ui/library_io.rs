@@ -12,6 +12,7 @@ use std::path::Path;
 use adw::prelude::*;
 
 use big_app_kit::file_dialogs::FilePicker;
+use big_media_components::media::files::PLAYLIST_EXTENSIONS;
 use big_relm4_components::input::button_content::{BigButtonContentSpec, build_button};
 use big_relm4_components::layout::{
     dialog_page::BigDialogPage,
@@ -49,7 +50,7 @@ pub(super) fn export_detail_m3u8(
     FilePicker::save_file(i18n("Export Playlist"))
         .accept_label(i18n("Save"))
         .initial_name("playlist.m3u8")
-        .pattern_filter(&i18n("M3U8 Playlist"), &["*.m3u8", "*.m3u"])
+        .filter(&i18n("M3U8 Playlist"), crate::media::playlist_scan::M3U_EXTENSIONS)
         .save(parent, move |path| {
             crate::settings::saving::acknowledged_task(
                 false,
@@ -75,7 +76,7 @@ pub(super) fn import_playlist(parent: &gtk::Window, sender: &ComponentSender<Lib
     let out = sender.clone();
     FilePicker::new(i18n("Import Playlist"))
         .accept_label(i18n("Open"))
-        .pattern_filter(&i18n("Playlists"), &["*.m3u", "*.m3u8", "*.pls"])
+        .filter(&i18n("Playlists"), PLAYLIST_EXTENSIONS)
         .open(parent, move |path| {
             let _ = out.output(LibraryPanelOutput::ImportPlaylistFile { path });
         });

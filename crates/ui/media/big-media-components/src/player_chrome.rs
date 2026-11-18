@@ -246,7 +246,8 @@ pub fn build_voice_popover(
     scroll_moves(parent, &scale, VOICE_SCROLL_PERCENT);
 
     let trough = gtk::CssProvider::new();
-    let initial_color = voice_trough_color(voice_spec.initial_strength_percent);
+    let initial_color =
+        voice_trough_color(voice_spec.initial_strength_percent, VOICE_MAXIMUM_PERCENT);
     update_scale_trough(&trough, "voice-scale", &initial_color);
     let shown_color = std::cell::RefCell::new(initial_color);
     big_gtk_kit::css::add_provider_for_widget_lifetime(
@@ -266,7 +267,7 @@ pub fn build_voice_popover(
         let external_voice_label = voice_label.clone();
         scale.connect_value_changed(move |scale| {
             let voice_strength = scale.value();
-            let color = voice_trough_color(voice_strength);
+            let color = voice_trough_color(voice_strength, VOICE_MAXIMUM_PERCENT);
             if *shown_color.borrow() != color {
                 update_scale_trough(&trough, "voice-scale", &color);
                 *shown_color.borrow_mut() = color;
@@ -384,9 +385,45 @@ fn next_voice_preset(current_strength_percent: f64) -> Option<f64> {
     )
 }
 
+/// Symbolic icon of a volume control at `volume` percent. Muted and level 0
+/// share the crossed-out speaker: either way nothing plays.
+#[must_use]
+pub fn volume_icon_name(volume: f64, muted: bool) -> &'static str {
+    if muted || volume <= 0.0 {
+        "audio-volume-muted-symbolic"
+    } else if volume < 34.0 {
+        "audio-volume-low-symbolic"
+    } else if volume < 67.0 {
+        "audio-volume-medium-symbolic"
+    } else {
+        "audio-volume-high-symbolic"
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn volume_icon_follows_level_and_mute() {
+        for (volume, muted, icon) in [
+            (-1.0, false, "audio-volume-muted-symbolic"),
+            (0.0, false, "audio-volume-muted-symbolic"),
+            (0.1, false, "audio-volume-low-symbolic"),
+            (33.9, false, "audio-volume-low-symbolic"),
+            (34.0, false, "audio-volume-medium-symbolic"),
+            (66.9, false, "audio-volume-medium-symbolic"),
+            (67.0, false, "audio-volume-high-symbolic"),
+            (150.0, false, "audio-volume-high-symbolic"),
+            (80.0, true, "audio-volume-muted-symbolic"),
+        ] {
+            assert_eq!(
+                volume_icon_name(volume, muted),
+                icon,
+                "{volume} muted={muted}"
+            );
+        }
+    }
 
     #[test]
     fn play_pulse_names_class_and_duration() {

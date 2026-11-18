@@ -1,0 +1,15 @@
+id: volume-indicator-owner
+language: rust
+severity: error
+message: Build the audio volume readout with volume_indicator(volume, muted)
+note: >-
+  crates/big-audio-player/src/audio/ui/audio_shell/playback.rs owns the readout,
+  so every path shows the mute state; the icon itself is
+  big_media_components::player_chrome::volume_icon_name.
+rule:
+  kind: struct_expression
+  has:
+    field: name
+    regex: SetVolumeIndicator$
+ignores:
+  - crates/big-audio-player/src/audio/ui/audio_shell/playback.rs

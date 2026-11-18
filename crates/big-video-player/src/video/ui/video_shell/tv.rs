@@ -12,7 +12,7 @@ impl VideoShell {
         match action {
             TvCardAction::Stop => {
                 self.tv_pill.popdown();
-                self.tv.control("stop", 0.0);
+                self.tv.stop();
             }
             TvCardAction::ToggleRelease if self.tv.released() => self.attach_tv(),
             TvCardAction::ToggleRelease => self.release_tv(),
