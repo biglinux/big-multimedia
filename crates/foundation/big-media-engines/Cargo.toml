@@ -19,6 +19,7 @@ categories = ["multimedia", "parser-implementations"]
 serde_json = { workspace = true, optional = true }
 # Not optional: the always-compiled `queue` module logs too.
 log = { workspace = true }
+big-os-kit = { workspace = true }
 
 [features]
 # Radio-Browser API response parser (pulls serde_json).
