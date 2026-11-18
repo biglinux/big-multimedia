@@ -538,7 +538,6 @@ fn next_event(
             MpvEvent::EndFile(reason) => {
                 poll.seek_pending = false;
                 poll.last_eof = true;
-                debug!("[MPV-EVENT] EndFile reason={reason:?} (from mpv event queue)");
                 return Some(PlayerEvent::EndFile(reason));
             }
             MpvEvent::Shutdown => return Some(PlayerEvent::Shutdown),
