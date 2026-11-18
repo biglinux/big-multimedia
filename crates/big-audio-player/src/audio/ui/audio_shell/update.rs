@@ -173,9 +173,6 @@ impl AudioShell {
                 }
                 self.commit_queue();
             }
-            AudioShellInput::DetailResolved(tracks) => {
-                self.library.emit(LibraryPanelInput::PopulateDetail(tracks));
-            }
             AudioShellInput::NodeTracksResolved(tracks) => self.enqueue_tracks(tracks),
             AudioShellInput::RebuildLibraryTree => self.rebuild_library_tree(&sender),
             AudioShellInput::LibraryTreeFailed { generation } => {
