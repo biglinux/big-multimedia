@@ -589,6 +589,7 @@ impl Component for VideoShell {
                 tv_here: None,
                 playlist_second: -1,
                 mpv,
+                engine_failure: None,
                 video_start,
                 duration_secs: 0.0,
                 settings,
@@ -639,6 +640,10 @@ impl Component for VideoShell {
                     // playlist), so MPRIS sees the final position.
                     self.on_player_event(event.clone(), window_ref);
                     self.mirror_mpris(&event);
+                }
+                VideoShellInput::EngineFailed(message) => {
+                    self.notify(&message);
+                    self.engine_failure = Some(message);
                 }
                 VideoShellInput::Mpris(command) => {
                     self.handle_mpris_command(command, &sender, gtk_window_ref);

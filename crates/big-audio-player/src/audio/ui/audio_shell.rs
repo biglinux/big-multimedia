@@ -180,6 +180,9 @@ pub struct AudioShell {
     /// Audio playback backend (system libmpv). Built once at init; `None` only
     /// if the engine failed to initialize.
     mpv: Option<Arc<MpvBackend>>,
+    /// Why the engine failed to start, said again whenever something is asked
+    /// to play; set exactly when `mpv` is `None`.
+    engine_failure: Option<String>,
     shutdown_handler: Option<(glib::WeakRef<gio::Application>, glib::SignalHandlerId)>,
     _shell_input: crate::shared::app_base::ShellInputRegistration<relm4::Sender<AudioShellInput>>,
     /// Writer DB handle (queue persistence, ratings, playlists, deletes); read

@@ -10,6 +10,8 @@ use super::trim::VideoTrimBarOutput;
 pub enum VideoShellInput {
     /// An mpv backend event (position, duration, pause, EOF, …).
     Player(PlayerEvent),
+    /// mpv could not start; the message says why and what to do.
+    EngineFailed(String),
     /// An intent emitted by the OSD controls bar.
     Controls(VideoControlsBarOutput),
     /// An intent emitted by the folder-browser sidebar.

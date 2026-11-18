@@ -174,6 +174,9 @@ impl AudioShell {
                 }
             }
             RadioPanelOutput::PlayStation { url, name } => {
+                if self.report_missing_engine() {
+                    return;
+                }
                 self.mpris_state.invalidate();
                 self.is_playing = true;
                 self.is_stream = true;
@@ -206,9 +209,18 @@ impl AudioShell {
         self.notice.show(message);
     }
 
+    /// Say again why nothing can play when the engine failed to start; true then.
+    pub(super) fn report_missing_engine(&self) -> bool {
+        let Some(failure) = &self.engine_failure else {
+            return false;
+        };
+        self.notify(failure);
+        true
+    }
+
     /// Start recording the current radio stream into `~/Music/Radio Recordings`.
     pub(super) fn record_radio_stream(&mut self, sender: &ComponentSender<Self>) {
-        if self.mpv.is_none() {
+        if self.report_missing_engine() {
             return;
         }
         let music_dir = glib::user_special_dir(glib::UserDirectory::Music)

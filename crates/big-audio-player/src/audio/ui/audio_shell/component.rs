@@ -482,7 +482,13 @@ impl Component for AudioShell {
         });
         queue_persistence.bind_failure_banner(&queue_save_banner, queue_updates);
         queue_persistence.load(&sender);
-        let mpv = build_mpv_backend(&sender, &settings);
+        let (mpv, engine_failure) = match build_mpv_backend(&sender, &settings) {
+            Ok(mpv) => (Some(mpv), None),
+            Err(message) => {
+                notice.show(&message);
+                (None, Some(message))
+            }
+        };
         // Standalone shutdown can precede model destruction; save while mpv is alive.
         let shutdown_handler = gio::Application::default().and_then(|app| {
             let weak = Arc::downgrade(mpv.as_ref()?);
@@ -570,6 +576,7 @@ impl Component for AudioShell {
                 trim_ranges: Vec::new(),
                 trim_play_selection: false,
                 mpv,
+                engine_failure,
                 shutdown_handler,
                 _shell_input: shell_input,
                 db: None,

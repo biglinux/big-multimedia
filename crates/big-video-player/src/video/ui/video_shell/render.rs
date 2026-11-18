@@ -77,6 +77,11 @@ pub(super) fn wire_realize(
             Ok(backend) => Arc::new(backend),
             Err(e) => {
                 error!("video: failed to init mpv: {e}");
+                let message = i18n(
+                    "The playback engine could not start: {error}. Check Preferences → Advanced → mpv Options, then reopen the player.",
+                )
+                .replace("{error}", &e.to_string());
+                sender.input(VideoShellInput::EngineFailed(message));
                 return;
             }
         };

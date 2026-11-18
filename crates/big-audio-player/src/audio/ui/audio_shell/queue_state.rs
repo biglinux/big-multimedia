@@ -44,6 +44,9 @@ impl AudioShell {
     }
 
     pub(super) fn play_current_as(&mut self, status: PlaybackStatus) {
+        if status != PlaybackStatus::Stopped && self.report_missing_engine() {
+            return;
+        }
         let Some(path) = self.queue.current().map(|track| track.file_path.clone()) else {
             return;
         };

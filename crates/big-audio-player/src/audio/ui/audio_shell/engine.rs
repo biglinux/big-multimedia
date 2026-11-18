@@ -199,12 +199,12 @@ impl AudioShell {
 }
 
 /// Build the mpv audio backend, apply persisted audio settings, and spawn the
-/// event loop that forwards `PlayerEvent`s into the shell. Returns `None` if the
-/// engine fails to initialize (the UI still loads; playback is unavailable).
+/// event loop that forwards `PlayerEvent`s into the shell. When the engine
+/// fails to initialize, the error is the message that tells the person why.
 pub(super) fn build_mpv_backend(
     sender: &ComponentSender<AudioShell>,
     settings: &Settings,
-) -> Option<Arc<MpvBackend>> {
+) -> Result<Arc<MpvBackend>, String> {
     let (tx, rx) = async_channel::bounded::<PlayerEvent>(64);
     let mpv = match MpvBackend::new_audio_only_with_output(
         tx,
@@ -213,7 +213,10 @@ pub(super) fn build_mpv_backend(
         Ok(mpv) => mpv,
         Err(e) => {
             log::error!("failed to initialize mpv audio backend: {e}");
-            return None;
+            return Err(i18n(
+                "The playback engine could not start: {error}. Check Preferences → Audio → Audio Output, then reopen the player.",
+            )
+            .replace("{error}", &e.to_string()));
         }
     };
 
@@ -245,7 +248,7 @@ pub(super) fn build_mpv_backend(
         }
     });
 
-    Some(Arc::new(mpv))
+    Ok(Arc::new(mpv))
 }
 
 fn restored_volume(saved: i32) -> i32 {

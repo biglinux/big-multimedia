@@ -289,7 +289,7 @@ impl VideoShell {
         start: usize,
         folder: Option<String>,
     ) {
-        if entries.is_empty() {
+        if entries.is_empty() || self.report_missing_engine() {
             self.reveal_pending_welcome();
             return;
         }
@@ -313,6 +313,7 @@ impl VideoShell {
         }
         let mpv_ref = self.mpv.borrow();
         let Some(mpv) = mpv_ref.as_ref() else {
+            self.report_missing_engine();
             return;
         };
         let Some(chosen) = entries.get(start).or(entries.first()) else {
@@ -452,6 +453,15 @@ impl VideoShell {
     /// Tell the person something, in the row above the content.
     pub(crate) fn notify(&self, message: &str) {
         self.notice.show(message);
+    }
+
+    /// Say again why nothing can play when mpv failed to start; true then.
+    fn report_missing_engine(&self) -> bool {
+        let Some(failure) = &self.engine_failure else {
+            return false;
+        };
+        self.notify(failure);
+        true
     }
 
     /// Queue the chosen files in the video converter (an already-running
@@ -688,6 +698,7 @@ impl VideoShell {
             start_video();
         }
         let Some(mpv) = self.mpv.borrow().clone() else {
+            self.report_missing_engine();
             return;
         };
         if title.is_empty() {
