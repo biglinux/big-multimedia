@@ -11,7 +11,7 @@
 //! Pages are rebuilt from mpv and `Settings` each time they open, so they
 //! never show a stale value.
 
-use super::adjustments::{Adjustment, detect};
+use super::adjustments::{Adjustment, changes_summary, detect};
 use super::*;
 use big_relm4_components::feedback::tooltip;
 
@@ -233,19 +233,6 @@ fn page_of(adjustment: &Adjustment) -> Option<PanelPage> {
     }
 }
 
-/// "Normal", the one change by name, or how many there are.
-fn summary(changes: &[&Adjustment], normal: String) -> (String, bool) {
-    match changes {
-        [] => (normal, false),
-        [only] => (only.label(), true),
-        many => (
-            ni18n("{n} change", "{n} changes", many.len() as u64)
-                .replace("{n}", &many.len().to_string()),
-            true,
-        ),
-    }
-}
-
 fn group(title: &str, description: Option<&str>) -> adw::PreferencesGroup {
     let group = adw::PreferencesGroup::builder().title(title).build();
     if let Some(description) = description {
@@ -427,7 +414,8 @@ impl VideoShell {
                 .iter()
                 .filter(|a| page_of(a) == Some(page))
                 .collect();
-            let (state, changed) = summary(&changes, i18n("Normal"));
+            let (state, changed) = changes_summary(&changes)
+                .map_or_else(|| (i18n("Normal"), false), |text| (text, true));
             Block {
                 icon,
                 name,

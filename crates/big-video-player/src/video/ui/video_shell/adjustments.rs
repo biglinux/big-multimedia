@@ -151,6 +151,18 @@ fn seconds(value: f64) -> String {
     format!("{:.1}", value.abs())
 }
 
+/// The one change by name, or how many there are; `None` when nothing changed.
+pub(super) fn changes_summary(changes: &[&Adjustment]) -> Option<String> {
+    match changes {
+        [] => None,
+        [only] => Some(only.label()),
+        many => Some(
+            ni18n("{n} change", "{n} changes", many.len() as u64)
+                .replace("{n}", &many.len().to_string()),
+        ),
+    }
+}
+
 impl Adjustment {
     /// What the chip says, in words for people who never opened the dialog.
     pub(super) fn label(&self) -> String {
@@ -303,11 +315,7 @@ impl VideoShell {
             found.push(Adjustment::SleepTimer(self.sleep_timer.remaining_secs()));
         }
         let names: Vec<String> = found.iter().map(Adjustment::label).collect();
-        let text = match names.as_slice() {
-            [only] => only.clone(),
-            many => ni18n("{n} change", "{n} changes", many.len() as u64)
-                .replace("{n}", &many.len().to_string()),
-        };
+        let text = changes_summary(&found.iter().collect::<Vec<_>>()).unwrap_or_default();
         let tooltip = format!("{}\n{}", names.join("\n"), i18n("Click to see or undo"));
         self.adjustments_pill.set_label(&format!("● {text}"));
         self.adjustments_pill.set_tooltip_text(Some(&tooltip));
