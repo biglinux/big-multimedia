@@ -55,9 +55,12 @@ the provider editor, and rewritten only for providers nobody edited meanwhile.
 Until then the panel and the provider list say the password is not in the
 keyring yet. Replacing or removing a secret deletes the old item after the
 provider list is updated; a failed delete is shown, never retried silently.
-Played channel URLs carry the Xtream credentials, so a channel is not added to
-the playlist sidebar, whose Save writes a file, and recent files never take a
-stream.
+Played channel URLs carry the Xtream credentials. The playlist sidebar, whose
+Save writes a file, lists a channel by its stored URL, with `/{credentials}/`
+in their place, and only mpv gets the played URL. A channel whose URL may
+repeat the provider's secret in another form (an M3U URL with credentials, or
+a list cached with them) plays without entering the sidebar. Recent files
+never take a stream.
 
 ## LAN remote
 
