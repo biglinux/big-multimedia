@@ -7,6 +7,8 @@ use adw::prelude::*;
 use relm4::gtk;
 use std::{cell::Cell, rc::Rc};
 
+use crate::input::spin_row::accessible_spin_row;
+
 const DEFAULT_MINUTES: i32 = 30;
 const MIN_MINUTES: f64 = 1.0;
 const MAX_MINUTES: f64 = 480.0;
@@ -161,7 +163,7 @@ impl BigSleepTimerSetupPage {
         let timer_group = adw::PreferencesGroup::builder()
             .title(&spec.labels.duration_group)
             .build();
-        let spin = adw::SpinRow::builder()
+        let spin = accessible_spin_row()
             .title(&spec.labels.minutes_title)
             .adjustment(&gtk::Adjustment::new(
                 f64::from(resolved.minutes),

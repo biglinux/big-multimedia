@@ -5,6 +5,7 @@
 //! optional UI.
 
 use adw::prelude::*;
+use big_relm4_components::input::spin_row::accessible_spin_row;
 use big_relm4_components::list::button_strip_row::{BigButtonStripRow, BigButtonStripRowSpec};
 use gtk::gdk;
 
@@ -128,7 +129,7 @@ pub fn spin_int_row(
         spec.page_increment,
         0.0,
     );
-    let row = adw::SpinRow::builder()
+    let row = accessible_spin_row()
         .title(&spec.title)
         .adjustment(&adj)
         .build();
@@ -162,7 +163,7 @@ pub fn spin_double_row(
         spec.page_increment,
         0.0,
     );
-    let row = adw::SpinRow::builder()
+    let row = accessible_spin_row()
         .title(&spec.title)
         .adjustment(&adj)
         .digits(spec.digits.unwrap_or_default())

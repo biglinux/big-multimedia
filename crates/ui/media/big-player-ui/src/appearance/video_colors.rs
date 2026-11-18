@@ -4,6 +4,7 @@ use adw::prelude::*;
 use big_media_data::i18n::i18n;
 use big_media_data::settings::{Settings, keys};
 use big_relm4_components::input::dropdown_row::{BigDropdownRow, BigDropdownRowSpec};
+use big_relm4_components::input::spin_row::accessible_spin_row;
 use std::rc::Rc;
 
 use super::color_palette_controls::{
@@ -44,7 +45,7 @@ pub fn create_video_colors_page(
         (i18n("Background Opacity"), keys::UI_BG_OPACITY),
         (i18n("Menu Opacity"), keys::UI_MENU_OPACITY),
     ] {
-        let row = adw::SpinRow::builder()
+        let row = accessible_spin_row()
             .title(title)
             .digits(2)
             .adjustment(&gtk::Adjustment::new(

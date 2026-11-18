@@ -9,6 +9,7 @@ use std::time::Duration;
 
 use adw::prelude::*;
 use big_relm4_components::input::dropdown_row::{BigDropdownRow, BigDropdownRowSpec};
+use big_relm4_components::input::spin_row::accessible_spin_row;
 use big_relm4_components::layout::preferences::BigPreferencesGroupSpec;
 use big_relm4_components::list::detail_row::{BigDetailRow, BigDetailRowSpec};
 
@@ -72,7 +73,7 @@ fn build_gpu_sharpen_row(mpv: &Arc<MpvBackend>) -> adw::ExpanderRow {
         0.0,
     );
     expander.add_row(
-        &adw::SpinRow::builder()
+        &accessible_spin_row()
             .title(i18n("Amount"))
             .adjustment(&adjustment)
             .digits(1)
@@ -176,7 +177,7 @@ pub(super) fn build_shaders_group(
         10.0,
         0.0,
     );
-    let intensity_row = adw::SpinRow::builder()
+    let intensity_row = accessible_spin_row()
         .title(i18n("Sharpening Intensity"))
         .subtitle(i18n(
             "Higher values produce a more visible sharpening effect",

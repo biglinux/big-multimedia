@@ -61,6 +61,9 @@ disallowed-methods = [
     { path = "gtk4::PopoverMenu::from_model_full", reason = "GTK 4.24 leaves its items unnamed for screen readers; use `popover_menu::from_model` (crates/ui/generic/big-relm4-components/src/feedback/popover_menu.rs)" },
     { path = "gtk4::PopoverMenu::builder", reason = "GTK 4.24 leaves its items unnamed for screen readers; use `popover_menu::from_model` (crates/ui/generic/big-relm4-components/src/feedback/popover_menu.rs)" },
     { path = "gtk4::MenuButton::set_menu_model", reason = "GTK 4.24 leaves its items unnamed for screen readers; use `popover_menu::set_menu_model` (crates/ui/generic/big-relm4-components/src/feedback/popover_menu.rs)" },
+    { path = "libadwaita::SpinRow::builder", reason = "libadwaita 1.10 hides the row and its spin button from screen readers under GTK 4.24; use `spin_row::accessible_spin_row` (crates/ui/generic/big-relm4-components/src/input/spin_row.rs)" },
+    { path = "libadwaita::SpinRow::new", reason = "libadwaita 1.10 hides the row and its spin button from screen readers under GTK 4.24; use `spin_row::accessible_spin_row` (crates/ui/generic/big-relm4-components/src/input/spin_row.rs)" },
+    { path = "libadwaita::SpinRow::with_range", reason = "libadwaita 1.10 hides the row and its spin button from screen readers under GTK 4.24; use `spin_row::accessible_spin_row` (crates/ui/generic/big-relm4-components/src/input/spin_row.rs)" },
     { path = "gtk4::builders::MenuButtonBuilder::menu_model", reason = "GTK 4.24 leaves its items unnamed for screen readers; use `popover_menu::set_menu_model` (crates/ui/generic/big-relm4-components/src/feedback/popover_menu.rs)" },
 ]
 
