@@ -1,6 +1,22 @@
 //! Shared runtime for BigLinux multimedia applications.
+//!
+//! - `app`: process boot (env, gettext, locale, resources), the About dialog
+//!   and the slot that delivers opened files to the open shell.
+//! - `audio_effects`: equalizer, noise reduction and the voice strength slider
+//!   bound to mpv and settings.
+//! - `cast`: client of the BigNetScreen Chromecast/DLNA daemon and the "Play on
+//!   a TV" page and card.
+//! - `converter_handoff`: hands files (and marked cuts) to the converter GUIs.
+//! - `db_query`: off-thread library database queries.
+//! - `media`: playlists, metadata probing, IPTV lists and thumbnails.
+//! - `player`: mpv backend, playback queue and seek-bar preview frames.
+//! - `recent`: recently played files.
+//! - `resources`: compiled GTK resources and the illustrations built from them.
+//! - `settings`: persistent key/value settings store.
+//! - `shortcut_capture`: shortcut capture dialog.
+//! - `sleep_timer`: sleep timer labels, actions, persistence and countdown.
+//! - `theming`: color parsing and Adwaita CSS overrides for custom themes.
 
-/// Client of the BigNetScreen Chromecast/DLNA daemon.
 pub mod cast;
 /// Compile-time configuration constants (paths, domain names), from the
 /// GTK-free `big-media-data` crate.
@@ -19,41 +35,27 @@ pub use big_media_data::library;
 pub use big_media_data::media_probe;
 // Root paths for consumers: `big_media_runtime::Error` / `Result<T>`.
 pub use big_media_data::{Error, Result};
-/// Process boot (env, gettext, locale, resources), the About dialog and the
-/// slot that delivers opened files to the open shell.
 #[cfg(feature = "ui-core")]
 pub mod app;
-/// Audio effects: equalizer, noise reduction, and filter chain management.
 #[cfg(feature = "ui-core")]
 pub mod audio_effects;
-/// Hand files (and marked cuts) to the external converter GUIs.
 #[cfg(feature = "ui-core")]
 pub mod converter_handoff;
-/// Off-thread library database queries.
 #[cfg(feature = "audio")]
 pub mod db_query;
-/// Media utilities: playlist handling, metadata probing, thumbnails.
 #[cfg(feature = "ui-core")]
 pub mod media;
-/// mpv backend, playback queue, and seek-bar preview frames.
 #[cfg(feature = "ui-core")]
 pub mod player;
-/// Recently-played file tracking.
 #[cfg(feature = "ui-core")]
 pub mod recent;
-/// Compiled GTK resources shared by split application crates and the
-/// illustrations built from them.
 #[cfg(feature = "ui-core")]
 pub mod resources;
-/// Persistent key/value settings store.
 #[cfg(feature = "ui-core")]
 pub mod settings;
-/// Shortcut capture dialog.
 #[cfg(feature = "ui-core")]
 pub mod shortcut_capture;
-/// Sleep timer labels, actions, settings persistence and countdown.
 #[cfg(feature = "ui-core")]
 pub mod sleep_timer;
-/// Color parsing and Adwaita CSS override generation for custom themes.
 #[cfg(feature = "ui-core")]
 pub mod theming;
