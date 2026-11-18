@@ -1,7 +1,7 @@
 //! Smartphone integration dialog.
 
 use std::cell::RefCell;
-use std::net::{IpAddr, SocketAddr};
+use std::net::SocketAddr;
 use std::rc::Rc;
 use std::sync::{Arc, atomic::AtomicBool};
 
@@ -14,12 +14,6 @@ use big_relm4_components::{
 };
 
 use super::qr::build_qr_widget;
-
-fn detect_lan_ip() -> Option<IpAddr> {
-    let socket = std::net::UdpSocket::bind("0.0.0.0:0").ok()?;
-    socket.connect("8.8.8.8:80").ok()?;
-    Some(socket.local_addr().ok()?.ip())
-}
 
 /// Present the smartphone web-remote dialog.
 pub fn present<F>(parent: &impl IsA<gtk::Widget>, build_remote: F)
@@ -129,7 +123,7 @@ where
     enable_row.connect_active_notify(move |switch| {
         let active = switch.is_active();
         if active {
-            let Some(ip) = detect_lan_ip() else {
+            let Some(ip) = remote_control::lan_address() else {
                 switch.set_active(false);
                 status_for_toggle.set_text(&i18n(
                     "No local network found. Connect to a network and try again.",
