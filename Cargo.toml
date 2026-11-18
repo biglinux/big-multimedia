@@ -37,7 +37,7 @@ homepage = "https://github.com/biglinux/big-multimedia"
 authors = ["BigLinux contributors"]
 
 [workspace.dependencies]
-adw = { version = "0.9", features = ["v1_9"], package = "libadwaita" }
+adw = { version = "0.9", features = ["v1_9", "gtk_v4_22"], package = "libadwaita" }
 gtk = { version = "0.11", features = ["v4_22"], package = "gtk4" }
 relm4 = { version = "0.11.0", features = ["libadwaita"] }
 log = "0.4"
