@@ -294,8 +294,14 @@ impl Component for AudioTrimBar {
 
     fn update(&mut self, message: Self::Input, sender: ComponentSender<Self>, _root: &Self::Root) {
         match message {
-            AudioTrimBarInput::SetDuration(duration) => self.cuts.set_duration(duration),
-            AudioTrimBarInput::SetPlayhead(playhead) => self.playhead = playhead,
+            AudioTrimBarInput::SetDuration(duration) => {
+                self.cuts.set_duration(duration);
+                return;
+            }
+            AudioTrimBarInput::SetPlayhead(playhead) => {
+                self.playhead = playhead;
+                return;
+            }
             AudioTrimBarInput::MarkHere => {
                 self.cuts.mark(self.playhead);
             }
