@@ -279,14 +279,12 @@ impl Adjustment {
                 }
             }
             Self::ImageEnhancement(choices) => {
-                let keys = [
-                    keys::BUILTIN_UPSCALER,
-                    keys::NEURAL_UPSCALER,
-                    keys::ANIME4K_PRESET,
-                ];
-                for (key, choice) in keys.into_iter().zip(choices) {
-                    let _ = settings.put_string(key, if normal { "" } else { choice });
-                }
+                let restored = if normal {
+                    [""; 3]
+                } else {
+                    choices.each_ref().map(String::as_str)
+                };
+                crate::video::ui::filters::put_enhancements(settings, restored);
                 crate::video::ui::filters::apply_saved_enhancements(mpv, settings);
             }
             Self::SleepTimer(_) => {}

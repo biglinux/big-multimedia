@@ -23,14 +23,14 @@ impl MpvBackend {
     pub fn set_replaygain_preamp(&self, db: f64) {
         let db = db.clamp(-15.0, 15.0);
         self.with_mpv(|mpv| {
-            let _ = mpv.set_property("replaygain-preamp", db);
+            mpv.set_property_logged("replaygain-preamp", db);
         });
     }
 
     pub fn set_gapless(&self, enabled: bool) {
         let mode = if enabled { "weak" } else { "no" };
         self.with_mpv(|mpv| {
-            let _ = mpv.set_property("gapless-audio", mode);
+            mpv.set_property_logged("gapless-audio", mode);
         });
         info!("Gapless audio: {mode}");
     }
@@ -79,8 +79,8 @@ impl MpvBackend {
         self.running
             .store(false, std::sync::atomic::Ordering::Relaxed);
         self.with_mpv(|mpv| {
-            let _ = mpv.set_property("pause", true);
-            let _ = mpv.set_property("af", String::new());
+            mpv.set_property_logged("pause", true);
+            mpv.set_property_logged("af", String::new());
             let _ = mpv.command("stop", &[]);
             let _ = mpv.command("quit", &[]);
         });

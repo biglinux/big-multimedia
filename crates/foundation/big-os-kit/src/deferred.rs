@@ -97,9 +97,23 @@ impl Document {
         items.push(Arc::downgrade(&document.state));
         document
     }
+    /// Read the document at `path` with `decode`, which refuses bytes by returning
+    /// `None`. A missing file starts from `T::default()`; an unreadable or refused
+    /// one does too, with a blocked writer, so a corrupt file is never replaced by
+    /// an empty document.
+    pub fn load<T: Default>(path: PathBuf, decode: impl FnOnce(&[u8]) -> Option<T>) -> (T, Self) {
+        match storage::read_regular_limited(&path, MAX_BYTES) {
+            Ok(None) => (T::default(), Self::reviewed(path, None)),
+            Ok(Some(bytes)) => match decode(&bytes) {
+                Some(value) => (value, Self::reviewed(path, Some(bytes))),
+                None => (T::default(), Self::blocked(path)),
+            },
+            Err(_) => (T::default(), Self::blocked(path)),
+        }
+    }
     /// Invalid/unreadable source: edits are session-only until the application reloads
     /// and explicitly resolves the conflict. Never silently overwrite malformed state.
-    pub fn blocked(path: PathBuf) -> Self {
+    fn blocked(path: PathBuf) -> Self {
         let value = Self::reviewed(path, None);
         {
             let mut s = value.state.lock().unwrap_or_else(PoisonError::into_inner);
@@ -316,6 +330,28 @@ mod tests {
         assert!(saw(Phase::Failed));
         doc.replace(b"same".to_vec()).unwrap();
         assert!(saw(Phase::Saved));
+        std::fs::remove_dir_all(p.parent().unwrap()).unwrap();
+    }
+    #[test]
+    fn load_blocks_refused_files() {
+        let decode = |bytes: &[u8]| (bytes != b"corrupt").then(|| bytes.to_vec());
+        let p = path("prefs.json");
+        let (missing, doc) = Document::load(p.clone(), decode);
+        assert!(missing.is_empty());
+        assert_eq!(doc.status().phase, Phase::Saved);
+
+        std::fs::write(&p, b"valid").unwrap();
+        let (valid, doc) = Document::load(p.clone(), decode);
+        assert_eq!(valid, b"valid");
+        assert_eq!(doc.status().phase, Phase::Saved);
+
+        std::fs::write(&p, b"corrupt").unwrap();
+        let (refused, doc) = Document::load(p.clone(), decode);
+        assert!(refused.is_empty());
+        assert_eq!(doc.status().phase, Phase::Failed);
+        assert!(doc.replace(Vec::new()).is_err());
+        drain(&doc);
+        assert_eq!(std::fs::read(&p).unwrap(), b"corrupt");
         std::fs::remove_dir_all(p.parent().unwrap()).unwrap();
     }
     #[test]

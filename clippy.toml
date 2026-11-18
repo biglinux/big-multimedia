@@ -38,6 +38,8 @@ disallowed-methods = [
     { path = "libadwaita::prelude::AdwDialogExt::add_breakpoint", reason = "the breakpoint outlives the dialog (libadwaita 1.9); use `big_gtk_kit::breakpoint::add`" },
     { path = "libadwaita::prelude::BreakpointBinExt::add_breakpoint", reason = "the breakpoint outlives the bin (libadwaita 1.9); use `big_gtk_kit::breakpoint::add`" },
     { path = "gtk4::Switch::set_active", reason = "cancels a click's slide even when the value is unchanged (GTK 4.22), so a refresh swallows the click; use `big_gtk_kit::switch::set_active`" },
+    { path = "libc::dlopen", reason = "use `gl_proc_address::gl_function` or `egl_function` (crates/media-runtime/src/player/mpv_backend/gl_proc_address.rs), which resolve GL through eglGetProcAddress for Mesa and NVIDIA under libglvnd" },
+    { path = "libc::dlsym", reason = "use `gl_proc_address::gl_function` or `egl_function` (crates/media-runtime/src/player/mpv_backend/gl_proc_address.rs), which resolve GL through eglGetProcAddress for Mesa and NVIDIA under libglvnd" },
     { path = "libc::renameat2", reason = "use `big_os_kit::storage::rename_no_replace` (crates/foundation/big-os-kit/src/storage/transaction.rs); where it fails with EINVAL the filesystem cannot refuse a replacing rename, so fall back to `StagedFile::publish`, never check-then-rename" },
     { path = "big_app_kit::desktop::BigSystemPowerAction::spawn_detached", reason = "settings writes must finish before suspend or power off; use the sleep timer in crates/media-runtime/src/shared/sleep_timer.rs" },
     { path = "glib::home_dir", reason = "use `big_os_kit::xdg_dirs::home_dir` (crates/foundation/big-os-kit/src/xdg_dirs.rs), which returns `None` instead of a relative or guessed path" },

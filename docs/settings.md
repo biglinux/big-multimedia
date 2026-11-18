@@ -259,7 +259,7 @@ the new values at once, except `render-mode`, `gpu-dumb-mode`,
 
 | Variable | Read by | Effect |
 |---|---|---|
-| `BIG_MEDIA_DISABLE_GRAPHICS_OFFLOAD` | video player, when it creates the video surface | `1`, `true`, `yes` or `on` (any case) draws video through a GL area; `0`, `false`, `no`, `off` or empty first tries GTK graphics offload, falling back to the GL area. The video player sets it to `1` when it is unset. Sessions on the proprietary NVIDIA driver never use offload. |
+| `BIG_MEDIA_DISABLE_GRAPHICS_OFFLOAD` | video player, when it creates the video surface | `1`, `true`, `yes` or `on` (any case) draws video through a GL area; `0`, `false`, `no`, `off` or empty first tries GTK graphics offload, falling back to the GL area. Unset draws through a GL area. Sessions on the proprietary NVIDIA driver never use offload. |
 | `BIG_MEDIA_DB_APP_ID` | audio player, each time it opens the music library | Names the folder of the library database, `~/.config/<id>/library.db`. Unset or empty means `big-audio-player`. No shipped program sets it. |
 
 To try graphics offload in the video player:

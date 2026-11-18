@@ -1,10 +1,11 @@
 //! Zero-allocation render context wrapping the mpv render C API directly.
 //! Uses stack-allocated render params for the hot frame path.
 
-use std::ffi::c_void;
+use std::ffi::{CStr, c_void};
 use std::sync::Arc;
 
 use super::MpvBackend;
+use super::gl_proc_address::{gl_function, gl_proc_address};
 
 // A sized allocation provides a stable C userdata pointer to the trait object.
 // Callbacks can execute on mpv threads; never capture GTK objects directly.
@@ -392,14 +393,10 @@ pub(super) unsafe fn current_gl_driver() -> (String, String) {
     const GL_VENDOR: u32 = 0x1F00;
     const GL_RENDERER: u32 = 0x1F01;
     type GetString = unsafe extern "C" fn(u32) -> *const std::ffi::c_char;
-    // SAFETY: resolved as mpv resolves every GL function; a null result means
-    // no GL is loaded.
-    let address = unsafe { gl_proc_address_raw(std::ptr::null_mut(), c"glGetString".as_ptr()) };
-    if address.is_null() {
+    // SAFETY: `glGetString` has this signature.
+    let Some(get_string) = (unsafe { gl_function::<GetString>(c"glGetString") }) else {
         return (String::new(), String::new());
-    }
-    // SAFETY: `glGetString` has this C signature.
-    let get_string: GetString = unsafe { std::mem::transmute(address) };
+    };
     let read = |name| {
         // SAFETY: the caller has a GL context current; GL returns a static
         // NUL-terminated string or null.
@@ -416,12 +413,12 @@ pub(super) unsafe fn current_gl_driver() -> (String, String) {
     (read(GL_VENDOR), read(GL_RENDERER))
 }
 
-/// SAFETY: `name` is a valid null-terminated string from mpv. `dlsym` with
-/// `RTLD_DEFAULT` is safe for resolving GL function pointers.
+/// # Safety
+/// `name` is a NUL-terminated string mpv keeps alive for the call.
 unsafe extern "C" fn gl_proc_address_raw(
     _ctx: *mut c_void,
     name: *const std::ffi::c_char,
 ) -> *mut c_void {
     // SAFETY: see the function's contract above.
-    unsafe { libc::dlsym(libc::RTLD_DEFAULT, name) }
+    gl_proc_address(unsafe { CStr::from_ptr(name) })
 }

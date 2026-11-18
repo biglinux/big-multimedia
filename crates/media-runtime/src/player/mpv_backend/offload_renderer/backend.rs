@@ -15,8 +15,9 @@ pub enum VideoBackend {
 impl VideoBackend {
     /// Tries offload first (best on Wayland, harmless on X11), falls back to GLArea.
     pub fn detect(display: &gdk::Display) -> Self {
-        if Self::graphics_offload_disabled() {
-            info!("GraphicsOffload video backend disabled by environment");
+        if !Self::graphics_offload_requested() {
+            // allow-noisy-log: one line per video surface, naming its backend.
+            info!("GraphicsOffload video backend not requested");
             return Self::GlArea;
         }
 
@@ -34,15 +35,11 @@ impl VideoBackend {
         Self::GlArea
     }
 
-    /// `BIG_MEDIA_DISABLE_GRAPHICS_OFFLOAD` as a boolean: truthy (`1`/`true`/
-    /// `yes`/`on`) disables the offload backend; falsy (`0`/`false`/`no`/`off`/
-    /// empty) or unset leaves it enabled. A real toggle, so an app can default it
-    /// off (the video player does; `big_video_player::run` says why) while a
-    /// user can still turn the zero-copy path back on. NVIDIA is excluded
-    /// earlier, by [`OffloadRenderer::try_new`].
-    fn graphics_offload_disabled() -> bool {
+    /// Offload only when `BIG_MEDIA_DISABLE_GRAPHICS_OFFLOAD` is set and not
+    /// truthy: it costs the GL area's CPU plus an idle GL context and texture pool.
+    fn graphics_offload_requested() -> bool {
         std::env::var("BIG_MEDIA_DISABLE_GRAPHICS_OFFLOAD").is_ok_and(|v| {
-            matches!(
+            !matches!(
                 v.trim().to_ascii_lowercase().as_str(),
                 "1" | "true" | "yes" | "on"
             )
