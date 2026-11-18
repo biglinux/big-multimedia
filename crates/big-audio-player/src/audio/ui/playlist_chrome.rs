@@ -231,12 +231,14 @@ fn build_podcast_hint() -> adw::StatusPage {
         .build()
 }
 
-/// Library populated but queue empty: invite a drag-drop or library add.
+/// Library populated but queue empty: the ways a library track gets here.
 fn build_drop_hint() -> adw::StatusPage {
     adw::StatusPage::builder()
         .icon_name("list-add-symbolic")
         .title(i18n("Drop tracks here"))
-        .description(i18n("or use \u{FF0B} to add from the library"))
+        .description(i18n(
+            "Or double-click a track in the library, or select it and press Return.",
+        ))
         .vexpand(true)
         .build()
 }
