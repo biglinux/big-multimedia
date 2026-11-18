@@ -236,19 +236,16 @@ impl Component for VideoIptvBrowser {
             VideoIptvBrowserInput::ManageProviders => self.open_providers_dialog(root, &sender),
             VideoIptvBrowserInput::ProvidersChanged => self.on_providers_changed(&sender),
             VideoIptvBrowserInput::PlayChannel { url, title } => {
-                let index = self.provider_dropdown.selected() as usize;
-                let store = self.store.borrow();
-                let Some(provider) = store.providers.get(index) else {
+                let Some(source) = self.selected_source() else {
                     return;
                 };
-                let url = match &provider.source {
+                let url = match &source {
                     IptvKind::Xtream {
                         username, password, ..
                     } => xtream::stream_url(&url, username, password),
                     IptvKind::M3uUrl { .. } | IptvKind::M3uLocal { .. } => url,
                 };
-                let origin = provider.source.list_origin();
-                drop(store);
+                let origin = source.list_origin();
                 let _ = sender.output(VideoIptvBrowserOutput::PlayChannel { url, title, origin });
             }
             VideoIptvBrowserInput::FavoriteToggled => self.list_view.reload_favorites(),
@@ -258,6 +255,7 @@ impl Component for VideoIptvBrowser {
             } => {
                 if generation == self.load_generation {
                     self.list_view.set_channels(channels);
+                    self.rename_xtream_favorites();
                     self.status
                         .set_label(&i18n("Showing cached channels — updating…"));
                 }
@@ -271,6 +269,27 @@ impl Component for VideoIptvBrowser {
 }
 
 impl VideoIptvBrowser {
+    fn selected_source(&self) -> Option<IptvKind> {
+        let index = self.provider_dropdown.selected() as usize;
+        let store = self.store.borrow();
+        store
+            .providers
+            .get(index)
+            .map(|provider| provider.source.clone())
+    }
+
+    /// Stars saved under a stream URL with the Xtream account's credentials
+    /// in it move to the stored URL the list shows.
+    fn rename_xtream_favorites(&self) {
+        if let Some(IptvKind::Xtream {
+            username, password, ..
+        }) = self.selected_source()
+        {
+            self.list_view
+                .rename_favorites(|url| xtream::stream_url(url, &username, &password));
+        }
+    }
+
     /// Refresh the dropdown model from the current store, selecting the first
     /// provider if any exist.
     fn repopulate_provider_dropdown(&self) {
@@ -361,6 +380,7 @@ impl VideoIptvBrowser {
                 }
                 status.extend(left_out_notice(false, channels.skipped));
                 self.list_view.set_channels(channels.entries);
+                self.rename_xtream_favorites();
                 self.status.set_label(&status.join(" "));
             }
             Err(error) => self.status.set_label(&fetch_error_text(&error)),

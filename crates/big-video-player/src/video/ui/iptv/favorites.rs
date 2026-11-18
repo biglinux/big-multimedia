@@ -93,6 +93,24 @@ impl IptvFavorites {
         now_starred
     }
 
+    /// Star `to` in place of each starred `from`, and persist if any moved.
+    pub fn rename(&mut self, renames: impl IntoIterator<Item = (String, String)>) {
+        if self.rename_in_memory(renames) {
+            self.save();
+        }
+    }
+
+    fn rename_in_memory(&mut self, renames: impl IntoIterator<Item = (String, String)>) -> bool {
+        let mut moved = false;
+        for (from, to) in renames {
+            if from != to && self.urls.remove(&from) {
+                self.urls.insert(to);
+                moved = true;
+            }
+        }
+        moved
+    }
+
     fn toggle_in_memory(&mut self, url: &str) -> bool {
         if self.urls.contains(url) {
             self.urls.remove(url);
@@ -116,6 +134,34 @@ mod tests {
         assert!(f.contains("http://x"));
         assert!(!f.toggle_in_memory("http://x"));
         assert!(!f.contains("http://x"));
+    }
+
+    #[test]
+    fn rename_moves_only_starred_urls() {
+        let mut f = IptvFavorites::default();
+        f.toggle_in_memory("http://srv/live/u/p/1.ts");
+        f.toggle_in_memory("http://other/2.ts");
+        let renames = |pairs: &[(&str, &str)]| {
+            pairs
+                .iter()
+                .map(|(from, to)| ((*from).to_owned(), (*to).to_owned()))
+                .collect::<Vec<_>>()
+        };
+        assert!(f.rename_in_memory(renames(&[
+            (
+                "http://srv/live/u/p/1.ts",
+                "http://srv/live/{credentials}/1.ts"
+            ),
+            (
+                "http://srv/live/u/p/3.ts",
+                "http://srv/live/{credentials}/3.ts"
+            ),
+        ])));
+        assert_eq!(
+            f.urls.iter().map(String::as_str).collect::<Vec<_>>(),
+            ["http://other/2.ts", "http://srv/live/{credentials}/1.ts"]
+        );
+        assert!(!f.rename_in_memory(renames(&[("http://other/2.ts", "http://other/2.ts")])));
     }
 
     #[test]
