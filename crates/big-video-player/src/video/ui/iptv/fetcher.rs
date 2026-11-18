@@ -293,7 +293,7 @@ mod tests {
     /// A list cached before its credentials were taken out, or an M3U URL
     /// whose secret the channel URLs may repeat, keeps the channel unlisted.
     #[test]
-    fn urls_that_may_hold_the_secret_stay_unlisted() {
+    fn secret_bearing_urls_stay_unlisted() {
         let cached = channel_urls(
             &account("Panel"),
             "http://srv/live/ana/s3c%3Fret/7.ts",
@@ -349,7 +349,7 @@ mod tests {
     }
 
     #[test]
-    fn a_saved_channel_without_its_password_does_not_play() {
+    fn locked_keyring_refuses_saved_channels() {
         let entries = ["http://srv/live/{credentials}/7.ts".to_string()];
         assert_eq!(
             played_channels(&entries, &[account("Panel")], &Keyring(None)),
@@ -378,7 +378,7 @@ mod tests {
     }
 
     #[test]
-    fn lists_without_a_secret_are_listed_as_played() {
+    fn secretless_lists_list_played_urls() {
         let free = provider(
             "Free",
             IptvKind::M3uUrl {
