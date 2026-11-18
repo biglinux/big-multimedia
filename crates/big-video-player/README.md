@@ -12,7 +12,7 @@ BigNetScreen daemon. A member of the big-multimedia workspace; see the root
 The player converts nothing itself. Cut Video, Convert and Extract Audio hand
 the file (and any marked cuts) to `big-video-converter-gui` or
 `big-audio-converter-gui` through
-`big_media_runtime::shared::converter_handoff`.
+`big_media_runtime::converter_handoff`.
 
 ## Install
 
