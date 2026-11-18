@@ -187,6 +187,23 @@ after changing user-facing text:
 crates/media-runtime/po/regen-pot.sh
 ```
 
+## Documentation
+
+- [CONTRIBUTING.md](CONTRIBUTING.md): build, checks and the resource-lifetime
+  rules.
+- [docs/](docs/README.md): the index of the guides below.
+- [Settings and environment](docs/settings.md): `settings.conf`, every key and
+  the environment variables.
+- [Persistence and recovery](docs/persistence-and-recovery.md): how saves,
+  credentials, the LAN remote and library scans behave when something fails.
+- [Native library limits](docs/native-library-limits.md): GTK and libadwaita
+  defects behind the `clippy.toml` bans.
+- [Media runtime architecture](crates/media-runtime/ARCHITECTURE.md): the
+  engine's module map and subprocess rules.
+- Each player's README lists its command-line options:
+  [video](crates/big-video-player/README.md#command-line),
+  [audio](crates/big-audio-player/README.md#command-line).
+
 ## Contributing
 
 Issues and pull requests are welcome on

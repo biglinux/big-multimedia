@@ -17,6 +17,12 @@ the installed LADSPA plugins: mpv's `af` chain loads them by these names.
   noise-reduction model identifiers.
 - `equalizer` — the canonical 10-band equalizer center frequencies and labels.
 
+## Validate a change
+
+```sh
+cargo test --locked -p big-audio-effects
+```
+
 ## License
 
 MIT

@@ -22,6 +22,15 @@ here.
 
 - `remote-control` — local HTTP remote-control endpoint.
 
+## Validate a change
+
+```sh
+cargo test --locked -p big-app-kit --all-features
+```
+
+The `#[ignore]`d tray test needs a session bus of its own;
+[CONTRIBUTING](../../../CONTRIBUTING.md#build-and-check) gives the command.
+
 ## License
 
 MIT
