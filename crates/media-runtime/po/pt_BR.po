@@ -3197,7 +3197,7 @@ msgstr "Quando um vídeo termina"
 
 #: crates/big-video-player/src/video/ui/preferences/general.rs:62
 msgid "Keep the last frame"
-msgstr "Manter o último quadro"
+msgstr "Manter último quadro"
 
 #: crates/big-video-player/src/video/ui/preferences/general.rs:63
 msgid "Stop after each"
