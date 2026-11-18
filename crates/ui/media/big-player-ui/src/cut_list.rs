@@ -225,6 +225,15 @@ mod tests {
     }
 
     #[test]
+    fn marks_before_duration_keep_time() {
+        let mut list = CutList::default();
+        list.mark(-3.0);
+        assert_eq!(list.pending(), Some(0.0));
+        assert!(list.mark(125.5));
+        assert_eq!(spans(&list), vec![(0.0, 125.5)]);
+    }
+
+    #[test]
     fn set_cut_times_clamps_and_swaps() {
         let mut list = list(100.0);
         mark(&mut list, 10.0, 20.0);
