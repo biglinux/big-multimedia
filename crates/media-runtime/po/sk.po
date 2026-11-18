@@ -3991,7 +3991,7 @@ msgstr "Použiť HDR?"
 
 #: crates/big-video-player/src/video/ui/video_shell/component.rs:214
 msgid "Does the picture look grey and washed out? Click to use HDR colors"
-msgstr "Vyzerá obraz sivo a vyblednuto? Kliknutím použijete farby HDR"
+msgstr "Vyzerá obraz sivý a vyblednutý? Kliknutím použijete farby HDR"
 
 #: crates/big-video-player/src/video/ui/video_shell/component.rs:233
 msgid "On the TV"

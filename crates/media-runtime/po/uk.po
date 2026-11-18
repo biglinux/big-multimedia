@@ -531,7 +531,8 @@ msgstr ""
 #: crates/big-audio-player/src/audio/ui/audio_shell/playback.rs:143
 msgid "The library could not be read, so lyrics were not searched online."
 msgstr ""
-"Не вдалося прочитати бібліотеку, тому тексти пісень не шукалися в інтернеті."
+"Не вдалося прочитати бібліотеку, тому пошук текстів пісень в інтернеті не "
+"виконувався."
 
 #: crates/big-audio-player/src/audio/ui/audio_shell/playback.rs:157
 msgid "Seek position"
@@ -748,7 +749,7 @@ msgstr "Не вдалося вилучити станцію."
 
 #: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:230
 msgid "There is no Music or home folder to save recordings in."
-msgstr "Немає теки «Музика» або домашньої теки для збереження записів."
+msgstr "Немає ні теки «Музика», ні домашньої теки для збереження записів."
 
 #: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:276
 #: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:284
@@ -2856,7 +2857,7 @@ msgid ""
 "There is no Pictures or home folder to save screenshots in. Choose a folder "
 "in Preferences."
 msgstr ""
-"Немає теки «Зображення» або домашньої теки для збереження знімків екрана. "
+"Немає ні теки «Зображення», ні домашньої теки для збереження знімків екрана. "
 "Виберіть теку в параметрах."
 
 #: crates/big-video-player/src/video/ui/menu_dialogs.rs:127
