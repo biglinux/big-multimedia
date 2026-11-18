@@ -24,8 +24,9 @@ license=('GPL-3.0-or-later' 'MIT' 'LGPL-3.0-or-later')
 # IPTV passwords in the keyring.
 depends=('gtk4>=4.22' 'libadwaita>=1.9' 'mpv' 'ffmpeg' 'libpulse' 'libsecret')
 makedepends=('git' 'cargo' 'pkgconf' 'gettext')
-checkdepends=('desktop-file-utils' 'appstream')
-optdepends=('deepfilternet3-native: light voice noise reduction (DeepFilterNet3)'
+checkdepends=('desktop-file-utils' 'appstream' 'apparmor')
+optdepends=('apparmor: confine the player to media files (complain mode: logs only)'
+            'deepfilternet3-native: light voice noise reduction (DeepFilterNet3)'
             'dpdfnet-native: higher-quality voice noise reduction (DPDFNet-2 48 kHz)'
             'big-video-converter: cut and convert videos'
             'big-audio-converter: extract audio from videos'
@@ -38,6 +39,7 @@ provides=('bigvideo=0.1.0-7')
 # makepkg's lto adds -flto to CFLAGS, so the C in jemalloc builds as
 # GCC bytecode that lld cannot link. The release profile already does fat LTO.
 options=('!lto')
+install=big-video-player.install
 
 # Inside a checkout this recipe builds its working tree, uncommitted changes
 # included. The CI receives only this directory and fetches from GitHub
@@ -83,6 +85,7 @@ check() {
 
     desktop-file-validate "${resources}/applications/${id}.desktop"
     appstreamcli validate --no-net "${resources}/metainfo/${id}.metainfo.xml"
+    apparmor_parser -Q -K "${resources}/apparmor/big-video-player"
     local po="${tree}/crates/media-runtime/po" lang
     while read -r lang; do
         [[ -z "${lang}" || "${lang}" == \#* ]] && continue
@@ -105,6 +108,7 @@ package() {
         "${pkgdir}/usr/share/applications/${id}.desktop"
     install -Dm644 "${resources}/metainfo/${id}.metainfo.xml" \
         "${pkgdir}/usr/share/metainfo/${id}.metainfo.xml"
+    install -Dm644 "${resources}/apparmor/big-video-player" "${pkgdir}/etc/apparmor.d/big-video-player"
     install -Dm644 "${resources}/icons/hicolor/scalable/apps/big-video-player.svg" \
         "${pkgdir}/usr/share/icons/hicolor/scalable/apps/big-video-player.svg"
 
