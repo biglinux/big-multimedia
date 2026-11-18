@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: big-media-runtime 0.1.0\n"
 "Report-Msgid-Bugs-To: https://github.com/biglinux/big-multimedia/issues\n"
-"POT-Creation-Date: 2026-10-26 19:32-0300\n"
+"POT-Creation-Date: 2026-11-18 05:54-0300\n"
 "PO-Revision-Date: 2026-10-23 00:15-0300\n"
 "Last-Translator: Automatically generated\n"
 "Language-Team: none\n"
@@ -89,8 +89,22 @@ msgstr ""
 msgid "Data Sources"
 msgstr "Източници на данни"
 
+#: crates/big-audio-player/src/audio/app.rs:54
+#, fuzzy
+#| msgid "Close the player"
+msgid "Play or pause the running player"
+msgstr "Затваряне на плейъра"
+
+#: crates/big-audio-player/src/audio/app.rs:59
+msgid "Skip to the next track in the running player"
+msgstr ""
+
+#: crates/big-audio-player/src/audio/app.rs:64
+msgid "Go back to the previous track in the running player"
+msgstr ""
+
 #: crates/big-audio-player/src/audio/appearance/dialogs.rs:43
-#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:283
+#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:309
 msgid "Effects"
 msgstr "Ефекти"
 
@@ -108,7 +122,7 @@ msgid ""
 msgstr "Показване на текущата обложка като замъглен фон зад аудио контролите"
 
 #: crates/big-audio-player/src/audio/keybindings.rs:14
-#: crates/big-audio-player/src/audio/ui/audio_shell/playback.rs:162
+#: crates/big-audio-player/src/audio/ui/audio_shell/playback.rs:175
 #: crates/big-audio-player/src/audio/ui/audio_shell/tray.rs:20
 #: crates/big-video-player/src/video/keybindings.rs:15
 #: crates/big-video-player/src/video/ui/video_shell/input_gestures.rs:105
@@ -124,7 +138,7 @@ msgstr "Изпълнение / Пауза"
 #: crates/big-audio-player/src/audio/keybindings.rs:57
 #: crates/big-audio-player/src/audio/keybindings.rs:64
 #: crates/big-audio-player/src/audio/keybindings.rs:71
-#: crates/big-audio-player/src/audio/preferences.rs:97
+#: crates/big-audio-player/src/audio/preferences.rs:98
 #: crates/big-video-player/src/video/keybindings.rs:16
 #: crates/big-video-player/src/video/keybindings.rs:23
 #: crates/big-video-player/src/video/keybindings.rs:30
@@ -140,7 +154,7 @@ msgstr "Изпълнение / Пауза"
 #: crates/big-video-player/src/video/keybindings.rs:100
 #: crates/big-video-player/src/video/keybindings.rs:107
 #: crates/big-video-player/src/video/keybindings.rs:114
-#: crates/big-video-player/src/video/ui/preferences/general.rs:24
+#: crates/big-video-player/src/video/ui/preferences/general.rs:25
 msgid "Playback"
 msgstr "Изпълнение"
 
@@ -189,8 +203,8 @@ msgstr "Търсене"
 #: crates/big-audio-player/src/audio/keybindings.rs:79
 #: crates/big-audio-player/src/audio/keybindings.rs:86
 #: crates/big-audio-player/src/audio/keybindings.rs:93
-#: crates/big-video-player/src/video/keybindings.rs:260
-#: crates/big-video-player/src/video/keybindings.rs:267
+#: crates/big-video-player/src/video/keybindings.rs:261
+#: crates/big-video-player/src/video/keybindings.rs:268
 msgid "Navigation"
 msgstr "Навигация"
 
@@ -212,7 +226,7 @@ msgid "Library"
 msgstr "Фонотека"
 
 #: crates/big-audio-player/src/audio/keybindings.rs:107
-#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:127
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:112
 #: crates/big-video-player/src/video/ui/video_shell/input_gestures.rs:116
 #: crates/big-video-player/src/video/ui/video_shell/panel.rs:43
 #: crates/big-video-player/src/video/ui/video_shell/panel.rs:469
@@ -237,8 +251,8 @@ msgid "Toggle Repeat"
 msgstr "Превключване на повторението"
 
 #: crates/big-audio-player/src/audio/keybindings.rs:129
-#: crates/big-video-player/src/video/ui/video_shell/panel.rs:548
-#: crates/big-video-player/src/video/ui/video_shell/playback.rs:491
+#: crates/big-video-player/src/video/ui/video_shell/panel.rs:549
+#: crates/big-video-player/src/video/ui/video_shell/playback.rs:502
 msgid "Undo"
 msgstr "Отмяна"
 
@@ -276,13 +290,13 @@ msgid "This Year"
 msgstr "Тази година"
 
 #: crates/big-audio-player/src/audio/library_grouping/group_by.rs:38
-#: crates/big-video-player/src/video/ui/filters/groups_shader.rs:153
+#: crates/big-video-player/src/video/ui/filters/groups_shader.rs:154
 msgid "None"
 msgstr "Няма"
 
 #: crates/big-audio-player/src/audio/library_grouping/group_by.rs:39
 #: crates/big-audio-player/src/audio/ui/library_tag_editor.rs:203
-#: crates/big-audio-player/src/audio/ui/track_list.rs:75
+#: crates/big-audio-player/src/audio/ui/track_list.rs:92
 msgid "Artist"
 msgstr "Изпълнител"
 
@@ -294,27 +308,27 @@ msgstr "Изпълнител на албума"
 #: crates/big-audio-player/src/audio/library_grouping/group_by.rs:41
 #: crates/big-audio-player/src/audio/library_grouping/grouping.rs:82
 #: crates/big-audio-player/src/audio/ui/library_tag_editor.rs:204
-#: crates/big-audio-player/src/audio/ui/track_list.rs:76
+#: crates/big-audio-player/src/audio/ui/track_list.rs:93
 msgid "Album"
 msgstr "Албум"
 
 #: crates/big-audio-player/src/audio/library_grouping/group_by.rs:42
 #: crates/big-audio-player/src/audio/library_grouping/grouping.rs:89
 #: crates/big-audio-player/src/audio/ui/library_tag_editor.rs:209
-#: crates/big-audio-player/src/audio/ui/track_list.rs:78
+#: crates/big-audio-player/src/audio/ui/track_list.rs:95
 msgid "Genre"
 msgstr "Жанр"
 
 #: crates/big-audio-player/src/audio/library_grouping/group_by.rs:43
 #: crates/big-audio-player/src/audio/library_grouping/grouping.rs:90
 #: crates/big-audio-player/src/audio/ui/library_tag_editor.rs:210
-#: crates/big-audio-player/src/audio/ui/track_list.rs:79
+#: crates/big-audio-player/src/audio/ui/track_list.rs:96
 msgid "Year"
 msgstr "Година"
 
 #: crates/big-audio-player/src/audio/library_grouping/group_by.rs:44
 #: crates/big-audio-player/src/audio/ui/library_tag_editor/spec.rs:112
-#: crates/big-audio-player/src/audio/ui/track_list.rs:81
+#: crates/big-audio-player/src/audio/ui/track_list.rs:98
 #: crates/big-video-player/src/video/ui/media_details_dialog.rs:109
 #: crates/big-video-player/src/video/ui/media_details_dialog.rs:260
 #: crates/ui/media/big-media-components/src/media/file_metadata_dialog.rs:59
@@ -341,32 +355,38 @@ msgstr "Жанр → Изпълнител"
 msgid "Year → Album"
 msgstr "Година → Албум"
 
-#: crates/big-audio-player/src/audio/library_query.rs:119
+#: crates/big-audio-player/src/audio/library_query.rs:125
 msgid "All Tracks"
 msgstr "Всички песни"
 
-#: crates/big-audio-player/src/audio/library_query.rs:168
+#: crates/big-audio-player/src/audio/library_query.rs:174
 #: crates/big-audio-player/src/audio/ui/library_tree.rs:135
 #: crates/big-audio-player/src/audio/ui/library_tree.rs:246
-#: crates/big-audio-player/src/audio/ui/library_tree/presentation.rs:77
-#: crates/big-audio-player/src/audio/ui/library_tree/presentation_tests.rs:81
-#: crates/ui/media/big-player-ui/src/browser_node.rs:219
+#: crates/big-audio-player/src/audio/ui/library_tree/presentation.rs:68
+#: crates/big-audio-player/src/audio/ui/library_tree/presentation_tests.rs:73
+#: crates/ui/media/big-player-ui/src/browser_node.rs:233
 msgid "Various Artists"
 msgstr "Различни изпълнители"
 
-#: crates/big-audio-player/src/audio/preferences.rs:32
-#: crates/big-audio-player/src/audio/ui/audio_shell/component.rs:141
-#: crates/big-audio-player/src/audio/ui/audio_shell/component.rs:170
+#: crates/big-audio-player/src/audio/playlist_import.rs:16
+#: crates/big-video-player/src/video/ui/video_shell/playback.rs:289
+#, rust-format
+msgid "Only the first {} entries of the playlist were loaded."
+msgstr ""
+
+#: crates/big-audio-player/src/audio/preferences.rs:33
+#: crates/big-audio-player/src/audio/ui/audio_shell/component.rs:144
+#: crates/big-audio-player/src/audio/ui/audio_shell/component.rs:173
 #: crates/big-video-player/src/video/keybindings.rs:245
 #: crates/big-video-player/src/video/keybindings.rs:252
 msgid "Music"
 msgstr "Музика"
 
-#: crates/big-audio-player/src/audio/preferences.rs:39
+#: crates/big-audio-player/src/audio/preferences.rs:40
 msgid "Volume Leveling"
 msgstr "Изравняване на силата на звука"
 
-#: crates/big-audio-player/src/audio/preferences.rs:41
+#: crates/big-audio-player/src/audio/preferences.rs:42
 msgid ""
 "Uses the loudness stored in the files so you do not have to adjust the "
 "volume between songs"
@@ -374,180 +394,154 @@ msgstr ""
 "Използва силата на звука, записана във файловете, така че да не се налага да "
 "я регулирате между песните"
 
-#: crates/big-audio-player/src/audio/preferences.rs:48
+#: crates/big-audio-player/src/audio/preferences.rs:49
 msgid "Level By"
 msgstr "Изравняване по"
 
-#: crates/big-audio-player/src/audio/preferences.rs:50
-#: crates/big-video-player/src/video/ui/preferences/general.rs:39
+#: crates/big-audio-player/src/audio/preferences.rs:51
+#: crates/big-video-player/src/video/ui/preferences/general.rs:40
 #: crates/big-video-player/src/video/ui/preferences/video.rs:60
 #: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/header.rs:196
-#: crates/big-video-player/src/video/ui/video_shell/panel.rs:493
+#: crates/big-video-player/src/video/ui/video_shell/panel.rs:494
 msgid "Off"
 msgstr "Изключено"
 
-#: crates/big-audio-player/src/audio/preferences.rs:50
+#: crates/big-audio-player/src/audio/preferences.rs:51
 msgid "Per Song"
 msgstr "Песен"
 
-#: crates/big-audio-player/src/audio/preferences.rs:50
+#: crates/big-audio-player/src/audio/preferences.rs:51
 msgid "Per Album"
 msgstr "Албум"
 
-#: crates/big-audio-player/src/audio/preferences.rs:62
+#: crates/big-audio-player/src/audio/preferences.rs:63
 msgid "Leveling Boost"
 msgstr "Усилване при изравняването"
 
-#: crates/big-audio-player/src/audio/preferences.rs:64
+#: crates/big-audio-player/src/audio/preferences.rs:65
 msgid "In decibels; positive values play louder, negative softer"
 msgstr ""
 "В децибели; положителните стойности звучат по-силно, отрицателните — по-тихо"
 
-#: crates/big-audio-player/src/audio/preferences.rs:101
+#: crates/big-audio-player/src/audio/preferences.rs:102
 msgid "No Gaps Between Songs"
 msgstr "Без пауза между песните"
 
-#: crates/big-audio-player/src/audio/preferences.rs:103
+#: crates/big-audio-player/src/audio/preferences.rs:104
 msgid "Albums recorded as one continuous piece play without pauses"
 msgstr ""
 "Албумите, записани като едно непрекъснато цяло, се изпълняват без паузи"
 
-#: crates/big-audio-player/src/audio/preferences.rs:120
-#: crates/big-video-player/src/video/ui/preferences/general.rs:28
+#: crates/big-audio-player/src/audio/preferences.rs:121
+#: crates/big-video-player/src/video/ui/preferences/general.rs:29
 msgid "Resume Where You Left Off"
 msgstr "Продължаване от мястото на спиране"
 
-#: crates/big-audio-player/src/audio/preferences.rs:121
+#: crates/big-audio-player/src/audio/preferences.rs:122
 msgid "Playing a song again continues from where it stopped"
 msgstr "Повторното изпълнение на песен продължава от мястото, където е спряла"
 
-#: crates/big-audio-player/src/audio/preferences.rs:141
+#: crates/big-audio-player/src/audio/preferences.rs:139
 msgid "Progress on the Taskbar"
 msgstr "Напредък в лентата на задачите"
 
-#: crates/big-audio-player/src/audio/preferences.rs:142
+#: crates/big-audio-player/src/audio/preferences.rs:140
 msgid "Shows how far the song has played on the player icon"
 msgstr "Показва докъде е стигнала песента върху иконата на плейъра"
 
-#: crates/big-audio-player/src/audio/preferences.rs:157
+#: crates/big-audio-player/src/audio/preferences.rs:155
 msgid "Icon in the System Tray"
 msgstr "Икона в системната област"
 
-#: crates/big-audio-player/src/audio/preferences.rs:159
+#: crates/big-audio-player/src/audio/preferences.rs:157
 msgid "A one-color icon that follows the panel theme, with playback controls"
 msgstr ""
 "Едноцветна икона, която следва темата на панела, с контроли за изпълнението"
 
-#: crates/big-audio-player/src/audio/preferences.rs:222
-#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:144
-#: crates/big-video-player/src/video/ui/preferences/mod.rs:37
-#: crates/big-video-player/src/video/ui/video_shell/panel.rs:571
+#: crates/big-audio-player/src/audio/preferences.rs:227
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:129
+#: crates/big-video-player/src/video/ui/preferences/mod.rs:39
+#: crates/big-video-player/src/video/ui/video_shell/panel.rs:572
 msgid "Preferences"
 msgstr "Настройки"
 
 #: crates/big-audio-player/src/audio/ui/audio_shell/chrome.rs:55
-#: crates/big-audio-player/src/audio/ui/audio_shell/component.rs:147
-#: crates/big-audio-player/src/audio/ui/audio_shell/component.rs:172
-#: crates/big-audio-player/src/audio/ui/audio_shell/mpris.rs:224
+#: crates/big-audio-player/src/audio/ui/audio_shell/component.rs:150
+#: crates/big-audio-player/src/audio/ui/audio_shell/component.rs:175
+#: crates/big-audio-player/src/audio/ui/audio_shell/mpris.rs:228
 msgid "Radio"
 msgstr "Радио"
 
 #: crates/big-audio-player/src/audio/ui/audio_shell/chrome.rs:151
-#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:128
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:113
 msgid "Sleep Timer"
 msgstr "Таймер за заспиване"
 
 #: crates/big-audio-player/src/audio/ui/audio_shell/chrome.rs:161
-#: crates/big-video-player/src/video/ui/video_shell/panel.rs:710
+#: crates/big-video-player/src/video/ui/video_shell/panel.rs:711
 msgid "Timer Active"
 msgstr "Таймерът е активен"
 
 #: crates/big-audio-player/src/audio/ui/audio_shell/chrome.rs:162
-#: crates/big-video-player/src/video/ui/video_shell/panel.rs:711
+#: crates/big-video-player/src/video/ui/video_shell/panel.rs:712
 msgid "Cancel Timer"
 msgstr "Отмяна на таймера"
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/chrome.rs:268
-#: crates/big-video-player/src/video/ui/menu_dialogs.rs:265
-msgid "Sleep timer: closing player"
-msgstr "Таймер за заспиване: затваряне на плейъра"
-
-#: crates/big-audio-player/src/audio/ui/audio_shell/chrome.rs:276
-#: crates/big-video-player/src/video/ui/menu_dialogs.rs:273
-msgid "Sleep timer: suspending computer"
-msgstr "Таймер за заспиване: приспиване на компютъра"
-
-#: crates/big-audio-player/src/audio/ui/audio_shell/chrome.rs:288
-#: crates/big-video-player/src/video/ui/menu_dialogs.rs:285
-msgid "Sleep timer: shutting down"
-msgstr "Таймер за заспиване: изключване"
-
-#: crates/big-audio-player/src/audio/ui/audio_shell/chrome.rs:299
-#: crates/big-video-player/src/video/ui/menu_dialogs.rs:296
-msgid "Sleep timer: playback paused"
-msgstr "Таймер за заспиване: изпълнението е на пауза"
-
-#: crates/big-audio-player/src/audio/ui/audio_shell/component.rs:105
+#: crates/big-audio-player/src/audio/ui/audio_shell/component.rs:108
 msgid "Add current folder to Music Library"
 msgstr "Добавяне на текущата папка към музикалната фонотека"
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/component.rs:106
+#: crates/big-audio-player/src/audio/ui/audio_shell/component.rs:109
 msgid "Add this folder to Music Library"
 msgstr "Добавяне на тази папка към музикалната фонотека"
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/component.rs:107
+#: crates/big-audio-player/src/audio/ui/audio_shell/component.rs:110
 msgid "Filter files…"
 msgstr "Филтриране на файловете…"
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/component.rs:144
-#: crates/big-audio-player/src/audio/ui/audio_shell/component.rs:171
+#: crates/big-audio-player/src/audio/ui/audio_shell/component.rs:147
+#: crates/big-audio-player/src/audio/ui/audio_shell/component.rs:174
 #: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/header.rs:22
-#: crates/big-video-player/src/video/ui/video_shell/component.rs:284
-#: crates/big-video-player/src/video/ui/video_shell/component.rs:288
+#: crates/big-video-player/src/video/ui/video_shell/component.rs:294
+#: crates/big-video-player/src/video/ui/video_shell/component.rs:298
 msgid "Files"
 msgstr "Файлове"
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/component.rs:150
+#: crates/big-audio-player/src/audio/ui/audio_shell/component.rs:153
 msgid "Podcasts"
 msgstr "Подкасти"
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/component.rs:175
+#: crates/big-audio-player/src/audio/ui/audio_shell/component.rs:178
 msgid "Podcast"
 msgstr "Подкаст"
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/component.rs:227
-#: crates/big-audio-player/src/audio/ui/audio_shell/playback.rs:173
+#: crates/big-audio-player/src/audio/ui/audio_shell/component.rs:230
+#: crates/big-audio-player/src/audio/ui/audio_shell/playback.rs:186
 #: crates/big-audio-player/src/audio/ui/library_tag_editor.rs:299
 msgid "Album art"
 msgstr "Обложка на албума"
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/component.rs:229
+#: crates/big-audio-player/src/audio/ui/audio_shell/component.rs:232
 #: crates/big-audio-player/src/lib.rs:28
 msgid "Big Audio Player"
 msgstr "Big Audio Player"
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/component.rs:236
+#: crates/big-audio-player/src/audio/ui/audio_shell/component.rs:239
 msgid "Select a song to start"
 msgstr "Изберете песен, за да започнете"
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/component.rs:286
-msgid ""
-"The playback queue could not be saved or restored. Your previous saved queue "
-"was kept."
-msgstr ""
-"Опашката за изпълнение не можа да бъде запазена или възстановена. Предишната "
-"запазена опашка беше запазена."
-
-#: crates/big-audio-player/src/audio/ui/audio_shell/component.rs:287
-#: crates/media-runtime/src/settings/saving.rs:227
-msgid "Retry saving"
-msgstr "Нов опит за запазване"
-
-#: crates/big-audio-player/src/audio/ui/audio_shell/engine.rs:33
-#: crates/big-video-player/src/video/ui/video_shell/playback.rs:186
+#: crates/big-audio-player/src/audio/ui/audio_shell/engine.rs:32
+#: crates/big-video-player/src/video/ui/video_shell/playback.rs:185
 msgid "Could not play this file — it may be unsupported or corrupt."
 msgstr ""
 "Този файл не може да бъде изпълнен — може да е неподдържан или повреден."
+
+#: crates/big-audio-player/src/audio/ui/audio_shell/engine.rs:216
+#, rust-format
+msgid ""
+"The playback engine could not start: {error}. Update or reinstall the mpv "
+"package, then reopen the player."
+msgstr ""
 
 #: crates/big-audio-player/src/audio/ui/audio_shell/export.rs:20
 #: crates/big-audio-player/src/audio/ui/audio_shell/export.rs:36
@@ -584,23 +578,18 @@ msgid "Edit cut"
 msgstr "Редактиране на изрязването"
 
 #: crates/big-audio-player/src/audio/ui/audio_shell/export.rs:161
-#: crates/big-audio-player/src/audio/ui/library_dialogs.rs:78
-#: crates/big-audio-player/src/audio/ui/library_io.rs:53
 #: crates/big-audio-player/src/audio/ui/library_tag_editor.rs:146
-#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:219
 #: crates/big-audio-player/src/audio/ui/playlist_interactions.rs:245
-#: crates/big-audio-player/src/audio/ui/playlist_library_dialog/spec.rs:197
-#: crates/big-audio-player/src/audio/ui/playlist_library_dialog/spec.rs:208
-#: crates/big-audio-player/src/audio/ui/playlist_library_dialog/spec.rs:217
+#: crates/big-audio-player/src/audio/ui/playlist_library_dialog/spec.rs:210
 #: crates/big-audio-player/src/audio/ui/unavailable_dialog.rs:258
 #: crates/big-video-player/src/video/ui/iptv/providers_dialog.rs:168
 #: crates/big-video-player/src/video/ui/menu_dialogs.rs:72
-#: crates/big-video-player/src/video/ui/video_browser_sidebar/fileops.rs:210
 #: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:173
-#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:257
-#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:381
+#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:251
+#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:373
 #: crates/big-video-player/src/video/ui/video_shell/trim/run.rs:259
-#: crates/ui/media/big-player-ui/src/podcast_panel.rs:571
+#: crates/ui/generic/big-relm4-components/src/layout/name_prompt.rs:84
+#: crates/ui/media/big-player-ui/src/podcast_panel.rs:625
 #: crates/ui/media/big-player-ui/src/radio_panel/widgets.rs:351
 msgid "Cancel"
 msgstr "Отказ"
@@ -618,6 +607,21 @@ msgstr "Използване на текущата позиция"
 msgid "Use current playback position"
 msgstr "Използване на текущата позиция на изпълнение"
 
+#: crates/big-audio-player/src/audio/ui/audio_shell/library_store.rs:63
+msgid "The music library is still opening. Try again in a moment."
+msgstr ""
+
+#: crates/big-audio-player/src/audio/ui/audio_shell/library_store.rs:225
+#: crates/big-audio-player/src/audio/ui/audio_shell/library_store.rs:261
+#, fuzzy
+#| msgid ""
+#| "The library could not be read. Previous results were kept; try searching "
+#| "again."
+msgid "The library could not be read. The queue was not changed."
+msgstr ""
+"Фонотеката не можа да бъде прочетена. Предишните резултати са запазени; "
+"опитайте да търсите отново."
+
 #: crates/big-audio-player/src/audio/ui/audio_shell/panel_intents.rs:79
 msgid ""
 "This folder name cannot yet be stored in the library. No path was changed or "
@@ -626,104 +630,127 @@ msgstr ""
 "Името на тази папка засега не може да бъде съхранено във фонотеката. Не е "
 "променен или внесен път."
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/panel_intents.rs:112
-#: crates/big-audio-player/src/audio/ui/audio_shell/update.rs:241
+#: crates/big-audio-player/src/audio/ui/audio_shell/panel_intents.rs:121
+#: crates/big-audio-player/src/audio/ui/audio_shell/update.rs:233
 msgid ""
 "The playlist could not be read safely. Check its format and permissions."
 msgstr ""
 "Списъкът за изпълнение не можа да бъде прочетен безопасно. Проверете формата "
 "и правата му."
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/panel_intents.rs:345
+#: crates/big-audio-player/src/audio/ui/audio_shell/panel_intents.rs:353
 msgid "The playlist could not be saved."
 msgstr "Списъкът за изпълнение не можа да бъде запазен."
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/panel_intents.rs:447
+#: crates/big-audio-player/src/audio/ui/audio_shell/panel_intents.rs:454
 msgid "Save Episode"
 msgstr "Запазване на епизода"
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/panel_intents.rs:448
-#: crates/big-audio-player/src/audio/ui/library_io.rs:54
-#: crates/big-audio-player/src/audio/ui/library_io.rs:85
+#: crates/big-audio-player/src/audio/ui/audio_shell/panel_intents.rs:455
+#: crates/big-audio-player/src/audio/ui/library_io.rs:50
+#: crates/big-audio-player/src/audio/ui/library_io.rs:100
 #: crates/big-audio-player/src/audio/ui/library_tag_editor.rs:146
-#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:219
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:192
+#: crates/big-audio-player/src/audio/ui/playlist_library_dialog/spec.rs:187
+#: crates/big-audio-player/src/audio/ui/playlist_library_dialog/spec.rs:199
 #: crates/big-video-player/src/video/ui/iptv/providers_dialog.rs:168
 msgid "Save"
 msgstr "Запазване"
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/panel_intents.rs:455
+#: crates/big-audio-player/src/audio/ui/audio_shell/panel_intents.rs:463
 msgid "Save Episodes"
 msgstr "Запазване на епизодите"
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/playback.rs:160
+#: crates/big-audio-player/src/audio/ui/audio_shell/panel_intents.rs:482
+#, fuzzy
+#| msgid ""
+#| "The playlist could not be read safely. Check its format and permissions."
+msgid ""
+"The episodes could not be saved in this folder. Check its permissions and "
+"try again."
+msgstr ""
+"Списъкът за изпълнение не можа да бъде прочетен безопасно. Проверете формата "
+"и правата му."
+
+#: crates/big-audio-player/src/audio/ui/audio_shell/playback.rs:159
+#, fuzzy
+#| msgid ""
+#| "The library could not be read. Previous results were kept; try searching "
+#| "again."
+msgid "The library could not be read, so lyrics were not searched online."
+msgstr ""
+"Фонотеката не можа да бъде прочетена. Предишните резултати са запазени; "
+"опитайте да търсите отново."
+
+#: crates/big-audio-player/src/audio/ui/audio_shell/playback.rs:173
 msgid "Seek position"
 msgstr "Позиция на превъртане"
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/playback.rs:161
-#: crates/big-video-player/src/video/ui/video_controls_bar.rs:291
+#: crates/big-audio-player/src/audio/ui/audio_shell/playback.rs:174
+#: crates/big-video-player/src/video/ui/video_controls_bar.rs:290
 msgid "Cut timeline"
 msgstr "Времева линия на изрязване"
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/playback.rs:163
+#: crates/big-audio-player/src/audio/ui/audio_shell/playback.rs:176
 #: crates/big-video-player/src/video/ui/appearance/layout/buttons_page.rs:77
 #: crates/big-video-player/src/video/ui/video_controls_bar/seek_preview.rs:177
-#: crates/big-video-player/src/video/ui/video_controls_bar/zones.rs:565
+#: crates/big-video-player/src/video/ui/video_controls_bar/zones.rs:578
 msgid "Previous"
 msgstr "Предишна"
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/playback.rs:164
+#: crates/big-audio-player/src/audio/ui/audio_shell/playback.rs:177
 #: crates/big-video-player/src/video/ui/appearance/layout/buttons_page.rs:91
 #: crates/big-video-player/src/video/ui/video_controls_bar/seek_preview.rs:179
-#: crates/big-video-player/src/video/ui/video_controls_bar/zones.rs:568
+#: crates/big-video-player/src/video/ui/video_controls_bar/zones.rs:581
 msgid "Next"
 msgstr "Следваща"
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/playback.rs:165
+#: crates/big-audio-player/src/audio/ui/audio_shell/playback.rs:178
 #: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/header.rs:200
 msgid "Shuffle"
 msgstr "Разбъркване"
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/playback.rs:166
-#: crates/big-video-player/src/video/ui/preferences/general.rs:36
+#: crates/big-audio-player/src/audio/ui/audio_shell/playback.rs:179
+#: crates/big-video-player/src/video/ui/preferences/general.rs:37
 #: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/header.rs:201
 msgid "Repeat"
 msgstr "Повторение"
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/playback.rs:167
+#: crates/big-audio-player/src/audio/ui/audio_shell/playback.rs:180
 #: crates/big-video-player/src/video/ui/appearance/layout/buttons_page.rs:56
-#: crates/big-video-player/src/video/ui/video_controls_bar.rs:560
-#: crates/ui/media/big-media-components/src/player_chrome.rs:301
+#: crates/big-video-player/src/video/ui/video_controls_bar.rs:568
+#: crates/ui/media/big-media-components/src/player_chrome.rs:319
 #: crates/ui/media/big-media-components/src/text.rs:82
 #: crates/ui/media/big-media-components/src/text.rs:90
 #: crates/ui/media/big-media-components/src/text.rs:99
-#: crates/ui/media/big-player-ui/src/playback_bar.rs:325
+#: crates/ui/media/big-player-ui/src/playback_bar.rs:339
 msgid "Volume"
 msgstr "Сила на звука"
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/playback.rs:168
+#: crates/big-audio-player/src/audio/ui/audio_shell/playback.rs:181
 #: crates/big-video-player/src/video/ui/appearance/layout/buttons_page.rs:63
 #: crates/big-video-player/src/video/ui/video_controls_bar/zones.rs:302
-#: crates/ui/media/big-media-components/src/player_chrome.rs:312
+#: crates/ui/media/big-media-components/src/player_chrome.rs:330
 msgid "Speed"
 msgstr "Скорост"
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/playback.rs:169
+#: crates/big-audio-player/src/audio/ui/audio_shell/playback.rs:182
 #: crates/big-video-player/src/video/ui/appearance/layout/buttons_page.rs:70
 #: crates/big-video-player/src/video/ui/video_controls_bar/zones.rs:317
 msgid "Voice Enhancement"
 msgstr "Подобряване на гласа"
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/playback.rs:170
-#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:129
+#: crates/big-audio-player/src/audio/ui/audio_shell/playback.rs:183
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:114
 msgid "Trim & Export"
 msgstr "Изрязване и експорт"
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/playback.rs:171
+#: crates/big-audio-player/src/audio/ui/audio_shell/playback.rs:184
 #: crates/ui/media/big-player-ui/src/lyrics_panel.rs:144
 msgid "Lyrics"
 msgstr "Текст на песента"
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/playback.rs:172
+#: crates/big-audio-player/src/audio/ui/audio_shell/playback.rs:185
 msgid "Status"
 msgstr "Състояние"
 
@@ -739,25 +766,25 @@ msgstr "Твърде много записи в избраната папка"
 msgid "Choose at most 100 playlist files per import"
 msgstr "Изберете най-много 100 файла със списъци за изпълнение на внасяне"
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/playlist_library_dialog_actions.rs:155
-#: crates/big-audio-player/src/audio/ui/audio_shell/update.rs:152
+#: crates/big-audio-player/src/audio/ui/audio_shell/playlist_library_dialog_actions.rs:156
+#: crates/big-audio-player/src/audio/ui/audio_shell/update.rs:140
 #: crates/big-audio-player/src/audio/ui/scan_progress.rs:47
 msgid "Imported"
 msgstr "Внесени"
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/playlist_library_dialog_actions.rs:165
+#: crates/big-audio-player/src/audio/ui/audio_shell/playlist_library_dialog_actions.rs:169
 msgid "Import stopped. Confirmed tracks were kept"
 msgstr "Внасянето е спряно. Потвърдените песни са запазени"
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/playlist_library_dialog_actions.rs:188
+#: crates/big-audio-player/src/audio/ui/audio_shell/playlist_library_dialog_actions.rs:192
 msgid "Export All Playlists"
 msgstr "Експорт на всички списъци за изпълнение"
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/playlist_library_dialog_actions.rs:196
+#: crates/big-audio-player/src/audio/ui/audio_shell/playlist_library_dialog_actions.rs:200
 msgid "Playlists exported"
 msgstr "Списъците за изпълнение са експортирани"
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/playlist_library_dialog_actions.rs:200
+#: crates/big-audio-player/src/audio/ui/audio_shell/playlist_library_dialog_actions.rs:204
 msgid ""
 "Export was not fully completed. Published files were kept; choose an empty "
 "destination and try again."
@@ -765,62 +792,85 @@ msgstr ""
 "Експортът не беше напълно завършен. Публикуваните файлове са запазени; "
 "изберете празно местоназначение и опитайте отново."
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/playlist_library_dialog_actions.rs:233
-#: crates/big-audio-player/src/audio/ui/library_io.rs:84
+#: crates/big-audio-player/src/audio/ui/audio_shell/playlist_library_dialog_actions.rs:237
+#: crates/big-audio-player/src/audio/ui/library_io.rs:49
 msgid "Export Playlist"
 msgstr "Експорт на списъка за изпълнение"
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/playlist_library_dialog_actions.rs:235
-#: crates/big-audio-player/src/audio/ui/library_io.rs:87
+#: crates/big-audio-player/src/audio/ui/audio_shell/playlist_library_dialog_actions.rs:239
+#: crates/big-audio-player/src/audio/ui/library_io.rs:52
 msgid "M3U8 Playlist"
 msgstr "Списък за изпълнение M3U8"
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/playlist_library_dialog_actions.rs:259
-#: crates/big-audio-player/src/audio/ui/library_io.rs:111
+#: crates/big-audio-player/src/audio/ui/audio_shell/playlist_library_dialog_actions.rs:263
+#: crates/big-audio-player/src/audio/ui/library_io.rs:76
 msgid "Import Playlist"
 msgstr "Внасяне на списък за изпълнение"
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/playlist_library_dialog_actions.rs:260
-#: crates/big-audio-player/src/audio/ui/library_dialogs.rs:62
-#: crates/big-audio-player/src/audio/ui/library_io.rs:113
+#: crates/big-audio-player/src/audio/ui/audio_shell/playlist_library_dialog_actions.rs:264
+#: crates/big-audio-player/src/audio/ui/library_dialogs.rs:48
+#: crates/big-audio-player/src/audio/ui/library_io.rs:78
 #: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/menu_actions.rs:230
 msgid "Playlists"
 msgstr "Списъци за изпълнение"
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/playlist_library_dialog_actions.rs:305
+#: crates/big-audio-player/src/audio/ui/audio_shell/playlist_library_dialog_actions.rs:310
 msgid ""
 "The batch import limit was reached. Split the playlists into smaller imports."
 msgstr ""
 "Достигнато е ограничението за пакетно внасяне. Разделете списъците на по-"
 "малки партиди."
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/playlist_library_dialog_actions.rs:315
-#: crates/big-audio-player/src/audio/ui/audio_shell/playlist_library_dialog_actions.rs:352
-#: crates/big-audio-player/src/audio/ui/audio_shell/playlist_library_dialog_actions.rs:391
+#: crates/big-audio-player/src/audio/ui/audio_shell/playlist_library_dialog_actions.rs:320
+#: crates/big-audio-player/src/audio/ui/audio_shell/playlist_library_dialog_actions.rs:357
+#: crates/big-audio-player/src/audio/ui/audio_shell/playlist_library_dialog_actions.rs:396
 msgid "Library unavailable"
 msgstr "Фонотеката не е налична"
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/playlist_library_dialog_actions.rs:366
+#: crates/big-audio-player/src/audio/ui/audio_shell/playlist_library_dialog_actions.rs:371
 msgid "Too many playlists for one export"
 msgstr "Твърде много списъци за един експорт"
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/playlist_library_dialog_actions.rs:380
+#: crates/big-audio-player/src/audio/ui/audio_shell/playlist_library_dialog_actions.rs:385
 msgid "Export stopped. Confirmed outputs were kept"
 msgstr "Експортът е спрян. Потвърдените резултати са запазени"
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/playlist_library_dialog_actions.rs:401
+#: crates/big-audio-player/src/audio/ui/audio_shell/playlist_library_dialog_actions.rs:406
 #: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/menu_actions.rs:212
 msgid "Playlist export"
 msgstr "Експорт на списъци за изпълнение"
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/playlist_library_dialog_actions.rs:404
-#: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:478
-#: crates/big-audio-player/src/audio/ui/library_dialogs.rs:64
+#: crates/big-audio-player/src/audio/ui/audio_shell/playlist_library_dialog_actions.rs:409
+#: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:486
+#: crates/big-audio-player/src/audio/ui/library_dialogs.rs:50
 #: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/menu_actions.rs:215
-#: crates/big-video-player/src/video/ui/video_shell/component.rs:132
+#: crates/big-video-player/src/video/ui/video_shell/component.rs:136
 #: crates/ui/generic/big-relm4-components/src/layout/media_window.rs:283
 msgid "Close"
 msgstr "Затваряне"
+
+#: crates/big-audio-player/src/audio/ui/audio_shell/queue_persistence.rs:55
+#, fuzzy, rust-format
+#| msgid "The playlist could not be saved."
+msgid "The music library could not be opened: {}"
+msgstr "Списъкът за изпълнение не можа да бъде запазен."
+
+#: crates/big-audio-player/src/audio/ui/audio_shell/queue_persistence.rs:57
+msgid "Retry"
+msgstr ""
+
+#: crates/big-audio-player/src/audio/ui/audio_shell/queue_persistence.rs:60
+msgid ""
+"The playback queue could not be saved or restored. Your previous saved queue "
+"was kept."
+msgstr ""
+"Опашката за изпълнение не можа да бъде запазена или възстановена. Предишната "
+"запазена опашка беше запазена."
+
+#: crates/big-audio-player/src/audio/ui/audio_shell/queue_persistence.rs:62
+#: crates/media-runtime/src/settings/saving.rs:240
+msgid "Retry saving"
+msgstr "Нов опит за запазване"
 
 #: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:42
 msgid "A library scan is already running. Cancel it or wait for its result."
@@ -843,48 +893,70 @@ msgstr ""
 "Наблюдаваните папки не можаха да бъдат прочетени. Предишните настройки са "
 "запазени."
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:258
-#: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:266
-#: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:295
+#: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:150
+#, fuzzy
+#| msgid "The playlist could not be saved."
+msgid "The station could not be saved."
+msgstr "Списъкът за изпълнение не можа да бъде запазен."
+
+#: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:164
+#, fuzzy
+#| msgid "The playlist could not be saved."
+msgid "The station could not be removed."
+msgstr "Списъкът за изпълнение не можа да бъде запазен."
+
+#: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:224
+msgid "There is no Music or home folder to save recordings in."
+msgstr ""
+
+#: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:270
+#: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:278
+#: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:307
 msgid "Recording was not saved"
 msgstr "Записът не беше запазен"
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:271
+#: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:283
 msgid "Recording to"
 msgstr "Запис в"
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:344
+#: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:356
 msgid "No episodes found"
 msgstr "Не са намерени епизоди"
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:453
+#: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:461
 msgid "Recording saved"
 msgstr "Записът е запазен"
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:459
+#: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:467
 msgid "The recording was saved and is ready to open."
 msgstr "Записът беше запазен и е готов за отваряне."
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:463
+#: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:471
 #: crates/big-audio-player/src/audio/ui/library_tag_editor/spec.rs:125
 #: crates/big-video-player/src/video/ui/media_details_dialog.rs:81
 msgid "File"
 msgstr "Файл"
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:467
+#: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:475
 msgid "Folder"
 msgstr "Папка"
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:473
+#: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:481
 #: crates/ui/media/big-media-components/src/media/file_metadata_dialog.rs:55
 msgid "Open Folder"
 msgstr "Отваряне на папка"
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:478
+#: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:486
 #: crates/big-video-player/src/video/ui/appearance/layout/buttons_page.rs:35
 #: crates/big-video-player/src/video/ui/video_shell/actions.rs:126
 msgid "Open File"
 msgstr "Отваряне на файл"
+
+#: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:539
+#, fuzzy
+#| msgid "The playlist could not be saved."
+msgid "Saved radio stations could not be read."
+msgstr "Списъкът за изпълнение не можа да бъде запазен."
 
 #: crates/big-audio-player/src/audio/ui/audio_shell/tray.rs:18
 msgid "Show Big Audio Player"
@@ -894,11 +966,11 @@ msgstr "Показване на Big Audio Player"
 msgid "The TV's track is no longer in the queue."
 msgstr "Песента на телевизора вече не е в опашката."
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/update.rs:141
+#: crates/big-audio-player/src/audio/ui/audio_shell/update.rs:129
 msgid "Scan cancelled. Earlier confirmed imports were kept."
 msgstr "Сканирането е отменено. По-ранните потвърдени внасяния са запазени."
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/update.rs:144
+#: crates/big-audio-player/src/audio/ui/audio_shell/update.rs:132
 msgid ""
 "Scan incomplete. Earlier confirmed imports were kept; check storage and "
 "retry."
@@ -906,20 +978,20 @@ msgstr ""
 "Сканирането е непълно. По-ранните потвърдени внасяния са запазени; проверете "
 "хранилището и опитайте отново."
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/update.rs:147
+#: crates/big-audio-player/src/audio/ui/audio_shell/update.rs:135
 msgid "Library scan finished."
 msgstr "Сканирането на фонотеката приключи."
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/update.rs:154
+#: crates/big-audio-player/src/audio/ui/audio_shell/update.rs:142
 #: crates/big-audio-player/src/audio/ui/scan_progress.rs:48
 msgid "Skipped"
 msgstr "Пропуснати"
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/update.rs:160
+#: crates/big-audio-player/src/audio/ui/audio_shell/update.rs:148
 msgid "Library updated"
 msgstr "Фонотеката е обновена"
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/update.rs:162
+#: crates/big-audio-player/src/audio/ui/audio_shell/update.rs:150
 msgid ""
 "The operation was incomplete. Imported tracks were kept; check the folder "
 "and try again."
@@ -927,7 +999,7 @@ msgstr ""
 "Операцията беше непълна. Внесените песни са запазени; проверете папката и "
 "опитайте отново."
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/update.rs:190
+#: crates/big-audio-player/src/audio/ui/audio_shell/update.rs:175
 msgid ""
 "The library could not be read. Previous results were kept; try searching "
 "again."
@@ -935,20 +1007,21 @@ msgstr ""
 "Фонотеката не можа да бъде прочетена. Предишните резултати са запазени; "
 "опитайте да търсите отново."
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/update.rs:204
+#: crates/big-audio-player/src/audio/ui/audio_shell/update.rs:195
 msgid "The playlist could not be changed. Your previous playlist was kept."
 msgstr ""
 "Списъкът за изпълнение не можа да бъде променен. Предишният списък е запазен."
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/update.rs:209
+#: crates/big-audio-player/src/audio/ui/audio_shell/update.rs:200
 msgid "Playlists could not be opened. Please try again."
 msgstr "Списъците за изпълнение не можаха да бъдат отворени. Опитайте отново."
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/update.rs:311
+#: crates/big-audio-player/src/audio/ui/audio_shell/update.rs:306
+#: crates/big-audio-player/src/audio/ui/audio_shell/update.rs:310
 msgid "tracks imported"
 msgstr "внесени песни"
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/update.rs:315
+#: crates/big-audio-player/src/audio/ui/audio_shell/update.rs:316
 msgid ""
 "Playlist import was not fully completed. Previously confirmed imports were "
 "kept."
@@ -961,8 +1034,8 @@ msgstr ""
 #: crates/big-audio-player/src/audio/ui/library_tree/view.rs:376
 #: crates/big-audio-player/src/audio/ui/playlist_interactions.rs:110
 #: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/context_menu.rs:41
-#: crates/big-video-player/src/video/ui/video_controls_bar.rs:479
-#: crates/big-video-player/src/video/ui/video_controls_bar/zones.rs:566
+#: crates/big-video-player/src/video/ui/video_controls_bar.rs:478
+#: crates/big-video-player/src/video/ui/video_controls_bar/zones.rs:579
 #: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:173
 msgid "Play"
 msgstr "Изпълнение"
@@ -1002,46 +1075,48 @@ msgstr "Информация за песента"
 
 #: crates/big-audio-player/src/audio/ui/library_detail_interactions.rs:125
 #: crates/big-audio-player/src/audio/ui/playlist_interactions.rs:135
-#: crates/big-audio-player/src/audio/ui/track_list.rs:430
+#: crates/big-audio-player/src/audio/ui/track_list.rs:448
 #, rust-format
 msgid "{} of 5 stars"
 msgstr "{} от 5 звезди"
 
 #: crates/big-audio-player/src/audio/ui/library_detail_interactions.rs:129
 #: crates/big-audio-player/src/audio/ui/playlist_interactions.rs:139
-#: crates/big-audio-player/src/audio/ui/track_list.rs:82
+#: crates/big-audio-player/src/audio/ui/track_list.rs:99
 #: crates/big-audio-player/src/audio/ui/unavailable_dialog.rs:351
 msgid "Rating"
 msgstr "Оценка"
 
-#: crates/big-audio-player/src/audio/ui/library_dialogs.rs:56
+#: crates/big-audio-player/src/audio/ui/library_dialogs.rs:42
 msgid "Add to Playlist"
 msgstr "Добавяне към списък за изпълнение"
 
-#: crates/big-audio-player/src/audio/ui/library_dialogs.rs:63
+#: crates/big-audio-player/src/audio/ui/library_dialogs.rs:49
 msgid "No playlists yet"
 msgstr "Още няма списъци за изпълнение"
 
-#: crates/big-audio-player/src/audio/ui/library_dialogs.rs:65
-#: crates/big-audio-player/src/audio/ui/library_dialogs.rs:73
+#: crates/big-audio-player/src/audio/ui/library_dialogs.rs:51
+#: crates/big-audio-player/src/audio/ui/library_dialogs.rs:159
 msgid "New Playlist"
 msgstr "Нов списък за изпълнение"
 
-#: crates/big-audio-player/src/audio/ui/library_dialogs.rs:67
+#: crates/big-audio-player/src/audio/ui/library_dialogs.rs:53
 #: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/context_menu.rs:82
-#: crates/big-video-player/src/video/ui/video_browser_sidebar/fileops.rs:72
-#: crates/big-video-player/src/video/ui/video_browser_sidebar/library.rs:646
-#: crates/big-video-player/src/video/ui/video_browser_sidebar/library.rs:650
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/fileops.rs:69
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/library.rs:647
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/library.rs:651
 msgid "Add to playlist"
 msgstr "Добавяне към списък за изпълнение"
 
-#: crates/big-audio-player/src/audio/ui/library_dialogs.rs:77
-#: crates/big-audio-player/src/audio/ui/library_io.rs:52
-#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:213
+#: crates/big-audio-player/src/audio/ui/library_dialogs.rs:161
+#: crates/big-audio-player/src/audio/ui/library_io.rs:98
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:190
+#: crates/big-audio-player/src/audio/ui/playlist_library_dialog/spec.rs:185
+#: crates/big-audio-player/src/audio/ui/playlist_library_dialog/spec.rs:197
 msgid "Playlist name"
 msgstr "Име на списъка за изпълнение"
 
-#: crates/big-audio-player/src/audio/ui/library_dialogs.rs:79
+#: crates/big-audio-player/src/audio/ui/library_dialogs.rs:163
 msgid "Create"
 msgstr "Създаване"
 
@@ -1058,7 +1133,7 @@ msgstr "Филтриране по дата на добавяне"
 
 #: crates/big-audio-player/src/audio/ui/library_grouping_ui.rs:206
 #: crates/big-audio-player/src/audio/ui/library_grouping_ui.rs:207
-#: crates/big-audio-player/src/audio/ui/library_io.rs:307
+#: crates/big-audio-player/src/audio/ui/library_io.rs:282
 msgid "Add music folder"
 msgstr "Добавяне на музикална папка"
 
@@ -1075,11 +1150,11 @@ msgstr "Филтриране…"
 msgid "Search library"
 msgstr "Търсене във фонотеката"
 
-#: crates/big-audio-player/src/audio/ui/library_io.rs:80
+#: crates/big-audio-player/src/audio/ui/library_io.rs:45
 msgid "No tracks to export"
 msgstr "Няма песни за експортиране"
 
-#: crates/big-audio-player/src/audio/ui/library_io.rs:99
+#: crates/big-audio-player/src/audio/ui/library_io.rs:64
 #: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/menu_actions.rs:208
 msgid ""
 "Playlist export could not be confirmed. Existing files were kept; choose a "
@@ -1088,41 +1163,41 @@ msgstr ""
 "Експортирането на списъка за изпълнение не можа да бъде потвърдено. "
 "Съществуващите файлове са запазени; изберете ново име и опитайте отново."
 
-#: crates/big-audio-player/src/audio/ui/library_io.rs:112
-#: crates/big-video-player/src/video/ui/menu_dialogs.rs:349
-#: crates/big-video-player/src/video/ui/video_shell/component.rs:269
-#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:257
+#: crates/big-audio-player/src/audio/ui/library_io.rs:77
+#: crates/big-video-player/src/video/ui/menu_dialogs.rs:240
+#: crates/big-video-player/src/video/ui/video_shell/component.rs:279
+#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:251
 msgid "Open"
 msgstr "Отваряне"
 
-#: crates/big-audio-player/src/audio/ui/library_io.rs:127
+#: crates/big-audio-player/src/audio/ui/library_io.rs:92
 msgid "No tracks to save"
 msgstr "Няма песни за запазване"
 
-#: crates/big-audio-player/src/audio/ui/library_io.rs:133
+#: crates/big-audio-player/src/audio/ui/library_io.rs:96
 msgid "Save as Playlist"
 msgstr "Запазване като списък за изпълнение"
 
-#: crates/big-audio-player/src/audio/ui/library_io.rs:134
+#: crates/big-audio-player/src/audio/ui/library_io.rs:97
 msgid "Enter a name for the new playlist"
 msgstr "Въведете име за новия списък за изпълнение"
 
-#: crates/big-audio-player/src/audio/ui/library_io.rs:170
-#: crates/big-audio-player/src/audio/ui/library_io.rs:185
-#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:121
+#: crates/big-audio-player/src/audio/ui/library_io.rs:145
+#: crates/big-audio-player/src/audio/ui/library_io.rs:160
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:106
 msgid "Music Folders"
 msgstr "Музикални папки"
 
-#: crates/big-audio-player/src/audio/ui/library_io.rs:177
+#: crates/big-audio-player/src/audio/ui/library_io.rs:152
 #: crates/big-audio-player/src/audio/ui/unavailable_dialog.rs:41
 msgid "Review unavailable files"
 msgstr "Преглед на недостъпните файлове"
 
-#: crates/big-audio-player/src/audio/ui/library_io.rs:224
+#: crates/big-audio-player/src/audio/ui/library_io.rs:199
 msgid "Monitored Folders"
 msgstr "Наблюдавани папки"
 
-#: crates/big-audio-player/src/audio/ui/library_io.rs:234
+#: crates/big-audio-player/src/audio/ui/library_io.rs:209
 msgid ""
 "These folders are scanned for audio files. Removing a folder stops "
 "monitoring it. Tracks and ratings are kept until you explicitly review "
@@ -1132,49 +1207,49 @@ msgstr ""
 "наблюдението ѝ. Песните и оценките се запазват, докато изрично не прегледате "
 "недостъпните файлове."
 
-#: crates/big-audio-player/src/audio/ui/library_io.rs:260
+#: crates/big-audio-player/src/audio/ui/library_io.rs:235
 msgid "Music folders"
 msgstr "Музикални папки"
 
-#: crates/big-audio-player/src/audio/ui/library_io.rs:264
+#: crates/big-audio-player/src/audio/ui/library_io.rs:239
 msgid "No folders added yet"
 msgstr "Още няма добавени папки"
 
-#: crates/big-audio-player/src/audio/ui/library_io.rs:266
+#: crates/big-audio-player/src/audio/ui/library_io.rs:241
 msgid "Click the button below to add your first music folder"
 msgstr "Натиснете бутона по-долу, за да добавите първата си музикална папка"
 
-#: crates/big-audio-player/src/audio/ui/library_io.rs:288
+#: crates/big-audio-player/src/audio/ui/library_io.rs:263
 msgid "Removal requested. Reopen this list after the operation finishes."
 msgstr ""
 "Премахването е заявено. Отворете този списък отново, след като операцията "
 "приключи."
 
-#: crates/big-audio-player/src/audio/ui/library_io.rs:306
+#: crates/big-audio-player/src/audio/ui/library_io.rs:281
 msgid "Add Folder"
 msgstr "Добавяне на папка"
 
-#: crates/big-audio-player/src/audio/ui/library_io.rs:319
+#: crates/big-audio-player/src/audio/ui/library_io.rs:294
 msgid "Select Music Folder"
 msgstr "Избор на музикална папка"
 
-#: crates/big-audio-player/src/audio/ui/library_io.rs:329
+#: crates/big-audio-player/src/audio/ui/library_io.rs:304
 msgid "Scan Now"
 msgstr "Сканиране сега"
 
-#: crates/big-audio-player/src/audio/ui/library_io.rs:330
+#: crates/big-audio-player/src/audio/ui/library_io.rs:305
 msgid "Scan all monitored folders now"
 msgstr "Сканиране на всички наблюдавани папки сега"
 
-#: crates/big-audio-player/src/audio/ui/library_io.rs:440
+#: crates/big-audio-player/src/audio/ui/library_io.rs:341
 msgid "Stop monitoring this folder; keep its tracks"
 msgstr "Спиране на наблюдението на тази папка; песните ѝ се запазват"
 
-#: crates/big-audio-player/src/audio/ui/library_io.rs:443
+#: crates/big-audio-player/src/audio/ui/library_io.rs:344
 msgid "Remove folder"
 msgstr "Премахване на папката"
 
-#: crates/big-audio-player/src/audio/ui/library_io.rs:452
+#: crates/big-audio-player/src/audio/ui/library_io.rs:353
 msgid ""
 "Add folders where your music files are stored. The player scans these "
 "folders to build your library, organizing tracks by artist, album, and genre "
@@ -1184,22 +1259,22 @@ msgstr ""
 "сканира тези папки, за да изгради фонотеката ви, като автоматично организира "
 "песните по изпълнител, албум и жанр."
 
-#: crates/big-audio-player/src/audio/ui/library_io.rs:490
+#: crates/big-audio-player/src/audio/ui/library_io.rs:391
 msgid "Tips"
 msgstr "Съвети"
 
-#: crates/big-audio-player/src/audio/ui/library_io.rs:499
+#: crates/big-audio-player/src/audio/ui/library_io.rs:400
 msgid ""
 "• Supported formats: MP3, FLAC, OGG, Opus, M4A, WAV, WMA, AAC, APE, WavPack"
 msgstr ""
 "• Поддържани формати: MP3, FLAC, OGG, Opus, M4A, WAV, WMA, AAC, APE, WavPack"
 
-#: crates/big-audio-player/src/audio/ui/library_io.rs:500
+#: crates/big-audio-player/src/audio/ui/library_io.rs:401
 msgid "• Subfolders are included automatically — no need to add each one"
 msgstr ""
 "• Подпапките се включват автоматично — не е нужно да добавяте всяка поотделно"
 
-#: crates/big-audio-player/src/audio/ui/library_io.rs:502
+#: crates/big-audio-player/src/audio/ui/library_io.rs:403
 msgid ""
 "• Use the Files tab to play files from any folder without adding them to the "
 "library"
@@ -1225,10 +1300,8 @@ msgid "Back to library"
 msgstr "Назад към фонотеката"
 
 #: crates/big-audio-player/src/audio/ui/library_tag_editor.rs:202
-#: crates/big-audio-player/src/audio/ui/track_list.rs:74
+#: crates/big-audio-player/src/audio/ui/track_list.rs:91
 #: crates/big-video-player/src/video/ui/media_details_dialog.rs:105
-#: crates/media-runtime/src/media/metadata_cache/detailed_video_metadata.rs:160
-#: crates/media-runtime/src/media/metadata_cache/detailed_video_metadata.rs:174
 msgid "Title"
 msgstr "Заглавие"
 
@@ -1262,33 +1335,29 @@ msgid "Searching…"
 msgstr "Търсене…"
 
 #: crates/big-audio-player/src/audio/ui/library_tag_editor/spec.rs:83
-#: crates/big-audio-player/src/audio/ui/track_list.rs:77
+#: crates/big-audio-player/src/audio/ui/track_list.rs:94
 #: crates/big-video-player/src/video/ui/media_details_dialog.rs:114
-#: crates/media-runtime/src/shared/sleep_timer.rs:21
+#: crates/media-runtime/src/shared/sleep_timer.rs:29
 #: crates/ui/media/big-media-components/src/media/file_metadata_dialog.rs:57
 msgid "Duration"
 msgstr "Продължителност"
 
 #: crates/big-audio-player/src/audio/ui/library_tag_editor/spec.rs:88
-#: crates/big-audio-player/src/audio/ui/track_list.rs:80
+#: crates/big-audio-player/src/audio/ui/track_list.rs:97
 #: crates/big-video-player/src/video/ui/media_details_dialog.rs:181
 #: crates/big-video-player/src/video/ui/media_details_dialog.rs:238
-#: crates/media-runtime/src/media/metadata_cache/detailed_video_metadata.rs:108
-#: crates/media-runtime/src/media/metadata_cache/detailed_video_metadata.rs:154
 #: crates/ui/media/big-media-components/src/media/file_metadata_dialog.rs:60
 msgid "Bitrate"
 msgstr "Битрейт"
 
 #: crates/big-audio-player/src/audio/ui/library_tag_editor/spec.rs:98
 #: crates/big-video-player/src/video/ui/media_details_dialog.rs:246
-#: crates/media-runtime/src/media/metadata_cache/detailed_video_metadata.rs:139
 #: crates/ui/media/big-media-components/src/media/file_metadata_dialog.rs:69
 msgid "Sample Rate"
 msgstr "Честота на дискретизация"
 
 #: crates/big-audio-player/src/audio/ui/library_tag_editor/spec.rs:105
 #: crates/big-video-player/src/video/ui/media_details_dialog.rs:253
-#: crates/media-runtime/src/media/metadata_cache/detailed_video_metadata.rs:149
 #: crates/ui/media/big-media-components/src/media/file_metadata_dialog.rs:70
 msgid "Channels"
 msgstr "Канали"
@@ -1308,14 +1377,14 @@ msgid "No new data found"
 msgstr "Не са намерени нови данни"
 
 #: crates/big-audio-player/src/audio/ui/library_tree/view.rs:162
-#: crates/big-audio-player/src/audio/ui/playlist_library_dialog/spec.rs:179
+#: crates/big-audio-player/src/audio/ui/playlist_library_dialog/spec.rs:170
 #: crates/big-audio-player/src/audio/ui/playlist_panel.rs:103
 msgid "track"
 msgstr "песен"
 
 #: crates/big-audio-player/src/audio/ui/library_tree/view.rs:164
 #: crates/big-audio-player/src/audio/ui/playlist_interactions.rs:292
-#: crates/big-audio-player/src/audio/ui/playlist_library_dialog/spec.rs:181
+#: crates/big-audio-player/src/audio/ui/playlist_library_dialog/spec.rs:172
 #: crates/big-audio-player/src/audio/ui/playlist_panel.rs:105
 msgid "tracks"
 msgstr "песни"
@@ -1324,104 +1393,104 @@ msgstr "песни"
 msgid "Music library"
 msgstr "Музикална фонотека"
 
-#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:49
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:34
 msgid "Drag and drop files to create a playlist"
 msgstr "Плъзнете и пуснете файлове, за да създадете списък за изпълнение"
 
-#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:53
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:38
 msgid "Use the Music tab on the left to browse your library"
 msgstr "Използвайте раздела „Музика“ отляво, за да разгледате фонотеката си"
 
-#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:57
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:42
 msgid "Explore Radio and Podcasts in the sidebar tabs"
 msgstr "Разгледайте Радио и Подкасти в разделите на страничната лента"
 
-#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:78
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:63
 #: crates/big-audio-player/src/audio/ui/playlist_panel.rs:94
-#: crates/big-audio-player/src/audio/ui/playlist_panel.rs:401
+#: crates/big-audio-player/src/audio/ui/playlist_panel.rs:412
 #: crates/big-video-player/src/video/ui/appearance/layout/buttons_page.rs:42
 #: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/header.rs:24
-#: crates/big-video-player/src/video/ui/video_shell/component.rs:291
-#: crates/big-video-player/src/video/ui/video_shell/component.rs:295
+#: crates/big-video-player/src/video/ui/video_shell/component.rs:301
+#: crates/big-video-player/src/video/ui/video_shell/component.rs:305
 #: crates/big-video-player/src/video/ui/video_shell/playlist_panel.rs:24
 msgid "Playlist"
 msgstr "Списък за изпълнение"
 
-#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:92
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:77
 msgid "Main Menu"
 msgstr "Главно меню"
 
-#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:112
-#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:203
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:97
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:188
 msgid "Save Queue as Playlist"
 msgstr "Запазване на опашката като списък за изпълнение"
 
-#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:113
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:98
 msgid "Remove Duplicates"
 msgstr "Премахване на дубликатите"
 
-#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:114
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:99
 msgid "Clear Queue"
 msgstr "Изчистване на опашката"
 
-#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:120
-#: crates/big-audio-player/src/audio/ui/playlist_library_dialog/spec.rs:105
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:105
+#: crates/big-audio-player/src/audio/ui/playlist_library_dialog/spec.rs:96
 msgid "Manage Playlists"
 msgstr "Управление на списъците за изпълнение"
 
-#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:130
-#: crates/big-video-player/src/video/ui/video_controls_bar/zones.rs:670
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:115
+#: crates/big-video-player/src/video/ui/video_controls_bar/zones.rs:683
 msgid "Convert…"
 msgstr "Преобразуване…"
 
-#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:136
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:121
 #: crates/big-video-player/src/video/ui/appearance/layout/buttons_page.rs:112
-#: crates/big-video-player/src/video/ui/video_controls_bar/zones.rs:628
+#: crates/big-video-player/src/video/ui/video_controls_bar/zones.rs:641
 #: crates/big-video-player/src/video/ui/video_shell/panel.rs:46
 #: crates/media-runtime/src/shared/tv_cast.rs:846
 msgid "Play on a TV"
 msgstr "Изпълнение на телевизор"
 
-#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:137
-#: crates/ui/media/big-player-ui/src/smartphone/dialog.rs:29
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:122
+#: crates/ui/media/big-player-ui/src/smartphone/dialog.rs:30
 msgid "Smartphone"
 msgstr "Смартфон"
 
-#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:143
-#: crates/big-video-player/src/video/ui/video_shell/panel.rs:576
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:128
+#: crates/big-video-player/src/video/ui/video_shell/panel.rs:577
 #: crates/ui/media/big-player-ui/src/appearance/window.rs:76
 msgid "Appearance"
 msgstr "Външен вид"
 
-#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:145
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:130
 #: crates/big-audio-player/src/audio/ui/shortcuts_dialog.rs:27
 #: crates/big-video-player/src/video/ui/keyboard_shortcuts_dialog.rs:30
 msgid "Keyboard Shortcuts"
 msgstr "Клавишни комбинации"
 
-#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:146
-#: crates/big-video-player/src/video/ui/video_shell/panel.rs:584
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:131
+#: crates/big-video-player/src/video/ui/video_shell/panel.rs:585
 msgid "About"
 msgstr "Относно"
 
-#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:209
-#: crates/big-audio-player/src/audio/ui/playlist_library_dialog/spec.rs:194
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:189
+#: crates/big-audio-player/src/audio/ui/playlist_library_dialog/spec.rs:184
 msgid "Name for the new playlist"
 msgstr "Име на новия списък за изпълнение"
 
-#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:284
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:225
 msgid "Drop tracks here"
 msgstr "Пуснете песни тук"
 
-#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:285
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:226
 msgid "or use ＋ to add from the library"
 msgstr "или използвайте ＋, за да добавите от фонотеката"
 
-#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:311
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:252
 msgid "Welcome to Big Audio Player"
 msgstr "Добре дошли в Big Audio Player"
 
-#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:319
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:260
 msgid ""
 "Add a folder with your music files to get started.\n"
 "Supported formats: MP3, FLAC, OGG, M4A, OPUS, WAV and more."
@@ -1429,23 +1498,23 @@ msgstr ""
 "Добавете папка с вашите музикални файлове, за да започнете.\n"
 "Поддържани формати: MP3, FLAC, OGG, M4A, OPUS, WAV и други."
 
-#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:332
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:273
 msgid "Open Files"
 msgstr "Отваряне на файлове"
 
-#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:333
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:274
 msgid "Open files"
 msgstr "Отваряне на файлове"
 
-#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:343
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:284
 msgid "Open Audio Files"
 msgstr "Отваряне на аудио файлове"
 
-#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:345
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:286
 msgid "Audio Files"
 msgstr "Аудио файлове"
 
-#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:369
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:310
 msgid "Quick tips"
 msgstr "Бързи съвети"
 
@@ -1501,93 +1570,98 @@ msgid "Import / Export"
 msgstr "Внасяне / Експорт"
 
 #: crates/big-audio-player/src/audio/ui/playlist_library_dialog.rs:259
-#: crates/big-audio-player/src/audio/ui/playlist_library_dialog/spec.rs:192
+#: crates/big-audio-player/src/audio/ui/playlist_library_dialog/spec.rs:183
 msgid "Save Current Queue"
 msgstr "Запазване на текущата опашка"
 
-#: crates/big-audio-player/src/audio/ui/playlist_library_dialog.rs:280
+#: crates/big-audio-player/src/audio/ui/playlist_library_dialog.rs:287
 msgid "Generate"
 msgstr "Генериране"
 
-#: crates/big-audio-player/src/audio/ui/playlist_library_dialog.rs:281
+#: crates/big-audio-player/src/audio/ui/playlist_library_dialog.rs:288
 msgid "Build a playlist from your listening stats"
 msgstr "Създаване на списък за изпълнение от статистиката ви на слушане"
 
-#: crates/big-audio-player/src/audio/ui/playlist_library_dialog/spec.rs:88
+#: crates/big-audio-player/src/audio/ui/playlist_library_dialog/spec.rs:79
 msgid "Most Played"
 msgstr "Най-изпълнявани"
 
-#: crates/big-audio-player/src/audio/ui/playlist_library_dialog/spec.rs:93
+#: crates/big-audio-player/src/audio/ui/playlist_library_dialog/spec.rs:84
 msgid "Recently Added"
 msgstr "Наскоро добавени"
 
-#: crates/big-audio-player/src/audio/ui/playlist_library_dialog/spec.rs:98
+#: crates/big-audio-player/src/audio/ui/playlist_library_dialog/spec.rs:89
 msgid "Never Played"
 msgstr "Неизпълнявани"
 
+#: crates/big-audio-player/src/audio/ui/playlist_library_dialog/spec.rs:97
 #: crates/big-audio-player/src/audio/ui/playlist_library_dialog/spec.rs:106
-#: crates/big-audio-player/src/audio/ui/playlist_library_dialog/spec.rs:115
 msgid "Your Playlists"
 msgstr "Вашите списъци за изпълнение"
 
-#: crates/big-audio-player/src/audio/ui/playlist_library_dialog/spec.rs:129
+#: crates/big-audio-player/src/audio/ui/playlist_library_dialog/spec.rs:120
 msgid "No Saved Playlists"
 msgstr "Няма запазени списъци за изпълнение"
 
-#: crates/big-audio-player/src/audio/ui/playlist_library_dialog/spec.rs:131
+#: crates/big-audio-player/src/audio/ui/playlist_library_dialog/spec.rs:122
 msgid "Save the current queue, generate one from your stats, or import a file"
 msgstr ""
 "Запазете текущата опашка, генерирайте списък от статистиката си или внесете "
 "файл"
 
-#: crates/big-audio-player/src/audio/ui/playlist_library_dialog/spec.rs:140
+#: crates/big-audio-player/src/audio/ui/playlist_library_dialog/spec.rs:131
 msgid "Import File…"
 msgstr "Внасяне на файл…"
 
-#: crates/big-audio-player/src/audio/ui/playlist_library_dialog/spec.rs:145
+#: crates/big-audio-player/src/audio/ui/playlist_library_dialog/spec.rs:136
 msgid "Import Folder…"
 msgstr "Внасяне на папка…"
 
-#: crates/big-audio-player/src/audio/ui/playlist_library_dialog/spec.rs:150
+#: crates/big-audio-player/src/audio/ui/playlist_library_dialog/spec.rs:141
 msgid "Export All…"
 msgstr "Експорт на всички…"
 
-#: crates/big-audio-player/src/audio/ui/playlist_library_dialog/spec.rs:170
+#: crates/big-audio-player/src/audio/ui/playlist_library_dialog/spec.rs:161
 msgid "Load"
 msgstr "Зареждане"
 
-#: crates/big-audio-player/src/audio/ui/playlist_library_dialog/spec.rs:171
+#: crates/big-audio-player/src/audio/ui/playlist_library_dialog/spec.rs:162
 msgid "Rename playlist"
 msgstr "Преименуване на списъка за изпълнение"
 
-#: crates/big-audio-player/src/audio/ui/playlist_library_dialog/spec.rs:172
+#: crates/big-audio-player/src/audio/ui/playlist_library_dialog/spec.rs:163
 msgid "Export playlist"
 msgstr "Експорт на списъка за изпълнение"
 
-#: crates/big-audio-player/src/audio/ui/playlist_library_dialog/spec.rs:173
+#: crates/big-audio-player/src/audio/ui/playlist_library_dialog/spec.rs:164
 msgid "Delete playlist"
 msgstr "Изтриване на списъка за изпълнение"
 
-#: crates/big-audio-player/src/audio/ui/playlist_library_dialog/spec.rs:186
+#: crates/big-audio-player/src/audio/ui/playlist_library_dialog/spec.rs:177
 msgid "min"
 msgstr "мин"
 
-#: crates/big-audio-player/src/audio/ui/playlist_library_dialog/spec.rs:203
+#: crates/big-audio-player/src/audio/ui/playlist_library_dialog/spec.rs:195
 msgid "Rename Playlist"
 msgstr "Преименуване на списъка за изпълнение"
 
-#: crates/big-audio-player/src/audio/ui/playlist_library_dialog/spec.rs:205
-#: crates/big-video-player/src/video/ui/video_browser_sidebar/fileops.rs:203
+#: crates/big-audio-player/src/audio/ui/playlist_library_dialog/spec.rs:196
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/fileops.rs:198
 msgid "New name"
 msgstr "Ново име"
 
-#: crates/big-audio-player/src/audio/ui/playlist_library_dialog/spec.rs:214
+#: crates/big-audio-player/src/audio/ui/playlist_library_dialog/spec.rs:207
 msgid "Delete Playlist?"
 msgstr "Изтриване на списъка за изпълнение?"
 
-#: crates/big-audio-player/src/audio/ui/playlist_library_dialog/spec.rs:225
+#: crates/big-audio-player/src/audio/ui/playlist_library_dialog/spec.rs:218
 msgid "This will permanently delete"
 msgstr "Това ще изтрие завинаги"
+
+#: crates/big-audio-player/src/audio/ui/playlist_panel.rs:300
+#: crates/ui/media/big-player-ui/src/podcast_panel.rs:481
+msgid "Loading…"
+msgstr "Зареждане…"
 
 #: crates/big-audio-player/src/audio/ui/scan_progress.rs:10
 msgid "Scanning the library"
@@ -1613,7 +1687,7 @@ msgstr ""
 msgid "Cancel scan"
 msgstr "Отмяна на сканирането"
 
-#: crates/big-audio-player/src/audio/ui/track_list.rs:433
+#: crates/big-audio-player/src/audio/ui/track_list.rs:451
 msgid "Playing"
 msgstr "Изпълнява се"
 
@@ -1722,9 +1796,13 @@ msgid "Remote or unsupported location — not eligible for removal here"
 msgstr ""
 "Отдалечено или неподдържано местоположение — не може да се премахне оттук"
 
-#: crates/big-video-player/src/lib.rs:26
+#: crates/big-video-player/src/lib.rs:29
 msgid "Big Video Player"
 msgstr "Big Video Player"
+
+#: crates/big-video-player/src/video/app.rs:123
+msgid "Open a separate player window instead of using the running one"
+msgstr ""
 
 #: crates/big-video-player/src/video/keybindings.rs:50
 msgid "Increase speed"
@@ -1739,12 +1817,12 @@ msgid "Reset speed to 1×"
 msgstr "Връщане на скоростта на 1×"
 
 #: crates/big-video-player/src/video/keybindings.rs:71
-#: crates/big-video-player/src/video/keybindings.rs:259
+#: crates/big-video-player/src/video/keybindings.rs:260
 msgid "Next chapter"
 msgstr "Следваща глава"
 
 #: crates/big-video-player/src/video/keybindings.rs:78
-#: crates/big-video-player/src/video/keybindings.rs:266
+#: crates/big-video-player/src/video/keybindings.rs:267
 msgid "Previous chapter"
 msgstr "Предишна глава"
 
@@ -1824,7 +1902,7 @@ msgstr "Увеличаване на звука"
 #: crates/big-video-player/src/video/keybindings.rs:200
 #: crates/big-video-player/src/video/ui/media_details_dialog.rs:233
 #: crates/big-video-player/src/video/ui/media_details_dialog.rs:315
-#: crates/ui/media/big-player-ui/src/audio_preferences.rs:82
+#: crates/ui/media/big-player-ui/src/audio_preferences.rs:83
 msgid "Audio"
 msgstr "Аудио"
 
@@ -1850,7 +1928,7 @@ msgstr "Превключване на вторичните субтитри"
 #: crates/big-video-player/src/video/keybindings.rs:229
 #: crates/big-video-player/src/video/ui/appearance/layout/buttons_page.rs:98
 #: crates/big-video-player/src/video/ui/preferences/subtitles.rs:19
-#: crates/big-video-player/src/video/ui/video_controls_bar/zones.rs:612
+#: crates/big-video-player/src/video/ui/video_controls_bar/zones.rs:625
 msgid "Subtitles"
 msgstr "Субтитри"
 
@@ -1872,7 +1950,7 @@ msgid "Screenshot"
 msgstr "Снимка на екрана"
 
 #: crates/big-video-player/src/video/keybindings.rs:237
-#: crates/big-video-player/src/video/ui/preferences/general.rs:154
+#: crates/big-video-player/src/video/ui/preferences/general.rs:155
 msgid "Screenshots"
 msgstr "Снимки на екрана"
 
@@ -1884,57 +1962,57 @@ msgstr "Превключване на разбъркването"
 msgid "Cycle repeat mode"
 msgstr "Смяна на режима на повторение"
 
-#: crates/big-video-player/src/video/keybindings.rs:274
+#: crates/big-video-player/src/video/keybindings.rs:275
 msgid "Open file"
 msgstr "Отваряне на файл"
 
-#: crates/big-video-player/src/video/keybindings.rs:275
-#: crates/big-video-player/src/video/keybindings.rs:282
-#: crates/big-video-player/src/video/keybindings.rs:289
-#: crates/big-video-player/src/video/keybindings.rs:296
-#: crates/big-video-player/src/video/keybindings.rs:303
-#: crates/big-video-player/src/video/keybindings.rs:311
-#: crates/big-video-player/src/video/keybindings.rs:318
-#: crates/big-video-player/src/video/keybindings.rs:325
-#: crates/big-video-player/src/video/ui/preferences/advanced.rs:222
+#: crates/big-video-player/src/video/keybindings.rs:276
+#: crates/big-video-player/src/video/keybindings.rs:283
+#: crates/big-video-player/src/video/keybindings.rs:290
+#: crates/big-video-player/src/video/keybindings.rs:297
+#: crates/big-video-player/src/video/keybindings.rs:304
+#: crates/big-video-player/src/video/keybindings.rs:312
+#: crates/big-video-player/src/video/keybindings.rs:319
+#: crates/big-video-player/src/video/keybindings.rs:326
+#: crates/big-video-player/src/video/ui/preferences/advanced.rs:220
 msgid "Other"
 msgstr "Други"
 
-#: crates/big-video-player/src/video/keybindings.rs:281
+#: crates/big-video-player/src/video/keybindings.rs:282
 #: crates/big-video-player/src/video/ui/video_shell/actions.rs:138
 #: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:154
 msgid "Open URL"
 msgstr "Отваряне на URL"
 
-#: crates/big-video-player/src/video/keybindings.rs:288
+#: crates/big-video-player/src/video/keybindings.rs:289
 msgid "Paste and play"
 msgstr "Поставяне и изпълнение"
 
-#: crates/big-video-player/src/video/keybindings.rs:295
-#: crates/big-video-player/src/video/ui/video_controls_bar.rs:258
-#: crates/big-video-player/src/video/ui/video_controls_bar.rs:259
+#: crates/big-video-player/src/video/keybindings.rs:296
+#: crates/big-video-player/src/video/ui/video_controls_bar.rs:261
+#: crates/big-video-player/src/video/ui/video_controls_bar.rs:262
 msgid "Go to time"
 msgstr "Отиване на момент"
 
-#: crates/big-video-player/src/video/keybindings.rs:302
+#: crates/big-video-player/src/video/keybindings.rs:303
 msgid "Cycle edition"
 msgstr "Смяна на изданието"
 
-#: crates/big-video-player/src/video/keybindings.rs:310
+#: crates/big-video-player/src/video/keybindings.rs:311
 msgid "Toggle files sidebar"
 msgstr "Превключване на страничната лента с файлове"
 
-#: crates/big-video-player/src/video/keybindings.rs:317
+#: crates/big-video-player/src/video/keybindings.rs:318
 msgid "Toggle playlist sidebar"
 msgstr "Превключване на страничната лента със списъка за изпълнение"
 
-#: crates/big-video-player/src/video/keybindings.rs:324
+#: crates/big-video-player/src/video/keybindings.rs:325
 msgid "Media information"
 msgstr "Информация за медията"
 
 #: crates/big-video-player/src/video/ui/appearance/layout/buttons_page.rs:28
-#: crates/big-video-player/src/video/ui/video_shell/component.rs:260
-#: crates/big-video-player/src/video/ui/video_shell/component.rs:264
+#: crates/big-video-player/src/video/ui/video_shell/component.rs:270
+#: crates/big-video-player/src/video/ui/video_shell/component.rs:274
 msgid "Keep Above"
 msgstr "Над другите прозорци"
 
@@ -1947,171 +2025,185 @@ msgid "Play/Pause"
 msgstr "Изпълнение/Пауза"
 
 #: crates/big-video-player/src/video/ui/appearance/layout/buttons_page.rs:105
-#: crates/big-video-player/src/video/ui/video_controls_bar/zones.rs:620
+#: crates/big-video-player/src/video/ui/video_controls_bar/zones.rs:633
 msgid "Audio Track"
 msgstr "Аудио пътека"
 
 #: crates/big-video-player/src/video/ui/appearance/layout/buttons_page.rs:119
-#: crates/big-video-player/src/video/ui/video_controls_bar/zones.rs:631
+#: crates/big-video-player/src/video/ui/video_controls_bar/zones.rs:644
 #: crates/big-video-player/src/video/ui/video_shell/input_gestures.rs:106
 msgid "Fullscreen"
 msgstr "Цял екран"
 
-#: crates/big-video-player/src/video/ui/appearance/layout/buttons_page.rs:146
+#: crates/big-video-player/src/video/ui/appearance/layout/buttons_page.rs:145
+msgid "Top bar"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/appearance/layout/buttons_page.rs:147
 msgid "Video Title"
 msgstr "Заглавие на видеото"
 
-#: crates/big-video-player/src/video/ui/appearance/layout/buttons_page.rs:188
-#: crates/big-video-player/src/video/ui/appearance/layout/layout_page.rs:97
+#: crates/big-video-player/src/video/ui/appearance/layout/buttons_page.rs:151
+#, fuzzy
+#| msgid "Bottom Margin"
+msgid "Bottom bar"
+msgstr "Долно поле"
+
+#: crates/big-video-player/src/video/ui/appearance/layout/buttons_page.rs:190
+#: crates/big-video-player/src/video/ui/appearance/layout/layout_page.rs:98
 msgid "Buttons"
 msgstr "Бутони"
 
-#: crates/big-video-player/src/video/ui/appearance/layout/buttons_page.rs:192
+#: crates/big-video-player/src/video/ui/appearance/layout/buttons_page.rs:194
 msgid "Button Layout"
 msgstr "Подредба на бутоните"
 
-#: crates/big-video-player/src/video/ui/appearance/layout/buttons_page.rs:194
-msgid "Drag buttons between zones • Click to toggle visibility"
+#: crates/big-video-player/src/video/ui/appearance/layout/buttons_page.rs:196
+#, fuzzy
+#| msgid "Drag buttons between zones • Click to toggle visibility"
+msgid ""
+"Drag buttons between zones or move them with Alt+Left and Alt+Right • Click "
+"to toggle visibility"
 msgstr ""
 "Плъзгайте бутоните между зоните • Щракнете, за да превключите видимостта"
 
-#: crates/big-video-player/src/video/ui/appearance/layout/layout_page.rs:18
+#: crates/big-video-player/src/video/ui/appearance/layout/layout_page.rs:19
 msgid "Layout"
 msgstr "Подредба"
 
-#: crates/big-video-player/src/video/ui/appearance/layout/layout_page.rs:33
+#: crates/big-video-player/src/video/ui/appearance/layout/layout_page.rs:34
 msgid "Controls Bar"
 msgstr "Лента за управление"
 
-#: crates/big-video-player/src/video/ui/appearance/layout/layout_page.rs:37
+#: crates/big-video-player/src/video/ui/appearance/layout/layout_page.rs:38
 msgid "Corner Radius"
 msgstr "Радиус на ъглите"
 
-#: crates/big-video-player/src/video/ui/appearance/layout/layout_page.rs:43
+#: crates/big-video-player/src/video/ui/appearance/layout/layout_page.rs:44
 msgid "Bottom Margin"
 msgstr "Долно поле"
 
-#: crates/big-video-player/src/video/ui/appearance/layout/layout_page.rs:49
+#: crates/big-video-player/src/video/ui/appearance/layout/layout_page.rs:50
 msgid "Side Margin"
 msgstr "Странично поле"
 
-#: crates/big-video-player/src/video/ui/appearance/layout/layout_page.rs:55
+#: crates/big-video-player/src/video/ui/appearance/layout/layout_page.rs:56
 msgid "Padding Top"
 msgstr "Вътрешен отстъп отгоре"
 
-#: crates/big-video-player/src/video/ui/appearance/layout/layout_page.rs:61
+#: crates/big-video-player/src/video/ui/appearance/layout/layout_page.rs:62
 msgid "Padding Bottom"
 msgstr "Вътрешен отстъп отдолу"
 
-#: crates/big-video-player/src/video/ui/appearance/layout/layout_page.rs:67
+#: crates/big-video-player/src/video/ui/appearance/layout/layout_page.rs:68
 msgid "Padding Left"
 msgstr "Вътрешен отстъп отляво"
 
-#: crates/big-video-player/src/video/ui/appearance/layout/layout_page.rs:73
+#: crates/big-video-player/src/video/ui/appearance/layout/layout_page.rs:74
 msgid "Padding Right"
 msgstr "Вътрешен отстъп отдясно"
 
-#: crates/big-video-player/src/video/ui/appearance/layout/layout_page.rs:100
+#: crates/big-video-player/src/video/ui/appearance/layout/layout_page.rs:101
 msgid "Custom Button Size"
 msgstr "Размер на бутоните по избор"
 
-#: crates/big-video-player/src/video/ui/appearance/layout/layout_page.rs:106
+#: crates/big-video-player/src/video/ui/appearance/layout/layout_page.rs:107
 msgid "Button Size"
 msgstr "Размер на бутоните"
 
-#: crates/big-video-player/src/video/ui/appearance/layout/layout_page.rs:121
+#: crates/big-video-player/src/video/ui/appearance/layout/layout_page.rs:122
 msgid "Button Border Radius"
 msgstr "Радиус на рамката на бутоните"
 
-#: crates/big-video-player/src/video/ui/appearance/layout/layout_page.rs:172
+#: crates/big-video-player/src/video/ui/appearance/layout/layout_page.rs:173
 msgid "Window"
 msgstr "Прозорец"
 
-#: crates/big-video-player/src/video/ui/appearance/layout/layout_page.rs:175
+#: crates/big-video-player/src/video/ui/appearance/layout/layout_page.rs:176
 msgid "Custom Window Corner Radius"
 msgstr "Радиус на ъглите на прозореца по избор"
 
-#: crates/big-video-player/src/video/ui/appearance/layout/layout_page.rs:181
+#: crates/big-video-player/src/video/ui/appearance/layout/layout_page.rs:182
 msgid "Window Corner Radius"
 msgstr "Радиус на ъглите на прозореца"
 
-#: crates/big-video-player/src/video/ui/appearance/layout/layout_page.rs:218
+#: crates/big-video-player/src/video/ui/appearance/layout/layout_page.rs:219
 msgid "Window Buttons Follow Custom Size"
 msgstr "Бутоните на прозореца следват избрания размер"
 
-#: crates/big-video-player/src/video/ui/appearance/layout/layout_page.rs:219
+#: crates/big-video-player/src/video/ui/appearance/layout/layout_page.rs:220
 msgid "Also resize the minimize, maximize and close buttons"
 msgstr ""
 "Променя размера и на бутоните за минимизиране, максимизиране и затваряне"
 
-#: crates/big-video-player/src/video/ui/filters/groups_shader.rs:28
+#: crates/big-video-player/src/video/ui/filters/groups_shader.rs:29
 msgid "GPU Processing"
 msgstr "Обработка от графичния процесор"
 
-#: crates/big-video-player/src/video/ui/filters/groups_shader.rs:34
+#: crates/big-video-player/src/video/ui/filters/groups_shader.rs:35
 msgid "Deband"
 msgstr "Премахване на лентите (deband)"
 
-#: crates/big-video-player/src/video/ui/filters/groups_shader.rs:35
+#: crates/big-video-player/src/video/ui/filters/groups_shader.rs:36
 msgid "Remove color banding artifacts"
 msgstr "Премахва артефактите от цветни ленти"
 
-#: crates/big-video-player/src/video/ui/filters/groups_shader.rs:41
+#: crates/big-video-player/src/video/ui/filters/groups_shader.rs:42
 msgid "Sigmoid Upscaling"
 msgstr "Сигмоидно уголемяване"
 
-#: crates/big-video-player/src/video/ui/filters/groups_shader.rs:42
+#: crates/big-video-player/src/video/ui/filters/groups_shader.rs:43
 msgid "Reduces ringing when scaling video up"
 msgstr "Намалява ореолите при уголемяване на видеото"
 
-#: crates/big-video-player/src/video/ui/filters/groups_shader.rs:48
+#: crates/big-video-player/src/video/ui/filters/groups_shader.rs:49
 msgid "Correct Downscaling"
 msgstr "Коректно намаляване"
 
-#: crates/big-video-player/src/video/ui/filters/groups_shader.rs:49
+#: crates/big-video-player/src/video/ui/filters/groups_shader.rs:50
 msgid "Higher quality when scaling video down"
 msgstr "По-високо качество при намаляване на видеото"
 
-#: crates/big-video-player/src/video/ui/filters/groups_shader.rs:60
+#: crates/big-video-player/src/video/ui/filters/groups_shader.rs:61
 msgid "Sharpen"
 msgstr "Изостряне"
 
-#: crates/big-video-player/src/video/ui/filters/groups_shader.rs:61
+#: crates/big-video-player/src/video/ui/filters/groups_shader.rs:62
 msgid "GPU sharpening (unsharp mask)"
 msgstr "Изостряне от графичния процесор (unsharp mask)"
 
-#: crates/big-video-player/src/video/ui/filters/groups_shader.rs:76
+#: crates/big-video-player/src/video/ui/filters/groups_shader.rs:77
 msgid "Amount"
 msgstr "Количество"
 
-#: crates/big-video-player/src/video/ui/filters/groups_shader.rs:137
+#: crates/big-video-player/src/video/ui/filters/groups_shader.rs:138
 msgid "GPU Upscaling Shaders"
 msgstr "Шейдъри за уголемяване от графичния процесор"
 
-#: crates/big-video-player/src/video/ui/filters/groups_shader.rs:151
+#: crates/big-video-player/src/video/ui/filters/groups_shader.rs:152
 msgid "Upscaling Shader"
 msgstr "Шейдър за уголемяване"
 
-#: crates/big-video-player/src/video/ui/filters/groups_shader.rs:154
+#: crates/big-video-player/src/video/ui/filters/groups_shader.rs:155
 msgid "FidelityFX Super Resolution (FSR)"
 msgstr "FidelityFX Super Resolution (FSR)"
 
-#: crates/big-video-player/src/video/ui/filters/groups_shader.rs:155
+#: crates/big-video-player/src/video/ui/filters/groups_shader.rs:156
 msgid "CAS Upscaling"
 msgstr "Уголемяване с CAS"
 
-#: crates/big-video-player/src/video/ui/filters/groups_shader.rs:159
+#: crates/big-video-player/src/video/ui/filters/groups_shader.rs:160
 msgid ""
 "Enhances image quality when the video resolution is lower than your display"
 msgstr ""
 "Подобрява качеството на картината, когато разделителната способност на "
 "видеото е по-ниска от тази на екрана ви"
 
-#: crates/big-video-player/src/video/ui/filters/groups_shader.rs:180
+#: crates/big-video-player/src/video/ui/filters/groups_shader.rs:181
 msgid "Sharpening Intensity"
 msgstr "Сила на изостряне"
 
-#: crates/big-video-player/src/video/ui/filters/groups_shader.rs:182
+#: crates/big-video-player/src/video/ui/filters/groups_shader.rs:183
 msgid "Higher values produce a more visible sharpening effect"
 msgstr "По-високите стойности дават по-забележим ефект на изостряне"
 
@@ -2189,238 +2281,244 @@ msgid "Install the big-media-runtime package to get Anime4K shaders"
 msgstr ""
 "Инсталирайте пакета big-media-runtime, за да получите шейдърите на Anime4K"
 
-#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:25
+#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:29
 msgid "Denoise and Sharpen"
 msgstr "Намаляване на шума и изостряне"
 
-#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:32
+#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:37
 msgid "Denoise (hqdn3d)"
 msgstr "Намаляване на шума (hqdn3d)"
 
-#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:33
+#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:38
 msgid "Reduces visual noise and grain from old or low-light footage"
 msgstr ""
 "Намалява визуалния шум и зърнистостта при стари или слабо осветени кадри"
 
-#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:34
-#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:49
+#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:39
+#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:55
 msgid "Strength"
 msgstr "Сила"
 
-#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:47
+#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:53
 msgid "Sharpen (CAS)"
 msgstr "Изостряне (CAS)"
 
-#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:48
+#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:54
 msgid "Software contrast-adaptive sharpening — works at any resolution"
 msgstr ""
 "Софтуерно контрастно-адаптивно изостряне — работи при всяка разделителна "
 "способност"
 
-#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:62
+#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:68
 #: crates/big-video-player/src/video/ui/preferences/subtitles.rs:77
 msgid "Color"
 msgstr "Цвят"
 
-#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:69
+#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:76
 msgid "Color Temperature"
 msgstr "Цветова температура"
 
-#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:70
+#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:77
 msgid "Warm or cool tone (Kelvin)"
 msgstr "Топъл или студен тон (Келвин)"
 
-#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:71
+#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:78
 msgid "Temperature"
 msgstr "Температура"
 
-#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:84
+#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:92
 msgid "Vibrance"
 msgstr "Наситеност на цветовете (vibrance)"
 
-#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:85
+#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:93
 msgid "Boost color saturation intelligently"
 msgstr "Интелигентно усилване на наситеността на цветовете"
 
-#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:86
+#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:94
 msgid "Intensity"
 msgstr "Интензитет"
 
-#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:103
+#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:112
 msgid "Colorize"
 msgstr "Оцветяване"
 
-#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:104
+#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:113
 msgid "Apply a color tint overlay"
 msgstr "Прилага наслагване с цветен нюанс"
 
-#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:114
+#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:130
 #: crates/big-video-player/src/video/ui/media_adjust.rs:633
 msgid "Hue"
 msgstr "Нюанс"
 
-#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:121
+#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:137
 #: crates/big-video-player/src/video/ui/media_adjust.rs:623
-#: crates/big-video-player/src/video/ui/preferences/advanced.rs:138
+#: crates/big-video-player/src/video/ui/preferences/advanced.rs:137
 msgid "Saturation"
 msgstr "Наситеност"
 
-#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:128
+#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:144
 msgid "Mix"
 msgstr "Смесване"
 
-#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:185
+#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:201
 msgid "Monochrome"
 msgstr "Монохромно"
 
-#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:186
+#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:202
 msgid "Cinematic black and white"
 msgstr "Кинематографично черно-бяло"
 
-#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:206
+#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:222
 msgid "Style Presets"
 msgstr "Предварителни стилове"
 
-#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:209
+#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:226
 msgid "Color Curves"
 msgstr "Цветови криви"
 
-#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:210
+#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:227
 msgid "Predefined color grading looks"
 msgstr "Предварително зададени цветови обработки"
 
-#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:225
+#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:243
 msgid "Preset"
 msgstr "Предварителна настройка"
 
-#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:227
+#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:245
 msgid "Vintage"
 msgstr "Винтидж"
 
-#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:228
+#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:246
 msgid "Cross Process"
 msgstr "Cross Process"
 
-#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:229
+#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:247
 msgid "Darker"
 msgstr "По-тъмно"
 
-#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:230
+#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:248
 msgid "Lighter"
 msgstr "По-светло"
 
-#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:231
+#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:249
 msgid "More Contrast"
 msgstr "Повече контраст"
 
-#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:232
+#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:250
 msgid "Strong Contrast"
 msgstr "Силен контраст"
 
-#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:233
+#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:251
 msgid "Color Negative"
 msgstr "Цветен негатив"
 
-#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:288
+#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:314
 msgid "Vignette"
 msgstr "Виньетиране"
 
-#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:289
+#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:315
 msgid "Darken edges of the image"
 msgstr "Затъмнява краищата на изображението"
 
-#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:315
+#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:342
 msgid "Pixelize"
 msgstr "Пикселизиране"
 
-#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:316
+#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:343
 msgid "Mosaic / pixel art effect"
 msgstr "Ефект на мозайка / пиксел арт"
 
-#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:317
+#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:344
 msgid "Block Size"
 msgstr "Размер на блока"
 
-#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:329
+#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:357
 msgid "Gaussian Blur"
 msgstr "Гаусово размазване"
 
-#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:330
+#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:358
 msgid "Smooth blur effect"
 msgstr "Ефект на меко размазване"
 
-#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:331
+#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:359
 msgid "Sigma"
 msgstr "Сигма"
 
-#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:343
+#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:372
 msgid "Motion Trail"
 msgstr "Следа от движение"
 
-#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:344
+#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:373
 msgid "Slowly fading visual trail effect"
 msgstr "Ефект на бавно избледняваща визуална следа"
 
-#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:345
+#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:374
 msgid "Decay"
 msgstr "Затихване"
 
-#: crates/big-video-player/src/video/ui/iptv/channel_list.rs:78
+#: crates/big-video-player/src/video/ui/iptv/channel_list.rs:82
 msgid "Toggle favorite"
 msgstr "Превключване на любимо"
 
-#: crates/big-video-player/src/video/ui/iptv/channel_list.rs:158
+#: crates/big-video-player/src/video/ui/iptv/channel_list.rs:161
 msgid "No channels"
 msgstr "Няма канали"
 
-#: crates/big-video-player/src/video/ui/iptv/channel_list.rs:166
+#: crates/big-video-player/src/video/ui/iptv/channel_list.rs:169
 #, rust-format
 msgid "{} channel"
 msgid_plural "{} channels"
 msgstr[0] "{} канал"
 msgstr[1] "{} канала"
 
-#: crates/big-video-player/src/video/ui/iptv/channel_list.rs:213
+#: crates/big-video-player/src/video/ui/iptv/channel_list.rs:216
 #: crates/ui/media/big-player-ui/src/radio_panel/methods.rs:126
 msgid "Ungrouped"
 msgstr "Негрупирани"
 
-#: crates/big-video-player/src/video/ui/iptv/mod.rs:119
-#: crates/big-video-player/src/video/ui/iptv/mod.rs:135
+#: crates/big-video-player/src/video/ui/iptv/mod.rs:122
+#: crates/big-video-player/src/video/ui/iptv/mod.rs:138
 msgid "Provider"
 msgstr "Доставчик"
 
-#: crates/big-video-player/src/video/ui/iptv/mod.rs:143
+#: crates/big-video-player/src/video/ui/iptv/mod.rs:146
 msgid "Manage…"
 msgstr "Управление…"
 
-#: crates/big-video-player/src/video/ui/iptv/mod.rs:150
+#: crates/big-video-player/src/video/ui/iptv/mod.rs:153
 msgid "Reload from provider"
 msgstr "Презареждане от доставчика"
 
-#: crates/big-video-player/src/video/ui/iptv/mod.rs:156
-#: crates/big-video-player/src/video/ui/iptv/mod.rs:161
+#: crates/big-video-player/src/video/ui/iptv/mod.rs:159
+#: crates/big-video-player/src/video/ui/iptv/mod.rs:164
 msgid "Search channels"
 msgstr "Търсене на канали"
 
-#: crates/big-video-player/src/video/ui/iptv/mod.rs:206
-#: crates/big-video-player/src/video/ui/iptv/mod.rs:282
+#: crates/big-video-player/src/video/ui/iptv/mod.rs:212
+#: crates/big-video-player/src/video/ui/iptv/mod.rs:288
 msgid "No providers configured. Click “Manage…” to add one."
 msgstr "Няма настроени доставчици. Натиснете „Управление…“, за да добавите."
 
-#: crates/big-video-player/src/video/ui/iptv/mod.rs:236
+#: crates/big-video-player/src/video/ui/iptv/mod.rs:242
 msgid "Showing cached channels — updating…"
 msgstr "Показват се кеширани канали — обновяване…"
 
-#: crates/big-video-player/src/video/ui/iptv/mod.rs:304
+#: crates/big-video-player/src/video/ui/iptv/mod.rs:310
 msgid "Reloading channels…"
 msgstr "Презареждане на каналите…"
 
-#: crates/big-video-player/src/video/ui/iptv/mod.rs:306
+#: crates/big-video-player/src/video/ui/iptv/mod.rs:312
 msgid "Loading channels…"
 msgstr "Зареждане на каналите…"
 
-#: crates/big-video-player/src/video/ui/iptv/mod.rs:337
+#: crates/big-video-player/src/video/ui/iptv/mod.rs:333
+#, fuzzy, rust-format
+#| msgid "Showing the first {}. Type more to narrow the search."
+msgid "Showing the first {} channels; the list has more."
+msgstr "Показват се първите {}. Въведете повече, за да стесните търсенето."
+
+#: crates/big-video-player/src/video/ui/iptv/mod.rs:350
 msgid ""
 "Could not reach the provider. Check the address and your connection; a saved "
 "list stays on screen."
@@ -2428,7 +2526,7 @@ msgstr ""
 "Доставчикът не може да бъде достигнат. Проверете адреса и връзката си; "
 "запазеният списък остава на екрана."
 
-#: crates/big-video-player/src/video/ui/iptv/mod.rs:340
+#: crates/big-video-player/src/video/ui/iptv/mod.rs:353
 msgid ""
 "The provider refused access. Check the user name and password, or the User-"
 "Agent the provider asks for."
@@ -2436,35 +2534,35 @@ msgstr ""
 "Доставчикът отказа достъп. Проверете потребителското име и паролата или User-"
 "Agent, който изисква доставчикът."
 
-#: crates/big-video-player/src/video/ui/iptv/mod.rs:343
+#: crates/big-video-player/src/video/ui/iptv/mod.rs:356
 #, rust-format
 msgid "The provider's server failed (error {}). Try again later."
 msgstr "Сървърът на доставчика се срина (грешка {}). Опитайте отново по-късно."
 
-#: crates/big-video-player/src/video/ui/iptv/mod.rs:347
+#: crates/big-video-player/src/video/ui/iptv/mod.rs:360
 #, rust-format
 msgid "The provider answered with error {}."
 msgstr "Доставчикът отговори с грешка {}."
 
-#: crates/big-video-player/src/video/ui/iptv/mod.rs:349
+#: crates/big-video-player/src/video/ui/iptv/mod.rs:362
 #, rust-format
 msgid "The channel list is larger than {} MB."
 msgstr "Списъкът с канали е по-голям от {} МБ."
 
-#: crates/big-video-player/src/video/ui/iptv/mod.rs:353
+#: crates/big-video-player/src/video/ui/iptv/mod.rs:366
 msgid "The provider sent no channels."
 msgstr "Доставчикът не изпрати канали."
 
-#: crates/big-video-player/src/video/ui/iptv/mod.rs:354
+#: crates/big-video-player/src/video/ui/iptv/mod.rs:367
 msgid "The provider rejected the user name or password."
 msgstr "Доставчикът отхвърли потребителското име или паролата."
 
-#: crates/big-video-player/src/video/ui/iptv/mod.rs:356
+#: crates/big-video-player/src/video/ui/iptv/mod.rs:369
 #, rust-format
 msgid "This account is not active (the provider says: {})."
 msgstr "Този акаунт не е активен (доставчикът казва: {})."
 
-#: crates/big-video-player/src/video/ui/iptv/mod.rs:358
+#: crates/big-video-player/src/video/ui/iptv/mod.rs:371
 msgid "Could not read the playlist file."
 msgstr "Файлът с плейлиста не може да бъде прочетен."
 
@@ -2489,7 +2587,7 @@ msgid "Edit"
 msgstr "Редактиране"
 
 #: crates/big-video-player/src/video/ui/iptv/providers_dialog.rs:108
-#: crates/big-video-player/src/video/ui/video_browser_sidebar/library.rs:748
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/library.rs:749
 msgid "Remove"
 msgstr "Премахване"
 
@@ -2587,8 +2685,8 @@ msgstr "Разни клавишни комбинации"
 #: crates/big-video-player/src/video/ui/preferences/advanced.rs:101
 #: crates/big-video-player/src/video/ui/preferences/video.rs:54
 #: crates/big-video-player/src/video/ui/preferences/video.rs:87
-#: crates/ui/media/big-player-ui/src/audio_preferences.rs:168
-#: crates/ui/media/big-player-ui/src/audio_preferences.rs:179
+#: crates/ui/media/big-player-ui/src/audio_preferences.rs:170
+#: crates/ui/media/big-player-ui/src/audio_preferences.rs:181
 msgid "Automatic"
 msgstr "Автоматично"
 
@@ -2605,14 +2703,14 @@ msgid "HDR (TV)"
 msgstr "HDR (ТВ)"
 
 #: crates/big-video-player/src/video/ui/media_adjust.rs:119
-#: crates/big-video-player/src/video/ui/video_shell/adjustments.rs:175
+#: crates/big-video-player/src/video/ui/video_shell/adjustments.rs:142
 #: crates/big-video-player/src/video/ui/video_shell/panel.rs:431
 #: crates/media-runtime/src/shared/audio_effects.rs:186
 msgid "Normal"
 msgstr "Нормално"
 
 #: crates/big-video-player/src/video/ui/media_adjust.rs:183
-#: crates/big-video-player/src/video/ui/video_controls_bar/tracks.rs:80
+#: crates/big-video-player/src/video/ui/video_controls_bar/tracks.rs:81
 msgid "Subtitles early or late"
 msgstr "Субтитри — по-рано или по-късно"
 
@@ -2747,7 +2845,7 @@ msgid "Copy All"
 msgstr "Копиране на всичко"
 
 #: crates/big-video-player/src/video/ui/media_details_dialog.rs:77
-#: crates/big-video-player/src/video/ui/preferences/general.rs:19
+#: crates/big-video-player/src/video/ui/preferences/general.rs:20
 msgid "General"
 msgstr "Общи"
 
@@ -2759,22 +2857,17 @@ msgstr "Глави"
 
 #: crates/big-video-player/src/video/ui/media_details_dialog.rs:162
 #: crates/big-video-player/src/video/ui/media_details_dialog.rs:234
-#: crates/media-runtime/src/media/metadata_cache/detailed_video_metadata.rs:90
-#: crates/media-runtime/src/media/metadata_cache/detailed_video_metadata.rs:123
-#: crates/media-runtime/src/media/metadata_cache/detailed_video_metadata.rs:168
 #: crates/ui/media/big-media-components/src/media/file_metadata_dialog.rs:64
 msgid "Codec"
 msgstr "Кодек"
 
 #: crates/big-video-player/src/video/ui/media_details_dialog.rs:165
-#: crates/media-runtime/src/media/metadata_cache/detailed_video_metadata.rs:93
 #: crates/media-runtime/src/shared/tv_cast.rs:488
 #: crates/ui/media/big-media-components/src/media/file_metadata_dialog.rs:66
 msgid "Resolution"
 msgstr "Разделителна способност"
 
 #: crates/big-video-player/src/video/ui/media_details_dialog.rs:173
-#: crates/media-runtime/src/media/metadata_cache/detailed_video_metadata.rs:100
 #: crates/ui/media/big-media-components/src/media/file_metadata_dialog.rs:68
 msgid "Frame Rate"
 msgstr "Кадрова честота"
@@ -2788,7 +2881,6 @@ msgid "Hardware Decoder"
 msgstr "Хардуерен декодер"
 
 #: crates/big-video-player/src/video/ui/media_details_dialog.rs:200
-#: crates/media-runtime/src/media/metadata_cache/detailed_video_metadata.rs:103
 #: crates/ui/media/big-media-components/src/media/file_metadata_dialog.rs:67
 msgid "Pixel Format"
 msgstr "Пикселен формат"
@@ -2826,13 +2918,19 @@ msgid "Subtitle Tracks"
 msgstr "Пътеки със субтитри"
 
 #: crates/big-video-player/src/video/ui/media_details_dialog.rs:325
-#: crates/big-video-player/src/video/ui/video_controls_bar/tracks.rs:246
+#: crates/big-video-player/src/video/ui/video_controls_bar/tracks.rs:237
 msgid "external"
 msgstr "външен"
 
 #: crates/big-video-player/src/video/ui/media_details_dialog.rs:338
 msgid "Subtitle"
 msgstr "Субтитри"
+
+#: crates/big-video-player/src/video/ui/menu_dialogs.rs:23
+#, fuzzy, rust-format
+#| msgid "Recording was not saved"
+msgid "The screenshot was not saved: {error}"
+msgstr "Записът не беше запазен"
 
 #: crates/big-video-player/src/video/ui/menu_dialogs.rs:54
 msgid "Go to Time"
@@ -2850,28 +2948,43 @@ msgstr "Време на изпълнение"
 msgid "Go"
 msgstr "Отиди"
 
+#: crates/big-video-player/src/video/ui/menu_dialogs.rs:124
+#: crates/big-video-player/src/video/ui/menu_dialogs.rs:177
+msgid "Still saving the previous screenshots. Try again in a moment."
+msgstr ""
+
 #: crates/big-video-player/src/video/ui/menu_dialogs.rs:130
-msgid "Screenshot queue is full; wait for pending captures"
-msgstr "Опашката за снимки на екрана е пълна; изчакайте текущите заснемания"
+#: crates/big-video-player/src/video/ui/menu_dialogs.rs:135
+#, fuzzy
+#| msgid "Stores the video color space in each screenshot"
+msgid "Open a video to take a screenshot"
+msgstr "Запазва цветовото пространство на видеото във всяка снимка на екрана"
 
-#: crates/big-video-player/src/video/ui/menu_dialogs.rs:134
-#: crates/big-video-player/src/video/ui/menu_dialogs.rs:138
-#: crates/big-video-player/src/video/ui/menu_dialogs.rs:149
-#: crates/big-video-player/src/video/ui/video_shell/component.rs:738
-#: crates/big-video-player/src/video/ui/video_shell/playback.rs:163
-msgid "Screenshot failed"
-msgstr "Снимката на екрана е неуспешна"
+#: crates/big-video-player/src/video/ui/menu_dialogs.rs:147
+msgid ""
+"There is no Pictures or home folder to save screenshots in. Choose a folder "
+"in Preferences."
+msgstr ""
 
-#: crates/big-video-player/src/video/ui/menu_dialogs.rs:324
-#: crates/media-runtime/src/player/mpv_backend/backend/mod.rs:301
+#: crates/big-video-player/src/video/ui/menu_dialogs.rs:172
+#, rust-format
+msgid "Cannot save to {folder}: {error}. Choose another folder in Preferences."
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/menu_dialogs.rs:182
+msgid "The screenshot was not saved because of an unexpected error"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/menu_dialogs.rs:215
+#: crates/media-runtime/src/player/mpv_backend/backend/mod.rs:327
 msgid "Chapter"
 msgstr "Глава"
 
-#: crates/big-video-player/src/video/ui/menu_dialogs.rs:345
+#: crates/big-video-player/src/video/ui/menu_dialogs.rs:236
 msgid "Screenshot saved"
 msgstr "Снимката на екрана е запазена"
 
-#: crates/big-video-player/src/video/ui/menu_dialogs.rs:347
+#: crates/big-video-player/src/video/ui/menu_dialogs.rs:238
 msgid "Screenshot saved; disk synchronization could not be confirmed"
 msgstr ""
 "Снимката на екрана е запазена; синхронизирането с диска не можа да бъде "
@@ -2955,73 +3068,73 @@ msgstr ""
 msgid "Profile File"
 msgstr "Файл на профила"
 
-#: crates/big-video-player/src/video/ui/preferences/advanced.rs:133
+#: crates/big-video-player/src/video/ui/preferences/advanced.rs:132
 msgid "Rendering Intent"
 msgstr "Цел на изобразяването"
 
-#: crates/big-video-player/src/video/ui/preferences/advanced.rs:136
+#: crates/big-video-player/src/video/ui/preferences/advanced.rs:135
 msgid "Perceptual"
 msgstr "Възприятийна"
 
-#: crates/big-video-player/src/video/ui/preferences/advanced.rs:137
+#: crates/big-video-player/src/video/ui/preferences/advanced.rs:136
 msgid "Relative"
 msgstr "Относителна"
 
-#: crates/big-video-player/src/video/ui/preferences/advanced.rs:139
+#: crates/big-video-player/src/video/ui/preferences/advanced.rs:138
 msgid "Absolute"
 msgstr "Абсолютна"
 
-#: crates/big-video-player/src/video/ui/preferences/advanced.rs:155
+#: crates/big-video-player/src/video/ui/preferences/advanced.rs:153
 msgid "Streaming and Cache"
 msgstr "Поточно предаване и кеш"
 
-#: crates/big-video-player/src/video/ui/preferences/advanced.rs:157
+#: crates/big-video-player/src/video/ui/preferences/advanced.rs:155
 msgid "Loads media ahead of time to avoid pauses on slow networks"
 msgstr "Зарежда медията предварително, за да избегне паузи при бавни мрежи"
 
-#: crates/big-video-player/src/video/ui/preferences/advanced.rs:162
+#: crates/big-video-player/src/video/ui/preferences/advanced.rs:160
 msgid "Load Ahead"
 msgstr "Предварително зареждане"
 
-#: crates/big-video-player/src/video/ui/preferences/advanced.rs:170
+#: crates/big-video-player/src/video/ui/preferences/advanced.rs:168
 msgid "How Far Ahead"
 msgstr "Колко напред"
 
-#: crates/big-video-player/src/video/ui/preferences/advanced.rs:171
+#: crates/big-video-player/src/video/ui/preferences/advanced.rs:169
 msgid "In seconds"
 msgstr "В секунди"
 
-#: crates/big-video-player/src/video/ui/preferences/advanced.rs:181
+#: crates/big-video-player/src/video/ui/preferences/advanced.rs:179
 msgid "Wait Instead of Stuttering"
 msgstr "Изчакване вместо накъсване"
 
-#: crates/big-video-player/src/video/ui/preferences/advanced.rs:182
+#: crates/big-video-player/src/video/ui/preferences/advanced.rs:180
 msgid "Pauses until enough is loaded to keep playing smoothly"
 msgstr "Спира, докато се зареди достатъчно за плавно изпълнение"
 
-#: crates/big-video-player/src/video/ui/preferences/advanced.rs:189
+#: crates/big-video-player/src/video/ui/preferences/advanced.rs:187
 msgid "Keep on Disk"
 msgstr "Съхраняване на диска"
 
-#: crates/big-video-player/src/video/ui/preferences/advanced.rs:190
+#: crates/big-video-player/src/video/ui/preferences/advanced.rs:188
 msgid "Uses disk space instead of memory; useful for very long streams"
 msgstr ""
 "Използва дисково пространство вместо памет; полезно за много дълги потоци"
 
-#: crates/big-video-player/src/video/ui/preferences/advanced.rs:207
+#: crates/big-video-player/src/video/ui/preferences/advanced.rs:205
 msgid "Read Ahead in the File"
 msgstr "Четене напред във файла"
 
-#: crates/big-video-player/src/video/ui/preferences/advanced.rs:208
+#: crates/big-video-player/src/video/ui/preferences/advanced.rs:206
 msgid "Seconds of the file read in advance, also for local files"
 msgstr ""
 "Секунди от файла, прочетени предварително, включително за локални файлове"
 
-#: crates/big-video-player/src/video/ui/preferences/advanced.rs:226
+#: crates/big-video-player/src/video/ui/preferences/advanced.rs:224
 msgid "Pause on the Final Frame"
 msgstr "Пауза на последния кадър"
 
-#: crates/big-video-player/src/video/ui/preferences/advanced.rs:227
+#: crates/big-video-player/src/video/ui/preferences/advanced.rs:225
 msgid ""
 "When the player stops at the end of a video; off lets seeking back resume "
 "playback"
@@ -3029,37 +3142,37 @@ msgstr ""
 "Когато плейърът спира в края на видеото; ако е изключено, превъртането назад "
 "възобновява изпълнението"
 
-#: crates/big-video-player/src/video/ui/preferences/advanced.rs:234
+#: crates/big-video-player/src/video/ui/preferences/advanced.rs:232
 msgid "Screenshot Compression"
 msgstr "Компресия на снимките на екрана"
 
-#: crates/big-video-player/src/video/ui/preferences/advanced.rs:235
+#: crates/big-video-player/src/video/ui/preferences/advanced.rs:233
 msgid "Higher values make smaller PNG files but take longer to save"
 msgstr ""
 "По-високите стойности дават по-малки PNG файлове, но запазването отнема "
 "повече време"
 
-#: crates/big-video-player/src/video/ui/preferences/advanced.rs:245
+#: crates/big-video-player/src/video/ui/preferences/advanced.rs:243
 msgid "Screenshot Color Profile"
 msgstr "Цветови профил на снимките на екрана"
 
-#: crates/big-video-player/src/video/ui/preferences/advanced.rs:246
+#: crates/big-video-player/src/video/ui/preferences/advanced.rs:244
 msgid "Stores the video color space in each screenshot"
 msgstr "Запазва цветовото пространство на видеото във всяка снимка на екрана"
 
-#: crates/big-video-player/src/video/ui/preferences/advanced.rs:253
+#: crates/big-video-player/src/video/ui/preferences/advanced.rs:251
 msgid "High Bit Depth Screenshots"
 msgstr "Снимки на екрана с висока битова дълбочина"
 
-#: crates/big-video-player/src/video/ui/preferences/advanced.rs:254
+#: crates/big-video-player/src/video/ui/preferences/advanced.rs:252
 msgid "Keeps more color precision; files get larger"
 msgstr "Запазва повече цветова точност; файловете стават по-големи"
 
-#: crates/big-video-player/src/video/ui/preferences/advanced.rs:264
+#: crates/big-video-player/src/video/ui/preferences/advanced.rs:262
 msgid "Custom Shaders"
 msgstr "Шейдъри по избор"
 
-#: crates/big-video-player/src/video/ui/preferences/advanced.rs:266
+#: crates/big-video-player/src/video/ui/preferences/advanced.rs:264
 msgid "Paths to .glsl files, separated by commas. Press Enter to apply."
 msgstr ""
 "Пътища до .glsl файлове, разделени със запетаи. Натиснете Enter, за да "
@@ -3069,11 +3182,11 @@ msgstr ""
 msgid "Shader Files"
 msgstr "Файлове на шейдъри"
 
-#: crates/big-video-player/src/video/ui/preferences/advanced.rs:285
+#: crates/big-video-player/src/video/ui/preferences/advanced.rs:289
 msgid "mpv Options"
 msgstr "Опции на mpv"
 
-#: crates/big-video-player/src/video/ui/preferences/advanced.rs:287
+#: crates/big-video-player/src/video/ui/preferences/advanced.rs:291
 msgid ""
 "Extra key=value options, separated by commas. They take effect after "
 "reopening the player."
@@ -3081,133 +3194,133 @@ msgstr ""
 "Допълнителни опции key=value, разделени със запетаи. Влизат в сила след "
 "повторно отваряне на плейъра."
 
-#: crates/big-video-player/src/video/ui/preferences/advanced.rs:292
+#: crates/big-video-player/src/video/ui/preferences/advanced.rs:296
 #: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/header.rs:216
 msgid "Options"
 msgstr "Опции"
 
-#: crates/big-video-player/src/video/ui/preferences/general.rs:29
+#: crates/big-video-player/src/video/ui/preferences/general.rs:30
 msgid "Reopen files at the point where you stopped watching"
 msgstr "Отваряне на файловете отново от мястото, където сте спрели да гледате"
 
-#: crates/big-video-player/src/video/ui/preferences/general.rs:40
+#: crates/big-video-player/src/video/ui/preferences/general.rs:41
 msgid "Current video"
 msgstr "Текущото видео"
 
-#: crates/big-video-player/src/video/ui/preferences/general.rs:41
+#: crates/big-video-player/src/video/ui/preferences/general.rs:42
 #: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/header.rs:198
 msgid "Whole playlist"
 msgstr "Целият списък за изпълнение"
 
-#: crates/big-video-player/src/video/ui/preferences/general.rs:51
+#: crates/big-video-player/src/video/ui/preferences/general.rs:52
 msgid "When Playback Ends"
 msgstr "Когато изпълнението приключи"
 
-#: crates/big-video-player/src/video/ui/preferences/general.rs:53
+#: crates/big-video-player/src/video/ui/preferences/general.rs:54
 msgid "Playlist videos play one after another unless they stop after each"
 msgstr ""
 "Видеата от списъка се изпълняват едно след друго, освен ако не спират след "
 "всяко"
 
-#: crates/big-video-player/src/video/ui/preferences/general.rs:58
+#: crates/big-video-player/src/video/ui/preferences/general.rs:59
 msgid "When a Video Ends"
 msgstr "Когато видеото приключи"
 
-#: crates/big-video-player/src/video/ui/preferences/general.rs:61
+#: crates/big-video-player/src/video/ui/preferences/general.rs:62
 msgid "Keep the last frame"
 msgstr "Запазване на последния кадър"
 
-#: crates/big-video-player/src/video/ui/preferences/general.rs:62
+#: crates/big-video-player/src/video/ui/preferences/general.rs:63
 msgid "Stop after each"
 msgstr "Спиране след всяко"
 
-#: crates/big-video-player/src/video/ui/preferences/general.rs:63
+#: crates/big-video-player/src/video/ui/preferences/general.rs:64
 msgid "Close the video"
 msgstr "Затваряне на видеото"
 
-#: crates/big-video-player/src/video/ui/preferences/general.rs:73
+#: crates/big-video-player/src/video/ui/preferences/general.rs:74
 msgid "When the Playlist Finishes"
 msgstr "Когато списъкът за изпълнение приключи"
 
-#: crates/big-video-player/src/video/ui/preferences/general.rs:74
+#: crates/big-video-player/src/video/ui/preferences/general.rs:75
 msgid "Used only when the video closes"
 msgstr "Използва се само когато видеото се затваря"
 
-#: crates/big-video-player/src/video/ui/preferences/general.rs:76
+#: crates/big-video-player/src/video/ui/preferences/general.rs:77
 msgid "Stay open"
 msgstr "Оставане отворен"
 
-#: crates/big-video-player/src/video/ui/preferences/general.rs:77
-#: crates/media-runtime/src/shared/sleep_timer.rs:13
+#: crates/big-video-player/src/video/ui/preferences/general.rs:78
+#: crates/media-runtime/src/shared/sleep_timer.rs:21
 msgid "Close the player"
 msgstr "Затваряне на плейъра"
 
-#: crates/big-video-player/src/video/ui/preferences/general.rs:78
+#: crates/big-video-player/src/video/ui/preferences/general.rs:79
 msgid "Close after one playlist"
 msgstr "Затваряне след един списък за изпълнение"
 
-#: crates/big-video-player/src/video/ui/preferences/general.rs:102
+#: crates/big-video-player/src/video/ui/preferences/general.rs:103
 msgid "Window and Screen"
 msgstr "Прозорец и екран"
 
-#: crates/big-video-player/src/video/ui/preferences/general.rs:106
+#: crates/big-video-player/src/video/ui/preferences/general.rs:107
 msgid "Keep the Screen On"
 msgstr "Екранът да остава включен"
 
-#: crates/big-video-player/src/video/ui/preferences/general.rs:107
+#: crates/big-video-player/src/video/ui/preferences/general.rs:108
 msgid "Stops the screen from dimming or locking"
 msgstr "Не позволява на екрана да се затъмнява или заключва"
 
-#: crates/big-video-player/src/video/ui/preferences/general.rs:108
+#: crates/big-video-player/src/video/ui/preferences/general.rs:109
 msgid "During playback"
 msgstr "По време на изпълнение"
 
-#: crates/big-video-player/src/video/ui/preferences/general.rs:108
+#: crates/big-video-player/src/video/ui/preferences/general.rs:109
 msgid "Always"
 msgstr "Винаги"
 
-#: crates/big-video-player/src/video/ui/preferences/general.rs:108
+#: crates/big-video-player/src/video/ui/preferences/general.rs:109
 #: crates/big-video-player/src/video/ui/preferences/subtitles.rs:45
 msgid "Never"
 msgstr "Никога"
 
-#: crates/big-video-player/src/video/ui/preferences/general.rs:118
+#: crates/big-video-player/src/video/ui/preferences/general.rs:119
 msgid "Fit Window to Video"
 msgstr "Напасване на прозореца към видеото"
 
-#: crates/big-video-player/src/video/ui/preferences/general.rs:119
+#: crates/big-video-player/src/video/ui/preferences/general.rs:120
 msgid "Keeps the window in the video's proportions, without black bars"
 msgstr "Запазва прозореца в пропорциите на видеото, без черни ленти"
 
-#: crates/big-video-player/src/video/ui/preferences/general.rs:127
+#: crates/big-video-player/src/video/ui/preferences/general.rs:128
 msgid "Preview While Seeking"
 msgstr "Преглед при превъртане"
 
-#: crates/big-video-player/src/video/ui/preferences/general.rs:128
+#: crates/big-video-player/src/video/ui/preferences/general.rs:129
 msgid "Show a thumbnail of the video when pointing at the progress bar"
 msgstr "Показва миниатюра на видеото при посочване на лентата за напредък"
 
-#: crates/big-video-player/src/video/ui/preferences/general.rs:139
+#: crates/big-video-player/src/video/ui/preferences/general.rs:140
 msgid "Restore Default Settings…"
 msgstr "Възстановяване на стандартните настройки…"
 
-#: crates/big-video-player/src/video/ui/preferences/general.rs:165
+#: crates/big-video-player/src/video/ui/preferences/general.rs:166
 msgid "Save To"
 msgstr "Запазване в"
 
-#: crates/big-video-player/src/video/ui/preferences/general.rs:170
+#: crates/big-video-player/src/video/ui/preferences/general.rs:171
 msgid "Choose Folder"
 msgstr "Избор на папка"
 
-#: crates/big-video-player/src/video/ui/preferences/general.rs:175
+#: crates/big-video-player/src/video/ui/preferences/general.rs:176
 msgid "Use the Pictures Folder"
 msgstr "Използване на папката „Снимки“"
 
-#: crates/big-video-player/src/video/ui/preferences/general.rs:190
+#: crates/big-video-player/src/video/ui/preferences/general.rs:191
 msgid "Pictures folder"
 msgstr "Папка „Снимки“"
 
-#: crates/big-video-player/src/video/ui/preferences/general.rs:217
+#: crates/big-video-player/src/video/ui/preferences/general.rs:219
 msgid "Screenshot Folder"
 msgstr "Папка за снимките на екрана"
 
@@ -3223,7 +3336,7 @@ msgstr ""
 "например bg,en"
 
 #: crates/big-video-player/src/video/ui/preferences/subtitles.rs:31
-#: crates/ui/media/big-player-ui/src/audio_preferences.rs:148
+#: crates/ui/media/big-player-ui/src/audio_preferences.rs:150
 msgid "Preferred Languages"
 msgstr "Предпочитани езици"
 
@@ -3483,12 +3596,12 @@ msgid "Rename…"
 msgstr "Преименуване…"
 
 #: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/context_menu.rs:94
-#: crates/big-video-player/src/video/ui/video_browser_sidebar/fileops.rs:83
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/fileops.rs:80
 msgid "Move to trash"
 msgstr "Преместване в кошчето"
 
 #: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/context_menu.rs:101
-#: crates/big-video-player/src/video/ui/video_browser_sidebar/views/queue_view.rs:214
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/views/queue_view.rs:215
 msgid "Remove from playlist"
 msgstr "Премахване от списъка за изпълнение"
 
@@ -3615,8 +3728,8 @@ msgid "Your folders"
 msgstr "Вашите папки"
 
 #: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/metadata.rs:143
-#: crates/big-video-player/src/video/ui/video_browser_sidebar/library.rs:429
-#: crates/big-video-player/src/video/ui/video_browser_sidebar/mod.rs:301
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/library.rs:430
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/mod.rs:306
 #, rust-format
 msgid "{} video"
 msgid_plural "{} videos"
@@ -3636,103 +3749,98 @@ msgstr ""
 "Показват се {shown} от {total} намерени файла. Помислете дали да не "
 "филтрирате по подпапка."
 
-#: crates/big-video-player/src/video/ui/video_browser_sidebar/fileops.rs:23
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/fileops.rs:20
 #, rust-format
 msgid "{} selected"
 msgid_plural "{} selected"
 msgstr[0] "{} избран"
 msgstr[1] "{} избрани"
 
-#: crates/big-video-player/src/video/ui/video_browser_sidebar/fileops.rs:55
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/fileops.rs:52
 msgid "Send to converter"
 msgstr "Изпращане към преобразувателя"
 
-#: crates/big-video-player/src/video/ui/video_browser_sidebar/fileops.rs:66
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/fileops.rs:63
 msgid "Move to folder…"
 msgstr "Преместване в папка…"
 
-#: crates/big-video-player/src/video/ui/video_browser_sidebar/fileops.rs:96
-#: crates/big-video-player/src/video/ui/video_browser_sidebar/fileops.rs:97
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/fileops.rs:93
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/fileops.rs:94
 msgid "Done"
 msgstr "Готово"
 
-#: crates/big-video-player/src/video/ui/video_browser_sidebar/fileops.rs:154
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/fileops.rs:151
 msgid "Move to Folder"
 msgstr "Преместване в папка"
 
-#: crates/big-video-player/src/video/ui/video_browser_sidebar/fileops.rs:171
-msgid "moved"
-msgstr "преместени"
-
-#: crates/big-video-player/src/video/ui/video_browser_sidebar/fileops.rs:193
-#: crates/big-video-player/src/video/ui/video_browser_sidebar/fileops.rs:210
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/fileops.rs:196
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/fileops.rs:200
 msgid "Rename"
 msgstr "Преименуване"
 
-#: crates/big-video-player/src/video/ui/video_browser_sidebar/fileops.rs:199
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/fileops.rs:197
 msgid "Choose a new file name."
 msgstr "Изберете ново име на файла."
 
-#: crates/big-video-player/src/video/ui/video_browser_sidebar/fileops.rs:242
-msgid "Invalid name"
-msgstr "Невалидно име"
-
-#: crates/big-video-player/src/video/ui/video_browser_sidebar/fileops.rs:258
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/fileops.rs:243
 msgid "A file with that name already exists"
 msgstr "Файл с това име вече съществува"
 
-#: crates/big-video-player/src/video/ui/video_browser_sidebar/fileops.rs:265
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/fileops.rs:250
 msgid "Rename failed"
 msgstr "Преименуването е неуспешно"
 
-#: crates/big-video-player/src/video/ui/video_browser_sidebar/fileops.rs:359
-#, rust-format
-msgid "{ok} {verb}, {failed} failed"
-msgstr "{ok} {verb}, {failed} неуспешни"
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/fileops.rs:320
+#, fuzzy, rust-format
+#| msgid "Could not move to trash"
+msgid "Could not move {failed} of {total} file"
+msgid_plural "Could not move {failed} of {total} files"
+msgstr[0] "Не можа да се премести в кошчето"
+msgstr[1] "Не можа да се премести в кошчето"
 
-#: crates/big-video-player/src/video/ui/video_browser_sidebar/library.rs:116
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/library.rs:117
 msgid "Home folder"
 msgstr "Домашна папка"
 
-#: crates/big-video-player/src/video/ui/video_browser_sidebar/library.rs:405
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/library.rs:406
 msgid "Choose folders…"
 msgstr "Избор на папки…"
 
-#: crates/big-video-player/src/video/ui/video_browser_sidebar/library.rs:556
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/library.rs:557
 msgid "No video in your folders has that name"
 msgstr "Никое видео във вашите папки няма това име"
 
-#: crates/big-video-player/src/video/ui/video_browser_sidebar/library.rs:568
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/library.rs:569
 #, rust-format
 msgid "{} more in your folders"
 msgid_plural "{} more in your folders"
 msgstr[0] "Още {} във вашите папки"
 msgstr[1] "Още {} във вашите папки"
 
-#: crates/big-video-player/src/video/ui/video_browser_sidebar/library.rs:573
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/library.rs:574
 #, rust-format
 msgid "{} video found"
 msgid_plural "{} videos found"
 msgstr[0] "Намерено е {} видео"
 msgstr[1] "Намерени са {} видеа"
 
-#: crates/big-video-player/src/video/ui/video_browser_sidebar/library.rs:588
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/library.rs:589
 #, rust-format
 msgid "Showing the first {}. Type more to narrow the search."
 msgstr "Показват се първите {}. Въведете повече, за да стесните търсенето."
 
-#: crates/big-video-player/src/video/ui/video_browser_sidebar/library.rs:700
-#: crates/big-video-player/src/video/ui/video_browser_sidebar/library.rs:703
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/library.rs:701
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/library.rs:704
 #: crates/big-video-player/src/video/ui/video_shell/panel.rs:121
 #: crates/big-video-player/src/video/ui/video_shell/panel.rs:124
 msgid "Back"
 msgstr "Назад"
 
-#: crates/big-video-player/src/video/ui/video_browser_sidebar/library.rs:714
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/library.rs:715
 msgid "Video folders"
 msgstr "Папки с видеа"
 
-#: crates/big-video-player/src/video/ui/video_browser_sidebar/library.rs:724
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/library.rs:725
 msgid ""
 "Their videos are listed and searched here. Folders BigSearch does not index "
 "are searched by the player, more slowly."
@@ -3740,37 +3848,37 @@ msgstr ""
 "Видеата им се изброяват и търсят тук. Папките, които BigSearch не индексира, "
 "се търсят от плейъра по-бавно."
 
-#: crates/big-video-player/src/video/ui/video_browser_sidebar/library.rs:753
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/library.rs:754
 #, rust-format
 msgid "Remove {}"
 msgstr "Премахване на {}"
 
-#: crates/big-video-player/src/video/ui/video_browser_sidebar/library.rs:771
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/library.rs:772
 msgid "Add a folder…"
 msgstr "Добавяне на папка…"
 
-#: crates/big-video-player/src/video/ui/video_browser_sidebar/library.rs:782
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/library.rs:783
 msgid "Add a Video Folder"
 msgstr "Добавяне на папка с видеа"
 
-#: crates/big-video-player/src/video/ui/video_browser_sidebar/library.rs:800
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/library.rs:801
 msgid "Use the standard folders"
 msgstr "Използване на стандартните папки"
 
-#: crates/big-video-player/src/video/ui/video_browser_sidebar/library.rs:801
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/library.rs:802
 msgid "Videos, Downloads and the home folder"
 msgstr "Видеа, Изтеглени и домашната папка"
 
-#: crates/big-video-player/src/video/ui/video_browser_sidebar/mod.rs:329
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/mod.rs:334
 #, rust-format
 msgid "ends at {}"
 msgstr "свършва в {}"
 
-#: crates/big-video-player/src/video/ui/video_browser_sidebar/mod.rs:511
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/mod.rs:520
 msgid "Scanning…"
 msgstr "Сканиране…"
 
-#: crates/big-video-player/src/video/ui/video_browser_sidebar/mod.rs:556
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/mod.rs:565
 msgid "Search your videos…"
 msgstr "Търсене във видеата ви…"
 
@@ -3778,22 +3886,22 @@ msgstr "Търсене във видеата ви…"
 msgid "Previous folder"
 msgstr "Предишна папка"
 
-#: crates/big-video-player/src/video/ui/video_browser_sidebar/views/queue_view.rs:434
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/views/queue_view.rs:442
 #, rust-format
 msgid "Stopped at {}"
 msgstr "Спряно на {}"
 
-#: crates/big-video-player/src/video/ui/video_controls_bar.rs:278
+#: crates/big-video-player/src/video/ui/video_controls_bar.rs:281
 msgid "Seek Position"
 msgstr "Позиция на превъртане"
 
-#: crates/big-video-player/src/video/ui/video_controls_bar.rs:479
+#: crates/big-video-player/src/video/ui/video_controls_bar.rs:478
 #: crates/media-runtime/src/shared/tv_cast.rs:716
 msgid "Pause"
 msgstr "Пауза"
 
-#: crates/big-video-player/src/video/ui/video_controls_bar.rs:558
-#: crates/ui/media/big-player-ui/src/playback_bar.rs:323
+#: crates/big-video-player/src/video/ui/video_controls_bar.rs:566
+#: crates/ui/media/big-player-ui/src/playback_bar.rs:337
 msgid "TV volume"
 msgstr "Сила на звука на ТВ"
 
@@ -3801,43 +3909,43 @@ msgstr "Сила на звука на ТВ"
 msgid "Seek preview"
 msgstr "Преглед при превъртане"
 
-#: crates/big-video-player/src/video/ui/video_controls_bar/tracks.rs:26
+#: crates/big-video-player/src/video/ui/video_controls_bar/tracks.rs:27
 msgid "Load Subtitle File…"
 msgstr "Зареждане на файл със субтитри…"
 
-#: crates/big-video-player/src/video/ui/video_controls_bar/tracks.rs:36
+#: crates/big-video-player/src/video/ui/video_controls_bar/tracks.rs:37
 msgid "Primary Subtitles"
 msgstr "Основни субтитри"
 
-#: crates/big-video-player/src/video/ui/video_controls_bar/tracks.rs:38
+#: crates/big-video-player/src/video/ui/video_controls_bar/tracks.rs:39
 msgid "Disable Subtitles"
 msgstr "Изключване на субтитрите"
 
-#: crates/big-video-player/src/video/ui/video_controls_bar/tracks.rs:58
+#: crates/big-video-player/src/video/ui/video_controls_bar/tracks.rs:59
 msgid "Secondary Subtitles"
 msgstr "Вторични субтитри"
 
-#: crates/big-video-player/src/video/ui/video_controls_bar/tracks.rs:60
+#: crates/big-video-player/src/video/ui/video_controls_bar/tracks.rs:61
 msgid "Disable Secondary Subtitles"
 msgstr "Изключване на вторичните субтитри"
 
-#: crates/big-video-player/src/video/ui/video_controls_bar/tracks.rs:109
-msgid "Subtitle files"
-msgstr "Файлове със субтитри"
-
-#: crates/big-video-player/src/video/ui/video_controls_bar/tracks.rs:117
+#: crates/big-video-player/src/video/ui/video_controls_bar/tracks.rs:111
 msgid "Load Subtitle File"
 msgstr "Зареждане на файл със субтитри"
 
-#: crates/big-video-player/src/video/ui/video_controls_bar/tracks.rs:191
+#: crates/big-video-player/src/video/ui/video_controls_bar/tracks.rs:113
+msgid "Subtitle files"
+msgstr "Файлове със субтитри"
+
+#: crates/big-video-player/src/video/ui/video_controls_bar/tracks.rs:182
 msgid "Earlier"
 msgstr "По-рано"
 
-#: crates/big-video-player/src/video/ui/video_controls_bar/tracks.rs:191
+#: crates/big-video-player/src/video/ui/video_controls_bar/tracks.rs:182
 msgid "Later"
 msgstr "По-късно"
 
-#: crates/big-video-player/src/video/ui/video_controls_bar/tracks.rs:245
+#: crates/big-video-player/src/video/ui/video_controls_bar/tracks.rs:236
 msgid "Track"
 msgstr "Пътека"
 
@@ -3850,8 +3958,8 @@ msgid "Unmute"
 msgstr "Включване на звука"
 
 #: crates/big-video-player/src/video/ui/video_controls_bar/zones.rs:218
-#: crates/big-video-player/src/video/ui/video_controls_bar/zones.rs:444
-#: crates/big-video-player/src/video/ui/video_controls_bar/zones.rs:461
+#: crates/big-video-player/src/video/ui/video_controls_bar/zones.rs:457
+#: crates/big-video-player/src/video/ui/video_controls_bar/zones.rs:474
 msgid "Mute"
 msgstr "Заглушаване"
 
@@ -3868,15 +3976,15 @@ msgstr "PC"
 msgid "PC volume"
 msgstr "Сила на звука на PC"
 
-#: crates/big-video-player/src/video/ui/video_controls_bar/zones.rs:606
+#: crates/big-video-player/src/video/ui/video_controls_bar/zones.rs:619
 msgid "Edit & Export"
 msgstr "Редактиране и експорт"
 
-#: crates/big-video-player/src/video/ui/video_controls_bar/zones.rs:668
+#: crates/big-video-player/src/video/ui/video_controls_bar/zones.rs:681
 msgid "Cut Video…"
 msgstr "Изрязване на видео…"
 
-#: crates/big-video-player/src/video/ui/video_controls_bar/zones.rs:669
+#: crates/big-video-player/src/video/ui/video_controls_bar/zones.rs:682
 msgid "Extract Audio…"
 msgstr "Извличане на аудио…"
 
@@ -3885,101 +3993,101 @@ msgid "Drop a file or open one to start"
 msgstr "Пуснете файл или отворете такъв, за да започнете"
 
 #: crates/big-video-player/src/video/ui/video_shell/actions.rs:132
-#: crates/big-video-player/src/video/ui/video_shell/component.rs:864
+#: crates/big-video-player/src/video/ui/video_shell/component.rs:882
 msgid "Open Recent"
 msgstr "Отваряне на скорошен"
 
-#: crates/big-video-player/src/video/ui/video_shell/adjustments.rs:176
+#: crates/big-video-player/src/video/ui/video_shell/adjustments.rs:143
 msgid "More bass"
 msgstr "Повече баси"
 
-#: crates/big-video-player/src/video/ui/video_shell/adjustments.rs:177
+#: crates/big-video-player/src/video/ui/video_shell/adjustments.rs:144
 msgid "More treble"
 msgstr "Повече високи"
 
-#: crates/big-video-player/src/video/ui/video_shell/adjustments.rs:178
+#: crates/big-video-player/src/video/ui/video_shell/adjustments.rs:145
 msgid "Voices"
 msgstr "Гласове"
 
-#: crates/big-video-player/src/video/ui/video_shell/adjustments.rs:191
+#: crates/big-video-player/src/video/ui/video_shell/adjustments.rs:158
 #, rust-format
 msgid "Video colour: {name}"
 msgstr "Цвят на видеото: {name}"
 
-#: crates/big-video-player/src/video/ui/video_shell/adjustments.rs:195
+#: crates/big-video-player/src/video/ui/video_shell/adjustments.rs:162
 msgid "Picture adjusted"
 msgstr "Картината е настроена"
 
-#: crates/big-video-player/src/video/ui/video_shell/adjustments.rs:196
+#: crates/big-video-player/src/video/ui/video_shell/adjustments.rs:163
 #, rust-format
 msgid "Zoom {percent}%"
 msgstr "Мащаб {percent}%"
 
-#: crates/big-video-player/src/video/ui/video_shell/adjustments.rs:198
+#: crates/big-video-player/src/video/ui/video_shell/adjustments.rs:165
 msgid "Picture enlarged to fill"
 msgstr "Картината е уголемена до запълване"
 
-#: crates/big-video-player/src/video/ui/video_shell/adjustments.rs:200
+#: crates/big-video-player/src/video/ui/video_shell/adjustments.rs:167
 #, rust-format
 msgid "Rotated {degrees}°"
 msgstr "Завъртяно на {degrees}°"
 
-#: crates/big-video-player/src/video/ui/video_shell/adjustments.rs:202
+#: crates/big-video-player/src/video/ui/video_shell/adjustments.rs:169
 msgid "Mirrored"
 msgstr "Огледално"
 
-#: crates/big-video-player/src/video/ui/video_shell/adjustments.rs:203
+#: crates/big-video-player/src/video/ui/video_shell/adjustments.rs:170
 msgid "Edges cut off"
 msgstr "Краищата са отрязани"
 
-#: crates/big-video-player/src/video/ui/video_shell/adjustments.rs:204
+#: crates/big-video-player/src/video/ui/video_shell/adjustments.rs:171
 #, rust-format
 msgid "Speed {speed}×"
 msgstr "Скорост {speed}×"
 
-#: crates/big-video-player/src/video/ui/video_shell/adjustments.rs:206
+#: crates/big-video-player/src/video/ui/video_shell/adjustments.rs:173
 #, rust-format
 msgid "Sound {seconds} s late"
 msgstr "Звукът закъснява с {seconds} s"
 
-#: crates/big-video-player/src/video/ui/video_shell/adjustments.rs:209
+#: crates/big-video-player/src/video/ui/video_shell/adjustments.rs:176
 #, rust-format
 msgid "Sound {seconds} s early"
 msgstr "Звукът избързва с {seconds} s"
 
-#: crates/big-video-player/src/video/ui/video_shell/adjustments.rs:212
+#: crates/big-video-player/src/video/ui/video_shell/adjustments.rs:179
 #, rust-format
 msgid "Subtitles {seconds} s late"
 msgstr "Субтитрите закъсняват с {seconds} s"
 
-#: crates/big-video-player/src/video/ui/video_shell/adjustments.rs:215
+#: crates/big-video-player/src/video/ui/video_shell/adjustments.rs:182
 #, rust-format
 msgid "Subtitles {seconds} s early"
 msgstr "Субтитрите избързват с {seconds} s"
 
-#: crates/big-video-player/src/video/ui/video_shell/adjustments.rs:217
+#: crates/big-video-player/src/video/ui/video_shell/adjustments.rs:184
 #, rust-format
 msgid "Type of sound: {name}"
 msgstr "Вид звук: {name}"
 
-#: crates/big-video-player/src/video/ui/video_shell/adjustments.rs:225
+#: crates/big-video-player/src/video/ui/video_shell/adjustments.rs:192
 msgid "by hand"
 msgstr "ръчно"
 
-#: crates/big-video-player/src/video/ui/video_shell/adjustments.rs:227
+#: crates/big-video-player/src/video/ui/video_shell/adjustments.rs:194
 msgid "Video effects on"
 msgstr "Видео ефектите са включени"
 
-#: crates/big-video-player/src/video/ui/video_shell/adjustments.rs:228
+#: crates/big-video-player/src/video/ui/video_shell/adjustments.rs:195
 msgid "Picture enhanced"
 msgstr "Картината е подобрена"
 
-#: crates/big-video-player/src/video/ui/video_shell/adjustments.rs:235
+#: crates/big-video-player/src/video/ui/video_shell/adjustments.rs:202
 #, rust-format
 msgid "Stops at {time}"
 msgstr "Спира в {time}"
 
-#: crates/big-video-player/src/video/ui/video_shell/adjustments.rs:343
+#: crates/big-video-player/src/video/ui/video_shell/adjustments.rs:310
 #: crates/big-video-player/src/video/ui/video_shell/panel.rs:238
 #, rust-format
 msgid "{n} change"
@@ -3987,7 +4095,7 @@ msgid_plural "{n} changes"
 msgstr[0] "{n} промяна"
 msgstr[1] "{n} промени"
 
-#: crates/big-video-player/src/video/ui/video_shell/adjustments.rs:346
+#: crates/big-video-player/src/video/ui/video_shell/adjustments.rs:313
 msgid "Click to see or undo"
 msgstr "Щракнете, за да видите или отмените"
 
@@ -3998,49 +4106,54 @@ msgstr "Щракнете, за да видите или отмените"
 msgid "Settings"
 msgstr "Настройки"
 
-#: crates/big-video-player/src/video/ui/video_shell/component.rs:132
+#: crates/big-video-player/src/video/ui/video_shell/component.rs:133
 msgid "Minimize"
 msgstr "Минимизиране"
 
-#: crates/big-video-player/src/video/ui/video_shell/component.rs:132
+#: crates/big-video-player/src/video/ui/video_shell/component.rs:134
 msgid "Maximize"
 msgstr "Максимизиране"
 
-#: crates/big-video-player/src/video/ui/video_shell/component.rs:142
+#: crates/big-video-player/src/video/ui/video_shell/component.rs:135
+#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:373
+msgid "Restore"
+msgstr "Възстановяване"
+
+#: crates/big-video-player/src/video/ui/video_shell/component.rs:147
 msgid "Use HDR?"
 msgstr "Да се използва ли HDR?"
 
-#: crates/big-video-player/src/video/ui/video_shell/component.rs:144
+#: crates/big-video-player/src/video/ui/video_shell/component.rs:149
 msgid "Does the picture look grey and washed out? Click to use HDR colours"
 msgstr ""
 "Картината изглежда ли сивкава и избледняла? Щракнете, за да използвате HDR "
 "цветове"
 
-#: crates/big-video-player/src/video/ui/video_shell/component.rs:163
+#: crates/big-video-player/src/video/ui/video_shell/component.rs:168
 msgid "On the TV"
 msgstr "На телевизора"
 
-#: crates/big-video-player/src/video/ui/video_shell/component.rs:164
+#: crates/big-video-player/src/video/ui/video_shell/component.rs:169
 #: crates/big-video-player/src/video/ui/video_shell/tv.rs:43
 #: crates/media-runtime/src/shared/tv_cast/card.rs:261
 msgid "The TV is still playing"
 msgstr "Телевизорът все още изпълнява"
 
-#: crates/big-video-player/src/video/ui/video_shell/component.rs:863
+#: crates/big-video-player/src/video/ui/video_shell/component.rs:881
 #: crates/big-video-player/src/video/ui/video_shell/input_gestures.rs:121
 msgid "Open File…"
 msgstr "Отваряне на файл…"
 
-#: crates/big-video-player/src/video/ui/video_shell/component.rs:865
+#: crates/big-video-player/src/video/ui/video_shell/component.rs:883
 #: crates/big-video-player/src/video/ui/video_shell/input_gestures.rs:122
 msgid "Open URL…"
 msgstr "Отваряне на URL…"
 
-#: crates/big-video-player/src/video/ui/video_shell/component.rs:866
+#: crates/big-video-player/src/video/ui/video_shell/component.rs:884
 msgid "Open Disc…"
 msgstr "Отваряне на диск…"
 
-#: crates/big-video-player/src/video/ui/video_shell/component.rs:867
+#: crates/big-video-player/src/video/ui/video_shell/component.rs:885
 msgid "TV Channels (IPTV)…"
 msgstr "ТВ канали (IPTV)…"
 
@@ -4116,46 +4229,42 @@ msgstr "Поддържа YouTube, HTTP потоци, RTSP, RTMP, DVD и Blu-ray 
 msgid "Media URL"
 msgstr "URL на медията"
 
-#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:231
+#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:225
 msgid "Open Disc"
 msgstr "Отваряне на диск"
 
-#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:240
+#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:234
 msgid "Choose a disc type and enter the device, ISO, or folder path."
 msgstr ""
 "Изберете тип диск и въведете устройството, ISO файла или пътя до папката."
 
-#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:244
+#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:238
 msgid "Disc type"
 msgstr "Тип диск"
 
-#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:245
+#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:239
 msgid "DVD"
 msgstr "DVD"
 
-#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:245
+#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:239
 msgid "Blu-ray"
 msgstr "Blu-ray"
 
-#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:248
+#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:242
 msgid "Disc device path"
 msgstr "Път до устройството на диска"
 
-#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:374
+#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:366
 msgid "Restore Default Settings?"
 msgstr "Да се възстановят ли стандартните настройки?"
 
-#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:376
+#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:368
 msgid ""
 "Every setting, including appearance, goes back to its default value. Some "
 "changes take effect after reopening the player."
 msgstr ""
 "Всички настройки, включително външният вид, се връщат към стандартните си "
 "стойности. Някои промени влизат в сила след повторно отваряне на плейъра."
-
-#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:381
-msgid "Restore"
-msgstr "Възстановяване"
 
 #: crates/big-video-player/src/video/ui/video_shell/export.rs:19
 msgid "No file is playing"
@@ -4178,12 +4287,12 @@ msgid "Effects and filters"
 msgstr "Ефекти и филтри"
 
 #: crates/big-video-player/src/video/ui/video_shell/input_gestures.rs:123
-#: crates/big-video-player/src/video/ui/video_shell/panel.rs:516
+#: crates/big-video-player/src/video/ui/video_shell/panel.rs:517
 msgid "About this video"
 msgstr "За това видео"
 
 #: crates/big-video-player/src/video/ui/video_shell/panel.rs:45
-#: crates/big-video-player/src/video/ui/video_shell/panel.rs:490
+#: crates/big-video-player/src/video/ui/video_shell/panel.rs:491
 msgid "Stop after…"
 msgstr "Спиране след…"
 
@@ -4196,77 +4305,84 @@ msgstr "Скорошни файлове"
 msgid "{current} of {total}"
 msgstr "{current} от {total}"
 
-#: crates/big-video-player/src/video/ui/video_shell/panel.rs:504
+#: crates/big-video-player/src/video/ui/video_shell/panel.rs:505
 msgid "Online quality"
 msgstr "Онлайн качество"
 
-#: crates/big-video-player/src/video/ui/video_shell/panel.rs:505
+#: crates/big-video-player/src/video/ui/video_shell/panel.rs:506
 msgid "Choose"
 msgstr "Избор"
 
-#: crates/big-video-player/src/video/ui/video_shell/panel.rs:549
+#: crates/big-video-player/src/video/ui/video_shell/panel.rs:550
 msgid "Put back what was just set to normal"
 msgstr "Връщане на току-що нулираното към нормално"
 
-#: crates/big-video-player/src/video/ui/video_shell/panel.rs:581
+#: crates/big-video-player/src/video/ui/video_shell/panel.rs:582
 msgid "Shortcuts"
 msgstr "Клавишни комбинации"
 
-#: crates/big-video-player/src/video/ui/video_shell/panel.rs:622
+#: crates/big-video-player/src/video/ui/video_shell/panel.rs:623
 msgid "Changed"
 msgstr "Променено"
 
-#: crates/big-video-player/src/video/ui/video_shell/panel.rs:634
-#: crates/big-video-player/src/video/ui/video_shell/panel.rs:657
+#: crates/big-video-player/src/video/ui/video_shell/panel.rs:635
+#: crates/big-video-player/src/video/ui/video_shell/panel.rs:658
 msgid "Back to normal"
 msgstr "Обратно към нормалното"
 
-#: crates/big-video-player/src/video/ui/video_shell/panel.rs:639
+#: crates/big-video-player/src/video/ui/video_shell/panel.rs:640
 #, rust-format
 msgid "Undo: {setting}"
 msgstr "Отмяна: {setting}"
 
-#: crates/big-video-player/src/video/ui/video_shell/panel.rs:658
+#: crates/big-video-player/src/video/ui/video_shell/panel.rs:659
 msgid "Undo every change to the picture and sound"
 msgstr "Отмяна на всяка промяна в картината и звука"
 
-#: crates/big-video-player/src/video/ui/video_shell/panel.rs:827
+#: crates/big-video-player/src/video/ui/video_shell/panel.rs:828
 msgid "Jump to a chapter"
 msgstr "Преминаване към глава"
 
-#: crates/big-video-player/src/video/ui/video_shell/panel/recent.rs:15
+#: crates/big-video-player/src/video/ui/video_shell/panel/recent.rs:41
 msgid "No Recent Files"
 msgstr "Няма скорошни файлове"
 
-#: crates/big-video-player/src/video/ui/video_shell/panel/recent.rs:142
-#: crates/big-video-player/src/video/ui/video_shell/panel/recent.rs:146
+#: crates/big-video-player/src/video/ui/video_shell/panel/recent.rs:204
+#: crates/big-video-player/src/video/ui/video_shell/panel/recent.rs:208
 msgid "Search recent files"
 msgstr "Търсене в скорошните файлове"
 
-#: crates/big-video-player/src/video/ui/video_shell/panel/recent.rs:158
+#: crates/big-video-player/src/video/ui/video_shell/panel/recent.rs:220
 msgid "No recent file matches"
 msgstr "Няма съвпадащи скорошни файлове"
 
-#: crates/big-video-player/src/video/ui/video_shell/playback.rs:168
-msgid "Screenshot timed out; cancellation requested"
-msgstr "Снимката на екрана изтече по време; поискана е отмяна"
+#: crates/big-video-player/src/video/ui/video_shell/playback.rs:169
+msgid "The screenshot took too long and was not saved"
+msgstr ""
 
-#: crates/big-video-player/src/video/ui/video_shell/playback.rs:214
+#: crates/big-video-player/src/video/ui/video_shell/playback.rs:213
 msgid "Playing video"
 msgstr "Изпълнява се видео"
 
-#: crates/big-video-player/src/video/ui/video_shell/playback.rs:479
+#: crates/big-video-player/src/video/ui/video_shell/playback.rs:490
 msgid "Could not move to trash"
 msgstr "Не можа да се премести в кошчето"
 
-#: crates/big-video-player/src/video/ui/video_shell/playback.rs:485
+#: crates/big-video-player/src/video/ui/video_shell/playback.rs:496
 #, rust-format
 msgid "{} file moved to trash"
 msgid_plural "{} files moved to trash"
 msgstr[0] "{} файл е преместен в кошчето"
 msgstr[1] "{} файла са преместени в кошчето"
 
-#: crates/big-video-player/src/video/ui/video_shell/render.rs:335
+#: crates/big-video-player/src/video/ui/video_shell/render.rs:81
+#, rust-format
+msgid ""
+"The playback engine could not start: {error}. Check Preferences → Advanced → "
+"mpv Options, then reopen the player."
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/video_shell/render.rs:340
 msgid ""
 "Video could not start. Try Automatic video output in Preferences, or check "
 "that mpv is installed."
@@ -4274,7 +4390,7 @@ msgstr ""
 "Видеото не можа да стартира. Опитайте „Автоматично“ видео изход в Настройки "
 "или проверете дали mpv е инсталиран."
 
-#: crates/big-video-player/src/video/ui/video_shell/render.rs:422
+#: crates/big-video-player/src/video/ui/video_shell/render.rs:427
 msgid ""
 "The video area is too large for compatibility mode. Reduce the window size "
 "or select Automatic video output in Preferences."
@@ -4282,7 +4398,7 @@ msgstr ""
 "Видео областта е твърде голяма за режима за съвместимост. Намалете размера "
 "на прозореца или изберете „Автоматично“ видео изход в Настройки."
 
-#: crates/big-video-player/src/video/ui/video_shell/render.rs:431
+#: crates/big-video-player/src/video/ui/video_shell/render.rs:436
 msgid ""
 "The video frame could not be displayed. Try Automatic video output in "
 "Preferences."
@@ -4392,40 +4508,6 @@ msgstr "BigNetScreen е изключен"
 msgid "Select between 1 and 1000 files"
 msgstr "Изберете между 1 и 1000 файла"
 
-#: crates/media-runtime/src/media/metadata_cache/detailed_video_metadata.rs:111
-#: crates/media-runtime/src/media/metadata_cache/detailed_video_metadata.rs:157
-#: crates/media-runtime/src/media/metadata_cache/detailed_video_metadata.rs:171
-#: crates/ui/media/big-media-components/src/media/file_metadata_dialog.rs:65
-#: crates/ui/media/big-player-ui/src/audio_preferences.rs:140
-msgid "Language"
-msgstr "Език"
-
-#: crates/media-runtime/src/media/metadata_cache/detailed_video_metadata.rs:129
-msgid "CD Quality"
-msgstr "CD качество"
-
-#: crates/media-runtime/src/media/metadata_cache/detailed_video_metadata.rs:131
-msgid "Hi-Res"
-msgstr "Висока разделителна способност"
-
-#: crates/media-runtime/src/media/metadata_cache/detailed_video_metadata.rs:143
-#: crates/ui/media/big-player-ui/src/audio_preferences.rs:179
-msgid "Mono"
-msgstr "Моно"
-
-#: crates/media-runtime/src/media/metadata_cache/detailed_video_metadata.rs:144
-#: crates/ui/media/big-player-ui/src/audio_preferences.rs:179
-msgid "Stereo"
-msgstr "Стерео"
-
-#: crates/media-runtime/src/media/metadata_cache/detailed_video_metadata.rs:145
-msgid "5.1 Surround"
-msgstr "Съраунд 5.1"
-
-#: crates/media-runtime/src/media/metadata_cache/detailed_video_metadata.rs:146
-msgid "7.1 Surround"
-msgstr "Съраунд 7.1"
-
 #: crates/media-runtime/src/media/metadata_cache/display.rs:21
 #, rust-format
 msgid "{} audio track"
@@ -4440,7 +4522,7 @@ msgid_plural "{} subtitles"
 msgstr[0] "{} субтитри"
 msgstr[1] "{} субтитри"
 
-#: crates/media-runtime/src/media/playlist_scan/display.rs:79
+#: crates/media-runtime/src/media/playlist_scan/display.rs:20
 msgid "Home"
 msgstr "Начало"
 
@@ -4596,7 +4678,7 @@ msgstr "Потребителски токен"
 msgid "Retry Saving"
 msgstr "Нов опит за запазване"
 
-#: crates/media-runtime/src/settings/saving.rs:41
+#: crates/media-runtime/src/settings/saving.rs:33
 msgid ""
 "Your changes work for now but could not be saved. Check free disk space or "
 "close other players, then retry."
@@ -4604,7 +4686,7 @@ msgstr ""
 "Промените ви работят засега, но не можаха да бъдат запазени. Проверете "
 "свободното място на диска или затворете други плейъри и опитайте отново."
 
-#: crates/media-runtime/src/settings/saving.rs:126
+#: crates/media-runtime/src/settings/saving.rs:135
 msgid ""
 "Saves and exports are still finishing. The window will close afterwards. "
 "Keeping it open does not cancel those operations."
@@ -4612,16 +4694,16 @@ msgstr ""
 "Запазванията и експортите все още приключват. Прозорецът ще се затвори след "
 "това. Оставянето му отворен не отменя тези операции."
 
-#: crates/media-runtime/src/settings/saving.rs:129
+#: crates/media-runtime/src/settings/saving.rs:138
 msgid "Finishing pending work"
 msgstr "Приключване на чакащата работа"
 
-#: crates/media-runtime/src/settings/saving.rs:132
-#: crates/media-runtime/src/settings/saving.rs:171
+#: crates/media-runtime/src/settings/saving.rs:141
+#: crates/media-runtime/src/settings/saving.rs:184
 msgid "Keep open"
 msgstr "Оставане отворен"
 
-#: crates/media-runtime/src/settings/saving.rs:164
+#: crates/media-runtime/src/settings/saving.rs:177
 msgid ""
 "Keep the player open to review saving errors and retry. Continuing may "
 "discard unsaved session changes; it does not mark them as saved."
@@ -4630,11 +4712,11 @@ msgstr ""
 "опитате отново. Продължаването може да отхвърли незапазените промени от "
 "сесията; то не ги отбелязва като запазени."
 
-#: crates/media-runtime/src/settings/saving.rs:167
+#: crates/media-runtime/src/settings/saving.rs:180
 msgid "Some changes are not confirmed as saved"
 msgstr "Някои промени не са потвърдени като запазени"
 
-#: crates/media-runtime/src/settings/saving.rs:172
+#: crates/media-runtime/src/settings/saving.rs:185
 msgid "Continue without saved changes"
 msgstr "Продължаване без запазените промени"
 
@@ -4746,7 +4828,7 @@ msgstr "Средни"
 msgid "Highs"
 msgstr "Високи"
 
-#: crates/media-runtime/src/shared/converter_handoff.rs:41
+#: crates/media-runtime/src/shared/converter_handoff.rs:39
 msgid "Could not launch the converter"
 msgstr "Преобразувателят не можа да бъде стартиран"
 
@@ -4766,33 +4848,49 @@ msgstr "Изчакване…"
 msgid "Reset to Default"
 msgstr "Връщане към стандартното"
 
-#: crates/media-runtime/src/shared/sleep_timer.rs:12
+#: crates/media-runtime/src/shared/sleep_timer.rs:20
 msgid "Stop playback"
 msgstr "Спиране на изпълнението"
 
-#: crates/media-runtime/src/shared/sleep_timer.rs:14
+#: crates/media-runtime/src/shared/sleep_timer.rs:22
 msgid "Suspend computer"
 msgstr "Приспиване на компютъра"
 
-#: crates/media-runtime/src/shared/sleep_timer.rs:15
+#: crates/media-runtime/src/shared/sleep_timer.rs:23
 msgid "Shut down computer"
 msgstr "Изключване на компютъра"
 
-#: crates/media-runtime/src/shared/sleep_timer.rs:22
+#: crates/media-runtime/src/shared/sleep_timer.rs:30
 msgid "Minutes"
 msgstr "Минути"
 
-#: crates/media-runtime/src/shared/sleep_timer.rs:23
+#: crates/media-runtime/src/shared/sleep_timer.rs:31
 msgid "Action"
 msgstr "Действие"
 
-#: crates/media-runtime/src/shared/sleep_timer.rs:24
+#: crates/media-runtime/src/shared/sleep_timer.rs:32
 msgid "When timer ends"
 msgstr "Когато таймерът изтече"
 
-#: crates/media-runtime/src/shared/sleep_timer.rs:25
+#: crates/media-runtime/src/shared/sleep_timer.rs:33
 msgid "Start Timer"
 msgstr "Стартиране на таймера"
+
+#: crates/media-runtime/src/shared/sleep_timer.rs:212
+msgid "Sleep timer: closing player"
+msgstr "Таймер за заспиване: затваряне на плейъра"
+
+#: crates/media-runtime/src/shared/sleep_timer.rs:224
+msgid "Sleep timer: suspending computer"
+msgstr "Таймер за заспиване: приспиване на компютъра"
+
+#: crates/media-runtime/src/shared/sleep_timer.rs:236
+msgid "Sleep timer: shutting down"
+msgstr "Таймер за заспиване: изключване"
+
+#: crates/media-runtime/src/shared/sleep_timer.rs:238
+msgid "Sleep timer: playback paused"
+msgstr "Таймер за заспиване: изпълнението е на пауза"
 
 #: crates/media-runtime/src/shared/tv_cast.rs:110
 msgid "BigNetScreen is not installed"
@@ -4867,7 +4965,7 @@ msgstr "Първо пуснете нещо, после изберете теле
 
 #: crates/media-runtime/src/shared/tv_cast.rs:704
 #: crates/media-runtime/src/shared/tv_cast.rs:776
-#: crates/ui/media/big-player-ui/src/download_panel.rs:207
+#: crates/ui/media/big-player-ui/src/download_panel.rs:216
 msgid "Starting…"
 msgstr "Стартиране…"
 
@@ -4971,11 +5069,32 @@ msgstr "Контролите отново управляват телевизо�
 msgid "Press Alt+Down to adjust. Press Escape to close."
 msgstr "Натиснете Alt+Надолу за настройка. Натиснете Escape за затваряне."
 
-#: crates/ui/generic/big-relm4-components/src/layout/media_window/sidebar.rs:248
+#: crates/ui/generic/big-relm4-components/src/input/zone_layout_editor.rs:158
+#, rust-format
+msgid "{zone}, {position} of {count}"
+msgstr ""
+
+#: crates/ui/generic/big-relm4-components/src/input/zone_layout_editor.rs:199
+#, rust-format
+msgid "{bar}, center"
+msgstr ""
+
+#: crates/ui/generic/big-relm4-components/src/input/zone_layout_editor.rs:200
+#: crates/ui/generic/big-relm4-components/src/input/zone_layout_editor.rs:201
+#, rust-format
+msgid "{bar}, left"
+msgstr ""
+
+#: crates/ui/generic/big-relm4-components/src/input/zone_layout_editor.rs:202
+#, rust-format
+msgid "{bar}, right"
+msgstr ""
+
+#: crates/ui/generic/big-relm4-components/src/layout/media_window/sidebar.rs:232
 msgid "Resize sidebar"
 msgstr "Преоразмеряване на страничния панел"
 
-#: crates/ui/generic/big-relm4-components/src/layout/media_window/sidebar.rs:250
+#: crates/ui/generic/big-relm4-components/src/layout/media_window/sidebar.rs:234
 msgid ""
 "Use Left and Right arrow keys to resize the media sidebar. Use Home and End "
 "for minimum and maximum width."
@@ -5003,6 +5122,11 @@ msgstr "Аудио поток"
 msgid "Subtitle Stream"
 msgstr "Поток със субтитри"
 
+#: crates/ui/media/big-media-components/src/media/file_metadata_dialog.rs:65
+#: crates/ui/media/big-player-ui/src/audio_preferences.rs:142
+msgid "Language"
+msgstr "Език"
+
 #: crates/ui/media/big-media-components/src/media/file_metadata_dialog.rs:419
 msgid "Low"
 msgstr "Ниско"
@@ -5011,45 +5135,45 @@ msgstr "Ниско"
 msgid "Studio"
 msgstr "Студио"
 
-#: crates/ui/media/big-media-components/src/player_chrome.rs:301
+#: crates/ui/media/big-media-components/src/player_chrome.rs:319
 msgid "Volume level"
 msgstr "Ниво на звука"
 
-#: crates/ui/media/big-media-components/src/player_chrome.rs:312
+#: crates/ui/media/big-media-components/src/player_chrome.rs:330
 msgid "Playback speed"
 msgstr "Скорост на изпълнение"
 
-#: crates/ui/media/big-media-components/src/player_chrome.rs:324
+#: crates/ui/media/big-media-components/src/player_chrome.rs:342
 msgid "Voice"
 msgstr "Глас"
 
-#: crates/ui/media/big-media-components/src/player_chrome.rs:326
+#: crates/ui/media/big-media-components/src/player_chrome.rs:344
 msgid "Voice enhancement"
 msgstr "Подобряване на гласа"
 
 #: crates/ui/media/big-player-ui/src/appearance/audio_colors.rs:30
-#: crates/ui/media/big-player-ui/src/appearance/video_colors.rs:29
+#: crates/ui/media/big-player-ui/src/appearance/video_colors.rs:30
 msgid "Color Source"
 msgstr "Източник на цветове"
 
 #: crates/ui/media/big-player-ui/src/appearance/audio_colors.rs:32
-#: crates/ui/media/big-player-ui/src/appearance/video_colors.rs:31
+#: crates/ui/media/big-player-ui/src/appearance/video_colors.rs:32
 msgid "Follow System"
 msgstr "Следване на системата"
 
 #: crates/ui/media/big-player-ui/src/appearance/audio_colors.rs:33
-#: crates/ui/media/big-player-ui/src/appearance/video_colors.rs:32
+#: crates/ui/media/big-player-ui/src/appearance/video_colors.rs:33
 msgid "Light Theme"
 msgstr "Светла тема"
 
 #: crates/ui/media/big-player-ui/src/appearance/audio_colors.rs:34
-#: crates/ui/media/big-player-ui/src/appearance/video_colors.rs:33
+#: crates/ui/media/big-player-ui/src/appearance/video_colors.rs:34
 msgid "Dark Theme"
 msgstr "Тъмна тема"
 
 #: crates/ui/media/big-player-ui/src/appearance/audio_colors.rs:35
 #: crates/ui/media/big-player-ui/src/appearance/color_palette_controls.rs:130
-#: crates/ui/media/big-player-ui/src/appearance/video_colors.rs:35
+#: crates/ui/media/big-player-ui/src/appearance/video_colors.rs:36
 msgid "Custom Colors"
 msgstr "Цветове по избор"
 
@@ -5101,51 +5225,51 @@ msgstr "Цвят на иконите"
 msgid "Dialogs and Menus Color"
 msgstr "Цвят на диалозите и менютата"
 
-#: crates/ui/media/big-player-ui/src/appearance/video_colors.rs:34
+#: crates/ui/media/big-player-ui/src/appearance/video_colors.rs:35
 msgid "Video Colors"
 msgstr "Цветове на видеото"
 
-#: crates/ui/media/big-player-ui/src/appearance/video_colors.rs:44
+#: crates/ui/media/big-player-ui/src/appearance/video_colors.rs:45
 msgid "Background Opacity"
 msgstr "Непрозрачност на фона"
 
-#: crates/ui/media/big-player-ui/src/appearance/video_colors.rs:45
+#: crates/ui/media/big-player-ui/src/appearance/video_colors.rs:46
 msgid "Menu Opacity"
 msgstr "Непрозрачност на менюто"
 
-#: crates/ui/media/big-player-ui/src/appearance/video_colors.rs:69
+#: crates/ui/media/big-player-ui/src/appearance/video_colors.rs:70
 msgid "Icon and Text Shadow"
 msgstr "Сянка на иконите и текста"
 
-#: crates/ui/media/big-player-ui/src/audio_preferences.rs:87
+#: crates/ui/media/big-player-ui/src/audio_preferences.rs:88
 msgid "Sound"
 msgstr "Звук"
 
-#: crates/ui/media/big-player-ui/src/audio_preferences.rs:91
+#: crates/ui/media/big-player-ui/src/audio_preferences.rs:92
 msgid "Even Out Loudness"
 msgstr "Изравняване на силата на звука"
 
-#: crates/ui/media/big-player-ui/src/audio_preferences.rs:92
+#: crates/ui/media/big-player-ui/src/audio_preferences.rs:93
 msgid "Quiet and loud media play at a similar volume"
 msgstr "Тихите и силните медии се изпълняват с подобна сила на звука"
 
-#: crates/ui/media/big-player-ui/src/audio_preferences.rs:110
+#: crates/ui/media/big-player-ui/src/audio_preferences.rs:111
 msgid "Keep Voices Natural"
 msgstr "Естествени гласове"
 
-#: crates/ui/media/big-player-ui/src/audio_preferences.rs:111
+#: crates/ui/media/big-player-ui/src/audio_preferences.rs:112
 msgid "Voices keep their tone when playing faster or slower"
 msgstr "Гласовете запазват тона си при по-бързо или по-бавно изпълнение"
 
-#: crates/ui/media/big-player-ui/src/audio_preferences.rs:124
+#: crates/ui/media/big-player-ui/src/audio_preferences.rs:126
 msgid "Maximum Volume"
 msgstr "Максимална сила на звука"
 
-#: crates/ui/media/big-player-ui/src/audio_preferences.rs:125
+#: crates/ui/media/big-player-ui/src/audio_preferences.rs:127
 msgid "Above 100% helps with quiet recordings but may distort"
 msgstr "Над 100% помага при тихи записи, но може да изкриви звука"
 
-#: crates/ui/media/big-player-ui/src/audio_preferences.rs:142
+#: crates/ui/media/big-player-ui/src/audio_preferences.rs:144
 msgid ""
 "For media with several audio tracks. Use language codes separated by commas, "
 "in order of preference, such as pt,en"
@@ -5153,29 +5277,37 @@ msgstr ""
 "За медии с няколко аудио пътеки. Използвайте кодове на езици, разделени със "
 "запетаи, по ред на предпочитание, например bg,en"
 
-#: crates/ui/media/big-player-ui/src/audio_preferences.rs:161
+#: crates/ui/media/big-player-ui/src/audio_preferences.rs:163
 msgid "Sound System"
 msgstr "Звукова система"
 
-#: crates/ui/media/big-player-ui/src/audio_preferences.rs:162
+#: crates/ui/media/big-player-ui/src/audio_preferences.rs:164
 msgid "Automatic works for most computers"
 msgstr "„Автоматично“ работи при повечето компютри"
 
-#: crates/ui/media/big-player-ui/src/audio_preferences.rs:166
+#: crates/ui/media/big-player-ui/src/audio_preferences.rs:168
 msgid "Audio Output"
 msgstr "Аудио изход"
 
-#: crates/ui/media/big-player-ui/src/audio_preferences.rs:167
+#: crates/ui/media/big-player-ui/src/audio_preferences.rs:169
 msgid "Takes effect after reopening the player"
 msgstr "Влиза в сила след повторно отваряне на плейъра"
 
-#: crates/ui/media/big-player-ui/src/audio_preferences.rs:177
+#: crates/ui/media/big-player-ui/src/audio_preferences.rs:179
 msgid "Speakers"
 msgstr "Говорители"
 
-#: crates/ui/media/big-player-ui/src/audio_preferences.rs:178
+#: crates/ui/media/big-player-ui/src/audio_preferences.rs:180
 msgid "Mixes surround sound down for stereo speakers or headphones"
 msgstr "Смесва съраунд звука надолу за стерео говорители или слушалки"
+
+#: crates/ui/media/big-player-ui/src/audio_preferences.rs:181
+msgid "Stereo"
+msgstr "Стерео"
+
+#: crates/ui/media/big-player-ui/src/audio_preferences.rs:181
+msgid "Mono"
+msgstr "Моно"
 
 #: crates/ui/media/big-player-ui/src/audio_trim_bar.rs:40
 msgid "Mark cut point"
@@ -5206,35 +5338,35 @@ msgstr "Натиснете „Маркиране“ в началото и в к
 msgid "Export cuts"
 msgstr "Експорт на изрязванията"
 
-#: crates/ui/media/big-player-ui/src/download_panel.rs:100
+#: crates/ui/media/big-player-ui/src/download_panel.rs:110
 msgid "Downloads"
 msgstr "Изтеглени"
 
-#: crates/ui/media/big-player-ui/src/download_panel.rs:109
+#: crates/ui/media/big-player-ui/src/download_panel.rs:119
 msgid "Clear completed downloads"
 msgstr "Изчистване на завършените изтегляния"
 
-#: crates/ui/media/big-player-ui/src/download_panel.rs:119
+#: crates/ui/media/big-player-ui/src/download_panel.rs:129
 msgid "Hide downloads panel"
 msgstr "Скриване на панела с изтегляния"
 
-#: crates/ui/media/big-player-ui/src/download_panel.rs:197
+#: crates/ui/media/big-player-ui/src/download_panel.rs:206
 msgid "Cancel download"
 msgstr "Отмяна на изтеглянето"
 
-#: crates/ui/media/big-player-ui/src/download_panel.rs:290
+#: crates/ui/media/big-player-ui/src/download_panel.rs:315
 msgid "Cancelled"
 msgstr "Отменено"
 
-#: crates/ui/media/big-player-ui/src/download_panel.rs:301
+#: crates/ui/media/big-player-ui/src/download_panel.rs:326
 msgid "Complete"
 msgstr "Завършено"
 
-#: crates/ui/media/big-player-ui/src/file_browser.rs:108
+#: crates/ui/media/big-player-ui/src/file_browser.rs:110
 msgid "Filter files"
 msgstr "Филтриране на файловете"
 
-#: crates/ui/media/big-player-ui/src/file_browser.rs:261
+#: crates/ui/media/big-player-ui/src/file_browser.rs:281
 msgid "File browser"
 msgstr "Файлов браузър"
 
@@ -5255,86 +5387,101 @@ msgstr "Търсене на текст на песента…"
 msgid "No lyrics found"
 msgstr "Не е намерен текст на песента"
 
-#: crates/ui/media/big-player-ui/src/podcast_panel.rs:123
+#: crates/ui/media/big-player-ui/src/podcast_panel.rs:124
 msgid "Search podcasts…"
 msgstr "Търсене на подкасти…"
 
-#: crates/ui/media/big-player-ui/src/podcast_panel.rs:125
+#: crates/ui/media/big-player-ui/src/podcast_panel.rs:126
 msgid "Search podcasts"
 msgstr "Търсене на подкасти"
 
-#: crates/ui/media/big-player-ui/src/podcast_panel.rs:146
 #: crates/ui/media/big-player-ui/src/podcast_panel.rs:147
+#: crates/ui/media/big-player-ui/src/podcast_panel.rs:148
 msgid "Add RSS feed"
 msgstr "Добавяне на RSS поток"
 
-#: crates/ui/media/big-player-ui/src/podcast_panel.rs:176
+#: crates/ui/media/big-player-ui/src/podcast_panel.rs:177
 msgid "No Podcasts"
 msgstr "Няма подкасти"
 
-#: crates/ui/media/big-player-ui/src/podcast_panel.rs:177
+#: crates/ui/media/big-player-ui/src/podcast_panel.rs:178
 msgid "Search for podcasts or add an RSS feed"
 msgstr "Потърсете подкасти или добавете RSS поток"
 
-#: crates/ui/media/big-player-ui/src/podcast_panel.rs:262
+#: crates/ui/media/big-player-ui/src/podcast_panel.rs:251
+msgid "Podcast Subscriptions Unavailable"
+msgstr ""
+
+#: crates/ui/media/big-player-ui/src/podcast_panel.rs:281
 msgid "Connection error — try again"
 msgstr "Грешка при връзката — опитайте отново"
 
-#: crates/ui/media/big-player-ui/src/podcast_panel.rs:273
+#: crates/ui/media/big-player-ui/src/podcast_panel.rs:295
 msgid "Already subscribed"
 msgstr "Вече сте абонирани"
 
-#: crates/ui/media/big-player-ui/src/podcast_panel.rs:353
+#: crates/ui/media/big-player-ui/src/podcast_panel.rs:348
+msgid "Podcast subscriptions are still loading"
+msgstr ""
+
+#: crates/ui/media/big-player-ui/src/podcast_panel.rs:385
 msgid "Subscriptions"
 msgstr "Абонаменти"
 
-#: crates/ui/media/big-player-ui/src/podcast_panel.rs:377
+#: crates/ui/media/big-player-ui/src/podcast_panel.rs:409
 msgid "Search Results"
 msgstr "Резултати от търсенето"
 
-#: crates/ui/media/big-player-ui/src/podcast_panel.rs:425
+#: crates/ui/media/big-player-ui/src/podcast_panel.rs:457
+#, fuzzy
+#| msgid "The playlist could not be saved."
+msgid "Podcast subscriptions could not be saved"
+msgstr "Списъкът за изпълнение не можа да бъде запазен."
+
+#: crates/ui/media/big-player-ui/src/podcast_panel.rs:470
+#, rust-format
+msgid "Podcast subscriptions could not be read, so changes are not saved: {}"
+msgstr ""
+
+#: crates/ui/media/big-player-ui/src/podcast_panel.rs:479
 msgid "Title unavailable"
 msgstr "Заглавието не е налично"
 
-#: crates/ui/media/big-player-ui/src/podcast_panel.rs:427
-msgid "Loading…"
-msgstr "Зареждане…"
-
-#: crates/ui/media/big-player-ui/src/podcast_panel.rs:491
+#: crates/ui/media/big-player-ui/src/podcast_panel.rs:545
 msgid "Unsubscribe"
 msgstr "Отписване"
 
-#: crates/ui/media/big-player-ui/src/podcast_panel.rs:493
+#: crates/ui/media/big-player-ui/src/podcast_panel.rs:547
 msgid "Unsubscribe from podcast"
 msgstr "Отписване от подкаста"
 
-#: crates/ui/media/big-player-ui/src/podcast_panel.rs:512
-#: crates/ui/media/big-player-ui/src/podcast_panel.rs:571
+#: crates/ui/media/big-player-ui/src/podcast_panel.rs:566
+#: crates/ui/media/big-player-ui/src/podcast_panel.rs:625
 msgid "Subscribe"
 msgstr "Абониране"
 
-#: crates/ui/media/big-player-ui/src/podcast_panel.rs:514
+#: crates/ui/media/big-player-ui/src/podcast_panel.rs:568
 msgid "Subscribe to podcast"
 msgstr "Абониране за подкаста"
 
-#: crates/ui/media/big-player-ui/src/podcast_panel.rs:533
+#: crates/ui/media/big-player-ui/src/podcast_panel.rs:587
 msgid "episodes"
 msgstr "епизода"
 
-#: crates/ui/media/big-player-ui/src/podcast_panel.rs:554
+#: crates/ui/media/big-player-ui/src/podcast_panel.rs:608
 msgid "Add RSS Feed"
 msgstr "Добавяне на RSS поток"
 
-#: crates/ui/media/big-player-ui/src/podcast_panel.rs:560
+#: crates/ui/media/big-player-ui/src/podcast_panel.rs:614
 msgid "Paste the podcast RSS feed URL below."
 msgstr "Поставете по-долу URL адреса на RSS потока на подкаста."
 
-#: crates/ui/media/big-player-ui/src/podcast_panel.rs:562
+#: crates/ui/media/big-player-ui/src/podcast_panel.rs:616
 msgid "Feed"
 msgstr "Поток"
 
-#: crates/ui/media/big-player-ui/src/podcast_panel.rs:564
-#: crates/ui/media/big-player-ui/src/podcast_panel.rs:567
+#: crates/ui/media/big-player-ui/src/podcast_panel.rs:618
+#: crates/ui/media/big-player-ui/src/podcast_panel.rs:621
 msgid "RSS feed URL"
 msgstr "URL на RSS потока"
 
@@ -5426,11 +5573,11 @@ msgstr "URL на потока на станцията"
 msgid "Add"
 msgstr "Добавяне"
 
-#: crates/ui/media/big-player-ui/src/smartphone/dialog.rs:38
+#: crates/ui/media/big-player-ui/src/smartphone/dialog.rs:39
 msgid "Web Remote"
 msgstr "Уеб дистанционно"
 
-#: crates/ui/media/big-player-ui/src/smartphone/dialog.rs:40
+#: crates/ui/media/big-player-ui/src/smartphone/dialog.rs:41
 msgid ""
 "Turn on to control this player from a phone or tablet on the same network. "
 "HTTP is not encrypted: use only a trusted private network. Scan the QR code "
@@ -5440,24 +5587,24 @@ msgstr ""
 "мрежа. HTTP не е шифровано: използвайте само надеждна частна мрежа. "
 "Сканирайте QR кода с камерата на телефона, за да отворите дистанционното."
 
-#: crates/ui/media/big-player-ui/src/smartphone/dialog.rs:47
+#: crates/ui/media/big-player-ui/src/smartphone/dialog.rs:48
 msgid "Enable web remote"
 msgstr "Включване на уеб дистанционното"
 
-#: crates/ui/media/big-player-ui/src/smartphone/dialog.rs:52
+#: crates/ui/media/big-player-ui/src/smartphone/dialog.rs:53
 msgid "QR code"
 msgstr "QR код"
 
-#: crates/ui/media/big-player-ui/src/smartphone/dialog.rs:65
-#: crates/ui/media/big-player-ui/src/smartphone/dialog.rs:157
+#: crates/ui/media/big-player-ui/src/smartphone/dialog.rs:66
+#: crates/ui/media/big-player-ui/src/smartphone/dialog.rs:193
 msgid "Web remote is off."
 msgstr "Уеб дистанционното е изключено."
 
-#: crates/ui/media/big-player-ui/src/smartphone/dialog.rs:83
+#: crates/ui/media/big-player-ui/src/smartphone/dialog.rs:84
 msgid "KDE Connect / GSConnect"
 msgstr "KDE Connect / GSConnect"
 
-#: crates/ui/media/big-player-ui/src/smartphone/dialog.rs:85
+#: crates/ui/media/big-player-ui/src/smartphone/dialog.rs:86
 msgid ""
 "If you have KDE Connect (Plasma, Android) or GSConnect (GNOME) installed, "
 "your paired phone already shows media controls, track information and volume "
@@ -5468,11 +5615,11 @@ msgstr ""
 "и сила на звука за този плейър — от наша страна не е нужна допълнителна "
 "настройка."
 
-#: crates/ui/media/big-player-ui/src/smartphone/dialog.rs:92
+#: crates/ui/media/big-player-ui/src/smartphone/dialog.rs:93
 msgid "Install KDE Connect on your phone"
 msgstr "Инсталирайте KDE Connect на телефона си"
 
-#: crates/ui/media/big-player-ui/src/smartphone/dialog.rs:94
+#: crates/ui/media/big-player-ui/src/smartphone/dialog.rs:95
 msgid ""
 "Open the link on the phone's app store. Pair once - then media keys, "
 "notifications and file sharing work both ways."
@@ -5481,17 +5628,58 @@ msgstr ""
 "след това медийните клавиши, известията и споделянето на файлове работят в "
 "двете посоки."
 
-#: crates/ui/media/big-player-ui/src/smartphone/dialog.rs:98
+#: crates/ui/media/big-player-ui/src/smartphone/dialog.rs:99
 msgid "Open KDE Connect download page"
 msgstr "Отваряне на страницата за изтегляне на KDE Connect"
 
-#: crates/ui/media/big-player-ui/src/smartphone/dialog.rs:143
+#: crates/ui/media/big-player-ui/src/smartphone/dialog.rs:135
+msgid "No local network found. Connect to a network and try again."
+msgstr ""
+
+#: crates/ui/media/big-player-ui/src/smartphone/dialog.rs:158
 msgid "Scan the code with the phone's camera."
 msgstr "Сканирайте кода с камерата на телефона."
 
-#: crates/ui/media/big-player-ui/src/smartphone/dialog.rs:149
+#: crates/ui/media/big-player-ui/src/smartphone/dialog.rs:177
+#, fuzzy, rust-format
+#| msgid "Web remote is off."
+msgid "Web remote stopped: {error}"
+msgstr "Уеб дистанционното е изключено."
+
+#: crates/ui/media/big-player-ui/src/smartphone/dialog.rs:185
 msgid "Could not start server"
 msgstr "Сървърът не можа да бъде стартиран"
+
+#~ msgid "Screenshot queue is full; wait for pending captures"
+#~ msgstr "Опашката за снимки на екрана е пълна; изчакайте текущите заснемания"
+
+#~ msgid "Screenshot failed"
+#~ msgstr "Снимката на екрана е неуспешна"
+
+#~ msgid "moved"
+#~ msgstr "преместени"
+
+#~ msgid "Invalid name"
+#~ msgstr "Невалидно име"
+
+#, rust-format
+#~ msgid "{ok} {verb}, {failed} failed"
+#~ msgstr "{ok} {verb}, {failed} неуспешни"
+
+#~ msgid "Screenshot timed out; cancellation requested"
+#~ msgstr "Снимката на екрана изтече по време; поискана е отмяна"
+
+#~ msgid "CD Quality"
+#~ msgstr "CD качество"
+
+#~ msgid "Hi-Res"
+#~ msgstr "Висока разделителна способност"
+
+#~ msgid "5.1 Surround"
+#~ msgstr "Съраунд 5.1"
+
+#~ msgid "7.1 Surround"
+#~ msgstr "Съраунд 7.1"
 
 #~ msgid "Could not reach provider — showing cached copy if available."
 #~ msgstr ""

@@ -176,6 +176,8 @@ crates/media-runtime/src/media/playlist_scan/tests/display.rs
 crates/media-runtime/src/media/playlist_scan/tests/mod.rs
 crates/media-runtime/src/media/playlist_scan/tests/playlist_io.rs
 crates/media-runtime/src/media/playlist_scan/tests/scan.rs
+crates/media-runtime/src/media/playlist_scan/tests/trash.rs
+crates/media-runtime/src/media/playlist_scan/trash.rs
 crates/media-runtime/src/media/thumbnail.rs
 crates/media-runtime/src/player/mod.rs
 crates/media-runtime/src/player/mpv_backend/backend/client.rs
@@ -222,7 +224,6 @@ crates/media-runtime/src/shared/converter_handoff.rs
 crates/media-runtime/src/shared/illustration.rs
 crates/media-runtime/src/shared/mod.rs
 crates/media-runtime/src/shared/popovers.rs
-crates/media-runtime/src/shared/preference_rows.rs
 crates/media-runtime/src/shared/shortcut_capture.rs
 crates/media-runtime/src/shared/sleep_timer.rs
 crates/media-runtime/src/shared/spawn.rs
@@ -323,6 +324,7 @@ crates/ui/media/big-player-ui/src/lyrics_panel.rs
 crates/ui/media/big-player-ui/src/media_list.rs
 crates/ui/media/big-player-ui/src/playback_bar.rs
 crates/ui/media/big-player-ui/src/podcast_panel.rs
+crates/ui/media/big-player-ui/src/preference_rows.rs
 crates/ui/media/big-player-ui/src/radio_panel.rs
 crates/ui/media/big-player-ui/src/radio_panel/methods.rs
 crates/ui/media/big-player-ui/src/radio_panel/widgets.rs

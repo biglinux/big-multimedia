@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: big-media-runtime 0.1.0\n"
 "Report-Msgid-Bugs-To: https://github.com/biglinux/big-multimedia/issues\n"
-"POT-Creation-Date: 2026-10-26 19:32-0300\n"
+"POT-Creation-Date: 2026-11-18 05:54-0300\n"
 "PO-Revision-Date: 2026-10-23 00:15-0300\n"
 "Last-Translator: Automatically generated\n"
 "Language-Team: none\n"
@@ -90,8 +90,22 @@ msgstr ""
 msgid "Data Sources"
 msgstr "Πηγές δεδομένων"
 
+#: crates/big-audio-player/src/audio/app.rs:54
+#, fuzzy
+#| msgid "Close the player"
+msgid "Play or pause the running player"
+msgstr "Κλείσιμο της εφαρμογής"
+
+#: crates/big-audio-player/src/audio/app.rs:59
+msgid "Skip to the next track in the running player"
+msgstr ""
+
+#: crates/big-audio-player/src/audio/app.rs:64
+msgid "Go back to the previous track in the running player"
+msgstr ""
+
 #: crates/big-audio-player/src/audio/appearance/dialogs.rs:43
-#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:283
+#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:309
 msgid "Effects"
 msgstr "Εφέ"
 
@@ -110,7 +124,7 @@ msgstr ""
 "Εμφάνιση του τρέχοντος εξωφύλλου ως θολό φόντο πίσω από τα χειριστήρια ήχου"
 
 #: crates/big-audio-player/src/audio/keybindings.rs:14
-#: crates/big-audio-player/src/audio/ui/audio_shell/playback.rs:162
+#: crates/big-audio-player/src/audio/ui/audio_shell/playback.rs:175
 #: crates/big-audio-player/src/audio/ui/audio_shell/tray.rs:20
 #: crates/big-video-player/src/video/keybindings.rs:15
 #: crates/big-video-player/src/video/ui/video_shell/input_gestures.rs:105
@@ -126,7 +140,7 @@ msgstr "Αναπαραγωγή / Παύση"
 #: crates/big-audio-player/src/audio/keybindings.rs:57
 #: crates/big-audio-player/src/audio/keybindings.rs:64
 #: crates/big-audio-player/src/audio/keybindings.rs:71
-#: crates/big-audio-player/src/audio/preferences.rs:97
+#: crates/big-audio-player/src/audio/preferences.rs:98
 #: crates/big-video-player/src/video/keybindings.rs:16
 #: crates/big-video-player/src/video/keybindings.rs:23
 #: crates/big-video-player/src/video/keybindings.rs:30
@@ -142,7 +156,7 @@ msgstr "Αναπαραγωγή / Παύση"
 #: crates/big-video-player/src/video/keybindings.rs:100
 #: crates/big-video-player/src/video/keybindings.rs:107
 #: crates/big-video-player/src/video/keybindings.rs:114
-#: crates/big-video-player/src/video/ui/preferences/general.rs:24
+#: crates/big-video-player/src/video/ui/preferences/general.rs:25
 msgid "Playback"
 msgstr "Αναπαραγωγή"
 
@@ -191,8 +205,8 @@ msgstr "Αναζήτηση"
 #: crates/big-audio-player/src/audio/keybindings.rs:79
 #: crates/big-audio-player/src/audio/keybindings.rs:86
 #: crates/big-audio-player/src/audio/keybindings.rs:93
-#: crates/big-video-player/src/video/keybindings.rs:260
-#: crates/big-video-player/src/video/keybindings.rs:267
+#: crates/big-video-player/src/video/keybindings.rs:261
+#: crates/big-video-player/src/video/keybindings.rs:268
 msgid "Navigation"
 msgstr "Πλοήγηση"
 
@@ -214,7 +228,7 @@ msgid "Library"
 msgstr "Βιβλιοθήκη"
 
 #: crates/big-audio-player/src/audio/keybindings.rs:107
-#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:127
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:112
 #: crates/big-video-player/src/video/ui/video_shell/input_gestures.rs:116
 #: crates/big-video-player/src/video/ui/video_shell/panel.rs:43
 #: crates/big-video-player/src/video/ui/video_shell/panel.rs:469
@@ -239,8 +253,8 @@ msgid "Toggle Repeat"
 msgstr "Εναλλαγή επανάληψης"
 
 #: crates/big-audio-player/src/audio/keybindings.rs:129
-#: crates/big-video-player/src/video/ui/video_shell/panel.rs:548
-#: crates/big-video-player/src/video/ui/video_shell/playback.rs:491
+#: crates/big-video-player/src/video/ui/video_shell/panel.rs:549
+#: crates/big-video-player/src/video/ui/video_shell/playback.rs:502
 msgid "Undo"
 msgstr "Αναίρεση"
 
@@ -278,13 +292,13 @@ msgid "This Year"
 msgstr "Φέτος"
 
 #: crates/big-audio-player/src/audio/library_grouping/group_by.rs:38
-#: crates/big-video-player/src/video/ui/filters/groups_shader.rs:153
+#: crates/big-video-player/src/video/ui/filters/groups_shader.rs:154
 msgid "None"
 msgstr "Κανένα"
 
 #: crates/big-audio-player/src/audio/library_grouping/group_by.rs:39
 #: crates/big-audio-player/src/audio/ui/library_tag_editor.rs:203
-#: crates/big-audio-player/src/audio/ui/track_list.rs:75
+#: crates/big-audio-player/src/audio/ui/track_list.rs:92
 msgid "Artist"
 msgstr "Καλλιτέχνης"
 
@@ -296,27 +310,27 @@ msgstr "Καλλιτέχνης άλμπουμ"
 #: crates/big-audio-player/src/audio/library_grouping/group_by.rs:41
 #: crates/big-audio-player/src/audio/library_grouping/grouping.rs:82
 #: crates/big-audio-player/src/audio/ui/library_tag_editor.rs:204
-#: crates/big-audio-player/src/audio/ui/track_list.rs:76
+#: crates/big-audio-player/src/audio/ui/track_list.rs:93
 msgid "Album"
 msgstr "Άλμπουμ"
 
 #: crates/big-audio-player/src/audio/library_grouping/group_by.rs:42
 #: crates/big-audio-player/src/audio/library_grouping/grouping.rs:89
 #: crates/big-audio-player/src/audio/ui/library_tag_editor.rs:209
-#: crates/big-audio-player/src/audio/ui/track_list.rs:78
+#: crates/big-audio-player/src/audio/ui/track_list.rs:95
 msgid "Genre"
 msgstr "Είδος"
 
 #: crates/big-audio-player/src/audio/library_grouping/group_by.rs:43
 #: crates/big-audio-player/src/audio/library_grouping/grouping.rs:90
 #: crates/big-audio-player/src/audio/ui/library_tag_editor.rs:210
-#: crates/big-audio-player/src/audio/ui/track_list.rs:79
+#: crates/big-audio-player/src/audio/ui/track_list.rs:96
 msgid "Year"
 msgstr "Έτος"
 
 #: crates/big-audio-player/src/audio/library_grouping/group_by.rs:44
 #: crates/big-audio-player/src/audio/ui/library_tag_editor/spec.rs:112
-#: crates/big-audio-player/src/audio/ui/track_list.rs:81
+#: crates/big-audio-player/src/audio/ui/track_list.rs:98
 #: crates/big-video-player/src/video/ui/media_details_dialog.rs:109
 #: crates/big-video-player/src/video/ui/media_details_dialog.rs:260
 #: crates/ui/media/big-media-components/src/media/file_metadata_dialog.rs:59
@@ -343,32 +357,38 @@ msgstr "Είδος → Καλλιτέχνης"
 msgid "Year → Album"
 msgstr "Έτος → Άλμπουμ"
 
-#: crates/big-audio-player/src/audio/library_query.rs:119
+#: crates/big-audio-player/src/audio/library_query.rs:125
 msgid "All Tracks"
 msgstr "Όλα τα κομμάτια"
 
-#: crates/big-audio-player/src/audio/library_query.rs:168
+#: crates/big-audio-player/src/audio/library_query.rs:174
 #: crates/big-audio-player/src/audio/ui/library_tree.rs:135
 #: crates/big-audio-player/src/audio/ui/library_tree.rs:246
-#: crates/big-audio-player/src/audio/ui/library_tree/presentation.rs:77
-#: crates/big-audio-player/src/audio/ui/library_tree/presentation_tests.rs:81
-#: crates/ui/media/big-player-ui/src/browser_node.rs:219
+#: crates/big-audio-player/src/audio/ui/library_tree/presentation.rs:68
+#: crates/big-audio-player/src/audio/ui/library_tree/presentation_tests.rs:73
+#: crates/ui/media/big-player-ui/src/browser_node.rs:233
 msgid "Various Artists"
 msgstr "Διάφοροι καλλιτέχνες"
 
-#: crates/big-audio-player/src/audio/preferences.rs:32
-#: crates/big-audio-player/src/audio/ui/audio_shell/component.rs:141
-#: crates/big-audio-player/src/audio/ui/audio_shell/component.rs:170
+#: crates/big-audio-player/src/audio/playlist_import.rs:16
+#: crates/big-video-player/src/video/ui/video_shell/playback.rs:289
+#, rust-format
+msgid "Only the first {} entries of the playlist were loaded."
+msgstr ""
+
+#: crates/big-audio-player/src/audio/preferences.rs:33
+#: crates/big-audio-player/src/audio/ui/audio_shell/component.rs:144
+#: crates/big-audio-player/src/audio/ui/audio_shell/component.rs:173
 #: crates/big-video-player/src/video/keybindings.rs:245
 #: crates/big-video-player/src/video/keybindings.rs:252
 msgid "Music"
 msgstr "Μουσική"
 
-#: crates/big-audio-player/src/audio/preferences.rs:39
+#: crates/big-audio-player/src/audio/preferences.rs:40
 msgid "Volume Leveling"
 msgstr "Εξισορρόπηση έντασης"
 
-#: crates/big-audio-player/src/audio/preferences.rs:41
+#: crates/big-audio-player/src/audio/preferences.rs:42
 msgid ""
 "Uses the loudness stored in the files so you do not have to adjust the "
 "volume between songs"
@@ -376,182 +396,156 @@ msgstr ""
 "Χρησιμοποιεί την ένταση που είναι αποθηκευμένη στα αρχεία, ώστε να μη "
 "χρειάζεται να ρυθμίζετε την ένταση ανάμεσα στα τραγούδια"
 
-#: crates/big-audio-player/src/audio/preferences.rs:48
+#: crates/big-audio-player/src/audio/preferences.rs:49
 msgid "Level By"
 msgstr "Εξισορρόπηση ανά"
 
-#: crates/big-audio-player/src/audio/preferences.rs:50
-#: crates/big-video-player/src/video/ui/preferences/general.rs:39
+#: crates/big-audio-player/src/audio/preferences.rs:51
+#: crates/big-video-player/src/video/ui/preferences/general.rs:40
 #: crates/big-video-player/src/video/ui/preferences/video.rs:60
 #: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/header.rs:196
-#: crates/big-video-player/src/video/ui/video_shell/panel.rs:493
+#: crates/big-video-player/src/video/ui/video_shell/panel.rs:494
 msgid "Off"
 msgstr "Ανενεργό"
 
-#: crates/big-audio-player/src/audio/preferences.rs:50
+#: crates/big-audio-player/src/audio/preferences.rs:51
 msgid "Per Song"
 msgstr "Τραγούδι"
 
-#: crates/big-audio-player/src/audio/preferences.rs:50
+#: crates/big-audio-player/src/audio/preferences.rs:51
 msgid "Per Album"
 msgstr "Άλμπουμ"
 
-#: crates/big-audio-player/src/audio/preferences.rs:62
+#: crates/big-audio-player/src/audio/preferences.rs:63
 msgid "Leveling Boost"
 msgstr "Ενίσχυση εξισορρόπησης"
 
-#: crates/big-audio-player/src/audio/preferences.rs:64
+#: crates/big-audio-player/src/audio/preferences.rs:65
 msgid "In decibels; positive values play louder, negative softer"
 msgstr ""
 "Σε ντεσιμπέλ· οι θετικές τιμές ακούγονται πιο δυνατά, οι αρνητικές πιο σιγανά"
 
-#: crates/big-audio-player/src/audio/preferences.rs:101
+#: crates/big-audio-player/src/audio/preferences.rs:102
 msgid "No Gaps Between Songs"
 msgstr "Χωρίς κενά ανάμεσα στα τραγούδια"
 
-#: crates/big-audio-player/src/audio/preferences.rs:103
+#: crates/big-audio-player/src/audio/preferences.rs:104
 msgid "Albums recorded as one continuous piece play without pauses"
 msgstr ""
 "Τα άλμπουμ που έχουν ηχογραφηθεί ως ένα συνεχές έργο παίζουν χωρίς παύσεις"
 
-#: crates/big-audio-player/src/audio/preferences.rs:120
-#: crates/big-video-player/src/video/ui/preferences/general.rs:28
+#: crates/big-audio-player/src/audio/preferences.rs:121
+#: crates/big-video-player/src/video/ui/preferences/general.rs:29
 msgid "Resume Where You Left Off"
 msgstr "Συνέχιση από όπου σταματήσατε"
 
-#: crates/big-audio-player/src/audio/preferences.rs:121
+#: crates/big-audio-player/src/audio/preferences.rs:122
 msgid "Playing a song again continues from where it stopped"
 msgstr "Η επανάληψη ενός τραγουδιού συνεχίζει από το σημείο όπου σταμάτησε"
 
-#: crates/big-audio-player/src/audio/preferences.rs:141
+#: crates/big-audio-player/src/audio/preferences.rs:139
 msgid "Progress on the Taskbar"
 msgstr "Πρόοδος στη γραμμή εργασιών"
 
-#: crates/big-audio-player/src/audio/preferences.rs:142
+#: crates/big-audio-player/src/audio/preferences.rs:140
 msgid "Shows how far the song has played on the player icon"
 msgstr "Εμφανίζει πόσο έχει προχωρήσει το τραγούδι στο εικονίδιο της εφαρμογής"
 
-#: crates/big-audio-player/src/audio/preferences.rs:157
+#: crates/big-audio-player/src/audio/preferences.rs:155
 msgid "Icon in the System Tray"
 msgstr "Εικονίδιο στην περιοχή ειδοποιήσεων"
 
-#: crates/big-audio-player/src/audio/preferences.rs:159
+#: crates/big-audio-player/src/audio/preferences.rs:157
 msgid "A one-color icon that follows the panel theme, with playback controls"
 msgstr ""
 "Ένα μονόχρωμο εικονίδιο που ακολουθεί το θέμα του πίνακα, με στοιχεία "
 "ελέγχου αναπαραγωγής"
 
-#: crates/big-audio-player/src/audio/preferences.rs:222
-#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:144
-#: crates/big-video-player/src/video/ui/preferences/mod.rs:37
-#: crates/big-video-player/src/video/ui/video_shell/panel.rs:571
+#: crates/big-audio-player/src/audio/preferences.rs:227
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:129
+#: crates/big-video-player/src/video/ui/preferences/mod.rs:39
+#: crates/big-video-player/src/video/ui/video_shell/panel.rs:572
 msgid "Preferences"
 msgstr "Προτιμήσεις"
 
 #: crates/big-audio-player/src/audio/ui/audio_shell/chrome.rs:55
-#: crates/big-audio-player/src/audio/ui/audio_shell/component.rs:147
-#: crates/big-audio-player/src/audio/ui/audio_shell/component.rs:172
-#: crates/big-audio-player/src/audio/ui/audio_shell/mpris.rs:224
+#: crates/big-audio-player/src/audio/ui/audio_shell/component.rs:150
+#: crates/big-audio-player/src/audio/ui/audio_shell/component.rs:175
+#: crates/big-audio-player/src/audio/ui/audio_shell/mpris.rs:228
 msgid "Radio"
 msgstr "Ραδιόφωνο"
 
 #: crates/big-audio-player/src/audio/ui/audio_shell/chrome.rs:151
-#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:128
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:113
 msgid "Sleep Timer"
 msgstr "Χρονόμετρο ύπνου"
 
 #: crates/big-audio-player/src/audio/ui/audio_shell/chrome.rs:161
-#: crates/big-video-player/src/video/ui/video_shell/panel.rs:710
+#: crates/big-video-player/src/video/ui/video_shell/panel.rs:711
 msgid "Timer Active"
 msgstr "Ενεργό χρονόμετρο"
 
 #: crates/big-audio-player/src/audio/ui/audio_shell/chrome.rs:162
-#: crates/big-video-player/src/video/ui/video_shell/panel.rs:711
+#: crates/big-video-player/src/video/ui/video_shell/panel.rs:712
 msgid "Cancel Timer"
 msgstr "Ακύρωση χρονομέτρου"
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/chrome.rs:268
-#: crates/big-video-player/src/video/ui/menu_dialogs.rs:265
-msgid "Sleep timer: closing player"
-msgstr "Χρονόμετρο ύπνου: κλείσιμο της εφαρμογής"
-
-#: crates/big-audio-player/src/audio/ui/audio_shell/chrome.rs:276
-#: crates/big-video-player/src/video/ui/menu_dialogs.rs:273
-msgid "Sleep timer: suspending computer"
-msgstr "Χρονόμετρο ύπνου: αναστολή του υπολογιστή"
-
-#: crates/big-audio-player/src/audio/ui/audio_shell/chrome.rs:288
-#: crates/big-video-player/src/video/ui/menu_dialogs.rs:285
-msgid "Sleep timer: shutting down"
-msgstr "Χρονόμετρο ύπνου: τερματισμός λειτουργίας"
-
-#: crates/big-audio-player/src/audio/ui/audio_shell/chrome.rs:299
-#: crates/big-video-player/src/video/ui/menu_dialogs.rs:296
-msgid "Sleep timer: playback paused"
-msgstr "Χρονόμετρο ύπνου: η αναπαραγωγή τέθηκε σε παύση"
-
-#: crates/big-audio-player/src/audio/ui/audio_shell/component.rs:105
+#: crates/big-audio-player/src/audio/ui/audio_shell/component.rs:108
 msgid "Add current folder to Music Library"
 msgstr "Προσθήκη τρέχοντος φακέλου στη μουσική βιβλιοθήκη"
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/component.rs:106
+#: crates/big-audio-player/src/audio/ui/audio_shell/component.rs:109
 msgid "Add this folder to Music Library"
 msgstr "Προσθήκη αυτού του φακέλου στη μουσική βιβλιοθήκη"
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/component.rs:107
+#: crates/big-audio-player/src/audio/ui/audio_shell/component.rs:110
 msgid "Filter files…"
 msgstr "Φιλτράρισμα αρχείων…"
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/component.rs:144
-#: crates/big-audio-player/src/audio/ui/audio_shell/component.rs:171
+#: crates/big-audio-player/src/audio/ui/audio_shell/component.rs:147
+#: crates/big-audio-player/src/audio/ui/audio_shell/component.rs:174
 #: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/header.rs:22
-#: crates/big-video-player/src/video/ui/video_shell/component.rs:284
-#: crates/big-video-player/src/video/ui/video_shell/component.rs:288
+#: crates/big-video-player/src/video/ui/video_shell/component.rs:294
+#: crates/big-video-player/src/video/ui/video_shell/component.rs:298
 msgid "Files"
 msgstr "Αρχεία"
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/component.rs:150
+#: crates/big-audio-player/src/audio/ui/audio_shell/component.rs:153
 msgid "Podcasts"
 msgstr "Podcast"
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/component.rs:175
+#: crates/big-audio-player/src/audio/ui/audio_shell/component.rs:178
 msgid "Podcast"
 msgstr "Podcast"
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/component.rs:227
-#: crates/big-audio-player/src/audio/ui/audio_shell/playback.rs:173
+#: crates/big-audio-player/src/audio/ui/audio_shell/component.rs:230
+#: crates/big-audio-player/src/audio/ui/audio_shell/playback.rs:186
 #: crates/big-audio-player/src/audio/ui/library_tag_editor.rs:299
 msgid "Album art"
 msgstr "Εξώφυλλο άλμπουμ"
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/component.rs:229
+#: crates/big-audio-player/src/audio/ui/audio_shell/component.rs:232
 #: crates/big-audio-player/src/lib.rs:28
 msgid "Big Audio Player"
 msgstr "Big Audio Player"
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/component.rs:236
+#: crates/big-audio-player/src/audio/ui/audio_shell/component.rs:239
 msgid "Select a song to start"
 msgstr "Επιλέξτε ένα τραγούδι για να ξεκινήσετε"
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/component.rs:286
-msgid ""
-"The playback queue could not be saved or restored. Your previous saved queue "
-"was kept."
-msgstr ""
-"Η ουρά αναπαραγωγής δεν ήταν δυνατό να αποθηκευτεί ή να ανακτηθεί. "
-"Διατηρήθηκε η προηγούμενη αποθηκευμένη ουρά."
-
-#: crates/big-audio-player/src/audio/ui/audio_shell/component.rs:287
-#: crates/media-runtime/src/settings/saving.rs:227
-msgid "Retry saving"
-msgstr "Επανάληψη αποθήκευσης"
-
-#: crates/big-audio-player/src/audio/ui/audio_shell/engine.rs:33
-#: crates/big-video-player/src/video/ui/video_shell/playback.rs:186
+#: crates/big-audio-player/src/audio/ui/audio_shell/engine.rs:32
+#: crates/big-video-player/src/video/ui/video_shell/playback.rs:185
 msgid "Could not play this file — it may be unsupported or corrupt."
 msgstr ""
 "Δεν ήταν δυνατή η αναπαραγωγή αυτού του αρχείου — μπορεί να μην "
 "υποστηρίζεται ή να είναι κατεστραμμένο."
+
+#: crates/big-audio-player/src/audio/ui/audio_shell/engine.rs:216
+#, rust-format
+msgid ""
+"The playback engine could not start: {error}. Update or reinstall the mpv "
+"package, then reopen the player."
+msgstr ""
 
 #: crates/big-audio-player/src/audio/ui/audio_shell/export.rs:20
 #: crates/big-audio-player/src/audio/ui/audio_shell/export.rs:36
@@ -588,23 +582,18 @@ msgid "Edit cut"
 msgstr "Επεξεργασία αποκοπής"
 
 #: crates/big-audio-player/src/audio/ui/audio_shell/export.rs:161
-#: crates/big-audio-player/src/audio/ui/library_dialogs.rs:78
-#: crates/big-audio-player/src/audio/ui/library_io.rs:53
 #: crates/big-audio-player/src/audio/ui/library_tag_editor.rs:146
-#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:219
 #: crates/big-audio-player/src/audio/ui/playlist_interactions.rs:245
-#: crates/big-audio-player/src/audio/ui/playlist_library_dialog/spec.rs:197
-#: crates/big-audio-player/src/audio/ui/playlist_library_dialog/spec.rs:208
-#: crates/big-audio-player/src/audio/ui/playlist_library_dialog/spec.rs:217
+#: crates/big-audio-player/src/audio/ui/playlist_library_dialog/spec.rs:210
 #: crates/big-audio-player/src/audio/ui/unavailable_dialog.rs:258
 #: crates/big-video-player/src/video/ui/iptv/providers_dialog.rs:168
 #: crates/big-video-player/src/video/ui/menu_dialogs.rs:72
-#: crates/big-video-player/src/video/ui/video_browser_sidebar/fileops.rs:210
 #: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:173
-#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:257
-#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:381
+#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:251
+#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:373
 #: crates/big-video-player/src/video/ui/video_shell/trim/run.rs:259
-#: crates/ui/media/big-player-ui/src/podcast_panel.rs:571
+#: crates/ui/generic/big-relm4-components/src/layout/name_prompt.rs:84
+#: crates/ui/media/big-player-ui/src/podcast_panel.rs:625
 #: crates/ui/media/big-player-ui/src/radio_panel/widgets.rs:351
 msgid "Cancel"
 msgstr "Ακύρωση"
@@ -622,6 +611,21 @@ msgstr "Χρήση τρέχουσας θέσης"
 msgid "Use current playback position"
 msgstr "Χρήση τρέχουσας θέσης αναπαραγωγής"
 
+#: crates/big-audio-player/src/audio/ui/audio_shell/library_store.rs:63
+msgid "The music library is still opening. Try again in a moment."
+msgstr ""
+
+#: crates/big-audio-player/src/audio/ui/audio_shell/library_store.rs:225
+#: crates/big-audio-player/src/audio/ui/audio_shell/library_store.rs:261
+#, fuzzy
+#| msgid ""
+#| "The library could not be read. Previous results were kept; try searching "
+#| "again."
+msgid "The library could not be read. The queue was not changed."
+msgstr ""
+"Δεν ήταν δυνατή η ανάγνωση της βιβλιοθήκης. Διατηρήθηκαν τα προηγούμενα "
+"αποτελέσματα· δοκιμάστε να αναζητήσετε ξανά."
+
 #: crates/big-audio-player/src/audio/ui/audio_shell/panel_intents.rs:79
 msgid ""
 "This folder name cannot yet be stored in the library. No path was changed or "
@@ -630,104 +634,127 @@ msgstr ""
 "Το όνομα αυτού του φακέλου δεν μπορεί ακόμη να αποθηκευτεί στη βιβλιοθήκη. "
 "Δεν άλλαξε ούτε εισήχθη καμία διαδρομή."
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/panel_intents.rs:112
-#: crates/big-audio-player/src/audio/ui/audio_shell/update.rs:241
+#: crates/big-audio-player/src/audio/ui/audio_shell/panel_intents.rs:121
+#: crates/big-audio-player/src/audio/ui/audio_shell/update.rs:233
 msgid ""
 "The playlist could not be read safely. Check its format and permissions."
 msgstr ""
 "Η λίστα αναπαραγωγής δεν ήταν δυνατό να διαβαστεί με ασφάλεια. Ελέγξτε τη "
 "μορφή και τα δικαιώματά της."
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/panel_intents.rs:345
+#: crates/big-audio-player/src/audio/ui/audio_shell/panel_intents.rs:353
 msgid "The playlist could not be saved."
 msgstr "Η λίστα αναπαραγωγής δεν ήταν δυνατό να αποθηκευτεί."
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/panel_intents.rs:447
+#: crates/big-audio-player/src/audio/ui/audio_shell/panel_intents.rs:454
 msgid "Save Episode"
 msgstr "Αποθήκευση επεισοδίου"
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/panel_intents.rs:448
-#: crates/big-audio-player/src/audio/ui/library_io.rs:54
-#: crates/big-audio-player/src/audio/ui/library_io.rs:85
+#: crates/big-audio-player/src/audio/ui/audio_shell/panel_intents.rs:455
+#: crates/big-audio-player/src/audio/ui/library_io.rs:50
+#: crates/big-audio-player/src/audio/ui/library_io.rs:100
 #: crates/big-audio-player/src/audio/ui/library_tag_editor.rs:146
-#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:219
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:192
+#: crates/big-audio-player/src/audio/ui/playlist_library_dialog/spec.rs:187
+#: crates/big-audio-player/src/audio/ui/playlist_library_dialog/spec.rs:199
 #: crates/big-video-player/src/video/ui/iptv/providers_dialog.rs:168
 msgid "Save"
 msgstr "Αποθήκευση"
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/panel_intents.rs:455
+#: crates/big-audio-player/src/audio/ui/audio_shell/panel_intents.rs:463
 msgid "Save Episodes"
 msgstr "Αποθήκευση επεισοδίων"
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/playback.rs:160
+#: crates/big-audio-player/src/audio/ui/audio_shell/panel_intents.rs:482
+#, fuzzy
+#| msgid ""
+#| "The playlist could not be read safely. Check its format and permissions."
+msgid ""
+"The episodes could not be saved in this folder. Check its permissions and "
+"try again."
+msgstr ""
+"Η λίστα αναπαραγωγής δεν ήταν δυνατό να διαβαστεί με ασφάλεια. Ελέγξτε τη "
+"μορφή και τα δικαιώματά της."
+
+#: crates/big-audio-player/src/audio/ui/audio_shell/playback.rs:159
+#, fuzzy
+#| msgid ""
+#| "The library could not be read. Previous results were kept; try searching "
+#| "again."
+msgid "The library could not be read, so lyrics were not searched online."
+msgstr ""
+"Δεν ήταν δυνατή η ανάγνωση της βιβλιοθήκης. Διατηρήθηκαν τα προηγούμενα "
+"αποτελέσματα· δοκιμάστε να αναζητήσετε ξανά."
+
+#: crates/big-audio-player/src/audio/ui/audio_shell/playback.rs:173
 msgid "Seek position"
 msgstr "Θέση αναζήτησης"
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/playback.rs:161
-#: crates/big-video-player/src/video/ui/video_controls_bar.rs:291
+#: crates/big-audio-player/src/audio/ui/audio_shell/playback.rs:174
+#: crates/big-video-player/src/video/ui/video_controls_bar.rs:290
 msgid "Cut timeline"
 msgstr "Χρονολόγιο αποκοπής"
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/playback.rs:163
+#: crates/big-audio-player/src/audio/ui/audio_shell/playback.rs:176
 #: crates/big-video-player/src/video/ui/appearance/layout/buttons_page.rs:77
 #: crates/big-video-player/src/video/ui/video_controls_bar/seek_preview.rs:177
-#: crates/big-video-player/src/video/ui/video_controls_bar/zones.rs:565
+#: crates/big-video-player/src/video/ui/video_controls_bar/zones.rs:578
 msgid "Previous"
 msgstr "Προηγούμενο"
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/playback.rs:164
+#: crates/big-audio-player/src/audio/ui/audio_shell/playback.rs:177
 #: crates/big-video-player/src/video/ui/appearance/layout/buttons_page.rs:91
 #: crates/big-video-player/src/video/ui/video_controls_bar/seek_preview.rs:179
-#: crates/big-video-player/src/video/ui/video_controls_bar/zones.rs:568
+#: crates/big-video-player/src/video/ui/video_controls_bar/zones.rs:581
 msgid "Next"
 msgstr "Επόμενο"
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/playback.rs:165
+#: crates/big-audio-player/src/audio/ui/audio_shell/playback.rs:178
 #: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/header.rs:200
 msgid "Shuffle"
 msgstr "Τυχαία σειρά"
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/playback.rs:166
-#: crates/big-video-player/src/video/ui/preferences/general.rs:36
+#: crates/big-audio-player/src/audio/ui/audio_shell/playback.rs:179
+#: crates/big-video-player/src/video/ui/preferences/general.rs:37
 #: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/header.rs:201
 msgid "Repeat"
 msgstr "Επανάληψη"
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/playback.rs:167
+#: crates/big-audio-player/src/audio/ui/audio_shell/playback.rs:180
 #: crates/big-video-player/src/video/ui/appearance/layout/buttons_page.rs:56
-#: crates/big-video-player/src/video/ui/video_controls_bar.rs:560
-#: crates/ui/media/big-media-components/src/player_chrome.rs:301
+#: crates/big-video-player/src/video/ui/video_controls_bar.rs:568
+#: crates/ui/media/big-media-components/src/player_chrome.rs:319
 #: crates/ui/media/big-media-components/src/text.rs:82
 #: crates/ui/media/big-media-components/src/text.rs:90
 #: crates/ui/media/big-media-components/src/text.rs:99
-#: crates/ui/media/big-player-ui/src/playback_bar.rs:325
+#: crates/ui/media/big-player-ui/src/playback_bar.rs:339
 msgid "Volume"
 msgstr "Ένταση"
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/playback.rs:168
+#: crates/big-audio-player/src/audio/ui/audio_shell/playback.rs:181
 #: crates/big-video-player/src/video/ui/appearance/layout/buttons_page.rs:63
 #: crates/big-video-player/src/video/ui/video_controls_bar/zones.rs:302
-#: crates/ui/media/big-media-components/src/player_chrome.rs:312
+#: crates/ui/media/big-media-components/src/player_chrome.rs:330
 msgid "Speed"
 msgstr "Ταχύτητα"
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/playback.rs:169
+#: crates/big-audio-player/src/audio/ui/audio_shell/playback.rs:182
 #: crates/big-video-player/src/video/ui/appearance/layout/buttons_page.rs:70
 #: crates/big-video-player/src/video/ui/video_controls_bar/zones.rs:317
 msgid "Voice Enhancement"
 msgstr "Βελτίωση φωνής"
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/playback.rs:170
-#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:129
+#: crates/big-audio-player/src/audio/ui/audio_shell/playback.rs:183
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:114
 msgid "Trim & Export"
 msgstr "Περικοπή και εξαγωγή"
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/playback.rs:171
+#: crates/big-audio-player/src/audio/ui/audio_shell/playback.rs:184
 #: crates/ui/media/big-player-ui/src/lyrics_panel.rs:144
 msgid "Lyrics"
 msgstr "Στίχοι"
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/playback.rs:172
+#: crates/big-audio-player/src/audio/ui/audio_shell/playback.rs:185
 msgid "Status"
 msgstr "Κατάσταση"
 
@@ -743,25 +770,25 @@ msgstr "Πάρα πολλές εγγραφές στον επιλεγμένο φ�
 msgid "Choose at most 100 playlist files per import"
 msgstr "Επιλέξτε το πολύ 100 αρχεία λιστών αναπαραγωγής ανά εισαγωγή"
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/playlist_library_dialog_actions.rs:155
-#: crates/big-audio-player/src/audio/ui/audio_shell/update.rs:152
+#: crates/big-audio-player/src/audio/ui/audio_shell/playlist_library_dialog_actions.rs:156
+#: crates/big-audio-player/src/audio/ui/audio_shell/update.rs:140
 #: crates/big-audio-player/src/audio/ui/scan_progress.rs:47
 msgid "Imported"
 msgstr "Εισήχθησαν"
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/playlist_library_dialog_actions.rs:165
+#: crates/big-audio-player/src/audio/ui/audio_shell/playlist_library_dialog_actions.rs:169
 msgid "Import stopped. Confirmed tracks were kept"
 msgstr "Η εισαγωγή διακόπηκε. Τα επιβεβαιωμένα κομμάτια διατηρήθηκαν"
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/playlist_library_dialog_actions.rs:188
+#: crates/big-audio-player/src/audio/ui/audio_shell/playlist_library_dialog_actions.rs:192
 msgid "Export All Playlists"
 msgstr "Εξαγωγή όλων των λιστών αναπαραγωγής"
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/playlist_library_dialog_actions.rs:196
+#: crates/big-audio-player/src/audio/ui/audio_shell/playlist_library_dialog_actions.rs:200
 msgid "Playlists exported"
 msgstr "Οι λίστες αναπαραγωγής εξήχθησαν"
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/playlist_library_dialog_actions.rs:200
+#: crates/big-audio-player/src/audio/ui/audio_shell/playlist_library_dialog_actions.rs:204
 msgid ""
 "Export was not fully completed. Published files were kept; choose an empty "
 "destination and try again."
@@ -769,62 +796,85 @@ msgstr ""
 "Η εξαγωγή δεν ολοκληρώθηκε πλήρως. Τα δημοσιευμένα αρχεία διατηρήθηκαν· "
 "επιλέξτε έναν κενό προορισμό και δοκιμάστε ξανά."
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/playlist_library_dialog_actions.rs:233
-#: crates/big-audio-player/src/audio/ui/library_io.rs:84
+#: crates/big-audio-player/src/audio/ui/audio_shell/playlist_library_dialog_actions.rs:237
+#: crates/big-audio-player/src/audio/ui/library_io.rs:49
 msgid "Export Playlist"
 msgstr "Εξαγωγή λίστας αναπαραγωγής"
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/playlist_library_dialog_actions.rs:235
-#: crates/big-audio-player/src/audio/ui/library_io.rs:87
+#: crates/big-audio-player/src/audio/ui/audio_shell/playlist_library_dialog_actions.rs:239
+#: crates/big-audio-player/src/audio/ui/library_io.rs:52
 msgid "M3U8 Playlist"
 msgstr "Λίστα αναπαραγωγής M3U8"
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/playlist_library_dialog_actions.rs:259
-#: crates/big-audio-player/src/audio/ui/library_io.rs:111
+#: crates/big-audio-player/src/audio/ui/audio_shell/playlist_library_dialog_actions.rs:263
+#: crates/big-audio-player/src/audio/ui/library_io.rs:76
 msgid "Import Playlist"
 msgstr "Εισαγωγή λίστας αναπαραγωγής"
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/playlist_library_dialog_actions.rs:260
-#: crates/big-audio-player/src/audio/ui/library_dialogs.rs:62
-#: crates/big-audio-player/src/audio/ui/library_io.rs:113
+#: crates/big-audio-player/src/audio/ui/audio_shell/playlist_library_dialog_actions.rs:264
+#: crates/big-audio-player/src/audio/ui/library_dialogs.rs:48
+#: crates/big-audio-player/src/audio/ui/library_io.rs:78
 #: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/menu_actions.rs:230
 msgid "Playlists"
 msgstr "Λίστες αναπαραγωγής"
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/playlist_library_dialog_actions.rs:305
+#: crates/big-audio-player/src/audio/ui/audio_shell/playlist_library_dialog_actions.rs:310
 msgid ""
 "The batch import limit was reached. Split the playlists into smaller imports."
 msgstr ""
 "Συμπληρώθηκε το όριο μαζικής εισαγωγής. Χωρίστε τις λίστες αναπαραγωγής σε "
 "μικρότερες εισαγωγές."
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/playlist_library_dialog_actions.rs:315
-#: crates/big-audio-player/src/audio/ui/audio_shell/playlist_library_dialog_actions.rs:352
-#: crates/big-audio-player/src/audio/ui/audio_shell/playlist_library_dialog_actions.rs:391
+#: crates/big-audio-player/src/audio/ui/audio_shell/playlist_library_dialog_actions.rs:320
+#: crates/big-audio-player/src/audio/ui/audio_shell/playlist_library_dialog_actions.rs:357
+#: crates/big-audio-player/src/audio/ui/audio_shell/playlist_library_dialog_actions.rs:396
 msgid "Library unavailable"
 msgstr "Η βιβλιοθήκη δεν είναι διαθέσιμη"
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/playlist_library_dialog_actions.rs:366
+#: crates/big-audio-player/src/audio/ui/audio_shell/playlist_library_dialog_actions.rs:371
 msgid "Too many playlists for one export"
 msgstr "Πάρα πολλές λίστες αναπαραγωγής για μία εξαγωγή"
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/playlist_library_dialog_actions.rs:380
+#: crates/big-audio-player/src/audio/ui/audio_shell/playlist_library_dialog_actions.rs:385
 msgid "Export stopped. Confirmed outputs were kept"
 msgstr "Η εξαγωγή διακόπηκε. Τα επιβεβαιωμένα αποτελέσματα διατηρήθηκαν"
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/playlist_library_dialog_actions.rs:401
+#: crates/big-audio-player/src/audio/ui/audio_shell/playlist_library_dialog_actions.rs:406
 #: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/menu_actions.rs:212
 msgid "Playlist export"
 msgstr "Εξαγωγή λιστών αναπαραγωγής"
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/playlist_library_dialog_actions.rs:404
-#: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:478
-#: crates/big-audio-player/src/audio/ui/library_dialogs.rs:64
+#: crates/big-audio-player/src/audio/ui/audio_shell/playlist_library_dialog_actions.rs:409
+#: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:486
+#: crates/big-audio-player/src/audio/ui/library_dialogs.rs:50
 #: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/menu_actions.rs:215
-#: crates/big-video-player/src/video/ui/video_shell/component.rs:132
+#: crates/big-video-player/src/video/ui/video_shell/component.rs:136
 #: crates/ui/generic/big-relm4-components/src/layout/media_window.rs:283
 msgid "Close"
 msgstr "Κλείσιμο"
+
+#: crates/big-audio-player/src/audio/ui/audio_shell/queue_persistence.rs:55
+#, fuzzy, rust-format
+#| msgid "The playlist could not be saved."
+msgid "The music library could not be opened: {}"
+msgstr "Η λίστα αναπαραγωγής δεν ήταν δυνατό να αποθηκευτεί."
+
+#: crates/big-audio-player/src/audio/ui/audio_shell/queue_persistence.rs:57
+msgid "Retry"
+msgstr ""
+
+#: crates/big-audio-player/src/audio/ui/audio_shell/queue_persistence.rs:60
+msgid ""
+"The playback queue could not be saved or restored. Your previous saved queue "
+"was kept."
+msgstr ""
+"Η ουρά αναπαραγωγής δεν ήταν δυνατό να αποθηκευτεί ή να ανακτηθεί. "
+"Διατηρήθηκε η προηγούμενη αποθηκευμένη ουρά."
+
+#: crates/big-audio-player/src/audio/ui/audio_shell/queue_persistence.rs:62
+#: crates/media-runtime/src/settings/saving.rs:240
+msgid "Retry saving"
+msgstr "Επανάληψη αποθήκευσης"
 
 #: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:42
 msgid "A library scan is already running. Cancel it or wait for its result."
@@ -848,48 +898,70 @@ msgstr ""
 "Δεν ήταν δυνατή η ανάγνωση των παρακολουθούμενων φακέλων. Διατηρήθηκαν οι "
 "προηγούμενες ρυθμίσεις."
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:258
-#: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:266
-#: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:295
+#: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:150
+#, fuzzy
+#| msgid "The playlist could not be saved."
+msgid "The station could not be saved."
+msgstr "Η λίστα αναπαραγωγής δεν ήταν δυνατό να αποθηκευτεί."
+
+#: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:164
+#, fuzzy
+#| msgid "The playlist could not be saved."
+msgid "The station could not be removed."
+msgstr "Η λίστα αναπαραγωγής δεν ήταν δυνατό να αποθηκευτεί."
+
+#: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:224
+msgid "There is no Music or home folder to save recordings in."
+msgstr ""
+
+#: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:270
+#: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:278
+#: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:307
 msgid "Recording was not saved"
 msgstr "Η εγγραφή δεν αποθηκεύτηκε"
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:271
+#: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:283
 msgid "Recording to"
 msgstr "Εγγραφή σε"
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:344
+#: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:356
 msgid "No episodes found"
 msgstr "Δεν βρέθηκαν επεισόδια"
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:453
+#: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:461
 msgid "Recording saved"
 msgstr "Η εγγραφή αποθηκεύτηκε"
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:459
+#: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:467
 msgid "The recording was saved and is ready to open."
 msgstr "Η εγγραφή αποθηκεύτηκε και είναι έτοιμη για άνοιγμα."
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:463
+#: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:471
 #: crates/big-audio-player/src/audio/ui/library_tag_editor/spec.rs:125
 #: crates/big-video-player/src/video/ui/media_details_dialog.rs:81
 msgid "File"
 msgstr "Αρχείο"
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:467
+#: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:475
 msgid "Folder"
 msgstr "Φάκελος"
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:473
+#: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:481
 #: crates/ui/media/big-media-components/src/media/file_metadata_dialog.rs:55
 msgid "Open Folder"
 msgstr "Άνοιγμα φακέλου"
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:478
+#: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:486
 #: crates/big-video-player/src/video/ui/appearance/layout/buttons_page.rs:35
 #: crates/big-video-player/src/video/ui/video_shell/actions.rs:126
 msgid "Open File"
 msgstr "Άνοιγμα αρχείου"
+
+#: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:539
+#, fuzzy
+#| msgid "The playlist could not be saved."
+msgid "Saved radio stations could not be read."
+msgstr "Η λίστα αναπαραγωγής δεν ήταν δυνατό να αποθηκευτεί."
 
 #: crates/big-audio-player/src/audio/ui/audio_shell/tray.rs:18
 msgid "Show Big Audio Player"
@@ -899,12 +971,12 @@ msgstr "Εμφάνιση του Big Audio Player"
 msgid "The TV's track is no longer in the queue."
 msgstr "Το κομμάτι της τηλεόρασης δεν βρίσκεται πλέον στην ουρά."
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/update.rs:141
+#: crates/big-audio-player/src/audio/ui/audio_shell/update.rs:129
 msgid "Scan cancelled. Earlier confirmed imports were kept."
 msgstr ""
 "Η σάρωση ακυρώθηκε. Οι προηγούμενες επιβεβαιωμένες εισαγωγές διατηρήθηκαν."
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/update.rs:144
+#: crates/big-audio-player/src/audio/ui/audio_shell/update.rs:132
 msgid ""
 "Scan incomplete. Earlier confirmed imports were kept; check storage and "
 "retry."
@@ -912,20 +984,20 @@ msgstr ""
 "Η σάρωση είναι ατελής. Οι προηγούμενες επιβεβαιωμένες εισαγωγές "
 "διατηρήθηκαν· ελέγξτε τον αποθηκευτικό χώρο και δοκιμάστε ξανά."
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/update.rs:147
+#: crates/big-audio-player/src/audio/ui/audio_shell/update.rs:135
 msgid "Library scan finished."
 msgstr "Η σάρωση της βιβλιοθήκης ολοκληρώθηκε."
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/update.rs:154
+#: crates/big-audio-player/src/audio/ui/audio_shell/update.rs:142
 #: crates/big-audio-player/src/audio/ui/scan_progress.rs:48
 msgid "Skipped"
 msgstr "Παραλείφθηκαν"
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/update.rs:160
+#: crates/big-audio-player/src/audio/ui/audio_shell/update.rs:148
 msgid "Library updated"
 msgstr "Η βιβλιοθήκη ενημερώθηκε"
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/update.rs:162
+#: crates/big-audio-player/src/audio/ui/audio_shell/update.rs:150
 msgid ""
 "The operation was incomplete. Imported tracks were kept; check the folder "
 "and try again."
@@ -933,7 +1005,7 @@ msgstr ""
 "Η λειτουργία ήταν ατελής. Τα εισαγμένα κομμάτια διατηρήθηκαν· ελέγξτε τον "
 "φάκελο και δοκιμάστε ξανά."
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/update.rs:190
+#: crates/big-audio-player/src/audio/ui/audio_shell/update.rs:175
 msgid ""
 "The library could not be read. Previous results were kept; try searching "
 "again."
@@ -941,21 +1013,22 @@ msgstr ""
 "Δεν ήταν δυνατή η ανάγνωση της βιβλιοθήκης. Διατηρήθηκαν τα προηγούμενα "
 "αποτελέσματα· δοκιμάστε να αναζητήσετε ξανά."
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/update.rs:204
+#: crates/big-audio-player/src/audio/ui/audio_shell/update.rs:195
 msgid "The playlist could not be changed. Your previous playlist was kept."
 msgstr ""
 "Δεν ήταν δυνατή η αλλαγή της λίστας αναπαραγωγής. Διατηρήθηκε η προηγούμενη "
 "λίστα."
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/update.rs:209
+#: crates/big-audio-player/src/audio/ui/audio_shell/update.rs:200
 msgid "Playlists could not be opened. Please try again."
 msgstr "Δεν ήταν δυνατό το άνοιγμα των λιστών αναπαραγωγής. Δοκιμάστε ξανά."
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/update.rs:311
+#: crates/big-audio-player/src/audio/ui/audio_shell/update.rs:306
+#: crates/big-audio-player/src/audio/ui/audio_shell/update.rs:310
 msgid "tracks imported"
 msgstr "κομμάτια εισήχθησαν"
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/update.rs:315
+#: crates/big-audio-player/src/audio/ui/audio_shell/update.rs:316
 msgid ""
 "Playlist import was not fully completed. Previously confirmed imports were "
 "kept."
@@ -968,8 +1041,8 @@ msgstr ""
 #: crates/big-audio-player/src/audio/ui/library_tree/view.rs:376
 #: crates/big-audio-player/src/audio/ui/playlist_interactions.rs:110
 #: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/context_menu.rs:41
-#: crates/big-video-player/src/video/ui/video_controls_bar.rs:479
-#: crates/big-video-player/src/video/ui/video_controls_bar/zones.rs:566
+#: crates/big-video-player/src/video/ui/video_controls_bar.rs:478
+#: crates/big-video-player/src/video/ui/video_controls_bar/zones.rs:579
 #: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:173
 msgid "Play"
 msgstr "Αναπαραγωγή"
@@ -1009,46 +1082,48 @@ msgstr "Πληροφορίες κομματιού"
 
 #: crates/big-audio-player/src/audio/ui/library_detail_interactions.rs:125
 #: crates/big-audio-player/src/audio/ui/playlist_interactions.rs:135
-#: crates/big-audio-player/src/audio/ui/track_list.rs:430
+#: crates/big-audio-player/src/audio/ui/track_list.rs:448
 #, rust-format
 msgid "{} of 5 stars"
 msgstr "{} από 5 αστέρια"
 
 #: crates/big-audio-player/src/audio/ui/library_detail_interactions.rs:129
 #: crates/big-audio-player/src/audio/ui/playlist_interactions.rs:139
-#: crates/big-audio-player/src/audio/ui/track_list.rs:82
+#: crates/big-audio-player/src/audio/ui/track_list.rs:99
 #: crates/big-audio-player/src/audio/ui/unavailable_dialog.rs:351
 msgid "Rating"
 msgstr "Βαθμολογία"
 
-#: crates/big-audio-player/src/audio/ui/library_dialogs.rs:56
+#: crates/big-audio-player/src/audio/ui/library_dialogs.rs:42
 msgid "Add to Playlist"
 msgstr "Προσθήκη σε λίστα αναπαραγωγής"
 
-#: crates/big-audio-player/src/audio/ui/library_dialogs.rs:63
+#: crates/big-audio-player/src/audio/ui/library_dialogs.rs:49
 msgid "No playlists yet"
 msgstr "Δεν υπάρχουν ακόμη λίστες αναπαραγωγής"
 
-#: crates/big-audio-player/src/audio/ui/library_dialogs.rs:65
-#: crates/big-audio-player/src/audio/ui/library_dialogs.rs:73
+#: crates/big-audio-player/src/audio/ui/library_dialogs.rs:51
+#: crates/big-audio-player/src/audio/ui/library_dialogs.rs:159
 msgid "New Playlist"
 msgstr "Νέα λίστα αναπαραγωγής"
 
-#: crates/big-audio-player/src/audio/ui/library_dialogs.rs:67
+#: crates/big-audio-player/src/audio/ui/library_dialogs.rs:53
 #: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/context_menu.rs:82
-#: crates/big-video-player/src/video/ui/video_browser_sidebar/fileops.rs:72
-#: crates/big-video-player/src/video/ui/video_browser_sidebar/library.rs:646
-#: crates/big-video-player/src/video/ui/video_browser_sidebar/library.rs:650
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/fileops.rs:69
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/library.rs:647
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/library.rs:651
 msgid "Add to playlist"
 msgstr "Προσθήκη σε λίστα αναπαραγωγής"
 
-#: crates/big-audio-player/src/audio/ui/library_dialogs.rs:77
-#: crates/big-audio-player/src/audio/ui/library_io.rs:52
-#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:213
+#: crates/big-audio-player/src/audio/ui/library_dialogs.rs:161
+#: crates/big-audio-player/src/audio/ui/library_io.rs:98
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:190
+#: crates/big-audio-player/src/audio/ui/playlist_library_dialog/spec.rs:185
+#: crates/big-audio-player/src/audio/ui/playlist_library_dialog/spec.rs:197
 msgid "Playlist name"
 msgstr "Όνομα λίστας αναπαραγωγής"
 
-#: crates/big-audio-player/src/audio/ui/library_dialogs.rs:79
+#: crates/big-audio-player/src/audio/ui/library_dialogs.rs:163
 msgid "Create"
 msgstr "Δημιουργία"
 
@@ -1065,7 +1140,7 @@ msgstr "Φιλτράρισμα κατά ημερομηνία προσθήκης"
 
 #: crates/big-audio-player/src/audio/ui/library_grouping_ui.rs:206
 #: crates/big-audio-player/src/audio/ui/library_grouping_ui.rs:207
-#: crates/big-audio-player/src/audio/ui/library_io.rs:307
+#: crates/big-audio-player/src/audio/ui/library_io.rs:282
 msgid "Add music folder"
 msgstr "Προσθήκη φακέλου μουσικής"
 
@@ -1082,11 +1157,11 @@ msgstr "Φιλτράρισμα…"
 msgid "Search library"
 msgstr "Αναζήτηση στη βιβλιοθήκη"
 
-#: crates/big-audio-player/src/audio/ui/library_io.rs:80
+#: crates/big-audio-player/src/audio/ui/library_io.rs:45
 msgid "No tracks to export"
 msgstr "Δεν υπάρχουν κομμάτια για εξαγωγή"
 
-#: crates/big-audio-player/src/audio/ui/library_io.rs:99
+#: crates/big-audio-player/src/audio/ui/library_io.rs:64
 #: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/menu_actions.rs:208
 msgid ""
 "Playlist export could not be confirmed. Existing files were kept; choose a "
@@ -1095,41 +1170,41 @@ msgstr ""
 "Η εξαγωγή της λίστας αναπαραγωγής δεν ήταν δυνατό να επιβεβαιωθεί. Τα "
 "υπάρχοντα αρχεία διατηρήθηκαν· επιλέξτε νέο όνομα και δοκιμάστε ξανά."
 
-#: crates/big-audio-player/src/audio/ui/library_io.rs:112
-#: crates/big-video-player/src/video/ui/menu_dialogs.rs:349
-#: crates/big-video-player/src/video/ui/video_shell/component.rs:269
-#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:257
+#: crates/big-audio-player/src/audio/ui/library_io.rs:77
+#: crates/big-video-player/src/video/ui/menu_dialogs.rs:240
+#: crates/big-video-player/src/video/ui/video_shell/component.rs:279
+#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:251
 msgid "Open"
 msgstr "Άνοιγμα"
 
-#: crates/big-audio-player/src/audio/ui/library_io.rs:127
+#: crates/big-audio-player/src/audio/ui/library_io.rs:92
 msgid "No tracks to save"
 msgstr "Δεν υπάρχουν κομμάτια για αποθήκευση"
 
-#: crates/big-audio-player/src/audio/ui/library_io.rs:133
+#: crates/big-audio-player/src/audio/ui/library_io.rs:96
 msgid "Save as Playlist"
 msgstr "Αποθήκευση ως λίστα αναπαραγωγής"
 
-#: crates/big-audio-player/src/audio/ui/library_io.rs:134
+#: crates/big-audio-player/src/audio/ui/library_io.rs:97
 msgid "Enter a name for the new playlist"
 msgstr "Εισαγάγετε ένα όνομα για τη νέα λίστα αναπαραγωγής"
 
-#: crates/big-audio-player/src/audio/ui/library_io.rs:170
-#: crates/big-audio-player/src/audio/ui/library_io.rs:185
-#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:121
+#: crates/big-audio-player/src/audio/ui/library_io.rs:145
+#: crates/big-audio-player/src/audio/ui/library_io.rs:160
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:106
 msgid "Music Folders"
 msgstr "Φάκελοι μουσικής"
 
-#: crates/big-audio-player/src/audio/ui/library_io.rs:177
+#: crates/big-audio-player/src/audio/ui/library_io.rs:152
 #: crates/big-audio-player/src/audio/ui/unavailable_dialog.rs:41
 msgid "Review unavailable files"
 msgstr "Έλεγχος μη διαθέσιμων αρχείων"
 
-#: crates/big-audio-player/src/audio/ui/library_io.rs:224
+#: crates/big-audio-player/src/audio/ui/library_io.rs:199
 msgid "Monitored Folders"
 msgstr "Παρακολουθούμενοι φάκελοι"
 
-#: crates/big-audio-player/src/audio/ui/library_io.rs:234
+#: crates/big-audio-player/src/audio/ui/library_io.rs:209
 msgid ""
 "These folders are scanned for audio files. Removing a folder stops "
 "monitoring it. Tracks and ratings are kept until you explicitly review "
@@ -1139,49 +1214,49 @@ msgstr ""
 "διακόπτει την παρακολούθησή του. Τα κομμάτια και οι βαθμολογίες διατηρούνται "
 "μέχρι να ελέγξετε ρητά τα μη διαθέσιμα αρχεία."
 
-#: crates/big-audio-player/src/audio/ui/library_io.rs:260
+#: crates/big-audio-player/src/audio/ui/library_io.rs:235
 msgid "Music folders"
 msgstr "Φάκελοι μουσικής"
 
-#: crates/big-audio-player/src/audio/ui/library_io.rs:264
+#: crates/big-audio-player/src/audio/ui/library_io.rs:239
 msgid "No folders added yet"
 msgstr "Δεν έχουν προστεθεί ακόμη φάκελοι"
 
-#: crates/big-audio-player/src/audio/ui/library_io.rs:266
+#: crates/big-audio-player/src/audio/ui/library_io.rs:241
 msgid "Click the button below to add your first music folder"
 msgstr ""
 "Πατήστε το παρακάτω κουμπί για να προσθέσετε τον πρώτο σας φάκελο μουσικής"
 
-#: crates/big-audio-player/src/audio/ui/library_io.rs:288
+#: crates/big-audio-player/src/audio/ui/library_io.rs:263
 msgid "Removal requested. Reopen this list after the operation finishes."
 msgstr ""
 "Ζητήθηκε αφαίρεση. Ανοίξτε ξανά αυτή τη λίστα όταν ολοκληρωθεί η λειτουργία."
 
-#: crates/big-audio-player/src/audio/ui/library_io.rs:306
+#: crates/big-audio-player/src/audio/ui/library_io.rs:281
 msgid "Add Folder"
 msgstr "Προσθήκη φακέλου"
 
-#: crates/big-audio-player/src/audio/ui/library_io.rs:319
+#: crates/big-audio-player/src/audio/ui/library_io.rs:294
 msgid "Select Music Folder"
 msgstr "Επιλογή φακέλου μουσικής"
 
-#: crates/big-audio-player/src/audio/ui/library_io.rs:329
+#: crates/big-audio-player/src/audio/ui/library_io.rs:304
 msgid "Scan Now"
 msgstr "Σάρωση τώρα"
 
-#: crates/big-audio-player/src/audio/ui/library_io.rs:330
+#: crates/big-audio-player/src/audio/ui/library_io.rs:305
 msgid "Scan all monitored folders now"
 msgstr "Σάρωση όλων των παρακολουθούμενων φακέλων τώρα"
 
-#: crates/big-audio-player/src/audio/ui/library_io.rs:440
+#: crates/big-audio-player/src/audio/ui/library_io.rs:341
 msgid "Stop monitoring this folder; keep its tracks"
 msgstr "Διακοπή παρακολούθησης αυτού του φακέλου· διατήρηση των κομματιών του"
 
-#: crates/big-audio-player/src/audio/ui/library_io.rs:443
+#: crates/big-audio-player/src/audio/ui/library_io.rs:344
 msgid "Remove folder"
 msgstr "Αφαίρεση φακέλου"
 
-#: crates/big-audio-player/src/audio/ui/library_io.rs:452
+#: crates/big-audio-player/src/audio/ui/library_io.rs:353
 msgid ""
 "Add folders where your music files are stored. The player scans these "
 "folders to build your library, organizing tracks by artist, album, and genre "
@@ -1191,24 +1266,24 @@ msgstr ""
 "εφαρμογή σαρώνει αυτούς τους φακέλους για να δημιουργήσει τη βιβλιοθήκη σας, "
 "οργανώνοντας αυτόματα τα κομμάτια ανά καλλιτέχνη, άλμπουμ και είδος."
 
-#: crates/big-audio-player/src/audio/ui/library_io.rs:490
+#: crates/big-audio-player/src/audio/ui/library_io.rs:391
 msgid "Tips"
 msgstr "Συμβουλές"
 
-#: crates/big-audio-player/src/audio/ui/library_io.rs:499
+#: crates/big-audio-player/src/audio/ui/library_io.rs:400
 msgid ""
 "• Supported formats: MP3, FLAC, OGG, Opus, M4A, WAV, WMA, AAC, APE, WavPack"
 msgstr ""
 "• Υποστηριζόμενες μορφές: MP3, FLAC, OGG, Opus, M4A, WAV, WMA, AAC, APE, "
 "WavPack"
 
-#: crates/big-audio-player/src/audio/ui/library_io.rs:500
+#: crates/big-audio-player/src/audio/ui/library_io.rs:401
 msgid "• Subfolders are included automatically — no need to add each one"
 msgstr ""
 "• Οι υποφάκελοι περιλαμβάνονται αυτόματα — δεν χρειάζεται να προσθέσετε τον "
 "καθένα"
 
-#: crates/big-audio-player/src/audio/ui/library_io.rs:502
+#: crates/big-audio-player/src/audio/ui/library_io.rs:403
 msgid ""
 "• Use the Files tab to play files from any folder without adding them to the "
 "library"
@@ -1234,10 +1309,8 @@ msgid "Back to library"
 msgstr "Πίσω στη βιβλιοθήκη"
 
 #: crates/big-audio-player/src/audio/ui/library_tag_editor.rs:202
-#: crates/big-audio-player/src/audio/ui/track_list.rs:74
+#: crates/big-audio-player/src/audio/ui/track_list.rs:91
 #: crates/big-video-player/src/video/ui/media_details_dialog.rs:105
-#: crates/media-runtime/src/media/metadata_cache/detailed_video_metadata.rs:160
-#: crates/media-runtime/src/media/metadata_cache/detailed_video_metadata.rs:174
 msgid "Title"
 msgstr "Τίτλος"
 
@@ -1271,33 +1344,29 @@ msgid "Searching…"
 msgstr "Αναζήτηση…"
 
 #: crates/big-audio-player/src/audio/ui/library_tag_editor/spec.rs:83
-#: crates/big-audio-player/src/audio/ui/track_list.rs:77
+#: crates/big-audio-player/src/audio/ui/track_list.rs:94
 #: crates/big-video-player/src/video/ui/media_details_dialog.rs:114
-#: crates/media-runtime/src/shared/sleep_timer.rs:21
+#: crates/media-runtime/src/shared/sleep_timer.rs:29
 #: crates/ui/media/big-media-components/src/media/file_metadata_dialog.rs:57
 msgid "Duration"
 msgstr "Διάρκεια"
 
 #: crates/big-audio-player/src/audio/ui/library_tag_editor/spec.rs:88
-#: crates/big-audio-player/src/audio/ui/track_list.rs:80
+#: crates/big-audio-player/src/audio/ui/track_list.rs:97
 #: crates/big-video-player/src/video/ui/media_details_dialog.rs:181
 #: crates/big-video-player/src/video/ui/media_details_dialog.rs:238
-#: crates/media-runtime/src/media/metadata_cache/detailed_video_metadata.rs:108
-#: crates/media-runtime/src/media/metadata_cache/detailed_video_metadata.rs:154
 #: crates/ui/media/big-media-components/src/media/file_metadata_dialog.rs:60
 msgid "Bitrate"
 msgstr "Ρυθμός bit"
 
 #: crates/big-audio-player/src/audio/ui/library_tag_editor/spec.rs:98
 #: crates/big-video-player/src/video/ui/media_details_dialog.rs:246
-#: crates/media-runtime/src/media/metadata_cache/detailed_video_metadata.rs:139
 #: crates/ui/media/big-media-components/src/media/file_metadata_dialog.rs:69
 msgid "Sample Rate"
 msgstr "Ρυθμός δειγματοληψίας"
 
 #: crates/big-audio-player/src/audio/ui/library_tag_editor/spec.rs:105
 #: crates/big-video-player/src/video/ui/media_details_dialog.rs:253
-#: crates/media-runtime/src/media/metadata_cache/detailed_video_metadata.rs:149
 #: crates/ui/media/big-media-components/src/media/file_metadata_dialog.rs:70
 msgid "Channels"
 msgstr "Κανάλια"
@@ -1317,14 +1386,14 @@ msgid "No new data found"
 msgstr "Δεν βρέθηκαν νέα δεδομένα"
 
 #: crates/big-audio-player/src/audio/ui/library_tree/view.rs:162
-#: crates/big-audio-player/src/audio/ui/playlist_library_dialog/spec.rs:179
+#: crates/big-audio-player/src/audio/ui/playlist_library_dialog/spec.rs:170
 #: crates/big-audio-player/src/audio/ui/playlist_panel.rs:103
 msgid "track"
 msgstr "κομμάτι"
 
 #: crates/big-audio-player/src/audio/ui/library_tree/view.rs:164
 #: crates/big-audio-player/src/audio/ui/playlist_interactions.rs:292
-#: crates/big-audio-player/src/audio/ui/playlist_library_dialog/spec.rs:181
+#: crates/big-audio-player/src/audio/ui/playlist_library_dialog/spec.rs:172
 #: crates/big-audio-player/src/audio/ui/playlist_panel.rs:105
 msgid "tracks"
 msgstr "κομμάτια"
@@ -1333,107 +1402,107 @@ msgstr "κομμάτια"
 msgid "Music library"
 msgstr "Μουσική βιβλιοθήκη"
 
-#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:49
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:34
 msgid "Drag and drop files to create a playlist"
 msgstr "Σύρετε και αποθέστε αρχεία για να δημιουργήσετε λίστα αναπαραγωγής"
 
-#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:53
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:38
 msgid "Use the Music tab on the left to browse your library"
 msgstr ""
 "Χρησιμοποιήστε την καρτέλα Μουσική στα αριστερά για να περιηγηθείτε στη "
 "βιβλιοθήκη σας"
 
-#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:57
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:42
 msgid "Explore Radio and Podcasts in the sidebar tabs"
 msgstr ""
 "Εξερευνήστε το Ραδιόφωνο και τα Podcast στις καρτέλες της πλευρικής στήλης"
 
-#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:78
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:63
 #: crates/big-audio-player/src/audio/ui/playlist_panel.rs:94
-#: crates/big-audio-player/src/audio/ui/playlist_panel.rs:401
+#: crates/big-audio-player/src/audio/ui/playlist_panel.rs:412
 #: crates/big-video-player/src/video/ui/appearance/layout/buttons_page.rs:42
 #: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/header.rs:24
-#: crates/big-video-player/src/video/ui/video_shell/component.rs:291
-#: crates/big-video-player/src/video/ui/video_shell/component.rs:295
+#: crates/big-video-player/src/video/ui/video_shell/component.rs:301
+#: crates/big-video-player/src/video/ui/video_shell/component.rs:305
 #: crates/big-video-player/src/video/ui/video_shell/playlist_panel.rs:24
 msgid "Playlist"
 msgstr "Λίστα αναπαραγωγής"
 
-#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:92
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:77
 msgid "Main Menu"
 msgstr "Κύριο μενού"
 
-#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:112
-#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:203
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:97
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:188
 msgid "Save Queue as Playlist"
 msgstr "Αποθήκευση ουράς ως λίστας αναπαραγωγής"
 
-#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:113
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:98
 msgid "Remove Duplicates"
 msgstr "Αφαίρεση διπλοτύπων"
 
-#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:114
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:99
 msgid "Clear Queue"
 msgstr "Εκκαθάριση ουράς"
 
-#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:120
-#: crates/big-audio-player/src/audio/ui/playlist_library_dialog/spec.rs:105
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:105
+#: crates/big-audio-player/src/audio/ui/playlist_library_dialog/spec.rs:96
 msgid "Manage Playlists"
 msgstr "Διαχείριση λιστών αναπαραγωγής"
 
-#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:130
-#: crates/big-video-player/src/video/ui/video_controls_bar/zones.rs:670
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:115
+#: crates/big-video-player/src/video/ui/video_controls_bar/zones.rs:683
 msgid "Convert…"
 msgstr "Μετατροπή…"
 
-#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:136
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:121
 #: crates/big-video-player/src/video/ui/appearance/layout/buttons_page.rs:112
-#: crates/big-video-player/src/video/ui/video_controls_bar/zones.rs:628
+#: crates/big-video-player/src/video/ui/video_controls_bar/zones.rs:641
 #: crates/big-video-player/src/video/ui/video_shell/panel.rs:46
 #: crates/media-runtime/src/shared/tv_cast.rs:846
 msgid "Play on a TV"
 msgstr "Αναπαραγωγή σε τηλεόραση"
 
-#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:137
-#: crates/ui/media/big-player-ui/src/smartphone/dialog.rs:29
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:122
+#: crates/ui/media/big-player-ui/src/smartphone/dialog.rs:30
 msgid "Smartphone"
 msgstr "Smartphone"
 
-#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:143
-#: crates/big-video-player/src/video/ui/video_shell/panel.rs:576
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:128
+#: crates/big-video-player/src/video/ui/video_shell/panel.rs:577
 #: crates/ui/media/big-player-ui/src/appearance/window.rs:76
 msgid "Appearance"
 msgstr "Εμφάνιση"
 
-#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:145
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:130
 #: crates/big-audio-player/src/audio/ui/shortcuts_dialog.rs:27
 #: crates/big-video-player/src/video/ui/keyboard_shortcuts_dialog.rs:30
 msgid "Keyboard Shortcuts"
 msgstr "Συντομεύσεις πληκτρολογίου"
 
-#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:146
-#: crates/big-video-player/src/video/ui/video_shell/panel.rs:584
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:131
+#: crates/big-video-player/src/video/ui/video_shell/panel.rs:585
 msgid "About"
 msgstr "Πληροφορίες"
 
-#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:209
-#: crates/big-audio-player/src/audio/ui/playlist_library_dialog/spec.rs:194
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:189
+#: crates/big-audio-player/src/audio/ui/playlist_library_dialog/spec.rs:184
 msgid "Name for the new playlist"
 msgstr "Όνομα της νέας λίστας αναπαραγωγής"
 
-#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:284
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:225
 msgid "Drop tracks here"
 msgstr "Αποθέστε κομμάτια εδώ"
 
-#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:285
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:226
 msgid "or use ＋ to add from the library"
 msgstr "ή χρησιμοποιήστε το ＋ για προσθήκη από τη βιβλιοθήκη"
 
-#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:311
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:252
 msgid "Welcome to Big Audio Player"
 msgstr "Καλώς ήρθατε στο Big Audio Player"
 
-#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:319
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:260
 msgid ""
 "Add a folder with your music files to get started.\n"
 "Supported formats: MP3, FLAC, OGG, M4A, OPUS, WAV and more."
@@ -1441,23 +1510,23 @@ msgstr ""
 "Προσθέστε έναν φάκελο με τα αρχεία μουσικής σας για να ξεκινήσετε.\n"
 "Υποστηριζόμενες μορφές: MP3, FLAC, OGG, M4A, OPUS, WAV και άλλες."
 
-#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:332
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:273
 msgid "Open Files"
 msgstr "Άνοιγμα αρχείων"
 
-#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:333
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:274
 msgid "Open files"
 msgstr "Άνοιγμα αρχείων"
 
-#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:343
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:284
 msgid "Open Audio Files"
 msgstr "Άνοιγμα αρχείων ήχου"
 
-#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:345
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:286
 msgid "Audio Files"
 msgstr "Αρχεία ήχου"
 
-#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:369
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:310
 msgid "Quick tips"
 msgstr "Γρήγορες συμβουλές"
 
@@ -1513,93 +1582,98 @@ msgid "Import / Export"
 msgstr "Εισαγωγή / Εξαγωγή"
 
 #: crates/big-audio-player/src/audio/ui/playlist_library_dialog.rs:259
-#: crates/big-audio-player/src/audio/ui/playlist_library_dialog/spec.rs:192
+#: crates/big-audio-player/src/audio/ui/playlist_library_dialog/spec.rs:183
 msgid "Save Current Queue"
 msgstr "Αποθήκευση τρέχουσας ουράς"
 
-#: crates/big-audio-player/src/audio/ui/playlist_library_dialog.rs:280
+#: crates/big-audio-player/src/audio/ui/playlist_library_dialog.rs:287
 msgid "Generate"
 msgstr "Δημιουργία"
 
-#: crates/big-audio-player/src/audio/ui/playlist_library_dialog.rs:281
+#: crates/big-audio-player/src/audio/ui/playlist_library_dialog.rs:288
 msgid "Build a playlist from your listening stats"
 msgstr "Δημιουργία λίστας αναπαραγωγής από τα στατιστικά ακρόασής σας"
 
-#: crates/big-audio-player/src/audio/ui/playlist_library_dialog/spec.rs:88
+#: crates/big-audio-player/src/audio/ui/playlist_library_dialog/spec.rs:79
 msgid "Most Played"
 msgstr "Πιο συχνά αναπαραγόμενα"
 
-#: crates/big-audio-player/src/audio/ui/playlist_library_dialog/spec.rs:93
+#: crates/big-audio-player/src/audio/ui/playlist_library_dialog/spec.rs:84
 msgid "Recently Added"
 msgstr "Προστέθηκαν πρόσφατα"
 
-#: crates/big-audio-player/src/audio/ui/playlist_library_dialog/spec.rs:98
+#: crates/big-audio-player/src/audio/ui/playlist_library_dialog/spec.rs:89
 msgid "Never Played"
 msgstr "Δεν έχουν αναπαραχθεί ποτέ"
 
+#: crates/big-audio-player/src/audio/ui/playlist_library_dialog/spec.rs:97
 #: crates/big-audio-player/src/audio/ui/playlist_library_dialog/spec.rs:106
-#: crates/big-audio-player/src/audio/ui/playlist_library_dialog/spec.rs:115
 msgid "Your Playlists"
 msgstr "Οι λίστες αναπαραγωγής σας"
 
-#: crates/big-audio-player/src/audio/ui/playlist_library_dialog/spec.rs:129
+#: crates/big-audio-player/src/audio/ui/playlist_library_dialog/spec.rs:120
 msgid "No Saved Playlists"
 msgstr "Καμία αποθηκευμένη λίστα αναπαραγωγής"
 
-#: crates/big-audio-player/src/audio/ui/playlist_library_dialog/spec.rs:131
+#: crates/big-audio-player/src/audio/ui/playlist_library_dialog/spec.rs:122
 msgid "Save the current queue, generate one from your stats, or import a file"
 msgstr ""
 "Αποθηκεύστε την τρέχουσα ουρά, δημιουργήστε μία από τα στατιστικά σας ή "
 "εισαγάγετε ένα αρχείο"
 
-#: crates/big-audio-player/src/audio/ui/playlist_library_dialog/spec.rs:140
+#: crates/big-audio-player/src/audio/ui/playlist_library_dialog/spec.rs:131
 msgid "Import File…"
 msgstr "Εισαγωγή αρχείου…"
 
-#: crates/big-audio-player/src/audio/ui/playlist_library_dialog/spec.rs:145
+#: crates/big-audio-player/src/audio/ui/playlist_library_dialog/spec.rs:136
 msgid "Import Folder…"
 msgstr "Εισαγωγή φακέλου…"
 
-#: crates/big-audio-player/src/audio/ui/playlist_library_dialog/spec.rs:150
+#: crates/big-audio-player/src/audio/ui/playlist_library_dialog/spec.rs:141
 msgid "Export All…"
 msgstr "Εξαγωγή όλων…"
 
-#: crates/big-audio-player/src/audio/ui/playlist_library_dialog/spec.rs:170
+#: crates/big-audio-player/src/audio/ui/playlist_library_dialog/spec.rs:161
 msgid "Load"
 msgstr "Φόρτωση"
 
-#: crates/big-audio-player/src/audio/ui/playlist_library_dialog/spec.rs:171
+#: crates/big-audio-player/src/audio/ui/playlist_library_dialog/spec.rs:162
 msgid "Rename playlist"
 msgstr "Μετονομασία λίστας αναπαραγωγής"
 
-#: crates/big-audio-player/src/audio/ui/playlist_library_dialog/spec.rs:172
+#: crates/big-audio-player/src/audio/ui/playlist_library_dialog/spec.rs:163
 msgid "Export playlist"
 msgstr "Εξαγωγή λίστας αναπαραγωγής"
 
-#: crates/big-audio-player/src/audio/ui/playlist_library_dialog/spec.rs:173
+#: crates/big-audio-player/src/audio/ui/playlist_library_dialog/spec.rs:164
 msgid "Delete playlist"
 msgstr "Διαγραφή λίστας αναπαραγωγής"
 
-#: crates/big-audio-player/src/audio/ui/playlist_library_dialog/spec.rs:186
+#: crates/big-audio-player/src/audio/ui/playlist_library_dialog/spec.rs:177
 msgid "min"
 msgstr "λεπτά"
 
-#: crates/big-audio-player/src/audio/ui/playlist_library_dialog/spec.rs:203
+#: crates/big-audio-player/src/audio/ui/playlist_library_dialog/spec.rs:195
 msgid "Rename Playlist"
 msgstr "Μετονομασία λίστας αναπαραγωγής"
 
-#: crates/big-audio-player/src/audio/ui/playlist_library_dialog/spec.rs:205
-#: crates/big-video-player/src/video/ui/video_browser_sidebar/fileops.rs:203
+#: crates/big-audio-player/src/audio/ui/playlist_library_dialog/spec.rs:196
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/fileops.rs:198
 msgid "New name"
 msgstr "Νέο όνομα"
 
-#: crates/big-audio-player/src/audio/ui/playlist_library_dialog/spec.rs:214
+#: crates/big-audio-player/src/audio/ui/playlist_library_dialog/spec.rs:207
 msgid "Delete Playlist?"
 msgstr "Διαγραφή λίστας αναπαραγωγής;"
 
-#: crates/big-audio-player/src/audio/ui/playlist_library_dialog/spec.rs:225
+#: crates/big-audio-player/src/audio/ui/playlist_library_dialog/spec.rs:218
 msgid "This will permanently delete"
 msgstr "Αυτό θα διαγράψει οριστικά"
+
+#: crates/big-audio-player/src/audio/ui/playlist_panel.rs:300
+#: crates/ui/media/big-player-ui/src/podcast_panel.rs:481
+msgid "Loading…"
+msgstr "Φόρτωση…"
 
 #: crates/big-audio-player/src/audio/ui/scan_progress.rs:10
 msgid "Scanning the library"
@@ -1626,7 +1700,7 @@ msgstr ""
 msgid "Cancel scan"
 msgstr "Ακύρωση σάρωσης"
 
-#: crates/big-audio-player/src/audio/ui/track_list.rs:433
+#: crates/big-audio-player/src/audio/ui/track_list.rs:451
 msgid "Playing"
 msgstr "Αναπαράγεται"
 
@@ -1738,9 +1812,13 @@ msgstr ""
 "Απομακρυσμένη ή μη υποστηριζόμενη τοποθεσία — δεν είναι επιλέξιμη για "
 "αφαίρεση εδώ"
 
-#: crates/big-video-player/src/lib.rs:26
+#: crates/big-video-player/src/lib.rs:29
 msgid "Big Video Player"
 msgstr "Big Video Player"
+
+#: crates/big-video-player/src/video/app.rs:123
+msgid "Open a separate player window instead of using the running one"
+msgstr ""
 
 #: crates/big-video-player/src/video/keybindings.rs:50
 msgid "Increase speed"
@@ -1755,12 +1833,12 @@ msgid "Reset speed to 1×"
 msgstr "Επαναφορά ταχύτητας στο 1×"
 
 #: crates/big-video-player/src/video/keybindings.rs:71
-#: crates/big-video-player/src/video/keybindings.rs:259
+#: crates/big-video-player/src/video/keybindings.rs:260
 msgid "Next chapter"
 msgstr "Επόμενο κεφάλαιο"
 
 #: crates/big-video-player/src/video/keybindings.rs:78
-#: crates/big-video-player/src/video/keybindings.rs:266
+#: crates/big-video-player/src/video/keybindings.rs:267
 msgid "Previous chapter"
 msgstr "Προηγούμενο κεφάλαιο"
 
@@ -1840,7 +1918,7 @@ msgstr "Αύξηση έντασης"
 #: crates/big-video-player/src/video/keybindings.rs:200
 #: crates/big-video-player/src/video/ui/media_details_dialog.rs:233
 #: crates/big-video-player/src/video/ui/media_details_dialog.rs:315
-#: crates/ui/media/big-player-ui/src/audio_preferences.rs:82
+#: crates/ui/media/big-player-ui/src/audio_preferences.rs:83
 msgid "Audio"
 msgstr "Ήχος"
 
@@ -1866,7 +1944,7 @@ msgstr "Εναλλαγή δευτερευόντων υποτίτλων"
 #: crates/big-video-player/src/video/keybindings.rs:229
 #: crates/big-video-player/src/video/ui/appearance/layout/buttons_page.rs:98
 #: crates/big-video-player/src/video/ui/preferences/subtitles.rs:19
-#: crates/big-video-player/src/video/ui/video_controls_bar/zones.rs:612
+#: crates/big-video-player/src/video/ui/video_controls_bar/zones.rs:625
 msgid "Subtitles"
 msgstr "Υπότιτλοι"
 
@@ -1888,7 +1966,7 @@ msgid "Screenshot"
 msgstr "Στιγμιότυπο οθόνης"
 
 #: crates/big-video-player/src/video/keybindings.rs:237
-#: crates/big-video-player/src/video/ui/preferences/general.rs:154
+#: crates/big-video-player/src/video/ui/preferences/general.rs:155
 msgid "Screenshots"
 msgstr "Στιγμιότυπα οθόνης"
 
@@ -1900,57 +1978,57 @@ msgstr "Εναλλαγή τυχαίας σειράς"
 msgid "Cycle repeat mode"
 msgstr "Περιστροφή λειτουργίας επανάληψης"
 
-#: crates/big-video-player/src/video/keybindings.rs:274
+#: crates/big-video-player/src/video/keybindings.rs:275
 msgid "Open file"
 msgstr "Άνοιγμα αρχείου"
 
-#: crates/big-video-player/src/video/keybindings.rs:275
-#: crates/big-video-player/src/video/keybindings.rs:282
-#: crates/big-video-player/src/video/keybindings.rs:289
-#: crates/big-video-player/src/video/keybindings.rs:296
-#: crates/big-video-player/src/video/keybindings.rs:303
-#: crates/big-video-player/src/video/keybindings.rs:311
-#: crates/big-video-player/src/video/keybindings.rs:318
-#: crates/big-video-player/src/video/keybindings.rs:325
-#: crates/big-video-player/src/video/ui/preferences/advanced.rs:222
+#: crates/big-video-player/src/video/keybindings.rs:276
+#: crates/big-video-player/src/video/keybindings.rs:283
+#: crates/big-video-player/src/video/keybindings.rs:290
+#: crates/big-video-player/src/video/keybindings.rs:297
+#: crates/big-video-player/src/video/keybindings.rs:304
+#: crates/big-video-player/src/video/keybindings.rs:312
+#: crates/big-video-player/src/video/keybindings.rs:319
+#: crates/big-video-player/src/video/keybindings.rs:326
+#: crates/big-video-player/src/video/ui/preferences/advanced.rs:220
 msgid "Other"
 msgstr "Άλλα"
 
-#: crates/big-video-player/src/video/keybindings.rs:281
+#: crates/big-video-player/src/video/keybindings.rs:282
 #: crates/big-video-player/src/video/ui/video_shell/actions.rs:138
 #: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:154
 msgid "Open URL"
 msgstr "Άνοιγμα URL"
 
-#: crates/big-video-player/src/video/keybindings.rs:288
+#: crates/big-video-player/src/video/keybindings.rs:289
 msgid "Paste and play"
 msgstr "Επικόλληση και αναπαραγωγή"
 
-#: crates/big-video-player/src/video/keybindings.rs:295
-#: crates/big-video-player/src/video/ui/video_controls_bar.rs:258
-#: crates/big-video-player/src/video/ui/video_controls_bar.rs:259
+#: crates/big-video-player/src/video/keybindings.rs:296
+#: crates/big-video-player/src/video/ui/video_controls_bar.rs:261
+#: crates/big-video-player/src/video/ui/video_controls_bar.rs:262
 msgid "Go to time"
 msgstr "Μετάβαση σε χρόνο"
 
-#: crates/big-video-player/src/video/keybindings.rs:302
+#: crates/big-video-player/src/video/keybindings.rs:303
 msgid "Cycle edition"
 msgstr "Περιστροφή έκδοσης"
 
-#: crates/big-video-player/src/video/keybindings.rs:310
+#: crates/big-video-player/src/video/keybindings.rs:311
 msgid "Toggle files sidebar"
 msgstr "Εναλλαγή πλευρικής στήλης αρχείων"
 
-#: crates/big-video-player/src/video/keybindings.rs:317
+#: crates/big-video-player/src/video/keybindings.rs:318
 msgid "Toggle playlist sidebar"
 msgstr "Εναλλαγή πλευρικής στήλης λίστας αναπαραγωγής"
 
-#: crates/big-video-player/src/video/keybindings.rs:324
+#: crates/big-video-player/src/video/keybindings.rs:325
 msgid "Media information"
 msgstr "Πληροφορίες πολυμέσων"
 
 #: crates/big-video-player/src/video/ui/appearance/layout/buttons_page.rs:28
-#: crates/big-video-player/src/video/ui/video_shell/component.rs:260
-#: crates/big-video-player/src/video/ui/video_shell/component.rs:264
+#: crates/big-video-player/src/video/ui/video_shell/component.rs:270
+#: crates/big-video-player/src/video/ui/video_shell/component.rs:274
 msgid "Keep Above"
 msgstr "Διατήρηση από πάνω"
 
@@ -1963,171 +2041,185 @@ msgid "Play/Pause"
 msgstr "Αναπαραγωγή/Παύση"
 
 #: crates/big-video-player/src/video/ui/appearance/layout/buttons_page.rs:105
-#: crates/big-video-player/src/video/ui/video_controls_bar/zones.rs:620
+#: crates/big-video-player/src/video/ui/video_controls_bar/zones.rs:633
 msgid "Audio Track"
 msgstr "Κομμάτι ήχου"
 
 #: crates/big-video-player/src/video/ui/appearance/layout/buttons_page.rs:119
-#: crates/big-video-player/src/video/ui/video_controls_bar/zones.rs:631
+#: crates/big-video-player/src/video/ui/video_controls_bar/zones.rs:644
 #: crates/big-video-player/src/video/ui/video_shell/input_gestures.rs:106
 msgid "Fullscreen"
 msgstr "Πλήρης οθόνη"
 
-#: crates/big-video-player/src/video/ui/appearance/layout/buttons_page.rs:146
+#: crates/big-video-player/src/video/ui/appearance/layout/buttons_page.rs:145
+msgid "Top bar"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/appearance/layout/buttons_page.rs:147
 msgid "Video Title"
 msgstr "Τίτλος βίντεο"
 
-#: crates/big-video-player/src/video/ui/appearance/layout/buttons_page.rs:188
-#: crates/big-video-player/src/video/ui/appearance/layout/layout_page.rs:97
+#: crates/big-video-player/src/video/ui/appearance/layout/buttons_page.rs:151
+#, fuzzy
+#| msgid "Bottom Margin"
+msgid "Bottom bar"
+msgstr "Κάτω περιθώριο"
+
+#: crates/big-video-player/src/video/ui/appearance/layout/buttons_page.rs:190
+#: crates/big-video-player/src/video/ui/appearance/layout/layout_page.rs:98
 msgid "Buttons"
 msgstr "Κουμπιά"
 
-#: crates/big-video-player/src/video/ui/appearance/layout/buttons_page.rs:192
+#: crates/big-video-player/src/video/ui/appearance/layout/buttons_page.rs:194
 msgid "Button Layout"
 msgstr "Διάταξη κουμπιών"
 
-#: crates/big-video-player/src/video/ui/appearance/layout/buttons_page.rs:194
-msgid "Drag buttons between zones • Click to toggle visibility"
+#: crates/big-video-player/src/video/ui/appearance/layout/buttons_page.rs:196
+#, fuzzy
+#| msgid "Drag buttons between zones • Click to toggle visibility"
+msgid ""
+"Drag buttons between zones or move them with Alt+Left and Alt+Right • Click "
+"to toggle visibility"
 msgstr "Σύρετε κουμπιά ανάμεσα στις ζώνες • Κάντε κλικ για εναλλαγή ορατότητας"
 
-#: crates/big-video-player/src/video/ui/appearance/layout/layout_page.rs:18
+#: crates/big-video-player/src/video/ui/appearance/layout/layout_page.rs:19
 msgid "Layout"
 msgstr "Διάταξη"
 
-#: crates/big-video-player/src/video/ui/appearance/layout/layout_page.rs:33
+#: crates/big-video-player/src/video/ui/appearance/layout/layout_page.rs:34
 msgid "Controls Bar"
 msgstr "Γραμμή ελέγχου"
 
-#: crates/big-video-player/src/video/ui/appearance/layout/layout_page.rs:37
+#: crates/big-video-player/src/video/ui/appearance/layout/layout_page.rs:38
 msgid "Corner Radius"
 msgstr "Ακτίνα γωνιών"
 
-#: crates/big-video-player/src/video/ui/appearance/layout/layout_page.rs:43
+#: crates/big-video-player/src/video/ui/appearance/layout/layout_page.rs:44
 msgid "Bottom Margin"
 msgstr "Κάτω περιθώριο"
 
-#: crates/big-video-player/src/video/ui/appearance/layout/layout_page.rs:49
+#: crates/big-video-player/src/video/ui/appearance/layout/layout_page.rs:50
 msgid "Side Margin"
 msgstr "Πλευρικό περιθώριο"
 
-#: crates/big-video-player/src/video/ui/appearance/layout/layout_page.rs:55
+#: crates/big-video-player/src/video/ui/appearance/layout/layout_page.rs:56
 msgid "Padding Top"
 msgstr "Εσωτερικό περιθώριο πάνω"
 
-#: crates/big-video-player/src/video/ui/appearance/layout/layout_page.rs:61
+#: crates/big-video-player/src/video/ui/appearance/layout/layout_page.rs:62
 msgid "Padding Bottom"
 msgstr "Εσωτερικό περιθώριο κάτω"
 
-#: crates/big-video-player/src/video/ui/appearance/layout/layout_page.rs:67
+#: crates/big-video-player/src/video/ui/appearance/layout/layout_page.rs:68
 msgid "Padding Left"
 msgstr "Εσωτερικό περιθώριο αριστερά"
 
-#: crates/big-video-player/src/video/ui/appearance/layout/layout_page.rs:73
+#: crates/big-video-player/src/video/ui/appearance/layout/layout_page.rs:74
 msgid "Padding Right"
 msgstr "Εσωτερικό περιθώριο δεξιά"
 
-#: crates/big-video-player/src/video/ui/appearance/layout/layout_page.rs:100
+#: crates/big-video-player/src/video/ui/appearance/layout/layout_page.rs:101
 msgid "Custom Button Size"
 msgstr "Προσαρμοσμένο μέγεθος κουμπιών"
 
-#: crates/big-video-player/src/video/ui/appearance/layout/layout_page.rs:106
+#: crates/big-video-player/src/video/ui/appearance/layout/layout_page.rs:107
 msgid "Button Size"
 msgstr "Μέγεθος κουμπιών"
 
-#: crates/big-video-player/src/video/ui/appearance/layout/layout_page.rs:121
+#: crates/big-video-player/src/video/ui/appearance/layout/layout_page.rs:122
 msgid "Button Border Radius"
 msgstr "Ακτίνα περιγράμματος κουμπιών"
 
-#: crates/big-video-player/src/video/ui/appearance/layout/layout_page.rs:172
+#: crates/big-video-player/src/video/ui/appearance/layout/layout_page.rs:173
 msgid "Window"
 msgstr "Παράθυρο"
 
-#: crates/big-video-player/src/video/ui/appearance/layout/layout_page.rs:175
+#: crates/big-video-player/src/video/ui/appearance/layout/layout_page.rs:176
 msgid "Custom Window Corner Radius"
 msgstr "Προσαρμοσμένη ακτίνα γωνιών παραθύρου"
 
-#: crates/big-video-player/src/video/ui/appearance/layout/layout_page.rs:181
+#: crates/big-video-player/src/video/ui/appearance/layout/layout_page.rs:182
 msgid "Window Corner Radius"
 msgstr "Ακτίνα γωνιών παραθύρου"
 
-#: crates/big-video-player/src/video/ui/appearance/layout/layout_page.rs:218
+#: crates/big-video-player/src/video/ui/appearance/layout/layout_page.rs:219
 msgid "Window Buttons Follow Custom Size"
 msgstr "Τα κουμπιά παραθύρου ακολουθούν το προσαρμοσμένο μέγεθος"
 
-#: crates/big-video-player/src/video/ui/appearance/layout/layout_page.rs:219
+#: crates/big-video-player/src/video/ui/appearance/layout/layout_page.rs:220
 msgid "Also resize the minimize, maximize and close buttons"
 msgstr ""
 "Αλλάζει επίσης το μέγεθος των κουμπιών ελαχιστοποίησης, μεγιστοποίησης και "
 "κλεισίματος"
 
-#: crates/big-video-player/src/video/ui/filters/groups_shader.rs:28
+#: crates/big-video-player/src/video/ui/filters/groups_shader.rs:29
 msgid "GPU Processing"
 msgstr "Επεξεργασία GPU"
 
-#: crates/big-video-player/src/video/ui/filters/groups_shader.rs:34
+#: crates/big-video-player/src/video/ui/filters/groups_shader.rs:35
 msgid "Deband"
 msgstr "Deband"
 
-#: crates/big-video-player/src/video/ui/filters/groups_shader.rs:35
+#: crates/big-video-player/src/video/ui/filters/groups_shader.rs:36
 msgid "Remove color banding artifacts"
 msgstr "Αφαίρεση ανωμαλιών χρωματικής διαβάθμισης (banding)"
 
-#: crates/big-video-player/src/video/ui/filters/groups_shader.rs:41
+#: crates/big-video-player/src/video/ui/filters/groups_shader.rs:42
 msgid "Sigmoid Upscaling"
 msgstr "Sigmoid μεγέθυνση"
 
-#: crates/big-video-player/src/video/ui/filters/groups_shader.rs:42
+#: crates/big-video-player/src/video/ui/filters/groups_shader.rs:43
 msgid "Reduces ringing when scaling video up"
 msgstr "Μειώνει το ringing κατά τη μεγέθυνση του βίντεο"
 
-#: crates/big-video-player/src/video/ui/filters/groups_shader.rs:48
+#: crates/big-video-player/src/video/ui/filters/groups_shader.rs:49
 msgid "Correct Downscaling"
 msgstr "Σωστή σμίκρυνση"
 
-#: crates/big-video-player/src/video/ui/filters/groups_shader.rs:49
+#: crates/big-video-player/src/video/ui/filters/groups_shader.rs:50
 msgid "Higher quality when scaling video down"
 msgstr "Υψηλότερη ποιότητα κατά τη σμίκρυνση του βίντεο"
 
-#: crates/big-video-player/src/video/ui/filters/groups_shader.rs:60
+#: crates/big-video-player/src/video/ui/filters/groups_shader.rs:61
 msgid "Sharpen"
 msgstr "Όξυνση"
 
-#: crates/big-video-player/src/video/ui/filters/groups_shader.rs:61
+#: crates/big-video-player/src/video/ui/filters/groups_shader.rs:62
 msgid "GPU sharpening (unsharp mask)"
 msgstr "Όξυνση GPU (unsharp mask)"
 
-#: crates/big-video-player/src/video/ui/filters/groups_shader.rs:76
+#: crates/big-video-player/src/video/ui/filters/groups_shader.rs:77
 msgid "Amount"
 msgstr "Ποσότητα"
 
-#: crates/big-video-player/src/video/ui/filters/groups_shader.rs:137
+#: crates/big-video-player/src/video/ui/filters/groups_shader.rs:138
 msgid "GPU Upscaling Shaders"
 msgstr "Shaders μεγέθυνσης GPU"
 
-#: crates/big-video-player/src/video/ui/filters/groups_shader.rs:151
+#: crates/big-video-player/src/video/ui/filters/groups_shader.rs:152
 msgid "Upscaling Shader"
 msgstr "Shader μεγέθυνσης"
 
-#: crates/big-video-player/src/video/ui/filters/groups_shader.rs:154
+#: crates/big-video-player/src/video/ui/filters/groups_shader.rs:155
 msgid "FidelityFX Super Resolution (FSR)"
 msgstr "FidelityFX Super Resolution (FSR)"
 
-#: crates/big-video-player/src/video/ui/filters/groups_shader.rs:155
+#: crates/big-video-player/src/video/ui/filters/groups_shader.rs:156
 msgid "CAS Upscaling"
 msgstr "Μεγέθυνση CAS"
 
-#: crates/big-video-player/src/video/ui/filters/groups_shader.rs:159
+#: crates/big-video-player/src/video/ui/filters/groups_shader.rs:160
 msgid ""
 "Enhances image quality when the video resolution is lower than your display"
 msgstr ""
 "Βελτιώνει την ποιότητα εικόνας όταν η ανάλυση του βίντεο είναι χαμηλότερη "
 "από της οθόνης σας"
 
-#: crates/big-video-player/src/video/ui/filters/groups_shader.rs:180
+#: crates/big-video-player/src/video/ui/filters/groups_shader.rs:181
 msgid "Sharpening Intensity"
 msgstr "Ένταση όξυνσης"
 
-#: crates/big-video-player/src/video/ui/filters/groups_shader.rs:182
+#: crates/big-video-player/src/video/ui/filters/groups_shader.rs:183
 msgid "Higher values produce a more visible sharpening effect"
 msgstr "Οι υψηλότερες τιμές δίνουν πιο ορατό εφέ όξυνσης"
 
@@ -2207,240 +2299,248 @@ msgid "Install the big-media-runtime package to get Anime4K shaders"
 msgstr ""
 "Εγκαταστήστε το πακέτο big-media-runtime για να αποκτήσετε τα shaders Anime4K"
 
-#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:25
+#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:29
 msgid "Denoise and Sharpen"
 msgstr "Μείωση θορύβου και όξυνση"
 
-#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:32
+#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:37
 msgid "Denoise (hqdn3d)"
 msgstr "Μείωση θορύβου (hqdn3d)"
 
-#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:33
+#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:38
 msgid "Reduces visual noise and grain from old or low-light footage"
 msgstr ""
 "Μειώνει τον οπτικό θόρυβο και τον κόκκο σε παλιό υλικό ή υλικό με χαμηλό "
 "φωτισμό"
 
-#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:34
-#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:49
+#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:39
+#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:55
 msgid "Strength"
 msgstr "Ένταση"
 
-#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:47
+#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:53
 msgid "Sharpen (CAS)"
 msgstr "Όξυνση (CAS)"
 
-#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:48
+#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:54
 msgid "Software contrast-adaptive sharpening — works at any resolution"
 msgstr ""
 "Λογισμική όξυνση προσαρμοζόμενης αντίθεσης — λειτουργεί σε οποιαδήποτε "
 "ανάλυση"
 
-#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:62
+#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:68
 #: crates/big-video-player/src/video/ui/preferences/subtitles.rs:77
 msgid "Color"
 msgstr "Χρώμα"
 
-#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:69
+#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:76
 msgid "Color Temperature"
 msgstr "Θερμοκρασία χρώματος"
 
-#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:70
+#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:77
 msgid "Warm or cool tone (Kelvin)"
 msgstr "Θερμός ή ψυχρός τόνος (Kelvin)"
 
-#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:71
+#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:78
 msgid "Temperature"
 msgstr "Θερμοκρασία"
 
-#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:84
+#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:92
 msgid "Vibrance"
 msgstr "Ζωντάνια"
 
-#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:85
+#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:93
 msgid "Boost color saturation intelligently"
 msgstr "Έξυπνη ενίσχυση του κορεσμού χρωμάτων"
 
-#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:86
+#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:94
 msgid "Intensity"
 msgstr "Ένταση"
 
-#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:103
+#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:112
 msgid "Colorize"
 msgstr "Χρωματισμός"
 
-#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:104
+#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:113
 msgid "Apply a color tint overlay"
 msgstr "Εφαρμόζει επικάλυψη χρωματικής απόχρωσης"
 
-#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:114
+#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:130
 #: crates/big-video-player/src/video/ui/media_adjust.rs:633
 msgid "Hue"
 msgstr "Απόχρωση"
 
-#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:121
+#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:137
 #: crates/big-video-player/src/video/ui/media_adjust.rs:623
-#: crates/big-video-player/src/video/ui/preferences/advanced.rs:138
+#: crates/big-video-player/src/video/ui/preferences/advanced.rs:137
 msgid "Saturation"
 msgstr "Κορεσμός"
 
-#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:128
+#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:144
 msgid "Mix"
 msgstr "Μίξη"
 
-#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:185
+#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:201
 msgid "Monochrome"
 msgstr "Μονόχρωμο"
 
-#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:186
+#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:202
 msgid "Cinematic black and white"
 msgstr "Κινηματογραφικό ασπρόμαυρο"
 
-#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:206
+#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:222
 msgid "Style Presets"
 msgstr "Προεπιλογές στυλ"
 
-#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:209
+#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:226
 msgid "Color Curves"
 msgstr "Καμπύλες χρώματος"
 
-#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:210
+#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:227
 msgid "Predefined color grading looks"
 msgstr "Προκαθορισμένες εμφανίσεις χρωματικής διαβάθμισης"
 
-#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:225
+#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:243
 msgid "Preset"
 msgstr "Προεπιλογή"
 
-#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:227
+#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:245
 msgid "Vintage"
 msgstr "Vintage"
 
-#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:228
+#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:246
 msgid "Cross Process"
 msgstr "Cross Process"
 
-#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:229
+#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:247
 msgid "Darker"
 msgstr "Πιο σκοτεινό"
 
-#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:230
+#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:248
 msgid "Lighter"
 msgstr "Πιο φωτεινό"
 
-#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:231
+#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:249
 msgid "More Contrast"
 msgstr "Περισσότερη αντίθεση"
 
-#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:232
+#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:250
 msgid "Strong Contrast"
 msgstr "Έντονη αντίθεση"
 
-#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:233
+#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:251
 msgid "Color Negative"
 msgstr "Αρνητικό χρώματος"
 
-#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:288
+#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:314
 msgid "Vignette"
 msgstr "Βινιέτα"
 
-#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:289
+#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:315
 msgid "Darken edges of the image"
 msgstr "Σκουραίνει τις άκρες της εικόνας"
 
-#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:315
+#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:342
 msgid "Pixelize"
 msgstr "Κατακερματισμός pixel"
 
-#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:316
+#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:343
 msgid "Mosaic / pixel art effect"
 msgstr "Εφέ μωσαϊκού / pixel art"
 
-#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:317
+#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:344
 msgid "Block Size"
 msgstr "Μέγεθος μπλοκ"
 
-#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:329
+#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:357
 msgid "Gaussian Blur"
 msgstr "Θόλωμα Gauss"
 
-#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:330
+#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:358
 msgid "Smooth blur effect"
 msgstr "Εφέ απαλού θολώματος"
 
-#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:331
+#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:359
 msgid "Sigma"
 msgstr "Sigma"
 
-#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:343
+#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:372
 msgid "Motion Trail"
 msgstr "Ίχνος κίνησης"
 
-#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:344
+#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:373
 msgid "Slowly fading visual trail effect"
 msgstr "Εφέ οπτικού ίχνους που σβήνει σταδιακά"
 
-#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:345
+#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:374
 msgid "Decay"
 msgstr "Απόσβεση"
 
-#: crates/big-video-player/src/video/ui/iptv/channel_list.rs:78
+#: crates/big-video-player/src/video/ui/iptv/channel_list.rs:82
 msgid "Toggle favorite"
 msgstr "Εναλλαγή αγαπημένου"
 
-#: crates/big-video-player/src/video/ui/iptv/channel_list.rs:158
+#: crates/big-video-player/src/video/ui/iptv/channel_list.rs:161
 msgid "No channels"
 msgstr "Κανένα κανάλι"
 
-#: crates/big-video-player/src/video/ui/iptv/channel_list.rs:166
+#: crates/big-video-player/src/video/ui/iptv/channel_list.rs:169
 #, rust-format
 msgid "{} channel"
 msgid_plural "{} channels"
 msgstr[0] "{} κανάλι"
 msgstr[1] "{} κανάλια"
 
-#: crates/big-video-player/src/video/ui/iptv/channel_list.rs:213
+#: crates/big-video-player/src/video/ui/iptv/channel_list.rs:216
 #: crates/ui/media/big-player-ui/src/radio_panel/methods.rs:126
 msgid "Ungrouped"
 msgstr "Χωρίς ομάδα"
 
-#: crates/big-video-player/src/video/ui/iptv/mod.rs:119
-#: crates/big-video-player/src/video/ui/iptv/mod.rs:135
+#: crates/big-video-player/src/video/ui/iptv/mod.rs:122
+#: crates/big-video-player/src/video/ui/iptv/mod.rs:138
 msgid "Provider"
 msgstr "Πάροχος"
 
-#: crates/big-video-player/src/video/ui/iptv/mod.rs:143
+#: crates/big-video-player/src/video/ui/iptv/mod.rs:146
 msgid "Manage…"
 msgstr "Διαχείριση…"
 
-#: crates/big-video-player/src/video/ui/iptv/mod.rs:150
+#: crates/big-video-player/src/video/ui/iptv/mod.rs:153
 msgid "Reload from provider"
 msgstr "Επαναφόρτωση από τον πάροχο"
 
-#: crates/big-video-player/src/video/ui/iptv/mod.rs:156
-#: crates/big-video-player/src/video/ui/iptv/mod.rs:161
+#: crates/big-video-player/src/video/ui/iptv/mod.rs:159
+#: crates/big-video-player/src/video/ui/iptv/mod.rs:164
 msgid "Search channels"
 msgstr "Αναζήτηση καναλιών"
 
-#: crates/big-video-player/src/video/ui/iptv/mod.rs:206
-#: crates/big-video-player/src/video/ui/iptv/mod.rs:282
+#: crates/big-video-player/src/video/ui/iptv/mod.rs:212
+#: crates/big-video-player/src/video/ui/iptv/mod.rs:288
 msgid "No providers configured. Click “Manage…” to add one."
 msgstr ""
 "Δεν έχουν ρυθμιστεί πάροχοι. Κάντε κλικ στο «Διαχείριση…» για να προσθέσετε."
 
-#: crates/big-video-player/src/video/ui/iptv/mod.rs:236
+#: crates/big-video-player/src/video/ui/iptv/mod.rs:242
 msgid "Showing cached channels — updating…"
 msgstr "Εμφάνιση αποθηκευμένων καναλιών — ενημέρωση…"
 
-#: crates/big-video-player/src/video/ui/iptv/mod.rs:304
+#: crates/big-video-player/src/video/ui/iptv/mod.rs:310
 msgid "Reloading channels…"
 msgstr "Επαναφόρτωση καναλιών…"
 
-#: crates/big-video-player/src/video/ui/iptv/mod.rs:306
+#: crates/big-video-player/src/video/ui/iptv/mod.rs:312
 msgid "Loading channels…"
 msgstr "Φόρτωση καναλιών…"
 
-#: crates/big-video-player/src/video/ui/iptv/mod.rs:337
+#: crates/big-video-player/src/video/ui/iptv/mod.rs:333
+#, fuzzy, rust-format
+#| msgid "Showing the first {}. Type more to narrow the search."
+msgid "Showing the first {} channels; the list has more."
+msgstr ""
+"Εμφάνιση των πρώτων {}. Πληκτρολογήστε περισσότερα για να περιορίσετε την "
+"αναζήτηση."
+
+#: crates/big-video-player/src/video/ui/iptv/mod.rs:350
 msgid ""
 "Could not reach the provider. Check the address and your connection; a saved "
 "list stays on screen."
@@ -2448,7 +2548,7 @@ msgstr ""
 "Δεν ήταν δυνατή η σύνδεση με τον πάροχο. Ελέγξτε τη διεύθυνση και τη σύνδεσή "
 "σας· μια αποθηκευμένη λίστα παραμένει στην οθόνη."
 
-#: crates/big-video-player/src/video/ui/iptv/mod.rs:340
+#: crates/big-video-player/src/video/ui/iptv/mod.rs:353
 msgid ""
 "The provider refused access. Check the user name and password, or the User-"
 "Agent the provider asks for."
@@ -2456,36 +2556,36 @@ msgstr ""
 "Ο πάροχος απέρριψε την πρόσβαση. Ελέγξτε το όνομα χρήστη και τον κωδικό "
 "πρόσβασης ή το User-Agent που ζητά ο πάροχος."
 
-#: crates/big-video-player/src/video/ui/iptv/mod.rs:343
+#: crates/big-video-player/src/video/ui/iptv/mod.rs:356
 #, rust-format
 msgid "The provider's server failed (error {}). Try again later."
 msgstr ""
 "Ο διακομιστής του πάροχου απέτυχε (σφάλμα {}). Δοκιμάστε ξανά αργότερα."
 
-#: crates/big-video-player/src/video/ui/iptv/mod.rs:347
+#: crates/big-video-player/src/video/ui/iptv/mod.rs:360
 #, rust-format
 msgid "The provider answered with error {}."
 msgstr "Ο πάροχος απάντησε με σφάλμα {}."
 
-#: crates/big-video-player/src/video/ui/iptv/mod.rs:349
+#: crates/big-video-player/src/video/ui/iptv/mod.rs:362
 #, rust-format
 msgid "The channel list is larger than {} MB."
 msgstr "Η λίστα καναλιών είναι μεγαλύτερη από {} MB."
 
-#: crates/big-video-player/src/video/ui/iptv/mod.rs:353
+#: crates/big-video-player/src/video/ui/iptv/mod.rs:366
 msgid "The provider sent no channels."
 msgstr "Ο πάροχος δεν έστειλε κανάλια."
 
-#: crates/big-video-player/src/video/ui/iptv/mod.rs:354
+#: crates/big-video-player/src/video/ui/iptv/mod.rs:367
 msgid "The provider rejected the user name or password."
 msgstr "Ο πάροχος απέρριψε το όνομα χρήστη ή τον κωδικό πρόσβασης."
 
-#: crates/big-video-player/src/video/ui/iptv/mod.rs:356
+#: crates/big-video-player/src/video/ui/iptv/mod.rs:369
 #, rust-format
 msgid "This account is not active (the provider says: {})."
 msgstr "Αυτός ο λογαριασμός δεν είναι ενεργός (ο πάροχος αναφέρει: {})."
 
-#: crates/big-video-player/src/video/ui/iptv/mod.rs:358
+#: crates/big-video-player/src/video/ui/iptv/mod.rs:371
 msgid "Could not read the playlist file."
 msgstr "Δεν ήταν δυνατή η ανάγνωση του αρχείου λίστας αναπαραγωγής."
 
@@ -2510,7 +2610,7 @@ msgid "Edit"
 msgstr "Επεξεργασία"
 
 #: crates/big-video-player/src/video/ui/iptv/providers_dialog.rs:108
-#: crates/big-video-player/src/video/ui/video_browser_sidebar/library.rs:748
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/library.rs:749
 msgid "Remove"
 msgstr "Αφαίρεση"
 
@@ -2608,8 +2708,8 @@ msgstr "Διάφορες συντομεύσεις"
 #: crates/big-video-player/src/video/ui/preferences/advanced.rs:101
 #: crates/big-video-player/src/video/ui/preferences/video.rs:54
 #: crates/big-video-player/src/video/ui/preferences/video.rs:87
-#: crates/ui/media/big-player-ui/src/audio_preferences.rs:168
-#: crates/ui/media/big-player-ui/src/audio_preferences.rs:179
+#: crates/ui/media/big-player-ui/src/audio_preferences.rs:170
+#: crates/ui/media/big-player-ui/src/audio_preferences.rs:181
 msgid "Automatic"
 msgstr "Αυτόματα"
 
@@ -2626,14 +2726,14 @@ msgid "HDR (TV)"
 msgstr "HDR (τηλεόραση)"
 
 #: crates/big-video-player/src/video/ui/media_adjust.rs:119
-#: crates/big-video-player/src/video/ui/video_shell/adjustments.rs:175
+#: crates/big-video-player/src/video/ui/video_shell/adjustments.rs:142
 #: crates/big-video-player/src/video/ui/video_shell/panel.rs:431
 #: crates/media-runtime/src/shared/audio_effects.rs:186
 msgid "Normal"
 msgstr "Κανονικό"
 
 #: crates/big-video-player/src/video/ui/media_adjust.rs:183
-#: crates/big-video-player/src/video/ui/video_controls_bar/tracks.rs:80
+#: crates/big-video-player/src/video/ui/video_controls_bar/tracks.rs:81
 msgid "Subtitles early or late"
 msgstr "Υπότιτλοι νωρίτερα ή αργότερα"
 
@@ -2769,7 +2869,7 @@ msgid "Copy All"
 msgstr "Αντιγραφή όλων"
 
 #: crates/big-video-player/src/video/ui/media_details_dialog.rs:77
-#: crates/big-video-player/src/video/ui/preferences/general.rs:19
+#: crates/big-video-player/src/video/ui/preferences/general.rs:20
 msgid "General"
 msgstr "Γενικά"
 
@@ -2781,22 +2881,17 @@ msgstr "Κεφάλαια"
 
 #: crates/big-video-player/src/video/ui/media_details_dialog.rs:162
 #: crates/big-video-player/src/video/ui/media_details_dialog.rs:234
-#: crates/media-runtime/src/media/metadata_cache/detailed_video_metadata.rs:90
-#: crates/media-runtime/src/media/metadata_cache/detailed_video_metadata.rs:123
-#: crates/media-runtime/src/media/metadata_cache/detailed_video_metadata.rs:168
 #: crates/ui/media/big-media-components/src/media/file_metadata_dialog.rs:64
 msgid "Codec"
 msgstr "Κωδικοποιητής"
 
 #: crates/big-video-player/src/video/ui/media_details_dialog.rs:165
-#: crates/media-runtime/src/media/metadata_cache/detailed_video_metadata.rs:93
 #: crates/media-runtime/src/shared/tv_cast.rs:488
 #: crates/ui/media/big-media-components/src/media/file_metadata_dialog.rs:66
 msgid "Resolution"
 msgstr "Ανάλυση"
 
 #: crates/big-video-player/src/video/ui/media_details_dialog.rs:173
-#: crates/media-runtime/src/media/metadata_cache/detailed_video_metadata.rs:100
 #: crates/ui/media/big-media-components/src/media/file_metadata_dialog.rs:68
 msgid "Frame Rate"
 msgstr "Ρυθμός καρέ"
@@ -2810,7 +2905,6 @@ msgid "Hardware Decoder"
 msgstr "Αποκωδικοποιητής υλικού"
 
 #: crates/big-video-player/src/video/ui/media_details_dialog.rs:200
-#: crates/media-runtime/src/media/metadata_cache/detailed_video_metadata.rs:103
 #: crates/ui/media/big-media-components/src/media/file_metadata_dialog.rs:67
 msgid "Pixel Format"
 msgstr "Μορφή pixel"
@@ -2848,13 +2942,19 @@ msgid "Subtitle Tracks"
 msgstr "Κομμάτια υποτίτλων"
 
 #: crates/big-video-player/src/video/ui/media_details_dialog.rs:325
-#: crates/big-video-player/src/video/ui/video_controls_bar/tracks.rs:246
+#: crates/big-video-player/src/video/ui/video_controls_bar/tracks.rs:237
 msgid "external"
 msgstr "εξωτερικό"
 
 #: crates/big-video-player/src/video/ui/media_details_dialog.rs:338
 msgid "Subtitle"
 msgstr "Υπότιτλος"
+
+#: crates/big-video-player/src/video/ui/menu_dialogs.rs:23
+#, fuzzy, rust-format
+#| msgid "Recording was not saved"
+msgid "The screenshot was not saved: {error}"
+msgstr "Η εγγραφή δεν αποθηκεύτηκε"
 
 #: crates/big-video-player/src/video/ui/menu_dialogs.rs:54
 msgid "Go to Time"
@@ -2872,29 +2972,43 @@ msgstr "Χρόνος αναπαραγωγής"
 msgid "Go"
 msgstr "Μετάβαση"
 
-#: crates/big-video-player/src/video/ui/menu_dialogs.rs:130
-msgid "Screenshot queue is full; wait for pending captures"
+#: crates/big-video-player/src/video/ui/menu_dialogs.rs:124
+#: crates/big-video-player/src/video/ui/menu_dialogs.rs:177
+msgid "Still saving the previous screenshots. Try again in a moment."
 msgstr ""
-"Η ουρά στιγμιοτύπων οθόνης είναι πλήρης· περιμένετε τις εκκρεμείς λήψεις"
 
-#: crates/big-video-player/src/video/ui/menu_dialogs.rs:134
-#: crates/big-video-player/src/video/ui/menu_dialogs.rs:138
-#: crates/big-video-player/src/video/ui/menu_dialogs.rs:149
-#: crates/big-video-player/src/video/ui/video_shell/component.rs:738
-#: crates/big-video-player/src/video/ui/video_shell/playback.rs:163
-msgid "Screenshot failed"
-msgstr "Αποτυχία στιγμιότυπου οθόνης"
+#: crates/big-video-player/src/video/ui/menu_dialogs.rs:130
+#: crates/big-video-player/src/video/ui/menu_dialogs.rs:135
+#, fuzzy
+#| msgid "Stores the video color space in each screenshot"
+msgid "Open a video to take a screenshot"
+msgstr "Αποθηκεύει τον χρωματικό χώρο του βίντεο σε κάθε στιγμιότυπο οθόνης"
 
-#: crates/big-video-player/src/video/ui/menu_dialogs.rs:324
-#: crates/media-runtime/src/player/mpv_backend/backend/mod.rs:301
+#: crates/big-video-player/src/video/ui/menu_dialogs.rs:147
+msgid ""
+"There is no Pictures or home folder to save screenshots in. Choose a folder "
+"in Preferences."
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/menu_dialogs.rs:172
+#, rust-format
+msgid "Cannot save to {folder}: {error}. Choose another folder in Preferences."
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/menu_dialogs.rs:182
+msgid "The screenshot was not saved because of an unexpected error"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/menu_dialogs.rs:215
+#: crates/media-runtime/src/player/mpv_backend/backend/mod.rs:327
 msgid "Chapter"
 msgstr "Κεφάλαιο"
 
-#: crates/big-video-player/src/video/ui/menu_dialogs.rs:345
+#: crates/big-video-player/src/video/ui/menu_dialogs.rs:236
 msgid "Screenshot saved"
 msgstr "Το στιγμιότυπο οθόνης αποθηκεύτηκε"
 
-#: crates/big-video-player/src/video/ui/menu_dialogs.rs:347
+#: crates/big-video-player/src/video/ui/menu_dialogs.rs:238
 msgid "Screenshot saved; disk synchronization could not be confirmed"
 msgstr ""
 "Το στιγμιότυπο οθόνης αποθηκεύτηκε· ο συγχρονισμός με τον δίσκο δεν ήταν "
@@ -2980,76 +3094,76 @@ msgstr ""
 msgid "Profile File"
 msgstr "Αρχείο προφίλ"
 
-#: crates/big-video-player/src/video/ui/preferences/advanced.rs:133
+#: crates/big-video-player/src/video/ui/preferences/advanced.rs:132
 msgid "Rendering Intent"
 msgstr "Πρόθεση απόδοσης"
 
-#: crates/big-video-player/src/video/ui/preferences/advanced.rs:136
+#: crates/big-video-player/src/video/ui/preferences/advanced.rs:135
 msgid "Perceptual"
 msgstr "Αντιληπτική"
 
-#: crates/big-video-player/src/video/ui/preferences/advanced.rs:137
+#: crates/big-video-player/src/video/ui/preferences/advanced.rs:136
 msgid "Relative"
 msgstr "Σχετική"
 
-#: crates/big-video-player/src/video/ui/preferences/advanced.rs:139
+#: crates/big-video-player/src/video/ui/preferences/advanced.rs:138
 msgid "Absolute"
 msgstr "Απόλυτη"
 
-#: crates/big-video-player/src/video/ui/preferences/advanced.rs:155
+#: crates/big-video-player/src/video/ui/preferences/advanced.rs:153
 msgid "Streaming and Cache"
 msgstr "Ροή και κρυφή μνήμη"
 
-#: crates/big-video-player/src/video/ui/preferences/advanced.rs:157
+#: crates/big-video-player/src/video/ui/preferences/advanced.rs:155
 msgid "Loads media ahead of time to avoid pauses on slow networks"
 msgstr ""
 "Φορτώνει τα πολυμέσα εκ των προτέρων για να αποφεύγονται οι παύσεις σε αργά "
 "δίκτυα"
 
-#: crates/big-video-player/src/video/ui/preferences/advanced.rs:162
+#: crates/big-video-player/src/video/ui/preferences/advanced.rs:160
 msgid "Load Ahead"
 msgstr "Φόρτωση εκ των προτέρων"
 
-#: crates/big-video-player/src/video/ui/preferences/advanced.rs:170
+#: crates/big-video-player/src/video/ui/preferences/advanced.rs:168
 msgid "How Far Ahead"
 msgstr "Πόσο μπροστά"
 
-#: crates/big-video-player/src/video/ui/preferences/advanced.rs:171
+#: crates/big-video-player/src/video/ui/preferences/advanced.rs:169
 msgid "In seconds"
 msgstr "Σε δευτερόλεπτα"
 
-#: crates/big-video-player/src/video/ui/preferences/advanced.rs:181
+#: crates/big-video-player/src/video/ui/preferences/advanced.rs:179
 msgid "Wait Instead of Stuttering"
 msgstr "Αναμονή αντί για κόμπιασμα"
 
-#: crates/big-video-player/src/video/ui/preferences/advanced.rs:182
+#: crates/big-video-player/src/video/ui/preferences/advanced.rs:180
 msgid "Pauses until enough is loaded to keep playing smoothly"
 msgstr "Κάνει παύση μέχρι να φορτωθούν αρκετά δεδομένα για ομαλή αναπαραγωγή"
 
-#: crates/big-video-player/src/video/ui/preferences/advanced.rs:189
+#: crates/big-video-player/src/video/ui/preferences/advanced.rs:187
 msgid "Keep on Disk"
 msgstr "Διατήρηση στον δίσκο"
 
-#: crates/big-video-player/src/video/ui/preferences/advanced.rs:190
+#: crates/big-video-player/src/video/ui/preferences/advanced.rs:188
 msgid "Uses disk space instead of memory; useful for very long streams"
 msgstr ""
 "Χρησιμοποιεί χώρο στον δίσκο αντί για μνήμη· χρήσιμο για πολύ μεγάλες ροές"
 
-#: crates/big-video-player/src/video/ui/preferences/advanced.rs:207
+#: crates/big-video-player/src/video/ui/preferences/advanced.rs:205
 msgid "Read Ahead in the File"
 msgstr "Ανάγνωση εκ των προτέρων στο αρχείο"
 
-#: crates/big-video-player/src/video/ui/preferences/advanced.rs:208
+#: crates/big-video-player/src/video/ui/preferences/advanced.rs:206
 msgid "Seconds of the file read in advance, also for local files"
 msgstr ""
 "Δευτερόλεπτα του αρχείου που διαβάζονται εκ των προτέρων, και για τοπικά "
 "αρχεία"
 
-#: crates/big-video-player/src/video/ui/preferences/advanced.rs:226
+#: crates/big-video-player/src/video/ui/preferences/advanced.rs:224
 msgid "Pause on the Final Frame"
 msgstr "Παύση στο τελευταίο καρέ"
 
-#: crates/big-video-player/src/video/ui/preferences/advanced.rs:227
+#: crates/big-video-player/src/video/ui/preferences/advanced.rs:225
 msgid ""
 "When the player stops at the end of a video; off lets seeking back resume "
 "playback"
@@ -3057,37 +3171,37 @@ msgstr ""
 "Όταν η εφαρμογή σταματά στο τέλος ενός βίντεο· αν είναι ανενεργό, η μετάβαση "
 "πίσω συνεχίζει την αναπαραγωγή"
 
-#: crates/big-video-player/src/video/ui/preferences/advanced.rs:234
+#: crates/big-video-player/src/video/ui/preferences/advanced.rs:232
 msgid "Screenshot Compression"
 msgstr "Συμπίεση στιγμιοτύπων οθόνης"
 
-#: crates/big-video-player/src/video/ui/preferences/advanced.rs:235
+#: crates/big-video-player/src/video/ui/preferences/advanced.rs:233
 msgid "Higher values make smaller PNG files but take longer to save"
 msgstr ""
 "Οι υψηλότερες τιμές δίνουν μικρότερα αρχεία PNG αλλά η αποθήκευση διαρκεί "
 "περισσότερο"
 
-#: crates/big-video-player/src/video/ui/preferences/advanced.rs:245
+#: crates/big-video-player/src/video/ui/preferences/advanced.rs:243
 msgid "Screenshot Color Profile"
 msgstr "Χρωματικό προφίλ στιγμιοτύπων οθόνης"
 
-#: crates/big-video-player/src/video/ui/preferences/advanced.rs:246
+#: crates/big-video-player/src/video/ui/preferences/advanced.rs:244
 msgid "Stores the video color space in each screenshot"
 msgstr "Αποθηκεύει τον χρωματικό χώρο του βίντεο σε κάθε στιγμιότυπο οθόνης"
 
-#: crates/big-video-player/src/video/ui/preferences/advanced.rs:253
+#: crates/big-video-player/src/video/ui/preferences/advanced.rs:251
 msgid "High Bit Depth Screenshots"
 msgstr "Στιγμιότυπα οθόνης υψηλού βάθους bit"
 
-#: crates/big-video-player/src/video/ui/preferences/advanced.rs:254
+#: crates/big-video-player/src/video/ui/preferences/advanced.rs:252
 msgid "Keeps more color precision; files get larger"
 msgstr "Διατηρεί μεγαλύτερη ακρίβεια χρώματος· τα αρχεία γίνονται μεγαλύτερα"
 
-#: crates/big-video-player/src/video/ui/preferences/advanced.rs:264
+#: crates/big-video-player/src/video/ui/preferences/advanced.rs:262
 msgid "Custom Shaders"
 msgstr "Προσαρμοσμένα shaders"
 
-#: crates/big-video-player/src/video/ui/preferences/advanced.rs:266
+#: crates/big-video-player/src/video/ui/preferences/advanced.rs:264
 msgid "Paths to .glsl files, separated by commas. Press Enter to apply."
 msgstr ""
 "Διαδρομές αρχείων .glsl, χωρισμένες με κόμμα. Πατήστε Enter για εφαρμογή."
@@ -3096,11 +3210,11 @@ msgstr ""
 msgid "Shader Files"
 msgstr "Αρχεία shader"
 
-#: crates/big-video-player/src/video/ui/preferences/advanced.rs:285
+#: crates/big-video-player/src/video/ui/preferences/advanced.rs:289
 msgid "mpv Options"
 msgstr "Επιλογές mpv"
 
-#: crates/big-video-player/src/video/ui/preferences/advanced.rs:287
+#: crates/big-video-player/src/video/ui/preferences/advanced.rs:291
 msgid ""
 "Extra key=value options, separated by commas. They take effect after "
 "reopening the player."
@@ -3108,135 +3222,135 @@ msgstr ""
 "Πρόσθετες επιλογές key=value, χωρισμένες με κόμμα. Τίθενται σε ισχύ μετά το "
 "επανάνοιγμα της εφαρμογής."
 
-#: crates/big-video-player/src/video/ui/preferences/advanced.rs:292
+#: crates/big-video-player/src/video/ui/preferences/advanced.rs:296
 #: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/header.rs:216
 msgid "Options"
 msgstr "Επιλογές"
 
-#: crates/big-video-player/src/video/ui/preferences/general.rs:29
+#: crates/big-video-player/src/video/ui/preferences/general.rs:30
 msgid "Reopen files at the point where you stopped watching"
 msgstr "Άνοιγμα αρχείων ξανά από το σημείο όπου σταματήσατε να παρακολουθείτε"
 
-#: crates/big-video-player/src/video/ui/preferences/general.rs:40
+#: crates/big-video-player/src/video/ui/preferences/general.rs:41
 msgid "Current video"
 msgstr "Τρέχον βίντεο"
 
-#: crates/big-video-player/src/video/ui/preferences/general.rs:41
+#: crates/big-video-player/src/video/ui/preferences/general.rs:42
 #: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/header.rs:198
 msgid "Whole playlist"
 msgstr "Ολόκληρη η λίστα αναπαραγωγής"
 
-#: crates/big-video-player/src/video/ui/preferences/general.rs:51
+#: crates/big-video-player/src/video/ui/preferences/general.rs:52
 msgid "When Playback Ends"
 msgstr "Όταν τελειώνει η αναπαραγωγή"
 
-#: crates/big-video-player/src/video/ui/preferences/general.rs:53
+#: crates/big-video-player/src/video/ui/preferences/general.rs:54
 msgid "Playlist videos play one after another unless they stop after each"
 msgstr ""
 "Τα βίντεο της λίστας αναπαραγωγής παίζουν το ένα μετά το άλλο, εκτός αν "
 "σταματούν μετά από κάθε ένα"
 
-#: crates/big-video-player/src/video/ui/preferences/general.rs:58
+#: crates/big-video-player/src/video/ui/preferences/general.rs:59
 msgid "When a Video Ends"
 msgstr "Όταν τελειώνει ένα βίντεο"
 
-#: crates/big-video-player/src/video/ui/preferences/general.rs:61
+#: crates/big-video-player/src/video/ui/preferences/general.rs:62
 msgid "Keep the last frame"
 msgstr "Διατήρηση του τελευταίου καρέ"
 
-#: crates/big-video-player/src/video/ui/preferences/general.rs:62
+#: crates/big-video-player/src/video/ui/preferences/general.rs:63
 msgid "Stop after each"
 msgstr "Διακοπή μετά από κάθε ένα"
 
-#: crates/big-video-player/src/video/ui/preferences/general.rs:63
+#: crates/big-video-player/src/video/ui/preferences/general.rs:64
 msgid "Close the video"
 msgstr "Κλείσιμο του βίντεο"
 
-#: crates/big-video-player/src/video/ui/preferences/general.rs:73
+#: crates/big-video-player/src/video/ui/preferences/general.rs:74
 msgid "When the Playlist Finishes"
 msgstr "Όταν τελειώνει η λίστα αναπαραγωγής"
 
-#: crates/big-video-player/src/video/ui/preferences/general.rs:74
+#: crates/big-video-player/src/video/ui/preferences/general.rs:75
 msgid "Used only when the video closes"
 msgstr "Χρησιμοποιείται μόνο όταν κλείνει το βίντεο"
 
-#: crates/big-video-player/src/video/ui/preferences/general.rs:76
+#: crates/big-video-player/src/video/ui/preferences/general.rs:77
 msgid "Stay open"
 msgstr "Να παραμένει ανοιχτή"
 
-#: crates/big-video-player/src/video/ui/preferences/general.rs:77
-#: crates/media-runtime/src/shared/sleep_timer.rs:13
+#: crates/big-video-player/src/video/ui/preferences/general.rs:78
+#: crates/media-runtime/src/shared/sleep_timer.rs:21
 msgid "Close the player"
 msgstr "Κλείσιμο της εφαρμογής"
 
-#: crates/big-video-player/src/video/ui/preferences/general.rs:78
+#: crates/big-video-player/src/video/ui/preferences/general.rs:79
 msgid "Close after one playlist"
 msgstr "Κλείσιμο μετά από μία λίστα αναπαραγωγής"
 
-#: crates/big-video-player/src/video/ui/preferences/general.rs:102
+#: crates/big-video-player/src/video/ui/preferences/general.rs:103
 msgid "Window and Screen"
 msgstr "Παράθυρο και οθόνη"
 
-#: crates/big-video-player/src/video/ui/preferences/general.rs:106
+#: crates/big-video-player/src/video/ui/preferences/general.rs:107
 msgid "Keep the Screen On"
 msgstr "Διατήρηση της οθόνης αναμμένης"
 
-#: crates/big-video-player/src/video/ui/preferences/general.rs:107
+#: crates/big-video-player/src/video/ui/preferences/general.rs:108
 msgid "Stops the screen from dimming or locking"
 msgstr "Εμποδίζει την οθόνη να σκουραίνει ή να κλειδώνει"
 
-#: crates/big-video-player/src/video/ui/preferences/general.rs:108
+#: crates/big-video-player/src/video/ui/preferences/general.rs:109
 msgid "During playback"
 msgstr "Κατά την αναπαραγωγή"
 
-#: crates/big-video-player/src/video/ui/preferences/general.rs:108
+#: crates/big-video-player/src/video/ui/preferences/general.rs:109
 msgid "Always"
 msgstr "Πάντα"
 
-#: crates/big-video-player/src/video/ui/preferences/general.rs:108
+#: crates/big-video-player/src/video/ui/preferences/general.rs:109
 #: crates/big-video-player/src/video/ui/preferences/subtitles.rs:45
 msgid "Never"
 msgstr "Ποτέ"
 
-#: crates/big-video-player/src/video/ui/preferences/general.rs:118
+#: crates/big-video-player/src/video/ui/preferences/general.rs:119
 msgid "Fit Window to Video"
 msgstr "Προσαρμογή παραθύρου στο βίντεο"
 
-#: crates/big-video-player/src/video/ui/preferences/general.rs:119
+#: crates/big-video-player/src/video/ui/preferences/general.rs:120
 msgid "Keeps the window in the video's proportions, without black bars"
 msgstr "Διατηρεί το παράθυρο στις αναλογίες του βίντεο, χωρίς μαύρες ζώνες"
 
-#: crates/big-video-player/src/video/ui/preferences/general.rs:127
+#: crates/big-video-player/src/video/ui/preferences/general.rs:128
 msgid "Preview While Seeking"
 msgstr "Προεπισκόπηση κατά τη μετάβαση"
 
-#: crates/big-video-player/src/video/ui/preferences/general.rs:128
+#: crates/big-video-player/src/video/ui/preferences/general.rs:129
 msgid "Show a thumbnail of the video when pointing at the progress bar"
 msgstr ""
 "Εμφανίζει μια μικρογραφία του βίντεο όταν τοποθετείτε τον δείκτη στη γραμμή "
 "προόδου"
 
-#: crates/big-video-player/src/video/ui/preferences/general.rs:139
+#: crates/big-video-player/src/video/ui/preferences/general.rs:140
 msgid "Restore Default Settings…"
 msgstr "Επαναφορά προεπιλεγμένων ρυθμίσεων…"
 
-#: crates/big-video-player/src/video/ui/preferences/general.rs:165
+#: crates/big-video-player/src/video/ui/preferences/general.rs:166
 msgid "Save To"
 msgstr "Αποθήκευση σε"
 
-#: crates/big-video-player/src/video/ui/preferences/general.rs:170
+#: crates/big-video-player/src/video/ui/preferences/general.rs:171
 msgid "Choose Folder"
 msgstr "Επιλογή φακέλου"
 
-#: crates/big-video-player/src/video/ui/preferences/general.rs:175
+#: crates/big-video-player/src/video/ui/preferences/general.rs:176
 msgid "Use the Pictures Folder"
 msgstr "Χρήση του φακέλου Εικόνες"
 
-#: crates/big-video-player/src/video/ui/preferences/general.rs:190
+#: crates/big-video-player/src/video/ui/preferences/general.rs:191
 msgid "Pictures folder"
 msgstr "Φάκελος Εικόνες"
 
-#: crates/big-video-player/src/video/ui/preferences/general.rs:217
+#: crates/big-video-player/src/video/ui/preferences/general.rs:219
 msgid "Screenshot Folder"
 msgstr "Φάκελος στιγμιοτύπων οθόνης"
 
@@ -3252,7 +3366,7 @@ msgstr ""
 "όπως el,en"
 
 #: crates/big-video-player/src/video/ui/preferences/subtitles.rs:31
-#: crates/ui/media/big-player-ui/src/audio_preferences.rs:148
+#: crates/ui/media/big-player-ui/src/audio_preferences.rs:150
 msgid "Preferred Languages"
 msgstr "Προτιμώμενες γλώσσες"
 
@@ -3516,12 +3630,12 @@ msgid "Rename…"
 msgstr "Μετονομασία…"
 
 #: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/context_menu.rs:94
-#: crates/big-video-player/src/video/ui/video_browser_sidebar/fileops.rs:83
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/fileops.rs:80
 msgid "Move to trash"
 msgstr "Μετακίνηση στον κάδο απορριμμάτων"
 
 #: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/context_menu.rs:101
-#: crates/big-video-player/src/video/ui/video_browser_sidebar/views/queue_view.rs:214
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/views/queue_view.rs:215
 msgid "Remove from playlist"
 msgstr "Αφαίρεση από τη λίστα αναπαραγωγής"
 
@@ -3648,8 +3762,8 @@ msgid "Your folders"
 msgstr "Οι φάκελοί σας"
 
 #: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/metadata.rs:143
-#: crates/big-video-player/src/video/ui/video_browser_sidebar/library.rs:429
-#: crates/big-video-player/src/video/ui/video_browser_sidebar/mod.rs:301
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/library.rs:430
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/mod.rs:306
 #, rust-format
 msgid "{} video"
 msgid_plural "{} videos"
@@ -3669,105 +3783,100 @@ msgstr ""
 "Εμφάνιση {shown} από {total} αρχεία που βρέθηκαν. Σκεφτείτε να φιλτράρετε "
 "ανά υποφάκελο."
 
-#: crates/big-video-player/src/video/ui/video_browser_sidebar/fileops.rs:23
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/fileops.rs:20
 #, rust-format
 msgid "{} selected"
 msgid_plural "{} selected"
 msgstr[0] "{} επιλεγμένο"
 msgstr[1] "{} επιλεγμένα"
 
-#: crates/big-video-player/src/video/ui/video_browser_sidebar/fileops.rs:55
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/fileops.rs:52
 msgid "Send to converter"
 msgstr "Αποστολή στον μετατροπέα"
 
-#: crates/big-video-player/src/video/ui/video_browser_sidebar/fileops.rs:66
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/fileops.rs:63
 msgid "Move to folder…"
 msgstr "Μετακίνηση σε φάκελο…"
 
-#: crates/big-video-player/src/video/ui/video_browser_sidebar/fileops.rs:96
-#: crates/big-video-player/src/video/ui/video_browser_sidebar/fileops.rs:97
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/fileops.rs:93
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/fileops.rs:94
 msgid "Done"
 msgstr "Ολοκληρώθηκε"
 
-#: crates/big-video-player/src/video/ui/video_browser_sidebar/fileops.rs:154
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/fileops.rs:151
 msgid "Move to Folder"
 msgstr "Μετακίνηση σε φάκελο"
 
-#: crates/big-video-player/src/video/ui/video_browser_sidebar/fileops.rs:171
-msgid "moved"
-msgstr "μετακινήθηκαν"
-
-#: crates/big-video-player/src/video/ui/video_browser_sidebar/fileops.rs:193
-#: crates/big-video-player/src/video/ui/video_browser_sidebar/fileops.rs:210
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/fileops.rs:196
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/fileops.rs:200
 msgid "Rename"
 msgstr "Μετονομασία"
 
-#: crates/big-video-player/src/video/ui/video_browser_sidebar/fileops.rs:199
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/fileops.rs:197
 msgid "Choose a new file name."
 msgstr "Επιλέξτε ένα νέο όνομα αρχείου."
 
-#: crates/big-video-player/src/video/ui/video_browser_sidebar/fileops.rs:242
-msgid "Invalid name"
-msgstr "Μη έγκυρο όνομα"
-
-#: crates/big-video-player/src/video/ui/video_browser_sidebar/fileops.rs:258
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/fileops.rs:243
 msgid "A file with that name already exists"
 msgstr "Υπάρχει ήδη αρχείο με αυτό το όνομα"
 
-#: crates/big-video-player/src/video/ui/video_browser_sidebar/fileops.rs:265
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/fileops.rs:250
 msgid "Rename failed"
 msgstr "Η μετονομασία απέτυχε"
 
-#: crates/big-video-player/src/video/ui/video_browser_sidebar/fileops.rs:359
-#, rust-format
-msgid "{ok} {verb}, {failed} failed"
-msgstr "{ok} {verb}, {failed} απέτυχαν"
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/fileops.rs:320
+#, fuzzy, rust-format
+#| msgid "Could not move to trash"
+msgid "Could not move {failed} of {total} file"
+msgid_plural "Could not move {failed} of {total} files"
+msgstr[0] "Δεν ήταν δυνατή η μετακίνηση στον κάδο απορριμμάτων"
+msgstr[1] "Δεν ήταν δυνατή η μετακίνηση στον κάδο απορριμμάτων"
 
-#: crates/big-video-player/src/video/ui/video_browser_sidebar/library.rs:116
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/library.rs:117
 msgid "Home folder"
 msgstr "Προσωπικός φάκελος"
 
-#: crates/big-video-player/src/video/ui/video_browser_sidebar/library.rs:405
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/library.rs:406
 msgid "Choose folders…"
 msgstr "Επιλογή φακέλων…"
 
-#: crates/big-video-player/src/video/ui/video_browser_sidebar/library.rs:556
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/library.rs:557
 msgid "No video in your folders has that name"
 msgstr "Κανένα βίντεο στους φακέλους σας δεν έχει αυτό το όνομα"
 
-#: crates/big-video-player/src/video/ui/video_browser_sidebar/library.rs:568
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/library.rs:569
 #, rust-format
 msgid "{} more in your folders"
 msgid_plural "{} more in your folders"
 msgstr[0] "Ακόμη {} στους φακέλους σας"
 msgstr[1] "Ακόμη {} στους φακέλους σας"
 
-#: crates/big-video-player/src/video/ui/video_browser_sidebar/library.rs:573
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/library.rs:574
 #, rust-format
 msgid "{} video found"
 msgid_plural "{} videos found"
 msgstr[0] "Βρέθηκε {} βίντεο"
 msgstr[1] "Βρέθηκαν {} βίντεο"
 
-#: crates/big-video-player/src/video/ui/video_browser_sidebar/library.rs:588
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/library.rs:589
 #, rust-format
 msgid "Showing the first {}. Type more to narrow the search."
 msgstr ""
 "Εμφάνιση των πρώτων {}. Πληκτρολογήστε περισσότερα για να περιορίσετε την "
 "αναζήτηση."
 
-#: crates/big-video-player/src/video/ui/video_browser_sidebar/library.rs:700
-#: crates/big-video-player/src/video/ui/video_browser_sidebar/library.rs:703
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/library.rs:701
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/library.rs:704
 #: crates/big-video-player/src/video/ui/video_shell/panel.rs:121
 #: crates/big-video-player/src/video/ui/video_shell/panel.rs:124
 msgid "Back"
 msgstr "Πίσω"
 
-#: crates/big-video-player/src/video/ui/video_browser_sidebar/library.rs:714
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/library.rs:715
 msgid "Video folders"
 msgstr "Φάκελοι βίντεο"
 
-#: crates/big-video-player/src/video/ui/video_browser_sidebar/library.rs:724
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/library.rs:725
 msgid ""
 "Their videos are listed and searched here. Folders BigSearch does not index "
 "are searched by the player, more slowly."
@@ -3775,37 +3884,37 @@ msgstr ""
 "Τα βίντεό τους εμφανίζονται και αναζητούνται εδώ. Οι φάκελοι που το "
 "BigSearch δεν ευρετηριάζει αναζητούνται από την εφαρμογή, πιο αργά."
 
-#: crates/big-video-player/src/video/ui/video_browser_sidebar/library.rs:753
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/library.rs:754
 #, rust-format
 msgid "Remove {}"
 msgstr "Αφαίρεση {}"
 
-#: crates/big-video-player/src/video/ui/video_browser_sidebar/library.rs:771
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/library.rs:772
 msgid "Add a folder…"
 msgstr "Προσθήκη φακέλου…"
 
-#: crates/big-video-player/src/video/ui/video_browser_sidebar/library.rs:782
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/library.rs:783
 msgid "Add a Video Folder"
 msgstr "Προσθήκη φακέλου βίντεο"
 
-#: crates/big-video-player/src/video/ui/video_browser_sidebar/library.rs:800
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/library.rs:801
 msgid "Use the standard folders"
 msgstr "Χρήση των τυπικών φακέλων"
 
-#: crates/big-video-player/src/video/ui/video_browser_sidebar/library.rs:801
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/library.rs:802
 msgid "Videos, Downloads and the home folder"
 msgstr "Βίντεο, Λήψεις και ο προσωπικός φάκελος"
 
-#: crates/big-video-player/src/video/ui/video_browser_sidebar/mod.rs:329
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/mod.rs:334
 #, rust-format
 msgid "ends at {}"
 msgstr "τελειώνει στις {}"
 
-#: crates/big-video-player/src/video/ui/video_browser_sidebar/mod.rs:511
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/mod.rs:520
 msgid "Scanning…"
 msgstr "Σάρωση…"
 
-#: crates/big-video-player/src/video/ui/video_browser_sidebar/mod.rs:556
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/mod.rs:565
 msgid "Search your videos…"
 msgstr "Αναζήτηση στα βίντεό σας…"
 
@@ -3813,22 +3922,22 @@ msgstr "Αναζήτηση στα βίντεό σας…"
 msgid "Previous folder"
 msgstr "Προηγούμενος φάκελος"
 
-#: crates/big-video-player/src/video/ui/video_browser_sidebar/views/queue_view.rs:434
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/views/queue_view.rs:442
 #, rust-format
 msgid "Stopped at {}"
 msgstr "Σταμάτησε στις {}"
 
-#: crates/big-video-player/src/video/ui/video_controls_bar.rs:278
+#: crates/big-video-player/src/video/ui/video_controls_bar.rs:281
 msgid "Seek Position"
 msgstr "Θέση αναζήτησης"
 
-#: crates/big-video-player/src/video/ui/video_controls_bar.rs:479
+#: crates/big-video-player/src/video/ui/video_controls_bar.rs:478
 #: crates/media-runtime/src/shared/tv_cast.rs:716
 msgid "Pause"
 msgstr "Παύση"
 
-#: crates/big-video-player/src/video/ui/video_controls_bar.rs:558
-#: crates/ui/media/big-player-ui/src/playback_bar.rs:323
+#: crates/big-video-player/src/video/ui/video_controls_bar.rs:566
+#: crates/ui/media/big-player-ui/src/playback_bar.rs:337
 msgid "TV volume"
 msgstr "Ένταση τηλεόρασης"
 
@@ -3836,43 +3945,43 @@ msgstr "Ένταση τηλεόρασης"
 msgid "Seek preview"
 msgstr "Προεπισκόπηση μετάβασης"
 
-#: crates/big-video-player/src/video/ui/video_controls_bar/tracks.rs:26
+#: crates/big-video-player/src/video/ui/video_controls_bar/tracks.rs:27
 msgid "Load Subtitle File…"
 msgstr "Φόρτωση αρχείου υποτίτλων…"
 
-#: crates/big-video-player/src/video/ui/video_controls_bar/tracks.rs:36
+#: crates/big-video-player/src/video/ui/video_controls_bar/tracks.rs:37
 msgid "Primary Subtitles"
 msgstr "Κύριοι υπότιτλοι"
 
-#: crates/big-video-player/src/video/ui/video_controls_bar/tracks.rs:38
+#: crates/big-video-player/src/video/ui/video_controls_bar/tracks.rs:39
 msgid "Disable Subtitles"
 msgstr "Απενεργοποίηση υποτίτλων"
 
-#: crates/big-video-player/src/video/ui/video_controls_bar/tracks.rs:58
+#: crates/big-video-player/src/video/ui/video_controls_bar/tracks.rs:59
 msgid "Secondary Subtitles"
 msgstr "Δευτερεύοντες υπότιτλοι"
 
-#: crates/big-video-player/src/video/ui/video_controls_bar/tracks.rs:60
+#: crates/big-video-player/src/video/ui/video_controls_bar/tracks.rs:61
 msgid "Disable Secondary Subtitles"
 msgstr "Απενεργοποίηση δευτερευόντων υποτίτλων"
 
-#: crates/big-video-player/src/video/ui/video_controls_bar/tracks.rs:109
-msgid "Subtitle files"
-msgstr "Αρχεία υποτίτλων"
-
-#: crates/big-video-player/src/video/ui/video_controls_bar/tracks.rs:117
+#: crates/big-video-player/src/video/ui/video_controls_bar/tracks.rs:111
 msgid "Load Subtitle File"
 msgstr "Φόρτωση αρχείου υποτίτλων"
 
-#: crates/big-video-player/src/video/ui/video_controls_bar/tracks.rs:191
+#: crates/big-video-player/src/video/ui/video_controls_bar/tracks.rs:113
+msgid "Subtitle files"
+msgstr "Αρχεία υποτίτλων"
+
+#: crates/big-video-player/src/video/ui/video_controls_bar/tracks.rs:182
 msgid "Earlier"
 msgstr "Νωρίτερα"
 
-#: crates/big-video-player/src/video/ui/video_controls_bar/tracks.rs:191
+#: crates/big-video-player/src/video/ui/video_controls_bar/tracks.rs:182
 msgid "Later"
 msgstr "Αργότερα"
 
-#: crates/big-video-player/src/video/ui/video_controls_bar/tracks.rs:245
+#: crates/big-video-player/src/video/ui/video_controls_bar/tracks.rs:236
 msgid "Track"
 msgstr "Κομμάτι"
 
@@ -3885,8 +3994,8 @@ msgid "Unmute"
 msgstr "Κατάργηση σίγασης"
 
 #: crates/big-video-player/src/video/ui/video_controls_bar/zones.rs:218
-#: crates/big-video-player/src/video/ui/video_controls_bar/zones.rs:444
-#: crates/big-video-player/src/video/ui/video_controls_bar/zones.rs:461
+#: crates/big-video-player/src/video/ui/video_controls_bar/zones.rs:457
+#: crates/big-video-player/src/video/ui/video_controls_bar/zones.rs:474
 msgid "Mute"
 msgstr "Σίγαση"
 
@@ -3903,15 +4012,15 @@ msgstr "PC"
 msgid "PC volume"
 msgstr "Ένταση PC"
 
-#: crates/big-video-player/src/video/ui/video_controls_bar/zones.rs:606
+#: crates/big-video-player/src/video/ui/video_controls_bar/zones.rs:619
 msgid "Edit & Export"
 msgstr "Επεξεργασία και εξαγωγή"
 
-#: crates/big-video-player/src/video/ui/video_controls_bar/zones.rs:668
+#: crates/big-video-player/src/video/ui/video_controls_bar/zones.rs:681
 msgid "Cut Video…"
 msgstr "Αποκοπή βίντεο…"
 
-#: crates/big-video-player/src/video/ui/video_controls_bar/zones.rs:669
+#: crates/big-video-player/src/video/ui/video_controls_bar/zones.rs:682
 msgid "Extract Audio…"
 msgstr "Εξαγωγή ήχου…"
 
@@ -3920,101 +4029,101 @@ msgid "Drop a file or open one to start"
 msgstr "Αποθέστε ένα αρχείο ή ανοίξτε ένα για να ξεκινήσετε"
 
 #: crates/big-video-player/src/video/ui/video_shell/actions.rs:132
-#: crates/big-video-player/src/video/ui/video_shell/component.rs:864
+#: crates/big-video-player/src/video/ui/video_shell/component.rs:882
 msgid "Open Recent"
 msgstr "Άνοιγμα πρόσφατου"
 
-#: crates/big-video-player/src/video/ui/video_shell/adjustments.rs:176
+#: crates/big-video-player/src/video/ui/video_shell/adjustments.rs:143
 msgid "More bass"
 msgstr "Περισσότερα μπάσα"
 
-#: crates/big-video-player/src/video/ui/video_shell/adjustments.rs:177
+#: crates/big-video-player/src/video/ui/video_shell/adjustments.rs:144
 msgid "More treble"
 msgstr "Περισσότερα πρίμα"
 
-#: crates/big-video-player/src/video/ui/video_shell/adjustments.rs:178
+#: crates/big-video-player/src/video/ui/video_shell/adjustments.rs:145
 msgid "Voices"
 msgstr "Φωνές"
 
-#: crates/big-video-player/src/video/ui/video_shell/adjustments.rs:191
+#: crates/big-video-player/src/video/ui/video_shell/adjustments.rs:158
 #, rust-format
 msgid "Video colour: {name}"
 msgstr "Χρώμα βίντεο: {name}"
 
-#: crates/big-video-player/src/video/ui/video_shell/adjustments.rs:195
+#: crates/big-video-player/src/video/ui/video_shell/adjustments.rs:162
 msgid "Picture adjusted"
 msgstr "Η εικόνα προσαρμόστηκε"
 
-#: crates/big-video-player/src/video/ui/video_shell/adjustments.rs:196
+#: crates/big-video-player/src/video/ui/video_shell/adjustments.rs:163
 #, rust-format
 msgid "Zoom {percent}%"
 msgstr "Ζουμ {percent}%"
 
-#: crates/big-video-player/src/video/ui/video_shell/adjustments.rs:198
+#: crates/big-video-player/src/video/ui/video_shell/adjustments.rs:165
 msgid "Picture enlarged to fill"
 msgstr "Η εικόνα μεγεθύνθηκε για να γεμίσει"
 
-#: crates/big-video-player/src/video/ui/video_shell/adjustments.rs:200
+#: crates/big-video-player/src/video/ui/video_shell/adjustments.rs:167
 #, rust-format
 msgid "Rotated {degrees}°"
 msgstr "Περιστροφή κατά {degrees}°"
 
-#: crates/big-video-player/src/video/ui/video_shell/adjustments.rs:202
+#: crates/big-video-player/src/video/ui/video_shell/adjustments.rs:169
 msgid "Mirrored"
 msgstr "Αντικατοπτρισμός"
 
-#: crates/big-video-player/src/video/ui/video_shell/adjustments.rs:203
+#: crates/big-video-player/src/video/ui/video_shell/adjustments.rs:170
 msgid "Edges cut off"
 msgstr "Οι άκρες κόπηκαν"
 
-#: crates/big-video-player/src/video/ui/video_shell/adjustments.rs:204
+#: crates/big-video-player/src/video/ui/video_shell/adjustments.rs:171
 #, rust-format
 msgid "Speed {speed}×"
 msgstr "Ταχύτητα {speed}×"
 
-#: crates/big-video-player/src/video/ui/video_shell/adjustments.rs:206
+#: crates/big-video-player/src/video/ui/video_shell/adjustments.rs:173
 #, rust-format
 msgid "Sound {seconds} s late"
 msgstr "Ήχος με καθυστέρηση {seconds} s"
 
-#: crates/big-video-player/src/video/ui/video_shell/adjustments.rs:209
+#: crates/big-video-player/src/video/ui/video_shell/adjustments.rs:176
 #, rust-format
 msgid "Sound {seconds} s early"
 msgstr "Ήχος με προπορεία {seconds} s"
 
-#: crates/big-video-player/src/video/ui/video_shell/adjustments.rs:212
+#: crates/big-video-player/src/video/ui/video_shell/adjustments.rs:179
 #, rust-format
 msgid "Subtitles {seconds} s late"
 msgstr "Υπότιτλοι με καθυστέρηση {seconds} s"
 
-#: crates/big-video-player/src/video/ui/video_shell/adjustments.rs:215
+#: crates/big-video-player/src/video/ui/video_shell/adjustments.rs:182
 #, rust-format
 msgid "Subtitles {seconds} s early"
 msgstr "Υπότιτλοι με προπορεία {seconds} s"
 
-#: crates/big-video-player/src/video/ui/video_shell/adjustments.rs:217
+#: crates/big-video-player/src/video/ui/video_shell/adjustments.rs:184
 #, rust-format
 msgid "Type of sound: {name}"
 msgstr "Τύπος ήχου: {name}"
 
-#: crates/big-video-player/src/video/ui/video_shell/adjustments.rs:225
+#: crates/big-video-player/src/video/ui/video_shell/adjustments.rs:192
 msgid "by hand"
 msgstr "χειροκίνητα"
 
-#: crates/big-video-player/src/video/ui/video_shell/adjustments.rs:227
+#: crates/big-video-player/src/video/ui/video_shell/adjustments.rs:194
 msgid "Video effects on"
 msgstr "Εφέ βίντεο ενεργά"
 
-#: crates/big-video-player/src/video/ui/video_shell/adjustments.rs:228
+#: crates/big-video-player/src/video/ui/video_shell/adjustments.rs:195
 msgid "Picture enhanced"
 msgstr "Η εικόνα βελτιώθηκε"
 
-#: crates/big-video-player/src/video/ui/video_shell/adjustments.rs:235
+#: crates/big-video-player/src/video/ui/video_shell/adjustments.rs:202
 #, rust-format
 msgid "Stops at {time}"
 msgstr "Σταματά στις {time}"
 
-#: crates/big-video-player/src/video/ui/video_shell/adjustments.rs:343
+#: crates/big-video-player/src/video/ui/video_shell/adjustments.rs:310
 #: crates/big-video-player/src/video/ui/video_shell/panel.rs:238
 #, rust-format
 msgid "{n} change"
@@ -4022,7 +4131,7 @@ msgid_plural "{n} changes"
 msgstr[0] "{n} αλλαγή"
 msgstr[1] "{n} αλλαγές"
 
-#: crates/big-video-player/src/video/ui/video_shell/adjustments.rs:346
+#: crates/big-video-player/src/video/ui/video_shell/adjustments.rs:313
 msgid "Click to see or undo"
 msgstr "Κάντε κλικ για προβολή ή αναίρεση"
 
@@ -4033,48 +4142,53 @@ msgstr "Κάντε κλικ για προβολή ή αναίρεση"
 msgid "Settings"
 msgstr "Ρυθμίσεις"
 
-#: crates/big-video-player/src/video/ui/video_shell/component.rs:132
+#: crates/big-video-player/src/video/ui/video_shell/component.rs:133
 msgid "Minimize"
 msgstr "Ελαχιστοποίηση"
 
-#: crates/big-video-player/src/video/ui/video_shell/component.rs:132
+#: crates/big-video-player/src/video/ui/video_shell/component.rs:134
 msgid "Maximize"
 msgstr "Μεγιστοποίηση"
 
-#: crates/big-video-player/src/video/ui/video_shell/component.rs:142
+#: crates/big-video-player/src/video/ui/video_shell/component.rs:135
+#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:373
+msgid "Restore"
+msgstr "Επαναφορά"
+
+#: crates/big-video-player/src/video/ui/video_shell/component.rs:147
 msgid "Use HDR?"
 msgstr "Χρήση HDR;"
 
-#: crates/big-video-player/src/video/ui/video_shell/component.rs:144
+#: crates/big-video-player/src/video/ui/video_shell/component.rs:149
 msgid "Does the picture look grey and washed out? Click to use HDR colours"
 msgstr ""
 "Η εικόνα φαίνεται γκρίζα και ξεθωριασμένη; Κάντε κλικ για χρήση χρωμάτων HDR"
 
-#: crates/big-video-player/src/video/ui/video_shell/component.rs:163
+#: crates/big-video-player/src/video/ui/video_shell/component.rs:168
 msgid "On the TV"
 msgstr "Στην τηλεόραση"
 
-#: crates/big-video-player/src/video/ui/video_shell/component.rs:164
+#: crates/big-video-player/src/video/ui/video_shell/component.rs:169
 #: crates/big-video-player/src/video/ui/video_shell/tv.rs:43
 #: crates/media-runtime/src/shared/tv_cast/card.rs:261
 msgid "The TV is still playing"
 msgstr "Η τηλεόραση εξακολουθεί να παίζει"
 
-#: crates/big-video-player/src/video/ui/video_shell/component.rs:863
+#: crates/big-video-player/src/video/ui/video_shell/component.rs:881
 #: crates/big-video-player/src/video/ui/video_shell/input_gestures.rs:121
 msgid "Open File…"
 msgstr "Άνοιγμα αρχείου…"
 
-#: crates/big-video-player/src/video/ui/video_shell/component.rs:865
+#: crates/big-video-player/src/video/ui/video_shell/component.rs:883
 #: crates/big-video-player/src/video/ui/video_shell/input_gestures.rs:122
 msgid "Open URL…"
 msgstr "Άνοιγμα URL…"
 
-#: crates/big-video-player/src/video/ui/video_shell/component.rs:866
+#: crates/big-video-player/src/video/ui/video_shell/component.rs:884
 msgid "Open Disc…"
 msgstr "Άνοιγμα δίσκου…"
 
-#: crates/big-video-player/src/video/ui/video_shell/component.rs:867
+#: crates/big-video-player/src/video/ui/video_shell/component.rs:885
 msgid "TV Channels (IPTV)…"
 msgstr "Τηλεοπτικά κανάλια (IPTV)…"
 
@@ -4150,36 +4264,36 @@ msgstr "Υποστηρίζει YouTube, ροές HTTP, RTSP, RTMP, DVD και UR
 msgid "Media URL"
 msgstr "URL πολυμέσων"
 
-#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:231
+#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:225
 msgid "Open Disc"
 msgstr "Άνοιγμα δίσκου"
 
-#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:240
+#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:234
 msgid "Choose a disc type and enter the device, ISO, or folder path."
 msgstr ""
 "Επιλέξτε τύπο δίσκου και εισαγάγετε τη συσκευή, το ISO ή τη διαδρομή φακέλου."
 
-#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:244
+#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:238
 msgid "Disc type"
 msgstr "Τύπος δίσκου"
 
-#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:245
+#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:239
 msgid "DVD"
 msgstr "DVD"
 
-#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:245
+#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:239
 msgid "Blu-ray"
 msgstr "Blu-ray"
 
-#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:248
+#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:242
 msgid "Disc device path"
 msgstr "Διαδρομή συσκευής δίσκου"
 
-#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:374
+#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:366
 msgid "Restore Default Settings?"
 msgstr "Επαναφορά προεπιλεγμένων ρυθμίσεων;"
 
-#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:376
+#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:368
 msgid ""
 "Every setting, including appearance, goes back to its default value. Some "
 "changes take effect after reopening the player."
@@ -4187,10 +4301,6 @@ msgstr ""
 "Κάθε ρύθμιση, συμπεριλαμβανομένης της εμφάνισης, επανέρχεται στην "
 "προεπιλεγμένη τιμή της. Ορισμένες αλλαγές τίθενται σε ισχύ μετά το "
 "επανάνοιγμα της εφαρμογής."
-
-#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:381
-msgid "Restore"
-msgstr "Επαναφορά"
 
 #: crates/big-video-player/src/video/ui/video_shell/export.rs:19
 msgid "No file is playing"
@@ -4213,12 +4323,12 @@ msgid "Effects and filters"
 msgstr "Εφέ και φίλτρα"
 
 #: crates/big-video-player/src/video/ui/video_shell/input_gestures.rs:123
-#: crates/big-video-player/src/video/ui/video_shell/panel.rs:516
+#: crates/big-video-player/src/video/ui/video_shell/panel.rs:517
 msgid "About this video"
 msgstr "Σχετικά με αυτό το βίντεο"
 
 #: crates/big-video-player/src/video/ui/video_shell/panel.rs:45
-#: crates/big-video-player/src/video/ui/video_shell/panel.rs:490
+#: crates/big-video-player/src/video/ui/video_shell/panel.rs:491
 msgid "Stop after…"
 msgstr "Διακοπή μετά από…"
 
@@ -4231,77 +4341,84 @@ msgstr "Πρόσφατα αρχεία"
 msgid "{current} of {total}"
 msgstr "{current} από {total}"
 
-#: crates/big-video-player/src/video/ui/video_shell/panel.rs:504
+#: crates/big-video-player/src/video/ui/video_shell/panel.rs:505
 msgid "Online quality"
 msgstr "Διαδικτυακή ποιότητα"
 
-#: crates/big-video-player/src/video/ui/video_shell/panel.rs:505
+#: crates/big-video-player/src/video/ui/video_shell/panel.rs:506
 msgid "Choose"
 msgstr "Επιλογή"
 
-#: crates/big-video-player/src/video/ui/video_shell/panel.rs:549
+#: crates/big-video-player/src/video/ui/video_shell/panel.rs:550
 msgid "Put back what was just set to normal"
 msgstr "Επαναφορά όσων μόλις ορίστηκαν σε κανονικά"
 
-#: crates/big-video-player/src/video/ui/video_shell/panel.rs:581
+#: crates/big-video-player/src/video/ui/video_shell/panel.rs:582
 msgid "Shortcuts"
 msgstr "Συντομεύσεις"
 
-#: crates/big-video-player/src/video/ui/video_shell/panel.rs:622
+#: crates/big-video-player/src/video/ui/video_shell/panel.rs:623
 msgid "Changed"
 msgstr "Άλλαξε"
 
-#: crates/big-video-player/src/video/ui/video_shell/panel.rs:634
-#: crates/big-video-player/src/video/ui/video_shell/panel.rs:657
+#: crates/big-video-player/src/video/ui/video_shell/panel.rs:635
+#: crates/big-video-player/src/video/ui/video_shell/panel.rs:658
 msgid "Back to normal"
 msgstr "Επιστροφή στο κανονικό"
 
-#: crates/big-video-player/src/video/ui/video_shell/panel.rs:639
+#: crates/big-video-player/src/video/ui/video_shell/panel.rs:640
 #, rust-format
 msgid "Undo: {setting}"
 msgstr "Αναίρεση: {setting}"
 
-#: crates/big-video-player/src/video/ui/video_shell/panel.rs:658
+#: crates/big-video-player/src/video/ui/video_shell/panel.rs:659
 msgid "Undo every change to the picture and sound"
 msgstr "Αναίρεση κάθε αλλαγής στην εικόνα και τον ήχο"
 
-#: crates/big-video-player/src/video/ui/video_shell/panel.rs:827
+#: crates/big-video-player/src/video/ui/video_shell/panel.rs:828
 msgid "Jump to a chapter"
 msgstr "Μετάβαση σε κεφάλαιο"
 
-#: crates/big-video-player/src/video/ui/video_shell/panel/recent.rs:15
+#: crates/big-video-player/src/video/ui/video_shell/panel/recent.rs:41
 msgid "No Recent Files"
 msgstr "Κανένα πρόσφατο αρχείο"
 
-#: crates/big-video-player/src/video/ui/video_shell/panel/recent.rs:142
-#: crates/big-video-player/src/video/ui/video_shell/panel/recent.rs:146
+#: crates/big-video-player/src/video/ui/video_shell/panel/recent.rs:204
+#: crates/big-video-player/src/video/ui/video_shell/panel/recent.rs:208
 msgid "Search recent files"
 msgstr "Αναζήτηση πρόσφατων αρχείων"
 
-#: crates/big-video-player/src/video/ui/video_shell/panel/recent.rs:158
+#: crates/big-video-player/src/video/ui/video_shell/panel/recent.rs:220
 msgid "No recent file matches"
 msgstr "Κανένα πρόσφατο αρχείο δεν ταιριάζει"
 
-#: crates/big-video-player/src/video/ui/video_shell/playback.rs:168
-msgid "Screenshot timed out; cancellation requested"
-msgstr "Το στιγμιότυπο οθόνης έληξε· ζητήθηκε ακύρωση"
+#: crates/big-video-player/src/video/ui/video_shell/playback.rs:169
+msgid "The screenshot took too long and was not saved"
+msgstr ""
 
-#: crates/big-video-player/src/video/ui/video_shell/playback.rs:214
+#: crates/big-video-player/src/video/ui/video_shell/playback.rs:213
 msgid "Playing video"
 msgstr "Αναπαραγωγή βίντεο"
 
-#: crates/big-video-player/src/video/ui/video_shell/playback.rs:479
+#: crates/big-video-player/src/video/ui/video_shell/playback.rs:490
 msgid "Could not move to trash"
 msgstr "Δεν ήταν δυνατή η μετακίνηση στον κάδο απορριμμάτων"
 
-#: crates/big-video-player/src/video/ui/video_shell/playback.rs:485
+#: crates/big-video-player/src/video/ui/video_shell/playback.rs:496
 #, rust-format
 msgid "{} file moved to trash"
 msgid_plural "{} files moved to trash"
 msgstr[0] "{} αρχείο μετακινήθηκε στον κάδο απορριμμάτων"
 msgstr[1] "{} αρχεία μετακινήθηκαν στον κάδο απορριμμάτων"
 
-#: crates/big-video-player/src/video/ui/video_shell/render.rs:335
+#: crates/big-video-player/src/video/ui/video_shell/render.rs:81
+#, rust-format
+msgid ""
+"The playback engine could not start: {error}. Check Preferences → Advanced → "
+"mpv Options, then reopen the player."
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/video_shell/render.rs:340
 msgid ""
 "Video could not start. Try Automatic video output in Preferences, or check "
 "that mpv is installed."
@@ -4309,7 +4426,7 @@ msgstr ""
 "Δεν ήταν δυνατή η έναρξη του βίντεο. Δοκιμάστε την Αυτόματη έξοδο βίντεο "
 "στις Προτιμήσεις ή ελέγξτε ότι το mpv είναι εγκατεστημένο."
 
-#: crates/big-video-player/src/video/ui/video_shell/render.rs:422
+#: crates/big-video-player/src/video/ui/video_shell/render.rs:427
 msgid ""
 "The video area is too large for compatibility mode. Reduce the window size "
 "or select Automatic video output in Preferences."
@@ -4317,7 +4434,7 @@ msgstr ""
 "Η περιοχή βίντεο είναι πολύ μεγάλη για τη λειτουργία συμβατότητας. Μειώστε "
 "το μέγεθος του παραθύρου ή επιλέξτε Αυτόματη έξοδο βίντεο στις Προτιμήσεις."
 
-#: crates/big-video-player/src/video/ui/video_shell/render.rs:431
+#: crates/big-video-player/src/video/ui/video_shell/render.rs:436
 msgid ""
 "The video frame could not be displayed. Try Automatic video output in "
 "Preferences."
@@ -4429,40 +4546,6 @@ msgstr "Το BigNetScreen αποσυνδέθηκε"
 msgid "Select between 1 and 1000 files"
 msgstr "Επιλέξτε από 1 έως 1000 αρχεία"
 
-#: crates/media-runtime/src/media/metadata_cache/detailed_video_metadata.rs:111
-#: crates/media-runtime/src/media/metadata_cache/detailed_video_metadata.rs:157
-#: crates/media-runtime/src/media/metadata_cache/detailed_video_metadata.rs:171
-#: crates/ui/media/big-media-components/src/media/file_metadata_dialog.rs:65
-#: crates/ui/media/big-player-ui/src/audio_preferences.rs:140
-msgid "Language"
-msgstr "Γλώσσα"
-
-#: crates/media-runtime/src/media/metadata_cache/detailed_video_metadata.rs:129
-msgid "CD Quality"
-msgstr "Ποιότητα CD"
-
-#: crates/media-runtime/src/media/metadata_cache/detailed_video_metadata.rs:131
-msgid "Hi-Res"
-msgstr "Hi-Res"
-
-#: crates/media-runtime/src/media/metadata_cache/detailed_video_metadata.rs:143
-#: crates/ui/media/big-player-ui/src/audio_preferences.rs:179
-msgid "Mono"
-msgstr "Μονοφωνικό"
-
-#: crates/media-runtime/src/media/metadata_cache/detailed_video_metadata.rs:144
-#: crates/ui/media/big-player-ui/src/audio_preferences.rs:179
-msgid "Stereo"
-msgstr "Στερεοφωνικό"
-
-#: crates/media-runtime/src/media/metadata_cache/detailed_video_metadata.rs:145
-msgid "5.1 Surround"
-msgstr "Surround 5.1"
-
-#: crates/media-runtime/src/media/metadata_cache/detailed_video_metadata.rs:146
-msgid "7.1 Surround"
-msgstr "Surround 7.1"
-
 #: crates/media-runtime/src/media/metadata_cache/display.rs:21
 #, rust-format
 msgid "{} audio track"
@@ -4477,7 +4560,7 @@ msgid_plural "{} subtitles"
 msgstr[0] "{} υπότιτλος"
 msgstr[1] "{} υπότιτλοι"
 
-#: crates/media-runtime/src/media/playlist_scan/display.rs:79
+#: crates/media-runtime/src/media/playlist_scan/display.rs:20
 msgid "Home"
 msgstr "Αρχική"
 
@@ -4633,7 +4716,7 @@ msgstr "Διακριτικό χρήστη"
 msgid "Retry Saving"
 msgstr "Επανάληψη αποθήκευσης"
 
-#: crates/media-runtime/src/settings/saving.rs:41
+#: crates/media-runtime/src/settings/saving.rs:33
 msgid ""
 "Your changes work for now but could not be saved. Check free disk space or "
 "close other players, then retry."
@@ -4642,7 +4725,7 @@ msgstr ""
 "Ελέγξτε τον ελεύθερο χώρο στον δίσκο ή κλείστε άλλες εφαρμογές αναπαραγωγής "
 "και δοκιμάστε ξανά."
 
-#: crates/media-runtime/src/settings/saving.rs:126
+#: crates/media-runtime/src/settings/saving.rs:135
 msgid ""
 "Saves and exports are still finishing. The window will close afterwards. "
 "Keeping it open does not cancel those operations."
@@ -4650,16 +4733,16 @@ msgstr ""
 "Οι αποθηκεύσεις και οι εξαγωγές ολοκληρώνονται ακόμη. Το παράθυρο θα κλείσει "
 "μετά. Αν το αφήσετε ανοιχτό, δεν ακυρώνονται αυτές οι λειτουργίες."
 
-#: crates/media-runtime/src/settings/saving.rs:129
+#: crates/media-runtime/src/settings/saving.rs:138
 msgid "Finishing pending work"
 msgstr "Ολοκλήρωση εκκρεμών εργασιών"
 
-#: crates/media-runtime/src/settings/saving.rs:132
-#: crates/media-runtime/src/settings/saving.rs:171
+#: crates/media-runtime/src/settings/saving.rs:141
+#: crates/media-runtime/src/settings/saving.rs:184
 msgid "Keep open"
 msgstr "Να παραμείνει ανοιχτή"
 
-#: crates/media-runtime/src/settings/saving.rs:164
+#: crates/media-runtime/src/settings/saving.rs:177
 msgid ""
 "Keep the player open to review saving errors and retry. Continuing may "
 "discard unsaved session changes; it does not mark them as saved."
@@ -4668,11 +4751,11 @@ msgstr ""
 "δοκιμάσετε ξανά. Η συνέχεια μπορεί να απορρίψει μη αποθηκευμένες αλλαγές της "
 "συνεδρίας· δεν τις σημειώνει ως αποθηκευμένες."
 
-#: crates/media-runtime/src/settings/saving.rs:167
+#: crates/media-runtime/src/settings/saving.rs:180
 msgid "Some changes are not confirmed as saved"
 msgstr "Ορισμένες αλλαγές δεν έχουν επιβεβαιωθεί ως αποθηκευμένες"
 
-#: crates/media-runtime/src/settings/saving.rs:172
+#: crates/media-runtime/src/settings/saving.rs:185
 msgid "Continue without saved changes"
 msgstr "Συνέχεια χωρίς τις αποθηκευμένες αλλαγές"
 
@@ -4784,7 +4867,7 @@ msgstr "Μεσαία"
 msgid "Highs"
 msgstr "Πρίμα"
 
-#: crates/media-runtime/src/shared/converter_handoff.rs:41
+#: crates/media-runtime/src/shared/converter_handoff.rs:39
 msgid "Could not launch the converter"
 msgstr "Δεν ήταν δυνατή η εκκίνηση του μετατροπέα"
 
@@ -4804,33 +4887,49 @@ msgstr "Αναμονή…"
 msgid "Reset to Default"
 msgstr "Επαναφορά στην προεπιλογή"
 
-#: crates/media-runtime/src/shared/sleep_timer.rs:12
+#: crates/media-runtime/src/shared/sleep_timer.rs:20
 msgid "Stop playback"
 msgstr "Διακοπή αναπαραγωγής"
 
-#: crates/media-runtime/src/shared/sleep_timer.rs:14
+#: crates/media-runtime/src/shared/sleep_timer.rs:22
 msgid "Suspend computer"
 msgstr "Αναστολή υπολογιστή"
 
-#: crates/media-runtime/src/shared/sleep_timer.rs:15
+#: crates/media-runtime/src/shared/sleep_timer.rs:23
 msgid "Shut down computer"
 msgstr "Τερματισμός λειτουργίας υπολογιστή"
 
-#: crates/media-runtime/src/shared/sleep_timer.rs:22
+#: crates/media-runtime/src/shared/sleep_timer.rs:30
 msgid "Minutes"
 msgstr "Λεπτά"
 
-#: crates/media-runtime/src/shared/sleep_timer.rs:23
+#: crates/media-runtime/src/shared/sleep_timer.rs:31
 msgid "Action"
 msgstr "Ενέργεια"
 
-#: crates/media-runtime/src/shared/sleep_timer.rs:24
+#: crates/media-runtime/src/shared/sleep_timer.rs:32
 msgid "When timer ends"
 msgstr "Όταν λήξει το χρονόμετρο"
 
-#: crates/media-runtime/src/shared/sleep_timer.rs:25
+#: crates/media-runtime/src/shared/sleep_timer.rs:33
 msgid "Start Timer"
 msgstr "Έναρξη χρονομέτρου"
+
+#: crates/media-runtime/src/shared/sleep_timer.rs:212
+msgid "Sleep timer: closing player"
+msgstr "Χρονόμετρο ύπνου: κλείσιμο της εφαρμογής"
+
+#: crates/media-runtime/src/shared/sleep_timer.rs:224
+msgid "Sleep timer: suspending computer"
+msgstr "Χρονόμετρο ύπνου: αναστολή του υπολογιστή"
+
+#: crates/media-runtime/src/shared/sleep_timer.rs:236
+msgid "Sleep timer: shutting down"
+msgstr "Χρονόμετρο ύπνου: τερματισμός λειτουργίας"
+
+#: crates/media-runtime/src/shared/sleep_timer.rs:238
+msgid "Sleep timer: playback paused"
+msgstr "Χρονόμετρο ύπνου: η αναπαραγωγή τέθηκε σε παύση"
 
 #: crates/media-runtime/src/shared/tv_cast.rs:110
 msgid "BigNetScreen is not installed"
@@ -4906,7 +5005,7 @@ msgstr "Παίξτε πρώτα κάτι και μετά επιλέξτε την
 
 #: crates/media-runtime/src/shared/tv_cast.rs:704
 #: crates/media-runtime/src/shared/tv_cast.rs:776
-#: crates/ui/media/big-player-ui/src/download_panel.rs:207
+#: crates/ui/media/big-player-ui/src/download_panel.rs:216
 msgid "Starting…"
 msgstr "Εκκίνηση…"
 
@@ -5013,11 +5112,32 @@ msgstr ""
 msgid "Press Alt+Down to adjust. Press Escape to close."
 msgstr "Πατήστε Alt+Κάτω για ρύθμιση. Πατήστε Escape για κλείσιμο."
 
-#: crates/ui/generic/big-relm4-components/src/layout/media_window/sidebar.rs:248
+#: crates/ui/generic/big-relm4-components/src/input/zone_layout_editor.rs:158
+#, rust-format
+msgid "{zone}, {position} of {count}"
+msgstr ""
+
+#: crates/ui/generic/big-relm4-components/src/input/zone_layout_editor.rs:199
+#, rust-format
+msgid "{bar}, center"
+msgstr ""
+
+#: crates/ui/generic/big-relm4-components/src/input/zone_layout_editor.rs:200
+#: crates/ui/generic/big-relm4-components/src/input/zone_layout_editor.rs:201
+#, rust-format
+msgid "{bar}, left"
+msgstr ""
+
+#: crates/ui/generic/big-relm4-components/src/input/zone_layout_editor.rs:202
+#, rust-format
+msgid "{bar}, right"
+msgstr ""
+
+#: crates/ui/generic/big-relm4-components/src/layout/media_window/sidebar.rs:232
 msgid "Resize sidebar"
 msgstr "Αλλαγή μεγέθους πλευρικής στήλης"
 
-#: crates/ui/generic/big-relm4-components/src/layout/media_window/sidebar.rs:250
+#: crates/ui/generic/big-relm4-components/src/layout/media_window/sidebar.rs:234
 msgid ""
 "Use Left and Right arrow keys to resize the media sidebar. Use Home and End "
 "for minimum and maximum width."
@@ -5046,6 +5166,11 @@ msgstr "Ροή ήχου"
 msgid "Subtitle Stream"
 msgstr "Ροή υποτίτλων"
 
+#: crates/ui/media/big-media-components/src/media/file_metadata_dialog.rs:65
+#: crates/ui/media/big-player-ui/src/audio_preferences.rs:142
+msgid "Language"
+msgstr "Γλώσσα"
+
 #: crates/ui/media/big-media-components/src/media/file_metadata_dialog.rs:419
 msgid "Low"
 msgstr "Χαμηλή"
@@ -5054,45 +5179,45 @@ msgstr "Χαμηλή"
 msgid "Studio"
 msgstr "Στούντιο"
 
-#: crates/ui/media/big-media-components/src/player_chrome.rs:301
+#: crates/ui/media/big-media-components/src/player_chrome.rs:319
 msgid "Volume level"
 msgstr "Επίπεδο έντασης"
 
-#: crates/ui/media/big-media-components/src/player_chrome.rs:312
+#: crates/ui/media/big-media-components/src/player_chrome.rs:330
 msgid "Playback speed"
 msgstr "Ταχύτητα αναπαραγωγής"
 
-#: crates/ui/media/big-media-components/src/player_chrome.rs:324
+#: crates/ui/media/big-media-components/src/player_chrome.rs:342
 msgid "Voice"
 msgstr "Φωνή"
 
-#: crates/ui/media/big-media-components/src/player_chrome.rs:326
+#: crates/ui/media/big-media-components/src/player_chrome.rs:344
 msgid "Voice enhancement"
 msgstr "Βελτίωση φωνής"
 
 #: crates/ui/media/big-player-ui/src/appearance/audio_colors.rs:30
-#: crates/ui/media/big-player-ui/src/appearance/video_colors.rs:29
+#: crates/ui/media/big-player-ui/src/appearance/video_colors.rs:30
 msgid "Color Source"
 msgstr "Πηγή χρωμάτων"
 
 #: crates/ui/media/big-player-ui/src/appearance/audio_colors.rs:32
-#: crates/ui/media/big-player-ui/src/appearance/video_colors.rs:31
+#: crates/ui/media/big-player-ui/src/appearance/video_colors.rs:32
 msgid "Follow System"
 msgstr "Ακολούθηση συστήματος"
 
 #: crates/ui/media/big-player-ui/src/appearance/audio_colors.rs:33
-#: crates/ui/media/big-player-ui/src/appearance/video_colors.rs:32
+#: crates/ui/media/big-player-ui/src/appearance/video_colors.rs:33
 msgid "Light Theme"
 msgstr "Ανοιχτό θέμα"
 
 #: crates/ui/media/big-player-ui/src/appearance/audio_colors.rs:34
-#: crates/ui/media/big-player-ui/src/appearance/video_colors.rs:33
+#: crates/ui/media/big-player-ui/src/appearance/video_colors.rs:34
 msgid "Dark Theme"
 msgstr "Σκούρο θέμα"
 
 #: crates/ui/media/big-player-ui/src/appearance/audio_colors.rs:35
 #: crates/ui/media/big-player-ui/src/appearance/color_palette_controls.rs:130
-#: crates/ui/media/big-player-ui/src/appearance/video_colors.rs:35
+#: crates/ui/media/big-player-ui/src/appearance/video_colors.rs:36
 msgid "Custom Colors"
 msgstr "Προσαρμοσμένα χρώματα"
 
@@ -5144,53 +5269,53 @@ msgstr "Χρώμα εικονιδίων"
 msgid "Dialogs and Menus Color"
 msgstr "Χρώμα διαλόγων και μενού"
 
-#: crates/ui/media/big-player-ui/src/appearance/video_colors.rs:34
+#: crates/ui/media/big-player-ui/src/appearance/video_colors.rs:35
 msgid "Video Colors"
 msgstr "Χρώματα βίντεο"
 
-#: crates/ui/media/big-player-ui/src/appearance/video_colors.rs:44
+#: crates/ui/media/big-player-ui/src/appearance/video_colors.rs:45
 msgid "Background Opacity"
 msgstr "Αδιαφάνεια φόντου"
 
-#: crates/ui/media/big-player-ui/src/appearance/video_colors.rs:45
+#: crates/ui/media/big-player-ui/src/appearance/video_colors.rs:46
 msgid "Menu Opacity"
 msgstr "Αδιαφάνεια μενού"
 
-#: crates/ui/media/big-player-ui/src/appearance/video_colors.rs:69
+#: crates/ui/media/big-player-ui/src/appearance/video_colors.rs:70
 msgid "Icon and Text Shadow"
 msgstr "Σκιά εικονιδίων και κειμένου"
 
-#: crates/ui/media/big-player-ui/src/audio_preferences.rs:87
+#: crates/ui/media/big-player-ui/src/audio_preferences.rs:88
 msgid "Sound"
 msgstr "Ήχος"
 
-#: crates/ui/media/big-player-ui/src/audio_preferences.rs:91
+#: crates/ui/media/big-player-ui/src/audio_preferences.rs:92
 msgid "Even Out Loudness"
 msgstr "Εξίσωση έντασης"
 
-#: crates/ui/media/big-player-ui/src/audio_preferences.rs:92
+#: crates/ui/media/big-player-ui/src/audio_preferences.rs:93
 msgid "Quiet and loud media play at a similar volume"
 msgstr "Τα πολυμέσα με χαμηλή και υψηλή ένταση παίζουν με παρόμοια ένταση"
 
-#: crates/ui/media/big-player-ui/src/audio_preferences.rs:110
+#: crates/ui/media/big-player-ui/src/audio_preferences.rs:111
 msgid "Keep Voices Natural"
 msgstr "Φυσικές φωνές"
 
-#: crates/ui/media/big-player-ui/src/audio_preferences.rs:111
+#: crates/ui/media/big-player-ui/src/audio_preferences.rs:112
 msgid "Voices keep their tone when playing faster or slower"
 msgstr "Οι φωνές διατηρούν τον τόνο τους όταν παίζουν πιο γρήγορα ή πιο αργά"
 
-#: crates/ui/media/big-player-ui/src/audio_preferences.rs:124
+#: crates/ui/media/big-player-ui/src/audio_preferences.rs:126
 msgid "Maximum Volume"
 msgstr "Μέγιστη ένταση"
 
-#: crates/ui/media/big-player-ui/src/audio_preferences.rs:125
+#: crates/ui/media/big-player-ui/src/audio_preferences.rs:127
 msgid "Above 100% helps with quiet recordings but may distort"
 msgstr ""
 "Πάνω από 100% βοηθά με σιγανές ηχογραφήσεις αλλά μπορεί να προκαλέσει "
 "παραμόρφωση"
 
-#: crates/ui/media/big-player-ui/src/audio_preferences.rs:142
+#: crates/ui/media/big-player-ui/src/audio_preferences.rs:144
 msgid ""
 "For media with several audio tracks. Use language codes separated by commas, "
 "in order of preference, such as pt,en"
@@ -5198,29 +5323,37 @@ msgstr ""
 "Για πολυμέσα με πολλά κομμάτια ήχου. Χρησιμοποιήστε κωδικούς γλωσσών "
 "χωρισμένους με κόμμα, κατά σειρά προτίμησης, όπως el,en"
 
-#: crates/ui/media/big-player-ui/src/audio_preferences.rs:161
+#: crates/ui/media/big-player-ui/src/audio_preferences.rs:163
 msgid "Sound System"
 msgstr "Σύστημα ήχου"
 
-#: crates/ui/media/big-player-ui/src/audio_preferences.rs:162
+#: crates/ui/media/big-player-ui/src/audio_preferences.rs:164
 msgid "Automatic works for most computers"
 msgstr "Η αυτόματη επιλογή λειτουργεί στους περισσότερους υπολογιστές"
 
-#: crates/ui/media/big-player-ui/src/audio_preferences.rs:166
+#: crates/ui/media/big-player-ui/src/audio_preferences.rs:168
 msgid "Audio Output"
 msgstr "Έξοδος ήχου"
 
-#: crates/ui/media/big-player-ui/src/audio_preferences.rs:167
+#: crates/ui/media/big-player-ui/src/audio_preferences.rs:169
 msgid "Takes effect after reopening the player"
 msgstr "Τίθεται σε ισχύ μετά το επανάνοιγμα της εφαρμογής"
 
-#: crates/ui/media/big-player-ui/src/audio_preferences.rs:177
+#: crates/ui/media/big-player-ui/src/audio_preferences.rs:179
 msgid "Speakers"
 msgstr "Ηχεία"
 
-#: crates/ui/media/big-player-ui/src/audio_preferences.rs:178
+#: crates/ui/media/big-player-ui/src/audio_preferences.rs:180
 msgid "Mixes surround sound down for stereo speakers or headphones"
 msgstr "Συμπιέζει τον ήχο surround για στερεοφωνικά ηχεία ή ακουστικά"
+
+#: crates/ui/media/big-player-ui/src/audio_preferences.rs:181
+msgid "Stereo"
+msgstr "Στερεοφωνικό"
+
+#: crates/ui/media/big-player-ui/src/audio_preferences.rs:181
+msgid "Mono"
+msgstr "Μονοφωνικό"
 
 #: crates/ui/media/big-player-ui/src/audio_trim_bar.rs:40
 msgid "Mark cut point"
@@ -5251,35 +5384,35 @@ msgstr "Πατήστε Σήμανση στην αρχή και στο τέλος
 msgid "Export cuts"
 msgstr "Εξαγωγή αποκοπών"
 
-#: crates/ui/media/big-player-ui/src/download_panel.rs:100
+#: crates/ui/media/big-player-ui/src/download_panel.rs:110
 msgid "Downloads"
 msgstr "Λήψεις"
 
-#: crates/ui/media/big-player-ui/src/download_panel.rs:109
+#: crates/ui/media/big-player-ui/src/download_panel.rs:119
 msgid "Clear completed downloads"
 msgstr "Εκκαθάριση ολοκληρωμένων λήψεων"
 
-#: crates/ui/media/big-player-ui/src/download_panel.rs:119
+#: crates/ui/media/big-player-ui/src/download_panel.rs:129
 msgid "Hide downloads panel"
 msgstr "Απόκρυψη πίνακα λήψεων"
 
-#: crates/ui/media/big-player-ui/src/download_panel.rs:197
+#: crates/ui/media/big-player-ui/src/download_panel.rs:206
 msgid "Cancel download"
 msgstr "Ακύρωση λήψης"
 
-#: crates/ui/media/big-player-ui/src/download_panel.rs:290
+#: crates/ui/media/big-player-ui/src/download_panel.rs:315
 msgid "Cancelled"
 msgstr "Ακυρώθηκε"
 
-#: crates/ui/media/big-player-ui/src/download_panel.rs:301
+#: crates/ui/media/big-player-ui/src/download_panel.rs:326
 msgid "Complete"
 msgstr "Ολοκληρώθηκε"
 
-#: crates/ui/media/big-player-ui/src/file_browser.rs:108
+#: crates/ui/media/big-player-ui/src/file_browser.rs:110
 msgid "Filter files"
 msgstr "Φιλτράρισμα αρχείων"
 
-#: crates/ui/media/big-player-ui/src/file_browser.rs:261
+#: crates/ui/media/big-player-ui/src/file_browser.rs:281
 msgid "File browser"
 msgstr "Περιήγηση αρχείων"
 
@@ -5300,86 +5433,101 @@ msgstr "Αναζήτηση στίχων…"
 msgid "No lyrics found"
 msgstr "Δεν βρέθηκαν στίχοι"
 
-#: crates/ui/media/big-player-ui/src/podcast_panel.rs:123
+#: crates/ui/media/big-player-ui/src/podcast_panel.rs:124
 msgid "Search podcasts…"
 msgstr "Αναζήτηση podcast…"
 
-#: crates/ui/media/big-player-ui/src/podcast_panel.rs:125
+#: crates/ui/media/big-player-ui/src/podcast_panel.rs:126
 msgid "Search podcasts"
 msgstr "Αναζήτηση podcast"
 
-#: crates/ui/media/big-player-ui/src/podcast_panel.rs:146
 #: crates/ui/media/big-player-ui/src/podcast_panel.rs:147
+#: crates/ui/media/big-player-ui/src/podcast_panel.rs:148
 msgid "Add RSS feed"
 msgstr "Προσθήκη ροής RSS"
 
-#: crates/ui/media/big-player-ui/src/podcast_panel.rs:176
+#: crates/ui/media/big-player-ui/src/podcast_panel.rs:177
 msgid "No Podcasts"
 msgstr "Κανένα podcast"
 
-#: crates/ui/media/big-player-ui/src/podcast_panel.rs:177
+#: crates/ui/media/big-player-ui/src/podcast_panel.rs:178
 msgid "Search for podcasts or add an RSS feed"
 msgstr "Αναζητήστε podcast ή προσθέστε μια ροή RSS"
 
-#: crates/ui/media/big-player-ui/src/podcast_panel.rs:262
+#: crates/ui/media/big-player-ui/src/podcast_panel.rs:251
+msgid "Podcast Subscriptions Unavailable"
+msgstr ""
+
+#: crates/ui/media/big-player-ui/src/podcast_panel.rs:281
 msgid "Connection error — try again"
 msgstr "Σφάλμα σύνδεσης — δοκιμάστε ξανά"
 
-#: crates/ui/media/big-player-ui/src/podcast_panel.rs:273
+#: crates/ui/media/big-player-ui/src/podcast_panel.rs:295
 msgid "Already subscribed"
 msgstr "Έχετε ήδη εγγραφεί"
 
-#: crates/ui/media/big-player-ui/src/podcast_panel.rs:353
+#: crates/ui/media/big-player-ui/src/podcast_panel.rs:348
+msgid "Podcast subscriptions are still loading"
+msgstr ""
+
+#: crates/ui/media/big-player-ui/src/podcast_panel.rs:385
 msgid "Subscriptions"
 msgstr "Συνδρομές"
 
-#: crates/ui/media/big-player-ui/src/podcast_panel.rs:377
+#: crates/ui/media/big-player-ui/src/podcast_panel.rs:409
 msgid "Search Results"
 msgstr "Αποτελέσματα αναζήτησης"
 
-#: crates/ui/media/big-player-ui/src/podcast_panel.rs:425
+#: crates/ui/media/big-player-ui/src/podcast_panel.rs:457
+#, fuzzy
+#| msgid "The playlist could not be saved."
+msgid "Podcast subscriptions could not be saved"
+msgstr "Η λίστα αναπαραγωγής δεν ήταν δυνατό να αποθηκευτεί."
+
+#: crates/ui/media/big-player-ui/src/podcast_panel.rs:470
+#, rust-format
+msgid "Podcast subscriptions could not be read, so changes are not saved: {}"
+msgstr ""
+
+#: crates/ui/media/big-player-ui/src/podcast_panel.rs:479
 msgid "Title unavailable"
 msgstr "Ο τίτλος δεν είναι διαθέσιμος"
 
-#: crates/ui/media/big-player-ui/src/podcast_panel.rs:427
-msgid "Loading…"
-msgstr "Φόρτωση…"
-
-#: crates/ui/media/big-player-ui/src/podcast_panel.rs:491
+#: crates/ui/media/big-player-ui/src/podcast_panel.rs:545
 msgid "Unsubscribe"
 msgstr "Κατάργηση συνδρομής"
 
-#: crates/ui/media/big-player-ui/src/podcast_panel.rs:493
+#: crates/ui/media/big-player-ui/src/podcast_panel.rs:547
 msgid "Unsubscribe from podcast"
 msgstr "Κατάργηση συνδρομής από το podcast"
 
-#: crates/ui/media/big-player-ui/src/podcast_panel.rs:512
-#: crates/ui/media/big-player-ui/src/podcast_panel.rs:571
+#: crates/ui/media/big-player-ui/src/podcast_panel.rs:566
+#: crates/ui/media/big-player-ui/src/podcast_panel.rs:625
 msgid "Subscribe"
 msgstr "Συνδρομή"
 
-#: crates/ui/media/big-player-ui/src/podcast_panel.rs:514
+#: crates/ui/media/big-player-ui/src/podcast_panel.rs:568
 msgid "Subscribe to podcast"
 msgstr "Συνδρομή στο podcast"
 
-#: crates/ui/media/big-player-ui/src/podcast_panel.rs:533
+#: crates/ui/media/big-player-ui/src/podcast_panel.rs:587
 msgid "episodes"
 msgstr "επεισόδια"
 
-#: crates/ui/media/big-player-ui/src/podcast_panel.rs:554
+#: crates/ui/media/big-player-ui/src/podcast_panel.rs:608
 msgid "Add RSS Feed"
 msgstr "Προσθήκη ροής RSS"
 
-#: crates/ui/media/big-player-ui/src/podcast_panel.rs:560
+#: crates/ui/media/big-player-ui/src/podcast_panel.rs:614
 msgid "Paste the podcast RSS feed URL below."
 msgstr "Επικολλήστε παρακάτω το URL της ροής RSS του podcast."
 
-#: crates/ui/media/big-player-ui/src/podcast_panel.rs:562
+#: crates/ui/media/big-player-ui/src/podcast_panel.rs:616
 msgid "Feed"
 msgstr "Ροή"
 
-#: crates/ui/media/big-player-ui/src/podcast_panel.rs:564
-#: crates/ui/media/big-player-ui/src/podcast_panel.rs:567
+#: crates/ui/media/big-player-ui/src/podcast_panel.rs:618
+#: crates/ui/media/big-player-ui/src/podcast_panel.rs:621
 msgid "RSS feed URL"
 msgstr "URL ροής RSS"
 
@@ -5471,11 +5619,11 @@ msgstr "URL ροής σταθμού"
 msgid "Add"
 msgstr "Προσθήκη"
 
-#: crates/ui/media/big-player-ui/src/smartphone/dialog.rs:38
+#: crates/ui/media/big-player-ui/src/smartphone/dialog.rs:39
 msgid "Web Remote"
 msgstr "Απομακρυσμένος έλεγχος μέσω web"
 
-#: crates/ui/media/big-player-ui/src/smartphone/dialog.rs:40
+#: crates/ui/media/big-player-ui/src/smartphone/dialog.rs:41
 msgid ""
 "Turn on to control this player from a phone or tablet on the same network. "
 "HTTP is not encrypted: use only a trusted private network. Scan the QR code "
@@ -5486,24 +5634,24 @@ msgstr ""
 "αξιόπιστο ιδιωτικό δίκτυο. Σαρώστε τον κωδικό QR με την κάμερα του κινητού "
 "για να ανοίξετε τον απομακρυσμένο έλεγχο."
 
-#: crates/ui/media/big-player-ui/src/smartphone/dialog.rs:47
+#: crates/ui/media/big-player-ui/src/smartphone/dialog.rs:48
 msgid "Enable web remote"
 msgstr "Ενεργοποίηση απομακρυσμένου ελέγχου μέσω web"
 
-#: crates/ui/media/big-player-ui/src/smartphone/dialog.rs:52
+#: crates/ui/media/big-player-ui/src/smartphone/dialog.rs:53
 msgid "QR code"
 msgstr "Κωδικός QR"
 
-#: crates/ui/media/big-player-ui/src/smartphone/dialog.rs:65
-#: crates/ui/media/big-player-ui/src/smartphone/dialog.rs:157
+#: crates/ui/media/big-player-ui/src/smartphone/dialog.rs:66
+#: crates/ui/media/big-player-ui/src/smartphone/dialog.rs:193
 msgid "Web remote is off."
 msgstr "Ο απομακρυσμένος έλεγχος μέσω web είναι απενεργοποιημένος."
 
-#: crates/ui/media/big-player-ui/src/smartphone/dialog.rs:83
+#: crates/ui/media/big-player-ui/src/smartphone/dialog.rs:84
 msgid "KDE Connect / GSConnect"
 msgstr "KDE Connect / GSConnect"
 
-#: crates/ui/media/big-player-ui/src/smartphone/dialog.rs:85
+#: crates/ui/media/big-player-ui/src/smartphone/dialog.rs:86
 msgid ""
 "If you have KDE Connect (Plasma, Android) or GSConnect (GNOME) installed, "
 "your paired phone already shows media controls, track information and volume "
@@ -5514,11 +5662,11 @@ msgstr ""
 "πληροφορίες κομματιού και ένταση για αυτήν την εφαρμογή — δεν χρειάζεται "
 "καμία πρόσθετη ρύθμιση από τη δική μας πλευρά."
 
-#: crates/ui/media/big-player-ui/src/smartphone/dialog.rs:92
+#: crates/ui/media/big-player-ui/src/smartphone/dialog.rs:93
 msgid "Install KDE Connect on your phone"
 msgstr "Εγκαταστήστε το KDE Connect στο κινητό σας"
 
-#: crates/ui/media/big-player-ui/src/smartphone/dialog.rs:94
+#: crates/ui/media/big-player-ui/src/smartphone/dialog.rs:95
 msgid ""
 "Open the link on the phone's app store. Pair once - then media keys, "
 "notifications and file sharing work both ways."
@@ -5527,17 +5675,59 @@ msgstr ""
 "φορά — μετά, τα πλήκτρα πολυμέσων, οι ειδοποιήσεις και η κοινή χρήση αρχείων "
 "λειτουργούν και προς τις δύο κατευθύνσεις."
 
-#: crates/ui/media/big-player-ui/src/smartphone/dialog.rs:98
+#: crates/ui/media/big-player-ui/src/smartphone/dialog.rs:99
 msgid "Open KDE Connect download page"
 msgstr "Άνοιγμα της σελίδας λήψης του KDE Connect"
 
-#: crates/ui/media/big-player-ui/src/smartphone/dialog.rs:143
+#: crates/ui/media/big-player-ui/src/smartphone/dialog.rs:135
+msgid "No local network found. Connect to a network and try again."
+msgstr ""
+
+#: crates/ui/media/big-player-ui/src/smartphone/dialog.rs:158
 msgid "Scan the code with the phone's camera."
 msgstr "Σαρώστε τον κωδικό με την κάμερα του κινητού."
 
-#: crates/ui/media/big-player-ui/src/smartphone/dialog.rs:149
+#: crates/ui/media/big-player-ui/src/smartphone/dialog.rs:177
+#, fuzzy, rust-format
+#| msgid "Web remote is off."
+msgid "Web remote stopped: {error}"
+msgstr "Ο απομακρυσμένος έλεγχος μέσω web είναι απενεργοποιημένος."
+
+#: crates/ui/media/big-player-ui/src/smartphone/dialog.rs:185
 msgid "Could not start server"
 msgstr "Δεν ήταν δυνατή η εκκίνηση του διακομιστή"
+
+#~ msgid "Screenshot queue is full; wait for pending captures"
+#~ msgstr ""
+#~ "Η ουρά στιγμιοτύπων οθόνης είναι πλήρης· περιμένετε τις εκκρεμείς λήψεις"
+
+#~ msgid "Screenshot failed"
+#~ msgstr "Αποτυχία στιγμιότυπου οθόνης"
+
+#~ msgid "moved"
+#~ msgstr "μετακινήθηκαν"
+
+#~ msgid "Invalid name"
+#~ msgstr "Μη έγκυρο όνομα"
+
+#, rust-format
+#~ msgid "{ok} {verb}, {failed} failed"
+#~ msgstr "{ok} {verb}, {failed} απέτυχαν"
+
+#~ msgid "Screenshot timed out; cancellation requested"
+#~ msgstr "Το στιγμιότυπο οθόνης έληξε· ζητήθηκε ακύρωση"
+
+#~ msgid "CD Quality"
+#~ msgstr "Ποιότητα CD"
+
+#~ msgid "Hi-Res"
+#~ msgstr "Hi-Res"
+
+#~ msgid "5.1 Surround"
+#~ msgstr "Surround 5.1"
+
+#~ msgid "7.1 Surround"
+#~ msgstr "Surround 7.1"
 
 #~ msgid "Could not reach provider — showing cached copy if available."
 #~ msgstr ""

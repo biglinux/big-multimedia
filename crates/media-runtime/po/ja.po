@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: big-media-runtime 0.1.0\n"
 "Report-Msgid-Bugs-To: https://github.com/biglinux/big-multimedia/issues\n"
-"POT-Creation-Date: 2026-10-26 19:32-0300\n"
+"POT-Creation-Date: 2026-11-18 05:54-0300\n"
 "PO-Revision-Date: 2026-10-23 00:15-0300\n"
 "Last-Translator: Automatically generated\n"
 "Language-Team: none\n"
@@ -89,8 +89,22 @@ msgstr ""
 msgid "Data Sources"
 msgstr "データソース"
 
+#: crates/big-audio-player/src/audio/app.rs:54
+#, fuzzy
+#| msgid "Close the player"
+msgid "Play or pause the running player"
+msgstr "プレーヤーを閉じる"
+
+#: crates/big-audio-player/src/audio/app.rs:59
+msgid "Skip to the next track in the running player"
+msgstr ""
+
+#: crates/big-audio-player/src/audio/app.rs:64
+msgid "Go back to the previous track in the running player"
+msgstr ""
+
 #: crates/big-audio-player/src/audio/appearance/dialogs.rs:43
-#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:283
+#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:309
 msgid "Effects"
 msgstr "エフェクト"
 
@@ -110,7 +124,7 @@ msgstr ""
 "ます"
 
 #: crates/big-audio-player/src/audio/keybindings.rs:14
-#: crates/big-audio-player/src/audio/ui/audio_shell/playback.rs:162
+#: crates/big-audio-player/src/audio/ui/audio_shell/playback.rs:175
 #: crates/big-audio-player/src/audio/ui/audio_shell/tray.rs:20
 #: crates/big-video-player/src/video/keybindings.rs:15
 #: crates/big-video-player/src/video/ui/video_shell/input_gestures.rs:105
@@ -126,7 +140,7 @@ msgstr "再生 / 一時停止"
 #: crates/big-audio-player/src/audio/keybindings.rs:57
 #: crates/big-audio-player/src/audio/keybindings.rs:64
 #: crates/big-audio-player/src/audio/keybindings.rs:71
-#: crates/big-audio-player/src/audio/preferences.rs:97
+#: crates/big-audio-player/src/audio/preferences.rs:98
 #: crates/big-video-player/src/video/keybindings.rs:16
 #: crates/big-video-player/src/video/keybindings.rs:23
 #: crates/big-video-player/src/video/keybindings.rs:30
@@ -142,7 +156,7 @@ msgstr "再生 / 一時停止"
 #: crates/big-video-player/src/video/keybindings.rs:100
 #: crates/big-video-player/src/video/keybindings.rs:107
 #: crates/big-video-player/src/video/keybindings.rs:114
-#: crates/big-video-player/src/video/ui/preferences/general.rs:24
+#: crates/big-video-player/src/video/ui/preferences/general.rs:25
 msgid "Playback"
 msgstr "再生"
 
@@ -191,8 +205,8 @@ msgstr "検索"
 #: crates/big-audio-player/src/audio/keybindings.rs:79
 #: crates/big-audio-player/src/audio/keybindings.rs:86
 #: crates/big-audio-player/src/audio/keybindings.rs:93
-#: crates/big-video-player/src/video/keybindings.rs:260
-#: crates/big-video-player/src/video/keybindings.rs:267
+#: crates/big-video-player/src/video/keybindings.rs:261
+#: crates/big-video-player/src/video/keybindings.rs:268
 msgid "Navigation"
 msgstr "ナビゲーション"
 
@@ -214,7 +228,7 @@ msgid "Library"
 msgstr "ライブラリ"
 
 #: crates/big-audio-player/src/audio/keybindings.rs:107
-#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:127
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:112
 #: crates/big-video-player/src/video/ui/video_shell/input_gestures.rs:116
 #: crates/big-video-player/src/video/ui/video_shell/panel.rs:43
 #: crates/big-video-player/src/video/ui/video_shell/panel.rs:469
@@ -239,8 +253,8 @@ msgid "Toggle Repeat"
 msgstr "リピートを切り替え"
 
 #: crates/big-audio-player/src/audio/keybindings.rs:129
-#: crates/big-video-player/src/video/ui/video_shell/panel.rs:548
-#: crates/big-video-player/src/video/ui/video_shell/playback.rs:491
+#: crates/big-video-player/src/video/ui/video_shell/panel.rs:549
+#: crates/big-video-player/src/video/ui/video_shell/playback.rs:502
 msgid "Undo"
 msgstr "元に戻す"
 
@@ -278,13 +292,13 @@ msgid "This Year"
 msgstr "今年"
 
 #: crates/big-audio-player/src/audio/library_grouping/group_by.rs:38
-#: crates/big-video-player/src/video/ui/filters/groups_shader.rs:153
+#: crates/big-video-player/src/video/ui/filters/groups_shader.rs:154
 msgid "None"
 msgstr "なし"
 
 #: crates/big-audio-player/src/audio/library_grouping/group_by.rs:39
 #: crates/big-audio-player/src/audio/ui/library_tag_editor.rs:203
-#: crates/big-audio-player/src/audio/ui/track_list.rs:75
+#: crates/big-audio-player/src/audio/ui/track_list.rs:92
 msgid "Artist"
 msgstr "アーティスト"
 
@@ -296,27 +310,27 @@ msgstr "アルバムアーティスト"
 #: crates/big-audio-player/src/audio/library_grouping/group_by.rs:41
 #: crates/big-audio-player/src/audio/library_grouping/grouping.rs:82
 #: crates/big-audio-player/src/audio/ui/library_tag_editor.rs:204
-#: crates/big-audio-player/src/audio/ui/track_list.rs:76
+#: crates/big-audio-player/src/audio/ui/track_list.rs:93
 msgid "Album"
 msgstr "アルバム"
 
 #: crates/big-audio-player/src/audio/library_grouping/group_by.rs:42
 #: crates/big-audio-player/src/audio/library_grouping/grouping.rs:89
 #: crates/big-audio-player/src/audio/ui/library_tag_editor.rs:209
-#: crates/big-audio-player/src/audio/ui/track_list.rs:78
+#: crates/big-audio-player/src/audio/ui/track_list.rs:95
 msgid "Genre"
 msgstr "ジャンル"
 
 #: crates/big-audio-player/src/audio/library_grouping/group_by.rs:43
 #: crates/big-audio-player/src/audio/library_grouping/grouping.rs:90
 #: crates/big-audio-player/src/audio/ui/library_tag_editor.rs:210
-#: crates/big-audio-player/src/audio/ui/track_list.rs:79
+#: crates/big-audio-player/src/audio/ui/track_list.rs:96
 msgid "Year"
 msgstr "年"
 
 #: crates/big-audio-player/src/audio/library_grouping/group_by.rs:44
 #: crates/big-audio-player/src/audio/ui/library_tag_editor/spec.rs:112
-#: crates/big-audio-player/src/audio/ui/track_list.rs:81
+#: crates/big-audio-player/src/audio/ui/track_list.rs:98
 #: crates/big-video-player/src/video/ui/media_details_dialog.rs:109
 #: crates/big-video-player/src/video/ui/media_details_dialog.rs:260
 #: crates/ui/media/big-media-components/src/media/file_metadata_dialog.rs:59
@@ -343,32 +357,38 @@ msgstr "ジャンル → アーティスト"
 msgid "Year → Album"
 msgstr "年 → アルバム"
 
-#: crates/big-audio-player/src/audio/library_query.rs:119
+#: crates/big-audio-player/src/audio/library_query.rs:125
 msgid "All Tracks"
 msgstr "すべてのトラック"
 
-#: crates/big-audio-player/src/audio/library_query.rs:168
+#: crates/big-audio-player/src/audio/library_query.rs:174
 #: crates/big-audio-player/src/audio/ui/library_tree.rs:135
 #: crates/big-audio-player/src/audio/ui/library_tree.rs:246
-#: crates/big-audio-player/src/audio/ui/library_tree/presentation.rs:77
-#: crates/big-audio-player/src/audio/ui/library_tree/presentation_tests.rs:81
-#: crates/ui/media/big-player-ui/src/browser_node.rs:219
+#: crates/big-audio-player/src/audio/ui/library_tree/presentation.rs:68
+#: crates/big-audio-player/src/audio/ui/library_tree/presentation_tests.rs:73
+#: crates/ui/media/big-player-ui/src/browser_node.rs:233
 msgid "Various Artists"
 msgstr "さまざまなアーティスト"
 
-#: crates/big-audio-player/src/audio/preferences.rs:32
-#: crates/big-audio-player/src/audio/ui/audio_shell/component.rs:141
-#: crates/big-audio-player/src/audio/ui/audio_shell/component.rs:170
+#: crates/big-audio-player/src/audio/playlist_import.rs:16
+#: crates/big-video-player/src/video/ui/video_shell/playback.rs:289
+#, rust-format
+msgid "Only the first {} entries of the playlist were loaded."
+msgstr ""
+
+#: crates/big-audio-player/src/audio/preferences.rs:33
+#: crates/big-audio-player/src/audio/ui/audio_shell/component.rs:144
+#: crates/big-audio-player/src/audio/ui/audio_shell/component.rs:173
 #: crates/big-video-player/src/video/keybindings.rs:245
 #: crates/big-video-player/src/video/keybindings.rs:252
 msgid "Music"
 msgstr "ミュージック"
 
-#: crates/big-audio-player/src/audio/preferences.rs:39
+#: crates/big-audio-player/src/audio/preferences.rs:40
 msgid "Volume Leveling"
 msgstr "音量の均一化"
 
-#: crates/big-audio-player/src/audio/preferences.rs:41
+#: crates/big-audio-player/src/audio/preferences.rs:42
 msgid ""
 "Uses the loudness stored in the files so you do not have to adjust the "
 "volume between songs"
@@ -376,178 +396,152 @@ msgstr ""
 "ファイルに保存されたラウドネス情報を使うため、曲ごとに音量を調整する必要があ"
 "りません"
 
-#: crates/big-audio-player/src/audio/preferences.rs:48
+#: crates/big-audio-player/src/audio/preferences.rs:49
 msgid "Level By"
 msgstr "均一化の基準"
 
-#: crates/big-audio-player/src/audio/preferences.rs:50
-#: crates/big-video-player/src/video/ui/preferences/general.rs:39
+#: crates/big-audio-player/src/audio/preferences.rs:51
+#: crates/big-video-player/src/video/ui/preferences/general.rs:40
 #: crates/big-video-player/src/video/ui/preferences/video.rs:60
 #: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/header.rs:196
-#: crates/big-video-player/src/video/ui/video_shell/panel.rs:493
+#: crates/big-video-player/src/video/ui/video_shell/panel.rs:494
 msgid "Off"
 msgstr "オフ"
 
-#: crates/big-audio-player/src/audio/preferences.rs:50
+#: crates/big-audio-player/src/audio/preferences.rs:51
 msgid "Per Song"
 msgstr "曲ごと"
 
-#: crates/big-audio-player/src/audio/preferences.rs:50
+#: crates/big-audio-player/src/audio/preferences.rs:51
 msgid "Per Album"
 msgstr "アルバムごと"
 
-#: crates/big-audio-player/src/audio/preferences.rs:62
+#: crates/big-audio-player/src/audio/preferences.rs:63
 msgid "Leveling Boost"
 msgstr "均一化のブースト"
 
-#: crates/big-audio-player/src/audio/preferences.rs:64
+#: crates/big-audio-player/src/audio/preferences.rs:65
 msgid "In decibels; positive values play louder, negative softer"
 msgstr "デシベル単位。正の値は大きく、負の値は小さく再生されます"
 
-#: crates/big-audio-player/src/audio/preferences.rs:101
+#: crates/big-audio-player/src/audio/preferences.rs:102
 msgid "No Gaps Between Songs"
 msgstr "曲間のギャップなし"
 
-#: crates/big-audio-player/src/audio/preferences.rs:103
+#: crates/big-audio-player/src/audio/preferences.rs:104
 msgid "Albums recorded as one continuous piece play without pauses"
 msgstr "1 つの連続した作品として録音されたアルバムを、途切れなく再生します"
 
-#: crates/big-audio-player/src/audio/preferences.rs:120
-#: crates/big-video-player/src/video/ui/preferences/general.rs:28
+#: crates/big-audio-player/src/audio/preferences.rs:121
+#: crates/big-video-player/src/video/ui/preferences/general.rs:29
 msgid "Resume Where You Left Off"
 msgstr "前回の続きから再生"
 
-#: crates/big-audio-player/src/audio/preferences.rs:121
+#: crates/big-audio-player/src/audio/preferences.rs:122
 msgid "Playing a song again continues from where it stopped"
 msgstr "曲をもう一度再生すると、停止した位置から続きを再生します"
 
-#: crates/big-audio-player/src/audio/preferences.rs:141
+#: crates/big-audio-player/src/audio/preferences.rs:139
 msgid "Progress on the Taskbar"
 msgstr "タスクバーに進行状況を表示"
 
-#: crates/big-audio-player/src/audio/preferences.rs:142
+#: crates/big-audio-player/src/audio/preferences.rs:140
 msgid "Shows how far the song has played on the player icon"
 msgstr "プレーヤーのアイコンに曲の再生済み位置を表示します"
 
-#: crates/big-audio-player/src/audio/preferences.rs:157
+#: crates/big-audio-player/src/audio/preferences.rs:155
 msgid "Icon in the System Tray"
 msgstr "システムトレイのアイコン"
 
-#: crates/big-audio-player/src/audio/preferences.rs:159
+#: crates/big-audio-player/src/audio/preferences.rs:157
 msgid "A one-color icon that follows the panel theme, with playback controls"
 msgstr "パネルのテーマに合わせた単色アイコンで、再生コントロール付きです"
 
-#: crates/big-audio-player/src/audio/preferences.rs:222
-#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:144
-#: crates/big-video-player/src/video/ui/preferences/mod.rs:37
-#: crates/big-video-player/src/video/ui/video_shell/panel.rs:571
+#: crates/big-audio-player/src/audio/preferences.rs:227
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:129
+#: crates/big-video-player/src/video/ui/preferences/mod.rs:39
+#: crates/big-video-player/src/video/ui/video_shell/panel.rs:572
 msgid "Preferences"
 msgstr "設定"
 
 #: crates/big-audio-player/src/audio/ui/audio_shell/chrome.rs:55
-#: crates/big-audio-player/src/audio/ui/audio_shell/component.rs:147
-#: crates/big-audio-player/src/audio/ui/audio_shell/component.rs:172
-#: crates/big-audio-player/src/audio/ui/audio_shell/mpris.rs:224
+#: crates/big-audio-player/src/audio/ui/audio_shell/component.rs:150
+#: crates/big-audio-player/src/audio/ui/audio_shell/component.rs:175
+#: crates/big-audio-player/src/audio/ui/audio_shell/mpris.rs:228
 msgid "Radio"
 msgstr "ラジオ"
 
 #: crates/big-audio-player/src/audio/ui/audio_shell/chrome.rs:151
-#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:128
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:113
 msgid "Sleep Timer"
 msgstr "スリープタイマー"
 
 #: crates/big-audio-player/src/audio/ui/audio_shell/chrome.rs:161
-#: crates/big-video-player/src/video/ui/video_shell/panel.rs:710
+#: crates/big-video-player/src/video/ui/video_shell/panel.rs:711
 msgid "Timer Active"
 msgstr "タイマー作動中"
 
 #: crates/big-audio-player/src/audio/ui/audio_shell/chrome.rs:162
-#: crates/big-video-player/src/video/ui/video_shell/panel.rs:711
+#: crates/big-video-player/src/video/ui/video_shell/panel.rs:712
 msgid "Cancel Timer"
 msgstr "タイマーをキャンセル"
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/chrome.rs:268
-#: crates/big-video-player/src/video/ui/menu_dialogs.rs:265
-msgid "Sleep timer: closing player"
-msgstr "スリープタイマー: プレーヤーを閉じています"
-
-#: crates/big-audio-player/src/audio/ui/audio_shell/chrome.rs:276
-#: crates/big-video-player/src/video/ui/menu_dialogs.rs:273
-msgid "Sleep timer: suspending computer"
-msgstr "スリープタイマー: コンピューターをサスペンドしています"
-
-#: crates/big-audio-player/src/audio/ui/audio_shell/chrome.rs:288
-#: crates/big-video-player/src/video/ui/menu_dialogs.rs:285
-msgid "Sleep timer: shutting down"
-msgstr "スリープタイマー: シャットダウンしています"
-
-#: crates/big-audio-player/src/audio/ui/audio_shell/chrome.rs:299
-#: crates/big-video-player/src/video/ui/menu_dialogs.rs:296
-msgid "Sleep timer: playback paused"
-msgstr "スリープタイマー: 再生を一時停止しました"
-
-#: crates/big-audio-player/src/audio/ui/audio_shell/component.rs:105
+#: crates/big-audio-player/src/audio/ui/audio_shell/component.rs:108
 msgid "Add current folder to Music Library"
 msgstr "現在のフォルダーをミュージックライブラリに追加"
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/component.rs:106
+#: crates/big-audio-player/src/audio/ui/audio_shell/component.rs:109
 msgid "Add this folder to Music Library"
 msgstr "このフォルダーをミュージックライブラリに追加"
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/component.rs:107
+#: crates/big-audio-player/src/audio/ui/audio_shell/component.rs:110
 msgid "Filter files…"
 msgstr "ファイルを絞り込み…"
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/component.rs:144
-#: crates/big-audio-player/src/audio/ui/audio_shell/component.rs:171
+#: crates/big-audio-player/src/audio/ui/audio_shell/component.rs:147
+#: crates/big-audio-player/src/audio/ui/audio_shell/component.rs:174
 #: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/header.rs:22
-#: crates/big-video-player/src/video/ui/video_shell/component.rs:284
-#: crates/big-video-player/src/video/ui/video_shell/component.rs:288
+#: crates/big-video-player/src/video/ui/video_shell/component.rs:294
+#: crates/big-video-player/src/video/ui/video_shell/component.rs:298
 msgid "Files"
 msgstr "ファイル"
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/component.rs:150
+#: crates/big-audio-player/src/audio/ui/audio_shell/component.rs:153
 msgid "Podcasts"
 msgstr "ポッドキャスト"
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/component.rs:175
+#: crates/big-audio-player/src/audio/ui/audio_shell/component.rs:178
 msgid "Podcast"
 msgstr "ポッドキャスト"
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/component.rs:227
-#: crates/big-audio-player/src/audio/ui/audio_shell/playback.rs:173
+#: crates/big-audio-player/src/audio/ui/audio_shell/component.rs:230
+#: crates/big-audio-player/src/audio/ui/audio_shell/playback.rs:186
 #: crates/big-audio-player/src/audio/ui/library_tag_editor.rs:299
 msgid "Album art"
 msgstr "アルバムアート"
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/component.rs:229
+#: crates/big-audio-player/src/audio/ui/audio_shell/component.rs:232
 #: crates/big-audio-player/src/lib.rs:28
 msgid "Big Audio Player"
 msgstr "Big Audio Player"
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/component.rs:236
+#: crates/big-audio-player/src/audio/ui/audio_shell/component.rs:239
 msgid "Select a song to start"
 msgstr "曲を選択して開始"
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/component.rs:286
-msgid ""
-"The playback queue could not be saved or restored. Your previous saved queue "
-"was kept."
-msgstr ""
-"再生キューを保存または復元できませんでした。以前に保存されたキューは保持され"
-"ています。"
-
-#: crates/big-audio-player/src/audio/ui/audio_shell/component.rs:287
-#: crates/media-runtime/src/settings/saving.rs:227
-msgid "Retry saving"
-msgstr "保存を再試行"
-
-#: crates/big-audio-player/src/audio/ui/audio_shell/engine.rs:33
-#: crates/big-video-player/src/video/ui/video_shell/playback.rs:186
+#: crates/big-audio-player/src/audio/ui/audio_shell/engine.rs:32
+#: crates/big-video-player/src/video/ui/video_shell/playback.rs:185
 msgid "Could not play this file — it may be unsupported or corrupt."
 msgstr ""
 "このファイルを再生できませんでした。非対応または破損している可能性がありま"
 "す。"
+
+#: crates/big-audio-player/src/audio/ui/audio_shell/engine.rs:216
+#, rust-format
+msgid ""
+"The playback engine could not start: {error}. Update or reinstall the mpv "
+"package, then reopen the player."
+msgstr ""
 
 #: crates/big-audio-player/src/audio/ui/audio_shell/export.rs:20
 #: crates/big-audio-player/src/audio/ui/audio_shell/export.rs:36
@@ -582,23 +576,18 @@ msgid "Edit cut"
 msgstr "カットを編集"
 
 #: crates/big-audio-player/src/audio/ui/audio_shell/export.rs:161
-#: crates/big-audio-player/src/audio/ui/library_dialogs.rs:78
-#: crates/big-audio-player/src/audio/ui/library_io.rs:53
 #: crates/big-audio-player/src/audio/ui/library_tag_editor.rs:146
-#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:219
 #: crates/big-audio-player/src/audio/ui/playlist_interactions.rs:245
-#: crates/big-audio-player/src/audio/ui/playlist_library_dialog/spec.rs:197
-#: crates/big-audio-player/src/audio/ui/playlist_library_dialog/spec.rs:208
-#: crates/big-audio-player/src/audio/ui/playlist_library_dialog/spec.rs:217
+#: crates/big-audio-player/src/audio/ui/playlist_library_dialog/spec.rs:210
 #: crates/big-audio-player/src/audio/ui/unavailable_dialog.rs:258
 #: crates/big-video-player/src/video/ui/iptv/providers_dialog.rs:168
 #: crates/big-video-player/src/video/ui/menu_dialogs.rs:72
-#: crates/big-video-player/src/video/ui/video_browser_sidebar/fileops.rs:210
 #: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:173
-#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:257
-#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:381
+#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:251
+#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:373
 #: crates/big-video-player/src/video/ui/video_shell/trim/run.rs:259
-#: crates/ui/media/big-player-ui/src/podcast_panel.rs:571
+#: crates/ui/generic/big-relm4-components/src/layout/name_prompt.rs:84
+#: crates/ui/media/big-player-ui/src/podcast_panel.rs:625
 #: crates/ui/media/big-player-ui/src/radio_panel/widgets.rs:351
 msgid "Cancel"
 msgstr "キャンセル"
@@ -616,6 +605,21 @@ msgstr "現在位置を使用"
 msgid "Use current playback position"
 msgstr "現在の再生位置を使用"
 
+#: crates/big-audio-player/src/audio/ui/audio_shell/library_store.rs:63
+msgid "The music library is still opening. Try again in a moment."
+msgstr ""
+
+#: crates/big-audio-player/src/audio/ui/audio_shell/library_store.rs:225
+#: crates/big-audio-player/src/audio/ui/audio_shell/library_store.rs:261
+#, fuzzy
+#| msgid ""
+#| "The library could not be read. Previous results were kept; try searching "
+#| "again."
+msgid "The library could not be read. The queue was not changed."
+msgstr ""
+"ライブラリを読み取れませんでした。以前の結果は保持されています。もう一度検索"
+"してください。"
+
 #: crates/big-audio-player/src/audio/ui/audio_shell/panel_intents.rs:79
 msgid ""
 "This folder name cannot yet be stored in the library. No path was changed or "
@@ -624,103 +628,125 @@ msgstr ""
 "このフォルダー名はまだライブラリに保存できません。パスの変更もインポートも行"
 "われていません。"
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/panel_intents.rs:112
-#: crates/big-audio-player/src/audio/ui/audio_shell/update.rs:241
+#: crates/big-audio-player/src/audio/ui/audio_shell/panel_intents.rs:121
+#: crates/big-audio-player/src/audio/ui/audio_shell/update.rs:233
 msgid ""
 "The playlist could not be read safely. Check its format and permissions."
 msgstr ""
 "プレイリストを安全に読み取れませんでした。形式と権限を確認してください。"
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/panel_intents.rs:345
+#: crates/big-audio-player/src/audio/ui/audio_shell/panel_intents.rs:353
 msgid "The playlist could not be saved."
 msgstr "プレイリストを保存できませんでした。"
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/panel_intents.rs:447
+#: crates/big-audio-player/src/audio/ui/audio_shell/panel_intents.rs:454
 msgid "Save Episode"
 msgstr "エピソードを保存"
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/panel_intents.rs:448
-#: crates/big-audio-player/src/audio/ui/library_io.rs:54
-#: crates/big-audio-player/src/audio/ui/library_io.rs:85
+#: crates/big-audio-player/src/audio/ui/audio_shell/panel_intents.rs:455
+#: crates/big-audio-player/src/audio/ui/library_io.rs:50
+#: crates/big-audio-player/src/audio/ui/library_io.rs:100
 #: crates/big-audio-player/src/audio/ui/library_tag_editor.rs:146
-#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:219
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:192
+#: crates/big-audio-player/src/audio/ui/playlist_library_dialog/spec.rs:187
+#: crates/big-audio-player/src/audio/ui/playlist_library_dialog/spec.rs:199
 #: crates/big-video-player/src/video/ui/iptv/providers_dialog.rs:168
 msgid "Save"
 msgstr "保存"
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/panel_intents.rs:455
+#: crates/big-audio-player/src/audio/ui/audio_shell/panel_intents.rs:463
 msgid "Save Episodes"
 msgstr "エピソードを保存"
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/playback.rs:160
+#: crates/big-audio-player/src/audio/ui/audio_shell/panel_intents.rs:482
+#, fuzzy
+#| msgid ""
+#| "The playlist could not be read safely. Check its format and permissions."
+msgid ""
+"The episodes could not be saved in this folder. Check its permissions and "
+"try again."
+msgstr ""
+"プレイリストを安全に読み取れませんでした。形式と権限を確認してください。"
+
+#: crates/big-audio-player/src/audio/ui/audio_shell/playback.rs:159
+#, fuzzy
+#| msgid ""
+#| "The library could not be read. Previous results were kept; try searching "
+#| "again."
+msgid "The library could not be read, so lyrics were not searched online."
+msgstr ""
+"ライブラリを読み取れませんでした。以前の結果は保持されています。もう一度検索"
+"してください。"
+
+#: crates/big-audio-player/src/audio/ui/audio_shell/playback.rs:173
 msgid "Seek position"
 msgstr "シーク位置"
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/playback.rs:161
-#: crates/big-video-player/src/video/ui/video_controls_bar.rs:291
+#: crates/big-audio-player/src/audio/ui/audio_shell/playback.rs:174
+#: crates/big-video-player/src/video/ui/video_controls_bar.rs:290
 msgid "Cut timeline"
 msgstr "カットのタイムライン"
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/playback.rs:163
+#: crates/big-audio-player/src/audio/ui/audio_shell/playback.rs:176
 #: crates/big-video-player/src/video/ui/appearance/layout/buttons_page.rs:77
 #: crates/big-video-player/src/video/ui/video_controls_bar/seek_preview.rs:177
-#: crates/big-video-player/src/video/ui/video_controls_bar/zones.rs:565
+#: crates/big-video-player/src/video/ui/video_controls_bar/zones.rs:578
 msgid "Previous"
 msgstr "前へ"
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/playback.rs:164
+#: crates/big-audio-player/src/audio/ui/audio_shell/playback.rs:177
 #: crates/big-video-player/src/video/ui/appearance/layout/buttons_page.rs:91
 #: crates/big-video-player/src/video/ui/video_controls_bar/seek_preview.rs:179
-#: crates/big-video-player/src/video/ui/video_controls_bar/zones.rs:568
+#: crates/big-video-player/src/video/ui/video_controls_bar/zones.rs:581
 msgid "Next"
 msgstr "次へ"
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/playback.rs:165
+#: crates/big-audio-player/src/audio/ui/audio_shell/playback.rs:178
 #: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/header.rs:200
 msgid "Shuffle"
 msgstr "シャッフル"
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/playback.rs:166
-#: crates/big-video-player/src/video/ui/preferences/general.rs:36
+#: crates/big-audio-player/src/audio/ui/audio_shell/playback.rs:179
+#: crates/big-video-player/src/video/ui/preferences/general.rs:37
 #: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/header.rs:201
 msgid "Repeat"
 msgstr "リピート"
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/playback.rs:167
+#: crates/big-audio-player/src/audio/ui/audio_shell/playback.rs:180
 #: crates/big-video-player/src/video/ui/appearance/layout/buttons_page.rs:56
-#: crates/big-video-player/src/video/ui/video_controls_bar.rs:560
-#: crates/ui/media/big-media-components/src/player_chrome.rs:301
+#: crates/big-video-player/src/video/ui/video_controls_bar.rs:568
+#: crates/ui/media/big-media-components/src/player_chrome.rs:319
 #: crates/ui/media/big-media-components/src/text.rs:82
 #: crates/ui/media/big-media-components/src/text.rs:90
 #: crates/ui/media/big-media-components/src/text.rs:99
-#: crates/ui/media/big-player-ui/src/playback_bar.rs:325
+#: crates/ui/media/big-player-ui/src/playback_bar.rs:339
 msgid "Volume"
 msgstr "音量"
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/playback.rs:168
+#: crates/big-audio-player/src/audio/ui/audio_shell/playback.rs:181
 #: crates/big-video-player/src/video/ui/appearance/layout/buttons_page.rs:63
 #: crates/big-video-player/src/video/ui/video_controls_bar/zones.rs:302
-#: crates/ui/media/big-media-components/src/player_chrome.rs:312
+#: crates/ui/media/big-media-components/src/player_chrome.rs:330
 msgid "Speed"
 msgstr "速度"
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/playback.rs:169
+#: crates/big-audio-player/src/audio/ui/audio_shell/playback.rs:182
 #: crates/big-video-player/src/video/ui/appearance/layout/buttons_page.rs:70
 #: crates/big-video-player/src/video/ui/video_controls_bar/zones.rs:317
 msgid "Voice Enhancement"
 msgstr "音声強調"
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/playback.rs:170
-#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:129
+#: crates/big-audio-player/src/audio/ui/audio_shell/playback.rs:183
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:114
 msgid "Trim & Export"
 msgstr "トリミングと書き出し"
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/playback.rs:171
+#: crates/big-audio-player/src/audio/ui/audio_shell/playback.rs:184
 #: crates/ui/media/big-player-ui/src/lyrics_panel.rs:144
 msgid "Lyrics"
 msgstr "歌詞"
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/playback.rs:172
+#: crates/big-audio-player/src/audio/ui/audio_shell/playback.rs:185
 msgid "Status"
 msgstr "ステータス"
 
@@ -736,25 +762,25 @@ msgstr "選択したフォルダーの項目が多すぎます"
 msgid "Choose at most 100 playlist files per import"
 msgstr "1 回のインポートで選べるプレイリストファイルは最大 100 個です"
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/playlist_library_dialog_actions.rs:155
-#: crates/big-audio-player/src/audio/ui/audio_shell/update.rs:152
+#: crates/big-audio-player/src/audio/ui/audio_shell/playlist_library_dialog_actions.rs:156
+#: crates/big-audio-player/src/audio/ui/audio_shell/update.rs:140
 #: crates/big-audio-player/src/audio/ui/scan_progress.rs:47
 msgid "Imported"
 msgstr "インポート済み"
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/playlist_library_dialog_actions.rs:165
+#: crates/big-audio-player/src/audio/ui/audio_shell/playlist_library_dialog_actions.rs:169
 msgid "Import stopped. Confirmed tracks were kept"
 msgstr "インポートを中止しました。確認済みのトラックは保持されています"
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/playlist_library_dialog_actions.rs:188
+#: crates/big-audio-player/src/audio/ui/audio_shell/playlist_library_dialog_actions.rs:192
 msgid "Export All Playlists"
 msgstr "すべてのプレイリストを書き出し"
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/playlist_library_dialog_actions.rs:196
+#: crates/big-audio-player/src/audio/ui/audio_shell/playlist_library_dialog_actions.rs:200
 msgid "Playlists exported"
 msgstr "プレイリストを書き出しました"
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/playlist_library_dialog_actions.rs:200
+#: crates/big-audio-player/src/audio/ui/audio_shell/playlist_library_dialog_actions.rs:204
 msgid ""
 "Export was not fully completed. Published files were kept; choose an empty "
 "destination and try again."
@@ -762,62 +788,85 @@ msgstr ""
 "書き出しが完全には完了しませんでした。公開済みのファイルは保持されています。"
 "空のフォルダーを選んで再試行してください。"
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/playlist_library_dialog_actions.rs:233
-#: crates/big-audio-player/src/audio/ui/library_io.rs:84
+#: crates/big-audio-player/src/audio/ui/audio_shell/playlist_library_dialog_actions.rs:237
+#: crates/big-audio-player/src/audio/ui/library_io.rs:49
 msgid "Export Playlist"
 msgstr "プレイリストを書き出し"
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/playlist_library_dialog_actions.rs:235
-#: crates/big-audio-player/src/audio/ui/library_io.rs:87
+#: crates/big-audio-player/src/audio/ui/audio_shell/playlist_library_dialog_actions.rs:239
+#: crates/big-audio-player/src/audio/ui/library_io.rs:52
 msgid "M3U8 Playlist"
 msgstr "M3U8 プレイリスト"
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/playlist_library_dialog_actions.rs:259
-#: crates/big-audio-player/src/audio/ui/library_io.rs:111
+#: crates/big-audio-player/src/audio/ui/audio_shell/playlist_library_dialog_actions.rs:263
+#: crates/big-audio-player/src/audio/ui/library_io.rs:76
 msgid "Import Playlist"
 msgstr "プレイリストをインポート"
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/playlist_library_dialog_actions.rs:260
-#: crates/big-audio-player/src/audio/ui/library_dialogs.rs:62
-#: crates/big-audio-player/src/audio/ui/library_io.rs:113
+#: crates/big-audio-player/src/audio/ui/audio_shell/playlist_library_dialog_actions.rs:264
+#: crates/big-audio-player/src/audio/ui/library_dialogs.rs:48
+#: crates/big-audio-player/src/audio/ui/library_io.rs:78
 #: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/menu_actions.rs:230
 msgid "Playlists"
 msgstr "プレイリスト"
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/playlist_library_dialog_actions.rs:305
+#: crates/big-audio-player/src/audio/ui/audio_shell/playlist_library_dialog_actions.rs:310
 msgid ""
 "The batch import limit was reached. Split the playlists into smaller imports."
 msgstr ""
 "一括インポートの上限に達しました。プレイリストを小さく分けてインポートしてく"
 "ださい。"
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/playlist_library_dialog_actions.rs:315
-#: crates/big-audio-player/src/audio/ui/audio_shell/playlist_library_dialog_actions.rs:352
-#: crates/big-audio-player/src/audio/ui/audio_shell/playlist_library_dialog_actions.rs:391
+#: crates/big-audio-player/src/audio/ui/audio_shell/playlist_library_dialog_actions.rs:320
+#: crates/big-audio-player/src/audio/ui/audio_shell/playlist_library_dialog_actions.rs:357
+#: crates/big-audio-player/src/audio/ui/audio_shell/playlist_library_dialog_actions.rs:396
 msgid "Library unavailable"
 msgstr "ライブラリを利用できません"
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/playlist_library_dialog_actions.rs:366
+#: crates/big-audio-player/src/audio/ui/audio_shell/playlist_library_dialog_actions.rs:371
 msgid "Too many playlists for one export"
 msgstr "一度に書き出すにはプレイリストが多すぎます"
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/playlist_library_dialog_actions.rs:380
+#: crates/big-audio-player/src/audio/ui/audio_shell/playlist_library_dialog_actions.rs:385
 msgid "Export stopped. Confirmed outputs were kept"
 msgstr "書き出しを中止しました。確認済みの出力は保持されています"
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/playlist_library_dialog_actions.rs:401
+#: crates/big-audio-player/src/audio/ui/audio_shell/playlist_library_dialog_actions.rs:406
 #: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/menu_actions.rs:212
 msgid "Playlist export"
 msgstr "プレイリストの書き出し"
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/playlist_library_dialog_actions.rs:404
-#: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:478
-#: crates/big-audio-player/src/audio/ui/library_dialogs.rs:64
+#: crates/big-audio-player/src/audio/ui/audio_shell/playlist_library_dialog_actions.rs:409
+#: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:486
+#: crates/big-audio-player/src/audio/ui/library_dialogs.rs:50
 #: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/menu_actions.rs:215
-#: crates/big-video-player/src/video/ui/video_shell/component.rs:132
+#: crates/big-video-player/src/video/ui/video_shell/component.rs:136
 #: crates/ui/generic/big-relm4-components/src/layout/media_window.rs:283
 msgid "Close"
 msgstr "閉じる"
+
+#: crates/big-audio-player/src/audio/ui/audio_shell/queue_persistence.rs:55
+#, fuzzy, rust-format
+#| msgid "The playlist could not be saved."
+msgid "The music library could not be opened: {}"
+msgstr "プレイリストを保存できませんでした。"
+
+#: crates/big-audio-player/src/audio/ui/audio_shell/queue_persistence.rs:57
+msgid "Retry"
+msgstr ""
+
+#: crates/big-audio-player/src/audio/ui/audio_shell/queue_persistence.rs:60
+msgid ""
+"The playback queue could not be saved or restored. Your previous saved queue "
+"was kept."
+msgstr ""
+"再生キューを保存または復元できませんでした。以前に保存されたキューは保持され"
+"ています。"
+
+#: crates/big-audio-player/src/audio/ui/audio_shell/queue_persistence.rs:62
+#: crates/media-runtime/src/settings/saving.rs:240
+msgid "Retry saving"
+msgstr "保存を再試行"
 
 #: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:42
 msgid "A library scan is already running. Cancel it or wait for its result."
@@ -839,48 +888,70 @@ msgstr "ライブラリをスキャンしています…"
 msgid "Watch folders could not be read. Previous settings were kept."
 msgstr "監視フォルダーを読み取れませんでした。以前の設定は保持されています。"
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:258
-#: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:266
-#: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:295
+#: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:150
+#, fuzzy
+#| msgid "The playlist could not be saved."
+msgid "The station could not be saved."
+msgstr "プレイリストを保存できませんでした。"
+
+#: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:164
+#, fuzzy
+#| msgid "The playlist could not be saved."
+msgid "The station could not be removed."
+msgstr "プレイリストを保存できませんでした。"
+
+#: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:224
+msgid "There is no Music or home folder to save recordings in."
+msgstr ""
+
+#: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:270
+#: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:278
+#: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:307
 msgid "Recording was not saved"
 msgstr "録音は保存されませんでした"
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:271
+#: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:283
 msgid "Recording to"
 msgstr "録音先"
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:344
+#: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:356
 msgid "No episodes found"
 msgstr "エピソードが見つかりません"
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:453
+#: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:461
 msgid "Recording saved"
 msgstr "録音を保存しました"
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:459
+#: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:467
 msgid "The recording was saved and is ready to open."
 msgstr "録音を保存しました。開く準備ができています。"
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:463
+#: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:471
 #: crates/big-audio-player/src/audio/ui/library_tag_editor/spec.rs:125
 #: crates/big-video-player/src/video/ui/media_details_dialog.rs:81
 msgid "File"
 msgstr "ファイル"
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:467
+#: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:475
 msgid "Folder"
 msgstr "フォルダー"
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:473
+#: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:481
 #: crates/ui/media/big-media-components/src/media/file_metadata_dialog.rs:55
 msgid "Open Folder"
 msgstr "フォルダーを開く"
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:478
+#: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:486
 #: crates/big-video-player/src/video/ui/appearance/layout/buttons_page.rs:35
 #: crates/big-video-player/src/video/ui/video_shell/actions.rs:126
 msgid "Open File"
 msgstr "ファイルを開く"
+
+#: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:539
+#, fuzzy
+#| msgid "The playlist could not be saved."
+msgid "Saved radio stations could not be read."
+msgstr "プレイリストを保存できませんでした。"
 
 #: crates/big-audio-player/src/audio/ui/audio_shell/tray.rs:18
 msgid "Show Big Audio Player"
@@ -890,12 +961,12 @@ msgstr "Big Audio Player を表示"
 msgid "The TV's track is no longer in the queue."
 msgstr "TV のトラックはキューにありません。"
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/update.rs:141
+#: crates/big-audio-player/src/audio/ui/audio_shell/update.rs:129
 msgid "Scan cancelled. Earlier confirmed imports were kept."
 msgstr ""
 "スキャンをキャンセルしました。以前に確認済みのインポートは保持されています。"
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/update.rs:144
+#: crates/big-audio-player/src/audio/ui/audio_shell/update.rs:132
 msgid ""
 "Scan incomplete. Earlier confirmed imports were kept; check storage and "
 "retry."
@@ -903,20 +974,20 @@ msgstr ""
 "スキャンが完了しませんでした。以前に確認済みのインポートは保持されています。"
 "ストレージを確認して再試行してください。"
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/update.rs:147
+#: crates/big-audio-player/src/audio/ui/audio_shell/update.rs:135
 msgid "Library scan finished."
 msgstr "ライブラリのスキャンが完了しました。"
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/update.rs:154
+#: crates/big-audio-player/src/audio/ui/audio_shell/update.rs:142
 #: crates/big-audio-player/src/audio/ui/scan_progress.rs:48
 msgid "Skipped"
 msgstr "スキップ"
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/update.rs:160
+#: crates/big-audio-player/src/audio/ui/audio_shell/update.rs:148
 msgid "Library updated"
 msgstr "ライブラリを更新しました"
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/update.rs:162
+#: crates/big-audio-player/src/audio/ui/audio_shell/update.rs:150
 msgid ""
 "The operation was incomplete. Imported tracks were kept; check the folder "
 "and try again."
@@ -924,7 +995,7 @@ msgstr ""
 "操作が完了しませんでした。インポート済みのトラックは保持されています。フォル"
 "ダーを確認して再試行してください。"
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/update.rs:190
+#: crates/big-audio-player/src/audio/ui/audio_shell/update.rs:175
 msgid ""
 "The library could not be read. Previous results were kept; try searching "
 "again."
@@ -932,20 +1003,21 @@ msgstr ""
 "ライブラリを読み取れませんでした。以前の結果は保持されています。もう一度検索"
 "してください。"
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/update.rs:204
+#: crates/big-audio-player/src/audio/ui/audio_shell/update.rs:195
 msgid "The playlist could not be changed. Your previous playlist was kept."
 msgstr ""
 "プレイリストを変更できませんでした。以前のプレイリストは保持されています。"
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/update.rs:209
+#: crates/big-audio-player/src/audio/ui/audio_shell/update.rs:200
 msgid "Playlists could not be opened. Please try again."
 msgstr "プレイリストを開けませんでした。もう一度お試しください。"
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/update.rs:311
+#: crates/big-audio-player/src/audio/ui/audio_shell/update.rs:306
+#: crates/big-audio-player/src/audio/ui/audio_shell/update.rs:310
 msgid "tracks imported"
 msgstr "件のトラックをインポートしました"
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/update.rs:315
+#: crates/big-audio-player/src/audio/ui/audio_shell/update.rs:316
 msgid ""
 "Playlist import was not fully completed. Previously confirmed imports were "
 "kept."
@@ -958,8 +1030,8 @@ msgstr ""
 #: crates/big-audio-player/src/audio/ui/library_tree/view.rs:376
 #: crates/big-audio-player/src/audio/ui/playlist_interactions.rs:110
 #: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/context_menu.rs:41
-#: crates/big-video-player/src/video/ui/video_controls_bar.rs:479
-#: crates/big-video-player/src/video/ui/video_controls_bar/zones.rs:566
+#: crates/big-video-player/src/video/ui/video_controls_bar.rs:478
+#: crates/big-video-player/src/video/ui/video_controls_bar/zones.rs:579
 #: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:173
 msgid "Play"
 msgstr "再生"
@@ -999,46 +1071,48 @@ msgstr "トラック情報"
 
 #: crates/big-audio-player/src/audio/ui/library_detail_interactions.rs:125
 #: crates/big-audio-player/src/audio/ui/playlist_interactions.rs:135
-#: crates/big-audio-player/src/audio/ui/track_list.rs:430
+#: crates/big-audio-player/src/audio/ui/track_list.rs:448
 #, rust-format
 msgid "{} of 5 stars"
 msgstr "5 つ星中 {}"
 
 #: crates/big-audio-player/src/audio/ui/library_detail_interactions.rs:129
 #: crates/big-audio-player/src/audio/ui/playlist_interactions.rs:139
-#: crates/big-audio-player/src/audio/ui/track_list.rs:82
+#: crates/big-audio-player/src/audio/ui/track_list.rs:99
 #: crates/big-audio-player/src/audio/ui/unavailable_dialog.rs:351
 msgid "Rating"
 msgstr "評価"
 
-#: crates/big-audio-player/src/audio/ui/library_dialogs.rs:56
+#: crates/big-audio-player/src/audio/ui/library_dialogs.rs:42
 msgid "Add to Playlist"
 msgstr "プレイリストに追加"
 
-#: crates/big-audio-player/src/audio/ui/library_dialogs.rs:63
+#: crates/big-audio-player/src/audio/ui/library_dialogs.rs:49
 msgid "No playlists yet"
 msgstr "プレイリストはまだありません"
 
-#: crates/big-audio-player/src/audio/ui/library_dialogs.rs:65
-#: crates/big-audio-player/src/audio/ui/library_dialogs.rs:73
+#: crates/big-audio-player/src/audio/ui/library_dialogs.rs:51
+#: crates/big-audio-player/src/audio/ui/library_dialogs.rs:159
 msgid "New Playlist"
 msgstr "新しいプレイリスト"
 
-#: crates/big-audio-player/src/audio/ui/library_dialogs.rs:67
+#: crates/big-audio-player/src/audio/ui/library_dialogs.rs:53
 #: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/context_menu.rs:82
-#: crates/big-video-player/src/video/ui/video_browser_sidebar/fileops.rs:72
-#: crates/big-video-player/src/video/ui/video_browser_sidebar/library.rs:646
-#: crates/big-video-player/src/video/ui/video_browser_sidebar/library.rs:650
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/fileops.rs:69
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/library.rs:647
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/library.rs:651
 msgid "Add to playlist"
 msgstr "プレイリストに追加"
 
-#: crates/big-audio-player/src/audio/ui/library_dialogs.rs:77
-#: crates/big-audio-player/src/audio/ui/library_io.rs:52
-#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:213
+#: crates/big-audio-player/src/audio/ui/library_dialogs.rs:161
+#: crates/big-audio-player/src/audio/ui/library_io.rs:98
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:190
+#: crates/big-audio-player/src/audio/ui/playlist_library_dialog/spec.rs:185
+#: crates/big-audio-player/src/audio/ui/playlist_library_dialog/spec.rs:197
 msgid "Playlist name"
 msgstr "プレイリスト名"
 
-#: crates/big-audio-player/src/audio/ui/library_dialogs.rs:79
+#: crates/big-audio-player/src/audio/ui/library_dialogs.rs:163
 msgid "Create"
 msgstr "作成"
 
@@ -1055,7 +1129,7 @@ msgstr "追加日で絞り込み"
 
 #: crates/big-audio-player/src/audio/ui/library_grouping_ui.rs:206
 #: crates/big-audio-player/src/audio/ui/library_grouping_ui.rs:207
-#: crates/big-audio-player/src/audio/ui/library_io.rs:307
+#: crates/big-audio-player/src/audio/ui/library_io.rs:282
 msgid "Add music folder"
 msgstr "ミュージックフォルダーを追加"
 
@@ -1072,11 +1146,11 @@ msgstr "絞り込み…"
 msgid "Search library"
 msgstr "ライブラリを検索"
 
-#: crates/big-audio-player/src/audio/ui/library_io.rs:80
+#: crates/big-audio-player/src/audio/ui/library_io.rs:45
 msgid "No tracks to export"
 msgstr "書き出すトラックがありません"
 
-#: crates/big-audio-player/src/audio/ui/library_io.rs:99
+#: crates/big-audio-player/src/audio/ui/library_io.rs:64
 #: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/menu_actions.rs:208
 msgid ""
 "Playlist export could not be confirmed. Existing files were kept; choose a "
@@ -1085,41 +1159,41 @@ msgstr ""
 "プレイリストの書き出しを確認できませんでした。既存のファイルは保持されていま"
 "す。新しい名前を選んで再試行してください。"
 
-#: crates/big-audio-player/src/audio/ui/library_io.rs:112
-#: crates/big-video-player/src/video/ui/menu_dialogs.rs:349
-#: crates/big-video-player/src/video/ui/video_shell/component.rs:269
-#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:257
+#: crates/big-audio-player/src/audio/ui/library_io.rs:77
+#: crates/big-video-player/src/video/ui/menu_dialogs.rs:240
+#: crates/big-video-player/src/video/ui/video_shell/component.rs:279
+#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:251
 msgid "Open"
 msgstr "開く"
 
-#: crates/big-audio-player/src/audio/ui/library_io.rs:127
+#: crates/big-audio-player/src/audio/ui/library_io.rs:92
 msgid "No tracks to save"
 msgstr "保存するトラックがありません"
 
-#: crates/big-audio-player/src/audio/ui/library_io.rs:133
+#: crates/big-audio-player/src/audio/ui/library_io.rs:96
 msgid "Save as Playlist"
 msgstr "プレイリストとして保存"
 
-#: crates/big-audio-player/src/audio/ui/library_io.rs:134
+#: crates/big-audio-player/src/audio/ui/library_io.rs:97
 msgid "Enter a name for the new playlist"
 msgstr "新しいプレイリストの名前を入力してください"
 
-#: crates/big-audio-player/src/audio/ui/library_io.rs:170
-#: crates/big-audio-player/src/audio/ui/library_io.rs:185
-#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:121
+#: crates/big-audio-player/src/audio/ui/library_io.rs:145
+#: crates/big-audio-player/src/audio/ui/library_io.rs:160
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:106
 msgid "Music Folders"
 msgstr "ミュージックフォルダー"
 
-#: crates/big-audio-player/src/audio/ui/library_io.rs:177
+#: crates/big-audio-player/src/audio/ui/library_io.rs:152
 #: crates/big-audio-player/src/audio/ui/unavailable_dialog.rs:41
 msgid "Review unavailable files"
 msgstr "利用できないファイルを確認"
 
-#: crates/big-audio-player/src/audio/ui/library_io.rs:224
+#: crates/big-audio-player/src/audio/ui/library_io.rs:199
 msgid "Monitored Folders"
 msgstr "監視対象のフォルダー"
 
-#: crates/big-audio-player/src/audio/ui/library_io.rs:234
+#: crates/big-audio-player/src/audio/ui/library_io.rs:209
 msgid ""
 "These folders are scanned for audio files. Removing a folder stops "
 "monitoring it. Tracks and ratings are kept until you explicitly review "
@@ -1129,48 +1203,48 @@ msgstr ""
 "と監視が停止します。トラックと評価は、利用できないファイルを明示的に確認する"
 "まで保持されます。"
 
-#: crates/big-audio-player/src/audio/ui/library_io.rs:260
+#: crates/big-audio-player/src/audio/ui/library_io.rs:235
 msgid "Music folders"
 msgstr "ミュージックフォルダー"
 
-#: crates/big-audio-player/src/audio/ui/library_io.rs:264
+#: crates/big-audio-player/src/audio/ui/library_io.rs:239
 msgid "No folders added yet"
 msgstr "フォルダーはまだ追加されていません"
 
-#: crates/big-audio-player/src/audio/ui/library_io.rs:266
+#: crates/big-audio-player/src/audio/ui/library_io.rs:241
 msgid "Click the button below to add your first music folder"
 msgstr ""
 "下のボタンをクリックして、最初のミュージックフォルダーを追加してください"
 
-#: crates/big-audio-player/src/audio/ui/library_io.rs:288
+#: crates/big-audio-player/src/audio/ui/library_io.rs:263
 msgid "Removal requested. Reopen this list after the operation finishes."
 msgstr "削除を要求しました。操作の完了後にこのリストを開き直してください。"
 
-#: crates/big-audio-player/src/audio/ui/library_io.rs:306
+#: crates/big-audio-player/src/audio/ui/library_io.rs:281
 msgid "Add Folder"
 msgstr "フォルダーを追加"
 
-#: crates/big-audio-player/src/audio/ui/library_io.rs:319
+#: crates/big-audio-player/src/audio/ui/library_io.rs:294
 msgid "Select Music Folder"
 msgstr "ミュージックフォルダーを選択"
 
-#: crates/big-audio-player/src/audio/ui/library_io.rs:329
+#: crates/big-audio-player/src/audio/ui/library_io.rs:304
 msgid "Scan Now"
 msgstr "今すぐスキャン"
 
-#: crates/big-audio-player/src/audio/ui/library_io.rs:330
+#: crates/big-audio-player/src/audio/ui/library_io.rs:305
 msgid "Scan all monitored folders now"
 msgstr "監視対象のすべてのフォルダーを今すぐスキャン"
 
-#: crates/big-audio-player/src/audio/ui/library_io.rs:440
+#: crates/big-audio-player/src/audio/ui/library_io.rs:341
 msgid "Stop monitoring this folder; keep its tracks"
 msgstr "このフォルダーの監視を停止します (トラックは保持されます)"
 
-#: crates/big-audio-player/src/audio/ui/library_io.rs:443
+#: crates/big-audio-player/src/audio/ui/library_io.rs:344
 msgid "Remove folder"
 msgstr "フォルダーを削除"
 
-#: crates/big-audio-player/src/audio/ui/library_io.rs:452
+#: crates/big-audio-player/src/audio/ui/library_io.rs:353
 msgid ""
 "Add folders where your music files are stored. The player scans these "
 "folders to build your library, organizing tracks by artist, album, and genre "
@@ -1180,22 +1254,22 @@ msgstr ""
 "のフォルダーをスキャンしてライブラリを作成し、トラックをアーティスト、アルバ"
 "ム、ジャンルごとに自動的に整理します。"
 
-#: crates/big-audio-player/src/audio/ui/library_io.rs:490
+#: crates/big-audio-player/src/audio/ui/library_io.rs:391
 msgid "Tips"
 msgstr "ヒント"
 
-#: crates/big-audio-player/src/audio/ui/library_io.rs:499
+#: crates/big-audio-player/src/audio/ui/library_io.rs:400
 msgid ""
 "• Supported formats: MP3, FLAC, OGG, Opus, M4A, WAV, WMA, AAC, APE, WavPack"
 msgstr ""
 "• 対応フォーマット: MP3、FLAC、OGG、Opus、M4A、WAV、WMA、AAC、APE、WavPack"
 
-#: crates/big-audio-player/src/audio/ui/library_io.rs:500
+#: crates/big-audio-player/src/audio/ui/library_io.rs:401
 msgid "• Subfolders are included automatically — no need to add each one"
 msgstr ""
 "• サブフォルダーは自動的に含まれるため、1 つずつ追加する必要はありません"
 
-#: crates/big-audio-player/src/audio/ui/library_io.rs:502
+#: crates/big-audio-player/src/audio/ui/library_io.rs:403
 msgid ""
 "• Use the Files tab to play files from any folder without adding them to the "
 "library"
@@ -1221,10 +1295,8 @@ msgid "Back to library"
 msgstr "ライブラリに戻る"
 
 #: crates/big-audio-player/src/audio/ui/library_tag_editor.rs:202
-#: crates/big-audio-player/src/audio/ui/track_list.rs:74
+#: crates/big-audio-player/src/audio/ui/track_list.rs:91
 #: crates/big-video-player/src/video/ui/media_details_dialog.rs:105
-#: crates/media-runtime/src/media/metadata_cache/detailed_video_metadata.rs:160
-#: crates/media-runtime/src/media/metadata_cache/detailed_video_metadata.rs:174
 msgid "Title"
 msgstr "タイトル"
 
@@ -1258,33 +1330,29 @@ msgid "Searching…"
 msgstr "検索しています…"
 
 #: crates/big-audio-player/src/audio/ui/library_tag_editor/spec.rs:83
-#: crates/big-audio-player/src/audio/ui/track_list.rs:77
+#: crates/big-audio-player/src/audio/ui/track_list.rs:94
 #: crates/big-video-player/src/video/ui/media_details_dialog.rs:114
-#: crates/media-runtime/src/shared/sleep_timer.rs:21
+#: crates/media-runtime/src/shared/sleep_timer.rs:29
 #: crates/ui/media/big-media-components/src/media/file_metadata_dialog.rs:57
 msgid "Duration"
 msgstr "長さ"
 
 #: crates/big-audio-player/src/audio/ui/library_tag_editor/spec.rs:88
-#: crates/big-audio-player/src/audio/ui/track_list.rs:80
+#: crates/big-audio-player/src/audio/ui/track_list.rs:97
 #: crates/big-video-player/src/video/ui/media_details_dialog.rs:181
 #: crates/big-video-player/src/video/ui/media_details_dialog.rs:238
-#: crates/media-runtime/src/media/metadata_cache/detailed_video_metadata.rs:108
-#: crates/media-runtime/src/media/metadata_cache/detailed_video_metadata.rs:154
 #: crates/ui/media/big-media-components/src/media/file_metadata_dialog.rs:60
 msgid "Bitrate"
 msgstr "ビットレート"
 
 #: crates/big-audio-player/src/audio/ui/library_tag_editor/spec.rs:98
 #: crates/big-video-player/src/video/ui/media_details_dialog.rs:246
-#: crates/media-runtime/src/media/metadata_cache/detailed_video_metadata.rs:139
 #: crates/ui/media/big-media-components/src/media/file_metadata_dialog.rs:69
 msgid "Sample Rate"
 msgstr "サンプルレート"
 
 #: crates/big-audio-player/src/audio/ui/library_tag_editor/spec.rs:105
 #: crates/big-video-player/src/video/ui/media_details_dialog.rs:253
-#: crates/media-runtime/src/media/metadata_cache/detailed_video_metadata.rs:149
 #: crates/ui/media/big-media-components/src/media/file_metadata_dialog.rs:70
 msgid "Channels"
 msgstr "チャンネル"
@@ -1304,14 +1372,14 @@ msgid "No new data found"
 msgstr "新しいデータは見つかりませんでした"
 
 #: crates/big-audio-player/src/audio/ui/library_tree/view.rs:162
-#: crates/big-audio-player/src/audio/ui/playlist_library_dialog/spec.rs:179
+#: crates/big-audio-player/src/audio/ui/playlist_library_dialog/spec.rs:170
 #: crates/big-audio-player/src/audio/ui/playlist_panel.rs:103
 msgid "track"
 msgstr "トラック"
 
 #: crates/big-audio-player/src/audio/ui/library_tree/view.rs:164
 #: crates/big-audio-player/src/audio/ui/playlist_interactions.rs:292
-#: crates/big-audio-player/src/audio/ui/playlist_library_dialog/spec.rs:181
+#: crates/big-audio-player/src/audio/ui/playlist_library_dialog/spec.rs:172
 #: crates/big-audio-player/src/audio/ui/playlist_panel.rs:105
 msgid "tracks"
 msgstr "トラック"
@@ -1320,104 +1388,104 @@ msgstr "トラック"
 msgid "Music library"
 msgstr "ミュージックライブラリ"
 
-#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:49
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:34
 msgid "Drag and drop files to create a playlist"
 msgstr "ファイルをドラッグ＆ドロップしてプレイリストを作成"
 
-#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:53
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:38
 msgid "Use the Music tab on the left to browse your library"
 msgstr "左側の「ミュージック」タブでライブラリを参照できます"
 
-#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:57
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:42
 msgid "Explore Radio and Podcasts in the sidebar tabs"
 msgstr "サイドバーのタブでラジオとポッドキャストを探索できます"
 
-#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:78
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:63
 #: crates/big-audio-player/src/audio/ui/playlist_panel.rs:94
-#: crates/big-audio-player/src/audio/ui/playlist_panel.rs:401
+#: crates/big-audio-player/src/audio/ui/playlist_panel.rs:412
 #: crates/big-video-player/src/video/ui/appearance/layout/buttons_page.rs:42
 #: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/header.rs:24
-#: crates/big-video-player/src/video/ui/video_shell/component.rs:291
-#: crates/big-video-player/src/video/ui/video_shell/component.rs:295
+#: crates/big-video-player/src/video/ui/video_shell/component.rs:301
+#: crates/big-video-player/src/video/ui/video_shell/component.rs:305
 #: crates/big-video-player/src/video/ui/video_shell/playlist_panel.rs:24
 msgid "Playlist"
 msgstr "プレイリスト"
 
-#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:92
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:77
 msgid "Main Menu"
 msgstr "メインメニュー"
 
-#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:112
-#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:203
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:97
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:188
 msgid "Save Queue as Playlist"
 msgstr "キューをプレイリストとして保存"
 
-#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:113
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:98
 msgid "Remove Duplicates"
 msgstr "重複を削除"
 
-#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:114
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:99
 msgid "Clear Queue"
 msgstr "キューをクリア"
 
-#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:120
-#: crates/big-audio-player/src/audio/ui/playlist_library_dialog/spec.rs:105
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:105
+#: crates/big-audio-player/src/audio/ui/playlist_library_dialog/spec.rs:96
 msgid "Manage Playlists"
 msgstr "プレイリストを管理"
 
-#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:130
-#: crates/big-video-player/src/video/ui/video_controls_bar/zones.rs:670
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:115
+#: crates/big-video-player/src/video/ui/video_controls_bar/zones.rs:683
 msgid "Convert…"
 msgstr "変換…"
 
-#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:136
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:121
 #: crates/big-video-player/src/video/ui/appearance/layout/buttons_page.rs:112
-#: crates/big-video-player/src/video/ui/video_controls_bar/zones.rs:628
+#: crates/big-video-player/src/video/ui/video_controls_bar/zones.rs:641
 #: crates/big-video-player/src/video/ui/video_shell/panel.rs:46
 #: crates/media-runtime/src/shared/tv_cast.rs:846
 msgid "Play on a TV"
 msgstr "TV で再生"
 
-#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:137
-#: crates/ui/media/big-player-ui/src/smartphone/dialog.rs:29
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:122
+#: crates/ui/media/big-player-ui/src/smartphone/dialog.rs:30
 msgid "Smartphone"
 msgstr "スマートフォン"
 
-#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:143
-#: crates/big-video-player/src/video/ui/video_shell/panel.rs:576
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:128
+#: crates/big-video-player/src/video/ui/video_shell/panel.rs:577
 #: crates/ui/media/big-player-ui/src/appearance/window.rs:76
 msgid "Appearance"
 msgstr "外観"
 
-#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:145
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:130
 #: crates/big-audio-player/src/audio/ui/shortcuts_dialog.rs:27
 #: crates/big-video-player/src/video/ui/keyboard_shortcuts_dialog.rs:30
 msgid "Keyboard Shortcuts"
 msgstr "キーボードショートカット"
 
-#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:146
-#: crates/big-video-player/src/video/ui/video_shell/panel.rs:584
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:131
+#: crates/big-video-player/src/video/ui/video_shell/panel.rs:585
 msgid "About"
 msgstr "このアプリについて"
 
-#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:209
-#: crates/big-audio-player/src/audio/ui/playlist_library_dialog/spec.rs:194
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:189
+#: crates/big-audio-player/src/audio/ui/playlist_library_dialog/spec.rs:184
 msgid "Name for the new playlist"
 msgstr "新しいプレイリストの名前"
 
-#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:284
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:225
 msgid "Drop tracks here"
 msgstr "ここにトラックをドロップ"
 
-#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:285
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:226
 msgid "or use ＋ to add from the library"
 msgstr "または ＋ を使ってライブラリから追加"
 
-#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:311
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:252
 msgid "Welcome to Big Audio Player"
 msgstr "Big Audio Player へようこそ"
 
-#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:319
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:260
 msgid ""
 "Add a folder with your music files to get started.\n"
 "Supported formats: MP3, FLAC, OGG, M4A, OPUS, WAV and more."
@@ -1425,23 +1493,23 @@ msgstr ""
 "音楽ファイルのあるフォルダーを追加して始めましょう。\n"
 "対応フォーマット: MP3、FLAC、OGG、M4A、OPUS、WAV など。"
 
-#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:332
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:273
 msgid "Open Files"
 msgstr "ファイルを開く"
 
-#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:333
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:274
 msgid "Open files"
 msgstr "ファイルを開く"
 
-#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:343
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:284
 msgid "Open Audio Files"
 msgstr "オーディオファイルを開く"
 
-#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:345
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:286
 msgid "Audio Files"
 msgstr "オーディオファイル"
 
-#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:369
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:310
 msgid "Quick tips"
 msgstr "クイックヒント"
 
@@ -1497,93 +1565,98 @@ msgid "Import / Export"
 msgstr "インポート / エクスポート"
 
 #: crates/big-audio-player/src/audio/ui/playlist_library_dialog.rs:259
-#: crates/big-audio-player/src/audio/ui/playlist_library_dialog/spec.rs:192
+#: crates/big-audio-player/src/audio/ui/playlist_library_dialog/spec.rs:183
 msgid "Save Current Queue"
 msgstr "現在のキューを保存"
 
-#: crates/big-audio-player/src/audio/ui/playlist_library_dialog.rs:280
+#: crates/big-audio-player/src/audio/ui/playlist_library_dialog.rs:287
 msgid "Generate"
 msgstr "生成"
 
-#: crates/big-audio-player/src/audio/ui/playlist_library_dialog.rs:281
+#: crates/big-audio-player/src/audio/ui/playlist_library_dialog.rs:288
 msgid "Build a playlist from your listening stats"
 msgstr "再生統計からプレイリストを作成します"
 
-#: crates/big-audio-player/src/audio/ui/playlist_library_dialog/spec.rs:88
+#: crates/big-audio-player/src/audio/ui/playlist_library_dialog/spec.rs:79
 msgid "Most Played"
 msgstr "再生回数が多い"
 
-#: crates/big-audio-player/src/audio/ui/playlist_library_dialog/spec.rs:93
+#: crates/big-audio-player/src/audio/ui/playlist_library_dialog/spec.rs:84
 msgid "Recently Added"
 msgstr "最近追加"
 
-#: crates/big-audio-player/src/audio/ui/playlist_library_dialog/spec.rs:98
+#: crates/big-audio-player/src/audio/ui/playlist_library_dialog/spec.rs:89
 msgid "Never Played"
 msgstr "未再生"
 
+#: crates/big-audio-player/src/audio/ui/playlist_library_dialog/spec.rs:97
 #: crates/big-audio-player/src/audio/ui/playlist_library_dialog/spec.rs:106
-#: crates/big-audio-player/src/audio/ui/playlist_library_dialog/spec.rs:115
 msgid "Your Playlists"
 msgstr "あなたのプレイリスト"
 
-#: crates/big-audio-player/src/audio/ui/playlist_library_dialog/spec.rs:129
+#: crates/big-audio-player/src/audio/ui/playlist_library_dialog/spec.rs:120
 msgid "No Saved Playlists"
 msgstr "保存済みのプレイリストはありません"
 
-#: crates/big-audio-player/src/audio/ui/playlist_library_dialog/spec.rs:131
+#: crates/big-audio-player/src/audio/ui/playlist_library_dialog/spec.rs:122
 msgid "Save the current queue, generate one from your stats, or import a file"
 msgstr ""
 "現在のキューを保存するか、統計から生成するか、ファイルをインポートしてくださ"
 "い"
 
-#: crates/big-audio-player/src/audio/ui/playlist_library_dialog/spec.rs:140
+#: crates/big-audio-player/src/audio/ui/playlist_library_dialog/spec.rs:131
 msgid "Import File…"
 msgstr "ファイルをインポート…"
 
-#: crates/big-audio-player/src/audio/ui/playlist_library_dialog/spec.rs:145
+#: crates/big-audio-player/src/audio/ui/playlist_library_dialog/spec.rs:136
 msgid "Import Folder…"
 msgstr "フォルダーをインポート…"
 
-#: crates/big-audio-player/src/audio/ui/playlist_library_dialog/spec.rs:150
+#: crates/big-audio-player/src/audio/ui/playlist_library_dialog/spec.rs:141
 msgid "Export All…"
 msgstr "すべてエクスポート…"
 
-#: crates/big-audio-player/src/audio/ui/playlist_library_dialog/spec.rs:170
+#: crates/big-audio-player/src/audio/ui/playlist_library_dialog/spec.rs:161
 msgid "Load"
 msgstr "読み込む"
 
-#: crates/big-audio-player/src/audio/ui/playlist_library_dialog/spec.rs:171
+#: crates/big-audio-player/src/audio/ui/playlist_library_dialog/spec.rs:162
 msgid "Rename playlist"
 msgstr "プレイリスト名を変更"
 
-#: crates/big-audio-player/src/audio/ui/playlist_library_dialog/spec.rs:172
+#: crates/big-audio-player/src/audio/ui/playlist_library_dialog/spec.rs:163
 msgid "Export playlist"
 msgstr "プレイリストをエクスポート"
 
-#: crates/big-audio-player/src/audio/ui/playlist_library_dialog/spec.rs:173
+#: crates/big-audio-player/src/audio/ui/playlist_library_dialog/spec.rs:164
 msgid "Delete playlist"
 msgstr "プレイリストを削除"
 
-#: crates/big-audio-player/src/audio/ui/playlist_library_dialog/spec.rs:186
+#: crates/big-audio-player/src/audio/ui/playlist_library_dialog/spec.rs:177
 msgid "min"
 msgstr "分"
 
-#: crates/big-audio-player/src/audio/ui/playlist_library_dialog/spec.rs:203
+#: crates/big-audio-player/src/audio/ui/playlist_library_dialog/spec.rs:195
 msgid "Rename Playlist"
 msgstr "プレイリスト名を変更"
 
-#: crates/big-audio-player/src/audio/ui/playlist_library_dialog/spec.rs:205
-#: crates/big-video-player/src/video/ui/video_browser_sidebar/fileops.rs:203
+#: crates/big-audio-player/src/audio/ui/playlist_library_dialog/spec.rs:196
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/fileops.rs:198
 msgid "New name"
 msgstr "新しい名前"
 
-#: crates/big-audio-player/src/audio/ui/playlist_library_dialog/spec.rs:214
+#: crates/big-audio-player/src/audio/ui/playlist_library_dialog/spec.rs:207
 msgid "Delete Playlist?"
 msgstr "プレイリストを削除しますか?"
 
-#: crates/big-audio-player/src/audio/ui/playlist_library_dialog/spec.rs:225
+#: crates/big-audio-player/src/audio/ui/playlist_library_dialog/spec.rs:218
 msgid "This will permanently delete"
 msgstr "次の項目を完全に削除します"
+
+#: crates/big-audio-player/src/audio/ui/playlist_panel.rs:300
+#: crates/ui/media/big-player-ui/src/podcast_panel.rs:481
+msgid "Loading…"
+msgstr "読み込み中…"
 
 #: crates/big-audio-player/src/audio/ui/scan_progress.rs:10
 msgid "Scanning the library"
@@ -1609,7 +1682,7 @@ msgstr ""
 msgid "Cancel scan"
 msgstr "スキャンをキャンセル"
 
-#: crates/big-audio-player/src/audio/ui/track_list.rs:433
+#: crates/big-audio-player/src/audio/ui/track_list.rs:451
 msgid "Playing"
 msgstr "再生中"
 
@@ -1717,9 +1790,13 @@ msgstr "選択"
 msgid "Remote or unsupported location — not eligible for removal here"
 msgstr "リモートまたは非対応の場所のため、ここでは削除できません"
 
-#: crates/big-video-player/src/lib.rs:26
+#: crates/big-video-player/src/lib.rs:29
 msgid "Big Video Player"
 msgstr "Big Video Player"
+
+#: crates/big-video-player/src/video/app.rs:123
+msgid "Open a separate player window instead of using the running one"
+msgstr ""
 
 #: crates/big-video-player/src/video/keybindings.rs:50
 msgid "Increase speed"
@@ -1734,12 +1811,12 @@ msgid "Reset speed to 1×"
 msgstr "速度を 1× に戻す"
 
 #: crates/big-video-player/src/video/keybindings.rs:71
-#: crates/big-video-player/src/video/keybindings.rs:259
+#: crates/big-video-player/src/video/keybindings.rs:260
 msgid "Next chapter"
 msgstr "次のチャプター"
 
 #: crates/big-video-player/src/video/keybindings.rs:78
-#: crates/big-video-player/src/video/keybindings.rs:266
+#: crates/big-video-player/src/video/keybindings.rs:267
 msgid "Previous chapter"
 msgstr "前のチャプター"
 
@@ -1819,7 +1896,7 @@ msgstr "音量を上げる"
 #: crates/big-video-player/src/video/keybindings.rs:200
 #: crates/big-video-player/src/video/ui/media_details_dialog.rs:233
 #: crates/big-video-player/src/video/ui/media_details_dialog.rs:315
-#: crates/ui/media/big-player-ui/src/audio_preferences.rs:82
+#: crates/ui/media/big-player-ui/src/audio_preferences.rs:83
 msgid "Audio"
 msgstr "オーディオ"
 
@@ -1845,7 +1922,7 @@ msgstr "副字幕を切り替え"
 #: crates/big-video-player/src/video/keybindings.rs:229
 #: crates/big-video-player/src/video/ui/appearance/layout/buttons_page.rs:98
 #: crates/big-video-player/src/video/ui/preferences/subtitles.rs:19
-#: crates/big-video-player/src/video/ui/video_controls_bar/zones.rs:612
+#: crates/big-video-player/src/video/ui/video_controls_bar/zones.rs:625
 msgid "Subtitles"
 msgstr "字幕"
 
@@ -1867,7 +1944,7 @@ msgid "Screenshot"
 msgstr "スクリーンショット"
 
 #: crates/big-video-player/src/video/keybindings.rs:237
-#: crates/big-video-player/src/video/ui/preferences/general.rs:154
+#: crates/big-video-player/src/video/ui/preferences/general.rs:155
 msgid "Screenshots"
 msgstr "スクリーンショット"
 
@@ -1879,57 +1956,57 @@ msgstr "シャッフルを切り替え"
 msgid "Cycle repeat mode"
 msgstr "リピートモードを切り替え"
 
-#: crates/big-video-player/src/video/keybindings.rs:274
+#: crates/big-video-player/src/video/keybindings.rs:275
 msgid "Open file"
 msgstr "ファイルを開く"
 
-#: crates/big-video-player/src/video/keybindings.rs:275
-#: crates/big-video-player/src/video/keybindings.rs:282
-#: crates/big-video-player/src/video/keybindings.rs:289
-#: crates/big-video-player/src/video/keybindings.rs:296
-#: crates/big-video-player/src/video/keybindings.rs:303
-#: crates/big-video-player/src/video/keybindings.rs:311
-#: crates/big-video-player/src/video/keybindings.rs:318
-#: crates/big-video-player/src/video/keybindings.rs:325
-#: crates/big-video-player/src/video/ui/preferences/advanced.rs:222
+#: crates/big-video-player/src/video/keybindings.rs:276
+#: crates/big-video-player/src/video/keybindings.rs:283
+#: crates/big-video-player/src/video/keybindings.rs:290
+#: crates/big-video-player/src/video/keybindings.rs:297
+#: crates/big-video-player/src/video/keybindings.rs:304
+#: crates/big-video-player/src/video/keybindings.rs:312
+#: crates/big-video-player/src/video/keybindings.rs:319
+#: crates/big-video-player/src/video/keybindings.rs:326
+#: crates/big-video-player/src/video/ui/preferences/advanced.rs:220
 msgid "Other"
 msgstr "その他"
 
-#: crates/big-video-player/src/video/keybindings.rs:281
+#: crates/big-video-player/src/video/keybindings.rs:282
 #: crates/big-video-player/src/video/ui/video_shell/actions.rs:138
 #: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:154
 msgid "Open URL"
 msgstr "URL を開く"
 
-#: crates/big-video-player/src/video/keybindings.rs:288
+#: crates/big-video-player/src/video/keybindings.rs:289
 msgid "Paste and play"
 msgstr "貼り付けて再生"
 
-#: crates/big-video-player/src/video/keybindings.rs:295
-#: crates/big-video-player/src/video/ui/video_controls_bar.rs:258
-#: crates/big-video-player/src/video/ui/video_controls_bar.rs:259
+#: crates/big-video-player/src/video/keybindings.rs:296
+#: crates/big-video-player/src/video/ui/video_controls_bar.rs:261
+#: crates/big-video-player/src/video/ui/video_controls_bar.rs:262
 msgid "Go to time"
 msgstr "時間を指定して移動"
 
-#: crates/big-video-player/src/video/keybindings.rs:302
+#: crates/big-video-player/src/video/keybindings.rs:303
 msgid "Cycle edition"
 msgstr "エディションを切り替え"
 
-#: crates/big-video-player/src/video/keybindings.rs:310
+#: crates/big-video-player/src/video/keybindings.rs:311
 msgid "Toggle files sidebar"
 msgstr "ファイルサイドバーを切り替え"
 
-#: crates/big-video-player/src/video/keybindings.rs:317
+#: crates/big-video-player/src/video/keybindings.rs:318
 msgid "Toggle playlist sidebar"
 msgstr "プレイリストサイドバーを切り替え"
 
-#: crates/big-video-player/src/video/keybindings.rs:324
+#: crates/big-video-player/src/video/keybindings.rs:325
 msgid "Media information"
 msgstr "メディア情報"
 
 #: crates/big-video-player/src/video/ui/appearance/layout/buttons_page.rs:28
-#: crates/big-video-player/src/video/ui/video_shell/component.rs:260
-#: crates/big-video-player/src/video/ui/video_shell/component.rs:264
+#: crates/big-video-player/src/video/ui/video_shell/component.rs:270
+#: crates/big-video-player/src/video/ui/video_shell/component.rs:274
 msgid "Keep Above"
 msgstr "常に手前に表示"
 
@@ -1942,167 +2019,181 @@ msgid "Play/Pause"
 msgstr "再生/一時停止"
 
 #: crates/big-video-player/src/video/ui/appearance/layout/buttons_page.rs:105
-#: crates/big-video-player/src/video/ui/video_controls_bar/zones.rs:620
+#: crates/big-video-player/src/video/ui/video_controls_bar/zones.rs:633
 msgid "Audio Track"
 msgstr "オーディオトラック"
 
 #: crates/big-video-player/src/video/ui/appearance/layout/buttons_page.rs:119
-#: crates/big-video-player/src/video/ui/video_controls_bar/zones.rs:631
+#: crates/big-video-player/src/video/ui/video_controls_bar/zones.rs:644
 #: crates/big-video-player/src/video/ui/video_shell/input_gestures.rs:106
 msgid "Fullscreen"
 msgstr "全画面表示"
 
-#: crates/big-video-player/src/video/ui/appearance/layout/buttons_page.rs:146
+#: crates/big-video-player/src/video/ui/appearance/layout/buttons_page.rs:145
+msgid "Top bar"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/appearance/layout/buttons_page.rs:147
 msgid "Video Title"
 msgstr "ビデオのタイトル"
 
-#: crates/big-video-player/src/video/ui/appearance/layout/buttons_page.rs:188
-#: crates/big-video-player/src/video/ui/appearance/layout/layout_page.rs:97
+#: crates/big-video-player/src/video/ui/appearance/layout/buttons_page.rs:151
+#, fuzzy
+#| msgid "Bottom Margin"
+msgid "Bottom bar"
+msgstr "下余白"
+
+#: crates/big-video-player/src/video/ui/appearance/layout/buttons_page.rs:190
+#: crates/big-video-player/src/video/ui/appearance/layout/layout_page.rs:98
 msgid "Buttons"
 msgstr "ボタン"
 
-#: crates/big-video-player/src/video/ui/appearance/layout/buttons_page.rs:192
+#: crates/big-video-player/src/video/ui/appearance/layout/buttons_page.rs:194
 msgid "Button Layout"
 msgstr "ボタンのレイアウト"
 
-#: crates/big-video-player/src/video/ui/appearance/layout/buttons_page.rs:194
-msgid "Drag buttons between zones • Click to toggle visibility"
+#: crates/big-video-player/src/video/ui/appearance/layout/buttons_page.rs:196
+#, fuzzy
+#| msgid "Drag buttons between zones • Click to toggle visibility"
+msgid ""
+"Drag buttons between zones or move them with Alt+Left and Alt+Right • Click "
+"to toggle visibility"
 msgstr "ボタンをゾーン間でドラッグ • クリックで表示/非表示を切り替え"
 
-#: crates/big-video-player/src/video/ui/appearance/layout/layout_page.rs:18
+#: crates/big-video-player/src/video/ui/appearance/layout/layout_page.rs:19
 msgid "Layout"
 msgstr "レイアウト"
 
-#: crates/big-video-player/src/video/ui/appearance/layout/layout_page.rs:33
+#: crates/big-video-player/src/video/ui/appearance/layout/layout_page.rs:34
 msgid "Controls Bar"
 msgstr "コントロールバー"
 
-#: crates/big-video-player/src/video/ui/appearance/layout/layout_page.rs:37
+#: crates/big-video-player/src/video/ui/appearance/layout/layout_page.rs:38
 msgid "Corner Radius"
 msgstr "角の丸み"
 
-#: crates/big-video-player/src/video/ui/appearance/layout/layout_page.rs:43
+#: crates/big-video-player/src/video/ui/appearance/layout/layout_page.rs:44
 msgid "Bottom Margin"
 msgstr "下余白"
 
-#: crates/big-video-player/src/video/ui/appearance/layout/layout_page.rs:49
+#: crates/big-video-player/src/video/ui/appearance/layout/layout_page.rs:50
 msgid "Side Margin"
 msgstr "横余白"
 
-#: crates/big-video-player/src/video/ui/appearance/layout/layout_page.rs:55
+#: crates/big-video-player/src/video/ui/appearance/layout/layout_page.rs:56
 msgid "Padding Top"
 msgstr "上パディング"
 
-#: crates/big-video-player/src/video/ui/appearance/layout/layout_page.rs:61
+#: crates/big-video-player/src/video/ui/appearance/layout/layout_page.rs:62
 msgid "Padding Bottom"
 msgstr "下パディング"
 
-#: crates/big-video-player/src/video/ui/appearance/layout/layout_page.rs:67
+#: crates/big-video-player/src/video/ui/appearance/layout/layout_page.rs:68
 msgid "Padding Left"
 msgstr "左パディング"
 
-#: crates/big-video-player/src/video/ui/appearance/layout/layout_page.rs:73
+#: crates/big-video-player/src/video/ui/appearance/layout/layout_page.rs:74
 msgid "Padding Right"
 msgstr "右パディング"
 
-#: crates/big-video-player/src/video/ui/appearance/layout/layout_page.rs:100
+#: crates/big-video-player/src/video/ui/appearance/layout/layout_page.rs:101
 msgid "Custom Button Size"
 msgstr "ボタンサイズをカスタマイズ"
 
-#: crates/big-video-player/src/video/ui/appearance/layout/layout_page.rs:106
+#: crates/big-video-player/src/video/ui/appearance/layout/layout_page.rs:107
 msgid "Button Size"
 msgstr "ボタンサイズ"
 
-#: crates/big-video-player/src/video/ui/appearance/layout/layout_page.rs:121
+#: crates/big-video-player/src/video/ui/appearance/layout/layout_page.rs:122
 msgid "Button Border Radius"
 msgstr "ボタンの角の丸み"
 
-#: crates/big-video-player/src/video/ui/appearance/layout/layout_page.rs:172
+#: crates/big-video-player/src/video/ui/appearance/layout/layout_page.rs:173
 msgid "Window"
 msgstr "ウィンドウ"
 
-#: crates/big-video-player/src/video/ui/appearance/layout/layout_page.rs:175
+#: crates/big-video-player/src/video/ui/appearance/layout/layout_page.rs:176
 msgid "Custom Window Corner Radius"
 msgstr "ウィンドウの角の丸みをカスタマイズ"
 
-#: crates/big-video-player/src/video/ui/appearance/layout/layout_page.rs:181
+#: crates/big-video-player/src/video/ui/appearance/layout/layout_page.rs:182
 msgid "Window Corner Radius"
 msgstr "ウィンドウの角の丸み"
 
-#: crates/big-video-player/src/video/ui/appearance/layout/layout_page.rs:218
+#: crates/big-video-player/src/video/ui/appearance/layout/layout_page.rs:219
 msgid "Window Buttons Follow Custom Size"
 msgstr "ウィンドウボタンもカスタムサイズに合わせる"
 
-#: crates/big-video-player/src/video/ui/appearance/layout/layout_page.rs:219
+#: crates/big-video-player/src/video/ui/appearance/layout/layout_page.rs:220
 msgid "Also resize the minimize, maximize and close buttons"
 msgstr "最小化、最大化、閉じるボタンのサイズも変更します"
 
-#: crates/big-video-player/src/video/ui/filters/groups_shader.rs:28
+#: crates/big-video-player/src/video/ui/filters/groups_shader.rs:29
 msgid "GPU Processing"
 msgstr "GPU 処理"
 
-#: crates/big-video-player/src/video/ui/filters/groups_shader.rs:34
+#: crates/big-video-player/src/video/ui/filters/groups_shader.rs:35
 msgid "Deband"
 msgstr "デバンド"
 
-#: crates/big-video-player/src/video/ui/filters/groups_shader.rs:35
+#: crates/big-video-player/src/video/ui/filters/groups_shader.rs:36
 msgid "Remove color banding artifacts"
 msgstr "色のバンディングノイズを除去します"
 
-#: crates/big-video-player/src/video/ui/filters/groups_shader.rs:41
+#: crates/big-video-player/src/video/ui/filters/groups_shader.rs:42
 msgid "Sigmoid Upscaling"
 msgstr "シグモイドアップスケーリング"
 
-#: crates/big-video-player/src/video/ui/filters/groups_shader.rs:42
+#: crates/big-video-player/src/video/ui/filters/groups_shader.rs:43
 msgid "Reduces ringing when scaling video up"
 msgstr "ビデオを拡大する際のリンギングを軽減します"
 
-#: crates/big-video-player/src/video/ui/filters/groups_shader.rs:48
+#: crates/big-video-player/src/video/ui/filters/groups_shader.rs:49
 msgid "Correct Downscaling"
 msgstr "正確なダウンスケーリング"
 
-#: crates/big-video-player/src/video/ui/filters/groups_shader.rs:49
+#: crates/big-video-player/src/video/ui/filters/groups_shader.rs:50
 msgid "Higher quality when scaling video down"
 msgstr "ビデオを縮小する際の品質が向上します"
 
-#: crates/big-video-player/src/video/ui/filters/groups_shader.rs:60
+#: crates/big-video-player/src/video/ui/filters/groups_shader.rs:61
 msgid "Sharpen"
 msgstr "シャープ化"
 
-#: crates/big-video-player/src/video/ui/filters/groups_shader.rs:61
+#: crates/big-video-player/src/video/ui/filters/groups_shader.rs:62
 msgid "GPU sharpening (unsharp mask)"
 msgstr "GPU シャープ化 (アンシャープマスク)"
 
-#: crates/big-video-player/src/video/ui/filters/groups_shader.rs:76
+#: crates/big-video-player/src/video/ui/filters/groups_shader.rs:77
 msgid "Amount"
 msgstr "量"
 
-#: crates/big-video-player/src/video/ui/filters/groups_shader.rs:137
+#: crates/big-video-player/src/video/ui/filters/groups_shader.rs:138
 msgid "GPU Upscaling Shaders"
 msgstr "GPU アップスケーリングシェーダー"
 
-#: crates/big-video-player/src/video/ui/filters/groups_shader.rs:151
+#: crates/big-video-player/src/video/ui/filters/groups_shader.rs:152
 msgid "Upscaling Shader"
 msgstr "アップスケーリングシェーダー"
 
-#: crates/big-video-player/src/video/ui/filters/groups_shader.rs:154
+#: crates/big-video-player/src/video/ui/filters/groups_shader.rs:155
 msgid "FidelityFX Super Resolution (FSR)"
 msgstr "FidelityFX Super Resolution (FSR)"
 
-#: crates/big-video-player/src/video/ui/filters/groups_shader.rs:155
+#: crates/big-video-player/src/video/ui/filters/groups_shader.rs:156
 msgid "CAS Upscaling"
 msgstr "CAS アップスケーリング"
 
-#: crates/big-video-player/src/video/ui/filters/groups_shader.rs:159
+#: crates/big-video-player/src/video/ui/filters/groups_shader.rs:160
 msgid ""
 "Enhances image quality when the video resolution is lower than your display"
 msgstr "ビデオの解像度がディスプレイより低い場合に画質を向上させます"
 
-#: crates/big-video-player/src/video/ui/filters/groups_shader.rs:180
+#: crates/big-video-player/src/video/ui/filters/groups_shader.rs:181
 msgid "Sharpening Intensity"
 msgstr "シャープ化の強度"
 
-#: crates/big-video-player/src/video/ui/filters/groups_shader.rs:182
+#: crates/big-video-player/src/video/ui/filters/groups_shader.rs:183
 msgid "Higher values produce a more visible sharpening effect"
 msgstr "値を大きくすると、シャープ化の効果がより目立ちます"
 
@@ -2180,236 +2271,242 @@ msgstr ""
 "Anime4K シェーダーを使うには big-media-runtime パッケージをインストールしてく"
 "ださい"
 
-#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:25
+#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:29
 msgid "Denoise and Sharpen"
 msgstr "ノイズ除去とシャープ化"
 
-#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:32
+#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:37
 msgid "Denoise (hqdn3d)"
 msgstr "ノイズ除去 (hqdn3d)"
 
-#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:33
+#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:38
 msgid "Reduces visual noise and grain from old or low-light footage"
 msgstr "古い映像や暗所で撮影した映像の視覚的なノイズやざらつきを軽減します"
 
-#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:34
-#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:49
+#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:39
+#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:55
 msgid "Strength"
 msgstr "強度"
 
-#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:47
+#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:53
 msgid "Sharpen (CAS)"
 msgstr "シャープ化 (CAS)"
 
-#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:48
+#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:54
 msgid "Software contrast-adaptive sharpening — works at any resolution"
 msgstr ""
 "ソフトウェアによるコントラスト適応型シャープ化。どの解像度でも動作します"
 
-#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:62
+#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:68
 #: crates/big-video-player/src/video/ui/preferences/subtitles.rs:77
 msgid "Color"
 msgstr "色"
 
-#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:69
+#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:76
 msgid "Color Temperature"
 msgstr "色温度"
 
-#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:70
+#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:77
 msgid "Warm or cool tone (Kelvin)"
 msgstr "暖色または寒色のトーン (ケルビン)"
 
-#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:71
+#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:78
 msgid "Temperature"
 msgstr "温度"
 
-#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:84
+#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:92
 msgid "Vibrance"
 msgstr "バイブランス"
 
-#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:85
+#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:93
 msgid "Boost color saturation intelligently"
 msgstr "色の彩度を自然に引き上げます"
 
-#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:86
+#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:94
 msgid "Intensity"
 msgstr "強さ"
 
-#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:103
+#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:112
 msgid "Colorize"
 msgstr "カラー化"
 
-#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:104
+#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:113
 msgid "Apply a color tint overlay"
 msgstr "色合いのオーバーレイを適用します"
 
-#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:114
+#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:130
 #: crates/big-video-player/src/video/ui/media_adjust.rs:633
 msgid "Hue"
 msgstr "色相"
 
-#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:121
+#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:137
 #: crates/big-video-player/src/video/ui/media_adjust.rs:623
-#: crates/big-video-player/src/video/ui/preferences/advanced.rs:138
+#: crates/big-video-player/src/video/ui/preferences/advanced.rs:137
 msgid "Saturation"
 msgstr "彩度"
 
-#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:128
+#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:144
 msgid "Mix"
 msgstr "ミックス"
 
-#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:185
+#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:201
 msgid "Monochrome"
 msgstr "モノクロ"
 
-#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:186
+#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:202
 msgid "Cinematic black and white"
 msgstr "シネマ調の白黒"
 
-#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:206
+#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:222
 msgid "Style Presets"
 msgstr "スタイルプリセット"
 
-#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:209
+#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:226
 msgid "Color Curves"
 msgstr "カラーカーブ"
 
-#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:210
+#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:227
 msgid "Predefined color grading looks"
 msgstr "あらかじめ用意されたカラーグレーディングの雰囲気"
 
-#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:225
+#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:243
 msgid "Preset"
 msgstr "プリセット"
 
-#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:227
+#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:245
 msgid "Vintage"
 msgstr "ビンテージ"
 
-#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:228
+#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:246
 msgid "Cross Process"
 msgstr "クロスプロセス"
 
-#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:229
+#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:247
 msgid "Darker"
 msgstr "より暗く"
 
-#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:230
+#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:248
 msgid "Lighter"
 msgstr "より明るく"
 
-#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:231
+#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:249
 msgid "More Contrast"
 msgstr "コントラストを強める"
 
-#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:232
+#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:250
 msgid "Strong Contrast"
 msgstr "コントラストを非常に強める"
 
-#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:233
+#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:251
 msgid "Color Negative"
 msgstr "カラーネガ"
 
-#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:288
+#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:314
 msgid "Vignette"
 msgstr "ビネット"
 
-#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:289
+#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:315
 msgid "Darken edges of the image"
 msgstr "画像の端を暗くします"
 
-#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:315
+#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:342
 msgid "Pixelize"
 msgstr "ピクセル化"
 
-#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:316
+#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:343
 msgid "Mosaic / pixel art effect"
 msgstr "モザイク / ピクセルアート効果"
 
-#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:317
+#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:344
 msgid "Block Size"
 msgstr "ブロックサイズ"
 
-#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:329
+#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:357
 msgid "Gaussian Blur"
 msgstr "ガウスぼかし"
 
-#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:330
+#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:358
 msgid "Smooth blur effect"
 msgstr "なめらかなぼかし効果"
 
-#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:331
+#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:359
 msgid "Sigma"
 msgstr "シグマ"
 
-#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:343
+#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:372
 msgid "Motion Trail"
 msgstr "モーショントレイル"
 
-#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:344
+#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:373
 msgid "Slowly fading visual trail effect"
 msgstr "ゆっくり消えていく残像エフェクト"
 
-#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:345
+#: crates/big-video-player/src/video/ui/filters/groups_vf.rs:374
 msgid "Decay"
 msgstr "減衰"
 
-#: crates/big-video-player/src/video/ui/iptv/channel_list.rs:78
+#: crates/big-video-player/src/video/ui/iptv/channel_list.rs:82
 msgid "Toggle favorite"
 msgstr "お気に入りを切り替え"
 
-#: crates/big-video-player/src/video/ui/iptv/channel_list.rs:158
+#: crates/big-video-player/src/video/ui/iptv/channel_list.rs:161
 msgid "No channels"
 msgstr "チャンネルなし"
 
-#: crates/big-video-player/src/video/ui/iptv/channel_list.rs:166
+#: crates/big-video-player/src/video/ui/iptv/channel_list.rs:169
 #, rust-format
 msgid "{} channel"
 msgid_plural "{} channels"
 msgstr[0] "{} 個のチャンネル"
 
-#: crates/big-video-player/src/video/ui/iptv/channel_list.rs:213
+#: crates/big-video-player/src/video/ui/iptv/channel_list.rs:216
 #: crates/ui/media/big-player-ui/src/radio_panel/methods.rs:126
 msgid "Ungrouped"
 msgstr "グループなし"
 
-#: crates/big-video-player/src/video/ui/iptv/mod.rs:119
-#: crates/big-video-player/src/video/ui/iptv/mod.rs:135
+#: crates/big-video-player/src/video/ui/iptv/mod.rs:122
+#: crates/big-video-player/src/video/ui/iptv/mod.rs:138
 msgid "Provider"
 msgstr "プロバイダー"
 
-#: crates/big-video-player/src/video/ui/iptv/mod.rs:143
+#: crates/big-video-player/src/video/ui/iptv/mod.rs:146
 msgid "Manage…"
 msgstr "管理…"
 
-#: crates/big-video-player/src/video/ui/iptv/mod.rs:150
+#: crates/big-video-player/src/video/ui/iptv/mod.rs:153
 msgid "Reload from provider"
 msgstr "プロバイダーから再読み込み"
 
-#: crates/big-video-player/src/video/ui/iptv/mod.rs:156
-#: crates/big-video-player/src/video/ui/iptv/mod.rs:161
+#: crates/big-video-player/src/video/ui/iptv/mod.rs:159
+#: crates/big-video-player/src/video/ui/iptv/mod.rs:164
 msgid "Search channels"
 msgstr "チャンネルを検索"
 
-#: crates/big-video-player/src/video/ui/iptv/mod.rs:206
-#: crates/big-video-player/src/video/ui/iptv/mod.rs:282
+#: crates/big-video-player/src/video/ui/iptv/mod.rs:212
+#: crates/big-video-player/src/video/ui/iptv/mod.rs:288
 msgid "No providers configured. Click “Manage…” to add one."
 msgstr ""
 "プロバイダーが設定されていません。「管理…」をクリックして追加してください。"
 
-#: crates/big-video-player/src/video/ui/iptv/mod.rs:236
+#: crates/big-video-player/src/video/ui/iptv/mod.rs:242
 msgid "Showing cached channels — updating…"
 msgstr "キャッシュ済みのチャンネルを表示しています — 更新中…"
 
-#: crates/big-video-player/src/video/ui/iptv/mod.rs:304
+#: crates/big-video-player/src/video/ui/iptv/mod.rs:310
 msgid "Reloading channels…"
 msgstr "チャンネルを再読み込みしています…"
 
-#: crates/big-video-player/src/video/ui/iptv/mod.rs:306
+#: crates/big-video-player/src/video/ui/iptv/mod.rs:312
 msgid "Loading channels…"
 msgstr "チャンネルを読み込んでいます…"
 
-#: crates/big-video-player/src/video/ui/iptv/mod.rs:337
+#: crates/big-video-player/src/video/ui/iptv/mod.rs:333
+#, fuzzy, rust-format
+#| msgid "Showing the first {}. Type more to narrow the search."
+msgid "Showing the first {} channels; the list has more."
+msgstr "先頭の {} 件を表示しています。さらに入力して検索を絞り込んでください。"
+
+#: crates/big-video-player/src/video/ui/iptv/mod.rs:350
 msgid ""
 "Could not reach the provider. Check the address and your connection; a saved "
 "list stays on screen."
@@ -2417,7 +2514,7 @@ msgstr ""
 "プロバイダーに接続できませんでした。アドレスとネットワーク接続を確認してくだ"
 "さい。保存済みのリストは画面に残ります。"
 
-#: crates/big-video-player/src/video/ui/iptv/mod.rs:340
+#: crates/big-video-player/src/video/ui/iptv/mod.rs:353
 msgid ""
 "The provider refused access. Check the user name and password, or the User-"
 "Agent the provider asks for."
@@ -2425,37 +2522,37 @@ msgstr ""
 "プロバイダーがアクセスを拒否しました。ユーザー名とパスワード、またはプロバイ"
 "ダーが要求する User-Agent を確認してください。"
 
-#: crates/big-video-player/src/video/ui/iptv/mod.rs:343
+#: crates/big-video-player/src/video/ui/iptv/mod.rs:356
 #, rust-format
 msgid "The provider's server failed (error {}). Try again later."
 msgstr ""
 "プロバイダーのサーバーでエラーが発生しました (エラー {})。しばらくしてからも"
 "う一度お試しください。"
 
-#: crates/big-video-player/src/video/ui/iptv/mod.rs:347
+#: crates/big-video-player/src/video/ui/iptv/mod.rs:360
 #, rust-format
 msgid "The provider answered with error {}."
 msgstr "プロバイダーからエラー {} が返されました。"
 
-#: crates/big-video-player/src/video/ui/iptv/mod.rs:349
+#: crates/big-video-player/src/video/ui/iptv/mod.rs:362
 #, rust-format
 msgid "The channel list is larger than {} MB."
 msgstr "チャンネルリストが {} MB を超えています。"
 
-#: crates/big-video-player/src/video/ui/iptv/mod.rs:353
+#: crates/big-video-player/src/video/ui/iptv/mod.rs:366
 msgid "The provider sent no channels."
 msgstr "プロバイダーからチャンネルが送信されませんでした。"
 
-#: crates/big-video-player/src/video/ui/iptv/mod.rs:354
+#: crates/big-video-player/src/video/ui/iptv/mod.rs:367
 msgid "The provider rejected the user name or password."
 msgstr "プロバイダーがユーザー名またはパスワードを拒否しました。"
 
-#: crates/big-video-player/src/video/ui/iptv/mod.rs:356
+#: crates/big-video-player/src/video/ui/iptv/mod.rs:369
 #, rust-format
 msgid "This account is not active (the provider says: {})."
 msgstr "このアカウントは有効ではありません (プロバイダーからの応答: {})。"
 
-#: crates/big-video-player/src/video/ui/iptv/mod.rs:358
+#: crates/big-video-player/src/video/ui/iptv/mod.rs:371
 msgid "Could not read the playlist file."
 msgstr "プレイリストファイルを読み込めませんでした。"
 
@@ -2480,7 +2577,7 @@ msgid "Edit"
 msgstr "編集"
 
 #: crates/big-video-player/src/video/ui/iptv/providers_dialog.rs:108
-#: crates/big-video-player/src/video/ui/video_browser_sidebar/library.rs:748
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/library.rs:749
 msgid "Remove"
 msgstr "削除"
 
@@ -2578,8 +2675,8 @@ msgstr "その他のショートカット"
 #: crates/big-video-player/src/video/ui/preferences/advanced.rs:101
 #: crates/big-video-player/src/video/ui/preferences/video.rs:54
 #: crates/big-video-player/src/video/ui/preferences/video.rs:87
-#: crates/ui/media/big-player-ui/src/audio_preferences.rs:168
-#: crates/ui/media/big-player-ui/src/audio_preferences.rs:179
+#: crates/ui/media/big-player-ui/src/audio_preferences.rs:170
+#: crates/ui/media/big-player-ui/src/audio_preferences.rs:181
 msgid "Automatic"
 msgstr "自動"
 
@@ -2596,14 +2693,14 @@ msgid "HDR (TV)"
 msgstr "HDR (TV)"
 
 #: crates/big-video-player/src/video/ui/media_adjust.rs:119
-#: crates/big-video-player/src/video/ui/video_shell/adjustments.rs:175
+#: crates/big-video-player/src/video/ui/video_shell/adjustments.rs:142
 #: crates/big-video-player/src/video/ui/video_shell/panel.rs:431
 #: crates/media-runtime/src/shared/audio_effects.rs:186
 msgid "Normal"
 msgstr "標準"
 
 #: crates/big-video-player/src/video/ui/media_adjust.rs:183
-#: crates/big-video-player/src/video/ui/video_controls_bar/tracks.rs:80
+#: crates/big-video-player/src/video/ui/video_controls_bar/tracks.rs:81
 msgid "Subtitles early or late"
 msgstr "字幕が早い/遅い"
 
@@ -2740,7 +2837,7 @@ msgid "Copy All"
 msgstr "すべてコピー"
 
 #: crates/big-video-player/src/video/ui/media_details_dialog.rs:77
-#: crates/big-video-player/src/video/ui/preferences/general.rs:19
+#: crates/big-video-player/src/video/ui/preferences/general.rs:20
 msgid "General"
 msgstr "一般"
 
@@ -2752,22 +2849,17 @@ msgstr "チャプター"
 
 #: crates/big-video-player/src/video/ui/media_details_dialog.rs:162
 #: crates/big-video-player/src/video/ui/media_details_dialog.rs:234
-#: crates/media-runtime/src/media/metadata_cache/detailed_video_metadata.rs:90
-#: crates/media-runtime/src/media/metadata_cache/detailed_video_metadata.rs:123
-#: crates/media-runtime/src/media/metadata_cache/detailed_video_metadata.rs:168
 #: crates/ui/media/big-media-components/src/media/file_metadata_dialog.rs:64
 msgid "Codec"
 msgstr "コーデック"
 
 #: crates/big-video-player/src/video/ui/media_details_dialog.rs:165
-#: crates/media-runtime/src/media/metadata_cache/detailed_video_metadata.rs:93
 #: crates/media-runtime/src/shared/tv_cast.rs:488
 #: crates/ui/media/big-media-components/src/media/file_metadata_dialog.rs:66
 msgid "Resolution"
 msgstr "解像度"
 
 #: crates/big-video-player/src/video/ui/media_details_dialog.rs:173
-#: crates/media-runtime/src/media/metadata_cache/detailed_video_metadata.rs:100
 #: crates/ui/media/big-media-components/src/media/file_metadata_dialog.rs:68
 msgid "Frame Rate"
 msgstr "フレームレート"
@@ -2781,7 +2873,6 @@ msgid "Hardware Decoder"
 msgstr "ハードウェアデコーダー"
 
 #: crates/big-video-player/src/video/ui/media_details_dialog.rs:200
-#: crates/media-runtime/src/media/metadata_cache/detailed_video_metadata.rs:103
 #: crates/ui/media/big-media-components/src/media/file_metadata_dialog.rs:67
 msgid "Pixel Format"
 msgstr "ピクセル形式"
@@ -2819,13 +2910,19 @@ msgid "Subtitle Tracks"
 msgstr "字幕トラック"
 
 #: crates/big-video-player/src/video/ui/media_details_dialog.rs:325
-#: crates/big-video-player/src/video/ui/video_controls_bar/tracks.rs:246
+#: crates/big-video-player/src/video/ui/video_controls_bar/tracks.rs:237
 msgid "external"
 msgstr "外部"
 
 #: crates/big-video-player/src/video/ui/media_details_dialog.rs:338
 msgid "Subtitle"
 msgstr "字幕"
+
+#: crates/big-video-player/src/video/ui/menu_dialogs.rs:23
+#, fuzzy, rust-format
+#| msgid "Recording was not saved"
+msgid "The screenshot was not saved: {error}"
+msgstr "録音は保存されませんでした"
 
 #: crates/big-video-player/src/video/ui/menu_dialogs.rs:54
 msgid "Go to Time"
@@ -2843,30 +2940,43 @@ msgstr "再生時間"
 msgid "Go"
 msgstr "移動"
 
-#: crates/big-video-player/src/video/ui/menu_dialogs.rs:130
-msgid "Screenshot queue is full; wait for pending captures"
+#: crates/big-video-player/src/video/ui/menu_dialogs.rs:124
+#: crates/big-video-player/src/video/ui/menu_dialogs.rs:177
+msgid "Still saving the previous screenshots. Try again in a moment."
 msgstr ""
-"スクリーンショットのキューがいっぱいです。保留中のキャプチャが完了するまでお"
-"待ちください"
 
-#: crates/big-video-player/src/video/ui/menu_dialogs.rs:134
-#: crates/big-video-player/src/video/ui/menu_dialogs.rs:138
-#: crates/big-video-player/src/video/ui/menu_dialogs.rs:149
-#: crates/big-video-player/src/video/ui/video_shell/component.rs:738
-#: crates/big-video-player/src/video/ui/video_shell/playback.rs:163
-msgid "Screenshot failed"
-msgstr "スクリーンショットに失敗しました"
+#: crates/big-video-player/src/video/ui/menu_dialogs.rs:130
+#: crates/big-video-player/src/video/ui/menu_dialogs.rs:135
+#, fuzzy
+#| msgid "Stores the video color space in each screenshot"
+msgid "Open a video to take a screenshot"
+msgstr "ビデオの色空間を各スクリーンショットに保存します"
 
-#: crates/big-video-player/src/video/ui/menu_dialogs.rs:324
-#: crates/media-runtime/src/player/mpv_backend/backend/mod.rs:301
+#: crates/big-video-player/src/video/ui/menu_dialogs.rs:147
+msgid ""
+"There is no Pictures or home folder to save screenshots in. Choose a folder "
+"in Preferences."
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/menu_dialogs.rs:172
+#, rust-format
+msgid "Cannot save to {folder}: {error}. Choose another folder in Preferences."
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/menu_dialogs.rs:182
+msgid "The screenshot was not saved because of an unexpected error"
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/menu_dialogs.rs:215
+#: crates/media-runtime/src/player/mpv_backend/backend/mod.rs:327
 msgid "Chapter"
 msgstr "チャプター"
 
-#: crates/big-video-player/src/video/ui/menu_dialogs.rs:345
+#: crates/big-video-player/src/video/ui/menu_dialogs.rs:236
 msgid "Screenshot saved"
 msgstr "スクリーンショットを保存しました"
 
-#: crates/big-video-player/src/video/ui/menu_dialogs.rs:347
+#: crates/big-video-player/src/video/ui/menu_dialogs.rs:238
 msgid "Screenshot saved; disk synchronization could not be confirmed"
 msgstr ""
 "スクリーンショットを保存しましたが、ディスクへの同期を確認できませんでした"
@@ -2950,72 +3060,72 @@ msgstr ""
 msgid "Profile File"
 msgstr "プロファイルファイル"
 
-#: crates/big-video-player/src/video/ui/preferences/advanced.rs:133
+#: crates/big-video-player/src/video/ui/preferences/advanced.rs:132
 msgid "Rendering Intent"
 msgstr "レンダリングインテント"
 
-#: crates/big-video-player/src/video/ui/preferences/advanced.rs:136
+#: crates/big-video-player/src/video/ui/preferences/advanced.rs:135
 msgid "Perceptual"
 msgstr "知覚的"
 
-#: crates/big-video-player/src/video/ui/preferences/advanced.rs:137
+#: crates/big-video-player/src/video/ui/preferences/advanced.rs:136
 msgid "Relative"
 msgstr "相対的"
 
-#: crates/big-video-player/src/video/ui/preferences/advanced.rs:139
+#: crates/big-video-player/src/video/ui/preferences/advanced.rs:138
 msgid "Absolute"
 msgstr "絶対的"
 
-#: crates/big-video-player/src/video/ui/preferences/advanced.rs:155
+#: crates/big-video-player/src/video/ui/preferences/advanced.rs:153
 msgid "Streaming and Cache"
 msgstr "ストリーミングとキャッシュ"
 
-#: crates/big-video-player/src/video/ui/preferences/advanced.rs:157
+#: crates/big-video-player/src/video/ui/preferences/advanced.rs:155
 msgid "Loads media ahead of time to avoid pauses on slow networks"
 msgstr "低速なネットワークでの途切れを防ぐため、メディアを先読みします"
 
-#: crates/big-video-player/src/video/ui/preferences/advanced.rs:162
+#: crates/big-video-player/src/video/ui/preferences/advanced.rs:160
 msgid "Load Ahead"
 msgstr "先読み"
 
-#: crates/big-video-player/src/video/ui/preferences/advanced.rs:170
+#: crates/big-video-player/src/video/ui/preferences/advanced.rs:168
 msgid "How Far Ahead"
 msgstr "先読みする長さ"
 
-#: crates/big-video-player/src/video/ui/preferences/advanced.rs:171
+#: crates/big-video-player/src/video/ui/preferences/advanced.rs:169
 msgid "In seconds"
 msgstr "秒単位"
 
-#: crates/big-video-player/src/video/ui/preferences/advanced.rs:181
+#: crates/big-video-player/src/video/ui/preferences/advanced.rs:179
 msgid "Wait Instead of Stuttering"
 msgstr "カクつかずに待機"
 
-#: crates/big-video-player/src/video/ui/preferences/advanced.rs:182
+#: crates/big-video-player/src/video/ui/preferences/advanced.rs:180
 msgid "Pauses until enough is loaded to keep playing smoothly"
 msgstr "滑らかに再生を続けられるだけ読み込まれるまで一時停止します"
 
-#: crates/big-video-player/src/video/ui/preferences/advanced.rs:189
+#: crates/big-video-player/src/video/ui/preferences/advanced.rs:187
 msgid "Keep on Disk"
 msgstr "ディスクに保持"
 
-#: crates/big-video-player/src/video/ui/preferences/advanced.rs:190
+#: crates/big-video-player/src/video/ui/preferences/advanced.rs:188
 msgid "Uses disk space instead of memory; useful for very long streams"
 msgstr ""
 "メモリの代わりにディスク領域を使用します。非常に長いストリームに便利です"
 
-#: crates/big-video-player/src/video/ui/preferences/advanced.rs:207
+#: crates/big-video-player/src/video/ui/preferences/advanced.rs:205
 msgid "Read Ahead in the File"
 msgstr "ファイルの先読み"
 
-#: crates/big-video-player/src/video/ui/preferences/advanced.rs:208
+#: crates/big-video-player/src/video/ui/preferences/advanced.rs:206
 msgid "Seconds of the file read in advance, also for local files"
 msgstr "ローカルファイルも含め、ファイルを先読みする秒数"
 
-#: crates/big-video-player/src/video/ui/preferences/advanced.rs:226
+#: crates/big-video-player/src/video/ui/preferences/advanced.rs:224
 msgid "Pause on the Final Frame"
 msgstr "最終フレームで一時停止"
 
-#: crates/big-video-player/src/video/ui/preferences/advanced.rs:227
+#: crates/big-video-player/src/video/ui/preferences/advanced.rs:225
 msgid ""
 "When the player stops at the end of a video; off lets seeking back resume "
 "playback"
@@ -3023,36 +3133,36 @@ msgstr ""
 "ビデオの終わりでプレーヤーが停止したときの動作です。オフにすると、巻き戻して"
 "再生を再開できます"
 
-#: crates/big-video-player/src/video/ui/preferences/advanced.rs:234
+#: crates/big-video-player/src/video/ui/preferences/advanced.rs:232
 msgid "Screenshot Compression"
 msgstr "スクリーンショットの圧縮"
 
-#: crates/big-video-player/src/video/ui/preferences/advanced.rs:235
+#: crates/big-video-player/src/video/ui/preferences/advanced.rs:233
 msgid "Higher values make smaller PNG files but take longer to save"
 msgstr ""
 "値を大きくすると PNG ファイルは小さくなりますが、保存に時間がかかります"
 
-#: crates/big-video-player/src/video/ui/preferences/advanced.rs:245
+#: crates/big-video-player/src/video/ui/preferences/advanced.rs:243
 msgid "Screenshot Color Profile"
 msgstr "スクリーンショットのカラープロファイル"
 
-#: crates/big-video-player/src/video/ui/preferences/advanced.rs:246
+#: crates/big-video-player/src/video/ui/preferences/advanced.rs:244
 msgid "Stores the video color space in each screenshot"
 msgstr "ビデオの色空間を各スクリーンショットに保存します"
 
-#: crates/big-video-player/src/video/ui/preferences/advanced.rs:253
+#: crates/big-video-player/src/video/ui/preferences/advanced.rs:251
 msgid "High Bit Depth Screenshots"
 msgstr "高ビット深度のスクリーンショット"
 
-#: crates/big-video-player/src/video/ui/preferences/advanced.rs:254
+#: crates/big-video-player/src/video/ui/preferences/advanced.rs:252
 msgid "Keeps more color precision; files get larger"
 msgstr "色の精度が高くなりますが、ファイルは大きくなります"
 
-#: crates/big-video-player/src/video/ui/preferences/advanced.rs:264
+#: crates/big-video-player/src/video/ui/preferences/advanced.rs:262
 msgid "Custom Shaders"
 msgstr "カスタムシェーダー"
 
-#: crates/big-video-player/src/video/ui/preferences/advanced.rs:266
+#: crates/big-video-player/src/video/ui/preferences/advanced.rs:264
 msgid "Paths to .glsl files, separated by commas. Press Enter to apply."
 msgstr ""
 ".glsl ファイルのパスをカンマ区切りで入力します。Enter を押すと適用されます。"
@@ -3061,11 +3171,11 @@ msgstr ""
 msgid "Shader Files"
 msgstr "シェーダーファイル"
 
-#: crates/big-video-player/src/video/ui/preferences/advanced.rs:285
+#: crates/big-video-player/src/video/ui/preferences/advanced.rs:289
 msgid "mpv Options"
 msgstr "mpv オプション"
 
-#: crates/big-video-player/src/video/ui/preferences/advanced.rs:287
+#: crates/big-video-player/src/video/ui/preferences/advanced.rs:291
 msgid ""
 "Extra key=value options, separated by commas. They take effect after "
 "reopening the player."
@@ -3073,133 +3183,133 @@ msgstr ""
 "key=value 形式の追加オプションをカンマ区切りで入力します。プレーヤーを開き直"
 "すと有効になります。"
 
-#: crates/big-video-player/src/video/ui/preferences/advanced.rs:292
+#: crates/big-video-player/src/video/ui/preferences/advanced.rs:296
 #: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/header.rs:216
 msgid "Options"
 msgstr "オプション"
 
-#: crates/big-video-player/src/video/ui/preferences/general.rs:29
+#: crates/big-video-player/src/video/ui/preferences/general.rs:30
 msgid "Reopen files at the point where you stopped watching"
 msgstr "視聴を中断した位置からファイルを再び開きます"
 
-#: crates/big-video-player/src/video/ui/preferences/general.rs:40
+#: crates/big-video-player/src/video/ui/preferences/general.rs:41
 msgid "Current video"
 msgstr "現在のビデオ"
 
-#: crates/big-video-player/src/video/ui/preferences/general.rs:41
+#: crates/big-video-player/src/video/ui/preferences/general.rs:42
 #: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/header.rs:198
 msgid "Whole playlist"
 msgstr "プレイリスト全体"
 
-#: crates/big-video-player/src/video/ui/preferences/general.rs:51
+#: crates/big-video-player/src/video/ui/preferences/general.rs:52
 msgid "When Playback Ends"
 msgstr "再生終了時"
 
-#: crates/big-video-player/src/video/ui/preferences/general.rs:53
+#: crates/big-video-player/src/video/ui/preferences/general.rs:54
 msgid "Playlist videos play one after another unless they stop after each"
 msgstr ""
 "プレイリストのビデオは、各ビデオの後で停止する設定でない限り、続けて再生され"
 "ます"
 
-#: crates/big-video-player/src/video/ui/preferences/general.rs:58
+#: crates/big-video-player/src/video/ui/preferences/general.rs:59
 msgid "When a Video Ends"
 msgstr "ビデオ終了時"
 
-#: crates/big-video-player/src/video/ui/preferences/general.rs:61
+#: crates/big-video-player/src/video/ui/preferences/general.rs:62
 msgid "Keep the last frame"
 msgstr "最後のフレームを残す"
 
-#: crates/big-video-player/src/video/ui/preferences/general.rs:62
+#: crates/big-video-player/src/video/ui/preferences/general.rs:63
 msgid "Stop after each"
 msgstr "毎回停止"
 
-#: crates/big-video-player/src/video/ui/preferences/general.rs:63
+#: crates/big-video-player/src/video/ui/preferences/general.rs:64
 msgid "Close the video"
 msgstr "ビデオを閉じる"
 
-#: crates/big-video-player/src/video/ui/preferences/general.rs:73
+#: crates/big-video-player/src/video/ui/preferences/general.rs:74
 msgid "When the Playlist Finishes"
 msgstr "プレイリスト終了時"
 
-#: crates/big-video-player/src/video/ui/preferences/general.rs:74
+#: crates/big-video-player/src/video/ui/preferences/general.rs:75
 msgid "Used only when the video closes"
 msgstr "ビデオが閉じるときにのみ使用されます"
 
-#: crates/big-video-player/src/video/ui/preferences/general.rs:76
+#: crates/big-video-player/src/video/ui/preferences/general.rs:77
 msgid "Stay open"
 msgstr "開いたままにする"
 
-#: crates/big-video-player/src/video/ui/preferences/general.rs:77
-#: crates/media-runtime/src/shared/sleep_timer.rs:13
+#: crates/big-video-player/src/video/ui/preferences/general.rs:78
+#: crates/media-runtime/src/shared/sleep_timer.rs:21
 msgid "Close the player"
 msgstr "プレーヤーを閉じる"
 
-#: crates/big-video-player/src/video/ui/preferences/general.rs:78
+#: crates/big-video-player/src/video/ui/preferences/general.rs:79
 msgid "Close after one playlist"
 msgstr "1 つのプレイリストの後で閉じる"
 
-#: crates/big-video-player/src/video/ui/preferences/general.rs:102
+#: crates/big-video-player/src/video/ui/preferences/general.rs:103
 msgid "Window and Screen"
 msgstr "ウィンドウと画面"
 
-#: crates/big-video-player/src/video/ui/preferences/general.rs:106
+#: crates/big-video-player/src/video/ui/preferences/general.rs:107
 msgid "Keep the Screen On"
 msgstr "画面をオンのままにする"
 
-#: crates/big-video-player/src/video/ui/preferences/general.rs:107
+#: crates/big-video-player/src/video/ui/preferences/general.rs:108
 msgid "Stops the screen from dimming or locking"
 msgstr "画面が暗くなったりロックされたりするのを防ぎます"
 
-#: crates/big-video-player/src/video/ui/preferences/general.rs:108
+#: crates/big-video-player/src/video/ui/preferences/general.rs:109
 msgid "During playback"
 msgstr "再生中"
 
-#: crates/big-video-player/src/video/ui/preferences/general.rs:108
+#: crates/big-video-player/src/video/ui/preferences/general.rs:109
 msgid "Always"
 msgstr "常に"
 
-#: crates/big-video-player/src/video/ui/preferences/general.rs:108
+#: crates/big-video-player/src/video/ui/preferences/general.rs:109
 #: crates/big-video-player/src/video/ui/preferences/subtitles.rs:45
 msgid "Never"
 msgstr "しない"
 
-#: crates/big-video-player/src/video/ui/preferences/general.rs:118
+#: crates/big-video-player/src/video/ui/preferences/general.rs:119
 msgid "Fit Window to Video"
 msgstr "ウィンドウをビデオに合わせる"
 
-#: crates/big-video-player/src/video/ui/preferences/general.rs:119
+#: crates/big-video-player/src/video/ui/preferences/general.rs:120
 msgid "Keeps the window in the video's proportions, without black bars"
 msgstr "黒帯なしで、ウィンドウをビデオの縦横比に保ちます"
 
-#: crates/big-video-player/src/video/ui/preferences/general.rs:127
+#: crates/big-video-player/src/video/ui/preferences/general.rs:128
 msgid "Preview While Seeking"
 msgstr "シーク中にプレビュー"
 
-#: crates/big-video-player/src/video/ui/preferences/general.rs:128
+#: crates/big-video-player/src/video/ui/preferences/general.rs:129
 msgid "Show a thumbnail of the video when pointing at the progress bar"
 msgstr "プログレスバーにポインターを合わせると、ビデオのサムネイルを表示します"
 
-#: crates/big-video-player/src/video/ui/preferences/general.rs:139
+#: crates/big-video-player/src/video/ui/preferences/general.rs:140
 msgid "Restore Default Settings…"
 msgstr "既定の設定に戻す…"
 
-#: crates/big-video-player/src/video/ui/preferences/general.rs:165
+#: crates/big-video-player/src/video/ui/preferences/general.rs:166
 msgid "Save To"
 msgstr "保存先"
 
-#: crates/big-video-player/src/video/ui/preferences/general.rs:170
+#: crates/big-video-player/src/video/ui/preferences/general.rs:171
 msgid "Choose Folder"
 msgstr "フォルダーを選択"
 
-#: crates/big-video-player/src/video/ui/preferences/general.rs:175
+#: crates/big-video-player/src/video/ui/preferences/general.rs:176
 msgid "Use the Pictures Folder"
 msgstr "ピクチャフォルダーを使用"
 
-#: crates/big-video-player/src/video/ui/preferences/general.rs:190
+#: crates/big-video-player/src/video/ui/preferences/general.rs:191
 msgid "Pictures folder"
 msgstr "ピクチャフォルダー"
 
-#: crates/big-video-player/src/video/ui/preferences/general.rs:217
+#: crates/big-video-player/src/video/ui/preferences/general.rs:219
 msgid "Screenshot Folder"
 msgstr "スクリーンショットのフォルダー"
 
@@ -3213,7 +3323,7 @@ msgid ""
 msgstr "言語コードを優先順にカンマ区切りで指定します (例: ja,en)"
 
 #: crates/big-video-player/src/video/ui/preferences/subtitles.rs:31
-#: crates/ui/media/big-player-ui/src/audio_preferences.rs:148
+#: crates/ui/media/big-player-ui/src/audio_preferences.rs:150
 msgid "Preferred Languages"
 msgstr "優先言語"
 
@@ -3471,12 +3581,12 @@ msgid "Rename…"
 msgstr "名前を変更…"
 
 #: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/context_menu.rs:94
-#: crates/big-video-player/src/video/ui/video_browser_sidebar/fileops.rs:83
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/fileops.rs:80
 msgid "Move to trash"
 msgstr "ゴミ箱に移動"
 
 #: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/context_menu.rs:101
-#: crates/big-video-player/src/video/ui/video_browser_sidebar/views/queue_view.rs:214
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/views/queue_view.rs:215
 msgid "Remove from playlist"
 msgstr "プレイリストから削除"
 
@@ -3603,8 +3713,8 @@ msgid "Your folders"
 msgstr "あなたのフォルダー"
 
 #: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/metadata.rs:143
-#: crates/big-video-player/src/video/ui/video_browser_sidebar/library.rs:429
-#: crates/big-video-player/src/video/ui/video_browser_sidebar/mod.rs:301
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/library.rs:430
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/mod.rs:306
 #, rust-format
 msgid "{} video"
 msgid_plural "{} videos"
@@ -3623,100 +3733,94 @@ msgstr ""
 "見つかった {total} 件のファイルのうち {shown} 件を表示しています。サブフォル"
 "ダーで絞り込むことをおすすめします。"
 
-#: crates/big-video-player/src/video/ui/video_browser_sidebar/fileops.rs:23
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/fileops.rs:20
 #, rust-format
 msgid "{} selected"
 msgid_plural "{} selected"
 msgstr[0] "{} 件選択"
 
-#: crates/big-video-player/src/video/ui/video_browser_sidebar/fileops.rs:55
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/fileops.rs:52
 msgid "Send to converter"
 msgstr "コンバーターに送る"
 
-#: crates/big-video-player/src/video/ui/video_browser_sidebar/fileops.rs:66
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/fileops.rs:63
 msgid "Move to folder…"
 msgstr "フォルダーに移動…"
 
-#: crates/big-video-player/src/video/ui/video_browser_sidebar/fileops.rs:96
-#: crates/big-video-player/src/video/ui/video_browser_sidebar/fileops.rs:97
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/fileops.rs:93
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/fileops.rs:94
 msgid "Done"
 msgstr "完了"
 
-#: crates/big-video-player/src/video/ui/video_browser_sidebar/fileops.rs:154
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/fileops.rs:151
 msgid "Move to Folder"
 msgstr "フォルダーに移動"
 
-#: crates/big-video-player/src/video/ui/video_browser_sidebar/fileops.rs:171
-msgid "moved"
-msgstr "移動済み"
-
-#: crates/big-video-player/src/video/ui/video_browser_sidebar/fileops.rs:193
-#: crates/big-video-player/src/video/ui/video_browser_sidebar/fileops.rs:210
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/fileops.rs:196
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/fileops.rs:200
 msgid "Rename"
 msgstr "名前を変更"
 
-#: crates/big-video-player/src/video/ui/video_browser_sidebar/fileops.rs:199
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/fileops.rs:197
 msgid "Choose a new file name."
 msgstr "新しいファイル名を入力してください。"
 
-#: crates/big-video-player/src/video/ui/video_browser_sidebar/fileops.rs:242
-msgid "Invalid name"
-msgstr "無効な名前"
-
-#: crates/big-video-player/src/video/ui/video_browser_sidebar/fileops.rs:258
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/fileops.rs:243
 msgid "A file with that name already exists"
 msgstr "同じ名前のファイルがすでに存在します"
 
-#: crates/big-video-player/src/video/ui/video_browser_sidebar/fileops.rs:265
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/fileops.rs:250
 msgid "Rename failed"
 msgstr "名前の変更に失敗しました"
 
-#: crates/big-video-player/src/video/ui/video_browser_sidebar/fileops.rs:359
-#, rust-format
-msgid "{ok} {verb}, {failed} failed"
-msgstr "{ok} 件{verb}、{failed} 件失敗"
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/fileops.rs:320
+#, fuzzy, rust-format
+#| msgid "Could not move to trash"
+msgid "Could not move {failed} of {total} file"
+msgid_plural "Could not move {failed} of {total} files"
+msgstr[0] "ゴミ箱に移動できませんでした"
 
-#: crates/big-video-player/src/video/ui/video_browser_sidebar/library.rs:116
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/library.rs:117
 msgid "Home folder"
 msgstr "ホームフォルダー"
 
-#: crates/big-video-player/src/video/ui/video_browser_sidebar/library.rs:405
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/library.rs:406
 msgid "Choose folders…"
 msgstr "フォルダーを選択…"
 
-#: crates/big-video-player/src/video/ui/video_browser_sidebar/library.rs:556
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/library.rs:557
 msgid "No video in your folders has that name"
 msgstr "その名前のビデオはフォルダー内にありません"
 
-#: crates/big-video-player/src/video/ui/video_browser_sidebar/library.rs:568
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/library.rs:569
 #, rust-format
 msgid "{} more in your folders"
 msgid_plural "{} more in your folders"
 msgstr[0] "ほかにフォルダー内に {} 件"
 
-#: crates/big-video-player/src/video/ui/video_browser_sidebar/library.rs:573
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/library.rs:574
 #, rust-format
 msgid "{} video found"
 msgid_plural "{} videos found"
 msgstr[0] "{} 本のビデオが見つかりました"
 
-#: crates/big-video-player/src/video/ui/video_browser_sidebar/library.rs:588
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/library.rs:589
 #, rust-format
 msgid "Showing the first {}. Type more to narrow the search."
 msgstr "先頭の {} 件を表示しています。さらに入力して検索を絞り込んでください。"
 
-#: crates/big-video-player/src/video/ui/video_browser_sidebar/library.rs:700
-#: crates/big-video-player/src/video/ui/video_browser_sidebar/library.rs:703
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/library.rs:701
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/library.rs:704
 #: crates/big-video-player/src/video/ui/video_shell/panel.rs:121
 #: crates/big-video-player/src/video/ui/video_shell/panel.rs:124
 msgid "Back"
 msgstr "戻る"
 
-#: crates/big-video-player/src/video/ui/video_browser_sidebar/library.rs:714
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/library.rs:715
 msgid "Video folders"
 msgstr "ビデオフォルダー"
 
-#: crates/big-video-player/src/video/ui/video_browser_sidebar/library.rs:724
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/library.rs:725
 msgid ""
 "Their videos are listed and searched here. Folders BigSearch does not index "
 "are searched by the player, more slowly."
@@ -3725,37 +3829,37 @@ msgstr ""
 "インデックスしていないフォルダーは、プレーヤーが検索しますが、時間がかかりま"
 "す。"
 
-#: crates/big-video-player/src/video/ui/video_browser_sidebar/library.rs:753
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/library.rs:754
 #, rust-format
 msgid "Remove {}"
 msgstr "{} を削除"
 
-#: crates/big-video-player/src/video/ui/video_browser_sidebar/library.rs:771
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/library.rs:772
 msgid "Add a folder…"
 msgstr "フォルダーを追加…"
 
-#: crates/big-video-player/src/video/ui/video_browser_sidebar/library.rs:782
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/library.rs:783
 msgid "Add a Video Folder"
 msgstr "ビデオフォルダーを追加"
 
-#: crates/big-video-player/src/video/ui/video_browser_sidebar/library.rs:800
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/library.rs:801
 msgid "Use the standard folders"
 msgstr "標準のフォルダーを使用"
 
-#: crates/big-video-player/src/video/ui/video_browser_sidebar/library.rs:801
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/library.rs:802
 msgid "Videos, Downloads and the home folder"
 msgstr "ビデオ、ダウンロード、ホームフォルダー"
 
-#: crates/big-video-player/src/video/ui/video_browser_sidebar/mod.rs:329
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/mod.rs:334
 #, rust-format
 msgid "ends at {}"
 msgstr "{} に終了"
 
-#: crates/big-video-player/src/video/ui/video_browser_sidebar/mod.rs:511
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/mod.rs:520
 msgid "Scanning…"
 msgstr "スキャンしています…"
 
-#: crates/big-video-player/src/video/ui/video_browser_sidebar/mod.rs:556
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/mod.rs:565
 msgid "Search your videos…"
 msgstr "ビデオを検索…"
 
@@ -3763,22 +3867,22 @@ msgstr "ビデオを検索…"
 msgid "Previous folder"
 msgstr "前のフォルダー"
 
-#: crates/big-video-player/src/video/ui/video_browser_sidebar/views/queue_view.rs:434
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/views/queue_view.rs:442
 #, rust-format
 msgid "Stopped at {}"
 msgstr "{} で停止"
 
-#: crates/big-video-player/src/video/ui/video_controls_bar.rs:278
+#: crates/big-video-player/src/video/ui/video_controls_bar.rs:281
 msgid "Seek Position"
 msgstr "シーク位置"
 
-#: crates/big-video-player/src/video/ui/video_controls_bar.rs:479
+#: crates/big-video-player/src/video/ui/video_controls_bar.rs:478
 #: crates/media-runtime/src/shared/tv_cast.rs:716
 msgid "Pause"
 msgstr "一時停止"
 
-#: crates/big-video-player/src/video/ui/video_controls_bar.rs:558
-#: crates/ui/media/big-player-ui/src/playback_bar.rs:323
+#: crates/big-video-player/src/video/ui/video_controls_bar.rs:566
+#: crates/ui/media/big-player-ui/src/playback_bar.rs:337
 msgid "TV volume"
 msgstr "TV の音量"
 
@@ -3786,43 +3890,43 @@ msgstr "TV の音量"
 msgid "Seek preview"
 msgstr "シークのプレビュー"
 
-#: crates/big-video-player/src/video/ui/video_controls_bar/tracks.rs:26
+#: crates/big-video-player/src/video/ui/video_controls_bar/tracks.rs:27
 msgid "Load Subtitle File…"
 msgstr "字幕ファイルを読み込み…"
 
-#: crates/big-video-player/src/video/ui/video_controls_bar/tracks.rs:36
+#: crates/big-video-player/src/video/ui/video_controls_bar/tracks.rs:37
 msgid "Primary Subtitles"
 msgstr "主字幕"
 
-#: crates/big-video-player/src/video/ui/video_controls_bar/tracks.rs:38
+#: crates/big-video-player/src/video/ui/video_controls_bar/tracks.rs:39
 msgid "Disable Subtitles"
 msgstr "字幕を無効にする"
 
-#: crates/big-video-player/src/video/ui/video_controls_bar/tracks.rs:58
+#: crates/big-video-player/src/video/ui/video_controls_bar/tracks.rs:59
 msgid "Secondary Subtitles"
 msgstr "副字幕"
 
-#: crates/big-video-player/src/video/ui/video_controls_bar/tracks.rs:60
+#: crates/big-video-player/src/video/ui/video_controls_bar/tracks.rs:61
 msgid "Disable Secondary Subtitles"
 msgstr "副字幕を無効にする"
 
-#: crates/big-video-player/src/video/ui/video_controls_bar/tracks.rs:109
-msgid "Subtitle files"
-msgstr "字幕ファイル"
-
-#: crates/big-video-player/src/video/ui/video_controls_bar/tracks.rs:117
+#: crates/big-video-player/src/video/ui/video_controls_bar/tracks.rs:111
 msgid "Load Subtitle File"
 msgstr "字幕ファイルを読み込み"
 
-#: crates/big-video-player/src/video/ui/video_controls_bar/tracks.rs:191
+#: crates/big-video-player/src/video/ui/video_controls_bar/tracks.rs:113
+msgid "Subtitle files"
+msgstr "字幕ファイル"
+
+#: crates/big-video-player/src/video/ui/video_controls_bar/tracks.rs:182
 msgid "Earlier"
 msgstr "早く"
 
-#: crates/big-video-player/src/video/ui/video_controls_bar/tracks.rs:191
+#: crates/big-video-player/src/video/ui/video_controls_bar/tracks.rs:182
 msgid "Later"
 msgstr "遅く"
 
-#: crates/big-video-player/src/video/ui/video_controls_bar/tracks.rs:245
+#: crates/big-video-player/src/video/ui/video_controls_bar/tracks.rs:236
 msgid "Track"
 msgstr "トラック"
 
@@ -3835,8 +3939,8 @@ msgid "Unmute"
 msgstr "ミュート解除"
 
 #: crates/big-video-player/src/video/ui/video_controls_bar/zones.rs:218
-#: crates/big-video-player/src/video/ui/video_controls_bar/zones.rs:444
-#: crates/big-video-player/src/video/ui/video_controls_bar/zones.rs:461
+#: crates/big-video-player/src/video/ui/video_controls_bar/zones.rs:457
+#: crates/big-video-player/src/video/ui/video_controls_bar/zones.rs:474
 msgid "Mute"
 msgstr "ミュート"
 
@@ -3853,15 +3957,15 @@ msgstr "PC"
 msgid "PC volume"
 msgstr "PC の音量"
 
-#: crates/big-video-player/src/video/ui/video_controls_bar/zones.rs:606
+#: crates/big-video-player/src/video/ui/video_controls_bar/zones.rs:619
 msgid "Edit & Export"
 msgstr "編集と書き出し"
 
-#: crates/big-video-player/src/video/ui/video_controls_bar/zones.rs:668
+#: crates/big-video-player/src/video/ui/video_controls_bar/zones.rs:681
 msgid "Cut Video…"
 msgstr "ビデオをカット…"
 
-#: crates/big-video-player/src/video/ui/video_controls_bar/zones.rs:669
+#: crates/big-video-player/src/video/ui/video_controls_bar/zones.rs:682
 msgid "Extract Audio…"
 msgstr "音声を抽出…"
 
@@ -3870,108 +3974,108 @@ msgid "Drop a file or open one to start"
 msgstr "ファイルをドロップするか、開いて開始してください"
 
 #: crates/big-video-player/src/video/ui/video_shell/actions.rs:132
-#: crates/big-video-player/src/video/ui/video_shell/component.rs:864
+#: crates/big-video-player/src/video/ui/video_shell/component.rs:882
 msgid "Open Recent"
 msgstr "最近使ったファイルを開く"
 
-#: crates/big-video-player/src/video/ui/video_shell/adjustments.rs:176
+#: crates/big-video-player/src/video/ui/video_shell/adjustments.rs:143
 msgid "More bass"
 msgstr "低音を強く"
 
-#: crates/big-video-player/src/video/ui/video_shell/adjustments.rs:177
+#: crates/big-video-player/src/video/ui/video_shell/adjustments.rs:144
 msgid "More treble"
 msgstr "高音を強く"
 
-#: crates/big-video-player/src/video/ui/video_shell/adjustments.rs:178
+#: crates/big-video-player/src/video/ui/video_shell/adjustments.rs:145
 msgid "Voices"
 msgstr "音声"
 
-#: crates/big-video-player/src/video/ui/video_shell/adjustments.rs:191
+#: crates/big-video-player/src/video/ui/video_shell/adjustments.rs:158
 #, rust-format
 msgid "Video colour: {name}"
 msgstr "ビデオの色: {name}"
 
-#: crates/big-video-player/src/video/ui/video_shell/adjustments.rs:195
+#: crates/big-video-player/src/video/ui/video_shell/adjustments.rs:162
 msgid "Picture adjusted"
 msgstr "映像を調整しました"
 
-#: crates/big-video-player/src/video/ui/video_shell/adjustments.rs:196
+#: crates/big-video-player/src/video/ui/video_shell/adjustments.rs:163
 #, rust-format
 msgid "Zoom {percent}%"
 msgstr "ズーム {percent}%"
 
-#: crates/big-video-player/src/video/ui/video_shell/adjustments.rs:198
+#: crates/big-video-player/src/video/ui/video_shell/adjustments.rs:165
 msgid "Picture enlarged to fill"
 msgstr "映像を拡大して全体を埋めました"
 
-#: crates/big-video-player/src/video/ui/video_shell/adjustments.rs:200
+#: crates/big-video-player/src/video/ui/video_shell/adjustments.rs:167
 #, rust-format
 msgid "Rotated {degrees}°"
 msgstr "{degrees}° 回転"
 
-#: crates/big-video-player/src/video/ui/video_shell/adjustments.rs:202
+#: crates/big-video-player/src/video/ui/video_shell/adjustments.rs:169
 msgid "Mirrored"
 msgstr "反転済み"
 
-#: crates/big-video-player/src/video/ui/video_shell/adjustments.rs:203
+#: crates/big-video-player/src/video/ui/video_shell/adjustments.rs:170
 msgid "Edges cut off"
 msgstr "端を切り取りました"
 
-#: crates/big-video-player/src/video/ui/video_shell/adjustments.rs:204
+#: crates/big-video-player/src/video/ui/video_shell/adjustments.rs:171
 #, rust-format
 msgid "Speed {speed}×"
 msgstr "速度 {speed}×"
 
-#: crates/big-video-player/src/video/ui/video_shell/adjustments.rs:206
+#: crates/big-video-player/src/video/ui/video_shell/adjustments.rs:173
 #, rust-format
 msgid "Sound {seconds} s late"
 msgstr "音が {seconds} 秒遅れています"
 
-#: crates/big-video-player/src/video/ui/video_shell/adjustments.rs:209
+#: crates/big-video-player/src/video/ui/video_shell/adjustments.rs:176
 #, rust-format
 msgid "Sound {seconds} s early"
 msgstr "音が {seconds} 秒早まっています"
 
-#: crates/big-video-player/src/video/ui/video_shell/adjustments.rs:212
+#: crates/big-video-player/src/video/ui/video_shell/adjustments.rs:179
 #, rust-format
 msgid "Subtitles {seconds} s late"
 msgstr "字幕が {seconds} 秒遅れています"
 
-#: crates/big-video-player/src/video/ui/video_shell/adjustments.rs:215
+#: crates/big-video-player/src/video/ui/video_shell/adjustments.rs:182
 #, rust-format
 msgid "Subtitles {seconds} s early"
 msgstr "字幕が {seconds} 秒早まっています"
 
-#: crates/big-video-player/src/video/ui/video_shell/adjustments.rs:217
+#: crates/big-video-player/src/video/ui/video_shell/adjustments.rs:184
 #, rust-format
 msgid "Type of sound: {name}"
 msgstr "音の種類: {name}"
 
-#: crates/big-video-player/src/video/ui/video_shell/adjustments.rs:225
+#: crates/big-video-player/src/video/ui/video_shell/adjustments.rs:192
 msgid "by hand"
 msgstr "手動"
 
-#: crates/big-video-player/src/video/ui/video_shell/adjustments.rs:227
+#: crates/big-video-player/src/video/ui/video_shell/adjustments.rs:194
 msgid "Video effects on"
 msgstr "ビデオエフェクト オン"
 
-#: crates/big-video-player/src/video/ui/video_shell/adjustments.rs:228
+#: crates/big-video-player/src/video/ui/video_shell/adjustments.rs:195
 msgid "Picture enhanced"
 msgstr "映像を補正しました"
 
-#: crates/big-video-player/src/video/ui/video_shell/adjustments.rs:235
+#: crates/big-video-player/src/video/ui/video_shell/adjustments.rs:202
 #, rust-format
 msgid "Stops at {time}"
 msgstr "{time} に停止"
 
-#: crates/big-video-player/src/video/ui/video_shell/adjustments.rs:343
+#: crates/big-video-player/src/video/ui/video_shell/adjustments.rs:310
 #: crates/big-video-player/src/video/ui/video_shell/panel.rs:238
 #, rust-format
 msgid "{n} change"
 msgid_plural "{n} changes"
 msgstr[0] "{n} 件の変更"
 
-#: crates/big-video-player/src/video/ui/video_shell/adjustments.rs:346
+#: crates/big-video-player/src/video/ui/video_shell/adjustments.rs:313
 msgid "Click to see or undo"
 msgstr "クリックして確認または元に戻す"
 
@@ -3982,48 +4086,53 @@ msgstr "クリックして確認または元に戻す"
 msgid "Settings"
 msgstr "設定"
 
-#: crates/big-video-player/src/video/ui/video_shell/component.rs:132
+#: crates/big-video-player/src/video/ui/video_shell/component.rs:133
 msgid "Minimize"
 msgstr "最小化"
 
-#: crates/big-video-player/src/video/ui/video_shell/component.rs:132
+#: crates/big-video-player/src/video/ui/video_shell/component.rs:134
 msgid "Maximize"
 msgstr "最大化"
 
-#: crates/big-video-player/src/video/ui/video_shell/component.rs:142
+#: crates/big-video-player/src/video/ui/video_shell/component.rs:135
+#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:373
+msgid "Restore"
+msgstr "元に戻す"
+
+#: crates/big-video-player/src/video/ui/video_shell/component.rs:147
 msgid "Use HDR?"
 msgstr "HDR を使用しますか?"
 
-#: crates/big-video-player/src/video/ui/video_shell/component.rs:144
+#: crates/big-video-player/src/video/ui/video_shell/component.rs:149
 msgid "Does the picture look grey and washed out? Click to use HDR colours"
 msgstr ""
 "映像が灰色っぽく白っぽく見えますか? クリックすると HDR の色を使用します"
 
-#: crates/big-video-player/src/video/ui/video_shell/component.rs:163
+#: crates/big-video-player/src/video/ui/video_shell/component.rs:168
 msgid "On the TV"
 msgstr "TV で"
 
-#: crates/big-video-player/src/video/ui/video_shell/component.rs:164
+#: crates/big-video-player/src/video/ui/video_shell/component.rs:169
 #: crates/big-video-player/src/video/ui/video_shell/tv.rs:43
 #: crates/media-runtime/src/shared/tv_cast/card.rs:261
 msgid "The TV is still playing"
 msgstr "TV ではまだ再生中です"
 
-#: crates/big-video-player/src/video/ui/video_shell/component.rs:863
+#: crates/big-video-player/src/video/ui/video_shell/component.rs:881
 #: crates/big-video-player/src/video/ui/video_shell/input_gestures.rs:121
 msgid "Open File…"
 msgstr "ファイルを開く…"
 
-#: crates/big-video-player/src/video/ui/video_shell/component.rs:865
+#: crates/big-video-player/src/video/ui/video_shell/component.rs:883
 #: crates/big-video-player/src/video/ui/video_shell/input_gestures.rs:122
 msgid "Open URL…"
 msgstr "URL を開く…"
 
-#: crates/big-video-player/src/video/ui/video_shell/component.rs:866
+#: crates/big-video-player/src/video/ui/video_shell/component.rs:884
 msgid "Open Disc…"
 msgstr "ディスクを開く…"
 
-#: crates/big-video-player/src/video/ui/video_shell/component.rs:867
+#: crates/big-video-player/src/video/ui/video_shell/component.rs:885
 msgid "TV Channels (IPTV)…"
 msgstr "TV チャンネル (IPTV)…"
 
@@ -4100,47 +4209,43 @@ msgstr ""
 msgid "Media URL"
 msgstr "メディア URL"
 
-#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:231
+#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:225
 msgid "Open Disc"
 msgstr "ディスクを開く"
 
-#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:240
+#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:234
 msgid "Choose a disc type and enter the device, ISO, or folder path."
 msgstr ""
 "ディスクの種類を選択し、デバイス、ISO、またはフォルダーのパスを入力してくださ"
 "い。"
 
-#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:244
+#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:238
 msgid "Disc type"
 msgstr "ディスクの種類"
 
-#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:245
+#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:239
 msgid "DVD"
 msgstr "DVD"
 
-#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:245
+#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:239
 msgid "Blu-ray"
 msgstr "Blu-ray"
 
-#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:248
+#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:242
 msgid "Disc device path"
 msgstr "ディスクのデバイスパス"
 
-#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:374
+#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:366
 msgid "Restore Default Settings?"
 msgstr "既定の設定に戻しますか?"
 
-#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:376
+#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:368
 msgid ""
 "Every setting, including appearance, goes back to its default value. Some "
 "changes take effect after reopening the player."
 msgstr ""
 "外観を含むすべての設定が既定値に戻ります。一部の変更は、プレーヤーを開き直す"
 "と有効になります。"
-
-#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:381
-msgid "Restore"
-msgstr "元に戻す"
 
 #: crates/big-video-player/src/video/ui/video_shell/export.rs:19
 msgid "No file is playing"
@@ -4163,12 +4268,12 @@ msgid "Effects and filters"
 msgstr "エフェクトとフィルター"
 
 #: crates/big-video-player/src/video/ui/video_shell/input_gestures.rs:123
-#: crates/big-video-player/src/video/ui/video_shell/panel.rs:516
+#: crates/big-video-player/src/video/ui/video_shell/panel.rs:517
 msgid "About this video"
 msgstr "このビデオについて"
 
 #: crates/big-video-player/src/video/ui/video_shell/panel.rs:45
-#: crates/big-video-player/src/video/ui/video_shell/panel.rs:490
+#: crates/big-video-player/src/video/ui/video_shell/panel.rs:491
 msgid "Stop after…"
 msgstr "停止するまでの時間…"
 
@@ -4181,76 +4286,83 @@ msgstr "最近使ったファイル"
 msgid "{current} of {total}"
 msgstr "{current} / {total}"
 
-#: crates/big-video-player/src/video/ui/video_shell/panel.rs:504
+#: crates/big-video-player/src/video/ui/video_shell/panel.rs:505
 msgid "Online quality"
 msgstr "オンライン品質"
 
-#: crates/big-video-player/src/video/ui/video_shell/panel.rs:505
+#: crates/big-video-player/src/video/ui/video_shell/panel.rs:506
 msgid "Choose"
 msgstr "選択"
 
-#: crates/big-video-player/src/video/ui/video_shell/panel.rs:549
+#: crates/big-video-player/src/video/ui/video_shell/panel.rs:550
 msgid "Put back what was just set to normal"
 msgstr "標準に戻したばかりの設定を元に戻します"
 
-#: crates/big-video-player/src/video/ui/video_shell/panel.rs:581
+#: crates/big-video-player/src/video/ui/video_shell/panel.rs:582
 msgid "Shortcuts"
 msgstr "ショートカット"
 
-#: crates/big-video-player/src/video/ui/video_shell/panel.rs:622
+#: crates/big-video-player/src/video/ui/video_shell/panel.rs:623
 msgid "Changed"
 msgstr "変更済み"
 
-#: crates/big-video-player/src/video/ui/video_shell/panel.rs:634
-#: crates/big-video-player/src/video/ui/video_shell/panel.rs:657
+#: crates/big-video-player/src/video/ui/video_shell/panel.rs:635
+#: crates/big-video-player/src/video/ui/video_shell/panel.rs:658
 msgid "Back to normal"
 msgstr "標準に戻す"
 
-#: crates/big-video-player/src/video/ui/video_shell/panel.rs:639
+#: crates/big-video-player/src/video/ui/video_shell/panel.rs:640
 #, rust-format
 msgid "Undo: {setting}"
 msgstr "元に戻す: {setting}"
 
-#: crates/big-video-player/src/video/ui/video_shell/panel.rs:658
+#: crates/big-video-player/src/video/ui/video_shell/panel.rs:659
 msgid "Undo every change to the picture and sound"
 msgstr "映像と音声のすべての変更を元に戻します"
 
-#: crates/big-video-player/src/video/ui/video_shell/panel.rs:827
+#: crates/big-video-player/src/video/ui/video_shell/panel.rs:828
 msgid "Jump to a chapter"
 msgstr "チャプターへ移動"
 
-#: crates/big-video-player/src/video/ui/video_shell/panel/recent.rs:15
+#: crates/big-video-player/src/video/ui/video_shell/panel/recent.rs:41
 msgid "No Recent Files"
 msgstr "最近使ったファイルはありません"
 
-#: crates/big-video-player/src/video/ui/video_shell/panel/recent.rs:142
-#: crates/big-video-player/src/video/ui/video_shell/panel/recent.rs:146
+#: crates/big-video-player/src/video/ui/video_shell/panel/recent.rs:204
+#: crates/big-video-player/src/video/ui/video_shell/panel/recent.rs:208
 msgid "Search recent files"
 msgstr "最近使ったファイルを検索"
 
-#: crates/big-video-player/src/video/ui/video_shell/panel/recent.rs:158
+#: crates/big-video-player/src/video/ui/video_shell/panel/recent.rs:220
 msgid "No recent file matches"
 msgstr "一致する最近使ったファイルはありません"
 
-#: crates/big-video-player/src/video/ui/video_shell/playback.rs:168
-msgid "Screenshot timed out; cancellation requested"
-msgstr "スクリーンショットがタイムアウトしました。キャンセルを要求しました"
+#: crates/big-video-player/src/video/ui/video_shell/playback.rs:169
+msgid "The screenshot took too long and was not saved"
+msgstr ""
 
-#: crates/big-video-player/src/video/ui/video_shell/playback.rs:214
+#: crates/big-video-player/src/video/ui/video_shell/playback.rs:213
 msgid "Playing video"
 msgstr "ビデオを再生中"
 
-#: crates/big-video-player/src/video/ui/video_shell/playback.rs:479
+#: crates/big-video-player/src/video/ui/video_shell/playback.rs:490
 msgid "Could not move to trash"
 msgstr "ゴミ箱に移動できませんでした"
 
-#: crates/big-video-player/src/video/ui/video_shell/playback.rs:485
+#: crates/big-video-player/src/video/ui/video_shell/playback.rs:496
 #, rust-format
 msgid "{} file moved to trash"
 msgid_plural "{} files moved to trash"
 msgstr[0] "{} 個のファイルをゴミ箱に移動しました"
 
-#: crates/big-video-player/src/video/ui/video_shell/render.rs:335
+#: crates/big-video-player/src/video/ui/video_shell/render.rs:81
+#, rust-format
+msgid ""
+"The playback engine could not start: {error}. Check Preferences → Advanced → "
+"mpv Options, then reopen the player."
+msgstr ""
+
+#: crates/big-video-player/src/video/ui/video_shell/render.rs:340
 msgid ""
 "Video could not start. Try Automatic video output in Preferences, or check "
 "that mpv is installed."
@@ -4258,7 +4370,7 @@ msgstr ""
 "ビデオを開始できませんでした。設定でビデオ出力を「自動」にするか、mpv がイン"
 "ストールされているか確認してください。"
 
-#: crates/big-video-player/src/video/ui/video_shell/render.rs:422
+#: crates/big-video-player/src/video/ui/video_shell/render.rs:427
 msgid ""
 "The video area is too large for compatibility mode. Reduce the window size "
 "or select Automatic video output in Preferences."
@@ -4266,7 +4378,7 @@ msgstr ""
 "ビデオ領域が互換モードには大きすぎます。ウィンドウサイズを小さくするか、設定"
 "でビデオ出力を「自動」にしてください。"
 
-#: crates/big-video-player/src/video/ui/video_shell/render.rs:431
+#: crates/big-video-player/src/video/ui/video_shell/render.rs:436
 msgid ""
 "The video frame could not be displayed. Try Automatic video output in "
 "Preferences."
@@ -4377,40 +4489,6 @@ msgstr "BigNetScreen が切断されました"
 msgid "Select between 1 and 1000 files"
 msgstr "1 から 1000 までのファイルを選択してください"
 
-#: crates/media-runtime/src/media/metadata_cache/detailed_video_metadata.rs:111
-#: crates/media-runtime/src/media/metadata_cache/detailed_video_metadata.rs:157
-#: crates/media-runtime/src/media/metadata_cache/detailed_video_metadata.rs:171
-#: crates/ui/media/big-media-components/src/media/file_metadata_dialog.rs:65
-#: crates/ui/media/big-player-ui/src/audio_preferences.rs:140
-msgid "Language"
-msgstr "言語"
-
-#: crates/media-runtime/src/media/metadata_cache/detailed_video_metadata.rs:129
-msgid "CD Quality"
-msgstr "CD 品質"
-
-#: crates/media-runtime/src/media/metadata_cache/detailed_video_metadata.rs:131
-msgid "Hi-Res"
-msgstr "ハイレゾ"
-
-#: crates/media-runtime/src/media/metadata_cache/detailed_video_metadata.rs:143
-#: crates/ui/media/big-player-ui/src/audio_preferences.rs:179
-msgid "Mono"
-msgstr "モノラル"
-
-#: crates/media-runtime/src/media/metadata_cache/detailed_video_metadata.rs:144
-#: crates/ui/media/big-player-ui/src/audio_preferences.rs:179
-msgid "Stereo"
-msgstr "ステレオ"
-
-#: crates/media-runtime/src/media/metadata_cache/detailed_video_metadata.rs:145
-msgid "5.1 Surround"
-msgstr "5.1 サラウンド"
-
-#: crates/media-runtime/src/media/metadata_cache/detailed_video_metadata.rs:146
-msgid "7.1 Surround"
-msgstr "7.1 サラウンド"
-
 #: crates/media-runtime/src/media/metadata_cache/display.rs:21
 #, rust-format
 msgid "{} audio track"
@@ -4423,7 +4501,7 @@ msgid "{} subtitle"
 msgid_plural "{} subtitles"
 msgstr[0] "{}件の字幕"
 
-#: crates/media-runtime/src/media/playlist_scan/display.rs:79
+#: crates/media-runtime/src/media/playlist_scan/display.rs:20
 msgid "Home"
 msgstr "ホーム"
 
@@ -4573,7 +4651,7 @@ msgstr "ユーザートークン"
 msgid "Retry Saving"
 msgstr "保存を再試行"
 
-#: crates/media-runtime/src/settings/saving.rs:41
+#: crates/media-runtime/src/settings/saving.rs:33
 msgid ""
 "Your changes work for now but could not be saved. Check free disk space or "
 "close other players, then retry."
@@ -4581,7 +4659,7 @@ msgstr ""
 "変更は現在有効ですが、保存できませんでした。ディスクの空き容量を確認するか他"
 "のプレーヤーを閉じてから、再試行してください。"
 
-#: crates/media-runtime/src/settings/saving.rs:126
+#: crates/media-runtime/src/settings/saving.rs:135
 msgid ""
 "Saves and exports are still finishing. The window will close afterwards. "
 "Keeping it open does not cancel those operations."
@@ -4589,16 +4667,16 @@ msgstr ""
 "保存と書き出しがまだ完了していません。完了後にウィンドウが閉じます。開いたま"
 "まにしても、これらの操作はキャンセルされません。"
 
-#: crates/media-runtime/src/settings/saving.rs:129
+#: crates/media-runtime/src/settings/saving.rs:138
 msgid "Finishing pending work"
 msgstr "保留中の処理を完了しています"
 
-#: crates/media-runtime/src/settings/saving.rs:132
-#: crates/media-runtime/src/settings/saving.rs:171
+#: crates/media-runtime/src/settings/saving.rs:141
+#: crates/media-runtime/src/settings/saving.rs:184
 msgid "Keep open"
 msgstr "開いたままにする"
 
-#: crates/media-runtime/src/settings/saving.rs:164
+#: crates/media-runtime/src/settings/saving.rs:177
 msgid ""
 "Keep the player open to review saving errors and retry. Continuing may "
 "discard unsaved session changes; it does not mark them as saved."
@@ -4607,11 +4685,11 @@ msgstr ""
 "と、保存されていないセッションの変更が破棄される場合があります。保存済みとし"
 "てマークされることはありません。"
 
-#: crates/media-runtime/src/settings/saving.rs:167
+#: crates/media-runtime/src/settings/saving.rs:180
 msgid "Some changes are not confirmed as saved"
 msgstr "保存を確認できていない変更があります"
 
-#: crates/media-runtime/src/settings/saving.rs:172
+#: crates/media-runtime/src/settings/saving.rs:185
 msgid "Continue without saved changes"
 msgstr "保存されていない変更を無視して続行"
 
@@ -4723,7 +4801,7 @@ msgstr "中音"
 msgid "Highs"
 msgstr "高音"
 
-#: crates/media-runtime/src/shared/converter_handoff.rs:41
+#: crates/media-runtime/src/shared/converter_handoff.rs:39
 msgid "Could not launch the converter"
 msgstr "コンバーターを起動できませんでした"
 
@@ -4743,33 +4821,49 @@ msgstr "待機中…"
 msgid "Reset to Default"
 msgstr "既定に戻す"
 
-#: crates/media-runtime/src/shared/sleep_timer.rs:12
+#: crates/media-runtime/src/shared/sleep_timer.rs:20
 msgid "Stop playback"
 msgstr "再生を停止"
 
-#: crates/media-runtime/src/shared/sleep_timer.rs:14
+#: crates/media-runtime/src/shared/sleep_timer.rs:22
 msgid "Suspend computer"
 msgstr "コンピューターをサスペンド"
 
-#: crates/media-runtime/src/shared/sleep_timer.rs:15
+#: crates/media-runtime/src/shared/sleep_timer.rs:23
 msgid "Shut down computer"
 msgstr "コンピューターをシャットダウン"
 
-#: crates/media-runtime/src/shared/sleep_timer.rs:22
+#: crates/media-runtime/src/shared/sleep_timer.rs:30
 msgid "Minutes"
 msgstr "分"
 
-#: crates/media-runtime/src/shared/sleep_timer.rs:23
+#: crates/media-runtime/src/shared/sleep_timer.rs:31
 msgid "Action"
 msgstr "動作"
 
-#: crates/media-runtime/src/shared/sleep_timer.rs:24
+#: crates/media-runtime/src/shared/sleep_timer.rs:32
 msgid "When timer ends"
 msgstr "タイマー終了時"
 
-#: crates/media-runtime/src/shared/sleep_timer.rs:25
+#: crates/media-runtime/src/shared/sleep_timer.rs:33
 msgid "Start Timer"
 msgstr "タイマーを開始"
+
+#: crates/media-runtime/src/shared/sleep_timer.rs:212
+msgid "Sleep timer: closing player"
+msgstr "スリープタイマー: プレーヤーを閉じています"
+
+#: crates/media-runtime/src/shared/sleep_timer.rs:224
+msgid "Sleep timer: suspending computer"
+msgstr "スリープタイマー: コンピューターをサスペンドしています"
+
+#: crates/media-runtime/src/shared/sleep_timer.rs:236
+msgid "Sleep timer: shutting down"
+msgstr "スリープタイマー: シャットダウンしています"
+
+#: crates/media-runtime/src/shared/sleep_timer.rs:238
+msgid "Sleep timer: playback paused"
+msgstr "スリープタイマー: 再生を一時停止しました"
 
 #: crates/media-runtime/src/shared/tv_cast.rs:110
 msgid "BigNetScreen is not installed"
@@ -4844,7 +4938,7 @@ msgstr "先に何かを再生してから、テレビを選択してください
 
 #: crates/media-runtime/src/shared/tv_cast.rs:704
 #: crates/media-runtime/src/shared/tv_cast.rs:776
-#: crates/ui/media/big-player-ui/src/download_panel.rs:207
+#: crates/ui/media/big-player-ui/src/download_panel.rs:216
 msgid "Starting…"
 msgstr "開始しています…"
 
@@ -4947,11 +5041,32 @@ msgstr "コントロールが再びテレビを操作し、プレーヤーは一
 msgid "Press Alt+Down to adjust. Press Escape to close."
 msgstr "Alt+下で調整、Escape で閉じます。"
 
-#: crates/ui/generic/big-relm4-components/src/layout/media_window/sidebar.rs:248
+#: crates/ui/generic/big-relm4-components/src/input/zone_layout_editor.rs:158
+#, rust-format
+msgid "{zone}, {position} of {count}"
+msgstr ""
+
+#: crates/ui/generic/big-relm4-components/src/input/zone_layout_editor.rs:199
+#, rust-format
+msgid "{bar}, center"
+msgstr ""
+
+#: crates/ui/generic/big-relm4-components/src/input/zone_layout_editor.rs:200
+#: crates/ui/generic/big-relm4-components/src/input/zone_layout_editor.rs:201
+#, rust-format
+msgid "{bar}, left"
+msgstr ""
+
+#: crates/ui/generic/big-relm4-components/src/input/zone_layout_editor.rs:202
+#, rust-format
+msgid "{bar}, right"
+msgstr ""
+
+#: crates/ui/generic/big-relm4-components/src/layout/media_window/sidebar.rs:232
 msgid "Resize sidebar"
 msgstr "サイドバーのサイズを変更"
 
-#: crates/ui/generic/big-relm4-components/src/layout/media_window/sidebar.rs:250
+#: crates/ui/generic/big-relm4-components/src/layout/media_window/sidebar.rs:234
 msgid ""
 "Use Left and Right arrow keys to resize the media sidebar. Use Home and End "
 "for minimum and maximum width."
@@ -4979,6 +5094,11 @@ msgstr "オーディオストリーム"
 msgid "Subtitle Stream"
 msgstr "字幕ストリーム"
 
+#: crates/ui/media/big-media-components/src/media/file_metadata_dialog.rs:65
+#: crates/ui/media/big-player-ui/src/audio_preferences.rs:142
+msgid "Language"
+msgstr "言語"
+
 #: crates/ui/media/big-media-components/src/media/file_metadata_dialog.rs:419
 msgid "Low"
 msgstr "低"
@@ -4987,45 +5107,45 @@ msgstr "低"
 msgid "Studio"
 msgstr "スタジオ"
 
-#: crates/ui/media/big-media-components/src/player_chrome.rs:301
+#: crates/ui/media/big-media-components/src/player_chrome.rs:319
 msgid "Volume level"
 msgstr "音量レベル"
 
-#: crates/ui/media/big-media-components/src/player_chrome.rs:312
+#: crates/ui/media/big-media-components/src/player_chrome.rs:330
 msgid "Playback speed"
 msgstr "再生速度"
 
-#: crates/ui/media/big-media-components/src/player_chrome.rs:324
+#: crates/ui/media/big-media-components/src/player_chrome.rs:342
 msgid "Voice"
 msgstr "音声"
 
-#: crates/ui/media/big-media-components/src/player_chrome.rs:326
+#: crates/ui/media/big-media-components/src/player_chrome.rs:344
 msgid "Voice enhancement"
 msgstr "音声強調"
 
 #: crates/ui/media/big-player-ui/src/appearance/audio_colors.rs:30
-#: crates/ui/media/big-player-ui/src/appearance/video_colors.rs:29
+#: crates/ui/media/big-player-ui/src/appearance/video_colors.rs:30
 msgid "Color Source"
 msgstr "カラーソース"
 
 #: crates/ui/media/big-player-ui/src/appearance/audio_colors.rs:32
-#: crates/ui/media/big-player-ui/src/appearance/video_colors.rs:31
+#: crates/ui/media/big-player-ui/src/appearance/video_colors.rs:32
 msgid "Follow System"
 msgstr "システムに従う"
 
 #: crates/ui/media/big-player-ui/src/appearance/audio_colors.rs:33
-#: crates/ui/media/big-player-ui/src/appearance/video_colors.rs:32
+#: crates/ui/media/big-player-ui/src/appearance/video_colors.rs:33
 msgid "Light Theme"
 msgstr "ライトテーマ"
 
 #: crates/ui/media/big-player-ui/src/appearance/audio_colors.rs:34
-#: crates/ui/media/big-player-ui/src/appearance/video_colors.rs:33
+#: crates/ui/media/big-player-ui/src/appearance/video_colors.rs:34
 msgid "Dark Theme"
 msgstr "ダークテーマ"
 
 #: crates/ui/media/big-player-ui/src/appearance/audio_colors.rs:35
 #: crates/ui/media/big-player-ui/src/appearance/color_palette_controls.rs:130
-#: crates/ui/media/big-player-ui/src/appearance/video_colors.rs:35
+#: crates/ui/media/big-player-ui/src/appearance/video_colors.rs:36
 msgid "Custom Colors"
 msgstr "カスタムカラー"
 
@@ -5077,51 +5197,51 @@ msgstr "アイコンの色"
 msgid "Dialogs and Menus Color"
 msgstr "ダイアログとメニューの色"
 
-#: crates/ui/media/big-player-ui/src/appearance/video_colors.rs:34
+#: crates/ui/media/big-player-ui/src/appearance/video_colors.rs:35
 msgid "Video Colors"
 msgstr "ビデオの色"
 
-#: crates/ui/media/big-player-ui/src/appearance/video_colors.rs:44
+#: crates/ui/media/big-player-ui/src/appearance/video_colors.rs:45
 msgid "Background Opacity"
 msgstr "背景の不透明度"
 
-#: crates/ui/media/big-player-ui/src/appearance/video_colors.rs:45
+#: crates/ui/media/big-player-ui/src/appearance/video_colors.rs:46
 msgid "Menu Opacity"
 msgstr "メニューの不透明度"
 
-#: crates/ui/media/big-player-ui/src/appearance/video_colors.rs:69
+#: crates/ui/media/big-player-ui/src/appearance/video_colors.rs:70
 msgid "Icon and Text Shadow"
 msgstr "アイコンとテキストの影"
 
-#: crates/ui/media/big-player-ui/src/audio_preferences.rs:87
+#: crates/ui/media/big-player-ui/src/audio_preferences.rs:88
 msgid "Sound"
 msgstr "サウンド"
 
-#: crates/ui/media/big-player-ui/src/audio_preferences.rs:91
+#: crates/ui/media/big-player-ui/src/audio_preferences.rs:92
 msgid "Even Out Loudness"
 msgstr "音量を均一化"
 
-#: crates/ui/media/big-player-ui/src/audio_preferences.rs:92
+#: crates/ui/media/big-player-ui/src/audio_preferences.rs:93
 msgid "Quiet and loud media play at a similar volume"
 msgstr "小さい音と大きい音のメディアを同程度の音量で再生します"
 
-#: crates/ui/media/big-player-ui/src/audio_preferences.rs:110
+#: crates/ui/media/big-player-ui/src/audio_preferences.rs:111
 msgid "Keep Voices Natural"
 msgstr "声を自然に保つ"
 
-#: crates/ui/media/big-player-ui/src/audio_preferences.rs:111
+#: crates/ui/media/big-player-ui/src/audio_preferences.rs:112
 msgid "Voices keep their tone when playing faster or slower"
 msgstr "速く、または遅く再生しても、声の音色が保たれます"
 
-#: crates/ui/media/big-player-ui/src/audio_preferences.rs:124
+#: crates/ui/media/big-player-ui/src/audio_preferences.rs:126
 msgid "Maximum Volume"
 msgstr "最大音量"
 
-#: crates/ui/media/big-player-ui/src/audio_preferences.rs:125
+#: crates/ui/media/big-player-ui/src/audio_preferences.rs:127
 msgid "Above 100% helps with quiet recordings but may distort"
 msgstr "100% を超えると小さな録音に役立ちますが、音が歪む場合があります"
 
-#: crates/ui/media/big-player-ui/src/audio_preferences.rs:142
+#: crates/ui/media/big-player-ui/src/audio_preferences.rs:144
 msgid ""
 "For media with several audio tracks. Use language codes separated by commas, "
 "in order of preference, such as pt,en"
@@ -5129,30 +5249,38 @@ msgstr ""
 "複数のオーディオトラックを持つメディア向けです。言語コードを優先順にカンマ区"
 "切りで指定します (例: ja,en)"
 
-#: crates/ui/media/big-player-ui/src/audio_preferences.rs:161
+#: crates/ui/media/big-player-ui/src/audio_preferences.rs:163
 msgid "Sound System"
 msgstr "サウンドシステム"
 
-#: crates/ui/media/big-player-ui/src/audio_preferences.rs:162
+#: crates/ui/media/big-player-ui/src/audio_preferences.rs:164
 msgid "Automatic works for most computers"
 msgstr "ほとんどのコンピューターでは「自動」で問題なく動作します"
 
-#: crates/ui/media/big-player-ui/src/audio_preferences.rs:166
+#: crates/ui/media/big-player-ui/src/audio_preferences.rs:168
 msgid "Audio Output"
 msgstr "オーディオ出力"
 
-#: crates/ui/media/big-player-ui/src/audio_preferences.rs:167
+#: crates/ui/media/big-player-ui/src/audio_preferences.rs:169
 msgid "Takes effect after reopening the player"
 msgstr "プレーヤーを開き直すと有効になります"
 
-#: crates/ui/media/big-player-ui/src/audio_preferences.rs:177
+#: crates/ui/media/big-player-ui/src/audio_preferences.rs:179
 msgid "Speakers"
 msgstr "スピーカー"
 
-#: crates/ui/media/big-player-ui/src/audio_preferences.rs:178
+#: crates/ui/media/big-player-ui/src/audio_preferences.rs:180
 msgid "Mixes surround sound down for stereo speakers or headphones"
 msgstr ""
 "サラウンド音声をステレオスピーカーまたはヘッドホン向けにダウンミックスします"
+
+#: crates/ui/media/big-player-ui/src/audio_preferences.rs:181
+msgid "Stereo"
+msgstr "ステレオ"
+
+#: crates/ui/media/big-player-ui/src/audio_preferences.rs:181
+msgid "Mono"
+msgstr "モノラル"
 
 #: crates/ui/media/big-player-ui/src/audio_trim_bar.rs:40
 msgid "Mark cut point"
@@ -5183,35 +5311,35 @@ msgstr "各カットの開始位置と終了位置で「マーク」を押して
 msgid "Export cuts"
 msgstr "カットを書き出し"
 
-#: crates/ui/media/big-player-ui/src/download_panel.rs:100
+#: crates/ui/media/big-player-ui/src/download_panel.rs:110
 msgid "Downloads"
 msgstr "ダウンロード"
 
-#: crates/ui/media/big-player-ui/src/download_panel.rs:109
+#: crates/ui/media/big-player-ui/src/download_panel.rs:119
 msgid "Clear completed downloads"
 msgstr "完了したダウンロードをクリア"
 
-#: crates/ui/media/big-player-ui/src/download_panel.rs:119
+#: crates/ui/media/big-player-ui/src/download_panel.rs:129
 msgid "Hide downloads panel"
 msgstr "ダウンロードパネルを非表示"
 
-#: crates/ui/media/big-player-ui/src/download_panel.rs:197
+#: crates/ui/media/big-player-ui/src/download_panel.rs:206
 msgid "Cancel download"
 msgstr "ダウンロードをキャンセル"
 
-#: crates/ui/media/big-player-ui/src/download_panel.rs:290
+#: crates/ui/media/big-player-ui/src/download_panel.rs:315
 msgid "Cancelled"
 msgstr "キャンセル済み"
 
-#: crates/ui/media/big-player-ui/src/download_panel.rs:301
+#: crates/ui/media/big-player-ui/src/download_panel.rs:326
 msgid "Complete"
 msgstr "完了"
 
-#: crates/ui/media/big-player-ui/src/file_browser.rs:108
+#: crates/ui/media/big-player-ui/src/file_browser.rs:110
 msgid "Filter files"
 msgstr "ファイルを絞り込み"
 
-#: crates/ui/media/big-player-ui/src/file_browser.rs:261
+#: crates/ui/media/big-player-ui/src/file_browser.rs:281
 msgid "File browser"
 msgstr "ファイルブラウザー"
 
@@ -5232,86 +5360,101 @@ msgstr "歌詞を検索しています…"
 msgid "No lyrics found"
 msgstr "歌詞が見つかりません"
 
-#: crates/ui/media/big-player-ui/src/podcast_panel.rs:123
+#: crates/ui/media/big-player-ui/src/podcast_panel.rs:124
 msgid "Search podcasts…"
 msgstr "ポッドキャストを検索…"
 
-#: crates/ui/media/big-player-ui/src/podcast_panel.rs:125
+#: crates/ui/media/big-player-ui/src/podcast_panel.rs:126
 msgid "Search podcasts"
 msgstr "ポッドキャストを検索"
 
-#: crates/ui/media/big-player-ui/src/podcast_panel.rs:146
 #: crates/ui/media/big-player-ui/src/podcast_panel.rs:147
+#: crates/ui/media/big-player-ui/src/podcast_panel.rs:148
 msgid "Add RSS feed"
 msgstr "RSS フィードを追加"
 
-#: crates/ui/media/big-player-ui/src/podcast_panel.rs:176
+#: crates/ui/media/big-player-ui/src/podcast_panel.rs:177
 msgid "No Podcasts"
 msgstr "ポッドキャストなし"
 
-#: crates/ui/media/big-player-ui/src/podcast_panel.rs:177
+#: crates/ui/media/big-player-ui/src/podcast_panel.rs:178
 msgid "Search for podcasts or add an RSS feed"
 msgstr "ポッドキャストを検索するか、RSS フィードを追加してください"
 
-#: crates/ui/media/big-player-ui/src/podcast_panel.rs:262
+#: crates/ui/media/big-player-ui/src/podcast_panel.rs:251
+msgid "Podcast Subscriptions Unavailable"
+msgstr ""
+
+#: crates/ui/media/big-player-ui/src/podcast_panel.rs:281
 msgid "Connection error — try again"
 msgstr "接続エラー — もう一度お試しください"
 
-#: crates/ui/media/big-player-ui/src/podcast_panel.rs:273
+#: crates/ui/media/big-player-ui/src/podcast_panel.rs:295
 msgid "Already subscribed"
 msgstr "すでに登録済みです"
 
-#: crates/ui/media/big-player-ui/src/podcast_panel.rs:353
+#: crates/ui/media/big-player-ui/src/podcast_panel.rs:348
+msgid "Podcast subscriptions are still loading"
+msgstr ""
+
+#: crates/ui/media/big-player-ui/src/podcast_panel.rs:385
 msgid "Subscriptions"
 msgstr "登録中"
 
-#: crates/ui/media/big-player-ui/src/podcast_panel.rs:377
+#: crates/ui/media/big-player-ui/src/podcast_panel.rs:409
 msgid "Search Results"
 msgstr "検索結果"
 
-#: crates/ui/media/big-player-ui/src/podcast_panel.rs:425
+#: crates/ui/media/big-player-ui/src/podcast_panel.rs:457
+#, fuzzy
+#| msgid "The playlist could not be saved."
+msgid "Podcast subscriptions could not be saved"
+msgstr "プレイリストを保存できませんでした。"
+
+#: crates/ui/media/big-player-ui/src/podcast_panel.rs:470
+#, rust-format
+msgid "Podcast subscriptions could not be read, so changes are not saved: {}"
+msgstr ""
+
+#: crates/ui/media/big-player-ui/src/podcast_panel.rs:479
 msgid "Title unavailable"
 msgstr "タイトルを取得できません"
 
-#: crates/ui/media/big-player-ui/src/podcast_panel.rs:427
-msgid "Loading…"
-msgstr "読み込み中…"
-
-#: crates/ui/media/big-player-ui/src/podcast_panel.rs:491
+#: crates/ui/media/big-player-ui/src/podcast_panel.rs:545
 msgid "Unsubscribe"
 msgstr "登録解除"
 
-#: crates/ui/media/big-player-ui/src/podcast_panel.rs:493
+#: crates/ui/media/big-player-ui/src/podcast_panel.rs:547
 msgid "Unsubscribe from podcast"
 msgstr "ポッドキャストの登録を解除"
 
-#: crates/ui/media/big-player-ui/src/podcast_panel.rs:512
-#: crates/ui/media/big-player-ui/src/podcast_panel.rs:571
+#: crates/ui/media/big-player-ui/src/podcast_panel.rs:566
+#: crates/ui/media/big-player-ui/src/podcast_panel.rs:625
 msgid "Subscribe"
 msgstr "登録"
 
-#: crates/ui/media/big-player-ui/src/podcast_panel.rs:514
+#: crates/ui/media/big-player-ui/src/podcast_panel.rs:568
 msgid "Subscribe to podcast"
 msgstr "ポッドキャストを登録"
 
-#: crates/ui/media/big-player-ui/src/podcast_panel.rs:533
+#: crates/ui/media/big-player-ui/src/podcast_panel.rs:587
 msgid "episodes"
 msgstr "エピソード"
 
-#: crates/ui/media/big-player-ui/src/podcast_panel.rs:554
+#: crates/ui/media/big-player-ui/src/podcast_panel.rs:608
 msgid "Add RSS Feed"
 msgstr "RSS フィードを追加"
 
-#: crates/ui/media/big-player-ui/src/podcast_panel.rs:560
+#: crates/ui/media/big-player-ui/src/podcast_panel.rs:614
 msgid "Paste the podcast RSS feed URL below."
 msgstr "下にポッドキャストの RSS フィード URL を貼り付けてください。"
 
-#: crates/ui/media/big-player-ui/src/podcast_panel.rs:562
+#: crates/ui/media/big-player-ui/src/podcast_panel.rs:616
 msgid "Feed"
 msgstr "フィード"
 
-#: crates/ui/media/big-player-ui/src/podcast_panel.rs:564
-#: crates/ui/media/big-player-ui/src/podcast_panel.rs:567
+#: crates/ui/media/big-player-ui/src/podcast_panel.rs:618
+#: crates/ui/media/big-player-ui/src/podcast_panel.rs:621
 msgid "RSS feed URL"
 msgstr "RSS フィード URL"
 
@@ -5405,11 +5548,11 @@ msgstr "ステーションのストリーム URL"
 msgid "Add"
 msgstr "追加"
 
-#: crates/ui/media/big-player-ui/src/smartphone/dialog.rs:38
+#: crates/ui/media/big-player-ui/src/smartphone/dialog.rs:39
 msgid "Web Remote"
 msgstr "Web リモコン"
 
-#: crates/ui/media/big-player-ui/src/smartphone/dialog.rs:40
+#: crates/ui/media/big-player-ui/src/smartphone/dialog.rs:41
 msgid ""
 "Turn on to control this player from a phone or tablet on the same network. "
 "HTTP is not encrypted: use only a trusted private network. Scan the QR code "
@@ -5420,24 +5563,24 @@ msgstr ""
 "ワークでのみ使用してください。スマートフォンのカメラで QR コードを読み取る"
 "と、リモコンが開きます。"
 
-#: crates/ui/media/big-player-ui/src/smartphone/dialog.rs:47
+#: crates/ui/media/big-player-ui/src/smartphone/dialog.rs:48
 msgid "Enable web remote"
 msgstr "Web リモコンを有効にする"
 
-#: crates/ui/media/big-player-ui/src/smartphone/dialog.rs:52
+#: crates/ui/media/big-player-ui/src/smartphone/dialog.rs:53
 msgid "QR code"
 msgstr "QR コード"
 
-#: crates/ui/media/big-player-ui/src/smartphone/dialog.rs:65
-#: crates/ui/media/big-player-ui/src/smartphone/dialog.rs:157
+#: crates/ui/media/big-player-ui/src/smartphone/dialog.rs:66
+#: crates/ui/media/big-player-ui/src/smartphone/dialog.rs:193
 msgid "Web remote is off."
 msgstr "Web リモコンはオフです。"
 
-#: crates/ui/media/big-player-ui/src/smartphone/dialog.rs:83
+#: crates/ui/media/big-player-ui/src/smartphone/dialog.rs:84
 msgid "KDE Connect / GSConnect"
 msgstr "KDE Connect / GSConnect"
 
-#: crates/ui/media/big-player-ui/src/smartphone/dialog.rs:85
+#: crates/ui/media/big-player-ui/src/smartphone/dialog.rs:86
 msgid ""
 "If you have KDE Connect (Plasma, Android) or GSConnect (GNOME) installed, "
 "your paired phone already shows media controls, track information and volume "
@@ -5448,11 +5591,11 @@ msgstr ""
 "トラック情報、音量がすでに表示されます。こちら側で追加の設定は必要ありませ"
 "ん。"
 
-#: crates/ui/media/big-player-ui/src/smartphone/dialog.rs:92
+#: crates/ui/media/big-player-ui/src/smartphone/dialog.rs:93
 msgid "Install KDE Connect on your phone"
 msgstr "スマートフォンに KDE Connect をインストール"
 
-#: crates/ui/media/big-player-ui/src/smartphone/dialog.rs:94
+#: crates/ui/media/big-player-ui/src/smartphone/dialog.rs:95
 msgid ""
 "Open the link on the phone's app store. Pair once - then media keys, "
 "notifications and file sharing work both ways."
@@ -5460,17 +5603,60 @@ msgstr ""
 "スマートフォンのアプリストアでリンクを開いてください。一度ペアリングすれば、"
 "メディアキー、通知、ファイル共有が双方向で使えます。"
 
-#: crates/ui/media/big-player-ui/src/smartphone/dialog.rs:98
+#: crates/ui/media/big-player-ui/src/smartphone/dialog.rs:99
 msgid "Open KDE Connect download page"
 msgstr "KDE Connect のダウンロードページを開く"
 
-#: crates/ui/media/big-player-ui/src/smartphone/dialog.rs:143
+#: crates/ui/media/big-player-ui/src/smartphone/dialog.rs:135
+msgid "No local network found. Connect to a network and try again."
+msgstr ""
+
+#: crates/ui/media/big-player-ui/src/smartphone/dialog.rs:158
 msgid "Scan the code with the phone's camera."
 msgstr "スマートフォンのカメラでコードを読み取ってください。"
 
-#: crates/ui/media/big-player-ui/src/smartphone/dialog.rs:149
+#: crates/ui/media/big-player-ui/src/smartphone/dialog.rs:177
+#, fuzzy, rust-format
+#| msgid "Web remote is off."
+msgid "Web remote stopped: {error}"
+msgstr "Web リモコンはオフです。"
+
+#: crates/ui/media/big-player-ui/src/smartphone/dialog.rs:185
 msgid "Could not start server"
 msgstr "サーバーを起動できませんでした"
+
+#~ msgid "Screenshot queue is full; wait for pending captures"
+#~ msgstr ""
+#~ "スクリーンショットのキューがいっぱいです。保留中のキャプチャが完了するまで"
+#~ "お待ちください"
+
+#~ msgid "Screenshot failed"
+#~ msgstr "スクリーンショットに失敗しました"
+
+#~ msgid "moved"
+#~ msgstr "移動済み"
+
+#~ msgid "Invalid name"
+#~ msgstr "無効な名前"
+
+#, rust-format
+#~ msgid "{ok} {verb}, {failed} failed"
+#~ msgstr "{ok} 件{verb}、{failed} 件失敗"
+
+#~ msgid "Screenshot timed out; cancellation requested"
+#~ msgstr "スクリーンショットがタイムアウトしました。キャンセルを要求しました"
+
+#~ msgid "CD Quality"
+#~ msgstr "CD 品質"
+
+#~ msgid "Hi-Res"
+#~ msgstr "ハイレゾ"
+
+#~ msgid "5.1 Surround"
+#~ msgstr "5.1 サラウンド"
+
+#~ msgid "7.1 Surround"
+#~ msgstr "7.1 サラウンド"
 
 #~ msgid "Could not reach provider — showing cached copy if available."
 #~ msgstr ""
