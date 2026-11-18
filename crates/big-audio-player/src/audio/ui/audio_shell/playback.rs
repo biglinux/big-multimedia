@@ -147,12 +147,21 @@ impl AudioShell {
         let r#gen = self.now_playing_gen;
         let input = sender.input_sender().clone();
         glib::spawn_future_local(async move {
-            let text = gio::spawn_blocking(move || {
+            let text = match gio::spawn_blocking(move || {
                 lyrics_fetch_engine::fetch_lyrics_blocking(&db, &file_path)
             })
             .await
-            .ok()
-            .flatten();
+            {
+                Ok(Ok(text)) => text,
+                Ok(Err(error)) => {
+                    log::warn!("lyrics lookup could not read the library: {error}");
+                    let _ = input.send(AudioShellInput::Notify(i18n(
+                        "The library could not be read, so lyrics were not searched online.",
+                    )));
+                    None
+                }
+                Err(_) => None,
+            };
             let _ = input.send(AudioShellInput::LyricsResolved { r#gen, text });
         });
     }
