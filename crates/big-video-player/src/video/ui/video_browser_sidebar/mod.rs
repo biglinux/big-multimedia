@@ -205,6 +205,11 @@ pub(crate) struct BrowserState {
 }
 
 impl BrowserState {
+    /// Any `playlist-view` value but "grid" shows the list.
+    fn is_grid_view(&self) -> bool {
+        self.settings.get_string(keys::PLAYLIST_VIEW) == "grid"
+    }
+
     /// Upgrade the weak container ref; `None` only mid-teardown.
     fn container(&self) -> Option<gtk::Box> {
         self.container.upgrade()
@@ -574,7 +579,7 @@ impl BrowserState {
 
     /// Files mode: breadcrumb + search + kind chips + the folder browser.
     fn rebuild_files(self: &Rc<Self>) {
-        let is_grid = self.settings.get_string(keys::PLAYLIST_VIEW) == "grid";
+        let is_grid = self.is_grid_view();
         let recursive_on = self.settings.get_bool(keys::PLAYLIST_FOLDER_RECURSIVE);
         let folder_opt = self.folder.borrow().clone();
         let items = self.entries.borrow().clone();

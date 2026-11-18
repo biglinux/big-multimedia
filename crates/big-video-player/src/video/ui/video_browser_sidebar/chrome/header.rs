@@ -82,7 +82,7 @@ pub(crate) fn build_header(state: &Rc<BrowserState>) {
 /// List ⇄ grid view toggle (the one frequently-used, self-evident control kept
 /// out of the overflow menu).
 fn build_view_toggle(state: &Rc<BrowserState>) -> gtk::Button {
-    let is_grid = state.settings.get_string(keys::PLAYLIST_VIEW) == "grid";
+    let is_grid = state.is_grid_view();
     let (icon, label) = if is_grid {
         ("view-list-symbolic", i18n("Show as list"))
     } else {
@@ -92,11 +92,7 @@ fn build_view_toggle(state: &Rc<BrowserState>) -> gtk::Button {
     view_toggle_button.connect_clicked({
         let state = state.clone();
         move |_| {
-            let next = if state.settings.get_string(keys::PLAYLIST_VIEW) == "list" {
-                "grid"
-            } else {
-                "list"
-            };
+            let next = if state.is_grid_view() { "list" } else { "grid" };
             state.settings.put_string(keys::PLAYLIST_VIEW, next);
             state.rebuild();
         }
