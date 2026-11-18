@@ -7,7 +7,7 @@ use std::sync::atomic::Ordering;
 impl MpvBackend {
     pub fn set_subtitle_track(&self, id: i64) {
         self.with_mpv(|m| {
-            let _ = m.set_property("sid", id);
+            m.set_property_logged("sid", id);
         });
     }
 
@@ -34,13 +34,13 @@ impl MpvBackend {
             Self::SUB_DELAY_LIMIT_SECONDS,
         );
         self.with_mpv(|m| {
-            let _ = m.set_property("sub-delay", delay);
+            m.set_property_logged("sub-delay", delay);
         });
     }
 
     pub fn set_sub_font_size(&self, size: i64) {
         self.with_mpv(|m| {
-            let _ = m.set_property("sub-font-size", size);
+            m.set_property_logged("sub-font-size", size);
         });
     }
 
@@ -48,43 +48,43 @@ impl MpvBackend {
     pub fn set_sub_font(&self, font: &str) {
         let font = if font.is_empty() { "sans-serif" } else { font };
         self.with_mpv(|m| {
-            let _ = m.set_property("sub-font", font.to_string());
+            m.set_property_logged("sub-font", font.to_string());
         });
     }
 
     pub fn set_sub_bold(&self, bold: bool) {
         self.with_mpv(|m| {
-            let _ = m.set_property("sub-bold", bold);
+            m.set_property_logged("sub-bold", bold);
         });
     }
 
     pub fn set_sub_color(&self, color: &str) {
         self.with_mpv(|m| {
-            let _ = m.set_property("sub-color", color.to_string());
+            m.set_property_logged("sub-color", color.to_string());
         });
     }
 
     pub fn set_sub_border_color(&self, color: &str) {
         self.with_mpv(|m| {
-            let _ = m.set_property("sub-border-color", color.to_string());
+            m.set_property_logged("sub-border-color", color.to_string());
         });
     }
 
     pub fn set_sub_shadow_color(&self, color: &str) {
         self.with_mpv(|m| {
-            let _ = m.set_property("sub-shadow-color", color.to_string());
+            m.set_property_logged("sub-shadow-color", color.to_string());
         });
     }
 
     pub fn set_sub_border_size(&self, size: f64) {
         self.with_mpv(|m| {
-            let _ = m.set_property("sub-border-size", size);
+            m.set_property_logged("sub-border-size", size);
         });
     }
 
     pub fn set_sub_shadow_offset(&self, offset: f64) {
         self.with_mpv(|m| {
-            let _ = m.set_property("sub-shadow-offset", offset);
+            m.set_property_logged("sub-shadow-offset", offset);
         });
     }
 
@@ -108,67 +108,67 @@ impl MpvBackend {
             .load(Ordering::Relaxed)
             .saturating_add(self.sub_margin_lift.load(Ordering::Relaxed));
         self.with_mpv(|m| {
-            let _ = m.set_property("sub-margin-y", margin);
+            m.set_property_logged("sub-margin-y", margin);
         });
     }
 
     pub fn set_preferred_sub_lang(&self, lang: &str) {
         self.with_mpv(|m| {
-            let _ = m.set_property("slang", lang.to_string());
+            m.set_property_logged("slang", lang.to_string());
         });
     }
 
     pub fn set_sub_auto(&self, mode: &str) {
         self.with_mpv(|m| {
-            let _ = m.set_property("sub-auto", mode.to_string());
+            m.set_property_logged("sub-auto", mode.to_string());
         });
     }
 
     pub fn set_sub_border_style(&self, style: &str) {
         self.with_mpv(|m| {
-            let _ = m.set_property("sub-border-style", style.to_string());
+            m.set_property_logged("sub-border-style", style.to_string());
         });
     }
 
     pub fn set_sub_scale_with_window(&self, enable: bool) {
         self.with_mpv(|m| {
-            let _ = m.set_property("sub-scale-with-window", enable);
+            m.set_property_logged("sub-scale-with-window", enable);
         });
     }
 
     pub fn set_sub_ass_scale_with_window(&self, enable: bool) {
         self.with_mpv(|m| {
-            let _ = m.set_property("sub-ass-scale-with-window", enable);
+            m.set_property_logged("sub-ass-scale-with-window", enable);
         });
     }
 
     pub fn set_sub_filter_sdh(&self, enable: bool) {
         self.with_mpv(|m| {
-            let _ = m.set_property("sub-filter-sdh", enable);
+            m.set_property_logged("sub-filter-sdh", enable);
         });
     }
 
     pub fn set_sub_filter_sdh_harder(&self, enable: bool) {
         self.with_mpv(|m| {
-            let _ = m.set_property("sub-filter-sdh-harder", enable);
+            m.set_property_logged("sub-filter-sdh-harder", enable);
         });
     }
 
     pub fn set_sub_gauss(&self, blur: f64) {
         self.with_mpv(|m| {
-            let _ = m.set_property("sub-gauss", blur);
+            m.set_property_logged("sub-gauss", blur);
         });
     }
 
     pub fn set_sub_gray(&self, enable: bool) {
         self.with_mpv(|m| {
-            let _ = m.set_property("sub-gray", enable);
+            m.set_property_logged("sub-gray", enable);
         });
     }
 
     pub fn set_secondary_sid(&self, id: i64) {
         self.with_mpv(|m| {
-            let _ = m.set_property("secondary-sid", id);
+            m.set_property_logged("secondary-sid", id);
         });
     }
 
@@ -182,7 +182,7 @@ impl MpvBackend {
 
     pub fn disable_secondary_sub(&self) {
         self.with_mpv(|m| {
-            let _ = m.set_property("secondary-sid", false);
+            m.set_property_logged("secondary-sid", false);
         });
     }
 }

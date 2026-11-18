@@ -660,7 +660,7 @@ impl MpvBackend {
                 "write-watch-later-config"
             };
             let _ = mpv.command(command, &[]);
-            let _ = mpv.set_property("save-position-on-quit", false);
+            mpv.set_property_logged("save-position-on-quit", false);
         });
     }
 }

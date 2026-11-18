@@ -64,7 +64,7 @@ impl MpvBackend {
             if (empty || (result.is_err() && starting))
                 && let Some(original) = preference.take()
             {
-                let _ = mpv.set_property("hwdec", original);
+                mpv.set_property_logged("hwdec", original);
             }
         });
     }

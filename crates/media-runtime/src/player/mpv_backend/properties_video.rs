@@ -7,27 +7,27 @@ use super::MpvBackend;
 impl MpvBackend {
     pub fn set_contrast(&self, val: i64) {
         self.with_mpv(|m| {
-            let _ = m.set_property("contrast", val);
+            m.set_property_logged("contrast", val);
         });
     }
     pub fn set_brightness(&self, val: i64) {
         self.with_mpv(|m| {
-            let _ = m.set_property("brightness", val);
+            m.set_property_logged("brightness", val);
         });
     }
     pub fn set_gamma(&self, val: i64) {
         self.with_mpv(|m| {
-            let _ = m.set_property("gamma", val);
+            m.set_property_logged("gamma", val);
         });
     }
     pub fn set_saturation(&self, val: i64) {
         self.with_mpv(|m| {
-            let _ = m.set_property("saturation", val);
+            m.set_property_logged("saturation", val);
         });
     }
     pub fn set_hue(&self, val: i64) {
         self.with_mpv(|m| {
-            let _ = m.set_property("hue", val);
+            m.set_property_logged("hue", val);
         });
     }
     pub fn get_contrast(&self) -> i64 {
@@ -48,13 +48,13 @@ impl MpvBackend {
 
     pub fn set_video_zoom(&self, val: f64) {
         self.with_mpv(|m| {
-            let _ = m.set_property("video-zoom", val);
+            m.set_property_logged("video-zoom", val);
         });
     }
 
     pub fn set_video_rotate(&self, degrees: i64) {
         self.with_mpv(|m| {
-            let _ = m.set_property("video-rotate", degrees);
+            m.set_property_logged("video-rotate", degrees);
         });
     }
 
@@ -77,7 +77,7 @@ impl MpvBackend {
 
     pub fn set_panscan(&self, val: f64) {
         self.with_mpv(|m| {
-            let _ = m.set_property("panscan", val);
+            m.set_property_logged("panscan", val);
         });
     }
 
@@ -87,13 +87,13 @@ impl MpvBackend {
 
     pub fn set_video_crop(&self, crop: &str) {
         self.with_mpv(|m| {
-            let _ = m.set_property("video-crop", crop.to_string());
+            m.set_property_logged("video-crop", crop.to_string());
         });
     }
 
     pub fn set_deinterlace(&self, enable: bool) {
         self.with_mpv(|m| {
-            let _ = m.set_property("deinterlace", if enable { "yes" } else { "no" });
+            m.set_property_logged("deinterlace", if enable { "yes" } else { "no" });
         });
     }
 
@@ -119,25 +119,25 @@ impl MpvBackend {
 
     pub fn set_tone_mapping(&self, algo: &str) {
         self.with_mpv(|m| {
-            let _ = m.set_property("tone-mapping", algo.to_string());
+            m.set_property_logged("tone-mapping", algo.to_string());
         });
     }
 
     pub fn set_target_peak(&self, nits: i64) {
         self.with_mpv(|m| {
-            let _ = m.set_property("target-peak", nits);
+            m.set_property_logged("target-peak", nits);
         });
     }
 
     pub fn set_hdr_compute_peak(&self, enable: bool) {
         self.with_mpv(|m| {
-            let _ = m.set_property("hdr-compute-peak", enable);
+            m.set_property_logged("hdr-compute-peak", enable);
         });
     }
 
     pub fn set_gamut_mapping_mode(&self, mode: &str) {
         self.with_mpv(|m| {
-            let _ = m.set_property("gamut-mapping-mode", mode.to_string());
+            m.set_property_logged("gamut-mapping-mode", mode.to_string());
         });
     }
 

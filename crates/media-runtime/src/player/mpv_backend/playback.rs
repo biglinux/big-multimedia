@@ -414,13 +414,13 @@ impl MpvBackend {
 
     pub fn set_stream_record(&self, path: &str) {
         self.with_mpv(|m| {
-            let _ = m.set_property("stream-record", path.to_string());
+            m.set_property_logged("stream-record", path.to_string());
         });
     }
 
     pub fn set_chapter(&self, idx: i64) {
         self.with_mpv(|m| {
-            let _ = m.set_property("chapter", idx);
+            m.set_property_logged("chapter", idx);
         });
     }
 
@@ -433,7 +433,7 @@ impl MpvBackend {
             "dvd-device"
         };
         self.with_mpv(|m| {
-            let _ = m.set_property(property, device.to_string());
+            m.set_property_logged(property, device.to_string());
         });
     }
 

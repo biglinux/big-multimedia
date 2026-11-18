@@ -155,6 +155,23 @@ impl MpvClient {
         })
     }
 
+    /// Set `name` for a caller with no recovery of its own, logging a refusal by
+    /// name only: values can carry paths, URLs or device names.
+    pub fn set_property_logged<T>(&self, name: &str, value: T)
+    where
+        T: MpvSetValue,
+    {
+        match self.set_property(name, value) {
+            Ok(()) => {}
+            // Teardown, or a property that exists only while a file plays.
+            Err(
+                error @ (MpvError::DestroyedHandle
+                | MpvError::Raw(mpv_sys::mpv_error_MPV_ERROR_PROPERTY_UNAVAILABLE)),
+            ) => log::debug!("mpv did not set {name}: {error}"),
+            Err(error) => log::warn!("mpv refused {name}: {error}"),
+        }
+    }
+
     pub fn get_property<T>(&self, name: &str) -> Result<T>
     where
         T: MpvGetValue,

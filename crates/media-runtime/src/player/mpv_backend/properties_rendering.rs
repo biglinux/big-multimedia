@@ -18,10 +18,10 @@ impl MpvBackend {
             for property in render_profile_properties(profile) {
                 match property.value {
                     MpvPropertyValue::Text(value) => {
-                        let _ = m.set_property(property.name, value.to_string());
+                        m.set_property_logged(property.name, value.to_string());
                     }
                     MpvPropertyValue::Bool(value) => {
-                        let _ = m.set_property(property.name, value);
+                        m.set_property_logged(property.name, value);
                     }
                 }
             }
@@ -46,7 +46,7 @@ impl MpvBackend {
             } else {
                 mode.to_string()
             };
-            let _ = m.set_property("hwdec", effective);
+            m.set_property_logged("hwdec", effective);
         });
     }
 
@@ -65,44 +65,44 @@ impl MpvBackend {
 
     pub fn set_ytdl_format(&self, format: &str) {
         self.with_mpv(|m| {
-            let _ = m.set_property("ytdl-format", format.to_string());
+            m.set_property_logged("ytdl-format", format.to_string());
         });
     }
 
     pub fn set_sharpen(&self, val: f64) {
         self.with_mpv(|m| {
-            let _ = m.set_property("sharpen", val);
+            m.set_property_logged("sharpen", val);
         });
     }
 
     pub fn set_deband(&self, enable: bool) {
         self.with_mpv(|m| {
-            let _ = m.set_property("deband", if enable { "yes" } else { "no" });
+            m.set_property_logged("deband", if enable { "yes" } else { "no" });
         });
     }
 
     pub fn set_sigmoid_upscaling(&self, enable: bool) {
         self.with_mpv(|m| {
-            let _ = m.set_property("sigmoid-upscaling", if enable { "yes" } else { "no" });
+            m.set_property_logged("sigmoid-upscaling", if enable { "yes" } else { "no" });
         });
     }
 
     pub fn set_correct_downscaling(&self, enable: bool) {
         self.with_mpv(|m| {
-            let _ = m.set_property("correct-downscaling", if enable { "yes" } else { "no" });
+            m.set_property_logged("correct-downscaling", if enable { "yes" } else { "no" });
         });
     }
 
     pub fn set_icc_profile(&self, path: &str) {
         self.with_mpv(|m| {
-            let _ = m.set_property("icc-profile", path.to_string());
+            m.set_property_logged("icc-profile", path.to_string());
         });
     }
 
     pub fn set_icc_intent(&self, intent: i64) {
         self.with_mpv(|m| {
-            let _ = m.set_property("icc-3dlut-size", "64x64x64".to_string());
-            let _ = m.set_property("icc-intent", intent);
+            m.set_property_logged("icc-3dlut-size", "64x64x64".to_string());
+            m.set_property_logged("icc-intent", intent);
         });
     }
 
@@ -124,7 +124,7 @@ impl MpvBackend {
         let interop = hwdec_interop_for(&vendor, &renderer);
         info!("video: GL {vendor} / {renderer}, hwdec interop {interop}");
         self.with_mpv(|m| {
-            let _ = m.set_property("gpu-hwdec-interop", interop.to_string());
+            m.set_property_logged("gpu-hwdec-interop", interop.to_string());
         });
         if interop == "no" {
             self.software_gl.store(true, Ordering::Relaxed);

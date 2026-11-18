@@ -39,7 +39,7 @@ impl MpvBackend {
             if filters.is_empty() {
                 if self.has_af.swap(false, Ordering::Relaxed) {
                     debug!("apply_audio_effects: af=\"\" (clearing previous filters)");
-                    let _ = mpv.set_property("af", String::new());
+                    mpv.set_property_logged("af", String::new());
                     let _ = mpv.command("ao-reload", &[]);
                 }
             } else {
@@ -50,7 +50,7 @@ impl MpvBackend {
                 let graph = filters.join(",");
                 let chain = format!("@{AUDIO_FILTER_LABEL}:lavfi=graph=%{}%{graph}", graph.len());
                 debug!("apply_audio_effects: af=\"{chain}\"");
-                let _ = mpv.set_property("af", chain);
+                mpv.set_property_logged("af", chain);
             }
         });
     }
