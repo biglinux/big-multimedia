@@ -120,7 +120,7 @@ fn clean_argv_with_shell_metacharacters_passes_validation() {
 #[cfg_attr(miri, ignore)]
 fn captures_stderr_and_exit_code_on_failure() {
     // `ls` on a missing path writes to stderr and exits non-zero (code 2 on
-    // GNU coreutils). Exercises BigSubprocessStatus::code + stderr_lossy.
+    // GNU coreutils).
     let out = BigSubprocessSpec::builder()
         .program("ls")
         .arg("/nonexistent_path_xyzzy_42")

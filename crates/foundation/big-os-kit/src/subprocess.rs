@@ -347,7 +347,7 @@ pub struct BigSubprocessResolved {
 #[derive(Debug, Clone)]
 pub struct BigSubprocessOutput {
     /// Exit status.
-    pub status: BigSubprocessStatus,
+    pub status: std::process::ExitStatus,
     /// Captured stdout bytes (empty when stdout mode is not `Capture`).
     pub stdout: Vec<u8>,
     /// Captured stderr bytes (empty when stderr mode is not `Capture`).
@@ -365,30 +365,6 @@ impl BigSubprocessOutput {
     #[must_use]
     pub fn stderr_lossy(&self) -> String {
         String::from_utf8_lossy(&self.stderr).into_owned()
-    }
-}
-
-/// Exit outcome.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum BigSubprocessStatus {
-    /// Process exited with the given status code (or `None` on signal exit).
-    Exited(Option<i32>),
-}
-
-impl BigSubprocessStatus {
-    /// `true` when the child returned exit code 0.
-    #[must_use]
-    pub fn success(self) -> bool {
-        matches!(self, Self::Exited(Some(0)))
-    }
-
-    /// Exit code, or `None` when the child was terminated by a signal.
-    /// Mirrors `std::process::ExitStatus::code`.
-    #[must_use]
-    pub fn code(self) -> Option<i32> {
-        match self {
-            Self::Exited(code) => code,
-        }
     }
 }
 

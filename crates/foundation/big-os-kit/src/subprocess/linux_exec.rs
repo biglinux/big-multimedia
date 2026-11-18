@@ -4,8 +4,8 @@
 //! SIGCHLD=SIG_IGN violates the ownership contract and is reported as an error.
 use super::reaper::{OwnedChild, Permit, set_nonblocking};
 use super::{
-    BigSubprocessError as Error, BigSubprocessOutput, BigSubprocessSpec, BigSubprocessStatus,
-    DEFAULT_MAX_CAPTURE_BYTES, build_command, redact_in_place,
+    BigSubprocessError as Error, BigSubprocessOutput, BigSubprocessSpec, DEFAULT_MAX_CAPTURE_BYTES,
+    build_command, redact_in_place,
 };
 use std::io::{self, Read, Write};
 use std::os::fd::AsRawFd;
@@ -134,11 +134,11 @@ pub(super) fn run(
             }
         };
         if exited && input.is_none() && stdout.is_none() && stderr.is_none() {
-            let code = collect(&mut owner)?;
+            let status = collect(&mut owner)?;
             redact_in_place(&spec.redact_substrings, &mut out);
             redact_in_place(&spec.redact_substrings, &mut err);
             return Ok(BigSubprocessOutput {
-                status: BigSubprocessStatus::Exited(code),
+                status,
                 stdout: out,
                 stderr: err,
             });
@@ -217,7 +217,7 @@ fn write_turn(
 }
 
 /// Reap the exited leader. `try_wait` cannot block: `exited_unreaped` saw it exit.
-fn collect(owner: &mut OwnedChild) -> Result<Option<i32>, Error> {
+fn collect(owner: &mut OwnedChild) -> Result<std::process::ExitStatus, Error> {
     let result = owner.child.as_mut().expect("owned child").try_wait();
     let status = match result {
         Ok(Some(status)) => status,
@@ -234,5 +234,5 @@ fn collect(owner: &mut OwnedChild) -> Result<Option<i32>, Error> {
         }
     };
     owner.child = None; // never signal after collection/reuse is possible
-    Ok(status.code())
+    Ok(status)
 }
