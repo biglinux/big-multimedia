@@ -194,7 +194,7 @@ impl VideoShell {
     /// Hold or release the screen-awake inhibitor for the "Keep the Screen On"
     /// preference: during playback, always, or never.
     pub(super) fn sync_screen_inhibit(&mut self, root: Option<&adw::ApplicationWindow>) {
-        let wanted = match self.settings.string("stop-screensaver").as_str() {
+        let wanted = match self.settings.get_string(keys::STOP_SCREENSAVER).as_str() {
             "always" => true,
             "no" => false,
             _ => self.playing,

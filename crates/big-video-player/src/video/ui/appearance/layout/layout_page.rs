@@ -8,7 +8,7 @@ use std::rc::Rc;
 
 use crate::i18n::{gettext_noop, i18n};
 use crate::settings::{Settings, keys};
-use crate::shared::preference_rows::add_spin_int_row;
+use big_player_ui::preference_rows::add_spin_int_row;
 
 pub(in crate::video) fn create_layout_page(
     settings: &Settings,
@@ -32,46 +32,46 @@ fn build_controls_bar_group(
 ) -> adw::PreferencesGroup {
     let bar_group = BigPreferencesGroupSpec::new(i18n("Controls Bar")).build();
 
-    let spin_items: &[(&str, &str, f64, f64)] = &[
+    let spin_items: &[(&str, keys::IntKey, f64, f64)] = &[
         (
             gettext_noop("Corner Radius"),
-            "ui-controls-radius",
+            keys::UI_CONTROLS_RADIUS,
             0.0,
             48.0,
         ),
         (
             gettext_noop("Bottom Margin"),
-            "ui-controls-margin-bottom",
+            keys::UI_CONTROLS_MARGIN_BOTTOM,
             0.0,
             100.0,
         ),
         (
             gettext_noop("Side Margin"),
-            "ui-controls-margin-side",
+            keys::UI_CONTROLS_MARGIN_SIDE,
             0.0,
             100.0,
         ),
         (
             gettext_noop("Padding Top"),
-            "ui-controls-padding-top",
+            keys::UI_CONTROLS_PADDING_TOP,
             0.0,
             48.0,
         ),
         (
             gettext_noop("Padding Bottom"),
-            "ui-controls-padding-bottom",
+            keys::UI_CONTROLS_PADDING_BOTTOM,
             0.0,
             48.0,
         ),
         (
             gettext_noop("Padding Left"),
-            "ui-controls-padding-left",
+            keys::UI_CONTROLS_PADDING_LEFT,
             0.0,
             48.0,
         ),
         (
             gettext_noop("Padding Right"),
-            "ui-controls-padding-right",
+            keys::UI_CONTROLS_PADDING_RIGHT,
             0.0,
             48.0,
         ),
@@ -82,7 +82,7 @@ fn build_controls_bar_group(
             &bar_group,
             &i18n(label),
             "",
-            key,
+            *key,
             *min,
             *max,
             1.0,

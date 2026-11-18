@@ -22,6 +22,8 @@ pub const MUTE: BoolKey = BoolKey("mute");
 // Video
 pub const HWDEC: StringKey = StringKey("hwdec");
 pub const AUTO_WINDOW_RESIZE: BoolKey = BoolKey("auto-window-resize");
+pub const DEINTERLACE: BoolKey = BoolKey("deinterlace");
+pub const STOP_SCREENSAVER: StringKey = StringKey("stop-screensaver");
 
 // Audio output & language
 pub const AUDIO_OUTPUT: StringKey = StringKey("audio-output");
@@ -33,11 +35,30 @@ pub const AUDIO_CHANNELS: StringKey = StringKey("audio-channels");
 
 // Subtitles
 pub const SUB_FONT: StringKey = StringKey("sub-font");
+pub const PREFERRED_SUB_LANG: StringKey = StringKey("preferred-sub-lang");
+pub const SUB_AUTO: StringKey = StringKey("sub-auto");
+pub const SUBTITLE_FONT_SIZE: IntKey = IntKey("subtitle-font-size");
+pub const SUB_BOLD: BoolKey = BoolKey("sub-bold");
+pub const SUB_COLOR: StringKey = StringKey("sub-color");
+pub const SUB_BORDER_STYLE: StringKey = StringKey("sub-border-style");
+pub const SUB_BORDER_SIZE: DoubleKey = DoubleKey("sub-border-size");
+pub const SUB_BORDER_COLOR: StringKey = StringKey("sub-border-color");
+pub const SUB_SHADOW_OFFSET: DoubleKey = DoubleKey("sub-shadow-offset");
+pub const SUB_SHADOW_COLOR: StringKey = StringKey("sub-shadow-color");
+pub const SUB_MARGIN_Y: IntKey = IntKey("sub-margin-y");
+pub const SUB_SCALE_WITH_WINDOW: BoolKey = BoolKey("sub-scale-with-window");
+pub const SUB_ASS_SCALE_WITH_WINDOW: BoolKey = BoolKey("sub-ass-scale-with-window");
+pub const SUB_FILTER_SDH: BoolKey = BoolKey("sub-filter-sdh");
+pub const SUB_FILTER_SDH_HARDER: BoolKey = BoolKey("sub-filter-sdh-harder");
+pub const SUB_GAUSS: DoubleKey = DoubleKey("sub-gauss");
+pub const SUB_GRAY: BoolKey = BoolKey("sub-gray");
 
 // Playback
 pub const RESUME_PLAYBACK: BoolKey = BoolKey("resume-playback");
 pub const LOOP_MODE: StringKey = StringKey("loop-mode");
 pub const IDLE_MODE: StringKey = StringKey("idle-mode");
+pub const KEEP_OPEN: StringKey = StringKey("keep-open");
+pub const KEEP_OPEN_PAUSE: BoolKey = BoolKey("keep-open-pause");
 
 // Audio effects
 pub const NOISE_STRENGTH: DoubleKey = DoubleKey("noise-strength");
@@ -54,6 +75,9 @@ pub const EQ_PRESET: StringKey = StringKey("eq-preset");
 pub const RENDER_PROFILE: StringKey = StringKey("render-profile");
 
 pub const HDR_COMPUTE_PEAK: BoolKey = BoolKey("hdr-compute-peak");
+pub const TONE_MAPPING: StringKey = StringKey("tone-mapping");
+pub const TARGET_PEAK: IntKey = IntKey("target-peak");
+pub const GAMUT_MAPPING_MODE: StringKey = StringKey("gamut-mapping-mode");
 
 pub const BUILTIN_UPSCALER: StringKey = StringKey("builtin-upscaler");
 pub const SHADER_FSR_SHARPNESS: DoubleKey = DoubleKey("shader-fsr-sharpness");
@@ -64,11 +88,21 @@ pub const NEURAL_UPSCALER: StringKey = StringKey("neural-upscaler");
 // GPU / advanced
 pub const CUSTOM_MPV_OPTIONS: StringKey = StringKey("custom-mpv-options");
 pub const GPU_DUMB_MODE: BoolKey = BoolKey("gpu-dumb-mode");
+pub const GLSL_SHADERS: StringKey = StringKey("glsl-shaders");
+pub const CACHE: BoolKey = BoolKey("cache");
+pub const CACHE_SECS: IntKey = IntKey("cache-secs");
+pub const CACHE_PAUSE: BoolKey = BoolKey("cache-pause");
+pub const CACHE_ON_DISK: BoolKey = BoolKey("cache-on-disk");
+pub const DEMUXER_READAHEAD_SECS: DoubleKey = DoubleKey("demuxer-readahead-secs");
+pub const SCREENSHOT_PNG_COMPRESSION: IntKey = IntKey("screenshot-png-compression");
+pub const SCREENSHOT_TAG_COLORSPACE: BoolKey = BoolKey("screenshot-tag-colorspace");
+pub const SCREENSHOT_HIGH_BIT_DEPTH: BoolKey = BoolKey("screenshot-high-bit-depth");
 /// Video output mode: `"auto"` (try GL/offload, fall back to software when GL is
 /// not viable; the default), `"gl"` (force OpenGL/offload), `"sw"` (force the
 /// software/no-GL render path). Read at render setup; default `"auto"`.
 pub const RENDER_MODE: StringKey = StringKey("render-mode");
 
+pub const ICC_PROFILE: StringKey = StringKey("icc-profile");
 pub const ICC_INTENT: IntKey = IntKey("icc-intent");
 
 // Seekbar

@@ -43,6 +43,8 @@ pub mod playback_bar;
 /// Podcast subscriptions + RSS search panel.
 #[cfg(feature = "audio-panels")]
 pub mod podcast_panel;
+/// Preference rows bound to a typed settings key, shared by both players.
+pub mod preference_rows;
 /// Radio tab: saved stations + Radio-Browser search/explore.
 #[cfg(feature = "audio-panels")]
 pub mod radio_panel;

@@ -28,7 +28,7 @@ pub(super) fn page(
         &playback,
         &i18n("Resume Where You Left Off"),
         &i18n("Reopen files at the point where you stopped watching"),
-        "resume-playback",
+        keys::RESUME_PLAYBACK,
         settings,
         live(mpv, MpvBackend::set_save_position),
     );
@@ -42,7 +42,7 @@ pub(super) fn page(
             &i18n("Whole playlist"),
         ],
         &["no", "file", "playlist"],
-        keys::LOOP_MODE.0,
+        keys::LOOP_MODE,
         settings,
         live_str(mpv, MpvBackend::set_loop_mode),
     );
@@ -64,7 +64,7 @@ pub(super) fn page(
             &i18n("Close the video"),
         ],
         &["yes", "always", "no"],
-        "keep-open",
+        keys::KEEP_OPEN,
         settings,
         live_str(mpv, MpvBackend::set_keep_open),
     );
@@ -79,7 +79,7 @@ pub(super) fn page(
             &i18n("Close after one playlist"),
         ],
         &["yes", "no", "once"],
-        keys::IDLE_MODE.0,
+        keys::IDLE_MODE,
         settings,
         move |value| {
             // Applied now only with a file loaded; otherwise at the next load
@@ -108,7 +108,7 @@ pub(super) fn page(
         &i18n("Stops the screen from dimming or locking"),
         &[&i18n("During playback"), &i18n("Always"), &i18n("Never")],
         &["yes", "always", "no"],
-        "stop-screensaver",
+        keys::STOP_SCREENSAVER,
         settings,
         // The video shell holds the inhibitor; it re-reads this on every
         // play, pause and end of file, and when the preferences close.
@@ -118,7 +118,7 @@ pub(super) fn page(
         &window,
         &i18n("Fit Window to Video"),
         &i18n("Keeps the window in the video's proportions, without black bars"),
-        keys::AUTO_WINDOW_RESIZE.0,
+        keys::AUTO_WINDOW_RESIZE,
         settings,
         // Read by the video shell's aspect snap, not by mpv.
         |_| {},
@@ -127,7 +127,7 @@ pub(super) fn page(
         &window,
         &i18n("Preview While Seeking"),
         &i18n("Show a thumbnail of the video when pointing at the progress bar"),
-        keys::SEEKBAR_THUMBNAIL.0,
+        keys::SEEKBAR_THUMBNAIL,
         settings,
         |_| {},
     );

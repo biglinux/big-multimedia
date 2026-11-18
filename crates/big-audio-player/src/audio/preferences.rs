@@ -12,7 +12,7 @@ use big_player_ui::audio_preferences::{
 use crate::i18n::i18n;
 use crate::player::mpv_backend::{AudioEffects, MpvBackend};
 use crate::settings::{Settings, keys};
-use crate::shared::preference_rows::add_combo_row;
+use big_player_ui::preference_rows::add_combo_row;
 
 /// What the shell does when a desktop-integration switch changes, so the
 /// choice applies without a restart.
@@ -49,7 +49,7 @@ pub(super) fn create_music_page(
         "",
         &[&i18n("Off"), &i18n("Per Song"), &i18n("Per Album")],
         &["no", "track", "album"],
-        "replaygain",
+        keys::REPLAYGAIN,
         settings,
         move |v| {
             if let Some(ref mpv) = m {

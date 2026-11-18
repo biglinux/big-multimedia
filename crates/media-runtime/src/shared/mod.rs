@@ -11,8 +11,6 @@ pub mod converter_handoff;
 pub mod illustration;
 /// Shared hover-to-open popover infrastructure.
 pub mod popovers;
-/// Settings-bound wrappers around generic media preference rows.
-pub mod preference_rows;
 /// Shared shortcut capture dialog.
 pub mod shortcut_capture;
 /// Shared sleep timer labels, actions, and settings persistence.
