@@ -41,7 +41,7 @@ const CONTROLS: &[(&str, &str, &str, &str, keys::BoolKey)] = &[
         "playlist",
         gettext_noop("Playlist"),
         "view-list-symbolic",
-        "top:end",
+        "top:start",
         keys::UI_SHOW_PLAYLIST,
     ),
     (

@@ -15,7 +15,7 @@ use crate::video::ui::video_controls_bar::read_zones;
 const HEADER_CONTROLS: [(&str, keys::BoolKey, ZonePlacement); 4] = [
     ("pin", keys::UI_SHOW_PIN, ZonePlacement::Start),
     ("open", keys::UI_SHOW_OPEN, ZonePlacement::Start),
-    ("playlist", keys::UI_SHOW_PLAYLIST, ZonePlacement::End),
+    ("playlist", keys::UI_SHOW_PLAYLIST, ZonePlacement::Start),
     ("menu", keys::UI_SHOW_MENU, ZonePlacement::End),
 ];
 

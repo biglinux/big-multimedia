@@ -223,8 +223,8 @@ the new values at once, except `render-mode`, `gpu-dumb-mode`,
 | `ui-zone-bottom-center` | string | `prev,play,next` |  |
 | `ui-zone-bottom-left` | string | `volume,speed,voice` |  |
 | `ui-zone-bottom-right` | string | `subtitle,audio-track,tv,fullscreen` |  |
-| `ui-zone-top-left` | string | `pin,open` |  |
-| `ui-zone-top-right` | string | `menu,playlist` |  |
+| `ui-zone-top-left` | string | `pin,open,playlist` |  |
+| `ui-zone-top-right` | string | `menu` |  |
 
 ### Audio player appearance
 
