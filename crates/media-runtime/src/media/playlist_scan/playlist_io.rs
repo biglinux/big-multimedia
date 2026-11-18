@@ -124,7 +124,7 @@ fn resolve_playlist_entry(base_dir: &Path, entry: &str) -> String {
 /// crafted playlist that resolves into them is almost certainly an
 /// exfiltration attempt (file-existence probe via mpv error reporting
 /// or subtitle/cover loaders).
-const SYSTEM_PATH_DENY: &[&str] = &["/etc/", "/proc/", "/sys/", "/dev/", "/root/", "/boot/"];
+const SYSTEM_PATH_DENY: &[&str] = &["/etc", "/proc", "/sys", "/dev", "/root", "/boot"];
 
 fn is_resolved_playlist_entry_valid(entry: &str) -> bool {
     if is_stream_url(entry) {
@@ -135,8 +135,5 @@ fn is_resolved_playlist_entry_valid(entry: &str) -> bool {
     let Ok(canon) = std::fs::canonicalize(entry) else {
         return false;
     };
-    let canon_str = canon.to_string_lossy();
-    !SYSTEM_PATH_DENY
-        .iter()
-        .any(|deny| canon_str.starts_with(deny))
+    !SYSTEM_PATH_DENY.iter().any(|deny| canon.starts_with(deny))
 }

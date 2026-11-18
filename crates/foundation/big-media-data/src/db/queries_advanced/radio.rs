@@ -35,7 +35,7 @@ pub fn get_all_radio_stations(conn: &Connection) -> crate::Result<Vec<RadioStati
             favicon: row.get(3)?,
             group_name: row.get(4)?,
         })
-    })?);
+    })?)?;
     Ok(stations)
 }
 
