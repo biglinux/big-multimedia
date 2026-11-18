@@ -1,3 +1,4 @@
+use big_relm4_components::feedback::tooltip;
 use std::rc::Rc;
 
 use adw::prelude::*;
@@ -59,12 +60,11 @@ pub(crate) fn build_breadcrumb(state: &Rc<BrowserState>, folder: &str) {
     let bar = gtk::Box::builder().spacing(0).build();
     bar.add_css_class("breadcrumb-bar");
 
-    let places = gtk::Button::builder()
-        .icon_name("user-bookmarks-symbolic")
-        .tooltip_text(i18n("Your folders"))
-        .css_classes(["flat", "breadcrumb-btn"])
-        .build();
-    places.update_property(&[gtk::accessible::Property::Label(&i18n("Your folders"))]);
+    let places = tooltip::icon_button(
+        "user-bookmarks-symbolic",
+        &i18n("Your folders"),
+        &["flat", "breadcrumb-btn"],
+    );
     {
         let state = state.clone();
         places.connect_clicked(move |_| state.show_places());

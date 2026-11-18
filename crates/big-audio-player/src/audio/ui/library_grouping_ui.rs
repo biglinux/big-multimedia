@@ -8,6 +8,7 @@
 //! (no hand-rolled `glib::timeout`).
 
 use adw::prelude::*;
+use big_relm4_components::feedback::tooltip;
 use big_relm4_components::list::signal_factory;
 use gtk::glib;
 use relm4::ComponentSender;
@@ -197,14 +198,13 @@ fn build_age_dropdown(sender: &ComponentSender<LibraryPanel>) -> gtk::DropDown {
 /// Add-music-folder button (`folder-new-symbolic`) → folder picker →
 /// `AddWatchFolder`; the shell adds the folder as a watch root and scans it.
 fn build_add_folder_button(sender: &ComponentSender<LibraryPanel>) -> gtk::Button {
-    let add_folder_button = gtk::Button::builder()
-        .icon_name("folder-new-symbolic")
-        .has_frame(false)
-        .valign(gtk::Align::Center)
-        .build();
-    add_folder_button
-        .update_property(&[gtk::accessible::Property::Label(&i18n("Add music folder"))]);
-    add_folder_button.set_tooltip_text(Some(&i18n("Add music folder")));
+    let add_folder_button = tooltip::icon_button(
+        "folder-new-symbolic",
+        &i18n("Add music folder"),
+        &["image-button"],
+    );
+    add_folder_button.set_has_frame(false);
+    add_folder_button.set_valign(gtk::Align::Center);
 
     let out = sender.clone();
     add_folder_button.connect_clicked(move |button| {

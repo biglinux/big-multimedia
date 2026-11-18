@@ -25,6 +25,7 @@ mod logos;
 mod providers_dialog;
 mod xtream;
 
+use big_relm4_components::feedback::tooltip;
 use std::cell::RefCell;
 use std::rc::Rc;
 use std::sync::atomic::AtomicBool;
@@ -173,12 +174,11 @@ impl Component for VideoIptvBrowser {
         let manage_providers_button = gtk::Button::builder().label(i18n("Manage…")).build();
         provider_row_box.append(&manage_providers_button);
 
-        let refresh_provider_button = gtk::Button::builder()
-            .icon_name("view-refresh-symbolic")
-            .build();
-        refresh_provider_button.update_property(&[gtk::accessible::Property::Label(&i18n(
-            "Reload from provider",
-        ))]);
+        let refresh_provider_button = tooltip::icon_button(
+            "view-refresh-symbolic",
+            &i18n("Reload from provider"),
+            &["image-button"],
+        );
         provider_row_box.append(&refresh_provider_button);
         root.append(&provider_row_box);
 

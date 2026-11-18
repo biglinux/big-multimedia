@@ -1,0 +1,18 @@
+id: icon-button-owner
+language: rust
+severity: error
+message: Build an icon-only button with big_relm4_components::feedback::tooltip::icon_button or icon_toggle_button
+note: crates/ui/generic/big-relm4-components/src/feedback/tooltip.rs sets the tooltip and the accessible name together; pass "image-button" in its classes for the padding ButtonBuilder::icon_name gives without css_classes.
+rule:
+  any:
+    - pattern: $BUILDER.icon_name($ICON)
+    - pattern: gtk::Button::from_icon_name($ICON)
+constraints:
+  BUILDER:
+    regex: '\b(gtk::)?(Toggle)?Button::builder\(\)'
+ignores:
+  - crates/ui/generic/big-relm4-components/src/feedback/tooltip.rs
+  # Legacy: files of the cut/trim owner; migrate with it.
+  - crates/big-video-player/src/video/ui/video_shell/component.rs
+  - crates/big-audio-player/src/audio/ui/audio_shell/export.rs
+  - crates/ui/media/big-media-components/src/playback/audio_transport.rs

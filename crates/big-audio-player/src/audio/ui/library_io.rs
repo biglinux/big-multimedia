@@ -6,6 +6,7 @@
 //! `parent` is the toplevel window; it satisfies both `FilePicker`
 //! (`IsA<gtk::Window>`) and `AlertDialog::present`.
 
+use big_relm4_components::feedback::tooltip;
 use std::path::Path;
 
 use adw::prelude::*;
@@ -239,17 +240,12 @@ fn abbreviate_home(path: &str) -> String {
 
 /// Error-styled circular trash button used for each folder row.
 fn build_remove_button(folder_label: &str) -> gtk::Button {
-    let remove_folder_button = gtk::Button::builder()
-        .icon_name("user-trash-symbolic")
-        .valign(gtk::Align::Center)
-        .css_classes([
-            "flat".to_string(),
-            "circular".to_string(),
-            "error".to_string(),
-        ])
-        .build();
-    remove_folder_button
-        .set_tooltip_text(Some(&i18n("Stop monitoring this folder; keep its tracks")));
+    let remove_folder_button = tooltip::icon_button(
+        "user-trash-symbolic",
+        &i18n("Stop monitoring this folder; keep its tracks"),
+        &["flat", "circular", "error"],
+    );
+    remove_folder_button.set_valign(gtk::Align::Center);
     remove_folder_button.update_property(&[gtk::accessible::Property::Label(&format!(
         "{}: {folder_label}",
         i18n("Remove folder")

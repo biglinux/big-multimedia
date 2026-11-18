@@ -11,6 +11,7 @@
 //! Push-model: subscription CRUD, podcast search (network) and feed-title
 //! fetches are internal; selecting a feed emits `PodcastPanelOutput::LoadFeed`.
 
+use big_relm4_components::feedback::tooltip;
 use std::cell::RefCell;
 use std::collections::{HashMap, HashSet};
 use std::rc::Rc;
@@ -140,12 +141,8 @@ impl Component for PodcastPanel {
             }
         });
 
-        let add_button = gtk::Button::builder()
-            .icon_name("list-add-symbolic")
-            .css_classes(["flat"])
-            .build();
-        add_button.set_tooltip_text(Some(&i18n("Add RSS feed")));
-        add_button.update_property(&[gtk::accessible::Property::Label(&i18n("Add RSS feed"))]);
+        let add_button =
+            tooltip::icon_button("list-add-symbolic", &i18n("Add RSS feed"), &["flat"]);
         let s = sender.clone();
         add_button.connect_clicked(move |_| s.input(PodcastPanelInput::AddFeedDialog));
 
@@ -537,12 +534,12 @@ fn row_suffix_builder(
     let subscribed = subscribed.clone();
     move |row| match row.tag {
         TAG_SUB => {
-            let remove = gtk::Button::builder()
-                .icon_name("user-trash-symbolic")
-                .valign(gtk::Align::Center)
-                .css_classes(["flat", "error"])
-                .build();
-            remove.set_tooltip_text(Some(&i18n("Unsubscribe")));
+            let remove = tooltip::icon_button(
+                "user-trash-symbolic",
+                &i18n("Unsubscribe"),
+                &["flat", "error"],
+            );
+            remove.set_valign(gtk::Align::Center);
             remove.update_property(&[gtk::accessible::Property::Label(&i18n(
                 "Unsubscribe from podcast",
             ))]);
@@ -553,17 +550,14 @@ fn row_suffix_builder(
         }
         TAG_SEARCH => {
             let already = subscribed.borrow().contains(&row.id);
-            let sub = gtk::Button::builder()
-                .icon_name(if already {
-                    "object-select-symbolic"
-                } else {
-                    "list-add-symbolic"
-                })
-                .valign(gtk::Align::Center)
-                .sensitive(!already)
-                .css_classes(["flat"])
-                .build();
-            sub.set_tooltip_text(Some(&i18n("Subscribe")));
+            let icon = if already {
+                "object-select-symbolic"
+            } else {
+                "list-add-symbolic"
+            };
+            let sub = tooltip::icon_button(icon, &i18n("Subscribe"), &["flat"]);
+            sub.set_valign(gtk::Align::Center);
+            sub.set_sensitive(!already);
             sub.update_property(&[gtk::accessible::Property::Label(&i18n(
                 "Subscribe to podcast",
             ))]);

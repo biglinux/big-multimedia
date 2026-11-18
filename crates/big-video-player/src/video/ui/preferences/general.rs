@@ -3,6 +3,7 @@
 
 use adw::prelude::*;
 use big_app_kit::file_dialogs::FilePicker;
+use big_relm4_components::feedback::tooltip;
 use std::sync::Arc;
 
 use crate::i18n::i18n;
@@ -168,18 +169,18 @@ fn screenshot_folder_row(settings: &Settings) -> adw::ActionRow {
         .title(i18n("Save To"))
         .subtitle_selectable(true)
         .build();
-    let choose = gtk::Button::builder()
-        .icon_name("folder-open-symbolic")
-        .tooltip_text(i18n("Choose Folder"))
-        .valign(gtk::Align::Center)
-        .build();
-    let reset = gtk::Button::builder()
-        .icon_name("edit-undo-symbolic")
-        .tooltip_text(i18n("Use the Pictures Folder"))
-        .valign(gtk::Align::Center)
-        .build();
-    choose.add_css_class("flat");
-    reset.add_css_class("flat");
+    let choose = tooltip::icon_button(
+        "folder-open-symbolic",
+        &i18n("Choose Folder"),
+        &["image-button", "flat"],
+    );
+    let reset = tooltip::icon_button(
+        "edit-undo-symbolic",
+        &i18n("Use the Pictures Folder"),
+        &["image-button", "flat"],
+    );
+    choose.set_valign(gtk::Align::Center);
+    reset.set_valign(gtk::Align::Center);
     row.add_suffix(&reset);
     row.add_suffix(&choose);
     row.set_activatable_widget(Some(&choose));

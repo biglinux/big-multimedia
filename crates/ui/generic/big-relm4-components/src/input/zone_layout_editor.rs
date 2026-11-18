@@ -17,6 +17,7 @@
 //! only weak widget refs (no widget⇄closure strong cycle), so dropping the
 //! editor finalizes the whole subtree.
 
+use crate::feedback::tooltip;
 use std::cell::RefCell;
 use std::collections::{BTreeMap, HashMap};
 use std::rc::Rc;
@@ -233,17 +234,16 @@ impl BigZoneLayoutEditor {
         // Toggles, keyed by control id: pressed while the control is shown.
         let mut buttons_strong: HashMap<String, gtk::ToggleButton> = HashMap::new();
         for control in &spec.controls {
-            let button = gtk::ToggleButton::builder()
-                .icon_name(&control.icon)
-                .active(layout.is_visible(&control.id))
-                .build();
+            let button = tooltip::icon_toggle_button(
+                &control.icon,
+                &control.label,
+                layout.is_visible(&control.id),
+                &["image-button", "zle-button"],
+            );
             button.set_widget_name(&control.id);
-            button.add_css_class("zle-button");
-            button.set_tooltip_text(Some(&control.label));
-            button.update_property(&[
-                gtk::accessible::Property::Label(&control.label),
-                gtk::accessible::Property::KeyShortcuts("Alt+ArrowLeft Alt+ArrowRight"),
-            ]);
+            button.update_property(&[gtk::accessible::Property::KeyShortcuts(
+                "Alt+ArrowLeft Alt+ArrowRight",
+            )]);
             button.set_cursor_from_name(Some("grab"));
             button.set_opacity(if layout.is_visible(&control.id) {
                 1.0

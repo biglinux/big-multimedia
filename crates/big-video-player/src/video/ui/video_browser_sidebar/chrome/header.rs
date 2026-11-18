@@ -44,13 +44,12 @@ pub(crate) fn build_header(state: &Rc<BrowserState>) {
     }
     if mode == SidebarMode::Files && browsing {
         // Triage multi-select toggle (creator workflow).
-        let select_mode_button = gtk::ToggleButton::builder()
-            .icon_name("selection-mode-symbolic")
-            .active(state.select_mode.get())
-            .css_classes(["flat"])
-            .build();
-        select_mode_button.set_tooltip_text(Some(&i18n("Select")));
-        select_mode_button.update_property(&[gtk::accessible::Property::Label(&i18n("Select"))]);
+        let select_mode_button = tooltip::icon_toggle_button(
+            "selection-mode-symbolic",
+            &i18n("Select"),
+            state.select_mode.get(),
+            &["flat"],
+        );
         select_mode_button.connect_toggled({
             let state = state.clone();
             move |button| state.set_select_mode(button.is_active())

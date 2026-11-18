@@ -12,6 +12,7 @@
 //! are data from another process: only absolute paths to videos that are
 //! there now are shown.
 
+use big_relm4_components::feedback::tooltip;
 use std::collections::HashMap;
 use std::io::{BufRead, BufReader, Read, Write};
 use std::os::unix::net::UnixStream;
@@ -642,13 +643,8 @@ fn result_row(state: &Rc<BrowserState>, path: &str) -> adw::ActionRow {
     frame.add_overlay(&picture);
     frame.set_measure_overlay(&picture, false);
     row.add_prefix(&frame);
-    let add = gtk::Button::builder()
-        .icon_name("list-add-symbolic")
-        .tooltip_text(i18n("Add to playlist"))
-        .valign(gtk::Align::Center)
-        .css_classes(["flat"])
-        .build();
-    add.update_property(&[gtk::accessible::Property::Label(&i18n("Add to playlist"))]);
+    let add = tooltip::icon_button("list-add-symbolic", &i18n("Add to playlist"), &["flat"]);
+    add.set_valign(gtk::Align::Center);
     row.add_suffix(&add);
     {
         let state = state.clone();
@@ -696,12 +692,7 @@ pub(super) fn build_customize(state: &Rc<BrowserState>) {
         .margin_bottom(8)
         .build();
     let top = gtk::Box::builder().spacing(6).build();
-    let back = gtk::Button::builder()
-        .icon_name("go-previous-symbolic")
-        .tooltip_text(i18n("Back"))
-        .css_classes(["flat", "circular"])
-        .build();
-    back.update_property(&[gtk::accessible::Property::Label(&i18n("Back"))]);
+    let back = tooltip::icon_button("go-previous-symbolic", &i18n("Back"), &["flat", "circular"]);
     {
         let state = state.clone();
         back.connect_clicked(move |_| {
@@ -744,12 +735,8 @@ pub(super) fn build_customize(state: &Rc<BrowserState>) {
             .subtitle_lines(1)
             .build();
         row.add_prefix(&gtk::Image::from_icon_name(place_icon(dir)));
-        let remove = gtk::Button::builder()
-            .icon_name("list-remove-symbolic")
-            .tooltip_text(i18n("Remove"))
-            .valign(gtk::Align::Center)
-            .css_classes(["flat"])
-            .build();
+        let remove = tooltip::icon_button("list-remove-symbolic", &i18n("Remove"), &["flat"]);
+        remove.set_valign(gtk::Align::Center);
         remove.update_property(&[gtk::accessible::Property::Label(
             &i18n("Remove {}").replace("{}", &place_name(dir)),
         )]);

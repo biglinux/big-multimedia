@@ -3,6 +3,7 @@
 
 //! Plain context popover with flat action rows.
 
+use crate::feedback::tooltip;
 use relm4::gtk;
 use relm4::gtk::gdk;
 use relm4::gtk::prelude::*;
@@ -106,12 +107,7 @@ impl BigContextPopover {
         row.append(&name);
         let on_choice = std::rc::Rc::new(on_choice);
         for (index, (icon, accessible)) in choices.iter().enumerate() {
-            let button = gtk::Button::builder()
-                .icon_name(*icon)
-                .tooltip_text(accessible.as_str())
-                .build();
-            button.add_css_class("flat");
-            button.update_property(&[gtk::accessible::Property::Label(accessible)]);
+            let button = tooltip::icon_button(icon, accessible, &["image-button", "flat"]);
             let popover = self.popover.downgrade();
             let on_choice = std::rc::Rc::clone(&on_choice);
             button.connect_clicked(move |_| {

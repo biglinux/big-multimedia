@@ -8,6 +8,7 @@
 //! a dialog in the audio player, [`present_tv_dialog`]), the card over the
 //! video, and the transport controls, which drive the TV while it plays.
 
+use big_relm4_components::feedback::tooltip;
 use std::cell::{Cell, RefCell};
 use std::rc::Rc;
 use std::time::Duration;
@@ -482,30 +483,25 @@ pub fn tv_page(
         .build();
     let now_row = adw::ActionRow::builder().title_lines(2).build();
     now_row.add_prefix(&gtk::Image::from_icon_name("tv-symbolic"));
-    let pause = gtk::Button::builder()
-        .icon_name("media-playback-pause-symbolic")
-        .valign(gtk::Align::Center)
-        .css_classes(["circular"])
-        .build();
-    let stop = gtk::Button::builder()
-        .icon_name("media-playback-stop-symbolic")
-        .tooltip_text(i18n("Stop on the TV"))
-        .valign(gtk::Align::Center)
-        .css_classes(["circular", "destructive-action"])
-        .build();
-    stop.update_property(&[gtk::accessible::Property::Label(&i18n("Stop on the TV"))]);
+    let pause = tooltip::icon_button(
+        "media-playback-pause-symbolic",
+        &i18n("Pause"),
+        &["circular"],
+    );
+    pause.set_valign(gtk::Align::Center);
+    let stop = tooltip::icon_button(
+        "media-playback-stop-symbolic",
+        &i18n("Stop on the TV"),
+        &["circular", "destructive-action"],
+    );
+    stop.set_valign(gtk::Align::Center);
     now_row.add_suffix(&pause);
     now_row.add_suffix(&stop);
     now.add(&now_row);
     root.append(&now);
 
-    let rescan = gtk::Button::builder()
-        .icon_name("view-refresh-symbolic")
-        .tooltip_text(i18n("Search again"))
-        .valign(gtk::Align::Center)
-        .css_classes(["flat"])
-        .build();
-    rescan.update_property(&[gtk::accessible::Property::Label(&i18n("Search again"))]);
+    let rescan = tooltip::icon_button("view-refresh-symbolic", &i18n("Search again"), &["flat"]);
+    rescan.set_valign(gtk::Align::Center);
     let tvs = adw::PreferencesGroup::builder()
         .title(i18n("TVs on this network"))
         .description(i18n("Starts on the TV where it is now, and pauses here."))
