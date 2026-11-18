@@ -6,7 +6,6 @@
 use super::*;
 
 const PANEL_WIDTH: i32 = 400;
-const PANEL_MARGIN: i32 = 8;
 
 pub(super) struct PlaylistPanel {
     pub(super) revealer: gtk::Revealer,
@@ -75,7 +74,7 @@ impl PlaylistPanel {
             .valign(gtk::Align::Fill)
             .transition_type(gtk::RevealerTransitionType::SlideRight)
             .transition_duration(150)
-            .margin_start(PANEL_MARGIN)
+            .margin_start(8)
             .child(&clamp)
             .build();
         // Into the list, on the playing row when there is one: the arrow
@@ -120,9 +119,14 @@ impl PlaylistPanel {
             let (_, natural_width, _, _) = child.measure(gtk::Orientation::Horizontal, -1);
             let (_, natural_height, _, _) =
                 child.measure(gtk::Orientation::Vertical, natural_width);
+            // The card's own width: large text can widen it past the clamp.
+            let card_width = revealer.child().map_or(PANEL_WIDTH, |card| {
+                card.measure(gtk::Orientation::Horizontal, -1).1
+            });
             let (x, y) = beside_panel(
                 overlay.width(),
                 overlay.height(),
+                revealer.margin_start() + card_width,
                 natural_width,
                 natural_height,
             );
@@ -137,10 +141,15 @@ impl PlaylistPanel {
 }
 
 /// Where a `child_width` × `child_height` widget goes in a `width` × `height`
-/// overlay beside the open panel: centered in the room right of it, or as far
-/// right as it fits when that room is too narrow.
-fn beside_panel(width: i32, height: i32, child_width: i32, child_height: i32) -> (i32, i32) {
-    let edge = PANEL_MARGIN + PANEL_WIDTH;
+/// overlay beside a panel ending at `edge`: centered in the room right of it,
+/// or as far right as it fits when that room is too narrow.
+fn beside_panel(
+    width: i32,
+    height: i32,
+    edge: i32,
+    child_width: i32,
+    child_height: i32,
+) -> (i32, i32) {
     let x = (edge + (width - edge - child_width) / 2)
         .min(width - child_width)
         .max(0);
@@ -180,12 +189,12 @@ mod tests {
     #[test]
     fn beside_panel_centers_in_the_room_left() {
         // 1100 wide: the room right of the 408 px panel is 692 px.
-        assert_eq!(beside_panel(1100, 600, 528, 200), (490, 200));
+        assert_eq!(beside_panel(1100, 600, 408, 528, 200), (490, 200));
     }
 
     #[test]
     fn beside_panel_stops_at_the_right_edge() {
-        assert_eq!(beside_panel(640, 400, 528, 200), (112, 100));
-        assert_eq!(beside_panel(400, 300, 528, 400), (0, 0));
+        assert_eq!(beside_panel(640, 400, 408, 528, 200), (112, 100));
+        assert_eq!(beside_panel(400, 300, 408, 528, 400), (0, 0));
     }
 }
