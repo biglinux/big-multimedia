@@ -60,7 +60,7 @@ fn download_episode_label(episode_count: usize) -> Option<String> {
     }
 }
 
-/// Delete/Backspace on the selection → `RemoveTracks` (queue indices, desc).
+/// Delete/Backspace on the selection → `RemoveTracks` (queue indices).
 pub(super) fn wire_delete_key(
     view: &big_item_view::ItemView,
     selection: &gtk::MultiSelection,
@@ -76,11 +76,9 @@ pub(super) fn wire_delete_key(
             return glib::Propagation::Proceed;
         };
         let bitset = sel.selection();
-        // Highest-first so the shell's removals keep lower indices valid.
-        let mut indices: Vec<usize> = (0..bitset.size())
+        let indices: Vec<usize> = (0..bitset.size())
             .map(|nth| bitset.nth(nth as u32) as usize)
             .collect();
-        indices.sort_unstable_by(|a, b| b.cmp(a));
         if indices.is_empty() {
             return glib::Propagation::Proceed;
         }
@@ -112,9 +110,7 @@ pub(super) fn show_track_context_menu(
     }
     {
         let label = remove_from_queue_label(count);
-        let mut indices: Vec<usize> = selected.iter().map(|(i, _)| *i).collect();
-        indices.sort_unstable_by(|a, b| b.cmp(a));
-        indices.dedup();
+        let indices: Vec<usize> = selected.iter().map(|(i, _)| *i).collect();
         let out = sender.clone();
         menu.append_button(label, &[], move || {
             let _ = out.output(PlaylistPanelOutput::RemoveTracks {
