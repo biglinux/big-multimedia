@@ -48,6 +48,8 @@ extend-exclude = [
     "third_party/**",
     "**/po/*.po",
     "**/po/*.pot",
+    # Translation glossaries: target-language terms.
+    "**/po/glossary/*.tsv",
     "crates/media-runtime/data/shaders/**",
     "build-locale/**",
     "*.mo",
