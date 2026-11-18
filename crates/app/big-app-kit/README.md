@@ -10,7 +10,7 @@ here.
   power actions.
 - `containment` — panic containment for Relm4 `update()` bodies and glib
   callbacks.
-- `dialogs`, `file_dialogs` — dialog size persistence and GTK file dialogs.
+- `file_dialogs` — GTK file dialogs.
 - `keybindings` — shortcut parsing, overrides and accelerator labels.
 - `mpris` — MPRIS2 D-Bus service.
 - `widgets` — file drag-and-drop helpers.

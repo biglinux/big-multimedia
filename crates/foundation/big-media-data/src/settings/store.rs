@@ -91,12 +91,6 @@ pub struct Settings {
     inner: Arc<RwLock<Inner>>,
 }
 
-impl Default for Settings {
-    fn default() -> Self {
-        Self::new(crate::config::runtime::CONFIG_DIR)
-    }
-}
-
 impl Settings {
     #[must_use]
     pub fn for_audio() -> Self {
@@ -200,9 +194,6 @@ impl Settings {
     fn debug_check_key(&self, key: &str) {
         #[cfg(debug_assertions)]
         {
-            if key.starts_with("dlg-") {
-                return;
-            }
             let inner = self
                 .inner
                 .read()
