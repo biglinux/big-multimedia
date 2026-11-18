@@ -184,12 +184,19 @@ fn load_subscriptions_from(path: PathBuf) -> Result<Subscriptions> {
     })
 }
 
+const TITLE_CACHE_FILE: &str = "podcast-title-cache.json";
+
+/// `[feed_url, title]` pairs, oldest first.
+fn read_titles() -> Vec<(String, String)> {
+    read_state(TITLE_CACHE_FILE)
+        .and_then(|text| serde_json::from_str(&text).ok())
+        .unwrap_or_default()
+}
+
 /// `{feed_url: title}` map cached so the sidebar shows the name before the
 /// feed has been re-fetched.
 pub fn load_title_cache() -> std::collections::HashMap<String, String> {
-    read_state("podcast-title-cache.json")
-        .and_then(|text| serde_json::from_str(&text).ok())
-        .unwrap_or_default()
+    read_titles().into_iter().collect()
 }
 
 /// Feeds resolve on parallel workers; the lock keeps one read-modify-write
@@ -199,15 +206,30 @@ pub fn cache_feed_title(feed_url: &str, title: &str) {
     let _update = UPDATE
         .lock()
         .unwrap_or_else(std::sync::PoisonError::into_inner);
-    let mut cache = load_title_cache();
-    cache.insert(feed_url.to_string(), title.to_string());
-    if let (Some(path), Ok(json)) = (
-        state_path("podcast-title-cache.json"),
-        serde_json::to_vec(&cache),
-    ) && let Err(error) = big_os_kit::storage::atomic_write(&path, &json)
+    let mut titles = read_titles();
+    titles.retain(|(url, _)| url != feed_url);
+    titles.push((feed_url.to_string(), title.to_string()));
+    if let (Some(path), Ok(json)) = (state_path(TITLE_CACHE_FILE), title_cache_json(&titles))
+        && let Err(error) = big_os_kit::storage::atomic_write(&path, &json)
     {
         log::warn!("podcast title cache not saved: {error}");
     }
+}
+
+/// The newest of `titles` that fit in [`MAX_STATE_BYTES`], so the file stays
+/// readable.
+fn title_cache_json(titles: &[(String, String)]) -> serde_json::Result<Vec<u8>> {
+    // `[` and `]`, then `["url","title"],` per pair; the last comma is not written.
+    let mut size = 1;
+    let mut first_kept = titles.len();
+    for (index, pair) in titles.iter().enumerate().rev() {
+        size += serde_json::to_vec(pair)?.len() + 1;
+        if size > MAX_STATE_BYTES {
+            break;
+        }
+        first_kept = index;
+    }
+    serde_json::to_vec(&titles[first_kept..])
 }
 
 #[derive(Debug, Clone)]
@@ -298,6 +320,19 @@ fn parse_podcast_search_result(
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    /// Oracle by hand: each pair is `["u000000","x…"]`, 1014 bytes plus a
+    /// comma, so 1 + 1015 * 1033 bytes is the most that fits in 1 MiB.
+    #[test]
+    fn title_cache_drops_oldest_past_cap() {
+        let titles: Vec<(String, String)> = (0..2000)
+            .map(|index| (format!("u{index:06}"), "x".repeat(1000)))
+            .collect();
+        let json = title_cache_json(&titles).unwrap();
+        assert_eq!(json.len(), 1 + 1015 * 1033);
+        let kept: Vec<(String, String)> = serde_json::from_slice(&json).unwrap();
+        assert_eq!(kept, titles[2000 - 1033..]);
+    }
 
     #[test]
     fn child_text_finds_tag() {
