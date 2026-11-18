@@ -215,8 +215,16 @@ impl AudioShell {
                     conn, node_kind, &key, &secondary, &filter, age, &grouping,
                 )
             },
-            move |tracks| {
-                let _ = input.send(AudioShellInput::NodeTracksResolved(tracks));
+            move |tracks| match tracks {
+                Ok(tracks) => {
+                    let _ = input.send(AudioShellInput::NodeTracksResolved(tracks));
+                }
+                Err(error) => {
+                    log::warn!("library tracks could not be read: {error}");
+                    let _ = input.send(AudioShellInput::Notify(i18n(
+                        "The library could not be read. The queue was not changed.",
+                    )));
+                }
             },
         );
     }
@@ -236,14 +244,22 @@ impl AudioShell {
         spawn_db_query(
             db,
             move |conn| {
-                paths
-                    .iter()
-                    .filter_map(|p| queries::get_track_by_path(conn, p).ok().flatten())
-                    .collect::<Vec<Track>>()
+                let mut tracks = Vec::new();
+                for path in &paths {
+                    tracks.extend(queries::get_track_by_path(conn, path)?);
+                }
+                big_media_runtime::Result::Ok(tracks)
             },
-            move |tracks| {
-                if !tracks.is_empty() {
+            move |tracks| match tracks {
+                Ok(tracks) if tracks.is_empty() => {}
+                Ok(tracks) => {
                     let _ = input.send(AudioShellInput::DroppedResolved { insert_pos, tracks });
+                }
+                Err(error) => {
+                    log::warn!("library tracks could not be read: {error}");
+                    let _ = input.send(AudioShellInput::Notify(i18n(
+                        "The library could not be read. The queue was not changed.",
+                    )));
                 }
             },
         );

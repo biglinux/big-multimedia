@@ -22,8 +22,8 @@ use relm4::{Component, ComponentParts, ComponentSender};
 use crate::media_list::{MediaListView, MediaRow, RowImage};
 use big_media_data::i18n::i18n;
 use big_media_data::library::podcast::{
-    PodcastSearchResult, cache_feed_title, fetch_feed, load_subscriptions, load_title_cache,
-    save_subscriptions, search_podcasts,
+    PodcastSearchResult, Subscriptions, cache_feed_title, fetch_feed, load_subscriptions,
+    load_title_cache, search_podcasts,
 };
 use big_relm4_components::layout::{
     dialog_footer::{BigDialogFooter, BigDialogFooterSpec},
@@ -45,8 +45,8 @@ pub enum PodcastPanelInput {
     RefreshFeeds,
     /// Disk load finished: subscriptions + cached titles.
     FeedsLoaded {
-        /// Subscribed feed URLs.
-        subs: Vec<String>,
+        /// Subscribed feed URLs, or why they could not be read.
+        subscriptions: Result<Subscriptions, String>,
         /// Cached feed-url → title map.
         titles: HashMap<String, String>,
     },
@@ -90,7 +90,8 @@ pub struct PodcastPanel {
     scroll: gtk::ScrolledWindow,
     search_spinner: gtk::Spinner,
     status: adw::StatusPage,
-    subs: Vec<String>,
+    /// `None` until the first read finishes; edits are refused until it succeeds.
+    subscriptions: Option<Result<Subscriptions, String>>,
     titles: HashMap<String, String>,
     search_results: Vec<PodcastSearchResult>,
     /// Subscribed URLs, shared into the row-suffix builder so the search
@@ -204,7 +205,7 @@ impl Component for PodcastPanel {
                 scroll,
                 search_spinner,
                 status,
-                subs: Vec::new(),
+                subscriptions: None,
                 titles: HashMap::new(),
                 search_results: Vec::new(),
                 subscribed,
@@ -222,22 +223,40 @@ impl Component for PodcastPanel {
                 // Disk read off the GTK thread.
                 let s = sender.clone();
                 glib::spawn_future_local(async move {
-                    let loaded = gio::spawn_blocking(|| (load_subscriptions(), load_title_cache()))
-                        .await
-                        .unwrap_or_default();
+                    let (subscriptions, titles) =
+                        match gio::spawn_blocking(|| (load_subscriptions(), load_title_cache()))
+                            .await
+                        {
+                            Ok((subscriptions, titles)) => {
+                                (subscriptions.map_err(|error| error.to_string()), titles)
+                            }
+                            Err(_) => (
+                                Err("subscription reader stopped".to_owned()),
+                                HashMap::new(),
+                            ),
+                        };
                     s.input(PodcastPanelInput::FeedsLoaded {
-                        subs: loaded.0,
-                        titles: loaded.1,
+                        subscriptions,
+                        titles,
                     });
                 });
             }
-            PodcastPanelInput::FeedsLoaded { subs, titles } => {
-                self.subs = subs;
+            PodcastPanelInput::FeedsLoaded {
+                subscriptions,
+                titles,
+            } => {
+                if let Err(error) = &subscriptions {
+                    log::warn!("Podcast subscriptions could not be read: {error}");
+                    self.status
+                        .set_title(&i18n("Podcast Subscriptions Unavailable"));
+                    self.status.set_description(Some(&unreadable_notice(error)));
+                    let _ = sender.output(PodcastPanelOutput::Notify(unreadable_notice(error)));
+                }
+                self.subscriptions = Some(subscriptions);
                 self.titles = titles;
-                self.pending_title_fetches
-                    .retain(|url| self.subs.contains(url));
-                self.failed_title_fetches
-                    .retain(|url| self.subs.contains(url));
+                let subs = subscribed_urls(self.subscriptions.as_ref());
+                self.pending_title_fetches.retain(|url| subs.contains(url));
+                self.failed_title_fetches.retain(|url| subs.contains(url));
                 self.sync_subscribed();
                 self.rebuild_list();
                 self.resolve_missing_titles(&sender);
@@ -269,28 +288,34 @@ impl Component for PodcastPanel {
                 self.rebuild_list();
             }
             PodcastPanelInput::Subscribe(url) => {
-                if self.subs.contains(&url) {
+                let Some(subscriptions) = self.editable_subscriptions(&sender) else {
+                    return;
+                };
+                if subscriptions.urls.contains(&url) {
                     let _ = sender.output(PodcastPanelOutput::Notify(i18n("Already subscribed")));
-                } else {
-                    self.failed_title_fetches.remove(&url);
-                    self.subs.push(url);
-                    self.persist_subscriptions();
-                    self.sync_subscribed();
-                    self.rebuild_list();
-                    self.resolve_missing_titles(&sender);
+                    return;
                 }
+                subscriptions.urls.push(url.clone());
+                persist_subscriptions(subscriptions, &sender);
+                self.failed_title_fetches.remove(&url);
+                self.sync_subscribed();
+                self.rebuild_list();
+                self.resolve_missing_titles(&sender);
             }
             PodcastPanelInput::Unsubscribe(url) => {
-                self.subs.retain(|u| u != &url);
+                let Some(subscriptions) = self.editable_subscriptions(&sender) else {
+                    return;
+                };
+                subscriptions.urls.retain(|u| u != &url);
+                persist_subscriptions(subscriptions, &sender);
                 self.pending_title_fetches.remove(&url);
                 self.failed_title_fetches.remove(&url);
-                self.persist_subscriptions();
                 self.sync_subscribed();
                 self.rebuild_list();
             }
             PodcastPanelInput::FeedTitleResolved { url, title } => {
                 self.pending_title_fetches.remove(&url);
-                if !is_subscribed_url(&self.subs, &url) {
+                if !is_subscribed_url(self.subs(), &url) {
                     self.rebuild_list();
                     return;
                 }
@@ -308,21 +333,28 @@ impl Component for PodcastPanel {
 }
 
 impl PodcastPanel {
+    fn subs(&self) -> &[String] {
+        subscribed_urls(self.subscriptions.as_ref())
+    }
+
+    /// The loaded list, or `None` after telling the person why it cannot change.
+    fn editable_subscriptions(
+        &mut self,
+        sender: &ComponentSender<Self>,
+    ) -> Option<&mut Subscriptions> {
+        let notice = match &mut self.subscriptions {
+            Some(Ok(subscriptions)) => return Some(subscriptions),
+            Some(Err(error)) => unreadable_notice(error),
+            None => i18n("Podcast subscriptions are still loading"),
+        };
+        let _ = sender.output(PodcastPanelOutput::Notify(notice));
+        None
+    }
+
     fn sync_subscribed(&self) {
         let mut set = self.subscribed.borrow_mut();
         set.clear();
-        set.extend(self.subs.iter().cloned());
-    }
-
-    /// Persist the current subscription list off the GTK thread.
-    fn persist_subscriptions(&self) {
-        let subs = self.subs.clone();
-        glib::spawn_future_local(async move {
-            let saved = gio::spawn_blocking(move || save_subscriptions(&subs)).await;
-            if let Ok(Err(error)) = saved {
-                log::warn!("Failed to save podcast subscriptions: {error}");
-            }
-        });
+        set.extend(self.subs().iter().cloned());
     }
 
     /// Start an async podcast search, toggling the spinner.
@@ -349,9 +381,9 @@ impl PodcastPanel {
     fn rebuild_list(&self) {
         let mut rows: Vec<MediaRow> = Vec::new();
 
-        if !self.subs.is_empty() {
+        if !self.subs().is_empty() {
             rows.push(MediaRow::header(i18n("Subscriptions")));
-            for url in &self.subs {
+            for url in self.subs() {
                 let title = self.titles.get(url).cloned();
                 let has_title = title.is_some();
                 rows.push(MediaRow {
@@ -393,7 +425,7 @@ impl PodcastPanel {
     /// re-renders. Bounded by the number of uncached subs (the user's own list).
     fn resolve_missing_titles(&mut self, sender: &ComponentSender<Self>) {
         let missing = title_fetch_candidates(
-            &self.subs,
+            self.subs(),
             &self.titles,
             &self.pending_title_fetches,
             &self.failed_title_fetches,
@@ -415,6 +447,28 @@ impl PodcastPanel {
             });
         }
     }
+}
+
+/// Admit a save of the edited list; saves run one at a time and the latest wins.
+fn persist_subscriptions(subscriptions: &Subscriptions, sender: &ComponentSender<PodcastPanel>) {
+    if let Err(error) = subscriptions.save() {
+        log::warn!("Podcast subscriptions not saved: {error}");
+        let _ = sender.output(PodcastPanelOutput::Notify(i18n(
+            "Podcast subscriptions could not be saved",
+        )));
+    }
+}
+
+fn subscribed_urls(subscriptions: Option<&Result<Subscriptions, String>>) -> &[String] {
+    match subscriptions {
+        Some(Ok(subscriptions)) => &subscriptions.urls,
+        Some(Err(_)) | None => &[],
+    }
+}
+
+fn unreadable_notice(error: &str) -> String {
+    i18n("Podcast subscriptions could not be read, so changes are not saved: {}")
+        .replace("{}", error)
 }
 
 fn subscription_title_subtitle(has_title: bool, has_failed_title_fetch: bool) -> Option<String> {

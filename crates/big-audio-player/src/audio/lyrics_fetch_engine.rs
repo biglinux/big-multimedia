@@ -14,7 +14,10 @@ use crate::library::{lrclib, metadata};
 /// network lookup keyed on the library track's artist/title/album. LRC
 /// `[mm:ss.xx]` timestamps are stripped for plain-text display. `None` when no
 /// lyrics are found.
-pub(crate) fn fetch_lyrics_blocking(db: &DbHandle, file_path: &str) -> Option<String> {
+pub(crate) fn fetch_lyrics_blocking(
+    db: &DbHandle,
+    file_path: &str,
+) -> big_media_runtime::Result<Option<String>> {
     // Embedded tag lyrics first (no network round-trip).
     let mut lyrics = metadata::extract_lyrics(file_path);
 
@@ -22,7 +25,7 @@ pub(crate) fn fetch_lyrics_blocking(db: &DbHandle, file_path: &str) -> Option<St
         // Brief DB lock for the track lookup; released before the network call.
         let track = {
             let conn = db.lock().unwrap_or_else(PoisonError::into_inner);
-            queries::get_track_by_path(&conn, file_path).ok().flatten()
+            queries::get_track_by_path(&conn, file_path)?
         };
         if let Some(track) = track
             && let (Some(artist), Some(title)) = (&track.artist, &track.title)
@@ -31,7 +34,7 @@ pub(crate) fn fetch_lyrics_blocking(db: &DbHandle, file_path: &str) -> Option<St
         }
     }
 
-    lyrics.map(|raw| strip_lrc_timestamps(&raw))
+    Ok(lyrics.map(|raw| strip_lrc_timestamps(&raw)))
 }
 
 /// The rest of `line` after its leading `[mm:ss]` or `[mm:ss.xx]` stamp.
@@ -264,13 +267,26 @@ mod tests {
             "[00:01.00]first line\n[00:02.00]\n[00:03.00]second line",
         )?;
 
-        let lyrics = fetch_lyrics_blocking(&library_database, &audio_path.to_string_lossy());
+        let lyrics = fetch_lyrics_blocking(&library_database, &audio_path.to_string_lossy())?;
         assert_eq!(
             lyrics.as_deref(),
             Some("first line\nsecond line"),
             "sidecar LRC should bypass network lookup and be stripped to plain text"
         );
 
+        Ok(())
+    }
+
+    #[cfg(not(miri))]
+    #[test]
+    fn unreadable_library_errors() -> std::result::Result<(), Box<dyn std::error::Error>> {
+        let library_database: DbHandle = Arc::new(Mutex::new(Connection::open_in_memory()?));
+        let lyrics_fixture_folder = LyricsFixtureFolder::create()?;
+        let audio_path = lyrics_fixture_folder.path.join("song.mp3");
+        fs::write(&audio_path, [])?;
+
+        let lyrics = fetch_lyrics_blocking(&library_database, &audio_path.to_string_lossy());
+        assert!(lyrics.is_err(), "resolved {lyrics:?}");
         Ok(())
     }
 }
