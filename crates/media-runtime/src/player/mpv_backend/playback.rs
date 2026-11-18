@@ -181,9 +181,9 @@ impl MpvBackend {
     /// mpv runs `loadlist` on a thread of its own, so commands queued after
     /// it may run before the entries are in: callers must not address the
     /// new entries by index right away. Where they land does not depend on
-    /// that timing. The parser splits lines and strips leading blanks and a
-    /// line-final CR, so a list holding such a path goes one `loadfile` at a
-    /// time, which mpv runs in order.
+    /// that timing. The parser splits lines and strips blanks at both ends,
+    /// so a list holding such a path goes one `loadfile` at a time, which mpv
+    /// runs in order.
     pub fn load_files_at(&self, paths: &[String], source: TargetSource, index: Option<usize>) {
         let paths: Vec<String> = paths
             .iter()
@@ -455,7 +455,9 @@ impl MpvBackend {
 
 /// Whether mpv's plaintext playlist parser reads `path` back unchanged.
 fn fits_plaintext_playlist(path: &str) -> bool {
-    !(path.contains('\n') || path.ends_with('\r') || path.starts_with(char::is_whitespace))
+    !(path.contains('\n')
+        || path.starts_with(char::is_whitespace)
+        || path.ends_with(char::is_whitespace))
 }
 
 #[cfg(test)]
@@ -468,6 +470,9 @@ mod tests {
         assert!(!fits_plaintext_playlist("/videos/a\nb.mkv"));
         assert!(!fits_plaintext_playlist("/videos/a.mkv\r"));
         assert!(!fits_plaintext_playlist(" leading.mkv"));
+        assert!(!fits_plaintext_playlist("/videos/trailing.mkv "));
+        assert!(!fits_plaintext_playlist("/videos/tab.mkv\t"));
+        assert!(fits_plaintext_playlist("/videos/#hash.mkv"));
     }
 
     #[test]
