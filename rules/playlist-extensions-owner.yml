@@ -15,5 +15,3 @@ rule:
 ignores:
   - crates/foundation/big-media-engines/src/media_files.rs
   - crates/media-runtime/src/media/playlist_scan/playlist_io.rs
-  # Legacy: the video sidebar's Load playlist picker, migrated by the stream that owns it.
-  - crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/menu_actions.rs

@@ -3,6 +3,7 @@ use std::rc::Rc;
 use adw::prelude::*;
 use big_app_kit::desktop::install_action;
 use big_app_kit::file_dialogs::FilePicker;
+use big_media_components::media::files::PLAYLIST_EXTENSIONS;
 use gtk::{gio, glib};
 
 use super::super::{BrowserState, VideoBrowserSidebarOutput};
@@ -227,7 +228,7 @@ fn load_playlist_file(state: &Rc<BrowserState>) {
     };
     let sender = state.sender.clone();
     FilePicker::new(i18n("Load Playlist"))
-        .pattern_filter(&i18n("Playlists"), &["*.m3u", "*.m3u8", "*.pls"])
+        .filter(&i18n("Playlists"), PLAYLIST_EXTENSIONS)
         .open(&window, move |path| {
             sender
                 .output(VideoBrowserSidebarOutput::OpenPlaylist(
