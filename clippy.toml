@@ -38,6 +38,7 @@ disallowed-methods = [
     { path = "libadwaita::prelude::AdwDialogExt::add_breakpoint", reason = "the breakpoint outlives the dialog (libadwaita 1.9); use `big_gtk_kit::breakpoint::add`" },
     { path = "libadwaita::prelude::BreakpointBinExt::add_breakpoint", reason = "the breakpoint outlives the bin (libadwaita 1.9); use `big_gtk_kit::breakpoint::add`" },
     { path = "gtk4::Switch::set_active", reason = "cancels a click's slide even when the value is unchanged (GTK 4.22), so a refresh swallows the click; use `big_gtk_kit::switch::set_active`" },
+    { path = "libc::renameat2", reason = "use `big_os_kit::storage::rename_no_replace` (crates/foundation/big-os-kit/src/storage/transaction.rs); where it fails with EINVAL the filesystem cannot refuse a replacing rename, so fall back to `StagedFile::publish`, never check-then-rename" },
     { path = "gio::Menu::append_section", reason = "GTK 4.22's menu tracker keeps every section it shows; use `big_gtk_kit::menu::append_shared_section`" },
 ]
 

@@ -9,7 +9,8 @@ use std::rc::Rc;
 
 use adw::prelude::*;
 use big_app_kit::file_dialogs::FilePicker;
-use big_relm4_components::layout::name_prompt::{BigNamePromptSpec, prompt_name};
+use big_os_kit::storage::{StagedFile, rename_no_replace};
+use big_relm4_components::layout::name_prompt::{BigNamePromptSpec, prompt_name_with_reply};
 
 use super::{BrowserState, VideoBrowserSidebarOutput};
 use crate::i18n::{i18n, ni18n};
@@ -150,8 +151,10 @@ pub(super) fn move_to_folder(state: &Rc<BrowserState>, paths: Vec<String>) {
     FilePicker::new(i18n("Move to Folder")).select_folder(&window, move |dest| {
         // File moves (incl. cross-device copy of large videos) run off-thread.
         let state = state.clone();
+        let drain = big_os_kit::background::track_operation();
         big_media_components::player_chrome::spawn_blocking_result(
             move || {
+                let _drain = drain;
                 let mut moved = Vec::new();
                 let mut failed = 0_usize;
                 for src in &paths {
@@ -163,7 +166,7 @@ pub(super) fn move_to_folder(state: &Rc<BrowserState>, paths: Vec<String>) {
                 (moved, failed)
             },
             move |(moved, failed): (Vec<(String, String)>, usize)| {
-                notify_op_result(&state, moved.len(), failed, &i18n("moved"));
+                notify_move_failures(&state, moved.len(), failed);
                 if !moved.is_empty() {
                     let _ = state
                         .sender
@@ -199,43 +202,57 @@ pub(super) fn rename_file(state: &Rc<BrowserState>, path: &str) {
         content_height: 240,
     };
     let state = Rc::downgrade(state);
-    prompt_name(
+    prompt_name_with_reply(
         Some(window.upcast_ref()),
         &spec,
         accepted_rename_name,
-        move |new_name| {
-            let Some(state) = state.upgrade() else {
-                return true;
-            };
+        move |new_name, reply| {
+            let state = state.clone();
+            let old = old.clone();
             let dest = parent.join(&new_name);
-            match rename_no_replace(&old, &dest) {
-                Ok(()) => {
-                    let _ = state
-                        .sender
-                        .output(VideoBrowserSidebarOutput::Renamed(vec![(
-                            old.to_string_lossy().into_owned(),
-                            dest.to_string_lossy().into_owned(),
-                        )]));
-                    state.refresh_current_folder();
-                    true
-                }
-                Err(error) if error.kind() == std::io::ErrorKind::AlreadyExists => {
-                    state
-                        .sender
-                        .output(VideoBrowserSidebarOutput::Notify(i18n(
-                            "A file with that name already exists",
-                        )))
-                        .ok();
-                    false
-                }
-                Err(_) => {
-                    state
-                        .sender
-                        .output(VideoBrowserSidebarOutput::Notify(i18n("Rename failed")))
-                        .ok();
-                    false
-                }
-            }
+            // Where the filesystem cannot refuse a replacing rename, this copies.
+            let drain = big_os_kit::background::track_operation();
+            big_media_components::player_chrome::spawn_blocking_result(
+                move || {
+                    let _drain = drain;
+                    let result = move_no_replace(&old, &dest);
+                    (old, dest, result)
+                },
+                move |(old, dest, result)| {
+                    let Some(state) = state.upgrade() else {
+                        reply.close();
+                        return;
+                    };
+                    match result {
+                        Ok(()) => {
+                            let renamed = (
+                                old.to_string_lossy().into_owned(),
+                                dest.to_string_lossy().into_owned(),
+                            );
+                            state
+                                .sender
+                                .output(VideoBrowserSidebarOutput::Renamed(vec![renamed]))
+                                .ok();
+                            state.refresh_current_folder();
+                            reply.close();
+                        }
+                        Err(error) if error.kind() == std::io::ErrorKind::AlreadyExists => {
+                            state
+                                .sender
+                                .output(VideoBrowserSidebarOutput::Notify(i18n(
+                                    "A file with that name already exists",
+                                )))
+                                .ok();
+                        }
+                        Err(_) => {
+                            state
+                                .sender
+                                .output(VideoBrowserSidebarOutput::Notify(i18n("Rename failed")))
+                                .ok();
+                        }
+                    }
+                },
+            );
         },
     );
 }
@@ -248,9 +265,8 @@ fn accepted_rename_name(input: &str) -> Option<String> {
     Some(name.to_string())
 }
 
-/// Move one file into `dest_dir`, keeping its basename. Refuses to overwrite an
-/// existing destination; falls back to copy+remove across filesystems.
-/// Move `src` into `dest_dir`; the path it has now.
+/// Move `src` into `dest_dir`, keeping its name and never replacing a file
+/// there; the path it has now.
 fn move_file(src: &str, dest_dir: &Path) -> std::io::Result<PathBuf> {
     let src_path = Path::new(src);
     let name = src_path
@@ -260,70 +276,53 @@ fn move_file(src: &str, dest_dir: &Path) -> std::io::Result<PathBuf> {
     if dest == src_path {
         return Ok(dest);
     }
-    match rename_no_replace(src_path, &dest) {
-        Err(error) if error.raw_os_error() == Some(libc::EXDEV) => {}
-        result => return result.map(|()| dest),
-    }
-    // Cross-device → copy then remove the source. `create_new` refuses a file
-    // that appeared meanwhile; a failed copy (e.g. disk full) must not leave a
-    // truncated file behind.
-    let mut target = std::fs::OpenOptions::new()
-        .write(true)
-        .create_new(true)
-        .open(&dest)?;
-    let copied = std::fs::File::open(src_path)
-        .and_then(|mut source| std::io::copy(&mut source, &mut target))
-        .and_then(|_| target.sync_all());
-    if let Err(error) = copied {
-        let _ = std::fs::remove_file(&dest);
-        return Err(error);
-    }
-    std::fs::remove_file(src_path)?;
+    move_no_replace(src_path, &dest)?;
     Ok(dest)
 }
 
-/// `rename` that fails with `AlreadyExists` instead of replacing `dest`, so a
-/// file created between a check and the rename is never overwritten.
-fn rename_no_replace(src: &Path, dest: &Path) -> std::io::Result<()> {
-    use std::os::unix::ffi::OsStrExt;
-    let src_c = std::ffi::CString::new(src.as_os_str().as_bytes())?;
-    let dest_c = std::ffi::CString::new(dest.as_os_str().as_bytes())?;
-    // SAFETY: both arguments are valid NUL-terminated paths that outlive the
-    // call; renameat2 only reads them.
-    let status = unsafe {
-        libc::renameat2(
-            libc::AT_FDCWD,
-            src_c.as_ptr(),
-            libc::AT_FDCWD,
-            dest_c.as_ptr(),
-            libc::RENAME_NOREPLACE,
-        )
-    };
-    if status == 0 {
-        return Ok(());
-    }
-    let error = std::io::Error::last_os_error();
-    // Some filesystems (NFS, some FUSE) lack RENAME_NOREPLACE: fall back to
-    // check-then-rename there rather than failing every rename.
-    if error.raw_os_error() == Some(libc::EINVAL) {
-        if dest.exists() {
-            return Err(std::io::ErrorKind::AlreadyExists.into());
+/// Rename `src` to `dest`, failing with `AlreadyExists` instead of replacing
+/// it. Copies across filesystems, and where the filesystem cannot refuse a
+/// replacing rename (`EINVAL` on some FUSE and NFS mounts).
+fn move_no_replace(src: &Path, dest: &Path) -> std::io::Result<()> {
+    match rename_no_replace(src, dest) {
+        Err(error) if matches!(error.raw_os_error(), Some(libc::EXDEV | libc::EINVAL)) => {
+            move_by_copy(src, dest)
         }
-        return std::fs::rename(src, dest);
+        result => result,
     }
-    Err(error)
 }
 
-/// Say when some of a batch file op failed; the folder view already shows
+/// Copy `src` to the absent `dest` through staging that a killed copy leaves
+/// out of sight, and remove `src` only once the copy and its directory entry
+/// are on disk.
+fn move_by_copy(src: &Path, dest: &Path) -> std::io::Result<()> {
+    // Copying a large video takes minutes; refuse a taken name before it.
+    if dest.symlink_metadata().is_ok() {
+        return Err(std::io::ErrorKind::AlreadyExists.into());
+    }
+    let stage = StagedFile::new(dest)?;
+    let mut staged = std::fs::OpenOptions::new().write(true).open(stage.path())?;
+    std::io::copy(&mut std::fs::File::open(src)?, &mut staged)?;
+    drop(staged);
+    stage.publish_copy(dest)?.into_io_result()?;
+    std::fs::remove_file(src)
+}
+
+/// Say when some files of a batch move failed; the folder view already shows
 /// what moved.
-fn notify_op_result(state: &Rc<BrowserState>, ok: usize, failed: usize, verb: &str) {
+fn notify_move_failures(state: &Rc<BrowserState>, moved: usize, failed: usize) {
     if failed == 0 {
         return;
     }
-    let notification_message = i18n("{ok} {verb}, {failed} failed")
-        .replace("{ok}", &ok.to_string())
-        .replace("{verb}", verb)
-        .replace("{failed}", &failed.to_string());
+    let total = moved + failed;
+    // One plural form agrees with one number, so the message counts in the total.
+    let notification_message = ni18n(
+        "Could not move {failed} of {total} file",
+        "Could not move {failed} of {total} files",
+        total as u64,
+    )
+    .replace("{failed}", &failed.to_string())
+    .replace("{total}", &total.to_string());
     state
         .sender
         .output(VideoBrowserSidebarOutput::Notify(notification_message))
@@ -344,7 +343,81 @@ impl BrowserState {
 
 #[cfg(test)]
 mod tests {
-    use super::{accepted_rename_name, move_file, rename_no_replace};
+    use std::io::Write;
+    use std::path::{Path, PathBuf};
+
+    use super::{accepted_rename_name, move_by_copy, move_file, move_no_replace};
+
+    fn test_directory(name: &str) -> PathBuf {
+        let dir = std::env::temp_dir().join(format!("bvp-{name}-{}", std::process::id()));
+        std::fs::create_dir_all(&dir).unwrap();
+        dir
+    }
+
+    fn entry_names(dir: &Path) -> Vec<String> {
+        let mut names: Vec<String> = std::fs::read_dir(dir)
+            .unwrap()
+            .map(|entry| entry.unwrap().file_name().to_string_lossy().into_owned())
+            .collect();
+        names.sort();
+        names
+    }
+
+    /// A killed copy must leave nothing under the final name: the source is
+    /// a FIFO, so the copy is held open while the destination is inspected.
+    #[test]
+    fn cross_device_move_hides_partial_copies() {
+        let dir = test_directory("cross-device");
+        let (src, dest) = (dir.join("in.mp4"), dir.join("out").join("in.mp4"));
+        std::fs::create_dir(dir.join("out")).unwrap();
+        let fifo = std::ffi::CString::new(src.as_os_str().as_encoded_bytes()).unwrap();
+        // SAFETY: `fifo` is a NUL-terminated path bound for the whole call.
+        assert_eq!(unsafe { libc::mkfifo(fifo.as_ptr(), 0o600) }, 0);
+        let mover = std::thread::spawn({
+            let (src, dest) = (src.clone(), dest.clone());
+            move || move_by_copy(&src, &dest)
+        });
+        let mut writer = std::fs::OpenOptions::new().write(true).open(&src).unwrap();
+        assert!(
+            !dest.exists(),
+            "a partial copy is visible under the final name"
+        );
+        writer.write_all(b"video").unwrap();
+        drop(writer);
+        mover.join().unwrap().unwrap();
+        assert_eq!(std::fs::read(&dest).unwrap(), b"video");
+        assert!(!src.exists());
+        assert_eq!(entry_names(&dir.join("out")), ["in.mp4"]);
+        std::fs::remove_dir_all(dir).unwrap();
+    }
+
+    #[test]
+    fn cross_device_move_carries_empty_files() {
+        let dir = test_directory("cross-device-empty");
+        let (src, dest) = (dir.join("in.mp4"), dir.join("out").join("in.mp4"));
+        std::fs::create_dir(dir.join("out")).unwrap();
+        std::fs::write(&src, b"").unwrap();
+        move_by_copy(&src, &dest).unwrap();
+        assert_eq!(std::fs::read(&dest).unwrap(), b"");
+        assert!(!src.exists());
+        assert_eq!(entry_names(&dir.join("out")), ["in.mp4"]);
+        std::fs::remove_dir_all(dir).unwrap();
+    }
+
+    #[test]
+    fn cross_device_move_keeps_an_existing_destination() {
+        let dir = test_directory("cross-device-taken");
+        let (src, dest) = (dir.join("in.mp4"), dir.join("out").join("in.mp4"));
+        std::fs::create_dir(dir.join("out")).unwrap();
+        std::fs::write(&src, b"new").unwrap();
+        std::fs::write(&dest, b"kept").unwrap();
+        let error = move_by_copy(&src, &dest).unwrap_err();
+        assert_eq!(error.kind(), std::io::ErrorKind::AlreadyExists);
+        assert_eq!(std::fs::read(&src).unwrap(), b"new");
+        assert_eq!(std::fs::read(&dest).unwrap(), b"kept");
+        assert_eq!(entry_names(&dir.join("out")), ["in.mp4"]);
+        std::fs::remove_dir_all(dir).unwrap();
+    }
 
     #[test]
     fn rename_and_move_keep_existing_files() {
@@ -356,13 +429,13 @@ mod tests {
         std::fs::write(&b, b"b").unwrap();
         std::fs::write(sub.join("a.mp4"), b"kept").unwrap();
 
-        let err = rename_no_replace(&a, &b).unwrap_err();
+        let err = move_no_replace(&a, &b).unwrap_err();
         assert_eq!(err.kind(), std::io::ErrorKind::AlreadyExists);
         assert!(move_file(a.to_str().unwrap(), &sub).is_err());
         assert_eq!(std::fs::read(&b).unwrap(), b"b");
         assert_eq!(std::fs::read(sub.join("a.mp4")).unwrap(), b"kept");
 
-        rename_no_replace(&a, &dir.join("c.mp4")).unwrap();
+        move_no_replace(&a, &dir.join("c.mp4")).unwrap();
         assert!(!a.exists());
         std::fs::remove_dir_all(dir).unwrap();
     }
