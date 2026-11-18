@@ -294,28 +294,8 @@ fn build_source_colors_group(
     flow.set_min_children_per_line(2);
     let mut first: Option<gtk::ToggleButton> = None;
     for (index, (name, hint)) in source_color_names().into_iter().zip(hints).enumerate() {
-        let texts = gtk::Box::builder()
-            .orientation(gtk::Orientation::Vertical)
-            .spacing(2)
-            .build();
-        texts.append(
-            &gtk::Label::builder()
-                .label(&name)
-                .xalign(0.0)
-                .css_classes(["heading"])
-                .build(),
-        );
-        texts.append(
-            &gtk::Label::builder()
-                .label(&hint)
-                .xalign(0.0)
-                .wrap(true)
-                .lines(3)
-                .css_classes(["caption"])
-                .build(),
-        );
         let choice = gtk::ToggleButton::builder()
-            .child(&texts)
+            .child(&source_color_texts(&name, &hint))
             .active(transform_state.source_colors_index() == index)
             .width_request(130)
             .css_classes(["color-choice"])
@@ -337,6 +317,30 @@ fn build_source_colors_group(
     unfocusable_children(&flow);
     group.add(&flow);
     content.append(&group);
+}
+
+fn source_color_texts(name: &str, hint: &str) -> gtk::Box {
+    let texts = gtk::Box::builder()
+        .orientation(gtk::Orientation::Vertical)
+        .spacing(2)
+        .build();
+    texts.append(
+        &gtk::Label::builder()
+            .label(name)
+            .xalign(0.0)
+            .css_classes(["heading"])
+            .build(),
+    );
+    texts.append(
+        &gtk::Label::builder()
+            .label(hint)
+            .xalign(0.0)
+            .wrap(true)
+            .lines(3)
+            .css_classes(["caption"])
+            .build(),
+    );
+    texts
 }
 
 fn build_transform_group(

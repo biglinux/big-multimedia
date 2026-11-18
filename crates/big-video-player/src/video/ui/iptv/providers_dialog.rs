@@ -52,16 +52,7 @@ pub(super) fn present_providers_dialog(
         BigBoundedListBox::new(BigBoundedListBoxSpec::default().css_class("boxed-list"));
     let list = provider_list.root().clone();
     page.content().append(&list);
-    let keyring_note = gtk::Label::builder()
-        .label(i18n(
-            "A replaced or removed password could not be deleted from your keyring. You can delete the \u{201C}Big Multimedia IPTV provider\u{201D} item it left with your keyring manager.",
-        ))
-        .wrap(true)
-        .selectable(true)
-        .xalign(0.0)
-        .css_classes(["caption", "warning"])
-        .visible(false)
-        .build();
+    let keyring_note = keyring_leftover_note();
     page.content().append(&keyring_note);
     let status_store = store.clone();
     let retry_store = store.clone();
@@ -104,6 +95,20 @@ pub(super) fn present_providers_dialog(
         sender.input(VideoIptvBrowserInput::ProvidersChanged);
     });
     dialog.present(Some(parent));
+}
+
+/// Hidden until a password the keyring kept could not be deleted.
+fn keyring_leftover_note() -> gtk::Label {
+    gtk::Label::builder()
+        .label(i18n(
+            "A replaced or removed password could not be deleted from your keyring. You can delete the \u{201C}Big Multimedia IPTV provider\u{201D} item it left with your keyring manager.",
+        ))
+        .wrap(true)
+        .selectable(true)
+        .xalign(0.0)
+        .css_classes(["caption", "warning"])
+        .visible(false)
+        .build()
 }
 
 fn rebuild_list(list: &gtk::ListBox, store: &Rc<RefCell<IptvProviderStore>>, note: &gtk::Label) {
