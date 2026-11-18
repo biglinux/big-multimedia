@@ -10,6 +10,9 @@ use super::super::{BrowserState, VideoBrowserSidebarOutput};
 use crate::i18n::i18n;
 use crate::media::playlist;
 use crate::settings::keys;
+use crate::shared::playlist_export::{
+    playlist_export_message, playlist_save_picker, show_playlist_export_result,
+};
 
 /// Register the stateful + plain actions backing the overflow menu.
 pub(crate) fn install_menu_actions(state: &Rc<BrowserState>, group: &gio::SimpleActionGroup) {
@@ -186,38 +189,18 @@ fn save_playlist(state: &Rc<BrowserState>) {
         return;
     };
     let state = state.clone();
-    FilePicker::new(i18n("Save Playlist"))
-        .initial_name("playlist.m3u8")
-        .save(&window, move |path| {
-            let items = state.queue.borrow().clone();
-            let parent = state.window().map(|w| w.downgrade());
-            crate::settings::saving::acknowledged_task(
-                false,
-                move || {
-                    playlist::write_m3u(&path, &items).map_err(|_| {
-                        std::io::Error::other("Playlist export failed; existing files were kept")
-                    })
-                },
-                move |result| {
-                    let Some(parent) = parent.and_then(|p| p.upgrade()) else {
-                        return;
-                    };
-                    let message = if result.is_ok() {
-                        i18n("Playlist exported")
-                    } else {
-                        i18n(
-                            "Playlist export could not be confirmed. Existing files were kept; choose a new name and retry.",
-                        )
-                    };
-                    let alert = big_gtk_kit::alert::Alert::builder()
-                        .heading(i18n("Playlist export"))
-                        .body(message)
-                        .build();
-                    alert.add_response("close", &i18n("Close"));
-                    alert.present(Some(&parent));
-                },
-            );
-        });
+    playlist_save_picker(i18n("Save Playlist")).save(&window, move |path| {
+        let items = state.queue.borrow().clone();
+        let parent = state.window().map(|w| w.downgrade());
+        crate::settings::saving::acknowledged_task(
+            false,
+            move || playlist::write_m3u(&path, &items).map_err(std::io::Error::other),
+            move |result| {
+                let message = playlist_export_message(result.is_ok());
+                show_playlist_export_result(parent.as_ref(), &message);
+            },
+        );
+    });
 }
 
 /// Load a playlist file as the play queue and start it (overflow menu

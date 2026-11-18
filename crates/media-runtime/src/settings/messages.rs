@@ -13,11 +13,7 @@ const _: &[&str] = &[
         "Changes work for this session but could not be saved. Check storage or close other instances, then retry.",
     ),
     gettext_noop("Not found — select only if you want to forget this library record"),
-    gettext_noop("Playlist exported."),
     gettext_noop("Remote items are not checked as local files"),
     gettext_noop("Saving your changes…"),
-    gettext_noop(
-        "The playlist was not exported. Check storage or choose a new filename; existing files were not replaced.",
-    ),
     gettext_noop("This location is not a regular media file"),
 ];

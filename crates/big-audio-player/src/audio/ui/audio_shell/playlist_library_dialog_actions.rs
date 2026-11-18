@@ -1,4 +1,7 @@
 use super::*;
+use crate::shared::playlist_export::{
+    playlist_export_message, playlist_save_picker, show_playlist_export_result,
+};
 
 impl AudioShell {
     pub(super) fn refresh_playlist_dialog_entries(&self, sender: &ComponentSender<Self>) {
@@ -199,7 +202,7 @@ impl AudioShell {
                                 )
                             ),
                         };
-                        show_export_result(weak_parent.as_ref(), &body);
+                        show_playlist_export_result(weak_parent.as_ref(), &body);
                     },
                 );
             },
@@ -228,27 +231,20 @@ impl AudioShell {
         };
         let parent = self.playlist_library_parent();
         let weak_parent = parent.as_ref().map(glib::object::ObjectExt::downgrade);
-        FilePicker::save_file(i18n("Export Playlist"))
-            .initial_name("playlist.m3u8")
-            .filter(&i18n("M3U8 Playlist"), crate::media::playlist_scan::M3U_EXTENSIONS)
-            .save_optional(parent.as_ref(), move |path| {
-                crate::settings::acknowledged_task(
-                    false,
-                    move || {
-                        let items = playlist_paths(&db, id)?;
-                        crate::media::playlist_scan::write_m3u(&path, &items)
-                            .map_err(std::io::Error::other)
-                    },
-                    move |result| {
-                        let text = i18n(if result.is_ok() {
-                            "Playlist exported."
-                        } else {
-                            "The playlist was not exported. Check storage or choose a new filename; existing files were not replaced."
-                        });
-                        show_export_result(weak_parent.as_ref(), &text);
-                    },
-                );
-            });
+        playlist_save_picker(i18n("Export Playlist")).save_optional(parent.as_ref(), move |path| {
+            crate::settings::acknowledged_task(
+                false,
+                move || {
+                    let items = playlist_paths(&db, id)?;
+                    crate::media::playlist_scan::write_m3u(&path, &items)
+                        .map_err(std::io::Error::other)
+                },
+                move |result| {
+                    let text = playlist_export_message(result.is_ok());
+                    show_playlist_export_result(weak_parent.as_ref(), &text);
+                },
+            );
+        });
     }
 
     /// Import a playlist file → resolve its paths → save as a new playlist.
@@ -384,18 +380,6 @@ fn playlist_paths(db: &DbHandle, id: i64) -> std::io::Result<Vec<String>> {
     let conn = lock_library(db)?;
     let tracks = queries::get_playlist_tracks(&conn, id).map_err(std::io::Error::other)?;
     Ok(tracks.into_iter().map(|track| track.file_path).collect())
-}
-
-fn show_export_result(parent: Option<&glib::WeakRef<gtk::Window>>, body: &str) {
-    let Some(parent) = parent.and_then(glib::WeakRef::upgrade) else {
-        return;
-    };
-    let dialog = big_gtk_kit::alert::Alert::builder()
-        .heading(i18n("Playlist export"))
-        .body(body)
-        .build();
-    dialog.add_response("close", &i18n("Close"));
-    dialog.present(Some(&parent));
 }
 
 #[cfg(test)]
