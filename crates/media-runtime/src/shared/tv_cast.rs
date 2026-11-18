@@ -8,6 +8,7 @@
 //! a dialog in the audio player, [`present_tv_dialog`]), the card over the
 //! video, and the transport controls, which drive the TV while it plays.
 
+use big_media_components::playback::set_play_pause;
 use big_relm4_components::feedback::tooltip;
 use std::cell::{Cell, RefCell};
 use std::rc::Rc;
@@ -745,15 +746,7 @@ fn render_now(view: &View, state: &State) {
             "{} · {position}",
             receiver_line(state)
         )));
-    let (icon, label) = if state.paused {
-        ("media-playback-start-symbolic", i18n("Continue"))
-    } else {
-        ("media-playback-pause-symbolic", i18n("Pause"))
-    };
-    view.pause.set_icon_name(icon);
-    view.pause.set_tooltip_text(Some(&label));
-    view.pause
-        .update_property(&[gtk::accessible::Property::Label(&label)]);
+    set_play_pause(&view.pause, state.paused, &i18n("Play"), &i18n("Pause"));
     view.pause.set_sensitive(state.can_pause);
 }
 

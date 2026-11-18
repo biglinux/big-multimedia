@@ -450,15 +450,7 @@ impl BigAudioTransport {
 
     /// Show on the play button the action a click takes while `paused`.
     pub fn set_paused(&self, paused: bool) {
-        let (icon, action) = if paused {
-            ("media-playback-start-symbolic", &self.play_label)
-        } else {
-            ("media-playback-pause-symbolic", &self.pause_label)
-        };
-        self.play_button.set_icon_name(icon);
-        self.play_button.set_tooltip_text(Some(action));
-        self.play_button
-            .update_property(&[gtk::accessible::Property::Label(action)]);
+        super::set_play_pause(&self.play_button, paused, &self.play_label, &self.pause_label);
     }
 }
 
