@@ -5,7 +5,7 @@
 
 mod backend;
 mod screenshots;
-pub use screenshots::ScreenshotResult;
+pub use screenshots::{ScreenshotRequestError, ScreenshotResult};
 mod types;
 
 pub use backend::{MpvBackend, MpvError};
