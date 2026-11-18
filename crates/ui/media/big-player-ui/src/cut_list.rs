@@ -240,6 +240,8 @@ mod tests {
         let id = list.cuts()[0].id;
         assert!(list.set_cut_times(id, 155.5, 33.25));
         assert_eq!(spans(&list), vec![(33.25, 100.0)]);
+        assert!(list.set_cut_times(id, 40.0, -10.0));
+        assert_eq!(spans(&list), vec![(0.0, 40.0)]);
         assert!(!list.set_cut_times(id, 9.0, 9.0));
         assert!(!list.set_cut_times(999, 1.0, 2.0));
     }
