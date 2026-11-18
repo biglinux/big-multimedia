@@ -34,18 +34,16 @@ msgid "Data Sources"
 msgstr "データソース"
 
 #: crates/big-audio-player/src/audio/app.rs:53
-#, fuzzy
-#| msgid "Close the player"
 msgid "Play or pause the running player"
-msgstr "プレーヤーを閉じる"
+msgstr "実行中のプレーヤーで再生または一時停止する"
 
 #: crates/big-audio-player/src/audio/app.rs:58
 msgid "Skip to the next track in the running player"
-msgstr ""
+msgstr "実行中のプレーヤーで次のトラックにスキップする"
 
 #: crates/big-audio-player/src/audio/app.rs:63
 msgid "Go back to the previous track in the running player"
-msgstr ""
+msgstr "実行中のプレーヤーで前のトラックに戻る"
 
 #: crates/big-audio-player/src/audio/appearance/dialogs.rs:42
 #: crates/big-video-player/src/video/ui/filters/groups_vf.rs:278
@@ -462,12 +460,10 @@ msgid "Select a song to start"
 msgstr "曲を選択して開始"
 
 #: crates/big-audio-player/src/audio/ui/audio_shell/engine.rs:37
-#, fuzzy, rust-format
-#| msgid "Could not play this file — it may be unsupported or corrupt."
+#, rust-format
 msgid "Could not play “{file}”: it may be unsupported or corrupt."
 msgstr ""
-"このファイルを再生できませんでした。非対応または破損している可能性がありま"
-"す。"
+"「{file}」を再生できませんでした。非対応または破損している可能性があります。"
 
 #: crates/big-audio-player/src/audio/ui/audio_shell/engine.rs:215
 #, rust-format
@@ -475,6 +471,8 @@ msgid ""
 "The playback engine could not start: {error}. Update or reinstall the mpv "
 "package, then reopen the player."
 msgstr ""
+"再生エンジンを起動できませんでした: {error}。mpv パッケージを更新または再イン"
+"ストールしてから、プレーヤーを開き直してください。"
 
 #: crates/big-audio-player/src/audio/ui/audio_shell/export.rs:17
 #: crates/big-audio-player/src/audio/ui/audio_shell/export.rs:33
@@ -484,17 +482,13 @@ msgstr "ローカルのトラックは再生されていません"
 #: crates/big-audio-player/src/audio/ui/audio_shell/library_store.rs:63
 msgid "The music library is still opening. Try again in a moment."
 msgstr ""
+"ミュージックライブラリを開いている途中です。しばらくしてから再試行してくださ"
+"い。"
 
 #: crates/big-audio-player/src/audio/ui/audio_shell/library_store.rs:223
 #: crates/big-audio-player/src/audio/ui/audio_shell/library_store.rs:259
-#, fuzzy
-#| msgid ""
-#| "The library could not be read. Previous results were kept; try searching "
-#| "again."
 msgid "The library could not be read. The queue was not changed."
-msgstr ""
-"ライブラリを読み取れませんでした。以前の結果は保持されています。もう一度検索"
-"してください。"
+msgstr "ライブラリを読み込めませんでした。キューは変更されていません。"
 
 #: crates/big-audio-player/src/audio/ui/audio_shell/panel_intents.rs:61
 msgid ""
@@ -525,24 +519,17 @@ msgid "Save Episodes"
 msgstr "エピソードを保存"
 
 #: crates/big-audio-player/src/audio/ui/audio_shell/panel_intents.rs:432
-#, fuzzy
-#| msgid ""
-#| "The playlist could not be read safely. Check its format and permissions."
 msgid ""
 "The episodes could not be saved in this folder. Check its permissions and "
 "try again."
 msgstr ""
-"プレイリストを安全に読み取れませんでした。形式と権限を確認してください。"
+"このフォルダーにエピソードを保存できませんでした。フォルダーのアクセス権を確"
+"認して、再試行してください。"
 
 #: crates/big-audio-player/src/audio/ui/audio_shell/playback.rs:143
-#, fuzzy
-#| msgid ""
-#| "The library could not be read. Previous results were kept; try searching "
-#| "again."
 msgid "The library could not be read, so lyrics were not searched online."
 msgstr ""
-"ライブラリを読み取れませんでした。以前の結果は保持されています。もう一度検索"
-"してください。"
+"ライブラリを読み込めなかったため、歌詞をオンラインで検索しませんでした。"
 
 #: crates/big-audio-player/src/audio/ui/audio_shell/playback.rs:157
 msgid "Seek position"
@@ -707,14 +694,13 @@ msgid "Export stopped. Confirmed outputs were kept"
 msgstr "書き出しを中止しました。確認済みの出力は保持されています"
 
 #: crates/big-audio-player/src/audio/ui/audio_shell/queue_persistence.rs:55
-#, fuzzy, rust-format
-#| msgid "The playlist could not be saved."
+#, rust-format
 msgid "The music library could not be opened: {}"
-msgstr "プレイリストを保存できませんでした。"
+msgstr "ミュージックライブラリを開けませんでした: {}"
 
 #: crates/big-audio-player/src/audio/ui/audio_shell/queue_persistence.rs:57
 msgid "Retry"
-msgstr ""
+msgstr "再試行"
 
 #: crates/big-audio-player/src/audio/ui/audio_shell/queue_persistence.rs:60
 msgid ""
@@ -750,20 +736,16 @@ msgid "Watch folders could not be read. Previous settings were kept."
 msgstr "監視フォルダーを読み取れませんでした。以前の設定は保持されています。"
 
 #: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:154
-#, fuzzy
-#| msgid "The playlist could not be saved."
 msgid "The station could not be saved."
-msgstr "プレイリストを保存できませんでした。"
+msgstr "ステーションを保存できませんでした。"
 
 #: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:168
-#, fuzzy
-#| msgid "The playlist could not be saved."
 msgid "The station could not be removed."
-msgstr "プレイリストを保存できませんでした。"
+msgstr "ステーションを削除できませんでした。"
 
 #: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:230
 msgid "There is no Music or home folder to save recordings in."
-msgstr ""
+msgstr "録音を保存するミュージックフォルダーもホームフォルダーもありません。"
 
 #: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:276
 #: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:284
@@ -817,10 +799,8 @@ msgid "Open File"
 msgstr "ファイルを開く"
 
 #: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:528
-#, fuzzy
-#| msgid "The playlist could not be saved."
 msgid "Saved radio stations could not be read."
-msgstr "プレイリストを保存できませんでした。"
+msgstr "保存済みのラジオステーションを読み込めませんでした。"
 
 #: crates/big-audio-player/src/audio/ui/audio_shell/tray.rs:18
 msgid "Show Big Audio Player"
@@ -831,23 +811,18 @@ msgid "The TV's track is no longer in the queue."
 msgstr "TV のトラックはキューにありません。"
 
 #: crates/big-audio-player/src/audio/ui/audio_shell/update.rs:137
-#, fuzzy
-#| msgid "Cancelled"
 msgid "Scan cancelled"
-msgstr "キャンセル済み"
+msgstr "スキャンをキャンセルしました"
 
 #: crates/big-audio-player/src/audio/ui/audio_shell/update.rs:139
-#, fuzzy
-#| msgid "Sample Rate"
 msgid "Scan incomplete"
-msgstr "サンプルレート"
+msgstr "スキャンが完了しませんでした"
 
 #: crates/big-audio-player/src/audio/ui/audio_shell/update.rs:142
-#, fuzzy, rust-format
-#| msgid "tracks imported"
+#, rust-format
 msgid "{count} track imported"
 msgid_plural "{count} tracks imported"
-msgstr[0] "件のトラックをインポートしました"
+msgstr[0] "{count} 件のトラックをインポートしました"
 
 #: crates/big-audio-player/src/audio/ui/audio_shell/update.rs:153
 msgid "Library updated"
@@ -1174,13 +1149,13 @@ msgstr "ファイルマネージャーで表示"
 #, rust-format
 msgid "{count} track"
 msgid_plural "{count} tracks"
-msgstr[0] ""
+msgstr[0] "{count} トラック"
 
 #: crates/big-audio-player/src/audio/ui/mod.rs:59
 #, rust-format
 msgid "{count} track · {duration}"
 msgid_plural "{count} tracks · {duration}"
-msgstr[0] ""
+msgstr[0] "{count} トラック · {duration}"
 
 #: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:35
 msgid "Drag and drop files to create a playlist"
@@ -1209,7 +1184,7 @@ msgstr "メインメニュー"
 
 #: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:90
 msgid "Show Sidebar"
-msgstr ""
+msgstr "サイドバーを表示"
 
 #: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:121
 #: crates/big-audio-player/src/audio/ui/playlist_library_dialog.rs:261
@@ -1266,14 +1241,12 @@ msgid "About"
 msgstr "このアプリについて"
 
 #: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:244
-#, fuzzy
-#| msgid "No episodes found"
 msgid "No episodes queued"
-msgstr "エピソードが見つかりません"
+msgstr "キューにエピソードがありません"
 
 #: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:245
 msgid "Choose a podcast on the left to queue its episodes."
-msgstr ""
+msgstr "左側でポッドキャストを選ぶと、そのエピソードがキューに追加されます。"
 
 #: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:254
 msgid "Drop tracks here"
@@ -1282,22 +1255,21 @@ msgstr "ここにトラックをドロップ"
 #: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:256
 msgid "Or double-click a track in the library, or select it and press Return."
 msgstr ""
+"または、ライブラリのトラックをダブルクリックするか、選択して Enter キーを押し"
+"てください。"
 
 #: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:283
 msgid "Welcome to Big Audio Player"
 msgstr "Big Audio Player へようこそ"
 
 #: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:291
-#, fuzzy
-#| msgid ""
-#| "Add a folder with your music files to get started.\n"
-#| "Supported formats: MP3, FLAC, OGG, M4A, OPUS, WAV and more."
 msgid ""
 "Open music files to play them now, or add your music folder in the Music "
 "tab.\n"
 "Supported formats: MP3, FLAC, OGG, M4A, OPUS, WAV and more."
 msgstr ""
-"音楽ファイルのあるフォルダーを追加して始めましょう。\n"
+"音楽ファイルを開いてすぐに再生するか、ミュージックタブで音楽フォルダーを追加"
+"してください。\n"
 "対応フォーマット: MP3、FLAC、OGG、M4A、OPUS、WAV など。"
 
 #: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:304
@@ -1525,10 +1497,8 @@ msgid "Cancellation requested. Finishing the current safe step…"
 msgstr "キャンセルを要求しました。現在の安全なステップを完了しています…"
 
 #: crates/big-audio-player/src/audio/ui/scan_progress.rs:177
-#, fuzzy
-#| msgid "Library"
 msgid "Library Scan"
-msgstr "ライブラリ"
+msgstr "ライブラリのスキャン"
 
 #: crates/big-audio-player/src/audio/ui/track_list.rs:392
 #: crates/big-video-player/src/video/ui/video_browser_sidebar/views/queue_view.rs:313
@@ -1536,10 +1506,8 @@ msgid "Playing"
 msgstr "再生中"
 
 #: crates/big-audio-player/src/audio/ui/track_list.rs:393
-#, fuzzy
-#| msgid "Pause"
 msgid "Paused"
-msgstr "一時停止"
+msgstr "一時停止中"
 
 #: crates/big-audio-player/src/audio/ui/unavailable_dialog.rs:52
 msgid ""
@@ -1650,7 +1618,7 @@ msgstr "Big Video Player"
 
 #: crates/big-video-player/src/video/app.rs:124
 msgid "Open a separate player window instead of using the running one"
-msgstr ""
+msgstr "実行中のプレーヤーを使わずに、別のプレーヤーウィンドウを開く"
 
 #: crates/big-video-player/src/video/keybindings.rs:50
 msgid "Increase speed"
@@ -1871,10 +1839,8 @@ msgid "Open"
 msgstr "開く"
 
 #: crates/big-video-player/src/video/ui/appearance/layout/buttons_page.rs:56
-#, fuzzy
-#| msgid "Load Playlist"
 msgid "Files and Playlist"
-msgstr "プレイリストを読み込み"
+msgstr "ファイルとプレイリスト"
 
 #: crates/big-video-player/src/video/ui/appearance/layout/buttons_page.rs:64
 #: crates/big-video-player/src/video/ui/video_shell/component.rs:181
@@ -1900,17 +1866,15 @@ msgstr "全画面表示"
 
 #: crates/big-video-player/src/video/ui/appearance/layout/buttons_page.rs:179
 msgid "Top bar"
-msgstr ""
+msgstr "上部バー"
 
 #: crates/big-video-player/src/video/ui/appearance/layout/buttons_page.rs:181
 msgid "Video Title"
 msgstr "ビデオのタイトル"
 
 #: crates/big-video-player/src/video/ui/appearance/layout/buttons_page.rs:186
-#, fuzzy
-#| msgid "Bottom Margin"
 msgid "Bottom bar"
-msgstr "下余白"
+msgstr "下部バー"
 
 #: crates/big-video-player/src/video/ui/appearance/layout/buttons_page.rs:226
 #: crates/big-video-player/src/video/ui/appearance/layout/layout_page.rs:98
@@ -1922,12 +1886,12 @@ msgid "Button Layout"
 msgstr "ボタンのレイアウト"
 
 #: crates/big-video-player/src/video/ui/appearance/layout/buttons_page.rs:232
-#, fuzzy
-#| msgid "Drag buttons between zones • Click to toggle visibility"
 msgid ""
 "Drag buttons between zones, or move the focused one with Alt+Left and "
 "Alt+Right. Click a button to show or hide it."
-msgstr "ボタンをゾーン間でドラッグ • クリックで表示/非表示を切り替え"
+msgstr ""
+"ボタンをゾーン間でドラッグするか、フォーカスのあるボタンを Alt+← と Alt+→ で"
+"移動します。ボタンをクリックすると表示/非表示を切り替えます。"
 
 #: crates/big-video-player/src/video/ui/appearance/layout/layout_page.rs:19
 msgid "Layout"
@@ -2356,6 +2320,9 @@ msgid ""
 "Some provider passwords are still in a plain file because your keyring could "
 "not be reached. Unlock your keyring, then reload the channels."
 msgstr ""
+"キーリングにアクセスできなかったため、一部のプロバイダーのパスワードがまだ暗"
+"号化されていないファイルに保存されています。キーリングのロックを解除してか"
+"ら、チャンネルを再読み込みしてください。"
 
 #: crates/big-video-player/src/video/ui/iptv/mod.rs:257
 #: crates/big-video-player/src/video/ui/iptv/mod.rs:437
@@ -2376,10 +2343,9 @@ msgid "Loading channels…"
 msgstr "チャンネルを読み込んでいます…"
 
 #: crates/big-video-player/src/video/ui/iptv/mod.rs:490
-#, fuzzy, rust-format
-#| msgid "Showing the first {}. Type more to narrow the search."
+#, rust-format
 msgid "Showing the first {} channels; the list has more."
-msgstr "先頭の {} 件を表示しています。さらに入力して検索を絞り込んでください。"
+msgstr "先頭の {} チャンネルを表示しています。リストには続きがあります。"
 
 #: crates/big-video-player/src/video/ui/iptv/mod.rs:509
 msgid ""
@@ -2436,12 +2402,16 @@ msgid ""
 "Could not read this provider's password from your keyring. Unlock your "
 "keyring, then reload the channels."
 msgstr ""
+"このプロバイダーのパスワードをキーリングから読み取れませんでした。キーリング"
+"のロックを解除してから、チャンネルを再読み込みしてください。"
 
 #: crates/big-video-player/src/video/ui/iptv/mod.rs:535
 msgid ""
 "This playlist has IPTV channels from a provider that is not set up. Add the "
 "provider under IPTV, then open the playlist again."
 msgstr ""
+"このプレイリストには、未設定のプロバイダーの IPTV チャンネルが含まれていま"
+"す。IPTV でプロバイダーを追加してから、プレイリストを開き直してください。"
 
 #: crates/big-video-player/src/video/ui/iptv/providers_dialog.rs:48
 msgid "Add provider"
@@ -2457,6 +2427,9 @@ msgid ""
 "can delete the “Big Multimedia IPTV provider” item it left with your keyring "
 "manager."
 msgstr ""
+"置き換えたか削除したパスワードをキーリングから削除できませんでした。残った"
+"「Big Multimedia IPTV provider」項目は、キーリングの管理ツールで削除できま"
+"す。"
 
 #: crates/big-video-player/src/video/ui/iptv/providers_dialog.rs:120
 msgid "No providers yet"
@@ -2471,6 +2444,8 @@ msgid ""
 "Password not in your keyring yet. Unlock your keyring, then close this "
 "window to try again."
 msgstr ""
+"パスワードはまだキーリングに保存されていません。キーリングのロックを解除して"
+"から、このウィンドウを閉じて再試行してください。"
 
 #: crates/big-video-player/src/video/ui/iptv/providers_dialog.rs:137
 msgid "Edit"
@@ -2487,13 +2462,15 @@ msgstr "IPTV プロバイダー"
 
 #: crates/big-video-player/src/video/ui/iptv/providers_dialog.rs:298
 msgid "Saving the password in your keyring…"
-msgstr ""
+msgstr "パスワードをキーリングに保存しています…"
 
 #: crates/big-video-player/src/video/ui/iptv/providers_dialog.rs:326
 msgid ""
 "Could not save the password in your keyring, so nothing was saved. Unlock "
 "your keyring, then save again."
 msgstr ""
+"パスワードをキーリングに保存できなかったため、何も保存されませんでした。キー"
+"リングのロックを解除してから、もう一度保存してください。"
 
 #: crates/big-video-player/src/video/ui/iptv/providers_dialog.rs:366
 #: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/header.rs:163
@@ -2540,10 +2517,14 @@ msgstr "パスワード"
 msgid ""
 "The full address is saved in your keyring. Leave it as shown to keep it."
 msgstr ""
+"完全なアドレスはキーリングに保存されています。保持するには、表示されているま"
+"まにしてください。"
 
 #: crates/big-video-player/src/video/ui/iptv/providers_dialog.rs:425
 msgid "The password is saved in your keyring. Leave Password empty to keep it."
 msgstr ""
+"パスワードはキーリングに保存されています。保持するには、パスワード欄を空のま"
+"まにしてください。"
 
 #: crates/big-video-player/src/video/ui/iptv/providers_dialog.rs:433
 msgid "HTTP headers (optional)"
@@ -2658,8 +2639,6 @@ msgid "For some TV broadcasts (HLG)"
 msgstr "一部のテレビ放送向け (HLG)"
 
 #: crates/big-video-player/src/video/ui/media_adjust.rs:290
-#, fuzzy
-#| msgid "Plain colours (SDR)"
 msgid "Plain colors (SDR)"
 msgstr "通常の色 (SDR)"
 
@@ -2840,10 +2819,9 @@ msgid "Subtitle"
 msgstr "字幕"
 
 #: crates/big-video-player/src/video/ui/menu_dialogs.rs:20
-#, fuzzy, rust-format
-#| msgid "Recording was not saved"
+#, rust-format
 msgid "The screenshot was not saved: {error}"
-msgstr "録音は保存されませんでした"
+msgstr "スクリーンショットは保存されませんでした: {error}"
 
 #: crates/big-video-player/src/video/ui/menu_dialogs.rs:52
 msgid "Go to Time"
@@ -2865,28 +2843,31 @@ msgstr "移動"
 #: crates/big-video-player/src/video/ui/menu_dialogs.rs:132
 msgid "Still saving the previous screenshots. Try again in a moment."
 msgstr ""
+"前のスクリーンショットをまだ保存しています。しばらくしてから再試行してくださ"
+"い。"
 
 #: crates/big-video-player/src/video/ui/menu_dialogs.rs:83
 #: crates/big-video-player/src/video/ui/menu_dialogs.rs:88
-#, fuzzy
-#| msgid "Stores the video color space in each screenshot"
 msgid "Open a video to take a screenshot"
-msgstr "ビデオの色空間を各スクリーンショットに保存します"
+msgstr "スクリーンショットを撮るにはビデオを開いてください"
 
 #: crates/big-video-player/src/video/ui/menu_dialogs.rs:102
 msgid ""
 "There is no Pictures or home folder to save screenshots in. Choose a folder "
 "in Preferences."
 msgstr ""
+"スクリーンショットを保存するピクチャフォルダーもホームフォルダーもありませ"
+"ん。設定でフォルダーを選択してください。"
 
 #: crates/big-video-player/src/video/ui/menu_dialogs.rs:127
 #, rust-format
 msgid "Cannot save to {folder}: {error}. Choose another folder in Preferences."
 msgstr ""
+"{folder} に保存できません: {error}。設定で別のフォルダーを選択してください。"
 
 #: crates/big-video-player/src/video/ui/menu_dialogs.rs:137
 msgid "The screenshot was not saved because of an unexpected error"
-msgstr ""
+msgstr "予期しないエラーのため、スクリーンショットは保存されませんでした"
 
 #: crates/big-video-player/src/video/ui/menu_dialogs.rs:174
 msgid "Screenshot saved"
@@ -3678,11 +3659,10 @@ msgid "Rename failed"
 msgstr "名前の変更に失敗しました"
 
 #: crates/big-video-player/src/video/ui/video_browser_sidebar/fileops.rs:311
-#, fuzzy, rust-format
-#| msgid "Could not move to trash"
+#, rust-format
 msgid "Could not move {failed} of {total} file"
 msgid_plural "Could not move {failed} of {total} files"
-msgstr[0] "ゴミ箱に移動できませんでした"
+msgstr[0] "{total} 個中 {failed} 個のファイルを移動できませんでした"
 
 #: crates/big-video-player/src/video/ui/video_browser_sidebar/library.rs:118
 msgid "Home folder"
@@ -3894,8 +3874,7 @@ msgid_plural "{n} changes"
 msgstr[0] "{n} 件の変更"
 
 #: crates/big-video-player/src/video/ui/video_shell/adjustments.rs:173
-#, fuzzy, rust-format
-#| msgid "Video colour: {name}"
+#, rust-format
 msgid "Video color: {name}"
 msgstr "ビデオの色: {name}"
 
@@ -3994,11 +3973,9 @@ msgid "Use HDR?"
 msgstr "HDR を使用しますか?"
 
 #: crates/big-video-player/src/video/ui/video_shell/component.rs:214
-#, fuzzy
-#| msgid "Does the picture look grey and washed out? Click to use HDR colours"
 msgid "Does the picture look grey and washed out? Click to use HDR colors"
 msgstr ""
-"映像が灰色っぽく白っぽく見えますか? クリックすると HDR の色を使用します"
+"映像が灰色っぽく色あせて見えますか? クリックすると HDR の色を使用します"
 
 #: crates/big-video-player/src/video/ui/video_shell/component.rs:233
 msgid "On the TV"
@@ -4138,6 +4115,10 @@ msgid ""
 "kept. Video Output, Audio Output and the custom mpv options take effect "
 "after reopening the player."
 msgstr ""
+"設定と外観がデフォルトに戻ります。ライブラリフォルダー、キーボードショート"
+"カット、音量、シャッフル、音声とイコライザーのレベルは保持されます。ビデオ出"
+"力、オーディオ出力、カスタム mpv オプションは、プレーヤーを開き直した後に反映"
+"されます。"
 
 #: crates/big-video-player/src/video/ui/video_shell/export.rs:19
 msgid "No file is playing"
@@ -4231,7 +4212,7 @@ msgstr "一致する最近使ったファイルはありません"
 
 #: crates/big-video-player/src/video/ui/video_shell/playback.rs:196
 msgid "The screenshot took too long and was not saved"
-msgstr ""
+msgstr "スクリーンショットに時間がかかりすぎたため、保存されませんでした"
 
 #: crates/big-video-player/src/video/ui/video_shell/playback.rs:223
 msgid "Could not play this file — it may be unsupported or corrupt."
@@ -4259,6 +4240,8 @@ msgid ""
 "The playback engine could not start: {error}. Check Preferences → Advanced → "
 "mpv Options, then reopen the player."
 msgstr ""
+"再生エンジンを起動できませんでした: {error}。設定 → 詳細設定 → mpv オプション"
+"を確認してから、プレーヤーを開き直してください。"
 
 #: crates/big-video-player/src/video/ui/video_shell/render.rs:340
 msgid ""
@@ -4651,7 +4634,7 @@ msgstr "コンバーターを起動できませんでした"
 #: crates/media-runtime/src/media/iptv/m3u.rs:51
 #, rust-format
 msgid "Only the first {} entries of the playlist were loaded."
-msgstr ""
+msgstr "プレイリストの最初の {} 件のエントリーのみを読み込みました。"
 
 #: crates/media-runtime/src/media/iptv/m3u.rs:58
 #, rust-format
@@ -4659,6 +4642,8 @@ msgid "{} entry was skipped because it is not a supported stream or file."
 msgid_plural ""
 "{} entries were skipped because they are not supported streams or files."
 msgstr[0] ""
+"{} 件のエントリーは対応しているストリームまたはファイルではないため、スキップ"
+"しました。"
 
 #: crates/media-runtime/src/media/metadata_cache/display.rs:21
 #, rust-format
@@ -4701,32 +4686,24 @@ msgid "Chapter"
 msgstr "チャプター"
 
 #: crates/media-runtime/src/player/mpv_backend/properties_video.rs:39
-#, fuzzy
-#| msgid "Pixel Format"
 msgid "pixelformat"
-msgstr "ピクセル形式"
+msgstr ""
 
 #: crates/media-runtime/src/player/mpv_backend/properties_video.rs:40
-#, fuzzy
-#| msgid "Pixel Format"
 msgid "hw-pixelformat"
-msgstr "ピクセル形式"
+msgstr ""
 
 #: crates/media-runtime/src/player/mpv_backend/properties_video.rs:41
 msgid "colormatrix"
 msgstr ""
 
 #: crates/media-runtime/src/player/mpv_backend/properties_video.rs:42
-#, fuzzy
-#| msgid "Primaries"
 msgid "primaries"
-msgstr "原色"
+msgstr ""
 
 #: crates/media-runtime/src/player/mpv_backend/properties_video.rs:43
-#, fuzzy
-#| msgid "Gamma"
 msgid "gamma"
-msgstr "ガンマ"
+msgstr ""
 
 #: crates/media-runtime/src/player/mpv_backend/types.rs:94
 msgid ""
@@ -4734,6 +4711,9 @@ msgid ""
 "headphones are connected, or choose another Audio Output in Preferences and "
 "reopen the player."
 msgstr ""
+"オーディオ出力で音声を開始できませんでした。スピーカーまたはヘッドホンが接続"
+"されていることを確認するか、設定で別のオーディオ出力を選択してプレーヤーを開"
+"き直してください。"
 
 #: crates/media-runtime/src/settings/messages.rs:6
 msgid "Access could not be verified — check permissions before reviewing"
@@ -4895,23 +4875,23 @@ msgstr "Alt+下で調整、Escape で閉じます。"
 #: crates/ui/generic/big-relm4-components/src/input/zone_layout_editor.rs:160
 #, rust-format
 msgid "{zone}, {position} of {count}"
-msgstr ""
+msgstr "{zone}、{count} 個中 {position} 番目"
 
 #: crates/ui/generic/big-relm4-components/src/input/zone_layout_editor.rs:201
 #, rust-format
 msgid "{bar}, center"
-msgstr ""
+msgstr "{bar}、中央"
 
 #: crates/ui/generic/big-relm4-components/src/input/zone_layout_editor.rs:202
 #: crates/ui/generic/big-relm4-components/src/input/zone_layout_editor.rs:203
 #, rust-format
 msgid "{bar}, left"
-msgstr ""
+msgstr "{bar}、左"
 
 #: crates/ui/generic/big-relm4-components/src/input/zone_layout_editor.rs:204
 #, rust-format
 msgid "{bar}, right"
-msgstr ""
+msgstr "{bar}、右"
 
 #: crates/ui/generic/big-relm4-components/src/layout/media_window/sidebar.rs:232
 msgid "Resize sidebar"
@@ -5168,7 +5148,7 @@ msgstr "カットを編集"
 
 #: crates/ui/media/big-player-ui/src/cut_edit_dialog.rs:31
 msgid "Start and end must be at least 0.1 seconds apart"
-msgstr ""
+msgstr "開始と終了は 0.1 秒以上離す必要があります"
 
 #: crates/ui/media/big-player-ui/src/cut_edit_dialog.rs:42
 msgid "Edit Cut"
@@ -5269,7 +5249,7 @@ msgstr "ポッドキャストを検索するか、RSS フィードを追加し�
 
 #: crates/ui/media/big-player-ui/src/podcast_panel.rs:244
 msgid "Podcast Subscriptions Unavailable"
-msgstr ""
+msgstr "ポッドキャストの登録を利用できません"
 
 #: crates/ui/media/big-player-ui/src/podcast_panel.rs:274
 msgid "Connection error — try again"
@@ -5281,7 +5261,7 @@ msgstr "すでに登録済みです"
 
 #: crates/ui/media/big-player-ui/src/podcast_panel.rs:341
 msgid "Podcast subscriptions are still loading"
-msgstr ""
+msgstr "ポッドキャストの登録を読み込んでいます"
 
 #: crates/ui/media/big-player-ui/src/podcast_panel.rs:378
 msgid "Subscriptions"
@@ -5292,15 +5272,13 @@ msgid "Search Results"
 msgstr "検索結果"
 
 #: crates/ui/media/big-player-ui/src/podcast_panel.rs:450
-#, fuzzy
-#| msgid "The playlist could not be saved."
 msgid "Podcast subscriptions could not be saved"
-msgstr "プレイリストを保存できませんでした。"
+msgstr "ポッドキャストの登録を保存できませんでした"
 
 #: crates/ui/media/big-player-ui/src/podcast_panel.rs:463
 #, rust-format
 msgid "Podcast subscriptions could not be read, so changes are not saved: {}"
-msgstr ""
+msgstr "ポッドキャストの登録を読み込めなかったため、変更は保存されません: {}"
 
 #: crates/ui/media/big-player-ui/src/podcast_panel.rs:472
 msgid "Title unavailable"
@@ -5349,34 +5327,29 @@ msgid "Explore Stations"
 msgstr "ステーションを探す"
 
 #: crates/ui/media/big-player-ui/src/radio_panel/widgets.rs:56
-#, fuzzy, rust-format
-#| msgid "Remove station"
+#, rust-format
 msgid "Remove {station}"
-msgstr "ステーションを削除"
+msgstr "{station} を削除"
 
 #: crates/ui/media/big-player-ui/src/radio_panel/widgets.rs:75
-#, fuzzy, rust-format
-#| msgid "Add to my stations"
+#, rust-format
 msgid "Add {station} to my stations"
-msgstr "マイステーションに追加"
+msgstr "{station} をマイステーションに追加"
 
 #: crates/ui/media/big-player-ui/src/radio_panel/widgets.rs:99
-#, fuzzy, rust-format
-#| msgid "Add to my stations"
+#, rust-format
 msgid "{station} is in my stations"
-msgstr "マイステーションに追加"
+msgstr "{station} はマイステーションにあります"
 
 #: crates/ui/media/big-player-ui/src/radio_panel/widgets.rs:115
-#, fuzzy, rust-format
-#| msgid "Stop Recording"
+#, rust-format
 msgid "Stop recording {station}"
-msgstr "録音を停止"
+msgstr "{station} の録音を停止"
 
 #: crates/ui/media/big-player-ui/src/radio_panel/widgets.rs:121
-#, fuzzy, rust-format
-#| msgid "Remove station"
+#, rust-format
 msgid "Record {station}"
-msgstr "ステーションを削除"
+msgstr "{station} を録音"
 
 #: crates/ui/media/big-player-ui/src/radio_panel/widgets.rs:196
 msgid "Search radios..."
@@ -5499,16 +5472,17 @@ msgstr "KDE Connect のダウンロードページを開く"
 #: crates/ui/media/big-player-ui/src/smartphone/dialog.rs:129
 msgid "No local network found. Connect to a network and try again."
 msgstr ""
+"ローカルネットワークが見つかりません。ネットワークに接続して再試行してくださ"
+"い。"
 
 #: crates/ui/media/big-player-ui/src/smartphone/dialog.rs:152
 msgid "Scan the code with the phone's camera."
 msgstr "スマートフォンのカメラでコードを読み取ってください。"
 
 #: crates/ui/media/big-player-ui/src/smartphone/dialog.rs:171
-#, fuzzy, rust-format
-#| msgid "Web remote is off."
+#, rust-format
 msgid "Web remote stopped: {error}"
-msgstr "Web リモコンはオフです。"
+msgstr "Web リモコンが停止しました: {error}"
 
 #: crates/ui/media/big-player-ui/src/smartphone/dialog.rs:179
 msgid "Could not start server"
