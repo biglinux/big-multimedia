@@ -106,6 +106,8 @@ pub struct VideoIptvBrowser {
     /// Provider dropdown model + widget (kept for repopulation on CRUD close).
     provider_model: gtk::StringList,
     provider_dropdown: gtk::DropDown,
+    /// Blocked while the dropdown is refilled, whose caller loads the provider.
+    provider_selection: gtk::glib::SignalHandlerId,
     /// Status caption (cached/loading/error messaging).
     status: gtk::Label,
     /// Shown while a provider's password stays in the file for want of a
@@ -227,7 +229,7 @@ impl Component for VideoIptvBrowser {
         scrolled.set_child(Some(&list_view.root));
         root.append(&scrolled);
 
-        wire_widget_signals(
+        let provider_selection = wire_widget_signals(
             &manage_providers_button,
             &refresh_provider_button,
             &search,
@@ -240,6 +242,7 @@ impl Component for VideoIptvBrowser {
             list_view,
             provider_model,
             provider_dropdown,
+            provider_selection,
             status,
             keyring_status,
             protecting: false,
@@ -406,10 +409,14 @@ impl VideoIptvBrowser {
             .map(|p| p.name.clone())
             .collect();
         let name_refs: Vec<&str> = names.iter().map(String::as_str).collect();
+        self.provider_dropdown
+            .block_signal(&self.provider_selection);
         self.provider_model.splice(0, n, &name_refs);
         if self.provider_model.n_items() > 0 {
             self.provider_dropdown.set_selected(0);
         }
+        self.provider_dropdown
+            .unblock_signal(&self.provider_selection);
     }
 
     /// Present the providers-management dialog over the browser root.
@@ -575,14 +582,15 @@ fn spawn_network_load(
 }
 
 /// Wire the static widget signals (manage/refresh/search/dropdown) to component
-/// inputs. Pulled out of `init` to keep that function small.
+/// inputs, returning the dropdown's selection handler. Pulled out of `init` to
+/// keep that function small.
 fn wire_widget_signals(
     manage_providers_button: &gtk::Button,
     refresh_provider_button: &gtk::Button,
     search: &gtk::SearchEntry,
     provider_dropdown: &gtk::DropDown,
     sender: &ComponentSender<VideoIptvBrowser>,
-) {
+) -> gtk::glib::SignalHandlerId {
     let manage_sender = sender.clone();
     manage_providers_button.connect_clicked(move |_| {
         manage_sender.input(VideoIptvBrowserInput::ManageProviders);
@@ -603,5 +611,5 @@ fn wire_widget_signals(
         dropdown_sender.input(VideoIptvBrowserInput::ProviderSelected(
             dropdown.selected() as usize
         ));
-    });
+    })
 }
