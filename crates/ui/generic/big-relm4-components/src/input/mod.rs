@@ -3,13 +3,13 @@
 pub mod button_content;
 pub mod debounce;
 pub mod dropdown_row;
-pub mod illustrated_slider_row;
 pub mod inline_spin_set;
 pub mod preference_cards;
 pub mod scale_popover;
 pub mod scale_trough;
 pub mod shortcut_capture;
 pub mod shortcut_dialog;
+pub mod slider_row;
 pub mod spin_row;
 /// Display-free zone-layout model, re-exported from `big-app-kit-core` so the
 /// spec layer owns it GTK-free while every `big_relm4_components::input::zone_layout::*`
