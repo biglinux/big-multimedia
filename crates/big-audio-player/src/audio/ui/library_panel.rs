@@ -332,8 +332,8 @@ fn library_behaviour(
                     (Rc::clone(&cache), Rc::clone(&pending), Rc::clone(&shown));
                 big_media_components::player_chrome::spawn_blocking_result(
                     move || {
-                        let data = crate::library::metadata::extract_album_art(&path)?;
-                        big_media_components::media::images::bytes_to_thumbnail(&data, COVER_EDGE)
+                        let art = crate::library::metadata::extract_album_art(&path)?;
+                        big_media_components::media::images::bytes_to_thumbnail(&art, COVER_EDGE)
                     },
                     move |texture| {
                         pending.borrow_mut().remove(&hash);

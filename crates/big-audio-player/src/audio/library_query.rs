@@ -39,30 +39,27 @@ pub(crate) fn query_tracks_for_node(
     filter_text: &str,
     age_secs: Option<i64>,
     grouping: &LibraryGrouping,
-) -> Vec<Track> {
+) -> big_media_runtime::Result<Vec<Track>> {
     match node_kind {
-        BrowserNodeKind::All => {
-            queries::get_library_tracks(conn, &[], filter_text, age_secs).unwrap_or_default()
-        }
+        BrowserNodeKind::All => queries::get_library_tracks(conn, &[], filter_text, age_secs),
         BrowserNodeKind::VariousArtists => {
-            let compilations = queries::get_compilation_albums(conn, filter_text, &[], age_secs)
-                .unwrap_or_default();
+            let compilations = queries::get_compilation_albums(conn, filter_text, &[], age_secs)?;
             let mut tracks = Vec::new();
             for (album, _) in &compilations {
                 let filters = [("album", album.as_str())];
-                if let Ok(mut resolved) =
-                    queries::get_library_tracks(conn, &filters, filter_text, age_secs)
-                {
-                    tracks.append(&mut resolved);
-                }
+                tracks.append(&mut queries::get_library_tracks(
+                    conn,
+                    &filters,
+                    filter_text,
+                    age_secs,
+                )?);
             }
-            tracks
+            Ok(tracks)
         }
-        BrowserNodeKind::Divider | BrowserNodeKind::Station | BrowserNodeKind::Folder => Vec::new(),
-        BrowserNodeKind::File => queries::get_track_by_path(conn, node_key)
-            .ok()
-            .flatten()
-            .map_or_else(Vec::new, |track| vec![track]),
+        BrowserNodeKind::Divider | BrowserNodeKind::Station | BrowserNodeKind::Folder => {
+            Ok(Vec::new())
+        }
+        BrowserNodeKind::File => Ok(Vec::from_iter(queries::get_track_by_path(conn, node_key)?)),
         BrowserNodeKind::Artist
         | BrowserNodeKind::Album
         | BrowserNodeKind::Genre
@@ -87,7 +84,7 @@ pub(crate) fn query_tracks_for_node(
                     .split(PARENT_FILTER_SEPARATOR)
                     .filter_map(|filter| filter.split_once(':')),
             );
-            queries::get_library_tracks(conn, &filters, filter_text, age_secs).unwrap_or_default()
+            queries::get_library_tracks(conn, &filters, filter_text, age_secs)
         }
     }
 }
@@ -414,7 +411,7 @@ mod tests {
             "",
             None,
             &artist_grouping(),
-        );
+        )?;
         assert_eq!(tracks.len(), 5);
         Ok(())
     }
@@ -431,7 +428,7 @@ mod tests {
             "",
             None,
             &artist_grouping(),
-        );
+        )?;
         assert_eq!(found.len(), 1);
         assert_eq!(found[0].file_path, "/m/b1.flac");
 
@@ -443,8 +440,25 @@ mod tests {
             "",
             None,
             &artist_grouping(),
-        );
+        )?;
         assert!(missing.is_empty());
+        Ok(())
+    }
+
+    #[test]
+    fn unreadable_library_node_errors() -> MediaResult<()> {
+        let conn = Connection::open_in_memory()?;
+        for kind in [
+            BrowserNodeKind::All,
+            BrowserNodeKind::VariousArtists,
+            BrowserNodeKind::File,
+            BrowserNodeKind::Artist,
+            BrowserNodeKind::Album,
+        ] {
+            let result =
+                query_tracks_for_node(&conn, kind, "key", "", "", None, &artist_grouping());
+            assert!(result.is_err(), "{kind:?} resolved {result:?}");
+        }
         Ok(())
     }
 
@@ -458,7 +472,7 @@ mod tests {
             BrowserNodeKind::Folder,
         ] {
             let tracks =
-                query_tracks_for_node(&conn, kind, "anything", "", "", None, &artist_grouping());
+                query_tracks_for_node(&conn, kind, "anything", "", "", None, &artist_grouping())?;
             assert!(tracks.is_empty(), "{kind:?} should resolve to no tracks");
         }
         Ok(())
@@ -470,19 +484,20 @@ mod tests {
         seed_library(&conn)?;
         let g = artist_grouping();
 
-        let album = query_tracks_for_node(&conn, BrowserNodeKind::Album, "Debut", "", "", None, &g);
+        let album =
+            query_tracks_for_node(&conn, BrowserNodeKind::Album, "Debut", "", "", None, &g)?;
         assert_eq!(album.len(), 2);
 
-        let genre = query_tracks_for_node(&conn, BrowserNodeKind::Genre, "Jazz", "", "", None, &g);
+        let genre = query_tracks_for_node(&conn, BrowserNodeKind::Genre, "Jazz", "", "", None, &g)?;
         assert_eq!(genre.len(), 1);
         assert_eq!(genre[0].file_path, "/m/b1.flac");
 
         // `year` is an INTEGER column; the node key arrives as text. This
         // exercises the `Year` column arm end-to-end (regression for the
         // int-vs-text affinity fix in big-media-data).
-        let year = query_tracks_for_node(&conn, BrowserNodeKind::Year, "2020", "", "", None, &g);
+        let year = query_tracks_for_node(&conn, BrowserNodeKind::Year, "2020", "", "", None, &g)?;
         assert_eq!(year.len(), 2);
-        let none = query_tracks_for_node(&conn, BrowserNodeKind::Year, "1999", "", "", None, &g);
+        let none = query_tracks_for_node(&conn, BrowserNodeKind::Year, "1999", "", "", None, &g)?;
         assert!(none.is_empty());
         Ok(())
     }
@@ -501,7 +516,7 @@ mod tests {
             "",
             None,
             &artist_grouping(),
-        );
+        )?;
         assert_eq!(by_artist.len(), 2);
         let va = query_tracks_for_node(
             &conn,
@@ -511,7 +526,7 @@ mod tests {
             "",
             None,
             &artist_grouping(),
-        );
+        )?;
         assert!(va.is_empty());
         Ok(())
     }
@@ -524,11 +539,11 @@ mod tests {
             levels: [GroupBy::AlbumArtist, GroupBy::None, GroupBy::None],
         };
         // Now the Artist node keys on `album_artist`; "VA" groups Carol + Dave.
-        let va = query_tracks_for_node(&conn, BrowserNodeKind::Artist, "VA", "", "", None, &g);
+        let va = query_tracks_for_node(&conn, BrowserNodeKind::Artist, "VA", "", "", None, &g)?;
         assert_eq!(va.len(), 2);
         // And "Alice" (album_artist) still resolves her two tracks.
         let alice =
-            query_tracks_for_node(&conn, BrowserNodeKind::Artist, "Alice", "", "", None, &g);
+            query_tracks_for_node(&conn, BrowserNodeKind::Artist, "Alice", "", "", None, &g)?;
         assert_eq!(alice.len(), 2);
         Ok(())
     }
@@ -584,7 +599,7 @@ mod tests {
                 "",
                 None,
                 &grouping,
-            );
+            )?;
             let mut paths: Vec<_> = tracks
                 .iter()
                 .map(|track| track.file_path.as_str())
@@ -607,7 +622,7 @@ mod tests {
             "",
             None,
             &artist_grouping(),
-        );
+        )?;
         // Only the two-artist "Comp" album qualifies.
         assert_eq!(tracks.len(), 2);
         assert!(tracks.iter().all(|t| t.album.as_deref() == Some("Comp")));

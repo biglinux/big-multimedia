@@ -359,9 +359,25 @@ mod tests {
     use super::*;
     use std::process::Command;
 
+    /// Whether `program` is an executable file in a `PATH` directory.
+    fn on_path(program: &str) -> bool {
+        use std::os::unix::fs::PermissionsExt;
+        std::env::var_os("PATH").is_some_and(|path| {
+            std::env::split_paths(&path).any(|dir| {
+                fs::metadata(dir.join(program))
+                    .is_ok_and(|meta| meta.is_file() && meta.permissions().mode() & 0o111 != 0)
+            })
+        })
+    }
+
     #[test]
     #[cfg_attr(miri, ignore)]
     fn tag_rewrite_replaces_title() {
+        if let Some(missing) = ["ffmpeg", "ffprobe"].into_iter().find(|p| !on_path(p)) {
+            // allow-noisy-log: a skipped run must say why it proved nothing.
+            eprintln!("skipped: {missing} is not on PATH");
+            return;
+        }
         let dir = tempfile::tempdir().unwrap();
         let path = dir.path().join("tone.flac");
         let made = Command::new("ffmpeg")
