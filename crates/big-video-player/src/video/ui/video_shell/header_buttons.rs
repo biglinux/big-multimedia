@@ -97,3 +97,90 @@ fn read_header_layout(settings: &Settings) -> ZoneLayout {
     }
     layout
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn header_zones_follow_the_top_keys() {
+        let settings = Settings::memory_only();
+        settings.set_string(keys::UI_ZONE_TOP_LEFT.0, "menu, pin,volume,ghost");
+        settings.set_string(keys::UI_ZONE_TOP_RIGHT.0, "playlist,,open");
+
+        let layout = read_header_layout(&settings);
+
+        assert_eq!(layout.zone("top", ZonePlacement::Start), ["menu", "pin"]);
+        assert_eq!(layout.zone("top", ZonePlacement::End), ["playlist", "open"]);
+    }
+
+    #[test]
+    fn header_hides_the_buttons_turned_off() {
+        let settings = Settings::memory_only();
+        settings.set_boolean(keys::UI_SHOW_OPEN.0, false);
+        settings.set_boolean(keys::UI_SHOW_MENU.0, false);
+
+        let layout = read_header_layout(&settings);
+
+        assert!(layout.is_visible("pin"));
+        assert!(!layout.is_visible("open"));
+        assert!(layout.is_visible("playlist"));
+        assert!(!layout.is_visible("menu"));
+    }
+
+    /// The header before it read these keys: Keep Above, Open and the
+    /// Files/Playlist switch on the left, Settings on the right.
+    #[test]
+    fn default_header_keeps_its_places() {
+        let layout = read_header_layout(&Settings::memory_only());
+
+        assert_eq!(
+            layout.zone("top", ZonePlacement::Start),
+            ["pin", "open", "playlist"]
+        );
+        assert_eq!(layout.zone("top", ZonePlacement::End), ["menu"]);
+        assert!(layout.hidden.is_empty());
+    }
+
+    fn children(zone: &gtk::Box) -> Vec<gtk::Widget> {
+        std::iter::successors(zone.first_child(), gtk::Widget::next_sibling).collect()
+    }
+
+    fn widgets(buttons: &[&gtk::Button]) -> Vec<gtk::Widget> {
+        buttons
+            .iter()
+            .map(|button| button.upcast_ref::<gtk::Widget>().clone())
+            .collect()
+    }
+
+    #[test]
+    #[ignore = "requires an isolated GTK session"]
+    fn apply_places_the_header_buttons_live() {
+        gtk::init().unwrap();
+        let [pin, open, switch, menu] = [(); 4].map(|()| gtk::Button::new());
+        let header = HeaderButtons::new(&pin, &open, &switch, &menu);
+        let settings = Settings::memory_only();
+        settings.set_string(keys::UI_ZONE_TOP_LEFT.0, "menu,pin,menu,ghost");
+        settings.set_string(keys::UI_ZONE_TOP_RIGHT.0, "playlist,pin");
+        settings.set_boolean(keys::UI_SHOW_OPEN.0, false);
+
+        header.apply_settings(&settings);
+
+        // A repeat keeps its first place; `open`, named nowhere, goes to its
+        // default side.
+        assert_eq!(children(&header.start_zone), widgets(&[&menu, &pin, &open]));
+        assert_eq!(children(&header.end_zone), widgets(&[&switch]));
+        assert!(!open.is_visible());
+        assert!(menu.is_visible());
+
+        settings.reset_to_defaults();
+        header.apply_settings(&settings);
+
+        assert_eq!(
+            children(&header.start_zone),
+            widgets(&[&pin, &open, &switch])
+        );
+        assert_eq!(children(&header.end_zone), widgets(&[&menu]));
+        assert!(open.is_visible());
+    }
+}
