@@ -262,6 +262,7 @@ impl MediaNotice {
             banner: adw::Banner::builder().revealed(false).build(),
             action: Rc::default(),
         };
+        make_banner_title_selectable(&notice.banner);
         let action = notice.action.clone();
         notice.banner.connect_button_clicked(move |banner| {
             banner.set_revealed(false);
@@ -296,6 +297,31 @@ impl MediaNotice {
         }
         self.banner.set_button_label(Some(label));
     }
+}
+
+/// Let the person select and copy `banner`'s title, which may carry an error
+/// to report. `AdwBanner` has no property for it; its title is the one label
+/// outside its button.
+pub fn make_banner_title_selectable(banner: &adw::Banner) {
+    if let Some(title) = label_outside_buttons(banner.upcast_ref()) {
+        title.set_selectable(true);
+    }
+}
+
+fn label_outside_buttons(widget: &gtk::Widget) -> Option<gtk::Label> {
+    let mut child = widget.first_child();
+    while let Some(current) = child {
+        if let Some(label) = current.downcast_ref::<gtk::Label>() {
+            return Some(label.clone());
+        }
+        if !current.is::<gtk::Button>()
+            && let Some(label) = label_outside_buttons(&current)
+        {
+            return Some(label);
+        }
+        child = current.next_sibling();
+    }
+    None
 }
 
 const WINDOW_MAXIMIZE_ICON: &str = "window-maximize-symbolic";
@@ -753,6 +779,34 @@ fn bounded_immersion_idle_timeout_ms(idle_timeout: std::time::Duration) -> u64 {
 
 #[cfg(test)]
 mod tests {
+    #[test]
+    #[ignore = "requires an isolated GTK session"]
+    fn notice_title_is_selectable() {
+        use adw::prelude::*;
+        gtk::init().expect("isolated GTK session");
+        adw::init().expect("libadwaita");
+        let notice = super::MediaNotice::new();
+        notice.show("The music library could not be opened: disk I/O error");
+        let mut selectable = Vec::new();
+        let mut pending = vec![notice.widget().clone().upcast::<gtk::Widget>()];
+        while let Some(widget) = pending.pop() {
+            if let Some(label) = widget.downcast_ref::<gtk::Label>()
+                && label.is_selectable()
+            {
+                selectable.push(label.label().to_string());
+            }
+            let mut child = widget.first_child();
+            while let Some(current) = child {
+                child = current.next_sibling();
+                pending.push(current);
+            }
+        }
+        assert_eq!(
+            selectable,
+            ["The music library could not be opened: disk I/O error"]
+        );
+    }
+
     use super::BigMediaImmersionGuardSnapshot;
     use super::{
         BigMediaChromePlacement, BigMediaOverlayLayerRole, MIN_IMMERSION_IDLE_TIMEOUT_MS,

@@ -3,7 +3,7 @@ use super::input::SHELL_INPUT;
 use super::mpris::build_mpris_service;
 use super::playback::transport_labels;
 use super::*;
-use big_media_components::surface::{MediaNotice, create_media_root};
+use big_media_components::surface::{MediaNotice, create_media_root, make_banner_title_selectable};
 use big_relm4_components::input::button_content::{BigButtonContentSpec, build_button_content};
 use big_relm4_components::layout::toolbar_pane::{
     BigToolbarHeader, BigToolbarHeaderSpec, BigToolbarPane, BigToolbarPaneSpec,
@@ -283,6 +283,7 @@ impl Component for AudioShell {
         content_box.append(&lyrics_paned);
         content_box.append(downloads.widget());
         let queue_save_banner = adw::Banner::new("");
+        make_banner_title_selectable(&queue_save_banner);
         content_box.append(&queue_save_banner);
         // Messages take a row above the transport instead of covering it.
         let notice = MediaNotice::new();
