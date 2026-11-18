@@ -308,14 +308,7 @@ fn import_one_playlist(
             "The batch import limit was reached. Split the playlists into smaller imports.",
         )));
     }
-    // A short wait: a busy library gives a retryable error instead of
-    // holding up every later save.
-    let conn = crate::db::lock_within(
-        db,
-        std::time::Duration::from_secs(2),
-        &std::sync::atomic::AtomicBool::new(false),
-    )
-    .map_err(std::io::Error::other)?;
+    let conn = lock_library(db)?;
     let mut ids = Vec::new();
     for path in paths {
         if let Some(track) =
@@ -331,6 +324,17 @@ fn import_one_playlist(
     Ok((ids.len(), list.truncated))
 }
 
+/// The library connection for playlist import and export. A short wait: a busy
+/// library gives a retryable error instead of holding up every later save.
+fn lock_library(db: &DbHandle) -> std::io::Result<std::sync::MutexGuard<'_, rusqlite::Connection>> {
+    crate::db::lock_within(
+        db,
+        std::time::Duration::from_secs(2),
+        &std::sync::atomic::AtomicBool::new(false),
+    )
+    .map_err(|_| std::io::Error::other(i18n("Library unavailable")))
+}
+
 /// Most playlists one "Export All" run writes.
 const MAX_EXPORTED_PLAYLISTS: usize = 1000;
 
@@ -338,9 +342,7 @@ const MAX_EXPORTED_PLAYLISTS: usize = 1000;
 /// were published. Stops at the first failure; files already written stay.
 fn export_playlists(db: &DbHandle, folder: &Path) -> std::io::Result<usize> {
     let playlists = {
-        let conn = db
-            .lock()
-            .map_err(|_| std::io::Error::other(i18n("Library unavailable")))?;
+        let conn = lock_library(db)?;
         let mut statement = conn
             .prepare("SELECT id,name FROM playlists ORDER BY id LIMIT ?1")
             .map_err(std::io::Error::other)?;
@@ -377,9 +379,7 @@ fn export_playlists(db: &DbHandle, folder: &Path) -> std::io::Result<usize> {
 }
 
 fn playlist_paths(db: &DbHandle, id: i64) -> std::io::Result<Vec<String>> {
-    let conn = db
-        .lock()
-        .map_err(|_| std::io::Error::other(i18n("Library unavailable")))?;
+    let conn = lock_library(db)?;
     let tracks = queries::get_playlist_tracks(&conn, id).map_err(std::io::Error::other)?;
     Ok(tracks.into_iter().map(|track| track.file_path).collect())
 }
@@ -394,4 +394,30 @@ fn show_export_result(parent: Option<&glib::WeakRef<gtk::Window>>, body: &str) {
         .build();
     dialog.add_response("close", &i18n("Close"));
     dialog.present(Some(&parent));
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::sync::{Mutex, mpsc};
+    use std::time::Duration;
+
+    #[test]
+    fn exports_give_up_on_a_busy_library() {
+        let db: DbHandle = Arc::new(Mutex::new(
+            rusqlite::Connection::open_in_memory().expect("in-memory library"),
+        ));
+        let _held = db.lock().expect("library lock");
+        let (tx, rx) = mpsc::channel();
+        let worker_db = db.clone();
+        std::thread::spawn(move || {
+            let one = playlist_paths(&worker_db, 1).is_err();
+            let all = export_playlists(&worker_db, Path::new("/nonexistent")).is_err();
+            let _ = tx.send((one, all));
+        });
+
+        let failed = rx.recv_timeout(Duration::from_secs(10));
+
+        assert_eq!(failed, Ok((true, true)));
+    }
 }
