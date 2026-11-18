@@ -246,7 +246,8 @@ pub fn build_voice_popover(
     scroll_moves(parent, &scale, VOICE_SCROLL_PERCENT);
 
     let trough = gtk::CssProvider::new();
-    let initial_color = voice_trough_color(voice_spec.initial_strength_percent);
+    let initial_color =
+        voice_trough_color(voice_spec.initial_strength_percent, VOICE_MAXIMUM_PERCENT);
     update_scale_trough(&trough, "voice-scale", &initial_color);
     let shown_color = std::cell::RefCell::new(initial_color);
     big_gtk_kit::css::add_provider_for_widget_lifetime(
@@ -266,7 +267,7 @@ pub fn build_voice_popover(
         let external_voice_label = voice_label.clone();
         scale.connect_value_changed(move |scale| {
             let voice_strength = scale.value();
-            let color = voice_trough_color(voice_strength);
+            let color = voice_trough_color(voice_strength, VOICE_MAXIMUM_PERCENT);
             if *shown_color.borrow() != color {
                 update_scale_trough(&trough, "voice-scale", &color);
                 *shown_color.borrow_mut() = color;
