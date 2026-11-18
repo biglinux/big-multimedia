@@ -1,6 +1,7 @@
 use super::input::shell_input_sender;
 use super::playback::is_remote_uri;
 use super::*;
+use crate::video::ui::menu_dialogs::dialog_entry_row;
 use big_relm4_components::input::dropdown_row::{BigDropdownRow, BigDropdownRowSpec};
 use big_relm4_components::layout::{
     dialog_footer::{BigDialogFooter, BigDialogFooterSpec},
@@ -162,14 +163,7 @@ impl VideoShell {
                 "Supports YouTube, HTTP streams, RTSP, RTMP, DVD, and Blu-ray URLs.",
             ))
             .build();
-        let entry = adw::EntryRow::builder()
-            .title(i18n("Media URL"))
-            .show_apply_button(true)
-            .build();
-        // The row is labelled by both its title labels, so its name read
-        // "Media URL Media URL".
-        entry.reset_relation(gtk::AccessibleRelation::LabelledBy);
-        entry.update_property(&[gtk::accessible::Property::Label(&i18n("Media URL"))]);
+        let entry = dialog_entry_row(&i18n("Media URL"));
         group.add(&entry);
         page.content().append(&group);
 
@@ -241,11 +235,8 @@ impl VideoShell {
             i18n("Disc type"),
             [i18n("DVD"), i18n("Blu-ray")],
         ));
-        let entry = adw::EntryRow::builder()
-            .title(i18n("Disc device path"))
-            .text("/dev/sr0")
-            .show_apply_button(true)
-            .build();
+        let entry = dialog_entry_row(&i18n("Disc device path"));
+        entry.set_text("/dev/sr0");
         entry.add_css_class("monospace");
         group.add(disc_type_row.root());
         group.add(&entry);

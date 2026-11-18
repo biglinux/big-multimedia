@@ -12,11 +12,25 @@ use relm4::ComponentSender;
 use super::video_shell::{VideoShell, VideoShellInput};
 use crate::i18n::i18n;
 use crate::player::mpv_backend::ScreenshotRequestError;
+use big_media_components::time::playback_time;
 use big_relm4_components::layout::{
     dialog_footer::{BigDialogFooter, BigDialogFooterSpec},
     dialog_page::{BigDialogPage, focus_when_shown},
     preferences::BigPreferencesGroupSpec,
 };
+
+/// The one entry of a small dialog, Enter applying it.
+pub(crate) fn dialog_entry_row(title: &str) -> adw::EntryRow {
+    let entry = adw::EntryRow::builder()
+        .title(title)
+        .show_apply_button(true)
+        .build();
+    // libadwaita labels the row by both of its title labels, so its name
+    // read the title twice.
+    entry.reset_relation(gtk::AccessibleRelation::LabelledBy);
+    entry.update_property(&[gtk::accessible::Property::Label(title)]);
+    entry
+}
 
 /// mpv took the request but did not save the picture; `error` says why.
 pub(crate) fn screenshot_not_saved_message(error: &str) -> String {
@@ -51,7 +65,6 @@ impl VideoShell {
     /// Accepts `H:MM:SS`, `M:SS`, or plain seconds; on confirm the shell seeks
     /// there, on the TV when one plays.
     pub(super) fn show_goto_time_dialog(&self, root: &adw::ApplicationWindow) {
-        let position = self.playback_position();
         let dialog = big_gtk_kit::dialog::Dialog::builder()
             .title(i18n("Go to Time"))
             .content_width(420)
@@ -62,15 +75,8 @@ impl VideoShell {
         let group = BigPreferencesGroupSpec::untitled()
             .description(i18n("Use H:MM:SS, M:SS, or seconds."))
             .build();
-        let entry = adw::EntryRow::builder()
-            .title(i18n("Playback time"))
-            .text(big_media_components::time::playback_time(position))
-            .show_apply_button(true)
-            .build();
-        // The row is labelled by both its title labels, so its name read
-        // "Playback time Playback time".
-        entry.reset_relation(gtk::AccessibleRelation::LabelledBy);
-        entry.update_property(&[gtk::accessible::Property::Label(&i18n("Playback time"))]);
+        let entry = dialog_entry_row(&i18n("Playback time"));
+        entry.set_text(&playback_time(self.playback_position()));
         group.add(&entry);
         page.content().append(&group);
 
