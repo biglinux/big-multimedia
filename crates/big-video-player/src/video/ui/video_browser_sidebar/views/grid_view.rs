@@ -5,7 +5,7 @@ use gtk::{gdk, gio, glib};
 
 use super::super::BrowserState;
 use super::model::{build_filter, build_store, finish_view};
-use super::shared::{attach_context_menu, centered_icon, set_accent};
+use super::shared::{attach_context_menu, attach_context_menu_keys, centered_icon, set_accent};
 use crate::media::playlist::{self, EntryKind, PlaylistEntry};
 use crate::media::thumbnail;
 use big_media_components::time::duration_hms as format_duration_hms;
@@ -61,6 +61,7 @@ pub(crate) fn build_grid_view(
     grid.set_min_columns(2);
     grid.set_max_columns(3);
     grid.set_single_click_activate(true);
+    attach_context_menu_keys(state, &grid);
     grid.add_css_class("playlist-grid");
     grid.connect_activate({
         let state = state.clone();

@@ -17,6 +17,8 @@ use adw::prelude::*;
 use big_relm4_components::feedback::tooltip;
 use relm4::gtk;
 
+use super::cut_timeline::CutTimeline;
+
 /// Translated tooltip/accessible labels for the audio transport controls.
 #[allow(missing_docs)]
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -85,7 +87,7 @@ pub struct BigAudioTransport {
     root: gtk::Overlay,
     playback_bar: gtk::Box,
     seek_bar: gtk::Scale,
-    cut_timeline: gtk::DrawingArea,
+    cut_timeline: CutTimeline,
     bar_stack: gtk::Stack,
     position_label: gtk::Inscription,
     duration_label: gtk::Label,
@@ -300,7 +302,7 @@ impl BigAudioTransport {
 
     /// Borrow the trim-mode cut timeline.
     #[must_use]
-    pub fn cut_timeline(&self) -> &gtk::DrawingArea {
+    pub fn cut_timeline(&self) -> &CutTimeline {
         &self.cut_timeline
     }
 
@@ -483,7 +485,7 @@ fn build_seek_row(
     labels: &BigAudioTransportLabels,
 ) -> (
     gtk::Scale,
-    gtk::DrawingArea,
+    CutTimeline,
     gtk::Stack,
     gtk::Inscription,
     gtk::Label,
@@ -508,11 +510,7 @@ fn build_seek_row(
         .build();
     seek_bar.set_tooltip_text(Some(&labels.seek));
     seek_bar.update_property(&[gtk::accessible::Property::Label(&labels.seek)]);
-    let cut_timeline = gtk::DrawingArea::builder()
-        .hexpand(true)
-        .height_request(20)
-        .build();
-    cut_timeline.update_property(&[gtk::accessible::Property::Label(&labels.cut_timeline)]);
+    let cut_timeline = CutTimeline::new(&labels.cut_timeline);
     cut_timeline.set_tooltip_text(Some(&labels.cut_timeline));
     let bar_stack = gtk::Stack::builder().hexpand(true).build();
     bar_stack.add_named(&seek_bar, Some("seek"));

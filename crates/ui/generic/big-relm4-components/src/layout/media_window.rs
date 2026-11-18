@@ -317,16 +317,29 @@ fn window_for_control(control: &gtk::Button) -> Option<gtk::Window> {
     control.root()?.downcast::<gtk::Window>().ok()
 }
 
-/// Swap the maximize/restore glyph to match the window's maximized state.
-fn update_maximize_restore_icon(button: &gtk::Button, is_maximized: bool) {
-    let Some(image) = button.child().and_downcast::<gtk::Image>() else {
-        return;
-    };
-    image.set_icon_name(Some(if is_maximized {
-        WINDOW_RESTORE_ICON
-    } else {
-        WINDOW_MAXIMIZE_ICON
-    }));
+/// The maximize and the restore names of the maximize/restore button, once the
+/// app has given them.
+type MaximizeRestoreLabels = Rc<RefCell<Option<(String, String)>>>;
+
+/// Match the maximize/restore glyph, tooltip and accessible name to the
+/// window's maximized state.
+fn update_maximize_restore_button(
+    button: &gtk::Button,
+    is_maximized: bool,
+    labels: &MaximizeRestoreLabels,
+) {
+    if let Some(image) = button.child().and_downcast::<gtk::Image>() {
+        image.set_icon_name(Some(if is_maximized {
+            WINDOW_RESTORE_ICON
+        } else {
+            WINDOW_MAXIMIZE_ICON
+        }));
+    }
+    if let Some((maximize, restore)) = &*labels.borrow() {
+        let label = if is_maximized { restore } else { maximize };
+        button.set_tooltip_text(Some(label));
+        button.update_property(&[gtk::accessible::Property::Label(label)]);
+    }
 }
 
 /// Shared floating chrome (top `AdwHeaderBar` + bottom bar, each in a `Revealer`)
@@ -341,6 +354,7 @@ pub struct BigMediaChrome {
     window_controls: gtk::Box,
     minimize_button: gtk::Button,
     maximize_restore_button: gtk::Button,
+    maximize_restore_labels: MaximizeRestoreLabels,
     close_button: gtk::Button,
 }
 
@@ -363,17 +377,22 @@ impl BigMediaChrome {
             }
         });
         let maximize_restore_button = media_window_control_button(WINDOW_MAXIMIZE_ICON);
-        maximize_restore_button.connect_root_notify(|button| {
-            let Some(window) = window_for_control(button) else {
-                return;
-            };
-            update_maximize_restore_icon(button, window.is_maximized());
-            let button = button.downgrade();
-            window.connect_maximized_notify(move |window| {
-                if let Some(button) = button.upgrade() {
-                    update_maximize_restore_icon(&button, window.is_maximized());
-                }
-            });
+        let maximize_restore_labels = MaximizeRestoreLabels::default();
+        maximize_restore_button.connect_root_notify({
+            let labels = maximize_restore_labels.clone();
+            move |button| {
+                let Some(window) = window_for_control(button) else {
+                    return;
+                };
+                update_maximize_restore_button(button, window.is_maximized(), &labels);
+                let button = button.downgrade();
+                let labels = labels.clone();
+                window.connect_maximized_notify(move |window| {
+                    if let Some(button) = button.upgrade() {
+                        update_maximize_restore_button(&button, window.is_maximized(), &labels);
+                    }
+                });
+            }
         });
         maximize_restore_button.connect_clicked(|button| {
             let Some(window) = window_for_control(button) else {
@@ -442,22 +461,32 @@ impl BigMediaChrome {
             window_controls,
             minimize_button,
             maximize_restore_button,
+            maximize_restore_labels,
             close_button,
         }
     }
 
     /// Configure and reveal the end-of-header window controls (minimize,
     /// maximize/restore, close). The controls stay hidden until this is called;
-    /// apps pass already-translated tooltip labels.
+    /// apps pass already-translated tooltip labels, and the maximize/restore
+    /// button shows `maximize_label` or `restore_label` as the window changes.
     pub fn show_end_window_controls(
         &self,
         minimize_label: &str,
-        maximize_restore_label: &str,
+        maximize_label: &str,
+        restore_label: &str,
         close_label: &str,
     ) {
         self.minimize_button.set_tooltip_text(Some(minimize_label));
-        self.maximize_restore_button
-            .set_tooltip_text(Some(maximize_restore_label));
+        self.maximize_restore_labels
+            .replace(Some((maximize_label.to_owned(), restore_label.to_owned())));
+        let is_maximized = window_for_control(&self.maximize_restore_button)
+            .is_some_and(|window| window.is_maximized());
+        update_maximize_restore_button(
+            &self.maximize_restore_button,
+            is_maximized,
+            &self.maximize_restore_labels,
+        );
         self.close_button.set_tooltip_text(Some(close_label));
         self.window_controls.set_visible(true);
     }

@@ -16,6 +16,8 @@ use std::rc::Rc;
 
 use adw::prelude::*;
 use big_app_kit::actions::install_action;
+use big_relm4_components::feedback::context_popover::open_context_menu_on_keys;
+use big_relm4_components::feedback::popover_menu::name_menu_items;
 use gtk::{gio, glib};
 use relm4::{Component, ComponentParts, ComponentSender};
 
@@ -250,6 +252,7 @@ fn build_list_view(selection: &gtk::SingleSelection) -> gtk::ListView {
         };
         icon.set_icon_name(Some(&node.icon_name()));
         label.set_label(&node.label());
+        list_item.set_accessible_label(&node.label());
     });
 
     let list_view = gtk::ListView::builder()
@@ -314,7 +317,8 @@ fn wire_activate(
     });
 }
 
-/// Attach the right-click "add to library" context menu.
+/// Attach the "add to library" context menu: right-click, touch long-press,
+/// Menu or Shift+F10.
 fn install_library_menu(
     list_view: &gtk::ListView,
     selection: &gtk::SingleSelection,
@@ -338,6 +342,7 @@ fn install_library_menu(
     // finalizes "with children left" and the popover leaks), so detach at
     // the list's unrealize, while everything is still alive.
     let popover = gtk::PopoverMenu::from_model(Some(&context_menu));
+    name_menu_items(&popover);
     popover.set_parent(list_view);
     popover.set_has_arrow(false);
     {
@@ -375,10 +380,19 @@ fn install_library_menu(
     });
     list_view.insert_action_group("files", Some(&action_group));
 
-    let gesture = gtk::GestureClick::new();
-    gesture.set_button(3);
+    // Opening the menu selects the row at the point, so "Add this folder" acts
+    // on the row the menu opened from rather than on an earlier selection.
     let selection = selection.clone();
-    gesture.connect_pressed(move |_gest, _n, x, y| {
+    let list = list_view.downgrade();
+    let open_menu = Rc::new(move |x: f64, y: f64| {
+        if let Some(picked) = list
+            .upgrade()
+            .and_then(|list| list.pick(x, y, gtk::PickFlags::DEFAULT))
+        {
+            // Outside a row nothing provides `listitem.select`, and the
+            // selection stays.
+            let _ = picked.activate_action("listitem.select", Some(&(false, false).to_variant()));
+        }
         let mut on_folder = false;
         if let Some(obj) = selection.item(selection.selected())
             && let Some(node) = obj.downcast_ref::<BrowserNode>()
@@ -393,7 +407,39 @@ fn install_library_menu(
         popover.set_pointing_to(Some(&point));
         popover.popup();
     });
-    list_view.add_controller(gesture);
+
+    let click = gtk::GestureClick::new();
+    click.set_button(gtk::gdk::BUTTON_SECONDARY);
+    click.connect_pressed({
+        let open_menu = open_menu.clone();
+        move |_, _, x, y| open_menu(x, y)
+    });
+    list_view.add_controller(click);
+
+    let long_press = gtk::GestureLongPress::new();
+    long_press.set_touch_only(true);
+    long_press.connect_pressed({
+        let open_menu = open_menu.clone();
+        move |gesture, x, y| {
+            gesture.set_state(gtk::EventSequenceState::Claimed);
+            open_menu(x, y);
+        }
+    });
+    list_view.add_controller(long_press);
+
+    let list = list_view.downgrade();
+    open_context_menu_on_keys(list_view, move |row| {
+        let Some(point) = list
+            .upgrade()
+            .and_then(|list| row.compute_point(&list, &gtk::graphene::Point::new(0.0, 0.0)))
+        else {
+            return false;
+        };
+        let x = f64::from(point.x()) + f64::from(row.width()) / 2.0;
+        let y = f64::from(point.y()) + f64::from(row.height()) / 2.0;
+        open_menu(x, y);
+        true
+    });
 }
 
 /// Populate `store` with the media files (per `is_media_file`) and sub-folders

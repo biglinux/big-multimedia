@@ -129,7 +129,12 @@ impl Component for VideoShell {
         // The OSD header floats over edge-to-edge video with the compositor's
         // native title buttons disabled, so the standalone window has to draw
         // its own minimize/maximize/close.
-        chrome.show_end_window_controls(&i18n("Minimize"), &i18n("Maximize"), &i18n("Close"));
+        chrome.show_end_window_controls(
+            &i18n("Minimize"),
+            &i18n("Maximize"),
+            &i18n("Restore"),
+            &i18n("Close"),
+        );
 
         // Beside the settings button, small pills say what is away from
         // normal and offer HDR for a grey picture, without covering video.
