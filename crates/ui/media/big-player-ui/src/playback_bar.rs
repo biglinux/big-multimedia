@@ -266,6 +266,7 @@ impl Component for AudioPlaybackBar {
                     big_media_components::playback::audio_transport::time_label_chars(&text);
                 t.position_label().set_min_chars(chars);
                 t.position_label().set_nat_chars(chars);
+                t.duration_label().set_width_chars(chars.cast_signed());
                 t.duration_label().set_label(&text);
             }
             AudioPlaybackBarInput::SetSeekValue(value) => {

@@ -480,17 +480,17 @@ fn build_hover_control(
     (hover_box, button, value_label)
 }
 
-/// Build the seek row scale plus the position/duration labels.
-/// Characters reserved for the elapsed time: "0:00" plus a spare, so digits of
-/// uneven width never clip. [`time_label_chars`] widens it for long media.
+/// Characters reserved for each time label: "0:00" plus a spare, so digits of
+/// uneven width never clip. [`time_label_chars`] widens both for long media.
 pub const TIME_CHARS: u32 = 5;
 
-/// Characters the elapsed time needs to show a position as long as `duration`.
+/// Characters a time label needs to show a time as long as `duration`.
 #[must_use]
 pub fn time_label_chars(duration: &str) -> u32 {
     u32::try_from(duration.chars().count()).map_or(TIME_CHARS, |chars| (chars + 1).max(TIME_CHARS))
 }
 
+/// Build the seek row scale plus the position/duration labels.
 fn build_seek_row(
     labels: &BigAudioTransportLabels,
 ) -> (
@@ -528,7 +528,7 @@ fn build_seek_row(
     bar_stack.set_visible_child_name("seek");
     let duration_label = gtk::Label::builder()
         .label("0:00")
-        .width_chars(5)
+        .width_chars(TIME_CHARS.cast_signed())
         .xalign(0.0)
         .css_classes(["caption"])
         .build();
