@@ -4513,7 +4513,7 @@ msgstr "仅加载了播放列表的前 {} 个条目。"
 msgid "{} entry was skipped because it is not a supported stream or file."
 msgid_plural ""
 "{} entries were skipped because they are not supported streams or files."
-msgstr[0] "已跳过 {} 个条目，因为它们不是受支持的流或文件。"
+msgstr[0] "{} 个条目不是受支持的流或文件，已跳过。"
 
 #: crates/media-runtime/src/media/metadata_cache/display.rs:21
 #, rust-format
