@@ -34,18 +34,16 @@ msgid "Data Sources"
 msgstr "Tietolähteet"
 
 #: crates/big-audio-player/src/audio/app.rs:53
-#, fuzzy
-#| msgid "Close the player"
 msgid "Play or pause the running player"
-msgstr "Sulje soitin"
+msgstr "Toista tai keskeytä käynnissä oleva soitin"
 
 #: crates/big-audio-player/src/audio/app.rs:58
 msgid "Skip to the next track in the running player"
-msgstr ""
+msgstr "Siirry seuraavaan kappaleeseen käynnissä olevassa soittimessa"
 
 #: crates/big-audio-player/src/audio/app.rs:63
 msgid "Go back to the previous track in the running player"
-msgstr ""
+msgstr "Palaa edelliseen kappaleeseen käynnissä olevassa soittimessa"
 
 #: crates/big-audio-player/src/audio/appearance/dialogs.rs:42
 #: crates/big-video-player/src/video/ui/filters/groups_vf.rs:278
@@ -463,10 +461,10 @@ msgid "Select a song to start"
 msgstr "Aloita valitsemalla kappale"
 
 #: crates/big-audio-player/src/audio/ui/audio_shell/engine.rs:37
-#, fuzzy, rust-format
-#| msgid "Could not play this file — it may be unsupported or corrupt."
+#, rust-format
 msgid "Could not play “{file}”: it may be unsupported or corrupt."
-msgstr "Tiedostoa ei voitu toistaa – sitä ei ehkä tueta tai se on vioittunut."
+msgstr ""
+"Tiedostoa ”{file}” ei voitu toistaa: sitä ei ehkä tueta tai se on vioittunut."
 
 #: crates/big-audio-player/src/audio/ui/audio_shell/engine.rs:215
 #, rust-format
@@ -474,6 +472,8 @@ msgid ""
 "The playback engine could not start: {error}. Update or reinstall the mpv "
 "package, then reopen the player."
 msgstr ""
+"Toistomoottori ei käynnistynyt: {error}. Päivitä tai asenna mpv-paketti "
+"uudelleen ja avaa sitten soitin uudelleen."
 
 #: crates/big-audio-player/src/audio/ui/audio_shell/export.rs:17
 #: crates/big-audio-player/src/audio/ui/audio_shell/export.rs:33
@@ -482,18 +482,12 @@ msgstr "Paikallista kappaletta ei toisteta"
 
 #: crates/big-audio-player/src/audio/ui/audio_shell/library_store.rs:63
 msgid "The music library is still opening. Try again in a moment."
-msgstr ""
+msgstr "Musiikkikirjastoa avataan vielä. Yritä hetken kuluttua uudelleen."
 
 #: crates/big-audio-player/src/audio/ui/audio_shell/library_store.rs:223
 #: crates/big-audio-player/src/audio/ui/audio_shell/library_store.rs:259
-#, fuzzy
-#| msgid ""
-#| "The library could not be read. Previous results were kept; try searching "
-#| "again."
 msgid "The library could not be read. The queue was not changed."
-msgstr ""
-"Kirjastoa ei voitu lukea. Aiemmat tulokset säilytettiin; yritä hakea "
-"uudelleen."
+msgstr "Kirjastoa ei voitu lukea. Jonoa ei muutettu."
 
 #: crates/big-audio-player/src/audio/ui/audio_shell/panel_intents.rs:61
 msgid ""
@@ -524,24 +518,16 @@ msgid "Save Episodes"
 msgstr "Tallenna jaksot"
 
 #: crates/big-audio-player/src/audio/ui/audio_shell/panel_intents.rs:432
-#, fuzzy
-#| msgid ""
-#| "The playlist could not be read safely. Check its format and permissions."
 msgid ""
 "The episodes could not be saved in this folder. Check its permissions and "
 "try again."
 msgstr ""
-"Soittolistaa ei voitu lukea turvallisesti. Tarkista sen muoto ja oikeudet."
+"Jaksoja ei voitu tallentaa tähän kansioon. Tarkista kansion käyttöoikeudet "
+"ja yritä uudelleen."
 
 #: crates/big-audio-player/src/audio/ui/audio_shell/playback.rs:143
-#, fuzzy
-#| msgid ""
-#| "The library could not be read. Previous results were kept; try searching "
-#| "again."
 msgid "The library could not be read, so lyrics were not searched online."
-msgstr ""
-"Kirjastoa ei voitu lukea. Aiemmat tulokset säilytettiin; yritä hakea "
-"uudelleen."
+msgstr "Kirjastoa ei voitu lukea, joten sanoituksia ei haettu verkosta."
 
 #: crates/big-audio-player/src/audio/ui/audio_shell/playback.rs:157
 msgid "Seek position"
@@ -704,14 +690,13 @@ msgid "Export stopped. Confirmed outputs were kept"
 msgstr "Vienti pysäytettiin. Vahvistetut tulosteet säilytettiin"
 
 #: crates/big-audio-player/src/audio/ui/audio_shell/queue_persistence.rs:55
-#, fuzzy, rust-format
-#| msgid "The playlist could not be saved."
+#, rust-format
 msgid "The music library could not be opened: {}"
-msgstr "Soittolistaa ei voitu tallentaa."
+msgstr "Musiikkikirjastoa ei voitu avata: {}"
 
 #: crates/big-audio-player/src/audio/ui/audio_shell/queue_persistence.rs:57
 msgid "Retry"
-msgstr ""
+msgstr "Yritä uudelleen"
 
 #: crates/big-audio-player/src/audio/ui/audio_shell/queue_persistence.rs:60
 msgid ""
@@ -745,20 +730,16 @@ msgid "Watch folders could not be read. Previous settings were kept."
 msgstr "Seurattavia kansioita ei voitu lukea. Aiemmat asetukset säilytettiin."
 
 #: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:154
-#, fuzzy
-#| msgid "The playlist could not be saved."
 msgid "The station could not be saved."
-msgstr "Soittolistaa ei voitu tallentaa."
+msgstr "Asemaa ei voitu tallentaa."
 
 #: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:168
-#, fuzzy
-#| msgid "The playlist could not be saved."
 msgid "The station could not be removed."
-msgstr "Soittolistaa ei voitu tallentaa."
+msgstr "Asemaa ei voitu poistaa."
 
 #: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:230
 msgid "There is no Music or home folder to save recordings in."
-msgstr ""
+msgstr "Tallenteille ei ole Musiikki-kansiota eikä kotikansiota."
 
 #: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:276
 #: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:284
@@ -812,10 +793,8 @@ msgid "Open File"
 msgstr "Avaa tiedosto"
 
 #: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:528
-#, fuzzy
-#| msgid "The playlist could not be saved."
 msgid "Saved radio stations could not be read."
-msgstr "Soittolistaa ei voitu tallentaa."
+msgstr "Tallennettuja radioasemia ei voitu lukea."
 
 #: crates/big-audio-player/src/audio/ui/audio_shell/tray.rs:18
 msgid "Show Big Audio Player"
@@ -826,24 +805,19 @@ msgid "The TV's track is no longer in the queue."
 msgstr "Television kappale ei ole enää jonossa."
 
 #: crates/big-audio-player/src/audio/ui/audio_shell/update.rs:137
-#, fuzzy
-#| msgid "Cancelled"
 msgid "Scan cancelled"
-msgstr "Peruttu"
+msgstr "Tarkistus peruttu"
 
 #: crates/big-audio-player/src/audio/ui/audio_shell/update.rs:139
-#, fuzzy
-#| msgid "Sample Rate"
 msgid "Scan incomplete"
-msgstr "Näytteenottotaajuus"
+msgstr "Tarkistus jäi kesken"
 
 #: crates/big-audio-player/src/audio/ui/audio_shell/update.rs:142
-#, fuzzy, rust-format
-#| msgid "tracks imported"
+#, rust-format
 msgid "{count} track imported"
 msgid_plural "{count} tracks imported"
-msgstr[0] "kappaletta tuotu"
-msgstr[1] "kappaletta tuotu"
+msgstr[0] "{count} kappale tuotu"
+msgstr[1] "{count} kappaletta tuotu"
 
 #: crates/big-audio-player/src/audio/ui/audio_shell/update.rs:153
 msgid "Library updated"
@@ -1171,15 +1145,15 @@ msgstr "Näytä tiedostonhallinnassa"
 #, rust-format
 msgid "{count} track"
 msgid_plural "{count} tracks"
-msgstr[0] ""
-msgstr[1] ""
+msgstr[0] "{count} kappale"
+msgstr[1] "{count} kappaletta"
 
 #: crates/big-audio-player/src/audio/ui/mod.rs:59
 #, rust-format
 msgid "{count} track · {duration}"
 msgid_plural "{count} tracks · {duration}"
-msgstr[0] ""
-msgstr[1] ""
+msgstr[0] "{count} kappale · {duration}"
+msgstr[1] "{count} kappaletta · {duration}"
 
 #: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:35
 msgid "Drag and drop files to create a playlist"
@@ -1208,7 +1182,7 @@ msgstr "Päävalikko"
 
 #: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:90
 msgid "Show Sidebar"
-msgstr ""
+msgstr "Näytä sivupalkki"
 
 #: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:121
 #: crates/big-audio-player/src/audio/ui/playlist_library_dialog.rs:261
@@ -1265,14 +1239,12 @@ msgid "About"
 msgstr "Tietoja"
 
 #: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:244
-#, fuzzy
-#| msgid "No episodes found"
 msgid "No episodes queued"
-msgstr "Jaksoja ei löytynyt"
+msgstr "Ei jaksoja jonossa"
 
 #: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:245
 msgid "Choose a podcast on the left to queue its episodes."
-msgstr ""
+msgstr "Valitse podcast vasemmalta lisätäksesi sen jaksot jonoon."
 
 #: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:254
 msgid "Drop tracks here"
@@ -1281,22 +1253,21 @@ msgstr "Pudota kappaleet tähän"
 #: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:256
 msgid "Or double-click a track in the library, or select it and press Return."
 msgstr ""
+"Tai kaksoisnapsauta kappaletta kirjastossa, tai valitse se ja paina Enter-"
+"näppäintä."
 
 #: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:283
 msgid "Welcome to Big Audio Player"
 msgstr "Tervetuloa Big Audio Playeriin"
 
 #: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:291
-#, fuzzy
-#| msgid ""
-#| "Add a folder with your music files to get started.\n"
-#| "Supported formats: MP3, FLAC, OGG, M4A, OPUS, WAV and more."
 msgid ""
 "Open music files to play them now, or add your music folder in the Music "
 "tab.\n"
 "Supported formats: MP3, FLAC, OGG, M4A, OPUS, WAV and more."
 msgstr ""
-"Aloita lisäämällä kansio, jossa on musiikkitiedostosi.\n"
+"Avaa musiikkitiedostoja toistaaksesi ne heti, tai lisää musiikkikansiosi "
+"Musiikki-välilehdellä.\n"
 "Tuetut muodot: MP3, FLAC, OGG, M4A, OPUS, WAV ja muita."
 
 #: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:304
@@ -1521,10 +1492,8 @@ msgid "Cancellation requested. Finishing the current safe step…"
 msgstr "Peruutusta pyydetty. Viimeistellään nykyinen turvallinen vaihe…"
 
 #: crates/big-audio-player/src/audio/ui/scan_progress.rs:177
-#, fuzzy
-#| msgid "Library"
 msgid "Library Scan"
-msgstr "Kirjasto"
+msgstr "Kirjaston tarkistus"
 
 #: crates/big-audio-player/src/audio/ui/track_list.rs:392
 #: crates/big-video-player/src/video/ui/video_browser_sidebar/views/queue_view.rs:313
@@ -1532,10 +1501,8 @@ msgid "Playing"
 msgstr "Toistetaan"
 
 #: crates/big-audio-player/src/audio/ui/track_list.rs:393
-#, fuzzy
-#| msgid "Pause"
 msgid "Paused"
-msgstr "Tauko"
+msgstr "Keskeytetty"
 
 #: crates/big-audio-player/src/audio/ui/unavailable_dialog.rs:52
 msgid ""
@@ -1646,7 +1613,7 @@ msgstr "Big Video Player"
 
 #: crates/big-video-player/src/video/app.rs:124
 msgid "Open a separate player window instead of using the running one"
-msgstr ""
+msgstr "Avaa erillinen soitinikkuna käynnissä olevan soittimen sijaan"
 
 #: crates/big-video-player/src/video/keybindings.rs:50
 msgid "Increase speed"
@@ -1867,10 +1834,8 @@ msgid "Open"
 msgstr "Avaa"
 
 #: crates/big-video-player/src/video/ui/appearance/layout/buttons_page.rs:56
-#, fuzzy
-#| msgid "Load Playlist"
 msgid "Files and Playlist"
-msgstr "Lataa soittolista"
+msgstr "Tiedostot ja soittolista"
 
 #: crates/big-video-player/src/video/ui/appearance/layout/buttons_page.rs:64
 #: crates/big-video-player/src/video/ui/video_shell/component.rs:181
@@ -1896,17 +1861,15 @@ msgstr "Koko näyttö"
 
 #: crates/big-video-player/src/video/ui/appearance/layout/buttons_page.rs:179
 msgid "Top bar"
-msgstr ""
+msgstr "Yläpalkki"
 
 #: crates/big-video-player/src/video/ui/appearance/layout/buttons_page.rs:181
 msgid "Video Title"
 msgstr "Videon nimi"
 
 #: crates/big-video-player/src/video/ui/appearance/layout/buttons_page.rs:186
-#, fuzzy
-#| msgid "Bottom Margin"
 msgid "Bottom bar"
-msgstr "Alamarginaali"
+msgstr "Alapalkki"
 
 #: crates/big-video-player/src/video/ui/appearance/layout/buttons_page.rs:226
 #: crates/big-video-player/src/video/ui/appearance/layout/layout_page.rs:98
@@ -1918,12 +1881,13 @@ msgid "Button Layout"
 msgstr "Painikkeiden asettelu"
 
 #: crates/big-video-player/src/video/ui/appearance/layout/buttons_page.rs:232
-#, fuzzy
-#| msgid "Drag buttons between zones • Click to toggle visibility"
 msgid ""
 "Drag buttons between zones, or move the focused one with Alt+Left and "
 "Alt+Right. Click a button to show or hide it."
-msgstr "Vedä painikkeita alueiden välillä • Napsauta vaihtaaksesi näkyvyyttä"
+msgstr ""
+"Vedä painikkeita alueiden välillä tai siirrä kohdistettua painiketta "
+"näppäimillä Alt+vasen ja Alt+oikea. Napsauta painiketta näyttääksesi tai "
+"piilottaaksesi sen."
 
 #: crates/big-video-player/src/video/ui/appearance/layout/layout_page.rs:19
 msgid "Layout"
@@ -2351,6 +2315,9 @@ msgid ""
 "Some provider passwords are still in a plain file because your keyring could "
 "not be reached. Unlock your keyring, then reload the channels."
 msgstr ""
+"Joidenkin palveluntarjoajien salasanat ovat yhä tavallisessa tiedostossa, "
+"koska avainnippuun ei saatu yhteyttä. Avaa avainnipun lukitus ja lataa "
+"sitten kanavat uudelleen."
 
 #: crates/big-video-player/src/video/ui/iptv/mod.rs:257
 #: crates/big-video-player/src/video/ui/iptv/mod.rs:437
@@ -2371,10 +2338,9 @@ msgid "Loading channels…"
 msgstr "Ladataan kanavia…"
 
 #: crates/big-video-player/src/video/ui/iptv/mod.rs:490
-#, fuzzy, rust-format
-#| msgid "Showing the first {}. Type more to narrow the search."
+#, rust-format
 msgid "Showing the first {} channels; the list has more."
-msgstr "Näytetään {} ensimmäistä. Kirjoita lisää rajataksesi hakua."
+msgstr "Näytetään ensimmäiset {} kanavaa; luettelossa on enemmän."
 
 #: crates/big-video-player/src/video/ui/iptv/mod.rs:509
 msgid ""
@@ -2430,12 +2396,17 @@ msgid ""
 "Could not read this provider's password from your keyring. Unlock your "
 "keyring, then reload the channels."
 msgstr ""
+"Tämän palveluntarjoajan salasanaa ei voitu lukea avainnipusta. Avaa "
+"avainnipun lukitus ja lataa sitten kanavat uudelleen."
 
 #: crates/big-video-player/src/video/ui/iptv/mod.rs:535
 msgid ""
 "This playlist has IPTV channels from a provider that is not set up. Add the "
 "provider under IPTV, then open the playlist again."
 msgstr ""
+"Tässä soittolistassa on IPTV-kanavia palveluntarjoajalta, jota ei ole "
+"määritetty. Lisää palveluntarjoaja IPTV-kohdassa ja avaa sitten soittolista "
+"uudelleen."
 
 #: crates/big-video-player/src/video/ui/iptv/providers_dialog.rs:48
 msgid "Add provider"
@@ -2451,6 +2422,9 @@ msgid ""
 "can delete the “Big Multimedia IPTV provider” item it left with your keyring "
 "manager."
 msgstr ""
+"Korvattua tai poistettua salasanaa ei voitu poistaa avainnipusta. Voit "
+"poistaa jäljelle jääneen kohteen ”Big Multimedia IPTV provider” "
+"avainnippujen hallintaohjelmalla."
 
 #: crates/big-video-player/src/video/ui/iptv/providers_dialog.rs:120
 msgid "No providers yet"
@@ -2465,6 +2439,8 @@ msgid ""
 "Password not in your keyring yet. Unlock your keyring, then close this "
 "window to try again."
 msgstr ""
+"Salasana ei ole vielä avainnipussa. Avaa avainnipun lukitus ja yritä "
+"uudelleen sulkemalla tämä ikkuna."
 
 #: crates/big-video-player/src/video/ui/iptv/providers_dialog.rs:137
 msgid "Edit"
@@ -2481,13 +2457,15 @@ msgstr "IPTV-palveluntarjoaja"
 
 #: crates/big-video-player/src/video/ui/iptv/providers_dialog.rs:298
 msgid "Saving the password in your keyring…"
-msgstr ""
+msgstr "Tallennetaan salasanaa avainnippuun…"
 
 #: crates/big-video-player/src/video/ui/iptv/providers_dialog.rs:326
 msgid ""
 "Could not save the password in your keyring, so nothing was saved. Unlock "
 "your keyring, then save again."
 msgstr ""
+"Salasanaa ei voitu tallentaa avainnippuun, joten mitään ei tallennettu. Avaa "
+"avainnipun lukitus ja tallenna sitten uudelleen."
 
 #: crates/big-video-player/src/video/ui/iptv/providers_dialog.rs:366
 #: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/header.rs:163
@@ -2534,10 +2512,14 @@ msgstr "Salasana"
 msgid ""
 "The full address is saved in your keyring. Leave it as shown to keep it."
 msgstr ""
+"Koko osoite on tallennettu avainnippuun. Säilytä se jättämällä kenttä "
+"ennalleen."
 
 #: crates/big-video-player/src/video/ui/iptv/providers_dialog.rs:425
 msgid "The password is saved in your keyring. Leave Password empty to keep it."
 msgstr ""
+"Salasana on tallennettu avainnippuun. Säilytä se jättämällä Salasana-kenttä "
+"tyhjäksi."
 
 #: crates/big-video-player/src/video/ui/iptv/providers_dialog.rs:433
 msgid "HTTP headers (optional)"
@@ -2651,8 +2633,6 @@ msgid "For some TV broadcasts (HLG)"
 msgstr "Joillekin TV-lähetyksille (HLG)"
 
 #: crates/big-video-player/src/video/ui/media_adjust.rs:290
-#, fuzzy
-#| msgid "Plain colours (SDR)"
 msgid "Plain colors (SDR)"
 msgstr "Tavalliset värit (SDR)"
 
@@ -2833,10 +2813,9 @@ msgid "Subtitle"
 msgstr "Tekstitys"
 
 #: crates/big-video-player/src/video/ui/menu_dialogs.rs:20
-#, fuzzy, rust-format
-#| msgid "Recording was not saved"
+#, rust-format
 msgid "The screenshot was not saved: {error}"
-msgstr "Tallennusta ei tallennettu"
+msgstr "Kuvakaappausta ei tallennettu: {error}"
 
 #: crates/big-video-player/src/video/ui/menu_dialogs.rs:52
 msgid "Go to Time"
@@ -2858,28 +2837,32 @@ msgstr "Siirry"
 #: crates/big-video-player/src/video/ui/menu_dialogs.rs:132
 msgid "Still saving the previous screenshots. Try again in a moment."
 msgstr ""
+"Edellisiä kuvakaappauksia tallennetaan vielä. Yritä hetken kuluttua "
+"uudelleen."
 
 #: crates/big-video-player/src/video/ui/menu_dialogs.rs:83
 #: crates/big-video-player/src/video/ui/menu_dialogs.rs:88
-#, fuzzy
-#| msgid "Stores the video color space in each screenshot"
 msgid "Open a video to take a screenshot"
-msgstr "Tallentaa videon väriavaruuden jokaiseen kuvakaappaukseen"
+msgstr "Avaa video ottaaksesi kuvakaappauksen"
 
 #: crates/big-video-player/src/video/ui/menu_dialogs.rs:102
 msgid ""
 "There is no Pictures or home folder to save screenshots in. Choose a folder "
 "in Preferences."
 msgstr ""
+"Kuvakaappauksille ei ole Kuvat-kansiota eikä kotikansiota. Valitse kansio "
+"Asetuksissa."
 
 #: crates/big-video-player/src/video/ui/menu_dialogs.rs:127
 #, rust-format
 msgid "Cannot save to {folder}: {error}. Choose another folder in Preferences."
 msgstr ""
+"Kohteeseen {folder} ei voi tallentaa: {error}. Valitse toinen kansio "
+"Asetuksissa."
 
 #: crates/big-video-player/src/video/ui/menu_dialogs.rs:137
 msgid "The screenshot was not saved because of an unexpected error"
-msgstr ""
+msgstr "Kuvakaappausta ei tallennettu odottamattoman virheen vuoksi"
 
 #: crates/big-video-player/src/video/ui/menu_dialogs.rs:174
 msgid "Screenshot saved"
@@ -3676,12 +3659,11 @@ msgid "Rename failed"
 msgstr "Uudelleennimeäminen epäonnistui"
 
 #: crates/big-video-player/src/video/ui/video_browser_sidebar/fileops.rs:311
-#, fuzzy, rust-format
-#| msgid "Could not move to trash"
+#, rust-format
 msgid "Could not move {failed} of {total} file"
 msgid_plural "Could not move {failed} of {total} files"
-msgstr[0] "Roskakoriin siirtäminen epäonnistui"
-msgstr[1] "Roskakoriin siirtäminen epäonnistui"
+msgstr[0] "{total} tiedostosta {failed} ei voitu siirtää"
+msgstr[1] "{total} tiedostosta {failed} ei voitu siirtää"
 
 #: crates/big-video-player/src/video/ui/video_browser_sidebar/library.rs:118
 msgid "Home folder"
@@ -3895,8 +3877,7 @@ msgstr[0] "{n} muutos"
 msgstr[1] "{n} muutosta"
 
 #: crates/big-video-player/src/video/ui/video_shell/adjustments.rs:173
-#, fuzzy, rust-format
-#| msgid "Video colour: {name}"
+#, rust-format
 msgid "Video color: {name}"
 msgstr "Videon väri: {name}"
 
@@ -3995,8 +3976,6 @@ msgid "Use HDR?"
 msgstr "Käytetäänkö HDR:ää?"
 
 #: crates/big-video-player/src/video/ui/video_shell/component.rs:214
-#, fuzzy
-#| msgid "Does the picture look grey and washed out? Click to use HDR colours"
 msgid "Does the picture look grey and washed out? Click to use HDR colors"
 msgstr ""
 "Näyttääkö kuva harmaalta ja haalistuneelta? Napsauta käyttääksesi HDR-värejä"
@@ -4138,6 +4117,10 @@ msgid ""
 "kept. Video Output, Audio Output and the custom mpv options take effect "
 "after reopening the player."
 msgstr ""
+"Asetukset ja ulkoasu palautetaan oletuksiin. Kirjastokansiot, pikanäppäimet, "
+"äänenvoimakkuus, sekoitus sekä puheäänen ja taajuuskorjaimen tasot "
+"säilytetään. Videotulostus, Äänitulostus ja mukautetut mpv-asetukset tulevat "
+"voimaan, kun soitin avataan uudelleen."
 
 #: crates/big-video-player/src/video/ui/video_shell/export.rs:19
 msgid "No file is playing"
@@ -4231,7 +4214,7 @@ msgstr "Mikään viimeisin tiedosto ei täsmää"
 
 #: crates/big-video-player/src/video/ui/video_shell/playback.rs:196
 msgid "The screenshot took too long and was not saved"
-msgstr ""
+msgstr "Kuvakaappaus kesti liian kauan, eikä sitä tallennettu"
 
 #: crates/big-video-player/src/video/ui/video_shell/playback.rs:223
 msgid "Could not play this file — it may be unsupported or corrupt."
@@ -4258,6 +4241,8 @@ msgid ""
 "The playback engine could not start: {error}. Check Preferences → Advanced → "
 "mpv Options, then reopen the player."
 msgstr ""
+"Toistomoottori ei käynnistynyt: {error}. Tarkista Asetukset → Lisäasetukset "
+"→ mpv-asetukset ja avaa sitten soitin uudelleen."
 
 #: crates/big-video-player/src/video/ui/video_shell/render.rs:340
 msgid ""
@@ -4649,15 +4634,16 @@ msgstr "Muunninta ei voitu käynnistää"
 #: crates/media-runtime/src/media/iptv/m3u.rs:51
 #, rust-format
 msgid "Only the first {} entries of the playlist were loaded."
-msgstr ""
+msgstr "Soittolistasta ladattiin vain ensimmäiset {} kohdetta."
 
 #: crates/media-runtime/src/media/iptv/m3u.rs:58
 #, rust-format
 msgid "{} entry was skipped because it is not a supported stream or file."
 msgid_plural ""
 "{} entries were skipped because they are not supported streams or files."
-msgstr[0] ""
+msgstr[0] "{} kohde ohitettiin, koska se ei ole tuettu virta tai tiedosto."
 msgstr[1] ""
+"{} kohdetta ohitettiin, koska ne eivät ole tuettuja virtoja tai tiedostoja."
 
 #: crates/media-runtime/src/media/metadata_cache/display.rs:21
 #, rust-format
@@ -4735,6 +4721,9 @@ msgid ""
 "headphones are connected, or choose another Audio Output in Preferences and "
 "reopen the player."
 msgstr ""
+"Äänen toisto ei käynnistynyt äänitulostuksessa. Tarkista, että kaiuttimet "
+"tai kuulokkeet on liitetty, tai valitse toinen Äänitulostus Asetuksissa ja "
+"avaa soitin uudelleen."
 
 #: crates/media-runtime/src/settings/messages.rs:6
 msgid "Access could not be verified — check permissions before reviewing"
@@ -4895,23 +4884,23 @@ msgstr "Säädä painamalla Alt+alas. Sulje painamalla Esc."
 #: crates/ui/generic/big-relm4-components/src/input/zone_layout_editor.rs:160
 #, rust-format
 msgid "{zone}, {position} of {count}"
-msgstr ""
+msgstr "{zone}, {position}/{count}"
 
 #: crates/ui/generic/big-relm4-components/src/input/zone_layout_editor.rs:201
 #, rust-format
 msgid "{bar}, center"
-msgstr ""
+msgstr "{bar}, keskellä"
 
 #: crates/ui/generic/big-relm4-components/src/input/zone_layout_editor.rs:202
 #: crates/ui/generic/big-relm4-components/src/input/zone_layout_editor.rs:203
 #, rust-format
 msgid "{bar}, left"
-msgstr ""
+msgstr "{bar}, vasemmalla"
 
 #: crates/ui/generic/big-relm4-components/src/input/zone_layout_editor.rs:204
 #, rust-format
 msgid "{bar}, right"
-msgstr ""
+msgstr "{bar}, oikealla"
 
 #: crates/ui/generic/big-relm4-components/src/layout/media_window/sidebar.rs:232
 msgid "Resize sidebar"
@@ -5168,7 +5157,7 @@ msgstr "Muokkaa leikkausta"
 
 #: crates/ui/media/big-player-ui/src/cut_edit_dialog.rs:31
 msgid "Start and end must be at least 0.1 seconds apart"
-msgstr ""
+msgstr "Alun ja lopun välillä on oltava vähintään 0,1 sekuntia"
 
 #: crates/ui/media/big-player-ui/src/cut_edit_dialog.rs:42
 msgid "Edit Cut"
@@ -5269,7 +5258,7 @@ msgstr "Hae podcasteja tai lisää RSS-syöte"
 
 #: crates/ui/media/big-player-ui/src/podcast_panel.rs:244
 msgid "Podcast Subscriptions Unavailable"
-msgstr ""
+msgstr "Podcast-tilaukset eivät ole saatavilla"
 
 #: crates/ui/media/big-player-ui/src/podcast_panel.rs:274
 msgid "Connection error — try again"
@@ -5281,7 +5270,7 @@ msgstr "Jo tilattu"
 
 #: crates/ui/media/big-player-ui/src/podcast_panel.rs:341
 msgid "Podcast subscriptions are still loading"
-msgstr ""
+msgstr "Podcast-tilauksia ladataan vielä"
 
 #: crates/ui/media/big-player-ui/src/podcast_panel.rs:378
 msgid "Subscriptions"
@@ -5292,15 +5281,13 @@ msgid "Search Results"
 msgstr "Hakutulokset"
 
 #: crates/ui/media/big-player-ui/src/podcast_panel.rs:450
-#, fuzzy
-#| msgid "The playlist could not be saved."
 msgid "Podcast subscriptions could not be saved"
-msgstr "Soittolistaa ei voitu tallentaa."
+msgstr "Podcast-tilauksia ei voitu tallentaa"
 
 #: crates/ui/media/big-player-ui/src/podcast_panel.rs:463
 #, rust-format
 msgid "Podcast subscriptions could not be read, so changes are not saved: {}"
-msgstr ""
+msgstr "Podcast-tilauksia ei voitu lukea, joten muutoksia ei tallenneta: {}"
 
 #: crates/ui/media/big-player-ui/src/podcast_panel.rs:472
 msgid "Title unavailable"
@@ -5349,34 +5336,29 @@ msgid "Explore Stations"
 msgstr "Selaa asemia"
 
 #: crates/ui/media/big-player-ui/src/radio_panel/widgets.rs:56
-#, fuzzy, rust-format
-#| msgid "Remove station"
+#, rust-format
 msgid "Remove {station}"
-msgstr "Poista asema"
+msgstr "Poista {station}"
 
 #: crates/ui/media/big-player-ui/src/radio_panel/widgets.rs:75
-#, fuzzy, rust-format
-#| msgid "Add to my stations"
+#, rust-format
 msgid "Add {station} to my stations"
-msgstr "Lisää omiin asemiin"
+msgstr "Lisää {station} omiin asemiin"
 
 #: crates/ui/media/big-player-ui/src/radio_panel/widgets.rs:99
-#, fuzzy, rust-format
-#| msgid "Add to my stations"
+#, rust-format
 msgid "{station} is in my stations"
-msgstr "Lisää omiin asemiin"
+msgstr "{station} on omissa asemissa"
 
 #: crates/ui/media/big-player-ui/src/radio_panel/widgets.rs:115
-#, fuzzy, rust-format
-#| msgid "Stop Recording"
+#, rust-format
 msgid "Stop recording {station}"
-msgstr "Lopeta tallennus"
+msgstr "Lopeta aseman {station} tallennus"
 
 #: crates/ui/media/big-player-ui/src/radio_panel/widgets.rs:121
-#, fuzzy, rust-format
-#| msgid "Remove station"
+#, rust-format
 msgid "Record {station}"
-msgstr "Poista asema"
+msgstr "Tallenna {station}"
 
 #: crates/ui/media/big-player-ui/src/radio_panel/widgets.rs:196
 msgid "Search radios..."
@@ -5496,17 +5478,16 @@ msgstr "Avaa KDE Connectin lataussivu"
 
 #: crates/ui/media/big-player-ui/src/smartphone/dialog.rs:129
 msgid "No local network found. Connect to a network and try again."
-msgstr ""
+msgstr "Paikallista verkkoa ei löytynyt. Yhdistä verkkoon ja yritä uudelleen."
 
 #: crates/ui/media/big-player-ui/src/smartphone/dialog.rs:152
 msgid "Scan the code with the phone's camera."
 msgstr "Skannaa koodi puhelimen kameralla."
 
 #: crates/ui/media/big-player-ui/src/smartphone/dialog.rs:171
-#, fuzzy, rust-format
-#| msgid "Web remote is off."
+#, rust-format
 msgid "Web remote stopped: {error}"
-msgstr "Verkkokauko-ohjain on pois käytöstä."
+msgstr "Verkkokauko-ohjain pysähtyi: {error}"
 
 #: crates/ui/media/big-player-ui/src/smartphone/dialog.rs:179
 msgid "Could not start server"

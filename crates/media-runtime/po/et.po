@@ -34,18 +34,16 @@ msgid "Data Sources"
 msgstr "Andmeallikad"
 
 #: crates/big-audio-player/src/audio/app.rs:53
-#, fuzzy
-#| msgid "Close the player"
 msgid "Play or pause the running player"
-msgstr "Sulge esitaja"
+msgstr "Alusta või peata esitust töötavas esitajas"
 
 #: crates/big-audio-player/src/audio/app.rs:58
 msgid "Skip to the next track in the running player"
-msgstr ""
+msgstr "Mine töötavas esitajas järgmisele loole"
 
 #: crates/big-audio-player/src/audio/app.rs:63
 msgid "Go back to the previous track in the running player"
-msgstr ""
+msgstr "Mine töötavas esitajas tagasi eelmisele loole"
 
 #: crates/big-audio-player/src/audio/appearance/dialogs.rs:42
 #: crates/big-video-player/src/video/ui/filters/groups_vf.rs:278
@@ -462,10 +460,9 @@ msgid "Select a song to start"
 msgstr "Alustamiseks valige laul"
 
 #: crates/big-audio-player/src/audio/ui/audio_shell/engine.rs:37
-#, fuzzy, rust-format
-#| msgid "Could not play this file — it may be unsupported or corrupt."
+#, rust-format
 msgid "Could not play “{file}”: it may be unsupported or corrupt."
-msgstr "Seda faili ei saanud esitada – see võib olla toetamata või rikutud."
+msgstr "Faili „{file}“ ei saanud esitada: see võib olla toetamata või rikutud."
 
 #: crates/big-audio-player/src/audio/ui/audio_shell/engine.rs:215
 #, rust-format
@@ -473,6 +470,8 @@ msgid ""
 "The playback engine could not start: {error}. Update or reinstall the mpv "
 "package, then reopen the player."
 msgstr ""
+"Taasesitusmootor ei käivitunud: {error}. Uuendage mpv paketti või paigaldage "
+"see uuesti ja avage seejärel esitaja uuesti."
 
 #: crates/big-audio-player/src/audio/ui/audio_shell/export.rs:17
 #: crates/big-audio-player/src/audio/ui/audio_shell/export.rs:33
@@ -482,17 +481,12 @@ msgstr "Ühtegi kohalikku lugu ei esitata"
 #: crates/big-audio-player/src/audio/ui/audio_shell/library_store.rs:63
 msgid "The music library is still opening. Try again in a moment."
 msgstr ""
+"Muusikakogu avamine on veel pooleli. Proovige mõne hetke pärast uuesti."
 
 #: crates/big-audio-player/src/audio/ui/audio_shell/library_store.rs:223
 #: crates/big-audio-player/src/audio/ui/audio_shell/library_store.rs:259
-#, fuzzy
-#| msgid ""
-#| "The library could not be read. Previous results were kept; try searching "
-#| "again."
 msgid "The library could not be read. The queue was not changed."
-msgstr ""
-"Kogu ei õnnestunud lugeda. Eelmised tulemused säilitati; proovige uuesti "
-"otsida."
+msgstr "Kogu ei saanud lugeda. Järjekorda ei muudetud."
 
 #: crates/big-audio-player/src/audio/ui/audio_shell/panel_intents.rs:61
 msgid ""
@@ -523,25 +517,16 @@ msgid "Save Episodes"
 msgstr "Salvesta episoodid"
 
 #: crates/big-audio-player/src/audio/ui/audio_shell/panel_intents.rs:432
-#, fuzzy
-#| msgid ""
-#| "The playlist could not be read safely. Check its format and permissions."
 msgid ""
 "The episodes could not be saved in this folder. Check its permissions and "
 "try again."
 msgstr ""
-"Esitusloendit ei saanud turvaliselt lugeda. Kontrollige selle vormingut ja "
-"õigusi."
+"Episoode ei saanud sellesse kausta salvestada. Kontrollige kausta õigusi ja "
+"proovige uuesti."
 
 #: crates/big-audio-player/src/audio/ui/audio_shell/playback.rs:143
-#, fuzzy
-#| msgid ""
-#| "The library could not be read. Previous results were kept; try searching "
-#| "again."
 msgid "The library could not be read, so lyrics were not searched online."
-msgstr ""
-"Kogu ei õnnestunud lugeda. Eelmised tulemused säilitati; proovige uuesti "
-"otsida."
+msgstr "Kogu ei saanud lugeda, seega laulusõnu võrgust ei otsitud."
 
 #: crates/big-audio-player/src/audio/ui/audio_shell/playback.rs:157
 msgid "Seek position"
@@ -705,14 +690,13 @@ msgid "Export stopped. Confirmed outputs were kept"
 msgstr "Eksport peatati. Kinnitatud väljundid säilitati"
 
 #: crates/big-audio-player/src/audio/ui/audio_shell/queue_persistence.rs:55
-#, fuzzy, rust-format
-#| msgid "The playlist could not be saved."
+#, rust-format
 msgid "The music library could not be opened: {}"
-msgstr "Esitusloendit ei saanud salvestada."
+msgstr "Muusikakogu ei saanud avada: {}"
 
 #: crates/big-audio-player/src/audio/ui/audio_shell/queue_persistence.rs:57
 msgid "Retry"
-msgstr ""
+msgstr "Proovi uuesti"
 
 #: crates/big-audio-player/src/audio/ui/audio_shell/queue_persistence.rs:60
 msgid ""
@@ -745,20 +729,16 @@ msgid "Watch folders could not be read. Previous settings were kept."
 msgstr "Jälgitavaid kaustu ei saanud lugeda. Eelmised seaded säilitati."
 
 #: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:154
-#, fuzzy
-#| msgid "The playlist could not be saved."
 msgid "The station could not be saved."
-msgstr "Esitusloendit ei saanud salvestada."
+msgstr "Jaama ei saanud salvestada."
 
 #: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:168
-#, fuzzy
-#| msgid "The playlist could not be saved."
 msgid "The station could not be removed."
-msgstr "Esitusloendit ei saanud salvestada."
+msgstr "Jaama ei saanud eemaldada."
 
 #: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:230
 msgid "There is no Music or home folder to save recordings in."
-msgstr ""
+msgstr "Salvestuste jaoks pole kausta Muusika ega kodukausta."
 
 #: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:276
 #: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:284
@@ -812,10 +792,8 @@ msgid "Open File"
 msgstr "Ava fail"
 
 #: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:528
-#, fuzzy
-#| msgid "The playlist could not be saved."
 msgid "Saved radio stations could not be read."
-msgstr "Esitusloendit ei saanud salvestada."
+msgstr "Salvestatud raadiojaamu ei saanud lugeda."
 
 #: crates/big-audio-player/src/audio/ui/audio_shell/tray.rs:18
 msgid "Show Big Audio Player"
@@ -826,24 +804,19 @@ msgid "The TV's track is no longer in the queue."
 msgstr "Teleri lugu pole enam järjekorras."
 
 #: crates/big-audio-player/src/audio/ui/audio_shell/update.rs:137
-#, fuzzy
-#| msgid "Cancelled"
 msgid "Scan cancelled"
-msgstr "Tühistatud"
+msgstr "Skannimine tühistati"
 
 #: crates/big-audio-player/src/audio/ui/audio_shell/update.rs:139
-#, fuzzy
-#| msgid "Sample Rate"
 msgid "Scan incomplete"
-msgstr "Diskreetimissagedus"
+msgstr "Skannimine jäi poolikuks"
 
 #: crates/big-audio-player/src/audio/ui/audio_shell/update.rs:142
-#, fuzzy, rust-format
-#| msgid "tracks imported"
+#, rust-format
 msgid "{count} track imported"
 msgid_plural "{count} tracks imported"
-msgstr[0] "lugu imporditud"
-msgstr[1] "lugu imporditud"
+msgstr[0] "{count} lugu imporditud"
+msgstr[1] "{count} lugu imporditud"
 
 #: crates/big-audio-player/src/audio/ui/audio_shell/update.rs:153
 msgid "Library updated"
@@ -1169,15 +1142,15 @@ msgstr "Näita failihalduris"
 #, rust-format
 msgid "{count} track"
 msgid_plural "{count} tracks"
-msgstr[0] ""
-msgstr[1] ""
+msgstr[0] "{count} lugu"
+msgstr[1] "{count} lugu"
 
 #: crates/big-audio-player/src/audio/ui/mod.rs:59
 #, rust-format
 msgid "{count} track · {duration}"
 msgid_plural "{count} tracks · {duration}"
-msgstr[0] ""
-msgstr[1] ""
+msgstr[0] "{count} lugu · {duration}"
+msgstr[1] "{count} lugu · {duration}"
 
 #: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:35
 msgid "Drag and drop files to create a playlist"
@@ -1206,7 +1179,7 @@ msgstr "Peamenüü"
 
 #: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:90
 msgid "Show Sidebar"
-msgstr ""
+msgstr "Näita külgriba"
 
 #: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:121
 #: crates/big-audio-player/src/audio/ui/playlist_library_dialog.rs:261
@@ -1263,14 +1236,12 @@ msgid "About"
 msgstr "Teave"
 
 #: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:244
-#, fuzzy
-#| msgid "No episodes found"
 msgid "No episodes queued"
-msgstr "Episoode ei leitud"
+msgstr "Järjekorras pole episoode"
 
 #: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:245
 msgid "Choose a podcast on the left to queue its episodes."
-msgstr ""
+msgstr "Valige vasakult podcast, et selle episoodid järjekorda lisada."
 
 #: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:254
 msgid "Drop tracks here"
@@ -1278,23 +1249,20 @@ msgstr "Lohistage lood siia"
 
 #: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:256
 msgid "Or double-click a track in the library, or select it and press Return."
-msgstr ""
+msgstr "Või topeltklõpsake kogus lool või valige see ja vajutage Enter."
 
 #: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:283
 msgid "Welcome to Big Audio Player"
 msgstr "Tere tulemast Big Audio Playeri kasutajaks"
 
 #: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:291
-#, fuzzy
-#| msgid ""
-#| "Add a folder with your music files to get started.\n"
-#| "Supported formats: MP3, FLAC, OGG, M4A, OPUS, WAV and more."
 msgid ""
 "Open music files to play them now, or add your music folder in the Music "
 "tab.\n"
 "Supported formats: MP3, FLAC, OGG, M4A, OPUS, WAV and more."
 msgstr ""
-"Alustamiseks lisage kaust oma muusikafailidega.\n"
+"Avage muusikafailid, et neid kohe esitada, või lisage oma muusikakaust "
+"vahekaardil Muusika.\n"
 "Toetatud vormingud: MP3, FLAC, OGG, M4A, OPUS, WAV ja veel."
 
 #: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:304
@@ -1521,10 +1489,8 @@ msgid "Cancellation requested. Finishing the current safe step…"
 msgstr "Tühistamist taotleti. Praeguse turvalise sammu lõpetamine…"
 
 #: crates/big-audio-player/src/audio/ui/scan_progress.rs:177
-#, fuzzy
-#| msgid "Library"
 msgid "Library Scan"
-msgstr "Kogu"
+msgstr "Kogu skannimine"
 
 #: crates/big-audio-player/src/audio/ui/track_list.rs:392
 #: crates/big-video-player/src/video/ui/video_browser_sidebar/views/queue_view.rs:313
@@ -1532,10 +1498,8 @@ msgid "Playing"
 msgstr "Esitatakse"
 
 #: crates/big-audio-player/src/audio/ui/track_list.rs:393
-#, fuzzy
-#| msgid "Pause"
 msgid "Paused"
-msgstr "Paus"
+msgstr "Peatatud"
 
 #: crates/big-audio-player/src/audio/ui/unavailable_dialog.rs:52
 msgid ""
@@ -1646,7 +1610,7 @@ msgstr "Big Video Player"
 
 #: crates/big-video-player/src/video/app.rs:124
 msgid "Open a separate player window instead of using the running one"
-msgstr ""
+msgstr "Ava töötava esitaja asemel eraldi esitaja aken"
 
 #: crates/big-video-player/src/video/keybindings.rs:50
 msgid "Increase speed"
@@ -1867,10 +1831,8 @@ msgid "Open"
 msgstr "Ava"
 
 #: crates/big-video-player/src/video/ui/appearance/layout/buttons_page.rs:56
-#, fuzzy
-#| msgid "Load Playlist"
 msgid "Files and Playlist"
-msgstr "Laadi esitusloend"
+msgstr "Failid ja esitusloend"
 
 #: crates/big-video-player/src/video/ui/appearance/layout/buttons_page.rs:64
 #: crates/big-video-player/src/video/ui/video_shell/component.rs:181
@@ -1896,17 +1858,15 @@ msgstr "Täisekraan"
 
 #: crates/big-video-player/src/video/ui/appearance/layout/buttons_page.rs:179
 msgid "Top bar"
-msgstr ""
+msgstr "Ülemine riba"
 
 #: crates/big-video-player/src/video/ui/appearance/layout/buttons_page.rs:181
 msgid "Video Title"
 msgstr "Video pealkiri"
 
 #: crates/big-video-player/src/video/ui/appearance/layout/buttons_page.rs:186
-#, fuzzy
-#| msgid "Bottom Margin"
 msgid "Bottom bar"
-msgstr "Alumine veeris"
+msgstr "Alumine riba"
 
 #: crates/big-video-player/src/video/ui/appearance/layout/buttons_page.rs:226
 #: crates/big-video-player/src/video/ui/appearance/layout/layout_page.rs:98
@@ -1918,12 +1878,13 @@ msgid "Button Layout"
 msgstr "Nuppude paigutus"
 
 #: crates/big-video-player/src/video/ui/appearance/layout/buttons_page.rs:232
-#, fuzzy
-#| msgid "Drag buttons between zones • Click to toggle visibility"
 msgid ""
 "Drag buttons between zones, or move the focused one with Alt+Left and "
 "Alt+Right. Click a button to show or hide it."
-msgstr "Lohistage nuppe tsoonide vahel • Klõpsake nähtavuse ümberlülitamiseks"
+msgstr ""
+"Lohistage nuppe tsoonide vahel või liigutage fookuses olevat nuppu "
+"klahvidega Alt+vasakule ja Alt+paremale. Klõpsake nuppu, et seda näidata või "
+"peita."
 
 #: crates/big-video-player/src/video/ui/appearance/layout/layout_page.rs:19
 msgid "Layout"
@@ -2351,6 +2312,8 @@ msgid ""
 "Some provider passwords are still in a plain file because your keyring could "
 "not be reached. Unlock your keyring, then reload the channels."
 msgstr ""
+"Mõne teenusepakkuja paroolid on endiselt tavalises failis, sest võtmerõngale "
+"ei pääsetud ligi. Avage võtmerõnga lukk ja laadige seejärel kanalid uuesti."
 
 #: crates/big-video-player/src/video/ui/iptv/mod.rs:257
 #: crates/big-video-player/src/video/ui/iptv/mod.rs:437
@@ -2370,10 +2333,9 @@ msgid "Loading channels…"
 msgstr "Kanalite laadimine…"
 
 #: crates/big-video-player/src/video/ui/iptv/mod.rs:490
-#, fuzzy, rust-format
-#| msgid "Showing the first {}. Type more to narrow the search."
+#, rust-format
 msgid "Showing the first {} channels; the list has more."
-msgstr "Näidatakse esimest {}. Otsingu kitsendamiseks tippige rohkem."
+msgstr "Näidatakse esimest {} kanalit; loendis on rohkem."
 
 #: crates/big-video-player/src/video/ui/iptv/mod.rs:509
 msgid ""
@@ -2428,12 +2390,17 @@ msgid ""
 "Could not read this provider's password from your keyring. Unlock your "
 "keyring, then reload the channels."
 msgstr ""
+"Selle teenusepakkuja parooli ei saanud võtmerõngast lugeda. Avage võtmerõnga "
+"lukk ja laadige seejärel kanalid uuesti."
 
 #: crates/big-video-player/src/video/ui/iptv/mod.rs:535
 msgid ""
 "This playlist has IPTV channels from a provider that is not set up. Add the "
 "provider under IPTV, then open the playlist again."
 msgstr ""
+"Selles esitusloendis on IPTV kanaleid teenusepakkujalt, mis pole "
+"seadistatud. Lisage teenusepakkuja jaotises IPTV ja avage seejärel "
+"esitusloend uuesti."
 
 #: crates/big-video-player/src/video/ui/iptv/providers_dialog.rs:48
 msgid "Add provider"
@@ -2449,6 +2416,9 @@ msgid ""
 "can delete the “Big Multimedia IPTV provider” item it left with your keyring "
 "manager."
 msgstr ""
+"Asendatud või eemaldatud parooli ei saanud võtmerõngast kustutada. "
+"Mahajäänud kirje „Big Multimedia IPTV provider“ saate kustutada oma "
+"võtmerõngahalduriga."
 
 #: crates/big-video-player/src/video/ui/iptv/providers_dialog.rs:120
 msgid "No providers yet"
@@ -2463,6 +2433,8 @@ msgid ""
 "Password not in your keyring yet. Unlock your keyring, then close this "
 "window to try again."
 msgstr ""
+"Parool pole veel võtmerõngas. Avage võtmerõnga lukk ja sulgege seejärel see "
+"aken, et uuesti proovida."
 
 #: crates/big-video-player/src/video/ui/iptv/providers_dialog.rs:137
 msgid "Edit"
@@ -2479,13 +2451,15 @@ msgstr "IPTV teenusepakkuja"
 
 #: crates/big-video-player/src/video/ui/iptv/providers_dialog.rs:298
 msgid "Saving the password in your keyring…"
-msgstr ""
+msgstr "Parooli salvestamine võtmerõngasse…"
 
 #: crates/big-video-player/src/video/ui/iptv/providers_dialog.rs:326
 msgid ""
 "Could not save the password in your keyring, so nothing was saved. Unlock "
 "your keyring, then save again."
 msgstr ""
+"Parooli ei saanud võtmerõngasse salvestada, seega midagi ei salvestatud. "
+"Avage võtmerõnga lukk ja salvestage seejärel uuesti."
 
 #: crates/big-video-player/src/video/ui/iptv/providers_dialog.rs:366
 #: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/header.rs:163
@@ -2532,10 +2506,14 @@ msgstr "Parool"
 msgid ""
 "The full address is saved in your keyring. Leave it as shown to keep it."
 msgstr ""
+"Täielik aadress on võtmerõngasse salvestatud. Selle säilitamiseks jätke see "
+"nii, nagu see on näidatud."
 
 #: crates/big-video-player/src/video/ui/iptv/providers_dialog.rs:425
 msgid "The password is saved in your keyring. Leave Password empty to keep it."
 msgstr ""
+"Parool on võtmerõngasse salvestatud. Selle säilitamiseks jätke väli Parool "
+"tühjaks."
 
 #: crates/big-video-player/src/video/ui/iptv/providers_dialog.rs:433
 msgid "HTTP headers (optional)"
@@ -2648,8 +2626,6 @@ msgid "For some TV broadcasts (HLG)"
 msgstr "Mõne telesaate jaoks (HLG)"
 
 #: crates/big-video-player/src/video/ui/media_adjust.rs:290
-#, fuzzy
-#| msgid "Plain colours (SDR)"
 msgid "Plain colors (SDR)"
 msgstr "Tavalised värvid (SDR)"
 
@@ -2830,10 +2806,9 @@ msgid "Subtitle"
 msgstr "Subtiitrid"
 
 #: crates/big-video-player/src/video/ui/menu_dialogs.rs:20
-#, fuzzy, rust-format
-#| msgid "Recording was not saved"
+#, rust-format
 msgid "The screenshot was not saved: {error}"
-msgstr "Salvestust ei salvestatud"
+msgstr "Ekraanipilti ei salvestatud: {error}"
 
 #: crates/big-video-player/src/video/ui/menu_dialogs.rs:52
 msgid "Go to Time"
@@ -2855,28 +2830,32 @@ msgstr "Mine"
 #: crates/big-video-player/src/video/ui/menu_dialogs.rs:132
 msgid "Still saving the previous screenshots. Try again in a moment."
 msgstr ""
+"Eelmiste ekraanipiltide salvestamine on veel pooleli. Proovige mõne hetke "
+"pärast uuesti."
 
 #: crates/big-video-player/src/video/ui/menu_dialogs.rs:83
 #: crates/big-video-player/src/video/ui/menu_dialogs.rs:88
-#, fuzzy
-#| msgid "Stores the video color space in each screenshot"
 msgid "Open a video to take a screenshot"
-msgstr "Salvestab video värviruumi igasse ekraanipilti"
+msgstr "Ekraanipildi tegemiseks avage video"
 
 #: crates/big-video-player/src/video/ui/menu_dialogs.rs:102
 msgid ""
 "There is no Pictures or home folder to save screenshots in. Choose a folder "
 "in Preferences."
 msgstr ""
+"Ekraanipiltide salvestamiseks pole kausta Pildid ega kodukausta. Valige "
+"kaust jaotises Eelistused."
 
 #: crates/big-video-player/src/video/ui/menu_dialogs.rs:127
 #, rust-format
 msgid "Cannot save to {folder}: {error}. Choose another folder in Preferences."
 msgstr ""
+"Asukohta {folder} ei saa salvestada: {error}. Valige jaotises Eelistused "
+"mõni muu kaust."
 
 #: crates/big-video-player/src/video/ui/menu_dialogs.rs:137
 msgid "The screenshot was not saved because of an unexpected error"
-msgstr ""
+msgstr "Ekraanipilti ei salvestatud ootamatu vea tõttu"
 
 #: crates/big-video-player/src/video/ui/menu_dialogs.rs:174
 msgid "Screenshot saved"
@@ -3666,12 +3645,11 @@ msgid "Rename failed"
 msgstr "Ümbernimetamine ebaõnnestus"
 
 #: crates/big-video-player/src/video/ui/video_browser_sidebar/fileops.rs:311
-#, fuzzy, rust-format
-#| msgid "Could not move to trash"
+#, rust-format
 msgid "Could not move {failed} of {total} file"
 msgid_plural "Could not move {failed} of {total} files"
-msgstr[0] "Prügikasti teisaldamine ebaõnnestus"
-msgstr[1] "Prügikasti teisaldamine ebaõnnestus"
+msgstr[0] "{total} failist {failed} ei saanud teisaldada"
+msgstr[1] "{total} failist {failed} ei saanud teisaldada"
 
 #: crates/big-video-player/src/video/ui/video_browser_sidebar/library.rs:118
 msgid "Home folder"
@@ -3885,8 +3863,7 @@ msgstr[0] "{n} muudatus"
 msgstr[1] "{n} muudatust"
 
 #: crates/big-video-player/src/video/ui/video_shell/adjustments.rs:173
-#, fuzzy, rust-format
-#| msgid "Video colour: {name}"
+#, rust-format
 msgid "Video color: {name}"
 msgstr "Video värv: {name}"
 
@@ -3985,8 +3962,6 @@ msgid "Use HDR?"
 msgstr "Kas kasutada HDR-i?"
 
 #: crates/big-video-player/src/video/ui/video_shell/component.rs:214
-#, fuzzy
-#| msgid "Does the picture look grey and washed out? Click to use HDR colours"
 msgid "Does the picture look grey and washed out? Click to use HDR colors"
 msgstr "Kas pilt tundub hall ja luitunud? Klõpsake HDR-värvide kasutamiseks"
 
@@ -4125,6 +4100,10 @@ msgid ""
 "kept. Video Output, Audio Output and the custom mpv options take effect "
 "after reopening the player."
 msgstr ""
+"Eelistused ja välimus taastatakse vaikeväärtustele. Teie kogu kaustad, "
+"kiirklahvid, helitugevus, juhuesitus ning hääle ja ekvalaiseri tasemed "
+"jäävad alles. Videoväljund, Heliväljund ja kohandatud mpv valikud jõustuvad "
+"pärast esitaja uuesti avamist."
 
 #: crates/big-video-player/src/video/ui/video_shell/export.rs:19
 msgid "No file is playing"
@@ -4218,7 +4197,7 @@ msgstr "Ükski hiljutine fail ei sobi"
 
 #: crates/big-video-player/src/video/ui/video_shell/playback.rs:196
 msgid "The screenshot took too long and was not saved"
-msgstr ""
+msgstr "Ekraanipildi tegemine võttis liiga kaua aega ja seda ei salvestatud"
 
 #: crates/big-video-player/src/video/ui/video_shell/playback.rs:223
 msgid "Could not play this file — it may be unsupported or corrupt."
@@ -4245,6 +4224,8 @@ msgid ""
 "The playback engine could not start: {error}. Check Preferences → Advanced → "
 "mpv Options, then reopen the player."
 msgstr ""
+"Taasesitusmootor ei käivitunud: {error}. Kontrollige jaotist Eelistused → "
+"Täpsemad → mpv valikud ja avage seejärel esitaja uuesti."
 
 #: crates/big-video-player/src/video/ui/video_shell/render.rs:340
 msgid ""
@@ -4635,15 +4616,15 @@ msgstr "Teisendajat ei saanud käivitada"
 #: crates/media-runtime/src/media/iptv/m3u.rs:51
 #, rust-format
 msgid "Only the first {} entries of the playlist were loaded."
-msgstr ""
+msgstr "Esitusloendist laaditi ainult esimesed {} kirjet."
 
 #: crates/media-runtime/src/media/iptv/m3u.rs:58
 #, rust-format
 msgid "{} entry was skipped because it is not a supported stream or file."
 msgid_plural ""
 "{} entries were skipped because they are not supported streams or files."
-msgstr[0] ""
-msgstr[1] ""
+msgstr[0] "{} kirje jäeti vahele, kuna see pole toetatud voog ega fail."
+msgstr[1] "{} kirjet jäeti vahele, kuna need pole toetatud vood ega failid."
 
 #: crates/media-runtime/src/media/metadata_cache/display.rs:21
 #, rust-format
@@ -4721,6 +4702,9 @@ msgid ""
 "headphones are connected, or choose another Audio Output in Preferences and "
 "reopen the player."
 msgstr ""
+"Heli ei saanud heliväljundis käivitada. Kontrollige, kas kõlarid või "
+"kõrvaklapid on ühendatud, või valige jaotises Eelistused muu Heliväljund ja "
+"avage esitaja uuesti."
 
 #: crates/media-runtime/src/settings/messages.rs:6
 msgid "Access could not be verified — check permissions before reviewing"
@@ -4882,23 +4866,23 @@ msgstr "Kohandamiseks vajutage Alt+alla. Sulgemiseks vajutage Esc."
 #: crates/ui/generic/big-relm4-components/src/input/zone_layout_editor.rs:160
 #, rust-format
 msgid "{zone}, {position} of {count}"
-msgstr ""
+msgstr "{zone}, {position}/{count}"
 
 #: crates/ui/generic/big-relm4-components/src/input/zone_layout_editor.rs:201
 #, rust-format
 msgid "{bar}, center"
-msgstr ""
+msgstr "{bar}, keskel"
 
 #: crates/ui/generic/big-relm4-components/src/input/zone_layout_editor.rs:202
 #: crates/ui/generic/big-relm4-components/src/input/zone_layout_editor.rs:203
 #, rust-format
 msgid "{bar}, left"
-msgstr ""
+msgstr "{bar}, vasakul"
 
 #: crates/ui/generic/big-relm4-components/src/input/zone_layout_editor.rs:204
 #, rust-format
 msgid "{bar}, right"
-msgstr ""
+msgstr "{bar}, paremal"
 
 #: crates/ui/generic/big-relm4-components/src/layout/media_window/sidebar.rs:232
 msgid "Resize sidebar"
@@ -5154,7 +5138,7 @@ msgstr "Muuda lõiget"
 
 #: crates/ui/media/big-player-ui/src/cut_edit_dialog.rs:31
 msgid "Start and end must be at least 0.1 seconds apart"
-msgstr ""
+msgstr "Algus ja lõpp peavad olema üksteisest vähemalt 0,1 sekundi kaugusel"
 
 #: crates/ui/media/big-player-ui/src/cut_edit_dialog.rs:42
 msgid "Edit Cut"
@@ -5255,7 +5239,7 @@ msgstr "Otsige podcaste või lisage RSS-voog"
 
 #: crates/ui/media/big-player-ui/src/podcast_panel.rs:244
 msgid "Podcast Subscriptions Unavailable"
-msgstr ""
+msgstr "Podcastide tellimused pole saadaval"
 
 #: crates/ui/media/big-player-ui/src/podcast_panel.rs:274
 msgid "Connection error — try again"
@@ -5267,7 +5251,7 @@ msgstr "Juba tellitud"
 
 #: crates/ui/media/big-player-ui/src/podcast_panel.rs:341
 msgid "Podcast subscriptions are still loading"
-msgstr ""
+msgstr "Podcastide tellimusi alles laaditakse"
 
 #: crates/ui/media/big-player-ui/src/podcast_panel.rs:378
 msgid "Subscriptions"
@@ -5278,15 +5262,14 @@ msgid "Search Results"
 msgstr "Otsingutulemused"
 
 #: crates/ui/media/big-player-ui/src/podcast_panel.rs:450
-#, fuzzy
-#| msgid "The playlist could not be saved."
 msgid "Podcast subscriptions could not be saved"
-msgstr "Esitusloendit ei saanud salvestada."
+msgstr "Podcastide tellimusi ei saanud salvestada"
 
 #: crates/ui/media/big-player-ui/src/podcast_panel.rs:463
 #, rust-format
 msgid "Podcast subscriptions could not be read, so changes are not saved: {}"
 msgstr ""
+"Podcastide tellimusi ei saanud lugeda, seega muudatusi ei salvestata: {}"
 
 #: crates/ui/media/big-player-ui/src/podcast_panel.rs:472
 msgid "Title unavailable"
@@ -5335,34 +5318,29 @@ msgid "Explore Stations"
 msgstr "Avasta jaamu"
 
 #: crates/ui/media/big-player-ui/src/radio_panel/widgets.rs:56
-#, fuzzy, rust-format
-#| msgid "Remove station"
+#, rust-format
 msgid "Remove {station}"
-msgstr "Eemalda jaam"
+msgstr "Eemalda {station}"
 
 #: crates/ui/media/big-player-ui/src/radio_panel/widgets.rs:75
-#, fuzzy, rust-format
-#| msgid "Add to my stations"
+#, rust-format
 msgid "Add {station} to my stations"
-msgstr "Lisa minu jaamadesse"
+msgstr "Lisa {station} minu jaamade hulka"
 
 #: crates/ui/media/big-player-ui/src/radio_panel/widgets.rs:99
-#, fuzzy, rust-format
-#| msgid "Add to my stations"
+#, rust-format
 msgid "{station} is in my stations"
-msgstr "Lisa minu jaamadesse"
+msgstr "{station} on minu jaamade hulgas"
 
 #: crates/ui/media/big-player-ui/src/radio_panel/widgets.rs:115
-#, fuzzy, rust-format
-#| msgid "Stop Recording"
+#, rust-format
 msgid "Stop recording {station}"
-msgstr "Lõpeta salvestamine"
+msgstr "Peata jaama {station} salvestamine"
 
 #: crates/ui/media/big-player-ui/src/radio_panel/widgets.rs:121
-#, fuzzy, rust-format
-#| msgid "Remove station"
+#, rust-format
 msgid "Record {station}"
-msgstr "Eemalda jaam"
+msgstr "Salvesta {station}"
 
 #: crates/ui/media/big-player-ui/src/radio_panel/widgets.rs:196
 msgid "Search radios..."
@@ -5480,17 +5458,16 @@ msgstr "Ava KDE Connecti allalaadimisleht"
 
 #: crates/ui/media/big-player-ui/src/smartphone/dialog.rs:129
 msgid "No local network found. Connect to a network and try again."
-msgstr ""
+msgstr "Kohtvõrku ei leitud. Looge võrguühendus ja proovige uuesti."
 
 #: crates/ui/media/big-player-ui/src/smartphone/dialog.rs:152
 msgid "Scan the code with the phone's camera."
 msgstr "Skannige kood telefoni kaameraga."
 
 #: crates/ui/media/big-player-ui/src/smartphone/dialog.rs:171
-#, fuzzy, rust-format
-#| msgid "Web remote is off."
+#, rust-format
 msgid "Web remote stopped: {error}"
-msgstr "Veebikaugjuhtimine on välja lülitatud."
+msgstr "Veebikaugjuhtimine peatus: {error}"
 
 #: crates/ui/media/big-player-ui/src/smartphone/dialog.rs:179
 msgid "Could not start server"

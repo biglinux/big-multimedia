@@ -1,0 +1,21 @@
+source	translation	source of the choice
+library	资料库	zh_CN.po (Library)
+track	曲目	zh_CN.po (Imported tracks were kept)
+playlist	播放列表	zh_CN.po (Playlist)
+queue	队列	zh_CN.po (Queue)
+player	播放器	zh_CN.po (Close the player)
+playback engine	播放引擎	new; zh_CN.po uses 播放 for playback
+keyring	密钥环	libsecret, gnome-keyring
+password	密码	zh_CN.po (Password)
+provider	提供商	zh_CN.po (Provider)
+station	电台	zh_CN.po (My Stations)
+episode	单集	zh_CN.po (No episodes found)
+subscription	订阅	zh_CN.po (Subscriptions)
+screenshot	截图	zh_CN.po (Screenshot)
+recording	录音; record a station 录制	zh_CN.po (Recording saved, Recording to)
+scan	扫描	zh_CN.po (Scan Now)
+sidebar	侧边栏	zh_CN.po (Resize sidebar), nautilus
+Preferences	首选项	zh_CN.po (Preferences)
+Top bar	顶栏	libadwaita (Top Bar)
+Retry	重试	nautilus
+you	您	zh_CN.po

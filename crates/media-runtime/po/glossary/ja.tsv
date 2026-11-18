@@ -1,0 +1,21 @@
+source	translation	source of the choice
+library	ライブラリ	ja.po (Library)
+track	トラック	ja.po (Next Track)
+playlist	プレイリスト	ja.po (Playlist)
+queue	キュー	ja.po (Queue)
+player	プレーヤー	ja.po (Close the player)
+playback engine	再生エンジン	new; ja.po uses 再生 for playback
+keyring	キーリング	gnome-keyring (Unlock Keyring)
+password	パスワード	ja.po (Password)
+provider	プロバイダー	ja.po (Provider)
+station	ステーション	ja.po (Explore Stations)
+My Stations	マイステーション	ja.po (My Stations)
+episode	エピソード	ja.po (Save Episode)
+subscription	登録	ja.po (Subscriptions, Unsubscribe)
+screenshot	スクリーンショット	ja.po (Screenshot)
+recording	録音	ja.po (Recording saved)
+scan	スキャン	ja.po (Cancel scan)
+sidebar	サイドバー	ja.po (Resize sidebar), nautilus
+Preferences	設定	ja.po (Preferences)
+Retry	再試行	nautilus
+quotes	「」	ja.po (No providers configured)

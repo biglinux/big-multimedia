@@ -1,0 +1,22 @@
+source	translation	source of the choice
+library	ספרייה	he.po (Library)
+track	רצועה	he.po (Next Track)
+playlist	רשימת השמעה	he.po (Playlist)
+queue	תור	he.po (Queue)
+player	נגן	he.po (Close the player)
+playback engine	מנוע הניגון	new; he.po uses ניגון for playback
+keyring	קבוצת מפתחות	libsecret (Default keyring)
+password	סיסמה	he.po (Password); GNOME spells ססמה
+provider	ספק	he.po (Provider)
+station	תחנה	he.po (My Stations)
+episode	פרק	he.po (Save Episodes)
+subscription	מינוי	he.po (Subscriptions)
+screenshot	צילום מסך	he.po (Screenshot)
+recording	הקלטה	he.po (Recording saved)
+scan	סריקה	he.po (Cancel scan)
+stream	זרם	he.po (Video Stream)
+sidebar	סרגל הצד	he.po (Resize sidebar), nautilus
+Preferences	העדפות	he.po (Preferences)
+Retry	ניסיון חוזר	nautilus
+instructions	plural imperative (בדקו, נסו)	he.po
+command-line action descriptions	infinitive (לסגור את הנגן)	he.po

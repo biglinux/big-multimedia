@@ -1,0 +1,21 @@
+source	translation	source of the choice
+library	라이브러리	ko.po (Library)
+track	트랙	ko.po (Next Track)
+playlist	재생 목록	ko.po (Playlist)
+queue	대기열	ko.po (Queue)
+player	플레이어	ko.po (Close the player)
+playback engine	재생 엔진	new; ko.po uses 재생 for playback
+keyring	키 모음	libsecret, gnome-keyring
+password	비밀번호	ko.po (Password)
+provider	제공업체	ko.po (Provider)
+station	방송국	ko.po (Explore Stations)
+My Stations	내 방송국	ko.po (My Stations)
+episode	에피소드	ko.po (Save Episode)
+subscription	구독	ko.po (Subscriptions)
+screenshot	스크린샷	ko.po (Screenshot)
+recording	녹음	ko.po (Recording saved)
+scan	검색	ko.po (Scan Now, Cancel scan)
+sidebar	사이드바	ko.po (Resize sidebar)
+Preferences	환경 설정	ko.po (Preferences)
+Top bar	상단 표시줄	libadwaita (Top Bar)
+Retry	다시 시도	nautilus
