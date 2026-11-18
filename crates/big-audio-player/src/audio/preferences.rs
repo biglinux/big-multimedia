@@ -6,11 +6,11 @@ use adw::prelude::*;
 use std::sync::Arc;
 
 use big_player_ui::audio_preferences::{
-    PlayerAudioEffects, PlayerAudioPreferenceActions, create_player_audio_page as create_audio_page,
+    PlayerAudioPreferenceActions, create_player_audio_page as create_audio_page,
 };
 
 use crate::i18n::i18n;
-use crate::player::mpv_backend::{AudioEffects, MpvBackend};
+use crate::player::mpv_backend::MpvBackend;
 use crate::settings::{Settings, keys};
 use big_player_ui::preference_rows::add_combo_row;
 use big_relm4_components::input::spin_row::accessible_spin_row;
@@ -173,10 +173,12 @@ pub(super) fn create_music_page(
 }
 
 fn audio_preference_actions(
+    settings: &Settings,
     mpv: Option<&Arc<MpvBackend>>,
     volume_max_changed: impl Fn() + 'static,
 ) -> Option<PlayerAudioPreferenceActions> {
     let mpv = mpv.cloned()?;
+    let settings = settings.clone();
     Some(PlayerAudioPreferenceActions::new(
         {
             let mpv = Arc::clone(&mpv);
@@ -197,19 +199,8 @@ fn audio_preference_actions(
             let mpv = Arc::clone(&mpv);
             move |value| mpv.set_preferred_audio_lang(value)
         },
-        move |effects| apply_player_audio_effects(&mpv, effects),
+        move || crate::shared::audio_effects::apply_voice_change(&settings, &mpv),
     ))
-}
-
-fn apply_player_audio_effects(mpv: &MpvBackend, effects: PlayerAudioEffects) {
-    mpv.apply_audio_effects(&AudioEffects {
-        normalize: effects.normalize,
-        nr_strength: effects.nr_strength,
-        nr_model: effects.nr_model,
-        nr_mono: effects.nr_mono,
-        nr_voice_only: effects.nr_voice_only,
-        eq_bands: &effects.eq_bands,
-    });
 }
 
 /// `toggles` and `volume_max_changed` fire when their preference changes, so
@@ -229,7 +220,10 @@ pub fn show_audio_preferences(
         .build();
     let pages = [
         create_music_page(settings, mpv, toggles),
-        create_audio_page(settings, audio_preference_actions(mpv, volume_max_changed)),
+        create_audio_page(
+            settings,
+            audio_preference_actions(settings, mpv, volume_max_changed),
+        ),
     ];
     for page in &pages {
         crate::settings::attach_save_status_banner(page, settings);
