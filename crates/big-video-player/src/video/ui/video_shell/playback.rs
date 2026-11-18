@@ -472,8 +472,7 @@ impl VideoShell {
     }
 
     /// Move files to the trash, drop the trashed ones from the queue, refresh
-    /// the browser, and offer an Undo that restores them. The `gio trash`
-    /// calls run off the main thread (they spawn a subprocess per file).
+    /// the browser, and offer an Undo that restores them, all off the main thread.
     fn trash_files(&mut self, paths: Vec<String>, sender: &ComponentSender<VideoShell>) {
         let notice = self.notice.clone();
         let pl_sender = self.playlist.sender().clone();
@@ -483,7 +482,7 @@ impl VideoShell {
                 use big_media_runtime::media::playlist;
                 paths
                     .into_iter()
-                    .filter(|p| playlist::trash_file(p).is_ok())
+                    .filter(|p| playlist::trash_file(std::path::Path::new(p)).is_ok())
                     .collect::<Vec<String>>()
             },
             move |trashed: Vec<String>| {
@@ -506,7 +505,11 @@ impl VideoShell {
                         move || {
                             use big_media_runtime::media::playlist;
                             for path in &to_restore {
-                                let _ = playlist::restore_from_trash(path);
+                                if let Err(error) =
+                                    playlist::restore_from_trash(std::path::Path::new(path))
+                                {
+                                    log::warn!("restoring {path} from the trash failed: {error}");
+                                }
                             }
                         },
                         move |()| {

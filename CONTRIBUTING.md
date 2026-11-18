@@ -124,6 +124,18 @@ The tray icon test plays the tray host on a session bus of its own:
 dbus-run-session -- cargo test --locked -p big-app-kit tray -- --ignored
 ```
 
+`undo_restores_latest_trashing` trashes and restores through GVfs, which
+must see the scratch home instead of your trash, so the bus activates only
+GVfs:
+
+```sh
+mkdir -p -m 700 "$scratch/runtime"
+ln -s /usr/share/dbus-1/services/org.gtk.vfs.*.service "$scratch/services/"
+env -u DISPLAY -u WAYLAND_DISPLAY "${isolated_home[@]}" XDG_RUNTIME_DIR="$scratch/runtime" \
+	dbus-run-session --config-file "$scratch/bus.conf" -- \
+	cargo test --locked -p big-media-runtime --features ui-core --lib undo_restores_latest_trashing -- --ignored
+```
+
 Translations are one catalog for the whole suite in `crates/media-runtime/po`;
 regenerate the template with `crates/media-runtime/po/regen-pot.sh`.
 
