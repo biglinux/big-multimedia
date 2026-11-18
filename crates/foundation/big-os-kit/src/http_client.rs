@@ -478,7 +478,13 @@ fn validate_url(url: &str) -> Result<(), String> {
     }
     Ok(())
 }
-fn validate_header_name(name: &str) -> Result<(), String> {
+/// Accept an HTTP field name: an RFC 9110 token of at most 256 bytes.
+///
+/// # Errors
+///
+/// Returns a message when `name` is empty, longer than 256 bytes, or holds a
+/// byte outside the token characters.
+pub fn validate_header_name(name: &str) -> Result<(), String> {
     if name.is_empty()
         || name.len() > 256
         || !name
