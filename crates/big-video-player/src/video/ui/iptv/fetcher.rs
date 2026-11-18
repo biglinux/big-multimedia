@@ -36,8 +36,8 @@ pub enum FetchError {
     FileUnreadable,
 }
 
-/// Stable per-provider cache identifier. Fed through `cache::write`'s slugifier
-/// downstream, so any unsafe characters get sanitized there.
+/// Stable per-provider cache identifier; the cache names its file by a hash
+/// of it.
 #[must_use]
 pub fn provider_identifier(provider: &IptvProvider) -> String {
     match &provider.source {

@@ -36,7 +36,7 @@ use crate::i18n::i18n;
 use big_os_kit::url::ListOrigin;
 
 use crate::media::iptv::{
-    IptvChannel, IptvProvider, IptvProviderStore, MAX_PLAYLIST_ENTRIES, PlaylistEntries,
+    IptvChannel, IptvKind, IptvProvider, IptvProviderStore, MAX_PLAYLIST_ENTRIES, PlaylistEntries,
     left_out_notice, parse_channel_list,
 };
 
@@ -237,15 +237,18 @@ impl Component for VideoIptvBrowser {
             VideoIptvBrowserInput::ProvidersChanged => self.on_providers_changed(&sender),
             VideoIptvBrowserInput::PlayChannel { url, title } => {
                 let index = self.provider_dropdown.selected() as usize;
-                let Some(origin) = self
-                    .store
-                    .borrow()
-                    .providers
-                    .get(index)
-                    .map(|provider| provider.source.list_origin())
-                else {
+                let store = self.store.borrow();
+                let Some(provider) = store.providers.get(index) else {
                     return;
                 };
+                let url = match &provider.source {
+                    IptvKind::Xtream {
+                        username, password, ..
+                    } => xtream::stream_url(&url, username, password),
+                    IptvKind::M3uUrl { .. } | IptvKind::M3uLocal { .. } => url,
+                };
+                let origin = provider.source.list_origin();
+                drop(store);
                 let _ = sender.output(VideoIptvBrowserOutput::PlayChannel { url, title, origin });
             }
             VideoIptvBrowserInput::FavoriteToggled => self.list_view.reload_favorites(),
