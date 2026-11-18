@@ -56,9 +56,21 @@ fn after_lrc_stamp(line: &str) -> Option<&str> {
     rest.strip_prefix(']')
 }
 
+/// The LRC format's ID tags, which hold song details rather than lyrics.
+const LRC_ID_TAGS: [&str; 10] = [
+    "ar", "al", "ti", "au", "by", "length", "offset", "re", "tool", "ve",
+];
+
+fn is_lrc_id_tag(line: &str) -> bool {
+    line.strip_prefix('[')
+        .and_then(|rest| rest.strip_suffix(']'))
+        .and_then(|tag| tag.split_once(':'))
+        .is_some_and(|(key, _)| LRC_ID_TAGS.contains(&key))
+}
+
 /// Strip the leading LRC time stamps of each line for plain-text display,
-/// dropping lines that held only stamps and keeping blank ones. Text with no
-/// line starting with a stamp is returned unchanged.
+/// dropping ID tags and lines that held only stamps and keeping blank ones.
+/// Text with no line starting with a stamp is returned unchanged.
 fn strip_lrc_timestamps(raw: &str) -> String {
     if !raw
         .lines()
@@ -73,7 +85,12 @@ fn strip_lrc_timestamps(raw: &str) -> String {
             (text, stamped) = (rest, true);
         }
         let text = text.trim();
-        if !(stamped && text.is_empty()) {
+        let lyric = if stamped {
+            !text.is_empty()
+        } else {
+            !is_lrc_id_tag(text)
+        };
+        if lyric {
             lines.push(text);
         }
     }
@@ -156,6 +173,12 @@ mod tests {
             "Hello [x] world\nChorus\nUntimed [y]"
         );
         assert_eq!(strip_lrc_timestamps("Hello [x] world"), "Hello [x] world");
+    }
+
+    #[test]
+    fn lrc_id_tags_dropped() {
+        let lrc = "[ti:Song]\n[ar:Someone]\n[length: 03:20]\n[00:01.00]Line\n[x:y]";
+        assert_eq!(strip_lrc_timestamps(lrc), "Line\n[x:y]");
     }
 
     /// xorshift64, so every run walks the same inputs.
