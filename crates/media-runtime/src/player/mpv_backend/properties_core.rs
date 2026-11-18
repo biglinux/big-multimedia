@@ -78,6 +78,10 @@ impl MpvBackend {
         });
     }
 
+    pub fn audio_delay(&self) -> f64 {
+        self.get_property_f64("audio-delay")
+    }
+
     pub fn set_audio_delay(&self, delay: f64) {
         self.with_mpv(|m| {
             m.set_property_logged("audio-delay", delay);
@@ -124,15 +128,20 @@ impl MpvBackend {
         });
     }
 
-    pub fn get_property_f64(&self, name: &str) -> f64 {
+    /// Whether playback stopped at the end of the file (`keep-open`).
+    pub fn eof_reached(&self) -> bool {
+        self.get_property_bool("eof-reached")
+    }
+
+    pub(crate) fn get_property_f64(&self, name: &str) -> f64 {
         self.with_mpv(|m| m.get_property(name).unwrap_or(0.0))
     }
 
-    pub fn get_property_string(&self, name: &str) -> String {
+    pub(crate) fn get_property_string(&self, name: &str) -> String {
         self.with_mpv(|m| m.get_property::<String>(name).unwrap_or_default())
     }
 
-    pub fn get_property_bool(&self, name: &str) -> bool {
+    pub(crate) fn get_property_bool(&self, name: &str) -> bool {
         self.with_mpv(|m| {
             m.get_property::<String>(name)
                 .is_ok_and(|v| v == "yes" || v == "true" || v == "1")

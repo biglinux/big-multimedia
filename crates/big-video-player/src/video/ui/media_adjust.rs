@@ -186,7 +186,7 @@ pub(super) fn build_delay_row(mpv: &Arc<MpvBackend>, subtitles: bool) -> gtk::Wi
         (
             i18n("Sound early or late"),
             i18n("When voices do not match the lips. More = later"),
-            mpv.get_property_f64("audio-delay"),
+            mpv.audio_delay(),
             10.0,
             |mpv, value| mpv.set_audio_delay(value),
         )

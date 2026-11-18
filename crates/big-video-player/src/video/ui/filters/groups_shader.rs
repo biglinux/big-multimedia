@@ -32,23 +32,23 @@ pub(super) fn build_gpu_group(mpv: &Arc<MpvBackend>) -> adw::PreferencesGroup {
     group.add(&build_gpu_sharpen_row(mpv));
     group.add(&build_gpu_bool_row(
         mpv,
-        "deband",
         i18n("Deband"),
         i18n("Remove color banding artifacts"),
+        MpvBackend::deband,
         MpvBackend::set_deband,
     ));
     group.add(&build_gpu_bool_row(
         mpv,
-        "sigmoid-upscaling",
         i18n("Sigmoid Upscaling"),
         i18n("Reduces ringing when scaling video up"),
+        MpvBackend::sigmoid_upscaling,
         MpvBackend::set_sigmoid_upscaling,
     ));
     group.add(&build_gpu_bool_row(
         mpv,
-        "correct-downscaling",
         i18n("Correct Downscaling"),
         i18n("Higher quality when scaling video down"),
+        MpvBackend::correct_downscaling,
         MpvBackend::set_correct_downscaling,
     ));
     group
@@ -56,7 +56,7 @@ pub(super) fn build_gpu_group(mpv: &Arc<MpvBackend>) -> adw::PreferencesGroup {
 
 /// GPU sharpen expander (0..5, debounced 100 ms).
 fn build_gpu_sharpen_row(mpv: &Arc<MpvBackend>) -> adw::ExpanderRow {
-    let current = mpv.get_property_f64("sharpen");
+    let current = mpv.sharpen();
     let is_active = current.abs() > 0.001;
     let expander = adw::ExpanderRow::builder()
         .title(i18n("Sharpen"))
@@ -105,15 +105,15 @@ fn build_gpu_sharpen_row(mpv: &Arc<MpvBackend>) -> adw::ExpanderRow {
 /// A GPU boolean property toggle row seeded from the live mpv property.
 fn build_gpu_bool_row(
     mpv: &Arc<MpvBackend>,
-    property: &str,
     title: String,
     subtitle: String,
+    getter: fn(&MpvBackend) -> bool,
     setter: fn(&MpvBackend, bool),
 ) -> adw::SwitchRow {
     let row = adw::SwitchRow::builder()
         .title(title)
         .subtitle(subtitle)
-        .active(mpv.get_property_bool(property))
+        .active(getter(mpv))
         .build();
     let mpv = Arc::clone(mpv);
     row.connect_active_notify(move |row| setter(&mpv, row.is_active()));

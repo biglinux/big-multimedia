@@ -61,9 +61,8 @@ impl VideoShell {
             });
         }
         if let Some(mpv) = self.mpv.borrow().as_ref() {
-            self.trim.emit(VideoTrimBarInput::SetPlayhead(
-                mpv.get_property_f64("time-pos"),
-            ));
+            self.trim
+                .emit(VideoTrimBarInput::SetPlayhead(mpv.get_position()));
         }
     }
 
@@ -140,7 +139,7 @@ impl VideoShell {
             .mpv
             .borrow()
             .as_ref()
-            .map_or(0.0, |mpv| mpv.get_property_f64("time-pos"));
+            .map_or(0.0, |mpv| mpv.get_position());
         self.trim.emit(VideoTrimBarInput::Mark(t));
     }
 
@@ -176,11 +175,7 @@ impl VideoShell {
                         root,
                         Cut { id, start, end },
                         self.trim_duration(),
-                        move || {
-                            mpv.borrow()
-                                .as_ref()
-                                .map_or(0.0, |mpv| mpv.get_property_f64("time-pos"))
-                        },
+                        move || mpv.borrow().as_ref().map_or(0.0, |mpv| mpv.get_position()),
                         move |id, start, end| {
                             let _ = trim.send(VideoTrimBarInput::SetSegmentTimes(id, start, end));
                         },
@@ -216,7 +211,7 @@ impl VideoShell {
             self.mpv
                 .borrow()
                 .as_ref()
-                .map_or(0.0, |mpv| mpv.get_property_f64("duration"))
+                .map_or(0.0, |mpv| mpv.get_duration())
                 .max(1.0)
         }
     }

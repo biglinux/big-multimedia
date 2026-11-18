@@ -69,10 +69,18 @@ impl MpvBackend {
         });
     }
 
+    pub fn sharpen(&self) -> f64 {
+        self.get_property_f64("sharpen")
+    }
+
     pub fn set_sharpen(&self, val: f64) {
         self.with_mpv(|m| {
             m.set_property_logged("sharpen", val);
         });
+    }
+
+    pub fn deband(&self) -> bool {
+        self.get_property_bool("deband")
     }
 
     pub fn set_deband(&self, enable: bool) {
@@ -81,10 +89,18 @@ impl MpvBackend {
         });
     }
 
+    pub fn sigmoid_upscaling(&self) -> bool {
+        self.get_property_bool("sigmoid-upscaling")
+    }
+
     pub fn set_sigmoid_upscaling(&self, enable: bool) {
         self.with_mpv(|m| {
             m.set_property_logged("sigmoid-upscaling", if enable { "yes" } else { "no" });
         });
+    }
+
+    pub fn correct_downscaling(&self) -> bool {
+        self.get_property_bool("correct-downscaling")
     }
 
     pub fn set_correct_downscaling(&self, enable: bool) {

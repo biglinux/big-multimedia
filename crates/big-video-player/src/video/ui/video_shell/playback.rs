@@ -30,7 +30,7 @@ impl VideoShell {
                 // Seeking back from the end plays on without a pause change.
                 if self.ended && !tv {
                     let mpv = self.mpv.borrow().clone();
-                    if let Some(mpv) = mpv.filter(|mpv| !mpv.get_property_bool("eof-reached")) {
+                    if let Some(mpv) = mpv.filter(|mpv| !mpv.eof_reached()) {
                         self.ended = false;
                         self.playing = !mpv.is_paused();
                         self.sync_screen_inhibit(root);
@@ -213,7 +213,7 @@ impl VideoShell {
                     .mpv
                     .borrow()
                     .as_ref()
-                    .is_some_and(|mpv| mpv.get_property_bool("eof-reached"));
+                    .is_some_and(|mpv| mpv.eof_reached());
                 if self.ended && !tv {
                     self.controls.emit(VideoControlsBarInput::SetPaused(true));
                 }
@@ -863,7 +863,7 @@ impl VideoShell {
 
 /// Play or pause; held at the end of a file, Play starts over.
 pub(super) fn toggle_play(mpv: &MpvBackend, settings: &Settings) {
-    if mpv.get_property_bool("eof-reached") {
+    if mpv.eof_reached() {
         play_from_end(mpv, settings);
     } else {
         mpv.toggle_pause();
@@ -871,7 +871,7 @@ pub(super) fn toggle_play(mpv: &MpvBackend, settings: &Settings) {
 }
 
 pub(super) fn play(mpv: &MpvBackend, settings: &Settings) {
-    if mpv.get_property_bool("eof-reached") {
+    if mpv.eof_reached() {
         play_from_end(mpv, settings);
     } else {
         mpv.play();

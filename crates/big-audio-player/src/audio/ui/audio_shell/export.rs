@@ -35,15 +35,10 @@ impl AudioShell {
         }
         self.trim_active = true;
         self.trim_play_selection = false;
-        let duration = self.duration_secs.max(
-            self.mpv
-                .as_ref()
-                .map_or(0.0, |mpv| mpv.get_property_f64("duration")),
-        );
-        let playhead = self
-            .mpv
-            .as_ref()
-            .map_or(0.0, |mpv| mpv.get_property_f64("time-pos"));
+        let duration = self
+            .duration_secs
+            .max(self.mpv.as_ref().map_or(0.0, |mpv| mpv.get_duration()));
+        let playhead = self.mpv.as_ref().map_or(0.0, |mpv| mpv.get_position());
         self.playback_bar
             .emit(AudioPlaybackBarInput::SetDurationSecs(duration));
         self.playback_bar
@@ -123,10 +118,7 @@ impl AudioShell {
             self.playback_bar.widget(),
             Cut { id, start, end },
             self.duration_secs.max(1.0),
-            move || {
-                mpv.as_ref()
-                    .map_or(0.0, |mpv| mpv.get_property_f64("time-pos"))
-            },
+            move || mpv.as_ref().map_or(0.0, |mpv| mpv.get_position()),
             move |id, start, end| {
                 let _ = trim.send(AudioTrimBarInput::SetSegmentTimes(id, start, end));
             },

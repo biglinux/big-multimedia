@@ -495,18 +495,13 @@ impl VideoShell {
                 target: BlockTarget::Action("win.ytdl-quality"),
             });
         }
-        let (width, height) = (
-            mpv.get_property_f64("width"),
-            mpv.get_property_f64("height"),
-        );
+
         blocks.push(Block {
             icon: "dialog-information-symbolic",
             name: i18n("About this video"),
-            state: if width > 0.0 {
-                format!("{width:.0} × {height:.0}")
-            } else {
-                String::new()
-            },
+            state: mpv
+                .video_source_size()
+                .map_or_else(String::new, |(width, height)| format!("{width} × {height}")),
             changed: false,
             target: BlockTarget::Action("win.media-info"),
         });

@@ -88,7 +88,7 @@ pub(super) fn detect(
             vertical: transform.vflip(),
         });
     }
-    let crop = mpv.get_property_string("video-crop");
+    let crop = mpv.video_crop();
     if !crop.is_empty() && crop != "0x0+0+0" {
         found.push(Adjustment::Crop {
             margins: transform.crop_margins(),
@@ -99,7 +99,7 @@ pub(super) fn detect(
     if changed(speed - 1.0) {
         found.push(Adjustment::Speed(speed));
     }
-    let audio_delay = mpv.get_property_f64("audio-delay");
+    let audio_delay = mpv.audio_delay();
     if changed(audio_delay) {
         found.push(Adjustment::AudioDelay(audio_delay));
     }
@@ -370,18 +370,18 @@ impl VideoShell {
         let Some(mpv) = self.mpv.borrow().clone() else {
             return;
         };
+        let decoded = mpv.decoder_params();
         let undescribed_hdr = mpv.get_current_file().as_deref() == Some(path)
             && self.video_transform.source_colours_index() == 0
             // GPU decoding names the surface ("cuda") and puts the depth here.
-            && ["pixelformat", "hw-pixelformat"].iter().any(|name| {
-                let format = mpv.get_property_string(&format!("video-dec-params/{name}"));
+            && [&decoded.pixel_format, &decoded.hw_pixel_format].iter().any(|format| {
                 ["p10", "p12", "p010", "p016"]
                     .iter()
                     .any(|depth| format.contains(depth))
             })
-            && mpv.get_property_string("video-dec-params/gamma") == "auto"
-            && mpv.get_property_string("video-dec-params/primaries") == "auto"
-            && mpv.get_property_f64("video-dec-params/w") >= 3840.0;
+            && decoded.gamma == "auto"
+            && decoded.primaries == "auto"
+            && decoded.width >= 3840.0;
         self.hdr_hint.set_visible(undescribed_hdr);
     }
 }
