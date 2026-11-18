@@ -95,7 +95,9 @@ fn detect_wallpaper() -> Option<PathBuf> {
 /// `shell.json` is absent (not a BigShell session) so the Plasma/GNOME
 /// detectors still run there.
 fn detect_bigshell_wallpaper() -> Option<PathBuf> {
-    let config = config_home().join("big-shell").join("shell.json");
+    let config = big_os_kit::xdg_dirs::config_dir()?
+        .join("big-shell")
+        .join("shell.json");
     // shell.json absent → not a BigShell session → let the other detectors run.
     let text = std::fs::read_to_string(&config).ok()?;
 
@@ -160,7 +162,8 @@ fn collect_images_recursive(dir: &Path, depth: usize, out: &mut Vec<PathBuf>) {
 /// (KConfig INI): the first `Image=` under a `[…][Wallpaper][org.kde.image][General]`
 /// group that resolves to an existing image file.
 fn detect_plasma_wallpaper() -> Option<PathBuf> {
-    let config = config_home().join("plasma-org.kde.plasma.desktop-appletsrc");
+    let config =
+        big_os_kit::xdg_dirs::config_dir()?.join("plasma-org.kde.plasma.desktop-appletsrc");
     let text = std::fs::read_to_string(&config).ok()?;
 
     let mut in_wallpaper_image = false;
@@ -245,7 +248,7 @@ fn is_image_path(path: &Path) -> bool {
 /// cache miss. The cache key folds in the source path and mtime so a changed
 /// wallpaper (re)blurs. `None` if ffmpeg is unavailable or fails.
 fn ensure_blurred(source: &Path) -> Option<PathBuf> {
-    let cache_dir = cache_home().join("big-video-player");
+    let cache_dir = big_os_kit::xdg_dirs::cache_dir()?.join("big-video-player");
     std::fs::create_dir_all(&cache_dir).ok()?;
 
     let mtime = std::fs::metadata(source)
@@ -286,7 +289,7 @@ pub(super) fn tv_backdrop(video: &str, seconds: f64) -> Option<PathBuf> {
     if !Path::new(video).is_absolute() {
         return None;
     }
-    let cache_dir = cache_home().join("big-video-player");
+    let cache_dir = big_os_kit::xdg_dirs::cache_dir()?.join("big-video-player");
     std::fs::create_dir_all(&cache_dir).ok()?;
     let mut hasher = std::collections::hash_map::DefaultHasher::new();
     video.hash(&mut hasher);
@@ -418,30 +421,6 @@ fn is_svg(path: &Path) -> bool {
         .is_some_and(|ext| ext.eq_ignore_ascii_case("svg"))
 }
 
-/// `$XDG_CONFIG_HOME` or `~/.config`.
-fn config_home() -> PathBuf {
-    xdg_dir("XDG_CONFIG_HOME", ".config")
-}
-
-/// `$XDG_CACHE_HOME` or `~/.cache`.
-fn cache_home() -> PathBuf {
-    xdg_dir("XDG_CACHE_HOME", ".cache")
-}
-
-/// Resolve an XDG base dir from its env var, falling back to `~/<default>`.
-fn xdg_dir(env: &str, default: &str) -> PathBuf {
-    std::env::var_os(env)
-        .filter(|value| !value.is_empty())
-        .map_or_else(
-            || {
-                let home =
-                    std::env::var_os("HOME").map_or_else(|| PathBuf::from("/"), PathBuf::from);
-                home.join(default)
-            },
-            PathBuf::from,
-        )
-}
-
 /// Minimal percent-decoding for wallpaper URIs (`gsettings` / `file://` values
 /// percent-encode spaces and the like). Leaves malformed escapes untouched.
 fn percent_decode(input: &str) -> String {
@@ -485,14 +464,5 @@ mod tests {
         assert!(is_image_path(Path::new("/x/b.png")));
         assert!(!is_image_path(Path::new("/x/c.txt")));
         assert!(!is_image_path(Path::new("/x/noext")));
-    }
-
-    #[test]
-    fn xdg_dir_prefers_env_then_home_default() {
-        // Empty env value is ignored in favour of the HOME-based default.
-        // Env mutation in tests is racy, so only check that the fallback joins
-        // the default segment.
-        let dir = xdg_dir("BIG_VIDEO_PLAYER_NONEXISTENT_ENV", ".cache");
-        assert!(dir.ends_with(".cache"));
     }
 }
