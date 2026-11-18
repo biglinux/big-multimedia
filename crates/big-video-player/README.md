@@ -1,8 +1,11 @@
 # Big Video Player
 
-Hardware-accelerated video player for BigLinux, built on libmpv with a GL
-render path. It plays local files and folders, IPTV and online video, with
-subtitles, picture adjustments, MPRIS and playback on a TV through the
+Hardware-accelerated video player for BigLinux: local files and folders, IPTV
+and online video, with subtitles.
+
+![Big Video Player playing a demo clip with the Files panel open on its folder](../../docs/screenshots/video-player-files.png)
+
+It is built on libmpv with a GL render path, and plays on a TV through the
 BigNetScreen daemon. A member of the big-multimedia workspace; see the root
 [README](../../README.md).
 
@@ -10,6 +13,39 @@ The player converts nothing itself. Cut Video, Convert and Extract Audio hand
 the file (and any marked cuts) to `big-video-converter-gui` or
 `big-audio-converter-gui` through
 `big_media_runtime::shared::converter_handoff`.
+
+## Install
+
+On BigLinux the player comes from the official repositories:
+
+```sh
+sudo pacman -S big-video-player
+```
+
+To build the package from a checkout, run `makepkg -si` in
+[`big-video-player/`](../../big-video-player/PKGBUILD) at the repository root.
+
+## Use
+
+Open a video from the file manager, or start the player with one:
+
+```sh
+big-video-player ~/Videos/movie.mkv
+```
+
+The video's folder fills the Files panel, which the folder button at the top
+left or F9 opens, and playback continues through that folder. Move the
+pointer over the video to show the controls.
+
+| Key | Action |
+|---|---|
+| Space | Play or pause |
+| Left, Right | Seek 5 seconds |
+| F | Toggle fullscreen |
+| Ctrl+O | Open a file |
+| Ctrl+U | Open a URL |
+
+Shortcuts, in the main menu, lists every shortcut and changes it.
 
 ## Features
 
