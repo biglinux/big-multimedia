@@ -239,15 +239,15 @@ fn append_container_group(
             copyable_metadata_lines,
         ));
     }
-    if let Some(kbps) = fmt
+    if let Some(bitrate) = fmt
         .get("bit_rate")
         .and_then(serde_json::Value::as_str)
         .and_then(|raw| raw.parse::<u64>().ok())
-        .map(|bits| bits / 1000)
+        .and_then(|bits| i64::try_from(bits).ok())
     {
         group.add(&copyable_metadata_row(
             &labels.bitrate,
-            &format!("{kbps} kbps"),
+            &crate::audio::labels::bitrate_kbps_label_from_bps(bitrate),
             labels,
             copyable_metadata_lines,
         ));
