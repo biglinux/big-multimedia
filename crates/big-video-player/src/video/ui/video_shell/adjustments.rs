@@ -379,3 +379,31 @@ impl VideoShell {
         self.hdr_hint.set_visible(undescribed_hdr);
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::vf_label;
+    use crate::video::ui::filters::vf_entries;
+
+    #[test]
+    fn labelled_entries_keep_quoted_commas() {
+        let vf = "@denoise:lavfi=graph=%13%hqdn3d=4,eq=1,@big-flip:lavfi=graph=hflip,\
+                  @source-colours:format=gamma=pq:primaries=%7%bt.2020";
+        let entries = vf_entries(vf);
+        assert_eq!(
+            entries,
+            [
+                "@denoise:lavfi=graph=%13%hqdn3d=4,eq=1",
+                "@big-flip:lavfi=graph=hflip",
+                "@source-colours:format=gamma=pq:primaries=%7%bt.2020",
+            ]
+        );
+        let labels: Vec<_> = entries.iter().map(|entry| vf_label(entry)).collect();
+        assert_eq!(
+            labels,
+            [Some("denoise"), Some("big-flip"), Some("source-colours")]
+        );
+        assert_eq!(vf_label("format=gamma=pq"), None);
+        assert!(vf_entries("").is_empty());
+    }
+}
