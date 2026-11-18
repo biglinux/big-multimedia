@@ -58,6 +58,7 @@ mod adjustments;
 mod component;
 mod dialogs;
 mod export;
+mod header_buttons;
 mod idle_wallpaper;
 mod input;
 mod input_gestures;
@@ -76,6 +77,7 @@ mod tv;
 
 pub use input::{VideoShellInput, mark_opening_files, send_to_shell};
 
+use header_buttons::HeaderButtons;
 use osd::{AspectSnap, IdleBackground, OsdState, SubtitleLift};
 
 pub struct VideoShell {
@@ -95,6 +97,8 @@ pub struct VideoShell {
     playlist_sidebar_button: gtk::ToggleButton,
     /// Guard shared with the header toggles to avoid re-entrant state changes.
     sidebar_toggle_updating: Rc<Cell<bool>>,
+    /// The header buttons the Buttons page places, re-placed when it changes.
+    header_buttons: HeaderButtons,
     /// IPTV browser (providers / channels / favorites). Presented in a dialog
     /// from the header button; emits play intents routed to mpv.
     iptv: Controller<VideoIptvBrowser>,
