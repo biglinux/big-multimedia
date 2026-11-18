@@ -22,11 +22,13 @@ pub trait Vault {
 }
 /// System libsecret bridge. Exits after a bounded supervised operation.
 pub struct SecretService<'a> {
-    /// Cooperative cancellation supplied by the account operation owner.
+    /// Cooperative cancellation supplied by the operation owner.
     pub cancelled: &'a AtomicBool,
 }
+/// Item scopes this program owns; any other scope is refused.
+const SCOPES: &[&str] = &[];
 fn validate(scope: &str, id: &str) -> io::Result<()> {
-    if !matches!(scope, "lastfm" | "listenbrainz")
+    if !SCOPES.contains(&scope)
         || id.len() != 32
         || !id.bytes().all(|b| b.is_ascii_hexdigit())
     {

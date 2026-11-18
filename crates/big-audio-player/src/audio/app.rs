@@ -25,7 +25,6 @@ const AUDIO_ABOUT_CREDIT_LINES: &[&str] = &[
     "MusicBrainz https://musicbrainz.org",
     "Cover Art Archive https://coverartarchive.org",
     "Radio Browser https://www.radio-browser.info",
-    "ListenBrainz https://listenbrainz.org",
 ];
 
 pub(crate) fn open_paths_message(paths: Vec<String>) -> Option<AudioShellInput> {

@@ -10,7 +10,6 @@
 //! - `allocator`: jemalloc as the process allocator (feature `jemalloc`).
 //! - [`background`]: bounded serial executor for application persistence.
 //! - [`deferred`]: observable, coalesced private state writes off the GUI thread.
-//! - [`digest`]: bounded hashing of documents and opened files for durable receipts.
 //! - [`http_client`]: blocking HTTP over the system curl with timeouts, retry
 //!   policy and size limits.
 //! - [`keyring`]: a typed worker-only boundary to libsecret Secret Service.
@@ -27,7 +26,6 @@
 mod allocator;
 pub mod background;
 pub mod deferred;
-pub mod digest;
 pub mod http_client;
 pub mod keyring;
 pub mod storage;

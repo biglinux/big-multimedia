@@ -34,8 +34,6 @@ pub(super) fn create_music_page(
         .icon_name("emblem-music-symbolic")
         .build();
 
-    page.add(&super::account_security::group());
-
     let leveling_group = adw::PreferencesGroup::builder()
         .title(i18n("Volume Leveling"))
         .description(i18n(

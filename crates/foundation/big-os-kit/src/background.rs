@@ -75,7 +75,7 @@ impl Drop for Ticket {
 type Job = Box<dyn FnOnce() + Send + 'static>;
 type Lane = OnceLock<io::Result<mpsc::SyncSender<Job>>>;
 static WRITES: Lane = OnceLock::new();
-// Account providers can wait for an unlock prompt; never let such a prompt
+// Keyring access can wait for an unlock prompt; never let such a prompt
 // occupy the short disk-write lane. Both lanes participate in close draining.
 static SERVICES: Lane = OnceLock::new();
 
@@ -84,8 +84,8 @@ pub fn submit(job: impl FnOnce() + Send + 'static) -> io::Result<()> {
     admit(&WRITES, "media-persistence", 64, Box::new(job))
 }
 
-/// Admit a bounded account/service operation on a separate serial lane.
-/// This is for infrequent account work, not continuous playback or HTTP polling.
+/// Admit a bounded service operation, such as keyring access, on a separate
+/// serial lane. Not for continuous playback or HTTP polling.
 pub fn submit_service(job: impl FnOnce() + Send + 'static) -> io::Result<()> {
     admit(&SERVICES, "media-account-service", 8, Box::new(job))
 }

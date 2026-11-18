@@ -31,7 +31,7 @@ optdepends=('deepfilternet3-native: light voice noise reduction (DeepFilterNet3)
 replaces=('big-player-video' 'bigvideo')
 conflicts=('big-player-video' 'bigvideo')
 provides=('bigvideo=0.1.0-7')
-# makepkg's lto adds -flto to CFLAGS, so the C in ring and jemalloc builds as
+# makepkg's lto adds -flto to CFLAGS, so the C in jemalloc builds as
 # GCC bytecode that lld cannot link. The release profile already does fat LTO.
 options=('!lto')
 

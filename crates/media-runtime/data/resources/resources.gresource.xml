@@ -18,7 +18,6 @@
     <file preprocess="xml-stripblanks">illustrations/resume.svg</file>
     <file preprocess="xml-stripblanks">illustrations/crossfade.svg</file>
     <file preprocess="xml-stripblanks">illustrations/taskbar_progress.svg</file>
-    <file preprocess="xml-stripblanks">illustrations/listenbrainz.svg</file>
     <file preprocess="xml-stripblanks">illustrations/colors.svg</file>
     <file preprocess="xml-stripblanks">illustrations/render_profile.svg</file>
     <file preprocess="xml-stripblanks">illustrations/language.svg</file>
