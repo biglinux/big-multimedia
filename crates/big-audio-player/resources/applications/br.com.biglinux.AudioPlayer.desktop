@@ -97,10 +97,9 @@ Keywords[tr]=ses;müzik;çalar;
 Keywords[uk]=аудіо;музика;програвач;
 Keywords[zh_CN]=音频;音乐;播放器;
 Keywords[zh_TW]=音訊;音樂;播放器;
-MimeType=audio/mpeg;audio/flac;audio/x-flac;audio/ogg;audio/x-vorbis+ogg;audio/x-flac+ogg;audio/x-opus+ogg;audio/opus;audio/x-speex+ogg;audio/aac;audio/x-aac;audio/mp4;audio/x-m4a;audio/x-m4b;audio/vnd.wave;audio/wav;audio/x-wav;audio/x-aiff;audio/x-aifc;audio/x-ape;audio/x-wavpack;audio/x-ms-wma;audio/webm;audio/matroska;audio/x-matroska;audio/ac3;audio/vnd.dts;audio/vnd.dts.hd;audio/x-musepack;audio/x-tta;audio/amr;audio/AMR;audio/amr-wb;audio/AMR-WB;audio/basic;audio/x-dff;audio/x-dsf;audio/usac;audio/x-mod;audio/x-it;audio/x-s3m;audio/x-xm;
+MimeType=audio/mpeg;audio/flac;audio/x-flac;audio/ogg;audio/x-vorbis+ogg;audio/x-flac+ogg;audio/x-opus+ogg;audio/opus;audio/x-speex+ogg;audio/aac;audio/x-aac;audio/mp4;audio/x-m4a;audio/x-m4b;audio/vnd.wave;audio/wav;audio/x-wav;audio/x-aiff;audio/x-aifc;audio/x-ape;audio/x-wavpack;audio/x-ms-wma;audio/webm;audio/matroska;audio/x-matroska;audio/ac3;audio/vnd.dts;audio/vnd.dts.hd;audio/x-musepack;audio/x-tta;audio/amr;audio/AMR;audio/amr-wb;audio/AMR-WB;audio/basic;audio/x-dff;audio/x-dsf;audio/usac;audio/x-mod;audio/x-it;audio/x-s3m;audio/x-xm;audio/x-mpegurl;audio/mpegurl;audio/x-scpls;application/vnd.apple.mpegurl;
 StartupNotify=true
 StartupWMClass=br.com.biglinux.AudioPlayer
-X-GNOME-UsesNotifications=true
 Actions=PlayPause;Next;Previous;
 
 [Desktop Action PlayPause]
