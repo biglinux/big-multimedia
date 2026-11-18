@@ -79,6 +79,8 @@ pub enum EndReason {
     Quit,
     /// The file could not be played.
     Error,
+    /// The audio output could not start; the file itself may be fine.
+    AudioOutputFailed,
     /// The file was a playlist and its entries took its place.
     Redirect,
     /// A reason newer than this libmpv binding.
@@ -94,6 +96,18 @@ impl EndReason {
             mpv_sys::mpv_end_file_reason_MPV_END_FILE_REASON_ERROR => Self::Error,
             mpv_sys::mpv_end_file_reason_MPV_END_FILE_REASON_REDIRECT => Self::Redirect,
             other => Self::Unknown(other),
+        }
+    }
+
+    /// From a whole `mpv_event_end_file`, whose error code outranks its reason.
+    pub(super) fn from_end_file(
+        reason: mpv_sys::mpv_end_file_reason,
+        error: std::os::raw::c_int,
+    ) -> Self {
+        match error {
+            mpv_sys::mpv_error_MPV_ERROR_AO_INIT_FAILED => Self::AudioOutputFailed,
+            error if error < 0 => Self::Error,
+            _ => Self::from_mpv(reason),
         }
     }
 }
@@ -151,5 +165,17 @@ mod tests {
         ] {
             assert_eq!(EndReason::from_mpv(raw), reason, "reason {raw}");
         }
+    }
+
+    /// Error codes from `enum mpv_error` in libmpv's client.h: -14 is
+    /// MPV_ERROR_AO_INIT_FAILED, -13 MPV_ERROR_LOADING_FAILED.
+    #[test]
+    fn end_file_error_names_output_failure() {
+        assert_eq!(
+            EndReason::from_end_file(4, -14),
+            EndReason::AudioOutputFailed
+        );
+        assert_eq!(EndReason::from_end_file(4, -13), EndReason::Error);
+        assert_eq!(EndReason::from_end_file(0, 0), EndReason::Eof);
     }
 }
