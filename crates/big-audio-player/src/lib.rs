@@ -5,9 +5,7 @@
 //! [`run`]; multicall hosts (big-host, big-modules) embed the player through
 //! [`open_in_application`] and [`open_paths`].
 
-pub use big_media_runtime::{
-    cast, config, db, i18n, library, media, player, recent, settings, shared,
-};
+pub use big_media_runtime::{cast, config, db, i18n, library, media, player, recent, settings};
 
 pub mod audio;
 mod resources;
@@ -42,7 +40,7 @@ fn build_player_window(
         }
         gtk::glib::Propagation::Proceed
     });
-    shared::app_base::ignore_repeated_pointer_motion(&window);
+    big_media_runtime::app::ignore_repeated_pointer_motion(&window);
     window
 }
 
@@ -62,7 +60,7 @@ pub struct AudioEmbed {
 /// media domain, component translator, favicon namespace, GResource bundles).
 fn embed_boot() {
     EMBED_BOOT.call_once(|| {
-        shared::app_base::boot_player(&[
+        big_media_runtime::app::boot_player(&[
             big_media_runtime::resources::AUDIO,
             resources::AUDIO_PLAYER_SHELL,
         ]);
@@ -77,7 +75,7 @@ fn embed_boot() {
 ///
 /// The host owns process-wide setup ([`run`] steps this skips), done before its
 /// threads start: logging, allocator tuning,
-/// [`shared::app_base::init_process_locale`], without which mpv does not start,
+/// [`big_media_runtime::app::init_process_locale`], without which mpv does not start,
 /// and the `gtk::Application`.
 pub fn open_in_application() -> AudioEmbed {
     use gtk::prelude::*;
@@ -110,14 +108,14 @@ pub fn open_paths(paths: Vec<String>) {
 /// application. Returns the process exit code.
 #[must_use]
 pub fn run() -> gtk::glib::ExitCode {
-    shared::app_base::init_logging(
+    big_media_runtime::app::init_logging(
         "big_media_runtime=info,big_audio_player=info,lofty=error,glycin=error",
     );
     // GL instead of GTK's default Vulkan: less memory at startup for the same
     // CPU while scrolling the library. A renderer the session exports still wins.
-    shared::app_base::use_gl_renderer(false);
-    shared::app_base::init_process_locale();
-    shared::app_base::boot_player(&[
+    big_media_runtime::app::use_gl_renderer(false);
+    big_media_runtime::app::init_process_locale();
+    big_media_runtime::app::boot_player(&[
         big_media_runtime::resources::AUDIO,
         resources::AUDIO_PLAYER_SHELL,
     ]);

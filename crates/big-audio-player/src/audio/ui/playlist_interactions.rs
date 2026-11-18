@@ -15,7 +15,7 @@ use big_relm4_components::layout::{
 
 use crate::db::models::Track;
 use crate::i18n::i18n;
-use crate::shared::converter_handoff;
+use big_media_runtime::converter_handoff;
 
 use super::playlist_panel::{PlaylistPanel, PlaylistPanelOutput};
 use super::track_count_text;

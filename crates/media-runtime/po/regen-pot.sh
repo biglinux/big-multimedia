@@ -5,7 +5,7 @@
 # xgettext took strings from.
 #
 # One catalog translates the whole suite: apps set `big-media-runtime` as the
-# process default domain (shared::app_base::boot_player), so `i18n()`/`ni18n()`
+# process default domain (big_media_runtime::app::boot_player), so `i18n()`/`ni18n()`
 # and the components' `text()` translator resolve through it, and
 # big-relm4-components' `t()` binds the same domain explicitly.
 #

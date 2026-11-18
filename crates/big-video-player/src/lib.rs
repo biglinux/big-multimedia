@@ -8,7 +8,7 @@
 //! - `resources`: the player shell's GTK resource bundle.
 //! - [`video`]: the player shell, its dialogs and panels.
 
-pub use big_media_runtime::{cast, config, i18n, media, player, recent, settings, shared};
+pub use big_media_runtime::{cast, config, i18n, media, player, recent, settings};
 
 mod resources;
 pub mod video;
@@ -40,7 +40,7 @@ fn build_player_window(
 /// App-specific boot done exactly once for the embed/pane paths.
 fn embed_boot() {
     EMBED_BOOT.call_once(|| {
-        shared::app_base::boot_player(&[resources::VIDEO_PLAYER_SHELL]);
+        big_media_runtime::app::boot_player(&[resources::VIDEO_PLAYER_SHELL]);
     });
 }
 
@@ -64,7 +64,7 @@ pub struct VideoEmbed {
 /// the returned controller alive for as long as the module is open; dropping it
 /// shuts the component tree down. The caller owns process-wide concerns ([`run`]
 /// steps this skips), set before its threads start: logging, allocator tuning,
-/// the GSK renderer, [`shared::app_base::init_process_locale`], without which
+/// the GSK renderer, [`big_media_runtime::app::init_process_locale`], without which
 /// mpv does not start, and the `gtk::Application` itself.
 pub fn open_in_application() -> VideoEmbed {
     use gtk::prelude::*;
@@ -100,7 +100,7 @@ pub fn open_paths(paths: Vec<String>) {
 /// then run the GTK application. Returns the process exit code.
 #[must_use]
 pub fn run() -> gtk::glib::ExitCode {
-    shared::app_base::init_logging(
+    big_media_runtime::app::init_logging(
         "big_media_runtime=info,big_video_player=info,lofty=error,glycin=error",
     );
     // mpv renders through GL, so the GSK renderer has to be the OpenGL one.
@@ -108,9 +108,9 @@ pub fn run() -> gtk::glib::ExitCode {
     // would push every frame through a software upload. "opengl" is the name
     // GTK 4.18+ accepts without a warning: it ignores "ngl" and falls back to
     // its own default, which may be Vulkan.
-    shared::app_base::use_gl_renderer(true);
-    shared::app_base::init_process_locale();
-    shared::app_base::boot_player(&[resources::VIDEO_PLAYER_SHELL]);
+    big_media_runtime::app::use_gl_renderer(true);
+    big_media_runtime::app::init_process_locale();
+    big_media_runtime::app::boot_player(&[resources::VIDEO_PLAYER_SHELL]);
 
     // The `VideoShell` Root is mountable content (a `gtk::Box`), not a
     // window, so we boot manually instead of `RelmApp::run` (which
@@ -134,8 +134,8 @@ pub fn run() -> gtk::glib::ExitCode {
             .launch(())
             .detach();
         let window = build_player_window(app, controller.widget());
-        shared::app_base::log_active_renderer_once(&window);
-        shared::app_base::ignore_repeated_pointer_motion(&window);
+        big_media_runtime::app::log_active_renderer_once(&window);
+        big_media_runtime::app::ignore_repeated_pointer_motion(&window);
         window.present();
         *shell_for_activate.borrow_mut() = Some(controller);
     });

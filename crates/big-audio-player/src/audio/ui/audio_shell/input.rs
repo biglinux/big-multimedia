@@ -1,5 +1,5 @@
 use super::*;
-use crate::shared::app_base::ShellInputSlot;
+use big_media_runtime::app::ShellInputSlot;
 
 /// Messages into the shell. Almost all are child-panel `Output`s forwarded by
 /// the Controllers' `forward` maps.
@@ -139,7 +139,7 @@ pub enum AudioShellInput {
     /// BigNetScreen reported a change (session, position, receivers).
     TvChanged,
     /// A button of the TV strip.
-    Tv(crate::shared::tv_cast::TvCardAction),
+    Tv(big_media_runtime::cast::tv::TvCardAction),
     /// Open the smartphone web-remote dialog (main menu).
     ShowSmartphone,
     /// Re-evaluate the album-art background (Appearance toggle changed).

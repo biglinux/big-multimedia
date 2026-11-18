@@ -68,7 +68,7 @@ impl AudioShell {
                 if let Some(mpv) = &self.mpv
                     && self.settings.get_double(keys::NOISE_STRENGTH) > 0.0
                 {
-                    crate::shared::audio_effects::apply_voice_change(&self.settings, mpv);
+                    big_media_runtime::audio_effects::apply_voice_change(&self.settings, mpv);
                 }
             }
             AudioShellInput::PlaybackRemote { command, permit } => {
@@ -249,7 +249,7 @@ impl AudioShell {
             }
             AudioShellInput::ShowEqualizer => {
                 if let Some(win) = self.window() {
-                    let dialog = crate::shared::audio_effects::create_equalizer_dialog(
+                    let dialog = big_media_runtime::audio_effects::create_equalizer_dialog(
                         &self.settings,
                         self.mpv.clone(),
                         None,

@@ -40,6 +40,7 @@ big-os-kit.workspace = true
 big-gtk-kit = { workspace = true, optional = true }
 big-relm4-components = { workspace = true, optional = true }
 big-media-components = { workspace = true, optional = true }
+big-player-ui = { workspace = true, optional = true }
 big-mpv-render = { workspace = true, optional = true }
 # GTK-free data services (SQLite library, settings store, radio/library clients),
 # re-exported from `lib.rs` as `db`, `library`, `settings`, `config`, `i18n`.
@@ -78,6 +79,7 @@ ui-core = [
     "dep:big-gtk-kit",
     "dep:big-relm4-components",
     "dep:big-media-components",
+    "dep:big-player-ui",
 ]
 # Audio player: the SQLite music library, radio directory and podcast data.
 audio = [

@@ -55,7 +55,7 @@ pub fn fts_phrase(token: &str) -> String {
 /// assert_eq!(fts_match_query(""), "");
 /// assert_eq!(fts_match_query("   "), "");
 /// assert_eq!(fts_match_query("foo bar"), "\"foo\"* \"bar\"*");
-/// // Hostile input is neutralised by phrase-quoting.
+/// // Hostile input is neutralized by phrase-quoting.
 /// assert_eq!(
 ///     fts_match_query("a\"b OR c"),
 ///     "\"a\"\"b\"* \"OR\"* \"c\"*"
@@ -100,7 +100,7 @@ mod tests {
     }
 
     #[test]
-    fn fts5_operators_are_neutralised_inside_phrase() {
+    fn fts5_operators_are_neutralized_inside_phrase() {
         // `OR`, `*`, `(` lose operator meaning when wrapped in a phrase.
         let q = fts_match_query("a OR (b*c)");
         assert!(q.contains(r#""OR"*"#));

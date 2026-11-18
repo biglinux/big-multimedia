@@ -24,7 +24,6 @@ use crate::player::mpv_backend::fast_render::{
 use crate::player::mpv_backend::offload_renderer::VideoBackend;
 use crate::player::mpv_backend::{EndReason, MpvBackend, PlayerEvent, video_surface};
 use crate::settings::{Settings, keys};
-use crate::shared::converter_handoff;
 use crate::video::ui::filters::{VideoFiltersDialog, VideoFiltersDialogInit};
 use crate::video::ui::gl_framebuffer::{GL_FRAMEBUFFER_BINDING, get_gl_get_integerv};
 use crate::video::ui::iptv::{VideoIptvBrowser, VideoIptvBrowserOutput};
@@ -40,6 +39,7 @@ use crate::video::ui::video_controls_bar::{
 use big_app_kit::file_dialogs::FilePicker;
 use big_media_components::media::files::{PLAYLIST_EXTENSIONS, VIDEO_EXTENSIONS};
 use big_media_components::time::playback_time;
+use big_media_runtime::converter_handoff;
 use big_relm4_components::list::navigation_row::{BigNavigationRow, BigNavigationRowSpec};
 
 /// OSD auto-hide delay after the last pointer activity.
@@ -129,14 +129,14 @@ pub struct VideoShell {
     /// The settings panel (right-hand card over the video).
     panel: Rc<panel::SettingsPanel>,
     /// This player's line to BigNetScreen: TV page, card and controls.
-    tv: Rc<crate::shared::tv_cast::TvLink>,
+    tv: Rc<big_media_runtime::cast::tv::TvLink>,
     /// Over the video while a TV plays this player's session.
-    tv_card: crate::shared::tv_cast::TvCard,
+    tv_card: big_media_runtime::cast::tv::TvCard,
     /// Header button while the TV plays but the player was released; opens
     /// `tv_menu`.
     tv_pill: gtk::MenuButton,
     /// What the TV plays and the ways back, under `tv_pill`.
-    tv_menu: crate::shared::tv_cast::TvCard,
+    tv_menu: big_media_runtime::cast::tv::TvCard,
     /// "Play the TV's here": seek to the TV's point once its file loads.
     tv_catch_up: bool,
     /// The session's last state: where it was when it ended.
@@ -182,14 +182,14 @@ pub struct VideoShell {
     /// The `win.*` action group, kept so the shell can gate context-dependent
     /// entries (e.g. enable Stream Quality only for online media).
     win_actions: gio::SimpleActionGroup,
-    sleep_timer: crate::shared::sleep_timer::SleepTimer,
+    sleep_timer: big_media_runtime::sleep_timer::SleepTimer,
     /// Window aspect-ratio snap (resize to fit the video, no letterbox bars).
     aspect_snap: Rc<AspectSnap>,
     /// Subtitles kept above the controls while they show.
     subtitle_lift: Rc<SubtitleLift>,
     /// Leaves the shell input slot on drop, so a closed host module does not
     /// keep the Relm4 component alive.
-    _shell_input: crate::shared::app_base::ShellInputRegistration<relm4::Sender<VideoShellInput>>,
+    _shell_input: big_media_runtime::app::ShellInputRegistration<relm4::Sender<VideoShellInput>>,
     /// Interactive trim bar (bottom overlay), shown only in trim mode.
     trim: Controller<trim::VideoTrimBar>,
     /// "Play only the marked cuts" toggle state.

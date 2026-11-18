@@ -5,7 +5,7 @@ use gtk::{gdk, gio, glib};
 
 use super::super::{BrowserState, chrome};
 use super::model::{build_filter, build_store, finish_view};
-use super::shared::{attach_context_menu, attach_context_menu_keys, row_index, set_accent};
+use super::rows::{attach_context_menu, attach_context_menu_keys, row_index, set_accent};
 use crate::i18n::i18n;
 use crate::media::playlist::{self, EntryKind, PlaylistEntry};
 use crate::media::thumbnail;

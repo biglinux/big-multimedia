@@ -375,7 +375,7 @@ struct EventLoop {
     sender: async_channel::Sender<PlayerEvent>,
     volume: volume::VolumeControl,
     screenshots: Arc<super::screenshots::Screenshots>,
-    /// Signalled by mpv's wakeup callback and by `MpvBackend::wake_event_loop`.
+    /// Signaled by mpv's wakeup callback and by `MpvBackend::wake_event_loop`.
     wake: Receiver<()>,
 }
 
@@ -494,7 +494,7 @@ impl EventLoop {
 }
 
 /// Collect owned events under the mpv lock, without sending or waiting.
-/// A bounded batch prevents an event burst monopolising the client mutex.
+/// A bounded batch prevents an event burst monopolizing the client mutex.
 /// Returns whether mpv's queue was emptied: only then does mpv call the
 /// wakeup callback for the next event.
 fn drain_event_queue(

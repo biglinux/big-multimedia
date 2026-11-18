@@ -6,7 +6,7 @@
 use super::playback::volume_indicator;
 use super::*;
 use crate::cast::daemon::{PlaybackStart, State};
-use crate::shared::tv_cast::{TvCardAction, TvMedia};
+use big_media_runtime::cast::tv::{TvCardAction, TvMedia};
 
 impl AudioShell {
     pub(super) fn on_tv_card(&mut self, action: TvCardAction) {

@@ -6,17 +6,17 @@
 //! Interface XML lives next to the module so `gdbus introspect` can validate
 //! the exact exported contract.
 
+mod connection;
 mod metadata;
 mod properties;
-mod service;
 mod signals;
 mod sync;
 mod types;
 
 /// MPRIS service wrapper.
-pub use service::Mpris;
+pub use connection::Mpris;
 /// Private session-bus connection, shared with the tray icon.
-pub(crate) use service::private_session_bus;
+pub(crate) use connection::private_session_bus;
 /// MPRIS callback and state contracts.
 pub use types::{
     CommandCallback, LoopStatus, MprisCommand, PlaybackStatus, PlayerState, StateCallback,

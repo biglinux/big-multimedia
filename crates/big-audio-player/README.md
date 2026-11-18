@@ -10,7 +10,7 @@ big-multimedia workspace; see the root [README](../../README.md).
 
 The player converts nothing itself. Trim & Export and Convert hand the track
 (and any marked cuts) to `big-audio-converter-gui` through
-`big_media_runtime::shared::converter_handoff`.
+`big_media_runtime::converter_handoff`.
 
 ## Install
 

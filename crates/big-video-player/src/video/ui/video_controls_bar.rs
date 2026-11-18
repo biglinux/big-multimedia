@@ -36,7 +36,7 @@ mod tracks;
 mod zones;
 
 use seek_preview::{
-    build_seek_preview, wire_neighbour_preview, wire_seek_hover, wire_thumb_consumer,
+    build_seek_preview, wire_neighbor_preview, wire_seek_hover, wire_thumb_consumer,
 };
 use signals::wire_signals;
 pub(crate) use zones::read_zones;
@@ -59,7 +59,7 @@ pub struct VideoControlsBarInit {
     /// Shared mpv handle the popover callbacks read at call time.
     pub mpv: MpvSlot,
     /// While a TV plays this player's session, volume and mute drive it.
-    pub tv: Rc<crate::shared::tv_cast::TvLink>,
+    pub tv: Rc<big_media_runtime::cast::tv::TvLink>,
     /// The trim-bar widget, shown IN PLACE of the transport button row while trim
     /// mode is active (so the cut controls live inside the existing controls, not
     /// a separate bar).
@@ -372,8 +372,8 @@ impl Component for VideoControlsBar {
         center.set_start_widget(Some(&start_box));
 
         let (controls_center, previous_button, play_button, next_button) = build_center_box();
-        wire_neighbour_preview(&previous_button, &init.mpv, -1);
-        wire_neighbour_preview(&next_button, &init.mpv, 1);
+        wire_neighbor_preview(&previous_button, &init.mpv, -1);
+        wire_neighbor_preview(&next_button, &init.mpv, 1);
         center.set_center_widget(Some(&controls_center));
 
         let end_widgets = build_end_box();

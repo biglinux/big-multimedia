@@ -1,10 +1,10 @@
 //! App-local picture and equalizer builders for the settings panel: the
-//! "Video colour" choice up front and, under "More options", debounced
+//! "Video color" choice up front and, under "More options", debounced
 //! `BigSliderRow`s plus rotate/flip/crop that drive the live
 //! `Arc<MpvBackend>` directly.
 //!
 //! The equalizer reuses the shared
-//! `big_media_runtime::shared::audio_effects::create_equalizer_dialog`
+//! `big_media_runtime::audio_effects::create_equalizer_dialog`
 //! verbatim (the audio player drives the same dialog); only the
 //! transient/size/present wiring is app-local.
 //!
@@ -42,16 +42,16 @@ pub struct CropMargins {
     bottom: i64,
 }
 
-/// How the picture's colours are read (`MpvBackend::set_source_colours`),
+/// How the picture's colors are read (`MpvBackend::set_source_colors`),
 /// in the order the dialog lists them.
-const SOURCE_COLOURS: [&str; 4] = ["auto", "pq", "hlg", "sdr"];
+const SOURCE_COLORS: [&str; 4] = ["auto", "pq", "hlg", "sdr"];
 
 #[derive(Clone, Default)]
 pub(crate) struct VideoTransformState {
     hflip: Rc<Cell<bool>>,
     vflip: Rc<Cell<bool>>,
     crop_margins: Rc<RefCell<CropMargins>>,
-    source_colours: Rc<Cell<usize>>,
+    source_colors: Rc<Cell<usize>>,
 }
 
 impl VideoTransformState {
@@ -85,33 +85,33 @@ impl VideoTransformState {
         self.crop_margins.replace(margins);
     }
 
-    pub(crate) fn source_colours_index(&self) -> usize {
-        self.source_colours.get()
+    pub(crate) fn source_colors_index(&self) -> usize {
+        self.source_colors.get()
     }
 
-    pub(crate) fn select_source_colours(&self, mpv: &MpvBackend, index: usize) {
-        if index < SOURCE_COLOURS.len() {
-            self.source_colours.set(index);
-            mpv.set_source_colours(SOURCE_COLOURS[index]);
+    pub(crate) fn select_source_colors(&self, mpv: &MpvBackend, index: usize) {
+        if index < SOURCE_COLORS.len() {
+            self.source_colors.set(index);
+            mpv.set_source_colors(SOURCE_COLORS[index]);
         }
     }
 
-    /// "auto" unless the user said how to read this file's colours.
-    pub(crate) fn source_colours(&self) -> &'static str {
-        SOURCE_COLOURS[self.source_colours.get()]
+    /// "auto" unless the user said how to read this file's colors.
+    pub(crate) fn source_colors(&self) -> &'static str {
+        SOURCE_COLORS[self.source_colors.get()]
     }
 
     /// Back to trusting the file: a choice made for one recording would
-    /// spoil the next file, which may describe its colours correctly.
-    pub(crate) fn reset_source_colours(&self, mpv: &MpvBackend) {
-        if self.source_colours.replace(0) != 0 {
-            mpv.set_source_colours("auto");
+    /// spoil the next file, which may describe its colors correctly.
+    pub(crate) fn reset_source_colors(&self, mpv: &MpvBackend) {
+        if self.source_colors.replace(0) != 0 {
+            mpv.set_source_colors("auto");
         }
     }
 }
 
-/// Short names of [`SOURCE_COLOURS`], for the choice and its chip.
-pub(crate) fn source_colour_names() -> [String; 4] {
+/// Short names of [`SOURCE_COLORS`], for the choice and its chip.
+pub(crate) fn source_color_names() -> [String; 4] {
     [
         i18n("Automatic"),
         i18n("HDR"),
@@ -275,9 +275,9 @@ fn unfocusable_children(flow: &gtk::FlowBox) {
     }
 }
 
-/// "Video colour": how to read the picture's colours, as four plain
+/// "Video color": how to read the picture's colors, as four plain
 /// choices. A grey, washed-out picture is fixed here and by no slider.
-fn build_source_colours_group(
+fn build_source_colors_group(
     content: &gtk::Box,
     mpv: &Arc<MpvBackend>,
     transform_state: &VideoTransformState,
@@ -287,38 +287,18 @@ fn build_source_colours_group(
         i18n("Uses what the file says"),
         i18n("For a picture that looks grey and washed out"),
         i18n("For some TV broadcasts (HLG)"),
-        i18n("Plain colours (SDR)"),
+        i18n("Plain colors (SDR)"),
     ];
     // Side-by-side choices: the picked one is highlighted.
     let flow = reflowing_box(4);
     flow.set_min_children_per_line(2);
     let mut first: Option<gtk::ToggleButton> = None;
-    for (index, (name, hint)) in source_colour_names().into_iter().zip(hints).enumerate() {
-        let texts = gtk::Box::builder()
-            .orientation(gtk::Orientation::Vertical)
-            .spacing(2)
-            .build();
-        texts.append(
-            &gtk::Label::builder()
-                .label(&name)
-                .xalign(0.0)
-                .css_classes(["heading"])
-                .build(),
-        );
-        texts.append(
-            &gtk::Label::builder()
-                .label(&hint)
-                .xalign(0.0)
-                .wrap(true)
-                .lines(3)
-                .css_classes(["caption"])
-                .build(),
-        );
+    for (index, (name, hint)) in source_color_names().into_iter().zip(hints).enumerate() {
         let choice = gtk::ToggleButton::builder()
-            .child(&texts)
-            .active(transform_state.source_colours_index() == index)
+            .child(&source_color_texts(&name, &hint))
+            .active(transform_state.source_colors_index() == index)
             .width_request(130)
-            .css_classes(["colour-choice"])
+            .css_classes(["color-choice"])
             .build();
         choice.update_property(&[gtk::accessible::Property::Label(&format!("{name}: {hint}"))]);
         choice.set_group(first.as_ref());
@@ -328,7 +308,7 @@ fn build_source_colours_group(
             let transform_state = transform_state.clone();
             move |choice| {
                 if choice.is_active() {
-                    transform_state.select_source_colours(&mpv, index);
+                    transform_state.select_source_colors(&mpv, index);
                 }
             }
         });
@@ -337,6 +317,30 @@ fn build_source_colours_group(
     unfocusable_children(&flow);
     group.add(&flow);
     content.append(&group);
+}
+
+fn source_color_texts(name: &str, hint: &str) -> gtk::Box {
+    let texts = gtk::Box::builder()
+        .orientation(gtk::Orientation::Vertical)
+        .spacing(2)
+        .build();
+    texts.append(
+        &gtk::Label::builder()
+            .label(name)
+            .xalign(0.0)
+            .css_classes(["heading"])
+            .build(),
+    );
+    texts.append(
+        &gtk::Label::builder()
+            .label(hint)
+            .xalign(0.0)
+            .wrap(true)
+            .lines(3)
+            .css_classes(["caption"])
+            .build(),
+    );
+    texts
 }
 
 fn build_transform_group(
@@ -553,17 +557,17 @@ fn crop_spin(label: &str, upper: i64, initial: i64) -> gtk::SpinButton {
 /// saturation/hue (mpv built-in video equalizer, -100..=100) plus zoom & pan.
 /// Each slider is seeded from the current mpv value and applies live. Returns
 /// the scrolling content widget to mount in an `adw::Dialog`.
-/// The settings panel's "HDR" section: how to read the video's colours.
+/// The settings panel's "HDR" section: how to read the video's colors.
 pub(super) fn build_hdr_section(
     mpv: &Arc<MpvBackend>,
     transform_state: &VideoTransformState,
 ) -> gtk::Widget {
     let section = gtk::Box::new(gtk::Orientation::Vertical, 0);
-    build_source_colours_group(&section, mpv, transform_state);
+    build_source_colors_group(&section, mpv, transform_state);
     section.upcast()
 }
 
-/// The settings panel's "Picture" section: brightness and colour sliders,
+/// The settings panel's "Picture" section: brightness and color sliders,
 /// two side by side on a `wide` panel.
 pub(super) fn build_picture_section(mpv: &Arc<MpvBackend>, wide: bool) -> gtk::Widget {
     let section = gtk::Box::builder()

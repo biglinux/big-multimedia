@@ -40,7 +40,7 @@ const CREDENTIALS: &str = "/{credentials}/";
 
 /// `url` from a stored line-up with the account's credentials put back.
 #[must_use]
-pub fn stream_url(url: &str, username: &str, password: &str) -> String {
+pub(super) fn stream_url(url: &str, username: &str, password: &str) -> String {
     url.replacen(
         CREDENTIALS,
         &format!("/{}/{}/", urlencode(username), urlencode(password)),
@@ -50,13 +50,13 @@ pub fn stream_url(url: &str, username: &str, password: &str) -> String {
 
 /// Whether `url` is a stored stream URL waiting for an account's credentials.
 #[must_use]
-pub fn names_credentials(url: &str) -> bool {
+pub(super) fn names_credentials(url: &str) -> bool {
     url.contains(CREDENTIALS)
 }
 
 /// Whether `url` carries `password` as written or URL-encoded.
 #[must_use]
-pub fn shows_password(url: &str, password: &str) -> bool {
+pub(super) fn shows_password(url: &str, password: &str) -> bool {
     !password.is_empty() && (url.contains(password) || url.contains(&urlencode(password)))
 }
 
@@ -70,7 +70,7 @@ fn without_credentials(m3u: &str, username: &str, password: &str) -> String {
 }
 
 /// The live line-up of a Xtream account as M3U text, without its credentials.
-pub fn fetch_xtream_m3u(
+pub(super) fn fetch_xtream_m3u(
     server: &str,
     username: &str,
     password: &str,
@@ -251,7 +251,7 @@ fn player_api_url(base: &str, username: &str, password: &str) -> String {
 
 /// The panel's whole-account M3U export.
 #[must_use]
-pub fn get_php_url(base: &str, username: &str, password: &str) -> String {
+pub(super) fn get_php_url(base: &str, username: &str, password: &str) -> String {
     let base = base.trim_end_matches('/');
     format!(
         "{base}/get.php?username={}&password={}&type=m3u_plus&output=m3u8",

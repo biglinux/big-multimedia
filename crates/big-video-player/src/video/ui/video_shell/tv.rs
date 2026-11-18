@@ -5,7 +5,7 @@
 use super::playback::seek_fraction;
 use super::*;
 use crate::cast::daemon::{PlaybackStart, State};
-use crate::shared::tv_cast::{TvCardAction, TvMedia, saved_height};
+use big_media_runtime::cast::tv::{TvCardAction, TvMedia, saved_height};
 
 impl VideoShell {
     pub(super) fn on_tv_card(&mut self, action: TvCardAction) {

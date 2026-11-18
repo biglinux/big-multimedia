@@ -59,7 +59,7 @@ pub(super) fn build_toolbar(
     // controls. The sidebar header owns the left window buttons; this one owns
     // the right. Only the hamburger is exposed; every queue/settings action
     // lives in its menu.
-    // Centred title widget: the queue name when empty, "N tracks · duration"
+    // Centered title widget: the queue name when empty, "N tracks · duration"
     // when full (the panel refreshes it on every queue change).
     let header_label = gtk::Label::builder()
         .label(i18n("Playlist"))

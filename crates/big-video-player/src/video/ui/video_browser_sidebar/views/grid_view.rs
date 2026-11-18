@@ -5,7 +5,7 @@ use gtk::{gdk, gio, glib};
 
 use super::super::BrowserState;
 use super::model::{build_filter, build_store, finish_view};
-use super::shared::{
+use super::rows::{
     attach_context_menu, attach_context_menu_keys, centered_icon, set_accent, show_selected,
 };
 use crate::media::playlist::{self, EntryKind, PlaylistEntry};

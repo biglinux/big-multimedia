@@ -61,7 +61,7 @@ pub(crate) struct EglDmaBufFns {
 
 impl EglDmaBufFns {
     /// Core functions from libEGL, extension functions through `eglGetProcAddress`.
-    pub fn load() -> Option<Self> {
+    pub(crate) fn load() -> Option<Self> {
         // SAFETY: each name is paired with its EGL signature.
         unsafe {
             let Some(get_display) = egl_function(c"eglGetCurrentDisplay") else {

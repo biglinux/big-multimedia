@@ -15,7 +15,7 @@ impl VideoShell {
     /// TV plays.
     pub(super) fn tv_page(&self) -> gtk::Widget {
         use crate::cast::daemon::PlaybackStart;
-        use crate::shared::tv_cast::{TvMedia, tv_page};
+        use big_media_runtime::cast::tv::{TvMedia, tv_page};
         let mpv = self.mpv.borrow().clone();
         let current = mpv.clone();
         let media = move || {
@@ -465,7 +465,7 @@ mod tests {
     }
 
     #[test]
-    fn disc_input_picks_dvd_or_bluray_with_the_device() {
+    fn disc_input_picks_kind_and_device() {
         assert_eq!(disc(0, "/dev/sr0"), Some((false, "/dev/sr0".to_string())));
         assert_eq!(disc(1, " /dev/sr1 "), Some((true, "/dev/sr1".to_string())));
         // A folder or ISO path may contain dashes.
@@ -476,7 +476,7 @@ mod tests {
     }
 
     #[test]
-    fn disc_input_rejects_empty_or_option_like_device() {
+    fn disc_input_rejects_blank_or_option_device() {
         assert_eq!(disc(0, ""), None);
         assert_eq!(disc(1, "  "), None);
         assert_eq!(disc(1, "--foo"), None);

@@ -84,7 +84,7 @@ impl VideoShell {
                         PlaybackStatus::Playing
                     };
                     state.can_seek = mpv.is_seekable();
-                    (state.can_prev, state.can_next) = self.playlist_neighbours(&mpv);
+                    (state.can_prev, state.can_next) = self.playlist_neighbors(&mpv);
                     state.volume_pct = finite(mpv.get_volume());
                     state.rate = mpv.get_speed();
                 }
@@ -99,7 +99,7 @@ impl VideoShell {
                 // The folder around an opened file, and any queue change,
                 // lands after its `FileLoaded`.
                 if let Some(mpv) = mpv {
-                    (state.can_prev, state.can_next) = self.playlist_neighbours(&mpv);
+                    (state.can_prev, state.can_next) = self.playlist_neighbors(&mpv);
                 }
             }
             PlayerEvent::DurationChanged(duration) => state.duration_secs = finite(*duration),
@@ -133,7 +133,7 @@ impl VideoShell {
     /// Act on a command from the bus, revalidated against the current snapshot.
     /// Whether the playlist has an entry before and after the playing one;
     /// repeat-playlist wraps past the last entry.
-    fn playlist_neighbours(&self, mpv: &MpvBackend) -> (bool, bool) {
+    fn playlist_neighbors(&self, mpv: &MpvBackend) -> (bool, bool) {
         let (index, count) = (mpv.get_playlist_pos(), mpv.get_playlist_count());
         let wraps = count > 1 && self.settings.get_string(keys::LOOP_MODE) == "playlist";
         (index > 0, wraps || (index >= 0 && index + 1 < count))

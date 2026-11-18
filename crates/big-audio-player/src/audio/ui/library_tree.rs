@@ -50,7 +50,7 @@ use model::{
     ChildStores, DIVIDER_THRESHOLD, LeafTracks, build_node, child_store, child_store_key,
     group_divider_letter, to_browser_node,
 };
-pub use model::{LibraryTreeNode, LibraryTreeSnapshot};
+pub(crate) use model::{LibraryTreeNode, LibraryTreeSnapshot};
 #[cfg(test)]
 use presentation::{
     FileLeafPresentation, LibraryTreeAvatarPresentation, file_leaf_presentation,

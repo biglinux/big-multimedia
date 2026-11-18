@@ -91,7 +91,7 @@ impl Component for AudioShell {
                 initial_volume,
                 initial_voice_pct: (initial_noise * 100.0).clamp(0.0, 100.0),
                 trim_content: Some(trim.widget().clone().upcast()),
-                voice_settings: crate::shared::audio_effects::nr_settings_panel(&settings, {
+                voice_settings: big_media_runtime::audio_effects::nr_settings_panel(&settings, {
                     let input = sender.input_sender().clone();
                     move || input.emit(AudioShellInput::NoiseSettingsChanged)
                 })
@@ -138,7 +138,7 @@ impl Component for AudioShell {
         lyrics_paned.set_end_child(Some(playlist.widget()));
         lyrics.widget().set_visible(false);
 
-        // LEFT sidebar pane (distinct `.sidebar-pane` colour): Music | Files |
+        // LEFT sidebar pane (distinct `.sidebar-pane` color): Music | Files |
         // Radio | Podcasts in a view stack switched from its own header.
         let view_stack = gtk::Stack::new();
         view_stack
@@ -295,14 +295,14 @@ impl Component for AudioShell {
         let content_pane = BigToolbarPane::new(BigToolbarPaneSpec::new());
         content_pane.set_content(&content_box);
         // Connected on first use (the TV dialog), never merely by starting.
-        let tv = crate::shared::tv_cast::TvLink::new();
+        let tv = big_media_runtime::cast::tv::TvLink::new();
         tv.subscribe({
             let input = sender.input_sender().clone();
             move || {
                 let _ = input.send(AudioShellInput::TvChanged);
             }
         });
-        let tv_card = crate::shared::tv_cast::TvCard::new("tv-strip", true, true, false, {
+        let tv_card = big_media_runtime::cast::tv::TvCard::new("tv-strip", true, true, false, {
             let input = sender.input_sender().clone();
             move |action| {
                 let _ = input.send(AudioShellInput::Tv(action));
@@ -496,7 +496,7 @@ impl Component for AudioShell {
 
         // Files opened from the desktop, the command line or a host reach this
         // shell while its content is realized.
-        let shell_input = crate::shared::app_base::ShellInputSlot::bind(
+        let shell_input = big_media_runtime::app::ShellInputSlot::bind(
             &SHELL_INPUT,
             &root,
             sender.input_sender().clone(),
@@ -545,9 +545,9 @@ impl Component for AudioShell {
                 open_generation: 0,
                 history: QueueHistory::default(),
                 now_playing_gen: 0,
-                voice_active: std::rc::Rc::new(crate::shared::popovers::VoiceStrength::new(
-                    initial_voice_active,
-                )),
+                voice_active: std::rc::Rc::new(
+                    big_media_runtime::audio_effects::VoiceStrength::new(initial_voice_active),
+                ),
                 np_box,
                 np_art,
                 np_title,
@@ -573,7 +573,7 @@ impl Component for AudioShell {
                 volume_save: big_relm4_components::input::debounce::BigDebouncedAction::new(
                     VOLUME_SAVE_DELAY,
                 ),
-                sleep_timer: crate::shared::sleep_timer::SleepTimer::default(),
+                sleep_timer: big_media_runtime::sleep_timer::SleepTimer::default(),
                 library_grouping: initial_grouping,
                 library_filter: String::new(),
                 library_age: 0,

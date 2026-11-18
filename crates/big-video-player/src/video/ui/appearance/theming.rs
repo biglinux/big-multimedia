@@ -64,7 +64,7 @@ impl OsdCssConfig {
 
     // Following the system, `player_icon_color` is `window_fg_color`.
     fn css_color_foundation(&self, settings: &Settings) -> String {
-        crate::shared::theming::build_palette_css(
+        big_media_runtime::theming::build_palette_css(
             settings,
             &self.color_source,
             keys::UI_BG_COLOR,
@@ -139,7 +139,7 @@ menubutton.osd-btn > button:checked {{
   padding: 4px;
   -gtk-icon-size: 16px;
 }}
-/* The header is drawn over the video in the player's colours. Desktop themes
+/* The header is drawn over the video in the player's colors. Desktop themes
  * restyle headerbar through libadwaita's variables (BigStyle maps them to the
  * KDE title bar, dark text on dark video) and give :backdrop a light plate, so
  * the header names its own in every focus state. */
@@ -300,8 +300,8 @@ button.adjustment-reset {{
 }
 
 /// The volume control while no sound plays (muted or at 0): a pill in the
-/// theme's warning colours, after every palette rule so no customization
-/// dims it. Its text ("No sound") and shape say it too, not colour alone.
+/// theme's warning colors, after every palette rule so no customization
+/// dims it. Its text ("No sound") and shape say it too, not color alone.
 const SOUND_OFF_CSS: &str = "
 .sound-off {
   background: @warning_bg_color;
@@ -316,7 +316,7 @@ const SOUND_OFF_CSS: &str = "
   text-shadow: none;
 }
 /* The TV/PC mark beside the level, dimmed elsewhere: dimmed on the
-   warning colour it fell short of contrast. */
+   warning color it fell short of contrast. */
 .sound-off label.dim-label {
   opacity: 1;
 }
@@ -344,7 +344,7 @@ const PANEL_CSS: &str = "
 }
 .settings-panel button.settings-block,
 .settings-panel button.settings-link,
-.settings-panel button.colour-choice,
+.settings-panel button.color-choice,
 .settings-panel button.recent-card,
 .settings-panel list.boxed-list,
 .settings-panel .panel-backed {
@@ -366,12 +366,12 @@ const PANEL_CSS: &str = "
 .settings-panel .block-state {
   font-weight: normal;
 }
-.settings-panel button.colour-choice {
+.settings-panel button.color-choice {
   background-image: linear-gradient(alpha(@window_fg_color, 0.08), alpha(@window_fg_color, 0.08));
   border-radius: 10px;
   padding: 8px 10px;
 }
-.settings-panel button.colour-choice:checked {
+.settings-panel button.color-choice:checked {
   background: @accent_bg_color;
   color: @accent_fg_color;
 }
@@ -423,7 +423,7 @@ const PANEL_CSS: &str = "
 ";
 
 /// Secondary text (descriptions, subtitles, captions) at 75% instead of
-/// Adwaita's 55%: 55% reads at about 3.2:1 even on the plain window colour,
+/// Adwaita's 55%: 55% reads at about 3.2:1 even on the plain window color,
 /// under WCAG's 4.5:1; 75% gives 5.6:1 there, and over the see-through
 /// panel and bars on the worst frame.
 const DIM_TEXT_CSS: &str = "
@@ -442,11 +442,11 @@ fn build_osd_css(settings: &Settings, osd_css_config: &OsdCssConfig) -> String {
     css
 }
 
-/// Apply the saved colour source and the OSD palette and layout CSS into
+/// Apply the saved color source and the OSD palette and layout CSS into
 /// `slot`. Call at boot and from the Appearance dialog's `on_changed`.
 pub(in crate::video) fn apply_appearance(settings: &Settings, slot: &CssSlot) {
     let osd_css_config = OsdCssConfig::from_settings(settings);
-    crate::shared::theming::apply_color_scheme(&osd_css_config.color_source);
+    big_media_runtime::theming::apply_color_scheme(&osd_css_config.color_source);
     slot.set(&build_osd_css(settings, &osd_css_config));
 }
 
@@ -459,6 +459,6 @@ mod tests {
         let settings = Settings::memory_only();
         settings.put_bool(keys::AUDIO_HIGH_CONTRAST, true);
         let css = build_osd_css(&settings, &OsdCssConfig::from_settings(&settings));
-        assert!(!css.contains(crate::shared::theming::HIGH_CONTRAST_CSS));
+        assert!(!css.contains(big_media_runtime::theming::HIGH_CONTRAST_CSS));
     }
 }

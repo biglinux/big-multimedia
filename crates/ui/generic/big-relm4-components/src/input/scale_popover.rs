@@ -11,7 +11,7 @@ const DEFAULT_MARGIN_VERTICAL: i32 = 6;
 const DEFAULT_SPACING: i32 = 6;
 const DEFAULT_HEIGHT: i32 = 160;
 
-/// Display-free specification describing big vertical scale popover behaviour.
+/// Display-free specification describing big vertical scale popover behavior.
 #[derive(Debug, Clone, PartialEq)]
 pub struct BigVerticalScalePopoverSpec {
     /// Title.

@@ -11,7 +11,7 @@ use gtk::glib;
 
 use crate::config;
 use crate::settings::{self, keys};
-use crate::shared::theming;
+use crate::theming;
 
 /// Set an environment variable only when it is currently unset.
 fn set_default_env(name: &str, value: &str) {

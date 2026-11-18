@@ -8,7 +8,7 @@ cast daemon, media probing and playlist scanning, and the settings adapters.
 The GTK-free data services (SQLite library, settings store, radio/podcast
 clients) live in `crates/foundation/big-media-data` and are re-exported here as `config`, `db`, `error`, `i18n`, `library` and `settings`.
 
-Conversion is not part of this crate: `shared::converter_handoff` opens the
+Conversion is not part of this crate: `converter_handoff` opens the
 external converter GUIs with the file and the marked cuts.
 
 ## Features

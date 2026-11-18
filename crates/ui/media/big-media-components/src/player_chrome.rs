@@ -3,8 +3,7 @@
 //!
 //! They live here so reusable player panels (`big-player-ui`) can use them
 //! without depending on the engine runtime. i18n routes through the crate
-//! translator hook ([`crate::text::text`]); the runtime re-exports these under
-//! `shared::{spawn,play_button,popovers}`.
+//! translator hook ([`crate::text::text`]).
 
 use std::time::Duration;
 
@@ -117,7 +116,7 @@ pub fn build_volume_popover(
 
 /// Recolor `trough` when the value or the top of `adjustment` moves. The
 /// provider is display-wide and reloading it restyles every widget, so it
-/// reloads only when the colour changes (it is constant up to 100 %).
+/// reloads only when the color changes (it is constant up to 100 %).
 fn follow_volume_trough(adjustment: &gtk::Adjustment, trough: gtk::CssProvider, shown: String) {
     let shown = std::cell::RefCell::new(shown);
     let recolor = std::rc::Rc::new(move |adjustment: &gtk::Adjustment| {

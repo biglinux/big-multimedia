@@ -68,7 +68,7 @@ impl Component for VideoShell {
         // OSD controls bar (app-local). The trim
         // bar rides inside it (transport ↔ trim stack).
         // Connected on first use (the TV page), never merely by starting.
-        let tv = crate::shared::tv_cast::TvLink::new();
+        let tv = big_media_runtime::cast::tv::TvLink::new();
         tv.subscribe(|| super::send_to_shell(VideoShellInput::TvChanged));
         let controls = VideoControlsBar::builder()
             .launch(VideoControlsBarInit {
@@ -211,7 +211,7 @@ impl Component for VideoShell {
         let hdr_hint = gtk::Button::builder()
             .label(i18n("Use HDR?"))
             .tooltip_text(i18n(
-                "Does the picture look grey and washed out? Click to use HDR colours",
+                "Does the picture look grey and washed out? Click to use HDR colors",
             ))
             .css_classes(["header-pill", "hdr-hint"])
             .visible(false)
@@ -221,11 +221,11 @@ impl Component for VideoShell {
             move |hint| {
                 hint.set_visible(false);
                 sender.input(VideoShellInput::RestoreAdjustments(vec![
-                    super::adjustments::Adjustment::SourceColours(1),
+                    super::adjustments::Adjustment::SourceColors(1),
                 ]));
             }
         });
-        let tv_menu = crate::shared::tv_cast::TvCard::new("tv-menu", false, true, true, {
+        let tv_menu = big_media_runtime::cast::tv::TvCard::new("tv-menu", false, true, true, {
             let sender = sender.clone();
             move |action| sender.input(VideoShellInput::Tv(action))
         });
@@ -403,10 +403,11 @@ impl Component for VideoShell {
         // The settings panel sits over the video, clear of header and controls,
         // which stay shown while it is open.
         // Attached, the TV already plays what the player holds: no swap.
-        let tv_card = crate::shared::tv_cast::TvCard::new("settings-panel", false, false, true, {
-            let sender = sender.clone();
-            move |action| sender.input(VideoShellInput::Tv(action))
-        });
+        let tv_card =
+            big_media_runtime::cast::tv::TvCard::new("settings-panel", false, false, true, {
+                let sender = sender.clone();
+                move |action| sender.input(VideoShellInput::Tv(action))
+            });
         main_overlay.add_overlay(&tv_card.root);
         let panel = super::panel::SettingsPanel::new(&sender);
         main_overlay.add_overlay(&panel.revealer);
@@ -503,7 +504,7 @@ impl Component for VideoShell {
 
         // Files opened from the desktop, the command line or a host reach this
         // shell while its content is realized.
-        let shell_input = crate::shared::app_base::ShellInputSlot::bind(
+        let shell_input = big_media_runtime::app::ShellInputSlot::bind(
             &SHELL_INPUT,
             &root,
             sender.input_sender().clone(),
@@ -609,7 +610,7 @@ impl Component for VideoShell {
                 notice,
                 screenshot_owner: Arc::new(std::sync::atomic::AtomicBool::new(true)),
                 win_actions,
-                sleep_timer: crate::shared::sleep_timer::SleepTimer::default(),
+                sleep_timer: big_media_runtime::sleep_timer::SleepTimer::default(),
                 aspect_snap,
                 subtitle_lift,
                 _shell_input: shell_input,

@@ -41,7 +41,7 @@ module map and subprocess rules are in
 Neither player converts media on its own. Cut, Convert and Extract Audio open
 `big-video-converter-gui` or `big-audio-converter-gui` with the file and any
 marked cuts (`--segments=START-END,...`), through
-`big_media_runtime::shared::converter_handoff`.
+`big_media_runtime::converter_handoff`.
 
 ## Translations
 

@@ -384,7 +384,7 @@ fn build_playlist_row(
     row
 }
 
-/// Flat, vertically-centred icon button for an `ActionRow` suffix.
+/// Flat, vertically-centered icon button for an `ActionRow` suffix.
 fn suffix_button(icon: &str, tooltip: &str) -> gtk::Button {
     let suffix_button =
         big_relm4_components::feedback::tooltip::icon_button(icon, tooltip, &["flat"]);

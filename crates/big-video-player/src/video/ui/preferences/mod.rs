@@ -4,7 +4,7 @@
 //! Technical options live on the Advanced page instead of behind a mode switch.
 
 use adw::prelude::*;
-use big_player_ui::audio_preferences::{PlayerAudioPreferenceActions, create_player_audio_page};
+use big_player_ui::audio_preferences::create_player_audio_page;
 use std::sync::Arc;
 
 use crate::i18n::i18n;
@@ -51,7 +51,11 @@ pub fn show_preferences(
     let (advanced_page, refresh_preset_rows) = advanced::page(settings, mpv);
     let audio_page = create_player_audio_page(
         settings,
-        audio_preference_actions(settings, mpv, volume_max_changed),
+        big_media_runtime::audio_effects::audio_preference_actions(
+            settings,
+            mpv,
+            volume_max_changed,
+        ),
     );
     let pages = [
         general::page(settings, mpv, restore),
@@ -90,7 +94,7 @@ pub fn apply_saved_preferences(mpv: &MpvBackend, s: &Settings) {
     mpv.set_deinterlace(s.get_bool(keys::DEINTERLACE));
 
     // Audio
-    crate::shared::audio_effects::apply_audio_preferences(s, mpv);
+    big_media_runtime::audio_effects::apply_audio_preferences(s, mpv);
 
     // Subtitles
     mpv.set_preferred_sub_lang(&s.get_string(keys::PREFERRED_SUB_LANG));
@@ -155,35 +159,4 @@ fn live_str(
             apply(mpv, value);
         }
     }
-}
-
-fn audio_preference_actions(
-    settings: &Settings,
-    mpv: Option<&Arc<MpvBackend>>,
-    volume_max_changed: impl Fn() + 'static,
-) -> Option<PlayerAudioPreferenceActions> {
-    let mpv = mpv.cloned()?;
-    let settings = settings.clone();
-    Some(PlayerAudioPreferenceActions::new(
-        {
-            let mpv = Arc::clone(&mpv);
-            move |value| mpv.set_audio_channels(value)
-        },
-        {
-            let mpv = Arc::clone(&mpv);
-            move |value| mpv.set_audio_pitch_correction(value)
-        },
-        {
-            let mpv = Arc::clone(&mpv);
-            move |value| {
-                mpv.set_volume_max(value);
-                volume_max_changed();
-            }
-        },
-        {
-            let mpv = Arc::clone(&mpv);
-            move |value| mpv.set_preferred_audio_lang(value)
-        },
-        move || crate::shared::audio_effects::apply_voice_change(&settings, &mpv),
-    ))
 }

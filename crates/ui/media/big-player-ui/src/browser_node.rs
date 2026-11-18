@@ -1,6 +1,6 @@
 //! `BigMediaBrowserNode`: generic GObject node type for a media library /
 //! file-browser tree. Covers folder/file/divider plus the music-library
-//! flavours (artist/album/genre/year/station/playlist). Reusable by any media
+//! flavors (artist/album/genre/year/station/playlist). Reusable by any media
 //! app; the constructors are convenience factories, not a fixed taxonomy.
 
 use gtk::glib;

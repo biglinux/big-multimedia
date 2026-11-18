@@ -46,7 +46,7 @@ fn discover_servers_dns() -> Vec<String> {
     servers
 }
 
-pub fn api_servers() -> Vec<String> {
+pub(super) fn api_servers() -> Vec<String> {
     let discovered = discover_servers_dns();
     let servers = if discovered.is_empty() {
         DEFAULT_SERVERS
@@ -93,7 +93,7 @@ fn rotate_servers(mut servers: Vec<String>) -> Vec<String> {
     servers
 }
 
-pub fn radio_browser_get_with_fallback(path: &str, servers: &[String]) -> Option<String> {
+pub(super) fn radio_browser_get_with_fallback(path: &str, servers: &[String]) -> Option<String> {
     for server in servers {
         let url = format!("https://{server}{path}");
         debug!("[radio] trying {}", big_os_kit::url::MediaLogTarget(&url));

@@ -5,24 +5,24 @@
 
 use relm4::gtk;
 
-/// Pick the trough fill colour for a volume slider that may exceed
-/// 100 %. Normal range stays accent-coloured; the slider warms toward
+/// Pick the trough fill color for a volume slider that may exceed
+/// 100 %. Normal range stays accent-colored; the slider warms toward
 /// warning then error as the value approaches `max_value`.
 #[must_use]
 pub fn volume_trough_color(value: f64, max_value: f64) -> String {
     tiered_trough_color(value, 100.0, f64::midpoint(100.0, max_value), max_value)
 }
 
-/// Pick the trough fill colour for a voice-volume slider where 50 %
-/// is the recommended ceiling. Warmer colours warn the user above
-/// 50 % and reach the error colour at `max_value`.
+/// Pick the trough fill color for a voice-volume slider where 50 %
+/// is the recommended ceiling. Warmer colors warn the user above
+/// 50 % and reach the error color at `max_value`.
 #[must_use]
 pub fn voice_trough_color(value: f64, max_value: f64) -> String {
     tiered_trough_color(value, 50.0, 80.0, max_value)
 }
 
 /// Accent up to `safe`, blending to warning at `warning`, then to the full
-/// error colour at `max_value`.
+/// error color at `max_value`.
 fn tiered_trough_color(value: f64, safe: f64, warning: f64, max_value: f64) -> String {
     if value <= safe {
         "@accent_bg_color".to_string()

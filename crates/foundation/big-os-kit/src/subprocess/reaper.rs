@@ -21,7 +21,7 @@ struct State {
 }
 struct Collector {
     state: Mutex<State>,
-    /// eventfd signalled after a child is added.
+    /// eventfd signaled after a child is added.
     wake: OwnedFd,
 }
 static COLLECTOR: Mutex<Option<Arc<Collector>>> = Mutex::new(None);
@@ -256,7 +256,7 @@ impl OwnedChild {
         Ok(unsafe { info.si_pid() } != 0)
     }
 
-    /// Reap the leader if it exited; after that its pid and group are never signalled.
+    /// Reap the leader if it exited; after that its pid and group are never signaled.
     pub(crate) fn try_collect(&mut self) -> io::Result<Option<ExitStatus>> {
         let Some(child) = self.child.as_mut() else {
             return Err(io::Error::other("child already collected"));

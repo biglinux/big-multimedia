@@ -99,7 +99,7 @@ impl BigShortcutEntry {
     }
 }
 
-/// Display-free specification describing big shortcut dialog behaviour.
+/// Display-free specification describing big shortcut dialog behavior.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct BigShortcutDialogSpec {
     /// Title.
@@ -128,7 +128,7 @@ impl BigShortcutDialogSpec {
     }
 }
 
-/// Handle returned for every realised shortcut row so the host can
+/// Handle returned for every realized shortcut row so the host can
 /// connect signals and update labels.
 #[derive(Debug, Clone)]
 pub struct BigShortcutRowHandle {

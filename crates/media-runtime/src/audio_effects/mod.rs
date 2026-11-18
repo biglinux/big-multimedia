@@ -1,19 +1,25 @@
 //! Binds audio effect components to mpv/settings/noise-reduction runtime.
 
 use std::rc::Rc;
+use std::sync::Arc;
 
 use adw::prelude::*;
 use big_audio_effects::noise_reduction::{MODELS, NoiseModel, any_model_available};
+use big_player_ui::audio_preferences::PlayerAudioPreferenceActions;
 
 use crate::i18n::i18n;
 use crate::player::mpv_backend::MpvBackend;
 use crate::settings::keys;
 use big_audio_effects::equalizer::EQ_BAND_FREQUENCIES_F64;
 
-pub use super::audio_effects_eq::{
+mod equalizer;
+mod voice_strength;
+
+pub use equalizer::{
     create_equalizer_content, create_equalizer_dialog, equalizer_preset_matching,
     equalizer_preset_names,
 };
+pub use voice_strength::{VoiceStrength, handle_voice_strength_changed};
 
 /// 10 semicolon-separated dB gains, clamped to ±12 dB; missing → 0.
 pub fn parse_eq_bands(eq_str: &str) -> [f64; 10] {
@@ -65,6 +71,40 @@ pub fn apply_audio_preferences(settings: &crate::settings::Settings, mpv: &MpvBa
     mpv.set_audio_channels(&settings.get_string(keys::AUDIO_CHANNELS));
     mpv.set_preferred_audio_lang(&settings.get_string(keys::PREFERRED_AUDIO_LANG));
     apply_voice_change(settings, mpv);
+}
+
+/// What the audio preferences page changes on the running player as each row
+/// changes; `None` without a player. `volume_max_changed` runs after mpv takes
+/// a new volume ceiling.
+pub fn audio_preference_actions(
+    settings: &crate::settings::Settings,
+    mpv: Option<&Arc<MpvBackend>>,
+    volume_max_changed: impl Fn() + 'static,
+) -> Option<PlayerAudioPreferenceActions> {
+    let mpv = mpv.cloned()?;
+    let settings = settings.clone();
+    Some(PlayerAudioPreferenceActions::new(
+        {
+            let mpv = Arc::clone(&mpv);
+            move |value| mpv.set_audio_channels(value)
+        },
+        {
+            let mpv = Arc::clone(&mpv);
+            move |value| mpv.set_audio_pitch_correction(value)
+        },
+        {
+            let mpv = Arc::clone(&mpv);
+            move |value| {
+                mpv.set_volume_max(value);
+                volume_max_changed();
+            }
+        },
+        {
+            let mpv = Arc::clone(&mpv);
+            move |value| mpv.set_preferred_audio_lang(value)
+        },
+        move || apply_voice_change(&settings, &mpv),
+    ))
 }
 
 /// The noise reduction's settings, shown beside the voice slider as in the

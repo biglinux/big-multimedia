@@ -122,7 +122,7 @@ pub const RENDER_PROFILE_IDS: [&str; 3] = ["default", "balanced", "high-quality"
 
 /// Resolve a render-profile name into the matching property slice.
 ///
-/// Recognised names are `"balanced"` and `"high-quality"`.  Any other
+/// Recognized names are `"balanced"` and `"high-quality"`.  Any other
 /// value (including the empty string and `"default"`) falls back to
 /// [`DEFAULT_RENDER_PROFILE`], so callers can pass user input straight
 /// through.

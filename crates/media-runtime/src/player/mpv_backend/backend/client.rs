@@ -56,7 +56,7 @@ impl From<Utf8Error> for MpvError {
     }
 }
 
-pub struct MpvClient {
+pub(crate) struct MpvClient {
     mpv_handle: Option<NonNull<mpv_sys::mpv_handle>>,
 }
 
@@ -66,7 +66,7 @@ unsafe impl Send for MpvClient {}
 unsafe impl Sync for MpvClient {}
 
 impl MpvClient {
-    pub fn with_initializer<F>(setup: F) -> Result<Self>
+    pub(crate) fn with_initializer<F>(setup: F) -> Result<Self>
     where
         F: FnOnce(&MpvInitializer) -> Result<()>,
     {
@@ -109,12 +109,12 @@ impl MpvClient {
         })
     }
 
-    pub fn raw_handle(&self) -> *mut mpv_sys::mpv_handle {
+    pub(crate) fn raw_handle(&self) -> *mut mpv_sys::mpv_handle {
         self.mpv_handle
             .map_or(std::ptr::null_mut(), NonNull::as_ptr)
     }
 
-    pub fn terminate_destroy(&mut self) {
+    pub(crate) fn terminate_destroy(&mut self) {
         if let Some(mpv_handle) = self.mpv_handle.take() {
             // SAFETY: this object owns the handle; taking it prevents Drop from
             // destroying it again.
@@ -124,7 +124,7 @@ impl MpvClient {
         }
     }
 
-    pub fn command(&self, name: &str, args: &[&str]) -> Result<()> {
+    pub(crate) fn command(&self, name: &str, args: &[&str]) -> Result<()> {
         let mpv_handle = self.mpv_handle()?;
         let mut c_strings = Vec::with_capacity(args.len() + 1);
         c_strings.push(CString::new(name)?);
@@ -140,7 +140,7 @@ impl MpvClient {
         check_mpv(unsafe { mpv_sys::mpv_command(mpv_handle.as_ptr(), raw_args.as_mut_ptr()) })
     }
 
-    pub fn set_property<T>(&self, name: &str, value: T) -> Result<()>
+    pub(crate) fn set_property<T>(&self, name: &str, value: T) -> Result<()>
     where
         T: MpvSetValue,
     {
@@ -157,7 +157,7 @@ impl MpvClient {
 
     /// Set `name` for a caller with no recovery of its own, logging a refusal by
     /// name only: values can carry paths, URLs or device names.
-    pub fn set_property_logged<T>(&self, name: &str, value: T)
+    pub(crate) fn set_property_logged<T>(&self, name: &str, value: T)
     where
         T: MpvSetValue,
     {
@@ -173,7 +173,7 @@ impl MpvClient {
         }
     }
 
-    pub fn get_property<T>(&self, name: &str) -> Result<T>
+    pub(crate) fn get_property<T>(&self, name: &str) -> Result<T>
     where
         T: MpvGetValue,
     {
@@ -183,7 +183,7 @@ impl MpvClient {
     }
 
     /// Report changes of `name` as [`MpvEvent::PropertyChange`] carrying `group`.
-    pub fn observe_property(&self, name: &str, group: u64) -> Result<()> {
+    pub(crate) fn observe_property(&self, name: &str, group: u64) -> Result<()> {
         let handle = self.mpv_handle()?;
         let name = CString::new(name)?;
         // SAFETY: the handle is live and name lives through this call. NONE
@@ -198,7 +198,7 @@ impl MpvClient {
         })
     }
 
-    pub fn wait_event(&mut self, timeout: f64) -> Option<Result<MpvEvent>> {
+    pub(crate) fn wait_event(&mut self, timeout: f64) -> Option<Result<MpvEvent>> {
         let Some(mpv_handle) = self.mpv_handle else {
             return Some(Err(MpvError::DestroyedHandle));
         };
@@ -231,12 +231,12 @@ impl Drop for MpvClient {
     }
 }
 
-pub struct MpvInitializer {
+pub(crate) struct MpvInitializer {
     mpv_handle: NonNull<mpv_sys::mpv_handle>,
 }
 
 impl MpvInitializer {
-    pub fn set_option<T>(&self, name: &str, value: T) -> Result<()>
+    pub(crate) fn set_option<T>(&self, name: &str, value: T) -> Result<()>
     where
         T: MpvSetValue,
     {
@@ -251,7 +251,7 @@ impl MpvInitializer {
     }
 }
 
-pub trait MpvSetValue {
+pub(crate) trait MpvSetValue {
     fn with_mpv_value<R>(
         self,
         call: impl FnOnce(mpv_sys::mpv_format, *mut c_void) -> Result<R>,
@@ -320,7 +320,7 @@ impl MpvSetValue for f64 {
     }
 }
 
-pub trait MpvGetValue: Sized {
+pub(crate) trait MpvGetValue: Sized {
     fn get(mpv_handle: NonNull<mpv_sys::mpv_handle>, name: &CStr) -> Result<Self>;
 }
 
@@ -401,7 +401,7 @@ impl MpvGetValue for f64 {
 }
 
 #[derive(Debug, Clone, PartialEq)]
-pub enum MpvEvent {
+pub(crate) enum MpvEvent {
     AudioReconfig,
     FileLoaded,
     EndFile(EndReason),

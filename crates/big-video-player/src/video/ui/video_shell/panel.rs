@@ -204,7 +204,7 @@ impl SettingsPanel {
 }
 
 /// One home block: what it is, how it is set now, and whether that is a
-/// change from normal (then a dot and bold text say so, not colour alone).
+/// change from normal (then a dot and bold text say so, not color alone).
 struct Block {
     icon: &'static str,
     name: String,
@@ -221,7 +221,7 @@ enum BlockTarget {
 /// The home block (by page) an adjustment belongs to.
 fn page_of(adjustment: &Adjustment) -> Option<PanelPage> {
     match adjustment {
-        Adjustment::SourceColours(_) => Some(PanelPage::Hdr),
+        Adjustment::SourceColors(_) => Some(PanelPage::Hdr),
         Adjustment::Picture(_) => Some(PanelPage::Picture),
         Adjustment::Zoom { .. }
         | Adjustment::Rotation(_)
@@ -430,7 +430,7 @@ impl VideoShell {
             state: if hdr.changed {
                 hdr.state
             } else {
-                media_adjust::source_colour_names()[0].clone()
+                media_adjust::source_color_names()[0].clone()
             },
             ..hdr
         };
@@ -666,7 +666,7 @@ impl VideoShell {
         let page = page_box();
         page.set_margin_start(0);
         page.set_margin_end(0);
-        let equalizer = crate::shared::audio_effects::create_equalizer_content(
+        let equalizer = big_media_runtime::audio_effects::create_equalizer_content(
             &self.settings,
             Some(Arc::clone(mpv)),
             Some(Rc::new(|| {
@@ -707,11 +707,11 @@ impl VideoShell {
             return active.into_page().upcast();
         }
         let (minutes, action) =
-            crate::shared::sleep_timer::load_sleep_timer_preferences(Some(&self.settings));
+            big_media_runtime::sleep_timer::load_sleep_timer_preferences(Some(&self.settings));
         let setup = BigSleepTimerSetupPage::new(
             BigSleepTimerSetupSpec {
-                labels: crate::shared::sleep_timer::sleep_timer_setup_labels(),
-                actions: crate::shared::sleep_timer::sleep_timer_actions(),
+                labels: big_media_runtime::sleep_timer::sleep_timer_setup_labels(),
+                actions: big_media_runtime::sleep_timer::sleep_timer_actions(),
                 saved_minutes: minutes,
                 saved_action_id: action,
                 icon_size: 64,
@@ -727,7 +727,7 @@ impl VideoShell {
             &setup,
             &self.panel.card,
             move |_, minutes, action| {
-                crate::shared::sleep_timer::save_sleep_timer_preferences(
+                big_media_runtime::sleep_timer::save_sleep_timer_preferences(
                     Some(&settings),
                     minutes,
                     &action,

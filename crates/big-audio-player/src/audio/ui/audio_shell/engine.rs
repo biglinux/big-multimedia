@@ -221,7 +221,7 @@ pub(super) fn build_mpv_backend(
     mpv.set_replaygain(&settings.get_string(keys::REPLAYGAIN));
     mpv.set_replaygain_preamp(settings.get_double(keys::REPLAYGAIN_PREAMP));
     // The volume limit goes first: `set_volume` clamps to it.
-    crate::shared::audio_effects::apply_audio_preferences(settings, &mpv);
+    big_media_runtime::audio_effects::apply_audio_preferences(settings, &mpv);
     mpv.set_volume(settings.audio_volume_percent());
     mpv.set_gapless(settings.get_bool(keys::GAPLESS_AUDIO));
     mpv.set_save_position(settings.get_bool(keys::RESUME_PLAYBACK));

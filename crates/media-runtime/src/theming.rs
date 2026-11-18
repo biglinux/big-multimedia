@@ -6,9 +6,9 @@ pub use big_relm4_components::theme::{
 };
 
 /// libadwaita's palette for the scheme in force. libadwaita derives these
-/// variables from named colours that follow the scheme; a desktop theme that
+/// variables from named colors that follow the scheme; a desktop theme that
 /// pins the variables as user CSS (BigStyle writes the system's light ones)
-/// would leave light-theme colours on a forced dark scheme.
+/// would leave light-theme colors on a forced dark scheme.
 const SCHEME_PALETTE_CSS: &str = "\
 :root {
   --window-bg-color: @window_bg_color;
@@ -47,7 +47,7 @@ const SCHEME_PALETTE_CSS: &str = "\
 @define-color player_icon_color @window_fg_color;
 ";
 
-/// The palette CSS for `color_source`: the user's colours for `"custom"`,
+/// The palette CSS for `color_source`: the user's colors for `"custom"`,
 /// libadwaita's own for a forced light or dark scheme, `None` to follow the
 /// system.
 pub fn build_palette_css(
