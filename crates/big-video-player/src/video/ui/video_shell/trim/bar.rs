@@ -56,7 +56,7 @@ pub enum VideoTrimBarOutput {
     /// The cut state changed: repaint the cut timeline. Carries each segment's
     /// `(id, start, end)` (for edge-drag addressing) plus the pending first mark.
     SegmentsChanged {
-        /// Per-segment `(id, start, end)`.
+        /// Per-cut `(id, start, end)`, sorted and disjoint.
         segments: Vec<(u64, f64, f64)>,
         /// First mark awaiting its pair (drawn as a green guide), if any.
         pending: Option<f64>,

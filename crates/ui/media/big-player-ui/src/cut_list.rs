@@ -18,7 +18,8 @@ pub struct Cut {
     pub end: f64,
 }
 
-/// Marked cuts plus the first mark of the next one.
+/// Marked cuts plus the first mark of the next one. The cuts are kept sorted,
+/// with overlapping or touching ones merged into the earlier cut.
 #[derive(Debug, Default)]
 pub struct CutList {
     duration: f64,
@@ -39,7 +40,7 @@ impl CutList {
         self.pending
     }
 
-    /// The committed cuts.
+    /// The committed cuts, sorted and disjoint.
     #[must_use]
     pub fn cuts(&self) -> &[Cut] {
         &self.cuts
@@ -66,11 +67,13 @@ impl CutList {
         self.next_id += 1;
         self.cuts.push(Cut { id, start, end });
         self.pending = None;
+        self.merge();
         true
     }
 
-    /// Replace the times of cut `id`, in either order. Returns false when `id`
-    /// is unknown or the cut would be empty.
+    /// Replace the times of cut `id`, in either order; a cut it then overlaps
+    /// merges with it. Returns false when `id` is unknown or the cut would be
+    /// empty.
     pub fn set_cut_times(&mut self, id: u64, a: f64, b: f64) -> bool {
         let start = self.clamp(a.min(b));
         let end = self.clamp(a.max(b));
@@ -82,6 +85,7 @@ impl CutList {
         };
         cut.start = start;
         cut.end = end;
+        self.merge();
         true
     }
 
@@ -98,21 +102,22 @@ impl CutList {
         self.pending = None;
     }
 
-    /// The cuts as `(start, end)` ranges, sorted, with overlapping or touching
-    /// ones merged, so an export never repeats a span.
+    /// The cuts as `(start, end)` ranges, for export and [`play_only_cuts_seek`].
     #[must_use]
     pub fn ranges(&self) -> Vec<(f64, f64)> {
-        let mut ranges: Vec<(f64, f64)> =
-            self.cuts.iter().map(|cut| (cut.start, cut.end)).collect();
-        ranges.sort_by(|a, b| a.0.total_cmp(&b.0));
-        let mut merged: Vec<(f64, f64)> = Vec::with_capacity(ranges.len());
-        for (start, end) in ranges {
+        self.cuts.iter().map(|cut| (cut.start, cut.end)).collect()
+    }
+
+    fn merge(&mut self) {
+        self.cuts.sort_by(|a, b| a.start.total_cmp(&b.start));
+        let mut merged: Vec<Cut> = Vec::with_capacity(self.cuts.len());
+        for cut in self.cuts.drain(..) {
             match merged.last_mut() {
-                Some(last) if start <= last.1 => last.1 = last.1.max(end),
-                _ => merged.push((start, end)),
+                Some(last) if cut.start <= last.end => last.end = last.end.max(cut.end),
+                _ => merged.push(cut),
             }
         }
-        merged
+        self.cuts = merged;
     }
 
     fn clamp(&self, time: f64) -> f64 {
@@ -126,7 +131,8 @@ impl CutList {
 
 /// Where "Play only marked cuts" seeks from `position`: the next cut's start at
 /// the end of a cut or between cuts, the first cut's start after the last one,
-/// and `None` while playing inside a cut. `ranges` are sorted by start.
+/// and `None` while playing inside a cut. `ranges` are sorted and disjoint, as
+/// [`CutList::ranges`] returns them.
 #[must_use]
 pub fn play_only_cuts_seek(ranges: &[(f64, f64)], position: f64) -> Option<f64> {
     let &(first_start, _) = ranges.first()?;
@@ -228,13 +234,25 @@ mod tests {
     }
 
     #[test]
-    fn ranges_sort_and_merge() {
+    fn cuts_sort_and_merge() {
         let mut list = list(100.0);
         mark(&mut list, 20.0, 30.0);
         mark(&mut list, 2.0, 5.0);
         mark(&mut list, 4.0, 8.0);
         mark(&mut list, 30.0, 35.0);
-        assert_eq!(list.ranges(), vec![(2.0, 8.0), (20.0, 35.0)]);
+        mark(&mut list, 50.0, 60.0);
+        mark(&mut list, 52.0, 55.0);
+        assert_eq!(spans(&list), vec![(2.0, 8.0), (20.0, 35.0), (50.0, 60.0)]);
+    }
+
+    #[test]
+    fn edited_cut_merges_with_overlapped() {
+        let mut list = list(100.0);
+        mark(&mut list, 10.0, 20.0);
+        mark(&mut list, 40.0, 50.0);
+        let later = list.cuts()[1].id;
+        assert!(list.set_cut_times(later, 15.0, 45.0));
+        assert_eq!(spans(&list), vec![(10.0, 45.0)]);
     }
 
     #[test]
@@ -258,5 +276,17 @@ mod tests {
             );
         }
         assert_eq!(play_only_cuts_seek(&[], 5.0), None);
+    }
+
+    /// The shell steps over the cuts the list hands it, so a cut inside
+    /// another must not send playback back into the outer one.
+    #[test]
+    fn nested_cut_plays_through() {
+        let mut list = list(60.0);
+        mark(&mut list, 10.0, 30.0);
+        mark(&mut list, 20.0, 25.0);
+        let ranges = list.ranges();
+        assert_eq!(play_only_cuts_seek(&ranges, 25.0), None);
+        assert_eq!(play_only_cuts_seek(&ranges, 30.0), Some(10.0));
     }
 }

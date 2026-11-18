@@ -154,10 +154,8 @@ impl VideoShell {
     ) {
         match out {
             VideoTrimBarOutput::SegmentsChanged { segments, pending } => {
-                let mut ranges: Vec<(f64, f64)> =
+                *self.trim_ranges.borrow_mut() =
                     segments.iter().map(|(_, s, e)| (*s, *e)).collect();
-                ranges.sort_by(|a, b| a.0.total_cmp(&b.0));
-                *self.trim_ranges.borrow_mut() = ranges;
                 self.controls
                     .emit(VideoControlsBarInput::SetCutSegments(segments));
                 self.controls
