@@ -18,6 +18,7 @@ use crate::i18n::i18n;
 use crate::shared::converter_handoff;
 
 use super::playlist_panel::{PlaylistPanel, PlaylistPanelOutput};
+use super::track_count_text;
 
 fn is_queue_delete_key(keyval: gdk::Key) -> bool {
     keyval == gdk::Key::Delete || keyval == gdk::Key::BackSpace
@@ -284,10 +285,9 @@ fn delete_storage_body(count: usize, single_title: Option<&str>) -> String {
         )
     } else {
         format!(
-            "{}\n\n{} {}",
+            "{}\n\n{}",
             i18n("Move these files to the trash?"),
-            count,
-            i18n("tracks")
+            track_count_text(count as u64)
         )
     }
 }
