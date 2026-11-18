@@ -109,21 +109,27 @@ pub fn build_volume_popover(
         &trough,
         trough_style_provider_priority(),
     );
-    {
-        // The provider is display-wide: reloading it restyles every widget, so
-        // only reload when the colour changes (it is constant up to 100 %).
-        let shown = std::cell::RefCell::new(initial_color);
-        scale.connect_value_changed(move |s| {
-            let color = volume_trough_color(s.value(), s.adjustment().upper());
-            if *shown.borrow() != color {
-                update_scale_trough(&trough, "volume-scale", &color);
-                *shown.borrow_mut() = color;
-            }
-        });
-    }
+    follow_volume_trough(&scale.adjustment(), trough, initial_color);
 
     scroll_moves(parent, &scale, VOLUME_SCROLL_PERCENT);
     (popover, scale)
+}
+
+/// Recolor `trough` when the value or the top of `adjustment` moves. The
+/// provider is display-wide and reloading it restyles every widget, so it
+/// reloads only when the colour changes (it is constant up to 100 %).
+fn follow_volume_trough(adjustment: &gtk::Adjustment, trough: gtk::CssProvider, shown: String) {
+    let shown = std::cell::RefCell::new(shown);
+    let recolor = std::rc::Rc::new(move |adjustment: &gtk::Adjustment| {
+        let color = volume_trough_color(adjustment.value(), adjustment.upper());
+        if *shown.borrow() != color {
+            update_scale_trough(&trough, "volume-scale", &color);
+            *shown.borrow_mut() = color;
+        }
+    });
+    let on_value = recolor.clone();
+    adjustment.connect_value_changed(move |adjustment| on_value(adjustment));
+    adjustment.connect_upper_notify(move |adjustment| recolor(adjustment));
 }
 
 /// Give a scale from [`build_volume_popover`] a new top. The value is left to
@@ -402,6 +408,31 @@ mod tests {
         assert!(spec.inverted);
         assert_eq!(volume_reference_mark_percent(), 100.0);
         assert_eq!(popover_scale_mark_position(), gtk::PositionType::Right);
+    }
+
+    #[test]
+    #[ignore = "requires an isolated GTK session"]
+    fn volume_trough_follows_a_new_maximum() {
+        gtk::init().expect("isolated GTK session");
+        let scale = gtk::Scale::with_range(gtk::Orientation::Vertical, 0.0, 150.0, 1.0);
+        scale.set_value(120.0);
+        let trough = gtk::CssProvider::new();
+        let color = volume_trough_color(120.0, 150.0);
+        update_scale_trough(&trough, "volume-scale", &color);
+        follow_volume_trough(&scale.adjustment(), trough.clone(), color);
+
+        set_volume_maximum(&scale, 200.0);
+
+        let expected = gtk::CssProvider::new();
+        update_scale_trough(
+            &expected,
+            "volume-scale",
+            &volume_trough_color(120.0, 200.0),
+        );
+        let stale = gtk::CssProvider::new();
+        update_scale_trough(&stale, "volume-scale", &volume_trough_color(120.0, 150.0));
+        assert_ne!(expected.to_str(), stale.to_str());
+        assert_eq!(trough.to_str(), expected.to_str());
     }
 
     #[test]
