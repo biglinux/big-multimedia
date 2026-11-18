@@ -275,7 +275,7 @@ mod tests {
     }
 
     #[test]
-    fn open_uri_names_a_local_path_or_web_url() {
+    fn open_uri_resolves_local_files() {
         let state = PlayerState::default();
         let open = |uri: &str| method_command("OpenUri", &(uri,).to_variant(), &state);
         for (uri, expected) in [

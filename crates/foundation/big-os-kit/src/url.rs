@@ -675,7 +675,7 @@ mod tests {
     }
 
     #[test]
-    fn local_path_takes_absolute_paths_and_file_uris() {
+    fn local_path_accepts_local_forms() {
         for (value, path) in [
             ("/m/100%25.mp3", Some("/m/100%25.mp3")),
             ("file:///m/a%20b.mp3", Some("/m/a b.mp3")),
