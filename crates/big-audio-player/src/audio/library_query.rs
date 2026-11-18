@@ -68,25 +68,24 @@ pub(crate) fn query_tracks_for_node(
         | BrowserNodeKind::Format
         | BrowserNodeKind::Playlist
         | BrowserNodeKind::SmartPlaylist => {
-            let column = match node_kind {
+            let mut filters: Vec<(&str, &str)> = node_secondary
+                .split(PARENT_FILTER_SEPARATOR)
+                .filter_map(|filter| filter.split_once(':'))
+                .collect();
+            // One filter per ancestor, so their count is the node's own level.
+            let group_by = match node_kind {
                 BrowserNodeKind::Artist
-                    if grouping.level(0) == GroupBy::AlbumArtist
-                        || grouping.level(1) == GroupBy::AlbumArtist =>
+                    if grouping.level(filters.len()) == GroupBy::AlbumArtist =>
                 {
-                    "album_artist"
+                    GroupBy::AlbumArtist
                 }
-                BrowserNodeKind::Album => "album",
-                BrowserNodeKind::Genre => "genre",
-                BrowserNodeKind::Year => "year",
-                BrowserNodeKind::Format => "format",
-                _ => "artist",
+                BrowserNodeKind::Album => GroupBy::Album,
+                BrowserNodeKind::Genre => GroupBy::Genre,
+                BrowserNodeKind::Year => GroupBy::Year,
+                BrowserNodeKind::Format => GroupBy::Format,
+                _ => GroupBy::Artist,
             };
-            let mut filters = vec![(column, node_key)];
-            filters.extend(
-                node_secondary
-                    .split(PARENT_FILTER_SEPARATOR)
-                    .filter_map(|filter| filter.split_once(':')),
-            );
+            filters.push((group_by.column(), node_key));
             queries::get_library_tracks(conn, &filters, filter_text, age_secs)
         }
     }
@@ -591,6 +590,45 @@ mod tests {
             (artist_year_album, &["Bob", "2000", "Hits"], &["/b1"]),
             (artist_year_album, &["Bob", "2000"], &["/b1"]),
             (genre_artist, &["Rock", "Alice"], &["/a1"]),
+        ];
+        for (levels, path, expected) in cases {
+            let grouping = LibraryGrouping { levels };
+            let tree = build_library_tree_snapshot(&conn, &grouping, "", None);
+            let node = tree_node(&tree.level0, path);
+            let tracks = query_tracks_for_node(
+                &conn,
+                node.kind,
+                &node.key,
+                &node.secondary,
+                "",
+                None,
+                &grouping,
+            )?;
+            let mut paths: Vec<_> = tracks
+                .iter()
+                .map(|track| track.file_path.as_str())
+                .collect();
+            paths.sort_unstable();
+            assert_eq!(paths, expected, "{levels:?} {path:?}");
+        }
+        Ok(())
+    }
+
+    #[test]
+    fn album_artist_filters_at_own_level() -> MediaResult<()> {
+        let conn = setup_db()?;
+        seed_library(&conn)?;
+        let album_artist_first = [GroupBy::AlbumArtist, GroupBy::Artist, GroupBy::Album];
+        let album_artist_last = [GroupBy::Genre, GroupBy::Album, GroupBy::AlbumArtist];
+        let cases: [(_, &[&str], &[&str]); 4] = [
+            (album_artist_first, &["VA"], &["/m/c1.mp3", "/m/c2.mp3"]),
+            (album_artist_first, &["VA", "Carol"], &["/m/c1.mp3"]),
+            (album_artist_first, &["VA", "Carol", "Comp"], &["/m/c1.mp3"]),
+            (
+                album_artist_last,
+                &["Pop", "Comp", "VA"],
+                &["/m/c1.mp3", "/m/c2.mp3"],
+            ),
         ];
         for (levels, path, expected) in cases {
             let grouping = LibraryGrouping { levels };

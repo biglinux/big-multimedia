@@ -7,7 +7,7 @@ use adw::prelude::*;
 use big_app_kit::file_dialogs::FilePicker;
 use big_relm4_components::input::button_content::{BigButtonContentSpec, build_button};
 use big_relm4_components::layout::{
-    name_prompt::{BigNamePromptSpec, prompt_name, trimmed_name},
+    name_prompt::{prompt_name, trimmed_name},
     toolbar_pane::{BigToolbarHeader, BigToolbarHeaderSpec},
 };
 use gtk::gio;
@@ -15,6 +15,7 @@ use relm4::ComponentSender;
 
 use crate::i18n::i18n;
 
+use super::playlist_library_dialog::save_queue_prompt_spec;
 use super::playlist_panel::{PlaylistPanel, PlaylistPanelOutput};
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -207,15 +208,7 @@ fn prompt_queue_playlist_name(
     parent: Option<&gtk::Window>,
     sender: &ComponentSender<PlaylistPanel>,
 ) {
-    let spec = BigNamePromptSpec {
-        title: i18n("Save Queue as Playlist"),
-        description: Some(i18n("Name for the new playlist")),
-        entry_title: i18n("Playlist name"),
-        prefill: String::new(),
-        accept_label: i18n("Save"),
-        content_width: 420,
-        content_height: 240,
-    };
+    let spec = save_queue_prompt_spec();
     let out = sender.clone();
     prompt_name(
         parent.map(AsRef::as_ref),

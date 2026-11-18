@@ -3,6 +3,7 @@
 
 use crate::i18n::i18n;
 
+use super::super::track_count_duration_text;
 use super::PlaylistLibraryDialogOutput;
 use big_media_runtime::i18n::gettext_noop;
 use big_relm4_components::layout::name_prompt::BigNamePromptSpec;
@@ -166,21 +167,12 @@ pub(super) fn saved_playlist_row_spec(name: &str) -> SavedPlaylistRowSpec {
 }
 
 pub(super) fn localized_saved_playlist_subtitle(count: i64, secs: f64) -> String {
-    let track_label = if count == 1 {
-        i18n("track")
-    } else {
-        i18n("tracks")
-    };
-    format!(
-        "{count} {track_label} · {} {}",
-        (secs as i64) / 60,
-        i18n("min")
-    )
+    track_count_duration_text(count.unsigned_abs(), secs)
 }
 
-pub(super) fn save_current_queue_prompt_spec() -> BigNamePromptSpec {
+pub(in crate::audio::ui) fn save_queue_prompt_spec() -> BigNamePromptSpec {
     BigNamePromptSpec {
-        title: i18n("Save Current Queue"),
+        title: i18n("Save Queue as Playlist"),
         description: Some(i18n("Name for the new playlist")),
         entry_title: i18n("Playlist name"),
         prefill: String::new(),

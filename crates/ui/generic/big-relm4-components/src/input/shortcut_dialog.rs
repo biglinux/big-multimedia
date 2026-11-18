@@ -254,9 +254,9 @@ impl BigShortcutDialog {
 /// component owns the rendered row activation and capture dialog lifecycle.
 /// After each reset or rebind, `on_serialized_changed` receives the full
 /// serialized custom-override string so apps can persist it in their settings.
+/// The capture prompt is modal over the shortcuts window, so one opens at a time.
 pub fn connect_shortcut_dialog_rebinds<FK, FF, FS>(
     dialog: &BigShortcutDialog,
-    parent: &impl IsA<gtk::Window>,
     custom_value: &str,
     labels: BigShortcutCaptureLabels,
     key_to_binding: FK,
@@ -268,7 +268,7 @@ pub fn connect_shortcut_dialog_rebinds<FK, FF, FS>(
     FS: Fn(String) + Clone + 'static,
 {
     let overrides = Rc::new(RefCell::new(parse_custom(custom_value)));
-    let parent_weak = parent.as_ref().downgrade();
+    let parent_weak = dialog.window().downgrade();
 
     for shortcut_row in dialog.rows() {
         let display_name = shortcut_row.title.clone();
@@ -402,5 +402,48 @@ mod tests {
             .subtitle("Close the app");
 
         assert_eq!(entry.subtitle.as_deref(), Some("Close the app"));
+    }
+
+    #[test]
+    #[ignore = "requires an isolated GTK session"]
+    fn capture_prompt_modal_over_shortcuts() {
+        gtk::init().expect("isolated GTK session");
+        adw::init().expect("libadwaita");
+        let main_window = adw::Window::new();
+        let dialog = BigShortcutDialog::new(
+            BigShortcutDialogSpec::new("Keyboard Shortcuts"),
+            &[BigShortcutCategory::new("Playback", "Playback")],
+            &[BigShortcutEntry::new(
+                "Playback", "Play", "play", "space", "Space",
+            )],
+        );
+        dialog.window().set_transient_for(Some(&main_window));
+        connect_shortcut_dialog_rebinds(
+            &dialog,
+            "",
+            BigShortcutCaptureLabels::new("Set Shortcut", "Press keys", "Waiting", "Reset"),
+            |_, _| String::new(),
+            str::to_owned,
+            |_| {},
+        );
+        main_window.present();
+        dialog.window().present();
+
+        ActionRowExt::activate(dialog.rows()[0].row());
+        let shortcuts_window = dialog.window().upcast_ref::<gtk::Window>();
+        let prompts: Vec<gtk::Window> = gtk::Window::list_toplevels()
+            .into_iter()
+            .filter_map(|widget| widget.downcast::<gtk::Window>().ok())
+            .filter(|window| window.title().as_deref() == Some("Set Shortcut"))
+            .collect();
+
+        assert_eq!(prompts.len(), 1);
+        assert_eq!(prompts[0].transient_for().as_ref(), Some(shortcuts_window));
+        assert!(prompts[0].is_modal());
+        for window in prompts {
+            window.destroy();
+        }
+        dialog.window().destroy();
+        main_window.destroy();
     }
 }
