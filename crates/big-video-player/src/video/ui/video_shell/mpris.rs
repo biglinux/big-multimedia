@@ -159,12 +159,8 @@ impl VideoShell {
                     window.close();
                 }
             }
-            MprisCommand::OpenUri(uri) => {
-                let path = gio::File::for_uri(&uri)
-                    .path()
-                    .and_then(|path| path.to_str().map(str::to_owned))
-                    .unwrap_or(uri);
-                sender.input(VideoShellInput::OpenFiles(vec![path]));
+            MprisCommand::OpenUri(target) => {
+                sender.input(VideoShellInput::OpenFiles(vec![target]));
             }
             command => {
                 let Some(mpv) = self.mpv.borrow().clone() else {

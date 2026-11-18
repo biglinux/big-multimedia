@@ -10,21 +10,15 @@
 use std::cell::RefCell;
 use std::collections::hash_map::DefaultHasher;
 use std::hash::{Hash, Hasher};
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 use std::rc::Rc;
-use std::sync::atomic::{AtomicU64, Ordering};
 
 use adw::prelude::*;
-use big_app_kit::subprocess::{BigSubprocessOutputMode, BigSubprocessSpec};
-use big_media_runtime::media_probe::input_protocols;
 use big_relm4_components::display::texture::{pixbuf_to_rgba, rgba_to_texture};
 use gtk::{gdk, gdk_pixbuf, gio, glib};
 
 use super::BrowserState;
-use crate::media::playlist;
-
-/// Keeps partial frame names unique when two workers render the same clip.
-static PARTIAL_SEQ: AtomicU64 = AtomicU64::new(0);
+use crate::media::{playlist, thumbnail};
 
 /// Number of frames sampled across a clip.
 const SCRUB_FRAME_COUNT: usize = 8;
@@ -189,33 +183,6 @@ fn clip_key(path: &str) -> u64 {
     hasher.finish()
 }
 
-fn scrub_frame_spec(path: &str, time: f64, output_path: &str) -> BigSubprocessSpec {
-    BigSubprocessSpec::builder()
-        .program("ffmpeg")
-        .args(["-ss", &format!("{time:.2}")])
-        .args(input_protocols(path))
-        .args([
-            "-i",
-            path,
-            "-frames:v",
-            "1",
-            "-update",
-            "1",
-            "-vf",
-            // Even box: 4:2:0 output rounds an odd pad height down
-            // below the scaled frame and the filter fails. Square
-            // pixels for anamorphic sources.
-            "scale=240:136:force_original_aspect_ratio=decrease:force_divisible_by=2:reset_sar=1,\
-             pad=240:136:(ow-iw)/2:(oh-ih)/2",
-            "-y",
-            "--",
-            output_path,
-        ])
-        .stdout(BigSubprocessOutputMode::Null)
-        .stderr(BigSubprocessOutputMode::Null)
-        .build()
-}
-
 /// Generate (or reuse cached) scrub frames for `path`, returning the existing
 /// frame files in order. Blocking: call off the main thread.
 fn ensure_frames(path: &str) -> Vec<PathBuf> {
@@ -224,7 +191,6 @@ fn ensure_frames(path: &str) -> Vec<PathBuf> {
     };
     let clip_directory = root.join(format!("{:016x}", clip_key(path)));
     let _ = std::fs::create_dir_all(&clip_directory);
-    big_os_kit::storage::remove_stale_staging(&clip_directory);
 
     let duration = playlist::probe_metadata_cached(path)
         .and_then(|m| m.duration_secs)
@@ -234,37 +200,13 @@ fn ensure_frames(path: &str) -> Vec<PathBuf> {
     let mut frames = Vec::with_capacity(SCRUB_FRAME_COUNT);
     for frame_index in 0..SCRUB_FRAME_COUNT {
         let frame = clip_directory.join(format!("{frame_index}.jpg"));
-        // ffmpeg writes to a side name that is renamed into place only after a
-        // clean exit, so a killed run can't leave a broken frame cached forever.
-        if !frame.metadata().is_ok_and(|m| m.len() > 0) {
-            let time = sample_time_secs(frame_index, duration);
-            let partial = clip_directory.join(format!(
-                "{}{frame_index}-{}.jpg",
-                big_os_kit::storage::staging_prefix(),
-                PARTIAL_SEQ.fetch_add(1, Ordering::Relaxed)
-            ));
-            let Some(output_path) = partial.to_str() else {
-                continue;
-            };
-            let rendered = scrub_frame_spec(path, time, output_path).run();
-            publish_frame(
-                rendered.is_ok_and(|output| output.status.success()),
-                &partial,
-                &frame,
-            );
-        }
-        if frame.exists() {
+        if frame.exists()
+            || thumbnail::render_card_frame(path, sample_time_secs(frame_index, duration), &frame)
+        {
             frames.push(frame);
         }
     }
     frames
-}
-
-fn publish_frame(rendered: bool, partial: &Path, frame: &Path) {
-    let whole = rendered && partial.metadata().is_ok_and(|m| m.len() > 0);
-    if !whole || std::fs::rename(partial, frame).is_err() {
-        let _ = std::fs::remove_file(partial);
-    }
 }
 
 /// Sample time (seconds) for frame `i` of [`SCRUB_FRAME_COUNT`]: the center of each equal
@@ -280,36 +222,6 @@ fn sample_time_secs(frame_index: usize, duration: f64) -> f64 {
 #[cfg(test)]
 mod tests {
     use super::*;
-
-    #[test]
-    fn scrub_input_opens_only_files() {
-        let input = "/videos/concat:a|b.mp4";
-        let argv = scrub_frame_spec(input, 1.0, "/cache/0.jpg")
-            .try_resolved()
-            .unwrap()
-            .argv;
-        let input_at = argv.iter().position(|arg| arg == input).unwrap();
-        assert_eq!(
-            argv[input_at - 3..input_at],
-            ["-protocol_whitelist", "file,pipe", "-i"],
-            "{argv:?}"
-        );
-    }
-
-    /// A run that failed or timed out may have written part of the JPEG; only
-    /// a clean exit caches the frame.
-    #[test]
-    fn frame_cached_only_after_success() {
-        let dir = tempfile::tempdir().unwrap();
-        let (partial, frame) = (dir.path().join("partial.jpg"), dir.path().join("0.jpg"));
-        std::fs::write(&partial, b"truncated").unwrap();
-        publish_frame(false, &partial, &frame);
-        assert!(!frame.exists());
-        assert!(!partial.exists());
-        std::fs::write(&partial, b"whole").unwrap();
-        publish_frame(true, &partial, &frame);
-        assert_eq!(std::fs::read(&frame).unwrap(), b"whole");
-    }
 
     #[test]
     fn parse_card_index_accepts_prefixed_number_only() {

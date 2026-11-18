@@ -39,23 +39,6 @@ fn stop(cancel: &AtomicBool) -> Result<()> {
         Ok(())
     }
 }
-fn lock_db<'a>(
-    db: &'a DbHandle,
-    cancel: &AtomicBool,
-) -> Result<std::sync::MutexGuard<'a, Connection>> {
-    loop {
-        stop(cancel)?;
-        match db.try_lock() {
-            Ok(connection) => return Ok(connection),
-            Err(std::sync::TryLockError::WouldBlock) => {
-                std::thread::sleep(std::time::Duration::from_millis(5))
-            }
-            Err(std::sync::TryLockError::Poisoned(_)) => {
-                return Err(Error::internal("Library connection unavailable"));
-            }
-        }
-    }
-}
 /// Native paths only. Remote media is not "missing" and is not deletable here.
 pub fn availability(path: &str) -> Availability {
     if !Path::new(path).is_absolute() {
@@ -113,8 +96,11 @@ pub fn page(
     let high = if let Some(high) = upper {
         high
     } else {
-        lock_db(db, cancel)?
-            .query_row("SELECT COALESCE(MAX(id),0) FROM tracks", [], |r| r.get(0))?
+        super::lock_within(db, super::BACKGROUND_LOCK_WAIT, cancel)?.query_row(
+            "SELECT COALESCE(MAX(id),0) FROM tracks",
+            [],
+            |r| r.get(0),
+        )?
     };
     let mut cursor = after.max(0);
     let mut checked = 0;
@@ -123,7 +109,7 @@ pub fn page(
     while checked < MAX_CHECKED && entries.len() < MAX_SELECTED {
         stop(cancel)?;
         let batch = {
-            let conn = lock_db(db, cancel)?;
+            let conn = super::lock_within(db, super::BACKGROUND_LOCK_WAIT, cancel)?;
             let mut statement = conn.prepare(concat!(
                 "SELECT ",
                 queries::track_columns!(),
@@ -143,7 +129,7 @@ pub fn page(
             let status = availability(&track.file_path);
             if status != Availability::Present {
                 let (memberships, queued) = {
-                    let conn = lock_db(db, cancel)?;
+                    let conn = super::lock_within(db, super::BACKGROUND_LOCK_WAIT, cancel)?;
                     relations(&conn, track.id)?
                 };
                 entries.push(ReviewItem {
@@ -189,7 +175,7 @@ pub fn remove_reviewed(
     if ids.len() != selected.len() {
         return Err(Error::internal("Duplicate reviewed record"));
     }
-    let conn = lock_db(db, cancel)?;
+    let conn = super::lock_within(db, super::BACKGROUND_LOCK_WAIT, cancel)?;
     let tx = conn.unchecked_transaction()?;
     for item in selected {
         stop(cancel)?;

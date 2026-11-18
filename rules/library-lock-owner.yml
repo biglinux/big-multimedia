@@ -1,0 +1,11 @@
+id: library-lock-owner
+language: rust
+severity: error
+message: Wait for the library connection with big_media_data::db::lock_within
+note: crates/foundation/big-media-data/src/db/mod.rs owns how long a worker polls for the connection and how cancellation and a panicked holder end the wait.
+rule:
+  pattern: $MUTEX.try_lock()
+ignores:
+  - crates/foundation/big-media-data/src/db/mod.rs
+  # legacy: migrate to big_media_data::db::lock_within
+  - crates/big-audio-player/src/audio/ui/audio_shell/playlist_library_dialog_actions.rs

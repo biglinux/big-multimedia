@@ -1,6 +1,7 @@
 //! Thumbnail extraction (ffmpeg) with Freedesktop file-manager cache reuse.
 
 use std::collections::hash_map::DefaultHasher;
+use std::ffi::OsString;
 use std::hash::{Hash, Hasher};
 use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicU32, AtomicU64, Ordering};
@@ -77,11 +78,11 @@ fn duration_probe_spec(video_path: &str) -> BigSubprocessSpec {
         .build()
 }
 
-/// One frame of `video_path` at `seek_pos`, scaled to a card, into `output`.
-fn frame_spec(video_path: &str, seek_pos: &str, output: &Path) -> BigSubprocessSpec {
+/// One frame of `video_path` at `seek_secs`, scaled to a card, into `output`.
+fn card_frame_spec(video_path: &str, seek_secs: f64, output: &Path) -> BigSubprocessSpec {
     BigSubprocessSpec::builder()
         .program("ffmpeg")
-        .args(["-ss", seek_pos])
+        .args(["-ss", &format!("{seek_secs:.2}")])
         .args(input_protocols(video_path))
         .args([
             "-i",
@@ -91,10 +92,10 @@ fn frame_spec(video_path: &str, seek_pos: &str, output: &Path) -> BigSubprocessS
             "-update",
             "1",
             "-vf",
-            // reset_sar: PNG has no pixel aspect, so anamorphic frames need
-            // square pixels.
-            "scale=240:135:force_original_aspect_ratio=decrease:reset_sar=1,\
-             pad=240:135:(ow-iw)/2:(oh-ih)/2",
+            // Even box: 4:2:0 output rounds an odd pad height below the scaled
+            // frame and the filter fails. Square pixels for anamorphic sources.
+            "scale=240:136:force_original_aspect_ratio=decrease:force_divisible_by=2:reset_sar=1,\
+             pad=240:136:(ow-iw)/2:(oh-ih)/2",
             "-y",
             "--",
         ])
@@ -104,8 +105,40 @@ fn frame_spec(video_path: &str, seek_pos: &str, output: &Path) -> BigSubprocessS
         .build()
 }
 
-/// 30 % into the video, as `-ss` text; the cached duration saves an ffprobe.
-fn seek_position(video_path: &str) -> String {
+/// Renders one frame of `video_path` at `seek_secs`, fitted into a 240x136 card,
+/// into `target`, whose extension picks the image format. ffmpeg writes a staging
+/// file beside `target` that replaces it only after a clean exit with a non-empty
+/// file, so a killed or failed run never leaves a cached frame that `exists()`
+/// would serve. Blocking; returns whether `target` was written.
+pub fn render_card_frame(video_path: &str, seek_secs: f64, target: &Path) -> bool {
+    let (Some(directory), Some(extension)) = (target.parent(), target.extension()) else {
+        return false;
+    };
+    big_os_kit::storage::remove_stale_staging(directory);
+    let mut partial_name = OsString::from(format!(
+        "{}{}.",
+        big_os_kit::storage::staging_prefix(),
+        PARTIAL_SEQ.fetch_add(1, Ordering::Relaxed)
+    ));
+    partial_name.push(extension);
+    let partial = directory.join(partial_name);
+    let rendered = card_frame_spec(video_path, seek_secs, &partial)
+        .run()
+        .is_ok_and(|output| output.status.success());
+    publish_frame(rendered, &partial, target)
+}
+
+fn publish_frame(rendered: bool, partial: &Path, target: &Path) -> bool {
+    let whole = rendered && partial.metadata().is_ok_and(|m| m.len() > 0);
+    if whole && std::fs::rename(partial, target).is_ok() {
+        return true;
+    }
+    let _ = std::fs::remove_file(partial);
+    false
+}
+
+/// 30 % into the video; the cached duration saves an ffprobe.
+fn seek_position(video_path: &str) -> f64 {
     let cached = meta_cache()
         .lock()
         .ok()
@@ -117,7 +150,7 @@ fn seek_position(video_path: &str) -> String {
             .parse::<f64>()
             .ok()
     });
-    duration.map_or_else(|| "10".into(), |dur| format!("{:.1}", dur * 0.3))
+    duration.map_or(10.0, |dur| dur * 0.3)
 }
 
 /// Synchronous; semaphore-gated to cap concurrent ffmpeg children. `None`
@@ -138,28 +171,9 @@ fn get_or_generate_thumbnail(video_path: &str) -> Option<PathBuf> {
 
     acquire_slot(&ACTIVE_THUMBS, MAX_THUMBS);
 
-    let seek_pos = seek_position(video_path);
-
-    // ffmpeg writes beside the final name and the rename publishes it whole:
-    // a killed or concurrent run never leaves a truncated PNG that `exists()`
-    // would serve from then on.
-    let partial = cache.join(format!(
-        ".{hash}.{}.{}.png",
-        std::process::id(),
-        PARTIAL_SEQ.fetch_add(1, Ordering::Relaxed)
-    ));
-    let status = frame_spec(video_path, &seek_pos, &partial).run().ok();
-
+    let published = render_card_frame(video_path, seek_position(video_path), &thumb_path);
     release_slot(&ACTIVE_THUMBS);
-
-    let published = status.is_some_and(|s| s.status.success())
-        && std::fs::rename(&partial, &thumb_path).is_ok();
-    if published {
-        Some(thumb_path)
-    } else {
-        let _ = std::fs::remove_file(&partial);
-        None
-    }
+    published.then_some(thumb_path)
 }
 
 const MAX_TEXTURE_CACHE: usize = 96;
@@ -234,7 +248,7 @@ mod tests {
         let input = "/videos/concat:a|b.mp4";
         for spec in [
             duration_probe_spec(input),
-            frame_spec(input, "1.0", Path::new("/cache/.x.png")),
+            card_frame_spec(input, 1.0, Path::new("/cache/.x.png")),
         ] {
             let argv = spec.try_resolved().unwrap().argv;
             let whitelist_at = argv
@@ -244,6 +258,23 @@ mod tests {
             let input_at = argv.iter().position(|arg| arg == input).unwrap();
             assert!(whitelist_at < input_at, "{argv:?}");
         }
+    }
+
+    /// A run that failed or timed out may have written part of the image; only
+    /// a clean exit with bytes publishes it.
+    #[test]
+    fn frame_published_only_when_whole() {
+        let dir = tempfile::tempdir().unwrap();
+        let (partial, frame) = (dir.path().join("partial.jpg"), dir.path().join("0.jpg"));
+        std::fs::write(&partial, b"truncated").unwrap();
+        assert!(!publish_frame(false, &partial, &frame));
+        assert!(!frame.exists() && !partial.exists());
+        std::fs::write(&partial, b"").unwrap();
+        assert!(!publish_frame(true, &partial, &frame));
+        assert!(!frame.exists() && !partial.exists());
+        std::fs::write(&partial, b"whole").unwrap();
+        assert!(publish_frame(true, &partial, &frame));
+        assert_eq!(std::fs::read(&frame).unwrap(), b"whole");
     }
 
     #[test]

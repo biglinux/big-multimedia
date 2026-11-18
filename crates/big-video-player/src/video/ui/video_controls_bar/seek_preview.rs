@@ -155,17 +155,10 @@ pub(super) fn wire_neighbour_preview(button: &gtk::Button, mpv: &MpvSlot, step: 
         .css_classes(["seek-preview"])
         .build();
     popover.set_parent(button);
-    {
-        let popover = popover.downgrade();
-        button.connect_destroy(move |_| {
-            if let Some(popover) = popover.upgrade() {
-                popover.popdown();
-                if popover.parent().is_some() {
-                    popover.unparent();
-                }
-            }
-        });
-    }
+    big_relm4_components::feedback::popover_lifecycle::unparent_popover_on_parent_teardown(
+        button.upcast_ref(),
+        &popover,
+    );
     let thumb = gtk::Picture::builder()
         .width_request(THUMB_WIDTH)
         .height_request(THUMB_HEIGHT)

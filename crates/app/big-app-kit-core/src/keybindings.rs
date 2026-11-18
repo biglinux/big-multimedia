@@ -64,8 +64,59 @@ pub fn build_accel_map(
     resolve_accels(shortcuts, custom)
         .into_iter()
         .filter(|(shortcut, _)| !only_single_key || shortcut.single_key)
-        .map(|(shortcut, accel)| (accel, shortcut.action.to_string()))
+        .map(|(shortcut, accel)| (canonical_accel(&accel), shortcut.action.to_string()))
         .collect()
+}
+
+/// The modifiers a shortcut lookup tells apart.
+#[derive(Clone, Copy, Debug, Default)]
+pub struct AccelModifiers {
+    /// Control, written `<Ctrl>`.
+    pub ctrl: bool,
+    /// Shift, written `<Shift>`.
+    pub shift: bool,
+    /// Alt, written `<Alt>`.
+    pub alt: bool,
+}
+
+/// The accelerator text for `key` held with `modifiers`, in the one order every
+/// lookup uses: `<Ctrl>`, `<Shift>`, `<Alt>`, then the key name.
+#[must_use]
+pub fn accel_text(modifiers: AccelModifiers, key: &str) -> String {
+    let mut text = String::new();
+    if modifiers.ctrl {
+        text.push_str("<Ctrl>");
+    }
+    if modifiers.shift {
+        text.push_str("<Shift>");
+    }
+    if modifiers.alt {
+        text.push_str("<Alt>");
+    }
+    text.push_str(key);
+    text
+}
+
+/// `accel` in [`accel_text`]'s order. `<Control>` and `<Primary>` read as
+/// `<Ctrl>` and `<Mod1>` as `<Alt>`, in any case; other modifiers follow these.
+#[must_use]
+pub fn canonical_accel(accel: &str) -> String {
+    let mut modifiers = AccelModifiers::default();
+    let mut key = String::new();
+    let mut rest = accel;
+    while let Some(after) = rest.strip_prefix('<')
+        && let Some((name, tail)) = after.split_once('>')
+    {
+        match name.to_ascii_lowercase().as_str() {
+            "ctrl" | "control" | "primary" => modifiers.ctrl = true,
+            "shift" => modifiers.shift = true,
+            "alt" | "mod1" => modifiers.alt = true,
+            _ => key.push_str(&rest[..name.len() + 2]),
+        }
+        rest = tail;
+    }
+    key.push_str(rest);
+    accel_text(modifiers, &key)
 }
 
 /// Decode the serialized custom-overrides string into `(action, accel)` pairs.
@@ -165,6 +216,34 @@ mod tests {
         let map = build_accel_map(SHORTCUTS, "", true);
         assert_eq!(map.get("space"), Some(&"play-pause".to_string()));
         assert_eq!(map.get("<Ctrl>m"), None);
+    }
+
+    /// GTK accepts modifiers in any order and under several names; a press is
+    /// looked up as `<Ctrl><Shift><Alt>key`.
+    #[test]
+    fn build_accel_map_orders_modifiers() {
+        let map = build_accel_map(
+            SHORTCUTS,
+            "mute=<Shift><Control>m;play-pause=<alt><Primary>p",
+            false,
+        );
+        assert_eq!(map.get("<Ctrl><Shift>m"), Some(&"mute".to_string()));
+        assert_eq!(map.get("<Ctrl><Alt>p"), Some(&"play-pause".to_string()));
+    }
+
+    #[test]
+    fn canonical_accel_keeps_unknown_text() {
+        for (accel, canonical) in [
+            ("", ""),
+            ("space", "space"),
+            ("<Ctrl><Shift>z", "<Ctrl><Shift>z"),
+            ("<Mod1><SHIFT>F9", "<Shift><Alt>F9"),
+            ("<Super><Shift>k", "<Shift><Super>k"),
+            ("<Ctrl", "<Ctrl"),
+            ("<>x", "<>x"),
+        ] {
+            assert_eq!(canonical_accel(accel), canonical, "{accel}");
+        }
     }
 
     #[test]

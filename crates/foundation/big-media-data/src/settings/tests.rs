@@ -88,6 +88,60 @@ fn defaults_pass_the_schema() {
 }
 
 #[test]
+fn catalog_names_each_key_once() {
+    let mut names: Vec<&str> = keys::CATALOG.iter().map(|entry| entry.name).collect();
+    names.sort_unstable();
+    let count = names.len();
+    names.dedup();
+    assert_eq!(names.len(), count);
+}
+
+/// The key tables of docs/settings.md state each key's type and default.
+#[test]
+fn settings_doc_lists_the_catalog() {
+    let doc = include_str!(concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/../../../docs/settings.md"
+    ));
+    let tables = &doc[doc.find("## Keys").unwrap()..doc.find("## Environment variables").unwrap()];
+    let mut documented = HashMap::new();
+    for row in tables.lines().filter(|line| line.starts_with("| `")) {
+        let cells: Vec<&str> = row.split(" | ").collect();
+        let name = cells[0].trim_start_matches("| ").trim_matches('`');
+        let listed = (cells[1].to_owned(), cells[2].to_owned());
+        assert!(
+            documented.insert(name, listed).is_none(),
+            "{name} listed twice"
+        );
+    }
+    for entry in keys::CATALOG {
+        let value_type = if entry.choices.is_empty() {
+            match entry.value_type {
+                keys::ValueType::Bool => "bool".to_owned(),
+                keys::ValueType::Int => "integer".to_owned(),
+                keys::ValueType::Double => "number".to_owned(),
+                keys::ValueType::Text => "string".to_owned(),
+            }
+        } else {
+            let choices: Vec<String> = entry.choices.iter().map(|c| format!("`{c}`")).collect();
+            choices.join(", ")
+        };
+        let default = if entry.default.is_empty() {
+            "empty".to_owned()
+        } else {
+            format!("`{}`", entry.default)
+        };
+        assert_eq!(
+            documented.remove(entry.name),
+            Some((value_type, default)),
+            "{}",
+            entry.name
+        );
+    }
+    assert!(documented.is_empty(), "not in the catalog: {documented:?}");
+}
+
+#[test]
 fn settings_round_trip() {
     let settings = Settings::memory_only();
     settings.put_bool(keys::DEINTERLACE, true);
@@ -196,6 +250,7 @@ fn schema_types_tray_icon_and_render_mode() {
         ("tray-icon", "true", true),
         ("tray-icon", "false", true),
         ("tray-icon", "yes", false),
+        ("playlist-reorder-hint-seen", "yes", false),
         ("render-mode", "auto", true),
         ("render-mode", "gl", true),
         ("render-mode", "sw", true),

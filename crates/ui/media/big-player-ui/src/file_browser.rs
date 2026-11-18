@@ -17,6 +17,7 @@ use std::rc::Rc;
 use adw::prelude::*;
 use big_app_kit::actions::install_action;
 use big_relm4_components::feedback::context_popover::open_context_menu_on_keys;
+use big_relm4_components::feedback::popover_lifecycle::unparent_popover_on_parent_teardown;
 use big_relm4_components::feedback::popover_menu;
 use gtk::{gio, glib};
 use relm4::{Component, ComponentParts, ComponentSender};
@@ -353,28 +354,12 @@ fn install_library_menu(
         Some(add_selected_label),
         Some("files.add-selected-to-library"),
     );
-    // single reused context menu
-    // (gesture pops it up per right-click) parented on the list view.
-    // GtkListView does not unparent foreign children at dispose (it
-    // finalizes "with children left" and the popover leaks), so detach at
-    // the list's unrealize, while everything is still alive.
+    // GtkListView does not unparent foreign children at dispose, so the
+    // context menu parented on it is detached by the teardown owner.
     let popover = popover_menu::from_model(&context_menu);
     popover.set_parent(list_view);
     popover.set_has_arrow(false);
-    {
-        // `destroy`, not `unrealize`: a Files tab the user never opens never
-        // realizes, so unrealize never fires and the popover still leaked.
-        // `destroy` fires at the start of dispose with the widget valid.
-        let popover = popover.downgrade();
-        list_view.connect_destroy(move |_| {
-            if let Some(popover) = popover.upgrade() {
-                popover.popdown();
-                if popover.parent().is_some() {
-                    popover.unparent();
-                }
-            }
-        });
-    }
+    unparent_popover_on_parent_teardown(list_view.upcast_ref(), &popover);
 
     let action_group = gio::SimpleActionGroup::new();
     let dir_ref = current_dir.clone();

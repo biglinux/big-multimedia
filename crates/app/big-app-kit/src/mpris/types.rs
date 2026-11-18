@@ -57,7 +57,7 @@ pub enum MprisCommand {
         /// Absolute position in microseconds.
         position_us: i64,
     },
-    /// Load and play the given URI.
+    /// Load and play a local path, or an `http`/`https` URL as given.
     OpenUri(String),
     /// Set the volume, expressed as the MPRIS 0.0–1.0 ratio; always finite
     /// and at least zero.

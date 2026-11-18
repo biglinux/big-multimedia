@@ -127,17 +127,10 @@ pub(super) fn wire_video_input(
     let popover = big_relm4_components::feedback::popover_menu::from_model(&context_menu);
     popover.set_parent(main_overlay);
     popover.set_has_arrow(false);
-    {
-        let popover = popover.downgrade();
-        main_overlay.connect_destroy(move |_| {
-            if let Some(popover) = popover.upgrade() {
-                popover.popdown();
-                if popover.parent().is_some() {
-                    popover.unparent();
-                }
-            }
-        });
-    }
+    big_relm4_components::feedback::popover_lifecycle::unparent_popover_on_parent_teardown(
+        main_overlay.upcast_ref(),
+        &popover,
+    );
     let right_click = gtk::GestureClick::new();
     right_click.set_button(gtk::gdk::BUTTON_SECONDARY);
     {

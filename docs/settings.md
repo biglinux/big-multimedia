@@ -28,7 +28,7 @@ over a file another program changed after it was loaded.
   holds at most 65,536 bytes and no control characters.
 - The whole file is at most 1 MiB and must be a regular file, not a symlink.
 - The loader checks the keys typed in
-  [`schema.rs`](../crates/foundation/big-media-data/src/settings/schema.rs): a bool is `true` or
+  [`keys.rs`](../crates/foundation/big-media-data/src/settings/keys.rs): a bool is `true` or
   `false`, an integer fits 32 bits, a number is finite, and `render-mode`,
   `tv-resolution` and `noise-voice-sensitivity` take only the values listed.
   Spaces around such a value are ignored and dropped on the next save. Other
@@ -46,22 +46,17 @@ key it holds, defaults included, sorted by key; comments are not kept.
 ## Keys
 
 These tables list every key in the catalog the players share
-([`keys.rs`](../crates/foundation/big-media-data/src/settings/keys.rs),
-[`defaults.rs`](../crates/foundation/big-media-data/src/settings/defaults.rs) and
-`schema.rs`): its type and the default
-written into a new file. They list what the code reads and writes, not what each
+([`keys.rs`](../crates/foundation/big-media-data/src/settings/keys.rs)): its type
+and the default written into a new file; a unit test keeps them equal. They list what the code reads and writes, not what each
 value does on screen; the Notes column repeats only what the code states. Each
 player reads the keys it uses from its own file and keeps the rest.
-
-A key with no default reads as empty, `false` or `0` unless its Notes say
-otherwise.
 
 Restore Default Settings in the video player writes every default except the
 keys in `Settings::KEPT_ON_RESTORE`
 ([`store.rs`](../crates/foundation/big-media-data/src/settings/store.rs)): the
 library folders, keyboard shortcuts, volume, shuffle, voice and equalizer
-levels, the folders the browsers left off in, the one-time playlist hint and
-dialog sizes. Keys without a default stay as they are. The running player takes
+levels, the folders the browsers left off in, the one-time playlist hint,
+dialog sizes, and the library grouping and column widths. The running player takes
 the new values at once, except `render-mode`, `gpu-dumb-mode`,
 `custom-mpv-options` and `audio-output`, which apply when the player reopens.
 
@@ -91,7 +86,7 @@ the new values at once, except `render-mode`, `gpu-dumb-mode`,
 | `noise-model` | integer | `0` | `0` DeepFilterNet3, `1` DPDFNet-2. |
 | `noise-mono` | bool | `false` |  |
 | `noise-voice-only` | bool | `false` | Keep only what the denoiser hears as a voice. |
-| `noise-voice-sensitivity` | `1` to `5` | `3` |  |
+| `noise-voice-sensitivity` | `1`, `2`, `3`, `4`, `5` | `3` |  |
 
 ### Playback
 
@@ -120,7 +115,7 @@ the new values at once, except `render-mode`, `gpu-dumb-mode`,
 | `hwdec` | string | `auto-safe` |  |
 | `deinterlace` | bool | `false` |  |
 | `auto-window-resize` | bool | `true` |  |
-| `render-mode` | string | `auto` | `auto`, `gl` or `sw`. |
+| `render-mode` | `auto`, `gl`, `sw` | `auto` |  |
 | `render-profile` | string | `default` |  |
 | `gpu-dumb-mode` | bool | `false` |  |
 | `custom-mpv-options` | string | empty |  |
@@ -180,11 +175,11 @@ the new values at once, except `render-mode`, `gpu-dumb-mode`,
 | `playlist-folder-recursive` | bool | `false` |  |
 | `playlist-last-folder` | string | empty | The folder the video Files tab reopens at start. Empty, or a folder that no longer exists, opens the places. |
 | `playlist-reorder-hint-seen` | bool | `false` | The one-time "drag to reorder" line was closed. |
-| `playlist-column-widths` | string | not set |  |
+| `playlist-column-widths` | string | empty |  |
 | `video-library-folders` | string | empty | A JSON list; empty means Videos, Downloads and the home folder. |
 | `files-last-dir` | string | empty |  |
-| `library-grouping` | string | not set |  |
-| `library-column-widths` | string | not set |  |
+| `library-grouping` | string | empty |  |
+| `library-column-widths` | string | empty |  |
 | `radio-api-servers` | string | `de2.api.radio-browser.info,nl1.api.radio-browser.info,at1.api.radio-browser.info,de1.api.radio-browser.info` | Comma-separated Radio Browser hosts; empty finds them through DNS. |
 
 ### Video player controls and colors

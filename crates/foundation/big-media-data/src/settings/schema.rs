@@ -1,6 +1,8 @@
-//! Value types of the typed key catalog in `keys.rs`. Unknown keys are kept
-//! when they obey the line-oriented format; known numeric values must parse
-//! and be finite. `defaults_pass_the_schema` checks `defaults.rs` against it.
+//! Which stored values the key catalog in `keys.rs` accepts. Unknown keys are
+//! kept when they obey the line-oriented format; known numeric values must
+//! parse and be finite.
+
+use super::keys::{self, ValueType};
 
 /// Whether `value` may be stored for `key` as it is.
 pub(super) fn valid(key: &str, value: &str) -> bool {
@@ -29,94 +31,15 @@ pub(super) fn normalized<'a>(key: &str, value: &'a str) -> Option<&'a str> {
 
 /// Whether `typed` fits `key`'s type, or `None` for a text or unknown key.
 fn typed_value_valid(key: &str, typed: &str) -> Option<bool> {
-    let valid = match key {
-        "deinterlace"
-        | "auto-window-resize"
-        | "audio-normalize"
-        | "noise-mono"
-        | "noise-voice-only"
-        | "audio-pitch-correction"
-        | "sub-bold"
-        | "sub-scale-with-window"
-        | "sub-ass-scale-with-window"
-        | "sub-gray"
-        | "sub-filter-sdh"
-        | "sub-filter-sdh-harder"
-        | "resume-playback"
-        | "keep-open-pause"
-        | "hdr-compute-peak"
-        | "cache"
-        | "cache-pause"
-        | "cache-on-disk"
-        | "screenshot-tag-colorspace"
-        | "screenshot-high-bit-depth"
-        | "gpu-dumb-mode"
-        | "seekbar-thumbnail"
-        | "playlist-folder-recursive"
-        | "playlist-sort-desc"
-        | "playlist-shuffle"
-        | "ui-osd-shadow"
-        | "ui-button-custom"
-        | "ui-window-radius-custom"
-        | "ui-window-btn-custom-size"
-        | "ui-show-volume"
-        | "ui-show-speed"
-        | "ui-show-voice"
-        | "ui-show-play"
-        | "ui-show-prev"
-        | "ui-show-next"
-        | "ui-show-subtitle"
-        | "ui-show-audio-track"
-        | "ui-show-fullscreen"
-        | "ui-show-tv"
-        | "ui-show-pin"
-        | "ui-show-open"
-        | "ui-show-playlist"
-        | "ui-show-menu"
-        | "gapless-audio"
-        | "audio-high-contrast"
-        | "taskbar-progress"
-        | "tray-icon"
-        | "audio-album-art-bg" => matches!(typed, "true" | "false"),
-        "appearance-window-width"
-        | "appearance-window-height"
-        | "audio-appearance-window-width"
-        | "audio-appearance-window-height"
-        | "volume-max"
-        | "subtitle-font-size"
-        | "sub-margin-y"
-        | "noise-model"
-        | "target-peak"
-        | "cache-secs"
-        | "screenshot-png-compression"
-        | "icc-intent"
-        | "ui-controls-radius"
-        | "ui-controls-margin-bottom"
-        | "ui-controls-margin-side"
-        | "ui-controls-padding-top"
-        | "ui-controls-padding-bottom"
-        | "ui-controls-padding-left"
-        | "ui-controls-padding-right"
-        | "ui-button-size"
-        | "ui-button-radius"
-        | "ui-window-radius"
-        | "audio-volume"
-        | "sleep-timer-minutes" => typed.parse::<i32>().is_ok(),
-        "render-mode" => matches!(typed, "auto" | "gl" | "sw"),
-        "tv-resolution" => matches!(typed, "0" | "720" | "1080" | "1440" | "2160"),
-        "noise-voice-sensitivity" => matches!(typed, "1" | "2" | "3" | "4" | "5"),
-        "volume"
-        | "sub-border-size"
-        | "sub-shadow-offset"
-        | "sub-gauss"
-        | "noise-strength"
-        | "shader-fsr-sharpness"
-        | "shader-cas-sharpening"
-        | "demuxer-readahead-secs"
-        | "ui-bg-opacity"
-        | "ui-menu-opacity"
-        | "replaygain-preamp" => typed.parse::<f64>().is_ok_and(f64::is_finite),
-        _ => return None,
+    let entry = keys::entry(key)?;
+    if !entry.choices.is_empty() {
+        return Some(entry.choices.contains(&typed));
+    }
+    let valid = match entry.value_type {
+        ValueType::Bool => matches!(typed, "true" | "false"),
+        ValueType::Int => typed.parse::<i32>().is_ok(),
+        ValueType::Double => typed.parse::<f64>().is_ok_and(f64::is_finite),
+        ValueType::Text => return None,
     };
     Some(valid)
 }

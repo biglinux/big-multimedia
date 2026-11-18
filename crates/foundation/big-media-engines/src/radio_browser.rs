@@ -5,6 +5,7 @@
 //! payload themselves and pass it to `parse_stations_json` or
 //! `parse_stations_json_filtered`.
 
+use big_os_kit::url::is_http_url;
 use log::warn;
 
 /// One station row as `(name, url, country, tags, favicon)`.
@@ -97,12 +98,6 @@ fn parse_stations_inner(body: &str, filter_spam: bool) -> Vec<RadioBrowserEntry>
             Some((name, url, country, tags, favicon))
         })
         .collect()
-}
-
-fn is_http_url(url: &str) -> bool {
-    url.split_once("://").is_some_and(|(scheme, _)| {
-        scheme.eq_ignore_ascii_case("http") || scheme.eq_ignore_ascii_case("https")
-    })
 }
 
 /// Best-effort detection of the user's ISO 3166-1 alpha-2 country code from locale env vars.

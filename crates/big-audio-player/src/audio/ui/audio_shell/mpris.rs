@@ -150,13 +150,8 @@ impl AudioShell {
                     mpv.seek_absolute_async(target);
                 }
             }
-            MprisCommand::OpenUri(uri) => {
+            MprisCommand::OpenUri(path) => {
                 self.cancel_pending_opens();
-                let file = gio::File::for_uri(&uri);
-                let path = file
-                    .path()
-                    .and_then(|p| p.to_str().map(str::to_owned))
-                    .unwrap_or(uri);
                 self.snapshot_queue();
                 self.podcast_mode = false;
                 self.queue
