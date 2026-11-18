@@ -116,6 +116,46 @@ struct ExportedPlayer {
     publisher: Rc<Publisher>,
 }
 
+impl ExportedPlayer {
+    /// Export both objects on `connection`, take `bus_name` and publish the
+    /// first state; the connection is closed when exporting fails.
+    fn start(
+        connection: gio::DBusConnection,
+        bus_name: &str,
+        desktop_id: &str,
+        command_cb: CommandCallback,
+        state_cb: StateCallback,
+        taskbar: Rc<Cell<bool>>,
+    ) -> Result<Self, String> {
+        let command_cb = Arc::new(command_cb);
+        let state_cb = Arc::new(state_cb);
+        let exported = export_root(&connection, command_cb.clone(), desktop_id)
+            .and_then(|()| export_player(&connection, &command_cb, &state_cb));
+        if let Err(e) = exported {
+            connection.close(gio::Cancellable::NONE, |_| {});
+            return Err(e);
+        }
+        let owner_id = gio::bus_own_name_on_connection(
+            &connection,
+            bus_name,
+            gio::BusNameOwnerFlags::NONE,
+            |_, _| {},
+            |_, _| {},
+        );
+        let publisher = Rc::new(Publisher::new(
+            connection,
+            state_cb,
+            format!("application://{desktop_id}.desktop"),
+            taskbar,
+        ));
+        publisher.sync();
+        Ok(Self {
+            owner_id: Some(owner_id),
+            publisher,
+        })
+    }
+}
+
 impl Mpris {
     /// Build the MPRIS service under `bus_name` for the app whose desktop
     /// entry is `desktop_id`. The bus connection is made in the background; a
@@ -143,37 +183,20 @@ impl Mpris {
             let Some(slot) = slot.upgrade() else {
                 return;
             };
-            let command_cb = Arc::new(command_cb);
-            let state_cb = Arc::new(state_cb);
-            let exported = export_root(&connection, command_cb.clone(), &desktop_id)
-                .and_then(|()| export_player(&connection, &command_cb, &state_cb));
-            if let Err(e) = exported {
-                warn!("MPRIS: failed to export {e}");
-                connection.close(gio::Cancellable::NONE, |_| {});
-                return;
-            }
-
-            let owner_id = gio::bus_own_name_on_connection(
-                &connection,
-                &bus_name,
-                gio::BusNameOwnerFlags::NONE,
-                |_, _| {},
-                |_, _| {},
-            );
-
-            let publisher = Rc::new(Publisher::new(
+            match ExportedPlayer::start(
                 connection,
+                &bus_name,
+                &desktop_id,
+                command_cb,
                 state_cb,
-                format!("application://{desktop_id}.desktop"),
                 publisher_taskbar,
-            ));
-            publisher.sync();
-
-            info!("MPRIS2 service started on {bus_name}");
-            let _ = slot.set(ExportedPlayer {
-                owner_id: Some(owner_id),
-                publisher,
-            });
+            ) {
+                Ok(player) => {
+                    info!("MPRIS2 service started on {bus_name}");
+                    let _ = slot.set(player);
+                }
+                Err(e) => warn!("MPRIS: failed to export {e}"),
+            }
         });
         Self {
             exported,
