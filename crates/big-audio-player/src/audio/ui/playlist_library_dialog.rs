@@ -18,7 +18,7 @@ use adw::prelude::*;
 use big_relm4_components::input::button_content::{BigButtonContentSpec, build_button};
 use big_relm4_components::layout::{
     dialog_footer::{BigDialogFooter, BigDialogFooterSpec},
-    dialog_page::BigDialogPage,
+    dialog_page::{BigDialogPage, focus_when_shown},
     preferences::BigPreferencesGroupSpec,
     sidebar_dialog::{BigSidebarDialog, BigSidebarDialogSpec},
     widget_container::clear_box_children,
@@ -387,7 +387,7 @@ fn prompt_name(
     prompt_spec: &NamePromptSpec,
     on_accept: impl Fn(String) + 'static,
 ) {
-    let dialog = adw::Dialog::builder()
+    let dialog = big_gtk_kit::dialog::Dialog::builder()
         .title(i18n(prompt_spec.heading))
         .content_width(420)
         .content_height(240)
@@ -447,22 +447,15 @@ fn prompt_name(
         }
     });
 
-    let entry_for_focus = entry.clone();
-    dialog.connect_map(move |_| {
-        let entry_for_idle = entry_for_focus.clone();
-        glib::idle_add_local_once(move || {
-            entry_for_idle.grab_focus();
-            let (start, end) = name_prompt_focus_selection();
-            entry_for_idle.select_region(start, end);
-        });
-    });
+    let (start, end) = name_prompt_focus_selection();
+    focus_when_shown(&entry, start, end);
     dialog.present(parent);
 }
 
 /// Present a destructive confirmation; `on_confirm` fires on accept.
 fn confirm_delete(parent: Option<&adw::Window>, name: &str, on_confirm: impl Fn() + 'static) {
     let prompt_spec = delete_playlist_prompt_spec(name);
-    let dialog = adw::Dialog::builder()
+    let dialog = big_gtk_kit::dialog::Dialog::builder()
         .title(i18n(prompt_spec.heading))
         .content_width(420)
         .content_height(220)

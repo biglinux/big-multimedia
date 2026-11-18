@@ -27,7 +27,7 @@ use big_media_data::library::podcast::{
 };
 use big_relm4_components::layout::{
     dialog_footer::{BigDialogFooter, BigDialogFooterSpec},
-    dialog_page::BigDialogPage,
+    dialog_page::{BigDialogPage, focus_when_shown},
     preferences::BigPreferencesGroupSpec,
 };
 
@@ -550,7 +550,7 @@ fn present_add_feed_dialog(root: &gtk::Box, sender: &ComponentSender<PodcastPane
         return;
     };
 
-    let dialog = adw::Dialog::builder()
+    let dialog = big_gtk_kit::dialog::Dialog::builder()
         .title(i18n("Add RSS Feed"))
         .content_width(440)
         .content_height(260)
@@ -611,14 +611,7 @@ fn present_add_feed_dialog(root: &gtk::Box, sender: &ComponentSender<PodcastPane
         }
     });
 
-    dialog.connect_map(move |_| {
-        let feed_url_row = feed_url_row.downgrade();
-        gtk::glib::idle_add_local_once(move || {
-            if let Some(feed_url_row) = feed_url_row.upgrade() {
-                feed_url_row.grab_focus();
-            }
-        });
-    });
+    focus_when_shown(&feed_url_row, 0, -1);
     dialog.present(Some(&window));
 }
 

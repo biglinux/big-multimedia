@@ -250,7 +250,7 @@ impl VideoShell {
         section.append(&description);
         section.append(spin_set.root());
 
-        let dialog = adw::Dialog::builder()
+        let dialog = big_gtk_kit::dialog::Dialog::builder()
             .title(i18n("Edit Cut"))
             .content_width(380)
             .content_height(340)

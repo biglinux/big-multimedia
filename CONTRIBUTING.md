@@ -129,6 +129,12 @@ owns a window reference independently of Relm4;
   relation: an explicit label alone does not name an empty dropdown.
 - Password rows go through `big_gtk_kit::password::password_row`; libadwaita
   1.9 otherwise keeps the buffer, and the password in it, alive after the row.
+- Dialogs and alerts come from `big_gtk_kit::dialog::Dialog` and
+  `big_gtk_kit::alert::Alert`, which present a closed one again: libadwaita
+  1.9 keeps three breakpoints for every dialog it presents. A handler
+  connected through their deref, other than an alert's `response`, stays for
+  the next opening: connect `closed` through their own method and other
+  signals on the content, as `focus_when_shown` does for an entry.
 - Audio source pages use `gtk::Stack`; libadwaita 1.9 `ViewStack` retains its
   transition animation after teardown.
 - GMenu sections go through `big_gtk_kit::menu::append_shared_section`: GTK

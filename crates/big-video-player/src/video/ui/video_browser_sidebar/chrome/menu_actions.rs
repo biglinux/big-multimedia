@@ -208,7 +208,7 @@ fn save_playlist(state: &Rc<BrowserState>) {
                             "Playlist export could not be confirmed. Existing files were kept; choose a new name and retry.",
                         )
                     };
-                    let alert = adw::AlertDialog::builder()
+                    let alert = big_gtk_kit::alert::Alert::builder()
                         .heading(i18n("Playlist export"))
                         .body(message)
                         .build();

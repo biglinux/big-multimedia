@@ -38,7 +38,7 @@ fn media_detail_row(title: &str, value: &str, lines: &BigDetailLines) -> adw::Ac
 
 /// Present the media-details dialog over `parent`.
 pub fn show_video_media_details_dialog(parent: &impl IsA<gtk::Widget>, mpv: &Arc<MpvBackend>) {
-    let dialog = adw::Dialog::builder()
+    let dialog = big_gtk_kit::dialog::Dialog::builder()
         .title(i18n("Media Information"))
         .content_width(500)
         .content_height(500)

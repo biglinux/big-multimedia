@@ -449,7 +449,7 @@ fn recording_metadata_has_content(is_file: bool, byte_len: u64) -> bool {
 
 fn present_recording_saved_dialog(parent: &impl IsA<gtk::Widget>, path: PathBuf) {
     let saved_paths = recording_saved_paths(&path);
-    let dialog = adw::Dialog::builder()
+    let dialog = big_gtk_kit::dialog::Dialog::builder()
         .title(i18n("Recording saved"))
         .content_width(460)
         .content_height(340)

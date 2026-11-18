@@ -56,7 +56,7 @@ pub fn present_providers_dialog(
             move || retry_store.borrow().retry_save(),
         ));
 
-    let dialog = adw::Dialog::builder()
+    let dialog = big_gtk_kit::dialog::Dialog::builder()
         .title(i18n("IPTV Providers"))
         .content_width(600)
         .content_height(480)
@@ -72,7 +72,7 @@ pub fn present_providers_dialog(
         };
         let list = list_weak.clone();
         let store = store_for_add.clone();
-        show_provider_form(Some(&parent), IptvProvider::default(), move |p| {
+        show_provider_form(Some(parent.dialog()), IptvProvider::default(), move |p| {
             store.borrow_mut().add(p);
             if let Some(list) = list.upgrade() {
                 rebuild_list(&list, &store);
@@ -158,7 +158,7 @@ fn show_provider_form<F>(parent: Option<&adw::Dialog>, initial: IptvProvider, on
 where
     F: Fn(IptvProvider) + 'static,
 {
-    let form = adw::Dialog::builder()
+    let form = big_gtk_kit::dialog::Dialog::builder()
         .title(i18n("IPTV Provider"))
         .content_width(540)
         .content_height(520)

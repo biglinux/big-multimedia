@@ -842,7 +842,7 @@ pub fn present_tv_dialog(
     media: impl Fn() -> Option<TvMedia> + 'static,
     on_started: impl Fn() + 'static,
 ) {
-    let dialog = adw::Dialog::builder()
+    let dialog = big_gtk_kit::dialog::Dialog::builder()
         .title(i18n("Play on a TV"))
         .content_width(480)
         // Fixed: the page grows as TVs are found, and a dialog sized to its
