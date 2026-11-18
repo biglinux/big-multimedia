@@ -10,7 +10,7 @@ use std::path::Path;
 use std::sync::PoisonError;
 
 use std::sync::atomic::{AtomicBool, AtomicUsize, Ordering};
-use std::sync::{Arc, MutexGuard, TryLockError};
+use std::sync::{Arc, MutexGuard};
 /// Live counters contain no media names and need no UI-thread mutex.
 #[derive(Debug, Default)]
 pub struct ScanControl {
@@ -75,18 +75,14 @@ fn lock_db<'a>(
     db: &'a DbHandle,
     cancelled: &AtomicBool,
 ) -> Result<MutexGuard<'a, rusqlite::Connection>, String> {
-    loop {
-        if cancelled.load(Ordering::Acquire) {
-            return Err("Scan cancelled".into());
+    crate::db::lock_within(db, crate::db::BACKGROUND_LOCK_WAIT, cancelled).map_err(|error| {
+        match error {
+            big_media_runtime::Error::Cancelled => "Scan cancelled",
+            big_media_runtime::Error::Io(_) => "Library busy",
+            _ => "Library connection failed",
         }
-        match db.try_lock() {
-            Ok(conn) => return Ok(conn),
-            Err(TryLockError::WouldBlock) => {
-                std::thread::sleep(std::time::Duration::from_millis(5));
-            }
-            Err(TryLockError::Poisoned(_)) => return Err("Library connection failed".into()),
-        }
-    }
+        .to_owned()
+    })
 }
 #[cfg(test)]
 pub(crate) fn scan_folder_blocking(db: &DbHandle, folder: &str) -> Result<(usize, usize), String> {
