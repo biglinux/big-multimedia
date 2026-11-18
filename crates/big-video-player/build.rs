@@ -15,6 +15,7 @@ fn main() -> Result<(), Box<dyn Error>> {
     // big-os-kit's jemalloc shim replaces the C allocator for the whole process;
     // export it so libraries opened later with dlopen (GPU drivers, GIO modules)
     // bind to it instead of glibc's.
+    // allow-noisy-log: cargo build directives, not log output.
     for symbol in env::var("DEP_BIG_OS_KIT_ALLOCATOR_SYMBOLS")?.split(',') {
         println!("cargo::rustc-link-arg-bins=-Wl,--export-dynamic-symbol={symbol}");
     }
