@@ -1,4 +1,5 @@
 use super::*;
+use crate::media::iptv::MAX_PLAYLIST_ENTRIES;
 use big_media_components::surface::toggle_surface_fullscreened;
 
 impl VideoShell {
@@ -271,11 +272,8 @@ impl VideoShell {
                 .flatten();
             // Nothing playable still answers, so a launch that skipped the
             // welcome screen can bring it back.
-            let (entries, start, folder) = resolved.unwrap_or_default();
             sender.input(VideoShellInput::PlaylistResolved {
-                entries,
-                start,
-                folder,
+                list: resolved.unwrap_or_default(),
                 generation,
             });
         });
@@ -283,20 +281,21 @@ impl VideoShell {
 
     /// Apply a resolved open request on the main thread: load the playlist into
     /// mpv and push the listing to the sidebar.
-    pub(super) fn apply_open(
-        &mut self,
-        entries: Vec<String>,
-        start: usize,
-        folder: Option<String>,
-    ) {
-        if entries.is_empty() || self.report_missing_engine() {
+    pub(super) fn apply_open(&mut self, list: OpenedList) {
+        if list.entries.is_empty() || self.report_missing_engine() {
             self.reveal_pending_welcome();
             return;
         }
-        self.load_playlist(&entries, start);
+        if list.truncated {
+            self.notify(
+                &i18n("Only the first {} entries of the playlist were loaded.")
+                    .replace("{}", &MAX_PLAYLIST_ENTRIES.to_string()),
+            );
+        }
+        self.load_playlist(&list.entries, list.start);
         self.playlist.emit(VideoBrowserSidebarInput::SetPlaylist {
-            paths: entries,
-            folder,
+            paths: list.entries,
+            folder: list.folder,
         });
     }
 
@@ -422,6 +421,7 @@ impl VideoShell {
                     self.load_playlist(&paths, start);
                 }
             }
+            VideoBrowserSidebarOutput::OpenPlaylist(path) => self.open_files(&[path], sender),
             VideoBrowserSidebarOutput::Enqueue(paths) => self.enqueue_paths(&paths),
             VideoBrowserSidebarOutput::PlayNext { path, now } => self.play_next(path, now),
             VideoBrowserSidebarOutput::MoveEntry { path, to } => self.move_entry(&path, to),
@@ -784,13 +784,33 @@ impl VideoShell {
     }
 }
 
-/// Resolve an open request to `(entries, start, folder)` off the main thread.
-/// Pure + `Send` (captures only `String`s); the blocking folder scan / playlist
-/// parse run here. Returns `None` when nothing playable was found.
+/// What an open request resolved to.
+#[derive(Debug, Default, PartialEq, Eq)]
+pub struct OpenedList {
+    pub entries: Vec<String>,
+    pub start: usize,
+    /// The folder the sidebar browses, for a single opened file.
+    pub folder: Option<String>,
+    /// The opened playlist file listed more entries than were kept.
+    pub truncated: bool,
+}
+
+impl OpenedList {
+    fn from_entries(entries: Vec<String>) -> Self {
+        Self {
+            entries,
+            ..Self::default()
+        }
+    }
+}
+
+/// Resolve an open request off the main thread. Pure + `Send` (captures only
+/// `String`s); the blocking folder scan / playlist parse run here. Returns
+/// `None` when nothing playable was found.
 fn resolve_open_files(
     paths: Vec<String>,
     (sort_key, sort_desc): &(String, bool),
-) -> Option<(Vec<String>, usize, Option<String>)> {
+) -> Option<OpenedList> {
     use big_media_runtime::media::playlist;
 
     if paths.is_empty() {
@@ -801,15 +821,19 @@ fn resolve_open_files(
     // played, not read as a file: every IPTV channel was one.
     if paths.len() == 1 && !is_remote_uri(&paths[0]) && playlist::is_playlist_file(&paths[0]) {
         let parsed = playlist::parse_playlist_file(&paths[0]);
-        if parsed.is_empty() {
+        if parsed.entries.is_empty() {
             return None;
         }
-        return Some((parsed, 0, None));
+        return Some(OpenedList {
+            truncated: parsed.truncated,
+            ..OpenedList::from_entries(parsed.entries)
+        });
     }
 
     if paths.len() == 1 && !is_remote_uri(&paths[0]) {
         // Single local file → scan its folder, start at this file, and show that
         // folder as the sidebar's browse context.
+        let alone = OpenedList::from_entries(vec![paths[0].clone()]);
         return match std::path::Path::new(&paths[0]).parent() {
             Some(parent) => {
                 let mut folder = playlist::scan_folder_flat(parent);
@@ -817,17 +841,22 @@ fn resolve_open_files(
                 // A file the scan does not list (an extension it lacks) plays
                 // alone: starting at 0 played the folder's first video instead.
                 match folder.iter().position(|p| p == &paths[0]) {
-                    Some(pos) => Some((folder, pos, Some(parent.to_string_lossy().into_owned()))),
-                    None => Some((vec![paths[0].clone()], 0, None)),
+                    Some(start) => Some(OpenedList {
+                        entries: folder,
+                        start,
+                        folder: Some(parent.to_string_lossy().into_owned()),
+                        truncated: false,
+                    }),
+                    None => Some(alone),
                 }
             }
-            None => Some((vec![paths[0].clone()], 0, None)),
+            None => Some(alone),
         };
     }
 
     if paths.len() == 1 {
         // Single remote URI / stream → just that entry.
-        return Some((vec![paths[0].clone()], 0, None));
+        return Some(OpenedList::from_entries(paths));
     }
 
     let media: Vec<String> = paths
@@ -838,7 +867,7 @@ fn resolve_open_files(
     if media.is_empty() {
         return None;
     }
-    Some((media, 0, None))
+    Some(OpenedList::from_entries(media))
 }
 
 /// Streams and discs: what mpv opens by URL, never a path on disk. Schemes

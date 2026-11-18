@@ -210,7 +210,7 @@ mod tests {
                 "format",
                 "Format",
                 "document-properties-symbolic",
-                BrowserNodeKind::File,
+                BrowserNodeKind::Format,
                 "format",
             ),
         ];
