@@ -55,8 +55,9 @@ pub fn playback_time(secs: f64) -> String {
 /// Parse a user-entered time string into seconds.
 ///
 /// Accepts plain decimal seconds (`"123.5"`), `M:SS` form (`"2:30"`), and
-/// `H:MM:SS` form (`"1:02:03"`). Negative input is clamped to zero. Any other
-/// shape returns [`None`].
+/// `H:MM:SS` form (`"1:02:03"`). Negative plain seconds clamp to zero. Clock
+/// fields take digits only, with seconds (and minutes after hours) below 60;
+/// non-finite numbers and any other shape return [`None`].
 #[must_use]
 pub fn parse_playback_time(input: &str) -> Option<f64> {
     let input = input.trim();
@@ -64,23 +65,40 @@ pub fn parse_playback_time(input: &str) -> Option<f64> {
         return None;
     }
     if let Ok(secs) = input.parse::<f64>() {
-        return Some(secs.max(0.0));
+        return secs.is_finite().then(|| secs.max(0.0));
     }
     let parts: Vec<&str> = input.split(':').collect();
-    match parts.len() {
-        2 => {
-            let minutes = parts[0].parse::<f64>().ok()?;
-            let seconds = parts[1].parse::<f64>().ok()?;
-            Some((minutes * 60.0 + seconds).max(0.0))
+    match parts.as_slice() {
+        [minutes, seconds] => {
+            Some(f64::from(clock_count(minutes)?) * 60.0 + clock_seconds(seconds)?)
         }
-        3 => {
-            let hours = parts[0].parse::<f64>().ok()?;
-            let minutes = parts[1].parse::<f64>().ok()?;
-            let seconds = parts[2].parse::<f64>().ok()?;
-            Some((hours * 3600.0 + minutes * 60.0 + seconds).max(0.0))
+        [hours, minutes, seconds] => {
+            let minutes = clock_count(minutes).filter(|minutes| *minutes < 60)?;
+            Some(
+                f64::from(clock_count(hours)?) * 3600.0
+                    + f64::from(minutes) * 60.0
+                    + clock_seconds(seconds)?,
+            )
         }
         _ => None,
     }
+}
+
+fn clock_count(field: &str) -> Option<u32> {
+    if field.is_empty() || !field.bytes().all(|byte| byte.is_ascii_digit()) {
+        return None;
+    }
+    field.parse().ok()
+}
+
+fn clock_seconds(field: &str) -> Option<f64> {
+    if !field
+        .bytes()
+        .all(|byte| byte.is_ascii_digit() || byte == b'.')
+    {
+        return None;
+    }
+    field.parse::<f64>().ok().filter(|seconds| *seconds < 60.0)
 }
 
 /// Format a countdown label as zero-padded `MM:SS`.
@@ -137,6 +155,25 @@ mod tests {
         assert_eq!(parse_playback_time(""), None);
         assert_eq!(parse_playback_time(" 2:30 "), Some(150.0));
         assert_eq!(parse_playback_time("   "), None);
+    }
+
+    /// Oracle: `playback_time` is the inverse for whole seconds up to 100 hours.
+    #[test]
+    fn parse_inverts_playback_time() {
+        for secs in 0..360_000_u32 {
+            let text = playback_time(f64::from(secs));
+            assert_eq!(parse_playback_time(&text), Some(f64::from(secs)), "{text}");
+        }
+    }
+
+    #[test]
+    fn rejects_malformed_times() {
+        for input in [
+            "inf", "-inf", "1e400", "NaN", "1:99", "1.5:30", "1:60:00", "-1:30", "1:-30", "1:3e1",
+            "1::30", ":30",
+        ] {
+            assert_eq!(parse_playback_time(input), None, "{input}");
+        }
     }
 
     #[test]
