@@ -187,22 +187,34 @@ pub fn encode_query_value(value: &str) -> String {
     out
 }
 
-/// Return the final URL path segment when it looks like a filename.
+/// Longest name [`filename_from_url_path`] returns, leaving room under the
+/// usual 255-byte limit for a suffix the caller adds.
+const MAX_FILENAME_BYTES: usize = 200;
+/// Longest final extension that truncation keeps.
+const MAX_KEPT_EXTENSION_BYTES: usize = 16;
+
+/// Return the final URL path segment when it looks like a filename, else
+/// `fallback_filename`. A segment without a `.`, with a leading `.` or with a
+/// NUL is refused; the name is cut to 200 bytes, keeping a short extension.
 #[must_use]
 pub fn filename_from_url_path(url: &str, fallback_filename: &str) -> String {
-    uri_path(url)
-        .rsplit('/')
-        .next()
-        .and_then(|segment| {
-            let name = segment.split('?').next().unwrap_or(segment);
-            // "." and ".." would escape or alias the download directory.
-            if !name.contains('.') || name.trim_matches('.').is_empty() {
-                None
-            } else {
-                Some(name.to_string())
-            }
-        })
-        .unwrap_or_else(|| fallback_filename.to_string())
+    let segment = uri_path(url).rsplit('/').next().unwrap_or_default();
+    // A leading dot hides the file or aliases "." and "..".
+    let name = if segment.contains('.') && !segment.starts_with('.') && !segment.contains('\0') {
+        segment
+    } else {
+        fallback_filename
+    };
+    if name.len() <= MAX_FILENAME_BYTES {
+        return name.to_string();
+    }
+    let extension = name
+        .rfind('.')
+        .map(|dot| &name[dot..])
+        .filter(|extension| extension.len() <= MAX_KEPT_EXTENSION_BYTES)
+        .unwrap_or_default();
+    let stem_end = name.floor_char_boundary(MAX_FILENAME_BYTES - extension.len());
+    format!("{}{extension}", &name[..stem_end])
 }
 
 #[cfg(test)]
@@ -269,6 +281,52 @@ mod tests {
             redact_url("http://host/get.php?password=&type=m3u"),
             "http://host/get.php?password=&type=m3u"
         );
+    }
+
+    #[test]
+    fn long_filename_keeps_extension() {
+        let url = format!("https://h/{}.mp3", "a".repeat(300));
+        assert_eq!(
+            filename_from_url_path(&url, "fallback.mp3"),
+            format!("{}.mp3", "a".repeat(196))
+        );
+        // 196 bytes left for the stem hold 65 three-byte characters.
+        let fallback = format!("{}.mp3", "東".repeat(100));
+        assert_eq!(
+            filename_from_url_path("https://h/stream", &fallback),
+            format!("{}.mp3", "東".repeat(65))
+        );
+        assert_eq!(
+            filename_from_url_path("https://h/.hidden.mp3", "fallback.mp3"),
+            "fallback.mp3"
+        );
+    }
+
+    #[test]
+    fn url_filename_is_one_short_component() {
+        let pool = [
+            'a', 'É', '東', '🎵', '.', '/', '\0', ' ', '%', '?', '#', '\u{301}',
+        ];
+        let mut state = 0x9e37_79b9_7f4a_7c15_u64;
+        let mut next = move || {
+            state ^= state << 13;
+            state ^= state >> 7;
+            state ^= state << 17;
+            usize::try_from(state % 1024).unwrap()
+        };
+        for _ in 0..5000 {
+            let length = next() % 400;
+            let path: String = (0..length).map(|_| pool[next() % pool.len()]).collect();
+            let name = filename_from_url_path(&format!("https://h/{path}"), "fallback.mp3");
+            assert!(
+                !name.is_empty()
+                    && name != "."
+                    && name != ".."
+                    && !name.contains(['/', '\0'])
+                    && name.len() <= 200,
+                "{path:?} gave {name:?}"
+            );
+        }
     }
 
     #[test]
