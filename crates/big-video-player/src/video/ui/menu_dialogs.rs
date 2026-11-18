@@ -2,8 +2,6 @@
 //! screenshot, chapter list + navigation. Each
 //! `impl VideoShell` method drives the live mpv backend; the push-model wiring (a `VideoShellInput::Show*` variant →
 //! handler) matches the existing media-info / filters dialogs.
-//!
-//! The pure helper `parse_goto_seconds` carries the testable logic.
 
 use std::path::PathBuf;
 
