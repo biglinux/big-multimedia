@@ -120,7 +120,9 @@ impl VideoShell {
     /// Request off-thread staging; success is delivered by a terminal mpv reply.
     pub(super) fn take_screenshot(&self, sender: &ComponentSender<Self>) {
         let Some(permit) = ScreenshotPreparation::acquire() else {
-            self.notify(&i18n("Screenshot queue is full; wait for pending captures"));
+            self.notify(&i18n(
+                "Still saving the previous screenshots. Try again in a moment.",
+            ));
             return;
         };
         let Some(mpv) = self.mpv_handle().borrow().as_ref().cloned() else {
@@ -172,7 +174,7 @@ impl VideoShell {
                         .replace("{error}", &error.to_string())
                 }
                 Ok(Err(ScreenshotRequestError::Busy)) => {
-                    i18n("Screenshot queue is full; wait for pending captures")
+                    i18n("Still saving the previous screenshots. Try again in a moment.")
                 }
                 Ok(Err(ScreenshotRequestError::Rejected(error))) => {
                     screenshot_not_saved_message(&error)
