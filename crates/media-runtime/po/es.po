@@ -2451,8 +2451,8 @@ msgid ""
 "manager."
 msgstr ""
 "No se pudo eliminar de tu depósito de claves una contraseña reemplazada o "
-"quitada. Puedes eliminar el elemento «Big Multimedia IPTV provider» que "
-"quedó con tu gestor del depósito de claves."
+"quitada. Puedes eliminar el elemento sobrante «Big Multimedia IPTV "
+"provider» con tu gestor del depósito de claves."
 
 #: crates/big-video-player/src/video/ui/iptv/providers_dialog.rs:120
 msgid "No providers yet"
