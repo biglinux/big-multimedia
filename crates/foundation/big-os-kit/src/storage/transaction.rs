@@ -211,10 +211,7 @@ impl StagedFile {
             .ok_or_else(|| io::Error::new(io::ErrorKind::InvalidInput, "missing target name"))?;
         let parent = parent(target);
         remove_stale_staging(parent);
-        let mut nonce = [0_u8; 16];
-        // Linux/Unix desktop target; fail closed if OS randomness is unavailable.
-        File::open("/dev/urandom")?.read_exact(&mut nonce)?;
-        let hex: String = nonce.iter().map(|byte| format!("{byte:02x}")).collect();
+        let hex = crate::random::random_hex_id()?;
         let directory = parent.join(format!("{}{hex}", staging_prefix()));
         let mut builder = fs::DirBuilder::new();
         #[cfg(unix)]

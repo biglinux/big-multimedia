@@ -101,7 +101,8 @@ pub fn start_scoped(
     if stop.load(Ordering::Acquire) {
         return Err("Remote session already revoked".into());
     }
-    let token = make_token().map_err(|_| "Secure randomness unavailable".to_owned())?;
+    let token = big_os_kit::random::random_hex_id()
+        .map_err(|_| "Secure randomness unavailable".to_owned())?;
     let listener = TcpListener::bind(address).map_err(|e| format!("bind: {e}"))?;
     let local = listener.local_addr().map_err(|e| format!("address: {e}"))?;
     let wake = match local.ip() {
@@ -562,25 +563,6 @@ fn parse_volume(query: &str) -> Option<f64> {
     }
     Some(value.clamp(0.0, 100.0))
 }
-fn token_from_reader(mut reader: impl Read) -> std::io::Result<String> {
-    let mut bytes = [0_u8; 16];
-    reader.read_exact(&mut bytes)?;
-    Ok(hex(&bytes))
-}
-fn make_token() -> std::io::Result<String> {
-    token_from_reader(std::fs::File::open("/dev/urandom")?)
-}
-
-fn hex(bytes: &[u8]) -> String {
-    const DIGITS: &[u8; 16] = b"0123456789abcdef";
-    let mut hex_text = String::with_capacity(bytes.len() * 2);
-    for byte in bytes {
-        hex_text.push(DIGITS[(byte >> 4) as usize] as char);
-        hex_text.push(DIGITS[(byte & 0x0f) as usize] as char);
-    }
-    hex_text
-}
-
 const INDEX_HTML: &str = include_str!("remote_control.html");
 const INDEX_CSS: &str = include_str!("remote_control.css");
 const INDEX_JS: &str = include_str!("remote_control.js");
@@ -663,19 +645,6 @@ mod tests {
         assert_eq!(value["position"], 0.0);
         assert_eq!(value["duration"], 98.5);
         assert_eq!(value["volume"], 100.0);
-    }
-
-    #[test]
-    fn token_is_32_lowercase_hex() {
-        assert_eq!(hex(&[0x00, 0x0f, 0xa2, 0xff]), "000fa2ff");
-        let token = make_token().unwrap();
-        assert_eq!(token.len(), 32);
-        assert!(
-            token
-                .bytes()
-                .all(|c| matches!(c, b'0'..=b'9' | b'a'..=b'f'))
-        );
-        assert!(token_from_reader(std::io::Cursor::new([])).is_err());
     }
 
     #[test]
