@@ -223,6 +223,40 @@
     <control>touch</control>
   </supports>
   <releases>
+    <release version="2.0.0" date="2026-11-18">
+      <description>
+        <p>Plays videos and playlists with hardware-accelerated decoding, subtitles, chapters and upscaling filters.</p>
+        <p xml:lang="pt_BR">Reproduz vídeos e playlists com decodificação acelerada por hardware, legendas, capítulos e filtros de ampliação.</p>
+        <p xml:lang="bg">Възпроизвежда видеоклипове и плейлисти с декодиране с хардуерно ускорение, субтитри, глави и филтри за увеличаване на резолюцията.</p>
+        <p xml:lang="cs">Přehrává videa a playlisty s dekódováním s hardwarovou akcelerací, titulky, kapitolami a filtry pro zvětšení rozlišení.</p>
+        <p xml:lang="da">Afspiller videoer og afspilningslister med hardwareaccelereret afkodning, undertekster, kapitler og opskaleringsfiltre.</p>
+        <p xml:lang="de">Spielt Videos und Wiedergabelisten mit hardwarebeschleunigter Dekodierung, Untertiteln, Kapiteln und Hochskalierungsfiltern ab.</p>
+        <p xml:lang="el">Αναπαράγει βίντεο και λίστες αναπαραγωγής με αποκωδικοποίηση με επιτάχυνση υλικού, υπότιτλους, κεφάλαια και φίλτρα κλιμάκωσης.</p>
+        <p xml:lang="es">Reproduce vídeos y listas de reproducción con decodificación con aceleración por hardware, subtítulos, capítulos y filtros de escalado.</p>
+        <p xml:lang="et">Esitab videoid ja esitusloendeid riistvarakiirendusega dekodeerimise, subtiitrite, peatükkide ja suurendusfiltritega.</p>
+        <p xml:lang="fi">Toistaa videoita ja soittolistoja laitteistokiihdytetyllä dekoodauksella, tekstityksillä, kappaleilla ja skaalaussuodattimilla.</p>
+        <p xml:lang="fr">Lit les vidéos et les listes de lecture avec décodage accéléré par le matériel, sous-titres, chapitres et filtres d’agrandissement.</p>
+        <p xml:lang="he">מנגן סרטונים ורשימות השמעה עם פענוח בהאצת חומרה, כתוביות, פרקים ומסנני הגדלה.</p>
+        <p xml:lang="hr">Reproducira videozapise i popise za reprodukciju uz dekodiranje s hardverskim ubrzanjem, titlove, poglavlja i filtre za povećanje razlučivosti.</p>
+        <p xml:lang="hu">Videókat és lejátszási listákat játszik le hardveresen gyorsított dekódolással, feliratokkal, fejezetekkel és felskálázó szűrőkkel.</p>
+        <p xml:lang="is">Spilar myndbönd og spilunarlista með vélbúnaðarhraðaðri afkóðun, skjátextum, köflum og uppskölunarsíum.</p>
+        <p xml:lang="it">Riproduce video e playlist con decodifica con accelerazione hardware, sottotitoli, capitoli e filtri di upscaling.</p>
+        <p xml:lang="ja">ハードウェアアクセラレーションデコード、字幕、チャプター、アップスケーリングフィルターを使って、ビデオとプレイリストを再生します。</p>
+        <p xml:lang="ko">하드웨어 가속 디코딩, 자막, 챕터, 업스케일링 필터로 비디오와 재생 목록을 재생합니다.</p>
+        <p xml:lang="nb">Spiller av videoer og spillelister med maskinvareakselerert dekoding, undertekster, kapitler og oppskaleringsfiltre.</p>
+        <p xml:lang="nl">Speelt video’s en afspeellijsten af met hardwareversnelde decodering, ondertitels, hoofdstukken en opschalingsfilters.</p>
+        <p xml:lang="pl">Odtwarza filmy i listy odtwarzania z dekodowaniem z akceleracją sprzętową, napisami, rozdziałami i filtrami skalowania.</p>
+        <p xml:lang="pt">Reproduz vídeos e listas de reprodução com descodificação com aceleração por hardware, legendas, capítulos e filtros de ampliação.</p>
+        <p xml:lang="ro">Redă videoclipuri și liste de redare cu decodare cu accelerare hardware, subtitrări, capitole și filtre de scalare.</p>
+        <p xml:lang="ru">Воспроизводит видео и плейлисты с аппаратным ускорением декодирования, субтитрами, главами и фильтрами масштабирования.</p>
+        <p xml:lang="sk">Prehráva videá a zoznamy skladieb s dekódovaním s hardvérovou akceleráciou, titulkami, kapitolami a filtrami na zväčšenie rozlíšenia.</p>
+        <p xml:lang="sv">Spelar upp videor och spellistor med maskinvaruaccelererad avkodning, undertexter, kapitel och uppskalningsfilter.</p>
+        <p xml:lang="tr">Videoları ve çalma listelerini donanım hızlandırmalı kod çözme, altyazılar, bölümler ve büyütme filtreleriyle oynatır.</p>
+        <p xml:lang="uk">Відтворює відео та списки відтворення з апаратним прискоренням декодування, субтитрами, розділами та фільтрами масштабування.</p>
+        <p xml:lang="zh_CN">播放视频和播放列表，支持硬件加速解码、字幕、章节和放大滤镜。</p>
+        <p xml:lang="zh_TW">播放影片與播放清單，支援硬體加速解碼、字幕、章節與放大濾鏡。</p>
+      </description>
+    </release>
     <release version="0.1.0" date="2026-04-26">
       <description>
         <p>Initial Rust release with libadwaita UI, mpv backend, hardware decoding, and BigLinux desktop integration.</p>
