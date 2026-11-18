@@ -304,7 +304,7 @@ fn move_by_copy(src: &Path, dest: &Path) -> std::io::Result<()> {
     let mut staged = std::fs::OpenOptions::new().write(true).open(stage.path())?;
     std::io::copy(&mut std::fs::File::open(src)?, &mut staged)?;
     drop(staged);
-    stage.publish(dest)?.into_io_result()?;
+    stage.publish_copy(dest)?.into_io_result()?;
     std::fs::remove_file(src)
 }
 
@@ -386,6 +386,19 @@ mod tests {
         drop(writer);
         mover.join().unwrap().unwrap();
         assert_eq!(std::fs::read(&dest).unwrap(), b"video");
+        assert!(!src.exists());
+        assert_eq!(entry_names(&dir.join("out")), ["in.mp4"]);
+        std::fs::remove_dir_all(dir).unwrap();
+    }
+
+    #[test]
+    fn cross_device_move_carries_empty_files() {
+        let dir = test_directory("cross-device-empty");
+        let (src, dest) = (dir.join("in.mp4"), dir.join("out").join("in.mp4"));
+        std::fs::create_dir(dir.join("out")).unwrap();
+        std::fs::write(&src, b"").unwrap();
+        move_by_copy(&src, &dest).unwrap();
+        assert_eq!(std::fs::read(&dest).unwrap(), b"");
         assert!(!src.exists());
         assert_eq!(entry_names(&dir.join("out")), ["in.mp4"]);
         std::fs::remove_dir_all(dir).unwrap();

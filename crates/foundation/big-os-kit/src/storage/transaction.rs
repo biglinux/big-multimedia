@@ -248,7 +248,16 @@ impl StagedFile {
     /// `AlreadyExists`. Atomic unless the filesystem supports neither hard links
     /// nor `RENAME_NOREPLACE`, where the bytes are copied into a newly created
     /// file. Validate the media first. The outcome says whether it is durable.
+    /// An empty file is refused as a failed writer's output.
     pub fn publish(&self, target: &Path) -> io::Result<CommitOutcome> {
+        self.place(target, false)
+    }
+    /// [`Self::publish`] for a copy of a file that exists elsewhere, such as a
+    /// move across filesystems, where an empty file is a complete copy.
+    pub fn publish_copy(&self, target: &Path) -> io::Result<CommitOutcome> {
+        self.place(target, true)
+    }
+    fn place(&self, target: &Path, empty_allowed: bool) -> io::Result<CommitOutcome> {
         let mut options = OpenOptions::new();
         options.read(true);
         #[cfg(unix)]
@@ -258,7 +267,7 @@ impl StagedFile {
         }
         let file = options.open(&self.path)?;
         let metadata = file.metadata()?;
-        if !metadata.is_file() || metadata.len() == 0 {
+        if !metadata.is_file() || (metadata.len() == 0 && !empty_allowed) {
             return Err(io::Error::new(
                 io::ErrorKind::InvalidData,
                 "output is empty or not a regular file",
@@ -369,6 +378,23 @@ mod tests {
         assert!(stage.publish(&target).is_err());
         drop(stage);
         assert_eq!(fs::read(&target).unwrap(), b"original");
+        fs::remove_dir_all(dir).unwrap();
+    }
+    #[test]
+    fn only_copies_publish_empty_files() {
+        let dir = directory();
+        let target = dir.join("out.png");
+        let stage = StagedFile::new(&target).unwrap();
+        let error = stage.publish(&target).unwrap_err();
+        assert_eq!(error.kind(), io::ErrorKind::InvalidData);
+        assert!(!target.exists());
+        stage
+            .publish_copy(&target)
+            .unwrap()
+            .into_io_result()
+            .unwrap();
+        assert_eq!(fs::read(&target).unwrap(), b"");
+        drop(stage);
         fs::remove_dir_all(dir).unwrap();
     }
     /// Staging of an exited process is removed by the next staging in that
