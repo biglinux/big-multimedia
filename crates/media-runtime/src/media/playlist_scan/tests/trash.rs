@@ -53,7 +53,9 @@ fn undo_restores_latest_trashing() {
     use crate::media::playlist::{restore_from_trash, trash_file};
 
     // A newline once forged a line of `gio trash --list`.
-    let path = glib::home_dir().join("trash undo\nprobe.txt");
+    let path = big_os_kit::xdg_dirs::home_dir()
+        .expect("an absolute home folder")
+        .join("trash undo\nprobe.txt");
     for content in ["older", "newer"] {
         std::fs::write(&path, content).unwrap();
         trash_file(&path).unwrap();

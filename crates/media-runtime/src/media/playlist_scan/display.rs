@@ -7,7 +7,7 @@ pub fn folder_display_name(path: &str) -> String {
 }
 
 /// Returns `(display_name, full_path)` per ancestor up to `~` or `/`; up to
-/// `/` when `$HOME` is unset or relative.
+/// `/` when no absolute home folder is known.
 pub fn breadcrumb_segments(folder: &str) -> Vec<(String, String)> {
     let path = Path::new(folder);
     let home = big_os_kit::xdg_dirs::home_dir();

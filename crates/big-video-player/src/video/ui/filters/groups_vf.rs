@@ -9,6 +9,7 @@ use std::time::Duration;
 
 use adw::prelude::*;
 use big_relm4_components::input::dropdown_row::{BigDropdownRow, BigDropdownRowSpec};
+use big_relm4_components::input::spin_row::accessible_spin_row;
 use big_relm4_components::layout::preferences::BigPreferencesGroupSpec;
 
 use super::filter_specs::{
@@ -125,21 +126,21 @@ fn build_colorize_row(mpv: &Arc<MpvBackend>, current_vf: &str) -> adw::ExpanderR
     let saturation = gtk::Adjustment::new(value("saturation", 0.5, 1.0), 0.0, 1.0, 0.05, 0.1, 0.0);
     let mix = gtk::Adjustment::new(value("mix", 0.5, 1.0), 0.0, 1.0, 0.05, 0.1, 0.0);
     expander.add_row(
-        &adw::SpinRow::builder()
+        &accessible_spin_row()
             .title(i18n("Hue"))
             .adjustment(&hue)
             .digits(0)
             .build(),
     );
     expander.add_row(
-        &adw::SpinRow::builder()
+        &accessible_spin_row()
             .title(i18n("Saturation"))
             .adjustment(&saturation)
             .digits(2)
             .build(),
     );
     expander.add_row(
-        &adw::SpinRow::builder()
+        &accessible_spin_row()
             .title(i18n("Mix"))
             .adjustment(&mix)
             .digits(2)

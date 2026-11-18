@@ -36,7 +36,7 @@ impl AudioShell {
             self.fetch_lyrics_for_current(sender);
         }
         self.queue_persistence
-            .loaded(Some(restored.writer), restored.session.is_some());
+            .loaded(restored.writer, restored.session.is_some());
     }
 
     pub(super) fn play_current(&mut self) {
@@ -172,25 +172,30 @@ impl AudioShell {
             move || {
                 let mut resolved = Vec::new();
                 let mut failed = false;
+                let mut truncated = false;
                 for path in paths {
                     if crate::media::playlist::is_playlist_file(&path) {
                         match crate::audio::playlist_import::parse_playlist_file_for_import(
                             Path::new(&path),
                         ) {
-                            Ok(paths) => resolved.extend(paths),
+                            Ok(list) => {
+                                truncated |= list.truncated;
+                                resolved.extend(list.entries);
+                            }
                             Err(_) => failed = true,
                         }
                     } else {
                         resolved.push(path);
                     }
                 }
-                (resolved, failed)
+                (resolved, failed, truncated)
             },
-            move |(paths, failed)| {
+            move |(paths, failed, truncated)| {
                 let _ = input.send(AudioShellInput::OpenPathsResolved {
                     generation,
                     paths,
                     failed,
+                    truncated,
                 });
             },
         );

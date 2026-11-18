@@ -217,8 +217,14 @@ impl AudioShell {
         if self.report_missing_engine() {
             return;
         }
-        let music_dir = glib::user_special_dir(glib::UserDirectory::Music)
-            .unwrap_or_else(|| glib::home_dir().join("Music"));
+        let Some(music_dir) = big_os_kit::xdg_dirs::user_dir(big_os_kit::xdg_dirs::UserDir::Music)
+            .or_else(|| big_os_kit::xdg_dirs::home_dir().map(|home| home.join("Music")))
+        else {
+            self.notify(&i18n(
+                "There is no Music or home folder to save recordings in.",
+            ));
+            return;
+        };
         let rec_dir = music_dir.join("Radio Recordings");
         let safe_name = big_app_kit::files::sanitize_filename_stem_preserve_unicode(
             &self.radio_station_name,

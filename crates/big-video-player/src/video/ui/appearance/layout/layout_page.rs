@@ -3,6 +3,7 @@
 //! window-button sizing. Each switch toggles visibility of its dependent rows.
 
 use adw::prelude::*;
+use big_relm4_components::input::spin_row::accessible_spin_row;
 use big_relm4_components::layout::preferences::BigPreferencesGroupSpec;
 use std::rc::Rc;
 
@@ -102,7 +103,7 @@ fn build_buttons_group(settings: &Settings, on_changed: &Rc<dyn Fn()>) -> adw::P
         .build();
     button_group.add(&custom_button_size_row);
 
-    let button_size_row = adw::SpinRow::builder()
+    let button_size_row = accessible_spin_row()
         .title(i18n("Button Size"))
         .adjustment(&gtk::Adjustment::new(
             f64::from(settings.get_int(keys::UI_BUTTON_SIZE)),
@@ -117,7 +118,7 @@ fn build_buttons_group(settings: &Settings, on_changed: &Rc<dyn Fn()>) -> adw::P
     button_size_row.set_visible(settings.get_bool(keys::UI_BUTTON_CUSTOM));
     button_group.add(&button_size_row);
 
-    let button_radius_row = adw::SpinRow::builder()
+    let button_radius_row = accessible_spin_row()
         .title(i18n("Button Border Radius"))
         .adjustment(&gtk::Adjustment::new(
             f64::from(settings.get_int(keys::UI_BUTTON_RADIUS)),
@@ -177,7 +178,7 @@ fn build_window_group(settings: &Settings, on_changed: &Rc<dyn Fn()>) -> adw::Pr
         .build();
     window_group.add(&custom_window_radius_row);
 
-    let window_radius_row = adw::SpinRow::builder()
+    let window_radius_row = accessible_spin_row()
         .title(i18n("Window Corner Radius"))
         .adjustment(&gtk::Adjustment::new(
             f64::from(settings.get_int(keys::UI_WINDOW_RADIUS)),

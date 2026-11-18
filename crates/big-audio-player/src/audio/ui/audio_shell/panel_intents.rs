@@ -107,14 +107,20 @@ impl AudioShell {
                 let input = sender.input_sender().clone();
                 spawn_blocking_result(
                     move || playlist_import::parse_playlist_file_for_import(&path),
-                    move |result| {
-                        let message = match result {
-                            Ok(paths) => AudioShellInput::ImportPaths(paths),
-                            Err(_) => AudioShellInput::Notify(i18n(
+                    move |result| match result {
+                        Ok(list) => {
+                            if list.truncated {
+                                let _ = input.send(AudioShellInput::Notify(
+                                    playlist_import::truncated_message(),
+                                ));
+                            }
+                            let _ = input.send(AudioShellInput::ImportPaths(list.entries));
+                        }
+                        Err(_) => {
+                            let _ = input.send(AudioShellInput::Notify(i18n(
                                 "The playlist could not be read safely. Check its format and permissions.",
-                            )),
-                        };
-                        let _ = input.send(message);
+                            )));
+                        }
                     },
                 );
             }

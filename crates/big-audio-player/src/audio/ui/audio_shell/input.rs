@@ -120,6 +120,8 @@ pub enum AudioShellInput {
         generation: u64,
         paths: Vec<String>,
         failed: bool,
+        /// A playlist among them was cut at its entry cap.
+        truncated: bool,
     },
     ExternalMetadataResolved(Vec<Track>),
     /// Open the equalizer dialog (main menu).
@@ -156,7 +158,8 @@ pub enum AudioShellInput {
     /// A folder was chosen for batch import → parse every playlist file in it.
     ImportPlaylistFolder(PathBuf),
     /// Import finished → `usize` tracks were matched and added.
-    PlaylistImported(Result<usize, String>),
+    /// Tracks saved, and whether a playlist was cut at its entry cap.
+    PlaylistImported(Result<(usize, bool), String>),
     /// A transport command from the smartphone remote (worker thread); reuses
     /// the normal playback handler.
     PlaybackRemote {

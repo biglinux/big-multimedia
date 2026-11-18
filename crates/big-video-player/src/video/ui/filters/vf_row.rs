@@ -8,6 +8,7 @@ use std::sync::Arc;
 use std::time::Duration;
 
 use adw::prelude::*;
+use big_relm4_components::input::spin_row::accessible_spin_row;
 
 use crate::player::mpv_backend::MpvBackend;
 use big_relm4_components::input::debounce::BigDebouncedAction as DebouncedAction;
@@ -51,7 +52,7 @@ pub(super) fn build_vf_expander_row(
         .and_then(|graph| super::filter_specs::vf_graph_number(&graph, spec.param))
         .map_or(default, |value| value.clamp(min, max));
     let adjustment = gtk::Adjustment::new(value, min, max, step, page, 0.0);
-    let mut spin_builder = adw::SpinRow::builder()
+    let mut spin_builder = accessible_spin_row()
         .title(&spec.spin_title)
         .adjustment(&adjustment);
     if spec.digits > 0 {

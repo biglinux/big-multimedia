@@ -1,7 +1,8 @@
 // SPDX-FileCopyrightText: 2026 BigLinux contributors
 // SPDX-License-Identifier: MIT
 
-//! BigLinux action row with an accessible spin-button suffix.
+//! BigLinux action row with an accessible spin-button suffix, and an
+//! `AdwSpinRow` that screen readers can reach.
 
 use adw::prelude::*;
 use relm4::gtk;
@@ -176,6 +177,19 @@ impl BigSpinRow {
     pub fn into_parts(self) -> (adw::ActionRow, gtk::SpinButton) {
         (self.row, self.spin)
     }
+}
+
+/// An `AdwSpinRow` builder whose spin button reaches screen readers.
+///
+/// libadwaita 1.10 gives the row the presentation role, and GTK 4.24's AT-SPI
+/// bridge drops a presentation widget with everything below it; the generic
+/// role keeps the row itself out of the tree while its spin button stays.
+pub fn accessible_spin_row() -> adw::builders::SpinRowBuilder {
+    #[expect(
+        clippy::disallowed_methods,
+        reason = "the owner of accessible spin rows"
+    )]
+    adw::SpinRow::builder().accessible_role(gtk::AccessibleRole::Generic)
 }
 
 fn finite_or(value: f64, fallback: f64) -> f64 {

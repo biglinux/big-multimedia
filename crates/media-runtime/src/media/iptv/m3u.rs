@@ -38,7 +38,7 @@ impl<T> Default for PlaylistEntries<T> {
 
 impl<T> PlaylistEntries<T> {
     /// Keeps `entry` while under the cap; false, and marked truncated, once full.
-    pub(crate) fn push(&mut self, entry: T) -> bool {
+    pub fn push(&mut self, entry: T) -> bool {
         if self.entries.len() == MAX_PLAYLIST_ENTRIES {
             log::warn!("playlist over {MAX_PLAYLIST_ENTRIES} entries truncated");
             self.truncated = true;

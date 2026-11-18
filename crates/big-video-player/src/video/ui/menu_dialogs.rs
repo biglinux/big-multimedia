@@ -120,7 +120,9 @@ impl VideoShell {
     /// Request off-thread staging; success is delivered by a terminal mpv reply.
     pub(super) fn take_screenshot(&self, sender: &ComponentSender<Self>) {
         let Some(permit) = ScreenshotPreparation::acquire() else {
-            self.notify(&i18n("Screenshot queue is full; wait for pending captures"));
+            self.notify(&i18n(
+                "Still saving the previous screenshots. Try again in a moment.",
+            ));
             return;
         };
         let Some(mpv) = self.mpv_handle().borrow().as_ref().cloned() else {
@@ -138,8 +140,8 @@ impl VideoShell {
         let Some(directory) = chosen
             .is_absolute()
             .then_some(chosen)
-            .or_else(dirs::picture_dir)
-            .or_else(dirs::home_dir)
+            .or_else(|| big_os_kit::xdg_dirs::user_dir(big_os_kit::xdg_dirs::UserDir::Pictures))
+            .or_else(big_os_kit::xdg_dirs::home_dir)
         else {
             self.notify(&i18n(
                 "There is no Pictures or home folder to save screenshots in. Choose a folder in Preferences.",
@@ -172,7 +174,7 @@ impl VideoShell {
                         .replace("{error}", &error.to_string())
                 }
                 Ok(Err(ScreenshotRequestError::Busy)) => {
-                    i18n("Screenshot queue is full; wait for pending captures")
+                    i18n("Still saving the previous screenshots. Try again in a moment.")
                 }
                 Ok(Err(ScreenshotRequestError::Rejected(error))) => {
                     screenshot_not_saved_message(&error)

@@ -1,14 +1,20 @@
-//! Bounded native-path playlist import. Failure is distinct from an empty list.
+//! Bounded native-path playlist import. Failure is distinct from an empty list,
+//! and a list cut at [`MAX_PLAYLIST_ENTRIES`] says so.
+use crate::media::iptv::{MAX_PLAYLIST_ENTRIES, PlaylistEntries};
 use std::{io, path::Path};
 const MAX_PLAYLIST_BYTES: usize = 16 * 1024 * 1024;
-const MAX_ENTRIES: usize = 100_000;
 
-pub(crate) fn parse_playlist_file_for_import(path: &Path) -> io::Result<Vec<String>> {
+pub(crate) fn parse_playlist_file_for_import(path: &Path) -> io::Result<PlaylistEntries<String>> {
     let bytes = big_os_kit::storage::read_regular_limited(path, MAX_PLAYLIST_BYTES)?
         .ok_or_else(|| io::Error::new(io::ErrorKind::NotFound, "playlist unavailable"))?;
     let content = std::str::from_utf8(&bytes)
         .map_err(|_| io::Error::new(io::ErrorKind::InvalidData, "playlist is not valid UTF-8"))?;
     parse_content(path, content)
+}
+/// What the person is told when a playlist was cut at [`MAX_PLAYLIST_ENTRIES`].
+pub(crate) fn truncated_message() -> String {
+    crate::i18n::i18n("Only the first {} entries of the playlist were loaded.")
+        .replace("{}", &MAX_PLAYLIST_ENTRIES.to_string())
 }
 fn entry(base: &Path, line: &str) -> io::Result<String> {
     if line.is_empty() || line.len() > 4096 || line.chars().any(char::is_control) {
@@ -30,9 +36,9 @@ fn entry(base: &Path, line: &str) -> io::Result<String> {
         .map(str::to_owned)
         .ok_or_else(|| io::Error::new(io::ErrorKind::InvalidData, "playlist path is not UTF-8"))
 }
-fn parse_content(path: &Path, content: &str) -> io::Result<Vec<String>> {
+fn parse_content(path: &Path, content: &str) -> io::Result<PlaylistEntries<String>> {
     let base = path.parent().unwrap_or(Path::new("."));
-    let mut result = Vec::new();
+    let mut result = PlaylistEntries::default();
     if path
         .extension()
         .and_then(|e| e.to_str())
@@ -52,26 +58,21 @@ fn parse_content(path: &Path, content: &str) -> io::Result<Vec<String>> {
                         "duplicate PLS index",
                     ));
                 }
-                if ordered.len() > MAX_ENTRIES {
-                    return Err(io::Error::new(
-                        io::ErrorKind::InvalidData,
-                        "too many playlist entries",
-                    ));
+                // Keeps the lowest indices, so memory stays at the cap.
+                if ordered.len() > MAX_PLAYLIST_ENTRIES {
+                    ordered.pop_last();
+                    result.truncated = true;
                 }
             }
         }
-        result.extend(ordered.into_values());
+        result.entries.extend(ordered.into_values());
     } else {
         for line in content.strip_prefix('\u{feff}').unwrap_or(content).lines() {
             if line.trim().is_empty() || line.starts_with('#') {
                 continue;
             }
-            result.push(entry(base, line)?);
-            if result.len() > MAX_ENTRIES {
-                return Err(io::Error::new(
-                    io::ErrorKind::InvalidData,
-                    "too many playlist entries",
-                ));
+            if !result.push(entry(base, line)?) {
+                break;
             }
         }
     }
@@ -83,14 +84,18 @@ mod tests {
     #[test]
     fn relative_paths_preserve_spaces() {
         assert_eq!(
-            parse_content(Path::new("/music/list.m3u"), "#EXTM3U\n song.ogg \n").unwrap(),
+            parse_content(Path::new("/music/list.m3u"), "#EXTM3U\n song.ogg \n")
+                .unwrap()
+                .entries,
             ["/music/ song.ogg "]
         );
     }
     #[test]
     fn remote_uri_stays_remote() {
         assert_eq!(
-            parse_content(Path::new("/music/l.m3u"), "https://host/song.mp3?x=1\n").unwrap(),
+            parse_content(Path::new("/music/l.m3u"), "https://host/song.mp3?x=1\n")
+                .unwrap()
+                .entries,
             ["https://host/song.mp3?x=1"]
         );
     }
@@ -106,7 +111,8 @@ mod tests {
                 Path::new("/music/l.pls"),
                 "[playlist]\nFile2=b.mp3\nFile1=a.mp3"
             )
-            .unwrap(),
+            .unwrap()
+            .entries,
             ["/music/a.mp3", "/music/b.mp3"]
         );
     }
@@ -115,6 +121,7 @@ mod tests {
         assert!(
             parse_content(Path::new("/music/l"), "# empty")
                 .unwrap()
+                .entries
                 .is_empty()
         );
     }
@@ -159,7 +166,12 @@ mod tests {
         let path = dir.0.join("boundary.m3u");
         // A comment-only playlist is valid and empty even at the byte ceiling.
         std::fs::write(&path, vec![b'#'; MAX_PLAYLIST_BYTES]).unwrap();
-        assert!(parse_playlist_file_for_import(&path).unwrap().is_empty());
+        assert!(
+            parse_playlist_file_for_import(&path)
+                .unwrap()
+                .entries
+                .is_empty()
+        );
         // A sparse NUL file of the same size is not a playlist.
         std::fs::write(&path, vec![0_u8; MAX_PLAYLIST_BYTES]).unwrap();
         assert!(parse_playlist_file_for_import(&path).is_err());
@@ -181,8 +193,24 @@ mod tests {
         );
     }
     #[test]
-    fn entry_count_is_bounded() {
-        let content = "song.ogg\n".repeat(MAX_ENTRIES + 1);
-        assert!(parse_content(Path::new("/music/list.m3u"), &content).is_err());
+    fn m3u_cap_truncates_and_reports() {
+        let at_cap = "song.ogg\n".repeat(MAX_PLAYLIST_ENTRIES);
+        let parsed = parse_content(Path::new("/music/list.m3u"), &at_cap).unwrap();
+        assert_eq!((parsed.entries.len(), parsed.truncated), (100_000, false));
+        let over = format!("{at_cap}last.ogg\n");
+        let parsed = parse_content(Path::new("/music/list.m3u"), &over).unwrap();
+        assert_eq!((parsed.entries.len(), parsed.truncated), (100_000, true));
+        assert_eq!(parsed.entries.last().unwrap(), "/music/song.ogg");
+    }
+    #[test]
+    fn pls_cap_keeps_lowest_indices() {
+        let mut content = String::from("[playlist]\n");
+        for index in (1..=MAX_PLAYLIST_ENTRIES + 1).rev() {
+            content.push_str(&format!("File{index}={index}.mp3\n"));
+        }
+        let parsed = parse_content(Path::new("/music/l.pls"), &content).unwrap();
+        assert_eq!((parsed.entries.len(), parsed.truncated), (100_000, true));
+        assert_eq!(parsed.entries[0], "/music/1.mp3");
+        assert_eq!(parsed.entries.last().unwrap(), "/music/100000.mp3");
     }
 }

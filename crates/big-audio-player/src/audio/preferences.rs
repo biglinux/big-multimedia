@@ -13,6 +13,7 @@ use crate::i18n::i18n;
 use crate::player::mpv_backend::{AudioEffects, MpvBackend};
 use crate::settings::{Settings, keys};
 use big_player_ui::preference_rows::add_combo_row;
+use big_relm4_components::input::spin_row::accessible_spin_row;
 
 /// What the shell does when a desktop-integration switch changes, so the
 /// choice applies without a restart.
@@ -58,7 +59,7 @@ pub(super) fn create_music_page(
         },
     );
 
-    let rg_preamp_row = adw::SpinRow::builder()
+    let rg_preamp_row = accessible_spin_row()
         .title(i18n("Leveling Boost"))
         .subtitle(i18n(
             "In decibels; positive values play louder, negative softer",

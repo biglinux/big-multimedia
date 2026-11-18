@@ -65,7 +65,7 @@ impl SharedMprisState {
 }
 
 /// This player caches `artUrl` as a local `file://` URI: write the art bytes to
-/// the app cache and return the URL. Refuses to write when `dirs::cache_dir()`
+/// the app cache and return the URL. Refuses to write when `xdg_dirs::cache_dir()`
 /// is unavailable rather than falling back to world-writable `/tmp`.
 ///
 /// Blocking (`create_dir_all` + `write`): run off the GTK main thread (see
@@ -76,7 +76,7 @@ pub(crate) fn save_mpris_art(data: &[u8]) -> Option<String> {
     if data.is_empty() || data.len() > LIMIT {
         return None;
     }
-    let cache_dir = dirs::cache_dir()?
+    let cache_dir = big_os_kit::xdg_dirs::cache_dir()?
         .join("big-audio-player")
         .join("mpris-art-cache");
     std::fs::create_dir_all(&cache_dir).ok()?;
