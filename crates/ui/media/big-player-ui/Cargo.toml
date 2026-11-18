@@ -27,7 +27,6 @@ relm4.workspace = true
 log.workspace = true
 big-relm4-components.workspace = true
 big-media-components.workspace = true
-big-audio-effects.workspace = true
 big-app-kit = { workspace = true, features = ["remote-control"] }
 big-os-kit = { workspace = true }
 # GTK-free data + parser leaves (now a sibling brc crate).

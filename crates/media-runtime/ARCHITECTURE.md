@@ -30,8 +30,8 @@ README).
 
 Dependencies point one way: this crate uses `big-media-data`,
 `big-os-kit`, `big-app-kit`, `big-gtk-kit`, `big-relm4-components`,
-`big-media-components`, `big-audio-effects` and `big-mpv-render`; none of
-them depends on it.
+`big-media-components`, `big-player-ui`, `big-audio-effects` and
+`big-mpv-render`; none of them depends on it.
 
 ## Threads
 

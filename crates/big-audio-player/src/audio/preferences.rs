@@ -5,9 +5,7 @@
 use adw::prelude::*;
 use std::sync::Arc;
 
-use big_player_ui::audio_preferences::{
-    PlayerAudioPreferenceActions, create_player_audio_page as create_audio_page,
-};
+use big_player_ui::audio_preferences::create_player_audio_page as create_audio_page;
 
 use crate::i18n::i18n;
 use crate::player::mpv_backend::MpvBackend;
@@ -172,37 +170,6 @@ pub(super) fn create_music_page(
     page
 }
 
-fn audio_preference_actions(
-    settings: &Settings,
-    mpv: Option<&Arc<MpvBackend>>,
-    volume_max_changed: impl Fn() + 'static,
-) -> Option<PlayerAudioPreferenceActions> {
-    let mpv = mpv.cloned()?;
-    let settings = settings.clone();
-    Some(PlayerAudioPreferenceActions::new(
-        {
-            let mpv = Arc::clone(&mpv);
-            move |value| mpv.set_audio_channels(value)
-        },
-        {
-            let mpv = Arc::clone(&mpv);
-            move |value| mpv.set_audio_pitch_correction(value)
-        },
-        {
-            let mpv = Arc::clone(&mpv);
-            move |value| {
-                mpv.set_volume_max(value);
-                volume_max_changed();
-            }
-        },
-        {
-            let mpv = Arc::clone(&mpv);
-            move |value| mpv.set_preferred_audio_lang(value)
-        },
-        move || big_media_runtime::audio_effects::apply_voice_change(&settings, &mpv),
-    ))
-}
-
 /// `toggles` and `volume_max_changed` fire when their preference changes, so
 /// the shell applies it without a restart.
 pub fn show_audio_preferences(
@@ -222,7 +189,11 @@ pub fn show_audio_preferences(
         create_music_page(settings, mpv, toggles),
         create_audio_page(
             settings,
-            audio_preference_actions(settings, mpv, volume_max_changed),
+            big_media_runtime::audio_effects::audio_preference_actions(
+                settings,
+                mpv,
+                volume_max_changed,
+            ),
         ),
     ];
     for page in &pages {
