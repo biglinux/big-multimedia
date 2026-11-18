@@ -84,9 +84,12 @@ struct LiveStream {
     category_id: String,
 }
 
-/// The streams of a `get_live_streams` answer that have an id to play.
+/// The streams of a `get_live_streams` answer whose id is a number, the only
+/// form a panel's stream URL takes.
 fn live_streams(json: &str) -> Result<Vec<LiveStream>, FetchError> {
-    first_entries(json, |stream: &LiveStream| !stream.stream_id.is_empty())
+    first_entries(json, |stream: &LiveStream| {
+        !stream.stream_id.is_empty() && stream.stream_id.bytes().all(|b| b.is_ascii_digit())
+    })
 }
 
 /// The elements of a JSON array that pass `keep`, up to one past
@@ -243,9 +246,14 @@ fn check_account(account: &Value) -> Result<&'static str, FetchError> {
     Ok(if serves_hls { "m3u8" } else { "ts" })
 }
 
+/// `text` on one M3U line: a line break would start an entry of its own.
+fn one_line(text: &str) -> String {
+    text.replace(['\n', '\r'], " ")
+}
+
 /// An M3U attribute value: a double quote would end it early.
 fn attribute(text: &str) -> String {
-    text.replace('"', "'").replace(['\n', '\r'], " ")
+    one_line(&text.replace('"', "'"))
 }
 
 /// The live streams as M3U, grouped by their category names.
@@ -266,6 +274,7 @@ fn live_m3u(
             )
         })
         .collect();
+    let base = one_line(base);
     let mut m3u = String::from("#EXTM3U\n");
     for stream in streams {
         let group = names
@@ -277,7 +286,7 @@ fn live_m3u(
             attribute(&stream.epg_channel_id),
             attribute(&stream.stream_icon),
             attribute(group),
-            stream.name.replace(['\n', '\r'], " "),
+            one_line(&stream.name),
             urlencode(username),
             urlencode(password),
             urlencode(&stream.stream_id),
@@ -350,6 +359,25 @@ mod tests {
         assert_eq!(channels[0].url, "http://srv/live/u%40x/p/101.m3u8");
         assert_eq!(channels[1].group, "Sports 'HD'");
         assert_eq!(channels[1].url, "http://srv/live/u%40x/p/202.m3u8");
+    }
+
+    #[test]
+    fn hostile_panel_fields_stay_on_their_lines() {
+        let streams = r#"[
+            {"name": "Bad id", "stream_id": "7\nav://lavfi:sine"},
+            {"name": "Path id", "stream_id": "../7"},
+            {"name": "Float id", "stream_id": 7.5},
+            {"name": "N\r\nav://lavfi:sine", "stream_id": 8, "stream_icon": "a\nb",
+             "epg_channel_id": "c\rd", "category_id": "1"}
+        ]"#;
+        let categories = r#"[{"category_id": "1", "category_name": "G\nfdclose://0"}]"#;
+        let categories = first_entries(categories, |_: &Category| true).unwrap();
+        let streams = live_streams(streams).unwrap();
+        let m3u = live_m3u("http://srv\n/x", "u", "p", "ts", &categories, &streams);
+        assert_eq!(m3u.lines().count(), 3, "{m3u}");
+        let channels = parse_m3u_content(&m3u).entries;
+        assert_eq!(channels.len(), 1, "{m3u}");
+        assert_eq!(channels[0].url, "http://srv /x/live/u/p/8.ts");
     }
 
     #[test]
