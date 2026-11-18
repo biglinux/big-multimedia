@@ -15,11 +15,7 @@ pub(super) fn attach_context_menu(state: &Rc<BrowserState>, row: &gtk::Box) {
         let Some(row) = row_weak.upgrade() else {
             return;
         };
-        let name = row.widget_name();
-        let Some(idx) = name
-            .strip_prefix("video:")
-            .and_then(|s| s.parse::<usize>().ok())
-        else {
+        let Some(idx) = row_index(&row.widget_name()) else {
             return;
         };
         let path = state.entries.borrow().get(idx).cloned();
@@ -28,6 +24,15 @@ pub(super) fn attach_context_menu(state: &Rc<BrowserState>, row: &gtk::Box) {
         }
     });
     row.add_controller(click);
+}
+
+/// The list index in a bound row's widget name: `video:{index}` in Files,
+/// `q:{index}:{path hash}` in the playlist.
+pub(super) fn row_index(name: &str) -> Option<usize> {
+    let rest = name
+        .strip_prefix("video:")
+        .or_else(|| name.strip_prefix("q:"))?;
+    rest.split(':').next()?.parse().ok()
 }
 
 pub(super) fn centered_icon(name: &str, size: i32) -> gtk::Image {
@@ -43,5 +48,18 @@ pub(super) fn set_accent(widget: &impl IsA<gtk::Widget>, on: bool) {
         widget.add_css_class("accent");
     } else {
         widget.remove_css_class("accent");
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::row_index;
+
+    #[test]
+    fn row_index_reads_files_and_playlist_row_names() {
+        assert_eq!(row_index("video:4"), Some(4));
+        assert_eq!(row_index("q:2:9f3a0c"), Some(2));
+        assert_eq!(row_index("folder:/home/videos"), None);
+        assert_eq!(row_index("unbound"), None);
     }
 }
