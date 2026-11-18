@@ -34,7 +34,7 @@ pub(super) fn page(
             &i18n("Balanced"),
             &i18n("Detailed"),
         ],
-        &["default", "balanced", "high-quality"],
+        &MpvBackend::RENDER_PROFILES,
         keys::RENDER_PROFILE,
         settings,
         move |profile| {
@@ -106,5 +106,6 @@ pub(super) fn page(
 /// Store the per-scene HDR choice a picture-quality preset implies, so the
 /// Advanced page and the next start agree with the preset.
 fn write_profile_details(settings: &Settings, profile: &str) {
-    let _ = settings.put_bool(keys::HDR_COMPUTE_PEAK, profile == "high-quality");
+    let detailed = profile == MpvBackend::RENDER_PROFILES[2];
+    let _ = settings.put_bool(keys::HDR_COMPUTE_PEAK, detailed);
 }

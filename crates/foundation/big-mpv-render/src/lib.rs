@@ -116,6 +116,10 @@ pub const HIGH_QUALITY_RENDER_PROFILE: &[MpvProperty] = &[
     bool_prop("hdr-compute-peak", true),
 ];
 
+/// The profile ids [`render_profile_properties`] knows, lightest first: the
+/// values the picture quality setting stores.
+pub const RENDER_PROFILE_IDS: [&str; 3] = ["default", "balanced", "high-quality"];
+
 /// Resolve a render-profile name into the matching property slice.
 ///
 /// Recognised names are `"balanced"` and `"high-quality"`.  Any other
@@ -167,6 +171,18 @@ mod tests {
         assert!(DEFAULT_RENDER_PROFILE.contains(&text("scale", "bilinear")));
         assert!(BALANCED_RENDER_PROFILE.contains(&text("scale", "lanczos")));
         assert!(HIGH_QUALITY_RENDER_PROFILE.contains(&text("deband", "yes")));
+    }
+
+    #[test]
+    fn every_profile_id_has_its_profile() {
+        let profiles = [
+            DEFAULT_RENDER_PROFILE,
+            BALANCED_RENDER_PROFILE,
+            HIGH_QUALITY_RENDER_PROFILE,
+        ];
+        for (id, profile) in RENDER_PROFILE_IDS.into_iter().zip(profiles) {
+            assert_eq!(render_profile_properties(id), profile, "{id}");
+        }
     }
 
     #[test]

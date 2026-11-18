@@ -12,6 +12,9 @@ impl MpvBackend {
     /// Profiles: `"default"` (lean/fast: bilinear, audio sync),
     /// `"balanced"` (lanczos, correct-downscaling),
     /// `"high-quality"` (ewa_lanczossharp, display-resample, interpolation).
+    /// The ids [`Self::apply_render_profile`] knows, lightest first.
+    pub const RENDER_PROFILES: [&str; 3] = big_mpv_render::RENDER_PROFILE_IDS;
+
     pub fn apply_render_profile(&self, profile: &str) {
         info!("Applying render profile: {profile}");
         self.with_mpv(|m| {
