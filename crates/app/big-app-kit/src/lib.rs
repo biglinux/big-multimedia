@@ -11,7 +11,6 @@
 
 /// Application and window action contracts.
 pub mod actions;
-/// Panic containment for Relm4 `update()` bodies and raw glib callbacks.
 pub mod containment;
 /// Desktop integration: action installers, file manager, power actions.
 pub mod desktop;
@@ -23,7 +22,6 @@ pub mod file_dialogs;
 pub mod keybindings;
 /// MPRIS D-Bus service for media players.
 pub mod mpris;
-/// System tray icon (StatusNotifierItem) with a menu.
 pub mod tray;
 /// File drag-and-drop helpers.
 pub mod widgets;

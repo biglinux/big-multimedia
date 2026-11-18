@@ -219,8 +219,8 @@ impl TvLink {
         self.failure.take()
     }
 
-    /// Run `changed` on every change the daemon reports; returns what
-    /// [`Self::unsubscribe`] takes.
+    /// Run `changed` on every change the daemon reports; returns the id that
+    /// removes it when its view detaches.
     pub fn subscribe(&self, changed: impl Fn() + 'static) -> u64 {
         let id = self.next_listener.get() + 1;
         self.next_listener.set(id);

@@ -17,9 +17,7 @@
 //! this removes the "1px line under the sidebar header" and keeps the
 //! header from showing the lighter `headerbar` background). It carries no title
 //! by default; drop a title widget (plain title text, a primary action button,
-//! or a title/search stack) via [`BigSidebarDialog::set_sidebar_header`], and
-//! pack extra controls (e.g. a search toggle) into
-//! [`BigSidebarDialog::sidebar_header`].
+//! or a title/search stack) via [`BigSidebarDialog::set_sidebar_header`].
 //!
 //! Two entry points: [`BigSidebarDialog::new`] builds the split for embedding
 //! (exposed via [`BigSidebarDialog::root`]); [`BigSidebarDialog::install`] is the

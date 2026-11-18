@@ -32,5 +32,4 @@
 
 /// Canonical 10-band equalizer frequencies and labels.
 pub mod equalizer;
-/// Noise-reduction model identifiers and LADSPA control contracts.
 pub mod noise_reduction;

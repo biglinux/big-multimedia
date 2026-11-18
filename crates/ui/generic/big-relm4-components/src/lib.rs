@@ -11,7 +11,7 @@
 //! - [`layout`]: media window chrome, dialogs, menus and toolbar panes.
 //! - [`list`]: `AdwActionRow` derivatives.
 //! - [`task`]: off-main-thread work with main-thread delivery.
-//! - [`text`], [`time`]: markup escaping and duration formatting.
+//! - [`time`]: duration formatting.
 //! - [`theme`]: theme helpers shared by both players.
 
 #![deny(missing_docs)]

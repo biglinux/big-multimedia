@@ -2,8 +2,8 @@
 
 //! Atomic file persistence primitives for BigLinux apps.
 //!
-//! [`atomic_write`](crate::storage::atomic_write) and
-//! [`atomic_write_private`](crate::storage::atomic_write_private) write through a
+//! [`atomic_write`] and
+//! [`atomic_write_private`] write through a
 //! `.big-state.tmp.<pid>.<seq>` sibling file and then rename into place.
 //! `rename(2)` is atomic on the same filesystem; partial writes from a crash
 //! are bound to the temp file and visible only after a successful rename.

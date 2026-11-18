@@ -17,6 +17,4 @@ pub mod recent_files;
 /// Local HTTP remote-control endpoint (feature `remote-control`).
 #[cfg(feature = "remote-control")]
 pub mod remote_control;
-/// Display-free zone-layout model (control catalog + per-zone ordered ids +
-/// hidden set) behind the customizable button-zone editor and runtime applier.
 pub mod zone_layout;

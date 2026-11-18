@@ -31,7 +31,6 @@ pub mod digest;
 pub mod http_client;
 /// Worker-only Secret Service access through libsecret's secret-tool.
 pub mod keyring;
-/// Atomic JSON persistence helpers.
 pub mod storage;
 /// Safe subprocess argv specs and spawn handles.
 pub mod subprocess;
