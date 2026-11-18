@@ -491,7 +491,7 @@ impl Component for VideoShell {
                 custom_mpv_options,
                 audio_output,
                 initial_volume,
-                volume_max: i64::from(settings.get_int_or(keys::VOLUME_MAX, 150)),
+                volume_max: i64::from(settings.volume_max_percent()),
                 render_mode: settings.get_string(keys::RENDER_MODE).clone(),
                 settings: settings.clone(),
                 notice: notice.clone(),

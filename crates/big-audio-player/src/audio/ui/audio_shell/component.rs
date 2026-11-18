@@ -84,7 +84,7 @@ impl Component for AudioShell {
         let playback_bar = AudioPlaybackBar::builder()
             .launch(AudioPlaybackBarInit {
                 spec: BigAudioTransportSpec::new(transport_labels()),
-                max_volume: 150.0,
+                max_volume: f64::from(settings.volume_max_percent()),
                 initial_volume,
                 initial_voice_pct: (initial_noise * 100.0).clamp(0.0, 100.0),
                 trim_content: Some(trim.widget().clone().upcast()),

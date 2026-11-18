@@ -77,6 +77,8 @@ pub enum AudioPlaybackBarInput {
     },
     /// Set the volume slider value (`0..=max_volume`) without emitting.
     SetVolumeValue(f64),
+    /// Set the slider's maximum volume percent; a higher value comes down to it.
+    SetMaxVolume(f64),
     /// Whose volume the slider moves: the TV's while a TV has the transport.
     SetVolumeOfTv(bool),
     /// Toggle the `voice-active` style on the voice button.
@@ -316,6 +318,12 @@ impl Component for AudioPlaybackBar {
             AudioPlaybackBarInput::SetVolumeValue(value) => {
                 let scale = self.volume_scale.clone();
                 self.with_guard(|| scale.set_value(value));
+            }
+            AudioPlaybackBarInput::SetMaxVolume(maximum) => {
+                self.volume_scale.adjustment().set_upper(maximum);
+                if self.volume_scale.value() > maximum {
+                    self.volume_scale.set_value(maximum);
+                }
             }
             AudioPlaybackBarInput::SetVolumeOfTv(tv) => {
                 use big_media_components::text::text;

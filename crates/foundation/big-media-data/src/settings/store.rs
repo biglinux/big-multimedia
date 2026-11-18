@@ -330,6 +330,18 @@ impl Settings {
         })
     }
 
+    /// Range of the Maximum Volume preference, in percent.
+    pub const VOLUME_MAX_PERCENT_RANGE: std::ops::RangeInclusive<i32> = 100..=200;
+
+    /// The volume ceiling in percent: the Maximum Volume preference kept within
+    /// [`Self::VOLUME_MAX_PERCENT_RANGE`], 150 when never stored.
+    #[must_use]
+    pub fn volume_max_percent(&self) -> i32 {
+        let range = Self::VOLUME_MAX_PERCENT_RANGE;
+        self.get_int_or(keys::VOLUME_MAX, 150)
+            .clamp(*range.start(), *range.end())
+    }
+
     #[must_use]
     pub fn get_int(&self, key: keys::IntKey) -> i32 {
         self.int(key.0)

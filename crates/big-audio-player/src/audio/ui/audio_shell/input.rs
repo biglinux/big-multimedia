@@ -174,6 +174,8 @@ pub enum AudioShellInput {
     TaskbarProgressChanged(bool),
     /// Show or remove the tray icon, as Preferences now says.
     TrayIconChanged(bool),
+    /// The Maximum Volume preference changed: the volume slider follows it.
+    VolumeMaxChanged,
     /// A click on the tray icon or its menu.
     Tray(big_app_kit::tray::TrayCommand),
     /// Arm the sleep timer for `minutes`, then perform `action` on expiry.

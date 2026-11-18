@@ -119,13 +119,14 @@ pub fn create_player_audio_page(
     );
 
     let volume_actions = actions.clone();
+    let volume_max_range = Settings::VOLUME_MAX_PERCENT_RANGE;
     add_spin_int_row(
         &sound_group,
         &i18n("Maximum Volume"),
         &i18n("Above 100% helps with quiet recordings but may distort"),
         "volume-max",
-        100.0,
-        200.0,
+        f64::from(*volume_max_range.start()),
+        f64::from(*volume_max_range.end()),
         5.0,
         settings,
         move |value| {

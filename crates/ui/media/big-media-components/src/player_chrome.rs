@@ -110,12 +110,11 @@ pub fn build_volume_popover(
         trough_style_provider_priority(),
     );
     {
-        let maximum_volume_for_trough = maximum_volume_percent;
         // The provider is display-wide: reloading it restyles every widget, so
         // only reload when the colour changes (it is constant up to 100 %).
         let shown = std::cell::RefCell::new(initial_color);
         scale.connect_value_changed(move |s| {
-            let color = volume_trough_color(s.value(), maximum_volume_for_trough);
+            let color = volume_trough_color(s.value(), s.adjustment().upper());
             if *shown.borrow() != color {
                 update_scale_trough(&trough, "volume-scale", &color);
                 *shown.borrow_mut() = color;

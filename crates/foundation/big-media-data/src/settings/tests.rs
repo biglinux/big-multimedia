@@ -109,3 +109,20 @@ fn settings_round_trip() {
     settings.put_string(keys::HWDEC, "vaapi");
     assert_eq!(settings.get_string(keys::HWDEC), "vaapi");
 }
+
+#[test]
+fn volume_max_stays_in_preference_range() {
+    let settings = Settings::memory_only();
+    assert_eq!(settings.volume_max_percent(), 150);
+    for (stored, expected) in [
+        (0, 100),
+        (90, 100),
+        (100, 100),
+        (180, 180),
+        (200, 200),
+        (250, 200),
+    ] {
+        settings.put_int(keys::VOLUME_MAX, stored);
+        assert_eq!(settings.volume_max_percent(), expected, "stored {stored}");
+    }
+}

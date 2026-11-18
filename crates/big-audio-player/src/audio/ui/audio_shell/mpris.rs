@@ -168,7 +168,8 @@ impl AudioShell {
                 if volume.is_finite()
                     && let Some(mpv) = &self.mpv
                 {
-                    mpv.set_volume((volume * 100.0).clamp(0.0, 250.0));
+                    let volume_max = f64::from(self.settings.volume_max_percent());
+                    mpv.set_volume((volume * 100.0).clamp(0.0, volume_max));
                 }
             }
             MprisCommand::SetRate(rate) => {

@@ -228,10 +228,12 @@ pub(super) fn build_mpv_backend(
         &replaygain
     });
     mpv.set_replaygain_preamp(settings.get_double(keys::REPLAYGAIN_PREAMP));
-    mpv.set_volume_max(i64::from(settings.get_int_or(keys::VOLUME_MAX, 150)));
+    let volume_max = settings.volume_max_percent();
+    mpv.set_volume_max(i64::from(volume_max));
     // Zero is a deliberate user choice, not a missing setting.
     mpv.set_volume(f64::from(restored_volume(
         settings.get_int_or(keys::AUDIO_VOLUME, 100),
+        volume_max,
     )));
     mpv.set_gapless(settings.get_bool(keys::GAPLESS_AUDIO));
     mpv.set_audio_pitch_correction(settings.get_bool(keys::AUDIO_PITCH_CORRECTION));
@@ -252,8 +254,8 @@ pub(super) fn build_mpv_backend(
     Ok(Arc::new(mpv))
 }
 
-fn restored_volume(saved: i32) -> i32 {
-    saved.clamp(0, 250)
+fn restored_volume(saved: i32, volume_max: i32) -> i32 {
+    saved.clamp(0, volume_max)
 }
 
 #[cfg(test)]
@@ -262,9 +264,10 @@ mod review_tests {
 
     #[test]
     fn restored_volume_keeps_zero_and_clamps() {
-        assert_eq!(restored_volume(0), 0);
-        assert_eq!(restored_volume(-1), 0);
-        assert_eq!(restored_volume(65), 65);
-        assert_eq!(restored_volume(i32::MAX), 250);
+        assert_eq!(restored_volume(0, 150), 0);
+        assert_eq!(restored_volume(-1, 150), 0);
+        assert_eq!(restored_volume(65, 150), 65);
+        assert_eq!(restored_volume(180, 150), 150);
+        assert_eq!(restored_volume(i32::MAX, 200), 200);
     }
 }

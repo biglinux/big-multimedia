@@ -30,8 +30,11 @@ impl AudioShell {
             }
             AudioShellInput::ShowPreferences => {
                 if let Some(window) = self.notice.widget().root().and_downcast::<gtk::Window>() {
-                    let (taskbar_input, tray_input) =
-                        (sender.input_sender().clone(), sender.input_sender().clone());
+                    let (taskbar_input, tray_input, volume_input) = (
+                        sender.input_sender().clone(),
+                        sender.input_sender().clone(),
+                        sender.input_sender().clone(),
+                    );
                     crate::audio::preferences::show_audio_preferences(
                         &window,
                         &self.settings,
@@ -45,6 +48,9 @@ impl AudioShell {
                                 let _ = tray_input.send(AudioShellInput::TrayIconChanged(enabled));
                             }),
                         },
+                        move || {
+                            let _ = volume_input.send(AudioShellInput::VolumeMaxChanged);
+                        },
                     );
                 }
             }
@@ -54,6 +60,11 @@ impl AudioShell {
                 }
             }
             AudioShellInput::TrayIconChanged(enabled) => self.set_tray_icon(enabled, &sender),
+            AudioShellInput::VolumeMaxChanged => {
+                let maximum = f64::from(self.settings.volume_max_percent());
+                self.playback_bar
+                    .emit(AudioPlaybackBarInput::SetMaxVolume(maximum));
+            }
             AudioShellInput::Tray(command) => self.handle_tray_command(command, &sender),
             AudioShellInput::TracksDeletedFromStorage(ids) => {
                 self.reconcile_deleted_tracks(ids, &sender);
