@@ -80,25 +80,6 @@ impl AudioShell {
                 file_path,
                 fields,
             } => self.write_tags(track_id, file_path, fields, sender),
-            LibraryPanelOutput::ImportPlaylistFile { path } => {
-                let input = sender.input_sender().clone();
-                spawn_blocking_result(
-                    move || crate::media::playlist::parse_playlist_file(&path),
-                    move |result| match result {
-                        Ok(list) => {
-                            if let Some(notice) = left_out_notice(list.truncated, list.skipped) {
-                                let _ = input.send(AudioShellInput::Notify(notice));
-                            }
-                            let _ = input.send(AudioShellInput::ImportPaths(list.entries));
-                        }
-                        Err(_) => {
-                            let _ = input.send(AudioShellInput::Notify(i18n(
-                                "The playlist could not be read safely. Check its format and permissions.",
-                            )));
-                        }
-                    },
-                );
-            }
             LibraryPanelOutput::MusicBrainzLookup(track) => {
                 Self::lookup_musicbrainz(track, sender);
             }

@@ -50,8 +50,6 @@ pub enum LibraryPanelInput {
     },
     /// Open the watch-folder manager (shell resolved the folder list).
     ShowManageFolders(Vec<WatchFolder>),
-    /// Import a playlist file into the library (panel picks the file).
-    ImportPlaylist,
 }
 
 /// Intents the library panel emits for the shell to act on.
@@ -93,11 +91,6 @@ pub enum LibraryPanelOutput {
     },
     /// MusicBrainz lookup request (advisory; fills empty fields only).
     MusicBrainzLookup(Track),
-    /// Import an m3u/m3u8/pls file (shell parses + inserts).
-    ImportPlaylistFile {
-        /// Picked file path.
-        path: PathBuf,
-    },
     /// Add a watched folder + scan it.
     AddWatchFolder {
         /// Folder path.
@@ -205,11 +198,6 @@ impl Component for LibraryPanel {
             LibraryPanelInput::ShowManageFolders(folders) => {
                 if let Some(win) = parent.as_ref() {
                     library_io::show_manage_folders(win, &folders, &sender);
-                }
-            }
-            LibraryPanelInput::ImportPlaylist => {
-                if let Some(win) = parent.as_ref() {
-                    library_io::import_playlist(win, &sender);
                 }
             }
         }

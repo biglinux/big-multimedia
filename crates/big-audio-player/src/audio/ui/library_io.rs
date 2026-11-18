@@ -1,7 +1,7 @@
 //! Library-panel file IO + folder-management dialogs (push-model).
 //!
-//! Free functions the panel calls when the user imports a playlist or opens
-//! the watch-folder manager. The panel never touches the DB or the scanner:
+//! Free functions the panel calls when the user opens the watch-folder
+//! manager. The panel never touches the DB or the scanner:
 //! every action emits an `Output` intent and the shell runs the query/scan.
 //! `parent` is the toplevel window; it satisfies both `FilePicker`
 //! (`IsA<gtk::Window>`) and `AlertDialog::present`.
@@ -11,7 +11,6 @@ use std::path::Path;
 use adw::prelude::*;
 
 use big_app_kit::file_dialogs::FilePicker;
-use big_media_components::media::files::PLAYLIST_EXTENSIONS;
 use big_relm4_components::input::button_content::{BigButtonContentSpec, build_button};
 use big_relm4_components::layout::dialog_page::BigDialogPage;
 use big_relm4_components::list::button_strip_row::{BigButtonStripRow, BigButtonStripRowSpec};
@@ -27,18 +26,6 @@ const MUSIC_FOLDERS_DIALOG_WIDTH: i32 = 600;
 const MUSIC_FOLDERS_DIALOG_HEIGHT: i32 = 560;
 const MUSIC_FOLDERS_CONTENT_WIDTH: i32 = 560;
 const MUSIC_FOLDERS_TIGHTENING_WIDTH: i32 = 420;
-
-/// Pick an `.m3u`/`.m3u8`/`.pls` file and hand the path to the shell, which
-/// parses it (`big_media_runtime::media::playlist_scan`) + inserts the tracks.
-pub(super) fn import_playlist(parent: &gtk::Window, sender: &ComponentSender<LibraryPanel>) {
-    let out = sender.clone();
-    FilePicker::new(i18n("Import Playlist"))
-        .accept_label(i18n("Open"))
-        .filter(&i18n("Playlists"), PLAYLIST_EXTENSIONS)
-        .open(parent, move |path| {
-            let _ = out.output(LibraryPanelOutput::ImportPlaylistFile { path });
-        });
-}
 
 /// A scan opens its own progress dialog. Stacked over this one, Escape closed
 /// the progress (cancelling the scan) and left this identical-looking dialog,
