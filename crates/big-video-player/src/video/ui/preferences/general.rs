@@ -2,6 +2,7 @@
 //! lock, screenshots, and the reset-everything action.
 
 use adw::prelude::*;
+use big_app_kit::file_dialogs::FilePicker;
 use std::sync::Arc;
 
 use crate::i18n::i18n;
@@ -213,19 +214,12 @@ fn screenshot_folder_row(settings: &Settings) -> adw::ActionRow {
         reset.connect_clicked(move |_| save(""));
     }
     choose.connect_clicked(move |button| {
-        let dialog = gtk::FileDialog::builder()
-            .title(i18n("Screenshot Folder"))
-            .modal(true)
-            .build();
         let parent = button.root().and_downcast::<gtk::Window>();
         let save = save.clone();
-        dialog.select_folder(
+        FilePicker::open_folder(i18n("Screenshot Folder")).select_folder_optional(
             parent.as_ref(),
-            gtk::gio::Cancellable::NONE,
-            move |result| {
-                if let Some(path) = result.ok().and_then(|folder| folder.path())
-                    && let Some(folder) = path.to_str()
-                {
+            move |path| {
+                if let Some(folder) = path.to_str() {
                     save(folder);
                 }
             },

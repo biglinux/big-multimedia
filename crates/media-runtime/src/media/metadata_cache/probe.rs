@@ -1,4 +1,6 @@
-use big_app_kit::subprocess::BigSubprocessSpec;
+use std::sync::atomic::AtomicBool;
+
+use big_media_data::media_probe::probe_json;
 
 use crate::media::playlist::VideoMeta;
 
@@ -7,34 +9,10 @@ use super::cache::{
     evict_oldest, file_mtime, meta_cache, release_slot, save_meta_cache_to_disk,
 };
 
-/// ffprobe's format and stream report for `path`. Synchronous; call from a
-/// background thread.
-pub(super) fn ffprobe_json(path: &str) -> Option<serde_json::Value> {
-    let output = BigSubprocessSpec::builder()
-        .program("ffprobe")
-        .args([
-            "-v",
-            "quiet",
-            "-print_format",
-            "json",
-            "-show_streams",
-            "-show_format",
-            // A file name starting with `-` must not read as a flag.
-            "--",
-            path,
-        ])
-        .build()
-        .run()
-        .ok()?;
-    if !output.status.success() {
-        return None;
-    }
-    serde_json::from_str(&String::from_utf8_lossy(&output.stdout)).ok()
-}
-
 /// Synchronous; call from a background thread.
 pub fn probe_metadata(path: &str) -> Option<VideoMeta> {
-    ffprobe_json(path).map(|root| parse_ffprobe(&root))
+    let root = probe_json(path, &AtomicBool::new(false)).ok()?;
+    Some(parse_ffprobe(&root))
 }
 
 /// Atomic-semaphore gated to cap concurrent ffprobe children.

@@ -6,6 +6,8 @@
 //! uses the system libsqlite3 and is feature-gated behind `db`.
 //!
 //! HTTP + URL helpers come from `big_os_kit` (GTK-free leaf, single policy home).
+//! [`media_probe`] runs ffprobe for every crate that reads a media file's
+//! streams and tags.
 
 #![forbid(unsafe_code)]
 
@@ -22,6 +24,9 @@ pub mod i18n;
 /// (MusicBrainz, LRCLIB, cover art, podcasts).
 #[cfg(feature = "library")]
 pub mod library;
+/// ffprobe's JSON report on a media file, shared by the audio library and
+/// the video metadata cache.
+pub mod media_probe;
 /// Radio data layer: Radio-Browser API client (GTK-free).
 #[cfg(feature = "radio")]
 pub mod radio;

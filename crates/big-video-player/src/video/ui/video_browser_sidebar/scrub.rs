@@ -169,7 +169,7 @@ fn frame_index_for_x(pointer_x: f64, width: f64, frame_count: usize) -> Option<u
 
 /// Cache directory for scrub frames (`~/.cache/big-video-player/scrub`).
 fn cache_root() -> Option<PathBuf> {
-    let cache_directory = glib::user_cache_dir().join("big-video-player/scrub");
+    let cache_directory = big_os_kit::xdg_dirs::cache_dir()?.join("big-video-player/scrub");
     std::fs::create_dir_all(&cache_directory).ok()?;
     Some(cache_directory)
 }

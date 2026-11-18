@@ -1,4 +1,4 @@
-use big_os_kit::subprocess::{BigSubprocessError, BigSubprocessOutputMode, BigSubprocessSpec};
+use big_os_kit::subprocess::{BigSubprocessOutputMode, BigSubprocessSpec};
 use std::fs;
 use std::path::Path;
 use std::sync::atomic::{AtomicBool, Ordering};
@@ -6,6 +6,7 @@ use std::time::{Duration, SystemTime};
 
 use crate::db::models::Track;
 use crate::error::{Error, Result};
+use crate::media_probe::probe_json;
 
 pub fn read_track_metadata(path: &str) -> Result<Track> {
     read_track_metadata_cancellable(path, &AtomicBool::new(false))
@@ -16,7 +17,7 @@ pub fn read_track_metadata_cancellable(path: &str, cancelled: &AtomicBool) -> Re
         return Err(Error::Cancelled);
     }
     let file_path = Path::new(path);
-    let probe = ffprobe_json_cancellable(path, cancelled)?;
+    let probe = probe_json(path, cancelled)?;
 
     let file_meta = fs::metadata(file_path).ok();
     let file_size = file_meta.as_ref().map(|m| m.len() as i64);
@@ -212,42 +213,12 @@ pub fn extract_lyrics(path: &str) -> Option<String> {
         return Some(content);
     }
 
-    let probe = ffprobe_json(path).ok()?;
+    let probe = probe_json(path, &AtomicBool::new(false)).ok()?;
     tag_value(
         &probe,
         &["unsyncedlyrics", "unsynclyrics", "lyrics", "syncedlyrics"],
     )
     .filter(|s| !s.is_empty())
-}
-
-fn ffprobe_json(path: &str) -> Result<serde_json::Value> {
-    ffprobe_json_cancellable(path, &AtomicBool::new(false))
-}
-fn ffprobe_json_cancellable(path: &str, cancelled: &AtomicBool) -> Result<serde_json::Value> {
-    let result = BigSubprocessSpec::builder()
-        .program("ffprobe")
-        .args([
-            "-v",
-            "quiet",
-            "-print_format",
-            "json",
-            "-show_streams",
-            "-show_format",
-            "--",
-            path,
-        ])
-        .timeout(Duration::from_secs(30))
-        .build()
-        .run_cancellable(cancelled)
-        .map_err(|e| match e {
-            BigSubprocessError::Cancelled => Error::Cancelled,
-            _ => Error::invalid_argument("audio_file", "Could not complete the media probe"),
-        })?;
-    if !result.status.success() {
-        return Err(Error::invalid_argument("audio_file", "Media probe failed"));
-    }
-    serde_json::from_slice(&result.stdout)
-        .map_err(|_| Error::invalid_argument("audio_file", "Invalid media probe response"))
 }
 
 fn first_audio_stream(root: &serde_json::Value) -> Option<&serde_json::Value> {
