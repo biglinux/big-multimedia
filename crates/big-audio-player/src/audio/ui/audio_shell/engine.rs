@@ -25,9 +25,7 @@ impl AudioShell {
             // Every file would fail the same way, so nothing is skipped.
             PlayerEvent::EndFile(EndReason::AudioOutputFailed) => {
                 self.failed_loads = 0;
-                self.notify(&i18n(
-                    "Sound could not start on the audio output. Check that your speakers or headphones are connected, or choose another Audio Output in Preferences and reopen the player.",
-                ));
+                self.notify(&EndReason::audio_output_failed_notice());
                 self.handle_mpris_command(MprisCommand::Stop, sender);
             }
             PlayerEvent::EndFile(EndReason::Error) if !self.is_stream => {

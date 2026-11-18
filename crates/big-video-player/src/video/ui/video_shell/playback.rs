@@ -207,11 +207,17 @@ impl VideoShell {
                 if self.ended && !tv {
                     self.controls.emit(VideoControlsBarInput::SetPaused(true));
                 }
-                if reason == EndReason::Error {
-                    self.notify(&i18n(
-                        "Could not play this file — it may be unsupported or corrupt.",
-                    ));
-                    self.reveal_pending_welcome();
+                match reason {
+                    EndReason::Error => {
+                        self.notify(&i18n(
+                            "Could not play this file — it may be unsupported or corrupt.",
+                        ));
+                        self.reveal_pending_welcome();
+                    }
+                    EndReason::AudioOutputFailed => {
+                        self.notify(&EndReason::audio_output_failed_notice());
+                    }
+                    _ => {}
                 }
             }
             _ => {}

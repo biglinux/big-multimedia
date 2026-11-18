@@ -88,6 +88,13 @@ pub enum EndReason {
 }
 
 impl EndReason {
+    /// What to tell the person when the audio output, not the file, failed.
+    pub fn audio_output_failed_notice() -> String {
+        crate::i18n::i18n(
+            "Sound could not start on the audio output. Check that your speakers or headphones are connected, or choose another Audio Output in Preferences and reopen the player.",
+        )
+    }
+
     pub(super) fn from_mpv(reason: mpv_sys::mpv_end_file_reason) -> Self {
         match reason {
             mpv_sys::mpv_end_file_reason_MPV_END_FILE_REASON_EOF => Self::Eof,
