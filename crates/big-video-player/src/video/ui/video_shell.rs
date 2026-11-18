@@ -198,6 +198,9 @@ pub struct VideoShell {
     mpris_track_seq: u64,
     /// True between an unpause and the next pause or end of file.
     playing: bool,
+    /// mpv holds the last frame of a file (`eof-reached`): the button offers
+    /// Play though mpv is not paused.
+    ended: bool,
     /// GTK inhibit cookie keeping the screen awake. mpv cannot do it: its
     /// screensaver control needs a window of its own, which libmpv lacks.
     screen_inhibit: Option<u32>,

@@ -171,9 +171,9 @@ impl VideoShell {
                     return;
                 };
                 match command {
-                    MprisCommand::Play => mpv.play(),
+                    MprisCommand::Play => super::playback::play(&mpv, &self.settings),
                     MprisCommand::Pause => mpv.pause(),
-                    MprisCommand::PlayPause => mpv.toggle_pause(),
+                    MprisCommand::PlayPause => super::playback::toggle_play(&mpv, &self.settings),
                     MprisCommand::Stop => mpv.stop(),
                     MprisCommand::Next if state.can_next => mpv.playlist_next(),
                     MprisCommand::Previous if state.can_prev => mpv.playlist_prev(),

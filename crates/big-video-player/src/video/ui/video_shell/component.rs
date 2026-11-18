@@ -621,6 +621,7 @@ impl Component for VideoShell {
                 mpris_state,
                 mpris_track_seq: 0,
                 playing: false,
+                ended: false,
                 screen_inhibit: None,
             },
             widgets: (),
@@ -805,7 +806,7 @@ impl Component for VideoShell {
                         self.tv
                             .control(if state.paused { "play" } else { "pause" }, 0.0);
                     } else if let Some(mpv) = self.mpv.borrow().as_ref() {
-                        mpv.toggle_pause();
+                        super::playback::toggle_play(mpv, &self.settings);
                     }
                 }
                 VideoShellInput::TvChanged => self.on_tv_changed(),
