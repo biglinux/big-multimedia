@@ -81,8 +81,8 @@ A music player built around a fast, searchable library.
   playlists.
 - **Internet radio** with recording, and **podcasts** with subscriptions.
 - **Lyrics**, a tag editor and album art.
-- **Listening**: gapless playback, crossfade, ReplayGain, an equalizer, speed
-  and pitch control, and a sleep timer.
+- **Listening**: gapless playback, ReplayGain, an equalizer, speed and pitch
+  control, and a sleep timer.
 - **Desktop integration**: MPRIS for media keys and the desktop's player
   controls, playback on a TV, and ListenBrainz scrobbling.
 
