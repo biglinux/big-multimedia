@@ -590,6 +590,7 @@ const INDEX_JS: &str = include_str!("remote_control.js");
 mod tests {
     use super::*;
     use std::sync::Mutex;
+    use std::sync::atomic::AtomicUsize;
 
     fn is_closed(result: std::io::Result<usize>) -> bool {
         match result {
@@ -755,8 +756,118 @@ mod tests {
         assert!(stop.load(Ordering::Acquire));
     }
 
+    fn counting_handlers(calls: &Arc<AtomicUsize>) -> RemoteHandlers {
+        let command = || {
+            let calls = Arc::clone(calls);
+            Arc::new(move || {
+                calls.fetch_add(1, Ordering::SeqCst);
+                true
+            })
+        };
+        let volume_calls = Arc::clone(calls);
+        let status_calls = Arc::clone(calls);
+        let mut counting = handlers(true);
+        counting.play_pause = command();
+        counting.next = command();
+        counting.prev = command();
+        counting.set_volume = Arc::new(move |_| {
+            volume_calls.fetch_add(1, Ordering::SeqCst);
+            true
+        });
+        let status = counting.status;
+        counting.status = Arc::new(move || {
+            status_calls.fetch_add(1, Ordering::SeqCst);
+            status()
+        });
+        counting
+    }
+
+    fn status_code(reply: &[u8]) -> &str {
+        std::str::from_utf8(&reply[9..12]).unwrap()
+    }
+
+    /// Status, handler calls and whether the rate budget was charged.
+    fn exchange(head: &str, admitted: bool) -> (String, usize, bool) {
+        let calls = Arc::new(AtomicUsize::new(0));
+        let charged = std::cell::Cell::new(false);
+        let request = format!("{head}\r\nHost: localhost\r\n\r\n");
+        let reply = respond(
+            request.as_bytes(),
+            "t",
+            &counting_handlers(&calls),
+            &AtomicBool::new(false),
+            || {
+                charged.set(true);
+                admitted
+            },
+        );
+        let handled = calls.load(Ordering::SeqCst);
+        (status_code(&reply).to_owned(), handled, charged.get())
+    }
+
     #[test]
-    fn denied_admission_returns_503() {
+    fn refusals_skip_handlers() {
+        for head in [
+            "GET /t/status HTTP/1.1\r\nOrigin: http://evil",
+            "POST /t/next HTTP/1.1\r\nOrigin: http://evil\r\nX-Big-Media-Remote: 1",
+            "GET /t/status HTTP/1.1\r\nSec-Fetch-Site: cross-site",
+            "POST /t/next HTTP/1.1\r\nSec-Fetch-Site: same-site\r\nX-Big-Media-Remote: 1",
+            "POST /t/next HTTP/1.1",
+            "POST /t/volume?v=5 HTTP/1.1\r\nX-Big-Media-Remote: 0",
+        ] {
+            assert_eq!(exchange(head, true), ("403".into(), 0, false), "{head}");
+        }
+        let marked = "POST /t/play-pause HTTP/1.1\r\nX-Big-Media-Remote: 1";
+        assert_eq!(exchange(marked, false), ("429".into(), 0, true));
+        let same_origin = "POST /t/next HTTP/1.1\r\nOrigin: http://localhost\r\n\
+                           Sec-Fetch-Site: same-origin\r\nX-Big-Media-Remote: 1";
+        assert_eq!(exchange(same_origin, true), ("200".into(), 1, true));
+    }
+
+    #[test]
+    fn rate_limits_return_429() {
+        let calls = Arc::new(AtomicUsize::new(0));
+        let handlers = counting_handlers(&calls);
+        let start = Instant::now();
+        let mut limits = Limits {
+            peers: HashMap::new(),
+            global: Rate { start, count: 0 },
+        };
+        let mut send = |peer: u8, now: Instant| {
+            let reply = respond(
+                b"POST /token/next HTTP/1.1\r\nHost: localhost\r\nX-Big-Media-Remote: 1\r\n\r\n",
+                "token",
+                &handlers,
+                &AtomicBool::new(false),
+                || limits.admit(IpAddr::from([192, 168, 1, peer]), now),
+            );
+            status_code(&reply).to_owned()
+        };
+
+        // 8 mutations per peer per second.
+        for _ in 0..8 {
+            assert_eq!(send(1, start), "200");
+        }
+        assert_eq!(send(1, start), "429");
+        // 24 mutations per second overall.
+        for peer in [2, 3] {
+            for _ in 0..8 {
+                assert_eq!(send(peer, start), "200");
+            }
+        }
+        assert_eq!(send(4, start), "429");
+        assert_eq!(calls.load(Ordering::SeqCst), 24);
+        // At most 64 peers are tracked; one more is refused.
+        for peer in 5..=64 {
+            let later = start + Duration::from_secs(u64::from(peer));
+            assert_eq!(send(peer, later), "200");
+        }
+        assert_eq!(send(65, start + Duration::from_secs(65)), "429");
+        assert_eq!(calls.load(Ordering::SeqCst), 84);
+    }
+
+    #[test]
+    fn busy_handler_returns_503() {
         let req =
             parse_request(b"POST /token/next HTTP/1.1\r\nHost: localhost\r\nX-Big-Media-Remote: 1")
                 .unwrap();
