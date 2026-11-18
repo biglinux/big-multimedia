@@ -6,8 +6,8 @@
 //! `.idle-bg` gradient in `style.css` is the fallback when no wallpaper resolves
 //! (no desktop integration, or ffmpeg missing).
 //!
-//! Detection + blur run off the GTK main loop (a worker thread); the result is
-//! delivered back over an async channel and applied on the main thread.
+//! Detection + blur run off the GTK main loop; the result is applied on the
+//! main thread.
 
 use std::ffi::OsStr;
 use std::hash::{Hash, Hasher};
@@ -15,7 +15,7 @@ use std::path::{Path, PathBuf};
 use std::rc::Rc;
 
 use big_app_kit::subprocess::{BigSubprocessOutputMode, BigSubprocessSpec};
-use gtk::glib;
+use big_relm4_components::task::spawn_blocking_result;
 
 use super::osd::IdleBackground;
 
@@ -35,34 +35,15 @@ const WALLPAPER_SCAN_DEPTH: usize = 4;
 /// the cached blurred image as the idle background once it is ready. No-op on
 /// any failure: the static gradient fallback stays in place.
 pub(super) fn spawn_apply(idle_bg: Rc<IdleBackground>) {
-    let (sender, receiver) = async_channel::bounded::<PathBuf>(1);
-    // Worker: detection + ffmpeg blur are blocking (disk read + a subprocess),
-    // so they must not run on the GTK main loop. Only `sender` (Send) crosses
-    // the thread boundary; the `Rc<IdleBackground>` stays on the main thread.
-    let spawned = std::thread::Builder::new()
-        .name("idle-wallpaper".into())
-        .spawn(move || {
-            if let Some(path) = resolve_blurred_wallpaper() {
-                let _ = sender.send_blocking(path);
-            }
-        });
-    if spawned.is_err() {
-        return;
-    }
-    // Weak: the ffmpeg blur can outlive a quick open→close. A strong
-    // `Rc<IdleBackground>` captured across the `recv().await` would pin the
-    // shell's `video_bg` box and the `gl_area` GL surface (and stale-write a
-    // display-wide CSS provider) for the whole blur after the shell is torn
-    // down. Upgrade-or-return leaves the live path byte-for-byte unchanged.
+    // Weak: the ffmpeg blur can outlive a quick open→close, and a strong
+    // reference would pin the shell's `video_bg` box and `gl_area` until it ends.
     let idle_bg = Rc::downgrade(&idle_bg);
-    glib::spawn_future_local(async move {
-        if let Ok(path) = receiver.recv().await {
-            let Some(idle_bg) = idle_bg.upgrade() else {
-                return;
-            };
-            if let Some(display) = gtk::gdk::Display::default() {
-                idle_bg.set_blurred_wallpaper(&path, &display);
-            }
+    spawn_blocking_result(resolve_blurred_wallpaper, move |path| {
+        let (Some(path), Some(idle_bg)) = (path, idle_bg.upgrade()) else {
+            return;
+        };
+        if let Some(display) = gtk::gdk::Display::default() {
+            idle_bg.set_blurred_wallpaper(&path, &display);
         }
     });
 }
