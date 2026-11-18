@@ -1,4 +1,4 @@
-use super::playback::volume_icon;
+use super::playback::volume_indicator;
 use super::*;
 
 impl AudioShell {
@@ -115,11 +115,8 @@ impl AudioShell {
                 self.volume_save.run(move || {
                     settings.put_audio_volume_percent(vol);
                 });
-                self.playback_bar
-                    .emit(AudioPlaybackBarInput::SetVolumeIndicator {
-                        label: format!("{vol:.0}"),
-                        icon: volume_icon(vol).to_string(),
-                    });
+                let muted = self.mpv.as_ref().is_some_and(|mpv| mpv.get_mute());
+                self.playback_bar.emit(volume_indicator(vol, muted));
                 self.playback_bar
                     .emit(AudioPlaybackBarInput::SetVolumeValue(vol));
             }
@@ -129,15 +126,7 @@ impl AudioShell {
                     .volume
                     .lock()
                     .unwrap_or_else(PoisonError::into_inner);
-                self.playback_bar
-                    .emit(AudioPlaybackBarInput::SetVolumeIndicator {
-                        label: format!("{vol:.0}"),
-                        icon: if muted {
-                            "audio-volume-muted-symbolic".to_string()
-                        } else {
-                            volume_icon(vol).to_string()
-                        },
-                    });
+                self.playback_bar.emit(volume_indicator(vol, muted));
             }
             PlayerEvent::FileLoaded(_) => {
                 self.failed_loads = 0;

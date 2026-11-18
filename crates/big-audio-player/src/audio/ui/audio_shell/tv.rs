@@ -3,7 +3,7 @@
 //! and "Use the player", which leaves the TV playing and gives the transport
 //! back to mpv.
 
-use super::playback::volume_icon;
+use super::playback::volume_indicator;
 use super::*;
 use crate::cast::daemon::{PlaybackStart, State};
 use crate::shared::tv_cast::{TvCardAction, TvMedia};
@@ -166,11 +166,7 @@ impl AudioShell {
                 if state.muted == Some(true) {
                     self.tv.set_muted(false);
                 }
-                self.playback_bar
-                    .emit(AudioPlaybackBarInput::SetVolumeIndicator {
-                        label: format!("{vol:.0}"),
-                        icon: volume_icon(*vol).to_string(),
-                    });
+                self.playback_bar.emit(volume_indicator(*vol, false));
             }
             AudioPlaybackBarOutput::VolumeMuteToggled => {
                 self.tv.set_muted(state.muted != Some(true));
@@ -259,14 +255,7 @@ impl AudioShell {
         if let Some(volume) = state.volume {
             let percent = volume * 100.0;
             let _ = bar.send(AudioPlaybackBarInput::SetVolumeValue(percent));
-            let _ = bar.send(AudioPlaybackBarInput::SetVolumeIndicator {
-                label: format!("{percent:.0}"),
-                icon: if state.muted == Some(true) {
-                    "audio-volume-muted-symbolic".to_string()
-                } else {
-                    volume_icon(percent).to_string()
-                },
-            });
+            let _ = bar.send(volume_indicator(percent, state.muted == Some(true)));
         }
     }
 
@@ -292,13 +281,6 @@ impl AudioShell {
             ));
         }
         let _ = bar.send(AudioPlaybackBarInput::SetVolumeValue(volume));
-        let _ = bar.send(AudioPlaybackBarInput::SetVolumeIndicator {
-            label: format!("{volume:.0}"),
-            icon: if mpv.get_mute() {
-                "audio-volume-muted-symbolic".to_string()
-            } else {
-                volume_icon(volume).to_string()
-            },
-        });
+        let _ = bar.send(volume_indicator(volume, mpv.get_mute()));
     }
 }

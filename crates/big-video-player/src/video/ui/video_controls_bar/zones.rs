@@ -4,7 +4,7 @@ use super::*;
 use crate::settings::keys;
 use big_media_components::player_chrome::{
     build_speed_popover, build_voice_popover, build_volume_popover,
-    setup_exclusive_hover_popover_group,
+    setup_exclusive_hover_popover_group, volume_icon_name,
 };
 use big_relm4_components::feedback::tooltip;
 use big_relm4_components::input::zone_layout::{ZoneLayout, ZonePlacement, slot_key};
@@ -195,19 +195,12 @@ impl SoundIndicator {
         self.muted.get()
     }
 
-    /// Show `muted` at `volume`. Muted, the readout says "No sound" instead of
-    /// the level, which would read as sound while nothing plays. Muted and
-    /// level 0 have different icons, and either silent state wears the
-    /// `sound-off` pill, so no sound is visible at a glance and not by colour
-    /// alone. The button names the action it will take, for the tooltip and
-    /// for screen readers, and reports itself pressed while muted.
+    /// Show `muted` at `volume`: silent, by mute or at level 0, reads "No sound"
+    /// with the crossed-out speaker and the `sound-off` pill, not colour alone.
+    /// The button names the action it will take and reports pressed while muted.
     pub(super) fn show(&self, muted: bool, volume: f64) {
         self.muted.set(muted);
-        self.button.set_icon_name(if muted {
-            "audio-volume-muted-symbolic"
-        } else {
-            volume_icon(volume)
-        });
+        self.button.set_icon_name(volume_icon_name(volume, muted));
         let silent = muted || volume <= 0.0;
         self.label.set_label(&if silent {
             i18n("No sound")
@@ -711,19 +704,6 @@ fn osd_button(icon_name: &str, label: &str) -> gtk::Button {
 /// Level restored by unmuting a control left at 0.
 const UNMUTE_MINIMUM_VOLUME: f64 = 20.0;
 
-/// Volume icon for a 0..max level. Level 0 shows the lowest speaker, not the
-/// crossed-out one: that one means muted, a different state with a different
-/// way out.
-pub(super) fn volume_icon(value: f64) -> &'static str {
-    if value < 34.0 {
-        "audio-volume-low-symbolic"
-    } else if value < 67.0 {
-        "audio-volume-medium-symbolic"
-    } else {
-        "audio-volume-high-symbolic"
-    }
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -757,18 +737,6 @@ mod tests {
         assert_eq!(control_name("audio"), "");
         assert_eq!(control_name("fullscreen"), "fullscreen");
         assert_eq!(control_name("unknown"), "");
-    }
-
-    #[test]
-    fn volume_icon_uses_low_medium_high_thresholds() {
-        assert_eq!(volume_icon(-1.0), "audio-volume-low-symbolic");
-        assert_eq!(volume_icon(0.0), "audio-volume-low-symbolic");
-        assert_eq!(volume_icon(0.1), "audio-volume-low-symbolic");
-        assert_eq!(volume_icon(33.9), "audio-volume-low-symbolic");
-        assert_eq!(volume_icon(34.0), "audio-volume-medium-symbolic");
-        assert_eq!(volume_icon(66.9), "audio-volume-medium-symbolic");
-        assert_eq!(volume_icon(67.0), "audio-volume-high-symbolic");
-        assert_eq!(volume_icon(100.0), "audio-volume-high-symbolic");
     }
 
     #[cfg(not(miri))]

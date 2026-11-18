@@ -384,9 +384,45 @@ fn next_voice_preset(current_strength_percent: f64) -> Option<f64> {
     )
 }
 
+/// Symbolic icon of a volume control at `volume` percent. Muted and level 0
+/// share the crossed-out speaker: either way nothing plays.
+#[must_use]
+pub fn volume_icon_name(volume: f64, muted: bool) -> &'static str {
+    if muted || volume <= 0.0 {
+        "audio-volume-muted-symbolic"
+    } else if volume < 34.0 {
+        "audio-volume-low-symbolic"
+    } else if volume < 67.0 {
+        "audio-volume-medium-symbolic"
+    } else {
+        "audio-volume-high-symbolic"
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn volume_icon_follows_level_and_mute() {
+        for (volume, muted, icon) in [
+            (-1.0, false, "audio-volume-muted-symbolic"),
+            (0.0, false, "audio-volume-muted-symbolic"),
+            (0.1, false, "audio-volume-low-symbolic"),
+            (33.9, false, "audio-volume-low-symbolic"),
+            (34.0, false, "audio-volume-medium-symbolic"),
+            (66.9, false, "audio-volume-medium-symbolic"),
+            (67.0, false, "audio-volume-high-symbolic"),
+            (150.0, false, "audio-volume-high-symbolic"),
+            (80.0, true, "audio-volume-muted-symbolic"),
+        ] {
+            assert_eq!(
+                volume_icon_name(volume, muted),
+                icon,
+                "{volume} muted={muted}"
+            );
+        }
+    }
 
     #[test]
     fn play_pulse_names_class_and_duration() {
