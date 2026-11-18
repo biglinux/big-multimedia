@@ -1,5 +1,5 @@
-//! A private curl transport with nonblocking pipes, an operation deadline and
-//! pre-reserved reaping. No worker-per-stream, no wait() in error/drop paths.
+//! A private curl transport with nonblocking pipes, a total or no-progress
+//! deadline and pre-reserved reaping. No worker-per-stream, no wait() in error/drop paths.
 #[cfg(unix)]
 use crate::subprocess::reaper::set_nonblocking;
 use crate::subprocess::reaper::{OwnedChild, Permit};
@@ -11,6 +11,8 @@ pub(super) struct Transport {
     owner: Option<OwnedChild>,
     stdout: ChildStdout,
     deadline: Instant,
+    /// Set for a stream: each read must get bytes within it, however long the whole transfer takes.
+    stall: Option<Duration>,
     finished: bool,
     failed: bool,
 }
@@ -41,10 +43,14 @@ fn readiness(pipe: &impl std::os::fd::AsRawFd, events: i16, deadline: Instant) -
     Ok(())
 }
 impl Transport {
-    pub(super) fn new(mut command: Command, config: &[u8], timeout: Duration) -> io::Result<Self> {
+    pub(super) fn new(
+        mut command: Command,
+        config: &[u8],
+        deadline: super::Deadline,
+    ) -> io::Result<Self> {
         #[cfg(not(unix))]
         {
-            let _ = (&mut command, config, timeout);
+            let _ = (&mut command, config, deadline);
             return Err(io::Error::new(
                 io::ErrorKind::Unsupported,
                 "bounded curl streaming requires Unix",
@@ -53,8 +59,12 @@ impl Transport {
         #[cfg(unix)]
         {
             use std::os::unix::process::CommandExt;
+            let stall = match deadline {
+                super::Deadline::Total(_) => None,
+                super::Deadline::Stall(stall) => Some(stall),
+            };
             let deadline = Instant::now()
-                .checked_add(timeout)
+                .checked_add(deadline.duration())
                 .ok_or_else(|| io::Error::other("invalid HTTP timeout"))?;
             let permit = Permit::reserve()?;
             command.process_group(0);
@@ -108,6 +118,7 @@ impl Transport {
                 owner: Some(owner),
                 stdout,
                 deadline,
+                stall,
                 finished: false,
                 failed: false,
             })
@@ -119,6 +130,9 @@ impl Transport {
         }
         if self.finished {
             return Ok(0);
+        }
+        if let Some(stall) = self.stall {
+            self.deadline = Instant::now() + stall;
         }
         loop {
             if Instant::now() >= self.deadline {

@@ -5,6 +5,9 @@ use super::DownloadProgress;
 use big_os_kit::storage::CommitOutcome;
 use std::sync::atomic::Ordering;
 
+/// A download fails after this long without receiving a byte; its total length is unbounded.
+const STALL_TIMEOUT_SECS: u64 = 30;
+
 /// What [`download_file`] does when `dest` already exists.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum ExistingDestination {
@@ -27,7 +30,7 @@ pub fn download_file(
     let mut download_response = http_get_stream(
         url,
         &RequestHeaders::default(),
-        std::time::Duration::from_secs(15),
+        std::time::Duration::from_secs(STALL_TIMEOUT_SECS),
     )?;
     if !(200..300).contains(&download_response.status) {
         return Err(format!("HTTP {}", download_response.status));
