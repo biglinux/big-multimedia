@@ -2466,8 +2466,8 @@ msgid ""
 "manager."
 msgstr ""
 "Un mot de passe remplacé ou supprimé n’a pas pu être effacé de votre "
-"trousseau de clés. Vous pouvez supprimer l’élément « Big Multimedia IPTV "
-"provider » restant avec votre gestionnaire de trousseaux."
+"trousseau de clés. Vous pouvez supprimer l’élément restant « Big Multimedia "
+"IPTV provider » à l’aide de votre gestionnaire de trousseaux."
 
 #: crates/big-video-player/src/video/ui/iptv/providers_dialog.rs:120
 msgid "No providers yet"

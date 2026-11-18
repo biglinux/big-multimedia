@@ -160,6 +160,7 @@ pub fn start_scoped(
             }
         })
         .map_err(|_| "Could not start remote control worker".to_owned())?;
+    // allow-noisy-log: once per enable, the port a phone that cannot connect is told to try.
     info!("web-remote listening on port {}", local.port());
     Ok(ServerHandle {
         port: local.port(),

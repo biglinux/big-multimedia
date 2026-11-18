@@ -93,12 +93,12 @@ pub(super) fn save_meta_cache_to_disk(cache: &HashMap<String, CacheEntry>) {
     let json = match serde_json::to_vec(&stored) {
         Ok(json) => json,
         Err(error) => {
-            log::debug!("metadata cache not saved: {error}");
+            log::warn!("metadata cache not saved: {error}");
             return;
         }
     };
     if let Err(error) = big_os_kit::storage::atomic_write(&path, &json) {
-        log::debug!("metadata cache not saved: {error}");
+        log::warn!("metadata cache not saved: {error}");
     }
 }
 
