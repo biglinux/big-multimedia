@@ -123,9 +123,15 @@ impl MpvBackend {
         });
     }
 
+    /// 0 is mpv's `auto`, which the option takes only as text.
     pub fn set_target_peak(&self, nits: i64) {
+        let value = if nits == 0 {
+            "auto".to_string()
+        } else {
+            nits.to_string()
+        };
         self.with_mpv(|m| {
-            m.set_property_logged("target-peak", nits);
+            m.set_property_logged("target-peak", value);
         });
     }
 

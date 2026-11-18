@@ -489,6 +489,16 @@ fn subtitle_delay_stays_within_limit() {
     }
 }
 
+#[cfg(feature = "video")]
+#[test]
+fn target_peak_reaches_mpv() {
+    let (backend, _rx) = null_output_backend("test-target-peak");
+    for (nits, applied) in [(400, "400"), (0, "auto")] {
+        backend.set_target_peak(nits);
+        assert_eq!(backend.get_property_string("target-peak"), applied);
+    }
+}
+
 #[test]
 fn rejected_custom_option_keeps_the_rest() {
     let options = parse_custom_options("no-such-option=1,cache-secs=7");
