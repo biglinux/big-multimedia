@@ -124,6 +124,7 @@ impl VideoShell {
                 self.refresh_now_playing(root);
                 // Resize the window to the video's aspect (no letterbox bars).
                 self.aspect_snap.snap_on_load();
+                self.subtitle_lift.apply();
                 self.tv_follow_loaded();
                 self.tv_catch_up_loaded();
             }

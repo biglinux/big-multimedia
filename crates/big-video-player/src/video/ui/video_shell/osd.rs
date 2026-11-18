@@ -128,6 +128,109 @@ fn should_keep_osd_visible(welcome: bool, paused: bool, trim: bool) -> bool {
     welcome || paused || trim
 }
 
+/// mpv scales the subtitle margin to the shown video's height: one unit is
+/// 1/720 of it.
+const SUBTITLE_MARGIN_UNITS: f64 = 720.0;
+
+/// The controls bar's height without the gradient look's fade above it.
+pub(super) fn controls_bar_height(controls_revealer: &gtk::Revealer, settings: &Settings) -> i32 {
+    let natural = controls_revealer
+        .child()
+        .map_or(0, |child| child.measure(gtk::Orientation::Vertical, -1).1);
+    let fade = if settings.get_string(keys::UI_COLOR_SOURCE) == "gradient" {
+        80
+    } else {
+        0
+    };
+    natural - fade
+}
+
+/// Keeps text subtitles above the controls bar while it shows, on top of the
+/// person's own distance from the bottom.
+pub(super) struct SubtitleLift {
+    overlay: glib::WeakRef<gtk::Overlay>,
+    controls_revealer: glib::WeakRef<gtk::Revealer>,
+    mpv: Rc<RefCell<Option<Arc<MpvBackend>>>>,
+    settings: Settings,
+}
+
+impl SubtitleLift {
+    /// Follow the controls showing and hiding and the video area's size.
+    pub(super) fn wire(
+        main_overlay: &gtk::Overlay,
+        controls_revealer: &gtk::Revealer,
+        mpv: &Rc<RefCell<Option<Arc<MpvBackend>>>>,
+        settings: &Settings,
+    ) -> Rc<Self> {
+        let lift = Rc::new(Self {
+            overlay: main_overlay.downgrade(),
+            controls_revealer: controls_revealer.downgrade(),
+            mpv: mpv.clone(),
+            settings: settings.clone(),
+        });
+        controls_revealer.connect_reveal_child_notify({
+            let lift = Rc::downgrade(&lift);
+            move |_| {
+                if let Some(lift) = lift.upgrade() {
+                    lift.apply();
+                }
+            }
+        });
+        // An overlay has no resize signal; this empty area fills it and has one.
+        let probe = gtk::DrawingArea::builder()
+            .can_target(false)
+            .hexpand(true)
+            .vexpand(true)
+            .accessible_role(gtk::AccessibleRole::Presentation)
+            .build();
+        probe.connect_resize({
+            let lift = Rc::downgrade(&lift);
+            move |_, _, _| {
+                if let Some(lift) = lift.upgrade() {
+                    lift.apply();
+                }
+            }
+        });
+        main_overlay.add_overlay(&probe);
+        lift
+    }
+
+    pub(super) fn apply(&self) {
+        let Some(mpv) = self.mpv.borrow().clone() else {
+            return;
+        };
+        let (Some(overlay), Some(controls_revealer)) =
+            (self.overlay.upgrade(), self.controls_revealer.upgrade())
+        else {
+            return;
+        };
+        let lift = if controls_revealer.reveals_child() {
+            subtitle_lift(
+                controls_bar_height(&controls_revealer, &self.settings),
+                overlay.width(),
+                overlay.height(),
+                mpv.get_video_dimensions(),
+            )
+        } else {
+            0
+        };
+        mpv.set_sub_margin_lift(lift);
+    }
+}
+
+/// The subtitle margin, in mpv's units, that clears `controls` pixels at the
+/// bottom of a `width` × `height` area showing a `video` (width, height)
+/// letterboxed in it; without known video dimensions it fills the area.
+fn subtitle_lift(controls: i32, width: i32, height: i32, video: Option<(i64, i64)>) -> i64 {
+    if controls <= 0 || width <= 0 || height <= 0 {
+        return 0;
+    }
+    let shown_height = video.map_or(f64::from(height), |(video_width, video_height)| {
+        f64::from(height).min(f64::from(width) * video_height as f64 / video_width as f64)
+    });
+    (f64::from(controls) * SUBTITLE_MARGIN_UNITS / shown_height).ceil() as i64
+}
+
 /// Static idle background behind the welcome screen (no video loaded). The gl
 /// surface is hidden (opacity 0) so the `.idle-bg` box shows through. The base
 /// `.idle-bg` gradient (style.css) is the immediate look; once the desktop
@@ -389,7 +492,27 @@ fn aspect_snap_target(w: i32, h: i32, aspect: f64) -> Option<(i32, i32)> {
 
 #[cfg(test)]
 mod tests {
-    use super::{aspect_snap_target, focus_out_should_hide, should_keep_osd_visible};
+    use super::{
+        aspect_snap_target, focus_out_should_hide, should_keep_osd_visible, subtitle_lift,
+    };
+
+    #[test]
+    fn subtitle_lift_scales_to_the_shown_video() {
+        // Video filling a 720 px tall area: one unit per pixel.
+        assert_eq!(subtitle_lift(100, 1280, 720, Some((1280, 720))), 100);
+        // The same 16:9 video letterboxed in a square area is 360 px tall.
+        assert_eq!(subtitle_lift(100, 640, 640, Some((1280, 720))), 200);
+        // A square video pillarboxed in a wide area keeps the full height.
+        assert_eq!(subtitle_lift(90, 1600, 900, Some((720, 720))), 72);
+        assert_eq!(subtitle_lift(101, 1280, 720, None), 101);
+    }
+
+    #[test]
+    fn no_subtitle_lift_without_controls_or_area() {
+        assert_eq!(subtitle_lift(0, 1280, 720, None), 0);
+        assert_eq!(subtitle_lift(-80, 1280, 720, None), 0);
+        assert_eq!(subtitle_lift(100, 0, 0, None), 0);
+    }
 
     #[test]
     fn focus_out_hides_only_when_unpinned() {

@@ -264,25 +264,18 @@ impl VideoShell {
     /// Where the floating panels sit in the window at its current size.
     fn panel_layout_now(&self) -> PanelLayout {
         // The header bar itself: in the gradient look its box also holds
-        // 80 px of fade, and so does the top of the controls.
-        let natural = |widget: Option<gtk::Widget>| {
-            widget.map_or(0, |widget| widget.measure(gtk::Orientation::Vertical, -1).1)
-        };
-        let fade = if self.settings.get_string(keys::UI_COLOR_SOURCE) == "gradient" {
-            80
-        } else {
-            0
-        };
+        // 80 px of fade.
+        let header = self
+            .osd
+            .header_revealer
+            .child()
+            .and_then(|b| b.first_child())
+            .map_or(0, |bar| bar.measure(gtk::Orientation::Vertical, -1).1);
         panel_layout(
             self.main_overlay.width(),
             self.main_overlay.height(),
-            natural(
-                self.osd
-                    .header_revealer
-                    .child()
-                    .and_then(|b| b.first_child()),
-            ),
-            natural(self.osd.controls_revealer.child()) - fade,
+            header,
+            super::osd::controls_bar_height(&self.osd.controls_revealer, &self.settings),
         )
     }
 

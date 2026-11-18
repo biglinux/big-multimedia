@@ -402,6 +402,8 @@ impl Component for VideoShell {
             super::menus::keep_focus_off_clicks(area);
         }
         wire_osd_autohide(&main_overlay, &osd);
+        let subtitle_lift =
+            SubtitleLift::wire(&main_overlay, chrome.bottom_revealer(), &mpv, &settings);
         // The settings panel sits over the video, clear of header and controls,
         // which stay shown while it is open.
         // Attached, the TV already plays what the player holds: no swap.
@@ -608,6 +610,7 @@ impl Component for VideoShell {
                 win_actions,
                 sleep_timer: crate::shared::sleep_timer::SleepTimer::default(),
                 aspect_snap,
+                subtitle_lift,
                 _shell_input: shell_input,
                 trim,
                 trim_play_selection: Rc::new(Cell::new(false)),

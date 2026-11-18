@@ -2,6 +2,7 @@
 //! closed captions, image subs, border/scaling.
 
 use super::MpvBackend;
+use std::sync::atomic::Ordering;
 
 impl MpvBackend {
     pub fn set_subtitle_track(&self, id: i64) {
@@ -74,9 +75,27 @@ impl MpvBackend {
         });
     }
 
+    /// The person's own distance from the bottom; [`Self::set_sub_margin_lift`]
+    /// adds to it.
     pub fn set_sub_margin_y(&self, val: i64) {
+        self.sub_margin_base.store(val, Ordering::Relaxed);
+        self.apply_sub_margin_y();
+    }
+
+    /// Raise text subtitles `lift` scaled pixels above the person's margin, clear
+    /// of controls drawn over the bottom of the video; 0 puts them back.
+    pub fn set_sub_margin_lift(&self, lift: i64) {
+        self.sub_margin_lift.store(lift, Ordering::Relaxed);
+        self.apply_sub_margin_y();
+    }
+
+    fn apply_sub_margin_y(&self) {
+        let margin = self
+            .sub_margin_base
+            .load(Ordering::Relaxed)
+            .saturating_add(self.sub_margin_lift.load(Ordering::Relaxed));
         self.with_mpv(|m| {
-            let _ = m.set_property("sub-margin-y", val);
+            let _ = m.set_property("sub-margin-y", margin);
         });
     }
 
