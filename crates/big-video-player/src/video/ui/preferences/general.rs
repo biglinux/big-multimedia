@@ -162,8 +162,6 @@ fn screenshot_group(settings: &Settings) -> adw::PreferencesGroup {
     group
 }
 
-const SCREENSHOT_DIRECTORY: &str = "screenshot-directory";
-
 /// Folder row: shows where screenshots go and opens the folder chooser.
 fn screenshot_folder_row(settings: &Settings) -> adw::ActionRow {
     let row = adw::ActionRow::builder()
@@ -202,13 +200,13 @@ fn screenshot_folder_row(settings: &Settings) -> adw::ActionRow {
             }
         }
     };
-    show(&settings.string(SCREENSHOT_DIRECTORY));
+    show(&settings.get_string(keys::SCREENSHOT_DIRECTORY));
 
     // Read by `take_screenshot` for each capture, so nothing to apply live.
     let save = {
         let settings = settings.clone();
         move |folder: &str| {
-            let _ = settings.set_string(SCREENSHOT_DIRECTORY, folder);
+            let _ = settings.put_string(keys::SCREENSHOT_DIRECTORY, folder);
             show(folder);
         }
     };
