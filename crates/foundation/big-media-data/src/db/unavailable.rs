@@ -124,9 +124,10 @@ pub fn page(
         stop(cancel)?;
         let batch = {
             let conn = lock_db(db, cancel)?;
-            let mut statement = conn.prepare(&format!(
-                "SELECT {} FROM tracks WHERE id>?1 AND id<=?2 ORDER BY id LIMIT ?3",
-                queries::TRACK_COLUMNS
+            let mut statement = conn.prepare(concat!(
+                "SELECT ",
+                queries::track_columns!(),
+                " FROM tracks WHERE id>?1 AND id<=?2 ORDER BY id LIMIT ?3"
             ))?;
             let rows = statement.query_map(params![cursor, high, CHUNK as i64], bounded_track)?;
             rows.collect::<rusqlite::Result<Vec<_>>>()?
@@ -201,7 +202,11 @@ pub fn remove_reviewed(
         }
         let current = tx
             .query_row(
-                &format!("SELECT {} FROM tracks WHERE id=?1", queries::TRACK_COLUMNS),
+                concat!(
+                    "SELECT ",
+                    queries::track_columns!(),
+                    " FROM tracks WHERE id=?1"
+                ),
                 [item.track.id],
                 bounded_track,
             )

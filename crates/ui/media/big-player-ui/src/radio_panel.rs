@@ -377,7 +377,7 @@ mod lifetime_tests {
         gtk::init().unwrap();
         adw::init().unwrap();
         let app = adw::Application::builder()
-            .application_id("org.biglinux.RadioMapTest")
+            .application_id("br.com.biglinux.RadioMapTest")
             .build();
         app.register(gio::Cancellable::NONE).unwrap();
         let _relm = relm4::RelmApp::<()>::from_app(app);
@@ -426,7 +426,7 @@ mod lifetime_tests {
         gtk::init().unwrap();
         adw::init().unwrap();
         let app = adw::Application::builder()
-            .application_id("org.biglinux.RadioLifetimeTest")
+            .application_id("br.com.biglinux.RadioLifetimeTest")
             .build();
         app.register(gio::Cancellable::NONE).unwrap();
         let _relm = relm4::RelmApp::<()>::from_app(app);

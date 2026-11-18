@@ -7,8 +7,6 @@ use relm4::gtk;
 use relm4::gtk::gdk;
 use relm4::gtk::prelude::*;
 
-use crate::text::escape_markup_text;
-
 /// Right-click / long-press popover that hosts a vertical stack of
 /// flat action buttons. Cheap to build, self-unparenting on close.
 #[derive(Debug, Clone)]
@@ -53,9 +51,11 @@ impl BigContextPopover {
         F: Fn() + 'static,
     {
         let label = label.as_ref();
-        let row_label_markup = escape_markup_text(label);
         let row_label = gtk::Label::builder()
-            .label(format!("<span weight=\"normal\">{row_label_markup}</span>"))
+            .label(format!(
+                "<span weight=\"normal\">{}</span>",
+                gtk::glib::markup_escape_text(label)
+            ))
             .ellipsize(gtk::pango::EllipsizeMode::End)
             .halign(gtk::Align::Start)
             .hexpand(true)

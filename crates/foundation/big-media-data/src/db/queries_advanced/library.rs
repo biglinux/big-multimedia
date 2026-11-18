@@ -1,7 +1,7 @@
 use rusqlite::Connection;
 
 use crate::db::models::Track;
-use crate::db::queries::{TRACK_COLUMNS, row_to_track};
+use crate::db::queries::{row_to_track, track_columns};
 
 /// `(distinct value, track count)` pairs, alphabetic. `column` allowlisted
 /// (see `validate_column`); `filter_text` uses FTS if available, else LIKE.
@@ -51,7 +51,11 @@ pub fn get_library_tracks(
     filter_text: &str,
     age_secs: Option<i64>,
 ) -> crate::Result<Vec<Track>> {
-    let mut sql = format!("SELECT {TRACK_COLUMNS} FROM tracks WHERE 1=1");
+    let mut sql = String::from(concat!(
+        "SELECT ",
+        track_columns!(),
+        " FROM tracks WHERE 1=1"
+    ));
     let mut param_values: Vec<String> = Vec::new();
 
     append_parent_filters(&mut sql, &mut param_values, parent_filters)?;
