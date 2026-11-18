@@ -193,7 +193,7 @@ impl Component for AudioPlaybackBar {
         let seek_fraction = Rc::new(Cell::new(0.0));
         let duration_secs = Rc::new(Cell::new(0.0));
         install_cut_timeline_draw(
-            transport.cut_timeline(),
+            transport.cut_timeline().upcast_ref(),
             &cut_segments,
             &pending_mark,
             &seek_fraction,
@@ -202,7 +202,7 @@ impl Component for AudioPlaybackBar {
         let seek_sender = sender.clone();
         let segment_sender = sender.clone();
         wire_cut_timeline_interaction(
-            transport.cut_timeline(),
+            transport.cut_timeline().upcast_ref(),
             &cut_segments,
             &duration_secs,
             move |fraction| {
@@ -280,10 +280,16 @@ impl Component for AudioPlaybackBar {
                     return;
                 }
                 self.with_guard(|| bar.set_value(value));
+                let duration = self.duration_secs.get();
+                t.cut_timeline()
+                    .set_position(value / 100.0 * duration, duration);
                 t.cut_timeline().queue_draw();
             }
             AudioPlaybackBarInput::SetDurationSecs(secs) => {
-                self.duration_secs.set(secs.max(0.0));
+                let duration = secs.max(0.0);
+                self.duration_secs.set(duration);
+                t.cut_timeline()
+                    .set_position(self.seek_fraction.get() * duration, duration);
                 t.cut_timeline().queue_draw();
             }
             AudioPlaybackBarInput::SetCutSegments(segments) => {
