@@ -59,9 +59,10 @@ pub enum MprisCommand {
     },
     /// Load and play the given URI.
     OpenUri(String),
-    /// Set the volume, expressed as the MPRIS 0.0–1.0 ratio.
+    /// Set the volume, expressed as the MPRIS 0.0–1.0 ratio; always finite
+    /// and at least zero.
     SetVolume(f64),
-    /// Set the playback rate.
+    /// Set the playback rate, always within the published 0.25–4.0 range.
     SetRate(f64),
     /// Enable or disable shuffle.
     SetShuffle(bool),

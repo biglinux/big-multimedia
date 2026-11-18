@@ -229,6 +229,46 @@ mod tests {
             Ok(Some(C::SetPosition { position_us: 2, .. }))
         ));
     }
+    /// Oracle: the MPRIS spec. A negative volume means 0.0, a rate of 0.0 means
+    /// Pause, and a rate outside MinimumRate..MaximumRate (0.25..4.0) is refused.
+    #[test]
+    fn volume_and_rate_writes_are_bounded() {
+        let cases = [
+            ("Volume", f64::NAN, true, None),
+            ("Volume", f64::INFINITY, true, None),
+            ("Volume", f64::NEG_INFINITY, true, None),
+            ("Volume", -0.5, true, Some(C::SetVolume(0.0))),
+            ("Volume", 0.5, true, Some(C::SetVolume(0.5))),
+            ("Rate", f64::NAN, true, None),
+            ("Rate", f64::INFINITY, true, None),
+            ("Rate", 0.1, true, None),
+            ("Rate", 4.5, true, None),
+            ("Rate", -1.0, true, None),
+            ("Rate", 0.25, true, Some(C::SetRate(0.25))),
+            ("Rate", 4.0, true, Some(C::SetRate(4.0))),
+            ("Rate", 0.0, true, Some(C::Pause)),
+            ("Rate", 0.0, false, None),
+        ];
+        for (property, value, can_pause, expected) in cases {
+            let sent = std::sync::Arc::new(std::sync::Mutex::new(Vec::new()));
+            let sink = std::sync::Arc::clone(&sent);
+            let command: CommandCallback = Box::new(move |request| {
+                sink.lock().unwrap().push(request);
+            });
+            let state: StateCallback = Box::new(move || PlayerState {
+                can_pause,
+                ..Default::default()
+            });
+            let accepted = set_player_property(property, &value.to_variant(), &command, &state);
+            assert_eq!(
+                *sent.lock().unwrap(),
+                Vec::from_iter(expected.clone()),
+                "{property} {value}"
+            );
+            assert_eq!(accepted, expected.is_some(), "{property} {value}");
+        }
+    }
+
     #[test]
     fn unknown_method_is_an_error() {
         let state = PlayerState::default();

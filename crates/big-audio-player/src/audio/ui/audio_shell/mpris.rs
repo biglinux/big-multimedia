@@ -165,18 +165,13 @@ impl AudioShell {
                 Self::load_external_metadata(vec![path], sender);
             }
             MprisCommand::SetVolume(volume) => {
-                if volume.is_finite()
-                    && let Some(mpv) = &self.mpv
-                {
+                if let Some(mpv) = &self.mpv {
                     let volume_max = f64::from(self.settings.volume_max_percent());
                     mpv.set_volume((volume * 100.0).clamp(0.0, volume_max));
                 }
             }
             MprisCommand::SetRate(rate) => {
-                if rate.is_finite()
-                    && (0.25..=4.0).contains(&rate)
-                    && let Some(mpv) = &self.mpv
-                {
+                if let Some(mpv) = &self.mpv {
                     mpv.set_speed(rate);
                 }
             }
