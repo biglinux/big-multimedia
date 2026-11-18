@@ -450,7 +450,12 @@ impl BigAudioTransport {
 
     /// Show on the play button the action a click takes while `paused`.
     pub fn set_paused(&self, paused: bool) {
-        super::set_play_pause(&self.play_button, paused, &self.play_label, &self.pause_label);
+        super::set_play_pause(
+            &self.play_button,
+            paused,
+            &self.play_label,
+            &self.pause_label,
+        );
     }
 }
 
