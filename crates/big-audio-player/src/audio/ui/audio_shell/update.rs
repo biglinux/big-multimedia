@@ -365,7 +365,7 @@ impl AudioShell {
 
 /// Lyrics paned split position: full height when only-lyrics is requested, else
 /// ~40% of the height with a 150px floor.
-fn lyrics_paned_position(height: i32, only_lyrics: bool) -> i32 {
+pub(super) fn lyrics_paned_position(height: i32, only_lyrics: bool) -> i32 {
     if only_lyrics {
         height
     } else {

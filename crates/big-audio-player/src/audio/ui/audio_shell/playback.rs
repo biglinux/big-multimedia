@@ -93,9 +93,11 @@ impl AudioShell {
                 self.lyrics_visible = active;
                 self.lyrics.widget().set_visible(active);
                 if active {
-                    let height = self.lyrics_paned.height();
-                    let pos = (f64::from(height) * 0.4).max(150.0) as i32;
-                    self.lyrics_paned.set_position(pos);
+                    self.lyrics_paned
+                        .set_position(super::update::lyrics_paned_position(
+                            self.lyrics_paned.height(),
+                            false,
+                        ));
                     self.fetch_lyrics_for_current(sender);
                 }
             }
