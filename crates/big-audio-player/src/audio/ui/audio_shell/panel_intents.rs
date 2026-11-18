@@ -196,7 +196,7 @@ impl AudioShell {
             }
             PlaylistPanelOutput::ShowTrackInfo(track) => self.show_track_metadata_dialog(&track),
             PlaylistPanelOutput::DownloadEpisodes(episodes) => {
-                self.download_episodes(episodes);
+                self.download_episodes(episodes, sender);
             }
         }
     }
@@ -431,7 +431,11 @@ impl AudioShell {
     /// Download selected podcast episodes: a single episode prompts for a save
     /// path; multiple prompt for a destination folder. Each pick is fed to the
     /// self-driven download panel as an `Enqueue`.
-    pub(super) fn download_episodes(&self, episodes: Vec<(String, String)>) {
+    pub(super) fn download_episodes(
+        &self,
+        episodes: Vec<(String, String)>,
+        sender: &ComponentSender<Self>,
+    ) {
         let Some(window) = self.window() else {
             return;
         };
@@ -448,15 +452,28 @@ impl AudioShell {
                     });
             }
             _ => {
+                let input = sender.input_sender().clone();
                 FilePicker::open_folder(i18n("Save Episodes")).select_folder(&window, move |dir| {
-                    for (url, title) in &episodes {
-                        let dest = dir.join(filename_from_url(url, title));
-                        let _ = downloads.send(DownloadQueueInput::Enqueue {
-                            url: url.clone(),
-                            title: title.clone(),
-                            dest,
-                        });
-                    }
+                    spawn_blocking_result(
+                        move || {
+                            let destinations = episode_destinations(&dir, &episodes);
+                            (episodes, destinations)
+                        },
+                        move |(episodes, destinations)| match destinations {
+                            Ok(destinations) => {
+                                for ((url, title), dest) in episodes.into_iter().zip(destinations) {
+                                    let _ = downloads
+                                        .send(DownloadQueueInput::Enqueue { url, title, dest });
+                                }
+                            }
+                            Err(e) => {
+                                log::warn!("choosing episode file names failed: {e}");
+                                let _ = input.send(AudioShellInput::Notify(i18n(
+                                    "The episodes could not be saved in this folder. Check its permissions and try again.",
+                                )));
+                            }
+                        },
+                    );
                 });
             }
         }
@@ -494,9 +511,35 @@ fn remove_deleted_files(queue: &mut PlayQueue, deleted: &[(i64, String)]) -> Vec
         .collect()
 }
 
+/// One path in `dir` per episode that replaces neither an existing file nor
+/// another episode of the batch, numbered ` (2)`, ` (3)` before the extension.
+/// Leading dots are dropped, so a feed cannot name a hidden file.
+fn episode_destinations(
+    dir: &Path,
+    episodes: &[(String, String)],
+) -> std::io::Result<Vec<PathBuf>> {
+    let mut destinations: Vec<PathBuf> = Vec::with_capacity(episodes.len());
+    for (url, title) in episodes {
+        let name = filename_from_url(url, title);
+        let name = name.trim_start_matches('.');
+        let mut dest = dir.join(name);
+        let mut copy = 1;
+        while destinations.contains(&dest) || std::fs::exists(&dest)? {
+            copy += 1;
+            let numbered = match name.rsplit_once('.') {
+                Some((stem, extension)) => format!("{stem} ({copy}).{extension}"),
+                None => format!("{name} ({copy})"),
+            };
+            dest = dir.join(numbered);
+        }
+        destinations.push(dest);
+    }
+    Ok(destinations)
+}
+
 #[cfg(test)]
 mod tests {
-    use super::remove_deleted_files;
+    use super::{episode_destinations, remove_deleted_files};
     use crate::db::models::Track;
     use crate::player::queue::PlayQueue;
 
@@ -541,5 +584,57 @@ mod tests {
 
         assert_eq!(paths(&queue), ["/downloads/first.mp3"]);
         assert_eq!(ids, [7]);
+    }
+
+    /// File names chosen in `dir` for episodes at `urls`.
+    fn destination_names(dir: &std::path::Path, urls: &[&str]) -> Vec<String> {
+        let episodes: Vec<(String, String)> = urls
+            .iter()
+            .map(|url| ((*url).to_string(), "Title".to_string()))
+            .collect();
+        episode_destinations(dir, &episodes)
+            .unwrap()
+            .iter()
+            .map(|dest| {
+                dest.strip_prefix(dir)
+                    .unwrap()
+                    .to_str()
+                    .unwrap()
+                    .to_string()
+            })
+            .collect()
+    }
+
+    #[test]
+    fn batch_download_never_replaces_files() {
+        let dir = tempfile::tempdir().unwrap();
+        std::fs::write(dir.path().join("show.mp3"), b"kept").unwrap();
+        std::fs::write(dir.path().join("show (2).mp3"), b"kept").unwrap();
+
+        let names = destination_names(
+            dir.path(),
+            &[
+                "https://feed.test/a/show.mp3",
+                "https://feed.test/b/show.mp3",
+                "https://feed.test/other.ogg",
+            ],
+        );
+
+        assert_eq!(names, ["show (3).mp3", "show (4).mp3", "other.ogg"]);
+    }
+
+    #[test]
+    fn batch_download_refuses_hidden_names() {
+        let dir = tempfile::tempdir().unwrap();
+
+        let names = destination_names(
+            dir.path(),
+            &[
+                "https://feed.test/.profile",
+                "https://feed.test/..hidden.mp3",
+            ],
+        );
+
+        assert_eq!(names, ["profile", "hidden.mp3"]);
     }
 }
