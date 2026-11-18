@@ -18,7 +18,8 @@ use adw::prelude::*;
 use big_relm4_components::input::button_content::{BigButtonContentSpec, build_button};
 use big_relm4_components::layout::{
     dialog_footer::{BigDialogFooter, BigDialogFooterSpec},
-    dialog_page::{BigDialogPage, focus_when_shown},
+    dialog_page::BigDialogPage,
+    name_prompt::{prompt_name, trimmed_name},
     preferences::BigPreferencesGroupSpec,
     sidebar_dialog::{BigSidebarDialog, BigSidebarDialogSpec},
     widget_container::clear_box_children,
@@ -32,10 +33,9 @@ use relm4::{Component, ComponentParts, ComponentSender};
 
 use crate::i18n::i18n;
 use spec::{
-    NamePromptSpec, accepted_playlist_name, delete_playlist_prompt_spec, empty_playlist_state_spec,
-    generator_action_specs, import_export_action_specs, is_name_prompt_accept_enabled,
-    localized_delete_playlist_description, localized_saved_playlist_subtitle,
-    name_prompt_focus_selection, playlist_library_window_spec, rename_playlist_prompt_spec,
+    delete_playlist_prompt_spec, empty_playlist_state_spec, generator_action_specs,
+    import_export_action_specs, localized_delete_playlist_description,
+    localized_saved_playlist_subtitle, playlist_library_window_spec, rename_playlist_prompt_spec,
     save_current_queue_prompt_spec, saved_playlist_list_state, saved_playlist_row_spec,
 };
 
@@ -264,12 +264,19 @@ fn build_save_button(
     let root_weak = root.downgrade();
     save_button.connect_clicked(move |_| {
         let prompt_spec = save_current_queue_prompt_spec();
-        prompt_name(root_weak.upgrade().as_ref(), &prompt_spec, {
-            let out = out.clone();
-            move |name| {
-                let _ = out.output(PlaylistLibraryDialogOutput::SaveCurrent { name });
-            }
-        });
+        let root = root_weak.upgrade();
+        prompt_name(
+            root.as_ref().map(AsRef::as_ref),
+            &prompt_spec,
+            trimmed_name,
+            {
+                let out = out.clone();
+                move |name| {
+                    let _ = out.output(PlaylistLibraryDialogOutput::SaveCurrent { name });
+                    true
+                }
+            },
+        );
     });
     save_button
 }
@@ -329,12 +336,19 @@ fn build_playlist_row(
         let current_name = name.to_string();
         rename_button.connect_clicked(move |_| {
             let prompt_spec = rename_playlist_prompt_spec(&current_name);
-            prompt_name(root_weak.upgrade().as_ref(), &prompt_spec, {
-                let out = out.clone();
-                move |name| {
-                    let _ = out.output(PlaylistLibraryDialogOutput::Rename { id, name });
-                }
-            });
+            let root = root_weak.upgrade();
+            prompt_name(
+                root.as_ref().map(AsRef::as_ref),
+                &prompt_spec,
+                trimmed_name,
+                {
+                    let out = out.clone();
+                    move |name| {
+                        let _ = out.output(PlaylistLibraryDialogOutput::Rename { id, name });
+                        true
+                    }
+                },
+            );
         });
     }
     row.add_suffix(&rename_button);
@@ -378,78 +392,6 @@ fn suffix_button(icon: &str, tooltip: &str) -> gtk::Button {
     suffix_button.set_tooltip_text(Some(tooltip));
     suffix_button.update_property(&[gtk::accessible::Property::Label(tooltip)]);
     suffix_button
-}
-
-/// Present a single-entry name dialog; `on_accept` fires with the trimmed,
-/// non-empty name. `parent` anchors the dialog to the playlist library window.
-fn prompt_name(
-    parent: Option<&adw::Window>,
-    prompt_spec: &NamePromptSpec,
-    on_accept: impl Fn(String) + 'static,
-) {
-    let dialog = big_gtk_kit::dialog::Dialog::builder()
-        .title(i18n(prompt_spec.heading))
-        .content_width(420)
-        .content_height(240)
-        .build();
-    let page = BigDialogPage::plain();
-    page.content().set_spacing(12);
-    page.append_description(&i18n(prompt_spec.placeholder));
-
-    let group = BigPreferencesGroupSpec::untitled().build();
-    let entry = adw::EntryRow::builder()
-        .title(i18n(prompt_spec.entry_label))
-        .text(&prompt_spec.prefill)
-        .show_apply_button(true)
-        .build();
-    group.add(&entry);
-    page.content().append(&group);
-
-    let footer = BigDialogFooter::new(&BigDialogFooterSpec::new(
-        i18n(prompt_spec.cancel_label),
-        i18n(prompt_spec.accept_label),
-    ));
-    footer
-        .accept_button()
-        .set_sensitive(is_name_prompt_accept_enabled(&prompt_spec.prefill));
-    page.root().add_bottom_bar(footer.root());
-    dialog.set_child(Some(page.root()));
-
-    let accept_button = footer.accept_button().clone();
-    entry.connect_changed(move |row| {
-        accept_button.set_sensitive(is_name_prompt_accept_enabled(&row.text()));
-    });
-
-    let accept_button = footer.accept_button().clone();
-    entry.connect_apply(move |_| {
-        if accept_button.is_sensitive() {
-            accept_button.emit_clicked();
-        }
-    });
-
-    let on_accept = Rc::new(on_accept);
-    let entry_for_accept = entry.clone();
-    let dialog_weak = dialog.downgrade();
-    footer.accept_button().connect_clicked(move |_| {
-        let Some(name) = accepted_playlist_name(&entry_for_accept.text()) else {
-            return;
-        };
-        on_accept(name);
-        if let Some(dialog) = dialog_weak.upgrade() {
-            dialog.close();
-        }
-    });
-
-    let dialog_weak = dialog.downgrade();
-    footer.cancel_button().connect_clicked(move |_| {
-        if let Some(dialog) = dialog_weak.upgrade() {
-            dialog.close();
-        }
-    });
-
-    let (start, end) = name_prompt_focus_selection();
-    focus_when_shown(&entry, start, end);
-    dialog.present(parent);
 }
 
 /// Present a destructive confirmation; `on_confirm` fires on accept.

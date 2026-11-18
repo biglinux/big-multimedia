@@ -7,9 +7,7 @@ use adw::prelude::*;
 use big_app_kit::file_dialogs::FilePicker;
 use big_relm4_components::input::button_content::{BigButtonContentSpec, build_button};
 use big_relm4_components::layout::{
-    dialog_footer::{BigDialogFooter, BigDialogFooterSpec},
-    dialog_page::{BigDialogPage, focus_when_shown},
-    preferences::BigPreferencesGroupSpec,
+    name_prompt::{BigNamePromptSpec, prompt_name, trimmed_name},
     toolbar_pane::{BigToolbarHeader, BigToolbarHeaderSpec},
 };
 use gtk::gio;
@@ -23,19 +21,6 @@ use super::playlist_panel::{PlaylistPanel, PlaylistPanelOutput};
 struct WelcomeTipSpec {
     icon_name: &'static str,
     text: String,
-}
-
-fn can_save_queue_playlist_name(candidate_name: &str) -> bool {
-    !candidate_name.trim().is_empty()
-}
-
-fn normalized_queue_playlist_name(candidate_name: &str) -> Option<String> {
-    let trimmed_name = candidate_name.trim();
-    if trimmed_name.is_empty() {
-        None
-    } else {
-        Some(trimmed_name.to_string())
-    }
 }
 
 fn should_emit_open_audio_paths(file_paths: &[String]) -> bool {
@@ -199,62 +184,25 @@ fn prompt_queue_playlist_name(
     parent: Option<&gtk::Window>,
     sender: &ComponentSender<PlaylistPanel>,
 ) {
-    let dialog = big_gtk_kit::dialog::Dialog::builder()
-        .title(i18n("Save Queue as Playlist"))
-        .content_width(420)
-        .content_height(240)
-        .build();
-    let page = BigDialogPage::plain();
-    page.content().set_spacing(12);
-    page.append_description(&i18n("Name for the new playlist"));
-
-    let group = BigPreferencesGroupSpec::untitled().build();
-    let entry = adw::EntryRow::builder()
-        .title(i18n("Playlist name"))
-        .show_apply_button(true)
-        .build();
-    group.add(&entry);
-    page.content().append(&group);
-
-    let footer = BigDialogFooter::new(&BigDialogFooterSpec::new(i18n("Cancel"), i18n("Save")));
-    footer.accept_button().set_sensitive(false);
-    page.root().add_bottom_bar(footer.root());
-    dialog.set_child(Some(page.root()));
-
-    let accept_button = footer.accept_button().clone();
-    entry.connect_changed(move |row| {
-        accept_button.set_sensitive(can_save_queue_playlist_name(row.text().as_str()));
-    });
-
-    let accept_button = footer.accept_button().clone();
-    entry.connect_apply(move |_| {
-        if accept_button.is_sensitive() {
-            accept_button.emit_clicked();
-        }
-    });
-
+    let spec = BigNamePromptSpec {
+        title: i18n("Save Queue as Playlist"),
+        description: Some(i18n("Name for the new playlist")),
+        entry_title: i18n("Playlist name"),
+        prefill: String::new(),
+        accept_label: i18n("Save"),
+        content_width: 420,
+        content_height: 240,
+    };
     let out = sender.clone();
-    let entry_for_accept = entry.clone();
-    let dialog_weak = dialog.downgrade();
-    footer.accept_button().connect_clicked(move |_| {
-        let Some(name) = normalized_queue_playlist_name(entry_for_accept.text().as_str()) else {
-            return;
-        };
-        let _ = out.output(PlaylistPanelOutput::SaveQueueAsPlaylist { name });
-        if let Some(dialog) = dialog_weak.upgrade() {
-            dialog.close();
-        }
-    });
-
-    let dialog_weak = dialog.downgrade();
-    footer.cancel_button().connect_clicked(move |_| {
-        if let Some(dialog) = dialog_weak.upgrade() {
-            dialog.close();
-        }
-    });
-
-    focus_when_shown(&entry, 0, -1);
-    dialog.present(parent);
+    prompt_name(
+        parent.map(AsRef::as_ref),
+        &spec,
+        trimmed_name,
+        move |name| {
+            let _ = out.output(PlaylistPanelOutput::SaveQueueAsPlaylist { name });
+            true
+        },
+    );
 }
 
 /// Empty-queue placeholder: a drop hint when the library already has tracks,
@@ -424,19 +372,6 @@ mod tests {
             actions.iter().any(|actual| actual == "win.show-cast"),
             "missing TV menu action; actions={actions:?}"
         );
-    }
-
-    #[test]
-    fn queue_name_needs_non_blank_text() {
-        assert!(!can_save_queue_playlist_name(""));
-        assert!(!can_save_queue_playlist_name("  "));
-        assert!(can_save_queue_playlist_name(" Road Trip "));
-
-        assert_eq!(
-            normalized_queue_playlist_name("  Road Trip  "),
-            Some("Road Trip".to_string())
-        );
-        assert_eq!(normalized_queue_playlist_name("\t\n"), None);
     }
 
     #[test]

@@ -13,9 +13,8 @@ use gtk::glib;
 use big_app_kit::file_dialogs::FilePicker;
 use big_relm4_components::input::button_content::{BigButtonContentSpec, build_button};
 use big_relm4_components::layout::{
-    dialog_footer::{BigDialogFooter, BigDialogFooterSpec},
-    dialog_page::{BigDialogPage, focus_when_shown},
-    preferences::BigPreferencesGroupSpec,
+    dialog_page::BigDialogPage,
+    name_prompt::{BigNamePromptSpec, prompt_name, trimmed_name},
 };
 use big_relm4_components::list::button_strip_row::{BigButtonStripRow, BigButtonStripRowSpec};
 use big_relm4_components::list::detail_row::{BigDetailRow, BigDetailRowSpec};
@@ -25,46 +24,11 @@ use crate::db::models::{Track, WatchFolder};
 use crate::i18n::i18n;
 
 use super::library_panel::{LibraryPanel, LibraryPanelOutput};
-use big_media_runtime::i18n::gettext_noop;
 
 const MUSIC_FOLDERS_DIALOG_WIDTH: i32 = 600;
 const MUSIC_FOLDERS_DIALOG_HEIGHT: i32 = 560;
 const MUSIC_FOLDERS_CONTENT_WIDTH: i32 = 560;
 const MUSIC_FOLDERS_TIGHTENING_WIDTH: i32 = 420;
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-struct NameEntryDialogSpec {
-    content_width: i32,
-    content_height: i32,
-    content_spacing: i32,
-    entry_title: &'static str,
-    cancel_label: &'static str,
-    save_label: &'static str,
-    focus_select_start: i32,
-    focus_select_end: i32,
-}
-
-fn name_entry_dialog_spec() -> NameEntryDialogSpec {
-    NameEntryDialogSpec {
-        content_width: 420,
-        content_height: 240,
-        content_spacing: 12,
-        entry_title: gettext_noop("Playlist name"),
-        cancel_label: gettext_noop("Cancel"),
-        save_label: gettext_noop("Save"),
-        focus_select_start: 0,
-        focus_select_end: -1,
-    }
-}
-
-fn normalized_playlist_name(name: &str) -> Option<String> {
-    let trimmed_name = name.trim();
-    if trimmed_name.is_empty() {
-        None
-    } else {
-        Some(trimmed_name.to_string())
-    }
-}
 
 /// Export the current detail tracks as an `.m3u8` playlist. The save picker
 /// runs on the main loop; the file is written off-thread by
@@ -127,16 +91,26 @@ pub(super) fn save_tracks_as_playlist(
         let _ = sender.output(LibraryPanelOutput::Notify(i18n("No tracks to save")));
         return;
     }
+    let spec = BigNamePromptSpec {
+        title: i18n("Save as Playlist"),
+        description: Some(i18n("Enter a name for the new playlist")),
+        entry_title: i18n("Playlist name"),
+        prefill: String::new(),
+        accept_label: i18n("Save"),
+        content_width: 420,
+        content_height: 240,
+    };
     let out = sender.clone();
-    present_name_entry_dialog(
-        parent,
-        &i18n("Save as Playlist"),
-        &i18n("Enter a name for the new playlist"),
+    prompt_name(
+        Some(parent.upcast_ref()),
+        &spec,
+        trimmed_name,
         move |name| {
             let _ = out.output(LibraryPanelOutput::SaveTracksAsPlaylist {
                 name,
                 track_ids: track_ids.clone(),
             });
+            true
         },
     );
 }
@@ -339,77 +313,6 @@ fn build_folder_buttons(parent: &gtk::Window, sender: &ComponentSender<LibraryPa
     buttons
 }
 
-/// A small shared-chrome dialog with a single name entry; calls `on_save` with
-/// the trimmed name when the user confirms.
-fn present_name_entry_dialog<F>(parent: &gtk::Window, heading: &str, body: &str, on_save: F)
-where
-    F: Fn(String) + 'static,
-{
-    let dialog_spec = name_entry_dialog_spec();
-    let dialog = big_gtk_kit::dialog::Dialog::builder()
-        .title(heading)
-        .content_width(dialog_spec.content_width)
-        .content_height(dialog_spec.content_height)
-        .build();
-    let page = BigDialogPage::plain();
-    page.content().set_spacing(dialog_spec.content_spacing);
-    page.append_description(body);
-
-    let group = BigPreferencesGroupSpec::untitled().build();
-    let entry = adw::EntryRow::builder()
-        .title(i18n(dialog_spec.entry_title))
-        .show_apply_button(true)
-        .build();
-    group.add(&entry);
-    page.content().append(&group);
-
-    let footer = BigDialogFooter::new(&BigDialogFooterSpec::new(
-        i18n(dialog_spec.cancel_label),
-        i18n(dialog_spec.save_label),
-    ));
-    footer.accept_button().set_sensitive(false);
-    page.root().add_bottom_bar(footer.root());
-    dialog.set_child(Some(page.root()));
-
-    let accept_button = footer.accept_button().clone();
-    entry.connect_changed(move |row| {
-        accept_button.set_sensitive(normalized_playlist_name(&row.text()).is_some());
-    });
-
-    let accept_button = footer.accept_button().clone();
-    entry.connect_apply(move |_| {
-        if accept_button.is_sensitive() {
-            accept_button.emit_clicked();
-        }
-    });
-
-    let entry_for_accept = entry.clone();
-    let dialog_weak = dialog.downgrade();
-    footer.accept_button().connect_clicked(move |_| {
-        let Some(name) = normalized_playlist_name(&entry_for_accept.text()) else {
-            return;
-        };
-        on_save(name);
-        if let Some(dialog) = dialog_weak.upgrade() {
-            dialog.close();
-        }
-    });
-
-    let dialog_weak = dialog.downgrade();
-    footer.cancel_button().connect_clicked(move |_| {
-        if let Some(dialog) = dialog_weak.upgrade() {
-            dialog.close();
-        }
-    });
-
-    focus_when_shown(
-        &entry,
-        dialog_spec.focus_select_start,
-        dialog_spec.focus_select_end,
-    );
-    dialog.present(Some(parent));
-}
-
 /// Rewrite a `$HOME`-prefixed path to a `~`-abbreviated display form.
 fn abbreviate_home(path: &str) -> String {
     let home = glib::home_dir();
@@ -515,7 +418,6 @@ fn build_tips_card() -> gtk::Box {
 mod tests {
     #[cfg(not(miri))]
     use super::abbreviate_home;
-    use super::{NameEntryDialogSpec, name_entry_dialog_spec, normalized_playlist_name};
 
     #[cfg(not(miri))]
     #[test]
@@ -534,33 +436,6 @@ mod tests {
         assert_eq!(
             abbreviate_home("/mnt/media/lib"),
             "/mnt/media/lib".to_string()
-        );
-    }
-
-    #[test]
-    fn name_entry_dialog_keeps_chrome() {
-        assert_eq!(
-            name_entry_dialog_spec(),
-            NameEntryDialogSpec {
-                content_width: 420,
-                content_height: 240,
-                content_spacing: 12,
-                entry_title: "Playlist name",
-                cancel_label: "Cancel",
-                save_label: "Save",
-                focus_select_start: 0,
-                focus_select_end: -1,
-            }
-        );
-    }
-
-    #[test]
-    fn normalized_name_needs_non_blank_text() {
-        assert_eq!(normalized_playlist_name(""), None);
-        assert_eq!(normalized_playlist_name("   "), None);
-        assert_eq!(
-            normalized_playlist_name("  Favorites  "),
-            Some("Favorites".to_string())
         );
     }
 }
