@@ -18,6 +18,8 @@ pre_remove() {
     [[ -d /sys/kernel/security/apparmor ]] || return 0
     command -v apparmor_parser >/dev/null || return 0
     systemd-detect-virt --chroot --quiet && return 0
-    # Fails only when the profile was never loaded, which leaves nothing to remove.
-    apparmor_parser -R /etc/apparmor.d/big-video-player 2>/dev/null || :
+    # A profile that was never loaded leaves nothing to remove.
+    grep -q '^big-video-player ' /sys/kernel/security/apparmor/profiles 2>/dev/null || return 0
+    apparmor_parser -R /etc/apparmor.d/big-video-player ||
+        printf '%s\n' 'big-video-player: the AppArmor profile could not be unloaded; it stays active until reboot.'
 }
