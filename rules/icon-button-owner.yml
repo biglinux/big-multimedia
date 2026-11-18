@@ -12,7 +12,3 @@ constraints:
     regex: '\b(gtk::)?(Toggle)?Button::builder\(\)'
 ignores:
   - crates/ui/generic/big-relm4-components/src/feedback/tooltip.rs
-  # Legacy: files of the cut/trim owner; migrate with it.
-  - crates/big-video-player/src/video/ui/video_shell/component.rs
-  - crates/ui/media/big-player-ui/src/cut_edit_dialog.rs
-  - crates/ui/media/big-media-components/src/playback/audio_transport.rs

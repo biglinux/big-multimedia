@@ -9,6 +9,7 @@ use big_media_components::surface::{
     BigMediaChrome, BigMediaChromePlacement, BigMediaOverlayStack, MediaNotice, create_media_root,
     toggle_surface_fullscreened,
 };
+use big_relm4_components::feedback::tooltip;
 #[cfg(all(test, not(miri)))]
 use big_relm4_components::layout::hamburger_menu::build_flat_menu_model;
 use big_relm4_components::layout::hamburger_menu::{
@@ -120,13 +121,12 @@ impl Component for VideoShell {
         // Keep-Above toggle. No portable Wayland keep-above exists, so toggle it
         // via the compositor (KWin global shortcut, falling back to wmctrl). Both
         // run as argv arrays with no shell and no untrusted input.
-        let keep_above_toggle_button = gtk::ToggleButton::builder()
-            .icon_name("view-pin-symbolic")
-            .tooltip_text(i18n("Keep Above"))
-            .css_classes(["osd-btn"])
-            .build();
-        keep_above_toggle_button
-            .update_property(&[gtk::accessible::Property::Label(&i18n("Keep Above"))]);
+        let keep_above_toggle_button = tooltip::icon_toggle_button(
+            "view-pin-symbolic",
+            &i18n("Keep Above"),
+            false,
+            &["osd-btn"],
+        );
         keep_above_toggle_button.connect_toggled(|_button| toggle_keep_above());
 
         // Open popover button: a real GtkButton exposes AT-SPI DoAction while
@@ -144,20 +144,14 @@ impl Component for VideoShell {
         // Two separate sidebar entry points: Files (folder browser) and Playlist
         // (the play queue). Each reveals the sidebar in its mode; clicking the
         // active one hides it. Not a radio pair: both off hides the sidebar.
-        let files_sidebar_toggle_button = gtk::ToggleButton::builder()
-            .icon_name("folder-symbolic")
-            .tooltip_text(i18n("Files"))
-            .css_classes(["osd-btn"])
-            .build();
-        files_sidebar_toggle_button
-            .update_property(&[gtk::accessible::Property::Label(&i18n("Files"))]);
-        let playlist_sidebar_toggle_button = gtk::ToggleButton::builder()
-            .icon_name("view-list-symbolic")
-            .tooltip_text(i18n("Playlist"))
-            .css_classes(["osd-btn"])
-            .build();
-        playlist_sidebar_toggle_button
-            .update_property(&[gtk::accessible::Property::Label(&i18n("Playlist"))]);
+        let files_sidebar_toggle_button =
+            tooltip::icon_toggle_button("folder-symbolic", &i18n("Files"), false, &["osd-btn"]);
+        let playlist_sidebar_toggle_button = tooltip::icon_toggle_button(
+            "view-list-symbolic",
+            &i18n("Playlist"),
+            false,
+            &["osd-btn"],
+        );
         let sidebar_switch = gtk::Box::new(gtk::Orientation::Horizontal, 6);
         sidebar_switch.append(&files_sidebar_toggle_button);
         sidebar_switch.append(&playlist_sidebar_toggle_button);
@@ -183,13 +177,9 @@ impl Component for VideoShell {
         }
 
         // The header's main button opens the settings panel, not a menu.
-        let settings_button = gtk::Button::builder()
-            .icon_name("open-menu-symbolic")
-            .action_name("win.settings")
-            .tooltip_text(i18n("Settings"))
-            .css_classes(["osd-btn"])
-            .build();
-        settings_button.update_property(&[gtk::accessible::Property::Label(&i18n("Settings"))]);
+        let settings_button =
+            tooltip::icon_button("open-menu-symbolic", &i18n("Settings"), &["osd-btn"]);
+        settings_button.set_action_name(Some("win.settings"));
         let header_buttons = HeaderButtons::new(
             &keep_above_toggle_button,
             &open_menu_root,
