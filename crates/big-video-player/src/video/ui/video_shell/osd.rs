@@ -138,7 +138,7 @@ pub(super) fn controls_bar_height(controls_revealer: &gtk::Revealer, settings: &
         .child()
         .map_or(0, |child| child.measure(gtk::Orientation::Vertical, -1).1);
     let fade = if settings.get_string(keys::UI_COLOR_SOURCE) == "gradient" {
-        80
+        crate::video::ui::appearance::GRADIENT_FADE_PX
     } else {
         0
     };

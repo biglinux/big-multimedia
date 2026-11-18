@@ -98,9 +98,11 @@ impl AudioShell {
                 self.queue.jump_to(index);
                 self.play_current();
             }
-            PlaylistPanelOutput::RemoveTracks { indices } => {
+            PlaylistPanelOutput::RemoveTracks { mut indices } => {
                 self.snapshot_queue();
-                // Indices arrive highest-first so earlier removals stay valid.
+                // Highest first, once each, so earlier removals keep the rest valid.
+                indices.sort_unstable_by(|a, b| b.cmp(a));
+                indices.dedup();
                 for index in indices {
                     self.queue.remove(index);
                 }

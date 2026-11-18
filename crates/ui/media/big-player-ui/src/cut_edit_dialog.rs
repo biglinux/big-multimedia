@@ -4,6 +4,7 @@ use std::rc::Rc;
 
 use adw::prelude::*;
 use big_media_data::i18n::i18n;
+use big_relm4_components::feedback::tooltip;
 use big_relm4_components::input::preference_cards::BigSpinRange;
 use big_relm4_components::input::spin_row::{BigSpinRow, BigSpinRowSpec};
 use big_relm4_components::layout::dialog_footer::{BigDialogFooter, BigDialogFooterSpec};
@@ -110,15 +111,12 @@ fn cut_range_group(
 }
 
 fn playhead_button(playhead: &Rc<dyn Fn() -> f64>, spin: &gtk::SpinButton) -> gtk::Button {
-    let button = gtk::Button::builder()
-        .icon_name("preferences-system-time-symbolic")
-        .valign(gtk::Align::Center)
-        .css_classes(["flat"])
-        .build();
-    button.set_tooltip_text(Some(&i18n("Use current position")));
-    button.update_property(&[gtk::accessible::Property::Label(&i18n(
-        "Use current playback position",
-    ))]);
+    let button = tooltip::icon_button(
+        "preferences-system-time-symbolic",
+        &i18n("Use current playback position"),
+        &["flat"],
+    );
+    button.set_valign(gtk::Align::Center);
     let playhead = Rc::clone(playhead);
     let spin = spin.downgrade();
     button.connect_clicked(move |_| {

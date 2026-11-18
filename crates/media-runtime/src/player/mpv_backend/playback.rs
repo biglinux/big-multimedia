@@ -87,14 +87,9 @@ impl MpvBackend {
         if self.audio_only {
             self.set_audio_cache_profile(profile);
         }
-        self.loading.store(true, Ordering::Relaxed);
         // Resume stays with the global resume-playback preference: mpv reads
         // the watch-later file before per-file options, so none can veto it.
-        let options = if paused { "pause=yes" } else { "pause=no" };
-        if let Err(error) = self.queue_command("loadfile", &[path, "replace", "-1", options]) {
-            self.loading.store(false, Ordering::Relaxed);
-            log::warn!("Could not enqueue media load: {error}");
-        }
+        self.load_replacing(path, Some(if paused { "pause=yes" } else { "pause=no" }));
     }
 
     pub fn load_file_with_audio_profile(
@@ -109,7 +104,7 @@ impl MpvBackend {
         if self.audio_only {
             self.set_audio_cache_profile(profile);
         }
-        self.load_inner(path);
+        self.load_replacing(path, None);
     }
 
     pub fn load_file(&self, path: &str, source: TargetSource) {
@@ -119,12 +114,17 @@ impl MpvBackend {
         if self.audio_only {
             self.set_audio_cache_profile(profile_for_uri(path).unwrap_or(AudioCacheProfile::Music));
         }
-        self.load_inner(path);
+        self.load_replacing(path, None);
     }
 
-    fn load_inner(&self, path: &str) {
+    /// Queue `path` in place of the playlist, with mpv's per-file `options`.
+    fn load_replacing(&self, path: &str, options: Option<&str>) {
         self.loading.store(true, Ordering::Relaxed);
-        if let Err(error) = self.queue_command("loadfile", &[path, "replace"]) {
+        let queued = match options {
+            Some(options) => self.queue_command("loadfile", &[path, "replace", "-1", options]),
+            None => self.queue_command("loadfile", &[path, "replace"]),
+        };
+        if let Err(error) = queued {
             self.loading.store(false, Ordering::Relaxed);
             error!(
                 "Failed to load {}: {error}",
@@ -140,17 +140,10 @@ impl MpvBackend {
         if !admits(source, path) {
             return;
         }
-        self.loading.store(true, Ordering::Relaxed);
         // `%N%` takes the next N bytes as they are: a comma or `=` in the
         // name stays in it.
         let options = format!("force-media-title=%{}%{title}", title.len());
-        if let Err(error) = self.queue_command("loadfile", &[path, "replace", "-1", &options]) {
-            self.loading.store(false, Ordering::Relaxed);
-            error!(
-                "Failed to load {}: {error}",
-                big_os_kit::url::MediaLogTarget(path)
-            );
-        }
+        self.load_replacing(path, Some(&options));
     }
 
     pub fn load_file_append(&self, path: &str, source: TargetSource) {

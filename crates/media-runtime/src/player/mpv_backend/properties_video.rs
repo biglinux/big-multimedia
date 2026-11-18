@@ -4,7 +4,67 @@
 
 use super::MpvBackend;
 
+/// mpv's description of a video's frames, empty or 0 where it gives none.
+#[derive(Debug, Clone, Default, PartialEq)]
+pub struct VideoParams {
+    pub pixel_format: String,
+    /// The surface's real format under hardware decoding.
+    pub hw_pixel_format: String,
+    pub colormatrix: String,
+    pub primaries: String,
+    /// The transfer function, which mpv calls gamma.
+    pub gamma: String,
+    pub width: f64,
+}
+
 impl MpvBackend {
+    /// The frames the decoder produces (`video-dec-params`), as the file
+    /// describes them.
+    pub fn decoder_params(&self) -> VideoParams {
+        self.read_video_params("video-dec-params")
+    }
+
+    /// The frames as mpv outputs them (`video-params`), after its filters.
+    pub fn output_params(&self) -> VideoParams {
+        self.read_video_params("video-params")
+    }
+
+    fn read_video_params(&self, prefix: &str) -> VideoParams {
+        self.with_mpv(|m| {
+            let text = |key: &str| {
+                m.get_property::<String>(&format!("{prefix}/{key}"))
+                    .unwrap_or_default()
+            };
+            VideoParams {
+                pixel_format: text("pixelformat"),
+                hw_pixel_format: text("hw-pixelformat"),
+                colormatrix: text("colormatrix"),
+                primaries: text("primaries"),
+                gamma: text("gamma"),
+                width: m.get_property::<f64>(&format!("{prefix}/w")).unwrap_or(0.0),
+            }
+        })
+    }
+
+    /// The source video's size before scaling, when one is loaded.
+    pub fn video_source_size(&self) -> Option<(i64, i64)> {
+        self.with_mpv(|m| {
+            let w = m.get_property::<i64>("width").ok()?;
+            let h = m.get_property::<i64>("height").ok()?;
+            (w > 0 && h > 0).then_some((w, h))
+        })
+    }
+
+    /// Frames per second after the video filters, 0 when unknown.
+    pub fn estimated_fps(&self) -> f64 {
+        self.get_property_f64("estimated-vf-fps")
+    }
+
+    /// The hardware decoder in use, empty when decoding in software.
+    pub fn hwdec_current(&self) -> String {
+        self.get_property_string("hwdec-current")
+    }
+
     pub fn set_contrast(&self, val: i64) {
         self.with_mpv(|m| {
             m.set_property_logged("contrast", val);
@@ -62,12 +122,15 @@ impl MpvBackend {
         self.with_mpv(|m| m.get_property("video-rotate").unwrap_or(0))
     }
 
+    /// The `vf` label of the filter [`Self::set_video_flip`] owns.
+    pub const FLIP_VF_LABEL: &str = "big-flip";
+
     pub fn set_video_flip(&self, hflip: bool, vflip: bool) {
         match (hflip, vflip) {
-            (false, false) => self.vf_remove("big-flip"),
-            (true, false) => self.vf_append("big-flip", "hflip"),
-            (false, true) => self.vf_append("big-flip", "vflip"),
-            (true, true) => self.vf_append("big-flip", "hflip,vflip"),
+            (false, false) => self.vf_remove(Self::FLIP_VF_LABEL),
+            (true, false) => self.vf_append(Self::FLIP_VF_LABEL, "hflip"),
+            (false, true) => self.vf_append(Self::FLIP_VF_LABEL, "vflip"),
+            (true, true) => self.vf_append(Self::FLIP_VF_LABEL, "hflip,vflip"),
         }
     }
 
@@ -85,10 +148,18 @@ impl MpvBackend {
         self.with_mpv(|m| m.get_property::<f64>("panscan").unwrap_or(0.0))
     }
 
+    pub fn video_crop(&self) -> String {
+        self.get_property_string("video-crop")
+    }
+
     pub fn set_video_crop(&self, crop: &str) {
         self.with_mpv(|m| {
             m.set_property_logged("video-crop", crop.to_string());
         });
+    }
+
+    pub fn deinterlace(&self) -> bool {
+        self.get_property_bool("deinterlace")
     }
 
     pub fn set_deinterlace(&self, enable: bool) {
@@ -102,6 +173,8 @@ impl MpvBackend {
     /// colours at all (a DVB sample: nothing in the stream, nothing per
     /// frame), and its HDR then plays grey and washed out. mpv's own format
     /// filter only relabels the frames, so decoding stays on the GPU.
+    pub const SOURCE_COLOURS_VF_LABEL: &str = "source-colours";
+
     pub fn set_source_colours(&self, mode: &str) {
         let format = match mode {
             "pq" => "format=gamma=pq:primaries=bt.2020:colormatrix=bt.2020-ncl",
@@ -110,9 +183,10 @@ impl MpvBackend {
             _ => "",
         };
         self.with_mpv(|m| {
-            let _ = m.command("vf", &["remove", "@source-colours"]);
+            let label = Self::SOURCE_COLOURS_VF_LABEL;
+            let _ = m.command("vf", &["remove", &format!("@{label}")]);
             if !format.is_empty() {
-                let _ = m.command("vf", &["add", &format!("@source-colours:{format}")]);
+                let _ = m.command("vf", &["add", &format!("@{label}:{format}")]);
             }
         });
     }

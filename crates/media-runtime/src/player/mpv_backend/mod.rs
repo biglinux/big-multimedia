@@ -62,6 +62,8 @@ mod properties_subtitles;
 #[cfg(feature = "video")]
 mod properties_video;
 #[cfg(feature = "video")]
+pub use properties_video::VideoParams;
+#[cfg(feature = "video")]
 pub mod shader_gen;
 #[cfg(feature = "video")]
 pub mod software_frames;

@@ -315,7 +315,7 @@ fn dispatch_video_shortcut(
             };
             mpv.set_chapter((mpv.get_current_chapter() + step).clamp(0, count - 1));
         }
-        "deinterlace" => mpv.set_deinterlace(!mpv.get_property_bool("deinterlace")),
+        "deinterlace" => mpv.set_deinterlace(!mpv.deinterlace()),
         "hwdec" => mpv.set_hwdec(if mpv.get_hwdec() == "no" {
             "auto-safe"
         } else {

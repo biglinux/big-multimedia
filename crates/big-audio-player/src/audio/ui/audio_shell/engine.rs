@@ -218,21 +218,13 @@ pub(super) fn build_mpv_backend(
         }
     };
 
-    let replaygain = settings.get_string(keys::REPLAYGAIN);
-    mpv.set_replaygain(if replaygain.is_empty() {
-        "no"
-    } else {
-        &replaygain
-    });
+    mpv.set_replaygain(&settings.get_string(keys::REPLAYGAIN));
     mpv.set_replaygain_preamp(settings.get_double(keys::REPLAYGAIN_PREAMP));
-    mpv.set_volume_max(i64::from(settings.volume_max_percent()));
+    // The volume limit goes first: `set_volume` clamps to it.
+    crate::shared::audio_effects::apply_audio_preferences(settings, &mpv);
     mpv.set_volume(settings.audio_volume_percent());
     mpv.set_gapless(settings.get_bool(keys::GAPLESS_AUDIO));
-    mpv.set_audio_pitch_correction(settings.get_bool(keys::AUDIO_PITCH_CORRECTION));
-    mpv.set_audio_channels(&settings.get_string(keys::AUDIO_CHANNELS));
-    mpv.set_preferred_audio_lang(&settings.get_string(keys::PREFERRED_AUDIO_LANG));
     mpv.set_save_position(settings.get_bool(keys::RESUME_PLAYBACK));
-    crate::shared::audio_effects::apply_voice_change(settings, &mpv);
 
     let input = sender.input_sender().clone();
     glib::spawn_future_local(async move {

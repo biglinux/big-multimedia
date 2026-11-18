@@ -163,9 +163,9 @@ pub enum PlaylistPanelOutput {
         /// Queue index to jump to.
         index: usize,
     },
-    /// Remove queue tracks at these indices (descending order).
+    /// Remove the queue tracks at these indices, in any order.
     RemoveTracks {
-        /// Indices to remove, highest-first.
+        /// Queue indices; repeats are removed once.
         indices: Vec<usize>,
     },
     /// Move a queue track (single-source row reorder via drag).

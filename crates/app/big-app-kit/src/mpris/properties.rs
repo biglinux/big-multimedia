@@ -1,7 +1,7 @@
 use super::metadata::build_metadata;
 use super::types::{
-    CommandCallback, MprisCommand as C, PlaybackStatus, PlayerState, StateCallback, micros, rate,
-    volume,
+    CommandCallback, LoopStatus, MprisCommand as C, PlaybackStatus, PlayerState, StateCallback,
+    micros, rate, volume,
 };
 use glib::Variant;
 use glib::variant::{ObjectPath, ToVariant};
@@ -36,14 +36,7 @@ pub(super) fn player_property(prop: &str, s: &PlayerState) -> Option<Variant> {
         "CanSeek" => Some(s.can_seek.to_variant()),
         "CanGoNext" => Some(s.can_next.to_variant()),
         "CanGoPrevious" => Some(s.can_prev.to_variant()),
-        "LoopStatus" => Some(
-            (match s.loop_status.as_str() {
-                "Track" => "Track",
-                "Playlist" => "Playlist",
-                _ => "None",
-            })
-            .to_variant(),
-        ),
+        "LoopStatus" => Some(s.loop_status.as_str().to_variant()),
         "Shuffle" => Some(s.shuffle.to_variant()),
         _ => None,
     }
@@ -201,7 +194,7 @@ pub(super) fn set_player_property(
         }),
         "LoopStatus" => value
             .get::<String>()
-            .filter(|s| matches!(s.as_str(), "None" | "Track" | "Playlist"))
+            .and_then(|s| LoopStatus::from_bus(&s))
             .map(C::SetLoopStatus),
         "Shuffle" => value.get::<bool>().map(C::SetShuffle),
         _ => None,
@@ -271,6 +264,40 @@ mod tests {
                 "{property} {value}"
             );
             assert_eq!(accepted, expected.is_some(), "{property} {value}");
+        }
+    }
+
+    /// Oracle: the MPRIS spec's three LoopStatus values, case-sensitive.
+    #[test]
+    fn loop_status_writes_take_only_mpris_values() {
+        let sent = std::sync::Arc::new(std::sync::Mutex::new(Vec::new()));
+        let sink = std::sync::Arc::clone(&sent);
+        let command: CommandCallback = Box::new(move |request| {
+            sink.lock().unwrap().push(request);
+        });
+        let state: StateCallback = Box::new(PlayerState::default);
+        for value in ["None", "Track", "Playlist", "track", ""] {
+            set_player_property("LoopStatus", &value.to_variant(), &command, &state);
+        }
+        assert_eq!(
+            *sent.lock().unwrap(),
+            [
+                C::SetLoopStatus(LoopStatus::None),
+                C::SetLoopStatus(LoopStatus::Track),
+                C::SetLoopStatus(LoopStatus::Playlist),
+            ]
+        );
+        for status in [LoopStatus::None, LoopStatus::Track, LoopStatus::Playlist] {
+            let shown = PlayerState {
+                loop_status: status,
+                ..Default::default()
+            };
+            assert_eq!(
+                player_property("LoopStatus", &shown)
+                    .unwrap()
+                    .get::<String>(),
+                Some(status.as_str().to_owned())
+            );
         }
     }
 

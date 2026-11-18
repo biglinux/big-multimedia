@@ -11,9 +11,8 @@
 //! Pages are rebuilt from mpv and `Settings` each time they open, so they
 //! never show a stale value.
 
-use super::adjustments::{Adjustment, detect};
+use super::adjustments::{Adjustment, changes_summary, detect};
 use super::*;
-use crate::video::ui::menu_dialogs::chapter_title;
 use big_relm4_components::feedback::tooltip;
 
 mod recent;
@@ -234,19 +233,6 @@ fn page_of(adjustment: &Adjustment) -> Option<PanelPage> {
     }
 }
 
-/// "Normal", the one change by name, or how many there are.
-fn summary(changes: &[&Adjustment], normal: String) -> (String, bool) {
-    match changes {
-        [] => (normal, false),
-        [only] => (only.label(), true),
-        many => (
-            ni18n("{n} change", "{n} changes", many.len() as u64)
-                .replace("{n}", &many.len().to_string()),
-            true,
-        ),
-    }
-}
-
 fn group(title: &str, description: Option<&str>) -> adw::PreferencesGroup {
     let group = adw::PreferencesGroup::builder().title(title).build();
     if let Some(description) = description {
@@ -428,7 +414,8 @@ impl VideoShell {
                 .iter()
                 .filter(|a| page_of(a) == Some(page))
                 .collect();
-            let (state, changed) = summary(&changes, i18n("Normal"));
+            let (state, changed) = changes_summary(&changes)
+                .map_or_else(|| (i18n("Normal"), false), |text| (text, true));
             Block {
                 icon,
                 name,
@@ -508,18 +495,13 @@ impl VideoShell {
                 target: BlockTarget::Action("win.ytdl-quality"),
             });
         }
-        let (width, height) = (
-            mpv.get_property_f64("width"),
-            mpv.get_property_f64("height"),
-        );
+
         blocks.push(Block {
             icon: "dialog-information-symbolic",
             name: i18n("About this video"),
-            state: if width > 0.0 {
-                format!("{width:.0} × {height:.0}")
-            } else {
-                String::new()
-            },
+            state: mpv
+                .video_source_size()
+                .map_or_else(String::new, |(width, height)| format!("{width} × {height}")),
             changed: false,
             target: BlockTarget::Action("win.media-info"),
         });
@@ -827,12 +809,7 @@ fn block_button(block: Block, sender: &ComponentSender<VideoShell>) -> gtk::Butt
 fn chapters_page(mpv: &MpvBackend, sender: &ComponentSender<VideoShell>) -> gtk::Widget {
     let chapters = group(&i18n("Jump to a chapter"), None);
     let current = mpv.get_current_chapter();
-    for index in 0..mpv.get_chapter_count() {
-        let time = mpv.get_property_f64(&format!("chapter-list/{index}/time"));
-        let title = chapter_title(
-            mpv.get_property_string(&format!("chapter-list/{index}/title")),
-            index,
-        );
+    for (index, (time, title)) in (0_i64..).zip(mpv.chapters()) {
         let row = adw::ActionRow::builder()
             .title(title)
             .subtitle(big_media_components::time::playback_time(time))

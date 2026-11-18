@@ -8,23 +8,6 @@ use big_media_data::settings::{Settings, keys};
 
 use crate::preference_rows::{add_combo_row, add_entry_row, add_spin_int_row, add_switch_row};
 
-/// Owned audio-effect values emitted by the generic preferences page.
-#[derive(Debug, Clone, PartialEq)]
-pub struct PlayerAudioEffects {
-    /// Whether loudness normalization is enabled.
-    pub normalize: bool,
-    /// Noise reduction strength; 0 turns it off.
-    pub nr_strength: f64,
-    /// Selected noise reduction model.
-    pub nr_model: i32,
-    /// Mix to mono before the denoiser.
-    pub nr_mono: bool,
-    /// Keep only speech, at this voice sensitivity (1 to 5).
-    pub nr_voice_only: Option<u8>,
-    /// Equalizer band pairs `(frequency_hz, gain_db)`.
-    pub eq_bands: Vec<(f64, f64)>,
-}
-
 /// Live-player callbacks invoked by the generic audio preferences page.
 #[derive(Clone)]
 pub struct PlayerAudioPreferenceActions {
@@ -32,17 +15,18 @@ pub struct PlayerAudioPreferenceActions {
     set_audio_pitch_correction: Rc<dyn Fn(bool)>,
     set_volume_max: Rc<dyn Fn(i64)>,
     set_preferred_audio_lang: Rc<dyn Fn(&str)>,
-    apply_audio_effects: Rc<dyn Fn(PlayerAudioEffects)>,
+    apply_audio_effects: Rc<dyn Fn()>,
 }
 
 impl PlayerAudioPreferenceActions {
     /// Create callbacks that bridge the generic page to an app-specific player.
+    /// `apply_audio_effects` rebuilds the effect chain from the saved settings.
     pub fn new(
         set_audio_channels: impl Fn(&str) + 'static,
         set_audio_pitch_correction: impl Fn(bool) + 'static,
         set_volume_max: impl Fn(i64) + 'static,
         set_preferred_audio_lang: impl Fn(&str) + 'static,
-        apply_audio_effects: impl Fn(PlayerAudioEffects) + 'static,
+        apply_audio_effects: impl Fn() + 'static,
     ) -> Self {
         Self {
             set_audio_channels: Rc::new(set_audio_channels),
@@ -69,8 +53,8 @@ impl PlayerAudioPreferenceActions {
         (self.set_preferred_audio_lang)(value);
     }
 
-    fn apply_audio_effects(&self, effects: PlayerAudioEffects) {
-        (self.apply_audio_effects)(effects);
+    fn apply_audio_effects(&self) {
+        (self.apply_audio_effects)();
     }
 }
 
@@ -99,7 +83,7 @@ pub fn create_player_audio_page(
         normalize_row.connect_active_notify(move |row| {
             let _ = settings.put_bool(keys::AUDIO_NORMALIZE, row.is_active());
             if let Some(actions) = &actions {
-                actions.apply_audio_effects(read_audio_effects(&settings, row.is_active()));
+                actions.apply_audio_effects();
             }
         });
     }
@@ -191,25 +175,4 @@ pub fn create_player_audio_page(
     page.add(&output_group);
 
     page
-}
-
-fn read_audio_effects(settings: &Settings, normalize: bool) -> PlayerAudioEffects {
-    let gains = big_media_components::audio::equalizer_controls::parse_clamped_band_gains::<10>(
-        &settings.get_string(keys::EQ_BANDS),
-        -12.0,
-        12.0,
-    );
-    let eq_bands = big_audio_effects::equalizer::EQ_BAND_FREQUENCIES_F64
-        .into_iter()
-        .zip(gains)
-        .collect();
-
-    PlayerAudioEffects {
-        normalize,
-        nr_strength: settings.get_double(keys::NOISE_STRENGTH).max(0.0),
-        nr_model: settings.get_int(keys::NOISE_MODEL),
-        nr_mono: settings.get_bool(keys::NOISE_MONO),
-        nr_voice_only: settings.noise_voice_only(),
-        eq_bands,
-    }
 }

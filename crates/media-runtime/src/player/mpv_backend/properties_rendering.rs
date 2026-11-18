@@ -12,6 +12,9 @@ impl MpvBackend {
     /// Profiles: `"default"` (lean/fast: bilinear, audio sync),
     /// `"balanced"` (lanczos, correct-downscaling),
     /// `"high-quality"` (ewa_lanczossharp, display-resample, interpolation).
+    /// The ids [`Self::apply_render_profile`] knows, lightest first.
+    pub const RENDER_PROFILES: [&str; 3] = big_mpv_render::RENDER_PROFILE_IDS;
+
     pub fn apply_render_profile(&self, profile: &str) {
         info!("Applying render profile: {profile}");
         self.with_mpv(|m| {
@@ -69,10 +72,18 @@ impl MpvBackend {
         });
     }
 
+    pub fn sharpen(&self) -> f64 {
+        self.get_property_f64("sharpen")
+    }
+
     pub fn set_sharpen(&self, val: f64) {
         self.with_mpv(|m| {
             m.set_property_logged("sharpen", val);
         });
+    }
+
+    pub fn deband(&self) -> bool {
+        self.get_property_bool("deband")
     }
 
     pub fn set_deband(&self, enable: bool) {
@@ -81,10 +92,18 @@ impl MpvBackend {
         });
     }
 
+    pub fn sigmoid_upscaling(&self) -> bool {
+        self.get_property_bool("sigmoid-upscaling")
+    }
+
     pub fn set_sigmoid_upscaling(&self, enable: bool) {
         self.with_mpv(|m| {
             m.set_property_logged("sigmoid-upscaling", if enable { "yes" } else { "no" });
         });
+    }
+
+    pub fn correct_downscaling(&self) -> bool {
+        self.get_property_bool("correct-downscaling")
     }
 
     pub fn set_correct_downscaling(&self, enable: bool) {
@@ -120,9 +139,12 @@ impl MpvBackend {
         advanced_control: bool,
     ) -> crate::error::Result<super::fast_render::FastRenderContext> {
         // SAFETY: the caller has the creation GL context current.
-        let (vendor, renderer) = unsafe { super::fast_render::current_gl_driver() };
-        let interop = hwdec_interop_for(&vendor, &renderer);
-        info!("video: GL {vendor} / {renderer}, hwdec interop {interop}");
+        let driver = unsafe { super::fast_render::current_gl_driver() };
+        let interop = hwdec_interop_for(&driver.vendor, &driver.renderer);
+        info!(
+            "video: GL {} / {}, hwdec interop {interop}",
+            driver.vendor, driver.renderer
+        );
         self.with_mpv(|m| {
             m.set_property_logged("gpu-hwdec-interop", interop.to_string());
         });

@@ -22,7 +22,9 @@ use std::time::Duration;
 
 use adw::prelude::*;
 use big_relm4_components::input::debounce::connect_debounced_adjustment;
+use big_relm4_components::input::preference_cards::BigSpinRange;
 use big_relm4_components::input::slider_row::{BigSliderRow, BigSliderRowSpec};
+use big_relm4_components::input::spin_row::accessible_spin_button;
 use big_relm4_components::layout::preferences::BigPreferencesGroupSpec;
 
 use crate::i18n::i18n;
@@ -184,7 +186,7 @@ pub(super) fn build_delay_row(mpv: &Arc<MpvBackend>, subtitles: bool) -> gtk::Wi
         (
             i18n("Sound early or late"),
             i18n("When voices do not match the lips. More = later"),
-            mpv.get_property_f64("audio-delay"),
+            mpv.audio_delay(),
             10.0,
             |mpv, value| mpv.set_audio_delay(value),
         )
@@ -538,22 +540,13 @@ fn build_crop_group(
 }
 
 fn crop_spin(label: &str, upper: i64, initial: i64) -> gtk::SpinButton {
-    let adjustment = gtk::Adjustment::new(
-        initial.clamp(0, upper) as f64,
-        0.0,
-        upper.max(0) as f64,
-        1.0,
-        10.0,
-        0.0,
-    );
-    let spin = gtk::SpinButton::builder()
-        .adjustment(&adjustment)
-        .digits(0)
-        .numeric(true)
-        .width_chars(6)
-        .build();
-    spin.update_property(&[gtk::accessible::Property::Label(label)]);
-    spin
+    accessible_spin_button(
+        label,
+        BigSpinRange::new(0.0, upper as f64, 1.0, 10.0),
+        initial as f64,
+        0,
+        6,
+    )
 }
 
 /// Build the "Image and Video" dialog content: brightness/contrast/gamma/

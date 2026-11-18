@@ -27,6 +27,28 @@ impl BigSpinRange {
             page_step,
         }
     }
+
+    /// This range made safe for a `gtk::Adjustment`: a non-finite `min` reads
+    /// as 0 and `max` as `min`, `max` is at least `min`, the step is positive
+    /// and a page is at least one step.
+    #[must_use]
+    pub fn resolved(self) -> Self {
+        let min = finite_or(self.min, 0.0);
+        let max = finite_or(self.max, min).max(min);
+        let step = finite_or(self.step, 1.0).abs().max(f64::EPSILON);
+        let page_step = finite_or(self.page_step, step * 10.0).abs().max(step);
+        Self {
+            min,
+            max,
+            step,
+            page_step,
+        }
+    }
+}
+
+/// `value`, or `fallback` when it is NaN or infinite.
+pub(crate) fn finite_or(value: f64, fallback: f64) -> f64 {
+    if value.is_finite() { value } else { fallback }
 }
 
 #[cfg(test)]

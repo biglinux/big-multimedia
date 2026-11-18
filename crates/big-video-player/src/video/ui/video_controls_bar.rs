@@ -22,6 +22,7 @@ use relm4::{Component, ComponentParts, ComponentSender};
 
 use big_media_components::playback::audio_transport::time_label_chars;
 use big_media_components::playback::cut_timeline::CutTimeline;
+use big_media_components::playback::set_play_pause;
 use big_player_ui::cut_timeline::{install_cut_timeline_draw, wire_cut_timeline_interaction};
 
 use crate::i18n::i18n;
@@ -473,17 +474,7 @@ impl Component for VideoControlsBar {
         match message {
             VideoControlsBarInput::SetHasMedia(on) => self.set_has_media(on),
             VideoControlsBarInput::SetPaused(paused) => {
-                let icon = if paused {
-                    "media-playback-start-symbolic"
-                } else {
-                    "media-playback-pause-symbolic"
-                };
-                self.play_button.set_icon_name(icon);
-                // It names what a click does, as the icon shows.
-                let action = if paused { i18n("Play") } else { i18n("Pause") };
-                self.play_button.set_tooltip_text(Some(&action));
-                self.play_button
-                    .update_property(&[gtk::accessible::Property::Label(&action)]);
+                set_play_pause(&self.play_button, paused, &i18n("Play"), &i18n("Pause"));
             }
             VideoControlsBarInput::SetPosition(text) => self.position_label.set_text(Some(&text)),
             VideoControlsBarInput::SetDuration(text) => {

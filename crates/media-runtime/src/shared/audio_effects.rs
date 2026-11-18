@@ -58,6 +58,15 @@ pub fn apply_voice_change(settings: &crate::settings::Settings, mpv: &MpvBackend
     rebuild_filters(settings, &gains, mpv);
 }
 
+/// Apply the saved settings of the audio preferences page both players share.
+pub fn apply_audio_preferences(settings: &crate::settings::Settings, mpv: &MpvBackend) {
+    mpv.set_volume_max(i64::from(settings.volume_max_percent()));
+    mpv.set_audio_pitch_correction(settings.get_bool(keys::AUDIO_PITCH_CORRECTION));
+    mpv.set_audio_channels(&settings.get_string(keys::AUDIO_CHANNELS));
+    mpv.set_preferred_audio_lang(&settings.get_string(keys::PREFERRED_AUDIO_LANG));
+    apply_voice_change(settings, mpv);
+}
+
 /// The noise reduction's settings, shown beside the voice slider as in the
 /// BigLinux converters: the model, mono, and keeping only speech. Each
 /// change is saved, then `on_change` runs to rebuild the playing chain.

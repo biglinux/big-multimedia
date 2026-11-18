@@ -117,23 +117,10 @@ struct Service {
 }
 
 impl Mpris {
-    /// Build the MPRIS service with the BigVideoPlayer bus name and
-    /// desktop id. The bus connection is made in the background; a failure
-    /// is logged and leaves the player without MPRIS.
-    pub fn new(command_cb: CommandCallback, state_cb: StateCallback) -> Self {
-        Self::new_with_name(
-            "org.mpris.MediaPlayer2.BigVideoPlayer",
-            "br.com.biglinux.VideoPlayer",
-            command_cb,
-            state_cb,
-            false,
-        )
-    }
-
-    /// Build the MPRIS service with caller-supplied bus name and
-    /// desktop id; used by apps that need a different identity than
-    /// BigVideoPlayer. Connects in the background like [`Self::new`].
-    pub fn new_with_name(
+    /// Build the MPRIS service under `bus_name` for the app whose desktop
+    /// entry is `desktop_id`. The bus connection is made in the background; a
+    /// failure is logged and leaves the player without MPRIS.
+    pub fn new(
         bus_name: &str,
         desktop_id: &str,
         command_cb: CommandCallback,

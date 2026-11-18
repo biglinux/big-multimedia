@@ -9,6 +9,8 @@ mod audio_effects_eq;
 pub mod converter_handoff;
 /// Illustration image builders backed by GResource icons.
 pub mod illustration;
+/// Playlist file save picker and result alert.
+pub mod playlist_export;
 /// Shared hover-to-open popover infrastructure.
 pub mod popovers;
 /// Shared shortcut capture dialog.

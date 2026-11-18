@@ -18,6 +18,20 @@ pub struct ThumbnailResult {
     pub rgb_data: Arc<[u8]>,
 }
 
+impl ThumbnailResult {
+    /// The frame as a texture, in the pixel layout the generator decodes.
+    #[must_use]
+    pub fn into_texture(self) -> gtk::gdk::MemoryTexture {
+        gtk::gdk::MemoryTexture::new(
+            THUMB_WIDTH,
+            THUMB_HEIGHT,
+            gtk::gdk::MemoryFormat::R8g8b8,
+            &gtk::glib::Bytes::from_owned(self.rgb_data),
+            THUMB_STRIDE,
+        )
+    }
+}
+
 /// One pending hover request; decoded pixels are shared by the cache and GTK.
 pub struct ThumbnailGenerator {
     sender: async_channel::Sender<Option<ThumbnailRequest>>,

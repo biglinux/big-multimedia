@@ -10,7 +10,10 @@ use super::*;
 use crate::video::ui::media_adjust::{CropMargins, source_colour_names};
 
 /// `vf` labels the chips track elsewhere (flip, source colours).
-const OWNED_VF_LABELS: [&str; 2] = ["big-flip", "source-colours"];
+const OWNED_VF_LABELS: [&str; 2] = [
+    MpvBackend::FLIP_VF_LABEL,
+    MpvBackend::SOURCE_COLOURS_VF_LABEL,
+];
 const FLAT_EQ: &str = "0.0;0.0;0.0;0.0;0.0;0.0;0.0;0.0;0.0;0.0";
 
 /// One change from normal, holding the value it replaced so undoing the
@@ -88,7 +91,7 @@ pub(super) fn detect(
             vertical: transform.vflip(),
         });
     }
-    let crop = mpv.get_property_string("video-crop");
+    let crop = mpv.video_crop();
     if !crop.is_empty() && crop != "0x0+0+0" {
         found.push(Adjustment::Crop {
             margins: transform.crop_margins(),
@@ -99,7 +102,7 @@ pub(super) fn detect(
     if changed(speed - 1.0) {
         found.push(Adjustment::Speed(speed));
     }
-    let audio_delay = mpv.get_property_f64("audio-delay");
+    let audio_delay = mpv.audio_delay();
     if changed(audio_delay) {
         found.push(Adjustment::AudioDelay(audio_delay));
     }
@@ -149,6 +152,18 @@ pub(super) fn sound_type_name(preset: &str) -> String {
 
 fn seconds(value: f64) -> String {
     format!("{:.1}", value.abs())
+}
+
+/// The one change by name, or how many there are; `None` when nothing changed.
+pub(super) fn changes_summary(changes: &[&Adjustment]) -> Option<String> {
+    match changes {
+        [] => None,
+        [only] => Some(only.label()),
+        many => Some(
+            ni18n("{n} change", "{n} changes", many.len() as u64)
+                .replace("{n}", &many.len().to_string()),
+        ),
+    }
 }
 
 impl Adjustment {
@@ -303,11 +318,7 @@ impl VideoShell {
             found.push(Adjustment::SleepTimer(self.sleep_timer.remaining_secs()));
         }
         let names: Vec<String> = found.iter().map(Adjustment::label).collect();
-        let text = match names.as_slice() {
-            [only] => only.clone(),
-            many => ni18n("{n} change", "{n} changes", many.len() as u64)
-                .replace("{n}", &many.len().to_string()),
-        };
+        let text = changes_summary(&found.iter().collect::<Vec<_>>()).unwrap_or_default();
         let tooltip = format!("{}\n{}", names.join("\n"), i18n("Click to see or undo"));
         self.adjustments_pill.set_label(&format!("● {text}"));
         self.adjustments_pill.set_tooltip_text(Some(&tooltip));
@@ -362,18 +373,18 @@ impl VideoShell {
         let Some(mpv) = self.mpv.borrow().clone() else {
             return;
         };
+        let decoded = mpv.decoder_params();
         let undescribed_hdr = mpv.get_current_file().as_deref() == Some(path)
             && self.video_transform.source_colours_index() == 0
             // GPU decoding names the surface ("cuda") and puts the depth here.
-            && ["pixelformat", "hw-pixelformat"].iter().any(|name| {
-                let format = mpv.get_property_string(&format!("video-dec-params/{name}"));
+            && [&decoded.pixel_format, &decoded.hw_pixel_format].iter().any(|format| {
                 ["p10", "p12", "p010", "p016"]
                     .iter()
                     .any(|depth| format.contains(depth))
             })
-            && mpv.get_property_string("video-dec-params/gamma") == "auto"
-            && mpv.get_property_string("video-dec-params/primaries") == "auto"
-            && mpv.get_property_f64("video-dec-params/w") >= 3840.0;
+            && decoded.gamma == "auto"
+            && decoded.primaries == "auto"
+            && decoded.width >= 3840.0;
         self.hdr_hint.set_visible(undescribed_hdr);
     }
 }

@@ -6,7 +6,7 @@ use crate::media::playlist::VideoMeta;
 
 use super::cache::{
     ACTIVE_PROBES, CACHE_EVICT_COUNT, CacheEntry, MAX_CACHE_ENTRIES, MAX_PROBES, acquire_slot,
-    evict_oldest, file_mtime, meta_cache, release_slot, save_meta_cache_to_disk,
+    evict_oldest, meta_cache, release_slot, save_meta_cache_to_disk,
 };
 
 /// Synchronous; call from a background thread.
@@ -22,7 +22,7 @@ pub fn probe_metadata_cached(path: &str) -> Option<VideoMeta> {
     if big_os_kit::url::is_stream_uri(path) {
         return None;
     }
-    let current_mtime = file_mtime(path);
+    let current_mtime = big_os_kit::storage::modified_secs(path).unwrap_or(0);
     if let Some(entry) = meta_cache().lock().ok()?.get(path).cloned()
         && entry.mtime == current_mtime
         && (entry.meta.codec.is_some() || entry.meta.resolution.is_some())

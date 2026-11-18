@@ -492,7 +492,7 @@ impl Component for AudioShell {
         save_volume_on_close(&root, mpv.as_ref(), &settings);
         let mpris_state = Arc::new(SharedMprisState::default());
         let mpris = build_mpris_service(&sender, &mpris_state, &settings);
-        let tray = super::tray::build_tray(&sender, settings.get_bool_or(keys::TRAY_ICON, false));
+        let tray = super::tray::build_tray(&sender, settings.get_bool(keys::TRAY_ICON));
 
         // Files opened from the desktop, the command line or a host reach this
         // shell while its content is realized.

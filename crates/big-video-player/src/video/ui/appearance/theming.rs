@@ -15,6 +15,9 @@ use big_relm4_components::theme::CssSlot;
 
 use crate::settings::{Settings, keys};
 
+/// Height in pixels of the gradient look's fade beyond each OSD bar.
+pub(crate) const GRADIENT_FADE_PX: i32 = 80;
+
 /// All `ui-*` settings the OSD CSS reads, snapshotted once per apply.
 struct OsdCssConfig {
     color_source: String,
@@ -201,13 +204,14 @@ button.adjustment-reset {{
             css += &format!(
                 ".osd-controls {{\n\
                    background: linear-gradient(to top, rgba(0,0,0,{op:.2}), transparent);\n\
-                   padding-top: 80px;\n\
+                   padding-top: {fade}px;\n\
                  }}\n\
                  .osd-header {{\n\
                    background: linear-gradient(to bottom, rgba(0,0,0,{op:.2}), transparent);\n\
-                   padding-bottom: 80px;\n\
+                   padding-bottom: {fade}px;\n\
                  }}\n",
                 op = self.bg_opacity,
+                fade = GRADIENT_FADE_PX,
             );
         }
 

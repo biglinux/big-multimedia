@@ -7,17 +7,14 @@ use adw::prelude::*;
 use big_relm4_components::input::zone_layout::{ZoneLayout, ZonePlacement, slot_key};
 use big_relm4_components::layout::zone_applier::apply_zone_layout;
 
-use crate::settings::{Settings, keys};
+use crate::settings::Settings;
+use crate::video::ui::appearance::layout::{CONTROLS, OsdControl};
 use crate::video::ui::video_controls_bar::read_zones;
 
-/// `(id, its ui-show-* key, the zone it takes when no CSV names it)`.
-/// `playlist` is the Files/Playlist switch.
-const HEADER_CONTROLS: [(&str, keys::BoolKey, ZonePlacement); 4] = [
-    ("pin", keys::UI_SHOW_PIN, ZonePlacement::Start),
-    ("open", keys::UI_SHOW_OPEN, ZonePlacement::Start),
-    ("playlist", keys::UI_SHOW_PLAYLIST, ZonePlacement::Start),
-    ("menu", keys::UI_SHOW_MENU, ZonePlacement::End),
-];
+/// The Buttons page's top-bar controls; `playlist` is the Files/Playlist switch.
+fn header_controls() -> impl Iterator<Item = &'static OsdControl> {
+    CONTROLS.iter().filter(|control| control.bar == "top")
+}
 
 /// The header's start and end zones and the buttons placed in them. The
 /// window controls, the title and the status pills stay outside the zones.
@@ -58,11 +55,13 @@ impl HeaderButtons {
     pub(super) fn apply_settings(&self, settings: &Settings) {
         let start = slot_key("top", ZonePlacement::Start);
         let end = slot_key("top", ZonePlacement::End);
-        let fallback_slots =
-            HEADER_CONTROLS.map(|(id, _, placement)| (id, slot_key("top", placement)));
-        let fallback = fallback_slots
-            .each_ref()
-            .map(|(id, slot)| (*id, slot.as_str()));
+        let fallback_slots: Vec<(&str, String)> = header_controls()
+            .map(|control| (control.id, slot_key(control.bar, control.placement)))
+            .collect();
+        let fallback: Vec<(&str, &str)> = fallback_slots
+            .iter()
+            .map(|(id, slot)| (*id, slot.as_str()))
+            .collect();
         apply_zone_layout(
             &read_header_layout(settings),
             &self.controls,
@@ -78,22 +77,10 @@ impl HeaderButtons {
 
 /// The header's layout: its two zones and the buttons hidden.
 fn read_header_layout(settings: &Settings) -> ZoneLayout {
-    let mut layout = read_zones(
-        settings,
-        &[
-            (
-                keys::UI_ZONE_TOP_LEFT,
-                &slot_key("top", ZonePlacement::Start),
-            ),
-            (
-                keys::UI_ZONE_TOP_RIGHT,
-                &slot_key("top", ZonePlacement::End),
-            ),
-        ],
-        &HEADER_CONTROLS.map(|(id, _, _)| id),
-    );
-    for (id, show, _) in HEADER_CONTROLS {
-        layout.set_visible(id, settings.get_bool(show));
+    let ids: Vec<&str> = header_controls().map(|control| control.id).collect();
+    let mut layout = read_zones(settings, "top", &ids);
+    for control in header_controls() {
+        layout.set_visible(control.id, settings.get_bool(control.show));
     }
     layout
 }
@@ -101,6 +88,7 @@ fn read_header_layout(settings: &Settings) -> ZoneLayout {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::settings::keys;
 
     #[test]
     fn header_zones_follow_the_top_keys() {

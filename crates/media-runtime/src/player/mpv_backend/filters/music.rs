@@ -5,11 +5,16 @@ use log::{error, info};
 use crate::player::mpv_backend::{AudioMetadata, MpvBackend};
 
 impl MpvBackend {
-    /// `mode`: `"no"` | `"track"` | `"album"`.
+    /// mpv's `replaygain` modes: off, by track, by album.
+    pub const REPLAYGAIN_MODES: [&str; 3] = ["no", "track", "album"];
+
+    /// `mode` is one of [`Self::REPLAYGAIN_MODES`]; anything else turns
+    /// levelling off.
     pub fn set_replaygain(&self, mode: &str) {
-        let mode = match mode {
-            "track" | "album" => mode,
-            _ => "no",
+        let mode = if Self::REPLAYGAIN_MODES.contains(&mode) {
+            mode
+        } else {
+            "no"
         };
         self.with_mpv(|mpv| {
             if let Err(error) = mpv.set_property("replaygain", mode) {

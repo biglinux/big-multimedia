@@ -26,7 +26,7 @@ use big_relm4_components::list::copyable_detail_row::{
 };
 
 use crate::i18n::i18n;
-use crate::player::mpv_backend::{MpvBackend, TrackMetadata};
+use crate::player::mpv_backend::{MpvBackend, TrackMetadata, VideoParams};
 
 /// Build one copyable detail row and register it for "Copy All".
 fn media_detail_row(title: &str, value: &str, lines: &BigDetailLines) -> adw::ActionRow {
@@ -176,7 +176,7 @@ fn build_video_group(
             lines,
         ));
     }
-    let fps = mpv.get_property_f64("estimated-vf-fps");
+    let fps = mpv.estimated_fps();
     if fps > 0.0 {
         group.add(&media_detail_row(
             &i18n("Frame Rate"),
@@ -192,7 +192,7 @@ fn build_video_group(
             lines,
         ));
     }
-    let hwdec = mpv.get_property_string("hwdec-current");
+    let hwdec = mpv.hwdec_current();
     let decoder = if hwdec.is_empty() {
         i18n("Software")
     } else {
@@ -203,7 +203,13 @@ fn build_video_group(
         &decoder,
         lines,
     ));
-    let pixel_format = mpv.get_property_string("video-params/pixelformat");
+    let VideoParams {
+        pixel_format,
+        colormatrix,
+        primaries,
+        gamma: transfer,
+        ..
+    } = mpv.output_params();
     if !pixel_format.is_empty() {
         group.add(&media_detail_row(
             &i18n("Pixel Format"),
@@ -211,15 +217,12 @@ fn build_video_group(
             lines,
         ));
     }
-    let colormatrix = mpv.get_property_string("video-params/colormatrix");
     if !colormatrix.is_empty() {
         group.add(&media_detail_row(&i18n("Colorspace"), &colormatrix, lines));
     }
-    let primaries = mpv.get_property_string("video-params/primaries");
     if !primaries.is_empty() {
         group.add(&media_detail_row(&i18n("Primaries"), &primaries, lines));
     }
-    let transfer = mpv.get_property_string("video-params/gamma");
     if !transfer.is_empty() {
         let label = if transfer.contains("pq") || transfer.contains("hlg") {
             i18n("HDR")

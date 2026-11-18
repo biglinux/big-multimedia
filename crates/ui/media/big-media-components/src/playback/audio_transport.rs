@@ -450,15 +450,12 @@ impl BigAudioTransport {
 
     /// Show on the play button the action a click takes while `paused`.
     pub fn set_paused(&self, paused: bool) {
-        let (icon, action) = if paused {
-            ("media-playback-start-symbolic", &self.play_label)
-        } else {
-            ("media-playback-pause-symbolic", &self.pause_label)
-        };
-        self.play_button.set_icon_name(icon);
-        self.play_button.set_tooltip_text(Some(action));
-        self.play_button
-            .update_property(&[gtk::accessible::Property::Label(action)]);
+        super::set_play_pause(
+            &self.play_button,
+            paused,
+            &self.play_label,
+            &self.pause_label,
+        );
     }
 }
 
@@ -474,10 +471,9 @@ fn build_hover_control(
         .orientation(gtk::Orientation::Horizontal)
         .spacing(2)
         .build();
-    // The popover that opens on hover names the control.
-    let button = gtk::Button::from_icon_name(icon_name);
-    button.update_property(&[gtk::accessible::Property::Label(label)]);
-    button.set_has_frame(false);
+    let button = tooltip::icon_button(icon_name, label, &["image-button", "flat"]);
+    // The popover that opens on hover names the control; a tooltip would cover it.
+    button.set_has_tooltip(false);
     let value_label = gtk::Label::builder()
         .label(initial_text)
         .width_chars(width_chars)
