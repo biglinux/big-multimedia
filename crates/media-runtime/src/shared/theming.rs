@@ -76,7 +76,7 @@ mod tests {
 
     #[test]
     fn system_colors_bring_no_palette() {
-        let settings = crate::settings::Settings::new("test");
+        let settings = crate::settings::Settings::memory_only();
         let result = build_palette_css(
             &settings,
             "gtk-default",
