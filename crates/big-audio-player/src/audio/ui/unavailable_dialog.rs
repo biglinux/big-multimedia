@@ -37,7 +37,7 @@ struct View {
 }
 
 pub(super) fn show(parent: &gtk::Window, db: DbHandle, on_changed: impl Fn() + 'static) {
-    let dialog = adw::Dialog::builder()
+    let dialog = big_gtk_kit::dialog::Dialog::builder()
         .title(i18n("Review unavailable files"))
         .content_width(640)
         .content_height(560)
@@ -250,7 +250,7 @@ impl View {
                 "Their ratings and saved playlist links will be removed. Media files will not be deleted. A restored file or changed record cancels the whole selection.",
             )
         );
-        let confirm = adw::AlertDialog::builder()
+        let confirm = big_gtk_kit::alert::Alert::builder()
             .heading(i18n("Remove selected library records?"))
             .body(body)
             .build();

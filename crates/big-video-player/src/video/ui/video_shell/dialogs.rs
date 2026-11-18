@@ -4,7 +4,7 @@ use super::*;
 use big_relm4_components::input::dropdown_row::{BigDropdownRow, BigDropdownRowSpec};
 use big_relm4_components::layout::{
     dialog_footer::{BigDialogFooter, BigDialogFooterSpec},
-    dialog_page::BigDialogPage,
+    dialog_page::{BigDialogPage, focus_when_shown},
     preferences::BigPreferencesGroupSpec,
 };
 
@@ -80,7 +80,7 @@ impl VideoShell {
         let page = BigDialogPage::scrolled_clamped(420, 360);
         page.content().append(&group);
 
-        let dialog = adw::Dialog::builder()
+        let dialog = big_gtk_kit::dialog::Dialog::builder()
             .title(i18n("Online Video Quality"))
             .content_width(420)
             .content_height(360)
@@ -150,7 +150,7 @@ impl VideoShell {
             log::warn!("video open-url dialog ignored before shell input registration");
             return;
         };
-        let dialog = adw::Dialog::builder()
+        let dialog = big_gtk_kit::dialog::Dialog::builder()
             .title(i18n("Open URL"))
             .content_width(460)
             .content_height(260)
@@ -209,13 +209,7 @@ impl VideoShell {
             }
         });
 
-        let entry_for_idle = entry.clone();
-        dialog.connect_map(move |_| {
-            let entry = entry_for_idle.clone();
-            gtk::glib::idle_add_local_once(move || {
-                entry.grab_focus();
-            });
-        });
+        focus_when_shown(&entry, 0, -1);
         dialog.present(Some(root));
     }
 
@@ -227,7 +221,7 @@ impl VideoShell {
             log::warn!("video open-disc dialog ignored before shell input registration");
             return;
         };
-        let dialog = adw::Dialog::builder()
+        let dialog = big_gtk_kit::dialog::Dialog::builder()
             .title(i18n("Open Disc"))
             .content_width(460)
             .content_height(320)
@@ -311,14 +305,7 @@ impl VideoShell {
             }
         });
 
-        let entry_for_idle = entry.clone();
-        dialog.connect_map(move |_| {
-            let entry = entry_for_idle.clone();
-            gtk::glib::idle_add_local_once(move || {
-                entry.grab_focus();
-                entry.select_region(0, -1);
-            });
-        });
+        focus_when_shown(&entry, 0, -1);
         dialog.present(Some(root));
     }
 
@@ -370,7 +357,7 @@ impl VideoShell {
             log::warn!("video restore-defaults dialog ignored before shell input registration");
             return;
         };
-        let dialog = adw::AlertDialog::builder()
+        let dialog = big_gtk_kit::alert::Alert::builder()
             .heading(i18n("Restore Default Settings?"))
             .body(i18n(
                 "Every setting, including appearance, goes back to its default value. Some changes take effect after reopening the player.",
@@ -473,7 +460,7 @@ pub(super) fn present_controller_dialog(
     let page = BigDialogPage::plain();
     page.root().set_content(Some(widget));
     let dialog_root = page.into_root();
-    let dialog = adw::Dialog::builder()
+    let dialog = big_gtk_kit::dialog::Dialog::builder()
         .title(title)
         .content_width(content_width)
         .content_height(content_height)

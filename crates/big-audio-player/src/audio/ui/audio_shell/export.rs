@@ -152,7 +152,7 @@ impl AudioShell {
         group.add(end_row.row());
 
         let error_label = error_label(&i18n("End must be after start"));
-        let dialog = adw::Dialog::builder()
+        let dialog = big_gtk_kit::dialog::Dialog::builder()
             .title(i18n("Edit cut"))
             .content_width(440)
             .content_height(360)

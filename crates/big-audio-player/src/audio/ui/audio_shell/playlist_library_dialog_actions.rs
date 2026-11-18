@@ -397,7 +397,7 @@ fn show_export_result(parent: Option<&glib::WeakRef<gtk::Window>>, body: &str) {
     let Some(parent) = parent.and_then(glib::WeakRef::upgrade) else {
         return;
     };
-    let dialog = adw::AlertDialog::builder()
+    let dialog = big_gtk_kit::alert::Alert::builder()
         .heading(i18n("Playlist export"))
         .body(body)
         .build();

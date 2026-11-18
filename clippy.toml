@@ -19,6 +19,12 @@ large-error-threshold = 256
 allowed-duplicate-crates = []
 
 disallowed-methods = [
+    # >>> big-gtk-kit bans, written from the kit revision Cargo.lock pins
+    { path = "libadwaita::AlertDialog::new", reason = "every dialog leaves three breakpoints behind when it goes (libadwaita 1.9, about 1.8 KB an opening); use `big_gtk_kit::alert::Alert::new`, which asks again with one already made" },
+    { path = "libadwaita::AlertDialog::builder", reason = "every dialog leaves three breakpoints behind when it goes (libadwaita 1.9, about 1.8 KB an opening); use `big_gtk_kit::alert::Alert::builder`" },
+    { path = "libadwaita::Dialog::new", reason = "every dialog leaves three breakpoints behind when it goes (libadwaita 1.9, about 1.8 KB an opening); use `big_gtk_kit::dialog::Dialog::new`, which shows one already made" },
+    { path = "libadwaita::Dialog::builder", reason = "every dialog leaves three breakpoints behind when it goes (libadwaita 1.9, about 1.8 KB an opening); use `big_gtk_kit::dialog::Dialog::builder`" },
+    # <<< big-gtk-kit bans
     { path = "glib::SourceId::remove", reason = "panics when the source already ran, which aborts inside a GLib callback; use `big_gtk_kit::source::remove`" },
     # From big-gtk-kit/clippy.toml.
     { path = "gtk4::prelude::AccessibleExtManual::update_relation", reason = "leaks the list of targets on every call (gtk-rs 0.11); use `big_gtk_kit::accessible::relate`" },

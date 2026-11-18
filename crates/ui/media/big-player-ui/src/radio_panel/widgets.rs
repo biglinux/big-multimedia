@@ -13,7 +13,7 @@ use relm4::ComponentSender;
 use big_relm4_components::feedback::tooltip;
 use big_relm4_components::layout::{
     dialog_footer::{BigDialogFooter, BigDialogFooterSpec},
-    dialog_page::BigDialogPage,
+    dialog_page::{BigDialogPage, focus_when_shown},
     preferences::BigPreferencesGroupSpec,
 };
 
@@ -320,7 +320,7 @@ pub(super) fn present_add_dialog(root: &gtk::Box, sender: &ComponentSender<Radio
         return;
     };
 
-    let dialog = adw::Dialog::builder()
+    let dialog = big_gtk_kit::dialog::Dialog::builder()
         .title(i18n("Add Radio Station"))
         .content_width(440)
         .content_height(300)
@@ -413,14 +413,7 @@ pub(super) fn present_add_dialog(root: &gtk::Box, sender: &ComponentSender<Radio
         }
     });
 
-    dialog.connect_map(move |_| {
-        let name_entry = name_entry.downgrade();
-        gtk::glib::idle_add_local_once(move || {
-            if let Some(name_entry) = name_entry.upgrade() {
-                name_entry.grab_focus();
-            }
-        });
-    });
+    focus_when_shown(&name_entry, 0, -1);
     dialog.present(Some(&window));
 }
 

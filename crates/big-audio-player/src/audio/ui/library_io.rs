@@ -14,7 +14,7 @@ use big_app_kit::file_dialogs::FilePicker;
 use big_relm4_components::input::button_content::{BigButtonContentSpec, build_button};
 use big_relm4_components::layout::{
     dialog_footer::{BigDialogFooter, BigDialogFooterSpec},
-    dialog_page::BigDialogPage,
+    dialog_page::{BigDialogPage, focus_when_shown},
     preferences::BigPreferencesGroupSpec,
 };
 use big_relm4_components::list::button_strip_row::{BigButtonStripRow, BigButtonStripRowSpec};
@@ -181,7 +181,7 @@ pub(super) fn show_manage_folders(
     });
     content.append(&review);
 
-    let dialog = adw::Dialog::builder()
+    let dialog = big_gtk_kit::dialog::Dialog::builder()
         .title(i18n("Music Folders"))
         .content_width(MUSIC_FOLDERS_DIALOG_WIDTH)
         .content_height(MUSIC_FOLDERS_DIALOG_HEIGHT)
@@ -346,7 +346,7 @@ where
     F: Fn(String) + 'static,
 {
     let dialog_spec = name_entry_dialog_spec();
-    let dialog = adw::Dialog::builder()
+    let dialog = big_gtk_kit::dialog::Dialog::builder()
         .title(heading)
         .content_width(dialog_spec.content_width)
         .content_height(dialog_spec.content_height)
@@ -402,15 +402,11 @@ where
         }
     });
 
-    let entry_for_focus = entry.clone();
-    dialog.connect_map(move |_| {
-        let entry_for_idle = entry_for_focus.clone();
-        glib::idle_add_local_once(move || {
-            entry_for_idle.grab_focus();
-            entry_for_idle
-                .select_region(dialog_spec.focus_select_start, dialog_spec.focus_select_end);
-        });
-    });
+    focus_when_shown(
+        &entry,
+        dialog_spec.focus_select_start,
+        dialog_spec.focus_select_end,
+    );
     dialog.present(Some(parent));
 }
 

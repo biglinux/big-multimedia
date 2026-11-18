@@ -8,11 +8,11 @@ use big_app_kit::file_dialogs::FilePicker;
 use big_relm4_components::input::button_content::{BigButtonContentSpec, build_button};
 use big_relm4_components::layout::{
     dialog_footer::{BigDialogFooter, BigDialogFooterSpec},
-    dialog_page::BigDialogPage,
+    dialog_page::{BigDialogPage, focus_when_shown},
     preferences::BigPreferencesGroupSpec,
     toolbar_pane::{BigToolbarHeader, BigToolbarHeaderSpec},
 };
-use gtk::{gio, glib};
+use gtk::gio;
 use relm4::ComponentSender;
 
 use crate::i18n::i18n;
@@ -199,7 +199,7 @@ fn prompt_queue_playlist_name(
     parent: Option<&gtk::Window>,
     sender: &ComponentSender<PlaylistPanel>,
 ) {
-    let dialog = adw::Dialog::builder()
+    let dialog = big_gtk_kit::dialog::Dialog::builder()
         .title(i18n("Save Queue as Playlist"))
         .content_width(420)
         .content_height(240)
@@ -253,14 +253,7 @@ fn prompt_queue_playlist_name(
         }
     });
 
-    let entry_for_focus = entry.clone();
-    dialog.connect_map(move |_| {
-        let entry_for_idle = entry_for_focus.clone();
-        glib::idle_add_local_once(move || {
-            entry_for_idle.grab_focus();
-            entry_for_idle.select_region(0, -1);
-        });
-    });
+    focus_when_shown(&entry, 0, -1);
     dialog.present(parent);
 }
 

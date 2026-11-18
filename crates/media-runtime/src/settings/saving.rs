@@ -125,7 +125,7 @@ fn wait_for_pending_work(window: &gtk::Window, deciding: &Rc<Cell<bool>>) {
     let body = i18n(
         "Saves and exports are still finishing. The window will close afterwards. Keeping it open does not cancel those operations.",
     );
-    let dialog = adw::AlertDialog::builder()
+    let dialog = big_gtk_kit::alert::Alert::builder()
         .heading(i18n("Finishing pending work"))
         .body(body)
         .build();
@@ -159,11 +159,11 @@ fn wait_for_pending_work(window: &gtk::Window, deciding: &Rc<Cell<bool>>) {
 fn unsaved_changes() -> bool {
     Settings::any_unsaved() || big_os_kit::deferred::any_unsaved()
 }
-fn unsaved_dialog() -> adw::AlertDialog {
+fn unsaved_dialog() -> big_gtk_kit::alert::Alert {
     let body = i18n(
         "Keep the player open to review saving errors and retry. Continuing may discard unsaved session changes; it does not mark them as saved.",
     );
-    let dialog = adw::AlertDialog::builder()
+    let dialog = big_gtk_kit::alert::Alert::builder()
         .heading(i18n("Some changes are not confirmed as saved"))
         .body(body)
         .build();

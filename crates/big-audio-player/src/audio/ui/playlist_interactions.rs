@@ -223,7 +223,7 @@ fn show_delete_confirm(
         items.first().map(|(_, track)| track.display_title()),
     );
 
-    let dialog = adw::Dialog::builder()
+    let dialog = big_gtk_kit::dialog::Dialog::builder()
         .title(&heading)
         .content_width(440)
         .content_height(280)

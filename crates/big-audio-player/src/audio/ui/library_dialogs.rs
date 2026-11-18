@@ -9,11 +9,10 @@
 use adw::prelude::*;
 use big_relm4_components::layout::{
     dialog_footer::{BigDialogFooter, BigDialogFooterSpec},
-    dialog_page::BigDialogPage,
+    dialog_page::{BigDialogPage, focus_when_shown},
     preferences::BigPreferencesGroupSpec,
 };
 use big_relm4_components::list::navigation_row::{BigNavigationRow, BigNavigationRowSpec};
-use gtk::glib;
 use relm4::ComponentSender;
 
 use crate::db::models::Track;
@@ -109,7 +108,7 @@ pub(super) fn show_add_to_playlist<W>(
 {
     let dialog_spec = add_to_playlist_dialog_spec();
     let track_id = track.id;
-    let dialog = adw::Dialog::builder()
+    let dialog = big_gtk_kit::dialog::Dialog::builder()
         .title(i18n(dialog_spec.title))
         .content_width(dialog_spec.content_width)
         .content_height(dialog_spec.content_height)
@@ -196,7 +195,7 @@ where
     W: IsA<gtk::Widget>,
 {
     let dialog_spec = new_playlist_dialog_spec();
-    let dialog = adw::Dialog::builder()
+    let dialog = big_gtk_kit::dialog::Dialog::builder()
         .title(i18n(dialog_spec.title))
         .content_width(dialog_spec.content_width)
         .content_height(dialog_spec.content_height)
@@ -232,8 +231,12 @@ where
         }
     });
 
+    focus_when_shown(
+        &entry,
+        dialog_spec.focus_select_start,
+        dialog_spec.focus_select_end,
+    );
     let out = sender.clone();
-    let entry_for_accept = entry.clone();
     let dialog_weak = dialog.downgrade();
     footer.accept_button().connect_clicked(move |_| {
         let Some(name) = normalized_playlist_name(&entry.text()) else {
@@ -252,14 +255,6 @@ where
         }
     });
 
-    dialog.connect_map(move |_| {
-        let entry_for_idle = entry_for_accept.clone();
-        glib::idle_add_local_once(move || {
-            entry_for_idle.grab_focus();
-            entry_for_idle
-                .select_region(dialog_spec.focus_select_start, dialog_spec.focus_select_end);
-        });
-    });
     dialog.present(Some(parent));
 }
 

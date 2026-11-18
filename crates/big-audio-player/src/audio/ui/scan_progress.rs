@@ -6,7 +6,7 @@ use big_relm4_components::layout::dialog_page::BigDialogPage;
 use std::sync::{Arc, atomic::Ordering};
 
 pub(super) fn show(parent: &gtk::Window, control: Arc<ScanControl>) {
-    let dialog = adw::Dialog::builder()
+    let dialog = big_gtk_kit::dialog::Dialog::builder()
         .title(i18n("Scanning the library"))
         .content_width(440)
         .build();

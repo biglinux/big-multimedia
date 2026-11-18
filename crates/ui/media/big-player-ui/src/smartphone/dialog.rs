@@ -25,7 +25,7 @@ pub fn present<F>(parent: &impl IsA<gtk::Widget>, build_remote: F)
 where
     F: Fn(Arc<AtomicBool>) -> RemoteHandlers + 'static,
 {
-    let dialog = adw::Dialog::builder()
+    let dialog = big_gtk_kit::dialog::Dialog::builder()
         .title(i18n("Smartphone"))
         .content_width(460)
         .content_height(640)

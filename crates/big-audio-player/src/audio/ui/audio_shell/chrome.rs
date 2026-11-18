@@ -147,7 +147,7 @@ impl AudioShell {
         };
         let active = self.sleep_timer_source.is_some();
 
-        let dialog = adw::Dialog::builder()
+        let dialog = big_gtk_kit::dialog::Dialog::builder()
             .title(i18n("Sleep Timer"))
             .content_width(600)
             .content_height(if active { 420 } else { 560 })
