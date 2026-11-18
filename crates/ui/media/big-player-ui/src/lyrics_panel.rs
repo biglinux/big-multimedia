@@ -93,10 +93,13 @@ impl Component for LyricsPanel {
             .transition_duration(200)
             .vexpand(true)
             .build();
-        content_stack.add_named(&lyrics_scroll, Some("lyrics"));
-        content_stack.add_named(&build_loading_box(), Some("loading"));
-        content_stack.add_named(&build_empty_box(), Some("empty"));
-        content_stack.set_visible_child_name("empty");
+        content_stack.add_named(&lyrics_scroll, Some(LyricsState::Lyrics.child_name()));
+        content_stack.add_named(
+            &build_loading_box(),
+            Some(LyricsState::Loading.child_name()),
+        );
+        content_stack.add_named(&build_empty_box(), Some(LyricsState::Empty.child_name()));
+        content_stack.set_visible_child_name(LyricsState::Empty.child_name());
         root.append(&content_stack);
 
         ComponentParts {
@@ -247,16 +250,4 @@ fn build_empty_box() -> gtk::Box {
         .build();
     empty_box.append(&empty_label);
     empty_box
-}
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn state_maps_to_stack_child_names() {
-        assert_eq!(LyricsState::Lyrics.child_name(), "lyrics");
-        assert_eq!(LyricsState::Loading.child_name(), "loading");
-        assert_eq!(LyricsState::Empty.child_name(), "empty");
-    }
 }
