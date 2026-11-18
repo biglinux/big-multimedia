@@ -1,0 +1,19 @@
+source	translation	source of the choice
+library	kütüphane	tr.po (Library)
+track	parça	tr.po (Imported tracks were kept)
+playlist	çalma listesi	tr.po (Playlist)
+queue	kuyruk	tr.po (Queue)
+player	oynatıcı	tr.po (Close the player)
+playback engine	oynatma motoru	new; celluloid uses oynatma for playback
+keyring	anahtarlık	libsecret, gnome-keyring
+password	parola	tr.po (Password)
+provider	sağlayıcı	tr.po (Provider)
+station	istasyon	tr.po (My Stations = İstasyonlarım)
+episode	bölüm	tr.po (Save Episode)
+subscription	abonelik	tr.po (Subscriptions)
+screenshot	ekran görüntüsü	tr.po (Screenshot)
+recording	kayıt	tr.po (Recording saved)
+scan	tarama	tr.po (Scan cancelled. Earlier confirmed imports were kept.)
+sidebar	kenar çubuğu	tr.po (Resize sidebar)
+Preferences	Tercihler	tr.po (Preferences)
+Retry	Yeniden dene	gtk40
