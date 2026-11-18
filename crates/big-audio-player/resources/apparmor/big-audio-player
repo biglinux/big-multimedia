@@ -80,7 +80,9 @@ profile big-audio-player @{exec_path} flags=(complain) {
   dbus send bus=session path=/org/freedesktop/portal/desktop interface=org.freedesktop.portal.Inhibit member=Inhibit,
   dbus send bus=session path=/org/freedesktop/portal/desktop interface=org.freedesktop.portal.OpenURI member=OpenDirectory,
   # GTK's file dialogs go through the portal's chooser, where the person picks.
-  dbus send bus=session path=/org/freedesktop/portal/desktop interface=org.freedesktop.portal.FileChooser member={OpenFile,SaveFile},
+  dbus send bus=session path=/org/freedesktop/portal/desktop interface=org.freedesktop.portal.FileChooser member={OpenFile,SaveFile,SaveFiles},
+  # GTK registers a host app's id with the portal before its first call.
+  dbus send bus=session path=/org/freedesktop/portal/desktop interface=org.freedesktop.host.portal.Registry member=Register,
   dbus send bus=session interface=org.freedesktop.portal.Request member=Close,
   dbus send bus=session path=/org/freedesktop/portal/desktop interface=org.freedesktop.DBus.Properties member=Get,
   dbus receive bus=session interface=org.freedesktop.portal.Request member=Response,
