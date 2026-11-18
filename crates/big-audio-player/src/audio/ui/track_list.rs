@@ -446,7 +446,10 @@ impl ItemPresenter for TrackPresenter {
                 out.icon = IconSource::Texture(texture);
             }
         }
-        let mut said = vec![track.display_artist().to_owned()];
+        let mut said = Vec::new();
+        if !track.display_artist().is_empty() {
+            said.push(track.display_artist().to_owned());
+        }
         if track.duration_secs > 0.0 {
             said.push(track.duration_display());
         }
@@ -458,7 +461,7 @@ impl ItemPresenter for TrackPresenter {
             PlaybackStatus::Paused => said.push(i18n("Paused")),
             PlaybackStatus::Stopped => {}
         }
-        out.accessible_description = Some(said.join(", "));
+        out.accessible_description = (!said.is_empty()).then(|| said.join(", "));
     }
 
     fn title(&self, _position: u32, item: &glib::Object) -> String {
@@ -697,6 +700,14 @@ mod tests {
         let row = queue_row(PlaybackStatus::Stopped);
         assert!(!row.emphasized);
         assert_eq!(row.cells[position], "1");
+    }
+
+    #[test]
+    fn untagged_description_skips_empty_artist() {
+        let row = queue_row(PlaybackStatus::Paused);
+        assert_eq!(row.accessible_description.as_deref(), Some("Paused"));
+        let row = queue_row(PlaybackStatus::Stopped);
+        assert_eq!(row.accessible_description, None);
     }
 
     #[test]
