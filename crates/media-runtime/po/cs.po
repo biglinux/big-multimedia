@@ -34,18 +34,17 @@ msgid "Data Sources"
 msgstr "Zdroje dat"
 
 #: crates/big-audio-player/src/audio/app.rs:53
-#, fuzzy
 #| msgid "Close the player"
 msgid "Play or pause the running player"
-msgstr "Zavřít přehrávač"
+msgstr "Přehrát nebo pozastavit spuštěný přehrávač"
 
 #: crates/big-audio-player/src/audio/app.rs:58
 msgid "Skip to the next track in the running player"
-msgstr ""
+msgstr "Přejít na další skladbu ve spuštěném přehrávači"
 
 #: crates/big-audio-player/src/audio/app.rs:63
 msgid "Go back to the previous track in the running player"
-msgstr ""
+msgstr "Vrátit se na předchozí skladbu ve spuštěném přehrávači"
 
 #: crates/big-audio-player/src/audio/appearance/dialogs.rs:42
 #: crates/big-video-player/src/video/ui/filters/groups_vf.rs:278
@@ -460,10 +459,10 @@ msgid "Select a song to start"
 msgstr "Začněte výběrem skladby"
 
 #: crates/big-audio-player/src/audio/ui/audio_shell/engine.rs:37
-#, fuzzy, rust-format
+#, rust-format
 #| msgid "Could not play this file — it may be unsupported or corrupt."
 msgid "Could not play “{file}”: it may be unsupported or corrupt."
-msgstr "Tento soubor nelze přehrát — může být nepodporovaný nebo poškozený."
+msgstr "„{file}“ nelze přehrát: soubor může být nepodporovaný nebo poškozený."
 
 #: crates/big-audio-player/src/audio/ui/audio_shell/engine.rs:215
 #, rust-format
@@ -471,6 +470,8 @@ msgid ""
 "The playback engine could not start: {error}. Update or reinstall the mpv "
 "package, then reopen the player."
 msgstr ""
+"Modul přehrávání se nepodařilo spustit: {error}. Aktualizujte nebo "
+"přeinstalujte balíček mpv a poté přehrávač znovu otevřete."
 
 #: crates/big-audio-player/src/audio/ui/audio_shell/export.rs:17
 #: crates/big-audio-player/src/audio/ui/audio_shell/export.rs:33
@@ -479,18 +480,15 @@ msgstr "Nepřehrává se žádná místní skladba"
 
 #: crates/big-audio-player/src/audio/ui/audio_shell/library_store.rs:63
 msgid "The music library is still opening. Try again in a moment."
-msgstr ""
+msgstr "Hudební knihovna se stále otevírá. Zkuste to znovu za chvíli."
 
 #: crates/big-audio-player/src/audio/ui/audio_shell/library_store.rs:223
 #: crates/big-audio-player/src/audio/ui/audio_shell/library_store.rs:259
-#, fuzzy
 #| msgid ""
 #| "The library could not be read. Previous results were kept; try searching "
 #| "again."
 msgid "The library could not be read. The queue was not changed."
-msgstr ""
-"Knihovnu se nepodařilo přečíst. Předchozí výsledky byly zachovány; zkuste "
-"hledat znovu."
+msgstr "Knihovnu se nepodařilo přečíst. Fronta nebyla změněna."
 
 #: crates/big-audio-player/src/audio/ui/audio_shell/panel_intents.rs:61
 msgid ""
@@ -521,24 +519,22 @@ msgid "Save Episodes"
 msgstr "Uložit epizody"
 
 #: crates/big-audio-player/src/audio/ui/audio_shell/panel_intents.rs:432
-#, fuzzy
 #| msgid ""
 #| "The playlist could not be read safely. Check its format and permissions."
 msgid ""
 "The episodes could not be saved in this folder. Check its permissions and "
 "try again."
 msgstr ""
-"Seznam skladeb nelze bezpečně přečíst. Zkontrolujte jeho formát a oprávnění."
+"Epizody se do této složky nepodařilo uložit. Zkontrolujte její oprávnění a "
+"zkuste to znovu."
 
 #: crates/big-audio-player/src/audio/ui/audio_shell/playback.rs:143
-#, fuzzy
 #| msgid ""
 #| "The library could not be read. Previous results were kept; try searching "
 #| "again."
 msgid "The library could not be read, so lyrics were not searched online."
 msgstr ""
-"Knihovnu se nepodařilo přečíst. Předchozí výsledky byly zachovány; zkuste "
-"hledat znovu."
+"Knihovnu se nepodařilo přečíst, proto nebyly texty písní vyhledány online."
 
 #: crates/big-audio-player/src/audio/ui/audio_shell/playback.rs:157
 msgid "Seek position"
@@ -703,14 +699,14 @@ msgid "Export stopped. Confirmed outputs were kept"
 msgstr "Export byl zastaven. Potvrzené výstupy byly zachovány"
 
 #: crates/big-audio-player/src/audio/ui/audio_shell/queue_persistence.rs:55
-#, fuzzy, rust-format
+#, rust-format
 #| msgid "The playlist could not be saved."
 msgid "The music library could not be opened: {}"
-msgstr "Seznam skladeb se nepodařilo uložit."
+msgstr "Hudební knihovnu se nepodařilo otevřít: {}"
 
 #: crates/big-audio-player/src/audio/ui/audio_shell/queue_persistence.rs:57
 msgid "Retry"
-msgstr ""
+msgstr "Zkusit znovu"
 
 #: crates/big-audio-player/src/audio/ui/audio_shell/queue_persistence.rs:60
 msgid ""
@@ -745,20 +741,19 @@ msgid "Watch folders could not be read. Previous settings were kept."
 msgstr "Sledované složky nelze přečíst. Předchozí nastavení bylo zachováno."
 
 #: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:154
-#, fuzzy
 #| msgid "The playlist could not be saved."
 msgid "The station could not be saved."
-msgstr "Seznam skladeb se nepodařilo uložit."
+msgstr "Stanici se nepodařilo uložit."
 
 #: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:168
-#, fuzzy
 #| msgid "The playlist could not be saved."
 msgid "The station could not be removed."
-msgstr "Seznam skladeb se nepodařilo uložit."
+msgstr "Stanici se nepodařilo odebrat."
 
 #: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:230
 msgid "There is no Music or home folder to save recordings in."
 msgstr ""
+"Neexistuje složka Hudba ani domovská složka, kam by se daly ukládat nahrávky."
 
 #: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:276
 #: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:284
@@ -812,10 +807,9 @@ msgid "Open File"
 msgstr "Otevřít soubor"
 
 #: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:528
-#, fuzzy
 #| msgid "The playlist could not be saved."
 msgid "Saved radio stations could not be read."
-msgstr "Seznam skladeb se nepodařilo uložit."
+msgstr "Uložené rozhlasové stanice se nepodařilo přečíst."
 
 #: crates/big-audio-player/src/audio/ui/audio_shell/tray.rs:18
 msgid "Show Big Audio Player"
@@ -826,25 +820,23 @@ msgid "The TV's track is no longer in the queue."
 msgstr "Skladba z televize již ve frontě není."
 
 #: crates/big-audio-player/src/audio/ui/audio_shell/update.rs:137
-#, fuzzy
 #| msgid "Cancelled"
 msgid "Scan cancelled"
-msgstr "Zrušeno"
+msgstr "Prohledávání zrušeno"
 
 #: crates/big-audio-player/src/audio/ui/audio_shell/update.rs:139
-#, fuzzy
 #| msgid "Sample Rate"
 msgid "Scan incomplete"
-msgstr "Vzorkovací frekvence"
+msgstr "Prohledávání nedokončeno"
 
 #: crates/big-audio-player/src/audio/ui/audio_shell/update.rs:142
-#, fuzzy, rust-format
+#, rust-format
 #| msgid "tracks imported"
 msgid "{count} track imported"
 msgid_plural "{count} tracks imported"
-msgstr[0] "importovaných skladeb"
-msgstr[1] "importovaných skladeb"
-msgstr[2] "importovaných skladeb"
+msgstr[0] "Importována {count} skladba"
+msgstr[1] "Importovány {count} skladby"
+msgstr[2] "Importováno {count} skladeb"
 
 #: crates/big-audio-player/src/audio/ui/audio_shell/update.rs:153
 msgid "Library updated"
@@ -1172,17 +1164,17 @@ msgstr "Zobrazit ve správci souborů"
 #, rust-format
 msgid "{count} track"
 msgid_plural "{count} tracks"
-msgstr[0] ""
-msgstr[1] ""
-msgstr[2] ""
+msgstr[0] "{count} skladba"
+msgstr[1] "{count} skladby"
+msgstr[2] "{count} skladeb"
 
 #: crates/big-audio-player/src/audio/ui/mod.rs:59
 #, rust-format
 msgid "{count} track · {duration}"
 msgid_plural "{count} tracks · {duration}"
-msgstr[0] ""
-msgstr[1] ""
-msgstr[2] ""
+msgstr[0] "{count} skladba · {duration}"
+msgstr[1] "{count} skladby · {duration}"
+msgstr[2] "{count} skladeb · {duration}"
 
 #: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:35
 msgid "Drag and drop files to create a playlist"
@@ -1211,7 +1203,7 @@ msgstr "Hlavní nabídka"
 
 #: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:90
 msgid "Show Sidebar"
-msgstr ""
+msgstr "Zobrazit postranní panel"
 
 #: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:121
 #: crates/big-audio-player/src/audio/ui/playlist_library_dialog.rs:261
@@ -1268,14 +1260,13 @@ msgid "About"
 msgstr "O aplikaci"
 
 #: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:244
-#, fuzzy
 #| msgid "No episodes found"
 msgid "No episodes queued"
-msgstr "Nebyly nalezeny žádné epizody"
+msgstr "Ve frontě nejsou žádné epizody"
 
 #: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:245
 msgid "Choose a podcast on the left to queue its episodes."
-msgstr ""
+msgstr "Vyberte vlevo podcast a jeho epizody se zařadí do fronty."
 
 #: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:254
 msgid "Drop tracks here"
@@ -1284,13 +1275,14 @@ msgstr "Sem přetáhněte skladby"
 #: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:256
 msgid "Or double-click a track in the library, or select it and press Return."
 msgstr ""
+"Nebo na skladbu v knihovně dvakrát klikněte, případně ji vyberte a stiskněte "
+"Enter."
 
 #: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:283
 msgid "Welcome to Big Audio Player"
 msgstr "Vítá vás Big Audio Player"
 
 #: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:291
-#, fuzzy
 #| msgid ""
 #| "Add a folder with your music files to get started.\n"
 #| "Supported formats: MP3, FLAC, OGG, M4A, OPUS, WAV and more."
@@ -1299,7 +1291,8 @@ msgid ""
 "tab.\n"
 "Supported formats: MP3, FLAC, OGG, M4A, OPUS, WAV and more."
 msgstr ""
-"Začněte přidáním složky s hudebními soubory.\n"
+"Otevřete hudební soubory a hned je přehrajte, nebo přidejte svou hudební "
+"složku na kartě Hudba.\n"
 "Podporované formáty: MP3, FLAC, OGG, M4A, OPUS, WAV a další."
 
 #: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:304
@@ -1526,10 +1519,9 @@ msgid "Cancellation requested. Finishing the current safe step…"
 msgstr "Bylo vyžádáno zrušení. Dokončuje se aktuální bezpečný krok…"
 
 #: crates/big-audio-player/src/audio/ui/scan_progress.rs:177
-#, fuzzy
 #| msgid "Library"
 msgid "Library Scan"
-msgstr "Knihovna"
+msgstr "Prohledávání knihovny"
 
 #: crates/big-audio-player/src/audio/ui/track_list.rs:392
 #: crates/big-video-player/src/video/ui/video_browser_sidebar/views/queue_view.rs:313
@@ -1537,10 +1529,9 @@ msgid "Playing"
 msgstr "Přehrává se"
 
 #: crates/big-audio-player/src/audio/ui/track_list.rs:393
-#, fuzzy
 #| msgid "Pause"
 msgid "Paused"
-msgstr "Pozastavit"
+msgstr "Pozastaveno"
 
 #: crates/big-audio-player/src/audio/ui/unavailable_dialog.rs:52
 msgid ""
@@ -1650,7 +1641,7 @@ msgstr "Big Video Player"
 
 #: crates/big-video-player/src/video/app.rs:124
 msgid "Open a separate player window instead of using the running one"
-msgstr ""
+msgstr "Otevřít samostatné okno přehrávače místo použití spuštěného"
 
 #: crates/big-video-player/src/video/keybindings.rs:50
 msgid "Increase speed"
@@ -1871,10 +1862,9 @@ msgid "Open"
 msgstr "Otevřít"
 
 #: crates/big-video-player/src/video/ui/appearance/layout/buttons_page.rs:56
-#, fuzzy
 #| msgid "Load Playlist"
 msgid "Files and Playlist"
-msgstr "Načíst seznam skladeb"
+msgstr "Soubory a seznam skladeb"
 
 #: crates/big-video-player/src/video/ui/appearance/layout/buttons_page.rs:64
 #: crates/big-video-player/src/video/ui/video_shell/component.rs:181
@@ -1900,17 +1890,16 @@ msgstr "Celá obrazovka"
 
 #: crates/big-video-player/src/video/ui/appearance/layout/buttons_page.rs:179
 msgid "Top bar"
-msgstr ""
+msgstr "Horní lišta"
 
 #: crates/big-video-player/src/video/ui/appearance/layout/buttons_page.rs:181
 msgid "Video Title"
 msgstr "Název videa"
 
 #: crates/big-video-player/src/video/ui/appearance/layout/buttons_page.rs:186
-#, fuzzy
 #| msgid "Bottom Margin"
 msgid "Bottom bar"
-msgstr "Spodní okraj"
+msgstr "Dolní lišta"
 
 #: crates/big-video-player/src/video/ui/appearance/layout/buttons_page.rs:226
 #: crates/big-video-player/src/video/ui/appearance/layout/layout_page.rs:98
@@ -1922,12 +1911,14 @@ msgid "Button Layout"
 msgstr "Rozvržení tlačítek"
 
 #: crates/big-video-player/src/video/ui/appearance/layout/buttons_page.rs:232
-#, fuzzy
 #| msgid "Drag buttons between zones • Click to toggle visibility"
 msgid ""
 "Drag buttons between zones, or move the focused one with Alt+Left and "
 "Alt+Right. Click a button to show or hide it."
-msgstr "Přetahujte tlačítka mezi zónami • Kliknutím přepnete viditelnost"
+msgstr ""
+"Přetahujte tlačítka mezi zónami, nebo přesuňte zaměřené tlačítko pomocí "
+"Alt+Šipka vlevo a Alt+Šipka vpravo. Kliknutím na tlačítko jej zobrazíte nebo "
+"skryjete."
 
 #: crates/big-video-player/src/video/ui/appearance/layout/layout_page.rs:19
 msgid "Layout"
@@ -2355,6 +2346,9 @@ msgid ""
 "Some provider passwords are still in a plain file because your keyring could "
 "not be reached. Unlock your keyring, then reload the channels."
 msgstr ""
+"Některá hesla poskytovatelů jsou stále v obyčejném souboru, protože se "
+"nepodařilo spojit s klíčenkou. Odemkněte klíčenku a poté kanály znovu "
+"načtěte."
 
 #: crates/big-video-player/src/video/ui/iptv/mod.rs:257
 #: crates/big-video-player/src/video/ui/iptv/mod.rs:437
@@ -2375,10 +2369,10 @@ msgid "Loading channels…"
 msgstr "Načítání kanálů…"
 
 #: crates/big-video-player/src/video/ui/iptv/mod.rs:490
-#, fuzzy, rust-format
+#, rust-format
 #| msgid "Showing the first {}. Type more to narrow the search."
 msgid "Showing the first {} channels; the list has more."
-msgstr "Zobrazuje se prvních {}. Zadejte více znaků pro zúžení hledání."
+msgstr "Zobrazuje se prvních {} kanálů; seznam obsahuje další."
 
 #: crates/big-video-player/src/video/ui/iptv/mod.rs:509
 msgid ""
@@ -2433,12 +2427,17 @@ msgid ""
 "Could not read this provider's password from your keyring. Unlock your "
 "keyring, then reload the channels."
 msgstr ""
+"Heslo tohoto poskytovatele se nepodařilo přečíst z klíčenky. Odemkněte "
+"klíčenku a poté kanály znovu načtěte."
 
 #: crates/big-video-player/src/video/ui/iptv/mod.rs:535
 msgid ""
 "This playlist has IPTV channels from a provider that is not set up. Add the "
 "provider under IPTV, then open the playlist again."
 msgstr ""
+"Tento seznam skladeb obsahuje kanály IPTV od poskytovatele, který není "
+"nastaven. Přidejte poskytovatele v části IPTV a poté seznam skladeb znovu "
+"otevřete."
 
 #: crates/big-video-player/src/video/ui/iptv/providers_dialog.rs:48
 msgid "Add provider"
@@ -2454,6 +2453,9 @@ msgid ""
 "can delete the “Big Multimedia IPTV provider” item it left with your keyring "
 "manager."
 msgstr ""
+"Nahrazené nebo odebrané heslo se nepodařilo smazat z klíčenky. Položku „Big "
+"Multimedia IPTV provider“, která v ní zůstala, můžete smazat ve správci "
+"klíčenky."
 
 #: crates/big-video-player/src/video/ui/iptv/providers_dialog.rs:120
 msgid "No providers yet"
@@ -2468,6 +2470,8 @@ msgid ""
 "Password not in your keyring yet. Unlock your keyring, then close this "
 "window to try again."
 msgstr ""
+"Heslo ještě není v klíčence. Odemkněte klíčenku a poté toto okno zavřete, "
+"aby se akce zopakovala."
 
 #: crates/big-video-player/src/video/ui/iptv/providers_dialog.rs:137
 msgid "Edit"
@@ -2484,13 +2488,15 @@ msgstr "Poskytovatel IPTV"
 
 #: crates/big-video-player/src/video/ui/iptv/providers_dialog.rs:298
 msgid "Saving the password in your keyring…"
-msgstr ""
+msgstr "Ukládání hesla do klíčenky…"
 
 #: crates/big-video-player/src/video/ui/iptv/providers_dialog.rs:326
 msgid ""
 "Could not save the password in your keyring, so nothing was saved. Unlock "
 "your keyring, then save again."
 msgstr ""
+"Heslo se nepodařilo uložit do klíčenky, proto nebylo nic uloženo. Odemkněte "
+"klíčenku a poté uložte znovu."
 
 #: crates/big-video-player/src/video/ui/iptv/providers_dialog.rs:366
 #: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/header.rs:163
@@ -2537,10 +2543,13 @@ msgstr "Heslo"
 msgid ""
 "The full address is saved in your keyring. Leave it as shown to keep it."
 msgstr ""
+"Celá adresa je uložena v klíčence. Ponechte ji tak, jak je zobrazena, a "
+"zůstane zachována."
 
 #: crates/big-video-player/src/video/ui/iptv/providers_dialog.rs:425
 msgid "The password is saved in your keyring. Leave Password empty to keep it."
 msgstr ""
+"Heslo je uloženo v klíčence. Ponechte pole Heslo prázdné a zůstane zachováno."
 
 #: crates/big-video-player/src/video/ui/iptv/providers_dialog.rs:433
 msgid "HTTP headers (optional)"
@@ -2653,7 +2662,6 @@ msgid "For some TV broadcasts (HLG)"
 msgstr "Pro některá televizní vysílání (HLG)"
 
 #: crates/big-video-player/src/video/ui/media_adjust.rs:290
-#, fuzzy
 #| msgid "Plain colours (SDR)"
 msgid "Plain colors (SDR)"
 msgstr "Běžné barvy (SDR)"
@@ -2835,10 +2843,10 @@ msgid "Subtitle"
 msgstr "Titulky"
 
 #: crates/big-video-player/src/video/ui/menu_dialogs.rs:20
-#, fuzzy, rust-format
+#, rust-format
 #| msgid "Recording was not saved"
 msgid "The screenshot was not saved: {error}"
-msgstr "Nahrávka nebyla uložena"
+msgstr "Snímek obrazovky nebyl uložen: {error}"
 
 #: crates/big-video-player/src/video/ui/menu_dialogs.rs:52
 msgid "Go to Time"
@@ -2860,28 +2868,31 @@ msgstr "Přejít"
 #: crates/big-video-player/src/video/ui/menu_dialogs.rs:132
 msgid "Still saving the previous screenshots. Try again in a moment."
 msgstr ""
+"Předchozí snímky obrazovky se stále ukládají. Zkuste to znovu za chvíli."
 
 #: crates/big-video-player/src/video/ui/menu_dialogs.rs:83
 #: crates/big-video-player/src/video/ui/menu_dialogs.rs:88
-#, fuzzy
 #| msgid "Stores the video color space in each screenshot"
 msgid "Open a video to take a screenshot"
-msgstr "Uloží barevný prostor videa do každého snímku obrazovky"
+msgstr "Pro pořízení snímku obrazovky otevřete video"
 
 #: crates/big-video-player/src/video/ui/menu_dialogs.rs:102
 msgid ""
 "There is no Pictures or home folder to save screenshots in. Choose a folder "
 "in Preferences."
 msgstr ""
+"Neexistuje složka Obrázky ani domovská složka, kam by se daly ukládat snímky "
+"obrazovky. Vyberte složku v Předvolbách."
 
 #: crates/big-video-player/src/video/ui/menu_dialogs.rs:127
 #, rust-format
 msgid "Cannot save to {folder}: {error}. Choose another folder in Preferences."
 msgstr ""
+"Do {folder} nelze ukládat: {error}. Vyberte jinou složku v Předvolbách."
 
 #: crates/big-video-player/src/video/ui/menu_dialogs.rs:137
 msgid "The screenshot was not saved because of an unexpected error"
-msgstr ""
+msgstr "Snímek obrazovky nebyl uložen kvůli neočekávané chybě"
 
 #: crates/big-video-player/src/video/ui/menu_dialogs.rs:174
 msgid "Screenshot saved"
@@ -3670,13 +3681,13 @@ msgid "Rename failed"
 msgstr "Přejmenování se nezdařilo"
 
 #: crates/big-video-player/src/video/ui/video_browser_sidebar/fileops.rs:311
-#, fuzzy, rust-format
+#, rust-format
 #| msgid "Could not move to trash"
 msgid "Could not move {failed} of {total} file"
 msgid_plural "Could not move {failed} of {total} files"
-msgstr[0] "Nelze přesunout do koše"
-msgstr[1] "Nelze přesunout do koše"
-msgstr[2] "Nelze přesunout do koše"
+msgstr[0] "Nelze přesunout {failed} z {total} souboru"
+msgstr[1] "Nelze přesunout {failed} z {total} souborů"
+msgstr[2] "Nelze přesunout {failed} z {total} souborů"
 
 #: crates/big-video-player/src/video/ui/video_browser_sidebar/library.rs:118
 msgid "Home folder"
@@ -3893,7 +3904,7 @@ msgstr[1] "{n} změny"
 msgstr[2] "{n} změn"
 
 #: crates/big-video-player/src/video/ui/video_shell/adjustments.rs:173
-#, fuzzy, rust-format
+#, rust-format
 #| msgid "Video colour: {name}"
 msgid "Video color: {name}"
 msgstr "Barva videa: {name}"
@@ -3993,7 +4004,6 @@ msgid "Use HDR?"
 msgstr "Použít HDR?"
 
 #: crates/big-video-player/src/video/ui/video_shell/component.rs:214
-#, fuzzy
 #| msgid "Does the picture look grey and washed out? Click to use HDR colours"
 msgid "Does the picture look grey and washed out? Click to use HDR colors"
 msgstr "Vypadá obraz šedě a vybledle? Kliknutím použijete barvy HDR"
@@ -4133,6 +4143,10 @@ msgid ""
 "kept. Video Output, Audio Output and the custom mpv options take effect "
 "after reopening the player."
 msgstr ""
+"Předvolby a vzhled se vrátí na výchozí hodnoty. Složky knihovny, klávesové "
+"zkratky, hlasitost, náhodné přehrávání a úrovně hlasu a ekvalizéru zůstanou "
+"zachovány. Výstup videa, Zvukový výstup a vlastní volby mpv se projeví po "
+"opětovném otevření přehrávače."
 
 #: crates/big-video-player/src/video/ui/video_shell/export.rs:19
 msgid "No file is playing"
@@ -4226,7 +4240,7 @@ msgstr "Žádný nedávný soubor neodpovídá"
 
 #: crates/big-video-player/src/video/ui/video_shell/playback.rs:196
 msgid "The screenshot took too long and was not saved"
-msgstr ""
+msgstr "Pořízení snímku obrazovky trvalo příliš dlouho a snímek nebyl uložen"
 
 #: crates/big-video-player/src/video/ui/video_shell/playback.rs:223
 msgid "Could not play this file — it may be unsupported or corrupt."
@@ -4254,6 +4268,8 @@ msgid ""
 "The playback engine could not start: {error}. Check Preferences → Advanced → "
 "mpv Options, then reopen the player."
 msgstr ""
+"Modul přehrávání se nepodařilo spustit: {error}. Zkontrolujte Předvolby → "
+"Pokročilé → Volby mpv a poté přehrávač znovu otevřete."
 
 #: crates/big-video-player/src/video/ui/video_shell/render.rs:340
 msgid ""
@@ -4643,7 +4659,7 @@ msgstr "Převaděč se nepodařilo spustit"
 #: crates/media-runtime/src/media/iptv/m3u.rs:51
 #, rust-format
 msgid "Only the first {} entries of the playlist were loaded."
-msgstr ""
+msgstr "Načteno bylo jen prvních {} položek seznamu skladeb."
 
 #: crates/media-runtime/src/media/iptv/m3u.rs:58
 #, rust-format
@@ -4651,8 +4667,11 @@ msgid "{} entry was skipped because it is not a supported stream or file."
 msgid_plural ""
 "{} entries were skipped because they are not supported streams or files."
 msgstr[0] ""
+"{} položka byla přeskočena, protože není podporovaným streamem ani souborem."
 msgstr[1] ""
+"{} položky byly přeskočeny, protože nejsou podporovanými streamy ani soubory."
 msgstr[2] ""
+"{} položek bylo přeskočeno, protože nejsou podporovanými streamy ani soubory."
 
 #: crates/media-runtime/src/media/metadata_cache/display.rs:21
 #, rust-format
@@ -4732,6 +4751,9 @@ msgid ""
 "headphones are connected, or choose another Audio Output in Preferences and "
 "reopen the player."
 msgstr ""
+"Zvuk se na zvukovém výstupu nepodařilo spustit. Zkontrolujte, zda jsou "
+"připojeny reproduktory nebo sluchátka, případně vyberte jiný Zvukový výstup "
+"v Předvolbách a přehrávač znovu otevřete."
 
 #: crates/media-runtime/src/settings/messages.rs:6
 msgid "Access could not be verified — check permissions before reviewing"
@@ -4893,23 +4915,23 @@ msgstr "Stisknutím Alt+Down upravíte. Stisknutím Escape zavřete."
 #: crates/ui/generic/big-relm4-components/src/input/zone_layout_editor.rs:160
 #, rust-format
 msgid "{zone}, {position} of {count}"
-msgstr ""
+msgstr "{zone}, {position} z {count}"
 
 #: crates/ui/generic/big-relm4-components/src/input/zone_layout_editor.rs:201
 #, rust-format
 msgid "{bar}, center"
-msgstr ""
+msgstr "{bar}, uprostřed"
 
 #: crates/ui/generic/big-relm4-components/src/input/zone_layout_editor.rs:202
 #: crates/ui/generic/big-relm4-components/src/input/zone_layout_editor.rs:203
 #, rust-format
 msgid "{bar}, left"
-msgstr ""
+msgstr "{bar}, vlevo"
 
 #: crates/ui/generic/big-relm4-components/src/input/zone_layout_editor.rs:204
 #, rust-format
 msgid "{bar}, right"
-msgstr ""
+msgstr "{bar}, vpravo"
 
 #: crates/ui/generic/big-relm4-components/src/layout/media_window/sidebar.rs:232
 msgid "Resize sidebar"
@@ -5165,7 +5187,7 @@ msgstr "Upravit výstřih"
 
 #: crates/ui/media/big-player-ui/src/cut_edit_dialog.rs:31
 msgid "Start and end must be at least 0.1 seconds apart"
-msgstr ""
+msgstr "Začátek a konec musí být od sebe vzdáleny alespoň 0,1 sekundy"
 
 #: crates/ui/media/big-player-ui/src/cut_edit_dialog.rs:42
 msgid "Edit Cut"
@@ -5266,7 +5288,7 @@ msgstr "Vyhledejte podcasty nebo přidejte kanál RSS"
 
 #: crates/ui/media/big-player-ui/src/podcast_panel.rs:244
 msgid "Podcast Subscriptions Unavailable"
-msgstr ""
+msgstr "Odběry podcastů nejsou dostupné"
 
 #: crates/ui/media/big-player-ui/src/podcast_panel.rs:274
 msgid "Connection error — try again"
@@ -5278,7 +5300,7 @@ msgstr "Již odebíráno"
 
 #: crates/ui/media/big-player-ui/src/podcast_panel.rs:341
 msgid "Podcast subscriptions are still loading"
-msgstr ""
+msgstr "Odběry podcastů se stále načítají"
 
 #: crates/ui/media/big-player-ui/src/podcast_panel.rs:378
 msgid "Subscriptions"
@@ -5289,15 +5311,14 @@ msgid "Search Results"
 msgstr "Výsledky hledání"
 
 #: crates/ui/media/big-player-ui/src/podcast_panel.rs:450
-#, fuzzy
 #| msgid "The playlist could not be saved."
 msgid "Podcast subscriptions could not be saved"
-msgstr "Seznam skladeb se nepodařilo uložit."
+msgstr "Odběry podcastů se nepodařilo uložit"
 
 #: crates/ui/media/big-player-ui/src/podcast_panel.rs:463
 #, rust-format
 msgid "Podcast subscriptions could not be read, so changes are not saved: {}"
-msgstr ""
+msgstr "Odběry podcastů se nepodařilo přečíst, proto se změny neukládají: {}"
 
 #: crates/ui/media/big-player-ui/src/podcast_panel.rs:472
 msgid "Title unavailable"
@@ -5346,34 +5367,34 @@ msgid "Explore Stations"
 msgstr "Prozkoumat stanice"
 
 #: crates/ui/media/big-player-ui/src/radio_panel/widgets.rs:56
-#, fuzzy, rust-format
+#, rust-format
 #| msgid "Remove station"
 msgid "Remove {station}"
-msgstr "Odebrat stanici"
+msgstr "Odebrat {station}"
 
 #: crates/ui/media/big-player-ui/src/radio_panel/widgets.rs:75
-#, fuzzy, rust-format
+#, rust-format
 #| msgid "Add to my stations"
 msgid "Add {station} to my stations"
-msgstr "Přidat do mých stanic"
+msgstr "Přidat {station} do mých stanic"
 
 #: crates/ui/media/big-player-ui/src/radio_panel/widgets.rs:99
-#, fuzzy, rust-format
+#, rust-format
 #| msgid "Add to my stations"
 msgid "{station} is in my stations"
-msgstr "Přidat do mých stanic"
+msgstr "{station} je v mých stanicích"
 
 #: crates/ui/media/big-player-ui/src/radio_panel/widgets.rs:115
-#, fuzzy, rust-format
+#, rust-format
 #| msgid "Stop Recording"
 msgid "Stop recording {station}"
-msgstr "Zastavit nahrávání"
+msgstr "Zastavit nahrávání {station}"
 
 #: crates/ui/media/big-player-ui/src/radio_panel/widgets.rs:121
-#, fuzzy, rust-format
+#, rust-format
 #| msgid "Remove station"
 msgid "Record {station}"
-msgstr "Odebrat stanici"
+msgstr "Nahrávat {station}"
 
 #: crates/ui/media/big-player-ui/src/radio_panel/widgets.rs:196
 msgid "Search radios..."
@@ -5493,16 +5514,17 @@ msgstr "Otevřít stránku stahování KDE Connect"
 #: crates/ui/media/big-player-ui/src/smartphone/dialog.rs:129
 msgid "No local network found. Connect to a network and try again."
 msgstr ""
+"Nebyla nalezena žádná místní síť. Připojte se k síti a zkuste to znovu."
 
 #: crates/ui/media/big-player-ui/src/smartphone/dialog.rs:152
 msgid "Scan the code with the phone's camera."
 msgstr "Naskenujte kód fotoaparátem telefonu."
 
 #: crates/ui/media/big-player-ui/src/smartphone/dialog.rs:171
-#, fuzzy, rust-format
+#, rust-format
 #| msgid "Web remote is off."
 msgid "Web remote stopped: {error}"
-msgstr "Webové dálkové ovládání je vypnuto."
+msgstr "Webové dálkové ovládání bylo zastaveno: {error}"
 
 #: crates/ui/media/big-player-ui/src/smartphone/dialog.rs:179
 msgid "Could not start server"
