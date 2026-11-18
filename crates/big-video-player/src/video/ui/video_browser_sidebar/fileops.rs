@@ -9,11 +9,7 @@ use std::rc::Rc;
 
 use adw::prelude::*;
 use big_app_kit::file_dialogs::FilePicker;
-use big_relm4_components::layout::{
-    dialog_footer::{BigDialogFooter, BigDialogFooterSpec},
-    dialog_page::{BigDialogPage, focus_when_shown},
-    preferences::BigPreferencesGroupSpec,
-};
+use big_relm4_components::layout::name_prompt::{BigNamePromptSpec, prompt_name};
 
 use super::{BrowserState, VideoBrowserSidebarOutput};
 use crate::i18n::{i18n, ni18n};
@@ -193,92 +189,55 @@ pub(super) fn rename_file(state: &Rc<BrowserState>, path: &str) {
         .map(|n| n.to_string_lossy().into_owned())
         .unwrap_or_default();
 
-    let dialog = big_gtk_kit::dialog::Dialog::builder()
-        .title(i18n("Rename"))
-        .content_width(460)
-        .content_height(240)
-        .build();
-    let page = BigDialogPage::plain();
-    page.content().set_spacing(12);
-    page.append_description(&i18n("Choose a new file name."));
-
-    let group = BigPreferencesGroupSpec::untitled().build();
-    let entry = adw::EntryRow::builder()
-        .title(i18n("New name"))
-        .text(&current_name)
-        .show_apply_button(true)
-        .build();
-    group.add(&entry);
-    page.content().append(&group);
-
-    let footer = BigDialogFooter::new(&BigDialogFooterSpec::new(i18n("Cancel"), i18n("Rename")));
-    page.root().add_bottom_bar(footer.root());
-    dialog.set_child(Some(page.root()));
-
-    let accept_button = footer.accept_button().clone();
-    accept_button.set_sensitive(accepted_rename_name(&entry.text()).is_some());
-    entry.connect_changed({
-        let accept_button = accept_button.clone();
-        move |row| {
-            accept_button.set_sensitive(accepted_rename_name(&row.text()).is_some());
-        }
-    });
-    entry.connect_apply(move |_| {
-        if accept_button.is_sensitive() {
-            accept_button.emit_clicked();
-        }
-    });
-
-    let dialog_ref = dialog.downgrade();
-    footer.cancel_button().connect_clicked(move |_| {
-        if let Some(dialog) = dialog_ref.upgrade() {
-            dialog.close();
-        }
-    });
-
-    let state = state.clone();
-    let dialog_ref = dialog.downgrade();
-    let entry_for_accept = entry.clone();
-    footer.accept_button().connect_clicked(move |_| {
-        let Some(new_name) = accepted_rename_name(&entry_for_accept.text()) else {
-            state
-                .sender
-                .output(VideoBrowserSidebarOutput::Notify(i18n("Invalid name")))
-                .ok();
-            return;
-        };
-        let dest = parent.join(&new_name);
-        match rename_no_replace(&old, &dest) {
-            Ok(()) => {
-                let _ = state
-                    .sender
-                    .output(VideoBrowserSidebarOutput::Renamed(vec![(
-                        old.to_string_lossy().into_owned(),
-                        dest.to_string_lossy().into_owned(),
-                    )]));
-                state.refresh_current_folder();
-                if let Some(dialog) = dialog_ref.upgrade() {
-                    dialog.close();
+    let spec = BigNamePromptSpec {
+        title: i18n("Rename"),
+        description: Some(i18n("Choose a new file name.")),
+        entry_title: i18n("New name"),
+        prefill: current_name,
+        accept_label: i18n("Rename"),
+        content_width: 460,
+        content_height: 240,
+    };
+    let state = Rc::downgrade(state);
+    prompt_name(
+        Some(window.upcast_ref()),
+        &spec,
+        accepted_rename_name,
+        move |new_name| {
+            let Some(state) = state.upgrade() else {
+                return true;
+            };
+            let dest = parent.join(&new_name);
+            match rename_no_replace(&old, &dest) {
+                Ok(()) => {
+                    let _ = state
+                        .sender
+                        .output(VideoBrowserSidebarOutput::Renamed(vec![(
+                            old.to_string_lossy().into_owned(),
+                            dest.to_string_lossy().into_owned(),
+                        )]));
+                    state.refresh_current_folder();
+                    true
+                }
+                Err(error) if error.kind() == std::io::ErrorKind::AlreadyExists => {
+                    state
+                        .sender
+                        .output(VideoBrowserSidebarOutput::Notify(i18n(
+                            "A file with that name already exists",
+                        )))
+                        .ok();
+                    false
+                }
+                Err(_) => {
+                    state
+                        .sender
+                        .output(VideoBrowserSidebarOutput::Notify(i18n("Rename failed")))
+                        .ok();
+                    false
                 }
             }
-            Err(error) if error.kind() == std::io::ErrorKind::AlreadyExists => {
-                state
-                    .sender
-                    .output(VideoBrowserSidebarOutput::Notify(i18n(
-                        "A file with that name already exists",
-                    )))
-                    .ok();
-            }
-            Err(_) => {
-                state
-                    .sender
-                    .output(VideoBrowserSidebarOutput::Notify(i18n("Rename failed")))
-                    .ok();
-            }
-        }
-    });
-    focus_when_shown(&entry, 0, -1);
-    dialog.present(Some(&window));
+        },
+    );
 }
 
 fn accepted_rename_name(input: &str) -> Option<String> {

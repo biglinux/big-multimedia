@@ -6,6 +6,7 @@ pub mod dialog_page;
 pub mod didactic_card;
 pub mod hamburger_menu;
 pub mod media_window;
+pub mod name_prompt;
 pub mod preferences;
 pub mod sidebar_dialog;
 pub mod sidebar_header;

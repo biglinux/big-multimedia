@@ -9,8 +9,8 @@
 use adw::prelude::*;
 use big_relm4_components::layout::{
     dialog_footer::{BigDialogFooter, BigDialogFooterSpec},
-    dialog_page::{BigDialogPage, focus_when_shown},
-    preferences::BigPreferencesGroupSpec,
+    dialog_page::BigDialogPage,
+    name_prompt::{BigNamePromptSpec, prompt_name, trimmed_name},
 };
 use big_relm4_components::list::navigation_row::{BigNavigationRow, BigNavigationRowSpec};
 use relm4::ComponentSender;
@@ -37,19 +37,6 @@ struct AddToPlaylistDialogSpec {
     row_action_label: &'static str,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-struct NewPlaylistDialogSpec {
-    title: &'static str,
-    content_width: i32,
-    content_height: i32,
-    content_spacing: i32,
-    entry_title: &'static str,
-    cancel_label: &'static str,
-    create_label: &'static str,
-    focus_select_start: i32,
-    focus_select_end: i32,
-}
-
 fn add_to_playlist_dialog_spec() -> AddToPlaylistDialogSpec {
     AddToPlaylistDialogSpec {
         title: gettext_noop("Add to Playlist"),
@@ -64,33 +51,6 @@ fn add_to_playlist_dialog_spec() -> AddToPlaylistDialogSpec {
         new_playlist_label: gettext_noop("New Playlist"),
         row_prefix_icon_name: "playlist-symbolic",
         row_action_label: gettext_noop("Add to playlist"),
-    }
-}
-
-fn new_playlist_dialog_spec() -> NewPlaylistDialogSpec {
-    NewPlaylistDialogSpec {
-        title: gettext_noop("New Playlist"),
-        content_width: 420,
-        content_height: 220,
-        content_spacing: 12,
-        entry_title: gettext_noop("Playlist name"),
-        cancel_label: gettext_noop("Cancel"),
-        create_label: gettext_noop("Create"),
-        focus_select_start: 0,
-        focus_select_end: -1,
-    }
-}
-
-fn can_create_playlist_name(name: &str) -> bool {
-    normalized_playlist_name(name).is_some()
-}
-
-fn normalized_playlist_name(name: &str) -> Option<String> {
-    let trimmed_name = name.trim();
-    if trimmed_name.is_empty() {
-        None
-    } else {
-        Some(trimmed_name.to_string())
     }
 }
 
@@ -190,72 +150,25 @@ pub(super) fn show_add_to_playlist<W>(
 
 /// Name-entry dialog for "New Playlist" → `CreatePlaylistWithTrack`. Ignores an
 /// empty (trimmed) name.
-fn present_new_playlist_dialog<W>(parent: &W, track_id: i64, sender: &ComponentSender<LibraryPanel>)
-where
-    W: IsA<gtk::Widget>,
-{
-    let dialog_spec = new_playlist_dialog_spec();
-    let dialog = big_gtk_kit::dialog::Dialog::builder()
-        .title(i18n(dialog_spec.title))
-        .content_width(dialog_spec.content_width)
-        .content_height(dialog_spec.content_height)
-        .build();
-    let page = BigDialogPage::plain();
-    page.content().set_spacing(dialog_spec.content_spacing);
-
-    let group = BigPreferencesGroupSpec::untitled().build();
-    let entry = adw::EntryRow::builder()
-        .title(i18n(dialog_spec.entry_title))
-        .show_apply_button(true)
-        .build();
-    group.add(&entry);
-    page.content().append(&group);
-
-    let footer = BigDialogFooter::new(&BigDialogFooterSpec::new(
-        i18n(dialog_spec.cancel_label),
-        i18n(dialog_spec.create_label),
-    ));
-    footer.accept_button().set_sensitive(false);
-    page.root().add_bottom_bar(footer.root());
-    dialog.set_child(Some(page.root()));
-
-    let accept_button = footer.accept_button().clone();
-    entry.connect_changed(move |row| {
-        accept_button.set_sensitive(can_create_playlist_name(&row.text()));
-    });
-
-    let accept_button = footer.accept_button().clone();
-    entry.connect_apply(move |_| {
-        if accept_button.is_sensitive() {
-            accept_button.emit_clicked();
-        }
-    });
-
-    focus_when_shown(
-        &entry,
-        dialog_spec.focus_select_start,
-        dialog_spec.focus_select_end,
-    );
+fn present_new_playlist_dialog(
+    parent: &gtk::Widget,
+    track_id: i64,
+    sender: &ComponentSender<LibraryPanel>,
+) {
+    let spec = BigNamePromptSpec {
+        title: i18n("New Playlist"),
+        description: None,
+        entry_title: i18n("Playlist name"),
+        prefill: String::new(),
+        accept_label: i18n("Create"),
+        content_width: 420,
+        content_height: 220,
+    };
     let out = sender.clone();
-    let dialog_weak = dialog.downgrade();
-    footer.accept_button().connect_clicked(move |_| {
-        let Some(name) = normalized_playlist_name(&entry.text()) else {
-            return;
-        };
+    prompt_name(Some(parent), &spec, trimmed_name, move |name| {
         let _ = out.output(LibraryPanelOutput::CreatePlaylistWithTrack { name, track_id });
-        if let Some(dialog) = dialog_weak.upgrade() {
-            dialog.close();
-        }
+        true
     });
-
-    let dialog_weak = dialog.downgrade();
-    footer.cancel_button().connect_clicked(move |_| {
-        if let Some(dialog) = dialog_weak.upgrade() {
-            dialog.close();
-        }
-    });
-
-    dialog.present(Some(parent));
 }
 
 #[cfg(test)]
@@ -281,36 +194,5 @@ mod tests {
                 row_action_label: "Add to playlist",
             }
         );
-    }
-
-    #[test]
-    fn new_playlist_dialog_keeps_chrome() {
-        assert_eq!(
-            new_playlist_dialog_spec(),
-            NewPlaylistDialogSpec {
-                title: "New Playlist",
-                content_width: 420,
-                content_height: 220,
-                content_spacing: 12,
-                entry_title: "Playlist name",
-                cancel_label: "Cancel",
-                create_label: "Create",
-                focus_select_start: 0,
-                focus_select_end: -1,
-            }
-        );
-    }
-
-    #[test]
-    fn playlist_name_needs_non_blank_text() {
-        assert!(!can_create_playlist_name(""));
-        assert!(!can_create_playlist_name("   "));
-        assert!(can_create_playlist_name("Road Trip"));
-        assert!(can_create_playlist_name("  Road Trip  "));
-        assert_eq!(
-            normalized_playlist_name("  Road Trip  "),
-            Some("Road Trip".to_string())
-        );
-        assert_eq!(normalized_playlist_name("   "), None);
     }
 }
