@@ -280,7 +280,6 @@ crates/ui/generic/big-relm4-components/src/list/navigation_row.rs
 crates/ui/generic/big-relm4-components/src/list/row_core.rs
 crates/ui/generic/big-relm4-components/src/list/signal_factory.rs
 crates/ui/generic/big-relm4-components/src/task.rs
-crates/ui/generic/big-relm4-components/src/text.rs
 crates/ui/generic/big-relm4-components/src/theme.rs
 crates/ui/generic/big-relm4-components/src/time.rs
 crates/ui/media/big-media-components/src/audio/equalizer_controls.rs
