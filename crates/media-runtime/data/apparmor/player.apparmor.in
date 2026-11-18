@@ -18,11 +18,12 @@ abi <abi/4.0>,
 include <tunables/global>
 
 @{exec_path} = /usr/bin/@APP@
-# Where media lives: the home outside its hidden folders, and removable drives.
-@{user_files} = @{HOME}/[^.]** /media/** /run/media/** /mnt/**
-@{user_dirs} = @{HOME}/ @{HOME}/[^.]**/ /media/ /media/**/ /run/media/ /run/media/**/ /mnt/ /mnt/**/
+# Where media lives: the home outside its hidden folders, removable drives and
+# network shares GVfs mounts (sftp, smb, ftp through the file manager).
+@{user_files} = @{HOME}/[^.]** /media/** /run/media/** /mnt/** @{run}/user/@{uid}/gvfs/**
+@{user_dirs} = @{HOME}/ @{HOME}/[^.]**/ /media/ /media/**/ /run/media/ /run/media/**/ /mnt/ /mnt/**/ @{run}/user/@{uid}/gvfs/ @{run}/user/@{uid}/gvfs/**/
 # Folders a publish stages its hidden `.big-media-*` copy in.
-@{staging_parents} = @{HOME} @{HOME}/[^.]** /media/** /run/media/** /mnt/**
+@{staging_parents} = @{HOME} @{HOME}/[^.]** /media/** /run/media/** /mnt/** @{run}/user/@{uid}/gvfs/**
 @{suite_dirs} = big-audio-player big-video-player big-media-runtime
 
 @MEDIA_TYPES@
@@ -73,6 +74,8 @@ profile @APP@ @{exec_path} flags=(complain) {
   dbus send bus=session interface={org.freedesktop.ScreenSaver,org.gnome.SessionManager} member={Inhibit,Uninhibit,UnInhibit},
   # IPTV passwords through secret-tool; any client the keyring serves sees every unlocked item.
   dbus (send, receive) bus=session peer=(name=org.freedesktop.secrets),
+  # GIO reaches GVfs mounts through its daemons.
+  dbus (send, receive) bus=session interface=org.gtk.vfs.*,
   # KWin's keep-above shortcut.
   dbus send bus=session path=/component/kwin interface=org.kde.kglobalaccel.Component member=invokeShortcut,
   # The sleep timer suspends or powers off through logind.

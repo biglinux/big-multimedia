@@ -18,11 +18,12 @@ abi <abi/4.0>,
 include <tunables/global>
 
 @{exec_path} = /usr/bin/big-video-player
-# Where media lives: the home outside its hidden folders, and removable drives.
-@{user_files} = @{HOME}/[^.]** /media/** /run/media/** /mnt/**
-@{user_dirs} = @{HOME}/ @{HOME}/[^.]**/ /media/ /media/**/ /run/media/ /run/media/**/ /mnt/ /mnt/**/
+# Where media lives: the home outside its hidden folders, removable drives and
+# network shares GVfs mounts (sftp, smb, ftp through the file manager).
+@{user_files} = @{HOME}/[^.]** /media/** /run/media/** /mnt/** @{run}/user/@{uid}/gvfs/**
+@{user_dirs} = @{HOME}/ @{HOME}/[^.]**/ /media/ /media/**/ /run/media/ /run/media/**/ /mnt/ /mnt/**/ @{run}/user/@{uid}/gvfs/ @{run}/user/@{uid}/gvfs/**/
 # Folders a publish stages its hidden `.big-media-*` copy in.
-@{staging_parents} = @{HOME} @{HOME}/[^.]** /media/** /run/media/** /mnt/**
+@{staging_parents} = @{HOME} @{HOME}/[^.]** /media/** /run/media/** /mnt/** @{run}/user/@{uid}/gvfs/**
 @{suite_dirs} = big-audio-player big-video-player big-media-runtime
 
 @{media_ext} = {[mM][pP]4,[mM][kK][vV],[mM][kK]3[dD],[wW][eE][bB][mM],[aA][vV][iI],[mM][oO][vV],[qQ][tT],[fF][lL][vV],[wW][mM][vV],[mM][pP][gG],[mM][pP][eE][gG],[mM][pP][eE],[mM]2[vV],[tT][sS],[mM]2[tT][sS],[vV][oO][bB],[oO][gG][vV],[oO][gG][mM],3[gG][pP],3[gG]2,[mM]4[vV],[mM][tT][sS],[fF]4[vV],[dD][iI][vV][xX],[aA][sS][fF],[dD][vV],[mM][xX][fF],[rR][mM],[rR][mM][vV][bB],[nN][sS][vV],[mM][jJ]2,[mM][jJ][pP][eE][gG],[mM][jJ][pP][gG],[fF][lL][cC],[fF][lL][iI],[bB][iI][kK],[sS][mM][kK],[aA][xX][vV],3[gG][pP][pP],3[gG][pP]2,3[gG][pP][pP]2,[mM][jJ][pP]2,[mM]2[tT],[rR][vV],[bB][kK]2,[lL][rR][vV],[mM][oO][oO][vV],[mM][pP]3,[fF][lL][aA][cC],[oO][gG][gG],[oO][pP][uU][sS],[wW][aA][vV],[mM]4[aA],[mM]4[bB],[aA][aA][cC],[wW][mM][aA],[aA][pP][eE],[wW][vV],[aA][iI][fF][fF],[aA][iI][fF],[aA][iI][fF][cC],[mM][kK][aA],[oO][gG][aA],[sS][pP][xX],[aA][cC]3,[dD][tT][sS],[mM][pP][cC],[tT][tT][aA],[aA][mM][rR],[aA][wW][bB],[aA][uU],[sS][nN][dD],[dD][fF][fF],[dD][sS][fF],[wW][eE][bB][aA],[mM][oO][dD],[iI][tT],[sS]3[mM],[xX][mM],[mM][pP][gG][aA],[aA][dD][tT][sS],[fF]4[aA],[fF]4[bB],[aA][iI][fF][fF][cC],[dD][tT][sS][hH][dD],[mM][pP][pP],[lL][oO][aA][sS]}
@@ -77,6 +78,8 @@ profile big-video-player @{exec_path} flags=(complain) {
   dbus send bus=session interface={org.freedesktop.ScreenSaver,org.gnome.SessionManager} member={Inhibit,Uninhibit,UnInhibit},
   # IPTV passwords through secret-tool; any client the keyring serves sees every unlocked item.
   dbus (send, receive) bus=session peer=(name=org.freedesktop.secrets),
+  # GIO reaches GVfs mounts through its daemons.
+  dbus (send, receive) bus=session interface=org.gtk.vfs.*,
   # KWin's keep-above shortcut.
   dbus send bus=session path=/component/kwin interface=org.kde.kglobalaccel.Component member=invokeShortcut,
   # The sleep timer suspends or powers off through logind.
