@@ -456,13 +456,16 @@ impl Settings {
             }
         });
         if let Err(error) = &result {
-            let mut inner = self
-                .inner
-                .write()
-                .unwrap_or_else(std::sync::PoisonError::into_inner);
-            inner.save_queued = false;
-            inner.phase = SavePhase::Failed;
-            inner.save_error = Some(error.to_string());
+            {
+                let mut inner = self
+                    .inner
+                    .write()
+                    .unwrap_or_else(std::sync::PoisonError::into_inner);
+                inner.save_queued = false;
+                inner.phase = SavePhase::Failed;
+                inner.save_error = Some(error.to_string());
+            }
+            big_os_kit::background::changed();
         }
         result
     }

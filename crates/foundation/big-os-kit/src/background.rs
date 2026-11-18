@@ -2,12 +2,54 @@
 //! cross this boundary. Admission is non-blocking; a full queue is an error, not
 //! permission to silently drop a save. Jobs finish even if a widget disappears.
 use std::io;
-use std::sync::atomic::{AtomicUsize, Ordering};
-use std::sync::{OnceLock, mpsc};
+use std::sync::atomic::{AtomicU64, AtomicUsize, Ordering};
+use std::sync::{Mutex, OnceLock, PoisonError, mpsc};
 static ACTIVE: AtomicUsize = AtomicUsize::new(0);
 /// Number of admitted persistence jobs (including queued jobs).
 pub fn pending() -> usize {
     ACTIVE.load(Ordering::Acquire)
+}
+
+type OnChange = Box<dyn Fn() + Send + Sync>;
+static WATCHERS: Mutex<Vec<(u64, OnChange)>> = Mutex::new(Vec::new());
+static NEXT_WATCH: AtomicU64 = AtomicU64::new(0);
+
+/// Registration returned by [`watch`]; dropping it removes the callback.
+#[must_use = "dropping the watch stops its notifications"]
+pub struct Watch {
+    id: u64,
+}
+
+impl Drop for Watch {
+    fn drop(&mut self) {
+        WATCHERS
+            .lock()
+            .unwrap_or_else(PoisonError::into_inner)
+            .retain(|(id, _)| *id != self.id);
+    }
+}
+
+/// Call `on_change` after a job is admitted or finishes and after [`changed`],
+/// on the thread that did it, until the returned [`Watch`] drops. It runs under
+/// the watcher lock, so it must neither block nor call into this module.
+pub fn watch(on_change: impl Fn() + Send + Sync + 'static) -> Watch {
+    let id = NEXT_WATCH.fetch_add(1, Ordering::Relaxed);
+    WATCHERS
+        .lock()
+        .unwrap_or_else(PoisonError::into_inner)
+        .push((id, Box::new(on_change)));
+    Watch { id }
+}
+
+/// Wake every [`watch`] after a save owner changed its status outside a job.
+pub fn changed() {
+    for (_, on_change) in WATCHERS
+        .lock()
+        .unwrap_or_else(PoisonError::into_inner)
+        .iter()
+    {
+        on_change();
+    }
 }
 /// Keeps normal application shutdown draining while an already bounded,
 /// externally scheduled operation owns durable work. This does not spawn work;
@@ -26,6 +68,7 @@ struct Ticket;
 impl Drop for Ticket {
     fn drop(&mut self) {
         ACTIVE.fetch_sub(1, Ordering::Release);
+        changed();
     }
 }
 
@@ -74,6 +117,7 @@ fn admit(lane: &'static Lane, name: &'static str, capacity: usize, job: Job) -> 
             let _ticket = ticket;
             job();
         }))
+        .inspect(|()| changed())
         .map_err(|error| match error {
             mpsc::TrySendError::Full(_) => io::Error::new(
                 io::ErrorKind::WouldBlock,
@@ -83,4 +127,34 @@ fn admit(lane: &'static Lane, name: &'static str, capacity: usize, job: Job) -> 
                 io::Error::new(io::ErrorKind::BrokenPipe, format!("{name} worker stopped"))
             }
         })
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use std::time::Duration;
+
+    #[test]
+    fn watch_hears_admission_and_completion_until_dropped() {
+        let (heard, events) = mpsc::channel();
+        let watch = watch(move || {
+            let _ = heard.send(());
+        });
+        let (release, blocked) = mpsc::channel::<()>();
+        submit(move || {
+            let _ = blocked.recv();
+        })
+        .unwrap();
+        let wait = Duration::from_secs(5);
+        events.recv_timeout(wait).expect("admission");
+        release.send(()).unwrap();
+        events.recv_timeout(wait).expect("completion");
+        drop(watch);
+        while events.try_recv().is_ok() {}
+        assert_eq!(
+            events.try_recv(),
+            Err(mpsc::TryRecvError::Disconnected),
+            "the callback is released with its watch"
+        );
+    }
 }
