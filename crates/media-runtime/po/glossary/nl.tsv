@@ -1,0 +1,17 @@
+player	speler	catalog
+playlist	afspeellijst	catalog, celluloid
+queue	wachtrij	catalog
+track (music)	nummer	catalog
+track (audio or subtitle stream)	spoor	catalog
+library	bibliotheek	catalog
+station	zender	catalog
+episode	aflevering	catalog
+keyring	sleutelbos	gnome-keyring
+provider	aanbieder	catalog
+screenshot	schermafbeelding	catalog
+scan	scan	catalog
+sidebar	zijbalk	gtk40, catalog
+Preferences	Voorkeuren	catalog
+save	opslaan	catalog
+Retry	Opnieuw proberen	catalog
+you	je	catalog

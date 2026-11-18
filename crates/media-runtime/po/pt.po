@@ -34,18 +34,17 @@ msgid "Data Sources"
 msgstr "Fontes de dados"
 
 #: crates/big-audio-player/src/audio/app.rs:53
-#, fuzzy
 #| msgid "Close the player"
 msgid "Play or pause the running player"
-msgstr "Fechar o reprodutor"
+msgstr "Reproduzir ou pausar o reprodutor em execução"
 
 #: crates/big-audio-player/src/audio/app.rs:58
 msgid "Skip to the next track in the running player"
-msgstr ""
+msgstr "Avançar para a faixa seguinte no reprodutor em execução"
 
 #: crates/big-audio-player/src/audio/app.rs:63
 msgid "Go back to the previous track in the running player"
-msgstr ""
+msgstr "Voltar à faixa anterior no reprodutor em execução"
 
 #: crates/big-audio-player/src/audio/appearance/dialogs.rs:42
 #: crates/big-video-player/src/video/ui/filters/groups_vf.rs:278
@@ -464,11 +463,11 @@ msgid "Select a song to start"
 msgstr "Selecione uma música para começar"
 
 #: crates/big-audio-player/src/audio/ui/audio_shell/engine.rs:37
-#, fuzzy, rust-format
+#, rust-format
 #| msgid "Could not play this file — it may be unsupported or corrupt."
 msgid "Could not play “{file}”: it may be unsupported or corrupt."
 msgstr ""
-"Não foi possível reproduzir este ficheiro — pode não ser suportado ou estar "
+"Não foi possível reproduzir “{file}”: pode não ser suportado ou estar "
 "danificado."
 
 #: crates/big-audio-player/src/audio/ui/audio_shell/engine.rs:215
@@ -477,6 +476,8 @@ msgid ""
 "The playback engine could not start: {error}. Update or reinstall the mpv "
 "package, then reopen the player."
 msgstr ""
+"Não foi possível iniciar o motor de reprodução: {error}. Atualize ou "
+"reinstale o pacote mpv e depois volte a abrir o reprodutor."
 
 #: crates/big-audio-player/src/audio/ui/audio_shell/export.rs:17
 #: crates/big-audio-player/src/audio/ui/audio_shell/export.rs:33
@@ -486,17 +487,15 @@ msgstr "Nenhuma faixa local em reprodução"
 #: crates/big-audio-player/src/audio/ui/audio_shell/library_store.rs:63
 msgid "The music library is still opening. Try again in a moment."
 msgstr ""
+"A biblioteca de música ainda está a abrir. Tente novamente daqui a pouco."
 
 #: crates/big-audio-player/src/audio/ui/audio_shell/library_store.rs:223
 #: crates/big-audio-player/src/audio/ui/audio_shell/library_store.rs:259
-#, fuzzy
 #| msgid ""
 #| "The library could not be read. Previous results were kept; try searching "
 #| "again."
 msgid "The library could not be read. The queue was not changed."
-msgstr ""
-"Não foi possível ler a biblioteca. Os resultados anteriores foram mantidos; "
-"tente pesquisar novamente."
+msgstr "Não foi possível ler a biblioteca. A fila não foi alterada."
 
 #: crates/big-audio-player/src/audio/ui/audio_shell/panel_intents.rs:61
 msgid ""
@@ -527,25 +526,23 @@ msgid "Save Episodes"
 msgstr "Guardar episódios"
 
 #: crates/big-audio-player/src/audio/ui/audio_shell/panel_intents.rs:432
-#, fuzzy
 #| msgid ""
 #| "The playlist could not be read safely. Check its format and permissions."
 msgid ""
 "The episodes could not be saved in this folder. Check its permissions and "
 "try again."
 msgstr ""
-"Não foi possível ler a lista de reprodução de forma segura. Verifique o "
-"formato e as permissões."
+"Não foi possível guardar os episódios nesta pasta. Verifique as permissões "
+"da pasta e tente novamente."
 
 #: crates/big-audio-player/src/audio/ui/audio_shell/playback.rs:143
-#, fuzzy
 #| msgid ""
 #| "The library could not be read. Previous results were kept; try searching "
 #| "again."
 msgid "The library could not be read, so lyrics were not searched online."
 msgstr ""
-"Não foi possível ler a biblioteca. Os resultados anteriores foram mantidos; "
-"tente pesquisar novamente."
+"Não foi possível ler a biblioteca, por isso as letras não foram pesquisadas "
+"online."
 
 #: crates/big-audio-player/src/audio/ui/audio_shell/playback.rs:157
 msgid "Seek position"
@@ -710,14 +707,14 @@ msgid "Export stopped. Confirmed outputs were kept"
 msgstr "Exportação interrompida. As saídas confirmadas foram mantidas"
 
 #: crates/big-audio-player/src/audio/ui/audio_shell/queue_persistence.rs:55
-#, fuzzy, rust-format
+#, rust-format
 #| msgid "The playlist could not be saved."
 msgid "The music library could not be opened: {}"
-msgstr "Não foi possível guardar a lista de reprodução."
+msgstr "Não foi possível abrir a biblioteca de música: {}"
 
 #: crates/big-audio-player/src/audio/ui/audio_shell/queue_persistence.rs:57
 msgid "Retry"
-msgstr ""
+msgstr "Tentar novamente"
 
 #: crates/big-audio-player/src/audio/ui/audio_shell/queue_persistence.rs:60
 msgid ""
@@ -755,20 +752,19 @@ msgstr ""
 "mantidas."
 
 #: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:154
-#, fuzzy
 #| msgid "The playlist could not be saved."
 msgid "The station could not be saved."
-msgstr "Não foi possível guardar a lista de reprodução."
+msgstr "Não foi possível guardar a estação."
 
 #: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:168
-#, fuzzy
 #| msgid "The playlist could not be saved."
 msgid "The station could not be removed."
-msgstr "Não foi possível guardar a lista de reprodução."
+msgstr "Não foi possível remover a estação."
 
 #: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:230
 msgid "There is no Music or home folder to save recordings in."
 msgstr ""
+"Não existe uma pasta Música nem uma pasta pessoal onde guardar as gravações."
 
 #: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:276
 #: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:284
@@ -822,10 +818,9 @@ msgid "Open File"
 msgstr "Abrir ficheiro"
 
 #: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:528
-#, fuzzy
 #| msgid "The playlist could not be saved."
 msgid "Saved radio stations could not be read."
-msgstr "Não foi possível guardar a lista de reprodução."
+msgstr "Não foi possível ler as estações de rádio guardadas."
 
 #: crates/big-audio-player/src/audio/ui/audio_shell/tray.rs:18
 msgid "Show Big Audio Player"
@@ -836,24 +831,22 @@ msgid "The TV's track is no longer in the queue."
 msgstr "A faixa da TV já não está na fila."
 
 #: crates/big-audio-player/src/audio/ui/audio_shell/update.rs:137
-#, fuzzy
 #| msgid "Cancelled"
 msgid "Scan cancelled"
-msgstr "Cancelada"
+msgstr "Análise cancelada"
 
 #: crates/big-audio-player/src/audio/ui/audio_shell/update.rs:139
-#, fuzzy
 #| msgid "Sample Rate"
 msgid "Scan incomplete"
-msgstr "Taxa de amostragem"
+msgstr "Análise incompleta"
 
 #: crates/big-audio-player/src/audio/ui/audio_shell/update.rs:142
-#, fuzzy, rust-format
+#, rust-format
 #| msgid "tracks imported"
 msgid "{count} track imported"
 msgid_plural "{count} tracks imported"
-msgstr[0] "faixas importadas"
-msgstr[1] "faixas importadas"
+msgstr[0] "{count} faixa importada"
+msgstr[1] "{count} faixas importadas"
 
 #: crates/big-audio-player/src/audio/ui/audio_shell/update.rs:153
 msgid "Library updated"
@@ -1182,15 +1175,15 @@ msgstr "Mostrar no gestor de ficheiros"
 #, rust-format
 msgid "{count} track"
 msgid_plural "{count} tracks"
-msgstr[0] ""
-msgstr[1] ""
+msgstr[0] "{count} faixa"
+msgstr[1] "{count} faixas"
 
 #: crates/big-audio-player/src/audio/ui/mod.rs:59
 #, rust-format
 msgid "{count} track · {duration}"
 msgid_plural "{count} tracks · {duration}"
-msgstr[0] ""
-msgstr[1] ""
+msgstr[0] "{count} faixa · {duration}"
+msgstr[1] "{count} faixas · {duration}"
 
 #: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:35
 msgid "Drag and drop files to create a playlist"
@@ -1219,7 +1212,7 @@ msgstr "Menu principal"
 
 #: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:90
 msgid "Show Sidebar"
-msgstr ""
+msgstr "Mostrar barra lateral"
 
 #: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:121
 #: crates/big-audio-player/src/audio/ui/playlist_library_dialog.rs:261
@@ -1276,14 +1269,13 @@ msgid "About"
 msgstr "Acerca de"
 
 #: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:244
-#, fuzzy
 #| msgid "No episodes found"
 msgid "No episodes queued"
-msgstr "Nenhum episódio encontrado"
+msgstr "Nenhum episódio na fila"
 
 #: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:245
 msgid "Choose a podcast on the left to queue its episodes."
-msgstr ""
+msgstr "Escolha um podcast à esquerda para pôr os seus episódios na fila."
 
 #: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:254
 msgid "Drop tracks here"
@@ -1292,13 +1284,13 @@ msgstr "Largue aqui as faixas"
 #: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:256
 msgid "Or double-click a track in the library, or select it and press Return."
 msgstr ""
+"Ou faça duplo clique numa faixa da biblioteca, ou selecione-a e prima Enter."
 
 #: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:283
 msgid "Welcome to Big Audio Player"
 msgstr "Bem-vindo ao Big Audio Player"
 
 #: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:291
-#, fuzzy
 #| msgid ""
 #| "Add a folder with your music files to get started.\n"
 #| "Supported formats: MP3, FLAC, OGG, M4A, OPUS, WAV and more."
@@ -1307,7 +1299,8 @@ msgid ""
 "tab.\n"
 "Supported formats: MP3, FLAC, OGG, M4A, OPUS, WAV and more."
 msgstr ""
-"Adicione uma pasta com os seus ficheiros de música para começar.\n"
+"Abra ficheiros de música para os reproduzir já, ou adicione a sua pasta de "
+"música no separador Música.\n"
 "Formatos suportados: MP3, FLAC, OGG, M4A, OPUS, WAV e mais."
 
 #: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:304
@@ -1536,10 +1529,9 @@ msgid "Cancellation requested. Finishing the current safe step…"
 msgstr "Cancelamento solicitado. A concluir o passo seguro atual…"
 
 #: crates/big-audio-player/src/audio/ui/scan_progress.rs:177
-#, fuzzy
 #| msgid "Library"
 msgid "Library Scan"
-msgstr "Biblioteca"
+msgstr "Análise da biblioteca"
 
 #: crates/big-audio-player/src/audio/ui/track_list.rs:392
 #: crates/big-video-player/src/video/ui/video_browser_sidebar/views/queue_view.rs:313
@@ -1547,10 +1539,9 @@ msgid "Playing"
 msgstr "A reproduzir"
 
 #: crates/big-audio-player/src/audio/ui/track_list.rs:393
-#, fuzzy
 #| msgid "Pause"
 msgid "Paused"
-msgstr "Pausar"
+msgstr "Em pausa"
 
 #: crates/big-audio-player/src/audio/ui/unavailable_dialog.rs:52
 msgid ""
@@ -1665,6 +1656,7 @@ msgstr "Big Video Player"
 #: crates/big-video-player/src/video/app.rs:124
 msgid "Open a separate player window instead of using the running one"
 msgstr ""
+"Abrir outra janela do reprodutor em vez de utilizar a que já está em execução"
 
 #: crates/big-video-player/src/video/keybindings.rs:50
 msgid "Increase speed"
@@ -1885,10 +1877,9 @@ msgid "Open"
 msgstr "Abrir"
 
 #: crates/big-video-player/src/video/ui/appearance/layout/buttons_page.rs:56
-#, fuzzy
 #| msgid "Load Playlist"
 msgid "Files and Playlist"
-msgstr "Carregar lista de reprodução"
+msgstr "Ficheiros e lista de reprodução"
 
 #: crates/big-video-player/src/video/ui/appearance/layout/buttons_page.rs:64
 #: crates/big-video-player/src/video/ui/video_shell/component.rs:181
@@ -1914,17 +1905,16 @@ msgstr "Ecrã inteiro"
 
 #: crates/big-video-player/src/video/ui/appearance/layout/buttons_page.rs:179
 msgid "Top bar"
-msgstr ""
+msgstr "Barra superior"
 
 #: crates/big-video-player/src/video/ui/appearance/layout/buttons_page.rs:181
 msgid "Video Title"
 msgstr "Título do vídeo"
 
 #: crates/big-video-player/src/video/ui/appearance/layout/buttons_page.rs:186
-#, fuzzy
 #| msgid "Bottom Margin"
 msgid "Bottom bar"
-msgstr "Margem inferior"
+msgstr "Barra inferior"
 
 #: crates/big-video-player/src/video/ui/appearance/layout/buttons_page.rs:226
 #: crates/big-video-player/src/video/ui/appearance/layout/layout_page.rs:98
@@ -1936,12 +1926,13 @@ msgid "Button Layout"
 msgstr "Disposição dos botões"
 
 #: crates/big-video-player/src/video/ui/appearance/layout/buttons_page.rs:232
-#, fuzzy
 #| msgid "Drag buttons between zones • Click to toggle visibility"
 msgid ""
 "Drag buttons between zones, or move the focused one with Alt+Left and "
 "Alt+Right. Click a button to show or hide it."
-msgstr "Arraste botões entre zonas • Clique para alternar a visibilidade"
+msgstr ""
+"Arraste os botões entre zonas ou mova o botão em foco com Alt+Esquerda e "
+"Alt+Direita. Clique num botão para o mostrar ou ocultar."
 
 #: crates/big-video-player/src/video/ui/appearance/layout/layout_page.rs:19
 msgid "Layout"
@@ -2370,6 +2361,9 @@ msgid ""
 "Some provider passwords are still in a plain file because your keyring could "
 "not be reached. Unlock your keyring, then reload the channels."
 msgstr ""
+"Algumas palavras-passe de fornecedores continuam num ficheiro sem "
+"encriptação porque não foi possível aceder ao seu chaveiro. Desbloqueie o "
+"chaveiro e depois recarregue os canais."
 
 #: crates/big-video-player/src/video/ui/iptv/mod.rs:257
 #: crates/big-video-player/src/video/ui/iptv/mod.rs:437
@@ -2389,10 +2383,10 @@ msgid "Loading channels…"
 msgstr "A carregar canais…"
 
 #: crates/big-video-player/src/video/ui/iptv/mod.rs:490
-#, fuzzy, rust-format
+#, rust-format
 #| msgid "Showing the first {}. Type more to narrow the search."
 msgid "Showing the first {} channels; the list has more."
-msgstr "A mostrar os primeiros {}. Escreva mais para restringir a pesquisa."
+msgstr "A mostrar os primeiros {} canais; a lista tem mais."
 
 #: crates/big-video-player/src/video/ui/iptv/mod.rs:509
 msgid ""
@@ -2447,12 +2441,17 @@ msgid ""
 "Could not read this provider's password from your keyring. Unlock your "
 "keyring, then reload the channels."
 msgstr ""
+"Não foi possível ler a palavra-passe deste fornecedor no seu chaveiro. "
+"Desbloqueie o chaveiro e depois recarregue os canais."
 
 #: crates/big-video-player/src/video/ui/iptv/mod.rs:535
 msgid ""
 "This playlist has IPTV channels from a provider that is not set up. Add the "
 "provider under IPTV, then open the playlist again."
 msgstr ""
+"Esta lista de reprodução tem canais IPTV de um fornecedor que não está "
+"configurado. Adicione o fornecedor em IPTV e depois volte a abrir a lista de "
+"reprodução."
 
 #: crates/big-video-player/src/video/ui/iptv/providers_dialog.rs:48
 msgid "Add provider"
@@ -2468,6 +2467,9 @@ msgid ""
 "can delete the “Big Multimedia IPTV provider” item it left with your keyring "
 "manager."
 msgstr ""
+"Não foi possível eliminar do seu chaveiro uma palavra-passe substituída ou "
+"removida. Pode eliminar o item “Big Multimedia IPTV provider” que ficou para "
+"trás com o seu gestor de chaveiros."
 
 #: crates/big-video-player/src/video/ui/iptv/providers_dialog.rs:120
 msgid "No providers yet"
@@ -2482,6 +2484,8 @@ msgid ""
 "Password not in your keyring yet. Unlock your keyring, then close this "
 "window to try again."
 msgstr ""
+"A palavra-passe ainda não está no seu chaveiro. Desbloqueie o chaveiro e "
+"depois feche esta janela para tentar novamente."
 
 #: crates/big-video-player/src/video/ui/iptv/providers_dialog.rs:137
 msgid "Edit"
@@ -2498,13 +2502,15 @@ msgstr "Fornecedor IPTV"
 
 #: crates/big-video-player/src/video/ui/iptv/providers_dialog.rs:298
 msgid "Saving the password in your keyring…"
-msgstr ""
+msgstr "A guardar a palavra-passe no seu chaveiro…"
 
 #: crates/big-video-player/src/video/ui/iptv/providers_dialog.rs:326
 msgid ""
 "Could not save the password in your keyring, so nothing was saved. Unlock "
 "your keyring, then save again."
 msgstr ""
+"Não foi possível guardar a palavra-passe no seu chaveiro, por isso nada foi "
+"guardado. Desbloqueie o chaveiro e depois guarde novamente."
 
 #: crates/big-video-player/src/video/ui/iptv/providers_dialog.rs:366
 #: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/header.rs:163
@@ -2551,10 +2557,14 @@ msgstr "Palavra-passe"
 msgid ""
 "The full address is saved in your keyring. Leave it as shown to keep it."
 msgstr ""
+"O endereço completo está guardado no seu chaveiro. Deixe-o como está para o "
+"manter."
 
 #: crates/big-video-player/src/video/ui/iptv/providers_dialog.rs:425
 msgid "The password is saved in your keyring. Leave Password empty to keep it."
 msgstr ""
+"A palavra-passe está guardada no seu chaveiro. Deixe o campo Palavra-passe "
+"vazio para a manter."
 
 #: crates/big-video-player/src/video/ui/iptv/providers_dialog.rs:433
 msgid "HTTP headers (optional)"
@@ -2667,7 +2677,6 @@ msgid "For some TV broadcasts (HLG)"
 msgstr "Para algumas emissões de TV (HLG)"
 
 #: crates/big-video-player/src/video/ui/media_adjust.rs:290
-#, fuzzy
 #| msgid "Plain colours (SDR)"
 msgid "Plain colors (SDR)"
 msgstr "Cores normais (SDR)"
@@ -2849,10 +2858,10 @@ msgid "Subtitle"
 msgstr "Legenda"
 
 #: crates/big-video-player/src/video/ui/menu_dialogs.rs:20
-#, fuzzy, rust-format
+#, rust-format
 #| msgid "Recording was not saved"
 msgid "The screenshot was not saved: {error}"
-msgstr "A gravação não foi guardada"
+msgstr "A captura de ecrã não foi guardada: {error}"
 
 #: crates/big-video-player/src/video/ui/menu_dialogs.rs:52
 msgid "Go to Time"
@@ -2874,28 +2883,33 @@ msgstr "Ir"
 #: crates/big-video-player/src/video/ui/menu_dialogs.rs:132
 msgid "Still saving the previous screenshots. Try again in a moment."
 msgstr ""
+"Ainda a guardar as capturas de ecrã anteriores. Tente novamente daqui a "
+"pouco."
 
 #: crates/big-video-player/src/video/ui/menu_dialogs.rs:83
 #: crates/big-video-player/src/video/ui/menu_dialogs.rs:88
-#, fuzzy
 #| msgid "Stores the video color space in each screenshot"
 msgid "Open a video to take a screenshot"
-msgstr "Guarda o espaço de cor do vídeo em cada captura de ecrã"
+msgstr "Abra um vídeo para fazer uma captura de ecrã"
 
 #: crates/big-video-player/src/video/ui/menu_dialogs.rs:102
 msgid ""
 "There is no Pictures or home folder to save screenshots in. Choose a folder "
 "in Preferences."
 msgstr ""
+"Não existe uma pasta Imagens nem uma pasta pessoal onde guardar as capturas "
+"de ecrã. Escolha uma pasta nas Preferências."
 
 #: crates/big-video-player/src/video/ui/menu_dialogs.rs:127
 #, rust-format
 msgid "Cannot save to {folder}: {error}. Choose another folder in Preferences."
 msgstr ""
+"Não é possível guardar em {folder}: {error}. Escolha outra pasta nas "
+"Preferências."
 
 #: crates/big-video-player/src/video/ui/menu_dialogs.rs:137
 msgid "The screenshot was not saved because of an unexpected error"
-msgstr ""
+msgstr "A captura de ecrã não foi guardada devido a um erro inesperado"
 
 #: crates/big-video-player/src/video/ui/menu_dialogs.rs:174
 msgid "Screenshot saved"
@@ -3693,12 +3707,12 @@ msgid "Rename failed"
 msgstr "Falha ao mudar o nome"
 
 #: crates/big-video-player/src/video/ui/video_browser_sidebar/fileops.rs:311
-#, fuzzy, rust-format
+#, rust-format
 #| msgid "Could not move to trash"
 msgid "Could not move {failed} of {total} file"
 msgid_plural "Could not move {failed} of {total} files"
-msgstr[0] "Não foi possível mover para o lixo"
-msgstr[1] "Não foi possível mover para o lixo"
+msgstr[0] "Não foi possível mover {failed} de {total} ficheiro"
+msgstr[1] "Não foi possível mover {failed} de {total} ficheiros"
 
 #: crates/big-video-player/src/video/ui/video_browser_sidebar/library.rs:118
 msgid "Home folder"
@@ -3913,7 +3927,7 @@ msgstr[0] "{n} alteração"
 msgstr[1] "{n} alterações"
 
 #: crates/big-video-player/src/video/ui/video_shell/adjustments.rs:173
-#, fuzzy, rust-format
+#, rust-format
 #| msgid "Video colour: {name}"
 msgid "Video color: {name}"
 msgstr "Cor do vídeo: {name}"
@@ -4013,7 +4027,6 @@ msgid "Use HDR?"
 msgstr "Utilizar HDR?"
 
 #: crates/big-video-player/src/video/ui/video_shell/component.rs:214
-#, fuzzy
 #| msgid "Does the picture look grey and washed out? Click to use HDR colours"
 msgid "Does the picture look grey and washed out? Click to use HDR colors"
 msgstr "A imagem parece cinzenta e desbotada? Clique para utilizar cores HDR"
@@ -4155,6 +4168,11 @@ msgid ""
 "kept. Video Output, Audio Output and the custom mpv options take effect "
 "after reopening the player."
 msgstr ""
+"As preferências e a aparência voltam aos valores predefinidos. As pastas da "
+"biblioteca, os atalhos de teclado, o volume, a reprodução aleatória e os "
+"níveis de voz e do equalizador são mantidos. A Saída de vídeo, a Saída de "
+"áudio e as opções personalizadas do mpv aplicam-se depois de reabrir o "
+"reprodutor."
 
 #: crates/big-video-player/src/video/ui/video_shell/export.rs:19
 msgid "No file is playing"
@@ -4248,7 +4266,7 @@ msgstr "Nenhum ficheiro recente corresponde"
 
 #: crates/big-video-player/src/video/ui/video_shell/playback.rs:196
 msgid "The screenshot took too long and was not saved"
-msgstr ""
+msgstr "A captura de ecrã demorou demasiado e não foi guardada"
 
 #: crates/big-video-player/src/video/ui/video_shell/playback.rs:223
 msgid "Could not play this file — it may be unsupported or corrupt."
@@ -4277,6 +4295,8 @@ msgid ""
 "The playback engine could not start: {error}. Check Preferences → Advanced → "
 "mpv Options, then reopen the player."
 msgstr ""
+"Não foi possível iniciar o motor de reprodução: {error}. Verifique "
+"Preferências → Avançado → Opções do mpv e depois volte a abrir o reprodutor."
 
 #: crates/big-video-player/src/video/ui/video_shell/render.rs:340
 msgid ""
@@ -4669,7 +4689,7 @@ msgstr "Não foi possível iniciar o conversor"
 #: crates/media-runtime/src/media/iptv/m3u.rs:51
 #, rust-format
 msgid "Only the first {} entries of the playlist were loaded."
-msgstr ""
+msgstr "Só foram carregadas as primeiras {} entradas da lista de reprodução."
 
 #: crates/media-runtime/src/media/iptv/m3u.rs:58
 #, rust-format
@@ -4677,7 +4697,9 @@ msgid "{} entry was skipped because it is not a supported stream or file."
 msgid_plural ""
 "{} entries were skipped because they are not supported streams or files."
 msgstr[0] ""
+"{} entrada foi ignorada porque não é um fluxo ou ficheiro suportado."
 msgstr[1] ""
+"{} entradas foram ignoradas porque não são fluxos ou ficheiros suportados."
 
 #: crates/media-runtime/src/media/metadata_cache/display.rs:21
 #, rust-format
@@ -4723,32 +4745,24 @@ msgid "Chapter"
 msgstr "Capítulo"
 
 #: crates/media-runtime/src/player/mpv_backend/properties_video.rs:39
-#, fuzzy
-#| msgid "Pixel Format"
 msgid "pixelformat"
-msgstr "Formato de píxel"
+msgstr ""
 
 #: crates/media-runtime/src/player/mpv_backend/properties_video.rs:40
-#, fuzzy
-#| msgid "Pixel Format"
 msgid "hw-pixelformat"
-msgstr "Formato de píxel"
+msgstr ""
 
 #: crates/media-runtime/src/player/mpv_backend/properties_video.rs:41
 msgid "colormatrix"
 msgstr ""
 
 #: crates/media-runtime/src/player/mpv_backend/properties_video.rs:42
-#, fuzzy
-#| msgid "Primaries"
 msgid "primaries"
-msgstr "Primárias"
+msgstr ""
 
 #: crates/media-runtime/src/player/mpv_backend/properties_video.rs:43
-#, fuzzy
-#| msgid "Gamma"
 msgid "gamma"
-msgstr "Gama"
+msgstr ""
 
 #: crates/media-runtime/src/player/mpv_backend/types.rs:94
 msgid ""
@@ -4756,6 +4770,9 @@ msgid ""
 "headphones are connected, or choose another Audio Output in Preferences and "
 "reopen the player."
 msgstr ""
+"Não foi possível iniciar o som na saída de áudio. Verifique se as colunas ou "
+"os auscultadores estão ligados, ou escolha outra Saída de áudio nas "
+"Preferências e volte a abrir o reprodutor."
 
 #: crates/media-runtime/src/settings/messages.rs:6
 msgid "Access could not be verified — check permissions before reviewing"
@@ -4920,23 +4937,23 @@ msgstr "Prima Alt+Seta para baixo para ajustar. Prima Esc para fechar."
 #: crates/ui/generic/big-relm4-components/src/input/zone_layout_editor.rs:160
 #, rust-format
 msgid "{zone}, {position} of {count}"
-msgstr ""
+msgstr "{zone}, {position} de {count}"
 
 #: crates/ui/generic/big-relm4-components/src/input/zone_layout_editor.rs:201
 #, rust-format
 msgid "{bar}, center"
-msgstr ""
+msgstr "{bar}, centro"
 
 #: crates/ui/generic/big-relm4-components/src/input/zone_layout_editor.rs:202
 #: crates/ui/generic/big-relm4-components/src/input/zone_layout_editor.rs:203
 #, rust-format
 msgid "{bar}, left"
-msgstr ""
+msgstr "{bar}, esquerda"
 
 #: crates/ui/generic/big-relm4-components/src/input/zone_layout_editor.rs:204
 #, rust-format
 msgid "{bar}, right"
-msgstr ""
+msgstr "{bar}, direita"
 
 #: crates/ui/generic/big-relm4-components/src/layout/media_window/sidebar.rs:232
 msgid "Resize sidebar"
@@ -5192,7 +5209,7 @@ msgstr "Editar corte"
 
 #: crates/ui/media/big-player-ui/src/cut_edit_dialog.rs:31
 msgid "Start and end must be at least 0.1 seconds apart"
-msgstr ""
+msgstr "O início e o fim têm de estar separados por pelo menos 0,1 segundos"
 
 #: crates/ui/media/big-player-ui/src/cut_edit_dialog.rs:42
 msgid "Edit Cut"
@@ -5293,7 +5310,7 @@ msgstr "Pesquise podcasts ou adicione um feed RSS"
 
 #: crates/ui/media/big-player-ui/src/podcast_panel.rs:244
 msgid "Podcast Subscriptions Unavailable"
-msgstr ""
+msgstr "Subscrições de podcasts indisponíveis"
 
 #: crates/ui/media/big-player-ui/src/podcast_panel.rs:274
 msgid "Connection error — try again"
@@ -5305,7 +5322,7 @@ msgstr "Já subscrito"
 
 #: crates/ui/media/big-player-ui/src/podcast_panel.rs:341
 msgid "Podcast subscriptions are still loading"
-msgstr ""
+msgstr "As subscrições de podcasts ainda estão a carregar"
 
 #: crates/ui/media/big-player-ui/src/podcast_panel.rs:378
 msgid "Subscriptions"
@@ -5316,15 +5333,16 @@ msgid "Search Results"
 msgstr "Resultados da pesquisa"
 
 #: crates/ui/media/big-player-ui/src/podcast_panel.rs:450
-#, fuzzy
 #| msgid "The playlist could not be saved."
 msgid "Podcast subscriptions could not be saved"
-msgstr "Não foi possível guardar a lista de reprodução."
+msgstr "Não foi possível guardar as subscrições de podcasts"
 
 #: crates/ui/media/big-player-ui/src/podcast_panel.rs:463
 #, rust-format
 msgid "Podcast subscriptions could not be read, so changes are not saved: {}"
 msgstr ""
+"Não foi possível ler as subscrições de podcasts, por isso as alterações não "
+"são guardadas: {}"
 
 #: crates/ui/media/big-player-ui/src/podcast_panel.rs:472
 msgid "Title unavailable"
@@ -5373,34 +5391,34 @@ msgid "Explore Stations"
 msgstr "Explorar estações"
 
 #: crates/ui/media/big-player-ui/src/radio_panel/widgets.rs:56
-#, fuzzy, rust-format
+#, rust-format
 #| msgid "Remove station"
 msgid "Remove {station}"
-msgstr "Remover estação"
+msgstr "Remover {station}"
 
 #: crates/ui/media/big-player-ui/src/radio_panel/widgets.rs:75
-#, fuzzy, rust-format
+#, rust-format
 #| msgid "Add to my stations"
 msgid "Add {station} to my stations"
-msgstr "Adicionar às minhas estações"
+msgstr "Adicionar {station} às minhas estações"
 
 #: crates/ui/media/big-player-ui/src/radio_panel/widgets.rs:99
-#, fuzzy, rust-format
+#, rust-format
 #| msgid "Add to my stations"
 msgid "{station} is in my stations"
-msgstr "Adicionar às minhas estações"
+msgstr "{station} está nas minhas estações"
 
 #: crates/ui/media/big-player-ui/src/radio_panel/widgets.rs:115
-#, fuzzy, rust-format
+#, rust-format
 #| msgid "Stop Recording"
 msgid "Stop recording {station}"
-msgstr "Parar gravação"
+msgstr "Parar de gravar {station}"
 
 #: crates/ui/media/big-player-ui/src/radio_panel/widgets.rs:121
-#, fuzzy, rust-format
+#, rust-format
 #| msgid "Remove station"
 msgid "Record {station}"
-msgstr "Remover estação"
+msgstr "Gravar {station}"
 
 #: crates/ui/media/big-player-ui/src/radio_panel/widgets.rs:196
 msgid "Search radios..."
@@ -5521,17 +5539,17 @@ msgstr "Abrir a página de transferência do KDE Connect"
 
 #: crates/ui/media/big-player-ui/src/smartphone/dialog.rs:129
 msgid "No local network found. Connect to a network and try again."
-msgstr ""
+msgstr "Nenhuma rede local encontrada. Ligue-se a uma rede e tente novamente."
 
 #: crates/ui/media/big-player-ui/src/smartphone/dialog.rs:152
 msgid "Scan the code with the phone's camera."
 msgstr "Leia o código com a câmara do telemóvel."
 
 #: crates/ui/media/big-player-ui/src/smartphone/dialog.rs:171
-#, fuzzy, rust-format
+#, rust-format
 #| msgid "Web remote is off."
 msgid "Web remote stopped: {error}"
-msgstr "O controlo remoto web está desativado."
+msgstr "O controlo remoto web parou: {error}"
 
 #: crates/ui/media/big-player-ui/src/smartphone/dialog.rs:179
 msgid "Could not start server"

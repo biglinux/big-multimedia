@@ -1,0 +1,16 @@
+player	reproductor	catalog
+playlist	lista de reproducción	catalog, celluloid
+queue	cola	catalog
+track	pista	catalog
+library	biblioteca	catalog
+station	emisora	catalog
+episode	episodio	catalog
+keyring	depósito de claves	gnome-keyring
+provider	proveedor	catalog
+screenshot	captura de pantalla	catalog
+scan	análisis	catalog
+sidebar	barra lateral	gtk40, catalog
+Preferences	Preferencias	catalog
+save	guardar	catalog
+Retry	Reintentar	catalog
+you	tú	catalog majority (41 of 44)
