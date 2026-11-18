@@ -312,6 +312,12 @@ impl Component for VideoIptvBrowser {
 }
 
 impl VideoIptvBrowser {
+    /// The providers as edited, for resolving saved channels off the main loop.
+    #[must_use]
+    pub fn providers(&self) -> Vec<IptvProvider> {
+        self.store.borrow().providers.clone()
+    }
+
     /// Move the secrets a provider still holds in plain text, typed into an
     /// older build or carried in an older file, into the keyring.
     fn protect_plaintext(&mut self, sender: &ComponentSender<Self>) {
@@ -490,7 +496,7 @@ impl VideoIptvBrowser {
 
 /// What went wrong, in words the person can act on. A list saved before
 /// stays on screen.
-fn fetch_error_text(error: &FetchError) -> String {
+pub(crate) fn fetch_error_text(error: &FetchError) -> String {
     match error {
         FetchError::Unreachable => i18n(
             "Could not reach the provider. Check the address and your connection; a saved list stays on screen.",
@@ -517,6 +523,9 @@ fn fetch_error_text(error: &FetchError) -> String {
         FetchError::FileUnreadable => i18n("Could not read the playlist file."),
         FetchError::Keyring => i18n(
             "Could not read this provider's password from your keyring. Unlock your keyring, then reload the channels.",
+        ),
+        FetchError::NoProvider => i18n(
+            "This playlist has IPTV channels from a provider that is not set up. Add the provider under IPTV, then open the playlist again.",
         ),
     }
 }

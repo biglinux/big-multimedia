@@ -1,8 +1,12 @@
 use super::*;
-use crate::video::ui::iptv::fetcher::ChannelUrls;
+use crate::media::iptv::IptvProvider;
+use crate::video::ui::iptv::fetch_error_text;
+use crate::video::ui::iptv::fetcher::{ChannelUrls, FetchError, played_channels};
 use big_media_components::surface::toggle_surface_fullscreened;
 use big_media_runtime::player::mpv_backend::TargetSource;
+use big_os_kit::keyring::SecretService;
 use big_os_kit::url::ListOrigin;
+use std::sync::atomic::AtomicBool;
 
 impl VideoShell {
     /// Reflect an mpv event in the transport display + now-playing title.
@@ -304,11 +308,14 @@ impl VideoShell {
             self.settings.get_string(keys::PLAYLIST_SORT),
             self.settings.get_bool(keys::PLAYLIST_SORT_DESC),
         );
+        let providers = self.iptv.model().providers();
         gtk::glib::spawn_future_local(async move {
-            let resolved = gtk::gio::spawn_blocking(move || resolve_open_files(paths, &sort))
-                .await
-                .ok()
-                .flatten();
+            let resolved = gtk::gio::spawn_blocking(move || {
+                resolve_open_files(paths, &sort).map(|list| with_played_channels(list, &providers))
+            })
+            .await
+            .ok()
+            .flatten();
             // Nothing playable still answers, so a launch that skipped the
             // welcome screen can bring it back.
             sender.input(VideoShellInput::PlaylistResolved {
@@ -321,12 +328,20 @@ impl VideoShell {
     /// Apply a resolved open request on the main thread: load the playlist into
     /// mpv and push the listing to the sidebar.
     pub(super) fn apply_open(&mut self, list: OpenedList) {
+        if let Some(error) = &list.channel_error {
+            self.notify(&fetch_error_text(error));
+            self.reveal_pending_welcome();
+            return;
+        }
         if let Some(notice) = crate::media::iptv::left_out_notice(list.truncated, list.skipped) {
             self.notify(&notice);
         }
         if list.entries.is_empty() || self.report_missing_engine() {
             self.reveal_pending_welcome();
             return;
+        }
+        for (stored, played) in list.channels {
+            self.stored_urls.insert(stored, played);
         }
         // A played channel URL comes back from the TV.
         let entries: Vec<String> = list
@@ -887,6 +902,10 @@ pub struct OpenedList {
     /// Entries of the opened playlist file the player does not open.
     pub skipped: usize,
     pub source: TargetSource,
+    /// `(stored, played)` of the IPTV channels among the entries.
+    pub channels: Vec<(String, String)>,
+    /// Why the IPTV channels among the entries cannot play.
+    pub channel_error: Option<FetchError>,
 }
 
 impl OpenedList {
@@ -964,6 +983,20 @@ fn resolve_open_files(
         return None;
     }
     Some(OpenedList::from_entries(media))
+}
+
+/// `list` with the played URLs of the IPTV channels it names by their stored
+/// URL. Blocking, reads the keyring.
+fn with_played_channels(mut list: OpenedList, providers: &[IptvProvider]) -> OpenedList {
+    let cancelled = AtomicBool::new(false);
+    let vault = SecretService {
+        cancelled: &cancelled,
+    };
+    match played_channels(&list.entries, providers, &vault) {
+        Ok(channels) => list.channels = channels,
+        Err(error) => list.channel_error = Some(error),
+    }
+    list
 }
 
 /// Streams and discs: what mpv opens by URL, never a path on disk. Schemes

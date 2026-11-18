@@ -12,6 +12,8 @@ use crate::media::iptv::{
 use crate::video::ui::iptv::{cache, xtream};
 use big_os_kit::http_client::{RequestHeaders, http_get_bytes_capped};
 use big_os_kit::keyring::{SecretService, Vault};
+use std::collections::HashMap;
+use std::collections::hash_map::Entry;
 use std::io;
 use std::sync::atomic::AtomicBool;
 use std::time::Duration;
@@ -39,6 +41,8 @@ pub enum FetchError {
     FileUnreadable,
     /// The keyring did not give back the provider's password.
     Keyring,
+    /// A saved channel is on a server no Xtream provider is set up for.
+    NoProvider,
 }
 
 /// A provider's channels, and the favorites to move to their stored URLs.
@@ -87,6 +91,57 @@ pub fn channel_urls(
             stored: Some(url.to_owned()),
         },
     })
+}
+
+/// `(stored, played)` for each of `entries` that names an Xtream account's
+/// credentials. Blocking, reads the keyring once per provider.
+///
+/// # Errors
+///
+/// [`FetchError::NoProvider`] when no Xtream provider is on an entry's server,
+/// [`FetchError::Keyring`] when the keyring keeps that provider's password.
+pub fn played_channels(
+    entries: &[String],
+    providers: &[IptvProvider],
+    vault: &dyn Vault,
+) -> Result<Vec<(String, String)>, FetchError> {
+    let mut accounts: HashMap<usize, (String, String)> = HashMap::new();
+    let mut channels = Vec::new();
+    for entry in entries
+        .iter()
+        .filter(|entry| xtream::names_credentials(entry))
+    {
+        let (index, provider) = providers
+            .iter()
+            .enumerate()
+            .find(|(_, provider)| serves(provider, entry))
+            .ok_or(FetchError::NoProvider)?;
+        let (username, password) = match accounts.entry(index) {
+            Entry::Occupied(account) => account.into_mut(),
+            Entry::Vacant(slot) => match provider.resolved_source(vault) {
+                Ok(IptvKind::Xtream {
+                    username, password, ..
+                }) => slot.insert((username, password)),
+                Ok(IptvKind::M3uUrl { .. } | IptvKind::M3uLocal { .. }) => {
+                    return Err(FetchError::NoProvider);
+                }
+                Err(_) => return Err(FetchError::Keyring),
+            },
+        };
+        channels.push((entry.clone(), xtream::stream_url(entry, username, password)));
+    }
+    Ok(channels)
+}
+
+/// Whether `url` is on the server of the Xtream `provider`: its credentials
+/// go nowhere else.
+fn serves(provider: &IptvProvider, url: &str) -> bool {
+    match &provider.source {
+        IptvKind::Xtream { server, .. } => url
+            .strip_prefix(server.trim_end_matches('/'))
+            .is_some_and(|path| path.starts_with('/')),
+        IptvKind::M3uUrl { .. } | IptvKind::M3uLocal { .. } => false,
+    }
 }
 
 /// Stable per-provider cache identifier; the cache names its file by a hash
@@ -259,6 +314,67 @@ mod tests {
         let channel = channel_urls(&list, "http://srv/ana/s3cret/7", &keyring).unwrap();
         assert_eq!(channel.played, "http://srv/ana/s3cret/7");
         assert_eq!(channel.stored, None);
+    }
+
+    #[test]
+    fn saved_channels_play_with_their_provider_account() {
+        let entries = [
+            "/videos/a.mkv".to_string(),
+            "http://srv/live/{credentials}/7.ts".to_string(),
+            "http://srv/live/{credentials}/8.ts".to_string(),
+        ];
+        let providers = [
+            provider(
+                "Free",
+                IptvKind::M3uUrl {
+                    url: "http://srv/x.m3u".into(),
+                },
+            ),
+            account("Panel"),
+        ];
+        let channels = played_channels(&entries, &providers, &Keyring(Some("pw"))).unwrap();
+        assert_eq!(
+            channels,
+            [
+                (
+                    entries[1].clone(),
+                    "http://srv/live/ana/pw/7.ts".to_string()
+                ),
+                (
+                    entries[2].clone(),
+                    "http://srv/live/ana/pw/8.ts".to_string()
+                ),
+            ]
+        );
+    }
+
+    #[test]
+    fn a_saved_channel_without_its_password_does_not_play() {
+        let entries = ["http://srv/live/{credentials}/7.ts".to_string()];
+        assert_eq!(
+            played_channels(&entries, &[account("Panel")], &Keyring(None)),
+            Err(FetchError::Keyring)
+        );
+    }
+
+    /// A playlist file names the server; an account goes only to its own.
+    #[test]
+    fn credentials_never_go_to_another_server() {
+        for entry in [
+            "http://srv.example/live/{credentials}/7.ts",
+            "http://other/live/{credentials}/7.ts",
+            "https://srv/live/{credentials}/7.ts",
+        ] {
+            assert_eq!(
+                played_channels(
+                    &[entry.to_string()],
+                    &[account("Panel")],
+                    &Keyring(Some("pw"))
+                ),
+                Err(FetchError::NoProvider),
+                "{entry}"
+            );
+        }
     }
 
     #[test]

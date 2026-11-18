@@ -59,7 +59,10 @@ Played channel URLs carry the Xtream credentials. The playlist sidebar, whose
 Save writes a file, lists a channel by its stored URL, with `/{credentials}/`
 in their place, and only mpv gets the played URL. A channel whose URL may
 repeat the provider's secret in another form (an M3U URL with credentials, or
-a list cached with them) plays without entering the sidebar. Recent files
+a list cached with them) plays without entering the sidebar. Opening a saved
+playlist puts the credentials back from the Xtream provider whose server the
+channel is on, never another; when none is, or the keyring keeps the
+password, the playlist does not open and the player says why. Recent files
 never take a stream.
 
 ## LAN remote

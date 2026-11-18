@@ -48,6 +48,12 @@ pub fn stream_url(url: &str, username: &str, password: &str) -> String {
     )
 }
 
+/// Whether `url` is a stored stream URL waiting for an account's credentials.
+#[must_use]
+pub fn names_credentials(url: &str) -> bool {
+    url.contains(CREDENTIALS)
+}
+
 /// Whether `url` carries `password` as written or URL-encoded.
 #[must_use]
 pub fn shows_password(url: &str, password: &str) -> bool {
