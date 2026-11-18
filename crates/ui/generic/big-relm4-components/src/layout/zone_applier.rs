@@ -15,9 +15,10 @@
 //!
 //! Reparenting a GTK widget that already has a parent panics unless it is
 //! unparented first, and a naive `remove`/`append` on every apply churns the
-//! widget graph. `reparent_after` keeps a widget that is **already** a child of
-//! the target container there and only reorders it; otherwise it `unparent()`s
-//! it from its old parent before inserting it into the target. No dangling
+//! widget graph. A widget that is **already** a child of the target container
+//! stays there and is only reordered to follow the layout; otherwise it is
+//! `unparent()`ed from its old parent before it is inserted. A control placed
+//! by its fallback default keeps its place in the zone. No dangling
 //! references, no redundant reparents.
 
 use std::collections::{BTreeSet, HashMap};
@@ -36,8 +37,8 @@ use big_app_kit_core::zone_layout::ZoneLayout;
 ///   first slot (in this order) that names it.
 /// - `fallback_defaults`: ordered `(control_id, slot_key)` defaults. Any
 ///   registered control the layout leaves unplaced is appended to the **end** of
-///   its default slot, in this order (the generic
-///   `append_missing_defaults`).
+///   its default slot, in this order, unless it is already in that slot, where
+///   it keeps its place.
 /// - `visibility`: per-control visibility overrides for controls whose
 ///   visibility depends on extra runtime conditions (e.g. a backend probe). A
 ///   control absent from this map falls back to [`ZoneLayout::is_visible`] (its
@@ -56,12 +57,19 @@ pub fn apply_zone_layout(
 
     // `placements` is built in `slot_order`, i.e. the same order as `slots`, so
     // a positional zip pairs each resolved slot with its container.
-    for ((_, ids), &(_, target)) in placements.iter().zip(slots.iter()) {
+    for ((slot_key, ids), &(_, target)) in placements.iter().zip(slots.iter()) {
+        let named = layout.slots.get(slot_key);
         let mut previous: Option<&gtk::Widget> = None;
         for id in ids {
-            if let Some(widget) = controls.get(id) {
+            let Some(widget) = controls.get(id) else {
+                continue;
+            };
+            if named.is_some_and(|named| named.contains(id)) {
                 reparent_after(widget, target, previous);
                 previous = Some(widget);
+            } else if widget.parent().as_ref() != Some(target.upcast_ref()) {
+                widget.unparent();
+                target.append(widget);
             }
         }
     }
@@ -122,17 +130,17 @@ fn resolve_visibility(layout: &ZoneLayout, id: &str, overrides: &HashMap<String,
         .unwrap_or_else(|| layout.is_visible(id))
 }
 
-/// Leak-safe reparent: put `widget` in `target` right after `previous` (first
-/// when `None`), moving it within `target` when it is already there, else
-/// `unparent`ing it from its old parent first.
+/// Leak-safe reparent: put `widget` in `target` right after `previous`, or
+/// first when `None`. Already in `target`, it moves only to follow
+/// `previous`, so the first control a zone names keeps its place.
 fn reparent_after(widget: &gtk::Widget, target: &gtk::Box, previous: Option<&gtk::Widget>) {
-    if let Some(parent) = widget.parent() {
-        if &parent == target.upcast_ref::<gtk::Widget>() {
+    if widget.parent().as_ref() == Some(target.upcast_ref()) {
+        if previous.is_some() {
             target.reorder_child_after(widget, previous);
-            return;
         }
-        widget.unparent();
+        return;
     }
+    widget.unparent();
     target.insert_child_after(widget, previous);
 }
 
@@ -311,6 +319,22 @@ mod tests {
             .slots
             .insert(end_key.clone(), vec!["fullscreen".into(), "play".into()]);
         apply_zone_layout(&swapped, &controls, &slot_refs, &fallback, &HashMap::new());
+
+        assert_eq!(end.first_child().as_ref(), Some(fullscreen.upcast_ref()));
+        assert_eq!(end.last_child().as_ref(), Some(play.upcast_ref()));
+
+        // `fullscreen` left to its fallback, already in `end`, keeps its place.
+        let mut fallback_only = moved.clone();
+        fallback_only
+            .slots
+            .insert(end_key.clone(), vec!["play".into()]);
+        apply_zone_layout(
+            &fallback_only,
+            &controls,
+            &slot_refs,
+            &fallback,
+            &HashMap::new(),
+        );
 
         assert_eq!(end.first_child().as_ref(), Some(fullscreen.upcast_ref()));
         assert_eq!(end.last_child().as_ref(), Some(play.upcast_ref()));
