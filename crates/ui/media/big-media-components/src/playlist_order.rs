@@ -3,9 +3,7 @@
 
 //! Playlist ordering helpers.
 //!
-//! Pure functions that build and apply playlist permutations. The shuffle
-//! uses an internal xorshift PRNG seeded from the system clock, which is
-//! fine for UI shuffle and unfit for cryptographic uses.
+//! Pure functions that sort playlists and apply permutations to them.
 
 use std::cmp::Ordering;
 use std::path::Path;
@@ -68,55 +66,6 @@ pub fn natural_path_cmp(a: &str, b: &str) -> Ordering {
             }
         }
     }
-}
-
-/// Build a Fisher–Yates shuffle of `0..count` with `current_index` pinned at index 0.
-///
-/// The returned vector is a permutation of `0..count` whose first element
-/// is always `current_index` (the currently-playing track), so shuffling
-/// never restarts the listener mid-song.
-#[must_use]
-pub fn shuffled_order(count: usize, current_index: usize) -> Vec<usize> {
-    let random_seed = std::time::SystemTime::now()
-        .duration_since(std::time::UNIX_EPOCH)
-        .unwrap_or_default()
-        .as_nanos() as u64;
-
-    shuffled_order_with_seed(count, current_index, random_seed)
-}
-
-fn shuffled_order_with_seed(
-    count: usize,
-    current_index: usize,
-    mut random_state: u64,
-) -> Vec<usize> {
-    let mut order: Vec<usize> = (0..count).collect();
-
-    for target_index in (1..count).rev() {
-        let swap_index =
-            (next_shuffle_random(&mut random_state) as usize) % shuffle_bucket_size(target_index);
-        order.swap(target_index, swap_index);
-    }
-
-    if let Some(current_index_position) = order
-        .iter()
-        .position(|&playlist_index| playlist_index == current_index)
-    {
-        order.swap(0, current_index_position);
-    }
-
-    order
-}
-
-fn next_shuffle_random(random_state: &mut u64) -> u64 {
-    *random_state ^= *random_state << 13;
-    *random_state ^= *random_state >> 7;
-    *random_state ^= *random_state << 17;
-    *random_state
-}
-
-fn shuffle_bucket_size(target_index: usize) -> usize {
-    target_index + 1
 }
 
 /// Sort `paths` in place by `sort_by` key and optional descending order.
@@ -295,48 +244,6 @@ mod tests {
 
     fn path_string(path: &Path) -> String {
         path.to_string_lossy().to_string()
-    }
-
-    #[test]
-    fn shuffle_keeps_current_first_and_count() {
-        let order = shuffled_order(10, 5);
-        assert_eq!(order.len(), 10);
-        assert_eq!(order[0], 5);
-        let mut sorted = order;
-        sorted.sort_unstable();
-        assert_eq!(sorted, (0..10).collect::<Vec<_>>());
-    }
-
-    #[test]
-    fn xorshift_sequence_matches_shuffle_contract() {
-        let mut random_state = 0x1234_5678_9abc_def0;
-
-        assert_eq!(
-            next_shuffle_random(&mut random_state),
-            0xfe80_0d65_69fa_1b4d
-        );
-        assert_eq!(
-            next_shuffle_random(&mut random_state),
-            0x0ce7_c497_a6b0_9c3b
-        );
-        assert_eq!(
-            next_shuffle_random(&mut random_state),
-            0x41df_b69a_11db_93c3
-        );
-        assert_eq!(shuffle_bucket_size(5), 6);
-    }
-
-    #[test]
-    fn seeded_shuffle_is_deterministic() {
-        assert_eq!(
-            shuffled_order_with_seed(6, 2, 0x1234_5678_9abc_def0),
-            vec![2, 4, 0, 3, 5, 1]
-        );
-        assert_eq!(
-            shuffled_order_with_seed(5, 4, 0xfeed_face_cafe_beef),
-            vec![4, 3, 1, 2, 0]
-        );
-        assert_eq!(shuffled_order_with_seed(4, 99, 0x1234), vec![2, 3, 1, 0]);
     }
 
     #[test]

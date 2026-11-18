@@ -3,28 +3,6 @@ use rusqlite::Connection;
 use crate::db::models::Track;
 use crate::db::queries::{row_to_track, track_columns};
 
-/// `(distinct value, track count)` pairs, alphabetic. `column` allowlisted
-/// (see `validate_column`); `filter_text` uses FTS if available, else LIKE.
-pub fn get_library_groups(
-    conn: &Connection,
-    column: &str,
-    filter_text: &str,
-    parent_filters: &[(&str, &str)],
-    age_secs: Option<i64>,
-) -> crate::Result<Vec<(String, i64)>> {
-    let col = validate_column(column)?;
-    let grp_expr = column_text_expr(col);
-    let mut sql = format!("SELECT {grp_expr} AS grp, COUNT(*) AS cnt FROM tracks WHERE 1=1");
-    let mut param_values: Vec<String> = Vec::new();
-
-    append_parent_filters(&mut sql, &mut param_values, parent_filters)?;
-    append_text_filter(conn, &mut sql, &mut param_values, filter_text);
-    append_age_filter(&mut sql, &mut param_values, age_secs);
-    sql.push_str(" GROUP BY grp ORDER BY grp COLLATE NOCASE");
-
-    query_string_count_pairs(conn, &sql, &param_values)
-}
-
 /// Backs the "All Tracks" tree node.
 pub fn get_library_track_count(
     conn: &Connection,
@@ -43,8 +21,7 @@ pub fn get_library_track_count(
     Ok(n)
 }
 
-/// Backs leaf nodes and the detail panel, with the same filter shape as
-/// `get_library_groups`.
+/// Backs leaf nodes and the detail panel.
 pub fn get_library_tracks(
     conn: &Connection,
     parent_filters: &[(&str, &str)],
@@ -120,9 +97,8 @@ fn append_parent_filters(
 
 /// SQL `COALESCE(...,'')` expression that always yields TEXT for a validated
 /// column. INTEGER columns (`year`/`bitrate`/`sample_rate`) are `CAST` to TEXT
-/// so they compare equal to the string params the library tree passes and so
-/// group keys decode as `String`; TEXT columns stay bare to keep their indexes
-/// usable. `col` must already be allowlisted by [`validate_column`].
+/// so they compare equal to the string params the library tree passes; TEXT
+/// columns stay bare to keep their indexes usable. `col` must already be allowlisted by [`validate_column`].
 fn column_text_expr(col: &str) -> String {
     match col {
         "year" | "bitrate" | "sample_rate" => format!("COALESCE(CAST({col} AS TEXT), '')"),

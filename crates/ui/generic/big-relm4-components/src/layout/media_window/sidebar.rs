@@ -62,22 +62,6 @@ impl BigMediaSidebarSpec {
         Self::default()
     }
 
-    /// Set the initial sidebar width range used by `AdwOverlaySplitView`.
-    #[must_use]
-    pub fn width_range(mut self, min_width: f64, max_width: f64) -> Self {
-        self.min_width = min_width;
-        self.max_width = max_width.max(min_width);
-        self.resize_limit = self.resize_limit.max(self.max_width);
-        self
-    }
-
-    /// Set the maximum width allowed while the user drags the resize handle.
-    #[must_use]
-    pub fn resize_limit(mut self, resize_limit: f64) -> Self {
-        self.resize_limit = resize_limit.max(self.max_width);
-        self
-    }
-
     /// Minimum sidebar width in pixels.
     #[must_use]
     pub fn min_width(self) -> f64 {
@@ -262,24 +246,11 @@ mod tests {
 
     #[test]
     fn sidebar_resize_width_clamps_to_media_policy() {
-        let spec = BigMediaSidebarSpec::new()
-            .width_range(260.0, 480.0)
-            .resize_limit(900.0);
+        let spec = BigMediaSidebarSpec::new();
 
         assert_eq!(spec.resized_width(480.0, 120.0), 600.0);
         assert_eq!(spec.resized_width(480.0, -500.0), 260.0);
         assert_eq!(spec.resized_width(480.0, 1000.0), 900.0);
-    }
-
-    #[test]
-    fn resize_limit_covers_max_width() {
-        let spec = BigMediaSidebarSpec::new()
-            .width_range(300.0, 640.0)
-            .resize_limit(400.0);
-
-        assert_eq!(spec.min_width(), 300.0);
-        assert_eq!(spec.max_width(), 640.0);
-        assert_eq!(spec.resize_limit_width(), 640.0);
     }
 
     #[test]
@@ -307,9 +278,7 @@ mod tests {
 
     #[test]
     fn sidebar_resize_keyboard_commands_apply_policy_limits() {
-        let spec = BigMediaSidebarSpec::new()
-            .width_range(260.0, 480.0)
-            .resize_limit(520.0);
+        let spec = BigMediaSidebarSpec::new();
 
         assert_eq!(
             BigMediaSidebarResizeCommand::ShrinkStep.resized_width(spec, 300.0),
@@ -324,8 +293,8 @@ mod tests {
             504.0
         );
         assert_eq!(
-            BigMediaSidebarResizeCommand::GrowStep.resized_width(spec, 510.0),
-            520.0
+            BigMediaSidebarResizeCommand::GrowStep.resized_width(spec, 890.0),
+            900.0
         );
         assert_eq!(
             BigMediaSidebarResizeCommand::Minimum.resized_width(spec, 400.0),
@@ -333,7 +302,7 @@ mod tests {
         );
         assert_eq!(
             BigMediaSidebarResizeCommand::Maximum.resized_width(spec, 400.0),
-            520.0
+            900.0
         );
     }
 }

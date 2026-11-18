@@ -67,10 +67,6 @@ pub fn parse_playlist_file(path: &str) -> Vec<String> {
     }
 }
 
-pub fn export_m3u(paths: &[String], output_path: &str) -> Result<()> {
-    write_m3u(Path::new(output_path), paths)
-}
-
 pub(crate) fn parse_pls_file(path: &Path) -> Vec<String> {
     let Some(content) = read_playlist_text(path) else {
         return Vec::new();
