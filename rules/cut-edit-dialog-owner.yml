@@ -1,0 +1,14 @@
+id: cut-edit-dialog-owner
+language: rust
+severity: error
+message: Edit a cut's times with big_player_ui::cut_edit_dialog::present_cut_edit_dialog
+note: >-
+  crates/ui/media/big-player-ui/src/cut_edit_dialog.rs applies the cut list's
+  rules: times in either order, and one minimum length.
+rule:
+  kind: string_literal
+  regex: '^"(Start|End) \(seconds\)"$'
+ignores:
+  - crates/ui/media/big-player-ui/src/cut_edit_dialog.rs
+  # legacy: migrate the audio player's Edit cut dialog to the owner.
+  - crates/big-audio-player/src/audio/ui/audio_shell/export.rs
