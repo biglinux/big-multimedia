@@ -28,7 +28,6 @@ fn build_player_window(
         .title(i18n::i18n("Big Audio Player"))
         .content(content)
         .build();
-    window.set_size_request(640, 400);
     // Big Gnome Center frosts the windows that carry their app's class
     // (GNOME 51, "Windows" under Frosted glass). It shows through the
     // theme's window colors; custom colors and the album art paint over it.

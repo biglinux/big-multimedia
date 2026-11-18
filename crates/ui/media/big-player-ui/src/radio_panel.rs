@@ -164,7 +164,6 @@ impl Component for RadioPanel {
         );
 
         let empty_state = widgets::build_empty_state(&sender);
-        root.append(&empty_state);
         let spinner = adw::Spinner::builder()
             .halign(gtk::Align::Center)
             .width_request(32)
@@ -173,9 +172,36 @@ impl Component for RadioPanel {
             .margin_bottom(16)
             .visible(false)
             .build();
-        root.append(&spinner);
         let skeleton = widgets::build_skeleton();
-        root.append(&skeleton);
+        // Scrolls so a short window can hold these states, and hides while none
+        // of them shows: an empty scrolled window still takes its scrollbar's height.
+        let states = gtk::Box::new(gtk::Orientation::Vertical, 0);
+        let states_scroll = gtk::ScrolledWindow::builder()
+            .hscrollbar_policy(gtk::PolicyType::Never)
+            .propagate_natural_height(true)
+            .child(&states)
+            .build();
+        for state in [
+            empty_state.upcast_ref::<gtk::Widget>(),
+            spinner.upcast_ref(),
+            skeleton.upcast_ref(),
+        ] {
+            states.append(state);
+            let states_scroll = states_scroll.downgrade();
+            state.connect_visible_notify(move |state| {
+                let (Some(scroll), Some(states)) = (states_scroll.upgrade(), state.parent()) else {
+                    return;
+                };
+                let mut child = states.first_child();
+                let mut any_visible = false;
+                while let Some(widget) = child {
+                    any_visible |= widget.get_visible();
+                    child = widget.next_sibling();
+                }
+                scroll.set_visible(any_visible);
+            });
+        }
+        root.append(&states_scroll);
 
         let saved_urls: Rc<RefCell<HashSet<String>>> = Rc::new(RefCell::new(HashSet::new()));
         let list = MediaListView::new(
