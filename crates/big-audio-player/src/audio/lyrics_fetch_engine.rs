@@ -34,29 +34,67 @@ pub(crate) fn fetch_lyrics_blocking(db: &DbHandle, file_path: &str) -> Option<St
     lyrics.map(|raw| strip_lrc_timestamps(&raw))
 }
 
-/// Strip LRC `[mm:ss.xx]` timestamps for plain-text display, preserving blank
-/// lines. Text without `[` brackets is returned unchanged.
+/// The rest of `line` after its leading `[mm:ss]` or `[mm:ss.xx]` stamp.
+fn after_lrc_stamp(line: &str) -> Option<&str> {
+    let rest = line.strip_prefix('[')?;
+    let minutes = rest.bytes().take_while(u8::is_ascii_digit).count();
+    let rest = rest
+        .get(minutes..)?
+        .strip_prefix(':')
+        .filter(|_| minutes > 0)?;
+    let (seconds, mut rest) = rest.split_at_checked(2)?;
+    if !seconds.bytes().all(|byte| byte.is_ascii_digit()) {
+        return None;
+    }
+    if let Some(fraction) = rest.strip_prefix('.') {
+        let digits = fraction.bytes().take_while(u8::is_ascii_digit).count();
+        if !(2..=3).contains(&digits) {
+            return None;
+        }
+        rest = &fraction[digits..];
+    }
+    rest.strip_prefix(']')
+}
+
+/// The LRC format's ID tags, which hold song details rather than lyrics.
+const LRC_ID_TAGS: [&str; 10] = [
+    "ar", "al", "ti", "au", "by", "length", "offset", "re", "tool", "ve",
+];
+
+fn is_lrc_id_tag(line: &str) -> bool {
+    line.strip_prefix('[')
+        .and_then(|rest| rest.strip_suffix(']'))
+        .and_then(|tag| tag.split_once(':'))
+        .is_some_and(|(key, _)| LRC_ID_TAGS.contains(&key))
+}
+
+/// Strip the leading LRC time stamps of each line for plain-text display,
+/// dropping ID tags and lines that held only stamps and keeping blank ones.
+/// Text with no line starting with a stamp is returned unchanged.
 fn strip_lrc_timestamps(raw: &str) -> String {
-    if !raw.contains('[') {
+    if !raw
+        .lines()
+        .any(|line| after_lrc_stamp(line.trim_start()).is_some())
+    {
         return raw.to_string();
     }
-    raw.lines()
-        .filter_map(|line| {
-            let t = line.trim();
-            if t.is_empty() {
-                return Some(String::new());
-            }
-            if let Some(pos) = t.find(']') {
-                let after = t[pos + 1..].trim();
-                if after.is_empty() {
-                    return None;
-                }
-                return Some(after.to_string());
-            }
-            Some(t.to_string())
-        })
-        .collect::<Vec<_>>()
-        .join("\n")
+    let mut lines = Vec::new();
+    for line in raw.split('\n') {
+        let (mut text, mut stamped) = (line.trim(), false);
+        while let Some(rest) = after_lrc_stamp(text) {
+            (text, stamped) = (rest, true);
+        }
+        let text = text.trim();
+        let lyric = if stamped {
+            !text.is_empty()
+        } else {
+            !is_lrc_id_tag(text)
+        };
+        if lyric {
+            lines.push(text);
+        }
+    }
+    lines.join("\n")
 }
 
 #[cfg(test)]
@@ -125,6 +163,92 @@ mod tests {
     fn timestamp_only_lines_dropped() {
         let lrc = "[00:01.00]\n[00:02.00]kept";
         assert_eq!(strip_lrc_timestamps(lrc), "kept");
+    }
+
+    #[test]
+    fn brackets_in_lyric_text_kept() {
+        let lrc = "[00:01.00]Hello [x] world\n[00:01.00][00:20.00]Chorus\n  Untimed [y]  ";
+        assert_eq!(
+            strip_lrc_timestamps(lrc),
+            "Hello [x] world\nChorus\nUntimed [y]"
+        );
+        assert_eq!(strip_lrc_timestamps("Hello [x] world"), "Hello [x] world");
+    }
+
+    #[test]
+    fn lrc_id_tags_dropped() {
+        let lrc = "[ti:Song]\n[ar:Someone]\n[length: 03:20]\n[00:01.00]Line\n[x:y]";
+        assert_eq!(strip_lrc_timestamps(lrc), "Line\n[x:y]");
+    }
+
+    /// xorshift64, so every run walks the same inputs.
+    struct Rng(u64);
+
+    impl Rng {
+        fn below(&mut self, bound: usize) -> usize {
+            self.0 ^= self.0 << 13;
+            self.0 ^= self.0 >> 7;
+            self.0 ^= self.0 << 17;
+            (self.0 % bound as u64) as usize
+        }
+
+        fn digits(&mut self, count: usize) -> String {
+            (0..count)
+                .map(|_| char::from(b'0' + self.below(10) as u8))
+                .collect()
+        }
+    }
+
+    /// `[mm:ss]` or `[mm:ss.xx]`, as the LRC format writes a line's time.
+    fn stamp(rng: &mut Rng) -> String {
+        let width = 1 + rng.below(3);
+        let minutes = rng.digits(width);
+        let seconds = format!("{:02}", rng.below(60));
+        let fraction = match rng.below(3) {
+            0 => String::new(),
+            1 => format!(".{}", rng.digits(2)),
+            _ => format!(".{}", rng.digits(3)),
+        };
+        format!("[{minutes}:{seconds}{fraction}]")
+    }
+
+    /// Lyric text that never starts with a stamp, brackets and colons included.
+    fn text(rng: &mut Rng) -> String {
+        const TOKENS: [&str; 12] = [
+            "Hello", "world", " ", "[x]", "[chorus]", "]", "[", ":", "00", "[1:2]", "日本", "é",
+        ];
+        (0..rng.below(6))
+            .map(|_| TOKENS[rng.below(TOKENS.len())])
+            .collect()
+    }
+
+    #[test]
+    fn stamped_lines_keep_their_text() {
+        let mut rng = Rng(0x9e37_79b9_7f4a_7c15);
+        for _ in 0..5000 {
+            let (mut lines, mut expected, mut any_stamp) = (Vec::new(), Vec::new(), false);
+            for _ in 0..=rng.below(5) {
+                let body = text(&mut rng);
+                if rng.below(3) == 0 {
+                    lines.push(body.clone());
+                    expected.push(body.trim().to_owned());
+                    continue;
+                }
+                any_stamp = true;
+                let stamps: String = (0..=rng.below(3)).map(|_| stamp(&mut rng)).collect();
+                lines.push(format!("{stamps}{body}"));
+                if !body.trim().is_empty() {
+                    expected.push(body.trim().to_owned());
+                }
+            }
+            let raw = lines.join("\n");
+            let wanted = if any_stamp {
+                expected.join("\n")
+            } else {
+                raw.clone()
+            };
+            assert_eq!(strip_lrc_timestamps(&raw), wanted, "input {raw:?}");
+        }
     }
 
     #[cfg(not(miri))]

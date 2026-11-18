@@ -60,14 +60,14 @@ pub fn pixelize_vf(block: f64) -> String {
 }
 
 /// mpv's `vf` property split into its entries. A graph comes either as
-/// `%N%` followed by N bytes taken as they are, or in brackets; a comma
-/// inside either belongs to the graph.
-fn vf_entries(vf: &str) -> Vec<&str> {
+/// `%N%` followed by N bytes taken as they are, or in balanced brackets that
+/// quote everything inside them; a comma inside either belongs to the graph.
+pub(crate) fn vf_entries(vf: &str) -> Vec<&str> {
     let bytes = vf.as_bytes();
     let (mut entries, mut start, mut depth, mut i) = (Vec::new(), 0, 0_usize, 0);
     while i < bytes.len() {
         match bytes[i] {
-            b'%' => {
+            b'%' if depth == 0 => {
                 let digits = bytes[i + 1..]
                     .iter()
                     .take_while(|b| b.is_ascii_digit())
@@ -75,7 +75,7 @@ fn vf_entries(vf: &str) -> Vec<&str> {
                 let close = i + 1 + digits;
                 if digits > 0 && bytes.get(close) == Some(&b'%') {
                     let length: usize = vf[i + 1..close].parse().unwrap_or(0);
-                    i = (close + 1 + length).min(bytes.len());
+                    i = (close + 1).saturating_add(length).min(bytes.len());
                     continue;
                 }
             }
@@ -169,6 +169,111 @@ mod tests {
         let vf = "@a:lavfi=graph=%11%x=1,y=2:z=3,@b:lavfi=[b=k=7]";
         assert_eq!(active_vf_graph(vf, "a").as_deref(), Some("x=1,y=2:z=3"));
         assert_eq!(active_vf_graph(vf, "b").as_deref(), Some("b=k=7"));
+    }
+
+    /// xorshift64, so every run walks the same inputs.
+    struct Rng(u64);
+
+    impl Rng {
+        fn below(&mut self, bound: usize) -> usize {
+            self.0 ^= self.0 << 13;
+            self.0 ^= self.0 >> 7;
+            self.0 ^= self.0 << 17;
+            (self.0 % bound as u64) as usize
+        }
+    }
+
+    const GRAPH_CHARS: [char; 14] = [
+        'a', 'z', '0', '9', '=', ':', ',', '%', ';', ' ', 'é', '日', '🎬', '\'',
+    ];
+
+    /// A graph whose brackets balance, which mpv's `[...]` quoting requires.
+    fn balanced_graph(rng: &mut Rng, depth: usize) -> String {
+        let mut graph = String::new();
+        for _ in 0..rng.below(8) {
+            if depth < 3 && rng.below(5) == 0 {
+                graph.push('[');
+                graph.push_str(&balanced_graph(rng, depth + 1));
+                graph.push(']');
+            } else {
+                graph.push(GRAPH_CHARS[rng.below(GRAPH_CHARS.len())]);
+            }
+        }
+        graph
+    }
+
+    /// A graph with lone brackets too, which only `%N%` quoting can carry.
+    fn any_graph(rng: &mut Rng) -> String {
+        let mut graph = balanced_graph(rng, 0);
+        for _ in 0..rng.below(3) {
+            let at = graph
+                .char_indices()
+                .map(|(index, _)| index)
+                .nth(rng.below(graph.chars().count() + 1))
+                .unwrap_or(graph.len());
+            graph.insert(at, if rng.below(2) == 0 { '[' } else { ']' });
+        }
+        graph
+    }
+
+    /// The two quotings mpv's option parser documents for a value holding
+    /// commas: `%N%` with N in bytes, and balanced brackets.
+    #[test]
+    fn quoted_graphs_read_back_unchanged() {
+        let mut rng = Rng(0x9e37_79b9_7f4a_7c15);
+        for _ in 0..2000 {
+            let mut pairs = Vec::new();
+            let mut entries = Vec::new();
+            for index in 0..=rng.below(4) {
+                let label =
+                    ["cas", "cascade", "a-b", "x_1"][rng.below(4)].to_owned() + &index.to_string();
+                let graph = if rng.below(2) == 0 {
+                    let graph = any_graph(&mut rng);
+                    entries.push(format!("@{label}:lavfi=graph=%{}%{graph}", graph.len()));
+                    graph
+                } else {
+                    let graph = balanced_graph(&mut rng, 0);
+                    entries.push(format!("@{label}:lavfi=[{graph}]"));
+                    graph
+                };
+                pairs.push((label, graph));
+            }
+            let vf = entries.join(",");
+            for (label, graph) in &pairs {
+                assert_eq!(
+                    active_vf_graph(&vf, label).as_deref(),
+                    Some(graph.as_str()),
+                    "label {label} in {vf:?}"
+                );
+            }
+        }
+    }
+
+    #[test]
+    fn vf_entries_take_any_string() {
+        let hostile = [
+            "%18446744073709551615%",
+            "%18446744073709551615%,x",
+            "%99999999999999999999999%",
+            "[[[,%3%é,]]]]],",
+            "%2%日",
+            "%",
+            "%%",
+            ",,",
+        ];
+        for vf in hostile {
+            vf_entries(vf);
+        }
+        let alphabet = ['%', '1', '8', '[', ']', ',', 'é', '日', '@', ':'];
+        let mut rng = Rng(0x2545_f491_4f6c_dd1d);
+        for _ in 0..20_000 {
+            let vf: String = (0..rng.below(24))
+                .map(|_| alphabet[rng.below(alphabet.len())])
+                .collect();
+            for entry in vf_entries(&vf) {
+                assert!(vf.contains(entry));
+            }
+        }
     }
 
     #[test]

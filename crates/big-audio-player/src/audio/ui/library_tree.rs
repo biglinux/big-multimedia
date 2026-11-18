@@ -48,8 +48,8 @@ use interaction::{
 pub(super) use model::LibraryTreeHandle;
 #[cfg(test)]
 use model::{
-    ChildStores, DIVIDER_THRESHOLD, LeafTracks, build_node, child_store, group_divider_letter,
-    to_browser_node,
+    ChildStores, DIVIDER_THRESHOLD, LeafTracks, build_node, child_store, child_store_key,
+    group_divider_letter, to_browser_node,
 };
 pub use model::{LibraryTreeNode, LibraryTreeSnapshot};
 #[cfg(test)]
@@ -254,11 +254,17 @@ mod tests {
                 12,
             ),
             (
-                library_tree_node(BrowserNodeKind::Artist, "Alice", "artist-key", 3, ""),
+                library_tree_node(
+                    BrowserNodeKind::Artist,
+                    "Alice",
+                    "artist-key",
+                    3,
+                    "genre:Rock",
+                ),
                 BrowserNodeKind::Artist,
                 "Alice",
                 "artist-key",
-                "",
+                "genre:Rock",
                 3,
             ),
             (
@@ -270,19 +276,19 @@ mod tests {
                 9,
             ),
             (
-                library_tree_node(BrowserNodeKind::Genre, "Jazz", "genre-key", 4, ""),
+                library_tree_node(BrowserNodeKind::Genre, "Jazz", "genre-key", 4, "year:1997"),
                 BrowserNodeKind::Genre,
                 "Jazz",
                 "genre-key",
-                "",
+                "year:1997",
                 4,
             ),
             (
-                library_tree_node(BrowserNodeKind::Year, "ignored", "1997", 6, ""),
+                library_tree_node(BrowserNodeKind::Year, "ignored", "1997", 6, "artist:Alice"),
                 BrowserNodeKind::Year,
                 "1997",
                 "1997",
-                "",
+                "artist:Alice",
                 6,
             ),
             (
@@ -475,6 +481,36 @@ mod tests {
 
     #[cfg(not(miri))]
     #[test]
+    fn same_named_albums_keep_own_tracks() {
+        let album = |artist: &str| LibraryTreeNode {
+            kind: BrowserNodeKind::Album,
+            label: "Greatest Hits".to_string(),
+            key: "Greatest Hits".to_string(),
+            secondary: format!("artist:{artist}"),
+            children: vec![LibraryTreeNode {
+                kind: BrowserNodeKind::File,
+                key: format!("/music/{artist}.flac"),
+                ..Default::default()
+            }],
+            ..Default::default()
+        };
+        let (mut stores, mut leaves) = (HashMap::new(), HashMap::new());
+        let built: Vec<_> = ["Alice", "Bob"]
+            .map(|artist| build_node(album(artist), &mut stores, &mut leaves))
+            .into_iter()
+            .collect();
+        for (browser_node, artist) in built.iter().zip(["Alice", "Bob"]) {
+            let store = child_store(&child_store_key(browser_node), &mut stores, &mut leaves);
+            let first = store.and_then(|store| child_browser_node(&store, 0));
+            assert_eq!(
+                first.map(|node| node.key()),
+                Some(format!("/music/{artist}.flac"))
+            );
+        }
+    }
+
+    #[cfg(not(miri))]
+    #[test]
     fn letter_dividers_need_threshold() -> std::result::Result<(), Box<dyn std::error::Error>> {
         let threshold_children = (0..DIVIDER_THRESHOLD)
             .map(|index| {
@@ -502,11 +538,7 @@ mod tests {
             &mut threshold_leaves,
         );
         let threshold_store = child_store(
-            &format!(
-                "{}:{}",
-                threshold_browser_node.kind() as u32,
-                threshold_browser_node.key()
-            ),
+            &child_store_key(&threshold_browser_node),
             &mut threshold_stores,
             &mut threshold_leaves,
         )
@@ -546,11 +578,7 @@ mod tests {
         let divider_browser_node =
             build_node(divider_parent, &mut divider_stores, &mut divider_leaves);
         let divider_store = child_store(
-            &format!(
-                "{}:{}",
-                divider_browser_node.kind() as u32,
-                divider_browser_node.key()
-            ),
+            &child_store_key(&divider_browser_node),
             &mut divider_stores,
             &mut divider_leaves,
         )
@@ -641,7 +669,7 @@ mod tests {
         assert!(tree_handle.leaf_tracks.borrow().is_empty());
         {
             let artist_store = child_store(
-                "1:artist-key",
+                &child_store_key(&root_browser_node),
                 &mut tree_handle.child_stores.borrow_mut(),
                 &mut tree_handle.leaf_tracks.borrow_mut(),
             )

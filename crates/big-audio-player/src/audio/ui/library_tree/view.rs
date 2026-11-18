@@ -287,7 +287,7 @@ fn build_tree_model(
             return None;
         }
         let store = child_store(
-            &child_store_key(node.kind(), &node.key()),
+            &child_store_key(node),
             &mut stores.borrow_mut(),
             &mut leaves.borrow_mut(),
         )?;
