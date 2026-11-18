@@ -34,7 +34,8 @@ pub struct LibraryTreeNode {
     pub key: String,
     /// Track count badge (0 = hidden).
     pub count: i32,
-    /// Secondary payload: album artist, or the tab-joined leaf metadata
+    /// Secondary payload: a nested group's parent `column:value` filters, the
+    /// "Various Artists" album marker, or the tab-joined leaf metadata
     /// (`album\tduration\tartist\tart_hash`) used by the file-leaf binder.
     pub secondary: String,
     /// Preloaded children (already grouped/sorted by the shell). Empty = leaf or
@@ -201,6 +202,10 @@ pub(super) fn to_browser_node(node: &LibraryTreeNode) -> BrowserNode {
     // `key` is authoritative for resolution (year stores the raw string).
     if !node.key.is_empty() && gnode.key() != node.key {
         gnode.set_key(node.key.as_str());
+    }
+    // A nested group's secondary holds the parent filters its tracks resolve by.
+    if !node.secondary.is_empty() && gnode.secondary() != node.secondary {
+        gnode.set_secondary(node.secondary.as_str());
     }
     gnode
 }

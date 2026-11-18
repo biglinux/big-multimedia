@@ -82,13 +82,19 @@ pub(crate) fn query_tracks_for_node(
                 _ => "artist",
             };
             let mut filters = vec![(column, node_key)];
-            if let Some(parent) = node_secondary.split_once(':') {
-                filters.push(parent);
-            }
+            filters.extend(
+                node_secondary
+                    .split(PARENT_FILTER_SEPARATOR)
+                    .filter_map(|filter| filter.split_once(':')),
+            );
             queries::get_library_tracks(conn, &filters, filter_text, age_secs).unwrap_or_default()
         }
     }
 }
+
+/// Joins the `column:value` filters of a group node's ancestors in its
+/// `secondary`: the ASCII unit separator, which tag text does not use.
+const PARENT_FILTER_SEPARATOR: char = '\u{1f}';
 
 /// Build the full nested library tree (the `SetLibraryTree` payload) from the
 /// group + recursive child queries: the producer side of the atomic preload.
@@ -175,7 +181,7 @@ pub(crate) fn try_build_library_tree_snapshot(
     }
 
     let all: Vec<&Track> = tracks.iter().collect();
-    level0_nodes.extend(group_nodes(grouping, 0, &all));
+    level0_nodes.extend(group_nodes(grouping, 0, &all, ""));
     Ok(LibraryTreeSnapshot {
         level0: level0_nodes,
     })
@@ -200,11 +206,13 @@ fn group_value(track: &Track, group_by: GroupBy) -> String {
 /// The group nodes of `tracks` at `level_idx`: distinct values in
 /// `COLLATE NOCASE` order (ASCII case folding, the SQL grouping's order),
 /// empty values left out, each counting all of its tracks. Past the last level
-/// the tracks become file leaves in their incoming order.
+/// the tracks become file leaves in their incoming order. `parent_filters`
+/// are the ancestors' filters, which each node carries in its `secondary`.
 fn group_nodes(
     grouping: &LibraryGrouping,
     level_idx: usize,
     tracks: &[&Track],
+    parent_filters: &str,
 ) -> Vec<LibraryTreeNode> {
     let group_by = grouping.level(level_idx);
     let mut groups: std::collections::HashMap<String, Vec<&Track>> =
@@ -227,20 +235,36 @@ fn group_nodes(
             .then_with(|| a.cmp(b))
     });
     let next_idx = level_idx + 1;
+    let kind = group_by.node_kind();
     groups
         .into_iter()
-        .map(|(value, members)| LibraryTreeNode {
-            kind: group_by.node_kind(),
-            count: members.len() as i32,
-            children: if next_idx >= grouping.depth() {
+        .map(|(value, members)| {
+            let children = if next_idx >= grouping.depth() {
                 members.iter().map(|track| file_node(track)).collect()
             } else {
-                group_nodes(grouping, next_idx, &members)
-            },
-            label: value.clone(),
-            key: value,
-            secondary: String::new(),
-            track: None,
+                let filter = format!("{}:{value}", group_by.column());
+                let filters = if parent_filters.is_empty() {
+                    filter
+                } else {
+                    format!("{parent_filters}{PARENT_FILTER_SEPARATOR}{filter}")
+                };
+                group_nodes(grouping, next_idx, &members, &filters)
+            };
+            // A format group is a `File` node, whose secondary is shown.
+            let secondary = if kind == BrowserNodeKind::File {
+                String::new()
+            } else {
+                parent_filters.to_owned()
+            };
+            LibraryTreeNode {
+                kind,
+                count: members.len() as i32,
+                children,
+                label: value.clone(),
+                key: value,
+                secondary,
+                track: None,
+            }
         })
         .collect()
 }
@@ -509,33 +533,65 @@ mod tests {
         Ok(())
     }
 
+    /// The node reached by following `path` of keys down the tree.
+    fn tree_node<'a>(nodes: &'a [LibraryTreeNode], path: &[&str]) -> &'a LibraryTreeNode {
+        let (first, rest) = path.split_first().expect("non-empty path");
+        let node = nodes
+            .iter()
+            .find(|node| node.key == *first && node.kind != BrowserNodeKind::All)
+            .unwrap_or_else(|| panic!("no node {first}"));
+        if rest.is_empty() {
+            node
+        } else {
+            tree_node(&node.children, rest)
+        }
+    }
+
     #[test]
-    fn secondary_adds_parent_column_filter() -> MediaResult<()> {
+    fn group_tracks_stay_under_parents() -> MediaResult<()> {
         let conn = setup_db()?;
-        seed_library(&conn)?;
-        let g = artist_grouping();
-        // Album "Debut" narrowed by parent artist=Alice keeps both tracks.
-        let matched = query_tracks_for_node(
-            &conn,
-            BrowserNodeKind::Album,
-            "Debut",
-            "artist:Alice",
-            "",
-            None,
-            &g,
-        );
-        assert_eq!(matched.len(), 2);
-        // Narrowed by a non-matching parent artist removes them.
-        let none = query_tracks_for_node(
-            &conn,
-            BrowserNodeKind::Album,
-            "Debut",
-            "artist:Bob",
-            "",
-            None,
-            &g,
-        );
-        assert!(none.is_empty());
+        for (path, artist, genre) in [
+            ("/a1", "Alice", "Rock"),
+            ("/a2", "Alice", "Pop"),
+            ("/b1", "Bob", "Rock"),
+        ] {
+            insert_track(&conn, &track(path, artist, artist, "Hits", genre, 2000))?;
+        }
+        let artist_album = [GroupBy::Artist, GroupBy::Album, GroupBy::None];
+        let artist_year_album = [GroupBy::Artist, GroupBy::Year, GroupBy::Album];
+        let genre_artist = [GroupBy::Genre, GroupBy::Artist, GroupBy::None];
+        let cases: [(_, &[&str], &[&str]); 6] = [
+            (artist_album, &["Alice", "Hits"], &["/a1", "/a2"]),
+            (artist_album, &["Bob", "Hits"], &["/b1"]),
+            (
+                artist_year_album,
+                &["Alice", "2000", "Hits"],
+                &["/a1", "/a2"],
+            ),
+            (artist_year_album, &["Bob", "2000", "Hits"], &["/b1"]),
+            (artist_year_album, &["Bob", "2000"], &["/b1"]),
+            (genre_artist, &["Rock", "Alice"], &["/a1"]),
+        ];
+        for (levels, path, expected) in cases {
+            let grouping = LibraryGrouping { levels };
+            let tree = build_library_tree_snapshot(&conn, &grouping, "", None);
+            let node = tree_node(&tree.level0, path);
+            let tracks = query_tracks_for_node(
+                &conn,
+                node.kind,
+                &node.key,
+                &node.secondary,
+                "",
+                None,
+                &grouping,
+            );
+            let mut paths: Vec<_> = tracks
+                .iter()
+                .map(|track| track.file_path.as_str())
+                .collect();
+            paths.sort_unstable();
+            assert_eq!(paths, expected, "{levels:?} {path:?}");
+        }
         Ok(())
     }
 

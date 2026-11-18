@@ -254,11 +254,17 @@ mod tests {
                 12,
             ),
             (
-                library_tree_node(BrowserNodeKind::Artist, "Alice", "artist-key", 3, ""),
+                library_tree_node(
+                    BrowserNodeKind::Artist,
+                    "Alice",
+                    "artist-key",
+                    3,
+                    "genre:Rock",
+                ),
                 BrowserNodeKind::Artist,
                 "Alice",
                 "artist-key",
-                "",
+                "genre:Rock",
                 3,
             ),
             (
@@ -270,19 +276,19 @@ mod tests {
                 9,
             ),
             (
-                library_tree_node(BrowserNodeKind::Genre, "Jazz", "genre-key", 4, ""),
+                library_tree_node(BrowserNodeKind::Genre, "Jazz", "genre-key", 4, "year:1997"),
                 BrowserNodeKind::Genre,
                 "Jazz",
                 "genre-key",
-                "",
+                "year:1997",
                 4,
             ),
             (
-                library_tree_node(BrowserNodeKind::Year, "ignored", "1997", 6, ""),
+                library_tree_node(BrowserNodeKind::Year, "ignored", "1997", 6, "artist:Alice"),
                 BrowserNodeKind::Year,
                 "1997",
                 "1997",
-                "",
+                "artist:Alice",
                 6,
             ),
             (
