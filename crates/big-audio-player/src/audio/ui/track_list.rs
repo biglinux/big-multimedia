@@ -140,7 +140,9 @@ impl Column {
             Self::Title => track.display_title().to_owned(),
             Self::Artist => track.display_artist().to_owned(),
             Self::Album => track.display_album().to_owned(),
-            Self::Duration if track.duration_secs > 0.0 => track.duration_display(),
+            Self::Duration if track.duration_secs > 0.0 => {
+                big_media_components::time::playback_time(track.duration_secs)
+            }
             Self::Genre => track.genre.clone().unwrap_or_default(),
             Self::Year => track.year.map(|year| year.to_string()).unwrap_or_default(),
             Self::Bitrate => track
@@ -451,7 +453,9 @@ impl ItemPresenter for TrackPresenter {
             said.push(track.display_artist().to_owned());
         }
         if track.duration_secs > 0.0 {
-            said.push(track.duration_display());
+            said.push(big_media_components::time::playback_time(
+                track.duration_secs,
+            ));
         }
         if track.rating > 0 {
             said.push(i18n("{} of 5 stars").replace("{}", &track.rating.to_string()));
@@ -708,6 +712,15 @@ mod tests {
         assert_eq!(row.accessible_description.as_deref(), Some("Paused"));
         let row = queue_row(PlaybackStatus::Stopped);
         assert_eq!(row.accessible_description, None);
+    }
+
+    #[test]
+    fn duration_over_an_hour_shows_hours() {
+        let mut long = track("Long", 0);
+        long.duration_secs = 3661.0;
+        assert_eq!(Column::Duration.cell(&long, 0), "1:01:01");
+        long.duration_secs = 0.0;
+        assert_eq!(Column::Duration.cell(&long, 0), "");
     }
 
     #[test]
