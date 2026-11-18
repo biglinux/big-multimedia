@@ -198,7 +198,7 @@ pub(super) fn wire_neighbour_preview(button: &gtk::Button, mpv: &MpvSlot, step: 
             };
             // The preview says "Next" and where: a tooltip over it would too.
             button.set_has_tooltip(false);
-            name.set_label(&display_name(&path));
+            name.set_label(&crate::media::playlist::display_name(&path));
             if shown.borrow().as_deref() != Some(path.as_str()) {
                 shown.replace(Some(path.clone()));
                 thumb.set_paintable(gdk::Paintable::NONE);
@@ -242,17 +242,6 @@ pub(super) fn wire_neighbour_preview(button: &gtk::Button, mpv: &MpvSlot, step: 
     });
     motion.connect_leave(move |_| popover.popdown());
     button.add_controller(motion);
-}
-
-/// A playlist entry as a person names it: the file name without its
-/// extension, or a stream's last path segment.
-fn display_name(path: &str) -> String {
-    let trimmed = path.trim_end_matches('/');
-    let last = trimmed.rsplit('/').next().unwrap_or(trimmed);
-    std::path::Path::new(last).file_stem().map_or_else(
-        || last.to_string(),
-        |stem| stem.to_string_lossy().into_owned(),
-    )
 }
 
 /// Title of the last chapter at or before `time` (non-empty), else `None`.
