@@ -3,7 +3,7 @@
 //! host shell seeks where [`play_only_cuts_seek`] says.
 
 /// The shortest cut, in milliseconds: anything shorter would end within
-/// [`PLAY_ONLY_CUTS_TOLERANCE`] of its start and never play.
+/// the play-only-cuts tolerance of its start and never play.
 pub const MIN_CUT_MILLISECONDS: f64 = 100.0;
 
 /// How far from a cut's edge, in seconds, the playhead still counts as on it;
