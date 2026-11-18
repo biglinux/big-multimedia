@@ -286,7 +286,7 @@ mod tests {
     }
 
     #[test]
-    fn single_key_and_ctrl_rows_keep_their_own_keys() {
+    fn track_rows_keep_separate_keys() {
         let map =
             big_app_kit::keybindings::build_accel_map(SHORTCUTS, "next-track=<Ctrl><Alt>n", false);
         let lookup = |key, state| lookup_shortcut(&map, key, state);
