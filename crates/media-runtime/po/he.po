@@ -15,7 +15,8 @@ msgstr ""
 "MIME-Version: 1.0\n"
 "Content-Type: text/plain; charset=UTF-8\n"
 "Content-Transfer-Encoding: 8bit\n"
-"Plural-Forms: nplurals=2; plural=(n != 1);\n"
+"Plural-Forms: nplurals=4; plural=(n==1 ? 0 : n==2 ? 1 : n>10 && n%10==0 ? "
+"2 : 3);\n"
 
 #: crates/big-audio-player/src/audio/app.rs:16
 msgid ""
@@ -830,6 +831,8 @@ msgid "{count} track imported"
 msgid_plural "{count} tracks imported"
 msgstr[0] "רצועות יובאו"
 msgstr[1] "רצועות יובאו"
+msgstr[2] "רצועות יובאו"
+msgstr[3] "רצועות יובאו"
 
 #: crates/big-audio-player/src/audio/ui/audio_shell/update.rs:153
 msgid "Library updated"
@@ -1146,6 +1149,8 @@ msgid "{count} track"
 msgid_plural "{count} tracks"
 msgstr[0] ""
 msgstr[1] ""
+msgstr[2] ""
+msgstr[3] ""
 
 #: crates/big-audio-player/src/audio/ui/mod.rs:59
 #, rust-format
@@ -1153,6 +1158,8 @@ msgid "{count} track · {duration}"
 msgid_plural "{count} tracks · {duration}"
 msgstr[0] ""
 msgstr[1] ""
+msgstr[2] ""
+msgstr[3] ""
 
 #: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:35
 msgid "Drag and drop files to create a playlist"
@@ -2286,6 +2293,8 @@ msgid "{} channel"
 msgid_plural "{} channels"
 msgstr[0] "ערוץ {}"
 msgstr[1] "{} ערוצים"
+msgstr[2] "{} ערוצים"
+msgstr[3] "{} ערוצים"
 
 #: crates/big-video-player/src/video/ui/iptv/channel_list.rs:224
 #: crates/ui/media/big-player-ui/src/radio_panel/methods.rs:126
@@ -3563,6 +3572,8 @@ msgid "{} video"
 msgid_plural "{} videos"
 msgstr[0] "סרטון {}"
 msgstr[1] "{} סרטונים"
+msgstr[2] "{} סרטונים"
+msgstr[3] "{} סרטונים"
 
 #: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/metadata.rs:155
 #, rust-format
@@ -3581,6 +3592,8 @@ msgid "{} selected"
 msgid_plural "{} selected"
 msgstr[0] "{} נבחר"
 msgstr[1] "{} נבחרו"
+msgstr[2] "{} נבחרו"
+msgstr[3] "{} נבחרו"
 
 #: crates/big-video-player/src/video/ui/video_browser_sidebar/fileops.rs:53
 msgid "Send to converter"
@@ -3622,6 +3635,8 @@ msgid "Could not move {failed} of {total} file"
 msgid_plural "Could not move {failed} of {total} files"
 msgstr[0] "לא ניתן היה להעביר לאשפה"
 msgstr[1] "לא ניתן היה להעביר לאשפה"
+msgstr[2] "לא ניתן היה להעביר לאשפה"
+msgstr[3] "לא ניתן היה להעביר לאשפה"
 
 #: crates/big-video-player/src/video/ui/video_browser_sidebar/library.rs:118
 msgid "Home folder"
@@ -3641,6 +3656,8 @@ msgid "{} more in your folders"
 msgid_plural "{} more in your folders"
 msgstr[0] "עוד {} בתיקיות שלכם"
 msgstr[1] "עוד {} בתיקיות שלכם"
+msgstr[2] "עוד {} בתיקיות שלכם"
+msgstr[3] "עוד {} בתיקיות שלכם"
 
 #: crates/big-video-player/src/video/ui/video_browser_sidebar/library.rs:575
 #, rust-format
@@ -3648,6 +3665,8 @@ msgid "{} video found"
 msgid_plural "{} videos found"
 msgstr[0] "נמצא סרטון {}"
 msgstr[1] "נמצאו {} סרטונים"
+msgstr[2] "נמצאו {} סרטונים"
+msgstr[3] "נמצאו {} סרטונים"
 
 #: crates/big-video-player/src/video/ui/video_browser_sidebar/library.rs:590
 #, rust-format
@@ -3833,6 +3852,8 @@ msgid "{n} change"
 msgid_plural "{n} changes"
 msgstr[0] "שינוי {n}"
 msgstr[1] "{n} שינויים"
+msgstr[2] "{n} שינויים"
+msgstr[3] "{n} שינויים"
 
 #: crates/big-video-player/src/video/ui/video_shell/adjustments.rs:173
 #, fuzzy, rust-format
@@ -4188,6 +4209,8 @@ msgid "{} file moved to trash"
 msgid_plural "{} files moved to trash"
 msgstr[0] "קובץ {} הועבר לאשפה"
 msgstr[1] "{} קבצים הועברו לאשפה"
+msgstr[2] "{} קבצים הועברו לאשפה"
+msgstr[3] "{} קבצים הועברו לאשפה"
 
 #: crates/big-video-player/src/video/ui/video_shell/render.rs:81
 #, rust-format
@@ -4591,6 +4614,8 @@ msgid_plural ""
 "{} entries were skipped because they are not supported streams or files."
 msgstr[0] ""
 msgstr[1] ""
+msgstr[2] ""
+msgstr[3] ""
 
 #: crates/media-runtime/src/media/metadata_cache/display.rs:21
 #, rust-format
@@ -4598,6 +4623,8 @@ msgid "{} audio track"
 msgid_plural "{} audio tracks"
 msgstr[0] "{} רצועת שמע"
 msgstr[1] "{} רצועות שמע"
+msgstr[2] "{} רצועות שמע"
+msgstr[3] "{} רצועות שמע"
 
 #: crates/media-runtime/src/media/metadata_cache/display.rs:28
 #, rust-format
@@ -4605,6 +4632,8 @@ msgid "{} subtitle"
 msgid_plural "{} subtitles"
 msgstr[0] "{} כתובית"
 msgstr[1] "{} כתוביות"
+msgstr[2] "{} כתוביות"
+msgstr[3] "{} כתוביות"
 
 #: crates/media-runtime/src/media/playlist_export.rs:16
 msgid "M3U8 Playlist"
