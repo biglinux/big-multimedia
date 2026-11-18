@@ -125,23 +125,21 @@ impl AudioShell {
                 // An import changes which tracks a playlist can offer, so the
                 // open dialog goes stale exactly as it does after `ScanFinished`.
                 self.refresh_playlist_dialog_entries(&sender);
+                // The bar has room for about 20 characters; the dialog says the rest.
                 let status = if report.cancelled {
-                    i18n("Scan cancelled. Earlier confirmed imports were kept.")
+                    i18n("Scan cancelled")
                 } else if report.failed {
-                    i18n(
-                        "Scan incomplete. Earlier confirmed imports were kept; check storage and retry.",
-                    )
+                    i18n("Scan incomplete")
                 } else {
-                    i18n("Library scan finished.")
+                    ni18n(
+                        "{count} track imported",
+                        "{count} tracks imported",
+                        report.imported as u64,
+                    )
+                    .replace("{count}", &report.imported.to_string())
                 };
                 self.playback_bar
-                    .emit(AudioPlaybackBarInput::SetStatus(format!(
-                        "{status} {}: {} · {}: {}",
-                        i18n("Imported"),
-                        report.imported,
-                        i18n("Skipped"),
-                        report.skipped
-                    )));
+                    .emit(AudioPlaybackBarInput::SetStatus(status));
             }
             AudioShellInput::ScanFinished(complete) => {
                 self.playback_bar.emit(AudioPlaybackBarInput::SetStatus(if complete {

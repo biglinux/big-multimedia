@@ -91,6 +91,8 @@ pub(super) fn show(parent: &gtk::Window, control: Arc<ScanControl>) {
         skipped: skipped.downgrade(),
     };
     let weak_cancel = cancel.downgrade();
+    let weak_explanation = explanation.downgrade();
+    let weak_dialog = dialog.downgrade();
     let weak_spinner = spinner.downgrade();
     let weak_outcome = outcome.downgrade();
     let timer = std::rc::Rc::new(std::cell::RefCell::new(None::<glib::SourceId>));
@@ -105,6 +107,8 @@ pub(super) fn show(parent: &gtk::Window, control: Arc<ScanControl>) {
         let status = weak_status.clone();
         let counts = weak_counts.clone();
         let cancel = weak_cancel.clone();
+        let explanation = weak_explanation.clone();
+        let dialog = weak_dialog.clone();
         let spinner = weak_spinner.clone();
         let outcome = weak_outcome.clone();
         let mut last = None;
@@ -161,6 +165,13 @@ pub(super) fn show(parent: &gtk::Window, control: Arc<ScanControl>) {
                 outcome.add_css_class(class);
                 outcome.set_visible(true);
                 spinner.set_visible(false);
+                // A finished scan has nothing left to cancel.
+                if let Some(explanation) = explanation.upgrade() {
+                    explanation.set_visible(false);
+                }
+                if let Some(dialog) = dialog.upgrade() {
+                    dialog.set_title(&i18n("Library Scan"));
+                }
             }
             if finished {
                 glib::ControlFlow::Break
