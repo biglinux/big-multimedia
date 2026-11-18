@@ -535,8 +535,8 @@ msgstr ""
 #: crates/big-audio-player/src/audio/ui/audio_shell/playback.rs:143
 msgid "The library could not be read, so lyrics were not searched online."
 msgstr ""
-"Не удалось прочитать библиотеку, поэтому тексты песен не искались в "
-"интернете."
+"Не удалось прочитать библиотеку, поэтому поиск текстов песен в интернете не "
+"выполнялся."
 
 #: crates/big-audio-player/src/audio/ui/audio_shell/playback.rs:157
 msgid "Seek position"
@@ -752,7 +752,7 @@ msgstr "Не удалось удалить станцию."
 
 #: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:230
 msgid "There is no Music or home folder to save recordings in."
-msgstr "Нет папки «Музыка» или домашней папки для сохранения записей."
+msgstr "Нет ни папки «Музыка», ни домашней папки для сохранения записей."
 
 #: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:276
 #: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:284
@@ -2866,7 +2866,7 @@ msgid ""
 "There is no Pictures or home folder to save screenshots in. Choose a folder "
 "in Preferences."
 msgstr ""
-"Нет папки «Изображения» или домашней папки для сохранения снимков экрана. "
+"Нет ни папки «Изображения», ни домашней папки для сохранения снимков экрана. "
 "Выберите папку в настройках."
 
 #: crates/big-video-player/src/video/ui/menu_dialogs.rs:127
