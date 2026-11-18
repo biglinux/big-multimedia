@@ -21,15 +21,11 @@ use big_relm4_components::layout::{
 
 /// The one entry of a small dialog, Enter applying it.
 pub(crate) fn dialog_entry_row(title: &str) -> adw::EntryRow {
-    let entry = adw::EntryRow::builder()
-        .title(title)
-        .show_apply_button(true)
-        .build();
-    // libadwaita labels the row by both of its title labels, so its name
-    // read the title twice.
-    entry.reset_relation(gtk::AccessibleRelation::LabelledBy);
-    entry.update_property(&[gtk::accessible::Property::Label(title)]);
-    entry
+    big_relm4_components::input::entry_row::build(
+        adw::EntryRow::builder()
+            .title(title)
+            .show_apply_button(true),
+    )
 }
 
 /// mpv took the request but did not save the picture; `error` says why.

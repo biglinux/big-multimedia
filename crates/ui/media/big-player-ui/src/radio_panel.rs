@@ -5,7 +5,7 @@
 //! sections (My Stations + Explore) as a single recycling `ListView`, so only
 //! the ~visible rows become widgets and only their favicons are fetched (in
 //! `bind`, off-thread, cached). Replacing the data is a model swap, not a widget
-//! rebuild; a track change updates only the realized rows' highlight. The old
+//! rebuild; a track change rebinds only the realized rows. The old
 //! build-all `ListBox` + per-row favicon fetch storm is gone.
 //!
 //! Push-model: API search/discovery (off-thread) + explore disk cache are
@@ -14,7 +14,7 @@
 //! shell's DB (emit Save/DeleteStation, RequestStations; receive
 //! RefreshStations). Manual `impl Component` idiom; mirrors `podcast_panel.rs`.
 
-use std::cell::RefCell;
+use std::cell::{Cell, RefCell};
 use std::collections::HashSet;
 use std::rc::Rc;
 
@@ -32,9 +32,9 @@ mod widgets;
 
 use methods::QueryKind;
 
-/// Row tag: a saved "My Stations" entry (delete + record actions).
+/// Row tag: a saved "My Stations" entry (delete action).
 pub(super) const TAG_SAVED: u32 = 1;
-/// Row tag: an Explore result (record + add actions).
+/// Row tag: an Explore result (add action).
 pub(super) const TAG_EXPLORE: u32 = 2;
 
 /// Messages accepted by [`RadioPanel`].
@@ -78,6 +78,8 @@ pub enum RadioPanelInput {
     AddDialogRequested,
     /// Record toggle: `true` = start, `false` = stop.
     RecordToggle(bool),
+    /// Shell started (`true`) or stopped (`false`) recording the playing stream.
+    RecordingChanged(bool),
 }
 
 /// Intents emitted by the radio panel for the shell.
@@ -126,8 +128,11 @@ pub struct RadioPanel {
     filter: String,
     search_gen: u32,
     search_debounce: Option<glib::SourceId>,
-    /// The stream playing now; empty while a file plays.
-    playing_stream: String,
+    /// The stream playing now; empty while a file plays. Its row alone offers
+    /// recording, which captures whatever plays.
+    playing_stream: Rc<RefCell<String>>,
+    /// Whether the shell is recording the playing stream.
+    recording: Rc<Cell<bool>>,
 }
 
 impl Drop for RadioPanel {
@@ -164,7 +169,6 @@ impl Component for RadioPanel {
         );
 
         let empty_state = widgets::build_empty_state(&sender);
-        root.append(&empty_state);
         let spinner = adw::Spinner::builder()
             .halign(gtk::Align::Center)
             .width_request(32)
@@ -173,17 +177,46 @@ impl Component for RadioPanel {
             .margin_bottom(16)
             .visible(false)
             .build();
-        root.append(&spinner);
         let skeleton = widgets::build_skeleton();
-        root.append(&skeleton);
+        // Scrolls so a short window can hold these states, and hides while none
+        // of them shows: an empty scrolled window still takes its scrollbar's height.
+        let states = gtk::Box::new(gtk::Orientation::Vertical, 0);
+        let states_scroll = gtk::ScrolledWindow::builder()
+            .hscrollbar_policy(gtk::PolicyType::Never)
+            .propagate_natural_height(true)
+            .child(&states)
+            .build();
+        for state in [
+            empty_state.upcast_ref::<gtk::Widget>(),
+            spinner.upcast_ref(),
+            skeleton.upcast_ref(),
+        ] {
+            states.append(state);
+            let states_scroll = states_scroll.downgrade();
+            state.connect_visible_notify(move |state| {
+                let (Some(scroll), Some(states)) = (states_scroll.upgrade(), state.parent()) else {
+                    return;
+                };
+                let mut child = states.first_child();
+                let mut any_visible = false;
+                while let Some(widget) = child {
+                    any_visible |= widget.get_visible();
+                    child = widget.next_sibling();
+                }
+                scroll.set_visible(any_visible);
+            });
+        }
+        root.append(&states_scroll);
 
         let saved_urls: Rc<RefCell<HashSet<String>>> = Rc::new(RefCell::new(HashSet::new()));
+        let playing_stream = Rc::new(RefCell::new(String::new()));
+        let recording = Rc::new(Cell::new(false));
         let list = MediaListView::new(
             {
                 let sender = sender.clone();
                 move |url| sender.input(RadioPanelInput::PlayClicked(url.to_owned()))
             },
-            widgets::row_suffix_builder(&sender, &saved_urls),
+            widgets::row_suffix_builder(&sender, &saved_urls, &playing_stream, &recording),
         );
         let scroll = gtk::ScrolledWindow::builder()
             .vexpand(true)
@@ -229,7 +262,8 @@ impl Component for RadioPanel {
                 filter: String::new(),
                 search_gen: 0,
                 search_debounce: None,
-                playing_stream: String::new(),
+                playing_stream,
+                recording,
             },
             widgets: (),
         }
@@ -270,9 +304,13 @@ impl Component for RadioPanel {
                 }
             }
             RadioPanelInput::NowPlayingChanged { url, is_stream } => {
-                self.playing_stream = if is_stream { url } else { String::new() };
-                // Highlight only: no rebuild, no full-tree walk.
-                self.list.set_now_playing(&self.playing_stream);
+                *self.playing_stream.borrow_mut() = if is_stream { url } else { String::new() };
+                // Rebinds the visible rows, moving the record button with the stream.
+                self.rebuild_list();
+            }
+            RadioPanelInput::RecordingChanged(recording) => {
+                self.recording.set(recording);
+                self.rebuild_list();
             }
             RadioPanelInput::SearchQueryChanged(query) => {
                 if let Some(id) = self.search_debounce.take() {
@@ -353,7 +391,7 @@ impl RadioPanel {
         let rows = self.build_rows();
         let has_content = !rows.is_empty();
         self.list.set_items(rows);
-        self.list.set_now_playing(&self.playing_stream);
+        self.list.set_now_playing(&self.playing_stream.borrow());
 
         let loading = self.spinner.is_visible();
         self.empty_state.set_visible(

@@ -3,7 +3,7 @@ use super::input::SHELL_INPUT;
 use super::mpris::build_mpris_service;
 use super::playback::transport_labels;
 use super::*;
-use big_media_components::surface::{MediaNotice, create_media_root};
+use big_media_components::surface::{MediaNotice, create_media_root, make_banner_title_selectable};
 use big_relm4_components::input::button_content::{BigButtonContentSpec, build_button_content};
 use big_relm4_components::layout::toolbar_pane::{
     BigToolbarHeader, BigToolbarHeaderSpec, BigToolbarPane, BigToolbarPaneSpec,
@@ -72,8 +72,14 @@ impl Component for AudioShell {
             sender.input_sender(),
             AudioShellInput::PlaylistLibraryDialog,
         );
+        // The sidebar sits beside the queue, or folds over it when both do not fit.
+        let split_view = adw::OverlaySplitView::builder()
+            .min_sidebar_width(360.0)
+            .max_sidebar_width(400.0)
+            .sidebar_width_fraction(0.33)
+            .build();
         let playlist = PlaylistPanel::builder()
-            .launch(())
+            .launch(split_view.clone())
             .forward(sender.input_sender(), AudioShellInput::Playlist);
         let trim = AudioTrimBar::builder()
             .launch(BigAudioTrimBarLabels::translated(i18n))
@@ -132,9 +138,8 @@ impl Component for AudioShell {
         lyrics_paned.set_end_child(Some(playlist.widget()));
         lyrics.widget().set_visible(false);
 
-        // LEFT sidebar pane (distinct `.sidebar-pane` colour, always visible):
-        // Music | Files | Radio | Podcasts in a view stack switched from its
-        // own header.
+        // LEFT sidebar pane (distinct `.sidebar-pane` colour): Music | Files |
+        // Radio | Podcasts in a view stack switched from its own header.
         let view_stack = gtk::Stack::new();
         view_stack
             .add_titled(library.widget(), Some("music"), &i18n("Music"))
@@ -207,11 +212,7 @@ impl Component for AudioShell {
             BigToolbarHeaderSpec::new().show_end_title_buttons(false),
             &tab_bar,
         );
-        let sidebar_pane = BigToolbarPane::new(
-            BigToolbarPaneSpec::new()
-                .css_class("sidebar-pane")
-                .width_request(360),
-        );
+        let sidebar_pane = BigToolbarPane::new(BigToolbarPaneSpec::new().css_class("sidebar-pane"));
         sidebar_pane.add_top_bar(sidebar_header.root());
         sidebar_pane.set_content(&view_stack);
 
@@ -282,6 +283,7 @@ impl Component for AudioShell {
         content_box.append(&lyrics_paned);
         content_box.append(downloads.widget());
         let queue_save_banner = adw::Banner::new("");
+        make_banner_title_selectable(&queue_save_banner);
         content_box.append(&queue_save_banner);
         // Messages take a row above the transport instead of covering it.
         let notice = MediaNotice::new();
@@ -309,18 +311,25 @@ impl Component for AudioShell {
         content_pane.add_bottom_bar(&tv_card.root);
         content_pane.add_bottom_bar(playback_bar.widget());
 
-        let main_paned = gtk::Paned::builder()
-            .orientation(gtk::Orientation::Horizontal)
-            .shrink_start_child(false)
-            .shrink_end_child(false)
-            .resize_start_child(false)
-            .resize_end_child(true)
-            .position(400)
+        split_view.set_sidebar(Some(sidebar_pane.root()));
+        split_view.set_content(Some(content_pane.root()));
+        // 640 px fits the queue and the transport bar with the sidebar folded;
+        // 900 sp leaves both panes their minimum side by side.
+        let responsive = adw::BreakpointBin::builder()
+            .width_request(640)
+            .height_request(400)
+            .hexpand(true)
+            .vexpand(true)
+            .child(&split_view)
             .build();
-        main_paned.set_start_child(Some(sidebar_pane.root()));
-        main_paned.set_end_child(Some(content_pane.root()));
-
-        root.append(&main_paned);
+        let fold_sidebar = adw::Breakpoint::new(adw::BreakpointCondition::new_length(
+            adw::BreakpointConditionLengthType::MaxWidth,
+            900.0,
+            adw::LengthUnit::Sp,
+        ));
+        fold_sidebar.add_setter(&split_view, "collapsed", Some(&true.to_value()));
+        big_gtk_kit::breakpoint::add(&responsive, fold_sidebar);
+        root.append(&responsive);
 
         // App stylesheet (lyrics/radio/queue CSS classes).
         let provider = gtk::CssProvider::new();

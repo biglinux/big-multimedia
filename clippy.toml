@@ -29,7 +29,9 @@ disallowed-methods = [
     # From big-gtk-kit/clippy.toml.
     { path = "gtk4::prelude::AccessibleExtManual::update_relation", reason = "leaks the list of targets on every call (gtk-rs 0.11); use `big_gtk_kit::accessible::relate`" },
     { path = "libadwaita::PasswordEntryRow::new", reason = "leaks its buffer and the password in it (libadwaita 1.9); use `big_gtk_kit::password::password_row(adw::PasswordEntryRow::builder())`" },
-    { path = "libadwaita::builders::PasswordEntryRowBuilder::build", reason = "leaks its buffer and the password in it (libadwaita 1.9); pass the builder to `big_gtk_kit::password::password_row`" },
+    { path = "libadwaita::builders::PasswordEntryRowBuilder::build", reason = "leaks its buffer and the password in it (libadwaita 1.9); pass the builder to `big_gtk_kit::password::password_row`, then name the row with `big_relm4_components::input::entry_row::name_by_title`" },
+    { path = "libadwaita::EntryRow::new", reason = "a screen reader reads its title twice (libadwaita 1.9); use `big_relm4_components::input::entry_row::build(adw::EntryRow::builder())`" },
+    { path = "libadwaita::builders::EntryRowBuilder::build", reason = "a screen reader reads its title twice (libadwaita 1.9); pass the builder to `big_relm4_components::input::entry_row::build`" },
     { path = "libadwaita::prelude::AlertDialogExtManual::choose", reason = "leaks the dialog (libadwaita-rs 0.9); use `big_gtk_kit::alert::choose`" },
     { path = "libadwaita::prelude::AlertDialogExtManual::choose_future", reason = "leaks the dialog (libadwaita-rs 0.9); use `big_gtk_kit::alert::choose_future`" },
     { path = "libadwaita::prelude::MessageDialogExtManual::choose", reason = "leaks the dialog (libadwaita-rs 0.9); use `adw::AlertDialog` with `big_gtk_kit::alert::choose`" },

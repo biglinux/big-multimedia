@@ -52,6 +52,7 @@ fn welcome_tip_specs() -> Vec<WelcomeTipSpec> {
 /// the label so it can refresh the stats on every queue change).
 pub(super) fn build_toolbar(
     sender: &ComponentSender<PlaylistPanel>,
+    split_view: &adw::OverlaySplitView,
 ) -> (adw::HeaderBar, gtk::Label) {
     // An AdwHeaderBar so the queue info shares the window's title row with the
     // controls. The sidebar header owns the left window buttons; this one owns
@@ -81,6 +82,28 @@ pub(super) fn build_toolbar(
     menu_button.set_primary(true);
     install_queue_menu_actions(&menu_button, sender);
     bar.pack_end(&menu_button);
+
+    // While the sidebar is folded, this bar is the window's only title row.
+    let sidebar_button = big_relm4_components::feedback::tooltip::icon_toggle_button(
+        "sidebar-show-symbolic",
+        &i18n("Show Sidebar"),
+        false,
+        &["flat"],
+    );
+    split_view
+        .bind_property("show-sidebar", &sidebar_button, "active")
+        .bidirectional()
+        .sync_create()
+        .build();
+    split_view
+        .bind_property("collapsed", &sidebar_button, "visible")
+        .sync_create()
+        .build();
+    split_view
+        .bind_property("collapsed", bar.root(), "show-start-title-buttons")
+        .sync_create()
+        .build();
+    bar.pack_start(&sidebar_button);
 
     (bar.into_root(), header_label)
 }

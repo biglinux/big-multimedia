@@ -397,7 +397,8 @@ fn queue_behaviour(
 }
 
 impl Component for PlaylistPanel {
-    type Init = ();
+    /// The shell's split view, whose folded sidebar the toolbar reopens.
+    type Init = adw::OverlaySplitView;
     type Input = PlaylistPanelInput;
     type Output = PlaylistPanelOutput;
     type CommandOutput = ();
@@ -409,7 +410,7 @@ impl Component for PlaylistPanel {
     }
 
     fn init(
-        _init: Self::Init,
+        split_view: Self::Init,
         root: Self::Root,
         sender: ComponentSender<Self>,
     ) -> ComponentParts<Self> {
@@ -489,7 +490,7 @@ impl Component for PlaylistPanel {
             .build();
         let page = list.page(&scroll);
 
-        let (toolbar, header_label) = playlist_chrome::build_toolbar(&sender);
+        let (toolbar, header_label) = playlist_chrome::build_toolbar(&sender, &split_view);
         root.add_top_bar(&toolbar);
         root.set_content(Some(&page));
 

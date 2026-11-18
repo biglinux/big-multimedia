@@ -166,8 +166,10 @@ fn build_card(state: &Rc<BrowserState>) -> gtk::Box {
 
     card.append(&overlay);
 
+    // The card's full width: at its natural width a wrapping label breaks
+    // inside words that would fit.
     let name = gtk::Label::builder()
-        .halign(gtk::Align::Start)
+        .xalign(0.0)
         .ellipsize(gtk::pango::EllipsizeMode::End)
         .lines(2)
         .wrap(true)
