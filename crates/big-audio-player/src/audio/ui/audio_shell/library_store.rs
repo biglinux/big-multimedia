@@ -46,8 +46,31 @@ fn start_tree(
     });
 }
 impl AudioShell {
+    /// The writer connection; without one, tells the person whether the
+    /// library is still opening or could not be opened.
+    pub(super) fn writer(&self) -> Option<DbHandle> {
+        if self.db.is_none() {
+            self.notify(&if self.queue_ready {
+                i18n("The music library could not be opened.")
+            } else {
+                i18n("The music library is still opening. Try again in a moment.")
+            });
+        }
+        self.db.clone()
+    }
+
+    pub(super) fn reader(&self) -> Option<DbHandle> {
+        self.db_read.clone().or_else(|| self.writer())
+    }
+
+    /// For reads that `QueueRestored` repeats once the database opens: `None`
+    /// without a notice while it is still opening.
+    pub(super) fn deferred_reader(&self) -> Option<DbHandle> {
+        self.queue_ready.then(|| self.reader()).flatten()
+    }
+
     pub(super) fn rebuild_library_tree(&self, sender: &ComponentSender<Self>) {
-        let Some(db) = self.db_read.clone().or_else(|| self.db.clone()) else {
+        let Some(db) = self.deferred_reader() else {
             return;
         };
         let request = TreeRequest {
@@ -68,7 +91,7 @@ impl AudioShell {
 
     /// Delete a custom playlist, then refresh the manager dialog.
     pub(super) fn delete_playlist(&self, id: i64, sender: &ComponentSender<Self>) {
-        let Some(db) = self.db.clone() else {
+        let Some(db) = self.writer() else {
             return;
         };
         let input = sender.input_sender().clone();
@@ -84,7 +107,7 @@ impl AudioShell {
     /// Resolve the existing playlists off-thread, then open the add-to-playlist
     /// picker (shared library dialog) for `track`.
     pub(super) fn request_add_to_playlist(&self, track: Track, sender: &ComponentSender<Self>) {
-        let Some(db) = self.db_read.clone().or_else(|| self.db.clone()) else {
+        let Some(db) = self.reader() else {
             return;
         };
         let input = sender.input_sender().clone();
@@ -116,7 +139,7 @@ impl AudioShell {
         playlist_id: i64,
         sender: &ComponentSender<Self>,
     ) {
-        let Some(db) = self.db.clone() else {
+        let Some(db) = self.writer() else {
             return;
         };
         let input = sender.input_sender().clone();
@@ -146,7 +169,7 @@ impl AudioShell {
         track_ids: Vec<i64>,
         sender: &ComponentSender<Self>,
     ) {
-        let Some(db) = self.db.clone() else {
+        let Some(db) = self.writer() else {
             return;
         };
         let input = sender.input_sender().clone();
@@ -170,7 +193,7 @@ impl AudioShell {
         secondary: String,
         sender: &ComponentSender<Self>,
     ) {
-        let Some(db) = self.db_read.clone().or_else(|| self.db.clone()) else {
+        let Some(db) = self.reader() else {
             return;
         };
         let node_kind = library_query::kind_from_u32(kind);
@@ -199,7 +222,7 @@ impl AudioShell {
         paths: Vec<String>,
         sender: &ComponentSender<Self>,
     ) {
-        let Some(db) = self.db.clone() else {
+        let Some(db) = self.writer() else {
             return;
         };
         let input = sender.input_sender().clone();

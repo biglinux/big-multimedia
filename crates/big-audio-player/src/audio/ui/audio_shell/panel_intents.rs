@@ -81,7 +81,9 @@ impl AudioShell {
                 }
             }
             LibraryPanelOutput::ReviewUnavailable => {
-                if let (Some(parent), Some(db)) = (self.window(), self.db.clone()) {
+                if let Some(parent) = self.window()
+                    && let Some(db) = self.writer()
+                {
                     let input = sender.input_sender().clone();
                     super::super::unavailable_dialog::show(&parent, db, move || {
                         let _ = input.send(AudioShellInput::RebuildLibraryTree);
@@ -203,7 +205,7 @@ impl AudioShell {
 
     /// Persist a track rating (fire-and-forget).
     pub(super) fn persist_rating(&self, id: i64, rating: i32) {
-        let Some(db) = self.db.clone() else {
+        let Some(db) = self.writer() else {
             return;
         };
         spawn_db_query(
@@ -226,7 +228,7 @@ impl AudioShell {
         fields: TagEditFields,
         sender: &ComponentSender<Self>,
     ) {
-        let Some(db) = self.db.clone() else {
+        let Some(db) = self.writer() else {
             return;
         };
         let edits = crate::library::metadata::TagEdits {
@@ -313,7 +315,7 @@ impl AudioShell {
 
     /// Create a playlist from the current queue tracks.
     pub(super) fn save_queue_as_playlist(&self, name: String, sender: &ComponentSender<Self>) {
-        let Some(db) = self.db.clone() else {
+        let Some(db) = self.writer() else {
             return;
         };
         // External files and podcast episodes have no library row (id <= 0) and
@@ -410,7 +412,7 @@ impl AudioShell {
         // rebuild the library tree once the deletes commit so the removed tracks
         // leave the browse view. `spawn_db_query` runs on a pool, so ordering the
         // rebuild after the deletes requires chaining it off their completion.
-        if let Some(db) = self.db.clone() {
+        if let Some(db) = self.writer() {
             let input = sender.input_sender().clone();
             spawn_db_query(
                 db,

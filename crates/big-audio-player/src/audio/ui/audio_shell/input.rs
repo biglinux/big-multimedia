@@ -4,7 +4,9 @@ use super::*;
 /// the Controllers' `forward` maps.
 #[derive(Debug)]
 pub enum AudioShellInput {
-    QueueRestored(Result<(DbHandle, crate::db::queries_advanced::QueueSession), ()>),
+    /// The library database opened and the saved queue was read, or the
+    /// database could not be opened for the reason given.
+    QueueRestored(Result<super::queue_persistence::RestoredQueue, String>),
     RetryQueueSave,
     /// The library id (0 for an external file) and path of each file deleted or
     /// trashed off the main loop.

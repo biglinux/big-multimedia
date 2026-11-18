@@ -473,12 +473,9 @@ impl Component for AudioShell {
         })
         .set_enabled(converter);
 
-        // Engine: DB + mpv (built once at init). The event loop forwards
-        // PlayerEvents into the shell.
-        let db = db::open_database().ok();
-        let db_read = db::open_read_connection().ok();
-        let (queue_persistence, queue_updates) =
-            queue_persistence::QueuePersistence::new(db.clone());
+        // The database opens off the GTK thread with the queue restore; mpv is
+        // built once here and its event loop forwards PlayerEvents.
+        let (queue_persistence, queue_updates) = queue_persistence::QueuePersistence::new();
         let close_store = queue_persistence.clone();
         crate::settings::saving::bind_write_drain_with_unsaved(&root, move || {
             close_store.unsaved()
@@ -504,11 +501,9 @@ impl Component for AudioShell {
         // files opened from the desktop / CLI.
         set_shell_input(sender.input_sender().clone());
 
-        // Sync the grouping dropdown to the restored preset (no re-emit), then
-        // build the tree with that grouping + load the playlists sidebar.
+        // Sync the grouping dropdown to the restored preset (no re-emit); the
+        // tree is built once the database opens.
         library.emit(LibraryPanelInput::SetGrouping(initial_grouping.clone()));
-        sender.input(AudioShellInput::RebuildLibraryTree);
-        sender.input(AudioShellInput::RefreshPlaylists);
 
         // Publish the "win" action group on the content Root so `win.*` actions
         // (the hamburger menu + accels) resolve through the widget hierarchy in
@@ -566,8 +561,8 @@ impl Component for AudioShell {
                 trim_play_selection: false,
                 mpv,
                 shutdown_handler,
-                db,
-                db_read,
+                db: None,
+                db_read: None,
                 settings,
                 sleep_timer_source: None,
                 sleep_timer_remaining: 0,

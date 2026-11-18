@@ -152,6 +152,8 @@ pub enum PlaylistPanelInput {
     /// Restore saved column widths (`title=width,…`), pushed by the shell at
     /// construction. Suppresses the persist echo while applying.
     ApplyColumnWidths(String),
+    /// Restoring the saved queue ended, read or not: an empty queue is final.
+    QueueRestored,
 }
 
 /// Intents the playlist panel emits for the shell to act on.
@@ -253,6 +255,8 @@ pub struct PlaylistPanel {
     playlist_name: String,
     /// Library-has-tracks flag; picks the empty-queue placeholder variant.
     library_has_items: bool,
+    /// Until the saved queue arrives, an empty queue shows loading instead.
+    restoring: bool,
 }
 
 impl PlaylistPanel {
@@ -291,7 +295,14 @@ impl PlaylistPanel {
     fn refresh_empty_state(&self, sender: &ComponentSender<Self>) {
         let empty = self.store.n_items() == 0;
         self.list.header.set_visible(!empty);
-        if empty {
+        if empty && self.restoring {
+            let loading = adw::StatusPage::builder()
+                .title(i18n("Loading…"))
+                .vexpand(true)
+                .build();
+            loading.set_paintable(Some(&adw::SpinnerPaintable::new(Some(&loading))));
+            self.scroll.set_child(Some(&loading));
+        } else if empty {
             let placeholder = playlist_chrome::build_empty_state(self.library_has_items, sender);
             self.scroll.set_child(Some(&placeholder));
         } else {
@@ -469,9 +480,10 @@ impl Component for PlaylistPanel {
             current_track_identity,
             playlist_name: String::new(),
             library_has_items: false,
+            restoring: true,
         };
-        // Empty queue at boot → show the placeholder until the shell pushes a
-        // SetQueue (which reattaches the list).
+        // Empty queue at boot → show loading until the shell pushes the saved
+        // queue or reports there is none.
         model.refresh_empty_state(&sender);
         model.update_header();
 
@@ -551,6 +563,10 @@ impl Component for PlaylistPanel {
                 }
             }
             PlaylistPanelInput::ApplyColumnWidths(spec) => self.list.apply_widths(&spec),
+            PlaylistPanelInput::QueueRestored => {
+                self.restoring = false;
+                self.refresh_empty_state(&sender);
+            }
         }
     }
 }

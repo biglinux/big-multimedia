@@ -133,9 +133,13 @@ impl AudioShell {
                 .emit(LyricsPanelInput::SetState(LyricsState::Empty));
             return;
         }
-        let Some(db) = self.db_read.clone().or_else(|| self.db.clone()) else {
+        let Some(db) = self.deferred_reader() else {
             self.lyrics
-                .emit(LyricsPanelInput::SetState(LyricsState::Empty));
+                .emit(LyricsPanelInput::SetState(if self.queue_ready {
+                    LyricsState::Empty
+                } else {
+                    LyricsState::Loading
+                }));
             return;
         };
         self.lyrics
