@@ -1,6 +1,5 @@
 //! Shared list row widgets.
 
-pub mod action_nav_row;
 pub mod bounded_list_box;
 pub mod button_strip_row;
 pub mod copyable_detail_row;

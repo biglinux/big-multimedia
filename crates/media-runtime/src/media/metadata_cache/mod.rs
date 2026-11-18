@@ -6,11 +6,9 @@
 //! lookups. An atomic semaphore limits concurrent `ffprobe` child processes.
 
 mod cache;
-mod detailed_video_metadata;
 mod display;
 mod probe;
 
-pub use detailed_video_metadata::{DetailedVideoMetadata, probe_detailed_video_metadata};
 pub use display::{meta_summary, resolution_label};
 pub use probe::{fast_duration_cached, probe_metadata, probe_metadata_cached};
 

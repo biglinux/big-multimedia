@@ -1,6 +1,5 @@
 //! Input widgets shared by BigLinux Relm4/libadwaita apps.
 
-pub mod adjust_panel;
 pub mod button_content;
 pub mod debounce;
 pub mod dropdown_row;

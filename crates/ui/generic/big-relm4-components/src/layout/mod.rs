@@ -3,7 +3,6 @@
 pub mod column_persist;
 pub mod dialog_footer;
 pub mod dialog_page;
-pub mod didactic_card;
 pub mod hamburger_menu;
 pub mod media_window;
 pub mod name_prompt;
