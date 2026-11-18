@@ -26,10 +26,9 @@ impl AudioShell {
         self.sync_now_playing();
     }
 
-    /// Re-light the now-playing indicator in both panels from the queue's
-    /// current track (matched by file path in the library detail view), while
-    /// it plays or is paused. While a radio stream plays, nothing in the
-    /// queue/library is "playing", so clear it.
+    /// Re-light the queue's now-playing indicator from its current track while
+    /// it plays or is paused. While a radio stream plays, nothing in the queue
+    /// is "playing", so clear it.
     pub(super) fn sync_now_playing(&self) {
         let status = *self
             .mpris_state
@@ -52,11 +51,6 @@ impl AudioShell {
             idx: current,
             playback,
         });
-        let path = current
-            .and_then(|_| self.queue.current())
-            .map(|track| track.file_path.clone());
-        self.library
-            .emit(LibraryPanelInput::SetPlayingPath { path, playback });
     }
 
     /// Refresh the sidebar-bottom now-playing card from the current track (or a

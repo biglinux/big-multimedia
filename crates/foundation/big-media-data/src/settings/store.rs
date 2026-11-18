@@ -585,7 +585,7 @@ impl Settings {
     /// Keys [`Self::reset_to_defaults`] leaves as they are: what the person
     /// collected, where they left off, how they laid out the library, and the
     /// live levels of the player's own controls, none of them a preference.
-    pub const KEPT_ON_RESTORE: [&'static str; 22] = [
+    pub const KEPT_ON_RESTORE: [&'static str; 21] = [
         keys::VIDEO_LIBRARY_FOLDERS.0,
         keys::CUSTOM_KEYBINDINGS.0,
         keys::VOLUME.0,
@@ -606,7 +606,6 @@ impl Settings {
         keys::AUDIO_APPEARANCE_WINDOW_WIDTH.0,
         keys::AUDIO_APPEARANCE_WINDOW_HEIGHT.0,
         keys::LIBRARY_GROUPING.0,
-        keys::LIBRARY_COLUMN_WIDTHS.0,
         keys::PLAYLIST_COLUMN_WIDTHS.0,
     ];
 

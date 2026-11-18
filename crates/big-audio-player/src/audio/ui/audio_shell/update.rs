@@ -132,7 +132,7 @@ impl AudioShell {
                 // An import changes which tracks a playlist can offer, so the
                 // open dialog goes stale exactly as it does after `ScanFinished`.
                 self.refresh_playlist_dialog_entries(&sender);
-                // The bar has room for about 20 characters; the dialog says the rest.
+                // The bar has room for two short lines; the dialog says the rest.
                 let status = if report.cancelled {
                     i18n("Scan cancelled")
                 } else if report.failed {
@@ -365,7 +365,7 @@ impl AudioShell {
 
 /// Lyrics paned split position: full height when only-lyrics is requested, else
 /// ~40% of the height with a 150px floor.
-fn lyrics_paned_position(height: i32, only_lyrics: bool) -> i32 {
+pub(super) fn lyrics_paned_position(height: i32, only_lyrics: bool) -> i32 {
     if only_lyrics {
         height
     } else {

@@ -1,7 +1,7 @@
 //! Pure (GTK-free) library node → track resolution for the Relm4 `AudioShell`.
 //!
-//! The shell runs these off the read-only DB connection and pushes the result
-//! into the library panel as `PopulateDetail`.
+//! The shell runs these off the read-only DB connection and queues the tracks
+//! of an activated node.
 
 use crate::audio::browser_node::BrowserNodeKind;
 use crate::audio::library_grouping::{GroupBy, LibraryGrouping};
@@ -264,12 +264,12 @@ fn group_nodes(
 }
 
 /// A file-leaf node carrying the full track (drag/export) + the tab-joined
-/// metadata the library detail binder expects (`album\tduration\tartist\thash`).
+/// metadata the tree row shows (`album\tduration\tartist\thash`).
 fn file_node(track: &Track) -> LibraryTreeNode {
     let secondary = format!(
         "{}\t{}\t{}\t{}",
         track.display_album(),
-        track.duration_display(),
+        big_media_components::time::playback_time(track.duration_secs),
         track.display_artist(),
         track.art_hash.as_deref().unwrap_or(""),
     );

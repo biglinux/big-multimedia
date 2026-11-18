@@ -81,7 +81,7 @@ pub(super) fn read_only_metadata_rows(track: &Track) -> Vec<ReadOnlyMetadataRow>
     vec![
         ReadOnlyMetadataRow {
             label: gettext_noop("Duration"),
-            value: track.duration_display(),
+            value: big_media_components::time::playback_time(track.duration_secs),
             is_file_path: false,
         },
         ReadOnlyMetadataRow {

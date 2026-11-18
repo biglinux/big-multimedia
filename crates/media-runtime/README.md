@@ -23,10 +23,10 @@ external converter GUIs with the file and the marked cuts.
 
 ## Resources and translations
 
-`build.rs` compiles `data/resources` (video) and `data/audio-resources`
-(audio) into GResource bundles exposed by `resources`. `po/` holds the single
-gettext catalog for the whole workspace; regenerate the template with
-`po/regen-pot.sh`.
+`build.rs` compiles `data/audio-resources` (the audio player's sleep-timer
+illustrations) into the GResource bundle exposed by `resources`. `po/` holds
+the single gettext catalog for the whole workspace; regenerate the template
+with `po/regen-pot.sh`.
 
 See [ARCHITECTURE.md](ARCHITECTURE.md) for the module map and the
 subprocess rules.

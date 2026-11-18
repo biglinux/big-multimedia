@@ -143,6 +143,24 @@ impl BigAudioTransport {
         seek_row.append(&duration_label);
         playback_bar.append(&seek_row);
 
+        // A row of its own: beside the buttons, the bar's narrowest width left
+        // room for a few letters of a status.
+        let status_label = gtk::Label::builder()
+            .xalign(1.0)
+            .justify(gtk::Justification::Right)
+            .wrap(true)
+            .wrap_mode(gtk::pango::WrapMode::WordChar)
+            .lines(2)
+            .ellipsize(gtk::pango::EllipsizeMode::End)
+            .margin_start(16)
+            .margin_end(16)
+            .visible(false)
+            .css_classes(["caption"])
+            .build();
+        status_label.update_property(&[gtk::accessible::Property::Label(&labels.status)]);
+        status_label.connect_label_notify(|label| label.set_visible(!label.label().is_empty()));
+        playback_bar.append(&status_label);
+
         let controls_row = gtk::CenterBox::builder()
             .margin_start(12)
             .margin_end(12)
@@ -195,15 +213,7 @@ impl BigAudioTransport {
         center_box.append(&next_button);
         controls_row.set_center_widget(Some(&center_box));
 
-        // end: status / trim-export / shuffle / repeat / lyrics
-        let status_label = gtk::Label::builder()
-            .label("")
-            .xalign(1.0)
-            .ellipsize(gtk::pango::EllipsizeMode::End)
-            .max_width_chars(20)
-            .css_classes(["caption"])
-            .build();
-        status_label.update_property(&[gtk::accessible::Property::Label(&labels.status)]);
+        // end: trim-export / shuffle / repeat / lyrics
         let trim_export_button =
             tooltip::icon_button("edit-cut-symbolic", &labels.trim_export, &[]);
         trim_export_button.set_has_frame(false);
@@ -228,7 +238,6 @@ impl BigAudioTransport {
             .spacing(4)
             .valign(gtk::Align::Center)
             .build();
-        end_box.append(&status_label);
         end_box.append(&trim_export_button);
         end_box.append(&shuffle_button);
         end_box.append(&repeat_button);

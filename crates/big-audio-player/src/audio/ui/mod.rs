@@ -9,7 +9,6 @@
 pub mod audio_shell;
 /// Cast (Chromecast) device-picker dialog.
 /// The library track list's context menu.
-mod library_detail_interactions;
 /// Shared app-local library dialogs (add-to-playlist picker).
 mod library_dialogs;
 /// Grouping / age / search controls bar.

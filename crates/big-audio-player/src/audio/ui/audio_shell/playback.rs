@@ -48,9 +48,7 @@ impl AudioShell {
             }
             AudioPlaybackBarOutput::VolumeChanged(vol) => {
                 if let Some(mpv) = &self.mpv {
-                    mpv.set_volume(vol);
-                    self.playback_bar
-                        .emit(volume_indicator(vol, mpv.get_mute()));
+                    self.playback_bar.emit(set_volume_unmuted(mpv, vol));
                 }
             }
             AudioPlaybackBarOutput::VolumeMuteToggled => {
@@ -95,9 +93,11 @@ impl AudioShell {
                 self.lyrics_visible = active;
                 self.lyrics.widget().set_visible(active);
                 if active {
-                    let height = self.lyrics_paned.height();
-                    let pos = (f64::from(height) * 0.4).max(150.0) as i32;
-                    self.lyrics_paned.set_position(pos);
+                    self.lyrics_paned
+                        .set_position(super::update::lyrics_paned_position(
+                            self.lyrics_paned.height(),
+                            false,
+                        ));
                     self.fetch_lyrics_for_current(sender);
                 }
             }
@@ -182,10 +182,41 @@ pub(super) fn transport_labels() -> BigAudioTransportLabels {
     }
 }
 
+/// Moving the volume, by drag, keyboard or phone, asks for sound: it unmutes,
+/// as the video player's slider does.
+fn set_volume_unmuted(mpv: &MpvBackend, volume: f64) -> AudioPlaybackBarInput {
+    mpv.set_volume(volume);
+    mpv.set_mute(false);
+    volume_indicator(volume, false)
+}
+
 /// The transport's volume readout and icon for `volume` percent.
 pub(super) fn volume_indicator(volume: f64, muted: bool) -> AudioPlaybackBarInput {
     AudioPlaybackBarInput::SetVolumeIndicator {
         label: format!("{volume:.0}"),
         icon: volume_icon_name(volume, muted).to_string(),
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn volume_change_unmutes() {
+        let (tx, _rx) = async_channel::unbounded();
+        let mpv = MpvBackend::new_audio_only_with_output(tx, "null").expect("mpv on null output");
+        mpv.set_mute(true);
+        let AudioPlaybackBarInput::SetVolumeIndicator { label, icon } =
+            set_volume_unmuted(&mpv, 40.0)
+        else {
+            panic!("expected the volume indicator");
+        };
+        assert!(!mpv.get_mute());
+        assert_eq!(mpv.get_volume(), 40.0);
+        assert_eq!(
+            (label.as_str(), icon.as_str()),
+            ("40", "audio-volume-medium-symbolic")
+        );
     }
 }

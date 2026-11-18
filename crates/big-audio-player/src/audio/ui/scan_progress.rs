@@ -139,18 +139,22 @@ pub(super) fn show(parent: &gtk::Window, control: Arc<ScanControl>) {
             counts.imported.set_text(&imported.to_string());
             counts.skipped.set_text(&skipped.to_string());
             let message = if finished && cancelled {
-                "Scan cancelled. Earlier confirmed imports were kept."
+                i18n("Scan cancelled. Earlier confirmed imports were kept.")
             } else if finished && failed {
-                "Scan incomplete. Earlier confirmed imports were kept; check storage and retry."
+                i18n("Scan incomplete. Earlier confirmed imports were kept; check storage and retry.")
             } else if finished {
-                "Library scan finished."
+                i18n("Library scan finished.")
             } else if cancelled {
-                "Cancellation requested. Finishing the current safe step…"
+                i18n("Cancellation requested. Finishing the current safe step…")
             } else {
-                "Reading media information…"
+                i18n("Reading media information…")
             };
-            status.set_text(&i18n(message));
-            cancel.set_label(&i18n(if finished { "Close" } else { "Cancel scan" }));
+            status.set_text(&message);
+            cancel.set_label(&if finished {
+                i18n("Close")
+            } else {
+                i18n("Cancel scan")
+            });
             cancel.set_sensitive(finished || !cancelled);
             if finished {
                 cancel.add_css_class("suggested-action");

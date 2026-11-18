@@ -43,10 +43,7 @@ fn embed_boot() {
         // Read lazily at backend install (realize), so defaulting here is safe. See
         // `run` for why the offload path is not the default.
         shared::app_base::set_default_env("BIG_MEDIA_DISABLE_GRAPHICS_OFFLOAD", "1");
-        shared::app_base::boot_player(&[
-            big_media_runtime::resources::VIDEO,
-            resources::VIDEO_PLAYER_SHELL,
-        ]);
+        shared::app_base::boot_player(&[resources::VIDEO_PLAYER_SHELL]);
     });
 }
 
@@ -123,10 +120,7 @@ pub fn run() -> gtk::glib::ExitCode {
     // real DMA-BUF zero-copy, so it stays one variable away for anyone whose
     // compositor benefits from the subsurface; it just buys nothing by default.
     shared::app_base::set_default_env("BIG_MEDIA_DISABLE_GRAPHICS_OFFLOAD", "1");
-    shared::app_base::boot_player(&[
-        big_media_runtime::resources::VIDEO,
-        resources::VIDEO_PLAYER_SHELL,
-    ]);
+    shared::app_base::boot_player(&[resources::VIDEO_PLAYER_SHELL]);
 
     // The `VideoShell` Root is mountable content (a `gtk::Box`), not a
     // window, so we boot manually instead of `RelmApp::run` (which

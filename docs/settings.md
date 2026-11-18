@@ -179,7 +179,6 @@ the new values at once, except `render-mode`, `gpu-dumb-mode`,
 | `video-library-folders` | string | empty | A JSON list; empty means Videos, Downloads and the home folder. |
 | `files-last-dir` | string | empty |  |
 | `library-grouping` | string | empty |  |
-| `library-column-widths` | string | empty |  |
 | `radio-api-servers` | string | `de2.api.radio-browser.info,nl1.api.radio-browser.info,at1.api.radio-browser.info,de1.api.radio-browser.info` | Comma-separated Radio Browser hosts; empty finds them through DNS. |
 
 ### Video player controls and colors

@@ -617,7 +617,11 @@ pub(super) fn build_end_box() -> EndBoxWidgets {
         &i18n("Subtitles"),
         &["osd-btn"],
     );
-    let subtitle_menu_popover = gtk::Popover::new();
+    // A group, as the audio-track menu beside it: the role cannot change once
+    // an assistive technology has read it.
+    let subtitle_menu_popover = gtk::Popover::builder()
+        .accessible_role(gtk::AccessibleRole::Group)
+        .build();
     setup_end_menu_popover(&subtitle_menu_button, &subtitle_menu_popover);
 
     let audio_track_menu_button = tooltip::icon_button(
