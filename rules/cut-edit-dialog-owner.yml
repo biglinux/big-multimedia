@@ -10,5 +10,3 @@ rule:
   regex: '^"(Start|End) \(seconds\)"$'
 ignores:
   - crates/ui/media/big-player-ui/src/cut_edit_dialog.rs
-  # legacy: migrate the audio player's Edit cut dialog to the owner.
-  - crates/big-audio-player/src/audio/ui/audio_shell/export.rs
