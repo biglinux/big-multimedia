@@ -1,25 +1,20 @@
 // SPDX-FileCopyrightText: 2026 BigLinux contributors
 // SPDX-License-Identifier: MIT
 
-//! Illustrated slider row with value label and reset button.
+//! Titled slider row with value label and reset button.
 
 use adw::prelude::*;
 use relm4::gtk;
 
 use crate::feedback::tooltip;
 
-const DEFAULT_IMAGE_SIZE: i32 = 56;
 const DEFAULT_SCALE_WIDTH: i32 = 200;
 const DEFAULT_VALUE_WIDTH_CHARS: i32 = 5;
 const DEFAULT_RESET_ICON: &str = "edit-undo-symbolic";
 
-/// Data needed to build an illustrated slider row.
+/// Data needed to build a slider row.
 #[derive(Debug, Clone, PartialEq)]
-pub struct BigIllustratedSliderRowSpec {
-    /// Resource prefix.
-    pub resource_prefix: String,
-    /// Illustration name.
-    pub illustration_name: Option<String>,
+pub struct BigSliderRowSpec {
     /// Title.
     pub title: String,
     /// Subtitle.
@@ -44,8 +39,6 @@ pub struct BigIllustratedSliderRowSpec {
     pub value_width_chars: i32,
     /// Scale width request.
     pub scale_width_request: i32,
-    /// Image size.
-    pub image_size: i32,
     /// Title heading.
     pub title_heading: bool,
     /// Mark label.
@@ -56,12 +49,10 @@ pub struct BigIllustratedSliderRowSpec {
     pub reset_icon_name: String,
 }
 
-impl BigIllustratedSliderRowSpec {
+impl BigSliderRowSpec {
     /// Creates a new instance.
     #[must_use]
-    #[allow(clippy::too_many_arguments)]
     pub fn new(
-        resource_prefix: impl Into<String>,
         title: impl Into<String>,
         min: f64,
         max: f64,
@@ -71,8 +62,6 @@ impl BigIllustratedSliderRowSpec {
         reset_label: impl Into<String>,
     ) -> Self {
         Self {
-            resource_prefix: resource_prefix.into(),
-            illustration_name: None,
             title: title.into(),
             subtitle: None,
             min,
@@ -85,7 +74,6 @@ impl BigIllustratedSliderRowSpec {
             value_suffix: String::new(),
             value_width_chars: DEFAULT_VALUE_WIDTH_CHARS,
             scale_width_request: DEFAULT_SCALE_WIDTH,
-            image_size: DEFAULT_IMAGE_SIZE,
             title_heading: false,
             mark_label: None,
             reset_label: reset_label.into(),
@@ -93,20 +81,10 @@ impl BigIllustratedSliderRowSpec {
         }
     }
 
-    /// Configure the `illustration_name` setting and return the updated builder.
-    ///
-    /// The supplied `name` overrides any previously stored value; chain
-    /// further `with_*` / setter calls to compose the full [`BigIllustratedSliderRowSpec`].
-    #[must_use]
-    pub fn illustration_name(mut self, name: impl Into<String>) -> Self {
-        self.illustration_name = Some(name.into());
-        self
-    }
-
     /// Configure the `subtitle` setting and return the updated builder.
     ///
     /// The supplied `subtitle` overrides any previously stored value; chain
-    /// further `with_*` / setter calls to compose the full [`BigIllustratedSliderRowSpec`].
+    /// further `with_*` / setter calls to compose the full [`BigSliderRowSpec`].
     #[must_use]
     pub fn subtitle(mut self, subtitle: impl Into<String>) -> Self {
         self.subtitle = Some(subtitle.into());
@@ -116,7 +94,7 @@ impl BigIllustratedSliderRowSpec {
     /// Configure the `digits` setting and return the updated builder.
     ///
     /// The supplied `digits` overrides any previously stored value; chain
-    /// further `with_*` / setter calls to compose the full [`BigIllustratedSliderRowSpec`].
+    /// further `with_*` / setter calls to compose the full [`BigSliderRowSpec`].
     #[must_use]
     pub fn digits(mut self, digits: i32) -> Self {
         self.digits = digits;
@@ -126,7 +104,7 @@ impl BigIllustratedSliderRowSpec {
     /// Configure the `value_suffix` setting and return the updated builder.
     ///
     /// The supplied `suffix` overrides any previously stored value; chain
-    /// further `with_*` / setter calls to compose the full [`BigIllustratedSliderRowSpec`].
+    /// further `with_*` / setter calls to compose the full [`BigSliderRowSpec`].
     #[must_use]
     pub fn value_suffix(mut self, suffix: impl Into<String>) -> Self {
         self.value_suffix = suffix.into();
@@ -136,7 +114,7 @@ impl BigIllustratedSliderRowSpec {
     /// Configure the `value_width_chars` setting and return the updated builder.
     ///
     /// The supplied `width_chars` overrides any previously stored value; chain
-    /// further `with_*` / setter calls to compose the full [`BigIllustratedSliderRowSpec`].
+    /// further `with_*` / setter calls to compose the full [`BigSliderRowSpec`].
     #[must_use]
     pub fn value_width_chars(mut self, width_chars: i32) -> Self {
         self.value_width_chars = width_chars;
@@ -146,7 +124,7 @@ impl BigIllustratedSliderRowSpec {
     /// Configure the `scale_width_request` setting and return the updated builder.
     ///
     /// The supplied `width_request` overrides any previously stored value; chain
-    /// further `with_*` / setter calls to compose the full [`BigIllustratedSliderRowSpec`].
+    /// further `with_*` / setter calls to compose the full [`BigSliderRowSpec`].
     #[must_use]
     pub fn scale_width_request(mut self, width_request: i32) -> Self {
         self.scale_width_request = width_request;
@@ -156,7 +134,7 @@ impl BigIllustratedSliderRowSpec {
     /// Configure the `title_heading` setting and return the updated builder.
     ///
     /// The supplied `title_heading` overrides any previously stored value; chain
-    /// further `with_*` / setter calls to compose the full [`BigIllustratedSliderRowSpec`].
+    /// further `with_*` / setter calls to compose the full [`BigSliderRowSpec`].
     #[must_use]
     pub fn title_heading(mut self, title_heading: bool) -> Self {
         self.title_heading = title_heading;
@@ -166,7 +144,7 @@ impl BigIllustratedSliderRowSpec {
     /// Configure the `mark_label` setting and return the updated builder.
     ///
     /// The supplied `mark_label` overrides any previously stored value; chain
-    /// further `with_*` / setter calls to compose the full [`BigIllustratedSliderRowSpec`].
+    /// further `with_*` / setter calls to compose the full [`BigSliderRowSpec`].
     #[must_use]
     pub fn mark_label(mut self, mark_label: Option<impl Into<String>>) -> Self {
         self.mark_label = mark_label.map(Into::into);
@@ -175,7 +153,7 @@ impl BigIllustratedSliderRowSpec {
 
     /// Resolve the spec into its display-free runtime form.
     #[must_use]
-    pub fn resolved(&self) -> BigIllustratedSliderRowResolved {
+    pub fn resolved(&self) -> BigSliderRowResolved {
         let min = finite_or(self.min, 0.0);
         let max = finite_or(self.max, min).max(min);
         let default = finite_or(self.default, min).clamp(min, max);
@@ -184,11 +162,7 @@ impl BigIllustratedSliderRowSpec {
         let page_step = finite_or(self.page_step, step * 10.0).abs().max(step);
         let digits = self.digits.max(0);
 
-        BigIllustratedSliderRowResolved {
-            resource_path: self
-                .illustration_name
-                .as_ref()
-                .map(|name| format!("{}{}", self.resource_prefix, name)),
+        BigSliderRowResolved {
             min,
             max,
             default,
@@ -200,7 +174,6 @@ impl BigIllustratedSliderRowSpec {
             value_suffix: self.value_suffix.clone(),
             value_width_chars: self.value_width_chars.max(1),
             scale_width_request: self.scale_width_request,
-            image_size: self.image_size.max(1),
             title_heading: self.title_heading,
             mark_label: self.mark_label.clone(),
             reset_label: self.reset_label.clone(),
@@ -212,9 +185,7 @@ impl BigIllustratedSliderRowSpec {
 
 /// Pure row contract. Safe for no-display tests.
 #[derive(Debug, Clone, PartialEq)]
-pub struct BigIllustratedSliderRowResolved {
-    /// Resource path.
-    pub resource_path: Option<String>,
+pub struct BigSliderRowResolved {
     /// Min.
     pub min: f64,
     /// Max.
@@ -237,8 +208,6 @@ pub struct BigIllustratedSliderRowResolved {
     pub value_width_chars: i32,
     /// Scale width request.
     pub scale_width_request: i32,
-    /// Image size.
-    pub image_size: i32,
     /// Title heading.
     pub title_heading: bool,
     /// Mark label.
@@ -253,7 +222,7 @@ pub struct BigIllustratedSliderRowResolved {
 
 /// Built row plus direct handles for app wiring.
 #[derive(Debug, Clone)]
-pub struct BigIllustratedSliderRow {
+pub struct BigSliderRow {
     root: gtk::Box,
     adjustment: gtk::Adjustment,
     scale: gtk::Scale,
@@ -261,34 +230,20 @@ pub struct BigIllustratedSliderRow {
     reset_button: gtk::Button,
 }
 
-impl BigIllustratedSliderRow {
+impl BigSliderRow {
     /// Creates a new instance.
     #[must_use]
-    pub fn new(spec: BigIllustratedSliderRowSpec) -> Self {
+    pub fn new(spec: BigSliderRowSpec) -> Self {
         let resolved = spec.resolved();
         let root = gtk::Box::builder()
-            .orientation(gtk::Orientation::Horizontal)
-            .spacing(12)
-            .build();
-
-        if let Some(path) = resolved.resource_path.as_deref() {
-            let image = gtk::Image::from_resource(path);
-            image.set_pixel_size(resolved.image_size);
-            image.set_margin_top(6);
-            image.set_margin_bottom(6);
-            image.set_valign(gtk::Align::Center);
-            root.append(&image);
-        }
-
-        let text_box = gtk::Box::builder()
             .orientation(gtk::Orientation::Vertical)
             .spacing(if resolved.title_heading { 4 } else { 2 })
             .hexpand(true)
             .build();
-        text_box.append(&title_label(&spec.title, resolved.title_heading));
+        root.append(&title_label(&spec.title, resolved.title_heading));
 
         if let Some(subtitle) = spec.subtitle.as_deref() {
-            text_box.append(&subtitle_label(subtitle));
+            root.append(&subtitle_label(subtitle));
         }
 
         let slider_box = gtk::Box::builder()
@@ -304,52 +259,14 @@ impl BigIllustratedSliderRow {
             resolved.page_step,
             0.0,
         );
-        let scale = gtk::Scale::builder()
-            .adjustment(&adjustment)
-            .draw_value(false)
-            .hexpand(true)
-            .width_request(resolved.scale_width_request)
-            .build();
-        scale.set_digits(resolved.digits);
-        scale.update_property(&[gtk::accessible::Property::Label(&spec.title)]);
-        scale.add_mark(
-            resolved.default,
-            gtk::PositionType::Bottom,
-            resolved.mark_label.as_deref(),
-        );
+        let scale = slider_scale(&resolved, &spec.title, &adjustment);
         slider_box.append(&scale);
-
-        let value_label = gtk::Label::builder()
-            .label(&resolved.initial_label)
-            .width_chars(resolved.value_width_chars)
-            .xalign(1.0)
-            .build();
-        value_label.add_css_class("monospace");
+        let value_label = live_value_label(&resolved, &adjustment);
         slider_box.append(&value_label);
-
-        {
-            let value_label = value_label.clone();
-            let suffix = resolved.value_suffix.clone();
-            let digits = resolved.digits;
-            adjustment.connect_value_changed(move |adjustment| {
-                value_label.set_label(&format_value(adjustment.value(), digits, &suffix));
-            });
-        }
-
-        let reset_button =
-            tooltip::icon_button(&resolved.reset_icon_name, &resolved.reset_label, &["flat"]);
-        reset_button.update_property(&[gtk::accessible::Property::Label(
-            &resolved.reset_accessible_label,
-        )]);
-        {
-            let adjustment = adjustment.clone();
-            let default = resolved.default;
-            reset_button.connect_clicked(move |_| adjustment.set_value(default));
-        }
+        let reset_button = reset_to_default_button(&resolved, &adjustment);
         slider_box.append(&reset_button);
 
-        text_box.append(&slider_box);
-        root.append(&text_box);
+        root.append(&slider_box);
 
         Self {
             root,
@@ -360,7 +277,7 @@ impl BigIllustratedSliderRow {
         }
     }
 
-    /// Return a reference to the `root` exposed by this [`BigIllustratedSliderRow`].
+    /// Return a reference to the `root` exposed by this [`BigSliderRow`].
     ///
     /// Useful when callers need to bind signals, query state, or compose the
     /// widget into a larger surface without taking ownership.
@@ -369,7 +286,7 @@ impl BigIllustratedSliderRow {
         &self.root
     }
 
-    /// Return a reference to the `adjustment` exposed by this [`BigIllustratedSliderRow`].
+    /// Return a reference to the `adjustment` exposed by this [`BigSliderRow`].
     ///
     /// Useful when callers need to bind signals, query state, or compose the
     /// widget into a larger surface without taking ownership.
@@ -441,35 +358,83 @@ fn reset_accessible_label(reset_label: &str, title: &str) -> String {
     }
 }
 
+/// The slider itself, named after the row and marked at its default.
+fn slider_scale(
+    resolved: &BigSliderRowResolved,
+    title: &str,
+    adjustment: &gtk::Adjustment,
+) -> gtk::Scale {
+    let scale = gtk::Scale::builder()
+        .adjustment(adjustment)
+        .draw_value(false)
+        .hexpand(true)
+        .width_request(resolved.scale_width_request)
+        .build();
+    scale.set_digits(resolved.digits);
+    scale.update_property(&[gtk::accessible::Property::Label(title)]);
+    scale.add_mark(
+        resolved.default,
+        gtk::PositionType::Bottom,
+        resolved.mark_label.as_deref(),
+    );
+    scale
+}
+
+/// The value beside the slider, kept in step with the adjustment.
+fn live_value_label(resolved: &BigSliderRowResolved, adjustment: &gtk::Adjustment) -> gtk::Label {
+    let value_label = gtk::Label::builder()
+        .label(&resolved.initial_label)
+        .width_chars(resolved.value_width_chars)
+        .xalign(1.0)
+        .build();
+    value_label.add_css_class("monospace");
+    let label = value_label.downgrade();
+    let suffix = resolved.value_suffix.clone();
+    let digits = resolved.digits;
+    adjustment.connect_value_changed(move |adjustment| {
+        if let Some(label) = label.upgrade() {
+            label.set_label(&format_value(adjustment.value(), digits, &suffix));
+        }
+    });
+    value_label
+}
+
+/// The button that puts the slider back at its default.
+fn reset_to_default_button(
+    resolved: &BigSliderRowResolved,
+    adjustment: &gtk::Adjustment,
+) -> gtk::Button {
+    let reset_button =
+        tooltip::icon_button(&resolved.reset_icon_name, &resolved.reset_label, &["flat"]);
+    reset_button.update_property(&[gtk::accessible::Property::Label(
+        &resolved.reset_accessible_label,
+    )]);
+    let adjustment = adjustment.downgrade();
+    let default = resolved.default;
+    reset_button.connect_clicked(move |_| {
+        if let Some(adjustment) = adjustment.upgrade() {
+            adjustment.set_value(default);
+        }
+    });
+    reset_button
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
 
     #[test]
-    fn resolved_builds_resource_and_label() {
-        let resolved = BigIllustratedSliderRowSpec::new(
-            "/app/illustrations/",
-            "Subtitle Delay",
-            -10.0,
-            10.0,
-            0.0,
-            1.25,
-            0.1,
-            "Reset",
-        )
-        .illustration_name("sub_delay.svg")
-        .subtitle("Shift subtitles")
-        .value_suffix(" s")
-        .value_width_chars(7)
-        .scale_width_request(240)
-        .title_heading(true)
-        .mark_label(Some("0"))
-        .resolved();
+    fn resolved_builds_labels() {
+        let resolved =
+            BigSliderRowSpec::new("Subtitle Delay", -10.0, 10.0, 0.0, 1.25, 0.1, "Reset")
+                .subtitle("Shift subtitles")
+                .value_suffix(" s")
+                .value_width_chars(7)
+                .scale_width_request(240)
+                .title_heading(true)
+                .mark_label(Some("0"))
+                .resolved();
 
-        assert_eq!(
-            resolved.resource_path.as_deref(),
-            Some("/app/illustrations/sub_delay.svg")
-        );
         assert_eq!(resolved.initial_label, "1.25 s");
         assert_eq!(resolved.value_width_chars, 7);
         assert_eq!(resolved.scale_width_request, 240);
@@ -480,18 +445,9 @@ mod tests {
 
     #[test]
     fn resolved_clamps_initial_and_default() {
-        let resolved = BigIllustratedSliderRowSpec::new(
-            "",
-            "Brightness",
-            0.0,
-            1.0,
-            9.0,
-            f64::NAN,
-            0.0,
-            "Reset",
-        )
-        .digits(-1)
-        .resolved();
+        let resolved = BigSliderRowSpec::new("Brightness", 0.0, 1.0, 9.0, f64::NAN, 0.0, "Reset")
+            .digits(-1)
+            .resolved();
 
         assert_eq!(resolved.default, 1.0);
         assert_eq!(resolved.initial, 1.0);

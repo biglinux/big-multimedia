@@ -38,12 +38,15 @@ use big_os_kit::keyring::SecretService;
 use big_os_kit::url::ListOrigin;
 
 use crate::media::iptv::{
-    IptvChannel, IptvKind, IptvProvider, IptvProviderStore, MAX_PLAYLIST_ENTRIES, left_out_notice,
+    IptvChannel, IptvProvider, IptvProviderStore, MAX_PLAYLIST_ENTRIES, left_out_notice,
     parse_channel_list,
 };
 
 use channel_list::ChannelListView;
-use fetcher::{FetchError, FetchedChannels, fetch_provider_channels, provider_identifier};
+use fetcher::{
+    ChannelUrls, FetchError, FetchedChannels, channel_urls, fetch_provider_channels,
+    provider_identifier,
+};
 
 /// Messages into the IPTV browser.
 #[derive(Debug)]
@@ -85,10 +88,10 @@ pub enum VideoIptvBrowserInput {
 /// Intents emitted by the browser for the shell to act on.
 #[derive(Debug)]
 pub enum VideoIptvBrowserOutput {
-    /// Play this stream URL (with a display title) in the main player; the
+    /// Play this channel (with a display title) in the main player; the
     /// provider's list named it.
     PlayChannel {
-        url: String,
+        urls: ChannelUrls,
         title: String,
         origin: ListOrigin,
     },
@@ -103,6 +106,8 @@ pub struct VideoIptvBrowser {
     /// Provider dropdown model + widget (kept for repopulation on CRUD close).
     provider_model: gtk::StringList,
     provider_dropdown: gtk::DropDown,
+    /// Blocked while the dropdown is refilled, whose caller loads the provider.
+    provider_selection: gtk::glib::SignalHandlerId,
     /// Status caption (cached/loading/error messaging).
     status: gtk::Label,
     /// Shown while a provider's password stays in the file for want of a
@@ -224,7 +229,7 @@ impl Component for VideoIptvBrowser {
         scrolled.set_child(Some(&list_view.root));
         root.append(&scrolled);
 
-        wire_widget_signals(
+        let provider_selection = wire_widget_signals(
             &manage_providers_button,
             &refresh_provider_button,
             &search,
@@ -237,6 +242,7 @@ impl Component for VideoIptvBrowser {
             list_view,
             provider_model,
             provider_dropdown,
+            provider_selection,
             status,
             keyring_status,
             protecting: false,
@@ -309,6 +315,12 @@ impl Component for VideoIptvBrowser {
 }
 
 impl VideoIptvBrowser {
+    /// The providers as edited, for resolving saved channels off the main loop.
+    #[must_use]
+    pub fn providers(&self) -> Vec<IptvProvider> {
+        self.store.borrow().providers.clone()
+    }
+
     /// Move the secrets a provider still holds in plain text, typed into an
     /// older build or carried in an older file, into the keyring.
     fn protect_plaintext(&mut self, sender: &ComponentSender<Self>) {
@@ -369,20 +381,15 @@ impl VideoIptvBrowser {
                 let vault = SecretService {
                     cancelled: &cancelled,
                 };
-                match provider.source {
-                    IptvKind::Xtream { .. } => match provider.resolved_source(&vault)? {
-                        IptvKind::Xtream {
-                            username, password, ..
-                        } => Ok(xtream::stream_url(&url, &username, &password)),
-                        IptvKind::M3uUrl { .. } | IptvKind::M3uLocal { .. } => Ok(url),
-                    },
-                    IptvKind::M3uUrl { .. } | IptvKind::M3uLocal { .. } => Ok(url),
-                }
+                channel_urls(&provider, &url, &vault)
             },
-            move |played: std::io::Result<String>| match played {
-                Ok(url) => {
-                    let _ =
-                        sender.output(VideoIptvBrowserOutput::PlayChannel { url, title, origin });
+            move |urls: std::io::Result<ChannelUrls>| match urls {
+                Ok(urls) => {
+                    let _ = sender.output(VideoIptvBrowserOutput::PlayChannel {
+                        urls,
+                        title,
+                        origin,
+                    });
                 }
                 Err(_) => sender.input(VideoIptvBrowserInput::KeyringUnavailable),
             },
@@ -402,10 +409,14 @@ impl VideoIptvBrowser {
             .map(|p| p.name.clone())
             .collect();
         let name_refs: Vec<&str> = names.iter().map(String::as_str).collect();
+        self.provider_dropdown
+            .block_signal(&self.provider_selection);
         self.provider_model.splice(0, n, &name_refs);
         if self.provider_model.n_items() > 0 {
             self.provider_dropdown.set_selected(0);
         }
+        self.provider_dropdown
+            .unblock_signal(&self.provider_selection);
     }
 
     /// Present the providers-management dialog over the browser root.
@@ -492,7 +503,7 @@ impl VideoIptvBrowser {
 
 /// What went wrong, in words the person can act on. A list saved before
 /// stays on screen.
-fn fetch_error_text(error: &FetchError) -> String {
+pub(crate) fn fetch_error_text(error: &FetchError) -> String {
     match error {
         FetchError::Unreachable => i18n(
             "Could not reach the provider. Check the address and your connection; a saved list stays on screen.",
@@ -519,6 +530,9 @@ fn fetch_error_text(error: &FetchError) -> String {
         FetchError::FileUnreadable => i18n("Could not read the playlist file."),
         FetchError::Keyring => i18n(
             "Could not read this provider's password from your keyring. Unlock your keyring, then reload the channels.",
+        ),
+        FetchError::NoProvider => i18n(
+            "This playlist has IPTV channels from a provider that is not set up. Add the provider under IPTV, then open the playlist again.",
         ),
     }
 }
@@ -568,14 +582,15 @@ fn spawn_network_load(
 }
 
 /// Wire the static widget signals (manage/refresh/search/dropdown) to component
-/// inputs. Pulled out of `init` to keep that function small.
+/// inputs, returning the dropdown's selection handler. Pulled out of `init` to
+/// keep that function small.
 fn wire_widget_signals(
     manage_providers_button: &gtk::Button,
     refresh_provider_button: &gtk::Button,
     search: &gtk::SearchEntry,
     provider_dropdown: &gtk::DropDown,
     sender: &ComponentSender<VideoIptvBrowser>,
-) {
+) -> gtk::glib::SignalHandlerId {
     let manage_sender = sender.clone();
     manage_providers_button.connect_clicked(move |_| {
         manage_sender.input(VideoIptvBrowserInput::ManageProviders);
@@ -596,5 +611,5 @@ fn wire_widget_signals(
         dropdown_sender.input(VideoIptvBrowserInput::ProviderSelected(
             dropdown.selected() as usize
         ));
-    });
+    })
 }

@@ -106,11 +106,26 @@ fn card_frame_spec(video_path: &str, seek_secs: f64, output: &Path) -> BigSubpro
 }
 
 /// Renders one frame of `video_path` at `seek_secs`, fitted into a 240x136 card,
-/// into `target`, whose extension picks the image format. ffmpeg writes a staging
-/// file beside `target` that replaces it only after a clean exit with a non-empty
-/// file, so a killed or failed run never leaves a cached frame that `exists()`
-/// would serve. Blocking; returns whether `target` was written.
+/// into `target` through [`publish_converted`]. Blocking; returns whether
+/// `target` was written. A network stream is never opened: an IPTV panel counts
+/// each card against the account.
 pub fn render_card_frame(video_path: &str, seek_secs: f64, target: &Path) -> bool {
+    if big_os_kit::url::is_stream_uri(video_path) {
+        return false;
+    }
+    publish_converted(target, |partial| {
+        card_frame_spec(video_path, seek_secs, partial)
+    })
+}
+
+/// Runs the converter built for a staging file beside `target`, whose extension
+/// it keeps, and renames that file over `target` only after a clean exit with a
+/// non-empty file, so a killed or failed run never leaves a file that an
+/// `exists()` cache check would serve. Blocking; returns whether `target` was written.
+pub fn publish_converted(
+    target: &Path,
+    converter: impl FnOnce(&Path) -> BigSubprocessSpec,
+) -> bool {
     let (Some(directory), Some(extension)) = (target.parent(), target.extension()) else {
         return false;
     };
@@ -122,7 +137,7 @@ pub fn render_card_frame(video_path: &str, seek_secs: f64, target: &Path) -> boo
     ));
     partial_name.push(extension);
     let partial = directory.join(partial_name);
-    let rendered = card_frame_spec(video_path, seek_secs, &partial)
+    let rendered = converter(&partial)
         .run()
         .is_ok_and(|output| output.status.success());
     publish_frame(rendered, &partial, target)
@@ -154,8 +169,12 @@ fn seek_position(video_path: &str) -> f64 {
 }
 
 /// Synchronous; semaphore-gated to cap concurrent ffmpeg children. `None`
-/// without a private cache directory.
+/// without a private cache directory, and for a network stream, which
+/// [`render_card_frame`] does not open.
 fn get_or_generate_thumbnail(video_path: &str) -> Option<PathBuf> {
+    if big_os_kit::url::is_stream_uri(video_path) {
+        return None;
+    }
     let cache_root = big_os_kit::xdg_dirs::cache_dir()?;
     let cache = thumbnail_cache_dir(&cache_root)?;
     let hash = thumb_hash(video_path);
@@ -275,6 +294,41 @@ mod tests {
         std::fs::write(&partial, b"whole").unwrap();
         assert!(publish_frame(true, &partial, &frame));
         assert_eq!(std::fs::read(&frame).unwrap(), b"whole");
+    }
+
+    /// The converters stand in for an ffmpeg run that writes part of its output
+    /// and fails, and for one that exits cleanly without writing.
+    #[test]
+    fn failed_or_empty_conversion_leaves_no_file() {
+        let dir = tempfile::tempdir().unwrap();
+        let target = dir.path().join("wallpaper.png");
+        for script in ["printf part > \"$1\"; exit 1", ": > \"$1\""] {
+            assert!(!publish_converted(&target, |partial| {
+                BigSubprocessSpec::builder()
+                    .program("sh")
+                    .args(["-c", script, "sh"])
+                    .arg(partial)
+                    .build()
+            }));
+            assert_eq!(
+                std::fs::read_dir(dir.path()).unwrap().count(),
+                0,
+                "{script}"
+            );
+        }
+    }
+
+    #[test]
+    fn cards_never_open_streams() {
+        let listener = std::net::TcpListener::bind("127.0.0.1:0").unwrap();
+        listener.set_nonblocking(true).unwrap();
+        let url = format!("http://{}/live/1.ts", listener.local_addr().unwrap());
+        let dir = tempfile::tempdir().unwrap();
+        assert!(crate::media::playlist::probe_metadata_cached(&url).is_none());
+        assert!(get_or_generate_thumbnail(&url).is_none());
+        assert!(!render_card_frame(&url, 1.0, &dir.path().join("0.jpg")));
+        let connection = listener.accept().map(|_| ()).map_err(|error| error.kind());
+        assert_eq!(connection, Err(std::io::ErrorKind::WouldBlock));
     }
 
     #[test]

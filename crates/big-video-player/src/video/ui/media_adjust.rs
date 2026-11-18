@@ -1,6 +1,6 @@
 //! App-local picture and equalizer builders for the settings panel: the
 //! "Video colour" choice up front and, under "More options", debounced
-//! `BigIllustratedSliderRow`s plus rotate/flip/crop that drive the live
+//! `BigSliderRow`s plus rotate/flip/crop that drive the live
 //! `Arc<MpvBackend>` directly.
 //!
 //! The equalizer reuses the shared
@@ -21,12 +21,9 @@ use std::time::Duration;
 
 use adw::prelude::*;
 use big_relm4_components::input::debounce::connect_debounced_adjustment;
-use big_relm4_components::input::illustrated_slider_row::{
-    BigIllustratedSliderRow, BigIllustratedSliderRowSpec,
-};
+use big_relm4_components::input::slider_row::{BigSliderRow, BigSliderRowSpec};
 use big_relm4_components::layout::preferences::BigPreferencesGroupSpec;
 
-use crate::config::video::RESOURCE_PREFIX;
 use crate::i18n::i18n;
 use crate::player::mpv_backend::MpvBackend;
 use big_media_runtime::i18n::gettext_noop;
@@ -120,11 +117,6 @@ pub(crate) fn source_colour_names() -> [String; 4] {
     ]
 }
 
-/// Resource path prefix for the slider illustration SVGs.
-fn illustration_prefix() -> String {
-    format!("{RESOURCE_PREFIX}/illustrations/")
-}
-
 /// Seed value for a slider from a raw mpv property reading: clamp into the
 /// slider's `[lower, upper]` so an out-of-range/uninitialised mpv value can
 /// never push the adjustment past its bounds (which would silently re-apply a
@@ -196,9 +188,8 @@ pub(super) fn build_delay_row(mpv: &Arc<MpvBackend>, subtitles: bool) -> gtk::Wi
             |mpv, value| mpv.set_audio_delay(value),
         )
     };
-    let row = BigIllustratedSliderRow::new(
-        BigIllustratedSliderRowSpec::new(
-            illustration_prefix(),
+    let row = BigSliderRow::new(
+        BigSliderRowSpec::new(
             title,
             -limit,
             limit,
@@ -230,15 +221,13 @@ fn add_image_group(
     mpv: &Arc<MpvBackend>,
     wide: bool,
 ) {
-    let prefix = illustration_prefix();
     let group = adw::PreferencesGroup::new();
     // Side by side when the panel is wide, stacked when it is narrow.
     let flow = reflowing_box(if wide { 2 } else { 1 });
     flow.set_min_children_per_line(if wide { 2 } else { 1 });
     for spec in rows {
-        let row = BigIllustratedSliderRow::new(
-            BigIllustratedSliderRowSpec::new(
-                &prefix,
+        let row = BigSliderRow::new(
+            BigSliderRowSpec::new(
                 i18n(spec.title),
                 spec.lower,
                 spec.upper,

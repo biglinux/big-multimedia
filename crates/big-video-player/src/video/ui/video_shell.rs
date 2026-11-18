@@ -72,6 +72,7 @@ pub(crate) use playback::is_remote_uri;
 mod playlist_panel;
 mod render;
 mod state_access;
+mod stored_urls;
 mod trim;
 mod tv;
 
@@ -110,6 +111,8 @@ pub struct VideoShell {
     /// `PlayFromList` reuses the already-loaded list (jump in place) versus a new
     /// folder (reload), and to resolve a `RemoveEntry` path to its mpv index.
     playlist_paths: Vec<String>,
+    /// IPTV channels `playlist_paths` lists by their stored URL.
+    stored_urls: stored_urls::StoredUrls,
     /// Pending load-time shuffle: the chosen start path and the list length,
     /// applied at the `FileLoaded` where mpv holds both.
     shuffle_on_load: Option<(String, usize)>,

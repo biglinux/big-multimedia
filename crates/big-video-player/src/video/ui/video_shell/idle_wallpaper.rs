@@ -19,6 +19,7 @@ use big_media_runtime::media_probe::LOCAL_INPUT_PROTOCOLS;
 use big_relm4_components::task::spawn_blocking_result;
 
 use super::osd::IdleBackground;
+use crate::media::thumbnail::publish_converted;
 
 /// Image extensions accepted as wallpapers (lower-case match). Mirrors
 /// big-shell's `WALLPAPER_EXTENSIONS` (incl. `heic`/`jxl`, since BigShell's default
@@ -280,7 +281,7 @@ pub(super) fn tv_backdrop(video: &str, seconds: f64) -> Option<PathBuf> {
         }
     }
     let dest = cache_dir.join(name);
-    produced(backdrop_spec(video, seconds, &dest), &dest).then_some(dest)
+    publish_converted(&dest, |partial| backdrop_spec(video, seconds, partial)).then_some(dest)
 }
 
 fn backdrop_spec(video: &str, seconds: f64, dest: &Path) -> BigSubprocessSpec {
@@ -344,10 +345,10 @@ fn rasterize_magick(source: &Path, dest: &Path) -> bool {
     })
 }
 
-/// Run the ffmpeg blur on `source` → `dest`; `true` on a non-empty result. Argv
-/// array, no shell.
+/// Run the ffmpeg blur on `source` → `dest`; `true` once a non-empty result is
+/// published. Argv array, no shell.
 fn run_blur(source: &Path, dest: &Path) -> bool {
-    produced(blur_spec(source, dest), dest)
+    publish_converted(dest, |partial| blur_spec(source, partial))
 }
 
 fn blur_spec(source: &Path, dest: &Path) -> BigSubprocessSpec {

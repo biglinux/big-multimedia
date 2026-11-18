@@ -36,8 +36,13 @@ fn media_detail_row(title: &str, value: &str, lines: &BigDetailLines) -> adw::Ac
     .into_row()
 }
 
-/// Present the media-details dialog over `parent`.
-pub fn show_video_media_details_dialog(parent: &impl IsA<gtk::Widget>, mpv: &Arc<MpvBackend>) {
+/// Present the media-details dialog over `parent` for the file the playlist
+/// lists as `file_path`: an IPTV channel's stored URL, not the played one.
+pub fn show_video_media_details_dialog(
+    parent: &impl IsA<gtk::Widget>,
+    mpv: &Arc<MpvBackend>,
+    file_path: &str,
+) {
     let dialog = big_gtk_kit::dialog::Dialog::builder()
         .title(i18n("Media Information"))
         .content_width(500)
@@ -51,7 +56,7 @@ pub fn show_video_media_details_dialog(parent: &impl IsA<gtk::Widget>, mpv: &Arc
 
     let content = page.content().clone();
     content.set_spacing(12);
-    content.append(&build_general_group(mpv, &lines));
+    content.append(&build_general_group(mpv, file_path, &lines));
     if let Some(group) = build_metadata_group(mpv, &lines) {
         content.append(&group);
     }
@@ -73,15 +78,18 @@ pub fn show_video_media_details_dialog(parent: &impl IsA<gtk::Widget>, mpv: &Arc
     dialog.present(Some(parent));
 }
 
-fn build_general_group(mpv: &Arc<MpvBackend>, lines: &BigDetailLines) -> adw::PreferencesGroup {
+fn build_general_group(
+    mpv: &Arc<MpvBackend>,
+    file_path: &str,
+    lines: &BigDetailLines,
+) -> adw::PreferencesGroup {
     let group = BigPreferencesGroupSpec::new(i18n("General")).build();
 
-    let file_path = mpv.get_current_file().unwrap_or_default();
     if !file_path.is_empty() {
-        group.add(&media_detail_row(&i18n("File"), &file_path, lines));
+        group.add(&media_detail_row(&i18n("File"), file_path, lines));
         let group = group.downgrade();
         let lines = lines.clone();
-        gtk::gio::File::for_path(&file_path).query_info_async(
+        gtk::gio::File::for_path(file_path).query_info_async(
             "standard::size",
             gtk::gio::FileQueryInfoFlags::NONE,
             gtk::glib::Priority::DEFAULT,

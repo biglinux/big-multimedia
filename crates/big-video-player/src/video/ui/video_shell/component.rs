@@ -585,6 +585,7 @@ impl Component for VideoShell {
                 main_overlay,
                 welcome_overlay: RefCell::new(Some(welcome)),
                 playlist_paths: Vec::new(),
+                stored_urls: super::stored_urls::StoredUrls::default(),
                 shuffle_on_load: None,
                 open_generation: 0,
                 adjustments: Vec::new(),

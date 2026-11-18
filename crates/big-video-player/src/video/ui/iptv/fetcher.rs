@@ -11,7 +11,10 @@ use crate::media::iptv::{
 };
 use crate::video::ui::iptv::{cache, xtream};
 use big_os_kit::http_client::{RequestHeaders, http_get_bytes_capped};
-use big_os_kit::keyring::SecretService;
+use big_os_kit::keyring::{SecretService, Vault};
+use std::collections::HashMap;
+use std::collections::hash_map::Entry;
+use std::io;
 use std::sync::atomic::AtomicBool;
 use std::time::Duration;
 
@@ -38,6 +41,8 @@ pub enum FetchError {
     FileUnreadable,
     /// The keyring did not give back the provider's password.
     Keyring,
+    /// A saved channel is on a server no Xtream provider is set up for.
+    NoProvider,
 }
 
 /// A provider's channels, and the favorites to move to their stored URLs.
@@ -47,6 +52,96 @@ pub struct FetchedChannels {
     /// `(played URL, stored URL)`: Xtream stars saved under the URL with the
     /// account's credentials in it.
     pub favorite_renames: Vec<(String, String)>,
+}
+
+/// The URLs of a channel about to play.
+#[derive(Debug, PartialEq, Eq)]
+pub struct ChannelUrls {
+    /// What mpv opens, with the account's credentials in it.
+    pub played: String,
+    /// What the playlist lists and may save to a file; `None` when the played
+    /// URL can carry the provider's secret in a form no stored URL marks.
+    pub stored: Option<String>,
+}
+
+/// The URLs of the channel at `url` in `provider`'s list. Blocking, reads
+/// the keyring: call from a worker thread.
+///
+/// # Errors
+///
+/// When the keyring does not give back the provider's secret.
+pub fn channel_urls(
+    provider: &IptvProvider,
+    url: &str,
+    vault: &dyn Vault,
+) -> io::Result<ChannelUrls> {
+    Ok(match provider.resolved_source(vault)? {
+        IptvKind::Xtream {
+            username, password, ..
+        } => ChannelUrls {
+            played: xtream::stream_url(url, &username, &password),
+            stored: (!xtream::shows_password(url, &password)).then(|| url.to_owned()),
+        },
+        IptvKind::M3uUrl { url: list } => ChannelUrls {
+            played: url.to_owned(),
+            stored: (big_os_kit::url::redact_url(&list) == list).then(|| url.to_owned()),
+        },
+        IptvKind::M3uLocal { .. } => ChannelUrls {
+            played: url.to_owned(),
+            stored: Some(url.to_owned()),
+        },
+    })
+}
+
+/// `(stored, played)` for each of `entries` that names an Xtream account's
+/// credentials. Blocking, reads the keyring once per provider.
+///
+/// # Errors
+///
+/// [`FetchError::NoProvider`] when no Xtream provider is on an entry's server,
+/// [`FetchError::Keyring`] when the keyring keeps that provider's password.
+pub fn played_channels(
+    entries: &[String],
+    providers: &[IptvProvider],
+    vault: &dyn Vault,
+) -> Result<Vec<(String, String)>, FetchError> {
+    let mut accounts: HashMap<usize, (String, String)> = HashMap::new();
+    let mut channels = Vec::new();
+    for entry in entries
+        .iter()
+        .filter(|entry| xtream::names_credentials(entry))
+    {
+        let (index, provider) = providers
+            .iter()
+            .enumerate()
+            .find(|(_, provider)| serves(provider, entry))
+            .ok_or(FetchError::NoProvider)?;
+        let (username, password) = match accounts.entry(index) {
+            Entry::Occupied(account) => account.into_mut(),
+            Entry::Vacant(slot) => match provider.resolved_source(vault) {
+                Ok(IptvKind::Xtream {
+                    username, password, ..
+                }) => slot.insert((username, password)),
+                Ok(IptvKind::M3uUrl { .. } | IptvKind::M3uLocal { .. }) => {
+                    return Err(FetchError::NoProvider);
+                }
+                Err(_) => return Err(FetchError::Keyring),
+            },
+        };
+        channels.push((entry.clone(), xtream::stream_url(entry, username, password)));
+    }
+    Ok(channels)
+}
+
+/// Whether `url` is on the server of the Xtream `provider`: its credentials
+/// go nowhere else.
+fn serves(provider: &IptvProvider, url: &str) -> bool {
+    match &provider.source {
+        IptvKind::Xtream { server, .. } => url
+            .strip_prefix(server.trim_end_matches('/'))
+            .is_some_and(|path| path.starts_with('/')),
+        IptvKind::M3uUrl { .. } | IptvKind::M3uLocal { .. } => false,
+    }
 }
 
 /// Stable per-provider cache identifier; the cache names its file by a hash
@@ -141,6 +236,157 @@ mod tests {
             user_agent: String::new(),
             ..IptvProvider::default()
         }
+    }
+
+    /// A keyring holding one secret, or refusing every lookup.
+    struct Keyring(Option<&'static str>);
+
+    impl Vault for Keyring {
+        fn store(&self, _: &str, _: &str, _: &[u8]) -> io::Result<()> {
+            Err(io::Error::other("read-only"))
+        }
+        fn lookup(&self, _: &str, _: &str) -> io::Result<Vec<u8>> {
+            self.0
+                .map(|secret| secret.as_bytes().to_vec())
+                .ok_or_else(|| io::Error::other("locked"))
+        }
+        fn clear(&self, _: &str, _: &str) -> io::Result<()> {
+            Ok(())
+        }
+    }
+
+    fn account(name: &str) -> IptvProvider {
+        IptvProvider {
+            secret_id: "item".into(),
+            ..provider(
+                name,
+                IptvKind::Xtream {
+                    server: "http://srv".into(),
+                    username: "ana".into(),
+                    password: String::new(),
+                },
+            )
+        }
+    }
+
+    #[test]
+    fn saved_playlists_hold_no_xtream_password() {
+        let urls = channel_urls(
+            &account("Panel"),
+            "http://srv/live/{credentials}/7.ts",
+            &Keyring(Some("s3c?ret")),
+        )
+        .unwrap();
+        assert_eq!(urls.played, "http://srv/live/ana/s3c%3Fret/7.ts");
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir.path().join("playlist.m3u8");
+        let listed: Vec<String> = urls.stored.into_iter().collect();
+        crate::media::playlist::write_m3u(&path, &listed).unwrap();
+        let saved = std::fs::read_to_string(&path).unwrap();
+        assert!(
+            saved.contains("http://srv/live/{credentials}/7.ts"),
+            "{saved}"
+        );
+        assert!(!saved.contains("s3c") && !saved.contains("ana"), "{saved}");
+    }
+
+    /// A list cached before its credentials were taken out, or an M3U URL
+    /// whose secret the channel URLs may repeat, keeps the channel unlisted.
+    #[test]
+    fn secret_bearing_urls_stay_unlisted() {
+        let cached = channel_urls(
+            &account("Panel"),
+            "http://srv/live/ana/s3c%3Fret/7.ts",
+            &Keyring(Some("s3c?ret")),
+        )
+        .unwrap();
+        assert_eq!(cached.stored, None);
+        let list = IptvProvider {
+            secret_id: "item".into(),
+            ..provider(
+                "List",
+                IptvKind::M3uUrl {
+                    url: "http://srv/get.php?username=ana&password=***".into(),
+                },
+            )
+        };
+        let keyring = Keyring(Some("http://srv/get.php?username=ana&password=s3cret"));
+        let channel = channel_urls(&list, "http://srv/ana/s3cret/7", &keyring).unwrap();
+        assert_eq!(channel.played, "http://srv/ana/s3cret/7");
+        assert_eq!(channel.stored, None);
+    }
+
+    #[test]
+    fn saved_channels_play_with_their_provider_account() {
+        let entries = [
+            "/videos/a.mkv".to_string(),
+            "http://srv/live/{credentials}/7.ts".to_string(),
+            "http://srv/live/{credentials}/8.ts".to_string(),
+        ];
+        let providers = [
+            provider(
+                "Free",
+                IptvKind::M3uUrl {
+                    url: "http://srv/x.m3u".into(),
+                },
+            ),
+            account("Panel"),
+        ];
+        let channels = played_channels(&entries, &providers, &Keyring(Some("pw"))).unwrap();
+        assert_eq!(
+            channels,
+            [
+                (
+                    entries[1].clone(),
+                    "http://srv/live/ana/pw/7.ts".to_string()
+                ),
+                (
+                    entries[2].clone(),
+                    "http://srv/live/ana/pw/8.ts".to_string()
+                ),
+            ]
+        );
+    }
+
+    #[test]
+    fn locked_keyring_refuses_saved_channels() {
+        let entries = ["http://srv/live/{credentials}/7.ts".to_string()];
+        assert_eq!(
+            played_channels(&entries, &[account("Panel")], &Keyring(None)),
+            Err(FetchError::Keyring)
+        );
+    }
+
+    /// A playlist file names the server; an account goes only to its own.
+    #[test]
+    fn credentials_never_go_to_another_server() {
+        for entry in [
+            "http://srv.example/live/{credentials}/7.ts",
+            "http://other/live/{credentials}/7.ts",
+            "https://srv/live/{credentials}/7.ts",
+        ] {
+            assert_eq!(
+                played_channels(
+                    &[entry.to_string()],
+                    &[account("Panel")],
+                    &Keyring(Some("pw"))
+                ),
+                Err(FetchError::NoProvider),
+                "{entry}"
+            );
+        }
+    }
+
+    #[test]
+    fn secretless_lists_list_played_urls() {
+        let free = provider(
+            "Free",
+            IptvKind::M3uUrl {
+                url: "http://a/x.m3u".into(),
+            },
+        );
+        let urls = channel_urls(&free, "http://a/1.ts", &Keyring(None)).unwrap();
+        assert_eq!(urls.stored.as_deref(), Some(urls.played.as_str()));
     }
 
     #[test]
