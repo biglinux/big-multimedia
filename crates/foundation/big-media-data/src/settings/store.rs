@@ -26,19 +26,20 @@ fn observe(inner: &Shared) {
     items.push(Arc::downgrade(inner));
 }
 
-fn parse(content: &[u8]) -> io::Result<HashMap<String, String>> {
+pub(super) fn parse(content: &[u8]) -> io::Result<HashMap<String, String>> {
     let text = std::str::from_utf8(content)
         .map_err(|_| io::Error::new(io::ErrorKind::InvalidData, "settings are not UTF-8"))?;
     let mut values = HashMap::new();
     for line in text.lines() {
-        let line = line.trim();
+        let line = line.trim_start();
         if line.is_empty() || line.starts_with('#') {
             continue;
         }
+        // The value is taken as `serialize` wrote it, edge spaces included.
         let (key, value) = line
             .split_once('=')
             .ok_or_else(|| io::Error::new(io::ErrorKind::InvalidData, "invalid settings line"))?;
-        let key = key.trim();
+        let key = key.trim_end();
         if !super::schema::valid(key, value) || values.insert(key.into(), value.into()).is_some() {
             return Err(io::Error::new(
                 io::ErrorKind::InvalidData,
@@ -49,7 +50,7 @@ fn parse(content: &[u8]) -> io::Result<HashMap<String, String>> {
     Ok(values)
 }
 
-fn serialize(values: &HashMap<String, String>) -> io::Result<Vec<u8>> {
+pub(super) fn serialize(values: &HashMap<String, String>) -> io::Result<Vec<u8>> {
     let mut entries: Vec<_> = values.iter().collect();
     entries.sort_by_key(|(key, _)| *key);
     let mut bytes = Vec::new();

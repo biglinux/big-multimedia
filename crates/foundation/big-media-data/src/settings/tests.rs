@@ -126,3 +126,63 @@ fn volume_max_stays_in_preference_range() {
         assert_eq!(settings.volume_max_percent(), expected, "stored {stored}");
     }
 }
+
+#[test]
+fn serialized_settings_read_back_unchanged() {
+    const KEYS: [&str; 8] = [
+        "mute",
+        "tray-icon",
+        "volume",
+        "subtitle-font-size",
+        "render-mode",
+        "sub-font",
+        "hwdec",
+        "x-unknown_key",
+    ];
+    const PIECES: [&str; 14] = [
+        " ", "a", "Z", "0", "1", "=", "#", "é", "€", ".", "-", "true", "auto", "sw",
+    ];
+    // A fixed linear congruential generator: the same maps on every run.
+    let mut state: u64 = 0x5eed;
+    let mut below = |n: usize| {
+        state = state
+            .wrapping_mul(6_364_136_223_846_793_005)
+            .wrapping_add(1_442_695_040_888_963_407);
+        (state >> 33) as usize % n
+    };
+    for _ in 0..2000 {
+        let mut map = HashMap::new();
+        for _ in 0..below(6) {
+            let key = KEYS[below(KEYS.len())];
+            let value: String = (0..below(5)).map(|_| PIECES[below(PIECES.len())]).collect();
+            if schema::valid(key, &value) {
+                map.insert(key.to_owned(), value);
+            }
+        }
+        let bytes = store::serialize(&map).unwrap();
+        assert_eq!(store::parse(&bytes).unwrap(), map, "{map:?}");
+    }
+}
+
+#[test]
+fn hand_edited_lines_keep_their_values() {
+    let parsed = store::parse(b"# comment\n\n  volume =0.5\nsub-font=Noto Sans \n").unwrap();
+    assert_eq!(parsed.len(), 2);
+    assert_eq!(parsed["volume"], "0.5");
+    assert_eq!(parsed["sub-font"], "Noto Sans ");
+}
+
+#[test]
+fn schema_types_tray_icon_and_render_mode() {
+    for (key, value, valid) in [
+        ("tray-icon", "true", true),
+        ("tray-icon", "false", true),
+        ("tray-icon", "yes", false),
+        ("render-mode", "auto", true),
+        ("render-mode", "gl", true),
+        ("render-mode", "sw", true),
+        ("render-mode", "vulkan", false),
+    ] {
+        assert_eq!(schema::valid(key, value), valid, "{key}={value}");
+    }
+}

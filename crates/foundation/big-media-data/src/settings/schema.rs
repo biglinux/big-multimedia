@@ -63,6 +63,7 @@ pub(super) fn valid(key: &str, value: &str) -> bool {
         | "gapless-audio"
         | "audio-high-contrast"
         | "taskbar-progress"
+        | "tray-icon"
         | "audio-album-art-bg" => matches!(value, "true" | "false"),
         "appearance-window-width"
         | "appearance-window-height"
@@ -90,6 +91,7 @@ pub(super) fn valid(key: &str, value: &str) -> bool {
         | "ui-window-radius"
         | "audio-volume"
         | "sleep-timer-minutes" => value.parse::<i32>().is_ok(),
+        "render-mode" => matches!(value, "auto" | "gl" | "sw"),
         "tv-resolution" => matches!(value, "0" | "720" | "1080" | "1440" | "2160"),
         "noise-voice-sensitivity" => matches!(value, "1" | "2" | "3" | "4" | "5"),
         "volume"
