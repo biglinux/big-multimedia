@@ -10,7 +10,9 @@ all-features = true
 [advisories]
 version = 2
 yanked = "warn"
-ignore = []
+ignore = [
+    { id = "RUSTSEC-2026-0173", reason = "proc-macro-error2 is lock-only: jiff's weak defmt?/alloc feature lists defmt-macros in Cargo.lock, but jiff's defmt feature is never enabled, so it is built for no target" },
+]
 
 [licenses]
 version = 2
