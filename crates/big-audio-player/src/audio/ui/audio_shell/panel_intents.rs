@@ -369,7 +369,7 @@ impl AudioShell {
         let input = sender.input_sender().clone();
         spawn_blocking_result(
             move || {
-                let mut deleted_ids = Vec::with_capacity(targets.len());
+                let mut deleted = Vec::with_capacity(targets.len());
                 for (id, path) in targets {
                     let removed = if permanent {
                         std::fs::remove_file(&path).is_ok()
@@ -379,37 +379,33 @@ impl AudioShell {
                             .is_ok()
                     };
                     if removed {
-                        deleted_ids.push(id);
+                        deleted.push((id, path));
                     } else {
                         log::warn!("failed to delete from storage: {path}");
                     }
                 }
-                deleted_ids
+                deleted
             },
-            move |deleted_ids| {
-                let _ = input.send(AudioShellInput::TracksDeletedFromStorage(deleted_ids));
+            move |deleted| {
+                let _ = input.send(AudioShellInput::TracksDeletedFromStorage(deleted));
             },
         );
     }
 
     /// Reconcile the queue + database after files were deleted off the main loop.
-    /// Each track is located in the queue by **id** (not a stale index) so a
-    /// queue change during the deletes can't drop the wrong entry.
     pub(super) fn reconcile_deleted_tracks(
         &mut self,
-        ids: Vec<i64>,
+        deleted: Vec<(i64, String)>,
         sender: &ComponentSender<Self>,
     ) {
+        if deleted.is_empty() {
+            return;
+        }
+        let ids = remove_deleted_files(&mut self.queue, &deleted);
+        self.commit_queue();
         if ids.is_empty() {
             return;
         }
-        for id in &ids {
-            // The same track can sit in the queue more than once; drop every copy.
-            while let Some(index) = self.queue.tracks().iter().position(|t| t.id == *id) {
-                self.queue.remove(index);
-            }
-        }
-        self.commit_queue();
         // Delete every row in one connection lock (not N racing spawns), then
         // rebuild the library tree once the deletes commit so the removed tracks
         // leave the browse view. `spawn_db_query` runs on a pool, so ordering the
@@ -480,5 +476,70 @@ impl AudioShell {
                     input.send(AudioShellInput::MusicBrainzLookupResolved { track_id, metadata });
             },
         );
+    }
+}
+
+/// Drops every queue entry whose file was deleted and returns the library ids to
+/// forget. Entries match by path, because files opened from outside the library
+/// all share id 0.
+fn remove_deleted_files(queue: &mut PlayQueue, deleted: &[(i64, String)]) -> Vec<i64> {
+    let is_deleted = |track: &Track| deleted.iter().any(|(_, path)| *path == track.file_path);
+    while let Some(index) = queue.tracks().iter().position(is_deleted) {
+        queue.remove(index);
+    }
+    deleted
+        .iter()
+        .filter(|(id, _)| *id != 0)
+        .map(|(id, _)| *id)
+        .collect()
+}
+
+#[cfg(test)]
+mod tests {
+    use super::remove_deleted_files;
+    use crate::db::models::Track;
+    use crate::player::queue::PlayQueue;
+
+    fn library_track(id: i64, path: &str) -> Track {
+        let mut track = Track::new_external_path(path);
+        track.id = id;
+        track
+    }
+
+    fn paths(queue: &PlayQueue) -> Vec<&str> {
+        queue
+            .tracks()
+            .iter()
+            .map(|t| t.file_path.as_str())
+            .collect()
+    }
+
+    #[test]
+    fn deleting_external_file_keeps_others() {
+        let mut queue = PlayQueue::new();
+        queue.add_track(Track::new_external_path("/downloads/first.mp3"));
+        queue.add_track(library_track(7, "/music/library.mp3"));
+        queue.add_track(Track::new_external_path("/downloads/second.mp3"));
+
+        let ids = remove_deleted_files(&mut queue, &[(0, "/downloads/first.mp3".to_string())]);
+
+        assert_eq!(
+            paths(&queue),
+            ["/music/library.mp3", "/downloads/second.mp3"]
+        );
+        assert_eq!(ids, Vec::<i64>::new());
+    }
+
+    #[test]
+    fn deleting_library_track_drops_every_copy() {
+        let mut queue = PlayQueue::new();
+        queue.add_track(library_track(7, "/music/library.mp3"));
+        queue.add_track(Track::new_external_path("/downloads/first.mp3"));
+        queue.add_track(library_track(7, "/music/library.mp3"));
+
+        let ids = remove_deleted_files(&mut queue, &[(7, "/music/library.mp3".to_string())]);
+
+        assert_eq!(paths(&queue), ["/downloads/first.mp3"]);
+        assert_eq!(ids, [7]);
     }
 }
