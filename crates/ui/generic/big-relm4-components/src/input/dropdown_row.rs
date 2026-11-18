@@ -6,8 +6,6 @@
 use adw::prelude::*;
 use relm4::gtk;
 
-use crate::text::escape_markup_text;
-
 /// Inputs for building a dropdown row.
 #[non_exhaustive]
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -167,7 +165,7 @@ fn row_text(text: &str, allow_markup: bool) -> String {
     if allow_markup {
         text.to_string()
     } else {
-        escape_markup_text(text)
+        gtk::glib::markup_escape_text(text).into()
     }
 }
 

@@ -23,6 +23,5 @@ pub mod input;
 pub mod layout;
 pub mod list;
 pub mod task;
-pub mod text;
 pub mod theme;
 pub mod time;
