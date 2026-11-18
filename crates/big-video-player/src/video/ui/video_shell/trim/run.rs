@@ -8,6 +8,7 @@ use adw::prelude::*;
 use gtk::glib;
 use relm4::ComponentController;
 
+use big_player_ui::cut_list::play_only_cuts_seek;
 use big_relm4_components::input::inline_spin_set::{BigInlineSpinFieldSpec, BigInlineSpinSet};
 use big_relm4_components::input::preference_cards::BigSpinRange;
 use big_relm4_components::layout::dialog_footer::{BigDialogFooter, BigDialogFooterSpec};
@@ -100,35 +101,17 @@ impl VideoShell {
         }
     }
 
-    /// "Play only the marked cuts": when the playhead leaves / reaches the end of
-    /// a cut, jump to the next cut (or restart at the first). Mirrors the audio
-    /// editor's play-selection. Called every position tick while trim is active.
+    /// "Play only the marked cuts": seek on to the next cut where the owner
+    /// says. Called every position tick while trim is active.
     pub(in crate::video::ui::video_shell) fn apply_play_selection(&self, pos: f64) {
         if !self.trim_play_selection.get() {
             return;
         }
-        let ranges = self.trim_ranges.borrow();
-        let Some(&(first_start, _)) = ranges.first() else {
+        let Some(target) = play_only_cuts_seek(&self.trim_ranges.borrow(), pos) else {
             return;
         };
-        let mpv_ref = self.mpv.borrow();
-        let Some(mpv) = mpv_ref.as_ref() else {
-            return;
-        };
-        const EPS: f64 = 0.05;
-        if let Some((idx, &(_, end))) = ranges
-            .iter()
-            .enumerate()
-            .find(|&(_, &(s, e))| pos >= s - EPS && pos <= e + EPS)
-        {
-            if pos >= end - EPS {
-                let next = ranges.get(idx + 1).map_or(first_start, |&(s, _)| s);
-                mpv.seek_absolute(next);
-            }
-        } else if let Some(&(next, _)) = ranges.iter().find(|&&(s, _)| s > pos) {
-            mpv.seek_absolute(next);
-        } else {
-            mpv.seek_absolute(first_start);
+        if let Some(mpv) = self.mpv.borrow().as_ref() {
+            mpv.seek_absolute(target);
         }
     }
 

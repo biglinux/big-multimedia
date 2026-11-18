@@ -1,0 +1,262 @@
+//! The cuts both players mark in trim mode, and the stepping of "Play only
+//! marked cuts" over them. No GTK; each trim bar renders a [`CutList`] and the
+//! host shell seeks where [`play_only_cuts_seek`] says.
+
+/// How far from a cut's edge, in seconds, the playhead still counts as on it;
+/// position ticks and seeks land a few milliseconds off.
+const PLAY_ONLY_CUTS_TOLERANCE: f64 = 0.05;
+
+/// One marked cut, in seconds. `id` stays the same while the cut exists, so a
+/// chip or a timeline drag addresses it without index drift.
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub struct Cut {
+    /// Stable identifier for UI addressing.
+    pub id: u64,
+    /// Start, at least 0.
+    pub start: f64,
+    /// End, after `start`.
+    pub end: f64,
+}
+
+/// Marked cuts plus the first mark of the next one.
+#[derive(Debug, Default)]
+pub struct CutList {
+    duration: f64,
+    pending: Option<f64>,
+    cuts: Vec<Cut>,
+    next_id: u64,
+}
+
+impl CutList {
+    /// Set the media duration in seconds; 0 while it is unknown.
+    pub fn set_duration(&mut self, duration: f64) {
+        self.duration = duration;
+    }
+
+    /// The first mark of a cut, waiting for its second.
+    #[must_use]
+    pub fn pending(&self) -> Option<f64> {
+        self.pending
+    }
+
+    /// The committed cuts.
+    #[must_use]
+    pub fn cuts(&self) -> &[Cut] {
+        &self.cuts
+    }
+
+    /// Mark a point. The first mark waits; the second commits a cut spanning
+    /// both, in either order. Returns true when a cut was committed. A second
+    /// mark at the first one's time is ignored and the first keeps waiting.
+    pub fn mark(&mut self, time: f64) -> bool {
+        let time = self.clamp(time);
+        let Some(first) = self.pending else {
+            self.pending = Some(time);
+            return false;
+        };
+        let (start, end) = if time >= first {
+            (first, time)
+        } else {
+            (time, first)
+        };
+        if end <= start {
+            return false;
+        }
+        let id = self.next_id;
+        self.next_id += 1;
+        self.cuts.push(Cut { id, start, end });
+        self.pending = None;
+        true
+    }
+
+    /// Replace the times of cut `id`, in either order. Returns false when `id`
+    /// is unknown or the cut would be empty.
+    pub fn set_cut_times(&mut self, id: u64, a: f64, b: f64) -> bool {
+        let start = self.clamp(a.min(b));
+        let end = self.clamp(a.max(b));
+        if end <= start {
+            return false;
+        }
+        let Some(cut) = self.cuts.iter_mut().find(|cut| cut.id == id) else {
+            return false;
+        };
+        cut.start = start;
+        cut.end = end;
+        true
+    }
+
+    /// Remove cut `id`. Returns true when one was removed.
+    pub fn delete(&mut self, id: u64) -> bool {
+        let before = self.cuts.len();
+        self.cuts.retain(|cut| cut.id != id);
+        self.cuts.len() != before
+    }
+
+    /// Drop every cut and the pending mark.
+    pub fn clear(&mut self) {
+        self.cuts.clear();
+        self.pending = None;
+    }
+
+    /// The cuts as `(start, end)` ranges, sorted, with overlapping or touching
+    /// ones merged, so an export never repeats a span.
+    #[must_use]
+    pub fn ranges(&self) -> Vec<(f64, f64)> {
+        let mut ranges: Vec<(f64, f64)> =
+            self.cuts.iter().map(|cut| (cut.start, cut.end)).collect();
+        ranges.sort_by(|a, b| a.0.total_cmp(&b.0));
+        let mut merged: Vec<(f64, f64)> = Vec::with_capacity(ranges.len());
+        for (start, end) in ranges {
+            match merged.last_mut() {
+                Some(last) if start <= last.1 => last.1 = last.1.max(end),
+                _ => merged.push((start, end)),
+            }
+        }
+        merged
+    }
+
+    fn clamp(&self, time: f64) -> f64 {
+        if self.duration > 0.0 {
+            time.clamp(0.0, self.duration)
+        } else {
+            time.max(0.0)
+        }
+    }
+}
+
+/// Where "Play only marked cuts" seeks from `position`: the next cut's start at
+/// the end of a cut or between cuts, the first cut's start after the last one,
+/// and `None` while playing inside a cut. `ranges` are sorted by start.
+#[must_use]
+pub fn play_only_cuts_seek(ranges: &[(f64, f64)], position: f64) -> Option<f64> {
+    let &(first_start, _) = ranges.first()?;
+    let within = ranges.iter().enumerate().find(|(_, (start, end))| {
+        position >= start - PLAY_ONLY_CUTS_TOLERANCE && position <= end + PLAY_ONLY_CUTS_TOLERANCE
+    });
+    let next = match within {
+        Some((_, &(_, end))) if position < end - PLAY_ONLY_CUTS_TOLERANCE => return None,
+        Some((index, _)) => ranges.get(index + 1),
+        None => ranges.iter().find(|&&(start, _)| start > position),
+    };
+    Some(next.map_or(first_start, |&(start, _)| start))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn list(duration: f64) -> CutList {
+        let mut list = CutList::default();
+        list.set_duration(duration);
+        list
+    }
+
+    fn mark(list: &mut CutList, a: f64, b: f64) {
+        assert!(!list.mark(a), "first mark waits");
+        assert!(list.mark(b), "second mark commits");
+    }
+
+    fn spans(list: &CutList) -> Vec<(f64, f64)> {
+        list.cuts().iter().map(|cut| (cut.start, cut.end)).collect()
+    }
+
+    #[test]
+    fn two_marks_commit_one_cut() {
+        let mut list = list(100.0);
+        assert!(!list.mark(10.0));
+        assert_eq!(list.pending(), Some(10.0));
+        assert!(list.mark(25.0));
+        assert_eq!(spans(&list), vec![(10.0, 25.0)]);
+        assert_eq!(list.pending(), None);
+    }
+
+    #[test]
+    fn end_marked_first_swaps() {
+        let mut list = list(100.0);
+        mark(&mut list, 40.0, 15.0);
+        assert_eq!(spans(&list), vec![(15.0, 40.0)]);
+    }
+
+    #[test]
+    fn duplicate_mark_keeps_pending() {
+        let mut list = list(100.0);
+        list.mark(20.0);
+        assert!(!list.mark(20.0));
+        assert_eq!(list.pending(), Some(20.0));
+        assert!(list.cuts().is_empty());
+    }
+
+    #[test]
+    fn marks_clamp_to_duration() {
+        let mut list = list(40.0);
+        list.mark(-5.0);
+        assert_eq!(list.pending(), Some(0.0));
+        list.mark(999.0);
+        assert_eq!(spans(&list), vec![(0.0, 40.0)]);
+    }
+
+    #[test]
+    fn set_cut_times_clamps_and_swaps() {
+        let mut list = list(100.0);
+        mark(&mut list, 10.0, 20.0);
+        let id = list.cuts()[0].id;
+        assert!(list.set_cut_times(id, 155.5, 33.25));
+        assert_eq!(spans(&list), vec![(33.25, 100.0)]);
+        assert!(!list.set_cut_times(id, 9.0, 9.0));
+        assert!(!list.set_cut_times(999, 1.0, 2.0));
+    }
+
+    #[test]
+    fn delete_removes_by_id() {
+        let mut list = list(100.0);
+        mark(&mut list, 0.0, 10.0);
+        mark(&mut list, 20.0, 30.0);
+        let first = list.cuts()[0].id;
+        assert!(list.delete(first));
+        assert_eq!(spans(&list), vec![(20.0, 30.0)]);
+        assert!(!list.delete(first));
+    }
+
+    #[test]
+    fn clear_drops_cuts_and_pending() {
+        let mut list = list(100.0);
+        mark(&mut list, 5.0, 12.0);
+        list.mark(20.0);
+        list.clear();
+        assert!(list.cuts().is_empty());
+        assert_eq!(list.pending(), None);
+    }
+
+    #[test]
+    fn ranges_sort_and_merge() {
+        let mut list = list(100.0);
+        mark(&mut list, 20.0, 30.0);
+        mark(&mut list, 2.0, 5.0);
+        mark(&mut list, 4.0, 8.0);
+        mark(&mut list, 30.0, 35.0);
+        assert_eq!(list.ranges(), vec![(2.0, 8.0), (20.0, 35.0)]);
+    }
+
+    #[test]
+    fn play_only_cuts_steps_through_ranges() {
+        let ranges = [(10.0, 20.0), (40.0, 50.0)];
+        // (position, expected seek); targets from the cut times above.
+        let table = [
+            (0.0, Some(10.0)),
+            (15.0, None),
+            (20.0, Some(40.0)),
+            (30.0, Some(40.0)),
+            (45.0, None),
+            (50.0, Some(10.0)),
+            (60.0, Some(10.0)),
+        ];
+        for (position, expected) in table {
+            assert_eq!(
+                play_only_cuts_seek(&ranges, position),
+                expected,
+                "at {position}"
+            );
+        }
+        assert_eq!(play_only_cuts_seek(&[], 5.0), None);
+    }
+}
