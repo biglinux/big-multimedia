@@ -205,12 +205,12 @@ the new values at once, except `render-mode`, `gpu-dumb-mode`,
 | `ui-osd-shadow` | bool | `false` |  |
 | `ui-show-audio-track` | bool | `true` |  |
 | `ui-show-fullscreen` | bool | `true` |  |
-| `ui-show-menu` | bool | `true` |  |
+| `ui-show-menu` | bool | `true` | Shows the Settings button in the video header. |
 | `ui-show-next` | bool | `true` |  |
-| `ui-show-open` | bool | `true` |  |
-| `ui-show-pin` | bool | `true` |  |
+| `ui-show-open` | bool | `true` | Shows the Open button in the video header; its actions keep their shortcuts. |
+| `ui-show-pin` | bool | `true` | Shows the Keep Above button in the video header. |
 | `ui-show-play` | bool | `true` |  |
-| `ui-show-playlist` | bool | `true` |  |
+| `ui-show-playlist` | bool | `true` | Shows the Files and Playlist buttons in the video header; their shortcuts still open the sidebar. |
 | `ui-show-prev` | bool | `true` |  |
 | `ui-show-speed` | bool | `true` |  |
 | `ui-show-subtitle` | bool | `true` |  |
@@ -223,8 +223,8 @@ the new values at once, except `render-mode`, `gpu-dumb-mode`,
 | `ui-zone-bottom-center` | string | `prev,play,next` |  |
 | `ui-zone-bottom-left` | string | `volume,speed,voice` |  |
 | `ui-zone-bottom-right` | string | `subtitle,audio-track,tv,fullscreen` |  |
-| `ui-zone-top-left` | string | `pin,open` |  |
-| `ui-zone-top-right` | string | `menu,playlist` |  |
+| `ui-zone-top-left` | string | `pin,open,playlist` | The video header buttons on the left, in order, separated by commas: `pin` (Keep Above), `open`, `playlist` (Files and Playlist) and `menu` (Settings). Other names are dropped, a name given twice takes its first place, and a button neither top zone names goes to its default side. |
+| `ui-zone-top-right` | string | `menu` | The video header buttons on the right, before the window controls, read as `ui-zone-top-left`. |
 
 ### Audio player appearance
 

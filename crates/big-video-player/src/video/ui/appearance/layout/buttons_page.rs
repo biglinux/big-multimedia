@@ -32,21 +32,21 @@ const CONTROLS: &[(&str, &str, &str, &str, keys::BoolKey)] = &[
     ),
     (
         "open",
-        gettext_noop("Open File"),
-        "folder-open-symbolic",
+        gettext_noop("Open"),
+        "document-open-symbolic",
         "top:start",
         keys::UI_SHOW_OPEN,
     ),
     (
         "playlist",
-        gettext_noop("Playlist"),
+        gettext_noop("Files and Playlist"),
         "view-list-symbolic",
-        "top:end",
+        "top:start",
         keys::UI_SHOW_PLAYLIST,
     ),
     (
         "menu",
-        gettext_noop("Menu"),
+        gettext_noop("Settings"),
         "open-menu-symbolic",
         "top:end",
         keys::UI_SHOW_MENU,
@@ -133,8 +133,9 @@ const ZONE_KEYS: &[(&str, ZonePlacement, keys::StringKey)] = &[
     ("bottom", ZonePlacement::End, keys::UI_ZONE_BOTTOM_RIGHT),
 ];
 
-/// Build the editor spec: the 14 controls + a top bar (pin/open · title · menu/
-/// playlist) and a bottom bar (transport, with a seek slider above it).
+/// Build the editor spec: the 14 controls + a top bar drawn as the window
+/// header (its zones around the title, window controls at the end) and a
+/// bottom bar (transport, with a seek slider above it).
 fn build_spec() -> ZoneLayoutSpec {
     let controls = CONTROLS
         .iter()
@@ -146,12 +147,14 @@ fn build_spec() -> ZoneLayoutSpec {
             .with_decoration(BarDecoration {
                 title: Some(i18n("Video Title")),
                 seek_slider: false,
+                window_controls: true,
             }),
         BarSpec::new("bottom", ZonePlacement::ALL.to_vec())
             .with_label(i18n("Bottom bar"))
             .with_decoration(BarDecoration {
                 title: None,
                 seek_slider: true,
+                window_controls: false,
             }),
     ];
     ZoneLayoutSpec::new(controls, bars)
@@ -193,7 +196,7 @@ pub(in crate::video) fn create_buttons_page(
 
     let group = BigPreferencesGroupSpec::new(i18n("Button Layout"))
         .description(i18n(
-            "Drag buttons between zones or move them with Alt+Left and Alt+Right • Click to toggle visibility",
+            "Drag buttons between zones, or move the focused one with Alt+Left and Alt+Right. Click a button to show or hide it.",
         ))
         .build();
 

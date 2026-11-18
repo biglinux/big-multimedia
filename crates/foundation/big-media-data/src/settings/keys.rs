@@ -221,8 +221,8 @@ catalog! {
     UI_SHOW_OPEN: BoolKey("ui-show-open") = "true";
     UI_SHOW_PLAYLIST: BoolKey("ui-show-playlist") = "true";
     UI_SHOW_MENU: BoolKey("ui-show-menu") = "true";
-    UI_ZONE_TOP_LEFT: StringKey("ui-zone-top-left") = "pin,open";
-    UI_ZONE_TOP_RIGHT: StringKey("ui-zone-top-right") = "menu,playlist";
+    UI_ZONE_TOP_LEFT: StringKey("ui-zone-top-left") = "pin,open,playlist";
+    UI_ZONE_TOP_RIGHT: StringKey("ui-zone-top-right") = "menu";
     UI_ZONE_BOTTOM_LEFT: StringKey("ui-zone-bottom-left") = "volume,speed,voice";
     UI_ZONE_BOTTOM_CENTER: StringKey("ui-zone-bottom-center") = "prev,play,next";
     UI_ZONE_BOTTOM_RIGHT: StringKey("ui-zone-bottom-right") =

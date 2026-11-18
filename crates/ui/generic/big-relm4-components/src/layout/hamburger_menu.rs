@@ -155,13 +155,14 @@ pub fn menu_action_names(menu: &impl IsA<gio::MenuModel>) -> Vec<String> {
     actions
 }
 
-/// Replace a popover's child with flat named action rows.
+/// Replace a popover's child with flat named action rows. Build the popover
+/// with [`gtk::AccessibleRole::Group`]: GTK refuses a role set once an
+/// assistive technology has read the popover.
 pub fn populate_flat_action_popover(
     popover: &gtk::Popover,
     action_context: &impl IsA<gtk::Widget>,
     items: &[BigMenuActionItem],
 ) {
-    popover.set_accessible_role(gtk::AccessibleRole::Group);
     popover.add_css_class("menu");
 
     let rows = gtk::Box::new(gtk::Orientation::Vertical, 0);
@@ -187,7 +188,9 @@ pub fn build_flat_action_popover(
     action_context: &impl IsA<gtk::Widget>,
     items: &[BigMenuActionItem],
 ) -> gtk::Popover {
-    let popover = gtk::Popover::new();
+    let popover = gtk::Popover::builder()
+        .accessible_role(gtk::AccessibleRole::Group)
+        .build();
     populate_flat_action_popover(&popover, action_context, items);
     popover
 }

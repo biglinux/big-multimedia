@@ -336,14 +336,16 @@ impl VideoShell {
 
     /// Open the appearance dialog (palette + OSD layout + button-layout editor).
     /// `on_changed` re-applies the OSD CSS live through the shell's theme slot
-    /// and reapplies the bottom OSD button zones exposed by the controls bar.
+    /// and reapplies the header and bottom bar button zones.
     pub(super) fn show_appearance(&self, root: &adw::ApplicationWindow) {
         let settings = self.settings.clone();
         let theme = self.theme.clone();
         let button_layout = self.controls.model().button_layout();
+        let header_buttons = self.header_buttons.clone();
         crate::video::ui::appearance::show_appearance_dialog(root, &self.settings, move || {
             crate::video::ui::appearance::apply_appearance(&settings, &theme);
             button_layout.apply_settings(&settings);
+            header_buttons.apply_settings(&settings);
         });
     }
 
@@ -363,6 +365,7 @@ impl VideoShell {
             .model()
             .button_layout()
             .apply_settings(&self.settings);
+        self.header_buttons.apply_settings(&self.settings);
         self.playlist.emit(VideoBrowserSidebarInput::RefreshFolder);
         self.sync_screen_inhibit(window);
     }

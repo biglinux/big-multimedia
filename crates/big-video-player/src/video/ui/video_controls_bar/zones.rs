@@ -39,40 +39,21 @@ pub(crate) struct ButtonLayoutWidgets {
 }
 
 impl ButtonLayoutWidgets {
-    /// Reparent the OSD controls into their bottom-bar zones and apply
-    /// per-control visibility from the `ui-zone-*` / `ui-show-*` settings, via
-    /// the shared leak-safe [`apply_zone_layout`] primitive.
-    ///
-    /// The three `ui-zone-bottom-*` CSVs become a
-    /// [`ZoneLayout`](big_relm4_components::input::zone_layout::ZoneLayout) (each
-    /// token mapped through `control_name`, dropping unknown entries); the
-    /// applier reparents each control into its zone and appends any control the
-    /// CSVs omit to its default fallback slot. Visibility comes from
-    /// the `ui-show-*` flags, the voice control additionally gated on a
-    /// noise-reduction backend being installed.
+    /// Place and show the bottom-bar controls as the `ui-zone-bottom-*` and
+    /// `ui-show-*` settings say; voice also needs a noise-reduction backend.
     pub(crate) fn apply_settings(&self, settings: &Settings) {
         let start = slot_key("bottom", ZonePlacement::Start);
         let center = slot_key("bottom", ZonePlacement::Center);
         let end = slot_key("bottom", ZonePlacement::End);
-
-        // The three saved CSVs → an ordered ZoneLayout (unknown ids dropped).
-        // Cross-zone dedup + missing-default fallback are the applier's job.
-        let mut layout = ZoneLayout::default();
-        for (csv_key, slot) in [
-            (keys::UI_ZONE_BOTTOM_LEFT, &start),
-            (keys::UI_ZONE_BOTTOM_CENTER, &center),
-            (keys::UI_ZONE_BOTTOM_RIGHT, &end),
-        ] {
-            let ids: Vec<String> = settings
-                .get_string(csv_key)
-                .split(',')
-                .map(str::trim)
-                .map(control_name)
-                .filter(|name| !name.is_empty())
-                .map(String::from)
-                .collect();
-            layout.slots.insert(slot.clone(), ids);
-        }
+        let layout = read_zones(
+            settings,
+            &[
+                (keys::UI_ZONE_BOTTOM_LEFT, &start),
+                (keys::UI_ZONE_BOTTOM_CENTER, &center),
+                (keys::UI_ZONE_BOTTOM_RIGHT, &end),
+            ],
+            &BOTTOM_CONTROLS,
+        );
 
         let controls: HashMap<String, gtk::Widget> = [
             ("volume", self.volume_box.clone().upcast::<gtk::Widget>()),
@@ -146,21 +127,41 @@ impl ButtonLayoutWidgets {
     }
 }
 
-fn control_name(name: &str) -> &'static str {
-    match name {
-        "volume" => "volume",
-        "speed" => "speed",
-        "voice" => "voice",
-        "prev" => "prev",
-        "play" => "play",
-        "next" => "next",
-        "edit-export" => "edit-export",
-        "subtitle" => "subtitle",
-        "audio-track" => "audio-track",
-        "tv" => "tv",
-        "fullscreen" => "fullscreen",
-        _ => "",
+/// The ids the bottom bar places.
+const BOTTOM_CONTROLS: [&str; 11] = [
+    "volume",
+    "speed",
+    "voice",
+    "prev",
+    "play",
+    "next",
+    "edit-export",
+    "subtitle",
+    "audio-track",
+    "tv",
+    "fullscreen",
+];
+
+/// One bar's `ui-zone-*` CSVs, each into its slot. Ids outside `known` are
+/// dropped here; a repeated id is left to [`apply_zone_layout`], which places
+/// it once, in the first zone that names it.
+pub(crate) fn read_zones(
+    settings: &Settings,
+    zones: &[(keys::StringKey, &String)],
+    known: &[&str],
+) -> ZoneLayout {
+    let mut layout = ZoneLayout::default();
+    for (csv_key, slot) in zones {
+        let ids = settings
+            .get_string(*csv_key)
+            .split(',')
+            .map(str::trim)
+            .filter(|id| known.contains(id))
+            .map(String::from)
+            .collect();
+        layout.slots.insert((*slot).clone(), ids);
     }
+    layout
 }
 
 /// START box widgets: the reparentable control boxes, the readout value labels
@@ -617,8 +618,8 @@ pub(super) fn build_end_box() -> EndBoxWidgets {
         &i18n("Subtitles"),
         &["osd-btn"],
     );
-    // A group, as the audio-track menu beside it: the role cannot change once
-    // an assistive technology has read it.
+    // Both track menus are groups, set here: the role cannot change once an
+    // assistive technology has read it.
     let subtitle_menu_popover = gtk::Popover::builder()
         .accessible_role(gtk::AccessibleRole::Group)
         .build();
@@ -629,7 +630,9 @@ pub(super) fn build_end_box() -> EndBoxWidgets {
         &i18n("Audio Track"),
         &["osd-btn"],
     );
-    let audio_track_menu_popover = gtk::Popover::new();
+    let audio_track_menu_popover = gtk::Popover::builder()
+        .accessible_role(gtk::AccessibleRole::Group)
+        .build();
     setup_end_menu_popover(&audio_track_menu_button, &audio_track_menu_popover);
 
     // Here rather than in the menu, where many never look: the corner is
@@ -725,22 +728,34 @@ mod tests {
     }
 
     #[test]
-    fn control_names_drop_unknown_ids() {
-        assert_eq!(control_name("volume"), "volume");
-        assert_eq!(control_name("speed"), "speed");
-        assert_eq!(control_name("voice"), "voice");
-        assert_eq!(control_name("prev"), "prev");
-        assert_eq!(control_name("previous"), "");
-        assert_eq!(control_name("play"), "play");
-        assert_eq!(control_name("next"), "next");
-        assert_eq!(control_name("edit-export"), "edit-export");
-        assert_eq!(control_name("export"), "");
-        assert_eq!(control_name("subtitle"), "subtitle");
-        assert_eq!(control_name("subtitles"), "");
-        assert_eq!(control_name("audio-track"), "audio-track");
-        assert_eq!(control_name("audio"), "");
-        assert_eq!(control_name("fullscreen"), "fullscreen");
-        assert_eq!(control_name("unknown"), "");
+    fn bottom_zones_drop_unknown_ids() {
+        let settings = Settings::memory_only();
+        settings.set_string(keys::UI_ZONE_BOTTOM_LEFT.0, "volume, speed,voice,previous");
+        settings.set_string(keys::UI_ZONE_BOTTOM_CENTER.0, "prev,play,next,export");
+        settings.set_string(
+            keys::UI_ZONE_BOTTOM_RIGHT.0,
+            "edit-export,subtitles,subtitle,audio,audio-track,tv,fullscreen,unknown",
+        );
+        let start = slot_key("bottom", ZonePlacement::Start);
+        let center = slot_key("bottom", ZonePlacement::Center);
+        let end = slot_key("bottom", ZonePlacement::End);
+
+        let layout = read_zones(
+            &settings,
+            &[
+                (keys::UI_ZONE_BOTTOM_LEFT, &start),
+                (keys::UI_ZONE_BOTTOM_CENTER, &center),
+                (keys::UI_ZONE_BOTTOM_RIGHT, &end),
+            ],
+            &BOTTOM_CONTROLS,
+        );
+
+        assert_eq!(layout.slots[&start], ["volume", "speed", "voice"]);
+        assert_eq!(layout.slots[&center], ["prev", "play", "next"]);
+        assert_eq!(
+            layout.slots[&end],
+            ["edit-export", "subtitle", "audio-track", "tv", "fullscreen"]
+        );
     }
 
     #[cfg(not(miri))]

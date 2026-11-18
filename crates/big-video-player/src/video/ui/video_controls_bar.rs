@@ -37,6 +37,7 @@ use seek_preview::{
     build_seek_preview, wire_neighbour_preview, wire_seek_hover, wire_thumb_consumer,
 };
 use signals::wire_signals;
+pub(crate) use zones::read_zones;
 use zones::{
     ButtonLayoutWidgets, StartBoxWidgets, build_center_box, build_end_box, build_start_box,
 };
