@@ -60,8 +60,6 @@ use crate::player::mpv_backend::{
 };
 use crate::player::queue::{PlayQueue, RepeatMode};
 use crate::settings::{Settings, keys};
-use crate::shared::converter_handoff;
-use crate::shared::spawn::spawn_db_query;
 use big_app_kit::file_dialogs::FilePicker;
 use big_app_kit::mpris::{
     CommandCallback, Mpris, MprisCommand, PlaybackStatus, PlayerState, StateCallback,
@@ -76,6 +74,8 @@ use big_media_components::playback::audio_transport::{
 };
 use big_media_components::player_chrome::{spawn_blocking_result, volume_icon_name};
 use big_media_components::time;
+use big_media_runtime::converter_handoff;
+use big_media_runtime::db_query::spawn_db_query;
 use big_os_kit::url::ListOrigin;
 use big_player_ui::audio_trim_bar::{
     AudioTrimBar, AudioTrimBarInput, AudioTrimBarOutput, BigAudioTrimBarLabels,
@@ -100,9 +100,9 @@ pub struct AudioShell {
     /// Bottom transport bar (play/seek/volume/repeat/shuffle).
     playback_bar: Controller<AudioPlaybackBar>,
     /// This player's line to BigNetScreen: TV dialog, strip and controls.
-    tv: std::rc::Rc<crate::shared::tv_cast::TvLink>,
+    tv: std::rc::Rc<big_media_runtime::cast::tv::TvLink>,
     /// Above the transport while a TV plays this player's session.
-    tv_card: crate::shared::tv_cast::TvCard,
+    tv_card: big_media_runtime::cast::tv::TvCard,
     /// The session's last state: where it was when it ended.
     tv_last: Option<crate::cast::daemon::State>,
     /// Whether the session was released at the last change.
@@ -161,7 +161,7 @@ pub struct AudioShell {
     np_album: gtk::Label,
     /// Whether voice-enhancement (noise reduction) is active (NR pipeline toggle
     /// crosses on this).
-    voice_active: std::rc::Rc<crate::shared::popovers::VoiceStrength>,
+    voice_active: std::rc::Rc<big_media_runtime::audio_effects::VoiceStrength>,
     /// Name of the currently-playing radio station (for recording filenames).
     radio_station_name: String,
     /// Destination of the in-progress radio recording (None = not recording).
@@ -188,7 +188,7 @@ pub struct AudioShell {
     /// to play; set exactly when `mpv` is `None`.
     engine_failure: Option<String>,
     shutdown_handler: Option<(glib::WeakRef<gio::Application>, glib::SignalHandlerId)>,
-    _shell_input: crate::shared::app_base::ShellInputRegistration<relm4::Sender<AudioShellInput>>,
+    _shell_input: big_media_runtime::app::ShellInputRegistration<relm4::Sender<AudioShellInput>>,
     /// Writer DB handle (queue persistence, ratings, playlists, deletes); read
     /// through [`Self::writer`], which explains its absence.
     db: Option<DbHandle>,
@@ -198,7 +198,7 @@ pub struct AudioShell {
     settings: Settings,
     /// Saves the volume once it stays put, not on every slider step.
     volume_save: big_relm4_components::input::debounce::BigDebouncedAction,
-    sleep_timer: crate::shared::sleep_timer::SleepTimer,
+    sleep_timer: big_media_runtime::sleep_timer::SleepTimer,
     /// Current library grouping preset (drives tree + node resolution).
     library_grouping: LibraryGrouping,
     /// Current library search filter text.

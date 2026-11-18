@@ -19,6 +19,19 @@ pub use big_media_data::library;
 pub use big_media_data::media_probe;
 // Root paths for consumers: `big_media_runtime::Error` / `Result<T>`.
 pub use big_media_data::{Error, Result};
+/// Process boot (env, gettext, locale, resources), the About dialog and the
+/// slot that delivers opened files to the open shell.
+#[cfg(feature = "ui-core")]
+pub mod app;
+/// Audio effects: equalizer, noise reduction, and filter chain management.
+#[cfg(feature = "ui-core")]
+pub mod audio_effects;
+/// Hand files (and marked cuts) to the external converter GUIs.
+#[cfg(feature = "ui-core")]
+pub mod converter_handoff;
+/// Off-thread library database queries.
+#[cfg(feature = "audio")]
+pub mod db_query;
 /// Media utilities: playlist handling, metadata probing, thumbnails.
 #[cfg(feature = "ui-core")]
 pub mod media;
@@ -28,12 +41,19 @@ pub mod player;
 /// Recently-played file tracking.
 #[cfg(feature = "ui-core")]
 pub mod recent;
-/// Compiled GTK resources shared by split application crates.
+/// Compiled GTK resources shared by split application crates and the
+/// illustrations built from them.
 #[cfg(feature = "ui-core")]
 pub mod resources;
 /// Persistent key/value settings store.
 #[cfg(feature = "ui-core")]
 pub mod settings;
-/// Code shared between audio and video players.
+/// Shortcut capture dialog.
 #[cfg(feature = "ui-core")]
-pub mod shared;
+pub mod shortcut_capture;
+/// Sleep timer labels, actions, settings persistence and countdown.
+#[cfg(feature = "ui-core")]
+pub mod sleep_timer;
+/// Color parsing and Adwaita CSS override generation for custom themes.
+#[cfg(feature = "ui-core")]
+pub mod theming;

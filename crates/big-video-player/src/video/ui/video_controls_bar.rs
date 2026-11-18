@@ -59,7 +59,7 @@ pub struct VideoControlsBarInit {
     /// Shared mpv handle the popover callbacks read at call time.
     pub mpv: MpvSlot,
     /// While a TV plays this player's session, volume and mute drive it.
-    pub tv: Rc<crate::shared::tv_cast::TvLink>,
+    pub tv: Rc<big_media_runtime::cast::tv::TvLink>,
     /// The trim-bar widget, shown IN PLACE of the transport button row while trim
     /// mode is active (so the cut controls live inside the existing controls, not
     /// a separate bar).

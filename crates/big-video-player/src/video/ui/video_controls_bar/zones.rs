@@ -93,7 +93,7 @@ impl ButtonLayoutWidgets {
                 let shown = settings.get_bool(control.show)
                     && match control.id {
                         "volume" | "speed" | "fullscreen" => true,
-                        "voice" => crate::shared::audio_effects::has_noise_reduction_backend(),
+                        "voice" => big_media_runtime::audio_effects::has_noise_reduction_backend(),
                         _ => media,
                     };
                 (control.id.to_owned(), shown)
@@ -243,7 +243,7 @@ impl WeakSoundIndicator {
 pub(super) fn build_start_box(
     settings: &Settings,
     mpv: &MpvSlot,
-    tv: &Rc<crate::shared::tv_cast::TvLink>,
+    tv: &Rc<big_media_runtime::cast::tv::TvLink>,
 ) -> StartBoxWidgets {
     let start_box = gtk::Box::builder()
         .orientation(gtk::Orientation::Horizontal)
@@ -309,7 +309,7 @@ pub(super) fn build_start_box(
     let stored_noise_reduction_strength = settings.get_double(keys::NOISE_STRENGTH).max(0.0);
     let initial_noise_reduction_percent =
         (stored_noise_reduction_strength * 100.0).clamp(0.0, 100.0);
-    let voice_strength = Rc::new(crate::shared::popovers::VoiceStrength::new(
+    let voice_strength = Rc::new(big_media_runtime::audio_effects::VoiceStrength::new(
         stored_noise_reduction_strength > 0.0,
     ));
     let voice_popover = build_voice_popover(
@@ -321,7 +321,7 @@ pub(super) fn build_start_box(
             let settings = settings.clone();
             let mpv = mpv.clone();
             move |pct| {
-                crate::shared::popovers::handle_voice_strength_changed(
+                big_media_runtime::audio_effects::handle_voice_strength_changed(
                     &settings,
                     mpv.borrow().as_ref(),
                     pct,
@@ -329,14 +329,14 @@ pub(super) fn build_start_box(
                 );
             }
         },
-        &crate::shared::audio_effects::nr_settings_panel(settings, {
+        &big_media_runtime::audio_effects::nr_settings_panel(settings, {
             let settings = settings.clone();
             let mpv = mpv.clone();
             move || {
                 if let Some(mpv) = mpv.borrow().as_ref()
                     && settings.get_double(keys::NOISE_STRENGTH) > 0.0
                 {
-                    crate::shared::audio_effects::apply_voice_change(&settings, mpv);
+                    big_media_runtime::audio_effects::apply_voice_change(&settings, mpv);
                 }
             }
         }),
@@ -344,7 +344,7 @@ pub(super) fn build_start_box(
 
     // Hide the voice control if no noise-reduction backend is installed (old
     // `setup_hover_popovers` did the same).
-    if !crate::shared::audio_effects::has_noise_reduction_backend() {
+    if !big_media_runtime::audio_effects::has_noise_reduction_backend() {
         voice_box.set_visible(false);
     }
 
@@ -414,7 +414,7 @@ impl VolumeControl {
 fn build_volume_control(
     settings: &Settings,
     mpv: &MpvSlot,
-    tv: Option<&Rc<crate::shared::tv_cast::TvLink>>,
+    tv: Option<&Rc<big_media_runtime::cast::tv::TvLink>>,
     mark: &str,
     initial_volume: f64,
 ) -> VolumeControl {

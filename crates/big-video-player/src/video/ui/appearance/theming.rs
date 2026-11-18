@@ -64,7 +64,7 @@ impl OsdCssConfig {
 
     // Following the system, `player_icon_color` is `window_fg_color`.
     fn css_color_foundation(&self, settings: &Settings) -> String {
-        crate::shared::theming::build_palette_css(
+        big_media_runtime::theming::build_palette_css(
             settings,
             &self.color_source,
             keys::UI_BG_COLOR,
@@ -446,7 +446,7 @@ fn build_osd_css(settings: &Settings, osd_css_config: &OsdCssConfig) -> String {
 /// `slot`. Call at boot and from the Appearance dialog's `on_changed`.
 pub(in crate::video) fn apply_appearance(settings: &Settings, slot: &CssSlot) {
     let osd_css_config = OsdCssConfig::from_settings(settings);
-    crate::shared::theming::apply_color_scheme(&osd_css_config.color_source);
+    big_media_runtime::theming::apply_color_scheme(&osd_css_config.color_source);
     slot.set(&build_osd_css(settings, &osd_css_config));
 }
 
@@ -459,6 +459,6 @@ mod tests {
         let settings = Settings::memory_only();
         settings.put_bool(keys::AUDIO_HIGH_CONTRAST, true);
         let css = build_osd_css(&settings, &OsdCssConfig::from_settings(&settings));
-        assert!(!css.contains(crate::shared::theming::HIGH_CONTRAST_CSS));
+        assert!(!css.contains(big_media_runtime::theming::HIGH_CONTRAST_CSS));
     }
 }

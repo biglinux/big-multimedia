@@ -3,8 +3,7 @@
 //!
 //! They live here so reusable player panels (`big-player-ui`) can use them
 //! without depending on the engine runtime. i18n routes through the crate
-//! translator hook ([`crate::text::text`]); the runtime re-exports these under
-//! `shared::{spawn,play_button,popovers}`.
+//! translator hook ([`crate::text::text`]).
 
 use std::time::Duration;
 

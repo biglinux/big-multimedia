@@ -15,7 +15,7 @@ impl VideoShell {
     /// TV plays.
     pub(super) fn tv_page(&self) -> gtk::Widget {
         use crate::cast::daemon::PlaybackStart;
-        use crate::shared::tv_cast::{TvMedia, tv_page};
+        use big_media_runtime::cast::tv::{TvMedia, tv_page};
         let mpv = self.mpv.borrow().clone();
         let current = mpv.clone();
         let media = move || {

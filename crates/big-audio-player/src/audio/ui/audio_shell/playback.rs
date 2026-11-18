@@ -93,7 +93,7 @@ impl AudioShell {
             }
             // Voice-enhancement panel is wired with the equalizer subsystem.
             AudioPlaybackBarOutput::VoiceChanged(pct) => {
-                let active = crate::shared::popovers::handle_voice_strength_changed(
+                let active = big_media_runtime::audio_effects::handle_voice_strength_changed(
                     &self.settings,
                     self.mpv.as_ref(),
                     pct,

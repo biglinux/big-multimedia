@@ -2,7 +2,7 @@ use super::*;
 
 use std::sync::atomic::{AtomicBool, Ordering};
 
-use crate::shared::app_base::ShellInputSlot;
+use big_media_runtime::app::ShellInputSlot;
 
 use super::trim::VideoTrimBarOutput;
 
@@ -23,7 +23,7 @@ pub enum VideoShellInput {
     /// BigNetScreen reported a change (session, position, receivers).
     TvChanged,
     /// A button of the TV card over the video or of the TV pill's menu.
-    Tv(crate::shared::tv_cast::TvCardAction),
+    Tv(big_media_runtime::cast::tv::TvCardAction),
     /// The header's settings button: open the panel home, or close it.
     TogglePanel,
     /// Add these files to the end of the playlist (dropped on the panel).

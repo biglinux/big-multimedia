@@ -10,7 +10,7 @@ use super::super::{BrowserState, VideoBrowserSidebarOutput};
 use crate::i18n::i18n;
 use crate::media::playlist;
 use crate::settings::keys;
-use crate::shared::playlist_export::{
+use big_media_runtime::media::playlist_export::{
     playlist_export_message, playlist_save_picker, show_playlist_export_result,
 };
 

@@ -111,7 +111,7 @@ pub(super) fn detect(
         found.push(Adjustment::SubtitleDelay(subtitle_delay));
     }
     let bands = settings.get_string(keys::EQ_BANDS);
-    if crate::shared::audio_effects::parse_eq_bands(&bands)
+    if big_media_runtime::audio_effects::parse_eq_bands(&bands)
         .iter()
         .any(|gain| changed(*gain))
     {
@@ -198,9 +198,9 @@ impl Adjustment {
             }
             Self::Equalizer { bands, .. } => i18n("Type of sound: {name}").replace(
                 "{name}",
-                &crate::shared::audio_effects::equalizer_preset_matching(bands)
+                &big_media_runtime::audio_effects::equalizer_preset_matching(bands)
                     .and_then(|index| {
-                        crate::shared::audio_effects::equalizer_preset_names()
+                        big_media_runtime::audio_effects::equalizer_preset_names()
                             .get(index)
                             .copied()
                     })
@@ -280,7 +280,7 @@ impl Adjustment {
             Self::Equalizer { bands, preset } => {
                 let _ = settings.put_string(keys::EQ_BANDS, if normal { FLAT_EQ } else { bands });
                 let _ = settings.put_string(keys::EQ_PRESET, if normal { "flat" } else { preset });
-                crate::shared::audio_effects::apply_voice_change(settings, mpv);
+                big_media_runtime::audio_effects::apply_voice_change(settings, mpv);
             }
             Self::VideoEffects(entries) => {
                 for entry in entries {

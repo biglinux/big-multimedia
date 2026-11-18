@@ -1,15 +1,9 @@
-//! Player popover builders re-exported from `big-media-components::player_chrome`
-//! (pure-gtk, reusable). The mpv/settings-bound helpers below stay here: they
-//! are engine-coupled (`MpvBackend`, audio-effects, settings).
+//! The voice (noise reduction) strength slider both players show: heard at
+//! once, written into the filter chain once the slider rests.
 
-pub use big_media_components::player_chrome::{
-    SPEED_PRESETS, VOICE_PRESETS, build_speed_popover, build_voice_popover, build_volume_popover,
-    setup_exclusive_hover_popover_group, setup_hover_controller_exclusive,
-};
-
+use crate::audio_effects;
 use crate::player::mpv_backend::MpvBackend;
 use crate::settings::{Settings, keys};
-use crate::shared::audio_effects;
 use std::cell::{Cell, RefCell};
 use std::rc::Rc;
 use std::sync::Arc;

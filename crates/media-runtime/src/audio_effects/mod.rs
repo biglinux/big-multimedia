@@ -10,10 +10,14 @@ use crate::player::mpv_backend::MpvBackend;
 use crate::settings::keys;
 use big_audio_effects::equalizer::EQ_BAND_FREQUENCIES_F64;
 
-pub use super::audio_effects_eq::{
+mod equalizer;
+mod voice_strength;
+
+pub use equalizer::{
     create_equalizer_content, create_equalizer_dialog, equalizer_preset_matching,
     equalizer_preset_names,
 };
+pub use voice_strength::{VoiceStrength, handle_voice_strength_changed};
 
 /// 10 semicolon-separated dB gains, clamped to ±12 dB; missing → 0.
 pub fn parse_eq_bands(eq_str: &str) -> [f64; 10] {

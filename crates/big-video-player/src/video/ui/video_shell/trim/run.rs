@@ -13,8 +13,8 @@ use big_player_ui::cut_edit_dialog::present_cut_edit_dialog;
 use big_player_ui::cut_list::{Cut, play_only_cuts_seek};
 
 use crate::i18n::i18n;
-use crate::shared::converter_handoff;
 use crate::video::ui::video_controls_bar::VideoControlsBarInput;
+use big_media_runtime::converter_handoff;
 
 use super::super::VideoShell;
 use super::bar::{VideoTrimBarInput, VideoTrimBarOutput};

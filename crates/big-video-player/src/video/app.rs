@@ -49,17 +49,17 @@ mod imp {
             if !paths.is_empty() {
                 crate::video::ui::video_shell::mark_opening_files();
             }
-            crate::shared::app_base::present_for_open(self.obj().upcast_ref());
+            big_media_runtime::app::present_for_open(self.obj().upcast_ref());
             crate::open_paths(paths);
         }
 
         fn startup(&self) {
             self.parent_startup();
             big_gtk_kit::install();
-            crate::shared::app_base::strip_decoration_icon();
+            big_media_runtime::app::strip_decoration_icon();
 
             let settings = crate::settings::Settings::for_video();
-            crate::shared::app_base::apply_startup_color_scheme(&settings, keys::UI_COLOR_SOURCE);
+            big_media_runtime::app::apply_startup_color_scheme(&settings, keys::UI_COLOR_SOURCE);
 
             let app = self.obj();
             Self::setup_actions(&app);
@@ -75,8 +75,8 @@ mod imp {
             let about = gio::ActionEntry::builder("about")
                 .activate(|app: &super::Application, _, _| {
                     let win = app.active_window();
-                    let dialog = crate::shared::app_base::build_about_dialog(
-                        &crate::shared::app_base::AboutDialogConfig {
+                    let dialog = big_media_runtime::app::build_about_dialog(
+                        &big_media_runtime::app::AboutDialogConfig {
                             app_name: config::video::APP_NAME,
                             app_icon: config::video::ICON_NAME,
                             comments: "",

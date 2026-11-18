@@ -4,7 +4,7 @@
 //! `Arc<MpvBackend>` directly.
 //!
 //! The equalizer reuses the shared
-//! `big_media_runtime::shared::audio_effects::create_equalizer_dialog`
+//! `big_media_runtime::audio_effects::create_equalizer_dialog`
 //! verbatim (the audio player drives the same dialog); only the
 //! transient/size/present wiring is app-local.
 //!

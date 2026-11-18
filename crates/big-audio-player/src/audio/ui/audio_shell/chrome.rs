@@ -101,7 +101,7 @@ impl AudioShell {
 
     /// Bundled illustration loader (audio-player gresource path).
     pub(super) fn illustration(filename: &str) -> gtk::Image {
-        crate::shared::illustration::illustration(
+        big_media_runtime::resources::illustration(
             "/br/com/biglinux/AudioPlayer/illustrations/",
             filename,
         )
@@ -111,7 +111,7 @@ impl AudioShell {
     /// Chromecast or DLNA TV, pausing it here once the TV plays.
     pub(super) fn show_tv_dialog(&self) {
         use crate::cast::daemon::PlaybackStart;
-        use crate::shared::tv_cast::{TvMedia, present_tv_dialog};
+        use big_media_runtime::cast::tv::{TvMedia, present_tv_dialog};
         let Some(win) = self.window() else {
             return;
         };
@@ -190,11 +190,11 @@ impl AudioShell {
             active_page.into_page()
         } else {
             let (saved_mins, saved_action) =
-                crate::shared::sleep_timer::load_sleep_timer_preferences(Some(&self.settings));
+                big_media_runtime::sleep_timer::load_sleep_timer_preferences(Some(&self.settings));
             let setup_page = BigSleepTimerSetupPage::new(
                 BigSleepTimerSetupSpec {
-                    labels: crate::shared::sleep_timer::sleep_timer_setup_labels(),
-                    actions: crate::shared::sleep_timer::sleep_timer_actions(),
+                    labels: big_media_runtime::sleep_timer::sleep_timer_setup_labels(),
+                    actions: big_media_runtime::sleep_timer::sleep_timer_actions(),
                     saved_minutes: saved_mins,
                     saved_action_id: saved_action,
                     icon_size: 72,
@@ -211,7 +211,7 @@ impl AudioShell {
                 &setup_page,
                 &win,
                 move |_, minutes, action| {
-                    crate::shared::sleep_timer::save_sleep_timer_preferences(
+                    big_media_runtime::sleep_timer::save_sleep_timer_preferences(
                         Some(&settings),
                         minutes,
                         &action,

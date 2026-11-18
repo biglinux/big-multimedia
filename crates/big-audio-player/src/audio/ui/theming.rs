@@ -12,7 +12,7 @@ pub(crate) fn apply_appearance(settings: &Settings, theme_slot: &CssSlot, hc_slo
     let color_source = settings.get_string(keys::AUDIO_UI_COLOR_SOURCE);
     apply_color_scheme(&color_source);
 
-    let css = crate::shared::theming::build_palette_css(
+    let css = big_media_runtime::theming::build_palette_css(
         settings,
         &color_source,
         keys::AUDIO_UI_BG_COLOR,

@@ -90,7 +90,7 @@ pub fn apply_saved_preferences(mpv: &MpvBackend, s: &Settings) {
     mpv.set_deinterlace(s.get_bool(keys::DEINTERLACE));
 
     // Audio
-    crate::shared::audio_effects::apply_audio_preferences(s, mpv);
+    big_media_runtime::audio_effects::apply_audio_preferences(s, mpv);
 
     // Subtitles
     mpv.set_preferred_sub_lang(&s.get_string(keys::PREFERRED_SUB_LANG));
@@ -184,6 +184,6 @@ fn audio_preference_actions(
             let mpv = Arc::clone(&mpv);
             move |value| mpv.set_preferred_audio_lang(value)
         },
-        move || crate::shared::audio_effects::apply_voice_change(&settings, &mpv),
+        move || big_media_runtime::audio_effects::apply_voice_change(&settings, &mpv),
     ))
 }

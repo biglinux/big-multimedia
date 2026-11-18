@@ -7,5 +7,7 @@ pub mod iptv;
 pub mod metadata_cache;
 pub(crate) mod native_duration;
 pub mod playlist;
+/// Playlist file save picker and result alert.
+pub mod playlist_export;
 pub mod playlist_scan;
 pub mod thumbnail;

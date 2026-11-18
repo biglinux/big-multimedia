@@ -37,7 +37,7 @@ const PANSCAN_STEP: f64 = 0.1;
 pub(super) fn wire_keyboard_shortcuts(
     root: &gtk::Box,
     mpv: &Rc<RefCell<Option<Arc<MpvBackend>>>>,
-    tv: &Rc<crate::shared::tv_cast::TvLink>,
+    tv: &Rc<big_media_runtime::cast::tv::TvLink>,
     settings: &Settings,
     sender: &ComponentSender<VideoShell>,
     trim_active: Rc<Cell<bool>>,
@@ -142,7 +142,7 @@ struct Shortcuts {
     /// when the shortcuts dialog saves a change.
     single_key_actions: RefCell<(Option<String>, std::collections::HashMap<String, String>)>,
     mpv: Rc<RefCell<Option<Arc<MpvBackend>>>>,
-    tv: Rc<crate::shared::tv_cast::TvLink>,
+    tv: Rc<big_media_runtime::cast::tv::TvLink>,
     input: relm4::Sender<VideoShellInput>,
     settings: Settings,
     /// The control-bar and header menus: Escape closes them first.
@@ -239,7 +239,7 @@ pub(super) fn paste_and_play(root: &gtk::Box, sender: &ComponentSender<VideoShel
 fn dispatch_video_shortcut(
     action: &str,
     mpv: &Rc<RefCell<Option<Arc<MpvBackend>>>>,
-    tv: &Rc<crate::shared::tv_cast::TvLink>,
+    tv: &Rc<big_media_runtime::cast::tv::TvLink>,
     input: &relm4::Sender<VideoShellInput>,
     volume_max: f64,
 ) -> bool {
@@ -359,8 +359,8 @@ mod tests {
     }
 
     /// Never connected, so no TV has the keys.
-    fn no_tv() -> Rc<crate::shared::tv_cast::TvLink> {
-        crate::shared::tv_cast::TvLink::new()
+    fn no_tv() -> Rc<big_media_runtime::cast::tv::TvLink> {
+        big_media_runtime::cast::tv::TvLink::new()
     }
 
     #[test]

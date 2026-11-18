@@ -32,7 +32,7 @@ pub(crate) fn present_shortcuts(parent: &impl IsA<gtk::Window>, settings: &Setti
     connect_shortcut_dialog_rebinds(
         &dialog,
         &custom_str,
-        crate::shared::shortcut_capture::shortcut_capture_labels(),
+        big_media_runtime::shortcut_capture::shortcut_capture_labels(),
         key_to_accel_string,
         display_accel,
         move |serialized| {

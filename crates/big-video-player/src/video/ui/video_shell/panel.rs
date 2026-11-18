@@ -666,7 +666,7 @@ impl VideoShell {
         let page = page_box();
         page.set_margin_start(0);
         page.set_margin_end(0);
-        let equalizer = crate::shared::audio_effects::create_equalizer_content(
+        let equalizer = big_media_runtime::audio_effects::create_equalizer_content(
             &self.settings,
             Some(Arc::clone(mpv)),
             Some(Rc::new(|| {
@@ -707,11 +707,11 @@ impl VideoShell {
             return active.into_page().upcast();
         }
         let (minutes, action) =
-            crate::shared::sleep_timer::load_sleep_timer_preferences(Some(&self.settings));
+            big_media_runtime::sleep_timer::load_sleep_timer_preferences(Some(&self.settings));
         let setup = BigSleepTimerSetupPage::new(
             BigSleepTimerSetupSpec {
-                labels: crate::shared::sleep_timer::sleep_timer_setup_labels(),
-                actions: crate::shared::sleep_timer::sleep_timer_actions(),
+                labels: big_media_runtime::sleep_timer::sleep_timer_setup_labels(),
+                actions: big_media_runtime::sleep_timer::sleep_timer_actions(),
                 saved_minutes: minutes,
                 saved_action_id: action,
                 icon_size: 64,
@@ -727,7 +727,7 @@ impl VideoShell {
             &setup,
             &self.panel.card,
             move |_, minutes, action| {
-                crate::shared::sleep_timer::save_sleep_timer_preferences(
+                big_media_runtime::sleep_timer::save_sleep_timer_preferences(
                     Some(&settings),
                     minutes,
                     &action,

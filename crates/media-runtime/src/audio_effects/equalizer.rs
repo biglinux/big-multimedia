@@ -15,7 +15,7 @@ use crate::player::mpv_backend::MpvBackend;
 use crate::settings::keys;
 use big_relm4_components::input::debounce::BigDebouncedAction as DebouncedAction;
 
-use super::audio_effects::{EQ_LABELS, parse_eq_bands, rebuild_filters};
+use super::{EQ_LABELS, parse_eq_bands, rebuild_filters};
 
 struct EqPreset {
     name: &'static str,

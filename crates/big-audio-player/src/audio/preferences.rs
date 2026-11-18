@@ -199,7 +199,7 @@ fn audio_preference_actions(
             let mpv = Arc::clone(&mpv);
             move |value| mpv.set_preferred_audio_lang(value)
         },
-        move || crate::shared::audio_effects::apply_voice_change(&settings, &mpv),
+        move || big_media_runtime::audio_effects::apply_voice_change(&settings, &mpv),
     ))
 }
 

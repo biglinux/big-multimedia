@@ -75,8 +75,8 @@ fn dock_control_message(action: &str) -> Option<AudioShellInput> {
     Some(AudioShellInput::Playback(command))
 }
 
-fn audio_about_dialog_config() -> crate::shared::app_base::AboutDialogConfig {
-    crate::shared::app_base::AboutDialogConfig {
+fn audio_about_dialog_config() -> big_media_runtime::app::AboutDialogConfig {
+    big_media_runtime::app::AboutDialogConfig {
         app_name: config::audio::APP_NAME,
         app_icon: config::audio::ICON_NAME,
         comments: AUDIO_ABOUT_COMMENTS,
@@ -125,7 +125,7 @@ mod imp {
         fn open(&self, files: &[gio::File], _hint: &str) {
             // Show the relm4-managed window, then deliver opened files through
             // the shell's thread-local broker.
-            crate::shared::app_base::present_for_open(self.obj().upcast_ref());
+            big_media_runtime::app::present_for_open(self.obj().upcast_ref());
             if let Some(message) = open_files_message(files) {
                 crate::audio::ui::audio_shell::send_to_shell(message);
             }
@@ -160,9 +160,9 @@ mod imp {
         fn startup(&self) {
             self.parent_startup();
             big_gtk_kit::install();
-            crate::shared::app_base::strip_decoration_icon();
+            big_media_runtime::app::strip_decoration_icon();
             let settings = crate::settings::Settings::for_audio();
-            crate::shared::app_base::apply_startup_color_scheme(
+            big_media_runtime::app::apply_startup_color_scheme(
                 &settings,
                 keys::AUDIO_UI_COLOR_SOURCE,
             );
@@ -182,7 +182,7 @@ mod imp {
                 .activate(|app: &super::Application, _, _| {
                     let win = app.active_window();
                     let dialog =
-                        crate::shared::app_base::build_about_dialog(&audio_about_dialog_config());
+                        big_media_runtime::app::build_about_dialog(&audio_about_dialog_config());
                     dialog.add_credit_section(
                         Some(&i18n(AUDIO_ABOUT_CREDIT_SECTION_HEADING)),
                         AUDIO_ABOUT_CREDIT_LINES,
