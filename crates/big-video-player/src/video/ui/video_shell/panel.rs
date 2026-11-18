@@ -48,6 +48,17 @@ impl PanelPage {
         }
     }
 
+    /// The card's (horizontal, vertical) corner: the TV page rises from its
+    /// button in the controls' corner, Recent hangs below the Open menu on
+    /// the left, the rest below the settings button.
+    fn corner(self) -> (gtk::Align, gtk::Align) {
+        match self {
+            Self::Tv => (gtk::Align::End, gtk::Align::End),
+            Self::Recent => (gtk::Align::Start, gtk::Align::Start),
+            _ => (gtk::Align::End, gtk::Align::Start),
+        }
+    }
+
     /// Where "Back" leads.
     fn parent(self) -> Option<Self> {
         match self {
@@ -305,30 +316,31 @@ impl VideoShell {
             self.close_panel(sender);
             return;
         }
-        // The TV page opens from its button in the controls' corner, so it
-        // rises from there; the rest hang below the settings button.
-        let from_below = page == PanelPage::Tv;
-        if !panel.is_open() || from_below != (panel.card.valign() == gtk::Align::End) {
+        let (halign, valign) = page.corner();
+        if !panel.is_open() || (panel.revealer.halign(), panel.card.valign()) != (halign, valign) {
             let layout = self.panel_layout_now();
             panel.columns.set(layout.columns);
             // The revealer spans the room between header and controls; the
             // card hangs at its top or rests on its bottom, never past it.
             panel.revealer.set_margin_top(layout.top);
             panel.revealer.set_margin_bottom(layout.bottom);
-            if from_below {
-                // One list: the home page's width would only stretch it.
-                panel.card.set_width_request(layout.width.min(440));
-                panel.card.set_valign(gtk::Align::End);
-                panel
-                    .revealer
-                    .set_transition_type(gtk::RevealerTransitionType::SlideUp);
+            panel.revealer.set_halign(halign);
+            let on_left = halign == gtk::Align::Start;
+            panel.revealer.set_margin_start(if on_left { 8 } else { 0 });
+            panel.revealer.set_margin_end(if on_left { 0 } else { 8 });
+            panel.card.set_valign(valign);
+            // The TV page is one list: the home page's width would only
+            // stretch it.
+            panel.card.set_width_request(if page == PanelPage::Tv {
+                layout.width.min(440)
             } else {
-                panel.card.set_width_request(layout.width);
-                panel.card.set_valign(gtk::Align::Start);
-                panel
-                    .revealer
-                    .set_transition_type(gtk::RevealerTransitionType::SlideLeft);
-            }
+                layout.width
+            });
+            panel.revealer.set_transition_type(match page {
+                PanelPage::Tv => gtk::RevealerTransitionType::SlideUp,
+                PanelPage::Recent => gtk::RevealerTransitionType::SlideRight,
+                _ => gtk::RevealerTransitionType::SlideLeft,
+            });
             if layout.compact {
                 panel.card.add_css_class("compact");
             } else {
@@ -356,6 +368,10 @@ impl VideoShell {
         wrapper.append(&content);
         panel.scroller.set_child(Some(&wrapper));
         panel.title.set_label(&page.title());
+        // On the left Recent reads as the sidebars do, with their centered title.
+        panel
+            .title
+            .set_xalign(if page == PanelPage::Recent { 0.5 } else { 0.0 });
         panel.back.set_visible(page.parent().is_some());
         if !panel.is_open() {
             panel.direct.set(direct);

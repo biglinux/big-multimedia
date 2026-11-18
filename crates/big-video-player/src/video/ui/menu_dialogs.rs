@@ -67,6 +67,10 @@ impl VideoShell {
             .text(big_media_components::time::playback_time(position))
             .show_apply_button(true)
             .build();
+        // The row is labelled by both its title labels, so its name read
+        // "Playback time Playback time".
+        entry.reset_relation(gtk::AccessibleRelation::LabelledBy);
+        entry.update_property(&[gtk::accessible::Property::Label(&i18n("Playback time"))]);
         group.add(&entry);
         page.content().append(&group);
 

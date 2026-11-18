@@ -166,6 +166,10 @@ impl VideoShell {
             .title(i18n("Media URL"))
             .show_apply_button(true)
             .build();
+        // The row is labelled by both its title labels, so its name read
+        // "Media URL Media URL".
+        entry.reset_relation(gtk::AccessibleRelation::LabelledBy);
+        entry.update_property(&[gtk::accessible::Property::Label(&i18n("Media URL"))]);
         group.add(&entry);
         page.content().append(&group);
 
