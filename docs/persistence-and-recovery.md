@@ -44,6 +44,21 @@ or failed lookup by exit code alone. Helper output/error is never logged, and th
 secret goes on stdin, not argv or lookup attributes. Payload is capped at 7,900
 UTF-8 bytes, below the helper's current 8,192-byte input buffer.
 
+IPTV providers keep their secret there: the Xtream password, or the whole M3U
+URL when `big_os_kit::url::redact_url` would change it (credentials in the
+query or userinfo). `iptv-providers.toml` holds the item's random 128-bit
+`secret_id` and, for an M3U URL, its redacted form. Saving the provider form
+stores the item first and adds the provider only after the keyring accepts it;
+a refusal keeps the form open with the reason. A file that still holds a plain
+password is moved into the keyring when the TV panel opens, reloads or closes
+the provider editor, and rewritten only for providers nobody edited meanwhile.
+Until then the panel and the provider list say the password is not in the
+keyring yet. Replacing or removing a secret deletes the old item after the
+provider list is updated; a failed delete is shown, never retried silently.
+Played channel URLs carry the Xtream credentials, so a channel is not added to
+the playlist sidebar, whose Save writes a file, and recent files never take a
+stream.
+
 ## LAN remote
 
 One nonblocking server thread owns at most 16 accepted sockets and 4 per IP.

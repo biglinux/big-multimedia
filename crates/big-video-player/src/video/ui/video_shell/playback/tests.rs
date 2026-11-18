@@ -32,6 +32,21 @@ mod uri_and_seek_tests {
         }
     }
 
+    /// Recent files take only what `is_remote_uri` refuses, so a stream with a
+    /// password in its URL never reaches them.
+    #[test]
+    fn streams_with_credentials_are_remote() {
+        for uri in [
+            "http://panel.example:8080/live/ana/s3cret/1.ts",
+            "https://lists.example/get.php?username=ana&password=s3cret",
+            "rtsp://ana:s3cret@camera.local/stream",
+            "udp://@239.0.0.1:1234",
+            "HTTP://PANEL/live/ana/s3cret/2.m3u8",
+        ] {
+            assert!(is_remote_uri(uri), "{uri} should be remote");
+        }
+    }
+
     #[test]
     fn remote_uri_rejects_local_paths() {
         for path in ["/home/u/v.mkv", "file:///v.mp4", "video.mp4", "ftp://h/x"] {

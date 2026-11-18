@@ -12,4 +12,4 @@ pub use m3u::{
     MAX_PLAYLIST_BYTES, MAX_PLAYLIST_ENTRIES, PlaylistEntries, decode_playlist, left_out_notice,
     parse_channel_list, parse_m3u_content, read_playlist_text,
 };
-pub use provider::{IptvKind, IptvProvider, IptvProviderStore};
+pub use provider::{IptvKind, IptvProvider, IptvProviderStore, SECRET_SCOPE};
