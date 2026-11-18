@@ -236,44 +236,79 @@ mod tests {
         assert!(s.contains("srv.example"));
     }
 
-    #[test]
-    fn roundtrip_toml() {
-        let store = IptvProviderStore {
-            providers: vec![
-                m3u_url_provider("A", "https://a.example/list.m3u"),
-                IptvProvider {
-                    name: "B".into(),
-                    source: IptvKind::Xtream {
-                        server: "https://b.example".into(),
-                        username: "u".into(),
-                        password: "p".into(),
-                    },
-                    user_agent: "Mozilla/5.0 (X11)".into(),
-                    referer: "https://b.example/".into(),
-                    order: 1,
-                },
-            ],
-            ..IptvProviderStore::default()
-        };
-        let s = toml::to_string_pretty(&store).expect("serialize");
-        let back: IptvProviderStore = toml::from_str(&s).expect("deserialize");
-        assert_eq!(back.providers.len(), 2);
-        assert_eq!(back.providers[0].name, "A");
-        assert_eq!(back.providers[1].user_agent, "Mozilla/5.0 (X11)");
+    /// Any text, line breaks and control characters included.
+    const ANY_TEXT: &str = "(?s).{0,30}";
+
+    fn any_provider() -> impl proptest::strategy::Strategy<Value = IptvProvider> {
+        use proptest::prelude::*;
+        let source = prop_oneof![
+            ANY_TEXT.prop_map(|url| IptvKind::M3uUrl { url }),
+            ANY_TEXT.prop_map(|path| IptvKind::M3uLocal { path }),
+            (ANY_TEXT, ANY_TEXT, ANY_TEXT).prop_map(|(server, username, password)| {
+                IptvKind::Xtream {
+                    server,
+                    username,
+                    password,
+                }
+            }),
+        ];
+        (ANY_TEXT, source, ANY_TEXT, ANY_TEXT, any::<u32>()).prop_map(
+            |(name, source, user_agent, referer, order)| IptvProvider {
+                name,
+                source,
+                user_agent,
+                referer,
+                order,
+            },
+        )
     }
 
+    proptest::proptest! {
+        #[test]
+        fn store_roundtrips_through_toml(
+            providers in proptest::collection::vec(any_provider(), 0..5)
+        ) {
+            let store = IptvProviderStore { providers, ..IptvProviderStore::default() };
+            let text = toml::to_string_pretty(&store).expect("serialize");
+            let back: IptvProviderStore = toml::from_str(&text).expect("deserialize");
+            proptest::prop_assert_eq!(back.providers, store.providers);
+        }
+    }
+
+    /// The file a user keeps between versions: its `type` tags and field names
+    /// are the format contract.
     #[test]
-    fn missing_optional_fields_default_to_empty() {
-        let minimal = r#"
-            [[providers]]
-            name = "Bare"
-            [providers.source]
-            type = "m3u_url"
-            url = "https://a.example/x.m3u"
-        "#;
-        let store: IptvProviderStore = toml::from_str(minimal).expect("deserialize");
-        assert_eq!(store.providers.len(), 1);
-        assert!(store.providers[0].user_agent.is_empty());
-        assert!(store.providers[0].referer.is_empty());
+    fn fixture_file_loads_every_kind() {
+        let text = include_str!("../../../tests/fixtures/iptv-providers.toml");
+        let store: IptvProviderStore = toml::from_str(text).expect("deserialize");
+        let expected = vec![
+            IptvProvider {
+                name: "Free List".into(),
+                source: IptvKind::M3uUrl {
+                    url: "https://lists.example/free.m3u8".into(),
+                },
+                ..IptvProvider::default()
+            },
+            IptvProvider {
+                name: "Saved".into(),
+                source: IptvKind::M3uLocal {
+                    path: "/home/ana/Videos/channels.m3u".into(),
+                },
+                order: 1,
+                ..IptvProvider::default()
+            },
+            IptvProvider {
+                name: "Panel".into(),
+                source: IptvKind::Xtream {
+                    server: "http://panel.example:8080".into(),
+                    username: "ana".into(),
+                    password: "s3cret".into(),
+                },
+                user_agent: "VLC/3.0.20".into(),
+                referer: "https://panel.example/".into(),
+                order: 2,
+            },
+        ];
+        assert_eq!(store.providers, expected);
     }
 }
