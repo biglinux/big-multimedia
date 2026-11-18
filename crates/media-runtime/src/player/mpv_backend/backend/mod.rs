@@ -868,15 +868,21 @@ mod volume_tests {
         panic!("no thread named {name}");
     }
 
-    #[test]
-    fn idle_event_thread_waits_for_mpv() {
+    /// An audio-only backend on mpv's null output, its event thread named `thread`.
+    fn null_output_backend(thread: &str) -> (MpvBackend, async_channel::Receiver<PlayerEvent>) {
         let mpv = MpvClient::with_initializer(|init| {
             apply_audio_only_options(init)?;
             init.set_option("ao", "null")
         })
         .unwrap();
-        let (tx, _rx) = async_channel::unbounded();
-        let backend = MpvBackend::finish_mpv_init(mpv, tx, "test-idle", "test idle", true);
+        let (tx, rx) = async_channel::unbounded();
+        let backend = MpvBackend::finish_mpv_init(mpv, tx, thread, thread, true);
+        (backend, rx)
+    }
+
+    #[test]
+    fn idle_event_thread_waits_for_mpv() {
+        let (backend, _rx) = null_output_backend("test-idle");
         let wakeups = wakeups_in_one_second("test-idle");
         assert!(wakeups <= 1, "{wakeups} wakeups with nothing loaded");
         backend.set_volume(40.0);
@@ -887,13 +893,7 @@ mod volume_tests {
 
     #[test]
     fn volume_mute_work_without_pulse() {
-        let mpv = MpvClient::with_initializer(|init| {
-            apply_audio_only_options(init)?;
-            init.set_option("ao", "null")
-        })
-        .unwrap();
-        let (tx, rx) = async_channel::unbounded();
-        let backend = MpvBackend::finish_mpv_init(mpv, tx, "test-volume", "test volume", true);
+        let (backend, rx) = null_output_backend("test-volume");
         for value in 0..1000 {
             backend.set_volume(f64::from(value % 100));
         }
@@ -966,16 +966,10 @@ mod volume_tests {
     }
 
     #[test]
-    fn paused_and_ended_event_thread_waits_for_mpv() {
+    fn paused_event_thread_waits_for_mpv() {
         let temp = tempfile::tempdir().unwrap();
         let input = write_silence(temp.path());
-        let mpv = MpvClient::with_initializer(|init| {
-            apply_audio_only_options(init)?;
-            init.set_option("ao", "null")
-        })
-        .unwrap();
-        let (tx, rx) = async_channel::unbounded();
-        let backend = MpvBackend::finish_mpv_init(mpv, tx, "test-paused", "test paused", true);
+        let (backend, rx) = null_output_backend("test-paused");
         let mut seen = Vec::new();
         backend.load_audio_paused(&input, AudioCacheProfile::Music, true);
         wait_for_event(&rx, &mut seen, "file loaded", |e| {
@@ -1017,10 +1011,23 @@ mod volume_tests {
             "position advancing",
             |e| matches!(e, PlayerEvent::PositionChanged(p) if *p > 2.2),
         );
+    }
+
+    #[test]
+    fn ended_event_thread_waits_for_mpv() {
+        let temp = tempfile::tempdir().unwrap();
+        let input = write_silence(temp.path());
+        let (backend, rx) = null_output_backend("test-ended");
+        let mut seen = Vec::new();
+        backend.load_audio_paused(&input, AudioCacheProfile::Music, false);
+        wait_for_event(&rx, &mut seen, "playing", |e| {
+            matches!(e, PlayerEvent::PositionChanged(_))
+        });
+        backend.seek_absolute(3.5);
         wait_for_event(&rx, &mut seen, "end of file", |e| {
             matches!(e, PlayerEvent::EndFile(0))
         });
-        let wakeups = wakeups_in_one_second("test-paused");
+        let wakeups = wakeups_in_one_second("test-ended");
         assert!(wakeups <= 1, "{wakeups} wakeups at the end of the file");
     }
 

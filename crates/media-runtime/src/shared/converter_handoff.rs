@@ -103,7 +103,7 @@ mod tests {
 
     /// The paths reach one converter process as separate, unparsed arguments.
     #[test]
-    fn launch_passes_every_path_verbatim_to_one_process() {
+    fn launch_keeps_paths_verbatim() {
         let temp = tempfile::tempdir().unwrap();
         let record = temp.path().join("argv");
         let program = temp.path().join("converter");
