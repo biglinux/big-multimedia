@@ -279,7 +279,7 @@ pub(super) fn build_mpris_service(
             .unwrap_or_else(PoisonError::into_inner)
             .clone()
     });
-    Mpris::new_with_name(
+    Mpris::new(
         "org.mpris.MediaPlayer2.BigAudioPlayer",
         crate::config::audio::APP_ID,
         command_cb,

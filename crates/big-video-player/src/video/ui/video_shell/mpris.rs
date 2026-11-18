@@ -39,8 +39,13 @@ pub(super) fn build_mpris_service(
         snapshot.shuffle = settings.get_bool(keys::PLAYLIST_SHUFFLE);
         snapshot
     });
-    // `new` is the video identity (BigVideoPlayer bus name, no taskbar progress).
-    Mpris::new(command_cb, state_cb)
+    Mpris::new(
+        "org.mpris.MediaPlayer2.BigVideoPlayer",
+        crate::config::video::APP_ID,
+        command_cb,
+        state_cb,
+        false,
+    )
 }
 
 fn finite(value: f64) -> f64 {
