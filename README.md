@@ -54,7 +54,7 @@ the controls out of the way.
   plays, plus DVD and Blu-ray discs, ISO images and folders.
 - **Subtitles** with a secondary track, delay control, styling, and loading of
   external files.
-- **Picture and sound**: brightness, contrast and colour, zoom, crop and
+- **Picture and sound**: brightness, contrast and color, zoom, crop and
   rotation, HDR tone mapping, an equalizer, and upscaling shaders (FSR, CAS,
   RAVU and Anime4K).
 - **Streams and TV**: online video, IPTV playlists and Xtream providers, and
