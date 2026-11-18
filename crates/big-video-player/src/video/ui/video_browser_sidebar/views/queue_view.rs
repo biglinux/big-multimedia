@@ -388,7 +388,7 @@ impl QueueRow {
 fn resume_seconds(path: &str) -> Option<f64> {
     let name =
         glib::compute_checksum_for_string(glib::ChecksumType::Md5, path)?.to_ascii_uppercase();
-    let file = glib::user_data_dir()
+    let file = big_os_kit::xdg_dirs::data_dir()?
         .join(crate::config::video::WATCH_LATER_RELATIVE)
         .join(name);
     std::fs::read_to_string(file)
