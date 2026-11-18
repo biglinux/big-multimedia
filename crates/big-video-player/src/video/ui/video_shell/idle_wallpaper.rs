@@ -15,6 +15,7 @@ use std::path::{Path, PathBuf};
 use std::rc::Rc;
 
 use big_app_kit::subprocess::{BigSubprocessOutputMode, BigSubprocessSpec};
+use big_media_runtime::media_probe::LOCAL_INPUT_PROTOCOLS;
 use big_relm4_components::task::spawn_blocking_result;
 
 use super::osd::IdleBackground;
@@ -282,27 +283,28 @@ pub(super) fn tv_backdrop(video: &str, seconds: f64) -> Option<PathBuf> {
         }
     }
     let dest = cache_dir.join(name);
-    produced(
-        BigSubprocessSpec::builder()
-            .program("ffmpeg")
-            .arg("-y")
-            .arg("-ss")
-            .arg(format!("{:.1}", seconds.max(0.0)))
-            .arg("-i")
-            .arg(video)
-            .args([
-                "-vf",
-                "scale=960:-2:flags=bilinear,gblur=sigma=8,eq=saturation=0.85",
-                "-frames:v",
-                "1",
-            ])
-            .arg(&dest)
-            .stdout(BigSubprocessOutputMode::Null)
-            .stderr(BigSubprocessOutputMode::Null)
-            .build(),
-        &dest,
-    )
-    .then_some(dest)
+    produced(backdrop_spec(video, seconds, &dest), &dest).then_some(dest)
+}
+
+fn backdrop_spec(video: &str, seconds: f64, dest: &Path) -> BigSubprocessSpec {
+    BigSubprocessSpec::builder()
+        .program("ffmpeg")
+        .arg("-y")
+        .arg("-ss")
+        .arg(format!("{:.1}", seconds.max(0.0)))
+        .args(LOCAL_INPUT_PROTOCOLS)
+        .arg("-i")
+        .arg(video)
+        .args([
+            "-vf",
+            "scale=960:-2:flags=bilinear,gblur=sigma=8,eq=saturation=0.85",
+            "-frames:v",
+            "1",
+        ])
+        .arg(dest)
+        .stdout(BigSubprocessOutputMode::Null)
+        .stderr(BigSubprocessOutputMode::Null)
+        .build()
 }
 
 /// Blur + darken `source` into `dest`. Tries ffmpeg directly; if that fails
@@ -348,28 +350,30 @@ fn rasterize_magick(source: &Path, dest: &Path) -> bool {
 /// Run the ffmpeg blur on `source` → `dest`; `true` on a non-empty result. Argv
 /// array, no shell.
 fn run_blur(source: &Path, dest: &Path) -> bool {
-    produced(
-        BigSubprocessSpec::builder()
-            .program("ffmpeg")
-            .arg("-y")
-            .arg("-i")
-            .arg(source)
-            .args([
-                "-vf",
-                // The wallpaper's colours, not its shapes: averaged down to 4x2
-                // and spread back out, so a logo in its middle (BigLinux's own)
-                // is not left as a blurred square behind the welcome screen.
-                // Then a slight darken + desaturate for the text over it.
-                "scale=4:2:flags=area,scale=1280:720:flags=bicubic,gblur=sigma=90,eq=brightness=-0.18:saturation=0.9",
-                "-frames:v",
-                "1",
-            ])
-            .arg(dest)
-            .stdout(BigSubprocessOutputMode::Null)
-            .stderr(BigSubprocessOutputMode::Null)
-            .build(),
-        dest,
-    )
+    produced(blur_spec(source, dest), dest)
+}
+
+fn blur_spec(source: &Path, dest: &Path) -> BigSubprocessSpec {
+    BigSubprocessSpec::builder()
+        .program("ffmpeg")
+        .arg("-y")
+        .args(LOCAL_INPUT_PROTOCOLS)
+        .arg("-i")
+        .arg(source)
+        .args([
+            "-vf",
+            // The wallpaper's colours, not its shapes: averaged down to 4x2
+            // and spread back out, so a logo in its middle (BigLinux's own)
+            // is not left as a blurred square behind the welcome screen.
+            // Then a slight darken + desaturate for the text over it.
+            "scale=4:2:flags=area,scale=1280:720:flags=bicubic,gblur=sigma=90,eq=brightness=-0.18:saturation=0.9",
+            "-frames:v",
+            "1",
+        ])
+        .arg(dest)
+        .stdout(BigSubprocessOutputMode::Null)
+        .stderr(BigSubprocessOutputMode::Null)
+        .build()
 }
 
 /// Rasterize an SVG `source` to PNG `dest` via `rsvg-convert`; `true` on success.
@@ -425,6 +429,24 @@ fn percent_decode(input: &str) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn backdrop_inputs_open_only_files() {
+        let input = "/videos/concat:a|b.mp4";
+        let dest = Path::new("/cache/out.jpg");
+        for spec in [
+            backdrop_spec(input, 1.0, dest),
+            blur_spec(Path::new(input), dest),
+        ] {
+            let argv = spec.try_resolved().unwrap().argv;
+            let input_at = argv.iter().position(|arg| arg == input).unwrap();
+            assert_eq!(
+                argv[input_at - 3..input_at],
+                ["-protocol_whitelist", "file,pipe", "-i"],
+                "{argv:?}"
+            );
+        }
+    }
 
     #[test]
     fn percent_decode_handles_spaces_and_passthrough() {
