@@ -3,7 +3,7 @@
 
 use super::*;
 use big_app_kit::mpris::{
-    CommandCallback, Mpris, MprisCommand, PlaybackStatus, PlayerState, StateCallback,
+    CommandCallback, LoopStatus, Mpris, MprisCommand, PlaybackStatus, PlayerState, StateCallback,
 };
 use std::sync::{Mutex, PoisonError};
 
@@ -31,12 +31,11 @@ pub(super) fn build_mpris_service(
         let mut snapshot = state.lock().unwrap_or_else(PoisonError::into_inner).clone();
         // The settings are the source of truth: every path that changes repeat
         // or shuffle (boot, Preferences, playlist menu, MPRIS) applies them to mpv.
-        let status = match settings.get_string(keys::LOOP_MODE).as_str() {
-            "file" => "Track",
-            "playlist" => "Playlist",
-            _ => "None",
+        snapshot.loop_status = match settings.get_string(keys::LOOP_MODE).as_str() {
+            "file" => LoopStatus::Track,
+            "playlist" => LoopStatus::Playlist,
+            _ => LoopStatus::None,
         };
-        status.clone_into(&mut snapshot.loop_status);
         snapshot.shuffle = settings.get_bool(keys::PLAYLIST_SHUFFLE);
         snapshot
     });
@@ -201,10 +200,10 @@ impl VideoShell {
                     }
                     MprisCommand::SetRate(rate) => mpv.set_speed(rate),
                     MprisCommand::SetLoopStatus(status) => {
-                        let mode = match status.as_str() {
-                            "Track" => "file",
-                            "Playlist" => "playlist",
-                            _ => "no",
+                        let mode = match status {
+                            LoopStatus::Track => "file",
+                            LoopStatus::Playlist => "playlist",
+                            LoopStatus::None => "no",
                         };
                         let _ = self.settings.put_string(keys::LOOP_MODE, mode);
                         mpv.set_loop_mode(mode);

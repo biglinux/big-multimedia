@@ -1,4 +1,5 @@
 use super::*;
+use big_app_kit::mpris::LoopStatus;
 
 impl AudioShell {
     pub(super) fn handle_mpris_command(
@@ -172,16 +173,11 @@ impl AudioShell {
                 }
             }
             MprisCommand::SetLoopStatus(mode) => {
-                self.queue.set_repeat(match mode.as_str() {
-                    "Track" => RepeatMode::One,
-                    "Playlist" => RepeatMode::All,
-                    _ => RepeatMode::None,
+                self.queue.set_repeat(match mode {
+                    LoopStatus::Track => RepeatMode::One,
+                    LoopStatus::Playlist => RepeatMode::All,
+                    LoopStatus::None => RepeatMode::None,
                 });
-                *self
-                    .mpris_state
-                    .loop_status
-                    .lock()
-                    .unwrap_or_else(PoisonError::into_inner) = mode;
                 self.playback_bar
                     .emit(AudioPlaybackBarInput::SetRepeat(self.queue.repeat()));
             }
@@ -243,11 +239,11 @@ impl AudioShell {
                 .lock()
                 .unwrap_or_else(PoisonError::into_inner)
                 .clone(),
-            loop_status: s
-                .loop_status
-                .lock()
-                .unwrap_or_else(PoisonError::into_inner)
-                .clone(),
+            loop_status: match self.queue.repeat() {
+                RepeatMode::None => LoopStatus::None,
+                RepeatMode::One => LoopStatus::Track,
+                RepeatMode::All => LoopStatus::Playlist,
+            },
             shuffle: self.queue.shuffle(),
             can_next: operational && can_next,
             can_prev: operational && !self.is_stream && self.queue.len() > 1,

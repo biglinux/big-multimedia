@@ -22,8 +22,6 @@ pub(crate) struct SharedMprisState {
     pub(crate) duration: Mutex<f64>,
     /// Volume percent.
     pub(crate) volume: Mutex<f64>,
-    /// `"None"` | `"Track"` | `"Playlist"`.
-    pub(crate) loop_status: Mutex<String>,
     /// `file://` URL of cached art (this player uses local cache URIs).
     pub(crate) art_url: Mutex<String>,
 }
@@ -40,7 +38,6 @@ impl Default for SharedMprisState {
             position: Mutex::new(0.0),
             duration: Mutex::new(0.0),
             volume: Mutex::new(100.0),
-            loop_status: Mutex::new("None".into()),
             art_url: Mutex::new(String::new()),
         }
     }

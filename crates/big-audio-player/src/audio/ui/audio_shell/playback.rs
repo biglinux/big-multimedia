@@ -63,16 +63,6 @@ impl AudioShell {
                     RepeatMode::One => RepeatMode::None,
                 };
                 self.queue.set_repeat(next);
-                let loop_str = match next {
-                    RepeatMode::None => "None",
-                    RepeatMode::One => "Track",
-                    RepeatMode::All => "Playlist",
-                };
-                *self
-                    .mpris_state
-                    .loop_status
-                    .lock()
-                    .unwrap_or_else(PoisonError::into_inner) = loop_str.to_string();
                 self.playback_bar
                     .emit(AudioPlaybackBarInput::SetRepeat(next));
             }

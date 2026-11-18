@@ -18,7 +18,9 @@ pub use service::Mpris;
 /// Private session-bus connection, shared with the tray icon.
 pub(crate) use service::private_session_bus;
 /// MPRIS callback and state contracts.
-pub use types::{CommandCallback, MprisCommand, PlaybackStatus, PlayerState, StateCallback};
+pub use types::{
+    CommandCallback, LoopStatus, MprisCommand, PlaybackStatus, PlayerState, StateCallback,
+};
 
 const MPRIS_PATH: &str = "/org/mpris/MediaPlayer2";
 const MPRIS_PLAYER_IFACE: &str = "org.mpris.MediaPlayer2.Player";
