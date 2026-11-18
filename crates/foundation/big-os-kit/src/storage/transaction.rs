@@ -26,28 +26,41 @@ impl CommitOutcome {
     }
 }
 
-/// Read one regular file through the same handle with a byte limit. Does not
-/// follow a final symlink on Unix and does not block opening a FIFO.
-/// Missing files return None; permission, corruption and excess-size errors do not.
-pub fn read_regular_limited(path: &Path, limit: usize) -> io::Result<Option<Vec<u8>>> {
+/// Open a regular file for reading. Does not follow a final symlink on Unix
+/// and does not block opening a FIFO.
+///
+/// # Errors
+///
+/// The open error (`NotFound` for a missing file, `ELOOP` for a final
+/// symlink), or `InvalidData` when the path is not a regular file.
+pub fn open_regular_read(path: &Path) -> io::Result<File> {
     let mut options = OpenOptions::new();
     options.read(true);
     #[cfg(unix)]
     {
         use std::os::unix::fs::OpenOptionsExt;
+        #[expect(clippy::disallowed_methods, reason = "the owner of no-follow reads")]
         options.custom_flags(libc::O_NOFOLLOW | libc::O_NONBLOCK);
     }
-    let file = match options.open(path) {
-        Ok(file) => file,
-        Err(error) if error.kind() == io::ErrorKind::NotFound => return Ok(None),
-        Err(error) => return Err(error),
-    };
+    let file = options.open(path)?;
     if !file.metadata()?.is_file() {
         return Err(io::Error::new(
             io::ErrorKind::InvalidData,
             "expected a regular file",
         ));
     }
+    Ok(file)
+}
+
+/// Read one regular file through the same handle with a byte limit, opened
+/// as [`open_regular_read`] does.
+/// Missing files return None; permission, corruption and excess-size errors do not.
+pub fn read_regular_limited(path: &Path, limit: usize) -> io::Result<Option<Vec<u8>>> {
+    let file = match open_regular_read(path) {
+        Ok(file) => file,
+        Err(error) if error.kind() == io::ErrorKind::NotFound => return Ok(None),
+        Err(error) => return Err(error),
+    };
     let mut bytes = Vec::new();
     file.take((limit as u64).saturating_add(1))
         .read_to_end(&mut bytes)?;
@@ -79,6 +92,10 @@ impl WriteLock {
         {
             use std::os::fd::AsRawFd;
             use std::os::unix::fs::OpenOptionsExt;
+            #[expect(
+                clippy::disallowed_methods,
+                reason = "creates the lock file, which a read-only open cannot"
+            )]
             let file = OpenOptions::new()
                 .read(true)
                 .write(true)
@@ -255,19 +272,11 @@ impl StagedFile {
         self.place(target, true)
     }
     fn place(&self, target: &Path, empty_allowed: bool) -> io::Result<CommitOutcome> {
-        let mut options = OpenOptions::new();
-        options.read(true);
-        #[cfg(unix)]
-        {
-            use std::os::unix::fs::OpenOptionsExt;
-            options.custom_flags(libc::O_NOFOLLOW | libc::O_NONBLOCK);
-        }
-        let file = options.open(&self.path)?;
-        let metadata = file.metadata()?;
-        if !metadata.is_file() || (metadata.len() == 0 && !empty_allowed) {
+        let file = open_regular_read(&self.path)?;
+        if file.metadata()?.len() == 0 && !empty_allowed {
             return Err(io::Error::new(
                 io::ErrorKind::InvalidData,
-                "output is empty or not a regular file",
+                "output is empty",
             ));
         }
         file.sync_all()?;
@@ -561,6 +570,21 @@ mod tests {
         assert!(WriteLock::try_acquire(&target).is_err());
         drop(first);
         assert!(WriteLock::try_acquire(&target).is_ok());
+        fs::remove_dir_all(dir).unwrap();
+    }
+    #[cfg(unix)]
+    #[test]
+    fn regular_open_refuses_special_files() {
+        use std::os::unix::ffi::OsStrExt;
+        let dir = directory();
+        let fifo = dir.join("fifo");
+        let name = std::ffi::CString::new(fifo.as_os_str().as_bytes()).unwrap();
+        // SAFETY: `name` is a live NUL-terminated path for the whole call.
+        assert_eq!(unsafe { libc::mkfifo(name.as_ptr(), 0o600) }, 0);
+        let kind = |path: &Path| open_regular_read(path).unwrap_err().kind();
+        assert_eq!(kind(&fifo), io::ErrorKind::InvalidData);
+        assert_eq!(kind(&dir), io::ErrorKind::InvalidData);
+        assert_eq!(kind(&dir.join("missing")), io::ErrorKind::NotFound);
         fs::remove_dir_all(dir).unwrap();
     }
 }
