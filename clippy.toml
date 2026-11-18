@@ -43,6 +43,8 @@ disallowed-methods = [
     { path = "glib::user_cache_dir", reason = "use `big_os_kit::xdg_dirs::cache_dir` (crates/foundation/big-os-kit/src/xdg_dirs.rs), which ignores a relative `XDG_CACHE_HOME` and returns `None` instead of guessing a path" },
     { path = "glib::user_data_dir", reason = "use `big_os_kit::xdg_dirs::data_dir` (crates/foundation/big-os-kit/src/xdg_dirs.rs), which ignores a relative `XDG_DATA_HOME` and returns `None` instead of guessing a path" },
     { path = "glib::user_config_dir", reason = "use `big_os_kit::xdg_dirs::config_dir` (crates/foundation/big-os-kit/src/xdg_dirs.rs), which ignores a relative `XDG_CONFIG_HOME` and returns `None` instead of guessing a path" },
+    { path = "gtk4::style_context_add_provider_for_display", reason = "the display keeps the provider after its widget goes; use `big_relm4_components::theme::CssSlot` (crates/ui/generic/big-relm4-components/src/theme.rs) for CSS replaced in place, or `big_gtk_kit::css::add_provider_for_widget_lifetime` for a fixed sheet" },
+    { path = "gtk4::style_context_remove_provider_for_display", reason = "removal belongs to the registration's widget; use `big_relm4_components::theme::CssSlot` (crates/ui/generic/big-relm4-components/src/theme.rs), which leaves the display with its widget" },
     { path = "gtk4::FileDialog::builder", reason = "use `big_app_kit::file_dialogs::FilePicker` (crates/app/big-app-kit/src/file_dialogs.rs)" },
     { path = "gtk4::FileDialog::new", reason = "use `big_app_kit::file_dialogs::FilePicker` (crates/app/big-app-kit/src/file_dialogs.rs)" },
     { path = "gio::Menu::append_section", reason = "GTK 4.22's menu tracker keeps every section it shows; use `big_gtk_kit::menu::append_shared_section`" },

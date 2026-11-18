@@ -32,7 +32,7 @@ pub struct ColorPalette {
 /// Emits `@define-color` declarations and `:root` custom properties covering
 /// window, headerbar, popover, dialog, card, view, sidebar surfaces, plus
 /// the BigLinux-specific `player_icon_color`. Load the result via
-/// [`inject_palette_css`].
+/// [`CssSlot::set`].
 #[must_use]
 pub fn build_adwaita_color_overrides(palette: &ColorPalette) -> String {
     let (bg_r, bg_g, bg_b) = palette.bg;
@@ -86,27 +86,27 @@ pub fn apply_color_scheme(color_source: &str) {
     }
 }
 
-/// Load `css` into a process-wide [`gtk::CssProvider`] above user priority.
+/// Display CSS owned by one widget: registered on its display until the widget
+/// is destroyed, and replaced in place by [`CssSlot::set`].
 ///
-/// `provider_slot` caches the provider so repeated calls re-use the same
-/// instance, replacing its contents instead of stacking new providers on
-/// the [`gtk::gdk::Display`].
-pub fn inject_palette_css(css: &str, provider_slot: &mut Option<gtk::CssProvider>) {
-    let provider = if let Some(ref provider) = *provider_slot {
-        provider.clone()
-    } else {
+/// Clones share the registration, so a closure can keep one without keeping
+/// the widget.
+#[derive(Clone)]
+pub struct CssSlot(gtk::CssProvider);
+
+impl CssSlot {
+    /// Register an empty slot at `priority` on `owner`'s display for `owner`'s lifetime.
+    #[must_use]
+    pub fn new(owner: &impl gtk::prelude::IsA<gtk::Widget>, priority: u32) -> Self {
         let provider = gtk::CssProvider::new();
-        if let Some(display) = gtk::gdk::Display::default() {
-            gtk::style_context_add_provider_for_display(
-                &display,
-                &provider,
-                gtk::STYLE_PROVIDER_PRIORITY_USER + 1,
-            );
-        }
-        *provider_slot = Some(provider.clone());
-        provider
-    };
-    provider.load_from_string(css);
+        big_gtk_kit::css::add_provider_for_widget_lifetime(owner, &provider, priority);
+        Self(provider)
+    }
+
+    /// Replace the slot's rules with `css`; an empty string clears them.
+    pub fn set(&self, css: &str) {
+        self.0.load_from_string(css);
+    }
 }
 
 /// Decode a `#RRGGBB` or `RRGGBB` hex string into an `(R, G, B)` tuple.
@@ -148,6 +148,41 @@ pub fn parse_hex_to_rgba(hex_str: &str) -> gtk::gdk::RGBA {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use gtk::prelude::*;
+
+    #[test]
+    #[ignore = "requires an isolated GTK session"]
+    fn css_slot_leaves_with_its_widget() {
+        gtk::init().expect("isolated GTK session");
+        // Only widgets under a toplevel restyle when the display's providers change.
+        let probe = gtk::Label::new(None);
+        probe.add_css_class("css-slot-probe");
+        let window = gtk::Window::builder().child(&probe).build();
+        window.present();
+        let color = || {
+            let context = gtk::glib::MainContext::default();
+            while context.iteration(false) {}
+            probe.color()
+        };
+        let unstyled = color();
+        let red = gtk::gdk::RGBA::new(1.0, 0.0, 0.0, 1.0);
+        let blue = gtk::gdk::RGBA::new(0.0, 0.0, 1.0, 1.0);
+        for _ in 0..25 {
+            let owner = gtk::Box::new(gtk::Orientation::Vertical, 0);
+            let slot = CssSlot::new(&owner, gtk::STYLE_PROVIDER_PRIORITY_USER);
+            slot.set(".css-slot-probe { color: rgb(255, 0, 0); }");
+            assert_eq!(color(), red);
+            slot.set("");
+            assert_eq!(color(), unstyled, "cleared rules stayed");
+            slot.set(".css-slot-probe { color: rgb(0, 0, 255); }");
+            assert_eq!(color(), blue);
+            let provider = slot.0.downgrade();
+            drop((slot, owner));
+            assert!(provider.upgrade().is_none(), "the display kept the slot");
+            assert_eq!(color(), unstyled, "rules outlived their widget");
+        }
+        window.destroy();
+    }
 
     #[test]
     fn parse_hex_color_accepts_hash_and_plain() {

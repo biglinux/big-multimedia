@@ -118,9 +118,7 @@ impl VideoShell {
                 // First frame: drop the idle gradient and restore the gl surface
                 // (video stays invisible otherwise), then
                 // let the OSD auto-hide.
-                if let Some(display) = gtk::gdk::Display::default() {
-                    self.idle_bg.hide(&display);
-                }
+                self.idle_bg.hide();
                 self.osd.is_welcome_visible.set(false);
                 self.osd.show_and_schedule_hide();
                 self.refresh_now_playing(root);
@@ -391,9 +389,7 @@ impl VideoShell {
             return;
         };
         welcome.set_visible(true);
-        if let Some(display) = gtk::gdk::Display::default() {
-            self.idle_bg.show(&display);
-        }
+        self.idle_bg.show();
         self.controls
             .emit(VideoControlsBarInput::SetHasMedia(false));
         self.osd.is_welcome_visible.set(true);

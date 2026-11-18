@@ -215,10 +215,11 @@ GTK 4.22 loops removing a child that is not a stack page.
 Display CSS registered for a player or control uses
 `big_gtk_kit::css::add_provider_for_widget_lifetime`. The display owns a
 reference independently of the local provider variable, so the registration is
-removed when its widget dies. Audio palette and high-contrast slots also remove
-their registrations when the content root is destroyed: updating a cached slot
-prevents stacking within one window but does not release it when the window
-closes.
+removed when its widget dies. CSS rewritten while the widget lives (palettes,
+high contrast, the idle background) goes in a
+`big_relm4_components::theme::CssSlot`, which registers once on that kit
+function and replaces its rules in place: a cached provider prevents stacking
+within one window but is not released when the window closes.
 
 The reusable playlist window is hidden while its controller lives and
 destroyed in component shutdown, including when it was never presented. GTK

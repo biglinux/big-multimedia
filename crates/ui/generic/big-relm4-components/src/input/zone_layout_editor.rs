@@ -51,29 +51,6 @@ const EDITOR_CSS: &str = "
 .zle-title { color: alpha(white, 0.45); font-size: 11px; font-style: italic; }
 ";
 
-/// Install [`EDITOR_CSS`] once per display (replacing a previous provider).
-fn inject_css() {
-    thread_local! {
-        static PROVIDER: RefCell<Option<gtk::CssProvider>> = const { RefCell::new(None) };
-    }
-    let Some(display) = gdk::Display::default() else {
-        return;
-    };
-    let provider = gtk::CssProvider::new();
-    provider.load_from_string(EDITOR_CSS);
-    PROVIDER.with(|cell| {
-        if let Some(old) = cell.borrow_mut().take() {
-            gtk::style_context_remove_provider_for_display(&display, &old);
-        }
-    });
-    gtk::style_context_add_provider_for_display(
-        &display,
-        &provider,
-        gtk::STYLE_PROVIDER_PRIORITY_USER,
-    );
-    PROVIDER.with(|cell| *cell.borrow_mut() = Some(provider));
-}
-
 /// Shared editor state captured by the gesture closures. Holds only WEAK widget
 /// refs + plain data, so capturing `Rc<EditorState>` in a closure-on-a-widget
 /// never closes a strong widget cycle.
@@ -240,7 +217,6 @@ impl BigZoneLayoutEditor {
     /// [`normalized`](ZoneLayout::normalized) against the spec first).
     #[must_use]
     pub fn new(spec: &ZoneLayoutSpec, initial: &ZoneLayout) -> Self {
-        inject_css();
         let layout = initial.normalized(spec);
 
         // Zone boxes, keyed by slot, owned by the bars built below.
@@ -457,6 +433,7 @@ impl BigZoneLayoutEditor {
 
         let root = gtk::Frame::new(None);
         root.add_css_class("zle-frame");
+        crate::theme::CssSlot::new(&root, gtk::STYLE_PROVIDER_PRIORITY_USER).set(EDITOR_CSS);
         root.set_child(Some(&layout_box));
 
         Self { root, state }

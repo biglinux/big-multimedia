@@ -1,5 +1,4 @@
 use super::actions::{build_welcome_screen, install_window_actions, toggle_keep_above};
-use super::dialogs::hold_theme;
 use super::input::SHELL_INPUT;
 use super::input_gestures::{wire_osd_autohide, wire_osd_focus_out, wire_video_input};
 use super::render::{
@@ -15,6 +14,7 @@ use big_relm4_components::layout::hamburger_menu::build_flat_menu_model;
 use big_relm4_components::layout::hamburger_menu::{
     BigHamburgerMenuSpec, BigMenuActionItem, build_flat_action_popover_button,
 };
+use big_relm4_components::theme::CssSlot;
 
 impl Component for VideoShell {
     type Init = ();
@@ -445,7 +445,7 @@ impl Component for VideoShell {
         let idle_bg = Rc::new(IdleBackground {
             video_bg: video_bg.clone(),
             gl_area: gl_area.clone(),
-            provider: RefCell::new(None),
+            background: CssSlot::new(&video_bg, gtk::STYLE_PROVIDER_PRIORITY_USER + 2),
             blurred_path: RefCell::new(None),
             is_shown: Cell::new(false),
             tv_source: RefCell::new(None),
@@ -460,8 +460,8 @@ impl Component for VideoShell {
         // `FileLoaded` so the video surface becomes visible again. Kick off the
         // wallpaper detection + blur so the static gradient is replaced by the
         // blurred desktop wallpaper once it is cached.
-        if !opening_files && let Some(display) = gtk::gdk::Display::default() {
-            idle_bg.show(&display);
+        if !opening_files {
+            idle_bg.show();
         }
         super::idle_wallpaper::spawn_apply(idle_bg.clone());
 
@@ -511,10 +511,10 @@ impl Component for VideoShell {
             sender.input_sender().clone(),
         );
 
-        // Apply the saved OSD palette + layout CSS now into the shared
-        // display-wide provider slot, released when the last player closes;
-        // the Appearance dialog re-applies live through the same slot.
-        hold_theme(&root, &settings);
+        // The OSD palette + layout CSS has display-wide rules (`popover > contents`,
+        // `windowcontrols button`), so in a host it must leave with this player.
+        let theme = CssSlot::new(&root, gtk::STYLE_PROVIDER_PRIORITY_USER + 1);
+        crate::video::ui::appearance::apply_appearance(&settings, &theme);
 
         // Window aspect-ratio snap: resize the window to the video's aspect on
         // load and on manual resize (debounced), so no letterbox bars remain.
@@ -598,6 +598,7 @@ impl Component for VideoShell {
                 video_start,
                 duration_secs: 0.0,
                 settings,
+                theme,
                 video_transform,
                 osd,
                 idle_bg,
