@@ -26,6 +26,7 @@ pub fn visit_audio_files_cancellable(
         .git_global(false)
         .git_exclude(false)
         .follow_links(false)
+        .filter_entry(|entry| !big_os_kit::storage::is_staging_name(entry.file_name()))
         .build()
     {
         if cancelled.load(std::sync::atomic::Ordering::Acquire) {
@@ -65,6 +66,28 @@ mod tests {
                 "missing common audio extension: {ext}"
             );
         }
+    }
+
+    /// Files a killed writer left mid-write must never become tracks.
+    #[test]
+    fn scan_skips_staging_leftovers() {
+        let folder = tempfile::tempdir().unwrap();
+        std::fs::write(folder.path().join("song.mp3"), b"x").unwrap();
+        std::fs::create_dir(folder.path().join(".big-media-1-0a1b")).unwrap();
+        std::fs::write(folder.path().join(".big-media-1-0a1b/song.mp3"), b"x").unwrap();
+        std::fs::write(folder.path().join(".big-media-1-x7Yz.mp3"), b"x").unwrap();
+        std::fs::write(folder.path().join(".big-media-tags-x7Yz.flac"), b"x").unwrap();
+        let mut found = Vec::new();
+        visit_audio_files_cancellable(
+            folder.path().to_str().unwrap(),
+            &std::sync::atomic::AtomicBool::new(false),
+            |path| {
+                found.push(path.strip_prefix(folder.path()).unwrap().to_path_buf());
+                Ok(())
+            },
+        )
+        .unwrap();
+        assert_eq!(found, [Path::new("song.mp3")]);
     }
 
     #[test]

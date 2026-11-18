@@ -138,6 +138,61 @@ fn parent(path: &Path) -> &Path {
         .unwrap_or_else(|| Path::new("."))
 }
 
+/// Leading name of every staging entry next to user files.
+pub(super) const STAGING_PREFIX: &str = ".big-media-";
+
+/// Name prefix, carrying this process's PID, for staging next to user files;
+/// [`remove_stale_staging`] removes such entries once the process has exited.
+pub fn staging_prefix() -> String {
+    format!("{STAGING_PREFIX}{}-", std::process::id())
+}
+
+/// Best-effort removal of the staging entries in `directory` that a killed
+/// process of the current user left behind. A live owner keeps its entries.
+pub fn remove_stale_staging(directory: &Path) {
+    use std::os::unix::fs::MetadataExt;
+    let Ok(entries) = fs::read_dir(directory) else {
+        return;
+    };
+    // SAFETY: geteuid has no preconditions and cannot fail.
+    let uid = unsafe { libc::geteuid() };
+    for entry in entries.flatten() {
+        let name = entry.file_name();
+        let Some(pid) = name.to_str().and_then(staging_owner) else {
+            continue;
+        };
+        // SAFETY: signal 0 only checks that the process exists; pid is positive.
+        if unsafe { libc::kill(pid, 0) } == 0
+            || io::Error::last_os_error().raw_os_error() != Some(libc::ESRCH)
+        {
+            continue;
+        }
+        // DirEntry::metadata does not follow symlinks.
+        let Ok(metadata) = entry.metadata() else {
+            continue;
+        };
+        if metadata.uid() != uid {
+            continue;
+        }
+        let path = entry.path();
+        if metadata.is_dir() {
+            if let Ok(staged) = fs::read_dir(&path) {
+                for file in staged.flatten() {
+                    let _ = fs::remove_file(file.path());
+                }
+            }
+            let _ = fs::remove_dir(&path);
+        } else {
+            let _ = fs::remove_file(&path);
+        }
+    }
+}
+
+fn staging_owner(name: &str) -> Option<i32> {
+    let (pid, _) = name.strip_prefix(STAGING_PREFIX)?.split_once('-')?;
+    pid.parse::<i32>().ok().filter(|pid| *pid > 0)
+}
+
 /// Private staging file in the destination filesystem. Dropping it removes only
 /// its private directory, never the final output. Keep it owned until the writer
 /// has exited, not merely until cancellation was requested.
@@ -147,18 +202,20 @@ pub struct StagedFile {
     path: PathBuf,
 }
 impl StagedFile {
-    /// Reserve a mode-0700 directory and mode-0600 regular file. The extension is
-    /// inherited so tools that infer an encoder/container see the intended type.
+    /// Reserve a mode-0700 directory holding a regular file created with the
+    /// umask's mode, which the published file keeps. The extension is inherited
+    /// so tools that infer an encoder/container see the intended type.
     pub fn new(target: &Path) -> io::Result<Self> {
         let name = target
             .file_name()
             .ok_or_else(|| io::Error::new(io::ErrorKind::InvalidInput, "missing target name"))?;
         let parent = parent(target);
+        remove_stale_staging(parent);
         let mut nonce = [0_u8; 16];
         // Linux/Unix desktop target; fail closed if OS randomness is unavailable.
         File::open("/dev/urandom")?.read_exact(&mut nonce)?;
         let hex: String = nonce.iter().map(|byte| format!("{byte:02x}")).collect();
-        let directory = parent.join(format!(".big-media-{hex}"));
+        let directory = parent.join(format!("{}{hex}", staging_prefix()));
         let mut builder = fs::DirBuilder::new();
         #[cfg(unix)]
         {
@@ -177,24 +234,30 @@ impl StagedFile {
             path: directory.join(name),
             directory,
         };
-        let mut options = OpenOptions::new();
-        options.write(true).create_new(true);
-        #[cfg(unix)]
-        {
-            use std::os::unix::fs::OpenOptionsExt;
-            options.mode(0o600);
-        }
-        let _file = options.open(&stage.path)?;
+        OpenOptions::new()
+            .write(true)
+            .create_new(true)
+            .open(&stage.path)?;
         Ok(stage)
     }
     /// Path for the external writer. Do not expose it as a final user result.
     pub fn path(&self) -> &Path {
         &self.path
     }
-    /// Publish without replacing an existing destination. Hard-link creation is
-    /// atomic on a single filesystem and fails on EEXIST; there is no overwrite
-    /// fallback. Validate the media first. The outcome says whether it is durable.
+    /// Publish without replacing an existing destination, which fails with
+    /// `AlreadyExists`. Atomic unless the filesystem supports neither hard links
+    /// nor `RENAME_NOREPLACE`, where the bytes are copied into a newly created
+    /// file. Validate the media first. The outcome says whether it is durable.
+    /// An empty file is refused as a failed writer's output.
     pub fn publish(&self, target: &Path) -> io::Result<CommitOutcome> {
+        self.place(target, false)
+    }
+    /// [`Self::publish`] for a copy of a file that exists elsewhere, such as a
+    /// move across filesystems, where an empty file is a complete copy.
+    pub fn publish_copy(&self, target: &Path) -> io::Result<CommitOutcome> {
+        self.place(target, true)
+    }
+    fn place(&self, target: &Path, empty_allowed: bool) -> io::Result<CommitOutcome> {
         let mut options = OpenOptions::new();
         options.read(true);
         #[cfg(unix)]
@@ -204,19 +267,85 @@ impl StagedFile {
         }
         let file = options.open(&self.path)?;
         let metadata = file.metadata()?;
-        if !metadata.is_file() || metadata.len() == 0 {
+        if !metadata.is_file() || (metadata.len() == 0 && !empty_allowed) {
             return Err(io::Error::new(
                 io::ErrorKind::InvalidData,
                 "output is empty or not a regular file",
             ));
         }
         file.sync_all()?;
-        fs::hard_link(&self.path, target)?;
+        place_no_replace(&self.path, target, hard_link, rename_no_replace)?;
         Ok(match sync_parent(target) {
             Ok(()) => CommitOutcome::Durable,
             Err(error) => CommitOutcome::PublishedNotSynced(error),
         })
     }
+}
+fn hard_link(stage: &Path, target: &Path) -> io::Result<()> {
+    fs::hard_link(stage, target)
+}
+
+/// `rename` that fails with `AlreadyExists` instead of replacing `dest`.
+/// Filesystems without `RENAME_NOREPLACE` (some FUSE and NFS mounts) fail with
+/// `EINVAL`; the caller chooses the fallback.
+pub fn rename_no_replace(src: &Path, dest: &Path) -> io::Result<()> {
+    use std::os::unix::ffi::OsStrExt;
+    let src = std::ffi::CString::new(src.as_os_str().as_bytes())?;
+    let dest = std::ffi::CString::new(dest.as_os_str().as_bytes())?;
+    #[expect(clippy::disallowed_methods, reason = "the owner of no-replace renames")]
+    // SAFETY: both pointers come from CStrings bound for the whole call, and
+    // renameat2 only reads them.
+    let status = unsafe {
+        libc::renameat2(
+            libc::AT_FDCWD,
+            src.as_ptr(),
+            libc::AT_FDCWD,
+            dest.as_ptr(),
+            libc::RENAME_NOREPLACE,
+        )
+    };
+    if status == 0 {
+        Ok(())
+    } else {
+        Err(io::Error::last_os_error())
+    }
+}
+
+type MoveStep = fn(&Path, &Path) -> io::Result<()>;
+
+/// Move `stage` to the absent `target`: a hard link, then a no-replace rename
+/// where links are refused (FAT, exFAT, some FUSE and SMB mounts), then an
+/// exclusive create and copy where that rename is unsupported.
+fn place_no_replace(
+    stage: &Path,
+    target: &Path,
+    link: MoveStep,
+    rename: MoveStep,
+) -> io::Result<()> {
+    let refused = match link(stage, target) {
+        Ok(()) => return Ok(()),
+        Err(error) => error,
+    };
+    if !matches!(
+        refused.raw_os_error(),
+        Some(libc::EPERM | libc::EOPNOTSUPP | libc::EXDEV | libc::EMLINK | libc::ENOSYS)
+    ) {
+        return Err(refused);
+    }
+    match rename(stage, target) {
+        Err(error) if matches!(error.raw_os_error(), Some(libc::EINVAL | libc::ENOSYS)) => {}
+        result => return result,
+    }
+    let mut output = OpenOptions::new()
+        .write(true)
+        .create_new(true)
+        .open(target)?;
+    let copied = io::copy(&mut File::open(stage)?, &mut output).and_then(|_| output.sync_all());
+    if copied.is_err() {
+        // create_new made this file, so it holds only our partial copy.
+        let _ = fs::remove_file(target);
+    }
+    copied
 }
 impl Drop for StagedFile {
     fn drop(&mut self) {
@@ -250,6 +379,101 @@ mod tests {
         drop(stage);
         assert_eq!(fs::read(&target).unwrap(), b"original");
         fs::remove_dir_all(dir).unwrap();
+    }
+    #[test]
+    fn only_copies_publish_empty_files() {
+        let dir = directory();
+        let target = dir.join("out.png");
+        let stage = StagedFile::new(&target).unwrap();
+        let error = stage.publish(&target).unwrap_err();
+        assert_eq!(error.kind(), io::ErrorKind::InvalidData);
+        assert!(!target.exists());
+        stage
+            .publish_copy(&target)
+            .unwrap()
+            .into_io_result()
+            .unwrap();
+        assert_eq!(fs::read(&target).unwrap(), b"");
+        drop(stage);
+        fs::remove_dir_all(dir).unwrap();
+    }
+    /// Staging of an exited process is removed by the next staging in that
+    /// directory; a live process keeps its own. No PID reaches `i32::MAX`.
+    #[test]
+    fn staging_removes_dead_process_leftovers() {
+        let dir = directory();
+        let dead_directory = dir.join(format!(".big-media-{}-0a1b", i32::MAX));
+        fs::create_dir(&dead_directory).unwrap();
+        fs::write(dead_directory.join("out.png"), b"partial").unwrap();
+        let dead_file = dir.join(format!(".big-media-{}-x7Yz.flac", i32::MAX));
+        fs::write(&dead_file, b"partial").unwrap();
+        let live_directory = dir.join(format!(".big-media-{}-0a1b", std::process::id()));
+        fs::create_dir(&live_directory).unwrap();
+        let stage = StagedFile::new(&dir.join("out.png")).unwrap();
+        assert!(!dead_directory.exists());
+        assert!(!dead_file.exists());
+        assert!(live_directory.exists());
+        assert!(stage.path().exists());
+        drop(stage);
+        fs::remove_dir_all(dir).unwrap();
+    }
+    /// A published file is as readable as any file the user creates, so media
+    /// servers and other accounts can read downloads and exports.
+    #[cfg(unix)]
+    #[test]
+    fn published_file_follows_umask() {
+        use std::os::unix::fs::PermissionsExt;
+        let dir = directory();
+        let reference = dir.join("reference");
+        File::create(&reference).unwrap();
+        let target = dir.join("out.png");
+        let stage = StagedFile::new(&target).unwrap();
+        fs::write(stage.path(), b"new").unwrap();
+        stage.publish(&target).unwrap().into_io_result().unwrap();
+        let mode = |path: &Path| fs::metadata(path).unwrap().permissions().mode() & 0o777;
+        assert_eq!(mode(&target), mode(&reference));
+        fs::remove_dir_all(dir).unwrap();
+    }
+    fn refuse_link(_: &Path, _: &Path) -> io::Result<()> {
+        Err(io::Error::from_raw_os_error(libc::EPERM))
+    }
+    fn rename_unsupported(_: &Path, _: &Path) -> io::Result<()> {
+        Err(io::Error::from_raw_os_error(libc::EINVAL))
+    }
+    /// Filesystems without hard links (FAT, exFAT, some FUSE and SMB mounts)
+    /// fall back to a no-replace rename, then to an exclusive create and copy.
+    #[test]
+    fn publish_falls_back_without_replacing() {
+        let steps: [(MoveStep, MoveStep); 3] = [
+            (hard_link, rename_no_replace),
+            (refuse_link, rename_no_replace),
+            (refuse_link, rename_unsupported),
+        ];
+        for (index, (link, rename)) in steps.into_iter().enumerate() {
+            let dir = directory();
+            let stage = dir.join("stage");
+            let target = dir.join("out.png");
+            fs::write(&stage, b"new").unwrap();
+            place_no_replace(&stage, &target, link, rename)
+                .unwrap_or_else(|error| panic!("step chain {index}: {error}"));
+            assert_eq!(fs::read(&target).unwrap(), b"new", "step chain {index}");
+
+            fs::write(&target, b"original").unwrap();
+            let second_stage = dir.join("second-stage");
+            fs::write(&second_stage, b"newer").unwrap();
+            let error = place_no_replace(&second_stage, &target, link, rename).unwrap_err();
+            assert_eq!(
+                error.kind(),
+                io::ErrorKind::AlreadyExists,
+                "step chain {index}"
+            );
+            assert_eq!(
+                fs::read(&target).unwrap(),
+                b"original",
+                "step chain {index}"
+            );
+            fs::remove_dir_all(dir).unwrap();
+        }
     }
     #[test]
     fn bounded_read_distinguishes_missing_and_oversize() {

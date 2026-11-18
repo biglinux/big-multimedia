@@ -21,15 +21,27 @@ use std::io::Write;
 mod transaction;
 use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicU64, Ordering};
-pub use transaction::{CommitOutcome, StagedFile, WriteLock, read_regular_limited, sync_parent};
+pub use transaction::{
+    CommitOutcome, StagedFile, WriteLock, read_regular_limited, remove_stale_staging,
+    rename_no_replace, staging_prefix, sync_parent,
+};
 
 static TEMP_SEQ: AtomicU64 = AtomicU64::new(0);
+const ATOMIC_TEMP_PREFIX: &str = ".big-state.tmp.";
+
+/// Whether `name` is a write in progress of this module, which a media
+/// scanner must not import.
+pub fn is_staging_name(name: &std::ffi::OsStr) -> bool {
+    let name = name.as_encoded_bytes();
+    name.starts_with(transaction::STAGING_PREFIX.as_bytes())
+        || name.starts_with(ATOMIC_TEMP_PREFIX.as_bytes())
+}
 
 fn atomic_sibling_temp_path(target: &Path) -> PathBuf {
     let seq = TEMP_SEQ.fetch_add(1, Ordering::Relaxed);
     let pid = std::process::id();
     let parent = target.parent().unwrap_or_else(|| Path::new("."));
-    parent.join(format!(".big-state.tmp.{pid}.{seq}"))
+    parent.join(format!("{ATOMIC_TEMP_PREFIX}{pid}.{seq}"))
 }
 
 /// Atomically write `bytes` to `path`: write a uniquely-named sibling temp file,

@@ -128,8 +128,9 @@ pub fn write_track_tags(path: &str, edits: &TagEdits) -> Result<()> {
         .map_or_else(String::new, |ext| format!(".{ext}"));
     // ffmpeg overwrites this exclusively created file (`-y`); it stays ours
     // until the rename, so nothing can be planted at its name meanwhile.
+    big_os_kit::storage::remove_stale_staging(parent);
     let temp = tempfile::Builder::new()
-        .prefix(".big-media-tags-")
+        .prefix(&big_os_kit::storage::staging_prefix())
         .suffix(&suffix)
         .tempfile_in(parent)
         .map_err(|e| Error::internal(format!("cannot create tag temp file: {e}")))?;
