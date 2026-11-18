@@ -25,9 +25,6 @@ tikv-jemalloc-sys = { workspace = true, optional = true }
 
 [features]
 default = []
-# Compatibility feature for consumers that explicitly opt into shared HTTP
-# policy. The backend uses the system curl binary and adds no Rust HTTP/TLS dep.
-http-client = []
 # Link jemalloc in as the allocator of the whole process. Only executables
 # enable it; they must also export the symbols (see src/allocator.rs).
 jemalloc = ["dep:tikv-jemalloc-sys"]

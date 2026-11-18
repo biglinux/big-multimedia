@@ -11,8 +11,8 @@
 //! - [`background`]: bounded serial executor for application persistence.
 //! - [`deferred`]: observable, coalesced private state writes off the GUI thread.
 //! - [`digest`]: bounded hashing of documents and opened files for durable receipts.
-//! - `http_client`: blocking HTTP over the system curl with timeouts, retry
-//!   policy and size limits (feature `http-client`).
+//! - [`http_client`]: blocking HTTP over the system curl with timeouts, retry
+//!   policy and size limits.
 //! - [`keyring`]: a typed worker-only boundary to libsecret Secret Service.
 //! - [`storage`]: atomic JSON persistence (temp + rename) and a versioned
 //!   forward-migration envelope.
@@ -28,7 +28,6 @@ mod allocator;
 pub mod background;
 pub mod deferred;
 pub mod digest;
-#[cfg(feature = "http-client")]
 pub mod http_client;
 pub mod keyring;
 pub mod storage;
