@@ -73,7 +73,7 @@ mod resolve_open_files_tests {
     }
 
     #[test]
-    fn an_hls_stream_plays_instead_of_being_read_as_a_playlist() {
+    fn hls_stream_plays_directly() {
         for url in [
             "http://host/live/u/p/560.m3u8",
             "HTTPS://host/list.m3u",
