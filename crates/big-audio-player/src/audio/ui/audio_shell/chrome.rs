@@ -27,20 +27,36 @@ impl AudioShell {
     }
 
     /// Re-light the now-playing indicator in both panels from the queue's
-    /// current track (matched by file path in the library detail view). While a
-    /// radio stream plays, nothing in the queue/library is "playing", so clear it.
+    /// current track (matched by file path in the library detail view), while
+    /// it plays or is paused. While a radio stream plays, nothing in the
+    /// queue/library is "playing", so clear it.
     pub(super) fn sync_now_playing(&self) {
-        if self.is_stream || !self.is_playing {
-            self.playlist
-                .emit(PlaylistPanelInput::SetPlaying { idx: None });
-            self.library.emit(LibraryPanelInput::SetPlayingPath(None));
-            return;
-        }
+        let status = *self
+            .mpris_state
+            .status
+            .lock()
+            .unwrap_or_else(PoisonError::into_inner);
+        let playback = if self.is_stream {
+            PlaybackStatus::Stopped
+        } else if self.is_playing {
+            PlaybackStatus::Playing
+        } else if status == PlaybackStatus::Paused {
+            PlaybackStatus::Paused
+        } else {
+            PlaybackStatus::Stopped
+        };
+        let current = (playback != PlaybackStatus::Stopped)
+            .then(|| self.queue.current_index())
+            .flatten();
         self.playlist.emit(PlaylistPanelInput::SetPlaying {
-            idx: self.queue.current_index(),
+            idx: current,
+            playback,
         });
-        let path = self.queue.current().map(|t| t.file_path.clone());
-        self.library.emit(LibraryPanelInput::SetPlayingPath(path));
+        let path = current
+            .and_then(|_| self.queue.current())
+            .map(|track| track.file_path.clone());
+        self.library
+            .emit(LibraryPanelInput::SetPlayingPath { path, playback });
     }
 
     /// Refresh the sidebar-bottom now-playing card from the current track (or a

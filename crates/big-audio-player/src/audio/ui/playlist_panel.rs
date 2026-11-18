@@ -14,9 +14,10 @@
 use adw::prelude::*;
 use gtk::{gdk, gio, glib};
 use relm4::{Component, ComponentParts, ComponentSender};
-use std::cell::RefCell;
+use std::cell::{Cell, RefCell};
 use std::rc::Rc;
 
+use big_app_kit::mpris::PlaybackStatus;
 use big_relm4_components::layout::toolbar_pane::{BigToolbarPane, BigToolbarPaneSpec};
 
 use crate::audio::ui::track_list::{Behaviour, Columns, ListEvent, TrackList, track_of};
@@ -138,6 +139,8 @@ pub enum PlaylistPanelInput {
     SetPlaying {
         /// New current index, if any.
         idx: Option<usize>,
+        /// How it plays; `Stopped` shows no marker.
+        playback: PlaybackStatus,
     },
     /// Scroll the current row into view (+3 look-ahead), deferred to idle.
     ScrollToCurrent {
@@ -252,6 +255,8 @@ pub struct PlaylistPanel {
     header_label: gtk::Label,
     /// The currently-playing store object (identity target for the emphasis).
     current_track_identity: Rc<RefCell<Option<glib::Object>>>,
+    /// How the current track plays.
+    playback: Rc<Cell<PlaybackStatus>>,
     /// Active saved-playlist name (shown in the toolbar header when the queue
     /// is empty).
     playlist_name: String,
@@ -340,14 +345,20 @@ fn queue_behaviour(
     store: &gio::ListStore,
     selection: &gtk::MultiSelection,
     current: &Rc<RefCell<Option<glib::Object>>>,
+    playback: &Rc<Cell<PlaybackStatus>>,
     sender: &ComponentSender<PlaylistPanel>,
 ) -> Behaviour {
     let current = Rc::clone(current);
+    let playback = Rc::clone(playback);
     let selection_weak = selection.downgrade();
     let (store_weak, out) = (store.downgrade(), sender.clone());
     Behaviour {
-        is_current: Box::new(move |item, _| {
-            is_current_indicator_track(current.borrow().as_ref(), item)
+        playback: Box::new(move |item, _| {
+            if is_current_indicator_track(current.borrow().as_ref(), item) {
+                playback.get()
+            } else {
+                PlaybackStatus::Stopped
+            }
         }),
         cover: None,
         // Multi-row reorder is left out: where several rows land is ambiguous.
@@ -406,9 +417,16 @@ impl Component for PlaylistPanel {
         let store = gio::ListStore::new::<glib::BoxedAnyObject>();
         let selection = gtk::MultiSelection::new(Some(store.clone()));
         let current_track_identity: Rc<RefCell<Option<glib::Object>>> = Rc::new(RefCell::new(None));
+        let playback = Rc::new(Cell::new(PlaybackStatus::Stopped));
 
         let list = {
-            let behaviour = queue_behaviour(&store, &selection, &current_track_identity, &sender);
+            let behaviour = queue_behaviour(
+                &store,
+                &selection,
+                &current_track_identity,
+                &playback,
+                &sender,
+            );
             let (store, selection, out) =
                 (store.downgrade(), selection.downgrade(), sender.clone());
             TrackList::new(
@@ -483,6 +501,7 @@ impl Component for PlaylistPanel {
             scroll,
             header_label,
             current_track_identity,
+            playback,
             playlist_name: String::new(),
             library_has_items: false,
             podcasts: false,
@@ -550,9 +569,10 @@ impl Component for PlaylistPanel {
                 self.refresh_empty_state(&sender);
                 self.update_header();
             }
-            PlaylistPanelInput::SetPlaying { idx } => {
+            PlaylistPanelInput::SetPlaying { idx, playback } => {
                 *self.current_track_identity.borrow_mut() =
                     idx.and_then(|i| self.store.item(i as u32));
+                self.playback.set(playback);
                 self.list.view.refresh_all();
             }
             PlaylistPanelInput::ScrollToCurrent { idx } => self.scroll_to(idx),
