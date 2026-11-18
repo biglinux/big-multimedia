@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: big-media-runtime 0.1.0\n"
 "Report-Msgid-Bugs-To: https://github.com/biglinux/big-multimedia/issues\n"
-"POT-Creation-Date: 2026-11-18 14:46-0300\n"
+"POT-Creation-Date: 2026-11-18 15:02-0300\n"
 "PO-Revision-Date: 2026-10-23 00:15-0300\n"
 "Last-Translator: Automatically generated\n"
 "Language-Team: none\n"
@@ -4707,34 +4707,6 @@ msgstr "Kezdőlap"
 msgid "Chapter"
 msgstr "Fejezet"
 
-#: crates/media-runtime/src/player/mpv_backend/properties_video.rs:39
-#, fuzzy
-#| msgid "Pixel Format"
-msgid "pixelformat"
-msgstr "Képpontformátum"
-
-#: crates/media-runtime/src/player/mpv_backend/properties_video.rs:40
-#, fuzzy
-#| msgid "Pixel Format"
-msgid "hw-pixelformat"
-msgstr "Képpontformátum"
-
-#: crates/media-runtime/src/player/mpv_backend/properties_video.rs:41
-msgid "colormatrix"
-msgstr ""
-
-#: crates/media-runtime/src/player/mpv_backend/properties_video.rs:42
-#, fuzzy
-#| msgid "Primaries"
-msgid "primaries"
-msgstr "Alapszínek"
-
-#: crates/media-runtime/src/player/mpv_backend/properties_video.rs:43
-#, fuzzy
-#| msgid "Gamma"
-msgid "gamma"
-msgstr "Gamma"
-
 #: crates/media-runtime/src/player/mpv_backend/types.rs:94
 msgid ""
 "Sound could not start on the audio output. Check that your speakers or "
@@ -5522,6 +5494,26 @@ msgstr "A webes távirányító leállt: {error}"
 #: crates/ui/media/big-player-ui/src/smartphone/dialog.rs:179
 msgid "Could not start server"
 msgstr "A kiszolgálót nem sikerült elindítani"
+
+#, fuzzy
+#~| msgid "Pixel Format"
+#~ msgid "pixelformat"
+#~ msgstr "Képpontformátum"
+
+#, fuzzy
+#~| msgid "Pixel Format"
+#~ msgid "hw-pixelformat"
+#~ msgstr "Képpontformátum"
+
+#, fuzzy
+#~| msgid "Primaries"
+#~ msgid "primaries"
+#~ msgstr "Alapszínek"
+
+#, fuzzy
+#~| msgid "Gamma"
+#~ msgid "gamma"
+#~ msgstr "Gamma"
 
 #~ msgid ""
 #~ "Move existing account credentials to your desktop keyring. This does not "

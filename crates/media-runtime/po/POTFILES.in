@@ -99,7 +99,6 @@ crates/media-runtime/src/media/metadata_cache/display.rs
 crates/media-runtime/src/media/playlist_export.rs
 crates/media-runtime/src/media/playlist_scan/display.rs
 crates/media-runtime/src/player/mpv_backend/backend/mod.rs
-crates/media-runtime/src/player/mpv_backend/properties_video.rs
 crates/media-runtime/src/player/mpv_backend/types.rs
 crates/media-runtime/src/settings/messages.rs
 crates/media-runtime/src/settings/saving.rs

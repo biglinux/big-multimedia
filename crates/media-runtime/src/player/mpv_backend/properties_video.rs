@@ -31,16 +31,16 @@ impl MpvBackend {
 
     fn read_video_params(&self, prefix: &str) -> VideoParams {
         self.with_mpv(|m| {
-            let text = |key: &str| {
+            let param = |key: &str| {
                 m.get_property::<String>(&format!("{prefix}/{key}"))
                     .unwrap_or_default()
             };
             VideoParams {
-                pixel_format: text("pixelformat"),
-                hw_pixel_format: text("hw-pixelformat"),
-                colormatrix: text("colormatrix"),
-                primaries: text("primaries"),
-                gamma: text("gamma"),
+                pixel_format: param("pixelformat"),
+                hw_pixel_format: param("hw-pixelformat"),
+                colormatrix: param("colormatrix"),
+                primaries: param("primaries"),
+                gamma: param("gamma"),
                 width: m.get_property::<f64>(&format!("{prefix}/w")).unwrap_or(0.0),
             }
         })

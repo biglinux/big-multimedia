@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: big-media-runtime 0.1.0\n"
 "Report-Msgid-Bugs-To: https://github.com/biglinux/big-multimedia/issues\n"
-"POT-Creation-Date: 2026-11-18 14:46-0300\n"
+"POT-Creation-Date: 2026-11-18 15:02-0300\n"
 "PO-Revision-Date: 2026-10-23 00:15-0300\n"
 "Last-Translator: Automatically generated\n"
 "Language-Team: none\n"
@@ -34,7 +34,6 @@ msgid "Data Sources"
 msgstr "Datenquellen"
 
 #: crates/big-audio-player/src/audio/app.rs:53
-#| msgid "Close the player"
 msgid "Play or pause the running player"
 msgstr "Wiedergabe im laufenden Player starten oder pausieren"
 
@@ -467,7 +466,6 @@ msgstr "Wählen Sie einen Titel zum Starten"
 
 #: crates/big-audio-player/src/audio/ui/audio_shell/engine.rs:37
 #, rust-format
-#| msgid "Could not play this file — it may be unsupported or corrupt."
 msgid "Could not play “{file}”: it may be unsupported or corrupt."
 msgstr ""
 "„{file}“ konnte nicht wiedergegeben werden: Die Datei wird möglicherweise "
@@ -495,9 +493,6 @@ msgstr ""
 
 #: crates/big-audio-player/src/audio/ui/audio_shell/library_store.rs:223
 #: crates/big-audio-player/src/audio/ui/audio_shell/library_store.rs:259
-#| msgid ""
-#| "The library could not be read. Previous results were kept; try searching "
-#| "again."
 msgid "The library could not be read. The queue was not changed."
 msgstr ""
 "Die Bibliothek konnte nicht gelesen werden. Die Warteschlange wurde nicht "
@@ -532,8 +527,6 @@ msgid "Save Episodes"
 msgstr "Folgen speichern"
 
 #: crates/big-audio-player/src/audio/ui/audio_shell/panel_intents.rs:432
-#| msgid ""
-#| "The playlist could not be read safely. Check its format and permissions."
 msgid ""
 "The episodes could not be saved in this folder. Check its permissions and "
 "try again."
@@ -542,9 +535,6 @@ msgstr ""
 "seine Berechtigungen und versuchen Sie es erneut."
 
 #: crates/big-audio-player/src/audio/ui/audio_shell/playback.rs:143
-#| msgid ""
-#| "The library could not be read. Previous results were kept; try searching "
-#| "again."
 msgid "The library could not be read, so lyrics were not searched online."
 msgstr ""
 "Die Bibliothek konnte nicht gelesen werden, daher wurde nicht online nach "
@@ -714,7 +704,6 @@ msgstr "Export angehalten. Bestätigte Ausgaben wurden beibehalten"
 
 #: crates/big-audio-player/src/audio/ui/audio_shell/queue_persistence.rs:55
 #, rust-format
-#| msgid "The playlist could not be saved."
 msgid "The music library could not be opened: {}"
 msgstr "Die Musikbibliothek konnte nicht geöffnet werden: {}"
 
@@ -758,12 +747,10 @@ msgstr ""
 "wurden beibehalten."
 
 #: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:154
-#| msgid "The playlist could not be saved."
 msgid "The station could not be saved."
 msgstr "Der Sender konnte nicht gespeichert werden."
 
 #: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:168
-#| msgid "The playlist could not be saved."
 msgid "The station could not be removed."
 msgstr "Der Sender konnte nicht entfernt werden."
 
@@ -825,7 +812,6 @@ msgid "Open File"
 msgstr "Datei öffnen"
 
 #: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:528
-#| msgid "The playlist could not be saved."
 msgid "Saved radio stations could not be read."
 msgstr "Gespeicherte Radiosender konnten nicht gelesen werden."
 
@@ -839,18 +825,15 @@ msgstr ""
 "Der Titel des Fernsehers befindet sich nicht mehr in der Warteschlange."
 
 #: crates/big-audio-player/src/audio/ui/audio_shell/update.rs:137
-#| msgid "Cancelled"
 msgid "Scan cancelled"
 msgstr "Prüfung abgebrochen"
 
 #: crates/big-audio-player/src/audio/ui/audio_shell/update.rs:139
-#| msgid "Sample Rate"
 msgid "Scan incomplete"
 msgstr "Prüfung unvollständig"
 
 #: crates/big-audio-player/src/audio/ui/audio_shell/update.rs:142
 #, rust-format
-#| msgid "tracks imported"
 msgid "{count} track imported"
 msgid_plural "{count} tracks imported"
 msgstr[0] "{count} Titel importiert"
@@ -1286,7 +1269,6 @@ msgid "About"
 msgstr "Info"
 
 #: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:244
-#| msgid "No episodes found"
 msgid "No episodes queued"
 msgstr "Keine Folgen in der Warteschlange"
 
@@ -1311,9 +1293,6 @@ msgid "Welcome to Big Audio Player"
 msgstr "Willkommen bei Big Audio Player"
 
 #: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:291
-#| msgid ""
-#| "Add a folder with your music files to get started.\n"
-#| "Supported formats: MP3, FLAC, OGG, M4A, OPUS, WAV and more."
 msgid ""
 "Open music files to play them now, or add your music folder in the Music "
 "tab.\n"
@@ -1547,7 +1526,6 @@ msgid "Cancellation requested. Finishing the current safe step…"
 msgstr "Abbruch angefordert. Der aktuelle sichere Schritt wird abgeschlossen …"
 
 #: crates/big-audio-player/src/audio/ui/scan_progress.rs:177
-#| msgid "Library"
 msgid "Library Scan"
 msgstr "Bibliotheksprüfung"
 
@@ -1557,7 +1535,6 @@ msgid "Playing"
 msgstr "Wird abgespielt"
 
 #: crates/big-audio-player/src/audio/ui/track_list.rs:393
-#| msgid "Pause"
 msgid "Paused"
 msgstr "Pausiert"
 
@@ -1895,7 +1872,6 @@ msgid "Open"
 msgstr "Öffnen"
 
 #: crates/big-video-player/src/video/ui/appearance/layout/buttons_page.rs:56
-#| msgid "Load Playlist"
 msgid "Files and Playlist"
 msgstr "Dateien und Wiedergabeliste"
 
@@ -1930,7 +1906,6 @@ msgid "Video Title"
 msgstr "Videotitel"
 
 #: crates/big-video-player/src/video/ui/appearance/layout/buttons_page.rs:186
-#| msgid "Bottom Margin"
 msgid "Bottom bar"
 msgstr "Untere Leiste"
 
@@ -1944,7 +1919,6 @@ msgid "Button Layout"
 msgstr "Schaltflächenanordnung"
 
 #: crates/big-video-player/src/video/ui/appearance/layout/buttons_page.rs:232
-#| msgid "Drag buttons between zones • Click to toggle visibility"
 msgid ""
 "Drag buttons between zones, or move the focused one with Alt+Left and "
 "Alt+Right. Click a button to show or hide it."
@@ -2413,7 +2387,6 @@ msgstr "Kanäle werden geladen …"
 
 #: crates/big-video-player/src/video/ui/iptv/mod.rs:490
 #, rust-format
-#| msgid "Showing the first {}. Type more to narrow the search."
 msgid "Showing the first {} channels; the list has more."
 msgstr "Die ersten {} Kanäle werden angezeigt; die Liste enthält weitere."
 
@@ -2710,7 +2683,6 @@ msgid "For some TV broadcasts (HLG)"
 msgstr "Für einige Fernsehübertragungen (HLG)"
 
 #: crates/big-video-player/src/video/ui/media_adjust.rs:290
-#| msgid "Plain colours (SDR)"
 msgid "Plain colors (SDR)"
 msgstr "Einfache Farben (SDR)"
 
@@ -2892,7 +2864,6 @@ msgstr "Untertitel"
 
 #: crates/big-video-player/src/video/ui/menu_dialogs.rs:20
 #, rust-format
-#| msgid "Recording was not saved"
 msgid "The screenshot was not saved: {error}"
 msgstr "Das Bildschirmfoto wurde nicht gespeichert: {error}"
 
@@ -2921,7 +2892,6 @@ msgstr ""
 
 #: crates/big-video-player/src/video/ui/menu_dialogs.rs:83
 #: crates/big-video-player/src/video/ui/menu_dialogs.rs:88
-#| msgid "Stores the video color space in each screenshot"
 msgid "Open a video to take a screenshot"
 msgstr "Öffnen Sie ein Video, um ein Bildschirmfoto aufzunehmen"
 
@@ -3749,7 +3719,6 @@ msgstr "Umbenennen fehlgeschlagen"
 
 #: crates/big-video-player/src/video/ui/video_browser_sidebar/fileops.rs:311
 #, rust-format
-#| msgid "Could not move to trash"
 msgid "Could not move {failed} of {total} file"
 msgid_plural "Could not move {failed} of {total} files"
 msgstr[0] "Verschieben fehlgeschlagen: {failed} von {total} Datei"
@@ -3970,7 +3939,6 @@ msgstr[1] "{n} Änderungen"
 
 #: crates/big-video-player/src/video/ui/video_shell/adjustments.rs:173
 #, rust-format
-#| msgid "Video colour: {name}"
 msgid "Video color: {name}"
 msgstr "Videofarbe: {name}"
 
@@ -4069,7 +4037,6 @@ msgid "Use HDR?"
 msgstr "HDR verwenden?"
 
 #: crates/big-video-player/src/video/ui/video_shell/component.rs:214
-#| msgid "Does the picture look grey and washed out? Click to use HDR colours"
 msgid "Does the picture look grey and washed out? Click to use HDR colors"
 msgstr ""
 "Sieht das Bild grau und ausgewaschen aus? Klicken Sie, um HDR-Farben zu "
@@ -4793,26 +4760,6 @@ msgstr "Startseite"
 msgid "Chapter"
 msgstr "Kapitel"
 
-#: crates/media-runtime/src/player/mpv_backend/properties_video.rs:39
-msgid "pixelformat"
-msgstr ""
-
-#: crates/media-runtime/src/player/mpv_backend/properties_video.rs:40
-msgid "hw-pixelformat"
-msgstr ""
-
-#: crates/media-runtime/src/player/mpv_backend/properties_video.rs:41
-msgid "colormatrix"
-msgstr ""
-
-#: crates/media-runtime/src/player/mpv_backend/properties_video.rs:42
-msgid "primaries"
-msgstr ""
-
-#: crates/media-runtime/src/player/mpv_backend/properties_video.rs:43
-msgid "gamma"
-msgstr ""
-
 #: crates/media-runtime/src/player/mpv_backend/types.rs:94
 msgid ""
 "Sound could not start on the audio output. Check that your speakers or "
@@ -5388,7 +5335,6 @@ msgid "Search Results"
 msgstr "Suchergebnisse"
 
 #: crates/ui/media/big-player-ui/src/podcast_panel.rs:450
-#| msgid "The playlist could not be saved."
 msgid "Podcast subscriptions could not be saved"
 msgstr "Podcast-Abonnements konnten nicht gespeichert werden"
 
@@ -5447,31 +5393,26 @@ msgstr "Sender entdecken"
 
 #: crates/ui/media/big-player-ui/src/radio_panel/widgets.rs:56
 #, rust-format
-#| msgid "Remove station"
 msgid "Remove {station}"
 msgstr "{station} entfernen"
 
 #: crates/ui/media/big-player-ui/src/radio_panel/widgets.rs:75
 #, rust-format
-#| msgid "Add to my stations"
 msgid "Add {station} to my stations"
 msgstr "{station} zu meinen Sendern hinzufügen"
 
 #: crates/ui/media/big-player-ui/src/radio_panel/widgets.rs:99
 #, rust-format
-#| msgid "Add to my stations"
 msgid "{station} is in my stations"
 msgstr "{station} ist in meinen Sendern"
 
 #: crates/ui/media/big-player-ui/src/radio_panel/widgets.rs:115
 #, rust-format
-#| msgid "Stop Recording"
 msgid "Stop recording {station}"
 msgstr "Aufnahme von {station} beenden"
 
 #: crates/ui/media/big-player-ui/src/radio_panel/widgets.rs:121
 #, rust-format
-#| msgid "Remove station"
 msgid "Record {station}"
 msgstr "{station} aufnehmen"
 
@@ -5606,7 +5547,6 @@ msgstr "Scannen Sie den Code mit der Kamera des Smartphones."
 
 #: crates/ui/media/big-player-ui/src/smartphone/dialog.rs:171
 #, rust-format
-#| msgid "Web remote is off."
 msgid "Web remote stopped: {error}"
 msgstr "Web-Fernbedienung beendet: {error}"
 
