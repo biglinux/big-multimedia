@@ -147,14 +147,17 @@ menubutton.osd-btn {
   font-weight: bold;
 }
 /* In the panel the name stays in the text colour: the accent over the
-   accent-tinted row read at 3:1. The bar, the play mark and the tint say
-   which one plays. */
+   accent-tinted row or card read at 3:1. The bar or frame, the play mark
+   and the tint say which one plays. */
 .settings-panel .playlist-current label,
-.settings-panel .playlist-current label.accent {
+.settings-panel .playlist-current label.accent,
+.settings-panel .playlist-card-active label {
   color: @window_fg_color;
 }
 .playlist-current .playlist-badge,
-.settings-panel .playlist-current label.playlist-badge {
+.settings-panel .playlist-current label.playlist-badge,
+.playlist-card-active .playlist-badge,
+.settings-panel .playlist-card-active label.playlist-badge {
   color: #ffffff;
   font-weight: normal;
 }
@@ -184,6 +187,11 @@ menubutton.osd-btn {
 .breadcrumb-btn:hover {
   background: alpha(@window_fg_color, 0.08);
 }
+.breadcrumb-current {
+  font-size: 12px;
+  font-weight: bold;
+  padding: 0 6px;
+}
 .breadcrumb-sep {
   font-size: 13px;
   margin: 0 1px;
@@ -191,6 +199,10 @@ menubutton.osd-btn {
 }
 
 /* ── Grid view cards ── */
+/* The panel's see-through card shows behind the grid, as behind the lists. */
+.playlist-grid {
+  background: none;
+}
 .playlist-grid > child {
   padding: 3px;
 }
