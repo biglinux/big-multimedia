@@ -15,18 +15,18 @@ The same cooperating-writer lock covers compare and publication. Saves replace
 the file atomically and are not fsynced: losing the last seconds of player state
 to a power cut is acceptable, a sync per edit is not. Invalid source, external
 conflict and disk errors remain observable states. Retry does not implicitly
-rebase or overwrite an external revision. Resolve a conflict by reloading the
-application;
-export unsaved preferences to a new file before restarting when they must be kept.
-A failed save is not made successful merely because the worker finished.
+rebase or overwrite an external revision. Resolve a conflict by restarting the
+player; edits that were not saved are lost. A failed save is not made
+successful merely because the worker finished.
 
-The UI shows Pending/Saving/Saved/Failed and Retry on the relevant
-preferences/state surfaces. Main-store settings, generic JSON state, IPTV provider
-state, favorites, recents, plugin live control values, preference/profile exports
-and playlist exports write to disk outside the GTK callback. Snapshot
-construction and widget updates stay on GTK. Initial loading and media streaming
-do not go through these lanes. User document exports use staged no-replace
-publication rather than a universal private-mode overwrite policy.
+Preferences pages show a banner with Retry Saving only when a settings write
+failed. The IPTV provider and channel lists show a status line (saved, saving or
+failed) with Retry saving. Main-store settings, generic JSON state, IPTV provider
+state, favorites, recents and playlist exports write to disk outside the GTK
+callback. Snapshot construction and widget updates stay on GTK. Initial loading
+and media streaming do not go through these lanes. User document exports use
+staged no-replace publication rather than a universal private-mode overwrite
+policy.
 
 Normal window closing and requested quit/suspend/poweroff drain admitted jobs.
 Scans own a drain guard until terminal completion, not merely until the UI
@@ -53,15 +53,19 @@ the reference/readback/durability checks. Legacy plaintext is not erased early.
 Replacing the file does not securely erase old filesystem blocks or user
 backups.
 
-Protect/Check/Configure/Recover actions are available in audio preferences. A
-credential editor uses password rows, explicit Save, the account revision it loaded
-and a separate worker. Existing consent is preserved; protecting credentials does
-not implement or silently enable unavailable scrobbling features. A pending
-transaction cannot be replaced by a different edit. Recover replays that exact
-transaction; if the helper failed before creating its candidate, manually reenter
-exactly the intended credentials. A different payload is refused. Old-item
-cleanup uncertainty retains the journal and requires recovery/explicit inspection,
-not speculative deletion. Keyring and JSON are not one ACID resource.
+Audio preferences show a Saved account security group only when a provider already
+has saved credentials; the player never creates them, and there is no credential
+editor. Each provider row offers the action for its state: Protect credentials
+moves a plaintext file into the keyring, Check keyring access reads the protected
+item back, Recover account resumes an interrupted move, and Reload reviews the
+files again on the disk lane. The other three run on the service lane against the
+account revision the last review read. Existing consent is preserved; protecting
+credentials does not implement or silently enable unavailable scrobbling features.
+A pending transaction cannot be replaced by a different one. Recover finishes
+that exact transaction: it replays the move from the plaintext file, which stays
+intact until the move is confirmed, or completes its cleanup. Old-item cleanup uncertainty retains the journal and requires
+recovery/explicit inspection, not speculative deletion. Keyring and JSON are not
+one ACID resource.
 
 This bridge covers Last.fm and ListenBrainz account credentials, not arbitrary
 IPTV provider URLs or all credentials anywhere in the desktop.

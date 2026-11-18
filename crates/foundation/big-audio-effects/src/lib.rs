@@ -16,8 +16,11 @@
 //! - The canonical 10-band equalizer center frequencies and labels
 //!   ([`equalizer`]).
 //!
-//! Treat the values exported here as part of a public on-disk format:
-//! changing them invalidates user presets and breaks PipeWire graphs.
+//! Saved settings hold equalizer gains by band index and the noise-reduction
+//! model by its index in [`noise_reduction::MODELS`], so reordering either
+//! changes what a user's saved settings mean. The plugin paths, labels and
+//! control indexes must match the installed LADSPA plugins: mpv's `af` chain
+//! loads them by these names.
 //!
 //! # Examples
 //!

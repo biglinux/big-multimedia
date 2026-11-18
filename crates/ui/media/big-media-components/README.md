@@ -15,6 +15,12 @@ Media UI components and helpers shared by `big-audio-player` and
 - `preference_rows`, `initials_avatar` — shared widgets.
 - `text` — translation hook installed by each app.
 
+## Validate a change
+
+```sh
+cargo test --locked -p big-media-components
+```
+
 ## License
 
 MIT
