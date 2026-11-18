@@ -1,0 +1,16 @@
+id: settings-key-owner
+language: rust
+severity: error
+message: Read and write a setting through its typed key in big_media_data::settings::keys
+note: crates/foundation/big-media-data/src/settings/keys.rs names each key once with its type and default; a key spelled as a string bypasses both.
+rule:
+  any:
+    - pattern: $SETTINGS.$ACCESSOR($KEY)
+    - pattern: $SETTINGS.$ACCESSOR($KEY, $$$REST)
+constraints:
+  ACCESSOR:
+    regex: ^(string|boolean|boolean_or|int|int_or|double|set_string|set_boolean|set_int|set_double)$
+  KEY:
+    kind: string_literal
+ignores:
+  - crates/foundation/big-media-data/src/settings/**

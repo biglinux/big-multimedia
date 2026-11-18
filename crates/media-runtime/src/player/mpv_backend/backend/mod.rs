@@ -10,7 +10,7 @@ use client::{MpvClient, MpvEvent};
 use log::{debug, info};
 use std::collections::HashMap;
 use std::ffi::c_void;
-use std::sync::atomic::{AtomicBool, AtomicI64, Ordering};
+use std::sync::atomic::{AtomicBool, Ordering};
 use std::sync::mpsc::{Receiver, SyncSender};
 use std::sync::{Arc, Mutex};
 use std::time::Duration;
@@ -97,9 +97,11 @@ pub struct MpvBackend {
     pub(in crate::player::mpv_backend) has_af: AtomicBool,
     pub(in crate::player::mpv_backend) stream_volume: volume::VolumeControl,
     /// The person's subtitle distance from the bottom, in mpv's scaled pixels.
-    pub(in crate::player::mpv_backend) sub_margin_base: AtomicI64,
+    #[cfg(feature = "video")]
+    pub(in crate::player::mpv_backend) sub_margin_base: std::sync::atomic::AtomicI64,
     /// Scaled pixels added to `sub_margin_base` while controls cover the bottom.
-    pub(in crate::player::mpv_backend) sub_margin_lift: AtomicI64,
+    #[cfg(feature = "video")]
+    pub(in crate::player::mpv_backend) sub_margin_lift: std::sync::atomic::AtomicI64,
 }
 
 // SAFETY: raw_mpv_handle points to an mpv_handle that lives as long as the
@@ -252,8 +254,10 @@ impl MpvBackend {
             #[cfg(feature = "video")]
             software_gl: AtomicBool::new(false),
             stream_volume,
-            sub_margin_base: AtomicI64::new(0),
-            sub_margin_lift: AtomicI64::new(0),
+            #[cfg(feature = "video")]
+            sub_margin_base: std::sync::atomic::AtomicI64::new(0),
+            #[cfg(feature = "video")]
+            sub_margin_lift: std::sync::atomic::AtomicI64::new(0),
         }
     }
 

@@ -308,26 +308,14 @@ fn import_one_playlist(
             "The batch import limit was reached. Split the playlists into smaller imports.",
         )));
     }
-    // Short lock wait, never a GUI lock. Busy databases produce a retryable
-    // error instead of holding up all later saves indefinitely.
-    let until = std::time::Instant::now() + std::time::Duration::from_secs(2);
-    let conn = loop {
-        match db.try_lock() {
-            Ok(conn) => break conn,
-            Err(std::sync::TryLockError::Poisoned(_)) => {
-                return Err(std::io::Error::other(i18n("Library unavailable")));
-            }
-            Err(std::sync::TryLockError::WouldBlock) => {
-                if std::time::Instant::now() >= until {
-                    return Err(std::io::Error::new(
-                        std::io::ErrorKind::WouldBlock,
-                        "Library busy; retry import",
-                    ));
-                }
-                std::thread::sleep(std::time::Duration::from_millis(5));
-            }
-        }
-    };
+    // A short wait: a busy library gives a retryable error instead of
+    // holding up every later save.
+    let conn = crate::db::lock_within(
+        db,
+        std::time::Duration::from_secs(2),
+        &std::sync::atomic::AtomicBool::new(false),
+    )
+    .map_err(std::io::Error::other)?;
     let mut ids = Vec::new();
     for path in paths {
         if let Some(track) =

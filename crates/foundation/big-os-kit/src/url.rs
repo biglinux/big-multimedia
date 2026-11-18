@@ -187,6 +187,18 @@ pub fn file_uri_path(uri: &str) -> Option<std::path::PathBuf> {
     Some(std::ffi::OsString::from_vec(decoded).into())
 }
 
+/// `value` as a path on this computer: an absolute path as written, or the
+/// [`file_uri_path`] of a `file://` URI. `None` for anything else, a relative
+/// path included.
+#[must_use]
+pub fn local_path(value: &str) -> Option<std::path::PathBuf> {
+    if value.starts_with('/') {
+        Some(value.into())
+    } else {
+        file_uri_path(value)
+    }
+}
+
 /// URI path without authority, query or fragment. Does not decode path bytes.
 /// A bare authority such as https://radio.mp3 has an empty path, not an MP3 file.
 #[must_use]
@@ -658,6 +670,27 @@ mod tests {
                 file_uri_path(uri).as_deref(),
                 path.map(std::path::Path::new),
                 "{uri}"
+            );
+        }
+    }
+
+    #[test]
+    fn local_path_accepts_local_forms() {
+        for (value, path) in [
+            ("/m/100%25.mp3", Some("/m/100%25.mp3")),
+            ("file:///m/a%20b.mp3", Some("/m/a b.mp3")),
+            ("file://host/m/a.mp3", None),
+            ("file://localhost/m/a.mp3", Some("/m/a.mp3")),
+            ("m/a.mp3", None),
+            ("https://h/a.mp3", None),
+            ("rtmp://h/live", None),
+            ("   ", None),
+            ("", None),
+        ] {
+            assert_eq!(
+                local_path(value).as_deref(),
+                path.map(std::path::Path::new),
+                "{value}"
             );
         }
     }

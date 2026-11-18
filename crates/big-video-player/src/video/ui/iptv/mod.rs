@@ -334,6 +334,12 @@ impl VideoIptvBrowser {
                     if provider.protect_secret(&vault).is_err() {
                         return Ok((protected, false));
                     }
+                    // A redacted M3U URL names the cache differently; the old
+                    // file would never be read or replaced again.
+                    let cached_as = provider_identifier(&original);
+                    if provider_identifier(&provider) != cached_as {
+                        cache::remove(&cached_as);
+                    }
                     protected.push((index, original, provider));
                 }
                 Ok((protected, true))

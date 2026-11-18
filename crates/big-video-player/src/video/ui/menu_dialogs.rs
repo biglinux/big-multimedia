@@ -147,7 +147,9 @@ impl VideoShell {
             return;
         }
         let settings = self.settings_handle();
-        let chosen = std::path::PathBuf::from(settings.string("screenshot-directory"));
+        let chosen = std::path::PathBuf::from(
+            settings.get_string(crate::settings::keys::SCREENSHOT_DIRECTORY),
+        );
         let Some(directory) = chosen
             .is_absolute()
             .then_some(chosen)

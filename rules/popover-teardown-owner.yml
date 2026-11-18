@@ -1,0 +1,14 @@
+id: popover-teardown-owner
+language: rust
+severity: error
+message: Detach a parented popover with big_relm4_components::feedback::popover_lifecycle::unparent_popover_on_parent_teardown
+note: crates/ui/generic/big-relm4-components/src/feedback/popover_lifecycle.rs owns when a popover leaves its parent, including a parent that never realizes or moves between containers.
+rule:
+  any:
+    - pattern: $PARENT.connect_destroy($$$)
+    - pattern: $PARENT.connect_unrealize($$$)
+  has:
+    stopBy: end
+    pattern: $POPOVER.unparent()
+ignores:
+  - crates/ui/generic/big-relm4-components/src/feedback/popover_lifecycle.rs

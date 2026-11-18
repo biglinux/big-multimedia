@@ -70,6 +70,18 @@ pub fn read(provider_id: &str) -> Option<String> {
     fs::read_to_string(cache_path(provider_id)?).ok()
 }
 
+/// Delete the cached playlist of `provider_id` (best-effort).
+pub fn remove(provider_id: &str) {
+    let Some(path) = cache_path(provider_id) else {
+        return;
+    };
+    match fs::remove_file(&path) {
+        Ok(()) => {}
+        Err(error) if error.kind() == std::io::ErrorKind::NotFound => {}
+        Err(error) => log::warn!("iptv cache remove {}: {error}", redact_path(&path)),
+    }
+}
+
 /// Write the fetched content to the cache (best-effort).
 pub fn write(provider_id: &str, content: &str) {
     let Some(path) = cache_path(provider_id) else {

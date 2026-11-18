@@ -170,8 +170,7 @@ fn detect_plasma_wallpaper() -> Option<PathBuf> {
 /// `file://` URI / path, or a KPackage wallpaper directory whose actual images
 /// live under `contents/images/`.
 fn resolve_plasma_image(value: &str) -> Option<PathBuf> {
-    let raw = value.strip_prefix("file://").unwrap_or(value);
-    let path = PathBuf::from(percent_decode(raw));
+    let path = big_os_kit::url::local_path(value)?;
     if path.is_file() {
         return Some(path);
     }
@@ -199,9 +198,7 @@ fn detect_gnome_wallpaper() -> Option<PathBuf> {
         return None;
     }
     let value = output.stdout_lossy();
-    let value = value.trim().trim_matches(['\'', '"']);
-    let raw = value.strip_prefix("file://").unwrap_or(value);
-    let path = PathBuf::from(percent_decode(raw));
+    let path = big_os_kit::url::local_path(value.trim().trim_matches(['\'', '"']))?;
     path.is_file().then_some(path)
 }
 
@@ -404,28 +401,6 @@ fn is_svg(path: &Path) -> bool {
         .is_some_and(|ext| ext.eq_ignore_ascii_case("svg"))
 }
 
-/// Minimal percent-decoding for wallpaper URIs (`gsettings` / `file://` values
-/// percent-encode spaces and the like). Leaves malformed escapes untouched.
-fn percent_decode(input: &str) -> String {
-    let bytes = input.as_bytes();
-    let mut out: Vec<u8> = Vec::with_capacity(bytes.len());
-    let mut i = 0;
-    while i < bytes.len() {
-        if bytes[i] == b'%' && i + 2 < bytes.len() {
-            let hi = (bytes[i + 1] as char).to_digit(16);
-            let lo = (bytes[i + 2] as char).to_digit(16);
-            if let (Some(hi), Some(lo)) = (hi, lo) {
-                out.push((hi * 16 + lo) as u8);
-                i += 3;
-                continue;
-            }
-        }
-        out.push(bytes[i]);
-        i += 1;
-    }
-    String::from_utf8_lossy(&out).into_owned()
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -446,17 +421,6 @@ mod tests {
                 "{argv:?}"
             );
         }
-    }
-
-    #[test]
-    fn percent_decode_handles_spaces_and_passthrough() {
-        assert_eq!(
-            percent_decode("/home/u/My%20Wallpaper.png"),
-            "/home/u/My Wallpaper.png"
-        );
-        assert_eq!(percent_decode("/plain/path.jpg"), "/plain/path.jpg");
-        // Malformed escape is left as-is, not dropped.
-        assert_eq!(percent_decode("/a%2/b"), "/a%2/b");
     }
 
     #[test]

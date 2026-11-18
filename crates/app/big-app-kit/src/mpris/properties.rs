@@ -142,7 +142,12 @@ fn method_command(
         "OpenUri" => {
             let (uri,) = params.get::<(String,)>().ok_or("InvalidArgs")?;
             let scheme = big_os_kit::url::uri_scheme(&uri).ok_or("InvalidArgs")?;
-            if ["file", "http", "https"]
+            if scheme.eq_ignore_ascii_case("file") {
+                let path = big_os_kit::url::file_uri_path(&uri)
+                    .and_then(|path| path.into_os_string().into_string().ok())
+                    .ok_or("InvalidArgs")?;
+                Ok(Some(C::OpenUri(path)))
+            } else if ["http", "https"]
                 .iter()
                 .any(|s| scheme.eq_ignore_ascii_case(s))
             {
@@ -266,6 +271,32 @@ mod tests {
                 "{property} {value}"
             );
             assert_eq!(accepted, expected.is_some(), "{property} {value}");
+        }
+    }
+
+    #[test]
+    fn open_uri_resolves_local_files() {
+        let state = PlayerState::default();
+        let open = |uri: &str| method_command("OpenUri", &(uri,).to_variant(), &state);
+        for (uri, expected) in [
+            (
+                "file:///home/u/a%20b.mp3",
+                Ok(Some(C::OpenUri("/home/u/a b.mp3".into()))),
+            ),
+            (
+                "file://localhost/x.mp3",
+                Ok(Some(C::OpenUri("/x.mp3".into()))),
+            ),
+            ("file://server/x.mp3", Err("InvalidArgs")),
+            ("file:///x%FF.mp3", Err("InvalidArgs")),
+            (
+                "https://e.example/a.mp3",
+                Ok(Some(C::OpenUri("https://e.example/a.mp3".into()))),
+            ),
+            ("smb://server/x.mp3", Err("NotSupported")),
+            ("", Err("InvalidArgs")),
+        ] {
+            assert_eq!(open(uri), expected, "{uri}");
         }
     }
 

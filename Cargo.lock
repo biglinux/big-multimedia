@@ -185,6 +185,7 @@ dependencies = [
 name = "big-media-engines"
 version = "0.1.0"
 dependencies = [
+ "big-os-kit",
  "log",
  "serde_json",
 ]

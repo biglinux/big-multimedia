@@ -13,29 +13,21 @@ use gtk::prelude::IsA;
 
 #[doc(inline)]
 pub use big_app_kit_core::keybindings::{
-    ShortcutDef, build_accel_map, parse_custom, remove_custom_override, resolve_accels,
-    serialize_custom, set_custom_override,
+    AccelModifiers, ShortcutDef, accel_text, build_accel_map, parse_custom, remove_custom_override,
+    resolve_accels, serialize_custom, set_custom_override,
 };
 
-/// Format a `(keyval, modifiers)` pair as the GTK accelerator string.
-///
-/// Modifier mask bits are emitted as the canonical `<Ctrl>`/`<Shift>`/`<Alt>`
-/// prefixes (in that order) followed by the GDK key name. Use the result
-/// with [`gtk::accelerator_parse`] or shortcut controllers.
+/// Format a `(keyval, modifiers)` pair as the GTK accelerator string, in
+/// [`accel_text`]'s modifier order. Use the result with
+/// [`gtk::accelerator_parse`] or shortcut controllers.
 #[must_use]
 pub fn key_to_accel_string(keyval: gdk::Key, state: gdk::ModifierType) -> String {
-    let mut parts = String::new();
-    if state.contains(gdk::ModifierType::CONTROL_MASK) {
-        parts.push_str("<Ctrl>");
-    }
-    if state.contains(gdk::ModifierType::SHIFT_MASK) {
-        parts.push_str("<Shift>");
-    }
-    if state.contains(gdk::ModifierType::ALT_MASK) {
-        parts.push_str("<Alt>");
-    }
-    parts.push_str(&key_name_for_accel_string(keyval));
-    parts
+    let modifiers = AccelModifiers {
+        ctrl: state.contains(gdk::ModifierType::CONTROL_MASK),
+        shift: state.contains(gdk::ModifierType::SHIFT_MASK),
+        alt: state.contains(gdk::ModifierType::ALT_MASK),
+    };
+    accel_text(modifiers, &key_name_for_accel_string(keyval))
 }
 
 /// Find the action bound to a key press in an accel → action `map`.
