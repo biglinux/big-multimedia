@@ -488,3 +488,14 @@ fn subtitle_delay_stays_within_limit() {
         );
     }
 }
+
+#[test]
+fn rejected_custom_option_keeps_the_rest() {
+    let options = parse_custom_options("no-such-option=1,cache-secs=7");
+    let mpv = MpvClient::with_initializer(|init| {
+        apply_custom_options(init, &options);
+        Ok(())
+    })
+    .unwrap();
+    assert_eq!(mpv.get_property::<f64>("cache-secs").unwrap(), 7.0);
+}

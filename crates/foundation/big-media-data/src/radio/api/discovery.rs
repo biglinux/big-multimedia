@@ -27,21 +27,13 @@ fn discover_servers_dns() -> Vec<String> {
 
     for addr in addrs {
         let ip = addr.ip();
-        match dns_lookup::lookup_addr(&ip) {
-            Ok(hostname) => {
-                let hostname = hostname.trim_end_matches('.').to_string();
-                if hostname.ends_with(".api.radio-browser.info") && seen.insert(hostname.clone()) {
-                    debug!("[radio] discovered server: {hostname} ({ip})");
-                    servers.push(hostname);
-                }
-            }
-            Err(error) => {
-                debug!("[radio] reverse DNS failed for {ip}: {error}, using IP directly");
-                let ip_str = ip.to_string();
-                if seen.insert(ip_str.clone()) {
-                    servers.push(ip_str);
-                }
-            }
+        // TLS needs the host name: no certificate names a bare address.
+        let Ok(hostname) = dns_lookup::lookup_addr(&ip) else {
+            continue;
+        };
+        let hostname = hostname.trim_end_matches('.').to_string();
+        if hostname.ends_with(".api.radio-browser.info") && seen.insert(hostname.clone()) {
+            servers.push(hostname);
         }
     }
 

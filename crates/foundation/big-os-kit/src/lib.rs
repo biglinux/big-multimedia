@@ -12,6 +12,7 @@
 //! - [`deferred`]: observable, coalesced private state writes off the GUI thread.
 //! - [`http_client`]: blocking HTTP over the system curl with timeouts, retry
 //!   policy and size limits.
+//! - [`interface_addresses`]: the IPv4 addresses of the network interfaces.
 //! - [`keyring`]: a typed worker-only boundary to libsecret Secret Service.
 //! - [`random`]: unguessable ids from the kernel's random source.
 //! - [`storage`]: atomic JSON persistence (temp + rename) and a versioned
@@ -28,6 +29,7 @@ mod allocator;
 pub mod background;
 pub mod deferred;
 pub mod http_client;
+pub mod interface_addresses;
 pub mod keyring;
 pub mod random;
 pub mod storage;
