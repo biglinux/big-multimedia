@@ -20,6 +20,15 @@ GTK/libadwaita widget already solves it.
 - `task` — off-main-thread work with main-thread delivery.
 - `text`, `time`, `theme`, `i18n` — small shared helpers.
 
+## Validate a change
+
+```sh
+cargo test --locked -p big-relm4-components
+```
+
+The `#[ignore]`d widget tests need an isolated Wayland session;
+[CONTRIBUTING](../../../../CONTRIBUTING.md#build-and-check) shows how to run them.
+
 ## License
 
 MIT

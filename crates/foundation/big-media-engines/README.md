@@ -12,6 +12,12 @@ forbids `unsafe` and has no GTK dependency.
 Playlist and subtitle file parsing lives with its users in `big-media-runtime`
 (`media::playlist_scan`, `media::iptv`).
 
+## Validate a change
+
+```sh
+cargo test --locked -p big-media-engines --all-features
+```
+
 ## License
 
 MIT

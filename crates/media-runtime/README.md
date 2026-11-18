@@ -30,3 +30,12 @@ gettext catalog for the whole workspace; regenerate the template with
 
 See [ARCHITECTURE.md](ARCHITECTURE.md) for the module map and the
 subprocess rules.
+
+## Validate a change
+
+```sh
+cargo test --locked -p big-media-runtime --all-features
+```
+
+The `#[ignore]`d tests need a real mpv audio output or the BigNetScreen daemon;
+[ARCHITECTURE.md](ARCHITECTURE.md#tests) lists them.
