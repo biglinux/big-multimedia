@@ -35,7 +35,7 @@ msgstr "Andmeallikad"
 
 #: crates/big-audio-player/src/audio/app.rs:53
 msgid "Play or pause the running player"
-msgstr "Alusta või peata esitust töötavas esitajas"
+msgstr "Alusta töötavas esitajas esitust või pane see pausile"
 
 #: crates/big-audio-player/src/audio/app.rs:58
 msgid "Skip to the next track in the running player"
@@ -1499,7 +1499,7 @@ msgstr "Esitatakse"
 
 #: crates/big-audio-player/src/audio/ui/track_list.rs:393
 msgid "Paused"
-msgstr "Peatatud"
+msgstr "Pausil"
 
 #: crates/big-audio-player/src/audio/ui/unavailable_dialog.rs:52
 msgid ""
@@ -5307,12 +5307,12 @@ msgstr "{station} on minu jaamade hulgas"
 #: crates/ui/media/big-player-ui/src/radio_panel/widgets.rs:115
 #, rust-format
 msgid "Stop recording {station}"
-msgstr "Peata jaama {station} salvestamine"
+msgstr "Lõpeta jaama {station} salvestamine"
 
 #: crates/ui/media/big-player-ui/src/radio_panel/widgets.rs:121
 #, rust-format
 msgid "Record {station}"
-msgstr "Salvesta {station}"
+msgstr "Alusta jaama {station} salvestamist"
 
 #: crates/ui/media/big-player-ui/src/radio_panel/widgets.rs:196
 msgid "Search radios..."
