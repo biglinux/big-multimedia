@@ -12,8 +12,7 @@ settings store, and the radio, podcast, lyrics and metadata clients.
 - `db` (feature `db`): the SQLite library database, its migrations and queries;
   `db::open_database()` opens it.
 - `library` (feature `library`): folder scanning, cover art, MusicBrainz
-  metadata, LRC lyrics, podcast feeds, and the account credentials in the
-  keyring (`library::accounts`).
+  metadata, LRC lyrics and podcast feeds.
 - `radio` (feature `radio`): the Radio Browser API client and server discovery.
 - `media_probe`: ffprobe's JSON report on a media file.
 
@@ -23,12 +22,12 @@ All three features are on by default.
 
 `big-player-ui` uses it for its panels, and `big-media-runtime` re-exports it
 as `config`, `db`, `error`, `i18n`, `library` and `settings`, so the players
-reach it through the runtime. It builds on `big-os-kit` for files, HTTP and the
-keyring, and links neither GTK nor mpv.
+reach it through the runtime. It builds on `big-os-kit` for files and HTTP, and
+links neither GTK nor mpv.
 
 ## Rules for callers
 
-- Database, scan, network, keyring and ffprobe calls block: run them on a
+- Database, scan, network and ffprobe calls block: run them on a
   worker, never on the GTK main loop.
 - `Settings` reads from memory and saves on the `big-os-kit` background lane,
   without fsync. A settings file that fails to parse is never overwritten.

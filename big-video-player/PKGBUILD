@@ -17,8 +17,9 @@ arch=('x86_64')
 url="https://github.com/biglinux/big-multimedia"
 # The shipped GPU shaders: FSR/CAS and Anime4K are MIT, RAVU is LGPL-3.0.
 license=('GPL-3.0-or-later' 'MIT' 'LGPL-3.0-or-later')
-# ffmpeg renders the seek-bar preview thumbnails.
-depends=('gtk4>=4.22' 'libadwaita>=1.9' 'mpv' 'ffmpeg' 'libpulse')
+# ffmpeg renders the seek-bar preview thumbnails; libsecret's secret-tool keeps
+# IPTV passwords in the keyring.
+depends=('gtk4>=4.22' 'libadwaita>=1.9' 'mpv' 'ffmpeg' 'libpulse' 'libsecret')
 makedepends=('git' 'cargo' 'pkgconf' 'gettext')
 checkdepends=('desktop-file-utils' 'appstream')
 optdepends=('deepfilternet3-native: light voice noise reduction (DeepFilterNet3)'
@@ -31,7 +32,7 @@ optdepends=('deepfilternet3-native: light voice noise reduction (DeepFilterNet3)
 replaces=('big-player-video' 'bigvideo')
 conflicts=('big-player-video' 'bigvideo')
 provides=('bigvideo=0.1.0-7')
-# makepkg's lto adds -flto to CFLAGS, so the C in ring and jemalloc builds as
+# makepkg's lto adds -flto to CFLAGS, so the C in jemalloc builds as
 # GCC bytecode that lld cannot link. The release profile already does fat LTO.
 options=('!lto')
 

@@ -11,6 +11,8 @@ use crate::media::iptv::{
 };
 use crate::video::ui::iptv::{cache, xtream};
 use big_os_kit::http_client::{RequestHeaders, http_get_bytes_capped};
+use big_os_kit::keyring::SecretService;
+use std::sync::atomic::AtomicBool;
 use std::time::Duration;
 
 /// A whole provider list comes in one answer, tens of megabytes on a slow
@@ -34,6 +36,17 @@ pub enum FetchError {
     AccountInactive(String),
     /// The local playlist file could not be read.
     FileUnreadable,
+    /// The keyring did not give back the provider's password.
+    Keyring,
+}
+
+/// A provider's channels, and the favorites to move to their stored URLs.
+#[derive(Debug)]
+pub struct FetchedChannels {
+    pub channels: PlaylistEntries<IptvChannel>,
+    /// `(played URL, stored URL)`: Xtream stars saved under the URL with the
+    /// account's credentials in it.
+    pub favorite_renames: Vec<(String, String)>,
 }
 
 /// Stable per-provider cache identifier; the cache names its file by a hash
@@ -66,17 +79,23 @@ pub(super) fn fetch_text(url: &str, headers: &RequestHeaders<'_>) -> Result<Stri
 }
 
 /// Resolve a provider to its channel list over the network (or local file),
-/// caching the raw playlist on success. Synchronous and blocking: call from a
-/// worker thread.
+/// caching the raw playlist on success. Synchronous and blocking, reads the
+/// keyring: call from a worker thread.
 pub fn fetch_provider_channels(
     provider: &IptvProvider,
     provider_id: &str,
-) -> Result<PlaylistEntries<IptvChannel>, FetchError> {
+) -> Result<FetchedChannels, FetchError> {
     let headers = RequestHeaders {
         user_agent: &provider.user_agent,
         referer: &provider.referer,
     };
-    let content = match &provider.source {
+    let cancelled = AtomicBool::new(false);
+    let source = provider
+        .resolved_source(&SecretService {
+            cancelled: &cancelled,
+        })
+        .map_err(|_| FetchError::Keyring)?;
+    let content = match &source {
         IptvKind::M3uUrl { url } => fetch_text(url, &headers)?,
         IptvKind::M3uLocal { path } => {
             read_playlist_text(std::path::Path::new(path)).ok_or(FetchError::FileUnreadable)?
@@ -92,7 +111,23 @@ pub fn fetch_provider_channels(
         return Err(FetchError::Empty);
     }
     cache::write(provider_id, &content);
-    Ok(channels)
+    let favorite_renames = match &source {
+        IptvKind::Xtream {
+            username, password, ..
+        } => channels
+            .entries
+            .iter()
+            .map(|channel| {
+                let played = xtream::stream_url(&channel.url, username, password);
+                (played, channel.url.clone())
+            })
+            .collect(),
+        IptvKind::M3uUrl { .. } | IptvKind::M3uLocal { .. } => Vec::new(),
+    };
+    Ok(FetchedChannels {
+        channels,
+        favorite_renames,
+    })
 }
 
 #[cfg(test)]
@@ -104,8 +139,7 @@ mod tests {
             name: name.to_string(),
             source,
             user_agent: String::new(),
-            referer: String::new(),
-            order: 0,
+            ..IptvProvider::default()
         }
     }
 

@@ -27,21 +27,23 @@ mod xtream;
 
 use std::cell::RefCell;
 use std::rc::Rc;
+use std::sync::atomic::AtomicBool;
 
 use adw::prelude::*;
 use big_relm4_components::task::spawn_blocking_result;
 use relm4::{Component, ComponentParts, ComponentSender};
 
 use crate::i18n::i18n;
+use big_os_kit::keyring::SecretService;
 use big_os_kit::url::ListOrigin;
 
 use crate::media::iptv::{
-    IptvChannel, IptvKind, IptvProvider, IptvProviderStore, MAX_PLAYLIST_ENTRIES, PlaylistEntries,
-    left_out_notice, parse_channel_list,
+    IptvChannel, IptvKind, IptvProvider, IptvProviderStore, MAX_PLAYLIST_ENTRIES, left_out_notice,
+    parse_channel_list,
 };
 
 use channel_list::ChannelListView;
-use fetcher::{FetchError, fetch_provider_channels, provider_identifier};
+use fetcher::{FetchError, FetchedChannels, fetch_provider_channels, provider_identifier};
 
 /// Messages into the IPTV browser.
 #[derive(Debug)]
@@ -68,8 +70,16 @@ pub enum VideoIptvBrowserInput {
     /// Network channels resolved off-thread for load generation `gen`.
     NetworkResolved {
         generation: u64,
-        channels: Result<PlaylistEntries<IptvChannel>, FetchError>,
+        channels: Result<FetchedChannels, FetchError>,
     },
+    /// Plain-text secrets moved into the keyring: `(index, original,
+    /// protected)` each, and whether every one moved.
+    Protected {
+        protected: Vec<(usize, IptvProvider, IptvProvider)>,
+        complete: bool,
+    },
+    /// A channel could not play: the keyring kept its provider's password.
+    KeyringUnavailable,
 }
 
 /// Intents emitted by the browser for the shell to act on.
@@ -95,6 +105,11 @@ pub struct VideoIptvBrowser {
     provider_dropdown: gtk::DropDown,
     /// Status caption (cached/loading/error messaging).
     status: gtk::Label,
+    /// Shown while a provider's password stays in the file for want of a
+    /// keyring.
+    keyring_status: gtk::Label,
+    /// A move into the keyring is running; a second would store twice.
+    protecting: bool,
     /// Monotonic load token; off-thread results for an older value are dropped.
     load_generation: u64,
 }
@@ -179,6 +194,20 @@ impl Component for VideoIptvBrowser {
             .build();
         root.append(&status);
 
+        let keyring_status = gtk::Label::builder()
+            .label(i18n(
+                "Some provider passwords are still in a plain file because your keyring could not be reached. Unlock your keyring, then reload the channels.",
+            ))
+            .wrap(true)
+            .selectable(true)
+            .xalign(0.0)
+            .margin_start(12)
+            .margin_end(12)
+            .css_classes(["caption", "warning"])
+            .visible(false)
+            .build();
+        root.append(&keyring_status);
+
         let scrolled = gtk::ScrolledWindow::builder()
             .hscrollbar_policy(gtk::PolicyType::Never)
             .vexpand(true)
@@ -203,14 +232,17 @@ impl Component for VideoIptvBrowser {
             &sender,
         );
 
-        let model = Self {
+        let mut model = Self {
             store,
             list_view,
             provider_model,
             provider_dropdown,
             status,
+            keyring_status,
+            protecting: false,
             load_generation: 0,
         };
+        model.protect_plaintext(&sender);
         model.repopulate_provider_dropdown();
         if model.provider_model.n_items() > 0 {
             sender.input(VideoIptvBrowserInput::ProviderSelected(0));
@@ -229,24 +261,18 @@ impl Component for VideoIptvBrowser {
                 self.load_provider(index, false, &sender);
             }
             VideoIptvBrowserInput::Refresh => {
+                self.protect_plaintext(&sender);
                 let index = self.provider_dropdown.selected() as usize;
                 self.load_provider(index, true, &sender);
             }
             VideoIptvBrowserInput::Search(query) => self.list_view.apply_filter(&query),
             VideoIptvBrowserInput::ManageProviders => self.open_providers_dialog(root, &sender),
-            VideoIptvBrowserInput::ProvidersChanged => self.on_providers_changed(&sender),
+            VideoIptvBrowserInput::ProvidersChanged => {
+                self.protect_plaintext(&sender);
+                self.on_providers_changed(&sender);
+            }
             VideoIptvBrowserInput::PlayChannel { url, title } => {
-                let Some(source) = self.selected_source() else {
-                    return;
-                };
-                let url = match &source {
-                    IptvKind::Xtream {
-                        username, password, ..
-                    } => xtream::stream_url(&url, username, password),
-                    IptvKind::M3uUrl { .. } | IptvKind::M3uLocal { .. } => url,
-                };
-                let origin = source.list_origin();
-                let _ = sender.output(VideoIptvBrowserOutput::PlayChannel { url, title, origin });
+                self.play_channel(url, title, &sender);
             }
             VideoIptvBrowserInput::FavoriteToggled => self.list_view.reload_favorites(),
             VideoIptvBrowserInput::CachedResolved {
@@ -255,7 +281,6 @@ impl Component for VideoIptvBrowser {
             } => {
                 if generation == self.load_generation {
                     self.list_view.set_channels(channels);
-                    self.rename_xtream_favorites();
                     self.status
                         .set_label(&i18n("Showing cached channels — updating…"));
                 }
@@ -264,30 +289,98 @@ impl Component for VideoIptvBrowser {
                 generation,
                 channels,
             } => self.on_network_resolved(generation, channels),
+            VideoIptvBrowserInput::Protected {
+                protected,
+                complete,
+            } => {
+                self.protecting = false;
+                let mut store = self.store.borrow_mut();
+                if store.apply_protected(protected) {
+                    store.save();
+                }
+                self.keyring_status.set_visible(!complete);
+            }
+            VideoIptvBrowserInput::KeyringUnavailable => {
+                self.status
+                    .set_label(&fetch_error_text(&FetchError::Keyring));
+            }
         }
     }
 }
 
 impl VideoIptvBrowser {
-    fn selected_source(&self) -> Option<IptvKind> {
-        let index = self.provider_dropdown.selected() as usize;
-        let store = self.store.borrow();
-        store
-            .providers
-            .get(index)
-            .map(|provider| provider.source.clone())
+    /// Move the secrets a provider still holds in plain text, typed into an
+    /// older build or carried in an older file, into the keyring.
+    fn protect_plaintext(&mut self, sender: &ComponentSender<Self>) {
+        let unprotected = self.store.borrow().unprotected();
+        if unprotected.is_empty() {
+            self.keyring_status.set_visible(false);
+        }
+        if self.protecting || unprotected.is_empty() {
+            return;
+        }
+        self.protecting = true;
+        let sender = sender.clone();
+        crate::settings::saving::acknowledged_task(
+            true,
+            move || {
+                let cancelled = AtomicBool::new(false);
+                let vault = SecretService {
+                    cancelled: &cancelled,
+                };
+                let mut protected = Vec::new();
+                for (index, original) in unprotected {
+                    let mut provider = original.clone();
+                    if provider.protect_secret(&vault).is_err() {
+                        return Ok((protected, false));
+                    }
+                    protected.push((index, original, provider));
+                }
+                Ok((protected, true))
+            },
+            move |result| {
+                let (protected, complete) = result.unwrap_or_default();
+                sender.input(VideoIptvBrowserInput::Protected {
+                    protected,
+                    complete,
+                });
+            },
+        );
     }
 
-    /// Stars saved under a stream URL with the Xtream account's credentials
-    /// in it move to the stored URL the list shows.
-    fn rename_xtream_favorites(&self) {
-        if let Some(IptvKind::Xtream {
-            username, password, ..
-        }) = self.selected_source()
-        {
-            self.list_view
-                .rename_favorites(|url| xtream::stream_url(url, &username, &password));
-        }
+    /// Hand the channel at `url` of the selected provider to the shell, with
+    /// the Xtream account's credentials read back from the keyring.
+    fn play_channel(&self, url: String, title: String, sender: &ComponentSender<Self>) {
+        let index = self.provider_dropdown.selected() as usize;
+        let Some(provider) = self.store.borrow().providers.get(index).cloned() else {
+            return;
+        };
+        let origin = provider.source.list_origin();
+        let sender = sender.clone();
+        spawn_blocking_result(
+            move || {
+                let cancelled = AtomicBool::new(false);
+                let vault = SecretService {
+                    cancelled: &cancelled,
+                };
+                match provider.source {
+                    IptvKind::Xtream { .. } => match provider.resolved_source(&vault)? {
+                        IptvKind::Xtream {
+                            username, password, ..
+                        } => Ok(xtream::stream_url(&url, &username, &password)),
+                        IptvKind::M3uUrl { .. } | IptvKind::M3uLocal { .. } => Ok(url),
+                    },
+                    IptvKind::M3uUrl { .. } | IptvKind::M3uLocal { .. } => Ok(url),
+                }
+            },
+            move |played: std::io::Result<String>| match played {
+                Ok(url) => {
+                    let _ =
+                        sender.output(VideoIptvBrowserOutput::PlayChannel { url, title, origin });
+                }
+                Err(_) => sender.input(VideoIptvBrowserInput::KeyringUnavailable),
+            },
+        );
     }
 
     /// Refresh the dropdown model from the current store, selecting the first
@@ -364,13 +457,16 @@ impl VideoIptvBrowser {
     fn on_network_resolved(
         &mut self,
         generation: u64,
-        channels: Result<PlaylistEntries<IptvChannel>, FetchError>,
+        fetched: Result<FetchedChannels, FetchError>,
     ) {
         if generation != self.load_generation {
             return;
         }
-        match channels {
-            Ok(channels) => {
+        match fetched {
+            Ok(FetchedChannels {
+                channels,
+                favorite_renames,
+            }) => {
                 let mut status = Vec::new();
                 if channels.truncated {
                     status.push(
@@ -380,7 +476,7 @@ impl VideoIptvBrowser {
                 }
                 status.extend(left_out_notice(false, channels.skipped));
                 self.list_view.set_channels(channels.entries);
-                self.rename_xtream_favorites();
+                self.list_view.rename_favorites(favorite_renames);
                 self.status.set_label(&status.join(" "));
             }
             Err(error) => self.status.set_label(&fetch_error_text(&error)),
@@ -415,6 +511,9 @@ fn fetch_error_text(error: &FetchError) -> String {
             i18n("This account is not active (the provider says: {}).").replace("{}", status)
         }
         FetchError::FileUnreadable => i18n("Could not read the playlist file."),
+        FetchError::Keyring => i18n(
+            "Could not read this provider's password from your keyring. Unlock your keyring, then reload the channels.",
+        ),
     }
 }
 

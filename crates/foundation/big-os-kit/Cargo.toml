@@ -17,8 +17,6 @@ categories = ["os", "filesystem"]
 bon.workspace = true
 thiserror.workspace = true
 log.workspace = true
-# Reuse the exact ring release already locked by the workspace for SHA-256 receipts.
-ring = "0.17.14"
 libc.workspace = true
 # Statically linked jemalloc behind the `jemalloc` feature (see src/allocator.rs).
 tikv-jemalloc-sys = { workspace = true, optional = true }

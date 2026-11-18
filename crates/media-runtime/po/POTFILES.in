@@ -1,4 +1,3 @@
-crates/big-audio-player/src/audio/account_security.rs
 crates/big-audio-player/src/audio/app.rs
 crates/big-audio-player/src/audio/appearance/dialogs.rs
 crates/big-audio-player/src/audio/appearance/mod.rs
