@@ -166,7 +166,7 @@ pub(super) fn move_to_folder(state: &Rc<BrowserState>, paths: Vec<String>) {
                 (moved, failed)
             },
             move |(moved, failed): (Vec<(String, String)>, usize)| {
-                notify_op_result(&state, moved.len(), failed, &i18n("moved"));
+                notify_move_failures(&state, moved.len(), failed);
                 if !moved.is_empty() {
                     let _ = state
                         .sender
@@ -308,16 +308,21 @@ fn move_by_copy(src: &Path, dest: &Path) -> std::io::Result<()> {
     std::fs::remove_file(src)
 }
 
-/// Say when some of a batch file op failed; the folder view already shows
+/// Say when some files of a batch move failed; the folder view already shows
 /// what moved.
-fn notify_op_result(state: &Rc<BrowserState>, ok: usize, failed: usize, verb: &str) {
+fn notify_move_failures(state: &Rc<BrowserState>, moved: usize, failed: usize) {
     if failed == 0 {
         return;
     }
-    let notification_message = i18n("{ok} {verb}, {failed} failed")
-        .replace("{ok}", &ok.to_string())
-        .replace("{verb}", verb)
-        .replace("{failed}", &failed.to_string());
+    let total = moved + failed;
+    // One plural form agrees with one number, so the message counts in the total.
+    let notification_message = ni18n(
+        "Could not move {failed} of {total} file",
+        "Could not move {failed} of {total} files",
+        total as u64,
+    )
+    .replace("{failed}", &failed.to_string())
+    .replace("{total}", &total.to_string());
     state
         .sender
         .output(VideoBrowserSidebarOutput::Notify(notification_message))
