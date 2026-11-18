@@ -172,7 +172,8 @@ pub(super) fn transport_labels() -> BigAudioTransportLabels {
     BigAudioTransportLabels {
         seek: i18n("Seek position"),
         cut_timeline: i18n("Cut timeline"),
-        play_pause: i18n("Play / Pause"),
+        play: i18n("Play"),
+        pause: i18n("Pause"),
         previous: i18n("Previous"),
         next: i18n("Next"),
         shuffle: i18n("Shuffle"),
