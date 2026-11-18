@@ -582,19 +582,41 @@ impl Settings {
         }
     }
 
+    /// Keys [`Self::reset_to_defaults`] leaves as they are: what the person
+    /// collected, where they left off, and the live levels of the player's own
+    /// controls, none of them a preference.
+    pub const KEPT_ON_RESTORE: [&'static str; 19] = [
+        "video-library-folders",
+        "custom-keybindings",
+        "volume",
+        "audio-volume",
+        "playlist-shuffle",
+        "playlist-last-folder",
+        "playlist-reorder-hint-seen",
+        "files-last-dir",
+        "noise-strength",
+        "noise-model",
+        "noise-mono",
+        "noise-voice-only",
+        "noise-voice-sensitivity",
+        "eq-bands",
+        "eq-preset",
+        "appearance-window-width",
+        "appearance-window-height",
+        "audio-appearance-window-width",
+        "audio-appearance-window-height",
+    ];
+
+    /// Put every preference back to its default, keeping [`Self::KEPT_ON_RESTORE`].
     pub fn reset_to_defaults(&self) {
         let mut inner = self
             .inner
             .write()
             .unwrap_or_else(std::sync::PoisonError::into_inner);
         for (key, value) in defaults::defaults() {
-            if matches!(
-                key.as_str(),
-                "window-width" | "window-height" | "window-maximized"
-            ) {
-                continue;
+            if !Self::KEPT_ON_RESTORE.contains(&key.as_str()) {
+                inner.settings_values.insert(key, value);
             }
-            inner.settings_values.insert(key, value);
         }
         inner.dirty = true;
         inner.revision = inner.revision.wrapping_add(1);

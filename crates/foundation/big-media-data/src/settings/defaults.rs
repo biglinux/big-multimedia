@@ -54,6 +54,7 @@ pub(super) fn defaults() -> HashMap<String, String> {
     values.insert("keep-open-pause".into(), "false".into());
     values.insert("idle-mode".into(), "yes".into());
     values.insert("render-profile".into(), "default".into());
+    values.insert("render-mode".into(), "auto".into());
 
     values.insert("tone-mapping".into(), "auto".into());
     values.insert("target-peak".into(), "0".into());
@@ -64,6 +65,9 @@ pub(super) fn defaults() -> HashMap<String, String> {
     values.insert("builtin-upscaler".into(), String::new());
     values.insert("neural-upscaler".into(), String::new());
     values.insert("anime4k-preset".into(), String::new());
+    // FSR reads 0 as its 0.2 sharpness.
+    values.insert("shader-fsr-sharpness".into(), "0".into());
+    values.insert("shader-cas-sharpening".into(), "0".into());
 
     values.insert("cache".into(), "false".into());
     values.insert("cache-secs".into(), "30".into());
@@ -152,6 +156,8 @@ pub(super) fn defaults() -> HashMap<String, String> {
     values.insert("gapless-audio".into(), "false".into());
     values.insert("audio-volume".into(), "100".into());
     values.insert("taskbar-progress".into(), "true".into());
+    values.insert("tray-icon".into(), "false".into());
+    values.insert("audio-album-art-bg".into(), "true".into());
 
     values.insert("audio-high-contrast".into(), "false".into());
 

@@ -98,12 +98,16 @@ impl MpvBackend {
         self.wake_event_loop();
     }
 
+    /// Empty is Automatic, mpv's own `auto-safe`.
     pub fn set_audio_channels(&self, channels: &str) {
-        if !channels.is_empty() {
-            self.with_mpv(|m| {
-                let _ = m.set_property("audio-channels", channels.to_string());
-            });
-        }
+        let channels = if channels.is_empty() {
+            "auto-safe"
+        } else {
+            channels
+        };
+        self.with_mpv(|m| {
+            let _ = m.set_property("audio-channels", channels.to_string());
+        });
     }
 
     /// Send compressed surround formats to the receiver untouched, or decode

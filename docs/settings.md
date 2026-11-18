@@ -56,6 +56,15 @@ player reads the keys it uses from its own file and keeps the rest.
 A key with no default reads as empty, `false` or `0` unless its Notes say
 otherwise.
 
+Restore Default Settings in the video player writes every default except the
+keys in `Settings::KEPT_ON_RESTORE`
+([`store.rs`](../crates/foundation/big-media-data/src/settings/store.rs)): the
+library folders, keyboard shortcuts, volume, shuffle, voice and equalizer
+levels, the folders the browsers left off in, the one-time playlist hint and
+dialog sizes. Keys without a default stay as they are. The running player takes
+the new values at once, except `render-mode`, `gpu-dumb-mode`,
+`custom-mpv-options` and `audio-output`, which apply when the player reopens.
+
 ### Volume and audio output
 
 | Key | Type | Default | Notes |
@@ -111,14 +120,14 @@ otherwise.
 | `hwdec` | string | `auto-safe` |  |
 | `deinterlace` | bool | `false` |  |
 | `auto-window-resize` | bool | `true` |  |
-| `render-mode` | string | not set | `auto`, `gl` or `sw`; absent reads as `auto`. |
+| `render-mode` | string | `auto` | `auto`, `gl` or `sw`. |
 | `render-profile` | string | `default` |  |
 | `gpu-dumb-mode` | bool | `false` |  |
 | `custom-mpv-options` | string | empty |  |
 | `glsl-shaders` | string | empty |  |
 | `builtin-upscaler` | string | empty |  |
-| `shader-fsr-sharpness` | number | not set |  |
-| `shader-cas-sharpening` | number | not set |  |
+| `shader-fsr-sharpness` | number | `0` | `0` reads as `0.2`. |
+| `shader-cas-sharpening` | number | `0` |  |
 | `anime4k-preset` | string | empty |  |
 | `neural-upscaler` | string | empty |  |
 | `tone-mapping` | string | `auto` |  |
@@ -233,7 +242,7 @@ otherwise.
 | `audio-ui-icon-color` | string | `#FFFFFF` |  |
 | `audio-ui-dialog-color` | string | `#2A2A30` |  |
 | `audio-high-contrast` | bool | `false` |  |
-| `audio-album-art-bg` | bool | not set | Read as `true` when absent. |
+| `audio-album-art-bg` | bool | `true` |  |
 
 ### Dialog sizes
 
@@ -250,7 +259,7 @@ otherwise.
 |---|---|---|---|
 | `custom-keybindings` | string | empty |  |
 | `taskbar-progress` | bool | `true` |  |
-| `tray-icon` | bool | not set | Read as `false` when absent. |
+| `tray-icon` | bool | `false` |  |
 
 ## Environment variables
 

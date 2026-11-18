@@ -31,12 +31,12 @@ impl MpvBackend {
         });
     }
 
+    /// Empty is the default font, mpv's own `sans-serif`.
     pub fn set_sub_font(&self, font: &str) {
-        if !font.is_empty() {
-            self.with_mpv(|m| {
-                let _ = m.set_property("sub-font", font.to_string());
-            });
-        }
+        let font = if font.is_empty() { "sans-serif" } else { font };
+        self.with_mpv(|m| {
+            let _ = m.set_property("sub-font", font.to_string());
+        });
     }
 
     pub fn set_sub_bold(&self, bold: bool) {

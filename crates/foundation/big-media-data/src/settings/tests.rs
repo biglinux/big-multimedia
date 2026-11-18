@@ -218,3 +218,42 @@ fn removed_keys_load_as_unknown_text() {
         assert!(!Settings::defaults().contains_key(key), "{key}");
     }
 }
+
+#[test]
+fn restore_defaults_keeps_user_data() {
+    let settings = Settings::memory_only();
+    let reset = [
+        ("render-mode", "sw", "auto"),
+        ("tray-icon", "true", "false"),
+        ("audio-album-art-bg", "false", "true"),
+        ("shader-fsr-sharpness", "0.5", "0"),
+        ("shader-cas-sharpening", "0.5", "0"),
+        ("hwdec", "vaapi", "auto-safe"),
+        ("ui-show-volume", "false", "true"),
+        ("volume-max", "200", "150"),
+    ];
+    let kept = [
+        ("video-library-folders", r#"["/videos"]"#),
+        ("custom-keybindings", "mute=m"),
+        ("volume", "0.4"),
+        ("files-last-dir", "/music"),
+        ("playlist-last-folder", "/videos"),
+        ("playlist-shuffle", "true"),
+        ("eq-bands", "1;2;3;4;5;6;7;8;9;10"),
+        ("noise-strength", "0.5"),
+        ("appearance-window-width", "900"),
+    ];
+    for (key, value, _) in reset {
+        assert!(settings.set_string(key, value), "{key}");
+    }
+    for (key, value) in kept {
+        assert!(settings.set_string(key, value), "{key}");
+    }
+    settings.reset_to_defaults();
+    for (key, _, default) in reset {
+        assert_eq!(settings.string(key), default, "{key}");
+    }
+    for (key, value) in kept {
+        assert_eq!(settings.string(key), value, "{key}");
+    }
+}

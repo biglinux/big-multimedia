@@ -346,8 +346,28 @@ impl VideoShell {
         });
     }
 
-    /// Confirm, then reset every setting to its default; `on_confirmed` runs
-    /// after the reset request is sent.
+    /// Reset the preferences and put them on the running player: mpv, the
+    /// volume ceiling of the sliders, the theme, the controls layout, the file
+    /// browser and the screen inhibitor.
+    pub(super) fn restore_defaults(&mut self, window: Option<&adw::ApplicationWindow>) {
+        self.settings.reset_to_defaults();
+        if let Some(mpv) = self.mpv.borrow().as_ref() {
+            crate::video::ui::preferences::apply_saved_preferences(mpv, &self.settings);
+        }
+        let volume_max = f64::from(self.settings.volume_max_percent());
+        self.controls
+            .emit(VideoControlsBarInput::SetMaxVolume(volume_max));
+        crate::video::ui::appearance::apply_appearance(&self.settings, &self.theme);
+        self.controls
+            .model()
+            .button_layout()
+            .apply_settings(&self.settings);
+        self.playlist.emit(VideoBrowserSidebarInput::RefreshFolder);
+        self.sync_screen_inhibit(window);
+    }
+
+    /// Confirm, then reset the preferences; `on_confirmed` runs after the
+    /// reset request is sent.
     pub(super) fn show_restore_defaults_dialog(
         parent: &impl IsA<gtk::Widget>,
         on_confirmed: impl Fn() + 'static,
@@ -359,7 +379,7 @@ impl VideoShell {
         let dialog = big_gtk_kit::alert::Alert::builder()
             .heading(i18n("Restore Default Settings?"))
             .body(i18n(
-                "Every setting, including appearance, goes back to its default value. Some changes take effect after reopening the player.",
+                "Preferences and appearance go back to their defaults. Your library folders, keyboard shortcuts, volume, shuffle, and voice and equalizer levels are kept. Video Output, Audio Output and the custom mpv options take effect after reopening the player.",
             ))
             .default_response("cancel")
             .close_response("cancel")

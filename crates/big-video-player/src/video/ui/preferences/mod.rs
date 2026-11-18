@@ -80,12 +80,17 @@ pub fn apply_saved_preferences(mpv: &MpvBackend, s: &Settings) {
     mpv.set_save_position(s.get_bool(keys::RESUME_PLAYBACK));
     mpv.set_keep_open(&s.get_string(keys::KEEP_OPEN));
     mpv.set_keep_open_pause(s.get_bool(keys::KEEP_OPEN_PAUSE));
+    // An empty playlist with `idle=no` would make mpv quit; a load applies it.
+    if mpv.get_current_file().is_some() {
+        mpv.set_idle(&s.get_string(keys::IDLE_MODE));
+    }
 
     // Video
     mpv.set_hwdec(&s.get_string(keys::HWDEC));
     mpv.set_deinterlace(s.get_bool(keys::DEINTERLACE));
 
     // Audio
+    mpv.set_volume_max(i64::from(s.volume_max_percent()));
     mpv.set_audio_pitch_correction(s.get_bool(keys::AUDIO_PITCH_CORRECTION));
     mpv.set_audio_channels(&s.get_string(keys::AUDIO_CHANNELS));
     mpv.set_preferred_audio_lang(&s.get_string(keys::PREFERRED_AUDIO_LANG));
@@ -116,10 +121,7 @@ pub fn apply_saved_preferences(mpv: &MpvBackend, s: &Settings) {
     mpv.set_hdr_compute_peak(s.get_bool(keys::HDR_COMPUTE_PEAK));
     mpv.set_target_peak(i64::from(s.get_int(keys::TARGET_PEAK)));
     mpv.set_gamut_mapping_mode(&s.get_string(keys::GAMUT_MAPPING_MODE));
-    let icc_profile = s.get_string(keys::ICC_PROFILE);
-    if !icc_profile.is_empty() {
-        mpv.set_icc_profile(&icc_profile);
-    }
+    mpv.set_icc_profile(&s.get_string(keys::ICC_PROFILE));
     mpv.set_icc_intent(i64::from(s.get_int(keys::ICC_INTENT)));
     mpv.set_cache(s.get_bool(keys::CACHE));
     mpv.set_cache_secs(i64::from(s.get_int(keys::CACHE_SECS)));
