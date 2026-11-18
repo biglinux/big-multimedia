@@ -196,7 +196,7 @@ impl AudioShell {
             }
             PlaylistPanelOutput::ShowTrackInfo(track) => self.show_track_metadata_dialog(&track),
             PlaylistPanelOutput::DownloadEpisodes(episodes) => {
-                self.download_episodes(episodes);
+                self.download_episodes(episodes, sender);
             }
         }
     }
@@ -369,7 +369,7 @@ impl AudioShell {
         let input = sender.input_sender().clone();
         spawn_blocking_result(
             move || {
-                let mut deleted_ids = Vec::with_capacity(targets.len());
+                let mut deleted = Vec::with_capacity(targets.len());
                 for (id, path) in targets {
                     let removed = if permanent {
                         std::fs::remove_file(&path).is_ok()
@@ -379,37 +379,33 @@ impl AudioShell {
                             .is_ok()
                     };
                     if removed {
-                        deleted_ids.push(id);
+                        deleted.push((id, path));
                     } else {
                         log::warn!("failed to delete from storage: {path}");
                     }
                 }
-                deleted_ids
+                deleted
             },
-            move |deleted_ids| {
-                let _ = input.send(AudioShellInput::TracksDeletedFromStorage(deleted_ids));
+            move |deleted| {
+                let _ = input.send(AudioShellInput::TracksDeletedFromStorage(deleted));
             },
         );
     }
 
     /// Reconcile the queue + database after files were deleted off the main loop.
-    /// Each track is located in the queue by **id** (not a stale index) so a
-    /// queue change during the deletes can't drop the wrong entry.
     pub(super) fn reconcile_deleted_tracks(
         &mut self,
-        ids: Vec<i64>,
+        deleted: Vec<(i64, String)>,
         sender: &ComponentSender<Self>,
     ) {
+        if deleted.is_empty() {
+            return;
+        }
+        let ids = remove_deleted_files(&mut self.queue, &deleted);
+        self.commit_queue();
         if ids.is_empty() {
             return;
         }
-        for id in &ids {
-            // The same track can sit in the queue more than once; drop every copy.
-            while let Some(index) = self.queue.tracks().iter().position(|t| t.id == *id) {
-                self.queue.remove(index);
-            }
-        }
-        self.commit_queue();
         // Delete every row in one connection lock (not N racing spawns), then
         // rebuild the library tree once the deletes commit so the removed tracks
         // leave the browse view. `spawn_db_query` runs on a pool, so ordering the
@@ -435,7 +431,11 @@ impl AudioShell {
     /// Download selected podcast episodes: a single episode prompts for a save
     /// path; multiple prompt for a destination folder. Each pick is fed to the
     /// self-driven download panel as an `Enqueue`.
-    pub(super) fn download_episodes(&self, episodes: Vec<(String, String)>) {
+    pub(super) fn download_episodes(
+        &self,
+        episodes: Vec<(String, String)>,
+        sender: &ComponentSender<Self>,
+    ) {
         let Some(window) = self.window() else {
             return;
         };
@@ -452,15 +452,28 @@ impl AudioShell {
                     });
             }
             _ => {
+                let input = sender.input_sender().clone();
                 FilePicker::open_folder(i18n("Save Episodes")).select_folder(&window, move |dir| {
-                    for (url, title) in &episodes {
-                        let dest = dir.join(filename_from_url(url, title));
-                        let _ = downloads.send(DownloadQueueInput::Enqueue {
-                            url: url.clone(),
-                            title: title.clone(),
-                            dest,
-                        });
-                    }
+                    spawn_blocking_result(
+                        move || {
+                            let destinations = episode_destinations(&dir, &episodes);
+                            (episodes, destinations)
+                        },
+                        move |(episodes, destinations)| match destinations {
+                            Ok(destinations) => {
+                                for ((url, title), dest) in episodes.into_iter().zip(destinations) {
+                                    let _ = downloads
+                                        .send(DownloadQueueInput::Enqueue { url, title, dest });
+                                }
+                            }
+                            Err(e) => {
+                                log::warn!("choosing episode file names failed: {e}");
+                                let _ = input.send(AudioShellInput::Notify(i18n(
+                                    "The episodes could not be saved in this folder. Check its permissions and try again.",
+                                )));
+                            }
+                        },
+                    );
                 });
             }
         }
@@ -480,5 +493,148 @@ impl AudioShell {
                     input.send(AudioShellInput::MusicBrainzLookupResolved { track_id, metadata });
             },
         );
+    }
+}
+
+/// Drops every queue entry whose file was deleted and returns the library ids to
+/// forget. Entries match by path, because files opened from outside the library
+/// all share id 0.
+fn remove_deleted_files(queue: &mut PlayQueue, deleted: &[(i64, String)]) -> Vec<i64> {
+    let is_deleted = |track: &Track| deleted.iter().any(|(_, path)| *path == track.file_path);
+    while let Some(index) = queue.tracks().iter().position(is_deleted) {
+        queue.remove(index);
+    }
+    deleted
+        .iter()
+        .filter(|(id, _)| *id != 0)
+        .map(|(id, _)| *id)
+        .collect()
+}
+
+/// One path in `dir` per episode that replaces neither an existing file nor
+/// another episode of the batch, numbered ` (2)`, ` (3)` before the extension.
+/// Leading dots are dropped, so a feed cannot name a hidden file.
+fn episode_destinations(
+    dir: &Path,
+    episodes: &[(String, String)],
+) -> std::io::Result<Vec<PathBuf>> {
+    let mut destinations: Vec<PathBuf> = Vec::with_capacity(episodes.len());
+    for (url, title) in episodes {
+        let name = filename_from_url(url, title);
+        let name = name.trim_start_matches('.');
+        let mut dest = dir.join(name);
+        let mut copy = 1;
+        while destinations.contains(&dest) || std::fs::exists(&dest)? {
+            copy += 1;
+            let numbered = match name.rsplit_once('.') {
+                Some((stem, extension)) => format!("{stem} ({copy}).{extension}"),
+                None => format!("{name} ({copy})"),
+            };
+            dest = dir.join(numbered);
+        }
+        destinations.push(dest);
+    }
+    Ok(destinations)
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{episode_destinations, remove_deleted_files};
+    use crate::db::models::Track;
+    use crate::player::queue::PlayQueue;
+
+    fn library_track(id: i64, path: &str) -> Track {
+        let mut track = Track::new_external_path(path);
+        track.id = id;
+        track
+    }
+
+    fn paths(queue: &PlayQueue) -> Vec<&str> {
+        queue
+            .tracks()
+            .iter()
+            .map(|t| t.file_path.as_str())
+            .collect()
+    }
+
+    #[test]
+    fn deleting_external_file_keeps_others() {
+        let mut queue = PlayQueue::new();
+        queue.add_track(Track::new_external_path("/downloads/first.mp3"));
+        queue.add_track(library_track(7, "/music/library.mp3"));
+        queue.add_track(Track::new_external_path("/downloads/second.mp3"));
+
+        let ids = remove_deleted_files(&mut queue, &[(0, "/downloads/first.mp3".to_string())]);
+
+        assert_eq!(
+            paths(&queue),
+            ["/music/library.mp3", "/downloads/second.mp3"]
+        );
+        assert_eq!(ids, Vec::<i64>::new());
+    }
+
+    #[test]
+    fn deleting_library_track_drops_every_copy() {
+        let mut queue = PlayQueue::new();
+        queue.add_track(library_track(7, "/music/library.mp3"));
+        queue.add_track(Track::new_external_path("/downloads/first.mp3"));
+        queue.add_track(library_track(7, "/music/library.mp3"));
+
+        let ids = remove_deleted_files(&mut queue, &[(7, "/music/library.mp3".to_string())]);
+
+        assert_eq!(paths(&queue), ["/downloads/first.mp3"]);
+        assert_eq!(ids, [7]);
+    }
+
+    /// File names chosen in `dir` for episodes at `urls`.
+    fn destination_names(dir: &std::path::Path, urls: &[&str]) -> Vec<String> {
+        let episodes: Vec<(String, String)> = urls
+            .iter()
+            .map(|url| ((*url).to_string(), "Title".to_string()))
+            .collect();
+        episode_destinations(dir, &episodes)
+            .unwrap()
+            .iter()
+            .map(|dest| {
+                dest.strip_prefix(dir)
+                    .unwrap()
+                    .to_str()
+                    .unwrap()
+                    .to_string()
+            })
+            .collect()
+    }
+
+    #[test]
+    fn batch_download_never_replaces_files() {
+        let dir = tempfile::tempdir().unwrap();
+        std::fs::write(dir.path().join("show.mp3"), b"kept").unwrap();
+        std::fs::write(dir.path().join("show (2).mp3"), b"kept").unwrap();
+
+        let names = destination_names(
+            dir.path(),
+            &[
+                "https://feed.test/a/show.mp3",
+                "https://feed.test/b/show.mp3",
+                "https://feed.test/other.ogg",
+            ],
+        );
+
+        assert_eq!(names, ["show (3).mp3", "show (4).mp3", "other.ogg"]);
+    }
+
+    #[test]
+    fn batch_download_refuses_hidden_names() {
+        let dir = tempfile::tempdir().unwrap();
+
+        let names = destination_names(
+            dir.path(),
+            &[
+                "https://feed.test/.profile",
+                "https://feed.test/..hidden.mp3",
+            ],
+        );
+
+        assert_eq!(names, ["profile", "hidden.mp3"]);
     }
 }

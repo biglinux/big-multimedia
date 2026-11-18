@@ -234,6 +234,7 @@ pub(super) fn build_mpv_backend(
     mpv.set_audio_channels(&settings.get_string(keys::AUDIO_CHANNELS));
     mpv.set_preferred_audio_lang(&settings.get_string(keys::PREFERRED_AUDIO_LANG));
     mpv.set_save_position(settings.get_bool(keys::RESUME_PLAYBACK));
+    crate::shared::audio_effects::apply_voice_change(settings, &mpv);
 
     let input = sender.input_sender().clone();
     glib::spawn_future_local(async move {
