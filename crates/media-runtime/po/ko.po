@@ -709,15 +709,15 @@ msgstr "다시 저장"
 
 #: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:46
 msgid "A library scan is already running. Cancel it or wait for its result."
-msgstr "라이브러리 검색이 이미 실행 중입니다. 취소하거나 결과를 기다리세요."
+msgstr "라이브러리 스캔이 이미 실행 중입니다. 취소하거나 결과를 기다리세요."
 
 #: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:55
 msgid "Library scanning is busy. Try again after another scan finishes."
-msgstr "라이브러리 검색이 사용 중입니다. 다른 검색이 끝난 후 다시 시도하세요."
+msgstr "라이브러리 스캔이 사용 중입니다. 다른 스캔이 끝난 후 다시 시도하세요."
 
 #: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:65
 msgid "Scanning library…"
-msgstr "라이브러리 검색 중…"
+msgstr "라이브러리 스캔 중…"
 
 #: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:126
 msgid "Watch folders could not be read. Previous settings were kept."
@@ -800,11 +800,11 @@ msgstr "TV의 트랙이 더 이상 대기열에 없습니다."
 
 #: crates/big-audio-player/src/audio/ui/audio_shell/update.rs:137
 msgid "Scan cancelled"
-msgstr "검색 취소됨"
+msgstr "스캔 취소됨"
 
 #: crates/big-audio-player/src/audio/ui/audio_shell/update.rs:139
 msgid "Scan incomplete"
-msgstr "검색이 완료되지 않음"
+msgstr "스캔이 완료되지 않음"
 
 #: crates/big-audio-player/src/audio/ui/audio_shell/update.rs:142
 #, rust-format
@@ -968,11 +968,11 @@ msgstr "음악 폴더 선택"
 
 #: crates/big-audio-player/src/audio/ui/library_io.rs:216
 msgid "Scan Now"
-msgstr "지금 검색"
+msgstr "지금 스캔"
 
 #: crates/big-audio-player/src/audio/ui/library_io.rs:217
 msgid "Scan all monitored folders now"
-msgstr "감시 중인 모든 폴더를 지금 검색"
+msgstr "감시 중인 모든 폴더를 지금 스캔"
 
 #: crates/big-audio-player/src/audio/ui/library_io.rs:245
 msgid "Stop monitoring this folder; keep its tracks"
@@ -1424,7 +1424,7 @@ msgstr "불러오는 중…"
 
 #: crates/big-audio-player/src/audio/ui/scan_progress.rs:10
 msgid "Scanning the library"
-msgstr "라이브러리 검색 중"
+msgstr "라이브러리 스캔 중"
 
 #: crates/big-audio-player/src/audio/ui/scan_progress.rs:34
 #: crates/big-audio-player/src/audio/ui/scan_progress.rs:150
@@ -1450,23 +1450,23 @@ msgstr ""
 #: crates/big-audio-player/src/audio/ui/scan_progress.rs:62
 #: crates/big-audio-player/src/audio/ui/scan_progress.rs:156
 msgid "Cancel scan"
-msgstr "검색 취소"
+msgstr "스캔 취소"
 
 #: crates/big-audio-player/src/audio/ui/scan_progress.rs:142
 msgid "Scan cancelled. Earlier confirmed imports were kept."
-msgstr "검색이 취소되었습니다. 이전에 확인된 가져오기는 그대로 유지되었습니다."
+msgstr "스캔이 취소되었습니다. 이전에 확인된 가져오기는 그대로 유지되었습니다."
 
 #: crates/big-audio-player/src/audio/ui/scan_progress.rs:144
 msgid ""
 "Scan incomplete. Earlier confirmed imports were kept; check storage and "
 "retry."
 msgstr ""
-"검색이 완료되지 않았습니다. 이전에 확인된 가져오기는 그대로 유지되었습니다. "
+"스캔이 완료되지 않았습니다. 이전에 확인된 가져오기는 그대로 유지되었습니다. "
 "저장소를 확인하고 다시 시도하세요."
 
 #: crates/big-audio-player/src/audio/ui/scan_progress.rs:146
 msgid "Library scan finished."
-msgstr "라이브러리 검색이 완료되었습니다."
+msgstr "라이브러리 스캔이 완료되었습니다."
 
 #: crates/big-audio-player/src/audio/ui/scan_progress.rs:148
 #: crates/media-runtime/src/settings/messages.rs:9
@@ -1475,7 +1475,7 @@ msgstr "취소를 요청했습니다. 현재 안전한 단계를 마무리하는
 
 #: crates/big-audio-player/src/audio/ui/scan_progress.rs:177
 msgid "Library Scan"
-msgstr "라이브러리 검색"
+msgstr "라이브러리 스캔"
 
 #: crates/big-audio-player/src/audio/ui/track_list.rs:392
 #: crates/big-video-player/src/video/ui/video_browser_sidebar/views/queue_view.rs:313
@@ -3691,7 +3691,7 @@ msgstr "비디오 검색…"
 
 #: crates/big-video-player/src/video/ui/video_browser_sidebar/navigation.rs:175
 msgid "Scanning…"
-msgstr "검색 중…"
+msgstr "스캔 중…"
 
 #: crates/big-video-player/src/video/ui/video_browser_sidebar/views/model.rs:35
 msgid "Previous folder"
