@@ -20,6 +20,7 @@ use std::rc::Rc;
 use std::time::Duration;
 
 use adw::prelude::*;
+use big_os_kit::xdg_dirs::{UserDir, home_dir, user_dir};
 use gtk::{gio, glib};
 
 use super::{BrowserState, VideoBrowserSidebarOutput};
@@ -49,9 +50,9 @@ pub(super) fn folders(settings: &crate::settings::Settings) -> Vec<String> {
 fn default_folders() -> Vec<String> {
     let mut found = Vec::new();
     for dir in [
-        glib::user_special_dir(glib::UserDirectory::Videos),
-        glib::user_special_dir(glib::UserDirectory::Downloads),
-        Some(glib::home_dir()),
+        user_dir(UserDir::Videos),
+        user_dir(UserDir::Downloads),
+        home_dir(),
     ]
     .into_iter()
     .flatten()
@@ -112,7 +113,7 @@ fn is_under(path: &str, dir: &str) -> bool {
 }
 
 fn place_name(dir: &str) -> String {
-    if Path::new(dir) == glib::home_dir() {
+    if home_dir().as_deref() == Some(Path::new(dir)) {
         return i18n("Home folder");
     }
     Path::new(dir).file_name().map_or_else(
@@ -123,11 +124,11 @@ fn place_name(dir: &str) -> String {
 
 fn place_icon(dir: &str) -> &'static str {
     let path = Path::new(dir);
-    if path == glib::home_dir() {
+    if home_dir().as_deref() == Some(path) {
         "user-home-symbolic"
-    } else if glib::user_special_dir(glib::UserDirectory::Videos).as_deref() == Some(path) {
+    } else if user_dir(UserDir::Videos).as_deref() == Some(path) {
         "folder-videos-symbolic"
-    } else if glib::user_special_dir(glib::UserDirectory::Downloads).as_deref() == Some(path) {
+    } else if user_dir(UserDir::Downloads).as_deref() == Some(path) {
         "folder-download-symbolic"
     } else if dir.starts_with("/run/media/") {
         "drive-removable-media-symbolic"

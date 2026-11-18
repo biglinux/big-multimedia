@@ -101,8 +101,10 @@ impl Component for AudioShell {
             .launch(FileBrowserConfig {
                 is_media_file: big_media_components::media::files::is_audio_file,
                 settings: crate::settings::Settings::for_audio(),
-                fallback_dir: gtk::glib::user_special_dir(gtk::glib::UserDirectory::Music)
-                    .unwrap_or_else(|| gtk::glib::home_dir().join("Music")),
+                // With no home folder at all the browser starts at the root.
+                fallback_dir: big_os_kit::xdg_dirs::user_dir(big_os_kit::xdg_dirs::UserDir::Music)
+                    .or_else(|| big_os_kit::xdg_dirs::home_dir().map(|home| home.join("Music")))
+                    .unwrap_or_else(|| PathBuf::from("/")),
                 add_current_label: i18n("Add current folder to Music Library"),
                 add_selected_label: i18n("Add this folder to Music Library"),
                 filter_placeholder: i18n("Filter files…"),

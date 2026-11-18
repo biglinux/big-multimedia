@@ -140,8 +140,8 @@ impl VideoShell {
         let Some(directory) = chosen
             .is_absolute()
             .then_some(chosen)
-            .or_else(dirs::picture_dir)
-            .or_else(dirs::home_dir)
+            .or_else(|| big_os_kit::xdg_dirs::user_dir(big_os_kit::xdg_dirs::UserDir::Pictures))
+            .or_else(big_os_kit::xdg_dirs::home_dir)
         else {
             self.notify(&i18n(
                 "There is no Pictures or home folder to save screenshots in. Choose a folder in Preferences.",

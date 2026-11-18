@@ -7,8 +7,9 @@
 //! shell runs the query/scan. `parent` is the toplevel window; it satisfies
 //! both `FilePicker` (`IsA<gtk::Window>`) and `AlertDialog::present`.
 
+use std::path::Path;
+
 use adw::prelude::*;
-use gtk::glib;
 
 use big_app_kit::file_dialogs::FilePicker;
 use big_relm4_components::input::button_content::{BigButtonContentSpec, build_button};
@@ -313,14 +314,15 @@ fn build_folder_buttons(parent: &gtk::Window, sender: &ComponentSender<LibraryPa
     buttons
 }
 
-/// Rewrite a `$HOME`-prefixed path to a `~`-abbreviated display form.
+/// Rewrite a path inside the home folder to a `~`-abbreviated display form.
 fn abbreviate_home(path: &str) -> String {
-    let home = glib::home_dir();
-    let home_str = home.to_string_lossy();
-    if let Some(rest) = path.strip_prefix(home_str.as_ref()) {
-        format!("~{rest}")
-    } else {
-        path.to_string()
+    let Some(home) = big_os_kit::xdg_dirs::home_dir() else {
+        return path.to_string();
+    };
+    match Path::new(path).strip_prefix(&home) {
+        Ok(rest) if rest.as_os_str().is_empty() => "~".to_string(),
+        Ok(rest) => format!("~/{}", rest.display()),
+        Err(_) => path.to_string(),
     }
 }
 
@@ -422,7 +424,7 @@ mod tests {
     #[cfg(not(miri))]
     #[test]
     fn abbreviate_home_rewrites_prefix() {
-        let home = gtk::glib::home_dir();
+        let home = big_os_kit::xdg_dirs::home_dir().expect("an absolute home folder");
         let input = home.join("Music/Albums");
         assert_eq!(
             abbreviate_home(&input.to_string_lossy()),
@@ -437,5 +439,8 @@ mod tests {
             abbreviate_home("/mnt/media/lib"),
             "/mnt/media/lib".to_string()
         );
+        let home = big_os_kit::xdg_dirs::home_dir().expect("an absolute home folder");
+        let sibling = format!("{}2/Music", home.display());
+        assert_eq!(abbreviate_home(&sibling), sibling);
     }
 }
