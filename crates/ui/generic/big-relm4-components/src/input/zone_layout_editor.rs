@@ -281,8 +281,12 @@ impl BigZoneLayoutEditor {
         layout_box.add_css_class("zle-layout");
         for bar in &spec.bars {
             if bar.decoration.seek_slider {
-                let seek = gtk::Scale::with_range(gtk::Orientation::Horizontal, 0.0, 100.0, 1.0);
-                seek.set_value(35.0);
+                // A picture of the seek bar, not a control.
+                let seek = gtk::Scale::builder()
+                    .orientation(gtk::Orientation::Horizontal)
+                    .adjustment(&gtk::Adjustment::new(35.0, 0.0, 100.0, 1.0, 0.0, 0.0))
+                    .accessible_role(gtk::AccessibleRole::Presentation)
+                    .build();
                 seek.set_sensitive(false);
                 seek.add_css_class("zle-seek");
                 layout_box.append(&seek);
