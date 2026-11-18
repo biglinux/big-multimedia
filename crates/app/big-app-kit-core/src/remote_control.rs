@@ -88,6 +88,40 @@ const MAX_RATE_PEERS: usize = 64;
 const MUTATIONS: [&str; 4] = ["play-pause", "next", "prev", "volume"];
 const ACCEPT_RETRY_DELAY: Duration = Duration::from_millis(100);
 
+/// The address a phone on the same network reaches this computer at: a private
+/// IPv4 address, one on a physical interface first, so a VPN's default route
+/// does not decide it. A public or carrier-grade NAT address is never offered.
+#[must_use]
+pub fn lan_address() -> Option<IpAddr> {
+    let addresses = match big_os_kit::interface_addresses::ipv4_interface_addresses() {
+        Ok(addresses) => addresses,
+        Err(error) => {
+            warn!("network interfaces unreadable: {error}");
+            return None;
+        }
+    };
+    let candidates = addresses.into_iter().map(|(interface, address)| {
+        // Only interfaces backed by a device have one; tunnels and bridges do not.
+        let physical = std::path::Path::new("/sys/class/net")
+            .join(interface)
+            .join("device")
+            .exists();
+        (address, physical)
+    });
+    pick_lan_address(candidates).map(IpAddr::V4)
+}
+
+fn pick_lan_address(candidates: impl Iterator<Item = (Ipv4Addr, bool)>) -> Option<Ipv4Addr> {
+    let private: Vec<(Ipv4Addr, bool)> = candidates
+        .filter(|(address, _)| address.is_private())
+        .collect();
+    private
+        .iter()
+        .find(|(_, physical)| *physical)
+        .or(private.first())
+        .map(|(address, _)| *address)
+}
+
 /// Start with the same revocation token carried by queued UI commands. `stop`
 /// must be fresh and false; a stopped session is never reused for another token.
 /// `on_failure` runs on the worker thread when the listener fails for good; it
@@ -572,6 +606,28 @@ mod tests {
     use super::*;
     use std::sync::Mutex;
     use std::sync::atomic::AtomicUsize;
+
+    #[test]
+    fn lan_address_prefers_private_physical() {
+        let tun = (Ipv4Addr::new(10, 8, 0, 2), false);
+        let wifi = (Ipv4Addr::new(192, 168, 1, 5), true);
+        let bridge = (Ipv4Addr::new(172, 20, 0, 1), false);
+        let public = (Ipv4Addr::new(203, 0, 113, 7), true);
+        let tailscale = (Ipv4Addr::new(100, 64, 0, 9), false);
+        let loopback = (Ipv4Addr::LOCALHOST, false);
+        for (candidates, expected) in [
+            (vec![loopback, tun, wifi], Some(wifi.0)),
+            (vec![public, bridge], Some(bridge.0)),
+            (vec![loopback, public, tailscale], None),
+            (vec![], None),
+        ] {
+            assert_eq!(
+                pick_lan_address(candidates.clone().into_iter()),
+                expected,
+                "{candidates:?}"
+            );
+        }
+    }
 
     fn is_closed(result: std::io::Result<usize>) -> bool {
         match result {
