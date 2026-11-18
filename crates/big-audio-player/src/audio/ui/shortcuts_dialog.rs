@@ -19,8 +19,6 @@ pub(crate) fn present_shortcuts(parent: &impl IsA<gtk::Window>, settings: &Setti
     };
 
     let custom_str = settings.get_string(keys::CUSTOM_KEYBINDINGS);
-    // Vec preserves duplicate actions (single-key + multi-key defs); indexing by
-    // the exact def gives the right accel for each row.
     let resolved = resolve_accels(SHORTCUTS, &custom_str);
 
     let dialog = BigShortcutDialog::new(
