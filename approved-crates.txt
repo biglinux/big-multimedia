@@ -174,7 +174,6 @@ regex-syntax
 relm4
 relm4-css
 relm4-macros
-ring
 roxmltree
 rsqlite-vfs
 rusqlite
@@ -225,7 +224,6 @@ tracing-attributes
 tracing-core
 unarray
 unicode-ident
-untrusted
 utf8parse
 vcpkg
 version-compare

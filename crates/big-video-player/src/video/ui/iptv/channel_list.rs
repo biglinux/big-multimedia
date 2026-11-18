@@ -129,15 +129,8 @@ impl ChannelListView {
         self.resplice(&query);
     }
 
-    /// Move stars saved under the URL `played` gives for a listed channel to
-    /// the URL the list holds for it.
-    pub fn rename_favorites(&self, played: impl Fn(&str) -> String) {
-        let renames: Vec<(String, String)> = self
-            .all_channels
-            .borrow()
-            .iter()
-            .map(|channel| (played(&channel.url), channel.url.clone()))
-            .collect();
+    /// Move stars saved under the first URL of each pair to the second.
+    pub fn rename_favorites(&self, renames: Vec<(String, String)>) {
         self.favorites.borrow_mut().rename(renames);
         self.reload_favorites();
     }

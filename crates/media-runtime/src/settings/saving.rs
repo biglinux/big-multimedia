@@ -192,7 +192,7 @@ fn unsaved_dialog() -> big_gtk_kit::alert::Alert {
 
 /// Run an owned, acknowledged operation off GTK. The operation outlives a
 /// disappearing widget; use weak widgets in `done`. No exception path strands
-/// a dialog in Saving. Account prompts use the separate service lane.
+/// a dialog in Saving. Keyring prompts use the separate service lane.
 pub fn acknowledged_task<T: Send + 'static>(
     service: bool,
     work: impl FnOnce() -> std::io::Result<T> + Send + 'static,

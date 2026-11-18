@@ -132,6 +132,24 @@ The tray icon test plays the tray host on a session bus of its own:
 dbus-run-session -- cargo test --locked -p big-app-kit tray -- --ignored
 ```
 
+`secret_service_round_trip` stores, reads and deletes an item through
+`secret-tool`. It runs against a throwaway GNOME Keyring in the scratch home,
+on a bus with no activatable services, so your keyring is never reached.
+`SECRET_SERVICE_BUS_NAME` would point libsecret at another service, and an
+empty password creates no login keyring, so the script gives it one:
+
+```sh
+mkdir -p -m 700 "$scratch/runtime"
+cat >"$scratch/keyring.sh" <<'EOF'
+printf throwaway | gnome-keyring-daemon --replace --unlock --components=secrets >/dev/null
+sleep 1
+BIG_MEDIA_TEST_KEYRING_ISOLATED=1 cargo test --locked -p big-os-kit --lib secret_service_round_trip -- --ignored
+EOF
+env -u SECRET_SERVICE_BUS_NAME -u DISPLAY -u WAYLAND_DISPLAY "${isolated_home[@]}" \
+	XDG_RUNTIME_DIR="$scratch/runtime" \
+	dbus-run-session --config-file "$scratch/bus.conf" -- bash -e "$scratch/keyring.sh"
+```
+
 `undo_restores_latest_trashing` trashes and restores through GVfs, which
 must see the scratch home instead of your trash, so the bus activates only
 GVfs:

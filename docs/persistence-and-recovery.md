@@ -3,8 +3,8 @@
 ## Owners and thread boundaries
 
 `big-os-kit::background` has a bounded, serial lane for short disk transactions
-(64 queued tasks) and a separate serial account/service lane (8 tasks). Admission
-uses `try_send`. A widget disappearing does not discard an admitted write. GTK
+(64 queued tasks) and a separate serial service lane for keyring access (8
+tasks). Admission uses `try_send`. A widget disappearing does not discard an admitted write. GTK
 objects never enter the worker closure; completions use weak widget references.
 The existing `Settings` store snapshots its in-memory state under a short lock,
 then releases it before filesystem operations. A separate disk lock serializes
@@ -34,7 +34,7 @@ requests cancellation. Forced termination, kernel calls stuck in I/O, panic=abor
 and power loss are not successful-save guarantees. Hosts bypassing these window/
 quit paths must honor the same drain contract. Error states remain errors.
 
-## Secret Service account protocol
+## Secret Service
 
 The bridge uses the system `secret-tool` from libsecret on a service worker.
 Nothing is installed automatically. The default persistent collection is used;
@@ -44,31 +44,20 @@ or failed lookup by exit code alone. Helper output/error is never logged, and th
 secret goes on stdin, not argv or lookup attributes. Payload is capped at 7,900
 UTF-8 bytes, below the helper's current 8,192-byte input buffer.
 
-Last.fm and ListenBrainz use a fresh random candidate ID per update. A small
-private journal stores only provider, identifiers, source-revision hash, intended
-payload hash and existing listening-history consent. It is durably written before
-calling the service. Store is followed by exact readback; only then is the account
-JSON replaced by a versioned reference. The old keyring item is cleaned only after
-the reference/readback/durability checks. Legacy plaintext is not erased early.
-Replacing the file does not securely erase old filesystem blocks or user
-backups.
-
-Audio preferences show a Saved account security group only when a provider already
-has saved credentials; the player never creates them, and there is no credential
-editor. Each provider row offers the action for its state: Protect credentials
-moves a plaintext file into the keyring, Check keyring access reads the protected
-item back, Recover account resumes an interrupted move, and Reload reviews the
-files again on the disk lane. The other three run on the service lane against the
-account revision the last review read. Existing consent is preserved; protecting
-credentials does not implement or silently enable unavailable scrobbling features.
-A pending transaction cannot be replaced by a different one. Recover finishes
-that exact transaction: it replays the move from the plaintext file, which stays
-intact until the move is confirmed, or completes its cleanup. Old-item cleanup uncertainty retains the journal and requires
-recovery/explicit inspection, not speculative deletion. Keyring and JSON are not
-one ACID resource.
-
-This bridge covers Last.fm and ListenBrainz account credentials, not arbitrary
-IPTV provider URLs or all credentials anywhere in the desktop.
+IPTV providers keep their secret there: the Xtream password, or the whole M3U
+URL when `big_os_kit::url::redact_url` would change it (credentials in the
+query or userinfo). `iptv-providers.toml` holds the item's random 128-bit
+`secret_id` and, for an M3U URL, its redacted form. Saving the provider form
+stores the item first and adds the provider only after the keyring accepts it;
+a refusal keeps the form open with the reason. A file that still holds a plain
+password is moved into the keyring when the TV panel opens, reloads or closes
+the provider editor, and rewritten only for providers nobody edited meanwhile.
+Until then the panel and the provider list say the password is not in the
+keyring yet. Replacing or removing a secret deletes the old item after the
+provider list is updated; a failed delete is shown, never retried silently.
+Played channel URLs carry the Xtream credentials, so a channel is not added to
+the playlist sidebar, whose Save writes a file, and recent files never take a
+stream.
 
 ## LAN remote
 
@@ -132,6 +121,6 @@ termination and a host that bypasses these hooks remain outside the guarantee.
 
 ## Tests
 
-The Rust tests for deferred state, accounts, the remote server and unavailable
+The Rust tests for deferred state, the remote server and unavailable
 records run with `cargo test`. They cover no GTK appearance, keyring or cast
 receiver behavior.

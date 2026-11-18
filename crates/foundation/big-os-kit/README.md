@@ -12,8 +12,8 @@ files, background writes, the keyring and XDG paths.
 - `background` and `deferred`: the bounded serial lanes that write state off the
   GUI thread, and a JSON document whose save status a window can show.
 - `keyring`: Secret Service access through the system `secret-tool`.
-- `http_client`, `url`, `xdg_dirs`, `digest`: blocking HTTP over the system
-  curl, URL encoding, XDG base directories and bounded hashing.
+- `http_client`, `url`, `xdg_dirs`: blocking HTTP over the system curl, URL
+  encoding and XDG base directories.
 
 The crate root's rustdoc lists every module.
 

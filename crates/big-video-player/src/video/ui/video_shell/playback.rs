@@ -724,6 +724,8 @@ impl VideoShell {
 
     /// Play one stream under its own name: an IPTV channel. It replaces the
     /// playlist, like opening a URL, and nothing on disk is resolved for it.
+    /// The channel stays out of the playlist, which Save writes to a file:
+    /// its URL can hold the provider account's password.
     fn play_stream(&mut self, url: String, title: &str, source: TargetSource) {
         // A folder scan still running must not replace the channel.
         self.open_generation += 1;
@@ -741,12 +743,11 @@ impl VideoShell {
         }
         mpv.play();
         self.shuffle_on_load = None;
-        self.playlist_paths = vec![url.clone()];
-        self.playlist.emit(VideoBrowserSidebarInput::SetQueue(
-            self.playlist_paths.clone(),
-        ));
+        self.playlist_paths.clear();
+        self.playlist
+            .emit(VideoBrowserSidebarInput::SetQueue(Vec::new()));
         self.playlist.emit(VideoBrowserSidebarInput::SetPlaylist {
-            paths: vec![url],
+            paths: Vec::new(),
             folder: None,
         });
     }

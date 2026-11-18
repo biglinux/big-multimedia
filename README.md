@@ -84,7 +84,7 @@ A music player built around a fast, searchable library.
 - **Listening**: gapless playback, ReplayGain, an equalizer, playback speed
   that keeps voices at their natural pitch, and a sleep timer.
 - **Desktop integration**: MPRIS for media keys and the desktop's player
-  controls, playback on a TV, and ListenBrainz scrobbling.
+  controls, and playback on a TV.
 
 Neither player converts media on its own. Cut, Convert and Extract Audio open
 `big-video-converter-gui` or `big-audio-converter-gui` with the file and any

@@ -18,9 +18,9 @@ name = "Panel"
 user_agent = "VLC/3.0.20"
 referer = "https://panel.example/"
 order = 2
+secret_id = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
 
 [providers.source]
 type = "xtream"
 server = "http://panel.example:8080"
 username = "ana"
-password = "s3cret"
