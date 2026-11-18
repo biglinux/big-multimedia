@@ -30,15 +30,15 @@ fn should_emit_open_audio_paths(file_paths: &[String]) -> bool {
 fn welcome_tip_specs() -> Vec<WelcomeTipSpec> {
     vec![
         WelcomeTipSpec {
-            icon_name: "media-playlist-shuffle-symbolic",
+            icon_name: "list-add-symbolic",
             text: i18n("Drag and drop files to create a playlist"),
         },
         WelcomeTipSpec {
-            icon_name: "folder-symbolic",
+            icon_name: "emblem-music-symbolic",
             text: i18n("Use the Music tab on the left to browse your library"),
         },
         WelcomeTipSpec {
-            icon_name: "audio-speakers-symbolic",
+            icon_name: "icon_radio",
             text: i18n("Explore Radio and Podcasts in the sidebar tabs"),
         },
     ]
@@ -205,25 +205,40 @@ fn prompt_queue_playlist_name(
     );
 }
 
-/// Empty-queue placeholder: a drop hint when the library already has tracks,
-/// otherwise the first-run welcome page.
+/// Empty-queue placeholder: where podcast episodes come from, a drop hint when
+/// the library already has tracks, otherwise the first-run welcome page.
 pub(super) fn build_empty_state(
+    podcasts: bool,
     library_has_items: bool,
     sender: &ComponentSender<PlaylistPanel>,
 ) -> gtk::Widget {
-    if library_has_items {
+    if podcasts {
+        build_podcast_hint().upcast()
+    } else if library_has_items {
         build_drop_hint().upcast()
     } else {
         build_welcome(sender).upcast()
     }
 }
 
-/// Library populated but queue empty: invite a drag-drop or library add.
+/// Podcast queue empty: episodes come from choosing a podcast.
+fn build_podcast_hint() -> adw::StatusPage {
+    adw::StatusPage::builder()
+        .icon_name("microphone-sensitivity-high-symbolic")
+        .title(i18n("No episodes queued"))
+        .description(i18n("Choose a podcast on the left to queue its episodes."))
+        .vexpand(true)
+        .build()
+}
+
+/// Library populated but queue empty: the ways a library track gets here.
 fn build_drop_hint() -> adw::StatusPage {
     adw::StatusPage::builder()
         .icon_name("list-add-symbolic")
         .title(i18n("Drop tracks here"))
-        .description(i18n("or use \u{FF0B} to add from the library"))
+        .description(i18n(
+            "Or double-click a track in the library, or select it and press Return.",
+        ))
         .vexpand(true)
         .build()
 }
@@ -257,7 +272,7 @@ fn build_welcome(sender: &ComponentSender<PlaylistPanel>) -> gtk::Box {
 
     let subtitle = gtk::Label::builder()
         .label(i18n(
-            "Add a folder with your music files to get started.\n\
+            "Open music files to play them now, or add your music folder in the Music tab.\n\
              Supported formats: MP3, FLAC, OGG, M4A, OPUS, WAV and more.",
         ))
         .wrap(true)
@@ -392,15 +407,15 @@ mod tests {
                 .collect::<Vec<_>>(),
             vec![
                 (
-                    "media-playlist-shuffle-symbolic",
+                    "list-add-symbolic",
                     "Drag and drop files to create a playlist",
                 ),
                 (
-                    "folder-symbolic",
+                    "emblem-music-symbolic",
                     "Use the Music tab on the left to browse your library",
                 ),
                 (
-                    "audio-speakers-symbolic",
+                    "icon_radio",
                     "Explore Radio and Podcasts in the sidebar tabs",
                 ),
             ]

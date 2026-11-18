@@ -11,6 +11,7 @@ use std::cmp::Ordering;
 use std::rc::Rc;
 
 use adw::prelude::*;
+use big_app_kit::mpris::PlaybackStatus;
 use big_item_view::{
     Column as ViewColumn, ColumnHeader, ColumnShows, Geometry, IconSource, ItemContent,
     ItemPresenter, ItemView,
@@ -403,8 +404,9 @@ pub(super) type Receive = Box<dyn Fn(Option<u32>, &glib::Value) -> bool>;
 
 /// What a list does beyond showing tracks.
 pub(super) struct Behaviour {
-    /// Whether `item` (holding `track`) is the one playing.
-    pub(super) is_current: Box<dyn Fn(&glib::Object, &Track) -> bool>,
+    /// How `item` (holding `track`) plays: `Stopped` for every track but the
+    /// current one.
+    pub(super) playback: Box<dyn Fn(&glib::Object, &Track) -> PlaybackStatus>,
     pub(super) cover: Option<Cover>,
     pub(super) drag: Option<Drag>,
     pub(super) drop: Option<Receive>,
@@ -423,11 +425,15 @@ impl ItemPresenter for TrackPresenter {
             return;
         };
         track.display_title().clone_into(&mut out.title);
-        out.emphasized = (self.behaviour.is_current)(item, &track);
+        let playback = (self.behaviour.playback)(item, &track);
+        out.emphasized = playback != PlaybackStatus::Stopped;
         out.cells = Column::ALL
             .iter()
             .map(|column| column.cell(&track, position))
             .collect();
+        if let Some(marker) = playback_marker(playback) {
+            marker.clone_into(&mut out.cells[Column::Position.id() as usize]);
+        }
         out.ratings = vec![u8::try_from(track.rating.clamp(0, 5)).unwrap_or(0)];
         if self.columns.borrow().art > 0 {
             out.frame = big_item_view::IconFrame::Cover;
@@ -440,17 +446,22 @@ impl ItemPresenter for TrackPresenter {
                 out.icon = IconSource::Texture(texture);
             }
         }
-        let mut said = vec![track.display_artist().to_owned()];
+        let mut said = Vec::new();
+        if !track.display_artist().is_empty() {
+            said.push(track.display_artist().to_owned());
+        }
         if track.duration_secs > 0.0 {
             said.push(track.duration_display());
         }
         if track.rating > 0 {
             said.push(i18n("{} of 5 stars").replace("{}", &track.rating.to_string()));
         }
-        if out.emphasized {
-            said.push(i18n("Playing"));
+        match playback {
+            PlaybackStatus::Playing => said.push(i18n("Playing")),
+            PlaybackStatus::Paused => said.push(i18n("Paused")),
+            PlaybackStatus::Stopped => {}
         }
-        out.accessible_description = Some(said.join(", "));
+        out.accessible_description = (!said.is_empty()).then(|| said.join(", "));
     }
 
     fn title(&self, _position: u32, item: &glib::Object) -> String {
@@ -476,6 +487,17 @@ impl ItemPresenter for TrackPresenter {
             .drop
             .as_ref()
             .is_some_and(|drop| drop(target, value))
+    }
+}
+
+/// The glyph that takes the current track's number in the `#` column; the
+/// row's description says the state, so assistive technology never reads it.
+/// U+FE0E keeps the emoji font from drawing it in colour.
+fn playback_marker(playback: PlaybackStatus) -> Option<&'static str> {
+    match playback {
+        PlaybackStatus::Playing => Some("\u{25B6}\u{FE0E}"),
+        PlaybackStatus::Paused => Some("\u{23F8}\u{FE0E}"),
+        PlaybackStatus::Stopped => None,
     }
 }
 
@@ -643,6 +665,49 @@ mod tests {
         let mut track = Track::new_external_path_with_title("/music/a.flac", Some(title.into()));
         track.rating = rating;
         track
+    }
+
+    /// What the queue draws and says for its first row in `playback`.
+    fn queue_row(playback: PlaybackStatus) -> ItemContent {
+        let presenter = TrackPresenter {
+            behaviour: Behaviour {
+                playback: Box::new(move |_, _| playback),
+                cover: None,
+                drag: None,
+                drop: None,
+            },
+            columns: Rc::new(RefCell::new(Columns::queue())),
+        };
+        let item = glib::BoxedAnyObject::new(track("Song", 0)).upcast();
+        let mut out = ItemContent::default();
+        presenter.content(0, &item, &mut out);
+        out
+    }
+
+    #[test]
+    fn current_track_keeps_its_marker_while_paused() {
+        let position = Column::Position.id() as usize;
+        for (playback, marker, state) in [
+            (PlaybackStatus::Playing, "\u{25B6}\u{FE0E}", "Playing"),
+            (PlaybackStatus::Paused, "\u{23F8}\u{FE0E}", "Paused"),
+        ] {
+            let row = queue_row(playback);
+            assert!(row.emphasized, "{state}");
+            assert_eq!(row.cells[position], marker);
+            let description = row.accessible_description.unwrap_or_default();
+            assert!(description.ends_with(state), "{description}");
+        }
+        let row = queue_row(PlaybackStatus::Stopped);
+        assert!(!row.emphasized);
+        assert_eq!(row.cells[position], "1");
+    }
+
+    #[test]
+    fn untagged_description_skips_empty_artist() {
+        let row = queue_row(PlaybackStatus::Paused);
+        assert_eq!(row.accessible_description.as_deref(), Some("Paused"));
+        let row = queue_row(PlaybackStatus::Stopped);
+        assert_eq!(row.accessible_description, None);
     }
 
     #[test]

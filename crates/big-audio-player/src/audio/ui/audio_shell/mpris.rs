@@ -85,7 +85,6 @@ impl AudioShell {
             }
             MprisCommand::Stop => {
                 self.is_playing = false;
-                self.sync_now_playing();
                 self.duration_secs = 0.0;
                 self.mpris_state.invalidate();
                 *self
@@ -93,6 +92,7 @@ impl AudioShell {
                     .status
                     .lock()
                     .unwrap_or_else(PoisonError::into_inner) = PlaybackStatus::Stopped;
+                self.sync_now_playing();
                 *self
                     .mpris_state
                     .position

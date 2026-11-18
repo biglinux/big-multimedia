@@ -54,7 +54,7 @@ use crate::audio::ui::playlist_panel::{PlaylistPanel, PlaylistPanelInput, Playli
 use crate::db::models::{RadioStation, Track, WatchFolder};
 use crate::db::queries_advanced::{TrackMetadataUpdate, update_track_metadata};
 use crate::db::{self, DbHandle, queries};
-use crate::i18n::i18n;
+use crate::i18n::{i18n, ni18n};
 use crate::player::mpv_backend::{AudioCacheProfile, EndReason, MpvBackend, PlayerEvent};
 use crate::player::queue::{PlayQueue, RepeatMode};
 use crate::settings::{Settings, keys};

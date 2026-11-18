@@ -454,9 +454,5 @@ fn map_end_file_event(event_payload: *mut c_void) -> MpvEvent {
     }
     // SAFETY: MPV_EVENT_END_FILE carries `mpv_event_end_file`.
     let event = unsafe { &*event_payload.cast::<mpv_sys::mpv_event_end_file>() };
-    MpvEvent::EndFile(if event.error < 0 {
-        EndReason::Error
-    } else {
-        EndReason::from_mpv(event.reason)
-    })
+    MpvEvent::EndFile(EndReason::from_end_file(event.reason, event.error))
 }

@@ -8,6 +8,29 @@ window.background {
     background-color: var(--window-bg-color);
 }
 
+/* Secondary text at 75% instead of Adwaita's 55%, which reads at about 3.2:1
+   on the light window colour; high contrast restores libadwaita's 90%. */
+window {
+    --dim-opacity: 75%;
+}
+
+@media (prefers-contrast: more) {
+    window {
+        --dim-opacity: 90%;
+    }
+}
+
+/* The track lists' headings and dim cells follow the same level; the view's
+   own 40% headings read at 2.2:1. */
+itemheader > button > box,
+itemview > probe.text-dim {
+    color: color-mix(in srgb, currentColor var(--dim-opacity), transparent);
+}
+
+itemheader > button:hover > box {
+    color: currentColor;
+}
+
 /* ─── Header Bar ─── */
 headerbar {
     min-height: 40px;
@@ -128,23 +151,6 @@ viewswitcher > button:hover:not(:checked) {
     border-radius: 8px;
 }
 
-/* Two-line track rows in sidebar (Songs mode) */
-.browser-title {
-    font-weight: 600;
-    font-size: 0.92em;
-}
-
-.browser-artist {
-    color: alpha(@window_fg_color, 0.55);
-    font-size: 0.8em;
-}
-
-.browser-duration {
-    color: alpha(@window_fg_color, 0.55);
-    font-variant-numeric: tabular-nums;
-    font-size: 0.85em;
-}
-
 /* Now Playing sidebar bottom: hover effect */
 #sidebar_now_playing {
     border-radius: 8px;
@@ -154,82 +160,6 @@ viewswitcher > button:hover:not(:checked) {
 
 #sidebar_now_playing:hover {
     background: alpha(@accent_bg_color, 0.06);
-}
-
-/* ─── ColumnView (track list) ─── */
-columnview {
-    background: transparent;
-}
-
-/* Column headers: subtle and light */
-columnview > header > row {
-    background: transparent;
-    border-bottom: 1px solid alpha(@window_fg_color, 0.06);
-}
-
-columnview > header > row > button {
-    padding: 6px 12px;
-    min-height: 28px;
-    font-size: 0.8em;
-    font-weight: 500;
-    letter-spacing: 0.3px;
-    color: alpha(@window_fg_color, 0.55);
-    background: transparent;
-    border: none;
-    box-shadow: none;
-    transition: color 200ms ease;
-}
-
-columnview > header > row > button:hover {
-    color: alpha(@window_fg_color, 0.8);
-}
-
-/* Track list rows */
-columnview > listview > row {
-    min-height: 42px;
-    border-radius: 8px;
-    margin: 1px 6px;
-    transition: background-color 150ms ease;
-}
-
-columnview > listview > row:nth-child(even) {
-    background: alpha(@window_fg_color, 0.025);
-}
-
-columnview > listview > row > cell {
-    padding: 6px 12px;
-}
-
-columnview > listview > row:hover {
-    background: alpha(@accent_bg_color, 0.10);
-}
-
-columnview > listview > row:selected {
-    background: alpha(@accent_bg_color, 0.12);
-}
-
-/* Currently playing row */
-columnview > listview > row.now-playing {
-    font-weight: 600;
-    background: alpha(@accent_bg_color, 0.10);
-}
-
-/* Playing indicator icon */
-.playing-indicator {
-    color: @accent_bg_color;
-}
-
-/* Active track text in accent color */
-.now-playing-accent {
-    color: @accent_bg_color;
-    font-weight: 600;
-}
-
-/* Numeric cells: dim style */
-.numeric {
-    color: alpha(@window_fg_color, 0.55);
-    font-variant-numeric: tabular-nums;
-    font-size: 0.9em;
 }
 
 /* ─── Playback bar ─── */
@@ -262,12 +192,12 @@ columnview > listview > row.now-playing {
 }
 
 .playback-artist {
-    color: alpha(@window_fg_color, 0.6);
+    color: color-mix(in srgb, currentColor var(--dim-opacity), transparent);
     font-size: 0.85em;
 }
 
 .playback-album {
-    color: alpha(@window_fg_color, 0.4);
+    color: color-mix(in srgb, currentColor var(--dim-opacity), transparent);
     font-size: 0.78em;
     font-style: italic;
 }
@@ -286,7 +216,7 @@ columnview > listview > row.now-playing {
     font-size: 0.85em;
     letter-spacing: 0.5px;
     text-transform: uppercase;
-    color: alpha(@window_fg_color, 0.45);
+    color: color-mix(in srgb, currentColor var(--dim-opacity), transparent);
 }
 
 .lyrics-separator {
@@ -447,52 +377,9 @@ paned > separator {
     background: alpha(@window_fg_color, 0.08);
 }
 
-/* Playlist ColumnView rows */
-.playlist-columnview > listview > row {
-    padding: 0 4px;
-    min-height: 32px;
-    transition: background-color 150ms ease;
-}
-
-.playlist-columnview > listview > row:nth-child(even) {
-    background: alpha(@window_fg_color, 0.03);
-}
-
-.playlist-columnview > listview > row:hover {
-    background: alpha(@accent_bg_color, 0.12);
-}
-
-.playlist-columnview > listview > row:selected {
-    background: alpha(@accent_bg_color, 0.15);
-}
-
-/* Remove button hover in playlist */
-.playlist-columnview > listview > row button.circular {
-    opacity: 0;
-    transition: opacity 200ms ease;
-}
-.playlist-columnview > listview > row:hover button.circular {
-    opacity: 0.5;
-}
-.playlist-columnview > listview > row button.circular:hover {
-    opacity: 1;
-}
-
 .sidebar-separator {
     min-height: 1px;
     background-color: alpha(@window_fg_color, 0.06);
-}
-
-/* ─── Add-to-playlist button in ColumnView rows ─── */
-columnview > listview > row button.circular {
-    opacity: 0;
-    transition: opacity 200ms ease;
-}
-columnview > listview > row:hover button.circular {
-    opacity: 1.0;
-}
-columnview > listview > row button.circular:hover {
-    opacity: 1;
 }
 
 /* ─── Queue sidebar rows ─── */
@@ -503,8 +390,7 @@ columnview > listview > row button.circular:hover {
 /* ─── High Contrast ─── */
 @media (prefers-contrast: more) {
     .sidebar-pane listview > row:selected,
-    .radio-now-playing,
-    columnview > listview > row.now-playing {
+    .radio-now-playing {
         outline: 2px solid @accent_bg_color;
         outline-offset: -2px;
     }
@@ -523,17 +409,9 @@ columnview > listview > row button.circular:hover {
         background-color: @window_fg_color;
     }
 
-    columnview > header > row {
-        border-bottom: 2px solid @window_fg_color;
-    }
-
     *:focus-visible {
         outline: 3px solid @accent_bg_color;
         outline-offset: 2px;
-    }
-
-    .dim-label {
-        opacity: 0.8;
     }
 }
 

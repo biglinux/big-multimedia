@@ -22,15 +22,23 @@ impl AudioShell {
             // Skip a track that could not be opened, but stop once every
             // queued track failed in a row or the queue would come back to the
             // same one (repeat-one, a single track).
+            // Every file would fail the same way, so nothing is skipped.
+            PlayerEvent::EndFile(EndReason::AudioOutputFailed) => {
+                self.failed_loads = 0;
+                self.notify(&i18n(
+                    "Sound could not start on the audio output. Check that your speakers or headphones are connected, or choose another Audio Output in Preferences and reopen the player.",
+                ));
+                self.handle_mpris_command(MprisCommand::Stop, sender);
+            }
             PlayerEvent::EndFile(EndReason::Error) if !self.is_stream => {
                 self.failed_loads += 1;
                 let name = std::path::Path::new(&self.current_file)
                     .file_name()
                     .map_or_else(String::new, |name| name.to_string_lossy().into_owned());
-                self.notify(&format!(
-                    "{name}: {}",
-                    i18n("Could not play this file — it may be unsupported or corrupt.")
-                ));
+                self.notify(
+                    &i18n("Could not play “{file}”: it may be unsupported or corrupt.")
+                        .replace("{file}", &name),
+                );
                 let failed = self.queue.current_index();
                 if self.failed_loads < self.queue.len()
                     && self.queue.advance().is_some()

@@ -22,6 +22,8 @@ use adw::prelude::*;
 use gtk::{gdk, gio, glib};
 use relm4::{Component, ComponentParts, ComponentSender};
 
+use big_app_kit::mpris::PlaybackStatus;
+
 use crate::audio::library_grouping::LibraryGrouping;
 use crate::audio::ui::library_tree::{self, LibraryTreeHandle, LibraryTreeSnapshot};
 use crate::audio::ui::track_list::{self, Behaviour, Columns, ListEvent, TrackList, track_of};
@@ -110,9 +112,12 @@ pub enum LibraryPanelInput {
     /// Replace the detail track list after the shell resolves a selected node.
     /// Splices the store; never rebuilds the view.
     PopulateDetail(Vec<Track>),
-    /// The currently-playing file path (or `None`); re-lights the detail
+    /// The current file path and how it plays; re-lights the detail
     /// now-playing indicator by file-path match.
-    SetPlayingPath(Option<String>),
+    SetPlayingPath {
+        path: Option<String>,
+        playback: PlaybackStatus,
+    },
     /// Restore saved detail column widths (`key=width,…`), pushed by the shell
     /// at construction. Suppresses the persist echo while applying.
     ApplyColumnWidths(String),
@@ -261,7 +266,7 @@ pub struct LibraryPanel {
     /// empty-state placeholder (the view is reattached, never rebuilt).
     content_scroll: gtk::ScrolledWindow,
     /// Currently-playing file path (emphasis target).
-    current_path: Rc<RefCell<Option<String>>>,
+    current_path: Rc<RefCell<Option<(String, PlaybackStatus)>>>,
     /// Handle to push tree data after construction (atomic splice, no rebuild).
     library_tree_handle: LibraryTreeHandle,
     /// Grouping dropdown + signal id, synced to the restored preset on boot.
@@ -306,7 +311,7 @@ impl LibraryPanel {
 /// loop, and the selection dragged as file paths (for the queue or outside).
 fn library_behaviour(
     selection: &gtk::MultiSelection,
-    current_path: &Rc<RefCell<Option<String>>>,
+    current_path: &Rc<RefCell<Option<(String, PlaybackStatus)>>>,
     shown: &Rc<RefCell<glib::WeakRef<big_item_view::ItemView>>>,
 ) -> Behaviour {
     let current = Rc::clone(current_path);
@@ -317,8 +322,13 @@ fn library_behaviour(
     let shown = Rc::clone(shown);
     let selection = selection.downgrade();
     Behaviour {
-        is_current: Box::new(move |_, track| {
-            is_current_detail_indicator(current.borrow().as_deref(), &track.file_path)
+        playback: Box::new(move |_, track| match &*current.borrow() {
+            Some((path, playback))
+                if is_current_detail_indicator(Some(path.as_str()), &track.file_path) =>
+            {
+                *playback
+            }
+            _ => PlaybackStatus::Stopped,
         }),
         cover: Some(Box::new(move |track| {
             let hash = track.art_hash.clone().filter(|hash| !hash.is_empty())?;
@@ -434,7 +444,8 @@ impl Component for LibraryPanel {
         // Detail track list (right pane).
         let detail_store = gio::ListStore::new::<glib::BoxedAnyObject>();
         let selection = gtk::MultiSelection::new(Some(detail_store.clone()));
-        let current_path: Rc<RefCell<Option<String>>> = Rc::new(RefCell::new(None));
+        let current_path: Rc<RefCell<Option<(String, PlaybackStatus)>>> =
+            Rc::new(RefCell::new(None));
         let shown: Rc<RefCell<glib::WeakRef<big_item_view::ItemView>>> = Rc::default();
         let detail = {
             let behaviour = library_behaviour(&selection, &current_path, &shown);
@@ -552,8 +563,8 @@ impl Component for LibraryPanel {
                 // Selecting a node swaps the single column to the track list.
                 root.set_visible_child_name("detail");
             }
-            LibraryPanelInput::SetPlayingPath(path) => {
-                *self.current_path.borrow_mut() = path;
+            LibraryPanelInput::SetPlayingPath { path, playback } => {
+                *self.current_path.borrow_mut() = path.map(|path| (path, playback));
                 self.detail.view.refresh_all();
             }
             LibraryPanelInput::ApplyColumnWidths(spec) => self.detail.apply_widths(&spec),

@@ -1,4 +1,7 @@
-use super::queue_state::{podcast_episode_tracks, start_podcast_queue, swap_queue_for_tab};
+use super::queue_state::{
+    LoadedAfterSwap, loaded_after_swap, podcast_episode_tracks, start_podcast_queue,
+    swap_queue_for_tab,
+};
 use super::*;
 use big_relm4_components::layout::{
     dialog_footer::{BigDialogFooter, BigDialogFooterSpec},
@@ -185,9 +188,14 @@ impl AudioShell {
                 }
                 self.current_file.clone_from(&url);
                 // A stream is not a queue/library track; clear those indicators.
-                self.library.emit(LibraryPanelInput::SetPlayingPath(None));
-                self.playlist
-                    .emit(PlaylistPanelInput::SetPlaying { idx: None });
+                self.library.emit(LibraryPanelInput::SetPlayingPath {
+                    path: None,
+                    playback: PlaybackStatus::Stopped,
+                });
+                self.playlist.emit(PlaylistPanelInput::SetPlaying {
+                    idx: None,
+                    playback: PlaybackStatus::Stopped,
+                });
                 self.radio.emit(RadioPanelInput::NowPlayingChanged {
                     url,
                     is_stream: true,
@@ -370,17 +378,29 @@ impl AudioShell {
     }
 
     /// Stash/restore the music vs podcast queues on view-stack tab switches.
-    pub(super) fn handle_tab_changed(&mut self, name: &str) {
+    pub(super) fn handle_tab_changed(&mut self, name: &str, sender: &ComponentSender<Self>) {
         self.cancel_pending_opens();
-        if swap_queue_for_tab(
+        if !swap_queue_for_tab(
             name,
             &mut self.podcast_mode,
             &mut self.queue,
             &mut self.saved_music_queue,
             &mut self.saved_podcast_queue,
         ) {
-            self.commit_queue();
+            return;
         }
+        let loaded = loaded_after_swap(&self.queue, &self.current_file);
+        if !self.is_stream && loaded != LoadedAfterSwap::Keep {
+            self.handle_mpris_command(MprisCommand::Stop, sender);
+            if loaded == LoadedAfterSwap::Select {
+                self.play_current_as(PlaybackStatus::Stopped);
+            } else {
+                self.current_file.clear();
+            }
+            self.now_playing_gen = self.now_playing_gen.wrapping_add(1);
+            self.sync_now_playing_card();
+        }
+        self.commit_queue();
     }
 
     /// Load the saved radio stations off-thread → `RadioStationsResolved`.

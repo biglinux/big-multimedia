@@ -25,7 +25,8 @@ use super::cut_timeline::CutTimeline;
 pub struct BigAudioTransportLabels {
     pub seek: String,
     pub cut_timeline: String,
-    pub play_pause: String,
+    pub play: String,
+    pub pause: String,
     pub previous: String,
     pub next: String,
     pub shuffle: String,
@@ -102,6 +103,9 @@ pub struct BigAudioTransport {
     voice_label: gtk::Label,
     prev_button: gtk::Button,
     play_button: gtk::Button,
+    /// The play button's name in each state: the action a click takes.
+    play_label: String,
+    pause_label: String,
     next_button: gtk::Button,
     status_label: gtk::Label,
     trim_export_button: gtk::Button,
@@ -175,7 +179,7 @@ impl BigAudioTransport {
         prev_button.set_has_frame(false);
         let play_button = tooltip::icon_button(
             "media-playback-start-symbolic",
-            &labels.play_pause,
+            &labels.play,
             &["circular", "suggested-action"],
         );
         play_button.set_size_request(42, 42);
@@ -272,6 +276,8 @@ impl BigAudioTransport {
             voice_label,
             prev_button,
             play_button,
+            play_label: labels.play.clone(),
+            pause_label: labels.pause.clone(),
             next_button,
             status_label,
             trim_export_button,
@@ -433,13 +439,17 @@ impl BigAudioTransport {
         &self.blur_bg
     }
 
-    /// Update the play button's icon to reflect `paused`.
+    /// Show on the play button the action a click takes while `paused`.
     pub fn set_paused(&self, paused: bool) {
-        self.play_button.set_icon_name(if paused {
-            "media-playback-start-symbolic"
+        let (icon, action) = if paused {
+            ("media-playback-start-symbolic", &self.play_label)
         } else {
-            "media-playback-pause-symbolic"
-        });
+            ("media-playback-pause-symbolic", &self.pause_label)
+        };
+        self.play_button.set_icon_name(icon);
+        self.play_button.set_tooltip_text(Some(action));
+        self.play_button
+            .update_property(&[gtk::accessible::Property::Label(action)]);
     }
 }
 

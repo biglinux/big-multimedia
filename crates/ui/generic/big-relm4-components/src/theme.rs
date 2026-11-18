@@ -7,6 +7,7 @@ use relm4::gtk;
 
 /// HIGH CONTRAST CSS constant.
 pub const HIGH_CONTRAST_CSS: &str = "\
+window { --dim-opacity: 100%; }
 .dim-label { opacity: 1.0; }
 .subtitle { opacity: 1.0; }
 .caption { opacity: 1.0; }
