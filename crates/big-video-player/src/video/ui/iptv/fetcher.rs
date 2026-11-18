@@ -6,8 +6,8 @@
 //! testable.
 
 use crate::media::iptv::{
-    IptvChannel, IptvKind, IptvProvider, MAX_PLAYLIST_BYTES, decode_playlist, parse_m3u_content,
-    read_playlist_text,
+    IptvChannel, IptvKind, IptvProvider, MAX_PLAYLIST_BYTES, PlaylistEntries, decode_playlist,
+    parse_m3u_content, read_playlist_text,
 };
 use crate::video::ui::iptv::{cache, xtream};
 use big_os_kit::http_client::{RequestHeaders, http_get_bytes_capped};
@@ -71,7 +71,7 @@ pub(super) fn fetch_text(url: &str, headers: &RequestHeaders<'_>) -> Result<Stri
 pub fn fetch_provider_channels(
     provider: &IptvProvider,
     provider_id: &str,
-) -> Result<Vec<IptvChannel>, FetchError> {
+) -> Result<PlaylistEntries<IptvChannel>, FetchError> {
     let headers = RequestHeaders {
         user_agent: &provider.user_agent,
         referer: &provider.referer,
@@ -88,7 +88,7 @@ pub fn fetch_provider_channels(
         } => xtream::fetch_xtream_m3u(server, username, password, &headers)?,
     };
     let channels = parse_m3u_content(&content);
-    if channels.is_empty() {
+    if channels.entries.is_empty() {
         return Err(FetchError::Empty);
     }
     cache::write(provider_id, &content);

@@ -734,14 +734,9 @@ impl Component for VideoShell {
                 // A restart picks up the new values: mpv is configured at startup.
                 VideoShellInput::RestoreDefaultsConfirmed => self.settings.reset_to_defaults(),
                 VideoShellInput::OpenFiles(paths) => self.open_files(&paths, &sender),
-                VideoShellInput::PlaylistResolved {
-                    entries,
-                    start,
-                    folder,
-                    generation,
-                } => {
+                VideoShellInput::PlaylistResolved { list, generation } => {
                     if generation == self.open_generation {
-                        self.apply_open(entries, start, folder);
+                        self.apply_open(list);
                     }
                 }
                 VideoShellInput::ShowGotoTime => {

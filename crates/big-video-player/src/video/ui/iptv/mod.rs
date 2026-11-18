@@ -33,7 +33,10 @@ use big_relm4_components::task::spawn_blocking_result;
 use relm4::{Component, ComponentParts, ComponentSender};
 
 use crate::i18n::i18n;
-use crate::media::iptv::{IptvChannel, IptvProvider, IptvProviderStore, parse_m3u_content};
+use crate::media::iptv::{
+    IptvChannel, IptvProvider, IptvProviderStore, MAX_PLAYLIST_ENTRIES, PlaylistEntries,
+    parse_m3u_content,
+};
 
 use channel_list::ChannelListView;
 use fetcher::{FetchError, fetch_provider_channels, provider_identifier};
@@ -63,7 +66,7 @@ pub enum VideoIptvBrowserInput {
     /// Network channels resolved off-thread for load generation `gen`.
     NetworkResolved {
         generation: u64,
-        channels: Result<Vec<IptvChannel>, FetchError>,
+        channels: Result<PlaylistEntries<IptvChannel>, FetchError>,
     },
 }
 
@@ -317,15 +320,22 @@ impl VideoIptvBrowser {
     fn on_network_resolved(
         &mut self,
         generation: u64,
-        channels: Result<Vec<IptvChannel>, FetchError>,
+        channels: Result<PlaylistEntries<IptvChannel>, FetchError>,
     ) {
         if generation != self.load_generation {
             return;
         }
         match channels {
             Ok(channels) => {
-                self.list_view.set_channels(channels);
-                self.status.set_label("");
+                self.list_view.set_channels(channels.entries);
+                if channels.truncated {
+                    self.status.set_label(
+                        &i18n("Showing the first {} channels; the list has more.")
+                            .replace("{}", &MAX_PLAYLIST_ENTRIES.to_string()),
+                    );
+                } else {
+                    self.status.set_label("");
+                }
             }
             Err(error) => self.status.set_label(&fetch_error_text(&error)),
         }
@@ -371,7 +381,7 @@ fn spawn_cached_load(
 ) {
     let sender = sender.clone();
     spawn_blocking_result(
-        move || cache::read(&provider_id).map(|content| parse_m3u_content(&content)),
+        move || cache::read(&provider_id).map(|content| parse_m3u_content(&content).entries),
         move |channels| {
             if let Some(channels) = channels {
                 sender.input(VideoIptvBrowserInput::CachedResolved {
