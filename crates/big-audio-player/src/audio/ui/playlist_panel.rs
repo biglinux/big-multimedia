@@ -23,7 +23,7 @@ use big_relm4_components::layout::toolbar_pane::{BigToolbarPane, BigToolbarPaneS
 use crate::audio::ui::track_list::{Behaviour, Columns, ListEvent, TrackList, track_of};
 use crate::audio::ui::{playlist_chrome, playlist_interactions};
 use crate::db::models::Track;
-use crate::i18n::i18n;
+use crate::i18n::{i18n, ni18n};
 use big_media_components::time::duration_hm as format_duration_hm;
 
 fn playlist_track_objects(tracks: &[Track]) -> Vec<glib::Object> {
@@ -96,17 +96,17 @@ fn playlist_header_label(track_count: u32, total_secs: f64, playlist_name: &str)
         } else {
             playlist_name.to_string()
         }
-    } else {
-        format!(
-            "{} {} · {}",
-            track_count,
-            if track_count == 1 {
-                i18n("track")
-            } else {
-                i18n("tracks")
-            },
-            format_duration_hm(total_secs),
+    } else if total_secs >= 1.0 {
+        ni18n(
+            "{count} track · {duration}",
+            "{count} tracks · {duration}",
+            u64::from(track_count),
         )
+        .replace("{count}", &track_count.to_string())
+        .replace("{duration}", &format_duration_hm(total_secs))
+    } else {
+        ni18n("{count} track", "{count} tracks", u64::from(track_count))
+            .replace("{count}", &track_count.to_string())
     }
 }
 
@@ -748,11 +748,12 @@ mod tests {
         assert_eq!(playlist_header_label(0, 0.0, ""), "Playlist");
         assert_eq!(playlist_header_label(0, 0.0, "Road Mix"), "Road Mix");
 
-        let one_track = playlist_header_label(1, 65.0, "Road Mix");
-        assert!(one_track.starts_with("1 track · "));
-
-        let two_tracks = playlist_header_label(2, 125.0, "Road Mix");
-        assert!(two_tracks.starts_with("2 tracks · "));
+        assert_eq!(playlist_header_label(1, 40.0, "Road Mix"), "1 track · 40 s");
+        assert_eq!(
+            playlist_header_label(2, 125.0, "Road Mix"),
+            "2 tracks · 2 min"
+        );
+        assert_eq!(playlist_header_label(3, 0.0, ""), "3 tracks");
     }
 
     /// Metadata for rows 1 and 2, a removal, an insertion, duplicates and

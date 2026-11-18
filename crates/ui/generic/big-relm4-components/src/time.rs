@@ -7,16 +7,18 @@
 //! controls. All formatters tolerate `NaN`, infinities, and negative input by
 //! returning a stable placeholder instead of panicking.
 
-/// Format `total_secs` for a media library row, e.g. `"1h 05min"` or `"5 min"`.
+/// Format `total_secs` for a media library row, e.g. `"1h 05min"`, `"5 min"`
+/// or `"40 s"`.
 ///
-/// Floors to minute precision and omits the hours field when the duration is
-/// under an hour.
+/// Floors to minute precision, or to seconds under a minute, and omits the
+/// hours field when the duration is under an hour.
 ///
 /// # Examples
 ///
 /// ```
 /// use big_relm4_components::time::duration_hm;
 ///
+/// assert_eq!(duration_hm(40.0), "40 s");
 /// assert_eq!(duration_hm(300.0), "5 min");
 /// assert_eq!(duration_hm(3900.0), "1h 05min");
 /// ```
@@ -27,8 +29,10 @@ pub fn duration_hm(total_secs: f64) -> String {
     let mins = total_mins % 60;
     if hours > 0 {
         format!("{hours}h {mins:02}min")
-    } else {
+    } else if mins > 0 {
         format!("{mins} min")
+    } else {
+        format!("{} s", total_secs.max(0.0) as u64)
     }
 }
 
@@ -124,7 +128,9 @@ mod tests {
 
     #[test]
     fn duration_hm_formats_library_totals() {
-        assert_eq!(duration_hm(0.0), "0 min");
+        assert_eq!(duration_hm(0.0), "0 s");
+        assert_eq!(duration_hm(40.0), "40 s");
+        assert_eq!(duration_hm(60.0), "1 min");
         assert_eq!(duration_hm(300.0), "5 min");
         assert_eq!(duration_hm(3900.0), "1h 05min");
     }
