@@ -122,12 +122,15 @@ impl MpvBackend {
         self.with_mpv(|m| m.get_property("video-rotate").unwrap_or(0))
     }
 
+    /// The `vf` label of the filter [`Self::set_video_flip`] owns.
+    pub const FLIP_VF_LABEL: &str = "big-flip";
+
     pub fn set_video_flip(&self, hflip: bool, vflip: bool) {
         match (hflip, vflip) {
-            (false, false) => self.vf_remove("big-flip"),
-            (true, false) => self.vf_append("big-flip", "hflip"),
-            (false, true) => self.vf_append("big-flip", "vflip"),
-            (true, true) => self.vf_append("big-flip", "hflip,vflip"),
+            (false, false) => self.vf_remove(Self::FLIP_VF_LABEL),
+            (true, false) => self.vf_append(Self::FLIP_VF_LABEL, "hflip"),
+            (false, true) => self.vf_append(Self::FLIP_VF_LABEL, "vflip"),
+            (true, true) => self.vf_append(Self::FLIP_VF_LABEL, "hflip,vflip"),
         }
     }
 
@@ -170,6 +173,8 @@ impl MpvBackend {
     /// colours at all (a DVB sample: nothing in the stream, nothing per
     /// frame), and its HDR then plays grey and washed out. mpv's own format
     /// filter only relabels the frames, so decoding stays on the GPU.
+    pub const SOURCE_COLOURS_VF_LABEL: &str = "source-colours";
+
     pub fn set_source_colours(&self, mode: &str) {
         let format = match mode {
             "pq" => "format=gamma=pq:primaries=bt.2020:colormatrix=bt.2020-ncl",
@@ -178,9 +183,10 @@ impl MpvBackend {
             _ => "",
         };
         self.with_mpv(|m| {
-            let _ = m.command("vf", &["remove", "@source-colours"]);
+            let label = Self::SOURCE_COLOURS_VF_LABEL;
+            let _ = m.command("vf", &["remove", &format!("@{label}")]);
             if !format.is_empty() {
-                let _ = m.command("vf", &["add", &format!("@source-colours:{format}")]);
+                let _ = m.command("vf", &["add", &format!("@{label}:{format}")]);
             }
         });
     }

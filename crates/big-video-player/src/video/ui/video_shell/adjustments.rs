@@ -10,7 +10,10 @@ use super::*;
 use crate::video::ui::media_adjust::{CropMargins, source_colour_names};
 
 /// `vf` labels the chips track elsewhere (flip, source colours).
-const OWNED_VF_LABELS: [&str; 2] = ["big-flip", "source-colours"];
+const OWNED_VF_LABELS: [&str; 2] = [
+    MpvBackend::FLIP_VF_LABEL,
+    MpvBackend::SOURCE_COLOURS_VF_LABEL,
+];
 const FLAT_EQ: &str = "0.0;0.0;0.0;0.0;0.0;0.0;0.0;0.0;0.0;0.0";
 
 /// One change from normal, holding the value it replaced so undoing the
