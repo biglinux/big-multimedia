@@ -135,7 +135,7 @@ dependencies = [
 [[package]]
 name = "big-gtk-kit"
 version = "0.1.0"
-source = "git+https://github.com/biglinux/big-gtk-kit#9d1340753f74313b8d2fc0d9ecd2850aea042ac6"
+source = "git+https://github.com/biglinux/big-gtk-kit?rev=9d1340753f74313b8d2fc0d9ecd2850aea042ac6#9d1340753f74313b8d2fc0d9ecd2850aea042ac6"
 dependencies = [
  "gtk4",
  "libadwaita",
@@ -144,7 +144,7 @@ dependencies = [
 [[package]]
 name = "big-item-view"
 version = "0.1.0"
-source = "git+https://github.com/biglinux/big-gtk-kit#9d1340753f74313b8d2fc0d9ecd2850aea042ac6"
+source = "git+https://github.com/biglinux/big-gtk-kit?rev=9d1340753f74313b8d2fc0d9ecd2850aea042ac6#9d1340753f74313b8d2fc0d9ecd2850aea042ac6"
 dependencies = [
  "big-gtk-kit",
  "gtk4",
