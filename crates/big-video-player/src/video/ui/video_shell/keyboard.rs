@@ -412,7 +412,7 @@ mod tests {
     }
 
     #[test]
-    fn key_lookup_survives_caps_lock_and_shifted_symbols() {
+    fn key_lookup_ignores_caps_lock_shift() {
         use gtk::gdk::{Key, ModifierType};
         let map = build_single_key_map("");
         let lookup = |key, state| lookup_action(&map, key, state);

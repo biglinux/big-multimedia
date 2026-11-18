@@ -165,7 +165,7 @@ mod tests {
     }
 
     #[test]
-    fn a_comma_inside_a_graph_does_not_split_it() {
+    fn graph_keeps_its_inner_commas() {
         let vf = "@a:lavfi=graph=%11%x=1,y=2:z=3,@b:lavfi=[b=k=7]";
         assert_eq!(active_vf_graph(vf, "a").as_deref(), Some("x=1,y=2:z=3"));
         assert_eq!(active_vf_graph(vf, "b").as_deref(), Some("b=k=7"));

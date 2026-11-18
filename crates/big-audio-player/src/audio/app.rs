@@ -259,7 +259,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn about_icon_is_the_icon_the_package_installs() {
+    fn about_icon_matches_installed_icon() {
         let icon = crate::config::audio::ICON_NAME;
         let desktop =
             include_str!("../../resources/applications/br.com.biglinux.AudioPlayer.desktop");
@@ -270,7 +270,7 @@ mod tests {
     }
 
     #[test]
-    fn every_dock_menu_action_runs_a_known_option() {
+    fn dock_actions_run_known_options() {
         let desktop =
             include_str!("../../resources/applications/br.com.biglinux.AudioPlayer.desktop");
         let execs: Vec<&str> = desktop

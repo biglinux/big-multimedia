@@ -267,7 +267,7 @@ mod tests {
     }
 
     #[test]
-    fn byte_order_mark_is_not_a_channel() {
+    fn byte_order_mark_is_skipped() {
         let input = "\u{feff}#EXTM3U\n#EXTINF:-1,One\nhttp://a/1\n";
         let channels = parse_m3u_content(input).entries;
         assert_eq!(channels.len(), 1);

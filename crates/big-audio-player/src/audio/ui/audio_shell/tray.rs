@@ -129,7 +129,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn close_hides_only_with_a_shown_icon_and_no_quit() {
+    fn close_hides_only_to_shown_tray() {
         assert!(!close_hides_window(), "no icon: close ends the player");
         let shown = std::rc::Rc::new(std::cell::Cell::new(false));
         TRAY_SHOWN.set(Some(shown.clone()));
@@ -156,7 +156,7 @@ mod tests {
     }
 
     #[test]
-    fn tray_icon_is_installed_as_a_symbolic_icon() {
+    fn tray_icon_installs_as_symbolic() {
         let icon = crate::config::audio::TRAY_ICON_NAME;
         assert!(
             icon.ends_with("-symbolic"),

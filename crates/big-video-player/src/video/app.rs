@@ -135,7 +135,7 @@ impl Application {
 #[cfg(test)]
 mod tests {
     #[test]
-    fn about_icon_is_the_icon_the_package_installs() {
+    fn about_icon_matches_installed_icon() {
         let icon = crate::config::video::ICON_NAME;
         let desktop =
             include_str!("../../resources/applications/br.com.biglinux.VideoPlayer.desktop");

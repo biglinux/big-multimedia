@@ -104,13 +104,13 @@ fn export_player(
 /// MPRIS2 player exported on a private session-bus connection.
 pub struct Mpris {
     /// Set once the connection is up and the objects are exported.
-    service: Rc<OnceCell<Service>>,
+    exported: Rc<OnceCell<ExportedPlayer>>,
     taskbar: Rc<Cell<bool>>,
     /// Aborted in Drop, which cancels a connection still being made.
     connecting: glib::JoinHandle<()>,
 }
 
-struct Service {
+struct ExportedPlayer {
     /// Released in Drop before the connection closes.
     owner_id: Option<gio::OwnerId>,
     publisher: Rc<Publisher>,
@@ -127,9 +127,9 @@ impl Mpris {
         state_cb: StateCallback,
         taskbar_progress_enabled: bool,
     ) -> Self {
-        let service = Rc::new(OnceCell::new());
+        let exported = Rc::new(OnceCell::new());
         let taskbar = Rc::new(Cell::new(taskbar_progress_enabled));
-        let slot = Rc::downgrade(&service);
+        let slot = Rc::downgrade(&exported);
         let publisher_taskbar = taskbar.clone();
         let (bus_name, desktop_id) = (bus_name.to_owned(), desktop_id.to_owned());
         let connecting = glib::spawn_future_local(async move {
@@ -170,13 +170,13 @@ impl Mpris {
             publisher.sync();
 
             info!("MPRIS2 service started on {bus_name}");
-            let _ = slot.set(Service {
+            let _ = slot.set(ExportedPlayer {
                 owner_id: Some(owner_id),
                 publisher,
             });
         });
         Self {
-            service,
+            exported,
             taskbar,
             connecting,
         }
@@ -186,25 +186,25 @@ impl Mpris {
     /// this after changing it. While playing, the next tick publishes instead,
     /// within a second.
     pub fn sync(&self) {
-        if let Some(service) = self.service.get() {
-            service.publisher.sync();
+        if let Some(exported) = self.exported.get() {
+            exported.publisher.sync();
         }
     }
 
     /// Show or hide the playback progress on the taskbar entry.
     pub fn set_taskbar_progress(&self, enabled: bool) {
         self.taskbar.set(enabled);
-        if let Some(service) = self.service.get() {
-            service.publisher.publish();
+        if let Some(exported) = self.exported.get() {
+            exported.publisher.publish();
         }
     }
 
     /// Emit the seeked signal on the active D-Bus connection.
     pub fn emit_seeked(&self, position_us: i64) {
-        let Some(service) = self.service.get() else {
+        let Some(exported) = self.exported.get() else {
             return;
         };
-        if let Err(error) = service.publisher.connection.emit_signal(
+        if let Err(error) = exported.publisher.connection.emit_signal(
             None::<&str>,
             MPRIS_PATH,
             MPRIS_PLAYER_IFACE,
@@ -222,7 +222,7 @@ impl Drop for Mpris {
     }
 }
 
-impl Drop for Service {
+impl Drop for ExportedPlayer {
     fn drop(&mut self) {
         if let Some(tick) = self.publisher.tick.take() {
             big_gtk_kit::source::remove(tick);

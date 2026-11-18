@@ -116,7 +116,7 @@ crates/big-video-player/src/video/ui/video_browser_sidebar/views/grid_view.rs
 crates/big-video-player/src/video/ui/video_browser_sidebar/views/list_view.rs
 crates/big-video-player/src/video/ui/video_browser_sidebar/views/model.rs
 crates/big-video-player/src/video/ui/video_browser_sidebar/views/queue_view.rs
-crates/big-video-player/src/video/ui/video_browser_sidebar/views/shared.rs
+crates/big-video-player/src/video/ui/video_browser_sidebar/views/rows.rs
 crates/big-video-player/src/video/ui/video_controls_bar.rs
 crates/big-video-player/src/video/ui/video_controls_bar/seek_preview.rs
 crates/big-video-player/src/video/ui/video_controls_bar/signals.rs

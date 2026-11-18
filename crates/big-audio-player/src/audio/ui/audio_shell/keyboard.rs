@@ -318,7 +318,7 @@ mod tests {
     }
 
     #[test]
-    fn bare_keys_match_through_caps_lock_and_shift() {
+    fn bare_keys_ignore_caps_lock_shift() {
         let map = big_app_kit::keybindings::build_accel_map(SHORTCUTS, "", false);
         let lookup = |key, state| lookup_shortcut(&map, key, state);
         assert_eq!(

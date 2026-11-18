@@ -535,14 +535,14 @@ mod open_tests {
     }
 
     #[test]
-    fn a_file_already_queued_plays_where_it_is() {
+    fn queued_file_plays_in_place() {
         let (added, target) = plan_open(&["/a.mp3", "/b.mp3"], &paths(&["/b.mp3"]));
         assert_eq!(added, Vec::<String>::new());
         assert_eq!(target, Some(1));
     }
 
     #[test]
-    fn new_files_append_once_and_play_from_the_first() {
+    fn new_files_append_once_play_first() {
         let (added, target) = plan_open(
             &["/a.mp3"],
             &paths(&["/c.mp3", "/a.mp3", "/c.mp3", "/d.mp3"]),

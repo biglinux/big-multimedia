@@ -1,3 +1,6 @@
+//! Context menu, accent and selection marks on the rows of the list, grid
+//! and queue views.
+
 use std::rc::Rc;
 
 use adw::prelude::*;

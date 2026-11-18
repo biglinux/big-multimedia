@@ -472,7 +472,7 @@ mod tests {
     fn menu_replies_match_the_declared_signatures() {
         let command: TrayCallback = Rc::new(|_| {});
         let items = spec().items;
-        let info = interface(MENU_XML).unwrap();
+        let menu_interface = interface(MENU_XML).unwrap();
         // The out arguments of menu.xml.
         let calls = [
             (
@@ -496,7 +496,7 @@ mod tests {
         ];
         for (method, params, reply_type) in calls {
             assert!(
-                info.lookup_method(method).is_some(),
+                menu_interface.lookup_method(method).is_some(),
                 "{method} is not declared"
             );
             let reply = handle_menu_method(&items, method, &params, &command)
@@ -549,7 +549,7 @@ mod tests {
     /// A tray host registers the icon, reads it and clicks a menu entry.
     #[test]
     #[ignore = "needs its own session bus: dbus-run-session -- cargo test -p big-app-kit tray -- --ignored"]
-    fn a_tray_host_registers_reads_and_clicks_the_icon() {
+    fn tray_host_reads_and_clicks_icon() {
         let host = glib::MainContext::default()
             .block_on(crate::mpris::private_session_bus())
             .unwrap();
