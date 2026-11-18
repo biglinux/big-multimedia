@@ -512,9 +512,9 @@ fn build_volume_control(
             }
             // The TV's level is 0–1: its own 100 is the ceiling there.
             if let Some((tv, state)) = tv.as_ref().and_then(|tv| Some((tv, tv.attached()?))) {
-                tv.control("volume", (value / 100.0).clamp(0.0, 1.0));
+                tv.set_volume(value / 100.0);
                 if state.muted == Some(true) {
-                    tv.control("unmute", 0.0);
+                    tv.set_muted(false);
                 }
                 return;
             }
@@ -534,7 +534,7 @@ fn build_volume_control(
         button.connect_clicked(move |_| {
             if let Some((tv, state)) = tv.as_ref().and_then(|tv| Some((tv, tv.attached()?))) {
                 let muted = state.muted != Some(true);
-                tv.control(if muted { "mute" } else { "unmute" }, 0.0);
+                tv.set_muted(muted);
                 if let (Some(sound), Some(scale)) = (sound.upgrade(), scale.upgrade()) {
                     sound.show(muted, scale.value());
                 }

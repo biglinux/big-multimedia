@@ -11,7 +11,7 @@ use crate::shared::tv_cast::{TvCardAction, TvMedia};
 impl AudioShell {
     pub(super) fn on_tv_card(&mut self, action: TvCardAction) {
         match action {
-            TvCardAction::Stop => self.tv.control("stop", 0.0),
+            TvCardAction::Stop => self.tv.stop(),
             TvCardAction::ToggleRelease => self.toggle_tv_release(),
             TvCardAction::Replace => self.replace_tv(),
             TvCardAction::Follow => self.follow_tv(),
@@ -151,14 +151,9 @@ impl AudioShell {
     /// that stay the player's (shuffle, repeat, lyrics, …).
     pub(super) fn tv_playback(&mut self, out: &AudioPlaybackBarOutput, state: State) -> bool {
         match out {
-            AudioPlaybackBarOutput::TogglePlay => {
-                self.tv
-                    .control(if state.paused { "play" } else { "pause" }, 0.0);
-            }
+            AudioPlaybackBarOutput::TogglePlay => self.tv.toggle_pause(),
             AudioPlaybackBarOutput::SeekChanged(pct) => {
-                if state.can_seek && state.duration > 0.0 {
-                    self.tv.control("seek-to", pct / 100.0 * state.duration);
-                }
+                self.tv.seek_to(pct / 100.0 * state.duration);
             }
             AudioPlaybackBarOutput::Next => {
                 self.tv_skip(true, state.receiver_id);
@@ -167,9 +162,9 @@ impl AudioShell {
                 self.tv_skip(false, state.receiver_id);
             }
             AudioPlaybackBarOutput::VolumeChanged(vol) => {
-                self.tv.control("volume", (vol / 100.0).clamp(0.0, 1.0));
+                self.tv.set_volume(vol / 100.0);
                 if state.muted == Some(true) {
-                    self.tv.control("unmute", 0.0);
+                    self.tv.set_muted(false);
                 }
                 self.playback_bar
                     .emit(AudioPlaybackBarInput::SetVolumeIndicator {
@@ -178,8 +173,7 @@ impl AudioShell {
                     });
             }
             AudioPlaybackBarOutput::VolumeMuteToggled => {
-                let muted = state.muted != Some(true);
-                self.tv.control(if muted { "mute" } else { "unmute" }, 0.0);
+                self.tv.set_muted(state.muted != Some(true));
             }
             _ => return false,
         }

@@ -245,9 +245,46 @@ impl TvLink {
         }
     }
 
+    /// Play a paused session, pause a playing one.
+    pub fn toggle_pause(self: &Rc<Self>) {
+        if let Some(state) = self.playing() {
+            self.control(if state.paused { "play" } else { "pause" }, 0.0);
+        }
+    }
+
+    pub fn stop(self: &Rc<Self>) {
+        self.control("stop", 0.0);
+    }
+
+    /// Seek to `seconds`, within the TV's length.
+    pub fn seek_to(self: &Rc<Self>, seconds: f64) {
+        if let Some(target) = self
+            .playing()
+            .and_then(|state| seek_target(&state, seconds))
+        {
+            self.control("seek-to", target);
+        }
+    }
+
+    /// Seek `offset` seconds from where the TV is.
+    pub fn seek_by(self: &Rc<Self>, offset: f64) {
+        if let Some(state) = self.playing() {
+            self.seek_to(state.position + offset);
+        }
+    }
+
+    /// Set the TV's level, 0 to 1.
+    pub fn set_volume(self: &Rc<Self>, level: f64) {
+        self.control("volume", level.clamp(0.0, 1.0));
+    }
+
+    pub fn set_muted(self: &Rc<Self>, muted: bool) {
+        self.control(if muted { "mute" } else { "unmute" }, 0.0);
+    }
+
     /// Send a player command to the running session: `play`, `pause`,
     /// `seek-to` (seconds), `volume` (0–1), `mute`, `unmute` or `stop`.
-    pub fn control(self: &Rc<Self>, command: &'static str, value: f64) {
+    fn control(self: &Rc<Self>, command: &'static str, value: f64) {
         let Some(client) = self.client() else {
             return;
         };
@@ -329,6 +366,12 @@ impl TvLink {
             link.notify();
         });
     }
+}
+
+/// Where a seek to `seconds` lands, or `None` when the TV cannot seek or its
+/// length is unknown: clamped to an unknown end, every seek went to the start.
+fn seek_target(state: &State, seconds: f64) -> Option<f64> {
+    (state.can_seek && state.duration > 0.0).then(|| seconds.clamp(0.0, state.duration))
 }
 
 /// What choosing a TV row does.
@@ -597,11 +640,8 @@ fn wire_actions(
     view.pause.connect_clicked({
         let link = Rc::downgrade(&view.link);
         move |_| {
-            let Some(link) = link.upgrade() else {
-                return;
-            };
-            if let Some(state) = link.playing() {
-                link.control(if state.paused { "play" } else { "pause" }, 0.0);
+            if let Some(link) = link.upgrade() {
+                link.toggle_pause();
             }
         }
     });
@@ -609,7 +649,7 @@ fn wire_actions(
         let link = Rc::downgrade(&view.link);
         move |_| {
             if let Some(link) = link.upgrade() {
-                link.control("stop", 0.0);
+                link.stop();
             }
         }
     });
@@ -872,4 +912,23 @@ pub fn present_tv_dialog(
     ));
     dialog.set_child(Some(&toolbar));
     dialog.present(Some(parent));
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn seek_needs_known_length() {
+        let state = |can_seek, duration| State {
+            duration,
+            can_seek,
+            ..State::default()
+        };
+        assert_eq!(seek_target(&state(true, 0.0), 30.0), None);
+        assert_eq!(seek_target(&state(false, 600.0), 30.0), None);
+        assert_eq!(seek_target(&state(true, 600.0), 30.0), Some(30.0));
+        assert_eq!(seek_target(&state(true, 600.0), -5.0), Some(0.0));
+        assert_eq!(seek_target(&state(true, 600.0), 900.0), Some(600.0));
+    }
 }

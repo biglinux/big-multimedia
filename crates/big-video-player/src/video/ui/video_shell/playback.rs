@@ -376,11 +376,8 @@ impl VideoShell {
 
     /// Seek to `secs`: on the TV while it has the controls, else locally.
     pub(super) fn seek_to(&self, secs: f64) {
-        if let Some(state) = self.tv.attached() {
-            if state.can_seek {
-                self.tv
-                    .control("seek-to", secs.clamp(0.0, state.duration.max(0.0)));
-            }
+        if self.tv.attached().is_some() {
+            self.tv.seek_to(secs);
         } else if let Some(mpv) = self.mpv.borrow().as_ref() {
             mpv.seek_absolute(secs);
         }
@@ -778,16 +775,9 @@ impl VideoShell {
         }
         if let Some(state) = self.tv.attached() {
             match out {
-                VideoControlsBarOutput::TogglePlay => {
-                    self.tv
-                        .control(if state.paused { "play" } else { "pause" }, 0.0);
-                }
+                VideoControlsBarOutput::TogglePlay => self.tv.toggle_pause(),
                 VideoControlsBarOutput::SeekChanged(frac) => {
-                    if state.can_seek
-                        && let Some(target) = seek_target_secs(frac, state.duration)
-                    {
-                        self.tv.control("seek-to", target);
-                    }
+                    self.tv.seek_to(frac * state.duration);
                 }
                 VideoControlsBarOutput::Next => {
                     self.tv_skip(true, state.receiver_id);
