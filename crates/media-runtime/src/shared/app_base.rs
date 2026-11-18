@@ -139,10 +139,7 @@ fn resolve_locale_dir() -> String {
     if let Some(private) = private_locale_dir() {
         return private;
     }
-    let installed = std::path::Path::new(config::LOCALEDIR)
-        .join("pt_BR/LC_MESSAGES")
-        .join(format!("{}.mo", config::GETTEXT_PACKAGE));
-    if installed.exists() {
+    if has_catalog(std::path::Path::new(config::LOCALEDIR)) {
         return config::LOCALEDIR.to_string();
     }
     if let Some(dev) = dev_locale_dir() {
@@ -156,10 +153,15 @@ fn private_locale_dir() -> Option<String> {
     let exe = std::env::current_exe().ok()?;
     let stem = exe.file_stem()?.to_str()?;
     let dir = format!("/usr/share/{stem}/locale");
-    let probe = std::path::Path::new(&dir)
-        .join("pt_BR/LC_MESSAGES")
-        .join(format!("{}.mo", config::GETTEXT_PACKAGE));
-    probe.exists().then_some(dir)
+    has_catalog(std::path::Path::new(&dir)).then_some(dir)
+}
+
+/// Whether `dir` holds our compiled catalog; pt_BR always ships, so it stands
+/// for the rest.
+fn has_catalog(dir: &std::path::Path) -> bool {
+    dir.join("pt_BR/LC_MESSAGES")
+        .join(format!("{}.mo", config::GETTEXT_PACKAGE))
+        .exists()
 }
 
 fn dev_locale_dir() -> Option<String> {
@@ -167,11 +169,7 @@ fn dev_locale_dir() -> Option<String> {
     let exe_dir = exe.parent()?;
     for rel in ["../../locale", "../locale", "locale"] {
         let candidate = exe_dir.join(rel);
-        if candidate
-            .join("pt_BR/LC_MESSAGES")
-            .join(format!("{}.mo", config::GETTEXT_PACKAGE))
-            .exists()
-        {
+        if has_catalog(&candidate) {
             return Some(candidate.to_string_lossy().into_owned());
         }
     }
