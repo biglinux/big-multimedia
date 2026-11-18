@@ -9,6 +9,7 @@ use std::rc::Rc;
 
 use adw::prelude::*;
 use big_app_kit::file_dialogs::FilePicker;
+use big_os_kit::storage::StagedFile;
 use big_relm4_components::layout::name_prompt::{BigNamePromptSpec, prompt_name};
 
 use super::{BrowserState, VideoBrowserSidebarOutput};
@@ -150,8 +151,10 @@ pub(super) fn move_to_folder(state: &Rc<BrowserState>, paths: Vec<String>) {
     FilePicker::new(i18n("Move to Folder")).select_folder(&window, move |dest| {
         // File moves (incl. cross-device copy of large videos) run off-thread.
         let state = state.clone();
+        let drain = big_os_kit::background::track_operation();
         big_media_components::player_chrome::spawn_blocking_result(
             move || {
+                let _drain = drain;
                 let mut moved = Vec::new();
                 let mut failed = 0_usize;
                 for src in &paths {
@@ -248,9 +251,8 @@ fn accepted_rename_name(input: &str) -> Option<String> {
     Some(name.to_string())
 }
 
-/// Move one file into `dest_dir`, keeping its basename. Refuses to overwrite an
-/// existing destination; falls back to copy+remove across filesystems.
-/// Move `src` into `dest_dir`; the path it has now.
+/// Move `src` into `dest_dir`, keeping its name and never replacing a file
+/// there; the path it has now.
 fn move_file(src: &str, dest_dir: &Path) -> std::io::Result<PathBuf> {
     let src_path = Path::new(src);
     let name = src_path
@@ -264,22 +266,24 @@ fn move_file(src: &str, dest_dir: &Path) -> std::io::Result<PathBuf> {
         Err(error) if error.raw_os_error() == Some(libc::EXDEV) => {}
         result => return result.map(|()| dest),
     }
-    // Cross-device → copy then remove the source. `create_new` refuses a file
-    // that appeared meanwhile; a failed copy (e.g. disk full) must not leave a
-    // truncated file behind.
-    let mut target = std::fs::OpenOptions::new()
-        .write(true)
-        .create_new(true)
-        .open(&dest)?;
-    let copied = std::fs::File::open(src_path)
-        .and_then(|mut source| std::io::copy(&mut source, &mut target))
-        .and_then(|_| target.sync_all());
-    if let Err(error) = copied {
-        let _ = std::fs::remove_file(&dest);
-        return Err(error);
-    }
-    std::fs::remove_file(src_path)?;
+    move_across_filesystems(src_path, &dest)?;
     Ok(dest)
+}
+
+/// Copy `src` to the absent `dest` through staging that a killed copy leaves
+/// out of sight, and remove `src` only once the copy and its directory entry
+/// are on disk.
+fn move_across_filesystems(src: &Path, dest: &Path) -> std::io::Result<()> {
+    // Copying a large video takes minutes; refuse a taken name before it.
+    if dest.symlink_metadata().is_ok() {
+        return Err(std::io::ErrorKind::AlreadyExists.into());
+    }
+    let stage = StagedFile::new(dest)?;
+    let mut staged = std::fs::OpenOptions::new().write(true).open(stage.path())?;
+    std::io::copy(&mut std::fs::File::open(src)?, &mut staged)?;
+    drop(staged);
+    stage.publish(dest)?.into_io_result()?;
+    std::fs::remove_file(src)
 }
 
 /// `rename` that fails with `AlreadyExists` instead of replacing `dest`, so a
@@ -344,7 +348,68 @@ impl BrowserState {
 
 #[cfg(test)]
 mod tests {
-    use super::{accepted_rename_name, move_file, rename_no_replace};
+    use std::io::Write;
+    use std::path::{Path, PathBuf};
+
+    use super::{accepted_rename_name, move_across_filesystems, move_file, rename_no_replace};
+
+    fn test_directory(name: &str) -> PathBuf {
+        let dir = std::env::temp_dir().join(format!("bvp-{name}-{}", std::process::id()));
+        std::fs::create_dir_all(&dir).unwrap();
+        dir
+    }
+
+    fn entry_names(dir: &Path) -> Vec<String> {
+        let mut names: Vec<String> = std::fs::read_dir(dir)
+            .unwrap()
+            .map(|entry| entry.unwrap().file_name().to_string_lossy().into_owned())
+            .collect();
+        names.sort();
+        names
+    }
+
+    /// A killed copy must leave nothing under the final name: the source is
+    /// a FIFO, so the copy is held open while the destination is inspected.
+    #[test]
+    fn cross_device_move_hides_partial_copies() {
+        let dir = test_directory("cross-device");
+        let (src, dest) = (dir.join("in.mp4"), dir.join("out").join("in.mp4"));
+        std::fs::create_dir(dir.join("out")).unwrap();
+        let fifo = std::ffi::CString::new(src.as_os_str().as_encoded_bytes()).unwrap();
+        // SAFETY: `fifo` is a NUL-terminated path bound for the whole call.
+        assert_eq!(unsafe { libc::mkfifo(fifo.as_ptr(), 0o600) }, 0);
+        let mover = std::thread::spawn({
+            let (src, dest) = (src.clone(), dest.clone());
+            move || move_across_filesystems(&src, &dest)
+        });
+        let mut writer = std::fs::OpenOptions::new().write(true).open(&src).unwrap();
+        assert!(
+            !dest.exists(),
+            "a partial copy is visible under the final name"
+        );
+        writer.write_all(b"video").unwrap();
+        drop(writer);
+        mover.join().unwrap().unwrap();
+        assert_eq!(std::fs::read(&dest).unwrap(), b"video");
+        assert!(!src.exists());
+        assert_eq!(entry_names(&dir.join("out")), ["in.mp4"]);
+        std::fs::remove_dir_all(dir).unwrap();
+    }
+
+    #[test]
+    fn cross_device_move_keeps_an_existing_destination() {
+        let dir = test_directory("cross-device-taken");
+        let (src, dest) = (dir.join("in.mp4"), dir.join("out").join("in.mp4"));
+        std::fs::create_dir(dir.join("out")).unwrap();
+        std::fs::write(&src, b"new").unwrap();
+        std::fs::write(&dest, b"kept").unwrap();
+        let error = move_across_filesystems(&src, &dest).unwrap_err();
+        assert_eq!(error.kind(), std::io::ErrorKind::AlreadyExists);
+        assert_eq!(std::fs::read(&src).unwrap(), b"new");
+        assert_eq!(std::fs::read(&dest).unwrap(), b"kept");
+        assert_eq!(entry_names(&dir.join("out")), ["in.mp4"]);
+        std::fs::remove_dir_all(dir).unwrap();
+    }
 
     #[test]
     fn rename_and_move_keep_existing_files() {
