@@ -119,7 +119,7 @@ fn write_mute(mpv: &MpvClient, mute: Option<bool>, native_mute: bool, transition
 pub(in crate::player::mpv_backend) struct VolumeControl(Arc<Mutex<State>>);
 
 impl VolumeControl {
-    pub fn new() -> Self {
+    pub(crate) fn new() -> Self {
         Self(Arc::new(Mutex::new(State {
             volume: 100.0,
             mute: false,
@@ -141,7 +141,7 @@ impl VolumeControl {
         })))
     }
 
-    pub fn snapshot(&self) -> (f64, bool) {
+    pub(crate) fn snapshot(&self) -> (f64, bool) {
         let state = self.0.lock().unwrap_or_else(PoisonError::into_inner);
         (
             state.pending_volume.unwrap_or(state.volume),
@@ -149,7 +149,7 @@ impl VolumeControl {
         )
     }
 
-    pub fn set_volume(&self, volume: f64) {
+    pub(crate) fn set_volume(&self, volume: f64) {
         if volume.is_finite() {
             let mut state = self.0.lock().unwrap_or_else(PoisonError::into_inner);
             state.pending_volume = Some(volume.max(0.0).min(state.volume_max));
@@ -158,7 +158,7 @@ impl VolumeControl {
     }
 
     /// A level above the new maximum is lowered to it at the next sync.
-    pub fn set_volume_max(&self, max: f64) {
+    pub(crate) fn set_volume_max(&self, max: f64) {
         let mut state = self.0.lock().unwrap_or_else(PoisonError::into_inner);
         state.volume_max = max;
         if state.pending_volume.unwrap_or(state.volume) > max {
@@ -166,7 +166,7 @@ impl VolumeControl {
         }
     }
 
-    pub fn set_mute(&self, mute: bool) {
+    pub(crate) fn set_mute(&self, mute: bool) {
         let mut state = self.0.lock().unwrap_or_else(PoisonError::into_inner);
         state.pending_mute = Some(mute);
         state.mute_set = true;

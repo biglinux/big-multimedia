@@ -39,7 +39,7 @@ use crate::video::ui::iptv::{VideoIptvBrowser, VideoIptvBrowserInput};
 
 /// Present the providers-management dialog over `parent`, notifying the browser
 /// component (via `sender`) when it closes so the dropdown can refresh.
-pub fn present_providers_dialog(
+pub(super) fn present_providers_dialog(
     parent: &impl IsA<gtk::Widget>,
     store: Rc<RefCell<IptvProviderStore>>,
     sender: ComponentSender<VideoIptvBrowser>,

@@ -29,7 +29,7 @@ use crate::i18n::i18n;
 
 /// Messages into the trim bar (from the shell / its own widgets).
 #[derive(Debug)]
-pub enum VideoTrimBarInput {
+pub(crate) enum VideoTrimBarInput {
     /// Media duration changed (seconds).
     SetDuration(f64),
     /// Live playhead position (seconds), cached for the Mark button.
@@ -82,7 +82,7 @@ pub enum VideoTrimBarOutput {
 }
 
 /// The trim bar component.
-pub struct VideoTrimBar {
+pub(crate) struct VideoTrimBar {
     state: Rc<RefCell<CutList>>,
     playhead: f64,
     segments_strip: gtk::Box,

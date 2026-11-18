@@ -66,12 +66,12 @@ fn cache_path(provider_id: &str) -> Option<PathBuf> {
 
 /// Read the cached playlist content if it exists.
 #[must_use]
-pub fn read(provider_id: &str) -> Option<String> {
+pub(super) fn read(provider_id: &str) -> Option<String> {
     fs::read_to_string(cache_path(provider_id)?).ok()
 }
 
 /// Delete the cached playlist of `provider_id` (best-effort).
-pub fn remove(provider_id: &str) {
+pub(super) fn remove(provider_id: &str) {
     let Some(path) = cache_path(provider_id) else {
         return;
     };
@@ -83,7 +83,7 @@ pub fn remove(provider_id: &str) {
 }
 
 /// Write the fetched content to the cache (best-effort).
-pub fn write(provider_id: &str, content: &str) {
+pub(super) fn write(provider_id: &str, content: &str) {
     let Some(path) = cache_path(provider_id) else {
         log::warn!("iptv cache write: no XDG cache directory");
         return;

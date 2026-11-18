@@ -10,7 +10,7 @@ use super::types::{AudioCacheProfile, TargetSource};
 
 /// Fallback audio policy only. Panels with known intent override this heuristic.
 #[must_use]
-pub fn profile_for_uri(target: &str) -> Option<AudioCacheProfile> {
+pub(super) fn profile_for_uri(target: &str) -> Option<AudioCacheProfile> {
     if !big_os_kit::url::is_stream_uri(target) {
         return None;
     }

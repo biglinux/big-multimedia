@@ -8,43 +8,43 @@
 
 /// FSR shader sharpness (0..=2, lower = sharper) → UI percent (0..=100).
 #[must_use]
-pub fn fsr_shader_to_ui_pct(sharpness: f64) -> f64 {
+pub(super) fn fsr_shader_to_ui_pct(sharpness: f64) -> f64 {
     (1.0 - sharpness / 2.0) * 100.0
 }
 
 /// UI percent (0..=100) → FSR shader sharpness (0..=2).
 #[must_use]
-pub fn fsr_ui_pct_to_shader(pct: f64) -> f64 {
+pub(super) fn fsr_ui_pct_to_shader(pct: f64) -> f64 {
     2.0 * (1.0 - pct / 100.0)
 }
 
 /// CAS shader sharpening (0..=1) → UI percent (0..=100).
 #[must_use]
-pub fn cas_shader_to_ui_pct(sharpening: f64) -> f64 {
+pub(super) fn cas_shader_to_ui_pct(sharpening: f64) -> f64 {
     sharpening * 100.0
 }
 
 /// UI percent (0..=100) → CAS shader sharpening (0..=1).
 #[must_use]
-pub fn cas_ui_pct_to_shader(pct: f64) -> f64 {
+pub(super) fn cas_ui_pct_to_shader(pct: f64) -> f64 {
     pct / 100.0
 }
 
 /// `colortemperature` vf string for a Kelvin temperature.
 #[must_use]
-pub fn colortemp_vf(kelvin: f64) -> String {
+pub(super) fn colortemp_vf(kelvin: f64) -> String {
     format!("colortemperature=temperature={kelvin:.0}")
 }
 
 /// `colorize` vf string from hue (deg), saturation (0..1), mix (0..1).
 #[must_use]
-pub fn colorize_vf(hue: f64, saturation: f64, mix: f64) -> String {
+pub(super) fn colorize_vf(hue: f64, saturation: f64, mix: f64) -> String {
     format!("colorize=hue={hue:.0}:saturation={saturation:.2}:mix={mix:.2}")
 }
 
 /// `hqdn3d` denoise vf string from a single strength value.
 #[must_use]
-pub fn hqdn3d_vf(strength: f64) -> String {
+pub(super) fn hqdn3d_vf(strength: f64) -> String {
     format!(
         "hqdn3d=luma_spatial={strength}:chroma_spatial={}:luma_tmp={}",
         strength * 0.75,
@@ -54,7 +54,7 @@ pub fn hqdn3d_vf(strength: f64) -> String {
 
 /// `pixelize` vf string from a block size (rounded to an integer).
 #[must_use]
-pub fn pixelize_vf(block: f64) -> String {
+pub(super) fn pixelize_vf(block: f64) -> String {
     let block = block as i32;
     format!("pixelize=width={block}:height={block}")
 }
@@ -98,7 +98,7 @@ pub(crate) fn vf_entries(vf: &str) -> Vec<&str> {
 /// The lavfi graph of the `@label` entry of mpv's `vf` property, which mpv
 /// lists as `@label:lavfi=graph=%N%<graph>`; `None` when no such entry is on.
 #[must_use]
-pub fn active_vf_graph(vf: &str, label: &str) -> Option<String> {
+pub(super) fn active_vf_graph(vf: &str, label: &str) -> Option<String> {
     let prefix = format!("@{label}:");
     let entry = vf_entries(vf)
         .into_iter()
@@ -119,7 +119,7 @@ pub fn active_vf_graph(vf: &str, label: &str) -> Option<String> {
 
 /// The value of `key` in a single-filter graph such as `cas=strength=0.50`.
 #[must_use]
-pub fn vf_graph_param(graph: &str, key: &str) -> Option<String> {
+pub(super) fn vf_graph_param(graph: &str, key: &str) -> Option<String> {
     let (_, options) = graph.split_once('=')?;
     options.split(':').find_map(|option| {
         let (name, value) = option.split_once('=')?;
@@ -129,7 +129,7 @@ pub fn vf_graph_param(graph: &str, key: &str) -> Option<String> {
 
 /// [`vf_graph_param`] as a number.
 #[must_use]
-pub fn vf_graph_number(graph: &str, key: &str) -> Option<f64> {
+pub(super) fn vf_graph_number(graph: &str, key: &str) -> Option<f64> {
     vf_graph_param(graph, key)?.parse().ok()
 }
 
