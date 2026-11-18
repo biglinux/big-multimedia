@@ -1,11 +1,13 @@
 # Load the AppArmor profile now when AppArmor runs; on later boots
-# apparmor.service loads every profile in /etc/apparmor.d.
+# apparmor.service loads every profile in /etc/apparmor.d. Inside a chroot
+# (an ISO or package build) /sys belongs to the host, so nothing is loaded there.
 
 post_install() {
     [[ -d /sys/kernel/security/apparmor ]] || return 0
     command -v apparmor_parser >/dev/null || return 0
+    systemd-detect-virt --chroot --quiet && return 0
     apparmor_parser -r /etc/apparmor.d/big-video-player ||
-        printf '%s\n' 'big-video-player: the AppArmor profile did not load; it applies once apparmor.service loads it.'
+        printf '%s\n' 'big-video-player: the AppArmor profile above failed to load and is not active.'
 }
 
 post_upgrade() {
@@ -15,6 +17,7 @@ post_upgrade() {
 pre_remove() {
     [[ -d /sys/kernel/security/apparmor ]] || return 0
     command -v apparmor_parser >/dev/null || return 0
+    systemd-detect-virt --chroot --quiet && return 0
     # Fails only when the profile was never loaded, which leaves nothing to remove.
     apparmor_parser -R /etc/apparmor.d/big-video-player 2>/dev/null || :
 }
