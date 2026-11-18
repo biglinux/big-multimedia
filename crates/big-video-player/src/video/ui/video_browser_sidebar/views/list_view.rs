@@ -5,7 +5,7 @@ use gtk::{gio, glib};
 
 use super::super::BrowserState;
 use super::model::{build_filter, build_store, finish_view};
-use super::shared::{attach_context_menu, set_accent};
+use super::shared::{attach_context_menu, attach_context_menu_keys, set_accent};
 use crate::media::playlist::{self, EntryKind, PlaylistEntry};
 
 /// ListView factory: icon + name + a metadata caption line per row.
@@ -166,6 +166,7 @@ pub(crate) fn build_list_view(
     });
 
     let list = gtk::ListView::new(Some(selection.clone()), Some(factory));
+    attach_context_menu_keys(state, &list);
     list.set_single_click_activate(true);
     list.add_css_class("navigation-sidebar");
     list.connect_activate({

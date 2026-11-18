@@ -141,3 +141,29 @@ impl BigContextPopover {
         self.popover.popup();
     }
 }
+
+/// Open a row's context menu from the keyboard: on Menu or Shift+F10 inside
+/// `list` (a `GtkListView` or `GtkGridView`), `open` gets the focused row's
+/// child and returns whether it opened a menu for it.
+pub fn open_context_menu_on_keys(
+    list: &impl IsA<gtk::Widget>,
+    open: impl Fn(&gtk::Widget) -> bool + 'static,
+) {
+    let action = gtk::CallbackAction::new(move |list, _| {
+        let opened = list
+            .focus_child()
+            .and_then(|cell| cell.first_child())
+            .is_some_and(|row| open(&row));
+        if opened {
+            gtk::glib::Propagation::Stop
+        } else {
+            gtk::glib::Propagation::Proceed
+        }
+    });
+    let keys = gtk::ShortcutController::new();
+    keys.add_shortcut(gtk::Shortcut::new(
+        gtk::ShortcutTrigger::parse_string("Menu|<Shift>F10"),
+        Some(action),
+    ));
+    list.add_controller(keys);
+}

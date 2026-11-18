@@ -5,7 +5,7 @@ use gtk::{gdk, gio, glib};
 
 use super::super::{BrowserState, chrome};
 use super::model::{build_filter, build_store, finish_view};
-use super::shared::{row_index, set_accent};
+use super::shared::{attach_context_menu, attach_context_menu_keys, row_index, set_accent};
 use crate::media::playlist::{self, EntryKind, PlaylistEntry};
 use crate::media::thumbnail;
 use big_media_components::time::duration_hms as format_duration_hms;
@@ -55,6 +55,7 @@ pub(crate) fn build_queue_view(state: &Rc<BrowserState>, items: &[String]) -> gt
     });
 
     let list = gtk::ListView::new(Some(selection.clone()), Some(factory));
+    attach_context_menu_keys(state, &list);
     list.set_single_click_activate(true);
     // Alt+Up / Alt+Down move the focused row one place. Capture phase: the
     // list's own row keeps plain arrow keys, and took these too.
@@ -227,6 +228,7 @@ fn build_queue_row(state: &Rc<BrowserState>) -> gtk::Box {
     });
     row.append(&remove);
     wire_reorder(state, &row);
+    attach_context_menu(state, &row);
     row
 }
 
