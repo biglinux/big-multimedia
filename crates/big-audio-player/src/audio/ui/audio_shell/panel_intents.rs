@@ -292,16 +292,8 @@ impl AudioShell {
         let input = sender.input_sender().clone();
         spawn_db_query(
             db,
-            move |conn| -> big_media_runtime::Result<()> {
-                // All or nothing: a half-filled playlist is worse than none.
-                let transaction = conn.unchecked_transaction()?;
-                let playlist_id = queries::create_playlist(&transaction, &name)?;
-                for id in &track_ids {
-                    queries::add_track_to_playlist(&transaction, playlist_id, *id)?;
-                }
-                transaction.commit()?;
-                Ok(())
-            },
+            // All or nothing, and a track queued twice is saved once.
+            move |conn| queries::create_playlist_with_tracks(conn, &name, &track_ids).map(drop),
             move |saved| {
                 if let Err(e) = saved {
                     log::warn!("saving the queue as a playlist failed: {e}");

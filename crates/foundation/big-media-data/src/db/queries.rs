@@ -157,7 +157,7 @@ pub fn remove_watch_folder(conn: &Connection, folder_id: i64) -> crate::Result<(
     Ok(())
 }
 
-pub fn create_playlist(conn: &Connection, name: &str) -> crate::Result<i64> {
+pub(crate) fn create_playlist(conn: &Connection, name: &str) -> crate::Result<i64> {
     conn.execute("INSERT INTO playlists (name) VALUES (?1)", params![name])?;
     Ok(conn.last_insert_rowid())
 }
