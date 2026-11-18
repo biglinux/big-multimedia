@@ -7,8 +7,9 @@
 //! Uses `EGL_MESA_image_dma_buf_export`. Falls back to GdkGLTexture when the
 //! extension is unavailable or export fails at runtime.
 
+use super::gl_proc_address::{egl_function, gl_function};
 use log::{debug, info, warn};
-use std::ffi::c_void;
+use std::ffi::{CStr, c_void};
 use std::os::fd::RawFd;
 
 type EglDisplayHandle = *mut c_void;
@@ -26,7 +27,6 @@ const EGL_NONE: EglInteger = 0x3038;
 
 type EglGetCurrentDisplayFn = unsafe extern "C" fn() -> EglDisplayHandle;
 type EglGetCurrentContextFn = unsafe extern "C" fn() -> EglContextHandle;
-type EglGetProcAddressFn = unsafe extern "C" fn(*const std::ffi::c_char) -> *mut c_void;
 type EglCreateImageFn = unsafe extern "C" fn(
     EglDisplayHandle,
     EglContextHandle,
@@ -60,83 +60,36 @@ pub(crate) struct EglDmaBufFns {
 }
 
 impl EglDmaBufFns {
-    /// Core fns via `dlsym`; extension fns via `eglGetProcAddress` (NVIDIA
-    /// drivers don't expose extension entry points to plain dlsym).
+    /// Core functions from libEGL, extension functions through `eglGetProcAddress`.
     pub fn load() -> Option<Self> {
-        // GTK loads libEGL internally but may not export symbols to RTLD_DEFAULT.
-        // SAFETY: dlopen of a system library by constant name; it returns the
-        // already loaded instance, and the handle is never closed.
-        static EGL_LIBRARY: std::sync::OnceLock<usize> = std::sync::OnceLock::new();
-        let lib = *EGL_LIBRARY.get_or_init(|| unsafe {
-            libc::dlopen(c"libEGL.so.1".as_ptr(), libc::RTLD_LAZY | libc::RTLD_LOCAL) as usize
-        }) as *mut c_void;
-        if lib.is_null() {
-            warn!("EGL DMA-BUF: cannot load libEGL.so.1");
-            return None;
-        }
-
-        /// SAFETY: lib must be a valid dlopen handle, name null-terminated.
-        unsafe fn dlsym_fn<F>(lib: *mut c_void, name: &[u8]) -> Option<F> {
-            let ptr = unsafe { libc::dlsym(lib, name.as_ptr().cast::<std::ffi::c_char>()) };
-            if ptr.is_null() {
-                return None;
-            }
-            // F is always a bare fn pointer (pointer-width); guard against a
-            // mistyped F that would make transmute_copy read out of bounds.
-            debug_assert_eq!(
-                std::mem::size_of::<F>(),
-                std::mem::size_of::<*mut c_void>(),
-                "dlsym target F must be a plain function pointer",
-            );
-            // SAFETY: ptr is a non-null symbol address; F is a fn pointer of the
-            // same width as the void* it was loaded as (asserted above).
-            Some(unsafe { std::mem::transmute_copy::<*mut c_void, F>(&ptr) })
-        }
-
-        // SAFETY: `lib` is a live dlopen handle; names are nul-terminated.
-        let get_display: EglGetCurrentDisplayFn =
-            unsafe { dlsym_fn(lib, b"eglGetCurrentDisplay\0")? };
-        let get_context: EglGetCurrentContextFn =
-            unsafe { dlsym_fn(lib, b"eglGetCurrentContext\0")? };
-        let get_proc_address: EglGetProcAddressFn =
-            unsafe { dlsym_fn(lib, b"eglGetProcAddress\0")? };
-
-        /// SAFETY: get_proc_address must be a valid eglGetProcAddress pointer.
-        unsafe fn egl_fn<F>(get_proc_address: EglGetProcAddressFn, name: &[u8]) -> Option<F> {
-            let ptr = unsafe { get_proc_address(name.as_ptr().cast::<std::ffi::c_char>()) };
-            if ptr.is_null() {
-                debug!(
-                    "EGL DMA-BUF: missing extension function: {}",
-                    std::str::from_utf8(&name[..name.len() - 1]).unwrap_or("?")
-                );
-                return None;
-            }
-            // F is always a bare fn pointer (pointer-width); guard against a
-            // mistyped F that would make transmute_copy read out of bounds.
-            debug_assert_eq!(
-                std::mem::size_of::<F>(),
-                std::mem::size_of::<*mut c_void>(),
-                "eglGetProcAddress target F must be a plain function pointer",
-            );
-            // SAFETY: ptr is a non-null symbol address; F is a fn pointer of the
-            // same width as the void* it was loaded as (asserted above).
-            Some(unsafe { std::mem::transmute_copy::<*mut c_void, F>(&ptr) })
-        }
-
-        // lib is never dlclosed: the functions must stay valid for the
-        // process lifetime, and GTK keeps EGL loaded anyway.
-        // SAFETY: get_proc_address is valid; names are null-terminated.
+        // SAFETY: each name is paired with its EGL signature.
         unsafe {
+            let Some(get_display) = egl_function(c"eglGetCurrentDisplay") else {
+                warn!("EGL DMA-BUF: EGL is not available");
+                return None;
+            };
             Some(Self {
                 get_display,
-                get_context,
-                create_image: egl_fn(get_proc_address, b"eglCreateImageKHR\0")?,
-                destroy_image: egl_fn(get_proc_address, b"eglDestroyImageKHR\0")?,
-                export_query: egl_fn(get_proc_address, b"eglExportDMABUFImageQueryMESA\0")?,
-                export_image: egl_fn(get_proc_address, b"eglExportDMABUFImageMESA\0")?,
+                get_context: egl_function(c"eglGetCurrentContext")?,
+                create_image: extension_function(c"eglCreateImageKHR")?,
+                destroy_image: extension_function(c"eglDestroyImageKHR")?,
+                export_query: extension_function(c"eglExportDMABUFImageQueryMESA")?,
+                export_image: extension_function(c"eglExportDMABUFImageMESA")?,
             })
         }
     }
+}
+
+/// # Safety
+/// `F` must be the `unsafe extern "C" fn` type of `name`.
+unsafe fn extension_function<F: Copy>(name: &CStr) -> Option<F> {
+    // SAFETY: forwarded from the caller.
+    let function = unsafe { gl_function(name) };
+    if function.is_none() {
+        // allow-noisy-log: names the extension that keeps DMA-BUF export off.
+        debug!("EGL DMA-BUF: missing extension function: {name:?}");
+    }
+    function
 }
 
 /// Owns the fd; `Drop` closes it.

@@ -64,7 +64,7 @@ impl MpvBackend {
     pub fn step_speed(&self, delta: f64, min: f64, max: f64) {
         self.with_mpv(|m| {
             let current = m.get_property::<f64>("speed").unwrap_or(1.0);
-            let _ = m.set_property("speed", (current + delta).clamp(min, max));
+            m.set_property_logged("speed", (current + delta).clamp(min, max));
         });
     }
 
@@ -74,25 +74,25 @@ impl MpvBackend {
 
     pub fn set_audio_track(&self, id: i64) {
         self.with_mpv(|m| {
-            let _ = m.set_property("aid", id);
+            m.set_property_logged("aid", id);
         });
     }
 
     pub fn set_audio_delay(&self, delay: f64) {
         self.with_mpv(|m| {
-            let _ = m.set_property("audio-delay", delay);
+            m.set_property_logged("audio-delay", delay);
         });
     }
 
     pub fn set_audio_pitch_correction(&self, enable: bool) {
         self.with_mpv(|m| {
-            let _ = m.set_property("audio-pitch-correction", enable);
+            m.set_property_logged("audio-pitch-correction", enable);
         });
     }
 
     pub fn set_volume_max(&self, max: i64) {
         self.with_mpv(|m| {
-            let _ = m.set_property("volume-max", max);
+            m.set_property_logged("volume-max", max);
         });
         self.stream_volume.set_volume_max(max as f64);
         self.wake_event_loop();
@@ -106,7 +106,7 @@ impl MpvBackend {
             channels
         };
         self.with_mpv(|m| {
-            let _ = m.set_property("audio-channels", channels.to_string());
+            m.set_property_logged("audio-channels", channels.to_string());
         });
     }
 
@@ -120,7 +120,7 @@ impl MpvBackend {
                 .unwrap_or_default()
                 .is_empty();
             let codecs = if on { PASSTHROUGH_CODECS } else { "" };
-            let _ = m.set_property("audio-spdif", codecs.to_string());
+            m.set_property_logged("audio-spdif", codecs.to_string());
         });
     }
 
@@ -147,8 +147,8 @@ impl MpvBackend {
             _ => ("no", "no"),
         };
         self.with_mpv(|m| {
-            let _ = m.set_property("loop-file", file.to_string());
-            let _ = m.set_property("loop-playlist", playlist.to_string());
+            m.set_property_logged("loop-file", file.to_string());
+            m.set_property_logged("loop-playlist", playlist.to_string());
         });
     }
 
@@ -156,56 +156,56 @@ impl MpvBackend {
     /// resuming files saved while it was on.
     pub fn set_save_position(&self, enable: bool) {
         self.with_mpv(|m| {
-            let _ = m.set_property("save-position-on-quit", enable);
-            let _ = m.set_property("resume-playback", enable);
+            m.set_property_logged("save-position-on-quit", enable);
+            m.set_property_logged("resume-playback", enable);
         });
     }
 
     pub fn set_screenshot_png_compression(&self, level: i64) {
         self.with_mpv(|m| {
-            let _ = m.set_property("screenshot-png-compression", level);
+            m.set_property_logged("screenshot-png-compression", level);
         });
     }
 
     pub fn set_screenshot_tag_colorspace(&self, enable: bool) {
         self.with_mpv(|m| {
-            let _ = m.set_property("screenshot-tag-colorspace", enable);
+            m.set_property_logged("screenshot-tag-colorspace", enable);
         });
     }
 
     pub fn set_screenshot_high_bit_depth(&self, enable: bool) {
         self.with_mpv(|m| {
-            let _ = m.set_property("screenshot-high-bit-depth", enable);
+            m.set_property_logged("screenshot-high-bit-depth", enable);
         });
     }
 
     pub fn set_keep_open(&self, mode: &str) {
         self.with_mpv(|m| {
-            let _ = m.set_property("keep-open", mode.to_string());
+            m.set_property_logged("keep-open", mode.to_string());
         });
     }
 
     pub fn set_keep_open_pause(&self, enable: bool) {
         self.with_mpv(|m| {
-            let _ = m.set_property("keep-open-pause", if enable { "yes" } else { "no" });
+            m.set_property_logged("keep-open-pause", if enable { "yes" } else { "no" });
         });
     }
 
     pub fn set_idle(&self, mode: &str) {
         self.with_mpv(|m| {
-            let _ = m.set_property("idle", mode.to_string());
+            m.set_property_logged("idle", mode.to_string());
         });
     }
 
     pub fn set_cache(&self, enable: bool) {
         self.with_mpv(|m| {
-            let _ = m.set_property("cache", if enable { "yes" } else { "no" });
+            m.set_property_logged("cache", if enable { "yes" } else { "no" });
         });
     }
 
     pub fn set_cache_secs(&self, secs: i64) {
         self.with_mpv(|m| {
-            let _ = m.set_property("cache-secs", secs);
+            m.set_property_logged("cache-secs", secs);
         });
     }
 
@@ -216,19 +216,19 @@ impl MpvBackend {
 
     pub fn set_cache_pause(&self, enable: bool) {
         self.with_mpv(|m| {
-            let _ = m.set_property("cache-pause", enable);
+            m.set_property_logged("cache-pause", enable);
         });
     }
 
     pub fn set_cache_on_disk(&self, enable: bool) {
         self.with_mpv(|m| {
-            let _ = m.set_property("cache-on-disk", if enable { "yes" } else { "no" });
+            m.set_property_logged("cache-on-disk", if enable { "yes" } else { "no" });
         });
     }
 
     pub fn set_demuxer_readahead_secs(&self, secs: f64) {
         self.with_mpv(|m| {
-            let _ = m.set_property("demuxer-readahead-secs", secs);
+            m.set_property_logged("demuxer-readahead-secs", secs);
         });
     }
 
@@ -269,7 +269,7 @@ impl MpvBackend {
 
     pub fn set_preferred_audio_lang(&self, lang: &str) {
         self.with_mpv(|m| {
-            let _ = m.set_property("alang", lang.to_string());
+            m.set_property_logged("alang", lang.to_string());
         });
     }
 }

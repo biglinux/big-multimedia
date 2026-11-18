@@ -15,6 +15,7 @@
 use std::sync::Arc;
 
 use adw::prelude::*;
+use big_media_components::audio::labels::bitrate_kbps_label_from_bps;
 use big_media_components::bytes::decimal_detailed;
 use big_media_components::time::duration_hms;
 use big_relm4_components::layout::{
@@ -187,7 +188,7 @@ fn build_video_group(
     if bitrate > 0.0 {
         group.add(&media_detail_row(
             &i18n("Bitrate"),
-            &format!("{:.0} kbps", bitrate / 1000.0),
+            &bitrate_kbps_label_from_bps(bitrate as i64),
             lines,
         ));
     }
@@ -244,7 +245,7 @@ fn build_audio_group(
     if bitrate > 0.0 {
         group.add(&media_detail_row(
             &i18n("Bitrate"),
-            &format!("{:.0} kbps", bitrate / 1000.0),
+            &bitrate_kbps_label_from_bps(bitrate as i64),
             lines,
         ));
     }

@@ -310,6 +310,14 @@ fn apply_anime4k(mpv: &MpvBackend, preset: &str) {
     }
 }
 
+/// The upscaler, neural upscaler and Anime4K preset, in the order every
+/// enhancement array uses.
+const ENHANCEMENT_KEYS: [keys::StringKey; 3] = [
+    keys::BUILTIN_UPSCALER,
+    keys::NEURAL_UPSCALER,
+    keys::ANIME4K_PRESET,
+];
+
 /// The upscaler, neural upscaler and Anime4K preset the dialog saved, each
 /// empty when off or when its shaders are not installed.
 pub(crate) fn saved_enhancements(settings: &Settings) -> [String; 3] {
@@ -318,18 +326,21 @@ pub(crate) fn saved_enhancements(settings: &Settings) -> [String; 3] {
         shader_gen::neural_shaders_available(),
         shader_gen::anime4k_dir().is_dir(),
     ];
-    let keys = [
-        keys::BUILTIN_UPSCALER,
-        keys::NEURAL_UPSCALER,
-        keys::ANIME4K_PRESET,
-    ];
     std::array::from_fn(|i| {
         if available[i] {
-            settings.get_string(keys[i])
+            settings.get_string(ENHANCEMENT_KEYS[i])
         } else {
             String::new()
         }
     })
+}
+
+/// Save the upscaler, neural upscaler and Anime4K preset, in the order
+/// [`saved_enhancements`] returns them.
+pub(crate) fn put_enhancements(settings: &Settings, choices: [&str; 3]) {
+    for (key, choice) in ENHANCEMENT_KEYS.into_iter().zip(choices) {
+        let _ = settings.put_string(key, choice);
+    }
 }
 
 /// Put the saved choices on the picture: they outlive the session, so the
@@ -444,4 +455,18 @@ fn anime4k_not_installed_row() -> adw::ActionRow {
         )),
     )
     .into_root()
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn enhancements_are_saved_under_their_own_keys() {
+        let settings = Settings::memory_only();
+        put_enhancements(&settings, ["fsr", "ravu-r4", "mode-a"]);
+        assert_eq!(settings.get_string(keys::BUILTIN_UPSCALER), "fsr");
+        assert_eq!(settings.get_string(keys::NEURAL_UPSCALER), "ravu-r4");
+        assert_eq!(settings.get_string(keys::ANIME4K_PRESET), "mode-a");
+    }
 }

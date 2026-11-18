@@ -45,6 +45,8 @@ pub mod fast_render;
 pub mod filters;
 #[cfg(feature = "video")]
 pub mod frame_layout;
+#[cfg(feature = "video")]
+pub mod gl_proc_address;
 /// GPU-offloaded video renderer: DMA-BUF export (MESA) or GdkGLTexture
 /// fallback → `GtkGraphicsOffload` → Wayland subsurface. Used by both the
 /// video player and the video converter's edit page.

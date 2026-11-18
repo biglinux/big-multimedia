@@ -14,7 +14,7 @@ use crate::settings::{self, keys};
 use crate::shared::theming;
 
 /// Set an environment variable only when it is currently unset.
-pub fn set_default_env(name: &str, value: &str) {
+fn set_default_env(name: &str, value: &str) {
     if std::env::var_os(name).is_none() {
         // SAFETY: callers run this from main() before any other thread starts.
         unsafe {
@@ -24,7 +24,7 @@ pub fn set_default_env(name: &str, value: &str) {
 }
 
 /// Set an environment variable during bootstrap regardless of previous value.
-pub fn set_bootstrap_env(name: &str, value: &str) {
+fn set_bootstrap_env(name: &str, value: &str) {
     // SAFETY: callers run this from main() before any other thread starts.
     unsafe {
         std::env::set_var(name, value);
@@ -123,12 +123,7 @@ pub fn init_logging(default_rust_log: &str) {
 }
 
 /// Falls back to `<repo>/locale` so `cargo run` works without an install step.
-pub fn init_gettext() {
-    // SAFETY: called from main() before any other thread starts, as
-    // init_numeric_locale is.
-    unsafe {
-        gettextrs::setlocale(gettextrs::LocaleCategory::LcAll, "");
-    }
+fn bind_text_domain() {
     let locale_dir = resolve_locale_dir();
     gettextrs::bindtextdomain(config::GETTEXT_PACKAGE, locale_dir)
         .expect("Failed to bind textdomain");
@@ -183,28 +178,34 @@ fn dev_locale_dir() -> Option<String> {
     None
 }
 
-/// libmpv parses numbers via libc and breaks under non-C decimal separators.
-pub fn init_numeric_locale() {
-    // GTK must preserve the per-category locale set by gettext + libmpv boot,
-    // including when LC_ALL overrides LC_NUMERIC in the inherited environment.
+/// Take the session's locale, with C for numbers: libmpv parses numbers through
+/// libc and refuses to start under another `LC_NUMERIC`.
+///
+/// Process-wide, so it runs from main() before any other thread starts: in a
+/// standalone player, and in a host before it embeds one.
+pub fn init_process_locale() {
+    // GTK must keep these categories, including when LC_ALL overrides
+    // LC_NUMERIC in the inherited environment.
     if !gtk::is_initialized() {
         gtk::disable_setlocale();
     }
-    set_bootstrap_env("LC_NUMERIC", "C");
-    let c_locale = std::ffi::CString::new("C").expect("static string has no null bytes");
     // SAFETY: called from main() before any other thread starts.
     unsafe {
-        libc::setlocale(libc::LC_NUMERIC, c_locale.as_ptr());
+        gettextrs::setlocale(gettextrs::LocaleCategory::LcAll, "");
+    }
+    set_bootstrap_env("LC_NUMERIC", "C");
+    // SAFETY: as above.
+    unsafe {
+        libc::setlocale(libc::LC_NUMERIC, c"C".as_ptr());
     }
 }
 
-/// Boot steps every player entry point (standalone and embedded) shares: bind
-/// the shared gettext domain, route the components' strings through it, pin
-/// the numeric locale, and register the player's GResource bundles.
+/// Boot steps every player entry point (standalone and embedded) shares, none
+/// of them process-wide: bind the shared gettext domain, route the components'
+/// strings through it, and register the player's GResource bundles.
 pub fn boot_player(resource_bundles: &[&'static [u8]]) {
-    init_gettext();
+    bind_text_domain();
     big_media_components::install_media_components_translator(crate::i18n::i18n);
-    init_numeric_locale();
     for bundle in resource_bundles {
         register_resource_bytes(bundle);
     }

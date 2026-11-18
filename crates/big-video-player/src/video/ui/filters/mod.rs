@@ -17,7 +17,7 @@ mod groups_vf;
 mod vf_row;
 
 pub(crate) use filter_specs::vf_entries;
-pub(crate) use groups_shader::{apply_saved_enhancements, saved_enhancements};
+pub(crate) use groups_shader::{apply_saved_enhancements, put_enhancements, saved_enhancements};
 
 use std::sync::Arc;
 

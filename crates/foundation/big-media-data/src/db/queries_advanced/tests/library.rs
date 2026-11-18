@@ -123,6 +123,18 @@ fn text_filter_narrows_tracks_and_groups() {
 }
 
 #[test]
+fn text_filter_matches_word_prefixes_across_columns() {
+    let conn = setup_db();
+    insert_year_track(&conn, 1, "Beatles", 1968, 320);
+    insert_year_track(&conn, 2, "Bob", 2010, 256);
+
+    let tracks = get_library_tracks(&conn, &[], "beat t1", None).unwrap();
+    assert_eq!(tracks.len(), 1);
+    assert_eq!(tracks[0].artist.as_deref(), Some("Beatles"));
+    assert_eq!(get_library_track_count(&conn, "roc bob", None).unwrap(), 1);
+}
+
+#[test]
 fn age_filter_excludes_tracks_older_than_window() {
     let conn = setup_db();
     let now: i64 = conn

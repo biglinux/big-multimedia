@@ -9,6 +9,7 @@ mod texture_pool;
 
 use super::egl_dmabuf::{self, EglDmaBufFns};
 use crate::player::mpv_backend::fast_render::FastRenderContext;
+use crate::player::mpv_backend::gl_proc_address::gl_function;
 use gtk::glib::translate::{ToGlibPtr, from_glib_full};
 use gtk::{gdk, prelude::*};
 use log::{debug, error, info, warn};
@@ -413,17 +414,8 @@ fn query_gl_diagnostics() -> GlDiagnostics {
     const GL_VERSION_ENUM: u32 = 0x1F02;
     const GL_RENDERER: u32 = 0x1F01;
 
-    // SAFETY: dlsym RTLD_DEFAULT queries the process global symbol table.
-    let get_string: Option<GlGetStringFn> = unsafe {
-        let ptr = libc::dlsym(libc::RTLD_DEFAULT, c"glGetString".as_ptr());
-        if ptr.is_null() {
-            None
-        } else {
-            Some(std::mem::transmute::<*mut std::ffi::c_void, GlGetStringFn>(
-                ptr,
-            ))
-        }
-    };
+    // SAFETY: `glGetString` has this signature.
+    let get_string: Option<GlGetStringFn> = unsafe { gl_function(c"glGetString") };
 
     let Some(get_string) = get_string else {
         return GlDiagnostics {

@@ -40,9 +40,6 @@ fn build_player_window(
 /// App-specific boot done exactly once for the embed/pane paths.
 fn embed_boot() {
     EMBED_BOOT.call_once(|| {
-        // Read lazily at backend install (realize), so defaulting here is safe. See
-        // `run` for why the offload path is not the default.
-        shared::app_base::set_default_env("BIG_MEDIA_DISABLE_GRAPHICS_OFFLOAD", "1");
         shared::app_base::boot_player(&[resources::VIDEO_PLAYER_SHELL]);
     });
 }
@@ -62,14 +59,13 @@ pub struct VideoEmbed {
 
 /// Open the video-player shell as a window of the host's running
 /// application (multicall hosts: big-host). Performs the app-specific boot
-/// exactly once (gettext with the shared media domain, numeric locale, GResource
-/// bundles, the graphics-offload default) and launches a detached
-/// [`video::ui::video_shell::VideoShell`]. The host keeps the returned
-/// controller alive for as long as the module is open; dropping it shuts
-/// the component tree down. The caller owns process-wide concerns ([`run`]
-/// steps this skips): logging, allocator tuning, the GSK renderer
-/// choice (the host's renderer is already decided), and the
-/// `gtk::Application` itself.
+/// exactly once (the shared media gettext domain, GResource bundles) and
+/// launches a detached [`video::ui::video_shell::VideoShell`]. The host keeps
+/// the returned controller alive for as long as the module is open; dropping it
+/// shuts the component tree down. The caller owns process-wide concerns ([`run`]
+/// steps this skips), set before its threads start: logging, allocator tuning,
+/// the GSK renderer, [`shared::app_base::init_process_locale`], without which
+/// mpv does not start, and the `gtk::Application` itself.
 pub fn open_in_application() -> VideoEmbed {
     use gtk::prelude::*;
     use relm4::{Component, ComponentController};
@@ -113,13 +109,7 @@ pub fn run() -> gtk::glib::ExitCode {
     // GTK 4.18+ accepts without a warning: it ignores "ngl" and falls back to
     // its own default, which may be Vulkan.
     shared::app_base::use_gl_renderer(true);
-    // Keep the GLArea video path as the default. With a non-blocking render
-    // call (see `FastRenderContext::render`), offload and GLArea cost the same
-    // CPU, and offload holds an extra GL context and texture pool while idle.
-    // It does give
-    // real DMA-BUF zero-copy, so it stays one variable away for anyone whose
-    // compositor benefits from the subsurface; it just buys nothing by default.
-    shared::app_base::set_default_env("BIG_MEDIA_DISABLE_GRAPHICS_OFFLOAD", "1");
+    shared::app_base::init_process_locale();
     shared::app_base::boot_player(&[resources::VIDEO_PLAYER_SHELL]);
 
     // The `VideoShell` Root is mountable content (a `gtk::Box`), not a
@@ -161,6 +151,9 @@ mod lifetime_tests {
     #[test]
     #[ignore = "requires an isolated GTK session and home"]
     fn embedded_video_finalizes_after_close() {
+        // A host sets the process locale before its threads start; the test
+        // keeps the C locale mpv needs instead of taking the session's.
+        gtk::disable_setlocale();
         gtk::init().unwrap();
         adw::init().unwrap();
         let app = adw::Application::builder()
