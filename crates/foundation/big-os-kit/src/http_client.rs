@@ -12,6 +12,8 @@ use crate::url::MediaLogTarget;
 mod transport;
 
 const CURL: &str = "curl";
+/// Start of the error text for a curl process that exited unsuccessfully; the exit code follows.
+const CURL_EXIT_PREFIX: &str = "curl exited with code ";
 const USER_AGENT: &str = "BigLinuxRustApp/0.1 (https://github.com/biglinux/big-multimedia)";
 const TIMEOUT_SECS: u64 = 15;
 const _: () = assert!(TIMEOUT_SECS >= 5);
@@ -63,7 +65,7 @@ struct CurlHeaders {
 
 /// DNS/lookup failures are permanent per invocation; never retry.
 fn is_dns_error(err: &str) -> bool {
-    err.contains("code 6")
+    err.ends_with(&format!("{CURL_EXIT_PREFIX}6"))
         || err.contains("Could not resolve host")
         || err.contains("Name or service not known")
         || err.contains("No address associated")
@@ -580,14 +582,15 @@ mod tests {
         assert!(http_get_fast("not-a-url").is_none());
     }
 
+    /// Exit codes from curl(1): 6 is a failed host lookup, 28 a timeout,
+    /// 60 an unverified peer certificate and 67 a refused login.
     #[test]
-    fn dns_error_detected() {
-        assert!(is_dns_error("curl exited with code 6"));
-    }
-
-    #[test]
-    fn timeout_is_distinct_from_dns() {
-        assert!(!is_dns_error("curl exited with code 28"));
+    fn dns_error_matches_exit_code_exactly() {
+        assert!(is_dns_error("read curl headers: curl exited with code 6"));
+        for other in [28, 60, 61, 67] {
+            let error = format!("read curl headers: curl exited with code {other}");
+            assert!(!is_dns_error(&error), "{error}");
+        }
     }
 
     #[test]

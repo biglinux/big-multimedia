@@ -143,7 +143,8 @@ impl Transport {
                                 return Ok(0);
                             }
                             return Err(io::Error::other(format!(
-                                "curl exited with code {}",
+                                "{}{}",
+                                super::CURL_EXIT_PREFIX,
                                 status.code().unwrap_or(-1)
                             )));
                         }
