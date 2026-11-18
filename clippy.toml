@@ -42,6 +42,8 @@ disallowed-methods = [
     { path = "big_app_kit::desktop::BigSystemPowerAction::spawn_detached", reason = "settings writes must finish before suspend or power off; use the sleep timer in crates/media-runtime/src/shared/sleep_timer.rs" },
     { path = "glib::user_cache_dir", reason = "use `big_os_kit::xdg_dirs::cache_dir` (crates/foundation/big-os-kit/src/xdg_dirs.rs), which ignores a relative `XDG_CACHE_HOME` and returns `None` instead of guessing a path" },
     { path = "glib::user_config_dir", reason = "use `big_os_kit::xdg_dirs::config_dir` (crates/foundation/big-os-kit/src/xdg_dirs.rs), which ignores a relative `XDG_CONFIG_HOME` and returns `None` instead of guessing a path" },
+    { path = "gtk4::FileDialog::builder", reason = "use `big_app_kit::file_dialogs::FilePicker` (crates/app/big-app-kit/src/file_dialogs.rs)" },
+    { path = "gtk4::FileDialog::new", reason = "use `big_app_kit::file_dialogs::FilePicker` (crates/app/big-app-kit/src/file_dialogs.rs)" },
     { path = "gio::Menu::append_section", reason = "GTK 4.22's menu tracker keeps every section it shows; use `big_gtk_kit::menu::append_shared_section`" },
 ]
 
