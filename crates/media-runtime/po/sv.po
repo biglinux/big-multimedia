@@ -527,7 +527,8 @@ msgstr ""
 
 #: crates/big-audio-player/src/audio/ui/audio_shell/playback.rs:143
 msgid "The library could not be read, so lyrics were not searched online."
-msgstr "Biblioteket kunde inte läsas, så ingen sångtext söktes på nätet."
+msgstr ""
+"Biblioteket kunde inte läsas, så det söktes inte efter sångtexter på nätet."
 
 #: crates/big-audio-player/src/audio/ui/audio_shell/playback.rs:157
 msgid "Seek position"
@@ -811,7 +812,7 @@ msgstr "Skanning avbruten"
 
 #: crates/big-audio-player/src/audio/ui/audio_shell/update.rs:139
 msgid "Scan incomplete"
-msgstr "Skanning ofullständig"
+msgstr "Skanning ej slutförd"
 
 #: crates/big-audio-player/src/audio/ui/audio_shell/update.rs:142
 #, rust-format
@@ -1241,7 +1242,7 @@ msgstr "Inga avsnitt i kön"
 
 #: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:245
 msgid "Choose a podcast on the left to queue its episodes."
-msgstr "Välj en podd till vänster för att köa dess avsnitt."
+msgstr "Välj en podd till vänster för att lägga dess avsnitt i kön."
 
 #: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:254
 msgid "Drop tracks here"
@@ -2402,8 +2403,9 @@ msgid ""
 "This playlist has IPTV channels from a provider that is not set up. Add the "
 "provider under IPTV, then open the playlist again."
 msgstr ""
-"Den här spellistan har IPTV-kanaler från en leverantör som inte är inställd. "
-"Lägg till leverantören under IPTV och öppna sedan spellistan igen."
+"Den här spellistan har IPTV-kanaler från en leverantör som inte är "
+"konfigurerad. Lägg till leverantören under IPTV och öppna sedan spellistan "
+"igen."
 
 #: crates/big-video-player/src/video/ui/iptv/providers_dialog.rs:48
 msgid "Add provider"
@@ -2420,7 +2422,7 @@ msgid ""
 "manager."
 msgstr ""
 "Ett ersatt eller borttaget lösenord kunde inte tas bort från din nyckelring. "
-"Du kan själv ta bort objektet ”Big Multimedia IPTV provider” som blev kvar "
+"Du kan själv ta bort det kvarlämnade objektet ”Big Multimedia IPTV provider” "
 "med ditt program för nyckelringar."
 
 #: crates/big-video-player/src/video/ui/iptv/providers_dialog.rs:120
