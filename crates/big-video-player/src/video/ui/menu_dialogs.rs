@@ -164,23 +164,6 @@ fn accepted_goto_seconds(input: &str) -> Option<f64> {
     }
 }
 
-/// Resolve a non-empty chapter title, falling back to `Chapter N` (1-based) when
-/// mpv reports an empty or placeholder title.
-pub(super) fn chapter_title(raw: String, index: i64) -> String {
-    chapter_title_with_prefix(raw, index, &i18n("Chapter"))
-}
-
-fn chapter_title_with_prefix(raw: String, index: i64, chapter_prefix: &str) -> String {
-    if raw.is_empty()
-        || raw.eq_ignore_ascii_case("(unnamed)")
-        || raw.eq_ignore_ascii_case("unnamed")
-    {
-        format!("{chapter_prefix} {}", index + 1)
-    } else {
-        raw
-    }
-}
-
 /// Called only after terminal completion and no-replace publication.
 pub(super) fn show_screenshot_result(
     notice: &big_media_components::surface::MediaNotice,
@@ -195,25 +178,4 @@ pub(super) fn show_screenshot_result(
     notice.show_action(&message, &i18n("Open"), move || {
         big_app_kit::desktop::open_file(&path);
     });
-}
-
-#[cfg(test)]
-mod tests {
-    use super::chapter_title_with_prefix;
-
-    #[test]
-    fn blank_chapter_title_falls_back() {
-        assert_eq!(
-            chapter_title_with_prefix(String::new(), 0, "Chapter"),
-            "Chapter 1"
-        );
-        assert_eq!(
-            chapter_title_with_prefix("(unnamed)".to_string(), 2, "Chapter"),
-            "Chapter 3"
-        );
-        assert_eq!(
-            chapter_title_with_prefix("Intro".to_string(), 0, "Chapter"),
-            "Intro"
-        );
-    }
 }

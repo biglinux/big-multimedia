@@ -322,6 +322,7 @@ impl MpvBackend {
 
     fn get_chapters_locked(mpv: &MpvClient) -> Result<Vec<(f64, String)>, MpvError> {
         let count = mpv.get_property::<i64>("chapter-list/count")?;
+        let prefix = crate::i18n::i18n("Chapter");
         let mut chapters = Vec::new();
         for i in 0..count {
             let time = mpv
@@ -330,17 +331,15 @@ impl MpvBackend {
             let raw_title = mpv
                 .get_property::<String>(&format!("chapter-list/{i}/title"))
                 .unwrap_or_default();
-            let title = if raw_title.is_empty()
-                || raw_title.eq_ignore_ascii_case("(unnamed)")
-                || raw_title.eq_ignore_ascii_case("unnamed")
-            {
-                format!("{} {}", crate::i18n::i18n("Chapter"), i + 1)
-            } else {
-                raw_title
-            };
-            chapters.push((time, title));
+            chapters.push((time, chapter_title(raw_title, i, &prefix)));
         }
         Ok(chapters)
+    }
+
+    /// The current file's chapters as `(start seconds, title)`, read under one
+    /// lock; empty when mpv has none or cannot list them.
+    pub fn chapters(&self) -> Vec<(f64, String)> {
+        self.with_mpv(|mpv| Self::get_chapters_locked(mpv).unwrap_or_default())
     }
 
     pub(in crate::player::mpv_backend) fn with_mpv<F, R>(&self, f: F) -> R
@@ -352,6 +351,19 @@ impl MpvBackend {
             .lock()
             .unwrap_or_else(std::sync::PoisonError::into_inner);
         f(&guard)
+    }
+}
+
+/// mpv's chapter title, or `<prefix> <n>` counting from one when the file
+/// leaves it blank or "unnamed".
+fn chapter_title(raw: String, index: i64, prefix: &str) -> String {
+    if raw.is_empty()
+        || raw.eq_ignore_ascii_case("(unnamed)")
+        || raw.eq_ignore_ascii_case("unnamed")
+    {
+        format!("{prefix} {}", index + 1)
+    } else {
+        raw
     }
 }
 

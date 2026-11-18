@@ -509,3 +509,17 @@ fn rejected_custom_option_keeps_the_rest() {
     .unwrap();
     assert_eq!(mpv.get_property::<f64>("cache-secs").unwrap(), 7.0);
 }
+
+#[test]
+fn blank_chapter_title_falls_back() {
+    assert_eq!(chapter_title(String::new(), 0, "Chapter"), "Chapter 1");
+    assert_eq!(
+        chapter_title("(unnamed)".to_string(), 2, "Chapter"),
+        "Chapter 3"
+    );
+    assert_eq!(
+        chapter_title("Unnamed".to_string(), 0, "Chapter"),
+        "Chapter 1"
+    );
+    assert_eq!(chapter_title("Intro".to_string(), 0, "Chapter"), "Intro");
+}

@@ -13,7 +13,6 @@
 
 use super::adjustments::{Adjustment, detect};
 use super::*;
-use crate::video::ui::menu_dialogs::chapter_title;
 use big_relm4_components::feedback::tooltip;
 
 mod recent;
@@ -827,12 +826,7 @@ fn block_button(block: Block, sender: &ComponentSender<VideoShell>) -> gtk::Butt
 fn chapters_page(mpv: &MpvBackend, sender: &ComponentSender<VideoShell>) -> gtk::Widget {
     let chapters = group(&i18n("Jump to a chapter"), None);
     let current = mpv.get_current_chapter();
-    for index in 0..mpv.get_chapter_count() {
-        let time = mpv.get_property_f64(&format!("chapter-list/{index}/time"));
-        let title = chapter_title(
-            mpv.get_property_string(&format!("chapter-list/{index}/title")),
-            index,
-        );
+    for (index, (time, title)) in (0_i64..).zip(mpv.chapters()) {
         let row = adw::ActionRow::builder()
             .title(title)
             .subtitle(big_media_components::time::playback_time(time))
