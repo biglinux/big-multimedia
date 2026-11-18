@@ -65,7 +65,7 @@ pub mod software_frames;
 #[cfg(feature = "video")]
 pub mod video_surface;
 
-#[cfg(test)]
+#[cfg(all(test, feature = "video"))]
 mod tests {
     use super::env_value_names_nvidia_driver;
 

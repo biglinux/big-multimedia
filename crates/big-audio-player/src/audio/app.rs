@@ -51,17 +51,17 @@ const DOCK_CONTROLS: &[(&str, &str, &str)] = &[
     (
         "play-pause",
         "play-pause",
-        "Play or pause the running player",
+        gettext_noop("Play or pause the running player"),
     ),
     (
         "next",
         "next-track",
-        "Skip to the next track in the running player",
+        gettext_noop("Skip to the next track in the running player"),
     ),
     (
         "previous",
         "prev-track",
-        "Go back to the previous track in the running player",
+        gettext_noop("Go back to the previous track in the running player"),
     ),
 ];
 
@@ -227,7 +227,7 @@ impl Application {
                 glib::Char::from(0),
                 glib::OptionFlags::NONE,
                 glib::OptionArg::None,
-                description,
+                &i18n(description),
                 None,
             );
         }

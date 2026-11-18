@@ -71,6 +71,7 @@ const PLAYBACK_PROPERTIES: u64 = 1;
 pub struct MpvBackend {
     pub(in crate::player::mpv_backend) hwdec_before_filters: Mutex<Option<String>>,
     /// The render context draws with a software GL, so the CPU decodes.
+    #[cfg(feature = "video")]
     pub(in crate::player::mpv_backend) software_gl: AtomicBool,
     /// Locked mpv client. Drop uses mpv_terminate_destroy instead of plain
     /// mpv_destroy so libmpv internal threads are joined before teardown.
@@ -244,6 +245,7 @@ impl MpvBackend {
             _wakeup: wakeup,
             has_af: AtomicBool::new(false),
             hwdec_before_filters: Mutex::new(None),
+            #[cfg(feature = "video")]
             software_gl: AtomicBool::new(false),
             stream_volume,
         }
@@ -300,6 +302,7 @@ impl MpvBackend {
 
     /// Report the track list again after a command changed it outside a file
     /// load, which is the only time the event loop reads it.
+    #[cfg(feature = "video")]
     pub(in crate::player::mpv_backend) fn republish_tracks(&self) {
         let tracks = self.get_track_list();
         let _ = self
