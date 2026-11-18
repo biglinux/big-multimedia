@@ -56,7 +56,7 @@ fn fill_recent_page(
         .build();
     let names: Rc<[String]> = entries
         .iter()
-        .map(|entry| crate::recent::display_name(&entry.path))
+        .map(|entry| crate::media::playlist::display_name(&entry.path))
         .collect();
     for entry in entries {
         grid.append(&recent_card(entry, sender));
@@ -80,7 +80,8 @@ fn recent_card(
     entry: crate::recent::RecentEntry,
     sender: &ComponentSender<VideoShell>,
 ) -> gtk::Button {
-    let name = crate::recent::display_name(&entry.path);
+    // Without the extension, as the Files and Playlist lists name videos.
+    let name = crate::media::playlist::display_name(&entry.path);
     let (frame, picture, placeholder, length) = card_frame(&entry.path);
     let label = gtk::Label::builder()
         .label(&name)

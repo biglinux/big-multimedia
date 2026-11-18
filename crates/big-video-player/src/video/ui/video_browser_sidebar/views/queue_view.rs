@@ -6,6 +6,7 @@ use gtk::{gdk, gio, glib};
 use super::super::{BrowserState, chrome};
 use super::model::{build_filter, build_store, finish_view};
 use super::shared::{attach_context_menu, attach_context_menu_keys, row_index, set_accent};
+use crate::i18n::i18n;
 use crate::media::playlist::{self, EntryKind, PlaylistEntry};
 use crate::media::thumbnail;
 use big_media_components::time::duration_hms as format_duration_hms;
@@ -311,9 +312,11 @@ fn bind_queue_row(state: &Rc<BrowserState>, queue_cell: &gtk::ListItem, generati
     let is_current = entry.index as i64 == state.pos.get();
     if is_current {
         pos.set_label("▶");
+        pos.update_property(&[gtk::accessible::Property::Label(&i18n("Playing"))]);
         row.add_css_class("playlist-current");
     } else {
         pos.set_label(&(entry.index + 1).to_string());
+        pos.reset_property(gtk::AccessibleProperty::Label);
         row.remove_css_class("playlist-current");
     }
     set_accent(&pos, is_current);

@@ -347,7 +347,9 @@ impl VideoShell {
         let controls = self.controls.sender();
         let _ = controls.send(VideoControlsBarInput::SetVolumeOfTv(false));
         let position = mpv.get_position();
-        let _ = controls.send(VideoControlsBarInput::SetPaused(mpv.is_paused()));
+        let _ = controls.send(VideoControlsBarInput::SetPaused(
+            mpv.is_paused() || self.ended,
+        ));
         let _ = controls.send(VideoControlsBarInput::SetPosition(playback_time(position)));
         let _ = controls.send(VideoControlsBarInput::SetDuration(playback_time(
             self.duration_secs,

@@ -76,7 +76,7 @@ mod tv;
 
 pub use input::{VideoShellInput, mark_opening_files, send_to_shell};
 
-use osd::{AspectSnap, IdleBackground, OsdState};
+use osd::{AspectSnap, IdleBackground, OsdState, SubtitleLift};
 
 pub struct VideoShell {
     /// OSD controls bar (seek row + volume/speed/voice + transport + tracks).
@@ -176,6 +176,8 @@ pub struct VideoShell {
     sleep_timer: crate::shared::sleep_timer::SleepTimer,
     /// Window aspect-ratio snap (resize to fit the video, no letterbox bars).
     aspect_snap: Rc<AspectSnap>,
+    /// Subtitles kept above the controls while they show.
+    subtitle_lift: Rc<SubtitleLift>,
     /// Leaves the shell input slot on drop, so a closed host module does not
     /// keep the Relm4 component alive.
     _shell_input: crate::shared::app_base::ShellInputRegistration<relm4::Sender<VideoShellInput>>,
@@ -196,6 +198,9 @@ pub struct VideoShell {
     mpris_track_seq: u64,
     /// True between an unpause and the next pause or end of file.
     playing: bool,
+    /// mpv holds the last frame of a file (`eof-reached`): the button offers
+    /// Play though mpv is not paused.
+    ended: bool,
     /// GTK inhibit cookie keeping the screen awake. mpv cannot do it: its
     /// screensaver control needs a window of its own, which libmpv lacks.
     screen_inhibit: Option<u32>,

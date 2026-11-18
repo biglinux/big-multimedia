@@ -244,6 +244,7 @@ impl Component for VideoShell {
 
         // The playlist / folder browser floats over the video on the left.
         let playlist_panel = super::playlist_panel::PlaylistPanel::new(playlist.widget(), &sender);
+        playlist_panel.keep_clear(&main_overlay, &welcome);
         // Videos dropped on the panel join the list; dropped on the video
         // they replace it (the window's own drop target, below).
         {
@@ -402,6 +403,8 @@ impl Component for VideoShell {
             super::menus::keep_focus_off_clicks(area);
         }
         wire_osd_autohide(&main_overlay, &osd);
+        let subtitle_lift =
+            SubtitleLift::wire(&main_overlay, chrome.bottom_revealer(), &mpv, &settings);
         // The settings panel sits over the video, clear of header and controls,
         // which stay shown while it is open.
         // Attached, the TV already plays what the player holds: no swap.
@@ -608,6 +611,7 @@ impl Component for VideoShell {
                 win_actions,
                 sleep_timer: crate::shared::sleep_timer::SleepTimer::default(),
                 aspect_snap,
+                subtitle_lift,
                 _shell_input: shell_input,
                 trim,
                 trim_play_selection: Rc::new(Cell::new(false)),
@@ -617,6 +621,7 @@ impl Component for VideoShell {
                 mpris_state,
                 mpris_track_seq: 0,
                 playing: false,
+                ended: false,
                 screen_inhibit: None,
             },
             widgets: (),
@@ -747,7 +752,7 @@ impl Component for VideoShell {
                 }
                 VideoShellInput::ShowGotoTime => {
                     if let Some(root) = window_ref {
-                        Self::show_goto_time_dialog(root);
+                        self.show_goto_time_dialog(root);
                     }
                 }
                 VideoShellInput::Screenshot => self.take_screenshot(&sender),
@@ -801,7 +806,7 @@ impl Component for VideoShell {
                         self.tv
                             .control(if state.paused { "play" } else { "pause" }, 0.0);
                     } else if let Some(mpv) = self.mpv.borrow().as_ref() {
-                        mpv.toggle_pause();
+                        super::playback::toggle_play(mpv, &self.settings);
                     }
                 }
                 VideoShellInput::TvChanged => self.on_tv_changed(),

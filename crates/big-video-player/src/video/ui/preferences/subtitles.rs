@@ -236,10 +236,16 @@ fn font_row(settings: &Settings, mpv: Option<&Arc<MpvBackend>>) -> adw::ActionRo
     let button = gtk::FontDialogButton::new(Some(gtk::FontDialog::new()));
     button.set_level(gtk::FontLevel::Family);
     button.set_valign(gtk::Align::Center);
-    let current = settings.get_string(keys::SUB_FONT);
-    if !current.is_empty() {
-        button.set_font_desc(&pango::FontDescription::from_string(&current));
+    let mut current = settings.get_string(keys::SUB_FONT);
+    if current.is_empty() {
+        // Unset, mpv asks fontconfig for sans-serif: name the family it gets.
+        current = button
+            .pango_context()
+            .load_font(&pango::FontDescription::from_string("sans-serif"))
+            .and_then(|font| font.describe().family())
+            .map_or_else(|| "sans-serif".to_string(), |family| family.to_string());
     }
+    button.set_font_desc(&pango::FontDescription::from_string(&current));
     let settings = settings.clone();
     let mpv = mpv.cloned();
     button.connect_font_desc_notify(move |button| {

@@ -45,22 +45,37 @@ pub fn create_video_colors_page(
         (i18n("Background Opacity"), keys::UI_BG_OPACITY),
         (i18n("Menu Opacity"), keys::UI_MENU_OPACITY),
     ] {
+        // Shown in percent; stored as a fraction.
         let row = accessible_spin_row()
             .title(title)
-            .digits(2)
+            .digits(0)
             .adjustment(&gtk::Adjustment::new(
-                settings.get_double(key),
+                (settings.get_double(key) * 100.0).round(),
                 0.0,
-                1.0,
-                0.05,
-                0.1,
+                100.0,
+                5.0,
+                10.0,
                 0.0,
             ))
             .build();
+        row.connect_output(|row| {
+            row.set_text(&format!("{}%", row.value()));
+            true
+        });
+        row.connect_input(|row| {
+            Some(
+                row.text()
+                    .trim()
+                    .trim_end_matches('%')
+                    .trim_end()
+                    .parse::<f64>()
+                    .map_err(|_| ()),
+            )
+        });
         let settings = settings.clone();
         let on_changed = on_changed.clone();
         row.connect_value_notify(move |row| {
-            let _ = settings.put_double(key, row.value());
+            let _ = settings.put_double(key, row.value() / 100.0);
             on_changed();
         });
         source_group.add(&row);

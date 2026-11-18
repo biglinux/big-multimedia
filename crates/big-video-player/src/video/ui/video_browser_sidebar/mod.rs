@@ -610,12 +610,12 @@ impl BrowserState {
     fn rebuild_playlist(self: &Rc<Self>) {
         let items = self.queue.borrow().clone();
 
-        let search_entry = chrome::build_search(self);
-
+        // An empty playlist has nothing to filter.
         if items.is_empty() {
             chrome::build_playlist_empty_state(self);
             return;
         }
+        let search_entry = chrome::build_search(self);
 
         self.build_summary(&items);
         if items.len() >= 2 && !self.settings.get_bool(keys::PLAYLIST_REORDER_HINT_SEEN) {
