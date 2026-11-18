@@ -159,13 +159,15 @@ impl VideoShell {
                         durability_confirmed,
                     );
                 }
-                crate::player::mpv_backend::ScreenshotResult::Failed => {
-                    self.notify(&i18n("Screenshot failed"));
+                crate::player::mpv_backend::ScreenshotResult::Failed(error) => {
+                    self.notify(
+                        &crate::video::ui::menu_dialogs::screenshot_not_saved_message(&error),
+                    );
                 }
                 crate::player::mpv_backend::ScreenshotResult::Cancelled => {}
             },
             PlayerEvent::ScreenshotTimedOut { .. } => {
-                self.notify(&i18n("Screenshot timed out; cancellation requested"));
+                self.notify(&i18n("The screenshot took too long and was not saved"));
             }
             // mpv quit on its own (idle mode "close player" at the end of the
             // playlist): close the window instead of leaving a dead player.
@@ -289,7 +291,7 @@ impl VideoShell {
         start: usize,
         folder: Option<String>,
     ) {
-        if entries.is_empty() {
+        if entries.is_empty() || self.report_missing_engine() {
             self.reveal_pending_welcome();
             return;
         }
@@ -313,6 +315,7 @@ impl VideoShell {
         }
         let mpv_ref = self.mpv.borrow();
         let Some(mpv) = mpv_ref.as_ref() else {
+            self.report_missing_engine();
             return;
         };
         let Some(chosen) = entries.get(start).or(entries.first()) else {
@@ -452,6 +455,15 @@ impl VideoShell {
     /// Tell the person something, in the row above the content.
     pub(crate) fn notify(&self, message: &str) {
         self.notice.show(message);
+    }
+
+    /// Say again why nothing can play when mpv failed to start; true then.
+    pub(crate) fn report_missing_engine(&self) -> bool {
+        let Some(failure) = &self.engine_failure else {
+            return false;
+        };
+        self.notify(failure);
+        true
     }
 
     /// Queue the chosen files in the video converter (an already-running
@@ -688,6 +700,7 @@ impl VideoShell {
             start_video();
         }
         let Some(mpv) = self.mpv.borrow().clone() else {
+            self.report_missing_engine();
             return;
         };
         if title.is_empty() {

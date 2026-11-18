@@ -28,12 +28,19 @@ fn start_tree(
                 &request.filter,
                 request.age,
             )?;
-            Ok::<_, &'static str>(request.ticket.is_current().then_some(tree))
+            let has_items = queries::get_library_track_count(&conn, "", None)
+                .map_err(|_| "library count failed")?
+                > 0;
+            Ok::<_, &'static str>(request.ticket.is_current().then_some((tree, has_items)))
         })
         .await;
         match result {
-            Ok(Ok(Some(data))) => {
-                let _ = input.send(AudioShellInput::LibraryTreeResolved { generation, data });
+            Ok(Ok(Some((data, has_items)))) => {
+                let _ = input.send(AudioShellInput::LibraryTreeResolved {
+                    generation,
+                    data,
+                    has_items,
+                });
             }
             Ok(Ok(None)) => {} // stale: do not display empty results or an error
             _ => {

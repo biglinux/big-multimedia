@@ -149,6 +149,8 @@ pub struct VideoShell {
     /// Video playback backend (system libmpv). `None` until the surface
     /// realizes and the backend initializes; `None` also if init failed.
     mpv: Rc<RefCell<Option<Arc<MpvBackend>>>>,
+    /// Why mpv failed to start, said again whenever something is asked to play.
+    engine_failure: Option<String>,
     /// The GL render path, built when the first media loads.
     video_start: render::VideoStart,
     /// Duration of the loaded media (scrub fraction → seconds conversion).

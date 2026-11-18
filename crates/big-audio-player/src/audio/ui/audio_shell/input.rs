@@ -91,6 +91,8 @@ pub enum AudioShellInput {
         generation: u64,
         /// Snapshot built off the main thread.
         data: LibraryTreeSnapshot,
+        /// The library holds tracks, whatever the search and age filters hide.
+        has_items: bool,
     },
     /// A playlist mutation completed (false leaves the current view unchanged).
     PlaylistMutationFinished(bool),

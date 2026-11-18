@@ -176,9 +176,15 @@ impl AudioShell {
                     )));
                 }
             }
-            AudioShellInput::LibraryTreeResolved { generation, data } => {
+            AudioShellInput::LibraryTreeResolved {
+                generation,
+                data,
+                has_items,
+            } => {
                 if self.library_generation.is_current(generation) {
                     self.library.emit(LibraryPanelInput::SetLibraryTree(data));
+                    self.playlist
+                        .emit(PlaylistPanelInput::SetLibraryHasItems(has_items));
                 }
             }
             AudioShellInput::PlaylistMutationFinished(success) => {

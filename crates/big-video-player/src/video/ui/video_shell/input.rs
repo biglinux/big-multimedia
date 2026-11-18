@@ -10,6 +10,8 @@ use super::trim::VideoTrimBarOutput;
 pub enum VideoShellInput {
     /// An mpv backend event (position, duration, pause, EOF, …).
     Player(PlayerEvent),
+    /// mpv could not start; the message says why and what to do.
+    EngineFailed(String),
     /// An intent emitted by the OSD controls bar.
     Controls(VideoControlsBarOutput),
     /// An intent emitted by the folder-browser sidebar.
@@ -86,14 +88,12 @@ pub enum VideoShellInput {
     ShowGotoTime,
     /// Capture the current frame to the Pictures dir (Playback menu).
     Screenshot,
-    ScreenshotQueueFailed,
+    /// A screenshot never reached mpv; the message says why and what to do.
+    ScreenshotFailed(String),
     /// Jump to chapter `idx` (chapter list dialog).
     SetChapter(i64),
     /// Arm the sleep timer for `minutes`, running `action` on expiry.
-    SleepTimerStart {
-        minutes: u32,
-        action: String,
-    },
+    SleepTimerStart { minutes: u32, action: String },
     /// Disarm the sleep timer.
     SleepTimerCancel,
     /// Re-read which settings are away from normal (controls shown, a
@@ -126,10 +126,7 @@ pub enum VideoShellInput {
     /// fullscreen. It never enters fullscreen.
     Escape,
     /// Play the DVD (or Blu-ray) in `device`: a drive, an ISO or a folder.
-    OpenDisc {
-        bluray: bool,
-        device: String,
-    },
+    OpenDisc { bluray: bool, device: String },
     /// These files went to the trash.
     Trashed(Vec<String>),
     /// Keyboard: shuffle the playlist, or put it back in order.
