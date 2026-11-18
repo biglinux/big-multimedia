@@ -11,6 +11,7 @@ use super::menu_actions::install_menu_actions;
 use crate::i18n::i18n;
 use crate::media::playlist;
 use crate::settings::keys;
+use crate::video::ui::preferences::general::{LOOP_MODE_VALUES, loop_mode_labels};
 
 /// Mode-specific header: in Files, a "load folder" button + a files options menu
 /// (subfolders / sort); in Playlist, an "add files" button + a playlist options
@@ -193,9 +194,14 @@ fn build_options_menu(state: &Rc<BrowserState>, mode: SidebarMode) -> gtk::MenuB
                 "video-playlist-playback",
                 || {
                     let repeat = gio::Menu::new();
-                    repeat.append(Some(&i18n("Off")), Some("pl.loop::no"));
-                    repeat.append(Some(&i18n("Current file")), Some("pl.loop::file"));
-                    repeat.append(Some(&i18n("Whole playlist")), Some("pl.loop::playlist"));
+                    for (value, label) in LOOP_MODE_VALUES.iter().zip(loop_mode_labels()) {
+                        let item = gio::MenuItem::new(Some(&label), None);
+                        item.set_action_and_target_value(
+                            Some("pl.loop"),
+                            Some(&value.to_variant()),
+                        );
+                        repeat.append_item(&item);
+                    }
                     let playback = gio::Menu::new();
                     playback.append(Some(&i18n("Shuffle")), Some("pl.shuffle"));
                     playback.append_submenu(Some(&i18n("Repeat")), &repeat);
