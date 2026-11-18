@@ -8,6 +8,7 @@ use big_relm4_components::input::button_content::{BigButtonContentSpec, build_bu
 use big_relm4_components::layout::toolbar_pane::{
     BigToolbarHeader, BigToolbarHeaderSpec, BigToolbarPane, BigToolbarPaneSpec,
 };
+use big_relm4_components::theme::CssSlot;
 
 const PLAYBACK_SHORTCUT_ACTIONS: &[&str] = &[
     "play-pause",
@@ -360,36 +361,19 @@ impl Component for AudioShell {
             let _ = eq_sender.send(AudioShellInput::ShowEqualizer);
         });
 
-        // Appearance: apply the saved palette + high-contrast now, and let the dialog re-apply live via the same two
-        // provider slots (replaced in place, never stacked).
-        let theme_provider: std::rc::Rc<std::cell::RefCell<Option<gtk::CssProvider>>> =
-            std::rc::Rc::new(std::cell::RefCell::new(None));
-        let hc_provider: std::rc::Rc<std::cell::RefCell<Option<gtk::CssProvider>>> =
-            std::rc::Rc::new(std::cell::RefCell::new(None));
-        crate::audio::ui::theming::apply_appearance(
-            &settings,
-            &mut theme_provider.borrow_mut(),
-            &mut hc_provider.borrow_mut(),
-        );
-        {
-            let theme_provider = theme_provider.clone();
-            let hc_provider = hc_provider.clone();
-            root.connect_destroy(move |root| {
-                for slot in [&theme_provider, &hc_provider] {
-                    if let Some(provider) = slot.borrow_mut().take() {
-                        gtk::style_context_remove_provider_for_display(&root.display(), &provider);
-                    }
-                }
-            });
-        }
+        // Appearance: apply the saved palette + high-contrast now, and let the dialog re-apply live through the
+        // same two slots, which leave the display with this content.
+        let theme_slot = CssSlot::new(&root, gtk::STYLE_PROVIDER_PRIORITY_USER + 1);
+        let hc_slot = CssSlot::new(&root, gtk::STYLE_PROVIDER_PRIORITY_USER + 1);
+        crate::audio::ui::theming::apply_appearance(&settings, &theme_slot, &hc_slot);
         {
             // Weak: these actions live in the window's action map, so a strong
             // window capture is a window⇄action cycle that pins the whole
             // window after close (invisible standalone, where close exits).
             let root_weak = root.downgrade();
             let s = settings.clone();
-            let tp = theme_provider.clone();
-            let hp = hc_provider.clone();
+            let tp = theme_slot.clone();
+            let hp = hc_slot.clone();
             let blur_sender = sender.input_sender().clone();
             big_app_kit::desktop::install_action(&win_actions, "show-appearance", move || {
                 let s_apply = s.clone();
@@ -404,11 +388,7 @@ impl Component for AudioShell {
                     return;
                 };
                 crate::audio::appearance::show_audio_appearance_dialog(&win, &s, move || {
-                    crate::audio::ui::theming::apply_appearance(
-                        &s_apply,
-                        &mut tp.borrow_mut(),
-                        &mut hp.borrow_mut(),
-                    );
+                    crate::audio::ui::theming::apply_appearance(&s_apply, &tp, &hp);
                     // The Effects toggle lives in this dialog; re-evaluate the bar.
                     let _ = blur_sender.send(AudioShellInput::RefreshBlurArt);
                 });

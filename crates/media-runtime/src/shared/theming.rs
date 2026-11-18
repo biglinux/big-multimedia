@@ -2,7 +2,7 @@
 
 pub use big_relm4_components::theme::{
     ColorPalette, HIGH_CONTRAST_CSS, apply_color_scheme, build_adwaita_color_overrides,
-    inject_palette_css, parse_hex_color, parse_hex_to_rgba,
+    parse_hex_color, parse_hex_to_rgba,
 };
 
 /// libadwaita's palette for the scheme in force. libadwaita derives these

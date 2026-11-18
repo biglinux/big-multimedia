@@ -35,7 +35,7 @@ pub(super) fn page(
             &i18n("Detailed"),
         ],
         &["default", "balanced", "high-quality"],
-        keys::RENDER_PROFILE.0,
+        keys::RENDER_PROFILE,
         settings,
         move |profile| {
             write_profile_details(&preset_settings, profile);
@@ -60,7 +60,7 @@ pub(super) fn page(
             &i18n("Off"),
         ],
         &["auto-safe", "auto", "vaapi", "nvdec", "cuda", "vdpau", "no"],
-        keys::HWDEC.0,
+        keys::HWDEC,
         settings,
         live_str(mpv, MpvBackend::set_hwdec),
     );
@@ -68,7 +68,7 @@ pub(super) fn page(
         &picture,
         &i18n("Remove Interlacing Lines"),
         &i18n("Fixes comb-like stripes in old TV recordings and DVDs"),
-        "deinterlace",
+        keys::DEINTERLACE,
         settings,
         live(mpv, MpvBackend::set_deinterlace),
     );
@@ -86,7 +86,7 @@ pub(super) fn page(
         &i18n("Compatibility mode works without a graphics card but uses more energy"),
         &[&i18n("Automatic"), "OpenGL", &i18n("Compatibility")],
         &["auto", "gl", "sw"],
-        keys::RENDER_MODE.0,
+        keys::RENDER_MODE,
         settings,
         |_| {},
     );
@@ -94,7 +94,7 @@ pub(super) fn page(
         &troubleshooting,
         &i18n("Simple Rendering"),
         &i18n("Turns off effects and shaders for very old graphics cards"),
-        keys::GPU_DUMB_MODE.0,
+        keys::GPU_DUMB_MODE,
         settings,
         |_| {},
     );

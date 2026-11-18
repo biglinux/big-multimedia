@@ -124,6 +124,18 @@ The tray icon test plays the tray host on a session bus of its own:
 dbus-run-session -- cargo test --locked -p big-app-kit tray -- --ignored
 ```
 
+`undo_restores_latest_trashing` trashes and restores through GVfs, which
+must see the scratch home instead of your trash, so the bus activates only
+GVfs:
+
+```sh
+mkdir -p -m 700 "$scratch/runtime"
+ln -s /usr/share/dbus-1/services/org.gtk.vfs.*.service "$scratch/services/"
+env -u DISPLAY -u WAYLAND_DISPLAY "${isolated_home[@]}" XDG_RUNTIME_DIR="$scratch/runtime" \
+	dbus-run-session --config-file "$scratch/bus.conf" -- \
+	cargo test --locked -p big-media-runtime --features ui-core --lib undo_restores_latest_trashing -- --ignored
+```
+
 Translations are one catalog for the whole suite in `crates/media-runtime/po`;
 regenerate the template with `crates/media-runtime/po/regen-pot.sh`.
 
@@ -215,10 +227,11 @@ GTK 4.22 loops removing a child that is not a stack page.
 Display CSS registered for a player or control uses
 `big_gtk_kit::css::add_provider_for_widget_lifetime`. The display owns a
 reference independently of the local provider variable, so the registration is
-removed when its widget dies. Audio palette and high-contrast slots also remove
-their registrations when the content root is destroyed: updating a cached slot
-prevents stacking within one window but does not release it when the window
-closes.
+removed when its widget dies. CSS rewritten while the widget lives (palettes,
+high contrast, the idle background) goes in a
+`big_relm4_components::theme::CssSlot`, which registers once on that kit
+function and replaces its rules in place: a cached provider prevents stacking
+within one window but is not released when the window closes.
 
 The reusable playlist window is hidden while its controller lives and
 destroyed in component shutdown, including when it was never presented. GTK

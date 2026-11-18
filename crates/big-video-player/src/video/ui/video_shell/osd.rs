@@ -1,6 +1,7 @@
 use super::*;
 use big_media_components::surface::BigMediaImmersionController;
 use big_relm4_components::task::spawn_blocking_result;
+use big_relm4_components::theme::CssSlot;
 
 use std::path::{Path, PathBuf};
 
@@ -138,9 +139,9 @@ pub(super) struct IdleBackground {
     pub(super) video_bg: gtk::Box,
     /// The visible video surface (GLArea), hidden while idle.
     pub(super) gl_area: gtk::GLArea,
-    /// User-priority provider holding the blurred-wallpaper CSS; `None` = the
-    /// base `.idle-bg` gradient fallback.
-    pub(super) provider: RefCell<Option<gtk::CssProvider>>,
+    /// User-priority blurred-wallpaper CSS; empty leaves the base `.idle-bg`
+    /// gradient.
+    pub(super) background: CssSlot,
     /// Cached blurred-wallpaper path; `None` until detection succeeds (or never,
     /// if no desktop wallpaper resolves).
     pub(super) blurred_path: RefCell<Option<PathBuf>>,
@@ -157,17 +158,17 @@ impl IdleBackground {
     /// Show the idle background: hide the gl surface, add the `.idle-bg` class,
     /// and apply the current background (blurred wallpaper if known, else the
     /// base gradient).
-    pub(super) fn show(&self, display: &gtk::gdk::Display) {
+    pub(super) fn show(&self) {
         self.is_shown.set(true);
-        self.refresh(display);
+        self.refresh();
     }
 
     /// Hide the idle background: restore the gl surface opacity, drop the class,
-    /// and remove the wallpaper provider. Without the gl opacity restore, video
+    /// and clear the wallpaper CSS. Without the gl opacity restore, video
     /// stays invisible.
-    pub(super) fn hide(&self, display: &gtk::gdk::Display) {
+    pub(super) fn hide(&self) {
         self.is_shown.set(false);
-        self.refresh(display);
+        self.refresh();
     }
 
     /// While only the TV plays `source`: cover the frozen frame with that
@@ -179,9 +180,7 @@ impl IdleBackground {
         }
         self.tv_picture.take();
         self.tv_source.replace(source.clone());
-        if let Some(display) = gtk::gdk::Display::default() {
-            self.refresh(&display);
-        }
+        self.refresh();
         let Some(source) = source.filter(|source| !super::playback::is_remote_uri(source)) else {
             return;
         };
@@ -196,9 +195,7 @@ impl IdleBackground {
                 };
                 if this.tv_source.borrow().as_deref() == Some(source.as_str()) {
                     this.tv_picture.replace(Some(picture));
-                    if let Some(display) = gtk::gdk::Display::default() {
-                        this.refresh(&display);
-                    }
+                    this.refresh();
                 }
             },
         );
@@ -207,66 +204,39 @@ impl IdleBackground {
     /// Cover the surface while the welcome screen is up or only the TV plays;
     /// otherwise restore it. Without the gl opacity restore, video stays
     /// invisible.
-    fn refresh(&self, display: &gtk::gdk::Display) {
+    fn refresh(&self) {
         let covered = self.is_shown.get() || self.tv_source.borrow().is_some();
         self.gl_area.set_opacity(if covered { 0.0 } else { 1.0 });
         if covered {
             self.video_bg.add_css_class("idle-bg");
-            self.apply_background(display);
+            self.apply_background();
         } else {
             self.video_bg.remove_css_class("idle-bg");
-            self.clear_provider(display);
+            self.background.set("");
         }
     }
 
     /// Record the detected blurred wallpaper and apply it if idle is shown now.
     /// Called from the wallpaper worker once the blurred image is cached.
-    pub(super) fn set_blurred_wallpaper(&self, path: &Path, display: &gtk::gdk::Display) {
+    pub(super) fn set_blurred_wallpaper(&self, path: &Path) {
         self.blurred_path.replace(Some(path.to_path_buf()));
         if self.is_shown.get() {
-            self.refresh(display);
+            self.refresh();
         }
     }
 
     /// (Re)apply the background: the TV's video picture while only the TV
-    /// plays, else the blurred wallpaper when known (static image provider),
+    /// plays, else the blurred wallpaper when known,
     /// else nothing, so the base `.idle-bg` gradient shows through.
-    fn apply_background(&self, display: &gtk::gdk::Display) {
-        self.clear_provider(display);
+    fn apply_background(&self) {
         let tv = self.tv_source.borrow().is_some();
         let path = if tv {
             self.tv_picture.borrow().clone()
         } else {
             self.blurred_path.borrow().clone()
         };
-        let Some(path) = path else {
-            return;
-        };
-        let provider = gtk::CssProvider::new();
-        provider.load_from_string(&idle_bg_image_css(&path, tv));
-        gtk::style_context_add_provider_for_display(
-            display,
-            &provider,
-            gtk::STYLE_PROVIDER_PRIORITY_USER + 2,
-        );
-        self.provider.replace(Some(provider));
-    }
-
-    /// Remove the wallpaper provider from `display` if one is installed.
-    fn clear_provider(&self, display: &gtk::gdk::Display) {
-        if let Some(provider) = self.provider.borrow_mut().take() {
-            gtk::style_context_remove_provider_for_display(display, &provider);
-        }
-    }
-}
-
-impl Drop for IdleBackground {
-    fn drop(&mut self) {
-        if let Some(provider) = self.provider.borrow_mut().take()
-            && let Some(display) = gtk::gdk::Display::default()
-        {
-            gtk::style_context_remove_provider_for_display(&display, &provider);
-        }
+        let css = path.map_or_else(String::new, |path| idle_bg_image_css(&path, tv));
+        self.background.set(&css);
     }
 }
 

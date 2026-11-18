@@ -376,8 +376,7 @@ impl AudioShell {
                     let removed = if permanent {
                         std::fs::remove_file(&path).is_ok()
                     } else {
-                        gio::File::for_path(&path)
-                            .trash(gio::Cancellable::NONE)
+                        big_media_runtime::media::playlist::trash_file(std::path::Path::new(&path))
                             .is_ok()
                     };
                     if removed {

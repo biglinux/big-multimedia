@@ -3,9 +3,10 @@
 use std::rc::Rc;
 
 use adw::prelude::*;
-use big_media_components::preference_rows::{combo_row, entry_row, spin_int_row, switch_row};
 use big_media_data::i18n::i18n;
 use big_media_data::settings::{Settings, keys};
+
+use crate::preference_rows::{add_combo_row, add_entry_row, add_spin_int_row, add_switch_row};
 
 /// Owned audio-effect values emitted by the generic preferences page.
 #[derive(Debug, Clone, PartialEq)]
@@ -109,7 +110,7 @@ pub fn create_player_audio_page(
         &sound_group,
         &i18n("Keep Voices Natural"),
         &i18n("Voices keep their tone when playing faster or slower"),
-        "audio-pitch-correction",
+        keys::AUDIO_PITCH_CORRECTION,
         settings,
         move |value| {
             if let Some(actions) = &pitch_actions {
@@ -124,7 +125,7 @@ pub fn create_player_audio_page(
         &sound_group,
         &i18n("Maximum Volume"),
         &i18n("Above 100% helps with quiet recordings but may distort"),
-        "volume-max",
+        keys::VOLUME_MAX,
         f64::from(*volume_max_range.start()),
         f64::from(*volume_max_range.end()),
         5.0,
@@ -148,7 +149,7 @@ pub fn create_player_audio_page(
         &language_group,
         &i18n("Preferred Languages"),
         "",
-        "preferred-audio-lang",
+        keys::PREFERRED_AUDIO_LANG,
         settings,
         move |value| {
             if let Some(actions) = &language_actions {
@@ -168,7 +169,7 @@ pub fn create_player_audio_page(
         &i18n("Takes effect after reopening the player"),
         &[&i18n("Automatic"), "PipeWire", "PulseAudio", "ALSA", "JACK"],
         &["", "pipewire", "pulse", "alsa", "jack"],
-        "audio-output",
+        keys::AUDIO_OUTPUT,
         settings,
         |_| {},
     );
@@ -179,7 +180,7 @@ pub fn create_player_audio_page(
         &i18n("Mixes surround sound down for stereo speakers or headphones"),
         &[&i18n("Automatic"), &i18n("Stereo"), &i18n("Mono")],
         &["", "stereo", "mono"],
-        "audio-channels",
+        keys::AUDIO_CHANNELS,
         settings,
         move |value| {
             if let Some(actions) = &channel_actions {
@@ -211,97 +212,4 @@ fn read_audio_effects(settings: &Settings, normalize: bool) -> PlayerAudioEffect
         nr_voice_only: settings.noise_voice_only(),
         eq_bands,
     }
-}
-
-fn add_switch_row(
-    group: &adw::PreferencesGroup,
-    title: &str,
-    subtitle: &str,
-    key: &str,
-    settings: &Settings,
-    on_change: impl Fn(bool) + 'static,
-) -> adw::SwitchRow {
-    let settings = settings.clone();
-    let key = key.to_string();
-    switch_row(
-        group,
-        title,
-        subtitle,
-        settings.boolean(&key),
-        move |active| {
-            let _ = settings.set_boolean(&key, active);
-            on_change(active);
-        },
-    )
-}
-
-#[allow(clippy::too_many_arguments)]
-fn add_combo_row(
-    group: &adw::PreferencesGroup,
-    title: &str,
-    subtitle: &str,
-    labels: &[&str],
-    values: &'static [&'static str],
-    key: &str,
-    settings: &Settings,
-    on_change: impl Fn(&str) + 'static,
-) -> adw::ComboRow {
-    let current = settings.string(key);
-    let selected = values
-        .iter()
-        .position(|value| *value == current.as_str())
-        .unwrap_or(0) as u32;
-    let settings = settings.clone();
-    let key = key.to_string();
-    combo_row(group, title, subtitle, labels, selected, move |selected| {
-        if let Some(value) = values.get(selected as usize) {
-            let _ = settings.set_string(&key, value);
-            on_change(value);
-        }
-    })
-}
-
-#[allow(clippy::too_many_arguments)]
-fn add_spin_int_row(
-    group: &adw::PreferencesGroup,
-    title: &str,
-    subtitle: &str,
-    key: &str,
-    min: f64,
-    max: f64,
-    step: f64,
-    settings: &Settings,
-    on_change: impl Fn(i64) + 'static,
-) -> adw::SpinRow {
-    let settings = settings.clone();
-    let key = key.to_string();
-    spin_int_row(
-        group,
-        title,
-        subtitle,
-        settings.int(&key),
-        min,
-        max,
-        step,
-        move |value| {
-            let _ = settings.set_int(&key, value);
-            on_change(i64::from(value));
-        },
-    )
-}
-
-fn add_entry_row(
-    group: &adw::PreferencesGroup,
-    title: &str,
-    tooltip: &str,
-    key: &str,
-    settings: &Settings,
-    on_change: impl Fn(&str) + 'static,
-) -> adw::EntryRow {
-    let settings = settings.clone();
-    let key = key.to_string();
-    entry_row(group, title, tooltip, &settings.string(&key), move |text| {
-        let _ = settings.set_string(&key, text);
-        on_change(text);
-    })
 }
