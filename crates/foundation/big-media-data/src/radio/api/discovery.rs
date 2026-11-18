@@ -12,7 +12,6 @@ const DEFAULT_SERVERS: &[&str] = &[
     "at1.api.radio-browser.info",
     "de1.api.radio-browser.info",
 ];
-const SETTINGS_KEY_SERVERS: &str = "radio-api-servers";
 
 fn discover_servers_dns() -> Vec<String> {
     let addrs = match (DNS_DISCOVERY_DOMAIN, 443).to_socket_addrs() {
@@ -71,7 +70,7 @@ pub fn api_servers() -> Vec<String> {
 /// The user's raw comma-separated server override (empty = DNS discovery). Cheap
 /// settings read, safe on the main thread before spawning the blocking resolve.
 pub fn settings_servers_raw(settings: &crate::settings::Settings) -> String {
-    settings.string(SETTINGS_KEY_SERVERS)
+    settings.get_string(crate::settings::keys::RADIO_API_SERVERS)
 }
 
 /// Resolve the API server list from the raw override. Falls back to blocking DNS

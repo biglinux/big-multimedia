@@ -4,7 +4,7 @@ use std::sync::{Arc, RwLock};
 
 use log::error;
 
-use super::{Inner, defaults, keys};
+use super::{Inner, keys};
 
 const LIMIT: usize = 1024 * 1024;
 use big_os_kit::storage;
@@ -119,7 +119,7 @@ impl Settings {
     #[must_use]
     pub fn memory_only() -> Self {
         let inner = Arc::new(RwLock::new(Inner {
-            settings_values: defaults::defaults(),
+            settings_values: keys::defaults(),
             path: PathBuf::new(),
             dirty: false,
             disk_bytes: None,
@@ -152,7 +152,7 @@ impl Settings {
             return Self { inner };
         }
         let loaded = storage::read_regular_limited(&path, LIMIT);
-        let mut values = defaults::defaults();
+        let mut values = keys::defaults();
         let (disk_bytes, load_error) = match loaded {
             Ok(Some(bytes)) => match parse(&bytes) {
                 Ok(saved) => {
@@ -190,7 +190,7 @@ impl Settings {
 
     #[cfg(test)]
     pub(crate) fn defaults() -> std::collections::HashMap<String, String> {
-        defaults::defaults()
+        keys::defaults()
     }
 
     #[inline]
@@ -203,7 +203,7 @@ impl Settings {
                 .read()
                 .unwrap_or_else(std::sync::PoisonError::into_inner);
             if !inner.settings_values.contains_key(key) {
-                log::warn!("Settings: unknown key {key:?} — consider adding to defaults()");
+                log::warn!("Settings: unknown key {key:?} — add it to the catalog in keys.rs");
             }
         }
     }
@@ -583,28 +583,31 @@ impl Settings {
     }
 
     /// Keys [`Self::reset_to_defaults`] leaves as they are: what the person
-    /// collected, where they left off, and the live levels of the player's own
-    /// controls, none of them a preference.
-    pub const KEPT_ON_RESTORE: [&'static str; 19] = [
-        "video-library-folders",
-        "custom-keybindings",
-        "volume",
-        "audio-volume",
-        "playlist-shuffle",
-        "playlist-last-folder",
-        "playlist-reorder-hint-seen",
-        "files-last-dir",
-        "noise-strength",
-        "noise-model",
-        "noise-mono",
-        "noise-voice-only",
-        "noise-voice-sensitivity",
-        "eq-bands",
-        "eq-preset",
-        "appearance-window-width",
-        "appearance-window-height",
-        "audio-appearance-window-width",
-        "audio-appearance-window-height",
+    /// collected, where they left off, how they laid out the library, and the
+    /// live levels of the player's own controls, none of them a preference.
+    pub const KEPT_ON_RESTORE: [&'static str; 22] = [
+        keys::VIDEO_LIBRARY_FOLDERS.0,
+        keys::CUSTOM_KEYBINDINGS.0,
+        keys::VOLUME.0,
+        keys::AUDIO_VOLUME.0,
+        keys::PLAYLIST_SHUFFLE.0,
+        keys::PLAYLIST_LAST_FOLDER.0,
+        keys::PLAYLIST_REORDER_HINT_SEEN.0,
+        keys::FILES_LAST_DIR.0,
+        keys::NOISE_STRENGTH.0,
+        keys::NOISE_MODEL.0,
+        keys::NOISE_MONO.0,
+        keys::NOISE_VOICE_ONLY.0,
+        keys::NOISE_VOICE_SENSITIVITY.0,
+        keys::EQ_BANDS.0,
+        keys::EQ_PRESET.0,
+        keys::APPEARANCE_WINDOW_WIDTH.0,
+        keys::APPEARANCE_WINDOW_HEIGHT.0,
+        keys::AUDIO_APPEARANCE_WINDOW_WIDTH.0,
+        keys::AUDIO_APPEARANCE_WINDOW_HEIGHT.0,
+        keys::LIBRARY_GROUPING.0,
+        keys::LIBRARY_COLUMN_WIDTHS.0,
+        keys::PLAYLIST_COLUMN_WIDTHS.0,
     ];
 
     /// Put every preference back to its default, keeping [`Self::KEPT_ON_RESTORE`].
@@ -613,7 +616,7 @@ impl Settings {
             .inner
             .write()
             .unwrap_or_else(std::sync::PoisonError::into_inner);
-        for (key, value) in defaults::defaults() {
+        for (key, value) in keys::defaults() {
             if !Self::KEPT_ON_RESTORE.contains(&key.as_str()) {
                 inner.settings_values.insert(key, value);
             }

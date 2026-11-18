@@ -6,7 +6,6 @@ use std::path::PathBuf;
 
 pub mod keys;
 
-mod defaults;
 mod schema;
 mod store;
 #[cfg(test)]
