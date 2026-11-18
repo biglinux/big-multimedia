@@ -18,9 +18,6 @@ pub(super) struct LibraryTreeRowPresentation {
     pub(super) avatar: Option<LibraryTreeAvatarPresentation>,
     pub(super) is_heading: bool,
     pub(super) is_file_leaf: bool,
-    pub(super) is_activatable: bool,
-    pub(super) is_selectable: bool,
-    pub(super) show_icon: bool,
     pub(super) show_tracks_button: bool,
 }
 
@@ -43,9 +40,6 @@ pub(super) fn library_tree_row_presentation(node: &BrowserNode) -> LibraryTreeRo
             avatar: None,
             is_heading: true,
             is_file_leaf: false,
-            is_activatable: false,
-            is_selectable: false,
-            show_icon: false,
             show_tracks_button: false,
         };
     }
@@ -58,9 +52,6 @@ pub(super) fn library_tree_row_presentation(node: &BrowserNode) -> LibraryTreeRo
             avatar: None,
             is_heading: false,
             is_file_leaf: true,
-            is_activatable: true,
-            is_selectable: true,
-            show_icon: true,
             show_tracks_button: false,
         };
     }
@@ -89,9 +80,6 @@ pub(super) fn library_tree_row_presentation(node: &BrowserNode) -> LibraryTreeRo
         avatar,
         is_heading: false,
         is_file_leaf: false,
-        is_activatable: true,
-        is_selectable: true,
-        show_icon: !is_album && !is_various_artists,
         show_tracks_button: true,
     }
 }

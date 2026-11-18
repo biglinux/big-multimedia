@@ -226,7 +226,6 @@ impl BigSubprocessSpec {
                 })
                 .collect(),
             env_inherit: self.env_inherit,
-            stdin_len: self.stdin.as_ref().map(Vec::len).unwrap_or(0),
             stdout: self.stdout,
             stderr: self.stderr,
             timeout_ms: u64::try_from(self.timeout.as_millis()).unwrap_or(u64::MAX),
@@ -334,8 +333,6 @@ pub struct BigSubprocessResolved {
     /// Inherits the parent environment when `true`; set `false` for
     /// reproducible builds and to keep host secrets out of child procs.
     pub env_inherit: bool,
-    /// Length of the stdin payload (0 = none).
-    pub stdin_len: usize,
     /// Stdout capture policy.
     pub stdout: BigSubprocessOutputMode,
     /// Stderr capture policy.

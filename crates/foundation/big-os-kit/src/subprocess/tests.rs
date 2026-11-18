@@ -319,7 +319,6 @@ fn defaults_are_safe() {
     assert_eq!(r.stderr, BigSubprocessOutputMode::Capture);
     assert_eq!(r.timeout_ms, 30_000);
     assert!(r.env_inherit);
-    assert_eq!(r.stdin_len, 0);
 }
 
 #[test]
