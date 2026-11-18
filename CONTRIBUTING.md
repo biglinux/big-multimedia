@@ -136,6 +136,23 @@ env -u DISPLAY -u WAYLAND_DISPLAY "${isolated_home[@]}" XDG_RUNTIME_DIR="$scratc
 	cargo test --locked -p big-media-runtime --features ui-core --lib undo_restores_latest_trashing -- --ignored
 ```
 
+### FAT and exFAT publication
+
+FAT and exFAT refuse hard links, so `StagedFile::publish` falls back to a
+no-replace rename there. `fat_publish_without_hard_links` checks that against a
+real mount and fails unless `BIG_OS_KIT_FAT_DIR` names a directory on vfat or
+exfat. A memory stick mounted with `udisksctl mount -b DEVICE` will do; make an
+empty directory on it for the run and remove it afterwards. The video move and
+podcast download tests write under `TMPDIR`, so the same directory runs them on
+that filesystem; the FIFO test is skipped because FAT has no FIFOs:
+
+```sh
+dir=/run/media/$USER/LABEL/big-multimedia-test
+BIG_OS_KIT_FAT_DIR="$dir" cargo test --locked -p big-os-kit --lib fat_publish_without_hard_links -- --ignored
+TMPDIR="$dir" cargo test --locked -p big-video-player --lib fileops -- --skip cross_device_move_hides_partial_copies
+TMPDIR="$dir" cargo test --locked -p big-player-ui --features audio-panels --lib downloads_publish_only_complete_files
+```
+
 Translations are one catalog for the whole suite in `crates/media-runtime/po`;
 regenerate the template with `crates/media-runtime/po/regen-pot.sh`.
 

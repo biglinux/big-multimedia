@@ -475,6 +475,73 @@ mod tests {
             fs::remove_dir_all(dir).unwrap();
         }
     }
+    /// The `statfs` magic number of the filesystem holding `path`.
+    fn filesystem_type(path: &Path) -> libc::c_long {
+        use std::os::unix::ffi::OsStrExt;
+        let c_path = std::ffi::CString::new(path.as_os_str().as_bytes()).unwrap();
+        let mut stat = std::mem::MaybeUninit::<libc::statfs>::uninit();
+        // SAFETY: c_path is a NUL-terminated path bound for the whole call,
+        // and stat is writable storage for one statfs.
+        let status = unsafe { libc::statfs(c_path.as_ptr(), stat.as_mut_ptr()) };
+        let error = io::Error::last_os_error();
+        assert_eq!(status, 0, "statfs {}: {error}", path.display());
+        // SAFETY: statfs returned 0, so it filled stat.
+        unsafe { stat.assume_init() }.f_type
+    }
+    /// The real filesystem counterpart of `publish_falls_back_without_replacing`.
+    #[test]
+    #[ignore = "needs a FAT/exFAT directory in BIG_OS_KIT_FAT_DIR"]
+    fn fat_publish_without_hard_links() {
+        // From linux/magic.h; libc names only MSDOS_SUPER_MAGIC.
+        const EXFAT_SUPER_MAGIC: libc::c_long = 0x2011_BAB0;
+        let root = PathBuf::from(
+            std::env::var_os("BIG_OS_KIT_FAT_DIR")
+                .expect("BIG_OS_KIT_FAT_DIR must name a directory on a vfat or exfat mount"),
+        );
+        let filesystem = filesystem_type(&root);
+        assert!(
+            matches!(filesystem, libc::MSDOS_SUPER_MAGIC | EXFAT_SUPER_MAGIC),
+            "{} is not on vfat or exfat (f_type {filesystem:#x})",
+            root.display()
+        );
+
+        let dir = root.join(format!("big-os-kit-fat-{}", std::process::id()));
+        fs::create_dir(&dir).unwrap();
+        let probe = dir.join("probe");
+        fs::write(&probe, b"").unwrap();
+        let refused = fs::hard_link(&probe, dir.join("probe-link")).unwrap_err();
+        assert_eq!(refused.raw_os_error(), Some(libc::EPERM), "{refused}");
+        fs::remove_file(probe).unwrap();
+
+        let target = dir.join("out.png");
+        let stage = StagedFile::new(&target).unwrap();
+        fs::write(stage.path(), b"new").unwrap();
+        stage.publish(&target).unwrap().into_io_result().unwrap();
+        drop(stage);
+        let empty_target = dir.join("empty.png");
+        let stage = StagedFile::new(&empty_target).unwrap();
+        stage
+            .publish_copy(&empty_target)
+            .unwrap()
+            .into_io_result()
+            .unwrap();
+        drop(stage);
+        let stage = StagedFile::new(&target).unwrap();
+        fs::write(stage.path(), b"newer").unwrap();
+        let error = stage.publish(&target).unwrap_err();
+        assert_eq!(error.kind(), io::ErrorKind::AlreadyExists, "{error}");
+        drop(stage);
+
+        assert_eq!(fs::read(&target).unwrap(), b"new");
+        assert_eq!(fs::read(&empty_target).unwrap(), b"");
+        let mut names: Vec<_> = fs::read_dir(&dir)
+            .unwrap()
+            .map(|entry| entry.unwrap().file_name())
+            .collect();
+        names.sort();
+        assert_eq!(names, ["empty.png", "out.png"], "staging left behind");
+        fs::remove_dir_all(dir).unwrap();
+    }
     #[test]
     fn bounded_read_distinguishes_missing_and_oversize() {
         let dir = directory();
