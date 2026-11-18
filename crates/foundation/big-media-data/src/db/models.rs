@@ -140,14 +140,6 @@ impl Track {
     pub fn display_album(&self) -> &str {
         self.album.as_deref().unwrap_or("")
     }
-
-    #[must_use]
-    pub fn duration_display(&self) -> String {
-        let total = self.duration_secs as u64;
-        let min = total / 60;
-        let sec = total % 60;
-        format!("{min}:{sec:02}")
-    }
 }
 
 // The playback-queue primitive lives in the GTK-free engines leaf; `Track` is
@@ -264,48 +256,6 @@ mod tests {
     fn display_album_empty_when_none() {
         let t = make_track(None, None, None, 0.0, "x.mp3");
         assert_eq!(t.display_album(), "");
-    }
-
-    #[test]
-    fn duration_display_zero() {
-        let t = make_track(None, None, None, 0.0, "x.mp3");
-        assert_eq!(t.duration_display(), "0:00");
-    }
-
-    #[test]
-    fn duration_display_seconds_only() {
-        let t = make_track(None, None, None, 42.0, "x.mp3");
-        assert_eq!(t.duration_display(), "0:42");
-    }
-
-    #[test]
-    fn duration_display_minutes_and_seconds() {
-        let t = make_track(None, None, None, 185.0, "x.mp3");
-        assert_eq!(t.duration_display(), "3:05");
-    }
-
-    #[test]
-    fn duration_display_pads_seconds() {
-        let t = make_track(None, None, None, 61.0, "x.mp3");
-        assert_eq!(t.duration_display(), "1:01");
-    }
-
-    #[test]
-    fn duration_display_over_an_hour() {
-        let t = make_track(None, None, None, 3661.0, "x.mp3");
-        assert_eq!(t.duration_display(), "61:01");
-    }
-
-    #[test]
-    fn duration_display_truncates_fractional() {
-        let t = make_track(None, None, None, 59.9, "x.mp3");
-        assert_eq!(t.duration_display(), "0:59");
-    }
-
-    #[test]
-    fn duration_display_exact_minute() {
-        let t = make_track(None, None, None, 120.0, "x.mp3");
-        assert_eq!(t.duration_display(), "2:00");
     }
 
     #[test]
