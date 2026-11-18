@@ -117,7 +117,7 @@ pub fn build_volume_popover(
 
 /// Recolor `trough` when the value or the top of `adjustment` moves. The
 /// provider is display-wide and reloading it restyles every widget, so it
-/// reloads only when the colour changes (it is constant up to 100 %).
+/// reloads only when the color changes (it is constant up to 100 %).
 fn follow_volume_trough(adjustment: &gtk::Adjustment, trough: gtk::CssProvider, shown: String) {
     let shown = std::cell::RefCell::new(shown);
     let recolor = std::rc::Rc::new(move |adjustment: &gtk::Adjustment| {

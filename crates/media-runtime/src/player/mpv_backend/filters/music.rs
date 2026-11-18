@@ -9,7 +9,7 @@ impl MpvBackend {
     pub const REPLAYGAIN_MODES: [&str; 3] = ["no", "track", "album"];
 
     /// `mode` is one of [`Self::REPLAYGAIN_MODES`]; anything else turns
-    /// levelling off.
+    /// leveling off.
     pub fn set_replaygain(&self, mode: &str) {
         let mode = if Self::REPLAYGAIN_MODES.contains(&mode) {
             mode

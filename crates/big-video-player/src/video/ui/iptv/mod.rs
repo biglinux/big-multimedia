@@ -161,7 +161,7 @@ impl Component for VideoIptvBrowser {
         // A raw GtkDropDown derives its AT-SPI name from the selected item, so
         // with an empty provider list the `Label` property is overridden to ''
         // (screen-reader-invisible). Bind the visible "Provider" heading via the
-        // labelled-by relation so the control keeps a stable accessible name
+        // labeled-by relation so the control keeps a stable accessible name
         // regardless of selection.
         provider_dropdown.update_property(&[gtk::accessible::Property::Label(&i18n("Provider"))]);
         big_gtk_kit::accessible::relate(

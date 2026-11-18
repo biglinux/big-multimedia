@@ -7,12 +7,12 @@
 //! list is re-read from it whenever the controls appear or a dialog closes.
 
 use super::*;
-use crate::video::ui::media_adjust::{CropMargins, source_colour_names};
+use crate::video::ui::media_adjust::{CropMargins, source_color_names};
 
-/// `vf` labels the chips track elsewhere (flip, source colours).
+/// `vf` labels the chips track elsewhere (flip, source colors).
 const OWNED_VF_LABELS: [&str; 2] = [
     MpvBackend::FLIP_VF_LABEL,
-    MpvBackend::SOURCE_COLOURS_VF_LABEL,
+    MpvBackend::SOURCE_COLORS_VF_LABEL,
 ];
 const FLAT_EQ: &str = "0.0;0.0;0.0;0.0;0.0;0.0;0.0;0.0;0.0;0.0";
 
@@ -20,7 +20,7 @@ const FLAT_EQ: &str = "0.0;0.0;0.0;0.0;0.0;0.0;0.0;0.0;0.0;0.0";
 /// reset can put it back.
 #[derive(Debug, Clone, PartialEq)]
 pub enum Adjustment {
-    SourceColours(usize),
+    SourceColors(usize),
     /// Contrast, brightness, gamma, saturation, hue.
     Picture([i64; 5]),
     Zoom {
@@ -63,9 +63,9 @@ pub(super) fn detect(
     transform: &media_adjust::VideoTransformState,
 ) -> Vec<Adjustment> {
     let mut found = Vec::new();
-    let colours = transform.source_colours_index();
-    if colours != 0 {
-        found.push(Adjustment::SourceColours(colours));
+    let colors = transform.source_colors_index();
+    if colors != 0 {
+        found.push(Adjustment::SourceColors(colors));
     }
     let picture = [
         mpv.get_contrast(),
@@ -170,9 +170,9 @@ impl Adjustment {
     /// What the chip says, in words for people who never opened the dialog.
     pub(super) fn label(&self) -> String {
         match self {
-            Self::SourceColours(index) => i18n("Video colour: {name}").replace(
+            Self::SourceColors(index) => i18n("Video color: {name}").replace(
                 "{name}",
-                source_colour_names().get(*index).map_or("", String::as_str),
+                source_color_names().get(*index).map_or("", String::as_str),
             ),
             Self::Picture(_) => i18n("Picture adjusted"),
             Self::Zoom { zoom, .. } if changed(*zoom) => i18n("Zoom {percent}%")
@@ -222,7 +222,7 @@ impl Adjustment {
     /// The `win.*` action that opens the section this chip belongs to.
     pub(super) fn section_action(&self) -> Option<&'static str> {
         match self {
-            Self::SourceColours(_) => Some("win.show-hdr"),
+            Self::SourceColors(_) => Some("win.show-hdr"),
             Self::Picture(_) => Some("win.show-image-adjust"),
             Self::Zoom { .. } | Self::Rotation(_) | Self::Flip { .. } | Self::Crop { .. } => {
                 Some("win.show-framing")
@@ -245,8 +245,8 @@ impl Adjustment {
         transform: &media_adjust::VideoTransformState,
     ) {
         match self {
-            Self::SourceColours(index) => {
-                transform.select_source_colours(mpv, if normal { 0 } else { *index });
+            Self::SourceColors(index) => {
+                transform.select_source_colors(mpv, if normal { 0 } else { *index });
             }
             Self::Picture(values) => {
                 let [contrast, brightness, gamma, saturation, hue] =
@@ -325,7 +325,7 @@ impl VideoShell {
         self.adjustments_pill
             .update_property(&[gtk::accessible::Property::Label(&tooltip)]);
         self.adjustments_pill.set_visible(!found.is_empty());
-        if self.video_transform.source_colours_index() != 0 {
+        if self.video_transform.source_colors_index() != 0 {
             self.hdr_hint.set_visible(false);
         }
         self.adjustments = found;
@@ -367,7 +367,7 @@ impl VideoShell {
     }
 
     /// HDR that does not say so plays grey and washed out, and nothing on
-    /// screen tells why: 10-bit 4K frames with no colour description are
+    /// screen tells why: 10-bit 4K frames with no color description are
     /// that case. Offer the fix in a header pill; apply it only on request.
     pub(super) fn suggest_hdr(&self, path: &str) {
         let Some(mpv) = self.mpv.borrow().clone() else {
@@ -375,7 +375,7 @@ impl VideoShell {
         };
         let decoded = mpv.decoder_params();
         let undescribed_hdr = mpv.get_current_file().as_deref() == Some(path)
-            && self.video_transform.source_colours_index() == 0
+            && self.video_transform.source_colors_index() == 0
             // GPU decoding names the surface ("cuda") and puts the depth here.
             && [&decoded.pixel_format, &decoded.hw_pixel_format].iter().any(|format| {
                 ["p10", "p12", "p010", "p016"]
@@ -395,22 +395,22 @@ mod tests {
     use crate::video::ui::filters::vf_entries;
 
     #[test]
-    fn labelled_entries_keep_quoted_commas() {
+    fn labeled_entries_keep_quoted_commas() {
         let vf = "@denoise:lavfi=graph=%13%hqdn3d=4,eq=1,@big-flip:lavfi=graph=hflip,\
-                  @source-colours:format=gamma=pq:primaries=%7%bt.2020";
+                  @source-colors:format=gamma=pq:primaries=%7%bt.2020";
         let entries = vf_entries(vf);
         assert_eq!(
             entries,
             [
                 "@denoise:lavfi=graph=%13%hqdn3d=4,eq=1",
                 "@big-flip:lavfi=graph=hflip",
-                "@source-colours:format=gamma=pq:primaries=%7%bt.2020",
+                "@source-colors:format=gamma=pq:primaries=%7%bt.2020",
             ]
         );
         let labels: Vec<_> = entries.iter().map(|entry| vf_label(entry)).collect();
         assert_eq!(
             labels,
-            [Some("denoise"), Some("big-flip"), Some("source-colours")]
+            [Some("denoise"), Some("big-flip"), Some("source-colors")]
         );
         assert_eq!(vf_label("format=gamma=pq"), None);
         assert!(vf_entries("").is_empty());

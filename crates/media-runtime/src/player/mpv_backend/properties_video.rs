@@ -168,14 +168,14 @@ impl MpvBackend {
         });
     }
 
-    /// Read the picture's colours as `mode` says: "pq" (HDR10), "hlg" or
+    /// Read the picture's colors as `mode` says: "pq" (HDR10), "hlg" or
     /// "sdr"; anything else trusts the file. A recording can describe no
-    /// colours at all (a DVB sample: nothing in the stream, nothing per
+    /// colors at all (a DVB sample: nothing in the stream, nothing per
     /// frame), and its HDR then plays grey and washed out. mpv's own format
     /// filter only relabels the frames, so decoding stays on the GPU.
-    pub const SOURCE_COLOURS_VF_LABEL: &str = "source-colours";
+    pub const SOURCE_COLORS_VF_LABEL: &str = "source-colors";
 
-    pub fn set_source_colours(&self, mode: &str) {
+    pub fn set_source_colors(&self, mode: &str) {
         let format = match mode {
             "pq" => "format=gamma=pq:primaries=bt.2020:colormatrix=bt.2020-ncl",
             "hlg" => "format=gamma=hlg:primaries=bt.2020:colormatrix=bt.2020-ncl",
@@ -183,7 +183,7 @@ impl MpvBackend {
             _ => "",
         };
         self.with_mpv(|m| {
-            let label = Self::SOURCE_COLOURS_VF_LABEL;
+            let label = Self::SOURCE_COLORS_VF_LABEL;
             let _ = m.command("vf", &["remove", &format!("@{label}")]);
             if !format.is_empty() {
                 let _ = m.command("vf", &["add", &format!("@{label}:{format}")]);

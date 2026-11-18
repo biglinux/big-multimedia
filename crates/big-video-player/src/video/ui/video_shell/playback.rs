@@ -82,7 +82,7 @@ impl VideoShell {
                 // make mpv quit at startup.
                 if let Some(mpv) = self.mpv.borrow().as_ref() {
                     mpv.set_idle(&self.settings.get_string(keys::IDLE_MODE));
-                    self.video_transform.reset_source_colours(mpv);
+                    self.video_transform.reset_source_colors(mpv);
                     // `EndFile` cleared `playing`, but mpv keeps playing into
                     // the next file without a pause change to report it.
                     self.playing = !mpv.is_paused();

@@ -20,7 +20,7 @@ use std::rc::Rc;
 use big_app_kit::mpris::PlaybackStatus;
 use big_relm4_components::layout::toolbar_pane::{BigToolbarPane, BigToolbarPaneSpec};
 
-use crate::audio::ui::track_list::{Behaviour, Columns, ListEvent, TrackList, track_of};
+use crate::audio::ui::track_list::{Behavior, Columns, ListEvent, TrackList, track_of};
 use crate::audio::ui::{
     playlist_chrome, playlist_interactions, track_count_duration_text, track_count_text,
 };
@@ -333,20 +333,20 @@ impl PlaylistPanel {
     }
 }
 
-/// Queue behaviour: identity emphasis, single-row reorder drags, and drops of
+/// Queue behavior: identity emphasis, single-row reorder drags, and drops of
 /// that row or of files from outside.
-fn queue_behaviour(
+fn queue_behavior(
     store: &gio::ListStore,
     selection: &gtk::MultiSelection,
     current: &Rc<RefCell<Option<glib::Object>>>,
     playback: &Rc<Cell<PlaybackStatus>>,
     sender: &ComponentSender<PlaylistPanel>,
-) -> Behaviour {
+) -> Behavior {
     let current = Rc::clone(current);
     let playback = Rc::clone(playback);
     let selection_weak = selection.downgrade();
     let (store_weak, out) = (store.downgrade(), sender.clone());
-    Behaviour {
+    Behavior {
         playback: Box::new(move |item, _| {
             if is_current_indicator_track(current.borrow().as_ref(), item) {
                 playback.get()
@@ -414,7 +414,7 @@ impl Component for PlaylistPanel {
         let playback = Rc::new(Cell::new(PlaybackStatus::Stopped));
 
         let list = {
-            let behaviour = queue_behaviour(
+            let behavior = queue_behavior(
                 &store,
                 &selection,
                 &current_track_identity,
@@ -425,7 +425,7 @@ impl Component for PlaylistPanel {
                 (store.downgrade(), selection.downgrade(), sender.clone());
             TrackList::new(
                 Columns::queue(),
-                behaviour,
+                behavior,
                 &i18n("Playlist"),
                 move |event| {
                     let (Some(store), Some(selection)) = (store.upgrade(), selection.upgrade())

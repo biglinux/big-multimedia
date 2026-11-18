@@ -9,7 +9,7 @@ window.background {
 }
 
 /* Secondary text at 75% instead of Adwaita's 55%, which reads at about 3.2:1
-   on the light window colour; high contrast restores libadwaita's 90%. */
+   on the light window color; high contrast restores libadwaita's 90%. */
 window {
     --dim-opacity: 75%;
 }

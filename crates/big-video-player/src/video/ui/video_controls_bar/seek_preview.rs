@@ -138,7 +138,7 @@ pub(super) fn wire_thumb_consumer(
 /// Hovering Previous (`step` -1) or Next (+1) shows where it goes: that
 /// video's picture and name, in the order the playlist plays (shuffled
 /// too). Nothing shows where there is nowhere to go.
-pub(super) fn wire_neighbour_preview(button: &gtk::Button, mpv: &MpvSlot, step: i64) {
+pub(super) fn wire_neighbor_preview(button: &gtk::Button, mpv: &MpvSlot, step: i64) {
     // one reused popover per button, for
     // the life of the controls bar.
     let popover = gtk::Popover::builder()

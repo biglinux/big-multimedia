@@ -2,7 +2,7 @@
 //! their own: cuts marked in a player travel as `--segments=START-END,...`
 //! (seconds), which both GUIs read into their queue before the user converts,
 //! and the video converter takes `--source-hdr=pq|hlg|sdr` for a file whose
-//! colours the user told the player how to read.
+//! colors the user told the player how to read.
 
 use gdk::prelude::*;
 
@@ -20,7 +20,7 @@ pub fn is_installed(program: &str) -> bool {
 }
 
 /// Open `paths` in the converter `program`, with the cuts to keep and how
-/// to read their colours, if any. Returns what to tell the person when the
+/// to read their colors, if any. Returns what to tell the person when the
 /// converter could not be started.
 pub fn open(
     program: &str,

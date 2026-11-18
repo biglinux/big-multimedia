@@ -1,4 +1,5 @@
 [default]
+locale = "en-us"
 # Translated text: AppStream elements with xml:lang and desktop Key[lang]= lines.
 extend-ignore-re = [
     '<[a-z]+ xml:lang="[^"]+">.*',
@@ -8,6 +9,8 @@ extend-ignore-identifiers-re = [
     # GTK / libadwaita / Relm4 acronyms
     "Adw",
     "adw",
+    # gtk::AccessibleRelation::LabelledBy keeps GTK's British spelling.
+    "LabelledBy",
     # libmpv / FFmpeg domain words
     "mpv",
     "vaapi",

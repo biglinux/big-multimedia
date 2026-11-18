@@ -347,7 +347,7 @@ pub(super) type Drag = Box<dyn Fn(&[u32]) -> Option<gdk::ContentProvider>>;
 pub(super) type Receive = Box<dyn Fn(Option<u32>, &glib::Value) -> bool>;
 
 /// What the queue does beyond showing tracks.
-pub(super) struct Behaviour {
+pub(super) struct Behavior {
     /// How `item` (holding `track`) plays: `Stopped` for every track but the
     /// current one.
     pub(super) playback: Box<dyn Fn(&glib::Object, &Track) -> PlaybackStatus>,
@@ -357,7 +357,7 @@ pub(super) struct Behaviour {
 
 /// What the queue view asks about its tracks.
 pub(super) struct TrackPresenter {
-    behaviour: Behaviour,
+    behavior: Behavior,
 }
 
 impl ItemPresenter for TrackPresenter {
@@ -366,7 +366,7 @@ impl ItemPresenter for TrackPresenter {
             return;
         };
         track.display_title().clone_into(&mut out.title);
-        let playback = (self.behaviour.playback)(item, &track);
+        let playback = (self.behavior.playback)(item, &track);
         out.emphasized = playback != PlaybackStatus::Stopped;
         out.cells = Column::ALL
             .iter()
@@ -407,15 +407,15 @@ impl ItemPresenter for TrackPresenter {
     }
 
     fn drag_content(&self, positions: &[u32]) -> Option<gdk::ContentProvider> {
-        self.behaviour.drag.as_ref()?(positions)
+        self.behavior.drag.as_ref()?(positions)
     }
 
     fn accepts_drop(&self, _target: Option<u32>) -> bool {
-        self.behaviour.drop.is_some()
+        self.behavior.drop.is_some()
     }
 
     fn receive_drop(&self, target: Option<u32>, value: &glib::Value, _want_move: bool) -> bool {
-        self.behaviour
+        self.behavior
             .drop
             .as_ref()
             .is_some_and(|drop| drop(target, value))
@@ -424,7 +424,7 @@ impl ItemPresenter for TrackPresenter {
 
 /// The glyph that takes the current track's number in the `#` column; the
 /// row's description says the state, so assistive technology never reads it.
-/// U+FE0E keeps the emoji font from drawing it in colour.
+/// U+FE0E keeps the emoji font from drawing it in color.
 fn playback_marker(playback: PlaybackStatus) -> Option<&'static str> {
     match playback {
         PlaybackStatus::Playing => Some("\u{25B6}\u{FE0E}"),
@@ -457,12 +457,12 @@ pub(super) enum ListEvent {
 impl TrackList {
     pub(super) fn new(
         columns: Columns,
-        behaviour: Behaviour,
+        behavior: Behavior,
         accessible_label: &str,
         on_event: impl Fn(ListEvent) + 'static,
     ) -> Self {
         let columns = Rc::new(RefCell::new(columns));
-        let presenter = Rc::new(TrackPresenter { behaviour });
+        let presenter = Rc::new(TrackPresenter { behavior });
         let view = ItemView::new(presenter, columns.borrow().geometry());
         view.set_stripes(true);
         view.set_vexpand(true);
@@ -599,7 +599,7 @@ mod tests {
     /// What the queue draws and says for its first row in `playback`.
     fn queue_row(playback: PlaybackStatus) -> ItemContent {
         let presenter = TrackPresenter {
-            behaviour: Behaviour {
+            behavior: Behavior {
                 playback: Box::new(move |_, _| playback),
                 drag: None,
                 drop: None,

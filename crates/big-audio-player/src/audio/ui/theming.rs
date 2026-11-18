@@ -7,7 +7,7 @@ use big_relm4_components::theme::{CssSlot, HIGH_CONTRAST_CSS, apply_color_scheme
 
 use crate::settings::{Settings, keys};
 
-/// Apply the saved colour source, custom palette, and high-contrast override.
+/// Apply the saved color source, custom palette, and high-contrast override.
 pub(crate) fn apply_appearance(settings: &Settings, theme_slot: &CssSlot, hc_slot: &CssSlot) {
     let color_source = settings.get_string(keys::AUDIO_UI_COLOR_SOURCE);
     apply_color_scheme(&color_source);

@@ -160,7 +160,7 @@ pub(super) fn apply_watch_later(
 }
 
 /// Apply user-supplied `key=value` pairs; individual failures are logged
-/// but don't abort initialisation. The log leaves out the value, which may
+/// but don't abort initialization. The log leaves out the value, which may
 /// hold a header or a password.
 pub(super) fn apply_custom_options(init: &MpvInitializer, opts: &[(String, String)]) {
     for (key, value) in opts {

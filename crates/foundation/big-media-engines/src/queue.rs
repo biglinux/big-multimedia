@@ -2,7 +2,7 @@
 
 use std::collections::HashSet;
 
-/// Repeat behaviour for [`PlayQueue::advance`].
+/// Repeat behavior for [`PlayQueue::advance`].
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Default)]
 pub enum RepeatMode {
     /// Stop after the last track.
@@ -174,7 +174,7 @@ impl<T: QueueEntry> PlayQueue<T> {
         self.tracks.is_empty()
     }
 
-    /// Move to the next track honouring [`RepeatMode`] and shuffle settings.
+    /// Move to the next track honoring [`RepeatMode`] and shuffle settings.
     pub fn advance(&mut self) -> Option<&T> {
         let old_idx = self.current_index;
         if self.tracks.is_empty() {

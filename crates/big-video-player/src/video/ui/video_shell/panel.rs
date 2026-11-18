@@ -204,7 +204,7 @@ impl SettingsPanel {
 }
 
 /// One home block: what it is, how it is set now, and whether that is a
-/// change from normal (then a dot and bold text say so, not colour alone).
+/// change from normal (then a dot and bold text say so, not color alone).
 struct Block {
     icon: &'static str,
     name: String,
@@ -221,7 +221,7 @@ enum BlockTarget {
 /// The home block (by page) an adjustment belongs to.
 fn page_of(adjustment: &Adjustment) -> Option<PanelPage> {
     match adjustment {
-        Adjustment::SourceColours(_) => Some(PanelPage::Hdr),
+        Adjustment::SourceColors(_) => Some(PanelPage::Hdr),
         Adjustment::Picture(_) => Some(PanelPage::Picture),
         Adjustment::Zoom { .. }
         | Adjustment::Rotation(_)
@@ -430,7 +430,7 @@ impl VideoShell {
             state: if hdr.changed {
                 hdr.state
             } else {
-                media_adjust::source_colour_names()[0].clone()
+                media_adjust::source_color_names()[0].clone()
             },
             ..hdr
         };

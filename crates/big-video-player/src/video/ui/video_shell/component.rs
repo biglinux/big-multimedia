@@ -211,7 +211,7 @@ impl Component for VideoShell {
         let hdr_hint = gtk::Button::builder()
             .label(i18n("Use HDR?"))
             .tooltip_text(i18n(
-                "Does the picture look grey and washed out? Click to use HDR colours",
+                "Does the picture look grey and washed out? Click to use HDR colors",
             ))
             .css_classes(["header-pill", "hdr-hint"])
             .visible(false)
@@ -221,7 +221,7 @@ impl Component for VideoShell {
             move |hint| {
                 hint.set_visible(false);
                 sender.input(VideoShellInput::RestoreAdjustments(vec![
-                    super::adjustments::Adjustment::SourceColours(1),
+                    super::adjustments::Adjustment::SourceColors(1),
                 ]));
             }
         });

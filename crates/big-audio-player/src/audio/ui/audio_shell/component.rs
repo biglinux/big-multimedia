@@ -138,7 +138,7 @@ impl Component for AudioShell {
         lyrics_paned.set_end_child(Some(playlist.widget()));
         lyrics.widget().set_visible(false);
 
-        // LEFT sidebar pane (distinct `.sidebar-pane` colour): Music | Files |
+        // LEFT sidebar pane (distinct `.sidebar-pane` color): Music | Files |
         // Radio | Podcasts in a view stack switched from its own header.
         let view_stack = gtk::Stack::new();
         view_stack

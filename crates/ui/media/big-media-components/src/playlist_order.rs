@@ -70,7 +70,7 @@ pub fn natural_path_cmp(a: &str, b: &str) -> Ordering {
 
 /// Sort `paths` in place by `sort_by` key and optional descending order.
 ///
-/// Recognised keys are `"date"` (filesystem modified time), `"size"`
+/// Recognized keys are `"date"` (filesystem modified time), `"size"`
 /// (filesystem length in bytes), and anything else, which falls back to a
 /// case-insensitive sort on the file-stem. Filesystem errors on individual
 /// entries silently sort those entries as `UNIX_EPOCH` or `0`.

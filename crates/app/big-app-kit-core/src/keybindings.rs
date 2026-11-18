@@ -20,7 +20,7 @@ pub struct ShortcutDef {
     /// Grouping label shown above the row in the shortcut dialog.
     pub category: &'static str,
     /// Canonical GTK accelerator (`"<Ctrl>m"`, `"space"`) used when
-    /// the user has not customised it.
+    /// the user has not customized it.
     pub default_accel: &'static str,
     /// `true` when the binding is a bare key (no modifiers) and must
     /// be suppressed while a text entry has focus.
@@ -153,7 +153,7 @@ pub fn serialize_custom(overrides: &[(String, String)]) -> String {
 
 /// Drop any override for `action_id` from the in-memory list.
 ///
-/// No-op when the action is not currently customised. Paired with
+/// No-op when the action is not currently customized. Paired with
 /// [`set_custom_override`] to implement the "reset to default" path.
 pub fn remove_custom_override(overrides: &mut Vec<(String, String)>, action_id: &str) {
     overrides.retain(|(action, _)| action != action_id);

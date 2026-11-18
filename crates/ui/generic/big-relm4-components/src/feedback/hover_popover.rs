@@ -55,7 +55,7 @@ pub fn build_vertical_popover_shell(
 
 /// Wire `hover_box` so its motion/click controllers pop `popover` up
 /// and pop down every other popover in `all_popovers`. Implements the
-/// mutually-exclusive hover-popover group behaviour.
+/// mutually-exclusive hover-popover group behavior.
 pub fn setup_hover_controller_exclusive(
     hover_box: &gtk::Box,
     popover: &gtk::Popover,

@@ -234,13 +234,13 @@ fn ensure_blurred(source: &Path) -> Option<PathBuf> {
     source.hash(&mut hasher);
     mtime.hash(&mut hasher);
     // A prefix apart from the `wallpaper-blur-` files, which are swept below.
-    let name = format!("wallpaper-colours-{:016x}.png", hasher.finish());
+    let name = format!("wallpaper-colors-{:016x}.png", hasher.finish());
     if let Ok(entries) = std::fs::read_dir(&cache_dir) {
         for entry in entries.flatten() {
             let old = entry.file_name();
             let old = old.to_string_lossy();
             if old.starts_with("wallpaper-blur-")
-                || (old.starts_with("wallpaper-colours-") && *old != name)
+                || (old.starts_with("wallpaper-colors-") && *old != name)
             {
                 let _ = std::fs::remove_file(entry.path());
             }
@@ -356,7 +356,7 @@ fn blur_spec(source: &Path, dest: &Path) -> BigSubprocessSpec {
         .arg(source)
         .args([
             "-vf",
-            // The wallpaper's colours, not its shapes: averaged down to 4x2
+            // The wallpaper's colors, not its shapes: averaged down to 4x2
             // and spread back out, so a logo in its middle (BigLinux's own)
             // is not left as a blurred square behind the welcome screen.
             // Then a slight darken + desaturate for the text over it.

@@ -221,7 +221,7 @@ impl BigSubprocessSpec {
         self.run_cancellable(&AtomicBool::new(false))
     }
 
-    /// Spawn the subprocess synchronously and wait, honouring an external
+    /// Spawn the subprocess synchronously and wait, honoring an external
     /// cancellation flag in addition to the spec timeout.
     ///
     /// Behaves like [`Self::run`] (same concurrent stdout/stderr

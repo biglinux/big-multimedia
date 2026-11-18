@@ -175,7 +175,7 @@ impl SoundIndicator {
     }
 
     /// Show `muted` at `volume`: silent, by mute or at level 0, reads "No sound"
-    /// with the crossed-out speaker and the `sound-off` pill, not colour alone.
+    /// with the crossed-out speaker and the `sound-off` pill, not color alone.
     /// The button names the action it will take and reports pressed while muted.
     pub(super) fn show(&self, muted: bool, volume: f64) {
         self.muted.set(muted);

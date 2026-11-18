@@ -36,9 +36,9 @@ fn drop_paths_from_text(text: &str, max_items: Option<usize>) -> Vec<PathBuf> {
 
 /// Extract dropped paths from a `gtk::DropTarget` signal value.
 ///
-/// Recognises [`gio::File`], [`gdk::FileList`], and plain `String`
+/// Recognizes [`gio::File`], [`gdk::FileList`], and plain `String`
 /// (treated as a uri-list). Returns an empty vector when the value carries
-/// no recognised type; receivers usually abort the drop on empty.
+/// no recognized type; receivers usually abort the drop on empty.
 #[must_use]
 pub fn drop_paths_from_value(value: &glib::Value) -> Vec<PathBuf> {
     if let Ok(file) = value.get::<gio::File>() {
@@ -59,7 +59,7 @@ pub fn drop_paths_from_value(value: &glib::Value) -> Vec<PathBuf> {
 
 /// Build a [`gtk::DropTarget`] that accepts file/path payloads.
 ///
-/// The returned target reports the supplied [`gdk::DragAction`] and recognises
+/// The returned target reports the supplied [`gdk::DragAction`] and recognizes
 /// `gio::File`, `gdk::FileList`, and plain string drops. Pair with
 /// [`drop_paths_from_value`] to extract paths from the drop signal.
 pub fn path_drop_target(action: gdk::DragAction) -> gtk::DropTarget {

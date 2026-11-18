@@ -9,7 +9,7 @@
 
 use std::path::Path;
 
-/// Container extensions recognised as video: those of the MIME types the
+/// Container extensions recognized as video: those of the MIME types the
 /// video player's desktop entry claims, so a file it is asked to open is also
 /// one its folder scan lists.
 pub const VIDEO_EXTENSIONS: &[&str] = &[
@@ -19,7 +19,7 @@ pub const VIDEO_EXTENSIONS: &[&str] = &[
     "3gp2", "3gpp2", "mjp2", "m2t", "rv", "bk2", "lrv", "moov",
 ];
 
-/// Container extensions recognised as audio, likewise the audio player's.
+/// Container extensions recognized as audio, likewise the audio player's.
 pub const AUDIO_EXTENSIONS: &[&str] = &[
     "mp3", "flac", "ogg", "opus", "wav", "m4a", "m4b", "aac", "wma", "ape", "wv", "aiff", "aif",
     "aifc", "mka", "oga", "spx", "ac3", "dts", "mpc", "tta", "amr", "awb", "au", "snd", "dff",
