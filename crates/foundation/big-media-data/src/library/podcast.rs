@@ -40,14 +40,15 @@ pub fn parse_feed(xml: &str) -> Option<PodcastFeed> {
     let description = child_text(&channel, "description").unwrap_or_default();
 
     // RSS spec image first, then itunes:image href fallback.
-    let image_url = channel
-        .children()
-        .find(|n| n.has_tag_name("image"))
+    let image_url = rss_child(&channel, "image")
         .and_then(|img| child_text(&img, "url"))
         .or_else(|| {
             channel
                 .children()
-                .find(|n| n.tag_name().name() == "image")
+                .find(|n| {
+                    n.tag_name().name() == "image"
+                        && n.tag_name().namespace() != channel.tag_name().namespace()
+                })
                 .and_then(|n| n.attribute("href").map(String::from))
         });
 
@@ -99,10 +100,18 @@ pub fn parse_feed(xml: &str) -> Option<PodcastFeed> {
     })
 }
 
+/// An RSS element of `parent`: one in its namespace, never an `itunes:` one
+/// of the same local name.
+fn rss_child<'a, 'input>(parent: &Node<'a, 'input>, tag_name: &str) -> Option<Node<'a, 'input>> {
+    parent.children().find(|n| {
+        n.is_element()
+            && n.tag_name().name() == tag_name
+            && n.tag_name().namespace() == parent.tag_name().namespace()
+    })
+}
+
 fn child_text(parent: &Node, tag_name: &str) -> Option<String> {
-    parent
-        .children()
-        .find(|n| n.has_tag_name(tag_name))
+    rss_child(parent, tag_name)
         .and_then(|n| n.text().map(|t| t.trim().to_string()))
         .filter(|s| !s.is_empty())
 }
@@ -436,6 +445,31 @@ mod tests {
         assert_eq!(
             feed.image_url,
             Some("https://img.example.com/art.jpg".into())
+        );
+    }
+
+    #[test]
+    fn rss_image_wins_over_itunes() {
+        let feed = |images: &str| {
+            let xml = format!(
+                r#"<rss xmlns:itunes="http://www.itunes.com/dtds/podcast-1.0.dtd"><channel>
+<itunes:title>Show name for Apple</itunes:title>
+<title>T</title>
+{images}
+</channel></rss>"#
+            );
+            parse_feed(&xml).unwrap()
+        };
+        let itunes = r#"<itunes:image href="https://img.example.com/itunes.jpg"/>"#;
+        let rss = "<image><url>https://img.example.com/rss.jpg</url></image>";
+        let rss_image = Some("https://img.example.com/rss.jpg".to_owned());
+        assert_eq!(feed(&format!("{itunes}{rss}")).image_url, rss_image);
+        assert_eq!(feed(&format!("{rss}{itunes}")).image_url, rss_image);
+        assert_eq!(feed(&format!("{itunes}{rss}")).title, "T");
+        let empty_rss = "<image><title>Logo</title></image>";
+        assert_eq!(
+            feed(&format!("{empty_rss}{itunes}")).image_url,
+            Some("https://img.example.com/itunes.jpg".to_owned())
         );
     }
 
