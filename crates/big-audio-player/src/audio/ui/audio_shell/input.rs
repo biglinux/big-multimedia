@@ -73,9 +73,6 @@ pub enum AudioShellInput {
         /// Resolved tracks (paths not in the library are dropped).
         tracks: Vec<Track>,
     },
-    /// A smart/playlist node resolved to its tracks (async DB result) →
-    /// populate the detail view.
-    DetailResolved(Vec<Track>),
     /// A browse-tree node resolved to its tracks (async DB result) → append to
     /// the queue and start playback when idle.
     NodeTracksResolved(Vec<Track>),

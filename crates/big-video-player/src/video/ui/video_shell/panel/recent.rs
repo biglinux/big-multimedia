@@ -1,23 +1,49 @@
 //! The panel's "Recent" page.
 
 use super::*;
+use big_relm4_components::task::spawn_blocking_result;
 
 /// The last videos opened, as cards: picture, name and length. A click
 /// opens one. Pictures and lengths come off the main loop. The search above
 /// them filters as it is typed, over every file the store keeps (50); with
 /// nothing typed the most recent twelve show.
 pub(super) fn recent_page(columns: usize, sender: &ComponentSender<VideoShell>) -> gtk::Widget {
+    let page = gtk::Box::builder()
+        .orientation(gtk::Orientation::Vertical)
+        .spacing(10)
+        .build();
+    let weak_page = page.downgrade();
+    let sender = sender.clone();
+    // The history file may sit on a slow or stale home mount.
+    spawn_blocking_result(
+        || crate::recent::load_recent_for("video"),
+        move |entries| {
+            if let Some(page) = weak_page.upgrade() {
+                fill_recent_page(&page, entries, columns, &sender);
+            }
+        },
+    );
+    page.upcast()
+}
+
+fn fill_recent_page(
+    page: &gtk::Box,
+    entries: Vec<crate::recent::RecentEntry>,
+    columns: usize,
+    sender: &ComponentSender<VideoShell>,
+) {
     /// Enough to find the recent one without a list to scroll through.
     const SHOWN: usize = 12;
-    let entries = crate::recent::load_recent_for("video");
     if entries.is_empty() {
-        return gtk::Label::builder()
-            .label(i18n("No Recent Files"))
-            .css_classes(["dim-label"])
-            .margin_top(24)
-            .margin_bottom(24)
-            .build()
-            .upcast();
+        page.append(
+            &gtk::Label::builder()
+                .label(i18n("No Recent Files"))
+                .css_classes(["dim-label"])
+                .margin_top(24)
+                .margin_bottom(24)
+                .build(),
+        );
+        return;
     }
     let grid = gtk::FlowBox::builder()
         .selection_mode(gtk::SelectionMode::None)
@@ -205,14 +231,9 @@ pub(super) fn recent_page(columns: usize, sender: &ComponentSender<VideoShell>) 
         }
     });
 
-    let page = gtk::Box::builder()
-        .orientation(gtk::Orientation::Vertical)
-        .spacing(10)
-        .build();
     page.append(&search);
     page.append(&empty);
     page.append(&grid);
-    page.upcast()
 }
 
 /// As the file browser's search: the letters typed, in order.

@@ -8,7 +8,7 @@ use std::rc::Rc;
 
 /// Put a save-problem banner on `page`. It stays hidden while saving works and
 /// appears with a retry action only when the store reports a failed or
-/// unconfirmed write. Polls only while the page is mapped.
+/// unconfirmed write.
 pub fn attach_save_status_banner(page: &adw::PreferencesPage, settings: &Settings) {
     let banner = adw::Banner::builder()
         .button_label(i18n("Retry Saving"))
@@ -19,46 +19,55 @@ pub fn attach_save_status_banner(page: &adw::PreferencesPage, settings: &Setting
     banner.connect_button_clicked(move |_| {
         let _ = store.request_flush();
     });
-    let timer = Rc::new(RefCell::new(None::<glib::SourceId>));
     let store = settings.clone();
-    let timer_map = timer.clone();
     let weak_banner = banner.downgrade();
-    page.connect_map(move |_| {
-        if timer_map.borrow().is_some() {
+    let mut last = None;
+    refresh_while_mapped(page, move || {
+        let Some(banner) = weak_banner.upgrade() else {
+            return;
+        };
+        let status = store.save_status();
+        if last.as_ref() != Some(&status) {
+            let problem = match status.phase {
+                SavePhase::Failed => Some(i18n(
+                    "Your changes work for now but could not be saved. Check free disk space or close other players, then retry.",
+                )),
+                SavePhase::Saved | SavePhase::Pending | SavePhase::Saving => None,
+            };
+            if let Some(problem) = &problem {
+                banner.set_title(problem);
+            }
+            banner.set_revealed(problem.is_some());
+            last = Some(status);
+        }
+    });
+}
+
+/// Call `refresh` when `widget` maps and after each background save change
+/// until it unmaps, so nothing runs while saves are idle.
+fn refresh_while_mapped(widget: &impl IsA<gtk::Widget>, refresh: impl FnMut() + 'static) {
+    let refresh = Rc::new(RefCell::new(refresh));
+    let watch = Rc::new(RefCell::new(None::<big_os_kit::background::Watch>));
+    let mapped = watch.clone();
+    widget.connect_map(move |_| {
+        if mapped.borrow().is_some() {
             return;
         }
-        let store = store.clone();
-        let banner = weak_banner.clone();
-        let mut last = None;
-        let poll = move || {
-            let Some(banner) = banner.upgrade() else {
-                return glib::ControlFlow::Break;
-            };
-            let status = store.save_status();
-            if last.as_ref() != Some(&status) {
-                let problem = match status.phase {
-                    SavePhase::Failed => Some(i18n(
-                        "Your changes work for now but could not be saved. Check free disk space or close other players, then retry.",
-                    )),
-                    SavePhase::Saved | SavePhase::Pending | SavePhase::Saving => None,
-                };
-                if let Some(problem) = &problem {
-                    banner.set_title(problem);
-                }
-                banner.set_revealed(problem.is_some());
-                last = Some(status);
+        let (wake, changes) = async_channel::bounded(1);
+        *mapped.borrow_mut() = Some(big_os_kit::background::watch(move || {
+            let _ = wake.try_send(());
+        }));
+        (refresh.borrow_mut())();
+        let refresh = refresh.clone();
+        // Ends when unmap drops the watch, which closes the channel.
+        glib::spawn_future_local(async move {
+            while changes.recv().await.is_ok() {
+                (refresh.borrow_mut())();
             }
-            glib::ControlFlow::Continue
-        };
-        *timer_map.borrow_mut() = Some(glib::timeout_add_local(
-            std::time::Duration::from_millis(250),
-            poll,
-        ));
+        });
     });
-    page.connect_unmap(move |_| {
-        if let Some(timer) = timer.borrow_mut().take() {
-            big_gtk_kit::source::remove(timer);
-        }
+    widget.connect_unmap(move |_| {
+        watch.borrow_mut().take();
     });
 }
 
@@ -131,27 +140,31 @@ fn wait_for_pending_work(window: &gtk::Window, deciding: &Rc<Cell<bool>>) {
         .build();
     dialog.add_response("keep", &i18n("Keep open"));
     dialog.set_close_response("keep");
+    let (wake, changes) = async_channel::bounded(1);
     let keep = deciding.clone();
-    dialog.connect_response(None, move |_, _| keep.set(false));
+    let kept = wake.clone();
+    dialog.connect_response(None, move |_, _| {
+        keep.set(false);
+        let _ = kept.try_send(());
+    });
     dialog.present(Some(window));
+    let watch = big_os_kit::background::watch(move || {
+        let _ = wake.try_send(());
+    });
     let weak = window.downgrade();
     let waiting = deciding.clone();
-    let mut hold = window.application().map(|app| app.hold());
-    glib::timeout_add_local(std::time::Duration::from_millis(50), move || {
-        if !waiting.get() {
-            hold.take();
-            return glib::ControlFlow::Break;
+    let hold = window.application().map(|app| app.hold());
+    glib::spawn_future_local(async move {
+        let _watch = watch;
+        let _hold = hold;
+        while waiting.get() && big_os_kit::background::pending() != 0 {
+            let _ = changes.recv().await;
         }
-        if big_os_kit::background::pending() == 0 {
-            waiting.set(false);
+        if waiting.replace(false) {
             dialog.close();
             if let Some(window) = weak.upgrade() {
                 window.close();
             }
-            hold.take();
-            glib::ControlFlow::Break
-        } else {
-            glib::ControlFlow::Continue
         }
     });
 }
@@ -214,7 +227,7 @@ pub fn acknowledged_task<T: Send + 'static>(
 }
 
 /// Small persistence indicator for independent state stores (IPTV/favorites).
-/// Polls only while mapped, uses weak widgets, and never displays document data.
+/// Refreshes only while mapped, uses weak widgets, and never displays document data.
 pub fn document_status(
     snapshot: impl Fn() -> Option<big_os_kit::deferred::Status> + 'static,
     retry: impl Fn() + 'static,
@@ -229,47 +242,26 @@ pub fn document_status(
     root.append(&label);
     root.append(&button);
     button.connect_clicked(move |_| retry());
-    let timer = Rc::new(RefCell::new(None::<glib::SourceId>));
-    let mapped = timer.clone();
-    let snapshot = Rc::new(snapshot);
     let weak_label = label.downgrade();
     let weak_button = button.downgrade();
-    root.connect_map(move |_| {
-        if mapped.borrow().is_some() {
+    let mut last = None;
+    refresh_while_mapped(&root, move || {
+        let (Some(label), Some(button)) = (weak_label.upgrade(), weak_button.upgrade()) else {
             return;
-        }
-        let get = snapshot.clone();
-        let weak_label = weak_label.clone();
-        let weak_button = weak_button.clone();
-        let mut last = None;
-        let poll = move || {
-            let (Some(label), Some(button)) = (weak_label.upgrade(), weak_button.upgrade()) else {
-                return glib::ControlFlow::Break;
-            };
-            let status = get();
-            if status != last {
-                use big_os_kit::deferred::Phase;
-                let phase = status.as_ref().map(|s| s.phase);
-                label.set_label(&i18n(match phase {
-                    None | Some(Phase::Saved) => "Changes are saved.",
-                    Some(Phase::Pending | Phase::Saving) => "Saving your changes…",
-                    Some(Phase::Failed) => {
-                        "Changes work for this session but could not be saved. Check storage or close other instances, then retry."
-                    }
-                }));
-                button.set_sensitive(matches!(phase, Some(Phase::Failed)));
-                last = status;
-            }
-            glib::ControlFlow::Continue
         };
-        *mapped.borrow_mut() = Some(glib::timeout_add_local(
-            std::time::Duration::from_millis(250),
-            poll,
-        ));
-    });
-    root.connect_unmap(move |_| {
-        if let Some(id) = timer.borrow_mut().take() {
-            big_gtk_kit::source::remove(id);
+        let status = snapshot();
+        if status != last {
+            use big_os_kit::deferred::Phase;
+            let phase = status.as_ref().map(|s| s.phase);
+            label.set_label(&i18n(match phase {
+                None | Some(Phase::Saved) => "Changes are saved.",
+                Some(Phase::Pending | Phase::Saving) => "Saving your changes…",
+                Some(Phase::Failed) => {
+                    "Changes work for this session but could not be saved. Check storage or close other instances, then retry."
+                }
+            }));
+            button.set_sensitive(matches!(phase, Some(Phase::Failed)));
+            last = status;
         }
     });
     root
@@ -287,15 +279,17 @@ pub fn after_writes(action: impl FnOnce() + 'static) {
     after_writes_inner(Box::new(action), true);
 }
 fn after_writes_inner(action: Box<dyn FnOnce()>, confirm: bool) {
-    let mut action = Some(action);
-    let mut hold = gio::Application::default().map(|app| app.hold());
-    glib::timeout_add_local(std::time::Duration::from_millis(50), move || {
-        if big_os_kit::background::pending() != 0 {
-            return glib::ControlFlow::Continue;
+    let hold = gio::Application::default().map(|app| app.hold());
+    let (wake, changes) = async_channel::bounded(1);
+    let watch = big_os_kit::background::watch(move || {
+        let _ = wake.try_send(());
+    });
+    glib::spawn_future_local(async move {
+        let _hold = hold;
+        while big_os_kit::background::pending() != 0 {
+            let _ = changes.recv().await;
         }
-        let Some(action) = action.take() else {
-            return glib::ControlFlow::Break;
-        };
+        drop(watch);
         if confirm && unsaved_changes() {
             let parent = gio::Application::default()
                 .and_downcast::<gtk::Application>()
@@ -319,7 +313,5 @@ fn after_writes_inner(action: Box<dyn FnOnce()>, confirm: bool) {
         } else {
             action();
         }
-        hold.take();
-        glib::ControlFlow::Break
     });
 }

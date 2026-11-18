@@ -146,37 +146,43 @@ impl Document {
     /// Record a rejected serialization/validation attempt without claiming that
     /// the rejected in-memory content was saved. A new valid replace clears it.
     pub fn reject_update(&self) {
-        let mut s = self.state.lock().unwrap_or_else(PoisonError::into_inner);
-        s.invalid_update = true;
-        s.phase = Phase::Failed;
+        {
+            let mut s = self.state.lock().unwrap_or_else(PoisonError::into_inner);
+            s.invalid_update = true;
+            s.phase = Phase::Failed;
+        }
+        crate::background::changed();
     }
 
     /// Retry a failed save. Never rebases onto an external writer's content:
     /// a conflict needs an explicit reload.
     pub fn retry(&self) -> io::Result<()> {
-        {
+        let settled = {
             let mut s = self.state.lock().unwrap_or_else(PoisonError::into_inner);
             if s.invalid_update {
                 s.phase = Phase::Failed;
-                return Err(io::Error::other(
+                Some(Err(io::Error::other(
                     "invalid local state; correct it before saving",
-                ));
-            }
-            if s.blocked {
+                )))
+            } else if s.blocked {
                 s.phase = Phase::Failed;
-                return Err(io::Error::other(
+                Some(Err(io::Error::other(
                     "saved state is invalid or unavailable; reload before saving",
-                ));
-            }
-            if s.queued {
+                )))
+            } else if s.queued {
                 return Ok(());
-            }
-            if s.revision == s.saved_revision {
+            } else if s.revision == s.saved_revision {
                 s.phase = Phase::Saved;
-                return Ok(());
+                Some(Ok(()))
+            } else {
+                s.queued = true;
+                s.phase = Phase::Pending;
+                None
             }
-            s.queued = true;
-            s.phase = Phase::Pending;
+        };
+        if let Some(result) = settled {
+            crate::background::changed();
+            return result;
         }
         let owner = self.clone();
         let admitted = crate::background::submit(move || {
@@ -199,9 +205,12 @@ impl Document {
             }
         });
         if admitted.is_err() {
-            let mut s = self.state.lock().unwrap_or_else(PoisonError::into_inner);
-            s.queued = false;
-            s.phase = Phase::Failed;
+            {
+                let mut s = self.state.lock().unwrap_or_else(PoisonError::into_inner);
+                s.queued = false;
+                s.phase = Phase::Failed;
+            }
+            crate::background::changed();
         }
         admitted
     }
@@ -291,6 +300,22 @@ mod tests {
         drain(&doc);
         assert_eq!(doc.status().phase, Phase::Failed);
         assert_eq!(std::fs::read(&p).unwrap(), b"external");
+        std::fs::remove_dir_all(p.parent().unwrap()).unwrap();
+    }
+    #[test]
+    fn status_changes_without_a_job_wake_watchers() {
+        let p = path("prefs.json");
+        let doc = Document::reviewed(p.clone(), Some(b"same".to_vec()));
+        let (heard, phases) = std::sync::mpsc::channel();
+        let observed = doc.clone();
+        let _watch = crate::background::watch(move || {
+            let _ = heard.send(observed.status().phase);
+        });
+        let saw = |phase| phases.try_iter().any(|seen| seen == phase);
+        doc.reject_update();
+        assert!(saw(Phase::Failed));
+        doc.replace(b"same".to_vec()).unwrap();
+        assert!(saw(Phase::Saved));
         std::fs::remove_dir_all(p.parent().unwrap()).unwrap();
     }
     #[test]

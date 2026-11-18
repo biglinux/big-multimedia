@@ -100,6 +100,8 @@ pub enum VideoControlsBarInput {
     SetMuted(bool),
     /// Whose volume the control moves: the TV's while a TV has the controls.
     SetVolumeOfTv(bool),
+    /// The Maximum Volume preference changed: the sliders' new top (percent).
+    SetMaxVolume(f64),
     /// The PC's own volume (percent) and mute, beside the TV's, while the
     /// player plays along with the TV; `None` hides it.
     ShowPcVolume(Option<(f64, bool)>),
@@ -554,6 +556,10 @@ impl Component for VideoControlsBar {
                 self.pc_volume.volume_box.set_visible(pc.is_some());
                 self.volume.mark.set_visible(pc.is_some());
                 self.pc_volume.mark.set_visible(pc.is_some());
+            }
+            VideoControlsBarInput::SetMaxVolume(maximum) => {
+                self.volume.set_maximum(maximum);
+                self.pc_volume.set_maximum(maximum);
             }
             VideoControlsBarInput::SetVolumeOfTv(tv) => {
                 let label = if tv {

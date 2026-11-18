@@ -425,6 +425,19 @@ pub(super) struct VolumeControl {
     pub(super) title: Option<gtk::Label>,
 }
 
+impl VolumeControl {
+    /// Follow the Maximum Volume preference; the player already holds its
+    /// level within it, so a lowered value is only mirrored.
+    pub(super) fn set_maximum(&self, maximum: f64) {
+        big_media_components::player_chrome::set_volume_maximum(&self.scale, maximum);
+        if self.scale.value() > maximum {
+            self.suppress.set(true);
+            self.scale.set_value(maximum);
+            self.suppress.set(false);
+        }
+    }
+}
+
 /// A volume control for mpv, or for the TV while `tv` has the controls.
 /// `mark` is the word that tells it apart from the other one.
 fn build_volume_control(

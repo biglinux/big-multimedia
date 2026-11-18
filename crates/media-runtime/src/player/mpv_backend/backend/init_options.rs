@@ -103,7 +103,7 @@ pub(super) fn apply_playback_options(init: &MpvInitializer) -> Result<(), MpvErr
     init.set_option("demuxer-max-back-bytes", "4MiB")?;
     init.set_option("framedrop", "vo")?;
     init.set_option("vd-lavc-skiploopfilter", "nonref")?;
-    init.set_option("volume-max", "150")?;
+    init.set_option("volume-max", super::volume::VOLUME_MAX_AT_START)?;
     init.set_option("audio-client-name", audio_client_name())?;
     init.set_option("screenshot-format", "png")?;
     init.set_option("screenshot-template", "%F-%p")?;
@@ -125,7 +125,7 @@ pub(super) fn apply_audio_only_options(init: &MpvInitializer) -> Result<(), MpvE
     init.set_option("input-vo-keyboard", "no")?;
     init.set_option("osc", "no")?;
     init.set_option("osd-level", "0")?;
-    init.set_option("volume-max", "150")?;
+    init.set_option("volume-max", super::volume::VOLUME_MAX_AT_START)?;
     init.set_option("audio-client-name", audio_client_name())?;
     init.set_option("gapless-audio", "yes")?;
     let profile = crate::player::mpv_backend::types::AudioCacheProfile::Music;

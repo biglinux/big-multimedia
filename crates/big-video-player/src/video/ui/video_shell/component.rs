@@ -722,6 +722,11 @@ impl Component for VideoShell {
                     }
                 }
                 VideoShellInput::PreferencesClosed => self.sync_screen_inhibit(window_ref),
+                VideoShellInput::VolumeMaxChanged => {
+                    let maximum = f64::from(self.settings.volume_max_percent());
+                    self.controls
+                        .emit(VideoControlsBarInput::SetMaxVolume(maximum));
+                }
                 VideoShellInput::ShowAppearance => {
                     if let Some(root) = window_ref {
                         self.show_appearance(root);
@@ -845,9 +850,7 @@ impl Component for VideoShell {
                 VideoShellInput::Trashed(paths) => self.remove_trashed(&paths),
                 VideoShellInput::PastePlay => super::keyboard::paste_and_play(root, &sender),
             }
-            if let Some(mpris) = &self.mpris {
-                mpris.sync();
-            }
+            self.mpris.sync();
         });
     }
 }

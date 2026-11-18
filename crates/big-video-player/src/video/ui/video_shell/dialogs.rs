@@ -317,6 +317,11 @@ impl VideoShell {
             root,
             &self.settings,
             mpv,
+            || {
+                if let Some(sender) = shell_input_sender() {
+                    let _ = sender.send(VideoShellInput::VolumeMaxChanged);
+                }
+            },
             |preferences| {
                 // The preferences show the old values after a reset, so close them.
                 let preferences_ref = preferences.downgrade();

@@ -94,6 +94,8 @@ impl MpvBackend {
         self.with_mpv(|m| {
             let _ = m.set_property("volume-max", max);
         });
+        self.stream_volume.set_volume_max(max as f64);
+        self.wake_event_loop();
     }
 
     pub fn set_audio_channels(&self, channels: &str) {

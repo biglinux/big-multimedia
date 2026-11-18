@@ -7,9 +7,14 @@ use std::time::{Duration, Instant};
 
 use super::client::MpvClient;
 
+/// mpv's `volume-max` until the player applies the Maximum Volume preference.
+pub(super) const VOLUME_MAX_AT_START: i64 = 150;
+
 #[derive(Clone, Copy)]
 struct State {
     volume: f64,
+    /// The `volume-max` last given to mpv; requests above it are clamped.
+    volume_max: f64,
     mute: bool,
     pending_volume: Option<f64>,
     pending_mute: Option<bool>,
@@ -28,7 +33,7 @@ struct State {
 /// How long a new stream's reported 0 volume is not taken as the user's.
 const NEW_STREAM: Duration = Duration::from_secs(1);
 
-/// The stream's volume on our 0–250 scale, amplification included.
+/// The stream's volume from 0 to `volume-max`, amplification included.
 fn read_volume(mpv: &MpvClient, native_volume: bool, pipewire: bool) -> Option<f64> {
     let property = if native_volume { "ao-volume" } else { "volume" };
     let volume = mpv
@@ -118,6 +123,7 @@ impl VolumeControl {
         Self(Arc::new(Mutex::new(State {
             volume: 100.0,
             mute: false,
+            volume_max: VOLUME_MAX_AT_START as f64,
             pending_volume: None,
             pending_mute: None,
             volume_set: false,
@@ -146,8 +152,17 @@ impl VolumeControl {
     pub fn set_volume(&self, volume: f64) {
         if volume.is_finite() {
             let mut state = self.0.lock().unwrap_or_else(PoisonError::into_inner);
-            state.pending_volume = Some(volume.clamp(0.0, 250.0));
+            state.pending_volume = Some(volume.max(0.0).min(state.volume_max));
             state.volume_set = true;
+        }
+    }
+
+    /// A level above the new maximum is lowered to it at the next sync.
+    pub fn set_volume_max(&self, max: f64) {
+        let mut state = self.0.lock().unwrap_or_else(PoisonError::into_inner);
+        state.volume_max = max;
+        if state.pending_volume.unwrap_or(state.volume) > max {
+            state.pending_volume = Some(max);
         }
     }
 
@@ -229,5 +244,31 @@ impl VolumeControl {
         shared.last_sync = Instant::now();
         shared.new_stream_until = state.new_stream_until;
         Some((state.volume, state.mute))
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn requests_stay_within_volume_max() {
+        let control = VolumeControl::new();
+        control.set_volume(250.0);
+        assert_eq!(control.snapshot().0, 150.0);
+        control.set_volume_max(200.0);
+        control.set_volume(250.0);
+        assert_eq!(control.snapshot().0, 200.0);
+        control.set_volume_max(120.0);
+        assert_eq!(control.snapshot().0, 120.0, "pending above the new maximum");
+        control.set_volume(110.0);
+        control.set_volume_max(150.0);
+        assert_eq!(
+            control.snapshot().0,
+            110.0,
+            "raising the maximum keeps the level"
+        );
+        control.set_volume(-5.0);
+        assert_eq!(control.snapshot().0, 0.0);
     }
 }

@@ -143,15 +143,32 @@ impl Component for FileBrowser {
         let list_view = build_list_view(&selection);
 
         // Restore last directory from settings; fall back to the configured dir.
+        // Checked off the main loop: a stale network mount can hang `stat`.
         let saved = settings.get_string(keys::FILES_LAST_DIR);
-        let start_dir = if !saved.is_empty() && Path::new(&saved).is_dir() {
-            PathBuf::from(saved)
-        } else {
-            fallback_dir
-        };
-        current_dir.replace(start_dir.clone());
-        populate_dir(&store, &scan_gen, &start_dir, is_media_file);
-        path_label.set_label(&start_dir.to_string_lossy());
+        spawn_blocking_result(
+            move || {
+                if !saved.is_empty() && Path::new(&saved).is_dir() {
+                    PathBuf::from(saved)
+                } else {
+                    fallback_dir
+                }
+            },
+            glib::clone!(
+                #[strong]
+                store,
+                #[strong]
+                scan_gen,
+                #[strong]
+                current_dir,
+                #[weak]
+                path_label,
+                move |start_dir: PathBuf| {
+                    current_dir.replace(start_dir.clone());
+                    populate_dir(&store, &scan_gen, &start_dir, is_media_file);
+                    path_label.set_label(&start_dir.to_string_lossy());
+                }
+            ),
+        );
 
         wire_activate(
             &list_view,
@@ -363,9 +380,10 @@ fn install_library_menu(
     let dir_ref = current_dir.clone();
     let s = sender.clone();
     install_action(&action_group, "add-current-to-library", move || {
-        let _ = s.output(FileBrowserOutput::ScanFolder(
-            dir_ref.borrow().to_string_lossy().to_string(),
-        ));
+        let dir = dir_ref.borrow().to_string_lossy().to_string();
+        if !dir.is_empty() {
+            let _ = s.output(FileBrowserOutput::ScanFolder(dir));
+        }
     });
 
     let context_selected_path = Rc::new(RefCell::new(String::new()));

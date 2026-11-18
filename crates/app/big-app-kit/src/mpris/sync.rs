@@ -13,7 +13,7 @@ pub(super) struct Publisher {
     pub(super) connection: gio::DBusConnection,
     pub(super) state: Arc<StateCallback>,
     pub(super) desktop_uri: String,
-    pub(super) taskbar: Cell<bool>,
+    pub(super) taskbar: Rc<Cell<bool>>,
     previous: RefCell<Option<PlayerState>>,
     sent_launcher: Cell<Option<Option<f64>>>,
     /// The once-a-second tick, only while playing: it publishes every change
@@ -27,13 +27,13 @@ impl Publisher {
         connection: gio::DBusConnection,
         state: Arc<StateCallback>,
         desktop_uri: String,
-        taskbar: bool,
+        taskbar: Rc<Cell<bool>>,
     ) -> Self {
         Self {
             connection,
             state,
             desktop_uri,
-            taskbar: Cell::new(taskbar),
+            taskbar,
             previous: RefCell::new(None),
             sent_launcher: Cell::new(None),
             tick: RefCell::new(None),

@@ -268,9 +268,7 @@ impl AudioShell {
             can_seek: operational && present && s.seekable.load(Ordering::Relaxed),
         };
         *s.snapshot.lock().unwrap_or_else(PoisonError::into_inner) = snapshot;
-        if let Some(mpris) = &self.mpris {
-            mpris.sync();
-        }
+        self.mpris.sync();
     }
 }
 fn finite(x: f64) -> f64 {
@@ -281,7 +279,7 @@ pub(super) fn build_mpris_service(
     sender: &ComponentSender<AudioShell>,
     state: &Arc<SharedMprisState>,
     settings: &Settings,
-) -> Option<Mpris> {
+) -> Mpris {
     let input = sender.input_sender().clone();
     let command_cb: CommandCallback = Box::new(move |command| {
         let _ = input.send(AudioShellInput::MprisCommand(command));

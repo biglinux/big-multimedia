@@ -173,9 +173,8 @@ impl AudioShell {
                     .position
                     .lock()
                     .unwrap_or_else(PoisonError::into_inner) = position;
-                if let Some(mpris) = &self.mpris {
-                    mpris.emit_seeked((position * 1_000_000.0).min(i64::MAX as f64).round() as i64);
-                }
+                self.mpris
+                    .emit_seeked((position * 1_000_000.0).min(i64::MAX as f64).round() as i64);
             }
             PlayerEvent::RateChanged(rate) if rate.is_finite() && rate > 0.0 => {
                 *self

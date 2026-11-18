@@ -163,8 +163,8 @@ pub struct AudioShell {
     /// Destination of the in-progress radio recording (None = not recording).
     recording_path: Option<PathBuf>,
     recording_generation: u64,
-    /// MPRIS2 D-Bus service (None if the session bus is unavailable).
-    mpris: Option<Mpris>,
+    /// MPRIS2 D-Bus service, inactive if the session bus is unavailable.
+    mpris: Mpris,
     /// Playback-state snapshot read by the MPRIS `StateCallback` (D-Bus thread).
     mpris_state: Arc<SharedMprisState>,
     /// System tray icon (None while the setting is off).

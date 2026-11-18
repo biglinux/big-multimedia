@@ -55,9 +55,7 @@ impl AudioShell {
                 }
             }
             AudioShellInput::TaskbarProgressChanged(enabled) => {
-                if let Some(mpris) = &self.mpris {
-                    mpris.set_taskbar_progress(enabled);
-                }
+                self.mpris.set_taskbar_progress(enabled);
             }
             AudioShellInput::TrayIconChanged(enabled) => self.set_tray_icon(enabled, &sender),
             AudioShellInput::VolumeMaxChanged => {
@@ -174,9 +172,6 @@ impl AudioShell {
                     self.play_current();
                 }
                 self.commit_queue();
-            }
-            AudioShellInput::DetailResolved(tracks) => {
-                self.library.emit(LibraryPanelInput::PopulateDetail(tracks));
             }
             AudioShellInput::NodeTracksResolved(tracks) => self.enqueue_tracks(tracks),
             AudioShellInput::RebuildLibraryTree => self.rebuild_library_tree(&sender),
