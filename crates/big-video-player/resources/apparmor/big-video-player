@@ -73,13 +73,27 @@ profile big-video-player @{exec_path} flags=(complain) {
   dbus send bus=session interface=org.kde.StatusNotifierWatcher member=RegisterStatusNotifierItem,
   dbus (send, receive) bus=session path=/{StatusNotifierItem,MenuBar},
   # Portals: desktop settings, opening links and folders, the idle inhibitor.
-  dbus (send, receive) bus=session peer=(name=org.freedesktop.portal.Desktop),
+  # Only the portal calls the players make: the whole portal would let a
+  # compromised player add an autostart entry, open URLs or trash any file.
+  dbus send bus=session path=/org/freedesktop/portal/desktop interface=org.freedesktop.portal.Settings member={Read,ReadAll,ReadOne},
+  dbus receive bus=session interface=org.freedesktop.portal.Settings member=SettingChanged,
+  dbus send bus=session path=/org/freedesktop/portal/desktop interface=org.freedesktop.portal.Inhibit member=Inhibit,
+  dbus send bus=session path=/org/freedesktop/portal/desktop interface=org.freedesktop.portal.OpenURI member=OpenDirectory,
+  dbus send bus=session interface=org.freedesktop.portal.Request member=Close,
+  dbus send bus=session path=/org/freedesktop/portal/desktop interface=org.freedesktop.DBus.Properties member=Get,
   dbus receive bus=session interface=org.freedesktop.portal.Request member=Response,
+  # Files dropped from a file manager arrive through the document portal.
+  dbus send bus=session path=/org/freedesktop/portal/documents interface=org.freedesktop.portal.FileTransfer member=RetrieveFiles,
+  # Show a file in its folder when no portal answers.
+  dbus send bus=session path=/org/freedesktop/FileManager1 interface=org.freedesktop.FileManager1 member=ShowItems,
   dbus send bus=session interface={org.freedesktop.ScreenSaver,org.gnome.SessionManager} member={Inhibit,Uninhibit,UnInhibit},
   # IPTV passwords through secret-tool; any client the keyring serves sees every unlocked item.
   dbus (send, receive) bus=session peer=(name=org.freedesktop.secrets),
   # GIO reaches GVfs mounts through its daemons.
-  dbus (send, receive) bus=session interface=org.gtk.vfs.*,
+  # Read-only GVfs calls: its daemons run outside the profile and would write for us.
+  dbus send bus=session interface=org.gtk.vfs.MountTracker member={LookupMount,ListMounts2,ListMountableInfo},
+  dbus send bus=session interface=org.gtk.vfs.Mount member={QueryInfo,Enumerate,OpenForRead,QueryFilesystemInfo},
+  deny @{run}/user/@{uid}/gvfsd/** rw,
   # KWin's keep-above shortcut.
   dbus send bus=session path=/component/kwin interface=org.kde.kglobalaccel.Component member=invokeShortcut,
   # The sleep timer suspends or powers off through logind.
@@ -107,6 +121,7 @@ profile big-video-player @{exec_path} flags=(complain) {
   # The converters run under their own profiles.
   /usr/bin/big-{audio,video}-converter-gui Px,
   signal (send) set=(term, kill) peer=big-video-player//{decoder,image_loader},
+  unix (send, receive) type=stream peer=(label=big-video-player//image_loader),
 
   # Folder views list every folder; files are read by type.
   @{user_dirs} r,
@@ -133,6 +148,9 @@ profile big-video-player @{exec_path} flags=(complain) {
   owner @{HOME}/.cache/@{suite_dirs}/** rwk,
   # Thumbnails other programs made.
   owner @{HOME}/.cache/thumbnails/** r,
+  # Trash folders of drives udisks mounts, which abstractions/trash leaves out.
+  owner /run/media/*/*/.Trash-@{uid}/{,**} rw,
+  owner /mnt/*/.Trash-@{uid}/{,**} rw,
 
   # Desktop settings the players follow.
   owner @{HOME}/.config/user-dirs.dirs r,
@@ -194,6 +212,9 @@ profile big-video-player @{exec_path} flags=(complain) {
   profile image_loader flags=(complain) {
     include <abstractions/base>
     include <abstractions/fonts>
+
+    # glycin talks to its loader over a socket pair the player opened.
+    unix (send, receive) type=stream peer=(label=big-video-player),
 
     signal (receive) set=(term, kill) peer=big-video-player,
     deny /dev/dri/* rw,
