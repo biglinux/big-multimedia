@@ -222,6 +222,7 @@ impl AudioShell {
                 generation,
                 paths,
                 failed,
+                truncated,
             } => {
                 if generation != self.open_generation {
                     return;
@@ -231,6 +232,8 @@ impl AudioShell {
                     self.notify(&i18n(
                         "The playlist could not be read safely. Check its format and permissions.",
                     ));
+                } else if truncated {
+                    self.notify(&playlist_import::truncated_message());
                 }
                 self.append_open_paths(paths, &sender);
                 self.resolve_next_open(&sender);
@@ -299,7 +302,14 @@ impl AudioShell {
             }
             AudioShellInput::PlaylistImported(result) => {
                 match result {
-                    Ok(added) => self.notify(&format!("{added} {}", i18n("tracks imported"))),
+                    Ok((added, false)) => {
+                        self.notify(&format!("{added} {}", i18n("tracks imported")));
+                    }
+                    Ok((added, true)) => self.notify(&format!(
+                        "{added} {} {}",
+                        i18n("tracks imported"),
+                        playlist_import::truncated_message()
+                    )),
                     Err(error) => self.notify(&format!(
                         "{} {error}",
                         i18n(

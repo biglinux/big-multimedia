@@ -151,6 +151,7 @@ impl AudioShell {
                 }
                 paths.sort();
                 let mut total = 0_usize;
+                let mut truncated = false;
                 for path in paths {
                     let fallback = i18n("Imported");
                     let name = path
@@ -158,7 +159,10 @@ impl AudioShell {
                         .and_then(|s| s.to_str())
                         .unwrap_or(&fallback);
                     match import_one_playlist(&db, &path, name, 100_000 - total) {
-                        Ok(added) => total += added,
+                        Ok((added, cut)) => {
+                            total += added;
+                            truncated |= cut;
+                        }
                         Err(_) => {
                             return Err(std::io::Error::other(format!(
                                 "{}: {total}",
@@ -167,7 +171,7 @@ impl AudioShell {
                         }
                     }
                 }
-                Ok(total)
+                Ok((total, truncated))
             },
             move |result| {
                 let _ = input.send(AudioShellInput::PlaylistImported(
@@ -295,11 +299,12 @@ fn import_one_playlist(
     path: &Path,
     name: &str,
     remaining: usize,
-) -> std::io::Result<usize> {
+) -> std::io::Result<(usize, bool)> {
     if name.is_empty() || name.len() > 1024 || name.chars().any(char::is_control) {
         return Err(std::io::Error::other("Invalid playlist name"));
     }
-    let paths = playlist_import::parse_playlist_file_for_import(path)?;
+    let list = playlist_import::parse_playlist_file_for_import(path)?;
+    let paths = list.entries;
     if paths.len() > remaining {
         return Err(std::io::Error::other(i18n(
             "The batch import limit was reached. Split the playlists into smaller imports.",
@@ -334,10 +339,10 @@ fn import_one_playlist(
         }
     }
     if ids.is_empty() {
-        return Ok(0);
+        return Ok((0, list.truncated));
     }
     queries::create_playlist_with_tracks(&conn, name, &ids).map_err(std::io::Error::other)?;
-    Ok(ids.len())
+    Ok((ids.len(), list.truncated))
 }
 
 /// Most playlists one "Export All" run writes.
