@@ -12,6 +12,8 @@ homepage.workspace = true
 authors.workspace = true
 keywords = ["subprocess", "keyring", "storage", "biglinux"]
 categories = ["os", "filesystem"]
+# Names the metadata build.rs hands to dependents' build scripts; links no library.
+links = "big_os_kit"
 
 [dependencies]
 bon.workspace = true
