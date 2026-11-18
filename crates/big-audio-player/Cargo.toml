@@ -30,7 +30,6 @@ big-relm4-components.workspace = true
 big-media-components.workspace = true
 relm4.workspace = true
 async-channel = "2.5"
-dirs = "6"
 log.workspace = true
 lru = "0.18"
 rusqlite = "0.40.1"
