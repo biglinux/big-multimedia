@@ -1,7 +1,7 @@
 //! `VideoTrimBar`, the trim toolbar: a single Mark control, the segment chips
 //! and Export, which hands the cuts to the video converter.
 //!
-//! A Relm4 [`Component`]: it owns the [`TrimState`] and renders the chips; the
+//! A Relm4 [`Component`]: it owns the [`CutList`] and renders the chips; the
 //! cut ranges themselves are drawn on the **existing transport seek bar** (the
 //! shell forwards [`VideoTrimBarOutput::SegmentsChanged`] there), not on a
 //! separate timeline. The shell owns the mpv handle and the hand-off.
@@ -16,6 +16,7 @@ use std::rc::Rc;
 
 use adw::prelude::*;
 use big_media_components::time::playback_time;
+use big_player_ui::cut_list::CutList;
 use big_relm4_components::feedback::tooltip::{
     icon_button, icon_toggle_button, labeled_icon_button,
 };
@@ -25,8 +26,6 @@ use gtk::glib;
 use relm4::{Component, ComponentParts, ComponentSender, gtk};
 
 use crate::i18n::i18n;
-
-use super::state::TrimState;
 
 /// Messages into the trim bar (from the shell / its own widgets).
 #[derive(Debug)]
@@ -57,7 +56,7 @@ pub enum VideoTrimBarOutput {
     /// The cut state changed: repaint the cut timeline. Carries each segment's
     /// `(id, start, end)` (for edge-drag addressing) plus the pending first mark.
     SegmentsChanged {
-        /// Per-segment `(id, start, end)`.
+        /// Per-cut `(id, start, end)`, sorted and disjoint.
         segments: Vec<(u64, f64, f64)>,
         /// First mark awaiting its pair (drawn as a green guide), if any.
         pending: Option<f64>,
@@ -84,7 +83,8 @@ pub enum VideoTrimBarOutput {
 
 /// The trim bar component.
 pub struct VideoTrimBar {
-    state: Rc<RefCell<TrimState>>,
+    state: Rc<RefCell<CutList>>,
+    playhead: f64,
     segments_strip: gtk::Box,
     segments_scroll: gtk::ScrolledWindow,
     hint_label: gtk::Label,
@@ -99,22 +99,22 @@ impl VideoTrimBar {
             let state = self.state.borrow();
             (
                 state
-                    .segments
+                    .cuts()
                     .iter()
-                    .map(|s| (s.id, s.start, s.end))
+                    .map(|cut| (cut.id, cut.start, cut.end))
                     .collect::<Vec<_>>(),
-                !state.segments.is_empty(),
-                state.segments.len(),
-                state.pending,
-                state.is_exportable(),
+                !state.cuts().is_empty(),
+                state.cuts().len(),
+                state.pending(),
+                !state.cuts().is_empty(),
             )
         };
 
         clear_box_children(&self.segments_strip);
         {
             let state = self.state.borrow();
-            for segment in &state.segments {
-                let chip = build_segment_chip(segment.id, segment.start, segment.end, sender);
+            for cut in state.cuts() {
+                let chip = build_segment_chip(cut.id, cut.start, cut.end, sender);
                 self.segments_strip.append(&chip);
             }
         }
@@ -161,7 +161,7 @@ impl Component for VideoTrimBar {
         root: Self::Root,
         sender: ComponentSender<Self>,
     ) -> ComponentParts<Self> {
-        let state = Rc::new(RefCell::new(TrimState::default()));
+        let state = Rc::new(RefCell::new(CutList::default()));
 
         // Segment chips.
         let segments_strip = gtk::Box::new(gtk::Orientation::Horizontal, 6);
@@ -269,6 +269,7 @@ impl Component for VideoTrimBar {
 
         let model = VideoTrimBar {
             state,
+            playhead: 0.0,
             segments_strip,
             segments_scroll,
             hint_label,
@@ -282,31 +283,30 @@ impl Component for VideoTrimBar {
 
     fn update(&mut self, message: Self::Input, sender: ComponentSender<Self>, _root: &Self::Root) {
         match message {
-            VideoTrimBarInput::SetDuration(dur) => self.state.borrow_mut().duration = dur,
+            VideoTrimBarInput::SetDuration(dur) => self.state.borrow_mut().set_duration(dur),
             VideoTrimBarInput::SetPlayhead(pos) => {
-                self.state.borrow_mut().playhead = pos;
+                self.playhead = pos;
                 return;
             }
             VideoTrimBarInput::Mark(t) => {
                 self.state.borrow_mut().mark(t);
             }
             VideoTrimBarInput::MarkHere => {
-                let t = self.state.borrow().playhead;
-                self.state.borrow_mut().mark(t);
+                self.state.borrow_mut().mark(self.playhead);
             }
             VideoTrimBarInput::DeleteSegment(id) => {
                 self.state.borrow_mut().delete(id);
             }
             VideoTrimBarInput::ClearSegments => self.state.borrow_mut().clear(),
             VideoTrimBarInput::SetSegmentTimes(id, a, b) => {
-                self.state.borrow_mut().set_segment_times(id, a, b);
+                self.state.borrow_mut().set_cut_times(id, a, b);
             }
             VideoTrimBarInput::StopPlaySelection => {
                 self.play_selection_btn.set_active(false);
                 return;
             }
             VideoTrimBarInput::RequestExport => {
-                let ranges = self.state.borrow().export_ranges();
+                let ranges = self.state.borrow().ranges();
                 if !ranges.is_empty() {
                     let _ = sender.output(VideoTrimBarOutput::ExportRequested { ranges });
                 }
