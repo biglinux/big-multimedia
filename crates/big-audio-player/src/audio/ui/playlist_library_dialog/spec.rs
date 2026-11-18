@@ -170,9 +170,9 @@ pub(super) fn localized_saved_playlist_subtitle(count: i64, secs: f64) -> String
     track_count_duration_text(count.unsigned_abs(), secs)
 }
 
-pub(super) fn save_current_queue_prompt_spec() -> BigNamePromptSpec {
+pub(in crate::audio::ui) fn save_queue_prompt_spec() -> BigNamePromptSpec {
     BigNamePromptSpec {
-        title: i18n("Save Current Queue"),
+        title: i18n("Save Queue as Playlist"),
         description: Some(i18n("Name for the new playlist")),
         entry_title: i18n("Playlist name"),
         prefill: String::new(),

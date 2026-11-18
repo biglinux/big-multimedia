@@ -3,7 +3,7 @@
 //! Sidebar + content split. The sidebar holds the actions:
 //! 1. **Save** the current queue as a new playlist.
 //! 2. **Generate** from listening stats (most played / recently added / never
-//!    played): loads the set into the queue (save it with "Save Current Queue").
+//!    played): loads the set into the queue (save it with "Save Queue as Playlist").
 //! 3. **Import / Export**: single-file import, batch folder import, export-all.
 //!
 //! The content pane lists the saved playlists (load / rename / export / delete).
@@ -36,8 +36,10 @@ use spec::{
     delete_playlist_prompt_spec, empty_playlist_state_spec, generator_action_specs,
     import_export_action_specs, localized_delete_playlist_description,
     localized_saved_playlist_subtitle, playlist_library_window_spec, rename_playlist_prompt_spec,
-    save_current_queue_prompt_spec, saved_playlist_list_state, saved_playlist_row_spec,
+    saved_playlist_list_state, saved_playlist_row_spec,
 };
+
+pub(super) use spec::save_queue_prompt_spec;
 
 /// `(id, name, track_count, total_secs)` for one saved playlist.
 pub type PlaylistEntry = (i64, String, i64, f64);
@@ -256,14 +258,14 @@ fn build_save_button(
     root: &adw::Window,
 ) -> gtk::Button {
     let save_button = build_button(
-        &BigButtonContentSpec::new("list-add-symbolic", i18n("Save Current Queue"))
+        &BigButtonContentSpec::new("list-add-symbolic", i18n("Save Queue as Playlist"))
             .css_classes(["suggested-action", "pill"]),
     );
     save_button.set_halign(gtk::Align::Center);
     let out = sender.clone();
     let root_weak = root.downgrade();
     save_button.connect_clicked(move |_| {
-        let prompt_spec = save_current_queue_prompt_spec();
+        let prompt_spec = save_queue_prompt_spec();
         let root = root_weak.upgrade();
         prompt_name(
             root.as_ref().map(AsRef::as_ref),
@@ -282,7 +284,7 @@ fn build_save_button(
 }
 
 /// "Generate" group: smart playlists from listening stats. Row activate loads
-/// the set into the queue (save it afterwards with "Save Current Queue").
+/// the set into the queue (save it afterwards with "Save Queue as Playlist").
 fn build_generate_group(sender: &ComponentSender<PlaylistLibraryDialog>) -> adw::PreferencesGroup {
     let group = BigPreferencesGroupSpec::new(i18n("Generate"))
         .description(i18n("Build a playlist from your listening stats"))
