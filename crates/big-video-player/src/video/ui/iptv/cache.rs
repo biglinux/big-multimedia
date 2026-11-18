@@ -13,33 +13,36 @@ use std::fs;
 use std::path::PathBuf;
 
 use big_app_kit::files::safe_filename_stem;
-use gtk::glib;
 
 use crate::config;
 use crate::video::redaction::redact_path;
 
-/// Compute the cache path for a given provider identifier.
+/// Compute the cache path for a given provider identifier. `None` without an
+/// XDG cache directory.
 #[must_use]
-pub fn cache_path(provider_id: &str) -> PathBuf {
-    let base = glib::user_cache_dir()
+pub fn cache_path(provider_id: &str) -> Option<PathBuf> {
+    let base = big_os_kit::xdg_dirs::cache_dir()?
         .join(config::video::CONFIG_DIR)
         .join("iptv");
     let _ = fs::create_dir_all(&base);
-    base.join(format!(
+    Some(base.join(format!(
         "{}.m3u",
         safe_filename_stem(provider_id, 80, "unnamed")
-    ))
+    )))
 }
 
 /// Read the cached playlist content if it exists.
 #[must_use]
 pub fn read(provider_id: &str) -> Option<String> {
-    fs::read_to_string(cache_path(provider_id)).ok()
+    fs::read_to_string(cache_path(provider_id)?).ok()
 }
 
 /// Write the fetched content to the cache (best-effort).
 pub fn write(provider_id: &str, content: &str) {
-    let path = cache_path(provider_id);
+    let Some(path) = cache_path(provider_id) else {
+        log::warn!("iptv cache write: no XDG cache directory");
+        return;
+    };
     if let Err(e) = big_os_kit::storage::atomic_write(&path, content.as_bytes()) {
         // PII: redact user-home path.
         log::warn!("iptv cache write {}: {e}", redact_path(&path));

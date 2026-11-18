@@ -1,7 +1,7 @@
 //! Per-mode mpv `MpvInitializer` option helpers (video, audio-only,
 //! playback, watch-later, IPC, custom).
 
-use log::error;
+use log::{error, warn};
 
 use super::client::{MpvError, MpvInitializer};
 
@@ -147,10 +147,14 @@ pub(super) fn apply_watch_later(
     subdir: &str,
     options: &str,
 ) -> Result<(), MpvError> {
-    if let Some(data_dir) = gtk::glib::user_data_dir().to_str() {
+    if let Some(data_dir) = big_os_kit::xdg_dirs::data_dir()
+        && let Some(data_dir) = data_dir.to_str()
+    {
         let watch_dir = format!("{data_dir}/{subdir}");
         let _ = std::fs::create_dir_all(&watch_dir);
         init.set_option("watch-later-directory", watch_dir)?;
+    } else {
+        warn!("No XDG data directory; mpv keeps resume points in its own default");
     }
     init.set_option("watch-later-options", options)
 }

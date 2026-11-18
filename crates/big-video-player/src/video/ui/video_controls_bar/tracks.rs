@@ -1,4 +1,5 @@
 use super::*;
+use big_app_kit::file_dialogs::FilePicker;
 use big_relm4_components::layout::hamburger_menu::{
     BigMenuActionItem, populate_flat_action_popover,
 };
@@ -105,28 +106,18 @@ impl VideoControlsBar {
 
 /// Open a file chooser for an external subtitle and add it via mpv `sub-add`.
 fn open_subtitle_file_dialog(mpv: &MpvSlot, anchor: &gtk::Button) {
-    let filter = gtk::FileFilter::new();
-    filter.set_name(Some(&i18n("Subtitle files")));
-    for ext in ["srt", "ass", "ssa", "sub", "vtt", "idx", "sup", "smi"] {
-        filter.add_suffix(ext);
-    }
-    let filters = gio::ListStore::new::<gtk::FileFilter>();
-    filters.append(&filter);
-
-    let dialog = gtk::FileDialog::builder()
-        .title(i18n("Load Subtitle File"))
-        .modal(true)
-        .filters(&filters)
-        .build();
     let window = anchor.root().and_downcast::<gtk::Window>();
     let mpv = mpv.clone();
-    dialog.open(window.as_ref(), gio::Cancellable::NONE, move |result| {
-        let Ok(file) = result else { return };
-        let Some(path) = file.path() else { return };
-        if let Some(mpv) = mpv.borrow().as_ref() {
-            mpv.add_subtitle_file(&path.to_string_lossy());
-        }
-    });
+    FilePicker::new(i18n("Load Subtitle File"))
+        .filter(
+            &i18n("Subtitle files"),
+            &["srt", "ass", "ssa", "sub", "vtt", "idx", "sup", "smi"],
+        )
+        .open_optional(window.as_ref(), move |path| {
+            if let Some(mpv) = mpv.borrow().as_ref() {
+                mpv.add_subtitle_file(&path.to_string_lossy());
+            }
+        });
 }
 
 /// Select the primary subtitle track (`id == -1` disables it).

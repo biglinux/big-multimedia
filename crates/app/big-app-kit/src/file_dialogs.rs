@@ -78,6 +78,10 @@ impl FilePicker {
         self
     }
 
+    #[expect(
+        clippy::disallowed_methods,
+        reason = "FilePicker is the owner of gtk::FileDialog"
+    )]
     fn build_dialog(&self) -> gtk::FileDialog {
         let mut builder = gtk::FileDialog::builder().title(&self.title).modal(true);
         if let Some(ref label) = self.accept_label {

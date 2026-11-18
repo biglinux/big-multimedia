@@ -8,12 +8,9 @@ use std::fmt::Write;
 use std::fs;
 use std::path::{Path, PathBuf};
 
-fn user_shaders_dir() -> Option<PathBuf> {
-    let dir = glib::user_config_dir().join(crate::config::video::USER_SHADERS_RELATIVE);
-    fs::create_dir_all(&dir)
-        .map_err(|e| error!("Cannot create shader dir {}: {e}", dir.display()))
-        .ok()?;
-    Some(dir)
+/// Where generated shaders are written. `None` without an XDG config directory.
+pub fn user_shaders_dir() -> Option<PathBuf> {
+    Some(big_os_kit::xdg_dirs::config_dir()?.join(crate::config::video::USER_SHADERS_RELATIVE))
 }
 
 /// Preserves trailing `//` comments on the line.
@@ -61,9 +58,12 @@ pub fn generate(filename: &str, params: &[ShaderParam<'_>]) -> Option<String> {
         result = replace_define(&result, p.define_name, &formatted);
     }
 
-    let out_dir = user_shaders_dir()?;
+    let Some(out_dir) = user_shaders_dir() else {
+        error!("Cannot write shader {filename}: no XDG config directory");
+        return None;
+    };
     let out_path = out_dir.join(filename);
-    fs::write(&out_path, &result)
+    big_os_kit::storage::atomic_write(&out_path, result.as_bytes())
         .map_err(|e| error!("Cannot write shader {}: {e}", out_path.display()))
         .ok()?;
 

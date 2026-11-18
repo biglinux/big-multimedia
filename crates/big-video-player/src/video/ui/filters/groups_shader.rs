@@ -260,9 +260,8 @@ fn apply_builtin_upscaler(mpv: &MpvBackend, key: &str, pct: f64) {
             mpv.glsl_shader_remove_prefix(path);
         }
     }
-    if let Some(user_dir) = gtk::glib::user_config_dir()
-        .join(config::video::USER_SHADERS_RELATIVE)
-        .to_str()
+    if let Some(user_dir) = shader_gen::user_shaders_dir()
+        && let Some(user_dir) = user_dir.to_str()
     {
         mpv.glsl_shader_remove_prefix(user_dir);
     }

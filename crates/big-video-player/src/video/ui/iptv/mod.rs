@@ -29,7 +29,7 @@ use std::cell::RefCell;
 use std::rc::Rc;
 
 use adw::prelude::*;
-use gtk::glib;
+use big_relm4_components::task::spawn_blocking_result;
 use relm4::{Component, ComponentParts, ComponentSender};
 
 use crate::i18n::i18n;
@@ -369,20 +369,18 @@ fn spawn_cached_load(
     generation: u64,
     sender: &ComponentSender<VideoIptvBrowser>,
 ) {
-    let (tx, rx) = async_channel::bounded::<Option<Vec<IptvChannel>>>(1);
-    std::thread::spawn(move || {
-        let result = cache::read(&provider_id).map(|content| parse_m3u_content(&content));
-        let _ = tx.send_blocking(result);
-    });
     let sender = sender.clone();
-    glib::spawn_future_local(async move {
-        if let Ok(Some(channels)) = rx.recv().await {
-            sender.input(VideoIptvBrowserInput::CachedResolved {
-                generation,
-                channels,
-            });
-        }
-    });
+    spawn_blocking_result(
+        move || cache::read(&provider_id).map(|content| parse_m3u_content(&content)),
+        move |channels| {
+            if let Some(channels) = channels {
+                sender.input(VideoIptvBrowserInput::CachedResolved {
+                    generation,
+                    channels,
+                });
+            }
+        },
+    );
 }
 
 /// Fetch + parse the provider's playlist over the network off-thread (caching
@@ -393,19 +391,16 @@ fn spawn_network_load(
     generation: u64,
     sender: &ComponentSender<VideoIptvBrowser>,
 ) {
-    let (tx, rx) = async_channel::bounded::<Result<Vec<IptvChannel>, FetchError>>(1);
-    std::thread::spawn(move || {
-        let result = fetch_provider_channels(&provider, &provider_id);
-        let _ = tx.send_blocking(result);
-    });
     let sender = sender.clone();
-    glib::spawn_future_local(async move {
-        let channels = rx.recv().await.unwrap_or(Err(FetchError::Unreachable));
-        sender.input(VideoIptvBrowserInput::NetworkResolved {
-            generation,
-            channels,
-        });
-    });
+    spawn_blocking_result(
+        move || fetch_provider_channels(&provider, &provider_id),
+        move |channels| {
+            sender.input(VideoIptvBrowserInput::NetworkResolved {
+                generation,
+                channels,
+            });
+        },
+    );
 }
 
 /// Wire the static widget signals (manage/refresh/search/dropdown) to component

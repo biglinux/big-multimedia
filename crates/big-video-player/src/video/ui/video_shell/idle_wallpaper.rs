@@ -6,8 +6,8 @@
 //! `.idle-bg` gradient in `style.css` is the fallback when no wallpaper resolves
 //! (no desktop integration, or ffmpeg missing).
 //!
-//! Detection + blur run off the GTK main loop (a worker thread); the result is
-//! delivered back over an async channel and applied on the main thread.
+//! Detection + blur run off the GTK main loop; the result is applied on the
+//! main thread.
 
 use std::ffi::OsStr;
 use std::hash::{Hash, Hasher};
@@ -15,7 +15,7 @@ use std::path::{Path, PathBuf};
 use std::rc::Rc;
 
 use big_app_kit::subprocess::{BigSubprocessOutputMode, BigSubprocessSpec};
-use gtk::glib;
+use big_relm4_components::task::spawn_blocking_result;
 
 use super::osd::IdleBackground;
 
@@ -35,34 +35,15 @@ const WALLPAPER_SCAN_DEPTH: usize = 4;
 /// the cached blurred image as the idle background once it is ready. No-op on
 /// any failure: the static gradient fallback stays in place.
 pub(super) fn spawn_apply(idle_bg: Rc<IdleBackground>) {
-    let (sender, receiver) = async_channel::bounded::<PathBuf>(1);
-    // Worker: detection + ffmpeg blur are blocking (disk read + a subprocess),
-    // so they must not run on the GTK main loop. Only `sender` (Send) crosses
-    // the thread boundary; the `Rc<IdleBackground>` stays on the main thread.
-    let spawned = std::thread::Builder::new()
-        .name("idle-wallpaper".into())
-        .spawn(move || {
-            if let Some(path) = resolve_blurred_wallpaper() {
-                let _ = sender.send_blocking(path);
-            }
-        });
-    if spawned.is_err() {
-        return;
-    }
-    // Weak: the ffmpeg blur can outlive a quick open→close. A strong
-    // `Rc<IdleBackground>` captured across the `recv().await` would pin the
-    // shell's `video_bg` box and the `gl_area` GL surface (and stale-write a
-    // display-wide CSS provider) for the whole blur after the shell is torn
-    // down. Upgrade-or-return leaves the live path byte-for-byte unchanged.
+    // Weak: the ffmpeg blur can outlive a quick open→close, and a strong
+    // reference would pin the shell's `video_bg` box and `gl_area` until it ends.
     let idle_bg = Rc::downgrade(&idle_bg);
-    glib::spawn_future_local(async move {
-        if let Ok(path) = receiver.recv().await {
-            let Some(idle_bg) = idle_bg.upgrade() else {
-                return;
-            };
-            if let Some(display) = gtk::gdk::Display::default() {
-                idle_bg.set_blurred_wallpaper(&path, &display);
-            }
+    spawn_blocking_result(resolve_blurred_wallpaper, move |path| {
+        let (Some(path), Some(idle_bg)) = (path, idle_bg.upgrade()) else {
+            return;
+        };
+        if let Some(display) = gtk::gdk::Display::default() {
+            idle_bg.set_blurred_wallpaper(&path, &display);
         }
     });
 }
@@ -95,7 +76,9 @@ fn detect_wallpaper() -> Option<PathBuf> {
 /// `shell.json` is absent (not a BigShell session) so the Plasma/GNOME
 /// detectors still run there.
 fn detect_bigshell_wallpaper() -> Option<PathBuf> {
-    let config = config_home().join("big-shell").join("shell.json");
+    let config = big_os_kit::xdg_dirs::config_dir()?
+        .join("big-shell")
+        .join("shell.json");
     // shell.json absent → not a BigShell session → let the other detectors run.
     let text = std::fs::read_to_string(&config).ok()?;
 
@@ -160,7 +143,8 @@ fn collect_images_recursive(dir: &Path, depth: usize, out: &mut Vec<PathBuf>) {
 /// (KConfig INI): the first `Image=` under a `[…][Wallpaper][org.kde.image][General]`
 /// group that resolves to an existing image file.
 fn detect_plasma_wallpaper() -> Option<PathBuf> {
-    let config = config_home().join("plasma-org.kde.plasma.desktop-appletsrc");
+    let config =
+        big_os_kit::xdg_dirs::config_dir()?.join("plasma-org.kde.plasma.desktop-appletsrc");
     let text = std::fs::read_to_string(&config).ok()?;
 
     let mut in_wallpaper_image = false;
@@ -245,7 +229,7 @@ fn is_image_path(path: &Path) -> bool {
 /// cache miss. The cache key folds in the source path and mtime so a changed
 /// wallpaper (re)blurs. `None` if ffmpeg is unavailable or fails.
 fn ensure_blurred(source: &Path) -> Option<PathBuf> {
-    let cache_dir = cache_home().join("big-video-player");
+    let cache_dir = big_os_kit::xdg_dirs::cache_dir()?.join("big-video-player");
     std::fs::create_dir_all(&cache_dir).ok()?;
 
     let mtime = std::fs::metadata(source)
@@ -286,7 +270,7 @@ pub(super) fn tv_backdrop(video: &str, seconds: f64) -> Option<PathBuf> {
     if !Path::new(video).is_absolute() {
         return None;
     }
-    let cache_dir = cache_home().join("big-video-player");
+    let cache_dir = big_os_kit::xdg_dirs::cache_dir()?.join("big-video-player");
     std::fs::create_dir_all(&cache_dir).ok()?;
     let mut hasher = std::collections::hash_map::DefaultHasher::new();
     video.hash(&mut hasher);
@@ -418,30 +402,6 @@ fn is_svg(path: &Path) -> bool {
         .is_some_and(|ext| ext.eq_ignore_ascii_case("svg"))
 }
 
-/// `$XDG_CONFIG_HOME` or `~/.config`.
-fn config_home() -> PathBuf {
-    xdg_dir("XDG_CONFIG_HOME", ".config")
-}
-
-/// `$XDG_CACHE_HOME` or `~/.cache`.
-fn cache_home() -> PathBuf {
-    xdg_dir("XDG_CACHE_HOME", ".cache")
-}
-
-/// Resolve an XDG base dir from its env var, falling back to `~/<default>`.
-fn xdg_dir(env: &str, default: &str) -> PathBuf {
-    std::env::var_os(env)
-        .filter(|value| !value.is_empty())
-        .map_or_else(
-            || {
-                let home =
-                    std::env::var_os("HOME").map_or_else(|| PathBuf::from("/"), PathBuf::from);
-                home.join(default)
-            },
-            PathBuf::from,
-        )
-}
-
 /// Minimal percent-decoding for wallpaper URIs (`gsettings` / `file://` values
 /// percent-encode spaces and the like). Leaves malformed escapes untouched.
 fn percent_decode(input: &str) -> String {
@@ -485,14 +445,5 @@ mod tests {
         assert!(is_image_path(Path::new("/x/b.png")));
         assert!(!is_image_path(Path::new("/x/c.txt")));
         assert!(!is_image_path(Path::new("/x/noext")));
-    }
-
-    #[test]
-    fn xdg_dir_prefers_env_then_home_default() {
-        // Empty env value is ignored in favour of the HOME-based default.
-        // Env mutation in tests is racy, so only check that the fallback joins
-        // the default segment.
-        let dir = xdg_dir("BIG_VIDEO_PLAYER_NONEXISTENT_ENV", ".cache");
-        assert!(dir.ends_with(".cache"));
     }
 }

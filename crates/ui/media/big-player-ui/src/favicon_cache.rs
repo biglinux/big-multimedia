@@ -103,10 +103,7 @@ pub fn fetch_favicon_bytes(url: &str) -> Option<Vec<u8>> {
     }
     let favicon_bytes = favicon_response.bytes;
 
-    if let Err(error) = std::fs::create_dir_all(&cache_dir) {
-        warn!("[radio] favicon cache dir fail: {error}");
-    }
-    if let Err(error) = std::fs::write(&cache_file, &favicon_bytes) {
+    if let Err(error) = big_os_kit::storage::atomic_write(&cache_file, &favicon_bytes) {
         warn!("[radio] favicon cache write fail: {error}");
     }
 

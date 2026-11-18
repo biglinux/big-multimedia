@@ -1,5 +1,6 @@
 use super::*;
 use big_media_components::surface::BigMediaImmersionController;
+use big_relm4_components::task::spawn_blocking_result;
 
 use std::path::{Path, PathBuf};
 
@@ -185,30 +186,22 @@ impl IdleBackground {
             return;
         };
         // An ffmpeg run: off the main loop.
-        let (sender, receiver) = async_channel::bounded::<PathBuf>(1);
         let wanted = source.clone();
-        let spawned = std::thread::Builder::new()
-            .name("tv-background".into())
-            .spawn(move || {
-                if let Some(picture) = super::idle_wallpaper::tv_backdrop(&wanted, seconds) {
-                    let _ = sender.send_blocking(picture);
-                }
-            });
-        if spawned.is_err() {
-            return;
-        }
         let this = Rc::downgrade(self);
-        glib::spawn_future_local(async move {
-            let (Ok(picture), Some(this)) = (receiver.recv().await, this.upgrade()) else {
-                return;
-            };
-            if this.tv_source.borrow().as_deref() == Some(source.as_str()) {
-                this.tv_picture.replace(Some(picture));
-                if let Some(display) = gtk::gdk::Display::default() {
-                    this.refresh(&display);
+        spawn_blocking_result(
+            move || super::idle_wallpaper::tv_backdrop(&wanted, seconds),
+            move |picture| {
+                let (Some(picture), Some(this)) = (picture, this.upgrade()) else {
+                    return;
+                };
+                if this.tv_source.borrow().as_deref() == Some(source.as_str()) {
+                    this.tv_picture.replace(Some(picture));
+                    if let Some(display) = gtk::gdk::Display::default() {
+                        this.refresh(&display);
+                    }
                 }
-            }
-        });
+            },
+        );
     }
 
     /// Cover the surface while the welcome screen is up or only the TV plays;
