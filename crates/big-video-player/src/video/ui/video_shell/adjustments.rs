@@ -103,7 +103,7 @@ pub(super) fn detect(
     if changed(audio_delay) {
         found.push(Adjustment::AudioDelay(audio_delay));
     }
-    let subtitle_delay = mpv.get_property_f64("sub-delay");
+    let subtitle_delay = mpv.sub_delay();
     if changed(subtitle_delay) {
         found.push(Adjustment::SubtitleDelay(subtitle_delay));
     }

@@ -175,14 +175,16 @@ struct ImageSliderSpec {
     apply: fn(&MpvBackend, f64),
 }
 
-/// A ±10 s timing slider for the sound (`subtitles == false`) or the
-/// subtitles, named for the symptom it fixes.
+/// A timing slider for the sound (`subtitles == false`) or the subtitles,
+/// named for the symptom it fixes.
 pub(super) fn build_delay_row(mpv: &Arc<MpvBackend>, subtitles: bool) -> gtk::Widget {
-    let (title, subtitle, initial, apply): (_, _, _, fn(&MpvBackend, f64)) = if subtitles {
+    let (title, subtitle, initial, limit, apply): (_, _, _, _, fn(&MpvBackend, f64)) = if subtitles
+    {
         (
             i18n("Subtitles early or late"),
             i18n("When the text shows before or after the speech. More = later"),
-            mpv.get_property_f64("sub-delay"),
+            mpv.sub_delay(),
+            MpvBackend::SUB_DELAY_LIMIT_SECONDS,
             |mpv, value| mpv.set_sub_delay(value),
         )
     } else {
@@ -190,6 +192,7 @@ pub(super) fn build_delay_row(mpv: &Arc<MpvBackend>, subtitles: bool) -> gtk::Wi
             i18n("Sound early or late"),
             i18n("When voices do not match the lips. More = later"),
             mpv.get_property_f64("audio-delay"),
+            10.0,
             |mpv, value| mpv.set_audio_delay(value),
         )
     };
@@ -197,10 +200,10 @@ pub(super) fn build_delay_row(mpv: &Arc<MpvBackend>, subtitles: bool) -> gtk::Wi
         BigIllustratedSliderRowSpec::new(
             illustration_prefix(),
             title,
-            -10.0,
-            10.0,
+            -limit,
+            limit,
             0.0,
-            clamp_initial(initial, -10.0, 10.0),
+            clamp_initial(initial, -limit, limit),
             0.1,
             i18n("Reset to zero"),
         )

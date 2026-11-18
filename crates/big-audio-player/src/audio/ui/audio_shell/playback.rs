@@ -3,11 +3,8 @@ use super::*;
 impl AudioShell {
     /// Keyboard seek, on the TV while it has the transport.
     pub(super) fn seek_by(&mut self, seconds: f64) {
-        if let Some(state) = self.tv.attached() {
-            if state.can_seek && state.duration > 0.0 {
-                let target = (state.position + seconds).clamp(0.0, state.duration);
-                self.tv.control("seek-to", target);
-            }
+        if self.tv.attached().is_some() {
+            self.tv.seek_by(seconds);
         } else if let Some(mpv) = &self.mpv {
             mpv.seek(seconds);
         }
@@ -52,12 +49,9 @@ impl AudioShell {
             AudioPlaybackBarOutput::VolumeChanged(vol) => {
                 if let Some(mpv) = &self.mpv {
                     mpv.set_volume(vol);
+                    self.playback_bar
+                        .emit(volume_indicator(vol, mpv.get_mute()));
                 }
-                self.playback_bar
-                    .emit(AudioPlaybackBarInput::SetVolumeIndicator {
-                        label: format!("{vol:.0}"),
-                        icon: volume_icon(vol).to_string(),
-                    });
             }
             AudioPlaybackBarOutput::VolumeMuteToggled => {
                 if let Some(mpv) = &self.mpv {
@@ -188,15 +182,10 @@ pub(super) fn transport_labels() -> BigAudioTransportLabels {
     }
 }
 
-/// Symbolic volume icon for a 0..=max percent.
-pub(super) fn volume_icon(volume: f64) -> &'static str {
-    if volume <= 0.0 {
-        "audio-volume-muted-symbolic"
-    } else if volume < 34.0 {
-        "audio-volume-low-symbolic"
-    } else if volume < 67.0 {
-        "audio-volume-medium-symbolic"
-    } else {
-        "audio-volume-high-symbolic"
+/// The transport's volume readout and icon for `volume` percent.
+pub(super) fn volume_indicator(volume: f64, muted: bool) -> AudioPlaybackBarInput {
+    AudioPlaybackBarInput::SetVolumeIndicator {
+        label: format!("{volume:.0}"),
+        icon: volume_icon_name(volume, muted).to_string(),
     }
 }

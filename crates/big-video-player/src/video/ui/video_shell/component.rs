@@ -804,9 +804,8 @@ impl Component for VideoShell {
                     }
                 }
                 VideoShellInput::TogglePlayback => {
-                    if let Some(state) = self.tv.attached() {
-                        self.tv
-                            .control(if state.paused { "play" } else { "pause" }, 0.0);
+                    if self.tv.attached().is_some() {
+                        self.tv.toggle_pause();
                     } else if let Some(mpv) = self.mpv.borrow().as_ref() {
                         super::playback::toggle_play(mpv, &self.settings);
                     }

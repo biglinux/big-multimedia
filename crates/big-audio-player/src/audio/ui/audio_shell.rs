@@ -70,10 +70,11 @@ use big_media_components::media::file_metadata_dialog::{
     BigMediaFileMetadataDialogLabels, BigMediaFileMetadataDialogSpec,
     show_media_file_metadata_dialog,
 };
+use big_media_components::media::files::PLAYLIST_EXTENSIONS;
 use big_media_components::playback::audio_transport::{
     BigAudioTransportLabels, BigAudioTransportSpec,
 };
-use big_media_components::player_chrome::spawn_blocking_result;
+use big_media_components::player_chrome::{spawn_blocking_result, volume_icon_name};
 use big_media_components::time;
 use big_os_kit::url::ListOrigin;
 use big_player_ui::audio_trim_bar::{

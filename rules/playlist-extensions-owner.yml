@@ -1,0 +1,19 @@
+id: playlist-extensions-owner
+language: rust
+severity: error
+message: List playlist extensions with PLAYLIST_EXTENSIONS, or M3U_EXTENSIONS for the files write_m3u writes
+note: >-
+  crates/foundation/big-media-engines/src/media_files.rs owns which extensions are
+  playlists. Pass them to FilePicker::filter: its suffixes match in any case, a
+  glob pattern such as "*.m3u" hides PLAYLIST.M3U.
+rule:
+  kind: string_literal
+  regex: '^"(\*\.)?(m3u8?|pls)"$'
+  inside:
+    kind: array_expression
+    stopBy: end
+ignores:
+  - crates/foundation/big-media-engines/src/media_files.rs
+  - crates/media-runtime/src/media/playlist_scan/playlist_io.rs
+  # Legacy: the video sidebar's Load playlist picker, migrated by the stream that owns it.
+  - crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/menu_actions.rs

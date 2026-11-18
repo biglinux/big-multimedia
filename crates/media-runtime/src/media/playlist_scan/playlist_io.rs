@@ -124,6 +124,9 @@ fn resolve_playlist_entry(base: &Path, entry: &str) -> Option<String> {
         .ok()
 }
 
+/// Extensions of the files [`write_m3u`] writes, offered by export pickers.
+pub const M3U_EXTENSIONS: &[&str] = &["m3u8", "m3u"];
+
 /// Worker-only export. Never overwrite an existing user document and never
 /// report success from an ignored filesystem error. Embedded newlines in paths
 /// cannot be represented faithfully in M3U and are rejected.

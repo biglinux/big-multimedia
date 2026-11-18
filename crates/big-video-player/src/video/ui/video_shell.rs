@@ -38,7 +38,7 @@ use crate::video::ui::video_controls_bar::{
     VideoControlsBar, VideoControlsBarInit, VideoControlsBarInput, VideoControlsBarOutput,
 };
 use big_app_kit::file_dialogs::FilePicker;
-use big_media_components::media::files::VIDEO_EXTENSIONS;
+use big_media_components::media::files::{PLAYLIST_EXTENSIONS, VIDEO_EXTENSIONS};
 use big_media_components::time::playback_time;
 use big_relm4_components::list::navigation_row::{BigNavigationRow, BigNavigationRowSpec};
 

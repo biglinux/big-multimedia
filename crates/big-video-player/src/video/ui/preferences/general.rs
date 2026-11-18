@@ -11,6 +11,14 @@ use crate::settings::{Settings, keys};
 
 use super::{add_combo_row, add_switch_row, live, live_str};
 
+/// The `loop-mode` setting's values, in the order every repeat menu lists them.
+pub(crate) const LOOP_MODE_VALUES: &[&str] = &["no", "file", "playlist"];
+
+/// Names of [`LOOP_MODE_VALUES`], in the same order.
+pub(crate) fn loop_mode_labels() -> [String; 3] {
+    [i18n("Off"), i18n("Current video"), i18n("Whole playlist")]
+}
+
 pub(super) fn page(
     settings: &Settings,
     mpv: Option<&Arc<MpvBackend>>,
@@ -36,12 +44,8 @@ pub(super) fn page(
         &playback,
         &i18n("Repeat"),
         "",
-        &[
-            &i18n("Off"),
-            &i18n("Current video"),
-            &i18n("Whole playlist"),
-        ],
-        &["no", "file", "playlist"],
+        &loop_mode_labels().each_ref().map(String::as_str),
+        LOOP_MODE_VALUES,
         keys::LOOP_MODE,
         settings,
         live_str(mpv, MpvBackend::set_loop_mode),
