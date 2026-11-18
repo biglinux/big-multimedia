@@ -818,7 +818,7 @@ msgstr "Vizsgálat megszakítva"
 
 #: crates/big-audio-player/src/audio/ui/audio_shell/update.rs:139
 msgid "Scan incomplete"
-msgstr "Vizsgálat hiányos"
+msgstr "Vizsgálat befejezetlen"
 
 #: crates/big-audio-player/src/audio/ui/audio_shell/update.rs:142
 #, rust-format
@@ -5357,7 +5357,7 @@ msgstr "{station} felvételének leállítása"
 #: crates/ui/media/big-player-ui/src/radio_panel/widgets.rs:121
 #, rust-format
 msgid "Record {station}"
-msgstr "{station} felvétele"
+msgstr "{station} felvételének indítása"
 
 #: crates/ui/media/big-player-ui/src/radio_panel/widgets.rs:196
 msgid "Search radios..."
