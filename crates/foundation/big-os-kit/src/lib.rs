@@ -17,7 +17,7 @@
 //! - [`storage`]: atomic JSON persistence (temp + rename) and a versioned
 //!   forward-migration envelope.
 //! - [`subprocess`]: argv-form subprocess specs with timeout, capture,
-//!   redaction, allow-list, and a spawn-handle for long-running children.
+//!   and a spawn-handle for long-running children.
 //! - [`url`]: RFC 3986 percent-encoding and URL file-name helpers.
 //! - [`xdg_dirs`]: XDG directory resolution for BigLinux desktop apps.
 //!

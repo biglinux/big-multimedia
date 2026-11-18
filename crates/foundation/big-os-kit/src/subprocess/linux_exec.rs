@@ -5,7 +5,7 @@
 use super::reaper::{OwnedChild, Permit, set_nonblocking};
 use super::{
     BigSubprocessError as Error, BigSubprocessOutput, BigSubprocessSpec, DEFAULT_MAX_CAPTURE_BYTES,
-    build_command, redact_in_place,
+    build_command,
 };
 use std::io::{self, Read, Write};
 use std::os::fd::AsRawFd;
@@ -135,8 +135,6 @@ pub(super) fn run(
         };
         if exited && input.is_none() && stdout.is_none() && stderr.is_none() {
             let status = collect(&mut owner)?;
-            redact_in_place(&spec.redact_substrings, &mut out);
-            redact_in_place(&spec.redact_substrings, &mut err);
             return Ok(BigSubprocessOutput {
                 status,
                 stdout: out,
