@@ -169,7 +169,7 @@ otherwise.
 | `playlist-sort-desc` | bool | `false` |  |
 | `playlist-shuffle` | bool | `false` |  |
 | `playlist-folder-recursive` | bool | `false` |  |
-| `playlist-last-folder` | string | empty |  |
+| `playlist-last-folder` | string | empty | The folder the video Files tab reopens at start. Empty, or a folder that no longer exists, opens the places. |
 | `playlist-reorder-hint-seen` | bool | `false` | The one-time "drag to reorder" line was closed. |
 | `playlist-column-widths` | string | not set |  |
 | `video-library-folders` | string | empty | A JSON list; empty means Videos, Downloads and the home folder. |
