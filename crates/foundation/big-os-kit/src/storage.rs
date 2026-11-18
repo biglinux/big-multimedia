@@ -21,7 +21,9 @@ use std::io::Write;
 mod transaction;
 use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicU64, Ordering};
-pub use transaction::{CommitOutcome, StagedFile, WriteLock, read_regular_limited, sync_parent};
+pub use transaction::{
+    CommitOutcome, StagedFile, WriteLock, read_regular_limited, rename_no_replace, sync_parent,
+};
 
 static TEMP_SEQ: AtomicU64 = AtomicU64::new(0);
 

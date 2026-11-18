@@ -191,9 +191,10 @@ impl StagedFile {
     pub fn path(&self) -> &Path {
         &self.path
     }
-    /// Publish without replacing an existing destination. Hard-link creation is
-    /// atomic on a single filesystem and fails on EEXIST; there is no overwrite
-    /// fallback. Validate the media first. The outcome says whether it is durable.
+    /// Publish without replacing an existing destination, which fails with
+    /// `AlreadyExists`. Atomic unless the filesystem supports neither hard links
+    /// nor `RENAME_NOREPLACE`, where the bytes are copied into a newly created
+    /// file. Validate the media first. The outcome says whether it is durable.
     pub fn publish(&self, target: &Path) -> io::Result<CommitOutcome> {
         let mut options = OpenOptions::new();
         options.read(true);
@@ -211,12 +212,77 @@ impl StagedFile {
             ));
         }
         file.sync_all()?;
-        fs::hard_link(&self.path, target)?;
+        place_no_replace(&self.path, target, hard_link, rename_no_replace)?;
         Ok(match sync_parent(target) {
             Ok(()) => CommitOutcome::Durable,
             Err(error) => CommitOutcome::PublishedNotSynced(error),
         })
     }
+}
+fn hard_link(stage: &Path, target: &Path) -> io::Result<()> {
+    fs::hard_link(stage, target)
+}
+
+/// `rename` that fails with `AlreadyExists` instead of replacing `dest`.
+/// Filesystems without `RENAME_NOREPLACE` (some FUSE and NFS mounts) fail with
+/// `EINVAL`; the caller chooses the fallback.
+pub fn rename_no_replace(src: &Path, dest: &Path) -> io::Result<()> {
+    use std::os::unix::ffi::OsStrExt;
+    let src = std::ffi::CString::new(src.as_os_str().as_bytes())?;
+    let dest = std::ffi::CString::new(dest.as_os_str().as_bytes())?;
+    // SAFETY: both pointers come from CStrings bound for the whole call, and
+    // renameat2 only reads them.
+    let status = unsafe {
+        libc::renameat2(
+            libc::AT_FDCWD,
+            src.as_ptr(),
+            libc::AT_FDCWD,
+            dest.as_ptr(),
+            libc::RENAME_NOREPLACE,
+        )
+    };
+    if status == 0 {
+        Ok(())
+    } else {
+        Err(io::Error::last_os_error())
+    }
+}
+
+type MoveStep = fn(&Path, &Path) -> io::Result<()>;
+
+/// Move `stage` to the absent `target`: a hard link, then a no-replace rename
+/// where links are refused (FAT, exFAT, some FUSE and SMB mounts), then an
+/// exclusive create and copy where that rename is unsupported.
+fn place_no_replace(
+    stage: &Path,
+    target: &Path,
+    link: MoveStep,
+    rename: MoveStep,
+) -> io::Result<()> {
+    let refused = match link(stage, target) {
+        Ok(()) => return Ok(()),
+        Err(error) => error,
+    };
+    if !matches!(
+        refused.raw_os_error(),
+        Some(libc::EPERM | libc::EOPNOTSUPP | libc::EXDEV | libc::EMLINK | libc::ENOSYS)
+    ) {
+        return Err(refused);
+    }
+    match rename(stage, target) {
+        Err(error) if matches!(error.raw_os_error(), Some(libc::EINVAL | libc::ENOSYS)) => {}
+        result => return result,
+    }
+    let mut output = OpenOptions::new()
+        .write(true)
+        .create_new(true)
+        .open(target)?;
+    let copied = io::copy(&mut File::open(stage)?, &mut output).and_then(|_| output.sync_all());
+    if copied.is_err() {
+        // create_new made this file, so it holds only our partial copy.
+        let _ = fs::remove_file(target);
+    }
+    copied
 }
 impl Drop for StagedFile {
     fn drop(&mut self) {
@@ -250,6 +316,47 @@ mod tests {
         drop(stage);
         assert_eq!(fs::read(&target).unwrap(), b"original");
         fs::remove_dir_all(dir).unwrap();
+    }
+    fn refuse_link(_: &Path, _: &Path) -> io::Result<()> {
+        Err(io::Error::from_raw_os_error(libc::EPERM))
+    }
+    fn rename_unsupported(_: &Path, _: &Path) -> io::Result<()> {
+        Err(io::Error::from_raw_os_error(libc::EINVAL))
+    }
+    /// Filesystems without hard links (FAT, exFAT, some FUSE and SMB mounts)
+    /// fall back to a no-replace rename, then to an exclusive create and copy.
+    #[test]
+    fn publish_falls_back_without_replacing() {
+        let steps: [(MoveStep, MoveStep); 3] = [
+            (hard_link, rename_no_replace),
+            (refuse_link, rename_no_replace),
+            (refuse_link, rename_unsupported),
+        ];
+        for (index, (link, rename)) in steps.into_iter().enumerate() {
+            let dir = directory();
+            let stage = dir.join("stage");
+            let target = dir.join("out.png");
+            fs::write(&stage, b"new").unwrap();
+            place_no_replace(&stage, &target, link, rename)
+                .unwrap_or_else(|error| panic!("step chain {index}: {error}"));
+            assert_eq!(fs::read(&target).unwrap(), b"new", "step chain {index}");
+
+            fs::write(&target, b"original").unwrap();
+            let second_stage = dir.join("second-stage");
+            fs::write(&second_stage, b"newer").unwrap();
+            let error = place_no_replace(&second_stage, &target, link, rename).unwrap_err();
+            assert_eq!(
+                error.kind(),
+                io::ErrorKind::AlreadyExists,
+                "step chain {index}"
+            );
+            assert_eq!(
+                fs::read(&target).unwrap(),
+                b"original",
+                "step chain {index}"
+            );
+            fs::remove_dir_all(dir).unwrap();
+        }
     }
     #[test]
     fn bounded_read_distinguishes_missing_and_oversize() {
