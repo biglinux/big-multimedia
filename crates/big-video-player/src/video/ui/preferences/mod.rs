@@ -90,11 +90,7 @@ pub fn apply_saved_preferences(mpv: &MpvBackend, s: &Settings) {
     mpv.set_deinterlace(s.get_bool(keys::DEINTERLACE));
 
     // Audio
-    mpv.set_volume_max(i64::from(s.volume_max_percent()));
-    mpv.set_audio_pitch_correction(s.get_bool(keys::AUDIO_PITCH_CORRECTION));
-    mpv.set_audio_channels(&s.get_string(keys::AUDIO_CHANNELS));
-    mpv.set_preferred_audio_lang(&s.get_string(keys::PREFERRED_AUDIO_LANG));
-    crate::shared::audio_effects::apply_voice_change(s, mpv);
+    crate::shared::audio_effects::apply_audio_preferences(s, mpv);
 
     // Subtitles
     mpv.set_preferred_sub_lang(&s.get_string(keys::PREFERRED_SUB_LANG));
