@@ -59,51 +59,6 @@ fn parse_m3u_nonexistent_file_returns_empty() {
 }
 
 #[test]
-fn parse_iptv_m3u_extracts_metadata() {
-    let dir = tempfile::tempdir().unwrap();
-    let m3u = dir.path().join("iptv.m3u");
-    std::fs::write(
-        &m3u,
-        concat!(
-            "#EXTM3U\n",
-            "#EXTINF:-1 tvg-logo=\"http://logo.com/ch1.png\" group-title=\"News\",Channel One\n",
-            "http://stream.example.com/ch1\n",
-            "#EXTINF:-1 group-title=\"Sports\",Channel Two\n",
-            "http://stream.example.com/ch2\n",
-        ),
-    )
-    .unwrap();
-    let channels = crate::media::iptv::parse_m3u_file(&m3u).entries;
-    assert_eq!(channels.len(), 2);
-    assert_eq!(channels[0].name, "Channel One");
-    assert_eq!(channels[0].group, "News");
-    assert_eq!(channels[0].logo, "http://logo.com/ch1.png");
-    assert_eq!(channels[0].url, "http://stream.example.com/ch1");
-    assert_eq!(channels[1].name, "Channel Two");
-    assert_eq!(channels[1].group, "Sports");
-    assert!(channels[1].logo.is_empty());
-}
-
-#[test]
-fn parse_iptv_m3u_url_without_extinf() {
-    let dir = tempfile::tempdir().unwrap();
-    let m3u = dir.path().join("iptv.m3u");
-    std::fs::write(&m3u, "#EXTM3U\nhttp://stream.example.com/direto\n").unwrap();
-    let channels = crate::media::iptv::parse_m3u_file(&m3u).entries;
-    assert_eq!(channels.len(), 1);
-    assert_eq!(channels[0].url, "http://stream.example.com/direto");
-    assert!(!channels[0].name.is_empty());
-}
-
-#[test]
-fn parse_iptv_m3u_empty_file() {
-    let dir = tempfile::tempdir().unwrap();
-    let m3u = dir.path().join("empty.m3u");
-    std::fs::write(&m3u, "").unwrap();
-    assert!(crate::media::iptv::parse_m3u_file(&m3u).entries.is_empty());
-}
-
-#[test]
 fn parse_playlist_file_pls_format() {
     let dir = tempfile::tempdir().unwrap();
     let pls = dir.path().join("radio.pls");
@@ -201,4 +156,41 @@ fn write_m3u_refuses_line_breaks() {
     let m3u = dir.path().join("list.m3u8");
     assert!(write_m3u(&m3u, &["/a\n/etc/passwd".to_string()]).is_err());
     assert!(!m3u.exists());
+}
+
+#[test]
+fn system_path_entries_dropped() {
+    use crate::media::playlist_scan::playlist_io::parse_pls_file;
+    let dir = tempfile::tempdir().unwrap();
+    let control = dir.path().join("control.mp3");
+    std::fs::write(&control, b"fake").unwrap();
+    let control = control.to_string_lossy().into_owned();
+    let link = dir.path().join("hostname.mp3");
+    std::os::unix::fs::symlink("/etc/hostname", &link).unwrap();
+    let to_root = "../".repeat(dir.path().components().count());
+    let rows = [
+        "/etc/passwd".to_string(),
+        format!("{to_root}etc/passwd"),
+        link.to_string_lossy().into_owned(),
+        "/proc/self/environ".to_string(),
+        "/dev/stdin".to_string(),
+        "/etc".to_string(),
+        "/proc".to_string(),
+    ];
+    let m3u = dir.path().join("hostile.m3u");
+    let pls = dir.path().join("hostile.pls");
+    let mut leaks = Vec::new();
+    for row in &rows {
+        std::fs::write(&m3u, format!("#EXTM3U\n{control}\n{row}\n")).unwrap();
+        std::fs::write(&pls, format!("[playlist]\nFile1={control}\nFile2={row}\n")).unwrap();
+        for (format, entries) in [
+            ("m3u", parse_m3u(&m3u).entries),
+            ("pls", parse_pls_file(&pls).entries),
+        ] {
+            if entries != [control.clone()] {
+                leaks.push(format!("{format} {row}: {entries:?}"));
+            }
+        }
+    }
+    assert!(leaks.is_empty(), "system paths kept: {leaks:#?}");
 }

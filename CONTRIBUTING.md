@@ -10,17 +10,130 @@ cargo build --workspace --locked
 cargo clippy --workspace --all-targets --all-features -- -D warnings
 cargo test --workspace --locked --all-features
 scripts/check-media-surface-imports.sh
+scripts/check-no-shell-invocations.sh
 ```
+
+`check-no-shell-invocations.sh` refuses `sh -c` and `bash -c` in every crate's
+`src/`: subprocesses take an argv array, never a shell command string.
 
 Tests that create widgets need a Wayland display. Run them in an isolated
 session, a headless compositor such as `kwin_wayland --virtual` with its own
 D-Bus session bus, so no window reaches your desktop. Lifetime regressions are
-`#[ignore]`d and run one at a time with `-- --ignored`.
+`#[ignore]`d and run one at a time with `-- --ignored`, inside that session.
+They open the settings, library and cache of whatever home they get, so point
+`HOME` and the XDG directories at a scratch directory and keep cargo's own:
+
+```sh
+scratch="$(mktemp -d)"
+mkdir "$scratch/home"
+isolated_home=(
+	CARGO_HOME="${CARGO_HOME:-$HOME/.cargo}" RUSTUP_HOME="${RUSTUP_HOME:-$HOME/.rustup}"
+	HOME="$scratch/home" XDG_CONFIG_HOME="$scratch/config" XDG_DATA_HOME="$scratch/data"
+	XDG_CACHE_HOME="$scratch/cache" XDG_STATE_HOME="$scratch/state"
+)
+env "${isolated_home[@]}" cargo test --locked -p big-video-player embedded_video_finalizes_after_close -- --ignored
+env "${isolated_home[@]}" cargo test --locked -p big-audio-player closing_audio_releases_the_sleep_timer -- --ignored
+env "${isolated_home[@]}" cargo test --locked -p big-player-ui --features audio-panels radio_discovery_waits_for_first_map -- --ignored
+env "${isolated_home[@]}" cargo test --locked -p big-player-ui --features audio-panels radio_teardown_cancels_pending_search -- --ignored
+```
+
+### Sound server and cast daemon tests
+
+Two runtime tests need services of their own. Never run them in your desktop
+session: they must not reach your sound devices or your session bus. Both use
+`isolated_home` from above and a bus whose only activatable service is the one
+in `$scratch/services`:
+
+```sh
+mkdir "$scratch/services"
+cat >"$scratch/bus.conf" <<EOF
+<!DOCTYPE busconfig PUBLIC "-//freedesktop//DTD D-Bus Bus Configuration 1.0//EN"
+ "http://www.freedesktop.org/standards/dbus/1.0/busconfig.dtd">
+<busconfig>
+  <type>session</type>
+  <listen>unix:dir=$scratch</listen>
+  <auth>EXTERNAL</auth>
+  <servicedir>$scratch/services</servicedir>
+  <policy context="default">
+    <allow send_destination="*" eavesdrop="true"/>
+    <allow eavesdrop="true"/>
+    <allow own="*"/>
+  </policy>
+</busconfig>
+EOF
+```
+
+`native_sound_server_volume_tracks_external_changes` plays through mpv's
+`pulse` and `pipewire` outputs and changes the stream with `pactl`; it needs
+FFmpeg. It runs against a private PipeWire, WirePlumber and pipewire-pulse
+under a scratch `XDG_RUNTIME_DIR`. WirePlumber's `policy` profile loads no
+ALSA, Bluetooth or camera monitor, so the only sink is a null sink; the script
+stops before the test when `pactl` sees any other sink:
+
+```sh
+mkdir -m 700 "$scratch/runtime"
+mkdir -p "$scratch/config/pipewire/pipewire.conf.d"
+cat >"$scratch/config/pipewire/pipewire.conf.d/null-sink.conf" <<'EOF'
+context.objects = [
+    { factory = adapter
+        args = {
+            factory.name = support.null-audio-sink
+            node.name = test-null-sink
+            media.class = Audio/Sink
+            audio.position = [ FL FR ]
+            monitor.channel-volumes = true
+        }
+    }
+]
+EOF
+cat >"$scratch/audio.sh" <<'EOF'
+pipewire &
+wireplumber --profile policy &
+pipewire-pulse &
+trap 'kill $(jobs -p)' EXIT
+for _ in {1..50}; do pactl info >/dev/null 2>&1 && break; sleep 0.2; done
+pactl list short sinks |
+	awk '$2 != "test-null-sink" && $2 != "auto_null" { bad = 1 } END { exit bad || NR == 0 }'
+BIG_MEDIA_TEST_AUDIO_ISOLATED=1 cargo test --locked -p big-media-runtime --features ui-core \
+	--lib native_sound_server_volume_tracks_external_changes -- --ignored
+EOF
+env -u PULSE_SERVER -u PIPEWIRE_REMOTE -u DISPLAY -u WAYLAND_DISPLAY "${isolated_home[@]}" \
+	XDG_RUNTIME_DIR="$scratch/runtime" PIPEWIRE_RUNTIME_DIR="$scratch/runtime" \
+	dbus-run-session --config-file "$scratch/bus.conf" -- bash -e "$scratch/audio.sh"
+```
+
+`daemon_exposes_player_contract` checks that D-Bus activates the BigNetScreen
+daemon you name, not the installed one. Set `daemon` to the absolute path of a
+`bignetscreend` build, without spaces, and give the bus a service file for it:
+
+```sh
+daemon=/path/to/bignetscreend
+cat >"$scratch/services/br.com.biglinux.BigNetScreen.Service.service" <<EOF
+[D-BUS Service]
+Name=br.com.biglinux.BigNetScreen.Service
+Exec=$daemon
+EOF
+env "${isolated_home[@]}" BIG_MEDIA_TEST_BNS_DAEMON="$daemon" \
+	dbus-run-session --config-file "$scratch/bus.conf" -- \
+	cargo test --locked -p big-media-runtime --features ui-core --lib daemon_exposes_player_contract -- --ignored
+```
 
 The tray icon test plays the tray host on a session bus of its own:
 
 ```sh
 dbus-run-session -- cargo test --locked -p big-app-kit tray -- --ignored
+```
+
+`undo_restores_latest_trashing` trashes and restores through GVfs, which
+must see the scratch home instead of your trash, so the bus activates only
+GVfs:
+
+```sh
+mkdir -p -m 700 "$scratch/runtime"
+ln -s /usr/share/dbus-1/services/org.gtk.vfs.*.service "$scratch/services/"
+env -u DISPLAY -u WAYLAND_DISPLAY "${isolated_home[@]}" XDG_RUNTIME_DIR="$scratch/runtime" \
+	dbus-run-session --config-file "$scratch/bus.conf" -- \
+	cargo test --locked -p big-media-runtime --features ui-core --lib undo_restores_latest_trashing -- --ignored
 ```
 
 Translations are one catalog for the whole suite in `crates/media-runtime/po`;
@@ -114,10 +227,11 @@ GTK 4.22 loops removing a child that is not a stack page.
 Display CSS registered for a player or control uses
 `big_gtk_kit::css::add_provider_for_widget_lifetime`. The display owns a
 reference independently of the local provider variable, so the registration is
-removed when its widget dies. Audio palette and high-contrast slots also remove
-their registrations when the content root is destroyed: updating a cached slot
-prevents stacking within one window but does not release it when the window
-closes.
+removed when its widget dies. CSS rewritten while the widget lives (palettes,
+high contrast, the idle background) goes in a
+`big_relm4_components::theme::CssSlot`, which registers once on that kit
+function and replaces its rules in place: a cached provider prevents stacking
+within one window but is not released when the window closes.
 
 The reusable playlist window is hidden while its controller lives and
 destroyed in component shutdown, including when it was never presented. GTK

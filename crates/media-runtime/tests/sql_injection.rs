@@ -1,12 +1,11 @@
 // SPDX-License-Identifier: GPL-3.0-or-later
 
-//! Regression: hostile filter text + hostile file paths must not be able
-//! to drop the tracks table, leak data, or crash the FTS5 parser.
-//!
-//! Mirrors the `get_library_tracks` call path used by the audio player
-//! sidebar filter input.
+//! Hostile filter text, parent-filter values and file paths sent through the
+//! library query the audio sidebar uses, on a database built by the production
+//! migrations.
 
-use big_media_runtime::db::fts::{fts_match_query, fts_phrase};
+use big_media_runtime::db::queries::{get_library_track_count, get_library_tracks};
+use big_media_runtime::db::schema::run_migrations;
 use rusqlite::{Connection, params};
 
 const HOSTILE_FILENAMES: &[&str] = &[
@@ -17,112 +16,98 @@ const HOSTILE_FILENAMES: &[&str] = &[
     "/tmp/a*b(c)d.mp3",
 ];
 
-const HOSTILE_FILTERS: &[&str] = &[
-    "x'); DROP TABLE tracks; --",
-    "OR 1=1",
-    "* OR \"a\"",
-    "\"; DELETE FROM tracks; --",
-    "a OR b",
-];
+/// Shares no token with any filter below, so any query that returns it leaked.
+const PRIVATE_TRACK: &str = "/music/private.flac";
 
-fn setup() -> Connection {
+fn library() -> Connection {
     let conn = Connection::open_in_memory().expect("in-memory db");
-    conn.execute_batch(
-        "
-        CREATE TABLE tracks (
-            id INTEGER PRIMARY KEY AUTOINCREMENT,
-            file_path TEXT NOT NULL UNIQUE,
-            title TEXT,
-            artist TEXT,
-            album TEXT,
-            genre TEXT
-        );
-        CREATE VIRTUAL TABLE tracks_fts USING fts5(
-            title, artist, album, genre, content='tracks', content_rowid='id'
-        );
-        CREATE TRIGGER tracks_ai AFTER INSERT ON tracks BEGIN
-            INSERT INTO tracks_fts(rowid, title, artist, album, genre)
-            VALUES (new.id, new.title, new.artist, new.album, new.genre);
-        END;
-        ",
-    )
-    .expect("schema");
+    run_migrations(&conn).expect("migrations");
     for path in HOSTILE_FILENAMES {
         conn.execute(
             "INSERT INTO tracks (file_path, title, artist, album, genre)
-             VALUES (?1, ?2, 'Test Artist', 'Test Album', 'Test Genre')",
-            params![path, path],
+             VALUES (?1, ?1, 'Test Artist', 'Test Album', 'Test Genre')",
+            params![path],
         )
         .expect("insert");
     }
+    conn.execute(
+        "INSERT INTO tracks (file_path, title, artist, album, genre)
+         VALUES (?1, 'Private Song', 'Other Band', 'Hidden', 'Jazz')",
+        params![PRIVATE_TRACK],
+    )
+    .expect("insert");
     conn
 }
 
-fn count_tracks(conn: &Connection) -> i64 {
-    conn.query_row("SELECT COUNT(*) FROM tracks", [], |r| r.get(0))
-        .expect("count")
+fn sorted_paths(conn: &Connection, parents: &[(&str, &str)], filter: &str) -> Vec<String> {
+    let tracks = get_library_tracks(conn, parents, filter, None)
+        .unwrap_or_else(|e| panic!("{parents:?} {filter:?}: {e}"));
+    let mut paths: Vec<String> = tracks.into_iter().map(|t| t.file_path).collect();
+    paths.sort();
+    paths
 }
 
 #[test]
-fn hostile_filter_text_keeps_tables() {
-    let conn = setup();
-    let initial = count_tracks(&conn);
-    assert_eq!(initial as usize, HOSTILE_FILENAMES.len());
+fn hostile_filters_match_only_text() {
+    let conn = library();
+    // Expected rows from the unicode61 tokens of each title: every token is a
+    // quoted prefix phrase, and an operator word or punctuation-only token
+    // matches no row.
+    let drop_table = vec![
+        HOSTILE_FILENAMES[1].to_string(),
+        HOSTILE_FILENAMES[0].to_string(),
+    ];
+    let cases: [(&str, Vec<String>); 6] = [
+        ("x'); DROP TABLE tracks; --", drop_table.clone()),
+        ("OR 1=1", Vec::new()),
+        ("* OR \"a\"", Vec::new()),
+        ("\"; DELETE FROM tracks; --", Vec::new()),
+        ("a OR b", Vec::new()),
+        ("DROP TABLE", drop_table),
+    ];
+    for (filter, expected) in cases {
+        assert_eq!(sorted_paths(&conn, &[], filter), expected, "{filter:?}");
+    }
 
-    let mut stmt = conn
-        .prepare("SELECT rowid FROM tracks_fts WHERE tracks_fts MATCH ?1")
-        .expect("prepare");
-    for filter in HOSTILE_FILTERS {
-        let query = fts_match_query(filter);
-        // The quoted query must parse: an FTS5 syntax error would leave the
-        // filter field unable to search for this text.
-        let rows: rusqlite::Result<Vec<i64>> = stmt
-            .query_map(params![&query], |r| r.get(0))
-            .and_then(Iterator::collect);
-        assert!(rows.is_ok(), "{filter:?} -> {query:?}: {rows:?}");
+    let mut all: Vec<String> = HOSTILE_FILENAMES.iter().map(|p| (*p).to_string()).collect();
+    all.push(PRIVATE_TRACK.to_string());
+    all.sort();
+    assert_eq!(sorted_paths(&conn, &[], ""), all, "rows and paths intact");
+}
+
+#[test]
+fn hostile_parent_values_are_bound() {
+    let conn = library();
+    for value in ["x' OR '1'='1", "Test Artist' --", "') OR 1=1 --"] {
+        assert!(
+            sorted_paths(&conn, &[("artist", value)], "").is_empty(),
+            "{value:?}"
+        );
     }
     assert_eq!(
-        count_tracks(&conn),
-        initial,
-        "hostile filters must not delete rows"
+        sorted_paths(&conn, &[("genre", "Jazz")], ""),
+        [PRIVATE_TRACK]
     );
+    assert!(get_library_tracks(&conn, &[("artist = artist OR 1=1 --", "")], "", None).is_err());
 }
 
 #[test]
-fn hostile_filenames_round_trip_through_fts() {
-    let conn = setup();
-    // The "DROP TABLE" filename is indexed as content; querying for the
-    // literal substring through fts_match_query must locate it without
-    // executing the embedded SQL.
-    let query = fts_match_query("DROP TABLE");
-    let mut stmt = conn
-        .prepare("SELECT rowid FROM tracks_fts WHERE tracks_fts MATCH ?1")
-        .expect("prepare");
-    let rows: Vec<i64> = stmt
-        .query_map(params![&query], |r| r.get(0))
-        .expect("query")
-        .filter_map(Result::ok)
-        .collect();
-    // At least one of the hostile filenames must be returned as a match
-    // (the FTS index sees the literal text, not as SQL).
-    assert!(!rows.is_empty(), "FTS should find DROP TABLE as plain text");
-    assert_eq!(
-        count_tracks(&conn),
-        HOSTILE_FILENAMES.len() as i64,
-        "table still intact"
-    );
+fn blank_search_lists_whole_library() {
+    let conn = library();
+    let all = sorted_paths(&conn, &[], "");
+    assert_eq!(all.len(), HOSTILE_FILENAMES.len() + 1);
+    for filter in ["   ", "\t\n"] {
+        assert_eq!(sorted_paths(&conn, &[], filter), all, "{filter:?}");
+        let count = get_library_track_count(&conn, filter, None)
+            .unwrap_or_else(|e| panic!("{filter:?}: {e}"));
+        assert_eq!(usize::try_from(count).unwrap(), all.len(), "{filter:?}");
+    }
 }
 
 #[test]
-fn empty_filter_yields_no_match_clause() {
-    // Caller policy: empty fts_match_query must be skipped before passing
-    // to FTS5 (FTS5 syntax-errors on empty MATCH). This test pins the
-    // contract.
-    assert_eq!(fts_match_query(""), "");
-    assert_eq!(fts_match_query("   "), "");
-}
-
-#[test]
-fn fts_phrase_doubles_embedded_quotes() {
-    assert_eq!(fts_phrase("a\"b"), "\"a\"\"b\"");
+fn damaged_search_index_fails_query() {
+    let conn = library();
+    conn.execute_batch("DELETE FROM tracks_fts_data")
+        .expect("damage index");
+    assert!(get_library_tracks(&conn, &[], "Test", None).is_err());
 }

@@ -42,9 +42,7 @@ pub(super) fn spawn_apply(idle_bg: Rc<IdleBackground>) {
         let (Some(path), Some(idle_bg)) = (path, idle_bg.upgrade()) else {
             return;
         };
-        if let Some(display) = gtk::gdk::Display::default() {
-            idle_bg.set_blurred_wallpaper(&path, &display);
-        }
+        idle_bg.set_blurred_wallpaper(&path);
     });
 }
 

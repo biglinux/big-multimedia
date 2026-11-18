@@ -2,8 +2,6 @@
 //! screenshot, chapter list + navigation. Each
 //! `impl VideoShell` method drives the live mpv backend; the push-model wiring (a `VideoShellInput::Show*` variant →
 //! handler) matches the existing media-info / filters dialogs.
-//!
-//! The pure helper `parse_goto_seconds` carries the testable logic.
 
 use std::path::PathBuf;
 
@@ -244,37 +242,7 @@ pub(super) fn show_screenshot_result(
 
 #[cfg(test)]
 mod tests {
-    use super::{accepted_goto_seconds, chapter_title_with_prefix, parse_goto_seconds};
-
-    #[test]
-    fn goto_parses_plain_seconds() {
-        assert_eq!(parse_goto_seconds("123.5"), Some(123.5));
-    }
-
-    #[test]
-    fn goto_parses_minute_second() {
-        assert_eq!(parse_goto_seconds("2:30"), Some(150.0));
-    }
-
-    #[test]
-    fn goto_parses_hour_minute_second() {
-        assert_eq!(parse_goto_seconds("1:02:03"), Some(3723.0));
-    }
-
-    #[test]
-    fn goto_rejects_garbage() {
-        assert_eq!(parse_goto_seconds("abc:def"), None);
-    }
-
-    #[test]
-    fn goto_accepts_trimmed_dialog_input() {
-        assert_eq!(accepted_goto_seconds(" 2:30 "), Some(150.0));
-    }
-
-    #[test]
-    fn goto_rejects_blank_dialog_input() {
-        assert_eq!(accepted_goto_seconds("   "), None);
-    }
+    use super::chapter_title_with_prefix;
 
     #[test]
     fn blank_chapter_title_falls_back() {

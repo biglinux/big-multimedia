@@ -135,6 +135,8 @@ mod tests {
         assert_eq!(parse_playback_time("-5"), Some(0.0));
         assert_eq!(parse_playback_time("abc:def"), None);
         assert_eq!(parse_playback_time(""), None);
+        assert_eq!(parse_playback_time(" 2:30 "), Some(150.0));
+        assert_eq!(parse_playback_time("   "), None);
     }
 
     #[test]

@@ -42,7 +42,7 @@ pub fn get_library_tracks(
 
     let mut stmt = conn.prepare(&sql)?;
     let params_ref = params_ref(&param_values);
-    let tracks = crate::db::decoded_rows(stmt.query_map(params_ref.as_slice(), row_to_track)?);
+    let tracks = crate::db::decoded_rows(stmt.query_map(params_ref.as_slice(), row_to_track)?)?;
     Ok(tracks)
 }
 
@@ -76,7 +76,7 @@ fn query_string_count_pairs(
     let params_ref = params_ref(param_values);
     let rows = crate::db::decoded_rows(stmt.query_map(params_ref.as_slice(), |row| {
         Ok((row.get::<_, String>(0)?, row.get::<_, i64>(1)?))
-    })?);
+    })?)?;
     Ok(rows)
 }
 
@@ -112,7 +112,7 @@ fn append_text_filter(
     param_values: &mut Vec<String>,
     filter_text: &str,
 ) {
-    if filter_text.is_empty() {
+    if filter_text.trim().is_empty() {
         return;
     }
 

@@ -12,6 +12,8 @@
 //! dialog can reapply `ui-zone-bottom-*` and `ui-show-*` live while this module
 //! refreshes the CSS provider.
 
+use big_relm4_components::theme::CssSlot;
+
 use crate::settings::{Settings, keys};
 
 /// All `ui-*` settings the OSD CSS reads, snapshotted once per apply.
@@ -442,32 +444,10 @@ fn build_osd_css(settings: &Settings, osd_css_config: &OsdCssConfig) -> String {
     css
 }
 
-/// Apply the saved colour source, OSD palette + layout CSS, and high-contrast
-/// override. `provider_slot` is the persistent provider slot (replaced in
-/// place, never stacked). Call at boot and from the Appearance dialog's
-/// `on_changed`.
-pub(in crate::video) fn apply_appearance(
-    settings: &Settings,
-    provider_slot: &mut Option<gtk::CssProvider>,
-) {
-    if let Some(old) = provider_slot.as_ref()
-        && let Some(display) = gtk::gdk::Display::default()
-    {
-        gtk::style_context_remove_provider_for_display(&display, old);
-    }
-
+/// Apply the saved colour source and the OSD palette, layout and high-contrast
+/// CSS into `slot`. Call at boot and from the Appearance dialog's `on_changed`.
+pub(in crate::video) fn apply_appearance(settings: &Settings, slot: &CssSlot) {
     let osd_css_config = OsdCssConfig::from_settings(settings);
     crate::shared::theming::apply_color_scheme(&osd_css_config.color_source);
-    let css = build_osd_css(settings, &osd_css_config);
-
-    let provider = gtk::CssProvider::new();
-    provider.load_from_string(&css);
-    if let Some(display) = gtk::gdk::Display::default() {
-        gtk::style_context_add_provider_for_display(
-            &display,
-            &provider,
-            gtk::STYLE_PROVIDER_PRIORITY_USER + 1,
-        );
-    }
-    *provider_slot = Some(provider);
+    slot.set(&build_osd_css(settings, &osd_css_config));
 }

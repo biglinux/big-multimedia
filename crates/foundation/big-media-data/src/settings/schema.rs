@@ -21,7 +21,15 @@ pub(super) fn normalized<'a>(key: &str, value: &'a str) -> Option<&'a str> {
         return None;
     }
     let typed = value.trim();
-    let typed_valid = match key {
+    match typed_value_valid(key, typed) {
+        Some(valid) => valid.then_some(typed),
+        None => Some(value),
+    }
+}
+
+/// Whether `typed` fits `key`'s type, or `None` for a text or unknown key.
+fn typed_value_valid(key: &str, typed: &str) -> Option<bool> {
+    let valid = match key {
         "mute"
         | "deinterlace"
         | "auto-window-resize"
@@ -115,7 +123,7 @@ pub(super) fn normalized<'a>(key: &str, value: &'a str) -> Option<&'a str> {
         | "ui-bg-opacity"
         | "ui-menu-opacity"
         | "replaygain-preamp" => typed.parse::<f64>().is_ok_and(f64::is_finite),
-        _ => return Some(value),
+        _ => return None,
     };
-    typed_valid.then_some(typed)
+    Some(valid)
 }

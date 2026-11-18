@@ -125,7 +125,7 @@ pub fn get_track_by_path(conn: &Connection, path: &str) -> crate::Result<Option<
 
 pub fn get_all_file_paths(conn: &Connection) -> crate::Result<Vec<String>> {
     let mut stmt = conn.prepare("SELECT file_path FROM tracks")?;
-    let paths: Vec<String> = crate::db::decoded_rows(stmt.query_map([], |row| row.get(0))?);
+    let paths: Vec<String> = crate::db::decoded_rows(stmt.query_map([], |row| row.get(0))?)?;
     Ok(paths)
 }
 
@@ -145,7 +145,7 @@ pub fn get_watch_folders(conn: &Connection) -> crate::Result<Vec<WatchFolder>> {
             path: row.get(1)?,
             enabled: row.get::<_, i32>(2)? != 0,
         })
-    })?);
+    })?)?;
     Ok(folders)
 }
 

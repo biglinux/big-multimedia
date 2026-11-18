@@ -156,6 +156,8 @@ pub struct VideoShell {
     duration_secs: f64,
     /// Player settings (passed to the on-demand filters/shortcuts dialogs).
     settings: Settings,
+    /// OSD palette, layout and high-contrast CSS, re-applied by the Appearance dialog.
+    theme: big_relm4_components::theme::CssSlot,
     /// Live transform state for values mpv does not expose back directly
     /// (currently flip/crop), shared with cast snapshot construction.
     video_transform: media_adjust::VideoTransformState,

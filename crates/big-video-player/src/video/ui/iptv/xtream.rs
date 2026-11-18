@@ -293,23 +293,6 @@ mod tests {
     use serde_json::json;
 
     #[test]
-    fn urlencodes_special_chars() {
-        assert_eq!(urlencode("user@example"), "user%40example");
-        assert_eq!(urlencode("pa&ss"), "pa%26ss");
-        assert_eq!(urlencode("plain123-_.~"), "plain123-_.~");
-    }
-
-    #[test]
-    fn urlencodes_plus_and_equal() {
-        assert_eq!(urlencode("a+b=c"), "a%2Bb%3Dc");
-    }
-
-    #[test]
-    fn urlencodes_empty_string() {
-        assert_eq!(urlencode(""), "");
-    }
-
-    #[test]
     fn get_php_url_trims_and_encodes() {
         let url = get_php_url("http://srv.example/", "u@x", "p&w");
         assert_eq!(

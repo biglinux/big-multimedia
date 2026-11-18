@@ -340,14 +340,14 @@ impl VideoShell {
     }
 
     /// Open the appearance dialog (palette + OSD layout + button-layout editor).
-    /// `on_changed` re-applies the OSD CSS live through the app-owned provider
-    /// slot and reapplies the bottom OSD button zones exposed by the controls
-    /// bar.
+    /// `on_changed` re-applies the OSD CSS live through the shell's theme slot
+    /// and reapplies the bottom OSD button zones exposed by the controls bar.
     pub(super) fn show_appearance(&self, root: &adw::ApplicationWindow) {
         let settings = self.settings.clone();
+        let theme = self.theme.clone();
         let button_layout = self.controls.model().button_layout();
         crate::video::ui::appearance::show_appearance_dialog(root, &self.settings, move || {
-            reapply_theme(&settings);
+            crate::video::ui::appearance::apply_appearance(&settings, &theme);
             button_layout.apply_settings(&settings);
         });
     }
@@ -378,48 +378,6 @@ impl VideoShell {
         });
         dialog.present(Some(parent));
     }
-}
-
-thread_local! {
-    /// Display-wide OSD-theme CSS provider slot. Single slot replaced in place
-    /// on boot and on every Appearance-dialog change (the provider is attached
-    /// to the default `gdk::Display`, which is process-global, so a thread-local
-    /// is the right ownership home: no per-shell duplication, no stacking).
-    static LIVE_THEME_PROVIDER: RefCell<Option<gtk::CssProvider>> = const { RefCell::new(None) };
-    /// Open players sharing that provider.
-    static LIVE_THEME_USERS: std::cell::Cell<usize> = const { std::cell::Cell::new(0) };
-}
-
-/// Apply the OSD theme for a new player and keep it on the display while
-/// any player is open. Its rules are display-wide (`popover > contents`,
-/// `windowcontrols button`): in a host that embeds the player, they must
-/// leave with the last one instead of restyling the host's other modules.
-pub(super) fn hold_theme(root: &gtk::Box, settings: &Settings) {
-    LIVE_THEME_USERS.with(|users| users.set(users.get() + 1));
-    reapply_theme(settings);
-    root.connect_destroy(|_| {
-        let last = LIVE_THEME_USERS.with(|users| {
-            users.set(users.get().saturating_sub(1));
-            users.get() == 0
-        });
-        if !last {
-            return;
-        }
-        if let Some(provider) = LIVE_THEME_PROVIDER.with(|cell| cell.borrow_mut().take())
-            && let Some(display) = gtk::gdk::Display::default()
-        {
-            gtk::style_context_remove_provider_for_display(&display, &provider);
-        }
-    });
-}
-
-/// (Re)apply the OSD palette + layout CSS into the shared provider slot. Called
-/// at boot and from the Appearance dialog's `on_changed`.
-pub(super) fn reapply_theme(settings: &Settings) {
-    LIVE_THEME_PROVIDER.with(|cell| {
-        let mut slot = cell.borrow_mut();
-        crate::video::ui::appearance::apply_appearance(settings, &mut slot);
-    });
 }
 
 /// The disc in `device`: Blu-ray for the dropdown's second entry, else DVD.
