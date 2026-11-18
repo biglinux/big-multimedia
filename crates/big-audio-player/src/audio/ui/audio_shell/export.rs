@@ -238,18 +238,8 @@ impl AudioShell {
             .as_ref()
             .and_then(|mpv| mpv.get_current_file())
             .unwrap_or_else(|| self.current_file.clone());
-        local_input_path(&input)
+        big_os_kit::url::local_path(&input)
     }
-}
-
-fn local_input_path(input: &str) -> Option<PathBuf> {
-    if input.trim().is_empty() {
-        return None;
-    }
-    if input.contains("://") {
-        return big_os_kit::url::file_uri_path(input);
-    }
-    Some(PathBuf::from(input))
 }
 
 fn error_label(label: &str) -> gtk::Label {
@@ -285,39 +275,4 @@ fn playhead_button(mpv: &Option<Arc<MpvBackend>>, spin: &gtk::SpinButton) -> gtk
         }
     });
     button
-}
-
-#[cfg(test)]
-mod tests {
-    use super::local_input_path;
-    use std::path::PathBuf;
-
-    #[test]
-    fn input_path_accepts_paths_and_uris() {
-        assert_eq!(
-            local_input_path("/tmp/song.flac"),
-            Some(PathBuf::from("/tmp/song.flac"))
-        );
-        assert_eq!(
-            local_input_path("file:///tmp/song.flac"),
-            Some(PathBuf::from("/tmp/song.flac"))
-        );
-        assert_eq!(
-            local_input_path("file://localhost/tmp/song.flac"),
-            Some(PathBuf::from("/tmp/song.flac"))
-        );
-        assert_eq!(
-            local_input_path("file:///tmp/My%20Song.flac"),
-            Some(PathBuf::from("/tmp/My Song.flac"))
-        );
-    }
-
-    #[test]
-    fn input_path_rejects_empty_and_streams() {
-        assert_eq!(local_input_path(""), None);
-        assert_eq!(local_input_path("   "), None);
-        assert_eq!(local_input_path("file://remote-host/tmp/song.flac"), None);
-        assert_eq!(local_input_path("https://example.test/song.flac"), None);
-        assert_eq!(local_input_path("rtmp://example.test/live"), None);
-    }
 }

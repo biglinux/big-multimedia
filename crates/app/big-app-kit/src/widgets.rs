@@ -25,20 +25,12 @@ fn parse_uri_list(text: &str, max_items: Option<usize>) -> Vec<String> {
 
 /// Resolve a `text/uri-list` drop payload to local filesystem paths.
 ///
-/// Each entry is parsed by [`parse_uri_list`]; `file://` URIs are decoded
-/// by [`big_os_kit::url::file_uri_path`] while plain entries are taken
-/// verbatim as [`PathBuf`]. Other URIs and entries that cannot be decoded are
-/// dropped silently.
+/// Each entry is parsed by [`parse_uri_list`] and kept when
+/// [`big_os_kit::url::local_path`] reads it as a path on this computer.
 fn drop_paths_from_text(text: &str, max_items: Option<usize>) -> Vec<PathBuf> {
     parse_uri_list(text, max_items)
         .into_iter()
-        .filter_map(|entry| {
-            if entry.contains("://") {
-                big_os_kit::url::file_uri_path(&entry)
-            } else {
-                Some(PathBuf::from(entry))
-            }
-        })
+        .filter_map(|entry| big_os_kit::url::local_path(&entry))
         .collect()
 }
 
