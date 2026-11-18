@@ -19,16 +19,6 @@ fn video_colors_are_the_video_players_default() {
 }
 
 #[test]
-fn audio_migration_leaves_video_colors_behind() {
-    let settings = Settings::memory_only();
-    settings.migrate_audio_appearance();
-    assert_eq!(
-        settings.get_string(keys::AUDIO_UI_COLOR_SOURCE),
-        "gtk-default"
-    );
-}
-
-#[test]
 fn color_source_round_trip_all_values() {
     let settings = Settings::memory_only();
     for value in ["gtk-default", "gtk-light", "gtk-dark", "gradient", "custom"] {
@@ -100,8 +90,8 @@ fn defaults_pass_the_schema() {
 #[test]
 fn settings_round_trip() {
     let settings = Settings::memory_only();
-    settings.put_bool(keys::MUTE, true);
-    assert!(settings.get_bool(keys::MUTE));
+    settings.put_bool(keys::DEINTERLACE, true);
+    assert!(settings.get_bool(keys::DEINTERLACE));
     settings.put_int(keys::APPEARANCE_WINDOW_WIDTH, 1234);
     assert_eq!(settings.get_int(keys::APPEARANCE_WINDOW_WIDTH), 1234);
     settings.put_double(keys::VOLUME, 0.75);
@@ -128,9 +118,28 @@ fn volume_max_stays_in_preference_range() {
 }
 
 #[test]
+fn saved_volume_keeps_zero_within_maximum() {
+    let settings = Settings::memory_only();
+    assert_eq!(settings.audio_volume_percent(), 100.0);
+    assert_eq!(settings.video_volume_percent(), 100.0);
+    for (saved, expected) in [(0.0, 0.0), (37.0, 37.0), (150.0, 150.0), (180.0, 150.0)] {
+        settings.put_audio_volume_percent(saved);
+        settings.put_video_volume_percent(saved);
+        assert_eq!(settings.audio_volume_percent(), expected, "audio {saved}");
+        assert_eq!(settings.video_volume_percent(), expected, "video {saved}");
+    }
+    settings.put_int(keys::VOLUME_MAX, 200);
+    assert_eq!(settings.audio_volume_percent(), 180.0);
+    assert_eq!(settings.get_int(keys::AUDIO_VOLUME), 180);
+    assert_eq!(settings.get_double(keys::VOLUME), 1.8);
+    settings.put_int(keys::AUDIO_VOLUME, -5);
+    assert_eq!(settings.audio_volume_percent(), 0.0);
+}
+
+#[test]
 fn serialized_settings_read_back_unchanged() {
     const KEYS: [&str; 8] = [
-        "mute",
+        "deinterlace",
         "tray-icon",
         "volume",
         "subtitle-font-size",
@@ -169,7 +178,7 @@ fn hand_edited_lines_keep_their_values() {
     for (line, key, value) in [
         ("  volume =0.5", "volume", "0.5"),
         ("volume= 80", "volume", "80"),
-        ("mute=true ", "mute", "true"),
+        ("deinterlace=true ", "deinterlace", "true"),
         ("subtitle-font-size= 36 ", "subtitle-font-size", "36"),
         ("render-mode= sw", "render-mode", "sw"),
         ("sub-font=Noto Sans ", "sub-font", "Noto Sans "),
@@ -193,5 +202,58 @@ fn schema_types_tray_icon_and_render_mode() {
         ("render-mode", "vulkan", false),
     ] {
         assert_eq!(schema::valid(key, value), valid, "{key}={value}");
+    }
+}
+
+#[test]
+fn removed_keys_load_as_unknown_text() {
+    let file = "mute=maybe\nscreenshot-jpeg-quality=high\ntarget-contrast=auto\n\
+                hdr-contrast-recovery=none\ntarget-colorspace-hint=1\nicc-profile-auto=yes\n\
+                secondary-subtitles=on\nscreenshot-format=webp\nscreenshot-template=%f\n";
+    let parsed = store::parse(file.as_bytes()).unwrap();
+    assert_eq!(parsed.len(), 9);
+    assert_eq!(parsed["mute"], "maybe");
+    assert_eq!(parsed["target-contrast"], "auto");
+    for key in parsed.keys() {
+        assert!(!Settings::defaults().contains_key(key), "{key}");
+    }
+}
+
+#[test]
+fn restore_defaults_keeps_user_data() {
+    let settings = Settings::memory_only();
+    let reset = [
+        ("render-mode", "sw", "auto"),
+        ("tray-icon", "true", "false"),
+        ("audio-album-art-bg", "false", "true"),
+        ("shader-fsr-sharpness", "0.5", "0"),
+        ("shader-cas-sharpening", "0.5", "0"),
+        ("hwdec", "vaapi", "auto-safe"),
+        ("ui-show-volume", "false", "true"),
+        ("volume-max", "200", "150"),
+    ];
+    let kept = [
+        ("video-library-folders", r#"["/videos"]"#),
+        ("custom-keybindings", "mute=m"),
+        ("volume", "0.4"),
+        ("files-last-dir", "/music"),
+        ("playlist-last-folder", "/videos"),
+        ("playlist-shuffle", "true"),
+        ("eq-bands", "1;2;3;4;5;6;7;8;9;10"),
+        ("noise-strength", "0.5"),
+        ("appearance-window-width", "900"),
+    ];
+    for (key, value, _) in reset {
+        assert!(settings.set_string(key, value), "{key}");
+    }
+    for (key, value) in kept {
+        assert!(settings.set_string(key, value), "{key}");
+    }
+    settings.reset_to_defaults();
+    for (key, _, default) in reset {
+        assert_eq!(settings.string(key), default, "{key}");
+    }
+    for (key, value) in kept {
+        assert_eq!(settings.string(key), value, "{key}");
     }
 }

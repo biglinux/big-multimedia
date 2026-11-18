@@ -17,7 +17,6 @@ pub const AUDIO_APPEARANCE_WINDOW_WIDTH: IntKey = IntKey("audio-appearance-windo
 pub const AUDIO_APPEARANCE_WINDOW_HEIGHT: IntKey = IntKey("audio-appearance-window-height");
 
 pub const VOLUME: DoubleKey = DoubleKey("volume");
-pub const MUTE: BoolKey = BoolKey("mute");
 
 // Video
 pub const HWDEC: StringKey = StringKey("hwdec");

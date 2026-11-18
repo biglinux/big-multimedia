@@ -384,12 +384,36 @@ impl BrowserState {
         self.scan_generation
             .set(self.scan_generation.get().wrapping_add(1));
         self.folder.replace(None);
+        self.settings.put_string(keys::PLAYLIST_LAST_FOLDER, "");
         self.entries.replace(Vec::new());
         self.subfolders.replace(Vec::new());
         self.selection.borrow_mut().clear();
         self.select_mode.set(false);
         self.recompute_pos();
         self.rebuild();
+    }
+
+    /// Open the folder browsed last time, unless it is gone or another folder
+    /// opened while it was being checked.
+    fn restore_last_folder(self: &Rc<Self>) {
+        let folder = self.settings.get_string(keys::PLAYLIST_LAST_FOLDER);
+        if folder.is_empty() {
+            return;
+        }
+        let state = Rc::downgrade(self);
+        glib::spawn_future_local(async move {
+            let probe = folder.clone();
+            let exists = gio::spawn_blocking(move || std::path::Path::new(&probe).is_dir())
+                .await
+                .unwrap_or(false);
+            if let Some(state) = state.upgrade()
+                && exists
+                && state.folder.borrow().is_none()
+                && !state.customizing.get()
+            {
+                state.navigate_to_folder(&folder);
+            }
+        });
     }
 
     /// Scan `folder` (flat or recursive per settings) and rebuild, cancelling
@@ -819,6 +843,7 @@ impl Component for VideoBrowserSidebar {
             filter: RefCell::new(None),
         });
         state.rebuild();
+        state.restore_last_folder();
         ComponentParts {
             model: Self { state },
             widgets: (),
@@ -945,6 +970,36 @@ mod lifetime_tests {
             assert!(
                 state.upgrade().is_none(),
                 "state retained after cycle {cycle}"
+            );
+        }
+    }
+
+    #[test]
+    #[ignore = "requires an isolated GTK session"]
+    fn reopens_last_folder_when_present() {
+        gtk::init().unwrap();
+        adw::init().unwrap();
+        let context = glib::MainContext::default();
+        let existing = std::env::temp_dir().to_string_lossy().into_owned();
+        let missing = format!("{existing}/missing-folder-{}", std::process::id());
+        for (saved, expected) in [
+            (existing.as_str(), Some(existing.as_str())),
+            (missing.as_str(), None),
+            ("", None),
+        ] {
+            let settings = Settings::memory_only();
+            settings.put_string(keys::PLAYLIST_LAST_FOLDER, saved);
+            let controller = VideoBrowserSidebar::builder().launch(settings).detach();
+            for _ in 0..100 {
+                while context.pending() {
+                    context.iteration(false);
+                }
+                std::thread::sleep(Duration::from_millis(5));
+            }
+            assert_eq!(
+                controller.model().state.folder.borrow().as_deref(),
+                expected,
+                "saved {saved:?}"
             );
         }
     }

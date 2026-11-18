@@ -68,39 +68,10 @@ pub fn build_accel_map(
         .collect()
 }
 
-/// Convert a `Ctrl+Shift+f`-style accel to canonical `<Ctrl><Shift>f`.
-///
-/// Returns the input unchanged when it already contains `<` or carries no
-/// `+` separators. Unknown modifier tokens fall back to the original
-/// string rather than producing a broken accelerator.
-#[must_use]
-pub fn migrate_legacy_accel(accel: &str) -> String {
-    if accel.contains('<') || !accel.contains('+') {
-        return accel.to_string();
-    }
-    let parts: Vec<&str> = accel.split('+').collect();
-    let (key, mods) = match parts.split_last() {
-        Some((key, mods)) => (*key, mods),
-        None => return accel.to_string(),
-    };
-    let mut out = String::new();
-    for modifier in mods {
-        match *modifier {
-            "Ctrl" | "ctrl" | "Control" | "control" => out.push_str("<Ctrl>"),
-            "Shift" | "shift" => out.push_str("<Shift>"),
-            "Alt" | "alt" => out.push_str("<Alt>"),
-            _ => return accel.to_string(),
-        }
-    }
-    out.push_str(key);
-    out
-}
-
 /// Decode the serialized custom-overrides string into `(action, accel)` pairs.
 ///
-/// Expected format is `action=accel;action=accel`. Each accel passes through
-/// [`migrate_legacy_accel`], so on-disk values from older releases are
-/// silently upgraded.
+/// Expected format is `action=accel;action=accel`, each accel a GTK
+/// accelerator such as `<Ctrl>m`.
 #[must_use]
 pub fn parse_custom(value: &str) -> Vec<(String, String)> {
     let mut result = Vec::new();
@@ -108,7 +79,7 @@ pub fn parse_custom(value: &str) -> Vec<(String, String)> {
         let entry = entry.trim();
         if let Some((action, accel)) = entry.split_once('=') {
             let action = action.trim().to_string();
-            let accel = migrate_legacy_accel(accel.trim());
+            let accel = accel.trim().to_string();
             if !action.is_empty() && !accel.is_empty() {
                 result.push((action, accel));
             }
@@ -172,24 +143,6 @@ mod tests {
             single_key: false,
         },
     ];
-
-    #[test]
-    fn parse_custom_migrates_legacy_format() {
-        let result = parse_custom("mute=Ctrl+m;fullscreen=Ctrl+Shift+f");
-        assert_eq!(result[0], ("mute".into(), "<Ctrl>m".into()));
-        assert_eq!(result[1], ("fullscreen".into(), "<Ctrl><Shift>f".into()));
-    }
-
-    #[test]
-    fn migrate_legacy_accel_supports_alt_modifier() {
-        assert_eq!(migrate_legacy_accel("Alt+Return"), "<Alt>Return");
-        assert_eq!(migrate_legacy_accel("alt+space"), "<Alt>space");
-    }
-
-    #[test]
-    fn legacy_accel_with_angle_marker_stays_unmigrated() {
-        assert_eq!(migrate_legacy_accel("Ctrl+<m"), "Ctrl+<m");
-    }
 
     #[test]
     fn parse_custom_rejects_empty_action_or_accel() {
