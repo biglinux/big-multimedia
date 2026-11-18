@@ -680,8 +680,11 @@ mod tests {
             ("/m/100%25.mp3", Some("/m/100%25.mp3")),
             ("file:///m/a%20b.mp3", Some("/m/a b.mp3")),
             ("file://host/m/a.mp3", None),
+            ("file://localhost/m/a.mp3", Some("/m/a.mp3")),
             ("m/a.mp3", None),
             ("https://h/a.mp3", None),
+            ("rtmp://h/live", None),
+            ("   ", None),
             ("", None),
         ] {
             assert_eq!(
