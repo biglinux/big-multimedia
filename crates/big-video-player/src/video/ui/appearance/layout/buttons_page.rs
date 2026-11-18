@@ -151,7 +151,7 @@ pub(crate) const CONTROLS: &[OsdControl] = &[
 
 /// `(bar, placement, the `ui-zone-*` key)`: maps the editor's slots to the
 /// settings keys the runtime controls bar reads.
-const ZONE_KEYS: &[(&str, ZonePlacement, keys::StringKey)] = &[
+pub(crate) const ZONE_KEYS: &[(&str, ZonePlacement, keys::StringKey)] = &[
     ("top", ZonePlacement::Start, keys::UI_ZONE_TOP_LEFT),
     ("top", ZonePlacement::End, keys::UI_ZONE_TOP_RIGHT),
     ("bottom", ZonePlacement::Start, keys::UI_ZONE_BOTTOM_LEFT),

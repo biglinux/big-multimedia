@@ -7,7 +7,7 @@ use adw::prelude::*;
 use big_relm4_components::input::zone_layout::{ZoneLayout, ZonePlacement, slot_key};
 use big_relm4_components::layout::zone_applier::apply_zone_layout;
 
-use crate::settings::{Settings, keys};
+use crate::settings::Settings;
 use crate::video::ui::appearance::layout::{CONTROLS, OsdControl};
 use crate::video::ui::video_controls_bar::read_zones;
 
@@ -77,22 +77,8 @@ impl HeaderButtons {
 
 /// The header's layout: its two zones and the buttons hidden.
 fn read_header_layout(settings: &Settings) -> ZoneLayout {
-    let mut layout = read_zones(
-        settings,
-        &[
-            (
-                keys::UI_ZONE_TOP_LEFT,
-                &slot_key("top", ZonePlacement::Start),
-            ),
-            (
-                keys::UI_ZONE_TOP_RIGHT,
-                &slot_key("top", ZonePlacement::End),
-            ),
-        ],
-        &header_controls()
-            .map(|control| control.id)
-            .collect::<Vec<_>>(),
-    );
+    let ids: Vec<&str> = header_controls().map(|control| control.id).collect();
+    let mut layout = read_zones(settings, "top", &ids);
     for control in header_controls() {
         layout.set_visible(control.id, settings.get_bool(control.show));
     }
@@ -102,6 +88,7 @@ fn read_header_layout(settings: &Settings) -> ZoneLayout {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::settings::keys;
 
     #[test]
     fn header_zones_follow_the_top_keys() {

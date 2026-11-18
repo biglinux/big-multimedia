@@ -2,7 +2,7 @@ use std::collections::HashMap;
 
 use super::*;
 use crate::settings::keys;
-use crate::video::ui::appearance::layout::{CONTROLS, OsdControl};
+use crate::video::ui::appearance::layout::{CONTROLS, OsdControl, ZONE_KEYS};
 use big_media_components::player_chrome::{
     build_speed_popover, build_voice_popover, build_volume_popover,
     setup_exclusive_hover_popover_group, volume_icon_name,
@@ -46,15 +46,7 @@ impl ButtonLayoutWidgets {
         let start = slot_key("bottom", ZonePlacement::Start);
         let center = slot_key("bottom", ZonePlacement::Center);
         let end = slot_key("bottom", ZonePlacement::End);
-        let layout = read_zones(
-            settings,
-            &[
-                (keys::UI_ZONE_BOTTOM_LEFT, &start),
-                (keys::UI_ZONE_BOTTOM_CENTER, &center),
-                (keys::UI_ZONE_BOTTOM_RIGHT, &end),
-            ],
-            &bottom_control_ids(),
-        );
+        let layout = read_zones(settings, "bottom", &bottom_control_ids());
 
         let controls: HashMap<String, gtk::Widget> = [
             ("volume", self.volume_box.clone().upcast::<gtk::Widget>()),
@@ -129,16 +121,15 @@ fn bottom_control_ids() -> Vec<&'static str> {
         .collect()
 }
 
-/// One bar's `ui-zone-*` CSVs, each into its slot. Ids outside `known` are
+/// `bar`'s `ui-zone-*` CSVs, each into its slot. Ids outside `known` are
 /// dropped here; a repeated id is left to [`apply_zone_layout`], which places
 /// it once, in the first zone that names it.
-pub(crate) fn read_zones(
-    settings: &Settings,
-    zones: &[(keys::StringKey, &String)],
-    known: &[&str],
-) -> ZoneLayout {
+pub(crate) fn read_zones(settings: &Settings, bar: &str, known: &[&str]) -> ZoneLayout {
     let mut layout = ZoneLayout::default();
-    for (csv_key, slot) in zones {
+    for (zone_bar, placement, csv_key) in ZONE_KEYS {
+        if *zone_bar != bar {
+            continue;
+        }
         let ids = settings
             .get_string(*csv_key)
             .split(',')
@@ -146,7 +137,7 @@ pub(crate) fn read_zones(
             .filter(|id| known.contains(id))
             .map(String::from)
             .collect();
-        layout.slots.insert((*slot).clone(), ids);
+        layout.slots.insert(slot_key(bar, *placement), ids);
     }
     layout
 }
@@ -722,15 +713,7 @@ mod tests {
         let center = slot_key("bottom", ZonePlacement::Center);
         let end = slot_key("bottom", ZonePlacement::End);
 
-        let layout = read_zones(
-            &settings,
-            &[
-                (keys::UI_ZONE_BOTTOM_LEFT, &start),
-                (keys::UI_ZONE_BOTTOM_CENTER, &center),
-                (keys::UI_ZONE_BOTTOM_RIGHT, &end),
-            ],
-            &bottom_control_ids(),
-        );
+        let layout = read_zones(&settings, "bottom", &bottom_control_ids());
 
         assert_eq!(layout.slots[&start], ["volume", "speed", "voice"]);
         assert_eq!(layout.slots[&center], ["prev", "play", "next"]);
