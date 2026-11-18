@@ -746,6 +746,7 @@ mod tests {
     }
 
     #[test]
+    #[cfg_attr(miri, ignore)] // a live socket
     fn failed_listener_stops_and_reports() {
         // accept on a UDP socket fails with EOPNOTSUPP, which no retry can fix.
         let udp = std::net::UdpSocket::bind("127.0.0.1:0").unwrap();
