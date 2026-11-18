@@ -15,11 +15,10 @@
 //!
 //! Reparenting a GTK widget that already has a parent panics unless it is
 //! unparented first, and a naive `remove`/`append` on every apply churns the
-//! widget graph. `reparent_into` keeps the exact discipline the video player
-//! proved: if the widget is **already** a child of the target container, leave
-//! it in place (no unparent, no move); otherwise `unparent()` it from its old
-//! parent before `append`ing it to the target. No dangling references, no
-//! redundant reparents.
+//! widget graph. `reparent_after` keeps a widget that is **already** a child of
+//! the target container there and only reorders it; otherwise it `unparent()`s
+//! it from its old parent before inserting it into the target. No dangling
+//! references, no redundant reparents.
 
 use std::collections::{BTreeSet, HashMap};
 
@@ -58,9 +57,11 @@ pub fn apply_zone_layout(
     // `placements` is built in `slot_order`, i.e. the same order as `slots`, so
     // a positional zip pairs each resolved slot with its container.
     for ((_, ids), &(_, target)) in placements.iter().zip(slots.iter()) {
+        let mut previous: Option<&gtk::Widget> = None;
         for id in ids {
             if let Some(widget) = controls.get(id) {
-                reparent_into(widget, target);
+                reparent_after(widget, target, previous);
+                previous = Some(widget);
             }
         }
     }
@@ -121,16 +122,18 @@ fn resolve_visibility(layout: &ZoneLayout, id: &str, overrides: &HashMap<String,
         .unwrap_or_else(|| layout.is_visible(id))
 }
 
-/// Leak-safe reparent: no-op if `widget` is already a child of `target`; else
-/// `unparent` it from its old parent before `append`ing it to `target`.
-fn reparent_into(widget: &gtk::Widget, target: &gtk::Box) {
+/// Leak-safe reparent: put `widget` in `target` right after `previous` (first
+/// when `None`), moving it within `target` when it is already there, else
+/// `unparent`ing it from its old parent first.
+fn reparent_after(widget: &gtk::Widget, target: &gtk::Box, previous: Option<&gtk::Widget>) {
     if let Some(parent) = widget.parent() {
         if &parent == target.upcast_ref::<gtk::Widget>() {
+            target.reorder_child_after(widget, previous);
             return;
         }
         widget.unparent();
     }
-    target.append(widget);
+    target.insert_child_after(widget, previous);
 }
 
 #[cfg(test)]
@@ -301,5 +304,15 @@ mod tests {
 
         assert_eq!(play.parent().as_ref(), Some(end.upcast_ref()));
         assert!(center.first_child().is_none());
+
+        // Re-apply with the order inside `end` swapped: the zone follows it.
+        let mut swapped = moved.clone();
+        swapped
+            .slots
+            .insert(end_key.clone(), vec!["fullscreen".into(), "play".into()]);
+        apply_zone_layout(&swapped, &controls, &slot_refs, &fallback, &HashMap::new());
+
+        assert_eq!(end.first_child().as_ref(), Some(fullscreen.upcast_ref()));
+        assert_eq!(end.last_child().as_ref(), Some(play.upcast_ref()));
     }
 }
