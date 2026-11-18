@@ -18,7 +18,7 @@ use big_player_ui::preference_rows::{
 };
 
 mod advanced;
-mod general;
+pub(crate) mod general;
 mod subtitles;
 mod video;
 
