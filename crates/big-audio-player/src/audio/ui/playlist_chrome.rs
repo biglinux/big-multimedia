@@ -30,15 +30,15 @@ fn should_emit_open_audio_paths(file_paths: &[String]) -> bool {
 fn welcome_tip_specs() -> Vec<WelcomeTipSpec> {
     vec![
         WelcomeTipSpec {
-            icon_name: "media-playlist-shuffle-symbolic",
+            icon_name: "list-add-symbolic",
             text: i18n("Drag and drop files to create a playlist"),
         },
         WelcomeTipSpec {
-            icon_name: "folder-symbolic",
+            icon_name: "emblem-music-symbolic",
             text: i18n("Use the Music tab on the left to browse your library"),
         },
         WelcomeTipSpec {
-            icon_name: "audio-speakers-symbolic",
+            icon_name: "icon_radio",
             text: i18n("Explore Radio and Podcasts in the sidebar tabs"),
         },
     ]
@@ -272,7 +272,7 @@ fn build_welcome(sender: &ComponentSender<PlaylistPanel>) -> gtk::Box {
 
     let subtitle = gtk::Label::builder()
         .label(i18n(
-            "Add a folder with your music files to get started.\n\
+            "Open music files to play them now, or add your music folder in the Music tab.\n\
              Supported formats: MP3, FLAC, OGG, M4A, OPUS, WAV and more.",
         ))
         .wrap(true)
@@ -407,15 +407,15 @@ mod tests {
                 .collect::<Vec<_>>(),
             vec![
                 (
-                    "media-playlist-shuffle-symbolic",
+                    "list-add-symbolic",
                     "Drag and drop files to create a playlist",
                 ),
                 (
-                    "folder-symbolic",
+                    "emblem-music-symbolic",
                     "Use the Music tab on the left to browse your library",
                 ),
                 (
-                    "audio-speakers-symbolic",
+                    "icon_radio",
                     "Explore Radio and Podcasts in the sidebar tabs",
                 ),
             ]
