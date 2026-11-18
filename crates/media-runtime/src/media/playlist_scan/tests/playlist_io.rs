@@ -144,19 +144,23 @@ fn entry_caps_keep_the_first_entries() {
     assert_eq!(list.entries.last().unwrap(), "http://a/100000");
 }
 
-#[test]
-fn write_m3u_round_trips() {
-    let dir = tempfile::tempdir().unwrap();
-    let files: Vec<String> = (0..3)
-        .map(|i| {
-            let path = dir.path().join(format!("track {i}.mp3"));
+proptest::proptest! {
+    // Any file name the writer accepts, blanks, `#` and `%` included, reads back.
+    #[test]
+    fn written_names_read_back(
+        names in proptest::collection::btree_set("[ #%a-z0-9\\t.:\u{a0}é\u{feff}-]{1,12}", 1..6)
+    ) {
+        let dir = tempfile::tempdir().unwrap();
+        let mut files = Vec::new();
+        for name in names.iter().filter(|name| !matches!(name.as_str(), "." | "..")) {
+            let path = dir.path().join(name);
             std::fs::write(&path, b"fake").unwrap();
-            path.to_string_lossy().into_owned()
-        })
-        .collect();
-    let m3u = dir.path().join("list.m3u8");
-    write_m3u(&m3u, &files).unwrap();
-    assert_eq!(parse_playlist_file(&m3u).unwrap().entries, files);
+            files.push(path.to_str().unwrap().to_owned());
+        }
+        let m3u = dir.path().join("list.m3u8");
+        write_m3u(&m3u, &files).unwrap();
+        proptest::prop_assert_eq!(parse_playlist_file(&m3u).unwrap().entries, files);
+    }
 }
 
 #[test]
