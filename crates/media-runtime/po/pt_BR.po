@@ -1244,7 +1244,8 @@ msgstr "Dicas"
 msgid ""
 "• Supported formats: MP3, FLAC, OGG, Opus, M4A, WAV, WMA, AAC, APE, WavPack"
 msgstr ""
-"• Formatos suportados: MP3, FLAC, OGG, Opus, M4A, WAV, WMA, AAC, APE, WavPack"
+"• Formatos compatíveis: MP3, FLAC, OGG, Opus, M4A, WAV, WMA, AAC, APE, "
+"WavPack"
 
 #: crates/big-audio-player/src/audio/ui/library_io.rs:401
 msgid "• Subfolders are included automatically — no need to add each one"
@@ -1460,7 +1461,7 @@ msgstr "Nenhum episódio na fila"
 
 #: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:229
 msgid "Choose a podcast on the left to queue its episodes."
-msgstr "Escolha um podcast à esquerda para colocar os episódios dele na fila."
+msgstr "Escolha um podcast à esquerda para adicionar os episódios à fila."
 
 #: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:238
 msgid "Drop tracks here"
@@ -1705,7 +1706,7 @@ msgstr "Tocando agora"
 
 #: crates/big-audio-player/src/audio/ui/track_list.rs:461
 msgid "Paused"
-msgstr "Pausado"
+msgstr "Em pausa"
 
 #: crates/big-audio-player/src/audio/ui/unavailable_dialog.rs:52
 msgid ""
