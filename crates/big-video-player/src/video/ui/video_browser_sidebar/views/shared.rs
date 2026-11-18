@@ -82,7 +82,7 @@ mod tests {
     use super::row_index;
 
     #[test]
-    fn row_index_reads_files_and_playlist_row_names() {
+    fn row_index_reads_both_row_names() {
         assert_eq!(row_index("video:4"), Some(4));
         assert_eq!(row_index("q:2:9f3a0c"), Some(2));
         assert_eq!(row_index("folder:/home/videos"), None);
