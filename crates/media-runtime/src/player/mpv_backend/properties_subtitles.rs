@@ -19,7 +19,20 @@ impl MpvBackend {
         }
     }
 
+    /// Largest subtitle delay, earlier or later, in seconds.
+    pub const SUB_DELAY_LIMIT_SECONDS: f64 = 10.0;
+
+    /// Seconds the subtitles show after the speech; negative is earlier.
+    pub fn sub_delay(&self) -> f64 {
+        self.get_property_f64("sub-delay")
+    }
+
+    /// Held within ±[`Self::SUB_DELAY_LIMIT_SECONDS`].
     pub fn set_sub_delay(&self, delay: f64) {
+        let delay = delay.clamp(
+            -Self::SUB_DELAY_LIMIT_SECONDS,
+            Self::SUB_DELAY_LIMIT_SECONDS,
+        );
         self.with_mpv(|m| {
             let _ = m.set_property("sub-delay", delay);
         });
