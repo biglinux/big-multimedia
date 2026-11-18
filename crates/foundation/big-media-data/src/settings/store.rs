@@ -35,12 +35,15 @@ pub(super) fn parse(content: &[u8]) -> io::Result<HashMap<String, String>> {
         if line.is_empty() || line.starts_with('#') {
             continue;
         }
-        // The value is taken as `serialize` wrote it, edge spaces included.
         let (key, value) = line
             .split_once('=')
             .ok_or_else(|| io::Error::new(io::ErrorKind::InvalidData, "invalid settings line"))?;
         let key = key.trim_end();
-        if !super::schema::valid(key, value) || values.insert(key.into(), value.into()).is_some() {
+        let rejected = match super::schema::normalized(key, value) {
+            Some(value) => values.insert(key.into(), value.into()).is_some(),
+            None => true,
+        };
+        if rejected {
             return Err(io::Error::new(
                 io::ErrorKind::InvalidData,
                 "invalid or duplicate setting",

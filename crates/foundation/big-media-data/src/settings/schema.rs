@@ -1,7 +1,15 @@
 //! Value types of the typed key catalog in `keys.rs`. Unknown keys are kept
 //! when they obey the line-oriented format; known numeric values must parse
 //! and be finite. `defaults_pass_the_schema` checks `defaults.rs` against it.
+
+/// Whether `value` may be stored for `key` as it is.
 pub(super) fn valid(key: &str, value: &str) -> bool {
+    normalized(key, value) == Some(value)
+}
+
+/// The value stored for `key`, or `None` when it is invalid. A typed value may
+/// carry spaces from a hand edit and is stored trimmed; text is kept as written.
+pub(super) fn normalized<'a>(key: &str, value: &'a str) -> Option<&'a str> {
     if key.is_empty()
         || key.len() > 128
         || value.len() > 65536
@@ -10,9 +18,10 @@ pub(super) fn valid(key: &str, value: &str) -> bool {
             .all(|b| b.is_ascii_alphanumeric() || b == b'-' || b == b'_')
         || value.chars().any(|c| c.is_control())
     {
-        return false;
+        return None;
     }
-    match key {
+    let typed = value.trim();
+    let typed_valid = match key {
         "mute"
         | "deinterlace"
         | "auto-window-resize"
@@ -64,7 +73,7 @@ pub(super) fn valid(key: &str, value: &str) -> bool {
         | "audio-high-contrast"
         | "taskbar-progress"
         | "tray-icon"
-        | "audio-album-art-bg" => matches!(value, "true" | "false"),
+        | "audio-album-art-bg" => matches!(typed, "true" | "false"),
         "appearance-window-width"
         | "appearance-window-height"
         | "audio-appearance-window-width"
@@ -90,10 +99,10 @@ pub(super) fn valid(key: &str, value: &str) -> bool {
         | "ui-button-radius"
         | "ui-window-radius"
         | "audio-volume"
-        | "sleep-timer-minutes" => value.parse::<i32>().is_ok(),
-        "render-mode" => matches!(value, "auto" | "gl" | "sw"),
-        "tv-resolution" => matches!(value, "0" | "720" | "1080" | "1440" | "2160"),
-        "noise-voice-sensitivity" => matches!(value, "1" | "2" | "3" | "4" | "5"),
+        | "sleep-timer-minutes" => typed.parse::<i32>().is_ok(),
+        "render-mode" => matches!(typed, "auto" | "gl" | "sw"),
+        "tv-resolution" => matches!(typed, "0" | "720" | "1080" | "1440" | "2160"),
+        "noise-voice-sensitivity" => matches!(typed, "1" | "2" | "3" | "4" | "5"),
         "volume"
         | "sub-border-size"
         | "sub-shadow-offset"
@@ -105,7 +114,8 @@ pub(super) fn valid(key: &str, value: &str) -> bool {
         | "demuxer-readahead-secs"
         | "ui-bg-opacity"
         | "ui-menu-opacity"
-        | "replaygain-preamp" => value.parse::<f64>().is_ok_and(f64::is_finite),
-        _ => true,
-    }
+        | "replaygain-preamp" => typed.parse::<f64>().is_ok_and(f64::is_finite),
+        _ => return Some(value),
+    };
+    typed_valid.then_some(typed)
 }

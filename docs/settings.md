@@ -23,15 +23,17 @@ over a file another program changed after it was loaded.
 
 - UTF-8 text, one `key=value` per line. Blank lines and lines that start with
   `#` are skipped.
-- The key is trimmed; the value is everything after the first `=` up to the
-  trailing spaces, so write no space after the `=`. A key holds 1 to 128 letters, digits, `-` or `_`; a value
+- The key is trimmed; the value is everything after the first `=`, spaces
+  included. A key holds 1 to 128 letters, digits, `-` or `_`; a value
   holds at most 65,536 bytes and no control characters.
 - The whole file is at most 1 MiB and must be a regular file, not a symlink.
 - The loader checks the keys typed in
   [`schema.rs`](../crates/foundation/big-media-data/src/settings/schema.rs): a bool is `true` or
-  `false`, an integer fits 32 bits, a number is finite, and `tv-resolution`
-  and `noise-voice-sensitivity` take only the values listed. Other keys take
-  any value; a bool among them reads as `true` only when it is exactly `true`.
+  `false`, an integer fits 32 bits, a number is finite, and `render-mode`,
+  `tv-resolution` and `noise-voice-sensitivity` take only the values listed.
+  Spaces around such a value are ignored and dropped on the next save. Other
+  keys keep their value as written; a bool among them reads as `true` only
+  when it is exactly `true`.
 - An unknown key that follows these rules is kept, and written back on the
   next save.
 - One bad line, a bad value for a known key or a key given twice rejects the
@@ -112,7 +114,7 @@ that still holds its default; a `gradient` color source is not copied.
 | `hwdec` | string | `auto-safe` |  |
 | `deinterlace` | bool | `false` |  |
 | `auto-window-resize` | bool | `true` |  |
-| `render-mode` | string | not set | `auto`, `gl` or `sw`; empty reads as `auto`. |
+| `render-mode` | string | not set | `auto`, `gl` or `sw`; absent reads as `auto`. |
 | `render-profile` | string | `default` |  |
 | `gpu-dumb-mode` | bool | `false` |  |
 | `custom-mpv-options` | string | empty |  |

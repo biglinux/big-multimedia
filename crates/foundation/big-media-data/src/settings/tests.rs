@@ -166,10 +166,19 @@ fn serialized_settings_read_back_unchanged() {
 
 #[test]
 fn hand_edited_lines_keep_their_values() {
-    let parsed = store::parse(b"# comment\n\n  volume =0.5\nsub-font=Noto Sans \n").unwrap();
-    assert_eq!(parsed.len(), 2);
-    assert_eq!(parsed["volume"], "0.5");
-    assert_eq!(parsed["sub-font"], "Noto Sans ");
+    for (line, key, value) in [
+        ("  volume =0.5", "volume", "0.5"),
+        ("volume= 80", "volume", "80"),
+        ("mute=true ", "mute", "true"),
+        ("subtitle-font-size= 36 ", "subtitle-font-size", "36"),
+        ("render-mode= sw", "render-mode", "sw"),
+        ("sub-font=Noto Sans ", "sub-font", "Noto Sans "),
+        ("x-unknown_key= kept ", "x-unknown_key", " kept "),
+    ] {
+        let parsed = store::parse(format!("# comment\n\n{line}\n").as_bytes()).unwrap();
+        assert_eq!(parsed.len(), 1, "{line}");
+        assert_eq!(parsed[key], value, "{line}");
+    }
 }
 
 #[test]
