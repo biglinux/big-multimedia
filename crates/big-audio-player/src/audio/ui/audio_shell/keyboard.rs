@@ -266,7 +266,6 @@ fn focus_keeps_arrows(widget: &gtk::Widget) -> bool {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::audio::keybindings::build_single_key_map;
 
     #[test]
     fn every_listed_shortcut_has_a_target() {
@@ -310,6 +309,5 @@ mod tests {
             ),
             Some("redo")
         );
-        assert!(build_single_key_map("").contains_key("space"));
     }
 }

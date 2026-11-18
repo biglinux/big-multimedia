@@ -161,10 +161,6 @@ pub struct RequestHeaders<'a> {
 }
 
 impl<'a> RequestHeaders<'a> {
-    fn is_empty(&self) -> bool {
-        self.user_agent.is_empty() && self.referer.is_empty()
-    }
-
     fn pairs(&self) -> Vec<(&str, &str)> {
         let mut pairs = Vec::with_capacity(2);
         if !self.user_agent.is_empty() {
@@ -175,14 +171,6 @@ impl<'a> RequestHeaders<'a> {
         }
         pairs
     }
-}
-
-/// Reuses the shared command policy; retries once on transient errors.
-pub fn http_get_with_headers(url: &str, headers: &RequestHeaders<'_>) -> Option<String> {
-    if headers.is_empty() {
-        return http_get_with_retry(url);
-    }
-    http_get_text_with_headers(url, headers, &[], Duration::from_secs(TIMEOUT_SECS))
 }
 
 /// Binary GET + per-request headers; 1 MB cap.
@@ -633,15 +621,6 @@ mod tests {
     #[cfg_attr(miri, ignore)]
     fn bytes_returns_none_for_invalid_url() {
         assert!(http_get_bytes("not-a-url").is_none());
-    }
-
-    #[test]
-    // Empty headers delegate to the system curl retry path.
-    #[cfg_attr(miri, ignore)]
-    fn empty_headers_delegate_to_retry() {
-        let headers = RequestHeaders::default();
-        assert!(headers.is_empty());
-        assert!(http_get_with_headers("not-a-url", &headers).is_none());
     }
 
     #[test]

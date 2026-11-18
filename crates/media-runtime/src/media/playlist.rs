@@ -3,14 +3,12 @@
 
 pub use super::fuzzy_search::fuzzy_match;
 pub use super::metadata_cache::{
-    DetailedVideoMetadata, fast_duration_cached, meta_summary, probe_detailed_video_metadata,
-    probe_metadata, probe_metadata_cached, resolution_label,
+    meta_summary, probe_metadata, probe_metadata_cached, resolution_label,
 };
 pub use super::playlist_scan::{
-    IptvChannel, breadcrumb_segments, export_m3u, folder_display_name, format_file_size,
-    is_audio_file, is_media_file, is_playlist_file, is_video_file, list_subfolders, parse_m3u,
-    parse_playlist_file, restore_from_trash, scan_folder_flat, scan_folder_recursive,
-    shuffled_order, sort_paths, trash_file, write_m3u,
+    IptvChannel, breadcrumb_segments, folder_display_name, is_audio_file, is_media_file,
+    is_playlist_file, is_video_file, list_subfolders, parse_m3u, parse_playlist_file,
+    restore_from_trash, scan_folder_flat, scan_folder_recursive, sort_paths, trash_file, write_m3u,
 };
 pub use big_media_components::media::files::{AUDIO_EXTENSIONS, VIDEO_EXTENSIONS};
 

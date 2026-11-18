@@ -149,8 +149,3 @@ pub const SHORTCUTS: &[ShortcutDef] = &[
 
 /// Display order in the shortcuts dialog.
 pub const CATEGORIES: &[&str] = &["Playback", "Navigation", "Library", "Queue"];
-
-#[must_use]
-pub fn build_single_key_map(custom: &str) -> std::collections::HashMap<String, String> {
-    build_accel_map(SHORTCUTS, custom, true)
-}

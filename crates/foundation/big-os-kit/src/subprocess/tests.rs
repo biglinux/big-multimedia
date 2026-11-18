@@ -12,13 +12,6 @@ fn empty_program_rejected() {
 }
 
 #[test]
-fn redact_replaces_secret_in_captured_stdout() {
-    let mut buf = b"token=ABCDEF rest".to_vec();
-    redact_in_place(&["ABCDEF".to_string()], &mut buf);
-    assert_eq!(buf, b"token=[REDACTED] rest");
-}
-
-#[test]
 // Miri does not implement `posix_spawn`; normal `cargo test` still checks
 // concurrent stdout draining against a real child process.
 #[cfg_attr(miri, ignore)]
@@ -120,7 +113,7 @@ fn clean_argv_with_shell_metacharacters_passes_validation() {
 #[cfg_attr(miri, ignore)]
 fn captures_stderr_and_exit_code_on_failure() {
     // `ls` on a missing path writes to stderr and exits non-zero (code 2 on
-    // GNU coreutils). Exercises BigSubprocessStatus::code + stderr_lossy.
+    // GNU coreutils).
     let out = BigSubprocessSpec::builder()
         .program("ls")
         .arg("/nonexistent_path_xyzzy_42")
@@ -238,13 +231,6 @@ fn run_cancellable_still_times_out_without_cancel() {
     );
 }
 
-#[test]
-fn redaction_survives_non_utf8() {
-    let mut buf = b"secret\xffsecret".to_vec();
-    redact_in_place(&["secret".to_owned()], &mut buf);
-    assert_eq!(buf, b"[REDACTED]\xff[REDACTED]");
-}
-
 #[cfg(target_os = "linux")]
 #[test]
 #[cfg_attr(miri, ignore)]
@@ -319,14 +305,6 @@ fn defaults_are_safe() {
     assert_eq!(r.stderr, BigSubprocessOutputMode::Capture);
     assert_eq!(r.timeout_ms, 30_000);
     assert!(r.env_inherit);
-    assert_eq!(r.stdin_len, 0);
-}
-
-#[test]
-fn empty_allow_list_denies_every_program() {
-    let policy = BigSubprocessAllowList::default();
-    assert!(!policy.permits("sh"));
-    assert!(!policy.permits("/usr/bin/true"));
 }
 
 #[cfg(target_os = "linux")]

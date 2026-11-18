@@ -222,12 +222,12 @@ mod tests {
             {"name": "No id"}
         ]);
         let m3u = live_m3u("http://srv", "u@x", "p", "m3u8", &categories, &streams);
+        assert!(m3u.contains("tvg-id=\"globo.br\""));
         let channels = parse_m3u_content(&m3u);
         assert_eq!(channels.len(), 2);
         assert_eq!(channels[0].name, "Globo, SP");
         assert_eq!(channels[0].group, "News");
         assert_eq!(channels[0].logo, "http://logo/1.png");
-        assert_eq!(channels[0].tvg_id, "globo.br");
         assert_eq!(channels[0].url, "http://srv/live/u%40x/p/101.m3u8");
         assert_eq!(channels[1].group, "Sports 'HD'");
         assert_eq!(channels[1].url, "http://srv/live/u%40x/p/202.m3u8");

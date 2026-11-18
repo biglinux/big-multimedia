@@ -8,9 +8,7 @@ use std::path::Path;
 use gtk::gio;
 use relm4::gtk;
 
-pub use crate::actions::{
-    install_action, install_action_enabled, install_quit_action, install_static_accels,
-};
+pub use crate::actions::{install_action, install_action_enabled, install_quit_action};
 
 /// Opens the folder holding `path` in the file manager. Best effort: a
 /// missing parent or a launch failure is ignored.

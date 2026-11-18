@@ -218,7 +218,7 @@ impl PlaylistLibraryDialog {
             entries.len()
         ));
         let saved_playlist_list =
-            BigBoundedListBox::new(BigBoundedListBoxSpec::new(64).css_class("boxed-list"));
+            BigBoundedListBox::new(BigBoundedListBoxSpec::default().css_class("boxed-list"));
         let list = saved_playlist_list.root().clone();
         list.update_property(&[gtk::accessible::Property::Label(&i18n("Saved playlists"))]);
         for (id, name, count, secs) in entries {

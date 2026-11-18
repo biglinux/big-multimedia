@@ -85,19 +85,6 @@ impl std::fmt::Debug for IptvProvider {
     }
 }
 
-impl IptvProvider {
-    #[must_use]
-    pub fn new_m3u_url(name: impl Into<String>, url: impl Into<String>) -> Self {
-        Self {
-            name: name.into(),
-            source: IptvKind::M3uUrl { url: url.into() },
-            user_agent: String::new(),
-            referer: String::new(),
-            order: 0,
-        }
-    }
-}
-
 impl Default for IptvProvider {
     fn default() -> Self {
         Self {
@@ -217,9 +204,17 @@ impl IptvProviderStore {
 mod tests {
     use super::*;
 
+    fn m3u_url_provider(name: &str, url: &str) -> IptvProvider {
+        IptvProvider {
+            name: name.into(),
+            source: IptvKind::M3uUrl { url: url.into() },
+            ..IptvProvider::default()
+        }
+    }
+
     #[test]
     fn m3u_url_summary_is_the_url() {
-        let p = IptvProvider::new_m3u_url("Foo", "https://example.com/list.m3u");
+        let p = m3u_url_provider("Foo", "https://example.com/list.m3u");
         assert_eq!(p.source.summary(), "https://example.com/list.m3u");
     }
 
@@ -245,7 +240,7 @@ mod tests {
     fn roundtrip_toml() {
         let store = IptvProviderStore {
             providers: vec![
-                IptvProvider::new_m3u_url("A", "https://a.example/list.m3u"),
+                m3u_url_provider("A", "https://a.example/list.m3u"),
                 IptvProvider {
                     name: "B".into(),
                     source: IptvKind::Xtream {

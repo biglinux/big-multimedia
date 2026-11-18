@@ -15,7 +15,7 @@ README).
   and provider store (`iptv/`), ffprobe metadata cache, native MP4/MKV
   duration readers, fuzzy search, thumbnails.
 - `settings/`: re-exports `big_media_data::settings` plus the GTK adapters:
-  dialog-size persistence, save status and close draining (`saving.rs`) and
+  save status and close draining (`saving.rs`) and
   the msgid anchors for dynamically chosen status text (`messages.rs`).
 - `shared/`: code both players use: app boot (`app_base`), audio effects and
   equalizer, `converter_handoff`, popovers, preference rows, shortcut

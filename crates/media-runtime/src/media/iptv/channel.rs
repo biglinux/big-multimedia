@@ -16,6 +16,4 @@ pub struct IptvChannel {
     pub group: String,
     /// Channel logo URL (`tvg-logo="..."`) for thumbnail fetching.
     pub logo: String,
-    /// Channel ID (`tvg-id="..."`), used to correlate with XMLTV EPG.
-    pub tvg_id: String,
 }

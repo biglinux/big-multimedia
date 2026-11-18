@@ -143,11 +143,6 @@ impl MpvBackend {
         ))
     }
 
-    /// Create a new MpvBackend in audio-only mode (no video output).
-    pub fn new_audio_only(sender: async_channel::Sender<PlayerEvent>) -> Result<Self, MpvError> {
-        Self::new_audio_only_with_output(sender, "")
-    }
-
     /// Create an audio engine using the saved output driver (empty means auto).
     pub fn new_audio_only_with_output(
         sender: async_channel::Sender<PlayerEvent>,

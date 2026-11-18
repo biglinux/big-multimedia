@@ -16,8 +16,6 @@ use relm4::gtk::prelude::*;
 #[non_exhaustive]
 #[derive(Debug, Clone)]
 pub struct BigBoundedListBoxSpec {
-    /// Expected row count that still fits the bounded-list contract.
-    pub expected_max_rows: u32,
     /// Selection mode applied to the root list box.
     pub selection_mode: gtk::SelectionMode,
     /// CSS classes applied to the root list box.
@@ -34,12 +32,9 @@ pub struct BigBoundedListBoxSpec {
     pub margin_bottom: i32,
 }
 
-impl BigBoundedListBoxSpec {
-    /// Create a spec for a bounded local list.
-    #[must_use]
-    pub fn new(expected_max_rows: u32) -> Self {
+impl Default for BigBoundedListBoxSpec {
+    fn default() -> Self {
         Self {
-            expected_max_rows,
             selection_mode: gtk::SelectionMode::None,
             css_classes: Vec::new(),
             visible: true,
@@ -49,7 +44,9 @@ impl BigBoundedListBoxSpec {
             margin_bottom: 0,
         }
     }
+}
 
+impl BigBoundedListBoxSpec {
     /// Add one CSS class.
     #[must_use]
     pub fn css_class(mut self, css_class: impl Into<String>) -> Self {
@@ -112,9 +109,8 @@ mod tests {
 
     #[test]
     fn spec_defaults_to_non_selectable_visible_list() {
-        let spec = BigBoundedListBoxSpec::new(24);
+        let spec = BigBoundedListBoxSpec::default();
 
-        assert_eq!(spec.expected_max_rows, 24);
         assert_eq!(spec.selection_mode, gtk::SelectionMode::None);
         assert!(spec.css_classes.is_empty());
         assert!(spec.visible);

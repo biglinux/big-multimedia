@@ -6,9 +6,7 @@ mod queue;
 mod radio;
 mod smart_playlists;
 
-pub use library::{
-    get_compilation_albums, get_library_groups, get_library_track_count, get_library_tracks,
-};
+pub use library::{get_compilation_albums, get_library_track_count, get_library_tracks};
 pub use metadata::{TrackMetadataUpdate, update_track_metadata, update_track_rating};
 pub use queue::{QueueSession, SavedQueue, load_queue, load_queue_session, save_queue_session};
 pub use radio::{

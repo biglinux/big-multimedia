@@ -37,33 +37,6 @@ pub fn probe_metadata(path: &str) -> Option<VideoMeta> {
     ffprobe_json(path).map(|root| parse_ffprobe(&root))
 }
 
-/// Cache lookup → native container parser. No ffprobe.
-#[must_use]
-pub fn fast_duration_cached(path: &str) -> Option<f64> {
-    let current_mtime = file_mtime(path);
-
-    if let Some(entry) = meta_cache().lock().ok().and_then(|c| c.get(path).cloned())
-        && entry.mtime == current_mtime
-    {
-        return entry.meta.duration_secs;
-    }
-
-    let dur = super::super::native_duration::fast_read_duration(path)?;
-    if let Ok(mut cache) = meta_cache().lock() {
-        if cache.len() >= MAX_CACHE_ENTRIES {
-            evict_oldest(&mut cache, CACHE_EVICT_COUNT);
-        }
-        cache.entry(path.to_string()).or_insert(CacheEntry {
-            meta: VideoMeta {
-                duration_secs: Some(dur),
-                ..Default::default()
-            },
-            mtime: current_mtime,
-        });
-    }
-    Some(dur)
-}
-
 /// Atomic-semaphore gated to cap concurrent ffprobe children.
 pub fn probe_metadata_cached(path: &str) -> Option<VideoMeta> {
     let current_mtime = file_mtime(path);

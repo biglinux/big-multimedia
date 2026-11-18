@@ -12,7 +12,6 @@
 //! - [`actions`]: application and window action contracts.
 //! - [`containment`]: panic containment for Relm4 `update()` bodies and raw glib callbacks.
 //! - [`desktop`]: desktop integration: action installers, file manager, power actions.
-//! - [`dialogs`]: dialog size persistence (re-exported from `big-app-kit-core`).
 //! - [`file_dialogs`]: open/save file picker contracts.
 //! - [`keybindings`]: keyboard shortcut parsing, overrides and accelerator labels.
 //! - [`mpris`]: MPRIS D-Bus service for media players.
@@ -22,7 +21,6 @@
 pub mod actions;
 pub mod containment;
 pub mod desktop;
-pub mod dialogs;
 pub mod file_dialogs;
 pub mod keybindings;
 pub mod mpris;

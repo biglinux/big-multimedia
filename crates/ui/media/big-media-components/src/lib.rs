@@ -50,7 +50,7 @@ pub mod playback;
 /// Player-UI chrome shared across player front-ends: off-thread spawn, play
 /// pulse, volume/speed/voice popovers.
 pub mod player_chrome;
-/// Playlist ordering: shuffle and stable path sort.
+/// Playlist ordering: natural and stable path sort.
 pub mod playlist_order;
 /// libadwaita preference-row builders for player/converter settings.
 pub mod preference_rows;

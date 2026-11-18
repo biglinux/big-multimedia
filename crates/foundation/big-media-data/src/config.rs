@@ -1,5 +1,3 @@
-/// Repository that owns `APP_VERSION`, for gitrepo.
-pub const APP_VERSION_OWNER: &str = "big-multimedia";
 /// Version of both players, shown in their About dialogs. gitrepo bumps it
 /// from each commit it sends (`feat` raises the minor, `fix` and friends the
 /// patch, a breaking change the major); set it by hand only for a planned
