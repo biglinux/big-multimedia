@@ -4,7 +4,7 @@
 //! and the video converter takes `--source-hdr=pq|hlg|sdr` for a file whose
 //! colours the user told the player how to read.
 
-use big_os_kit::subprocess::BigSubprocessSpec;
+use gdk::prelude::*;
 
 use crate::i18n::i18n;
 
@@ -28,12 +28,10 @@ pub fn open(
     cuts: &[(f64, f64)],
     source_hdr: Option<&str>,
 ) -> Option<String> {
-    let spawned = BigSubprocessSpec::builder()
-        .program(program)
-        .args(converter_args(paths, cuts, source_hdr))
-        .build()
-        .spawn_detached();
-    match spawned {
+    // The launch context hands the converter an activation token, so the
+    // compositor focuses its window.
+    let context = gdk::Display::default().map(|display| display.app_launch_context());
+    match launch(program, paths, cuts, source_hdr, context.as_ref()) {
         // The converter's own window is the answer.
         Ok(()) => None,
         Err(error) => {
@@ -43,8 +41,34 @@ pub fn open(
     }
 }
 
-fn converter_args(paths: &[String], cuts: &[(f64, f64)], source_hdr: Option<&str>) -> Vec<String> {
-    let mut args = Vec::with_capacity(paths.len() + 3);
+/// Start `program` once with every path, through GIO, which reaps it.
+fn launch(
+    program: &str,
+    paths: &[String],
+    cuts: &[(f64, f64)],
+    source_hdr: Option<&str>,
+    context: Option<&gdk::AppLaunchContext>,
+) -> Result<(), glib::Error> {
+    // GLib splits the command line like a shell without running one, then
+    // expands `%` field codes; the paths go in as files through `%F`.
+    let mut commandline = glib::shell_quote(program);
+    for arg in converter_args(cuts, source_hdr) {
+        commandline.push(" ");
+        commandline.push(glib::shell_quote(arg.replace('%', "%%")));
+    }
+    commandline.push(" %F");
+    // Without startup notification GLib asks the context for no token.
+    let app = gio::AppInfo::create_from_commandline(
+        commandline,
+        None,
+        gio::AppInfoCreateFlags::SUPPORTS_STARTUP_NOTIFICATION,
+    )?;
+    let files: Vec<gio::File> = paths.iter().map(gio::File::for_commandline_arg).collect();
+    app.launch(&files, context)
+}
+
+fn converter_args(cuts: &[(f64, f64)], source_hdr: Option<&str>) -> Vec<String> {
+    let mut args = Vec::with_capacity(3);
     if !cuts.is_empty() {
         let ranges: Vec<String> = cuts
             .iter()
@@ -59,30 +83,60 @@ fn converter_args(paths: &[String], cuts: &[(f64, f64)], source_hdr: Option<&str
     }
     // A file name starting with `-` must not read as an option.
     args.push("--".to_string());
-    args.extend(paths.iter().cloned());
     args
 }
 
 #[cfg(test)]
 mod tests {
-    use super::converter_args;
+    use super::{converter_args, launch};
+    use std::os::unix::fs::PermissionsExt;
+    use std::time::{Duration, Instant};
 
     #[test]
     fn cuts_precede_the_end_of_options_marker() {
-        let paths = vec!["/v/a.mkv".to_string(), "-dash.mkv".to_string()];
         assert_eq!(
-            converter_args(&paths, &[(1.5, 3.0), (10.0, 12.345_678_9)], Some("pq")),
-            [
-                "--segments=1.5-3,10-12.3456789",
-                "--source-hdr=pq",
-                "--",
-                "/v/a.mkv",
-                "-dash.mkv"
-            ]
+            converter_args(&[(1.5, 3.0), (10.0, 12.345_678_9)], Some("pq")),
+            ["--segments=1.5-3,10-12.3456789", "--source-hdr=pq", "--"]
         );
+        assert_eq!(converter_args(&[], None), ["--"]);
+    }
+
+    /// The paths reach one converter process as separate, unparsed arguments.
+    #[test]
+    fn launch_keeps_paths_verbatim() {
+        let temp = tempfile::tempdir().unwrap();
+        let record = temp.path().join("argv");
+        let program = temp.path().join("converter");
+        std::fs::write(
+            &program,
+            format!(
+                "#!/bin/sh\nprintf '%s\\n' \"$@\" > '{0}.part'\nmv '{0}.part' '{0}'\n",
+                record.display()
+            ),
+        )
+        .unwrap();
+        std::fs::set_permissions(&program, std::fs::Permissions::from_mode(0o755)).unwrap();
+        let paths = [
+            "/v/a b'c$HOME%f.mkv".to_string(),
+            "/v/-dash.mkv".to_string(),
+            "file:///v/u%20ri.mkv".to_string(),
+        ];
+        launch(
+            program.to_str().unwrap(),
+            &paths,
+            &[(1.5, 3.0)],
+            Some("hlg"),
+            None,
+        )
+        .unwrap();
+        let deadline = Instant::now() + Duration::from_secs(5);
+        while !record.exists() {
+            assert!(Instant::now() < deadline, "converter did not start");
+            std::thread::sleep(Duration::from_millis(10));
+        }
         assert_eq!(
-            converter_args(&paths, &[], None),
-            ["--", "/v/a.mkv", "-dash.mkv"]
+            std::fs::read_to_string(&record).unwrap(),
+            "--segments=1.5-3\n--source-hdr=hlg\n--\n/v/a b'c$HOME%f.mkv\n/v/-dash.mkv\n/v/u ri.mkv\n"
         );
     }
 }
