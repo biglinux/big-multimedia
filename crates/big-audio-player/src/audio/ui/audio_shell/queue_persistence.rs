@@ -13,6 +13,8 @@ struct State {
     writing: bool,
     loaded: bool,
     failed: bool,
+    /// Why the library could not be opened; the banner states it instead of the save failure.
+    open_failure: Option<String>,
 }
 
 #[derive(Clone)]
@@ -47,7 +49,19 @@ impl QueuePersistence {
                 let (Some(state), Some(banner)) = (state.upgrade(), banner.upgrade()) else {
                     break;
                 };
-                banner.set_revealed(state.lock().unwrap_or_else(PoisonError::into_inner).failed);
+                let state = state.lock().unwrap_or_else(PoisonError::into_inner);
+                if let Some(cause) = &state.open_failure {
+                    banner.set_title(
+                        &i18n("The music library could not be opened: {}").replace("{}", cause),
+                    );
+                    banner.set_button_label(Some(&i18n("Retry")));
+                } else {
+                    banner.set_title(&i18n(
+                        "The playback queue could not be saved or restored. Your previous saved queue was kept.",
+                    ));
+                    banner.set_button_label(Some(&i18n("Retry saving")));
+                }
+                banner.set_revealed(state.failed);
             }
         });
     }
@@ -76,18 +90,26 @@ impl QueuePersistence {
 
     /// `restored` says whether the saved queue was read; until it is, saves are
     /// refused so they cannot replace a queue the person has not seen.
-    pub(super) fn loaded(&mut self, writer: Option<DbHandle>, restored: bool) {
-        if let Some(writer) = writer {
-            self.db = Some(writer);
-        }
+    pub(super) fn loaded(&mut self, writer: DbHandle, restored: bool) {
+        self.db = Some(writer);
         let mut state = self.state.lock().unwrap_or_else(PoisonError::into_inner);
         state.loaded = restored;
         state.failed = !restored;
+        state.open_failure = None;
         drop(state);
         let _ = self.changes.try_send(());
         if restored {
             self.retry();
         }
+    }
+
+    /// Saves stay refused until a retry opens the library.
+    pub(super) fn open_failed(&self, cause: String) {
+        let mut state = self.state.lock().unwrap_or_else(PoisonError::into_inner);
+        state.failed = true;
+        state.open_failure = Some(cause);
+        drop(state);
+        let _ = self.changes.try_send(());
     }
 
     pub(super) fn replace(&self, session: QueueSession) {
@@ -150,15 +172,16 @@ impl QueuePersistence {
     }
 
     pub(super) fn load(&self, sender: &ComponentSender<AudioShell>) {
-        if self
-            .state
-            .lock()
-            .unwrap_or_else(PoisonError::into_inner)
-            .loaded
-        {
+        let mut state = self.state.lock().unwrap_or_else(PoisonError::into_inner);
+        if state.loaded {
+            drop(state);
             self.retry();
             return;
         }
+        // The banner comes back with the result if this attempt fails too.
+        state.failed = false;
+        drop(state);
+        let _ = self.changes.try_send(());
         let writer = self.db.clone();
         let input = sender.input_sender().clone();
         spawn_blocking_result(
@@ -229,12 +252,36 @@ mod tests {
     }
 
     #[test]
+    fn open_failure_holds_queue_saves() {
+        let (mut owner, _updates) = QueuePersistence::new();
+        owner.open_failed("database is locked".into());
+        owner.replace(session("/held.flac"));
+        assert_eq!(owner.status().phase, Phase::Failed);
+        assert!(owner.unsaved());
+        let conn = rusqlite::Connection::open_in_memory().unwrap();
+        db::schema::run_migrations(&conn).unwrap();
+        let db = Arc::new(Mutex::new(conn));
+        owner.loaded(db.clone(), true);
+        wait_for_result(&owner);
+        assert!(!owner.unsaved());
+        assert!(owner.state.lock().unwrap().open_failure.is_none());
+        assert_eq!(
+            load_queue_session(&db.lock().unwrap())
+                .unwrap()
+                .music
+                .tracks[0]
+                .file_path,
+            "/held.flac"
+        );
+    }
+
+    #[test]
     fn newest_edit_wins_and_retries() {
         let conn = rusqlite::Connection::open_in_memory().unwrap();
         db::schema::run_migrations(&conn).unwrap();
         let db = Arc::new(Mutex::new(conn));
         let (mut owner, _updates) = QueuePersistence::new();
-        owner.loaded(Some(db.clone()), true);
+        owner.loaded(db.clone(), true);
         let lock = db.lock().unwrap();
         lock.execute_batch(
             "CREATE TEMP TABLE write_count (value INTEGER);

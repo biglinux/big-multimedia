@@ -12,13 +12,7 @@ impl AudioShell {
                 self.queue_ready = true;
                 match result {
                     Ok(restored) => self.restore_queue(restored, &sender),
-                    Err(detail) => {
-                        self.notify(
-                            &i18n("The music library could not be opened: {}")
-                                .replace("{}", &detail),
-                        );
-                        self.queue_persistence.loaded(None, false);
-                    }
+                    Err(detail) => self.queue_persistence.open_failed(detail),
                 }
                 self.playlist.emit(PlaylistPanelInput::QueueRestored);
                 if first_load {

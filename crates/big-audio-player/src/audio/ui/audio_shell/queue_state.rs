@@ -36,7 +36,7 @@ impl AudioShell {
             self.fetch_lyrics_for_current(sender);
         }
         self.queue_persistence
-            .loaded(Some(restored.writer), restored.session.is_some());
+            .loaded(restored.writer, restored.session.is_some());
     }
 
     pub(super) fn play_current(&mut self) {

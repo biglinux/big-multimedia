@@ -53,15 +53,15 @@ fn start_tree(
     });
 }
 impl AudioShell {
-    /// The writer connection; without one, tells the person whether the
-    /// library is still opening or could not be opened.
+    /// The writer connection; without one, says the library is still opening
+    /// unless the queue banner already states why it could not be opened.
     pub(super) fn writer(&self) -> Option<DbHandle> {
-        if self.db.is_none() {
-            self.notify(&if self.queue_ready {
-                i18n("The music library could not be opened.")
-            } else {
-                i18n("The music library is still opening. Try again in a moment.")
-            });
+        if self.db.is_none()
+            && self.queue_persistence.status().phase != big_os_kit::deferred::Phase::Failed
+        {
+            self.notify(&i18n(
+                "The music library is still opening. Try again in a moment.",
+            ));
         }
         self.db.clone()
     }

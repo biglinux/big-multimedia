@@ -283,10 +283,7 @@ impl Component for AudioShell {
         let content_box = gtk::Box::new(gtk::Orientation::Vertical, 0);
         content_box.append(&lyrics_paned);
         content_box.append(downloads.widget());
-        let queue_save_banner = adw::Banner::builder()
-            .title(i18n("The playback queue could not be saved or restored. Your previous saved queue was kept."))
-            .button_label(i18n("Retry saving"))
-            .build();
+        let queue_save_banner = adw::Banner::new("");
         content_box.append(&queue_save_banner);
         // Messages take a row above the transport instead of covering it.
         let notice = MediaNotice::new();
