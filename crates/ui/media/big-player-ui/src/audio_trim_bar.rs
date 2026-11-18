@@ -338,6 +338,8 @@ fn build_segment_chip(
     );
     let edit_button = gtk::Button::builder().label(&label).build();
     edit_button.set_tooltip_text(Some(&labels.edit_cut_times));
+    // GTK labels the button by its label child, which outranks the name below.
+    edit_button.reset_relation(gtk::AccessibleRelation::LabelledBy);
     edit_button.update_property(&[gtk::accessible::Property::Label(&format!(
         "{}: {label}",
         labels.edit_cut
