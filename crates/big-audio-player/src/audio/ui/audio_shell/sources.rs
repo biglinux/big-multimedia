@@ -288,6 +288,7 @@ impl AudioShell {
         let filename = path.file_name().unwrap_or_default().to_string_lossy();
         self.notify(&format!("{}: {filename}", i18n("Recording to")));
         self.recording_path = Some(path);
+        self.radio.emit(RadioPanelInput::RecordingChanged(true));
     }
 
     /// Stop the in-progress recording and show a saved dialog with open actions.
@@ -296,6 +297,7 @@ impl AudioShell {
         if let Some(mpv) = &self.mpv {
             mpv.set_stream_record("");
         }
+        self.radio.emit(RadioPanelInput::RecordingChanged(false));
         let Some(path) = self.recording_path.take() else {
             return;
         };
