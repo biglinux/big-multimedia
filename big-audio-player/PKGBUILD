@@ -17,8 +17,9 @@ arch=('x86_64')
 url="https://github.com/biglinux/big-multimedia"
 license=('GPL-3.0-or-later')
 # libpulse provides pactl, which drives the stream volume.
-depends=('gtk4>=4.22' 'libadwaita>=1.9' 'mpv' 'ffmpeg' 'libpulse')
+depends=('gtk4>=4.22' 'libadwaita>=1.9' 'mpv' 'ffmpeg' 'libpulse' 'sqlite')
 makedepends=('git' 'cargo' 'pkgconf' 'gettext')
+checkdepends=('desktop-file-utils' 'appstream')
 optdepends=('deepfilternet3-native: light voice noise reduction (DeepFilterNet3)'
             'dpdfnet-native: higher-quality voice noise reduction (DPDFNet-2 48 kHz)'
             'big-audio-converter: trim and convert tracks'
@@ -62,6 +63,25 @@ build() {
     cargo build --frozen --release -p big-audio-player
 }
 
+check() {
+    local tree="${srcdir}/${_repo}"
+    local resources="${tree}/crates/big-audio-player/resources"
+    local id=br.com.biglinux.AudioPlayer
+
+    desktop-file-validate "${resources}/applications/${id}.desktop"
+    appstreamcli validate --no-net "${resources}/metainfo/${id}.metainfo.xml"
+    local po="${tree}/crates/media-runtime/po" lang
+    while read -r lang; do
+        [[ -z "${lang}" || "${lang}" == \#* ]] && continue
+        msgfmt --check -o /dev/null "${po}/${lang}.po"
+    done <"${po}/LINGUAS"
+
+    # The unit tests need no display, D-Bus session or network; the ones that
+    # open windows are ignored.
+    cd "${tree}" || return
+    cargo test --frozen --lib -p big-audio-player --config build.incremental=false
+}
+
 package() {
     local tree="${srcdir}/${_repo}"
     local resources="${tree}/crates/big-audio-player/resources"
@@ -91,7 +111,7 @@ package() {
     while read -r lang; do
         [[ -z "${lang}" || "${lang}" == \#* ]] && continue
         install -d "${pkgdir}/usr/share/big-audio-player/locale/${lang}/LC_MESSAGES"
-        msgfmt "${po}/${lang}.po" \
+        msgfmt --check "${po}/${lang}.po" \
             -o "${pkgdir}/usr/share/big-audio-player/locale/${lang}/LC_MESSAGES/big-media-runtime.mo"
     done <"${po}/LINGUAS"
 }

@@ -236,6 +236,7 @@ crates/ui/generic/big-relm4-components/src/feedback/context_popover.rs
 crates/ui/generic/big-relm4-components/src/feedback/hover_popover.rs
 crates/ui/generic/big-relm4-components/src/feedback/mod.rs
 crates/ui/generic/big-relm4-components/src/feedback/popover_lifecycle.rs
+crates/ui/generic/big-relm4-components/src/feedback/popover_menu.rs
 crates/ui/generic/big-relm4-components/src/feedback/tooltip.rs
 crates/ui/generic/big-relm4-components/src/i18n.rs
 crates/ui/generic/big-relm4-components/src/input/button_content.rs
@@ -292,6 +293,7 @@ crates/ui/media/big-media-components/src/media/files.rs
 crates/ui/media/big-media-components/src/media/images.rs
 crates/ui/media/big-media-components/src/media/mod.rs
 crates/ui/media/big-media-components/src/playback/audio_transport.rs
+crates/ui/media/big-media-components/src/playback/cut_timeline.rs
 crates/ui/media/big-media-components/src/playback/mod.rs
 crates/ui/media/big-media-components/src/playback/queue.rs
 crates/ui/media/big-media-components/src/player_chrome.rs
