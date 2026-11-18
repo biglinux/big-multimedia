@@ -138,6 +138,61 @@ fn parent(path: &Path) -> &Path {
         .unwrap_or_else(|| Path::new("."))
 }
 
+/// Leading name of every staging entry next to user files.
+pub(super) const STAGING_PREFIX: &str = ".big-media-";
+
+/// Name prefix, carrying this process's PID, for staging next to user files;
+/// [`remove_stale_staging`] removes such entries once the process has exited.
+pub fn staging_prefix() -> String {
+    format!("{STAGING_PREFIX}{}-", std::process::id())
+}
+
+/// Best-effort removal of the staging entries in `directory` that a killed
+/// process of the current user left behind. A live owner keeps its entries.
+pub fn remove_stale_staging(directory: &Path) {
+    use std::os::unix::fs::MetadataExt;
+    let Ok(entries) = fs::read_dir(directory) else {
+        return;
+    };
+    // SAFETY: geteuid has no preconditions and cannot fail.
+    let uid = unsafe { libc::geteuid() };
+    for entry in entries.flatten() {
+        let name = entry.file_name();
+        let Some(pid) = name.to_str().and_then(staging_owner) else {
+            continue;
+        };
+        // SAFETY: signal 0 only checks that the process exists; pid is positive.
+        if unsafe { libc::kill(pid, 0) } == 0
+            || io::Error::last_os_error().raw_os_error() != Some(libc::ESRCH)
+        {
+            continue;
+        }
+        // DirEntry::metadata does not follow symlinks.
+        let Ok(metadata) = entry.metadata() else {
+            continue;
+        };
+        if metadata.uid() != uid {
+            continue;
+        }
+        let path = entry.path();
+        if metadata.is_dir() {
+            if let Ok(staged) = fs::read_dir(&path) {
+                for file in staged.flatten() {
+                    let _ = fs::remove_file(file.path());
+                }
+            }
+            let _ = fs::remove_dir(&path);
+        } else {
+            let _ = fs::remove_file(&path);
+        }
+    }
+}
+
+fn staging_owner(name: &str) -> Option<i32> {
+    let (pid, _) = name.strip_prefix(STAGING_PREFIX)?.split_once('-')?;
+    pid.parse::<i32>().ok().filter(|pid| *pid > 0)
+}
+
 /// Private staging file in the destination filesystem. Dropping it removes only
 /// its private directory, never the final output. Keep it owned until the writer
 /// has exited, not merely until cancellation was requested.
@@ -154,11 +209,12 @@ impl StagedFile {
             .file_name()
             .ok_or_else(|| io::Error::new(io::ErrorKind::InvalidInput, "missing target name"))?;
         let parent = parent(target);
+        remove_stale_staging(parent);
         let mut nonce = [0_u8; 16];
         // Linux/Unix desktop target; fail closed if OS randomness is unavailable.
         File::open("/dev/urandom")?.read_exact(&mut nonce)?;
         let hex: String = nonce.iter().map(|byte| format!("{byte:02x}")).collect();
-        let directory = parent.join(format!(".big-media-{hex}"));
+        let directory = parent.join(format!("{}{hex}", staging_prefix()));
         let mut builder = fs::DirBuilder::new();
         #[cfg(unix)]
         {
@@ -315,6 +371,26 @@ mod tests {
         assert!(stage.publish(&target).is_err());
         drop(stage);
         assert_eq!(fs::read(&target).unwrap(), b"original");
+        fs::remove_dir_all(dir).unwrap();
+    }
+    /// Staging of an exited process is removed by the next staging in that
+    /// directory; a live process keeps its own. No PID reaches `i32::MAX`.
+    #[test]
+    fn staging_removes_dead_process_leftovers() {
+        let dir = directory();
+        let dead_directory = dir.join(format!(".big-media-{}-0a1b", i32::MAX));
+        fs::create_dir(&dead_directory).unwrap();
+        fs::write(dead_directory.join("out.png"), b"partial").unwrap();
+        let dead_file = dir.join(format!(".big-media-{}-x7Yz.flac", i32::MAX));
+        fs::write(&dead_file, b"partial").unwrap();
+        let live_directory = dir.join(format!(".big-media-{}-0a1b", std::process::id()));
+        fs::create_dir(&live_directory).unwrap();
+        let stage = StagedFile::new(&dir.join("out.png")).unwrap();
+        assert!(!dead_directory.exists());
+        assert!(!dead_file.exists());
+        assert!(live_directory.exists());
+        assert!(stage.path().exists());
+        drop(stage);
         fs::remove_dir_all(dir).unwrap();
     }
     fn refuse_link(_: &Path, _: &Path) -> io::Result<()> {
