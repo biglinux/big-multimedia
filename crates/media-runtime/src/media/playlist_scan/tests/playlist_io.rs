@@ -157,3 +157,40 @@ fn write_m3u_refuses_line_breaks() {
     assert!(write_m3u(&m3u, &["/a\n/etc/passwd".to_string()]).is_err());
     assert!(!m3u.exists());
 }
+
+#[test]
+fn system_path_entries_dropped() {
+    use crate::media::playlist_scan::playlist_io::parse_pls_file;
+    let dir = tempfile::tempdir().unwrap();
+    let control = dir.path().join("control.mp3");
+    std::fs::write(&control, b"fake").unwrap();
+    let control = control.to_string_lossy().into_owned();
+    let link = dir.path().join("hostname.mp3");
+    std::os::unix::fs::symlink("/etc/hostname", &link).unwrap();
+    let to_root = "../".repeat(dir.path().components().count());
+    let rows = [
+        "/etc/passwd".to_string(),
+        format!("{to_root}etc/passwd"),
+        link.to_string_lossy().into_owned(),
+        "/proc/self/environ".to_string(),
+        "/dev/stdin".to_string(),
+        "/etc".to_string(),
+        "/proc".to_string(),
+    ];
+    let m3u = dir.path().join("hostile.m3u");
+    let pls = dir.path().join("hostile.pls");
+    let mut leaks = Vec::new();
+    for row in &rows {
+        std::fs::write(&m3u, format!("#EXTM3U\n{control}\n{row}\n")).unwrap();
+        std::fs::write(&pls, format!("[playlist]\nFile1={control}\nFile2={row}\n")).unwrap();
+        for (format, entries) in [
+            ("m3u", parse_m3u(&m3u).entries),
+            ("pls", parse_pls_file(&pls).entries),
+        ] {
+            if entries != [control.clone()] {
+                leaks.push(format!("{format} {row}: {entries:?}"));
+            }
+        }
+    }
+    assert!(leaks.is_empty(), "system paths kept: {leaks:#?}");
+}
