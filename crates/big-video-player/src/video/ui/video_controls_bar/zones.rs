@@ -2,6 +2,7 @@ use std::collections::HashMap;
 
 use super::*;
 use crate::settings::keys;
+use crate::video::ui::appearance::layout::{CONTROLS, OsdControl};
 use big_media_components::player_chrome::{
     build_speed_popover, build_voice_popover, build_volume_popover,
     setup_exclusive_hover_popover_group, volume_icon_name,
@@ -52,7 +53,7 @@ impl ButtonLayoutWidgets {
                 (keys::UI_ZONE_BOTTOM_CENTER, &center),
                 (keys::UI_ZONE_BOTTOM_RIGHT, &end),
             ],
-            &BOTTOM_CONTROLS,
+            &bottom_control_ids(),
         );
 
         let controls: HashMap<String, gtk::Widget> = [
@@ -62,7 +63,7 @@ impl ButtonLayoutWidgets {
             ("prev", self.previous_button.clone().upcast()),
             ("play", self.play_button.clone().upcast()),
             ("next", self.next_button.clone().upcast()),
-            ("edit-export", self.export_menu_button.clone().upcast()),
+            (EDIT_EXPORT, self.export_menu_button.clone().upcast()),
             ("subtitle", self.subtitle_menu_button.clone().upcast()),
             ("audio-track", self.audio_track_menu_button.clone().upcast()),
             ("tv", self.tv_button.clone().upcast()),
@@ -78,69 +79,55 @@ impl ButtonLayoutWidgets {
             (end.as_str(), &self.end_zone),
         ];
 
-        let fallback = [
-            ("volume", start.as_str()),
-            ("speed", start.as_str()),
-            ("voice", start.as_str()),
-            ("prev", center.as_str()),
-            ("play", center.as_str()),
-            ("next", center.as_str()),
-            ("edit-export", end.as_str()),
-            ("subtitle", end.as_str()),
-            ("audio-track", end.as_str()),
-            ("tv", end.as_str()),
-            ("fullscreen", end.as_str()),
-        ];
+        // The edit menu leads the end zone.
+        let fallback_slots: Vec<(&str, String)> = [(EDIT_EXPORT, end.clone())]
+            .into_iter()
+            .chain(
+                bottom_bar_controls()
+                    .map(|control| (control.id, slot_key(control.bar, control.placement))),
+            )
+            .collect();
+        let fallback: Vec<(&str, &str)> = fallback_slots
+            .iter()
+            .map(|(id, slot)| (*id, slot.as_str()))
+            .collect();
 
         // Visibility: the `ui-show-*` flags, and for what acts on the open
-        // file, one being open. `edit-export` has no flag of its own. Voice is
+        // file, one being open. The edit menu has no flag of its own. Voice is
         // also gated on a real noise-reduction backend.
         let media = self.has_media.get();
-        let visibility: HashMap<String, bool> = [
-            ("volume", settings.get_bool(keys::UI_SHOW_VOLUME)),
-            ("speed", settings.get_bool(keys::UI_SHOW_SPEED)),
-            (
-                "voice",
-                settings.get_bool(keys::UI_SHOW_VOICE)
-                    && crate::shared::audio_effects::has_noise_reduction_backend(),
-            ),
-            ("prev", media && settings.get_bool(keys::UI_SHOW_PREV)),
-            ("play", media && settings.get_bool(keys::UI_SHOW_PLAY)),
-            ("next", media && settings.get_bool(keys::UI_SHOW_NEXT)),
-            ("edit-export", media),
-            (
-                "subtitle",
-                media && settings.get_bool(keys::UI_SHOW_SUBTITLE),
-            ),
-            (
-                "audio-track",
-                media && settings.get_bool(keys::UI_SHOW_AUDIO_TRACK),
-            ),
-            ("tv", media && settings.get_bool(keys::UI_SHOW_TV)),
-            ("fullscreen", settings.get_bool(keys::UI_SHOW_FULLSCREEN)),
-        ]
-        .into_iter()
-        .map(|(id, visible)| (id.to_owned(), visible))
-        .collect();
+        let mut visibility: HashMap<String, bool> = bottom_bar_controls()
+            .map(|control| {
+                let shown = settings.get_bool(control.show)
+                    && match control.id {
+                        "volume" | "speed" | "fullscreen" => true,
+                        "voice" => crate::shared::audio_effects::has_noise_reduction_backend(),
+                        _ => media,
+                    };
+                (control.id.to_owned(), shown)
+            })
+            .collect();
+        visibility.insert(EDIT_EXPORT.to_owned(), media);
 
         apply_zone_layout(&layout, &controls, &slots, &fallback, &visibility);
     }
 }
 
+/// The edit and export menu: always in the bottom bar, so the Buttons page
+/// does not list it.
+const EDIT_EXPORT: &str = "edit-export";
+
+fn bottom_bar_controls() -> impl Iterator<Item = &'static OsdControl> {
+    CONTROLS.iter().filter(|control| control.bar == "bottom")
+}
+
 /// The ids the bottom bar places.
-const BOTTOM_CONTROLS: [&str; 11] = [
-    "volume",
-    "speed",
-    "voice",
-    "prev",
-    "play",
-    "next",
-    "edit-export",
-    "subtitle",
-    "audio-track",
-    "tv",
-    "fullscreen",
-];
+fn bottom_control_ids() -> Vec<&'static str> {
+    bottom_bar_controls()
+        .map(|control| control.id)
+        .chain([EDIT_EXPORT])
+        .collect()
+}
 
 /// One bar's `ui-zone-*` CSVs, each into its slot. Ids outside `known` are
 /// dropped here; a repeated id is left to [`apply_zone_layout`], which places
@@ -742,7 +729,7 @@ mod tests {
                 (keys::UI_ZONE_BOTTOM_CENTER, &center),
                 (keys::UI_ZONE_BOTTOM_RIGHT, &end),
             ],
-            &BOTTOM_CONTROLS,
+            &bottom_control_ids(),
         );
 
         assert_eq!(layout.slots[&start], ["volume", "speed", "voice"]);
