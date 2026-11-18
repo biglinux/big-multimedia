@@ -213,8 +213,9 @@ pub(super) fn build_mpv_backend(
         Ok(mpv) => mpv,
         Err(e) => {
             log::error!("failed to initialize mpv audio backend: {e}");
+            // mpv accepts any audio output name at start, so only the library itself fails here.
             return Err(i18n(
-                "The playback engine could not start: {error}. Check Preferences → Audio → Audio Output, then reopen the player.",
+                "The playback engine could not start: {error}. Update or reinstall the mpv package, then reopen the player.",
             )
             .replace("{error}", &e.to_string()));
         }
