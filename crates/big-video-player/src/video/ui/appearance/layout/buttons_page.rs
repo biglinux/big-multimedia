@@ -196,7 +196,7 @@ pub(in crate::video) fn create_buttons_page(
 
     let group = BigPreferencesGroupSpec::new(i18n("Button Layout"))
         .description(i18n(
-            "Drag buttons between zones or move them with Alt+Left and Alt+Right • Click to toggle visibility",
+            "Drag buttons between zones, or move the focused one with Alt+Left and Alt+Right. Click a button to show or hide it.",
         ))
         .build();
 
