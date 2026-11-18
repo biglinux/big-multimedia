@@ -640,6 +640,8 @@ mod lifetime_tests {
     #[test]
     #[ignore = "requires an isolated home and GTK session"]
     fn closing_audio_releases_the_sleep_timer() {
+        // A host keeps numbers in C for libmpv; the session's LC_NUMERIC may not be.
+        gtk::disable_setlocale();
         gtk::init().unwrap();
         adw::init().unwrap();
         let app = adw::Application::builder()
