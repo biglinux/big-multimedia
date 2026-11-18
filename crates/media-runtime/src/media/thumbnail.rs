@@ -27,13 +27,7 @@ fn thumbnail_cache_dir(cache_root: &Path) -> Option<PathBuf> {
 
 /// `path + mtime` so renames or edits invalidate the cached thumb.
 fn thumb_hash(path: &str) -> String {
-    let mtime = std::fs::metadata(path)
-        .and_then(|m| m.modified())
-        .map_or(0, |t| {
-            t.duration_since(std::time::UNIX_EPOCH)
-                .unwrap_or_default()
-                .as_secs()
-        });
+    let mtime = big_os_kit::storage::modified_secs(path).unwrap_or(0);
     let mut hasher = DefaultHasher::new();
     path.hash(&mut hasher);
     mtime.hash(&mut hasher);

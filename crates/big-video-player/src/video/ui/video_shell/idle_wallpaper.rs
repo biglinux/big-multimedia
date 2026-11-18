@@ -229,11 +229,7 @@ fn ensure_blurred(source: &Path) -> Option<PathBuf> {
     let cache_dir = big_os_kit::xdg_dirs::cache_dir()?.join("big-video-player");
     std::fs::create_dir_all(&cache_dir).ok()?;
 
-    let mtime = std::fs::metadata(source)
-        .and_then(|m| m.modified())
-        .ok()
-        .and_then(|t| t.duration_since(std::time::UNIX_EPOCH).ok())
-        .map_or(0, |d| d.as_secs());
+    let mtime = big_os_kit::storage::modified_secs(source).unwrap_or(0);
     let mut hasher = std::collections::hash_map::DefaultHasher::new();
     source.hash(&mut hasher);
     mtime.hash(&mut hasher);

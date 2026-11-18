@@ -59,16 +59,6 @@ pub(in crate::media) fn meta_cache() -> &'static Mutex<HashMap<String, CacheEntr
     CACHE.get_or_init(|| Mutex::new(load_meta_cache_from_disk()))
 }
 
-pub(super) fn file_mtime(path: &str) -> u64 {
-    std::fs::metadata(path)
-        .and_then(|m| m.modified())
-        .map_or(0, |t| {
-            t.duration_since(std::time::UNIX_EPOCH)
-                .unwrap_or_default()
-                .as_secs()
-        })
-}
-
 /// One file's entry as the cache file stores it; a missing field reads as
 /// unknown.
 #[derive(Default, Serialize, Deserialize)]

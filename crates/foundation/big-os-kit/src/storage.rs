@@ -139,6 +139,17 @@ pub fn atomic_write_private_synced(path: &Path, bytes: &[u8]) -> std::io::Result
     atomic_replace(path, true, true, |file| file.write_all(bytes))
 }
 
+/// When `path` was last modified, in whole seconds since the Unix epoch;
+/// `None` when it cannot be read or predates the epoch.
+#[must_use]
+pub fn modified_secs(path: impl AsRef<Path>) -> Option<u64> {
+    let modified = fs::metadata(path)
+        .and_then(|metadata| metadata.modified())
+        .ok()?;
+    let since_epoch = modified.duration_since(std::time::UNIX_EPOCH).ok()?;
+    Some(since_epoch.as_secs())
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -149,6 +160,17 @@ mod tests {
         let seq = TEMP_SEQ.fetch_add(1, Ordering::Relaxed);
         p.push(format!("big-os-kit-storage-test-{pid}-{seq}-{name}.json"));
         p
+    }
+
+    #[test]
+    fn modified_secs_reads_whole_seconds() {
+        let path = storage_test_path("modified-secs");
+        let file = fs::File::create(&path).unwrap();
+        let stamp = std::time::UNIX_EPOCH + std::time::Duration::from_millis(1_700_000_000_900);
+        file.set_modified(stamp).unwrap();
+        assert_eq!(modified_secs(&path), Some(1_700_000_000));
+        let _ = fs::remove_file(&path);
+        assert_eq!(modified_secs(&path), None);
     }
 
     #[test]
