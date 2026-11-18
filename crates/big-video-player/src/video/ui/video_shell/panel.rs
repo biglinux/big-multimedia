@@ -59,9 +59,6 @@ impl PanelPage {
     }
 }
 
-/// Below this the panel covers the controls instead of shrinking.
-const PANEL_MIN_HEIGHT: i32 = 300;
-
 /// Where the panel sits and how its home page is laid out in a window of
 /// `width` × `height` whose header bar and controls take `header` and
 /// `controls` pixels.
@@ -78,9 +75,9 @@ struct PanelLayout {
 fn panel_layout(width: i32, height: i32, header: i32, controls: i32) -> PanelLayout {
     // Just below the header, where the settings button is.
     let top = header + 4;
-    // A short window would squeeze the card to a sliver: then it covers the
-    // controls rather than shrink below a usable height.
-    let bottom = (controls + 6).min(height - top - PANEL_MIN_HEIGHT).max(8);
+    // Clear of the seek bar and time even in a short window, where the card
+    // scrolls instead.
+    let bottom = (controls + 6).max(8);
     let room = width - 16;
     let (columns, card) = if room >= 940 {
         (3, 620)
@@ -140,8 +137,8 @@ impl SettingsPanel {
         // again or Esc closes it.
         top.append(&title);
 
-        // The card hugs its content and scrolls only when the window is too
-        // short for it (`max_content_height` is set per window on open).
+        // The card hugs its content and scrolls only when the room between
+        // the revealer's margins is too short for it.
         let scroller = gtk::ScrolledWindow::builder()
             .hscrollbar_policy(gtk::PolicyType::Never)
             .propagate_natural_height(true)
@@ -157,7 +154,7 @@ impl SettingsPanel {
 
         let revealer = gtk::Revealer::builder()
             .halign(gtk::Align::End)
-            .valign(gtk::Align::Start)
+            .valign(gtk::Align::Fill)
             .transition_type(gtk::RevealerTransitionType::SlideLeft)
             .transition_duration(150)
             .margin_end(8)
@@ -311,30 +308,27 @@ impl VideoShell {
         // The TV page opens from its button in the controls' corner, so it
         // rises from there; the rest hang below the settings button.
         let from_below = page == PanelPage::Tv;
-        if !panel.is_open() || from_below != (panel.revealer.valign() == gtk::Align::End) {
+        if !panel.is_open() || from_below != (panel.card.valign() == gtk::Align::End) {
             let layout = self.panel_layout_now();
             panel.columns.set(layout.columns);
+            // The revealer spans the room between header and controls; the
+            // card hangs at its top or rests on its bottom, never past it.
             panel.revealer.set_margin_top(layout.top);
+            panel.revealer.set_margin_bottom(layout.bottom);
             if from_below {
                 // One list: the home page's width would only stretch it.
                 panel.card.set_width_request(layout.width.min(440));
-                panel.revealer.set_valign(gtk::Align::End);
-                panel.revealer.set_margin_bottom(layout.bottom);
+                panel.card.set_valign(gtk::Align::End);
                 panel
                     .revealer
                     .set_transition_type(gtk::RevealerTransitionType::SlideUp);
             } else {
                 panel.card.set_width_request(layout.width);
-                panel.revealer.set_valign(gtk::Align::Start);
-                panel.revealer.set_margin_bottom(0);
+                panel.card.set_valign(gtk::Align::Start);
                 panel
                     .revealer
                     .set_transition_type(gtk::RevealerTransitionType::SlideLeft);
             }
-            // Room below the card's own title row.
-            panel.scroller.set_max_content_height(
-                (self.main_overlay.height() - layout.top - layout.bottom - 52).max(120),
-            );
             if layout.compact {
                 panel.card.add_css_class("compact");
             } else {
@@ -857,9 +851,9 @@ mod tests {
     }
 
     #[test]
-    fn short_window_covers_the_controls() {
-        let layout = panel_layout(1174, 420, 46, 110);
-        assert_eq!(layout.bottom, 420 - 50 - PANEL_MIN_HEIGHT);
+    fn short_window_keeps_the_controls_clear() {
+        let layout = panel_layout(640, 400, 46, 110);
+        assert_eq!((layout.top, layout.bottom), (50, 116));
         assert!(layout.compact);
     }
 

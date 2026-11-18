@@ -244,6 +244,7 @@ impl Component for VideoShell {
 
         // The playlist / folder browser floats over the video on the left.
         let playlist_panel = super::playlist_panel::PlaylistPanel::new(playlist.widget(), &sender);
+        playlist_panel.keep_clear(&main_overlay, &welcome);
         // Videos dropped on the panel join the list; dropped on the video
         // they replace it (the window's own drop target, below).
         {
