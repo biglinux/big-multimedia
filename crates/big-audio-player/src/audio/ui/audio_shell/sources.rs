@@ -1,4 +1,5 @@
 use super::*;
+use super::queue_state::{podcast_episode_tracks, start_podcast_queue, swap_queue_for_tab};
 use big_relm4_components::layout::{
     dialog_footer::{BigDialogFooter, BigDialogFooterSpec},
     dialog_page::BigDialogPage,
@@ -356,29 +357,14 @@ impl AudioShell {
             self.notify(&i18n("No episodes found"));
             return;
         }
-        if !self.podcast_mode {
-            self.saved_music_queue =
-                Some((self.queue.tracks().to_vec(), self.queue.current_index()));
-        }
-        self.podcast_mode = true;
         self.cancel_pending_opens();
-        self.current_playlist_name.clone_from(&title);
-
-        let tracks = episodes
-            .into_iter()
-            .enumerate()
-            .map(|(i, (audio_url, ep_title))| {
-                Track::new_podcast_episode(
-                    -(i as i64 + 1),
-                    audio_url,
-                    ep_title,
-                    title.clone(),
-                    i as i32 + 1,
-                )
-            })
-            .collect::<Vec<_>>();
-        self.queue.set_tracks(tracks);
-        self.queue.jump_to(0);
+        start_podcast_queue(
+            &mut self.podcast_mode,
+            &mut self.queue,
+            &mut self.saved_music_queue,
+            podcast_episode_tracks(&title, episodes),
+        );
+        self.current_playlist_name = title;
         self.play_current();
         self.commit_queue();
     }
@@ -386,32 +372,14 @@ impl AudioShell {
     /// Stash/restore the music vs podcast queues on view-stack tab switches.
     pub(super) fn handle_tab_changed(&mut self, name: &str) {
         self.cancel_pending_opens();
-        if name == "podcast" {
-            // Returning to the podcast tab restores a stashed episode queue.
-            if !self.podcast_mode
-                && let Some((tracks, index)) = self.saved_podcast_queue.take()
-            {
-                self.saved_music_queue =
-                    Some((self.queue.tracks().to_vec(), self.queue.current_index()));
-                self.podcast_mode = true;
-                self.queue.set_tracks(tracks);
-                if let Some(idx) = index {
-                    self.queue.jump_to(idx);
-                }
-                self.commit_queue();
-            }
-        } else if self.podcast_mode {
-            // Leaving the podcast tab stashes the episode queue and restores music.
-            self.saved_podcast_queue =
-                Some((self.queue.tracks().to_vec(), self.queue.current_index()));
-            self.podcast_mode = false;
-            if let Some((tracks, index)) = self.saved_music_queue.take() {
-                self.queue.set_tracks(tracks);
-                if let Some(idx) = index {
-                    self.queue.jump_to(idx);
-                }
-                self.commit_queue();
-            }
+        if swap_queue_for_tab(
+            name,
+            &mut self.podcast_mode,
+            &mut self.queue,
+            &mut self.saved_music_queue,
+            &mut self.saved_podcast_queue,
+        ) {
+            self.commit_queue();
         }
     }
 

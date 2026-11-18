@@ -158,8 +158,9 @@ exclude_re = [
     # The remaining audio shell source methods are live orchestration:
     # asynchronous DB queries, mpv stream control, Relm4 messages, GIO blocking
     # workers, GTK toasts/dialogs, and tab/queue state bridges. The pure
-    # recording path/content contracts are tested in this module; the live
-    # behavior needs a live window and session bus.
+    # recording path/content contracts are tested in this module, episode ids
+    # and the queue stash/restore in queue_state; the live behavior needs a
+    # live window and session bus.
     'crates/big-audio-player/src/audio/ui/audio_shell/sources\.rs:.*replace AudioShell::handle_files with \(\)',
     'crates/big-audio-player/src/audio/ui/audio_shell/sources\.rs:.*replace AudioShell::scan_folder with \(\)',
     'crates/big-audio-player/src/audio/ui/audio_shell/sources\.rs:.*replace AudioShell::remove_watch_folder with \(\)',
@@ -172,12 +173,7 @@ exclude_re = [
     'crates/big-audio-player/src/audio/ui/audio_shell/sources\.rs:.*delete ! in AudioShell::stop_radio_recording',
     'crates/big-audio-player/src/audio/ui/audio_shell/sources\.rs:.*replace AudioShell::handle_podcast with \(\)',
     'crates/big-audio-player/src/audio/ui/audio_shell/sources\.rs:.*replace AudioShell::enter_podcast_mode with \(\)',
-    'crates/big-audio-player/src/audio/ui/audio_shell/sources\.rs:.*delete ! in AudioShell::enter_podcast_mode',
-    'crates/big-audio-player/src/audio/ui/audio_shell/sources\.rs:.*delete - in AudioShell::enter_podcast_mode',
-    'crates/big-audio-player/src/audio/ui/audio_shell/sources\.rs:.*replace \+ with [-*] in AudioShell::enter_podcast_mode',
     'crates/big-audio-player/src/audio/ui/audio_shell/sources\.rs:.*replace AudioShell::handle_tab_changed with \(\)',
-    'crates/big-audio-player/src/audio/ui/audio_shell/sources\.rs:.*replace == with != in AudioShell::handle_tab_changed',
-    'crates/big-audio-player/src/audio/ui/audio_shell/sources\.rs:.*delete ! in AudioShell::handle_tab_changed',
     'crates/big-audio-player/src/audio/ui/audio_shell/sources\.rs:.*replace AudioShell::load_radio_stations with \(\)',
     'crates/big-audio-player/src/audio/ui/audio_shell/sources\.rs:.*replace present_recording_saved_dialog with \(\)',
     'crates/big-audio-player/src/audio/ui/audio_shell/sources\.rs:.*replace recording_saved_field -> gtk::Box with Default::default\(\)',

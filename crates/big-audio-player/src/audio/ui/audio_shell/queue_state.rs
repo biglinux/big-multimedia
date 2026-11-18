@@ -301,6 +301,166 @@ fn plan_open(queued: &[&str], resolved: &[String]) -> (Vec<String>, Option<usize
     (added, target)
 }
 
+/// A queue set aside while the other one plays, with its playing index.
+type StashedQueue = (Vec<Track>, Option<usize>);
+
+fn stash(queue: &PlayQueue) -> Option<StashedQueue> {
+    Some((queue.tracks().to_vec(), queue.current_index()))
+}
+
+/// The feed's episodes as tracks numbered from 1, with ids counting down from
+/// -1 so none matches a library track, whose database ids are positive.
+pub(super) fn podcast_episode_tracks(
+    feed_title: &str,
+    episodes: Vec<(String, String)>,
+) -> Vec<Track> {
+    episodes
+        .into_iter()
+        .zip(1..)
+        .map(|((audio_url, episode_title), number)| {
+            Track::new_podcast_episode(
+                -i64::from(number),
+                audio_url,
+                episode_title,
+                feed_title,
+                number,
+            )
+        })
+        .collect()
+}
+
+/// Plays `episodes` from the first one, stashing the music queue unless
+/// podcasts already play.
+pub(super) fn start_podcast_queue(
+    podcast_mode: &mut bool,
+    queue: &mut PlayQueue,
+    saved_music: &mut Option<StashedQueue>,
+    episodes: Vec<Track>,
+) {
+    if !*podcast_mode {
+        *saved_music = stash(queue);
+    }
+    *podcast_mode = true;
+    queue.set_tracks(episodes);
+    queue.jump_to(0);
+}
+
+/// Swaps the playing queue with the stashed one when the `tab` switch crosses
+/// between music and podcasts; true when `queue` changed.
+pub(super) fn swap_queue_for_tab(
+    tab: &str,
+    podcast_mode: &mut bool,
+    queue: &mut PlayQueue,
+    saved_music: &mut Option<StashedQueue>,
+    saved_podcast: &mut Option<StashedQueue>,
+) -> bool {
+    let (tracks, current) = if tab == "podcast" {
+        if *podcast_mode {
+            return false;
+        }
+        let Some(podcasts) = saved_podcast.take() else {
+            return false;
+        };
+        *saved_music = stash(queue);
+        *podcast_mode = true;
+        podcasts
+    } else {
+        if !*podcast_mode {
+            return false;
+        }
+        *saved_podcast = stash(queue);
+        *podcast_mode = false;
+        let Some(music) = saved_music.take() else {
+            return false;
+        };
+        music
+    };
+    queue.set_tracks(tracks);
+    if let Some(index) = current {
+        queue.jump_to(index);
+    }
+    true
+}
+
+#[cfg(test)]
+mod podcast_queue_tests {
+    use super::*;
+
+    fn titles(queue: &PlayQueue) -> Vec<&str> {
+        queue
+            .tracks()
+            .iter()
+            .map(|track| track.title.as_deref().unwrap_or_default())
+            .collect()
+    }
+
+    fn episodes(count: usize) -> Vec<(String, String)> {
+        (0..count)
+            .map(|index| {
+                (
+                    format!("https://feed/{index}.mp3"),
+                    format!("Episode {index}"),
+                )
+            })
+            .collect()
+    }
+
+    #[test]
+    fn episode_ids_negative_and_unique() {
+        let tracks = podcast_episode_tracks("Feed", episodes(50));
+        let mut ids: Vec<i64> = tracks.iter().map(|track| track.id).collect();
+        assert!(ids.iter().all(|id| *id < 0), "{ids:?}");
+        let numbers: Vec<Option<i32>> = tracks.iter().map(|track| track.track_number).collect();
+        assert_eq!(numbers, (1..=50).map(Some).collect::<Vec<_>>());
+        ids.sort_unstable();
+        ids.dedup();
+        assert_eq!(ids.len(), 50);
+    }
+
+    #[test]
+    fn tab_switches_restore_each_queue() {
+        let mut queue = PlayQueue::new();
+        for title in ["Song A", "Song B", "Song C"] {
+            let mut track = Track::new_external_path(format!("/music/{title}.mp3"));
+            track.title = Some(title.to_string());
+            queue.add_track(track);
+        }
+        queue.jump_to(2);
+        let (mut podcast_mode, mut saved_music, mut saved_podcast) = (false, None, None);
+
+        start_podcast_queue(
+            &mut podcast_mode,
+            &mut queue,
+            &mut saved_music,
+            podcast_episode_tracks("Feed", episodes(3)),
+        );
+        queue.jump_to(1);
+
+        let mut switch = |tab: &str, queue: &mut PlayQueue| {
+            swap_queue_for_tab(
+                tab,
+                &mut podcast_mode,
+                queue,
+                &mut saved_music,
+                &mut saved_podcast,
+            )
+        };
+        assert!(switch("music", &mut queue));
+        assert_eq!(titles(&queue), ["Song A", "Song B", "Song C"]);
+        assert_eq!(queue.current_index(), Some(2));
+        assert!(!switch("radio", &mut queue));
+
+        assert!(switch("podcast", &mut queue));
+        assert_eq!(titles(&queue), ["Episode 0", "Episode 1", "Episode 2"]);
+        assert_eq!(queue.current_index(), Some(1));
+        assert!(!switch("podcast", &mut queue));
+
+        assert!(switch("music", &mut queue));
+        assert_eq!(titles(&queue), ["Song A", "Song B", "Song C"]);
+        assert_eq!(queue.current_index(), Some(2));
+    }
+}
+
 #[cfg(test)]
 mod open_tests {
     use super::plan_open;
