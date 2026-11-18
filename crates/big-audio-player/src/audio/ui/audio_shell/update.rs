@@ -107,7 +107,7 @@ impl AudioShell {
             AudioShellInput::PodcastFeedResolved { title, episodes } => {
                 self.enter_podcast_mode(title, episodes);
             }
-            AudioShellInput::ViewTabChanged(name) => self.handle_tab_changed(&name),
+            AudioShellInput::ViewTabChanged(name) => self.handle_tab_changed(&name, &sender),
             AudioShellInput::RadioStationsResolved(stations) => {
                 self.radio.emit(RadioPanelInput::RefreshStations(stations));
             }

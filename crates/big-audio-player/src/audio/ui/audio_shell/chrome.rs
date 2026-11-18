@@ -10,6 +10,7 @@ impl AudioShell {
             tracks,
             current_idx,
             playlist_name: self.current_playlist_name.clone(),
+            podcasts: self.podcast_mode,
         });
         self.sync_now_playing();
     }

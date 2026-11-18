@@ -205,17 +205,30 @@ fn prompt_queue_playlist_name(
     );
 }
 
-/// Empty-queue placeholder: a drop hint when the library already has tracks,
-/// otherwise the first-run welcome page.
+/// Empty-queue placeholder: where podcast episodes come from, a drop hint when
+/// the library already has tracks, otherwise the first-run welcome page.
 pub(super) fn build_empty_state(
+    podcasts: bool,
     library_has_items: bool,
     sender: &ComponentSender<PlaylistPanel>,
 ) -> gtk::Widget {
-    if library_has_items {
+    if podcasts {
+        build_podcast_hint().upcast()
+    } else if library_has_items {
         build_drop_hint().upcast()
     } else {
         build_welcome(sender).upcast()
     }
+}
+
+/// Podcast queue empty: episodes come from choosing a podcast.
+fn build_podcast_hint() -> adw::StatusPage {
+    adw::StatusPage::builder()
+        .icon_name("microphone-sensitivity-high-symbolic")
+        .title(i18n("No episodes queued"))
+        .description(i18n("Choose a podcast on the left to queue its episodes."))
+        .vexpand(true)
+        .build()
 }
 
 /// Library populated but queue empty: invite a drag-drop or library add.

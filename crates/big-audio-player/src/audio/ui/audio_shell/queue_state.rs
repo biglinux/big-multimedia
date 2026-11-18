@@ -382,6 +382,27 @@ pub(super) fn swap_queue_for_tab(
     true
 }
 
+/// What the transport holds once a tab switch put the other queue on screen.
+#[derive(Debug, PartialEq, Eq)]
+pub(super) enum LoadedAfterSwap {
+    /// The visible queue's current entry is the loaded file.
+    Keep,
+    /// Unload, then select the visible queue's current entry without playing it.
+    Select,
+    /// Unload; the visible queue is empty.
+    Clear,
+}
+
+/// The transport follows the visible queue: the player keeps `loaded` (empty
+/// when nothing is) only while `queue` shows it as current.
+pub(super) fn loaded_after_swap(queue: &PlayQueue, loaded: &str) -> LoadedAfterSwap {
+    match queue.current() {
+        Some(track) if track.file_path == loaded => LoadedAfterSwap::Keep,
+        Some(_) => LoadedAfterSwap::Select,
+        None => LoadedAfterSwap::Clear,
+    }
+}
+
 #[cfg(test)]
 mod podcast_queue_tests {
     use super::*;
@@ -392,6 +413,18 @@ mod podcast_queue_tests {
             .iter()
             .map(|track| track.title.as_deref().unwrap_or_default())
             .collect()
+    }
+
+    /// Songs A, B and C with C playing.
+    fn music_queue() -> PlayQueue {
+        let mut queue = PlayQueue::new();
+        for title in ["Song A", "Song B", "Song C"] {
+            let mut track = Track::new_external_path(format!("/music/{title}.mp3"));
+            track.title = Some(title.to_string());
+            queue.add_track(track);
+        }
+        queue.jump_to(2);
+        queue
     }
 
     fn episodes(count: usize) -> Vec<(String, String)> {
@@ -419,13 +452,7 @@ mod podcast_queue_tests {
 
     #[test]
     fn tab_switches_restore_each_queue() {
-        let mut queue = PlayQueue::new();
-        for title in ["Song A", "Song B", "Song C"] {
-            let mut track = Track::new_external_path(format!("/music/{title}.mp3"));
-            track.title = Some(title.to_string());
-            queue.add_track(track);
-        }
-        queue.jump_to(2);
+        let mut queue = music_queue();
         let (mut podcast_mode, mut saved_music, mut saved_podcast) = (false, None, None);
 
         start_podcast_queue(
@@ -458,6 +485,36 @@ mod podcast_queue_tests {
         assert!(switch("music", &mut queue));
         assert_eq!(titles(&queue), ["Song A", "Song B", "Song C"]);
         assert_eq!(queue.current_index(), Some(2));
+    }
+
+    /// A restored session stashes the podcast queue even when it is empty.
+    #[test]
+    fn transport_follows_the_queue_each_tab_shows() {
+        let mut queue = music_queue();
+        let song = "/music/Song C.mp3";
+        let (mut podcast_mode, mut saved_music) = (false, None);
+        let mut saved_podcast = Some((Vec::new(), None));
+        let mut switch = |tab: &str, queue: &mut PlayQueue| {
+            swap_queue_for_tab(
+                tab,
+                &mut podcast_mode,
+                queue,
+                &mut saved_music,
+                &mut saved_podcast,
+            )
+        };
+
+        assert!(switch("podcast", &mut queue));
+        assert!(queue.is_empty());
+        assert_eq!(loaded_after_swap(&queue, song), LoadedAfterSwap::Clear);
+
+        assert!(switch("music", &mut queue));
+        assert_eq!(titles(&queue), ["Song A", "Song B", "Song C"]);
+        assert_eq!(loaded_after_swap(&queue, ""), LoadedAfterSwap::Select);
+        assert_eq!(loaded_after_swap(&queue, song), LoadedAfterSwap::Keep);
+
+        queue.set_tracks(podcast_episode_tracks("Feed", episodes(2)));
+        assert_eq!(loaded_after_swap(&queue, song), LoadedAfterSwap::Select);
     }
 }
 

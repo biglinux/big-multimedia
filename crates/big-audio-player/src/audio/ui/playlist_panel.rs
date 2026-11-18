@@ -120,6 +120,8 @@ pub enum PlaylistPanelInput {
         current_idx: Option<usize>,
         /// Active saved-playlist name (empty = ad-hoc queue).
         playlist_name: String,
+        /// The queue holds podcast episodes, not music.
+        podcasts: bool,
     },
     /// Incremental append (fast path; avoids a full `SetQueue`).
     AppendTracks(Vec<Track>),
@@ -255,6 +257,8 @@ pub struct PlaylistPanel {
     playlist_name: String,
     /// Library-has-tracks flag; picks the empty-queue placeholder variant.
     library_has_items: bool,
+    /// The queue holds podcast episodes; picks the empty-queue placeholder.
+    podcasts: bool,
     /// Until the saved queue arrives, an empty queue shows loading instead.
     restoring: bool,
 }
@@ -303,7 +307,8 @@ impl PlaylistPanel {
             loading.set_paintable(Some(&adw::SpinnerPaintable::new(Some(&loading))));
             self.scroll.set_child(Some(&loading));
         } else if empty {
-            let placeholder = playlist_chrome::build_empty_state(self.library_has_items, sender);
+            let placeholder =
+                playlist_chrome::build_empty_state(self.podcasts, self.library_has_items, sender);
             self.scroll.set_child(Some(&placeholder));
         } else {
             let view: gtk::Widget = self.list.view.clone().upcast();
@@ -480,6 +485,7 @@ impl Component for PlaylistPanel {
             current_track_identity,
             playlist_name: String::new(),
             library_has_items: false,
+            podcasts: false,
             restoring: true,
         };
         // Empty queue at boot → show loading until the shell pushes the saved
@@ -496,8 +502,10 @@ impl Component for PlaylistPanel {
                 tracks,
                 current_idx,
                 playlist_name,
+                podcasts,
             } => {
                 self.playlist_name = playlist_name;
+                self.podcasts = podcasts;
                 // Replace only the rows that changed: each metadata batch of a
                 // large open sends the whole queue, and new objects for every
                 // row made GTK destroy and rebuild every row widget each time.
