@@ -12,7 +12,6 @@ crates/big-audio-player/src/audio/library_scan_engine.rs
 crates/big-audio-player/src/audio/lyrics_fetch_engine.rs
 crates/big-audio-player/src/audio/mod.rs
 crates/big-audio-player/src/audio/mpris_state.rs
-crates/big-audio-player/src/audio/playlist_import.rs
 crates/big-audio-player/src/audio/preferences.rs
 crates/big-audio-player/src/audio/queue_undo.rs
 crates/big-audio-player/src/audio/ui/audio_shell.rs

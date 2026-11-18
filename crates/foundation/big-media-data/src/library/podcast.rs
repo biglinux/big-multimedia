@@ -3,6 +3,7 @@
 use crate::error::Result;
 use big_os_kit::deferred::Document;
 use big_os_kit::http_client::http_get_with_retry;
+use big_os_kit::url::ListOrigin;
 use roxmltree::Node;
 use std::path::PathBuf;
 
@@ -12,6 +13,8 @@ pub struct PodcastFeed {
     pub description: String,
     pub image_url: Option<String>,
     pub episodes: Vec<PodcastEpisode>,
+    /// Episodes left out because their audio address is not a stream URI.
+    pub skipped: usize,
 }
 
 #[derive(Debug, Clone)]
@@ -48,6 +51,7 @@ pub fn parse_feed(xml: &str) -> Option<PodcastFeed> {
                 .and_then(|n| n.attribute("href").map(String::from))
         });
 
+    let mut skipped = 0;
     let episodes = channel
         .children()
         .filter(|n| n.has_tag_name("item"))
@@ -71,6 +75,10 @@ pub fn parse_feed(xml: &str) -> Option<PodcastFeed> {
                     None
                 }
             })?;
+            if !big_os_kit::url::accepts_list_entry(&audio_url, ListOrigin::Network) {
+                skipped += 1;
+                return None;
+            }
 
             Some(PodcastEpisode {
                 title: episode_title,
@@ -87,6 +95,7 @@ pub fn parse_feed(xml: &str) -> Option<PodcastFeed> {
         description,
         image_url,
         episodes,
+        skipped,
     })
 }
 
@@ -325,6 +334,32 @@ mod tests {
         assert_eq!(feed.episodes.len(), 1);
         assert_eq!(feed.episodes[0].title, "Episode 1");
         assert_eq!(feed.episodes[0].audio_url, "https://example.com/ep1.mp3");
+    }
+
+    #[test]
+    fn enclosures_must_be_streams() {
+        let mut items = String::new();
+        for url in [
+            "av://lavfi:sine,ametadata=mode=print:file=/tmp/x",
+            "fdclose://0",
+            "/home/user/song.mp3",
+            "file:///etc/hostname",
+            "HTTPS://example.com/ep.mp3",
+            "rtsp://example.com/live",
+        ] {
+            items.push_str(&format!(
+                "<item><title>t</title><enclosure url=\"{url}\" type=\"audio/mpeg\"/></item>"
+            ));
+        }
+        let feed = parse_feed(&format!("<rss><channel>{items}</channel></rss>")).unwrap();
+        let urls: Vec<&str> = feed.episodes.iter().map(|e| e.audio_url.as_str()).collect();
+        assert_eq!(
+            (urls, feed.skipped),
+            (
+                vec!["HTTPS://example.com/ep.mp3", "rtsp://example.com/live"],
+                4
+            )
+        );
     }
 
     #[test]

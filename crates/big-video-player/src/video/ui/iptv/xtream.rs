@@ -12,8 +12,10 @@
 //! panels without the JSON API.
 //!
 //! The channels are turned into M3U text, so the cache and the parser are the
-//! same as for an M3U provider. Engine-free helper; blocking, so call it from
-//! a worker thread.
+//! same as for an M3U provider. Its stream URLs carry [`CREDENTIALS`] in place
+//! of the account's user name and password, which [`stream_url`] puts back
+//! when a channel plays. Engine-free helper; blocking, so call it from a
+//! worker thread.
 
 use std::fmt;
 
@@ -32,7 +34,30 @@ use crate::media::iptv::MAX_PLAYLIST_ENTRIES;
 /// kilobytes.
 const MAX_ACCOUNT_BYTES: usize = 1024 * 1024;
 
-/// The live line-up of a Xtream account as M3U text.
+/// The path segment standing for `user/password` in a stored stream URL.
+/// Braces are not valid in a URL path, so no panel URL holds it.
+const CREDENTIALS: &str = "/{credentials}/";
+
+/// `url` from a stored line-up with the account's credentials put back.
+#[must_use]
+pub fn stream_url(url: &str, username: &str, password: &str) -> String {
+    url.replacen(
+        CREDENTIALS,
+        &format!("/{}/{}/", urlencode(username), urlencode(password)),
+        1,
+    )
+}
+
+/// `m3u` with the account's `/user/password/` path segments, as the panel
+/// writes them or URL-encoded, replaced by [`CREDENTIALS`].
+fn without_credentials(m3u: &str, username: &str, password: &str) -> String {
+    let raw = format!("/{username}/{password}/");
+    let encoded = format!("/{}/{}/", urlencode(username), urlencode(password));
+    m3u.replace(&raw, CREDENTIALS)
+        .replace(&encoded, CREDENTIALS)
+}
+
+/// The live line-up of a Xtream account as M3U text, without its credentials.
 pub fn fetch_xtream_m3u(
     server: &str,
     username: &str,
@@ -48,14 +73,15 @@ pub fn fetch_xtream_m3u(
     };
     // No JSON API here: the panel's M3U export.
     let Some(account) = account else {
-        return fetch_text(&get_php_url(base, username, password), headers);
+        let m3u = fetch_text(&get_php_url(base, username, password), headers)?;
+        return Ok(without_credentials(&m3u, username, password));
     };
     let extension = check_account(&account)?;
     let categories = fetch_text(&format!("{api}&action=get_live_categories"), headers)?;
     let streams = fetch_text(&format!("{api}&action=get_live_streams"), headers)?;
     let categories = first_entries(&categories, |_: &Category| true)?;
     let streams = live_streams(&streams)?;
-    let m3u = live_m3u(base, username, password, extension, &categories, &streams);
+    let m3u = live_m3u(base, extension, &categories, &streams);
     if m3u.lines().count() <= 1 {
         return Err(FetchError::Empty);
     }
@@ -84,9 +110,12 @@ struct LiveStream {
     category_id: String,
 }
 
-/// The streams of a `get_live_streams` answer that have an id to play.
+/// The streams of a `get_live_streams` answer whose id is a number, the only
+/// form a panel's stream URL takes.
 fn live_streams(json: &str) -> Result<Vec<LiveStream>, FetchError> {
-    first_entries(json, |stream: &LiveStream| !stream.stream_id.is_empty())
+    first_entries(json, |stream: &LiveStream| {
+        !stream.stream_id.is_empty() && stream.stream_id.bytes().all(|b| b.is_ascii_digit())
+    })
 }
 
 /// The elements of a JSON array that pass `keep`, up to one past
@@ -243,16 +272,19 @@ fn check_account(account: &Value) -> Result<&'static str, FetchError> {
     Ok(if serves_hls { "m3u8" } else { "ts" })
 }
 
+/// `text` on one M3U line: a line break would start an entry of its own.
+fn one_line(text: &str) -> String {
+    text.replace(['\n', '\r'], " ")
+}
+
 /// An M3U attribute value: a double quote would end it early.
 fn attribute(text: &str) -> String {
-    text.replace('"', "'").replace(['\n', '\r'], " ")
+    one_line(&text.replace('"', "'"))
 }
 
 /// The live streams as M3U, grouped by their category names.
 fn live_m3u(
     base: &str,
-    username: &str,
-    password: &str,
     extension: &str,
     categories: &[Category],
     streams: &[LiveStream],
@@ -266,6 +298,7 @@ fn live_m3u(
             )
         })
         .collect();
+    let base = one_line(base);
     let mut m3u = String::from("#EXTM3U\n");
     for stream in streams {
         let group = names
@@ -273,14 +306,12 @@ fn live_m3u(
             .copied()
             .unwrap_or_default();
         m3u.push_str(&format!(
-            "#EXTINF:-1 tvg-id=\"{}\" tvg-logo=\"{}\" group-title=\"{}\",{}\n{base}/live/{}/{}/{}.{extension}\n",
+            "#EXTINF:-1 tvg-id=\"{}\" tvg-logo=\"{}\" group-title=\"{}\",{}\n{base}/live{CREDENTIALS}{}.{extension}\n",
             attribute(&stream.epg_channel_id),
             attribute(&stream.stream_icon),
             attribute(group),
-            stream.name.replace(['\n', '\r'], " "),
-            urlencode(username),
-            urlencode(password),
-            urlencode(&stream.stream_id),
+            one_line(&stream.name),
+            stream.stream_id,
         ));
     }
     m3u
@@ -340,16 +371,70 @@ mod tests {
         ]"#;
         let categories = first_entries(categories, |_: &Category| true).unwrap();
         let streams = live_streams(streams).unwrap();
-        let m3u = live_m3u("http://srv", "u@x", "p", "m3u8", &categories, &streams);
+        let m3u = live_m3u("http://srv", "m3u8", &categories, &streams);
         assert!(m3u.contains("tvg-id=\"globo.br\""));
         let channels = parse_m3u_content(&m3u).entries;
         assert_eq!(channels.len(), 2);
         assert_eq!(channels[0].name, "Globo, SP");
         assert_eq!(channels[0].group, "News");
         assert_eq!(channels[0].logo, "http://logo/1.png");
-        assert_eq!(channels[0].url, "http://srv/live/u%40x/p/101.m3u8");
         assert_eq!(channels[1].group, "Sports 'HD'");
-        assert_eq!(channels[1].url, "http://srv/live/u%40x/p/202.m3u8");
+        let urls: Vec<String> = channels
+            .iter()
+            .map(|channel| stream_url(&channel.url, "u@x", "p"))
+            .collect();
+        assert_eq!(
+            urls,
+            [
+                "http://srv/live/u%40x/p/101.m3u8",
+                "http://srv/live/u%40x/p/202.m3u8"
+            ]
+        );
+    }
+
+    #[test]
+    fn stored_line_ups_hold_no_credentials() {
+        let streams = live_streams(r#"[{"name": "One", "stream_id": 1}]"#).unwrap();
+        let json_api = live_m3u("http://srv", "ts", &[], &streams);
+        let export = without_credentials(
+            "#EXTM3U\n#EXTINF:-1,One\nhttp://srv/joe/s3cr%3Ft/1\n#EXTINF:-1,Two\nhttp://srv/live/joe/s3cr?t/2.ts\n",
+            "joe",
+            "s3cr?t",
+        );
+        for m3u in [&json_api, &export] {
+            assert!(!m3u.contains("joe") && !m3u.contains("s3cr"), "{m3u}");
+        }
+        let played: Vec<String> = parse_m3u_content(&export)
+            .entries
+            .iter()
+            .map(|channel| stream_url(&channel.url, "joe", "s3cr?t"))
+            .collect();
+        assert_eq!(
+            played,
+            [
+                "http://srv/joe/s3cr%3Ft/1",
+                "http://srv/live/joe/s3cr%3Ft/2.ts"
+            ]
+        );
+    }
+
+    #[test]
+    fn hostile_panel_fields_stay_on_their_lines() {
+        let streams = r#"[
+            {"name": "Bad id", "stream_id": "7\nav://lavfi:sine"},
+            {"name": "Path id", "stream_id": "../7"},
+            {"name": "Float id", "stream_id": 7.5},
+            {"name": "N\r\nav://lavfi:sine", "stream_id": 8, "stream_icon": "a\nb",
+             "epg_channel_id": "c\rd", "category_id": "1"}
+        ]"#;
+        let categories = r#"[{"category_id": "1", "category_name": "G\nfdclose://0"}]"#;
+        let categories = first_entries(categories, |_: &Category| true).unwrap();
+        let streams = live_streams(streams).unwrap();
+        let m3u = live_m3u("http://srv\n/x", "ts", &categories, &streams);
+        assert_eq!(m3u.lines().count(), 3, "{m3u}");
+        let channels = parse_m3u_content(&m3u).entries;
+        assert_eq!(channels.len(), 1, "{m3u}");
+        assert_eq!(channels[0].url, "http://srv /x/live/{credentials}/8.ts");
     }
 
     #[test]
@@ -363,7 +448,7 @@ mod tests {
         assert_eq!(streams.len(), 100_001);
         assert_eq!(streams[0].stream_id, "0");
 
-        let m3u = live_m3u("http://srv", "u", "p", "ts", &[], &streams);
+        let m3u = live_m3u("http://srv", "ts", &[], &streams);
         let channels = parse_m3u_content(&m3u);
         assert_eq!(
             (channels.entries.len(), channels.truncated),

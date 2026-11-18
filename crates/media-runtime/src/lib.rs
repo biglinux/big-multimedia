@@ -15,6 +15,8 @@ pub use big_media_data::i18n;
 /// Music library scanning, metadata, web clients (in `big-media-data`).
 #[cfg(feature = "audio")]
 pub use big_media_data::library;
+/// ffprobe reports and the protocols ffmpeg may open (in `big-media-data`).
+pub use big_media_data::media_probe;
 // Root paths for consumers: `big_media_runtime::Error` / `Result<T>`.
 pub use big_media_data::{Error, Result};
 /// Media utilities: playlist handling, metadata probing, thumbnails.

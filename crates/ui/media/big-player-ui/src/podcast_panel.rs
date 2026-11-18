@@ -671,14 +671,7 @@ fn present_add_feed_dialog(root: &gtk::Box, sender: &ComponentSender<PodcastPane
 
 fn accepted_podcast_feed_url(url: &str) -> Option<String> {
     let url = url.trim();
-    if !url.starts_with("http://") && !url.starts_with("https://") {
-        return None;
-    }
-    let (_, target) = url.split_once("://")?;
-    if target.trim().is_empty() {
-        return None;
-    }
-    Some(url.to_owned())
+    big_os_kit::url::is_http_url(url).then(|| url.to_owned())
 }
 
 #[cfg(test)]

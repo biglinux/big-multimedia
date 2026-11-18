@@ -467,14 +467,8 @@ fn validate_url(url: &str) -> Result<(), String> {
     if url.len() > 65536 || url.chars().any(|ch| ch.is_control() || ch.is_whitespace()) {
         return Err("Invalid HTTP URL".into());
     }
-    let (scheme, authority) = url
-        .split_once("://")
-        .ok_or("HTTP URL requires a scheme and authority")?;
-    if !(scheme.eq_ignore_ascii_case("https") || scheme.eq_ignore_ascii_case("http"))
-        || authority.is_empty()
-        || authority.starts_with('/')
-    {
-        return Err("Only HTTP and HTTPS URLs are supported".into());
+    if !crate::url::is_http_url(url) {
+        return Err("Only HTTP and HTTPS URLs with a host are supported".into());
     }
     Ok(())
 }

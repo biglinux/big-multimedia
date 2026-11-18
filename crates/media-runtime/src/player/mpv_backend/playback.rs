@@ -6,16 +6,12 @@ use std::sync::atomic::Ordering;
 use log::error;
 
 use super::MpvBackend;
-use super::types::AudioCacheProfile;
+use super::types::{AudioCacheProfile, TargetSource};
 
 /// Fallback audio policy only. Panels with known intent override this heuristic.
 #[must_use]
 pub fn profile_for_uri(target: &str) -> Option<AudioCacheProfile> {
-    let scheme = big_os_kit::url::uri_scheme(target)?;
-    if !["http", "https", "rtsp", "rtmp", "mms"]
-        .iter()
-        .any(|s| scheme.eq_ignore_ascii_case(s))
-    {
+    if !big_os_kit::url::is_stream_uri(target) {
         return None;
     }
     let path = big_os_kit::url::uri_path(target);
@@ -36,6 +32,21 @@ pub fn profile_for_uri(target: &str) -> Option<AudioCacheProfile> {
             AudioCacheProfile::Radio
         },
     )
+}
+
+/// Whether mpv may open `target` named by `source`; a refusal is logged.
+fn admits(source: TargetSource, target: &str) -> bool {
+    let TargetSource::List(origin) = source else {
+        return true;
+    };
+    let admitted = big_os_kit::url::is_list_target(target, origin);
+    if !admitted {
+        log::warn!(
+            "Refused a list entry: {}",
+            big_os_kit::url::MediaLogTarget(target)
+        );
+    }
+    admitted
 }
 
 impl MpvBackend {
@@ -63,7 +74,16 @@ impl MpvBackend {
         }
     }
     /// Per-file pause is supplied before load, never Play immediately followed by Pause.
-    pub fn load_audio_paused(&self, path: &str, profile: AudioCacheProfile, paused: bool) {
+    pub fn load_audio_paused(
+        &self,
+        path: &str,
+        source: TargetSource,
+        profile: AudioCacheProfile,
+        paused: bool,
+    ) {
+        if !admits(source, path) {
+            return;
+        }
         if self.audio_only {
             self.set_audio_cache_profile(profile);
         }
@@ -77,14 +97,25 @@ impl MpvBackend {
         }
     }
 
-    pub fn load_file_with_audio_profile(&self, path: &str, profile: AudioCacheProfile) {
+    pub fn load_file_with_audio_profile(
+        &self,
+        path: &str,
+        source: TargetSource,
+        profile: AudioCacheProfile,
+    ) {
+        if !admits(source, path) {
+            return;
+        }
         if self.audio_only {
             self.set_audio_cache_profile(profile);
         }
         self.load_inner(path);
     }
 
-    pub fn load_file(&self, path: &str) {
+    pub fn load_file(&self, path: &str, source: TargetSource) {
+        if !admits(source, path) {
+            return;
+        }
         if self.audio_only {
             self.set_audio_cache_profile(profile_for_uri(path).unwrap_or(AudioCacheProfile::Music));
         }
@@ -105,7 +136,10 @@ impl MpvBackend {
     /// Load `path` in place of the playlist, shown as `title` (an IPTV
     /// channel's name, where the URL ends in `560.m3u8`). Per-file option:
     /// the next file has its own title again.
-    pub fn load_file_titled(&self, path: &str, title: &str) {
+    pub fn load_file_titled(&self, path: &str, source: TargetSource, title: &str) {
+        if !admits(source, path) {
+            return;
+        }
         self.loading.store(true, Ordering::Relaxed);
         // `%N%` takes the next N bytes as they are: a comma or `=` in the
         // name stays in it.
@@ -119,7 +153,10 @@ impl MpvBackend {
         }
     }
 
-    pub fn load_file_append(&self, path: &str) {
+    pub fn load_file_append(&self, path: &str, source: TargetSource) {
+        if !admits(source, path) {
+            return;
+        }
         if let Err(e) = self.queue_command("loadfile", &[path, "append-play"]) {
             error!(
                 "Failed to append {}: {e}",
@@ -130,8 +167,8 @@ impl MpvBackend {
 
     /// Append `paths` in order, after whatever the playlist holds when mpv
     /// gets to them.
-    pub fn load_files_append(&self, paths: &[String]) {
-        self.load_files_at(paths, None);
+    pub fn load_files_append(&self, paths: &[String], source: TargetSource) {
+        self.load_files_at(paths, source, None);
     }
 
     /// Insert `paths` in order at playlist `index`, or append them with
@@ -147,7 +184,12 @@ impl MpvBackend {
     /// that timing. The parser splits lines and strips leading blanks and a
     /// line-final CR, so a list holding such a path goes one `loadfile` at a
     /// time, which mpv runs in order.
-    pub fn load_files_at(&self, paths: &[String], index: Option<usize>) {
+    pub fn load_files_at(&self, paths: &[String], source: TargetSource, index: Option<usize>) {
+        let paths: Vec<String> = paths
+            .iter()
+            .filter(|path| admits(source, path))
+            .cloned()
+            .collect();
         if paths.is_empty() {
             return;
         }

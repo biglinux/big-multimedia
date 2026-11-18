@@ -33,9 +33,11 @@ use big_relm4_components::task::spawn_blocking_result;
 use relm4::{Component, ComponentParts, ComponentSender};
 
 use crate::i18n::i18n;
+use big_os_kit::url::ListOrigin;
+
 use crate::media::iptv::{
-    IptvChannel, IptvProvider, IptvProviderStore, MAX_PLAYLIST_ENTRIES, PlaylistEntries,
-    parse_m3u_content,
+    IptvChannel, IptvKind, IptvProvider, IptvProviderStore, MAX_PLAYLIST_ENTRIES, PlaylistEntries,
+    left_out_notice, parse_channel_list,
 };
 
 use channel_list::ChannelListView;
@@ -73,8 +75,13 @@ pub enum VideoIptvBrowserInput {
 /// Intents emitted by the browser for the shell to act on.
 #[derive(Debug)]
 pub enum VideoIptvBrowserOutput {
-    /// Play this stream URL (with a display title) in the main player.
-    PlayChannel { url: String, title: String },
+    /// Play this stream URL (with a display title) in the main player; the
+    /// provider's list named it.
+    PlayChannel {
+        url: String,
+        title: String,
+        origin: ListOrigin,
+    },
 }
 
 /// Relm4 IPTV browser component.
@@ -229,7 +236,17 @@ impl Component for VideoIptvBrowser {
             VideoIptvBrowserInput::ManageProviders => self.open_providers_dialog(root, &sender),
             VideoIptvBrowserInput::ProvidersChanged => self.on_providers_changed(&sender),
             VideoIptvBrowserInput::PlayChannel { url, title } => {
-                let _ = sender.output(VideoIptvBrowserOutput::PlayChannel { url, title });
+                let Some(source) = self.selected_source() else {
+                    return;
+                };
+                let url = match &source {
+                    IptvKind::Xtream {
+                        username, password, ..
+                    } => xtream::stream_url(&url, username, password),
+                    IptvKind::M3uUrl { .. } | IptvKind::M3uLocal { .. } => url,
+                };
+                let origin = source.list_origin();
+                let _ = sender.output(VideoIptvBrowserOutput::PlayChannel { url, title, origin });
             }
             VideoIptvBrowserInput::FavoriteToggled => self.list_view.reload_favorites(),
             VideoIptvBrowserInput::CachedResolved {
@@ -238,6 +255,7 @@ impl Component for VideoIptvBrowser {
             } => {
                 if generation == self.load_generation {
                     self.list_view.set_channels(channels);
+                    self.rename_xtream_favorites();
                     self.status
                         .set_label(&i18n("Showing cached channels — updating…"));
                 }
@@ -251,6 +269,27 @@ impl Component for VideoIptvBrowser {
 }
 
 impl VideoIptvBrowser {
+    fn selected_source(&self) -> Option<IptvKind> {
+        let index = self.provider_dropdown.selected() as usize;
+        let store = self.store.borrow();
+        store
+            .providers
+            .get(index)
+            .map(|provider| provider.source.clone())
+    }
+
+    /// Stars saved under a stream URL with the Xtream account's credentials
+    /// in it move to the stored URL the list shows.
+    fn rename_xtream_favorites(&self) {
+        if let Some(IptvKind::Xtream {
+            username, password, ..
+        }) = self.selected_source()
+        {
+            self.list_view
+                .rename_favorites(|url| xtream::stream_url(url, &username, &password));
+        }
+    }
+
     /// Refresh the dropdown model from the current store, selecting the first
     /// provider if any exist.
     fn repopulate_provider_dropdown(&self) {
@@ -310,7 +349,12 @@ impl VideoIptvBrowser {
             self.status.set_label(&i18n("Reloading channels…"));
         } else {
             self.status.set_label(&i18n("Loading channels…"));
-            spawn_cached_load(provider_id.clone(), generation, sender);
+            spawn_cached_load(
+                provider_id.clone(),
+                provider.source.list_origin(),
+                generation,
+                sender,
+            );
         }
         spawn_network_load(provider, provider_id, generation, sender);
     }
@@ -327,15 +371,17 @@ impl VideoIptvBrowser {
         }
         match channels {
             Ok(channels) => {
-                self.list_view.set_channels(channels.entries);
+                let mut status = Vec::new();
                 if channels.truncated {
-                    self.status.set_label(
-                        &i18n("Showing the first {} channels; the list has more.")
+                    status.push(
+                        i18n("Showing the first {} channels; the list has more.")
                             .replace("{}", &MAX_PLAYLIST_ENTRIES.to_string()),
                     );
-                } else {
-                    self.status.set_label("");
                 }
+                status.extend(left_out_notice(false, channels.skipped));
+                self.list_view.set_channels(channels.entries);
+                self.rename_xtream_favorites();
+                self.status.set_label(&status.join(" "));
             }
             Err(error) => self.status.set_label(&fetch_error_text(&error)),
         }
@@ -376,12 +422,15 @@ fn fetch_error_text(error: &FetchError) -> String {
 /// component tagged with `generation`.
 fn spawn_cached_load(
     provider_id: String,
+    origin: ListOrigin,
     generation: u64,
     sender: &ComponentSender<VideoIptvBrowser>,
 ) {
     let sender = sender.clone();
     spawn_blocking_result(
-        move || cache::read(&provider_id).map(|content| parse_m3u_content(&content).entries),
+        move || {
+            cache::read(&provider_id).map(|content| parse_channel_list(&content, origin).entries)
+        },
         move |channels| {
             if let Some(channels) = channels {
                 sender.input(VideoIptvBrowserInput::CachedResolved {

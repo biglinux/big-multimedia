@@ -272,8 +272,7 @@ impl TvLink {
                 &i18n("BigNetScreen is unavailable"),
             )
         })?;
-        let remote = media.source.starts_with("http://") || media.source.starts_with("https://");
-        if remote {
+        if big_os_kit::url::is_http_url(&media.source) {
             let content_type = if media.audio {
                 "audio/mpeg"
             } else {

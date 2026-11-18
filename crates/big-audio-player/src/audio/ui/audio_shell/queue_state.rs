@@ -68,12 +68,19 @@ impl AudioShell {
                 .lock()
                 .unwrap_or_else(PoisonError::into_inner) = 0.0;
         } else if let Some(mpv) = &self.mpv {
-            let profile = if self.podcast_mode {
-                AudioCacheProfile::Podcast
+            // The music queue keeps entries of imported playlists, saved
+            // queues included, so every queue load passes the list check.
+            let (profile, origin) = if self.podcast_mode {
+                (AudioCacheProfile::Podcast, ListOrigin::Network)
             } else {
-                AudioCacheProfile::Music
+                (AudioCacheProfile::Music, ListOrigin::LocalFile)
             };
-            mpv.load_audio_paused(&path, profile, status == PlaybackStatus::Paused);
+            mpv.load_audio_paused(
+                &path,
+                TargetSource::List(origin),
+                profile,
+                status == PlaybackStatus::Paused,
+            );
         }
         self.sync_now_playing();
     }
@@ -173,13 +180,13 @@ impl AudioShell {
                 let mut resolved = Vec::new();
                 let mut failed = false;
                 let mut truncated = false;
+                let mut skipped = 0;
                 for path in paths {
                     if crate::media::playlist::is_playlist_file(&path) {
-                        match crate::audio::playlist_import::parse_playlist_file_for_import(
-                            Path::new(&path),
-                        ) {
+                        match crate::media::playlist::parse_playlist_file(Path::new(&path)) {
                             Ok(list) => {
                                 truncated |= list.truncated;
+                                skipped += list.skipped;
                                 resolved.extend(list.entries);
                             }
                             Err(_) => failed = true,
@@ -188,14 +195,15 @@ impl AudioShell {
                         resolved.push(path);
                     }
                 }
-                (resolved, failed, truncated)
+                (resolved, failed, truncated, skipped)
             },
-            move |(paths, failed, truncated)| {
+            move |(paths, failed, truncated, skipped)| {
                 let _ = input.send(AudioShellInput::OpenPathsResolved {
                     generation,
                     paths,
                     failed,
                     truncated,
+                    skipped,
                 });
             },
         );
