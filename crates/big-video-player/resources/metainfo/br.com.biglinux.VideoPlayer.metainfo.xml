@@ -3,7 +3,7 @@
   <id>br.com.biglinux.VideoPlayer</id>
   <metadata_license>CC0-1.0</metadata_license>
   <project_license>GPL-3.0-or-later</project_license>
-  <developer id="com.biglinux">
+  <developer id="br.com.biglinux">
     <name>BigLinux</name>
   </developer>
   <name>Big Video Player</name>
@@ -71,6 +71,10 @@
     <p xml:lang="zh_TW">Big Video Player 是一款以 libadwaita 打造的影片播放器，使用 Rust 並建構於 mpv 與 BigLinux 的共用元件之上。它支援透過 VAAPI、VDPAU 與 NVDEC 進行硬體加速解碼、MPRIS 控制、字幕軌，以及 BigLinux 通知堆疊。常見的容器格式包括 MP4、MKV、WebM、MOV 與 AVI。</p>
   </description>
   <launchable type="desktop-id">br.com.biglinux.VideoPlayer.desktop</launchable>
+  <provides>
+    <binary>big-video-player</binary>
+  </provides>
+  <translation type="gettext">big-media-runtime</translation>
   <categories>
     <category>AudioVideo</category>
     <category>Video</category>
@@ -176,6 +180,7 @@
   </keywords>
   <url type="homepage">https://github.com/biglinux/big-multimedia</url>
   <url type="bugtracker">https://github.com/biglinux/big-multimedia/issues</url>
+  <url type="vcs-browser">https://github.com/biglinux/big-multimedia</url>
   <screenshots>
     <screenshot type="default">
       <caption>Main window playing a video</caption>
