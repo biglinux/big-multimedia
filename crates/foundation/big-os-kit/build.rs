@@ -4,6 +4,7 @@
 //! and exports each one.
 
 fn main() {
+    // allow-noisy-log: cargo build directives, not log output.
     println!("cargo::rerun-if-changed=build.rs");
     println!(
         "cargo::metadata=allocator_symbols=malloc,calloc,realloc,free,posix_memalign,\
