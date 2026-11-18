@@ -721,6 +721,11 @@ impl Component for VideoShell {
                     }
                 }
                 VideoShellInput::PreferencesClosed => self.sync_screen_inhibit(window_ref),
+                VideoShellInput::VolumeMaxChanged => {
+                    let maximum = f64::from(self.settings.volume_max_percent());
+                    self.controls
+                        .emit(VideoControlsBarInput::SetMaxVolume(maximum));
+                }
                 VideoShellInput::ShowAppearance => {
                     if let Some(root) = window_ref {
                         self.show_appearance(root);

@@ -126,6 +126,19 @@ pub fn build_volume_popover(
     (popover, scale)
 }
 
+/// Give a scale from [`build_volume_popover`] a new top. The value is left to
+/// the caller, which knows whether moving it is a request or a mirror.
+pub fn set_volume_maximum(scale: &gtk::Scale, maximum_volume_percent: f64) {
+    scale.adjustment().set_upper(maximum_volume_percent);
+    // GtkScale places a mark only when it is added, not when the range changes.
+    scale.clear_marks();
+    scale.add_mark(
+        volume_reference_mark_percent(),
+        popover_scale_mark_position(),
+        None,
+    );
+}
+
 /// The mouse wheel over a control moves its slider a `step` a notch, up for
 /// more, without opening anything: the slider in the popover already takes
 /// the wheel, the control it hangs from did not.

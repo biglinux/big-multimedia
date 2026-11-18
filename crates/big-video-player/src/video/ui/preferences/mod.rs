@@ -23,13 +23,15 @@ mod subtitles;
 mod video;
 
 /// Present the preferences over `parent`. `mpv` is `None` before playback
-/// starts; rows then only store their value. `on_restore_defaults` receives the
-/// dialog so the confirmation can stack on it and close it afterwards.
+/// starts; rows then only store their value. `volume_max_changed` fires after
+/// mpv took a new Maximum Volume. `on_restore_defaults` receives the dialog so
+/// the confirmation can stack on it and close it afterwards.
 /// Returns the presented dialog, for callers that react to it closing.
 pub fn show_preferences(
     parent: &impl IsA<gtk::Widget>,
     settings: &Settings,
     mpv: Option<Arc<MpvBackend>>,
+    volume_max_changed: impl Fn() + 'static,
     on_restore_defaults: impl Fn(&adw::PreferencesDialog) + 'static,
 ) -> adw::PreferencesDialog {
     let mpv = mpv.as_ref();
@@ -49,7 +51,8 @@ pub fn show_preferences(
         }
     };
     let (advanced_page, refresh_preset_rows) = advanced::page(settings, mpv);
-    let audio_page = create_player_audio_page(settings, audio_preference_actions(mpv));
+    let audio_page =
+        create_player_audio_page(settings, audio_preference_actions(mpv, volume_max_changed));
     let pages = [
         general::page(settings, mpv, restore),
         video::page(settings, mpv, refresh_preset_rows),
@@ -156,7 +159,10 @@ fn live_str(
     }
 }
 
-fn audio_preference_actions(mpv: Option<&Arc<MpvBackend>>) -> Option<PlayerAudioPreferenceActions> {
+fn audio_preference_actions(
+    mpv: Option<&Arc<MpvBackend>>,
+    volume_max_changed: impl Fn() + 'static,
+) -> Option<PlayerAudioPreferenceActions> {
     let mpv = mpv.cloned()?;
     Some(PlayerAudioPreferenceActions::new(
         {
@@ -169,7 +175,10 @@ fn audio_preference_actions(mpv: Option<&Arc<MpvBackend>>) -> Option<PlayerAudio
         },
         {
             let mpv = Arc::clone(&mpv);
-            move |value| mpv.set_volume_max(value)
+            move |value| {
+                mpv.set_volume_max(value);
+                volume_max_changed();
+            }
         },
         {
             let mpv = Arc::clone(&mpv);

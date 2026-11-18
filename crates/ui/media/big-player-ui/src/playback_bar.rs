@@ -17,7 +17,7 @@ use big_media_components::playback::audio_transport::{BigAudioTransport, BigAudi
 use big_media_components::playback::queue::RepeatMode;
 
 use big_media_components::player_chrome::{
-    build_speed_popover, build_voice_popover, build_volume_popover,
+    build_speed_popover, build_voice_popover, build_volume_popover, set_volume_maximum,
     setup_exclusive_hover_popover_group,
 };
 
@@ -326,7 +326,7 @@ impl Component for AudioPlaybackBar {
                 self.with_guard(|| scale.set_value(value));
             }
             AudioPlaybackBarInput::SetMaxVolume(maximum) => {
-                self.volume_scale.adjustment().set_upper(maximum);
+                set_volume_maximum(&self.volume_scale, maximum);
                 if self.volume_scale.value() > maximum {
                     self.volume_scale.set_value(maximum);
                 }

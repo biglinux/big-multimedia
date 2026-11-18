@@ -66,6 +66,8 @@ pub enum VideoShellInput {
     /// The preferences dialog closed: re-read settings the shell applies
     /// itself (the screen-awake inhibitor).
     PreferencesClosed,
+    /// The Maximum Volume preference changed while the player runs.
+    VolumeMaxChanged,
     /// Confirm + reset all settings to defaults (Settings menu).
     ShowRestoreDefaults,
     /// Restore-defaults confirmed in the alert dialog: reset the store.
