@@ -98,6 +98,7 @@ name = "big-app-kit-core"
 version = "0.1.0"
 dependencies = [
  "big-os-kit",
+ "libc",
  "log",
  "serde_json",
 ]
