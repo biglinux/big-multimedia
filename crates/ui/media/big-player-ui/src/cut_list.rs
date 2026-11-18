@@ -2,6 +2,10 @@
 //! marked cuts" over them. No GTK; each trim bar renders a [`CutList`] and the
 //! host shell seeks where [`play_only_cuts_seek`] says.
 
+/// The shortest cut, in milliseconds: anything shorter would end within
+/// [`PLAY_ONLY_CUTS_TOLERANCE`] of its start and never play.
+pub const MIN_CUT_MILLISECONDS: f64 = 100.0;
+
 /// How far from a cut's edge, in seconds, the playhead still counts as on it;
 /// position ticks and seeks land a few milliseconds off.
 const PLAY_ONLY_CUTS_TOLERANCE: f64 = 0.05;
@@ -48,21 +52,16 @@ impl CutList {
 
     /// Mark a point. The first mark waits; the second commits a cut spanning
     /// both, in either order. Returns true when a cut was committed. A second
-    /// mark at the first one's time is ignored and the first keeps waiting.
+    /// mark too close to the first is ignored and the first keeps waiting.
     pub fn mark(&mut self, time: f64) -> bool {
         let time = self.clamp(time);
         let Some(first) = self.pending else {
             self.pending = Some(time);
             return false;
         };
-        let (start, end) = if time >= first {
-            (first, time)
-        } else {
-            (time, first)
-        };
-        if end <= start {
+        let Some((start, end)) = cut_span(first, time) else {
             return false;
-        }
+        };
         let id = self.next_id;
         self.next_id += 1;
         self.cuts.push(Cut { id, start, end });
@@ -73,13 +72,11 @@ impl CutList {
 
     /// Replace the times of cut `id`, in either order; a cut it then overlaps
     /// merges with it. Returns false when `id` is unknown or the cut would be
-    /// empty.
+    /// shorter than [`MIN_CUT_MILLISECONDS`].
     pub fn set_cut_times(&mut self, id: u64, a: f64, b: f64) -> bool {
-        let start = self.clamp(a.min(b));
-        let end = self.clamp(a.max(b));
-        if end <= start {
+        let Some((start, end)) = cut_span(self.clamp(a), self.clamp(b)) else {
             return false;
-        }
+        };
         let Some(cut) = self.cuts.iter_mut().find(|cut| cut.id == id) else {
             return false;
         };
@@ -127,6 +124,16 @@ impl CutList {
             time.max(0.0)
         }
     }
+}
+
+/// `a` and `b` as a cut's `(start, end)`, in either order, or `None` when they
+/// are less than [`MIN_CUT_MILLISECONDS`] apart.
+#[must_use]
+pub fn cut_span(a: f64, b: f64) -> Option<(f64, f64)> {
+    let (start, end) = if a <= b { (a, b) } else { (b, a) };
+    // Whole milliseconds, so 10.0 to 10.1 typed in the dialog is long enough.
+    let milliseconds = ((end - start) * 1000.0).round();
+    (milliseconds >= MIN_CUT_MILLISECONDS).then_some((start, end))
 }
 
 /// Where "Play only marked cuts" seeks from `position`: the next cut's start at
@@ -190,6 +197,22 @@ mod tests {
         assert!(!list.mark(20.0));
         assert_eq!(list.pending(), Some(20.0));
         assert!(list.cuts().is_empty());
+    }
+
+    #[test]
+    fn short_cut_refused() {
+        let mut list = list(100.0);
+        list.mark(20.0);
+        assert!(!list.mark(20.05));
+        assert_eq!(list.pending(), Some(20.0));
+        assert!(list.mark(20.1));
+        assert_eq!(spans(&list), vec![(20.0, 20.1)]);
+        let id = list.cuts()[0].id;
+        assert!(!list.set_cut_times(id, 30.0, 30.09));
+        assert!(list.set_cut_times(id, 10.1, 10.0));
+        assert_eq!(spans(&list), vec![(10.0, 10.1)]);
+        assert_eq!(cut_span(5.0, 5.0), None);
+        assert_eq!(cut_span(f64::NAN, 5.0), None);
     }
 
     #[test]
