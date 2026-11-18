@@ -7,7 +7,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: big-media-runtime 0.1.0\n"
 "Report-Msgid-Bugs-To: https://github.com/biglinux/big-multimedia/issues\n"
-"POT-Creation-Date: 2026-11-18 05:54-0300\n"
+"POT-Creation-Date: 2026-11-18 07:48-0300\n"
 "PO-Revision-Date: 2026-10-23 00:15-0300\n"
 "Last-Translator: Automatically generated\n"
 "Language-Team: none\n"
@@ -122,7 +122,6 @@ msgid ""
 msgstr "Zobrazí aktuální obal jako rozmazané pozadí za ovládacími prvky zvuku"
 
 #: crates/big-audio-player/src/audio/keybindings.rs:14
-#: crates/big-audio-player/src/audio/ui/audio_shell/playback.rs:175
 #: crates/big-audio-player/src/audio/ui/audio_shell/tray.rs:20
 #: crates/big-video-player/src/video/keybindings.rs:15
 #: crates/big-video-player/src/video/ui/video_shell/input_gestures.rs:105
@@ -229,7 +228,7 @@ msgstr "Knihovna"
 #: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:112
 #: crates/big-video-player/src/video/ui/video_shell/input_gestures.rs:116
 #: crates/big-video-player/src/video/ui/video_shell/panel.rs:43
-#: crates/big-video-player/src/video/ui/video_shell/panel.rs:469
+#: crates/big-video-player/src/video/ui/video_shell/panel.rs:472
 #: crates/media-runtime/src/shared/audio_effects_eq.rs:90
 msgid "Equalizer"
 msgstr "Ekvalizér"
@@ -251,8 +250,8 @@ msgid "Toggle Repeat"
 msgstr "Přepnout opakování"
 
 #: crates/big-audio-player/src/audio/keybindings.rs:129
-#: crates/big-video-player/src/video/ui/video_shell/panel.rs:549
-#: crates/big-video-player/src/video/ui/video_shell/playback.rs:502
+#: crates/big-video-player/src/video/ui/video_shell/panel.rs:552
+#: crates/big-video-player/src/video/ui/video_shell/playback.rs:535
 msgid "Undo"
 msgstr "Zpět"
 
@@ -296,7 +295,7 @@ msgstr "Žádné"
 
 #: crates/big-audio-player/src/audio/library_grouping/group_by.rs:39
 #: crates/big-audio-player/src/audio/ui/library_tag_editor.rs:203
-#: crates/big-audio-player/src/audio/ui/track_list.rs:92
+#: crates/big-audio-player/src/audio/ui/track_list.rs:93
 msgid "Artist"
 msgstr "Interpret"
 
@@ -308,27 +307,27 @@ msgstr "Interpret alba"
 #: crates/big-audio-player/src/audio/library_grouping/group_by.rs:41
 #: crates/big-audio-player/src/audio/library_grouping/grouping.rs:82
 #: crates/big-audio-player/src/audio/ui/library_tag_editor.rs:204
-#: crates/big-audio-player/src/audio/ui/track_list.rs:93
+#: crates/big-audio-player/src/audio/ui/track_list.rs:94
 msgid "Album"
 msgstr "Album"
 
 #: crates/big-audio-player/src/audio/library_grouping/group_by.rs:42
 #: crates/big-audio-player/src/audio/library_grouping/grouping.rs:89
 #: crates/big-audio-player/src/audio/ui/library_tag_editor.rs:209
-#: crates/big-audio-player/src/audio/ui/track_list.rs:95
+#: crates/big-audio-player/src/audio/ui/track_list.rs:96
 msgid "Genre"
 msgstr "Žánr"
 
 #: crates/big-audio-player/src/audio/library_grouping/group_by.rs:43
 #: crates/big-audio-player/src/audio/library_grouping/grouping.rs:90
 #: crates/big-audio-player/src/audio/ui/library_tag_editor.rs:210
-#: crates/big-audio-player/src/audio/ui/track_list.rs:96
+#: crates/big-audio-player/src/audio/ui/track_list.rs:97
 msgid "Year"
 msgstr "Rok"
 
 #: crates/big-audio-player/src/audio/library_grouping/group_by.rs:44
 #: crates/big-audio-player/src/audio/ui/library_tag_editor/spec.rs:112
-#: crates/big-audio-player/src/audio/ui/track_list.rs:98
+#: crates/big-audio-player/src/audio/ui/track_list.rs:99
 #: crates/big-video-player/src/video/ui/media_details_dialog.rs:109
 #: crates/big-video-player/src/video/ui/media_details_dialog.rs:260
 #: crates/ui/media/big-media-components/src/media/file_metadata_dialog.rs:59
@@ -369,7 +368,7 @@ msgid "Various Artists"
 msgstr "Různí interpreti"
 
 #: crates/big-audio-player/src/audio/playlist_import.rs:16
-#: crates/big-video-player/src/video/ui/video_shell/playback.rs:289
+#: crates/big-video-player/src/video/ui/video_shell/playback.rs:322
 #, rust-format
 msgid "Only the first {} entries of the playlist were loaded."
 msgstr ""
@@ -402,7 +401,7 @@ msgstr "Vyrovnávat podle"
 #: crates/big-video-player/src/video/ui/preferences/general.rs:40
 #: crates/big-video-player/src/video/ui/preferences/video.rs:60
 #: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/header.rs:196
-#: crates/big-video-player/src/video/ui/video_shell/panel.rs:494
+#: crates/big-video-player/src/video/ui/video_shell/panel.rs:497
 msgid "Off"
 msgstr "Vypnuto"
 
@@ -458,29 +457,29 @@ msgstr "Jednobarevná ikona, která sleduje motiv panelu, s ovládáním přehr�
 #: crates/big-audio-player/src/audio/preferences.rs:227
 #: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:129
 #: crates/big-video-player/src/video/ui/preferences/mod.rs:39
-#: crates/big-video-player/src/video/ui/video_shell/panel.rs:572
+#: crates/big-video-player/src/video/ui/video_shell/panel.rs:575
 msgid "Preferences"
 msgstr "Předvolby"
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/chrome.rs:55
+#: crates/big-audio-player/src/audio/ui/audio_shell/chrome.rs:72
 #: crates/big-audio-player/src/audio/ui/audio_shell/component.rs:150
 #: crates/big-audio-player/src/audio/ui/audio_shell/component.rs:175
-#: crates/big-audio-player/src/audio/ui/audio_shell/mpris.rs:228
+#: crates/big-audio-player/src/audio/ui/audio_shell/mpris.rs:223
 msgid "Radio"
 msgstr "Rádio"
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/chrome.rs:151
+#: crates/big-audio-player/src/audio/ui/audio_shell/chrome.rs:168
 #: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:113
 msgid "Sleep Timer"
 msgstr "Časovač vypnutí"
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/chrome.rs:161
-#: crates/big-video-player/src/video/ui/video_shell/panel.rs:711
+#: crates/big-audio-player/src/audio/ui/audio_shell/chrome.rs:178
+#: crates/big-video-player/src/video/ui/video_shell/panel.rs:714
 msgid "Timer Active"
 msgstr "Časovač je aktivní"
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/chrome.rs:162
-#: crates/big-video-player/src/video/ui/video_shell/panel.rs:712
+#: crates/big-audio-player/src/audio/ui/audio_shell/chrome.rs:179
+#: crates/big-video-player/src/video/ui/video_shell/panel.rs:715
 msgid "Cancel Timer"
 msgstr "Zrušit časovač"
 
@@ -499,21 +498,18 @@ msgstr "Filtrovat soubory…"
 #: crates/big-audio-player/src/audio/ui/audio_shell/component.rs:147
 #: crates/big-audio-player/src/audio/ui/audio_shell/component.rs:174
 #: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/header.rs:22
-#: crates/big-video-player/src/video/ui/video_shell/component.rs:294
-#: crates/big-video-player/src/video/ui/video_shell/component.rs:298
+#: crates/big-video-player/src/video/ui/video_shell/component.rs:295
+#: crates/big-video-player/src/video/ui/video_shell/component.rs:299
 msgid "Files"
 msgstr "Soubory"
 
 #: crates/big-audio-player/src/audio/ui/audio_shell/component.rs:153
+#: crates/big-audio-player/src/audio/ui/audio_shell/component.rs:178
 msgid "Podcasts"
 msgstr "Podcasty"
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/component.rs:178
-msgid "Podcast"
-msgstr "Podcast"
-
 #: crates/big-audio-player/src/audio/ui/audio_shell/component.rs:230
-#: crates/big-audio-player/src/audio/ui/audio_shell/playback.rs:186
+#: crates/big-audio-player/src/audio/ui/audio_shell/playback.rs:187
 #: crates/big-audio-player/src/audio/ui/library_tag_editor.rs:299
 msgid "Album art"
 msgstr "Obal alba"
@@ -527,12 +523,13 @@ msgstr "Big Audio Player"
 msgid "Select a song to start"
 msgstr "Začněte výběrem skladby"
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/engine.rs:32
-#: crates/big-video-player/src/video/ui/video_shell/playback.rs:185
-msgid "Could not play this file — it may be unsupported or corrupt."
+#: crates/big-audio-player/src/audio/ui/audio_shell/engine.rs:37
+#, fuzzy, rust-format
+#| msgid "Could not play this file — it may be unsupported or corrupt."
+msgid "Could not play “{file}”: it may be unsupported or corrupt."
 msgstr "Tento soubor nelze přehrát — může být nepodporovaný nebo poškozený."
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/engine.rs:216
+#: crates/big-audio-player/src/audio/ui/audio_shell/engine.rs:222
 #, rust-format
 msgid ""
 "The playback engine could not start: {error}. Update or reinstall the mpv "
@@ -577,10 +574,10 @@ msgstr "Upravit výstřih"
 #: crates/big-audio-player/src/audio/ui/playlist_library_dialog/spec.rs:210
 #: crates/big-audio-player/src/audio/ui/unavailable_dialog.rs:258
 #: crates/big-video-player/src/video/ui/iptv/providers_dialog.rs:168
-#: crates/big-video-player/src/video/ui/menu_dialogs.rs:72
-#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:173
-#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:251
-#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:373
+#: crates/big-video-player/src/video/ui/menu_dialogs.rs:83
+#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:170
+#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:245
+#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:367
 #: crates/big-video-player/src/video/ui/video_shell/trim/run.rs:259
 #: crates/ui/generic/big-relm4-components/src/layout/name_prompt.rs:84
 #: crates/ui/media/big-player-ui/src/podcast_panel.rs:625
@@ -625,7 +622,7 @@ msgstr ""
 "ani importována."
 
 #: crates/big-audio-player/src/audio/ui/audio_shell/panel_intents.rs:121
-#: crates/big-audio-player/src/audio/ui/audio_shell/update.rs:233
+#: crates/big-audio-player/src/audio/ui/audio_shell/update.rs:231
 msgid ""
 "The playlist could not be read safely. Check its format and permissions."
 msgstr ""
@@ -683,32 +680,50 @@ msgstr "Pozice přetáčení"
 msgid "Cut timeline"
 msgstr "Časová osa výstřihů"
 
+#: crates/big-audio-player/src/audio/ui/audio_shell/playback.rs:175
+#: crates/big-audio-player/src/audio/ui/library_detail_interactions.rs:63
+#: crates/big-audio-player/src/audio/ui/library_tree/view.rs:359
+#: crates/big-audio-player/src/audio/ui/library_tree/view.rs:376
+#: crates/big-audio-player/src/audio/ui/playlist_interactions.rs:110
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/context_menu.rs:41
+#: crates/big-video-player/src/video/ui/video_controls_bar.rs:478
+#: crates/big-video-player/src/video/ui/video_controls_bar/zones.rs:579
+#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:170
+msgid "Play"
+msgstr "Přehrát"
+
 #: crates/big-audio-player/src/audio/ui/audio_shell/playback.rs:176
+#: crates/big-video-player/src/video/ui/video_controls_bar.rs:478
+#: crates/media-runtime/src/shared/tv_cast.rs:716
+msgid "Pause"
+msgstr "Pozastavit"
+
+#: crates/big-audio-player/src/audio/ui/audio_shell/playback.rs:177
 #: crates/big-video-player/src/video/ui/appearance/layout/buttons_page.rs:77
 #: crates/big-video-player/src/video/ui/video_controls_bar/seek_preview.rs:177
 #: crates/big-video-player/src/video/ui/video_controls_bar/zones.rs:578
 msgid "Previous"
 msgstr "Předchozí"
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/playback.rs:177
+#: crates/big-audio-player/src/audio/ui/audio_shell/playback.rs:178
 #: crates/big-video-player/src/video/ui/appearance/layout/buttons_page.rs:91
 #: crates/big-video-player/src/video/ui/video_controls_bar/seek_preview.rs:179
 #: crates/big-video-player/src/video/ui/video_controls_bar/zones.rs:581
 msgid "Next"
 msgstr "Další"
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/playback.rs:178
+#: crates/big-audio-player/src/audio/ui/audio_shell/playback.rs:179
 #: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/header.rs:200
 msgid "Shuffle"
 msgstr "Náhodně"
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/playback.rs:179
+#: crates/big-audio-player/src/audio/ui/audio_shell/playback.rs:180
 #: crates/big-video-player/src/video/ui/preferences/general.rs:37
 #: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/header.rs:201
 msgid "Repeat"
 msgstr "Opakovat"
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/playback.rs:180
+#: crates/big-audio-player/src/audio/ui/audio_shell/playback.rs:181
 #: crates/big-video-player/src/video/ui/appearance/layout/buttons_page.rs:56
 #: crates/big-video-player/src/video/ui/video_controls_bar.rs:568
 #: crates/ui/media/big-media-components/src/player_chrome.rs:319
@@ -719,30 +734,30 @@ msgstr "Opakovat"
 msgid "Volume"
 msgstr "Hlasitost"
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/playback.rs:181
+#: crates/big-audio-player/src/audio/ui/audio_shell/playback.rs:182
 #: crates/big-video-player/src/video/ui/appearance/layout/buttons_page.rs:63
 #: crates/big-video-player/src/video/ui/video_controls_bar/zones.rs:302
 #: crates/ui/media/big-media-components/src/player_chrome.rs:330
 msgid "Speed"
 msgstr "Rychlost"
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/playback.rs:182
+#: crates/big-audio-player/src/audio/ui/audio_shell/playback.rs:183
 #: crates/big-video-player/src/video/ui/appearance/layout/buttons_page.rs:70
 #: crates/big-video-player/src/video/ui/video_controls_bar/zones.rs:317
 msgid "Voice Enhancement"
 msgstr "Vylepšení hlasu"
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/playback.rs:183
+#: crates/big-audio-player/src/audio/ui/audio_shell/playback.rs:184
 #: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:114
 msgid "Trim & Export"
 msgstr "Oříznout a exportovat"
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/playback.rs:184
+#: crates/big-audio-player/src/audio/ui/audio_shell/playback.rs:185
 #: crates/ui/media/big-player-ui/src/lyrics_panel.rs:144
 msgid "Lyrics"
 msgstr "Text písně"
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/playback.rs:185
+#: crates/big-audio-player/src/audio/ui/audio_shell/playback.rs:186
 msgid "Status"
 msgstr "Stav"
 
@@ -759,7 +774,6 @@ msgid "Choose at most 100 playlist files per import"
 msgstr "Vyberte nejvýše 100 souborů seznamů skladeb na jeden import"
 
 #: crates/big-audio-player/src/audio/ui/audio_shell/playlist_library_dialog_actions.rs:156
-#: crates/big-audio-player/src/audio/ui/audio_shell/update.rs:140
 #: crates/big-audio-player/src/audio/ui/scan_progress.rs:47
 msgid "Imported"
 msgstr "Importováno"
@@ -833,7 +847,7 @@ msgid "Playlist export"
 msgstr "Export seznamu skladeb"
 
 #: crates/big-audio-player/src/audio/ui/audio_shell/playlist_library_dialog_actions.rs:409
-#: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:486
+#: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:474
 #: crates/big-audio-player/src/audio/ui/library_dialogs.rs:50
 #: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/menu_actions.rs:215
 #: crates/big-video-player/src/video/ui/video_shell/component.rs:136
@@ -864,85 +878,85 @@ msgstr ""
 msgid "Retry saving"
 msgstr "Zkusit uložit znovu"
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:42
+#: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:46
 msgid "A library scan is already running. Cancel it or wait for its result."
 msgstr ""
 "Prohledávání knihovny již probíhá. Zrušte je nebo počkejte na výsledek."
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:51
+#: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:55
 msgid "Library scanning is busy. Try again after another scan finishes."
 msgstr ""
 "Prohledávání knihovny je zaneprázdněno. Zkuste to znovu po dokončení jiného "
 "prohledávání."
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:61
+#: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:65
 msgid "Scanning library…"
 msgstr "Prohledávání knihovny…"
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:122
+#: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:126
 msgid "Watch folders could not be read. Previous settings were kept."
 msgstr "Sledované složky nelze přečíst. Předchozí nastavení bylo zachováno."
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:150
+#: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:154
 #, fuzzy
 #| msgid "The playlist could not be saved."
 msgid "The station could not be saved."
 msgstr "Seznam skladeb se nepodařilo uložit."
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:164
+#: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:168
 #, fuzzy
 #| msgid "The playlist could not be saved."
 msgid "The station could not be removed."
 msgstr "Seznam skladeb se nepodařilo uložit."
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:224
+#: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:233
 msgid "There is no Music or home folder to save recordings in."
 msgstr ""
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:270
-#: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:278
-#: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:307
+#: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:279
+#: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:287
+#: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:316
 msgid "Recording was not saved"
 msgstr "Nahrávka nebyla uložena"
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:283
+#: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:292
 msgid "Recording to"
 msgstr "Nahrávání do"
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:356
+#: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:365
 msgid "No episodes found"
 msgstr "Nebyly nalezeny žádné epizody"
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:461
+#: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:449
 msgid "Recording saved"
 msgstr "Nahrávka uložena"
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:467
+#: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:455
 msgid "The recording was saved and is ready to open."
 msgstr "Nahrávka byla uložena a je připravena k otevření."
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:471
+#: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:459
 #: crates/big-audio-player/src/audio/ui/library_tag_editor/spec.rs:125
 #: crates/big-video-player/src/video/ui/media_details_dialog.rs:81
 msgid "File"
 msgstr "Soubor"
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:475
+#: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:463
 msgid "Folder"
 msgstr "Složka"
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:481
+#: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:469
 #: crates/ui/media/big-media-components/src/media/file_metadata_dialog.rs:55
 msgid "Open Folder"
 msgstr "Otevřít složku"
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:486
+#: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:474
 #: crates/big-video-player/src/video/ui/appearance/layout/buttons_page.rs:35
 #: crates/big-video-player/src/video/ui/video_shell/actions.rs:126
 msgid "Open File"
 msgstr "Otevřít soubor"
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:539
+#: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:527
 #, fuzzy
 #| msgid "The playlist could not be saved."
 msgid "Saved radio stations could not be read."
@@ -956,32 +970,32 @@ msgstr "Zobrazit Big Audio Player"
 msgid "The TV's track is no longer in the queue."
 msgstr "Skladba z televize již ve frontě není."
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/update.rs:129
-msgid "Scan cancelled. Earlier confirmed imports were kept."
-msgstr "Prohledávání zrušeno. Dříve potvrzené importy byly zachovány."
+#: crates/big-audio-player/src/audio/ui/audio_shell/update.rs:130
+#, fuzzy
+#| msgid "Cancelled"
+msgid "Scan cancelled"
+msgstr "Zrušeno"
 
 #: crates/big-audio-player/src/audio/ui/audio_shell/update.rs:132
-msgid ""
-"Scan incomplete. Earlier confirmed imports were kept; check storage and "
-"retry."
-msgstr ""
-"Prohledávání nebylo dokončeno. Dříve potvrzené importy byly zachovány; "
-"zkontrolujte úložiště a zkuste to znovu."
+#, fuzzy
+#| msgid "Sample Rate"
+msgid "Scan incomplete"
+msgstr "Vzorkovací frekvence"
 
 #: crates/big-audio-player/src/audio/ui/audio_shell/update.rs:135
-msgid "Library scan finished."
-msgstr "Prohledávání knihovny dokončeno."
+#, fuzzy, rust-format
+#| msgid "tracks imported"
+msgid "{count} track imported"
+msgid_plural "{count} tracks imported"
+msgstr[0] "importovaných skladeb"
+msgstr[1] "importovaných skladeb"
+msgstr[2] "importovaných skladeb"
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/update.rs:142
-#: crates/big-audio-player/src/audio/ui/scan_progress.rs:48
-msgid "Skipped"
-msgstr "Přeskočeno"
-
-#: crates/big-audio-player/src/audio/ui/audio_shell/update.rs:148
+#: crates/big-audio-player/src/audio/ui/audio_shell/update.rs:146
 msgid "Library updated"
 msgstr "Knihovna aktualizována"
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/update.rs:150
+#: crates/big-audio-player/src/audio/ui/audio_shell/update.rs:148
 msgid ""
 "The operation was incomplete. Imported tracks were kept; check the folder "
 "and try again."
@@ -989,7 +1003,7 @@ msgstr ""
 "Operace nebyla dokončena. Importované skladby byly zachovány; zkontrolujte "
 "složku a zkuste to znovu."
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/update.rs:175
+#: crates/big-audio-player/src/audio/ui/audio_shell/update.rs:173
 msgid ""
 "The library could not be read. Previous results were kept; try searching "
 "again."
@@ -997,39 +1011,28 @@ msgstr ""
 "Knihovnu se nepodařilo přečíst. Předchozí výsledky byly zachovány; zkuste "
 "hledat znovu."
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/update.rs:195
+#: crates/big-audio-player/src/audio/ui/audio_shell/update.rs:193
 msgid "The playlist could not be changed. Your previous playlist was kept."
 msgstr ""
 "Seznam skladeb se nepodařilo změnit. Váš předchozí seznam skladeb byl "
 "zachován."
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/update.rs:200
+#: crates/big-audio-player/src/audio/ui/audio_shell/update.rs:198
 msgid "Playlists could not be opened. Please try again."
 msgstr "Seznamy skladeb se nepodařilo otevřít. Zkuste to prosím znovu."
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/update.rs:306
-#: crates/big-audio-player/src/audio/ui/audio_shell/update.rs:310
+#: crates/big-audio-player/src/audio/ui/audio_shell/update.rs:304
+#: crates/big-audio-player/src/audio/ui/audio_shell/update.rs:308
 msgid "tracks imported"
 msgstr "importovaných skladeb"
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/update.rs:316
+#: crates/big-audio-player/src/audio/ui/audio_shell/update.rs:314
 msgid ""
 "Playlist import was not fully completed. Previously confirmed imports were "
 "kept."
 msgstr ""
 "Import seznamu skladeb nebyl zcela dokončen. Dříve potvrzené importy byly "
 "zachovány."
-
-#: crates/big-audio-player/src/audio/ui/library_detail_interactions.rs:63
-#: crates/big-audio-player/src/audio/ui/library_tree/view.rs:359
-#: crates/big-audio-player/src/audio/ui/library_tree/view.rs:376
-#: crates/big-audio-player/src/audio/ui/playlist_interactions.rs:110
-#: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/context_menu.rs:41
-#: crates/big-video-player/src/video/ui/video_controls_bar.rs:478
-#: crates/big-video-player/src/video/ui/video_controls_bar/zones.rs:579
-#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:173
-msgid "Play"
-msgstr "Přehrát"
 
 #: crates/big-audio-player/src/audio/ui/library_detail_interactions.rs:73
 msgid "Play Next"
@@ -1066,14 +1069,14 @@ msgstr "Informace o skladbě"
 
 #: crates/big-audio-player/src/audio/ui/library_detail_interactions.rs:125
 #: crates/big-audio-player/src/audio/ui/playlist_interactions.rs:135
-#: crates/big-audio-player/src/audio/ui/track_list.rs:448
+#: crates/big-audio-player/src/audio/ui/track_list.rs:457
 #, rust-format
 msgid "{} of 5 stars"
 msgstr "{} z 5 hvězdiček"
 
 #: crates/big-audio-player/src/audio/ui/library_detail_interactions.rs:129
 #: crates/big-audio-player/src/audio/ui/playlist_interactions.rs:139
-#: crates/big-audio-player/src/audio/ui/track_list.rs:99
+#: crates/big-audio-player/src/audio/ui/track_list.rs:100
 #: crates/big-audio-player/src/audio/ui/unavailable_dialog.rs:351
 msgid "Rating"
 msgstr "Hodnocení"
@@ -1133,7 +1136,7 @@ msgid "Add Music Folder"
 msgstr "Přidat složku s hudbou"
 
 #: crates/big-audio-player/src/audio/ui/library_grouping_ui.rs:230
-#: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/metadata.rs:118
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/metadata.rs:123
 msgid "Filter…"
 msgstr "Filtrovat…"
 
@@ -1155,9 +1158,9 @@ msgstr ""
 "zachovány; zvolte nový název a zkuste to znovu."
 
 #: crates/big-audio-player/src/audio/ui/library_io.rs:77
-#: crates/big-video-player/src/video/ui/menu_dialogs.rs:240
-#: crates/big-video-player/src/video/ui/video_shell/component.rs:279
-#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:251
+#: crates/big-video-player/src/video/ui/menu_dialogs.rs:251
+#: crates/big-video-player/src/video/ui/video_shell/component.rs:280
+#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:245
 msgid "Open"
 msgstr "Otevřít"
 
@@ -1272,25 +1275,25 @@ msgstr ""
 "• Pomocí karty Soubory přehrajete soubory z libovolné složky, aniž byste je "
 "přidávali do knihovny"
 
-#: crates/big-audio-player/src/audio/ui/library_panel.rs:291
+#: crates/big-audio-player/src/audio/ui/library_panel.rs:296
 msgid "No Tracks"
 msgstr "Žádné skladby"
 
-#: crates/big-audio-player/src/audio/ui/library_panel.rs:292
+#: crates/big-audio-player/src/audio/ui/library_panel.rs:297
 msgid "Select an item on the left to view its tracks"
 msgstr "Vyberte položku vlevo a zobrazí se její skladby"
 
-#: crates/big-audio-player/src/audio/ui/library_panel.rs:445
+#: crates/big-audio-player/src/audio/ui/library_panel.rs:456
 msgid "Tracks"
 msgstr "Skladby"
 
-#: crates/big-audio-player/src/audio/ui/library_panel.rs:512
-#: crates/big-audio-player/src/audio/ui/library_panel.rs:513
+#: crates/big-audio-player/src/audio/ui/library_panel.rs:523
+#: crates/big-audio-player/src/audio/ui/library_panel.rs:524
 msgid "Back to library"
 msgstr "Zpět do knihovny"
 
 #: crates/big-audio-player/src/audio/ui/library_tag_editor.rs:202
-#: crates/big-audio-player/src/audio/ui/track_list.rs:91
+#: crates/big-audio-player/src/audio/ui/track_list.rs:92
 #: crates/big-video-player/src/video/ui/media_details_dialog.rs:105
 msgid "Title"
 msgstr "Název"
@@ -1325,7 +1328,7 @@ msgid "Searching…"
 msgstr "Hledání…"
 
 #: crates/big-audio-player/src/audio/ui/library_tag_editor/spec.rs:83
-#: crates/big-audio-player/src/audio/ui/track_list.rs:94
+#: crates/big-audio-player/src/audio/ui/track_list.rs:95
 #: crates/big-video-player/src/video/ui/media_details_dialog.rs:114
 #: crates/media-runtime/src/shared/sleep_timer.rs:29
 #: crates/ui/media/big-media-components/src/media/file_metadata_dialog.rs:57
@@ -1333,7 +1336,7 @@ msgid "Duration"
 msgstr "Délka"
 
 #: crates/big-audio-player/src/audio/ui/library_tag_editor/spec.rs:88
-#: crates/big-audio-player/src/audio/ui/track_list.rs:97
+#: crates/big-audio-player/src/audio/ui/track_list.rs:98
 #: crates/big-video-player/src/video/ui/media_details_dialog.rs:181
 #: crates/big-video-player/src/video/ui/media_details_dialog.rs:238
 #: crates/ui/media/big-media-components/src/media/file_metadata_dialog.rs:60
@@ -1368,14 +1371,12 @@ msgstr "Nebyla nalezena žádná nová data"
 
 #: crates/big-audio-player/src/audio/ui/library_tree/view.rs:162
 #: crates/big-audio-player/src/audio/ui/playlist_library_dialog/spec.rs:170
-#: crates/big-audio-player/src/audio/ui/playlist_panel.rs:103
 msgid "track"
 msgstr "skladba"
 
 #: crates/big-audio-player/src/audio/ui/library_tree/view.rs:164
 #: crates/big-audio-player/src/audio/ui/playlist_interactions.rs:292
 #: crates/big-audio-player/src/audio/ui/playlist_library_dialog/spec.rs:172
-#: crates/big-audio-player/src/audio/ui/playlist_panel.rs:105
 msgid "tracks"
 msgstr "skladby"
 
@@ -1396,13 +1397,13 @@ msgid "Explore Radio and Podcasts in the sidebar tabs"
 msgstr "Prozkoumejte Rádio a Podcasty na kartách postranního panelu"
 
 #: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:63
-#: crates/big-audio-player/src/audio/ui/playlist_panel.rs:94
-#: crates/big-audio-player/src/audio/ui/playlist_panel.rs:412
+#: crates/big-audio-player/src/audio/ui/playlist_panel.rs:95
+#: crates/big-audio-player/src/audio/ui/playlist_panel.rs:435
 #: crates/big-video-player/src/video/ui/appearance/layout/buttons_page.rs:42
 #: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/header.rs:24
-#: crates/big-video-player/src/video/ui/video_shell/component.rs:301
-#: crates/big-video-player/src/video/ui/video_shell/component.rs:305
-#: crates/big-video-player/src/video/ui/video_shell/playlist_panel.rs:24
+#: crates/big-video-player/src/video/ui/video_shell/component.rs:302
+#: crates/big-video-player/src/video/ui/video_shell/component.rs:306
+#: crates/big-video-player/src/video/ui/video_shell/playlist_panel.rs:26
 msgid "Playlist"
 msgstr "Seznam skladeb"
 
@@ -1447,7 +1448,7 @@ msgid "Smartphone"
 msgstr "Chytrý telefon"
 
 #: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:128
-#: crates/big-video-player/src/video/ui/video_shell/panel.rs:577
+#: crates/big-video-player/src/video/ui/video_shell/panel.rs:580
 #: crates/ui/media/big-player-ui/src/appearance/window.rs:76
 msgid "Appearance"
 msgstr "Vzhled"
@@ -1459,7 +1460,7 @@ msgid "Keyboard Shortcuts"
 msgstr "Klávesové zkratky"
 
 #: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:131
-#: crates/big-video-player/src/video/ui/video_shell/panel.rs:585
+#: crates/big-video-player/src/video/ui/video_shell/panel.rs:588
 msgid "About"
 msgstr "O aplikaci"
 
@@ -1468,43 +1469,58 @@ msgstr "O aplikaci"
 msgid "Name for the new playlist"
 msgstr "Název nového seznamu skladeb"
 
-#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:225
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:228
+#, fuzzy
+#| msgid "No episodes found"
+msgid "No episodes queued"
+msgstr "Nebyly nalezeny žádné epizody"
+
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:229
+msgid "Choose a podcast on the left to queue its episodes."
+msgstr ""
+
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:238
 msgid "Drop tracks here"
 msgstr "Sem přetáhněte skladby"
 
-#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:226
-msgid "or use ＋ to add from the library"
-msgstr "nebo je přidejte z knihovny pomocí ＋"
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:240
+msgid "Or double-click a track in the library, or select it and press Return."
+msgstr ""
 
-#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:252
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:267
 msgid "Welcome to Big Audio Player"
 msgstr "Vítá vás Big Audio Player"
 
-#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:260
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:275
+#, fuzzy
+#| msgid ""
+#| "Add a folder with your music files to get started.\n"
+#| "Supported formats: MP3, FLAC, OGG, M4A, OPUS, WAV and more."
 msgid ""
-"Add a folder with your music files to get started.\n"
+"Open music files to play them now, or add your music folder in the Music "
+"tab.\n"
 "Supported formats: MP3, FLAC, OGG, M4A, OPUS, WAV and more."
 msgstr ""
 "Začněte přidáním složky s hudebními soubory.\n"
 "Podporované formáty: MP3, FLAC, OGG, M4A, OPUS, WAV a další."
 
-#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:273
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:288
 msgid "Open Files"
 msgstr "Otevřít soubory"
 
-#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:274
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:289
 msgid "Open files"
 msgstr "Otevřít soubory"
 
-#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:284
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:299
 msgid "Open Audio Files"
 msgstr "Otevřít zvukové soubory"
 
-#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:286
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:301
 msgid "Audio Files"
 msgstr "Zvukové soubory"
 
-#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:310
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:325
 msgid "Quick tips"
 msgstr "Rychlé tipy"
 
@@ -1648,7 +1664,23 @@ msgstr "Odstranit seznam skladeb?"
 msgid "This will permanently delete"
 msgstr "Tímto trvale odstraníte"
 
-#: crates/big-audio-player/src/audio/ui/playlist_panel.rs:300
+#: crates/big-audio-player/src/audio/ui/playlist_panel.rs:101
+#, rust-format
+msgid "{count} track · {duration}"
+msgid_plural "{count} tracks · {duration}"
+msgstr[0] ""
+msgstr[1] ""
+msgstr[2] ""
+
+#: crates/big-audio-player/src/audio/ui/playlist_panel.rs:108
+#, rust-format
+msgid "{count} track"
+msgid_plural "{count} tracks"
+msgstr[0] ""
+msgstr[1] ""
+msgstr[2] ""
+
+#: crates/big-audio-player/src/audio/ui/playlist_panel.rs:309
 #: crates/ui/media/big-player-ui/src/podcast_panel.rs:481
 msgid "Loading…"
 msgstr "Načítání…"
@@ -1665,6 +1697,10 @@ msgstr "Čtení informací o médiích…"
 msgid "Examined"
 msgstr "Prozkoumáno"
 
+#: crates/big-audio-player/src/audio/ui/scan_progress.rs:48
+msgid "Skipped"
+msgstr "Přeskočeno"
+
 #: crates/big-audio-player/src/audio/ui/scan_progress.rs:53
 msgid ""
 "You can keep using the player. Cancelling keeps earlier confirmed imports "
@@ -1677,9 +1713,22 @@ msgstr ""
 msgid "Cancel scan"
 msgstr "Zrušit prohledávání"
 
-#: crates/big-audio-player/src/audio/ui/track_list.rs:451
+#: crates/big-audio-player/src/audio/ui/scan_progress.rs:173
+#, fuzzy
+#| msgid "Library"
+msgid "Library Scan"
+msgstr "Knihovna"
+
+#: crates/big-audio-player/src/audio/ui/track_list.rs:460
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/views/queue_view.rs:315
 msgid "Playing"
 msgstr "Přehrává se"
+
+#: crates/big-audio-player/src/audio/ui/track_list.rs:461
+#, fuzzy
+#| msgid "Pause"
+msgid "Paused"
+msgstr "Pozastavit"
 
 #: crates/big-audio-player/src/audio/ui/unavailable_dialog.rs:52
 msgid ""
@@ -1968,7 +2017,7 @@ msgstr "Ostatní"
 
 #: crates/big-video-player/src/video/keybindings.rs:282
 #: crates/big-video-player/src/video/ui/video_shell/actions.rs:138
-#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:154
+#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:155
 msgid "Open URL"
 msgstr "Otevřít URL"
 
@@ -1999,8 +2048,8 @@ msgid "Media information"
 msgstr "Informace o médiu"
 
 #: crates/big-video-player/src/video/ui/appearance/layout/buttons_page.rs:28
-#: crates/big-video-player/src/video/ui/video_shell/component.rs:270
-#: crates/big-video-player/src/video/ui/video_shell/component.rs:274
+#: crates/big-video-player/src/video/ui/video_shell/component.rs:271
+#: crates/big-video-player/src/video/ui/video_shell/component.rs:275
 msgid "Keep Above"
 msgstr "Vždy nahoře"
 
@@ -2675,7 +2724,7 @@ msgstr "Automaticky"
 #: crates/big-video-player/src/video/ui/media_details_dialog.rs:216
 #: crates/big-video-player/src/video/ui/video_shell/input_gestures.rs:112
 #: crates/big-video-player/src/video/ui/video_shell/panel.rs:39
-#: crates/big-video-player/src/video/ui/video_shell/panel.rs:440
+#: crates/big-video-player/src/video/ui/video_shell/panel.rs:443
 msgid "HDR"
 msgstr "HDR"
 
@@ -2685,7 +2734,7 @@ msgstr "HDR (TV)"
 
 #: crates/big-video-player/src/video/ui/media_adjust.rs:119
 #: crates/big-video-player/src/video/ui/video_shell/adjustments.rs:142
-#: crates/big-video-player/src/video/ui/video_shell/panel.rs:431
+#: crates/big-video-player/src/video/ui/video_shell/panel.rs:434
 #: crates/media-runtime/src/shared/audio_effects.rs:186
 msgid "Normal"
 msgstr "Normální"
@@ -2832,7 +2881,7 @@ msgstr "Obecné"
 
 #: crates/big-video-player/src/video/ui/media_details_dialog.rs:122
 #: crates/big-video-player/src/video/ui/video_shell/panel.rs:44
-#: crates/big-video-player/src/video/ui/video_shell/panel.rs:477
+#: crates/big-video-player/src/video/ui/video_shell/panel.rs:480
 msgid "Chapters"
 msgstr "Kapitoly"
 
@@ -2907,65 +2956,65 @@ msgstr "externí"
 msgid "Subtitle"
 msgstr "Titulky"
 
-#: crates/big-video-player/src/video/ui/menu_dialogs.rs:23
+#: crates/big-video-player/src/video/ui/menu_dialogs.rs:37
 #, fuzzy, rust-format
 #| msgid "Recording was not saved"
 msgid "The screenshot was not saved: {error}"
 msgstr "Nahrávka nebyla uložena"
 
-#: crates/big-video-player/src/video/ui/menu_dialogs.rs:54
+#: crates/big-video-player/src/video/ui/menu_dialogs.rs:69
 msgid "Go to Time"
 msgstr "Přejít na čas"
 
-#: crates/big-video-player/src/video/ui/menu_dialogs.rs:62
+#: crates/big-video-player/src/video/ui/menu_dialogs.rs:76
 msgid "Use H:MM:SS, M:SS, or seconds."
 msgstr "Použijte H:MM:SS, M:SS nebo sekundy."
 
-#: crates/big-video-player/src/video/ui/menu_dialogs.rs:65
+#: crates/big-video-player/src/video/ui/menu_dialogs.rs:78
 msgid "Playback time"
 msgstr "Čas přehrávání"
 
-#: crates/big-video-player/src/video/ui/menu_dialogs.rs:72
+#: crates/big-video-player/src/video/ui/menu_dialogs.rs:83
 msgid "Go"
 msgstr "Přejít"
 
-#: crates/big-video-player/src/video/ui/menu_dialogs.rs:124
-#: crates/big-video-player/src/video/ui/menu_dialogs.rs:177
+#: crates/big-video-player/src/video/ui/menu_dialogs.rs:135
+#: crates/big-video-player/src/video/ui/menu_dialogs.rs:188
 msgid "Still saving the previous screenshots. Try again in a moment."
 msgstr ""
 
-#: crates/big-video-player/src/video/ui/menu_dialogs.rs:130
-#: crates/big-video-player/src/video/ui/menu_dialogs.rs:135
+#: crates/big-video-player/src/video/ui/menu_dialogs.rs:141
+#: crates/big-video-player/src/video/ui/menu_dialogs.rs:146
 #, fuzzy
 #| msgid "Stores the video color space in each screenshot"
 msgid "Open a video to take a screenshot"
 msgstr "Uloží barevný prostor videa do každého snímku obrazovky"
 
-#: crates/big-video-player/src/video/ui/menu_dialogs.rs:147
+#: crates/big-video-player/src/video/ui/menu_dialogs.rs:158
 msgid ""
 "There is no Pictures or home folder to save screenshots in. Choose a folder "
 "in Preferences."
 msgstr ""
 
-#: crates/big-video-player/src/video/ui/menu_dialogs.rs:172
+#: crates/big-video-player/src/video/ui/menu_dialogs.rs:183
 #, rust-format
 msgid "Cannot save to {folder}: {error}. Choose another folder in Preferences."
 msgstr ""
 
-#: crates/big-video-player/src/video/ui/menu_dialogs.rs:182
+#: crates/big-video-player/src/video/ui/menu_dialogs.rs:193
 msgid "The screenshot was not saved because of an unexpected error"
 msgstr ""
 
-#: crates/big-video-player/src/video/ui/menu_dialogs.rs:215
-#: crates/media-runtime/src/player/mpv_backend/backend/mod.rs:327
+#: crates/big-video-player/src/video/ui/menu_dialogs.rs:226
+#: crates/media-runtime/src/player/mpv_backend/backend/mod.rs:333
 msgid "Chapter"
 msgstr "Kapitola"
 
-#: crates/big-video-player/src/video/ui/menu_dialogs.rs:236
+#: crates/big-video-player/src/video/ui/menu_dialogs.rs:247
 msgid "Screenshot saved"
 msgstr "Snímek obrazovky uložen"
 
-#: crates/big-video-player/src/video/ui/menu_dialogs.rs:238
+#: crates/big-video-player/src/video/ui/menu_dialogs.rs:249
 msgid "Screenshot saved; disk synchronization could not be confirmed"
 msgstr "Snímek obrazovky uložen; synchronizaci s diskem se nepodařilo potvrdit"
 
@@ -3468,14 +3517,14 @@ msgstr "Zobrazit šedě"
 msgid "Replaces colored subtitles with gray ones"
 msgstr "Nahradí barevné titulky šedými"
 
-#: crates/big-video-player/src/video/ui/preferences/subtitles.rs:256
+#: crates/big-video-player/src/video/ui/preferences/subtitles.rs:262
 msgid "Font"
 msgstr "Písmo"
 
 #: crates/big-video-player/src/video/ui/preferences/video.rs:24
 #: crates/big-video-player/src/video/ui/video_shell/input_gestures.rs:113
 #: crates/big-video-player/src/video/ui/video_shell/panel.rs:40
-#: crates/big-video-player/src/video/ui/video_shell/panel.rs:454
+#: crates/big-video-player/src/video/ui/video_shell/panel.rs:457
 msgid "Picture"
 msgstr "Obraz"
 
@@ -3569,7 +3618,7 @@ msgid "Move to trash"
 msgstr "Přesunout do koše"
 
 #: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/context_menu.rs:101
-#: crates/big-video-player/src/video/ui/video_browser_sidebar/views/queue_view.rs:215
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/views/queue_view.rs:216
 msgid "Remove from playlist"
 msgstr "Odebrat ze seznamu skladeb"
 
@@ -3629,7 +3678,7 @@ msgid "Add Video Files"
 msgstr "Přidat videosoubory"
 
 #: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/header.rs:128
-#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:132
+#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:133
 msgid "Video files"
 msgstr "Videosoubory"
 
@@ -3694,7 +3743,7 @@ msgstr "Videa"
 msgid "Your folders"
 msgstr "Vaše složky"
 
-#: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/metadata.rs:143
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/metadata.rs:148
 #: crates/big-video-player/src/video/ui/video_browser_sidebar/library.rs:430
 #: crates/big-video-player/src/video/ui/video_browser_sidebar/mod.rs:306
 #, rust-format
@@ -3704,12 +3753,12 @@ msgstr[0] "{} video"
 msgstr[1] "{} videa"
 msgstr[2] "{} videí"
 
-#: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/metadata.rs:150
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/metadata.rs:155
 #, rust-format
 msgid "(of {total})"
 msgstr "(z {total})"
 
-#: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/metadata.rs:154
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/metadata.rs:159
 #, rust-format
 msgid ""
 "Showing {shown} of {total} files found. Consider filtering by subfolder."
@@ -3803,8 +3852,8 @@ msgstr "Zobrazuje se prvních {}. Zadejte více znaků pro zúžení hledání."
 
 #: crates/big-video-player/src/video/ui/video_browser_sidebar/library.rs:701
 #: crates/big-video-player/src/video/ui/video_browser_sidebar/library.rs:704
-#: crates/big-video-player/src/video/ui/video_shell/panel.rs:121
-#: crates/big-video-player/src/video/ui/video_shell/panel.rs:124
+#: crates/big-video-player/src/video/ui/video_shell/panel.rs:129
+#: crates/big-video-player/src/video/ui/video_shell/panel.rs:132
 msgid "Back"
 msgstr "Zpět"
 
@@ -3858,7 +3907,7 @@ msgstr "Hledat ve vašich videích…"
 msgid "Previous folder"
 msgstr "Předchozí složka"
 
-#: crates/big-video-player/src/video/ui/video_browser_sidebar/views/queue_view.rs:442
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/views/queue_view.rs:445
 #, rust-format
 msgid "Stopped at {}"
 msgstr "Zastaveno v {}"
@@ -3866,11 +3915,6 @@ msgstr "Zastaveno v {}"
 #: crates/big-video-player/src/video/ui/video_controls_bar.rs:281
 msgid "Seek Position"
 msgstr "Pozice přetáčení"
-
-#: crates/big-video-player/src/video/ui/video_controls_bar.rs:478
-#: crates/media-runtime/src/shared/tv_cast.rs:716
-msgid "Pause"
-msgstr "Pozastavit"
 
 #: crates/big-video-player/src/video/ui/video_controls_bar.rs:566
 #: crates/ui/media/big-player-ui/src/playback_bar.rs:337
@@ -3965,7 +4009,7 @@ msgid "Drop a file or open one to start"
 msgstr "Začněte přetažením souboru nebo otevřením některého"
 
 #: crates/big-video-player/src/video/ui/video_shell/actions.rs:132
-#: crates/big-video-player/src/video/ui/video_shell/component.rs:882
+#: crates/big-video-player/src/video/ui/video_shell/component.rs:887
 msgid "Open Recent"
 msgstr "Otevřít nedávné"
 
@@ -4060,7 +4104,7 @@ msgid "Stops at {time}"
 msgstr "Zastaví se v {time}"
 
 #: crates/big-video-player/src/video/ui/video_shell/adjustments.rs:310
-#: crates/big-video-player/src/video/ui/video_shell/panel.rs:238
+#: crates/big-video-player/src/video/ui/video_shell/panel.rs:246
 #, rust-format
 msgid "{n} change"
 msgid_plural "{n} changes"
@@ -4075,7 +4119,7 @@ msgstr "Kliknutím zobrazíte nebo vrátíte zpět"
 #: crates/big-video-player/src/video/ui/video_shell/component.rs:124
 #: crates/big-video-player/src/video/ui/video_shell/component.rs:127
 #: crates/big-video-player/src/video/ui/video_shell/panel.rs:38
-#: crates/big-video-player/src/video/ui/video_shell/panel.rs:156
+#: crates/big-video-player/src/video/ui/video_shell/panel.rs:164
 msgid "Settings"
 msgstr "Nastavení"
 
@@ -4088,7 +4132,7 @@ msgid "Maximize"
 msgstr "Maximalizovat"
 
 #: crates/big-video-player/src/video/ui/video_shell/component.rs:135
-#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:373
+#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:367
 msgid "Restore"
 msgstr "Obnovit"
 
@@ -4110,85 +4154,85 @@ msgstr "Na televizi"
 msgid "The TV is still playing"
 msgstr "Televize stále přehrává"
 
-#: crates/big-video-player/src/video/ui/video_shell/component.rs:881
+#: crates/big-video-player/src/video/ui/video_shell/component.rs:886
 #: crates/big-video-player/src/video/ui/video_shell/input_gestures.rs:121
 msgid "Open File…"
 msgstr "Otevřít soubor…"
 
-#: crates/big-video-player/src/video/ui/video_shell/component.rs:883
+#: crates/big-video-player/src/video/ui/video_shell/component.rs:888
 #: crates/big-video-player/src/video/ui/video_shell/input_gestures.rs:122
 msgid "Open URL…"
 msgstr "Otevřít URL…"
 
-#: crates/big-video-player/src/video/ui/video_shell/component.rs:884
+#: crates/big-video-player/src/video/ui/video_shell/component.rs:889
 msgid "Open Disc…"
 msgstr "Otevřít disk…"
 
-#: crates/big-video-player/src/video/ui/video_shell/component.rs:885
+#: crates/big-video-player/src/video/ui/video_shell/component.rs:890
 msgid "TV Channels (IPTV)…"
 msgstr "Televizní kanály (IPTV)…"
 
-#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:54
+#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:55
 msgid "Best available"
 msgstr "Nejlepší dostupná"
 
-#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:56
+#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:57
 msgid "Highest video and audio quality"
 msgstr "Nejvyšší kvalita obrazu a zvuku"
 
-#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:59
+#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:60
 msgid "Up to 1080p"
 msgstr "Až 1080p"
 
-#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:61
+#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:62
 msgid "Prefer Full HD or lower"
 msgstr "Preferovat Full HD nebo nižší"
 
-#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:64
+#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:65
 msgid "Up to 720p"
 msgstr "Až 720p"
 
-#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:66
+#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:67
 msgid "Prefer HD or lower"
 msgstr "Preferovat HD nebo nižší"
 
-#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:69
+#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:70
 msgid "Up to 480p"
 msgstr "Až 480p"
 
-#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:71
+#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:72
 msgid "Prefer SD or lower"
 msgstr "Preferovat SD nebo nižší"
 
-#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:74
+#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:75
 msgid "Audio only"
 msgstr "Pouze zvuk"
 
-#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:76
+#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:77
 msgid "Use the best audio stream"
 msgstr "Použít nejlepší zvukový proud"
 
-#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:84
+#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:85
 msgid "Online Video Quality"
 msgstr "Kvalita online videa"
 
-#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:93
+#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:94
 msgid "Use this quality"
 msgstr "Použít tuto kvalitu"
 
-#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:123
+#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:124
 msgid "IPTV"
 msgstr "IPTV"
 
-#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:131
+#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:132
 msgid "Open Video"
 msgstr "Otevřít video"
 
-#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:133
+#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:134
 msgid "Playlist files"
 msgstr "Soubory seznamů skladeb"
 
-#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:134
+#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:135
 msgid "All files"
 msgstr "Všechny soubory"
 
@@ -4196,39 +4240,39 @@ msgstr "Všechny soubory"
 msgid "Supports YouTube, HTTP streams, RTSP, RTMP, DVD, and Blu-ray URLs."
 msgstr "Podporuje YouTube, proudy HTTP, RTSP, RTMP, DVD a adresy URL Blu-ray."
 
-#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:167
+#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:166
 msgid "Media URL"
 msgstr "URL média"
 
-#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:225
+#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:222
 msgid "Open Disc"
 msgstr "Otevřít disk"
 
-#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:234
+#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:231
 msgid "Choose a disc type and enter the device, ISO, or folder path."
 msgstr "Vyberte typ disku a zadejte cestu k zařízení, obrazu ISO nebo složce."
 
-#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:238
+#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:235
 msgid "Disc type"
 msgstr "Typ disku"
 
-#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:239
+#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:236
 msgid "DVD"
 msgstr "DVD"
 
-#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:239
+#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:236
 msgid "Blu-ray"
 msgstr "Blu-ray"
 
-#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:242
+#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:238
 msgid "Disc device path"
 msgstr "Cesta k zařízení disku"
 
-#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:366
+#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:360
 msgid "Restore Default Settings?"
 msgstr "Obnovit výchozí nastavení?"
 
-#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:368
+#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:362
 msgid ""
 "Every setting, including appearance, goes back to its default value. Some "
 "changes take effect after reopening the player."
@@ -4246,23 +4290,23 @@ msgstr "Síťový proud nelze exportovat"
 
 #: crates/big-video-player/src/video/ui/video_shell/input_gestures.rs:114
 #: crates/big-video-player/src/video/ui/video_shell/panel.rs:41
-#: crates/big-video-player/src/video/ui/video_shell/panel.rs:459
+#: crates/big-video-player/src/video/ui/video_shell/panel.rs:462
 msgid "Zoom and position"
 msgstr "Zvětšení a poloha"
 
 #: crates/big-video-player/src/video/ui/video_shell/input_gestures.rs:115
 #: crates/big-video-player/src/video/ui/video_shell/panel.rs:42
-#: crates/big-video-player/src/video/ui/video_shell/panel.rs:464
+#: crates/big-video-player/src/video/ui/video_shell/panel.rs:467
 msgid "Effects and filters"
 msgstr "Efekty a filtry"
 
 #: crates/big-video-player/src/video/ui/video_shell/input_gestures.rs:123
-#: crates/big-video-player/src/video/ui/video_shell/panel.rs:517
+#: crates/big-video-player/src/video/ui/video_shell/panel.rs:520
 msgid "About this video"
 msgstr "O tomto videu"
 
 #: crates/big-video-player/src/video/ui/video_shell/panel.rs:45
-#: crates/big-video-player/src/video/ui/video_shell/panel.rs:491
+#: crates/big-video-player/src/video/ui/video_shell/panel.rs:494
 msgid "Stop after…"
 msgstr "Zastavit po…"
 
@@ -4270,46 +4314,46 @@ msgstr "Zastavit po…"
 msgid "Recent Files"
 msgstr "Nedávné soubory"
 
-#: crates/big-video-player/src/video/ui/video_shell/panel.rs:478
+#: crates/big-video-player/src/video/ui/video_shell/panel.rs:481
 #, rust-format
 msgid "{current} of {total}"
 msgstr "{current} z {total}"
 
-#: crates/big-video-player/src/video/ui/video_shell/panel.rs:505
+#: crates/big-video-player/src/video/ui/video_shell/panel.rs:508
 msgid "Online quality"
 msgstr "Kvalita online"
 
-#: crates/big-video-player/src/video/ui/video_shell/panel.rs:506
+#: crates/big-video-player/src/video/ui/video_shell/panel.rs:509
 msgid "Choose"
 msgstr "Vybrat"
 
-#: crates/big-video-player/src/video/ui/video_shell/panel.rs:550
+#: crates/big-video-player/src/video/ui/video_shell/panel.rs:553
 msgid "Put back what was just set to normal"
 msgstr "Vrátit zpět to, co bylo právě nastaveno na normální"
 
-#: crates/big-video-player/src/video/ui/video_shell/panel.rs:582
+#: crates/big-video-player/src/video/ui/video_shell/panel.rs:585
 msgid "Shortcuts"
 msgstr "Zkratky"
 
-#: crates/big-video-player/src/video/ui/video_shell/panel.rs:623
+#: crates/big-video-player/src/video/ui/video_shell/panel.rs:626
 msgid "Changed"
 msgstr "Změněno"
 
-#: crates/big-video-player/src/video/ui/video_shell/panel.rs:635
-#: crates/big-video-player/src/video/ui/video_shell/panel.rs:658
+#: crates/big-video-player/src/video/ui/video_shell/panel.rs:638
+#: crates/big-video-player/src/video/ui/video_shell/panel.rs:661
 msgid "Back to normal"
 msgstr "Zpět na normál"
 
-#: crates/big-video-player/src/video/ui/video_shell/panel.rs:640
+#: crates/big-video-player/src/video/ui/video_shell/panel.rs:643
 #, rust-format
 msgid "Undo: {setting}"
 msgstr "Vrátit zpět: {setting}"
 
-#: crates/big-video-player/src/video/ui/video_shell/panel.rs:659
+#: crates/big-video-player/src/video/ui/video_shell/panel.rs:662
 msgid "Undo every change to the picture and sound"
 msgstr "Vrátit zpět každou změnu obrazu a zvuku"
 
-#: crates/big-video-player/src/video/ui/video_shell/panel.rs:828
+#: crates/big-video-player/src/video/ui/video_shell/panel.rs:831
 msgid "Jump to a chapter"
 msgstr "Přejít na kapitolu"
 
@@ -4317,28 +4361,32 @@ msgstr "Přejít na kapitolu"
 msgid "No Recent Files"
 msgstr "Žádné nedávné soubory"
 
-#: crates/big-video-player/src/video/ui/video_shell/panel/recent.rs:204
-#: crates/big-video-player/src/video/ui/video_shell/panel/recent.rs:208
+#: crates/big-video-player/src/video/ui/video_shell/panel/recent.rs:205
+#: crates/big-video-player/src/video/ui/video_shell/panel/recent.rs:209
 msgid "Search recent files"
 msgstr "Hledat v nedávných souborech"
 
-#: crates/big-video-player/src/video/ui/video_shell/panel/recent.rs:220
+#: crates/big-video-player/src/video/ui/video_shell/panel/recent.rs:221
 msgid "No recent file matches"
 msgstr "Žádný nedávný soubor neodpovídá"
 
-#: crates/big-video-player/src/video/ui/video_shell/playback.rs:169
+#: crates/big-video-player/src/video/ui/video_shell/playback.rs:186
 msgid "The screenshot took too long and was not saved"
 msgstr ""
 
 #: crates/big-video-player/src/video/ui/video_shell/playback.rs:213
+msgid "Could not play this file — it may be unsupported or corrupt."
+msgstr "Tento soubor nelze přehrát — může být nepodporovaný nebo poškozený."
+
+#: crates/big-video-player/src/video/ui/video_shell/playback.rs:246
 msgid "Playing video"
 msgstr "Přehrávané video"
 
-#: crates/big-video-player/src/video/ui/video_shell/playback.rs:490
+#: crates/big-video-player/src/video/ui/video_shell/playback.rs:523
 msgid "Could not move to trash"
 msgstr "Nelze přesunout do koše"
 
-#: crates/big-video-player/src/video/ui/video_shell/playback.rs:496
+#: crates/big-video-player/src/video/ui/video_shell/playback.rs:529
 #, rust-format
 msgid "{} file moved to trash"
 msgid_plural "{} files moved to trash"
@@ -4498,6 +4546,13 @@ msgstr[2] "{} titulků"
 #: crates/media-runtime/src/media/playlist_scan/display.rs:20
 msgid "Home"
 msgstr "Domů"
+
+#: crates/media-runtime/src/player/mpv_backend/types.rs:94
+msgid ""
+"Sound could not start on the audio output. Check that your speakers or "
+"headphones are connected, or choose another Audio Output in Preferences and "
+"reopen the player."
+msgstr ""
 
 #: crates/media-runtime/src/settings/messages.rs:7
 msgid ""
@@ -5201,7 +5256,7 @@ msgstr "Průhlednost pozadí"
 msgid "Menu Opacity"
 msgstr "Průhlednost nabídky"
 
-#: crates/ui/media/big-player-ui/src/appearance/video_colors.rs:70
+#: crates/ui/media/big-player-ui/src/appearance/video_colors.rs:85
 msgid "Icon and Text Shadow"
 msgstr "Stín ikon a textu"
 
@@ -5612,6 +5667,25 @@ msgstr "Webové dálkové ovládání je vypnuto."
 #: crates/ui/media/big-player-ui/src/smartphone/dialog.rs:185
 msgid "Could not start server"
 msgstr "Server se nepodařilo spustit"
+
+#~ msgid "Podcast"
+#~ msgstr "Podcast"
+
+#~ msgid "Scan cancelled. Earlier confirmed imports were kept."
+#~ msgstr "Prohledávání zrušeno. Dříve potvrzené importy byly zachovány."
+
+#~ msgid ""
+#~ "Scan incomplete. Earlier confirmed imports were kept; check storage and "
+#~ "retry."
+#~ msgstr ""
+#~ "Prohledávání nebylo dokončeno. Dříve potvrzené importy byly zachovány; "
+#~ "zkontrolujte úložiště a zkuste to znovu."
+
+#~ msgid "Library scan finished."
+#~ msgstr "Prohledávání knihovny dokončeno."
+
+#~ msgid "or use ＋ to add from the library"
+#~ msgstr "nebo je přidejte z knihovny pomocí ＋"
 
 #~ msgid "Screenshot queue is full; wait for pending captures"
 #~ msgstr ""

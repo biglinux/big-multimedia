@@ -8,7 +8,7 @@ msgid ""
 msgstr ""
 "Project-Id-Version: big-media-runtime 0.1.0\n"
 "Report-Msgid-Bugs-To: https://github.com/biglinux/big-multimedia/issues\n"
-"POT-Creation-Date: 2026-11-18 05:54-0300\n"
+"POT-Creation-Date: 2026-11-18 07:48-0300\n"
 "PO-Revision-Date: 2026-10-23 00:15-0300\n"
 "Last-Translator: Automatically generated\n"
 "Language-Team: none\n"
@@ -116,7 +116,6 @@ msgid ""
 msgstr "將目前的封面顯示為音訊控制項後方的模糊背景"
 
 #: crates/big-audio-player/src/audio/keybindings.rs:14
-#: crates/big-audio-player/src/audio/ui/audio_shell/playback.rs:175
 #: crates/big-audio-player/src/audio/ui/audio_shell/tray.rs:20
 #: crates/big-video-player/src/video/keybindings.rs:15
 #: crates/big-video-player/src/video/ui/video_shell/input_gestures.rs:105
@@ -223,7 +222,7 @@ msgstr "資料庫"
 #: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:112
 #: crates/big-video-player/src/video/ui/video_shell/input_gestures.rs:116
 #: crates/big-video-player/src/video/ui/video_shell/panel.rs:43
-#: crates/big-video-player/src/video/ui/video_shell/panel.rs:469
+#: crates/big-video-player/src/video/ui/video_shell/panel.rs:472
 #: crates/media-runtime/src/shared/audio_effects_eq.rs:90
 msgid "Equalizer"
 msgstr "等化器"
@@ -245,8 +244,8 @@ msgid "Toggle Repeat"
 msgstr "切換重複播放"
 
 #: crates/big-audio-player/src/audio/keybindings.rs:129
-#: crates/big-video-player/src/video/ui/video_shell/panel.rs:549
-#: crates/big-video-player/src/video/ui/video_shell/playback.rs:502
+#: crates/big-video-player/src/video/ui/video_shell/panel.rs:552
+#: crates/big-video-player/src/video/ui/video_shell/playback.rs:535
 msgid "Undo"
 msgstr "復原"
 
@@ -290,7 +289,7 @@ msgstr "無"
 
 #: crates/big-audio-player/src/audio/library_grouping/group_by.rs:39
 #: crates/big-audio-player/src/audio/ui/library_tag_editor.rs:203
-#: crates/big-audio-player/src/audio/ui/track_list.rs:92
+#: crates/big-audio-player/src/audio/ui/track_list.rs:93
 msgid "Artist"
 msgstr "演出者"
 
@@ -302,27 +301,27 @@ msgstr "專輯演出者"
 #: crates/big-audio-player/src/audio/library_grouping/group_by.rs:41
 #: crates/big-audio-player/src/audio/library_grouping/grouping.rs:82
 #: crates/big-audio-player/src/audio/ui/library_tag_editor.rs:204
-#: crates/big-audio-player/src/audio/ui/track_list.rs:93
+#: crates/big-audio-player/src/audio/ui/track_list.rs:94
 msgid "Album"
 msgstr "專輯"
 
 #: crates/big-audio-player/src/audio/library_grouping/group_by.rs:42
 #: crates/big-audio-player/src/audio/library_grouping/grouping.rs:89
 #: crates/big-audio-player/src/audio/ui/library_tag_editor.rs:209
-#: crates/big-audio-player/src/audio/ui/track_list.rs:95
+#: crates/big-audio-player/src/audio/ui/track_list.rs:96
 msgid "Genre"
 msgstr "類型"
 
 #: crates/big-audio-player/src/audio/library_grouping/group_by.rs:43
 #: crates/big-audio-player/src/audio/library_grouping/grouping.rs:90
 #: crates/big-audio-player/src/audio/ui/library_tag_editor.rs:210
-#: crates/big-audio-player/src/audio/ui/track_list.rs:96
+#: crates/big-audio-player/src/audio/ui/track_list.rs:97
 msgid "Year"
 msgstr "年份"
 
 #: crates/big-audio-player/src/audio/library_grouping/group_by.rs:44
 #: crates/big-audio-player/src/audio/ui/library_tag_editor/spec.rs:112
-#: crates/big-audio-player/src/audio/ui/track_list.rs:98
+#: crates/big-audio-player/src/audio/ui/track_list.rs:99
 #: crates/big-video-player/src/video/ui/media_details_dialog.rs:109
 #: crates/big-video-player/src/video/ui/media_details_dialog.rs:260
 #: crates/ui/media/big-media-components/src/media/file_metadata_dialog.rs:59
@@ -363,7 +362,7 @@ msgid "Various Artists"
 msgstr "群星"
 
 #: crates/big-audio-player/src/audio/playlist_import.rs:16
-#: crates/big-video-player/src/video/ui/video_shell/playback.rs:289
+#: crates/big-video-player/src/video/ui/video_shell/playback.rs:322
 #, rust-format
 msgid "Only the first {} entries of the playlist were loaded."
 msgstr ""
@@ -394,7 +393,7 @@ msgstr "平衡依據"
 #: crates/big-video-player/src/video/ui/preferences/general.rs:40
 #: crates/big-video-player/src/video/ui/preferences/video.rs:60
 #: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/header.rs:196
-#: crates/big-video-player/src/video/ui/video_shell/panel.rs:494
+#: crates/big-video-player/src/video/ui/video_shell/panel.rs:497
 msgid "Off"
 msgstr "關閉"
 
@@ -450,29 +449,29 @@ msgstr "單色圖示，跟隨面板主題，並附有播放控制"
 #: crates/big-audio-player/src/audio/preferences.rs:227
 #: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:129
 #: crates/big-video-player/src/video/ui/preferences/mod.rs:39
-#: crates/big-video-player/src/video/ui/video_shell/panel.rs:572
+#: crates/big-video-player/src/video/ui/video_shell/panel.rs:575
 msgid "Preferences"
 msgstr "偏好設定"
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/chrome.rs:55
+#: crates/big-audio-player/src/audio/ui/audio_shell/chrome.rs:72
 #: crates/big-audio-player/src/audio/ui/audio_shell/component.rs:150
 #: crates/big-audio-player/src/audio/ui/audio_shell/component.rs:175
-#: crates/big-audio-player/src/audio/ui/audio_shell/mpris.rs:228
+#: crates/big-audio-player/src/audio/ui/audio_shell/mpris.rs:223
 msgid "Radio"
 msgstr "電台"
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/chrome.rs:151
+#: crates/big-audio-player/src/audio/ui/audio_shell/chrome.rs:168
 #: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:113
 msgid "Sleep Timer"
 msgstr "睡眠計時器"
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/chrome.rs:161
-#: crates/big-video-player/src/video/ui/video_shell/panel.rs:711
+#: crates/big-audio-player/src/audio/ui/audio_shell/chrome.rs:178
+#: crates/big-video-player/src/video/ui/video_shell/panel.rs:714
 msgid "Timer Active"
 msgstr "計時器已啟用"
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/chrome.rs:162
-#: crates/big-video-player/src/video/ui/video_shell/panel.rs:712
+#: crates/big-audio-player/src/audio/ui/audio_shell/chrome.rs:179
+#: crates/big-video-player/src/video/ui/video_shell/panel.rs:715
 msgid "Cancel Timer"
 msgstr "取消計時器"
 
@@ -491,21 +490,18 @@ msgstr "篩選檔案…"
 #: crates/big-audio-player/src/audio/ui/audio_shell/component.rs:147
 #: crates/big-audio-player/src/audio/ui/audio_shell/component.rs:174
 #: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/header.rs:22
-#: crates/big-video-player/src/video/ui/video_shell/component.rs:294
-#: crates/big-video-player/src/video/ui/video_shell/component.rs:298
+#: crates/big-video-player/src/video/ui/video_shell/component.rs:295
+#: crates/big-video-player/src/video/ui/video_shell/component.rs:299
 msgid "Files"
 msgstr "檔案"
 
 #: crates/big-audio-player/src/audio/ui/audio_shell/component.rs:153
+#: crates/big-audio-player/src/audio/ui/audio_shell/component.rs:178
 msgid "Podcasts"
 msgstr "Podcast"
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/component.rs:178
-msgid "Podcast"
-msgstr "Podcast"
-
 #: crates/big-audio-player/src/audio/ui/audio_shell/component.rs:230
-#: crates/big-audio-player/src/audio/ui/audio_shell/playback.rs:186
+#: crates/big-audio-player/src/audio/ui/audio_shell/playback.rs:187
 #: crates/big-audio-player/src/audio/ui/library_tag_editor.rs:299
 msgid "Album art"
 msgstr "專輯封面"
@@ -519,12 +515,13 @@ msgstr "Big Audio Player"
 msgid "Select a song to start"
 msgstr "選擇一首歌曲開始"
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/engine.rs:32
-#: crates/big-video-player/src/video/ui/video_shell/playback.rs:185
-msgid "Could not play this file — it may be unsupported or corrupt."
+#: crates/big-audio-player/src/audio/ui/audio_shell/engine.rs:37
+#, fuzzy, rust-format
+#| msgid "Could not play this file — it may be unsupported or corrupt."
+msgid "Could not play “{file}”: it may be unsupported or corrupt."
 msgstr "無法播放此檔案——它可能不受支援或已損毀。"
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/engine.rs:216
+#: crates/big-audio-player/src/audio/ui/audio_shell/engine.rs:222
 #, rust-format
 msgid ""
 "The playback engine could not start: {error}. Update or reinstall the mpv "
@@ -569,10 +566,10 @@ msgstr "編輯剪下"
 #: crates/big-audio-player/src/audio/ui/playlist_library_dialog/spec.rs:210
 #: crates/big-audio-player/src/audio/ui/unavailable_dialog.rs:258
 #: crates/big-video-player/src/video/ui/iptv/providers_dialog.rs:168
-#: crates/big-video-player/src/video/ui/menu_dialogs.rs:72
-#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:173
-#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:251
-#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:373
+#: crates/big-video-player/src/video/ui/menu_dialogs.rs:83
+#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:170
+#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:245
+#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:367
 #: crates/big-video-player/src/video/ui/video_shell/trim/run.rs:259
 #: crates/ui/generic/big-relm4-components/src/layout/name_prompt.rs:84
 #: crates/ui/media/big-player-ui/src/podcast_panel.rs:625
@@ -613,7 +610,7 @@ msgid ""
 msgstr "此資料夾名稱暫時無法儲存至資料庫中。未變更或匯入任何路徑。"
 
 #: crates/big-audio-player/src/audio/ui/audio_shell/panel_intents.rs:121
-#: crates/big-audio-player/src/audio/ui/audio_shell/update.rs:233
+#: crates/big-audio-player/src/audio/ui/audio_shell/update.rs:231
 msgid ""
 "The playlist could not be read safely. Check its format and permissions."
 msgstr "無法安全讀取該播放清單。請檢查其格式和權限。"
@@ -667,32 +664,50 @@ msgstr "定位位置"
 msgid "Cut timeline"
 msgstr "剪下時間軸"
 
+#: crates/big-audio-player/src/audio/ui/audio_shell/playback.rs:175
+#: crates/big-audio-player/src/audio/ui/library_detail_interactions.rs:63
+#: crates/big-audio-player/src/audio/ui/library_tree/view.rs:359
+#: crates/big-audio-player/src/audio/ui/library_tree/view.rs:376
+#: crates/big-audio-player/src/audio/ui/playlist_interactions.rs:110
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/context_menu.rs:41
+#: crates/big-video-player/src/video/ui/video_controls_bar.rs:478
+#: crates/big-video-player/src/video/ui/video_controls_bar/zones.rs:579
+#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:170
+msgid "Play"
+msgstr "播放"
+
 #: crates/big-audio-player/src/audio/ui/audio_shell/playback.rs:176
+#: crates/big-video-player/src/video/ui/video_controls_bar.rs:478
+#: crates/media-runtime/src/shared/tv_cast.rs:716
+msgid "Pause"
+msgstr "暫停"
+
+#: crates/big-audio-player/src/audio/ui/audio_shell/playback.rs:177
 #: crates/big-video-player/src/video/ui/appearance/layout/buttons_page.rs:77
 #: crates/big-video-player/src/video/ui/video_controls_bar/seek_preview.rs:177
 #: crates/big-video-player/src/video/ui/video_controls_bar/zones.rs:578
 msgid "Previous"
 msgstr "上一個"
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/playback.rs:177
+#: crates/big-audio-player/src/audio/ui/audio_shell/playback.rs:178
 #: crates/big-video-player/src/video/ui/appearance/layout/buttons_page.rs:91
 #: crates/big-video-player/src/video/ui/video_controls_bar/seek_preview.rs:179
 #: crates/big-video-player/src/video/ui/video_controls_bar/zones.rs:581
 msgid "Next"
 msgstr "下一個"
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/playback.rs:178
+#: crates/big-audio-player/src/audio/ui/audio_shell/playback.rs:179
 #: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/header.rs:200
 msgid "Shuffle"
 msgstr "隨機播放"
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/playback.rs:179
+#: crates/big-audio-player/src/audio/ui/audio_shell/playback.rs:180
 #: crates/big-video-player/src/video/ui/preferences/general.rs:37
 #: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/header.rs:201
 msgid "Repeat"
 msgstr "重複播放"
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/playback.rs:180
+#: crates/big-audio-player/src/audio/ui/audio_shell/playback.rs:181
 #: crates/big-video-player/src/video/ui/appearance/layout/buttons_page.rs:56
 #: crates/big-video-player/src/video/ui/video_controls_bar.rs:568
 #: crates/ui/media/big-media-components/src/player_chrome.rs:319
@@ -703,30 +718,30 @@ msgstr "重複播放"
 msgid "Volume"
 msgstr "音量"
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/playback.rs:181
+#: crates/big-audio-player/src/audio/ui/audio_shell/playback.rs:182
 #: crates/big-video-player/src/video/ui/appearance/layout/buttons_page.rs:63
 #: crates/big-video-player/src/video/ui/video_controls_bar/zones.rs:302
 #: crates/ui/media/big-media-components/src/player_chrome.rs:330
 msgid "Speed"
 msgstr "速度"
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/playback.rs:182
+#: crates/big-audio-player/src/audio/ui/audio_shell/playback.rs:183
 #: crates/big-video-player/src/video/ui/appearance/layout/buttons_page.rs:70
 #: crates/big-video-player/src/video/ui/video_controls_bar/zones.rs:317
 msgid "Voice Enhancement"
 msgstr "人聲增強"
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/playback.rs:183
+#: crates/big-audio-player/src/audio/ui/audio_shell/playback.rs:184
 #: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:114
 msgid "Trim & Export"
 msgstr "裁剪並匯出"
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/playback.rs:184
+#: crates/big-audio-player/src/audio/ui/audio_shell/playback.rs:185
 #: crates/ui/media/big-player-ui/src/lyrics_panel.rs:144
 msgid "Lyrics"
 msgstr "歌詞"
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/playback.rs:185
+#: crates/big-audio-player/src/audio/ui/audio_shell/playback.rs:186
 msgid "Status"
 msgstr "狀態"
 
@@ -743,7 +758,6 @@ msgid "Choose at most 100 playlist files per import"
 msgstr "每次匯入最多選擇 100 個播放清單檔案"
 
 #: crates/big-audio-player/src/audio/ui/audio_shell/playlist_library_dialog_actions.rs:156
-#: crates/big-audio-player/src/audio/ui/audio_shell/update.rs:140
 #: crates/big-audio-player/src/audio/ui/scan_progress.rs:47
 msgid "Imported"
 msgstr "已匯入"
@@ -813,7 +827,7 @@ msgid "Playlist export"
 msgstr "播放清單匯出"
 
 #: crates/big-audio-player/src/audio/ui/audio_shell/playlist_library_dialog_actions.rs:409
-#: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:486
+#: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:474
 #: crates/big-audio-player/src/audio/ui/library_dialogs.rs:50
 #: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/menu_actions.rs:215
 #: crates/big-video-player/src/video/ui/video_shell/component.rs:136
@@ -842,82 +856,82 @@ msgstr "無法儲存或還原播放佇列。已保留先前儲存的佇列。"
 msgid "Retry saving"
 msgstr "重試儲存"
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:42
+#: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:46
 msgid "A library scan is already running. Cancel it or wait for its result."
 msgstr "資料庫掃描已在執行。請取消掃描或等待其結果。"
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:51
+#: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:55
 msgid "Library scanning is busy. Try again after another scan finishes."
 msgstr "資料庫掃描忙碌中。請在其他掃描完成後重試。"
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:61
+#: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:65
 msgid "Scanning library…"
 msgstr "正在掃描資料庫…"
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:122
+#: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:126
 msgid "Watch folders could not be read. Previous settings were kept."
 msgstr "無法讀取監看資料夾。已保留先前的設定。"
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:150
+#: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:154
 #, fuzzy
 #| msgid "The playlist could not be saved."
 msgid "The station could not be saved."
 msgstr "無法儲存播放清單。"
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:164
+#: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:168
 #, fuzzy
 #| msgid "The playlist could not be saved."
 msgid "The station could not be removed."
 msgstr "無法儲存播放清單。"
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:224
+#: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:233
 msgid "There is no Music or home folder to save recordings in."
 msgstr ""
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:270
-#: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:278
-#: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:307
+#: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:279
+#: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:287
+#: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:316
 msgid "Recording was not saved"
 msgstr "錄音未儲存"
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:283
+#: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:292
 msgid "Recording to"
 msgstr "錄製到"
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:356
+#: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:365
 msgid "No episodes found"
 msgstr "找不到單集"
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:461
+#: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:449
 msgid "Recording saved"
 msgstr "錄音已儲存"
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:467
+#: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:455
 msgid "The recording was saved and is ready to open."
 msgstr "錄音已儲存，可以開啟。"
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:471
+#: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:459
 #: crates/big-audio-player/src/audio/ui/library_tag_editor/spec.rs:125
 #: crates/big-video-player/src/video/ui/media_details_dialog.rs:81
 msgid "File"
 msgstr "檔案"
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:475
+#: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:463
 msgid "Folder"
 msgstr "資料夾"
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:481
+#: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:469
 #: crates/ui/media/big-media-components/src/media/file_metadata_dialog.rs:55
 msgid "Open Folder"
 msgstr "開啟資料夾"
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:486
+#: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:474
 #: crates/big-video-player/src/video/ui/appearance/layout/buttons_page.rs:35
 #: crates/big-video-player/src/video/ui/video_shell/actions.rs:126
 msgid "Open File"
 msgstr "開啟檔案"
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:539
+#: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:527
 #, fuzzy
 #| msgid "The playlist could not be saved."
 msgid "Saved radio stations could not be read."
@@ -931,70 +945,59 @@ msgstr "顯示 Big Audio Player"
 msgid "The TV's track is no longer in the queue."
 msgstr "電視上的曲目已不在佇列中。"
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/update.rs:129
-msgid "Scan cancelled. Earlier confirmed imports were kept."
-msgstr "掃描已取消。先前已確認的匯入已保留。"
+#: crates/big-audio-player/src/audio/ui/audio_shell/update.rs:130
+#, fuzzy
+#| msgid "Cancelled"
+msgid "Scan cancelled"
+msgstr "已取消"
 
 #: crates/big-audio-player/src/audio/ui/audio_shell/update.rs:132
-msgid ""
-"Scan incomplete. Earlier confirmed imports were kept; check storage and "
-"retry."
-msgstr "掃描未完成。先前已確認的匯入已保留；請檢查儲存空間後重試。"
+#, fuzzy
+#| msgid "Sample Rate"
+msgid "Scan incomplete"
+msgstr "取樣率"
 
 #: crates/big-audio-player/src/audio/ui/audio_shell/update.rs:135
-msgid "Library scan finished."
-msgstr "資料庫掃描已完成。"
+#, fuzzy, rust-format
+#| msgid "tracks imported"
+msgid "{count} track imported"
+msgid_plural "{count} tracks imported"
+msgstr[0] "首曲目已匯入"
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/update.rs:142
-#: crates/big-audio-player/src/audio/ui/scan_progress.rs:48
-msgid "Skipped"
-msgstr "已略過"
-
-#: crates/big-audio-player/src/audio/ui/audio_shell/update.rs:148
+#: crates/big-audio-player/src/audio/ui/audio_shell/update.rs:146
 msgid "Library updated"
 msgstr "資料庫已更新"
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/update.rs:150
+#: crates/big-audio-player/src/audio/ui/audio_shell/update.rs:148
 msgid ""
 "The operation was incomplete. Imported tracks were kept; check the folder "
 "and try again."
 msgstr "操作未完成。已匯入的曲目已保留；請檢查資料夾後重試。"
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/update.rs:175
+#: crates/big-audio-player/src/audio/ui/audio_shell/update.rs:173
 msgid ""
 "The library could not be read. Previous results were kept; try searching "
 "again."
 msgstr "無法讀取資料庫。已保留先前的結果；請重新搜尋。"
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/update.rs:195
+#: crates/big-audio-player/src/audio/ui/audio_shell/update.rs:193
 msgid "The playlist could not be changed. Your previous playlist was kept."
 msgstr "無法變更播放清單。已保留先前的播放清單。"
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/update.rs:200
+#: crates/big-audio-player/src/audio/ui/audio_shell/update.rs:198
 msgid "Playlists could not be opened. Please try again."
 msgstr "無法開啟播放清單。請重試。"
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/update.rs:306
-#: crates/big-audio-player/src/audio/ui/audio_shell/update.rs:310
+#: crates/big-audio-player/src/audio/ui/audio_shell/update.rs:304
+#: crates/big-audio-player/src/audio/ui/audio_shell/update.rs:308
 msgid "tracks imported"
 msgstr "首曲目已匯入"
 
-#: crates/big-audio-player/src/audio/ui/audio_shell/update.rs:316
+#: crates/big-audio-player/src/audio/ui/audio_shell/update.rs:314
 msgid ""
 "Playlist import was not fully completed. Previously confirmed imports were "
 "kept."
 msgstr "播放清單匯入未完全完成。先前已確認的匯入已保留。"
-
-#: crates/big-audio-player/src/audio/ui/library_detail_interactions.rs:63
-#: crates/big-audio-player/src/audio/ui/library_tree/view.rs:359
-#: crates/big-audio-player/src/audio/ui/library_tree/view.rs:376
-#: crates/big-audio-player/src/audio/ui/playlist_interactions.rs:110
-#: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/context_menu.rs:41
-#: crates/big-video-player/src/video/ui/video_controls_bar.rs:478
-#: crates/big-video-player/src/video/ui/video_controls_bar/zones.rs:579
-#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:173
-msgid "Play"
-msgstr "播放"
 
 #: crates/big-audio-player/src/audio/ui/library_detail_interactions.rs:73
 msgid "Play Next"
@@ -1031,14 +1034,14 @@ msgstr "曲目資訊"
 
 #: crates/big-audio-player/src/audio/ui/library_detail_interactions.rs:125
 #: crates/big-audio-player/src/audio/ui/playlist_interactions.rs:135
-#: crates/big-audio-player/src/audio/ui/track_list.rs:448
+#: crates/big-audio-player/src/audio/ui/track_list.rs:457
 #, rust-format
 msgid "{} of 5 stars"
 msgstr "{} 顆星（滿分 5 顆星）"
 
 #: crates/big-audio-player/src/audio/ui/library_detail_interactions.rs:129
 #: crates/big-audio-player/src/audio/ui/playlist_interactions.rs:139
-#: crates/big-audio-player/src/audio/ui/track_list.rs:99
+#: crates/big-audio-player/src/audio/ui/track_list.rs:100
 #: crates/big-audio-player/src/audio/ui/unavailable_dialog.rs:351
 msgid "Rating"
 msgstr "評分"
@@ -1098,7 +1101,7 @@ msgid "Add Music Folder"
 msgstr "加入音樂資料夾"
 
 #: crates/big-audio-player/src/audio/ui/library_grouping_ui.rs:230
-#: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/metadata.rs:118
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/metadata.rs:123
 msgid "Filter…"
 msgstr "篩選…"
 
@@ -1118,9 +1121,9 @@ msgid ""
 msgstr "無法確認播放清單匯出。現有檔案已保留；請選擇新名稱後重試。"
 
 #: crates/big-audio-player/src/audio/ui/library_io.rs:77
-#: crates/big-video-player/src/video/ui/menu_dialogs.rs:240
-#: crates/big-video-player/src/video/ui/video_shell/component.rs:279
-#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:251
+#: crates/big-video-player/src/video/ui/menu_dialogs.rs:251
+#: crates/big-video-player/src/video/ui/video_shell/component.rs:280
+#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:245
 msgid "Open"
 msgstr "開啟"
 
@@ -1228,25 +1231,25 @@ msgid ""
 "library"
 msgstr "• 使用「檔案」分頁可播放任意資料夾中的檔案，無需將其加入資料庫"
 
-#: crates/big-audio-player/src/audio/ui/library_panel.rs:291
+#: crates/big-audio-player/src/audio/ui/library_panel.rs:296
 msgid "No Tracks"
 msgstr "沒有曲目"
 
-#: crates/big-audio-player/src/audio/ui/library_panel.rs:292
+#: crates/big-audio-player/src/audio/ui/library_panel.rs:297
 msgid "Select an item on the left to view its tracks"
 msgstr "選擇左側的項目以檢視其曲目"
 
-#: crates/big-audio-player/src/audio/ui/library_panel.rs:445
+#: crates/big-audio-player/src/audio/ui/library_panel.rs:456
 msgid "Tracks"
 msgstr "曲目"
 
-#: crates/big-audio-player/src/audio/ui/library_panel.rs:512
-#: crates/big-audio-player/src/audio/ui/library_panel.rs:513
+#: crates/big-audio-player/src/audio/ui/library_panel.rs:523
+#: crates/big-audio-player/src/audio/ui/library_panel.rs:524
 msgid "Back to library"
 msgstr "返回資料庫"
 
 #: crates/big-audio-player/src/audio/ui/library_tag_editor.rs:202
-#: crates/big-audio-player/src/audio/ui/track_list.rs:91
+#: crates/big-audio-player/src/audio/ui/track_list.rs:92
 #: crates/big-video-player/src/video/ui/media_details_dialog.rs:105
 msgid "Title"
 msgstr "標題"
@@ -1281,7 +1284,7 @@ msgid "Searching…"
 msgstr "正在搜尋…"
 
 #: crates/big-audio-player/src/audio/ui/library_tag_editor/spec.rs:83
-#: crates/big-audio-player/src/audio/ui/track_list.rs:94
+#: crates/big-audio-player/src/audio/ui/track_list.rs:95
 #: crates/big-video-player/src/video/ui/media_details_dialog.rs:114
 #: crates/media-runtime/src/shared/sleep_timer.rs:29
 #: crates/ui/media/big-media-components/src/media/file_metadata_dialog.rs:57
@@ -1289,7 +1292,7 @@ msgid "Duration"
 msgstr "長度"
 
 #: crates/big-audio-player/src/audio/ui/library_tag_editor/spec.rs:88
-#: crates/big-audio-player/src/audio/ui/track_list.rs:97
+#: crates/big-audio-player/src/audio/ui/track_list.rs:98
 #: crates/big-video-player/src/video/ui/media_details_dialog.rs:181
 #: crates/big-video-player/src/video/ui/media_details_dialog.rs:238
 #: crates/ui/media/big-media-components/src/media/file_metadata_dialog.rs:60
@@ -1324,14 +1327,12 @@ msgstr "找不到新資料"
 
 #: crates/big-audio-player/src/audio/ui/library_tree/view.rs:162
 #: crates/big-audio-player/src/audio/ui/playlist_library_dialog/spec.rs:170
-#: crates/big-audio-player/src/audio/ui/playlist_panel.rs:103
 msgid "track"
 msgstr "首曲目"
 
 #: crates/big-audio-player/src/audio/ui/library_tree/view.rs:164
 #: crates/big-audio-player/src/audio/ui/playlist_interactions.rs:292
 #: crates/big-audio-player/src/audio/ui/playlist_library_dialog/spec.rs:172
-#: crates/big-audio-player/src/audio/ui/playlist_panel.rs:105
 msgid "tracks"
 msgstr "首曲目"
 
@@ -1352,13 +1353,13 @@ msgid "Explore Radio and Podcasts in the sidebar tabs"
 msgstr "在側邊欄分頁中探索電台和 Podcast"
 
 #: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:63
-#: crates/big-audio-player/src/audio/ui/playlist_panel.rs:94
-#: crates/big-audio-player/src/audio/ui/playlist_panel.rs:412
+#: crates/big-audio-player/src/audio/ui/playlist_panel.rs:95
+#: crates/big-audio-player/src/audio/ui/playlist_panel.rs:435
 #: crates/big-video-player/src/video/ui/appearance/layout/buttons_page.rs:42
 #: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/header.rs:24
-#: crates/big-video-player/src/video/ui/video_shell/component.rs:301
-#: crates/big-video-player/src/video/ui/video_shell/component.rs:305
-#: crates/big-video-player/src/video/ui/video_shell/playlist_panel.rs:24
+#: crates/big-video-player/src/video/ui/video_shell/component.rs:302
+#: crates/big-video-player/src/video/ui/video_shell/component.rs:306
+#: crates/big-video-player/src/video/ui/video_shell/playlist_panel.rs:26
 msgid "Playlist"
 msgstr "播放清單"
 
@@ -1403,7 +1404,7 @@ msgid "Smartphone"
 msgstr "智慧型手機"
 
 #: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:128
-#: crates/big-video-player/src/video/ui/video_shell/panel.rs:577
+#: crates/big-video-player/src/video/ui/video_shell/panel.rs:580
 #: crates/ui/media/big-player-ui/src/appearance/window.rs:76
 msgid "Appearance"
 msgstr "外觀"
@@ -1415,7 +1416,7 @@ msgid "Keyboard Shortcuts"
 msgstr "鍵盤快捷鍵"
 
 #: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:131
-#: crates/big-video-player/src/video/ui/video_shell/panel.rs:585
+#: crates/big-video-player/src/video/ui/video_shell/panel.rs:588
 msgid "About"
 msgstr "關於"
 
@@ -1424,43 +1425,58 @@ msgstr "關於"
 msgid "Name for the new playlist"
 msgstr "新播放清單的名稱"
 
-#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:225
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:228
+#, fuzzy
+#| msgid "No episodes found"
+msgid "No episodes queued"
+msgstr "找不到單集"
+
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:229
+msgid "Choose a podcast on the left to queue its episodes."
+msgstr ""
+
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:238
 msgid "Drop tracks here"
 msgstr "將曲目拖放到此處"
 
-#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:226
-msgid "or use ＋ to add from the library"
-msgstr "或使用 ＋ 從資料庫加入"
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:240
+msgid "Or double-click a track in the library, or select it and press Return."
+msgstr ""
 
-#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:252
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:267
 msgid "Welcome to Big Audio Player"
 msgstr "歡迎使用 Big Audio Player"
 
-#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:260
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:275
+#, fuzzy
+#| msgid ""
+#| "Add a folder with your music files to get started.\n"
+#| "Supported formats: MP3, FLAC, OGG, M4A, OPUS, WAV and more."
 msgid ""
-"Add a folder with your music files to get started.\n"
+"Open music files to play them now, or add your music folder in the Music "
+"tab.\n"
 "Supported formats: MP3, FLAC, OGG, M4A, OPUS, WAV and more."
 msgstr ""
 "加入包含音樂檔案的資料夾即可開始。\n"
 "支援的格式：MP3、FLAC、OGG、M4A、OPUS、WAV 等。"
 
-#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:273
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:288
 msgid "Open Files"
 msgstr "開啟檔案"
 
-#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:274
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:289
 msgid "Open files"
 msgstr "開啟檔案"
 
-#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:284
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:299
 msgid "Open Audio Files"
 msgstr "開啟音訊檔案"
 
-#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:286
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:301
 msgid "Audio Files"
 msgstr "音訊檔案"
 
-#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:310
+#: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:325
 msgid "Quick tips"
 msgstr "快速提示"
 
@@ -1602,7 +1618,19 @@ msgstr "刪除播放清單？"
 msgid "This will permanently delete"
 msgstr "這將永久刪除"
 
-#: crates/big-audio-player/src/audio/ui/playlist_panel.rs:300
+#: crates/big-audio-player/src/audio/ui/playlist_panel.rs:101
+#, rust-format
+msgid "{count} track · {duration}"
+msgid_plural "{count} tracks · {duration}"
+msgstr[0] ""
+
+#: crates/big-audio-player/src/audio/ui/playlist_panel.rs:108
+#, rust-format
+msgid "{count} track"
+msgid_plural "{count} tracks"
+msgstr[0] ""
+
+#: crates/big-audio-player/src/audio/ui/playlist_panel.rs:309
 #: crates/ui/media/big-player-ui/src/podcast_panel.rs:481
 msgid "Loading…"
 msgstr "正在載入…"
@@ -1619,6 +1647,10 @@ msgstr "正在讀取媒體資訊…"
 msgid "Examined"
 msgstr "已檢查"
 
+#: crates/big-audio-player/src/audio/ui/scan_progress.rs:48
+msgid "Skipped"
+msgstr "已略過"
+
 #: crates/big-audio-player/src/audio/ui/scan_progress.rs:53
 msgid ""
 "You can keep using the player. Cancelling keeps earlier confirmed imports "
@@ -1631,9 +1663,22 @@ msgstr ""
 msgid "Cancel scan"
 msgstr "取消掃描"
 
-#: crates/big-audio-player/src/audio/ui/track_list.rs:451
+#: crates/big-audio-player/src/audio/ui/scan_progress.rs:173
+#, fuzzy
+#| msgid "Library"
+msgid "Library Scan"
+msgstr "資料庫"
+
+#: crates/big-audio-player/src/audio/ui/track_list.rs:460
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/views/queue_view.rs:315
 msgid "Playing"
 msgstr "正在播放"
+
+#: crates/big-audio-player/src/audio/ui/track_list.rs:461
+#, fuzzy
+#| msgid "Pause"
+msgid "Paused"
+msgstr "暫停"
 
 #: crates/big-audio-player/src/audio/ui/unavailable_dialog.rs:52
 msgid ""
@@ -1916,7 +1961,7 @@ msgstr "其他"
 
 #: crates/big-video-player/src/video/keybindings.rs:282
 #: crates/big-video-player/src/video/ui/video_shell/actions.rs:138
-#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:154
+#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:155
 msgid "Open URL"
 msgstr "開啟 URL"
 
@@ -1947,8 +1992,8 @@ msgid "Media information"
 msgstr "媒體資訊"
 
 #: crates/big-video-player/src/video/ui/appearance/layout/buttons_page.rs:28
-#: crates/big-video-player/src/video/ui/video_shell/component.rs:270
-#: crates/big-video-player/src/video/ui/video_shell/component.rs:274
+#: crates/big-video-player/src/video/ui/video_shell/component.rs:271
+#: crates/big-video-player/src/video/ui/video_shell/component.rs:275
 msgid "Keep Above"
 msgstr "置頂"
 
@@ -2612,7 +2657,7 @@ msgstr "自動"
 #: crates/big-video-player/src/video/ui/media_details_dialog.rs:216
 #: crates/big-video-player/src/video/ui/video_shell/input_gestures.rs:112
 #: crates/big-video-player/src/video/ui/video_shell/panel.rs:39
-#: crates/big-video-player/src/video/ui/video_shell/panel.rs:440
+#: crates/big-video-player/src/video/ui/video_shell/panel.rs:443
 msgid "HDR"
 msgstr "HDR"
 
@@ -2622,7 +2667,7 @@ msgstr "HDR（電視）"
 
 #: crates/big-video-player/src/video/ui/media_adjust.rs:119
 #: crates/big-video-player/src/video/ui/video_shell/adjustments.rs:142
-#: crates/big-video-player/src/video/ui/video_shell/panel.rs:431
+#: crates/big-video-player/src/video/ui/video_shell/panel.rs:434
 #: crates/media-runtime/src/shared/audio_effects.rs:186
 msgid "Normal"
 msgstr "正常"
@@ -2769,7 +2814,7 @@ msgstr "一般"
 
 #: crates/big-video-player/src/video/ui/media_details_dialog.rs:122
 #: crates/big-video-player/src/video/ui/video_shell/panel.rs:44
-#: crates/big-video-player/src/video/ui/video_shell/panel.rs:477
+#: crates/big-video-player/src/video/ui/video_shell/panel.rs:480
 msgid "Chapters"
 msgstr "章節"
 
@@ -2844,65 +2889,65 @@ msgstr "外部"
 msgid "Subtitle"
 msgstr "字幕"
 
-#: crates/big-video-player/src/video/ui/menu_dialogs.rs:23
+#: crates/big-video-player/src/video/ui/menu_dialogs.rs:37
 #, fuzzy, rust-format
 #| msgid "Recording was not saved"
 msgid "The screenshot was not saved: {error}"
 msgstr "錄音未儲存"
 
-#: crates/big-video-player/src/video/ui/menu_dialogs.rs:54
+#: crates/big-video-player/src/video/ui/menu_dialogs.rs:69
 msgid "Go to Time"
 msgstr "跳至時間"
 
-#: crates/big-video-player/src/video/ui/menu_dialogs.rs:62
+#: crates/big-video-player/src/video/ui/menu_dialogs.rs:76
 msgid "Use H:MM:SS, M:SS, or seconds."
 msgstr "使用 H:MM:SS、M:SS 或秒數。"
 
-#: crates/big-video-player/src/video/ui/menu_dialogs.rs:65
+#: crates/big-video-player/src/video/ui/menu_dialogs.rs:78
 msgid "Playback time"
 msgstr "播放時間"
 
-#: crates/big-video-player/src/video/ui/menu_dialogs.rs:72
+#: crates/big-video-player/src/video/ui/menu_dialogs.rs:83
 msgid "Go"
 msgstr "前往"
 
-#: crates/big-video-player/src/video/ui/menu_dialogs.rs:124
-#: crates/big-video-player/src/video/ui/menu_dialogs.rs:177
+#: crates/big-video-player/src/video/ui/menu_dialogs.rs:135
+#: crates/big-video-player/src/video/ui/menu_dialogs.rs:188
 msgid "Still saving the previous screenshots. Try again in a moment."
 msgstr ""
 
-#: crates/big-video-player/src/video/ui/menu_dialogs.rs:130
-#: crates/big-video-player/src/video/ui/menu_dialogs.rs:135
+#: crates/big-video-player/src/video/ui/menu_dialogs.rs:141
+#: crates/big-video-player/src/video/ui/menu_dialogs.rs:146
 #, fuzzy
 #| msgid "Stores the video color space in each screenshot"
 msgid "Open a video to take a screenshot"
 msgstr "在每張截圖中儲存影片的色彩空間"
 
-#: crates/big-video-player/src/video/ui/menu_dialogs.rs:147
+#: crates/big-video-player/src/video/ui/menu_dialogs.rs:158
 msgid ""
 "There is no Pictures or home folder to save screenshots in. Choose a folder "
 "in Preferences."
 msgstr ""
 
-#: crates/big-video-player/src/video/ui/menu_dialogs.rs:172
+#: crates/big-video-player/src/video/ui/menu_dialogs.rs:183
 #, rust-format
 msgid "Cannot save to {folder}: {error}. Choose another folder in Preferences."
 msgstr ""
 
-#: crates/big-video-player/src/video/ui/menu_dialogs.rs:182
+#: crates/big-video-player/src/video/ui/menu_dialogs.rs:193
 msgid "The screenshot was not saved because of an unexpected error"
 msgstr ""
 
-#: crates/big-video-player/src/video/ui/menu_dialogs.rs:215
-#: crates/media-runtime/src/player/mpv_backend/backend/mod.rs:327
+#: crates/big-video-player/src/video/ui/menu_dialogs.rs:226
+#: crates/media-runtime/src/player/mpv_backend/backend/mod.rs:333
 msgid "Chapter"
 msgstr "章節"
 
-#: crates/big-video-player/src/video/ui/menu_dialogs.rs:236
+#: crates/big-video-player/src/video/ui/menu_dialogs.rs:247
 msgid "Screenshot saved"
 msgstr "螢幕截圖已儲存"
 
-#: crates/big-video-player/src/video/ui/menu_dialogs.rs:238
+#: crates/big-video-player/src/video/ui/menu_dialogs.rs:249
 msgid "Screenshot saved; disk synchronization could not be confirmed"
 msgstr "螢幕截圖已儲存；無法確認磁碟同步完成"
 
@@ -3394,14 +3439,14 @@ msgstr "以灰色顯示"
 msgid "Replaces colored subtitles with gray ones"
 msgstr "用灰色字幕取代彩色字幕"
 
-#: crates/big-video-player/src/video/ui/preferences/subtitles.rs:256
+#: crates/big-video-player/src/video/ui/preferences/subtitles.rs:262
 msgid "Font"
 msgstr "字型"
 
 #: crates/big-video-player/src/video/ui/preferences/video.rs:24
 #: crates/big-video-player/src/video/ui/video_shell/input_gestures.rs:113
 #: crates/big-video-player/src/video/ui/video_shell/panel.rs:40
-#: crates/big-video-player/src/video/ui/video_shell/panel.rs:454
+#: crates/big-video-player/src/video/ui/video_shell/panel.rs:457
 msgid "Picture"
 msgstr "畫面"
 
@@ -3491,7 +3536,7 @@ msgid "Move to trash"
 msgstr "移至資源回收筒"
 
 #: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/context_menu.rs:101
-#: crates/big-video-player/src/video/ui/video_browser_sidebar/views/queue_view.rs:215
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/views/queue_view.rs:216
 msgid "Remove from playlist"
 msgstr "從播放清單中移除"
 
@@ -3550,7 +3595,7 @@ msgid "Add Video Files"
 msgstr "加入影片檔案"
 
 #: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/header.rs:128
-#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:132
+#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:133
 msgid "Video files"
 msgstr "影片檔案"
 
@@ -3615,7 +3660,7 @@ msgstr "影片"
 msgid "Your folders"
 msgstr "您的資料夾"
 
-#: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/metadata.rs:143
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/metadata.rs:148
 #: crates/big-video-player/src/video/ui/video_browser_sidebar/library.rs:430
 #: crates/big-video-player/src/video/ui/video_browser_sidebar/mod.rs:306
 #, rust-format
@@ -3623,12 +3668,12 @@ msgid "{} video"
 msgid_plural "{} videos"
 msgstr[0] "{} 部影片"
 
-#: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/metadata.rs:150
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/metadata.rs:155
 #, rust-format
 msgid "(of {total})"
 msgstr "（共 {total} 個）"
 
-#: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/metadata.rs:154
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/metadata.rs:159
 #, rust-format
 msgid ""
 "Showing {shown} of {total} files found. Consider filtering by subfolder."
@@ -3712,8 +3757,8 @@ msgstr "僅顯示前 {} 個。輸入更多內容以縮小搜尋範圍。"
 
 #: crates/big-video-player/src/video/ui/video_browser_sidebar/library.rs:701
 #: crates/big-video-player/src/video/ui/video_browser_sidebar/library.rs:704
-#: crates/big-video-player/src/video/ui/video_shell/panel.rs:121
-#: crates/big-video-player/src/video/ui/video_shell/panel.rs:124
+#: crates/big-video-player/src/video/ui/video_shell/panel.rs:129
+#: crates/big-video-player/src/video/ui/video_shell/panel.rs:132
 msgid "Back"
 msgstr "返回"
 
@@ -3767,7 +3812,7 @@ msgstr "搜尋您的影片…"
 msgid "Previous folder"
 msgstr "上一個資料夾"
 
-#: crates/big-video-player/src/video/ui/video_browser_sidebar/views/queue_view.rs:442
+#: crates/big-video-player/src/video/ui/video_browser_sidebar/views/queue_view.rs:445
 #, rust-format
 msgid "Stopped at {}"
 msgstr "停在 {}"
@@ -3775,11 +3820,6 @@ msgstr "停在 {}"
 #: crates/big-video-player/src/video/ui/video_controls_bar.rs:281
 msgid "Seek Position"
 msgstr "定位位置"
-
-#: crates/big-video-player/src/video/ui/video_controls_bar.rs:478
-#: crates/media-runtime/src/shared/tv_cast.rs:716
-msgid "Pause"
-msgstr "暫停"
 
 #: crates/big-video-player/src/video/ui/video_controls_bar.rs:566
 #: crates/ui/media/big-player-ui/src/playback_bar.rs:337
@@ -3874,7 +3914,7 @@ msgid "Drop a file or open one to start"
 msgstr "拖入檔案或開啟一個檔案以開始"
 
 #: crates/big-video-player/src/video/ui/video_shell/actions.rs:132
-#: crates/big-video-player/src/video/ui/video_shell/component.rs:882
+#: crates/big-video-player/src/video/ui/video_shell/component.rs:887
 msgid "Open Recent"
 msgstr "開啟最近使用的檔案"
 
@@ -3969,7 +4009,7 @@ msgid "Stops at {time}"
 msgstr "在 {time} 停止"
 
 #: crates/big-video-player/src/video/ui/video_shell/adjustments.rs:310
-#: crates/big-video-player/src/video/ui/video_shell/panel.rs:238
+#: crates/big-video-player/src/video/ui/video_shell/panel.rs:246
 #, rust-format
 msgid "{n} change"
 msgid_plural "{n} changes"
@@ -3982,7 +4022,7 @@ msgstr "點擊檢視或復原"
 #: crates/big-video-player/src/video/ui/video_shell/component.rs:124
 #: crates/big-video-player/src/video/ui/video_shell/component.rs:127
 #: crates/big-video-player/src/video/ui/video_shell/panel.rs:38
-#: crates/big-video-player/src/video/ui/video_shell/panel.rs:156
+#: crates/big-video-player/src/video/ui/video_shell/panel.rs:164
 msgid "Settings"
 msgstr "設定"
 
@@ -3995,7 +4035,7 @@ msgid "Maximize"
 msgstr "最大化"
 
 #: crates/big-video-player/src/video/ui/video_shell/component.rs:135
-#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:373
+#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:367
 msgid "Restore"
 msgstr "還原"
 
@@ -4017,85 +4057,85 @@ msgstr "在電視上"
 msgid "The TV is still playing"
 msgstr "電視仍在播放"
 
-#: crates/big-video-player/src/video/ui/video_shell/component.rs:881
+#: crates/big-video-player/src/video/ui/video_shell/component.rs:886
 #: crates/big-video-player/src/video/ui/video_shell/input_gestures.rs:121
 msgid "Open File…"
 msgstr "開啟檔案…"
 
-#: crates/big-video-player/src/video/ui/video_shell/component.rs:883
+#: crates/big-video-player/src/video/ui/video_shell/component.rs:888
 #: crates/big-video-player/src/video/ui/video_shell/input_gestures.rs:122
 msgid "Open URL…"
 msgstr "開啟 URL…"
 
-#: crates/big-video-player/src/video/ui/video_shell/component.rs:884
+#: crates/big-video-player/src/video/ui/video_shell/component.rs:889
 msgid "Open Disc…"
 msgstr "開啟光碟…"
 
-#: crates/big-video-player/src/video/ui/video_shell/component.rs:885
+#: crates/big-video-player/src/video/ui/video_shell/component.rs:890
 msgid "TV Channels (IPTV)…"
 msgstr "電視頻道 (IPTV)…"
 
-#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:54
+#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:55
 msgid "Best available"
 msgstr "最佳可用"
 
-#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:56
+#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:57
 msgid "Highest video and audio quality"
 msgstr "最高的影片和音訊品質"
 
-#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:59
+#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:60
 msgid "Up to 1080p"
 msgstr "最高 1080p"
 
-#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:61
+#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:62
 msgid "Prefer Full HD or lower"
 msgstr "優先選擇全高畫質或更低"
 
-#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:64
+#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:65
 msgid "Up to 720p"
 msgstr "最高 720p"
 
-#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:66
+#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:67
 msgid "Prefer HD or lower"
 msgstr "優先選擇高畫質或更低"
 
-#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:69
+#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:70
 msgid "Up to 480p"
 msgstr "最高 480p"
 
-#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:71
+#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:72
 msgid "Prefer SD or lower"
 msgstr "優先選擇標準畫質或更低"
 
-#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:74
+#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:75
 msgid "Audio only"
 msgstr "僅音訊"
 
-#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:76
+#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:77
 msgid "Use the best audio stream"
 msgstr "使用最佳音訊串流"
 
-#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:84
+#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:85
 msgid "Online Video Quality"
 msgstr "線上影片品質"
 
-#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:93
+#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:94
 msgid "Use this quality"
 msgstr "使用此品質"
 
-#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:123
+#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:124
 msgid "IPTV"
 msgstr "IPTV"
 
-#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:131
+#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:132
 msgid "Open Video"
 msgstr "開啟影片"
 
-#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:133
+#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:134
 msgid "Playlist files"
 msgstr "播放清單檔案"
 
-#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:134
+#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:135
 msgid "All files"
 msgstr "所有檔案"
 
@@ -4103,39 +4143,39 @@ msgstr "所有檔案"
 msgid "Supports YouTube, HTTP streams, RTSP, RTMP, DVD, and Blu-ray URLs."
 msgstr "支援 YouTube、HTTP 串流、RTSP、RTMP、DVD 和 Blu-ray URL。"
 
-#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:167
+#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:166
 msgid "Media URL"
 msgstr "媒體 URL"
 
-#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:225
+#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:222
 msgid "Open Disc"
 msgstr "開啟光碟"
 
-#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:234
+#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:231
 msgid "Choose a disc type and enter the device, ISO, or folder path."
 msgstr "選擇光碟類型，並輸入裝置、ISO 或資料夾路徑。"
 
-#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:238
+#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:235
 msgid "Disc type"
 msgstr "光碟類型"
 
-#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:239
+#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:236
 msgid "DVD"
 msgstr "DVD"
 
-#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:239
+#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:236
 msgid "Blu-ray"
 msgstr "Blu-ray"
 
-#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:242
+#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:238
 msgid "Disc device path"
 msgstr "光碟裝置路徑"
 
-#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:366
+#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:360
 msgid "Restore Default Settings?"
 msgstr "還原預設設定？"
 
-#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:368
+#: crates/big-video-player/src/video/ui/video_shell/dialogs.rs:362
 msgid ""
 "Every setting, including appearance, goes back to its default value. Some "
 "changes take effect after reopening the player."
@@ -4153,23 +4193,23 @@ msgstr "無法匯出網路串流"
 
 #: crates/big-video-player/src/video/ui/video_shell/input_gestures.rs:114
 #: crates/big-video-player/src/video/ui/video_shell/panel.rs:41
-#: crates/big-video-player/src/video/ui/video_shell/panel.rs:459
+#: crates/big-video-player/src/video/ui/video_shell/panel.rs:462
 msgid "Zoom and position"
 msgstr "縮放和位置"
 
 #: crates/big-video-player/src/video/ui/video_shell/input_gestures.rs:115
 #: crates/big-video-player/src/video/ui/video_shell/panel.rs:42
-#: crates/big-video-player/src/video/ui/video_shell/panel.rs:464
+#: crates/big-video-player/src/video/ui/video_shell/panel.rs:467
 msgid "Effects and filters"
 msgstr "效果和濾鏡"
 
 #: crates/big-video-player/src/video/ui/video_shell/input_gestures.rs:123
-#: crates/big-video-player/src/video/ui/video_shell/panel.rs:517
+#: crates/big-video-player/src/video/ui/video_shell/panel.rs:520
 msgid "About this video"
 msgstr "關於此影片"
 
 #: crates/big-video-player/src/video/ui/video_shell/panel.rs:45
-#: crates/big-video-player/src/video/ui/video_shell/panel.rs:491
+#: crates/big-video-player/src/video/ui/video_shell/panel.rs:494
 msgid "Stop after…"
 msgstr "在此之後停止…"
 
@@ -4177,46 +4217,46 @@ msgstr "在此之後停止…"
 msgid "Recent Files"
 msgstr "最近使用的檔案"
 
-#: crates/big-video-player/src/video/ui/video_shell/panel.rs:478
+#: crates/big-video-player/src/video/ui/video_shell/panel.rs:481
 #, rust-format
 msgid "{current} of {total}"
 msgstr "第 {current} 個，共 {total} 個"
 
-#: crates/big-video-player/src/video/ui/video_shell/panel.rs:505
+#: crates/big-video-player/src/video/ui/video_shell/panel.rs:508
 msgid "Online quality"
 msgstr "線上品質"
 
-#: crates/big-video-player/src/video/ui/video_shell/panel.rs:506
+#: crates/big-video-player/src/video/ui/video_shell/panel.rs:509
 msgid "Choose"
 msgstr "選擇"
 
-#: crates/big-video-player/src/video/ui/video_shell/panel.rs:550
+#: crates/big-video-player/src/video/ui/video_shell/panel.rs:553
 msgid "Put back what was just set to normal"
 msgstr "還原剛剛設為正常的內容"
 
-#: crates/big-video-player/src/video/ui/video_shell/panel.rs:582
+#: crates/big-video-player/src/video/ui/video_shell/panel.rs:585
 msgid "Shortcuts"
 msgstr "快捷鍵"
 
-#: crates/big-video-player/src/video/ui/video_shell/panel.rs:623
+#: crates/big-video-player/src/video/ui/video_shell/panel.rs:626
 msgid "Changed"
 msgstr "已變更"
 
-#: crates/big-video-player/src/video/ui/video_shell/panel.rs:635
-#: crates/big-video-player/src/video/ui/video_shell/panel.rs:658
+#: crates/big-video-player/src/video/ui/video_shell/panel.rs:638
+#: crates/big-video-player/src/video/ui/video_shell/panel.rs:661
 msgid "Back to normal"
 msgstr "恢復正常"
 
-#: crates/big-video-player/src/video/ui/video_shell/panel.rs:640
+#: crates/big-video-player/src/video/ui/video_shell/panel.rs:643
 #, rust-format
 msgid "Undo: {setting}"
 msgstr "復原：{setting}"
 
-#: crates/big-video-player/src/video/ui/video_shell/panel.rs:659
+#: crates/big-video-player/src/video/ui/video_shell/panel.rs:662
 msgid "Undo every change to the picture and sound"
 msgstr "復原對畫面和聲音的所有變更"
 
-#: crates/big-video-player/src/video/ui/video_shell/panel.rs:828
+#: crates/big-video-player/src/video/ui/video_shell/panel.rs:831
 msgid "Jump to a chapter"
 msgstr "跳至章節"
 
@@ -4224,28 +4264,32 @@ msgstr "跳至章節"
 msgid "No Recent Files"
 msgstr "沒有最近使用的檔案"
 
-#: crates/big-video-player/src/video/ui/video_shell/panel/recent.rs:204
-#: crates/big-video-player/src/video/ui/video_shell/panel/recent.rs:208
+#: crates/big-video-player/src/video/ui/video_shell/panel/recent.rs:205
+#: crates/big-video-player/src/video/ui/video_shell/panel/recent.rs:209
 msgid "Search recent files"
 msgstr "搜尋最近使用的檔案"
 
-#: crates/big-video-player/src/video/ui/video_shell/panel/recent.rs:220
+#: crates/big-video-player/src/video/ui/video_shell/panel/recent.rs:221
 msgid "No recent file matches"
 msgstr "沒有相符的最近使用檔案"
 
-#: crates/big-video-player/src/video/ui/video_shell/playback.rs:169
+#: crates/big-video-player/src/video/ui/video_shell/playback.rs:186
 msgid "The screenshot took too long and was not saved"
 msgstr ""
 
 #: crates/big-video-player/src/video/ui/video_shell/playback.rs:213
+msgid "Could not play this file — it may be unsupported or corrupt."
+msgstr "無法播放此檔案——它可能不受支援或已損毀。"
+
+#: crates/big-video-player/src/video/ui/video_shell/playback.rs:246
 msgid "Playing video"
 msgstr "正在播放影片"
 
-#: crates/big-video-player/src/video/ui/video_shell/playback.rs:490
+#: crates/big-video-player/src/video/ui/video_shell/playback.rs:523
 msgid "Could not move to trash"
 msgstr "無法移至資源回收筒"
 
-#: crates/big-video-player/src/video/ui/video_shell/playback.rs:496
+#: crates/big-video-player/src/video/ui/video_shell/playback.rs:529
 #, rust-format
 msgid "{} file moved to trash"
 msgid_plural "{} files moved to trash"
@@ -4396,6 +4440,13 @@ msgstr[0] "{} 個字幕"
 #: crates/media-runtime/src/media/playlist_scan/display.rs:20
 msgid "Home"
 msgstr "首頁"
+
+#: crates/media-runtime/src/player/mpv_backend/types.rs:94
+msgid ""
+"Sound could not start on the audio output. Check that your speakers or "
+"headphones are connected, or choose another Audio Output in Preferences and "
+"reopen the player."
+msgstr ""
 
 #: crates/media-runtime/src/settings/messages.rs:7
 msgid ""
@@ -5080,7 +5131,7 @@ msgstr "背景不透明度"
 msgid "Menu Opacity"
 msgstr "選單不透明度"
 
-#: crates/ui/media/big-player-ui/src/appearance/video_colors.rs:70
+#: crates/ui/media/big-player-ui/src/appearance/video_colors.rs:85
 msgid "Icon and Text Shadow"
 msgstr "圖示和文字陰影"
 
@@ -5488,6 +5539,23 @@ msgstr "網頁遙控已關閉。"
 #: crates/ui/media/big-player-ui/src/smartphone/dialog.rs:185
 msgid "Could not start server"
 msgstr "無法啟動伺服器"
+
+#~ msgid "Podcast"
+#~ msgstr "Podcast"
+
+#~ msgid "Scan cancelled. Earlier confirmed imports were kept."
+#~ msgstr "掃描已取消。先前已確認的匯入已保留。"
+
+#~ msgid ""
+#~ "Scan incomplete. Earlier confirmed imports were kept; check storage and "
+#~ "retry."
+#~ msgstr "掃描未完成。先前已確認的匯入已保留；請檢查儲存空間後重試。"
+
+#~ msgid "Library scan finished."
+#~ msgstr "資料庫掃描已完成。"
+
+#~ msgid "or use ＋ to add from the library"
+#~ msgstr "或使用 ＋ 從資料庫加入"
 
 #~ msgid "Screenshot queue is full; wait for pending captures"
 #~ msgstr "螢幕截圖佇列已滿；請等待待處理的截圖完成"
