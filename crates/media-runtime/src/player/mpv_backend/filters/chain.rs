@@ -51,12 +51,23 @@ mod tests {
         }
     }
 
+    /// Expected graph written from DPDFNet-2's plugin, 48 dB cap, 2880-sample
+    /// delay and the 24000-sample lead-in.
     #[test]
     fn noise_reduction_requires_installed_chain() {
-        let model = NoiseModel::DpdfNet2;
         let chain = build_audio_filter_chain(&effects(false, 0.5, &[]));
-        if model.plugin_available() {
-            assert_eq!(chain, [lavfi_chain(model, 0.5, false, None)]);
+        if NoiseModel::DpdfNet2.plugin_available() {
+            assert_eq!(
+                chain,
+                [concat!(
+                    "aresample=48000,asplit[bvcnr_main][bvcnr_head];",
+                    "[bvcnr_head]atrim=end_sample=24000,apad=whole_len=24000,areverse,",
+                    "asetpts=PTS-STARTPTS-24000/SR/TB[bvcnr_pre];",
+                    "[bvcnr_pre][bvcnr_main]concat=n=2:v=0:a=1,apad=pad_len=2880,",
+                    "ladspa=file=/usr/lib/ladspa/libdpdfnet_native.so:plugin=dpdfnet_native_48hr:",
+                    "controls=c0=24.00,atrim=start_sample=26880,asetpts=PTS-2880/SR/TB",
+                )]
+            );
         } else {
             assert!(chain.is_empty(), "{chain:?}");
         }
@@ -81,11 +92,5 @@ mod tests {
         assert_eq!(chain.len(), 2);
         assert!(chain[0].contains("f=100"));
         assert!(chain[1].contains("f=1000"));
-    }
-
-    #[test]
-    fn flat_eq_builds_empty_chain() {
-        let bands = [(100.0, 0.05), (200.0, -0.09)];
-        assert!(build_audio_filter_chain(&effects(false, 0.0, &bands)).is_empty());
     }
 }

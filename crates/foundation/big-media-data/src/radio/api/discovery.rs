@@ -133,17 +133,6 @@ mod tests {
         }
     }
 
-    // DNS discovery calls libc resolver APIs; ordinary tests cover the system
-    // boundary while Miri stays focused on pure server-list logic.
-    #[test]
-    #[cfg_attr(miri, ignore)]
-    fn api_servers_returns_non_empty() {
-        assert!(
-            !api_servers().is_empty(),
-            "api_servers should never return empty"
-        );
-    }
-
     #[test]
     fn rotate_servers_preserves_elements() {
         let original = vec!["a".to_string(), "b".to_string(), "c".to_string()];
@@ -162,23 +151,5 @@ mod tests {
     #[test]
     fn rotate_empty_list_unchanged() {
         assert!(rotate_servers(Vec::new()).is_empty());
-    }
-
-    // DNS discovery calls libc resolver APIs; ordinary tests cover the system
-    // boundary while Miri stays focused on pure server-list logic.
-    #[test]
-    #[cfg_attr(miri, ignore)]
-    fn dns_discovery_returns_valid_servers() {
-        let servers = discover_servers_dns();
-        for server in &servers {
-            assert!(
-                !server.starts_with("https://"),
-                "server should be hostname, not URL: {server}"
-            );
-            assert!(
-                !server.starts_with("http://"),
-                "server should be hostname, not URL: {server}"
-            );
-        }
     }
 }

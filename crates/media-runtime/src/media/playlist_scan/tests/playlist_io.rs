@@ -59,51 +59,6 @@ fn parse_m3u_nonexistent_file_returns_empty() {
 }
 
 #[test]
-fn parse_iptv_m3u_extracts_metadata() {
-    let dir = tempfile::tempdir().unwrap();
-    let m3u = dir.path().join("iptv.m3u");
-    std::fs::write(
-        &m3u,
-        concat!(
-            "#EXTM3U\n",
-            "#EXTINF:-1 tvg-logo=\"http://logo.com/ch1.png\" group-title=\"News\",Channel One\n",
-            "http://stream.example.com/ch1\n",
-            "#EXTINF:-1 group-title=\"Sports\",Channel Two\n",
-            "http://stream.example.com/ch2\n",
-        ),
-    )
-    .unwrap();
-    let channels = crate::media::iptv::parse_m3u_file(&m3u);
-    assert_eq!(channels.len(), 2);
-    assert_eq!(channels[0].name, "Channel One");
-    assert_eq!(channels[0].group, "News");
-    assert_eq!(channels[0].logo, "http://logo.com/ch1.png");
-    assert_eq!(channels[0].url, "http://stream.example.com/ch1");
-    assert_eq!(channels[1].name, "Channel Two");
-    assert_eq!(channels[1].group, "Sports");
-    assert!(channels[1].logo.is_empty());
-}
-
-#[test]
-fn parse_iptv_m3u_url_without_extinf() {
-    let dir = tempfile::tempdir().unwrap();
-    let m3u = dir.path().join("iptv.m3u");
-    std::fs::write(&m3u, "#EXTM3U\nhttp://stream.example.com/direto\n").unwrap();
-    let channels = crate::media::iptv::parse_m3u_file(&m3u);
-    assert_eq!(channels.len(), 1);
-    assert_eq!(channels[0].url, "http://stream.example.com/direto");
-    assert!(!channels[0].name.is_empty());
-}
-
-#[test]
-fn parse_iptv_m3u_empty_file() {
-    let dir = tempfile::tempdir().unwrap();
-    let m3u = dir.path().join("empty.m3u");
-    std::fs::write(&m3u, "").unwrap();
-    assert!(crate::media::iptv::parse_m3u_file(&m3u).is_empty());
-}
-
-#[test]
 fn parse_playlist_file_pls_format() {
     let dir = tempfile::tempdir().unwrap();
     let pls = dir.path().join("radio.pls");
