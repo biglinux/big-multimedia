@@ -4,6 +4,7 @@
 //! spawning); move and rename are filesystem ops done here, followed by a
 //! folder re-scan. All act on the current `selection` (batch) or a single path.
 
+use big_relm4_components::feedback::tooltip;
 use std::path::{Path, PathBuf};
 use std::rc::Rc;
 
@@ -86,12 +87,7 @@ pub(super) fn build_batch_bar(state: &Rc<BrowserState>) {
         },
     ));
 
-    let done = gtk::Button::builder()
-        .icon_name("window-close-symbolic")
-        .css_classes(["flat"])
-        .build();
-    done.set_tooltip_text(Some(&i18n("Done")));
-    done.update_property(&[gtk::accessible::Property::Label(&i18n("Done"))]);
+    let done = tooltip::icon_button("window-close-symbolic", &i18n("Done"), &["flat"]);
     done.connect_clicked({
         let state = state.clone();
         move |_| state.set_select_mode(false)
@@ -112,12 +108,7 @@ fn batch_button(
     label: &str,
     action: impl Fn(&Rc<BrowserState>, Vec<String>) + 'static,
 ) -> gtk::Button {
-    let action_button = gtk::Button::builder()
-        .icon_name(icon)
-        .css_classes(["flat"])
-        .build();
-    action_button.set_tooltip_text(Some(label));
-    action_button.update_property(&[gtk::accessible::Property::Label(label)]);
+    let action_button = tooltip::icon_button(icon, label, &["flat"]);
     action_button.connect_clicked({
         let state = state.clone();
         move |_| {

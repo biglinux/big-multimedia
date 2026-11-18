@@ -170,18 +170,7 @@ impl Screenshots {
     }
 }
 fn validate_png(path: &std::path::Path) -> io::Result<()> {
-    use std::fs::OpenOptions;
-    let mut options = OpenOptions::new();
-    options.read(true);
-    #[cfg(unix)]
-    {
-        use std::os::unix::fs::OpenOptionsExt;
-        options.custom_flags(libc::O_NOFOLLOW | libc::O_NONBLOCK);
-    }
-    let mut file = options.open(path)?;
-    if !file.metadata()?.is_file() {
-        return Err(io::Error::other("screenshot is not regular"));
-    }
+    let mut file = big_os_kit::storage::open_regular_read(path)?;
     let mut signature = [0_u8; 8];
     file.read_exact(&mut signature)?;
     if &signature != b"\x89PNG\r\n\x1a\n" {

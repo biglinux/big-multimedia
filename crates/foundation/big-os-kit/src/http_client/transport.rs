@@ -92,7 +92,6 @@ impl Transport {
         }
         #[cfg(unix)]
         {
-            use std::os::unix::process::CommandExt;
             let stall = match deadline {
                 super::Deadline::Total(_) => None,
                 super::Deadline::Stall(stall) => Some(stall),
@@ -101,28 +100,11 @@ impl Transport {
                 .checked_add(deadline.duration())
                 .ok_or_else(|| io::Error::other("invalid HTTP timeout"))?;
             let permit = Permit::reserve()?;
-            command.process_group(0);
-            let child = command.spawn()?;
-            let mut owner = OwnedChild {
-                child: Some(child),
-                permit: Some(permit),
-                may_signal: true,
-            };
-            let stdin = owner
-                .child
-                .as_mut()
-                .expect("owned child")
-                .stdin
-                .take()
-                .ok_or_else(|| io::Error::other("curl stdin unavailable"))?;
+            let mut owner = OwnedChild::spawn(&mut command, permit)?;
+            let (stdin, stdout, _) = owner.take_pipes();
+            let stdin = stdin.ok_or_else(|| io::Error::other("curl stdin unavailable"))?;
             send_config(stdin, config, deadline)?;
-            let stdout = owner
-                .child
-                .as_mut()
-                .expect("owned child")
-                .stdout
-                .take()
-                .ok_or_else(|| io::Error::other("curl stdout unavailable"))?;
+            let stdout = stdout.ok_or_else(|| io::Error::other("curl stdout unavailable"))?;
             set_nonblocking(&stdout)?;
             Ok(Self {
                 owner: Some(owner),
@@ -157,10 +139,8 @@ impl Transport {
                         .owner
                         .as_mut()
                         .ok_or_else(|| io::Error::other("HTTP transport closed"))?;
-                    let result = owner.child.as_mut().expect("owned child").try_wait();
-                    match result {
-                        Ok(Some(status)) => {
-                            owner.child = None; // collected: never signal this PID/group again
+                    match owner.try_collect()? {
+                        Some(status) => {
                             self.owner = None;
                             if status.success() {
                                 self.finished = true;
@@ -172,14 +152,7 @@ impl Transport {
                                 status.code().unwrap_or(-1)
                             )));
                         }
-                        Ok(None) => std::thread::sleep(Duration::from_millis(5)),
-                        Err(error) => {
-                            #[cfg(unix)]
-                            if error.raw_os_error() == Some(libc::ECHILD) {
-                                owner.may_signal = false;
-                            }
-                            return Err(error);
-                        }
+                        None => std::thread::sleep(Duration::from_millis(5)),
                     }
                 }
                 Ok(n) => return Ok(n),

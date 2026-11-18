@@ -207,14 +207,12 @@ fn build_queue_row(state: &Rc<BrowserState>) -> gtk::Box {
     text.append(&detail);
     row.append(&text);
 
-    let remove = gtk::Button::builder()
-        .icon_name("window-close-symbolic")
-        .valign(gtk::Align::Center)
-        .css_classes(["flat", "circular", "queue-remove"])
-        .build();
-    remove.update_property(&[gtk::accessible::Property::Label(&crate::i18n::i18n(
-        "Remove from playlist",
-    ))]);
+    let remove = big_relm4_components::feedback::tooltip::icon_button(
+        "window-close-symbolic",
+        &crate::i18n::i18n("Remove from playlist"),
+        &["flat", "circular", "queue-remove"],
+    );
+    remove.set_valign(gtk::Align::Center);
     remove.connect_clicked({
         let state = state.clone();
         let row_weak = row.downgrade();

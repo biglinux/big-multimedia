@@ -13,20 +13,7 @@ use super::video_shell::{VideoShell, VideoShellInput};
 use crate::i18n::i18n;
 use crate::player::mpv_backend::ScreenshotRequestError;
 use big_media_components::time::playback_time;
-use big_relm4_components::layout::{
-    dialog_footer::{BigDialogFooter, BigDialogFooterSpec},
-    dialog_page::{BigDialogPage, focus_when_shown},
-    preferences::BigPreferencesGroupSpec,
-};
-
-/// The one entry of a small dialog, Enter applying it.
-pub(crate) fn dialog_entry_row(title: &str) -> adw::EntryRow {
-    big_relm4_components::input::entry_row::build(
-        adw::EntryRow::builder()
-            .title(title)
-            .show_apply_button(true),
-    )
-}
+use big_relm4_components::layout::name_prompt::{BigNamePromptSpec, prompt_name};
 
 /// mpv took the request but did not save the picture; `error` says why.
 pub(crate) fn screenshot_not_saved_message(error: &str) -> String {
@@ -61,67 +48,26 @@ impl VideoShell {
     /// Accepts `H:MM:SS`, `M:SS`, or plain seconds; on confirm the shell seeks
     /// there, on the TV when one plays.
     pub(super) fn show_goto_time_dialog(&self, root: &adw::ApplicationWindow) {
-        let dialog = big_gtk_kit::dialog::Dialog::builder()
-            .title(i18n("Go to Time"))
-            .content_width(420)
-            .build();
-        let page = BigDialogPage::plain();
-        page.content().set_spacing(12);
-
-        let group = BigPreferencesGroupSpec::untitled()
-            .description(i18n("Use H:MM:SS, M:SS, or seconds."))
-            .build();
-        let entry = dialog_entry_row(&i18n("Playback time"));
-        entry.set_text(&playback_time(self.playback_position()));
-        group.add(&entry);
-        page.content().append(&group);
-
-        let footer = BigDialogFooter::new(&BigDialogFooterSpec::new(i18n("Cancel"), i18n("Go")));
-        footer
-            .accept_button()
-            .set_sensitive(accepted_goto_seconds(&entry.text()).is_some());
-        page.root().add_bottom_bar(footer.root());
-        dialog.set_child(Some(page.root()));
-
-        let accept_button = footer.accept_button().downgrade();
-        entry.connect_changed(move |row| {
-            if let Some(accept_button) = accept_button.upgrade() {
-                accept_button.set_sensitive(accepted_goto_seconds(&row.text()).is_some());
-            }
+        let spec = BigNamePromptSpec {
+            title: i18n("Go to Time"),
+            description: Some(i18n("Use H:MM:SS, M:SS, or seconds.")),
+            entry_title: i18n("Playback time"),
+            prefill: playback_time(self.playback_position()),
+            accept_label: i18n("Go"),
+            content_width: 420,
+            content_height: -1,
+        };
+        let validate = |text: &str| accepted_goto_seconds(text).map(|_| text.to_owned());
+        prompt_name(Some(root.upcast_ref()), &spec, validate, |text| {
+            let Some(secs) = accepted_goto_seconds(&text) else {
+                return false;
+            };
+            // Through the shell, which sends it to the TV when one plays.
+            crate::video::ui::video_shell::send_to_shell(
+                crate::video::ui::video_shell::VideoShellInput::SeekTo(secs),
+            );
+            true
         });
-
-        let accept_button = footer.accept_button().downgrade();
-        entry.connect_apply(move |_| {
-            if let Some(accept_button) = accept_button.upgrade()
-                && accept_button.is_sensitive()
-            {
-                accept_button.emit_clicked();
-            }
-        });
-
-        let dialog_ref = dialog.downgrade();
-        footer.cancel_button().connect_clicked(move |_| {
-            if let Some(dialog) = dialog_ref.upgrade() {
-                dialog.close();
-            }
-        });
-
-        let dialog_ref = dialog.downgrade();
-        let entry_for_accept = entry.clone();
-        footer.accept_button().connect_clicked(move |_| {
-            if let Some(secs) = accepted_goto_seconds(&entry_for_accept.text()) {
-                // Through the shell, which sends it to the TV when one plays.
-                crate::video::ui::video_shell::send_to_shell(
-                    crate::video::ui::video_shell::VideoShellInput::SeekTo(secs),
-                );
-                if let Some(dialog) = dialog_ref.upgrade() {
-                    dialog.close();
-                }
-            }
-        });
-
-        focus_when_shown(&entry, 0, -1);
-        dialog.present(Some(root));
     }
 
     /// Request off-thread staging; success is delivered by a terminal mpv reply.

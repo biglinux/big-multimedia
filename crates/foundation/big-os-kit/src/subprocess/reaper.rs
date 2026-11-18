@@ -3,7 +3,7 @@
 //! the collector sleeps in poll(2) on a pidfd per child until one exits.
 use std::io;
 use std::os::fd::{AsRawFd, FromRawFd, OwnedFd};
-use std::process::Child;
+use std::process::{Child, ChildStderr, ChildStdin, ChildStdout, Command, ExitStatus};
 use std::sync::{Arc, Mutex, PoisonError};
 
 const MAX_CHILDREN: usize = 128;
@@ -201,9 +201,82 @@ fn pidfd_open(pid: u32) -> Option<OwnedFd> {
 /// (unless `may_signal` was cleared after the leader exited) and hands the
 /// child to the collector, so no error or drop path ever blocks in `wait()`.
 pub(crate) struct OwnedChild {
-    pub(crate) child: Option<Child>,
-    pub(crate) permit: Option<Permit>,
-    pub(crate) may_signal: bool,
+    /// `None` once collected: the pid may then name another process.
+    child: Option<Child>,
+    permit: Option<Permit>,
+    /// Cleared on ECHILD, when something else reaped the leader.
+    may_signal: bool,
+}
+
+impl OwnedChild {
+    /// Spawn `command` as the leader of a new process group, reaped through `permit`.
+    pub(crate) fn spawn(command: &mut Command, permit: Permit) -> io::Result<Self> {
+        #[cfg(unix)]
+        std::os::unix::process::CommandExt::process_group(command, 0);
+        Ok(Self {
+            child: Some(command.spawn()?),
+            permit: Some(permit),
+            may_signal: true,
+        })
+    }
+
+    pub(crate) fn take_pipes(
+        &mut self,
+    ) -> (Option<ChildStdin>, Option<ChildStdout>, Option<ChildStderr>) {
+        match self.child.as_mut() {
+            Some(child) => (child.stdin.take(), child.stdout.take(), child.stderr.take()),
+            None => (None, None, None),
+        }
+    }
+
+    /// Whether the leader exited, leaving it waitable (WNOWAIT) so its pid stays ours.
+    #[cfg(target_os = "linux")]
+    pub(crate) fn exited(&mut self) -> io::Result<bool> {
+        let Some(pid) = self.child.as_ref().map(Child::id) else {
+            return Ok(true);
+        };
+        // SAFETY: siginfo_t is plain C data; all-zero is a valid value, and it is
+        // what WNOHANG leaves behind when no child has changed state.
+        let mut info: libc::siginfo_t = unsafe { std::mem::zeroed() };
+        // SAFETY: `info` is a live, writable siginfo_t; WNOWAIT leaves the child
+        // waitable, so the PID stays ours until `try_collect` reaps it.
+        let rc = unsafe {
+            libc::waitid(
+                libc::P_PID,
+                pid as libc::id_t,
+                &mut info,
+                libc::WEXITED | libc::WNOHANG | libc::WNOWAIT,
+            )
+        };
+        if rc < 0 {
+            return Err(self.wait_failed(io::Error::last_os_error()));
+        }
+        // SAFETY: waitid succeeded, so `info` is either zeroed or a filled-in
+        // SIGCHLD record; both carry a valid `si_pid`.
+        Ok(unsafe { info.si_pid() } != 0)
+    }
+
+    /// Reap the leader if it exited; after that its pid and group are never signalled.
+    pub(crate) fn try_collect(&mut self) -> io::Result<Option<ExitStatus>> {
+        let Some(child) = self.child.as_mut() else {
+            return Err(io::Error::other("child already collected"));
+        };
+        match child.try_wait() {
+            Ok(Some(status)) => {
+                self.child = None;
+                Ok(Some(status))
+            }
+            Ok(None) => Ok(None),
+            Err(error) => Err(self.wait_failed(error)),
+        }
+    }
+
+    fn wait_failed(&mut self, error: io::Error) -> io::Error {
+        if error.raw_os_error() == Some(libc::ECHILD) {
+            self.may_signal = false;
+        }
+        error
+    }
 }
 
 impl Drop for OwnedChild {

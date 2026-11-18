@@ -698,13 +698,8 @@ fn build_export_menu_model() -> gio::Menu {
 
 /// OSD icon button, its name in the tooltip and for screen readers.
 fn osd_button(icon_name: &str, label: &str) -> gtk::Button {
-    let button = gtk::Button::builder()
-        .icon_name(icon_name)
-        .tooltip_text(label)
-        .valign(gtk::Align::Center)
-        .css_classes(["osd-btn"])
-        .build();
-    button.update_property(&[gtk::accessible::Property::Label(label)]);
+    let button = tooltip::icon_button(icon_name, label, &["osd-btn"]);
+    button.set_valign(gtk::Align::Center);
     button
 }
 

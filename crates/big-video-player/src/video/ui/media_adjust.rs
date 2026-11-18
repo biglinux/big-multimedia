@@ -14,6 +14,7 @@
 //! The pure slider-spec → range/default mapping is exercised by the unit tests
 //! at the bottom (range monotonicity + default-in-range invariants).
 
+use big_relm4_components::feedback::tooltip;
 use std::cell::{Cell, RefCell};
 use std::rc::Rc;
 use std::sync::Arc;
@@ -356,21 +357,18 @@ fn build_transform_group(
         .width_chars(4)
         .xalign(1.0)
         .build();
-    let rotate_left = gtk::Button::builder()
-        .icon_name("object-rotate-left-symbolic")
-        .css_classes(["flat"])
-        .build();
-    rotate_left.update_property(&[gtk::accessible::Property::Label(&i18n("Rotate Left"))]);
-    let rotate_reset = gtk::Button::builder()
-        .icon_name("edit-undo-symbolic")
-        .css_classes(["flat"])
-        .build();
-    rotate_reset.update_property(&[gtk::accessible::Property::Label(&i18n("Reset Rotation"))]);
-    let rotate_right = gtk::Button::builder()
-        .icon_name("object-rotate-right-symbolic")
-        .css_classes(["flat"])
-        .build();
-    rotate_right.update_property(&[gtk::accessible::Property::Label(&i18n("Rotate Right"))]);
+    let rotate_left = tooltip::icon_button(
+        "object-rotate-left-symbolic",
+        &i18n("Rotate Left"),
+        &["flat"],
+    );
+    let rotate_reset =
+        tooltip::icon_button("edit-undo-symbolic", &i18n("Reset Rotation"), &["flat"]);
+    let rotate_right = tooltip::icon_button(
+        "object-rotate-right-symbolic",
+        &i18n("Rotate Right"),
+        &["flat"],
+    );
     rotation_box.append(&rotation_label);
     rotation_box.append(&rotate_left);
     rotation_box.append(&rotate_reset);

@@ -1,11 +1,11 @@
 use super::input::shell_input_sender;
 use super::playback::is_remote_uri;
 use super::*;
-use crate::video::ui::menu_dialogs::dialog_entry_row;
 use big_relm4_components::input::dropdown_row::{BigDropdownRow, BigDropdownRowSpec};
 use big_relm4_components::layout::{
     dialog_footer::{BigDialogFooter, BigDialogFooterSpec},
     dialog_page::{BigDialogPage, focus_when_shown},
+    name_prompt::{BigNamePromptSpec, prompt_name},
     preferences::BigPreferencesGroupSpec,
 };
 
@@ -152,63 +152,26 @@ impl VideoShell {
             log::warn!("video open-url dialog ignored before shell input registration");
             return;
         };
-        let dialog = big_gtk_kit::dialog::Dialog::builder()
-            .title(i18n("Open URL"))
-            .content_width(460)
-            .build();
-        let page = BigDialogPage::plain();
-        page.content().set_spacing(12);
-
-        let group = BigPreferencesGroupSpec::untitled()
-            .description(i18n(
+        let spec = BigNamePromptSpec {
+            title: i18n("Open URL"),
+            description: Some(i18n(
                 "Supports YouTube, HTTP streams, RTSP, RTMP, DVD, and Blu-ray URLs.",
-            ))
-            .build();
-        let entry = dialog_entry_row(&i18n("Media URL"));
-        group.add(&entry);
-        page.content().append(&group);
-
-        let footer = BigDialogFooter::new(&BigDialogFooterSpec::new(i18n("Cancel"), i18n("Play")));
-        footer.accept_button().set_sensitive(false);
-        page.root().add_bottom_bar(footer.root());
-        dialog.set_child(Some(page.root()));
-
-        let accept_button = footer.accept_button().downgrade();
-        entry.connect_changed(move |row| {
-            if let Some(accept_button) = accept_button.upgrade() {
-                accept_button.set_sensitive(accepted_open_url(&row.text()).is_some());
-            }
-        });
-
-        let accept_button = footer.accept_button().downgrade();
-        entry.connect_apply(move |_| {
-            if let Some(accept_button) = accept_button.upgrade()
-                && accept_button.is_sensitive()
-            {
-                accept_button.emit_clicked();
-            }
-        });
-
-        let dialog_ref = dialog.downgrade();
-        footer.cancel_button().connect_clicked(move |_| {
-            if let Some(dialog) = dialog_ref.upgrade() {
-                dialog.close();
-            }
-        });
-
-        let dialog_ref = dialog.downgrade();
-        let entry_for_accept = entry.clone();
-        footer.accept_button().connect_clicked(move |_| {
-            if let Some(url) = accepted_open_url(&entry_for_accept.text()) {
+            )),
+            entry_title: i18n("Media URL"),
+            prefill: String::new(),
+            accept_label: i18n("Play"),
+            content_width: 460,
+            content_height: -1,
+        };
+        prompt_name(
+            Some(root.upcast_ref()),
+            &spec,
+            accepted_open_url,
+            move |url| {
                 let _ = sender.send(VideoShellInput::OpenFiles(vec![url]));
-                if let Some(dialog) = dialog_ref.upgrade() {
-                    dialog.close();
-                }
-            }
-        });
-
-        focus_when_shown(&entry, 0, -1);
-        dialog.present(Some(root));
+                true
+            },
+        );
     }
 
     /// Present the open-disc entry dialog (DVD / Blu-ray device or ISO/folder).
@@ -236,7 +199,11 @@ impl VideoShell {
             i18n("Disc type"),
             [i18n("DVD"), i18n("Blu-ray")],
         ));
-        let entry = dialog_entry_row(&i18n("Disc device path"));
+        let entry = big_relm4_components::input::entry_row::build(
+            adw::EntryRow::builder()
+                .title(i18n("Disc device path"))
+                .show_apply_button(true),
+        );
         entry.set_text("/dev/sr0");
         entry.add_css_class("monospace");
         group.add(disc_type_row.root());

@@ -9,32 +9,9 @@ use super::{
 };
 use std::io::{self, Read, Write};
 use std::os::fd::AsRawFd;
-use std::os::unix::process::CommandExt;
 use std::process::ChildStdin;
 use std::sync::atomic::{AtomicBool, Ordering};
 use std::time::Instant;
-
-fn exited_unreaped(pid: u32) -> io::Result<bool> {
-    // SAFETY: siginfo_t is plain C data; all-zero is a valid value, and it is
-    // what WNOHANG leaves behind when no child has changed state.
-    let mut info: libc::siginfo_t = unsafe { std::mem::zeroed() };
-    // SAFETY: `info` is a live, writable siginfo_t; WNOWAIT leaves the child
-    // waitable, so the PID stays ours until `try_wait` collects it.
-    let rc = unsafe {
-        libc::waitid(
-            libc::P_PID,
-            pid as libc::id_t,
-            &mut info,
-            libc::WEXITED | libc::WNOHANG | libc::WNOWAIT,
-        )
-    };
-    if rc < 0 {
-        return Err(io::Error::last_os_error());
-    }
-    // SAFETY: waitid succeeded, so `info` is either zeroed or a filled-in
-    // SIGCHLD record; both carry a valid `si_pid`.
-    Ok(unsafe { info.si_pid() } != 0)
-}
 
 fn read_turn<R: Read>(
     pipe: &mut Option<R>,
@@ -87,19 +64,8 @@ pub(super) fn run(
         return Err(Error::Timeout);
     }
     let permit = Permit::reserve().map_err(Error::Io)?;
-    let mut command = build_command(spec);
-    command.process_group(0);
-    let child = command.spawn().map_err(Error::Spawn)?;
-    let mut owner = OwnedChild {
-        child: Some(child),
-        permit: Some(permit),
-        may_signal: true,
-    };
-    let child = owner.child.as_mut().expect("owned child");
-    let pid = child.id();
-    let mut input = child.stdin.take();
-    let mut stdout = child.stdout.take();
-    let mut stderr = child.stderr.take();
+    let mut owner = OwnedChild::spawn(&mut build_command(spec), permit).map_err(Error::Spawn)?;
+    let (mut input, mut stdout, mut stderr) = owner.take_pipes();
     if let Some(pipe) = &input {
         set_nonblocking(pipe).map_err(Error::Io)?;
     }
@@ -123,15 +89,10 @@ pub(super) fn run(
         read_turn(&mut stdout, &mut out, "stdout")?;
         read_turn(&mut stderr, &mut err, "stderr")?;
         write_turn(&mut input, bytes, &mut written)?;
-        let exited = match exited_unreaped(pid) {
+        let exited = match owner.exited() {
             Ok(value) => value,
             Err(error) if error.kind() == io::ErrorKind::Interrupted => false,
-            Err(error) => {
-                if error.raw_os_error() == Some(libc::ECHILD) {
-                    owner.may_signal = false;
-                }
-                return Err(Error::Io(error));
-            }
+            Err(error) => return Err(Error::Io(error)),
         };
         if exited && input.is_none() && stdout.is_none() && stderr.is_none() {
             let status = collect(&mut owner)?;
@@ -214,23 +175,12 @@ fn write_turn(
     Ok(())
 }
 
-/// Reap the exited leader. `try_wait` cannot block: `exited_unreaped` saw it exit.
+/// Reap the exited leader. `try_collect` cannot block: `exited` saw it exit.
 fn collect(owner: &mut OwnedChild) -> Result<std::process::ExitStatus, Error> {
-    let result = owner.child.as_mut().expect("owned child").try_wait();
-    let status = match result {
-        Ok(Some(status)) => status,
-        Ok(None) => {
-            return Err(Error::Io(io::Error::other(
-                "child exit notification disappeared",
-            )));
-        }
-        Err(error) => {
-            if error.raw_os_error() == Some(libc::ECHILD) {
-                owner.may_signal = false;
-            }
-            return Err(Error::Io(error));
-        }
-    };
-    owner.child = None; // never signal after collection/reuse is possible
-    Ok(status)
+    match owner.try_collect().map_err(Error::Io)? {
+        Some(status) => Ok(status),
+        None => Err(Error::Io(io::Error::other(
+            "child exit notification disappeared",
+        ))),
+    }
 }

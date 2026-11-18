@@ -242,14 +242,11 @@ pub(super) fn build_toolbar() -> (gtk::Box, gtk::SearchEntry, gtk::DropDown, gtk
     genre_dropdown.update_property(&[gtk::accessible::Property::Label(&i18n("Filter by genre"))]);
     filter_row.append(&genre_dropdown);
 
-    let add_button = gtk::Button::builder()
-        .icon_name("list-add-symbolic")
-        .css_classes(["flat"])
-        .build();
-    add_button.set_tooltip_text(Some(&i18n("Add station manually")));
-    add_button.update_property(&[gtk::accessible::Property::Label(&i18n(
-        "Add station manually",
-    ))]);
+    let add_button = tooltip::icon_button(
+        "list-add-symbolic",
+        &i18n("Add station manually"),
+        &["flat"],
+    );
     filter_row.append(&add_button);
     toolbar.append(&filter_row);
 

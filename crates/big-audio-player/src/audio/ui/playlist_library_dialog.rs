@@ -386,13 +386,9 @@ fn build_playlist_row(
 
 /// Flat, vertically-centred icon button for an `ActionRow` suffix.
 fn suffix_button(icon: &str, tooltip: &str) -> gtk::Button {
-    let suffix_button = gtk::Button::builder()
-        .icon_name(icon)
-        .valign(gtk::Align::Center)
-        .css_classes(["flat"])
-        .build();
-    suffix_button.set_tooltip_text(Some(tooltip));
-    suffix_button.update_property(&[gtk::accessible::Property::Label(tooltip)]);
+    let suffix_button =
+        big_relm4_components::feedback::tooltip::icon_button(icon, tooltip, &["flat"]);
+    suffix_button.set_valign(gtk::Align::Center);
     suffix_button
 }
 

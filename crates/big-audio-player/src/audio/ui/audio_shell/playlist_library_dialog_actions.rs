@@ -151,12 +151,8 @@ impl AudioShell {
                 let mut total = 0_usize;
                 let mut truncated = false;
                 for path in paths {
-                    let fallback = i18n("Imported");
-                    let name = path
-                        .file_stem()
-                        .and_then(|s| s.to_str())
-                        .unwrap_or(&fallback);
-                    match import_one_playlist(&db, &path, name, 100_000 - total) {
+                    let name = imported_playlist_name(&path);
+                    match import_one_playlist(&db, &path, &name, 100_000 - total) {
                         Ok((added, cut)) => {
                             total += added;
                             truncated |= cut;
@@ -261,10 +257,7 @@ impl AudioShell {
         FilePicker::new(i18n("Import Playlist"))
             .filter(&i18n("Playlists"), PLAYLIST_EXTENSIONS)
             .open_optional(self.window().as_ref(), move |path| {
-                let name = path.file_stem().map_or_else(
-                    || "Imported".to_string(),
-                    |s| s.to_string_lossy().into_owned(),
-                );
+                let name = imported_playlist_name(&path);
                 let _ = input.send(AudioShellInput::ImportPlaylistFile { path, name });
             });
     }
@@ -290,6 +283,15 @@ impl AudioShell {
             },
         );
     }
+}
+
+/// The playlist name for an imported file: its stem, with any invalid
+/// UTF-8 replaced.
+fn imported_playlist_name(path: &Path) -> String {
+    path.file_stem().map_or_else(
+        || i18n("Imported"),
+        |stem| stem.to_string_lossy().into_owned(),
+    )
 }
 
 fn import_one_playlist(
@@ -401,6 +403,16 @@ mod tests {
     use super::*;
     use std::sync::{Mutex, mpsc};
     use std::time::Duration;
+
+    #[test]
+    fn imported_name_keeps_lossy_stem() {
+        use std::os::unix::ffi::OsStrExt;
+        let name =
+            |bytes: &[u8]| imported_playlist_name(Path::new(std::ffi::OsStr::from_bytes(bytes)));
+        assert_eq!(name(b"/music/Road Trip.m3u8"), "Road Trip");
+        assert_eq!(name(b"/music/Caf\xe9.m3u"), "Caf\u{fffd}");
+        assert_eq!(name(b"/"), i18n("Imported"));
+    }
 
     #[test]
     fn exports_give_up_on_a_busy_library() {

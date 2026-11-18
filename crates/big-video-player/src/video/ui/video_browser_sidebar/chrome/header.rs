@@ -44,13 +44,12 @@ pub(crate) fn build_header(state: &Rc<BrowserState>) {
     }
     if mode == SidebarMode::Files && browsing {
         // Triage multi-select toggle (creator workflow).
-        let select_mode_button = gtk::ToggleButton::builder()
-            .icon_name("selection-mode-symbolic")
-            .active(state.select_mode.get())
-            .css_classes(["flat"])
-            .build();
-        select_mode_button.set_tooltip_text(Some(&i18n("Select")));
-        select_mode_button.update_property(&[gtk::accessible::Property::Label(&i18n("Select"))]);
+        let select_mode_button = tooltip::icon_toggle_button(
+            "selection-mode-symbolic",
+            &i18n("Select"),
+            state.select_mode.get(),
+            &["flat"],
+        );
         select_mode_button.connect_toggled({
             let state = state.clone();
             move |button| state.set_select_mode(button.is_active())
@@ -83,7 +82,7 @@ pub(crate) fn build_header(state: &Rc<BrowserState>) {
 /// List ⇄ grid view toggle (the one frequently-used, self-evident control kept
 /// out of the overflow menu).
 fn build_view_toggle(state: &Rc<BrowserState>) -> gtk::Button {
-    let is_grid = state.settings.get_string(keys::PLAYLIST_VIEW) == "grid";
+    let is_grid = state.is_grid_view();
     let (icon, label) = if is_grid {
         ("view-list-symbolic", i18n("Show as list"))
     } else {
@@ -93,11 +92,7 @@ fn build_view_toggle(state: &Rc<BrowserState>) -> gtk::Button {
     view_toggle_button.connect_clicked({
         let state = state.clone();
         move |_| {
-            let next = if state.settings.get_string(keys::PLAYLIST_VIEW) == "list" {
-                "grid"
-            } else {
-                "list"
-            };
+            let next = if state.is_grid_view() { "list" } else { "grid" };
             state.settings.put_string(keys::PLAYLIST_VIEW, next);
             state.rebuild();
         }

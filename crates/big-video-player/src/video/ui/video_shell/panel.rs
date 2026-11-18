@@ -14,6 +14,7 @@
 use super::adjustments::{Adjustment, detect};
 use super::*;
 use crate::video::ui::menu_dialogs::chapter_title;
+use big_relm4_components::feedback::tooltip;
 
 mod recent;
 use recent::recent_page;
@@ -124,12 +125,8 @@ pub(super) struct SettingsPanel {
 
 impl SettingsPanel {
     pub(super) fn new(sender: &ComponentSender<VideoShell>) -> Rc<Self> {
-        let back = gtk::Button::builder()
-            .icon_name("go-previous-symbolic")
-            .tooltip_text(i18n("Back"))
-            .css_classes(["flat", "circular"])
-            .build();
-        back.update_property(&[gtk::accessible::Property::Label(&i18n("Back"))]);
+        let back =
+            tooltip::icon_button("go-previous-symbolic", &i18n("Back"), &["flat", "circular"]);
         let title = gtk::Label::builder()
             .hexpand(true)
             .xalign(0.0)
@@ -633,12 +630,12 @@ impl VideoShell {
                     let _ = row.activate_action(action, None);
                 });
             }
-            let undo = gtk::Button::builder()
-                .icon_name("window-close-symbolic")
-                .tooltip_text(i18n("Back to normal"))
-                .valign(gtk::Align::Center)
-                .css_classes(["flat", "circular"])
-                .build();
+            let undo = tooltip::icon_button(
+                "window-close-symbolic",
+                &i18n("Back to normal"),
+                &["flat", "circular"],
+            );
+            undo.set_valign(gtk::Align::Center);
             undo.update_property(&[gtk::accessible::Property::Label(
                 &i18n("Undo: {setting}").replace("{setting}", &label),
             )]);
