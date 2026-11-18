@@ -252,6 +252,7 @@ fn build_list_view(selection: &gtk::SingleSelection) -> gtk::ListView {
         };
         icon.set_icon_name(Some(&node.icon_name()));
         label.set_label(&node.label());
+        list_item.set_accessible_label(&node.label());
     });
 
     let list_view = gtk::ListView::builder()

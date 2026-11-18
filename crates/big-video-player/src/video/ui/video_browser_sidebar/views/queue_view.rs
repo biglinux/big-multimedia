@@ -291,6 +291,7 @@ fn bind_queue_row(state: &Rc<BrowserState>, queue_cell: &gtk::ListItem, generati
     if entry.kind != EntryKind::Video {
         return;
     }
+    queue_cell.set_accessible_label(&entry.display_name);
     let Some(row) = queue_cell.child().and_downcast::<gtk::Box>() else {
         return;
     };
