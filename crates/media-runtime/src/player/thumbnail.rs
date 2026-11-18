@@ -219,7 +219,6 @@ fn preview_frame_spec(file: &str, time: f64) -> BigSubprocessSpec {
 }
 
 fn generate_thumbnail(file: &str, time: f64, cancelled: &AtomicBool) -> Option<Vec<u8>> {
-    debug!("Generating thumbnail at {time:.3}s");
     // run() drains stdout while waiting, so a frame larger than the pipe
     // buffer cannot deadlock it.
     let output = preview_frame_spec(file, time)
