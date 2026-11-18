@@ -429,11 +429,7 @@ fn accepted_radio_station_form(name: &str, url: &str) -> Option<RadioStationForm
     if name.is_empty() {
         return None;
     }
-    if !url.starts_with("http://") && !url.starts_with("https://") {
-        return None;
-    }
-    let (_, target) = url.split_once("://")?;
-    if target.trim().is_empty() {
+    if !big_os_kit::url::is_http_url(url) {
         return None;
     }
     Some(RadioStationForm {

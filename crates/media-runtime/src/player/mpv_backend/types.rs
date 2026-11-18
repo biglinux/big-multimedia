@@ -119,6 +119,18 @@ impl EndReason {
     }
 }
 
+/// Who named a load target. mpv's guard against unsafe playlist entries does
+/// not cover loads through its client API, so a list's targets must pass
+/// [`big_os_kit::url::is_list_target`] at the load too.
+#[derive(Debug, Default, Clone, Copy, PartialEq, Eq)]
+pub enum TargetSource {
+    /// The person typed, picked or opened it.
+    #[default]
+    Person,
+    /// A feed, an IPTV list or a playlist file named it.
+    List(big_os_kit::url::ListOrigin),
+}
+
 /// Demuxer-cache sizing policy for the audio-only backend. Each profile is
 /// a `(forward, back)` pair in `mpv` `demuxer-max-bytes` / `demuxer-max-back-bytes`
 /// string form ("NMiB"). Switching profile at runtime is cheap: mpv

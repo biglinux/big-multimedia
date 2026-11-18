@@ -106,13 +106,11 @@ impl AudioShell {
             LibraryPanelOutput::ImportPlaylistFile { path } => {
                 let input = sender.input_sender().clone();
                 spawn_blocking_result(
-                    move || playlist_import::parse_playlist_file_for_import(&path),
+                    move || crate::media::playlist::parse_playlist_file(&path),
                     move |result| match result {
                         Ok(list) => {
-                            if list.truncated {
-                                let _ = input.send(AudioShellInput::Notify(
-                                    playlist_import::truncated_message(),
-                                ));
+                            if let Some(notice) = left_out_notice(list.truncated, list.skipped) {
+                                let _ = input.send(AudioShellInput::Notify(notice));
                             }
                             let _ = input.send(AudioShellInput::ImportPaths(list.entries));
                         }

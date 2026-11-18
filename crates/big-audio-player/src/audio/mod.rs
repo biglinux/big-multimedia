@@ -19,7 +19,6 @@ mod lyrics_fetch_engine;
 /// Shared MPRIS playback-state snapshot.
 mod mpris_state;
 /// Pure (GTK-free) M3U/PLS import parser.
-mod playlist_import;
 /// Audio + Music preferences window.
 pub mod preferences;
 /// Pure (GTK-free) snapshot-based queue undo/redo.

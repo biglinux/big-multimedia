@@ -1,5 +1,5 @@
 use super::*;
-use crate::player::mpv_backend::types::AudioCacheProfile;
+use crate::player::mpv_backend::types::{AudioCacheProfile, TargetSource};
 use std::time::{Duration, Instant};
 
 fn wait_until(label: &str, condition: impl Fn() -> bool) {
@@ -67,7 +67,7 @@ fn native_sound_server_volume_tracks_external_changes() {
         wait_until("unmute applied", || !backend.get_property_bool("ao-mute"));
         backend.stop();
         wait_until("output closed", || backend.get_current_ao().is_empty());
-        backend.load_file(input.to_str().unwrap());
+        backend.load_file(input.to_str().unwrap(), TargetSource::Person);
         wait_until("controls after reopening", || {
             backend.get_current_ao() == driver
                 && (backend.get_volume() - 72.0).abs() < 0.1
@@ -95,7 +95,7 @@ fn muted_at_37_percent(driver: &str, name: &str, input: &std::path::Path) -> Mpv
     wait_until("pending software volume", || {
         backend.get_property_f64("volume") == 37.0 && backend.get_property_bool("mute")
     });
-    backend.load_file(input.to_str().unwrap());
+    backend.load_file(input.to_str().unwrap(), TargetSource::Person);
     wait_until("native output and transferred controls", || {
         backend.get_current_ao() == driver
             && (backend.get_volume() - 37.0).abs() < 0.1
@@ -304,7 +304,7 @@ fn paused_event_thread_waits_for_mpv() {
     let input = write_silence(temp.path());
     let (backend, rx) = null_output_backend("test-paused");
     let mut seen = Vec::new();
-    backend.load_audio_paused(&input, AudioCacheProfile::Music, true);
+    backend.load_audio_paused(&input, TargetSource::Person, AudioCacheProfile::Music, true);
     wait_for_event(&rx, &mut seen, "file loaded", |e| {
         matches!(e, PlayerEvent::FileLoaded(_))
     });
@@ -352,7 +352,12 @@ fn ended_event_thread_waits_for_mpv() {
     let input = write_silence(temp.path());
     let (backend, rx) = null_output_backend("test-ended");
     let mut seen = Vec::new();
-    backend.load_audio_paused(&input, AudioCacheProfile::Music, false);
+    backend.load_audio_paused(
+        &input,
+        TargetSource::Person,
+        AudioCacheProfile::Music,
+        false,
+    );
     wait_for_event(&rx, &mut seen, "playing", |e| {
         matches!(e, PlayerEvent::PositionChanged(_))
     });
@@ -404,7 +409,7 @@ fn close_keeps_position_forgets_finished() {
     let saved = || saved_watch_later_lines(&watch_dir);
 
     let (backend, _rx) = open();
-    backend.load_audio_paused(input, AudioCacheProfile::Music, true);
+    backend.load_audio_paused(input, TargetSource::Person, AudioCacheProfile::Music, true);
     // Seek once audio output is up; sent earlier, mpv sometimes drops it.
     wait_until("playback started", || !backend.get_current_ao().is_empty());
     backend.seek_absolute(1.5);
@@ -416,7 +421,7 @@ fn close_keeps_position_forgets_finished() {
     assert_eq!(saved(), ["start=1.500000"], "filters stay with the app");
 
     let (backend, _rx) = open();
-    backend.load_audio_paused(input, AudioCacheProfile::Music, true);
+    backend.load_audio_paused(input, TargetSource::Person, AudioCacheProfile::Music, true);
     wait_until("resumed", || {
         (backend.get_property_f64("time-pos") - 1.5).abs() < 0.01
     });
@@ -427,4 +432,45 @@ fn close_keeps_position_forgets_finished() {
         saved().is_empty(),
         "a finished file must not resume at its end"
     );
+}
+
+/// A lavfi graph whose `ametadata` filter creates `written` once mpv opens it.
+fn file_writing_graph(written: &std::path::Path) -> String {
+    format!(
+        "av://lavfi:sine=d=1,ametadata=mode=print:file={}",
+        written.display()
+    )
+}
+
+#[test]
+fn list_targets_never_reach_loadfile() {
+    use big_os_kit::url::ListOrigin;
+    let temp = tempfile::tempdir().unwrap();
+    let (backend, rx) = null_output_backend("test-list-guard");
+    for origin in [ListOrigin::Network, ListOrigin::LocalFile] {
+        let source = TargetSource::List(origin);
+        let target = file_writing_graph(&temp.path().join(format!("{origin:?}")));
+        backend.load_file(&target, source);
+        backend.load_file_titled(&target, source, "Channel");
+        backend.load_file_append(&target, source);
+        backend.load_files_append(std::slice::from_ref(&target), source);
+        backend.load_files_at(std::slice::from_ref(&target), source, Some(0));
+        backend.load_audio_paused(&target, source, AudioCacheProfile::Podcast, false);
+        backend.load_file_with_audio_profile(&target, source, AudioCacheProfile::Radio);
+    }
+    assert_eq!(backend.get_playlist_count(), 0);
+    // The same graph from the person loads and writes, so the checks here
+    // would see a list entry that got through.
+    let control = temp.path().join("person");
+    backend.load_file(&file_writing_graph(&control), TargetSource::Person);
+    let mut seen = Vec::new();
+    wait_for_event(&rx, &mut seen, "file loaded", |e| {
+        matches!(e, PlayerEvent::FileLoaded(_))
+    });
+    wait_until("the person's graph writes", || control.exists());
+    let written: Vec<_> = std::fs::read_dir(temp.path())
+        .unwrap()
+        .map(|entry| entry.unwrap().file_name())
+        .collect();
+    assert_eq!(written, ["person"]);
 }

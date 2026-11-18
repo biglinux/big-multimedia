@@ -33,9 +33,11 @@ use big_relm4_components::task::spawn_blocking_result;
 use relm4::{Component, ComponentParts, ComponentSender};
 
 use crate::i18n::i18n;
+use big_os_kit::url::ListOrigin;
+
 use crate::media::iptv::{
     IptvChannel, IptvProvider, IptvProviderStore, MAX_PLAYLIST_ENTRIES, PlaylistEntries,
-    parse_m3u_content,
+    left_out_notice, parse_channel_list,
 };
 
 use channel_list::ChannelListView;
@@ -73,8 +75,13 @@ pub enum VideoIptvBrowserInput {
 /// Intents emitted by the browser for the shell to act on.
 #[derive(Debug)]
 pub enum VideoIptvBrowserOutput {
-    /// Play this stream URL (with a display title) in the main player.
-    PlayChannel { url: String, title: String },
+    /// Play this stream URL (with a display title) in the main player; the
+    /// provider's list named it.
+    PlayChannel {
+        url: String,
+        title: String,
+        origin: ListOrigin,
+    },
 }
 
 /// Relm4 IPTV browser component.
@@ -229,7 +236,17 @@ impl Component for VideoIptvBrowser {
             VideoIptvBrowserInput::ManageProviders => self.open_providers_dialog(root, &sender),
             VideoIptvBrowserInput::ProvidersChanged => self.on_providers_changed(&sender),
             VideoIptvBrowserInput::PlayChannel { url, title } => {
-                let _ = sender.output(VideoIptvBrowserOutput::PlayChannel { url, title });
+                let index = self.provider_dropdown.selected() as usize;
+                let Some(origin) = self
+                    .store
+                    .borrow()
+                    .providers
+                    .get(index)
+                    .map(|provider| provider.source.list_origin())
+                else {
+                    return;
+                };
+                let _ = sender.output(VideoIptvBrowserOutput::PlayChannel { url, title, origin });
             }
             VideoIptvBrowserInput::FavoriteToggled => self.list_view.reload_favorites(),
             VideoIptvBrowserInput::CachedResolved {
@@ -310,7 +327,12 @@ impl VideoIptvBrowser {
             self.status.set_label(&i18n("Reloading channels…"));
         } else {
             self.status.set_label(&i18n("Loading channels…"));
-            spawn_cached_load(provider_id.clone(), generation, sender);
+            spawn_cached_load(
+                provider_id.clone(),
+                provider.source.list_origin(),
+                generation,
+                sender,
+            );
         }
         spawn_network_load(provider, provider_id, generation, sender);
     }
@@ -327,15 +349,16 @@ impl VideoIptvBrowser {
         }
         match channels {
             Ok(channels) => {
-                self.list_view.set_channels(channels.entries);
+                let mut status = Vec::new();
                 if channels.truncated {
-                    self.status.set_label(
-                        &i18n("Showing the first {} channels; the list has more.")
+                    status.push(
+                        i18n("Showing the first {} channels; the list has more.")
                             .replace("{}", &MAX_PLAYLIST_ENTRIES.to_string()),
                     );
-                } else {
-                    self.status.set_label("");
                 }
+                status.extend(left_out_notice(false, channels.skipped));
+                self.list_view.set_channels(channels.entries);
+                self.status.set_label(&status.join(" "));
             }
             Err(error) => self.status.set_label(&fetch_error_text(&error)),
         }
@@ -376,12 +399,15 @@ fn fetch_error_text(error: &FetchError) -> String {
 /// component tagged with `generation`.
 fn spawn_cached_load(
     provider_id: String,
+    origin: ListOrigin,
     generation: u64,
     sender: &ComponentSender<VideoIptvBrowser>,
 ) {
     let sender = sender.clone();
     spawn_blocking_result(
-        move || cache::read(&provider_id).map(|content| parse_m3u_content(&content).entries),
+        move || {
+            cache::read(&provider_id).map(|content| parse_channel_list(&content, origin).entries)
+        },
         move |channels| {
             if let Some(channels) = channels {
                 sender.input(VideoIptvBrowserInput::CachedResolved {

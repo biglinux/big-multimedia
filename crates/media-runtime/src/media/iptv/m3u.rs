@@ -25,6 +25,9 @@ pub struct PlaylistEntries<T> {
     pub entries: Vec<T>,
     /// The playlist listed more entries than were kept.
     pub truncated: bool,
+    /// Entries left out because the list may not name them, see
+    /// [`big_os_kit::url::accepts_list_entry`].
+    pub skipped: usize,
 }
 
 impl<T> Default for PlaylistEntries<T> {
@@ -32,8 +35,50 @@ impl<T> Default for PlaylistEntries<T> {
         Self {
             entries: Vec::new(),
             truncated: false,
+            skipped: 0,
         }
     }
+}
+
+/// What the person is told when a list was cut at [`MAX_PLAYLIST_ENTRIES`] or
+/// named entries the player does not open.
+#[must_use]
+pub fn left_out_notice(truncated: bool, skipped: usize) -> Option<String> {
+    use crate::i18n::{i18n, ni18n};
+    let mut notice = Vec::new();
+    if truncated {
+        notice.push(
+            i18n("Only the first {} entries of the playlist were loaded.")
+                .replace("{}", &MAX_PLAYLIST_ENTRIES.to_string()),
+        );
+    }
+    if skipped > 0 {
+        notice.push(
+            ni18n(
+                "{} entry was skipped because it is not a supported stream or file.",
+                "{} entries were skipped because they are not supported streams or files.",
+                skipped as u64,
+            )
+            .replace("{}", &skipped.to_string()),
+        );
+    }
+    (!notice.is_empty()).then(|| notice.join(" "))
+}
+
+/// The channels of an IPTV list from `origin`, without those whose address the
+/// list may not name.
+#[must_use]
+pub fn parse_channel_list(
+    content: &str,
+    origin: big_os_kit::url::ListOrigin,
+) -> PlaylistEntries<IptvChannel> {
+    let mut channels = parse_m3u_content(content);
+    let listed = channels.entries.len();
+    channels
+        .entries
+        .retain(|channel| big_os_kit::url::accepts_list_entry(&channel.url, origin));
+    channels.skipped = listed - channels.entries.len();
+    channels
 }
 
 impl<T> PlaylistEntries<T> {
@@ -108,18 +153,6 @@ pub fn read_playlist_text(path: &Path) -> Option<String> {
         return None;
     }
     Some(decode_playlist(bytes))
-}
-
-/// Read and parse an M3U/M3U8 file from disk.
-///
-/// Returns no entries on read error or an oversized file; callers that
-/// need to distinguish "file missing" from "valid but empty" should check
-/// existence first.
-#[must_use]
-pub fn parse_m3u_file(path: &Path) -> PlaylistEntries<IptvChannel> {
-    read_playlist_text(path)
-        .map(|s| parse_m3u_content(&s))
-        .unwrap_or_default()
 }
 
 /// The quoted value of `attr`, matched by its whole name among the attributes
@@ -203,6 +236,29 @@ mod tests {
     }
 
     #[test]
+    fn channel_lists_name_only_streams() {
+        use big_os_kit::url::ListOrigin;
+        let dir = tempfile::tempdir().unwrap();
+        let recording = dir.path().join("recording.ts");
+        std::fs::write(&recording, b"").unwrap();
+        let list = format!(
+            "#EXTM3U\n#EXTINF:-1,Graph\nav://lavfi:sine,ametadata=mode=print:file={}\n\
+             #EXTINF:-1,Descriptor\nfdclose://0\n#EXTINF:-1,Local\n{}\n\
+             #EXTINF:-1,System\n/etc/hostname\n#EXTINF:-1,Multicast\nUDP://@239.0.0.1:1234\n",
+            dir.path().join("written").display(),
+            recording.display()
+        );
+        for (origin, names, skipped) in [
+            (ListOrigin::Network, vec!["Multicast"], 4),
+            (ListOrigin::LocalFile, vec!["Local", "Multicast"], 3),
+        ] {
+            let channels = parse_channel_list(&list, origin);
+            let kept: Vec<&str> = channels.entries.iter().map(|c| c.name.as_str()).collect();
+            assert_eq!((kept, channels.skipped), (names, skipped), "{origin:?}");
+        }
+    }
+
+    #[test]
     fn names_keep_their_commas() {
         let input = "#EXTINF:-1 group-title=\"News, Brazil\",Globo, SP\nhttp://a/1\n";
         let channels = parse_m3u_content(input).entries;
@@ -223,7 +279,7 @@ mod tests {
         let dir = tempfile::tempdir().unwrap();
         let path = dir.path().join("list.m3u");
         std::fs::write(&path, b"#EXTINF:-1,Canal Not\xedcias\nhttp://a/1\n").unwrap();
-        let channels = parse_m3u_file(&path).entries;
+        let channels = parse_m3u_content(&read_playlist_text(&path).unwrap()).entries;
         assert_eq!(channels.len(), 1);
         assert_eq!(channels[0].name, "Canal Notícias");
         assert_eq!(channels[0].url, "http://a/1");

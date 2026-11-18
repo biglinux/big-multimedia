@@ -104,7 +104,14 @@ impl AudioShell {
                 }
             }
             AudioShellInput::Podcast(out) => self.handle_podcast(out, &sender),
-            AudioShellInput::PodcastFeedResolved { title, episodes } => {
+            AudioShellInput::PodcastFeedResolved {
+                title,
+                episodes,
+                skipped,
+            } => {
+                if let Some(notice) = left_out_notice(false, skipped) {
+                    self.notify(&notice);
+                }
                 self.enter_podcast_mode(title, episodes);
             }
             AudioShellInput::ViewTabChanged(name) => self.handle_tab_changed(&name, &sender),
@@ -221,6 +228,7 @@ impl AudioShell {
                 paths,
                 failed,
                 truncated,
+                skipped,
             } => {
                 if generation != self.open_generation {
                     return;
@@ -230,8 +238,8 @@ impl AudioShell {
                     self.notify(&i18n(
                         "The playlist could not be read safely. Check its format and permissions.",
                     ));
-                } else if truncated {
-                    self.notify(&playlist_import::truncated_message());
+                } else if let Some(notice) = left_out_notice(truncated, skipped) {
+                    self.notify(&notice);
                 }
                 self.append_open_paths(paths, &sender);
                 self.resolve_next_open(&sender);
@@ -306,7 +314,7 @@ impl AudioShell {
                     Ok((added, true)) => self.notify(&format!(
                         "{added} {} {}",
                         i18n("tracks imported"),
-                        playlist_import::truncated_message()
+                        left_out_notice(true, 0).unwrap_or_default()
                     )),
                     Err(error) => self.notify(&format!(
                         "{} {error}",

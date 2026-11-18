@@ -1,26 +1,127 @@
+use std::collections::BTreeMap;
+use std::io;
 use std::path::Path;
 
+use big_os_kit::url::{ListOrigin, accepts_list_entry, file_uri_path, is_stream_uri};
+
 use crate::error::Result;
-use crate::media::iptv::{
-    MAX_PLAYLIST_ENTRIES, PlaylistEntries, parse_m3u_file, read_playlist_text,
-};
+use crate::media::iptv::{MAX_PLAYLIST_ENTRIES, PlaylistEntries, decode_playlist};
 use crate::media::playlist::display_name;
 
-/// Filters non-existent local entries; URLs always pass. Shares the line loop
-/// with the IPTV parser: an entry is every non-comment line, whether or not it
-/// carries `#EXTINF` attributes.
-pub fn parse_m3u(path: &Path) -> PlaylistEntries<String> {
-    let base_dir = path.parent().unwrap_or_else(|| Path::new("/"));
-    let channels = parse_m3u_file(path);
-    PlaylistEntries {
-        entries: channels
-            .entries
-            .into_iter()
-            .map(|channel| resolve_playlist_entry(base_dir, &channel.url))
-            .filter(|entry| is_resolved_playlist_entry_valid(entry))
-            .collect(),
-        truncated: channels.truncated,
+/// Largest playlist file read.
+const MAX_PLAYLIST_FILE_BYTES: usize = 16 * 1024 * 1024;
+
+/// The entries of the M3U or PLS file at `path` (PLS by its extension), in
+/// order, relative ones resolved against its folder. An entry that is not a
+/// stream URI or an existing file outside the system directories is left out
+/// and counted in [`PlaylistEntries::skipped`]. Blocking.
+///
+/// # Errors
+/// The file is missing, unreadable, larger than 16 MiB or holds a NUL byte;
+/// a PLS file has an invalid or repeated `File` index.
+pub fn parse_playlist_file(path: &Path) -> io::Result<PlaylistEntries<String>> {
+    let bytes = big_os_kit::storage::read_regular_limited(
+        &std::fs::canonicalize(path)?,
+        MAX_PLAYLIST_FILE_BYTES,
+    )?
+    .ok_or_else(|| io::Error::new(io::ErrorKind::NotFound, "playlist unavailable"))?;
+    if bytes.contains(&0) {
+        return Err(io::Error::new(
+            io::ErrorKind::InvalidData,
+            "playlist is not text",
+        ));
     }
+    let content = decode_playlist(bytes);
+    let is_pls = path
+        .extension()
+        .and_then(|e| e.to_str())
+        .is_some_and(|e| e.eq_ignore_ascii_case("pls"));
+    let (lines, truncated) = if is_pls {
+        pls_lines(&content)?
+    } else {
+        m3u_lines(&content)
+    };
+    let base = path.parent().unwrap_or(Path::new("/"));
+    let accepted = |line: &str| {
+        resolve_playlist_entry(base, line)
+            .filter(|entry| accepts_list_entry(entry, ListOrigin::LocalFile))
+    };
+    let mut result = PlaylistEntries {
+        truncated,
+        ..PlaylistEntries::default()
+    };
+    for line in lines {
+        // Names may start or end with blanks; a sloppy list indents its lines.
+        let trimmed = line.trim();
+        let mut entry = accepted(line);
+        if entry.is_none() && trimmed != line {
+            entry = accepted(trimmed);
+        }
+        match entry {
+            Some(entry) => result.entries.push(entry),
+            None => result.skipped += 1,
+        }
+    }
+    Ok(result)
+}
+
+/// Every non-comment line, at most [`MAX_PLAYLIST_ENTRIES`], and whether more
+/// were left.
+fn m3u_lines(content: &str) -> (Vec<&str>, bool) {
+    let mut lines = content
+        .strip_prefix('\u{feff}')
+        .unwrap_or(content)
+        .lines()
+        .filter(|line| !line.trim().is_empty() && !line.trim_start().starts_with('#'));
+    let kept: Vec<&str> = lines.by_ref().take(MAX_PLAYLIST_ENTRIES).collect();
+    let truncated = lines.next().is_some();
+    (kept, truncated)
+}
+
+/// The `FileN=` values in index order, the lowest [`MAX_PLAYLIST_ENTRIES`] of
+/// them, and whether more were left.
+fn pls_lines(content: &str) -> io::Result<(Vec<&str>, bool)> {
+    let invalid = |message| io::Error::new(io::ErrorKind::InvalidData, message);
+    let mut ordered = BTreeMap::new();
+    let mut truncated = false;
+    for line in content.lines() {
+        let Some((key, value)) = line.trim().split_once('=') else {
+            continue;
+        };
+        let Some(index) = key
+            .get(..4)
+            .filter(|prefix| prefix.eq_ignore_ascii_case("file"))
+            .and_then(|_| key.get(4..))
+        else {
+            continue;
+        };
+        let index = index
+            .parse::<u32>()
+            .ok()
+            .filter(|index| *index > 0)
+            .ok_or_else(|| invalid("invalid PLS index"))?;
+        if ordered.insert(index, value).is_some() {
+            return Err(invalid("duplicate PLS index"));
+        }
+        if ordered.len() > MAX_PLAYLIST_ENTRIES {
+            ordered.pop_last();
+            truncated = true;
+        }
+    }
+    Ok((ordered.into_values().collect(), truncated))
+}
+
+/// `entry` as mpv would open it: a stream URI or an absolute path as it is, a
+/// `file://` URI as its path, anything else joined to `base`.
+fn resolve_playlist_entry(base: &Path, entry: &str) -> Option<String> {
+    if is_stream_uri(entry) || entry.starts_with('/') {
+        return Some(entry.to_owned());
+    }
+    file_uri_path(entry)
+        .unwrap_or_else(|| base.join(entry))
+        .into_os_string()
+        .into_string()
+        .ok()
 }
 
 /// Worker-only export. Never overwrite an existing user document and never
@@ -56,84 +157,4 @@ pub fn write_m3u(path: &Path, items: &[String]) -> Result<()> {
 #[must_use]
 pub fn is_playlist_file(path: &str) -> bool {
     big_media_components::media::files::is_playlist_file(path)
-}
-
-/// Dispatches by extension: `.pls` → INI parser, anything else → M3U.
-pub fn parse_playlist_file(path: &str) -> PlaylistEntries<String> {
-    let p = Path::new(path);
-    let ext = p
-        .extension()
-        .and_then(|e| e.to_str())
-        .unwrap_or("")
-        .to_ascii_lowercase();
-
-    if ext == "pls" {
-        parse_pls_file(p)
-    } else {
-        parse_m3u(p)
-    }
-}
-
-pub(crate) fn parse_pls_file(path: &Path) -> PlaylistEntries<String> {
-    let mut entries = PlaylistEntries::default();
-    let Some(content) = read_playlist_text(path) else {
-        return entries;
-    };
-    let base_dir = path.parent().unwrap_or_else(|| Path::new("/"));
-    for line in content.lines() {
-        let line = line.trim();
-        if !line
-            .get(..4)
-            .is_some_and(|key| key.eq_ignore_ascii_case("file"))
-        {
-            continue;
-        }
-        if let Some((_, value)) = line.split_once('=')
-            && !entries.push(resolve_playlist_entry(base_dir, value.trim()))
-        {
-            break;
-        }
-    }
-    // Same guard as M3U: a crafted .pls must not reach system paths.
-    entries
-        .entries
-        .retain(|entry| is_resolved_playlist_entry_valid(entry));
-    entries
-}
-
-fn is_stream_url(entry: &str) -> bool {
-    ["http://", "https://", "rtsp://", "rtmp://", "mms://"]
-        .iter()
-        .any(|scheme| entry.starts_with(scheme))
-}
-
-fn resolve_playlist_entry(base_dir: &Path, entry: &str) -> String {
-    if is_stream_url(entry) {
-        entry.to_string()
-    } else {
-        let entry_path = Path::new(entry);
-        if entry_path.is_absolute() {
-            entry.to_string()
-        } else {
-            base_dir.join(entry).to_string_lossy().to_string()
-        }
-    }
-}
-
-/// Paths under these prefixes are never legitimate media targets and a
-/// crafted playlist that resolves into them is almost certainly an
-/// exfiltration attempt (file-existence probe via mpv error reporting
-/// or subtitle/cover loaders).
-const SYSTEM_PATH_DENY: &[&str] = &["/etc", "/proc", "/sys", "/dev", "/root", "/boot"];
-
-fn is_resolved_playlist_entry_valid(entry: &str) -> bool {
-    if is_stream_url(entry) {
-        return true;
-    }
-    // canonicalize collapses `..` and follows symlinks; on failure
-    // (broken symlink, missing file) the entry is dropped.
-    let Ok(canon) = std::fs::canonicalize(entry) else {
-        return false;
-    };
-    !SYSTEM_PATH_DENY.iter().any(|deny| canon.starts_with(deny))
 }

@@ -182,7 +182,8 @@ impl AudioShell {
                 if let Some(mpv) = &self.mpv {
                     mpv.load_file_with_audio_profile(
                         &url,
-                        crate::player::mpv_backend::AudioCacheProfile::Radio,
+                        TargetSource::List(ListOrigin::Network),
+                        AudioCacheProfile::Radio,
                     );
                     mpv.play();
                 }
@@ -339,6 +340,7 @@ impl AudioShell {
                             let _ = input.send(AudioShellInput::PodcastFeedResolved {
                                 title: String::new(),
                                 episodes: Vec::new(),
+                                skipped: 0,
                             });
                             return;
                         };
@@ -350,6 +352,7 @@ impl AudioShell {
                         let _ = input.send(AudioShellInput::PodcastFeedResolved {
                             title: feed.title,
                             episodes,
+                            skipped: feed.skipped,
                         });
                     },
                 );
