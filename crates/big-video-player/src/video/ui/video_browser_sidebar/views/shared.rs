@@ -77,6 +77,21 @@ pub(super) fn set_accent(widget: &impl IsA<gtk::Widget>, on: bool) {
     }
 }
 
+/// Marks a row or card picked in select mode; the CSS class is only drawn, so
+/// the accessible state carries the choice to screen readers.
+pub(super) fn show_selected(widget: &gtk::Box, selecting: bool, selected: bool) {
+    if selected {
+        widget.add_css_class("selected");
+    } else {
+        widget.remove_css_class("selected");
+    }
+    if selecting {
+        widget.update_state(&[gtk::accessible::State::Selected(Some(selected))]);
+    } else {
+        widget.reset_state(gtk::AccessibleState::Selected);
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::row_index;
