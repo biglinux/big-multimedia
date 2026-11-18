@@ -328,6 +328,12 @@ impl Component for AudioShell {
 
         // App stylesheet (lyrics/radio/queue CSS classes).
         let provider = gtk::CssProvider::new();
+        // An application provider answers `@media (prefers-contrast)` from its
+        // own property, not from the settings as the theme does.
+        gtk::Settings::for_display(&root.display())
+            .bind_property("gtk-interface-contrast", &provider, "prefers-contrast")
+            .sync_create()
+            .build();
         provider.load_from_resource(&format!(
             "{}/style.css",
             crate::config::audio::RESOURCE_PREFIX
