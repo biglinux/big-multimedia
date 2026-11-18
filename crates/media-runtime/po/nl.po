@@ -1903,8 +1903,8 @@ msgid ""
 "Drag buttons between zones, or move the focused one with Alt+Left and "
 "Alt+Right. Click a button to show or hide it."
 msgstr ""
-"Sleep knoppen tussen zones, of verplaats de knop met focus met Alt+Links en "
-"Alt+Rechts. Klik op een knop om deze te tonen of te verbergen."
+"Sleep knoppen tussen zones, of verplaats de knop die de focus heeft met "
+"Alt+Links en Alt+Rechts. Klik op een knop om deze te tonen of te verbergen."
 
 #: crates/big-video-player/src/video/ui/appearance/layout/layout_page.rs:19
 msgid "Layout"
@@ -2440,7 +2440,7 @@ msgid ""
 "manager."
 msgstr ""
 "Een vervangen of verwijderd wachtwoord kon niet uit je sleutelbos worden "
-"verwijderd. Je kunt het achtergebleven item ‘Big Multimedia IPTV provider’ "
+"gewist. Je kunt het achtergebleven item ‘Big Multimedia IPTV provider’ "
 "verwijderen met je sleutelbosbeheer."
 
 #: crates/big-video-player/src/video/ui/iptv/providers_dialog.rs:120
