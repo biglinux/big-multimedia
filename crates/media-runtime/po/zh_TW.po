@@ -35,18 +35,16 @@ msgid "Data Sources"
 msgstr "資料來源"
 
 #: crates/big-audio-player/src/audio/app.rs:53
-#, fuzzy
-#| msgid "Close the player"
 msgid "Play or pause the running player"
-msgstr "關閉播放器"
+msgstr "在執行中的播放器播放或暫停"
 
 #: crates/big-audio-player/src/audio/app.rs:58
 msgid "Skip to the next track in the running player"
-msgstr ""
+msgstr "在執行中的播放器跳到下一首曲目"
 
 #: crates/big-audio-player/src/audio/app.rs:63
 msgid "Go back to the previous track in the running player"
-msgstr ""
+msgstr "在執行中的播放器回到上一首曲目"
 
 #: crates/big-audio-player/src/audio/appearance/dialogs.rs:42
 #: crates/big-video-player/src/video/ui/filters/groups_vf.rs:278
@@ -459,10 +457,9 @@ msgid "Select a song to start"
 msgstr "選擇一首歌曲開始"
 
 #: crates/big-audio-player/src/audio/ui/audio_shell/engine.rs:37
-#, fuzzy, rust-format
-#| msgid "Could not play this file — it may be unsupported or corrupt."
+#, rust-format
 msgid "Could not play “{file}”: it may be unsupported or corrupt."
-msgstr "無法播放此檔案——它可能不受支援或已損毀。"
+msgstr "無法播放「{file}」：檔案可能不受支援或已損毀。"
 
 #: crates/big-audio-player/src/audio/ui/audio_shell/engine.rs:215
 #, rust-format
@@ -470,6 +467,7 @@ msgid ""
 "The playback engine could not start: {error}. Update or reinstall the mpv "
 "package, then reopen the player."
 msgstr ""
+"播放引擎無法啟動：{error}。請更新或重新安裝 mpv 套件，然後重新開啟播放器。"
 
 #: crates/big-audio-player/src/audio/ui/audio_shell/export.rs:17
 #: crates/big-audio-player/src/audio/ui/audio_shell/export.rs:33
@@ -478,16 +476,12 @@ msgstr "沒有正在播放的本機曲目"
 
 #: crates/big-audio-player/src/audio/ui/audio_shell/library_store.rs:63
 msgid "The music library is still opening. Try again in a moment."
-msgstr ""
+msgstr "音樂資料庫仍在開啟中。請稍後再試一次。"
 
 #: crates/big-audio-player/src/audio/ui/audio_shell/library_store.rs:223
 #: crates/big-audio-player/src/audio/ui/audio_shell/library_store.rs:259
-#, fuzzy
-#| msgid ""
-#| "The library could not be read. Previous results were kept; try searching "
-#| "again."
 msgid "The library could not be read. The queue was not changed."
-msgstr "無法讀取資料庫。已保留先前的結果；請重新搜尋。"
+msgstr "無法讀取資料庫。佇列未變更。"
 
 #: crates/big-audio-player/src/audio/ui/audio_shell/panel_intents.rs:61
 msgid ""
@@ -516,21 +510,14 @@ msgid "Save Episodes"
 msgstr "儲存多集"
 
 #: crates/big-audio-player/src/audio/ui/audio_shell/panel_intents.rs:432
-#, fuzzy
-#| msgid ""
-#| "The playlist could not be read safely. Check its format and permissions."
 msgid ""
 "The episodes could not be saved in this folder. Check its permissions and "
 "try again."
-msgstr "無法安全讀取該播放清單。請檢查其格式和權限。"
+msgstr "無法將單集儲存到此資料夾。請檢查資料夾權限後再試一次。"
 
 #: crates/big-audio-player/src/audio/ui/audio_shell/playback.rs:143
-#, fuzzy
-#| msgid ""
-#| "The library could not be read. Previous results were kept; try searching "
-#| "again."
 msgid "The library could not be read, so lyrics were not searched online."
-msgstr "無法讀取資料庫。已保留先前的結果；請重新搜尋。"
+msgstr "無法讀取資料庫，因此未在線上搜尋歌詞。"
 
 #: crates/big-audio-player/src/audio/ui/audio_shell/playback.rs:157
 msgid "Seek position"
@@ -691,14 +678,13 @@ msgid "Export stopped. Confirmed outputs were kept"
 msgstr "匯出已停止。已確認的輸出已保留"
 
 #: crates/big-audio-player/src/audio/ui/audio_shell/queue_persistence.rs:55
-#, fuzzy, rust-format
-#| msgid "The playlist could not be saved."
+#, rust-format
 msgid "The music library could not be opened: {}"
-msgstr "無法儲存播放清單。"
+msgstr "無法開啟音樂資料庫：{}"
 
 #: crates/big-audio-player/src/audio/ui/audio_shell/queue_persistence.rs:57
 msgid "Retry"
-msgstr ""
+msgstr "重試"
 
 #: crates/big-audio-player/src/audio/ui/audio_shell/queue_persistence.rs:60
 msgid ""
@@ -728,20 +714,16 @@ msgid "Watch folders could not be read. Previous settings were kept."
 msgstr "無法讀取監看資料夾。已保留先前的設定。"
 
 #: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:154
-#, fuzzy
-#| msgid "The playlist could not be saved."
 msgid "The station could not be saved."
-msgstr "無法儲存播放清單。"
+msgstr "無法儲存電台。"
 
 #: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:168
-#, fuzzy
-#| msgid "The playlist could not be saved."
 msgid "The station could not be removed."
-msgstr "無法儲存播放清單。"
+msgstr "無法移除電台。"
 
 #: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:230
 msgid "There is no Music or home folder to save recordings in."
-msgstr ""
+msgstr "沒有可用來儲存錄音的「音樂」資料夾或家目錄。"
 
 #: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:276
 #: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:284
@@ -795,10 +777,8 @@ msgid "Open File"
 msgstr "開啟檔案"
 
 #: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:528
-#, fuzzy
-#| msgid "The playlist could not be saved."
 msgid "Saved radio stations could not be read."
-msgstr "無法儲存播放清單。"
+msgstr "無法讀取已儲存的電台。"
 
 #: crates/big-audio-player/src/audio/ui/audio_shell/tray.rs:18
 msgid "Show Big Audio Player"
@@ -809,23 +789,18 @@ msgid "The TV's track is no longer in the queue."
 msgstr "電視上的曲目已不在佇列中。"
 
 #: crates/big-audio-player/src/audio/ui/audio_shell/update.rs:137
-#, fuzzy
-#| msgid "Cancelled"
 msgid "Scan cancelled"
-msgstr "已取消"
+msgstr "已取消掃描"
 
 #: crates/big-audio-player/src/audio/ui/audio_shell/update.rs:139
-#, fuzzy
-#| msgid "Sample Rate"
 msgid "Scan incomplete"
-msgstr "取樣率"
+msgstr "掃描未完成"
 
 #: crates/big-audio-player/src/audio/ui/audio_shell/update.rs:142
-#, fuzzy, rust-format
-#| msgid "tracks imported"
+#, rust-format
 msgid "{count} track imported"
 msgid_plural "{count} tracks imported"
-msgstr[0] "首曲目已匯入"
+msgstr[0] "已匯入 {count} 首曲目"
 
 #: crates/big-audio-player/src/audio/ui/audio_shell/update.rs:153
 msgid "Library updated"
@@ -1137,13 +1112,13 @@ msgstr "在檔案管理員中顯示"
 #, rust-format
 msgid "{count} track"
 msgid_plural "{count} tracks"
-msgstr[0] ""
+msgstr[0] "{count} 首曲目"
 
 #: crates/big-audio-player/src/audio/ui/mod.rs:59
 #, rust-format
 msgid "{count} track · {duration}"
 msgid_plural "{count} tracks · {duration}"
-msgstr[0] ""
+msgstr[0] "{count} 首曲目 · {duration}"
 
 #: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:35
 msgid "Drag and drop files to create a playlist"
@@ -1172,7 +1147,7 @@ msgstr "主選單"
 
 #: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:90
 msgid "Show Sidebar"
-msgstr ""
+msgstr "顯示側邊欄"
 
 #: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:121
 #: crates/big-audio-player/src/audio/ui/playlist_library_dialog.rs:261
@@ -1229,14 +1204,12 @@ msgid "About"
 msgstr "關於"
 
 #: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:244
-#, fuzzy
-#| msgid "No episodes found"
 msgid "No episodes queued"
-msgstr "找不到單集"
+msgstr "佇列中沒有單集"
 
 #: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:245
 msgid "Choose a podcast on the left to queue its episodes."
-msgstr ""
+msgstr "在左側選擇一個 Podcast，即可將其單集加入佇列。"
 
 #: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:254
 msgid "Drop tracks here"
@@ -1244,23 +1217,19 @@ msgstr "將曲目拖放到此處"
 
 #: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:256
 msgid "Or double-click a track in the library, or select it and press Return."
-msgstr ""
+msgstr "或在資料庫中按兩下曲目，或選取曲目後按 Enter 鍵。"
 
 #: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:283
 msgid "Welcome to Big Audio Player"
 msgstr "歡迎使用 Big Audio Player"
 
 #: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:291
-#, fuzzy
-#| msgid ""
-#| "Add a folder with your music files to get started.\n"
-#| "Supported formats: MP3, FLAC, OGG, M4A, OPUS, WAV and more."
 msgid ""
 "Open music files to play them now, or add your music folder in the Music "
 "tab.\n"
 "Supported formats: MP3, FLAC, OGG, M4A, OPUS, WAV and more."
 msgstr ""
-"加入包含音樂檔案的資料夾即可開始。\n"
+"開啟音樂檔案即可立即播放，或在「音樂」分頁中加入您的音樂資料夾。\n"
 "支援的格式：MP3、FLAC、OGG、M4A、OPUS、WAV 等。"
 
 #: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:304
@@ -1483,10 +1452,8 @@ msgid "Cancellation requested. Finishing the current safe step…"
 msgstr "已要求取消。正在完成目前的安全步驟…"
 
 #: crates/big-audio-player/src/audio/ui/scan_progress.rs:177
-#, fuzzy
-#| msgid "Library"
 msgid "Library Scan"
-msgstr "資料庫"
+msgstr "資料庫掃描"
 
 #: crates/big-audio-player/src/audio/ui/track_list.rs:392
 #: crates/big-video-player/src/video/ui/video_browser_sidebar/views/queue_view.rs:313
@@ -1494,10 +1461,8 @@ msgid "Playing"
 msgstr "正在播放"
 
 #: crates/big-audio-player/src/audio/ui/track_list.rs:393
-#, fuzzy
-#| msgid "Pause"
 msgid "Paused"
-msgstr "暫停"
+msgstr "已暫停"
 
 #: crates/big-audio-player/src/audio/ui/unavailable_dialog.rs:52
 msgid ""
@@ -1601,7 +1566,7 @@ msgstr "Big Video Player"
 
 #: crates/big-video-player/src/video/app.rs:124
 msgid "Open a separate player window instead of using the running one"
-msgstr ""
+msgstr "開啟另一個播放器視窗，而不使用執行中的播放器"
 
 #: crates/big-video-player/src/video/keybindings.rs:50
 msgid "Increase speed"
@@ -1822,10 +1787,8 @@ msgid "Open"
 msgstr "開啟"
 
 #: crates/big-video-player/src/video/ui/appearance/layout/buttons_page.rs:56
-#, fuzzy
-#| msgid "Load Playlist"
 msgid "Files and Playlist"
-msgstr "載入播放清單"
+msgstr "檔案與播放清單"
 
 #: crates/big-video-player/src/video/ui/appearance/layout/buttons_page.rs:64
 #: crates/big-video-player/src/video/ui/video_shell/component.rs:181
@@ -1851,17 +1814,15 @@ msgstr "全螢幕"
 
 #: crates/big-video-player/src/video/ui/appearance/layout/buttons_page.rs:179
 msgid "Top bar"
-msgstr ""
+msgstr "頂端列"
 
 #: crates/big-video-player/src/video/ui/appearance/layout/buttons_page.rs:181
 msgid "Video Title"
 msgstr "影片標題"
 
 #: crates/big-video-player/src/video/ui/appearance/layout/buttons_page.rs:186
-#, fuzzy
-#| msgid "Bottom Margin"
 msgid "Bottom bar"
-msgstr "底部邊距"
+msgstr "底部列"
 
 #: crates/big-video-player/src/video/ui/appearance/layout/buttons_page.rs:226
 #: crates/big-video-player/src/video/ui/appearance/layout/layout_page.rs:98
@@ -1873,12 +1834,12 @@ msgid "Button Layout"
 msgstr "按鈕配置"
 
 #: crates/big-video-player/src/video/ui/appearance/layout/buttons_page.rs:232
-#, fuzzy
-#| msgid "Drag buttons between zones • Click to toggle visibility"
 msgid ""
 "Drag buttons between zones, or move the focused one with Alt+Left and "
 "Alt+Right. Click a button to show or hide it."
-msgstr "在區域之間拖曳按鈕 • 點擊以切換可見性"
+msgstr ""
+"在區域之間拖曳按鈕，或用 Alt+左方向鍵與 Alt+右方向鍵移動目前焦點所在的按鈕。"
+"點擊按鈕即可顯示或隱藏。"
 
 #: crates/big-video-player/src/video/ui/appearance/layout/layout_page.rs:19
 msgid "Layout"
@@ -2300,6 +2261,8 @@ msgid ""
 "Some provider passwords are still in a plain file because your keyring could "
 "not be reached. Unlock your keyring, then reload the channels."
 msgstr ""
+"由於無法存取鑰匙圈，部分供應商密碼仍儲存在未加密的檔案中。請解鎖鑰匙圈，然後"
+"重新載入頻道。"
 
 #: crates/big-video-player/src/video/ui/iptv/mod.rs:257
 #: crates/big-video-player/src/video/ui/iptv/mod.rs:437
@@ -2319,10 +2282,9 @@ msgid "Loading channels…"
 msgstr "正在載入頻道…"
 
 #: crates/big-video-player/src/video/ui/iptv/mod.rs:490
-#, fuzzy, rust-format
-#| msgid "Showing the first {}. Type more to narrow the search."
+#, rust-format
 msgid "Showing the first {} channels; the list has more."
-msgstr "僅顯示前 {} 個。輸入更多內容以縮小搜尋範圍。"
+msgstr "僅顯示前 {} 個頻道；清單中還有更多頻道。"
 
 #: crates/big-video-player/src/video/ui/iptv/mod.rs:509
 msgid ""
@@ -2372,13 +2334,15 @@ msgstr "無法讀取播放清單檔案。"
 msgid ""
 "Could not read this provider's password from your keyring. Unlock your "
 "keyring, then reload the channels."
-msgstr ""
+msgstr "無法從鑰匙圈讀取此供應商的密碼。請解鎖鑰匙圈，然後重新載入頻道。"
 
 #: crates/big-video-player/src/video/ui/iptv/mod.rs:535
 msgid ""
 "This playlist has IPTV channels from a provider that is not set up. Add the "
 "provider under IPTV, then open the playlist again."
 msgstr ""
+"此播放清單含有尚未設定之供應商的 IPTV 頻道。請在 IPTV 中加入該供應商，然後重"
+"新開啟播放清單。"
 
 #: crates/big-video-player/src/video/ui/iptv/providers_dialog.rs:48
 msgid "Add provider"
@@ -2394,6 +2358,8 @@ msgid ""
 "can delete the “Big Multimedia IPTV provider” item it left with your keyring "
 "manager."
 msgstr ""
+"無法從鑰匙圈刪除已取代或已移除的密碼。您可以用鑰匙圈管理工具刪除它留下的"
+"「Big Multimedia IPTV provider」項目。"
 
 #: crates/big-video-player/src/video/ui/iptv/providers_dialog.rs:120
 msgid "No providers yet"
@@ -2407,7 +2373,7 @@ msgstr "加入 IPTV 供應商以開始使用"
 msgid ""
 "Password not in your keyring yet. Unlock your keyring, then close this "
 "window to try again."
-msgstr ""
+msgstr "密碼尚未存入鑰匙圈。請解鎖鑰匙圈，然後關閉此視窗再試一次。"
 
 #: crates/big-video-player/src/video/ui/iptv/providers_dialog.rs:137
 msgid "Edit"
@@ -2424,13 +2390,14 @@ msgstr "IPTV 供應商"
 
 #: crates/big-video-player/src/video/ui/iptv/providers_dialog.rs:298
 msgid "Saving the password in your keyring…"
-msgstr ""
+msgstr "正在將密碼儲存到鑰匙圈…"
 
 #: crates/big-video-player/src/video/ui/iptv/providers_dialog.rs:326
 msgid ""
 "Could not save the password in your keyring, so nothing was saved. Unlock "
 "your keyring, then save again."
 msgstr ""
+"無法將密碼儲存到鑰匙圈，因此未儲存任何內容。請解鎖鑰匙圈，然後再儲存一次。"
 
 #: crates/big-video-player/src/video/ui/iptv/providers_dialog.rs:366
 #: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/header.rs:163
@@ -2476,11 +2443,11 @@ msgstr "密碼"
 #: crates/big-video-player/src/video/ui/iptv/providers_dialog.rs:422
 msgid ""
 "The full address is saved in your keyring. Leave it as shown to keep it."
-msgstr ""
+msgstr "完整位址已儲存在鑰匙圈中。維持目前顯示的內容即可保留。"
 
 #: crates/big-video-player/src/video/ui/iptv/providers_dialog.rs:425
 msgid "The password is saved in your keyring. Leave Password empty to keep it."
-msgstr ""
+msgstr "密碼已儲存在鑰匙圈中。將「密碼」留空即可保留。"
 
 #: crates/big-video-player/src/video/ui/iptv/providers_dialog.rs:433
 msgid "HTTP headers (optional)"
@@ -2593,8 +2560,6 @@ msgid "For some TV broadcasts (HLG)"
 msgstr "適用於某些電視廣播 (HLG)"
 
 #: crates/big-video-player/src/video/ui/media_adjust.rs:290
-#, fuzzy
-#| msgid "Plain colours (SDR)"
 msgid "Plain colors (SDR)"
 msgstr "一般色彩 (SDR)"
 
@@ -2775,10 +2740,9 @@ msgid "Subtitle"
 msgstr "字幕"
 
 #: crates/big-video-player/src/video/ui/menu_dialogs.rs:20
-#, fuzzy, rust-format
-#| msgid "Recording was not saved"
+#, rust-format
 msgid "The screenshot was not saved: {error}"
-msgstr "錄音未儲存"
+msgstr "螢幕截圖未儲存：{error}"
 
 #: crates/big-video-player/src/video/ui/menu_dialogs.rs:52
 msgid "Go to Time"
@@ -2799,29 +2763,28 @@ msgstr "前往"
 #: crates/big-video-player/src/video/ui/menu_dialogs.rs:77
 #: crates/big-video-player/src/video/ui/menu_dialogs.rs:132
 msgid "Still saving the previous screenshots. Try again in a moment."
-msgstr ""
+msgstr "仍在儲存先前的螢幕截圖。請稍後再試一次。"
 
 #: crates/big-video-player/src/video/ui/menu_dialogs.rs:83
 #: crates/big-video-player/src/video/ui/menu_dialogs.rs:88
-#, fuzzy
-#| msgid "Stores the video color space in each screenshot"
 msgid "Open a video to take a screenshot"
-msgstr "在每張截圖中儲存影片的色彩空間"
+msgstr "開啟影片即可擷取螢幕畫面"
 
 #: crates/big-video-player/src/video/ui/menu_dialogs.rs:102
 msgid ""
 "There is no Pictures or home folder to save screenshots in. Choose a folder "
 "in Preferences."
 msgstr ""
+"沒有可用來儲存螢幕截圖的「圖片」資料夾或家目錄。請在偏好設定中選擇資料夾。"
 
 #: crates/big-video-player/src/video/ui/menu_dialogs.rs:127
 #, rust-format
 msgid "Cannot save to {folder}: {error}. Choose another folder in Preferences."
-msgstr ""
+msgstr "無法儲存到 {folder}：{error}。請在偏好設定中選擇其他資料夾。"
 
 #: crates/big-video-player/src/video/ui/menu_dialogs.rs:137
 msgid "The screenshot was not saved because of an unexpected error"
-msgstr ""
+msgstr "發生未預期的錯誤，螢幕截圖未儲存"
 
 #: crates/big-video-player/src/video/ui/menu_dialogs.rs:174
 msgid "Screenshot saved"
@@ -3588,11 +3551,10 @@ msgid "Rename failed"
 msgstr "重新命名失敗"
 
 #: crates/big-video-player/src/video/ui/video_browser_sidebar/fileops.rs:311
-#, fuzzy, rust-format
-#| msgid "Could not move to trash"
+#, rust-format
 msgid "Could not move {failed} of {total} file"
 msgid_plural "Could not move {failed} of {total} files"
-msgstr[0] "無法移至資源回收筒"
+msgstr[0] "無法移動 {total} 個檔案中的 {failed} 個"
 
 #: crates/big-video-player/src/video/ui/video_browser_sidebar/library.rs:118
 msgid "Home folder"
@@ -3803,8 +3765,7 @@ msgid_plural "{n} changes"
 msgstr[0] "{n} 項變更"
 
 #: crates/big-video-player/src/video/ui/video_shell/adjustments.rs:173
-#, fuzzy, rust-format
-#| msgid "Video colour: {name}"
+#, rust-format
 msgid "Video color: {name}"
 msgstr "影片色彩：{name}"
 
@@ -3903,8 +3864,6 @@ msgid "Use HDR?"
 msgstr "使用 HDR？"
 
 #: crates/big-video-player/src/video/ui/video_shell/component.rs:214
-#, fuzzy
-#| msgid "Does the picture look grey and washed out? Click to use HDR colours"
 msgid "Does the picture look grey and washed out? Click to use HDR colors"
 msgstr "畫面看起來發灰、發白嗎？點擊以使用 HDR 色彩"
 
@@ -4043,6 +4002,9 @@ msgid ""
 "kept. Video Output, Audio Output and the custom mpv options take effect "
 "after reopening the player."
 msgstr ""
+"偏好設定與外觀將還原為預設值。您的資料庫資料夾、鍵盤快捷鍵、音量、隨機播放，"
+"以及人聲與等化器等級都會保留。影片輸出、音訊輸出與自訂 mpv 選項會在重新開啟播"
+"放器後生效。"
 
 #: crates/big-video-player/src/video/ui/video_shell/export.rs:19
 msgid "No file is playing"
@@ -4136,7 +4098,7 @@ msgstr "沒有相符的最近使用檔案"
 
 #: crates/big-video-player/src/video/ui/video_shell/playback.rs:196
 msgid "The screenshot took too long and was not saved"
-msgstr ""
+msgstr "螢幕截圖耗時過久，未儲存"
 
 #: crates/big-video-player/src/video/ui/video_shell/playback.rs:223
 msgid "Could not play this file — it may be unsupported or corrupt."
@@ -4162,6 +4124,8 @@ msgid ""
 "The playback engine could not start: {error}. Check Preferences → Advanced → "
 "mpv Options, then reopen the player."
 msgstr ""
+"播放引擎無法啟動：{error}。請檢查「偏好設定 → 進階 → mpv 選項」，然後重新開啟"
+"播放器。"
 
 #: crates/big-video-player/src/video/ui/video_shell/render.rs:340
 msgid ""
@@ -4545,14 +4509,14 @@ msgstr "無法啟動轉換器"
 #: crates/media-runtime/src/media/iptv/m3u.rs:51
 #, rust-format
 msgid "Only the first {} entries of the playlist were loaded."
-msgstr ""
+msgstr "僅載入播放清單的前 {} 個項目。"
 
 #: crates/media-runtime/src/media/iptv/m3u.rs:58
 #, rust-format
 msgid "{} entry was skipped because it is not a supported stream or file."
 msgid_plural ""
 "{} entries were skipped because they are not supported streams or files."
-msgstr[0] ""
+msgstr[0] "已略過 {} 個項目，因為它們不是支援的串流或檔案。"
 
 #: crates/media-runtime/src/media/metadata_cache/display.rs:21
 #, rust-format
@@ -4593,32 +4557,24 @@ msgid "Chapter"
 msgstr "章節"
 
 #: crates/media-runtime/src/player/mpv_backend/properties_video.rs:39
-#, fuzzy
-#| msgid "Pixel Format"
 msgid "pixelformat"
-msgstr "像素格式"
+msgstr ""
 
 #: crates/media-runtime/src/player/mpv_backend/properties_video.rs:40
-#, fuzzy
-#| msgid "Pixel Format"
 msgid "hw-pixelformat"
-msgstr "像素格式"
+msgstr ""
 
 #: crates/media-runtime/src/player/mpv_backend/properties_video.rs:41
 msgid "colormatrix"
 msgstr ""
 
 #: crates/media-runtime/src/player/mpv_backend/properties_video.rs:42
-#, fuzzy
-#| msgid "Primaries"
 msgid "primaries"
-msgstr "原色"
+msgstr ""
 
 #: crates/media-runtime/src/player/mpv_backend/properties_video.rs:43
-#, fuzzy
-#| msgid "Gamma"
 msgid "gamma"
-msgstr "Gamma"
+msgstr ""
 
 #: crates/media-runtime/src/player/mpv_backend/types.rs:94
 msgid ""
@@ -4626,6 +4582,8 @@ msgid ""
 "headphones are connected, or choose another Audio Output in Preferences and "
 "reopen the player."
 msgstr ""
+"無法在音訊輸出上啟動聲音。請確認喇叭或耳機已連接，或在偏好設定中選擇其他音訊"
+"輸出，然後重新開啟播放器。"
 
 #: crates/media-runtime/src/settings/messages.rs:6
 msgid "Access could not be verified — check permissions before reviewing"
@@ -4780,23 +4738,23 @@ msgstr "按 Alt+Down 調整。按 Escape 關閉。"
 #: crates/ui/generic/big-relm4-components/src/input/zone_layout_editor.rs:160
 #, rust-format
 msgid "{zone}, {position} of {count}"
-msgstr ""
+msgstr "{zone}，第 {position} 個，共 {count} 個"
 
 #: crates/ui/generic/big-relm4-components/src/input/zone_layout_editor.rs:201
 #, rust-format
 msgid "{bar}, center"
-msgstr ""
+msgstr "{bar}，中間"
 
 #: crates/ui/generic/big-relm4-components/src/input/zone_layout_editor.rs:202
 #: crates/ui/generic/big-relm4-components/src/input/zone_layout_editor.rs:203
 #, rust-format
 msgid "{bar}, left"
-msgstr ""
+msgstr "{bar}，左側"
 
 #: crates/ui/generic/big-relm4-components/src/input/zone_layout_editor.rs:204
 #, rust-format
 msgid "{bar}, right"
-msgstr ""
+msgstr "{bar}，右側"
 
 #: crates/ui/generic/big-relm4-components/src/layout/media_window/sidebar.rs:232
 msgid "Resize sidebar"
@@ -5052,7 +5010,7 @@ msgstr "編輯剪下"
 
 #: crates/ui/media/big-player-ui/src/cut_edit_dialog.rs:31
 msgid "Start and end must be at least 0.1 seconds apart"
-msgstr ""
+msgstr "開始與結束之間至少須相隔 0.1 秒"
 
 #: crates/ui/media/big-player-ui/src/cut_edit_dialog.rs:42
 msgid "Edit Cut"
@@ -5153,7 +5111,7 @@ msgstr "搜尋 Podcast 或加入 RSS 訂閱源"
 
 #: crates/ui/media/big-player-ui/src/podcast_panel.rs:244
 msgid "Podcast Subscriptions Unavailable"
-msgstr ""
+msgstr "無法使用 Podcast 訂閱"
 
 #: crates/ui/media/big-player-ui/src/podcast_panel.rs:274
 msgid "Connection error — try again"
@@ -5165,7 +5123,7 @@ msgstr "已訂閱"
 
 #: crates/ui/media/big-player-ui/src/podcast_panel.rs:341
 msgid "Podcast subscriptions are still loading"
-msgstr ""
+msgstr "Podcast 訂閱仍在載入中"
 
 #: crates/ui/media/big-player-ui/src/podcast_panel.rs:378
 msgid "Subscriptions"
@@ -5176,15 +5134,13 @@ msgid "Search Results"
 msgstr "搜尋結果"
 
 #: crates/ui/media/big-player-ui/src/podcast_panel.rs:450
-#, fuzzy
-#| msgid "The playlist could not be saved."
 msgid "Podcast subscriptions could not be saved"
-msgstr "無法儲存播放清單。"
+msgstr "無法儲存 Podcast 訂閱"
 
 #: crates/ui/media/big-player-ui/src/podcast_panel.rs:463
 #, rust-format
 msgid "Podcast subscriptions could not be read, so changes are not saved: {}"
-msgstr ""
+msgstr "無法讀取 Podcast 訂閱，因此不會儲存變更：{}"
 
 #: crates/ui/media/big-player-ui/src/podcast_panel.rs:472
 msgid "Title unavailable"
@@ -5233,34 +5189,29 @@ msgid "Explore Stations"
 msgstr "探索電台"
 
 #: crates/ui/media/big-player-ui/src/radio_panel/widgets.rs:56
-#, fuzzy, rust-format
-#| msgid "Remove station"
+#, rust-format
 msgid "Remove {station}"
-msgstr "移除電台"
+msgstr "移除 {station}"
 
 #: crates/ui/media/big-player-ui/src/radio_panel/widgets.rs:75
-#, fuzzy, rust-format
-#| msgid "Add to my stations"
+#, rust-format
 msgid "Add {station} to my stations"
-msgstr "加入我的電台"
+msgstr "將 {station} 加入我的電台"
 
 #: crates/ui/media/big-player-ui/src/radio_panel/widgets.rs:99
-#, fuzzy, rust-format
-#| msgid "Add to my stations"
+#, rust-format
 msgid "{station} is in my stations"
-msgstr "加入我的電台"
+msgstr "{station} 已在我的電台中"
 
 #: crates/ui/media/big-player-ui/src/radio_panel/widgets.rs:115
-#, fuzzy, rust-format
-#| msgid "Stop Recording"
+#, rust-format
 msgid "Stop recording {station}"
-msgstr "停止錄製"
+msgstr "停止錄製 {station}"
 
 #: crates/ui/media/big-player-ui/src/radio_panel/widgets.rs:121
-#, fuzzy, rust-format
-#| msgid "Remove station"
+#, rust-format
 msgid "Record {station}"
-msgstr "移除電台"
+msgstr "錄製 {station}"
 
 #: crates/ui/media/big-player-ui/src/radio_panel/widgets.rs:196
 msgid "Search radios..."
@@ -5376,17 +5327,16 @@ msgstr "開啟 KDE Connect 下載頁面"
 
 #: crates/ui/media/big-player-ui/src/smartphone/dialog.rs:129
 msgid "No local network found. Connect to a network and try again."
-msgstr ""
+msgstr "找不到區域網路。請連上網路後再試一次。"
 
 #: crates/ui/media/big-player-ui/src/smartphone/dialog.rs:152
 msgid "Scan the code with the phone's camera."
 msgstr "用手機相機掃描 QR 碼。"
 
 #: crates/ui/media/big-player-ui/src/smartphone/dialog.rs:171
-#, fuzzy, rust-format
-#| msgid "Web remote is off."
+#, rust-format
 msgid "Web remote stopped: {error}"
-msgstr "網頁遙控已關閉。"
+msgstr "網頁遙控已停止：{error}"
 
 #: crates/ui/media/big-player-ui/src/smartphone/dialog.rs:179
 msgid "Could not start server"
