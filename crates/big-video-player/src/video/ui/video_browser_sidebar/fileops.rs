@@ -9,7 +9,7 @@ use std::rc::Rc;
 
 use adw::prelude::*;
 use big_app_kit::file_dialogs::FilePicker;
-use big_os_kit::storage::StagedFile;
+use big_os_kit::storage::{StagedFile, rename_no_replace};
 use big_relm4_components::layout::name_prompt::{BigNamePromptSpec, prompt_name};
 
 use super::{BrowserState, VideoBrowserSidebarOutput};
@@ -211,7 +211,7 @@ pub(super) fn rename_file(state: &Rc<BrowserState>, path: &str) {
                 return true;
             };
             let dest = parent.join(&new_name);
-            match rename_no_replace(&old, &dest) {
+            match move_no_replace(&old, &dest) {
                 Ok(()) => {
                     let _ = state
                         .sender
@@ -262,18 +262,26 @@ fn move_file(src: &str, dest_dir: &Path) -> std::io::Result<PathBuf> {
     if dest == src_path {
         return Ok(dest);
     }
-    match rename_no_replace(src_path, &dest) {
-        Err(error) if error.raw_os_error() == Some(libc::EXDEV) => {}
-        result => return result.map(|()| dest),
-    }
-    move_across_filesystems(src_path, &dest)?;
+    move_no_replace(src_path, &dest)?;
     Ok(dest)
+}
+
+/// Rename `src` to `dest`, failing with `AlreadyExists` instead of replacing
+/// it. Copies across filesystems, and where the filesystem cannot refuse a
+/// replacing rename (`EINVAL` on some FUSE and NFS mounts).
+fn move_no_replace(src: &Path, dest: &Path) -> std::io::Result<()> {
+    match rename_no_replace(src, dest) {
+        Err(error) if matches!(error.raw_os_error(), Some(libc::EXDEV | libc::EINVAL)) => {
+            move_by_copy(src, dest)
+        }
+        result => result,
+    }
 }
 
 /// Copy `src` to the absent `dest` through staging that a killed copy leaves
 /// out of sight, and remove `src` only once the copy and its directory entry
 /// are on disk.
-fn move_across_filesystems(src: &Path, dest: &Path) -> std::io::Result<()> {
+fn move_by_copy(src: &Path, dest: &Path) -> std::io::Result<()> {
     // Copying a large video takes minutes; refuse a taken name before it.
     if dest.symlink_metadata().is_ok() {
         return Err(std::io::ErrorKind::AlreadyExists.into());
@@ -284,38 +292,6 @@ fn move_across_filesystems(src: &Path, dest: &Path) -> std::io::Result<()> {
     drop(staged);
     stage.publish(dest)?.into_io_result()?;
     std::fs::remove_file(src)
-}
-
-/// `rename` that fails with `AlreadyExists` instead of replacing `dest`, so a
-/// file created between a check and the rename is never overwritten.
-fn rename_no_replace(src: &Path, dest: &Path) -> std::io::Result<()> {
-    use std::os::unix::ffi::OsStrExt;
-    let src_c = std::ffi::CString::new(src.as_os_str().as_bytes())?;
-    let dest_c = std::ffi::CString::new(dest.as_os_str().as_bytes())?;
-    // SAFETY: both arguments are valid NUL-terminated paths that outlive the
-    // call; renameat2 only reads them.
-    let status = unsafe {
-        libc::renameat2(
-            libc::AT_FDCWD,
-            src_c.as_ptr(),
-            libc::AT_FDCWD,
-            dest_c.as_ptr(),
-            libc::RENAME_NOREPLACE,
-        )
-    };
-    if status == 0 {
-        return Ok(());
-    }
-    let error = std::io::Error::last_os_error();
-    // Some filesystems (NFS, some FUSE) lack RENAME_NOREPLACE: fall back to
-    // check-then-rename there rather than failing every rename.
-    if error.raw_os_error() == Some(libc::EINVAL) {
-        if dest.exists() {
-            return Err(std::io::ErrorKind::AlreadyExists.into());
-        }
-        return std::fs::rename(src, dest);
-    }
-    Err(error)
 }
 
 /// Say when some of a batch file op failed; the folder view already shows
@@ -351,7 +327,7 @@ mod tests {
     use std::io::Write;
     use std::path::{Path, PathBuf};
 
-    use super::{accepted_rename_name, move_across_filesystems, move_file, rename_no_replace};
+    use super::{accepted_rename_name, move_by_copy, move_file, move_no_replace};
 
     fn test_directory(name: &str) -> PathBuf {
         let dir = std::env::temp_dir().join(format!("bvp-{name}-{}", std::process::id()));
@@ -380,7 +356,7 @@ mod tests {
         assert_eq!(unsafe { libc::mkfifo(fifo.as_ptr(), 0o600) }, 0);
         let mover = std::thread::spawn({
             let (src, dest) = (src.clone(), dest.clone());
-            move || move_across_filesystems(&src, &dest)
+            move || move_by_copy(&src, &dest)
         });
         let mut writer = std::fs::OpenOptions::new().write(true).open(&src).unwrap();
         assert!(
@@ -403,7 +379,7 @@ mod tests {
         std::fs::create_dir(dir.join("out")).unwrap();
         std::fs::write(&src, b"new").unwrap();
         std::fs::write(&dest, b"kept").unwrap();
-        let error = move_across_filesystems(&src, &dest).unwrap_err();
+        let error = move_by_copy(&src, &dest).unwrap_err();
         assert_eq!(error.kind(), std::io::ErrorKind::AlreadyExists);
         assert_eq!(std::fs::read(&src).unwrap(), b"new");
         assert_eq!(std::fs::read(&dest).unwrap(), b"kept");
@@ -421,13 +397,13 @@ mod tests {
         std::fs::write(&b, b"b").unwrap();
         std::fs::write(sub.join("a.mp4"), b"kept").unwrap();
 
-        let err = rename_no_replace(&a, &b).unwrap_err();
+        let err = move_no_replace(&a, &b).unwrap_err();
         assert_eq!(err.kind(), std::io::ErrorKind::AlreadyExists);
         assert!(move_file(a.to_str().unwrap(), &sub).is_err());
         assert_eq!(std::fs::read(&b).unwrap(), b"b");
         assert_eq!(std::fs::read(sub.join("a.mp4")).unwrap(), b"kept");
 
-        rename_no_replace(&a, &dir.join("c.mp4")).unwrap();
+        move_no_replace(&a, &dir.join("c.mp4")).unwrap();
         assert!(!a.exists());
         std::fs::remove_dir_all(dir).unwrap();
     }

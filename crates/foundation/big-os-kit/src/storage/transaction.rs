@@ -283,6 +283,7 @@ pub fn rename_no_replace(src: &Path, dest: &Path) -> io::Result<()> {
     use std::os::unix::ffi::OsStrExt;
     let src = std::ffi::CString::new(src.as_os_str().as_bytes())?;
     let dest = std::ffi::CString::new(dest.as_os_str().as_bytes())?;
+    #[expect(clippy::disallowed_methods, reason = "the owner of no-replace renames")]
     // SAFETY: both pointers come from CStrings bound for the whole call, and
     // renameat2 only reads them.
     let status = unsafe {
