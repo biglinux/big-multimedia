@@ -49,6 +49,7 @@ const EDITOR_CSS: &str = "
 }
 .zle-button:hover { background: rgba(255,255,255,0.20); }
 .zle-title { color: alpha(white, 0.45); font-size: 11px; font-style: italic; }
+.zle-window-control { color: alpha(white, 0.45); }
 ";
 
 /// Shared editor state captured by the gesture closures. Holds only WEAK widget
@@ -416,6 +417,23 @@ impl BigZoneLayoutEditor {
                 match placement {
                     ZonePlacement::Start => center_box.set_start_widget(Some(zone)),
                     ZonePlacement::Center => center_box.set_center_widget(Some(zone)),
+                    ZonePlacement::End if bar.decoration.window_controls => {
+                        let end = gtk::Box::new(gtk::Orientation::Horizontal, 8);
+                        end.append(zone);
+                        for icon in [
+                            "window-minimize-symbolic",
+                            "window-maximize-symbolic",
+                            "window-close-symbolic",
+                        ] {
+                            let image = gtk::Image::builder()
+                                .icon_name(icon)
+                                .accessible_role(gtk::AccessibleRole::Presentation)
+                                .build();
+                            image.add_css_class("zle-window-control");
+                            end.append(&image);
+                        }
+                        center_box.set_end_widget(Some(&end));
+                    }
                     ZonePlacement::End => center_box.set_end_widget(Some(zone)),
                 }
             }

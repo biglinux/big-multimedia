@@ -87,14 +87,18 @@ impl ZoneControl {
     }
 }
 
-/// Miniature-only bar decoration (preview realism): a dim title placeholder and
-/// a non-interactive seek slider. Has no effect on the persisted [`ZoneLayout`].
+/// Miniature-only bar decoration (preview realism): a dim title placeholder, a
+/// non-interactive seek slider and window controls. Has no effect on the
+/// persisted [`ZoneLayout`].
 #[derive(Debug, Clone, Default, PartialEq, Eq)]
 pub struct BarDecoration {
     /// Optional dim title placeholder (e.g. "Video Title").
     pub title: Option<String>,
     /// Whether to draw a disabled seek slider above this bar.
     pub seek_slider: bool,
+    /// Whether to draw minimize, maximize and close after the end zone, as a
+    /// window's own header does.
+    pub window_controls: bool,
 }
 
 /// One bar (a `CenterBox` row in the rendered editor) and which of its zones
