@@ -63,7 +63,6 @@ that still holds its default; a `gradient` color source is not copied.
 | Key | Type | Default | Notes |
 |---|---|---|---|
 | `volume` | number | `1.0` |  |
-| `mute` | bool | `false` |  |
 | `volume-max` | integer | `150` | Percent; the players keep it within 100 to 200. |
 | `audio-volume` | integer | `100` |  |
 | `audio-output` | string | empty |  |
@@ -126,13 +125,9 @@ that still holds its default; a `gradient` color source is not copied.
 | `neural-upscaler` | string | empty |  |
 | `tone-mapping` | string | `auto` |  |
 | `target-peak` | integer | `0` |  |
-| `target-contrast` | integer | `0` | No code reads it. |
 | `hdr-compute-peak` | bool | `false` |  |
-| `hdr-contrast-recovery` | number | `0.0` | No code reads it. |
-| `target-colorspace-hint` | bool | `false` | No code reads it. |
 | `gamut-mapping-mode` | string | `auto` |  |
 | `icc-profile` | string | empty |  |
-| `icc-profile-auto` | bool | `false` | No code reads it. |
 | `icc-intent` | integer | `0` |  |
 
 ### Subtitles
@@ -141,7 +136,6 @@ that still holds its default; a `gradient` color source is not copied.
 |---|---|---|---|
 | `preferred-sub-lang` | string | empty |  |
 | `sub-auto` | string | `fuzzy` |  |
-| `secondary-subtitles` | bool | `false` | No code reads it. |
 | `sub-font` | string | empty |  |
 | `subtitle-font-size` | integer | `36` |  |
 | `sub-bold` | bool | `false` |  |
@@ -163,10 +157,7 @@ that still holds its default; a `gradient` color source is not copied.
 
 | Key | Type | Default | Notes |
 |---|---|---|---|
-| `screenshot-format` | string | `png` |  |
-| `screenshot-jpeg-quality` | integer | `90` | No code reads it. |
 | `screenshot-png-compression` | integer | `7` |  |
-| `screenshot-template` | string | `%F-%p` |  |
 | `screenshot-directory` | string | empty |  |
 | `screenshot-tag-colorspace` | bool | `true` |  |
 | `screenshot-high-bit-depth` | bool | `true` |  |
