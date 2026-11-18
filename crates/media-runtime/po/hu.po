@@ -34,18 +34,16 @@ msgid "Data Sources"
 msgstr "Adatforrások"
 
 #: crates/big-audio-player/src/audio/app.rs:53
-#, fuzzy
-#| msgid "Close the player"
 msgid "Play or pause the running player"
-msgstr "A lejátszó bezárása"
+msgstr "A futó lejátszó lejátszásának indítása vagy szüneteltetése"
 
 #: crates/big-audio-player/src/audio/app.rs:58
 msgid "Skip to the next track in the running player"
-msgstr ""
+msgstr "Ugrás a következő számra a futó lejátszóban"
 
 #: crates/big-audio-player/src/audio/app.rs:63
 msgid "Go back to the previous track in the running player"
-msgstr ""
+msgstr "Vissza az előző számra a futó lejátszóban"
 
 #: crates/big-audio-player/src/audio/appearance/dialogs.rs:42
 #: crates/big-video-player/src/video/ui/filters/groups_vf.rs:278
@@ -462,11 +460,11 @@ msgid "Select a song to start"
 msgstr "Válasszon egy dalt az indításhoz"
 
 #: crates/big-audio-player/src/audio/ui/audio_shell/engine.rs:37
-#, fuzzy, rust-format
-#| msgid "Could not play this file — it may be unsupported or corrupt."
+#, rust-format
 msgid "Could not play “{file}”: it may be unsupported or corrupt."
 msgstr ""
-"Ezt a fájlt nem sikerült lejátszani — lehet, hogy nem támogatott vagy sérült."
+"A(z) „{file}” fájlt nem sikerült lejátszani: lehet, hogy nem támogatott vagy "
+"sérült."
 
 #: crates/big-audio-player/src/audio/ui/audio_shell/engine.rs:215
 #, rust-format
@@ -474,6 +472,8 @@ msgid ""
 "The playback engine could not start: {error}. Update or reinstall the mpv "
 "package, then reopen the player."
 msgstr ""
+"A lejátszómotor nem indult el: {error}. Frissítse vagy telepítse újra az mpv "
+"csomagot, majd nyissa meg újra a lejátszót."
 
 #: crates/big-audio-player/src/audio/ui/audio_shell/export.rs:17
 #: crates/big-audio-player/src/audio/ui/audio_shell/export.rs:33
@@ -483,17 +483,13 @@ msgstr "Nem játszik helyi szám"
 #: crates/big-audio-player/src/audio/ui/audio_shell/library_store.rs:63
 msgid "The music library is still opening. Try again in a moment."
 msgstr ""
+"A zenei könyvtár megnyitása még folyamatban van. Próbálja újra egy pillanat "
+"múlva."
 
 #: crates/big-audio-player/src/audio/ui/audio_shell/library_store.rs:223
 #: crates/big-audio-player/src/audio/ui/audio_shell/library_store.rs:259
-#, fuzzy
-#| msgid ""
-#| "The library could not be read. Previous results were kept; try searching "
-#| "again."
 msgid "The library could not be read. The queue was not changed."
-msgstr ""
-"A könyvtárat nem sikerült beolvasni. A korábbi eredmények megmaradtak; "
-"próbáljon újra keresni."
+msgstr "A könyvtárat nem sikerült beolvasni. A várólista nem változott."
 
 #: crates/big-audio-player/src/audio/ui/audio_shell/panel_intents.rs:61
 msgid ""
@@ -524,25 +520,18 @@ msgid "Save Episodes"
 msgstr "Epizódok mentése"
 
 #: crates/big-audio-player/src/audio/ui/audio_shell/panel_intents.rs:432
-#, fuzzy
-#| msgid ""
-#| "The playlist could not be read safely. Check its format and permissions."
 msgid ""
 "The episodes could not be saved in this folder. Check its permissions and "
 "try again."
 msgstr ""
-"A lejátszólistát nem sikerült biztonságosan beolvasni. Ellenőrizze a "
-"formátumát és az engedélyeket."
+"Az epizódokat nem sikerült ebbe a mappába menteni. Ellenőrizze a mappa "
+"jogosultságait, és próbálja újra."
 
 #: crates/big-audio-player/src/audio/ui/audio_shell/playback.rs:143
-#, fuzzy
-#| msgid ""
-#| "The library could not be read. Previous results were kept; try searching "
-#| "again."
 msgid "The library could not be read, so lyrics were not searched online."
 msgstr ""
-"A könyvtárat nem sikerült beolvasni. A korábbi eredmények megmaradtak; "
-"próbáljon újra keresni."
+"A könyvtárat nem sikerült beolvasni, ezért nem történt online dalszöveg-"
+"keresés."
 
 #: crates/big-audio-player/src/audio/ui/audio_shell/playback.rs:157
 msgid "Seek position"
@@ -707,14 +696,13 @@ msgid "Export stopped. Confirmed outputs were kept"
 msgstr "Az exportálás leállt. A megerősített kimenetek megmaradtak"
 
 #: crates/big-audio-player/src/audio/ui/audio_shell/queue_persistence.rs:55
-#, fuzzy, rust-format
-#| msgid "The playlist could not be saved."
+#, rust-format
 msgid "The music library could not be opened: {}"
-msgstr "A lejátszólistát nem sikerült menteni."
+msgstr "A zenei könyvtárat nem sikerült megnyitni: {}"
 
 #: crates/big-audio-player/src/audio/ui/audio_shell/queue_persistence.rs:57
 msgid "Retry"
-msgstr ""
+msgstr "Újrapróbálás"
 
 #: crates/big-audio-player/src/audio/ui/audio_shell/queue_persistence.rs:60
 msgid ""
@@ -750,20 +738,16 @@ msgstr ""
 "A figyelt mappákat nem sikerült beolvasni. A korábbi beállítások megmaradtak."
 
 #: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:154
-#, fuzzy
-#| msgid "The playlist could not be saved."
 msgid "The station could not be saved."
-msgstr "A lejátszólistát nem sikerült menteni."
+msgstr "Az állomást nem sikerült menteni."
 
 #: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:168
-#, fuzzy
-#| msgid "The playlist could not be saved."
 msgid "The station could not be removed."
-msgstr "A lejátszólistát nem sikerült menteni."
+msgstr "Az állomást nem sikerült eltávolítani."
 
 #: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:230
 msgid "There is no Music or home folder to save recordings in."
-msgstr ""
+msgstr "Nincs Zene mappa vagy saját mappa, ahová a felvételek menthetők."
 
 #: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:276
 #: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:284
@@ -817,10 +801,8 @@ msgid "Open File"
 msgstr "Fájl megnyitása"
 
 #: crates/big-audio-player/src/audio/ui/audio_shell/sources.rs:528
-#, fuzzy
-#| msgid "The playlist could not be saved."
 msgid "Saved radio stations could not be read."
-msgstr "A lejátszólistát nem sikerült menteni."
+msgstr "A mentett rádióállomásokat nem sikerült beolvasni."
 
 #: crates/big-audio-player/src/audio/ui/audio_shell/tray.rs:18
 msgid "Show Big Audio Player"
@@ -831,24 +813,19 @@ msgid "The TV's track is no longer in the queue."
 msgstr "A TV száma már nincs a várólistán."
 
 #: crates/big-audio-player/src/audio/ui/audio_shell/update.rs:137
-#, fuzzy
-#| msgid "Cancelled"
 msgid "Scan cancelled"
-msgstr "Megszakítva"
+msgstr "Vizsgálat megszakítva"
 
 #: crates/big-audio-player/src/audio/ui/audio_shell/update.rs:139
-#, fuzzy
-#| msgid "Sample Rate"
 msgid "Scan incomplete"
-msgstr "Mintavételi frekvencia"
+msgstr "Vizsgálat hiányos"
 
 #: crates/big-audio-player/src/audio/ui/audio_shell/update.rs:142
-#, fuzzy, rust-format
-#| msgid "tracks imported"
+#, rust-format
 msgid "{count} track imported"
 msgid_plural "{count} tracks imported"
-msgstr[0] "szám importálva"
-msgstr[1] "szám importálva"
+msgstr[0] "{count} szám importálva"
+msgstr[1] "{count} szám importálva"
 
 #: crates/big-audio-player/src/audio/ui/audio_shell/update.rs:153
 msgid "Library updated"
@@ -1178,15 +1155,15 @@ msgstr "Megjelenítés a fájlkezelőben"
 #, rust-format
 msgid "{count} track"
 msgid_plural "{count} tracks"
-msgstr[0] ""
-msgstr[1] ""
+msgstr[0] "{count} szám"
+msgstr[1] "{count} szám"
 
 #: crates/big-audio-player/src/audio/ui/mod.rs:59
 #, rust-format
 msgid "{count} track · {duration}"
 msgid_plural "{count} tracks · {duration}"
-msgstr[0] ""
-msgstr[1] ""
+msgstr[0] "{count} szám · {duration}"
+msgstr[1] "{count} szám · {duration}"
 
 #: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:35
 msgid "Drag and drop files to create a playlist"
@@ -1215,7 +1192,7 @@ msgstr "Főmenü"
 
 #: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:90
 msgid "Show Sidebar"
-msgstr ""
+msgstr "Oldalsáv megjelenítése"
 
 #: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:121
 #: crates/big-audio-player/src/audio/ui/playlist_library_dialog.rs:261
@@ -1272,14 +1249,14 @@ msgid "About"
 msgstr "Névjegy"
 
 #: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:244
-#, fuzzy
-#| msgid "No episodes found"
 msgid "No episodes queued"
-msgstr "Nem található epizód"
+msgstr "Nincs epizód a várólistán"
 
 #: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:245
 msgid "Choose a podcast on the left to queue its episodes."
 msgstr ""
+"Válasszon egy podcastot a bal oldalon, hogy az epizódjait a várólistára "
+"tegye."
 
 #: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:254
 msgid "Drop tracks here"
@@ -1288,22 +1265,21 @@ msgstr "Húzza ide a számokat"
 #: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:256
 msgid "Or double-click a track in the library, or select it and press Return."
 msgstr ""
+"Vagy kattintson duplán egy számra a könyvtárban, vagy jelölje ki, és nyomja "
+"meg az Enter billentyűt."
 
 #: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:283
 msgid "Welcome to Big Audio Player"
 msgstr "Üdvözli a Big Audio Player"
 
 #: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:291
-#, fuzzy
-#| msgid ""
-#| "Add a folder with your music files to get started.\n"
-#| "Supported formats: MP3, FLAC, OGG, M4A, OPUS, WAV and more."
 msgid ""
 "Open music files to play them now, or add your music folder in the Music "
 "tab.\n"
 "Supported formats: MP3, FLAC, OGG, M4A, OPUS, WAV and more."
 msgstr ""
-"A kezdéshez adjon hozzá egy mappát a zenefájljaival.\n"
+"Nyisson meg zenefájlokat az azonnali lejátszáshoz, vagy adja hozzá a "
+"zenemappáját a Zene lapon.\n"
 "Támogatott formátumok: MP3, FLAC, OGG, M4A, OPUS, WAV és mások."
 
 #: crates/big-audio-player/src/audio/ui/playlist_chrome.rs:304
@@ -1531,10 +1507,8 @@ msgid "Cancellation requested. Finishing the current safe step…"
 msgstr "Megszakítás kérve. A jelenlegi biztonságos lépés befejezése…"
 
 #: crates/big-audio-player/src/audio/ui/scan_progress.rs:177
-#, fuzzy
-#| msgid "Library"
 msgid "Library Scan"
-msgstr "Könyvtár"
+msgstr "Könyvtár vizsgálata"
 
 #: crates/big-audio-player/src/audio/ui/track_list.rs:392
 #: crates/big-video-player/src/video/ui/video_browser_sidebar/views/queue_view.rs:313
@@ -1542,10 +1516,8 @@ msgid "Playing"
 msgstr "Lejátszás alatt"
 
 #: crates/big-audio-player/src/audio/ui/track_list.rs:393
-#, fuzzy
-#| msgid "Pause"
 msgid "Paused"
-msgstr "Szünet"
+msgstr "Szüneteltetve"
 
 #: crates/big-audio-player/src/audio/ui/unavailable_dialog.rs:52
 msgid ""
@@ -1658,7 +1630,7 @@ msgstr "Big Video Player"
 
 #: crates/big-video-player/src/video/app.rs:124
 msgid "Open a separate player window instead of using the running one"
-msgstr ""
+msgstr "Külön lejátszóablak megnyitása a futó lejátszó használata helyett"
 
 #: crates/big-video-player/src/video/keybindings.rs:50
 msgid "Increase speed"
@@ -1879,10 +1851,8 @@ msgid "Open"
 msgstr "Megnyitás"
 
 #: crates/big-video-player/src/video/ui/appearance/layout/buttons_page.rs:56
-#, fuzzy
-#| msgid "Load Playlist"
 msgid "Files and Playlist"
-msgstr "Lejátszólista betöltése"
+msgstr "Fájlok és lejátszólista"
 
 #: crates/big-video-player/src/video/ui/appearance/layout/buttons_page.rs:64
 #: crates/big-video-player/src/video/ui/video_shell/component.rs:181
@@ -1908,17 +1878,15 @@ msgstr "Teljes képernyő"
 
 #: crates/big-video-player/src/video/ui/appearance/layout/buttons_page.rs:179
 msgid "Top bar"
-msgstr ""
+msgstr "Felső sáv"
 
 #: crates/big-video-player/src/video/ui/appearance/layout/buttons_page.rs:181
 msgid "Video Title"
 msgstr "Videó címe"
 
 #: crates/big-video-player/src/video/ui/appearance/layout/buttons_page.rs:186
-#, fuzzy
-#| msgid "Bottom Margin"
 msgid "Bottom bar"
-msgstr "Alsó margó"
+msgstr "Alsó sáv"
 
 #: crates/big-video-player/src/video/ui/appearance/layout/buttons_page.rs:226
 #: crates/big-video-player/src/video/ui/appearance/layout/layout_page.rs:98
@@ -1930,12 +1898,13 @@ msgid "Button Layout"
 msgstr "Gombelrendezés"
 
 #: crates/big-video-player/src/video/ui/appearance/layout/buttons_page.rs:232
-#, fuzzy
-#| msgid "Drag buttons between zones • Click to toggle visibility"
 msgid ""
 "Drag buttons between zones, or move the focused one with Alt+Left and "
 "Alt+Right. Click a button to show or hide it."
-msgstr "Húzza a gombokat a zónák között • Kattintson a láthatóság váltásához"
+msgstr ""
+"Húzza a gombokat a zónák között, vagy mozgassa a fókuszban lévő gombot az "
+"Alt+Balra és Alt+Jobbra billentyűkkel. Kattintson egy gombra a "
+"megjelenítéséhez vagy elrejtéséhez."
 
 #: crates/big-video-player/src/video/ui/appearance/layout/layout_page.rs:19
 msgid "Layout"
@@ -2365,6 +2334,9 @@ msgid ""
 "Some provider passwords are still in a plain file because your keyring could "
 "not be reached. Unlock your keyring, then reload the channels."
 msgstr ""
+"Néhány szolgáltatói jelszó még mindig egyszerű fájlban van, mert a "
+"kulcstartó nem volt elérhető. Oldja fel a kulcstartót, majd töltse be újra a "
+"csatornákat."
 
 #: crates/big-video-player/src/video/ui/iptv/mod.rs:257
 #: crates/big-video-player/src/video/ui/iptv/mod.rs:437
@@ -2385,10 +2357,9 @@ msgid "Loading channels…"
 msgstr "Csatornák betöltése…"
 
 #: crates/big-video-player/src/video/ui/iptv/mod.rs:490
-#, fuzzy, rust-format
-#| msgid "Showing the first {}. Type more to narrow the search."
+#, rust-format
 msgid "Showing the first {} channels; the list has more."
-msgstr "Az első {} megjelenítése. Gépeljen többet a keresés szűkítéséhez."
+msgstr "Az első {} csatorna látható; a lista ennél többet tartalmaz."
 
 #: crates/big-video-player/src/video/ui/iptv/mod.rs:509
 msgid ""
@@ -2443,12 +2414,17 @@ msgid ""
 "Could not read this provider's password from your keyring. Unlock your "
 "keyring, then reload the channels."
 msgstr ""
+"Nem sikerült beolvasni a szolgáltató jelszavát a kulcstartóból. Oldja fel a "
+"kulcstartót, majd töltse be újra a csatornákat."
 
 #: crates/big-video-player/src/video/ui/iptv/mod.rs:535
 msgid ""
 "This playlist has IPTV channels from a provider that is not set up. Add the "
 "provider under IPTV, then open the playlist again."
 msgstr ""
+"Ez a lejátszólista olyan szolgáltató IPTV-csatornáit tartalmazza, amely "
+"nincs beállítva. Adja hozzá a szolgáltatót az IPTV alatt, majd nyissa meg "
+"újra a lejátszólistát."
 
 #: crates/big-video-player/src/video/ui/iptv/providers_dialog.rs:48
 msgid "Add provider"
@@ -2464,6 +2440,9 @@ msgid ""
 "can delete the “Big Multimedia IPTV provider” item it left with your keyring "
 "manager."
 msgstr ""
+"Egy lecserélt vagy eltávolított jelszót nem sikerült törölni a "
+"kulcstartóból. A visszamaradt „Big Multimedia IPTV provider” elemet a "
+"kulcstartókezelővel törölheti."
 
 #: crates/big-video-player/src/video/ui/iptv/providers_dialog.rs:120
 msgid "No providers yet"
@@ -2478,6 +2457,8 @@ msgid ""
 "Password not in your keyring yet. Unlock your keyring, then close this "
 "window to try again."
 msgstr ""
+"A jelszó még nincs a kulcstartóban. Oldja fel a kulcstartót, majd az "
+"újrapróbáláshoz zárja be ezt az ablakot."
 
 #: crates/big-video-player/src/video/ui/iptv/providers_dialog.rs:137
 msgid "Edit"
@@ -2494,13 +2475,15 @@ msgstr "IPTV-szolgáltató"
 
 #: crates/big-video-player/src/video/ui/iptv/providers_dialog.rs:298
 msgid "Saving the password in your keyring…"
-msgstr ""
+msgstr "Jelszó mentése a kulcstartóba…"
 
 #: crates/big-video-player/src/video/ui/iptv/providers_dialog.rs:326
 msgid ""
 "Could not save the password in your keyring, so nothing was saved. Unlock "
 "your keyring, then save again."
 msgstr ""
+"A jelszót nem sikerült a kulcstartóba menteni, ezért semmi sem lett mentve. "
+"Oldja fel a kulcstartót, majd mentsen újra."
 
 #: crates/big-video-player/src/video/ui/iptv/providers_dialog.rs:366
 #: crates/big-video-player/src/video/ui/video_browser_sidebar/chrome/header.rs:163
@@ -2547,10 +2530,14 @@ msgstr "Jelszó"
 msgid ""
 "The full address is saved in your keyring. Leave it as shown to keep it."
 msgstr ""
+"A teljes cím a kulcstartóban van mentve. Megtartásához hagyja úgy, ahogy "
+"látható."
 
 #: crates/big-video-player/src/video/ui/iptv/providers_dialog.rs:425
 msgid "The password is saved in your keyring. Leave Password empty to keep it."
 msgstr ""
+"A jelszó a kulcstartóban van mentve. Megtartásához hagyja üresen a Jelszó "
+"mezőt."
 
 #: crates/big-video-player/src/video/ui/iptv/providers_dialog.rs:433
 msgid "HTTP headers (optional)"
@@ -2663,8 +2650,6 @@ msgid "For some TV broadcasts (HLG)"
 msgstr "Egyes tévéadásokhoz (HLG)"
 
 #: crates/big-video-player/src/video/ui/media_adjust.rs:290
-#, fuzzy
-#| msgid "Plain colours (SDR)"
 msgid "Plain colors (SDR)"
 msgstr "Egyszerű színek (SDR)"
 
@@ -2845,10 +2830,9 @@ msgid "Subtitle"
 msgstr "Felirat"
 
 #: crates/big-video-player/src/video/ui/menu_dialogs.rs:20
-#, fuzzy, rust-format
-#| msgid "Recording was not saved"
+#, rust-format
 msgid "The screenshot was not saved: {error}"
-msgstr "A felvétel nem lett mentve"
+msgstr "A képernyőkép nem lett mentve: {error}"
 
 #: crates/big-video-player/src/video/ui/menu_dialogs.rs:52
 msgid "Go to Time"
@@ -2870,28 +2854,32 @@ msgstr "Ugrás"
 #: crates/big-video-player/src/video/ui/menu_dialogs.rs:132
 msgid "Still saving the previous screenshots. Try again in a moment."
 msgstr ""
+"Az előző képernyőképek mentése még folyamatban van. Próbálja újra egy "
+"pillanat múlva."
 
 #: crates/big-video-player/src/video/ui/menu_dialogs.rs:83
 #: crates/big-video-player/src/video/ui/menu_dialogs.rs:88
-#, fuzzy
-#| msgid "Stores the video color space in each screenshot"
 msgid "Open a video to take a screenshot"
-msgstr "Minden képernyőképben tárolja a videó színterét"
+msgstr "Képernyőkép készítéséhez nyisson meg egy videót"
 
 #: crates/big-video-player/src/video/ui/menu_dialogs.rs:102
 msgid ""
 "There is no Pictures or home folder to save screenshots in. Choose a folder "
 "in Preferences."
 msgstr ""
+"Nincs Képek mappa vagy saját mappa, ahová a képernyőképek menthetők. "
+"Válasszon mappát a Beállításokban."
 
 #: crates/big-video-player/src/video/ui/menu_dialogs.rs:127
 #, rust-format
 msgid "Cannot save to {folder}: {error}. Choose another folder in Preferences."
 msgstr ""
+"Nem lehet menteni a(z) {folder} mappába: {error}. Válasszon másik mappát a "
+"Beállításokban."
 
 #: crates/big-video-player/src/video/ui/menu_dialogs.rs:137
 msgid "The screenshot was not saved because of an unexpected error"
-msgstr ""
+msgstr "A képernyőkép váratlan hiba miatt nem lett mentve"
 
 #: crates/big-video-player/src/video/ui/menu_dialogs.rs:174
 msgid "Screenshot saved"
@@ -3687,12 +3675,11 @@ msgid "Rename failed"
 msgstr "Az átnevezés sikertelen"
 
 #: crates/big-video-player/src/video/ui/video_browser_sidebar/fileops.rs:311
-#, fuzzy, rust-format
-#| msgid "Could not move to trash"
+#, rust-format
 msgid "Could not move {failed} of {total} file"
 msgid_plural "Could not move {failed} of {total} files"
-msgstr[0] "Nem sikerült a Kukába helyezni"
-msgstr[1] "Nem sikerült a Kukába helyezni"
+msgstr[0] "{total} fájlból {failed} áthelyezése nem sikerült"
+msgstr[1] "{total} fájlból {failed} áthelyezése nem sikerült"
 
 #: crates/big-video-player/src/video/ui/video_browser_sidebar/library.rs:118
 msgid "Home folder"
@@ -3906,8 +3893,7 @@ msgstr[0] "{n} módosítás"
 msgstr[1] "{n} módosítás"
 
 #: crates/big-video-player/src/video/ui/video_shell/adjustments.rs:173
-#, fuzzy, rust-format
-#| msgid "Video colour: {name}"
+#, rust-format
 msgid "Video color: {name}"
 msgstr "Videószín: {name}"
 
@@ -4006,8 +3992,6 @@ msgid "Use HDR?"
 msgstr "HDR használata?"
 
 #: crates/big-video-player/src/video/ui/video_shell/component.rs:214
-#, fuzzy
-#| msgid "Does the picture look grey and washed out? Click to use HDR colours"
 msgid "Does the picture look grey and washed out? Click to use HDR colors"
 msgstr ""
 "A kép szürkének és kifakultnak tűnik? Kattintson a HDR-színek használatához"
@@ -4151,6 +4135,11 @@ msgid ""
 "kept. Video Output, Audio Output and the custom mpv options take effect "
 "after reopening the player."
 msgstr ""
+"A beállítások és a megjelenés visszaáll az alapértelmezettre. A "
+"könyvtármappák, a billentyűparancsok, a hangerő, a keverés, valamint a "
+"beszédhang- és hangszínszabályzó-szintek megmaradnak. A Videókimenet, a "
+"Hangkimenet és az egyéni mpv beállítások a lejátszó újranyitása után lépnek "
+"érvénybe."
 
 #: crates/big-video-player/src/video/ui/video_shell/export.rs:19
 msgid "No file is playing"
@@ -4244,7 +4233,7 @@ msgstr "Egyetlen legutóbbi fájl sem egyezik"
 
 #: crates/big-video-player/src/video/ui/video_shell/playback.rs:196
 msgid "The screenshot took too long and was not saved"
-msgstr ""
+msgstr "A képernyőkép készítése túl sokáig tartott, ezért nem lett mentve"
 
 #: crates/big-video-player/src/video/ui/video_shell/playback.rs:223
 msgid "Could not play this file — it may be unsupported or corrupt."
@@ -4272,6 +4261,8 @@ msgid ""
 "The playback engine could not start: {error}. Check Preferences → Advanced → "
 "mpv Options, then reopen the player."
 msgstr ""
+"A lejátszómotor nem indult el: {error}. Ellenőrizze a Beállítások → "
+"Speciális → mpv beállítások részt, majd nyissa meg újra a lejátszót."
 
 #: crates/big-video-player/src/video/ui/video_shell/render.rs:340
 msgid ""
@@ -4664,15 +4655,15 @@ msgstr "Az átalakító nem indítható el"
 #: crates/media-runtime/src/media/iptv/m3u.rs:51
 #, rust-format
 msgid "Only the first {} entries of the playlist were loaded."
-msgstr ""
+msgstr "A lejátszólistának csak az első {} bejegyzése lett betöltve."
 
 #: crates/media-runtime/src/media/iptv/m3u.rs:58
 #, rust-format
 msgid "{} entry was skipped because it is not a supported stream or file."
 msgid_plural ""
 "{} entries were skipped because they are not supported streams or files."
-msgstr[0] ""
-msgstr[1] ""
+msgstr[0] "{} bejegyzés kimaradt, mert nem támogatott adatfolyam vagy fájl."
+msgstr[1] "{} bejegyzés kimaradt, mert nem támogatott adatfolyam vagy fájl."
 
 #: crates/media-runtime/src/media/metadata_cache/display.rs:21
 #, rust-format
@@ -4750,6 +4741,9 @@ msgid ""
 "headphones are connected, or choose another Audio Output in Preferences and "
 "reopen the player."
 msgstr ""
+"A hang nem indult el a hangkimeneten. Ellenőrizze, hogy a hangszórók vagy a "
+"fejhallgató csatlakoztatva van-e, vagy válasszon másik Hangkimenetet a "
+"Beállításokban, és nyissa meg újra a lejátszót."
 
 #: crates/media-runtime/src/settings/messages.rs:6
 msgid "Access could not be verified — check permissions before reviewing"
@@ -4916,23 +4910,23 @@ msgstr ""
 #: crates/ui/generic/big-relm4-components/src/input/zone_layout_editor.rs:160
 #, rust-format
 msgid "{zone}, {position} of {count}"
-msgstr ""
+msgstr "{zone}, {position}/{count}"
 
 #: crates/ui/generic/big-relm4-components/src/input/zone_layout_editor.rs:201
 #, rust-format
 msgid "{bar}, center"
-msgstr ""
+msgstr "{bar}, középen"
 
 #: crates/ui/generic/big-relm4-components/src/input/zone_layout_editor.rs:202
 #: crates/ui/generic/big-relm4-components/src/input/zone_layout_editor.rs:203
 #, rust-format
 msgid "{bar}, left"
-msgstr ""
+msgstr "{bar}, bal oldalt"
 
 #: crates/ui/generic/big-relm4-components/src/input/zone_layout_editor.rs:204
 #, rust-format
 msgid "{bar}, right"
-msgstr ""
+msgstr "{bar}, jobb oldalt"
 
 #: crates/ui/generic/big-relm4-components/src/layout/media_window/sidebar.rs:232
 msgid "Resize sidebar"
@@ -5188,7 +5182,7 @@ msgstr "Vágás szerkesztése"
 
 #: crates/ui/media/big-player-ui/src/cut_edit_dialog.rs:31
 msgid "Start and end must be at least 0.1 seconds apart"
-msgstr ""
+msgstr "A kezdet és a vég között legalább 0,1 másodpercnek kell lennie"
 
 #: crates/ui/media/big-player-ui/src/cut_edit_dialog.rs:42
 msgid "Edit Cut"
@@ -5289,7 +5283,7 @@ msgstr "Keressen podcastokat, vagy adjon hozzá egy RSS-csatornát"
 
 #: crates/ui/media/big-player-ui/src/podcast_panel.rs:244
 msgid "Podcast Subscriptions Unavailable"
-msgstr ""
+msgstr "A podcast-feliratkozások nem érhetők el"
 
 #: crates/ui/media/big-player-ui/src/podcast_panel.rs:274
 msgid "Connection error — try again"
@@ -5301,7 +5295,7 @@ msgstr "Már feliratkozott"
 
 #: crates/ui/media/big-player-ui/src/podcast_panel.rs:341
 msgid "Podcast subscriptions are still loading"
-msgstr ""
+msgstr "A podcast-feliratkozások betöltése még folyamatban van"
 
 #: crates/ui/media/big-player-ui/src/podcast_panel.rs:378
 msgid "Subscriptions"
@@ -5312,15 +5306,15 @@ msgid "Search Results"
 msgstr "Keresési találatok"
 
 #: crates/ui/media/big-player-ui/src/podcast_panel.rs:450
-#, fuzzy
-#| msgid "The playlist could not be saved."
 msgid "Podcast subscriptions could not be saved"
-msgstr "A lejátszólistát nem sikerült menteni."
+msgstr "A podcast-feliratkozásokat nem sikerült menteni"
 
 #: crates/ui/media/big-player-ui/src/podcast_panel.rs:463
 #, rust-format
 msgid "Podcast subscriptions could not be read, so changes are not saved: {}"
 msgstr ""
+"A podcast-feliratkozásokat nem sikerült beolvasni, ezért a módosítások nem "
+"lesznek mentve: {}"
 
 #: crates/ui/media/big-player-ui/src/podcast_panel.rs:472
 msgid "Title unavailable"
@@ -5369,34 +5363,29 @@ msgid "Explore Stations"
 msgstr "Állomások felfedezése"
 
 #: crates/ui/media/big-player-ui/src/radio_panel/widgets.rs:56
-#, fuzzy, rust-format
-#| msgid "Remove station"
+#, rust-format
 msgid "Remove {station}"
-msgstr "Állomás eltávolítása"
+msgstr "{station} eltávolítása"
 
 #: crates/ui/media/big-player-ui/src/radio_panel/widgets.rs:75
-#, fuzzy, rust-format
-#| msgid "Add to my stations"
+#, rust-format
 msgid "Add {station} to my stations"
-msgstr "Hozzáadás a saját állomásokhoz"
+msgstr "{station} hozzáadása a saját állomásokhoz"
 
 #: crates/ui/media/big-player-ui/src/radio_panel/widgets.rs:99
-#, fuzzy, rust-format
-#| msgid "Add to my stations"
+#, rust-format
 msgid "{station} is in my stations"
-msgstr "Hozzáadás a saját állomásokhoz"
+msgstr "{station} a saját állomások között van"
 
 #: crates/ui/media/big-player-ui/src/radio_panel/widgets.rs:115
-#, fuzzy, rust-format
-#| msgid "Stop Recording"
+#, rust-format
 msgid "Stop recording {station}"
-msgstr "Rögzítés leállítása"
+msgstr "{station} felvételének leállítása"
 
 #: crates/ui/media/big-player-ui/src/radio_panel/widgets.rs:121
-#, fuzzy, rust-format
-#| msgid "Remove station"
+#, rust-format
 msgid "Record {station}"
-msgstr "Állomás eltávolítása"
+msgstr "{station} felvétele"
 
 #: crates/ui/media/big-player-ui/src/radio_panel/widgets.rs:196
 msgid "Search radios..."
@@ -5519,16 +5508,16 @@ msgstr "A KDE Connect letöltési oldalának megnyitása"
 #: crates/ui/media/big-player-ui/src/smartphone/dialog.rs:129
 msgid "No local network found. Connect to a network and try again."
 msgstr ""
+"Nem található helyi hálózat. Csatlakozzon egy hálózathoz, és próbálja újra."
 
 #: crates/ui/media/big-player-ui/src/smartphone/dialog.rs:152
 msgid "Scan the code with the phone's camera."
 msgstr "Olvassa be a kódot a telefon kamerájával."
 
 #: crates/ui/media/big-player-ui/src/smartphone/dialog.rs:171
-#, fuzzy, rust-format
-#| msgid "Web remote is off."
+#, rust-format
 msgid "Web remote stopped: {error}"
-msgstr "A webes távirányító ki van kapcsolva."
+msgstr "A webes távirányító leállt: {error}"
 
 #: crates/ui/media/big-player-ui/src/smartphone/dialog.rs:179
 msgid "Could not start server"
