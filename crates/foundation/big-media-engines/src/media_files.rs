@@ -36,7 +36,7 @@ pub fn is_audio_file(path: &str) -> bool {
     extension(path).is_some_and(|ext| AUDIO_EXTENSIONS.contains(&ext.as_str()))
 }
 
-/// `true` when `path` has a video extension and is not a TypeScript file mis-claimed as `.ts`.
+/// `true` when `path` has a video extension and is not a TypeScript file wrongly claimed as `.ts`.
 #[must_use]
 pub fn is_video_file(path: &str) -> bool {
     let Some(ext) = extension(path) else {
