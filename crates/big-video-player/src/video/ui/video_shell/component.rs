@@ -748,7 +748,7 @@ impl Component for VideoShell {
                     }
                 }
                 VideoShellInput::Screenshot => self.take_screenshot(&sender),
-                VideoShellInput::ScreenshotQueueFailed => self.notify(&i18n("Screenshot failed")),
+                VideoShellInput::ScreenshotFailed(message) => self.notify(&message),
                 VideoShellInput::SetChapter(idx) => self.set_chapter(idx),
                 VideoShellInput::SleepTimerStart { minutes, action } => {
                     self.start_sleep_timer(sleep_minutes_to_secs(minutes), action, &sender);

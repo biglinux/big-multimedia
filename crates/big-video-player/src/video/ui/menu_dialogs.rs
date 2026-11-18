@@ -14,11 +14,17 @@ use relm4::ComponentSender;
 
 use super::video_shell::{VideoShell, VideoShellInput};
 use crate::i18n::i18n;
+use crate::player::mpv_backend::ScreenshotRequestError;
 use big_relm4_components::layout::{
     dialog_footer::{BigDialogFooter, BigDialogFooterSpec},
     dialog_page::{BigDialogPage, focus_when_shown},
     preferences::BigPreferencesGroupSpec,
 };
+
+/// mpv took the request but did not save the picture; `error` says why.
+pub(crate) fn screenshot_not_saved_message(error: &str) -> String {
+    i18n("The screenshot was not saved: {error}").replace("{error}", error)
+}
 
 /// The sleep timer fades the volume out over its last seconds.
 const SLEEP_FADE_SECS: u32 = 10;
@@ -124,11 +130,13 @@ impl VideoShell {
             return;
         };
         let Some(mpv) = self.mpv_handle().borrow().as_ref().cloned() else {
-            self.notify(&i18n("Screenshot failed"));
+            if !self.report_missing_engine() {
+                self.notify(&i18n("Open a video to take a screenshot"));
+            }
             return;
         };
         if mpv.get_current_file().is_none() {
-            self.notify(&i18n("Screenshot failed"));
+            self.notify(&i18n("Open a video to take a screenshot"));
             return;
         }
         let settings = self.settings_handle();
@@ -139,7 +147,9 @@ impl VideoShell {
             .or_else(dirs::picture_dir)
             .or_else(dirs::home_dir)
         else {
-            self.notify(&i18n("Screenshot failed"));
+            self.notify(&i18n(
+                "There is no Pictures or home folder to save screenshots in. Choose a folder in Preferences.",
+            ));
             return;
         };
         // Metadata titles can contain secrets or exceed NAME_MAX. The public
@@ -154,14 +164,28 @@ impl VideoShell {
         let input = sender.input_sender().clone();
         glib::spawn_future_local(async move {
             let _permit = permit;
+            let folder = directory.clone();
             let result = gio::spawn_blocking(move || {
-                std::fs::create_dir_all(&directory)?;
+                std::fs::create_dir_all(&directory).map_err(ScreenshotRequestError::Folder)?;
                 mpv.screenshot_to_file_async(&target, alive)
             })
             .await;
-            if !matches!(result, Ok(Ok(_))) {
-                let _ = input.send(VideoShellInput::ScreenshotQueueFailed);
-            }
+            let message = match result {
+                Ok(Ok(_) | Err(ScreenshotRequestError::Closed)) => return,
+                Ok(Err(ScreenshotRequestError::Folder(error))) => {
+                    i18n("Cannot save to {folder}: {error}. Choose another folder in Preferences.")
+                        .replace("{folder}", &folder.display().to_string())
+                        .replace("{error}", &error.to_string())
+                }
+                Ok(Err(ScreenshotRequestError::Busy)) => {
+                    i18n("Screenshot queue is full; wait for pending captures")
+                }
+                Ok(Err(ScreenshotRequestError::Rejected(error))) => {
+                    screenshot_not_saved_message(&error)
+                }
+                Err(_) => i18n("The screenshot was not saved because of an unexpected error"),
+            };
+            let _ = input.send(VideoShellInput::ScreenshotFailed(message));
         });
     }
 

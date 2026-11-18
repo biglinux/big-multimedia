@@ -212,15 +212,20 @@ impl MpvBackend {
         &self,
         target: &std::path::Path,
         alive: std::sync::Arc<std::sync::atomic::AtomicBool>,
-    ) -> std::io::Result<u64> {
-        let stage = big_os_kit::storage::StagedFile::new(target)?;
+    ) -> Result<u64, super::ScreenshotRequestError> {
+        use super::ScreenshotRequestError;
+        let stage =
+            big_os_kit::storage::StagedFile::new(target).map_err(ScreenshotRequestError::Folder)?;
         let command = CString::new("screenshot-to-file").expect("literal");
-        let path = CString::new(
-            stage
-                .path()
-                .to_str()
-                .ok_or_else(|| std::io::Error::other("screenshot path is not UTF-8"))?,
-        )?;
+        let path = stage
+            .path()
+            .to_str()
+            .and_then(|path| CString::new(path).ok())
+            .ok_or_else(|| {
+                ScreenshotRequestError::Folder(std::io::Error::other(
+                    "the folder name is not valid UTF-8",
+                ))
+            })?;
         let mode = CString::new("video").expect("literal");
         let mut args = [
             command.as_ptr(),
@@ -237,9 +242,9 @@ impl MpvBackend {
             unsafe { mpv_sys::mpv_command_async(self.raw_mpv_handle, id, args.as_mut_ptr()) };
         if status < 0 {
             self.screenshots.rejected(id);
-            Err(std::io::Error::other(format!(
-                "screenshot command rejected: {status}"
-            )))
+            Err(ScreenshotRequestError::Rejected(
+                super::MpvError::Raw(status).to_string(),
+            ))
         } else {
             Ok(id)
         }
