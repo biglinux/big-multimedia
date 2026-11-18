@@ -14,6 +14,9 @@ use serde::{Deserialize, Serialize};
 
 use crate::config;
 
+/// Room for every channel of a large provider, far below the 1 MiB file limit.
+const MAX_FAVORITES: usize = 4096;
+
 /// Flat set of starred channel stream URLs, persisted as JSON.
 #[derive(Clone, Default, Serialize, Deserialize)]
 pub struct IptvFavorites {
@@ -41,17 +44,14 @@ impl IptvFavorites {
     }
     #[must_use]
     pub fn load() -> Self {
-        use big_os_kit::{deferred::Document, storage::read_regular_limited};
-        let path = Self::path();
-        let (mut favorites, writer) =
-            match read_regular_limited(&path, big_os_kit::deferred::MAX_BYTES) {
-                Ok(None) => (Self::default(), Document::reviewed(path, None)),
-                Ok(Some(bytes)) => match serde_json::from_slice::<Self>(&bytes) {
-                    Ok(value) => (value, Document::reviewed(path, Some(bytes))),
-                    Err(_) => (Self::default(), Document::blocked(path)),
-                },
-                Err(_) => (Self::default(), Document::blocked(path)),
-            };
+        Self::load_from(Self::path())
+    }
+    fn load_from(path: PathBuf) -> Self {
+        let (mut favorites, writer) = big_os_kit::deferred::Document::load(path, |bytes| {
+            serde_json::from_slice::<Self>(bytes)
+                .ok()
+                .filter(|favorites| favorites.urls.len() <= MAX_FAVORITES)
+        });
         favorites.persistence = Some(writer);
         favorites
     }
@@ -61,6 +61,11 @@ impl IptvFavorites {
             .persistence
             .get_or_insert_with(|| big_os_kit::deferred::Document::reviewed(Self::path(), None))
             .clone();
+        if self.urls.len() > MAX_FAVORITES {
+            writer.reject_update();
+            log::warn!("too many IPTV favorites; not saved");
+            return;
+        }
         if let Ok(bytes) = serde_json::to_vec_pretty(self) {
             if writer.replace(bytes).is_err() {
                 log::warn!("IPTV favorites are session-only until save is retried");
@@ -162,6 +167,29 @@ mod tests {
             ["http://other/2.ts", "http://srv/live/{credentials}/1.ts"]
         );
         assert!(!f.rename_in_memory(renames(&[("http://other/2.ts", "http://other/2.ts")])));
+    }
+
+    #[test]
+    fn more_favorites_than_the_cap_are_never_written() {
+        let dir = tempfile::tempdir().unwrap();
+        let path = dir.path().join("iptv-favorites.json");
+        let mut f = IptvFavorites::load_from(path.clone());
+        for n in 0..=MAX_FAVORITES {
+            f.toggle_in_memory(&format!("http://srv/{n}.ts"));
+        }
+        f.save();
+        assert_eq!(
+            f.save_status().unwrap().phase,
+            big_os_kit::deferred::Phase::Failed
+        );
+        assert!(!path.exists());
+
+        let oversized = serde_json::to_vec(&f).unwrap();
+        std::fs::write(&path, &oversized).unwrap();
+        let mut loaded = IptvFavorites::load_from(path.clone());
+        assert!(!loaded.contains("http://srv/0.ts"));
+        loaded.toggle("http://srv/0.ts");
+        assert_eq!(std::fs::read(&path).unwrap(), oversized);
     }
 
     #[test]

@@ -177,6 +177,8 @@ impl Default for IptvProvider {
     }
 }
 
+const MAX_PROVIDERS: usize = 256;
+
 /// On-disk provider container. A missing file may start empty; a corrupt file
 /// blocks persistence and is surfaced through save_status instead of being erased.
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
@@ -202,24 +204,13 @@ impl IptvProviderStore {
     /// interpreted as permission to replace the original with an empty store.
     #[must_use]
     pub fn load() -> Self {
-        use big_os_kit::{deferred::Document, storage::read_regular_limited};
-        let path = Self::config_path();
-        let (mut store, writer) = match read_regular_limited(&path, big_os_kit::deferred::MAX_BYTES)
-        {
-            Ok(None) => (Self::default(), Document::reviewed(path, None)),
-            Ok(Some(bytes)) => {
-                let decoded = std::str::from_utf8(&bytes)
+        let (mut store, writer) =
+            big_os_kit::deferred::Document::load(Self::config_path(), |bytes| {
+                let text = std::str::from_utf8(bytes).ok()?;
+                toml::from_str::<Self>(text)
                     .ok()
-                    .and_then(|text| toml::from_str::<Self>(text).ok());
-                match decoded {
-                    Some(store) if store.providers.len() <= 256 => {
-                        (store, Document::reviewed(path, Some(bytes)))
-                    }
-                    _ => (Self::default(), Document::blocked(path)),
-                }
-            }
-            Err(_) => (Self::default(), Document::blocked(path)),
-        };
+                    .filter(|store| store.providers.len() <= MAX_PROVIDERS)
+            });
         store.persistence = Some(writer);
         store
     }
@@ -229,7 +220,7 @@ impl IptvProviderStore {
         let writer = self.persistence.get_or_insert_with(|| {
             big_os_kit::deferred::Document::reviewed(Self::config_path(), None)
         });
-        if self.providers.len() > 256 {
+        if self.providers.len() > MAX_PROVIDERS {
             writer.reject_update();
             log::warn!("too many IPTV providers; not saved");
             return;
