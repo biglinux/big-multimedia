@@ -172,6 +172,36 @@ mod tests {
         );
     }
 
+    /// Sorting checks the laws on its own, as `sort_by` panics on some
+    /// inconsistent comparators; the pairwise pass catches the rest.
+    #[test]
+    fn natural_order_is_total() {
+        let pool = [
+            '0', '1', '9', 'a', 'A', 'b', ' ', '.', '/', ':', 'İ', 'ß', 'é',
+        ];
+        let mut state = 0x9e37_79b9_7f4a_7c15_u64;
+        let mut next = || {
+            state ^= state << 13;
+            state ^= state >> 7;
+            state ^= state << 17;
+            usize::try_from(state % 1024).unwrap()
+        };
+        for _ in 0..20 {
+            let mut names: Vec<String> = (0..300)
+                .map(|_| (0..next() % 7).map(|_| pool[next() % pool.len()]).collect())
+                .collect();
+            names.sort_by(|a, b| natural_cmp(a, b));
+            for (index, a) in names.iter().enumerate() {
+                for b in &names[index..] {
+                    let order = natural_cmp(a, b);
+                    assert!(!order.is_gt(), "{a:?} sorted before {b:?}");
+                    assert_eq!(natural_cmp(b, a), order.reverse(), "{a:?} vs {b:?}");
+                    assert_eq!(order.is_eq(), a == b, "{a:?} vs {b:?}");
+                }
+            }
+        }
+    }
+
     #[test]
     fn natural_path_order_keeps_a_folder_together() {
         let mut paths = vec!["/m/a b/x.mkv", "/m/a/y.mkv", "/m/a/x.mkv", "/m/a2/x.mkv"];
