@@ -313,12 +313,18 @@ impl AudioShell {
             AudioShellInput::ConvertTrack => self.open_in_converter(&[]),
             AudioShellInput::ShowTrimExport => self.enter_trim_mode(),
             AudioShellInput::SleepTimerStart { minutes, action } => {
-                self.start_sleep_timer(sleep_timer_seconds(minutes), action, &sender);
+                let input = sender.input_sender().clone();
+                self.sleep_timer
+                    .start(minutes, action, self.mpv.as_deref(), move || {
+                        let _ = input.send(AudioShellInput::SleepTick);
+                    });
             }
-            AudioShellInput::SleepTimerCancel => {
-                self.cancel_sleep_timer();
+            AudioShellInput::SleepTimerCancel => self.sleep_timer.cancel(self.mpv.as_deref()),
+            AudioShellInput::SleepTick => {
+                if let Some(notice) = self.sleep_timer.tick(self.mpv.as_deref()) {
+                    self.notify(&notice);
+                }
             }
-            AudioShellInput::SleepTick => self.sleep_tick(),
             AudioShellInput::Notify(message) => self.notify(&message),
             AudioShellInput::Undo => self.undo_queue(&sender),
             AudioShellInput::Redo => self.redo_queue(&sender),
@@ -366,11 +372,6 @@ fn should_start_playback_on_drop(is_playing: bool, current_file_empty: bool) -> 
     !is_playing || current_file_empty
 }
 
-/// Sleep-timer countdown length converted to seconds.
-fn sleep_timer_seconds(minutes: u32) -> u32 {
-    minutes * 60
-}
-
 /// Guard a stale async result against the current now-playing generation.
 fn is_current_generation(result_gen: u64, current_gen: u64) -> bool {
     result_gen == current_gen
@@ -399,7 +400,7 @@ mod tests {
     use super::{
         drop_insert_base, drop_insert_index, is_current_generation, lyrics_paned_position,
         lyrics_text_is_meaningful, next_shuffle_state, should_replace_queue_with,
-        should_start_playback_on_drop, sleep_timer_seconds,
+        should_start_playback_on_drop,
     };
 
     #[test]
@@ -440,13 +441,6 @@ mod tests {
         assert!(should_start_playback_on_drop(false, false)); // not playing
         assert!(should_start_playback_on_drop(true, true)); // no current file
         assert!(!should_start_playback_on_drop(true, false)); // actively playing
-    }
-
-    #[test]
-    fn sleep_timer_seconds_is_minutes_times_60() {
-        assert_eq!(sleep_timer_seconds(0), 0);
-        assert_eq!(sleep_timer_seconds(1), 60);
-        assert_eq!(sleep_timer_seconds(30), 1800);
     }
 
     #[test]

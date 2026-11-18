@@ -582,10 +582,7 @@ impl Component for AudioShell {
                 db: None,
                 db_read: None,
                 settings,
-                sleep_timer_source: None,
-                sleep_timer_remaining: 0,
-                sleep_timer_action: String::new(),
-                sleep_timer_volume: 100.0,
+                sleep_timer: crate::shared::sleep_timer::SleepTimer::default(),
                 library_grouping: initial_grouping,
                 library_filter: String::new(),
                 library_age: 0,
@@ -667,8 +664,8 @@ mod lifetime_tests {
                 player
                     .controller
                     .model()
-                    .sleep_timer_source
-                    .as_ref()
+                    .sleep_timer
+                    .source()
                     .expect("timer armed"),
             )
             .unwrap();

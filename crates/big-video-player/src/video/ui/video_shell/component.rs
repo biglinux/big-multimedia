@@ -600,10 +600,7 @@ impl Component for VideoShell {
                 notice,
                 screenshot_owner: Arc::new(std::sync::atomic::AtomicBool::new(true)),
                 win_actions,
-                sleep_timer_source: None,
-                sleep_timer_remaining: 0,
-                sleep_timer_action: String::new(),
-                sleep_timer_volume: 100.0,
+                sleep_timer: crate::shared::sleep_timer::SleepTimer::default(),
                 aspect_snap,
                 _shell_input: shell_input,
                 trim,
@@ -751,11 +748,17 @@ impl Component for VideoShell {
                 VideoShellInput::ScreenshotFailed(message) => self.notify(&message),
                 VideoShellInput::SetChapter(idx) => self.set_chapter(idx),
                 VideoShellInput::SleepTimerStart { minutes, action } => {
-                    self.start_sleep_timer(sleep_minutes_to_secs(minutes), action, &sender);
+                    let input = sender.input_sender().clone();
+                    let mpv = self.mpv.borrow().clone();
+                    self.sleep_timer
+                        .start(minutes, action, mpv.as_deref(), move || {
+                            let _ = input.send(VideoShellInput::SleepTick);
+                        });
                     self.refresh_adjustments(&sender);
                 }
                 VideoShellInput::SleepTimerCancel => {
-                    self.cancel_sleep_timer();
+                    let mpv = self.mpv.borrow().clone();
+                    self.sleep_timer.cancel(mpv.as_deref());
                     self.refresh_adjustments(&sender);
                     self.refresh_panel_home(&sender);
                 }
@@ -781,7 +784,12 @@ impl Component for VideoShell {
                 VideoShellInput::RestoreAdjustments(adjustments) => {
                     self.restore_adjustments(&adjustments, &sender);
                 }
-                VideoShellInput::SleepTick => self.sleep_tick(),
+                VideoShellInput::SleepTick => {
+                    let mpv = self.mpv.borrow().clone();
+                    if let Some(notice) = self.sleep_timer.tick(mpv.as_deref()) {
+                        self.notify(&notice);
+                    }
+                }
                 VideoShellInput::TogglePlayback => {
                     if let Some(state) = self.tv.attached() {
                         self.tv
@@ -844,9 +852,6 @@ impl Component for VideoShell {
 }
 
 impl Drop for VideoShell {
-    /// Remove the armed sleep-timer countdown source so it does not outlive the
-    /// shell (no leaked `glib::timeout`).
-    ///
     /// Do not force-drop the live mpv backend here: GTK widgets still own
     /// render-context callbacks during unrealize/finalize, and those callbacks
     /// must release their mpv render context before the shared mpv handle is
@@ -854,9 +859,6 @@ impl Drop for VideoShell {
     fn drop(&mut self) {
         self.screenshot_owner
             .store(false, std::sync::atomic::Ordering::Release);
-        if let Some(source) = self.sleep_timer_source.take() {
-            big_gtk_kit::source::remove(source);
-        }
         if let Some(cookie) = self.screen_inhibit.take()
             && let Some(app) = gtk::gio::Application::default().and_downcast::<gtk::Application>()
         {

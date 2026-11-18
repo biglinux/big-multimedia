@@ -483,8 +483,9 @@ impl VideoShell {
             });
         }
         let timer = self
-            .sleep_timer_is_armed()
-            .then(|| Adjustment::SleepTimer(self.sleep_timer_remaining_secs()));
+            .sleep_timer
+            .is_armed()
+            .then(|| Adjustment::SleepTimer(self.sleep_timer.remaining_secs()));
         blocks.push(Block {
             icon: "alarm-symbolic",
             name: i18n("Stop after…"),
@@ -702,8 +703,8 @@ impl VideoShell {
             BigSleepTimerSetupPage, BigSleepTimerSetupSpec, connect_sleep_timer_start_with_close,
         };
         let icon = || gtk::Image::from_icon_name("alarm-symbolic");
-        if self.sleep_timer_is_armed() {
-            let remaining = self.sleep_timer_remaining_secs();
+        if self.sleep_timer.is_armed() {
+            let remaining = self.sleep_timer.remaining_secs();
             let active = BigSleepTimerActivePage::new(
                 BigSleepTimerActiveSpec {
                     labels: BigSleepTimerActiveLabels {
