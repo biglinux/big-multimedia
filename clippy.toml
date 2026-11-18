@@ -41,6 +41,11 @@ disallowed-methods = [
     { path = "libc::renameat2", reason = "use `big_os_kit::storage::rename_no_replace` (crates/foundation/big-os-kit/src/storage/transaction.rs); where it fails with EINVAL the filesystem cannot refuse a replacing rename, so fall back to `StagedFile::publish`, never check-then-rename" },
     { path = "big_app_kit::desktop::BigSystemPowerAction::spawn_detached", reason = "settings writes must finish before suspend or power off; use the sleep timer in crates/media-runtime/src/shared/sleep_timer.rs" },
     { path = "gio::Menu::append_section", reason = "GTK 4.22's menu tracker keeps every section it shows; use `big_gtk_kit::menu::append_shared_section`" },
+    { path = "gtk4::PopoverMenu::from_model", reason = "GTK 4.24 leaves its items unnamed for screen readers; use `popover_menu::from_model` (crates/ui/generic/big-relm4-components/src/feedback/popover_menu.rs)" },
+    { path = "gtk4::PopoverMenu::from_model_full", reason = "GTK 4.24 leaves its items unnamed for screen readers; use `popover_menu::from_model` (crates/ui/generic/big-relm4-components/src/feedback/popover_menu.rs)" },
+    { path = "gtk4::PopoverMenu::builder", reason = "GTK 4.24 leaves its items unnamed for screen readers; use `popover_menu::from_model` (crates/ui/generic/big-relm4-components/src/feedback/popover_menu.rs)" },
+    { path = "gtk4::MenuButton::set_menu_model", reason = "GTK 4.24 leaves its items unnamed for screen readers; use `popover_menu::set_menu_model` (crates/ui/generic/big-relm4-components/src/feedback/popover_menu.rs)" },
+    { path = "gtk4::builders::MenuButtonBuilder::menu_model", reason = "GTK 4.24 leaves its items unnamed for screen readers; use `popover_menu::set_menu_model` (crates/ui/generic/big-relm4-components/src/feedback/popover_menu.rs)" },
 ]
 
 disallowed-types = [

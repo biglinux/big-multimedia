@@ -77,7 +77,7 @@ pub(super) fn build_toolbar(
         &i18n("Main Menu"),
         &["flat"],
     );
-    menu_button.set_menu_model(Some(&main_menu()));
+    big_relm4_components::feedback::popover_menu::set_menu_model(&menu_button, &main_menu());
     menu_button.set_primary(true);
     install_queue_menu_actions(&menu_button, sender);
     bar.pack_end(&menu_button);
