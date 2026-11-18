@@ -43,6 +43,23 @@ pub fn prompt_name(
     validate: impl Fn(&str) -> Option<String> + 'static,
     on_accept: impl Fn(String) -> bool + 'static,
 ) {
+    prompt_name_with_reply(parent, spec, validate, move |name, reply| {
+        if on_accept(name) {
+            reply.close();
+        }
+    });
+}
+
+/// [`prompt_name`] for an outcome that arrives later, such as work on a
+/// worker thread: `on_accept` receives the name and a [`BigNamePromptReply`].
+/// The entry and the accept button stay insensitive until the reply closes
+/// the dialog or is dropped, which keeps it open for another try.
+pub fn prompt_name_with_reply(
+    parent: Option<&gtk::Widget>,
+    spec: &BigNamePromptSpec,
+    validate: impl Fn(&str) -> Option<String> + 'static,
+    on_accept: impl Fn(String, BigNamePromptReply) + 'static,
+) {
     let dialog = big_gtk_kit::dialog::Dialog::builder()
         .title(spec.title.as_str())
         .content_width(spec.content_width)
@@ -74,13 +91,43 @@ pub fn prompt_name(
     dialog.present(parent);
 }
 
+/// The outcome of one accepted name, owed to the prompt it came from.
+pub struct BigNamePromptReply {
+    dialog: big_gtk_kit::dialog::WeakDialog,
+    entry: gtk::glib::WeakRef<adw::EntryRow>,
+    accept_button: gtk::glib::WeakRef<gtk::Button>,
+    closed: bool,
+}
+
+impl BigNamePromptReply {
+    /// Close the prompt, unless it was cancelled meanwhile.
+    pub fn close(mut self) {
+        self.closed = self.dialog.upgrade().is_some_and(|dialog| dialog.close());
+    }
+}
+
+impl Drop for BigNamePromptReply {
+    fn drop(&mut self) {
+        if self.closed {
+            return;
+        }
+        if let Some(accept_button) = self.accept_button.upgrade() {
+            accept_button.set_sensitive(true);
+        }
+        if let Some(entry) = self.entry.upgrade() {
+            entry.set_sensitive(true);
+            entry.grab_focus();
+        }
+    }
+}
+
 /// The accept handler owns the entry, so the entry's handlers hold the button weakly.
 fn connect_handlers(
     dialog: &big_gtk_kit::dialog::Dialog,
     entry: &adw::EntryRow,
     footer: &BigDialogFooter,
     validate: impl Fn(&str) -> Option<String> + 'static,
-    on_accept: impl Fn(String) -> bool + 'static,
+    on_accept: impl Fn(String, BigNamePromptReply) + 'static,
 ) {
     let validate = Rc::new(validate);
     footer
@@ -106,16 +153,24 @@ fn connect_handlers(
 
     let dialog_weak = dialog.downgrade();
     let entry_for_accept = entry.clone();
-    footer.accept_button().connect_clicked(move |_| {
-        let Some(name) = validate(&entry_for_accept.text()) else {
-            return;
-        };
-        if on_accept(name)
-            && let Some(dialog) = dialog_weak.upgrade()
-        {
-            dialog.close();
-        }
-    });
+    footer
+        .accept_button()
+        .connect_clicked(move |accept_button| {
+            let Some(name) = validate(&entry_for_accept.text()) else {
+                return;
+            };
+            entry_for_accept.set_sensitive(false);
+            accept_button.set_sensitive(false);
+            on_accept(
+                name,
+                BigNamePromptReply {
+                    dialog: dialog_weak.clone(),
+                    entry: entry_for_accept.downgrade(),
+                    accept_button: accept_button.downgrade(),
+                    closed: false,
+                },
+            );
+        });
 
     let dialog_weak = dialog.downgrade();
     footer.cancel_button().connect_clicked(move |_| {

@@ -10,7 +10,7 @@ use std::rc::Rc;
 use adw::prelude::*;
 use big_app_kit::file_dialogs::FilePicker;
 use big_os_kit::storage::{StagedFile, rename_no_replace};
-use big_relm4_components::layout::name_prompt::{BigNamePromptSpec, prompt_name};
+use big_relm4_components::layout::name_prompt::{BigNamePromptSpec, prompt_name_with_reply};
 
 use super::{BrowserState, VideoBrowserSidebarOutput};
 use crate::i18n::{i18n, ni18n};
@@ -202,43 +202,57 @@ pub(super) fn rename_file(state: &Rc<BrowserState>, path: &str) {
         content_height: 240,
     };
     let state = Rc::downgrade(state);
-    prompt_name(
+    prompt_name_with_reply(
         Some(window.upcast_ref()),
         &spec,
         accepted_rename_name,
-        move |new_name| {
-            let Some(state) = state.upgrade() else {
-                return true;
-            };
+        move |new_name, reply| {
+            let state = state.clone();
+            let old = old.clone();
             let dest = parent.join(&new_name);
-            match move_no_replace(&old, &dest) {
-                Ok(()) => {
-                    let _ = state
-                        .sender
-                        .output(VideoBrowserSidebarOutput::Renamed(vec![(
-                            old.to_string_lossy().into_owned(),
-                            dest.to_string_lossy().into_owned(),
-                        )]));
-                    state.refresh_current_folder();
-                    true
-                }
-                Err(error) if error.kind() == std::io::ErrorKind::AlreadyExists => {
-                    state
-                        .sender
-                        .output(VideoBrowserSidebarOutput::Notify(i18n(
-                            "A file with that name already exists",
-                        )))
-                        .ok();
-                    false
-                }
-                Err(_) => {
-                    state
-                        .sender
-                        .output(VideoBrowserSidebarOutput::Notify(i18n("Rename failed")))
-                        .ok();
-                    false
-                }
-            }
+            // Where the filesystem cannot refuse a replacing rename, this copies.
+            let drain = big_os_kit::background::track_operation();
+            big_media_components::player_chrome::spawn_blocking_result(
+                move || {
+                    let _drain = drain;
+                    let result = move_no_replace(&old, &dest);
+                    (old, dest, result)
+                },
+                move |(old, dest, result)| {
+                    let Some(state) = state.upgrade() else {
+                        reply.close();
+                        return;
+                    };
+                    match result {
+                        Ok(()) => {
+                            let renamed = (
+                                old.to_string_lossy().into_owned(),
+                                dest.to_string_lossy().into_owned(),
+                            );
+                            state
+                                .sender
+                                .output(VideoBrowserSidebarOutput::Renamed(vec![renamed]))
+                                .ok();
+                            state.refresh_current_folder();
+                            reply.close();
+                        }
+                        Err(error) if error.kind() == std::io::ErrorKind::AlreadyExists => {
+                            state
+                                .sender
+                                .output(VideoBrowserSidebarOutput::Notify(i18n(
+                                    "A file with that name already exists",
+                                )))
+                                .ok();
+                        }
+                        Err(_) => {
+                            state
+                                .sender
+                                .output(VideoBrowserSidebarOutput::Notify(i18n("Rename failed")))
+                                .ok();
+                        }
+                    }
+                },
+            );
         },
     );
 }
