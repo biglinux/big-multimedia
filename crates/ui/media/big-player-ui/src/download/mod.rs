@@ -5,5 +5,5 @@
 pub mod transfer;
 pub mod types;
 
-pub use transfer::{download_file, filename_from_url};
+pub use transfer::{ExistingDestination, download_file, filename_from_url};
 pub use types::{DownloadProgress, DownloadStatus, DownloadTask};

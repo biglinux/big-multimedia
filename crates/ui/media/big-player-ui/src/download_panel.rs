@@ -18,15 +18,25 @@ use big_media_components::bytes;
 use big_relm4_components::feedback::tooltip;
 use relm4::{Component, ComponentParts, ComponentSender};
 
-use crate::download::transfer::download_file;
+use crate::download::transfer::{ExistingDestination, download_file};
 use crate::download::{DownloadProgress, DownloadStatus, DownloadTask};
 use big_media_data::i18n::i18n;
 
 /// Messages accepted by [`DownloadQueuePanel`].
 #[derive(Debug)]
 pub enum DownloadQueueInput {
-    /// Start downloading `url` (display name `title`) to `dest`.
+    /// Start downloading `url` (display name `title`) to `dest`, replacing a
+    /// file there: the person confirmed it in a save dialog.
     Enqueue {
+        /// Source URL.
+        url: String,
+        /// Display title for the row.
+        title: String,
+        /// Destination file path.
+        dest: PathBuf,
+    },
+    /// Like `Enqueue`, but the download fails instead of replacing a file at `dest`.
+    EnqueueNoReplace {
         /// Source URL.
         url: String,
         /// Display title for the row.
@@ -157,7 +167,10 @@ impl Component for DownloadQueuePanel {
     fn update(&mut self, message: Self::Input, sender: ComponentSender<Self>, _root: &Self::Root) {
         match message {
             DownloadQueueInput::Enqueue { url, title, dest } => {
-                self.enqueue(&url, &title, &dest, &sender);
+                self.enqueue(&url, &title, &dest, ExistingDestination::Replace, &sender);
+            }
+            DownloadQueueInput::EnqueueNoReplace { url, title, dest } => {
+                self.enqueue(&url, &title, &dest, ExistingDestination::Keep, &sender);
             }
             DownloadQueueInput::Tick => {
                 if self.tick_downloads()
@@ -175,7 +188,14 @@ impl Component for DownloadQueuePanel {
 impl DownloadQueuePanel {
     /// Build a progress row, register the task, reveal the panel, and spawn the
     /// streamed HTTP download on a worker thread.
-    fn enqueue(&mut self, url: &str, title: &str, dest: &Path, sender: &ComponentSender<Self>) {
+    fn enqueue(
+        &mut self,
+        url: &str,
+        title: &str,
+        dest: &Path,
+        existing: ExistingDestination,
+        sender: &ComponentSender<Self>,
+    ) {
         let progress = Arc::new(DownloadProgress::default());
 
         let row_box = gtk::Box::new(gtk::Orientation::Vertical, 2);
@@ -240,7 +260,7 @@ impl DownloadQueuePanel {
         let dest = dest.to_path_buf();
         let progress_cb = Arc::clone(&progress);
         big_media_components::player_chrome::spawn_blocking_result(
-            move || download_file(&url, &dest, &progress),
+            move || download_file(&url, &dest, existing, &progress),
             move |result| {
                 if result.is_ok() {
                     // Publication completed before a late click reached the main loop.

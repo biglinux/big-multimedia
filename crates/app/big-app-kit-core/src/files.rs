@@ -29,10 +29,15 @@ pub fn safe_filename_stem(input: &str, max_len: usize, fallback: &str) -> String
     out
 }
 
-/// Sanitize a user-facing filename stem while preserving Unicode letters/numbers.
+/// Longest stem [`sanitize_filename_stem_preserve_unicode`] returns, leaving
+/// room under the usual 255-byte limit for the suffix the caller adds.
+const MAX_STEM_BYTES: usize = 200;
+
+/// Sanitize a user-facing filename stem while preserving Unicode letters/numbers,
+/// cut to 200 bytes on a character boundary.
 #[must_use]
 pub fn sanitize_filename_stem_preserve_unicode(input: &str, fallback: &str) -> String {
-    let safe = input
+    let mut safe = input
         .chars()
         .map(|character| {
             if character.is_alphanumeric() || character == ' ' || character == '-' {
@@ -44,6 +49,7 @@ pub fn sanitize_filename_stem_preserve_unicode(input: &str, fallback: &str) -> S
         .collect::<String>()
         .trim()
         .replace(' ', "_");
+    safe.truncate(safe.floor_char_boundary(MAX_STEM_BYTES));
     if safe.is_empty() {
         fallback.to_string()
     } else {
@@ -107,6 +113,38 @@ mod tests {
             sanitize_filename_stem_preserve_unicode("", "radio"),
             "radio"
         );
+    }
+
+    #[test]
+    fn unicode_stem_is_one_short_component() {
+        // 200 bytes hold 66 three-byte characters.
+        assert_eq!(
+            sanitize_filename_stem_preserve_unicode(&"東".repeat(100), "radio"),
+            "東".repeat(66)
+        );
+        let pool = [
+            'a', 'É', '東', '🎵', '.', '/', '\0', ' ', '-', '_', '\u{301}',
+        ];
+        let mut state = 0x9e37_79b9_7f4a_7c15_u64;
+        let mut next = move || {
+            state ^= state << 13;
+            state ^= state >> 7;
+            state ^= state << 17;
+            usize::try_from(state % 1024).unwrap()
+        };
+        for _ in 0..5000 {
+            let length = next() % 400;
+            let input: String = (0..length).map(|_| pool[next() % pool.len()]).collect();
+            let stem = sanitize_filename_stem_preserve_unicode(&input, "radio");
+            assert!(
+                !stem.is_empty()
+                    && stem != "."
+                    && stem != ".."
+                    && !stem.contains(['/', '\0'])
+                    && stem.len() <= 200,
+                "{input:?} gave {stem:?}"
+            );
+        }
     }
 
     #[test]
