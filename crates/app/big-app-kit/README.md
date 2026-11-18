@@ -13,6 +13,7 @@ here.
 - `file_dialogs` — GTK file dialogs.
 - `keybindings` — shortcut parsing, overrides and accelerator labels.
 - `mpris` — MPRIS2 D-Bus service.
+- `tray` — system tray icon (StatusNotifierItem) with a menu.
 - `widgets` — file drag-and-drop helpers.
 - Re-exported: `files`, `recent_files`, `zone_layout`, `storage`,
   `subprocess`, `remote_control` (feature `remote-control`).

@@ -6,8 +6,10 @@ This crate centralizes the small, hard-to-change pieces of an audio processing
 chain so that `big-audio-player` and `big-video-player` produce identical
 results from identical user input.
 
-The values exported here are part of a public on-disk format: changing them
-invalidates user presets and breaks PipeWire graphs.
+Saved settings hold equalizer gains by band index and the noise-reduction
+model by its index in `MODELS`, so reordering either changes what a user's
+saved settings mean. The plugin paths, labels and control indexes must match
+the installed LADSPA plugins: mpv's `af` chain loads them by these names.
 
 ## Modules
 
