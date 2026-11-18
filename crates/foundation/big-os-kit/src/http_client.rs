@@ -12,6 +12,8 @@ use crate::url::MediaLogTarget;
 mod transport;
 
 const CURL: &str = "curl";
+/// Start of the error text for a curl process that exited unsuccessfully; the exit code follows.
+const CURL_EXIT_PREFIX: &str = "curl exited with code ";
 const USER_AGENT: &str = "BigLinuxRustApp/0.1 (https://github.com/biglinux/big-multimedia)";
 const TIMEOUT_SECS: u64 = 15;
 const _: () = assert!(TIMEOUT_SECS >= 5);
@@ -55,6 +57,23 @@ pub struct HttpStreamResponse {
     pub reader: Box<dyn Read>,
 }
 
+/// How long a request may take.
+#[derive(Clone, Copy)]
+enum Deadline {
+    /// The whole request, for small buffered responses.
+    Total(Duration),
+    /// The longest wait for the next bytes, for streams of any length.
+    Stall(Duration),
+}
+
+impl Deadline {
+    fn duration(self) -> Duration {
+        match self {
+            Self::Total(duration) | Self::Stall(duration) => duration,
+        }
+    }
+}
+
 struct CurlHeaders {
     status: u16,
     content_type: Option<String>,
@@ -63,7 +82,7 @@ struct CurlHeaders {
 
 /// DNS/lookup failures are permanent per invocation; never retry.
 fn is_dns_error(err: &str) -> bool {
-    err.contains("code 6")
+    err.ends_with(&format!("{CURL_EXIT_PREFIX}6"))
         || err.contains("Could not resolve host")
         || err.contains("Name or service not known")
         || err.contains("No address associated")
@@ -202,23 +221,26 @@ pub fn http_get_bytes_capped_with_extra_headers(
 }
 
 /// GET a streaming response with metadata and caller-owned body policy.
+///
+/// There is no total deadline: connecting is bounded, then the transfer fails
+/// once no bytes arrive for `stall_timeout`.
 pub fn http_get_stream(
     url: &str,
     headers: &RequestHeaders<'_>,
-    timeout: Duration,
+    stall_timeout: Duration,
 ) -> Result<HttpStreamResponse, String> {
-    http_get_stream_with_extra_headers(url, headers, &[], timeout)
+    http_get_stream_with_extra_headers(url, headers, &[], stall_timeout)
 }
 
 /// GET a streaming response with metadata, additional per-call headers, and
-/// caller-owned body policy.
+/// caller-owned body policy; `stall_timeout` as in [`http_get_stream`].
 pub fn http_get_stream_with_extra_headers(
     url: &str,
     headers: &RequestHeaders<'_>,
     extra_headers: &[(&str, &str)],
-    timeout: Duration,
+    stall_timeout: Duration,
 ) -> Result<HttpStreamResponse, String> {
-    curl_stream(url, headers, extra_headers, timeout)
+    curl_stream(url, headers, extra_headers, Deadline::Stall(stall_timeout))
 }
 
 /// Copy a response stream to a writer with cancellation and progress callbacks.
@@ -296,7 +318,7 @@ fn curl_bytes(
     max_bytes: u64,
     timeout: Duration,
 ) -> Result<HttpResponseBytes, String> {
-    let mut response = curl_stream(url, headers, extra_headers, timeout)?;
+    let mut response = curl_stream(url, headers, extra_headers, Deadline::Total(timeout))?;
     let bytes = read_capped(response.reader.as_mut(), max_bytes)?;
     Ok(HttpResponseBytes {
         status: response.status,
@@ -310,9 +332,10 @@ fn curl_stream(
     url: &str,
     headers: &RequestHeaders<'_>,
     extra_headers: &[(&str, &str)],
-    timeout: Duration,
+    deadline: Deadline,
 ) -> Result<HttpStreamResponse, String> {
     validate_url(url)?;
+    let timeout = deadline.duration();
     if timeout.is_zero() || timeout > Duration::from_secs(7200) {
         return Err("Invalid HTTP timeout".into());
     }
@@ -326,7 +349,7 @@ fn curl_stream(
                 && matches!(*value, "application/json" | "text/html" | "*/*")
         });
     let config = request_config(url, headers, extra_headers)?;
-    let mut command = base_curl(timeout);
+    let mut command = base_curl(deadline);
     command.args(["--include", "--suppress-connect-headers"]);
     if follow {
         command.args([
@@ -346,7 +369,7 @@ fn curl_stream(
             "=http,https"
         },
     ]);
-    let transport = transport::Transport::new(command, config.as_bytes(), timeout)
+    let transport = transport::Transport::new(command, config.as_bytes(), deadline)
         .map_err(|e| e.to_string())?;
     // The same reader goes into the response: any prefetched body bytes survive
     // header parsing. EOF verifies the child exit status, not just pipe closure.
@@ -360,28 +383,41 @@ fn curl_stream(
         reader: Box::new(reader),
     })
 }
-fn base_curl(timeout: Duration) -> Command {
+fn base_curl(deadline: Deadline) -> Command {
+    let timeout = deadline.duration();
     let mut command = Command::new(CURL);
     // curl honors --disable only as the first parameter. All untrusted values go through
     // stdin configuration; none are command-line arguments or environment values.
+    command.args([
+        "--disable",
+        "--silent",
+        "--show-error",
+        "--globoff",
+        "--proto",
+        "=http,https",
+        "--connect-timeout",
+        &timeout
+            .as_secs_f64()
+            .min(FAST_TIMEOUT_SECS as f64)
+            .to_string(),
+    ]);
+    match deadline {
+        Deadline::Total(timeout) => {
+            command.args(["--max-time", &timeout.as_secs_f64().to_string()]);
+        }
+        // Unbuffered output lets the reader see each received byte as progress.
+        Deadline::Stall(stall) => {
+            command.args([
+                "--no-buffer",
+                "--speed-limit",
+                "1",
+                "--speed-time",
+                &stall.as_secs().max(1).to_string(),
+            ]);
+        }
+    }
     command
-        .args([
-            "--disable",
-            "--silent",
-            "--show-error",
-            "--globoff",
-            "--proto",
-            "=http,https",
-            "--connect-timeout",
-            &timeout
-                .as_secs_f64()
-                .min(FAST_TIMEOUT_SECS as f64)
-                .to_string(),
-            "--max-time",
-            &timeout.as_secs_f64().to_string(),
-            "--config",
-            "-",
-        ])
+        .args(["--config", "-"])
         .stdin(Stdio::piped())
         .stdout(Stdio::piped())
         .stderr(Stdio::null());
@@ -580,14 +616,15 @@ mod tests {
         assert!(http_get_fast("not-a-url").is_none());
     }
 
+    /// Exit codes from curl(1): 6 is a failed host lookup, 28 a timeout,
+    /// 60 an unverified peer certificate and 67 a refused login.
     #[test]
-    fn dns_error_detected() {
-        assert!(is_dns_error("curl exited with code 6"));
-    }
-
-    #[test]
-    fn timeout_is_distinct_from_dns() {
-        assert!(!is_dns_error("curl exited with code 28"));
+    fn dns_error_matches_exit_code_exactly() {
+        assert!(is_dns_error("read curl headers: curl exited with code 6"));
+        for other in [28, 60, 61, 67] {
+            let error = format!("read curl headers: curl exited with code {other}");
+            assert!(!is_dns_error(&error), "{error}");
+        }
     }
 
     #[test]
@@ -649,13 +686,66 @@ mod tests {
         )
         .unwrap();
         assert!(config.contains("header = \"Authorization: Bearer secret\""));
-        let args: Vec<_> = base_curl(Duration::from_secs(10))
+        let args: Vec<_> = base_curl(Deadline::Total(Duration::from_secs(10)))
             .get_args()
             .map(|s| s.to_string_lossy().into_owned())
             .collect();
         assert_eq!(args[0], "--disable");
         assert!(!args.iter().any(|arg| arg.contains("secret")));
     }
+    /// Serve `chunks` single bytes on a local port, `gap` apart, and return the URL.
+    fn trickle_server(chunks: usize, gap: Duration) -> (String, std::thread::JoinHandle<()>) {
+        use std::io::Read as _;
+        let listener = std::net::TcpListener::bind("127.0.0.1:0").unwrap();
+        let url = format!("http://{}/episode.mp3", listener.local_addr().unwrap());
+        let server = std::thread::spawn(move || {
+            let (mut stream, _) = listener.accept().unwrap();
+            let mut request = [0; 2048];
+            assert!(stream.read(&mut request).unwrap() > 0);
+            let header = format!("HTTP/1.1 200 OK\r\nContent-Length: {chunks}\r\n\r\n");
+            stream.write_all(header.as_bytes()).unwrap();
+            for chunk in 0..chunks {
+                if chunk > 0 {
+                    std::thread::sleep(gap);
+                }
+                if stream.write_all(b"x").is_err() {
+                    return;
+                }
+            }
+        });
+        (url, server)
+    }
+
+    #[test]
+    #[cfg_attr(miri, ignore)]
+    fn stream_outlives_stall_limit_while_progressing() {
+        let (url, server) = trickle_server(6, Duration::from_millis(400));
+        let mut response =
+            http_get_stream(&url, &RequestHeaders::default(), Duration::from_secs(1)).unwrap();
+        let mut body = Vec::new();
+        response.reader.read_to_end(&mut body).unwrap();
+        server.join().unwrap();
+        assert_eq!(body, b"xxxxxx");
+    }
+
+    #[test]
+    #[cfg_attr(miri, ignore)]
+    fn stalled_stream_fails_after_stall_limit() {
+        let (url, server) = trickle_server(2, Duration::from_secs(4));
+        let started = std::time::Instant::now();
+        let mut response =
+            http_get_stream(&url, &RequestHeaders::default(), Duration::from_secs(1)).unwrap();
+        let mut body = Vec::new();
+        assert!(response.reader.read_to_end(&mut body).is_err());
+        assert!(
+            started.elapsed() < Duration::from_secs(3),
+            "{:?}",
+            started.elapsed()
+        );
+        drop(response);
+        server.join().unwrap();
+    }
+
     #[test]
     fn buffered_header_parser_preserves_prefetched_body() {
         let bytes = b"HTTP/1.1 200 OK\r\nContent-Length: 4\r\n\r\nbody";

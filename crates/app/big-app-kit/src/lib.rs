@@ -8,22 +8,25 @@
 //!
 //! GTK-free pieces live in `big-app-kit-core` and `big-os-kit` and are
 //! re-exported here so `big_app_kit::<module>::…` paths work for both.
+//!
+//! - [`actions`]: application and window action contracts.
+//! - [`containment`]: panic containment for Relm4 `update()` bodies and raw glib callbacks.
+//! - [`desktop`]: desktop integration: action installers, file manager, power actions.
+//! - [`dialogs`]: dialog size persistence (re-exported from `big-app-kit-core`).
+//! - [`file_dialogs`]: open/save file picker contracts.
+//! - [`keybindings`]: keyboard shortcut parsing, overrides and accelerator labels.
+//! - [`mpris`]: MPRIS D-Bus service for media players.
+//! - [`tray`]: system tray icon (StatusNotifierItem) with a menu.
+//! - [`widgets`]: file drag-and-drop helpers.
 
-/// Application and window action contracts.
 pub mod actions;
 pub mod containment;
-/// Desktop integration: action installers, file manager, power actions.
 pub mod desktop;
-/// Dialog size persistence (re-exported from `big-app-kit-core`).
 pub mod dialogs;
-/// Open/save file picker contracts.
 pub mod file_dialogs;
-/// Keyboard shortcut parsing, overrides and accelerator labels.
 pub mod keybindings;
-/// MPRIS D-Bus service for media players.
 pub mod mpris;
 pub mod tray;
-/// File drag-and-drop helpers.
 pub mod widgets;
 
 #[cfg(feature = "remote-control")]

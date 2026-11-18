@@ -7,6 +7,7 @@
 //!
 //! - [`display`]: sleep timer dialog and texture conversion.
 //! - [`feedback`]: popovers and the custom tooltip.
+//! - [`i18n`]: component-owned user-visible strings.
 //! - [`input`]: sliders, dropdown rows, shortcut capture and the zone-layout editor.
 //! - [`layout`]: media window chrome, dialogs, menus and toolbar panes.
 //! - [`list`]: `AdwActionRow` derivatives.

@@ -5,16 +5,18 @@
 #![forbid(unsafe_code)]
 
 //! GTK-free app helpers behind `big-app-kit` (re-exported there unchanged).
+//!
+//! - [`dialogs`]: dialog size persistence.
+//! - [`files`]: filename sanitizing and display-name helpers.
+//! - [`keybindings`]: keyboard shortcut definitions and override parsing.
+//! - [`recent_files`]: recent-files tracking, persisted between sessions.
+//! - [`remote_control`]: local HTTP remote-control endpoint (feature `remote-control`).
+//! - [`zone_layout`]: display-free zone-layout model behind the button-zone editor and applier.
 
-/// Dialog size persistence.
 pub mod dialogs;
-/// Filename sanitizing and display-name helpers.
 pub mod files;
-/// Keyboard shortcut definitions and override parsing.
 pub mod keybindings;
-/// Recent-files tracking, persisted between sessions.
 pub mod recent_files;
-/// Local HTTP remote-control endpoint (feature `remote-control`).
 #[cfg(feature = "remote-control")]
 pub mod remote_control;
 pub mod zone_layout;

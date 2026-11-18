@@ -4,6 +4,9 @@
 //! thin binary (`src/main.rs`) calls [`run`]; multicall hosts (big-host,
 //! big-modules) embed the player through [`open_in_application`] and
 //! [`open_paths`].
+//!
+//! - `resources`: the player shell's GTK resource bundle.
+//! - [`video`]: the player shell, its dialogs and panels.
 
 pub use big_media_runtime::{cast, config, i18n, media, player, recent, settings, shared};
 

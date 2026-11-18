@@ -462,8 +462,11 @@ impl AudioShell {
                         move |(episodes, destinations)| match destinations {
                             Ok(destinations) => {
                                 for ((url, title), dest) in episodes.into_iter().zip(destinations) {
-                                    let _ = downloads
-                                        .send(DownloadQueueInput::Enqueue { url, title, dest });
+                                    let _ = downloads.send(DownloadQueueInput::EnqueueNoReplace {
+                                        url,
+                                        title,
+                                        dest,
+                                    });
                                 }
                             }
                             Err(e) => {
@@ -635,6 +638,6 @@ mod tests {
             ],
         );
 
-        assert_eq!(names, ["profile", "hidden.mp3"]);
+        assert_eq!(names, ["Title.mp3", "Title (2).mp3"]);
     }
 }

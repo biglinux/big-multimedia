@@ -1,5 +1,5 @@
-//! A private curl transport with nonblocking pipes, an operation deadline and
-//! pre-reserved reaping. No worker-per-stream, no wait() in error/drop paths.
+//! A private curl transport with nonblocking pipes, a total or no-progress
+//! deadline and pre-reserved reaping. No worker-per-stream, no wait() in error/drop paths.
 #[cfg(unix)]
 use crate::subprocess::reaper::set_nonblocking;
 use crate::subprocess::reaper::{OwnedChild, Permit};
@@ -11,6 +11,8 @@ pub(super) struct Transport {
     owner: Option<OwnedChild>,
     stdout: ChildStdout,
     deadline: Instant,
+    /// Set for a stream: each read must get bytes within it, however long the whole transfer takes.
+    stall: Option<Duration>,
     finished: bool,
     failed: bool,
 }
@@ -40,11 +42,49 @@ fn readiness(pipe: &impl std::os::fd::AsRawFd, events: i16, deadline: Instant) -
     }
     Ok(())
 }
+/// Write curl's whole configuration to its nonblocking stdin before `deadline`,
+/// then close it: curl reads all of it before transferring.
+#[cfg(unix)]
+fn send_config(
+    mut stdin: std::process::ChildStdin,
+    config: &[u8],
+    deadline: Instant,
+) -> io::Result<()> {
+    set_nonblocking(&stdin)?;
+    let mut sent = 0;
+    while sent < config.len() {
+        if Instant::now() >= deadline {
+            return Err(io::Error::new(
+                io::ErrorKind::TimedOut,
+                "curl configuration timed out",
+            ));
+        }
+        match stdin.write(&config[sent..config.len().min(sent.saturating_add(65536))]) {
+            Ok(0) => {
+                return Err(io::Error::new(
+                    io::ErrorKind::WriteZero,
+                    "curl configuration pipe closed",
+                ));
+            }
+            Ok(n) => sent += n,
+            Err(error) if error.kind() == io::ErrorKind::Interrupted => {}
+            Err(error) if error.kind() == io::ErrorKind::WouldBlock => {
+                readiness(&stdin, libc::POLLOUT, deadline)?
+            }
+            Err(error) => return Err(error),
+        }
+    }
+    Ok(())
+}
 impl Transport {
-    pub(super) fn new(mut command: Command, config: &[u8], timeout: Duration) -> io::Result<Self> {
+    pub(super) fn new(
+        mut command: Command,
+        config: &[u8],
+        deadline: super::Deadline,
+    ) -> io::Result<Self> {
         #[cfg(not(unix))]
         {
-            let _ = (&mut command, config, timeout);
+            let _ = (&mut command, config, deadline);
             return Err(io::Error::new(
                 io::ErrorKind::Unsupported,
                 "bounded curl streaming requires Unix",
@@ -53,8 +93,12 @@ impl Transport {
         #[cfg(unix)]
         {
             use std::os::unix::process::CommandExt;
+            let stall = match deadline {
+                super::Deadline::Total(_) => None,
+                super::Deadline::Stall(stall) => Some(stall),
+            };
             let deadline = Instant::now()
-                .checked_add(timeout)
+                .checked_add(deadline.duration())
                 .ok_or_else(|| io::Error::other("invalid HTTP timeout"))?;
             let permit = Permit::reserve()?;
             command.process_group(0);
@@ -64,38 +108,14 @@ impl Transport {
                 permit: Some(permit),
                 may_signal: true,
             };
-            let mut stdin = owner
+            let stdin = owner
                 .child
                 .as_mut()
                 .expect("owned child")
                 .stdin
                 .take()
                 .ok_or_else(|| io::Error::other("curl stdin unavailable"))?;
-            set_nonblocking(&stdin)?;
-            let mut sent = 0;
-            while sent < config.len() {
-                if Instant::now() >= deadline {
-                    return Err(io::Error::new(
-                        io::ErrorKind::TimedOut,
-                        "curl configuration timed out",
-                    ));
-                }
-                match stdin.write(&config[sent..config.len().min(sent.saturating_add(65536))]) {
-                    Ok(0) => {
-                        return Err(io::Error::new(
-                            io::ErrorKind::WriteZero,
-                            "curl configuration pipe closed",
-                        ));
-                    }
-                    Ok(n) => sent += n,
-                    Err(error) if error.kind() == io::ErrorKind::Interrupted => {}
-                    Err(error) if error.kind() == io::ErrorKind::WouldBlock => {
-                        readiness(&stdin, libc::POLLOUT, deadline)?
-                    }
-                    Err(error) => return Err(error),
-                }
-            }
-            drop(stdin); // curl reads its whole configuration before transferring
+            send_config(stdin, config, deadline)?;
             let stdout = owner
                 .child
                 .as_mut()
@@ -108,6 +128,7 @@ impl Transport {
                 owner: Some(owner),
                 stdout,
                 deadline,
+                stall,
                 finished: false,
                 failed: false,
             })
@@ -119,6 +140,9 @@ impl Transport {
         }
         if self.finished {
             return Ok(0);
+        }
+        if let Some(stall) = self.stall {
+            self.deadline = Instant::now() + stall;
         }
         loop {
             if Instant::now() >= self.deadline {
@@ -143,7 +167,8 @@ impl Transport {
                                 return Ok(0);
                             }
                             return Err(io::Error::other(format!(
-                                "curl exited with code {}",
+                                "{}{}",
+                                super::CURL_EXIT_PREFIX,
                                 status.code().unwrap_or(-1)
                             )));
                         }
