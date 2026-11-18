@@ -268,8 +268,11 @@ fn install_keyboard_access(
     others: &[glib::WeakRef<gtk::Popover>],
     state: &PendingClose,
 ) {
+    // The control is the anchor's first focusable child: a label may come first.
+    let control = std::iter::successors(anchor.first_child(), gtk::Widget::next_sibling)
+        .find(gtk::Widget::is_focusable);
     let description = crate::i18n::t("Press Alt+Down to adjust. Press Escape to close.");
-    if let Some(control) = anchor.first_child() {
+    if let Some(control) = &control {
         control.update_property(&[gtk::accessible::Property::Description(&description)]);
     }
     // Keep Enter/Space available for the button's original action (e.g. mute).
@@ -280,7 +283,7 @@ fn install_keyboard_access(
     ] {
         let controller = gtk::EventControllerKey::new();
         controller.set_propagation_phase(gtk::PropagationPhase::Capture);
-        let anchor = anchor.downgrade();
+        let control = control.as_ref().map(glib::object::ObjectExt::downgrade);
         let popover = popover.downgrade();
         let others = others.to_vec();
         let state = state.clone();
@@ -291,8 +294,8 @@ fn install_keyboard_access(
             if key == gtk::gdk::Key::Escape && popover.is_visible() {
                 cancel_pending_close(&state);
                 popover.popdown();
-                if let Some(anchor) = anchor.upgrade() {
-                    anchor.child_focus(gtk::DirectionType::TabForward);
+                if let Some(control) = control.as_ref().and_then(glib::WeakRef::upgrade) {
+                    control.grab_focus();
                 }
                 return glib::Propagation::Stop;
             }
@@ -300,13 +303,22 @@ fn install_keyboard_access(
                 cancel_pending_close(&state);
                 popdown_all_others(&popover, &others);
                 popover.popup();
-                popover.child_focus(gtk::DirectionType::TabForward);
+                focus_first(popover.upcast_ref());
                 return glib::Propagation::Stop;
             }
             glib::Propagation::Proceed
         });
         widget.add_controller(controller);
     }
+}
+
+/// Focus the first focusable descendant in child order, which puts a scale
+/// popover's slider first. Tab order entered the video bar's volume popover at
+/// its Mute button instead.
+fn focus_first(widget: &gtk::Widget) -> bool {
+    std::iter::successors(widget.first_child(), gtk::Widget::next_sibling)
+        .filter(|child| child.is_visible() && child.is_sensitive())
+        .any(|child| (child.is_focusable() && child.grab_focus()) || focus_first(&child))
 }
 
 #[cfg(test)]
