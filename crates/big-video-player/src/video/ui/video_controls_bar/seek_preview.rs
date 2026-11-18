@@ -130,15 +130,7 @@ pub(super) fn wire_thumb_consumer(
             if !generator.is_current(&result) {
                 continue;
             }
-            let bytes = glib::Bytes::from_owned(result.rgb_data);
-            let texture = gdk::MemoryTexture::new(
-                THUMB_WIDTH,
-                THUMB_HEIGHT,
-                gdk::MemoryFormat::R8g8b8,
-                &bytes,
-                (THUMB_WIDTH * 3) as usize,
-            );
-            thumb.set_paintable(Some(&texture));
+            thumb.set_paintable(Some(&result.into_texture()));
         }
     });
 }
