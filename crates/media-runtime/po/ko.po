@@ -5176,7 +5176,7 @@ msgstr "이미 구독 중"
 
 #: crates/ui/media/big-player-ui/src/podcast_panel.rs:341
 msgid "Podcast subscriptions are still loading"
-msgstr "팟캐스트 구독을 불러오는 중"
+msgstr "팟캐스트 구독을 아직 불러오는 중입니다"
 
 #: crates/ui/media/big-player-ui/src/podcast_panel.rs:378
 msgid "Subscriptions"
