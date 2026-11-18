@@ -172,6 +172,34 @@ mod tests {
         fn parse_never_panics(text in "\\PC{0,4096}") {
             proptest::prop_assert!(parse_m3u_content(&text).entries.len() <= text.lines().count());
         }
+
+        // Oracle: the playlist rendered from the channels in the documented
+        // `#EXTINF` shape lists them back, with a `tvg-id` the model drops.
+        #[test]
+        fn rendered_channels_parse_back(
+            channels in proptest::collection::vec(
+                (
+                    "[^\"\\r\\n]{0,20}",
+                    "[^\"\\r\\n]{0,20}",
+                    "[^\"\\r\\n]{0,20}",
+                    "[^\\s](?:[^\\r\\n]{0,20}[^\\s])?",
+                    "https?://[a-z]{1,10}/[A-Za-z0-9/._~,-]{0,20}",
+                ),
+                0..20,
+            )
+        ) {
+            let mut playlist = String::from("#EXTM3U\n");
+            let mut expected = Vec::new();
+            for (id, group, logo, name, url) in channels {
+                playlist.push_str(&format!(
+                    "#EXTINF:-1 tvg-id=\"{id}\" tvg-logo=\"{logo}\" group-title=\"{group}\",{name}\n{url}\n"
+                ));
+                expected.push(IptvChannel { name, url, group, logo });
+            }
+            let parsed = parse_m3u_content(&playlist);
+            proptest::prop_assert_eq!(parsed.entries, expected);
+            proptest::prop_assert!(!parsed.truncated);
+        }
     }
 
     #[test]

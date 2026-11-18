@@ -15,6 +15,7 @@
 //! per-session and shared with the phone only through the QR code, so LAN
 //! neighbors cannot guess the URL.
 
+use big_os_kit::http_client::validate_header_name;
 use log::{info, warn};
 use std::collections::HashMap;
 use std::io::{ErrorKind, Read, Write};
@@ -408,10 +409,7 @@ fn parse_request(input: &[u8]) -> Result<Request<'_>, ()> {
     let mut headers = HashMap::new();
     for line in lines {
         let (key, value) = line.split_once(':').ok_or(())?;
-        if key.is_empty()
-            || !key
-                .bytes()
-                .all(|b| b.is_ascii_alphanumeric() || b"!#$%&'*+-.^_`|~".contains(&b))
+        if validate_header_name(key).is_err()
             || value.bytes().any(|b| (b < 32 && b != b'\t') || b == 127)
         {
             return Err(());
@@ -707,6 +705,7 @@ mod tests {
             "POST /token/next HTTP/1.1\r\nHost: localhost\r\nContent-Length: 0\r\nContent-Length: 0",
             "POST /token/next HTTP/1.1\r\nHost: localhost\r\nTransfer-Encoding: chunked",
             "GET /token/status HTTP/1.1\r\nHost: localhost\r\n folded:value",
+            "GET /token/status HTTP/1.1\r\nHost: localhost\r\n:value",
             "GET /token/status HTTP/1.1\r\nHost: localhost\r\nExpect: 100-continue",
         ] {
             assert!(parse_request(input.as_bytes()).is_err(), "{input}");

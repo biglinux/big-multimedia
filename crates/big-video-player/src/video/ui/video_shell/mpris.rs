@@ -199,15 +199,11 @@ impl VideoShell {
                             mpv.seek_absolute(target);
                         }
                     }
-                    MprisCommand::SetVolume(volume) if volume.is_finite() => {
+                    MprisCommand::SetVolume(volume) => {
                         let volume_max = f64::from(self.settings.volume_max_percent());
                         mpv.set_volume((volume * 100.0).clamp(0.0, volume_max));
                     }
-                    MprisCommand::SetRate(rate)
-                        if rate.is_finite() && (0.25..=4.0).contains(&rate) =>
-                    {
-                        mpv.set_speed(rate);
-                    }
+                    MprisCommand::SetRate(rate) => mpv.set_speed(rate),
                     MprisCommand::SetLoopStatus(status) => {
                         let mode = match status.as_str() {
                             "Track" => "file",

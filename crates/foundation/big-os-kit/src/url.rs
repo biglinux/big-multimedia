@@ -221,6 +221,124 @@ pub fn filename_from_url_path(url: &str, fallback_filename: &str) -> String {
 mod tests {
     use super::*;
 
+    /// Xorshift step, reduced to a small index range for picking from pools.
+    fn next_random(state: &mut u64) -> usize {
+        *state ^= *state << 13;
+        *state ^= *state >> 7;
+        *state ^= *state << 17;
+        usize::try_from(*state % 1024).unwrap()
+    }
+
+    /// Reference decoder for the oracle: `%XX` becomes the byte, anything else stays.
+    fn percent_decode(encoded: &str) -> Vec<u8> {
+        let bytes = encoded.as_bytes();
+        let mut decoded = Vec::new();
+        let mut index = 0;
+        while index < bytes.len() {
+            if bytes[index] == b'%' {
+                let pair = std::str::from_utf8(&bytes[index + 1..index + 3]).unwrap();
+                decoded.push(u8::from_str_radix(pair, 16).unwrap());
+                index += 3;
+            } else {
+                decoded.push(bytes[index]);
+                index += 1;
+            }
+        }
+        decoded
+    }
+
+    #[test]
+    fn encoded_query_value_decodes_back() {
+        let pool = [
+            'a', 'Z', '0', '-', '_', '.', '~', ' ', '%', '&', '=', '+', '?', '#', '/', 'é', '東',
+            '🎵', '\0', '\u{7f}',
+        ];
+        let mut state = 0x2545_f491_4f6c_dd1d_u64;
+        for _ in 0..5000 {
+            let length = next_random(&mut state) % 40;
+            let value: String = (0..length)
+                .map(|_| pool[next_random(&mut state) % pool.len()])
+                .collect();
+            let encoded = encode_query_value(&value);
+            let bytes = encoded.as_bytes();
+            let mut index = 0;
+            while index < bytes.len() {
+                if bytes[index] == b'%' {
+                    assert!(
+                        bytes[index + 1..index + 3]
+                            .iter()
+                            .all(|digit| matches!(digit, b'0'..=b'9' | b'A'..=b'F')),
+                        "{value:?} gave {encoded:?}"
+                    );
+                    index += 3;
+                } else {
+                    assert!(
+                        bytes[index].is_ascii_alphanumeric() || b"-_.~".contains(&bytes[index]),
+                        "{value:?} gave {encoded:?}"
+                    );
+                    index += 1;
+                }
+            }
+            assert_eq!(percent_decode(&encoded), value.as_bytes(), "{encoded:?}");
+        }
+    }
+
+    /// Spells `key` in random letter case with random bytes percent-encoded.
+    fn disguised_key(key: &str, state: &mut u64) -> String {
+        let mut disguised = String::new();
+        for byte in key.bytes() {
+            let byte = if next_random(state).is_multiple_of(2) {
+                byte.to_ascii_uppercase()
+            } else {
+                byte
+            };
+            if next_random(state).is_multiple_of(3) {
+                disguised.push_str(&format!("%{byte:02x}"));
+            } else {
+                disguised.push(char::from(byte));
+            }
+        }
+        disguised
+    }
+
+    #[test]
+    fn redaction_hides_disguised_secrets() {
+        let mut state = 0x853c_49e6_748f_ea9b_u64;
+        for round in 0..2000 {
+            let mut url = String::from("https://host/path?page=2");
+            let mut secrets = Vec::new();
+            for pair in 0..1 + next_random(&mut state) % 4 {
+                let key =
+                    SENSITIVE_QUERY_KEYS[next_random(&mut state) % SENSITIVE_QUERY_KEYS.len()];
+                let secret = format!("Qz{round}x{pair}y{}", next_random(&mut state));
+                url.push_str(&format!("&{}={secret}", disguised_key(key, &mut state)));
+                secrets.push(secret);
+            }
+            let redacted = redact_url(&url);
+            for secret in &secrets {
+                assert!(!redacted.contains(secret.as_str()), "{url} gave {redacted}");
+            }
+            assert!(redacted.contains("page=2"), "{url} gave {redacted}");
+        }
+    }
+
+    #[test]
+    fn redaction_is_idempotent() {
+        let pool = [
+            "https://", "h", "/", ":", "@", "?", "&", "=", "#", "%", "%74", "token", "Pass", "***",
+            "é",
+        ];
+        let mut state = 0xda94_2042_e4dd_58b5_u64;
+        for _ in 0..5000 {
+            let length = next_random(&mut state) % 24;
+            let url: String = (0..length)
+                .map(|_| pool[next_random(&mut state) % pool.len()])
+                .collect();
+            let once = redact_url(&url);
+            assert_eq!(redact_url(&once), once, "{url:?}");
+        }
+    }
+
     #[test]
     fn query_value_keeps_unreserved_ascii() {
         assert_eq!(encode_query_value("A-Z_0.9~"), "A-Z_0.9~");
@@ -308,12 +426,7 @@ mod tests {
             'a', 'É', '東', '🎵', '.', '/', '\0', ' ', '%', '?', '#', '\u{301}',
         ];
         let mut state = 0x9e37_79b9_7f4a_7c15_u64;
-        let mut next = move || {
-            state ^= state << 13;
-            state ^= state >> 7;
-            state ^= state << 17;
-            usize::try_from(state % 1024).unwrap()
-        };
+        let mut next = || next_random(&mut state);
         for _ in 0..5000 {
             let length = next() % 400;
             let path: String = (0..length).map(|_| pool[next() % pool.len()]).collect();

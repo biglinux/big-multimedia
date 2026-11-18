@@ -1,0 +1,26 @@
+[[providers]]
+name = "Free List"
+
+[providers.source]
+type = "m3u_url"
+url = "https://lists.example/free.m3u8"
+
+[[providers]]
+name = "Saved"
+order = 1
+
+[providers.source]
+type = "m3u_local"
+path = "/home/ana/Videos/channels.m3u"
+
+[[providers]]
+name = "Panel"
+user_agent = "VLC/3.0.20"
+referer = "https://panel.example/"
+order = 2
+
+[providers.source]
+type = "xtream"
+server = "http://panel.example:8080"
+username = "ana"
+password = "s3cret"
