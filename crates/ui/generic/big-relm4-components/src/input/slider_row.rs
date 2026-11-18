@@ -259,48 +259,11 @@ impl BigSliderRow {
             resolved.page_step,
             0.0,
         );
-        let scale = gtk::Scale::builder()
-            .adjustment(&adjustment)
-            .draw_value(false)
-            .hexpand(true)
-            .width_request(resolved.scale_width_request)
-            .build();
-        scale.set_digits(resolved.digits);
-        scale.update_property(&[gtk::accessible::Property::Label(&spec.title)]);
-        scale.add_mark(
-            resolved.default,
-            gtk::PositionType::Bottom,
-            resolved.mark_label.as_deref(),
-        );
+        let scale = slider_scale(&resolved, &spec.title, &adjustment);
         slider_box.append(&scale);
-
-        let value_label = gtk::Label::builder()
-            .label(&resolved.initial_label)
-            .width_chars(resolved.value_width_chars)
-            .xalign(1.0)
-            .build();
-        value_label.add_css_class("monospace");
+        let value_label = live_value_label(&resolved, &adjustment);
         slider_box.append(&value_label);
-
-        {
-            let value_label = value_label.clone();
-            let suffix = resolved.value_suffix.clone();
-            let digits = resolved.digits;
-            adjustment.connect_value_changed(move |adjustment| {
-                value_label.set_label(&format_value(adjustment.value(), digits, &suffix));
-            });
-        }
-
-        let reset_button =
-            tooltip::icon_button(&resolved.reset_icon_name, &resolved.reset_label, &["flat"]);
-        reset_button.update_property(&[gtk::accessible::Property::Label(
-            &resolved.reset_accessible_label,
-        )]);
-        {
-            let adjustment = adjustment.clone();
-            let default = resolved.default;
-            reset_button.connect_clicked(move |_| adjustment.set_value(default));
-        }
+        let reset_button = reset_to_default_button(&resolved, &adjustment);
         slider_box.append(&reset_button);
 
         root.append(&slider_box);
@@ -393,6 +356,67 @@ fn reset_accessible_label(reset_label: &str, title: &str) -> String {
     } else {
         format!("{reset}: {title}")
     }
+}
+
+/// The slider itself, named after the row and marked at its default.
+fn slider_scale(
+    resolved: &BigSliderRowResolved,
+    title: &str,
+    adjustment: &gtk::Adjustment,
+) -> gtk::Scale {
+    let scale = gtk::Scale::builder()
+        .adjustment(adjustment)
+        .draw_value(false)
+        .hexpand(true)
+        .width_request(resolved.scale_width_request)
+        .build();
+    scale.set_digits(resolved.digits);
+    scale.update_property(&[gtk::accessible::Property::Label(title)]);
+    scale.add_mark(
+        resolved.default,
+        gtk::PositionType::Bottom,
+        resolved.mark_label.as_deref(),
+    );
+    scale
+}
+
+/// The value beside the slider, kept in step with the adjustment.
+fn live_value_label(resolved: &BigSliderRowResolved, adjustment: &gtk::Adjustment) -> gtk::Label {
+    let value_label = gtk::Label::builder()
+        .label(&resolved.initial_label)
+        .width_chars(resolved.value_width_chars)
+        .xalign(1.0)
+        .build();
+    value_label.add_css_class("monospace");
+    let label = value_label.downgrade();
+    let suffix = resolved.value_suffix.clone();
+    let digits = resolved.digits;
+    adjustment.connect_value_changed(move |adjustment| {
+        if let Some(label) = label.upgrade() {
+            label.set_label(&format_value(adjustment.value(), digits, &suffix));
+        }
+    });
+    value_label
+}
+
+/// The button that puts the slider back at its default.
+fn reset_to_default_button(
+    resolved: &BigSliderRowResolved,
+    adjustment: &gtk::Adjustment,
+) -> gtk::Button {
+    let reset_button =
+        tooltip::icon_button(&resolved.reset_icon_name, &resolved.reset_label, &["flat"]);
+    reset_button.update_property(&[gtk::accessible::Property::Label(
+        &resolved.reset_accessible_label,
+    )]);
+    let adjustment = adjustment.downgrade();
+    let default = resolved.default;
+    reset_button.connect_clicked(move |_| {
+        if let Some(adjustment) = adjustment.upgrade() {
+            adjustment.set_value(default);
+        }
+    });
+    reset_button
 }
 
 #[cfg(test)]
