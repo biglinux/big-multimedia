@@ -38,12 +38,15 @@ use big_os_kit::keyring::SecretService;
 use big_os_kit::url::ListOrigin;
 
 use crate::media::iptv::{
-    IptvChannel, IptvKind, IptvProvider, IptvProviderStore, MAX_PLAYLIST_ENTRIES, left_out_notice,
+    IptvChannel, IptvProvider, IptvProviderStore, MAX_PLAYLIST_ENTRIES, left_out_notice,
     parse_channel_list,
 };
 
 use channel_list::ChannelListView;
-use fetcher::{FetchError, FetchedChannels, fetch_provider_channels, provider_identifier};
+use fetcher::{
+    ChannelUrls, FetchError, FetchedChannels, channel_urls, fetch_provider_channels,
+    provider_identifier,
+};
 
 /// Messages into the IPTV browser.
 #[derive(Debug)]
@@ -85,10 +88,10 @@ pub enum VideoIptvBrowserInput {
 /// Intents emitted by the browser for the shell to act on.
 #[derive(Debug)]
 pub enum VideoIptvBrowserOutput {
-    /// Play this stream URL (with a display title) in the main player; the
+    /// Play this channel (with a display title) in the main player; the
     /// provider's list named it.
     PlayChannel {
-        url: String,
+        urls: ChannelUrls,
         title: String,
         origin: ListOrigin,
     },
@@ -309,6 +312,12 @@ impl Component for VideoIptvBrowser {
 }
 
 impl VideoIptvBrowser {
+    /// The providers as edited, for resolving saved channels off the main loop.
+    #[must_use]
+    pub fn providers(&self) -> Vec<IptvProvider> {
+        self.store.borrow().providers.clone()
+    }
+
     /// Move the secrets a provider still holds in plain text, typed into an
     /// older build or carried in an older file, into the keyring.
     fn protect_plaintext(&mut self, sender: &ComponentSender<Self>) {
@@ -369,20 +378,15 @@ impl VideoIptvBrowser {
                 let vault = SecretService {
                     cancelled: &cancelled,
                 };
-                match provider.source {
-                    IptvKind::Xtream { .. } => match provider.resolved_source(&vault)? {
-                        IptvKind::Xtream {
-                            username, password, ..
-                        } => Ok(xtream::stream_url(&url, &username, &password)),
-                        IptvKind::M3uUrl { .. } | IptvKind::M3uLocal { .. } => Ok(url),
-                    },
-                    IptvKind::M3uUrl { .. } | IptvKind::M3uLocal { .. } => Ok(url),
-                }
+                channel_urls(&provider, &url, &vault)
             },
-            move |played: std::io::Result<String>| match played {
-                Ok(url) => {
-                    let _ =
-                        sender.output(VideoIptvBrowserOutput::PlayChannel { url, title, origin });
+            move |urls: std::io::Result<ChannelUrls>| match urls {
+                Ok(urls) => {
+                    let _ = sender.output(VideoIptvBrowserOutput::PlayChannel {
+                        urls,
+                        title,
+                        origin,
+                    });
                 }
                 Err(_) => sender.input(VideoIptvBrowserInput::KeyringUnavailable),
             },
@@ -492,7 +496,7 @@ impl VideoIptvBrowser {
 
 /// What went wrong, in words the person can act on. A list saved before
 /// stays on screen.
-fn fetch_error_text(error: &FetchError) -> String {
+pub(crate) fn fetch_error_text(error: &FetchError) -> String {
     match error {
         FetchError::Unreachable => i18n(
             "Could not reach the provider. Check the address and your connection; a saved list stays on screen.",
@@ -519,6 +523,9 @@ fn fetch_error_text(error: &FetchError) -> String {
         FetchError::FileUnreadable => i18n("Could not read the playlist file."),
         FetchError::Keyring => i18n(
             "Could not read this provider's password from your keyring. Unlock your keyring, then reload the channels.",
+        ),
+        FetchError::NoProvider => i18n(
+            "This playlist has IPTV channels from a provider that is not set up. Add the provider under IPTV, then open the playlist again.",
         ),
     }
 }

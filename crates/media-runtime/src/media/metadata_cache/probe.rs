@@ -15,8 +15,13 @@ pub fn probe_metadata(path: &str) -> Option<VideoMeta> {
     Some(parse_ffprobe(&root))
 }
 
-/// Atomic-semaphore gated to cap concurrent ffprobe children.
+/// Atomic-semaphore gated to cap concurrent ffprobe children. A network
+/// stream is never opened: the playlist probes every card, and an IPTV panel
+/// counts each probe against the account or refuses a stored channel URL.
 pub fn probe_metadata_cached(path: &str) -> Option<VideoMeta> {
+    if big_os_kit::url::is_stream_uri(path) {
+        return None;
+    }
     let current_mtime = file_mtime(path);
     if let Some(entry) = meta_cache().lock().ok()?.get(path).cloned()
         && entry.mtime == current_mtime

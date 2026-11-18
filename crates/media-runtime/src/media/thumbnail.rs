@@ -109,8 +109,12 @@ fn card_frame_spec(video_path: &str, seek_secs: f64, output: &Path) -> BigSubpro
 /// into `target`, whose extension picks the image format. ffmpeg writes a staging
 /// file beside `target` that replaces it only after a clean exit with a non-empty
 /// file, so a killed or failed run never leaves a cached frame that `exists()`
-/// would serve. Blocking; returns whether `target` was written.
+/// would serve. Blocking; returns whether `target` was written. A network
+/// stream is never opened: an IPTV panel counts each card against the account.
 pub fn render_card_frame(video_path: &str, seek_secs: f64, target: &Path) -> bool {
+    if big_os_kit::url::is_stream_uri(video_path) {
+        return false;
+    }
     let (Some(directory), Some(extension)) = (target.parent(), target.extension()) else {
         return false;
     };
@@ -154,8 +158,12 @@ fn seek_position(video_path: &str) -> f64 {
 }
 
 /// Synchronous; semaphore-gated to cap concurrent ffmpeg children. `None`
-/// without a private cache directory.
+/// without a private cache directory, and for a network stream, which
+/// [`render_card_frame`] does not open.
 fn get_or_generate_thumbnail(video_path: &str) -> Option<PathBuf> {
+    if big_os_kit::url::is_stream_uri(video_path) {
+        return None;
+    }
     let cache_root = big_os_kit::xdg_dirs::cache_dir()?;
     let cache = thumbnail_cache_dir(&cache_root)?;
     let hash = thumb_hash(video_path);
@@ -275,6 +283,19 @@ mod tests {
         std::fs::write(&partial, b"whole").unwrap();
         assert!(publish_frame(true, &partial, &frame));
         assert_eq!(std::fs::read(&frame).unwrap(), b"whole");
+    }
+
+    #[test]
+    fn cards_never_open_streams() {
+        let listener = std::net::TcpListener::bind("127.0.0.1:0").unwrap();
+        listener.set_nonblocking(true).unwrap();
+        let url = format!("http://{}/live/1.ts", listener.local_addr().unwrap());
+        let dir = tempfile::tempdir().unwrap();
+        assert!(crate::media::playlist::probe_metadata_cached(&url).is_none());
+        assert!(get_or_generate_thumbnail(&url).is_none());
+        assert!(!render_card_frame(&url, 1.0, &dir.path().join("0.jpg")));
+        let connection = listener.accept().map(|_| ()).map_err(|error| error.kind());
+        assert_eq!(connection, Err(std::io::ErrorKind::WouldBlock));
     }
 
     #[test]

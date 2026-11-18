@@ -113,7 +113,8 @@ impl VideoShell {
     /// before mpv is up.
     pub(super) fn show_media_details(&self, root: &adw::ApplicationWindow) {
         if let Some(mpv) = self.mpv.borrow().as_ref() {
-            show_video_media_details_dialog(root, mpv);
+            let file_path = mpv.get_current_file().unwrap_or_default();
+            show_video_media_details_dialog(root, mpv, self.stored_urls.stored_url(&file_path));
         }
     }
 
