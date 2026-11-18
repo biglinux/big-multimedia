@@ -16,6 +16,7 @@ use big_relm4_components::list::detail_row::{BigDetailRow, BigDetailRowSpec};
 use super::filter_specs::{
     cas_shader_to_ui_pct, cas_ui_pct_to_shader, fsr_shader_to_ui_pct, fsr_ui_pct_to_shader,
 };
+use super::vf_row::wire_filter_expander;
 use crate::config;
 use crate::i18n::i18n;
 use crate::player::mpv_backend::MpvBackend;
@@ -80,34 +81,23 @@ fn build_gpu_sharpen_row(mpv: &Arc<MpvBackend>) -> adw::ExpanderRow {
             .build(),
     );
 
-    let mpv_toggle = Arc::clone(mpv);
-    let adjustment_toggle = adjustment.clone();
-    expander.connect_enable_expansion_notify(move |row| {
-        mpv_toggle.set_sharpen(if row.enables_expansion() {
-            adjustment_toggle.value()
-        } else {
-            0.0
-        });
-    });
-
-    let debounce = DebouncedAction::new(Duration::from_millis(100));
-    // Weak back-ref: the expander owns the SpinRow (→ adjustment), so a strong
-    // capture here would form a mutual reference cycle (both leak on close).
-    let expander_weak = expander.downgrade();
-    let mpv = Arc::clone(mpv);
-    adjustment.connect_value_changed(move |adjustment| {
-        let Some(expander_ref) = expander_weak.upgrade() else {
-            return;
-        };
-        if !expander_ref.enables_expansion() {
-            return;
+    let apply = {
+        let mpv = Arc::clone(mpv);
+        let adjustment = adjustment.downgrade();
+        move || {
+            if let Some(adjustment) = adjustment.upgrade() {
+                mpv.set_sharpen(adjustment.value());
+            }
         }
-        let value = adjustment.value();
-        let mpv = Arc::clone(&mpv);
-        debounce.run(move || {
-            mpv.set_sharpen(value);
-        });
-    });
+    };
+    let mpv = Arc::clone(mpv);
+    let changed = wire_filter_expander(
+        &expander,
+        Some(Duration::from_millis(100)),
+        apply,
+        move || mpv.set_sharpen(0.0),
+    );
+    adjustment.connect_value_changed(move |_| changed());
 
     expander
 }
