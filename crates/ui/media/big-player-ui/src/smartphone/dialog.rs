@@ -137,10 +137,14 @@ where
                 return;
             };
             let revoked = Arc::new(AtomicBool::new(false));
+            let (failure_sender, failure_receiver) = relm4::channel::<String>();
             match remote_control::start_scoped(
                 SocketAddr::new(ip, 0),
                 (build_for_toggle)(revoked.clone()),
                 revoked,
+                move |error| {
+                    let _ = failure_sender.send(error);
+                },
             ) {
                 Ok(handle) => {
                     let url = format!(
@@ -152,7 +156,28 @@ where
                     url_for_toggle.set_text(&url);
                     url_for_toggle.set_visible(true);
                     status_for_toggle.set_text(&i18n("Scan the code with the phone's camera."));
+                    let token = handle.token.clone();
                     *server_for_toggle.borrow_mut() = Some(handle);
+
+                    let switch = switch.clone();
+                    let status = status_for_toggle.clone();
+                    let server = Rc::clone(&server_for_toggle);
+                    gtk::glib::spawn_future_local(async move {
+                        // None once the worker ends through stop.
+                        let Some(error) = failure_receiver.recv().await else {
+                            return;
+                        };
+                        let same_session = server
+                            .borrow()
+                            .as_ref()
+                            .is_some_and(|handle| handle.token == token);
+                        if same_session {
+                            switch.set_active(false);
+                            status.set_text(
+                                &i18n("Web remote stopped: {error}").replace("{error}", &error),
+                            );
+                        }
+                    });
                 }
                 Err(error) => {
                     switch.set_active(false);
