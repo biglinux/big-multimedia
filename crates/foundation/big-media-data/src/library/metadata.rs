@@ -6,7 +6,7 @@ use std::time::{Duration, SystemTime};
 
 use crate::db::models::Track;
 use crate::error::{Error, Result};
-use crate::media_probe::probe_json;
+use crate::media_probe::{LOCAL_INPUT_PROTOCOLS, input_protocols, probe_json};
 
 pub fn read_track_metadata(path: &str) -> Result<Track> {
     read_track_metadata_cancellable(path, &AtomicBool::new(false))
@@ -135,16 +135,7 @@ pub fn write_track_tags(path: &str, edits: &TagEdits) -> Result<()> {
         .suffix(&suffix)
         .tempfile_in(parent)
         .map_err(|e| Error::internal(format!("cannot create tag temp file: {e}")))?;
-    let output = BigSubprocessSpec::builder()
-        .program("ffmpeg")
-        .args(["-hide_banner", "-loglevel", "error", "-y", "-i"])
-        .arg(source)
-        .args(["-map", "0", "-c", "copy", "-map_metadata", "0"])
-        .args(metadata_args(edits))
-        .arg(temp.path())
-        .stdout(BigSubprocessOutputMode::Null)
-        .timeout(TAG_REWRITE_TIMEOUT)
-        .build()
+    let output = tag_rewrite_spec(source, edits, temp.path())
         .run()
         .map_err(|e| Error::internal(format!("ffmpeg tag rewrite failed: {e}")))?;
     if !output.status.success() {
@@ -165,6 +156,21 @@ pub fn write_track_tags(path: &str, edits: &TagEdits) -> Result<()> {
         log::warn!("tag rewrite renamed but not synced: {error}");
     }
     Ok(())
+}
+
+fn tag_rewrite_spec(source: &Path, edits: &TagEdits, output: &Path) -> BigSubprocessSpec {
+    BigSubprocessSpec::builder()
+        .program("ffmpeg")
+        .args(["-hide_banner", "-loglevel", "error", "-y"])
+        .args(LOCAL_INPUT_PROTOCOLS)
+        .arg("-i")
+        .arg(source)
+        .args(["-map", "0", "-c", "copy", "-map_metadata", "0"])
+        .args(metadata_args(edits))
+        .arg(output)
+        .stdout(BigSubprocessOutputMode::Null)
+        .timeout(TAG_REWRITE_TIMEOUT)
+        .build()
 }
 
 /// Embedded picture first; falls back to sibling Cover/folder/front/album/
@@ -296,14 +302,12 @@ fn metadata_args(edits: &TagEdits) -> Vec<String> {
     args
 }
 
-fn extract_embedded_album_art(path: &str, cancelled: &AtomicBool) -> Option<Vec<u8>> {
-    let output = BigSubprocessSpec::builder()
+fn embedded_art_spec(path: &str) -> BigSubprocessSpec {
+    BigSubprocessSpec::builder()
         .program("ffmpeg")
+        .args(["-nostdin", "-hide_banner", "-loglevel", "error"])
+        .args(input_protocols(path))
         .args([
-            "-nostdin",
-            "-hide_banner",
-            "-loglevel",
-            "error",
             "-i",
             path,
             "-map",
@@ -316,8 +320,10 @@ fn extract_embedded_album_art(path: &str, cancelled: &AtomicBool) -> Option<Vec<
         ])
         .timeout(Duration::from_secs(30))
         .build()
-        .run_cancellable(cancelled)
-        .ok()?;
+}
+
+fn extract_embedded_album_art(path: &str, cancelled: &AtomicBool) -> Option<Vec<u8>> {
+    let output = embedded_art_spec(path).run_cancellable(cancelled).ok()?;
     if output.status.success() && !output.stdout.is_empty() {
         Some(output.stdout)
     } else {
@@ -376,6 +382,27 @@ mod tests {
             Some("Renamed")
         );
         assert_eq!(fs::read_dir(dir.path()).unwrap().count(), 1);
+    }
+
+    #[test]
+    fn local_inputs_open_only_files() {
+        let edits = TagEdits {
+            title: Some("T".into()),
+            ..TagEdits::default()
+        };
+        let input = "/music/concat:a|b.flac";
+        for spec in [
+            tag_rewrite_spec(Path::new(input), &edits, Path::new("/music/.tmp.flac")),
+            embedded_art_spec(input),
+        ] {
+            let argv = spec.try_resolved().unwrap().argv;
+            let input_at = argv.iter().position(|arg| arg == input).unwrap();
+            assert_eq!(
+                argv[input_at - 3..input_at],
+                ["-protocol_whitelist", "file,pipe", "-i"],
+                "{argv:?}"
+            );
+        }
     }
 
     #[test]

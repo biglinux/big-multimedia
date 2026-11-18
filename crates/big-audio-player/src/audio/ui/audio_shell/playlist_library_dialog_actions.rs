@@ -303,7 +303,7 @@ fn import_one_playlist(
     if name.is_empty() || name.len() > 1024 || name.chars().any(char::is_control) {
         return Err(std::io::Error::other("Invalid playlist name"));
     }
-    let list = playlist_import::parse_playlist_file_for_import(path)?;
+    let list = crate::media::playlist::parse_playlist_file(path)?;
     let paths = list.entries;
     if paths.len() > remaining {
         return Err(std::io::Error::other(i18n(

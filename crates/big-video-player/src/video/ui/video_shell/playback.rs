@@ -1,6 +1,7 @@
 use super::*;
-use crate::media::iptv::MAX_PLAYLIST_ENTRIES;
 use big_media_components::surface::toggle_surface_fullscreened;
+use big_media_runtime::player::mpv_backend::TargetSource;
+use big_os_kit::url::ListOrigin;
 
 impl VideoShell {
     /// Reflect an mpv event in the transport display + now-playing title.
@@ -317,17 +318,14 @@ impl VideoShell {
     /// Apply a resolved open request on the main thread: load the playlist into
     /// mpv and push the listing to the sidebar.
     pub(super) fn apply_open(&mut self, list: OpenedList) {
+        if let Some(notice) = crate::media::iptv::left_out_notice(list.truncated, list.skipped) {
+            self.notify(&notice);
+        }
         if list.entries.is_empty() || self.report_missing_engine() {
             self.reveal_pending_welcome();
             return;
         }
-        if list.truncated {
-            self.notify(
-                &i18n("Only the first {} entries of the playlist were loaded.")
-                    .replace("{}", &MAX_PLAYLIST_ENTRIES.to_string()),
-            );
-        }
-        self.load_playlist(&list.entries, list.start);
+        self.load_playlist(&list.entries, list.start, list.source);
         self.playlist.emit(VideoBrowserSidebarInput::SetPlaylist {
             paths: list.entries,
             folder: list.folder,
@@ -340,7 +338,7 @@ impl VideoShell {
     /// again; mpv indices always come from mpv's live order, which shuffle
     /// changes. Pushes the new queue to the sidebar; an external open also
     /// sends the folder listing.
-    fn load_playlist(&mut self, entries: &[String], start: usize) {
+    fn load_playlist(&mut self, entries: &[String], start: usize, source: TargetSource) {
         // mpv starts its video output only with a render context in place.
         if let Some(start_video) = self.video_start.take() {
             start_video();
@@ -359,9 +357,9 @@ impl VideoShell {
         // queued after them could run before they are in and leave the first
         // file playing; an insert at 0 and an append land right whenever
         // they run.
-        mpv.load_file(chosen);
-        mpv.load_files_at(&entries[..start], Some(0));
-        mpv.load_files_append(&entries[start + 1..]);
+        mpv.load_file(chosen, source);
+        mpv.load_files_at(&entries[..start], source, Some(0));
+        mpv.load_files_append(&entries[start + 1..], source);
         mpv.play();
         drop(mpv_ref);
         self.playlist_paths = entries.to_vec();
@@ -451,7 +449,7 @@ impl VideoShell {
                         mpv.playlist_play_index(index as i64);
                     }
                 } else {
-                    self.load_playlist(&paths, start);
+                    self.load_playlist(&paths, start, TargetSource::Person);
                 }
             }
             VideoBrowserSidebarOutput::OpenPlaylist(path) => self.open_files(&[path], sender),
@@ -576,13 +574,13 @@ impl VideoShell {
             return;
         }
         if self.playlist_paths.is_empty() {
-            self.load_playlist(paths, 0);
+            self.load_playlist(paths, 0, TargetSource::Person);
             return;
         }
         let Some(mpv) = self.mpv.borrow().clone() else {
             return;
         };
-        mpv.load_files_append(paths);
+        mpv.load_files_append(paths, TargetSource::Person);
         self.playlist_paths.extend_from_slice(paths);
         self.playlist.emit(VideoBrowserSidebarInput::SetQueue(
             self.playlist_paths.clone(),
@@ -628,7 +626,7 @@ impl VideoShell {
     /// The rest of the list stays as it was.
     fn play_next(&mut self, path: String, now: bool) {
         if self.playlist_paths.is_empty() {
-            self.load_playlist(std::slice::from_ref(&path), 0);
+            self.load_playlist(std::slice::from_ref(&path), 0, TargetSource::Person);
         } else {
             let Some(mpv) = self.mpv.borrow().clone() else {
                 return;
@@ -638,7 +636,7 @@ impl VideoShell {
             let from = if let Some(index) = playlist_index_of(&order, &path) {
                 index as i64
             } else {
-                mpv.load_file_append(&path);
+                mpv.load_file_append(&path, TargetSource::Person);
                 order.len() as i64
             };
             // mpv inserts before `to`: that is right after the playing one.
@@ -721,13 +719,15 @@ impl VideoShell {
     /// existing playback path (replaces the playlist with the single stream).
     pub(super) fn on_iptv(&mut self, out: VideoIptvBrowserOutput) {
         match out {
-            VideoIptvBrowserOutput::PlayChannel { url, title } => self.play_stream(url, &title),
+            VideoIptvBrowserOutput::PlayChannel { url, title, origin } => {
+                self.play_stream(url, &title, TargetSource::List(origin));
+            }
         }
     }
 
     /// Play one stream under its own name: an IPTV channel. It replaces the
     /// playlist, like opening a URL, and nothing on disk is resolved for it.
-    fn play_stream(&mut self, url: String, title: &str) {
+    fn play_stream(&mut self, url: String, title: &str, source: TargetSource) {
         // A folder scan still running must not replace the channel.
         self.open_generation += 1;
         if let Some(start_video) = self.video_start.take() {
@@ -738,9 +738,9 @@ impl VideoShell {
             return;
         };
         if title.is_empty() {
-            mpv.load_file(&url);
+            mpv.load_file(&url, source);
         } else {
-            mpv.load_file_titled(&url, title);
+            mpv.load_file_titled(&url, source, title);
         }
         mpv.play();
         self.shuffle_on_load = None;
@@ -858,6 +858,9 @@ pub struct OpenedList {
     pub folder: Option<String>,
     /// The opened playlist file listed more entries than were kept.
     pub truncated: bool,
+    /// Entries of the opened playlist file the player does not open.
+    pub skipped: usize,
+    pub source: TargetSource,
 }
 
 impl OpenedList {
@@ -885,12 +888,14 @@ fn resolve_open_files(
     // A playlist file on disk; an HLS stream ends in .m3u8 too, and it is
     // played, not read as a file: every IPTV channel was one.
     if paths.len() == 1 && !is_remote_uri(&paths[0]) && playlist::is_playlist_file(&paths[0]) {
-        let parsed = playlist::parse_playlist_file(&paths[0]);
-        if parsed.entries.is_empty() {
+        let parsed = playlist::parse_playlist_file(std::path::Path::new(&paths[0])).ok()?;
+        if parsed.entries.is_empty() && parsed.skipped == 0 {
             return None;
         }
         return Some(OpenedList {
             truncated: parsed.truncated,
+            skipped: parsed.skipped,
+            source: TargetSource::List(ListOrigin::LocalFile),
             ..OpenedList::from_entries(parsed.entries)
         });
     }
@@ -910,7 +915,7 @@ fn resolve_open_files(
                         entries: folder,
                         start,
                         folder: Some(parent.to_string_lossy().into_owned()),
-                        truncated: false,
+                        ..OpenedList::default()
                     }),
                     None => Some(alone),
                 }
@@ -938,14 +943,11 @@ fn resolve_open_files(
 /// Streams and discs: what mpv opens by URL, never a path on disk. Schemes
 /// are case-insensitive; IPTV lists use the UDP, RTP, SRT and MMS ones too.
 pub(crate) fn is_remote_uri(s: &str) -> bool {
-    const SCHEMES: [&str; 12] = [
-        "http", "https", "rtsp", "rtsps", "rtmp", "rtmps", "udp", "rtp", "srt", "mms", "dvd", "bd",
-    ];
-    s.trim().split_once("://").is_some_and(|(scheme, _)| {
-        SCHEMES
-            .iter()
-            .any(|known| scheme.eq_ignore_ascii_case(known))
-    })
+    let s = s.trim();
+    big_os_kit::url::is_stream_uri(s)
+        || s.split_once("://").is_some_and(|(scheme, _)| {
+            scheme.eq_ignore_ascii_case("dvd") || scheme.eq_ignore_ascii_case("bd")
+        })
 }
 
 /// Seek-bar fraction for `pos` within a clip of `duration` seconds, clamped to

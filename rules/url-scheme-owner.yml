@@ -1,0 +1,10 @@
+id: url-scheme-owner
+language: rust
+severity: error
+message: Check a URL's scheme with big_os_kit::url (is_http_url, is_stream_uri, is_list_target)
+note: crates/foundation/big-os-kit/src/url.rs owns which schemes a target may use.
+rule:
+  pattern: $VALUE.starts_with($PREFIX)
+constraints:
+  PREFIX:
+    regex: '^"(?i)(https?|rtsps?|rtmps?|mms|udp|rtp|srt|file)://'

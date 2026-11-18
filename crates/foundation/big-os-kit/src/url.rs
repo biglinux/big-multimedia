@@ -1,4 +1,5 @@
-//! RFC 3986 percent-encoding helpers for URL query values.
+//! URL helpers: which schemes a media target may use, RFC 3986 percent-encoding
+//! of query values, and redaction for logs.
 
 /// Query-parameter keys (matched case-insensitively) whose values [`redact_url`]
 /// masks in the compatibility redactor. Covers Xtream Codes credentials
@@ -81,6 +82,109 @@ pub fn uri_scheme(value: &str) -> Option<&str> {
         return None;
     }
     Some(scheme)
+}
+
+/// Network stream schemes a list written by someone else may name. mpv opens
+/// anything else it knows too (`av://lavfi`, `fdclose://`, `memory://`), which
+/// writes files or closes the player's descriptors.
+const STREAM_SCHEMES: [&str; 10] = [
+    "http", "https", "rtsp", "rtsps", "rtmp", "rtmps", "mms", "udp", "rtp", "srt",
+];
+
+/// Paths no list entry may resolve into: a crafted playlist naming them probes
+/// for files through mpv's errors or its subtitle and cover loaders.
+const SYSTEM_PATH_DENY: [&str; 6] = ["/etc", "/proc", "/sys", "/dev", "/root", "/boot"];
+
+fn has_scheme_of<'a>(value: &'a str, schemes: &[&str]) -> Option<&'a str> {
+    let (scheme, rest) = value.split_once("://")?;
+    schemes
+        .iter()
+        .any(|known| scheme.eq_ignore_ascii_case(known))
+        .then_some(rest)
+}
+
+/// An `http://` or `https://` URL with a host, in any letter case.
+#[must_use]
+pub fn is_http_url(value: &str) -> bool {
+    has_scheme_of(value, &["http", "https"])
+        .is_some_and(|rest| !rest.is_empty() && !rest.starts_with('/'))
+}
+
+/// A URL of one of the network stream schemes mpv plays (HTTP, RTSP, RTMP,
+/// MMS, UDP, RTP, SRT and their TLS forms), in any letter case.
+#[must_use]
+pub fn is_stream_uri(value: &str) -> bool {
+    has_scheme_of(value, &STREAM_SCHEMES).is_some()
+}
+
+/// Where a list of media entries came from, which decides what it may name.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum ListOrigin {
+    /// A feed, an IPTV list or a playlist fetched over the network.
+    Network,
+    /// A playlist file on this computer.
+    LocalFile,
+}
+
+/// Whether a list from `origin` may name `entry`, without touching the disk: a
+/// stream URI, or an absolute path when the list itself is a local file.
+#[must_use]
+pub fn is_list_target(entry: &str, origin: ListOrigin) -> bool {
+    is_stream_uri(entry) || (origin == ListOrigin::LocalFile && entry.starts_with('/'))
+}
+
+/// [`is_list_target`], and a path must resolve, after `..` and symlinks, to an
+/// existing file outside the system directories. Blocking.
+#[must_use]
+pub fn accepts_list_entry(entry: &str, origin: ListOrigin) -> bool {
+    if !is_list_target(entry, origin) {
+        return false;
+    }
+    if is_stream_uri(entry) {
+        return true;
+    }
+    std::fs::canonicalize(entry)
+        .is_ok_and(|path| !SYSTEM_PATH_DENY.iter().any(|deny| path.starts_with(deny)))
+}
+
+/// The local path a `file://` URI names (empty or `localhost` authority),
+/// percent-decoded. `None` for any other URI, a decoded NUL or an escaped `/`.
+#[must_use]
+pub fn file_uri_path(uri: &str) -> Option<std::path::PathBuf> {
+    use std::os::unix::ffi::OsStringExt;
+    let rest = has_scheme_of(uri, &["file"])?;
+    let path = if rest.starts_with('/') {
+        rest
+    } else {
+        let slash = rest.find('/')?;
+        if !rest[..slash].eq_ignore_ascii_case("localhost") {
+            return None;
+        }
+        &rest[slash..]
+    };
+    let bytes = path.as_bytes();
+    let mut decoded = Vec::with_capacity(bytes.len());
+    let mut index = 0;
+    while let Some(&byte) = bytes.get(index) {
+        if byte == b'%' {
+            let high = hex(*bytes.get(index + 1)?)?;
+            let low = hex(*bytes.get(index + 2)?)?;
+            // An escaped slash would join two path components, as GLib refuses.
+            let byte = high * 16 + low;
+            if byte == b'/' {
+                return None;
+            }
+            decoded.push(byte);
+            index += 3;
+        } else {
+            decoded.push(byte);
+            index += 1;
+        }
+    }
+    if decoded.contains(&0) {
+        return None;
+    }
+    Some(std::ffi::OsString::from_vec(decoded).into())
 }
 
 /// URI path without authority, query or fragment. Does not decode path bytes.
@@ -467,6 +571,97 @@ mod tests {
             "https media"
         );
     }
+    #[test]
+    fn stream_and_http_schemes() {
+        // (value, is_http_url, is_stream_uri)
+        for (value, http, stream) in [
+            ("https://h/a.mp3", true, true),
+            ("HTTP://h", true, true),
+            ("http://", false, true),
+            ("https:///etc/passwd", false, true),
+            ("http:h/a", false, false),
+            ("rtsps://cam/live", false, true),
+            ("RTMP://h/app", false, true),
+            ("udp://@239.0.0.1:1234", false, true),
+            ("srt://h:9000", false, true),
+            ("mms://h/s", false, true),
+            ("av://lavfi:sine", false, false),
+            ("fdclose://3", false, false),
+            ("memory://x", false, false),
+            ("file:///music/a.mp3", false, false),
+            ("dvd://", false, false),
+            ("/music/a.mp3", false, false),
+            ("/music/http://a", false, false),
+            ("", false, false),
+        ] {
+            assert_eq!(
+                (is_http_url(value), is_stream_uri(value)),
+                (http, stream),
+                "{value:?}"
+            );
+        }
+    }
+
+    #[test]
+    fn list_entries_follow_their_origin() {
+        let dir = std::env::temp_dir().join(format!("list-entry-{}", std::process::id()));
+        std::fs::create_dir(&dir).unwrap();
+        let song = dir.join("song.mp3");
+        std::fs::write(&song, b"").unwrap();
+        let link = dir.join("hostname.mp3");
+        std::os::unix::fs::symlink("/etc/hostname", &link).unwrap();
+        let song = song.to_str().unwrap();
+        let link = link.to_str().unwrap();
+        let up = format!("{}/../../../../../../../../etc/passwd", dir.display());
+        let missing = format!("{}/missing.mp3", dir.display());
+        // (entry, from a local file, from the network)
+        for (entry, local, network) in [
+            ("https://h/a.mp3", true, true),
+            ("srt://h:9000", true, true),
+            ("av://lavfi:sine,ametadata=mode=print:file=/x", false, false),
+            ("fdclose://0", false, false),
+            ("file:///music/a.mp3", false, false),
+            ("song.mp3", false, false),
+            (song, true, false),
+            (link, false, false),
+            (up.as_str(), false, false),
+            (missing.as_str(), false, false),
+            ("/proc/self/environ", false, false),
+            ("/dev/stdin", false, false),
+        ] {
+            assert_eq!(
+                (
+                    accepts_list_entry(entry, ListOrigin::LocalFile),
+                    accepts_list_entry(entry, ListOrigin::Network)
+                ),
+                (local, network),
+                "{entry:?}"
+            );
+        }
+        std::fs::remove_dir_all(&dir).unwrap();
+    }
+
+    #[test]
+    fn file_uri_decodes_to_a_path() {
+        for (uri, path) in [
+            ("file:///music/a%20b.mp3", Some("/music/a b.mp3")),
+            ("FILE://localhost/m/%C3%A9.ogg", Some("/m/é.ogg")),
+            ("file://host/m/a.mp3", None),
+            ("file:///m/a%2Fb", None),
+            ("file:///m/a%00b", None),
+            ("file:///m/a%zz", None),
+            ("file:///m/a%2", None),
+            ("https://h/a", None),
+            ("/m/a.mp3", None),
+        ] {
+            assert_eq!(
+                file_uri_path(uri).as_deref(),
+                path.map(std::path::Path::new),
+                "{uri}"
+            );
+        }
+    }
+
     #[test]
     fn authority_yields_no_filename() {
         assert_eq!(uri_path("https://radio.mp3"), "");

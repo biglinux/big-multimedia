@@ -46,9 +46,7 @@ fn should_show_single_track_actions(count: usize) -> bool {
 fn downloadable_episode_items(selected: &[(usize, Track)]) -> Vec<(String, String)> {
     selected
         .iter()
-        .filter(|(_, track)| {
-            track.file_path.starts_with("http://") || track.file_path.starts_with("https://")
-        })
+        .filter(|(_, track)| big_os_kit::url::is_http_url(&track.file_path))
         .map(|(_, track)| (track.file_path.clone(), track.display_title().to_string()))
         .collect()
 }

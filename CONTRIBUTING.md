@@ -11,10 +11,18 @@ cargo clippy --workspace --all-targets --all-features -- -D warnings
 cargo test --workspace --locked --all-features
 scripts/check-media-surface-imports.sh
 scripts/check-no-shell-invocations.sh
+ast-grep scan
 ```
 
 `check-no-shell-invocations.sh` refuses `sh -c` and `bash -c` in every crate's
 `src/`: subprocesses take an argv array, never a shell command string.
+
+`ast-grep scan` runs the rules in `rules/`. A URL's scheme is checked through
+`big_os_kit::url`: entries of feeds, IPTV lists and playlists reach mpv only
+as network streams, or as local files from a local list, because mpv's guard
+against unsafe playlist entries does not cover loads through its client API.
+ffmpeg and ffprobe open a local input with `LOCAL_INPUT_PROTOCOLS` from
+`big_media_data::media_probe`.
 
 Tests that create widgets need a Wayland display. Run them in an isolated
 session, a headless compositor such as `kwin_wayland --virtual` with its own

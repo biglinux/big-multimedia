@@ -64,6 +64,7 @@ impl AudioShell {
                         if let Some(mpv) = &self.mpv {
                             mpv.load_file_with_audio_profile(
                                 &self.current_file,
+                                TargetSource::List(ListOrigin::Network),
                                 AudioCacheProfile::Radio,
                             );
                         }

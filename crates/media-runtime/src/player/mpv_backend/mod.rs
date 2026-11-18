@@ -10,7 +10,8 @@ mod types;
 
 pub use backend::{MpvBackend, MpvError};
 pub use types::{
-    AudioCacheProfile, AudioEffects, AudioMetadata, EndReason, PlayerEvent, TrackMetadata,
+    AudioCacheProfile, AudioEffects, AudioMetadata, EndReason, PlayerEvent, TargetSource,
+    TrackMetadata,
 };
 
 #[cfg(feature = "video")]

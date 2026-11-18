@@ -172,10 +172,34 @@ mod resolve_open_files_tests {
 
     #[cfg(not(miri))]
     #[test]
+    fn playlist_entries_load_as_its_list() {
+        use big_media_runtime::player::mpv_backend::TargetSource;
+        use big_os_kit::url::ListOrigin;
+        let dir = tempfile::tempdir().unwrap();
+        let a = touch(dir.path(), "a.mp4");
+        let playlist = dir.path().join("list.m3u");
+        fs::write(&playlist, format!("{a}\nav://lavfi:sine\n")).unwrap();
+        let list = resolve_open_files(
+            vec![playlist.to_string_lossy().into_owned()],
+            &("name".to_string(), false),
+        )
+        .unwrap();
+        assert_eq!(
+            (list.entries, list.skipped, list.source),
+            (vec![a], 1, TargetSource::List(ListOrigin::LocalFile))
+        );
+    }
+
+    #[cfg(not(miri))]
+    #[test]
     fn long_playlist_reports_truncation() {
         let dir = tempfile::tempdir().unwrap();
         let playlist = dir.path().join("long.pls");
-        fs::write(&playlist, "File1=http://a/\n".repeat(100_001)).unwrap();
+        let mut lines = String::new();
+        for index in 1..=100_001 {
+            lines.push_str(&format!("File{index}=http://a/{index}\n"));
+        }
+        fs::write(&playlist, lines).unwrap();
         let list = resolve_open_files(
             vec![playlist.to_string_lossy().into_owned()],
             &("name".to_string(), false),

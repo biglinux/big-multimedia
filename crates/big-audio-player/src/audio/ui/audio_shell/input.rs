@@ -53,6 +53,8 @@ pub enum AudioShellInput {
         title: String,
         /// `(audio_url, episode_title)` per episode, in feed order.
         episodes: Vec<(String, String)>,
+        /// Episodes left out for an address that is not a stream URI.
+        skipped: usize,
     },
     /// The visible view-stack tab changed → enter/leave podcast mode.
     ViewTabChanged(String),
@@ -122,6 +124,8 @@ pub enum AudioShellInput {
         failed: bool,
         /// A playlist among them was cut at its entry cap.
         truncated: bool,
+        /// Playlist entries left out because the player does not open them.
+        skipped: usize,
     },
     ExternalMetadataResolved(Vec<Track>),
     /// Open the equalizer dialog (main menu).

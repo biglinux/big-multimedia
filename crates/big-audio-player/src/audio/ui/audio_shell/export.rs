@@ -246,16 +246,8 @@ fn local_input_path(input: &str) -> Option<PathBuf> {
     if input.trim().is_empty() {
         return None;
     }
-    if let Some((scheme, rest)) = input.split_once("://") {
-        if !scheme.eq_ignore_ascii_case("file") {
-            return None;
-        }
-        let authority = rest.split('/').next()?;
-        if !authority.is_empty() && !authority.eq_ignore_ascii_case("localhost") {
-            return None;
-        }
-        use gtk::gio::prelude::FileExt;
-        return gtk::gio::File::for_uri(input).path();
+    if input.contains("://") {
+        return big_os_kit::url::file_uri_path(input);
     }
     Some(PathBuf::from(input))
 }

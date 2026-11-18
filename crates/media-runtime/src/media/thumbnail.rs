@@ -6,6 +6,7 @@ use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicU32, AtomicU64, Ordering};
 
 use big_app_kit::subprocess::{BigSubprocessOutputMode, BigSubprocessSpec};
+use big_media_data::media_probe::input_protocols;
 use gtk::glib;
 
 use big_relm4_components::display::texture::{RgbaImage, pixbuf_to_rgba, rgba_to_texture};
@@ -58,6 +59,51 @@ fn find_freedesktop_thumbnail(cache_root: &Path, video_path: &str) -> Option<Pat
     None
 }
 
+fn duration_probe_spec(video_path: &str) -> BigSubprocessSpec {
+    BigSubprocessSpec::builder()
+        .program("ffprobe")
+        .args(input_protocols(video_path))
+        .args([
+            "-v",
+            "quiet",
+            "-show_entries",
+            "format=duration",
+            "-of",
+            "csv=p=0",
+            // A file name starting with `-` must not read as a flag.
+            "--",
+            video_path,
+        ])
+        .build()
+}
+
+/// One frame of `video_path` at `seek_pos`, scaled to a card, into `output`.
+fn frame_spec(video_path: &str, seek_pos: &str, output: &Path) -> BigSubprocessSpec {
+    BigSubprocessSpec::builder()
+        .program("ffmpeg")
+        .args(["-ss", seek_pos])
+        .args(input_protocols(video_path))
+        .args([
+            "-i",
+            video_path,
+            "-frames:v",
+            "1",
+            "-update",
+            "1",
+            "-vf",
+            // reset_sar: PNG has no pixel aspect, so anamorphic frames need
+            // square pixels.
+            "scale=240:135:force_original_aspect_ratio=decrease:reset_sar=1,\
+             pad=240:135:(ow-iw)/2:(oh-ih)/2",
+            "-y",
+            "--",
+        ])
+        .arg(output)
+        .stdout(BigSubprocessOutputMode::Null)
+        .stderr(BigSubprocessOutputMode::Null)
+        .build()
+}
+
 /// 30 % into the video, as `-ss` text; the cached duration saves an ffprobe.
 fn seek_position(video_path: &str) -> String {
     let cached = meta_cache()
@@ -65,22 +111,7 @@ fn seek_position(video_path: &str) -> String {
         .ok()
         .and_then(|c| c.get(video_path).and_then(|e| e.meta.duration_secs));
     let duration = cached.or_else(|| {
-        let output = BigSubprocessSpec::builder()
-            .program("ffprobe")
-            .args([
-                "-v",
-                "quiet",
-                "-show_entries",
-                "format=duration",
-                "-of",
-                "csv=p=0",
-                // A file name starting with `-` must not read as a flag.
-                "--",
-                video_path,
-            ])
-            .build()
-            .run()
-            .ok()?;
+        let output = duration_probe_spec(video_path).run().ok()?;
         String::from_utf8_lossy(&output.stdout)
             .trim()
             .parse::<f64>()
@@ -117,31 +148,7 @@ fn get_or_generate_thumbnail(video_path: &str) -> Option<PathBuf> {
         std::process::id(),
         PARTIAL_SEQ.fetch_add(1, Ordering::Relaxed)
     ));
-    let status = BigSubprocessSpec::builder()
-        .program("ffmpeg")
-        .args([
-            "-ss",
-            seek_pos.as_str(),
-            "-i",
-            video_path,
-            "-frames:v",
-            "1",
-            "-update",
-            "1",
-            "-vf",
-            // reset_sar: PNG has no pixel aspect, so anamorphic frames need
-            // square pixels.
-            "scale=240:135:force_original_aspect_ratio=decrease:reset_sar=1,\
-             pad=240:135:(ow-iw)/2:(oh-ih)/2",
-            "-y",
-            "--",
-        ])
-        .arg(&partial)
-        .stdout(BigSubprocessOutputMode::Null)
-        .stderr(BigSubprocessOutputMode::Null)
-        .build()
-        .run()
-        .ok();
+    let status = frame_spec(video_path, &seek_pos, &partial).run().ok();
 
     release_slot(&ACTIVE_THUMBS);
 
@@ -221,6 +228,23 @@ pub fn thumbnail_texture(thumb_path: PathBuf, image: RgbaImage) -> gtk::gdk::Tex
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn local_videos_open_only_files() {
+        let input = "/videos/concat:a|b.mp4";
+        for spec in [
+            duration_probe_spec(input),
+            frame_spec(input, "1.0", Path::new("/cache/.x.png")),
+        ] {
+            let argv = spec.try_resolved().unwrap().argv;
+            let whitelist_at = argv
+                .windows(2)
+                .position(|pair| pair == ["-protocol_whitelist", "file,pipe"])
+                .unwrap_or(usize::MAX);
+            let input_at = argv.iter().position(|arg| arg == input).unwrap();
+            assert!(whitelist_at < input_at, "{argv:?}");
+        }
+    }
 
     #[test]
     fn thumb_hash_is_stable() {

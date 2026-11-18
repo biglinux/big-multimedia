@@ -55,6 +55,17 @@ impl IptvKind {
             } => format!("{} ({username})", big_os_kit::url::redact_url(server)),
         }
     }
+
+    /// Where this source's channel list comes from.
+    #[must_use]
+    pub fn list_origin(&self) -> big_os_kit::url::ListOrigin {
+        match self {
+            IptvKind::M3uLocal { .. } => big_os_kit::url::ListOrigin::LocalFile,
+            IptvKind::M3uUrl { .. } | IptvKind::Xtream { .. } => {
+                big_os_kit::url::ListOrigin::Network
+            }
+        }
+    }
 }
 
 /// One configured IPTV source.
