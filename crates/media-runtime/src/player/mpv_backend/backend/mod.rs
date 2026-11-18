@@ -538,7 +538,6 @@ fn next_event(
             MpvEvent::EndFile(reason) => {
                 poll.seek_pending = false;
                 poll.last_eof = true;
-                debug!("[MPV-EVENT] EndFile reason={reason:?} (from mpv event queue)");
                 return Some(PlayerEvent::EndFile(reason));
             }
             MpvEvent::Shutdown => return Some(PlayerEvent::Shutdown),
@@ -591,11 +590,11 @@ fn poll_properties(
         poll.last_paused = Some(paused);
         events.push(PlayerEvent::PauseChanged(paused));
     }
-    if loading.load(Ordering::Relaxed) {
-        debug!("[MPV-POLL] skipping eof-reached check (loading=true)");
-    } else if let Ok(eof) = mpv.get_property::<bool>("eof-reached") {
+    // While a file loads, eof-reached still describes the previous one.
+    if !loading.load(Ordering::Relaxed)
+        && let Ok(eof) = mpv.get_property::<bool>("eof-reached")
+    {
         if eof && !poll.last_eof {
-            debug!("[MPV-POLL] eof-reached=true, sending synthetic EndFile(Eof)");
             events.push(PlayerEvent::EndFile(EndReason::Eof));
         }
         poll.last_eof = eof;

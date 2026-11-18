@@ -20,6 +20,7 @@ use std::sync::Arc;
 use adw::prelude::*;
 use relm4::{Component, ComponentParts, ComponentSender};
 
+use big_media_components::playback::cut_timeline::CutTimeline;
 use big_player_ui::cut_timeline::{install_cut_timeline_draw, wire_cut_timeline_interaction};
 
 use crate::i18n::i18n;
@@ -175,7 +176,7 @@ pub struct VideoControlsBar {
     seek_fraction: Rc<Cell<f64>>,
     /// Dedicated cut timeline (a fully-owned DrawingArea) shown IN PLACE of the
     /// GtkScale during trim mode, so the cut ranges align exactly with the bar.
-    cut_timeline: gtk::DrawingArea,
+    cut_timeline: CutTimeline,
     /// Swaps the GtkScale ↔ the cut timeline in the seek row.
     bar_stack: gtk::Stack,
     /// Revealer for the trim controls, an extra row above the transport (the
@@ -284,13 +285,9 @@ impl Component for VideoControlsBar {
         let cut_segments: Rc<RefCell<Vec<(u64, f64, f64)>>> = Rc::new(RefCell::new(Vec::new()));
         let pending_mark: Rc<RefCell<Option<f64>>> = Rc::new(RefCell::new(None));
         let seek_fraction = Rc::new(Cell::new(0.0_f64));
-        let cut_timeline = gtk::DrawingArea::builder()
-            .hexpand(true)
-            .height_request(20)
-            .build();
-        cut_timeline.update_property(&[gtk::accessible::Property::Label(&i18n("Cut timeline"))]);
+        let cut_timeline = CutTimeline::new(&i18n("Cut timeline"));
         install_cut_timeline_draw(
-            &cut_timeline,
+            cut_timeline.upcast_ref(),
             &cut_segments,
             &pending_mark,
             &seek_fraction,
@@ -299,7 +296,7 @@ impl Component for VideoControlsBar {
         let seek_sender = sender.clone();
         let segment_sender = sender.clone();
         wire_cut_timeline_interaction(
-            &cut_timeline,
+            cut_timeline.upcast_ref(),
             &cut_segments,
             &duration_secs,
             move |fraction| {
@@ -492,12 +489,15 @@ impl Component for VideoControlsBar {
                     .get()
                     .is_some_and(|at| at.elapsed() < USER_SEEK_HOLD);
                 // Unallocated (hidden) bars draw nothing: keep them current.
-                if user_seeking {
-                    self.cut_timeline.queue_draw();
-                } else if width == 0.0 || ((value - self.seek_bar.value()) * width).abs() >= 0.5 {
+                let moved = width == 0.0 || ((value - self.seek_bar.value()) * width).abs() >= 0.5;
+                if moved && !user_seeking {
                     self.suppress_seek.set(true);
                     self.seek_bar.set_value(value);
                     self.suppress_seek.set(false);
+                }
+                if moved || user_seeking {
+                    let duration = self.duration_secs.get();
+                    self.cut_timeline.set_position(value * duration, duration);
                     self.cut_timeline.queue_draw();
                 }
             }
@@ -505,6 +505,8 @@ impl Component for VideoControlsBar {
             VideoControlsBarInput::SetDurationSecs(secs) => {
                 self.duration_secs.set(secs);
                 self.render_chapter_marks();
+                self.cut_timeline
+                    .set_position(self.seek_fraction.get() * secs, secs);
                 self.cut_timeline.queue_draw();
             }
             VideoControlsBarInput::SetCutSegments(segments) => {

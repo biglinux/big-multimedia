@@ -5,7 +5,7 @@ use gtk::{gdk, gio, glib};
 
 use super::super::{BrowserState, chrome};
 use super::model::{build_filter, build_store, finish_view};
-use super::shared::set_accent;
+use super::shared::{attach_context_menu, attach_context_menu_keys, row_index, set_accent};
 use crate::media::playlist::{self, EntryKind, PlaylistEntry};
 use crate::media::thumbnail;
 use big_media_components::time::duration_hms as format_duration_hms;
@@ -55,6 +55,7 @@ pub(crate) fn build_queue_view(state: &Rc<BrowserState>, items: &[String]) -> gt
     });
 
     let list = gtk::ListView::new(Some(selection.clone()), Some(factory));
+    attach_context_menu_keys(state, &list);
     list.set_single_click_activate(true);
     // Alt+Up / Alt+Down move the focused row one place. Capture phase: the
     // list's own row keeps plain arrow keys, and took these too.
@@ -227,12 +228,13 @@ fn build_queue_row(state: &Rc<BrowserState>) -> gtk::Box {
     });
     row.append(&remove);
     wire_reorder(state, &row);
+    attach_context_menu(state, &row);
     row
 }
 
-/// The row's queue position, from its `q:{index}` widget name.
+/// The row's queue position, from its widget name.
 fn queue_index_of(row: &gtk::Box) -> Option<usize> {
-    row.widget_name().strip_prefix("q:")?.parse().ok()
+    row_index(&row.widget_name())
 }
 
 /// Drag the row onto another to put it there: above that row when dropped
@@ -276,11 +278,9 @@ fn wire_reorder(state: &Rc<BrowserState>, row: &gtk::Box) {
     row.add_controller(drop);
 }
 
-/// Resolve a queue row's path from its `q:{index}` widget name.
+/// Resolve a queue row's path from its widget name.
 fn queue_path_of(state: &Rc<BrowserState>, row: &gtk::Box) -> Option<String> {
-    let name = row.widget_name();
-    let idx = name.strip_prefix("q:")?.parse::<usize>().ok()?;
-    state.item_at(idx)
+    state.item_at(queue_index_of(row)?)
 }
 
 fn bind_queue_row(state: &Rc<BrowserState>, queue_cell: &gtk::ListItem, generation: u64) {
@@ -291,6 +291,7 @@ fn bind_queue_row(state: &Rc<BrowserState>, queue_cell: &gtk::ListItem, generati
     if entry.kind != EntryKind::Video {
         return;
     }
+    queue_cell.set_accessible_label(&entry.display_name);
     let Some(row) = queue_cell.child().and_downcast::<gtk::Box>() else {
         return;
     };
