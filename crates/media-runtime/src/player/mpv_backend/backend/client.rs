@@ -163,7 +163,8 @@ impl MpvClient {
         T::get(mpv_handle, name.as_c_str())
     }
 
-    pub fn observe_property(&self, name: &str) -> Result<()> {
+    /// Report changes of `name` as [`MpvEvent::PropertyChange`] carrying `group`.
+    pub fn observe_property(&self, name: &str, group: u64) -> Result<()> {
         let handle = self.mpv_handle()?;
         let name = CString::new(name)?;
         // SAFETY: the handle is live and name lives through this call. NONE
@@ -171,7 +172,7 @@ impl MpvClient {
         check_mpv(unsafe {
             mpv_sys::mpv_observe_property(
                 handle.as_ptr(),
-                0,
+                group,
                 name.as_ptr(),
                 mpv_sys::mpv_format_MPV_FORMAT_NONE,
             )
@@ -386,8 +387,9 @@ pub enum MpvEvent {
     FileLoaded,
     EndFile(u32),
     Shutdown,
-    /// Observed with `MPV_FORMAT_NONE`: the event names no value.
-    PropertyChange,
+    /// Observed with `MPV_FORMAT_NONE`: the event names no value, only the
+    /// group given to [`MpvClient::observe_property`].
+    PropertyChange(u64),
     CommandReply {
         id: u64,
         error: c_int,
@@ -438,7 +440,9 @@ fn map_event(event: &mpv_sys::mpv_event) -> Option<Result<MpvEvent>> {
         mpv_sys::mpv_event_id_MPV_EVENT_PLAYBACK_RESTART => Ok(MpvEvent::PlaybackRestart),
         mpv_sys::mpv_event_id_MPV_EVENT_END_FILE => Ok(map_end_file_event(event.data)),
         mpv_sys::mpv_event_id_MPV_EVENT_SHUTDOWN => Ok(MpvEvent::Shutdown),
-        mpv_sys::mpv_event_id_MPV_EVENT_PROPERTY_CHANGE => Ok(MpvEvent::PropertyChange),
+        mpv_sys::mpv_event_id_MPV_EVENT_PROPERTY_CHANGE => {
+            Ok(MpvEvent::PropertyChange(event.reply_userdata))
+        }
         _ => Ok(MpvEvent::Other),
     })
 }
