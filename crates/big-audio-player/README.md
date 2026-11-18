@@ -8,6 +8,20 @@ The player converts nothing itself. Trim & Export and Convert hand the track
 (and any marked cuts) to `big-audio-converter-gui` through
 `big_media_runtime::shared::converter_handoff`.
 
+## Features
+
+- **Library** of the music folders you choose, scanned in the background and
+  searchable as you type, grouped by song, album, artist or genre.
+- **Formats**: MP3, FLAC, OGG Vorbis, Opus, AAC, WAV and more.
+- **Playlists and queue**, with undo, import of M3U/PLS playlists and smart
+  playlists.
+- **Internet radio** with recording, and **podcasts** with subscriptions.
+- **Lyrics**, a tag editor and album art.
+- **Listening**: gapless playback, ReplayGain, an equalizer, playback speed
+  that keeps voices at their natural pitch, and a sleep timer.
+- **Desktop integration**: MPRIS for media keys and the desktop's player
+  controls, and playback on a TV.
+
 ## Command line
 
 ```sh

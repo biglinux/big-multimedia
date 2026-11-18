@@ -11,6 +11,26 @@ the file (and any marked cuts) to `big-video-converter-gui` or
 `big-audio-converter-gui` through
 `big_media_runtime::shared::converter_handoff`.
 
+## Features
+
+- **Hardware decoding** through VAAPI, VDPAU and NVDEC, on a GL render path
+  with a software fallback.
+- **Every common format**: MP4, MKV, WebM, MOV, AVI and anything else mpv
+  plays, plus DVD and Blu-ray discs, ISO images and folders.
+- **Subtitles** with a secondary track, delay control, styling, and loading of
+  external files.
+- **Picture and sound**: brightness, contrast and color, zoom, crop and
+  rotation, HDR tone mapping, an equalizer, and upscaling shaders (FSR, CAS,
+  RAVU and Anime4K).
+- **Streams and TV**: online video, IPTV playlists and Xtream providers, and
+  playback on a TV on the same network.
+- **Library at hand**: a folder browser and a play queue in a side panel,
+  thumbnail previews on the seek bar, and chapters.
+- **Cut and convert**: mark the parts to keep and hand them to Big Video
+  Converter, or extract the audio track.
+- **Desktop integration**: MPRIS for media keys and the desktop's player
+  controls, a sleep timer, screenshots, and configurable keyboard shortcuts.
+
 ## Command line
 
 ```sh
