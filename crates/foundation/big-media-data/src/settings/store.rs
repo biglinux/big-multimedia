@@ -232,36 +232,17 @@ impl Settings {
     }
 
     #[must_use]
-    pub fn boolean_or(&self, key: &str, default: bool) -> bool {
-        self.debug_check_key(key);
-        let inner = self
-            .inner
-            .read()
-            .unwrap_or_else(std::sync::PoisonError::into_inner);
-        match inner.settings_values.get(key) {
-            Some(value) => value == "true",
-            None => default,
-        }
-    }
-
-    #[must_use]
     pub fn int(&self, key: &str) -> i32 {
-        self.int_or(key, 0)
-    }
-
-    /// Unlike [`Self::int`], keeps zero distinguishable from "never stored",
-    /// which matters for volume-like settings where 0 is a real user choice.
-    #[must_use]
-    pub fn int_or(&self, key: &str, default: i32) -> i32 {
         self.debug_check_key(key);
         let inner = self
             .inner
             .read()
             .unwrap_or_else(std::sync::PoisonError::into_inner);
-        match inner.settings_values.get(key) {
-            Some(value) => value.parse().unwrap_or(default),
-            None => default,
-        }
+        inner
+            .settings_values
+            .get(key)
+            .and_then(|value| value.parse().ok())
+            .unwrap_or(0)
     }
 
     #[must_use]
@@ -321,11 +302,6 @@ impl Settings {
         self.boolean(key.0)
     }
 
-    #[must_use]
-    pub fn get_bool_or(&self, key: keys::BoolKey, default: bool) -> bool {
-        self.boolean_or(key.0, default)
-    }
-
     /// The voice sensitivity when the noise reduction keeps only speech.
     #[must_use]
     pub fn noise_voice_only(&self) -> Option<u8> {
@@ -338,11 +314,11 @@ impl Settings {
     pub const VOLUME_MAX_PERCENT_RANGE: std::ops::RangeInclusive<i32> = 100..=200;
 
     /// The volume ceiling in percent: the Maximum Volume preference kept within
-    /// [`Self::VOLUME_MAX_PERCENT_RANGE`], 150 when never stored.
+    /// [`Self::VOLUME_MAX_PERCENT_RANGE`].
     #[must_use]
     pub fn volume_max_percent(&self) -> i32 {
         let range = Self::VOLUME_MAX_PERCENT_RANGE;
-        self.get_int_or(keys::VOLUME_MAX, 150)
+        self.get_int(keys::VOLUME_MAX)
             .clamp(*range.start(), *range.end())
     }
 
@@ -351,7 +327,7 @@ impl Settings {
     #[must_use]
     pub fn audio_volume_percent(&self) -> f64 {
         f64::from(
-            self.get_int_or(keys::AUDIO_VOLUME, 100)
+            self.get_int(keys::AUDIO_VOLUME)
                 .clamp(0, self.volume_max_percent()),
         )
     }
@@ -377,11 +353,6 @@ impl Settings {
     #[must_use]
     pub fn get_int(&self, key: keys::IntKey) -> i32 {
         self.int(key.0)
-    }
-
-    #[must_use]
-    pub fn get_int_or(&self, key: keys::IntKey, default: i32) -> i32 {
-        self.int_or(key.0, default)
     }
 
     #[must_use]

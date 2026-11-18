@@ -136,7 +136,7 @@ pub(super) fn create_music_page(
     let taskbar_row = adw::SwitchRow::builder()
         .title(i18n("Progress on the Taskbar"))
         .subtitle(i18n("Shows how far the song has played on the player icon"))
-        .active(settings.get_bool_or(keys::TASKBAR_PROGRESS, true))
+        .active(settings.get_bool(keys::TASKBAR_PROGRESS))
         .build();
     {
         let s = settings.clone();
@@ -154,7 +154,7 @@ pub(super) fn create_music_page(
         .subtitle(i18n(
             "A one-color icon that follows the panel theme, with playback controls",
         ))
-        .active(settings.get_bool_or(keys::TRAY_ICON, false))
+        .active(settings.get_bool(keys::TRAY_ICON))
         .build();
     {
         let s = settings.clone();

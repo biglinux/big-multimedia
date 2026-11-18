@@ -284,6 +284,6 @@ pub(super) fn build_mpris_service(
         crate::config::audio::APP_ID,
         command_cb,
         state_cb,
-        settings.get_bool_or(keys::TASKBAR_PROGRESS, true),
+        settings.get_bool(keys::TASKBAR_PROGRESS),
     )
 }
