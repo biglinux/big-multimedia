@@ -1,5 +1,5 @@
 use super::engine::build_mpv_backend;
-use super::input::set_shell_input;
+use super::input::SHELL_INPUT;
 use super::mpris::build_mpris_service;
 use super::playback::transport_labels;
 use super::*;
@@ -497,9 +497,13 @@ impl Component for AudioShell {
         let mpris = build_mpris_service(&sender, &mpris_state, &settings);
         let tray = super::tray::build_tray(&sender, settings.get_bool_or(keys::TRAY_ICON, false));
 
-        // Publish the shell input so the application `open` handler can deliver
-        // files opened from the desktop / CLI.
-        set_shell_input(sender.input_sender().clone());
+        // Files opened from the desktop, the command line or a host reach this
+        // shell while its content is realized.
+        let shell_input = crate::shared::app_base::ShellInputSlot::bind(
+            &SHELL_INPUT,
+            &root,
+            sender.input_sender().clone(),
+        );
 
         // Sync the grouping dropdown to the restored preset (no re-emit); the
         // tree is built once the database opens.
@@ -561,6 +565,7 @@ impl Component for AudioShell {
                 trim_play_selection: false,
                 mpv,
                 shutdown_handler,
+                _shell_input: shell_input,
                 db: None,
                 db_read: None,
                 settings,
@@ -674,6 +679,10 @@ mod lifetime_tests {
         assert!(
             source.is_destroyed(),
             "closed audio component kept its countdown source"
+        );
+        assert!(
+            SHELL_INPUT.with(|slot| slot.sender().is_none()),
+            "closed audio component still receives opened files"
         );
         assert_eq!(
             Arc::weak_count(&backend),

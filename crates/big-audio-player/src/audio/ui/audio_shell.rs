@@ -181,6 +181,7 @@ pub struct AudioShell {
     /// if the engine failed to initialize.
     mpv: Option<Arc<MpvBackend>>,
     shutdown_handler: Option<(glib::WeakRef<gio::Application>, glib::SignalHandlerId)>,
+    _shell_input: crate::shared::app_base::ShellInputRegistration<relm4::Sender<AudioShellInput>>,
     /// Writer DB handle (queue persistence, ratings, playlists, deletes); read
     /// through [`Self::writer`], which explains its absence.
     db: Option<DbHandle>,

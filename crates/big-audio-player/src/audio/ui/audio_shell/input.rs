@@ -1,4 +1,5 @@
 use super::*;
+use crate::shared::app_base::ShellInputSlot;
 
 /// Messages into the shell. Almost all are child-panel `Output`s forwarded by
 /// the Controllers' `forward` maps.
@@ -224,26 +225,16 @@ pub enum AudioShellInput {
 }
 
 thread_local! {
-    /// Main-thread handle to the running shell's input, set at init so the
-    /// `AudioApplication` `open` handler can deliver opened files. The inputs
-    /// carry GTK objects (not `Send`), so a thread-local `Sender` is used
+    /// The inputs carry GTK objects (not `Send`), so the slot is thread-local
     /// instead of a `MessageBroker` static.
-    static SHELL_INPUT: std::cell::RefCell<Option<relm4::Sender<AudioShellInput>>> =
-        const { std::cell::RefCell::new(None) };
+    pub(super) static SHELL_INPUT: ShellInputSlot<relm4::Sender<AudioShellInput>> =
+        const { ShellInputSlot::new() };
 }
 
-pub(super) fn set_shell_input(sender: relm4::Sender<AudioShellInput>) {
-    SHELL_INPUT.with(|cell| {
-        *cell.borrow_mut() = Some(sender);
-    });
-}
-
-/// Deliver a message to the running shell from the main thread (used by the
-/// application `open` handler). No-op if the shell is not running yet.
+/// Deliver a message to the open shell from the main thread (used by the
+/// application `open` handler). No-op when no shell is open.
 pub fn send_to_shell(message: AudioShellInput) {
-    SHELL_INPUT.with(|cell| {
-        if let Some(sender) = cell.borrow().as_ref() {
-            let _ = sender.send(message);
-        }
-    });
+    if let Some(sender) = SHELL_INPUT.with(ShellInputSlot::sender) {
+        let _ = sender.send(message);
+    }
 }
