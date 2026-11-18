@@ -75,6 +75,8 @@ profile @APP@ @{exec_path} flags=(complain) {
   dbus receive bus=session interface=org.freedesktop.portal.Settings member=SettingChanged,
   dbus send bus=session path=/org/freedesktop/portal/desktop interface=org.freedesktop.portal.Inhibit member=Inhibit,
   dbus send bus=session path=/org/freedesktop/portal/desktop interface=org.freedesktop.portal.OpenURI member=OpenDirectory,
+  # GTK's file dialogs go through the portal's chooser, where the person picks.
+  dbus send bus=session path=/org/freedesktop/portal/desktop interface=org.freedesktop.portal.FileChooser member={OpenFile,SaveFile},
   dbus send bus=session interface=org.freedesktop.portal.Request member=Close,
   dbus send bus=session path=/org/freedesktop/portal/desktop interface=org.freedesktop.DBus.Properties member=Get,
   dbus receive bus=session interface=org.freedesktop.portal.Request member=Response,
