@@ -9,6 +9,7 @@ use big_app_kit::desktop::install_quit_action;
 use gtk::{gio, glib};
 
 use crate::config;
+use crate::i18n::i18n;
 use crate::settings::keys;
 
 mod imp {
@@ -119,7 +120,7 @@ impl Application {
             glib::Char::from(0),
             glib::OptionFlags::NONE,
             glib::OptionArg::None,
-            "Open a separate player window instead of using the running one",
+            &i18n("Open a separate player window instead of using the running one"),
             None,
         );
         app
