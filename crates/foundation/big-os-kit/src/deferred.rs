@@ -333,7 +333,7 @@ mod tests {
         std::fs::remove_dir_all(p.parent().unwrap()).unwrap();
     }
     #[test]
-    fn load_blocks_a_refused_file_and_starts_a_missing_one() {
+    fn load_blocks_refused_files() {
         let decode = |bytes: &[u8]| (bytes != b"corrupt").then(|| bytes.to_vec());
         let p = path("prefs.json");
         let (missing, doc) = Document::load(p.clone(), decode);

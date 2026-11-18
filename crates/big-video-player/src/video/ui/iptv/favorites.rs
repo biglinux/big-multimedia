@@ -170,7 +170,7 @@ mod tests {
     }
 
     #[test]
-    fn more_favorites_than_the_cap_are_never_written() {
+    fn oversized_favorites_are_never_written() {
         let dir = tempfile::tempdir().unwrap();
         let path = dir.path().join("iptv-favorites.json");
         let mut f = IptvFavorites::load_from(path.clone());

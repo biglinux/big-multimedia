@@ -59,19 +59,8 @@ pub struct AudioEmbed {
     pub controller: relm4::Controller<audio::ui::audio_shell::AudioShell>,
 }
 
-/// Open the audio-player shell as a window of the host's running
-/// application (multicall hosts: big-host). Performs the app-specific boot
-/// exactly once (the shared media gettext domain, component translator, favicon
-/// cache namespace, GResource bundles) and launches a detached
-/// [`audio::ui::audio_shell::AudioShell`]. The host keeps the returned
-/// controller alive for as long as the module is open; dropping it shuts the
-/// component tree down. The caller owns process-wide concerns ([`run`] steps
-/// this skips), set before its threads start: logging, allocator tuning,
-/// [`shared::app_base::init_process_locale`], without which mpv does not start,
-/// and the `gtk::Application` itself.
 /// App-specific boot done exactly once for the embed/pane paths (gettext shared
 /// media domain, component translator, favicon namespace, GResource bundles).
-/// The standalone [`run`] does these inline.
 fn embed_boot() {
     EMBED_BOOT.call_once(|| {
         shared::app_base::boot_player(&[
@@ -83,6 +72,14 @@ fn embed_boot() {
     });
 }
 
+/// Open the audio-player shell as a window of the host's running application
+/// (multicall hosts: big-host); the host keeps the returned controller alive
+/// while the module is open.
+///
+/// The host owns process-wide setup ([`run`] steps this skips), done before its
+/// threads start: logging, allocator tuning,
+/// [`shared::app_base::init_process_locale`], without which mpv does not start,
+/// and the `gtk::Application`.
 pub fn open_in_application() -> AudioEmbed {
     use gtk::prelude::*;
     use relm4::{Component, ComponentController};
