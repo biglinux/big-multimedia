@@ -4669,7 +4669,7 @@ msgid ""
 "headphones are connected, or choose another Audio Output in Preferences and "
 "reopen the player."
 msgstr ""
-"Ses, ses çıkışında başlatılamadı. Hoparlörlerinizin veya kulaklığınızın "
+"Ses çıkışından ses verilemedi. Hoparlörlerinizin veya kulaklığınızın "
 "bağlı olduğunu denetleyin ya da Tercihler'de başka bir Ses çıkışı seçip "
 "oynatıcıyı yeniden açın."
 
@@ -5306,7 +5306,7 @@ msgstr "{station} kaydını durdur"
 #: crates/ui/media/big-player-ui/src/radio_panel/widgets.rs:121
 #, rust-format
 msgid "Record {station}"
-msgstr "{station} istasyonunu kaydet"
+msgstr "{station} yayınını kaydet"
 
 #: crates/ui/media/big-player-ui/src/radio_panel/widgets.rs:196
 msgid "Search radios..."

@@ -4115,7 +4115,7 @@ msgid ""
 "kept. Video Output, Audio Output and the custom mpv options take effect "
 "after reopening the player."
 msgstr ""
-"設定と外観がデフォルトに戻ります。ライブラリフォルダー、キーボードショート"
+"設定と外観が既定値に戻ります。ライブラリフォルダー、キーボードショート"
 "カット、音量、シャッフル、音声とイコライザーのレベルは保持されます。ビデオ出"
 "力、オーディオ出力、カスタム mpv オプションは、プレーヤーを開き直した後に反映"
 "されます。"
@@ -5241,7 +5241,7 @@ msgstr "すでに登録済みです"
 
 #: crates/ui/media/big-player-ui/src/podcast_panel.rs:341
 msgid "Podcast subscriptions are still loading"
-msgstr "ポッドキャストの登録を読み込んでいます"
+msgstr "ポッドキャストの登録をまだ読み込み中です"
 
 #: crates/ui/media/big-player-ui/src/podcast_panel.rs:378
 msgid "Subscriptions"
@@ -5319,7 +5319,7 @@ msgstr "{station} をマイステーションに追加"
 #: crates/ui/media/big-player-ui/src/radio_panel/widgets.rs:99
 #, rust-format
 msgid "{station} is in my stations"
-msgstr "{station} はマイステーションにあります"
+msgstr "{station} はマイステーションに追加済み"
 
 #: crates/ui/media/big-player-ui/src/radio_panel/widgets.rs:115
 #, rust-format
