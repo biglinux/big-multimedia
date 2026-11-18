@@ -189,10 +189,6 @@ impl AudioShell {
                 }
                 self.current_file.clone_from(&url);
                 // A stream is not a queue/library track; clear those indicators.
-                self.library.emit(LibraryPanelInput::SetPlayingPath {
-                    path: None,
-                    playback: PlaybackStatus::Stopped,
-                });
                 self.playlist.emit(PlaylistPanelInput::SetPlaying {
                     idx: None,
                     playback: PlaybackStatus::Stopped,

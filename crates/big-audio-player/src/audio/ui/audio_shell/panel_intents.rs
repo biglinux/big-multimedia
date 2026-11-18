@@ -41,21 +41,6 @@ impl AudioShell {
                 self.play_if_idle();
                 self.commit_queue();
             }
-            LibraryPanelOutput::EnqueueNext(track) => {
-                self.snapshot_queue();
-                self.queue.add_next(track);
-                self.play_if_idle();
-                self.commit_queue();
-            }
-            LibraryPanelOutput::PlayAllFrom { tracks, index } => {
-                self.cancel_pending_opens();
-                self.snapshot_queue();
-                self.queue.set_tracks(tracks);
-                self.queue.jump_to(index);
-                self.play_current();
-                self.commit_queue();
-            }
-            LibraryPanelOutput::RateTrack { id, rating } => self.persist_rating(id, rating),
             LibraryPanelOutput::RevealInFileManager(path) => {
                 big_app_kit::desktop::reveal_in_file_manager(Path::new(&path));
             }
@@ -68,9 +53,6 @@ impl AudioShell {
             } => self.add_track_to_playlist(track_id, playlist_id, sender),
             LibraryPanelOutput::CreatePlaylistWithTrack { name, track_id } => {
                 self.create_playlist_with_track(name, track_id, sender);
-            }
-            LibraryPanelOutput::SaveTracksAsPlaylist { name, track_ids } => {
-                self.save_tracks_as_playlist_db(name, track_ids, sender);
             }
             LibraryPanelOutput::AddWatchFolder { path } => {
                 match path.to_str() {
@@ -93,16 +75,11 @@ impl AudioShell {
             }
             LibraryPanelOutput::ScanNow => self.scan_all_watch_folders(sender),
             LibraryPanelOutput::RemoveWatchFolder { id } => self.remove_watch_folder(id, sender),
-            LibraryPanelOutput::ShowTrackInfo(track) => self.show_track_metadata_dialog(&track),
-            LibraryPanelOutput::Notify(message) => self.notify(&message),
             LibraryPanelOutput::WriteTags {
                 track_id,
                 file_path,
                 fields,
             } => self.write_tags(track_id, file_path, fields, sender),
-            LibraryPanelOutput::PersistColumnWidths(spec) => {
-                self.settings.put_string(keys::LIBRARY_COLUMN_WIDTHS, &spec);
-            }
             LibraryPanelOutput::ImportPlaylistFile { path } => {
                 let input = sender.input_sender().clone();
                 spawn_blocking_result(

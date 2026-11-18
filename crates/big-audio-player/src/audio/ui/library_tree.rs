@@ -8,10 +8,9 @@
 //! children (never a DB hit on expand; atomic preload is the generation guard).
 //!
 //! Row activation emits `LibraryPanelOutput::NodeSelected`; the shell resolves
-//! the node into tracks and pushes them back via `PopulateDetail`. Letter
-//! dividers are inserted when a group level has more than ten real entries
-//! (`model::group_divider_letter`). Per-row
-//! gestures are recycled-safe (signal id stashed on bind, disconnected on
+//! the node into tracks and queues them. Letter dividers are inserted when a
+//! group level has more than ten real entries (`model::group_divider_letter`).
+//! Per-row gestures are recycled-safe (signal id stashed on bind, disconnected on
 //! unbind); the tree data changes via `splice`, never a full view rebuild.
 
 #[cfg(test)]
