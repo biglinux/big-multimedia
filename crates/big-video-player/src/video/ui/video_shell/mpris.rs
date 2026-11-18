@@ -114,7 +114,7 @@ impl VideoShell {
             PlayerEvent::RateChanged(rate) => state.rate = *rate,
             PlayerEvent::Seeked(position) => {
                 state.position_secs = finite(*position);
-                mpris.emit_seeked((state.position_secs * 1_000_000.0).round() as i64);
+                mpris.emit_seeked(state.position_secs);
             }
             // Between playlist entries the next `FileLoaded` restores the track.
             // Past the last entry (or after Stop) mpv sits idle with nothing to

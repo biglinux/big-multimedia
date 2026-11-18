@@ -221,8 +221,9 @@ impl Mpris {
         }
     }
 
-    /// Emit the seeked signal on the active D-Bus connection.
-    pub fn emit_seeked(&self, position_us: i64) {
+    /// Emit the seeked signal on the active D-Bus connection, for a position in seconds.
+    pub fn emit_seeked(&self, position_secs: f64) {
+        let position_us = super::types::micros(position_secs);
         let Some(exported) = self.exported.get() else {
             return;
         };

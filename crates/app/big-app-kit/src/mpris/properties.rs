@@ -209,6 +209,15 @@ pub(super) fn set_player_property(
 #[cfg(test)]
 mod tests {
     use super::*;
+    /// Oracle: MPRIS positions are non-negative microseconds in an i64.
+    #[test]
+    fn seconds_become_whole_microseconds() {
+        assert_eq!(micros(1.5), 1_500_000);
+        assert_eq!(micros(0.000_000_6), 1);
+        assert_eq!(micros(-3.0), 0);
+        assert_eq!(micros(f64::NAN), 0);
+        assert_eq!(micros(f64::MAX), i64::MAX);
+    }
     #[test]
     fn stale_set_position_is_ignored() {
         let state = PlayerState {
