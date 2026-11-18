@@ -10,8 +10,9 @@
 use std::cell::RefCell;
 use std::collections::hash_map::DefaultHasher;
 use std::hash::{Hash, Hasher};
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::rc::Rc;
+use std::sync::atomic::{AtomicU64, Ordering};
 
 use adw::prelude::*;
 use big_app_kit::subprocess::{BigSubprocessOutputMode, BigSubprocessSpec};
@@ -20,6 +21,9 @@ use gtk::{gdk, gdk_pixbuf, gio, glib};
 
 use super::BrowserState;
 use crate::media::playlist;
+
+/// Keeps partial frame names unique when two workers render the same clip.
+static PARTIAL_SEQ: AtomicU64 = AtomicU64::new(0);
 
 /// Number of frames sampled across a clip.
 const SCRUB_FRAME_COUNT: usize = 8;
@@ -192,6 +196,7 @@ fn ensure_frames(path: &str) -> Vec<PathBuf> {
     };
     let clip_directory = root.join(format!("{:016x}", clip_key(path)));
     let _ = std::fs::create_dir_all(&clip_directory);
+    big_os_kit::storage::remove_stale_staging(&clip_directory);
 
     let duration = playlist::probe_metadata_cached(path)
         .and_then(|m| m.duration_secs)
@@ -201,15 +206,19 @@ fn ensure_frames(path: &str) -> Vec<PathBuf> {
     let mut frames = Vec::with_capacity(SCRUB_FRAME_COUNT);
     for frame_index in 0..SCRUB_FRAME_COUNT {
         let frame = clip_directory.join(format!("{frame_index}.jpg"));
-        // ffmpeg writes to a side name that is renamed into place only when
-        // complete, so a killed run can't leave a broken frame cached forever.
+        // ffmpeg writes to a side name that is renamed into place only after a
+        // clean exit, so a killed run can't leave a broken frame cached forever.
         if !frame.metadata().is_ok_and(|m| m.len() > 0) {
             let time = sample_time_secs(frame_index, duration);
-            let partial = clip_directory.join(format!("{frame_index}.part.jpg"));
+            let partial = clip_directory.join(format!(
+                "{}{frame_index}-{}.jpg",
+                big_os_kit::storage::staging_prefix(),
+                PARTIAL_SEQ.fetch_add(1, Ordering::Relaxed)
+            ));
             let Some(output_path) = partial.to_str() else {
                 continue;
             };
-            let _ = BigSubprocessSpec::builder()
+            let rendered = BigSubprocessSpec::builder()
                 .program("ffmpeg")
                 .args([
                     "-ss",
@@ -234,17 +243,24 @@ fn ensure_frames(path: &str) -> Vec<PathBuf> {
                 .stderr(BigSubprocessOutputMode::Null)
                 .build()
                 .run();
-            if partial.metadata().is_ok_and(|m| m.len() > 0) {
-                let _ = std::fs::rename(&partial, &frame);
-            } else {
-                let _ = std::fs::remove_file(&partial);
-            }
+            publish_frame(
+                rendered.is_ok_and(|output| output.status.success()),
+                &partial,
+                &frame,
+            );
         }
         if frame.exists() {
             frames.push(frame);
         }
     }
     frames
+}
+
+fn publish_frame(rendered: bool, partial: &Path, frame: &Path) {
+    let whole = rendered && partial.metadata().is_ok_and(|m| m.len() > 0);
+    if !whole || std::fs::rename(partial, frame).is_err() {
+        let _ = std::fs::remove_file(partial);
+    }
 }
 
 /// Sample time (seconds) for frame `i` of [`SCRUB_FRAME_COUNT`]: the center of each equal
@@ -260,6 +276,21 @@ fn sample_time_secs(frame_index: usize, duration: f64) -> f64 {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    /// A run that failed or timed out may have written part of the JPEG; only
+    /// a clean exit caches the frame.
+    #[test]
+    fn frame_cached_only_after_success() {
+        let dir = tempfile::tempdir().unwrap();
+        let (partial, frame) = (dir.path().join("partial.jpg"), dir.path().join("0.jpg"));
+        std::fs::write(&partial, b"truncated").unwrap();
+        publish_frame(false, &partial, &frame);
+        assert!(!frame.exists());
+        assert!(!partial.exists());
+        std::fs::write(&partial, b"whole").unwrap();
+        publish_frame(true, &partial, &frame);
+        assert_eq!(std::fs::read(&frame).unwrap(), b"whole");
+    }
 
     #[test]
     fn parse_card_index_accepts_prefixed_number_only() {
