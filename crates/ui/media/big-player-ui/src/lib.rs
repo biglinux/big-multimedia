@@ -11,6 +11,7 @@
 //!   types.
 //! - `audio_trim_bar`: shared visual audio trim bar used by player transports.
 //! - `browser_node`: `BrowserNode` GObject node type for the file/library browser tree.
+//! - [`cut_edit_dialog`]: the Edit Cut dialog both trim modes open from a cut chip.
 //! - [`cut_list`]: the cuts both trim modes mark, and "Play only marked cuts" stepping.
 //! - [`cut_timeline`]: shared cut timeline drawing and pointer interaction.
 //! - `download`: generic HTTP download-manager backend (worker + per-task
@@ -39,6 +40,7 @@ pub mod audio_preferences;
 pub mod audio_trim_bar;
 #[cfg(feature = "audio-panels")]
 pub mod browser_node;
+pub mod cut_edit_dialog;
 pub mod cut_list;
 pub mod cut_timeline;
 #[cfg(feature = "audio-panels")]
