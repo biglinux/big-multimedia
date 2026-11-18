@@ -21,10 +21,11 @@ use big_app_kit::mpris::PlaybackStatus;
 use big_relm4_components::layout::toolbar_pane::{BigToolbarPane, BigToolbarPaneSpec};
 
 use crate::audio::ui::track_list::{Behaviour, Columns, ListEvent, TrackList, track_of};
-use crate::audio::ui::{playlist_chrome, playlist_interactions};
+use crate::audio::ui::{
+    playlist_chrome, playlist_interactions, track_count_duration_text, track_count_text,
+};
 use crate::db::models::Track;
-use crate::i18n::{i18n, ni18n};
-use big_media_components::time::duration_hm as format_duration_hm;
+use crate::i18n::i18n;
 
 fn playlist_track_objects(tracks: &[Track]) -> Vec<glib::Object> {
     tracks
@@ -97,16 +98,9 @@ fn playlist_header_label(track_count: u32, total_secs: f64, playlist_name: &str)
             playlist_name.to_string()
         }
     } else if total_secs >= 1.0 {
-        ni18n(
-            "{count} track · {duration}",
-            "{count} tracks · {duration}",
-            u64::from(track_count),
-        )
-        .replace("{count}", &track_count.to_string())
-        .replace("{duration}", &format_duration_hm(total_secs))
+        track_count_duration_text(u64::from(track_count), total_secs)
     } else {
-        ni18n("{count} track", "{count} tracks", u64::from(track_count))
-            .replace("{count}", &track_count.to_string())
+        track_count_text(u64::from(track_count))
     }
 }
 

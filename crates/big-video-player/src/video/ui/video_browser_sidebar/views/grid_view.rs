@@ -5,7 +5,9 @@ use gtk::{gdk, gio, glib};
 
 use super::super::BrowserState;
 use super::model::{build_filter, build_store, finish_view};
-use super::shared::{attach_context_menu, attach_context_menu_keys, centered_icon, set_accent};
+use super::shared::{
+    attach_context_menu, attach_context_menu_keys, centered_icon, set_accent, show_selected,
+};
 use crate::media::playlist::{self, EntryKind, PlaylistEntry};
 use crate::media::thumbnail;
 use big_media_components::time::duration_hms as format_duration_hms;
@@ -252,8 +254,7 @@ fn bind_folder_card(w: &CardWidgets, entry: &PlaylistEntry, icon: &str) {
     w.name.set_label(&entry.display_name);
     w.name.remove_css_class("accent");
     w.card.remove_css_class("playlist-card-active");
-    w.card.remove_css_class("selected");
-    w.card.reset_state(gtk::AccessibleState::Selected);
+    show_selected(&w.card, false, false);
     w.card.set_widget_name(&format!("folder:{}", entry.path));
     w.card
         .update_property(&[gtk::accessible::Property::Label(&entry.display_name)]);
@@ -285,27 +286,15 @@ fn bind_video_card(
     w.name.set_label(&entry.display_name);
 
     // Triage select indicator (Files select mode only).
-    if state.select_mode.get() {
-        let selected = state.is_selected(&entry.path);
-        w.select_check.set_icon_name(Some(if selected {
-            "checkbox-checked-symbolic"
-        } else {
-            "checkbox-symbolic"
-        }));
-        w.select_check.set_visible(true);
-        if selected {
-            w.card.add_css_class("selected");
-        } else {
-            w.card.remove_css_class("selected");
-        }
-        // The check icon and CSS class are visual only; screen readers need the state.
-        w.card
-            .update_state(&[gtk::accessible::State::Selected(Some(selected))]);
+    let selecting = state.select_mode.get();
+    let selected = selecting && state.is_selected(&entry.path);
+    w.select_check.set_icon_name(Some(if selected {
+        "checkbox-checked-symbolic"
     } else {
-        w.select_check.set_visible(false);
-        w.card.remove_css_class("selected");
-        w.card.reset_state(gtk::AccessibleState::Selected);
-    }
+        "checkbox-symbolic"
+    }));
+    w.select_check.set_visible(selecting);
+    show_selected(&w.card, selecting, selected);
 
     let token = format!("video:{}", entry.index);
     w.card.set_widget_name(&token);

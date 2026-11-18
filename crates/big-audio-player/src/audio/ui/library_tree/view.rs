@@ -22,6 +22,7 @@ use crate::db::models::Track;
 use crate::i18n::i18n;
 
 use super::super::library_panel::{LibraryPanel, LibraryPanelInput, LibraryPanelOutput};
+use super::super::track_count_text;
 use super::interaction::{
     LibraryTreeContextTarget, library_panel_node_selected_output, library_tree_context_target,
     library_tree_selection, selected_leaf_drag_paths,
@@ -158,12 +159,9 @@ impl ItemPresenter for TreePresenter {
                 (None, None) => (themed(), IconFrame::Small),
             };
             if let Some(count) = row.track_count_label {
-                let unit = if node.track_count() == 1 {
-                    i18n("track")
-                } else {
-                    i18n("tracks")
-                };
-                said.push(format!("{count} {unit}"));
+                said.push(track_count_text(u64::from(
+                    node.track_count().unsigned_abs(),
+                )));
                 out.cells = vec![count];
             }
         }

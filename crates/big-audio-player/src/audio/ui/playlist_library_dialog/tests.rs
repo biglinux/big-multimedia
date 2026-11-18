@@ -7,7 +7,7 @@ use super::spec::{
     SavedPlaylistListState, SavedPlaylistRowSpec, delete_playlist_prompt_spec,
     empty_playlist_state_spec, generator_action_specs, import_export_action_specs,
     localized_delete_playlist_description, localized_saved_playlist_subtitle,
-    playlist_library_window_spec, rename_playlist_prompt_spec, save_current_queue_prompt_spec,
+    playlist_library_window_spec, rename_playlist_prompt_spec, save_queue_prompt_spec,
     saved_playlist_list_state, saved_playlist_row_spec,
 };
 
@@ -119,9 +119,9 @@ fn saved_row_formats_counts_and_minutes() {
 #[test]
 fn name_prompts_keep_their_copy() {
     assert_eq!(
-        save_current_queue_prompt_spec(),
+        save_queue_prompt_spec(),
         BigNamePromptSpec {
-            title: "Save Current Queue".into(),
+            title: "Save Queue as Playlist".into(),
             description: Some("Name for the new playlist".into()),
             entry_title: "Playlist name".into(),
             prefill: String::new(),
