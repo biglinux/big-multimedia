@@ -39,6 +39,8 @@ pub enum BrowserNodeKind {
     Divider = 10,
     /// The "Various Artists" compilation grouping.
     VariousArtists = 11,
+    /// An audio-format grouping (MP3, FLAC, …).
+    Format = 12,
 }
 
 mod imp {
@@ -147,6 +149,18 @@ impl BrowserNode {
             BrowserNodeKind::Genre,
             name,
             "audio-x-generic-symbolic",
+            name,
+            "",
+            count,
+        )
+    }
+
+    /// Audio-format node; `key` is the format name.
+    pub fn format(name: &str, count: i32) -> Self {
+        Self::with_fields(
+            BrowserNodeKind::Format,
+            name,
+            "document-properties-symbolic",
             name,
             "",
             count,

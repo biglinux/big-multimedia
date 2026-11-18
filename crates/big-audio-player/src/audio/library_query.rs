@@ -26,6 +26,7 @@ pub(crate) fn kind_from_u32(value: u32) -> BrowserNodeKind {
         9 => BrowserNodeKind::File,
         10 => BrowserNodeKind::Divider,
         11 => BrowserNodeKind::VariousArtists,
+        12 => BrowserNodeKind::Format,
         _ => BrowserNodeKind::All,
     }
 }
@@ -64,6 +65,7 @@ pub(crate) fn query_tracks_for_node(
         | BrowserNodeKind::Album
         | BrowserNodeKind::Genre
         | BrowserNodeKind::Year
+        | BrowserNodeKind::Format
         | BrowserNodeKind::Playlist
         | BrowserNodeKind::SmartPlaylist => {
             let column = match node_kind {
@@ -76,6 +78,7 @@ pub(crate) fn query_tracks_for_node(
                 BrowserNodeKind::Album => "album",
                 BrowserNodeKind::Genre => "genre",
                 BrowserNodeKind::Year => "year",
+                BrowserNodeKind::Format => "format",
                 _ => "artist",
             };
             let mut filters = vec![(column, node_key)];
@@ -247,19 +250,13 @@ fn group_nodes(
                 };
                 group_nodes(grouping, next_idx, &members, &filters)
             };
-            // A format group is a `File` node, whose secondary is shown.
-            let secondary = if kind == BrowserNodeKind::File {
-                String::new()
-            } else {
-                parent_filters.to_owned()
-            };
             LibraryTreeNode {
                 kind,
                 count: members.len() as i32,
                 children,
                 label: value.clone(),
                 key: value,
-                secondary,
+                secondary: parent_filters.to_owned(),
                 track: None,
             }
         })
@@ -390,12 +387,13 @@ mod tests {
             (9, BrowserNodeKind::File),
             (10, BrowserNodeKind::Divider),
             (11, BrowserNodeKind::VariousArtists),
+            (12, BrowserNodeKind::Format),
         ];
         for (value, expected) in cases {
             assert_eq!(kind_from_u32(value), expected, "value {value}");
         }
         // Out-of-range discriminants fall back to `All`.
-        assert_eq!(kind_from_u32(12), BrowserNodeKind::All);
+        assert_eq!(kind_from_u32(13), BrowserNodeKind::All);
         assert_eq!(kind_from_u32(u32::MAX), BrowserNodeKind::All);
     }
 
@@ -565,17 +563,24 @@ mod tests {
     #[test]
     fn group_tracks_stay_under_parents() -> MediaResult<()> {
         let conn = setup_db()?;
-        for (path, artist, genre) in [
-            ("/a1", "Alice", "Rock"),
-            ("/a2", "Alice", "Pop"),
-            ("/b1", "Bob", "Rock"),
+        for (path, artist, genre, format) in [
+            ("/a1", "Alice", "Rock", "MP3"),
+            ("/a2", "Alice", "Pop", "FLAC"),
+            ("/b1", "Bob", "Rock", "MP3"),
         ] {
-            insert_track(&conn, &track(path, artist, artist, "Hits", genre, 2000))?;
+            let mut track = track(path, artist, artist, "Hits", genre, 2000);
+            track.format = Some(format.into());
+            insert_track(&conn, &track)?;
         }
         let artist_album = [GroupBy::Artist, GroupBy::Album, GroupBy::None];
         let artist_year_album = [GroupBy::Artist, GroupBy::Year, GroupBy::Album];
         let genre_artist = [GroupBy::Genre, GroupBy::Artist, GroupBy::None];
-        let cases: [(_, &[&str], &[&str]); 6] = [
+        let format_artist = [GroupBy::Format, GroupBy::Artist, GroupBy::None];
+        let artist_format = [GroupBy::Artist, GroupBy::Format, GroupBy::None];
+        let cases: [(_, &[&str], &[&str]); 9] = [
+            (format_artist, &["MP3"], &["/a1", "/b1"]),
+            (format_artist, &["MP3", "Alice"], &["/a1"]),
+            (artist_format, &["Alice", "FLAC"], &["/a2"]),
             (artist_album, &["Alice", "Hits"], &["/a1", "/a2"]),
             (artist_album, &["Bob", "Hits"], &["/b1"]),
             (

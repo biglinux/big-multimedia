@@ -65,8 +65,7 @@ impl GroupBy {
             Self::Album => BrowserNodeKind::Album,
             Self::Genre => BrowserNodeKind::Genre,
             Self::Year => BrowserNodeKind::Year,
-            // File reused for format groups: same leaf semantics, different icon.
-            Self::Format => BrowserNodeKind::File,
+            Self::Format => BrowserNodeKind::Format,
         }
     }
 

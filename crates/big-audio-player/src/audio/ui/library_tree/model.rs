@@ -188,6 +188,7 @@ pub(super) fn to_browser_node(node: &LibraryTreeNode) -> BrowserNode {
         BrowserNodeKind::Artist => BrowserNode::artist(&node.label, node.count),
         BrowserNodeKind::Album => BrowserNode::album(&node.label, &node.secondary, node.count),
         BrowserNodeKind::Genre => BrowserNode::genre(&node.label, node.count),
+        BrowserNodeKind::Format => BrowserNode::format(&node.label, node.count),
         BrowserNodeKind::Year => BrowserNode::year(node.key.parse().unwrap_or(0), node.count),
         BrowserNodeKind::VariousArtists => BrowserNode::various_artists(node.count),
         BrowserNodeKind::Divider => BrowserNode::divider(&node.label),
