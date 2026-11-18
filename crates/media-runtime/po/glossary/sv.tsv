@@ -1,0 +1,28 @@
+source	translation	source of the choice
+track	spår	catalog: Track, All Tracks, tracks imported
+playlist	spellista	catalog: Playlist
+queue	kö	catalog: Queue
+library	bibliotek	catalog: Library
+station	station	catalog: My Stations
+episode	avsnitt	catalog: No episodes found
+podcast	podd (pl. poddar)	catalog: Podcasts
+podcast subscriptions	poddprenumerationer	catalog: Podcasts, Subscriptions
+screenshot	skärmbild	catalog: Screenshot
+recording	inspelning	catalog: Recording saved
+provider	leverantör	catalog: IPTV Provider
+password	lösenord	catalog: Password; gnome-keyring
+keyring	nyckelring	gnome-keyring, libsecret
+playback engine	uppspelningsmotor	new
+Preferences	Inställningar	catalog
+Advanced	Avancerat	catalog
+mpv Options	mpv-alternativ	catalog
+Video Output	Videoutmatning	catalog
+Audio Output	Ljudutgång	catalog
+sidebar	sidopanel	catalog: Toggle playlist sidebar
+lyrics	sångtext	catalog: Lyrics
+web remote	webbfjärrkontroll	catalog: Web Remote
+scan	skanning	catalog: Cancel scan
+Return (key)	Retur	gtk40 keyboard label
+Left / Right (keys)	Vänster / Höger	gtk40 keyboard label; catalog Alt+Upp style
+Pictures folder	Bilder-mapp	catalog: Pictures folder (mappen Bilder)
+quotation marks	” ”	Swedish convention; gnome-keyring

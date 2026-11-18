@@ -1,0 +1,25 @@
+player	εφαρμογή	catalog
+track	κομμάτι	catalog
+library	βιβλιοθήκη	catalog
+queue	ουρά	catalog
+playlist	λίστα αναπαραγωγής	catalog
+station	σταθμός	catalog
+episode	επεισόδιο	catalog
+podcast subscriptions	συνδρομές podcast	catalog Συνδρομές, Podcast
+screenshot	στιγμιότυπο οθόνης	catalog
+provider	πάροχος	catalog
+keyring	κλειδοθήκη	gnome-keyring, libsecret
+unlock	ξεκλείδωμα	gtk40, gnome-keyring
+Preferences	Προτιμήσεις	catalog
+Advanced	Για προχωρημένους	catalog
+Audio Output	Έξοδος ήχου	catalog
+Video Output	Έξοδος βίντεο	catalog
+mpv Options	Επιλογές mpv	catalog
+sidebar	πλευρική στήλη	catalog, nautilus
+top bar, bottom bar	πάνω γραμμή, κάτω γραμμή	catalog Γραμμή ελέγχου (libadwaita has Πάνω Μπάρα)
+Paused	Σε παύση	gtk40
+retry	Δοκιμή ξανά	catalog δοκιμάστε ξανά
+scan (library)	σάρωση	catalog
+playback engine	μηχανή αναπαραγωγής	new term
+entry (playlist)	εγγραφή	catalog
+web remote	απομακρυσμένος έλεγχος μέσω web	catalog

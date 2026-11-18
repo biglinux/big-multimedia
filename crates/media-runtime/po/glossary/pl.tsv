@@ -1,0 +1,30 @@
+player	odtwarzacz	catalog
+track	utwór	catalog
+library	biblioteka	catalog
+queue	kolejka	catalog
+playlist	lista odtwarzania	catalog
+station	stacja	catalog
+my stations	moje stacje	catalog
+podcast	podcast	catalog
+episode	odcinek	catalog
+subscriptions	subskrypcje	catalog
+recording	nagranie, nagrywanie	catalog
+screenshot	zrzut ekranu	catalog
+provider	dostawca	catalog
+channel	kanał	catalog
+keyring	baza kluczy	gnome-keyring, libsecret
+unlock	odblokuj	gtk40, gnome-keyring
+Preferences	Preferencje	catalog
+Advanced	Zaawansowane	catalog
+Audio Output	Wyjście dźwięku	catalog
+Video Output	Wyjście wideo	catalog
+mpv Options	Opcje mpv	catalog
+sidebar	panel boczny	catalog, nautilus
+top bar	górny pasek	libadwaita
+bottom bar	dolny pasek	libadwaita
+Paused	Wstrzymane	gtk40
+try again, retry	spróbuj ponownie	catalog
+web remote	zdalne sterowanie przez sieć	catalog
+playback engine	mechanizm odtwarzania	new term
+entry (playlist)	pozycja	new term
+reopen the player	otwórz ponownie odtwarzacz	catalog

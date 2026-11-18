@@ -1,0 +1,25 @@
+player	prehrávač	catalog
+track	skladba	catalog
+library	knižnica	catalog
+queue	fronta	catalog
+playlist	zoznam skladieb	catalog
+station	stanica	catalog
+episode	epizóda	catalog
+podcast subscriptions	odbery podcastov	catalog Odbery
+screenshot	snímka obrazovky	catalog
+provider	poskytovateľ	catalog
+keyring	zväzok kľúčov	gnome-keyring, libsecret
+unlock	odomknúť	gtk40, gnome-keyring
+Preferences	Nastavenia	catalog
+Advanced	Rozšírené	catalog
+Audio Output	Zvukový výstup	catalog
+Video Output	Video výstup	catalog
+mpv Options	Voľby mpv	catalog
+sidebar	bočný panel	catalog, nautilus
+top bar, bottom bar	horná lišta, dolná lišta	libadwaita
+Paused	Pozastavené	catalog Pozastaviť, gtk40 Pozastavená
+retry	Skúsiť znova	catalog skúste to znova
+scan (library)	prehľadávanie	catalog
+playback engine	modul prehrávania	new term
+entry (playlist)	položka	catalog
+web remote	webové ovládanie	catalog

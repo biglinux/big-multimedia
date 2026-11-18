@@ -1,0 +1,28 @@
+source	translation	source of the choice
+track (music)	kappale	catalog: All Tracks, tracks imported
+track (stream)	raita	catalog: Track
+playlist	soittolista	catalog: Playlist
+queue	jono	catalog: Queue
+library	kirjasto	catalog: Library
+station	asema	catalog: My Stations (Omat asemat)
+episode	jakso	catalog: No episodes found
+podcast subscriptions	podcast-tilaukset	catalog: Podcasts, Subscriptions
+screenshot	kuvakaappaus	catalog: Screenshot
+recording	tallenne	catalog: Recording saved
+provider	palveluntarjoaja	catalog: IPTV Provider
+password	salasana	catalog: Password; gnome-keyring
+keyring	avainnippu	gnome-keyring
+playback engine	toistomoottori	new
+Preferences	Asetukset	catalog
+Advanced	Lisäasetukset	catalog
+mpv Options	mpv-asetukset	catalog
+Video Output	Videotulostus	catalog
+Audio Output	Äänitulostus	catalog
+sidebar	sivupalkki	catalog: Toggle playlist sidebar
+lyrics	sanoitukset	catalog: Lyrics
+web remote	verkkokauko-ohjain	catalog: Web Remote
+scan	tarkistus	catalog: Cancel scan, Scanning library…
+stream	virta	new
+Return (key)	Enter	common Finnish UI usage; gtk40 says Rivinvaihto
+Left / Right (keys)	Alt+vasen / Alt+oikea	catalog Alt+ylös style
+quotation marks	” ”	Finnish convention

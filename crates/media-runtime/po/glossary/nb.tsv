@@ -1,0 +1,29 @@
+source	translation	source of the choice
+track	spor	catalog: Track, All Tracks, tracks imported
+playlist	spilleliste	catalog: Playlist
+queue	kø	catalog: Queue
+library	bibliotek	catalog: Library
+station	stasjon	catalog: My Stations
+episode	episode	catalog: No episodes found
+podcast	podkast	catalog: Podcasts
+podcast subscriptions	podkastabonnementer	catalog: Podcasts, Subscriptions
+screenshot	skjermbilde	catalog: Screenshot
+recording	opptak	catalog: Recording saved
+provider	leverandør	catalog: IPTV Provider
+password	passord	catalog: Password; gnome-keyring
+keyring	nøkkelring	gnome-keyring, libsecret
+playback engine	avspillingsmotor	new
+Preferences	Innstillinger	catalog
+Advanced	Avansert	catalog
+mpv Options	mpv-valg	catalog
+Video Output	Videoutgang	catalog
+Audio Output	Lydutgang	catalog
+sidebar	sidefelt	catalog: Toggle playlist sidebar
+lyrics	sangtekst	catalog: Lyrics
+web remote	nettfjernkontroll	catalog: Web Remote
+scan	skanning	catalog: Cancel scan
+Top bar / Bottom bar	topplinje / bunnlinje	new
+Return (key)	Enter	gtk40 keyboard label
+Left / Right (keys)	Venstre / Høyre	gtk40 keyboard label; catalog Alt+Opp style
+quotation marks	« »	gnome-keyring; Norwegian convention
+ellipsis	space before …	catalog: Skanner bibliotek …
