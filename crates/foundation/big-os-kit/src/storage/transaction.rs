@@ -202,8 +202,9 @@ pub struct StagedFile {
     path: PathBuf,
 }
 impl StagedFile {
-    /// Reserve a mode-0700 directory and mode-0600 regular file. The extension is
-    /// inherited so tools that infer an encoder/container see the intended type.
+    /// Reserve a mode-0700 directory holding a regular file created with the
+    /// umask's mode, which the published file keeps. The extension is inherited
+    /// so tools that infer an encoder/container see the intended type.
     pub fn new(target: &Path) -> io::Result<Self> {
         let name = target
             .file_name()
@@ -233,14 +234,10 @@ impl StagedFile {
             path: directory.join(name),
             directory,
         };
-        let mut options = OpenOptions::new();
-        options.write(true).create_new(true);
-        #[cfg(unix)]
-        {
-            use std::os::unix::fs::OpenOptionsExt;
-            options.mode(0o600);
-        }
-        let _file = options.open(&stage.path)?;
+        OpenOptions::new()
+            .write(true)
+            .create_new(true)
+            .open(&stage.path)?;
         Ok(stage)
     }
     /// Path for the external writer. Do not expose it as a final user result.
@@ -391,6 +388,23 @@ mod tests {
         assert!(live_directory.exists());
         assert!(stage.path().exists());
         drop(stage);
+        fs::remove_dir_all(dir).unwrap();
+    }
+    /// A published file is as readable as any file the user creates, so media
+    /// servers and other accounts can read downloads and exports.
+    #[cfg(unix)]
+    #[test]
+    fn published_file_follows_umask() {
+        use std::os::unix::fs::PermissionsExt;
+        let dir = directory();
+        let reference = dir.join("reference");
+        File::create(&reference).unwrap();
+        let target = dir.join("out.png");
+        let stage = StagedFile::new(&target).unwrap();
+        fs::write(stage.path(), b"new").unwrap();
+        stage.publish(&target).unwrap().into_io_result().unwrap();
+        let mode = |path: &Path| fs::metadata(path).unwrap().permissions().mode() & 0o777;
+        assert_eq!(mode(&target), mode(&reference));
         fs::remove_dir_all(dir).unwrap();
     }
     fn refuse_link(_: &Path, _: &Path) -> io::Result<()> {
