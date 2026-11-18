@@ -149,7 +149,7 @@ pub enum PlaylistPanelInput {
     /// Whether the library has any tracks; picks the empty-queue placeholder
     /// (drop hint vs. first-run welcome).
     SetLibraryHasItems(bool),
-    /// Restore saved column widths (`title=width,…`), pushed by the shell at
+    /// Restore saved column widths (`key=width,…`), pushed by the shell at
     /// construction. Suppresses the persist echo while applying.
     ApplyColumnWidths(String),
     /// Restoring the saved queue ended, read or not: an empty queue is final.
@@ -232,7 +232,7 @@ pub enum PlaylistPanelOutput {
     },
     /// First-run "Open Files" picker chose audio files; shell imports + plays.
     OpenFiles(Vec<String>),
-    /// Persist the queue column widths (`title=width,…`); the shell writes the
+    /// Persist the queue column widths (`key=width,…`); the shell writes the
     /// settings key. Debounced to one emission per resize gesture.
     PersistColumnWidths(String),
 }

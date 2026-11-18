@@ -508,6 +508,12 @@ impl Component for AudioShell {
         // Sync the grouping dropdown to the restored preset (no re-emit); the
         // tree is built once the database opens.
         library.emit(LibraryPanelInput::SetGrouping(initial_grouping.clone()));
+        library.emit(LibraryPanelInput::ApplyColumnWidths(
+            settings.get_string(keys::LIBRARY_COLUMN_WIDTHS),
+        ));
+        playlist.emit(PlaylistPanelInput::ApplyColumnWidths(
+            settings.get_string(keys::PLAYLIST_COLUMN_WIDTHS),
+        ));
 
         // Publish the "win" action group on the content Root so `win.*` actions
         // (the hamburger menu + accels) resolve through the widget hierarchy in
