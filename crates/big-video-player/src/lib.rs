@@ -167,7 +167,7 @@ mod lifetime_tests {
         gtk::init().unwrap();
         adw::init().unwrap();
         let app = adw::Application::builder()
-            .application_id("org.biglinux.VideoLifetimeTest")
+            .application_id("br.com.biglinux.VideoLifetimeTest")
             .build();
         app.register(gtk::gio::Cancellable::NONE).unwrap();
         let _relm = relm4::RelmApp::<()>::from_app(app);

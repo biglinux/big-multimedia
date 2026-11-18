@@ -3,20 +3,18 @@
 
 //! Private shared row contracts.
 
-use crate::text::escape_markup_text;
-
 #[must_use]
 pub(crate) fn row_text(text: &str, allow_markup: bool) -> String {
     if allow_markup {
         text.to_string()
     } else {
-        escape_markup_text(text)
+        gtk::glib::markup_escape_text(text).into()
     }
 }
 
 #[must_use]
 pub(crate) fn escaped_text(text: &str) -> String {
-    escape_markup_text(text)
+    gtk::glib::markup_escape_text(text).into()
 }
 
 #[must_use]

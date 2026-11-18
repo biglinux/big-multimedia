@@ -612,7 +612,7 @@ mod lifetime_tests {
         gtk::init().unwrap();
         adw::init().unwrap();
         let app = adw::Application::builder()
-            .application_id("org.biglinux.AudioLifetimeTest")
+            .application_id("br.com.biglinux.AudioLifetimeTest")
             .build();
         app.register(gio::Cancellable::NONE).unwrap();
         let _relm = relm4::RelmApp::<()>::from_app(app);

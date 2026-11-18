@@ -130,6 +130,7 @@ dependencies = [
  "pango",
  "relm4",
  "rusqlite",
+ "tempfile",
 ]
 
 [[package]]
