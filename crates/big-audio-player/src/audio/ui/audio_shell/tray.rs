@@ -49,7 +49,7 @@ pub(super) fn mark_quitting() {
     QUITTING.set(true);
 }
 
-/// The tray icon, when the setting is on; `None` also without a session bus.
+/// The tray icon, when the setting is on.
 pub(super) fn build_tray(sender: &ComponentSender<AudioShell>, enabled: bool) -> Option<Tray> {
     let tray = enabled.then(|| {
         let input = sender.input_sender().clone();
@@ -58,7 +58,6 @@ pub(super) fn build_tray(sender: &ComponentSender<AudioShell>, enabled: bool) ->
         });
         Tray::new(tray_spec(), command)
     });
-    let tray = tray.flatten();
     TRAY_SHOWN.set(tray.as_ref().map(Tray::shown_flag));
     tray
 }

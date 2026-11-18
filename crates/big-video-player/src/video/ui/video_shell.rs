@@ -186,8 +186,8 @@ pub struct VideoShell {
     /// True while interactive trim mode is active. Shared (`Rc`) with the OSD pin
     /// and the trim key controller.
     trim_active: Rc<Cell<bool>>,
-    /// MPRIS2 service; `None` in background mode or without a session bus.
-    mpris: Option<big_app_kit::mpris::Mpris>,
+    /// MPRIS2 service, inactive without a session bus.
+    mpris: big_app_kit::mpris::Mpris,
     /// Snapshot the MPRIS service polls, mirrored from mpv events.
     mpris_state: Arc<std::sync::Mutex<big_app_kit::mpris::PlayerState>>,
     /// Counter behind each loaded file's MPRIS track id.

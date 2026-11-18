@@ -55,9 +55,7 @@ impl AudioShell {
                 }
             }
             AudioShellInput::TaskbarProgressChanged(enabled) => {
-                if let Some(mpris) = &self.mpris {
-                    mpris.set_taskbar_progress(enabled);
-                }
+                self.mpris.set_taskbar_progress(enabled);
             }
             AudioShellInput::TrayIconChanged(enabled) => self.set_tray_icon(enabled, &sender),
             AudioShellInput::VolumeMaxChanged => {

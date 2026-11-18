@@ -1,6 +1,7 @@
 use glib::variant::ToVariant;
 use gtk::{gio, glib};
 use log::{info, warn};
+use std::cell::{Cell, OnceCell};
 use std::rc::Rc;
 use std::sync::Arc;
 
@@ -11,19 +12,23 @@ use super::sync::Publisher;
 use super::types::{CommandCallback, MprisCommand, StateCallback};
 use super::{MPRIS_PATH, MPRIS_PLAYER_IFACE, PLAYER_XML, ROOT_XML};
 
-/// Opens a session-bus connection owned by one service. Two players in one
-/// process would collide on `MPRIS_PATH` on the shared connection, and closing
-/// it in Drop releases the name and the exported objects together.
-pub(crate) fn private_session_bus() -> Result<gio::DBusConnection, glib::Error> {
-    let address =
-        gio::dbus_address_get_for_bus_sync(gio::BusType::Session, gio::Cancellable::NONE)?;
-    gio::DBusConnection::for_address_sync(
+/// Connects a session-bus connection owned by one service, off the main loop.
+/// Two players in one process would collide on `MPRIS_PATH` on the shared
+/// connection, and closing it releases the name and the exported objects together.
+pub(crate) async fn private_session_bus() -> Result<gio::DBusConnection, glib::Error> {
+    // Without an address in the environment, gio may start a helper to find one.
+    let address = gio::spawn_blocking(|| {
+        gio::dbus_address_get_for_bus_sync(gio::BusType::Session, gio::Cancellable::NONE)
+    })
+    .await
+    .map_err(|_| glib::Error::new(gio::IOErrorEnum::Failed, "session bus lookup panicked"))??;
+    gio::DBusConnection::for_address_future(
         &address,
         gio::DBusConnectionFlags::AUTHENTICATION_CLIENT
             | gio::DBusConnectionFlags::MESSAGE_BUS_CONNECTION,
         None,
-        gio::Cancellable::NONE,
     )
+    .await
 }
 
 fn export_root(
@@ -98,6 +103,14 @@ fn export_player(
 
 /// MPRIS2 player exported on a private session-bus connection.
 pub struct Mpris {
+    /// Set once the connection is up and the objects are exported.
+    service: Rc<OnceCell<Service>>,
+    taskbar: Rc<Cell<bool>>,
+    /// Aborted in Drop, which cancels a connection still being made.
+    connecting: glib::JoinHandle<()>,
+}
+
+struct Service {
     /// Released in Drop before the connection closes.
     owner_id: Option<gio::OwnerId>,
     publisher: Rc<Publisher>,
@@ -105,9 +118,9 @@ pub struct Mpris {
 
 impl Mpris {
     /// Build the MPRIS service with the BigVideoPlayer bus name and
-    /// desktop id. Returns `None` if the bus connection cannot be
-    /// established (no session bus, name taken, ...).
-    pub fn new(command_cb: CommandCallback, state_cb: StateCallback) -> Option<Self> {
+    /// desktop id. The bus connection is made in the background; a failure
+    /// is logged and leaves the player without MPRIS.
+    pub fn new(command_cb: CommandCallback, state_cb: StateCallback) -> Self {
         Self::new_with_name(
             "org.mpris.MediaPlayer2.BigVideoPlayer",
             "br.com.biglinux.VideoPlayer",
@@ -119,70 +132,92 @@ impl Mpris {
 
     /// Build the MPRIS service with caller-supplied bus name and
     /// desktop id; used by apps that need a different identity than
-    /// BigVideoPlayer. Returns `None` if the bus connection fails.
+    /// BigVideoPlayer. Connects in the background like [`Self::new`].
     pub fn new_with_name(
         bus_name: &str,
         desktop_id: &str,
         command_cb: CommandCallback,
         state_cb: StateCallback,
         taskbar_progress_enabled: bool,
-    ) -> Option<Self> {
-        let connection = match private_session_bus() {
-            Ok(connection) => connection,
-            Err(e) => {
-                warn!("MPRIS: failed to connect a private session bus: {e}");
-                return None;
+    ) -> Self {
+        let service = Rc::new(OnceCell::new());
+        let taskbar = Rc::new(Cell::new(taskbar_progress_enabled));
+        let slot = Rc::downgrade(&service);
+        let publisher_taskbar = taskbar.clone();
+        let (bus_name, desktop_id) = (bus_name.to_owned(), desktop_id.to_owned());
+        let connecting = glib::spawn_future_local(async move {
+            let connection = match private_session_bus().await {
+                Ok(connection) => connection,
+                Err(e) => {
+                    warn!("MPRIS: failed to connect a private session bus: {e}");
+                    return;
+                }
+            };
+            let Some(slot) = slot.upgrade() else {
+                return;
+            };
+            let command_cb = Arc::new(command_cb);
+            let state_cb = Arc::new(state_cb);
+            let exported = export_root(&connection, command_cb.clone(), &desktop_id)
+                .and_then(|()| export_player(&connection, &command_cb, &state_cb));
+            if let Err(e) = exported {
+                warn!("MPRIS: failed to export {e}");
+                connection.close(gio::Cancellable::NONE, |_| {});
+                return;
             }
-        };
-        let command_cb = Arc::new(command_cb);
-        let state_cb = Arc::new(state_cb);
-        let exported = export_root(&connection, command_cb.clone(), desktop_id)
-            .and_then(|()| export_player(&connection, &command_cb, &state_cb));
-        if let Err(e) = exported {
-            warn!("MPRIS: failed to export {e}");
-            let _ = connection.close_sync(gio::Cancellable::NONE);
-            return None;
+
+            let owner_id = gio::bus_own_name_on_connection(
+                &connection,
+                &bus_name,
+                gio::BusNameOwnerFlags::NONE,
+                |_, _| {},
+                |_, _| {},
+            );
+
+            let publisher = Rc::new(Publisher::new(
+                connection,
+                state_cb,
+                format!("application://{desktop_id}.desktop"),
+                publisher_taskbar,
+            ));
+            publisher.sync();
+
+            info!("MPRIS2 service started on {bus_name}");
+            let _ = slot.set(Service {
+                owner_id: Some(owner_id),
+                publisher,
+            });
+        });
+        Self {
+            service,
+            taskbar,
+            connecting,
         }
-
-        let owner_id = gio::bus_own_name_on_connection(
-            &connection,
-            bus_name,
-            gio::BusNameOwnerFlags::NONE,
-            |_, _| {},
-            |_, _| {},
-        );
-
-        let publisher = Rc::new(Publisher::new(
-            connection,
-            state_cb,
-            format!("application://{desktop_id}.desktop"),
-            taskbar_progress_enabled,
-        ));
-        publisher.sync();
-
-        info!("MPRIS2 service started on {bus_name}");
-        Some(Self {
-            owner_id: Some(owner_id),
-            publisher,
-        })
     }
 
     /// Publish what changed in the state the callback reads; the owner calls
     /// this after changing it. While playing, the next tick publishes instead,
     /// within a second.
     pub fn sync(&self) {
-        self.publisher.sync();
+        if let Some(service) = self.service.get() {
+            service.publisher.sync();
+        }
     }
 
     /// Show or hide the playback progress on the taskbar entry.
     pub fn set_taskbar_progress(&self, enabled: bool) {
-        self.publisher.taskbar.set(enabled);
-        self.publisher.publish();
+        self.taskbar.set(enabled);
+        if let Some(service) = self.service.get() {
+            service.publisher.publish();
+        }
     }
 
     /// Emit the seeked signal on the active D-Bus connection.
     pub fn emit_seeked(&self, position_us: i64) {
-        if let Err(error) = self.publisher.connection.emit_signal(
+        let Some(service) = self.service.get() else {
+            return;
+        };
+        if let Err(error) = service.publisher.connection.emit_signal(
             None::<&str>,
             MPRIS_PATH,
             MPRIS_PLAYER_IFACE,
@@ -196,6 +231,12 @@ impl Mpris {
 
 impl Drop for Mpris {
     fn drop(&mut self) {
+        self.connecting.abort();
+    }
+}
+
+impl Drop for Service {
+    fn drop(&mut self) {
         if let Some(tick) = self.publisher.tick.take() {
             big_gtk_kit::source::remove(tick);
         }
@@ -204,6 +245,8 @@ impl Drop for Mpris {
         if let Some(owner_id) = self.owner_id.take() {
             gio::bus_unown_name(owner_id);
         }
-        let _ = self.publisher.connection.close_sync(gio::Cancellable::NONE);
+        self.publisher
+            .connection
+            .close(gio::Cancellable::NONE, |_| {});
     }
 }

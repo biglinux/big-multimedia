@@ -13,7 +13,7 @@ pub(super) fn build_mpris_service(
     sender: &ComponentSender<VideoShell>,
     state: &Arc<Mutex<PlayerState>>,
     settings: &Settings,
-) -> Option<Mpris> {
+) -> Mpris {
     let (command_tx, command_rx) = relm4::channel::<MprisCommand>();
     let input = sender.input_sender().clone();
     glib::spawn_future_local(async move {
@@ -55,9 +55,7 @@ fn finite(value: f64) -> f64 {
 impl VideoShell {
     /// Mirror one mpv event into the MPRIS snapshot.
     pub(super) fn mirror_mpris(&mut self, event: &PlayerEvent) {
-        let Some(mpris) = &self.mpris else {
-            return;
-        };
+        let mpris = &self.mpris;
         let mpv = self.mpv.borrow().clone();
         let mut state = self
             .mpris_state

@@ -844,9 +844,7 @@ impl Component for VideoShell {
                 VideoShellInput::Trashed(paths) => self.remove_trashed(&paths),
                 VideoShellInput::PastePlay => super::keyboard::paste_and_play(root, &sender),
             }
-            if let Some(mpris) = &self.mpris {
-                mpris.sync();
-            }
+            self.mpris.sync();
         });
     }
 }
