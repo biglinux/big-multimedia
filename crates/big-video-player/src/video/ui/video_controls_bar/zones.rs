@@ -39,11 +39,8 @@ pub(crate) struct ButtonLayoutWidgets {
 }
 
 impl ButtonLayoutWidgets {
-    /// Reparent the OSD controls into their bottom-bar zones and apply
-    /// per-control visibility from the `ui-zone-bottom-*` / `ui-show-*`
-    /// settings, via the shared leak-safe [`apply_zone_layout`] primitive.
-    /// A control the CSVs omit goes to the end of its default zone; voice is
-    /// also gated on a noise-reduction backend being installed.
+    /// Place and show the bottom-bar controls as the `ui-zone-bottom-*` and
+    /// `ui-show-*` settings say; voice also needs a noise-reduction backend.
     pub(crate) fn apply_settings(&self, settings: &Settings) {
         let start = slot_key("bottom", ZonePlacement::Start);
         let center = slot_key("bottom", ZonePlacement::Center);
