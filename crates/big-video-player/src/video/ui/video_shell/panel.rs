@@ -48,6 +48,17 @@ impl PanelPage {
         }
     }
 
+    /// The card's (horizontal, vertical) corner: the TV page rises from its
+    /// button in the controls' corner, Recent hangs below the Open menu on
+    /// the left, the rest below the settings button.
+    fn corner(self) -> (gtk::Align, gtk::Align) {
+        match self {
+            Self::Tv => (gtk::Align::End, gtk::Align::End),
+            Self::Recent => (gtk::Align::Start, gtk::Align::Start),
+            _ => (gtk::Align::End, gtk::Align::Start),
+        }
+    }
+
     /// Where "Back" leads.
     fn parent(self) -> Option<Self> {
         match self {
@@ -58,9 +69,6 @@ impl PanelPage {
         }
     }
 }
-
-/// Below this the panel covers the controls instead of shrinking.
-const PANEL_MIN_HEIGHT: i32 = 300;
 
 /// Where the panel sits and how its home page is laid out in a window of
 /// `width` × `height` whose header bar and controls take `header` and
@@ -78,9 +86,9 @@ struct PanelLayout {
 fn panel_layout(width: i32, height: i32, header: i32, controls: i32) -> PanelLayout {
     // Just below the header, where the settings button is.
     let top = header + 4;
-    // A short window would squeeze the card to a sliver: then it covers the
-    // controls rather than shrink below a usable height.
-    let bottom = (controls + 6).min(height - top - PANEL_MIN_HEIGHT).max(8);
+    // Clear of the seek bar and time even in a short window, where the card
+    // scrolls instead.
+    let bottom = (controls + 6).max(8);
     let room = width - 16;
     let (columns, card) = if room >= 940 {
         (3, 620)
@@ -140,8 +148,8 @@ impl SettingsPanel {
         // again or Esc closes it.
         top.append(&title);
 
-        // The card hugs its content and scrolls only when the window is too
-        // short for it (`max_content_height` is set per window on open).
+        // The card hugs its content and scrolls only when the room between
+        // the revealer's margins is too short for it.
         let scroller = gtk::ScrolledWindow::builder()
             .hscrollbar_policy(gtk::PolicyType::Never)
             .propagate_natural_height(true)
@@ -157,7 +165,7 @@ impl SettingsPanel {
 
         let revealer = gtk::Revealer::builder()
             .halign(gtk::Align::End)
-            .valign(gtk::Align::Start)
+            .valign(gtk::Align::Fill)
             .transition_type(gtk::RevealerTransitionType::SlideLeft)
             .transition_duration(150)
             .margin_end(8)
@@ -264,25 +272,18 @@ impl VideoShell {
     /// Where the floating panels sit in the window at its current size.
     fn panel_layout_now(&self) -> PanelLayout {
         // The header bar itself: in the gradient look its box also holds
-        // 80 px of fade, and so does the top of the controls.
-        let natural = |widget: Option<gtk::Widget>| {
-            widget.map_or(0, |widget| widget.measure(gtk::Orientation::Vertical, -1).1)
-        };
-        let fade = if self.settings.get_string(keys::UI_COLOR_SOURCE) == "gradient" {
-            80
-        } else {
-            0
-        };
+        // 80 px of fade.
+        let header = self
+            .osd
+            .header_revealer
+            .child()
+            .and_then(|b| b.first_child())
+            .map_or(0, |bar| bar.measure(gtk::Orientation::Vertical, -1).1);
         panel_layout(
             self.main_overlay.width(),
             self.main_overlay.height(),
-            natural(
-                self.osd
-                    .header_revealer
-                    .child()
-                    .and_then(|b| b.first_child()),
-            ),
-            natural(self.osd.controls_revealer.child()) - fade,
+            header,
+            super::osd::controls_bar_height(&self.osd.controls_revealer, &self.settings),
         )
     }
 
@@ -315,33 +316,31 @@ impl VideoShell {
             self.close_panel(sender);
             return;
         }
-        // The TV page opens from its button in the controls' corner, so it
-        // rises from there; the rest hang below the settings button.
-        let from_below = page == PanelPage::Tv;
-        if !panel.is_open() || from_below != (panel.revealer.valign() == gtk::Align::End) {
+        let (halign, valign) = page.corner();
+        if !panel.is_open() || (panel.revealer.halign(), panel.card.valign()) != (halign, valign) {
             let layout = self.panel_layout_now();
             panel.columns.set(layout.columns);
+            // The revealer spans the room between header and controls; the
+            // card hangs at its top or rests on its bottom, never past it.
             panel.revealer.set_margin_top(layout.top);
-            if from_below {
-                // One list: the home page's width would only stretch it.
-                panel.card.set_width_request(layout.width.min(440));
-                panel.revealer.set_valign(gtk::Align::End);
-                panel.revealer.set_margin_bottom(layout.bottom);
-                panel
-                    .revealer
-                    .set_transition_type(gtk::RevealerTransitionType::SlideUp);
+            panel.revealer.set_margin_bottom(layout.bottom);
+            panel.revealer.set_halign(halign);
+            let on_left = halign == gtk::Align::Start;
+            panel.revealer.set_margin_start(if on_left { 8 } else { 0 });
+            panel.revealer.set_margin_end(if on_left { 0 } else { 8 });
+            panel.card.set_valign(valign);
+            // The TV page is one list: the home page's width would only
+            // stretch it.
+            panel.card.set_width_request(if page == PanelPage::Tv {
+                layout.width.min(440)
             } else {
-                panel.card.set_width_request(layout.width);
-                panel.revealer.set_valign(gtk::Align::Start);
-                panel.revealer.set_margin_bottom(0);
-                panel
-                    .revealer
-                    .set_transition_type(gtk::RevealerTransitionType::SlideLeft);
-            }
-            // Room below the card's own title row.
-            panel.scroller.set_max_content_height(
-                (self.main_overlay.height() - layout.top - layout.bottom - 52).max(120),
-            );
+                layout.width
+            });
+            panel.revealer.set_transition_type(match page {
+                PanelPage::Tv => gtk::RevealerTransitionType::SlideUp,
+                PanelPage::Recent => gtk::RevealerTransitionType::SlideRight,
+                _ => gtk::RevealerTransitionType::SlideLeft,
+            });
             if layout.compact {
                 panel.card.add_css_class("compact");
             } else {
@@ -369,6 +368,10 @@ impl VideoShell {
         wrapper.append(&content);
         panel.scroller.set_child(Some(&wrapper));
         panel.title.set_label(&page.title());
+        // On the left Recent reads as the sidebars do, with their centered title.
+        panel
+            .title
+            .set_xalign(if page == PanelPage::Recent { 0.5 } else { 0.0 });
         panel.back.set_visible(page.parent().is_some());
         if !panel.is_open() {
             panel.direct.set(direct);
@@ -864,9 +867,9 @@ mod tests {
     }
 
     #[test]
-    fn short_window_covers_the_controls() {
-        let layout = panel_layout(1174, 420, 46, 110);
-        assert_eq!(layout.bottom, 420 - 50 - PANEL_MIN_HEIGHT);
+    fn short_window_keeps_the_controls_clear() {
+        let layout = panel_layout(640, 400, 46, 110);
+        assert_eq!((layout.top, layout.bottom), (50, 116));
         assert!(layout.compact);
     }
 

@@ -5,6 +5,8 @@
 
 use super::*;
 
+const PANEL_WIDTH: i32 = 400;
+
 pub(super) struct PlaylistPanel {
     pub(super) revealer: gtk::Revealer,
 }
@@ -16,7 +18,7 @@ impl PlaylistPanel {
     ) -> Self {
         let card = gtk::Box::builder()
             .orientation(gtk::Orientation::Vertical)
-            .width_request(400)
+            .width_request(PANEL_WIDTH)
             .css_classes(["settings-panel", "playlist-panel"])
             .build();
         content.set_vexpand(true);
@@ -60,13 +62,20 @@ impl PlaylistPanel {
             }
         });
         card.add_controller(search_keys);
+        // One width for every page: a long folder path ellipsizes instead
+        // of widening the card over the welcome screen's buttons.
+        let clamp = adw::Clamp::builder()
+            .maximum_size(PANEL_WIDTH)
+            .tightening_threshold(PANEL_WIDTH)
+            .child(&card)
+            .build();
         let revealer = gtk::Revealer::builder()
             .halign(gtk::Align::Start)
             .valign(gtk::Align::Fill)
             .transition_type(gtk::RevealerTransitionType::SlideRight)
             .transition_duration(150)
             .margin_start(8)
-            .child(&card)
+            .child(&clamp)
             .build();
         // Into the list, on the playing row when there is one: the arrow
         // keys and Alt+Up/Down then act at once. Once the slide is done, or
@@ -96,6 +105,55 @@ impl PlaylistPanel {
     pub(super) fn hide(&self) {
         self.revealer.set_reveal_child(false);
     }
+
+    /// While the panel is open, place `widget`, an overlay child of
+    /// `overlay`, in the room beside it.
+    pub(super) fn keep_clear(&self, overlay: &gtk::Overlay, widget: &impl IsA<gtk::Widget>) {
+        let widget = widget.upcast_ref::<gtk::Widget>().downgrade();
+        let revealer = self.revealer.downgrade();
+        overlay.connect_get_child_position(move |overlay, child| {
+            let (widget, revealer) = (widget.upgrade()?, revealer.upgrade()?);
+            if *child != widget || !revealer.reveals_child() {
+                return None;
+            }
+            let (_, natural_width, _, _) = child.measure(gtk::Orientation::Horizontal, -1);
+            let (_, natural_height, _, _) =
+                child.measure(gtk::Orientation::Vertical, natural_width);
+            // The card's own width: large text can widen it past the clamp.
+            let card_width = revealer.child().map_or(PANEL_WIDTH, |card| {
+                card.measure(gtk::Orientation::Horizontal, -1).1
+            });
+            let (x, y) = beside_panel(
+                overlay.width(),
+                overlay.height(),
+                revealer.margin_start() + card_width,
+                natural_width,
+                natural_height,
+            );
+            Some(gtk::gdk::Rectangle::new(
+                x,
+                y,
+                natural_width.min(overlay.width()),
+                natural_height.min(overlay.height()),
+            ))
+        });
+    }
+}
+
+/// Where a `child_width` × `child_height` widget goes in a `width` × `height`
+/// overlay beside a panel ending at `edge`: centered in the room right of it,
+/// or as far right as it fits when that room is too narrow.
+fn beside_panel(
+    width: i32,
+    height: i32,
+    edge: i32,
+    child_width: i32,
+    child_height: i32,
+) -> (i32, i32) {
+    let x = (edge + (width - edge - child_width) / 2)
+        .min(width - child_width)
+        .max(0);
+    (x, ((height - child_height) / 2).max(0))
 }
 
 /// Focus the list in `card`; without a list (the Files places), the search:
@@ -122,4 +180,21 @@ fn first_of(widget: &gtk::Widget, wanted: &dyn Fn(&gtk::Widget) -> bool) -> Opti
     }
     std::iter::successors(widget.first_child(), gtk::Widget::next_sibling)
         .find_map(|child| first_of(&child, wanted))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::beside_panel;
+
+    #[test]
+    fn beside_panel_centers_in_the_room_left() {
+        // 1100 wide: the room right of the 408 px panel is 692 px.
+        assert_eq!(beside_panel(1100, 600, 408, 528, 200), (490, 200));
+    }
+
+    #[test]
+    fn beside_panel_stops_at_the_right_edge() {
+        assert_eq!(beside_panel(640, 400, 408, 528, 200), (112, 100));
+        assert_eq!(beside_panel(400, 300, 408, 528, 400), (0, 0));
+    }
 }

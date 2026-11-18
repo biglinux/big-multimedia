@@ -21,6 +21,17 @@ impl VideoShell {
                             .emit(VideoControlsBarInput::SetSeekFraction(frac));
                     }
                 }
+                // Seeking back from the end plays on without a pause change.
+                if self.ended && !tv {
+                    let mpv = self.mpv.borrow().clone();
+                    if let Some(mpv) = mpv.filter(|mpv| !mpv.get_property_bool("eof-reached")) {
+                        self.ended = false;
+                        self.playing = !mpv.is_paused();
+                        self.sync_screen_inhibit(root);
+                        self.controls
+                            .emit(VideoControlsBarInput::SetPaused(mpv.is_paused()));
+                    }
+                }
                 self.feed_trim_playhead(pos);
                 self.apply_play_selection(pos);
                 self.shuffle_when_listed();
@@ -46,7 +57,8 @@ impl VideoShell {
                 self.playing = !paused;
                 self.sync_screen_inhibit(root);
                 if !tv {
-                    self.controls.emit(VideoControlsBarInput::SetPaused(paused));
+                    self.controls
+                        .emit(VideoControlsBarInput::SetPaused(paused || self.ended));
                 }
                 // Old "keep shown while paused": reveal the OSD when paused, and
                 // re-arm the auto-hide when resuming.
@@ -68,6 +80,10 @@ impl VideoShell {
                     // `EndFile` cleared `playing`, but mpv keeps playing into
                     // the next file without a pause change to report it.
                     self.playing = !mpv.is_paused();
+                    if std::mem::take(&mut self.ended) && !tv {
+                        self.controls
+                            .emit(VideoControlsBarInput::SetPaused(mpv.is_paused()));
+                    }
                     // A live stream never reports a duration: without this the
                     // previous file's length stayed, and seeks used it.
                     let duration = mpv.get_duration();
@@ -124,6 +140,7 @@ impl VideoShell {
                 self.refresh_now_playing(root);
                 // Resize the window to the video's aspect (no letterbox bars).
                 self.aspect_snap.snap_on_load();
+                self.subtitle_lift.apply();
                 self.tv_follow_loaded();
                 self.tv_catch_up_loaded();
             }
@@ -180,6 +197,16 @@ impl VideoShell {
             PlayerEvent::EndFile(reason) => {
                 self.playing = false;
                 self.sync_screen_inhibit(root);
+                // Held on the last frame, mpv is not paused, yet Play is what
+                // the button offers.
+                self.ended = self
+                    .mpv
+                    .borrow()
+                    .as_ref()
+                    .is_some_and(|mpv| mpv.get_property_bool("eof-reached"));
+                if self.ended && !tv {
+                    self.controls.emit(VideoControlsBarInput::SetPaused(true));
+                }
                 if reason == EndReason::Error {
                     self.notify(&i18n(
                         "Could not play this file — it may be unsupported or corrupt.",
@@ -731,7 +758,7 @@ impl VideoShell {
         }
         if let VideoControlsBarOutput::GotoTimeClicked = out {
             if let Some(root) = root {
-                Self::show_goto_time_dialog(root);
+                self.show_goto_time_dialog(root);
             }
             return;
         }
@@ -767,7 +794,7 @@ impl VideoShell {
             return;
         };
         match out {
-            VideoControlsBarOutput::TogglePlay => mpv.toggle_pause(),
+            VideoControlsBarOutput::TogglePlay => toggle_play(mpv, &self.settings),
             VideoControlsBarOutput::Next => mpv.playlist_next(),
             VideoControlsBarOutput::Previous => mpv.playlist_prev(),
             VideoControlsBarOutput::SeekChanged(frac) => {
@@ -781,6 +808,35 @@ impl VideoShell {
             | VideoControlsBarOutput::SegmentEdgeAdjusted { .. } => {}
         }
     }
+}
+
+/// Play or pause; held at the end of a file, Play starts over.
+pub(super) fn toggle_play(mpv: &MpvBackend, settings: &Settings) {
+    if mpv.get_property_bool("eof-reached") {
+        play_from_end(mpv, settings);
+    } else {
+        mpv.toggle_pause();
+    }
+}
+
+pub(super) fn play(mpv: &MpvBackend, settings: &Settings) {
+    if mpv.get_property_bool("eof-reached") {
+        play_from_end(mpv, settings);
+    } else {
+        mpv.play();
+    }
+}
+
+/// Play once mpv holds the end of a file: the next file when the player stops
+/// after each one and there is a next, else this file from its start.
+fn play_from_end(mpv: &MpvBackend, settings: &Settings) {
+    let has_next = mpv.get_playlist_pos() + 1 < mpv.get_playlist_count();
+    if has_next && settings.get_string(keys::KEEP_OPEN) == "always" {
+        mpv.playlist_next();
+    } else {
+        mpv.seek_absolute(0.0);
+    }
+    mpv.play();
 }
 
 /// What an open request resolved to.

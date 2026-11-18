@@ -12,6 +12,18 @@ impl VideoShell {
         &self.screenshot_owner
     }
 
+    /// Where playback is, on the TV when one plays; 0 with nothing loaded.
+    pub(crate) fn playback_position(&self) -> f64 {
+        match self.tv.attached() {
+            Some(state) => state.position,
+            None => self
+                .mpv
+                .borrow()
+                .as_ref()
+                .map_or(0.0, |mpv| mpv.get_position()),
+        }
+    }
+
     /// Player settings (for the sleep-timer dialog persistence).
     pub(crate) fn settings_handle(&self) -> &Settings {
         &self.settings
