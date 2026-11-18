@@ -6,6 +6,7 @@
 use adw::prelude::*;
 use relm4::gtk;
 
+use super::preference_cards::{BigSpinRange, finite_or};
 use crate::feedback::tooltip;
 
 const DEFAULT_SCALE_WIDTH: i32 = 200;
@@ -154,12 +155,14 @@ impl BigSliderRowSpec {
     /// Resolve the spec into its display-free runtime form.
     #[must_use]
     pub fn resolved(&self) -> BigSliderRowResolved {
-        let min = finite_or(self.min, 0.0);
-        let max = finite_or(self.max, min).max(min);
+        let BigSpinRange {
+            min,
+            max,
+            step,
+            page_step,
+        } = BigSpinRange::new(self.min, self.max, self.step, self.page_step).resolved();
         let default = finite_or(self.default, min).clamp(min, max);
         let initial = finite_or(self.initial, default).clamp(min, max);
-        let step = finite_or(self.step, 1.0).abs().max(f64::EPSILON);
-        let page_step = finite_or(self.page_step, step * 10.0).abs().max(step);
         let digits = self.digits.max(0);
 
         BigSliderRowResolved {
@@ -341,10 +344,6 @@ fn subtitle_label(text: &str) -> gtk::Label {
 fn format_value(value: f64, digits: i32, suffix: &str) -> String {
     let precision = usize::try_from(digits.max(0)).unwrap_or(0);
     format!("{value:.precision$}{suffix}")
-}
-
-fn finite_or(value: f64, fallback: f64) -> f64 {
-    if value.is_finite() { value } else { fallback }
 }
 
 fn reset_accessible_label(reset_label: &str, title: &str) -> String {
