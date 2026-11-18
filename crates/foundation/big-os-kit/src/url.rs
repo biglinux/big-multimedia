@@ -287,12 +287,12 @@ mod tests {
     fn disguised_key(key: &str, state: &mut u64) -> String {
         let mut disguised = String::new();
         for byte in key.bytes() {
-            let byte = if next_random(state) % 2 == 0 {
+            let byte = if next_random(state).is_multiple_of(2) {
                 byte.to_ascii_uppercase()
             } else {
                 byte
             };
-            if next_random(state) % 3 == 0 {
+            if next_random(state).is_multiple_of(3) {
                 disguised.push_str(&format!("%{byte:02x}"));
             } else {
                 disguised.push(char::from(byte));
