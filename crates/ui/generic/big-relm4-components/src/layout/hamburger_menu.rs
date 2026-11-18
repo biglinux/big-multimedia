@@ -229,17 +229,10 @@ pub fn attach_popover_to_button_with_parent(
             .as_ref()
             .set_data(ACTION_POPOVER_QDATA_KEY, popover.clone());
     }
-    {
-        let popover = popover.downgrade();
-        popover_parent.as_ref().connect_destroy(move |_| {
-            if let Some(popover) = popover.upgrade() {
-                popover.popdown();
-                if popover.parent().is_some() {
-                    popover.unparent();
-                }
-            }
-        });
-    }
+    crate::feedback::popover_lifecycle::unparent_popover_on_parent_teardown(
+        popover_parent.as_ref(),
+        popover,
+    );
     {
         let popover = popover.clone();
         button.connect_clicked(move |_| {
