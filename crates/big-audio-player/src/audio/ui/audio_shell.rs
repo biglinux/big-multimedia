@@ -70,6 +70,7 @@ use big_media_components::media::file_metadata_dialog::{
     BigMediaFileMetadataDialogLabels, BigMediaFileMetadataDialogSpec,
     show_media_file_metadata_dialog,
 };
+use big_media_components::media::files::PLAYLIST_EXTENSIONS;
 use big_media_components::playback::audio_transport::{
     BigAudioTransportLabels, BigAudioTransportSpec,
 };

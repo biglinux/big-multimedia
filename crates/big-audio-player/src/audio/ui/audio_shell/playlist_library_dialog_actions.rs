@@ -138,9 +138,7 @@ impl AudioShell {
                         )));
                     }
                     let path = entry?.path();
-                    if path.extension().and_then(|e| e.to_str()).is_some_and(|e| {
-                        matches!(e.to_ascii_lowercase().as_str(), "m3u" | "m3u8" | "pls")
-                    }) {
+                    if crate::media::playlist::is_playlist_file(&path.to_string_lossy()) {
                         paths.push(path);
                         if paths.len() > 100 {
                             return Err(std::io::Error::other(i18n(
@@ -236,7 +234,7 @@ impl AudioShell {
         let weak_parent = parent.as_ref().map(glib::object::ObjectExt::downgrade);
         FilePicker::save_file(i18n("Export Playlist"))
             .initial_name("playlist.m3u8")
-            .filter(&i18n("M3U8 Playlist"), &["m3u8", "m3u"])
+            .filter(&i18n("M3U8 Playlist"), crate::media::playlist_scan::M3U_EXTENSIONS)
             .save_optional(parent.as_ref(), move |path| {
                 crate::settings::acknowledged_task(
                     false,
@@ -261,7 +259,7 @@ impl AudioShell {
     pub(super) fn import_playlist(&self, sender: &ComponentSender<Self>) {
         let input = sender.input_sender().clone();
         FilePicker::new(i18n("Import Playlist"))
-            .filter(&i18n("Playlists"), &["m3u", "m3u8", "pls"])
+            .filter(&i18n("Playlists"), PLAYLIST_EXTENSIONS)
             .open_optional(self.window().as_ref(), move |path| {
                 let name = path.file_stem().map_or_else(
                     || "Imported".to_string(),

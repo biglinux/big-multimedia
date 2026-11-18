@@ -131,7 +131,7 @@ impl VideoShell {
         };
         FilePicker::new(i18n("Open Video"))
             .filter(&i18n("Video files"), VIDEO_EXTENSIONS)
-            .filter(&i18n("Playlist files"), &["m3u", "m3u8", "pls"])
+            .filter(&i18n("Playlist files"), PLAYLIST_EXTENSIONS)
             .pattern_filter(&i18n("All files"), &["*"])
             .open_multiple(root, move |paths| {
                 let strs: Vec<String> = paths
