@@ -47,7 +47,7 @@ pub(super) fn create_music_page(
         &i18n("Level By"),
         "",
         &[&i18n("Off"), &i18n("Per Song"), &i18n("Per Album")],
-        &["no", "track", "album"],
+        &MpvBackend::REPLAYGAIN_MODES,
         keys::REPLAYGAIN,
         settings,
         move |v| {
