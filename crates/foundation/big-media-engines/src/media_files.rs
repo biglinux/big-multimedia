@@ -30,6 +30,18 @@ pub const AUDIO_EXTENSIONS: &[&str] = &[
 /// Playlist file extensions.
 pub const PLAYLIST_EXTENSIONS: &[&str] = &["m3u", "m3u8", "pls"];
 
+/// External subtitle extensions a player loads beside a video.
+pub const SUBTITLE_EXTENSIONS: &[&str] = &["srt", "ass", "ssa", "sub", "vtt", "idx", "sup", "smi"];
+
+/// Synced lyrics read from beside a track.
+pub const LYRICS_EXTENSION: &str = "lrc";
+
+/// Image extensions read as covers and wallpapers: big-shell's
+/// `WALLPAPER_EXTENSIONS` (HEIC and JXL included) plus raster types ffmpeg can blur.
+pub const IMAGE_EXTENSIONS: &[&str] = &[
+    "jpg", "jpeg", "png", "webp", "bmp", "tiff", "avif", "heic", "jxl", "svg",
+];
+
 /// `true` when `path` has an audio extension from [`AUDIO_EXTENSIONS`].
 #[must_use]
 pub fn is_audio_file(path: &str) -> bool {

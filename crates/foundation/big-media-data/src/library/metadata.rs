@@ -211,7 +211,7 @@ fn album_art(path: &str, cancelled: &AtomicBool, try_embedded: bool) -> Option<V
 
 /// External `.lrc` sidecar wins over embedded lyrics when both exist.
 pub fn extract_lyrics(path: &str) -> Option<String> {
-    let lrc_path = Path::new(path).with_extension("lrc");
+    let lrc_path = Path::new(path).with_extension(big_media_engines::media_files::LYRICS_EXTENSION);
     if let Ok(Some(bytes)) = big_os_kit::storage::read_regular_limited(&lrc_path, 1024 * 1024)
         && let Ok(content) = String::from_utf8(bytes)
         && !content.trim().is_empty()

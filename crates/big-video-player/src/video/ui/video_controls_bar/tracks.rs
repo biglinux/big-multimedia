@@ -111,7 +111,7 @@ fn open_subtitle_file_dialog(mpv: &MpvSlot, anchor: &gtk::Button) {
     FilePicker::new(i18n("Load Subtitle File"))
         .filter(
             &i18n("Subtitle files"),
-            &["srt", "ass", "ssa", "sub", "vtt", "idx", "sup", "smi"],
+            big_media_components::media::files::SUBTITLE_EXTENSIONS,
         )
         .open_optional(window.as_ref(), move |path| {
             if let Some(mpv) = mpv.borrow().as_ref() {

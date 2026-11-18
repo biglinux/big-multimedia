@@ -21,12 +21,8 @@ use big_relm4_components::task::spawn_blocking_result;
 use super::osd::IdleBackground;
 use crate::media::thumbnail::publish_converted;
 
-/// Image extensions accepted as wallpapers (lower-case match). Mirrors
-/// big-shell's `WALLPAPER_EXTENSIONS` (incl. `heic`/`jxl`, since BigShell's default
-/// wallpapers are HEIC) plus the extra raster types ffmpeg can also blur.
-const IMAGE_EXTS: &[&str] = &[
-    "jpg", "jpeg", "png", "webp", "bmp", "tiff", "avif", "heic", "jxl", "svg",
-];
+/// Image extensions accepted as wallpapers.
+const IMAGE_EXTS: &[&str] = big_media_components::media::files::IMAGE_EXTENSIONS;
 
 /// System wallpaper pool BigShell scans (mirrors `big_shell_core::paths`).
 const SYSTEM_WALLPAPER_DIR: &str = "/usr/share/wallpapers";
