@@ -253,7 +253,6 @@ catalog! {
 
     // Library
     LIBRARY_GROUPING: StringKey("library-grouping") = "";
-    LIBRARY_COLUMN_WIDTHS: StringKey("library-column-widths") = "";
     PLAYLIST_COLUMN_WIDTHS: StringKey("playlist-column-widths") = "";
 
     // Desktop integration
